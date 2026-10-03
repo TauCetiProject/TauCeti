@@ -29,13 +29,6 @@ as roots of unity in `F`; consequently `e_N(S, T) ^ k = e_m(k S, k T)` for `S, T
 with multiplication by `ℓ` on the torsion tower and the `ℓ`-th power map on the roots of unity,
 which is what assembling them into the `ℓ`-adic Weil pairing on the Tate module requires.
 
-The proof is Silverman's. Let `g` be a function with divisor `[m]^* (T) - [m]^* (O)`, the function
-from which `e_m(·, T)` is built. Since `[m] ∘ [k] = [N]`, its pullback `[k]^* g` has divisor
-`[N]^* (T) - [N]^* (O)`, so it computes `e_N(·, T)`. Translation by `S` moves `[k]^* g` to
-`[k]^* (τ_{k S}^* g)`, as `[k]` is a separable isogeny sending `S` to `k S`, hence
-
-    e_N(S, T) = τ_S ([k]^* g) / [k]^* g = [k]^* (τ_{k S}^* g / g) = e_m(k S, T).
-
 ## Main results
 
 * `TauCeti.Isogeny.coe_weilPairing_eq_coe_weilPairing_nsmul`: `e_N(S, T) = e_m(k S, T)` for
@@ -86,6 +79,13 @@ variable [DecidableEq F] [IsSepClosed F] {N m : ℕ} [NeZero N] [NeZero m] (hN :
 
 local instance : IsIntegrallyClosed W.toAffine.CoordinateRing :=
   W.toAffine.isIntegrallyClosed_coordinateRing
+
+/- The proof is Silverman's. Let `g` be a function with divisor `[m]^* (T) - [m]^* (O)`, the
+function from which `e_m(·, T)` is built. Since `[m] ∘ [k] = [N]`, its pullback `[k]^* g` has
+divisor `[N]^* (T) - [N]^* (O)`, so it computes `e_N(·, T)`. Translation by `S` moves `[k]^* g`
+to `[k]^* (τ_{k S}^* g)`, as `[k]` is a separable isogeny sending `S` to `k S`, hence
+
+    e_N(S, T) = τ_S ([k]^* g) / [k]^* g = [k]^* (τ_{k S}^* g / g) = e_m(k S, T). -/
 
 /-- **The Weil pairings are compatible across levels** (Silverman III.8.1(g)): for `N = m k`
 invertible in `F`, `e_N(S, T) = e_m(k S, T)` for `S ∈ E[N]` and `T ∈ E[m]`, as roots of unity in
