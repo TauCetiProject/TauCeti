@@ -36,23 +36,14 @@ variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L]
   [Module.Finite K L] [IsGalois K L]
 
-private theorem psiNat_eq_self_of_le_break (hℓ : (Module.finrank K L).Prime)
-    {v t : ℕ} (hvt : v ≤ t)
-    (ht : UpperJump K L ⟨t, Nat.cast_mem_ramificationIndexDomain t⟩) :
-    psiNat K L v = v := by
-  have hGi (i : ℕ) (hi : i ≤ t) : lowerRamificationGroup K L i = ⊤ :=
-    top_le_iff.1 <| lowerRamificationGroup_natCast_eq_top_of_upperJump K L hℓ ht ▸
-      lowerRamificationGroup_antitone K L (by exact_mod_cast hi)
-  exact (psiNat_eq_self_iff K L).2 (by rw [hGi v hvt, ← Nat.cast_zero, hGi 0 (Nat.zero_le t)])
-
 private theorem map_normUnits_unitFiltration_inf_succ_before_break
     (hℓ : (Module.finrank K L).Prime) {v t : ℕ} (hvt : v < t)
     (ht : UpperJump K L ⟨t, Nat.cast_mem_ramificationIndexDomain t⟩) :
     (unitFiltration L (psiNat K L v)).map (Algebra.normUnits K) ⊓
       unitFiltration K (v + 1) =
         (unitFiltration L (psiNat K L (v + 1))).map (Algebra.normUnits K) := by
-  have hψ := psiNat_eq_self_of_le_break hℓ hvt.le ht
-  have hψ' := psiNat_eq_self_of_le_break hℓ (Nat.succ_le_of_lt hvt) ht
+  have hψ := psiNat_eq_self_of_le_break K L hℓ hvt.le ht
+  have hψ' := psiNat_eq_self_of_le_break K L hℓ (Nat.succ_le_of_lt hvt) ht
   apply le_antisymm
   · intro x hx
     obtain ⟨hyx, hx⟩ := Subgroup.mem_inf.1 hx
