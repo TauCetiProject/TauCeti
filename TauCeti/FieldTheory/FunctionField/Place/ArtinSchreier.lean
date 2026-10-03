@@ -24,8 +24,10 @@ of the power map on the residue field; the iteration uses additivity of Frobeniu
 Neither result requires completeness, an exact constant field, or a function-field hypothesis.
 
 A prime-to-`p` pole cannot be improved by any Artin–Schreier substitution, even with an
-imperfect residue field. `ord_sub_pow_sub_self_le_of_ord_neg_of_not_dvd` records this
-maximality. The integral alternative includes the zero representative, so no statement
+imperfect residue field.
+`TauCeti.ord_sub_pow_sub_self_le_of_ord_neg_of_not_dvd` records this maximality,
+and `TauCeti.ord_reduced_artinSchreier_representative_eq` gives uniqueness.
+The integral alternative includes the zero representative, so no statement
 uses the junk value `ord_P 0 = 0` as a positive order of vanishing.
 
 ## References
@@ -85,8 +87,10 @@ theorem exists_ord_sub_pow_sub_self_gt_of_dvd_ord {n : ℕ} (hn : 1 < n)
       rw [P.mem_filtration_iff_le_ord (inv_ne_zero hs0), P.ord_inv, hs]
       omega
     have h := P.mul_mem_filtration haint hsint
-    apply P.filtration_antitone (show P.ord u + 1 ≤ q by rw [hq]; nlinarith)
-    simpa [div_eq_mul_inv] using h
+    apply P.filtration_antitone (b := q)
+    · rw [hq]
+      nlinarith
+    · simpa [div_eq_mul_inv] using h
   refine ⟨(a : F) / s, ?_⟩
   have hmem : u - (((a : F) / s) ^ n - (a : F) / s) ∈
       P.filtration (P.ord u + 1) := by
@@ -96,29 +100,6 @@ theorem exists_ord_sub_pow_sub_self_gt_of_dvd_ord {n : ℕ} (hn : 1 < n)
   · simpa [hzero] using hu
   · have := (P.mem_filtration_iff_le_ord hzero).mp hmem
     omega
-
-/-- A negative order not divisible by `n > 1` is maximal among all representatives
-`u - (w ^ n - w)`. No perfection or characteristic hypothesis is needed for this
-obstruction to improving a pole. -/
-theorem ord_sub_pow_sub_self_le_of_ord_neg_of_not_dvd {n : ℕ} (hn : 1 < n) {u : F}
-    (hu : P.ord u < 0) (hdiv : ¬(n : ℤ) ∣ P.ord u) (w : F) :
-    P.ord (u - (w ^ n - w)) ≤ P.ord u := by
-  have hu0 : u ≠ 0 := by rintro rfl; simp at hu
-  rcases eq_or_ne (w ^ n - w) 0 with hw0 | hw0
-  · simp [hw0]
-  have hne : P.ord (w ^ n - w) ≠ P.ord u := by
-    intro heq
-    have hwneg : P.valuation.ord w < 0 :=
-      (P.valuation.ord_pow_sub_self_neg_iff hn w).mp (by
-        rw [Valuation.ord_def, ← P.ord_def, heq]
-        exact hu)
-    have horder : P.ord (w ^ n - w) = (n : ℤ) * P.ord w := by
-      simpa only [Valuation.ord_def, ← P.ord_def] using
-        P.valuation.ord_pow_sub_self_of_ord_neg hn hwneg
-    exact hdiv ⟨P.ord w, heq.symm.trans horder⟩
-  rw [sub_eq_add_neg, P.ord_add_eq_min_of_ord_ne hu0 (neg_ne_zero.mpr hw0)
-    (by simpa only [P.ord_neg] using hne.symm), P.ord_neg]
-  exact min_le_left _ _
 
 /-- Over a perfect residue field in characteristic `p`, every Artin–Schreier class has
 an integral representative or a representative with negative order not divisible by `p`.
@@ -153,24 +134,5 @@ theorem exists_reduced_artinSchreier_representative (p : ℕ) [Fact p.Prime] [Ch
         ring
       rwa [heq]
     · exact ⟨0, by simpa [hp0] using Or.inr ⟨hu, hdiv⟩⟩
-
-/-- Two representatives of an Artin–Schreier class with prime-to-`p` poles have the
-same order. Thus the reduced pole order is independent of the substitution used to
-obtain it. This uniqueness statement does not need a perfect residue field. -/
-theorem ord_reduced_artinSchreier_representative_eq (p : ℕ) [Fact p.Prime] [CharP F p]
-    {u w z : F} (hw : P.ord (u - (w ^ p - w)) < 0)
-    (hwdiv : ¬(p : ℤ) ∣ P.ord (u - (w ^ p - w)))
-    (hz : P.ord (u - (z ^ p - z)) < 0)
-    (hzdiv : ¬(p : ℤ) ∣ P.ord (u - (z ^ p - z))) :
-    P.ord (u - (w ^ p - w)) = P.ord (u - (z ^ p - z)) := by
-  have heq (a b : F) : (u - (a ^ p - a)) - ((b - a) ^ p - (b - a)) =
-      u - (b ^ p - b) := by
-    rw [sub_pow_char]
-    ring
-  apply le_antisymm
-  · simpa only [heq] using P.ord_sub_pow_sub_self_le_of_ord_neg_of_not_dvd
-      (Fact.out : p.Prime).one_lt hz hzdiv (w - z)
-  · simpa only [heq] using P.ord_sub_pow_sub_self_le_of_ord_neg_of_not_dvd
-      (Fact.out : p.Prime).one_lt hw hwdiv (z - w)
 
 end TauCeti.Place
