@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.NumberField.Completion.InfinitePlace
+public import Mathlib.NumberTheory.NumberField.Completion.Ramification
 
 /-!
 # Normalized absolute values on number-field completions
@@ -21,6 +21,10 @@ real places and two at complex places, so its restriction to the number field ag
 normalization used by `NumberField.prod_abs_eq_one`.  These completion-side maps are the local
 factors used by the global idele norm; the single all-places carrier is developed separately.
 
+The archimedean completions also carry a nontrivial norm. Completed extensions at infinite
+places are finite dimensional, and the diagonal embeddings form scalar towers. These instances
+allow finite-dimensional topological algebra to be used with the canonical completion maps.
+
 ## References
 
 * [J. Neukirch, *Algebraic Number Theory*][Neukirch1992], Chapter II.
@@ -32,11 +36,41 @@ noncomputable section
 namespace TauCeti.GlobalNumberFields
 
 open IsDedekindDomain NumberField NumberField.InfinitePlace
-open scoped WithZero
+open scoped WithZero NumberField.LiesOver
 
 variable {K : Type*} [Field K]
 
 section Infinite
+
+/-- An archimedean completion has a nontrivial norm, as seen by its embedding in `ℂ`. -/
+instance instNontriviallyNormedFieldInfiniteCompletion (v : InfinitePlace K) :
+    NontriviallyNormedField v.Completion where
+  non_trivial := by
+    have hnorm : ‖(2 : v.Completion)‖ = 2 := by
+      rw [← (Completion.isometry_extensionEmbedding v).norm_map_of_map_zero
+        (map_zero _), map_ofNat]
+      norm_num
+    exact ⟨2, by rw [hnorm]; norm_num⟩
+
+variable {L : Type*} [Field L] [Algebra K L]
+
+/-- A completed extension at an infinite place is finite dimensional: its degree is one or two. -/
+instance (v : InfinitePlace K) (w : InfinitePlace L) [w.LiesOver v] :
+    FiniteDimensional v.Completion w.Completion := by
+  apply Module.finite_of_finrank_pos
+  have h := mult_mul_finrank v w
+  have hn : Module.finrank v.Completion w.Completion ≠ 0 := by
+    intro hz
+    rw [hz, mul_zero] at h
+    exact mult_ne_zero (w := w) h.symm
+  exact Nat.pos_of_ne_zero hn
+
+/-- The diagonal algebra structures on an archimedean completion form a scalar tower. -/
+instance (w : InfinitePlace L) : IsScalarTower K L w.Completion :=
+  IsScalarTower.of_algebraMap_eq fun x ↦ by
+    apply Completion.ext
+    simp [Completion.algebraMap_toCompletion, UniformSpace.Completion.algebraMap_def,
+      WithAbs.algebraMap_right_apply]
 
 /-- The normalized absolute value on the completion at an infinite place. -/
 def infiniteCompletionNormalizedAbsValue (w : InfinitePlace K) : w.Completion →*₀ ℝ :=
