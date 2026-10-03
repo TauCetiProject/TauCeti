@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.IsManifold.ExtChartAt
+public import TauCeti.Geometry.Manifold.ContMDiff.Defs
 public import Mathlib.Analysis.Calculus.FDeriv.Prod
 public import Mathlib.LinearAlgebra.Determinant
 
@@ -39,7 +39,8 @@ infinite-dimensional space), so the model vector space is assumed finite-dimensi
 The notion is the one of differentiable manifolds: an oriented atlas has differentiable coordinate
 changes, which is not the homological orientability of a topological manifold. So oriented atlases
 and orientability are only stated for `C^n` manifolds with `n ≠ 0` (`[NeZero n]`, equivalently
-`1 ≤ n`); the instances `NeZero ∞` and `NeZero ω` cover smooth and analytic manifolds.
+`1 ≤ n`); the instances `NeZero ∞` and `NeZero ω` of `TauCeti/Geometry/Manifold/ContMDiff/Defs.lean`
+cover smooth and analytic manifolds.
 
 ## Main definitions
 
@@ -62,8 +63,8 @@ and orientability are only stated for `C^n` manifolds with `n ≠ 0` (`[NeZero n
   says that a linear automorphism of the model vector space preserves orientation exactly when its
   determinant is positive.
 * `TauCeti.not_contDiffGroupoid_le_orientationPreservingGroupoid`: the reflection `x ↦ -x` of `ℝ` is
-  a smooth coordinate change that does not preserve orientation, so the groupoid is a proper
-  restriction of the smooth one.
+  a smooth coordinate change that does not preserve orientation, so the `C^n` groupoid is not
+  contained in the orientation-preserving one.
 * `TauCeti.IsOrientedAtlas.det_fderivWithin_pos`: the coordinate changes of an oriented atlas have
   derivatives of positive determinant.
 * `TauCeti.Orientable.of_hasGroupoid`, and the instances: the model space is orientable, and a
@@ -255,8 +256,8 @@ end TauCeti
 
 On the model vector space itself, a linear automorphism preserves orientation exactly when its
 determinant is positive. In particular the reflection of `ℝ` is a smooth coordinate change that
-reverses orientation, so the orientation-preserving groupoid is a proper restriction of the smooth
-one and an oriented atlas is a genuine constraint. -/
+reverses orientation, so some smooth coordinate changes are excluded from the
+orientation-preserving groupoid and an oriented atlas is a genuine constraint. -/
 
 namespace ContinuousLinearMap
 
@@ -319,14 +320,6 @@ theorem not_contDiffGroupoid_le_orientationPreservingGroupoid (n : ℕ∞ω) :
   norm_num [A] at hdet
 
 /-! ### Oriented atlases and orientable manifolds -/
-
-/-- Smooth manifolds are differentiable, so they can carry oriented atlases. -/
-instance : NeZero (∞ : ℕ∞ω) :=
-  ⟨WithTop.coe_ne_zero.2 ENat.top_ne_zero⟩
-
-/-- Analytic manifolds are differentiable, so they can carry oriented atlases. -/
-instance : NeZero (ω : ℕ∞ω) :=
-  ⟨WithTop.top_ne_zero⟩
 
 section Atlas
 
