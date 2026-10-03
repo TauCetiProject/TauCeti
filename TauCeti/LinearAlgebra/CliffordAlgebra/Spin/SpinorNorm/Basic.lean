@@ -36,9 +36,9 @@ Spin group.
   the kernel of the spinor norm.
 * `CliffordAlgebra.spinToSpinorNormKernel`: the Spin action corestricted to that kernel.
 * `CliffordAlgebra.spinToSpinorNormKernel_surjective`: the corestricted action is surjective.
-* `TauCeti.QuadraticForm.spinorNorm_reflectionPairSpecialOrthogonal`: the spinor norm of a
+* `TauCeti.spinorNorm_reflectionPairSpecialOrthogonal`: the spinor norm of a
   reflection pair.
-* `TauCeti.QuadraticForm.orthogonalSpinorNorm_surjective_of_spinorNorm_surjective`: surjectivity
+* `TauCeti.orthogonalSpinorNorm_surjective_of_spinorNorm_surjective`: surjectivity
   on `SO(Q)` implies surjectivity on `O(Q)`.
 
 ## References
@@ -263,8 +263,6 @@ end CliffordAlgebra
 
 namespace TauCeti
 
-namespace QuadraticForm
-
 open _root_.CliffordAlgebra _root_.QuadraticMap
 
 universe u v
@@ -289,7 +287,5 @@ theorem orthogonalSpinorNorm_surjective_of_spinorNorm_surjective
     Function.Surjective (orthogonalSpinorNorm Q hQ) := by
   apply Function.Surjective.of_comp (g := specialOrthogonalToOrthogonal Q)
   simpa only [Function.comp_def, ← spinorNorm_apply] using hsurj
-
-end QuadraticForm
 
 end TauCeti
