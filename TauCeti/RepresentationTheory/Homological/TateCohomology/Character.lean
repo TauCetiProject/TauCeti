@@ -205,16 +205,4 @@ theorem characterConnectingClass_eq_tateδ
   norm_num at h ⊢
   exact h
 
-/-- The connecting class can be computed by first representing the character in the initial
-upward dimension shift and then applying the Tate connecting map for `ℤ → ℚ → ℚ/ℤ`. -/
-theorem characterConnectingClass_eq_tateδ_dimensionShift
-    (χ : Additive (Abelianization G) →+ AddCircle (1 : ℚ)) :
-    characterConnectingClass G χ =
-      _root_.TateCohomology.δ (Rep.ratAddCircleShortComplex_shortExact G) 1
-        ((dimensionShiftUpIso (Rep.ratAddCircleShortComplex G).X₃ 0).hom
-          (H0π (dimensionShiftUp (Rep.ratAddCircleShortComplex G).X₃)
-            (characterDimensionShift G χ))) := by
-  rw [characterConnectingClass_eq_tateδ,
-    dimensionShiftUpIso_characterDimensionShift]
-
 end TauCeti.TateCohomology
