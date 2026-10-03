@@ -13,8 +13,8 @@ public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.Torsion
 
 For a nonarchimedean local field `F` and an exponent `n` invertible in `F`, the Kummer
 coefficient map identifies `H²(F, μₙ)` with the `n`-torsion of the Brauer group. The local
-invariant `invMap F` therefore identifies it with the `n`-torsion of `ℚ/ℤ`. Composing with the
-inverse of `ZMod.toRatAddCircle n` gives the normalized equivalence
+invariant `invMap F`, normalized by arithmetic Frobenius, therefore identifies it with the
+`n`-torsion of `ℚ/ℤ`. The class of invariant `1/n` determines the normalized equivalence
 `h2MuEquivZMod F hn : H²(F, μₙ) ≃+ ZMod n`.
 
 The normalization is characterized by `toRatAddCircle_h2MuEquivZMod`: a class whose image in the
@@ -26,9 +26,18 @@ Only invertibility in the field is required, not in its valuation ring. Thus in 
 zero the construction works for every nonzero `n`, including exponents divisible by the residue
 characteristic (`h2MuEquivZMod_mixed`).
 
-The construction uses `h2MuToBr_injective` and `h2MuToBr_range` from the Kummer sequence,
-`invMap` normalized by arithmetic Frobenius, and the rational-circle character
-`ZMod.toRatAddCircle`.
+## Main definitions
+
+* `h2MuEquivZMod`: the normalized identification `H²(F, μₙ) ≃+ ZMod n`.
+
+## Main results
+
+* `range_invMap_comp_h2MuToBr`: the Kummer classes have precisely the `n`-torsion invariants.
+* `toRatAddCircle_h2MuEquivZMod`: the forward identification respects the Brauer invariant.
+* `invMap_h2MuToBr_h2MuEquivZMod_symm`: the inverse has the prescribed Brauer invariant.
+* `h2MuEquivZMod_eq_iff`: the invariant characterizes each residue.
+* `h2MuEquivZMod_mixed`: the identification exists for every nonzero exponent in
+  characteristic zero.
 
 ## References
 
@@ -63,12 +72,15 @@ theorem range_invMap_comp_h2MuToBr (hn : IsUnit (n : F)) :
 /-- The normalized local invariant `H²(F, μₙ) ≃+ ℤ/n`, for `n` invertible in the field.
 It sends a class of Brauer invariant `k/n` to `k`. -/
 def h2MuEquivZMod (hn : IsUnit (n : F)) :
-    continuousCohomology 2 (muNRep n F) ≃+ ZMod n := by
-  have : NeZero n := ⟨fun h => hn.ne_zero (by simp [h])⟩
-  exact (AddMonoidHom.ofInjective ((invMap F).injective.comp (h2MuToBr_injective n F hn))).trans
-    ((AddEquiv.addSubgroupCongr ((range_invMap_comp_h2MuToBr F hn).trans
-      (ZMod.toRatAddCircle_range n).symm)).trans
-        (AddMonoidHom.ofInjective (ZMod.toRatAddCircle_injective n)).symm)
+    continuousCohomology 2 (muNRep n F) ≃+ ZMod n :=
+  letI : NeZero (n : F) := ⟨hn.ne_zero⟩
+  let f := (invMap F).toAddMonoidHom.comp (h2MuToBr n F)
+  let hf : Function.Injective f := (invMap F).injective.comp (h2MuToBr_injective n F hn)
+  let hr : Set.range f = (AddSubgroup.torsionBy (AddCircle (1 : ℚ)) (n : ℤ) : Set _) := by
+    rw [← AddMonoidHom.coe_range, range_invMap_comp_h2MuToBr F hn]
+  let hu := (AddCircle.existsUnique_apply_eq_coe_period_div (1 : ℚ) hf hr).exists
+  (AddCircle.zmodAddEquivOfInjectiveOfRangeEqTorsionBy (1 : ℚ)
+    (NeZero.pos_of_neZero_natCast F) hf hr hu.choose_spec).symm
 
 /-- The degree-two invariant followed by `k ↦ k/n` is the Brauer invariant of the Kummer
 coefficient image. This characterizes its arithmetic normalization. -/
@@ -76,9 +88,25 @@ coefficient image. This characterizes its arithmetic normalization. -/
 theorem toRatAddCircle_h2MuEquivZMod (hn : IsUnit (n : F))
     (x : continuousCohomology 2 (muNRep n F)) :
     ZMod.toRatAddCircle n (h2MuEquivZMod F hn x) = invMap F (h2MuToBr n F x) := by
-  rw [h2MuEquivZMod, AddEquiv.trans_apply, AddEquiv.trans_apply,
-    AddMonoidHom.apply_ofInjective_symm]
-  rfl
+  have : NeZero (n : F) := ⟨hn.ne_zero⟩
+  let f := (invMap F).toAddMonoidHom.comp (h2MuToBr n F)
+  have hf : Function.Injective f := (invMap F).injective.comp (h2MuToBr_injective n F hn)
+  have hr : Set.range f = (AddSubgroup.torsionBy (AddCircle (1 : ℚ)) (n : ℤ) : Set _) := by
+    rw [← AddMonoidHom.coe_range, range_invMap_comp_h2MuToBr F hn]
+  let hu := (AddCircle.existsUnique_apply_eq_coe_period_div (1 : ℚ) hf hr).exists
+  let e := AddCircle.zmodAddEquivOfInjectiveOfRangeEqTorsionBy (1 : ℚ)
+    (NeZero.pos_of_neZero_natCast F) hf hr hu.choose_spec
+  have hgen : invMap F (h2MuToBr n F hu.choose) = ((1 / n : ℚ) : AddCircle (1 : ℚ)) := by
+    simpa only [f, AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom] using hu.choose_spec
+  have he (z : ZMod n) :
+      invMap F (h2MuToBr n F (e z)) = ZMod.toRatAddCircle n z := by
+    obtain ⟨i, rfl⟩ := ZMod.intCast_surjective z
+    rw [AddCircle.zmodAddEquivOfInjectiveOfRangeEqTorsionBy_apply_intCast,
+      map_zsmul, map_zsmul]
+    rw [hgen, ZMod.toRatAddCircle_intCast, ← AddCircle.coe_zsmul]
+    congr 1
+    simp [zsmul_eq_mul, div_eq_mul_inv]
+  simpa only [AddEquiv.apply_symm_apply, h2MuEquivZMod, e, f] using (he (e.symm x)).symm
 
 /-- The inverse degree-two identification has the prescribed Brauer invariant. For an integer
 residue `k`, the right side is the class of `k/n` in `ℚ/ℤ`. -/
@@ -92,7 +120,8 @@ that residue's rational-circle image. -/
 theorem h2MuEquivZMod_eq_iff (hn : IsUnit (n : F))
     (x : continuousCohomology 2 (muNRep n F)) (z : ZMod n) :
     h2MuEquivZMod F hn x = z ↔ invMap F (h2MuToBr n F x) = ZMod.toRatAddCircle n z := by
-  have : NeZero n := ⟨fun h => hn.ne_zero (by simp [h])⟩
+  have : NeZero (n : F) := ⟨hn.ne_zero⟩
+  have : NeZero n := NeZero.of_neZero_natCast F
   rw [← (ZMod.toRatAddCircle_injective n).eq_iff, toRatAddCircle_h2MuEquivZMod]
 
 /-- Roots-of-unity cohomology in degree two is `ℤ/n` in characteristic zero, for every nonzero
