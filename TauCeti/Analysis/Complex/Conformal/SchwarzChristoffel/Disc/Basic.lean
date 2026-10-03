@@ -54,13 +54,8 @@ unbounded polygons as well, including divergence at their vertex at infinity.
   the primitive on the disc.
 * `TauCeti.eqOn_schwarzChristoffelPrimitive_comp_I_mul_one_add_div_one_sub_with_infty` --
   unrestricted Cayley transport with the additional prevertex at infinity.
-* `TauCeti.eqOn_schwarzChristoffelPrimitive_comp_I_mul_one_add_div_one_sub` -- the half-plane
-  primitive in inverse Cayley coordinates equals an explicit affine image of the disc primitive.
 * `TauCeti.exists_bijOn_const_mul_schwarzChristoffelDiscPrimitive_add_with_infty_of_bijOn` --
   unrestricted transport of a bijection, its finite boundary limits, and divergence at infinity.
-* `TauCeti.exists_bijOn_const_mul_schwarzChristoffelDiscPrimitive_add_of_bijOn` -- a half-plane
-  Schwarz--Christoffel map onto a domain gives a disc Schwarz--Christoffel map onto the same domain,
-  with the same boundary limits at corresponding prevertices.
 
 ## References
 
@@ -334,18 +329,6 @@ theorem eqOn_schwarzChristoffelPrimitive_comp_I_mul_one_add_div_one_sub_with_inf
     simpa [mul_comm, mul_left_comm, mul_assoc] using hderivEq.symm
   simpa only [hKexpr, hD] using hKD
 
-
-/-- The normalized disc primitive is the half-plane primitive in inverse Cayley coordinates,
-with its affine constants fixed by the value and derivative at the disc centre. -/
-theorem eqOn_schwarzChristoffelPrimitive_comp_I_mul_one_add_div_one_sub
-    (a e : ι → ℝ) (z₀ : UpperHalfPlane) (hsum : ∑ i, e i = -2) :
-    EqOn (fun ζ => schwarzChristoffelPrimitive a e z₀ (I * (1 + ζ) / (1 - ζ)))
-      (fun ζ => 2 * I * schwarzChristoffelIntegrand a e I *
-        schwarzChristoffelDiscPrimitive (fun i => boundaryCayley (a i)) e ζ +
-        schwarzChristoffelPrimitive a e z₀ I) (ball 0 1) := by
-  simpa [hsum] using
-    eqOn_schwarzChristoffelPrimitive_comp_I_mul_one_add_div_one_sub_with_infty a e z₀
-
 /-- **Disc transport including the point at infinity.** A half-plane Schwarz--Christoffel
 bijection gives a disc Schwarz--Christoffel bijection after adding the prevertex `1` with
 exponent `-∑ i, e i - 2`. Finite boundary limits pass to their Cayley prevertices, and divergence
@@ -407,28 +390,5 @@ theorem exists_bijOn_const_mul_schwarzChristoffelDiscPrimitive_add_with_infty_of
   · intro hv
     exact (hv.comp tendsto_I_mul_one_add_div_one_sub_nhdsWithin_one).congr'
       (eventually_nhdsWithin_of_forall heq)
-
-/-- **A half-plane Schwarz--Christoffel map gives a disc Schwarz--Christoffel map.**  Suppose the
-turning exponents sum to `-2` and `z ↦ A * F z + B` maps the upper half-plane bijectively onto
-`U`, where `F` is the half-plane primitive for the prevertices `a`.  Then, with `w i` the Cayley
-image `(a i - i) / (a i + i)` of `a i`, some `ζ ↦ A' * G ζ + B'` with `A' ≠ 0` maps the open unit
-disc bijectively onto `U`, where `G` is the normalized disc primitive for `w`.  Moreover every
-boundary limit of the half-plane map at a real point `x` is the boundary limit of the disc map at
-the Cayley image of `x`; in particular prevertices go to the same vertices. -/
-theorem exists_bijOn_const_mul_schwarzChristoffelDiscPrimitive_add_of_bijOn
-    (a e : ι → ℝ) (z₀ : UpperHalfPlane) (hsum : ∑ i, e i = -2) {U : Set ℂ} {A B : ℂ}
-    (hAB : BijOn (fun z => A * schwarzChristoffelPrimitive a e z₀ z + B) upperHalfPlaneSet U) :
-    ∃ A' : ℂ, A' ≠ 0 ∧ ∃ B' : ℂ,
-      BijOn (fun ζ => A' * schwarzChristoffelDiscPrimitive
-        (fun i => boundaryCayley (a i)) e ζ + B') (ball 0 1) U ∧
-      ∀ (x : ℝ) (v : ℂ),
-        Tendsto (fun z => A * schwarzChristoffelPrimitive a e z₀ z + B)
-          (𝓝[upperHalfPlaneSet] (x : ℂ)) (𝓝 v) →
-        Tendsto (fun ζ => A' * schwarzChristoffelDiscPrimitive
-          (fun i => boundaryCayley (a i)) e ζ + B')
-          (𝓝[ball 0 1] (boundaryCayley x : ℂ)) (𝓝 v) := by
-  obtain ⟨A', hA', B', hbij, hfinite, -⟩ :=
-    exists_bijOn_const_mul_schwarzChristoffelDiscPrimitive_add_with_infty_of_bijOn a e z₀ hAB
-  exact ⟨A', hA', B', by simpa [hsum] using hbij, by simpa [hsum] using hfinite⟩
 
 end TauCeti
