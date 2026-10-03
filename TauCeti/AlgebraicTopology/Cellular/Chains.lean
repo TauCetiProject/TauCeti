@@ -192,6 +192,115 @@ lemma skeletonBasePairToSkeletonPair_succ (n : ℕ) :
     ext x
     exact skeletonBasePairToSkeletonPair_fst_apply C (n + 1) x
 
+/-- Inclusion of base pairs `(Xⁿ, X⁻¹) ⟶ (Xᵐ, X⁻¹)` for `n ≤ m`. -/
+def skeletonBasePairInclusion {n m : ℕ} (h : n ≤ m) :
+    skeletonBasePair C n ⟶ skeletonBasePair C m :=
+  TopPair.ofInclusionMap _ _
+    (ContinuousMap.inclusion (skeletonLT_mono (mod_cast Nat.add_le_add_right h 1)))
+    (fun _ hx ↦ hx)
+
+@[simp]
+lemma coe_skeletonBasePairInclusion_fst_apply {n m : ℕ} (h : n ≤ m)
+    (x : (skeletonBasePair C n).fst) :
+    (TopPair.Hom.fst (skeletonBasePairInclusion C h) x).1 = x.1 :=
+  congrArg Subtype.val (TopPair.ofInclusionMap_fst_apply _ _ _)
+
+@[simp]
+lemma skeletonBasePairInclusion_snd_apply {n m : ℕ} (h : n ≤ m)
+    (x : (skeletonBasePair C n).snd) :
+    TopPair.Hom.snd (skeletonBasePairInclusion C h) x = x :=
+  Subtype.ext (TopPair.ofInclusionMap_snd_apply _ _ _)
+
+@[simp]
+lemma skeletonBasePairInclusion_refl (n : ℕ) :
+    skeletonBasePairInclusion C (le_refl n) = 𝟙 _ := by
+  refine MorphismProperty.Arrow.Hom.ext ?_ ?_
+  · ext x
+    exact skeletonBasePairInclusion_snd_apply C _ x
+  · ext x
+    apply Subtype.ext
+    exact coe_skeletonBasePairInclusion_fst_apply C _ x
+
+/-- Inclusions of base pairs compose as inclusions. -/
+@[reassoc]
+lemma skeletonBasePairInclusion_comp {n m l : ℕ} (h : n ≤ m) (h' : m ≤ l) :
+    skeletonBasePairInclusion C h ≫ skeletonBasePairInclusion C h' =
+      skeletonBasePairInclusion C (h.trans h') := by
+  refine MorphismProperty.Arrow.Hom.ext ?_ ?_
+  · ext x
+    simp only [MorphismProperty.Comma.comp_left, TopCat.comp_app]
+    simpa only [skeletonBasePairInclusion_snd_apply] using
+      (skeletonBasePairInclusion_snd_apply C h' (TopPair.Hom.snd (skeletonBasePairInclusion C h) x))
+  · ext x
+    apply Subtype.ext
+    simp only [MorphismProperty.Comma.comp_right, TopCat.comp_app]
+    simp only [coe_skeletonBasePairInclusion_fst_apply]
+
+/-- The inclusion into the next base pair is the map of the skeletal triple. -/
+lemma skeletonBasePairInclusion_succ (n : ℕ) :
+    skeletonBasePairInclusion C n.le_succ = skeletonBasePairToSucc C n := by
+  refine MorphismProperty.Arrow.Hom.ext ?_ ?_
+  · ext x
+    exact (skeletonBasePairInclusion_snd_apply C n.le_succ x).trans
+      (skeletonBasePairToSucc_snd_apply C n x).symm
+  · ext x
+    exact Subtype.ext ((coe_skeletonBasePairInclusion_fst_apply C _ x).trans
+      (coe_skeletonBasePairToSucc_fst_apply C n x).symm)
+
+/-- The whole relative CW complex as a pair with its base `X⁻¹ = skeletonLT C 0`. -/
+abbrev complexBasePair : TopPair.{w} :=
+  TopPair.ofInclusion (X := TopCat.of X) (skeletonLT C 0).subset_complex
+
+/-- The base in `complexBasePair` is the actual base `D` of the relative CW complex. -/
+lemma complexBasePair_eq_ofInclusion :
+    complexBasePair C = TopPair.ofInclusion (X := TopCat.of X) (base_subset_complex (C := C)) := by
+  simp only [complexBasePair, skeletonLT_zero_eq_base]
+
+/-- Inclusion of a skeleton relative to the base into the whole relative CW complex. -/
+def skeletonBasePairToComplex (n : ℕ) : skeletonBasePair C n ⟶ complexBasePair C :=
+  TopPair.ofInclusionMap _ _ (ContinuousMap.inclusion (skeletonLT C _).subset_complex)
+    (fun _ hx ↦ hx)
+
+@[simp]
+lemma coe_skeletonBasePairToComplex_fst_apply (n : ℕ) (x : (skeletonBasePair C n).fst) :
+    (TopPair.Hom.fst (skeletonBasePairToComplex C n) x).1 = x.1 :=
+  congrArg Subtype.val (TopPair.ofInclusionMap_fst_apply _ _ _)
+
+@[simp]
+lemma skeletonBasePairToComplex_snd_apply (n : ℕ) (x : (skeletonBasePair C n).snd) :
+    TopPair.Hom.snd (skeletonBasePairToComplex C n) x = x :=
+  Subtype.ext (TopPair.ofInclusionMap_snd_apply _ _ _)
+
+/-- Inclusion into the whole pair factors through any larger skeleton. -/
+@[reassoc (attr := simp)]
+lemma skeletonBasePairInclusion_comp_toComplex {n m : ℕ} (h : n ≤ m) :
+    skeletonBasePairInclusion C h ≫ skeletonBasePairToComplex C m =
+      skeletonBasePairToComplex C n := by
+  refine MorphismProperty.Arrow.Hom.ext ?_ ?_
+  · ext x
+    simp only [MorphismProperty.Comma.comp_left, TopCat.comp_app]
+    simpa only [skeletonBasePairInclusion_snd_apply, skeletonBasePairToComplex_snd_apply] using
+      (skeletonBasePairToComplex_snd_apply C m (TopPair.Hom.snd (skeletonBasePairInclusion C h) x))
+  · ext x
+    apply Subtype.ext
+    simp only [MorphismProperty.Comma.comp_right, TopCat.comp_app]
+    simp only [coe_skeletonBasePairInclusion_fst_apply, coe_skeletonBasePairToComplex_fst_apply]
+
+/-- If a skeleton is the whole complex, its inclusion as a pair is an isomorphism. -/
+lemma isIso_skeletonBasePairToComplex_of_eq (m : ℕ)
+    (hm : (skeletonLT C ((m + 1 : ℕ) : ℕ∞) : Set X) = C) :
+    IsIso (skeletonBasePairToComplex C m) := by
+  have hf : TopPair.Hom.fst (skeletonBasePairToComplex C m) =
+      TopCat.ofHom (ContinuousMap.inclusion (skeletonLT C _).subset_complex) := by
+    ext x
+    exact Subtype.ext (coe_skeletonBasePairToComplex_fst_apply C m x)
+  have : IsIso (TopPair.Hom.fst (skeletonBasePairToComplex C m)) := by
+    rw [hf]
+    exact ⟨TopCat.ofHom (ContinuousMap.inclusion hm.symm.subset),
+      by ext x; rfl, by ext x; rfl⟩
+  exact TopPair.isIso_of_isIso_fst_of_surjective_snd _
+    (fun x ↦ ⟨x, skeletonBasePairToComplex_snd_apply C m x⟩)
+
 section
 
 variable {A : Type u} [Category.{v} A] [HasCoproducts.{w} A] [Abelian A] (R : A)
