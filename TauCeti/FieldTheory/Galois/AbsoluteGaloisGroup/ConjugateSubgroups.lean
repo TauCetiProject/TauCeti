@@ -20,7 +20,9 @@ and the Evens norm between different choices of embedding.
 
 The automorphism carrying one embedding to the other comes from the transitive action on
 embeddings in `TauCeti.FieldTheory.Normal.Embeddings`. Conjugacy of the fixing subgroups
-follows from the corresponding stabilizer conjugacy theorem.
+follows from the corresponding stabilizer conjugacy theorem. The finer statement
+`TauCeti.exists_galoisSubgroupEquiv_eq_conj` says that the two identifications of the absolute
+Galois group of `L` with these subgroups differ by conjugation by a single element of `G_K`.
 -/
 
 public section
@@ -41,6 +43,31 @@ theorem galoisSubgroup_conj [FiniteDimensional K L]
         (galoisSubgroup K L σ).toSubgroup.map (MulAut.conj g).toMonoidHom := by
   simpa only [galoisSubgroup_toSubgroup] using
     AlgHom.fixingSubgroup_fieldRange_conj σ τ
+
+/-- **The identifications of `G_L` with the subgroups cut out by two embeddings differ by an
+inner automorphism of `G_K`**: for `K`-embeddings `σ τ : L →ₐ[K] Kˢ` there is `γ : G_K` with
+`galoisSubgroupEquiv K L τ x = γ * galoisSubgroupEquiv K L σ x * γ⁻¹` for every `x : G_L`. The
+element `γ` is the automorphism of `Kˢ` carrying the identification of separable closures attached
+to `σ` to the one attached to `τ`. -/
+theorem exists_galoisSubgroupEquiv_eq_conj [FiniteDimensional K L]
+    (σ τ : L →ₐ[K] SeparableClosure K) :
+    ∃ γ : AbsoluteGaloisGroup K, ∀ x : AbsoluteGaloisGroup L,
+      (galoisSubgroupEquiv K L τ x : AbsoluteGaloisGroup K) =
+        γ * galoisSubgroupEquiv K L σ x * γ⁻¹ := by
+  let eσ := separableClosureRingEquiv K L σ
+  let eτ := separableClosureRingEquiv K L τ
+  -- `γ = eτ ∘ eσ⁻¹` fixes `K`, so it is an element of `G_K`.
+  let γ : AbsoluteGaloisGroup K := AlgEquiv.ofRingEquiv (f := eσ.symm.trans eτ) fun c => by
+    rw [RingEquiv.trans_apply, eσ.symm_apply_eq.2 (separableClosureRingEquiv_algebraMap_base
+      K L σ c).symm, separableClosureRingEquiv_algebraMap_base]
+  have hγ (w : SeparableClosure L) : γ (eσ w) = eτ w := by simp [γ]
+  have hγ' (w : SeparableClosure L) : γ⁻¹ (eτ w) = eσ w := by
+    rw [← hγ, AlgEquiv.aut_inv, AlgEquiv.symm_apply_apply]
+  refine ⟨γ, fun x => AlgEquiv.ext fun y => ?_⟩
+  obtain ⟨w, rfl⟩ := eτ.surjective y
+  rw [AlgEquiv.mul_apply, AlgEquiv.mul_apply, hγ',
+    galoisSubgroupEquiv_apply_separableClosureRingEquiv,
+    galoisSubgroupEquiv_apply_separableClosureRingEquiv, hγ]
 
 /-- **The subgroup cut out by a quadratic extension is independent of its embedding.**
 For a quadratic extension `L/K`, any two embeddings of `L` into the separable closure have the

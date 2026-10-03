@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.ConjugateSubgroups
 public import TauCeti.FieldTheory.GaloisCohomology.Restriction
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.Corestriction.TrivialF2
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Corestriction.Conjugation
 
 /-!
 # Corestriction across a finite extension of fields
@@ -23,6 +24,11 @@ The composite the other way round, `res ∘ cor`, is the identity plus the endom
 the nontrivial coset of `G_L` in `G_K`; it is written through `res ∘ cor` rather than through an
 element of that coset, so no such element is chosen.
 
+Neither map depends on `σ`: another embedding changes the open subgroup and its identification
+with `G_L` by conjugation by an element of `G_K`, and corestriction is invariant under conjugation
+(`TauCeti.ContinuousCohomology.map_comp_corestriction_of_conj`). So `galoisCor` and `galoisConj`
+are attached to `L/K` alone.
+
 ## Main definitions
 
 * `TauCeti.galoisCor`: corestriction from `G_L` to `G_K` on `𝔽₂`-cohomology.
@@ -36,6 +42,8 @@ element of that coset, so no such element is chosen.
   restriction is `y ↦ y + galoisConj y`.
 * `TauCeti.galoisConj_galoisRes`: on a restricted class, `galoisConj` is multiplication by
   `[L : K] - 1`.
+* `TauCeti.galoisCor_embedding_independent`, `TauCeti.galoisConj_embedding_independent`:
+  corestriction and `galoisConj` do not depend on the embedding of `L` into `Kˢ`.
 
 ## Reference
 
@@ -141,5 +149,50 @@ theorem galoisConj_galoisRes (n : ℕ)
   rw [galoisCor_galoisRes, map_nsmul, hd, zero_add, succ_nsmul'] at h
   rw [hd, zero_add, Nat.add_sub_cancel]
   exact (add_left_cancel h).symm
+
+/-! ### Independence of the embedding -/
+
+/-- **Field-extension corestriction does not depend on the embedding**: two `K`-embeddings
+`σ τ : L →ₐ[K] Kˢ` induce the same corestriction `Hⁿ(G_L, 𝔽₂) ⟶ Hⁿ(G_K, 𝔽₂)`, in every degree.
+The automorphism `γ` of `Kˢ` carrying the identification of separable closures attached to `σ` to
+the one attached to `τ` conjugates `galoisSubgroup K L σ` onto `galoisSubgroup K L τ`, compatibly
+with the two identifications with `G_L`, and corestriction is invariant under conjugation. -/
+theorem galoisCor_embedding_independent (τ : L →ₐ[K] SeparableClosure K) (n : ℕ) :
+    galoisCor K L σ n = galoisCor K L τ n := by
+  obtain ⟨γ, hγ⟩ := exists_galoisSubgroupEquiv_eq_conj K L σ τ
+  -- The identification of `galoisSubgroup K L τ` with `galoisSubgroup K L σ` through `G_L`, which
+  -- is conjugation by `γ⁻¹`.
+  let κ : (galoisSubgroup K L τ).toSubgroup →ₜ* (galoisSubgroup K L σ).toSubgroup :=
+    (ContinuousMonoidHom.toContinuousMonoidHom (galoisSubgroupEquiv K L σ)).comp
+      (ContinuousMonoidHom.toContinuousMonoidHom (galoisSubgroupEquiv K L τ).symm)
+  have hκ (v : (galoisSubgroup K L τ).toSubgroup) :
+      (κ v : AbsoluteGaloisGroup K) = γ⁻¹ * v * γ := by
+    have h := hγ ((galoisSubgroupEquiv K L τ).symm v)
+    rw [ContinuousMulEquiv.apply_symm_apply] at h
+    simp [κ, h, mul_assoc]
+  have hVU : (galoisSubgroup K L τ).toSubgroup =
+      (galoisSubgroup K L σ).toSubgroup.map (MulAut.conj γ).toMonoidHom := by
+    ext x
+    rw [Subgroup.mem_map_equiv, MulAut.conj_symm_apply]
+    refine ⟨fun hx => hκ ⟨x, hx⟩ ▸ (κ ⟨x, hx⟩).2, fun hx => ?_⟩
+    -- `κ` is onto: `γ⁻¹ x γ` is the image of `v`, so `x = v` lies in `galoisSubgroup K L τ`.
+    let v := galoisSubgroupEquiv K L τ ((galoisSubgroupEquiv K L σ).symm ⟨_, hx⟩)
+    have hv : (κ v : AbsoluteGaloisGroup K) = γ⁻¹ * x * γ := by simp [κ, v]
+    rw [hκ, mul_left_inj, mul_right_inj] at hv
+    exact hv ▸ v.2
+  rw [galoisCor_def, galoisCor_def, galoisF2Iso_inv, galoisF2Iso_inv,
+    ← trivialF2Map_comp_trivialF2CorMap_of_conj (galoisSubgroup K L σ).isOpen
+      (galoisSubgroup K L τ).isOpen γ hVU κ hκ n, ← Category.assoc, ← trivialF2Map_comp]
+  congr 2
+  ext v : 1
+  simp [κ]
+
+/-- **The endomorphism `galoisConj = res ∘ cor - id` does not depend on the embedding**: two
+`K`-embeddings `σ τ : L →ₐ[K] Kˢ` induce the same endomorphism `galoisConj` of `Hⁿ(G_L, 𝔽₂)`.
+For a quadratic extension it is conjugation by the nontrivial coset of `G_L` in `G_K`. -/
+theorem galoisConj_embedding_independent (τ : L →ₐ[K] SeparableClosure K) (n : ℕ) :
+    galoisConj K L σ n = galoisConj K L τ n := by
+  rw [galoisConj_def, galoisConj_def, galoisCor_embedding_independent K L σ τ,
+    galoisRes_embedding_independent K L σ τ]
 
 end TauCeti
