@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Toric.Analytic.Fan.Orbit
+public import TauCeti.Geometry.Toric.Analytic.Fan.Orbit.Basic
 
 /-!
 # The dense torus of an analytic toric fan realization

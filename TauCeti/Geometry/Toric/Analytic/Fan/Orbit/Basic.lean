@@ -62,6 +62,17 @@ variable {N V : Type u} [AddCommGroup N] [AddCommGroup V] [Module ℝ V]
 
 /-! ### Strata do not depend on the chart -/
 
+/-- A cone `τ` of a fan, viewed as a face of a cone `σ` containing it. This is the affine stratum
+in the chart of `σ` that represents the global orbit of `τ`. -/
+def orbitFace {τ σ : Φ.cones} (h : τ ≤ σ) : σ.1.Face :=
+  ⟨τ.1, Φ.isFaceOf_of_le σ.2 τ.2 h⟩
+
+/-- The cone underlying `orbitFace` is the smaller cone. -/
+@[simp]
+theorem coe_orbitFace {τ σ : Φ.cones} (h : τ ≤ σ) :
+    (Φ.orbitFace h : PointedCone ℝ V) = τ.1 :=
+  (rfl)
+
 /-- A map of the chart diagram sends the stratum of a face of the smaller cone into the stratum of
 the same cone, viewed as a face of the larger cone. -/
 private theorem analyticAffineChartDiagram_map_mem_affineConeOrbit {τ σ : Φ.cones} (f : τ ⟶ σ)
