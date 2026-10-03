@@ -43,6 +43,8 @@ instance (A G : Type*) [CommRing A] [Group G] [MulSemiringAction G A] :
   isInvariant a ha := ⟨⟨a, ha⟩, rfl⟩
 
 /-- The fixed subalgebra is an invariant extension: every fixed element lies in its image. -/
+-- Ambient commutativity supplies the commutative base and canonical inclusion algebra
+-- required by `Algebra.IsInvariant`; neither follows from a general `Semiring A`.
 instance (R A G : Type*) [CommSemiring R] [CommSemiring A] [Algebra R A] [Group G]
     [MulSemiringAction G A] [SMulCommClass G R A] :
     Algebra.IsInvariant (FixedPoints.subalgebra R A G) A G where
