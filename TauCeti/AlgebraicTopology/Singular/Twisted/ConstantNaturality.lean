@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Functoriality
-public import TauCeti.AlgebraicTopology.Singular.Basic
 
 /-!
 # The constant-system comparison for relative singular homology
@@ -34,6 +33,34 @@ noncomputable section
 open CategoryTheory Limits TauCeti
 
 universe u v w
+
+namespace TauCeti
+
+variable {C : Type u} [Category.{w} C] [HasCoproducts.{v} C] [Preadditive C]
+
+-- Isolate the singular/simplicial presentation of quotient naturality.
+private lemma singularChainComplexπ_pair_naturality
+    {P Q : TopPair.{v}} (f : P ⟶ Q) (M : C) :
+    ((AlgebraicTopology.singularChainComplexFunctor C).obj M).map (TopPair.Hom.fst f) ≫
+        Q.singularChainComplexπ M =
+      P.singularChainComplexπ M ≫ TopPair.singularChainComplexMap f M := by
+  have h := ((SSetPair.chainComplexFunctorπ C).app M).naturality (TopPair.toSSetPair.map f)
+  convert h using 1
+  rfl
+
+private lemma singularChainComplexπ_coefficient_naturality
+    (P : TopPair.{v}) {M N : C} (φ : M ⟶ N) :
+    ((AlgebraicTopology.singularChainComplexFunctor C).map φ).app P.fst ≫
+        P.singularChainComplexπ N =
+      P.singularChainComplexπ M ≫
+        ((SSetPair.chainComplexFunctor C).map φ).app (TopPair.toSSetPair.obj P) := by
+  have h := congrArg (fun η ↦ η.app (TopPair.toSSetPair.obj P))
+    ((SSetPair.chainComplexFunctorπ C).naturality φ)
+  simp only [NatTrans.comp_app] at h
+  convert h using 1
+  rfl
+
+end TauCeti
 
 namespace TopPair
 
@@ -67,13 +94,9 @@ lemma twistedChainComplexConstantIso_hom_pair_naturality (f : P ⟶ Q) :
       (reassoc_of% LocalCoefficientSystem.twistedChainComplexConstantIso_hom_space_naturality
         (Hom.fst f) M) (Q.singularChainComplexπ M)
     _ = _ := by
-      have hπ := ((SSetPair.chainComplexFunctorπ (ModuleCat.{max v w} R)).app M).naturality
-        (toSSetPair.map f)
-      have h := congrArg (fun g ↦ LocalCoefficientSystem.twistedChainComplexCoefficientMap
-          (LocalCoefficientSystem.pullbackConstantIso (Hom.fst f).hom M).hom ≫
-            (LocalCoefficientSystem.twistedChainComplexConstantIso P.fst M).hom ≫ g) hπ
-      -- The two bifunctors use definitionally equal expressions for ambient chains.
-      convert h using 1 <;> rfl
+      rw [singularChainComplexπ_pair_naturality]
+      erw [Category.assoc]
+      rfl
 
 /-- The constant-system comparison on relative homology is natural in maps of pairs. -/
 @[reassoc]
@@ -111,13 +134,9 @@ lemma twistedChainComplexConstantIso_hom_naturality
       (reassoc_of% LocalCoefficientSystem.twistedChainComplexConstantIso_hom_naturality
         P.fst φ) (P.singularChainComplexπ N)
     _ = _ := by
-      have hπ := congrArg (fun η ↦ η.app (toSSetPair.obj P))
-        ((SSetPair.chainComplexFunctorπ (ModuleCat.{max v w} R)).naturality φ)
-      have h := congrArg
-        (fun g ↦ (LocalCoefficientSystem.twistedChainComplexConstantIso P.fst M).hom ≫ g) hπ
-      simp only [NatTrans.comp_app] at h
-      -- Identify the ambient-chain objects of the singular and simplicial bifunctors.
-      convert h using 1 <;> rfl
+      rw [singularChainComplexπ_coefficient_naturality]
+      erw [Category.assoc]
+      rfl
 
 /-- The constant-system comparison on relative homology is natural in the coefficient module.
 The ordinary coefficient map is induced by the relative singular chain bifunctor. -/
@@ -181,7 +200,7 @@ lemma twistedChainComplexShortComplexConstantIso_hom_τ₃ :
 
 /-- The constant-system comparison preserves the connecting morphism of relative homology.
 The boundary convention is the same on the twisted and ordinary sides. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 lemma twistedHomologyδ_comp_twistedHomologyConstantIso_hom
     (n m : ℕ) (h : m + 1 = n := by lia) :
     P.twistedHomologyδ ((LocalCoefficientSystem.constantFunctor P.fst).obj M) n m h ≫
