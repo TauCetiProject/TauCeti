@@ -86,8 +86,8 @@ theorem curvedDuplex_split_isInjective_of_mem_nullHomotopic {X : CurvedDuplex C 
   -- The retractions of the components of `i` need not commute with the differentials, but
   -- composing them with a contraction of `X` gives a morphism of curved duplexes.
   refine ⟨nullHomotopicMap (retraction i.f₀ ≫ g.f₀ ≫ h₀) (retraction i.f₁ ≫ g.f₁ ≫ h₁), ?_⟩
-  rw [comp_nullHomotopicMap, IsSplitMono.id_assoc, IsSplitMono.id_assoc,
-    ← comp_nullHomotopicMap, hh, Category.comp_id]
+  simp only [comp_nullHomotopicMap, IsSplitMono.id_assoc]
+  rw [← comp_nullHomotopicMap, hh, Category.comp_id]
 
 /-- A contractible curved duplex is relatively projective for the componentwise split exact
 structure. -/
@@ -101,9 +101,8 @@ theorem curvedDuplex_split_isProjective_of_mem_nullHomotopic {X : CurvedDuplex C
   -- The sections of the components of `p` need not commute with the differentials, but
   -- composing them with a contraction of `X` gives a morphism of curved duplexes.
   refine ⟨nullHomotopicMap (h₀ ≫ g.f₁ ≫ section_ p.f₁) (h₁ ≫ g.f₀ ≫ section_ p.f₀), ?_⟩
-  rw [nullHomotopicMap_comp, Category.assoc, Category.assoc, Category.assoc, Category.assoc,
-    IsSplitEpi.id, IsSplitEpi.id, Category.comp_id, Category.comp_id, ← nullHomotopicMap_comp,
-    hh, Category.id_comp]
+  simp only [nullHomotopicMap_comp, Category.assoc, IsSplitEpi.id, Category.comp_id]
+  rw [← nullHomotopicMap_comp, hh, Category.id_comp]
 
 /-- The canonical map from a curved duplex into the disk sum on its components is a
 componentwise split inflation. -/

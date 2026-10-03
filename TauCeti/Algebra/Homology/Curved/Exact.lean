@@ -79,30 +79,6 @@ theorem isKernelCokernelPair_of_eval {S : ShortComplex (CurvedDuplex C w)}
     ((isColimitMapCoconeCoforkEquiv' (eval₀ C w) S.zero).symm h₀.gIsCokernel)
     ((isColimitMapCoconeCoforkEquiv' (eval₁ C w) S.zero).symm h₁.gIsCokernel)⟩
 
-/-- If a span of curved duplexes has a pushout in the even component, then its composite with
-the even evaluation functor has a colimit. -/
-theorem hasColimit_span_comp_eval₀ {X Y Z : CurvedDuplex C w} {f : X ⟶ Y} {g : X ⟶ Z}
-    [HasPushout f.f₀ g.f₀] : HasColimit (span f g ⋙ eval₀ C w) :=
-  hasColimit_of_iso (F := span f.f₀ g.f₀) (spanCompIso (eval₀ C w) f g)
-
-/-- If a span of curved duplexes has a pushout in the odd component, then its composite with
-the odd evaluation functor has a colimit. -/
-theorem hasColimit_span_comp_eval₁ {X Y Z : CurvedDuplex C w} {f : X ⟶ Y} {g : X ⟶ Z}
-    [HasPushout f.f₁ g.f₁] : HasColimit (span f g ⋙ eval₁ C w) :=
-  hasColimit_of_iso (F := span f.f₁ g.f₁) (spanCompIso (eval₁ C w) f g)
-
-/-- If a cospan of curved duplexes has a pullback in the even component, then its composite
-with the even evaluation functor has a limit. -/
-theorem hasLimit_cospan_comp_eval₀ {X Y Z : CurvedDuplex C w} {f : X ⟶ Z} {g : Y ⟶ Z}
-    [HasPullback f.f₀ g.f₀] : HasLimit (cospan f g ⋙ eval₀ C w) :=
-  hasLimit_of_iso (F := cospan f.f₀ g.f₀) (cospanCompIso (eval₀ C w) f g).symm
-
-/-- If a cospan of curved duplexes has a pullback in the odd component, then its composite with
-the odd evaluation functor has a limit. -/
-theorem hasLimit_cospan_comp_eval₁ {X Y Z : CurvedDuplex C w} {f : X ⟶ Z} {g : Y ⟶ Z}
-    [HasPullback f.f₁ g.f₁] : HasLimit (cospan f g ⋙ eval₁ C w) :=
-  hasLimit_of_iso (F := cospan f.f₁ g.f₁) (cospanCompIso (eval₁ C w) f g).symm
-
 end CurvedDuplex
 
 namespace ExactStructure

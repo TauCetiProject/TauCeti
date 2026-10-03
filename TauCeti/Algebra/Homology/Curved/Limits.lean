@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Homology.Curved.Duplex
 public import Mathlib.CategoryTheory.Limits.Preserves.Basic
 public import Mathlib.CategoryTheory.Limits.HasLimits
+public import Mathlib.CategoryTheory.Limits.Shapes.Pullback.HasPullback
 
 /-!
 # Limits and colimits of curved duplexes
@@ -36,18 +37,15 @@ homological complexes.
 * `TauCeti.CurvedDuplex.coneOfHasLimitEval` and `TauCeti.CurvedDuplex.coconeOfHasColimitEval`:
   the componentwise limit cone and colimit cocone.
 
-## Implementation notes
-
-The objects of an evaluated diagram `F ⋙ eval₀ C w` are the even components of the duplexes of
-`F` only up to unfolding `eval₀`, which `rw` and `simp` do not see through. The proofs therefore
-state the relevant equations with explicit component types and close them with `exact`, or use
-the natural transformations `d₀NatTrans` and `d₁NatTrans` to name the induced differentials.
-
 ## Main results
 
 * The instances `HasLimit F` and `HasColimit F` when the evaluated diagrams have limits
   (resp. colimits), with `PreservesLimit F (eval₀ C w)` and its variants for the other
   evaluation functor and for colimits.
+* `TauCeti.CurvedDuplex.hasColimit_span_comp_eval₀` and
+  `TauCeti.CurvedDuplex.hasLimit_cospan_comp_eval₀`, with their odd variants: a span (resp.
+  cospan) of curved duplexes with a pushout (resp. pullback) in a component has a colimit
+  (resp. limit) after evaluation at that component.
 -/
 
 public section
@@ -60,6 +58,12 @@ open CategoryTheory Category Limits
 
 variable {C : Type u} [Category.{v} C] [Preadditive C] {R : Type w'} [Semiring R] [Linear R C]
   {w : R} {J : Type u'} [Category.{v'} J] (F : J ⥤ CurvedDuplex C w)
+
+-- The objects of an evaluated diagram `F ⋙ eval₀ C w` are the even components of the duplexes of
+-- `F` only up to unfolding `eval₀`, which `rw` and `simp` do not see through. The proofs below
+-- therefore state the relevant equations with explicit component types and close them with
+-- `exact`, or use the natural transformations `d₀NatTrans` and `d₁NatTrans` to name the induced
+-- differentials.
 
 variable (C w) in
 /-- The even differentials of curved duplexes, as a natural transformation between the
@@ -112,8 +116,10 @@ variable [HasLimit (F ⋙ eval₀ C w)] [HasLimit (F ⋙ eval₁ C w)]
 
 /-- The componentwise limit of a diagram of curved duplexes, with the differentials induced by
 the differentials of the duplexes in the diagram. -/
--- Exposed so that its evaluations unfold to the limit cones of the evaluated diagrams.
-@[expose] noncomputable def coneOfHasLimitEval : Cone F where
+-- Exposed so that its evaluations unfold to the limit cones of the evaluated diagrams, which
+-- also lets its `simps` lemmas be exported.
+@[expose, simps]
+noncomputable def coneOfHasLimitEval : Cone F where
   pt :=
     { X₀ := limit (F ⋙ eval₀ C w)
       X₁ := limit (F ⋙ eval₁ C w)
@@ -204,8 +210,10 @@ variable [HasColimit (F ⋙ eval₀ C w)] [HasColimit (F ⋙ eval₁ C w)]
 
 /-- The componentwise colimit of a diagram of curved duplexes, with the differentials induced by
 the differentials of the duplexes in the diagram. -/
--- Exposed so that its evaluations unfold to the colimit cocones of the evaluated diagrams.
-@[expose] noncomputable def coconeOfHasColimitEval : Cocone F where
+-- Exposed so that its evaluations unfold to the colimit cocones of the evaluated diagrams, which
+-- also lets its `simps` lemmas be exported.
+@[expose, simps]
+noncomputable def coconeOfHasColimitEval : Cocone F where
   pt :=
     { X₀ := colimit (F ⋙ eval₀ C w)
       X₁ := colimit (F ⋙ eval₁ C w)
@@ -253,5 +261,37 @@ noncomputable instance : PreservesColimit F (eval₀ C w) :=
 noncomputable instance : PreservesColimit F (eval₁ C w) :=
   preservesColimit_of_preserves_colimit_cocone (isColimitCoconeOfHasColimitEval F)
     (isColimitEval₁CoconeOfHasColimitEval F)
+
+/-! ### Pushouts and pullbacks -/
+
+section PushoutPullback
+
+variable {X Y Z : CurvedDuplex C w}
+
+/-- If a span of curved duplexes has a pushout in the even component, then its composite with
+the even evaluation functor has a colimit. -/
+theorem hasColimit_span_comp_eval₀ {f : X ⟶ Y} {g : X ⟶ Z}
+    [HasPushout f.f₀ g.f₀] : HasColimit (span f g ⋙ eval₀ C w) :=
+  hasColimit_of_iso (F := span f.f₀ g.f₀) (spanCompIso (eval₀ C w) f g)
+
+/-- If a span of curved duplexes has a pushout in the odd component, then its composite with
+the odd evaluation functor has a colimit. -/
+theorem hasColimit_span_comp_eval₁ {f : X ⟶ Y} {g : X ⟶ Z}
+    [HasPushout f.f₁ g.f₁] : HasColimit (span f g ⋙ eval₁ C w) :=
+  hasColimit_of_iso (F := span f.f₁ g.f₁) (spanCompIso (eval₁ C w) f g)
+
+/-- If a cospan of curved duplexes has a pullback in the even component, then its composite
+with the even evaluation functor has a limit. -/
+theorem hasLimit_cospan_comp_eval₀ {f : X ⟶ Z} {g : Y ⟶ Z}
+    [HasPullback f.f₀ g.f₀] : HasLimit (cospan f g ⋙ eval₀ C w) :=
+  hasLimit_of_iso (F := cospan f.f₀ g.f₀) (cospanCompIso (eval₀ C w) f g).symm
+
+/-- If a cospan of curved duplexes has a pullback in the odd component, then its composite with
+the odd evaluation functor has a limit. -/
+theorem hasLimit_cospan_comp_eval₁ {f : X ⟶ Z} {g : Y ⟶ Z}
+    [HasPullback f.f₁ g.f₁] : HasLimit (cospan f g ⋙ eval₁ C w) :=
+  hasLimit_of_iso (F := cospan f.f₁ g.f₁) (cospanCompIso (eval₁ C w) f g).symm
+
+end PushoutPullback
 
 end TauCeti.CurvedDuplex
