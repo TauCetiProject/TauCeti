@@ -24,9 +24,9 @@ factor `f^μ`:
 `∑_g χ^μ(g) φ(g) = f^μ · ∑_g c_t(g) φ(g)`.
 
 The second form is how this enters the character theory of the Weyl modules `c_t · V^{⊗n}`: their
-characters are sums `∑_g c_t(g) φ(g)` with `φ(g)` the power sum of the cycle type of `g`, and the
-identity turns these into the class-function expansion `(1/n!) ∑_g χ^μ(g) φ(g)` that Frobenius's
-formula identifies with the Schur polynomial `s_μ`.
+characters are sums `(f^μ/n!) ∑_g c_t(g) φ(g)` with `φ(g)` the power sum of the cycle type of `g`,
+and the identity turns these into the class-function expansion `(1/n!) ∑_g χ^μ(g) φ(g)` that
+Frobenius's formula identifies with the Schur polynomial `s_μ`.
 
 The proof reads `S^μ` as the left ideal `ℚ[Sₙ] c_t`
 (`TauCeti.YoungTableau.character_spechtIdeal_eq_spechtSubrepresentation`) and applies the

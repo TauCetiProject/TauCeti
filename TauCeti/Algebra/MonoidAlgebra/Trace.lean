@@ -26,8 +26,8 @@ with `TauCeti.LinearMap.trace_eq_mul_finrank_range`.
 
 Multiplying on both sides at once, the endomorphism `x ↦ g * x * y` of a finite group algebra has
 `σ`-th diagonal entry `y_{σ⁻¹ g⁻¹ σ}`, so its trace is the sum of the coefficients of `y` along the
-conjugates of `g⁻¹`, each conjugate counted once for every element conjugating `g⁻¹` to it. With
-`y` a quasi-idempotent this is the character of the left ideal `k[G] y`.
+conjugates of `g⁻¹`, each conjugate counted once for every element conjugating `g⁻¹` to it. Over
+a field `k`, if `y * y = κ • y`, this trace is `κ` times the character of the left ideal `k[G] y`.
 
 ## Main statements
 
