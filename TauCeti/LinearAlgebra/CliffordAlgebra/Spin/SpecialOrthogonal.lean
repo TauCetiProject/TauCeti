@@ -159,8 +159,8 @@ private theorem mem_even_of_involute_eq (Q : QuadraticForm R M) {x : CliffordAlg
   rw [← hsum, hozero, add_zero]
   exact he
 
-/-- An even Lipschitz element acts with determinant one on a finite-free quadratic space. -/
-theorem det_lipschitzToOrthogonal_eq_one_of_mem_even [Module.Free R M] [Module.Finite R M]
+private theorem det_lipschitzToOrthogonal_eq_one_of_mem_even_of_finite_free
+    [Module.Free R M] [Module.Finite R M]
     (Q : QuadraticForm R M) (x : lipschitzGroup Q)
     (hx : ((x : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) ∈ even Q) :
     QuadraticMap.orthogonalDet Q (lipschitzToOrthogonal Q x) = 1 := by
@@ -175,6 +175,30 @@ theorem det_lipschitzToOrthogonal_eq_one_of_mem_even [Module.Free R M] [Module.F
     apply Units.ext
     exact algebraMap_injective Q (hs.trans (map_one _).symm)
   simpa [lipschitzDet, QuadraticMap.orthogonalDet_apply] using hd
+
+/-- An even Lipschitz element acts with determinant one. Outside the finite-free case,
+Mathlib's determinant convention makes this automatic. -/
+theorem det_lipschitzToOrthogonal_eq_one_of_mem_even
+    (Q : QuadraticForm R M) (x : lipschitzGroup Q)
+    (hx : ((x : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) ∈ even Q) :
+    QuadraticMap.orthogonalDet Q (lipschitzToOrthogonal Q x) = 1 := by
+  classical
+  rw [QuadraticMap.orthogonalDet_apply]
+  apply Units.ext
+  rw [LinearEquiv.coe_det]
+  -- Compare the underlying scalars before splitting on the determinant convention.
+  change LinearMap.det
+    ((lipschitzToOrthogonal Q x : M ≃ₗ[R] M) : M →ₗ[R] M) = 1
+  refine LinearMap.det_cases
+    (P := fun a : R ↦ a = 1)
+    ((lipschitzToOrthogonal Q x : M ≃ₗ[R] M) : M →ₗ[R] M) ?_ rfl
+  · intro _ b
+    let _ := Module.Free.of_basis b
+    let _ := Module.Finite.of_basis b
+    rw [LinearMap.det_toMatrix]
+    simpa [QuadraticMap.orthogonalDet_apply, LinearEquiv.coe_det] using
+      congrArg Units.val
+        (det_lipschitzToOrthogonal_eq_one_of_mem_even_of_finite_free Q x hx)
 
 /-- A finite-free Lipschitz element whose orthogonal action has determinant one is even. -/
 theorem mem_even_of_det_lipschitzToOrthogonal_eq_one [Module.Free R M] [Module.Finite R M]
@@ -206,7 +230,7 @@ private theorem det_spinToOrthogonal_eq_one_of_finite_free
     change (((pinToLipschitz Q (spinToPin Q x) : (CliffordAlgebra Q)ˣ) :
       CliffordAlgebra Q)) = _
     rw [coe_pinToLipschitz_apply, coe_spinToPin_apply]
-  have h := det_lipschitzToOrthogonal_eq_one_of_mem_even Q l (by
+  have h := det_lipschitzToOrthogonal_eq_one_of_mem_even_of_finite_free Q l (by
     rw [hlcoe]
     exact spinGroup.mem_even x.2)
   rw [QuadraticMap.orthogonalDet_apply, ← pinToOrthogonal_eq_lipschitzToOrthogonal,
