@@ -84,10 +84,10 @@ component indexed by the transported ray. -/
 theorem image_analyticMap_analyticBoundaryComponent (rho : Phi.Ray) :
     e.toFanHom.analyticMap hPhi hPsi '' Phi.analyticBoundaryComponent hPhi rho =
       Psi.analyticBoundaryComponent hPsi (e.rayEquiv rho) := by
-  rw [← e.preimage_analyticMap_analyticBoundaryComponent hPhi hPsi rho]
-  rw [← analyticIso_hom]
-  exact image_preimage_eq _ fun y ↦
-    ⟨(e.analyticIso hPhi hPsi).inv y, (e.analyticIso hPhi hPsi).inv_hom_id_apply y⟩
+  have hbij := ConcreteCategory.bijective_of_isIso (e.analyticIso hPhi hPsi).hom
+  rw [analyticIso_hom] at hbij
+  exact ((Set.preimage_eq_iff_eq_image hbij).mp
+    (e.preimage_analyticMap_analyticBoundaryComponent hPhi hPsi rho)).symm
 
 end FanEquiv
 

@@ -216,12 +216,7 @@ theorem toCone_rayEquiv (e : FanEquiv Phi Psi) (rho : Phi.Ray) :
 /-- The inverse ray equivalence is induced by the inverse fan equivalence. -/
 @[simp]
 theorem rayEquiv_symm (e : FanEquiv Phi Psi) : e.rayEquiv.symm = e.symm.rayEquiv := by
-  apply Equiv.ext
-  intro rho
-  apply e.rayEquiv.injective
-  rw [Equiv.apply_symm_apply]
-  apply Subtype.ext
-  simp only [toCone_rayEquiv, ← coneEquiv_symm, OrderIso.apply_symm_apply]
+  simp only [rayEquiv, Equiv.subtypeEquiv_symm, ← coneEquiv_symm, OrderIso.toEquiv_symm]
 
 /-- The identity fan equivalence induces the identity on rays. -/
 @[simp]
@@ -235,9 +230,7 @@ theorem rayEquiv_refl (Phi : Fan i) : (FanEquiv.refl Phi).rayEquiv = Equiv.refl 
 @[simp]
 theorem rayEquiv_trans (e : FanEquiv Phi Psi) (e' : FanEquiv Psi Omega) :
     (e.trans e').rayEquiv = e.rayEquiv.trans e'.rayEquiv := by
-  apply Equiv.ext
-  intro rho
-  apply Subtype.ext
-  simp only [Equiv.trans_apply, toCone_rayEquiv, coneEquiv_trans, OrderIso.trans_apply]
+  simp only [rayEquiv, coneEquiv_trans]
+  exact (Equiv.subtypeEquiv_trans _ _ _ _).symm
 
 end TauCeti.Toric.FanEquiv
