@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.TemperleyLieb
+public import TauCeti.Algebra.TemperleyLieb.Basic
 public import TauCeti.LinearAlgebra.Matrix.ExtendLast
 public import TauCeti.Logic.Function.Update
 public import Mathlib.LinearAlgebra.Matrix.Trace
