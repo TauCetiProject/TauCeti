@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Combinatorics.Quiver.Basic
 public import Mathlib.Data.Fintype.Sum
+public import TauCeti.Combinatorics.Quiver.UnderlyingGraph
 
 /-!
 # The extended Dynkin quiver of type `D~`
@@ -19,7 +19,9 @@ underlying graph is the extended Dynkin diagram `D~ₘ₊₄`, on `m + 5` vertic
 orientation. For `m = 0` the spine is a single vertex receiving all four arrows, and the quiver is
 the four subspace quiver `TauCeti.Quiver.Subspace (Fin 4)` of the extended Dynkin diagram `D~₄`.
 
-This file carries the vertex and arrow data alone; the representation theory, that the quiver has
+This file carries the vertex and arrow data, and the shape of the underlying graph: it is a tree,
+with at most one arrow between any two vertices, because every vertex is the source of at most one
+arrow and every arrow moves towards `spine m`. The representation theory, that the quiver has
 infinite representation type, is in `TauCeti.RepresentationTheory.Quiver.AffineD.FiniteRepType`.
 
 ## Main definitions
@@ -163,6 +165,43 @@ instance instSubsingletonHom : ∀ a b : AffineD m, Subsingleton (a ⟶ b)
   | .spine _, .spine _ => inferInstanceAs (Subsingleton (PLift _))
   | .leaf _, .leaf _ => inferInstanceAs (Subsingleton PEmpty)
   | .spine _, .leaf _ => inferInstanceAs (Subsingleton PEmpty)
+
+
+/-! ### The underlying graph -/
+
+/-- A height on the vertices which every arrow lowers: the spine descends to `0` at `spine m`, the
+leaves `0` and `1` lie above the whole spine, and the leaves `2` and `3` just above `spine m`. -/
+private def height : AffineD m → ℕ
+  | .leaf i => if (i : ℕ) < 2 then m + 1 else 1
+  | .spine j => m - j
+
+private theorem height_lt : ∀ ⦃a b : AffineD m⦄, (a ⟶ b) → height b < height a
+  | .leaf i, .spine j, e => by
+    obtain rfl := (nonempty_leaf_spine_iff i j).mp ⟨e⟩
+    by_cases hi : (i : ℕ) < 2 <;> simp [height, hi]
+  | .spine j, .spine j', e => by
+    have := (nonempty_spine_spine_iff j j').mp ⟨e⟩
+    simp only [height]
+    omega
+  | _, .leaf i, e => (not_nonempty_hom_leaf _ i ⟨e⟩).elim
+
+/-- The arrows out of a vertex of `TauCeti.Quiver.AffineD m` all share their target. -/
+private theorem eq_of_hom_of_hom ⦃a b b' : AffineD m⦄ (e : a ⟶ b) (e' : a ⟶ b') : b = b' := by
+  have he : Nonempty (a ⟶ b) := ⟨e⟩
+  have he' : Nonempty (a ⟶ b') := ⟨e'⟩
+  cases a <;> cases b <;> cases b' <;> simp only [not_nonempty_hom_leaf, nonempty_leaf_spine_iff,
+    nonempty_spine_spine_iff] at he he' <;> simp only [spine.injEq]
+  · exact he.trans he'.symm
+  · exact Fin.ext (he.trans he'.symm)
+
+/-- **The underlying graph of `TauCeti.Quiver.AffineD m` is acyclic**, so it is the tree `D~ₘ₊₄`. -/
+theorem isAcyclic_underlyingGraph : (underlyingGraph (AffineD m)).IsAcyclic :=
+  isAcyclic_underlyingGraph_of_lt height height_lt eq_of_hom_of_hom
+
+/-- Two vertices of `TauCeti.Quiver.AffineD m` are joined by at most one arrow, counted in both
+directions. -/
+theorem subsingleton_hom_sum (a b : AffineD m) : Subsingleton ((a ⟶ b) ⊕ (b ⟶ a)) :=
+  subsingleton_hom_sum_of_lt height height_lt a b
 
 end AffineD
 

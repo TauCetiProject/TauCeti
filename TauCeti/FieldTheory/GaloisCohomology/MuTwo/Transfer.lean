@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.FieldTheory.GaloisCohomology.Corestriction
+public import TauCeti.FieldTheory.GaloisCohomology.Corestriction.Basic
 public import TauCeti.FieldTheory.GaloisCohomology.MuTwo.Basic
 
 /-!

@@ -158,7 +158,8 @@ theorem cupFp_res (S : Subgroup G) (a b : cohomFp p G 1) :
 graded commutativity of the cup product at the multiplication pairing, whose opposite pairing is
 itself. -/
 theorem cupFp_gradedComm (a b : cohomFp p G 1) : cupFp p G a b = -cupFp p G b a := by
-  rw [cupFp_def, (fpPairing p G).cup_one_one_eq_neg_flip a b, fpPairing_flip]
+  rw [cupFp_def, (fpPairing p G).cup_gradedComm 1 1 a b, ContinuousCohomology.degreeCast_rfl,
+    Iso.refl_hom, ConcreteCategory.id_apply, mul_one, pow_one, neg_one_smul, fpPairing_flip]
 
 /-- `a ⌣ b` vanishes exactly when `b ⌣ a` does, by graded commutativity. -/
 theorem cupFp_eq_zero_comm (a b : cohomFp p G 1) : cupFp p G a b = 0 ↔ cupFp p G b a = 0 := by

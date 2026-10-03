@@ -6,7 +6,6 @@ Authors: Codex
 module
 
 public import TauCeti.FieldTheory.GaloisCohomology.Cyclic
-public import TauCeti.RepresentationTheory.Homological.GroupCohomology.CyclicRestriction
 
 /-!
 # Restriction of cyclic relative Brauer classes
@@ -17,7 +16,8 @@ coefficient map for restriction of relative Galois cohomology. In degree two thi
 restriction map on relative Brauer groups. If the generators are related by the degree of the
 ground-field extension, `TauCeti.cyclicClass_restrict` proves that restriction preserves the
 unit representing a cyclic class. The proof uses the carry-cocycle description of
-`TauCeti.H2π_eq_cyclicClass` and `TauCeti.map_groupCohomologyπEven_two_of_pow`.
+`TauCeti.H2π_eq_cyclicClass` and
+`Rep.FiniteCyclicGroup.map_groupCohomologyπEven_two`.
 
 ## References
 
@@ -103,9 +103,10 @@ theorem cyclicClass_restrict (hg : ∀ σ, σ ∈ Subgroup.zpowers g)
     rw [carryCocycle_apply_pow _ gE hgE z hi hj]
     split_ifs <;> rfl
   rw [← hy, ← hz]
-  exact map_groupCohomologyπEven_two_of_pow _ _ hgE _ hg _ hgg
-    (by rw [IsGalois.card_aut_eq_finrank, IsGalois.card_aut_eq_finrank,
-      Module.finrank_mul_finrank K E L]) (unitsRestrictionHom K E L) y z (by
+  exact map_groupCohomologyπEven_two _ _ hgE _ hg _ hgg (unitsRestrictionHom K E L) 1
+    (by rw [one_mul, IsGalois.card_aut_eq_finrank, IsGalois.card_aut_eq_finrank,
+      Module.finrank_mul_finrank K E L]) y z (by
+        rw [one_nsmul]
         rw [unitsRestrictionHom_apply]
         apply Rep.toAdditive.injective
         apply Additive.toMul.injective

@@ -9,21 +9,20 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Cohomo
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution
 
 /-!
-# Graded commutativity of the cup product in bidegrees `(0, n)` and `(1, n)`
+# Graded commutativity of the cup product
 
 Let `P : TopPairing X Y Z` be a coefficient pairing of topological representations of a
 topological group `G`, and let `P.flip : TopPairing Y X Z` be the opposite pairing
 `TauCeti.TopPairing.flip`, `P.flip.bil y x = P.bil x y`. On continuous cohomology the cup
 products in the two orders are related by graded commutativity,
-`a ⌣_P b = (-1)^{mn} (b ⌣_{P.flip} a)`. This file proves the cases in which the first
-degree is zero or one. In bidegree `(1, 1)` the result specializes to
 
 ```text
-cup P 1 1 a b = - cup P.flip 1 1 b a,
+a ⌣_P b = (-1)^(m n) (b ⌣_{P.flip} a),     a ∈ Hᵐ(G, X), b ∈ Hⁿ(G, Y),
 ```
 
-which is the identity against which the cup square `H¹(G, M) × H¹(G, M) → H²(G, M)` of a
-commutative coefficient ring is stated.
+which this file proves in every bidegree (`TauCeti.TopPairing.cup_gradedComm`). In bidegree
+`(1, 1)` it reads `cup P 1 1 a b = - cup P.flip 1 1 b a`, the identity against which the cup
+square `H¹(G, M) × H¹(G, M) → H²(G, M)` of a commutative coefficient ring is stated.
 
 In bidegree `(0, n)` the identity already holds on cocycles. A homogeneous zero-cocycle is a
 constant function, and the two Alexander–Whitney products therefore pair the same constant
@@ -33,58 +32,51 @@ coinduction resolution is recorded by
 and cohomology are `TauCeti.TopPairing.cupCochain_zero_eq_flip` and
 `TauCeti.TopPairing.cup_zero_eq_flip`.
 
-In bidegree `(1, 1)` the identity fails on cochains, and the proof is a homotopy. For homogeneous
-one-cochains `a` and `b` the **cup-one product** `TauCeti.TopPairing.cupOneCochain a b` is the
-pointwise pairing
-`(g₀, g₁) ↦ μ (a g₀ g₁) (b g₀ g₁)`, the bidegree-`(1, 1)` case of Steenrod's `∪₁`. When `a` and
-`b` are cocycles, its differential is `-(a ⌣ b) - (b ⌣ᵒᵖ a)`
-(`TauCeti.TopPairing.d_cupOneCochain`): expanding `μ (a g₀ g₂) (b g₀ g₂)` along the cocycle
-identities `a g₀ g₂ = a g₀ g₁ + a g₁ g₂` and `b g₀ g₂ = b g₀ g₁ + b g₁ g₂` leaves exactly the two
-cross terms `μ (a g₀ g₁) (b g₁ g₂)` and `μ (a g₁ g₂) (b g₀ g₁)`. The class-level statement follows
-because the descended cup product is the class of the cup product of cocycles.
+In general the identity fails on cochains, and the proof is a homotopy: Steenrod's **cup-one
+product** `TauCeti.TopPairing.cupOne`. For `a` of degree `m` and `b` of degree `n + 1`
+it has degree `m + n` and, in homogeneous coordinates,
 
-For every positive degree `n + 1`, `TauCeti.TopPairing.cupOneLeftCochain` extends this homotopy
-to bidegree `(1, n + 1)`. Its homogeneous formula is
-`(a ∪₁ b) (g₀, …, gₙ₊₁) = μ (a g₀ gₙ₊₁) (b g₀ … gₙ₊₁)`. Its differential is the negative
-ordinary cup plus `(-1)^(n+1)` times the opposite cup, so it descends to graded commutativity in
-all bidegrees whose first degree is one.
+```text
+(a ∪₁ b) (g₀, …, g_{m+n}) =
+  ∑_{i < m} (-1)^((m - 1 - i) n) μ (a (g₀, …, gᵢ, g_{i+n+1}, …, g_{m+n})) (b (gᵢ, …, g_{i+n+1})).
+```
 
-The same homotopy is already formalized on the explicit inhomogeneous model of
-`TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Product`:
-`TauCeti.ContCohomology.cup11_add_cup11_flip_eq_d1` is the cochain identity
-`(a ⌣_μ b) + (b ⌣_{μᵒᵖ} a) = d¹ (g ↦ -μ (a g) (b g))` for inhomogeneous `1`-cocycles, and
-`TauCeti.ContCohomology.explicitCup11_eq_neg_flip` is its descent to the explicit
-`H¹ × H¹ → H²`. This file is the homogeneous-resolution counterpart of those two declarations,
-stated on Mathlib's `continuousCohomology` so that it applies to `TauCeti.TopPairing.cup`. The
-two primitives differ by a sign: the inhomogeneous one is the negated pointwise pairing
-`g ↦ -μ (a g) (b g)`, whereas `cupOneCochain a b` is the unsigned pointwise pairing
-`(g₀, g₁) ↦ μ (a g₀ g₁) (b g₀ g₁)` and the sign is carried by its differential,
-`d (cupOneCochain a b) = -(a ⌣ b) - (b ⌣ᵒᵖ a)`. Equivalently
-`(a ⌣ b) + (b ⌣ᵒᵖ a) = d (-cupOneCochain a b)`, the homogeneous form of the inhomogeneous
-identity. The two differentials also follow different conventions (the inhomogeneous `d¹` of
-`Cup.Product` against `TopRep.homogeneousCochains.d_one_apply`,
-`(d a) g₀ g₁ g₂ = a g₁ g₂ - a g₀ g₂ + a g₀ g₁`), but the class-level statement only needs that
-the sum `(a ⌣ b) + (b ⌣ᵒᵖ a)` is a coboundary, which neither the sign of the primitive nor the
-convention affects; both descents therefore read `cup a b = - cup b a`.
+On the curried resolution this is a recursion on the first vertex: `a ∪₁ b = 0` when `a` has
+degree zero, and `(a ∪₁ b) g = (a g) ∪₁ b + (-1)^(m n) ((b g) ⌣_{P.flip} (a g))` when `a` has
+degree `m + 1`, the second term collecting the summand `i = 0`. Its boundary is
+(`TauCeti.TopPairing.d_cupOne`)
+
+```text
+d (a ∪₁ b) = (d a) ∪₁ b - (-1)^m (a ∪₁ d b) + (-1)^m (a ⌣ b) - (-1)^(m n) (b ⌣_{P.flip} a),
+```
+
+For cocycles only the last two terms survive, so `(-1)^m (a ∪₁ b)` is a primitive of
+`(a ⌣ b) - (-1)^(m (n + 1)) (b ⌣_{P.flip} a)`, which is graded commutativity in bidegree
+`(m, n + 1)`. Bidegree `(m, 0)` is the case `(0, m)` for the opposite pairing.
+
+The same homotopy in bidegree `(1, 1)` is formalized on the explicit inhomogeneous model of
+`TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Product` as
+`TauCeti.ContCohomology.cup11_add_cup11_flip_eq_d1`, with descent
+`TauCeti.ContCohomology.explicitCup11_eq_neg_flip`; this file works on Mathlib's
+`continuousCohomology`, so that it applies to `TauCeti.TopPairing.cup`.
 
 ## Main definitions
 
-* `TauCeti.TopPairing.cupOne`, `TauCeti.TopPairing.cupOneCochain`: the cup-one product of two
-  degree-one elements of the resolution, and of two homogeneous one-cochains.
-* `TauCeti.TopPairing.cupOneLeft`, `TauCeti.TopPairing.cupOneLeftCochain`: the cup-one product of
-  a degree-one element and a positive-degree element, on the resolution and on homogeneous
-  cochains.
+* `TauCeti.TopPairing.cupOne`: the cup-one product on the coinduced resolution, with
+  explicit total degree.
+* `TauCeti.TopPairing.cupOneCochain`: the cup-one product of homogeneous cochains, as a
+  bilinear map.
 
 ## Main results
 
-* `TauCeti.TopPairing.cup_zero_eq_flip`: **graded commutativity in bidegree `(0, n)`** for every
-  `n`, with the degree transport between `n + 0` and `0 + n` explicit.
-* `TauCeti.TopPairing.d_cupOneCochain`: the differential of the cup-one product of two cocycles
-  is `-(a ⌣ b) - (b ⌣ᵒᵖ a)`.
-* `TauCeti.TopPairing.cup_one_one_eq_neg_flip`: **graded commutativity in bidegree `(1, 1)`**,
-  `cup P 1 1 a b = - cup P.flip 1 1 b a`.
-* `TauCeti.TopPairing.cup_one_succ_eq_signed_flip`: **graded commutativity in every bidegree
-  `(1, n + 1)`**, with the degree transport and sign explicit.
+* `TauCeti.TopPairing.cup_zero_eq_flip`: graded commutativity in bidegree `(0, n)`, without a
+  sign.
+* `TauCeti.TopPairing.d_cupOne`: the boundary of the cup-one product.
+* `TauCeti.TopPairing.d_cupOneCochain`: the boundary of the cup-one product of two
+  cocycles is `(-1)^m (a ⌣ b) - (-1)^(m n) (b ⌣ᵒᵖ a)`.
+* `TauCeti.TopPairing.cup_gradedComm`: **graded commutativity in every bidegree**,
+  `a ⌣_P b = (-1)^(m n) (b ⌣_{P.flip} a)`, with the degree transport between `n + m` and `m + n`
+  explicit.
 
 ## References
 
@@ -200,392 +192,281 @@ variable {R : Type u} [CommRing R] [TopologicalSpace R]
   {G : Type v} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   {X Y Z : TopRep.{max v w} R G} (P : TopPairing X Y Z)
 
-/-! ### The cup-one product of one-cochains -/
+/-! ### The cup-one product on the resolution -/
 
-/-- The cup-one product of two degree-one elements of the resolution, as a plain function:
-`(a, b) ↦ ((g₀, g₁) ↦ μ (a g₀ g₁) (b g₀ g₁))`, built from the pointwise pairing so that the value
-is continuous in `(g₀, g₁)`. Its bilinearity is recorded by `TauCeti.TopPairing.cupOne`. -/
-private def cupOneAux (a : (TopRep.resolution'X X 1).V) (b : (TopRep.resolution'X Y 1).V) :
-    (TopRep.resolution'X Z 1).V :=
-  (⟨fun q : C(G, X.V) × C(G, Y.V) ↦ (P.pointwise 0 0 rfl).comp (q.1.prodMk q.2),
-    (continuous_postcomp _).comp ContinuousMap.continuous_prodMk⟩ :
-      C(C(G, X.V) × C(G, Y.V), C(G, Z.V))).comp
-    ((a : C(G, C(G, X.V))).prodMk (b : C(G, C(G, Y.V))))
+/-- **The cup-one product on the coinduced resolution**, Steenrod's `∪₁`, with explicit total
+degree: an element `a` of the `(m + 1)`-st term of the resolution of `X` (a degree-`m` element)
+paired with an element `b` of the `(n + 2)`-nd term of the resolution of `Y` (a degree-`(n + 1)`
+element) gives an element of the `(k + 1)`-st term of the resolution of `Z`, for `k = n + m`.
 
-private theorem cupOneAux_apply (a : (TopRep.resolution'X X 1).V)
-    (b : (TopRep.resolution'X Y 1).V) (g₀ g₁ : G) :
-    (P.cupOneAux a b : C(G, C(G, Z.V))) g₀ g₁ = P.bil (a g₀ g₁) (b g₀ g₁) := by
-  rw [cupOneAux]
-  exact P.pointwise_zero_apply rfl _ _
+It vanishes for `m = 0`, and otherwise fixes the first vertex:
+`(a ∪₁ b) g = (a g) ∪₁ b + (-1)^(m n) ((b g) ⌣_{P.flip} (a g))` for `a` of degree `m + 1`. In
+homogeneous coordinates this is Steenrod's sum
+`∑_{i < m} (-1)^((m - 1 - i) n) μ (a (g₀, …, gᵢ, g_{i+n+1}, …, g_{m+n})) (b (gᵢ, …, g_{i+n+1}))`.
+Its boundary is `TauCeti.TopPairing.d_cupOne`. -/
+def cupOne : (m n k : ℕ) → k = n + m →
+    C((TopRep.resolutionX X (m + 1)).V × (TopRep.resolutionX Y (n + 2)).V,
+      (TopRep.resolutionX Z (k + 1)).V)
+  | 0, _, _, _ => 0
+  | m + 1, n, k + 1, hk =>
+    ⟨fun p ↦ (cupOne m n k (by omega)).comp (p.1.prodMk (const G p.2)) +
+        (-1 : R) ^ (m * n) • (P.flip.resolutionCup n m k (by omega)).comp (p.2.prodMk p.1),
+      by
+        refine ((continuous_postcomp _).comp continuous_prodMk_const_right).add ?_
+        exact (continuous_const_smul _).comp
+          ((continuous_postcomp _).comp (ContinuousMap.continuous_prodMk.comp continuous_swap))⟩
+  | _ + 1, _, 0, hk => absurd hk (by omega)
 
-private theorem cupOneAux_add_left (a a' : (TopRep.resolution'X X 1).V)
-    (b : (TopRep.resolution'X Y 1).V) :
-    P.cupOneAux (a + a') b = P.cupOneAux a b + P.cupOneAux a' b := by
-  ext g₀ g₁
-  simp only [P.cupOneAux_apply, ContinuousMap.add_apply, map_add, LinearMap.add_apply]
-
-private theorem cupOneAux_smul_left (r : R) (a : (TopRep.resolution'X X 1).V)
-    (b : (TopRep.resolution'X Y 1).V) :
-    P.cupOneAux (r • a) b = r • P.cupOneAux a b := by
-  ext g₀ g₁
-  simp only [P.cupOneAux_apply, ContinuousMap.smul_apply, map_smul, LinearMap.smul_apply]
-
-private theorem cupOneAux_add_right (a : (TopRep.resolution'X X 1).V)
-    (b b' : (TopRep.resolution'X Y 1).V) :
-    P.cupOneAux a (b + b') = P.cupOneAux a b + P.cupOneAux a b' := by
-  ext g₀ g₁
-  simp only [P.cupOneAux_apply, ContinuousMap.add_apply, map_add]
-
-private theorem cupOneAux_smul_right (r : R) (a : (TopRep.resolution'X X 1).V)
-    (b : (TopRep.resolution'X Y 1).V) :
-    P.cupOneAux a (r • b) = r • P.cupOneAux a b := by
-  ext g₀ g₁
-  simp only [P.cupOneAux_apply, ContinuousMap.smul_apply, map_smul]
-
-/-- **The cup-one product on degree-one elements of the resolution**, as an `R`-bilinear map: for
-`a : C(G, C(G, X.V))` and `b : C(G, C(G, Y.V))`, the pointwise pairing
-`(g₀, g₁) ↦ μ (a g₀ g₁) (b g₀ g₁)`. It is the bidegree-`(1, 1)` case of Steenrod's `∪₁`
-product, and the homotopy behind graded commutativity of the cup product in that bidegree. -/
-def cupOne : (TopRep.resolution'X X 1).V →ₗ[R] (TopRep.resolution'X Y 1).V →ₗ[R]
-    (TopRep.resolution'X Z 1).V :=
-  LinearMap.mk₂ R P.cupOneAux P.cupOneAux_add_left P.cupOneAux_smul_left P.cupOneAux_add_right
-    P.cupOneAux_smul_right
-
+/-- The cup-one product vanishes when the first factor has degree zero. -/
 @[simp]
-theorem cupOne_apply (a : (TopRep.resolution'X X 1).V) (b : (TopRep.resolution'X Y 1).V)
-    (g₀ g₁ : G) :
-    (P.cupOne a b : C(G, C(G, Z.V))) g₀ g₁ = P.bil (a g₀ g₁) (b g₀ g₁) := by
-  rw [cupOne, LinearMap.mk₂_apply, cupOneAux_apply]
+theorem cupOne_zero {n k : ℕ} (hk : k = n + 0) : P.cupOne 0 n k hk = 0 := by
+  rw [cupOne]
 
-/-- The cup-one product is equivariant. -/
-theorem cupOne_ρ (g : G) (a : (TopRep.resolution'X X 1).V) (b : (TopRep.resolution'X Y 1).V) :
-    P.cupOne ((TopRep.resolution'X X 1).ρ g a) ((TopRep.resolution'X Y 1).ρ g b) =
-      (TopRep.resolution'X Z 1).ρ g (P.cupOne a b) := by
-  ext g₀ g₁
-  -- both sides evaluated at `(g₀, g₁)` are `μ (g • a (g⁻¹g₀) (g⁻¹g₁)) (g • b (g⁻¹g₀) (g⁻¹g₁))`
-  simp only [coind₁_apply_apply, P.cupOne_apply, P.equivariant]
+/-- **The recursion of the cup-one product**: fixing the first vertex `g` leaves the cup-one
+product of `a g` with `b`, plus the signed opposite Alexander–Whitney product of `b g` with
+`a g`. -/
+@[simp]
+theorem cupOne_succ_apply {m n k : ℕ} (hk : k + 1 = n + (m + 1))
+    (a : C(G, (TopRep.resolutionX X (m + 1)).V)) (b : (TopRep.resolutionX Y (n + 2)).V)
+    (g : G) :
+    (P.cupOne (m + 1) n (k + 1) hk (a, b) : C(G, (TopRep.resolutionX Z (k + 1)).V)) g =
+      P.cupOne m n k (by omega) (a g, b) +
+        (-1 : R) ^ (m * n) • P.flip.resolutionCup n m k (by omega) (b g, a g) := by
+  rw [cupOne]
+  rfl
 
-/-- **The cup-one product of homogeneous one-cochains**, as an `R`-bilinear map: the cup-one
-product of the underlying elements of the resolution, which is invariant by equivariance. -/
-def cupOneCochain : (TopRep.homogeneousCochains X).X 1 →ₗ[R]
-    (TopRep.homogeneousCochains Y).X 1 →ₗ[R] (TopRep.homogeneousCochains Z).X 1 :=
+theorem cupOne_add_left : ∀ (m n k : ℕ) (hk : k = n + m)
+    (a a' : (TopRep.resolutionX X (m + 1)).V) (b : (TopRep.resolutionX Y (n + 2)).V),
+    P.cupOne m n k hk (a + a', b) =
+      P.cupOne m n k hk (a, b) + P.cupOne m n k hk (a', b)
+  | 0, n, k, hk, a, a', b => by simp only [cupOne_zero, ContinuousMap.zero_apply, add_zero]
+  | m + 1, n, k + 1, hk, a, a', b => ContinuousMap.ext fun g ↦ by
+    rw [ContinuousMap.add_apply, cupOne_succ_apply, cupOne_succ_apply,
+      cupOne_succ_apply, ContinuousMap.add_apply,
+      cupOne_add_left m n k _ (a g) (a' g) b, P.flip.resolutionCup_add_right, smul_add]
+    abel
+
+theorem cupOne_smul_left : ∀ (m n k : ℕ) (hk : k = n + m) (r : R)
+    (a : (TopRep.resolutionX X (m + 1)).V) (b : (TopRep.resolutionX Y (n + 2)).V),
+    P.cupOne m n k hk (r • a, b) = r • P.cupOne m n k hk (a, b)
+  | 0, n, k, hk, r, a, b => by simp only [cupOne_zero, ContinuousMap.zero_apply, smul_zero]
+  | m + 1, n, k + 1, hk, r, a, b => ContinuousMap.ext fun g ↦ by
+    rw [ContinuousMap.smul_apply, cupOne_succ_apply, cupOne_succ_apply,
+      ContinuousMap.smul_apply, cupOne_smul_left m n k _ r (a g) b,
+      P.flip.resolutionCup_smul_right, smul_add, smul_comm r]
+
+theorem cupOne_add_right : ∀ (m n k : ℕ) (hk : k = n + m)
+    (a : (TopRep.resolutionX X (m + 1)).V) (b b' : (TopRep.resolutionX Y (n + 2)).V),
+    P.cupOne m n k hk (a, b + b') =
+      P.cupOne m n k hk (a, b) + P.cupOne m n k hk (a, b')
+  | 0, n, k, hk, a, b, b' => by simp only [cupOne_zero, ContinuousMap.zero_apply, add_zero]
+  | m + 1, n, k + 1, hk, a, b, b' => ContinuousMap.ext fun g ↦ by
+    rw [ContinuousMap.add_apply, cupOne_succ_apply, cupOne_succ_apply,
+      cupOne_succ_apply, ContinuousMap.add_apply,
+      cupOne_add_right m n k _ (a g) b b', P.flip.resolutionCup_add_left, smul_add]
+    abel
+
+theorem cupOne_smul_right : ∀ (m n k : ℕ) (hk : k = n + m) (r : R)
+    (a : (TopRep.resolutionX X (m + 1)).V) (b : (TopRep.resolutionX Y (n + 2)).V),
+    P.cupOne m n k hk (a, r • b) = r • P.cupOne m n k hk (a, b)
+  | 0, n, k, hk, r, a, b => by simp only [cupOne_zero, ContinuousMap.zero_apply, smul_zero]
+  | m + 1, n, k + 1, hk, r, a, b => ContinuousMap.ext fun g ↦ by
+    rw [ContinuousMap.smul_apply, cupOne_succ_apply, cupOne_succ_apply,
+      ContinuousMap.smul_apply, cupOne_smul_right m n k _ r (a g) b,
+      P.flip.resolutionCup_smul_left, smul_add, smul_comm r]
+
+/-- The cup-one product preserves subtraction in its first argument. -/
+private theorem cupOne_sub_left (m n k : ℕ) (hk : k = n + m)
+    (a a' : (TopRep.resolutionX X (m + 1)).V) (b : (TopRep.resolutionX Y (n + 2)).V) :
+    P.cupOne m n k hk (a - a', b) =
+      P.cupOne m n k hk (a, b) - P.cupOne m n k hk (a', b) := by
+  rw [sub_eq_add_neg, sub_eq_add_neg, P.cupOne_add_left, ← neg_one_smul R a',
+    P.cupOne_smul_left, neg_one_smul]
+
+/-- **The cup-one product is equivariant.** -/
+theorem cupOne_ρ : ∀ (m n k : ℕ) (hk : k = n + m) (g : G)
+    (a : (TopRep.resolutionX X (m + 1)).V) (b : (TopRep.resolutionX Y (n + 2)).V),
+    P.cupOne m n k hk
+        ((TopRep.resolutionX X (m + 1)).ρ g a, (TopRep.resolutionX Y (n + 2)).ρ g b) =
+      (TopRep.resolutionX Z (k + 1)).ρ g (P.cupOne m n k hk (a, b))
+  | 0, n, k, hk, g, a, b => by simp only [cupOne_zero, ContinuousMap.zero_apply, map_zero]
+  | m + 1, n, k + 1, hk, g, a, b => ContinuousMap.ext fun h ↦ by
+    rw [TopRep.resolutionX_succ_ρ_apply_apply, cupOne_succ_apply,
+      cupOne_succ_apply, TopRep.resolutionX_succ_ρ_apply_apply,
+      TopRep.resolutionX_succ_ρ_apply_apply, cupOne_ρ m n k _ g (a (g⁻¹ * h)) b,
+      P.flip.resolutionCup_ρ, map_add, map_smul]
+
+/-! ### The boundary of the cup-one product -/
+
+/-- **The cup-one boundary formula on the resolution.** For `a` of degree `m` and `b` of degree
+`n + 1`,
+`d (a ∪₁ b) = (d a) ∪₁ b - (-1)^m (a ∪₁ d b) + (-1)^m (a ⌣ b) - (-1)^(m n) (b ⌣_{P.flip} a)`.
+On cocycles only the last two terms survive, so the cup-one product is a homotopy between
+`(-1)^m (a ⌣ b)` and `(-1)^(m n) (b ⌣_{P.flip} a)`. -/
+theorem d_cupOne : ∀ (m n k : ℕ) (hk : k = n + m)
+    (a : (TopRep.resolutionX X (m + 1)).V) (b : (TopRep.resolutionX Y (n + 2)).V),
+    (TopRep.d Z (k + 1)).hom (P.cupOne m n k hk (a, b)) =
+      P.cupOne (m + 1) n (k + 1) (by omega) ((TopRep.d X (m + 1)).hom a, b) -
+        (-1 : R) ^ m • P.cupOne m (n + 1) (k + 1) (by omega)
+          (a, (TopRep.d Y (n + 2)).hom b) +
+        (-1 : R) ^ m • P.resolutionCup m (n + 1) (k + 1) (by omega) (a, b) -
+        (-1 : R) ^ (m * n) • P.flip.resolutionCup (n + 1) m (k + 1) (by omega) (b, a)
+  | 0, n, k, hk, a, b => ContinuousMap.ext fun g ↦ by
+    -- at `g`, the cup-one term is `(b g) ⌣ᵒᵖ a - (b g) ⌣ᵒᵖ (a g)`, and the last factor is
+    -- constant, so it cancels against the ordinary cup term
+    have hda : ((TopRep.d X 1).hom a : C(G, C(G, X.V))) g =
+        a - (TopRep.d X 0).hom (a g) :=
+      TopRep.hom_d_succ_apply_apply X 0 a g
+    rw [cupOne_zero, ContinuousMap.zero_apply, map_zero, ContinuousMap.zero_apply,
+      ContinuousMap.sub_apply, ContinuousMap.add_apply, ContinuousMap.sub_apply,
+      cupOne_succ_apply, cupOne_zero, cupOne_zero,
+      ContinuousMap.zero_apply, ContinuousMap.zero_apply, ContinuousMap.smul_apply,
+      ContinuousMap.smul_apply, ContinuousMap.smul_apply, ContinuousMap.zero_apply,
+      P.resolutionCup_zero_apply, P.flip.resolutionCup_succ_apply, hda,
+      P.flip.resolutionCup_sub_right, ← P.resolutionCup_zero_eq_flip n k (by omega),
+      P.resolutionCup_zero_d_zero]
+    simp only [zero_mul, pow_zero, one_smul, smul_zero]
+    abel
+  | m + 1, n, k + 1, hk, a, b => ContinuousMap.ext fun g ↦ by
+    have hd : ((TopRep.d Z (k + 2)).hom (P.cupOne (m + 1) n (k + 1) hk (a, b)) :
+        C(G, (TopRep.resolutionX Z (k + 2)).V)) g =
+        P.cupOne (m + 1) n (k + 1) hk (a, b) -
+          (TopRep.d Z (k + 1)).hom ((P.cupOne (m + 1) n (k + 1) hk (a, b) :
+            C(G, (TopRep.resolutionX Z (k + 1)).V)) g) :=
+      TopRep.hom_d_succ_apply_apply Z (k + 1) _ g
+    have hda : (TopRep.d X (m + 1)).hom (a g) =
+        a - ((TopRep.d X (m + 2)).hom a : C(G, (TopRep.resolutionX X (m + 2)).V)) g := by
+      rw [TopRep.hom_d_succ_apply_apply, sub_sub_cancel]
+    have hdb : (TopRep.d Y (n + 1)).hom (b g) =
+        b - ((TopRep.d Y (n + 2)).hom b : C(G, (TopRep.resolutionX Y (n + 2)).V)) g := by
+      rw [TopRep.hom_d_succ_apply_apply, sub_sub_cancel]
+    -- expand the left side at `g` by the recursion, the inductive hypothesis at `a g`, and the
+    -- Leibniz rule for the opposite Alexander–Whitney product
+    rw [hd, cupOne_succ_apply, map_add, map_smul,
+      d_cupOne m n k (by omega) (a g) b,
+      P.flip.resolutionCup_leibniz n m k (by omega) (b g) (a g), hda, hdb,
+      P.cupOne_sub_left, P.flip.resolutionCup_sub_left,
+      P.flip.resolutionCup_sub_right]
+    have hexponent : m + 1 + m * (n + 1) = 2 * m + (m * n + 1) := by ring
+    have hsign : (-1 : R) ^ (m + 1) * (-1 : R) ^ (m * (n + 1)) = -(-1 : R) ^ (m * n) := by
+      rw [← pow_add, hexponent, pow_add, pow_mul,
+        neg_one_sq, one_pow, one_mul, pow_succ, mul_neg_one]
+    -- expand the right side at `g` by the recursions
+    rw [ContinuousMap.sub_apply, ContinuousMap.add_apply, ContinuousMap.sub_apply,
+      ContinuousMap.smul_apply, ContinuousMap.smul_apply, ContinuousMap.smul_apply,
+      cupOne_succ_apply, cupOne_succ_apply, P.resolutionCup_succ_apply,
+      P.flip.resolutionCup_succ_apply]
+    simp only [smul_add, smul_smul, hsign]
+    module
+
+/-! ### The cup-one product of homogeneous cochains -/
+
+/-- **The cup-one product of homogeneous cochains**, as an `R`-bilinear map from `m`-cochains of
+`X` and `(n + 1)`-cochains of `Y` to `(m + n)`-cochains of `Z`: the cup-one product of the
+underlying elements of the resolution, which is invariant by equivariance. -/
+def cupOneCochain (m n : ℕ) : (TopRep.homogeneousCochains X).X m →ₗ[R]
+    (TopRep.homogeneousCochains Y).X (n + 1) →ₗ[R] (TopRep.homogeneousCochains Z).X (m + n) :=
   LinearMap.mk₂ R
-    (fun a b ↦ ⟨P.cupOne a.1 b.1, fun g ↦ by rw [← P.cupOne_ρ, a.2 g, b.2 g]⟩)
-    (fun a a' b ↦ Subtype.ext (LinearMap.map_add₂ _ a.1 a'.1 b.1))
-    (fun r a b ↦ Subtype.ext (LinearMap.map_smul₂ _ r a.1 b.1))
-    (fun a b b' ↦ Subtype.ext (map_add _ b.1 b'.1))
-    (fun r a b ↦ Subtype.ext (LinearMap.map_smul _ r b.1))
+    (fun a b ↦ ⟨P.cupOne m n (m + n) (Nat.add_comm m n) (a.1, b.1), fun g ↦ by
+      rw [← P.cupOne_ρ, a.2 g, b.2 g]⟩)
+    (fun a a' b ↦ Subtype.ext (P.cupOne_add_left m n _ _ a.1 a'.1 b.1))
+    (fun r a b ↦ Subtype.ext (P.cupOne_smul_left m n _ _ r a.1 b.1))
+    (fun a b b' ↦ Subtype.ext (P.cupOne_add_right m n _ _ a.1 b.1 b'.1))
+    (fun r a b ↦ Subtype.ext (P.cupOne_smul_right m n _ _ r a.1 b.1))
 
-/-- The underlying resolution element of the cup-one product of homogeneous cochains is the
-cup-one product of the underlying elements. -/
--- Not a `simp` lemma: as for `coe_cupCochain`, `simp` rewrites the implicit carrier
--- `(TopRep.resolution' Z).X 1` on the left-hand side through
--- `CategoryTheory.Functor.mapHomologicalComplex_obj_X`, so the statement is not in `simp`-normal
--- form; use it with `rw`.
-theorem coe_cupOneCochain (a : (TopRep.homogeneousCochains X).X 1)
-    (b : (TopRep.homogeneousCochains Y).X 1) :
-    Subtype.val (P.cupOneCochain a b) = P.cupOne a.1 b.1 := by
+/-- The underlying resolution element of `cupOneCochain` is `cupOne`. -/
+-- Not a `simp` lemma, for the same reason as `coe_cupCochain`: `simp` rewrites the implicit
+-- carrier `(TopRep.resolution' Z).X (m + n)` on the left-hand side through
+-- `CategoryTheory.Functor.mapHomologicalComplex_obj_X`; use it with `rw`.
+theorem coe_cupOneCochain (m n : ℕ) (a : (TopRep.homogeneousCochains X).X m)
+    (b : (TopRep.homogeneousCochains Y).X (n + 1)) :
+    Subtype.val (P.cupOneCochain m n a b) =
+      P.cupOne m n (m + n) (Nat.add_comm m n) (a.1, b.1) := by
   rw [cupOneCochain, LinearMap.mk₂_apply]
 
-/-- The cup-one product of homogeneous one-cochains, evaluated:
-`(a ∪₁ b) g₀ g₁ = μ (a g₀ g₁) (b g₀ g₁)`. -/
--- Not a `simp` lemma, for the same reason as `coe_cupOneCochain`: the implicit carrier
--- `(TopRep.resolution' Z).X 1` of the left-hand side is not in `simp`-normal form; use it with
--- `rw` or `simp only`.
-theorem cupOneCochain_apply (a : (TopRep.homogeneousCochains X).X 1)
-    (b : (TopRep.homogeneousCochains Y).X 1) (g₀ g₁ : G) :
-    ((P.cupOneCochain a b).val : C(G, C(G, Z.V))) g₀ g₁ = P.bil (a.val g₀ g₁) (b.val g₀ g₁) := by
-  rw [coe_cupOneCochain, cupOne_apply]
-
-/-! ### The differential of the cup-one product -/
-
-/-- **The differential of the cup-one product of two cocycles** is `-(a ⌣ b) - (b ⌣ᵒᵖ a)`: the
-cup-one product is a homotopy between the cup product and the negative of the opposite cup
-product. -/
-theorem d_cupOneCochain {a : (TopRep.homogeneousCochains X).X 1}
-    (ha : ((TopRep.homogeneousCochains X).d 1 (1 + 1)).hom a = 0)
-    {b : (TopRep.homogeneousCochains Y).X 1}
-    (hb : ((TopRep.homogeneousCochains Y).d 1 (1 + 1)).hom b = 0) :
-    ((TopRep.homogeneousCochains Z).d 1 (1 + 1)).hom (P.cupOneCochain a b) =
-      -P.cupCochain 1 1 a b - P.flip.cupCochain 1 1 b a := by
+/-- **The differential of the cup-one product of two cocycles**: for a cocycle `a` of degree `m`
+and a cocycle `b` of degree `n + 1`, `d (a ∪₁ b) = (-1)^m (a ⌣ b) - (-1)^(m n) (b ⌣ᵒᵖ a)`, both
+products transported to degree `m + n + 1`. -/
+theorem d_cupOneCochain (m n : ℕ) {a : (TopRep.homogeneousCochains X).X m}
+    (ha : ((TopRep.homogeneousCochains X).d m (m + 1)).hom a = 0)
+    {b : (TopRep.homogeneousCochains Y).X (n + 1)}
+    (hb : ((TopRep.homogeneousCochains Y).d (n + 1) (n + 1 + 1)).hom b = 0) :
+    ((TopRep.homogeneousCochains Z).d (m + n) (m + n + 1)).hom
+        (P.cupOneCochain m n a b) =
+      (-1 : R) ^ m • ((TopRep.homogeneousCochains Z).XIsoOfEq
+          (by omega : m + (n + 1) = m + n + 1)).hom (P.cupCochain m (n + 1) a b) -
+        (-1 : R) ^ (m * n) • ((TopRep.homogeneousCochains Z).XIsoOfEq
+          (by omega : n + 1 + m = m + n + 1)).hom (P.flip.cupCochain (n + 1) m b a) := by
+  have hda : (TopRep.d X (m + 1)).hom a.val = 0 :=
+    (TopRep.homogeneousCochains.d_apply X m a).symm.trans (congrArg Subtype.val ha)
+  have hdb : (TopRep.d Y (n + 2)).hom b.val = 0 :=
+    (TopRep.homogeneousCochains.d_apply Y (n + 1) b).symm.trans (congrArg Subtype.val hb)
   apply Subtype.ext
-  ext g₀ g₁ g₂
-  -- evaluate both sides at `(g₀, g₁, g₂)`
-  rw [Submodule.coe_sub, Submodule.coe_neg]
-  simp only [homogeneousCochains.d_one_apply (X := Z), P.cupOneCochain_apply,
-    ContinuousMap.sub_apply, ContinuousMap.neg_apply, P.cupCochain_one_one_apply,
-    P.flip.cupCochain_one_one_apply, flip_bil]
-  -- expand `μ (a g₀ g₂) (b g₀ g₂)` along the two cocycle identities
-  rw [homogeneousCochains.apply_eq_add_of_d_eq_zero ha g₀ g₁ g₂,
-    homogeneousCochains.apply_eq_add_of_d_eq_zero hb g₀ g₁ g₂]
-  simp only [map_add, LinearMap.add_apply]
-  abel
+  rw [TopRep.homogeneousCochains.d_apply, P.coe_cupOneCochain, Submodule.coe_sub,
+    Submodule.coe_smul, Submodule.coe_smul,
+    ContinuousCohomology.coe_homogeneousCochains_XIsoOfEq_hom_apply,
+    ContinuousCohomology.coe_homogeneousCochains_XIsoOfEq_hom_apply, P.coe_cupCochain,
+    P.flip.coe_cupCochain, P.resolutionCupPairing_apply, P.flip.resolutionCupPairing_apply,
+    P.resolutionCup_cast (hk' := by omega), P.flip.resolutionCup_cast (hk' := by omega),
+    P.d_cupOne, hda, hdb,
+    ← zero_smul R (0 : (TopRep.resolutionX X (m + 1 + 1)).V), P.cupOne_smul_left,
+    ← zero_smul R (0 : (TopRep.resolutionX Y (n + 1 + 2)).V), P.cupOne_smul_right]
+  module
 
 /-! ### Graded commutativity on classes -/
 
-/-- The classes of `a ⌣ b` and of `b ⌣ᵒᵖ a` add to zero, for one-cocycles `a` and `b`. -/
-theorem π_cupCocycles_add_π_flip_cupCocycles_one_one (a : cocycles X 1) (b : cocycles Y 1) :
-    π Z (1 + 1) (P.cupCocycles 1 1 a b) + π Z (1 + 1) (P.flip.cupCocycles 1 1 b a) = 0 := by
-  set L := homogeneousCochains Z
-  rw [← map_add,
-    L.homologyπ_eq_zero_iff (1 + 1) (m := 1) (CochainComplex.prev_nat_succ 1)]
-  refine ⟨-P.cupOneCochain ((homogeneousCochains X).iCycles 1 a)
-    ((homogeneousCochains Y).iCycles 1 b), L.iCycles_injective (1 + 1) ?_⟩
-  rw [L.iCycles_toCycles_apply, map_neg, P.d_cupOneCochain
-    ((homogeneousCochains X).d_iCycles_apply (1 + 1) a)
-    ((homogeneousCochains Y).d_iCycles_apply (1 + 1) b), map_add, iCycles_cupCocycles,
-    iCycles_cupCocycles]
-  abel
+/-- After transporting both products to degree `m + n + 1`, the class of `a ⌣ b` is
+`(-1)^(m (n + 1))` times the class of `b ⌣ᵒᵖ a`. This is the cocycle-level descent of
+`d_cupOneCochain`. -/
+private theorem π_cocyclesDegreeCast_cupCocycles (m n : ℕ) (a : cocycles X m)
+    (b : cocycles Y (n + 1)) :
+    π Z (m + n + 1) (ContinuousCohomology.cocyclesDegreeCast (by omega : m + (n + 1) = m + n + 1)
+        (P.cupCocycles m (n + 1) a b)) =
+      (-1 : R) ^ (m * (n + 1)) • π Z (m + n + 1) (ContinuousCohomology.cocyclesDegreeCast
+        (by omega : n + 1 + m = m + n + 1) (P.flip.cupCocycles (n + 1) m b a)) := by
+  rw [← sub_eq_zero, ← map_smul, ← map_sub]
+  set L := TopRep.homogeneousCochains Z
+  refine (L.homologyπ_eq_zero_iff (m + n + 1) (CochainComplex.prev_nat_succ (m + n))).2
+    ⟨(-1 : R) ^ m • P.cupOneCochain m n ((TopRep.homogeneousCochains X).iCycles m a)
+      ((TopRep.homogeneousCochains Y).iCycles (n + 1) b),
+      L.iCycles_injective (m + n + 1) ?_⟩
+  rw [L.iCycles_toCycles_apply, map_smul, P.d_cupOneCochain m n
+    ((TopRep.homogeneousCochains X).d_iCycles_apply (m + 1) a)
+    ((TopRep.homogeneousCochains Y).d_iCycles_apply (n + 1 + 1) b), map_sub, map_smul,
+    ContinuousCohomology.iCycles_cocyclesDegreeCast,
+    ContinuousCohomology.iCycles_cocyclesDegreeCast, iCycles_cupCocycles, iCycles_cupCocycles]
+  have hsign : (-1 : R) ^ m * (-1 : R) ^ m = 1 := by
+    rw [← pow_add, ← two_mul, pow_mul, neg_one_sq, one_pow]
+  have hsign' : (-1 : R) ^ m * (-1 : R) ^ (m * n) = (-1 : R) ^ (m * (n + 1)) := by
+    rw [← pow_add, mul_add_one, add_comm]
+  rw [smul_sub, smul_smul, smul_smul, hsign, hsign', one_smul]
 
-/-- **Graded commutativity of the cup product in bidegree `(1, 1)`**:
-`cup P 1 1 a b = - cup P.flip 1 1 b a`. -/
-theorem cup_one_one_eq_neg_flip (a : continuousCohomology 1 X) (b : continuousCohomology 1 Y) :
-    P.cup 1 1 a b = -P.flip.cup 1 1 b a := by
-  obtain ⟨a, rfl⟩ := (homogeneousCochains X).homologyπ_surjective 1 a
-  obtain ⟨b, rfl⟩ := (homogeneousCochains Y).homologyπ_surjective 1 b
-  rw [cup_π, cup_π, eq_neg_iff_add_eq_zero]
-  exact P.π_cupCocycles_add_π_flip_cupCocycles_one_one a b
+/-- **Graded commutativity of the cup product**: `a ⌣_P b = (-1)^(m n) (b ⌣_{P.flip} a)` for
+`a` of degree `m` and `b` of degree `n`, with the opposite product transported from degree
+`n + m` to degree `m + n`. -/
+theorem cup_gradedComm (m n : ℕ) (a : continuousCohomology m X)
+    (b : continuousCohomology n Y) :
+    P.cup m n a b =
+      (ContinuousCohomology.degreeCast Z (Nat.add_comm n m)).hom
+        ((-1 : R) ^ (m * n) • P.flip.cup n m b a) := by
+  cases n with
+  | zero =>
+    rw [mul_zero, pow_zero, one_smul, P.flip.cup_zero_eq_flip, flip_flip,
+      ← ConcreteCategory.comp_apply, ContinuousCohomology.degreeCast_hom_comp_degreeCast_hom,
+      ContinuousCohomology.degreeCast_rfl, Iso.refl_hom, ConcreteCategory.id_apply]
+  | succ n =>
+    obtain ⟨a, rfl⟩ := (TopRep.homogeneousCochains X).homologyπ_surjective m a
+    obtain ⟨b, rfl⟩ := (TopRep.homogeneousCochains Y).homologyπ_surjective (n + 1) b
+    have key := P.π_cocyclesDegreeCast_cupCocycles m n a b
+    rw [ContinuousCohomology.π_cocyclesDegreeCast, ContinuousCohomology.π_cocyclesDegreeCast]
+      at key
+    rw [cup_π, cup_π, ← Iso.hom_inv_id_apply
+        (ContinuousCohomology.degreeCast Z (by omega : m + (n + 1) = m + n + 1))
+        (π Z (m + (n + 1)) _), key, map_smul, map_smul, ← Iso.symm_hom,
+      ContinuousCohomology.degreeCast_symm, ← ConcreteCategory.comp_apply,
+      ContinuousCohomology.degreeCast_hom_comp_degreeCast_hom]
 
 end cupOne
-
-section cupOneLeft
-
-variable {R : Type u} [CommRing R] [TopologicalSpace R]
-  {G : Type v} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-  {X Y Z : TopRep.{max v w} R G} (P : TopPairing X Y Z)
-
-/-! ### The cup-one product in bidegree `(1, n + 1)` -/
-
-/-- The cup-one product of a degree-one resolution element and a degree-`n + 1` resolution
-element. In homogeneous coordinates it is
-`(a ∪₁ b) (g₀, …, gₙ₊₁) = μ (a g₀ gₙ₊₁) (b g₀ … gₙ₊₁)`.
-
-The definition uses the opposite Alexander--Whitney product after fixing the first vertex: at
-`g₀` it cups `b g₀`, of degree `n`, with `a g₀`, of degree zero. -/
-private def cupOneLeftAux (n : ℕ) (a : (TopRep.resolution'X X 1).V)
-    (b : (TopRep.resolution'X Y (n + 1)).V) : (TopRep.resolution'X Z (n + 1)).V :=
-  (P.flip.resolutionCup n 0 n (by omega)).comp (b.prodMk a)
-
-private theorem cupOneLeftAux_apply (n : ℕ) (a : (TopRep.resolution'X X 1).V)
-    (b : (TopRep.resolution'X Y (n + 1)).V) (g : G) :
-    P.cupOneLeftAux n a b g = P.flip.resolutionCup n 0 n (by omega) (b g, a g) := by
-  rfl
-
-private theorem cupOneLeftAux_add_left (n : ℕ) (a a' : (TopRep.resolution'X X 1).V)
-    (b : (TopRep.resolution'X Y (n + 1)).V) :
-    P.cupOneLeftAux n (a + a') b = P.cupOneLeftAux n a b + P.cupOneLeftAux n a' b := by
-  apply ContinuousMap.ext
-  intro g
-  rw [ContinuousMap.add_apply, cupOneLeftAux_apply, cupOneLeftAux_apply, cupOneLeftAux_apply,
-    ContinuousMap.add_apply, P.flip.resolutionCup_add_right]
-
-private theorem cupOneLeftAux_smul_left (n : ℕ) (r : R)
-    (a : (TopRep.resolution'X X 1).V) (b : (TopRep.resolution'X Y (n + 1)).V) :
-    P.cupOneLeftAux n (r • a) b = r • P.cupOneLeftAux n a b := by
-  apply ContinuousMap.ext
-  intro g
-  rw [ContinuousMap.smul_apply, cupOneLeftAux_apply, cupOneLeftAux_apply,
-    ContinuousMap.smul_apply, P.flip.resolutionCup_smul_right]
-
-private theorem cupOneLeftAux_add_right (n : ℕ) (a : (TopRep.resolution'X X 1).V)
-    (b b' : (TopRep.resolution'X Y (n + 1)).V) :
-    P.cupOneLeftAux n a (b + b') = P.cupOneLeftAux n a b + P.cupOneLeftAux n a b' := by
-  apply ContinuousMap.ext
-  intro g
-  rw [ContinuousMap.add_apply, cupOneLeftAux_apply, cupOneLeftAux_apply, cupOneLeftAux_apply,
-    ContinuousMap.add_apply, P.flip.resolutionCup_add_left]
-
-private theorem cupOneLeftAux_smul_right (n : ℕ) (r : R)
-    (a : (TopRep.resolution'X X 1).V) (b : (TopRep.resolution'X Y (n + 1)).V) :
-    P.cupOneLeftAux n a (r • b) = r • P.cupOneLeftAux n a b := by
-  apply ContinuousMap.ext
-  intro g
-  rw [ContinuousMap.smul_apply, cupOneLeftAux_apply, cupOneLeftAux_apply,
-    ContinuousMap.smul_apply, P.flip.resolutionCup_smul_left]
-
-/-- **The cup-one product in bidegree `(1, n + 1)`**, as an `R`-bilinear map on the
-coinduction resolution. -/
-def cupOneLeft (n : ℕ) : (TopRep.resolution'X X 1).V →ₗ[R]
-    (TopRep.resolution'X Y (n + 1)).V →ₗ[R] (TopRep.resolution'X Z (n + 1)).V :=
-  LinearMap.mk₂ R (P.cupOneLeftAux n) (P.cupOneLeftAux_add_left n)
-    (P.cupOneLeftAux_smul_left n) (P.cupOneLeftAux_add_right n)
-    (P.cupOneLeftAux_smul_right n)
-
-/-- Evaluating the cup-one product at its first vertex leaves the opposite Alexander--Whitney
-product of the two restrictions. -/
-theorem cupOneLeft_apply (n : ℕ) (a : (TopRep.resolution'X X 1).V)
-    (b : (TopRep.resolution'X Y (n + 1)).V) (g : G) :
-    P.cupOneLeft n a b g = P.flip.resolutionCup n 0 n (by omega) (b g, a g) := by
-  rw [cupOneLeft, LinearMap.mk₂_apply, cupOneLeftAux_apply]
-
-/-- The cup-one product in bidegree `(1, n + 1)` is equivariant. -/
-theorem cupOneLeft_ρ (n : ℕ) (g : G) (a : (TopRep.resolution'X X 1).V)
-    (b : (TopRep.resolution'X Y (n + 1)).V) :
-    P.cupOneLeft n ((TopRep.resolution'X X 1).ρ g a)
-        ((TopRep.resolution'X Y (n + 1)).ρ g b) =
-      (TopRep.resolution'X Z (n + 1)).ρ g (P.cupOneLeft n a b) := by
-  apply ContinuousMap.ext
-  intro h
-  rw [TopRep.resolutionX_succ_ρ_apply_apply, P.cupOneLeft_apply, P.cupOneLeft_apply,
-    TopRep.resolutionX_succ_ρ_apply_apply, TopRep.resolutionX_succ_ρ_apply_apply]
-  exact P.flip.resolutionCup_ρ n 0 n (by omega) g (b (g⁻¹ * h)) (a (g⁻¹ * h))
-
-/-- The cup-one product of a homogeneous one-cochain and a homogeneous `(n + 1)`-cochain. -/
-def cupOneLeftCochain (n : ℕ) : (TopRep.homogeneousCochains X).X 1 →ₗ[R]
-    (TopRep.homogeneousCochains Y).X (n + 1) →ₗ[R]
-      (TopRep.homogeneousCochains Z).X (n + 1) :=
-  LinearMap.mk₂ R
-    (fun a b ↦ ⟨P.cupOneLeft n a.1 b.1, fun g ↦ by rw [← P.cupOneLeft_ρ, a.2 g, b.2 g]⟩)
-    (fun a a' b ↦ Subtype.ext (LinearMap.map_add₂ _ a.1 a'.1 b.1))
-    (fun r a b ↦ Subtype.ext (LinearMap.map_smul₂ _ r a.1 b.1))
-    (fun a b b' ↦ Subtype.ext (map_add _ b.1 b'.1))
-    (fun r a b ↦ Subtype.ext (LinearMap.map_smul _ r b.1))
-
-/-- The underlying resolution element of `cupOneLeftCochain` is `cupOneLeft`. -/
--- Not a `simp` lemma, for the same reason as `coe_cupOneCochain`: `simp` rewrites the implicit
--- carrier `(TopRep.resolution' Z).X (n + 1)` on the left-hand side through
--- `CategoryTheory.Functor.mapHomologicalComplex_obj_X`; use it with `rw`.
-theorem coe_cupOneLeftCochain (n : ℕ) (a : (TopRep.homogeneousCochains X).X 1)
-    (b : (TopRep.homogeneousCochains Y).X (n + 1)) :
-    Subtype.val (P.cupOneLeftCochain n a b) = P.cupOneLeft n a.1 b.1 := by
-  rw [cupOneLeftCochain, LinearMap.mk₂_apply]
-
-/-- The restrictions of a homogeneous one-cocycle at two first vertices differ by the constant
-edge joining those vertices. The orientation is chosen for the cup-one calculation below. -/
-private theorem apply_sub_apply_eq_neg_d_zero {a : (TopRep.homogeneousCochains X).X 1}
-    (ha : ((TopRep.homogeneousCochains X).d 1 (1 + 1)).hom a = 0) (g h : G) :
-    a.val h - a.val g = -(TopRep.d X 0).hom (a.val g h) := by
-  apply ContinuousMap.ext
-  intro x
-  have hpath := TopRep.homogeneousCochains.apply_eq_add_of_d_eq_zero ha h g x
-  have hloop := TopRep.homogeneousCochains.apply_eq_add_of_d_eq_zero ha g h g
-  have hdiag := TopRep.homogeneousCochains.apply_eq_add_of_d_eq_zero ha g g g
-  have hzero : a.val g g = 0 := by
-    apply add_left_cancel (a := a.val g g)
-    simpa using hdiag.symm
-  have hsym : a.val h g = -a.val g h := by
-    rw [hzero] at hloop
-    apply eq_neg_iff_add_eq_zero.mpr
-    rw [add_comm]
-    exact hloop.symm
-  rw [ContinuousMap.sub_apply, ContinuousMap.neg_apply, TopRep.d_zero, TopRep.hom_ofHom,
-    ContRepresentation.coind₁ι_toFun, ContinuousMap.const_apply, hpath, hsym]
-  abel
-
-/-- Pairing a constant degree-zero resolution element with `b` is the pointwise pairing by its
-constant value. -/
-private theorem resolutionCup_zero_d_zero (n : ℕ) (x : X.V)
-    (b : (TopRep.resolutionX Y (n + 1)).V) :
-    P.resolutionCup 0 n n (by omega) ((TopRep.d X 0).hom x, b) =
-      P.pointwise (n + 1) (n + 1) rfl (x, b) := by
-  apply ContinuousMap.ext
-  intro h
-  rw [P.resolutionCup_zero_apply, P.pointwise_succ_apply]
-  rfl
-
-/-- Fixing the first vertex in the cup-one product produces the negative ordinary cup term. This
-is the endpoint identity in the proof of the cup-one boundary formula. -/
-private theorem cupOneLeft_sub_resolutionCup (n : ℕ)
-    {a : (TopRep.homogeneousCochains X).X 1}
-    (ha : ((TopRep.homogeneousCochains X).d 1 (1 + 1)).hom a = 0)
-    (b : (TopRep.resolution'X Y (n + 1)).V) (g : G) :
-    P.cupOneLeft n a.val b -
-        P.flip.resolutionCup (n + 1) 0 (n + 1) (by omega) (b, a.val g) =
-      -P.resolutionCup 0 (n + 1) (n + 1) (by omega) (a.val g, b) := by
-  apply ContinuousMap.ext
-  intro h
-  rw [ContinuousMap.sub_apply, P.cupOneLeft_apply, P.flip.resolutionCup_succ_apply,
-    ← P.flip.resolutionCup_sub_right, apply_sub_apply_eq_neg_d_zero ha]
-  rw [← neg_one_smul R ((TopRep.d X 0).hom (a.val g h)),
-    P.flip.resolutionCup_smul_right, neg_one_smul,
-    ← P.resolutionCup_zero_eq_flip n n rfl (a.val g h) (b h),
-    P.resolutionCup_zero_d_zero, ContinuousMap.neg_apply,
-    P.resolutionCup_zero_apply]
-
-/-- **The cup-one boundary formula in bidegree `(1, n + 1)`**. For cocycles `a` and `b`,
-the differential of `a ∪₁ b` is the negative ordinary product plus the signed opposite product.
-This is the cochain homotopy giving graded commutativity whenever the first degree is one. -/
-theorem d_cupOneLeftCochain (n : ℕ) {a : (TopRep.homogeneousCochains X).X 1}
-    (ha : ((TopRep.homogeneousCochains X).d 1 (1 + 1)).hom a = 0)
-    {b : (TopRep.homogeneousCochains Y).X (n + 1)}
-    (hb : ((TopRep.homogeneousCochains Y).d (n + 1) (n + 1 + 1)).hom b = 0) :
-    ((TopRep.homogeneousCochains Z).d (n + 1) (n + 1 + 1)).hom
-        (P.cupOneLeftCochain n a b) =
-      -((TopRep.homogeneousCochains Z).XIsoOfEq
-          (by omega : 1 + (n + 1) = n + 1 + 1)).hom (P.cupCochain 1 (n + 1) a b) +
-        (-1 : R) ^ (n + 1) • P.flip.cupCochain (n + 1) 1 b a := by
-  apply Subtype.ext
-  rw [TopRep.homogeneousCochains.d_apply, P.coe_cupOneLeftCochain, Submodule.coe_add,
-    Submodule.coe_neg, Submodule.coe_smul,
-    ContinuousCohomology.coe_homogeneousCochains_XIsoOfEq_hom_apply,
-    P.coe_cupCochain, P.flip.coe_cupCochain, P.resolutionCupPairing_apply,
-    P.flip.resolutionCupPairing_apply, P.resolutionCup_cast (hk' := by omega)]
-  apply ContinuousMap.ext
-  intro g
-  have hda0 : (TopRep.d X 2).hom a.val = 0 :=
-    (TopRep.homogeneousCochains.d_apply X 1 a).symm.trans (congrArg Subtype.val ha)
-  have hda_eval := congrArg (fun F : (TopRep.resolutionX X 3).V ↦ F g) hda0
-  rw [TopRep.hom_d_succ_apply_apply, ContinuousMap.zero_apply] at hda_eval
-  have hda : (TopRep.d X 1).hom (a.val g) = a.val := (sub_eq_zero.mp hda_eval).symm
-  have hdb0 : (TopRep.d Y (n + 2)).hom b.val = 0 :=
-    (TopRep.homogeneousCochains.d_apply Y (n + 1) b).symm.trans (congrArg Subtype.val hb)
-  have hdb_eval := congrArg (fun F : (TopRep.resolutionX Y (n + 3)).V ↦ F g) hdb0
-  rw [TopRep.hom_d_succ_apply_apply, ContinuousMap.zero_apply] at hdb_eval
-  have hdb : (TopRep.d Y (n + 1)).hom (b.val g) = b.val :=
-    (sub_eq_zero.mp hdb_eval).symm
-  rw [TopRep.hom_d_succ_apply_apply, P.cupOneLeft_apply,
-    P.flip.resolutionCup_leibniz n 0 n (by omega), hdb, hda,
-    sub_add_eq_sub_sub, P.cupOneLeft_sub_resolutionCup n ha b.val g,
-    ContinuousMap.add_apply, ContinuousMap.neg_apply, ContinuousMap.smul_apply,
-    P.resolutionCup_succ_apply, P.flip.resolutionCup_succ_apply, pow_succ, mul_neg_one,
-    neg_smul]
-  abel
-
-/-- After transporting the ordinary cup to degree `n + 1 + 1`, its class is the signed class of
-the opposite cup. This is the cocycle-level descent of `d_cupOneLeftCochain`. -/
-private theorem degreeCast_π_cupCocycles_one_succ (n : ℕ) (a : cocycles X 1)
-    (b : cocycles Y (n + 1)) :
-    (ContinuousCohomology.degreeCast Z
-        (by omega : 1 + (n + 1) = n + 1 + 1)).hom
-        (π Z (1 + (n + 1)) (P.cupCocycles 1 (n + 1) a b)) =
-      (-1 : R) ^ (n + 1) •
-        π Z (n + 1 + 1) (P.flip.cupCocycles (n + 1) 1 b a) := by
-  let h : 1 + (n + 1) = n + 1 + 1 := by omega
-  let c : cocycles Z (n + 1 + 1) := ContinuousCohomology.cocyclesDegreeCast h
-    (P.cupCocycles 1 (n + 1) a b)
-  have hc := ContinuousCohomology.iCycles_cocyclesDegreeCast h
-    (P.cupCocycles 1 (n + 1) a b)
-  have hcπ := ContinuousCohomology.π_cocyclesDegreeCast h
-    (P.cupCocycles 1 (n + 1) a b)
-  rw [← hcπ, ← sub_eq_zero, ← map_smul, ← map_sub]
-  set L := TopRep.homogeneousCochains Z
-  refine (L.homologyπ_eq_zero_iff (n + 1 + 1) (CochainComplex.prev_nat_succ (n + 1))).2
-    ⟨-P.cupOneLeftCochain n ((TopRep.homogeneousCochains X).iCycles 1 a)
-      ((TopRep.homogeneousCochains Y).iCycles (n + 1) b),
-      L.iCycles_injective (n + 1 + 1) ?_⟩
-  rw [L.iCycles_toCycles_apply, map_neg, P.d_cupOneLeftCochain n
-    ((TopRep.homogeneousCochains X).d_iCycles_apply 2 a)
-    ((TopRep.homogeneousCochains Y).d_iCycles_apply (n + 2) b), neg_add_rev,
-    neg_neg, map_sub, map_smul, hc,
-    iCycles_cupCocycles, iCycles_cupCocycles]
-  abel
-
-/-- **Graded commutativity of the cup product in bidegree `(1, n + 1)`**:
-`a ⌣_P b = (-1)^(n+1) (b ⌣_{P.flip} a)`, with the opposite product transported from degree
-`n + 1 + 1` to degree `1 + (n + 1)`. -/
-theorem cup_one_succ_eq_signed_flip (n : ℕ) (a : continuousCohomology 1 X)
-    (b : continuousCohomology (n + 1) Y) :
-    P.cup 1 (n + 1) a b =
-      (ContinuousCohomology.degreeCast Z
-          (by omega : n + 1 + 1 = 1 + (n + 1))).hom
-        ((-1 : R) ^ (n + 1) • P.flip.cup (n + 1) 1 b a) := by
-  obtain ⟨a, rfl⟩ := (TopRep.homogeneousCochains X).homologyπ_surjective 1 a
-  obtain ⟨b, rfl⟩ := (TopRep.homogeneousCochains Y).homologyπ_surjective (n + 1) b
-  rw [cup_π, cup_π]
-  rw [← ContinuousCohomology.degreeCast_symm (by omega : 1 + (n + 1) = n + 1 + 1), Iso.symm_hom,
-    ← P.degreeCast_π_cupCocycles_one_succ n a b, Iso.hom_inv_id_apply]
-
-end cupOneLeft
 
 end TopPairing
 

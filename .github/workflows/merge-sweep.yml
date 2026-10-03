@@ -32,6 +32,7 @@ concurrency:
 
 jobs:
   sweep:
+    if: ${{ vars.MERGE_BACKEND != 'bors' }}
     # Pinned to a TauCetiReview commit; bump deliberately. The reusable workflow receives the App
     # secrets, so a floating @main would be a supply-chain risk.
     # Re-pin together with the other two callers and .github/actions/checkout-merge-policy

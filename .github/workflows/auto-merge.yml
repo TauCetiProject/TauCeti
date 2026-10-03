@@ -84,6 +84,7 @@ jobs:
     uses: TauCetiProject/TauCetiReview/.github/workflows/merge-only.yml@be3717ec5f5b525689e17f7f20e3d8ac48d13256
     with:
       pr: ${{ needs.resolve.outputs.pr }}
+      merge_backend: ${{ vars.MERGE_BACKEND || 'queue' }}
     # Pass only the App credentials merge-only needs, not all of TauCeti's secrets.
     secrets:
       APP_ID: ${{ secrets.APP_ID }}

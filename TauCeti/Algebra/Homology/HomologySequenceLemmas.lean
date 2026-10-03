@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 public import Mathlib.Algebra.Homology.HomologySequenceLemmas
+public import TauCeti.Algebra.Homology.ShortComplex.ShortExact
 
 /-!
-# The middle map of a morphism of short exact sequences of complexes
+# Lemmas on the homology sequence of a short exact sequence of complexes
 
 Let `φ : S₁ ⟶ S₂` be a morphism between two short exact sequences of homological complexes in an
 abelian category. Mathlib's `HomologicalComplex.HomologySequence.quasiIso_τ₃` shows that `φ.τ₃`
@@ -16,6 +18,14 @@ is a quasi-isomorphism when `φ.τ₁` and `φ.τ₂` are. This file proves the 
 for the middle map: `φ.τ₂` is a quasi-isomorphism when `φ.τ₁` and `φ.τ₃` are. This lets one
 transfer a quasi-isomorphism to the middle terms of short exact sequences after comparing their
 outer terms, as for the short exact sequences associated with maps of mapping cones.
+
+It also proves that the connecting maps of a `3 × 3` diagram of complexes with short exact rows
+and columns anticommute: the two composites of connecting maps from the homology of one corner to
+that of the opposite corner differ by a sign. Both composites factor through the connecting maps of
+two auxiliary short exact sequences, `ker (X₂₂ ⟶ X₃₃) ⟶ X₂₂ ⟶ X₃₃` and
+`X₁₁ ⟶ X₁₂ ⊞ X₂₁ ⟶ ker (X₂₂ ⟶ X₃₃)`, and the sign is that of the first map `(f, -f)` of the
+second one. This is the sign rule behind the compatibility of products with connecting maps in each
+variable, such as for the cup product in Tate cohomology.
 
 ## Main results
 
@@ -25,7 +35,8 @@ outer terms, as for the short exact sequences associated with maps of mapping co
   to induce a mono, epi or iso in a given degree.
 * `HomologicalComplex.HomologySequence.quasiIso_τ₂`: if `φ.τ₁` and `φ.τ₃` are
   quasi-isomorphisms, so is `φ.τ₂`.
-
+* `HomologicalComplex.HomologySequence.δ_comp_δ_eq_neg`: the connecting maps of a `3 × 3` diagram
+  with short exact rows and columns anticommute.
 -/
 
 public section
@@ -112,3 +123,212 @@ lemma quasiIso_τ₂ (h₁ : QuasiIso φ.τ₁) (h₃ : QuasiIso φ.τ₃) :
 end HomologySequence
 
 end HomologicalComplex
+
+
+/-! ### Anticommutativity of the connecting maps of a `3 × 3` diagram -/
+
+open Limits
+
+namespace ThreeByThree
+
+variable {A : Type*} [Category* A] [Abelian A] (D : ShortComplex (ShortComplex A))
+
+/-- The `j`-th column `X₁ⱼ ⟶ X₂ⱼ ⟶ X₃ⱼ` of a `3 × 3` diagram, with its terms written as those of
+the rows. It is `D.map π_j` up to definitional equality. -/
+private noncomputable abbrev col₁ : ShortComplex A :=
+  ShortComplex.mk D.f.τ₁ D.g.τ₁ (by rw [← ShortComplex.comp_τ₁, D.zero, ShortComplex.zero_τ₁])
+
+@[inherit_doc col₁]
+private noncomputable abbrev col₂ : ShortComplex A :=
+  ShortComplex.mk D.f.τ₂ D.g.τ₂ (by rw [← ShortComplex.comp_τ₂, D.zero, ShortComplex.zero_τ₂])
+
+@[inherit_doc col₁]
+private noncomputable abbrev col₃ : ShortComplex A :=
+  ShortComplex.mk D.f.τ₃ D.g.τ₃ (by rw [← ShortComplex.comp_τ₃, D.zero, ShortComplex.zero_τ₃])
+
+/-- The kernel of the diagonal `X₂₂ ⟶ X₃₃` of a `3 × 3` diagram. -/
+private noncomputable abbrev K : A := kernel (D.X₂.g ≫ D.g.τ₃)
+
+/-- The inclusion of the kernel of the diagonal. -/
+private noncomputable abbrev incl : K D ⟶ D.X₂.X₂ := kernel.ι (D.X₂.g ≫ D.g.τ₃)
+
+/-- The map from the kernel of the diagonal to `X₃₁`. -/
+private noncomputable def toX₃₁ (h₃ : D.X₃.ShortExact) : K D ⟶ D.X₃.X₁ :=
+  have := h₃.mono_f
+  h₃.exact.lift (incl D ≫ D.g.τ₂) (by rw [Category.assoc, D.g.comm₂₃, kernel.condition])
+
+private lemma toX₃₁_f (h₃ : D.X₃.ShortExact) : toX₃₁ D h₃ ≫ D.X₃.f = incl D ≫ D.g.τ₂ :=
+  have := h₃.mono_f
+  h₃.exact.lift_f _ _
+
+/-- The map from the kernel of the diagonal to `X₁₃`. -/
+private noncomputable def toX₁₃ (h₃' : (col₃ D).ShortExact) : K D ⟶ D.X₁.X₃ :=
+  have := h₃'.mono_f
+  h₃'.exact.lift (incl D ≫ D.X₂.g) ((Category.assoc _ _ _).trans (kernel.condition _))
+
+private lemma toX₁₃_f (h₃' : (col₃ D).ShortExact) :
+    toX₁₃ D h₃' ≫ D.f.τ₃ = incl D ≫ D.X₂.g :=
+  have := h₃'.mono_f
+  h₃'.exact.lift_f _ _
+
+/-- The morphism from the kernel sequence of the diagonal to the third row. -/
+private noncomputable def diagSequenceToRow₃ (h₃ : D.X₃.ShortExact) :
+    ShortComplex.kernelSequence (D.X₂.g ≫ D.g.τ₃) ⟶ D.X₃ where
+  τ₁ := toX₃₁ D h₃
+  τ₂ := D.g.τ₂
+  τ₃ := 𝟙 _
+  comm₁₂ := toX₃₁_f D h₃
+  comm₂₃ := D.g.comm₂₃.trans (Category.comp_id _).symm
+
+/-- The morphism from the kernel sequence of the diagonal to the third column. -/
+private noncomputable def diagSequenceToCol₃ (h₃' : (col₃ D).ShortExact) :
+    ShortComplex.kernelSequence (D.X₂.g ≫ D.g.τ₃) ⟶ col₃ D where
+  τ₁ := toX₁₃ D h₃'
+  τ₂ := D.X₂.g
+  τ₃ := 𝟙 _
+  comm₁₂ := toX₁₃_f D h₃'
+  comm₂₃ := (Category.comp_id _).symm
+
+/-- The map `X₁₂ ⊞ X₂₁ ⟶ ker (X₂₂ ⟶ X₃₃)` induced by the sum of the two maps to `X₂₂`. -/
+private noncomputable def toK : D.X₁.X₂ ⊞ D.X₂.X₁ ⟶ K D :=
+  kernel.lift _ (biprod.desc D.f.τ₂ D.X₂.f) (by
+    ext
+    · rw [biprod.inl_desc_assoc, ← Category.assoc, D.f.comm₂₃, Category.assoc,
+        ← ShortComplex.comp_τ₃, D.zero, ShortComplex.zero_τ₃, comp_zero, comp_zero]
+    · rw [biprod.inr_desc_assoc, ← Category.assoc, D.X₂.zero, zero_comp, comp_zero])
+
+private lemma toK_incl : toK D ≫ incl D = biprod.desc D.f.τ₂ D.X₂.f := kernel.lift_ι _ _ _
+
+/-- The short complex `X₁₁ ⟶ X₁₂ ⊞ X₂₁ ⟶ ker (X₂₂ ⟶ X₃₃)`, whose first map is `(f, -f)`. -/
+private noncomputable abbrev crossSequence : ShortComplex A :=
+  ShortComplex.mk (biprod.lift D.X₁.f (-D.f.τ₁)) (toK D) (by
+    rw [← cancel_mono (incl D), Category.assoc, toK_incl, biprod.lift_desc, zero_comp,
+      Preadditive.neg_comp, D.f.comm₁₂, add_neg_cancel])
+
+variable {D}
+
+private lemma crossSequence_shortExact (h₁ : D.X₁.ShortExact) (h₂ : D.X₂.ShortExact)
+    (h₃ : D.X₃.ShortExact) (h₁' : (col₁ D).ShortExact)
+    (h₂' : (col₂ D).ShortExact) (h₃' : (col₃ D).ShortExact) :
+    (crossSequence D).ShortExact := by
+  have := h₁.mono_f
+  have := h₂.mono_f
+  have : Epi D.g.τ₁ := h₁'.epi_g
+  have : Mono D.f.τ₂ := h₂'.mono_f
+  have : Mono D.f.τ₃ := h₃'.mono_f
+  have : Mono (crossSequence D).f := mono_of_mono_fac (biprod.lift_fst D.X₁.f (-D.f.τ₁))
+  have : Epi (crossSequence D).g := by
+    rw [epi_iff_surjective_up_to_refinements]
+    intro B y
+    -- The image of `y` in `X₃₂` comes from `X₃₁`; lift it to `X₂₁` up to refinement.
+    obtain ⟨B', π, _, a, ha⟩ := surjective_up_to_refinements_of_epi D.g.τ₁ (y ≫ toX₃₁ D h₃)
+    -- The difference of `y` and the image of `a` in `X₂₂` comes from `X₁₂`.
+    have hb : (π ≫ y ≫ incl D - a ≫ D.X₂.f) ≫ D.g.τ₂ = 0 := by
+      rw [Preadditive.sub_comp, Category.assoc, Category.assoc, ← toX₃₁_f D h₃, ← Category.assoc y,
+        ← Category.assoc π, ha, Category.assoc, Category.assoc, D.g.comm₁₂, sub_self]
+    have := h₂'.mono_f
+    let b : B' ⟶ D.X₁.X₂ := h₂'.exact.lift _ hb
+    have hb' : b ≫ D.f.τ₂ = π ≫ y ≫ incl D - a ≫ D.X₂.f := h₂'.exact.lift_f _ hb
+    refine ⟨B', π, inferInstance, biprod.lift b a, ?_⟩
+    rw [← cancel_mono (incl D), Category.assoc, Category.assoc, toK_incl, biprod.lift_desc, hb',
+      sub_add_cancel]
+  refine { exact := ?_ }
+  rw [ShortComplex.exact_iff_exact_up_to_refinements]
+  intro B x hx
+  have hx' : x ≫ biprod.fst ≫ D.f.τ₂ + x ≫ biprod.snd ≫ D.X₂.f = 0 := by
+    have e := hx =≫ incl D
+    rwa [Category.assoc, toK_incl, zero_comp, biprod.desc_eq, Preadditive.comp_add] at e
+  -- The first component of `x` comes from `X₁₁`.
+  have hb : (x ≫ biprod.fst) ≫ D.X₁.g = 0 := by
+    rw [← cancel_mono D.f.τ₃, Category.assoc, Category.assoc, ← D.f.comm₂₃, zero_comp,
+      ← Category.assoc biprod.fst, ← Category.assoc x, eq_neg_of_add_eq_zero_left hx',
+      Preadditive.neg_comp, Category.assoc, Category.assoc, D.X₂.zero, comp_zero, comp_zero,
+      neg_zero]
+  refine ⟨B, 𝟙 B, inferInstance, h₁.exact.lift _ hb, ?_⟩
+  ext
+  · rw [Category.id_comp, Category.assoc, biprod.lift_fst, h₁.exact.lift_f]
+  · rw [Category.id_comp, Category.assoc, biprod.lift_snd, ← cancel_mono D.X₂.f]
+    simp only [Category.assoc, Preadditive.comp_neg, Preadditive.neg_comp, D.f.comm₁₂]
+    rw [← Category.assoc (h₁.exact.lift _ hb), h₁.exact.lift_f, Category.assoc]
+    exact eq_neg_of_add_eq_zero_right hx'
+
+/-- The morphism from the cross sequence to the first row: the identity on `X₁₁` and the first
+projection on `X₁₂ ⊞ X₂₁`. -/
+private noncomputable def crossSequenceToRow₁ (h₃' : (col₃ D).ShortExact) :
+    crossSequence D ⟶ D.X₁ where
+  τ₁ := 𝟙 _
+  τ₂ := biprod.fst
+  τ₃ := toX₁₃ D h₃'
+  comm₁₂ := by rw [Category.id_comp]; exact (biprod.lift_fst D.X₁.f (-D.f.τ₁)).symm
+  comm₂₃ := by
+    have : Mono D.f.τ₃ := h₃'.mono_f
+    rw [← cancel_mono D.f.τ₃]
+    simp only [Category.assoc, toX₁₃_f]
+    ext
+    · simp [← D.f.comm₂₃, ← Category.assoc, toK_incl]
+    · simp [← Category.assoc, toK_incl]
+
+/-- The morphism from the cross sequence to the first column: minus the identity on `X₁₁` and the
+second projection on `X₁₂ ⊞ X₂₁`. -/
+private noncomputable def crossSequenceToCol₁ (h₃ : D.X₃.ShortExact) :
+    crossSequence D ⟶ col₁ D where
+  τ₁ := -𝟙 _
+  τ₂ := biprod.snd
+  τ₃ := toX₃₁ D h₃
+  comm₁₂ := by
+    rw [Preadditive.neg_comp, Category.id_comp, biprod.lift_snd]
+  comm₂₃ := by
+    have := h₃.mono_f
+    rw [← cancel_mono D.X₃.f]
+    simp only [Category.assoc, toX₃₁_f]
+    ext
+    · simp [← Category.assoc, toK_incl, ← ShortComplex.comp_τ₂, D.zero]
+    · simp [← Category.assoc, toK_incl, D.g.comm₁₂]
+
+end ThreeByThree
+
+namespace HomologicalComplex.HomologySequence
+
+open ThreeByThree in
+/-- **The connecting maps of a `3 × 3` diagram anticommute.** Let `D` be a `3 × 3` diagram of
+homological complexes in an abelian category, presented as a short complex `D.X₁ ⟶ D.X₂ ⟶ D.X₃`
+of short complexes, all of whose rows `D.Xᵢ` and columns `D.map π_j` are short exact. Then the two
+composites of connecting maps from the homology of the corner `X₃₃` to that of the corner `X₁₁`,
+through the third row and the first column, and through the third column and the first row,
+differ by a sign. -/
+lemma δ_comp_δ_eq_neg (D : ShortComplex (ShortComplex (HomologicalComplex C c)))
+    (h₁ : D.X₁.ShortExact) (h₂ : D.X₂.ShortExact) (h₃ : D.X₃.ShortExact)
+    (h₁' : (D.map ShortComplex.π₁).ShortExact) (h₂' : (D.map ShortComplex.π₂).ShortExact)
+    (h₃' : (D.map ShortComplex.π₃).ShortExact) (i j k : ι) (hij : c.Rel i j) (hjk : c.Rel j k) :
+    h₃.δ i j hij ≫ h₁'.δ j k hjk = -(h₃'.δ i j hij ≫ h₁.δ j k hjk) := by
+  have : Epi (D.X₂.g ≫ D.g.τ₃) := by
+    have := h₂.epi_g
+    have : Epi D.g.τ₃ := h₃'.epi_g
+    exact epi_comp _ _
+  have hE := TauCeti.kernelSequence_shortExact (D.X₂.g ≫ D.g.τ₃)
+  have hT := crossSequence_shortExact (A := HomologicalComplex C c) h₁ h₂ h₃ h₁' h₂' h₃'
+  -- The connecting maps of the third row and column factor through the one of the kernel sequence
+  -- of the diagonal `X₂₂ ⟶ X₃₃`, and the connecting maps of the first row and column factor,
+  -- with opposite signs, through the one of the cross sequence `X₁₁ ⟶ X₁₂ ⊞ X₂₁ ⟶ ker`.
+  have eR₃ : hE.δ i j hij ≫ homologyMap (toX₃₁ D h₃) j = homologyMap (𝟙 _) i ≫ h₃.δ i j hij :=
+    δ_naturality (diagSequenceToRow₃ D h₃) hE h₃ i j hij
+  have eC₃ : hE.δ i j hij ≫ homologyMap (toX₁₃ D h₃') j = homologyMap (𝟙 _) i ≫ h₃'.δ i j hij :=
+    δ_naturality (diagSequenceToCol₃ D h₃') hE h₃' i j hij
+  have eR₁ : hT.δ j k hjk ≫ homologyMap (𝟙 _) k = homologyMap (toX₁₃ D h₃') j ≫ h₁.δ j k hjk :=
+    δ_naturality (crossSequenceToRow₁ h₃') hT h₁ j k hjk
+  have eC₁ : hT.δ j k hjk ≫ homologyMap (-𝟙 _) k = homologyMap (toX₃₁ D h₃) j ≫ h₁'.δ j k hjk :=
+    δ_naturality (crossSequenceToCol₁ h₃) hT h₁' j k hjk
+  rw [homologyMap_id, Category.id_comp] at eR₃ eC₃
+  rw [homologyMap_id, Category.comp_id] at eR₁
+  rw [homologyMap_neg, homologyMap_id, Preadditive.comp_neg, Category.comp_id] at eC₁
+  -- The steps are composed as terms rather than by rewriting because the columns `D.map π_j`
+  -- agree with the explicit columns used in the factorisations only up to definitional equality.
+  have e₁ : h₃.δ i j hij ≫ h₁'.δ j k hjk = -(hE.δ i j hij ≫ hT.δ j k hjk) :=
+    (congrArg (· ≫ h₁'.δ j k hjk) eR₃).symm.trans ((Category.assoc _ _ _).trans
+      ((congrArg (hE.δ i j hij ≫ ·) eC₁).symm.trans (Preadditive.comp_neg _ _)))
+  have e₂ : h₃'.δ i j hij ≫ h₁.δ j k hjk = hE.δ i j hij ≫ hT.δ j k hjk :=
+    (congrArg (· ≫ h₁.δ j k hjk) eC₃).symm.trans ((Category.assoc _ _ _).trans
+      (congrArg (hE.δ i j hij ≫ ·) eR₁).symm)
+  exact e₁.trans (congrArg Neg.neg e₂.symm)
+
+end HomologicalComplex.HomologySequence

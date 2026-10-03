@@ -19,6 +19,8 @@ none of the further theory built on it.
 
 * `TauCeti.single_sub_one_ne_zero`: over a nontrivial ring, the difference `single g 1 - 1`
   between the basis element at `g` and the unit is nonzero when `g ≠ 1`.
+* `MonoidAlgebra.coeff_one_mul_comm`: the coefficient at the identity of `xy` equals
+  that of `yx` in a group algebra over a commutative semiring.
 * The `IsMulCommutative (MonoidAlgebra R M)` instance: the monoid algebra of a commutative
   magma over a commutative semiring is commutative, as a mixin on the existing ring structure.
 * `TauCeti.MonoidAlgebra.mem_ideal_smul_top_iff`: an element of `R[M]` lies in `I • R[M]` exactly
@@ -88,3 +90,22 @@ theorem mapRingHom_eq_zero_iff [Monoid M] {S : Type*} [Semiring S] (f : R →+* 
 end MonoidAlgebra
 
 end TauCeti
+
+namespace MonoidAlgebra
+
+variable {R : Type*} [CommSemiring R] {G : Type*} [Group G]
+
+/-- The coefficient at the identity is symmetric under swapping the factors in a group algebra
+over a commutative semiring. -/
+theorem coeff_one_mul_comm (x y : MonoidAlgebra R G) :
+    (x * y).coeff 1 = (y * x).coeff 1 := by
+  induction y using MonoidAlgebra.induction_on with
+  | of g => simp [MonoidAlgebra.of_apply]
+  | add y z hy hz =>
+      simpa only [mul_add, add_mul, MonoidAlgebra.coeff_add, Finsupp.add_apply] using
+        congrArg₂ (· + ·) hy hz
+  | smul r y hy =>
+      simpa only [mul_smul_comm, smul_mul_assoc, MonoidAlgebra.coeff_smul,
+        Finsupp.smul_apply] using congrArg (r • ·) hy
+
+end MonoidAlgebra

@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Combinatorics.Quiver.Basic
 public import Mathlib.Data.Fintype.EquivFin
+public import TauCeti.Combinatorics.Quiver.UnderlyingGraph
 
 /-!
 # The extended Dynkin quiver of type `E₈~`
@@ -15,7 +15,9 @@ public import Mathlib.Data.Fintype.EquivFin
 arrows pointing towards the centre. Representations with injective arrows are configurations
 of a subspace, a two-step flag and a five-step flag in the centre space. This is the
 extended Dynkin diagram `T₂,₃,₆`; its infinite representation type is proved in
-`TauCeti.RepresentationTheory.Quiver.AffineE8.FiniteRepType`.
+`TauCeti.RepresentationTheory.Quiver.AffineE8.FiniteRepType`. The underlying graph is a tree,
+with at most one arrow between any two vertices, because every vertex is the source of at most one
+arrow and every arrow points towards the centre.
 
 ## References
 
@@ -76,6 +78,37 @@ abbrev coordinateCount : AffineE8 → ℕ
 
 /-- The extended diagram has nine vertices. -/
 @[simp] theorem card_eq : Fintype.card AffineE8 = 9 := by decide
+
+
+/-! ### The underlying graph -/
+
+/-- The distance to the centre, which every arrow lowers. -/
+private def height : AffineE8 → ℕ
+  | center => 0
+  | short => 1
+  | medium2 => 2
+  | medium4 => 1
+  | long1 => 5
+  | long2 => 4
+  | long3 => 3
+  | long4 => 2
+  | long5 => 1
+
+private theorem height_lt ⦃a b : AffineE8⦄ (e : a ⟶ b) : height b < height a := by
+  cases e <;> simp [height]
+
+/-- The arrows out of a vertex of `TauCeti.Quiver.AffineE8` all share their target. -/
+private theorem eq_of_hom_of_hom ⦃a b b' : AffineE8⦄ (e : a ⟶ b) (e' : a ⟶ b') : b = b' := by
+  cases e <;> cases e' <;> rfl
+
+/-- **The underlying graph of `TauCeti.Quiver.AffineE8` is acyclic**, so it is the tree `E₈~`. -/
+theorem isAcyclic_underlyingGraph : (underlyingGraph AffineE8).IsAcyclic :=
+  isAcyclic_underlyingGraph_of_lt height height_lt eq_of_hom_of_hom
+
+/-- Two vertices of `TauCeti.Quiver.AffineE8` are joined by at most one arrow, counted in both
+directions. -/
+theorem subsingleton_hom_sum (a b : AffineE8) : Subsingleton ((a ⟶ b) ⊕ (b ⟶ a)) :=
+  subsingleton_hom_sum_of_lt height height_lt a b
 
 end AffineE8
 end TauCeti.Quiver
