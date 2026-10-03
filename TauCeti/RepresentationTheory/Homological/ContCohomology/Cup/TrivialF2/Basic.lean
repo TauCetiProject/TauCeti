@@ -24,12 +24,16 @@ continuous cohomology are formed from. It is the `ℤ`-coefficient counterpart o
 ## Main definitions
 
 * `TauCeti.trivialF2TopPairing`: multiplication on the trivial integral `𝔽₂` coefficient object.
+* `TauCeti.cohomF2One`: the degree-zero unit class, with `TauCeti.cohomF2One_def` its value.
 
 ## Main results
 
 * `TauCeti.trivialF2TopPairing_bil_apply`: the pairing multiplies the underlying values in
   `ZMod 2`.
 * `TauCeti.trivialF2TopPairing_flip`: the opposite of the multiplication pairing is itself.
+* `TauCeti.trivialF2TopPairing_bil_one_left`, `TauCeti.trivialF2TopPairing_bil_one_right`,
+  `TauCeti.trivialF2TopPairing_bil_assoc`: the lift of `1` is a two-sided unit, and the
+  multiplication is associative.
 * `TauCeti.trivialF2Map_cup`: pullback preserves cup products with trivial `𝔽₂` coefficients.
 * `TauCeti.trivialF2TopPairing_cup_one_one_explicitH1`: on explicit cocycles, the cup product of
   two classes of `H¹(G, 𝔽₂)` is the class of the product cocycle `(g, h) ↦ a g * b h`.
@@ -75,6 +79,24 @@ theorem trivialF2TopPairing_bil_comm (x y : (trivialF2 G).V) :
     (trivialF2TopPairing G).bil x y = (trivialF2TopPairing G).bil y x := by
   simp only [trivialF2TopPairing_bil_apply, mul_comm]
 
+/-- The lift of `1` is a left unit for multiplication on the trivial `𝔽₂` coefficient object. -/
+theorem trivialF2TopPairing_bil_one_left (x : (trivialF2 G).V) :
+    (trivialF2TopPairing G).bil ((trivialF2Equiv G).symm 1) x = x := by
+  apply (trivialF2Equiv G).injective
+  simp
+
+/-- The lift of `1` is a right unit for multiplication on the trivial `𝔽₂` coefficient object. -/
+theorem trivialF2TopPairing_bil_one_right (x : (trivialF2 G).V) :
+    (trivialF2TopPairing G).bil x ((trivialF2Equiv G).symm 1) = x := by
+  apply (trivialF2Equiv G).injective
+  simp
+
+/-- Multiplication on the trivial `𝔽₂` coefficient object is associative. -/
+theorem trivialF2TopPairing_bil_assoc (x y z : (trivialF2 G).V) :
+    (trivialF2TopPairing G).bil ((trivialF2TopPairing G).bil x y) z =
+      (trivialF2TopPairing G).bil x ((trivialF2TopPairing G).bil y z) := by
+  simp only [trivialF2TopPairing_bil_apply, AddEquiv.apply_symm_apply, mul_assoc]
+
 /-- The opposite of the multiplication pairing is itself, because multiplication in `ZMod 2` is
 commutative. -/
 @[simp]
@@ -100,6 +122,24 @@ theorem trivialF2Map_cup {G H : Type u} [Group G] [Group H]
   rw [TopRep.eqToHom_hom_apply (res_trivialF2_hom φ)]
   simp only [trivialF2TopPairing_bil_apply, TopRep.eqToHom_hom_apply (res_trivialF2_hom φ),
     trivialF2Equiv_cast, AddEquiv.apply_symm_apply]
+
+section Unit
+
+variable (G : Type u) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+
+/-- The unit class of continuous cohomology with trivial `𝔽₂` coefficients: the degree-zero class
+of the lift of `1`, a two-sided unit for the cup product along `TauCeti.trivialF2TopPairing`. -/
+noncomputable def cohomF2One : cohomF2 G 0 :=
+  ContinuousCohomology.degreeZeroClass (trivialF2 G) ((trivialF2Equiv G).symm 1)
+    fun g ↦ trivialF2_ρ_apply_apply G g _
+
+/-- The unit class is the degree-zero class of the lift of `1`. -/
+theorem cohomF2One_def : cohomF2One G =
+    ContinuousCohomology.degreeZeroClass (trivialF2 G) ((trivialF2Equiv G).symm 1)
+      (fun g ↦ trivialF2_ρ_apply_apply G g _) :=
+  (rfl)
+
+end Unit
 
 end TauCeti
 

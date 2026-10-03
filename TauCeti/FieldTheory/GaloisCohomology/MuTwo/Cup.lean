@@ -7,7 +7,7 @@ module
 
 public import TauCeti.FieldTheory.GaloisCohomology.MuTwo.Basic
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.GradedComm
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.TrivialF2
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.TrivialF2.Basic
 
 /-!
 # Cup products of mod-two Kummer classes

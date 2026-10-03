@@ -41,6 +41,8 @@ coset sum is `ContRepresentation.sum_apply_out_mem_invariants`.
 * `TauCeti.ContinuousCohomology.isAddTorsion_continuousCohomology`: `Hⁿ⁺¹(G, X)` is torsion.
 * `TauCeti.ContinuousCohomology.subsingleton_continuousCohomology_of_module_rat`: `Hⁿ⁺¹(G, X)`
   vanishes when `X` is a `ℚ`-vector space.
+* `TauCeti.ContinuousCohomology.nsmul_continuousCohomology_eq_zero`: in every degree, and over
+  any topological group, `Hⁿ(G, X)` is killed by every `N` that kills `X`.
 
 ## References
 
@@ -144,5 +146,34 @@ theorem subsingleton_continuousCohomology_of_module_rat [Module ℚ X.V] (n : �
   simpa [← map_nsmul, hU] using h
 
 end Torsion
+
+/-! ### Exponents inherited from the coefficients -/
+
+section Exponent
+
+variable {X : TopRep k G} {N : ℕ}
+
+/-- Every term of the coinduced resolution of `X` is killed by `N` when `X` is. -/
+theorem nsmul_resolutionX_eq_zero (hX : ∀ x : X.V, N • x = 0) :
+    ∀ (n : ℕ) (F : (resolutionX X n).V), N • F = 0
+  | 0, F => hX F
+  -- the `n + 1`-st term is `C(G, (resolutionX X n).V)` by unfolding the coinduction functor, and
+  -- its additive structure is pointwise
+  | n + 1, F => ContinuousMap.ext fun g ↦ nsmul_resolutionX_eq_zero hX n (F g)
+
+/-- **Continuous cohomology inherits the exponent of its coefficients**: if `N` kills every
+element of `X`, then it kills every class of `Hⁿ(G, X)`, in every degree. It is the all-degree
+counterpart of `TauCeti.ContCohomology.nsmul_H1_eq_zero` and
+`TauCeti.ContCohomology.nsmul_H2_eq_zero`. -/
+theorem nsmul_continuousCohomology_eq_zero (hX : ∀ x : X.V, N • x = 0) (n : ℕ)
+    (x : continuousCohomology n X) : N • x = 0 := by
+  set K := homogeneousCochains X
+  obtain ⟨a, rfl⟩ := K.homologyπ_surjective n x
+  have ha : N • a = 0 := K.iCycles_injective n <| by
+    rw [map_nsmul, _root_.map_zero]
+    exact Subtype.ext (nsmul_resolutionX_eq_zero hX (n + 1) _)
+  rw [← map_nsmul, ha, _root_.map_zero]
+
+end Exponent
 
 end TauCeti.ContinuousCohomology

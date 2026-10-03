@@ -131,8 +131,6 @@ theorem exact_trivialF2ResMap_trivialF2CorMap_of_index_two (hU2 : U.index = 2) (
     letI : U.FiniteIndex := ⟨by omega⟩
     Function.Exact (trivialF2ResMap G U n) (trivialF2CorMap G U hU n) := by
   let _ : U.FiniteIndex := ⟨by omega⟩
-  have hM : ∀ m : (trivialF2 G).V, 2 • m = 0 := fun m => (trivialF2Equiv G).injective (by
-    rw [map_nsmul, map_zero, two_nsmul, CharTwo.add_self_eq_zero])
   -- Generalize the coefficient object over `G`, so that its identification with
   -- `ofDiscreteModule ℤ G (trivialF2 G).V` can be substituted away; the claim is then
   -- `exact_res_corestriction_of_index_two`. After restriction, `res_ofDiscreteModule` lands the
@@ -145,7 +143,8 @@ theorem exact_trivialF2ResMap_trivialF2CorMap_of_index_two (hU2 : U.index = 2) (
           eqToHom (congrArg (continuousCohomology n) hX)) := by
     rintro X rfl
     simp only [eqToHom_refl, Category.comp_id]
-    exact ContinuousCohomology.exact_res_corestriction_of_index_two U hU _ hU2 hM n
+    exact ContinuousCohomology.exact_res_corestriction_of_index_two U hU _ hU2
+      (trivialF2_two_nsmul_eq_zero G) n
   -- Over `U`, the identification of `ofDiscreteModule ℤ U (trivialF2 G).V` with `trivialF2 U`
   -- replaces the middle object.
   have h := (LinearEquiv.conj_exact_iff_exact _ _ (eqToIso (congrArg (continuousCohomology n)
