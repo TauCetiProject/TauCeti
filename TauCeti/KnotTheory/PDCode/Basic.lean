@@ -280,6 +280,39 @@ theorem crossing_apply (D : PDCode n) (i : Fin n) (slot : Fin 4) :
     D.crossing i slot = D.halfEdge (crossingSlotEquiv n (i, slot)) :=
   crossing.eq_1 D i slot
 
+/-- Let `D'` be a code with one crossing more than `D`, whose first `n` crossings keep the
+half-edges of `D` and whose last crossing takes the four new half-edge positions. A permutation of
+the half-edges of `D'` that acts at each crossing `i` by the local permutation `f i` of its slots
+is the permutation of the half-edges of `D` acting at each crossing `i` by `f i.castSucc`,
+together with `f (Fin.last n)` on the four new slots. -/
+theorem eq_permCongr_sumCongr_of_halfEdge_eq {D : PDCode n} {D' : PDCode (n + 1)}
+    (hD : D'.halfEdge = (halfEdgeSuccEquiv n).permCongr (Equiv.Perm.sumCongr D.halfEdge 1))
+    {σ : Equiv.Perm (Fin (4 * n))} {τ : Equiv.Perm (Fin (4 * (n + 1)))}
+    (f : Fin (n + 1) → Equiv.Perm (Fin 4))
+    (hσ : ∀ i slot, σ (D.halfEdge (crossingSlotEquiv n (i, slot))) =
+      D.crossing i (f i.castSucc slot))
+    (hτ : ∀ i slot, τ (D'.halfEdge (crossingSlotEquiv (n + 1) (i, slot))) =
+      D'.crossing i (f i slot)) :
+    τ = (halfEdgeSuccEquiv n).permCongr (Equiv.Perm.sumCongr σ (f (Fin.last n))) := by
+  have hold (i : Fin n) (slot : Fin 4) :
+      D'.crossing i.castSucc slot = halfEdgeSuccEquiv n (.inl (D.crossing i slot)) := by
+    simp [hD, Equiv.permCongr_apply]
+  have hnew (slot : Fin 4) : D'.crossing (Fin.last n) slot = halfEdgeSuccEquiv n (.inr slot) := by
+    simp [hD, Equiv.permCongr_apply]
+  refine Equiv.ext fun x => ?_
+  obtain ⟨y, rfl⟩ := (halfEdgeSuccEquiv n).surjective x
+  rcases y with y | slot
+  · obtain ⟨z, rfl⟩ := D.halfEdge.surjective y
+    obtain ⟨⟨i, slot⟩, rfl⟩ := (crossingSlotEquiv n).surjective z
+    have hx := hτ i.castSucc slot
+    rw [← crossing_apply D' i.castSucc slot, hold, hold] at hx
+    rw [← crossing_apply D i slot, hx, Equiv.permCongr_apply, Equiv.symm_apply_apply,
+      Equiv.Perm.sumCongr_apply, Sum.map_inl, crossing_apply D i slot, hσ]
+  · have hx := hτ (Fin.last n) slot
+    rw [← crossing_apply D' (Fin.last n) slot, hnew, hnew] at hx
+    rw [hx, Equiv.permCongr_apply, Equiv.symm_apply_apply, Equiv.Perm.sumCongr_apply,
+      Sum.map_inr]
+
 /-- Whether a slot belongs to the over-strand at its crossing. -/
 def isOver (D : PDCode n) (i : Fin n) (slot : Fin 4) : Bool :=
   D.overPair i == decide (slot = 1 ∨ slot = 3)

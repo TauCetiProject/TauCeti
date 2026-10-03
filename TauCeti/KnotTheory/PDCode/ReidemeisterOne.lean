@@ -252,6 +252,13 @@ variable (D : PDCode n) (h : Fin (4 * n)) (b : Bool)
     (D.reidemeisterOne h b).crossinglessComponentCount = D.crossinglessComponentCount := by
   simp [reidemeisterOne]
 
+private theorem reidemeisterOne_halfEdge :
+    (D.reidemeisterOne h b).halfEdge =
+      (halfEdgeSuccEquiv n).permCongr (Perm.sumCongr D.halfEdge 1) := (rfl)
+
+private theorem reidemeisterOne_overPair :
+    (D.reidemeisterOne h b).overPair = Fin.snoc (α := fun _ => Bool) D.overPair b := (rfl)
+
 private theorem reidemeisterOne_edgePair_val :
     (D.reidemeisterOne h b).edgePair.val =
       (halfEdgeSuccEquiv n).permCongr (kinkPerm D.edgePair.val h) := by
@@ -312,58 +319,6 @@ private theorem reidemeisterOne_edgePair_val :
   · funext i
     induction i using Fin.lastCases <;> simp
 
-private theorem crossingwisePerm_reidemeisterOne
-    (oldTurn : Perm (Fin (4 * n))) (newTurn : Perm (Fin (4 * (n + 1))))
-    (p : Fin (n + 1) → Perm (Fin 4))
-    (oldTurn_crossing : ∀ i slot,
-      oldTurn (D.halfEdge (crossingSlotEquiv n (i, slot))) =
-        D.crossing i (p i.castSucc slot))
-    (newTurn_crossing : ∀ i slot,
-      newTurn ((D.reidemeisterOne h b).halfEdge (crossingSlotEquiv (n + 1) (i, slot))) =
-        (D.reidemeisterOne h b).crossing i (p i slot)) :
-    newTurn = (halfEdgeSuccEquiv n).permCongr
-      (Perm.sumCongr oldTurn (p (Fin.last n))) := by
-  ext x
-  obtain ⟨y, rfl⟩ := (halfEdgeSuccEquiv n).surjective x
-  rcases y with y | slot
-  · obtain ⟨z, rfl⟩ := D.halfEdge.surjective y
-    obtain ⟨⟨i, slot⟩, rfl⟩ := (crossingSlotEquiv n).surjective z
-    have hx := D.reidemeisterOne_crossing_castSucc h b i slot
-    rw [crossing_apply, ← crossingSlotEquiv_succ_castSucc] at hx
-    rw [Equiv.permCongr_apply, Equiv.symm_apply_apply, Perm.sumCongr_apply, Sum.map_inl,
-      oldTurn_crossing, ← hx, newTurn_crossing, crossing_apply,
-      crossingSlotEquiv_succ_castSucc, reidemeisterOne_crossing_castSucc]
-  · have hx : (D.reidemeisterOne h b).halfEdge
-        (crossingSlotEquiv (n + 1) (Fin.last n, slot)) = halfEdgeSuccEquiv n (.inr slot) := by
-      simpa only [crossingSlotEquiv_succ_last] using D.reidemeisterOne_crossing_last h b slot
-    rw [Equiv.permCongr_apply, Equiv.symm_apply_apply, Perm.sumCongr_apply, Sum.map_inr, ← hx,
-      newTurn_crossing, crossing_apply, crossingSlotEquiv_succ_last,
-      reidemeisterOne_crossing_last]
-
-private theorem smoothingTurn_reidemeisterOne (c : Fin (n + 1) → Bool) :
-    (D.reidemeisterOne h b).smoothingTurn c = (halfEdgeSuccEquiv n).permCongr
-      (Perm.sumCongr (D.smoothingTurn (Fin.init c)) (slotSmoothing (c (Fin.last n)))) := by
-  apply crossingwisePerm_reidemeisterOne D h b _ _ (fun i => slotSmoothing (c i))
-  · intro i slot
-    simpa only [Fin.init_def] using D.smoothingTurn_crossing (Fin.init c) i slot
-  · exact (D.reidemeisterOne h b).smoothingTurn_crossing c
-
-private theorem crossingTurn_reidemeisterOne :
-    (D.reidemeisterOne h b).crossingTurn = (halfEdgeSuccEquiv n).permCongr
-      (Perm.sumCongr D.crossingTurn oppositeCrossingSlot) := by
-  apply crossingwisePerm_reidemeisterOne D h b _ _ (fun _ => oppositeCrossingSlot)
-  · exact D.crossingTurn_crossing
-  · exact (D.reidemeisterOne h b).crossingTurn_crossing
-
-private theorem init_smoothingChoice_reidemeisterOne (s : Fin (n + 1) → Bool) :
-    Fin.init ((D.reidemeisterOne h b).smoothingChoice s) = D.smoothingChoice (Fin.init s) := by
-  funext i
-  cases hs : s i.castSucc <;> simp [Fin.init, hs]
-
-private theorem smoothingChoice_reidemeisterOne_last (s : Fin (n + 1) → Bool) :
-    (D.reidemeisterOne h b).smoothingChoice s (Fin.last n) = (s (Fin.last n) == b) := by
-  cases hs : s (Fin.last n) <;> cases b <;> simp [hs]
-
 /-- Smoothing the new code has two directed traversal orbits more than smoothing the old one,
 namely the loop of the kink, exactly when the state cuts that loop off. -/
 private theorem orbitCount_statePerm_reidemeisterOne (s : Fin (n + 1) → Bool) :
@@ -371,8 +326,10 @@ private theorem orbitCount_statePerm_reidemeisterOne (s : Fin (n + 1) → Bool) 
       orbitCount (D.statePerm (Fin.init s)) + if s (Fin.last n) = b then 2 else 0 := by
   have he := D.edgePair.apply_apply h
   have hne := D.edgePair.apply_ne h
-  rw [statePerm_def, statePerm_def, smoothingTurn_reidemeisterOne,
-    init_smoothingChoice_reidemeisterOne, smoothingChoice_reidemeisterOne_last,
+  rw [statePerm_def, statePerm_def,
+    smoothingTurn_eq_permCongr_sumCongr (reidemeisterOne_halfEdge D h b),
+    init_smoothingChoice_of_overPair_eq (reidemeisterOne_overPair D h b),
+    smoothingChoice_last_of_overPair_eq (reidemeisterOne_overPair D h b),
     reidemeisterOne_edgePair_val, ← Equiv.permCongr_mul, Equiv.orbitCount_permCongr]
   by_cases hs : s (Fin.last n) = b
   · simp only [hs, ↓reduceIte, beq_self_eq_true]
@@ -400,7 +357,8 @@ smoothing that cuts off the loop of the kink, and the same number of circles oth
   have he := D.edgePair.apply_apply h
   have hne := D.edgePair.apply_ne h
   rw [crossingComponentCount_def, crossingComponentCount_def, componentPerm_def,
-    componentPerm_def, crossingTurn_reidemeisterOne, reidemeisterOne_edgePair_val,
+    componentPerm_def, crossingTurn_eq_permCongr_sumCongr (reidemeisterOne_halfEdge D h b),
+    reidemeisterOne_edgePair_val,
     ← Equiv.permCongr_mul, Equiv.orbitCount_permCongr,
     sumCongr_oppositeCrossingSlot_mul_kinkPerm he hne,
     Perm.orbitCount_sumCongr_one_mul_swap_mul_swap_mul_swap_mul_swap _ _ _ _ _ (by decide)

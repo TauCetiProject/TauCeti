@@ -11,10 +11,12 @@ import TauCeti.GroupTheory.Perm.SumCongr
 /-!
 # Crossing insertion and the skein relation of the Kauffman bracket
 
-Kauffman's bracket is characterised by its skein relation: at a crossing of a diagram `D`,
+Kauffman's bracket satisfies the skein relation: at a crossing of a diagram `D`,
 `⟨D⟩ = A ⟨D_A⟩ + A⁻¹ ⟨D_B⟩`, where `D_A` and `D_B` are the diagrams obtained by smoothing that
-crossing in its two ways. This file proves the relation for the state-sum bracket
-`TauCeti.PDCode.kauffmanBracket` of PD-codes, at a crossing none of whose four arcs returns to it.
+crossing in its two ways. Together with its value on the unknot and its behaviour under adding a
+disjoint circle, this determines the bracket. This file proves the relation for the state-sum
+bracket `TauCeti.PDCode.kauffmanBracket` of PD-codes, at a crossing none of whose four arcs returns
+to it.
 
 On a PD-code `D` with `n` crossings, `TauCeti.PDCode.insertCrossing D p q b` adds such a crossing:
 it cuts the arc `P` ending at the half-edge `p` and the arc `Q` ending at the half-edge `q`, and
@@ -258,6 +260,13 @@ variable (D : PDCode n) (p q : Fin (4 * n)) (b : Bool)
 @[simp] theorem insertCrossing_crossinglessComponentCount :
     (D.insertCrossing p q b).crossinglessComponentCount = D.crossinglessComponentCount := (rfl)
 
+private theorem insertCrossing_halfEdge :
+    (D.insertCrossing p q b).halfEdge =
+      (halfEdgeSuccEquiv n).permCongr (Perm.sumCongr D.halfEdge 1) := (rfl)
+
+private theorem insertCrossing_overPair :
+    (D.insertCrossing p q b).overPair = Fin.snoc (α := fun _ => Bool) D.overPair b := (rfl)
+
 private theorem insertCrossing_edgePair_val :
     (D.insertCrossing p q b).edgePair.val =
       (halfEdgeSuccEquiv n).permCongr (crossingMatching D.edgePair p q).val :=
@@ -362,58 +371,6 @@ omit hqp hqe in
 
 end EdgePair
 
-/-- A family of local permutations of the slots, applied at every crossing of the new code, is the
-same family on the old code together with its member at the new crossing on the four new slots. -/
-private theorem crossingwisePerm_insertCrossing
-    (oldTurn : Perm (Fin (4 * n))) (newTurn : Perm (Fin (4 * (n + 1))))
-    (f : Fin (n + 1) → Perm (Fin 4))
-    (oldTurn_crossing : ∀ i slot,
-      oldTurn (D.halfEdge (crossingSlotEquiv n (i, slot))) = D.crossing i (f i.castSucc slot))
-    (newTurn_crossing : ∀ i slot,
-      newTurn ((D.insertCrossing p q b).halfEdge (crossingSlotEquiv (n + 1) (i, slot))) =
-        (D.insertCrossing p q b).crossing i (f i slot)) :
-    newTurn = (halfEdgeSuccEquiv n).permCongr (Perm.sumCongr oldTurn (f (Fin.last n))) := by
-  ext x
-  obtain ⟨y, rfl⟩ := (halfEdgeSuccEquiv n).surjective x
-  rcases y with y | slot
-  · obtain ⟨z, rfl⟩ := D.halfEdge.surjective y
-    obtain ⟨⟨i, slot⟩, rfl⟩ := (crossingSlotEquiv n).surjective z
-    have hx := D.insertCrossing_crossing_castSucc p q b i slot
-    rw [crossing_apply, ← crossingSlotEquiv_succ_castSucc] at hx
-    rw [Equiv.permCongr_apply, Equiv.symm_apply_apply, Perm.sumCongr_apply, Sum.map_inl,
-      oldTurn_crossing, ← hx, newTurn_crossing, crossing_apply,
-      crossingSlotEquiv_succ_castSucc, insertCrossing_crossing_castSucc]
-  · have hx : (D.insertCrossing p q b).halfEdge
-        (crossingSlotEquiv (n + 1) (Fin.last n, slot)) = halfEdgeSuccEquiv n (.inr slot) := by
-      simpa only [crossingSlotEquiv_succ_last] using D.insertCrossing_crossing_last p q b slot
-    rw [Equiv.permCongr_apply, Equiv.symm_apply_apply, Perm.sumCongr_apply, Sum.map_inr, ← hx,
-      newTurn_crossing, crossing_apply, crossingSlotEquiv_succ_last,
-      insertCrossing_crossing_last]
-
-private theorem smoothingTurn_insertCrossing (c : Fin (n + 1) → Bool) :
-    (D.insertCrossing p q b).smoothingTurn c = (halfEdgeSuccEquiv n).permCongr
-      (Perm.sumCongr (D.smoothingTurn (Fin.init c)) (slotSmoothing (c (Fin.last n)))) := by
-  apply crossingwisePerm_insertCrossing D p q b _ _ (fun i => slotSmoothing (c i))
-  · intro i slot
-    simpa only [Fin.init_def] using D.smoothingTurn_crossing (Fin.init c) i slot
-  · exact (D.insertCrossing p q b).smoothingTurn_crossing c
-
-private theorem crossingTurn_insertCrossing :
-    (D.insertCrossing p q b).crossingTurn = (halfEdgeSuccEquiv n).permCongr
-      (Perm.sumCongr D.crossingTurn oppositeCrossingSlot) := by
-  apply crossingwisePerm_insertCrossing D p q b _ _ (fun _ => oppositeCrossingSlot)
-  · exact D.crossingTurn_crossing
-  · exact (D.insertCrossing p q b).crossingTurn_crossing
-
-private theorem init_smoothingChoice_insertCrossing (s : Fin (n + 1) → Bool) :
-    Fin.init ((D.insertCrossing p q b).smoothingChoice s) = D.smoothingChoice (Fin.init s) := by
-  funext i
-  cases hs : s i.castSucc <;> simp [Fin.init, hs]
-
-private theorem smoothingChoice_insertCrossing_last (s : Fin (n + 1) → Bool) :
-    (D.insertCrossing p q b).smoothingChoice s (Fin.last n) = (s (Fin.last n) == b) := by
-  cases hs : s (Fin.last n) <;> cases b <;> simp [hs]
-
 variable {D p q b} (hqp : q ≠ p) (hqe : q ≠ D.edgePair.val p)
 include hqp hqe
 
@@ -426,9 +383,11 @@ the new crossing: `D.reconnect p q` when that choice is `b`, and
       (D.reconnect p (if s (Fin.last n) = b then q else D.edgePair.val q)).stateLoopCount
         (Fin.init s) := by
   rw [stateLoopCount_def, stateLoopCount_def, statePerm_def, statePerm_def,
-    smoothingTurn_insertCrossing, init_smoothingChoice_insertCrossing,
-    smoothingChoice_insertCrossing_last, insertCrossing_edgePair_val, ← Equiv.permCongr_mul,
-    Equiv.orbitCount_permCongr, smoothingTurn_reconnect, smoothingChoice_reconnect,
+    smoothingTurn_eq_permCongr_sumCongr (insertCrossing_halfEdge D p q b),
+    init_smoothingChoice_of_overPair_eq (insertCrossing_overPair D p q b),
+    smoothingChoice_last_of_overPair_eq (insertCrossing_overPair D p q b),
+    insertCrossing_edgePair_val, ← Equiv.permCongr_mul, Equiv.orbitCount_permCongr,
+    smoothingTurn_reconnect, smoothingChoice_reconnect,
     reconnect_edgePair_val, reconnect_crossinglessComponentCount,
     insertCrossing_crossinglessComponentCount]
   by_cases hs : s (Fin.last n) = b
@@ -481,8 +440,8 @@ new crossing. -/
 @[simp] theorem crossingComponentCount_insertCrossing :
     (D.insertCrossing p q b).crossingComponentCount = D.crossingComponentCount := by
   rw [crossingComponentCount_def, crossingComponentCount_def, componentPerm_def,
-    componentPerm_def, crossingTurn_insertCrossing, insertCrossing_edgePair_val,
-    ← Equiv.permCongr_mul, Equiv.orbitCount_permCongr,
+    componentPerm_def, crossingTurn_eq_permCongr_sumCongr (insertCrossing_halfEdge D p q b),
+    insertCrossing_edgePair_val, ← Equiv.permCongr_mul, Equiv.orbitCount_permCongr,
     sumCongr_oppositeCrossingSlot_mul_crossingMatching hqp hqe,
     Perm.orbitCount_sumCongr_one_mul_swap_mul_swap_mul_swap_mul_swap _ _ _ _ _ (by decide)
       (by decide) (by decide) (by decide) (by decide) (by decide)]
