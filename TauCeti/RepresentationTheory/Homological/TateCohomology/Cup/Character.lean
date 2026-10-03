@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.AddCircle
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Character
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Cup.Delta
-public import TauCeti.RepresentationTheory.Homological.TateCohomology.LowDegree
 import TauCeti.RepresentationTheory.Homological.TateCohomology.Connecting.GroupHomology
 import TauCeti.RepresentationTheory.Homological.TateCohomology.Connecting.LowDegree
 
@@ -41,7 +40,8 @@ The computation has three steps.
   `ℤ ⊗ ℚ` and takes its norm, which is `1 ⊗ (-k)`.
 
 This is the low-degree normalization through which a character detects the Artin map of a class
-formation, whose reciprocity isomorphism is cup product with the fundamental class in degree `-2`.
+formation. Its Nakayama isomorphism is induced by cup product with the fundamental class in degree
+`-2`, and Artin reciprocity is the inverse of that isomorphism.
 
 ## Main results
 
