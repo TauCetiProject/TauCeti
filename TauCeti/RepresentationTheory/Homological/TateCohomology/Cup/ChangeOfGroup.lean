@@ -18,15 +18,7 @@ the Tate cohomology of `Q`-representations `M` and `N`, and morphisms `f : Res_�
 (`TauCeti.TateCohomology.cup_posMap`). Restriction to a subgroup and inflation from a quotient are
 both instances. For inflation this is the compatibility that, together with the scaling of the
 fundamental class, gives the inflation formula for the Tate isomorphism of a class formation.
-
-The cup product is defined by dimension shifting in the second factor, so the proof shifts the
-second degree down to zero along the coinduced sequences `0 → N → Coind_⊥^Q N → N' → 0`. Their
-restrictions along `φ` are no longer coinduced, but they are still split by evaluation at `1`, so
-the cup product over `G` still turns their connecting maps into connecting maps of the tensored
-sequences (`TauCeti.TateCohomology.cup_δ_of_leftInverse`), and change of group commutes with all
-of these connecting maps. Change of group does not exist in Tate degree zero, so the second factor
-is carried along as an ordinary cohomology class: in degree zero it is an invariant of `N`, which
-is also an invariant of `Res_φ N`, and cup product with it is a map of coefficients.
+Both degrees must be positive, since change of group does not exist in Tate degree zero.
 
 ## Main statements
 
@@ -50,6 +42,16 @@ namespace TauCeti.TateCohomology
 
 variable {k G Q : Type u} [CommRing k] [Group G] [Group Q] [Fintype G] [Fintype Q]
   (φ : G →* Q)
+
+-- Proof strategy. The cup product is defined by dimension shifting in the second factor, so the
+-- proof shifts the second degree down to zero along the coinduced sequences
+-- `0 → N → Coind_⊥^Q N → N' → 0`. Their restrictions along `φ` are no longer coinduced, but they
+-- are still split by evaluation at `1`, so the cup product over `G` still turns their connecting
+-- maps into connecting maps of the tensored sequences (`cup_δ_of_leftInverse`), and change of
+-- group commutes with all of these connecting maps. Since change of group does not exist in Tate
+-- degree zero, the second factor is carried along as an ordinary cohomology class: in degree zero
+-- it is an invariant of `N`, which is also an invariant of `Res_φ N`, and cup product with it is a
+-- map of coefficients.
 
 -- The base case: a degree-zero right factor is represented by an invariant, and cup product with it
 -- is the coefficient map `m ↦ m ⊗ v`, which commutes with change of group.

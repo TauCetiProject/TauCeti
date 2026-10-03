@@ -43,6 +43,8 @@ with inflation.
   cohomology, `posMap` is `groupCohomology.map`.
 * `TauCeti.TateCohomology.posMap_comp_map`, `TauCeti.TateCohomology.map_comp_posMap`: naturality
   in the two coefficient representations.
+* `TauCeti.TateCohomology.posMap_id`, `TauCeti.TateCohomology.posMap_comp`: functoriality in the
+  group homomorphism.
 * `TauCeti.TateCohomology.fromGroupCohomology_δ_comp_posMap`,
   `TauCeti.TateCohomology.δ_comp_posMap`: compatibility with connecting maps.
 
@@ -123,6 +125,30 @@ theorem map_comp_posMap {M' : Rep k Q} (g : M' ⟶ M) (f : Rep.res φ M ⟶ N) (
   -- composed as a term rather than rewritten into the goal.
   exact ((reassoc_of% (_root_.TateCohomology.isoGroupCohomology n).hom.naturality g) _).trans
     (congrArg (_ ≫ ·) (groupCohomology.map_comp (MonoidHom.id Q) φ g f n).symm)
+
+/-- Change of group along the identity homomorphism with the identity coefficient map is the
+identity. -/
+@[simp]
+theorem posMap_id (n : ℕ) [NeZero n] : posMap (MonoidHom.id G) (𝟙 N) n = 𝟙 _ := by
+  refine (cancel_mono ((_root_.TateCohomology.isoGroupCohomology n).hom.app N)).1 ?_
+  rw [posMap_comp_isoGroupCohomology_hom, Category.id_comp]
+  -- The comparison lands in the objects of `groupCohomology.functor`, so `map_id` is applied as a
+  -- term rather than rewritten into the goal.
+  exact (congrArg (_ ≫ ·) (groupCohomology.map_id n)).trans (Category.comp_id _)
+
+/-- **Change of group is transitive.** For `ψ : H →* G` and `φ : G →* Q`, changing the group
+along `φ` with `f : Res_φ M ⟶ N` and then along `ψ` with `g : Res_ψ N ⟶ L` is change of group
+along `φ.comp ψ` with the composite coefficient map `Res_ψ f ≫ g`. -/
+@[reassoc]
+theorem posMap_comp {H : Type u} [Group H] [Fintype H] (ψ : H →* G) {L : Rep k H}
+    (f : Rep.res φ M ⟶ N) (g : Rep.res ψ N ⟶ L) (n : ℕ) [NeZero n] :
+    posMap (φ.comp ψ) ((Rep.resFunctor ψ).map f ≫ g) n = posMap φ f n ≫ posMap ψ g n := by
+  refine (cancel_mono ((_root_.TateCohomology.isoGroupCohomology n).hom.app L)).1 ?_
+  rw [Category.assoc, posMap_comp_isoGroupCohomology_hom, posMap_comp_isoGroupCohomology_hom]
+  -- As in `map_comp_posMap`, the comparison lands in the objects of `groupCohomology.functor`, so
+  -- the remaining square is composed as a term rather than rewritten into the goal.
+  exact (congrArg (_ ≫ ·) (groupCohomology.map_comp φ ψ f g n)).trans
+    (posMap_comp_isoGroupCohomology_hom_assoc φ f n _).symm
 
 /-- **Change of group commutes with connecting maps, from degree zero on.** Let `S` be a short
 exact sequence of `Q`-representations, `S'` one of `G`-representations and `Φ : Res_φ S ⟶ S'`.
