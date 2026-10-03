@@ -5,12 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Module.ULift
-public import Mathlib.LinearAlgebra.Dimension.Free
-public import Mathlib.LinearAlgebra.Matrix.ToLin
 public import TauCeti.RepresentationTheory.Lie.Ado.CharacteristicZero
 public import TauCeti.RepresentationTheory.Lie.Ado.PositiveCharacteristic
 public import TauCeti.RepresentationTheory.Lie.FiniteTarget
+public import TauCeti.RepresentationTheory.Lie.MatrixTarget
 
 /-!
 # The Ado–Iwasawa theorem over an arbitrary field
@@ -49,8 +47,6 @@ that every element of `U(L)` survives in some finite-dimensional quotient.
 
 ## Main results
 
-* `TauCeti.faithfulRepresentation_iff_exists_injective_lieHom_matrix`: the endomorphism and matrix
-  formulations of a faithful finite-dimensional representation agree.
 * `TauCeti.exists_faithful_nilrepresentation`: over an arbitrary field, a faithful
   finite-dimensional representation in which every element of the nilradical acts nilpotently.
 * `TauCeti.adoIwasawa`: **the Ado–Iwasawa theorem**, over an arbitrary field.
@@ -82,28 +78,6 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 section General
 
 variable (K : Type u) (L : Type v) [Field K] [LieRing L] [LieAlgebra K L]
-
-/-- **The matrix and endomorphism formulations of faithfulness agree.** A faithful
-finite-dimensional representation becomes an injective Lie homomorphism into a matrix algebra once
-a basis of the carrier is chosen, and conversely a matrix algebra acts faithfully on the
-coordinate space. No finiteness of `L` is needed: this is a dictionary between two existential
-statements. -/
-theorem faithfulRepresentation_iff_exists_injective_lieHom_matrix :
-    (∃ (V : Type (max u v)) (_ : AddCommGroup V) (_ : Module K V) (_ : FiniteDimensional K V)
-        (ρ : L →ₗ⁅K⁆ Module.End K V), Function.Injective ρ) ↔
-      ∃ (n : ℕ) (f : L →ₗ⁅K⁆ Matrix (Fin n) (Fin n) K), Function.Injective f := by
-  constructor
-  · rintro ⟨V, _, _, _, ρ, hρ⟩
-    refine ⟨Module.finrank K V,
-      (LinearMap.toMatrixAlgEquiv (Module.finBasis K V)).toLieEquiv.toLieHom.comp ρ, ?_⟩
-    exact (LinearMap.toMatrixAlgEquiv (Module.finBasis K V)).injective.comp hρ
-  · rintro ⟨n, f, hf⟩
-    let b : Module.Basis (Fin n) K (ULift.{v} (Fin n → K)) :=
-      (Pi.basisFun K (Fin n)).map (ULift.moduleEquiv (R := K) (M := Fin n → K)).symm
-    exact ⟨ULift.{v} (Fin n → K), inferInstance, inferInstance, Module.Finite.of_basis b,
-      (LinearMap.toMatrixAlgEquiv b).symm.toLieEquiv.toLieHom.comp f,
-      (LinearMap.toMatrixAlgEquiv b).symm.injective.comp hf⟩
-
 variable [FiniteDimensional K L]
 
 /-- **The Ado–Iwasawa theorem with nilpotence on the nilradical.** A finite-dimensional Lie
