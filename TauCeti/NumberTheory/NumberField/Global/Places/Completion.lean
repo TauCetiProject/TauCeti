@@ -33,126 +33,111 @@ allow finite-dimensional topological algebra to be used with the canonical compl
 public section
 noncomputable section
 
-namespace TauCeti.GlobalNumberFields
+namespace NumberField.InfinitePlace
 
-open IsDedekindDomain NumberField NumberField.InfinitePlace
+open NumberField
 open scoped WithZero NumberField.LiesOver
 
 variable {K : Type*} [Field K]
 
-section Infinite
-
-/-- An archimedean completion has a nontrivial norm, as seen by its embedding in `ℂ`. -/
-instance instNontriviallyNormedFieldInfiniteCompletion (v : InfinitePlace K) :
-    NontriviallyNormedField v.Completion := by
-  have hnorm : ‖(2 : v.Completion)‖ = 2 := by
+/-- An archimedean completion is a nontrivially normed field. -/
+instance Completion.instNontriviallyNormedField (v : InfinitePlace K) :
+    NontriviallyNormedField v.Completion where
+  non_trivial := by
+    refine ⟨2, ?_⟩
     rw [← (Completion.isometry_extensionEmbedding v).norm_map_of_map_zero
       (map_zero _), map_ofNat]
-    norm_num
-  apply NontriviallyNormedField.ofNormNeOne
-  refine ⟨2, ?_, ?_⟩
-  · exact norm_ne_zero_iff.mp (by rw [hnorm]; norm_num)
-  · rw [hnorm]
     norm_num
 
 variable {L : Type*} [Field L] [Algebra K L]
 
 /-- A place indexed by the places above `v` carries its proof of lying over `v` as an instance. -/
-instance instLiesOverSubtypeInfinitePlace (v : InfinitePlace K)
+instance instLiesOverSubtype (v : InfinitePlace K)
     (w : {w : InfinitePlace L // w.LiesOver v}) : w.1.LiesOver v := w.2
 
 /-- A completed extension at an infinite place is finite dimensional: its degree is one or two. -/
 instance (v : InfinitePlace K) (w : InfinitePlace L) [w.LiesOver v] :
     FiniteDimensional v.Completion w.Completion := by
   apply Module.finite_of_finrank_pos
-  have h := mult_mul_finrank v w
-  have hn : Module.finrank v.Completion w.Completion ≠ 0 := by
-    intro hz
-    rw [hz, mul_zero] at h
-    exact mult_ne_zero (w := w) h.symm
-  exact Nat.pos_of_ne_zero hn
+  have h := mult_ne_zero (w := w)
+  rw [← mult_mul_finrank v w, mul_ne_zero_iff] at h
+  exact Nat.pos_of_ne_zero h.2
 
 /-- The diagonal algebra structures on an archimedean completion form a scalar tower. -/
-instance (w : InfinitePlace L) : IsScalarTower K L w.Completion :=
-  (Completion.equiv w).isScalarTower K L
+instance {R : Type*} [CommRing R] [Algebra R L] (w : InfinitePlace L) :
+    IsScalarTower R L w.Completion :=
+  (Completion.equiv w).isScalarTower R L
 
 /-- The normalized absolute value on the completion at an infinite place. -/
-def infiniteCompletionNormalizedAbsValue (w : InfinitePlace K) : w.Completion →*₀ ℝ :=
+def completionNormalizedAbsValue (w : InfinitePlace K) : w.Completion →*₀ ℝ :=
   (powMonoidWithZeroHom (InfinitePlace.mult_ne_zero (w := w))).comp normHom
 
 /-- Evaluating the normalized absolute value at `x` gives `‖x‖ ^ w.mult`. -/
 @[simp]
-theorem infiniteCompletionNormalizedAbsValue_apply (w : InfinitePlace K) (x : w.Completion) :
-    infiniteCompletionNormalizedAbsValue w x = ‖x‖ ^ w.mult :=
+theorem completionNormalizedAbsValue_apply (w : InfinitePlace K) (x : w.Completion) :
+    completionNormalizedAbsValue w x = ‖x‖ ^ w.mult :=
   (rfl)
 
-private lemma norm_algebraMap_infinitePlace_completion (w : InfinitePlace K) (x : K) :
+/-- The norm of a field element in its archimedean completion is its place absolute value. -/
+@[simp↓]
+theorem Completion.norm_algebraMap (w : InfinitePlace K) (x : K) :
     ‖algebraMap K w.Completion x‖ = w x := by
-  -- `algebraMap_apply` hides the `WithAbs` synonym used by the completion construction.
-  change ‖(WithAbs.toAbs w.1 x : w.Completion)‖ = w x
-  exact InfinitePlace.Completion.norm_coe w (WithAbs.toAbs w.1 x)
+  rw [Completion.algebraMap_apply]
+  exact Completion.norm_coe w (WithAbs.toAbs w.1 x)
 
 /-- On the dense copy of `K`, the infinite completion value is the normalized
 infinite-place value. -/
-theorem infiniteCompletionNormalizedAbsValue_algebraMap (w : InfinitePlace K) (x : K) :
-    infiniteCompletionNormalizedAbsValue w (algebraMap K w.Completion x) = w x ^ w.mult := by
-  rw [infiniteCompletionNormalizedAbsValue_apply, norm_algebraMap_infinitePlace_completion]
+theorem completionNormalizedAbsValue_algebraMap (w : InfinitePlace K) (x : K) :
+    completionNormalizedAbsValue w (algebraMap K w.Completion x) = w x ^ w.mult := by
+  rw [completionNormalizedAbsValue_apply, Completion.norm_algebraMap]
 
 /-- On the dense copy of `K`, a real place contributes its ordinary absolute value. -/
-theorem infiniteCompletionNormalizedAbsValue_algebraMap_of_isReal
+theorem completionNormalizedAbsValue_algebraMap_of_isReal
     (w : InfinitePlace K) (hw : w.IsReal) (x : K) :
-    infiniteCompletionNormalizedAbsValue w (algebraMap K w.Completion x) = w x := by
-  rw [infiniteCompletionNormalizedAbsValue_algebraMap, hw.mult_eq_one, pow_one]
+    completionNormalizedAbsValue w (algebraMap K w.Completion x) = w x := by
+  rw [completionNormalizedAbsValue_algebraMap, hw.mult_eq_one, pow_one]
 
 /-- On the dense copy of `K`, a complex place contributes the square of its absolute value. -/
-theorem infiniteCompletionNormalizedAbsValue_algebraMap_of_isComplex
+theorem completionNormalizedAbsValue_algebraMap_of_isComplex
     (w : InfinitePlace K) (hw : w.IsComplex) (x : K) :
-    infiniteCompletionNormalizedAbsValue w (algebraMap K w.Completion x) = w x ^ 2 := by
-  rw [infiniteCompletionNormalizedAbsValue_algebraMap, hw.mult_eq_two]
+    completionNormalizedAbsValue w (algebraMap K w.Completion x) = w x ^ 2 := by
+  rw [completionNormalizedAbsValue_algebraMap, hw.mult_eq_two]
 
 /-- At a real place the completion value is the ordinary absolute value. -/
-theorem infiniteCompletionNormalizedAbsValue_of_isReal
+theorem completionNormalizedAbsValue_of_isReal
     (w : InfinitePlace K) (hw : w.IsReal) (x : w.Completion) :
-    infiniteCompletionNormalizedAbsValue w x = ‖x‖ := by
-  rw [infiniteCompletionNormalizedAbsValue_apply, hw.mult_eq_one, pow_one]
+    completionNormalizedAbsValue w x = ‖x‖ := by
+  rw [completionNormalizedAbsValue_apply, hw.mult_eq_one, pow_one]
 
 /-- At a complex place the completion value is the square of the ordinary absolute value. -/
-theorem infiniteCompletionNormalizedAbsValue_of_isComplex
+theorem completionNormalizedAbsValue_of_isComplex
     (w : InfinitePlace K) (hw : w.IsComplex) (x : w.Completion) :
-    infiniteCompletionNormalizedAbsValue w x = ‖x‖ ^ 2 := by
-  rw [infiniteCompletionNormalizedAbsValue_apply, hw.mult_eq_two]
+    completionNormalizedAbsValue w x = ‖x‖ ^ 2 := by
+  rw [completionNormalizedAbsValue_apply, hw.mult_eq_two]
 
 /-- The infinite completion value is continuous. -/
-theorem continuous_infiniteCompletionNormalizedAbsValue (w : InfinitePlace K) :
-    Continuous (infiniteCompletionNormalizedAbsValue w : w.Completion → ℝ) := by
-  -- `Continuous` does not simplify through the coercion of the bundled hom, so explicitly
-  -- identify its underlying function using the pointwise evaluation theorem.
+@[fun_prop]
+theorem continuous_completionNormalizedAbsValue (w : InfinitePlace K) :
+    Continuous (completionNormalizedAbsValue w : w.Completion → ℝ) := by
+  -- Rewrite the bundled hom as a function before applying continuity of powers of the norm.
   convert continuous_norm.pow w.mult using 1
   ext x
-  exact infiniteCompletionNormalizedAbsValue_apply w x
-
-/-- The infinite completion value vanishes exactly at zero. -/
-theorem infiniteCompletionNormalizedAbsValue_eq_zero_iff
-    (w : InfinitePlace K) (x : w.Completion) :
-    infiniteCompletionNormalizedAbsValue w x = 0 ↔ x = 0 := by
-  simp [infiniteCompletionNormalizedAbsValue, InfinitePlace.mult_ne_zero]
+  exact completionNormalizedAbsValue_apply w x
 
 /-- Every nonnegative real number is the normalized absolute value of an element of the completion
 at an infinite place. -/
-theorem exists_infiniteCompletionNormalizedAbsValue_eq (w : InfinitePlace K) {t : ℝ} (ht : 0 ≤ t) :
-    ∃ x : w.Completion, infiniteCompletionNormalizedAbsValue w x = t := by
+theorem exists_completionNormalizedAbsValue_eq (w : InfinitePlace K) {t : ℝ} (ht : 0 ≤ t) :
+    ∃ x : w.Completion, completionNormalizedAbsValue w x = t := by
   rcases w.isReal_or_isComplex with hw | hw
   · obtain ⟨x, hx⟩ := Completion.surjective_extensionEmbeddingOfIsReal hw t
     refine ⟨x, ?_⟩
-    rw [infiniteCompletionNormalizedAbsValue_of_isReal w hw,
+    rw [completionNormalizedAbsValue_of_isReal w hw,
       ← (Completion.isometry_extensionEmbeddingOfIsReal hw).norm_map_of_map_zero (map_zero _), hx,
       Real.norm_of_nonneg ht]
   · obtain ⟨x, hx⟩ := Completion.surjective_extensionEmbedding_of_isComplex hw (√t : ℂ)
     refine ⟨x, ?_⟩
-    rw [infiniteCompletionNormalizedAbsValue_of_isComplex w hw,
+    rw [completionNormalizedAbsValue_of_isComplex w hw,
       ← (Completion.isometry_extensionEmbedding w).norm_map_of_map_zero (map_zero _), hx,
       Complex.norm_real, Real.norm_of_nonneg (Real.sqrt_nonneg t), Real.sq_sqrt ht]
 
-end Infinite
-
-end TauCeti.GlobalNumberFields
+end NumberField.InfinitePlace

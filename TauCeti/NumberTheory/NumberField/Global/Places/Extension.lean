@@ -17,11 +17,11 @@ real place doubles the normalization exponent. Multiplying over all places above
 the global degree `[L : K]`. These are the archimedean factors in the degree formula for
 extension of ideles.
 
-The formulas are in `TauCeti.GlobalNumberFields`, alongside
-`infiniteCompletionNormalizedAbsValue`. For the ordinary norm, use
-`TauCeti.GlobalNumberFields.norm_completionMap (w := w) x`. For the normalized value, use
-`infiniteCompletionNormalizedAbsValue_completionMap (w := w) x` for a completion element,
-and `prod_infiniteCompletionNormalizedAbsValue_completionMap (L := L) v x` for the product
+The formulas are in `NumberField.InfinitePlace`, alongside
+`completionNormalizedAbsValue`. For the ordinary norm, use
+`NumberField.InfinitePlace.Completion.norm_completionMap (w := w) x`. For the normalized value, use
+`completionNormalizedAbsValue_completionMap (w := w) x` for a completion element,
+and `prod_completionNormalizedAbsValue_completionMap (L := L) v x` for the product
 over places above `v`. Both are pre-simplification rules: `simp` applies them before
 expanding the normalized absolute value into a power of the norm.
 
@@ -40,13 +40,13 @@ noncomputable section
 open NumberField
 open scoped NumberField.LiesOver
 
-namespace TauCeti.GlobalNumberFields
+namespace NumberField.InfinitePlace
 
 variable {K L : Type*} [Field K] [Field L] [Algebra K L]
 
 /-- Extension of archimedean completions preserves the ordinary norm. -/
 @[simp]
-theorem norm_completionMap
+theorem Completion.norm_completionMap
     {v : InfinitePlace K} {w : InfinitePlace L} [w.LiesOver v] (x : v.Completion) :
     ‖LiesOver.completionMap (w := w) x‖ = ‖x‖ := by
   -- `completionMap` has an unexposed body, so use its public continuity and coercion lemmas
@@ -65,12 +65,12 @@ theorem norm_completionMap
 /-- Under extension of archimedean completions the normalized absolute value is raised to the
 local degree. This includes the real-to-complex case and the value at zero. -/
 @[simp↓]
-theorem infiniteCompletionNormalizedAbsValue_completionMap
+theorem completionNormalizedAbsValue_completionMap
     {v : InfinitePlace K} {w : InfinitePlace L} [w.LiesOver v] (x : v.Completion) :
-    infiniteCompletionNormalizedAbsValue w (LiesOver.completionMap x) =
-      infiniteCompletionNormalizedAbsValue v x ^ Module.finrank v.Completion w.Completion := by
-  rw [infiniteCompletionNormalizedAbsValue_apply, norm_completionMap,
-    infiniteCompletionNormalizedAbsValue_apply, ← pow_mul, InfinitePlace.mult_mul_finrank]
+    completionNormalizedAbsValue w (LiesOver.completionMap x) =
+      completionNormalizedAbsValue v x ^ Module.finrank v.Completion w.Completion := by
+  rw [completionNormalizedAbsValue_apply, Completion.norm_completionMap,
+    completionNormalizedAbsValue_apply, ← pow_mul, InfinitePlace.mult_mul_finrank]
 
 variable [NumberField K] [NumberField L]
 
@@ -78,18 +78,18 @@ open Classical in
 /-- The product of normalized absolute values over the infinite places above `v` is the
 normalized absolute value at `v` raised to the global degree. -/
 @[simp↓]
-theorem prod_infiniteCompletionNormalizedAbsValue_completionMap
+theorem prod_completionNormalizedAbsValue_completionMap
     (v : InfinitePlace K) (x : v.Completion) :
-    ∏ w : {w : InfinitePlace L // w.LiesOver v}, infiniteCompletionNormalizedAbsValue w.1
+    ∏ w : {w : InfinitePlace L // w.LiesOver v}, completionNormalizedAbsValue w.1
         (@LiesOver.completionMap K L _ _ _ v w.1 w.2 x) =
-      infiniteCompletionNormalizedAbsValue v x ^ Module.finrank K L := by
+      completionNormalizedAbsValue v x ^ Module.finrank K L := by
   classical
   have h (w : {w : InfinitePlace L // w.LiesOver v}) :
-      infiniteCompletionNormalizedAbsValue w.1
+      completionNormalizedAbsValue w.1
         (@LiesOver.completionMap K L _ _ _ v w.1 w.2 x) =
-        infiniteCompletionNormalizedAbsValue v x ^ v.inertiaDeg w.1 := by
+        completionNormalizedAbsValue v x ^ v.inertiaDeg w.1 := by
     let := w.2
-    rw [infiniteCompletionNormalizedAbsValue_completionMap,
+    rw [completionNormalizedAbsValue_completionMap,
       InfinitePlace.inertiaDeg_eq_finrank]
   simp_rw [h]
   rw [Finset.prod_pow_eq_pow_sum]
@@ -97,4 +97,4 @@ theorem prod_infiniteCompletionNormalizedAbsValue_completionMap
   exact (Finset.sum_set_coe (f := fun w ↦ v.inertiaDeg w) (v.placesOver L)).trans
     (InfinitePlace.sum_inertiaDeg_eq_finrank K L v)
 
-end TauCeti.GlobalNumberFields
+end NumberField.InfinitePlace

@@ -50,7 +50,7 @@ theorem exists_ideleNorm_eq_one_and_toClassGroup_eq (c : ClassGroup (𝓞 K)) :
   obtain ⟨f, hf⟩ := FiniteAdeleRing.toClassGroup_surjective (R := 𝓞 K) (K := K) c
   -- Correct the norm at one infinite place, which does not change the finite part.
   obtain ⟨w⟩ := (inferInstance : Nonempty (InfinitePlace K))
-  obtain ⟨x, hx⟩ := exists_infiniteCompletionNormalizedAbsValue_eq w
+  obtain ⟨x, hx⟩ := exists_completionNormalizedAbsValue_eq w
     ((ideleNorm (IdeleGroup.ofFiniteIdele (𝓞 K) K f))⁻¹ : NNReal).coe_nonneg
   have hx0 : x ≠ 0 := by
     rintro rfl
