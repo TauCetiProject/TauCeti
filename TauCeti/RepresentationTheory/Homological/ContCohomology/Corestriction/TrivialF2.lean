@@ -29,8 +29,9 @@ restriction `TauCeti.trivialF2ResMap`, and transports the identity `cor ∘ res 
   recovers the trivial `𝔽₂` object of `U`.
 * `TauCeti.trivialF2ResMap_comp_trivialF2CorMap`, `TauCeti.trivialF2CorMap_trivialF2ResMap`:
   restriction followed by corestriction is multiplication by the index `[G : U]`.
-* `TauCeti.trivialF2CorMap_explicitH1AddEquivContinuousCohomology`: in degree one, corestriction
-  is the explicit transversal formula on cocycles.
+* `TauCeti.trivialF2CorMap_explicitH1AddEquivContinuousCohomology`,
+  `TauCeti.trivialF2CorMap_explicitH2AddEquivContinuousCohomology`: in degrees one and two,
+  corestriction is the explicit transversal formula on cocycles.
 
 ## References
 
@@ -136,5 +137,22 @@ theorem trivialF2CorMap_explicitH1AddEquivContinuousCohomology (x : H1 U (trivia
   rw [trivialF2CorMap_def, ← ConcreteCategory.comp_apply, ← Category.assoc, eqToHom_trans,
     eqToHom_refl, Category.id_comp, ConcreteCategory.comp_apply,
     ContinuousCohomology.explicitH1AddEquivContinuousCohomology_corestriction]
+
+open ContCohomology in
+/-- **Degree-two corestriction with trivial `𝔽₂` coefficients is the explicit transversal
+formula**, under the degree-two comparison and the canonical coefficient identifications. -/
+theorem trivialF2CorMap_explicitH2AddEquivContinuousCohomology (x : H2 U (trivialF2 G).V) :
+    let _ : LocallyCompactSpace U := (U.isClosed_of_isOpen hU).locallyCompactSpace
+    trivialF2CorMap G U hU 2
+        ((eqToHom (congrArg (continuousCohomology 2) (ofDiscreteModule_subgroup_trivialF2 G U))).hom
+          (explicitH2AddEquivContinuousCohomology U (trivialF2 G).V x)) =
+      (eqToHom (congrArg (continuousCohomology 2) (ofDiscreteModule_trivialF2 G))).hom
+        (explicitH2AddEquivContinuousCohomology G (trivialF2 G).V
+          (explicitCor2 G (trivialF2 G).V U hU x)) := by
+  let _ : LocallyCompactSpace U := (U.isClosed_of_isOpen hU).locallyCompactSpace
+  dsimp only
+  rw [trivialF2CorMap_def, ← ConcreteCategory.comp_apply, ← Category.assoc, eqToHom_trans,
+    eqToHom_refl, Category.id_comp, ConcreteCategory.comp_apply,
+    ContinuousCohomology.explicitH2AddEquivContinuousCohomology_corestriction]
 
 end TauCeti
