@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.ClassFieldTheory.FiniteCohomology
+public import TauCeti.NumberTheory.ClassFieldTheory.FiniteCohomology.Basic
 public import TauCeti.NumberTheory.LocalField.InertiaDegree
 public import TauCeti.NumberTheory.LocalField.Padic
 
