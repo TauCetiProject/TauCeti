@@ -16,11 +16,9 @@ import TauCeti.RingTheory.Smooth.GeometricallyReduced
 /-!
 # Reduced tensor products over perfect fields
 
-Every reduced algebra over a perfect field is geometrically reduced: finite subextensions
-of the algebraic closure are étale, so their scalar extensions preserve reducedness.
+Every reduced algebra over a perfect field is geometrically reduced.
 The tensor product of two reduced algebras over a perfect field is therefore reduced, with
-no finite-generation hypothesis on either factor. Extend scalars to the algebraic closure
-and apply the reduced tensor-product result there to finitely generated subalgebras.
+no finite-generation hypothesis on either factor.
 This supplies the reduced tensor square needed to form reductions of affine groups.
 
 ## References
@@ -28,9 +26,6 @@ This supplies the reduced tensor square needed to form reductions of affine grou
 * The Stacks Project, [Tag 030U](https://stacks.math.columbia.edu/tag/030U),
   reduced algebras after separable field extension.
 
-The proof uses Mathlib's `IsReduced.tensorProduct_of_flat_of_forall_fg` and
-`Algebra.FormallyEtale.of_isSeparable`, together with `TauCeti.isReduced_of_smooth` and
-`TauCeti.instIsReducedTensorProductOfIsAlgClosed`.
 -/
 
 public section
@@ -46,6 +41,9 @@ finite-generation hypothesis. -/
 instance instIsGeometricallyReducedOfPerfectField
     (A : Type*) [CommRing A] [Algebra k A] [IsReduced A] :
     Algebra.IsGeometricallyReduced k A := by
+  -- Finite subextensions of the algebraic closure are étale, so their scalar extensions
+  -- preserve reducedness. Use Mathlib's `IsReduced.tensorProduct_of_flat_of_forall_fg`
+  -- and `Algebra.FormallyEtale.of_isSeparable`, together with `TauCeti.isReduced_of_smooth`.
   rw [Algebra.isGeometricallyReduced_field_iff]
   have : IsReduced (A ⊗[k] AlgebraicClosure k) := by
     apply IsReduced.tensorProduct_of_flat_of_forall_fg
@@ -66,6 +64,8 @@ needs to be finitely generated. -/
 instance instIsReducedTensorProductOfPerfectField
     (A B : Type*) [CommRing A] [Algebra k A] [IsReduced A]
     [CommRing B] [Algebra k B] [IsReduced B] : IsReduced (A ⊗[k] B) := by
+  -- Extend scalars to the algebraic closure and apply the reduced tensor-product result
+  -- there to finitely generated subalgebras, via `TauCeti.instIsReducedTensorProductOfIsAlgClosed`.
   apply IsReduced.tensorProduct_of_flat_of_forall_fg
   intro C hC
   have : Algebra.FiniteType k C := ⟨C.fg_top.mpr hC⟩
