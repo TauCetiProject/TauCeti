@@ -94,7 +94,7 @@ noncomputable def realCliffordTwoTwoVectorEquivMatrix :
 
 /-- The matrix coordinates of a vector in the split four-dimensional real model. -/
 @[simp]
-theorem coe_realCliffordTwoTwoVectorEquivMatrix_apply (v : Fin 4 → ℝ) :
+theorem realCliffordTwoTwoVectorEquivMatrix_apply (v : Fin 4 → ℝ) :
     realCliffordTwoTwoVectorEquivMatrix v =
       !![-v 0 - v 2, -v 1 - v 3; v 1 - v 3, -v 0 + v 2] := (rfl)
 
@@ -105,6 +105,19 @@ theorem realCliffordTwoTwoVectorEquivMatrix_symm_apply
     realCliffordTwoTwoVectorEquivMatrix.symm A =
       ![-(A 0 0 + A 1 1) / 2, (A 1 0 - A 0 1) / 2,
         (A 1 1 - A 0 0) / 2, -(A 0 1 + A 1 0) / 2] := (rfl)
+
+@[simp↓]
+private theorem realCliffordTwoTwoVectorEquivMatrix_symm_apply_apply (v : Fin 4 → ℝ) :
+    realCliffordTwoTwoVectorEquivMatrix.symm
+      (realCliffordTwoTwoVectorEquivMatrix v) = v :=
+  realCliffordTwoTwoVectorEquivMatrix.symm_apply_apply v
+
+@[simp↓]
+private theorem realCliffordTwoTwoVectorEquivMatrix_apply_symm_apply
+    (A : Matrix (Fin 2) (Fin 2) ℝ) :
+    realCliffordTwoTwoVectorEquivMatrix
+      (realCliffordTwoTwoVectorEquivMatrix.symm A) = A :=
+  realCliffordTwoTwoVectorEquivMatrix.apply_symm_apply A
 
 /-- The determinant in the matrix model is the split quadratic form. -/
 theorem realCliffordTwoTwoVectorEquivMatrix_det (v : Fin 4 → ℝ) :

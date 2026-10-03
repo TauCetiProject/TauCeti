@@ -7,7 +7,6 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
 public import TauCeti.LinearAlgebra.CliffordAlgebra.RealForm.TwoTwo
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Action
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.LowRank.Four
 
 /-!
@@ -264,6 +263,7 @@ private theorem coe_realCliffordTwoTwoVectorEven (v : Fin 4 → ℝ) :
 private theorem realCliffordTwoTwoEvenEquivMatrixProd_vectorEven (v : Fin 4 → ℝ) :
     (realCliffordTwoTwoEvenEquivMatrixProd (realCliffordTwoTwoVectorEven v)).1 *
         realCliffordTwoTwoSwapMatrix = realCliffordTwoTwoVectorEquivMatrix v := by
+  -- Unfold the private vector embedding so the landed generator formula can rewrite it.
   change (realCliffordTwoTwoEvenEquivMatrixProd
     ((CliffordAlgebra.even.ι realCliffordFormTwoTwo).bilin v
       realCliffordTwoTwoLastVector)).1 * realCliffordTwoTwoSwapMatrix =
@@ -280,6 +280,7 @@ private theorem realCliffordTwoTwoLastVector_sq :
     CliffordAlgebra.ι realCliffordFormTwoTwo realCliffordTwoTwoLastVector *
         CliffordAlgebra.ι realCliffordFormTwoTwo realCliffordTwoTwoLastVector = -1 := by
   have he : realCliffordFormTwoTwo realCliffordTwoTwoLastVector = -1 := by
+    -- Expose both local abbreviations before applying the explicit coordinate formula.
     change realCliffordForm 2 2 (Pi.single 3 1) = -1
     rw [realCliffordForm_two_two_apply]
     norm_num
@@ -325,9 +326,11 @@ private noncomputable def realCliffordTwoTwoConjugateLastEvenHom :
         (SetLike.mul_mem_graded hleft x.2)
         (CliffordAlgebra.ι_mem_evenOdd_one realCliffordFormTwoTwo
           realCliffordTwoTwoLastVector)
+      -- The two odd factors add to even parity, expressed here in the `ZMod 2` grading.
       exact (show (1 + 1 : ZMod 2) = 0 by decide) ▸ (by simpa only [add_zero] using h)⟩
   map_one' := by
     apply Subtype.ext
+    -- Expose the private hom's value at one so the last-vector square can rewrite it.
     change (-CliffordAlgebra.ι realCliffordFormTwoTwo realCliffordTwoTwoLastVector * 1) *
       CliffordAlgebra.ι realCliffordFormTwoTwo realCliffordTwoTwoLastVector = 1
     rw [mul_one, neg_mul, realCliffordTwoTwoLastVector_sq, neg_neg]
@@ -338,6 +341,7 @@ private noncomputable def realCliffordTwoTwoConjugateLastEvenHom :
   map_add' x y := by apply Subtype.ext; simp [mul_add, add_mul]
   commutes' r := by
     apply Subtype.ext
+    -- Expose the scalar in the ambient Clifford algebra to commute it past the last vector.
     change (-CliffordAlgebra.ι realCliffordFormTwoTwo realCliffordTwoTwoLastVector *
         algebraMap ℝ (CliffordAlgebra realCliffordFormTwoTwo) r) *
       CliffordAlgebra.ι realCliffordFormTwoTwo realCliffordTwoTwoLastVector =
@@ -370,6 +374,7 @@ private noncomputable def realCliffordTwoTwoSwapConjHom :
   map_one' := by simp [realCliffordTwoTwoSwapMatrix_mul_self]
   map_mul' x y := by
     apply Prod.ext
+    -- Expose the second component of the private product-valued hom.
     · change realCliffordTwoTwoSwapMatrix * (x.2 * y.2) * realCliffordTwoTwoSwapMatrix =
         (realCliffordTwoTwoSwapMatrix * x.2 * realCliffordTwoTwoSwapMatrix) *
           (realCliffordTwoTwoSwapMatrix * y.2 * realCliffordTwoTwoSwapMatrix)
@@ -379,6 +384,7 @@ private noncomputable def realCliffordTwoTwoSwapConjHom :
             (realCliffordTwoTwoSwapMatrix * realCliffordTwoTwoSwapMatrix) * y.2 *
               realCliffordTwoTwoSwapMatrix := by noncomm_ring
         _ = _ := by rw [realCliffordTwoTwoSwapMatrix_mul_self]; noncomm_ring
+    -- Expose the first component of the private product-valued hom.
     · change realCliffordTwoTwoSwapMatrix * (x.1 * y.1) * realCliffordTwoTwoSwapMatrix =
         (realCliffordTwoTwoSwapMatrix * x.1 * realCliffordTwoTwoSwapMatrix) *
           (realCliffordTwoTwoSwapMatrix * y.1 * realCliffordTwoTwoSwapMatrix)
@@ -425,6 +431,7 @@ private theorem realCliffordTwoTwoConjugateLastEvenHom_ι (m n : Fin 4 → ℝ) 
         (CliffordAlgebra.even.ι realCliffordFormTwoTwo).bilin n
           realCliffordTwoTwoLastVector := by
   apply Subtype.ext
+  -- Expose both even bilinear products in the ambient Clifford algebra.
   change (-CliffordAlgebra.ι realCliffordFormTwoTwo realCliffordTwoTwoLastVector *
       (CliffordAlgebra.ι realCliffordFormTwoTwo m *
         CliffordAlgebra.ι realCliffordFormTwoTwo n)) *
@@ -456,6 +463,7 @@ private theorem realCliffordTwoTwoEvenEquivMatrixProd_conjugate
     apply LinearMap.ext
     intro n
     simp only [CliffordAlgebra.EvenHom.compr₂_bilin, LinearMap.compr₂_apply]
+    -- Expose evaluation of the two composed homomorphisms on a bilinear generator.
     change realCliffordTwoTwoEvenEquivMatrixProd
         (realCliffordTwoTwoConjugateLastEvenHom
           ((CliffordAlgebra.even.ι realCliffordFormTwoTwo).bilin m n)) =
@@ -486,6 +494,7 @@ private theorem realCliffordTwoTwoVectorEven_spin_action
     CliffordAlgebra.coe_reverseEven_apply,
     CliffordAlgebra.coe_evenUnitaryGroupEvenPart]
   rw [CliffordAlgebra.coe_spinGroupToEvenUnitary_apply]
+  -- Expose every private even-part coercion in the ambient Clifford algebra.
   change ((s : CliffordAlgebra realCliffordFormTwoTwo) *
       CliffordAlgebra.ι realCliffordFormTwoTwo v *
         star (s : CliffordAlgebra realCliffordFormTwoTwo)) *
@@ -552,6 +561,7 @@ theorem realSpinTwoTwoEquivSpecialLinearProd_action
       Matrix (Fin 2) (Fin 2) ℝ) = (realCliffordTwoTwoEvenEquivMatrixProd x).2 := by
     simpa only [Prod.snd] using congrArg Prod.snd hq
   rw [Matrix.SpecialLinearGroup.coe_inv, hq₁, hq₂]
+  -- The inverse coercion has become an adjugate; expose that normalized target.
   change realCliffordTwoTwoVectorEquivMatrix (s • v) =
     (realCliffordTwoTwoEvenEquivMatrixProd x).1 *
       realCliffordTwoTwoVectorEquivMatrix v *
