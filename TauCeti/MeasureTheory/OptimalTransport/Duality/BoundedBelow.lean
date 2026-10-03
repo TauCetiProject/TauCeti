@@ -140,7 +140,7 @@ theorem isLUB_kantorovichDualValue_of_lowerSemicontinuous_residual_bddBelow
     rw [EReal.coe_toENNReal hnonneg] at hr'
     have hfinal := (EReal.le_sub_iff_add_le (.inl (EReal.coe_ne_bot k))
       (.inl (EReal.coe_ne_top k))).1 hr'
-    rw [transportCostBddBelow_eq_transportCost_residual]
+    rw [transportCostBddBelow_eq_transportCost_residual_add_integral_add_integral]
     simpa only [k, kantorovichDualValue_def] using hfinal
 
 /-- The signed transport value is the supremum in `EReal` of all integrable feasible dual

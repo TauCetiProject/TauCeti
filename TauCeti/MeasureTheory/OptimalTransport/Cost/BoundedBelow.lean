@@ -262,7 +262,7 @@ theorem le_transportCostBddBelow {d : EReal} (h : IntegrableSplitLowerBound c μ
 /-- Subtracting the split lower bound reduces the signed primal problem to the nonnegative
 transport problem. The marginal correction is finite even when the optimum is infinite or the
 feasible set is empty. -/
-theorem transportCostBddBelow_eq_transportCost_residual
+theorem transportCostBddBelow_eq_transportCost_residual_add_integral_add_integral
     (h : IntegrableSplitLowerBound c μ ν) :
     transportCostBddBelow c μ ν h = (transportCost h.residual μ ν : EReal) +
       (((∫ x, h.fst x ∂μ) + ∫ y, h.snd y ∂ν : ℝ) : EReal) := by
