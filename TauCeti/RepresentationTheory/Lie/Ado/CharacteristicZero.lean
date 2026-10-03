@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.Derivation.Solvable
 public import TauCeti.Algebra.Lie.LeviDecomposition.Solvable
 public import TauCeti.Algebra.Lie.Prod
 public import TauCeti.RepresentationTheory.Lie.Abelian
