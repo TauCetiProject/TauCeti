@@ -551,7 +551,6 @@ noncomputable abbrev fundamentalGroupWideSpan (hCU : ∀ i, C ⊆ U i) (hx : x �
 
 /-- The cocone over `fundamentalGroupWideSpan` with vertex `π₁(X, x)`, whose legs are induced by
 the inclusions of `C` and of the sets `U i` into `X`. -/
-@[expose]
 noncomputable def fundamentalGroupWideCocone (hCU : ∀ i, C ⊆ U i) (hx : x ∈ C) :
     Cocone (fundamentalGroupWideSpan hCU hx) :=
   WidePushoutShape.mkCocone
@@ -567,21 +566,23 @@ noncomputable def fundamentalGroupWideCocone (hCU : ∀ i, C ⊆ U i) (hx : x �
 @[simp]
 theorem fundamentalGroupWideCocone_pt (hCU : ∀ i, C ⊆ U i) (hx : x ∈ C) :
     (fundamentalGroupWideCocone hCU hx).pt = GrpCat.of (FundamentalGroup X x) :=
-  (rfl)
+  by unfold fundamentalGroupWideCocone; rfl
 
 /-- The leg of `fundamentalGroupWideCocone` at `C` is induced by the inclusion of `C`. -/
 @[simp]
 theorem fundamentalGroupWideCocone_ι_app_none (hCU : ∀ i, C ⊆ U i) (hx : x ∈ C) :
-    (fundamentalGroupWideCocone hCU hx).ι.app none =
+    (fundamentalGroupWideCocone hCU hx).ι.app none ≫
+        eqToHom (fundamentalGroupWideCocone_pt hCU hx) =
       GrpCat.ofHom (FundamentalGroup.map (ContinuousMap.subtypeVal C) ⟨x, hx⟩) :=
-  (rfl)
+  by unfold fundamentalGroupWideCocone; rfl
 
 /-- The leg of `fundamentalGroupWideCocone` at `U i` is induced by the inclusion of `U i`. -/
 @[simp]
 theorem fundamentalGroupWideCocone_ι_app_some (hCU : ∀ i, C ⊆ U i) (hx : x ∈ C) (i : ι) :
-    (fundamentalGroupWideCocone hCU hx).ι.app (some i) =
+    (fundamentalGroupWideCocone hCU hx).ι.app (some i) ≫
+        eqToHom (fundamentalGroupWideCocone_pt hCU hx) =
       GrpCat.ofHom (FundamentalGroup.map (ContinuousMap.subtypeVal (U i)) ⟨x, hCU i hx⟩) :=
-  (rfl)
+  by unfold fundamentalGroupWideCocone; rfl
 
 /-- **The Seifert--van Kampen theorem for a family with a common pairwise intersection.** If the
 interiors of the path-connected sets `U i` cover `X`, all of them contain the path-connected set
