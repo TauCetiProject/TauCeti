@@ -11,8 +11,6 @@ public import Mathlib.Algebra.Category.CommHopfAlgCat
 public import Mathlib.RingTheory.RingHom.Flat
 import TauCeti.RingTheory.Spectrum.Prime.GenericFreeness
 import TauCeti.RingTheory.RingHom.Flat
-import Mathlib.FieldTheory.IsAlgClosed.Basic
-import Mathlib.RingTheory.Jacobson.Ring
 
 /-!
 # Flatness of affine group morphisms
