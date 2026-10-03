@@ -43,7 +43,7 @@ When `r` lies in the Jacobson radical of `A`, the lift is unique up to isomorphi
 * `TauCeti.exists_isIdempotentElem_endMapQ_eq`: idempotent endomorphisms of `N ⧸ r • N` lift to
   idempotent endomorphisms of `N`.
 * `TauCeti.exists_projective_quotient_smul_top_linearEquiv`: every direct summand of
-  `N ⧸ r • N` is the reduction of a finitely generated projective submodule of `N`.
+  `N ⧸ r • N` is the reduction of a projective submodule of `N`.
 
 ## References
 
@@ -77,21 +77,21 @@ theorem exists_isIdempotentElem_endMapQ_eq
     Submodule.mem_smul_pointwise_iff_exists]
   simp only [Submodule.mem_top, true_and]
 
-/-- **Direct summands lift from the reduction modulo `r`.** Let `N` be a finitely generated
-projective `A`-module whose endomorphism ring is `(r)`-adically complete, and let `Y` be a direct
-summand of `N ⧸ r • N`, given by maps `i : Y → N ⧸ r • N` and `q : N ⧸ r • N → Y` with
-`q ∘ i = id`. Then `Y ≃ X ⧸ r • X` for a finitely generated projective submodule `X` of `N`,
-namely the range of an idempotent lifting `i ∘ q`.
+/-- **Direct summands lift from the reduction modulo `r`.** Let `N` be a projective `A`-module
+whose endomorphism ring is `(r)`-adically complete, and let `Y` be a direct summand of
+`N ⧸ r • N`, given by maps `i : Y → N ⧸ r • N` and `q : N ⧸ r • N → Y` with `q ∘ i = id`. Then
+`Y ≃ X ⧸ r • X` for a projective submodule `X` of `N`, namely the range of an idempotent lifting
+`i ∘ q`.
 
 In particular, when `A` is finite over `R`, a finitely generated projective module over `A ⧸ r A`,
 which is a direct summand of the reduction of a finitely generated free `A`-module, is the reduction
-of a finitely generated projective `A`-module. -/
-theorem exists_projective_quotient_smul_top_linearEquiv [Module.Finite A N] {Y : Type*}
+of a projective `A`-module, finitely generated when `R` is Noetherian. -/
+theorem exists_projective_quotient_smul_top_linearEquiv {Y : Type*}
     [AddCommGroup Y] [Module A Y]
     (i : Y →ₗ[A] N ⧸ Ideal.span {algebraMap R A r} • (⊤ : Submodule A N))
     (q : (N ⧸ Ideal.span {algebraMap R A r} • (⊤ : Submodule A N)) →ₗ[A] Y)
     (hqi : q ∘ₗ i = LinearMap.id) :
-    ∃ X : Submodule A N, Module.Finite A X ∧ Module.Projective A X ∧
+    ∃ X : Submodule A N, Module.Projective A X ∧
       Nonempty ((X ⧸ Ideal.span {algebraMap R A r} • (⊤ : Submodule A X)) ≃ₗ[A] Y) := by
   have hqi' (y : Y) : q (i y) = y := LinearMap.congr_fun hqi y
   obtain ⟨e, he, hee⟩ := exists_isIdempotentElem_endMapQ_eq r (e := i ∘ₗ q)
@@ -123,7 +123,7 @@ theorem exists_projective_quotient_smul_top_linearEquiv [Module.Finite A N] {Y :
     obtain ⟨n, hn⟩ := Submodule.Quotient.mk_surjective _ (i y)
     refine ⟨⟨e n, LinearMap.mem_range_self e n⟩, ?_⟩
     simp [φ, ← hred, hn, hqi']
-  refine ⟨LinearMap.range e, inferInstance,
+  refine ⟨LinearMap.range e,
     .of_split (LinearMap.range e).subtype e.rangeRestrict (LinearMap.ext fun x ↦ Subtype.ext ?_),
     ⟨.ofBijective ((Ideal.span {algebraMap R A r} • ⊤ : Submodule A (LinearMap.range e)).liftQ φ
       hle) ⟨LinearMap.ker_eq_bot.mp ?_, ?_⟩⟩⟩

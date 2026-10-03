@@ -225,10 +225,14 @@ theorem exists_projective_reduction_linearEquiv (N : Type v) [AddCommGroup N] [M
     .linearMap_of_isNoetherianRing
   have : IsAdicComplete (Ideal.span {(p : ℤ_[p])}) (Module.End (MonoidAlgebra ℤ_[p] G) N) :=
     .of_finite _ _
-  -- Write `p` in `ℤ_p[G]` as the image of `p` in `ℤ_p`, and apply the general lifting theorem.
+  have : IsNoetherian (MonoidAlgebra ℤ_[p] G) N := isNoetherian_of_tower ℤ_[p] inferInstance
+  -- Write `p` in `ℤ_p[G]` as the image of `p` in `ℤ_p`, and apply the general lifting theorem;
+  -- the lift is finitely generated since `N` is Noetherian.
   revert i q hqi
   rw [← map_natCast (algebraMap ℤ_[p] (MonoidAlgebra ℤ_[p] G)) p]
-  exact exists_projective_quotient_smul_top_linearEquiv (p : ℤ_[p])
+  intro i q hqi
+  obtain ⟨X, hX, hXY⟩ := exists_projective_quotient_smul_top_linearEquiv (p : ℤ_[p]) i q hqi
+  exact ⟨X, inferInstance, hX, hXY⟩
 
 end Reduction
 
