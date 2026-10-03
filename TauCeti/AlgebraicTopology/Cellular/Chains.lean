@@ -214,27 +214,17 @@ lemma skeletonBasePairInclusion_snd_apply {n m : ℕ} (h : n ≤ m)
 @[simp]
 lemma skeletonBasePairInclusion_refl (n : ℕ) :
     skeletonBasePairInclusion C (le_refl n) = 𝟙 _ := by
-  refine MorphismProperty.Arrow.Hom.ext ?_ ?_
-  · ext x
-    exact skeletonBasePairInclusion_snd_apply C _ x
-  · ext x
-    apply Subtype.ext
-    exact coe_skeletonBasePairInclusion_fst_apply C _ x
+  exact TopPair.ofInclusionMap_id
 
 /-- Inclusions of base pairs compose as inclusions. -/
 @[reassoc]
 lemma skeletonBasePairInclusion_comp {n m l : ℕ} (h : n ≤ m) (h' : m ≤ l) :
     skeletonBasePairInclusion C h ≫ skeletonBasePairInclusion C h' =
       skeletonBasePairInclusion C (h.trans h') := by
-  refine MorphismProperty.Arrow.Hom.ext ?_ ?_
-  · ext x
-    simp only [MorphismProperty.Comma.comp_left, TopCat.comp_app]
-    simpa only [skeletonBasePairInclusion_snd_apply] using
-      (skeletonBasePairInclusion_snd_apply C h' (TopPair.Hom.snd (skeletonBasePairInclusion C h) x))
-  · ext x
-    apply Subtype.ext
-    simp only [MorphismProperty.Comma.comp_right, TopCat.comp_app]
-    simp only [coe_skeletonBasePairInclusion_fst_apply]
+  unfold skeletonBasePairInclusion
+  -- The preservation proofs compute through the subtype inclusions.
+  erw [← TopPair.ofInclusionMap_comp]
+  rfl
 
 /-- The inclusion into the next base pair is the map of the skeletal triple. -/
 lemma skeletonBasePairInclusion_succ (n : ℕ) :
@@ -276,15 +266,10 @@ lemma skeletonBasePairToComplex_snd_apply (n : ℕ) (x : (skeletonBasePair C n).
 lemma skeletonBasePairInclusion_comp_toComplex {n m : ℕ} (h : n ≤ m) :
     skeletonBasePairInclusion C h ≫ skeletonBasePairToComplex C m =
       skeletonBasePairToComplex C n := by
-  refine MorphismProperty.Arrow.Hom.ext ?_ ?_
-  · ext x
-    simp only [MorphismProperty.Comma.comp_left, TopCat.comp_app]
-    simpa only [skeletonBasePairInclusion_snd_apply, skeletonBasePairToComplex_snd_apply] using
-      (skeletonBasePairToComplex_snd_apply C m (TopPair.Hom.snd (skeletonBasePairInclusion C h) x))
-  · ext x
-    apply Subtype.ext
-    simp only [MorphismProperty.Comma.comp_right, TopCat.comp_app]
-    simp only [coe_skeletonBasePairInclusion_fst_apply, coe_skeletonBasePairToComplex_fst_apply]
+  unfold skeletonBasePairInclusion skeletonBasePairToComplex
+  -- The preservation proofs compute through the subtype inclusions.
+  erw [← TopPair.ofInclusionMap_comp]
+  rfl
 
 /-- If a skeleton is the whole complex, its inclusion as a pair is an isomorphism. -/
 lemma isIso_skeletonBasePairToComplex_of_eq (m : ℕ)

@@ -55,12 +55,12 @@ lemma isIso_singularHomologyMap_skeletonBasePairToSucc {m k : ℕ}
       ((isZero_singularHomology_skeletonPair_of_ne C R (by lia)).eq_of_tgt _ _)
   exact isIso_of_mono_of_epi _
 
-variable [∀ m, HasExactColimitsOfShape (Discrete (cell C m)) A]
-
 /-- Homology in degree `k` is stable under inclusions of skeleta of dimension greater than `k`.
-The isomorphism is induced by the actual inclusion of pairs. -/
+The isomorphism is induced by the actual inclusion of pairs. Exactness of coproducts is needed
+only for cell dimensions `n < j ≤ m`. -/
 lemma isIso_singularHomologyMap_skeletonBasePairInclusion {n m k : ℕ}
-    (h : n ≤ m) (hk : k < n) :
+    (h : n ≤ m) (hk : k < n)
+    (hExact : ∀ j, n < j → j ≤ m → HasExactColimitsOfShape (Discrete (cell C j)) A) :
     IsIso ((skeletonBasePair C n).singularHomologyMap
       (skeletonBasePairInclusion C h) R k) := by
   induction m, h using Nat.le_induction with
@@ -68,6 +68,8 @@ lemma isIso_singularHomologyMap_skeletonBasePairInclusion {n m k : ℕ}
     simp only [skeletonBasePairInclusion_refl, TopPair.singularHomologyMap_id]
     infer_instance
   | succ m h ih =>
+    have := ih (fun j hj hjm ↦ hExact j hj (by lia))
+    have := hExact (m + 1) (by lia) (le_refl _)
     have := isIso_singularHomologyMap_skeletonBasePairToSucc C R (m := m) (by lia : k < m)
     have : IsIso ((skeletonBasePair C m).singularHomologyMap
         (skeletonBasePairInclusion C m.le_succ) R k) := by
@@ -79,8 +81,10 @@ lemma isIso_singularHomologyMap_skeletonBasePairInclusion {n m k : ℕ}
 variable [FiniteDimensional C]
 
 /-- For a finite-dimensional relative CW complex, inclusion of any skeleton of dimension
-greater than `k` induces an isomorphism on degree-`k` relative singular homology. -/
-lemma isIso_singularHomologyMap_skeletonBasePairToComplex {m k : ℕ} (hk : k < m) :
+greater than `k` induces an isomorphism on degree-`k` relative singular homology. Exactness of
+coproducts is needed only for cell dimensions above `m`. -/
+lemma isIso_singularHomologyMap_skeletonBasePairToComplex {m k : ℕ} (hk : k < m)
+    (hExact : ∀ j, m < j → HasExactColimitsOfShape (Discrete (cell C j)) A) :
     IsIso ((skeletonBasePair C m).singularHomologyMap (skeletonBasePairToComplex C m) R k) := by
   have h : ∀ᶠ j in Filter.atTop, IsEmpty (cell C j) :=
     FiniteDimensional.eventually_isEmpty_cell
@@ -90,17 +94,21 @@ lemma isIso_singularHomologyMap_skeletonBasePairToComplex {m k : ℕ} (hk : k < 
     skeletonLT_eq_complex_of_isEmpty_cell C (M + 1) fun j hj ↦ hN j (by dsimp [M] at hj; lia)
   have := isIso_skeletonBasePairToComplex_of_eq C M hM
   have := isIso_singularHomologyMap_skeletonBasePairInclusion C R (le_max_left m N) hk
+    (fun j hj _ ↦ hExact j hj)
   have hfac := TopPair.singularHomologyMap_comp
     (skeletonBasePairInclusion C (le_max_left m N)) R (skeletonBasePairToComplex C M) k
   rw [skeletonBasePairInclusion_comp_toComplex] at hfac
   rw [hfac]
   infer_instance
 
+variable [∀ m, HasExactColimitsOfShape (Discrete (cell C m)) A]
+
 /-- Cellular homology of a finite-dimensional relative CW complex is its relative singular
 homology. The second map is induced by inclusion of the `(n + 1)`-skeleton into the complex. -/
 def cellularSingularHomologyIso (n : ℕ) :
     (cellularChainComplex C R).homology n ≅ (complexBasePair C).singularHomology R n :=
   have := isIso_singularHomologyMap_skeletonBasePairToComplex C R (m := n + 1) (k := n) (by lia)
+    (fun _ _ ↦ inferInstance)
   cellularHomologyIso C R n ≪≫
     asIso ((skeletonBasePair C (n + 1)).singularHomologyMap
       (skeletonBasePairToComplex C (n + 1)) R n)
