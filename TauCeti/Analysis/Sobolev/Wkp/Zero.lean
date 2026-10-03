@@ -90,7 +90,8 @@ theorem iteratedGradientTestFunction_succ (phi : 𝓓(Omega, ℝ)) (k : ℕ) :
 /-- Every iterated gradient of a test function is smooth. -/
 theorem contDiff_iteratedGradientTestFunction (phi : 𝓓(Omega, ℝ)) (k : ℕ) :
     ContDiff ℝ ∞ (iteratedGradientTestFunction phi k) :=
-  contDiff_iteratedGradientChain phi.contDiff k (by simp)
+  contDiff_iff_contDiffAt.mpr fun _ =>
+    contDiffAt_iteratedGradientChain phi.contDiff.contDiffAt k (by simp)
 
 /-- Every iterated gradient of a test function has compact support. -/
 theorem hasCompactSupport_iteratedGradientTestFunction (phi : 𝓓(Omega, ℝ)) (k : ℕ) :

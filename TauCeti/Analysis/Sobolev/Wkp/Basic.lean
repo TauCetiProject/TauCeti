@@ -141,15 +141,15 @@ theorem iteratedGradientChain_succ (f : F → ℝ) (j : ℕ) :
     iteratedGradientChain f (j + 1) = fderiv ℝ (iteratedGradientChain f j) :=
   by rw [iteratedGradientChain]
 
-/-- The `j`th iterated-gradient field is `C^m` whenever the scalar function is
-`C^n` with `m + j + 1 ≤ n`. -/
-theorem contDiff_iteratedGradientChain {f : F → ℝ} {m n : ℕ∞ω}
-    (hf : ContDiff ℝ n f) (j : ℕ) (h : m + j + 1 ≤ n) :
-    ContDiff ℝ m (iteratedGradientChain f j) := by
+/-- The `j`th iterated-gradient field is `C^m` at a point whenever the scalar function
+is `C^n` there with `m + j + 1 ≤ n`. -/
+theorem contDiffAt_iteratedGradientChain {f : F → ℝ} {x : F} {m n : ℕ∞ω}
+    (hf : ContDiffAt ℝ n f x) (j : ℕ) (h : m + j + 1 ≤ n) :
+    ContDiffAt ℝ m (iteratedGradientChain f j) x := by
   induction j generalizing m with
   | zero =>
       rw [iteratedGradientChain_zero]
-      exact (InnerProductSpace.toDual ℝ F).symm.contDiff.comp
+      exact (InnerProductSpace.toDual ℝ F).symm.contDiff.contDiffAt.comp x
         (hf.fderiv_right (by simpa using h))
   | succ j ih =>
       rw [iteratedGradientChain_succ]

@@ -42,10 +42,10 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
   {Omega : Opens E} {p : ENNReal} [Fact (1 ≤ p)]
 
 /-- Simultaneous `Lᵖ` convergence of the classical derivatives of test functions through
-order `k` implies convergence to a `C^k` Sobolev representative in the full `W^{k,p}` norm.
-This implication works on any open domain, not only on the whole space. -/
-theorem Wkp.tendsto_ofTestFunctionₗ_of_contDiff {I : Type*} {l : Filter I}
-    (k : ℕ) (u : Wkp mu Omega p k) {f : E → ℝ} (hf : ContDiff ℝ k f)
+order `k` implies convergence in the full `W^{k,p}` norm to a Sobolev representative that is
+`C^k` on the domain. This implication works on any open domain, not only on the whole space. -/
+theorem Wkp.tendsto_ofTestFunctionₗ_of_contDiffOn {I : Type*} {l : Filter I}
+    (k : ℕ) (u : Wkp mu Omega p k) {f : E → ℝ} (hf : ContDiffOn ℝ k f Omega)
     (hu : (value k u : E → ℝ) =ᵐ[mu.restrict Omega] f) (phi : I → 𝓓(Omega, ℝ))
     (hphi : ∀ i ≤ k, Tendsto (fun j => eLpNorm
       (iteratedFDeriv ℝ i (phi j : E → ℝ) - iteratedFDeriv ℝ i f)
@@ -66,13 +66,15 @@ theorem Wkp.tendsto_ofTestFunctionₗ_of_contDiff {I : Type*} {l : Filter I}
       apply eLpNorm_congr_norm_ae
         ((Lp.aestronglyMeasurable _).sub (Lp.aestronglyMeasurable _))
         (((phi j).contDiff.continuous_iteratedFDeriv (by simp)).aestronglyMeasurable.sub
-          (hf.continuous_iteratedFDeriv (by simp)).aestronglyMeasurable)
-      filter_upwards [hval, hu] with x hx hy
+          ((ContinuousOn.continuousOn_iteratedFDeriv hf Omega.isOpen
+            (by simp)).aestronglyMeasurable Omega.isOpen.measurableSet))
+      filter_upwards [hval, hu, ae_restrict_mem Omega.isOpen.measurableSet] with x hx hy hxO
       simp only [value_zero] at hy
       rw [Pi.sub_apply, hx, hy]
       exact (norm_iteratedFDeriv_zero (f := (phi j : E → ℝ) - f) (x := x)).symm.trans
         (congrArg norm (fun_iteratedFDeriv_sub_apply
-          ((phi j).contDiff.of_le (by simp)).contDiffAt (hf.of_le (by simp)).contDiffAt))
+          ((phi j).contDiff.of_le (by simp)).contDiffAt
+          ((hf.of_le (by simp)).contDiffAt (Omega.isOpen.mem_nhds hxO))))
   | succ k ih =>
       -- The graph topology separates the preceding Sobolev order from the highest derivative.
       rw [tendsto_iff_lowerOrder_iteratedGradient]
@@ -86,7 +88,7 @@ theorem Wkp.tendsto_ofTestFunctionₗ_of_contDiff {I : Type*} {l : Filter I}
         funext j
         have hgrad : (iteratedGradient k u : E → IteratedGradient E k)
             =ᵐ[mu.restrict Omega] iteratedGradientChain f k :=
-          iteratedGradient_ae_eq_of_contDiff k u hf hu
+          iteratedGradient_ae_eq_of_contDiffOn k u hf hu
         have htest : (iteratedGradient k
             (ofTestFunctionₗ (mu := mu) (p := p) (k + 1) (phi j)) :
               E → IteratedGradient E k) =ᵐ[mu.restrict Omega]
@@ -98,10 +100,13 @@ theorem Wkp.tendsto_ofTestFunctionₗ_of_contDiff {I : Type*} {l : Filter I}
         apply eLpNorm_congr_norm_ae
           ((Lp.aestronglyMeasurable _).sub (Lp.aestronglyMeasurable _))
           (((phi j).contDiff.continuous_iteratedFDeriv (by simp)).aestronglyMeasurable.sub
-            (hf.continuous_iteratedFDeriv (by simp)).aestronglyMeasurable)
-        filter_upwards [htest, hgrad] with x hx hy
+            ((ContinuousOn.continuousOn_iteratedFDeriv hf Omega.isOpen
+              (by simp)).aestronglyMeasurable Omega.isOpen.measurableSet))
+        filter_upwards [htest, hgrad, ae_restrict_mem Omega.isOpen.measurableSet]
+          with x hx hy hxO
         simp only [Pi.sub_apply, hx, hy]
-        exact norm_iteratedGradientChain_sub k ((phi j).contDiff.of_le (by simp)) hf x
+        exact norm_iteratedGradientChain_sub k ((phi j).contDiff.of_le (by simp)).contDiffAt
+          (hf.contDiffAt (Omega.isOpen.mem_nhds hxO))
 
 /-- Every whole-space higher-order Sobolev function with a smooth representative belongs to
 the closure of test functions in the full Sobolev norm, for finite `p`. -/
@@ -111,12 +116,12 @@ private theorem Wkp.mem_wkp0Submodule_top_of_contDiff (hp : p ≠ ⊤)
     u ∈ wkp0Submodule mu ⊤ p k := by
   obtain ⟨g, hg, _, hlim⟩ := exists_contDiff_hasCompactSupport_approximation
     (zero_lt_one.trans_le Fact.out).ne' hp hf k
-      (memLp_iteratedFDeriv_of_contDiff k u (hf.of_le (by simp)) hu)
+      (memLp_iteratedFDeriv_of_contDiffOn k u (hf.of_le (by simp)).contDiffOn hu)
   let phi : ℕ → 𝓓((⊤ : Opens E), ℝ) := fun j =>
     ⟨g j, (hg j).1, (hg j).2, subset_univ _⟩
   have hconv : Tendsto (fun j => ofTestFunctionₗ (mu := mu) (p := p) k (phi j))
       atTop (𝓝 u) :=
-    tendsto_ofTestFunctionₗ_of_contDiff k u (hf.of_le (by simp)) hu phi hlim
+    tendsto_ofTestFunctionₗ_of_contDiffOn k u (hf.of_le (by simp)).contDiffOn hu phi hlim
   exact (wkp0Submodule mu ⊤ p k).isClosed.mem_of_tendsto hconv
     (.of_forall fun j => ofTestFunctionₗ_mem_wkp0Submodule k (phi j))
 
