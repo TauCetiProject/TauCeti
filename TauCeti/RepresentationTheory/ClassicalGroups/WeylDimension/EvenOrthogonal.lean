@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.ClassicalGroups.WeylDimension.OddOrthogonal
+public import TauCeti.LinearAlgebra.Vandermonde
+public import TauCeti.RepresentationTheory.ClassicalGroups.WeylDimension.Orthogonal
+public import TauCeti.RingTheory.Polynomial.Pochhammer
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -22,7 +24,7 @@ This file builds the right-hand side as a natural number, as `TauCeti.symplectic
 `TauCeti.oddOrthogonalWeylDimension` do for `Sp 2n` and `SO (2n + 1)`: the factors are rational,
 and neither the integrality nor the positivity of the product is visible from the formula.
 
-The entries of `λ + ρ` are the integers `TauCeti.oddOrthogonalRhoShift n λ i = λᵢ + n - 1 - i`,
+The entries of `λ + ρ` are the integers `TauCeti.orthogonalRhoShift n λ i = λᵢ + n - 1 - i`,
 since the half-sum of the positive roots of type `Dₙ` is that of type `Bₙ` less `1/2` in every
 coordinate.  The numerator `TauCeti.evenOrthogonalWeylDimensionNumerator` is the product
 `∏_{i < j} (lᵢ - lⱼ)(lᵢ + lⱼ)` of the pairings of `λ + ρ` with the positive roots.  The
@@ -30,9 +32,11 @@ denominator is its value at `λ = 0`, which is `2!/2 · 4!/2 ⋯ (2n - 2)!/2`
 (`TauCeti.evenOrthogonalWeylDimensionNumerator_bot`).  Integrality is
 `TauCeti.prod_add_one_mul_factorial_dvd_prod_prod_sq_sub_sq`: the factors `lᵢ² - lⱼ²` are the
 differences of the squares, and in their Vandermonde determinant the column of `(l²)^k` may be
-replaced by the column of `∏_{c < k} (l² - c²)`, and twice this polynomial is a sum of two
-products of `2k` consecutive integers.  The same polynomial evaluates each row of the numerator
-once the rows below it are those of `ρ`, which computes the denominator and the one-row weights.
+replaced by the column of the degree-`2k` polynomial `∏_{c < k} (l² - c²)`, twice which is the
+sum of the products of the `2k` consecutive integers ending at `l + k` and at `l + k - 1`
+(`TauCeti.two_mul_prod_sq_sub_sq_eq`, stated for `∏_{c ≤ k}` and so with `2k + 2` factors).  The
+same polynomial evaluates each row of the numerator once the rows below it are those of `ρ`, which
+computes the denominator and the one-row weights.
 
 A Young diagram `μ` is read through its first `n` rows
 (`TauCeti.evenOrthogonalWeylDimension_congr`).  When `μ` has at most `n` rows it is a dominant
@@ -87,16 +91,16 @@ variable (n : ℕ) (μ : YoungDiagram)
 `∏_{i < j < n} (lᵢ - lⱼ)(lᵢ + lⱼ)` of the pairings of `μ + ρ` with the positive roots `eᵢ ± eⱼ`. -/
 def evenOrthogonalWeylDimensionNumerator : ℤ :=
   ∏ i ∈ range n, ∏ j ∈ Ico (i + 1) n,
-    (oddOrthogonalRhoShift n μ i - oddOrthogonalRhoShift n μ j) *
-      (oddOrthogonalRhoShift n μ i + oddOrthogonalRhoShift n μ j)
+    (orthogonalRhoShift n μ i - orthogonalRhoShift n μ j) *
+      (orthogonalRhoShift n μ i + orthogonalRhoShift n μ j)
 
 /-- **The numerator as a double product**: the defining equation of
 `TauCeti.evenOrthogonalWeylDimensionNumerator`, the form every computation with it starts from. -/
 theorem evenOrthogonalWeylDimensionNumerator_eq_prod_prod :
     evenOrthogonalWeylDimensionNumerator n μ =
       ∏ i ∈ range n, ∏ j ∈ Ico (i + 1) n,
-        (oddOrthogonalRhoShift n μ i - oddOrthogonalRhoShift n μ j) *
-          (oddOrthogonalRhoShift n μ i + oddOrthogonalRhoShift n μ j) :=
+        (orthogonalRhoShift n μ i - orthogonalRhoShift n μ j) *
+          (orthogonalRhoShift n μ i + orthogonalRhoShift n μ j) :=
   (rfl)
 
 /-- Every factor of the numerator is positive: the entries of `μ + ρ` are strictly decreasing and
@@ -105,8 +109,8 @@ theorem evenOrthogonalWeylDimensionNumerator_pos :
     0 < evenOrthogonalWeylDimensionNumerator n μ := by
   rw [evenOrthogonalWeylDimensionNumerator_eq_prod_prod]
   refine prod_pos fun i _ => prod_pos fun j hj => ?_
-  have hij := oddOrthogonalRhoShift_strictAnti n μ (mem_Ico.1 hj).1
-  have hj0 := oddOrthogonalRhoShift_nonneg (μ := μ) (mem_Ico.1 hj).2
+  have hij := orthogonalRhoShift_strictAnti n μ (mem_Ico.1 hj).1
+  have hj0 := orthogonalRhoShift_nonneg (μ := μ) (mem_Ico.1 hj).2
   exact mul_pos (sub_pos.2 hij) (by omega)
 
 /-- **Integrality of the even orthogonal Weyl dimension formula**: `2!/2 · 4!/2 ⋯ (2n - 2)!/2`,
@@ -115,7 +119,7 @@ theorem prod_dvd_evenOrthogonalWeylDimensionNumerator :
     (∏ k ∈ range (n - 1), ((k + 1) * (2 * k + 1).factorial : ℤ))
       ∣ evenOrthogonalWeylDimensionNumerator n μ := by
   rw [evenOrthogonalWeylDimensionNumerator_eq_prod_prod]
-  convert prod_add_one_mul_factorial_dvd_prod_prod_sq_sub_sq n (oddOrthogonalRhoShift n μ)
+  convert prod_add_one_mul_factorial_dvd_prod_prod_sq_sub_sq n (orthogonalRhoShift n μ)
     using 2 with i _
   exact prod_congr rfl fun j _ => by ring
 
@@ -124,18 +128,18 @@ theorem prod_dvd_evenOrthogonalWeylDimensionNumerator :
 `∏_{c < k} (lᵢ² - c²)`. -/
 private theorem evenOrthogonalWeylDimensionNumerator_row {i : ℕ}
     (h : ∀ j, i < j → μ.rowLen j = 0) :
-    ∏ j ∈ Ico (i + 1) n, (oddOrthogonalRhoShift n μ i - oddOrthogonalRhoShift n μ j) *
-        (oddOrthogonalRhoShift n μ i + oddOrthogonalRhoShift n μ j)
-      = ∏ c ∈ range (n - 1 - i), (oddOrthogonalRhoShift n μ i ^ 2 - (c : ℤ) ^ 2) := by
-  set x := oddOrthogonalRhoShift n μ i
+    ∏ j ∈ Ico (i + 1) n, (orthogonalRhoShift n μ i - orthogonalRhoShift n μ j) *
+        (orthogonalRhoShift n μ i + orthogonalRhoShift n μ j)
+      = ∏ c ∈ range (n - 1 - i), (orthogonalRhoShift n μ i ^ 2 - (c : ℤ) ^ 2) := by
+  set x := orthogonalRhoShift n μ i
   have hrow : ∀ t ∈ range (n - (i + 1)),
-      (x - oddOrthogonalRhoShift n μ (i + 1 + t)) * (x + oddOrthogonalRhoShift n μ (i + 1 + t))
+      (x - orthogonalRhoShift n μ (i + 1 + t)) * (x + orthogonalRhoShift n μ (i + 1 + t))
         = (fun c : ℕ => x ^ 2 - (c : ℤ) ^ 2) (n - 1 - i - 1 - t) := by
     intro t ht
     have ht := mem_range.1 ht
     have hc : ((n - 1 - i - 1 - t : ℕ) : ℤ) = n - 1 - (i + 1 + t : ℕ) := by omega
     simp only [hc]
-    rw [oddOrthogonalRhoShift_apply, h (i + 1 + t) (by omega), Nat.cast_zero, zero_add]
+    rw [orthogonalRhoShift_apply, h (i + 1 + t) (by omega), Nat.cast_zero, zero_add]
     ring
   have hlen : n - (i + 1) = n - 1 - i := by omega
   rw [prod_Ico_eq_prod_range, prod_congr rfl hrow, hlen,
@@ -145,11 +149,11 @@ private theorem evenOrthogonalWeylDimensionNumerator_row {i : ℕ}
 `k = n - 1 - i`, and the row is `∏_{c < k} (k² - c²)`. -/
 private theorem evenOrthogonalWeylDimensionNumerator_row_of_rowLen_eq_zero {i : ℕ} (hi : i < n)
     (h : ∀ j, i ≤ j → μ.rowLen j = 0) :
-    ∏ j ∈ Ico (i + 1) n, (oddOrthogonalRhoShift n μ i - oddOrthogonalRhoShift n μ j) *
-        (oddOrthogonalRhoShift n μ i + oddOrthogonalRhoShift n μ j)
+    ∏ j ∈ Ico (i + 1) n, (orthogonalRhoShift n μ i - orthogonalRhoShift n μ j) *
+        (orthogonalRhoShift n μ i + orthogonalRhoShift n μ j)
       = (fun k : ℕ => ∏ c ∈ range k, ((k : ℤ) ^ 2 - (c : ℤ) ^ 2)) (n - 1 - i) := by
-  have hx : oddOrthogonalRhoShift n μ i = ((n - 1 - i : ℕ) : ℤ) := by
-    rw [oddOrthogonalRhoShift_apply, h i le_rfl]
+  have hx : orthogonalRhoShift n μ i = ((n - 1 - i : ℕ) : ℤ) := by
+    rw [orthogonalRhoShift_apply, h i le_rfl]
     omega
   rw [evenOrthogonalWeylDimensionNumerator_row n μ fun j hj => h j hj.le, hx]
 
@@ -207,7 +211,7 @@ private theorem evenOrthogonalWeylDimensionNumerator_cast (ν : YoungDiagram) :
   rw [evenOrthogonalWeylDimensionNumerator_eq_prod_prod]
   push_cast
   refine prod_congr rfl fun i _ => prod_congr rfl fun j _ => ?_
-  simp only [oddOrthogonalRhoShift_apply]
+  simp only [orthogonalRhoShift_apply]
   push_cast
   ring
 
@@ -236,8 +240,8 @@ the same lengths have the same numerator. -/
 theorem evenOrthogonalWeylDimensionNumerator_congr {ν : YoungDiagram}
     (h : ∀ i < n, μ.rowLen i = ν.rowLen i) :
     evenOrthogonalWeylDimensionNumerator n μ = evenOrthogonalWeylDimensionNumerator n ν := by
-  have hx : ∀ i < n, oddOrthogonalRhoShift n μ i = oddOrthogonalRhoShift n ν i := fun i hi => by
-    simp only [oddOrthogonalRhoShift_apply, h i hi]
+  have hx : ∀ i < n, orthogonalRhoShift n μ i = orthogonalRhoShift n ν i := fun i hi => by
+    simp only [orthogonalRhoShift_apply, h i hi]
   rw [evenOrthogonalWeylDimensionNumerator_eq_prod_prod,
     evenOrthogonalWeylDimensionNumerator_eq_prod_prod]
   refine prod_congr rfl fun i hi => prod_congr rfl fun j hj => ?_
@@ -282,12 +286,12 @@ private theorem evenOrthogonalWeylDimensionNumerator_add_two_of_colLen_le_one
     rw [prod_congr rfl hk,
       prod_range_reflect (fun k : ℕ => ∏ c ∈ range k, ((k : ℤ) ^ 2 - (c : ℤ) ^ 2)) (n + 1),
       prod_prod_sq_sub_sq_eq_prod_add_one_mul_factorial, Nat.add_sub_cancel]
-  · have hx : oddOrthogonalRhoShift (n + 2) μ 0 = ((μ.rowLen 0 + n + 1 : ℕ) : ℤ) := by
-      rw [oddOrthogonalRhoShift_apply]
+  · have hx : orthogonalRhoShift (n + 2) μ 0 = ((μ.rowLen 0 + n + 1 : ℕ) : ℤ) := by
+      rw [orthogonalRhoShift_apply]
       push_cast
       ring
-    rw [evenOrthogonalWeylDimensionNumerator_row (n + 2) μ fun j hj => h' j hj, hx,
-      show n + 2 - 1 - 0 = n + 1 by omega]
+    rw [evenOrthogonalWeylDimensionNumerator_row (n + 2) μ fun j hj => h' j hj, hx, Nat.sub_zero,
+      Nat.add_succ_sub_one]
 
 /-- **One-row weights**: if `μ` has at most one row, of length `d`, then the even orthogonal Weyl
 dimension for `SO (2n + 4)` is `(d + 2n + 2).choose (2n + 2) + (d + 2n + 1).choose (2n + 2)`, the
@@ -299,7 +303,7 @@ theorem evenOrthogonalWeylDimension_eq_choose_add_choose_of_colLen_le_one (h : �
         + (μ.rowLen 0 + 2 * n + 1).choose (2 * n + 2) := by
   have hdim := evenOrthogonalWeylDimension_mul_prod_add_one_mul_factorial (n + 2) μ
   rw [evenOrthogonalWeylDimensionNumerator_add_two_of_colLen_le_one n μ h,
-    show n + 2 - 1 = n + 1 by omega, prod_range_succ, mul_comm, mul_assoc] at hdim
+    Nat.add_succ_sub_one, prod_range_succ, mul_comm, mul_assoc] at hdim
   have hP := (prod_add_one_mul_factorial_two_mul_add_one_pos n).ne'
   -- Cancel `2!/2 ⋯ (2n)!/2`, then double the first row into two falling factorials.
   have hrow := mul_left_cancel₀ hP hdim
@@ -361,10 +365,10 @@ theorem evenOrthogonalWeylDimension_two :
       = (μ.rowLen 0 - μ.rowLen 1 + 1) * (μ.rowLen 0 + μ.rowLen 1 + 1) := by
   have h := evenOrthogonalWeylDimension_mul_prod_add_one_mul_factorial 2 μ
   have hle := μ.rowLen_anti 0 1 zero_le_one
-  simp only [evenOrthogonalWeylDimensionNumerator_eq_prod_prod, oddOrthogonalRhoShift_apply,
-    show 2 - 1 = 1 from rfl, range_one, prod_singleton] at h
+  simp only [evenOrthogonalWeylDimensionNumerator_eq_prod_prod, orthogonalRhoShift_apply,
+    Nat.reduceSub, range_one, prod_singleton] at h
   rw [prod_range_succ, range_one, prod_singleton, Ico_self, prod_empty, mul_one,
-    show Ico (0 + 1) 2 = {1} from rfl, prod_singleton] at h
+    zero_add, Nat.Ico_succ_singleton, prod_singleton] at h
   norm_num at h
   zify [hle]
   linear_combination h

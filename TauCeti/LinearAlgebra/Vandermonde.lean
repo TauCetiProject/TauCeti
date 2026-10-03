@@ -592,15 +592,15 @@ theorem prod_add_one_mul_factorial_two_mul_add_one_pos (m : ℕ) :
 /-- The products `∏_{c < j} (j² - c²)` for `j < m`, the rows of the even Vandermonde product at the
 nodes `m - 1, …, 1, 0`, multiply to `2!/2 · 4!/2 ⋯ (2m - 2)!/2`: the row `j = k + 1` is
 `(k + 1) (2k + 1)!` (`TauCeti.prod_sq_sub_sq_eq_mul_factorial`) and the row `j = 0` is empty. -/
-theorem prod_prod_sq_sub_sq_eq_prod_add_one_mul_factorial (m : ℕ) :
-    ∏ j ∈ Finset.range m, ∏ c ∈ Finset.range j, ((j : ℤ) ^ 2 - (c : ℤ) ^ 2)
-      = ∏ k ∈ Finset.range (m - 1), ((k + 1) * (2 * k + 1).factorial : ℤ) := by
+theorem prod_prod_sq_sub_sq_eq_prod_add_one_mul_factorial {R : Type*} [CommRing R] (m : ℕ) :
+    ∏ j ∈ Finset.range m, ∏ c ∈ Finset.range j, ((j : R) ^ 2 - (c : R) ^ 2)
+      = ∏ k ∈ Finset.range (m - 1), ((k + 1) * (2 * k + 1).factorial : R) := by
   cases m with
   | zero => simp
   | succ m =>
     rw [Finset.prod_range_succ', Finset.prod_range_zero, mul_one, Nat.add_sub_cancel]
     exact Finset.prod_congr rfl fun k _ => by
-      exact_mod_cast prod_sq_sub_sq_eq_mul_factorial (R := ℤ) k
+      exact_mod_cast prod_sq_sub_sq_eq_mul_factorial (R := R) k
 
 /-- **Integrality for the even Vandermonde product.**  For a sequence of integers, the product
 `∏_{k < l < m} (bₖ² - bₗ²)` is divisible by `∏_{k < m - 1} (k + 1) (2k + 1)!`, that is, by
