@@ -46,7 +46,7 @@ variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 
 attribute [local instance] TopRep.distribMulAction TopRep.smulCommClass
 
-local instance : ContinuousSMul G (trivialF2 G).V :=
+local instance continuousSMul_trivialF2_character : ContinuousSMul G (trivialF2 G).V :=
   (isSmoothDiscrete_trivialF2 G).continuousSMul
 
 /-- **The class of the character of an index-two open subgroup.** It is the canonical
