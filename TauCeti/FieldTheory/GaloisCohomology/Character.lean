@@ -39,9 +39,9 @@ noncomputable section
 
 namespace TauCeti
 
-universe u
+universe u v
 
-variable (K : Type u) [Field K] (L : Type u) [Field L] [Algebra K L]
+variable (K : Type u) [Field K] (L : Type v) [Field L] [Algebra K L]
   (σ : L →ₐ[K] SeparableClosure K) [FiniteDimensional K L]
 
 /-- **The quadratic character `χ_{L/K}`.** It is the class in `H¹(G_K, 𝔽₂)` of the
