@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Algebra.QuaternionBasis
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Basic
+import TauCeti.Algebra.Quaternion.Basis
+import TauCeti.Algebra.TensorProduct.Mul
 import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
 import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement
 import Mathlib.LinearAlgebra.Dimension.Constructions
@@ -132,29 +134,6 @@ private theorem generatorThree_sq (a b : Kˣ) (c d : K) :
   simp only [Units.val_inv_eq_inv_val, Units.val_mul]
   field_simp
 
-/-- The three standard generators of a quaternion basis with `c₂ = 0` pairwise anticommute. -/
-private theorem quaternionBasis_anticommute {A : Type*} [Ring A] [Algebra K A] {c₁ c₃ : K}
-    (q : _root_.QuaternionAlgebra.Basis A c₁ 0 c₃) :
-    q.i * q.j + q.j * q.i = 0 ∧ q.i * q.k + q.k * q.i = 0 ∧ q.j * q.k + q.k * q.j = 0 := by
-  refine ⟨?_, ?_, ?_⟩
-  · rw [q.i_mul_j, q.j_mul_i, zero_smul, zero_sub, add_neg_cancel]
-  · rw [q.i_mul_k, q.k_mul_i, zero_smul, add_zero, neg_smul, add_neg_cancel]
-  · rw [q.j_mul_k, q.k_mul_j, zero_mul, zero_smul, zero_sub, neg_add_cancel]
-
-/-- Pure tensors anticommute when their left factors anticommute and right factors commute. -/
-private theorem tmul_anticommute_of_left {A B : Type*} [Ring A] [Algebra K A] [Ring B]
-    [Algebra K B] {x x' : A} {y y' : B} (hx : x * x' + x' * x = 0) (hy : Commute y y') :
-    x ⊗ₜ[K] y * x' ⊗ₜ y' + x' ⊗ₜ y' * x ⊗ₜ y = 0 := by
-  rw [Algebra.TensorProduct.tmul_mul_tmul, Algebra.TensorProduct.tmul_mul_tmul, hy.eq,
-    ← TensorProduct.add_tmul, hx, TensorProduct.zero_tmul]
-
-/-- Pure tensors anticommute when their left factors commute and right factors anticommute. -/
-private theorem tmul_anticommute_of_right {A B : Type*} [Ring A] [Algebra K A] [Ring B]
-    [Algebra K B] {x x' : A} {y y' : B} (hx : Commute x x') (hy : y * y' + y' * y = 0) :
-    x ⊗ₜ[K] y * x' ⊗ₜ y' + x' ⊗ₜ y' * x ⊗ₜ y = 0 := by
-  rw [Algebra.TensorProduct.tmul_mul_tmul, Algebra.TensorProduct.tmul_mul_tmul, hx.eq,
-    ← TensorProduct.tmul_add, hy, TensorProduct.tmul_zero]
-
 private theorem generator_pair_anticommute (a b : Kˣ) (c d : K) :
     generatorZero a b c d * generatorOne a b c d +
         generatorOne a b c d * generatorZero a b c d = 0 ∧
@@ -168,12 +147,16 @@ private theorem generator_pair_anticommute (a b : Kˣ) (c d : K) :
         generatorThree a b c d * generatorOne a b c d = 0 ∧
       generatorTwo a b c d * generatorThree a b c d +
         generatorThree a b c d * generatorTwo a b c d = 0 := by
-  obtain ⟨hij, hik, hjk⟩ := quaternionBasis_anticommute
-    (_root_.QuaternionAlgebra.Basis.self K : _root_.QuaternionAlgebra.Basis
-      (firstQuaternion a b) _ _ _)
-  have hij' := (quaternionBasis_anticommute
-    (_root_.QuaternionAlgebra.Basis.self K : _root_.QuaternionAlgebra.Basis
-      (secondQuaternion a b c d) _ _ _)).1
+  -- Both quaternion factors have `c₂ = 0`, so their generators anticommute.
+  let q := (_root_.QuaternionAlgebra.Basis.self K : _root_.QuaternionAlgebra.Basis
+    (firstQuaternion a b) _ _ _)
+  let q' := (_root_.QuaternionAlgebra.Basis.self K : _root_.QuaternionAlgebra.Basis
+    (secondQuaternion a b c d) _ _ _)
+  have hij := q.i_mul_j_add_j_mul_i.trans (zero_smul K _)
+  have hik := q.i_mul_k_add_k_mul_i.trans (zero_smul K _)
+  have hjk := q.j_mul_k_add_k_mul_j.trans (by rw [zero_mul, zero_smul])
+  have hij' := q'.i_mul_j_add_j_mul_i.trans (zero_smul K _)
+  open Algebra.TensorProduct in
   exact ⟨tmul_anticommute_of_left hij (Commute.refl _),
     tmul_anticommute_of_left hik (Commute.one_left _),
     tmul_anticommute_of_left hik (Commute.one_left _),
