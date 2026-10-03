@@ -95,11 +95,11 @@ theorem measurableSet_dirichletDomain [MeasurableSpace X] [OpensMeasurableSpace 
   (isClosed_dirichletDomain G p).measurableSet
 
 variable (G) in
-/-- The group elements whose translates of `p` compete with `p` somewhere on `K`: for some
+/-- The acting elements whose images of `p` compete with `p` somewhere on `K`: for some
 `x ∈ K`, the point `g • p` is at least as close to `x` as `p` is. Equivalently, these are the
 `g` whose defining inequality of the Dirichlet domain does not hold strictly everywhere on `K`.
 Every constraint that cuts into `K` is indexed by a competitor, but a competitor's constraint
-may still be redundant (for nonempty `K`, the identity is always a competitor). -/
+may still be redundant. -/
 def dirichletCompetitors (p : X) (K : Set X) : Set G :=
   {g | ∃ x ∈ K, dist x (g • p) ≤ dist x p}
 
