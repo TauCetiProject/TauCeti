@@ -356,9 +356,10 @@ theorem ofPrime?_eq_some {q : DixonPrimeData G}
 
 variable (e he n hn)
 
-/-- **The search for Dixon prime data.** The numbers `e (k + 1) + 1` for `k < fuel`, which are
-exactly the numbers above `1` and at most `e · fuel + 1` congruent to `1` modulo `e`, are tested in
-increasing order, and the Dixon prime data at each good prime among them is kept. -/
+/-- **The search for Dixon prime data.** The numbers `e (k + 1) + 1` for `k < fuel` are tested in
+increasing order, and the Dixon prime data at each good prime among them is kept. When `e ≠ 0`
+(for instance when `G` is finite), these are exactly the numbers above `1` and at most
+`e · fuel + 1` congruent to `1` modulo `e`. -/
 def candidates (fuel : ℕ) : List (DixonPrimeData G) :=
   (List.range fuel).filterMap fun k ↦ ofPrime? e he n hn (e * (k + 1) + 1)
 

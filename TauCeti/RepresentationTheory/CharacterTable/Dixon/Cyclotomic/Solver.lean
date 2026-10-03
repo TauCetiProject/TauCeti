@@ -437,16 +437,18 @@ def characterTableDixon? (e : ℕ) (he : e = Monoid.exponent G) (fuel : ℕ) :
 theorem isSome_characterTableDixon?_iff (e : ℕ) (he : e = Monoid.exponent G) (fuel : ℕ) :
     (d.characterTableDixon? e he fuel).isSome ↔
       ∃ q ∈ DixonPrimeData.candidates e he (Fintype.card G) Nat.card_eq_fintype_card.symm fuel,
-        (d.dixonCyclotomicCharacterTable? e he q).isSome :=
-  List.findSome?_isSome_iff
+        (d.dixonCyclotomicCharacterTable? e he q).isSome := by
+  rw [characterTableDixon?]
+  exact List.findSome?_isSome_iff
 
 /-- Every table the algorithm returns is returned by the solver at one of the searched primes. -/
 theorem exists_mem_candidates_of_characterTableDixon?_eq_some (e : ℕ)
     (he : e = Monoid.exponent G) {fuel : ℕ} {output : d.CyclotomicCharacterTableData e}
     (h : d.characterTableDixon? e he fuel = some output) :
     ∃ q ∈ DixonPrimeData.candidates e he (Fintype.card G) Nat.card_eq_fintype_card.symm fuel,
-      d.dixonCyclotomicCharacterTable? e he q = some output :=
-  List.exists_of_findSome?_eq_some h
+      d.dixonCyclotomicCharacterTable? e he q = some output := by
+  rw [characterTableDixon?] at h
+  exact List.exists_of_findSome?_eq_some h
 
 /-- **The algorithm succeeds once the solver succeeds at a prime it reaches.** If the solver
 returns a table at the Dixon prime data `q`, the search computes `q` at its prime, and that prime
