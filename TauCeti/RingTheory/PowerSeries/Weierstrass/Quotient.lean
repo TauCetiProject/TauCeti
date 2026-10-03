@@ -34,18 +34,6 @@ public section
 
 namespace TauCeti.PowerSeries
 
-private theorem polynomialToRestricted_trunc_eq_of_coeff_eq_zero
-    {R : Type*} [NormedCommRing R] [IsUltrametricDist R] {c : ℝ} {s : ℕ}
-    (r : PowerSeries.IsRestricted.subring (R := R) c)
-    (hr : ∀ n, s ≤ n → (r : PowerSeries R).coeff n = 0) :
-    polynomialToRestricted c (PowerSeries.trunc s (r : PowerSeries R)) = r := by
-  apply Subtype.ext
-  ext n
-  simp only [coe_polynomialToRestricted, Polynomial.coeff_coe, PowerSeries.coeff_trunc]
-  split_ifs with hn
-  · rfl
-  · exact (hr n (by omega)).symm
-
 variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R] [NormMulClass R]
   {c : ℝ} {s : ℕ} {p : Polynomial R}
 

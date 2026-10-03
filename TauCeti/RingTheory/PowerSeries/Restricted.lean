@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.PowerSeries.Restricted
+public import Mathlib.RingTheory.PowerSeries.Trunc
 
 /-!
 # Restricted power series and their coefficient algebra
@@ -90,6 +91,19 @@ noncomputable def polynomialToRestricted (c : ℝ) :
 @[simp]
 theorem coe_polynomialToRestricted (p : Polynomial R) :
     (polynomialToRestricted c p : PowerSeries R) = p := (rfl)
+
+/-- A restricted series whose coefficients vanish from degree `s` onward is the polynomial
+inclusion of its `s`-truncation. -/
+theorem polynomialToRestricted_trunc_eq_of_coeff_eq_zero {s : ℕ}
+    (r : PowerSeries.IsRestricted.subring (R := R) c)
+    (hr : ∀ n, s ≤ n → (r : PowerSeries R).coeff n = 0) :
+    polynomialToRestricted c (PowerSeries.trunc s (r : PowerSeries R)) = r := by
+  apply Subtype.ext
+  ext n
+  simp only [coe_polynomialToRestricted, Polynomial.coeff_coe, PowerSeries.coeff_trunc]
+  split_ifs with hn
+  · rfl
+  · exact (hr n (by omega)).symm
 
 end Algebra
 
