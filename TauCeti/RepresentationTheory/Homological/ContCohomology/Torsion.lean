@@ -34,6 +34,10 @@ endomorphism of `X`, and the additivity of `Hⁿ⁺¹(G, -)` turns the annihilat
 The summed contraction identity is `TopRep.d_sum_apply_add_sum_d_apply`, and the invariance of the
 coset sum is `ContRepresentation.sum_apply_out_mem_invariants`.
 
+A second, hypothesis-free form of the same phenomenon is also recorded here: an exponent of the
+coefficients is an exponent of `Hⁿ(G, X)` in every degree, for any topological group, by
+exponent-inheritance along the coinduced resolution.
+
 ## Main results
 
 * `TauCeti.ContinuousCohomology.exists_openSubgroup_index_nsmul_eq_zero`: every class of positive

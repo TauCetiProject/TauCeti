@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.DirectSum.Algebra
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.GradedComm
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.GradedRing
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.TrivialF2.Basic
 
@@ -23,7 +22,7 @@ invisible, so the external direct sum
 
 is an ordinary commutative ring. This file packages the all-degree cup product along
 `TauCeti.trivialF2TopPairing` in that form: the graded ring structure is the general
-`TauCeti.TopPairing.cohomologyGRing` of that pairing, whose unit is `TauCeti.cohomF2One`, and its
+`TauCeti.TopPairing.cohomologyGRing` of that pairing, whose unit is `TauCeti.cohomF2.one`, and its
 value on the direct-sum generators is fixed by `TauCeti.cohomF2.of_mul_of`.
 
 The coefficient object `TauCeti.trivialF2` is an object of `TopRep ℤ G`, the coefficients over
@@ -40,6 +39,8 @@ The resulting direct sum is a `ZMod 2`-algebra whose multiplication preserves de
 ## Main results
 
 * `TauCeti.cohomF2.of_mul_of`: multiplication of homogeneous elements is the cup product.
+* `TauCeti.cohomF2.one_eq_one`, `TauCeti.cohomF2.of_one`: the unit class is the `1` of the
+  degree-zero ring and of `gradedCohomF2`.
 * `TauCeti.cohomF2.algebraMap_apply`: scalars from `ZMod 2` lie in degree zero.
 
 The cup-product identities used here are the Alexander–Whitney identities in Brown,
@@ -65,7 +66,7 @@ noncomputable abbrev gradedCohomF2 : Type u :=
 namespace cohomF2
 
 /-- Mod-two continuous cohomology is a graded ring under the cup product along
-`TauCeti.trivialF2TopPairing`, with unit `TauCeti.cohomF2One`. -/
+`TauCeti.trivialF2TopPairing`, with unit `TauCeti.cohomF2.one`. -/
 noncomputable instance instGRing : DirectSum.GRing (cohomF2 G) :=
   (trivialF2TopPairing G).cohomologyGRing ((trivialF2Equiv G).symm 1)
     (fun g ↦ trivialF2_ρ_apply_apply G g _) (trivialF2TopPairing_bil_one_left G)
@@ -78,30 +79,26 @@ theorem gMul_eq_cup {m n : ℕ} (x : cohomF2 G m) (y : cohomF2 G n) :
   (rfl)
 
 /-- The unit supplied by the graded ring structure is the degree-zero unit class. -/
+theorem gOne_eq_one : (GradedMonoid.GOne.one : cohomF2 G 0) = cohomF2.one G :=
+  (one_def G).symm
+
+/-- The unit class is the `1` of the degree-zero ring `cohomF2 G 0`. -/
 @[simp]
-theorem gOne_eq_cohomF2One : (GradedMonoid.GOne.one : cohomF2 G 0) = cohomF2One G :=
-  (cohomF2One_def G).symm
+theorem one_eq_one : cohomF2.one G = (1 : cohomF2 G 0) :=
+  (gOne_eq_one G).symm
+
+-- Not `@[simp]`: `simp` proves it from `one_eq_one` and `DirectSum.of_zero_one`.
+/-- The unit class is the unit of the graded mod-two cohomology algebra. -/
+theorem of_one : DirectSum.of (cohomF2 G) 0 (cohomF2.one G) = 1 := by
+  rw [one_eq_one, DirectSum.of_zero_one]
 
 /-- Homogeneous classes commute: the Koszul sign of `TauCeti.TopPairing.cup_gradedComm` acts
-trivially. -/
+trivially (`TauCeti.trivialF2TopPairing_cup_comm`). -/
 private theorem mk_mul_mk_comm {m n : ℕ} (x : cohomF2 G m) (y : cohomF2 G n) :
     GradedMonoid.mk m x * GradedMonoid.mk n y = GradedMonoid.mk n y * GradedMonoid.mk m x := by
   rw [GradedMonoid.mk_mul_mk, GradedMonoid.mk_mul_mk, gMul_eq_cup, gMul_eq_cup]
-  have hcup : (trivialF2TopPairing G).cup m n x y =
-      (ContinuousCohomology.degreeCast (trivialF2 G) (Nat.add_comm n m)).hom
-        ((trivialF2TopPairing G).cup n m y x) := by
-    rw [(trivialF2TopPairing G).cup_gradedComm m n x y, trivialF2TopPairing_flip]
-    congr 1
-    -- `cup_gradedComm` scales by the `ℤ`-module structure of the module category, which is not
-    -- definitionally the canonical `ℤ`-action; `int_smul_eq_zsmul` identifies the two
-    refine (int_smul_eq_zsmul _ _ _).trans ?_
-    -- the Koszul sign acts trivially: every class is killed by `2`, so `-c = c`
-    obtain h | h := neg_one_pow_eq_or ℤ (m * n) <;> rw [h]
-    · exact one_zsmul _
-    · rw [neg_one_zsmul]
-      exact ZModModule.neg_eq_self _
-  exact Sigma.ext (Nat.add_comm m n)
-    (hcup.heq.trans (ContinuousCohomology.degreeCast_hom_apply_heq _ _))
+  exact Sigma.ext (Nat.add_comm m n) ((trivialF2TopPairing_cup_comm G m n x y).heq.trans
+    (ContinuousCohomology.degreeCast_hom_apply_heq _ _))
 
 /-- In characteristic two the graded-commutative cup product is an ordinary commutative
 multiplication on the graded pieces. -/
@@ -110,25 +107,25 @@ noncomputable instance instGCommRing : DirectSum.GCommRing (cohomF2 G) where
   mul_comm := fun ⟨_, x⟩ ⟨_, y⟩ ↦ by exact mk_mul_mk_comm G x y
 
 /-- Multiplying by the degree-zero class `r • 1` is the scalar action of `r : ZMod 2`. -/
-private theorem mk_smul_cohomF2One_mul (r : ZMod 2) {n : ℕ} (x : cohomF2 G n) :
-    GradedMonoid.mk 0 (r • cohomF2One G) * GradedMonoid.mk n x = GradedMonoid.mk n (r • x) := by
+private theorem mk_smul_one_mul (r : ZMod 2) {n : ℕ} (x : cohomF2 G n) :
+    GradedMonoid.mk 0 (r • cohomF2.one G) * GradedMonoid.mk n x = GradedMonoid.mk n (r • x) := by
   obtain rfl | rfl : r = 0 ∨ r = 1 := by revert r; decide
   · rw [zero_smul, zero_smul, GradedMonoid.mk_mul_mk,
       DirectSum.GNonUnitalNonAssocSemiring.zero_mul, Nat.zero_add]
-  · rw [one_smul, one_smul, ← gOne_eq_cohomF2One]
+  · rw [one_smul, one_smul, ← gOne_eq_one]
     exact one_mul (GradedMonoid.mk n x)
 
 /-- Degree-zero scalar multiples of the unit make mod-two continuous cohomology a graded
 `ZMod 2`-algebra. -/
 noncomputable instance instGAlgebra : DirectSum.GAlgebra (ZMod 2) (cohomF2 G) where
-  toFun := (LinearMap.toSpanSingleton (ZMod 2) _ (cohomF2One G)).toAddMonoidHom
-  map_one := (one_smul (ZMod 2) (cohomF2One G)).trans (gOne_eq_cohomF2One G).symm
+  toFun := (LinearMap.toSpanSingleton (ZMod 2) _ (cohomF2.one G)).toAddMonoidHom
+  map_one := (one_smul (ZMod 2) (cohomF2.one G)).trans (gOne_eq_one G).symm
   -- as in `instGCommRing`, `by exact` keeps the private helper out of the exposed body
   map_mul r s := by
-    exact (congrArg (GradedMonoid.mk 0) (mul_smul r s (cohomF2One G))).trans
-      (mk_smul_cohomF2One_mul G r _).symm
+    exact (congrArg (GradedMonoid.mk 0) (mul_smul r s (cohomF2.one G))).trans
+      (mk_smul_one_mul G r _).symm
   commutes r x := mul_comm _ x
-  smul_def r := fun ⟨_, x⟩ ↦ by exact (mk_smul_cohomF2One_mul G r x).symm
+  smul_def r := fun ⟨_, x⟩ ↦ by exact (mk_smul_one_mul G r x).symm
 
 /-- Multiplication of homogeneous elements in `gradedCohomF2` is their cup product. -/
 @[simp]
@@ -142,9 +139,9 @@ theorem of_mul_of {m n : ℕ} (x : cohomF2 G m) (y : cohomF2 G n) :
 @[simp]
 theorem algebraMap_apply (r : ZMod 2) :
     algebraMap (ZMod 2) (gradedCohomF2 G) r =
-      DirectSum.of (cohomF2 G) 0 (r • cohomF2One G) := by
-  rw [DirectSum.algebraMap_apply]
-  -- the scalar map of `instGAlgebra` is `r ↦ r • cohomF2One G` by definition
+      DirectSum.of (cohomF2 G) 0 (r • (1 : cohomF2 G 0)) := by
+  rw [DirectSum.algebraMap_apply, ← one_eq_one]
+  -- the scalar map of `instGAlgebra` is `r ↦ r • cohomF2.one G` by definition
   rfl
 
 end cohomF2
