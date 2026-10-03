@@ -140,15 +140,9 @@ theorem eq_liftQ {f : L →ₗ⁅R⁆ L'} {h : I ≤ f.ker} {g : L ⧸ I →ₗ�
 `L ⧸ J`. -/
 theorem ker_liftQ_mkQ {J : LieIdeal R L} (h : J ≤ I.mkQ.ker) :
     (J.liftQ I.mkQ h).ker = I.map J.mkQ := by
-  rw [ker_mkQ] at h
-  ext z
-  obtain ⟨x, rfl⟩ := J.mkQ_surjective z
-  rw [LieHom.mem_ker, ← LieHom.comp_apply, liftQ_mkQ, ← LieHom.mem_ker, ker_mkQ]
-  refine ⟨fun hx ↦ mem_map hx, fun hx ↦ ?_⟩
-  obtain ⟨⟨y, hy⟩, hyx⟩ := mem_map_of_surjective J.mkQ_surjective hx
-  rw [← sub_add_cancel x y]
-  refine I.add_mem (h ?_) hy
-  rw [← ker_mkQ J, LieHom.mem_ker, map_sub, hyx, sub_self]
+  rw [← LieSubmodule.toSubmodule_inj, LieHom.ker_toSubmodule, coe_liftQ, Submodule.ker_liftQ,
+    ← LieHom.ker_toSubmodule, ker_mkQ, coe_map_of_surjective J.mkQ_surjective]
+  rfl
 
 section Supplement
 

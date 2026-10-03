@@ -51,8 +51,9 @@ whole algebra.
   solvable.
 * `LieIdeal.isSolvable_of_isSolvable_map`: solvability descends from the image together with the
   part of the ideal lying in the kernel.
-* `LieAlgebra.derivedAbelianOfIdeal_le`: the last nonzero term of the derived series of an ideal,
-  Mathlib's abelian ideal `LieAlgebra.derivedAbelianOfIdeal`, lies inside the ideal.
+* `LieAlgebra.derivedAbelianOfIdeal_le`: Mathlib's abelian ideal `LieAlgebra.derivedAbelianOfIdeal`
+  of an ideal (the last nonzero term of its derived series when the ideal is solvable, and `⊥`
+  otherwise) lies inside the ideal.
 * `LieAlgebra.isSolvable_of_isSolvable_ker_of_surjective` and
   `LieAlgebra.isSolvable_iff_ideal_quotient`: solvability is an extension property.
 * `LieIdeal.radical_map_eq`: a surjective homomorphism with solvable kernel carries the radical
@@ -217,7 +218,8 @@ namespace LieAlgebra
 
 variable {R L L' : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] [LieRing L'] [LieAlgebra R L']
 
-/-- The last nonzero term of the derived series of an ideal is contained in the ideal. -/
+/-- The ideal `derivedAbelianOfIdeal I` is contained in `I`. When `I` is solvable this is the last
+nonzero term of its derived series; otherwise it is `⊥`. -/
 theorem derivedAbelianOfIdeal_le (I : LieIdeal R L) : derivedAbelianOfIdeal I ≤ I := by
   rw [derivedAbelianOfIdeal]
   split
