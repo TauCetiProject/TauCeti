@@ -20,17 +20,17 @@ identifies the cohomology `Hⁿ(f(Y), M)` of the open subset `f(Y)` of `X` with 
 `Hⁿ(Y, M|_Y)` of the restriction of `M` along `f`.
 
 Applied to the canonical open immersion `Spec Γ(X, U) ⟶ X` of an affine open `U`, it transports
-Serre's vanishing theorem on the spectrum of a Noetherian ring to the affine opens of an arbitrary
-scheme: a quasi-coherent sheaf has no cohomology in positive degrees on an affine open `U` with
-`Γ(X, U)` Noetherian.
+the acyclicity of quasi-coherent sheaves on the spectrum of a Noetherian ring (Hartshorne,
+Theorem III.3.5) to the affine opens of an arbitrary scheme: a quasi-coherent sheaf has no
+cohomology in positive degrees on an affine open `U` with `Γ(X, U)` Noetherian.
 
 ## Main declarations
 
 * `AlgebraicGeometry.Scheme.Modules.cohomologyOnOpensRangeNatIso`: the comparison
   `Hⁿ(f(Y), M) ≅ Hⁿ(Y, M|_Y)`, natural in `M`, and `cohomologyOnOpensRangeIso` its component at
   a single sheaf of modules.
-* `AlgebraicGeometry.Scheme.Modules.subsingleton_cohomologyOn_succ_of_isAffineOpen`: Serre's
-  vanishing theorem on affine opens.
+* `AlgebraicGeometry.Scheme.Modules.subsingleton_cohomologyOn_succ_of_isAffineOpen`:
+  acyclicity of quasi-coherent sheaves on Noetherian affine opens.
 
 ## References
 
@@ -104,8 +104,8 @@ def cohomologyOnOpensRangeIso (n : ℕ) :
     cohomologyOn M n f.opensRange ≅ AddCommGrpCat.of (Cohomology (M.restrict f) n) :=
   (cohomologyOnOpensRangeNatIso f n).app M
 
-/-- **Serre's vanishing theorem on an affine open**: a quasi-coherent sheaf of modules has no
-cohomology in positive degrees on an affine open subset `U` whose ring of sections is
+/-- **Acyclicity of quasi-coherent sheaves on affine opens**: a quasi-coherent sheaf of modules
+has no cohomology in positive degrees on an affine open subset `U` whose ring of sections is
 Noetherian. -/
 theorem subsingleton_cohomologyOn_succ_of_isAffineOpen [M.IsQuasicoherent] {U : X.Opens}
     (hU : IsAffineOpen U) [IsNoetherianRing Γ(X, U)] (n : ℕ) :

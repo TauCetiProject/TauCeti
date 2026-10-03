@@ -40,8 +40,9 @@ together with the vanishing it gives when `U` and `V` cover `X`.
 
 These statements are the shape in which Mayer-Vietoris is used on a curve. The general theorem
 accepts arbitrary coefficients and explicit acyclicity hypotheses. For quasi-coherent
-coefficients on a locally Noetherian scheme, the affine-open variants use Serre vanishing; users
-may either supply an affine intersection directly or obtain it from an affine diagonal.
+coefficients on a locally Noetherian scheme, the affine-open variants use the acyclicity of
+quasi-coherent sheaves on affine opens; users may either supply an affine intersection directly
+or obtain it from an affine diagonal.
 
 This advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer B, "coherent sheaves and
 cohomology `Hⁱ(X, ℱ)`: … vanishing above dimension (`H² = 0` on a curve)". No formalization is
@@ -149,7 +150,7 @@ positive degrees has no cohomology in degrees at least two.
 
 This is the form Mayer-Vietoris takes on a separated scheme covered by two affine opens: the
 intersection is then affine as well. For quasi-coherent `M` on a locally Noetherian scheme the
-hypotheses are Serre's vanishing theorem on affine opens, which gives
+hypotheses are the acyclicity of quasi-coherent sheaves on affine opens, which gives
 `Scheme.Modules.subsingleton_cohomology_of_two_le_of_isAffineOpen`; for a general
 `M : X.Modules` they have to come from elsewhere. -/
 theorem subsingleton_cohomology_of_two_le (hUV : U ⊔ V = ⊤) (n : ℕ) (hn : 2 ≤ n)
