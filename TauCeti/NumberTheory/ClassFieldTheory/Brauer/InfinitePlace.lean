@@ -20,6 +20,8 @@ two-torsion subgroup at a real place and zero at a complex place.
 These maps provide the archimedean terms in sums of local Brauer invariants. The real value is
 intrinsic: it depends only on whether the class vanishes, not on an identification of separable
 closures used to transport the real Brauer-group calculation.
+`infiniteInvMap_eq_realInv_comp` makes this independence explicit for every additive
+identification with the real Brauer group.
 
 ## References
 
@@ -68,6 +70,21 @@ theorem infiniteInvMap_apply_of_isReal (w : InfinitePlace K) (hw : w.IsReal)
     infiniteInvMap w x = if x = 0 then 0 else ((1 / 2 : ℚ) : AddCircle (1 : ℚ)) := by
   rw [infiniteInvMap_of_isReal w hw, AddMonoidHom.comp_apply, realInv_apply]
   simp only [AddEquiv.coe_toAddMonoidHom, EmbeddingLike.map_eq_zero_iff]
+
+/-- At a real place, every additive identification with the real Brauer group gives the same
+normalized invariant. In particular, changing the lift of a field isomorphism to separable
+closures does not change the invariant. -/
+theorem infiniteInvMap_eq_realInv_comp (w : InfinitePlace K) (hw : w.IsReal)
+    (e : Br w.Completion ≃+ Br ℝ) :
+    infiniteInvMap w = realInv.comp e.toAddMonoidHom := by
+  classical
+  ext x
+  rw [infiniteInvMap_apply_of_isReal w hw, AddMonoidHom.comp_apply, realInv_apply]
+  by_cases hx : x = 0
+  · subst x
+    simp
+  · have he : e.toAddMonoidHom x ≠ 0 := fun h => hx (e.injective (h.trans e.map_zero.symm))
+    simp only [hx, he, ite_false]
 
 /-- The invariant at a complex place always vanishes. -/
 @[simp]

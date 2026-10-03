@@ -16,14 +16,19 @@ The construction uses the existing identification of separable closures and thei
 Galois groups, followed by change of groups and coefficients in continuous cohomology. In
 particular, it allows the Brauer groups of archimedean completions to be compared with those
 of the real and complex fields without changing the cohomology carrier.
+
+This API supplies an additive identification using a chosen lift to separable closures. It does
+not supply functoriality lemmas comparing the lifts chosen for different field isomorphisms.
+The archimedean invariant is independent of this identification, as recorded by
+`TauCeti.ClassFieldTheory.infiniteInvMap_eq_realInv_comp` in the archimedean module.
 -/
 
 public noncomputable section
 
 namespace TauCeti.ClassFieldTheory
 
-/-- An isomorphism of fields induces an additive equivalence of their cohomological Brauer
-groups, using the induced identification of separable closures. -/
+/-- An isomorphism of fields supplies an additive equivalence of their cohomological Brauer
+groups, using a chosen identification of separable closures. -/
 def brCongr {K L : Type*} [Field K] [Field L] (e : K ≃+* L) : Br K ≃+ Br L := by
   letI : Algebra K L := e.toRingHom.toAlgebra
   let eA : K ≃ₐ[K] L := { e with commutes' := fun _ => rfl }
