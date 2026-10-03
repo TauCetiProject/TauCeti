@@ -83,8 +83,9 @@ fixes `v` instead of negating it and is a transvection rather than a reflection 
 * `TauCeti.QuadraticMap.orthogonalGroupCongr`: isometric quadratic maps have isomorphic orthogonal
   groups. Over an algebraically closed field this is what makes `O(Q)` depend only on the rank of
   `Q`. The transport respects identity, composition, and inverses
-  (`orthogonalGroupCongr_refl`, `orthogonalGroupCongr_trans`, `orthogonalGroupCongr_symm`) and
-  preserves the determinant (`QuadraticMap.IsometryEquiv.orthogonalDet_orthogonalGroupCongr`).
+  (`orthogonalGroupCongr_refl`, `QuadraticMap.IsometryEquiv.orthogonalGroupCongr_trans`,
+  `QuadraticMap.IsometryEquiv.orthogonalGroupCongr_symm`) and preserves the determinant
+  (`QuadraticMap.IsometryEquiv.orthogonalDet_orthogonalGroupCongr`).
 * `QuadraticMap.IsometryEquiv.specialOrthogonalGroupCongr`: isometric quadratic maps have isomorphic
   special orthogonal groups as well, functorially and compatibly with the inclusion into the full
   orthogonal group.
@@ -288,8 +289,8 @@ theorem orthogonalGroupCongr_refl :
 
 /-- Orthogonal-group transport respects composition of isometries. -/
 @[simp]
-theorem orthogonalGroupCongr_trans (e₁₂ : Q₁.IsometryEquiv Q₂)
-    (e₂₃ : Q₂.IsometryEquiv Q₃) :
+theorem _root_.QuadraticMap.IsometryEquiv.orthogonalGroupCongr_trans
+    (e₁₂ : Q₁.IsometryEquiv Q₂) (e₂₃ : Q₂.IsometryEquiv Q₃) :
     orthogonalGroupCongr (e₁₂.trans e₂₃) =
       (orthogonalGroupCongr e₁₂).trans (orthogonalGroupCongr e₂₃) := by
   ext g m
@@ -297,7 +298,8 @@ theorem orthogonalGroupCongr_trans (e₁₂ : Q₁.IsometryEquiv Q₂)
   rfl
 
 /-- Inverting orthogonal-group transport is transport along the inverse isometry. -/
-theorem orthogonalGroupCongr_symm (e : Q₁.IsometryEquiv Q₂) :
+theorem _root_.QuadraticMap.IsometryEquiv.orthogonalGroupCongr_symm
+    (e : Q₁.IsometryEquiv Q₂) :
     (orthogonalGroupCongr e).symm = orthogonalGroupCongr e.symm := by
   ext g m
   simp
