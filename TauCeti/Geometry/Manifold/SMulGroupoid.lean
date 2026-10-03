@@ -147,6 +147,8 @@ theorem hasGroupoid_smulGroupoid_iff {M : Type*} [TopologicalSpace M] [ChartedSp
   ⟨fun h _ he _ he' ↦ mem_smulGroupoid_iff.1 (h.compatible he he'),
     fun h ↦ ⟨fun he he' ↦ mem_smulGroupoid_iff.2 (h _ he _ he')⟩⟩
 
+/-- The groupoid `smulGroupoid G X` is closed under restriction, so open subsets of a
+(G, X)-manifold inherit the same (G, X)-structure. -/
 instance : ClosedUnderRestriction (smulGroupoid G X) where
   closedUnderRestriction {_} he _ _ :=
     mem_smulGroupoid_iff.2 fun x hx ↦ mem_smulGroupoid_iff.1 he x hx.1
