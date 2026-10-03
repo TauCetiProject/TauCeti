@@ -62,19 +62,20 @@ theorem IsProP.module_finite_lcsGradedPiece (hG : IsProP p G)
     let _ : Module.Finite ℤ_[p] (gradedPiece 0 G n) := ih
     let _ : IsClosed (pLowerCentralSeries 0 G n : Set G) := isClosed_pLowerCentralSeries n
     obtain ⟨S, hS⟩ := isTopologicallyFinitelyGenerated_iff.mp hfg
-    let f : (S → gradedPiece 0 G n) →ₗ[ℤ_[p]] gradedPiece 0 G (0 + n + 1) :=
-      { toFun := fun y ↦ ∑ s : S, gradedBracket 0 G 0 n (gradedMkZero 0 G s) (y s)
-        map_add' := by
-          intro x y
-          simp only [Pi.add_apply, map_add, Finset.sum_add_distrib]
+    let fs (s : S) : gradedPiece 0 G n →ₗ[ℤ_[p]] gradedPiece 0 G (0 + n + 1) :=
+      { toFun := gradedBracket 0 G 0 n (gradedMkZero 0 G s)
+        map_add' := map_add _
         map_smul' := by
           intro u y
-          simp only [Pi.smul_apply, hG.gradedBracket_smul_right, Finset.smul_sum,
-            RingHom.id_apply] }
+          exact hG.gradedBracket_smul_right u (gradedMkZero 0 G s) y }
+    let f := LinearMap.lsum ℤ_[p] (fun _ : S ↦ gradedPiece 0 G n) ℤ_[p] fs
     have hrange : Set.range (fun s : S ↦ (s : G)) = (S : Set G) := by ext; simp
-    have hsurj : Function.Surjective f := fun z ↦
-      exists_sum_gradedBracket_eq_of_range n (fun s : S ↦ (s : G))
-        (by rwa [hrange]) z
+    have hsurj : Function.Surjective f := by
+      intro z
+      simpa only [f, LinearMap.lsum_apply, LinearMap.sum_apply, LinearMap.comp_apply,
+        LinearMap.proj_apply, fs, LinearMap.coe_mk, AddHom.coe_mk] using
+        exists_sum_gradedBracket_eq_of_range n (fun s : S ↦ (s : G))
+          (by rwa [hrange]) z
     exact Module.Finite.of_surjective f hsurj
 
 end TauCeti

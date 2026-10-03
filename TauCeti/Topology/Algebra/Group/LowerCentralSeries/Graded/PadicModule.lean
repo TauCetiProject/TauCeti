@@ -71,8 +71,7 @@ noncomputable def IsProP.gradedPieceModule (hG : IsProP p G) (q n : ℕ) :
     exact ⟨pLowerCentralSeries q G (n + 1), isClosed_pLowerCentralSeries (n + 1), rfl⟩
   exact ((hG.subgroup R).quotient N).module
 
-/-- The graded-piece module is the canonical module on its underlying abelian pro-`p` quotient.
-The local closedness instances supply the profinite structures on the subgroup and quotient. -/
+/-- The graded-piece module is the canonical module on its underlying abelian pro-`p` quotient. -/
 theorem IsProP.gradedPieceModule_def (hG : IsProP p G) (q n : ℕ) :
     hG.gradedPieceModule q n =
       let R := pLowerCentralSeries q G n
