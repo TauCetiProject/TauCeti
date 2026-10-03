@@ -241,9 +241,8 @@ theorem map_leftUnitor_cup_characterConnectingClass (σ : Additive (Abelianizati
   · dsimp only
     rw [← hk, ← QuotientAddGroup.mk_neg]
     rfl
-  · have hl : (((Rep.ratAddCircleShortComplex G).map (tensorLeft (Rep.trivial ℤ G ℤ))).f).hom
-        ((1 : ℤ) ⊗ₜ[ℤ] (-k)) = (1 : ℤ) ⊗ₜ[ℤ] ((-k : ℤ) : ℚ) := rfl
-    erw [hl]
+  · rw [ShortComplex.map_f, curriedTensor_obj_map, hom_whiskerLeft,
+      Representation.IntertwiningMap.lTensor_apply, ratAddCircleShortComplex_f_hom_apply]
     simp only [ShortComplex.map_X₂, curriedTensor_obj_obj, tensor_V, Int.cast_neg,
       Representation.norm, tensor_ρ, Representation.tprod_apply, LinearMap.coe_sum,
       Finset.sum_apply, TensorProduct.map_tmul, Representation.trivial_apply, Finset.sum_const,
