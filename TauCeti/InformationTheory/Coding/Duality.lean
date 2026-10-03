@@ -292,7 +292,8 @@ variable {K : Type*} [Field K] [Fintype ι]
 theorem permutationAut_euclideanDual (C : Submodule K (ι → K)) :
     permutationAut (euclideanDual C) = permutationAut C := by
   refine le_antisymm ?_ permutationAut_le_permutationAut_euclideanDual
-  simpa using permutationAut_le_permutationAut_euclideanDual (C := euclideanDual C)
+  simpa only [Submodule.euclideanDual_euclideanDual] using
+    permutationAut_le_permutationAut_euclideanDual (C := euclideanDual C)
 
 variable [DecidableEq ι]
 
@@ -301,9 +302,11 @@ exactly when its contragredient is a monomial automorphism of the code. -/
 theorem mem_monomialAut_euclideanDual_iff {C : Submodule K (ι → K)}
     {f : (ι → K) ≃ₗ[K] (ι → K)} :
     f ∈ monomialAut (euclideanDual C) ↔ f.dotProductContragredient ∈ monomialAut C := by
-  refine ⟨fun h ↦ by simpa using dotProductContragredient_mem_monomialAut_euclideanDual h,
-    fun h ↦ ?_⟩
-  simpa using dotProductContragredient_mem_monomialAut_euclideanDual h
+  refine ⟨fun h ↦ by
+    simpa only [Submodule.euclideanDual_euclideanDual] using
+      dotProductContragredient_mem_monomialAut_euclideanDual h, fun h ↦ ?_⟩
+  simpa only [LinearEquiv.dotProductContragredient_dotProductContragredient] using
+    dotProductContragredient_mem_monomialAut_euclideanDual h
 
 /-- The monomial automorphism groups of a linear code and of its Euclidean dual are isomorphic,
 by taking contragredients. -/

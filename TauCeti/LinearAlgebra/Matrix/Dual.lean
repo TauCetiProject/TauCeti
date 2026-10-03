@@ -107,6 +107,7 @@ def dotProductContragredient (f : (ι → R) ≃ₗ[R] (κ → R)) : (ι → R) 
   (dotProductEquiv R ι).trans (f.symm.dualMap.trans (dotProductEquiv R κ).symm)
 
 /-- The contragredient of `f` is adjoint, for the dot product, to the inverse of `f`. -/
+@[simp]
 theorem dotProductContragredient_apply_dotProduct (f : (ι → R) ≃ₗ[R] (κ → R)) (y : ι → R)
     (x : κ → R) : f.dotProductContragredient y ⬝ᵥ x = y ⬝ᵥ f.symm x := by
   have h := congr($((dotProductEquiv R κ).apply_symm_apply
@@ -115,7 +116,6 @@ theorem dotProductContragredient_apply_dotProduct (f : (ι → R) ≃ₗ[R] (κ 
     dualMap_apply] using h
 
 /-- A linear equivalence and its contragredient preserve the dot product jointly. -/
-@[simp]
 theorem dotProductContragredient_apply_dotProduct_apply (f : (ι → R) ≃ₗ[R] (κ → R))
     (y x : ι → R) : f.dotProductContragredient y ⬝ᵥ f x = y ⬝ᵥ x := by
   rw [dotProductContragredient_apply_dotProduct, symm_apply_apply]
@@ -134,6 +134,7 @@ theorem eq_dotProductContragredient_iff {f g : (ι → R) ≃ₗ[R] (κ → R)} 
   rw [← f.apply_symm_apply x, h, dotProductContragredient_apply_dotProduct_apply]
 
 /-- The matrix of the contragredient of `f` is the transpose of the matrix of `f.symm`. -/
+@[simp]
 theorem toMatrix'_dotProductContragredient (f : (ι → R) ≃ₗ[R] (κ → R)) :
     LinearMap.toMatrix' (f.dotProductContragredient : (ι → R) →ₗ[R] (κ → R)) =
       (LinearMap.toMatrix' (f.symm : (κ → R) →ₗ[R] (ι → R)))ᵀ := by
@@ -142,17 +143,22 @@ theorem toMatrix'_dotProductContragredient (f : (ι → R) ≃ₗ[R] (κ → R))
     ← dotProduct_single_one (f.dotProductContragredient (Pi.single i 1)) j,
     dotProductContragredient_apply_dotProduct, single_one_dotProduct]
 
+/-- The contragredient of the identity is the identity. -/
 @[simp]
 theorem dotProductContragredient_refl :
     (refl R (ι → R)).dotProductContragredient = refl R (ι → R) :=
   (eq_dotProductContragredient_iff.2 fun _ _ ↦ rfl).symm
 
+/-- Taking the contragredient is compatible with composition: the contragredient of `f.trans g`
+is the composite of the contragredients of `f` and `g`. -/
 @[simp]
 theorem dotProductContragredient_trans (f : (ι → R) ≃ₗ[R] (κ → R)) (g : (κ → R) ≃ₗ[R] (μ → R)) :
     (f.trans g).dotProductContragredient =
       f.dotProductContragredient.trans g.dotProductContragredient :=
   (eq_dotProductContragredient_iff.2 fun _ _ ↦ by simp).symm
 
+/-- Taking the contragredient is compatible with inversion: the contragredient of `f.symm` is
+the inverse of the contragredient of `f`. -/
 @[simp]
 theorem dotProductContragredient_symm (f : (ι → R) ≃ₗ[R] (κ → R)) :
     f.symm.dotProductContragredient = f.dotProductContragredient.symm := by
