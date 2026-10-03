@@ -128,8 +128,8 @@ theorem sum_range_finrank_cellularHomology {n : ℕ}
   have hX : IsZero ((cellularChainComplex C M).X (n + 1)) := by
     rw [cellularChainComplex_X]
     exact isZero_cellularChainGroup C (n + 1) M
-  rw [← (cellularChainComplex C M).sum_range_finrank_X_eq_sum_range_finrank_homology hfinite' hX,
-    Finset.mul_sum]
+  rw [← (cellularChainComplex C M).sum_range_finrank_X_eq_sum_range_finrank_homology hfinite'
+      (hX.eq_of_src _ 0), Finset.mul_sum]
   refine Finset.sum_congr rfl fun i hi ↦ ?_
   let _ := hfinite i (by simp at hi; omega)
   rw [finrank_cellularChainComplex_X]

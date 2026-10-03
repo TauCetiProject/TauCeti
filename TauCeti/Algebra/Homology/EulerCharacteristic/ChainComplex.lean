@@ -20,10 +20,11 @@ differential, applied to the boundaries `Bₙ = im (Kₙ₊₁ ⟶ Kₙ)`, gives
 dim Kₙ = dim Hₙ(K) + dim Bₙ + dim Bₙ₋₁,
 ```
 
-and the alternating sum of these identities telescopes.  If `Kₙ₊₁ = 0`, the last boundary
-term `dim Bₙ` vanishes, so the alternating sums of the dimensions of the terms and of the
-homology agree up to degree `n` (`ChainComplex.sum_range_finrank_X_eq_sum_range_finrank_homology`).
-The terms in degrees above `n + 1` play no role.
+and the alternating sum of these identities telescopes.  If the differential `Kₙ₊₁ ⟶ Kₙ`
+vanishes, the last boundary term `dim Bₙ` vanishes, so the alternating sums of the dimensions of
+the terms and of the homology agree up to degree `n`
+(`ChainComplex.sum_range_finrank_X_eq_sum_range_finrank_homology`).  The terms in degrees above
+`n + 1` play no role.
 
 For a complex of finite-dimensional vector spaces that vanishes in all large degrees this is the
 equality of Mathlib's term and homology Euler characteristics
@@ -110,14 +111,15 @@ private theorem sum_range_finrank_X_eq_add (n : ℕ)
     ring
 
 /-- **Euler--Poincaré for a chain complex of vector spaces indexed by `ℕ`.**  If the terms of
-`K` through degree `n` are finite-dimensional and `Kₙ₊₁ = 0`, then the alternating sums up to
-degree `n` of the dimensions of the terms and of the homology of `K` agree. -/
+`K` through degree `n` are finite-dimensional and the differential `Kₙ₊₁ ⟶ Kₙ` vanishes, then
+the alternating sums up to degree `n` of the dimensions of the terms and of the homology of `K`
+agree. -/
 theorem sum_range_finrank_X_eq_sum_range_finrank_homology {n : ℕ}
-    (hfinite : ∀ i ≤ n, Module.Finite k (K.X i)) (hn : IsZero (K.X (n + 1))) :
+    (hfinite : ∀ i ≤ n, Module.Finite k (K.X i)) (hn : K.d (n + 1) n = 0) :
     ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ i * finrank k (K.X i) =
       ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ i * finrank k (K.homology i) := by
-  rw [K.sum_range_finrank_X_eq_add n hfinite, hn.eq_of_src (K.d (n + 1) n), ModuleCat.hom_zero,
-    LinearMap.range_zero, finrank_bot]
+  rw [K.sum_range_finrank_X_eq_add n hfinite, hn, ModuleCat.hom_zero, LinearMap.range_zero,
+    finrank_bot]
   simp
 
 /-- **Euler--Poincaré for a bounded chain complex of vector spaces.**  For a chain complex of
@@ -138,6 +140,6 @@ theorem eulerChar_eq_homologyEulerChar [∀ n, Module.Finite k (K.X n)]
         ModuleCat.finrank_eq_zero_of_isZero
           (((K.exactAt_iff i).2 (ShortComplex.exact_of_isZero_X₂ _ (hX i hi))).isZero_homology))]
   simpa using K.sum_range_finrank_X_eq_sum_range_finrank_homology
-    (fun _ _ ↦ inferInstance) (hX (n + 1) (by simp))
+    (fun _ _ ↦ inferInstance) ((hX (n + 1) (by simp)).eq_of_src _ 0)
 
 end ChainComplex
