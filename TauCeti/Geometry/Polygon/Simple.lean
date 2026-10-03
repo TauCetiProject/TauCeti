@@ -28,7 +28,9 @@ orientation, and the parametrization `Polygon.boundaryParamCircle` is the corres
 topological embedding of the circle. The bundled type `TauCeti.SimplePolygon` carries the number of
 vertices as data, so that polygons with different numbers of vertices are presentations of the
 same type, and `TauCeti.SimplePolygon.realize` is its realization as a topological embedding of
-the unit circle `Circle`. Nothing here depends on the dimension of the ambient space.
+the unit circle `Circle`. A framing is not part of this presentation: a framing of a polygonal
+knot is a chosen push-off, which is separate data on top of the simple polygon, as for
+`TauCeti.SmoothCircleEmbedding`. Nothing here depends on the dimension of the ambient space.
 
 The first simple polygons are the triangles: `Affine.Triangle.toPolygon_isSimple`. The polygon with
 no vertices is vacuously simple and has empty boundary, so the results about the boundary assume
@@ -282,7 +284,7 @@ end Polygon
 
 namespace Affine.Triangle
 
-variable {R V P : Type*} [Ring R] [PartialOrder R] [AddRightMono R] [ZeroLEOneClass R]
+variable {R V P : Type*} [Ring R] [PartialOrder R] [ZeroLEOneClass R]
   [Nontrivial R] [AddCommGroup V] [Module R V] [AddTorsor V P]
 
 /-- **A triangle is a simple polygon.** -/
@@ -361,7 +363,7 @@ end TauCeti
 
 namespace Affine.Triangle
 
-variable {R V P : Type*} [Ring R] [PartialOrder R] [AddRightMono R] [ZeroLEOneClass R]
+variable {R V P : Type*} [Ring R] [PartialOrder R] [ZeroLEOneClass R]
   [Nontrivial R] [AddCommGroup V] [Module R V] [AddTorsor V P]
 
 /-- A triangle, as a simple polygon with three vertices. -/
