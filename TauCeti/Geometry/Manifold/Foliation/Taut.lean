@@ -1,0 +1,120 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Geometry.Manifold.Foliation.Leaf
+import Mathlib.Analysis.Calculus.LocalExtr.Rolle
+
+/-!
+# Transversals and taut foliations
+
+A closed transversal to a foliation is a smooth closed curve whose velocity is everywhere
+transverse to the tangent distribution.  The definition uses complementary submodules, so it
+does not silently assume a codimension: a one-dimensional transversal can exist only when the
+distribution has the corresponding codimension.  A foliation is taut when every leaf meets one
+of these curves.
+
+The obstruction theorem gives a concrete example.  The foliation of a finite-dimensional normed
+space by the affine hyperplanes of a nonzero continuous linear functional has a global first
+integral.  Rolle's theorem forces every closed smooth curve to have velocity in one of those
+hyperplanes somewhere, so this foliation is not taut.
+
+The terminology follows Calegari, *Foliations and the Geometry of 3-Manifolds*, Chapter 4.
+-/
+
+public section
+
+noncomputable section
+
+open Set
+open TauCeti.Manifold
+open scoped Manifold ContDiff
+
+namespace TauCeti
+
+namespace Foliation
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} {n : ℕ∞ω}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  {k : ℕ} [IsManifold I (n + 1) M]
+  (F : Foliation I n M k)
+
+/-- A smooth closed curve is transverse to `F` when its velocity and the leaf tangent space are
+complementary at every parameter value. -/
+def IsClosedTransversal (γ : ℝ → M) : Prop :=
+  ContMDiff 𝓘(ℝ, ℝ) I 1 γ ∧ γ 0 = γ 1 ∧
+    ∀ t, curveVelocity I γ t ≠ 0 ∧
+      IsCompl (Submodule.span ℝ {curveVelocity I γ t}) (F.distribution (γ t))
+
+/-- A foliation is taut when every leaf meets a smooth closed transversal. -/
+def Taut : Prop :=
+  ∀ x : M, ∃ γ : ℝ → M, F.IsClosedTransversal γ ∧ ∃ t : ℝ, γ t ∈ F.leaf x
+
+@[simp]
+theorem isClosedTransversal_iff (γ : ℝ → M) : F.IsClosedTransversal γ ↔
+    ContMDiff 𝓘(ℝ, ℝ) I 1 γ ∧ γ 0 = γ 1 ∧
+      ∀ t, curveVelocity I γ t ≠ 0 ∧
+        IsCompl (Submodule.span ℝ {curveVelocity I γ t}) (F.distribution (γ t)) :=
+  Iff.rfl
+
+theorem isClosedTransversal_periodic (hγ : F.IsClosedTransversal γ) : γ 0 = γ 1 := hγ.2.1
+
+theorem isClosedTransversal_velocity_not_mem (hγ : F.IsClosedTransversal γ) (t : ℝ) :
+    curveVelocity I γ t ∉ F.distribution (γ t) := by
+  intro ht
+  have hzero := (hγ.2.2 t).2.disjoint.le_bot
+    ⟨Submodule.mem_span_singleton_self _, ht⟩
+  exact (hγ.2.2 t).1 ((Submodule.mem_bot ℝ).mp hzero)
+
+theorem isClosedTransversal_of_complement
+    (hγ : ContMDiff 𝓘(ℝ, ℝ) I 1 γ) (hperiod : γ 0 = γ 1)
+    (htrans : ∀ t, curveVelocity I γ t ≠ 0 ∧
+      IsCompl (Submodule.span ℝ {curveVelocity I γ t}) (F.distribution (γ t))) :
+    F.IsClosedTransversal γ :=
+  ⟨hγ, hperiod, htrans⟩
+
+section FirstIntegral
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+  [FiniteDimensional ℝ V] (ℓ : V →L[ℝ] ℝ) (hn : 1 ≤ n)
+
+/-- The foliation by kernels of a continuous linear functional admits no closed transversal. -/
+theorem not_isClosedTransversal_ofSubmodule_ker
+    {γ : ℝ → V}
+    (hγ : (Foliation.ofSubmodule (LinearMap.ker ℓ.toLinearMap) hn).IsClosedTransversal γ) :
+    False := by
+  obtain ⟨hγdiff, hperiod, htrans⟩ := hγ
+  have hγ' : ContDiff ℝ 1 γ := (contMDiff_iff_contDiff.mp hγdiff)
+  let g : ℝ → ℝ := ℓ ∘ γ
+  have hg : ContinuousOn g (Icc 0 1) :=
+    (ℓ.continuous.comp hγ'.continuous).continuousOn
+  have hgperiod : g 0 = g 1 := by simp [g, hperiod]
+  obtain ⟨c, _hc, hdc⟩ := exists_deriv_eq_zero (a := (0 : ℝ)) (b := 1) zero_lt_one hg hgperiod
+  have hderiv : deriv g c = ℓ (deriv γ c) := by
+    simpa [g] using
+      (ℓ.hasFDerivAt.comp c (hγ'.differentiable one_ne_zero c).hasFDerivAt).hasDerivAt.deriv
+  have hvzero : ℓ (curveVelocity 𝓘(ℝ, V) γ c) = 0 := by
+    rw [curveVelocity_eq_deriv, ← hderiv, hdc]
+  have hnot := isClosedTransversal_velocity_not_mem
+    (F := Foliation.ofSubmodule (LinearMap.ker ℓ.toLinearMap) hn)
+      ⟨hγdiff, hperiod, htrans⟩ c
+  apply hnot
+  rw [Foliation.ofSubmodule_distribution]
+  exact hvzero
+
+/-- The affine-hyperplane foliation defined by a continuous linear functional is not taut. -/
+theorem not_taut_ofSubmodule_ker :
+    ¬ (Foliation.ofSubmodule (LinearMap.ker ℓ.toLinearMap) hn).Taut := by
+  intro htaut
+  obtain ⟨γ, hγ, -⟩ := htaut 0
+  exact not_isClosedTransversal_ofSubmodule_ker ℓ hn hγ
+
+end FirstIntegral
+
+end Foliation
+
+end TauCeti
