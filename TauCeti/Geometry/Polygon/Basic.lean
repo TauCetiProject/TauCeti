@@ -90,6 +90,8 @@ variable [Ring R] [PartialOrder R] [AddCommGroup V] [Module R V] [AddTorsor V P]
 theorem edgeSet_rotate (j : Fin n) : poly.rotate.edgeSet R j = poly.edgeSet R (finRotate n j) := by
   rw [edgeSet, edgeSet, rotate_apply, rotate_apply]
 
+/-- Cyclically relabelling the vertices does not change the boundary: the edges of
+`poly.rotate` are those of `poly`, reindexed by `finRotate n`. -/
 @[simp]
 theorem boundary_rotate : poly.rotate.boundary R = poly.boundary R := by
   simp only [boundary, edgeSet_rotate]
