@@ -101,10 +101,14 @@ theorem _root_.Polynomial.subresultant_natDegree_gcd {p q : K[X]} {m n : ℕ}
 Together with vanishing below that index, this identifies the first nonzero subresultant
 polynomial. A right degree bound suffices; neither squarefreeness nor monicity is assumed. -/
 theorem _root_.Polynomial.subresultant_natDegree_gcd_associated {p q : K[X]} {m n : ℕ}
-    (hp : p ≠ 0) (hm : p.natDegree = m) (hn : q.natDegree ≤ n)
+    (hm : p.natDegree = m) (hn : q.natDegree ≤ n)
     (hj : (EuclideanDomain.gcd p q).natDegree < min m n) :
     Associated (subresultant p q m n (EuclideanDomain.gcd p q).natDegree)
       (EuclideanDomain.gcd p q) := by
+  have hp : p ≠ 0 := by
+    rintro rfl
+    simp only [natDegree_zero] at hm
+    omega
   rw [subresultant_natDegree_gcd hm.le hn hj]
   have hc : IsUnit (C (psc p q m n (EuclideanDomain.gcd p q).natDegree)) :=
     isUnit_C.mpr (isUnit_iff_ne_zero.mpr (psc_natDegree_gcd_ne_zero hp hm hn))
