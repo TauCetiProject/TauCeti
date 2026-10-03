@@ -148,19 +148,17 @@ noncomputable def affineToricChartι (σ : Φ.cones) :
   colimit.ι Φ.affineToricDiagram σ
 
 /-- The colimit cocone from the affine toric charts to the toric scheme of a finite fan. -/
--- Expose the named point and legs so the dependent colimit API uses the chart carriers directly.
--- Using `colimit.cocone` here would require exposing `algebraicRealization`; this shell keeps
--- the realization's colimit implementation hidden while reusing Mathlib's naturality proof.
-@[expose] noncomputable def affineToricCocone : Cocone Φ.affineToricDiagram where
-  pt := Φ.algebraicRealization
-  ι :=
-    { app := Φ.affineToricChartι
-      naturality := by
-        intro τ σ f
-        have := fun {τ σ : Φ.cones} (f : τ ⟶ σ) ↦
-          isOpenImmersion_affineToricDiagram_map f
-        have := isLocallyDirected_affineToricDiagram (Φ := Φ)
-        exact (colimit.cocone Φ.affineToricDiagram).ι.naturality f }
+-- Keep the named point for the dependent colimit API while reusing Mathlib's cocone.
+-- Transport only the target functor; the reflexive equality uses the hidden realization body.
+@[expose] noncomputable def affineToricCocone : Cocone Φ.affineToricDiagram := (by
+  haveI := fun {τ σ : Φ.cones} (f : τ ⟶ σ) ↦
+    isOpenImmersion_affineToricDiagram_map f
+  haveI := isLocallyDirected_affineToricDiagram (Φ := Φ)
+  exact
+    { pt := Φ.algebraicRealization
+      ι := (by rfl : (Functor.const Φ.cones).obj (colimit.cocone Φ.affineToricDiagram).pt =
+        (Functor.const Φ.cones).obj Φ.algebraicRealization) ▸
+          (colimit.cocone Φ.affineToricDiagram).ι })
 
 /-- The point of the affine toric cocone is the toric scheme. -/
 @[simp]
@@ -179,9 +177,9 @@ noncomputable def isColimitAffineToricCocone : IsColimit Φ.affineToricCocone :=
   haveI := fun {τ σ : Φ.cones} (f : τ ⟶ σ) ↦
     isOpenImmersion_affineToricDiagram_map f
   haveI := isLocallyDirected_affineToricDiagram (Φ := Φ)
-  -- Unfold only the cocone and its point/leg wrappers to identify the chosen colimit cocone.
+  -- Unfold only the cocone and its point to identify the chosen colimit cocone.
   have hc : Φ.affineToricCocone = colimit.cocone Φ.affineToricDiagram := by
-    unfold affineToricCocone algebraicRealization affineToricChartι
+    unfold affineToricCocone algebraicRealization
     rfl
   exact hc.symm ▸ colimit.isColimit Φ.affineToricDiagram)
 
@@ -359,8 +357,9 @@ chart, followed by that chart's inclusion. -/
 theorem affineToricChartι_comp_algebraicMap (f : FanHom Φ Ψ) (σ : Φ.cones) :
     Φ.affineToricChartι σ ≫ f.algebraicMap =
       f.affineToricChartMap σ ≫
-        Ψ.affineToricChartι ⟨f.leastCone σ.2, f.leastCone_mem σ.2⟩ :=
-  Φ.isColimitAffineToricCocone.fac f.algebraicMapCocone σ
+        Ψ.affineToricChartι ⟨f.leastCone σ.2, f.leastCone_mem σ.2⟩ := (by
+  rw [← Fan.affineToricCocone_ι_app]
+  exact Φ.isColimitAffineToricCocone.fac f.algebraicMapCocone σ)
 
 /-- The algebraic map induced by the identity fan morphism is the identity. -/
 @[simp]
