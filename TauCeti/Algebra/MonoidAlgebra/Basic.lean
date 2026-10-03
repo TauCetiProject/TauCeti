@@ -21,9 +21,6 @@ none of the further theory built on it.
   between the basis element at `g` and the unit is nonzero when `g ≠ 1`.
 * The `IsMulCommutative (MonoidAlgebra R M)` instance: the monoid algebra of a commutative
   magma over a commutative semiring is commutative, as a mixin on the existing ring structure.
-* The `IsAddTorsionFree (MonoidAlgebra R M)` instance: a monoid algebra over a coefficient ring
-  without additive torsion has no additive torsion, since multiplication by `n` acts
-  coefficientwise.
 * `TauCeti.MonoidAlgebra.mem_ideal_smul_top_iff`: an element of `R[M]` lies in `I • R[M]` exactly
   when its coefficients lie in `I`, and `TauCeti.MonoidAlgebra.mapRingHom_eq_zero_iff`: the kernel
   of the coefficientwise map along `f : R →+* S` is `ker f • R[M]`.
@@ -63,14 +60,6 @@ theorem single_sub_one_ne_zero [Nontrivial R] {g : G} (hg : g ≠ 1) :
   exact hg (MonoidAlgebra.single_left_injective one_ne_zero h)
 
 namespace MonoidAlgebra
-
-/-- A monoid algebra over a coefficient semiring without additive torsion has no additive
-torsion. -/
-instance _root_.MonoidAlgebra.instIsAddTorsionFree {R : Type*} [Semiring R] [IsAddTorsionFree R]
-    {M : Type*} :
-    IsAddTorsionFree (MonoidAlgebra R M) :=
-  MonoidAlgebra.coeff_injective.isAddTorsionFree
-    MonoidAlgebra.coeffAddEquiv.toAddMonoidHom
 
 variable {R : Type*} [CommSemiring R] {M : Type*}
 
