@@ -18,7 +18,7 @@ import Mathlib.MeasureTheory.Integral.RieszMarkovKakutani.Real
 
 Let `A` be a unital commutative C⋆-algebra, with character space `Δ = characterSpace ℂ A`. A
 linear functional `f : A → ℂ` that is nonnegative on every `star a * a` is integration against a
-finite positive measure on `Δ`:
+finite inner regular positive measure on `Δ`:
 
 `f a = ∫ ω, ω a ∂μ`.
 
@@ -33,13 +33,13 @@ into a measure on the joint spectrum.
 ## Main declarations
 
 * `LinearMap.exists_isFiniteMeasure_integral_characterSpace_eq`: a functional nonnegative on
-  `star a * a` is integration against a finite measure on the character space.
+  `star a * a` is integration against a finite inner regular measure on the character space.
 * `WeakDual.CharacterSpace.integral_apply_star_mul_self`: integrating `ω ↦ ω (star a * a)`
   gives the squared `L²` norm of `ω ↦ ω a`, so a measure representing a functional `f` computes
   `f (star a * a)`.
 * `StarSubalgebra.exists_isFiniteMeasure_integral_characterSpace_eq_inner`: for a closed
   commutative star algebra of operators on a Hilbert space, each positive vector functional
-  `a ↦ ⟪ξ, a ξ⟫` is integration against a finite measure on the character space.
+  `a ↦ ⟪ξ, a ξ⟫` is integration against a finite inner regular measure on the character space.
 * `StarSubalgebra.integral_norm_sq_eq_norm_apply_sq`: a measure representing such a functional
   computes `‖a ξ‖²` as the squared `L²` norm of `ω ↦ ω a`.
 
@@ -127,14 +127,15 @@ variable [MeasurableSpace (characterSpace ℂ A)] [BorelSpace (characterSpace �
 
 /-- **Positive functionals on a commutative C⋆-algebra are measures on its character space.**
 A linear functional on a unital commutative C⋆-algebra that is nonnegative on every
-`star a * a` is integration against a finite positive measure `μ` on the character space:
-`f a = ∫ ω, ω a ∂μ`. -/
+`star a * a` is integration against a finite inner regular positive measure `μ` on the
+character space: `f a = ∫ ω, ω a ∂μ`. -/
 theorem LinearMap.exists_isFiniteMeasure_integral_characterSpace_eq (f : A →ₗ[ℂ] ℂ)
     (hf : ∀ a, 0 ≤ f (star a * a)) :
-    ∃ μ : Measure (characterSpace ℂ A), IsFiniteMeasure μ ∧ ∀ a, f a = ∫ ω, ω a ∂μ := by
+    ∃ μ : Measure (characterSpace ℂ A), IsFiniteMeasure μ ∧ μ.InnerRegular ∧
+      ∀ a, f a = ∫ ω, ω a ∂μ := by
   set Λ := realFunctional f hf
   set μ := RealRMK.rieszMeasure Λ
-  refine ⟨μ, inferInstance, fun a ↦ ?_⟩
+  refine ⟨μ, inferInstance, inferInstance, fun a ↦ ?_⟩
   -- Split the Gelfand transform `F` of `a` into its real part `u` and imaginary part `v`.
   set F := gelfandStarTransform A a
   let u : C(characterSpace ℂ A, ℝ) := ⟨fun ω ↦ (F ω).re, Complex.continuous_re.comp F.continuous⟩
@@ -199,10 +200,10 @@ variable [IsMulCommutative B] [BorelSpace (characterSpace ℂ B)]
 
 /-- **Positive vector functionals are measures on the character space.** For a closed
 commutative star algebra `B` of operators on a complex Hilbert space and a vector `ξ`, the
-positive vector functional `a ↦ ⟪ξ, a ξ⟫` is integration against a finite positive measure on
-the character space of `B`. -/
+positive vector functional `a ↦ ⟪ξ, a ξ⟫` is integration against a finite inner regular positive
+measure on the character space of `B`. -/
 theorem StarSubalgebra.exists_isFiniteMeasure_integral_characterSpace_eq_inner (ξ : H) :
-    ∃ μ : Measure (characterSpace ℂ B), IsFiniteMeasure μ ∧
+    ∃ μ : Measure (characterSpace ℂ B), IsFiniteMeasure μ ∧ μ.InnerRegular ∧
       ∀ a : B, ⟪ξ, (a : H →L[ℂ] H) ξ⟫_ℂ = ∫ ω, ω a ∂μ := by
   let f : B →ₗ[ℂ] ℂ :=
     { toFun a := ⟪ξ, (a : H →L[ℂ] H) ξ⟫_ℂ

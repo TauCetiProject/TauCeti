@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Fourier.Pontryagin.Measure
 public import TauCeti.RepresentationTheory.Continuous.Unitary.Basic
 import TauCeti.Analysis.CStarAlgebra.CharacterSpaceMeasure
+import TauCeti.MeasureTheory.Measure.Regular
 import TauCeti.RepresentationTheory.Continuous.Integrated.Algebra
 import TauCeti.RepresentationTheory.Continuous.Pontryagin
 import Mathlib.MeasureTheory.Measure.Haar.Unique
@@ -18,7 +19,7 @@ import Mathlib.MeasureTheory.Measure.Haar.Unique
 Let `π` be a strongly continuous unitary representation of a locally compact abelian group `G`
 on a complex Hilbert space `H`, and let `ξ ∈ H`. The
 diagonal matrix coefficient `g ↦ ⟪ξ, π(g) ξ⟫` is the Fourier–Stieltjes transform of a finite
-positive measure on the Pontryagin dual of `G`. This is the cyclic form of the
+inner regular positive measure on the Pontryagin dual of `G`. This is the cyclic form of the
 Stone–Naimark–Ambrose–Godement spectral theorem.
 
 The operators `π(g)` are only strongly continuous, so the spectral measure is built from the
@@ -29,7 +30,9 @@ on every integrated operator determines a continuous group character `χ_ω` wit
 `ω(π(g) π(f)) = χ_ω(g) ω(π(f))`; this assignment is continuous on the open set of such
 characters, and the image of `ν` under it is the required measure. The characters annihilating
 every integrated operator do not contribute: since `π(f) ξ` approximates `ξ`, the identity
-`∫ |ω(π(f)) - 1|² dν = ‖π(f) ξ - ξ‖²` forces `ω(π(f)) ≈ 1` in `L²(ν)`.
+`∫ |ω(π(f)) - 1|² dν = ‖π(f) ξ - ξ‖²` forces their measure to be zero.
+Compact approximation inside the open set of non-annihilating characters then proves that the
+pushforward measure is inner regular.
 
 No second countability of `G` and no separability of `H` is needed: the integrated form is defined
 for the Haar measure through its inner regularity for compact sets.
@@ -38,7 +41,7 @@ for the Haar measure through its inner regularity for compact sets.
 
 * `ContRepresentation.exists_pontryaginMeasureTransform_eq_inner`: a diagonal matrix coefficient
   of a strongly continuous unitary representation of a locally compact abelian group is the
-  Fourier–Stieltjes transform of a finite measure on the dual group.
+  Fourier–Stieltjes transform of a finite inner regular measure on the dual group.
 
 ## References
 
@@ -170,6 +173,37 @@ private lemma continuousOn_dual : ContinuousOn (dual π hcont hπ) (support π h
     exact (coe_dual_apply_eq_div π hcont hπ p.1.2 p.2.toAdd).symm
   exact (hVcont.continuousAt (hV.mem_nhds hf₀)).continuousWithinAt
 
+/-- A vector-state measure gives zero mass to characters annihilating all integrated operators. -/
+private lemma ae_mem_support [MeasurableSpace (characterSpace ℂ (algebra π hcont hπ))]
+    [BorelSpace (characterSpace ℂ (algebra π hcont hπ))]
+    {ν : Measure (characterSpace ℂ (algebra π hcont hπ))} [IsFiniteMeasure ν] {ξ : H}
+    (hrep : ∀ a : algebra π hcont hπ, ⟪ξ, (a : H →L[ℂ] H) ξ⟫_ℂ = ∫ ω, ω a ∂ν) :
+    ∀ᵐ ω ∂ν, ω ∈ support π hcont hπ := by
+  rw [ae_iff]
+  refine le_antisymm (ENNReal.le_of_forall_pos_le_add fun ε hε _ ↦ ?_) bot_le
+  have hεreal : 0 < (ε : ℝ) := by exact_mod_cast hε
+  obtain ⟨_, ⟨f, rfl⟩, hf⟩ := Metric.mem_closure_iff.mp
+    (π.mem_closure_range_integratedOperatorL1_apply (hcont := hcont)
+      (hbdd := hπ.exists_norm_le) (μ := Measure.addHaar) ξ)
+    (Real.sqrt ε) (Real.sqrt_pos.mpr hεreal)
+  let a := op π hcont hπ f - 1
+  have hint : Integrable (fun ω : characterSpace ℂ (algebra π hcont hπ) ↦ ‖ω a‖ ^ 2) ν :=
+    ((gelfandTransform ℂ _ a).continuous.norm.pow 2).integrable_of_hasCompactSupport
+      (.of_compactSpace _)
+  have hbound := hint.measure_le_integral (.of_forall fun _ ↦ sq_nonneg _)
+    (s := {ω | ω ∉ support π hcont hπ})
+    (fun ω hω ↦ by
+      have hzero : ω (op π hcont hπ f) = 0 := by
+        by_contra h
+        exact hω ⟨f, h⟩
+      simp [a, hzero])
+  rw [(algebra π hcont hπ).integral_norm_sq_eq_norm_apply_sq hrep a] at hbound
+  have ha : ‖(a : H →L[ℂ] H) ξ‖ < Real.sqrt ε := by
+    simpa [a, dist_eq_norm, norm_sub_rev] using hf
+  have hsq : ‖(a : H →L[ℂ] H) ξ‖ ^ 2 ≤ (ε : ℝ) := by
+    nlinarith [Real.sq_sqrt hεreal.le, norm_nonneg ((a : H →L[ℂ] H) ξ)]
+  simpa using hbound.trans (ENNReal.ofReal_le_ofReal hsq)
+
 /-- If `ν` represents the positive vector functional of `ξ`, then integrating `ω ↦ ω a` against
 a weight bounded by `1` costs at most `δ ν(Δ) + ‖a ξ‖² / δ`, for every `δ > 0`. This is the
 bound of an `L¹` norm by an `L²` norm, through `‖z‖ ≤ δ + ‖z‖² / δ`. -/
@@ -284,21 +318,26 @@ variable {G : Type*} [AddCommGroup G] [TopologicalSpace G] [IsTopologicalAddGrou
 /-- **Spectral theorem for strongly continuous unitary representations**, cyclic form. For a
 strongly continuous unitary representation `π` of a locally compact abelian group `G` on a
 Hilbert space `H` and a vector `ξ`, the matrix coefficient `g ↦ ⟪ξ, π(g) ξ⟫` is the
-Fourier–Stieltjes transform of a finite measure on the Pontryagin dual of `G`. -/
+Fourier–Stieltjes transform of a finite inner regular measure on the Pontryagin dual of `G`. -/
 theorem ContRepresentation.exists_pontryaginMeasureTransform_eq_inner
     (π : ContRepresentation ℂ (Multiplicative G) H)
     (hcont : ∀ v, Continuous fun g : G ↦ π (.ofAdd g) v)
     (hπ : TauCeti.ContRepresentation.IsUnitary π) (ξ : H) :
     ∃ μ : FiniteMeasure (PontryaginDual (Multiplicative G)),
-      ∀ g, μ.pontryaginMeasureTransform g = ⟪ξ, π (.ofAdd g) ξ⟫_ℂ := by
+      μ.toMeasure.InnerRegular ∧ ∀ g, μ.pontryaginMeasureTransform g = ⟪ξ, π (.ofAdd g) ξ⟫_ℂ := by
   borelize G
   set A := algebra π hcont hπ
   borelize ↥(characterSpace ℂ A)
-  obtain ⟨ν, hν, hrep⟩ := A.exists_isFiniteMeasure_integral_characterSpace_eq_inner ξ
+  obtain ⟨ν, hν, hνreg, hrep⟩ := A.exists_isFiniteMeasure_integral_characterSpace_eq_inner ξ
   have hθ := measurable_dual π hcont hπ
   let νf : FiniteMeasure (characterSpace ℂ A) := ⟨ν, hν⟩
-  refine ⟨νf.map (dual π hcont hπ), fun g ↦ ?_⟩
-  rw [FiniteMeasure.pontryaginMeasureTransform_apply, FiniteMeasure.toMeasure_map,
-    integral_map hθ.aemeasurable
-      (TauCeti.PontryaginDual.continuous_coe_eval_const _).aestronglyMeasurable,
-    FiniteMeasure.toMeasure_mk, inner_eq_integral_dual π hcont hπ hrep]
+  refine ⟨νf.map (dual π hcont hπ), ?_, fun g ↦ ?_⟩
+  · rw [FiniteMeasure.toMeasure_map]
+    simp only [νf, FiniteMeasure.toMeasure_mk]
+    exact TauCeti.innerRegular_map_of_continuousOn hθ
+      (isOpen_support π hcont hπ).measurableSet (continuousOn_dual π hcont hπ)
+      (ae_mem_support π hcont hπ hrep)
+  · rw [FiniteMeasure.pontryaginMeasureTransform_apply, FiniteMeasure.toMeasure_map,
+      integral_map hθ.aemeasurable
+        (TauCeti.PontryaginDual.continuous_coe_eval_const _).aestronglyMeasurable,
+      FiniteMeasure.toMeasure_mk, inner_eq_integral_dual π hcont hπ hrep]

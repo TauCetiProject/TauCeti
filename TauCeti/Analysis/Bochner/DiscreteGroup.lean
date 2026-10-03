@@ -53,8 +53,10 @@ theorem isPositiveDefiniteSub_iff_exists_pontryaginMeasureTransform_eq (φ : G �
     IsPositiveDefiniteSub φ ↔
       ∃ μ : FiniteMeasure (PontryaginDual (Multiplicative G)),
         μ.pontryaginMeasureTransform = φ :=
-  ⟨fun hφ ↦ hφ.exists_pontryaginMeasureTransform_eq_of_continuousAt
-      continuous_of_discreteTopology.continuousAt,
+  ⟨fun hφ ↦ by
+      obtain ⟨μ, -, hμ⟩ := hφ.exists_pontryaginMeasureTransform_eq_of_continuousAt
+        continuous_of_discreteTopology.continuousAt
+      exact ⟨μ, hμ⟩,
     fun ⟨μ, hμ⟩ ↦ hμ ▸ μ.isPositiveDefiniteSub_pontryaginMeasureTransform⟩
 
 end TauCeti
