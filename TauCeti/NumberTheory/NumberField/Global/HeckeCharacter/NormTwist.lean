@@ -77,18 +77,13 @@ No algebraicity assumption on the original character is needed. -/
 theorem isAlgebraic_mul_normPow_int_iff (χ : HeckeCharacter K) (m : ℤ) :
     (χ * normPow K (m : ℂ)).IsAlgebraic ↔ χ.IsAlgebraic := by
   have hm : (normPow K (m : ℂ)).IsAlgebraic := isAlgebraic_normPow_iff.mpr ⟨m, rfl⟩
-  refine ⟨fun h ↦ ?_, fun h ↦ h.mul hm⟩
-  have h' := h.mul hm.inv
-  exact (mul_inv_cancel_right χ (normPow K (m : ℂ))) ▸ h'
+  exact hm.mul_iff_left
 
 /-- For an algebraic Hecke character, a norm-power twist is algebraic exactly when the
 exponent of the twist is an integer. -/
+@[simp]
 theorem IsAlgebraic.mul_normPow_iff {χ : HeckeCharacter K} (hχ : χ.IsAlgebraic) {s : ℂ} :
     (χ * normPow K s).IsAlgebraic ↔ ∃ m : ℤ, s = m := by
-  refine ⟨fun h ↦ (isAlgebraic_normPow_iff (K := K)).mp ?_, ?_⟩
-  · have h' := hχ.inv.mul h
-    exact (inv_mul_cancel_left χ (normPow K s)) ▸ h'
-  · rintro ⟨m, rfl⟩
-    exact (isAlgebraic_mul_normPow_int_iff χ m).mpr hχ
+  rw [hχ.mul_iff_right, isAlgebraic_normPow_iff]
 
 end TauCeti.GlobalNumberFields.HeckeCharacter
