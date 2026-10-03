@@ -96,8 +96,10 @@ theorem measurableSet_dirichletDomain [MeasurableSpace X] [OpensMeasurableSpace 
 
 variable (G) in
 /-- The group elements whose translates of `p` compete with `p` somewhere on `K`: for some
-`x ∈ K`, the point `g • p` is at least as close to `x` as `p` is. These are precisely the
-inequalities which can be nontrivial on `K` when cutting out the Dirichlet domain. -/
+`x ∈ K`, the point `g • p` is at least as close to `x` as `p` is. Equivalently, these are the
+`g` whose defining inequality of the Dirichlet domain does not hold strictly everywhere on `K`.
+Every constraint that cuts into `K` is indexed by a competitor, but a competitor's constraint
+may still be redundant (for nonempty `K`, the identity is always a competitor). -/
 def dirichletCompetitors (p : X) (K : Set X) : Set G :=
   {g | ∃ x ∈ K, dist x (g • p) ≤ dist x p}
 
