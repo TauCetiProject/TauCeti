@@ -52,6 +52,9 @@ The resolution is used through its characterising API: the `n`-th term is
   Journal of Algebra 246 (2001), Section 3, for the low-rank zigzag algebras.
 * Yuxuan Liu and Ruidong Wang, *A-infinity deformations of zigzag algebras via Ginzburg dg
   algebras*, Section 2, for the `A₂` convention.
+* The formal construction follows `TauCeti.dualNumberProjectiveResolution` in
+  `TauCeti.Algebra.Homology.Ext.DualNumbers`: a private `ChainComplex.of`, an `XIso` given by
+  `Iso.refl`, and characterising lemmas for the differentials and the augmentation.
 -/
 
 open CategoryTheory
