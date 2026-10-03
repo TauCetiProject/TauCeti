@@ -104,22 +104,14 @@ private theorem indTrivialToQuotient_mk (x : G) (a : k) :
       MonoidAlgebra.single (QuotientGroup.mk x⁻¹ : G ⧸ H) a := by
   simp [indTrivialToQuotient, IndV.mk, indTrivialLift_tmul]
 
-/-- Left translation by `H` is invisible in `Ind_H^G (trivial)`. -/
-private theorem indV_mk_smul (s : H) (x : G) (a : k) :
-    IndV.mk H.subtype (Representation.trivial k H k) ((s : G) * x) a =
-      IndV.mk H.subtype (Representation.trivial k H k) x a := by
-  refine Eq.trans (congrArg (Coinvariants.mk (indTrivialSource k H)) ?_)
-    (Coinvariants.mk_inv_tmul ((Representation.leftRegular k G).comp H.subtype)
-      (Representation.trivial k H k) (MonoidAlgebra.single x 1) a s⁻¹)
-  simp [leftRegular]
-
 /-- The image of a coset `⟦x⟧` in `Ind_H^G (trivial)`, namely `⟦single x⁻¹ 1 ⊗ₜ 1⟧`. -/
 private noncomputable def indTrivialMk (q : G ⧸ H) :
     IndV H.subtype (Representation.trivial k H k) :=
   Quotient.liftOn' q
     (fun x : G ↦ IndV.mk H.subtype (Representation.trivial k H k) x⁻¹ (1 : k))
     fun _ b hab ↦ by
-      simpa using indV_mk_smul k H ⟨_, QuotientGroup.leftRel_apply.1 hab⟩ b⁻¹ 1
+      simpa using (indV_mk_apply_inv H.subtype (Representation.trivial k H k)
+        ⟨_, QuotientGroup.leftRel_apply.1 hab⟩ b⁻¹ 1).symm
 
 private theorem indTrivialMk_mk (x : G) :
     indTrivialMk k H (QuotientGroup.mk x) =

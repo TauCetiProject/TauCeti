@@ -22,11 +22,11 @@ For a finite cyclic subgroup `C`, its subgroup of order prime to `p` satisfies t
 
 Inducing to a finite group `G` containing `C`, and using that `Ind_C^G k[C/D] = k[G/D]`
 (`TauCeti.indK0_of_ofMulAction_quotient`), turns this into an equality of induced classes:
-`[Ind_D^G k] = [C : D] • [Ind_C^G k]` (`TauCeti.indK0_trivial_eq_relIndex_nsmul`). For a cyclic
+`[Ind_D^G k] = [C : D] • [Ind_C^G k]` (`TauCeti.indK0_of_trivial_eq_relIndex_nsmul`). For a cyclic
 `C` this says that the `p`-part of `|C|` times the class of `Ind_C^G k` is the class induced from
 the trivial line of the subgroup of `C` of order prime to `p`
-(`TauCeti.exists_coprimePart_indK0_trivial_eq_nsmul`); this is the input that removes the `p`-part
-of a cyclic subgroup in modular Artin induction.
+(`TauCeti.exists_coprimePart_indK0_of_trivial_eq_nsmul`); this is the input that removes the
+`p`-part of a cyclic subgroup in modular Artin induction.
 
 The class computation uses
 `TauCeti.exactK0_asModule_eq_finrank_nsmul_of_forall_pow_eq_one`; the cyclic subgroup is supplied
@@ -114,7 +114,7 @@ theorem exists_coprimePart_exactK0_ofMulAction_eq_nsmul
 group `G`, with `D` normal in `C` and every element of `C` having a `p`-power power in `D`. Then
 inducing the trivial line from `D` gives `[C : D]` times the class induced from `C`:
 `[Ind_D^G k] = [C : D] • [Ind_C^G k]` in the exact Grothendieck group of `G`. -/
-theorem indK0_trivial_eq_relIndex_nsmul [Finite G] {C D : Subgroup G} (h : D ≤ C)
+theorem indK0_of_trivial_eq_relIndex_nsmul [Finite G] {C D : Subgroup G} (h : D ≤ C)
     [(D.subgroupOf C).Normal] (hpow : ∀ c ∈ C, ∃ n : ℕ, c ^ p ^ n ∈ D) :
     letI : Module.Finite k[D] (Representation.trivial k D k).asModule :=
       Module.Finite.of_restrictScalars_finite k k[D] _
@@ -130,7 +130,7 @@ theorem indK0_trivial_eq_relIndex_nsmul [Finite G] {C D : Subgroup G} (h : D ≤
 
 /-- A finite cyclic subgroup `C` has a subgroup `D` of order prime to `p` such that inducing the
 trivial line from `D` gives the `p`-part of `|C|` times the class induced from `C`. -/
-theorem exists_coprimePart_indK0_trivial_eq_nsmul [Finite G] (C : Subgroup G) [IsCyclic C] :
+theorem exists_coprimePart_indK0_of_trivial_eq_nsmul [Finite G] (C : Subgroup G) [IsCyclic C] :
     ∃ D : Subgroup G, D ≤ C ∧ ¬ p ∣ Nat.card D ∧
       D.relIndex C = p ^ (Nat.card C).factorization p ∧
       (letI : Module.Finite k[D] (Representation.trivial k D k).asModule :=
@@ -145,6 +145,6 @@ theorem exists_coprimePart_indK0_trivial_eq_nsmul [Finite G] (C : Subgroup G) [I
   let := hDn
   refine ⟨D, hDC, hDp, hindex, ?_⟩
   rw [← hindex]
-  exact indK0_trivial_eq_relIndex_nsmul (k := k) p hDC hpow
+  exact indK0_of_trivial_eq_relIndex_nsmul (k := k) p hDC hpow
 
 end TauCeti

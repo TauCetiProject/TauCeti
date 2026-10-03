@@ -135,6 +135,7 @@ theorem indK0_of_trivial :
 /-- **Induction of a coset permutation module.** For a subgroup `D ≤ S`, induction from `S` sends
 the class of the permutation module `k[S ⧸ (D ⊓ S)]` to the class of the permutation module
 `k[G ⧸ D]`. -/
+@[simp high]
 theorem indK0_of_ofMulAction_quotient {D : Subgroup G} (h : D ≤ S) :
     letI : Module.Finite k[S] (Representation.ofMulAction k S (S ⧸ D.subgroupOf S)).asModule :=
       Module.Finite.of_restrictScalars_finite k k[S] _
