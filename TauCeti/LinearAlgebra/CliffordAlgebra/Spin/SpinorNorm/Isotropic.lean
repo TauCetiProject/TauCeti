@@ -67,7 +67,7 @@ theorem spinorNorm_surjective_of_not_anisotropic (Q : QuadraticForm K V)
   let _ : Invertible (Q x) := invertibleOfNonzero hx0
   let _ : Invertible (Q y) := invertibleOfNonzero hy0
   refine ⟨reflectionPairSpecialOrthogonal Q x y, ?_⟩
-  rw [spinorNorm_reflectionPairSpecialOrthogonal]
+  rw [Q.spinorNorm_reflectionPairSpecialOrthogonal]
   have hxa : unitOfInvertible (Q x) = a := Units.ext hx
   have hy1 : unitOfInvertible (Q y) = (1 : Kˣ) := Units.ext hy
   simpa only [hxa, hy1, mul_one] using ha
@@ -77,7 +77,7 @@ is surjective. -/
 theorem orthogonalSpinorNorm_surjective_of_not_anisotropic (Q : QuadraticForm K V)
     (hQ : Q.Nondegenerate) (hiso : ¬ Q.Anisotropic) :
     Function.Surjective (orthogonalSpinorNorm Q hQ) := by
-  exact orthogonalSpinorNorm_surjective_of_spinorNorm_surjective Q hQ
+  exact Q.orthogonalSpinorNorm_surjective_of_spinorNorm_surjective hQ
     (spinorNorm_surjective_of_not_anisotropic Q hQ hiso)
 
 /-- For a nondegenerate isotropic quadratic space, the Spin action on the special orthogonal

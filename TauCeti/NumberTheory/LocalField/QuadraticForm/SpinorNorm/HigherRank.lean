@@ -40,7 +40,7 @@ namespace TauCeti
 
 namespace CliffordAlgebra
 
-open _root_.CliffordAlgebra _root_.QuadraticMap TauCeti.QuadraticMap
+open TauCeti _root_.CliffordAlgebra _root_.QuadraticMap TauCeti.QuadraticMap
 open _root_.ValuativeRel
 
 section LocalField
@@ -71,7 +71,7 @@ theorem exists_reflectionPairSpecialOrthogonal_spinorNorm_eq (Q : QuadraticForm 
   refine ⟨v, w, inferInstance, inferInstance, ?_⟩
   have hb' : b = a * unitOfInvertible (Q w) :=
     Units.ext (by simpa using hw.symm)
-  rw [spinorNorm_reflectionPairSpecialOrthogonal]
+  rw [Q.spinorNorm_reflectionPairSpecialOrthogonal]
   have hv' : unitOfInvertible (Q v) = b := Units.ext hv
   rw [hv', hb']
   simp only [squareClassHom_apply]
@@ -97,7 +97,7 @@ dimension at least three is surjective. -/
 theorem orthogonalSpinorNorm_surjective_of_three_le_finrank (Q : QuadraticForm K V)
     (hQ : Q.Nondegenerate) (hV : 3 ≤ Module.finrank K V) :
     Function.Surjective (orthogonalSpinorNorm Q hQ) := by
-  exact orthogonalSpinorNorm_surjective_of_spinorNorm_surjective Q hQ
+  exact Q.orthogonalSpinorNorm_surjective_of_spinorNorm_surjective hQ
     (spinorNorm_surjective_of_three_le_finrank Q hQ hV)
 
 /-- In dimension at least three, the index of the Spin image in the local special orthogonal
