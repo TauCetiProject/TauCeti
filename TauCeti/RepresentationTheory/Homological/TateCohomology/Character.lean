@@ -120,22 +120,10 @@ def characterDimensionShift
     rw [hzero, add_zero]
   map_zero' := by
     apply Subtype.ext
-    change (dimensionShiftUpπ (Rep.ratAddCircleShortComplex G).X₃).hom
-      ((coindBotEquivPi ℤ G (AddCircle (1 : ℚ))).symm (0 : G → AddCircle (1 : ℚ))) = 0
-    rw [map_zero, map_zero]
+    simp only [AddMonoidHom.zero_apply, ← Pi.zero_def, map_zero, ZeroMemClass.coe_zero]
   map_add' χ ψ := by
     apply Subtype.ext
-    change (dimensionShiftUpπ (Rep.ratAddCircleShortComplex G).X₃).hom
-        ((coindBotEquivPi ℤ G (AddCircle (1 : ℚ))).symm
-          ((fun g ↦ χ (Additive.ofMul (Abelianization.of g))) +
-            fun g ↦ ψ (Additive.ofMul (Abelianization.of g)))) =
-      (dimensionShiftUpπ (Rep.ratAddCircleShortComplex G).X₃).hom
-          ((coindBotEquivPi ℤ G (AddCircle (1 : ℚ))).symm
-            (fun g ↦ χ (Additive.ofMul (Abelianization.of g)))) +
-        (dimensionShiftUpπ (Rep.ratAddCircleShortComplex G).X₃).hom
-          ((coindBotEquivPi ℤ G (AddCircle (1 : ℚ))).symm
-            (fun g ↦ ψ (Additive.ofMul (Abelianization.of g))))
-    rw [map_add, map_add]
+    simp only [AddMonoidHom.add_apply, ← Pi.add_def, map_add, AddMemClass.coe_add]
 
 omit [Fintype G] in
 /-- The underlying value of `characterDimensionShift` is the image in the first upward dimension
