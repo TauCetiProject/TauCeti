@@ -48,7 +48,8 @@ theorem mul_geom_sum₂_add_pow {S : Type*} [Semiring S] (x y : S) (m : ℕ) :
     rw [hsum]
     calc x * ((∑ i ∈ range m, x ^ i * y ^ (m - 1 - i)) * y + x ^ m) + y ^ (m + 1)
         = (x * (∑ i ∈ range m, x ^ i * y ^ (m - 1 - i)) + y ^ m) * y + x ^ (m + 1) := by
-          rw [pow_succ y, pow_succ' x, mul_add, add_mul, ← mul_assoc, add_right_comm]
+          rw [pow_succ y, pow_succ' x]
+          simp only [mul_add, add_mul, mul_assoc, add_comm, add_left_comm]
       _ = ((∑ i ∈ range m, x ^ i * y ^ (m - 1 - i)) * y + x ^ m) * y + x ^ (m + 1) := by rw [ih]
 
 end TauCeti

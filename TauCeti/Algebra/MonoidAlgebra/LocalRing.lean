@@ -92,8 +92,8 @@ private theorem single_sub_one_mem_of_isMaximal (hp : ¬IsUnit (p : R)) (hQ : Is
     exact hp𝔐
   obtain ⟨k, hk⟩ := hQ q
   rw [← Ideal.Quotient.eq_zero_iff_mem,
-    ← pow_eq_zero_iff (pow_ne_zero k (Fact.out : p.Prime).ne_zero), map_sub, map_one,
-    sub_pow_char_pow, ← map_pow, single_pow, hk, one_pow, ← one_def, map_one, one_pow, sub_self]
+    ← pow_eq_zero_iff (pow_ne_zero k (Fact.out : p.Prime).ne_zero)]
+  simp [sub_pow_char_pow, ← map_pow, single_pow, hk, ← one_def]
 
 /-- **The augmentation of the group algebra of a `p`-group is local.** For a finite commutative
 `p`-group `Q` and a local ring `R` in which `p` is not a unit, the augmentation `R[Q] → R` is a
