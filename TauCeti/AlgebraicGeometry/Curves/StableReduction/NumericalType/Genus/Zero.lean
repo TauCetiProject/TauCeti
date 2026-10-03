@@ -147,7 +147,7 @@ theorem isMinimal_and_arithmeticGenus_eq_zero_iff :
 
 /-- The canonical genus-zero numerical type is minimal. -/
 @[simp]
-theorem genusZeroType_isMinimal : genusZeroType.IsMinimal :=
+theorem isMinimal_genusZeroType : genusZeroType.IsMinimal :=
   genusZeroType.isMinimal_of_card_eq_one card_genusZeroType_component
 
 /-- The canonical genus-zero numerical type has arithmetic genus zero. -/
