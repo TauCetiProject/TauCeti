@@ -20,7 +20,11 @@ complementary, so the tensor square is their internal direct sum; the two submod
 concrete models of `Sym²M` and `⋀²M`
 *inside* `M ⊗[R] M`, which is what a construction carrying extra structure on the tensor square —
 a topology, say — needs, the quotient and subobject constructions `Sym[R]^2 M` and `⋀[R]^2 M`
-living outside it.
+living outside it. That they really are those two modules, `f ⊗ f`-equivariantly, is
+`TauCeti.symmetricTensorsEquivSymmetricPower` and
+`TauCeti.antisymmetricTensorsEquivExteriorPower` in
+`TauCeti/LinearAlgebra/TensorSquare.lean`, which this file does not import: nothing here needs
+the comparison, and the symmetric and exterior powers are a heavier dependency than the flip.
 
 The point of the file is the trace identity `TauCeti.trace_map_self_comp_comm`: composing
 `f ⊗ f` with the flip has trace `tr (f ∘ f)`, because on a basis the diagonal entry of the
@@ -40,6 +44,9 @@ the tensor square rather than on the symmetric and exterior powers.
 
 ## Main results
 
+* `TauCeti.tmul_add_tmul_mem_symmetricTensors` and
+  `TauCeti.tmul_sub_tmul_mem_antisymmetricTensors`: the symmetrization and antisymmetrization of
+  a pure tensor lie in the two eigenspaces.
 * `TauCeti.isCompl_symmetricTensors_antisymmetricTensors` and
   `TauCeti.isInternal_symmetricTensors_antisymmetricTensors`: with `2` invertible the two
   submodules are complementary, hence an internal direct sum decomposition of the tensor square.
@@ -87,6 +94,11 @@ theorem mem_symmetricTensors {x : M ⊗[R] M} :
   rw [symmetricTensors, LinearMap.mem_eqLocus]
   exact Iff.rfl
 
+/-- The symmetrization `x ⊗ₜ y + y ⊗ₜ x` of a pure tensor is symmetric. -/
+theorem tmul_add_tmul_mem_symmetricTensors (x y : M) :
+    x ⊗ₜ[R] y + y ⊗ₜ[R] x ∈ symmetricTensors R M := by
+  rw [mem_symmetricTensors, map_add, TensorProduct.comm_tmul, TensorProduct.comm_tmul, add_comm]
+
 /-- `f ⊗ f` preserves the symmetric tensors, because it commutes with the flip. -/
 theorem map_self_mem_symmetricTensors (f : M →ₗ[R] M) {x : M ⊗[R] M}
     (hx : x ∈ symmetricTensors R M) : TensorProduct.map f f x ∈ symmetricTensors R M := by
@@ -121,6 +133,12 @@ theorem mem_antisymmetricTensors {x : M ⊗[R] M} :
     x ∈ antisymmetricTensors R M ↔ TensorProduct.comm R M M x = -x := by
   rw [antisymmetricTensors, Module.End.mem_eigenspace_iff, neg_one_smul]
   exact Iff.rfl
+
+/-- The antisymmetrization `x ⊗ₜ y - y ⊗ₜ x` of a pure tensor is antisymmetric. -/
+theorem tmul_sub_tmul_mem_antisymmetricTensors (x y : M) :
+    x ⊗ₜ[R] y - y ⊗ₜ[R] x ∈ antisymmetricTensors R M := by
+  rw [mem_antisymmetricTensors, map_sub, TensorProduct.comm_tmul, TensorProduct.comm_tmul,
+    neg_sub]
 
 /-- `f ⊗ f` preserves the antisymmetric tensors, because it commutes with the flip. -/
 theorem map_self_mem_antisymmetricTensors (f : M →ₗ[R] M) {x : M ⊗[R] M}
