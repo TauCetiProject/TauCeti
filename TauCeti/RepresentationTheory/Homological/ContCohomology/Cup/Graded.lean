@@ -471,7 +471,7 @@ theorem resolutionCup_ρ : ∀ (m n k : ℕ) (hk : k = n + m) (g : G)
     exact resolutionCup_ρ m n k (Nat.succ.inj hk) g (a (g⁻¹ * h)) b
 
 /-- Pairing the constant map at `x` with `b` is the pointwise pairing of `x` with `b`. -/
-private theorem resolutionCup_zero_d_zero {n k : ℕ} (hk : k = n + 0) (x : X.V)
+theorem resolutionCup_zero_d_zero {n k : ℕ} (hk : k = n + 0) (x : X.V)
     (b : (TopRep.resolutionX Y (n + 1)).V) :
     P.resolutionCup 0 n k hk ((TopRep.d X 0).hom x, b) =
       P.pointwise (n + 1) (k + 1) (by omega) (x, b) :=
