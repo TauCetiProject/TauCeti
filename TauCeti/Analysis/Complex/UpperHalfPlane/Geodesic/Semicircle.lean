@@ -22,7 +22,8 @@ by an explicit quadratic form (`mem_rightHalfPlane_rotation_iff`).
 
 When `P.re ≠ Q.re`, the geodesic through `P` and `Q` is the semicircle centred at
 `UpperHalfPlane.circleCenter P Q` on the real axis, which passes through both points
-(`UpperHalfPlane.normSq_sub_circleCenter`, `mem_range_geodesicLine_geodesicBetween_iff_of_re_ne`);
+(`UpperHalfPlane.normSq_sub_circleCenter`, `mem_range_geodesicLine_geodesicBetween_iff_of_re_ne`),
+and it is the only such point of the real axis (`UpperHalfPlane.circleCenter_eq_of_normSq_eq`);
 its right half-plane is the inside of that disc when `Q` is to the right of `P` and the outside
 when `Q` is to the left (`mem_rightHalfPlane_geodesicBetween_iff_of_re_lt`,
 `mem_rightHalfPlane_geodesicBetween_iff_of_lt_re`), and its velocity at `P` is tangent to the
@@ -144,6 +145,15 @@ theorem normSq_sub_circleCenter {P Q : ℍ} (hPQ : P.re ≠ Q.re) :
   simp only [Complex.normSq_apply, Complex.sub_re, Complex.sub_im, Complex.ofReal_re,
     Complex.ofReal_im, sub_zero, UpperHalfPlane.coe_re, UpperHalfPlane.coe_im] at hcc ⊢
   linear_combination -hcc
+
+/-- A point `m` of the real axis equidistant from `P` and `Q`, with `P.re ≠ Q.re`, is the centre
+of the semicircle through `P` and `Q`. -/
+theorem circleCenter_eq_of_normSq_eq {P Q : ℍ} {m : ℝ} (hPQ : P.re ≠ Q.re)
+    (h : Complex.normSq ((P : ℂ) - m) = Complex.normSq ((Q : ℂ) - m)) : circleCenter P Q = m := by
+  rw [circleCenter, div_eq_iff (mul_ne_zero two_ne_zero (sub_ne_zero.2 (Ne.symm hPQ)))]
+  simp only [Complex.normSq_apply, Complex.sub_re, Complex.sub_im, Complex.ofReal_re,
+    Complex.ofReal_im, sub_zero, UpperHalfPlane.coe_re, UpperHalfPlane.coe_im] at h ⊢
+  linear_combination -h
 
 end UpperHalfPlane
 
