@@ -94,6 +94,29 @@ theorem mem_toRingOfIntegers (O : NumberFieldOrder K) {x : 𝓞 K} :
     x ∈ O.toRingOfIntegers ↔ (x : K) ∈ O.toSubalgebra :=
   Iff.rfl
 
+/-- The copy `O.toRingOfIntegers` of an order inside `𝓞 K` is isomorphic to the order itself.
+This moves ideals of the order between the two models: comparisons with ideals of `𝓞 K` use the
+former, fractional ideals and Picard groups the latter. -/
+def toRingOfIntegersEquiv (O : NumberFieldOrder K) : O.toRingOfIntegers ≃+* O.toSubalgebra where
+  toFun x := ⟨((x : 𝓞 K) : K), x.2⟩
+  invFun y := ⟨⟨y, O.le_ringOfIntegers y.2⟩, O.mem_toRingOfIntegers.mpr y.2⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+  map_mul' _ _ := rfl
+  map_add' _ _ := rfl
+
+/-- The isomorphism `toRingOfIntegersEquiv` does not change the underlying element of `K`. -/
+@[simp]
+theorem coe_toRingOfIntegersEquiv (O : NumberFieldOrder K) (x : O.toRingOfIntegers) :
+    (O.toRingOfIntegersEquiv x : K) = ((x : 𝓞 K) : K) :=
+  (rfl)
+
+/-- The inverse of `toRingOfIntegersEquiv` does not change the underlying element of `K`. -/
+@[simp]
+theorem coe_toRingOfIntegersEquiv_symm (O : NumberFieldOrder K) (y : O.toSubalgebra) :
+    (((O.toRingOfIntegersEquiv.symm y : O.toRingOfIntegers) : 𝓞 K) : K) = y :=
+  (rfl)
+
 /-- An order is a proper subring of its number field. -/
 theorem toSubalgebra_ne_top (O : NumberFieldOrder K) : O.toSubalgebra ≠ ⊤ := by
   intro h
