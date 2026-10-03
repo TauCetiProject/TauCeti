@@ -53,6 +53,7 @@ theorem infiniteInvMap_of_isReal (w : InfinitePlace K) (hw : w.IsReal) :
   simp [infiniteInvMap, hw]
 
 /-- At a complex place the archimedean invariant is the zero homomorphism. -/
+@[simp]
 theorem infiniteInvMap_of_isComplex (w : InfinitePlace K) (hw : w.IsComplex) :
     infiniteInvMap w = 0 := by
   simp [infiniteInvMap, not_isReal_iff_isComplex.mpr hw]
@@ -87,7 +88,6 @@ theorem infiniteInvMap_eq_realInv_comp (w : InfinitePlace K) (hw : w.IsReal)
     simp only [hx, he, ite_false]
 
 /-- The invariant at a complex place always vanishes. -/
-@[simp]
 theorem infiniteInvMap_eq_zero_of_isComplex (w : InfinitePlace K) (hw : w.IsComplex)
     (x : Br w.Completion) : infiniteInvMap w x = 0 := by
   rw [infiniteInvMap_of_isComplex w hw, AddMonoidHom.zero_apply]
