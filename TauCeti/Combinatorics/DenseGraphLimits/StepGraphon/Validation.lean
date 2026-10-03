@@ -24,7 +24,7 @@ nothing to the integrals. The defect identity `l2sq_sub_stepGraphonAvg` and the 
 increment `graphonPartitionEnergy_increment` are exercised on these partitions, together with
 a cut witness and the part-count bound of weak regularity. Averaging over singletons does not
 recover the original strict representative: the zero-mass atom's row and column are replaced by
-zero. The exported witness `exists_partition_stepGraphonAvg_ne_bernoulliMeasure` records this
+zero. The exported witness `exists_partition_stepGraphonAvg_ne_self_bernoulliMeasure` records this
 failure for a partition into all three singletons.
 
 ## References
@@ -137,7 +137,7 @@ example : adjacency 2 0 = 1 ∧ fineAvg 2 0 = 0 ∧ fineAvg 0 2 = 0 := by
 /-- On the three-point carrier with masses `1/2`, `1/2`, and `0`, averaging over the
 singleton partition can change the original strict graphon. The zero-mass atom's incident
 edges are erased. -/
-theorem exists_partition_stepGraphonAvg_ne_bernoulliMeasure :
+theorem exists_partition_stepGraphonAvg_ne_self_bernoulliMeasure :
     ∃ (P : Finpartition (univ : Set (Fin 3)))
       (W : Graphon (Fin 3)
         (bernoulliMeasure 0 1 ⟨1 / 2, by norm_num, by norm_num⟩)),
