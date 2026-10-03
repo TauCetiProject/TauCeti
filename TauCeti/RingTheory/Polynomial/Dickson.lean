@@ -154,6 +154,7 @@ weights `P_{n+2}(0, 1)`, `P_{n+2}(1, 1)` and `P_{n+2}(-1, 1)`. With parameter `1
 makes these periodic in `n`. -/
 
 /-- `P_{2m+2}(0, 1) = (-1) ^ m`. -/
+@[simp]
 theorem dickson_two_one_eval_zero_two_mul (m : ℕ) :
     (dickson 2 (1 : R) (2 * m)).eval 0 = (-1) ^ m := by
   induction m with
@@ -175,6 +176,7 @@ theorem dickson_two_one_eval_neg_one_add_three (n : ℕ) :
   ring
 
 /-- `P_{n+2}(1, 1)` has period `6` in `n`. -/
+@[simp]
 theorem dickson_two_one_eval_one_six_mul_add (j r : ℕ) :
     (dickson 2 (1 : R) (6 * j + r)).eval 1 = (dickson 2 (1 : R) r).eval 1 := by
   induction j with
@@ -184,6 +186,7 @@ theorem dickson_two_one_eval_one_six_mul_add (j r : ℕ) :
       dickson_two_one_eval_one_add_three, neg_neg, ih]
 
 /-- `P_{n+2}(-1, 1)` has period `3` in `n`. -/
+@[simp]
 theorem dickson_two_one_eval_neg_one_three_mul_add (j r : ℕ) :
     (dickson 2 (1 : R) (3 * j + r)).eval (-1) = (dickson 2 (1 : R) r).eval (-1) := by
   induction j with
