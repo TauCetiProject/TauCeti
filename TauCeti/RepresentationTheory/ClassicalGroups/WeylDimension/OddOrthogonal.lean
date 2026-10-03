@@ -82,7 +82,9 @@ variable (n : ℕ) (μ : YoungDiagram)
 
 /-- The integers `μᵢ + n - 1 - i` for `SO (2n + 1)`: the entries `μᵢ + n - i - 1/2` of `μ + ρ`,
 where `ρ = (n - 1/2, …, 1/2)` is the half-sum of the positive roots of type `Bₙ`, less `1/2`.  Only
-the indices `i < n` are used. -/
+the indices `i < n` are used.  They are also the entries of `μ + ρ` for the half-sum
+`ρ = (n - 1, …, 0)` of the positive roots of type `Dₙ`, which is how
+`TauCeti.evenOrthogonalWeylDimensionNumerator` uses them. -/
 def oddOrthogonalRhoShift (i : ℕ) : ℤ := μ.rowLen i + n - 1 - i
 
 /-- The defining equation of `TauCeti.oddOrthogonalRhoShift`. -/
