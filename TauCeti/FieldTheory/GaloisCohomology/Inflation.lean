@@ -96,6 +96,16 @@ theorem unitsInflationHom_apply (a : Lˣ) :
         (Additive.ofMul (Units.map (algebraMap L M : L →* M) a)) :=
   (rfl)
 
+/-- Read through `Rep.toAdditive`, `unitsInflationHom K L M` is `Units.map (algebraMap L M)`. -/
+private theorem toAdditive_comp_unitsInflationHom :
+    Rep.toAdditive (M := Gal(M/K)) (G := Mˣ) ∘ (unitsInflationHom K L M).hom =
+      Additive.ofMul ∘ Units.map (algebraMap L M : L →* M) ∘ Additive.toMul ∘
+        Rep.toAdditive (M := Gal(L/K)) (G := Lˣ) := by
+  ext x
+  obtain ⟨a, rfl⟩ := (Rep.toAdditive (M := Gal(L/K)) (G := Lˣ)).symm.surjective x
+  rw [← ofMul_toMul a, Function.comp_apply, unitsInflationHom_apply]
+  simp
+
 section BaseChange
 
 variable (K' M' : Type u) [Field K'] [Field M'] [Algebra K K'] [Algebra K' M'] [Algebra K M']
@@ -124,6 +134,17 @@ theorem unitsBaseChangeHom_apply (a : Lˣ) :
         (Additive.ofMul (Units.map (algebraMap L M' : L →* M') a)) :=
   (rfl)
 
+/-- Read through `Rep.toAdditive`, `unitsBaseChangeHom K L K' M'` is
+`Units.map (algebraMap L M')`. -/
+private theorem toAdditive_comp_unitsBaseChangeHom :
+    Rep.toAdditive (M := Gal(M'/K')) (G := M'ˣ) ∘ (unitsBaseChangeHom K L K' M').hom =
+      Additive.ofMul ∘ Units.map (algebraMap L M' : L →* M') ∘ Additive.toMul ∘
+        Rep.toAdditive (M := Gal(L/K)) (G := Lˣ) := by
+  ext x
+  obtain ⟨a, rfl⟩ := (Rep.toAdditive (M := Gal(L/K)) (G := Lˣ)).symm.surjective x
+  rw [← ofMul_toMul a, Function.comp_apply, unitsBaseChangeHom_apply]
+  simp
+
 end BaseChange
 
 open CategoryTheory
@@ -133,6 +154,21 @@ section Composition
 variable (K E L M : Type) [Field K] [Field E] [Field L] [Field M] [Algebra K E] [Algebra K L]
   [Algebra K M] [Algebra E M] [Algebra L M] [IsScalarTower K E M] [IsScalarTower K L M]
   [Normal K E] [Normal K M]
+
+/-- Including `Eˣ` into `Mˣ` and then base changing from `M/K` to `M/L` is base change from `E/K`
+to `M/L`. -/
+private theorem unitsBaseChangeHom_unitsInflationHom
+    (x : Rep.res (AlgEquiv.restrictNormalHom E : Gal(M/K) →* Gal(E/K))
+      (Rep.ofMulDistribMulAction Gal(E/K) Eˣ)) :
+    (unitsBaseChangeHom K M L M).hom ((unitsInflationHom K E M).hom x) =
+      (unitsBaseChangeHom K E L M).hom x := by
+  apply (Rep.toAdditive (M := Gal(M/L)) (G := Mˣ)).injective
+  have h₁ := congrFun (toAdditive_comp_unitsBaseChangeHom K M L M) ((unitsInflationHom K E M).hom x)
+  have h₂ := congrFun (toAdditive_comp_unitsInflationHom K E M) x
+  have h₃ := congrFun (toAdditive_comp_unitsBaseChangeHom K E L M) x
+  simp only [Function.comp_apply] at h₁ h₂ h₃
+  rw [h₁, h₂, h₃]
+  simp
 
 /-- **Inflation followed by restriction is base change.** For `K ⊆ E ⊆ M` and `K ⊆ L ⊆ M`,
 inflating a class of `Hⁿ(Gal(E/K), Eˣ)` to `Hⁿ(Gal(M/K), Mˣ)` and restricting it to
@@ -147,13 +183,7 @@ theorem map_unitsInflationHom_comp_map_unitsBaseChangeHom (n : ℕ) :
   refine groupCohomology.map_congr ?_ ?_ n
   · rw [AlgEquiv.restrictNormalHom_id, MonoidHom.id_comp]
   · ext x
-    obtain ⟨a, rfl⟩ := (Rep.toAdditive (M := Gal(E/K)) (G := Eˣ)).symm.surjective x
-    rw [Rep.hom_comp_toLinearMap, Rep.resMap_hom_toLinearMap,
-      LinearMap.comp_apply, Representation.IntertwiningMap.toLinearMap_apply,
-      Representation.IntertwiningMap.toLinearMap_apply,
-      Representation.IntertwiningMap.toLinearMap_apply, ← ofMul_toMul a, unitsInflationHom_apply,
-      unitsBaseChangeHom_apply, unitsBaseChangeHom_apply]
-    simp
+    simpa using unitsBaseChangeHom_unitsInflationHom K E L M x
 
 end Composition
 
@@ -165,21 +195,12 @@ variable (K L M : Type) [Field K] [Field L] [Field M] [Algebra K L] [Algebra K M
 /-- `unitsBaseChangeHom K M L M` is the identity of `Mˣ`, so it is bijective. -/
 private theorem unitsBaseChangeHom_self_bijective [Normal K M] :
     Function.Bijective (unitsBaseChangeHom K M L M).hom := by
+  refine (Function.Bijective.of_comp_iff' (Rep.toAdditive (M := Gal(M/L)) (G := Mˣ)).bijective
+    _).1 ?_
   -- The underlying unit is unchanged, `Units.map (algebraMap M M)` being the identity.
-  have h (x : Rep.res ((AlgEquiv.restrictNormalHom M).comp (AlgEquiv.restrictScalarsHom K) :
-      Gal(M/L) →* Gal(M/K)) (Rep.ofMulDistribMulAction Gal(M/K) Mˣ)) :
-      ((Additive.toMul (Rep.toAdditive (M := Gal(M/L)) (G := Mˣ)
-        ((unitsBaseChangeHom K M L M).hom x)) : Mˣ) : M) =
-        (Additive.toMul (Rep.toAdditive (M := Gal(M/K)) (G := Mˣ) x) : Mˣ) := by
-    obtain ⟨a, rfl⟩ := (Rep.toAdditive (M := Gal(M/K)) (G := Mˣ)).symm.surjective x
-    rw [← ofMul_toMul a, unitsBaseChangeHom_apply]
-    simp
-  refine ⟨fun x y hxy => (Rep.toAdditive (M := Gal(M/K)) (G := Mˣ)).injective <|
-    Additive.toMul.injective <| Units.ext <| by rw [← h x, ← h y, hxy], fun y => ?_⟩
-  refine ⟨(Rep.toAdditive (M := Gal(M/K)) (G := Mˣ)).symm
-    (Rep.toAdditive (M := Gal(M/L)) (G := Mˣ) y), ?_⟩
-  exact (Rep.toAdditive (M := Gal(M/L)) (G := Mˣ)).injective <| Additive.toMul.injective <|
-    Units.ext <| by rw [h, AddEquiv.apply_symm_apply]
+  rw [toAdditive_comp_unitsBaseChangeHom]
+  exact Additive.ofMul.bijective.comp <| (Units.map_bijective Function.bijective_id).comp <|
+    Additive.toMul.bijective.comp (Rep.toAdditive (M := Gal(M/K)) (G := Mˣ)).bijective
 
 variable [Normal K L]
 
@@ -195,10 +216,12 @@ private theorem coe_toMul_unitsInflationHom_apply
   simp
 
 /-- `unitsInflationHom K L M` is injective. -/
-private theorem unitsInflationHom_injective : Function.Injective (unitsInflationHom K L M).hom :=
-  fun x y h => (Rep.toAdditive (M := Gal(L/K)) (G := Lˣ)).injective <| Additive.toMul.injective <|
-    Units.ext <| (algebraMap L M).injective <| by
-      rw [← coe_toMul_unitsInflationHom_apply, ← coe_toMul_unitsInflationHom_apply, h]
+private theorem unitsInflationHom_injective :
+    Function.Injective (unitsInflationHom K L M).hom := by
+  refine Function.Injective.of_comp (f := Rep.toAdditive (M := Gal(M/K)) (G := Mˣ)) ?_
+  rw [toAdditive_comp_unitsInflationHom]
+  exact Additive.ofMul.injective.comp <| (Units.map_injective (algebraMap L M).injective).comp <|
+    Additive.toMul.injective.comp (Rep.toAdditive (M := Gal(L/K)) (G := Lˣ)).injective
 
 variable [FiniteDimensional K M] [IsGalois K M]
 
