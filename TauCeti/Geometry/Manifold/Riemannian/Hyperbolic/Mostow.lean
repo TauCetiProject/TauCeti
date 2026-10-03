@@ -36,7 +36,7 @@ namespace TauCeti
 
 variable {E : Type uE} {H : Type uH} {M : Type uM} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  [MetricSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
+  [TopologicalSpace M] [T3Space M] [ChartedSpace H M] [IsManifold I ∞ M]
   [BoundarylessManifold I M] [CompactSpace M] [ConnectedSpace M]
 
 namespace HyperbolicMetric
@@ -113,7 +113,7 @@ diffeomorphism between every pair of bundled complete constant-curvature `-1` me
 def MostowRigidity : Prop :=
   ∀ {E : Type uE} {H : Type uH} {M : Type uM} [NormedAddCommGroup E] [NormedSpace ℝ E]
     [FiniteDimensional ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-    [MetricSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
+    [TopologicalSpace M] [T3Space M] [ChartedSpace H M] [IsManifold I ∞ M]
     [BoundarylessManifold I M] [CompactSpace M] [ConnectedSpace M],
     IsHyperbolic (I := I) (M := M) →
       3 ≤ Module.finrank ℝ E →

@@ -17,8 +17,8 @@ states it: every compact connected smooth 3-manifold without boundary that admit
 metric (`TauCeti.IsHyperbolic`) is virtually fibered (`TauCeti.IsVirtuallyFibered`).
 
 A closed 3-manifold is modelled here on `EuclideanSpace ℝ (Fin 3)` with the boundaryless model
-`𝓡 3`, and is compact and connected. Its topology is that of a metric space, as
-`TauCeti.HyperbolicMetric` requires its metric to induce the given distance. The hypothesis
+`𝓡 3`, and is compact and connected. Its topology is metrizable, as
+`TauCeti.HyperbolicMetric` supplies its own Riemannian metric space for completeness. The hypothesis
 `[ConnectedSpace M]` is stated explicitly for readability; it is in fact implied by
 `TauCeti.IsHyperbolic`, since the Riemannian distance between points joined by no `C^1` path is
 infinite while the metric-space distance is finite. Orientability is not assumed; Agol's theorem

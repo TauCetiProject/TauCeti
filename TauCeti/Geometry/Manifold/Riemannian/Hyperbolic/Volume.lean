@@ -35,6 +35,7 @@ namespace TauCeti
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   [MetricSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
+  [PreconnectedSpace M]
   [CompactSpace M] [MeasurableSpace M] [BorelSpace M]
   [LindelofSpace M]
 
