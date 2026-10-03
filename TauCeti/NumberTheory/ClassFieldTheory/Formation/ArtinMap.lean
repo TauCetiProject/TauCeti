@@ -343,6 +343,7 @@ private theorem inv_cupFundamentalClass_zero (x : L.TrivialTateH 0) :
 /-- **The character formula for the Artin map.** With the current Tate cup-product and low-degree
 comparison conventions, the invariant of `a₀ ∪ δχ` is the negative of the character evaluation
 `χ (artinMap a)`. -/
+@[simp]
 theorem character_artinMap (a : F.level L.ground)
     (chi : Additive (Abelianization L.Gal) →+ AddCircle (1 : ℚ)) :
     cf.inv L (L.artinCharacterCup F a chi) = -chi (cf.artinMap L a) := by
