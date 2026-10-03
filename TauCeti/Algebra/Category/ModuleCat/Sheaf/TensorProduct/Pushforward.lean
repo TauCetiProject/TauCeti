@@ -51,7 +51,7 @@ maps of the pullback along a composite are the composites of the comparison maps
 ## Main declarations
 
 * `SheafOfModules.presheafPushforward`: the pushforward of presheaves of modules underlying the
-  pushforward of sheaves of modules, with its lax monoidal structure;
+  pushforward of sheaves of modules, with its lax symmetric monoidal structure;
 * `SheafOfModules.pushforwardLaxMonoidal` and `SheafOfModules.pushforwardLaxBraided`, with
   `SheafOfModules.pushforward_ε` and `SheafOfModules.pushforward_μ`;
 * `SheafOfModules.pullbackOplaxMonoidal`, with `SheafOfModules.pullback_η` and
@@ -117,13 +117,14 @@ def presheafPushforwardLaxMonoidal : (presheafPushforward φ).LaxMonoidal :=
 attribute [instance] presheafPushforwardLaxMonoidal
 
 /-- The sectionwise tensor map of pushforward of presheaves of modules respects symmetry. -/
-@[reassoc]
-lemma presheafPushforward_braided (M N : PresheafOfModules.{u} (ringCatSheaf R).obj) :
-    Functor.LaxMonoidal.μ (presheafPushforward φ) M N ≫
-        (presheafPushforward φ).map (β_ M N).hom =
-      (β_ ((presheafPushforward φ).obj M) ((presheafPushforward φ).obj N)).hom ≫
-        Functor.LaxMonoidal.μ (presheafPushforward φ) N M :=
-  (PresheafOfModules.pushforwardLaxBraided F (commRingCatHom φ)).braided M N
+-- As for `presheafPushforwardLaxMonoidal`, keep the body using `commRingCatHom` unexported.
+@[instance_reducible]
+def presheafPushforwardLaxBraided : (presheafPushforward φ).LaxBraided where
+  toLaxMonoidal := presheafPushforwardLaxMonoidal φ
+  braided M N :=
+    (PresheafOfModules.pushforwardLaxBraided F (commRingCatHom φ)).braided M N
+
+attribute [instance] presheafPushforwardLaxBraided
 
 /-- On sections over `U`, the unit map of the pushforward of presheaves of modules is `φ`. -/
 @[simp]
@@ -143,7 +144,7 @@ lemma presheafPushforward_μ_app_tmul (M N : PresheafOfModulesOfCommRing.{u} R.o
 /-- The braiding on the underlying presheaves of pushforward sheaves is the braiding on the
 pushforwards of their underlying presheaves. -/
 @[simp]
-lemma braiding_hom_forget_pushforward_obj (M N : SheafOfModules.{u} (ringCatSheaf R)) :
+private lemma braiding_hom_forget_pushforward_obj (M N : SheafOfModules.{u} (ringCatSheaf R)) :
     (β_ ((_root_.SheafOfModules.forget (ringCatSheaf S)).obj
         ((_root_.SheafOfModules.pushforward φ).obj M))
       ((_root_.SheafOfModules.forget (ringCatSheaf S)).obj
@@ -319,7 +320,7 @@ instance pushforwardLaxBraided : (_root_.SheafOfModules.pushforward φ).LaxBraid
     rw [forget_μ_comp_map_pushforward_μ, forget_map_pushforward_map]
     erw [Category.assoc, ← Functor.map_comp]
     erw [Functor.LaxBraided.braided]
-    erw [Functor.map_comp, presheafPushforward_braided_assoc]
+    erw [Functor.map_comp, Functor.LaxBraided.braided_assoc]
     exact congrArg
       (· ≫ Functor.LaxMonoidal.μ (presheafPushforward φ) N.val M.val ≫
         (presheafPushforward φ).map
