@@ -9,7 +9,7 @@ public import TauCeti.RepresentationTheory.Continuous.Invariants
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CocycleComparison
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.DegreeZero
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.LowDegree
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete.Basic
 
 /-!
 # The explicit model against the canonical object, in degree zero

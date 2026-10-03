@@ -7,7 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.BilinearMap.IntLinear
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.DegreeCast
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete.Basic
 public import TauCeti.Topology.CompactOpen
 
 /-!

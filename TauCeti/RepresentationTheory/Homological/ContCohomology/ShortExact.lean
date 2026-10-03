@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Exact.Basic
 public import Mathlib.Topology.LocallyConstant.Basic
 public import TauCeti.Algebra.GroupAction.QuotientAddGroup
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.LowDegree
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete.Basic
 public import TauCeti.Topology.Algebra.Group.Quotient.Basic
 public import TauCeti.Topology.Algebra.GroupAction.InternalHom.DoubleDual
 

@@ -10,7 +10,7 @@ public import Mathlib.Algebra.Category.ModuleCat.Colimits
 public import Mathlib.CategoryTheory.Action.Limits
 public import Mathlib.CategoryTheory.Limits.Filtered
 public import Mathlib.CategoryTheory.Limits.Preserves.Filtered
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete.Basic
 
 /-!
 # Filtered colimits of smooth discrete representations

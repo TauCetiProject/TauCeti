@@ -10,7 +10,7 @@ public import Mathlib.RepresentationTheory.Homological.ContCohomology.Basic
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Extension
 public import TauCeti.FieldTheory.GaloisCohomology.Coefficients
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.FiniteQuotient.Colimit
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete.Basic
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Transgression
 import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologyComparison
 
