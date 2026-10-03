@@ -70,13 +70,8 @@ noncomputable def fromDiskSum (h₀ : X.obj.X₀ ⟶ Y.obj.X₁)
     (h₁ : X.obj.X₁ ⟶ Y.obj.X₀) : diskSum X ⟶ Y :=
   ⟨CurvedDuplex.fromDiskSum h₀ h₁⟩
 
-@[simp] theorem toDiskSum_hom_f₀ (X : MatrixFactorization S w) :
-    (toDiskSum X).hom.f₀ = CategoryTheory.Limits.biprod.lift X.obj.d₀ (𝟙 X.obj.X₀) := by
-  simp [toDiskSum]
-
-@[simp] theorem toDiskSum_hom_f₁ (X : MatrixFactorization S w) :
-    (toDiskSum X).hom.f₁ = CategoryTheory.Limits.biprod.lift (𝟙 X.obj.X₁) (-X.obj.d₁) := by
-  simp [toDiskSum]
+@[simp] theorem toDiskSum_hom (X : MatrixFactorization S w) :
+    (toDiskSum X).hom = CurvedDuplex.toDiskSum X.obj := (rfl)
 
 @[simp] theorem fromDiskSum_hom_f₀ (h₀ : X.obj.X₀ ⟶ Y.obj.X₁)
     (h₁ : X.obj.X₁ ⟶ Y.obj.X₀) :
