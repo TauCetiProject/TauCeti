@@ -23,10 +23,6 @@ monoidal. The tensor comparisons are also exposed as natural isomorphisms with e
 quasicoherent factor fixed. These affine computations let tensor and duality constructions
 on sheaves be compared with their module counterparts.
 
-The proof uses Mathlib's affine quasicoherent comparison `Scheme.Modules.fromTildeΓ` and
-`presentationTilde`, together with preservation of tensor products of globally presented
-sheaves under pullback.
-
 ## References
 
 * The Stacks Project, *Sheaves of Modules*, Lemma 03EL (pullback of tensor products).

@@ -15,9 +15,6 @@ A quasicoherent module on an affine scheme admits a global presentation by free 
 with arbitrary sets of generators and relations. This permits colimit arguments with
 quasicoherent modules on an affine scheme, even when no finite generation is assumed.
 
-Use Mathlib's affine comparison `Scheme.Modules.fromTildeΓ` and `presentationTilde` on the
-spectrum of the ring of global sections, then transport the presentation along `X.isoSpec`.
-
 ## References
 
 * R. Hartshorne, *Algebraic Geometry*, Proposition II.5.1.
