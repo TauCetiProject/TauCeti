@@ -54,17 +54,28 @@ theorem rowLen_diagramOf {n : ℕ} (ν : n.Partition) (i : ℕ) :
     (diagramOf ν).rowLen i = (ν.parts.sort (· ≥ ·)).getD i 0 := by
   rw [← YoungDiagram.getD_rowLens, rowLens_diagramOf]
 
+/-- **The Young diagram of the partition `(1ⁿ)` is a single column**: each of its first `n` rows
+holds a single cell, and the rows beyond are empty.
+
+Not a `simp` lemma: `TauCeti.rowLen_diagramOf` already rewrites the left-hand side to a list
+lookup, so no form of this left-hand side is ever looked up. -/
+theorem rowLen_diagramOf_ones (n i : ℕ) :
+    (diagramOf (Nat.Partition.ones n)).rowLen i = if i < n then 1 else 0 := by
+  rw [rowLen_diagramOf, Nat.Partition.sort_parts_ones]
+  rcases lt_or_ge i n with hi | hi
+  · rw [List.getD_eq_getElem _ _ (by rwa [List.length_replicate]), List.getElem_replicate,
+      ite_eq_left hi]
+  · rw [List.getD_eq_default _ _ (by rwa [List.length_replicate]),
+      ite_eq_right (not_lt.mpr hi)]
+
 /-- **The Young diagram of the partition `(1ⁿ)` is a single column**: every part is `1`, so every
 row has at most one cell. -/
 theorem rowLen_diagramOf_ones_le_one (n i : ℕ) :
     (diagramOf (Nat.Partition.ones n)).rowLen i ≤ 1 := by
-  rw [rowLen_diagramOf, Nat.Partition.ones_parts]
-  rcases lt_or_ge i ((Multiset.replicate n 1).sort (· ≥ ·)).length with hi | hi
-  · rw [List.getD_eq_getElem _ _ hi]
-    exact le_of_eq (Multiset.eq_of_mem_replicate
-      ((Multiset.mem_sort (· ≥ ·)).mp (List.getElem_mem hi)))
-  · rw [List.getD_eq_default _ _ hi]
-    exact Nat.zero_le 1
+  rw [rowLen_diagramOf_ones]
+  rcases lt_or_ge i n with hi | hi
+  · exact le_of_eq (ite_eq_left hi)
+  · exact (ite_eq_right (not_lt.mpr hi)).trans_le (Nat.zero_le 1)
 
 /-- **The Young diagram of the partition `(n)` has at most one row**: for `n > 0` its only part is
 `n`, so there is nothing below the first row, and for `n = 0` the diagram is empty. -/
