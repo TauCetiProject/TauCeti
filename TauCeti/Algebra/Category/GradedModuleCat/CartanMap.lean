@@ -29,6 +29,13 @@ structure on the graded projectives is moreover split: a conflation with project
 splits in the graded module category. The inclusion into the finite graded modules is compatible
 with the grading shift, so its map on Grothendieck groups is linear over `ℤ[q,q⁻¹]`.
 
+The map is constructed for arbitrary grading data, since its construction uses only extension
+closure and shift stability. Its source is `K₀^gr(proj A)` in the textbook sense when `𝒜` is a
+decomposition of `A`: then finite graded modules with projective underlying module are projective
+objects of the graded module category (`TauCeti.GradedModuleCat.projective_of_module_projective`),
+and their induced exact structure is the split one
+(`TauCeti.gradedFiniteProjectiveModulesExactStructure_eq_split`).
+
 The smallness argument uses an explicit small model. A finite graded module is transported to a
 quotient of a finite-rank free `A`-module using Mathlib's `FGModuleRepr`; the grading and its
 compatibility with `𝒜` transport across the resulting linear equivalence. Thus both graded
@@ -369,7 +376,8 @@ noncomputable def gradedFiniteModulesExactStructure (𝒜 : ℤ → Submodule k 
     isExtensionClosed_gradedFiniteModules' gradedFiniteModules_shift'
 
 /-- The induced graded exact structure on finite graded modules with projective underlying
-module. -/
+module. When `𝒜` is a decomposition of `A`, it is the split exact structure, by
+`TauCeti.gradedFiniteProjectiveModulesExactStructure_eq_split`. -/
 noncomputable def gradedFiniteProjectiveModulesExactStructure (𝒜 : ℤ → Submodule k A) :
     GradedExactStructure (gradedFiniteProjectiveModules 𝒜).FullSubcategory :=
   (gradedModuleExactStructure 𝒜).fullSubcategory _
@@ -423,7 +431,13 @@ theorem gradedFiniteProjectiveModulesExactStructure_conflation_iff
 /-! ### The graded Cartan map -/
 
 /-- **The graded Cartan map** `c_A^gr : K₀^gr(proj A) ⟶ G₀^gr(mod A)`, induced by inclusion of
-finite graded modules with projective underlying module into all finite graded modules. -/
+finite graded modules with projective underlying module into all finite graded modules.
+
+It is defined for arbitrary grading data. Its source is the Grothendieck group of the induced
+exact structure on finite graded modules with projective underlying module; when `𝒜` is a
+decomposition of `A`, these are the finite graded projectives and that structure is split
+(`TauCeti.gradedFiniteProjectiveModulesExactStructure_eq_split`), so the source is
+`K₀^gr(proj A)`. -/
 noncomputable def gradedCartanMap (𝒜 : ℤ → Submodule k A) :
     LaurentK0.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜) →ₗ[LaurentPolynomial ℤ]
       LaurentK0.{uA} (gradedFiniteModulesExactStructure 𝒜) :=
