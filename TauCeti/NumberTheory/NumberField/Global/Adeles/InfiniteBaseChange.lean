@@ -65,6 +65,21 @@ theorem infiniteAdeleBaseChangeHom_tmul (a : InfiniteAdeleRing K) (x : L) :
   simp [infiniteAdeleBaseChangeHom, Algebra.ofId_apply,
     algebraMap_infiniteAdeleExtensionAlgebra]
 
+/-- At a place of `L`, a pure tensor is evaluated using the completion map from the place
+below it and the local embedding of the field element. -/
+@[simp]
+theorem infiniteAdeleBaseChangeHom_tmul_apply (a : InfiniteAdeleRing K) (x : L)
+    (w : InfinitePlace L) :
+    infiniteAdeleBaseChangeHom K L (a ⊗ₜ x) w =
+      LiesOver.completionMap (a (w.comap (algebraMap K L))) *
+        algebraMap L w.Completion x := by
+  rw [infiniteAdeleBaseChangeHom_tmul]
+  -- Evaluate multiplication in the infinite-adele type synonym before rewriting its factors.
+  change (infiniteAdeleExtension K L a) w *
+    (algebraMap L (InfiniteAdeleRing L) x) w = _
+  rw [infiniteAdeleExtension_apply, InfiniteAdeleRing.algebraMap_apply]
+  rfl
+
 variable [NumberField K] [NumberField L]
 
 private def groupedInfiniteAdeles :
@@ -168,11 +183,11 @@ def infiniteAdeleBaseChangeEquiv :
       continuous_toFun := hc
       continuous_invFun := (e.toEquiv.toHomeomorphOfContinuousOpen hc ho).symm.continuous }
 
-/-- Forgetting continuity and invertibility recovers the canonical base-change homomorphism. -/
+/-- Forgetting continuity recovers the algebraic base-change equivalence. -/
 @[simp]
-theorem infiniteAdeleBaseChangeEquiv_toAlgHom :
-    (infiniteAdeleBaseChangeEquiv K L).toAlgHom = infiniteAdeleBaseChangeHom K L := by
-  exact infiniteAdeleBaseChangeAlgEquiv_toAlgHom K L
+theorem infiniteAdeleBaseChangeEquiv_toAlgEquiv :
+    (infiniteAdeleBaseChangeEquiv K L).toAlgEquiv = infiniteAdeleBaseChangeAlgEquiv K L :=
+  (rfl)
 
 /-- The continuous comparison sends a pure tensor to the extended adele times the diagonal
 field element. -/
@@ -180,23 +195,10 @@ field element. -/
 theorem infiniteAdeleBaseChangeEquiv_tmul (a : InfiniteAdeleRing K) (x : L) :
     infiniteAdeleBaseChangeEquiv K L (a ⊗ₜ x) =
       infiniteAdeleExtension K L a * algebraMap L (InfiniteAdeleRing L) x := by
-  have h := AlgHom.congr_fun (infiniteAdeleBaseChangeEquiv_toAlgHom K L) (a ⊗ₜ[K] x)
-  exact h.trans (infiniteAdeleBaseChangeHom_tmul K L a x)
-
-/-- At a place of `L`, a pure tensor is evaluated using the completion map from the place
-below it and the local embedding of the field element. -/
-@[simp]
-theorem infiniteAdeleBaseChangeEquiv_tmul_apply (a : InfiniteAdeleRing K) (x : L)
-    (w : InfinitePlace L) :
-    infiniteAdeleBaseChangeEquiv K L (a ⊗ₜ x) w =
-      LiesOver.completionMap (a (w.comap (algebraMap K L))) *
-        algebraMap L w.Completion x := by
-  rw [infiniteAdeleBaseChangeEquiv_tmul]
-  -- Evaluate multiplication in the infinite-adele type synonym before rewriting its factors.
-  change (infiniteAdeleExtension K L a) w *
-    (algebraMap L (InfiniteAdeleRing L) x) w = _
-  rw [infiniteAdeleExtension_apply, InfiniteAdeleRing.algebraMap_apply]
-  rfl
+  have h : (infiniteAdeleBaseChangeEquiv K L).toAlgHom =
+      infiniteAdeleBaseChangeHom K L := by simp
+  exact (AlgHom.congr_fun h (a ⊗ₜ[K] x)).trans
+    (infiniteAdeleBaseChangeHom_tmul K L a x)
 
 /-- The inverse comparison sends a diagonal field element to `1 ⊗ x`. -/
 @[simp]
