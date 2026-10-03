@@ -70,7 +70,7 @@ for a nonempty weight (`TauCeti.DominantWeight.detShift_shift`).
 * `TauCeti.DominantWeight.rowLen_shape_eq_rowLen_detShiftShape_add`: on a polynomial weight the
   twist is visible on the diagram, each of whose first `n` rows is `λₙ` cells longer than the
   corresponding row of the polynomial part, and
-  `TauCeti.DominantWeight.colLen_zero_detShiftShape_le_one` records that for `n ≤ 2` the
+  `TauCeti.DominantWeight.colLen_zero_detShiftShape_le_one_of_le_two` records that for `n ≤ 2` the
   polynomial part is a single row.
 * `TauCeti.existsUnique_dominantWeight`: each orbit of the symmetric group permuting the
   coordinates of `ℤⁿ` contains exactly one dominant weight.
@@ -325,9 +325,10 @@ theorem colLen_zero_detShiftShape_le (l : DominantWeight n) : l.detShiftShape.co
   (colLen_zero_detShiftShape_le_pred l).trans (Nat.sub_le n 1)
 
 /-- **For `GL n` with `n ≤ 2` the polynomial part of every dominant weight has at most one row**:
-the general bound is `n - 1` rows.  In particular the rational irreducibles of `GL 2` are
-determinant twists of symmetric powers of the standard representation. -/
-theorem colLen_zero_detShiftShape_le_one (hn : n ≤ 2) (l : DominantWeight n) :
+the general bound is `n - 1` rows.  So for `n ≤ 2` the Weyl module of a polynomial part is a
+symmetric power of the standard representation, and `TauCeti.rationalWeylRep` is a determinant
+twist of one. -/
+theorem colLen_zero_detShiftShape_le_one_of_le_two (hn : n ≤ 2) (l : DominantWeight n) :
     l.detShiftShape.colLen 0 ≤ 1 :=
   l.colLen_zero_detShiftShape_le_pred.trans (by omega)
 

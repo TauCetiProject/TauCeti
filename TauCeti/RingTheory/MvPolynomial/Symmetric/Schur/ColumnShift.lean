@@ -26,7 +26,11 @@ The proof is one line of Jacobi's bialternant formula
 raises every beta-number by `c`, and raising every exponent of an alternant by `c` multiplies it by
 `(∏ᵢ xᵢ) ^ c` (`TauCeti.alternant_add_const`); the Vandermonde alternant `a_δ` can then be
 cancelled over `ℤ`, and the identity transfers to an arbitrary commutative semiring because both
-sides have natural-number coefficients.
+sides have natural-number coefficients.  That cancel-over-`ℤ`-then-transfer skeleton, including the
+injectivity of the staircase exponents, is adapted from the proof of
+`TauCeti.hsymm_mul_diagramSchurPoly` in
+`TauCeti/RingTheory/MvPolynomial/Symmetric/Schur/Pieri.lean`, which establishes the Pieri rule the
+same way.
 
 Both row bounds are hypotheses, and neither follows from the other: the prescription relates `ν`
 and `μ` only on the rows indexed by `Fin N`, and says nothing about the rows beyond them.
@@ -64,7 +68,8 @@ theorem diagramSchurPoly_eq_prod_X_pow_mul {N c : ℕ} {μ ν : YoungDiagram}
       (∏ i, (X i : MvPolynomial (Fin N) R)) ^ c * diagramSchurPoly N R μ := by
   -- Prove the identity over `ℤ`, where the nonzero Vandermonde alternant can be cancelled.  Both
   -- sides have natural-number coefficients, so the identity descends along the injection `ℕ → ℤ`
-  -- and the resulting identity over `ℕ` maps to any commutative semiring.
+  -- and the resulting identity over `ℕ` maps to any commutative semiring.  This transfer and the
+  -- cancellation below are adapted from `TauCeti.hsymm_mul_diagramSchurPoly` in `Schur/Pieri.lean`.
   suffices hℤ : diagramSchurPoly N ℤ ν =
       (∏ i, (X i : MvPolynomial (Fin N) ℤ)) ^ c * diagramSchurPoly N ℤ μ by
     have hℕ : diagramSchurPoly N ℕ ν =
