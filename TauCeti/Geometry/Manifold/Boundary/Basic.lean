@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
+public import TauCeti.Geometry.Manifold.LocalDiffeomorph
 
 /-!
 # Chart-independent detection of manifold boundary points
@@ -40,19 +40,8 @@ provided its differentiability exponent is nonzero. -/
 theorem isInteriorPoint_iff_mem_interior_range (hk : k ≠ 0)
     (he : e ∈ IsManifold.maximalAtlas I k M) (hx : x ∈ e.source) :
     I.IsInteriorPoint x ↔ I (e x) ∈ interior (range I) := by
-  let φ : PartialDiffeomorph I I M H k :=
-    { e.toPartialEquiv with
-      open_source := e.open_source
-      open_target := e.open_target
-      contMDiffOn_toFun := contMDiffOn_of_mem_maximalAtlas he
-      contMDiffOn_invFun := contMDiffOn_symm_of_mem_maximalAtlas he }
-  -- The partial diffeomorphism retains the chart's underlying function.
-  have hφcoe : (φ : M → H) = (e : M → H) := rfl
-  have he' : IsLocalDiffeomorphAt I I k e x := by
-    rw [← hφcoe]
-    exact φ.isLocalDiffeomorphAt I I k hx
   simpa only [ModelWithCorners.IsInteriorPoint, extChartAt_self_apply] using
-    he'.isInteriorPoint_iff hk
+    (e.isLocalDiffeomorphAt_of_mem_maximalAtlas he hx).isInteriorPoint_iff hk
 
 /-- For two charts of the maximal atlas with nonzero differentiability exponent around a point
 `x`, if the first reads `x` in the interior of its extended target, so does the second. -/
