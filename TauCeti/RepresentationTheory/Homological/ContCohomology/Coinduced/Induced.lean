@@ -174,10 +174,12 @@ theorem algebraicIndCoindIso_hom_mk_apply (g h : G) (a : A.obj.V) :
   let B := Rep.of (Representation.ofDistribMulAction R U.toSubgroup A.obj.V)
   have hm : (Rep.indToCoind B (Representation.IndV.mk U.toSubgroup.subtype B.ρ g a)).1 h =
       Rep.indToCoindAux B g a h := by
-    -- Freeze the representation before reducing the tensor lift: the dictionary equips the
-    -- same carrier with additional structure, but does not change this algebraic computation.
-    simp [Rep.indToCoind, Representation.IndV.mk]
-    rfl
+    -- Compute the coinvariant and tensor lifts on the generator using their evaluation API.
+    simp only [Rep.indToCoind, Representation.IndV.mk, LinearMap.comp_apply,
+      Representation.Coinvariants.lift_mk, TensorProduct.mk_apply, TensorProduct.lift.tmul,
+      LinearEquiv.coe_coe, MonoidAlgebra.coeffLinearEquiv_apply, MonoidAlgebra.coeff_single,
+      Finsupp.linearCombination_single, one_smul]
+    exact congrFun (LinearMap.codRestrict_apply _ _ a) h
   exact (congrArg (fun f : Representation.coindV U.toSubgroup.subtype
     (Representation.ofDistribMulAction R U.toSubgroup A.obj.V) ↦ f.1 h) he).trans hm
 
@@ -271,21 +273,15 @@ theorem algebraicIndCounit_mk_one (a : A.obj.V) :
     (algebraicIndCounit.{u, v, w} R G U A).hom
         (Representation.IndV.mk U.toSubgroup.subtype
           (Representation.ofDistribMulAction R U.toSubgroup A.obj.V) 1 a) = a := by
-  rw [algebraicIndCounit_apply]
-  -- The comparison's linear-map equation does not rewrite the intertwining-map coercion.
-  -- Identify that coercion, then compute the canonical generator through `indToCoindAux`.
-  change ((Rep.indCoindIso.{max u w, v, u}
-    (Rep.of (Representation.ofDistribMulAction R U.toSubgroup A.obj.V))).hom.hom.toLinearMap
+  -- As in `algebraicIndCounit_apply`, reduce the restriction and composition wrappers to
+  -- apply the coinduction counit's evaluation API and the comparison's generator formula.
+  change algebraicCoindCounit R G U A ((algebraicIndCoindIso.{u, v, w} R G U A).hom.hom.hom
     (Representation.IndV.mk U.toSubgroup.subtype
-      (Representation.ofDistribMulAction R U.toSubgroup A.obj.V) 1 a)).1 1 = a
-  rw [Rep.indCoindIso_hom_hom_toLinearMap]
-  simp only [Rep.indToCoind, Representation.IndV.mk, LinearMap.comp_apply,
-    Representation.Coinvariants.lift_mk, TensorProduct.mk_apply, TensorProduct.lift.tmul,
-    LinearEquiv.coe_coe,
-    MonoidAlgebra.coeffLinearEquiv_apply, MonoidAlgebra.coeff_single,
-    Finsupp.linearCombination_single, one_smul]
-  exact Rep.indToCoindAux_self
-    (A := Rep.of (Representation.ofDistribMulAction R U.toSubgroup A.obj.V)) (1 : G) a
+      (Representation.ofDistribMulAction R U.toSubgroup A.obj.V) 1 a)) = a
+  exact (algebraicCoindCounit_apply R G U A _).trans
+    ((algebraicIndCoindIso_hom_mk_apply.{u, v, w} R G U A 1 1 a).trans
+      (Rep.indToCoindAux_self
+        (A := Rep.of (Representation.ofDistribMulAction R U.toSubgroup A.obj.V)) (1 : G) a))
 
 variable {A}
   {B : SmoothDiscreteTopRep.{v, u, max u v w} R U.toSubgroup}
