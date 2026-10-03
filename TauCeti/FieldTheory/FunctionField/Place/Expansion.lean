@@ -212,6 +212,21 @@ theorem truncatedExpansion_smul (hP : P.degree = 1) (ht : P.ord t = 1)
   rw [← ValuationSubring.algebraMap_apply P.integers ((algebraMap k P.integers c) * x)]
   simp only [map_mul, ValuationSubring.algebraMap_apply, P.coe_algebraMap_constants]
 
+/-- Uniformizer coefficients respect negation of integral functions. -/
+@[simp]
+theorem truncatedExpansion_neg (hP : P.degree = 1) (ht : P.ord t = 1)
+    (n : ℕ) (x : P.integers) :
+    P.truncatedExpansion hP ht n (-x) = -P.truncatedExpansion hP ht n x := by
+  simpa only [neg_one_smul] using P.truncatedExpansion_smul hP ht n (-1 : k) x
+
+/-- Uniformizer coefficients respect subtraction of integral functions. -/
+@[simp]
+theorem truncatedExpansion_sub (hP : P.degree = 1) (ht : P.ord t = 1)
+    (n : ℕ) (x y : P.integers) :
+    P.truncatedExpansion hP ht n (x - y) =
+      P.truncatedExpansion hP ht n x - P.truncatedExpansion hP ht n y := by
+  simp only [sub_eq_add_neg, P.truncatedExpansion_add, P.truncatedExpansion_neg]
+
 /-- The unit has constant coefficient one and all positive-degree coefficients zero. -/
 @[simp]
 theorem truncatedExpansion_one (hP : P.degree = 1) (ht : P.ord t = 1) (n : ℕ) :
