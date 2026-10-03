@@ -20,10 +20,6 @@ The same identities hold for the Petersson-normalized Fricke operator and for cu
 This relation transports good Hecke eigensystems to the inverse-nebentypus space; it is
 the Hecke-theoretic input to the Fricke pseudo-eigenvalue theorem for primitive forms.
 
-The proof uses Mathlib's trace construction: `diag(1,n) W = W diag(n,1)` moves Fricke
-through the trace, and the existing adjugate-coset identity identifies `diag(n,1)` with
-`⟨n⟩⁻¹ Tₙ`. No additional determinant factor is introduced.
-
 ## References
 
 * [T. Miyake, *Modular forms*][miyake1989], §4.6, Theorem 4.6.15.
@@ -47,6 +43,9 @@ theorem frickeOperator_heckeTNat (hn : n.Coprime N)
     (f : ModularForm ((Gamma1 N).map (mapGL ℝ)) k) :
     frickeOperator k (heckeTNat k n f) =
       diamondOp k (ZMod.unitOfCoprime n hn)⁻¹ (heckeTNat k n (frickeOperator k f)) := by
+  -- The proof uses Mathlib's trace construction: `diag(1,n) W = W diag(n,1)` moves Fricke
+  -- through the trace, and the existing adjugate-coset identity identifies `diag(n,1)` with
+  -- `⟨n⟩⁻¹ Tₙ`. No additional determinant factor is introduced.
   let x := φ (natDiagGL 2 ![1, n])
   let W := frickeGL ℝ N
   -- Fricke exchanges the two diagonal entries, giving the main involution of `x`.
@@ -167,7 +166,8 @@ theorem normalizedFrickeOperatorCusp_heckeTCuspNat_of_mem_cuspFormCharSpace (hn 
 
 /-- Fricke transports a good Hecke eigenrelation by multiplying its eigenvalue by `χ(n)⁻¹`.
 The equivalence includes the zero form and does not require normalization of its coefficients. -/
-theorem heckeTCuspNat_normalizedFrickeOperatorCusp_eq_smul_iff (hn : n.Coprime N)
+theorem heckeTCuspNat_normalizedFrickeOperatorCusp_eq_smul_iff_heckeTCuspNat_eq_smul
+    (hn : n.Coprime N)
     {χ : (ZMod N)ˣ →* ℂˣ} {f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k}
     (hf : f ∈ cuspFormCharSpace k χ) (c : ℂ) :
     heckeTCuspNat k n (normalizedFrickeOperatorCusp k f) =
