@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.StandardCover
+public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.StandardCover.Basic
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Empty
 
 import Mathlib.CategoryTheory.Sites.Coverage
