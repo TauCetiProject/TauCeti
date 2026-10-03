@@ -20,9 +20,12 @@ differential, applied to the boundaries `Bₙ = im (Kₙ₊₁ ⟶ Kₙ)`, gives
 dim Kₙ = dim Hₙ(K) + dim Bₙ + dim Bₙ₋₁,
 ```
 
-and the alternating sum of these identities telescopes.  If the differential `Kₙ₊₁ ⟶ Kₙ`
-vanishes, the last boundary term `dim Bₙ` vanishes, so the alternating sums of the dimensions of
-the terms and of the homology agree up to degree `n`
+(`ChainComplex.finrank_X_zero`, `ChainComplex.finrank_X_succ`), and the alternating sum of these
+identities telescopes: up to degree `n` the alternating sums of the dimensions of the terms and
+of the homology differ by `(-1)ⁿ dim Bₙ`
+(`ChainComplex.sum_range_finrank_X_eq_sum_range_finrank_homology_add`).  If the differential
+`Kₙ₊₁ ⟶ Kₙ` vanishes, the last boundary term `dim Bₙ` vanishes, so the alternating sums of the
+dimensions of the terms and of the homology agree up to degree `n`
 (`ChainComplex.sum_range_finrank_X_eq_sum_range_finrank_homology`).  The terms in degrees above
 `n + 1` play no role.
 
@@ -58,7 +61,7 @@ namespace ChainComplex
 variable {k : Type u} [DivisionRing k] (K : ChainComplex (ModuleCat.{v} k) ℕ)
 
 /-- In degree `0`, every element is a cycle, so `dim K₀ = dim H₀(K) + dim im (K₁ ⟶ K₀)`. -/
-private theorem finrank_X_zero [Module.Finite k (K.X 0)] :
+theorem finrank_X_zero [Module.Finite k (K.X 0)] :
     finrank k (K.X 0) = finrank k (K.homology 0) + finrank k (LinearMap.range (K.d 1 0).hom) := by
   have : Module.Finite k (K.sc' 1 0 0).X₂ := ‹Module.Finite k (K.X 0)›
   -- The maps of `K.sc' i j k` are `K.d i j` and `K.d j k` by construction.
@@ -74,7 +77,7 @@ private theorem finrank_X_zero [Module.Finite k (K.X 0)] :
 
 /-- In degree `n + 1`, rank--nullity for `Kₙ₊₁ ⟶ Kₙ` gives
 `dim Kₙ₊₁ = dim Hₙ₊₁(K) + dim im (Kₙ₊₂ ⟶ Kₙ₊₁) + dim im (Kₙ₊₁ ⟶ Kₙ)`. -/
-private theorem finrank_X_succ (n : ℕ) [Module.Finite k (K.X (n + 1))] :
+theorem finrank_X_succ (n : ℕ) [Module.Finite k (K.X (n + 1))] :
     finrank k (K.X (n + 1)) = finrank k (K.homology (n + 1)) +
       finrank k (LinearMap.range (K.d (n + 2) (n + 1)).hom) +
         finrank k (LinearMap.range (K.d (n + 1) n).hom) := by
@@ -91,10 +94,10 @@ private theorem finrank_X_succ (n : ℕ) [Module.Finite k (K.X (n + 1))] :
   rw [← LinearMap.finrank_range_add_finrank_ker (K.d (n + 1) n).hom, ← h]
   ring
 
-/-- The alternating sums up to degree `n` of the dimensions of the terms and of the homology of
-a chain complex of finite-dimensional vector spaces differ by the dimension of the boundaries in
-degree `n`, with sign `(-1)ⁿ`. -/
-private theorem sum_range_finrank_X_eq_add (n : ℕ)
+/-- If the terms of `K` through degree `n` are finite-dimensional, the alternating sums up to
+degree `n` of the dimensions of the terms and of the homology of `K` differ by the dimension of
+the boundaries `im (Kₙ₊₁ ⟶ Kₙ)` in degree `n`, with sign `(-1)ⁿ`. -/
+theorem sum_range_finrank_X_eq_sum_range_finrank_homology_add (n : ℕ)
     (hfinite : ∀ i ≤ n, Module.Finite k (K.X i)) :
     ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ i * finrank k (K.X i) =
       ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ i * finrank k (K.homology i) +
@@ -118,8 +121,8 @@ theorem sum_range_finrank_X_eq_sum_range_finrank_homology {n : ℕ}
     (hfinite : ∀ i ≤ n, Module.Finite k (K.X i)) (hn : K.d (n + 1) n = 0) :
     ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ i * finrank k (K.X i) =
       ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ i * finrank k (K.homology i) := by
-  rw [K.sum_range_finrank_X_eq_add n hfinite, hn, ModuleCat.hom_zero, LinearMap.range_zero,
-    finrank_bot]
+  rw [K.sum_range_finrank_X_eq_sum_range_finrank_homology_add n hfinite, hn, ModuleCat.hom_zero,
+    LinearMap.range_zero, finrank_bot]
   simp
 
 /-- **Euler--Poincaré for a bounded chain complex of vector spaces.**  For a chain complex of
