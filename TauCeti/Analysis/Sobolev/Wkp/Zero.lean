@@ -72,7 +72,7 @@ noncomputable def iteratedGradientTestFunction (phi : 𝓓(Omega, ℝ)) (k : ℕ
 /-- The derivative fields of a test function are its classical iterated-gradient chain.
 This bridge is intentionally not a simp lemma: test-function fields are the normal form used
 by the zero, successor, and `Lᵖ` representative simp lemmas below. -/
-theorem iteratedGradientTestFunction_eq_chain (phi : 𝓓(Omega, ℝ)) (k : ℕ) :
+theorem iteratedGradientTestFunction_eq_iteratedGradientChain (phi : 𝓓(Omega, ℝ)) (k : ℕ) :
     iteratedGradientTestFunction phi k = iteratedGradientChain (phi : E → ℝ) k :=
   (rfl)
 

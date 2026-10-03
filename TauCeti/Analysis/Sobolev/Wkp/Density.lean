@@ -96,7 +96,8 @@ theorem Wkp.tendsto_ofTestFunctionₗ_of_contDiffOn {I : Type*} {l : Filter I}
           rw [iteratedGradient_ofTestFunctionₗ]
           filter_upwards [iteratedGradientTestFunctionLp_apply_ae (mu := mu) p k (phi j)]
             with x hx
-          exact hx.trans (congrFun (iteratedGradientTestFunction_eq_chain (phi j) k) x)
+          exact hx.trans
+            (congrFun (iteratedGradientTestFunction_eq_iteratedGradientChain (phi j) k) x)
         apply eLpNorm_congr_norm_ae
           ((Lp.aestronglyMeasurable _).sub (Lp.aestronglyMeasurable _))
           (((phi j).contDiff.continuous_iteratedFDeriv (by simp)).aestronglyMeasurable.sub
