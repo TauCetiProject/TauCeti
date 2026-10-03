@@ -55,6 +55,10 @@ a `FiniteOrderInfinityType`: signs at the real places and nothing else.
   a finite-order Hecke character comes from a finite-order infinity type.
 * `TauCeti.GlobalNumberFields.HeckeCharacter.isFiniteOrder_normPow_iff`: `‖·‖ ^ s` has finite
   order exactly when `s = 0`.
+* `TauCeti.GlobalNumberFields.HeckeCharacter.re_realExponent_infinityType`,
+  `TauCeti.GlobalNumberFields.HeckeCharacter.re_complexExponent_infinityType`: the real parts of the
+  modulus exponents are the shift `σ` of `χ` at every real place and `2 * σ` at every complex
+  place, since `|χ| = ‖·‖ ^ σ`.
 
 ## References
 
@@ -342,6 +346,55 @@ theorem isFiniteOrder_normPow_iff {s : ℂ} : (normPow K s).IsFiniteOrder ↔ s 
   rcases w.isReal_or_isComplex with hw | hw
   · simpa using congrArg (fun t : ContinuousInfinityType K ↦ t.realExponent ⟨w, hw⟩) ht
   · simpa using congrArg (fun t : ContinuousInfinityType K ↦ t.complexExponent ⟨w, hw⟩) ht
+
+/-! ### Absolute values of the components and the shift -/
+
+/-- **The absolute value of a real component is a power of the shift.**  At a real place `w`,
+the component of `χ` satisfies `|χ_w(x)| = |x| ^ σ`, where `σ` is the shift of `χ`. -/
+theorem norm_realComponent_apply (χ : HeckeCharacter K) (w : {w : InfinitePlace K // w.IsReal})
+    (x : ℝˣ) : ‖(χ.realComponent w x : ℂ)‖ = |(x : ℝ)| ^ χ.shift := by
+  conv_lhs => rw [← χ.unitaryPart_mul_normPow_shift]
+  rw [realComponent_mul, ContinuousMonoidHom.mul_apply, Units.val_mul, norm_mul,
+    realComponent_apply, infiniteComponent_apply, norm_unitaryPart, one_mul,
+    realComponent_normPow, coe_normCpowCharacter_apply,
+    Complex.norm_cpow_eq_rpow_re_of_pos (norm_pos_iff.2 x.ne_zero), Complex.ofReal_re,
+    Real.norm_eq_abs]
+
+/-- **The absolute value of a complex component is a power of the shift.**  At a complex place
+`w`, the component of `χ` satisfies `|χ_w(z)| = |z| ^ (2 * σ)`, where `σ` is the shift of `χ`,
+since the normalized absolute value of a complex place is the square of the usual one. -/
+theorem norm_complexComponent_apply (χ : HeckeCharacter K)
+    (w : {w : InfinitePlace K // w.IsComplex}) (z : ℂˣ) :
+    ‖(χ.complexComponent w z : ℂ)‖ = ‖(z : ℂ)‖ ^ (2 * χ.shift) := by
+  conv_lhs => rw [← χ.unitaryPart_mul_normPow_shift]
+  rw [complexComponent_mul, ContinuousMonoidHom.mul_apply, Units.val_mul, norm_mul,
+    complexComponent_apply, infiniteComponent_apply, norm_unitaryPart, one_mul,
+    complexComponent_normPow, coe_normCpowCharacter_apply,
+    Complex.norm_cpow_eq_rpow_re_of_pos (norm_pos_iff.2 z.ne_zero)]
+  simp
+
+/-- **The real part of a real modulus exponent is the shift.**  The infinity type of `χ` has a
+complex exponent `s_w` at each real place `w`; its real part is the shift of `χ`, independently
+of `w`. -/
+@[simp]
+theorem re_realExponent_infinityType (χ : HeckeCharacter K)
+    (w : {w : InfinitePlace K // w.IsReal}) :
+    (χ.infinityType.realExponent w).re = χ.shift := by
+  have h := χ.norm_realComponent_apply w (Units.mk0 2 two_ne_zero)
+  rw [realComponent_eq, norm_realUnitsCharacter_apply, Units.val_mk0, abs_two] at h
+  exact (Real.rpow_right_inj two_pos (by norm_num)).1 h
+
+/-- **The real part of a complex modulus exponent is twice the shift.**  The infinity type of
+`χ` has a complex exponent `s_w` at each complex place `w`; its real part is `2 * σ` for the shift
+`σ` of `χ`, independently of `w`. -/
+@[simp]
+theorem re_complexExponent_infinityType (χ : HeckeCharacter K)
+    (w : {w : InfinitePlace K // w.IsComplex}) :
+    (χ.infinityType.complexExponent w).re = 2 * χ.shift := by
+  have h := χ.norm_complexComponent_apply w (Units.mk0 2 two_ne_zero)
+  rw [complexComponent_eq, norm_complexUnitsCharacter_apply, Units.val_mk0,
+    Complex.norm_two] at h
+  exact (Real.rpow_right_inj two_pos (by norm_num)).1 h
 
 end HeckeCharacter
 
