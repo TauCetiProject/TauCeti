@@ -163,6 +163,7 @@ lemma singularChainComplexπ_pair_naturality
 
 /-- The quotient map from ambient to relative singular chains is natural in the coefficient
 object. -/
+@[reassoc]
 lemma singularChainComplexπ_coefficient_naturality
     (P : TopPair.{w}) {M N : C} (φ : M ⟶ N) :
     ((AlgebraicTopology.singularChainComplexFunctor C).map φ).app P.fst ≫
