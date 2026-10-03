@@ -45,17 +45,35 @@ private theorem map_opLoopPresentation_cokernelMap {X Y : Cᵒᵖ} (f : X ⟶ Y)
     E.op.projectiveStableFunctor.map
         ((hE.enoughProjectives.projectivePresentation X.unop).op.cokernelMap
           (hE.enoughProjectives.projectivePresentation Y.unop).op f) =
-      E.op.projectiveStableFunctor.map (hE.enoughProjectives.loopMap f.unop).op := by
+      E.op.projectiveStableFunctor.map
+        (eqToHom (ProjectivePresentation.op_K _) ≫
+          (hE.enoughProjectives.loopMap f.unop).op ≫
+          eqToHom (ProjectivePresentation.op_K _).symm) := by
   apply E.op.projectiveStableFunctor_map_cokernelMap_eq
     (hE.enoughProjectives.projectivePresentation X.unop).op
     (hE.enoughProjectives.projectivePresentation Y.unop).op
     (hE.op.isProjective_I (hE.enoughProjectives.projectivePresentation Y.unop).op) f
-    (hE.enoughProjectives.loopMiddleMap f.unop).op
-  · apply Quiver.Hom.unop_inj
-    simpa only [ProjectivePresentation.op_i, CategoryTheory.unop_comp, Quiver.Hom.unop_op] using
+    (eqToHom (ProjectivePresentation.op_I _) ≫
+      (hE.enoughProjectives.loopMiddleMap f.unop).op ≫
+      eqToHom (ProjectivePresentation.op_I _).symm)
+  · rw [← cancel_mono (eqToHom (ProjectivePresentation.op_I _))]
+    simp only [Category.assoc, eqToHom_trans, eqToHom_refl, Category.comp_id]
+    rw [reassoc_of% (ProjectivePresentation.op_i
+      (hE.enoughProjectives.projectivePresentation X.unop)),
+      ProjectivePresentation.op_i]
+    apply Quiver.Hom.unop_inj
+    simpa only [CategoryTheory.unop_comp, Quiver.Hom.unop_op] using
       hE.enoughProjectives.loopMiddleMap_comp_loopDeflation f.unop
-  · apply Quiver.Hom.unop_inj
-    simpa only [ProjectivePresentation.op_p, CategoryTheory.unop_comp, Quiver.Hom.unop_op] using
+  · -- Identify both endpoints before comparing with the original loop square.
+    rw [← cancel_mono (eqToHom (ProjectivePresentation.op_K _)),
+      ← cancel_epi (eqToHom (ProjectivePresentation.op_I _).symm)]
+    simp only [Category.assoc, eqToHom_trans_assoc, eqToHom_trans, eqToHom_refl,
+      Category.comp_id, Category.id_comp]
+    rw [reassoc_of% (ProjectivePresentation.op_p
+        (hE.enoughProjectives.projectivePresentation X.unop)),
+      ProjectivePresentation.op_p]
+    apply Quiver.Hom.unop_inj
+    simpa only [CategoryTheory.unop_comp, Quiver.Hom.unop_op] using
       hE.enoughProjectives.loopMap_comp_loopInflation f.unop
 
 private noncomputable def opSuspensionObjIso (X : Cᵒᵖ) :
@@ -71,6 +89,8 @@ private noncomputable def opSuspensionObjIso (X : Cᵒᵖ) :
       (hE.enoughProjectives.projectivePresentation X.unop).op).symm ≪≫
   eqToIso (E.projectiveStableOpFunctor_obj hE.projective_iff_injective
     (hE.enoughProjectives.projectivePresentation X.unop).op.K) ≪≫
+  eqToIso (congrArg (fun K ↦ Opposite.op (E.projectiveStableFunctor.obj K.unop))
+    (ProjectivePresentation.op_K _)) ≪≫
   eqToIso (congrArg Opposite.op
     (hE.enoughProjectives.stableLoop_obj_projectiveStableFunctor_obj X.unop).symm) ≪≫
   eqToIso (congrArg hE.enoughProjectives.stableLoop.op.obj
@@ -120,6 +140,8 @@ theorem stableSuspensionCompProjectiveStableOpFunctorIso_hom_app (X : Cᵒᵖ) :
             (hE.enoughProjectives.projectivePresentation X.unop).op (𝟙 X))) ≫
       eqToHom (E.projectiveStableOpFunctor_obj hE.projective_iff_injective
         (hE.enoughProjectives.projectivePresentation X.unop).op.K) ≫
+      eqToHom (congrArg (fun K ↦ Opposite.op (E.projectiveStableFunctor.obj K.unop))
+        (ProjectivePresentation.op_K _)) ≫
       eqToHom (congrArg Opposite.op
         (hE.enoughProjectives.stableLoop_obj_projectiveStableFunctor_obj X.unop).symm) ≫
       eqToHom (congrArg hE.enoughProjectives.stableLoop.op.obj
@@ -136,6 +158,8 @@ theorem stableSuspensionCompProjectiveStableOpFunctorIso_inv_app (X : Cᵒᵖ) :
         (E.projectiveStableOpFunctor_obj hE.projective_iff_injective X)) ≫
       eqToHom (congrArg Opposite.op
         (hE.enoughProjectives.stableLoop_obj_projectiveStableFunctor_obj X.unop)) ≫
+      eqToHom (congrArg (fun K ↦ Opposite.op (E.projectiveStableFunctor.obj K.unop))
+        (ProjectivePresentation.op_K _)).symm ≫
       eqToHom (E.projectiveStableOpFunctor_obj hE.projective_iff_injective
         (hE.enoughProjectives.projectivePresentation X.unop).op.K).symm ≫
       (E.projectiveStableOpFunctor hE.projective_iff_injective).map
