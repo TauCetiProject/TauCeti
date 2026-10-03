@@ -16,6 +16,9 @@ in degree two. Its unique vertex idempotent is the unit, so its sole graded Cart
 Hilbert polynomial of the algebra. This file computes that entry from the grading of the public
 componentwise zigzag algebra, including the exceptional `A₁` convention.
 
+It also names the unique volume basis vector `TauCeti.zigzagA1Volume`, the element
+corresponding to `ε` under the comparison with the dual numbers.
+
 See Huerfano--Khovanov, *A category for the adjoint representation*, Section 3, for the
 one-vertex convention and the graded Cartan polynomial.
 -/
@@ -47,6 +50,30 @@ theorem zigzagAlgebraBasis_A1_vertex_eq_one :
   rw [map_one, zigzagAlgebraEquivA1_apply, h]
   rw [zigzagComponentAlgebraEquivULiftDualNumber_zigzagComponentBasis_inl]
   rfl
+
+/-- The unique volume basis vector of the one-vertex zigzag algebra. -/
+noncomputable def zigzagA1Volume : zigzagAlgebra k (⊥ : SimpleGraph (Fin 1)) :=
+  (zigzagAlgebraEquivA1 k).symm DualNumber.eps
+
+/-- Under the comparison with the dual numbers, the `A₁` volume is `ε`. -/
+theorem zigzagAlgebraEquivA1_zigzagA1Volume :
+    zigzagAlgebraEquivA1 k (zigzagA1Volume k) = DualNumber.eps :=
+  (zigzagAlgebraEquivA1 k).apply_symm_apply DualNumber.eps
+
+/-- The element transported from `ε` is the volume vector in the standard zigzag basis. -/
+theorem zigzagA1Volume_eq_basis :
+    zigzagA1Volume k =
+      zigzagAlgebraBasis k (⊥ : SimpleGraph (Fin 1)) (.inr (.inr 0)) := by
+  apply (zigzagAlgebraEquivA1 k).injective
+  rw [zigzagAlgebraEquivA1_zigzagA1Volume, zigzagAlgebraEquivA1_apply]
+  have h : zigzagComponentProjection k (⊥ : SimpleGraph (Fin 1)) default
+      (zigzagAlgebraBasis k (⊥ : SimpleGraph (Fin 1)) (.inr (.inr 0))) =
+        zigzagComponentBasis k (⊥ : SimpleGraph (Fin 1)) default
+          (.inr (.inr ⟨0, rfl⟩)) := by
+    simpa only [zigzagComponentBasisIndexEquiv_inr_inr] using
+      (zigzagComponentProjection_zigzagAlgebraBasis
+        (G := (⊥ : SimpleGraph (Fin 1))) (k := k) default (.inr (.inr ⟨0, rfl⟩)))
+  rw [h, zigzagComponentAlgebraEquivULiftDualNumber_zigzagComponentBasis_inr_inr]
 
 /-- The rank-one zigzag comparison respects the degree pieces: the generator of the dual
 numbers and the volume basis vector both have degree two. -/

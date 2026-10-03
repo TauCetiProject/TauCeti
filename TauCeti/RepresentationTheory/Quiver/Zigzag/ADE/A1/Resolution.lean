@@ -26,6 +26,7 @@ multiplication by `v₀`.
 ## Main definitions
 
 * `TauCeti.zigzagA1Residue`: the residue module of the one-vertex zigzag algebra.
+* `TauCeti.zigzagA1Proj`: the quotient map from the regular module onto the residue module.
 * `TauCeti.zigzagA1ProjectiveResolution`: its periodic projective resolution.
 * `TauCeti.zigzagA1ProjectiveResolutionXIso`: the identification of every term with the
   regular module.
@@ -67,39 +68,13 @@ noncomputable abbrev zigzagA1Residue :
     ModuleCat.{u} (zigzagAlgebra k (⊥ : SimpleGraph (Fin 1))) :=
   (zigzagA1Restriction k).obj (dualNumberResidue k)
 
-/-- The unique volume basis vector of the one-vertex zigzag algebra. -/
-noncomputable def zigzagA1Volume : zigzagAlgebra k (⊥ : SimpleGraph (Fin 1)) :=
-  (zigzagAlgebraEquivA1 k).symm ε
-
-/-- Under the comparison with the dual numbers, the `A₁` volume is `ε`. -/
-theorem zigzagAlgebraEquivA1_zigzagA1Volume :
-    zigzagAlgebraEquivA1 k (zigzagA1Volume k) = ε :=
-  (zigzagAlgebraEquivA1 k).apply_symm_apply ε
-
-/-- The element transported from `ε` is the volume vector in the standard zigzag basis. -/
-theorem zigzagA1Volume_eq_basis :
-    zigzagA1Volume k =
-      zigzagAlgebraBasis k (⊥ : SimpleGraph (Fin 1)) (.inr (.inr 0)) := by
-  apply (zigzagAlgebraEquivA1 k).injective
-  rw [zigzagAlgebraEquivA1_zigzagA1Volume, zigzagAlgebraEquivA1_apply]
-  have h : zigzagComponentProjection k (⊥ : SimpleGraph (Fin 1)) default
-      (zigzagAlgebraBasis k (⊥ : SimpleGraph (Fin 1)) (.inr (.inr 0))) =
-        zigzagComponentBasis k (⊥ : SimpleGraph (Fin 1)) default
-          (.inr (.inr ⟨0, rfl⟩)) := by
-    simpa only [zigzagComponentBasisIndexEquiv_inr_inr] using
-      (zigzagComponentProjection_zigzagAlgebraBasis
-        (G := (⊥ : SimpleGraph (Fin 1))) (k := k) default (.inr (.inr ⟨0, rfl⟩)))
-  rw [h, zigzagComponentAlgebraEquivULiftDualNumber_zigzagComponentBasis_inr_inr]
-
 /-- The regular dual-number module, restricted to the one-vertex zigzag algebra, is the
 regular zigzag module. -/
-@[expose]
 noncomputable def zigzagA1FreeIso :
     (zigzagA1Restriction k).obj (dualNumberFree k) ≅ zigzagA1Free k :=
   ModuleCat.restrictScalarsIsoOfEquiv (zigzagAlgebraEquivA1 k).toRingEquiv
 
 /-- Right multiplication by the volume element on the regular one-vertex zigzag module. -/
-@[expose]
 noncomputable def zigzagA1VolumeMul : zigzagA1Free k ⟶ zigzagA1Free k :=
   ModuleCat.ofHom
     (LinearMap.mulRight (zigzagAlgebra k (⊥ : SimpleGraph (Fin 1))) (zigzagA1Volume k))
@@ -108,7 +83,7 @@ noncomputable def zigzagA1VolumeMul : zigzagA1Free k ⟶ zigzagA1Free k :=
 @[simp]
 theorem zigzagA1VolumeMul_apply (x : zigzagA1Free k) :
     (zigzagA1VolumeMul k).hom x = x * zigzagA1Volume k :=
-  rfl
+  (rfl)
 
 /-- Transporting multiplication by `ε` gives multiplication by the `A₁` volume. -/
 @[reassoc]
@@ -119,13 +94,31 @@ theorem zigzagA1FreeIso_naturality :
   apply LinearMap.ext
   intro x
   let y : DualNumber k := x
+  -- Definitionally, `zigzagA1FreeIso` is `ModuleCat.restrictScalarsIsoOfEquiv`, whose forward
+  -- map is the inverse algebra equivalence on elements, and `zigzagA1Restriction` leaves the
+  -- underlying map of `dualNumberEpsSmul` unchanged. The Mathlib lemma
+  -- `ModuleCat.restrictScalarsIsoOfEquiv_hom_apply` does not rewrite here: it is stated through
+  -- `ConcreteCategory.hom` on `DualNumber k`, while `x` lives in the restricted carrier. So we
+  -- state the unfolded goal on `y` instead.
   change (zigzagAlgebraEquivA1 k).toRingEquiv.symm
       ((dualNumberEpsSmul k).hom y) =
     (zigzagA1VolumeMul k).hom
       ((zigzagAlgebraEquivA1 k).toRingEquiv.symm y)
   rw [dualNumberEpsSmul_hom, LinearMap.mulLeft_apply, zigzagA1VolumeMul_apply]
   apply (zigzagAlgebraEquivA1 k).injective
-  simp [zigzagA1Volume, mul_comm]
+  simp [-zigzagAlgebraEquivA1_apply, zigzagAlgebraEquivA1_zigzagA1Volume, mul_comm]
+
+/-- The quotient map from the regular one-vertex zigzag module onto its residue module,
+transported from `TauCeti.dualNumberProj`. -/
+noncomputable def zigzagA1Proj : zigzagA1Free k ⟶ zigzagA1Residue k :=
+  (zigzagA1FreeIso k).inv ≫ (zigzagA1Restriction k).map (dualNumberProj k)
+
+/-- The quotient map takes the constant term under the comparison with the dual numbers. -/
+@[simp]
+theorem zigzagA1Proj_apply (x : zigzagA1Free k) :
+    (zigzagA1Proj k).hom x = TrivSqZeroExt.fst (zigzagAlgebraEquivA1 k x) := by
+  rw [zigzagA1Proj, ModuleCat.hom_comp, LinearMap.comp_apply]
+  exact dualNumberProj_apply k _
 
 /-! ### The periodic resolution -/
 
@@ -147,17 +140,24 @@ theorem zigzagA1ProjectiveResolution_complex_d (n : ℕ) :
     (zigzagA1ProjectiveResolution k).complex.d (n + 1) n =
       (zigzagA1ProjectiveResolutionXIso k (n + 1)).hom ≫ zigzagA1VolumeMul k ≫
         (zigzagA1ProjectiveResolutionXIso k n).inv := by
-  change (zigzagA1Restriction k).map
-      ((dualNumberProjectiveResolution k).complex.d (n + 1) n) =
-    ((zigzagA1Restriction k).mapIso
-          (dualNumberProjectiveResolutionXIso k (n + 1))).hom ≫
-      (zigzagA1FreeIso k).hom ≫ zigzagA1VolumeMul k ≫
-        (zigzagA1FreeIso k).inv ≫
-          ((zigzagA1Restriction k).mapIso
-            (dualNumberProjectiveResolutionXIso k n)).inv
-  rw [dualNumberProjectiveResolution_complex_d, Functor.map_comp, Functor.map_comp]
-  simp only [Functor.mapIso_hom, Functor.mapIso_inv]
-  rw [← zigzagA1FreeIso_naturality_assoc]
+  dsimp only [zigzagA1ProjectiveResolution, Functor.mapProjectiveResolution,
+    Functor.mapHomologicalComplex_obj_d, zigzagA1ProjectiveResolutionXIso, Iso.trans_hom,
+    Iso.trans_inv, Functor.mapIso_hom, Functor.mapIso_inv]
+  rw [dualNumberProjectiveResolution_complex_d, Functor.map_comp, Functor.map_comp,
+    Category.assoc, ← zigzagA1FreeIso_naturality_assoc]
   simp
+
+/-- The augmentation of the transported resolution is `TauCeti.zigzagA1Proj`, read through
+`TauCeti.zigzagA1ProjectiveResolutionXIso`. -/
+@[simp]
+theorem zigzagA1ProjectiveResolution_π_f_zero :
+    (zigzagA1ProjectiveResolutionXIso k 0).inv ≫ (zigzagA1ProjectiveResolution k).π.f 0 =
+      zigzagA1Proj k := by
+  dsimp only [zigzagA1ProjectiveResolution, Functor.mapProjectiveResolution,
+    zigzagA1ProjectiveResolutionXIso, Iso.trans_inv, Functor.mapIso_inv]
+  simp only [HomologicalComplex.comp_f, Functor.mapHomologicalComplex_map_f, Category.assoc,
+    HomologicalComplex.singleMapHomologicalComplex_hom_app_self]
+  rw [← Functor.map_comp_assoc, dualNumberProjectiveResolution_π_f_zero]
+  simp [zigzagA1Proj]
 
 end TauCeti
