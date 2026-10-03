@@ -38,6 +38,8 @@ preserves every short exact sequence.
   `Rep.shortExact_map_tensorLeft_of_rightInverse`: tensoring on the left preserves a short exact
   sequence whose first map has a `k`-linear retraction, or whose last map has a `k`-linear
   section.
+* `Rep.shortExact_map_tensorRight_of_leftInverse`: so does tensoring on the right, through the
+  braiding.
 -/
 
 public section
@@ -137,5 +139,14 @@ theorem shortExact_map_tensorLeft_of_rightInverse {S : ShortComplex (Rep.{u} k G
   have : Epi S.g := (epi_iff_surjective S.g).2 hs.surjective
   obtain ⟨r, hr⟩ := exists_leftInverse_of_rightInverse hS hs
   exact shortExact_map_tensorLeft_of_leftInverse hS M hr
+
+/-- Tensoring on the right with `M` sends an exact sequence ending in an epimorphism to a
+short exact sequence if the first map has a `k`-linear retraction. -/
+theorem shortExact_map_tensorRight_of_leftInverse {S : ShortComplex (Rep.{u} k G)}
+    (hS : S.Exact) [Epi S.g]
+    (M : Rep k G) {r : S.X₂.V →ₗ[k] S.X₁.V} (hr : Function.LeftInverse r S.f.hom) :
+    (S.map (tensorRight M)).ShortExact :=
+  ShortComplex.shortExact_of_iso (S.mapNatIso (BraidedCategory.tensorLeftIsoTensorRight M))
+    (shortExact_map_tensorLeft_of_leftInverse hS M hr)
 
 end Rep
