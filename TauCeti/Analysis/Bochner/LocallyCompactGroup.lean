@@ -19,10 +19,10 @@ A positive-definite function `φ` on a locally compact abelian group `G` that is
 is the Fourier–Stieltjes transform `φ(g) = ∫ χ(g) dμ(χ)` of a finite positive measure `μ` on the
 Pontryagin dual of `G`.
 
-For second-countable `G`, that measure is unique, and conversely every finite Borel measure on
+When the dual is Polish, that measure is unique, and conversely every finite Borel measure on
 the dual has a continuous positive-definite transform. Thus continuous positive-definite
-functions on a second-countable locally compact abelian group are exactly the transforms of
-unique finite positive measures.
+functions on a locally compact abelian group with Polish dual are exactly the transforms of
+unique finite positive measures. The dual is Polish when `G` is second countable.
 
 The measure comes from the GNS construction. The function `φ` is a matrix coefficient
 `φ(g) = ⟪v, U(-g) v⟫` of the unitary translation representation `U` on its GNS Hilbert space,
@@ -41,8 +41,8 @@ regularity of the Haar measure.
   positive-definite function, continuous at `0`, on a locally compact abelian group is the
   Fourier–Stieltjes transform of a finite measure on the dual group.
 * `TauCeti.continuous_and_isPositiveDefiniteSub_iff_existsUnique_pontryaginMeasureTransform_eq`:
-  the full Bochner characterization by unique finite measures on a second-countable locally
-  compact abelian group.
+  the full Bochner characterization by unique finite measures on a locally compact abelian
+  group with Polish dual.
 
 ## References
 
@@ -85,16 +85,15 @@ theorem IsPositiveDefiniteSub.exists_pontryaginMeasureTransform_eq_of_continuous
   rw [hμ, hπ_apply, ← hφ.gnsRepresentation_ofAdd, hφ.gnsRepresentation_gnsVector, add_zero,
     hφ.inner_gnsVector, zero_sub, neg_neg]
 
-/-- **Bochner's characterization on a second-countable locally compact abelian group.** A
+/-- **Bochner's characterization on a locally compact abelian group with Polish dual.** A
 function is continuous and positive definite if and only if it is the Fourier–Stieltjes
-transform of a unique finite positive Borel measure on the dual group. -/
+transform of a unique finite positive Borel measure on the dual group. The dual is Polish when
+the group is second countable. -/
 theorem continuous_and_isPositiveDefiniteSub_iff_existsUnique_pontryaginMeasureTransform_eq
-    [SecondCountableTopology G] (φ : G → ℂ) :
+    [PolishSpace (PontryaginDual (Multiplicative G))] (φ : G → ℂ) :
     (Continuous φ ∧ IsPositiveDefiniteSub φ) ↔
       ∃! μ : FiniteMeasure (PontryaginDual (Multiplicative G)),
         μ.pontryaginMeasureTransform = φ := by
-  let : SecondCountableTopology (Multiplicative G) :=
-    inferInstanceAs (SecondCountableTopology G)
   constructor
   · rintro ⟨hcont, hφ⟩
     obtain ⟨μ, hμ⟩ := hφ.exists_pontryaginMeasureTransform_eq_of_continuousAt hcont.continuousAt
