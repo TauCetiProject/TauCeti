@@ -206,6 +206,17 @@ theorem generatorChain_apply [DecidableEq Point] (g : D.Generator) (q : Point) :
   simp only [generatorChain, Set.indicator_apply, Set.mem_range, point_apply, exists_point_iff,
     Pi.one_apply]
 
+/-- The `0`-chain of a generator is the sum of the unit chains at its intersection points. -/
+theorem generatorChain_eq_sum_single [DecidableEq Point] (g : D.Generator) :
+    D.generatorChain g = ∑ i, Pi.single (D.point g i) 1 := by
+  funext q
+  rw [generatorChain_apply, Finset.sum_apply, Finset.sum_eq_single (D.alpha q)]
+  · simp [Pi.single_apply, eq_comm]
+  · intro i _ hi
+    have : q ≠ D.point g i := fun h => hi (by simp [h])
+    exact Pi.single_eq_of_ne this 1
+  · simp
+
 /-- Pairing the `0`-chain of a generator with a function on intersection points sums the
 function over the points of the generator. -/
 theorem sum_generatorChain_smul [Fintype Point] {M : Type*} [AddCommGroup M] (g : D.Generator)
