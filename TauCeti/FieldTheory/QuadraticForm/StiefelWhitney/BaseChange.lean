@@ -67,8 +67,7 @@ theorem galoisRes_sw2 {n : ℕ} (w : Fin n → Kˣ) :
   intro i _
   apply Finset.sum_congr rfl
   intro j _
-  rw [galoisRes_eq_map, trivialF2Map_cup _ 1 1, ← galoisRes_eq_map K L σ 1,
-    galoisRes_kummerClass, galoisRes_kummerClass]
+  rw [galoisRes_cup K L σ 1 1, galoisRes_kummerClass, galoisRes_kummerClass]
 
 /-- Restriction of the first Stiefel-Whitney class is the class of the scalar extension. -/
 @[simp]

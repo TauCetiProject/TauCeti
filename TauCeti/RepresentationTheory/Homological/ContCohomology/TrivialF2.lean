@@ -10,7 +10,9 @@ public import TauCeti.GroupTheory.GroupAction.FixedPoints
 public import TauCeti.RepresentationTheory.Continuous.Restriction
 public import TauCeti.RepresentationTheory.Continuous.TopRep.EqToHom
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Functoriality
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.InnerConjugation
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete
+public import TauCeti.Topology.Algebra.Group.ContinuousAut.Basic
 
 /-!
 # The trivial F₂ coefficient representation
@@ -53,6 +55,8 @@ trivial coefficient object for that subgroup.
 * `TauCeti.res_trivialF2`: restriction preserves the coefficient object on the nose.
 * `TauCeti.trivialF2Map_subgroupSubtype`: the general pullback recovers subgroup restriction.
 * `TauCeti.trivialF2Map_id`, `TauCeti.trivialF2Map_comp`: the functoriality laws.
+* `TauCeti.trivialF2Map_eq_of_conj`: over a locally compact target, pullbacks along two
+  homomorphisms that differ by an inner automorphism agree.
 * `TauCeti.eqToHom_comp_trivialF2Map`: read in discrete models of the coefficients, the pullback
   is the compatible-pair map of any coefficient map that is the identity of `𝔽₂`.
 * `TauCeti.isSmoothDiscrete_trivialF2`: the coefficient object is smooth discrete.
@@ -313,6 +317,21 @@ theorem trivialF2Map_comp (φ : H →ₜ* G) (ψ : J →ₜ* H) (n : ℕ) :
         (TopRep.resFunctor (ψ : J →* H)).map (eqToHom (res_trivialF2_hom φ)) ≫
           eqToHom (res_trivialF2_hom ψ) =
             eqToHom (res_trivialF2_hom (φ.comp ψ))).symm) n
+
+/-- **Pullback is invariant under inner automorphisms of the target**: if two continuous
+homomorphisms `φ ψ : H →ₜ* G` differ by conjugation by `g : G`, they induce the same map on
+continuous cohomology with trivial `𝔽₂` coefficients, in every degree: inner automorphisms act
+trivially on `Hⁿ(G, 𝔽₂)` (`TauCeti.ContinuousCohomology.map_eq_id_of_inner`). -/
+theorem trivialF2Map_eq_of_conj [LocallyCompactSpace G] (φ ψ : H →ₜ* G) (g : G)
+    (h : ∀ x, ψ x = g * φ x * g⁻¹) (n : ℕ) : trivialF2Map ψ n = trivialF2Map φ n := by
+  let c : G →ₜ* G := ContinuousMonoidHom.toContinuousMonoidHom (ContinuousAut.conj g)
+  have hψ : ψ = c.comp φ := ContinuousMonoidHom.ext fun x => by simp [c, h]
+  have hc : trivialF2Map c n = 𝟙 _ := by
+    rw [trivialF2Map_def]
+    exact ContinuousCohomology.map_eq_id_of_inner g⁻¹ c (fun x => by simp [c]) _
+      (fun v => by rw [TopRep.eqToHom_hom_apply, trivialF2_ρ_apply_apply, cast_eq])
+      (isSmoothDiscrete_trivialF2 G) n
+  rw [hψ, trivialF2Map_comp, hc, Category.id_comp]
 
 /-- A topological group isomorphism induces an equivalence on continuous cohomology with
 trivial `𝔽₂` coefficients. The cohomology map runs along the inverse group isomorphism. -/
