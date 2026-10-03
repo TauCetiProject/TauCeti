@@ -19,6 +19,9 @@ module at a vertex `i` as the principal left ideal `Z e_i` in the zigzag relatio
 multiplication by `e_i` is a projection from the regular module onto this ideal, so the module is
 projective.  Its idempotent is primitive, so the module is also indecomposable.
 
+The principal-ideal construction, grading, and projectivity work over any commutative ring.
+Indecomposability and the basis and dimension results below use a field.
+
 The vertex projective has an explicit basis: the idempotent `e_i`, the arrows whose tail is `i`,
 and the volume class `x_i`.  Thus its dimension is `2 + deg(i)`.  The choice of arrows with tail
 `i`, rather than head `i`, is forced by Tau Ceti's later-factor-first convention: `Z e_i` consists
@@ -55,7 +58,11 @@ open PathAlgebra DoubledQuiver
 
 universe u w
 
-variable (k : Type w) [Field k] {V : Type u} (G : SimpleGraph V) [Finite V]
+variable (k : Type w) {V : Type u} (G : SimpleGraph V) [Finite V]
+
+section CommRing
+
+variable [CommRing k]
 
 /-- The vertex idempotent of the zigzag relation quotient. -/
 noncomputable abbrev zigzagVertexIdempotent (i : V) : nonisolatedZigzagQuotient k G :=
@@ -150,6 +157,10 @@ theorem zigzagProjective_projective (i : V) :
     Module.Projective (nonisolatedZigzagQuotient k G) (zigzagProjective k G i) :=
   Module.Projective.of_split (zigzagProjective k G i).subtype
     (zigzagProjectiveProjection k G i) (zigzagProjectiveProjection_comp_subtype k G i)
+
+end CommRing
+
+variable [Field k]
 
 /-! ### Indecomposability -/
 

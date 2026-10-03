@@ -15,7 +15,7 @@ Write `A = kQ` for the path algebra of the doubled graph, `I` for the zigzag rel
 `Z = A/I`. The vertex projective `Z eᵢ` is canonically the quotient of `A eᵢ` by `I eᵢ`.
 This file gives the surjective presentation, identifies its kernel with right multiples of the
 relations, and constructs the resulting `A`-linear isomorphism. Thus the comparison respects
-left path action, not just the underlying vector spaces. In the associated quiver representation,
+left path action over any commutative coefficient ring. In the associated quiver representation,
 a path acts by left multiplication by its zigzag class.
 
 These statements concern the relation quotient. For the public componentwise zigzag algebra,
@@ -32,7 +32,7 @@ namespace TauCeti
 
 open PathAlgebra DoubledQuiver
 
-variable (k : Type*) [Field k] {V : Type*} (G : SimpleGraph V) [Finite V]
+variable (k : Type*) [CommRing k] {V : Type*} (G : SimpleGraph V) [Finite V]
 
 /-- The relations on the path-algebra vertex projective `kQ eᵢ`: the submodule `I eᵢ`, obtained
 by multiplying elements of the zigzag relation ideal on the right by the vertex idempotent. -/
@@ -125,6 +125,7 @@ theorem zigzagProjectivePathQuotientEquiv_mk (i : V)
 
 /-- Left multiplication on the path-projective quotient corresponds to multiplication by the
 zigzag class. This pins the later-factor-first convention of the comparison. -/
+@[simp]
 theorem coe_zigzagProjectivePathQuotientEquiv_smul (i : V)
     (a : pathAlgebra k (DoubledQuiver G))
     (x : (Ideal.span {vertexIdempotent k (vertex G i)} : Ideal (pathAlgebra k (DoubledQuiver G)))
