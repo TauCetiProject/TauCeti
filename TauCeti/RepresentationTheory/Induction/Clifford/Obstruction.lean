@@ -246,9 +246,7 @@ variable {ρ ρ' : inertia A → A ≃ₗ[k] A}
   {β β' : inertia A ⧸ N.subgroupOf (inertia A) → inertia A ⧸ N.subgroupOf (inertia A) → kˣ}
 
 /-- **Any two compatible projective extensions of `A` to its inertia group have the same class in
-the Schur multiplier of the inertia quotient.** By Schur's lemma the two extensions differ by
-scalars; these are constant on the cosets of `N`, and their coboundary on the quotient relates the
-two factor sets. -/
+the Schur multiplier of the inertia quotient.** -/
 theorem cohomologyClass_factorSet_eq (h : IsProjectiveInertiaExtension A ρ β)
     (h' : IsProjectiveInertiaExtension A ρ' β') :
     h'.factorSet.cohomologyClass = h.factorSet.cohomologyClass := by

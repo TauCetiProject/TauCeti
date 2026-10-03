@@ -133,10 +133,10 @@ section Comp
 variable {k G H : Type*} [CommSemiring k] [Monoid G] [Monoid H]
 
 /-- A function on `H` whose pullback along a surjective homomorphism `f : G →* H` is a normalized
-factor set is itself a normalized factor set: every instance of the axioms on `H` is the image of
-one on `G`. -/
+factor set is itself a normalized factor set. -/
 theorem of_comp {β : H → H → kˣ} (f : G →* H) (hf : Function.Surjective f)
     (h : IsFactorSet fun g₁ g₂ ↦ β (f g₁) (f g₂)) : IsFactorSet β where
+  -- Each instance of the axioms on `H` is the image under `f` of one on `G`.
   cocycle a b c := by
     obtain ⟨g₁, rfl⟩ := hf a
     obtain ⟨g₂, rfl⟩ := hf b
@@ -175,8 +175,8 @@ theorem apply_mul_left_of_mem [N.Normal] (hr : ∀ g, ∀ n ∈ N, α g n = 1)
     α (g * n) h = α g h := by
   have hc : α (g * n) h = α g (n * h) := by
     simpa [hr _ _ hn, hl _ _ hn] using cocycle (α := α) g n h
-  rw [hc, show n * h = h * (h⁻¹ * n * h) by simp [mul_assoc],
-    apply_mul_right_of_mem hr g h (Subgroup.Normal.conj_mem' ‹_› n hn h)]
+  have hconj : n * h = h * (h⁻¹ * n * h) := by simp [mul_assoc]
+  rw [hc, hconj, apply_mul_right_of_mem hr g h (Subgroup.Normal.conj_mem' ‹_› n hn h)]
 
 /-- **A factor set that is trivial whenever one of its arguments lies in the normal subgroup `N` is
 inflated from `G ⧸ N`**: it is the pullback of a normalized factor set on the quotient. -/

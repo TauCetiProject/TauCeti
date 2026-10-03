@@ -42,7 +42,7 @@ variable {k : Type u} {G : Type v} [Field k] [IsAlgClosed k] [Group G]
 /-- **Operators implementing conjugation on `N` form a projective representation.** Over an
 algebraically closed field, a normalized family of automorphisms of `A`, indexed by the inertia
 group, in which `ρ g` carries the action of `n` to the action of `g n g⁻¹`, is a projective
-representation: by Schur's lemma `ρ g ∘ ρ h` and `ρ (g * h)` differ by a nonzero scalar. -/
+representation. -/
 theorem exists_isProjectiveRep_of_apply_apply_conjNormal {ρ : inertia A → A ≃ₗ[k] A}
     (hone : ρ 1 = 1)
     (hinter : ∀ (g : inertia A) (n : N) (x : A),
@@ -50,6 +50,8 @@ theorem exists_isProjectiveRep_of_apply_apply_conjNormal {ρ : inertia A → A �
     ∃ α : inertia A → inertia A → kˣ, IsProjectiveRep ρ α := by
   have hA := FDRep.isIrreducible_of_simple A
   have : Nontrivial A := hA.nontrivial
+  -- By Schur's lemma `ρ g ∘ ρ h` and `ρ (g * h)` differ by a nonzero scalar, since both
+  -- carry the action of `n` to the action of `(g * h) n (g * h)⁻¹`.
   have hmul (g h : inertia A) : ∃ c : kˣ, ∀ x,
       ρ g (ρ h x) = (c : k) • ρ (g * h) x := by
     refine IsIrreducible.exists_unit_smul_of_intertwines
