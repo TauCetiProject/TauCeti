@@ -38,8 +38,9 @@ preserves every short exact sequence.
   `Rep.shortExact_map_tensorLeft_of_rightInverse`: tensoring on the left preserves a short exact
   sequence whose first map has a `k`-linear retraction, or whose last map has a `k`-linear
   section.
-* `Rep.shortExact_map_tensorRight_of_leftInverse`: so does tensoring on the right, through the
-  braiding.
+* `Rep.shortExact_map_tensorRight_of_flat`, `Rep.shortExact_map_tensorRight_of_leftInverse`,
+  `Rep.shortExact_map_tensorRight_of_rightInverse`: the same for tensoring on the right, through
+  the braiding.
 -/
 
 public section
@@ -148,5 +149,21 @@ theorem shortExact_map_tensorRight_of_leftInverse {S : ShortComplex (Rep.{u} k G
     (S.map (tensorRight M)).ShortExact :=
   ShortComplex.shortExact_of_iso (S.mapNatIso (BraidedCategory.tensorLeftIsoTensorRight M))
     (shortExact_map_tensorLeft_of_leftInverse hS M hr)
+
+/-- Tensoring on the right with `M` sends an exact sequence starting in a monomorphism to a
+short exact sequence if the last map has a `k`-linear section. -/
+theorem shortExact_map_tensorRight_of_rightInverse {S : ShortComplex (Rep.{u} k G)}
+    (hS : S.Exact) [Mono S.f]
+    (M : Rep k G) {s : S.X₃.V →ₗ[k] S.X₂.V} (hs : Function.RightInverse s S.g.hom) :
+    (S.map (tensorRight M)).ShortExact :=
+  ShortComplex.shortExact_of_iso (S.mapNatIso (BraidedCategory.tensorLeftIsoTensorRight M))
+    (shortExact_map_tensorLeft_of_rightInverse hS M hs)
+
+/-- Tensoring on the right with a representation whose underlying module is flat over `k`
+preserves short exact sequences. -/
+theorem shortExact_map_tensorRight_of_flat {S : ShortComplex (Rep.{u} k G)} (hS : S.ShortExact)
+    (M : Rep k G) [Module.Flat k M.V] : (S.map (tensorRight M)).ShortExact :=
+  ShortComplex.shortExact_of_iso (S.mapNatIso (BraidedCategory.tensorLeftIsoTensorRight M))
+    (shortExact_map_tensorLeft_of_flat hS M)
 
 end Rep
