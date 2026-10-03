@@ -16,7 +16,7 @@ The suspended component with `n` algebra inputs is the restriction of the Taylor
 linear part; it preserves the unsuspended degree and is a chain map for the unary operations.
 Its identity and composition formulas allow cohomology maps to be defined from module morphisms.
 
-The indexing counts algebra inputs, so `component 0` is the arity-one component, not a junk
+The indexing counts algebra inputs, so `suspendedComponent 0` is the arity-one component, not a junk
 arity-zero value. Cofreeness and the direct sum by word length make all these components together
 determine the morphism.
 
@@ -47,37 +47,37 @@ variable {MM : AInfinityRightModule AA M} {NN : AInfinityRightModule AA N}
   {PP : AInfinityRightModule AA P}
 
 /-- The suspended Taylor component with `n` algebra inputs (total arity `n + 1`). -/
-noncomputable def component (f : AInfinityRightModuleHom MM NN) (n : ℕ) :
+noncomputable def suspendedComponent (f : AInfinityRightModuleHom MM NN) (n : ℕ) :
     (M ⊗[R] TensorPower R n A) →ₗ[R] N :=
   f.taylor ∘ₗ (TensorWords.of R A n).lTensor M
 
 /-- The component is the Taylor map after the inclusion of words of the given length. -/
-theorem component_def (f : AInfinityRightModuleHom MM NN) (n : ℕ) :
-    f.component n = f.taylor ∘ₗ (TensorWords.of R A n).lTensor M := (rfl)
+theorem suspendedComponent_def (f : AInfinityRightModuleHom MM NN) (n : ℕ) :
+    f.suspendedComponent n = f.taylor ∘ₗ (TensorWords.of R A n).lTensor M := (rfl)
 
 /-- Restricting the Taylor map to words of length `n` gives its component of total arity `n + 1`. -/
 @[simp]
-theorem component_tmul (f : AInfinityRightModuleHom MM NN) (n : ℕ) (x : M)
+theorem suspendedComponent_tmul (f : AInfinityRightModuleHom MM NN) (n : ℕ) (x : M)
     (w : TensorPower R n A) :
-    f.component n (x ⊗ₜ[R] w) = f.taylor (x ⊗ₜ[R] TensorWords.of R A n w) := (rfl)
+    f.suspendedComponent n (x ⊗ₜ[R] w) = f.taylor (x ⊗ₜ[R] TensorWords.of R A n w) := (rfl)
 
 /-- The identity module morphism has no component with a positive number of algebra inputs. -/
 @[simp]
-theorem component_id_of_pos (MM : AInfinityRightModule AA M) {n : ℕ} (hn : 0 < n) :
-    (AInfinityRightModuleHom.id MM).component n = 0 := by
+theorem suspendedComponent_id_of_pos (MM : AInfinityRightModule AA M) {n : ℕ} (hn : 0 < n) :
+    (AInfinityRightModuleHom.id MM).suspendedComponent n = 0 := by
   refine TensorProduct.ext' fun x w ↦ ?_
-  simp only [component_tmul, taylor_id, LinearMap.comp_apply, LinearMap.lTensor_tmul,
+  simp only [suspendedComponent_tmul, taylor_id, LinearMap.comp_apply, LinearMap.lTensor_tmul,
     TensorWords.counit_eq_counit, TensorWords.counit_of_of_ne_zero R A hn.ne',
     TensorProduct.tmul_zero, map_zero, LinearMap.zero_apply]
 
 /-- Each suspended component has degree zero. -/
-theorem component_tmul_tprod_mem (f : AInfinityRightModuleHom MM NN) (n : ℕ)
+theorem suspendedComponent_tmul_tprod_mem (f : AInfinityRightModuleHom MM NN) (n : ℕ)
     {x : M} {p : ℤ} (hx : x ∈ (MM.grading.shift 1).piece p)
     (a : Fin n → A) (d : Fin n → ℤ)
     (ha : ∀ i, a i ∈ (AA.grading.shift 1).piece (d i)) :
-    f.component n (x ⊗ₜ[R] PiTensorProduct.tprod R a) ∈
+    f.suspendedComponent n (x ⊗ₜ[R] PiTensorProduct.tprod R a) ∈
       (NN.grading.shift 1).piece (p + ∑ i, d i) := by
-  rw [component_tmul]
+  rw [suspendedComponent_tmul]
   have hz : x ⊗ₜ[R] TensorWords.of R A n (PiTensorProduct.tprod R a) ∈
       (AInfinityRightModule.barGrading AA MM.grading).piece (p + ∑ i, d i) := by
     rw [AInfinityRightModule.barGrading_piece]
@@ -87,15 +87,16 @@ theorem component_tmul_tprod_mem (f : AInfinityRightModuleHom MM NN) (n : ℕ)
   simpa only [add_zero] using f.isHomogeneous_taylor.map_mem hz
 
 /-- All suspended arity components together determine a module morphism. -/
-theorem ext_component {f g : AInfinityRightModuleHom MM NN}
-    (h : ∀ n, f.component n = g.component n) : f = g := by
+@[ext]
+theorem ext_suspendedComponent {f g : AInfinityRightModuleHom MM NN}
+    (h : ∀ n, f.suspendedComponent n = g.suspendedComponent n) : f = g := by
   apply ext
   refine TensorProduct.ext' fun x w ↦ ?_
   have hx : f.taylor ∘ₗ TensorProduct.mk R M (TensorWords R A) x =
       g.taylor ∘ₗ TensorProduct.mk R M (TensorWords R A) x :=
     DirectSum.linearMap_ext R fun n ↦ LinearMap.ext fun z ↦ by
       simp only [← TensorWords.of_def, LinearMap.comp_apply, TensorProduct.mk_apply,
-        ← component_tmul, h n]
+        ← suspendedComponent_tmul, h n]
   exact LinearMap.congr_fun hx w
 
 /-- The linear part is the arity-one Taylor component, evaluated on the empty algebra word. -/
@@ -107,15 +108,17 @@ theorem linearPart_apply (f : AInfinityRightModuleHom MM NN) (x : M) :
     f.linearPart x = f.taylor (x ⊗ₜ[R] (1 : TensorWords R A)) := (rfl)
 
 /-- The component with no algebra inputs is exactly the linear part. -/
--- Normalize the empty-word component before the general `component_tmul` expansion.
+-- Normalize the empty-word component before the general `suspendedComponent_tmul` expansion.
 @[simp high]
-theorem component_zero_tmul_tprod (f : AInfinityRightModuleHom MM NN) (x : M)
-    (a : Fin 0 → A) : f.component 0 (x ⊗ₜ[R] PiTensorProduct.tprod R a) = f.linearPart x := by
+theorem suspendedComponent_zero_tmul_tprod (f : AInfinityRightModuleHom MM NN) (x : M)
+    (a : Fin 0 → A) :
+    f.suspendedComponent 0 (x ⊗ₜ[R] PiTensorProduct.tprod R a) = f.linearPart x := by
   have hone : TensorWords.of R A 0 (PiTensorProduct.tprod R a) = 1 := by
     rw [TensorWords.of_tprod_eq_subword, TensorWords.subword_length_zero R a le_rfl]
-  rw [component_tmul, hone, linearPart_apply]
+  rw [suspendedComponent_tmul, hone, linearPart_apply]
 
 /-- A comodule morphism sends an empty algebra word to another empty algebra word. -/
+@[simp]
 theorem barMap_tmul_one (f : AInfinityRightModuleHom MM NN) (x : M) :
     f.barMap (x ⊗ₜ[R] (1 : TensorWords R A)) =
       f.linearPart x ⊗ₜ[R] (1 : TensorWords R A) := by

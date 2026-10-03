@@ -66,6 +66,13 @@ variable {MM : AInfinityRightModule AA M} {NN : AInfinityRightModule AA N}
 /-- The underlying linear map of the bar-comodule morphism. -/
 abbrev barMap (f : AInfinityRightModuleHom MM NN) := f.barHom.toLinearMap
 
+/-- The intertwining of the module bar differentials, applied to an element. -/
+@[simp]
+theorem barDifferential_barMap (f : AInfinityRightModuleHom MM NN)
+    (z : M ⊗[R] TensorWords R A) :
+    NN.barDifferential (f.barHom z) = f.barHom (MM.barDifferential z) :=
+  LinearMap.congr_fun f.barDifferential_comp_barMap z
+
 /-- The suspended Taylor map: apply the coalgebra counit after the bar map. -/
 noncomputable def taylor (f : AInfinityRightModuleHom MM NN) :
     (M ⊗[R] TensorWords R A) →ₗ[R] N :=
@@ -140,10 +147,12 @@ theorem barDifferential_comp_iff
       MM.isGradedCoderivation_barDifferential NN.isGradedCoderivation_barDifferential
     have hK : K = 0 := (Comodule.Hom.eq_zero_iff_counit K).2 (by
       simp only [AInfinityRightModule.taylor_def, LinearMap.comp_assoc] at h
-      simp only [K, Comodule.Hom.coderivationComm_toLinearMap, LinearMap.comp_sub]
+      simp only [K, Comodule.Hom.coderivationComm_toLinearMap, mul_zero, Int.negOnePow_zero,
+        Units.val_one, Int.cast_one, one_smul, LinearMap.comp_sub]
       exact sub_eq_zero.mpr h)
     have := congrArg Comodule.Hom.toLinearMap hK
     simpa only [K, Comodule.Hom.coderivationComm_toLinearMap,
+      mul_zero, Int.negOnePow_zero, Units.val_one, Int.cast_one, one_smul,
       Comodule.Hom.zero_toLinearMap, sub_eq_zero] using this
 
 private theorem isHomogeneous_cofreeLift
