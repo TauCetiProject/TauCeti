@@ -272,9 +272,7 @@ variable {D : Type u'} [Category.{v'} D] [Preadditive D] [HasZeroObject D]
 
 /-- A conflation-exact additive functor preserving relative projectives transports a horseshoe.
 In particular this applies to the grading shift and its inverse in a graded exact category. -/
--- The body is exposed because the types of the component formulas must identify the middle
--- resolution with its functorial image, as for `FiniteResolution.map` itself.
-@[expose] noncomputable def map : Horseshoe (S.map F) (r₁.map hF hproj) (r₃.map hF hproj) where
+noncomputable def map : Horseshoe (S.map F) (r₁.map hF hproj) (r₃.map hF hproj) where
   resolution := h.resolution.map hF hproj
   ι := (toChainComplexMapIso hF hproj r₁).hom ≫
     (F.mapHomologicalComplex _).map h.ι ≫ (toChainComplexMapIso hF hproj h.resolution).inv
@@ -310,13 +308,18 @@ theorem map_resolution : (h.map hF hproj).resolution = h.resolution.map hF hproj
 @[simp]
 theorem map_ι_f (n : ℕ) : (h.map hF hproj).ι.f n =
     (termMapIso hF hproj r₁ n).hom ≫ F.map (h.ι.f n) ≫
-      (termMapIso hF hproj h.resolution n).inv := by
+      (termMapIso hF hproj h.resolution n).inv ≫
+        eqToHom (congrArg (fun r => r.term n) (h.map_resolution hF hproj).symm) := by
   simp [map]
 
 @[simp]
 theorem map_π_f (n : ℕ) : (h.map hF hproj).π.f n =
-    (termMapIso hF hproj h.resolution n).hom ≫ F.map (h.π.f n) ≫
+    eqToHom (congrArg (fun r => r.term n) (h.map_resolution hF hproj)) ≫
+      (termMapIso hF hproj h.resolution n).hom ≫ F.map (h.π.f n) ≫
       (termMapIso hF hproj r₃ n).inv := by
+  -- The identification is reflexive here, but `simp [map]` does not unfold the types in `eqToHom`.
+  change _ = (𝟙 _) ≫ (termMapIso hF hproj h.resolution n).hom ≫ F.map (h.π.f n) ≫
+    (termMapIso hF hproj r₃ n).inv
   simp [map]
 
 end Map
