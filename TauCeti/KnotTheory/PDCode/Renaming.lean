@@ -33,6 +33,7 @@ two equivalences. When both equivalences are permutations, `rename` is definitio
   compose.
 * `TauCeti.PDCode.rename_eq_relabel` and `TauCeti.OrientedPDCode.rename_eq_relabel`: on a fixed
   crossing count, renaming agrees with relabelling.
+* `TauCeti.OrientedPDCode.writhe_rename`: renaming preserves the writhe.
 -/
 
 public section
@@ -131,12 +132,20 @@ theorem rename_overPair_apply {n m : ℕ} (D : PDCode n)
 
 /-- Renaming transports every crossing block and all of its slots along the half-edge
 equivalence. -/
-theorem rename_crossing {n m : ℕ} (D : PDCode n) (half : Fin (4 * n) ≃ Fin (4 * m))
+theorem crossing_rename {n m : ℕ} (D : PDCode n) (half : Fin (4 * n) ≃ Fin (4 * m))
     (cross : Fin n ≃ Fin m) (i : Fin n) (slot : Fin 4) :
     (D.rename half cross).crossing (cross i) slot = half (D.crossing i slot) := by
   rw [crossing_apply, rename_halfEdge, Equiv.equivCongr_apply_apply,
     crossingBlockEquiv_symm_apply_crossingSlotEquiv, crossing_apply]
   rw [Equiv.symm_apply_apply]
+
+/-- The over/under status after renaming is read at the inverse old crossing name. -/
+@[simp]
+theorem isOver_rename {n m : ℕ} (D : PDCode n) (half : Fin (4 * n) ≃ Fin (4 * m))
+    (cross : Fin n ≃ Fin m) (i : Fin m) (slot : Fin 4) :
+    (D.rename half cross).isOver i slot = D.isOver (cross.symm i) slot := by
+  obtain rfl | rfl | rfl | rfl : slot = 0 ∨ slot = 1 ∨ slot = 2 ∨ slot = 3 := by omega
+  all_goals simp
 
 /-- Renaming by identity equivalences leaves a PD-code unchanged. -/
 @[simp]
@@ -214,6 +223,23 @@ theorem rename_crossinglessComponents {n m : ℕ} (D : OrientedPDCode n)
     (half : Fin (4 * n) ≃ Fin (4 * m)) (cross : Fin n ≃ Fin m) :
     (D.rename half cross).crossinglessComponents = D.crossinglessComponents := by
   simp [rename]
+
+/-- The crossing sign after renaming is read at the inverse old crossing name. -/
+@[simp]
+theorem crossingSign_rename {n m : ℕ} (D : OrientedPDCode n)
+    (half : Fin (4 * n) ≃ Fin (4 * m)) (cross : Fin n ≃ Fin m) (i : Fin m) :
+    (D.rename half cross).crossingSign i = D.crossingSign (cross.symm i) := by
+  obtain ⟨i, rfl⟩ := cross.surjective i
+  simp only [crossingSign_def, rename_toPDCode, PDCode.crossing_rename,
+    rename_orientation_apply, PDCode.rename_overPair_apply, Equiv.symm_apply_apply]
+
+/-- Renaming matches the crossings bijectively, so it preserves the writhe. -/
+@[simp]
+theorem writhe_rename {n m : ℕ} (D : OrientedPDCode n)
+    (half : Fin (4 * n) ≃ Fin (4 * m)) (cross : Fin n ≃ Fin m) :
+    (D.rename half cross).writhe = D.writhe := by
+  simp only [writhe_def, crossingSign_rename]
+  exact Equiv.sum_comp cross.symm D.crossingSign
 
 /-- Renaming by identity equivalences leaves an oriented PD-code unchanged. -/
 @[simp]

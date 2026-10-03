@@ -74,7 +74,7 @@ def crossingsAt (p : Fin n) : List (Fin w.length) :=
 
 /-- Expand the crossings of a word involving a specified strand position as a filtered finite
 range. -/
-theorem crossingsAt_eq_filter (p : Fin n) :
+theorem crossingsAt_def (p : Fin n) :
     w.crossingsAt p =
       (List.finRange w.length).filter fun j ↦
         p = strand w[j.1].1 ∨ p = strandSucc w[j.1].1 := by
