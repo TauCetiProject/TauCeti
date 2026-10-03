@@ -27,7 +27,7 @@ The **closed normal closure** of a set `s`, the topological closure of `Subgroup
 is the least closed normal subgroup containing `s`
 (`Subgroup.topologicalClosure_normalClosure_le_iff`), and it is `N` itself when `s` is the carrier
 of a closed normal subgroup `N` (`Subgroup.topologicalClosure_normalClosure_eq_self`), for
-instance the kernel of a continuous homomorphism to a `T1` group
+instance the kernel of a continuous homomorphism to a `T1` monoid
 (`ContinuousMonoidHom.topologicalClosure_normalClosure_ker`). This is the fact behind the
 universal property of a group presented by generators and relators inside a category of
 topological groups.
@@ -59,7 +59,7 @@ series of a profinite group.
 * `Subgroup.topologicalClosure_normalClosure_eq_self`: the closed normal closure of a closed normal
   subgroup is that subgroup.
 * `ContinuousMonoidHom.topologicalClosure_normalClosure_ker`: the kernel of a continuous
-  homomorphism to a `T1` group is its own closed normal closure.
+  homomorphism to a `T1` monoid is its own closed normal closure.
 * `Subgroup.toAddSubgroup_topologicalClosure`: converting to an additive subgroup commutes with
   topological closure; `Subgroup.dense_toAddSubgroup_iff`: and preserves density.
 * `MonoidHom.map_topologicalClosure_le`: a continuous homomorphism maps the topological closure of
@@ -107,13 +107,13 @@ namespace TauCeti
 
 /-- The closed normal closure of relators lies in the kernel of a continuous homomorphism that
 kills them. -/
-theorem topologicalClosure_normalClosure_le_ker {G H : Type*} [Group G] [Group H]
+theorem topologicalClosure_normalClosure_le_ker {G H : Type*} [Group G] [Monoid H]
     [TopologicalSpace G] [IsTopologicalGroup G] [TopologicalSpace H] [T1Space H] {s : Set G}
     {f : G →ₜ* H} (hf : ∀ r ∈ s, f r = 1) :
     (Subgroup.normalClosure s).topologicalClosure ≤ f.toMonoidHom.ker := by
   exact Subgroup.topologicalClosure_minimal (Subgroup.normalClosure s)
     (Subgroup.normalClosure_le_normal fun r hr ↦ MonoidHom.mem_ker.mpr (hf r hr))
-    (isClosed_singleton.preimage f.continuous)
+    f.isClosed_ker
 
 end TauCeti
 
@@ -190,13 +190,13 @@ instance instCompactSpace_of_isClosed [CompactSpace G] (N : Subgroup G) [IsClose
     CompactSpace N :=
   (IsClosed.isClosedEmbedding_subtypeVal ‹_›).compactSpace
 
-/-- The join of two compact subgroups `H` and `N` with `H` normalizing `N` is compact: its
-carrier is the product `H * N` of two compact sets. In a Hausdorff group it is therefore closed. -/
-@[to_additive /-- The join of two compact additive subgroups `H` and `N` with `H` normalizing `N`
-is compact: its carrier is the sum `H + N` of two compact sets. In a Hausdorff additive group it is
-therefore closed. -/]
-theorem isCompact_sup_of_le_normalizer {H N : Subgroup G} (hH : IsCompact (H : Set G))
-    (hN : IsCompact (N : Set G)) (hHN : H ≤ normalizer (N : Set G)) :
+omit [IsTopologicalGroup G] in
+/-- In a group with continuous multiplication, the join of two compact subgroups `H` and `N`
+with `H` normalizing `N` is compact. In a Hausdorff group it is therefore closed. -/
+@[to_additive /-- In a group with continuous addition, the join of two compact additive subgroups
+`H` and `N` with `H` normalizing `N` is compact. In a Hausdorff group it is therefore closed. -/]
+theorem isCompact_sup_of_le_normalizer [ContinuousMul G] {H N : Subgroup G}
+    (hH : IsCompact (H : Set G)) (hN : IsCompact (N : Set G)) (hHN : H ≤ normalizer (N : Set G)) :
     IsCompact ((H ⊔ N : Subgroup G) : Set G) := by
   rw [coe_mul_of_left_le_normalizer_right _ _ hHN]
   exact hH.mul hN
@@ -215,12 +215,12 @@ theorem topologicalClosure_normalClosure_eq_self (N : Subgroup G) [N.Normal]
   le_antisymm ((topologicalClosure_normalClosure_le_iff hN).2 subset_rfl)
     (le_normalClosure.trans (normalClosure (N : Set G)).le_topologicalClosure)
 
-/-- The kernel of a continuous homomorphism to a `T1` group is a closed normal subgroup, so it is
+/-- The kernel of a continuous homomorphism to a `T1` monoid is a closed normal subgroup, so it is
 its own closed normal closure. -/
-theorem _root_.ContinuousMonoidHom.topologicalClosure_normalClosure_ker {H : Type*} [Group H]
+theorem _root_.ContinuousMonoidHom.topologicalClosure_normalClosure_ker {H : Type*} [Monoid H]
     [TopologicalSpace H] [T1Space H] (φ : G →ₜ* H) :
     (normalClosure ((φ : G →* H).ker : Set G)).topologicalClosure = (φ : G →* H).ker :=
-  topologicalClosure_normalClosure_eq_self _ (isClosed_singleton.preimage (map_continuous φ))
+  topologicalClosure_normalClosure_eq_self _ φ.isClosed_ker
 
 /-- Converting a subgroup to an additive subgroup commutes with topological closure. -/
 @[simp]
@@ -231,11 +231,12 @@ theorem toAddSubgroup_topologicalClosure (S : Subgroup G) :
   -- to this bridge so consumers can rewrite without unfolding these representations.
   (rfl)
 
+omit [IsTopologicalGroup G] in
 /-- Converting a subgroup to an additive subgroup preserves density. -/
 theorem dense_toAddSubgroup_iff (S : Subgroup G) :
-    Dense (S.toAddSubgroup : Set (Additive G)) ↔ Dense (S : Set G) := by
-  rw [AddSubgroup.dense_iff_topologicalClosure_eq_top, dense_iff_topologicalClosure_eq_top,
-    ← toAddSubgroup_topologicalClosure, ← toAddSubgroup.map_top, toAddSubgroup.injective.eq_iff]
+    Dense (S.toAddSubgroup : Set (Additive G)) ↔ Dense (S : Set G) :=
+  -- The additive type tag preserves both the topology and the subgroup carrier.
+  Iff.rfl
 
 variable {H : Type*} [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
 
@@ -482,10 +483,10 @@ section Conj
 open scoped Pointwise
 
 /-- **Conjugation preserves discreteness**: if `H'` is the conjugate `g H g⁻¹` of a discrete
-subgroup `H` of a topological group, then `H'` is discrete, since `x ↦ g⁻¹ x g` embeds it in
-`H`. -/
+subgroup `H` of a group with continuous translations, then `H'` is discrete, since
+`x ↦ g⁻¹ x g` embeds it in `H`. -/
 theorem discreteTopology_of_conjAct_smul_eq {G : Type*} [Group G] [TopologicalSpace G]
-    [IsTopologicalGroup G] {H H' : _root_.Subgroup G} {g : G} [DiscreteTopology H]
+    [SeparatelyContinuousMul G] {H H' : _root_.Subgroup G} {g : G} [DiscreteTopology H]
     (h : ConjAct.toConjAct g • H = H') : DiscreteTopology H' := by
   subst h
   let φ : (ConjAct.toConjAct g • H : _root_.Subgroup G) → H := fun x ↦
