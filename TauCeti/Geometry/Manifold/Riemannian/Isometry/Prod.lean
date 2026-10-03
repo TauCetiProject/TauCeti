@@ -63,7 +63,8 @@ variable
   {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'}
   {M' : Type*} [TopologicalSpace M'] [ChartedSpace H' M']
   [RiemannianBundle (fun x : M' ↦ TangentSpace I' x)]
-  {G' : Type*} [TopologicalSpace G'] {J' : ModelWithCorners ℝ F G'}
+  {F' : Type*} [NormedAddCommGroup F'] [NormedSpace ℝ F']
+  {G' : Type*} [TopologicalSpace G'] {J' : ModelWithCorners ℝ F' G'}
   {N' : Type*} [TopologicalSpace N'] [ChartedSpace G' N']
   [RiemannianBundle (fun y : N' ↦ TangentSpace J' y)]
 
@@ -71,10 +72,17 @@ variable
 for the product metrics. -/
 def prodCongr (Φ : RiemannianIsometry I I' M M') (Ψ : RiemannianIsometry J J' N N') :
     RiemannianIsometry (I.prod J) (I'.prod J') (M × N) (M' × N') where
-  toDiffeomorph := _root_.Diffeomorph.prodCongr Φ.toDiffeomorph Ψ.toDiffeomorph
+  -- Mathlib's `Diffeomorph.prodCongr` requires `N` and `N'` to share a model vector space, so the
+  -- product diffeomorphism is assembled directly.
+  toEquiv := Φ.toDiffeomorph.toEquiv.prodCongr Ψ.toDiffeomorph.toEquiv
+  contMDiff_toFun := (Φ.toDiffeomorph.contMDiff.comp contMDiff_fst).prodMk
+    (Ψ.toDiffeomorph.contMDiff.comp contMDiff_snd)
+  contMDiff_invFun := (Φ.toDiffeomorph.symm.contMDiff.comp contMDiff_fst).prodMk
+    (Ψ.toDiffeomorph.symm.contMDiff.comp contMDiff_snd)
   inner_mfderiv' p v w := by
-    rw [_root_.Diffeomorph.coe_prodCongr, coe_toDiffeomorph, coe_toDiffeomorph,
-      Manifold.inner_tangentSpace_prod,
+    change inner ℝ (mfderiv (I.prod J) (I'.prod J') (Prod.map Φ Ψ) p v)
+      (mfderiv (I.prod J) (I'.prod J') (Prod.map Φ Ψ) p w) = inner ℝ v w
+    rw [Manifold.inner_tangentSpace_prod,
       Manifold.inner_tangentSpace_prod p,
       mfderiv_prodMap (Φ.mdifferentiableAt p.1) (Ψ.mdifferentiableAt p.2)]
     simp only [Manifold.tangentSpaceProdEquiv_apply]
@@ -89,9 +97,13 @@ theorem prodCongr_apply (Φ : RiemannianIsometry I I' M M') (Ψ : RiemannianIsom
     (p : M × N) : Φ.prodCongr Ψ p = (Φ p.1, Ψ p.2) :=
   (rfl)
 
+/-- When `N` and `N'` share a model vector space, the underlying diffeomorphism of a product of
+isometries is Mathlib's product of diffeomorphisms. -/
 @[simp]
-theorem toDiffeomorph_prodCongr (Φ : RiemannianIsometry I I' M M')
-    (Ψ : RiemannianIsometry J J' N N') :
+theorem toDiffeomorph_prodCongr {G'' : Type*} [TopologicalSpace G'']
+    {J'' : ModelWithCorners ℝ F G''} {N'' : Type*} [TopologicalSpace N''] [ChartedSpace G'' N'']
+    [RiemannianBundle (fun y : N'' ↦ TangentSpace J'' y)]
+    (Φ : RiemannianIsometry I I' M M') (Ψ : RiemannianIsometry J J'' N N'') :
     (Φ.prodCongr Ψ).toDiffeomorph = Φ.toDiffeomorph.prodCongr Ψ.toDiffeomorph :=
   (rfl)
 
@@ -99,7 +111,10 @@ theorem toDiffeomorph_prodCongr (Φ : RiemannianIsometry I I' M M')
 @[simp]
 theorem prodCongr_symm (Φ : RiemannianIsometry I I' M M') (Ψ : RiemannianIsometry J J' N N') :
     (Φ.prodCongr Ψ).symm = Φ.symm.prodCongr Ψ.symm := by
-  ext p <;> simp [coe_symm]
+  refine RiemannianIsometry.ext fun p ↦ ?_
+  obtain ⟨q, rfl⟩ := EquivLike.surjective (Φ.prodCongr Ψ) p
+  rw [symm_apply_apply]
+  ext <;> simp
 
 /-- The product of identity isometries is the identity isometry. -/
 @[simp]

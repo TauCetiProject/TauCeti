@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
 public import TauCeti.Analysis.LocallyConvex.Bounded
-public import TauCeti.Topology.VectorBundle.Riemannian
 public import TauCeti.Geometry.Manifold.Riemannian.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Tangent
 
@@ -283,6 +281,7 @@ scoped[TauCeti] attribute [instance] Manifold.instIsContMDiffRiemannianBundlePro
 
 /-- In the product metric, the inner product of two tangent vectors is the sum of the inner
 products of their components. -/
+@[simp]
 theorem inner_tangentSpace_prod (p : M × N) (v w : TangentSpace (I.prod J) p) :
     inner ℝ v w =
       inner ℝ (tangentSpaceProdEquiv p v).1 (tangentSpaceProdEquiv p w).1 +
