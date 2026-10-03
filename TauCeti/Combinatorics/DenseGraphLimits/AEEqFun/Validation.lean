@@ -30,7 +30,7 @@ constraints from constraints that could accidentally ignore positive-mass except
 
 The examples use the strict-representative construction `Graphon.clampSymm` and the bridge
 `exists_graphon_repr_iff`. The auxiliary functions are private; the exported theorem
-`Graphon.toAEEqFun_unitInterval_not_injective` records why strict equality cannot be recovered.
+`Graphon.not_injective_toAEEqFun_unitInterval` records why strict equality cannot be recovered.
 
 ## References
 
@@ -78,8 +78,10 @@ private theorem repaired_ae (W : Graphon I (volume : Measure I)) :
     (ν := (volume : Measure I))).quasiMeasurePreserving.ae (corrupted_ae W)
   filter_upwards [corrupted_ae W, hswap] with p hp hps
   simp only [Prod.swap] at hps
-  rw [repaired, Graphon.clampSymm_apply, hp, hps, ← W.symm, add_self_div_two,
-    min_eq_right (W.le_one _ _), max_eq_right (W.nonneg _ _)]
+  rw [repaired, Graphon.clampSymm_apply_of_symm_of_mem volume (corrupted W)
+    (measurable_corrupted W) (hp.trans ((W.symm _ _).trans hps.symm))
+    (hp ▸ W.mem_Icc _ _)]
+  exact hp
 
 -- Both range corrections are necessary. The uncorrected symmetrization is 4 at the origin
 -- and -1 at (0, 1); retaining either value would not give a graphon.
@@ -111,7 +113,7 @@ example (W : Graphon I (volume : Measure I)) :
 /-- Passing to the almost-everywhere class loses strict equality, already on the unit interval.
 A null-set modification of the constant graphon `1/2` gives a different strict graphon with the
 same class. -/
-theorem Graphon.toAEEqFun_unitInterval_not_injective :
+theorem Graphon.not_injective_toAEEqFun_unitInterval :
     ¬ Function.Injective (Graphon.toAEEqFun (Ω := I) (μ := (volume : Measure I))) := by
   intro hinj
   let W := Graphon.const (volume : Measure I) ⟨1 / 2, by norm_num, by norm_num⟩
