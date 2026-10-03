@@ -31,9 +31,12 @@ the volume element `ij` of the first. Since `(ij)^2 = -ab`, this precisely compe
 two rescaled coefficients in the second factor. This explicit model computes the first
 even-dimensional Clifford invariant beyond binary forms.
 
-## Main result
+## Main results
 
 * `CliffordAlgebra.weightedSumSquaresFourEquivTensorQuaternion`: the algebra equivalence above.
+* `CliffordAlgebra.weightedSumSquaresFourEquivTensorQuaternion_symm_tmul_one` and
+  `CliffordAlgebra.weightedSumSquaresFourEquivTensorQuaternion_symm_one_tmul`: its inverse on
+  each quaternion factor, in terms of Clifford generators.
 
 ## References
 
@@ -129,6 +132,29 @@ private theorem generatorThree_sq (a b : Kˣ) (c d : K) :
   simp only [Units.val_inv_eq_inv_val, Units.val_mul]
   field_simp
 
+/-- The three standard generators of a quaternion basis with `c₂ = 0` pairwise anticommute. -/
+private theorem quaternionBasis_anticommute {A : Type*} [Ring A] [Algebra K A] {c₁ c₃ : K}
+    (q : _root_.QuaternionAlgebra.Basis A c₁ 0 c₃) :
+    q.i * q.j + q.j * q.i = 0 ∧ q.i * q.k + q.k * q.i = 0 ∧ q.j * q.k + q.k * q.j = 0 := by
+  refine ⟨?_, ?_, ?_⟩
+  · rw [q.i_mul_j, q.j_mul_i, zero_smul, zero_sub, add_neg_cancel]
+  · rw [q.i_mul_k, q.k_mul_i, zero_smul, add_zero, neg_smul, add_neg_cancel]
+  · rw [q.j_mul_k, q.k_mul_j, zero_mul, zero_smul, zero_sub, neg_add_cancel]
+
+/-- Pure tensors anticommute when their left factors anticommute and right factors commute. -/
+private theorem tmul_anticommute_of_left {A B : Type*} [Ring A] [Algebra K A] [Ring B]
+    [Algebra K B] {x x' : A} {y y' : B} (hx : x * x' + x' * x = 0) (hy : Commute y y') :
+    x ⊗ₜ[K] y * x' ⊗ₜ y' + x' ⊗ₜ y' * x ⊗ₜ y = 0 := by
+  rw [Algebra.TensorProduct.tmul_mul_tmul, Algebra.TensorProduct.tmul_mul_tmul, hy.eq,
+    ← TensorProduct.add_tmul, hx, TensorProduct.zero_tmul]
+
+/-- Pure tensors anticommute when their left factors commute and right factors anticommute. -/
+private theorem tmul_anticommute_of_right {A B : Type*} [Ring A] [Algebra K A] [Ring B]
+    [Algebra K B] {x x' : A} {y y' : B} (hx : Commute x x') (hy : y * y' + y' * y = 0) :
+    x ⊗ₜ[K] y * x' ⊗ₜ y' + x' ⊗ₜ y' * x ⊗ₜ y = 0 := by
+  rw [Algebra.TensorProduct.tmul_mul_tmul, Algebra.TensorProduct.tmul_mul_tmul, hx.eq,
+    ← TensorProduct.tmul_add, hy, TensorProduct.tmul_zero]
+
 private theorem generator_pair_anticommute (a b : Kˣ) (c d : K) :
     generatorZero a b c d * generatorOne a b c d +
         generatorOne a b c d * generatorZero a b c d = 0 ∧
@@ -142,42 +168,18 @@ private theorem generator_pair_anticommute (a b : Kˣ) (c d : K) :
         generatorThree a b c d * generatorOne a b c d = 0 ∧
       generatorTwo a b c d * generatorThree a b c d +
         generatorThree a b c d * generatorTwo a b c d = 0 := by
-  constructor
-  · rw [Algebra.TensorProduct.tmul_mul_tmul, Algebra.TensorProduct.tmul_mul_tmul,
-      _root_.QuaternionAlgebra.Basis.i_mul_j, _root_.QuaternionAlgebra.Basis.j_mul_i]
-    simp only [zero_smul, zero_sub, one_mul]
-    rw [TensorProduct.neg_tmul]
-    abel
-  constructor
-  · rw [Algebra.TensorProduct.tmul_mul_tmul, Algebra.TensorProduct.tmul_mul_tmul,
-      _root_.QuaternionAlgebra.Basis.i_mul_k, _root_.QuaternionAlgebra.Basis.k_mul_i]
-    simp only [zero_smul, add_zero, one_mul, mul_one]
-    rw [← TensorProduct.add_tmul]
-    rw [neg_smul, add_neg_cancel, TensorProduct.zero_tmul]
-  constructor
-  · rw [Algebra.TensorProduct.tmul_mul_tmul, Algebra.TensorProduct.tmul_mul_tmul,
-      _root_.QuaternionAlgebra.Basis.i_mul_k, _root_.QuaternionAlgebra.Basis.k_mul_i]
-    simp only [zero_smul, add_zero, one_mul, mul_one]
-    rw [← TensorProduct.add_tmul]
-    rw [neg_smul, add_neg_cancel, TensorProduct.zero_tmul]
-  constructor
-  · rw [Algebra.TensorProduct.tmul_mul_tmul, Algebra.TensorProduct.tmul_mul_tmul,
-      _root_.QuaternionAlgebra.Basis.j_mul_k, _root_.QuaternionAlgebra.Basis.k_mul_j]
-    simp only [zero_mul, zero_smul, one_mul, mul_one]
-    rw [← TensorProduct.add_tmul]
-    rw [zero_sub, neg_add_cancel, TensorProduct.zero_tmul]
-  constructor
-  · rw [Algebra.TensorProduct.tmul_mul_tmul, Algebra.TensorProduct.tmul_mul_tmul,
-      _root_.QuaternionAlgebra.Basis.j_mul_k, _root_.QuaternionAlgebra.Basis.k_mul_j]
-    simp only [zero_mul, zero_smul, one_mul, mul_one]
-    rw [← TensorProduct.add_tmul]
-    rw [zero_sub, neg_add_cancel, TensorProduct.zero_tmul]
-  · rw [Algebra.TensorProduct.tmul_mul_tmul, Algebra.TensorProduct.tmul_mul_tmul,
-      _root_.QuaternionAlgebra.Basis.k_mul_k, _root_.QuaternionAlgebra.Basis.i_mul_j,
-      _root_.QuaternionAlgebra.Basis.j_mul_i]
-    simp only [zero_smul, zero_sub]
-    rw [← TensorProduct.tmul_add]
-    rw [add_neg_cancel, TensorProduct.tmul_zero]
+  obtain ⟨hij, hik, hjk⟩ := quaternionBasis_anticommute
+    (_root_.QuaternionAlgebra.Basis.self K : _root_.QuaternionAlgebra.Basis
+      (firstQuaternion a b) _ _ _)
+  have hij' := (quaternionBasis_anticommute
+    (_root_.QuaternionAlgebra.Basis.self K : _root_.QuaternionAlgebra.Basis
+      (secondQuaternion a b c d) _ _ _)).1
+  exact ⟨tmul_anticommute_of_left hij (Commute.refl _),
+    tmul_anticommute_of_left hik (Commute.one_left _),
+    tmul_anticommute_of_left hik (Commute.one_left _),
+    tmul_anticommute_of_left hjk (Commute.one_left _),
+    tmul_anticommute_of_left hjk (Commute.one_left _),
+    tmul_anticommute_of_right (Commute.refl _) hij'⟩
 
 private theorem fourGenerator_sq (a b : Kˣ) (c d : K) (x : Fin 4 → K) :
     fourGenerator a b c d x * fourGenerator a b c d x =
@@ -396,15 +398,14 @@ private theorem secondPreimages_anticommute (a b : Kˣ) (c d : K) :
     apply _root_.CliffordAlgebra.ι_mul_ι_comm_of_isOrtho
     simp [Q, QuadraticMap.isOrtho_def, QuadraticMap.weightedSumSquares_apply,
       Fin.sum_univ_succ, add_comm]
-  rw [secondIpreimage, secondJpreimage, secondGeneratorPreimage,
-    secondGeneratorPreimage, smul_mul_smul_comm, smul_mul_smul_comm, ← smul_add]
-  have h2u : g 2 * (g 0 * g 1) = (g 0 * g 1) * g 2 := by
+  -- The last two generators commute with the volume element `g 0 * g 1` of the first two.
+  have h2u : Commute (g 2) (g 0 * g 1) := by
     calc
       g 2 * (g 0 * g 1) = (g 2 * g 0) * g 1 := (mul_assoc _ _ _).symm
       _ = (-(g 0 * g 2)) * g 1 := by rw [h20]
       _ = -(g 0 * (g 2 * g 1)) := by simp only [neg_mul, mul_assoc]
       _ = (g 0 * g 1) * g 2 := by rw [h21]; noncomm_ring
-  have h3u : g 3 * (g 0 * g 1) = (g 0 * g 1) * g 3 := by
+  have h3u : Commute (g 3) (g 0 * g 1) := by
     calc
       g 3 * (g 0 * g 1) = (g 3 * g 0) * g 1 := (mul_assoc _ _ _).symm
       _ = (-(g 0 * g 3)) * g 1 := by rw [h30]
@@ -413,20 +414,10 @@ private theorem secondPreimages_anticommute (a b : Kˣ) (c d : K) :
   have hproducts :
       (g 0 * g 1 * g 2) * (g 0 * g 1 * g 3) +
         (g 0 * g 1 * g 3) * (g 0 * g 1 * g 2) = 0 := by
-    rw [show (g 0 * g 1 * g 2) * (g 0 * g 1 * g 3) =
-        (g 0 * g 1) * (g 0 * g 1) * (g 2 * g 3) by
-          rw [mul_assoc (g 0 * g 1) (g 2) (g 0 * g 1 * g 3),
-            ← mul_assoc (g 2), h2u]
-          simp only [mul_assoc],
-      show (g 0 * g 1 * g 3) * (g 0 * g 1 * g 2) =
-        (g 0 * g 1) * (g 0 * g 1) * (g 3 * g 2) by
-          rw [mul_assoc (g 0 * g 1) (g 3) (g 0 * g 1 * g 2),
-            ← mul_assoc (g 3), h3u]
-          simp only [mul_assoc], h32]
-    noncomm_ring
-  rw [show
-      ((g 0 * g 1 * g 2) * (g 0 * g 1 * g 3) +
-        (g 0 * g 1 * g 3) * (g 0 * g 1 * g 2)) = 0 from hproducts, smul_zero]
+    rw [h2u.mul_mul_mul_comm, h3u.mul_mul_mul_comm, ← mul_add, h32, add_neg_cancel, mul_zero]
+  rw [secondIpreimage, secondJpreimage, secondGeneratorPreimage,
+    secondGeneratorPreimage, smul_mul_smul_comm, smul_mul_smul_comm, ← smul_add]
+  exact smul_eq_zero_of_right _ hproducts
 
 private theorem fourToTensor_secondGeneratorPreimage (a b : Kˣ) (c d : K) (i : Fin 4)
     (q : secondQuaternion a b c d)
@@ -520,6 +511,20 @@ private theorem fourToTensor_bijective [Invertible (2 : K)] (a b : Kˣ) (c d : K
       (f := (fourToTensor a b c d).toLinearMap) hdim).2 hsurj
   exact ⟨hinj, hsurj⟩
 
+private theorem secondIpreimage_mul_secondJpreimage [Invertible (2 : K)] (a b : Kˣ) (c d : K) :
+    secondIpreimage a b c d * secondJpreimage a b c d =
+      (-((((a * b)⁻¹ : Kˣ) : K))) •
+        (_root_.CliffordAlgebra.ι _ (Pi.single 2 1) *
+          _root_.CliffordAlgebra.ι _ (Pi.single 3 1)) := by
+  apply (fourToTensor_bijective a b c d).injective
+  rw [map_mul, fourToTensor_secondIpreimage, fourToTensor_secondJpreimage, map_smul, map_mul,
+    fourToTensor_ue, fourToTensor_ue, fourGenerator_single_two, fourGenerator_single_three,
+    Algebra.TensorProduct.tmul_mul_tmul, Algebra.TensorProduct.tmul_mul_tmul, one_mul,
+    _root_.QuaternionAlgebra.Basis.k_mul_k, _root_.QuaternionAlgebra.Basis.i_mul_j,
+    TensorProduct.neg_tmul, ← TensorProduct.smul_tmul', smul_neg, smul_smul]
+  simp only [Units.val_inv_eq_inv_val, Units.val_mul]
+  rw [neg_mul, inv_mul_cancel₀ (mul_ne_zero a.ne_zero b.ne_zero), neg_one_smul, neg_neg]
+
 /-- **The Clifford algebra of a four-dimensional diagonal form** as a tensor product of two
 quaternion algebras:
 `Cl<a,b,c,d> ≃ (a,b) ⊗ (-c/(ab),-d/(ab))`. -/
@@ -530,6 +535,13 @@ noncomputable def weightedSumSquaresFourEquivTensorQuaternion [Invertible (2 : K
       (ℍ[K,(a : K),(b : K)] ⊗[K]
         ℍ[K,-((((a * b)⁻¹ : Kˣ) : K) * c),-((((a * b)⁻¹ : Kˣ) : K) * d)]) :=
   AlgEquiv.ofBijective (fourToTensor a b c d) (fourToTensor_bijective a b c d)
+
+private theorem weightedSumSquaresFourEquivTensorQuaternion_apply [Invertible (2 : K)]
+    (a b : Kˣ) (c d : K)
+    (z : _root_.CliffordAlgebra
+      (QuadraticMap.weightedSumSquares K ![(a : K), (b : K), (c : K), (d : K)])) :
+    weightedSumSquaresFourEquivTensorQuaternion a b c d z = fourToTensor a b c d z :=
+  rfl
 
 /-- The explicit tensor-quaternion coordinates of the four-dimensional Clifford generators. -/
 @[simp]
@@ -550,5 +562,47 @@ theorem weightedSumSquaresFourEquivTensorQuaternion_ι [Invertible (2 : K)]
   change fourToTensor a b c d (_root_.CliffordAlgebra.ι _ x) = _
   rw [fourToTensor, _root_.CliffordAlgebra.lift_ι_apply]
   rfl
+
+/-- The inverse of the four-dimensional model on the first quaternion factor: its standard
+generators `i` and `j` come from the first two Clifford generators. -/
+@[simp]
+theorem weightedSumSquaresFourEquivTensorQuaternion_symm_tmul_one [Invertible (2 : K)]
+    (a b : Kˣ) (c d : K) (x : ℍ[K,(a : K),(b : K)]) :
+    (weightedSumSquaresFourEquivTensorQuaternion a b c d).symm
+        (x ⊗ₜ (1 : ℍ[K,-((((a * b)⁻¹ : Kˣ) : K) * c),-((((a * b)⁻¹ : Kˣ) : K) * d)])) =
+      algebraMap K _ x.re + x.imI • _root_.CliffordAlgebra.ι _ (Pi.single 0 1) +
+        x.imJ • _root_.CliffordAlgebra.ι _ (Pi.single 1 1) +
+        x.imK • (_root_.CliffordAlgebra.ι _ (Pi.single 0 1) *
+          _root_.CliffordAlgebra.ι _ (Pi.single 1 1)) := by
+  rw [AlgEquiv.symm_apply_eq]
+  exact (fourToTensor_firstPreimage a b c d x).symm
+
+/-- The inverse of the four-dimensional model on the second quaternion factor: its standard
+generators `i` and `j` come from the last two Clifford generators multiplied by the volume
+element of the first two and rescaled by `-(ab)⁻¹`. -/
+@[simp]
+theorem weightedSumSquaresFourEquivTensorQuaternion_symm_one_tmul [Invertible (2 : K)]
+    (a b : Kˣ) (c d : K)
+    (y : ℍ[K,-((((a * b)⁻¹ : Kˣ) : K) * c),-((((a * b)⁻¹ : Kˣ) : K) * d)]) :
+    (weightedSumSquaresFourEquivTensorQuaternion a b c d).symm
+        ((1 : ℍ[K,(a : K),(b : K)]) ⊗ₜ y) =
+      algebraMap K _ y.re +
+        (-((((a * b)⁻¹ : Kˣ) : K)) * y.imI) • (_root_.CliffordAlgebra.ι _ (Pi.single 0 1) *
+          _root_.CliffordAlgebra.ι _ (Pi.single 1 1) *
+          _root_.CliffordAlgebra.ι _ (Pi.single 2 1)) +
+        (-((((a * b)⁻¹ : Kˣ) : K)) * y.imJ) • (_root_.CliffordAlgebra.ι _ (Pi.single 0 1) *
+          _root_.CliffordAlgebra.ι _ (Pi.single 1 1) *
+          _root_.CliffordAlgebra.ι _ (Pi.single 3 1)) +
+        (-((((a * b)⁻¹ : Kˣ) : K)) * y.imK) • (_root_.CliffordAlgebra.ι _ (Pi.single 2 1) *
+          _root_.CliffordAlgebra.ι _ (Pi.single 3 1)) := by
+  rw [AlgEquiv.symm_apply_eq, weightedSumSquaresFourEquivTensorQuaternion_apply,
+    ← fourToTensor_secondPreimage a b c d y]
+  congr 1
+  rw [secondPreimage, _root_.QuaternionAlgebra.Basis.liftHom_apply,
+    _root_.QuaternionAlgebra.Basis.lift]
+  dsimp only [secondPreimageBasis]
+  rw [secondIpreimage_mul_secondJpreimage]
+  simp only [secondGeneratorPreimage, smul_smul]
+  rw [mul_comm y.imI, mul_comm y.imJ, mul_comm y.imK]
 
 end CliffordAlgebra
