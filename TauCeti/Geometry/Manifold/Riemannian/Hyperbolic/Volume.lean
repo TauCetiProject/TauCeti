@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Hyperbolic
+public import TauCeti.Geometry.Manifold.Riemannian.Hyperbolic.Mostow
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Total
 
 /-!
@@ -30,9 +31,11 @@ open scoped ContDiff Manifold
 
 noncomputable section
 
+universe uE uH uM
+
 namespace TauCeti
 
-variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+variable {E : Type uE} {H : Type uH} {M : Type uM} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   [MetricSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
   [PreconnectedSpace M]
@@ -71,5 +74,33 @@ theorem hypVolumeOfMetric_nonneg (g : HyperbolicMetric (I := I) (M := M)) :
     IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle
       (IB := I) (n := ∞) (F := E) (V := fun x : M ↦ TangentSpace I x)
   exact riemannianTotalVolume_nonneg (I := I) (M := M)
+
+omit [LindelofSpace M] in
+/-- Mostow rigidity identifies the total volumes of any two bundled hyperbolic metrics. -/
+theorem hypVolumeOfMetric_eq_of_mostow [BoundarylessManifold I M]
+    (hConn : ConnectedSpace M)
+    (h : MostowRigidity.{uE, uH, uM})
+    (hM : IsHyperbolic (I := I) (M := M)) (hdim : 3 ≤ Module.finrank ℝ E)
+    (g g' : HyperbolicMetric (I := I) (M := M)) :
+    hypVolumeOfMetric (I := I) g = hypVolumeOfMetric (I := I) g' := by
+  let _ : ConnectedSpace M := hConn
+  obtain ⟨Φ⟩ := h.isometry hM hdim g g'
+  let gBundle : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+    ⟨g.metric.toRiemannianMetric⟩
+  let gCont : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
+    IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle
+      (IB := I) (n := ∞) (F := E) (V := fun x : M ↦ TangentSpace I x)
+  let g'Bundle : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+    ⟨g'.metric.toRiemannianMetric⟩
+  let g'Cont : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
+    IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle
+      (IB := I) (n := ∞) (F := E) (V := fun x : M ↦ TangentSpace I x)
+  change @riemannianTotalVolume E _ _ _ H _ I M _ _ _ _ _ _ gBundle gCont =
+    @riemannianTotalVolume E _ _ _ H _ I M _ _ _ _ _ _ g'Bundle g'Cont
+  exact @Homeomorph.riemannianTotalVolume_eq E _ _ _ H _ I M _ _ _ _ _ _ gBundle gCont
+    H _ I M _ _ _ _ _ _ g'Bundle g'Cont Φ.toDiffeomorph.toHomeomorph
+    (Φ.toDiffeomorph.mdifferentiable (by simp)) (by
+      intro x v w
+      exact Φ.inner_mfderiv' x v w)
 
 end TauCeti
