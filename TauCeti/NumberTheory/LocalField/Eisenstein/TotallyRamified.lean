@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.FieldTheory.IntermediateField.Adjoin.Basic
 public import TauCeti.NumberTheory.LocalField.Eisenstein.PowerBasis
 import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
 import TauCeti.RingTheory.DiscreteValuationRing.Basic

@@ -64,12 +64,11 @@ private theorem eisenstein_adjoin_eq_top_data [Algebra K L] [ValuativeExtension 
   have hminpoly : minpoly K (ξ : L) = (minpoly 𝒪[K] ξ).map (algebraMap 𝒪[K] K) :=
     minpoly.isIntegrallyClosed_eq_field_fractions K L hint
   -- `ξ` generates a power basis of `L/K` of length `deg f`.
-  let pb : PowerBasis K L := (IntermediateField.adjoin.powerBasis (.of_finite K (ξ : L))).map
-    ((IntermediateField.equivOfEq hgen).trans IntermediateField.topEquiv)
-  have hpbgen : pb.gen = ξ := by simp [pb]
+  let pb : PowerBasis K L := .ofAdjoinSimpleEqTop (.of_finite K (ξ : L)) hgen
+  have hpbgen : pb.gen = ξ := PowerBasis.ofAdjoinSimpleEqTop_gen _ hgen
   have hpbdim : pb.dim = f.natDegree := by
-    rw [← PowerBasis.natDegree_minpoly, hpbgen, hminpoly,
-      (minpoly.monic hint).natDegree_map, hnatDegree]
+    rw [PowerBasis.ofAdjoinSimpleEqTop_dim, hminpoly, (minpoly.monic hint).natDegree_map,
+      hnatDegree]
   -- Its norm is, up to sign, the constant coefficient of the minimal polynomial over `𝒪[K]`.
   have hfc0 : Irreducible (f.coeff 0) := hf.irreducible_coeff_zero hdeg
   have hminc0 : Irreducible ((minpoly 𝒪[K] ξ).coeff 0) :=
