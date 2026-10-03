@@ -58,8 +58,14 @@ on which the adic Fargues–Fontaine curve `𝒴 / φ^ℤ` is built.
 * `TauCeti.FarguesFontaine.iUnion_windowU_union_windowV` : the windows cover `𝒴`.
 * `TauCeti.FarguesFontaine.val_preimage_windowU_mem_spaRationalFamily` and its `V` analogue : the
   windows are rational subsets.
+* `TauCeti.FarguesFontaine.isOpen_val_preimage_windowU` and its `V` analogue : the windows are
+  open in `𝒴`.
+* `TauCeti.FarguesFontaine.isCompact_val_preimage_windowU` and its `V` analogue : the windows
+  are quasi-compact in `𝒴`.
 * `TauCeti.FarguesFontaine.comap_frobenius_mem_windowU_iff` and its `V` analogue : Frobenius shifts
   the window index by one.
+* `TauCeti.FarguesFontaine.frobeniusHomeomorph_zpow_mem_windowU_iff` and its `V` analogue :
+  integer Frobenius powers shift the window index by the same integer.
 * `TauCeti.FarguesFontaine.disjoint_windowU` and its `V` analogue : distinct windows in one family
   are disjoint.
 * `TauCeti.FarguesFontaine.iterate_comap_frobenius_ne` : the Frobenius iterates act freely on `𝒴`.
@@ -79,7 +85,7 @@ public section
 
 namespace TauCeti.FarguesFontaine
 
-open TauCeti.ValuationSpectrum _root_.WittVector
+open TauCeti.ValuationSpectrum _root_.WittVector Topology
 
 variable (p : ℕ) [Fact p.Prime] {R : Type*} [CommRing R]
 
@@ -371,6 +377,64 @@ theorem val_preimage_windowV_mem_spaRationalFamily
   val_preimage_setOf_mem_spaRationalFamily hI (mul_ne_zero (by positivity)
     (zpow_ne_zero n (Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero)))
 
+private theorem isOpen_val_preimage_of_mem_spaRationalFamily
+    (hI : IsAdic (Ideal.span {(p : WittVector p R), teichmuller p ϖ}))
+    (S : Set (Spv (WittVector p R)))
+    (hSrat : (Subtype.val ⁻¹' S : Set (spa (⊤ : Subring (WittVector p R)))) ∈
+      spaRationalFamily ⊤) : IsOpen (Subtype.val ⁻¹' S : Set (spaY p ϖ)) := by
+  have : IsTopologicalRing (WittVector p R) :=
+    hI ▸ (Ideal.span _).nonarchimedean.toIsTopologicalRing
+  have : Huber.IsHuberRing (WittVector p R) :=
+    Huber.isHuberRing_of_isAdic _ hI (Submodule.fg_span (by simp))
+  let j : spaY p ϖ → spa (⊤ : Subring (WittVector p R)) := fun v ↦
+    ⟨v.val, ((mem_spaY_iff p ϖ v.val).mp v.property).1⟩
+  exact ((isTopologicalBasis_spaRationalFamily _).isOpen hSrat).preimage
+    (continuous_subtype_val.subtype_mk _ : Continuous j)
+
+/-- Each `U` window is open in `𝒴`. -/
+theorem isOpen_val_preimage_windowU
+    (hI : IsAdic (Ideal.span {(p : WittVector p R), teichmuller p ϖ})) (n : ℤ) :
+    IsOpen (Subtype.val ⁻¹' windowU p ϖ n : Set (spaY p ϖ)) :=
+  isOpen_val_preimage_of_mem_spaRationalFamily hI _
+    (val_preimage_windowU_mem_spaRationalFamily ϖ hI n)
+
+/-- Each `V` window is open in `𝒴`. -/
+theorem isOpen_val_preimage_windowV
+    (hI : IsAdic (Ideal.span {(p : WittVector p R), teichmuller p ϖ})) (n : ℤ) :
+    IsOpen (Subtype.val ⁻¹' windowV p ϖ n : Set (spaY p ϖ)) :=
+  isOpen_val_preimage_of_mem_spaRationalFamily hI _
+    (val_preimage_windowV_mem_spaRationalFamily ϖ hI n)
+
+private theorem isCompact_val_preimage_of_mem_spaRationalFamily
+    (hI : IsAdic (Ideal.span {(p : WittVector p R), teichmuller p ϖ}))
+    (S : Set (Spv (WittVector p R))) (hS : S ⊆ spaY p ϖ)
+    (hSrat : (Subtype.val ⁻¹' S : Set (spa (⊤ : Subring (WittVector p R)))) ∈
+      spaRationalFamily ⊤) : IsCompact (Subtype.val ⁻¹' S : Set (spaY p ϖ)) := by
+  have : IsTopologicalRing (WittVector p R) :=
+    hI ▸ (Ideal.span _).nonarchimedean.toIsTopologicalRing
+  have : Huber.IsHuberRing (WittVector p R) :=
+    Huber.isHuberRing_of_isAdic _ hI (Submodule.fg_span (by simp))
+  let j : spaY p ϖ → spa (⊤ : Subring (WittVector p R)) := fun v ↦
+    ⟨v.val, ((mem_spaY_iff p ϖ v.val).mp v.property).1⟩
+  have hc : Continuous j := continuous_subtype_val.subtype_mk _
+  have hj : IsInducing j := .of_comp hc continuous_subtype_val .subtypeVal
+  exact hj.isCompact_preimage' (isCompact_of_mem_spaRationalFamily hSrat)
+    (fun v hv ↦ ⟨⟨v.val, hS hv⟩, Subtype.ext rfl⟩)
+
+/-- Each `U` window is quasi-compact as a subset of `𝒴`. -/
+theorem isCompact_val_preimage_windowU
+    (hI : IsAdic (Ideal.span {(p : WittVector p R), teichmuller p ϖ})) (n : ℤ) :
+    IsCompact (Subtype.val ⁻¹' windowU p ϖ n : Set (spaY p ϖ)) :=
+  isCompact_val_preimage_of_mem_spaRationalFamily hI _ (windowU_subset_spaY n)
+    (val_preimage_windowU_mem_spaRationalFamily ϖ hI n)
+
+/-- Each `V` window is quasi-compact as a subset of `𝒴`. -/
+theorem isCompact_val_preimage_windowV
+    (hI : IsAdic (Ideal.span {(p : WittVector p R), teichmuller p ϖ})) (n : ℤ) :
+    IsCompact (Subtype.val ⁻¹' windowV p ϖ n : Set (spaY p ϖ)) :=
+  isCompact_val_preimage_of_mem_spaRationalFamily hI _ (windowV_subset_spaY n)
+    (val_preimage_windowV_mem_spaRationalFamily ϖ hI n)
+
 end Rational
 
 /-! ### Frobenius on the windows -/
@@ -508,6 +572,47 @@ theorem iterate_comap_frobenius_ne
       (Set.mem_image_of_mem _ hn) hn
   · exact (disjoint_image_iterate_comap_frobenius_windowV hI n hk).ne_of_mem
       (Set.mem_image_of_mem _ hn) hn
+
+variable [PerfectRing R p]
+
+private theorem frobeniusHomeomorph_zpow_mem_window
+    (hI : IsAdic (Ideal.span {(p : WittVector p R), teichmuller p ϖ}))
+    (W : ℤ → Set (Spv (WittVector p R)))
+    (hW : ∀ v n, comap frobenius v ∈ W (n + 1) ↔ v ∈ W n)
+    (n m : ℤ) (v : spaY p ϖ) :
+    ((frobeniusHomeomorph hI ^ n) v).val ∈ W (m + n) ↔ v.val ∈ W m := by
+  induction n using Int.induction_on generalizing m v with
+  | zero => simp
+  | succ n ih =>
+    rw [zpow_add, zpow_one, Homeomorph.mul_apply]
+    have h := (ih (m + 1) (frobeniusHomeomorph hI v)).trans
+      (by simpa only [frobeniusHomeomorph_apply_val] using hW v.val m)
+    have he : m + (n + 1) = m + 1 + n := by omega
+    rw [he]
+    exact h
+  | pred n ih =>
+    rw [zpow_sub, zpow_one, Homeomorph.mul_apply]
+    have h := (ih (m - 1) ((frobeniusHomeomorph hI).symm v)).trans
+      (hW (((frobeniusHomeomorph hI).symm v).val) (m - 1)).symm
+    have hh : comap frobenius (((frobeniusHomeomorph hI).symm v).val) = v.val :=
+      (frobeniusHomeomorph_apply_val hI _).symm.trans
+        (congrArg Subtype.val ((frobeniusHomeomorph hI).apply_symm_apply v))
+    simp only [Homeomorph.inv_apply]
+    simpa only [sub_add_cancel, hh, sub_add_eq_add_sub, add_sub_assoc] using h
+
+/-- An integer Frobenius translate shifts the index of a `U` window by that integer. -/
+theorem frobeniusHomeomorph_zpow_mem_windowU_iff
+    (hI : IsAdic (Ideal.span {(p : WittVector p R), teichmuller p ϖ}))
+    (n m : ℤ) (v : spaY p ϖ) :
+    ((frobeniusHomeomorph hI ^ n) v).val ∈ windowU p ϖ (m + n) ↔ v.val ∈ windowU p ϖ m :=
+  frobeniusHomeomorph_zpow_mem_window hI _ (comap_frobenius_mem_windowU_iff hI) n m v
+
+/-- An integer Frobenius translate shifts the index of a `V` window by that integer. -/
+theorem frobeniusHomeomorph_zpow_mem_windowV_iff
+    (hI : IsAdic (Ideal.span {(p : WittVector p R), teichmuller p ϖ}))
+    (n m : ℤ) (v : spaY p ϖ) :
+    ((frobeniusHomeomorph hI ^ n) v).val ∈ windowV p ϖ (m + n) ↔ v.val ∈ windowV p ϖ m :=
+  frobeniusHomeomorph_zpow_mem_window hI _ (comap_frobenius_mem_windowV_iff hI) n m v
 
 end CharP
 
