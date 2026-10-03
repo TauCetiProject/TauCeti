@@ -52,6 +52,9 @@ Grothendieck groups live in the same universe as the coefficient data.
 * `TauCeti.gradedFiniteModulesExactStructure_conflation_iff` and
   `TauCeti.gradedFiniteProjectiveModulesExactStructure_conflation_iff`: the conflations of the two
   structures are the short exact sequences of graded modules with terms in the subcategory.
+* `TauCeti.gradedFiniteModulesExactStructureShiftFunctorCompιIso` and
+  `TauCeti.gradedFiniteProjectiveModulesExactStructureShiftFunctorCompιIso`: the restricted shifts
+  agree with the ambient grading shift after inclusion.
 * `TauCeti.gradedFiniteProjectiveModulesExactStructure_eq_split`: the underlying exact structure
   on finite graded projectives is split when `𝒜` is a decomposition of `A`.
 * `TauCeti.gradedCartanMap_of`: the graded Cartan map sends the class of a projective to the class
@@ -256,14 +259,18 @@ private theorem isZero_finiteZero : IsZero (finiteZero (𝒜 := 𝒜)) :=
     intro x
     exact Subsingleton.elim (α := PUnit) _ _)
 
+private theorem finite_finiteZero : Module.Finite A (finiteZero (𝒜 := 𝒜)) :=
+  inferInstance
+
+private theorem projective_finiteZero : Module.Projective A (finiteZero (𝒜 := 𝒜)) :=
+  inferInstance
+
 instance : (gradedFiniteModules 𝒜).ContainsZero where
-  exists_zero := ⟨finiteZero, isZero_finiteZero,
-    show Module.Finite A PUnit from inferInstance⟩
+  exists_zero := ⟨finiteZero, isZero_finiteZero, finite_finiteZero⟩
 
 instance : (gradedFiniteProjectiveModules 𝒜).ContainsZero where
   exists_zero := ⟨finiteZero, isZero_finiteZero,
-    ⟨show Module.Finite A PUnit from inferInstance,
-      show Module.Projective A PUnit from inferInstance⟩⟩
+    ⟨finite_finiteZero, projective_finiteZero⟩⟩
 
 /-- Finite graded modules are extension closed in the abelian category of graded modules. -/
 theorem isExtensionClosed_gradedFiniteModules :
@@ -367,6 +374,29 @@ noncomputable def gradedFiniteProjectiveModulesExactStructure (𝒜 : ℤ → Su
     GradedExactStructure (gradedFiniteProjectiveModules 𝒜).FullSubcategory :=
   (gradedModuleExactStructure 𝒜).fullSubcategory _
     isExtensionClosed_gradedFiniteProjectiveModules' gradedFiniteProjectiveModules_shift'
+
+/-- The shift on finite graded modules agrees with the ambient grading shift after applying the
+full-subcategory inclusion. -/
+noncomputable def gradedFiniteModulesExactStructureShiftFunctorCompιIso :
+  (gradedFiniteModulesExactStructure 𝒜).shift.functor ⋙ (gradedFiniteModules 𝒜).ι ≅
+      (gradedFiniteModules 𝒜).ι ⋙ (GradedModuleCat.shift 𝒜).functor := by
+  rw [gradedFiniteModulesExactStructure, GradedExactStructure.fullSubcategory_shift]
+  let e := (gradedModuleExactStructure 𝒜).fullSubcategoryShiftFunctorCompιIso
+    (gradedFiniteModules 𝒜) gradedFiniteModules_shift'
+  rw [GradedExactStructure.abelian_shift] at e
+  exact e
+
+/-- The shift on finite graded projective modules agrees with the ambient grading shift after
+applying the full-subcategory inclusion. -/
+noncomputable def gradedFiniteProjectiveModulesExactStructureShiftFunctorCompιIso :
+    (gradedFiniteProjectiveModulesExactStructure 𝒜).shift.functor ⋙
+        (gradedFiniteProjectiveModules 𝒜).ι ≅
+      (gradedFiniteProjectiveModules 𝒜).ι ⋙ (GradedModuleCat.shift 𝒜).functor := by
+  rw [gradedFiniteProjectiveModulesExactStructure, GradedExactStructure.fullSubcategory_shift]
+  let e := (gradedModuleExactStructure 𝒜).fullSubcategoryShiftFunctorCompιIso
+    (gradedFiniteProjectiveModules 𝒜) gradedFiniteProjectiveModules_shift'
+  rw [GradedExactStructure.abelian_shift] at e
+  exact e
 
 /-- The conflations of finite graded modules are the short exact sequences of graded modules
 whose three terms are finitely generated. -/
