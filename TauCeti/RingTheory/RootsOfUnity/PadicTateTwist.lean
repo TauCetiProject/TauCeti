@@ -82,9 +82,20 @@ def levelAddEquivRootsOfUnity (n : ℕ) :
   right_inv ζ := rfl
   map_add' x y := rfl
 
+/-- The inverse finite-level equivalence forgets the roots-of-unity membership proof. -/
+@[simp]
+theorem coe_levelAddEquivRootsOfUnity_symm (n : ℕ) (ζ : Additive (rootsOfUnity (p ^ n) K)) :
+    ((levelAddEquivRootsOfUnity n).symm ζ : Additive Kˣ) = Additive.ofMul (ζ.toMul : Kˣ) :=
+  (rfl)
+
 /-- Projection of `ℤ_p(1)` to its `p ^ n`-th roots-of-unity level. -/
 def proj (n : ℕ) : PadicTateTwist p K →+ Additive (rootsOfUnity (p ^ n) K) :=
   (levelAddEquivRootsOfUnity n).toAddMonoidHom.comp (TateModule.proj n)
+
+/-- The roots-of-unity projection is the finite-level equivalence after ordinary projection. -/
+theorem proj_def (n : ℕ) (x : PadicTateTwist p K) :
+    proj n x = levelAddEquivRootsOfUnity n (TateModule.proj n x) :=
+  (rfl)
 
 /-- The roots-of-unity projection is the ordinary Tate-module projection on underlying units. -/
 @[simp]
