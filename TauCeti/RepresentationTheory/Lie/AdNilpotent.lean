@@ -47,10 +47,10 @@ it because `⁅L, R⁆ ≤ N`, shows that `r = x - s` is `ad`-nilpotent; the rad
   Lie algebra implies nilpotence in every finite-dimensional Lie module.
 * `TauCeti.isNilpotent_apply_of_isNilpotent_ad`: the same result for an explicit Lie
   homomorphism into an endomorphism algebra.
-* `TauCeti.isNilpotent_toEnd_of_isNilpotent_ad_of_isCompl_radical`: in characteristic zero, an
-  `ad`-nilpotent element acts nilpotently on every finite-dimensional module on which the
+* `LieSubalgebra.isNilpotent_toEnd_of_isNilpotent_ad_of_isCompl_radical`: in characteristic
+  zero, an `ad`-nilpotent element acts nilpotently on every finite-dimensional module on which the
   nilradical acts nilpotently.
-* `TauCeti.isNilpotent_apply_of_isNilpotent_ad_of_isCompl_radical`: the same result for an
+* `LieSubalgebra.isNilpotent_apply_of_isNilpotent_ad_of_isCompl_radical`: the same result for an
   explicit Lie homomorphism into an endomorphism algebra.
 
 ## References
@@ -94,6 +94,18 @@ theorem isNilpotent_toEnd_of_isNilpotent_ad [LieRingModule L M] [LieModule K L M
     [FiniteDimensional K L] [IsKilling K L] {x : L} (hx : IsNilpotent (ad K L x)) :
     IsNilpotent (toEnd K L M x) :=
   isNilpotent_apply_of_isNilpotent_ad hx
+
+end TauCeti
+
+namespace LieSubalgebra
+
+open TauCeti
+
+variable {K L M : Type*} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
+  [AddCommGroup M] [Module K M] [FiniteDimensional K M]
+
+-- Endomorphism algebras carry the associative commutator bracket locally.
+attribute [local instance 100] LieRing.ofAssociativeRing
 
 section Radical
 
@@ -167,7 +179,6 @@ theorem isNilpotent_apply_of_isNilpotent_ad_of_isCompl_radical [FiniteDimensiona
     ext m
     simp [LieRingModule.compLieHom_apply]
   rw [← h]
-  exact isNilpotent_toEnd_of_isNilpotent_ad_of_isCompl_radical S hS
-    (fun n hn => h n ▸ hρ n hn) hx
+  exact S.isNilpotent_toEnd_of_isNilpotent_ad_of_isCompl_radical hS (fun n hn => h n ▸ hρ n hn) hx
 
-end TauCeti
+end LieSubalgebra
