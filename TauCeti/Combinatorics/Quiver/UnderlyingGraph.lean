@@ -30,9 +30,9 @@ distinct vertices, whatever their direction (`TauCeti.Quiver.underlyingGraph_con
 * `TauCeti.Quiver.isAcyclic_underlyingGraph_of_lt`: a quiver in which the arrows out of each vertex
   all share their target, and every arrow strictly lowers a height function, has a forest as its
   underlying graph.
-* `TauCeti.Quiver.subsingleton_hom_sum_of_lt`: a quiver with at most one arrow from any vertex to
-  any other, all of which strictly lower a height function, joins any two vertices by at most one
-  arrow, counted in both directions.
+* `TauCeti.Quiver.subsingleton_hom_sum_of_lt`: for fixed vertices `a` and `b`, if each directional
+  arrow type is subsingleton and all arrows lower an asymmetric height relation, then at most one
+  arrow joins `a` and `b`, counted in both directions.
 -/
 
 public section
@@ -99,9 +99,9 @@ theorem isAcyclic_underlyingGraph_of_lt {α : Type*} [LT α] [IsStrictOrder α (
     (hmax' _ ((c.rotate u hu).getVert_mem_support _))
   exact hc'.snd_ne_penultimate (hout e e')
 
-/-- **A quiver whose arrows lower a height function has at most one arrow between any two
-vertices**, counted in both directions, once it has at most one arrow in each direction. Only
-asymmetry of the relation on heights is needed. -/
+/-- For fixed vertices `a` and `b`, if each of `a ⟶ b` and `b ⟶ a` is subsingleton and every
+arrow lowers a height function into a type with an asymmetric relation, then
+`(a ⟶ b) ⊕ (b ⟶ a)` is subsingleton. -/
 theorem subsingleton_hom_sum_of_lt {α : Type*} [LT α] [Std.Asymm (α := α) (· < ·)]
     (ht : V → α)
     (hlt : ∀ ⦃a b : V⦄, (a ⟶ b) → ht b < ht a) (a b : V)
