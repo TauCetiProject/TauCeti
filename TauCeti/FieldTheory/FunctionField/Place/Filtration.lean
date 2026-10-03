@@ -131,31 +131,23 @@ theorem mem_filtration_one_iff {z : F} : z ∈ P.filtration 1 ↔ P.valuation z 
     omega
 
 /-- The positive part of the order filtration is the maximal-ideal filtration of the valuation
-ring: an integral function belongs to `𝔪_P ^ n` exactly when its image in the function field has
-order at least `n` at `P`.
-
-The normalization of a place is load-bearing here: it says that a uniformizer has value
-`exp (-1)`, so the `n`-th power of the maximal ideal is cut out by the same bound
-`v_P(x) ≤ exp (-n)` as `P.filtration n`. -/
+ring: an integral function belongs to `𝔪_P ^ n` exactly when its image in the function field lies
+in `P.filtration n`, that is, when `v_P(x) ≤ exp (-n)`. -/
 theorem mem_maximalIdeal_pow_iff_coe_mem_filtration (n : ℕ) (x : P.integers) :
     x ∈ IsLocalRing.maximalIdeal P.integers ^ n ↔ (x : F) ∈ P.filtration n := by
   let e : P.integers ≃+* P.valuation.valuationSubring :=
-    RingEquiv.subringCongr (congrArg ValuationSubring.toSubring
-      P.integers_eq_valuationSubring)
+    RingEquiv.subringCongr (congrArg ValuationSubring.toSubring P.integers_def)
   have he : ((e x : P.valuation.valuationSubring) : F) = (x : F) := rfl
   rw [← Ideal.apply_mem_of_equiv_iff (I := IsLocalRing.maximalIdeal P.integers ^ n)
     (f := e) (x := x), Ideal.map_pow, IsLocalRing.map_ringEquiv_maximalIdeal]
   let π : P.valuation.Uniformizer := Classical.choice inferInstance
   have hπ : P.valuation (π.1 : F) = WithZero.exp (-1 : ℤ) := by
     simpa [Valuation.IsUniformizer.iff, P.generator_eq_exp_neg_one] using π.valuation_gt_one
-  rw [Valuation.pow_Uniformizer_is_pow_generator π n]
-  rw [show (e x ∈ Ideal.span {(π.1 ^ n : P.valuation.valuationSubring)}) ↔
-      P.valuation (e x : F) ≤
-        P.valuation ((π.1 ^ n : P.valuation.valuationSubring) : F) by
-    exact Set.ext_iff.mp (Valuation.integer.coe_span_singleton_eq_setOfPred_le_v_coe
-      (π.1 ^ n)) (e x)]
-  rw [P.mem_filtration_iff]
-  rw [he]
+  -- Membership in a principal ideal of the valuation subring is a valuation inequality.
+  have hspan : e x ∈ Ideal.span {(π.1 ^ n : P.valuation.valuationSubring)} ↔
+      P.valuation (e x : F) ≤ P.valuation ((π.1 ^ n : P.valuation.valuationSubring) : F) :=
+    Set.ext_iff.mp (Valuation.integer.coe_span_singleton_eq_setOfPred_le_v_coe (π.1 ^ n)) (e x)
+  rw [Valuation.pow_Uniformizer_is_pow_generator π n, hspan, P.mem_filtration_iff, he]
   simp only [Subring.coe_pow, map_pow, hπ, ← WithZero.exp_nsmul]
   norm_num
 

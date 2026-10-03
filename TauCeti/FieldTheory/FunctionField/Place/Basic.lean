@@ -128,10 +128,10 @@ theorem valuation_injective : Function.Injective (valuation : Place k F → Valu
 Definition 1.1.4). -/
 def integers : ValuationSubring F := P.valuation.valuationSubring
 
-/-- The valuation ring of a place is Mathlib's valuation subring of its underlying valuation.
-This characteristic equation lets generic valuation-subring constructions be transported to the
-function-field notation without unfolding `Place.integers`. -/
-theorem integers_eq_valuationSubring : P.integers = P.valuation.valuationSubring :=
+/-- The defining equation of `Place.integers`: the valuation ring of a place is Mathlib's valuation
+subring of its underlying valuation. The body of `Place.integers` is not exposed to importing
+modules, so this is how generic valuation-subring constructions are transported to it. -/
+theorem integers_def : P.integers = P.valuation.valuationSubring :=
   (rfl)
 
 @[simp]
