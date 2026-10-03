@@ -11,7 +11,7 @@ public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Hasse
 import Mathlib.LinearAlgebra.CliffordAlgebra.Equivs
 import TauCeti.Algebra.BrauerGroup.Splitting
 import TauCeti.LinearAlgebra.CliffordAlgebra.CentralSimple.Even
-import TauCeti.LinearAlgebra.CliffordAlgebra.DiagonalFour
+import TauCeti.LinearAlgebra.CliffordAlgebra.LowRank.Four
 import TauCeti.LinearAlgebra.CliffordAlgebra.Even.Quaternion
 import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality
 
@@ -263,13 +263,14 @@ theorem cliffordInvariant_mk_quaternary (a b c d : Kˣ) :
         BrauerGroup.quaternionClass (-((a * b)⁻¹ * c)) (-((a * b)⁻¹ * d)) := by
   rw [BrauerGroup.quaternionClass_def, BrauerGroup.quaternionClass_def,
     ← BrauerGroup.mk_tensorProduct]
-  refine cliffordInvariant_mk_of_even _ (by change Even 4; exact ⟨2, rfl⟩) _ ?_
+  refine cliffordInvariant_mk_of_even _ (by exact ⟨2, rfl⟩) _ ?_
   have hw : (fun i ↦ ((![a, b, c, d] i : Kˣ) : K)) =
       ![(a : K), (b : K), (c : K), (d : K)] := by
     funext i
     fin_cases i <;> rfl
   rw [presentedForm_eq_weightedSumSquares_coe, hw]
-  exact CliffordAlgebra.weightedSumSquaresFourEquivTensorQuaternion a b c d
+  simpa only [Units.val_neg, Units.val_mul, Units.val_inv_eq_inv_val] using
+    CliffordAlgebra.weightedSumSquaresFourEquivTensorQuaternion a b (c : K) (d : K)
 
 /-- **In ranks at most two the Clifford invariant is the Hasse invariant.** This is the low-rank
 case of Lam V.3.20, whose correction terms vanish for `n ≤ 2`. -/
