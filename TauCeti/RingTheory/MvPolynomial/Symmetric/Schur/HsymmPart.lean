@@ -108,9 +108,7 @@ private theorem prod_hsymm_eq_sum_card_smul (N : ℕ) :
   | 0, c, n, hc => by
     rw [Fin.sum_univ_zero] at hc
     subst hc
-    have hbot : diagramOf (default : Nat.Partition 0) = ⊥ :=
-      YoungDiagram.ext ((Finset.card_eq_zero.mp (card_diagramOf _)).trans
-        YoungDiagram.cells_bot.symm)
+    have hbot : diagramOf (default : Nat.Partition 0) = ⊥ := diagramOf_eq_bot _
     have hcard : Nat.card {T : BoundedSSYT 0 (diagramOf (default : Nat.Partition 0)) //
         ⇑(BoundedSSYT.weight T) = c} = 1 := by
       rw [hbot, Nat.card_eq_one_iff_unique]
