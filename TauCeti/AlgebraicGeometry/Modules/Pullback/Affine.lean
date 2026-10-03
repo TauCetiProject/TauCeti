@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Pullback.Pr
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Presentation
 public import TauCeti.CategoryTheory.Monoidal.Rigid.Functor
+import Mathlib.CategoryTheory.Monoidal.Rigid.Braided
 
 /-!
 # Pullback of tensor products from an affine base
@@ -23,8 +24,8 @@ In particular, pullback from quasicoherent sheaves on `Y` to modules on `X` is s
 monoidal. The tensor comparisons are also exposed as natural isomorphisms with either
 quasicoherent factor fixed. These affine computations let tensor and duality constructions
 on sheaves be compared with their module counterparts. For instance, pullback from `Y`
-carries a quasicoherent sheaf with a left dual in `QuasicoherentSheaf Y` to one with a left
-dual in `QuasicoherentSheaf X`.
+carries a quasicoherent sheaf with a left or right dual in `QuasicoherentSheaf Y` to one with
+the corresponding dual in `QuasicoherentSheaf X`.
 
 ## References
 
@@ -173,6 +174,16 @@ theorem nonempty_hasLeftDual_pullback (E : QuasicoherentSheaf Y)
     @ObjectProperty.exactPairingFullSubcategory X.Modules _ _ _
       (Scheme.Modules.isMonoidal_isQuasicoherent X) _ _ this
   exact ⟨⟨(pullback f).obj (ᘁE)⟩⟩
+
+/-- Pullback along a morphism to an affine scheme preserves right dualizability of quasicoherent
+sheaves. -/
+theorem nonempty_hasRightDual_pullback (E : QuasicoherentSheaf Y)
+    (hE : Nonempty (HasRightDual E)) : Nonempty (HasRightDual ((pullback f).obj E)) := by
+  obtain ⟨hE⟩ := hE
+  let _ : HasLeftDual E := BraidedCategory.hasLeftDualOfHasRightDual
+  obtain ⟨hF⟩ := nonempty_hasLeftDual_pullback f E ⟨inferInstance⟩
+  let _ : HasLeftDual ((pullback f).obj E) := hF
+  exact ⟨BraidedCategory.hasRightDualOfHasLeftDual⟩
 
 end QuasicoherentSheaf
 

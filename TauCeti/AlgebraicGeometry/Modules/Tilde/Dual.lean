@@ -30,8 +30,9 @@ finite projective module is finite locally free
 dualizable
 (`TauCeti.AlgebraicGeometry.QuasicoherentSheaf.nonempty_hasLeftDual_of_isFiniteLocallyFree`).
 An affine scheme `X` is identified with `Spec Γ(X, ⊤)` by `X.isoSpec`; pullback along this
-isomorphism preserves dualizability, as does any pullback to an affine target
-(`TauCeti.AlgebraicGeometry.QuasicoherentSheaf.nonempty_hasLeftDual_pullback`), and finite local
+isomorphism preserves left and right dualizability, as does any pullback to an affine target
+(`TauCeti.AlgebraicGeometry.QuasicoherentSheaf.nonempty_hasLeftDual_pullback` and
+`TauCeti.AlgebraicGeometry.QuasicoherentSheaf.nonempty_hasRightDual_pullback`), and finite local
 freeness can be checked after it
 (`AlgebraicGeometry.Scheme.Modules.isFiniteLocallyFree_iff_forall_pullback`).
 
@@ -42,7 +43,9 @@ freeness can be checked after it
   finite projective `R`-module;
 * `TauCeti.AlgebraicGeometry.QuasicoherentSheaf.nonempty_hasLeftDual_iff_isFiniteLocallyFree`:
   a quasicoherent sheaf on an affine scheme is dualizable if and only if it is finite locally
-  free.
+  free;
+* `TauCeti.AlgebraicGeometry.QuasicoherentSheaf.nonempty_hasRightDual_iff_isFiniteLocallyFree`:
+  the corresponding characterization in terms of right duals.
 -/
 
 public section
@@ -130,6 +133,20 @@ theorem nonempty_hasLeftDual_iff_isFiniteLocallyFree {X : Scheme.{u}} [IsAffine 
   -- type-correct at reducible transparency.
   exact (Scheme.Modules.isFiniteLocallyFree _).prop_of_iso
     (eqToIso (C := (Spec Γ(X, ⊤)).Modules) (pullback_obj_obj X.isoSpec.inv E)) hF
+
+/-- A quasicoherent sheaf on an affine scheme `X` has a right dual in `QuasicoherentSheaf X` if
+and only if it is finite locally free. -/
+theorem nonempty_hasRightDual_iff_isFiniteLocallyFree {X : Scheme.{u}} [IsAffine X]
+    (E : QuasicoherentSheaf X) :
+    Nonempty (HasRightDual E) ↔ Scheme.Modules.isFiniteLocallyFree X E.obj := by
+  rw [← nonempty_hasLeftDual_iff_isFiniteLocallyFree]
+  constructor
+  · rintro ⟨hE⟩
+    let _ : HasRightDual E := hE
+    exact ⟨BraidedCategory.hasLeftDualOfHasRightDual⟩
+  · rintro ⟨hE⟩
+    let _ : HasLeftDual E := hE
+    exact ⟨BraidedCategory.hasRightDualOfHasLeftDual⟩
 
 end QuasicoherentSheaf
 
