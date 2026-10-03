@@ -7,8 +7,8 @@ module
 
 public import TauCeti.NumberTheory.NumberField.Global.Places.Semilocal
 public import TauCeti.NumberTheory.NumberField.Global.Adeles.Extension
-public import Mathlib.Topology.Algebra.Group.OpenMapping
-public import Mathlib.Topology.Baire.LocallyCompactRegular
+import Mathlib.Topology.Algebra.Group.OpenMapping
+import Mathlib.Topology.Baire.LocallyCompactRegular
 
 /-!
 # Base change of infinite adeles
