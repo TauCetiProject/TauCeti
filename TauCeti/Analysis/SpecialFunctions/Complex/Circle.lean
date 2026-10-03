@@ -32,6 +32,9 @@ modules.
 * `TauCeti.expCircle_coe`: its value on the class of a rational number.
 * `TauCeti.expCircle_eq_one_iff`: it is faithful.
 * `TauCeti.expCircle_neg`: its value at `-x` is the complex conjugate of its value at `x`.
+* `TauCeti.norm_expCircle`: its values have norm one.
+* `TauCeti.expCircle_one_div_two` and `TauCeti.expCircle_one_div_four`: `e^{2πi/2} = -1` and
+  `e^{2πi/4} = i`.
 * `TauCeti.isPrimitiveRoot_expCircle`: its value at the class of `1 / n` is a primitive `n`-th
   root of unity.
 * `CharacterModule.sum_expCircle`: the orthogonality relation
@@ -92,6 +95,23 @@ theorem expCircle_neg (x : AddCircle (1 : ℚ)) : expCircle (-x) = conj (expCirc
   induction x using QuotientAddGroup.induction_on with | H r =>
   rw [← QuotientAddGroup.mk_neg, expCircle_coe, expCircle_coe, ← exp_conj]
   simp [map_ofNat]
+
+/-- `expCircle` takes values of norm one. -/
+@[simp]
+theorem norm_expCircle (x : AddCircle (1 : ℚ)) : ‖expCircle x‖ = 1 := by
+  induction x using QuotientAddGroup.induction_on with | H r =>
+  rw [expCircle_coe, show 2 * π * I * r = ((2 * π * r : ℝ) : ℂ) * I by push_cast; ring,
+    norm_exp_ofReal_mul_I]
+
+/-- `e^{2πi/2} = -1`. -/
+theorem expCircle_one_div_two : expCircle ((1 / 2 : ℚ) : AddCircle (1 : ℚ)) = -1 := by
+  rw [expCircle_coe, show 2 * (π : ℂ) * I * ((1 / 2 : ℚ) : ℂ) = π * I by push_cast; ring,
+    exp_pi_mul_I]
+
+/-- `e^{2πi/4} = i`. -/
+theorem expCircle_one_div_four : expCircle ((1 / 4 : ℚ) : AddCircle (1 : ℚ)) = I := by
+  rw [expCircle_coe, show 2 * (π : ℂ) * I * ((1 / 4 : ℚ) : ℂ) = π / 2 * I by push_cast; ring,
+    exp_pi_div_two_mul_I]
 
 /-- `e^{2πi/n}` is a primitive `n`-th root of unity: the value of `expCircle` at the class of
 `1 / n` has multiplicative order `n`. -/
