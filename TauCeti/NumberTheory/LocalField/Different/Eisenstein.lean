@@ -43,7 +43,7 @@ namespace TauCeti
 variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
   [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L]
-  [Module.Finite K L] [Algebra.IsSeparable K L]
+  [Algebra.IsSeparable K L]
 
 /-- For a generator of `L/K` that is a root of an Eisenstein polynomial, the different exponent is
 the least valuation of the terms of its polynomial derivative. -/
@@ -56,6 +56,7 @@ theorem natCast_differentExponent_eq_iInf_of_eisenstein_adjoin_eq_top
       ⨅ i : Fin f.natDegree,
         ramificationIndex K L • IsDiscreteValuationRing.addVal 𝒪[K]
           (f.coeff (i + 1) * (i + 1)) + (i : ℕ) := by
+  have : Module.Finite K L := finite_of_valuativeExtension K L
   have he : ramificationIndex K L = f.natDegree :=
     ramificationIndex_eq_natDegree_of_eisenstein_adjoin_eq_top f hf ξ hroot hgen
   have hdeg : 0 < f.natDegree := he ▸ ramificationIndex_pos (K := K) (L := L)
@@ -97,6 +98,7 @@ theorem
     (he0 : (ramificationIndex K L : L) ≠ 0) :
     differentExponent K L ≤ ramificationIndex K L - 1 +
       natCastValuation L (ramificationIndex K L) he0 := by
+  have : Module.Finite K L := finite_of_valuativeExtension K L
   have hformula := natCast_differentExponent_eq_iInf_of_eisenstein_adjoin_eq_top
     f hf ξ hroot hgen
   let c : Fin f.natDegree → 𝒪[K] := fun i => f.coeff (i + 1) * (i + 1)
