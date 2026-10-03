@@ -168,25 +168,22 @@ private theorem height_lt : ∀ ⦃a b : AffineE6⦄, (a ⟶ b) → height b < h
   | .outer _, .center, e => isEmptyElim e
   | .outer _, .outer _, e => isEmptyElim e
 
-/-- Every vertex of `TauCeti.Quiver.AffineE6` is the source of at most one arrow. -/
-private theorem subsingleton_sigma_hom (a : AffineE6) : Subsingleton (Σ b, a ⟶ b) := by
-  refine ⟨fun ⟨b, e⟩ ⟨b', e'⟩ ↦ ?_⟩
-  obtain rfl : b = b' := by
-    cases a <;> cases b <;> cases b' <;> first
-      | rfl
-      | exact isEmptyElim e
-      | exact isEmptyElim e'
-      | exact congrArg inner (e.down.symm.trans e'.down)
-  rw [Subsingleton.elim e e']
+/-- The arrows out of a vertex of `TauCeti.Quiver.AffineE6` all share their target. -/
+private theorem eq_of_hom_of_hom ⦃a b b' : AffineE6⦄ (e : a ⟶ b) (e' : a ⟶ b') : b = b' := by
+  cases a <;> cases b <;> cases b' <;> first
+    | rfl
+    | exact isEmptyElim e
+    | exact isEmptyElim e'
+    | exact congrArg inner (e.down.symm.trans e'.down)
 
 /-- **The underlying graph of `TauCeti.Quiver.AffineE6` is acyclic**, so it is the tree `E₆~`. -/
 theorem isAcyclic_underlyingGraph : (underlyingGraph AffineE6).IsAcyclic :=
-  isAcyclic_underlyingGraph_of_lt height height_lt subsingleton_sigma_hom
+  isAcyclic_underlyingGraph_of_lt height height_lt eq_of_hom_of_hom
 
 /-- Two vertices of `TauCeti.Quiver.AffineE6` are joined by at most one arrow, counted in both
 directions. -/
 theorem subsingleton_hom_sum (a b : AffineE6) : Subsingleton ((a ⟶ b) ⊕ (b ⟶ a)) :=
-  subsingleton_hom_sum_of_lt height height_lt subsingleton_sigma_hom a b
+  subsingleton_hom_sum_of_lt height height_lt a b
 
 end AffineE6
 

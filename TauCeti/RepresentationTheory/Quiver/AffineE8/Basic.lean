@@ -97,18 +97,18 @@ private def height : AffineE8 → ℕ
 private theorem height_lt ⦃a b : AffineE8⦄ (e : a ⟶ b) : height b < height a := by
   cases e <;> simp [height]
 
-/-- Every vertex of `TauCeti.Quiver.AffineE8` is the source of at most one arrow. -/
-private theorem subsingleton_sigma_hom (a : AffineE8) : Subsingleton (Σ b, a ⟶ b) :=
-  ⟨fun ⟨_, e⟩ ⟨_, e'⟩ ↦ by cases e <;> cases e' <;> rfl⟩
+/-- The arrows out of a vertex of `TauCeti.Quiver.AffineE8` all share their target. -/
+private theorem eq_of_hom_of_hom ⦃a b b' : AffineE8⦄ (e : a ⟶ b) (e' : a ⟶ b') : b = b' := by
+  cases e <;> cases e' <;> rfl
 
 /-- **The underlying graph of `TauCeti.Quiver.AffineE8` is acyclic**, so it is the tree `E₈~`. -/
 theorem isAcyclic_underlyingGraph : (underlyingGraph AffineE8).IsAcyclic :=
-  isAcyclic_underlyingGraph_of_lt height height_lt subsingleton_sigma_hom
+  isAcyclic_underlyingGraph_of_lt height height_lt eq_of_hom_of_hom
 
 /-- Two vertices of `TauCeti.Quiver.AffineE8` are joined by at most one arrow, counted in both
 directions. -/
 theorem subsingleton_hom_sum (a b : AffineE8) : Subsingleton ((a ⟶ b) ⊕ (b ⟶ a)) :=
-  subsingleton_hom_sum_of_lt height height_lt subsingleton_sigma_hom a b
+  subsingleton_hom_sum_of_lt height height_lt a b
 
 end AffineE8
 end TauCeti.Quiver

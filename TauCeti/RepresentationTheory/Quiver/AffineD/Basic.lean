@@ -185,26 +185,23 @@ private theorem height_lt : ∀ ⦃a b : AffineD m⦄, (a ⟶ b) → height b < 
     omega
   | _, .leaf i, e => (not_nonempty_hom_leaf _ i ⟨e⟩).elim
 
-/-- Every vertex of `TauCeti.Quiver.AffineD m` is the source of at most one arrow. -/
-private theorem subsingleton_sigma_hom (a : AffineD m) : Subsingleton (Σ b, a ⟶ b) := by
-  refine ⟨fun ⟨b, e⟩ ⟨b', e'⟩ ↦ ?_⟩
-  obtain rfl : b = b' := by
-    have he : Nonempty (a ⟶ b) := ⟨e⟩
-    have he' : Nonempty (a ⟶ b') := ⟨e'⟩
-    cases a <;> cases b <;> cases b' <;> simp only [not_nonempty_hom_leaf, nonempty_leaf_spine_iff,
-      nonempty_spine_spine_iff] at he he' <;> simp only [spine.injEq]
-    · exact he.trans he'.symm
-    · exact Fin.ext (he.trans he'.symm)
-  rw [Subsingleton.elim e e']
+/-- The arrows out of a vertex of `TauCeti.Quiver.AffineD m` all share their target. -/
+private theorem eq_of_hom_of_hom ⦃a b b' : AffineD m⦄ (e : a ⟶ b) (e' : a ⟶ b') : b = b' := by
+  have he : Nonempty (a ⟶ b) := ⟨e⟩
+  have he' : Nonempty (a ⟶ b') := ⟨e'⟩
+  cases a <;> cases b <;> cases b' <;> simp only [not_nonempty_hom_leaf, nonempty_leaf_spine_iff,
+    nonempty_spine_spine_iff] at he he' <;> simp only [spine.injEq]
+  · exact he.trans he'.symm
+  · exact Fin.ext (he.trans he'.symm)
 
 /-- **The underlying graph of `TauCeti.Quiver.AffineD m` is acyclic**, so it is the tree `D~ₘ₊₄`. -/
 theorem isAcyclic_underlyingGraph : (underlyingGraph (AffineD m)).IsAcyclic :=
-  isAcyclic_underlyingGraph_of_lt height height_lt subsingleton_sigma_hom
+  isAcyclic_underlyingGraph_of_lt height height_lt eq_of_hom_of_hom
 
 /-- Two vertices of `TauCeti.Quiver.AffineD m` are joined by at most one arrow, counted in both
 directions. -/
 theorem subsingleton_hom_sum (a b : AffineD m) : Subsingleton ((a ⟶ b) ⊕ (b ⟶ a)) :=
-  subsingleton_hom_sum_of_lt height height_lt subsingleton_sigma_hom a b
+  subsingleton_hom_sum_of_lt height height_lt a b
 
 end AffineD
 

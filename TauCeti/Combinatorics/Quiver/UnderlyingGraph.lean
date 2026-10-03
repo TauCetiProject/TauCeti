@@ -27,11 +27,12 @@ vertices, whatever their direction (`TauCeti.Quiver.underlyingGraph_congr`).
   joined by an arrow in one direction or the other.
 * `TauCeti.Quiver.underlyingGraph_congr`: two quiver structures joining the same pairs of
   vertices by an arrow, in either direction, have the same underlying graph.
-* `TauCeti.Quiver.isAcyclic_underlyingGraph_of_lt`: a quiver in which every vertex is the source
-  of at most one arrow, and every arrow strictly lowers a height function, has a forest as its
+* `TauCeti.Quiver.isAcyclic_underlyingGraph_of_lt`: a quiver in which the arrows out of each vertex
+  all share their target, and every arrow strictly lowers a height function, has a forest as its
   underlying graph.
-* `TauCeti.Quiver.subsingleton_hom_sum_of_lt`: under the same hypotheses any two vertices are joined
-  by at most one arrow, counted in both directions.
+* `TauCeti.Quiver.subsingleton_hom_sum_of_lt`: a quiver with at most one arrow from any vertex to
+  any other, all of which strictly lower a height function, joins any two vertices by at most one
+  arrow, counted in both directions.
 -/
 
 public section
@@ -74,12 +75,14 @@ private theorem nonempty_hom_of_adj_of_not_lt {α : Type*} [Preorder α] {ht : V
     (hnlt : ¬ht a < ht b) : Nonempty (a ⟶ b) :=
   ((underlyingGraph_adj.mp hab).2.resolve_right fun ⟨e⟩ ↦ hnlt (hlt e))
 
-/-- **The underlying graph of an in-forest is acyclic.** If every vertex of a quiver is the source
-of at most one arrow, and every arrow strictly lowers a height function `ht`, then the underlying
-graph of the quiver has no cycle: at a vertex of a cycle where `ht` is maximal, both edges of the
-cycle would have to be arrows out of that vertex, and they lead to distinct vertices. -/
+/-- **The underlying graph of an in-forest is acyclic.** If the arrows out of each vertex of a
+quiver all share their target, and every arrow strictly lowers a height function `ht`, then the
+underlying graph of the quiver has no cycle: at a vertex of a cycle where `ht` is maximal, both
+edges of the cycle would have to be arrows out of that vertex, and they lead to distinct
+vertices. -/
 theorem isAcyclic_underlyingGraph_of_lt {α : Type*} [Preorder α] (ht : V → α)
-    (hlt : ∀ ⦃a b : V⦄, (a ⟶ b) → ht b < ht a) (hout : ∀ a : V, Subsingleton (Σ b, a ⟶ b)) :
+    (hlt : ∀ ⦃a b : V⦄, (a ⟶ b) → ht b < ht a)
+    (hout : ∀ ⦃a b b' : V⦄, (a ⟶ b) → (a ⟶ b') → b = b') :
     (underlyingGraph V).IsAcyclic := by
   classical
   intro v c hc
@@ -93,17 +96,14 @@ theorem isAcyclic_underlyingGraph_of_lt {α : Type*} [Preorder α] (ht : V → �
     (hmax' _ ((c.rotate u hu).getVert_mem_support 1))
   obtain ⟨e'⟩ := nonempty_hom_of_adj_of_not_lt hlt ((c.rotate u hu).adj_penultimate hnil).symm
     (hmax' _ ((c.rotate u hu).getVert_mem_support _))
-  exact hc'.snd_ne_penultimate (congrArg Sigma.fst (Subsingleton.elim (h := hout u) ⟨_, e⟩ ⟨_, e'⟩))
+  exact hc'.snd_ne_penultimate (hout e e')
 
-/-- **An in-forest has at most one arrow between any two vertices**, counted in both directions:
-under the hypotheses of `TauCeti.Quiver.isAcyclic_underlyingGraph_of_lt`, two arrows in opposite
-directions would raise and lower the height function at once, and two arrows in the same direction
-share their source. -/
+/-- **A quiver whose arrows lower a height function has at most one arrow between any two
+vertices**, counted in both directions, once it has at most one arrow in each direction: two arrows
+in opposite directions would raise and lower the height function `ht` at once. -/
 theorem subsingleton_hom_sum_of_lt {α : Type*} [Preorder α] (ht : V → α)
-    (hlt : ∀ ⦃a b : V⦄, (a ⟶ b) → ht b < ht a) (hout : ∀ a : V, Subsingleton (Σ b, a ⟶ b))
+    (hlt : ∀ ⦃a b : V⦄, (a ⟶ b) → ht b < ht a) [∀ a b : V, Subsingleton (a ⟶ b)]
     (a b : V) : Subsingleton ((a ⟶ b) ⊕ (b ⟶ a)) := by
-  have hsub (a b : V) : Subsingleton (a ⟶ b) :=
-    ⟨fun e e' ↦ eq_of_heq (Sigma.ext_iff.mp (Subsingleton.elim (h := hout a) ⟨b, e⟩ ⟨b, e'⟩)).2⟩
   refine ⟨?_⟩
   rintro (e | e) (e' | e')
   · exact congrArg _ (Subsingleton.elim e e')
