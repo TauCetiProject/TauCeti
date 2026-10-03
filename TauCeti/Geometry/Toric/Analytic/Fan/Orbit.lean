@@ -210,6 +210,24 @@ theorem preimage_analyticAffineChartι_analyticConeOrbit_of_not_le {τ σ : Φ.c
   have hF := (Φ.analyticAffineChartι_mem_analyticConeOrbit_iff hΦ hxF).1 hx
   exact Subtype.coe_le_coe.1 (hF ▸ F.toPointedCone_le)
 
+/-- A point in the orbit of `σ` belongs to the affine chart of `τ` exactly when `σ ≤ τ`. -/
+theorem mem_range_analyticAffineChartι_iff {σ τ : Φ.cones} {x : Φ.analyticRealization hΦ}
+    (hx : x ∈ Φ.analyticConeOrbit hΦ σ) :
+    x ∈ range (Φ.analyticAffineChartι hΦ τ) ↔ σ ≤ τ := by
+  constructor
+  · rintro ⟨y, rfl⟩
+    obtain ⟨F, hy, -⟩ := existsUnique_face_mem_affineConeOrbit Φ.lattice
+      ((isRegular_iff.mp hΦ) τ.1 τ.2) y
+    have hF := (Φ.analyticAffineChartι_mem_analyticConeOrbit_iff hΦ hy).1 hx
+    exact Subtype.coe_le_coe.1 (hF ▸ F.toPointedCone_le)
+  · intro h
+    rw [Φ.analyticConeOrbit_eq_orbit hΦ] at hx
+    obtain ⟨t, rfl⟩ := hx
+    refine ⟨t • distinguishedPoint Φ.lattice
+      (⟨σ.1, Φ.isFaceOf_of_le τ.2 σ.2 h⟩ : τ.1.Face), ?_⟩
+    exact (Φ.smul_analyticAffineChartι hΦ t τ _).symm.trans
+      (congrArg (t • ·) (Φ.analyticAffineChartι_distinguishedPoint hΦ h))
+
 /-! ### The orbit–cone correspondence -/
 
 /-- The orbits of the cones partition the analytic realization: every point lies in the orbit of a
