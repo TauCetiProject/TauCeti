@@ -933,17 +933,20 @@ noncomputable def liftAlgHom : pathAlgebra k Q →ₐ[k] B :=
   AlgHom.ofLinearMap (liftLinear k F) (liftLinear_one k F hone)
     (map_mul (liftNonUnitalAlgHom k F hcomp hzero))
 
-/-- Forgetting the unit condition on the unital lift gives the non-unital lift. -/
-@[simp]
-theorem coe_liftAlgHom :
-    (liftAlgHom k F hcomp hzero hone : pathAlgebra k Q →ₙₐ[k] B) =
-      liftNonUnitalAlgHom k F hcomp hzero := (rfl)
-
 /-- **The lift extends the assignment**: a basis path goes to the element it was assigned. -/
 @[simp]
 theorem liftAlgHom_ofPath (x : Quiver.TotalPath Q) :
     liftAlgHom k F hcomp hzero hone (ofPath x) = F x :=
   liftLinear_ofPath k F x
+
+/-- Forgetting the unit condition on the unital lift gives the non-unital lift. -/
+@[simp]
+theorem coe_liftAlgHom :
+    (liftAlgHom k F hcomp hzero hone : pathAlgebra k Q →ₙₐ[k] B) =
+      liftNonUnitalAlgHom k F hcomp hzero :=
+  nonUnitalAlgHom_ext k fun x ↦
+    (liftAlgHom_ofPath k F hcomp hzero hone x).trans
+      (liftNonUnitalAlgHom_ofPath k F hcomp hzero x).symm
 
 /-- The lift is `k`-linear, so a scaled basis path scales the element it was assigned. -/
 @[simp]
