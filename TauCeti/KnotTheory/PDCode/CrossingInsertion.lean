@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.PDCode.Kauffman
-import Mathlib.Tactic.LinearCombination
 import TauCeti.GroupTheory.Perm.SumCongr
 
 /-!
@@ -197,45 +196,20 @@ private theorem sumCongr_oppositeCrossingSlot_mul_crossingMatching (C : Perm α)
 
 end Values
 
-/-- Splicing all four adjoined fixed points into the orbits of `σ`, at four old points, leaves as
-many orbits as `σ` has. -/
-private theorem orbitCount_splice [Finite α] (σ : Perm α) (x₀ x₁ x₂ x₃ : α) {i₀ i₁ i₂ i₃ : Fin 4}
-    (h₀₁ : i₀ ≠ i₁) (h₀₂ : i₀ ≠ i₂) (h₀₃ : i₀ ≠ i₃) (h₁₂ : i₁ ≠ i₂) (h₁₃ : i₁ ≠ i₃)
-    (h₂₃ : i₂ ≠ i₃) :
-    orbitCount (Perm.sumCongr σ 1 * swap (.inl x₀) (.inr i₀) * swap (.inl x₁) (.inr i₁) *
-      swap (.inl x₂) (.inr i₂) * swap (.inl x₃) (.inr i₃)) = orbitCount σ := by
-  have k₀ := orbitCount_mul_swap_add_one (τ := Perm.sumCongr σ (1 : Perm (Fin 4)))
-    (p := .inr i₀) (a := .inl x₀) (by simp) (by simp)
-  have k₁ := orbitCount_mul_swap_add_one
-    (τ := Perm.sumCongr σ (1 : Perm (Fin 4)) * swap (.inl x₀) (.inr i₀))
-    (p := .inr i₁) (a := .inl x₁) (by simp [swap_apply_of_ne_of_ne, Ne.symm h₀₁]) (by simp)
-  have k₂ := orbitCount_mul_swap_add_one
-    (τ := Perm.sumCongr σ (1 : Perm (Fin 4)) * swap (.inl x₀) (.inr i₀) *
-      swap (.inl x₁) (.inr i₁))
-    (p := .inr i₂) (a := .inl x₂)
-    (by simp [swap_apply_of_ne_of_ne, Ne.symm h₀₂, Ne.symm h₁₂]) (by simp)
-  have k₃ := orbitCount_mul_swap_add_one
-    (τ := Perm.sumCongr σ (1 : Perm (Fin 4)) * swap (.inl x₀) (.inr i₀) *
-      swap (.inl x₁) (.inr i₁) * swap (.inl x₂) (.inr i₂))
-    (p := .inr i₃) (a := .inl x₃)
-    (by simp [swap_apply_of_ne_of_ne, Ne.symm h₀₃, Ne.symm h₁₃, Ne.symm h₂₃]) (by simp)
-  have k : orbitCount (Perm.sumCongr σ (1 : Perm (Fin 4))) = orbitCount σ + 4 := by
-    rw [Perm.orbitCount_sumCongr, orbitCount_one, Nat.card_eq_fintype_card, Fintype.card_fin]
-  omega
-
-
 end Splice
 
 section Reconnect
 
 /-- **Reconnecting two arcs.** Cut the arc of `D` ending at the half-edge `p` and the arc ending
 at `q`, and join `p` to `q` and the other end `D.edgePair.val p` of the first arc to the other end
-`D.edgePair.val q` of the second. The crossings, their over-strands and the crossing-free circles
-are unchanged. This is how a smoothing of a crossing added by `TauCeti.PDCode.insertCrossing`
-reconnects the cut arcs; it is meaningful when `q ≠ p`. -/
+`D.edgePair.val q` of the second (`TauCeti.PerfectMatching.reconnect`). The crossings, their
+over-strands and the crossing-free circles are unchanged. This is how a smoothing of a crossing
+added by `TauCeti.PDCode.insertCrossing` reconnects the cut arcs. The two arcs are distinct when
+`q ≠ p` and `q ≠ D.edgePair.val p`; when `q = D.edgePair.val p` both choices name the same arc and
+the code is left unchanged. -/
 def reconnect (D : PDCode n) (p q : Fin (4 * n)) : PDCode n where
   halfEdge := D.halfEdge
-  edgePair := PerfectMatching.congr (swap (D.edgePair.val p) q) D.edgePair
+  edgePair := D.edgePair.reconnect p q
   crossinglessComponentCount := D.crossinglessComponentCount
   overPair := D.overPair
 
@@ -251,11 +225,14 @@ variable (D : PDCode n) (p q : Fin (4 * n))
 @[simp] theorem reconnect_crossinglessComponentCount :
     (D.reconnect p q).crossinglessComponentCount = D.crossinglessComponentCount := (rfl)
 
+/-- Reconnecting arcs of the code reconnects its perfect matching of half-edges. -/
+@[simp] theorem reconnect_edgePair : (D.reconnect p q).edgePair = D.edgePair.reconnect p q := (rfl)
+
 /-- The arcs of the reconnected code are the old arcs conjugated by the transposition of
 `D.edgePair.val p` with `q`. -/
 theorem reconnect_edgePair_val :
     (D.reconnect p q).edgePair.val = (swap (D.edgePair.val p) q).permCongr D.edgePair.val :=
-  PerfectMatching.congr_val _ _
+  PerfectMatching.reconnect_val _ _ _
 
 /-- Reconnecting arcs does not change how the crossings are smoothed. -/
 @[simp] theorem smoothingTurn_reconnect (c : Fin n → Bool) :
@@ -276,44 +253,6 @@ theorem reconnect_edgePair_val :
   · simp [reconnect]
   · funext i
     simp [reconnect]
-
-variable {D p q} (hqp : q ≠ p)
-include hqp
-
-/-- After reconnecting, `p` is joined to `q`. -/
-@[simp] theorem reconnect_edgePair_self : (D.reconnect p q).edgePair.val p = q := by
-  have h₁ := D.edgePair.apply_ne p
-  simp [reconnect_edgePair_val, swap_apply_def, h₁.symm, hqp.symm]
-
-/-- After reconnecting, `q` is joined to `p`. -/
-@[simp] theorem reconnect_edgePair_right : (D.reconnect p q).edgePair.val q = p := by
-  have h₁ := D.edgePair.apply_ne p
-  simp [reconnect_edgePair_val, swap_apply_def, h₁.symm, hqp.symm]
-
-/-- After reconnecting, the other end of the first arc is joined to the other end of the
-second. -/
-@[simp] theorem reconnect_edgePair_edgePair_self :
-    (D.reconnect p q).edgePair.val (D.edgePair.val p) = D.edgePair.val q := by
-  have h₂ := D.edgePair.apply_ne q
-  have h₄ : D.edgePair.val q ≠ D.edgePair.val p := fun h => hqp (D.edgePair.val.injective h)
-  simp [reconnect_edgePair_val, swap_apply_def, h₂, h₄]
-
-/-- After reconnecting, the other end of the second arc is joined to the other end of the
-first. -/
-@[simp] theorem reconnect_edgePair_edgePair_right :
-    (D.reconnect p q).edgePair.val (D.edgePair.val q) = D.edgePair.val p := by
-  have h₂ := D.edgePair.apply_ne q
-  have h₄ : D.edgePair.val q ≠ D.edgePair.val p := fun h => hqp (D.edgePair.val.injective h)
-  simp [reconnect_edgePair_val, swap_apply_def, h₂, h₄]
-
-omit hqp in
-/-- Reconnecting keeps every arc that does not end at `p` or `q`. -/
-theorem reconnect_edgePair_of_ne {x : Fin (4 * n)} (hxp : x ≠ p) (hxq : x ≠ q)
-    (hxe : x ≠ D.edgePair.val p) (hxe' : x ≠ D.edgePair.val q) :
-    (D.reconnect p q).edgePair.val x = D.edgePair.val x := by
-  have h₁ : D.edgePair.val x ≠ D.edgePair.val p := fun h => hxp (D.edgePair.val.injective h)
-  have h₂ : D.edgePair.val x ≠ q := fun h => hxe' (by rw [← h, D.edgePair.apply_apply])
-  simp [reconnect_edgePair_val, swap_apply_def, hxe, hxq, h₁, h₂]
 
 end Reconnect
 
@@ -537,14 +476,14 @@ the new crossing: `D.reconnect p q` when that choice is `b`, and
   by_cases hs : s (Fin.last n) = b
   · simp only [hs, ↓reduceIte, beq_self_eq_true]
     rw [sumCongr_slotSmoothing_true_mul_crossingMatching hqp hqe,
-      orbitCount_splice _ _ _ _ _ (by decide) (by decide) (by decide) (by decide) (by decide)
-        (by decide)]
+      Perm.orbitCount_sumCongr_one_mul_swap_mul_swap_mul_swap_mul_swap _ _ _ _ _ (by decide)
+        (by decide) (by decide) (by decide) (by decide) (by decide)]
   · have hbne : (s (Fin.last n) == b) = false := by simpa using hs
     rw [hbne]
     simp only [hs, ↓reduceIte]
     rw [sumCongr_slotSmoothing_false_mul_crossingMatching hqp hqe,
-      orbitCount_splice _ _ _ _ _ (by decide) (by decide) (by decide) (by decide) (by decide)
-        (by decide)]
+      Perm.orbitCount_sumCongr_one_mul_swap_mul_swap_mul_swap_mul_swap _ _ _ _ _ (by decide)
+        (by decide) (by decide) (by decide) (by decide) (by decide)]
 
 /-- **The skein relation of the Kauffman bracket.** The bracket of a code with a crossing
 inserted is `a` times the bracket of the reconnection by the `A`-smoothing of the new crossing plus
@@ -587,8 +526,8 @@ new crossing. -/
     componentPerm_def, crossingTurn_insertCrossing, insertCrossing_edgePair_val,
     ← Equiv.permCongr_mul, Equiv.orbitCount_permCongr,
     sumCongr_oppositeCrossingSlot_mul_crossingMatching hqp hqe,
-    orbitCount_splice _ _ _ _ _ (by decide) (by decide) (by decide) (by decide) (by decide)
-      (by decide)]
+    Perm.orbitCount_sumCongr_one_mul_swap_mul_swap_mul_swap_mul_swap _ _ _ _ _ (by decide)
+      (by decide) (by decide) (by decide) (by decide) (by decide)]
 
 end Insert
 

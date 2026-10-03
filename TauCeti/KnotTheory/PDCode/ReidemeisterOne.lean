@@ -191,29 +191,6 @@ private theorem orbitCount_splice_two [Finite α] (σ : Perm α) (x y : α) :
   have h₀ := orbitCount_sumCongr_one σ
   omega
 
-/-- Splicing all four adjoined fixed points into the orbits of `σ` leaves as many orbits as `σ`
-has. -/
-private theorem orbitCount_splice_four [Finite α] (σ : Perm α) (x y : α) {i j k l : Fin 4}
-    (hij : i ≠ j) (hik : i ≠ k) (hil : i ≠ l) (hjk : j ≠ k) (hjl : j ≠ l) (hkl : k ≠ l) :
-    orbitCount (Perm.sumCongr σ 1 * swap (.inl x) (.inr i) * swap (.inl x) (.inr j) *
-      swap (.inl y) (.inr k) * swap (.inl y) (.inr l)) = orbitCount σ := by
-  have h₁ := orbitCount_mul_swap_add_one (τ := Perm.sumCongr σ (1 : Perm (Fin 4)))
-    (p := .inr i) (a := .inl x) (by simp) (by simp)
-  have h₂ := orbitCount_mul_swap_add_one
-    (τ := Perm.sumCongr σ (1 : Perm (Fin 4)) * swap (.inl x) (.inr i))
-    (p := .inr j) (a := .inl x) (by simp [swap_apply_of_ne_of_ne, Ne.symm hij]) (by simp)
-  have h₃ := orbitCount_mul_swap_add_one
-    (τ := Perm.sumCongr σ (1 : Perm (Fin 4)) * swap (.inl x) (.inr i) * swap (.inl x) (.inr j))
-    (p := .inr k) (a := .inl y)
-    (by simp [swap_apply_of_ne_of_ne, Ne.symm hik, Ne.symm hjk]) (by simp)
-  have h₄ := orbitCount_mul_swap_add_one
-    (τ := Perm.sumCongr σ (1 : Perm (Fin 4)) * swap (.inl x) (.inr i) * swap (.inl x) (.inr j) *
-      swap (.inl y) (.inr k))
-    (p := .inr l) (a := .inl y)
-    (by simp [swap_apply_of_ne_of_ne, Ne.symm hil, Ne.symm hjl, Ne.symm hkl]) (by simp)
-  have h₀ := orbitCount_sumCongr_one σ
-  omega
-
 end Kink
 
 /-- The arcs of a code with a kink added at `h`, as a perfect matching of the old half-edges and
@@ -404,8 +381,8 @@ private theorem orbitCount_statePerm_reidemeisterOne (s : Fin (n + 1) → Bool) 
     rw [hbne]
     simp only [hs, ↓reduceIte, add_zero]
     rw [sumCongr_slotSmoothing_false_mul_kinkPerm he hne,
-      orbitCount_splice_four _ _ _ (by decide) (by decide) (by decide) (by decide) (by decide)
-        (by decide)]
+      Perm.orbitCount_sumCongr_one_mul_swap_mul_swap_mul_swap_mul_swap _ _ _ _ _ (by decide)
+        (by decide) (by decide) (by decide) (by decide) (by decide)]
 
 /-- **Circles after the first Reidemeister move.** A state of the new code leaves one circle more
 than its restriction to the old crossings when its choice at the new crossing is `b`, the
@@ -426,8 +403,8 @@ smoothing that cuts off the loop of the kink, and the same number of circles oth
     componentPerm_def, crossingTurn_reidemeisterOne, reidemeisterOne_edgePair_val,
     ← Equiv.permCongr_mul, Equiv.orbitCount_permCongr,
     sumCongr_oppositeCrossingSlot_mul_kinkPerm he hne,
-    orbitCount_splice_four _ _ _ (by decide) (by decide) (by decide) (by decide) (by decide)
-      (by decide)]
+    Perm.orbitCount_sumCongr_one_mul_swap_mul_swap_mul_swap_mul_swap _ _ _ _ _ (by decide)
+      (by decide) (by decide) (by decide) (by decide) (by decide)]
 
 /-- **The Kauffman bracket under the first Reidemeister move.** Adding a kink with over-pair
 indicator `b` multiplies the bracket by `-a ^ 3` if `b = true` and by `-a⁻¹ ^ 3` if `b = false`. -/
