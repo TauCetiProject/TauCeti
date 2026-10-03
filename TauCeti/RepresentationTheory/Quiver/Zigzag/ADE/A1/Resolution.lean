@@ -98,13 +98,6 @@ noncomputable def zigzagA1FreeIso :
     (zigzagA1Restriction k).obj (dualNumberFree k) ≅ zigzagA1Free k :=
   ModuleCat.restrictScalarsIsoOfEquiv (zigzagAlgebraEquivA1 k).toRingEquiv
 
-/-- The forward map in `TauCeti.zigzagA1FreeIso` applies the inverse algebra comparison. -/
-@[simp]
-theorem zigzagA1FreeIso_hom_apply (x : DualNumber k) :
-    (zigzagA1FreeIso k).hom.hom x =
-      (zigzagAlgebraEquivA1 k).toRingEquiv.symm x :=
-  rfl
-
 /-- Right multiplication by the volume element on the regular one-vertex zigzag module. -/
 @[expose]
 noncomputable def zigzagA1VolumeMul : zigzagA1Free k ⟶ zigzagA1Free k :=
