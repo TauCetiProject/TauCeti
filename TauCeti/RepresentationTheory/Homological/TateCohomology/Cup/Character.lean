@@ -15,28 +15,28 @@ import TauCeti.RepresentationTheory.Homological.TateCohomology.Connecting.LowDeg
 # The low-degree Tate pairing with a character class
 
 For a finite group `G` of order `n`, the cup product pairs its additive abelianization,
-identified with `Ĥ⁻²(G, ℤ)` (`TauCeti.TateCohomology.HNegTwoAddEquivAbelianization`), with the
-connecting class `δχ ∈ Ĥ²(G, ℤ)` of a character `χ : Gᵃᵇ → ℚ/ℤ`, landing in
-`Ĥ⁰(G, ℤ) = ℤ/nℤ`. This file computes the pairing: for `σ ∈ Gᵃᵇ`, the product `σ ∪ δχ` is the
+identified with `Ĥ⁻²(G, ℤ)` (`TauCeti.TateCohomology.HNegTwoAddEquivAbelianization`), with the
+connecting class `δχ ∈ Ĥ²(G, ℤ)` of a character `χ : Gᵃᵇ → ℚ/ℤ`, landing in
+`Ĥ⁰(G, ℤ) = ℤ/nℤ`. This file computes the pairing: for `σ ∈ Gᵃᵇ`, the product `σ ∪ δχ` is the
 class of `-k`, for any integer `k` with `k / n ≡ χ(σ) (mod 1)`
 (`TauCeti.TateCohomology.map_leftUnitor_cup_characterConnectingClass`). In other words, the
 pairing `Gᵃᵇ × Hom(Gᵃᵇ, ℚ/ℤ) → (1/n)ℤ/ℤ` that it induces is `(σ, χ) ↦ -χ(σ)`.
 
 The computation has three steps.
 
-* For `x ∈ Ĥ⁻²(G, ℤ)`, the class `x ∪ δχ` is the Tate connecting map of the sequence
+* For `x ∈ Ĥ⁻²(G, ℤ)`, the class `x ∪ δχ` is the Tate connecting map of the sequence
   `0 → ℤ → ℚ → ℚ/ℤ → 0`, tensored on the left with `ℤ`, applied to the degree `(-2, 1)` product
   `x ∪ χ` with the degree-one class of `χ`. The sign is positive because `x` has even degree
   (`TauCeti.TateCohomology.cup_characterConnectingClass_eq_tateδ`).
 * The degree `(-2, 1)` product is evaluation of the character up to sign: `σ ∪ χ` is the class in
-  `Ĥ⁻¹(G, ℤ ⊗ ℚ/ℤ)` of `1 ⊗ (-χ(σ))` (`TauCeti.TateCohomology.cup_character_eq_HNegOneπ`). The
+  `Ĥ⁻¹(G, ℤ ⊗ ℚ/ℤ)` of `1 ⊗ (-χ(σ))` (`TauCeti.TateCohomology.cup_character_eq_HNegOneπ`). The
   product is defined by shifting `χ` to the invariant `g ↦ χ(g)` of the first upward dimension
   shift of `ℚ/ℤ` (`TauCeti.TateCohomology.characterDimensionShift`), so `σ ∪ χ` is the connecting
   map of the upward shifting sequence applied to the image of `σ`. Through first homology, the
   class of `σ = g` is the cycle `[g] ⊗ (1 ⊗ (h ↦ χ(h)))`, whose boundary, computed with the
   homological differential `[g] ⊗ m ↦ g⁻¹ • m - m`, is the constant function `h ↦ -χ(g)`. This is
   where the sign comes from.
-* The connecting map `Ĥ⁻¹(G, ℤ ⊗ ℚ/ℤ) → Ĥ⁰(G, ℤ ⊗ ℤ)` lifts `1 ⊗ (-χ(σ)) = 1 ⊗ (-k/n)` to
+* The connecting map `Ĥ⁻¹(G, ℤ ⊗ ℚ/ℤ) → Ĥ⁰(G, ℤ ⊗ ℤ)` lifts `1 ⊗ (-χ(σ)) = 1 ⊗ (-k/n)` to
   `ℤ ⊗ ℚ` and takes its norm, which is `1 ⊗ (-k)`.
 
 This is the low-degree normalization through which a character detects the Artin map of a class
@@ -47,9 +47,9 @@ formation, whose reciprocity isomorphism is cup product with the fundamental cla
 * `TauCeti.TateCohomology.cup_characterConnectingClass_eq_tateδ`: `x ∪ δχ` is the tensored
   connecting map applied to the degree `(-2, 1)` product `x ∪ χ`.
 * `TauCeti.TateCohomology.cup_character_eq_HNegOneπ`: for `σ ∈ Gᵃᵇ`, the degree `(-2, 1)` product
-  `σ ∪ χ` is the class of `1 ⊗ (-χ(σ))` in `Ĥ⁻¹(G, ℤ ⊗ ℚ/ℤ)`.
+  `σ ∪ χ` is the class of `1 ⊗ (-χ(σ))` in `Ĥ⁻¹(G, ℤ ⊗ ℚ/ℤ)`.
 * `TauCeti.TateCohomology.map_leftUnitor_cup_characterConnectingClass`: for `σ ∈ Gᵃᵇ`, the
-  product `σ ∪ δχ ∈ Ĥ⁰(G, ℤ)` is `-k` times the class of `1` whenever `k / |G| ≡ χ(σ) (mod 1)`.
+  product `σ ∪ δχ ∈ Ĥ⁰(G, ℤ)` is `-k` times the class of `1` whenever `k / |G| ≡ χ(σ) (mod 1)`.
 
 ## References
 
@@ -168,8 +168,8 @@ private theorem δ₀_character
     exact congrArg _ (coindBot_ρ_inv_sub_character G g χ).symm
 
 /-- **The degree `(-2, 1)` cup product with a character is evaluation, up to sign.** For
-`σ ∈ Gᵃᵇ = Ĥ⁻²(G, ℤ)` and a character `χ : Gᵃᵇ → ℚ/ℤ`, read as a class in `Ĥ¹(G, ℚ/ℤ)`, the
-product `σ ∪ χ` is the class of the norm-zero element `1 ⊗ (-χ(σ))` in `Ĥ⁻¹(G, ℤ ⊗ ℚ/ℤ)`. -/
+`σ ∈ Gᵃᵇ = Ĥ⁻²(G, ℤ)` and a character `χ : Gᵃᵇ → ℚ/ℤ`, read as a class in `Ĥ¹(G, ℚ/ℤ)`, the
+product `σ ∪ χ` is the class of the norm-zero element `1 ⊗ (-χ(σ))` in `Ĥ⁻¹(G, ℤ ⊗ ℚ/ℤ)`. -/
 theorem cup_character_eq_HNegOneπ (σ : Additive (Abelianization G))
     (χ : Additive (Abelianization G) →+ AddCircle (1 : ℚ)) :
     cup (Rep.trivial ℤ G ℤ) (Rep.ratAddCircleShortComplex G).X₃ (-2) 1 (-1) (by omega)
@@ -190,7 +190,7 @@ theorem cup_character_eq_HNegOneπ (σ : Additive (Abelianization G))
   rw [cup_zero_right]
   erw [cupH0_H0π]
   rw [Int.negOnePow_even _ (by decide), one_smul]
-  -- Compare both sides in `H₀(G, ℤ ⊗ ℚ/ℤ)`, into which `Ĥ⁻¹` injects.
+  -- Compare both sides in `H₀(G, ℤ ⊗ ℚ/ℤ)`, into which `Ĥ⁻¹` injects.
   apply (ModuleCat.mono_iff_injective (toGroupHomology _ 0)).mp inferInstance
   rw [← ConcreteCategory.comp_apply (HNegOneπ _), HNegOneπ_comp_toGroupHomology]
   have hS := dimensionShiftUpSES_tensorLeft_shortExact (Rep.ratAddCircleShortComplex G).X₃
@@ -209,9 +209,9 @@ theorem cup_character_eq_HNegOneπ (σ : Additive (Abelianization G))
   rw [H1π_comp_map_apply]
   exact δ₀_character G hS g χ
 
-/-- **The Tate pairing of `Gᵃᵇ` with a character class.** For `σ ∈ Gᵃᵇ = Ĥ⁻²(G, ℤ)`, a character
+/-- **The Tate pairing of `Gᵃᵇ` with a character class.** For `σ ∈ Gᵃᵇ = Ĥ⁻²(G, ℤ)`, a character
 `χ : Gᵃᵇ → ℚ/ℤ` and an integer `k` with `k / |G| ≡ χ(σ) (mod 1)`, the cup product `σ ∪ δχ`,
-read in `Ĥ⁰(G, ℤ)` through the left unitor, is `-k` times the class of `1`. -/
+read in `Ĥ⁰(G, ℤ)` through the left unitor, is `-k` times the class of `1`. -/
 theorem map_leftUnitor_cup_characterConnectingClass (σ : Additive (Abelianization G))
     (χ : Additive (Abelianization G) →+ AddCircle (1 : ℚ)) (k : ℤ)
     (hk : (((k : ℚ) / Nat.card G : ℚ) : AddCircle (1 : ℚ)) = χ σ) :
