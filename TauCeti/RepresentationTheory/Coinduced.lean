@@ -10,7 +10,7 @@ public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
 public import Mathlib.Algebra.Homology.ShortComplex.ExactFunctor
 public import Mathlib.Algebra.MonoidAlgebra.MapDomain
 public import TauCeti.RepresentationTheory.AsModule
-public import TauCeti.RepresentationTheory.Rep.OfMulAction
+public import TauCeti.RepresentationTheory.OfMulAction
 
 /-!
 # Coinduction: exactness and coextension of scalars
@@ -92,9 +92,12 @@ theorem coind'_asAlgebraHom_hom_apply (A : Rep k H) (r : k[G])
     ((coind' φ A).asAlgebraHom r f).hom a = f.hom (a * r) := by
   induction r using MonoidAlgebra.induction_on with
   | of g =>
-    rw [MonoidAlgebra.of_apply, asAlgebraHom_single_one,
-      ← Rep.leftRegularHomEquiv_symm_apply]
-    rfl
+    rw [MonoidAlgebra.of_apply, asAlgebraHom_single_one, coind'_apply_apply,
+      Rep.hom_comp, IntertwiningMap.comp_apply]
+    apply congrArg f.hom
+    rw [← IntertwiningMap.toLinearMap_apply, Rep.resMap_hom_toLinearMap,
+      IntertwiningMap.toLinearMap_apply, LinearEquiv.coe_coe,
+      Rep.leftRegularHomEquiv_symm_apply]
   | add r r' hr hr' => simp [Rep.add_hom, hr, hr', mul_add]
   | smul c r hr =>
     simp only [map_smul, LinearMap.smul_apply, Rep.smul_hom, IntertwiningMap.coe_smul,
