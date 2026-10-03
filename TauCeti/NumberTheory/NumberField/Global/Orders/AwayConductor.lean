@@ -19,13 +19,10 @@ coprime to `𝔣` and the nonzero ideals of `𝓞 K` coprime to `𝔣`. On the m
 carrier is the integral prime-to monoid `integralIdealsPrimeTo` of the conductor viewed as a
 modulus, `NumberFieldOrder.conductorModulus`, the same monoid the ray class group is built on.
 
-Every nonzero ideal `I` of `O` coprime to `𝔣` is invertible, even though `O` need not be a
-Dedekind domain. If `J'` is the inverse of the extension `I 𝓞 K` as a fractional ideal of the
-Dedekind domain `𝓞 K`, then `O + 𝔣 J'` is an inverse of `I`: indeed
-`I (O + 𝔣 J') = I + 𝔣 (I 𝓞 K) J' = I + 𝔣 = O`, using that `𝔣` is an ideal of `𝓞 K` contained in
-`O`. These ideals therefore map to the group of invertible fractional ideals of `O`, the carrier
-of the Picard group `Pic O`; these are the order-side ideals used to describe `Pic O` by ideals
-prime to the conductor.
+Every nonzero ideal of `O` coprime to `𝔣` is invertible, even though `O` need not be a Dedekind
+domain. These ideals therefore map injectively to the group of invertible fractional ideals of
+`O`, whose classes modulo principal ideals form the Picard group `Pic O` (via `mkPic`); they are
+the order-side ideals used to describe `Pic O` by ideals prime to the conductor.
 
 ## Main definitions
 
@@ -264,9 +261,13 @@ theorem isUnit_coeIdeal_of_mem_integralIdealsAwayConductor {I : Ideal O.toRingOf
   -- `I + 𝔣 = O`, since `I` is coprime to the conductor and `𝔣 ⊆ O`.
   have hif : i ⊔ f = one := restrictScalars_coeIdeal_sup_conductor hI.2
   -- The `ℤ`-submodule `O + 𝔣 M⁻¹` is an inverse of `I`; it lies in `I⁻¹`, so `I * I⁻¹ = O`.
-  have hinv : i * (one ⊔ f * j) = one := by
-    rw [Submodule.mul_sup, hi, ← hbf, ← mul_assoc, ← mul_assoc, restrictScalars_coeIdeal_mul_one,
-      mul_right_comm, hMj, hbf, hif]
+  have hinv : i * (one ⊔ f * j) = one :=
+    calc i * (one ⊔ f * j) = i ⊔ (i * b) * f * j := by
+          rw [Submodule.mul_sup, hi, mul_assoc i b f, hbf, mul_assoc]
+      _ = i ⊔ (M : Submodule (𝓞 K) K).restrictScalars ℤ * j * f := by
+          rw [restrictScalars_coeIdeal_mul_one, mul_right_comm]
+      _ = i ⊔ f := by rw [hMj, hbf]
+      _ = one := hif
   have hIfr : Ifr ≠ 0 := FractionalIdeal.coeIdeal_ne_zero.mpr <|
     (Ideal.map_eq_bot_iff_of_injective O.toRingOfIntegersEquiv.injective).not.mpr hI.1
   have hle : one ⊔ f * j ≤ ((Ifr⁻¹ : FractionalIdeal (nonZeroDivisors O.toSubalgebra) K) :
