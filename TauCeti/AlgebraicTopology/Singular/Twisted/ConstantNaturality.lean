@@ -66,7 +66,7 @@ lemma twistedChainComplexConstantIso_hom_pair_naturality (f : P ⟶ Q) :
       (reassoc_of% LocalCoefficientSystem.twistedChainComplexConstantIso_hom_space_naturality
         (Hom.fst f) M) (Q.singularChainComplexπ M)
     _ = _ := by
-      rw [singularChainComplexπ_pair_naturality]
+      erw [TauCeti.singularChainComplexFunctor_obj_map, singularChainComplexπ_pair_naturality]
       erw [Category.assoc]
       rfl
 

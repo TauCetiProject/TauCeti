@@ -149,13 +149,12 @@ noncomputable abbrev singularChainComplexπ :
   (toSSetPair.obj P).chainComplexπ R
 
 /-- The quotient map from ambient to relative singular chains is natural in maps of pairs. -/
-@[reassoc (attr := simp)]
+@[simp, reassoc]
 lemma singularChainComplexπ_pair_naturality
     {P Q : TopPair.{w}} (f : P ⟶ Q) (M : C) :
-    ((AlgebraicTopology.singularChainComplexFunctor C).obj M).map (TopPair.Hom.fst f) ≫
+    SSet.chainComplexMap (TopCat.toSSet.map (TopPair.Hom.fst f)) M ≫
         Q.singularChainComplexπ M =
       P.singularChainComplexπ M ≫ TopPair.singularChainComplexMap f M := by
-  rw [TauCeti.singularChainComplexFunctor_obj_map]
   have h : SSet.chainComplexMap (TopPair.toSSetPair.map f).right M ≫
       Q.singularChainComplexπ M =
         P.singularChainComplexπ M ≫ TopPair.singularChainComplexMap f M :=
