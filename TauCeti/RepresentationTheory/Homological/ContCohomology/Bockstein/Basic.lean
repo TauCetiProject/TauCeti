@@ -178,6 +178,7 @@ theorem bockstein1_eq_cupFp_self (x : cohomFp 2 G 1) :
     cohomFpAddEquivH2_cupFp]
 
 /-- The degree-one Bockstein commutes with pullback along a continuous group homomorphism. -/
+@[simp]
 theorem bockstein1_map {H : Type u} [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
     [LocallyCompactSpace H] (φ : H →ₜ* G) (x : cohomFp 2 G 1) :
     bockstein1 H (cohomFpMap 2 φ 1 x) = cohomFpMap 2 φ 2 (bockstein1 G x) := by
