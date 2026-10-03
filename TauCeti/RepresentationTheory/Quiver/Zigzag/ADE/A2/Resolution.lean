@@ -36,6 +36,12 @@ by the computations of `TauCeti.RepresentationTheory.Quiver.Zigzag.Projective.Sy
 * `x_j : P_j → P_j` has image `J² P_j` and kernel `J P_j`;
 * the arrow `P_{d.snd} → P_{d.fst}` has image `J P_{d.fst}` and kernel `J² P_{d.snd}`.
 
+The construction follows the formal precedent `TauCeti.dualNumberProjectiveResolution` in
+`TauCeti.Algebra.Homology.Ext.DualNumbers`: a private periodic complex with a separate
+augmentation built through `ChainComplex.toSingle₀Equiv`, the same proof of `quasiIso`, terms
+identified by an `XIso` given by `Iso.refl`, and characterising lemmas for the differentials and
+the augmentation.
+
 ## Main definitions
 
 * `TauCeti.zigzagPeriodicVertex`: the vertices `d.fst, d.snd, d.snd, d.fst, …` of the terms.
