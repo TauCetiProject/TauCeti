@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 public import Mathlib.MeasureTheory.Function.LpSeminorm.TriangleInequality
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.MeasureTheory.Function.LpSeminorm.SMul
+import TauCeti.Analysis.Calculus.ContDiff.Scaling
 import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
 
 /-!
@@ -31,6 +32,12 @@ Sobolev space is asserted.
 
 L. C. Evans, *Partial Differential Equations*, §5.3.1. The derivative estimate uses Mathlib's
 `norm_iteratedFDeriv_smul_le` and `iteratedFDeriv_comp_const_smul`.
+
+The expanding-cutoff construction and the compactly supported bump's derivative bounds are
+adapted from `SchwartzMap.dense_hasCompactSupport` and
+`SchwartzMap.tendsto_smulLeftCLM_comp_inv_smul_atTop` in
+`TauCeti/Analysis/Distribution/SchwartzSpace/Cutoff.lean`. Their positive-order derivative
+scaling estimate is shared via `TauCeti.norm_iteratedFDeriv_comp_inv_smul_sub_const_le`.
 -/
 
 public section
@@ -50,7 +57,6 @@ private theorem norm_iteratedFDeriv_cutoff_sub_one_le {χ : E → ℝ} {k : ℕ}
     (hB : ∀ i ≤ k, ∀ x, ‖iteratedFDeriv ℝ i χ x‖ ≤ B i)
     {R : ℝ} (hR : 1 ≤ R) {i : ℕ} (hi : i ≤ k) (x : E) :
     ‖iteratedFDeriv ℝ i (fun y ↦ χ (R⁻¹ • y) - 1) x‖ ≤ 1 + B i := by
-  have hR0 : 0 < R := zero_lt_one.trans_le hR
   have hBi : 0 ≤ B i := (norm_nonneg _).trans (hB i hi 0)
   have hχi : ContDiff ℝ i χ := hχ.of_le (by exact_mod_cast hi)
   rcases eq_or_ne i 0 with rfl | hi0
@@ -59,16 +65,9 @@ private theorem norm_iteratedFDeriv_cutoff_sub_one_le {χ : E → ℝ} {k : ℕ}
     rw [norm_iteratedFDeriv_zero] at hb
     simpa [add_comm] using (norm_sub_le (χ (R⁻¹ • x)) 1).trans
       (add_le_add hb (by simp : ‖(1 : ℝ)‖ ≤ 1))
-  · rw [fun_iteratedFDeriv_sub_apply (f := fun y ↦ χ (R⁻¹ • y))
-      (g := fun _ ↦ (1 : ℝ))
-      (hχi.comp (contDiff_const_smul R⁻¹)).contDiffAt
-        (contDiffAt_const (c := (1 : ℝ))),
-      iteratedFDeriv_const_of_ne hi0, Pi.zero_apply, sub_zero,
-      iteratedFDeriv_comp_const_smul _ hχi, norm_smul, norm_pow, norm_inv,
-      Real.norm_of_nonneg hR0.le]
-    have hp : (R⁻¹) ^ i ≤ 1 :=
-      pow_le_one₀ (by positivity) (inv_le_one_of_one_le₀ hR)
-    exact (mul_le_mul hp (hB i hi _) (norm_nonneg _) zero_le_one).trans (by linarith)
+  · exact (norm_iteratedFDeriv_comp_inv_smul_sub_const_le hχi hi0
+      (hB i hi) hR 1 x).trans
+        ((div_le_self hBi hR).trans (by linarith))
 
 /-- Expanding cutoffs approximate the `k`-th classical derivative of a `Cᵏ` function in `Lᵖ`.
 Only the derivatives up to the requested order need to be integrable; the measure need not
