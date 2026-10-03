@@ -179,6 +179,8 @@ theorem barMap_transferStrictHom :
   rw [AInfinityStrictHom.barMap_def, transferStrictHom_toLinearMap]
 
 /-- The retract map preserves all transferred operations. -/
+-- The target contraction and strict morphism cannot be inferred from the left-hand side,
+-- so `@[simp]` would fail the `simpNF` linter. Supply them explicitly when using `simp`.
 theorem map_m_transfer (n : ℕ) (x : Fin n → H) :
     g ((𝒜.transfer c hh hi hp).m n x) =
       (ℬ.transfer c' hh' hi' hp').m n (fun i ↦ g (x i)) := by
