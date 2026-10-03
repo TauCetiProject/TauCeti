@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.ZeroChart
-public import Mathlib.Geometry.Manifold.ContMDiff.Basic
+public import Mathlib.Geometry.Manifold.Immersion
 
 /-!
 # Smooth atlases on regular zero sets of bundle sections
@@ -22,7 +22,7 @@ The inverse charts are then smooth throughout their targets. Chart transitions a
 charts followed by continuous linear projections of ambient displacement, so no global
 trivialization is needed. Atlas assembly follows `levelSetChartedSpace` and
 `isManifold_levelSet` for ordinary maps. The inclusion into the parameter space is smooth
-for this atlas.
+for this atlas and is an immersion with complement the fiber model.
 
 Smoothness is stated in fiber coordinates at zeros in the chosen trivializations and regular
 implicit-coordinate neighbourhoods, and is required only for nonzero differentiability order.
@@ -41,7 +41,7 @@ asserts smooth compatibility of the atlas, not second countability.
 public section
 
 open Bundle Set
-open scoped ContDiff Topology
+open scoped ContDiff Manifold Topology
 
 namespace TauCeti
 
@@ -199,5 +199,100 @@ theorem hasMFDerivAt_coe_sectionZero (z : ↥{y | s y = 0}) :
   convert hcoord.hasFDerivWithinAt using 1
   ext v
   rfl
+
+include hs in
+/-- For the preferred section-zero atlas, the inclusion into the Banach parameter space is
+an immersion with complement the fiber model `F`. Only the atlas's coordinate smoothness
+hypotheses are needed; no smooth bundle structure or differentiability of the base map is
+required. -/
+theorem isImmersionOfComplement_coe_sectionZero :
+    letI := sectionZeroChartedSpace hf hFred hsurj hindex hb he
+    Manifold.IsImmersionOfComplement F 𝓘(𝕜, Fin n → 𝕜) 𝓘(𝕜, X) m
+      (Subtype.val : ↥{y | s y = 0} → X) := by
+  let _ := sectionZeroChartedSpace hf hFred hsurj hindex hb he
+  let := isManifold_sectionZero hf hFred hsurj hindex hb he hs
+  intro z
+  let χ := sectionZeroChartAt hf hFred hsurj hindex z
+  let K := (D z).kerModelEquiv (hFred z).finite_ker
+    ((ContinuousLinearMap.finrank_ker_eq_iff_index_eq (D z) (hsurj z)).2 (hindex z))
+  let L := (D z).implicitCoordEquiv (LinearMap.range_eq_top.2 (hsurj z))
+    (hFred z).closedComplemented_ker
+  have hL (x : X) : L x = (D z x, Classical.choose (hFred z).closedComplemented_ker x) :=
+    congrArg (fun T : X →L[𝕜] F × (D z).ker ↦ T x) ((D z).coe_implicitCoordEquiv _ _)
+  let A : ((Fin n → 𝕜) × F) ≃L[𝕜] X :=
+    ((K.symm.prodCongr (ContinuousLinearEquiv.refl 𝕜 F)).trans
+      (ContinuousLinearEquiv.prodComm 𝕜 _ _)).trans L.symm
+  -- Inverting the product equivalences puts the kernel coordinate first.
+  have hA_symm (x : X) : A.symm x = (K (L x).2, (L x).1) := (rfl)
+  let g (u : Fin n → 𝕜) := D z ((χ.symm u : X) - z.1)
+  have hg : ContDiffOn 𝕜 m g χ.target :=
+    (D z).contDiff.comp_contDiffOn
+      ((contDiffOn_coe_sectionZeroChartAt_symm hf hFred hsurj hindex hs z).sub contDiffOn_const)
+  have hminus : ContDiffOn 𝕜 m (fun p : (Fin n → 𝕜) × F ↦ (p.1, p.2 - g p.1))
+      (Prod.fst ⁻¹' χ.target) :=
+    contDiffOn_fst.prodMk (contDiffOn_snd.sub
+      (hg.comp contDiffOn_fst (fun _ hp ↦ hp)))
+  have hplus : ContDiffOn 𝕜 m (fun p : (Fin n → 𝕜) × F ↦ (p.1, p.2 + g p.1))
+      (Prod.fst ⁻¹' χ.target) :=
+    contDiffOn_fst.prodMk (contDiffOn_snd.add
+      (hg.comp contDiffOn_fst (fun _ hp ↦ hp)))
+  -- Subtract the smooth graph in the transverse coordinate. This uses smoothness only
+  -- along the zero manifold, rather than requiring smoothness off the zero set.
+  let shear : OpenPartialHomeomorph ((Fin n → 𝕜) × F) ((Fin n → 𝕜) × F) :=
+    { toFun := fun p ↦ (p.1, p.2 - g p.1)
+      invFun := fun p ↦ (p.1, p.2 + g p.1)
+      source := Prod.fst ⁻¹' χ.target
+      target := Prod.fst ⁻¹' χ.target
+      map_source' := fun _ hp ↦ hp
+      map_target' := fun _ hp ↦ hp
+      left_inv' := fun p _ ↦ by simp
+      right_inv' := fun p _ ↦ by simp
+      open_source := χ.open_target.preimage continuous_fst
+      open_target := χ.open_target.preimage continuous_fst
+      continuousOn_toFun := hminus.continuousOn
+      continuousOn_invFun := hplus.continuousOn }
+  let affine := (Homeomorph.addRight (-z.1)).trans A.symm.toHomeomorph
+  let Ψ := (affine.toOpenPartialHomeomorph.trans shear).transHomeomorph A.toHomeomorph
+  -- Evaluate the affine translation and the graph shear through their composition API.
+  have hΨ_apply (x : X) : Ψ x =
+      A ((A.symm (x - z.1)).1, (A.symm (x - z.1)).2 - g (A.symm (x - z.1)).1) := by
+    simp only [Ψ, OpenPartialHomeomorph.transHomeomorph_apply, Function.comp_apply,
+      OpenPartialHomeomorph.trans_apply, Homeomorph.toOpenPartialHomeomorph_apply,
+      affine, Homeomorph.trans_apply, Homeomorph.coe_addRight,
+      ContinuousLinearEquiv.coe_toHomeomorph, ← sub_eq_add_neg]
+    rfl
+  have hΨ : Ψ ∈ IsManifold.maximalAtlas 𝓘(𝕜, X) m X := by
+    apply OpenPartialHomeomorph.mem_maximalAtlas_of_contMDiffOn
+    · apply ContDiffOn.contMDiffOn
+      exact A.contDiff.comp_contDiffOn
+        (hminus.comp (A.symm.contDiff.comp (contDiff_id.add contDiff_const)).contDiffOn
+          (fun _ hp ↦ hp.2))
+    · apply ContDiffOn.contMDiffOn
+      exact ((A.contDiff.comp_contDiffOn
+        (hplus.comp A.symm.contDiff.contDiffOn (fun _ hp ↦ hp.1))).add
+          contDiffOn_const)
+  have hcoord (w : ↥{y | s y = 0}) : (A.symm (w.1 - z.1)).1 = χ w := by
+    rw [hA_symm, hL]
+    exact (sectionZeroChartAt_apply hf hFred hsurj hindex z w).symm
+  apply Manifold.IsImmersionAtOfComplement.mk_of_continuousAt
+    continuous_subtype_val.continuousAt A χ Ψ
+    (mem_sectionZeroChartAt_source hf hFred hsurj hindex hb he z)
+  · simpa [Ψ, affine, shear, hcoord, χ] using
+      mem_sectionZeroChartAt_target hf hFred hsurj hindex hb he z
+  · simpa only [sectionZeroChartedSpace_chartAt] using
+      (IsManifold.chart_mem_maximalAtlas (I := 𝓘(𝕜, Fin n → 𝕜)) (n := m) z)
+  · exact hΨ
+  · intro u hu
+    have hu' : u ∈ χ.target := by simpa using hu
+    have hp : (A.symm ((χ.symm u : X) - z.1)).1 = u :=
+      (hcoord (χ.symm u)).trans (χ.right_inv hu')
+    simp only [OpenPartialHomeomorph.extend_coe, OpenPartialHomeomorph.extend_coe_symm,
+      modelWithCornersSelf_coe, modelWithCornersSelf_coe_symm, Function.comp_apply, id_eq]
+    rw [hΨ_apply, hp]
+    congr 1
+    apply Prod.ext
+    · rfl
+    rw [hA_symm, hL]
+    exact sub_self _
 
 end TauCeti

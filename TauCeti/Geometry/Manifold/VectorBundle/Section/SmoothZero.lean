@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Manifold
-public import Mathlib.Geometry.Manifold.Immersion
 
 /-!
 # Zero manifolds of smooth Fredholm sections
@@ -96,6 +95,7 @@ theorem exists_isManifold_sectionZero_of_contMDiff {n : ℕ} (hm : m ≠ 0)
     ((contMDiffAt_totalSpace.1 (hs z.1 z.2)).1).mdifferentiableAt hm
   -- Transport the intrinsic hypotheses to the coordinate derivatives used by the atlas.
   let D (z : ↥{y | s y = 0}) := fderiv 𝕜 (fun y ↦ (e z ⟨b y, s y⟩).2) z.1
+  -- The smooth-to-strict-derivative theorem uses the real/complex mean value theorem.
   have hf (z : ↥{y | s y = 0}) :
       HasStrictFDerivAt (fun y ↦ (e z ⟨b y, s y⟩).2) (D z) z.1 :=
     (hcoord z z (he z)).hasStrictFDerivAt hm
@@ -116,94 +116,11 @@ theorem exists_isManifold_sectionZero_of_contMDiff {n : ℕ} (hm : m ≠ 0)
     fun _ z w hw _ ↦ hcoord z w hw
   let _ := sectionZeroChartedSpace hf hF hS hN (fun z ↦ (hb z).continuousAt) he
   let := isManifold_sectionZero hf hF hS hN (fun z ↦ (hb z).continuousAt) he hsmooth
-  have himm : Manifold.IsImmersionOfComplement F 𝓘(𝕜, Fin n → 𝕜) 𝓘(𝕜, X) m
-      (Subtype.val : ↥{y | s y = 0} → X) := by
-    intro z
-    let χ := sectionZeroChartAt hf hF hS hN z
-    let K := (D z).kerModelEquiv (hF z).finite_ker
-      ((ContinuousLinearMap.finrank_ker_eq_iff_index_eq (D z) (hS z)).2 (hN z))
-    let L := (D z).implicitCoordEquiv (LinearMap.range_eq_top.2 (hS z))
-      (hF z).closedComplemented_ker
-    have hL (x : X) : L x = (D z x, Classical.choose (hF z).closedComplemented_ker x) :=
-      congrArg (fun T : X →L[𝕜] F × (D z).ker ↦ T x) ((D z).coe_implicitCoordEquiv _ _)
-    let A : ((Fin n → 𝕜) × F) ≃L[𝕜] X :=
-      ((K.symm.prodCongr (ContinuousLinearEquiv.refl 𝕜 F)).trans
-        (ContinuousLinearEquiv.prodComm 𝕜 _ _)).trans L.symm
-    let g (u : Fin n → 𝕜) := D z ((χ.symm u : X) - z.1)
-    have hg : ContDiffOn 𝕜 m g χ.target :=
-      (D z).contDiff.comp_contDiffOn
-        ((contDiffOn_coe_sectionZeroChartAt_symm hf hF hS hN hsmooth z).sub contDiffOn_const)
-    have hminus : ContDiffOn 𝕜 m (fun p : (Fin n → 𝕜) × F ↦ (p.1, p.2 - g p.1))
-        (Prod.fst ⁻¹' χ.target) :=
-      contDiffOn_fst.prodMk (contDiffOn_snd.sub
-        (hg.comp contDiffOn_fst (fun _ hp ↦ hp)))
-    have hplus : ContDiffOn 𝕜 m (fun p : (Fin n → 𝕜) × F ↦ (p.1, p.2 + g p.1))
-        (Prod.fst ⁻¹' χ.target) :=
-      contDiffOn_fst.prodMk (contDiffOn_snd.add
-        (hg.comp contDiffOn_fst (fun _ hp ↦ hp)))
-    -- Subtract the smooth graph in the transverse coordinate. This uses smoothness only
-    -- along the zero manifold, rather than requiring smoothness off the zero set.
-    let shear : OpenPartialHomeomorph ((Fin n → 𝕜) × F) ((Fin n → 𝕜) × F) :=
-      { toFun := fun p ↦ (p.1, p.2 - g p.1)
-        invFun := fun p ↦ (p.1, p.2 + g p.1)
-        source := Prod.fst ⁻¹' χ.target
-        target := Prod.fst ⁻¹' χ.target
-        map_source' := fun _ hp ↦ hp
-        map_target' := fun _ hp ↦ hp
-        left_inv' := fun p _ ↦ by simp
-        right_inv' := fun p _ ↦ by simp
-        open_source := χ.open_target.preimage continuous_fst
-        open_target := χ.open_target.preimage continuous_fst
-        continuousOn_toFun := hminus.continuousOn
-        continuousOn_invFun := hplus.continuousOn }
-    let affine := (Homeomorph.addRight (-z.1)).trans A.symm.toHomeomorph
-    let Ψ := (affine.toOpenPartialHomeomorph.trans shear).transHomeomorph A.toHomeomorph
-    have hΨ : Ψ ∈ IsManifold.maximalAtlas 𝓘(𝕜, X) m X := by
-      apply OpenPartialHomeomorph.mem_maximalAtlas_of_contMDiffOn
-      · apply ContDiffOn.contMDiffOn
-        exact A.contDiff.comp_contDiffOn
-          (hminus.comp (A.symm.contDiff.comp (contDiff_id.add contDiff_const)).contDiffOn
-            (fun _ hp ↦ hp.2))
-      · apply ContDiffOn.contMDiffOn
-        exact ((A.contDiff.comp_contDiffOn
-          (hplus.comp A.symm.contDiff.contDiffOn (fun _ hp ↦ hp.1))).add
-            contDiffOn_const)
-    have hcoord (w : ↥{y | s y = 0}) : (A.symm (w.1 - z.1)).1 = χ w := by
-      change K (L (w.1 - z.1)).2 = χ w
-      rw [hL]
-      exact (sectionZeroChartAt_apply hf hF hS hN z w).symm
-    apply Manifold.IsImmersionAtOfComplement.mk_of_continuousAt
-      continuous_subtype_val.continuousAt A χ Ψ
-      (mem_sectionZeroChartAt_source hf hF hS hN (fun z ↦ (hb z).continuousAt) he z)
-    · simpa [Ψ, affine, shear, hcoord, χ] using
-        mem_sectionZeroChartAt_target hf hF hS hN (fun z ↦ (hb z).continuousAt) he z
-    · simpa only [sectionZeroChartedSpace_chartAt] using
-        (IsManifold.chart_mem_maximalAtlas (I := 𝓘(𝕜, Fin n → 𝕜)) (n := m) z)
-    · exact hΨ
-    · intro u hu
-      have hu' : u ∈ χ.target := by simpa using hu
-      have hp : (A.symm ((χ.symm u : X) - z.1)).1 = u :=
-        (hcoord (χ.symm u)).trans (χ.right_inv hu')
-      simp only [OpenPartialHomeomorph.extend_coe, OpenPartialHomeomorph.extend_coe_symm,
-        modelWithCornersSelf_coe, modelWithCornersSelf_coe_symm, Function.comp_apply, id_eq]
-      rw [show Ψ = (affine.toOpenPartialHomeomorph.trans shear).transHomeomorph
-        A.toHomeomorph from rfl, OpenPartialHomeomorph.transHomeomorph_apply,
-        Function.comp_apply, OpenPartialHomeomorph.trans_apply]
-      simp only [Homeomorph.toOpenPartialHomeomorph_apply, affine, Homeomorph.trans_apply,
-        Homeomorph.coe_addRight, ContinuousLinearEquiv.coe_toHomeomorph]
-      rw [← sub_eq_add_neg]
-      change A ((A.symm ((χ.symm u : X) - z.1)).1,
-        (A.symm ((χ.symm u : X) - z.1)).2 - g (A.symm ((χ.symm u : X) - z.1)).1) = A (u, 0)
-      rw [hp]
-      congr 1
-      apply Prod.ext
-      · rfl
-      change (L ((χ.symm u : X) - z.1)).1 - g u = 0
-      rw [hL]
-      exact sub_self _
   refine ⟨sectionZeroChartedSpace hf hF hS hN (fun z ↦ (hb z).continuousAt) he,
     isManifold_sectionZero hf hF hS hN (fun z ↦ (hb z).continuousAt) he hsmooth,
-    contMDiff_coe_sectionZero hf hF hS hN (fun z ↦ (hb z).continuousAt) he hsmooth, himm, ?_⟩
+    contMDiff_coe_sectionZero hf hF hS hN (fun z ↦ (hb z).continuousAt) he hsmooth,
+    isImmersionOfComplement_coe_sectionZero hf hF hS hN
+      (fun z ↦ (hb z).continuousAt) he hsmooth, ?_⟩
   -- The inclusion derivative is a kernel inclusion composed with an equivalence.
   intro z
   let K := (D z).kerModelEquiv (hF z).finite_ker
