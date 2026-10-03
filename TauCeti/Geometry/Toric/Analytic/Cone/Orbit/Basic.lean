@@ -565,17 +565,11 @@ theorem contMDiff_subtypeVal_affineConeOrbit (hi : IsIntegralLattice i)
     · exact contDiff_snd
   refine (hc.comp_contMDiff (contMDiff_affineConeOrbitAmbient hi hσ hb F g n)).congr fun x ↦ ?_
   ext a
-  · rw [Function.comp_apply, coneChartAmbient_fst_apply]
+  · rw [Function.comp_apply, Function.comp_apply, coneChartAmbient_fst_apply]
+    dsimp only [c]
     by_cases h : κ.symm a ∈ hσ.faceOrderIso hi F
-    · rw [show (coneChartEquiv hi hσ.toIsToricCone hb x.1).1 (κ.symm a) = 0 from
-          ((mem_affineConeOrbit_iff_coneChartEquiv hi hσ hb F x.1).1 x.2 _).2 h]
-      change 0 = if h' : κ.symm a ∈ hσ.faceOrderIso hi F then 0 else _
-      rw [dite_eq_left h]
-    · change (coneChartEquiv hi hσ.toIsToricCone hb x.1).1 (κ.symm a) =
-        if h' : κ.symm a ∈ hσ.faceOrderIso hi F then 0 else
-          (affineConeOrbitAmbient hi hσ hb F x).1 ⟨κ.symm a, h'⟩
-      rw [dite_eq_right h]
-      exact (affineConeOrbitAmbient_fst_apply hi hσ hb F x ⟨κ.symm a, h⟩).symm
+    · rw [((mem_affineConeOrbit_iff_coneChartEquiv hi hσ hb F x.1).1 x.2 _).2 h, dite_eq_left h]
+    · rw [dite_eq_right h, affineConeOrbitAmbient_fst_apply]
   · simp [c, Function.comp_apply, coneChartAmbient_snd_apply,
       affineConeOrbitAmbient_snd_apply]
 
