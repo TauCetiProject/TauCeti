@@ -33,10 +33,9 @@ isomorphic to the base change along `algebraMap A R` of its image under `ε`.
 
 * `Matrix.exists_isUnit_mul_eq_mul_map_of_pow_eq_one`: `M` is conjugate to its constant part.
 * `Matrix.trace_eq_algebraMap_of_pow_eq_one`: the trace of `M` is the constant `ε (trace M)`.
-* `LinearMap.trace_eq_algebraMap_of_pow_eq_one`: the same for an endomorphism of a free module of
-  finite rank.
-* `LinearMap.trace_restrictScalars_smul_of_pow_eq_one`: if moreover `R` is free of finite rank over
-  `A`, the `A`-trace of `c • f` is `ε (trace f) * Tr_{R/A}(c)`.
+* `LinearMap.trace_eq_algebraMap_of_pow_eq_one`: the same for an endomorphism of a free module.
+* `LinearMap.trace_restrictScalars_smul_of_pow_eq_one`: if moreover `R` is free over `A`, the
+  `A`-trace of `c • f` is `ε (trace f) * Tr_{R/A}(c)`.
 -/
 
 public section
@@ -56,8 +55,10 @@ private theorem mul_geom_sum₂_add_pow {S : Type*} [Ring S] (x y : S) (m : ℕ)
       rw [sum_range_succ, sum_mul]
       congr 1
       · refine sum_congr rfl fun i hi ↦ ?_
-        rw [mul_assoc, ← pow_succ, show m + 1 - 1 - i = m - 1 - i + 1 by
-          have := mem_range.mp hi; omega]
+        have hsub : m + 1 - 1 - i = m - 1 - i + 1 := by
+          have := mem_range.mp hi
+          omega
+        rw [mul_assoc, ← pow_succ, hsub]
       · simp
     rw [hsum]
     calc x * ((∑ i ∈ range m, x ^ i * y ^ (m - 1 - i)) * y + x ^ m) + y ^ (m + 1)
@@ -124,25 +125,31 @@ end Matrix
 namespace LinearMap
 
 variable {A R M : Type*} [CommRing A] [CommRing R] [Algebra A R] (ε : R →ₐ[A] A) [IsLocalHom ε]
-  [AddCommGroup M] [Module R M] [Module.Free R M] [Module.Finite R M]
+  [AddCommGroup M] [Module R M] [Module.Free R M]
 
 /-- **The trace of an endomorphism of invertible finite order is constant.** If `ε : R → A` is a
 local `A`-algebra retraction and `f ^ m = 1` with `m` invertible in `A`, then the trace of the
-endomorphism `f` of a free `R`-module of finite rank is the image of `ε (trace f)` in `R`. -/
+endomorphism `f` of a free `R`-module is the image of `ε (trace f)` in `R`. -/
 theorem trace_eq_algebraMap_of_pow_eq_one (f : M →ₗ[R] M) {m : ℕ} (hm : IsUnit (m : A))
     (hf : f ^ m = 1) : trace R M f = algebraMap A R (ε (trace R M f)) := by
   classical
-  let b := Module.Free.chooseBasis R M
+  nontriviality R
+  let ⟨ι, b⟩ := Module.Free.exists_basis (R := R) (M := M)
+  cases fintypeOrInfinite ι; swap
+  · have hM := Module.not_finite_of_infinite_basis b
+    have hM' : ¬∃ s : Finset M, Nonempty (Module.Basis s R M) :=
+      fun ⟨_, ⟨b⟩⟩ ↦ hM (Module.Finite.of_basis b)
+    simp [LinearMap.trace, hM']
   rw [trace_eq_matrix_trace R b]
   refine Matrix.trace_eq_algebraMap_of_pow_eq_one ε _ hm ?_
   have h := congrArg (toMatrixAlgEquiv b) hf
   rwa [map_pow, map_one] at h
 
 /-- **The trace over `A` of a multiple of an endomorphism of invertible finite order.** If `R` is
-free of finite rank over `A`, `ε : R → A` is a local `A`-algebra retraction and `f ^ m = 1` with `m`
-invertible in `A`, then for every `c ∈ R` the `A`-trace of `c • f` is `ε (trace f)` times the
-algebra trace of `c`. -/
-theorem trace_restrictScalars_smul_of_pow_eq_one [Module.Free A R] [Module.Finite A R]
+free over `A`, `ε : R → A` is a local `A`-algebra retraction and `f ^ m = 1` with `m` invertible
+in `A`, then for every `c ∈ R` the `A`-trace of `c • f` is `ε (trace f)` times the algebra trace
+of `c`. -/
+theorem trace_restrictScalars_smul_of_pow_eq_one [Module.Free A R]
     [Module A M] [IsScalarTower A R M] (f : M →ₗ[R] M) {m : ℕ} (hm : IsUnit (m : A))
     (hf : f ^ m = 1) (c : R) :
     trace A M ((c • f).restrictScalars A) = ε (trace R M f) * Algebra.trace A R c := by

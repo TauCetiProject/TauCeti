@@ -15,6 +15,7 @@ import TauCeti.Algebra.Module.Projective.Trans
 import TauCeti.Algebra.MonoidAlgebra.CosetBasis
 import TauCeti.Algebra.MonoidAlgebra.LocalRing
 import TauCeti.Algebra.MonoidAlgebra.Trace
+import TauCeti.GroupTheory.OrderOfElement.PPart
 import TauCeti.LinearAlgebra.Matrix.FiniteOrder
 import TauCeti.RingTheory.LocalRing.Basic
 
@@ -56,38 +57,6 @@ namespace TauCeti
 
 open _root_.MonoidAlgebra
 
-/-- An element whose order is divisible by `p` is the product of two commuting powers of itself:
-a nontrivial element `q` of `p`-power order and an element `s` of order prime to `p`. -/
-private theorem exists_mul_eq_of_dvd_orderOf {G : Type*} [Group G] [Finite G] {p : ℕ}
-    [hp : Fact p.Prime] {g : G} (hg : p ∣ orderOf g) :
-    ∃ s q : G, s * q = g ∧ Commute s q ∧ q ≠ 1 ∧ IsPGroup p (Subgroup.zpowers q) ∧
-      ∃ m : ℕ, ¬p ∣ m ∧ s ^ m = 1 := by
-  obtain ⟨k, m, hpm, hn⟩ := Nat.exists_eq_pow_mul_and_not_dvd (orderOf_pos g).ne' p hp.out.ne_one
-  have hk : k ≠ 0 := by
-    rintro rfl
-    exact hpm (by simpa [hn] using hg)
-  obtain ⟨u, v, huv⟩ : IsCoprime ((p ^ k : ℕ) : ℤ) (m : ℤ) := Nat.isCoprime_iff_coprime.mpr
-    ((Nat.Coprime.pow_left k ((Nat.Prime.coprime_iff_not_dvd hp.out).mpr hpm)))
-  have hgn : g ^ (orderOf g : ℤ) = 1 := by rw [zpow_natCast, pow_orderOf_eq_one]
-  refine ⟨g ^ (u * (p ^ k : ℕ)), g ^ (v * m), ?_, Commute.zpow_zpow_self g _ _, ?_, ?_,
-    m, hpm, ?_⟩
-  · rw [← zpow_add, huv, zpow_one]
-  · intro h
-    have hdvd : ((p : ℕ) : ℤ) ∣ v * m := (Int.natCast_dvd_natCast.mpr ((dvd_pow_self p hk).trans
-      (Dvd.intro m hn.symm))).trans (orderOf_dvd_iff_zpow_eq_one.mpr h)
-    have hp1 : ((p : ℕ) : ℤ) ∣ 1 := by
-      rw [← huv]
-      refine dvd_add (Dvd.dvd.mul_left ?_ _) hdvd
-      exact_mod_cast dvd_pow_self p hk
-    exact hp.out.one_lt.ne' (by exact_mod_cast Int.eq_one_of_dvd_one (by positivity) hp1)
-  · have hq : (g ^ (v * m)) ^ (p ^ k) = 1 := by
-      rw [← zpow_natCast, ← zpow_mul, mul_assoc, mul_comm (m : ℤ), ← Nat.cast_mul, ← hn, mul_comm,
-        zpow_mul, hgn, one_zpow]
-    obtain ⟨i, -, hi⟩ := (Nat.dvd_prime_pow hp.out).mp (orderOf_dvd_of_pow_eq_one hq)
-    exact IsPGroup.of_card (n := i) (by rw [Nat.card_zpowers, hi])
-  · rw [← zpow_natCast, ← zpow_mul, mul_assoc, ← Nat.cast_mul, ← hn, mul_comm, zpow_mul, hgn,
-      one_zpow]
-
 variable {A : Type*} [CommRing A] [IsLocalRing A] {p : ℕ} [Fact p.Prime] {G : Type*} [Group G]
   [Finite G] (X : Type*) [AddCommGroup X] [Module A X] [Module (MonoidAlgebra A G) X]
   [IsScalarTower A (MonoidAlgebra A G) X] [Module.Finite (MonoidAlgebra A G) X]
@@ -102,7 +71,17 @@ theorem trace_ofModule'_eq_zero_of_dvd_orderOf (hp : ¬IsUnit (p : A)) {g : G}
   -- which `s` acts linearly with `s ^ m = 1`, and compute the trace of `g = q • s` along
   -- `A[Q] / A` with `LinearMap.trace_restrictScalars_smul_of_pow_eq_one`.
   classical
-  obtain ⟨s, q, rfl, hsq, hq1, hQ, m, hpm, hsm⟩ := exists_mul_eq_of_dvd_orderOf hg
+  let s := pFreePart p g
+  let q := pPart p g
+  let m := orderOf s
+  have hmul : s * q = g := pFreePart_mul_pPart p g
+  have hsq : Commute s q := commute_pFreePart_pPart p g
+  have hq1 : q ≠ 1 := pPart_ne_one_of_dvd_orderOf Fact.out (orderOf_pos g).ne' hg
+  have hQ : IsPGroup p (Subgroup.zpowers q) :=
+    isPGroup_zpowers_pPart Fact.out (orderOf_pos g).ne'
+  have hpm : ¬p ∣ m := not_dvd_orderOf_pFreePart Fact.out (orderOf_pos g).ne'
+  have hsm : s ^ m = 1 := pow_orderOf_eq_one s
+  rw [← hmul]
   -- Restrict `X` to the local group algebra `A[Q]` of `Q = ⟨q⟩`.
   let Q := Subgroup.zpowers q
   -- The commutative group structure of `Q`, with the same underlying monoid as its subgroup one.
@@ -139,6 +118,8 @@ theorem trace_ofModule'_eq_zero_of_dvd_orderOf (hp : ¬IsUnit (p : A)) {g : G}
     { toFun := fun x ↦ (single s (1 : A) : MonoidAlgebra A G) • x
       map_add' := smul_add _
       map_smul' := fun r x ↦ by
+        -- Unfold the composed `A[Q]`-action and `S` to expose equality in the ambient group
+        -- algebra.
         change single s (1 : A) • (φ r • x) = φ r • (single s (1 : A) • x)
         rw [← mul_smul, ← mul_smul, hcomm] }
   have hSpow : ∀ k : ℕ, ∀ x, (S ^ k) x = (single (s ^ k) (1 : A) : MonoidAlgebra A G) • x := by
@@ -155,7 +136,7 @@ theorem trace_ofModule'_eq_zero_of_dvd_orderOf (hp : ¬IsUnit (p : A)) {g : G}
   have hg' : Representation.ofModule' X (s * q) =
       ((single q' (1 : A) : MonoidAlgebra A Q) • S).restrictScalars A := by
     ext x
-    -- The `A[Q]`-action on `X` is the `A[G]`-action through `φ`.
+    -- Unfold both constructed actions; the `A[Q]`-action on `X` is the `A[G]`-action through `φ`.
     change (single (s * q) (1 : A) : MonoidAlgebra A G) • x =
       φ (single q' (1 : A)) • (single s (1 : A) : MonoidAlgebra A G) • x
     rw [← mul_smul]
