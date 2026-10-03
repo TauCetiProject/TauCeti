@@ -42,34 +42,53 @@ variable (p : ℕ) [Fact p.Prime] (K L : Type*) [Field K] [Field L] [Algebra K L
 
 -- The completion uses raw power-hom ranges; identify them with the generic power classes
 -- via the public subgroup equality, without requiring `powerSubgroup` to be exposed.
+/-- The field norm on `p^m`-power classes for a finite extension `L/K`.
+Finiteness excludes the constant-one norm on infinite extensions. -/
+def padicCompletionPowerClassNorm [_hfin : FiniteDimensional K L] (m : ℕ) :
+    (Lˣ ⧸ (powMonoidHom (p ^ m) : Lˣ →* Lˣ).range) →*
+      (Kˣ ⧸ (powMonoidHom (p ^ m) : Kˣ →* Kˣ).range) :=
+  ((QuotientGroup.quotientMulEquivOfEq
+    (powerSubgroup_eq_range_powMonoidHom Kˣ (p ^ m))).toMonoidHom).comp
+    ((powerClassMap (p ^ m) (Algebra.normUnits K : Lˣ →* Kˣ)).comp
+      (QuotientGroup.quotientMulEquivOfEq
+        (powerSubgroup_eq_range_powMonoidHom Lˣ (p ^ m)).symm).toMonoidHom)
+
+variable [FiniteDimensional K L]
+
+omit [Fact p.Prime] in
+/-- The norm on power classes sends the class of a unit to the class of its norm. -/
+@[simp]
+theorem padicCompletionPowerClassNorm_mk (m : ℕ) (x : Lˣ) :
+    padicCompletionPowerClassNorm p K L m
+        (x : Lˣ ⧸ (powMonoidHom (p ^ m) : Lˣ →* Lˣ).range) =
+      (Algebra.normUnits K x : Kˣ ⧸ (powMonoidHom (p ^ m) : Kˣ →* Kˣ).range) := by
+  simp [padicCompletionPowerClassNorm]
+
+omit [Fact p.Prime] in
+/-- The norm on power classes commutes with the completion's transition maps. -/
+theorem padicCompletionPowerClassNorm_transition (m : ℕ)
+    (x : Lˣ ⧸ (powMonoidHom (p ^ (m + 1)) : Lˣ →* Lˣ).range) :
+    padicCompletionTransition p K m (padicCompletionPowerClassNorm p K L (m + 1) x) =
+      padicCompletionPowerClassNorm p K L m (padicCompletionTransition p L m x) := by
+  induction x using QuotientGroup.induction_on with
+  | H x => simp
+
 private def padicCompletionUnitsNormHom :
-    ↑(padicCompletionUnits p L) →* ↑(padicCompletionUnits p K) := by
-  let norm (m : ℕ) :=
-    ((QuotientGroup.quotientMulEquivOfEq
-      (powerSubgroup_eq_range_powMonoidHom Kˣ (p ^ m))).toMonoidHom).comp
-      ((powerClassMap (p ^ m) (Algebra.normUnits K : Lˣ →* Kˣ)).comp
-        (QuotientGroup.quotientMulEquivOfEq
-          (powerSubgroup_eq_range_powMonoidHom Lˣ (p ^ m)).symm).toMonoidHom)
-  refine padicCompletionUnitsLift p L K norm ?_
-  intro m y
-  induction y using QuotientGroup.induction_on with
-  | H y => simp [norm]
+    ↑(padicCompletionUnits p L) →* ↑(padicCompletionUnits p K) :=
+  padicCompletionUnitsLift p L K (padicCompletionPowerClassNorm p K L)
+    (padicCompletionPowerClassNorm_transition p K L)
 
 omit [Fact p.Prime] in
 @[simp]
 private theorem padicCompletionUnitsNormHom_apply (x : ↑(padicCompletionUnits p L))
     (m : ℕ) :
     (padicCompletionUnitsNormHom p K L x).1 m =
-      QuotientGroup.quotientMulEquivOfEq (powerSubgroup_eq_range_powMonoidHom Kˣ (p ^ m))
-        (powerClassMap (p ^ m) (Algebra.normUnits K : Lˣ →* Kˣ)
-          (QuotientGroup.quotientMulEquivOfEq
-            (powerSubgroup_eq_range_powMonoidHom Lˣ (p ^ m)).symm (x.1 m))) := by
-  simp only [padicCompletionUnitsNormHom, padicCompletionUnitsLift_apply,
-    MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom]
+      padicCompletionPowerClassNorm p K L m (x.1 m) := by
+  simp only [padicCompletionUnitsNormHom, padicCompletionUnitsLift_apply]
 
 /-- The `ℤ_p`-linear norm `A(L) → A(K)` induced by the field norm at every finite level.
 Finiteness excludes the constant-one value of Mathlib's total norm on infinite extensions. -/
-def padicCompletionUnitsNorm [_hfin : FiniteDimensional K L] :
+def padicCompletionUnitsNorm :
     Additive ↑(padicCompletionUnits p L) →ₗ[ℤ_[p]]
       Additive ↑(padicCompletionUnits p K) where
   toFun x := Additive.ofMul (padicCompletionUnitsNormHom p K L x.toMul)
@@ -83,16 +102,11 @@ def padicCompletionUnitsNorm [_hfin : FiniteDimensional K L] :
       padicCompletionUnits_smul_apply]
     simp only [map_pow]
 
-variable [FiniteDimensional K L]
-
 /-- The completed norm is computed by the norm on each power-class coordinate. -/
 @[simp]
 theorem padicCompletionUnitsNorm_apply (x : Additive ↑(padicCompletionUnits p L)) (m : ℕ) :
     (padicCompletionUnitsNorm p K L x).toMul.1 m =
-      QuotientGroup.quotientMulEquivOfEq (powerSubgroup_eq_range_powMonoidHom Kˣ (p ^ m))
-        (powerClassMap (p ^ m) (Algebra.normUnits K : Lˣ →* Kˣ)
-          (QuotientGroup.quotientMulEquivOfEq
-            (powerSubgroup_eq_range_powMonoidHom Lˣ (p ^ m)).symm (x.toMul.1 m))) := by
+      padicCompletionPowerClassNorm p K L m (x.toMul.1 m) := by
   simpa only [padicCompletionUnitsNorm, LinearMap.coe_mk, AddHom.coe_mk, toMul_ofMul] using
     padicCompletionUnitsNormHom_apply p K L x.toMul m
 
@@ -125,8 +139,7 @@ theorem padicCompletionUnitsNorm_aut (σ : L ≃ₐ[K] L)
   simp only [padicCompletionUnitsNorm_apply, toMul_ofMul, padicCompletionUnitsAut_apply]
   induction x.1 m using QuotientGroup.induction_on with
   | H y =>
-    simp only [padicCompletionPowerClassMap_mk, QuotientGroup.quotientMulEquivOfEq_mk,
-      powerClassMap_mk]
+    simp only [padicCompletionPowerClassMap_mk, padicCompletionPowerClassNorm_mk]
     simpa only [padicCompletionUnitsOf_apply, QuotientGroup.mk'_apply,
       RingHom.toMonoidHom_eq_coe,
       RingEquiv.toRingHom_eq_coe, AlgEquiv.toRingEquiv_toRingHom] using
