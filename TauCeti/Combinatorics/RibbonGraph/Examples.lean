@@ -44,12 +44,9 @@ open PermutationTriple
 noncomputable def cyclicDessin (n : ℕ) : BipartiteRibbonGraph :=
   (cyclicTriple n).ribbonGraph
 
-/-- The cyclic dessin is the ribbon graph constructed from the cyclic permutation triple. -/
-theorem cyclicDessin_def : cyclicDessin n = (cyclicTriple n).ribbonGraph := (rfl)
-
 /-- The cyclic dessin has `n` edges. -/
 @[simp] theorem card_E_cyclicDessin : Fintype.card (cyclicDessin n).E = n := by
-  rw [cyclicDessin_def]
+  rw [cyclicDessin]
   exact PermutationTriple.card_E_ribbonGraph _
 
 /-- In positive degree, the cyclic dessin has one black vertex. -/
@@ -85,12 +82,9 @@ theorem cyclicDessin_def : cyclicDessin n = (cyclicTriple n).ribbonGraph := (rfl
 noncomputable def segmentDessin : BipartiteRibbonGraph :=
   chebyshevTriple.ribbonGraph
 
-/-- The segment dessin is the ribbon graph constructed from the Chebyshev permutation triple. -/
-theorem segmentDessin_def : segmentDessin = chebyshevTriple.ribbonGraph := (rfl)
-
 /-- The segment dessin has two edges. -/
 @[simp] theorem card_E_segmentDessin : Fintype.card segmentDessin.E = 2 := by
-  rw [segmentDessin_def]
+  rw [segmentDessin]
   exact PermutationTriple.card_E_ribbonGraph _
 
 /-- The segment dessin has two black vertices. -/
@@ -129,12 +123,9 @@ theorem segmentDessin_def : segmentDessin = chebyshevTriple.ribbonGraph := (rfl)
 noncomputable def torusDessin : BipartiteRibbonGraph :=
   torusTriple.ribbonGraph
 
-/-- The torus dessin is the ribbon graph constructed from the Euclidean genus-one triple. -/
-theorem torusDessin_def : torusDessin = torusTriple.ribbonGraph := (rfl)
-
 /-- The torus dessin has four edges. -/
 @[simp] theorem card_E_torusDessin : Fintype.card torusDessin.E = 4 := by
-  rw [torusDessin_def]
+  rw [torusDessin]
   exact PermutationTriple.card_E_ribbonGraph _
 
 /-- The torus dessin has one black vertex. -/
@@ -170,12 +161,9 @@ theorem torusDessin_def : torusDessin = torusTriple.ribbonGraph := (rfl)
 noncomputable def s3Dessin : BipartiteRibbonGraph :=
   s3Triple.ribbonGraph
 
-/-- The symmetric degree-three dessin is the ribbon graph constructed from `s3Triple`. -/
-theorem s3Dessin_def : s3Dessin = s3Triple.ribbonGraph := (rfl)
-
 /-- The symmetric degree-three dessin has three edges. -/
 @[simp] theorem card_E_s3Dessin : Fintype.card s3Dessin.E = 3 := by
-  rw [s3Dessin_def]
+  rw [s3Dessin]
   exact PermutationTriple.card_E_ribbonGraph _
 
 /-- The symmetric degree-three dessin has one black vertex. -/
