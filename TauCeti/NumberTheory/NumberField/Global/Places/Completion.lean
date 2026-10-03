@@ -44,13 +44,16 @@ section Infinite
 
 /-- An archimedean completion has a nontrivial norm, as seen by its embedding in `ℂ`. -/
 instance instNontriviallyNormedFieldInfiniteCompletion (v : InfinitePlace K) :
-    NontriviallyNormedField v.Completion where
-  non_trivial := by
-    have hnorm : ‖(2 : v.Completion)‖ = 2 := by
-      rw [← (Completion.isometry_extensionEmbedding v).norm_map_of_map_zero
-        (map_zero _), map_ofNat]
-      norm_num
-    exact ⟨2, by rw [hnorm]; norm_num⟩
+    NontriviallyNormedField v.Completion := by
+  have hnorm : ‖(2 : v.Completion)‖ = 2 := by
+    rw [← (Completion.isometry_extensionEmbedding v).norm_map_of_map_zero
+      (map_zero _), map_ofNat]
+    norm_num
+  apply NontriviallyNormedField.ofNormNeOne
+  refine ⟨2, ?_, ?_⟩
+  · exact norm_ne_zero_iff.mp (by rw [hnorm]; norm_num)
+  · rw [hnorm]
+    norm_num
 
 variable {L : Type*} [Field L] [Algebra K L]
 

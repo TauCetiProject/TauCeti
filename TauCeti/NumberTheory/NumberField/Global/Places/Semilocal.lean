@@ -175,14 +175,17 @@ variable {L v}
 theorem infiniteSemilocalContinuousEquiv_tmul (a : v.Completion) (x : L)
     (w : {w : InfinitePlace L // w.LiesOver v}) :
     infiniteSemilocalContinuousEquiv L v (a ⊗ₜ x) w =
-      algebraMap v.Completion w.1.Completion a * algebraMap L w.1.Completion x :=
-  infiniteSemilocalEquiv_tmul a x w
+      algebraMap v.Completion w.1.Completion a * algebraMap L w.1.Completion x := by
+  rw [← ContinuousAlgEquiv.coe_toAlgEquiv, infiniteSemilocalContinuousEquiv_toAlgEquiv]
+  exact infiniteSemilocalEquiv_tmul a x w
 
 /-- The inverse comparison sends a diagonal field element to `1 ⊗ x`. -/
 theorem infiniteSemilocalContinuousEquiv_symm_algebraMap (x : L) :
     (infiniteSemilocalContinuousEquiv L v).symm
       (fun w : {w : InfinitePlace L // w.LiesOver v} ↦ algebraMap L w.1.Completion x) =
-        1 ⊗ₜ[K] x :=
-  infiniteSemilocalEquiv_symm_algebraMap L v x
+        1 ⊗ₜ[K] x := by
+  rw [← ContinuousAlgEquiv.coe_toAlgEquiv, ContinuousAlgEquiv.symm_toAlgEquiv,
+    infiniteSemilocalContinuousEquiv_toAlgEquiv]
+  exact infiniteSemilocalEquiv_symm_algebraMap L v x
 
 end TauCeti.GlobalNumberFields
