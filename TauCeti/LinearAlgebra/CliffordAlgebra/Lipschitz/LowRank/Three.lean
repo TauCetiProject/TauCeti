@@ -64,17 +64,15 @@ theorem unitsMap_even_mem_lipschitzGroup_of_finrank_eq_three (Q : QuadraticForm 
   obtain ⟨r, hr⟩ := exists_reverse_eq_scalar_mul_inv Q hQ hV x
   have hir : reverse (((x⁻¹ : (even Q)ˣ) : even Q) : CliffordAlgebra Q) =
       algebraMap K _ (r⁻¹ : Kˣ) * ((x : even Q) : CliffordAlgebra Q) := by
-    have h := congrArg reverse hr
-    rw [reverse_reverse, reverse.map_mul, reverse.commutes] at h
-    calc
-      reverse (((x⁻¹ : (even Q)ˣ) : even Q) : CliffordAlgebra Q) =
-          reverse (((x⁻¹ : (even Q)ˣ) : even Q) : CliffordAlgebra Q) *
-            (algebraMap K _ (r : Kˣ) * algebraMap K _ (r⁻¹ : Kˣ)) := by
-              simp only [← map_mul, ← Units.val_mul, mul_inv_cancel, Units.val_one,
-                map_one, mul_one]
-      _ = ((x : even Q) : CliffordAlgebra Q) * algebraMap K _ (r⁻¹ : Kˣ) := by
-        rw [← mul_assoc, ← h]
-      _ = _ := (Algebra.commutes _ _).symm
+    let y := Units.map (even Q).val.toMonoidHom x
+    have hn : reverse (y : CliffordAlgebra Q) * y = algebraMap K _ (r : K) := by
+      change reverse ((x : even Q) : CliffordAlgebra Q) *
+        ((x : even Q) : CliffordAlgebra Q) = _
+      rw [hr, mul_assoc]
+      simp only [← Subalgebra.coe_mul, Units.inv_mul, Subalgebra.coe_one, mul_one]
+    change reverse ((y⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) =
+      algebraMap K _ (r⁻¹ : Kˣ) * (y : CliffordAlgebra Q)
+    rw [← reverse_inv_mul_inv hn, mul_assoc, Units.inv_mul, mul_one]
   refine mem_lipschitzGroup_of_involute_act_ι_mem_range_ι Q hQ hQ.exists_isUnit fun m => ?_
   have hxe : ((x : even Q) : CliffordAlgebra Q) ∈ evenOdd Q 0 := by
     rw [← even_toSubmodule Q]
