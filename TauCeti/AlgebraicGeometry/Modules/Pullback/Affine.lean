@@ -154,6 +154,17 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.pullbackFromAffine_η :
     ((pullback f).map_id (𝟙_ Y.Modules))).trans
       ((Category.id_comp _).trans (pullback_η f))
 
+omit [IsAffine Y] in
+/-- Pullback sends the inherited braiding of quasicoherent sheaves to the pullback of
+the braiding of their underlying sheaves of modules. -/
+@[simp]
+theorem _root_.AlgebraicGeometry.Scheme.Modules.pullbackFromAffine_map_braiding
+    (E F : QuasicoherentSheaf Y) :
+    ((ObjectProperty.ι _ : QuasicoherentSheaf Y ⥤ Y.Modules) ⋙ pullback f).map
+        (β_ E F).hom =
+      (pullback f).map (@BraidedCategory.braiding Y.Modules _ _ _ E.obj F.obj).hom :=
+  (rfl)
+
 /-- Pullback of quasicoherent sheaves from an affine base to modules on the source is
 symmetric monoidal, with the existing canonical tensor comparisons. -/
 instance _root_.AlgebraicGeometry.Scheme.Modules.pullbackFromAffineBraided :
@@ -164,14 +175,7 @@ instance _root_.AlgebraicGeometry.Scheme.Modules.pullbackFromAffineBraided :
     rw [← cancel_epi (Functor.OplaxMonoidal.δ H E F)]
     erw [Functor.Monoidal.δ_μ_assoc]
     rw [pullbackFromAffine_δ]
-    -- The full-subcategory inclusion has identity tensor comparisons and sends its
-    -- inherited braiding to the underlying braiding. Specify `Y.Modules` explicitly:
-    -- inference from `E.obj` otherwise sees only the sheaf-of-modules wrapper.
-    change (pullback f).map
-      (@BraidedCategory.braiding Y.Modules _ _ _ E.obj F.obj).hom =
-      Functor.OplaxMonoidal.δ (pullback f) E.obj F.obj ≫
-        (β_ ((pullback f).obj E.obj) ((pullback f).obj F.obj)).hom ≫
-          Functor.LaxMonoidal.μ H F E
+    rw [pullbackFromAffine_map_braiding]
     erw [← pullback_map_braiding_hom_comp_δ_assoc, ← pullbackFromAffine_δ]
     exact ((congrArg ((pullback f).map
       (@BraidedCategory.braiding Y.Modules _ _ _ E.obj F.obj).hom ≫ ·)

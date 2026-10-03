@@ -140,6 +140,17 @@ lemma presheafPushforward_μ_app_tmul (M N : PresheafOfModulesOfCommRing.{u} R.o
       m ⊗ₜ[R.obj.obj (F.op.obj U)] n :=
   PresheafOfModules.pushforward_μ_app_tmul F (commRingCatHom φ) M N U m n
 
+/-- The braiding on the underlying presheaves of pushforward sheaves is the braiding on the
+pushforwards of their underlying presheaves. -/
+@[simp]
+lemma braiding_hom_forget_pushforward_obj (M N : SheafOfModules.{u} (ringCatSheaf R)) :
+    (β_ ((_root_.SheafOfModules.forget (ringCatSheaf S)).obj
+        ((_root_.SheafOfModules.pushforward φ).obj M))
+      ((_root_.SheafOfModules.forget (ringCatSheaf S)).obj
+        ((_root_.SheafOfModules.pushforward φ).obj N))).hom =
+      (β_ ((presheafPushforward φ).obj M.val) ((presheafPushforward φ).obj N.val)).hom :=
+  (rfl)
+
 /-- On underlying presheaves of modules, the pushforward of a morphism of sheaves of modules is
 the pushforward of the underlying morphism of presheaves. -/
 lemma forget_map_pushforward_map {M N : SheafOfModules.{u} (ringCatSheaf R)} (f : M ⟶ N) :
@@ -309,8 +320,11 @@ instance pushforwardLaxBraided : (_root_.SheafOfModules.pushforward φ).LaxBraid
     erw [Category.assoc, ← Functor.map_comp]
     erw [Functor.LaxBraided.braided]
     erw [Functor.map_comp, presheafPushforward_braided_assoc]
-    -- Forgetting a pushforward is the sectionwise pushforward of the forgotten sheaf.
-    rfl
+    exact congrArg
+      (· ≫ Functor.LaxMonoidal.μ (presheafPushforward φ) N.val M.val ≫
+        (presheafPushforward φ).map
+          (Functor.LaxMonoidal.μ (_root_.SheafOfModules.forget (ringCatSheaf R)) N M))
+      (braiding_hom_forget_pushforward_obj φ M N).symm
 
 section Comp
 
