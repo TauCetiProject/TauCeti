@@ -13,14 +13,15 @@ public import TauCeti.Algebra.Homology.AInfinity.Module.Right.Basic
 This file splits the Taylor map of a right `A∞` module `MM` over `AA` into its arity
 components, and spells out the module Stasheff law component by component.
 
-Arities are indexed by the number `n` of algebra inputs, so the components indexed by `n` are the
-operations `b_{n+1}^M` and `m_{n+1}^M` of arity `n + 1`.
+As for the operations `m n` of an `A∞` algebra, the components are indexed by their total arity
+`n`, counting the module input, so `b n` and `m n` take `n - 1` algebra inputs.  There is no
+arity-zero operation, and `b 0` and `m 0` are the junk value `0`.
 
-* `MM.b n : M ⊗ A^⊗n → M` is the suspended operation: the restriction of the Taylor map to the
-  summand `sM ⊗ (sA)^⊗n` of the cofree bar comodule.
-* `MM.m n : M → A^n → M` is the unsuspended operation, obtained from `MM.b n` by the Koszul sign of
-  the degree-`-1` suspension of its `n + 1` inputs.  This is the convention used for the
-  unsuspended operations of an `A∞` algebra.
+* `MM.b n : M ⊗ A^⊗(n-1) → M` is the suspended operation `b_n^M`: the restriction of the Taylor
+  map to the summand `sM ⊗ (sA)^⊗(n-1)` of the cofree bar comodule.
+* `MM.m n : M → A^(n-1) → M` is the unsuspended operation `m_n^M`, obtained from `MM.b n` by the
+  Koszul sign of the degree-`-1` suspension of its `n` inputs.  This is the convention used for
+  the unsuspended operations of an `A∞` algebra.
 
 The bar differential is determined by its Taylor map through the cofree coderivation formula
 `barDifferential_eq`.  Composing with the Taylor map turns the square-zero law into the suspended
@@ -38,7 +39,7 @@ the unsuspended module Stasheff equations in the operations `m` of the module an
 
 * `TauCeti.AInfinityRightModule.isHomogeneous_b_tmul_tprod` and
   `TauCeti.AInfinityRightModule.m_mem_piece`: the suspended components have degree one and the
-  unsuspended operation of arity `n + 1` has degree `1 - n`.
+  unsuspended operation of arity `n` has degree `2 - n`.
 * `TauCeti.AInfinityRightModule.ext_b` and `TauCeti.AInfinityRightModule.ext_m`: a module is
   determined by its grading and either family of operations.
 * `TauCeti.AInfinityRightModule.barDifferential_eq`: the bar differential in terms of the Taylor
@@ -48,7 +49,7 @@ the unsuspended module Stasheff equations in the operations `m` of the module an
 * `TauCeti.AInfinityRightModule.stasheff_tmul_of_tprod`: the suspended module Stasheff equation
   of each arity.
 * `TauCeti.AInfinityRightModule.stasheff`: the unsuspended module Stasheff equation of each arity
-  on homogeneous inputs, with `m_zero_m_zero` its arity-one case on arbitrary inputs.
+  on homogeneous inputs, with `m_one_m_one` its arity-one case on arbitrary inputs.
 
 ## References
 
@@ -76,30 +77,37 @@ open TensorWords
 
 section Components
 
-/-- The suspended arity-`n + 1` component `b_{n+1}^M` of a right `A∞` module: the Taylor map
-restricted to the summand `sM ⊗ (sA)^⊗n` of the cofree bar comodule. -/
-noncomputable def b (MM : AInfinityRightModule AA M) (n : ℕ) :
-    M ⊗[R] TensorPower R n A →ₗ[R] M :=
-  MM.taylor ∘ₗ (TensorWords.of R A n).lTensor M
+/-- The suspended arity-`n` component `b_n^M` of a right `A∞` module: the Taylor map restricted
+to the summand `sM ⊗ (sA)^⊗(n-1)` of the cofree bar comodule.  There is no arity-zero operation,
+and `b 0` is the junk value `0`. -/
+noncomputable def b (MM : AInfinityRightModule AA M) :
+    (n : ℕ) → M ⊗[R] TensorPower R (n - 1) A →ₗ[R] M
+  | 0 => 0
+  | n + 1 => MM.taylor ∘ₗ (TensorWords.of R A n).lTensor M
 
-/-- The arity component `b n` is the Taylor map composed with the inclusion of words of length
-`n`. -/
-theorem b_def (MM : AInfinityRightModule AA M) (n : ℕ) :
-    MM.b n = MM.taylor ∘ₗ (TensorWords.of R A n).lTensor M :=
+/-- The arity-zero component is the junk value `0`. -/
+theorem b_zero (MM : AInfinityRightModule AA M) : MM.b 0 = 0 :=
   (rfl)
 
-/-- On a word of length `n`, the Taylor map is the arity component `b n`. -/
+/-- The arity component `b (n + 1)` is the Taylor map composed with the inclusion of words of
+length `n`. -/
+theorem b_def (MM : AInfinityRightModule AA M) (n : ℕ) :
+    MM.b (n + 1) = MM.taylor ∘ₗ (TensorWords.of R A n).lTensor M :=
+  (rfl)
+
+/-- On a word of length `n`, the Taylor map is the arity component `b (n + 1)`. -/
 theorem taylor_tmul_of (MM : AInfinityRightModule AA M) (n : ℕ) (x : M)
     (w : TensorPower R n A) :
-    MM.taylor (x ⊗ₜ[R] TensorWords.of R A n w) = MM.b n (x ⊗ₜ[R] w) :=
+    MM.taylor (x ⊗ₜ[R] TensorWords.of R A n w) = MM.b (n + 1) (x ⊗ₜ[R] w) :=
   (rfl)
 
-/-- The arity component `b n` has degree one: it sends a homogeneous suspended module element
-and `n` homogeneous suspended letters to the suspended module degree one higher than the total. -/
+/-- The arity component `b (n + 1)` has degree one: it sends a homogeneous suspended module
+element and `n` homogeneous suspended letters to the suspended module degree one higher than the
+total. -/
 theorem isHomogeneous_b_tmul_tprod (MM : AInfinityRightModule AA M) (n : ℕ) {x : M} {p : ℤ}
     (hx : x ∈ (MM.grading.shift 1).piece p) (a : Fin n → A) (d : Fin n → ℤ)
     (ha : ∀ i, a i ∈ (AA.grading.shift 1).piece (d i)) :
-    MM.b n (x ⊗ₜ[R] PiTensorProduct.tprod R a) ∈
+    MM.b (n + 1) (x ⊗ₜ[R] PiTensorProduct.tprod R a) ∈
       (MM.grading.shift 1).piece (p + ∑ i, d i + 1) := by
   rw [← taylor_tmul_of]
   refine MM.isHomogeneous_taylor.map_mem ?_
@@ -111,11 +119,15 @@ theorem isHomogeneous_b_tmul_tprod (MM : AInfinityRightModule AA M) (n : ℕ) {x
 agree. -/
 theorem taylor_eq_taylor_iff {MM NN : AInfinityRightModule AA M} :
     MM.taylor = NN.taylor ↔ ∀ n, MM.b n = NN.b n := by
-  refine ⟨fun h n ↦ by rw [b_def, b_def, h], fun h ↦ TensorProduct.ext' fun x w ↦ ?_⟩
+  refine ⟨fun h n ↦ ?_, fun h ↦ TensorProduct.ext' fun x w ↦ ?_⟩
+  · cases n with
+    | zero => rfl
+    | succ n => rw [b_def, b_def, h]
   have hx : MM.taylor ∘ₗ TensorProduct.mk R M (TensorWords R A) x =
       NN.taylor ∘ₗ TensorProduct.mk R M (TensorWords R A) x :=
     DirectSum.linearMap_ext R fun n ↦ LinearMap.ext fun z ↦ by
-      simp only [← of_def, LinearMap.comp_apply, TensorProduct.mk_apply, taylor_tmul_of, h n]
+      simp only [← of_def, LinearMap.comp_apply, TensorProduct.mk_apply, taylor_tmul_of,
+        h (n + 1)]
   exact LinearMap.congr_fun hx w
 
 /-- Right `A∞` modules on a fixed carrier are determined by their grading and their suspended
@@ -128,36 +140,43 @@ end Components
 
 section Unsuspended
 
-/-- The unsuspended arity-`n + 1` operation `m_{n+1}^M` of a right `A∞` module, with the module
-input first.  It evaluates `b n` after twisting the input in position `j` (the module input
-being in position `0`) by the Koszul twist of parameter `n - j`; on homogeneous inputs these
-twists multiply to the Koszul sign of the suspension of `n + 1` inputs. -/
-noncomputable def m (MM : AInfinityRightModule AA M) (n : ℕ) :
-    M →ₗ[R] MultilinearMap R (fun _ : Fin n ↦ A) M where
-  toFun x :=
-    ((MM.b n ∘ₗ TensorProduct.mk R M (TensorPower R n A) (MM.grading.koszulTwist n x)
-      ).compMultilinearMap (PiTensorProduct.tprod R)).compLinearMap
-        fun i ↦ AA.grading.koszulTwist ((n : ℤ) - 1 - i)
-  map_add' x y := by
-    ext a
-    simp
-  map_smul' r x := by
-    ext a
-    simp
+/-- The unsuspended arity-`n` operation `m_n^M` of a right `A∞` module, with the module input
+first.  For `n = k + 1`, it evaluates `b n` after twisting the input in position `j` (the module
+input being in position `0`) by the Koszul twist of parameter `k - j`; on homogeneous inputs these
+twists multiply to the Koszul sign of the suspension of `n` inputs.  There is no arity-zero
+operation, and `m 0` is the junk value `0`. -/
+noncomputable def m (MM : AInfinityRightModule AA M) :
+    (n : ℕ) → M →ₗ[R] MultilinearMap R (fun _ : Fin (n - 1) ↦ A) M
+  | 0 => 0
+  | n + 1 =>
+    { toFun x :=
+        ((MM.b (n + 1) ∘ₗ TensorProduct.mk R M (TensorPower R n A) (MM.grading.koszulTwist n x)
+          ).compMultilinearMap (PiTensorProduct.tprod R)).compLinearMap
+            fun i ↦ AA.grading.koszulTwist ((n : ℤ) - 1 - i)
+      map_add' x y := by
+        ext a
+        simp
+      map_smul' r x := by
+        ext a
+        simp }
+
+/-- The arity-zero operation is the junk value `0`. -/
+theorem m_zero (MM : AInfinityRightModule AA M) : MM.m 0 = 0 :=
+  (rfl)
 
 /-- The unsuspended operation evaluates the suspended component on Koszul-twisted inputs. -/
 theorem m_apply (MM : AInfinityRightModule AA M) (n : ℕ) (x : M) (a : Fin n → A) :
-    MM.m n x a =
-      MM.b n (MM.grading.koszulTwist n x ⊗ₜ[R]
+    MM.m (n + 1) x a =
+      MM.b (n + 1) (MM.grading.koszulTwist n x ⊗ₜ[R]
         PiTensorProduct.tprod R fun i ↦ AA.grading.koszulTwist ((n : ℤ) - 1 - i) (a i)) :=
   (rfl)
 
 /-- The suspended component evaluates the unsuspended operation on Koszul-twisted inputs: the
 twists defining `m` are involutions. -/
 theorem b_tmul_tprod (MM : AInfinityRightModule AA M) (n : ℕ) (x : M) (a : Fin n → A) :
-    MM.b n (x ⊗ₜ[R] PiTensorProduct.tprod R a) =
-      MM.m n (MM.grading.koszulTwist n x)
-        fun i ↦ AA.grading.koszulTwist ((n : ℤ) - 1 - i) (a i) := by
+    MM.b (n + 1) (x ⊗ₜ[R] PiTensorProduct.tprod R a) =
+      MM.m (n + 1) (MM.grading.koszulTwist n x)
+        fun i : Fin n ↦ AA.grading.koszulTwist ((n : ℤ) - 1 - i) (a i) := by
   simp only [m_apply, InternalGrading.koszulTwist_koszulTwist]
 
 /-- On homogeneous inputs, the suspended component is the unsuspended operation multiplied by the
@@ -166,21 +185,27 @@ Koszul sign of suspending the module input of degree `e` and the `k` algebra inp
 theorem b_tmul_tprod_of_mem (MM : AInfinityRightModule AA M) (k : ℕ) {x : M} {e : ℤ}
     (hx : x ∈ MM.grading.piece e) (d : ℕ → ℤ) (a : ℕ → A)
     (ha : ∀ i < k, a i ∈ AA.grading.piece (d i)) :
-    MM.b k (x ⊗ₜ[R] PiTensorProduct.tprod R fun i : Fin k ↦ a i) =
-      negOnePowCast R (k * e + suspExp k d) • evalNat (MM.m k x) a := by
+    MM.b (k + 1) (x ⊗ₜ[R] PiTensorProduct.tprod R fun i : Fin k ↦ a i) =
+      negOnePowCast R (k * e + suspExp k d) • evalNat (MM.m (k + 1) x) a := by
   have htwist : (fun i : Fin k ↦ AA.grading.koszulTwist ((k : ℤ) - 1 - i) (a i)) =
       fun i : Fin k ↦ negOnePowCast R (((k : ℤ) - 1 - i) * d i) • a i := by
     funext i
     rw [AA.grading.koszulTwist_apply_of_mem (ha i i.isLt), negOnePowCast_eq_intCast]
   rw [b_tmul_tprod, htwist, MM.grading.koszulTwist_apply_of_mem hx, ← negOnePowCast_eq_intCast,
-    map_smul, smul_apply, MultilinearMap.map_smul_univ, smul_smul, evalNat_def,
-    suspExp_def, negOnePowCast_add, negOnePowCast_sum,
+    map_smul, smul_apply]
+  -- `MM.m (k + 1) x` is multilinear in `k + 1 - 1` arguments, which is `k` only up to unfolding.
+  refine congrArg _ (MultilinearMap.map_smul_univ (ι := Fin k) (M₁ := fun _ ↦ A) (MM.m (k + 1) x)
+    (fun i ↦ negOnePowCast R (((k : ℤ) - 1 - i) * d i)) fun i ↦ a i) |>.trans ?_
+  rw [smul_smul, evalNat_def, suspExp_def, negOnePowCast_add, negOnePowCast_sum,
     ← Fin.prod_univ_eq_prod_range (fun i ↦ negOnePowCast R (((k : ℤ) - 1 - i) * d i)) k]
+  rfl
 
 /-- The suspended arity components are determined by the grading and the unsuspended
 operations. -/
 theorem b_eq_b_of_m_eq_m {MM NN : AInfinityRightModule AA M} (hG : MM.grading = NN.grading)
     (n : ℕ) (hm : MM.m n = NN.m n) : MM.b n = NN.b n := by
+  obtain _ | n := n
+  · rfl
   refine TensorProduct.ext' fun x w ↦ ?_
   induction w using PiTensorProduct.induction_on with
   | smul_tprod r a =>
@@ -193,11 +218,11 @@ theorem ext_m {MM NN : AInfinityRightModule AA M} (hG : MM.grading = NN.grading)
     (hm : ∀ n, MM.m n = NN.m n) : MM = NN :=
   ext_b hG fun n ↦ b_eq_b_of_m_eq_m hG n (hm n)
 
-/-- The unsuspended operation `m_{n+1}^M` has cohomological degree `1 - n`. -/
+/-- The unsuspended operation `m_{n+1}^M` of arity `n + 1` has cohomological degree `1 - n`. -/
 theorem m_mem_piece (MM : AInfinityRightModule AA M) (n : ℕ) {x : M} {p : ℤ}
     (hx : x ∈ MM.grading.piece p) (a : Fin n → A) (d : Fin n → ℤ)
     (ha : ∀ i, a i ∈ AA.grading.piece (d i)) :
-    MM.m n x a ∈ MM.grading.piece (p + ∑ i, d i + (1 - n)) := by
+    MM.m (n + 1) x a ∈ MM.grading.piece (p + ∑ i, d i + (1 - n)) := by
   have hx' : MM.grading.koszulTwist n x ∈ (MM.grading.shift 1).piece (p - 1) := by
     rw [InternalGrading.shift_piece, sub_add_cancel]
     exact MM.grading.koszulTwist_mem_piece hx _
@@ -208,9 +233,8 @@ theorem m_mem_piece (MM : AInfinityRightModule AA M) (n : ℕ) {x : M} {p : ℤ}
   have h := MM.isHomogeneous_b_tmul_tprod n hx' _ _ ha'
   rw [InternalGrading.shift_piece, Finset.sum_sub_distrib, Finset.sum_const, Finset.card_univ,
     Fintype.card_fin, nsmul_eq_mul, mul_one] at h
-  rw [m_apply]
-  convert h using 2
-  ring
+  rw [m_apply, show p + ∑ i, d i + (1 - n) = p - 1 + (∑ i, d i - n) + 1 + 1 by ring]
+  exact h
 
 end Unsuspended
 
@@ -338,13 +362,14 @@ private theorem taylor_taylor_subword_of_mem (MM : AInfinityRightModule AA M) {n
         subword R (fun i : Fin n ↦ a i) k (n - k)) =
       negOnePowCast R (n * e + suspExp n d) •
         negOnePowCast R (((k : ℤ) + 1) * ((n : ℤ) - k)) •
-          evalNat (MM.m (n - k) (evalNat (MM.m k x) a)) fun j ↦ a (k + j) := by
+          evalNat (MM.m (n - k + 1) (evalNat (MM.m (k + 1) x) a)) fun j ↦ a (k + j) := by
   obtain ⟨t, rfl⟩ := Nat.exists_eq_add_of_le hk
   rw [Nat.add_sub_cancel_left, subword_eq_of_tprod R _ (by omega),
     subword_eq_of_tprod R _ le_rfl, taylor_tmul_of, taylor_tmul_of]
   simp only [Nat.zero_add]
   rw [b_tmul_tprod_of_mem MM k hx d a fun i hi ↦ ha i (by omega)]
-  have hy : evalNat (MM.m k x) a ∈ MM.grading.piece (e + ∑ i ∈ Finset.range k, d i + (1 - k)) := by
+  have hy : evalNat (MM.m (k + 1) x) a ∈
+      MM.grading.piece (e + ∑ i ∈ Finset.range k, d i + (1 - k)) := by
     rw [evalNat_def, ← Fin.sum_univ_eq_sum_range]
     exact MM.m_mem_piece k hx _ (fun i : Fin k ↦ d i) fun i ↦ ha i (by omega)
   rw [← TensorProduct.smul_tmul', map_smul,
@@ -375,7 +400,7 @@ private theorem taylor_splice_of_mem (MM : AInfinityRightModule AA M) {n p s : �
       negOnePowCast R (n * e + suspExp n d) •
         negOnePowCast R ((p : ℤ) + 1 + s * ((n : ℤ) - p - s) +
             (2 - s) * (e + ∑ i ∈ Finset.range p, d i)) •
-          evalNat (MM.m (p + 1 + (n - p - s)) x)
+          evalNat (MM.m (p + 1 + (n - p - s) + 1) x)
             (replaceBlock a p s (evalNat (AA.m s) fun j ↦ a (p + j))) := by
   obtain ⟨t, rfl⟩ : ∃ t, n = p + s + t := ⟨n - p - s, by omega⟩
   have ht : p + s + t - p - s = t := by omega
@@ -436,17 +461,18 @@ the inputs `x, a 0, …, a (n - 1)` by `0, …, n`, the term in which an operati
 collapses the block starting at position `r` carries the sign `(-1) ^ (r + s * t)`, with `t`
 inputs after the block, times the Koszul sign of the degree-`2 - s` inner operation crossing the
 `r` inputs before it.  The first sum collects the terms with `r = 0`, whose inner operation is
-`m k` of `MM`, and the second those with `r = p + 1`, whose inner operation is `m s` of `AA`. -/
+`m (k + 1)` of `MM`, and the second those with `r = p + 1`, whose inner operation is `m s` of
+`AA`. -/
 theorem stasheff (MM : AInfinityRightModule AA M) (n : ℕ) {x : M} {e : ℤ}
     (hx : x ∈ MM.grading.piece e) (d : ℕ → ℤ) (a : ℕ → A)
     (ha : ∀ i < n, a i ∈ AA.grading.piece (d i)) :
     ∑ k ∈ Finset.range (n + 1),
         negOnePowCast R (((k : ℤ) + 1) * ((n : ℤ) - k)) •
-          evalNat (MM.m (n - k) (evalNat (MM.m k x) a)) (fun j ↦ a (k + j)) +
+          evalNat (MM.m (n - k + 1) (evalNat (MM.m (k + 1) x) a)) (fun j ↦ a (k + j)) +
       ∑ p ∈ Finset.range n, ∑ s ∈ Finset.Icc 1 (n - p),
         negOnePowCast R ((p : ℤ) + 1 + s * ((n : ℤ) - p - s) +
             (2 - s) * (e + ∑ i ∈ Finset.range p, d i)) •
-          evalNat (MM.m (p + 1 + (n - p - s)) x)
+          evalNat (MM.m (p + 1 + (n - p - s) + 1) x)
             (replaceBlock a p s (evalNat (AA.m s) fun j ↦ a (p + j))) = 0 := by
   have hbar : MM.taylor ((MM.grading.shift 1).koszulTwist 1 x ⊗ₜ[R]
         AA.coaugmentedBarDifferential
@@ -488,8 +514,8 @@ theorem stasheff (MM : AInfinityRightModule AA M) (n : ℕ) {x : M} {e : ℤ}
 
 /-- The unsuspended module Stasheff equation of arity one: the unary module operation squares to
 zero. -/
-theorem m_zero_m_zero (MM : AInfinityRightModule AA M) (x : M) (a c : Fin 0 → A) :
-    MM.m 0 (MM.m 0 x a) c = 0 := by
+theorem m_one_m_one (MM : AInfinityRightModule AA M) (x : M) (a c : Fin 0 → A) :
+    MM.m 1 (MM.m 1 x a) c = 0 := by
   have hone : ∀ e : Fin 0 → A, TensorWords.of R A 0 (PiTensorProduct.tprod R e) = 1 :=
     fun e ↦ by
       rw [one_eq_of_zero]
@@ -497,7 +523,7 @@ theorem m_zero_m_zero (MM : AInfinityRightModule AA M) (x : M) (a c : Fin 0 → 
   have h := MM.stasheff_tmul_of_tprod 0 x a
   rw [hone, AA.coaugmentedBarDifferential_one, TensorProduct.tmul_zero, map_zero, add_zero,
     Finset.sum_range_one, Nat.sub_self, subword_length_zero R a le_rfl] at h
-  rw [m_apply, m_apply, ← taylor_tmul_of, ← taylor_tmul_of, hone, hone, Nat.cast_zero,
+  rw [m_apply MM 0, m_apply MM 0, ← taylor_tmul_of, ← taylor_tmul_of, hone, hone, Nat.cast_zero,
     InternalGrading.koszulTwist_zero, LinearMap.id_apply, LinearMap.id_apply, h]
 
 end ComponentEquations
