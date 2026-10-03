@@ -24,10 +24,10 @@ inner product of two tangent vectors at `(x, t)` divided by `t²`. For `1 ≤ n`
 The metric is the Euclidean metric of `E × ℝ`, restricted to the upper half-space and rescaled by
 the analytic positive function `t⁻²`, so it is an analytic Riemannian metric.
 
-For `0 < c` and `b ∈ E`, the similarity `(x, t) ↦ (c • x + b, c • t)` preserves the upper
-half-space and scales tangent vectors and the height `t` by the same factor `c`, so it is a
-Riemannian isometry. These similarities act transitively, so the upper half-space model is a
-homogeneous Riemannian manifold.
+For `0 < c`, a linear isometry `A` of `E` and `b ∈ E`, the similarity
+`(x, t) ↦ (c • A x + b, c • t)` preserves the upper half-space and scales tangent vectors and the
+height `t` by the same factor `c`, so it is a Riemannian isometry. These similarities act
+transitively, so the upper half-space model is a homogeneous Riemannian manifold.
 
 Only analyticity of the metric and homogeneity are established here: the constant curvature `-1`
 and the completeness of this metric are not proved, so it is not (yet) shown to be a
@@ -40,13 +40,15 @@ and the completeness of this metric are not proved, so it is not (yet) shown to 
   `RiemannianBundle` instance.
 * `TauCeti.UpperHalfSpace.height`: the last coordinate `t` of a point.
 * `TauCeti.UpperHalfSpace.riemannianMetric`: the analytic hyperbolic metric.
-* `TauCeti.UpperHalfSpace.similarity`: the isometry `(x, t) ↦ (c • x + b, c • t)`.
+* `TauCeti.UpperHalfSpace.similarity`: the isometry `(x, t) ↦ (c • A x + b, c • t)`.
 
 ## Main results
 
 * `TauCeti.UpperHalfSpace.inner_def`: the inner product of tangent vectors at `x` is their
-  Euclidean inner product divided by `height x ^ 2`; `TauCeti.UpperHalfSpace.norm_def` and
-  `TauCeti.UpperHalfSpace.enorm_def` are the corresponding norm forms.
+  Euclidean inner product divided by `height x ^ 2` (`TauCeti.UpperHalfSpace.riemannianMetric_inner`
+  is the same formula for the bundled metric `riemannianMetric`);
+  `TauCeti.UpperHalfSpace.norm_def` and `TauCeti.UpperHalfSpace.enorm_def` are the corresponding
+  norm forms.
 * `TauCeti.UpperHalfSpace.contMDiff_coe_comp_iff`: a map into the upper half-space is `C^n` iff
   its composite with the inclusion into `E × ℝ` is.
 * `TauCeti.UpperHalfSpace.isPretransitive_isom`: the isometry group of the upper half-space model
@@ -98,6 +100,9 @@ instance : TopologicalSpace (UpperHalfSpace E) :=
 
 instance : ChartedSpace (WithLp 2 (E × ℝ)) (UpperHalfSpace E) :=
   inferInstanceAs (ChartedSpace (WithLp 2 (E × ℝ)) (upperHalfSpaceOpens E))
+
+instance : T3Space (UpperHalfSpace E) :=
+  inferInstanceAs (T3Space (upperHalfSpaceOpens E))
 
 variable {E}
 
@@ -168,16 +173,6 @@ theorem contMDiff_coe :
       (coe : UpperHalfSpace E → WithLp 2 (E × ℝ)) :=
   contMDiff_subtype_val (U := upperHalfSpaceOpens E)
 
-/-- The differential of the inclusion of the upper half-space into `E × ℝ` is the identity of the
-model vector space. -/
-theorem mfderiv_coe_apply (x : UpperHalfSpace E)
-    (v : TangentSpace 𝓘(ℝ, WithLp 2 (E × ℝ)) x) :
-    mfderiv 𝓘(ℝ, WithLp 2 (E × ℝ)) 𝓘(ℝ, WithLp 2 (E × ℝ)) coe x v =
-      tangentSpaceCastModel 𝓘(ℝ, WithLp 2 (E × ℝ)) x v := by
-  have h := congrArg (· v) (TauCeti.Manifold.mfderiv_subtype_val (I := 𝓘(ℝ, WithLp 2 (E × ℝ)))
-    (U := upperHalfSpaceOpens E) x)
-  exact h.trans (TauCeti.Manifold.tangentSpaceOpenEquiv_apply (I := 𝓘(ℝ, WithLp 2 (E × ℝ))) x v)
-
 /-- The conformal factor `t⁻²` of the hyperbolic metric is analytic on the upper half-space. -/
 theorem contMDiff_inv_height_sq :
     ContMDiff 𝓘(ℝ, WithLp 2 (E × ℝ)) 𝓘(ℝ) ω fun x : UpperHalfSpace E ↦ (height x ^ 2)⁻¹ := by
@@ -224,66 +219,81 @@ theorem tangentSpaceCastModel_mfderiv_apply {f : UpperHalfSpace E → UpperHalfS
     (show upperHalfSpaceOpens E from x) v
   exact e₁.symm.trans (h.trans (congrArg L e₂))
 
-/-- The underlying map `(x, t) ↦ (c • x + b, c • t)` of `similarity c hc b`. -/
-private def similarityMap (c : ℝ) (hc : 0 < c) (b : E) (x : UpperHalfSpace E) :
+/-- The underlying map `(x, t) ↦ (c • A x + b, c • t)` of `similarity c hc A b`. -/
+private def similarityMap (c : ℝ) (hc : 0 < c) (A : E ≃ₗᵢ[ℝ] E) (b : E) (x : UpperHalfSpace E) :
     UpperHalfSpace E :=
-  mk (c • (x : WithLp 2 (E × ℝ)) + WithLp.toLp 2 (b, 0)) (by
-    simpa using mul_pos hc (height_pos x))
+  mk (c • LinearIsometryEquiv.withLpProdCongr 2 A (.refl ℝ ℝ) (x : WithLp 2 (E × ℝ)) +
+    WithLp.toLp 2 (b, 0)) (by simpa using mul_pos hc (height_pos x))
 
-private theorem coe_similarityMap (c : ℝ) (hc : 0 < c) (b : E) (x : UpperHalfSpace E) :
-    (similarityMap c hc b x : WithLp 2 (E × ℝ)) =
-      c • (x : WithLp 2 (E × ℝ)) + WithLp.toLp 2 (b, 0) :=
+private theorem coe_similarityMap (c : ℝ) (hc : 0 < c) (A : E ≃ₗᵢ[ℝ] E) (b : E)
+    (x : UpperHalfSpace E) :
+    (similarityMap c hc A b x : WithLp 2 (E × ℝ)) =
+      c • LinearIsometryEquiv.withLpProdCongr 2 A (.refl ℝ ℝ) (x : WithLp 2 (E × ℝ)) +
+        WithLp.toLp 2 (b, 0) :=
   (rfl)
 
-private theorem height_similarityMap (c : ℝ) (hc : 0 < c) (b : E) (x : UpperHalfSpace E) :
-    height (similarityMap c hc b x) = c * height x := by
+private theorem height_similarityMap (c : ℝ) (hc : 0 < c) (A : E ≃ₗᵢ[ℝ] E) (b : E)
+    (x : UpperHalfSpace E) : height (similarityMap c hc A b x) = c * height x := by
   simp [← snd_coe, coe_similarityMap]
 
 /-- The composition law of similarities. -/
-private theorem similarityMap_similarityMap (c c' : ℝ) (hc : 0 < c) (hc' : 0 < c') (b b' : E)
-    (x : UpperHalfSpace E) :
-    similarityMap c hc b (similarityMap c' hc' b' x) =
-      similarityMap (c * c') (mul_pos hc hc') (c • b' + b) x :=
+private theorem similarityMap_similarityMap (c c' : ℝ) (hc : 0 < c) (hc' : 0 < c')
+    (A A' : E ≃ₗᵢ[ℝ] E) (b b' : E) (x : UpperHalfSpace E) :
+    similarityMap c hc A b (similarityMap c' hc' A' b' x) =
+      similarityMap (c * c') (mul_pos hc hc') (A'.trans A) (c • A b' + b) x :=
   ext_fst_height (by simp [coe_similarityMap, smul_smul, add_assoc])
     (by simp [height_similarityMap, mul_assoc])
 
-/-- The similarity with factor `1` and translation `0` is the identity. The factor and the
-translation are hypotheses rather than literals because `hc` depends on the factor. -/
-private theorem similarityMap_eq_self {c : ℝ} (hc : 0 < c) {b : E} (hc₁ : c = 1) (hb : b = 0)
-    (x : UpperHalfSpace E) : similarityMap c hc b x = x := by
-  subst hc₁ hb
+/-- The similarity with factor `1`, linear part the identity and translation `0` is the identity.
+The factor, linear part and translation are hypotheses rather than literals because `hc` depends
+on the factor. -/
+private theorem similarityMap_eq_self {c : ℝ} (hc : 0 < c) {A : E ≃ₗᵢ[ℝ] E} {b : E} (hc₁ : c = 1)
+    (hA : A = .refl ℝ E) (hb : b = 0) (x : UpperHalfSpace E) : similarityMap c hc A b x = x := by
+  subst hc₁ hA hb
   exact ext_fst_height (by simp [coe_similarityMap]) (by simp [height_similarityMap])
 
-private theorem similarityMap_inv_similarityMap (c : ℝ) (hc : 0 < c) (b : E)
+private theorem similarityMap_inv_similarityMap (c : ℝ) (hc : 0 < c) (A : E ≃ₗᵢ[ℝ] E) (b : E)
     (x : UpperHalfSpace E) :
-    similarityMap c⁻¹ (inv_pos.mpr hc) (-(c⁻¹ • b)) (similarityMap c hc b x) = x := by
+    similarityMap c⁻¹ (inv_pos.mpr hc) A.symm (-(c⁻¹ • A.symm b)) (similarityMap c hc A b x) =
+      x := by
   rw [similarityMap_similarityMap]
-  exact similarityMap_eq_self _ (inv_mul_cancel₀ hc.ne') (add_neg_cancel _) x
+  exact similarityMap_eq_self _ (inv_mul_cancel₀ hc.ne') A.self_trans_symm
+    (add_neg_cancel _) x
 
-private theorem similarityMap_similarityMap_inv (c : ℝ) (hc : 0 < c) (b : E)
+private theorem similarityMap_similarityMap_inv (c : ℝ) (hc : 0 < c) (A : E ≃ₗᵢ[ℝ] E) (b : E)
     (x : UpperHalfSpace E) :
-    similarityMap c hc b (similarityMap c⁻¹ (inv_pos.mpr hc) (-(c⁻¹ • b)) x) = x := by
+    similarityMap c hc A b (similarityMap c⁻¹ (inv_pos.mpr hc) A.symm (-(c⁻¹ • A.symm b)) x) =
+      x := by
   rw [similarityMap_similarityMap]
-  exact similarityMap_eq_self _ (mul_inv_cancel₀ hc.ne')
-    (by rw [smul_neg, smul_smul, mul_inv_cancel₀ hc.ne', one_smul, neg_add_cancel]) x
+  exact similarityMap_eq_self _ (mul_inv_cancel₀ hc.ne') A.symm_trans_self
+    (by rw [map_neg, map_smul, LinearIsometryEquiv.apply_symm_apply, smul_neg, smul_smul,
+      mul_inv_cancel₀ hc.ne', one_smul, neg_add_cancel]) x
 
-private theorem contMDiff_similarityMap {n : ℕ∞ω} (c : ℝ) (hc : 0 < c) (b : E) :
-    ContMDiff 𝓘(ℝ, WithLp 2 (E × ℝ)) 𝓘(ℝ, WithLp 2 (E × ℝ)) n (similarityMap c hc b) := by
+private theorem contMDiff_similarityMap {n : ℕ∞ω} (c : ℝ) (hc : 0 < c) (A : E ≃ₗᵢ[ℝ] E)
+    (b : E) :
+    ContMDiff 𝓘(ℝ, WithLp 2 (E × ℝ)) 𝓘(ℝ, WithLp 2 (E × ℝ)) n (similarityMap c hc A b) := by
   refine contMDiff_coe_comp_iff.1 ?_
-  have h : ContDiff ℝ n fun p : WithLp 2 (E × ℝ) ↦ c • p + WithLp.toLp 2 (b, 0) :=
-    (contDiff_id.const_smul c).add contDiff_const
+  have h : ContDiff ℝ n fun p : WithLp 2 (E × ℝ) ↦
+      c • LinearIsometryEquiv.withLpProdCongr 2 A (.refl ℝ ℝ) p + WithLp.toLp 2 (b, 0) :=
+    ((LinearIsometryEquiv.withLpProdCongr 2 A (.refl ℝ ℝ)).contDiff.const_smul c).add
+      contDiff_const
   exact h.contMDiff.comp (contMDiff_coe.of_le le_top)
 
-private theorem tangentSpaceCastModel_mfderiv_similarityMap (c : ℝ) (hc : 0 < c) (b : E)
-    (x : UpperHalfSpace E) (v : TangentSpace 𝓘(ℝ, WithLp 2 (E × ℝ)) x) :
-    tangentSpaceCastModel 𝓘(ℝ, WithLp 2 (E × ℝ)) (similarityMap c hc b x)
-        (mfderiv 𝓘(ℝ, WithLp 2 (E × ℝ)) 𝓘(ℝ, WithLp 2 (E × ℝ)) (similarityMap c hc b) x v) =
-      c • tangentSpaceCastModel 𝓘(ℝ, WithLp 2 (E × ℝ)) x v := by
-  have hA : HasFDerivAt (fun p : WithLp 2 (E × ℝ) ↦ c • p + WithLp.toLp 2 (b, 0))
-      (c • ContinuousLinearMap.id ℝ (WithLp 2 (E × ℝ))) (x : WithLp 2 (E × ℝ)) :=
-    ((hasFDerivAt_id _).const_smul c).add_const _
+private theorem tangentSpaceCastModel_mfderiv_similarityMap (c : ℝ) (hc : 0 < c)
+    (A : E ≃ₗᵢ[ℝ] E) (b : E) (x : UpperHalfSpace E)
+    (v : TangentSpace 𝓘(ℝ, WithLp 2 (E × ℝ)) x) :
+    tangentSpaceCastModel 𝓘(ℝ, WithLp 2 (E × ℝ)) (similarityMap c hc A b x)
+        (mfderiv 𝓘(ℝ, WithLp 2 (E × ℝ)) 𝓘(ℝ, WithLp 2 (E × ℝ)) (similarityMap c hc A b) x v) =
+      c • LinearIsometryEquiv.withLpProdCongr 2 A (.refl ℝ ℝ)
+        (tangentSpaceCastModel 𝓘(ℝ, WithLp 2 (E × ℝ)) x v) := by
+  have hA : HasFDerivAt (fun p : WithLp 2 (E × ℝ) ↦
+      c • LinearIsometryEquiv.withLpProdCongr 2 A (.refl ℝ ℝ) p + WithLp.toLp 2 (b, 0))
+      (c • ((LinearIsometryEquiv.withLpProdCongr 2 A (.refl ℝ ℝ)).toContinuousLinearEquiv :
+        WithLp 2 (E × ℝ) →L[ℝ] WithLp 2 (E × ℝ))) (x : WithLp 2 (E × ℝ)) :=
+    ((LinearIsometryEquiv.withLpProdCongr 2 A
+      (.refl ℝ ℝ)).toContinuousLinearEquiv.hasFDerivAt.const_smul c).add_const _
   exact tangentSpaceCastModel_mfderiv_apply
-    ((contMDiff_similarityMap (n := 1) c hc b x).mdifferentiableAt one_ne_zero) hA (rfl) v
+    ((contMDiff_similarityMap (n := 1) c hc A b x).mdifferentiableAt one_ne_zero) hA (rfl) v
 
 end NormedSpace
 
@@ -331,17 +341,36 @@ instance : IsContinuousRiemannianBundle (WithLp 2 (E × ℝ))
     (fun x : UpperHalfSpace E ↦ TangentSpace 𝓘(ℝ, WithLp 2 (E × ℝ)) x) :=
   Bundle.instIsContinuousRiemannianBundle riemannianMetric.toContinuousRiemannianMetric
 
+/-- The hyperbolic metric evaluated on two tangent vectors at a point of the upper half-space is
+their Euclidean inner product divided by the square of the height. This is the characteristic
+lemma of the bundled metric `riemannianMetric`; `inner_def` is its form for the installed
+`RiemannianBundle` instance. -/
+@[simp]
+theorem riemannianMetric_inner (x : UpperHalfSpace E)
+    (v w : TangentSpace 𝓘(ℝ, WithLp 2 (E × ℝ)) x) :
+    riemannianMetric.inner x v w =
+      inner ℝ (tangentSpaceCastModel 𝓘(ℝ, WithLp 2 (E × ℝ)) x v)
+        (tangentSpaceCastModel 𝓘(ℝ, WithLp 2 (E × ℝ)) x w) / height x ^ 2 := by
+  rw [riemannianMetric, Bundle.ContMDiffRiemannianMetric.rescale_inner, euclideanMetric_inner,
+    div_eq_inv_mul]
+
+/-- The metric installed as the `RiemannianBundle` instance of the upper half-space is the
+hyperbolic metric `riemannianMetric`. -/
+theorem riemannianBundle_g :
+    RiemannianBundle.g (E := fun x : UpperHalfSpace E ↦ TangentSpace 𝓘(ℝ, WithLp 2 (E × ℝ)) x) =
+      riemannianMetric.toRiemannianMetric :=
+  rfl
+
 /-- The inner product of two tangent vectors at a point of the upper half-space is their
 Euclidean inner product divided by the square of the height. -/
 @[simp]
 theorem inner_def (x : UpperHalfSpace E) (v w : TangentSpace 𝓘(ℝ, WithLp 2 (E × ℝ)) x) :
     inner ℝ v w =
       inner ℝ (tangentSpaceCastModel 𝓘(ℝ, WithLp 2 (E × ℝ)) x v)
-        (tangentSpaceCastModel 𝓘(ℝ, WithLp 2 (E × ℝ)) x w) / height x ^ 2 := by
-  -- The `RiemannianBundle` instance is `riemannianMetric` by definition.
-  change riemannianMetric.inner x v w = _
-  rw [riemannianMetric, Bundle.ContMDiffRiemannianMetric.rescale_inner, euclideanMetric_inner,
-    div_eq_inv_mul]
+        (tangentSpaceCastModel 𝓘(ℝ, WithLp 2 (E × ℝ)) x w) / height x ^ 2 :=
+  -- The `RiemannianBundle` instance is `riemannianMetric` (`riemannianBundle_g`), so the inner
+  -- product of the instance is `riemannianMetric.inner` by definition.
+  riemannianMetric_inner x v w
 
 /-- The norm of a tangent vector at a point of the upper half-space is its Euclidean norm divided
 by the height. -/
@@ -359,75 +388,84 @@ theorem enorm_def (x : UpperHalfSpace E) (v : TangentSpace 𝓘(ℝ, WithLp 2 (E
   rw [← ofReal_norm, ← ofReal_norm, norm_def,
     ENNReal.ofReal_div_of_pos (height_pos x)]
 
-/-- The similarity `(x, t) ↦ (c • x + b, c • t)`, for `0 < c`, as an isometry of the upper
-half-space model: it scales tangent vectors and the height by the same factor `c`. -/
-def similarity (c : ℝ) (hc : 0 < c) (b : E) : Isom 𝓘(ℝ, WithLp 2 (E × ℝ)) (UpperHalfSpace E) where
-  toFun := similarityMap c hc b
-  invFun := similarityMap c⁻¹ (inv_pos.mpr hc) (-(c⁻¹ • b))
-  left_inv := similarityMap_inv_similarityMap c hc b
-  right_inv := similarityMap_similarityMap_inv c hc b
-  contMDiff_toFun := contMDiff_similarityMap c hc b
-  contMDiff_invFun := contMDiff_similarityMap c⁻¹ (inv_pos.mpr hc) (-(c⁻¹ • b))
+/-- The similarity `(x, t) ↦ (c • A x + b, c • t)`, for `0 < c` and a linear isometry `A` of
+`E`, as an isometry of the upper half-space model: it scales tangent vectors and the height by the
+same factor `c`. -/
+def similarity (c : ℝ) (hc : 0 < c) (A : E ≃ₗᵢ[ℝ] E) (b : E) :
+    Isom 𝓘(ℝ, WithLp 2 (E × ℝ)) (UpperHalfSpace E) where
+  toFun := similarityMap c hc A b
+  invFun := similarityMap c⁻¹ (inv_pos.mpr hc) A.symm (-(c⁻¹ • A.symm b))
+  left_inv := similarityMap_inv_similarityMap c hc A b
+  right_inv := similarityMap_similarityMap_inv c hc A b
+  contMDiff_toFun := contMDiff_similarityMap c hc A b
+  contMDiff_invFun := contMDiff_similarityMap c⁻¹ (inv_pos.mpr hc) A.symm (-(c⁻¹ • A.symm b))
   inner_mfderiv' x v w := by
-    -- The diffeomorphism under construction is `similarityMap c hc b` by definition; `change`
+    -- The diffeomorphism under construction is `similarityMap c hc A b` by definition; `change`
     -- states the goal in terms of that function, so that its differential lemma applies.
     change inner ℝ
-        (mfderiv 𝓘(ℝ, WithLp 2 (E × ℝ)) 𝓘(ℝ, WithLp 2 (E × ℝ)) (similarityMap c hc b) x v)
-        (mfderiv 𝓘(ℝ, WithLp 2 (E × ℝ)) 𝓘(ℝ, WithLp 2 (E × ℝ)) (similarityMap c hc b) x w) =
+        (mfderiv 𝓘(ℝ, WithLp 2 (E × ℝ)) 𝓘(ℝ, WithLp 2 (E × ℝ)) (similarityMap c hc A b) x v)
+        (mfderiv 𝓘(ℝ, WithLp 2 (E × ℝ)) 𝓘(ℝ, WithLp 2 (E × ℝ)) (similarityMap c hc A b) x w) =
       inner ℝ v w
     rw [inner_def, inner_def, tangentSpaceCastModel_mfderiv_similarityMap,
       tangentSpaceCastModel_mfderiv_similarityMap, height_similarityMap, real_inner_smul_left,
-      real_inner_smul_right]
+      real_inner_smul_right, LinearIsometryEquiv.inner_map_map]
     have := (height_pos x).ne'
     field_simp
 
-/-- The coercion of `similarity c hc b` to a function is `similarityMap c hc b`: the coercion of
-an isometry is the `toFun` field of its underlying equivalence. -/
-private theorem coe_similarity (c : ℝ) (hc : 0 < c) (b : E) :
-    ⇑(similarity c hc b) = similarityMap c hc b :=
+/-- The coercion of `similarity c hc A b` to a function is `similarityMap c hc A b`: the coercion
+of an isometry is the `toFun` field of its underlying equivalence. -/
+private theorem coe_similarity (c : ℝ) (hc : 0 < c) (A : E ≃ₗᵢ[ℝ] E) (b : E) :
+    ⇑(similarity c hc A b) = similarityMap c hc A b :=
   (rfl)
 
-/-- The similarity `similarity c hc b` sends `(x, t)` to `(c • x + b, c • t)`. -/
+/-- The similarity `similarity c hc A b` sends `(x, t)` to `(c • A x + b, c • t)`. -/
 @[simp]
-theorem coe_similarity_apply (c : ℝ) (hc : 0 < c) (b : E) (x : UpperHalfSpace E) :
-    (similarity c hc b x : WithLp 2 (E × ℝ)) =
-      c • (x : WithLp 2 (E × ℝ)) + WithLp.toLp 2 (b, 0) := by
+theorem coe_similarity_apply (c : ℝ) (hc : 0 < c) (A : E ≃ₗᵢ[ℝ] E) (b : E)
+    (x : UpperHalfSpace E) :
+    (similarity c hc A b x : WithLp 2 (E × ℝ)) =
+      WithLp.toLp 2 (c • A (x : WithLp 2 (E × ℝ)).fst + b, c * height x) := by
   rw [coe_similarity, coe_similarityMap]
+  exact (WithLp.ext_iff 2).2 (Prod.ext (by simp) (by simp))
 
-/-- The similarity `similarity c hc b` multiplies heights by `c`. -/
+/-- The similarity `similarity c hc A b` multiplies heights by `c`. -/
 @[simp]
-theorem height_similarity_apply (c : ℝ) (hc : 0 < c) (b : E) (x : UpperHalfSpace E) :
-    height (similarity c hc b x) = c * height x := by
+theorem height_similarity_apply (c : ℝ) (hc : 0 < c) (A : E ≃ₗᵢ[ℝ] E) (b : E)
+    (x : UpperHalfSpace E) : height (similarity c hc A b x) = c * height x := by
   rw [coe_similarity, height_similarityMap]
 
-/-- The differential of the similarity `similarity c hc b` is multiplication by `c`. -/
-theorem tangentSpaceCastModel_mfderiv_similarity (c : ℝ) (hc : 0 < c) (b : E)
+/-- The differential of the similarity `similarity c hc A b` is `c` times the linear isometry
+`(x, t) ↦ (A x, t)`. -/
+theorem tangentSpaceCastModel_mfderiv_similarity (c : ℝ) (hc : 0 < c) (A : E ≃ₗᵢ[ℝ] E) (b : E)
     (x : UpperHalfSpace E) (v : TangentSpace 𝓘(ℝ, WithLp 2 (E × ℝ)) x) :
-    tangentSpaceCastModel 𝓘(ℝ, WithLp 2 (E × ℝ)) (similarity c hc b x)
-        (mfderiv 𝓘(ℝ, WithLp 2 (E × ℝ)) 𝓘(ℝ, WithLp 2 (E × ℝ)) (similarity c hc b) x v) =
-      c • tangentSpaceCastModel 𝓘(ℝ, WithLp 2 (E × ℝ)) x v := by
+    tangentSpaceCastModel 𝓘(ℝ, WithLp 2 (E × ℝ)) (similarity c hc A b x)
+        (mfderiv 𝓘(ℝ, WithLp 2 (E × ℝ)) 𝓘(ℝ, WithLp 2 (E × ℝ)) (similarity c hc A b) x v) =
+      c • LinearIsometryEquiv.withLpProdCongr 2 A (.refl ℝ ℝ)
+        (tangentSpaceCastModel 𝓘(ℝ, WithLp 2 (E × ℝ)) x v) := by
   rw [coe_similarity]
-  exact tangentSpaceCastModel_mfderiv_similarityMap c hc b x v
+  exact tangentSpaceCastModel_mfderiv_similarityMap c hc A b x v
 
-/-- The similarity with factor `1` and translation `0` is the identity isometry. -/
+/-- The similarity with factor `1`, linear part the identity and translation `0` is the identity
+isometry. -/
 @[simp]
-theorem similarity_one : similarity 1 one_pos (0 : E) = 1 := by
+theorem similarity_one : similarity 1 one_pos (.refl ℝ E) 0 = 1 := by
   ext x
-  rw [coe_similarity, similarityMap_eq_self one_pos rfl rfl, RiemannianIsometry.one_apply]
+  rw [coe_similarity, similarityMap_eq_self one_pos rfl rfl rfl, RiemannianIsometry.one_apply]
 
-/-- Composing similarities multiplies their scale factors. -/
+/-- Composing similarities multiplies their scale factors and composes their linear parts. -/
 @[simp]
-theorem similarity_mul_similarity (c c' : ℝ) (hc : 0 < c) (hc' : 0 < c') (b b' : E) :
-    similarity c hc b * similarity c' hc' b' =
-      similarity (c * c') (mul_pos hc hc') (c • b' + b) := by
+theorem similarity_mul_similarity (c c' : ℝ) (hc : 0 < c) (hc' : 0 < c') (A A' : E ≃ₗᵢ[ℝ] E)
+    (b b' : E) :
+    similarity c hc A b * similarity c' hc' A' b' =
+      similarity (c * c') (mul_pos hc hc') (A'.trans A) (c • A b' + b) := by
   ext x
   rw [RiemannianIsometry.mul_apply, coe_similarity, coe_similarity, coe_similarity,
     similarityMap_similarityMap]
 
-/-- The inverse of a similarity is the similarity with the inverse scale factor. -/
+/-- The inverse of a similarity is the similarity with the inverse scale factor and the inverse
+linear part. -/
 @[simp]
-theorem similarity_inv (c : ℝ) (hc : 0 < c) (b : E) :
-    (similarity c hc b)⁻¹ = similarity c⁻¹ (inv_pos.mpr hc) (-(c⁻¹ • b)) :=
+theorem similarity_inv (c : ℝ) (hc : 0 < c) (A : E ≃ₗᵢ[ℝ] E) (b : E) :
+    (similarity c hc A b)⁻¹ = similarity c⁻¹ (inv_pos.mpr hc) A.symm (-(c⁻¹ • A.symm b)) :=
   inv_eq_iff_mul_eq_one.2 (by
     ext x
     rw [RiemannianIsometry.mul_apply, coe_similarity, coe_similarity,
@@ -441,7 +479,7 @@ instance isPretransitive_isom :
   refine ⟨fun x y ↦ ?_⟩
   -- Scale by `height y / height x`, then translate horizontally to land on `y`.
   have hc : 0 < height y / height x := div_pos (height_pos y) (height_pos x)
-  refine ⟨similarity (height y / height x) hc
+  refine ⟨similarity (height y / height x) hc (.refl ℝ E)
     ((y : WithLp 2 (E × ℝ)).fst - (height y / height x) • (x : WithLp 2 (E × ℝ)).fst), ?_⟩
   rw [RiemannianIsometry.smul_def]
   exact ext_fst_height (by simp) (by simp [(height_pos x).ne'])
