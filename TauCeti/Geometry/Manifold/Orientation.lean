@@ -34,9 +34,12 @@ manifold is `TauCeti.Orientable` when it has one. When the given atlas is itself
 when `HasGroupoid M (orientationPreservingGroupoid I)` holds, the manifold is orientable
 (`TauCeti.Orientable.of_hasGroupoid`).
 
-The notion is the one of smooth manifolds, so it is meant for `1 ≤ n`. For `n = 0` an oriented
-atlas still has differentiable coordinate changes, which is not the homological orientability of
-a topological manifold.
+Determinants are only meaningful in finite dimension (`LinearMap.det` is `1` on an
+infinite-dimensional space), so the model vector space is assumed finite-dimensional throughout.
+The notion is the one of differentiable manifolds: an oriented atlas has differentiable coordinate
+changes, which is not the homological orientability of a topological manifold. So oriented atlases
+and orientability are only stated for `C^n` manifolds with `n ≠ 0` (`[NeZero n]`, equivalently
+`1 ≤ n`); the instances `NeZero ∞` and `NeZero ω` cover smooth and analytic manifolds.
 
 ## Main definitions
 
@@ -88,15 +91,13 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSp
 
 /-- A map `f : H → H` preserves orientation on `s`, read in the model through `I`: at the image
 `I x` of each point `x ∈ s`, the coordinate expression `I ∘ f ∘ I.symm` is differentiable within
-`range I`, with derivative of positive determinant.
-
-In an infinite-dimensional model every determinant is `1` (`LinearMap.det`), so the condition is
-only meaningful for finite-dimensional models. -/
-def OrientationPreservingOn (f : H → H) (s : Set H) : Prop :=
+`range I`, with derivative of positive determinant. The model vector space `E` is
+finite-dimensional, as determinants are only meaningful there. -/
+def OrientationPreservingOn [FiniteDimensional ℝ E] (f : H → H) (s : Set H) : Prop :=
   ∀ x ∈ s, DifferentiableWithinAt ℝ (I ∘ f ∘ I.symm) (range I) (I x) ∧
     0 < LinearMap.det (fderivWithin ℝ (I ∘ f ∘ I.symm) (range I) (I x) : E →ₗ[ℝ] E)
 
-variable {I}
+variable [FiniteDimensional ℝ E] {I}
 
 /-- Unfold `TauCeti.OrientationPreservingOn`. -/
 theorem orientationPreservingOn_iff {f : H → H} {s : Set H} :
@@ -196,7 +197,7 @@ instance : ClosedUnderRestriction (orientationPreservingGroupoid I) :=
 section Prod
 
 variable {E' H' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
-  {I' : ModelWithCorners ℝ E' H'} [FiniteDimensional ℝ E] [FiniteDimensional ℝ E']
+  [FiniteDimensional ℝ E'] {I' : ModelWithCorners ℝ E' H'}
 
 /-- A product of orientation-preserving maps preserves orientation in the product model: the
 derivative of the product is block diagonal, so its determinant is the product of the two. -/
@@ -254,7 +255,7 @@ namespace ContinuousLinearMap
 
 open TauCeti
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
 
 /-- A continuous linear map of the model vector space preserves orientation on a set exactly when
 the set is empty or the determinant of the map is positive. -/
@@ -276,7 +277,7 @@ namespace ContinuousLinearEquiv
 
 open TauCeti
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
 
 /-- A linear automorphism of the model vector space, viewed as a coordinate change, belongs to the
 orientation-preserving groupoid exactly when its determinant is positive. -/
@@ -312,15 +313,23 @@ theorem not_contDiffGroupoid_le_orientationPreservingGroupoid (n : ℕ∞ω) :
 
 /-! ### Oriented atlases and orientable manifolds -/
 
+/-- Smooth manifolds are differentiable, so they can carry oriented atlases. -/
+instance : NeZero (∞ : ℕ∞ω) :=
+  ⟨WithTop.coe_ne_zero.2 ENat.top_ne_zero⟩
+
+/-- Analytic manifolds are differentiable, so they can carry oriented atlases. -/
+instance : NeZero (ω : ℕ∞ω) :=
+  ⟨WithTop.top_ne_zero⟩
+
 section Atlas
 
-variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
-  (I : ModelWithCorners ℝ E H) (n : ℕ∞ω)
+variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [TopologicalSpace H] (I : ModelWithCorners ℝ E H) (n : ℕ∞ω) [NeZero n]
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
 
-/-- An *oriented atlas* of the `C^n` manifold `M`: a family of charts from its maximal `C^n` atlas
-which covers `M` and whose coordinate changes all preserve orientation. -/
-structure IsOrientedAtlas (A : Set (OpenPartialHomeomorph M H)) : Prop where
+/-- An *oriented atlas* of the `C^n` manifold `M`, for `n ≠ 0`: a family of charts from its maximal
+`C^n` atlas which covers `M` and whose coordinate changes all preserve orientation. -/
+structure IsOrientedAtlas [NeZero n] (A : Set (OpenPartialHomeomorph M H)) : Prop where
   /-- Every chart of an oriented atlas is compatible with the `C^n` structure of `M`. -/
   subset_maximalAtlas : A ⊆ IsManifold.maximalAtlas I n M
   /-- The charts of an oriented atlas cover `M`. -/
@@ -330,10 +339,10 @@ structure IsOrientedAtlas (A : Set (OpenPartialHomeomorph M H)) : Prop where
     e ∈ A → e' ∈ A → e.symm ≫ₕ e' ∈ orientationPreservingGroupoid I
 
 variable (M) in
-/-- A `C^n` manifold is *orientable* when it has an oriented atlas: charts compatible with its
-`C^n` structure, covering it, whose coordinate changes all have derivatives of positive
-determinant. The atlas the manifold is equipped with is not required to be oriented. -/
-class Orientable : Prop where
+/-- A `C^n` manifold, for `n ≠ 0`, is *orientable* when it has an oriented atlas: charts
+compatible with its `C^n` structure, covering it, whose coordinate changes all have derivatives of
+positive determinant. The atlas the manifold is equipped with is not required to be oriented. -/
+class Orientable [NeZero n] : Prop where
   exists_isOrientedAtlas : ∃ A : Set (OpenPartialHomeomorph M H), IsOrientedAtlas I n A
 
 variable {I n}
@@ -370,8 +379,8 @@ instance : Orientable I n H :=
 section Prod
 
 variable {E' H' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
-  {I' : ModelWithCorners ℝ E' H'} {M' : Type*} [TopologicalSpace M'] [ChartedSpace H' M']
-  [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] [IsManifold I n M] [IsManifold I' n M']
+  [FiniteDimensional ℝ E'] {I' : ModelWithCorners ℝ E' H'} {M' : Type*} [TopologicalSpace M']
+  [ChartedSpace H' M'] [IsManifold I n M] [IsManifold I' n M']
 
 /-- The products of the charts of two oriented atlases form an oriented atlas of the product. -/
 theorem IsOrientedAtlas.prod {A : Set (OpenPartialHomeomorph M H)}
