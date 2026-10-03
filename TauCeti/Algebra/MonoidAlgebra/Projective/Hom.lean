@@ -25,9 +25,9 @@ That projectivity, in turn, is needed in Swan's rational detection theorem for p
 
 ## Main results
 
-* `TauCeti.Representation.leftRegularTensorEquivTrivial`: untwists the diagonal action on
+* `Representation.leftRegularTensorEquivTrivial`: untwists the diagonal action on
   `k[G] ⊗ S` to the action on the regular factor alone.
-* `TauCeti.Representation.dualLeftRegularEquiv`: identifies the regular representation of a
+* `Representation.dualLeftRegularEquiv`: identifies the regular representation of a
   finite group with its dual.
 
 ## References
@@ -42,10 +42,7 @@ open scoped MonoidAlgebra TensorProduct
 
 noncomputable section
 
-namespace TauCeti
 namespace Representation
-
-open _root_.Representation
 
 universe u v w
 
@@ -54,7 +51,7 @@ variable {k : Type u} [CommRing k] {G : Type v} [Group G]
 
 /-- The pointwise change of coordinates on finitely supported functions which sends the value at
 `g` through `σ(g⁻¹)`.  Its inverse sends the value at `g` through `σ(g)`. -/
-private def finsuppTwistEquiv (σ : _root_.Representation k G W) :
+private def finsuppTwistEquiv (σ : Representation k G W) :
     (G →₀ W) ≃ₗ[k] (G →₀ W) :=
   LinearEquiv.ofLinearMap
     (Finsupp.lsum k fun g ↦ (Finsupp.lsingle g).comp (σ g⁻¹))
@@ -67,7 +64,7 @@ private def finsuppTwistEquiv (σ : _root_.Representation k G W) :
       simp)
 
 @[simp]
-private theorem finsuppTwistEquiv_single (σ : _root_.Representation k G W) (g : G) (w : W) :
+private theorem finsuppTwistEquiv_single (σ : Representation k G W) (g : G) (w : W) :
     finsuppTwistEquiv σ (Finsupp.single g w) = Finsupp.single g (σ g⁻¹ w) := by
   simp [finsuppTwistEquiv]
 
@@ -89,14 +86,14 @@ private theorem monoidAlgebraTensorEquivFinsupp_single_tmul
     TensorProduct.finsuppScalarLeft_apply_tmul]
 
 /-- The linear equivalence underlying regular-tensor untwisting. -/
-private def leftRegularTensorLinearEquiv (σ : _root_.Representation k G W) :
+private def leftRegularTensorLinearEquiv (σ : Representation k G W) :
     MonoidAlgebra k G ⊗[k] W ≃ₗ[k] MonoidAlgebra k G ⊗[k] W :=
   monoidAlgebraTensorEquivFinsupp (k := k) (G := G) (W := W) |>.trans <|
     (finsuppTwistEquiv σ).trans
       (monoidAlgebraTensorEquivFinsupp (k := k) (G := G) (W := W)).symm
 
 @[simp]
-private theorem leftRegularTensorLinearEquiv_single_tmul (σ : _root_.Representation k G W)
+private theorem leftRegularTensorLinearEquiv_single_tmul (σ : Representation k G W)
     (g : G) (r : k) (w : W) :
     leftRegularTensorLinearEquiv σ (MonoidAlgebra.single g r ⊗ₜ[k] w) =
       MonoidAlgebra.single g r ⊗ₜ[k] σ g⁻¹ w := by
@@ -109,7 +106,7 @@ to the action on the regular factor alone.  On pure tensors the equivalence is
 `g ⊗ s ↦ g ⊗ g⁻¹s`.
 
 No finiteness hypothesis on `G` or `S` is needed. -/
-def leftRegularTensorEquivTrivial (σ : _root_.Representation k G W) :
+def leftRegularTensorEquivTrivial (σ : Representation k G W) :
     ((leftRegular k G).tprod σ).Equiv
       ((leftRegular k G).tprod (trivial k G W)) :=
   .mk
@@ -117,11 +114,11 @@ def leftRegularTensorEquivTrivial (σ : _root_.Representation k G W) :
     (fun h ↦ by
       ext g w
       simp [leftRegularTensorLinearEquiv_single_tmul,
-        _root_.Representation.inv_self_apply])
+        Representation.inv_self_apply])
 
 /-- Untwisting sends `g ⊗ s` to `g ⊗ g⁻¹s`. -/
 @[simp]
-theorem leftRegularTensorEquivTrivial_single_tmul (σ : _root_.Representation k G W)
+theorem leftRegularTensorEquivTrivial_single_tmul (σ : Representation k G W)
     (g : G) (r : k) (w : W) :
     leftRegularTensorEquivTrivial σ (MonoidAlgebra.single g r ⊗ₜ[k] w) =
       MonoidAlgebra.single g r ⊗ₜ[k] σ g⁻¹ w := by
@@ -129,12 +126,12 @@ theorem leftRegularTensorEquivTrivial_single_tmul (σ : _root_.Representation k 
 
 /-- The inverse of untwisting sends `g ⊗ s` to `g ⊗ gs`. -/
 @[simp]
-theorem leftRegularTensorEquivTrivial_symm_single_tmul (σ : _root_.Representation k G W)
+theorem leftRegularTensorEquivTrivial_symm_single_tmul (σ : Representation k G W)
     (g : G) (r : k) (w : W) :
     (leftRegularTensorEquivTrivial σ).symm (MonoidAlgebra.single g r ⊗ₜ[k] w) =
       MonoidAlgebra.single g r ⊗ₜ[k] σ g w := by
   apply (leftRegularTensorEquivTrivial σ).injective
-  simp [_root_.Representation.inv_self_apply]
+  simp [Representation.inv_self_apply]
 
 section Finite
 
@@ -187,4 +184,3 @@ theorem dualLeftRegularEquiv_coeff (f : Module.Dual k (MonoidAlgebra k G)) (g : 
 end Finite
 
 end Representation
-end TauCeti
