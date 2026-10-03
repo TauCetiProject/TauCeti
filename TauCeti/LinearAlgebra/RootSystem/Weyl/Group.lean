@@ -26,7 +26,8 @@ with that of its image.
 * `RootPairing.Equiv.indexHom_injective` says that an automorphism of a root system is
   determined by its permutation of the roots.
 * `RootPairing.Equiv.indexHom_injective_of_corootSpan_eq_top` gives the same faithfulness
-  when the coroots span, in particular for simply connected integral root data.
+  when the coroots span, in particular for simply connected integral root data, with
+  `RootPairing.weylGroupToPerm_injective_of_corootSpan_eq_top` its Weyl-group form.
 * `RootPairing.coroot'_reflection_self` says a reflection reverses the sign of its own
   coroot functional.
 * `RootPairing.coroot'_smul` and `RootPairing.coroot'_weylGroupToPerm_smul` say an
@@ -148,6 +149,13 @@ theorem _root_.RootPairing.weylGroupToPerm_injective_of_span_eq_top
     (hspan : Submodule.span R (range P.root) = ⊤) :
     Function.Injective P.weylGroupToPerm :=
   (RootPairing.Equiv.indexHom_injective_of_span_eq_top P hspan).comp Subtype.val_injective
+
+/-- If the coroots span, the action of the Weyl group on root indices is faithful. This applies to
+simply connected root data over the integers, whose roots span only the root lattice. -/
+theorem _root_.RootPairing.weylGroupToPerm_injective_of_corootSpan_eq_top
+    (hspan : P.corootSpan R = ⊤) :
+    Function.Injective P.weylGroupToPerm :=
+  (RootPairing.Equiv.indexHom_injective_of_corootSpan_eq_top P hspan).comp Subtype.val_injective
 
 /-- The action of the Weyl group on root indices is faithful. -/
 theorem _root_.RootPairing.weylGroupToPerm_injective
