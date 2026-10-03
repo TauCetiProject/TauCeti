@@ -200,7 +200,8 @@ theorem ker_quaternionUnitsToSpecialOrthogonal_eq_center (Q : QuadraticForm K V)
     (quaternionUnitsToSpecialOrthogonal Q hQ hV e).ker =
       Subgroup.center ℍ[K,(a : K),(b : K)]ˣ := by
   rw [ker_quaternionUnitsToSpecialOrthogonal,
-    QuaternionAlgebra.center_units_eq_range_unitsMap_algebraMap]
+    QuaternionAlgebra.center_units_eq_range_unitsMap_algebraMap a b
+      (isUnit_of_invertible (2 : K)).isRegular.left]
 
 /-- A regular ternary special orthogonal group is the quaternion unit group modulo its center.
 The equivalence uses the chosen quaternion model of the even Clifford algebra. -/

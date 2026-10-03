@@ -33,7 +33,7 @@ criterion gives either a division algebra or a two-by-two matrix algebra. The tw
   symbols with a regular parameter.
 * `TauCeti.QuaternionAlgebra.center_units_eq_range_unitsMap_algebraMap`: the center of a
   quaternion unit group with unit symbols consists exactly of scalar units, over a base ring
-  in which two is invertible, including the split case.
+  in which two is left-regular, including the split case.
 
 The split/division dichotomy used here is the norm-equation criterion in
 `TauCeti.Algebra.Quaternion.SplittingCriterion`.
@@ -146,9 +146,9 @@ instance instIsCentral (a : K) (b : Kˣ) [Invertible (2 : K)] :
   let hb : IsLeftRegular (b : K) := b.isUnit.isRegular.left
   isCentral_of_isLeftRegular_secondParameter a (b : K) h2 hb
 
-/-- The center of the unit group of a quaternion symbol with unit parameters is exactly the
-scalar units. This includes split quaternion algebras. -/
-theorem center_units_eq_range_unitsMap_algebraMap [Invertible (2 : K)] (a b : Kˣ) :
+/-- Over a base ring in which two is left-regular, the center of the unit group of a quaternion
+symbol with unit parameters is exactly the scalar units. This includes split quaternion algebras. -/
+theorem center_units_eq_range_unitsMap_algebraMap (a b : Kˣ) (h2 : IsLeftRegular (2 : K)) :
     Subgroup.center ℍ[K,(a : K),(b : K)]ˣ =
       (Units.map (algebraMap K ℍ[K,(a : K),(b : K)]).toMonoidHom).range := by
   ext x
@@ -163,7 +163,7 @@ theorem center_units_eq_range_unitsMap_algebraMap [Invertible (2 : K)] (a b : K�
     have hxi := congrArg Units.val (Subgroup.mem_center_iff.mp hx hi.unit)
     have hxj := congrArg Units.val (Subgroup.mem_center_iff.mp hx hj.unit)
     have hc := center_coordinates_eq_zero (a : K) (b : K)
-      (isUnit_of_invertible (2 : K)).isRegular.left b.isUnit.isRegular.left
+      h2 b.isUnit.isRegular.left
       (by simpa only [Units.val_mul, hi.unit_spec] using hxi)
       (by simpa only [Units.val_mul, hj.unit_spec] using hxj)
     have hs : (x : ℍ[K,(a : K),(b : K)]) = algebraMap K _ x.val.re := by
