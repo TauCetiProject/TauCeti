@@ -16,6 +16,12 @@ pentagon whose straightening returns to the source grid state. The two straighte
 therefore have the same unordered side columns. There are exactly two possibilities: their
 ordered side columns agree, or they occur in opposite orders.
 
+That a returning decomposition has one of the two side orders is
+`TauCeti.GridRectangleBetween.left_right_eq_cases`, applied to the pentagon's straightening, and
+the vertical or horizontal annulus covered in each case is
+`TauCeti.GridRectangleBetween.coveredSquares_union_coveredSquares_of_left_eq_left` or
+`TauCeti.GridRectangleBetween.coveredSquares_union_coveredSquares_of_left_eq_right`.
+
 This file makes that dichotomy exact for both orders of composition. It partitions each finite
 set of diagonal rectangle--pentagon decompositions into same-order and opposite-order terms, and
 splits every weighted sum along that partition. These are the two annular orientations that must
@@ -32,10 +38,9 @@ be treated separately in the exceptional diagonal case of the commutation chain-
 
 ## Main results
 
-* `TauCeti.GridRectanglePentagonDecomposition.side_order_cases_of_diagonal` and
-  `TauCeti.GridPentagonRectangleDecomposition.side_order_cases_of_diagonal`: a returning
-  decomposition has one of the two side orders.
-* The covered-square union lemmas: the two side orders give a vertical or horizontal annulus.
+* `TauCeti.GridRectanglePentagonDecomposition.not_same_and_opposite_side_order` and
+  `TauCeti.GridPentagonRectangleDecomposition.not_same_and_opposite_side_order`: the two side
+  orders are mutually exclusive.
 * `TauCeti.GridDiagram.rectanglePentagonSameSideOrder_union_oppositeSideOrder` and
   `TauCeti.GridDiagram.pentagonRectangleSameSideOrder_union_oppositeSideOrder`: the two families
   exhaust the corresponding diagonal decomposition set.
@@ -57,15 +62,6 @@ namespace GridRectanglePentagonDecomposition
 
 variable {n : ℕ} {a s : Fin n} {x : GridState n}
 
-/-- A rectangle followed by a pentagon and returning to its source has either the same ordered
-side columns as the pentagon or the opposite ordered side columns. -/
-theorem side_order_cases_of_diagonal (D : GridRectanglePentagonDecomposition a s x x) :
-    (D.rectangle.left = D.pentagon.left ∧ D.rectangle.right = D.pentagon.right) ∨
-      (D.rectangle.left = D.pentagon.right ∧ D.rectangle.right = D.pentagon.left) := by
-  rcases D.rectangle.left_right_eq_cases D.pentagon.toGridRectangleBetween with h | h
-  · exact Or.inl ⟨h.1.symm, h.2.symm⟩
-  · exact Or.inr ⟨h.2.symm, h.1.symm⟩
-
 /-- The two side-order alternatives for a diagonal rectangle--pentagon decomposition are
 mutually exclusive. -/
 theorem not_same_and_opposite_side_order (D : GridRectanglePentagonDecomposition a s x x) :
@@ -74,41 +70,11 @@ theorem not_same_and_opposite_side_order (D : GridRectanglePentagonDecomposition
   rintro ⟨hsame, hopposite⟩
   exact D.rectangle.left_ne_right (hsame.1.trans hopposite.2.symm)
 
-/-- In the same-side-order case, the two straightened rectangles cover a vertical annulus. -/
-theorem coveredSquares_union_eq_product_univ_of_same_side_order
-    (D : GridRectanglePentagonDecomposition a s x x)
-    (h : D.rectangle.left = D.pentagon.left ∧
-      D.rectangle.right = D.pentagon.right) :
-    D.rectangle.toGridRectangle.coveredSquares ∪
-        D.pentagon.toGridRectangle.coveredSquares =
-      D.rectangle.toGridRectangle.coveredColumns ×ˢ (Finset.univ : Finset (Fin n)) := by
-  exact D.rectangle.coveredSquares_union_coveredSquares_of_left_eq_left
-    D.pentagon.toGridRectangleBetween h.1.symm
-
-/-- In the opposite-side-order case, the two straightened rectangles cover a horizontal
-annulus. -/
-theorem coveredSquares_union_eq_univ_product_of_opposite_side_order
-    (D : GridRectanglePentagonDecomposition a s x x)
-    (h : D.rectangle.left = D.pentagon.right ∧
-      D.rectangle.right = D.pentagon.left) :
-    D.rectangle.toGridRectangle.coveredSquares ∪
-        D.pentagon.toGridRectangle.coveredSquares =
-      (Finset.univ : Finset (Fin n)) ×ˢ D.rectangle.toGridRectangle.coveredRows := by
-  exact D.rectangle.coveredSquares_union_coveredSquares_of_left_eq_right
-    D.pentagon.toGridRectangleBetween h.2.symm
-
 end GridRectanglePentagonDecomposition
 
 namespace GridPentagonRectangleDecomposition
 
 variable {n : ℕ} {a s : Fin n} {x : GridState n}
-
-/-- A pentagon followed by a rectangle and returning to its source has either the same ordered
-side columns as the pentagon or the opposite ordered side columns. -/
-theorem side_order_cases_of_diagonal (D : GridPentagonRectangleDecomposition a s x x) :
-    (D.rectangle.left = D.pentagon.left ∧ D.rectangle.right = D.pentagon.right) ∨
-      (D.rectangle.left = D.pentagon.right ∧ D.rectangle.right = D.pentagon.left) := by
-  exact D.pentagon.toGridRectangleBetween.left_right_eq_cases D.rectangle
 
 /-- The two side-order alternatives for a diagonal pentagon--rectangle decomposition are
 mutually exclusive. -/
@@ -117,29 +83,6 @@ theorem not_same_and_opposite_side_order (D : GridPentagonRectangleDecomposition
       (D.rectangle.left = D.pentagon.right ∧ D.rectangle.right = D.pentagon.left)) := by
   rintro ⟨hsame, hopposite⟩
   exact D.rectangle.left_ne_right (hsame.1.trans hopposite.2.symm)
-
-/-- In the same-side-order case, the two straightened rectangles cover a vertical annulus. -/
-theorem coveredSquares_union_eq_product_univ_of_same_side_order
-    (D : GridPentagonRectangleDecomposition a s x x)
-    (h : D.rectangle.left = D.pentagon.left ∧
-      D.rectangle.right = D.pentagon.right) :
-    D.pentagon.toGridRectangle.coveredSquares ∪
-        D.rectangle.toGridRectangle.coveredSquares =
-      D.pentagon.toGridRectangle.coveredColumns ×ˢ (Finset.univ : Finset (Fin n)) := by
-  exact D.pentagon.toGridRectangleBetween.coveredSquares_union_coveredSquares_of_left_eq_left
-    D.rectangle h.1
-
-/-- In the opposite-side-order case, the two straightened rectangles cover a horizontal
-annulus. -/
-theorem coveredSquares_union_eq_univ_product_of_opposite_side_order
-    (D : GridPentagonRectangleDecomposition a s x x)
-    (h : D.rectangle.left = D.pentagon.right ∧
-      D.rectangle.right = D.pentagon.left) :
-    D.pentagon.toGridRectangle.coveredSquares ∪
-        D.rectangle.toGridRectangle.coveredSquares =
-      (Finset.univ : Finset (Fin n)) ×ˢ D.pentagon.toGridRectangle.coveredRows := by
-  exact D.pentagon.toGridRectangleBetween.coveredSquares_union_coveredSquares_of_left_eq_right
-    D.rectangle h.1
 
 end GridPentagonRectangleDecomposition
 
@@ -200,8 +143,9 @@ theorem rectanglePentagonSameSideOrder_union_oppositeSideOrder (x : GridState n)
   constructor
   · rintro (⟨hD, -⟩ | ⟨hD, -⟩) <;> exact hD
   · intro hD
-    exact (D.side_order_cases_of_diagonal.elim (fun h => Or.inl ⟨hD, h⟩)
-      fun h => Or.inr ⟨hD, h⟩)
+    rcases D.rectangle.left_right_eq_cases D.pentagon.toGridRectangleBetween with h | h
+    · exact Or.inl ⟨hD, h.1.symm, h.2.symm⟩
+    · exact Or.inr ⟨hD, h.2.symm, h.1.symm⟩
 
 /-- The diagonal pentagon--rectangle terms whose rectangle and pentagon have the same ordered
 side columns. -/
@@ -256,8 +200,8 @@ theorem pentagonRectangleSameSideOrder_union_oppositeSideOrder (x : GridState n)
   constructor
   · rintro (⟨hD, -⟩ | ⟨hD, -⟩) <;> exact hD
   · intro hD
-    exact (D.side_order_cases_of_diagonal.elim (fun h => Or.inl ⟨hD, h⟩)
-      fun h => Or.inr ⟨hD, h⟩)
+    exact (D.pentagon.toGridRectangleBetween.left_right_eq_cases D.rectangle).elim
+      (fun h => Or.inl ⟨hD, h⟩) fun h => Or.inr ⟨hD, h⟩
 
 open Classical in
 /-- A weighted sum over diagonal rectangle--pentagon terms splits into the two annular side
