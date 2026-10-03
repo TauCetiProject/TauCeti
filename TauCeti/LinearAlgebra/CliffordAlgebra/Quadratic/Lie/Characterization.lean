@@ -25,7 +25,7 @@ infinitesimal elements as quadratic without first choosing exterior-square coord
   elements.
 * `CliffordAlgebra.mem_quadraticLieSubalgebra_of_mem_even_of_reverse_eq_neg_of_lie_ι_mem_range_ι`:
   the recognition theorem from the three intrinsic conditions.
-* `CliffordAlgebra.mem_quadraticLieSubalgebra_iff_mem_even_reverse_eq_neg_and_lie_ι_mem_range_ι`:
+* `mem_quadraticLieSubalgebra_iff_mem_even_and_reverse_eq_neg_and_lie_ι_mem_range_ι`:
   the complete characterization.
 -/
 
@@ -84,10 +84,6 @@ theorem mem_quadraticLieSubalgebra_of_mem_even_of_reverse_eq_neg_of_lie_ι_mem_r
     change ⁅x, ι Q v⁆ = ι Q ((ιRangeEquiv Q).symm (g v))
     rw [ι_ιRangeEquiv_symm_apply]
     rfl
-  have hlie_mul (y z : CliffordAlgebra Q) :
-      ⁅x, y * z⁆ = ⁅x, y⁆ * z + y * ⁅x, z⁆ := by
-    simp only [Ring.lie_def]
-    noncomm_ring
   -- Differentiating the polarized Clifford relation makes `f` skew-adjoint.
   have hf_skew : f ∈ (QuadraticMap.polarBilin Q).skewAdjointSubmodule := by
     rw [LinearMap.mem_skewAdjointSubmodule]
@@ -100,7 +96,7 @@ theorem mem_quadraticLieSubalgebra_of_mem_even_of_reverse_eq_neg_of_lie_ι_mem_r
         ι Q (f u) * ι Q v + ι Q v * ι Q (f u) +
               (ι Q u * ι Q (f v) + ι Q (f v) * ι Q u) =
             ⁅x, ι Q u * ι Q v + ι Q v * ι Q u⁆ := by
-              rw [lie_add, hlie_mul, hlie_mul, hf_lie, hf_lie]
+              rw [lie_add, lie_mul, lie_mul, hf_lie, hf_lie]
               abel
         _ = ⁅x, algebraMap K (CliffordAlgebra Q) (QuadraticMap.polar Q u v)⁆ := by
               rw [ι_mul_ι_add_swap]
@@ -156,7 +152,7 @@ theorem mem_quadraticLieSubalgebra_of_mem_even_of_reverse_eq_neg_of_lie_ι_mem_r
 
 /-- A Clifford element is quadratic exactly when it is even, reversal negates it, and its
 commutator with every generator is again a generating vector. -/
-theorem mem_quadraticLieSubalgebra_iff_mem_even_reverse_eq_neg_and_lie_ι_mem_range_ι
+theorem mem_quadraticLieSubalgebra_iff_mem_even_and_reverse_eq_neg_and_lie_ι_mem_range_ι
     (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) {x : CliffordAlgebra Q} :
     x ∈ quadraticLieSubalgebra Q ↔
       x ∈ even Q ∧ reverse x = -x ∧

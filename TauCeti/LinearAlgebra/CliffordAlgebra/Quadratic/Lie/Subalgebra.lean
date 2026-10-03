@@ -88,8 +88,8 @@ variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M]
   (Q : QuadraticForm R M) [Invertible (2 : R)]
 
 omit [Invertible (2 : R)] in
-/-- Bracketing with a fixed element of an associative ring is a derivation. -/
-private theorem lie_mul (x y z : CliffordAlgebra Q) :
+/-- Bracketing with a fixed element of a Clifford algebra is a derivation of multiplication. -/
+theorem lie_mul (x y z : CliffordAlgebra Q) :
     ⁅x, y * z⁆ = ⁅x, y⁆ * z + y * ⁅x, z⁆ := by
   simp only [Ring.lie_def]
   noncomm_ring
