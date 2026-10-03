@@ -326,7 +326,7 @@ theorem reconnect_val (D : PerfectMatching α) (a b : α) :
 
 /-- Reconnecting the two ends of one arc leaves the matching unchanged. -/
 @[simp]
-theorem reconnect_apply (D : PerfectMatching α) (a : α) :
+theorem reconnect_partner (D : PerfectMatching α) (a : α) :
     D.reconnect a (D.val a) = D := by
   rw [reconnect, Equiv.swap_self, congr_refl]
 

@@ -418,7 +418,7 @@ variable (D : PDCode n) (p q : Fin (4 * n))
 @[simp] theorem reconnect_edgePair : (D.reconnect p q).edgePair = D.edgePair.reconnect p q := (rfl)
 
 /-- Reconnecting the two ends of one arc leaves the code unchanged. -/
-@[simp] theorem reconnect_edgePair_apply : D.reconnect p (D.edgePair.val p) = D := by
+@[simp] theorem reconnect_partner : D.reconnect p (D.edgePair.val p) = D := by
   apply PDCode.ext <;> simp
 
 /-- Reconnecting a half-edge with itself leaves the code unchanged. -/
