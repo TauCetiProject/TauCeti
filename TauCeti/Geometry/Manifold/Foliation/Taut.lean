@@ -11,7 +11,7 @@ import Mathlib.Analysis.Calculus.LocalExtr.Rolle
 /-!
 # Transversals and taut foliations
 
-A closed transversal to a foliation is a smooth closed curve whose velocity is everywhere
+A closed transversal to a foliation is a smooth periodic curve whose velocity is everywhere
 transverse to the tangent distribution.  The definition uses complementary submodules, so it
 does not silently assume a codimension: a one-dimensional transversal can exist only when the
 distribution has the corresponding codimension.  A foliation is taut when every leaf meets one
@@ -46,7 +46,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 /-- A smooth closed curve is transverse to `F` when its velocity and the leaf tangent space are
 complementary at every parameter value. -/
 def IsClosedTransversal (γ : ℝ → M) : Prop :=
-  ContMDiff 𝓘(ℝ, ℝ) I 1 γ ∧ γ 0 = γ 1 ∧
+  ContMDiff 𝓘(ℝ, ℝ) I 1 γ ∧ Function.Periodic γ 1 ∧
     ∀ t, curveVelocity I γ t ≠ 0 ∧
       IsCompl (Submodule.span ℝ {curveVelocity I γ t}) (F.distribution (γ t))
 
@@ -56,12 +56,13 @@ def Taut : Prop :=
 
 @[simp]
 theorem isClosedTransversal_iff (γ : ℝ → M) : F.IsClosedTransversal γ ↔
-    ContMDiff 𝓘(ℝ, ℝ) I 1 γ ∧ γ 0 = γ 1 ∧
+    ContMDiff 𝓘(ℝ, ℝ) I 1 γ ∧ Function.Periodic γ 1 ∧
       ∀ t, curveVelocity I γ t ≠ 0 ∧
         IsCompl (Submodule.span ℝ {curveVelocity I γ t}) (F.distribution (γ t)) :=
   Iff.rfl
 
-theorem isClosedTransversal_periodic (hγ : F.IsClosedTransversal γ) : γ 0 = γ 1 := hγ.2.1
+theorem isClosedTransversal_periodic (hγ : F.IsClosedTransversal γ) :
+    Function.Periodic γ 1 := hγ.2.1
 
 theorem isClosedTransversal_velocity_not_mem (hγ : F.IsClosedTransversal γ) (t : ℝ) :
     curveVelocity I γ t ∉ F.distribution (γ t) := by
@@ -71,7 +72,7 @@ theorem isClosedTransversal_velocity_not_mem (hγ : F.IsClosedTransversal γ) (t
   exact (hγ.2.2 t).1 ((Submodule.mem_bot ℝ).mp hzero)
 
 theorem isClosedTransversal_of_complement
-    (hγ : ContMDiff 𝓘(ℝ, ℝ) I 1 γ) (hperiod : γ 0 = γ 1)
+    (hγ : ContMDiff 𝓘(ℝ, ℝ) I 1 γ) (hperiod : Function.Periodic γ 1)
     (htrans : ∀ t, curveVelocity I γ t ≠ 0 ∧
       IsCompl (Submodule.span ℝ {curveVelocity I γ t}) (F.distribution (γ t))) :
     F.IsClosedTransversal γ :=
@@ -88,11 +89,13 @@ theorem not_isClosedTransversal_ofSubmodule_ker
     (hγ : (Foliation.ofSubmodule (LinearMap.ker ℓ.toLinearMap) hn).IsClosedTransversal γ) :
     False := by
   obtain ⟨hγdiff, hperiod, htrans⟩ := hγ
+  have hperiod01 : γ 0 = γ 1 := by
+    simpa using (hperiod 0).symm
   have hγ' : ContDiff ℝ 1 γ := (contMDiff_iff_contDiff.mp hγdiff)
   let g : ℝ → ℝ := ℓ ∘ γ
   have hg : ContinuousOn g (Icc 0 1) :=
     (ℓ.continuous.comp hγ'.continuous).continuousOn
-  have hgperiod : g 0 = g 1 := by simp [g, hperiod]
+  have hgperiod : g 0 = g 1 := by simp [g, hperiod01]
   obtain ⟨c, _hc, hdc⟩ := exists_deriv_eq_zero (a := (0 : ℝ)) (b := 1) zero_lt_one hg hgperiod
   have hderiv : deriv g c = ℓ (deriv γ c) := by
     simpa [g] using
