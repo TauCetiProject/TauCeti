@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.Dual.Basic
+import Mathlib.LinearAlgebra.FreeModule.PID
 import TauCeti.Data.Int.CongrAllPrimes
 
 /-!

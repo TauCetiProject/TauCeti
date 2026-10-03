@@ -7,6 +7,7 @@ module
 
 public import TauCeti.FieldTheory.FunctionField.Different.Divisor
 public import TauCeti.RingTheory.DedekindDomain.Different
+import Mathlib.RingTheory.Finiteness.Quotient
 -- Non-public: `Algebra.HasSeparableResidueFieldsAt.isSeparable_quotient` supplies the separability
 -- half of tameness over a perfect residue field, in the proof below only.
 import Mathlib.RingTheory.LocalRing.ResidueField.Separable

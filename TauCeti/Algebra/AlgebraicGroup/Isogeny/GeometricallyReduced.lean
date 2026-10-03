@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Isogeny.Descent
 public import Mathlib.RingTheory.Nilpotent.GeometricallyReduced
+import Mathlib.RingTheory.FiniteStability
 import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.Flat
 import Mathlib.RingTheory.TensorProduct.Finite
 import TauCeti.RingTheory.Spectrum.Prime.Topology

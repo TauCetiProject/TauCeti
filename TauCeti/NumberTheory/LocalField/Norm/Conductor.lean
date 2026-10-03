@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.LocalField.Herbrand.HasseArf
 public import TauCeti.NumberTheory.LocalField.Norm.Surjectivity
+public import TauCeti.NumberTheory.LocalField.Norm.Unramified
 
 /-!
 # Unit norm indices and the conductor in prime degree
@@ -19,9 +21,19 @@ break. Together with norm surjectivity above the break, this gives the sharp con
 criterion: `U(K,v)` is contained in the field norm group exactly when `t < v`. Thus the least
 natural unit depth contained in the norm group is `t + 1`. This includes a tame break at zero.
 
+Since a prime-degree upper break is `-1` or a natural number by the prime-degree case of
+Hasse--Arf, the criterion extends to every prime-degree upper break `u`: `U(K,v)` lies in the
+norm group exactly when `u < v`. At the unramified break `-1` the conductor is zero.
+
+## Main results
+
+* `TauCeti.LocalFieldsRamification.UpperJump.unitFiltration_le_normGroup_iff_of_finrank_prime`:
+  the conductor criterion at any prime-degree upper break, including the unramified break `-1`.
+
 ## References
 
-* [J.-P. Serre, *Corps Locaux*][serre1968], Chapter V, §3, Proposition 5 and its corollaries.
+* [J.-P. Serre, *Corps Locaux*][serre1968], Chapter V, §3, Proposition 5 and its corollaries,
+  and §7.
 -/
 
 public section
@@ -116,8 +128,10 @@ theorem relIndex_normUnits_unitFiltration_zero (hℓ : (Module.finrank K L).Prim
     relIndex_normUnits_unitFiltration_of_le_break hℓ (Nat.zero_le t) ht
 
 /-- A unit-filtration step is contained in the field norm group exactly when its depth is
-strictly above the prime-degree upper break. Equivalently, the conductor is `t + 1`. -/
-theorem unitFiltration_le_normGroup_iff (hℓ : (Module.finrank K L).Prime) {t v : ℕ}
+strictly above the prime-degree upper break. Equivalently, the conductor is `t + 1`. This
+natural-break case is the input to
+`LocalFieldsRamification.UpperJump.unitFiltration_le_normGroup_iff_of_finrank_prime`. -/
+private theorem unitFiltration_le_normGroup_iff (hℓ : (Module.finrank K L).Prime) {t v : ℕ}
     (ht : UpperJump K L ⟨t, Nat.cast_mem_ramificationIndexDomain t⟩) :
     unitFiltration K v ≤ normGroup K L ↔ t < v := by
   constructor
@@ -142,5 +156,51 @@ theorem unitFiltration_le_normGroup_iff (hℓ : (Module.finrank K L).Prime) {t v
     rw [← map_normUnits_unitFiltration_after_break hℓ htv ht] at hx
     obtain ⟨y, _, rfl⟩ := hx
     exact mem_normGroup_iff.2 ⟨y, by simp⟩
+
+namespace LocalFieldsRamification
+
+/-- At an upper break of a prime-degree Galois extension, a unit-filtration step lies in the norm
+group exactly when its depth is strictly above the break. Thus the conductor is one more than the
+unique break; this is zero when the break is `-1` in the unramified case. -/
+theorem UpperJump.unitFiltration_le_normGroup_iff_of_finrank_prime
+    {u : RamificationIndexDomain} (hu : UpperJump K L u)
+    (hdegree : (Module.finrank K L).Prime) (v : ℕ) :
+    unitFiltration K v ≤ normGroup K L ↔ (u : ℝ) < v := by
+  have : Fact (Nat.card (L ≃ₐ[K] L)).Prime :=
+    ⟨IsGalois.card_aut_eq_finrank K L ▸ hdegree⟩
+  rcases hu.eq_neg_one_or_exists_eq_natCast_of_finrank_prime hdegree with hneg | ⟨t, hut⟩
+  · have hu_eq : u = ⟨(-1 : ℝ), le_rfl⟩ := Subtype.ext hneg
+    subst u
+    let zero : RamificationIndexDomain := ⟨(0 : ℝ), by norm_num⟩
+    have hdrop := (upperJump_iff K L ⟨(-1 : ℝ), le_rfl⟩).1 hu zero
+      (Subtype.mk_lt_mk.2 (by norm_num))
+    have hzero_ne_top : upperRamificationGroup K L zero ≠ ⊤ :=
+      (hdrop.trans_le le_top).ne
+    have hzero_bot : upperRamificationGroup K L zero = ⊥ :=
+      (upperRamificationGroup K L zero).eq_bot_or_eq_top_of_prime_card.resolve_right hzero_ne_top
+    have hGzero : lowerRamificationGroup K L 0 = ⊥ := by
+      rw [upperRamificationGroup_of_coe_le_zero K L (v := zero) (by norm_num)] at hzero_bot
+      rw [← lowerRamificationGroupReal_intCast K L (0 : ℤ)]
+      convert hzero_bot using 1
+      norm_num [zero]
+    have he : ramificationIndex K L = 1 := by
+      rw [← natCard_lowerRamificationGroup_zero K L, hGzero]
+      simp
+    have hunramified : IsUnramified K L :=
+      (isUnramified_iff_ramificationIndex_eq_one K L).2 he
+    let _ : IsUnramified K L := hunramified
+    constructor
+    · intro
+      have : (0 : ℝ) ≤ v := Nat.cast_nonneg v
+      linarith
+    · intro
+      rw [← map_normUnits_unitFiltration K L v]
+      rintro _ ⟨y, -, rfl⟩
+      exact mem_normGroup_iff.2 ⟨y, by simp⟩
+  · have hu_eq : u = ⟨t, Nat.cast_mem_ramificationIndexDomain t⟩ := Subtype.ext hut
+    subst u
+    simpa only [Nat.cast_lt] using unitFiltration_le_normGroup_iff hdegree hu
+
+end LocalFieldsRamification
 
 end TauCeti

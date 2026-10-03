@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Category.ModuleCat.Presheaf.InternalHom
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Hom
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Over
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Closed
 import TauCeti.CategoryTheory.Monoidal.Closed.Basic
 import TauCeti.CategoryTheory.Monoidal.Closed.Functor
@@ -43,7 +44,9 @@ rests, for sources `M` that are only locally free.
   section attached to a morphism off it in the same way, and the equivalence is compatible with
   restriction by `SheafOfModules.ihomObjEquiv_map_app`, natural in the target by
   `SheafOfModules.ihomObjEquiv_ihom_map_app`, and natural in the source by
-  `SheafOfModules.ihomObjEquiv_pre_app_app`.
+  `SheafOfModules.ihomObjEquiv_pre_app_app`. Its evaluation formula is
+  `SheafOfModules.ihomObjEquiv_apply_app`, with additivity and scalar compatibility recorded in
+  `SheafOfModules.ihomObjEquiv_add_app` and `SheafOfModules.ihomObjEquiv_smul_app`.
 
 ## References
 
@@ -329,6 +332,50 @@ theorem _root_.SheafOfModules.ihomObjEquiv_pre_app_app
   rw [ihomObjEquiv_apply, ihomObjEquiv_apply, hnat]
   apply Hom.ext
   exact PresheafOfModules.ihomObjEquiv_pre_app_app (R := R.obj) U M.val N.val β.val _
+
+/-- Evaluating a local internal-Hom section is evaluation in the presheaf internal Hom, after
+the comparison between the sheaf and presheaf internal Homs. -/
+theorem _root_.SheafOfModules.ihomObjEquiv_apply_app (U : C)
+    (s : ((ihom M).obj N).val.obj (op U)) {V : C} (g : V ⟶ U)
+    (m : M.val.obj (op V)) :
+    (M.ihomObjEquiv N U s).val.app (op (Over.mk g)) m =
+      ((ihom.ev M.val).app N.val).app' (op V)
+        (TensorProduct.tmul (R.obj.obj (op V)) m
+          (((ihom M.val).obj N.val).map g.op
+            (((ihomCompForgetIso M).hom.app N).app (op U) s))) := by
+  rw [ihomObjEquiv_apply]
+  exact TauCeti.PresheafOfModules.ihomObjEquiv_apply_app U M.val N.val _ g m
+
+/-- Evaluation of a local morphism is additive in its internal-Hom section. -/
+theorem _root_.SheafOfModules.ihomObjEquiv_add_app (U : C)
+    (s t : ((ihom M).obj N).val.obj (op U)) {V : C} (g : V ⟶ U)
+    (m : M.val.obj (op V)) :
+    (M.ihomObjEquiv N U (s + t)).val.app (op (Over.mk g)) m =
+      (M.ihomObjEquiv N U s).val.app (op (Over.mk g)) m +
+        (M.ihomObjEquiv N U t).val.app (op (Over.mk g)) m := by
+  simp only [ihomObjEquiv_apply_app]
+  erw [map_add, map_add, TensorProduct.tmul_add, map_add]
+  rfl
+
+/-- Evaluation of a scalar multiple of a local morphism multiplies its value by the restricted
+scalar. -/
+theorem _root_.SheafOfModules.ihomObjEquiv_smul_app (U : C)
+    (r : R.obj.obj (op U)) (s : ((ihom M).obj N).val.obj (op U))
+    {V : C} (g : V ⟶ U) (m : M.val.obj (op V)) :
+    (M.ihomObjEquiv N U (r • s)).val.app (op (Over.mk g)) m =
+      R.obj.map g.op r •
+        ((M.ihomObjEquiv N U s).val.app (op (Over.mk g)) m : N.val.obj (op V)) := by
+  simp only [ihomObjEquiv_apply_app]
+  -- Write the presheaf carriers over the original commutative rings, so semilinear
+  -- composition retains the scalar structure across the forgetful sheaf comparison.
+  let P : PresheafOfModulesOfCommRing.{u} R.obj := (ihom M.val).obj N.val
+  let Q : PresheafOfModulesOfCommRing.{u} R.obj := M.val
+  let a : ((ihom M).obj N).val.obj (op U) →ₗ[R.obj.obj (op U)] P.obj (op U) :=
+    (((ihomCompForgetIso M).hom.app N).app (op U)).hom
+  let e : P.obj (op V) →ₗ[R.obj.obj (op V)] N.val.obj (op V) :=
+    (((ihom.ev M.val).app N.val).app' (op V)).hom.comp
+      (TensorProduct.mk (R.obj.obj (op V)) (Q.obj (op V)) (P.obj (op V)) m)
+  exact (e.comp ((P.restrictₛₗ g.op).comp a)).map_smulₛₗ r s
 
 end SheafOfModules
 

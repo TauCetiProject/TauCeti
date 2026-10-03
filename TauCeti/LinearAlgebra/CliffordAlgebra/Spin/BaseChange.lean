@@ -7,8 +7,8 @@ module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.BaseChange
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.BaseChange
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Map
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Transvection
-public import TauCeti.LinearAlgebra.QuadraticForm.BaseChange
 
 /-!
 # Extension of scalars for Spin groups
@@ -27,6 +27,8 @@ sends `1 + ι w * ι u` to the lift determined by the pure tensors `1 ⊗ u` and
   of special orthogonal automorphisms.
 * `CliffordAlgebra.spinGroupBaseChange_spinTransvection` identifies the scalar extension of a
   canonical transvection lift.
+* `CliffordAlgebra.spinGroupBaseChange_baseChange` identifies direct and successive scalar
+  extension.
 -/
 
 public section
@@ -35,7 +37,7 @@ open scoped TensorProduct
 
 namespace CliffordAlgebra
 
-universe u v w
+universe u v w x
 
 variable {R : Type u} {A : Type v} {M : Type w}
 variable [CommRing R] [CommRing A] [Algebra R A]
@@ -146,5 +148,30 @@ theorem spinGroupBaseChange_spinTransvection (hQ : Q.Nondegenerate) (hu : Q u = 
     map_one, map_mul, ofBaseChangeAux_ι, ofBaseChangeAux_ι]
 
 end Field
+
+section ScalarTower
+
+variable {B : Type x} [CommRing B] [Algebra A B] [Algebra R B] [IsScalarTower R A B]
+variable (Q : QuadraticForm R M)
+
+/-- Direct and successive scalar extension of a Spin element agree after transport along the
+canonical scalar-tower isometry. -/
+@[simp]
+theorem spinGroupBaseChange_baseChange (z : spinGroup Q) :
+    letI : Invertible (2 : A) :=
+      (Invertible.map (algebraMap R A) 2).copy 2 (map_ofNat _ _).symm
+    (QuadraticForm.baseChangeBaseChange (A := A) (B := B) Q).toIsometry.spinGroupMap
+        (spinGroupBaseChange (A := B) Q z) =
+      spinGroupBaseChange (A := B) (Q.baseChange A)
+        (spinGroupBaseChange (A := A) Q z) := by
+  let : Invertible (2 : A) :=
+    (Invertible.map (algebraMap R A) 2).copy 2 (map_ofNat _ _).symm
+  apply Subtype.ext
+  rw [QuadraticMap.Isometry.coe_spinGroupMap_apply,
+    coe_spinGroupBaseChange_apply, coe_spinGroupBaseChange_apply,
+    coe_spinGroupBaseChange_apply]
+  exact ofBaseChangeAux_baseChange Q _
+
+end ScalarTower
 
 end CliffordAlgebra

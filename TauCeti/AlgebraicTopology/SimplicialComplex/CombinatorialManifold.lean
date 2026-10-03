@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Stellar.Equivalence
+import Mathlib.Data.Nat.Cast.Order.Basic
+import Mathlib.Tactic.NormNum.Basic
 
 /-!
 # Combinatorial balls, spheres, and manifolds

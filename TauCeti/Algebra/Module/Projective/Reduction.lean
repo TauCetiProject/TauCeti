@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Module.Projective
 public import Mathlib.RingTheory.Jacobson.Radical
 public import Mathlib.RingTheory.SimpleModule.Basic
+public import Mathlib.SetTheory.Cardinal.Finite
 import Mathlib.RingTheory.Artinian.Module
 import TauCeti.Algebra.Module.ProjectiveCover.Basic
 import TauCeti.RingTheory.Jacobson.Semiprimary
@@ -38,6 +39,8 @@ module.
 * `Ideal.nonempty_linearEquiv_of_quotient_smul_top`: two projective modules with coatomic
   submodule lattices (e.g. finitely generated ones) and isomorphic quotients by an ideal in the
   Jacobson radical are isomorphic.
+* `TauCeti.finite_quotient_jacobson_smul_top`: over a ring with finite radical quotient, the
+  radical quotient of a finitely generated module is finite.
 * `TauCeti.nonempty_linearEquiv_of_projective_of_natCard_linearMap_eq`: over a ring with finite
   radical quotient, two finitely generated projective modules with equally many maps to every
   simple module are isomorphic.
@@ -91,6 +94,23 @@ namespace TauCeti
 universe u v w
 
 variable {R : Type u} [Ring R]
+
+/-- **The radical quotient of a finitely generated module is finite** over a ring `R` whose radical
+quotient `R ⧸ J` is finite. It is a finitely generated module over the semisimple ring `R ⧸ J`,
+hence a finite product of simple modules, and simple modules are quotients of `R ⧸ J`. -/
+theorem finite_quotient_jacobson_smul_top [Finite (R ⧸ Ring.jacobson R)] (M : Type v)
+    [AddCommGroup M] [Module R M] [Module.Finite R M] :
+    Finite (M ⧸ Ring.jacobson R • (⊤ : Submodule R M)) := by
+  have : IsArtinianRing (R ⧸ Ring.jacobson R) := isArtinian_of_finite
+  have : IsSemisimpleRing (R ⧸ Ring.jacobson R) :=
+    IsArtinianRing.isSemisimpleRing_iff_jacobson.mpr (Ring.jacobson_quotient_jacobson R)
+  have := isSemisimpleModule_quotient_smul_top R (Ring.jacobson R) M
+  obtain ⟨n, m, hm, ⟨e⟩⟩ := IsSemisimpleModule.exists_linearEquiv_pi_quotient
+    (R := R) (M ⧸ Ring.jacobson R • (⊤ : Submodule R M))
+  have (i : Fin n) : Finite (R ⧸ m i) :=
+    have : IsSimpleModule R (R ⧸ m i) := isSimpleModule_iff_isCoatom.mpr (hm i).out
+    IsSimpleModule.finite_of_finite_quotient_jacobson (R := R) (R ⧸ m i)
+  exact Finite.of_equiv _ e.symm.toEquiv
 
 /-- **Projectives are determined by their maps to simple modules**, over a ring `R` whose radical
 quotient `R ⧸ J` is finite (a finite ring, or the group algebra of a finite group over `ℤ_p`).

@@ -41,6 +41,11 @@ restriction is then surjective.
 
 * `TauCeti.ClassFieldTheory.brRes_eq_explicitMap2`: restriction is the pullback along
   `G_L → G_K` and `(Kˢ)ˣ → (Lˢ)ˣ`.
+* `TauCeti.ClassFieldTheory.brRes_relBrInfl`: restriction carries a relative Brauer class to
+  the relative class obtained by base change.
+  Its two ingredients are `TauCeti.restrictNormalHom_absoluteGaloisGroupEquivFixingSubgroup`
+  (the Galois-group square) and `TauCeti.unitsCoeffMap_embeddedUnitsInvariants` (the coefficient
+  square).
 * `TauCeti.ClassFieldTheory.brCor_brRes`: `brCor (brRes x) = [L : K] • x`.
 
 ## References
@@ -112,6 +117,80 @@ theorem brRes_eq_explicitMap2 (x : Br K) :
     (absoluteGaloisGroupEquivFixingSubgroup K L σ :
       AbsoluteGaloisGroup L →ₜ* ↥σ.fieldRange.fixingSubgroup)
     (unitsCoeffMap K L σ) continuous_of_discreteTopology (unitsCoeffMap_smul K L σ)) _).symm
+
+section Relative
+
+variable (K₀ L₀ E M : Type) [Field K₀] [Field L₀] [Field E] [Field M] [Algebra K₀ L₀]
+  [Algebra K₀ E] [Algebra K₀ M] [Algebra L₀ M] [Algebra E M] [IsScalarTower K₀ L₀ M]
+  [IsScalarTower K₀ E M] [FiniteDimensional K₀ E] [FiniteDimensional L₀ M] [Normal K₀ E]
+  [Normal L₀ M] (sigma : L₀ →ₐ[K₀] SeparableClosure K₀)
+  (rho : E →ₐ[K₀] SeparableClosure K₀) (tau : M →ₐ[L₀] SeparableClosure L₀)
+
+/-- **Restriction commutes with relative Brauer inflation.** Suppose `E/K₀` and `M/L₀` are finite
+normal extensions in a base-change square, with their embeddings into the chosen separable
+closures compatible under `separableClosureRingEquiv K₀ L₀ sigma`. Restricting the relative class
+of `E/K₀` from `Br K₀` to `Br L₀` is the relative class of `M/L₀` obtained by the usual
+base-change map
+
+`H²(Gal(E/K₀), Eˣ) → H²(Gal(M/L₀), Mˣ)`.
+
+This is the finite-layer comparison used to reduce the restriction square for the local Brauer
+invariant to its arithmetic normalization on unramified layers. -/
+theorem brRes_relBrInfl
+    (hcompat : ∀ x : E,
+      separableClosureRingEquiv K₀ L₀ sigma (tau (algebraMap E M x)) = rho x)
+    (x : groupCohomology (Rep.ofMulDistribMulAction Gal(E/K₀) Eˣ) 2) :
+    brRes K₀ L₀ sigma (relBrInfl K₀ E rho x) =
+      relBrInfl L₀ M tau
+        (groupCohomology.map
+          ((AlgEquiv.restrictNormalHom E).comp (AlgEquiv.restrictScalarsHom K₀))
+          (unitsBaseChangeHom K₀ E L₀ M) 2 x) := by
+  induction x using groupCohomology.H2_induction_on with
+  | h c =>
+    rw [relBrInfl_H2π, brRes_eq_explicitMap2, AddEquiv.symm_apply_apply]
+    rw [explicitMap2_mk (AbsoluteGaloisGroup K₀) (UnitsCoeff K₀)
+      (AbsoluteGaloisGroup L₀) (UnitsCoeff L₀)
+      ((ContinuousMonoidHom.subgroupSubtype sigma.fieldRange.fixingSubgroup).comp
+        (absoluteGaloisGroupEquivFixingSubgroup K₀ L₀ sigma :
+          AbsoluteGaloisGroup L₀ →ₜ* ↥sigma.fieldRange.fixingSubgroup))
+      (unitsCoeffMap K₀ L₀ sigma) continuous_of_discreteTopology
+      (fun g x => unitsCoeffMap_smul K₀ L₀ sigma g x) (relBrCocycle K₀ E rho c),
+      groupCohomology.H2π_comp_map_apply, relBrInfl_H2π]
+    congr 1
+    apply congrArg (H2pi (AbsoluteGaloisGroup L₀) (UnitsCoeff L₀))
+    apply Subtype.ext
+    funext ⟨g, h⟩
+    rw [cocyclesMap2_apply (AbsoluteGaloisGroup K₀) (UnitsCoeff K₀)
+      (AbsoluteGaloisGroup L₀) (UnitsCoeff L₀)
+      ((ContinuousMonoidHom.subgroupSubtype sigma.fieldRange.fixingSubgroup).comp
+        (absoluteGaloisGroupEquivFixingSubgroup K₀ L₀ sigma :
+          AbsoluteGaloisGroup L₀ →ₜ* ↥sigma.fieldRange.fixingSubgroup))
+      (unitsCoeffMap K₀ L₀ sigma) continuous_of_discreteTopology
+      (fun g x => unitsCoeffMap_smul K₀ L₀ sigma g x),
+      relBrCocycle_apply, relBrCocycle_apply, ContinuousMonoidHom.comp_toFun,
+      ContinuousMonoidHom.comp_toFun, ContinuousMonoidHom.subgroupSubtype_apply,
+      ContinuousMonoidHom.subgroupSubtype_apply, ContinuousMonoidHom.coe_coe,
+      restrictNormalHom_absoluteGaloisGroupEquivFixingSubgroup K₀ L₀ sigma E M rho tau hcompat g,
+      restrictNormalHom_absoluteGaloisGroupEquivFixingSubgroup K₀ L₀ sigma E M rho tau hcompat h]
+    rw [congrFun (groupCohomology.coe_mapCocycles₂
+      (f := ((AlgEquiv.restrictNormalHom E).comp (AlgEquiv.restrictScalarsHom K₀)))
+      (φ := unitsBaseChangeHom K₀ E L₀ M) c)
+      (tau.restrictNormalHom g, tau.restrictNormalHom h)]
+    -- Unfold the standard degree-two cochain pullback at this pair; its coefficient leg is
+    -- exactly `unitsBaseChangeHom`.
+    change
+      unitsCoeffMap K₀ L₀ sigma
+          (embeddedUnitsEquivInvariants K₀ E rho
+            (Rep.toAdditive (c (_, _)) : Additive Eˣ) : UnitsCoeff K₀) =
+        (embeddedUnitsEquivInvariants L₀ M tau
+          (Rep.toAdditive ((unitsBaseChangeHom K₀ E L₀ M).hom (c (_, _)))) : UnitsCoeff L₀)
+    generalize c (_, _) = z
+    obtain ⟨a, rfl⟩ := (Rep.toAdditive (M := Gal(E/K₀)) (G := Eˣ)).symm.surjective z
+    rw [← ofMul_toMul a, unitsBaseChangeHom_apply]
+    simpa only [AddEquiv.apply_symm_apply, embeddedUnitsEquivInvariants_apply, toMul_ofMul] using
+      unitsCoeffMap_embeddedUnitsInvariants K₀ L₀ sigma E M rho tau hcompat a.toMul
+
+end Relative
 
 /-- The transport of `H²` from `Gal(Kˢ/σ(L))` to `G_L` and back is the identity. -/
 private theorem explicitMap2_symm_explicitMap2

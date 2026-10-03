@@ -141,16 +141,21 @@ theorem iteratedGradientChain_succ (f : F → ℝ) (j : ℕ) :
     iteratedGradientChain f (j + 1) = fderiv ℝ (iteratedGradientChain f j) :=
   by rw [iteratedGradientChain]
 
-/-- Every field in the iterated-gradient chain of a smooth function is smooth. -/
-theorem contDiff_iteratedGradientChain {f : F → ℝ} (hf : ContDiff ℝ ∞ f) :
-    ∀ j, ContDiff ℝ ∞ (iteratedGradientChain f j)
-  | 0 => by
+/-- The `j`th iterated-gradient field is `C^m` at a point whenever the scalar function
+is `C^n` there with `m + j + 1 ≤ n`. -/
+theorem contDiffAt_iteratedGradientChain {f : F → ℝ} {x : F} {m n : ℕ∞ω}
+    (hf : ContDiffAt ℝ n f x) (j : ℕ) (h : m + j + 1 ≤ n) :
+    ContDiffAt ℝ m (iteratedGradientChain f j) x := by
+  induction j generalizing m with
+  | zero =>
       rw [iteratedGradientChain_zero]
-      exact (InnerProductSpace.toDual ℝ F).symm.contDiff.comp
-        (contDiff_infty_iff_fderiv.mp hf).2
-  | j + 1 => by
+      exact (InnerProductSpace.toDual ℝ F).symm.contDiff.contDiffAt.comp x
+        (hf.fderiv_right (by simpa using h))
+  | succ j ih =>
       rw [iteratedGradientChain_succ]
-      exact (contDiff_infty_iff_fderiv.mp (contDiff_iteratedGradientChain hf j)).2
+      have hs := ih (m := m + 1) (by
+        simpa only [Nat.cast_add, Nat.cast_one, add_assoc, add_comm, add_left_comm] using h)
+      exact hs.fderiv_right le_rfl
 
 /-- Every field in the iterated-gradient chain of a compactly supported function has compact
 support. -/

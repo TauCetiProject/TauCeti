@@ -207,50 +207,6 @@ private theorem claspMatching_val_apply (he : IsPerfectMatching e) (hqp : q ≠ 
     PerfectMatching.val_mk _ _ _
   rw [h, Function.Involutive.coe_toPerm]
 
-/-- The old arcs reconnected as the clasp's reconnecting smoothings leave them: `p` is joined to
-`q`, `e p` to `e q`, and every other half-edge to its old partner. -/
-private def reconnect (e : Perm α) (p q : α) : Perm α :=
-  (swap (e p) q).permCongr e
-
-private theorem isPerfectMatching_reconnect (he : IsPerfectMatching e) (p q : α) :
-    IsPerfectMatching (reconnect e p q) :=
-  PerfectMatching.isPerfectMatching_permCongr _ he
-
-section Reconnect
-
-variable (he : IsPerfectMatching e)
-include he
-
-omit he in
-private theorem reconnect_apply (x : α) :
-    reconnect e p q x = swap (e p) q (e (swap (e p) q x)) := by
-  rw [reconnect, Equiv.permCongr_apply, symm_swap]
-
-private theorem reconnect_self (hqp : q ≠ p) : reconnect e p q p = q := by
-  rw [reconnect_apply, swap_apply_of_ne_of_ne (he.apply_ne p).symm hqp.symm, swap_apply_left]
-
-private theorem reconnect_right (hqp : q ≠ p) : reconnect e p q q = p := by
-  rw [reconnect_apply, swap_apply_right, he.apply_apply,
-    swap_apply_of_ne_of_ne (he.apply_ne p).symm hqp.symm]
-
-private theorem reconnect_apply_self (hqp : q ≠ p) :
-    reconnect e p q (e p) = e q := by
-  rw [reconnect_apply, swap_apply_left,
-    swap_apply_of_ne_of_ne (apply_ne_apply_of_ne hqp) (he.apply_ne q)]
-
-private theorem reconnect_apply_right (hqp : q ≠ p) :
-    reconnect e p q (e q) = e p := by
-  rw [reconnect_apply, swap_apply_of_ne_of_ne (apply_ne_apply_of_ne hqp) (he.apply_ne q),
-    he.apply_apply, swap_apply_right]
-
-private theorem reconnect_of_ne {x : α} (hxp : x ≠ p) (hxe : x ≠ e p) (hxq : x ≠ q)
-    (hxe' : x ≠ e q) : reconnect e p q x = e x := by
-  have h₁ : e x ≠ e p := fun h => hxp (e.injective h)
-  have h₂ : e x ≠ q := fun h => hxe' (by rw [← h, he.apply_apply])
-  rw [reconnect_apply, swap_apply_of_ne_of_ne hxe hxq, swap_apply_of_ne_of_ne h₁ h₂]
-
-end Reconnect
-
 section Smoothing
 
 /-! ### Following the new crossings
@@ -330,7 +286,8 @@ include he hqp hqe in
 private theorem sumCongr_true_false_mul_claspMatching (T : Perm α) :
     Perm.sumCongr (Perm.sumCongr T (slotSmoothing true)) (slotSmoothing false) *
         (claspMatching e he p q hqp hqe).val =
-      Perm.sumCongr (Perm.sumCongr (T * reconnect e p q) 1) 1 *
+      Perm.sumCongr (Perm.sumCongr
+          (T * ((PerfectMatching.mk e he.apply_apply he.apply_ne).reconnect p q).val) 1) 1 *
         swap (.inl (.inl p)) (.inl (.inr 1)) * swap (.inl (.inl q)) (.inl (.inr 0)) *
         swap (.inl (.inl (e p))) (.inr 2) * swap (.inl (.inl (e p))) (.inl (.inr 2)) *
         swap (.inl (.inl (e p))) (.inr 0) *
@@ -340,19 +297,21 @@ private theorem sumCongr_true_false_mul_claspMatching (T : Perm α) :
   have hne := he.apply_ne
   have h₁ := apply_ne_self_of_ne he hqe
   have h₂ := apply_ne_apply_of_ne (e := e) hqp
+  have r₁ := PerfectMatching.reconnect_val_val_self (D := .mk e hinv hne) hqp
+  have r₂ := PerfectMatching.reconnect_val_val_right (D := .mk e hinv hne) hqp
+  simp only [PerfectMatching.val_mk] at r₁ r₂
   refine clasp_ext (e := e) (p := p) (q := q) ?_ ?_ ?_ ?_ (fun x hxp hxe hxq hxe' => ?_)
     (fun i => ?_) (fun i => ?_)
   all_goals (try fin_cases i) <;> simp [claspMatching_val_apply, claspFun, swap_apply_def,
-    reconnect_self he hqp, reconnect_right he hqp, reconnect_apply_self he hqp,
-    reconnect_apply_right he hqp, reconnect_of_ne he, hqp.symm, hqe.symm, h₁.symm, h₂.symm,
-    (hne p).symm, (hne q).symm, *]
+    hqp.symm, hqe.symm, h₁.symm, h₂.symm, (hne p).symm, (hne q).symm, *]
 include he hqp hqe in
 /-- Smoothing the first new crossing by `slotSmoothing false` and the second by
 `slotSmoothing true` also joins `p` to `q` and `e p` to `e q`. -/
 private theorem sumCongr_false_true_mul_claspMatching (T : Perm α) :
     Perm.sumCongr (Perm.sumCongr T (slotSmoothing false)) (slotSmoothing true) *
         (claspMatching e he p q hqp hqe).val =
-      Perm.sumCongr (Perm.sumCongr (T * reconnect e p q) 1) 1 *
+      Perm.sumCongr (Perm.sumCongr
+          (T * ((PerfectMatching.mk e he.apply_apply he.apply_ne).reconnect p q).val) 1) 1 *
         swap (.inl (.inl p)) (.inl (.inr 1)) * swap (.inl (.inl p)) (.inr 1) *
         swap (.inl (.inl p)) (.inl (.inr 3)) *
         swap (.inl (.inl q)) (.inl (.inr 0)) * swap (.inl (.inl q)) (.inr 0) *
@@ -362,19 +321,21 @@ private theorem sumCongr_false_true_mul_claspMatching (T : Perm α) :
   have hne := he.apply_ne
   have h₁ := apply_ne_self_of_ne he hqe
   have h₂ := apply_ne_apply_of_ne (e := e) hqp
+  have r₁ := PerfectMatching.reconnect_val_val_self (D := .mk e hinv hne) hqp
+  have r₂ := PerfectMatching.reconnect_val_val_right (D := .mk e hinv hne) hqp
+  simp only [PerfectMatching.val_mk] at r₁ r₂
   refine clasp_ext (e := e) (p := p) (q := q) ?_ ?_ ?_ ?_ (fun x hxp hxe hxq hxe' => ?_)
     (fun i => ?_) (fun i => ?_)
   all_goals (try fin_cases i) <;> simp [claspMatching_val_apply, claspFun, swap_apply_def,
-    reconnect_self he hqp, reconnect_right he hqp, reconnect_apply_self he hqp,
-    reconnect_apply_right he hqp, reconnect_of_ne he, hqp.symm, hqe.symm, h₁.symm, h₂.symm,
-    (hne p).symm, (hne q).symm, *]
+    hqp.symm, hqe.symm, h₁.symm, h₂.symm, (hne p).symm, (hne q).symm, *]
 include he hqp hqe in
 /-- Smoothing both new crossings by `slotSmoothing true` joins `p` to `q` and `e p` to `e q`, and
 cuts off the circle through the two short arcs of the clasp. -/
 private theorem sumCongr_true_true_mul_claspMatching (T : Perm α) :
     Perm.sumCongr (Perm.sumCongr T (slotSmoothing true)) (slotSmoothing true) *
         (claspMatching e he p q hqp hqe).val =
-      Perm.sumCongr (Perm.sumCongr (T * reconnect e p q) 1) 1 *
+      Perm.sumCongr (Perm.sumCongr
+          (T * ((PerfectMatching.mk e he.apply_apply he.apply_ne).reconnect p q).val) 1) 1 *
         swap (.inl (.inl p)) (.inl (.inr 1)) * swap (.inl (.inl q)) (.inl (.inr 0)) *
         swap (.inl (.inl (e p))) (.inr 2) * swap (.inl (.inl (e q))) (.inr 3) *
         swap (.inl (.inr 2)) (.inr 0) * swap (.inl (.inr 3)) (.inr 1) := by
@@ -382,12 +343,13 @@ private theorem sumCongr_true_true_mul_claspMatching (T : Perm α) :
   have hne := he.apply_ne
   have h₁ := apply_ne_self_of_ne he hqe
   have h₂ := apply_ne_apply_of_ne (e := e) hqp
+  have r₁ := PerfectMatching.reconnect_val_val_self (D := .mk e hinv hne) hqp
+  have r₂ := PerfectMatching.reconnect_val_val_right (D := .mk e hinv hne) hqp
+  simp only [PerfectMatching.val_mk] at r₁ r₂
   refine clasp_ext (e := e) (p := p) (q := q) ?_ ?_ ?_ ?_ (fun x hxp hxe hxq hxe' => ?_)
     (fun i => ?_) (fun i => ?_)
   all_goals (try fin_cases i) <;> simp [claspMatching_val_apply, claspFun, swap_apply_def,
-    reconnect_self he hqp, reconnect_right he hqp, reconnect_apply_self he hqp,
-    reconnect_apply_right he hqp, reconnect_of_ne he, hqp.symm, hqe.symm, h₁.symm, h₂.symm,
-    (hne p).symm, (hne q).symm, *]
+    hqp.symm, hqe.symm, h₁.symm, h₂.symm, (hne p).symm, (hne q).symm, *]
 omit [DecidableEq α] in
 private theorem orbitCount_sumCongr_sumCongr_one [Finite α] (σ : Perm α) :
     orbitCount (Perm.sumCongr (Perm.sumCongr σ (1 : Perm (Fin 4))) (1 : Perm (Fin 4))) =
@@ -411,7 +373,8 @@ private theorem orbitCount_slotSmoothing_mul_claspMatching [Finite α] (T : Perm
     orbitCount (Perm.sumCongr (Perm.sumCongr T (slotSmoothing x)) (slotSmoothing y) *
         (claspMatching e he p q hqp hqe).val) =
       if x = false ∧ y = false then orbitCount (T * e)
-      else orbitCount (T * reconnect e p q) + if x = true ∧ y = true then 2 else 0 := by
+      else orbitCount (T * ((PerfectMatching.mk e he.apply_apply he.apply_ne).reconnect p q).val) +
+        if x = true ∧ y = true then 2 else 0 := by
   cases x <;> cases y
   · rw [sumCongr_false_false_mul_claspMatching he hqp hqe]
     repeat rw [orbitCount_mul_swap_eq_sub_one]
@@ -791,16 +754,16 @@ private theorem smoothingChoice_insertClasp_last (s : Fin (n + 2) → Bool) :
 /-- The number of circles left by a state of the old crossings once the two cut arcs are
 reconnected, `p` to `q` and the other end of one to the other end of the other. -/
 private noncomputable def claspLoopCount (s : Fin n → Bool) : ℕ :=
-  orbitCount (D.smoothingTurn (D.smoothingChoice s) * reconnect D.edgePair.val p q) / 2 +
+  orbitCount (D.smoothingTurn (D.smoothingChoice s) * (D.edgePair.reconnect p q).val) / 2 +
     D.crossinglessComponentCount
 
 private theorem one_le_claspLoopCount (s : Fin n → Bool) : 1 ≤ claspLoopCount D p q s := by
   have hpos : 0 < orbitCount (D.smoothingTurn (D.smoothingChoice s) *
-      reconnect D.edgePair.val p q) := by
+      (D.edgePair.reconnect p q).val) := by
     let _ : Nonempty (Fin (4 * n)) := ⟨p⟩
     exact Equiv.Perm.orbitCount_pos _
   obtain ⟨k, hk⟩ := (D.isPerfectMatching_smoothingTurn (D.smoothingChoice s)).even_orbitCount_mul
-    (isPerfectMatching_reconnect D.edgePair.prop p q)
+    (D.edgePair.reconnect p q).prop
   rw [claspLoopCount]
   omega
 
@@ -820,6 +783,10 @@ private theorem stateLoopCount_insertClasp (s : Fin (n + 2) → Bool) :
     smoothingChoice_insertClasp_last, insertClasp_edgePair_val, ← Equiv.permCongr_mul,
     Equiv.orbitCount_permCongr, orbitCount_slotSmoothing_mul_claspMatching,
     insertClasp_crossinglessComponentCount]
+  -- Rebundling the old arcs as a perfect matching gives back `D.edgePair`.
+  have hmk : PerfectMatching.mk D.edgePair.val D.edgePair.prop.apply_apply
+      D.edgePair.prop.apply_ne = D.edgePair := Subtype.ext (PerfectMatching.val_mk _ _ _)
+  rw [hmk]
   split_ifs <;> simp_all [stateLoopCount_def, statePerm_def, claspLoopCount]
   omega
 

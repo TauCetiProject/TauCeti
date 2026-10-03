@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.Tensoriality
+import Mathlib.Geometry.Manifold.Algebra.Structures
 import Mathlib.Geometry.Manifold.PartitionOfUnity
 import Mathlib.Geometry.Manifold.VectorBundle.LocalFrame
 

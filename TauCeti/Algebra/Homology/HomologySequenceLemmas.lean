@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import Mathlib.CategoryTheory.Abelian.Refinements
 public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 public import Mathlib.Algebra.Homology.HomologySequenceLemmas
 public import TauCeti.Algebra.Homology.ShortComplex.ShortExact

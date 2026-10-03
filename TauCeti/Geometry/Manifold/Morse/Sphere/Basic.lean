@@ -8,6 +8,8 @@ module
 public import TauCeti.Analysis.Calculus.Morse.Linearization
 public import TauCeti.Geometry.Manifold.Instances.Sphere
 public import TauCeti.Geometry.Manifold.Morse.Index
+import Mathlib.Analysis.Calculus.Deriv.Inv
+import Mathlib.Analysis.InnerProductSpace.Calculus
 import TauCeti.Analysis.Normed.Module.Ball
 
 /-!

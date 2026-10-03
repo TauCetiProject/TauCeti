@@ -121,14 +121,13 @@ theorem finiteComponent_pow (χ : HeckeCharacter K) (n : ℕ) (v : HeightOneSpec
 
 /-! ### Triviality on the unit filtration -/
 
-/-- **A Hecke character is trivial on a congruence subgroup at every finite place.**  There is a
-modulus `𝔪` such that at every finite place `v` the component of `χ` is trivial on the step
-`U(K_v, 𝔪.exponent v)` of the unit filtration: on the units of `𝓞_v` when `v` does not divide `𝔪`,
-and on the principal units of level `𝔪.exponent v` when it does. -/
-theorem exists_modulus_finiteComponent_eq_one (χ : HeckeCharacter K) :
-    ∃ 𝔪 : Modulus K, ∀ (v : HeightOneSpectrum (𝓞 K)),
-      ∀ u ∈ TauCeti.unitFiltration (v.adicCompletion K) (𝔪.exponent v),
-        χ.finiteComponent v u = 1 := by
+/-- A Hecke character is trivial on the finite parts of all ideles in a sufficiently small
+idele congruence subgroup. This controls the entire finite idele, including its infinitely many
+unit coordinates, rather than just each local component separately. -/
+theorem exists_modulus_finitePart_eq_one (χ : HeckeCharacter K) :
+    ∃ 𝔪 : Modulus K, ∀ x ∈ ideleCongruenceSubgroup 𝔪,
+      χ (QuotientGroup.mk (IdeleGroup.ofFiniteIdele (𝓞 K) K
+        (IdeleGroup.toFiniteIdele (𝓞 K) K x))) = 1 := by
   -- The finite parts of the ideles of a small enough idele congruence subgroup form a subgroup on
   -- which `χ` stays close to `1`, and `ℂˣ` has no small subgroups.
   -- `χ` as a character of the idele group, and a neighbourhood of `1` on which it kills every
@@ -142,16 +141,27 @@ theorem exists_modulus_finiteComponent_eq_one (χ : HeckeCharacter K) :
     (IdeleGroup.ofFiniteIdele (𝓞 K) K).comp (IdeleGroup.toFiniteIdele (𝓞 K) K)
   have hker : (ideleCongruenceSubgroup 𝔪).map φ ≤ f.ker :=
     hNker _ (by rintro _ ⟨x, hx, rfl⟩; exact h𝔪 x hx)
+  exact ⟨𝔪, fun x hx ↦ MonoidHom.mem_ker.mp (hker ⟨x, hx, rfl⟩)⟩
+
+/-- **A Hecke character is trivial on a congruence subgroup at every finite place.** There is a
+modulus `𝔪` such that at every finite place `v` the component of `χ` is trivial on the step
+`U(K_v, 𝔪.exponent v)` of the unit filtration: on the units of `𝓞_v` when `v` does not divide `𝔪`,
+and on the principal units of level `𝔪.exponent v` when it does. -/
+theorem exists_modulus_finiteComponent_eq_one (χ : HeckeCharacter K) :
+    ∃ 𝔪 : Modulus K, ∀ (v : HeightOneSpectrum (𝓞 K)),
+      ∀ u ∈ TauCeti.unitFiltration (v.adicCompletion K) (𝔪.exponent v),
+        χ.finiteComponent v u = 1 := by
+  obtain ⟨𝔪, h𝔪⟩ := χ.exists_modulus_finitePart_eq_one
   refine ⟨𝔪, fun v u hu ↦ ?_⟩
   -- An idele concentrated at a finite place is its own finite part.
-  have hφ : φ (IdeleGroup.ofAdicCompletion (𝓞 K) K v u) =
+  have hφ : IdeleGroup.ofFiniteIdele (𝓞 K) K
+      (IdeleGroup.toFiniteIdele (𝓞 K) K (IdeleGroup.ofAdicCompletion (𝓞 K) K v u)) =
       IdeleGroup.ofAdicCompletion (𝓞 K) K v u :=
     Units.ext <| by
-      rw [MonoidHom.comp_apply, IdeleGroup.coe_ofFiniteIdele, IdeleGroup.coe_toFiniteIdele,
+      rw [IdeleGroup.coe_ofFiniteIdele, IdeleGroup.coe_toFiniteIdele,
         IdeleGroup.val_ofAdicCompletion_apply]
-  have h := MonoidHom.mem_ker.mp
-    (hker ⟨_, ofAdicCompletion_mem_ideleCongruenceSubgroup_iff.mpr hu, hφ⟩)
-  simpa [f] using h
+  have h := h𝔪 _ (ofAdicCompletion_mem_ideleCongruenceSubgroup_iff.mpr hu)
+  simpa only [hφ, finiteComponent_apply, IdeleClassGroup.ofAdicCompletion_apply] using h
 
 /-- **The component of a Hecke character at a finite place is trivial on a step of the unit
 filtration.** -/

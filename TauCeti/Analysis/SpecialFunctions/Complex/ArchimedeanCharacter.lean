@@ -243,6 +243,21 @@ theorem coe_complexUnitsCharacter_apply (s : ℂ) (k : ℤ) (z : ℂˣ) :
     (complexUnitsCharacter s k z : ℂ) = (‖(z : ℂ)‖ : ℂ) ^ s * ((z : ℂ) / ‖(z : ℂ)‖) ^ k := by
   simp [complexUnitsCharacter]
 
+/-- Integer embedding exponents `a` and `b` give the algebraic character `z ↦ z^a conj(z)^b`.
+Their sum is the modulus exponent and their difference is the angular frequency. -/
+theorem coe_complexUnitsCharacter_intCast (a b : ℤ) (z : ℂˣ) :
+    (complexUnitsCharacter ((a + b : ℤ) : ℂ) (a - b) z : ℂ) =
+      (z : ℂ) ^ a * (starRingEnd ℂ) (z : ℂ) ^ b := by
+  rw [coe_complexUnitsCharacter_apply, cpow_intCast]
+  have hz : (z : ℂ) ≠ 0 := z.ne_zero
+  have hr : (‖(z : ℂ)‖ : ℂ) ≠ 0 := by simp
+  have hc : (starRingEnd ℂ) (z : ℂ) = (‖(z : ℂ)‖ : ℂ) ^ 2 / (z : ℂ) := by
+    apply (eq_div_iff hz).mpr
+    rw [mul_comm, mul_conj, normSq_eq_norm_sq, ofReal_pow]
+  rw [hc, zpow_add₀ hr, div_zpow, zpow_sub₀ hz, zpow_sub₀ hr, div_zpow,
+    pow_two, mul_zpow]
+  field_simp
+
 /-- With angular frequency `0`, `complexUnitsCharacter s 0` is the norm-power character
 `z ↦ |z| ^ s`. -/
 @[simp]

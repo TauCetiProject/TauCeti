@@ -64,8 +64,13 @@ reconstruction from hom-space dimensions returns to the finite-dimensional `k`-a
   dimension into them.
 * `TauCeti.natCard_linearMap_eq_pow_jordanHolderMultiplicity`: over any ring, maps from a
   finitely generated semisimple module `M` to a simple module `S` number `#End(S) ^ [M : S]`.
+* `TauCeti.natCard_linearMap_pi_eq_prod_pow`: maps from `M` into a finite product of simple
+  modules `N i` number `∏ i, #End(N i) ^ [M : N i]`.
 * `TauCeti.IsSemisimpleModule.nonempty_linearEquiv_of_jordanHolderMultiplicity_eq`: over any ring,
   finitely generated semisimple modules with the same Jordan-Hölder multiplicities are isomorphic.
+* `TauCeti.IsSemisimpleModule.nonempty_linearEquiv_of_natCard_linearMap_mul_eq`: over any ring,
+  finite semisimple modules `M` and `N` with `#Hom(M, N) · #Hom(N, M) = #End(M) · #End(N)` are
+  isomorphic.
 * `TauCeti.finrank_linearMap_pos_iff_exists_nonempty_linearEquiv`: the multiplicity is positive
   exactly when `S` occurs among the factors, so the hom space detects the constituents.
 * `TauCeti.finrank_linearMap_eq_natCard_of_linearEquiv_pi_const`: the isotypic case, where `M` is
@@ -346,6 +351,23 @@ theorem natCard_linearMap_eq_pow_jordanHolderMultiplicity (M : Type v) [AddCommG
     natCard_linearMap_pi_eq_pow, jordanHolderMultiplicity_eq_of_linearEquiv e,
     jordanHolderMultiplicity_pi_eq_natCard]
 
+/-- **Maps from a semisimple module into a finite product of simple modules.** For a finitely
+generated semisimple module `M`, `#Hom_R(M, ∏ i, N i) = ∏ i, #End_R(N i) ^ [M : N i]`: maps into a
+product are families of maps into the factors, counted by
+`TauCeti.natCard_linearMap_eq_pow_jordanHolderMultiplicity`. -/
+theorem natCard_linearMap_pi_eq_prod_pow {ι : Type*} [Fintype ι] {N : ι → Type*}
+    [∀ i, AddCommGroup (N i)] [∀ i, Module R (N i)] [∀ i, IsSimpleModule R (N i)]
+    (M : Type v) [AddCommGroup M] [Module R M] [IsSemisimpleModule R M] [Module.Finite R M] :
+    Nat.card (M →ₗ[R] ∀ i, N i) =
+      ∏ i, Nat.card (Module.End R (N i)) ^ jordanHolderMultiplicity R M (N i) := by
+  let e : (M →ₗ[R] ∀ i, N i) ≃ ∀ i, M →ₗ[R] N i :=
+    { toFun f i := LinearMap.proj i ∘ₗ f
+      invFun := LinearMap.pi
+      left_inv _ := rfl
+      right_inv _ := rfl }
+  rw [Nat.card_congr e, Nat.card_pi]
+  exact Finset.prod_congr rfl fun i _ ↦ natCard_linearMap_eq_pow_jordanHolderMultiplicity M (N i)
+
 /-- **Semisimple modules are determined by their Jordan-Hölder multiplicities**, over an arbitrary
 ring. Two finitely generated semisimple modules which contain every simple module equally often
 are isomorphic. It suffices to test the simple modules in the universe of `R`, since every simple
@@ -393,6 +415,127 @@ theorem IsSemisimpleModule.nonempty_linearEquiv_of_jordanHolderMultiplicity_eq
     Quotient.exact (Equiv.ofFiberEquiv_map e i)
   exact ⟨eM.trans <| (LinearEquiv.piCongrRight fun i ↦ (hσ i).some).trans <|
     (LinearEquiv.piCongrLeft R (fun j ↦ R ⧸ b j) σ).trans eN.symm⟩
+
+/-- **Finite semisimple modules are determined by the numbers of maps between them**, over an
+arbitrary ring. Two finite semisimple modules `M` and `N` with
+`#Hom(M, N) · #Hom(N, M) = #End(M) · #End(N)` are isomorphic.
+
+Writing `a_S` and `b_S` for the multiplicities of a simple module `S` in `M` and `N`, and
+`q_S = #End(S) ≥ 2`, the four numbers of maps are `∏ q_S ^ (a_S b_S)`, `∏ q_S ^ (b_S a_S)`,
+`∏ q_S ^ (a_S ^ 2)` and `∏ q_S ^ (b_S ^ 2)`, so the hypothesis says `∏ q_S ^ ((a_S - b_S) ^ 2) = 1`.
+This form of the comparison applies when only maps between `M` and `N` themselves can be counted,
+for instance when `M` and `N` are reductions of lattices whose hom modules are known. -/
+theorem IsSemisimpleModule.nonempty_linearEquiv_of_natCard_linearMap_mul_eq
+    (M : Type v) (N : Type w) [AddCommGroup M] [Module R M] [IsSemisimpleModule R M]
+    [Finite M] [AddCommGroup N] [Module R N] [IsSemisimpleModule R N] [Finite N]
+    (h : Nat.card (M →ₗ[R] N) * Nat.card (N →ₗ[R] M) =
+      Nat.card (Module.End R M) * Nat.card (Module.End R N)) :
+    Nonempty (M ≃ₗ[R] N) := by
+  classical
+  obtain ⟨n, a, ha, ⟨eM⟩⟩ := IsSemisimpleModule.exists_linearEquiv_pi_quotient (R := R) M
+  obtain ⟨m, b, hb, ⟨eN⟩⟩ := IsSemisimpleModule.exists_linearEquiv_pi_quotient (R := R) N
+  -- Index the simple factors of `M` and of `N` together, and group them by isomorphism class.
+  let c : Fin n ⊕ Fin m → Ideal R := Sum.elim a b
+  have hc : ∀ x, IsSimpleModule R (R ⧸ c x) := by
+    rintro (i | j)
+    exacts [isSimpleModule_iff_isCoatom.mpr (ha i).out, isSimpleModule_iff_isCoatom.mpr (hb j).out]
+  have (i : Fin n) : IsSimpleModule R (R ⧸ a i) := hc (.inl i)
+  have (j : Fin m) : IsSimpleModule R (R ⧸ b j) := hc (.inr j)
+  let eM' : M ≃ₗ[R] ∀ i, R ⧸ c (.inl i) := eM
+  let eN' : N ≃ₗ[R] ∀ j, R ⧸ c (.inr j) := eN
+  have hfin : ∀ x, Finite (R ⧸ c x) := by
+    rintro (i | j)
+    · exact Finite.of_surjective (fun y : M ↦ eM' y i) fun z ↦ ⟨eM'.symm (Pi.single i z), by simp⟩
+    · exact Finite.of_surjective (fun y : N ↦ eN' y j) fun z ↦ ⟨eN'.symm (Pi.single j z), by simp⟩
+  let s : Setoid (Fin n ⊕ Fin m) :=
+    { r x y := Nonempty ((R ⧸ c y) ≃ₗ[R] R ⧸ c x)
+      iseqv := ⟨fun _ ↦ ⟨LinearEquiv.refl R _⟩, fun ⟨e⟩ ↦ ⟨e.symm⟩,
+        fun ⟨e⟩ ⟨e'⟩ ↦ ⟨e'.trans e⟩⟩ }
+  let κ : Fin n ⊕ Fin m → Quotient s := Quotient.mk s
+  -- The size of the endomorphism ring of a class of simple factors, and the numbers `A q` and
+  -- `B q` of factors of `M` and of `N` in the class `q`.
+  let C : Quotient s → ℕ := Quotient.lift (fun x ↦ Nat.card (Module.End R (R ⧸ c x)))
+    fun x y ⟨e⟩ ↦ (Nat.card_congr (e.arrowCongrAddEquiv e).toEquiv).symm
+  -- `C` is defined by `Quotient.lift`, so it computes on classes by definition.
+  have hC_mk (x) : C (κ x) = Nat.card (Module.End R (R ⧸ c x)) := rfl
+  let A (q : Quotient s) : ℕ := Nat.card {i // κ (.inl i) = q}
+  let B (q : Quotient s) : ℕ := Nat.card {j // κ (.inr j) = q}
+  -- `κ y = κ x` unfolds to `Nonempty ((R ⧸ c x) ≃ₗ[R] R ⧸ c y)`, the condition counted by
+  -- `jordanHolderMultiplicity_pi_eq_natCard`.
+  have hA (x) : jordanHolderMultiplicity R M (R ⧸ c x) = A (κ x) := by
+    have := hc x
+    rw [jordanHolderMultiplicity_eq_of_linearEquiv eM, jordanHolderMultiplicity_pi_eq_natCard]
+    simp only [A, κ, Quotient.eq]
+    rfl
+  have hB (x) : jordanHolderMultiplicity R N (R ⧸ c x) = B (κ x) := by
+    have := hc x
+    rw [jordanHolderMultiplicity_eq_of_linearEquiv eN, jordanHolderMultiplicity_pi_eq_natCard]
+    simp only [B, κ, Quotient.eq]
+    rfl
+  -- Counting maps into a product of simple factors, grouped by class.
+  have hfib {k : ℕ} (g : Fin k → Fin n ⊕ Fin m) (F : Quotient s → ℕ) :
+      ∏ j, C (κ (g j)) ^ F (κ (g j)) = ∏ q, C q ^ (Nat.card {j // κ (g j) = q} * F q) := by
+    rw [← Finset.prod_fiberwise' Finset.univ (fun j ↦ κ (g j)) fun q ↦ C q ^ F q]
+    refine Finset.prod_congr rfl fun q _ ↦ ?_
+    rw [Finset.prod_const, ← pow_mul, mul_comm, Nat.card_eq_fintype_card, Fintype.card_subtype]
+  have hcardM {k : ℕ} (g : Fin k → Fin n ⊕ Fin m) :
+      Nat.card (M →ₗ[R] ∀ j, R ⧸ c (g j)) = ∏ q, C q ^ (Nat.card {j // κ (g j) = q} * A q) := by
+    have := fun j ↦ hc (g j)
+    rw [natCard_linearMap_pi_eq_prod_pow, ← hfib]
+    simp only [hA, hC_mk]
+  have hcardN {k : ℕ} (g : Fin k → Fin n ⊕ Fin m) :
+      Nat.card (N →ₗ[R] ∀ j, R ⧸ c (g j)) = ∏ q, C q ^ (Nat.card {j // κ (g j) = q} * B q) := by
+    have := fun j ↦ hc (g j)
+    rw [natCard_linearMap_pi_eq_prod_pow, ← hfib]
+    simp only [hB, hC_mk]
+  rw [Nat.card_congr ((LinearEquiv.refl R M).arrowCongrAddEquiv eN').toEquiv,
+    Nat.card_congr ((LinearEquiv.refl R N).arrowCongrAddEquiv eM').toEquiv,
+    Nat.card_congr ((LinearEquiv.refl R M).arrowCongrAddEquiv eM').toEquiv,
+    Nat.card_congr ((LinearEquiv.refl R N).arrowCongrAddEquiv eN').toEquiv,
+    hcardM Sum.inr, hcardN Sum.inl, hcardM Sum.inl, hcardN Sum.inr,
+    ← Finset.prod_mul_distrib, ← Finset.prod_mul_distrib] at h
+  simp only [← pow_add] at h
+  -- Since `a * a + b * b = (b * a + a * b) + ((a - b) ^ 2 + (b - a) ^ 2)`, the hypothesis forces
+  -- `∏ q, C q ^ ((A q - B q) ^ 2 + (B q - A q) ^ 2) = 1`.
+  have hsq (a b : ℕ) : a * a + b * b = (b * a + a * b) + ((a - b) ^ 2 + (b - a) ^ 2) := by
+    rcases le_total a b with hab | hab <;>
+    · obtain ⟨d, rfl⟩ := Nat.exists_eq_add_of_le hab
+      simp only [Nat.sub_eq_zero_of_le hab, add_tsub_cancel_left]
+      ring
+  have hC (q : Quotient s) : 1 < C q := by
+    induction q using Quotient.ind with | _ x
+    have := hc x
+    have := hfin x
+    have : Finite (Module.End R (R ⧸ c x)) := Finite.of_injective _ DFunLike.coe_injective
+    have := IsSimpleModule.nontrivial R (R ⧸ c x)
+    exact Finite.one_lt_card (α := Module.End R (R ⧸ c x))
+  have hone : ∏ q, C q ^ ((A q - B q) ^ 2 + (B q - A q) ^ 2) = 1 := by
+    have h' : ∏ q, C q ^ (B q * A q + A q * B q) = ∏ q, C q ^ (A q * A q + B q * B q) := h
+    have h2 : ∏ q, C q ^ (A q * A q + B q * B q) = (∏ q, C q ^ (B q * A q + A q * B q)) *
+        ∏ q, C q ^ ((A q - B q) ^ 2 + (B q - A q) ^ 2) := by
+      rw [← Finset.prod_mul_distrib]
+      exact Finset.prod_congr rfl fun q _ ↦ by rw [← pow_add, ← hsq]
+    rw [h2] at h'
+    exact (mul_eq_left₀ (Finset.prod_ne_zero_iff.mpr fun q _ ↦
+      pow_ne_zero _ (zero_lt_one.trans (hC q)).ne')).mp h'.symm
+  have hAB (q : Quotient s) : A q = B q := by
+    have := Nat.dvd_one.mp (hone ▸ Finset.dvd_prod_of_mem _ (Finset.mem_univ q))
+    rw [Nat.pow_eq_one] at this
+    have := this.resolve_left (hC q).ne'
+    simp only [Nat.add_eq_zero_iff, pow_eq_zero_iff two_ne_zero, Nat.sub_eq_zero_iff_le] at this
+    omega
+  -- Hence `M` and `N` have the same Jordan-Hölder multiplicities.
+  refine IsSemisimpleModule.nonempty_linearEquiv_of_jordanHolderMultiplicity_eq M N
+    fun S _ _ hS ↦ ?_
+  by_cases hx : ∃ x, Nonempty (S ≃ₗ[R] R ⧸ c x)
+  · obtain ⟨x, ⟨e⟩⟩ := hx
+    rw [jordanHolderMultiplicity_congr e, jordanHolderMultiplicity_congr e, hA, hB, hAB]
+  · push Not at hx
+    rw [jordanHolderMultiplicity_eq_of_linearEquiv eM, jordanHolderMultiplicity_pi_eq_natCard,
+      jordanHolderMultiplicity_eq_of_linearEquiv eN, jordanHolderMultiplicity_pi_eq_natCard]
+    have : IsEmpty {i // Nonempty (S ≃ₗ[R] R ⧸ a i)} := ⟨fun i ↦ (hx (.inl i.1)).false i.2.some⟩
+    have : IsEmpty {j // Nonempty (S ≃ₗ[R] R ⧸ b j)} := ⟨fun j ↦ (hx (.inr j.1)).false j.2.some⟩
+    simp
 
 end ArbitraryRing
 

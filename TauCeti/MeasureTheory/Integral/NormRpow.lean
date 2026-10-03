@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Integral
+import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 
 /-!
 # Integrals of a weakly singular norm power

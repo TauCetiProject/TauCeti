@@ -74,6 +74,8 @@ theorem _root_.Representation.Equiv.exists_intertwiningMap_comp_eq_smul
   have hiV : Function.Injective iV := (IsLocalizedModule.injective_iff_isRegular S iV).mpr hV
   have hiW : Function.Injective iW := (IsLocalizedModule.injective_iff_isRegular S iW).mpr hW
   -- Clear the denominators of `e` on `V` and of `e.symm` on `W`.
+  have : IsLocalizedModule S (iV.restrictScalars R) := inferInstanceAs (IsLocalizedModule S iV)
+  have : IsLocalizedModule S (iW.restrictScalars R) := inferInstanceAs (IsLocalizedModule S iW)
   obtain ⟨h, s, hh⟩ := Module.Finite.exists_lift_of_isLocalizedModule_of_injective S hiW
     (e.toLinearMap.restrictScalars R ∘ₗ iV)
   obtain ⟨h', t, hh'⟩ := Module.Finite.exists_lift_of_isLocalizedModule_of_injective S hiV

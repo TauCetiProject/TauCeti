@@ -9,6 +9,7 @@ module
 public import TauCeti.Algebra.CentralSimple.Splitting
 -- Non-public: the standard matrix basis is used only to construct the descended equivalence, and
 -- flatness is used only to prove that extending coefficients is injective.
+import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import Mathlib.LinearAlgebra.Matrix.StdBasis
 import Mathlib.RingTheory.Flat.Basic
 

@@ -8,7 +8,7 @@ module
 public import Mathlib.RepresentationTheory.Intertwining
 
 /-!
-# An injective intertwining map is an isomorphism onto its image
+# Intertwining maps: images, and the action of the monoid algebra
 
 Mathlib records the image of an intertwining map as a subrepresentation
 (`Representation.IntertwiningMap.range`) and turns a bijective intertwining map into an
@@ -29,6 +29,11 @@ caller has already done.
   subrepresentation containing its image.
 * `Representation.IntertwiningMap.equivOfRange`: an injective intertwining map is an equivalence
   onto a subrepresentation that its image fills.
+
+## Main results
+
+* `Representation.IntertwiningMap.apply_asAlgebraHom`: an intertwining map commutes with the
+  action of the monoid algebra, not only with that of the group elements.
 
 -/
 
@@ -63,6 +68,13 @@ noncomputable def equivOfRange (f : IntertwiningMap ρ σ) (hf : Function.Inject
     ⟨fun _ _ h => hf (by exact congrArg Subtype.val h), fun w => by
       obtain ⟨v, hv⟩ := hP.ge w.2
       exact ⟨v, Subtype.ext (by exact hv)⟩⟩
+
+/-- **An intertwining map commutes with the action of the monoid algebra**, not only with that of
+the group elements. -/
+@[simp]
+theorem apply_asAlgebraHom (f : IntertwiningMap ρ σ) (r : MonoidAlgebra A G) (v : V) :
+    f (ρ.asAlgebraHom r v) = σ.asAlgebraHom r (f v) :=
+  (equivLinearMapAsModule ρ σ f).map_smul r (ρ.asModuleEquiv.symm v)
 
 @[simp]
 theorem equivOfRange_apply_coe (f : IntertwiningMap ρ σ) (hf : Function.Injective f)

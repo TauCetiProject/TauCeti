@@ -123,9 +123,9 @@ lemma cellularDifferential_eq_skeletonBaseTripleδ_comp_singularHomologyMap (n :
       skeletonBasePairToSkeletonPair C n := by
     refine MorphismProperty.Arrow.Hom.ext ?_ ?_
     · ext x
-      exact Subtype.ext (coe_skeletonBasePairToSkeletonPair_snd_apply C n x).symm
+      exact Subtype.ext (congrArg (fun g ↦ (g x).1) (skeletonBasePairToSkeletonPair_snd C n)).symm
     · ext x
-      exact (skeletonBasePairToSkeletonPair_fst_apply C n x).symm
+      exact (congrArg (fun g ↦ g x) (skeletonBasePairToSkeletonPair_fst C n)).symm
   have h₂ : TopTriple.outerPair.map (skeletonBaseTripleToSkeletonTriple C n) = 𝟙 _ := by
     ext : 2 <;> rfl
   -- Naturality of the connecting morphism along the map of triples

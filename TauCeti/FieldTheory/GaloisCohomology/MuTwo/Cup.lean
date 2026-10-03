@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.GaloisCohomology.MuTwo.Basic
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.GradedComm
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.TrivialF2
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.TrivialF2.Basic
 
 /-!
 # Cup products of mod-two Kummer classes
@@ -88,15 +87,7 @@ theorem kummerCup_squareClass_squareClass (a b : Kˣ) :
 
 /-- **The Kummer cup pairing is symmetric**: `[a] ⌣ [b] = [b] ⌣ [a]`. -/
 theorem kummerCup_comm (x y : SquareClassGroup K) : kummerCup K x y = kummerCup K y x := by
-  -- Graded commutativity in bidegree `(1, 1)` gives `[a] ⌣ [b] = -([b] ⌣ [a])`, and the sign
-  -- disappears because the square-class group is killed by two.
-  have hy : y + y = 0 := by
-    rw [← two_smul (ZMod 2) y, CharTwo.two_eq_zero (R := ZMod 2), zero_smul]
-  have h2 : kummerCup K y x + kummerCup K y x = 0 := by
-    rw [← AddMonoidHom.add_apply, ← map_add, hy, map_zero, AddMonoidHom.zero_apply]
-  rw [kummerCup_apply, TopPairing.cup_gradedComm, ContinuousCohomology.degreeCast_rfl,
-    CategoryTheory.Iso.refl_hom, CategoryTheory.ConcreteCategory.id_apply, mul_one, pow_one,
-    neg_one_smul, trivialF2TopPairing_flip, ← kummerCup_apply]
-  exact neg_eq_of_add_eq_zero_right h2
+  rw [kummerCup_apply, trivialF2TopPairing_cup_comm, ContinuousCohomology.degreeCast_rfl,
+    CategoryTheory.Iso.refl_hom, CategoryTheory.ConcreteCategory.id_apply, ← kummerCup_apply]
 
 end TauCeti

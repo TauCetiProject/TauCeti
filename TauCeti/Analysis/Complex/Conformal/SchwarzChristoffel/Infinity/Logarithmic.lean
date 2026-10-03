@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Primitive
 import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 import Mathlib.Analysis.Complex.RemovableSingularity
+import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 
 /-!
 # Logarithmic growth of Schwarz--Christoffel primitives

@@ -44,6 +44,7 @@ especially Proposition 4.5.8.
 * `TauCeti.FramedOrientedPDCode`: a framing decoration of an oriented PD-code.
 * `TauCeti.PDCode.halfEdgeSuccEquiv`: the half-edge positions of a code with one crossing more.
 * `TauCeti.PDCode.mirror` and `TauCeti.PDCode.relabel`: reflection and relabelling.
+* `TauCeti.PDCode.reconnect`: reconnect the arcs ending at two half-edges, joining them.
 * `TauCeti.PDCode.slotSmoothing`: the two smoothings of the four slots at a crossing.
 * `TauCeti.PDCode.kink`: the one-crossing kink diagram, and `TauCeti.OrientedPDCode.positiveKink`,
   its orientation with a positive crossing.
@@ -279,6 +280,39 @@ theorem crossing_apply (D : PDCode n) (i : Fin n) (slot : Fin 4) :
     D.crossing i slot = D.halfEdge (crossingSlotEquiv n (i, slot)) :=
   crossing.eq_1 D i slot
 
+/-- Let `D'` be a code with one crossing more than `D`, whose first `n` crossings keep the
+half-edges of `D` and whose last crossing takes the four new half-edge positions. A permutation of
+the half-edges of `D'` that acts at each crossing `i` by the local permutation `f i` of its slots
+is the permutation of the half-edges of `D` acting at each crossing `i` by `f i.castSucc`,
+together with `f (Fin.last n)` on the four new slots. -/
+theorem eq_permCongr_sumCongr_of_halfEdge_eq {D : PDCode n} {D' : PDCode (n + 1)}
+    (hD : D'.halfEdge = (halfEdgeSuccEquiv n).permCongr (Equiv.Perm.sumCongr D.halfEdge 1))
+    {σ : Equiv.Perm (Fin (4 * n))} {τ : Equiv.Perm (Fin (4 * (n + 1)))}
+    (f : Fin (n + 1) → Equiv.Perm (Fin 4))
+    (hσ : ∀ i slot, σ (D.halfEdge (crossingSlotEquiv n (i, slot))) =
+      D.crossing i (f i.castSucc slot))
+    (hτ : ∀ i slot, τ (D'.halfEdge (crossingSlotEquiv (n + 1) (i, slot))) =
+      D'.crossing i (f i slot)) :
+    τ = (halfEdgeSuccEquiv n).permCongr (Equiv.Perm.sumCongr σ (f (Fin.last n))) := by
+  have hold (i : Fin n) (slot : Fin 4) :
+      D'.crossing i.castSucc slot = halfEdgeSuccEquiv n (.inl (D.crossing i slot)) := by
+    simp [hD, Equiv.permCongr_apply]
+  have hnew (slot : Fin 4) : D'.crossing (Fin.last n) slot = halfEdgeSuccEquiv n (.inr slot) := by
+    simp [hD, Equiv.permCongr_apply]
+  refine Equiv.ext fun x => ?_
+  obtain ⟨y, rfl⟩ := (halfEdgeSuccEquiv n).surjective x
+  rcases y with y | slot
+  · obtain ⟨z, rfl⟩ := D.halfEdge.surjective y
+    obtain ⟨⟨i, slot⟩, rfl⟩ := (crossingSlotEquiv n).surjective z
+    have hx := hτ i.castSucc slot
+    rw [← crossing_apply D' i.castSucc slot, hold, hold] at hx
+    rw [← crossing_apply D i slot, hx, Equiv.permCongr_apply, Equiv.symm_apply_apply,
+      Equiv.Perm.sumCongr_apply, Sum.map_inl, crossing_apply D i slot, hσ]
+  · have hx := hτ (Fin.last n) slot
+    rw [← crossing_apply D' (Fin.last n) slot, hnew, hnew] at hx
+    rw [hx, Equiv.permCongr_apply, Equiv.symm_apply_apply, Equiv.Perm.sumCongr_apply,
+      Sum.map_inr]
+
 /-- Whether a slot belongs to the over-strand at its crossing. -/
 def isOver (D : PDCode n) (i : Fin n) (slot : Fin 4) : Bool :=
   D.overPair i == decide (slot = 1 ∨ slot = 3)
@@ -352,6 +386,61 @@ theorem mirror_mirror (D : PDCode n) : D.mirror.mirror = D := by
 @[simp]
 theorem mirror_eq_self_of_zero_crossings (D : PDCode 0) : D.mirror = D :=
   PDCode.ext rfl rfl rfl (funext fun i => i.elim0)
+
+section Reconnect
+
+/-- **Reconnecting two arcs.** Cut the arc of `D` ending at the half-edge `p` and the arc ending
+at `q`, and join `p` to `q` and the other end `D.edgePair.val p` of the first arc to the other end
+`D.edgePair.val q` of the second (`TauCeti.PerfectMatching.reconnect`). The crossings, their
+over-strands and the crossing-free circles are unchanged. This is how a smoothing of a crossing
+added by `TauCeti.PDCode.insertCrossing` reconnects the cut arcs. The two arcs are distinct when
+`q ≠ p` and `q ≠ D.edgePair.val p`; when `q = D.edgePair.val p` both choices name the same arc and
+the code is left unchanged. -/
+def reconnect (D : PDCode n) (p q : Fin (4 * n)) : PDCode n where
+  halfEdge := D.halfEdge
+  edgePair := D.edgePair.reconnect p q
+  crossinglessComponentCount := D.crossinglessComponentCount
+  overPair := D.overPair
+
+variable (D : PDCode n) (p q : Fin (4 * n))
+
+/-- Reconnecting arcs keeps the half-edges at the crossings. -/
+@[simp] theorem reconnect_halfEdge : (D.reconnect p q).halfEdge = D.halfEdge := (rfl)
+
+/-- Reconnecting arcs keeps the over-strands. -/
+@[simp] theorem reconnect_overPair : (D.reconnect p q).overPair = D.overPair := (rfl)
+
+/-- Reconnecting arcs keeps the crossing-free circles. -/
+@[simp] theorem reconnect_crossinglessComponentCount :
+    (D.reconnect p q).crossinglessComponentCount = D.crossinglessComponentCount := (rfl)
+
+/-- Reconnecting arcs of the code reconnects its perfect matching of half-edges. -/
+@[simp] theorem reconnect_edgePair : (D.reconnect p q).edgePair = D.edgePair.reconnect p q := (rfl)
+
+/-- Reconnecting the two ends of one arc leaves the code unchanged. -/
+@[simp] theorem reconnect_partner : D.reconnect p (D.edgePair.val p) = D := by
+  apply PDCode.ext <;> simp
+
+/-- Reconnecting a half-edge with itself leaves the code unchanged. -/
+@[simp] theorem reconnect_self : D.reconnect p p = D := by
+  apply PDCode.ext <;> simp
+
+/-- The arcs of the reconnected code are the old arcs conjugated by the transposition of
+`D.edgePair.val p` with `q`. -/
+theorem reconnect_edgePair_val :
+    (D.reconnect p q).edgePair.val = (Equiv.swap (D.edgePair.val p) q).permCongr D.edgePair.val :=
+  PerfectMatching.reconnect_val _ _ _
+
+/-- Mirroring commutes with reconnecting arcs. -/
+@[simp] theorem mirror_reconnect : (D.reconnect p q).mirror = D.mirror.reconnect p q := by
+  apply PDCode.ext
+  · simp [reconnect]
+  · simp [reconnect]
+  · simp [reconnect]
+  · funext i
+    simp [reconnect]
+
+end Reconnect
 
 /-- The permutation of half-edge positions induced by a permutation of crossing blocks. -/
 def crossingBlockPerm (cross : Equiv.Perm (Fin n)) : Equiv.Perm (Fin (4 * n)) :=
