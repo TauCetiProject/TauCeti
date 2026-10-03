@@ -9,6 +9,7 @@ public import Mathlib.AlgebraicGeometry.Group.Affine
 public import Mathlib.AlgebraicGeometry.Morphisms.Finite
 public import Mathlib.AlgebraicGeometry.Morphisms.FinitePresentation
 public import Mathlib.AlgebraicGeometry.Morphisms.Flat
+public import Mathlib.AlgebraicGeometry.Morphisms.FlatRank
 public import Mathlib.RingTheory.Flat.EquationalCriterion
 public import Mathlib.RingTheory.Finiteness.ModuleFinitePresentation
 public import TauCeti.Algebra.Coalgebra.Convolution
@@ -373,5 +374,20 @@ theorem moduleProjective_iff_flat_and_locallyOfFinitePresentation_hopfSpec
   rw [← moduleFlat_iff_flat_hopfSpec, ←
     algebraFinitePresentation_iff_locallyOfFinitePresentation_hopfSpec]
   exact moduleProjective_iff_flat_and_finitePresentation R H
+
+/-- The rank function of a finite flat Hopf spectrum is the local rank of its coordinate
+algebra. -/
+theorem finrank_hopfSpec (R : Type u) [CommRing R] (H : CommHopfAlgCat.{u} R)
+    [Module.Finite R H] [Module.Flat R H] (x : PrimeSpectrum R) :
+    (((hopfSpec (CommRingCat.of R)).obj (op H)).X.hom).finrank x =
+      Module.rankAtStalk (R := R) H x := by
+  let _ := (moduleFinite_iff_isFinite_hopfSpec R H).mp inferInstance
+  let _ := (moduleFlat_iff_flat_hopfSpec R H).mp inferInstance
+  let _ : IsFinite (Spec.map (CommRingCat.ofHom (algebraMap R H))) :=
+    (IsFinite.SpecMap_iff _).mpr (RingHom.finite_algebraMap.mpr inferInstance)
+  let _ : Flat (Spec.map (CommRingCat.ofHom (algebraMap R H))) :=
+    (Flat.SpecMap_iff).mpr (RingHom.flat_algebraMap_iff.mpr inferInstance)
+  rw [hopfSpec_obj_X_hom, Scheme.Hom.finrank_comp_left_of_isIso]
+  exact Scheme.Hom.finrank_SpecMap_algebraMap R H x
 
 end TauCeti
