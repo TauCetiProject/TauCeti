@@ -239,7 +239,7 @@ theorem kummerCoeffEquiv_symm_apply (b : (trivialF2 (AbsoluteGaloisGroup K)).V) 
   rw [hsymm]
 
 /-- The dictionary is `G_K`-equivariant, the two sides being the trivial action. -/
-private theorem kummerCoeffEquiv_equivariant (g : AbsoluteGaloisGroup K) (x : KummerCoeff K 2) :
+theorem kummerCoeffEquiv_equivariant (g : AbsoluteGaloisGroup K) (x : KummerCoeff K 2) :
     kummerCoeffEquiv K (g • x) = g • kummerCoeffEquiv K x := by
   simp only [kummerCoeffEquiv_apply, mu2_smul_eq_self,
     TopRep.distribMulAction_smul, trivialF2_ρ_apply_apply]
@@ -340,7 +340,7 @@ theorem kummerCoeffIsoTrivialF2_inv_apply (b : (trivialF2 (AbsoluteGaloisGroup K
 /-- The degree-one map on continuous cohomology induced by the coefficient isomorphism
 `TauCeti.kummerCoeffIsoTrivialF2`, read off the image isomorphism the continuous-cohomology functor
 `TauCeti.ContinuousCohomology.continuousCohomologyFunctor` assigns to it. -/
-private noncomputable def kummerCohomMap :
+noncomputable def kummerCohomMap :
     continuousCohomology 1 (ofDiscreteModule ℤ (AbsoluteGaloisGroup K) (KummerCoeff K 2)) ⟶
       continuousCohomology 1 (trivialF2 (AbsoluteGaloisGroup K)) :=
   (ContinuousCohomology.continuousCohomologyFunctor ℤ (AbsoluteGaloisGroup K) 1).mapIso
@@ -393,6 +393,13 @@ noncomputable def kummerClass (a : Kˣ) :
     continuousCohomology 1 (trivialF2 (AbsoluteGaloisGroup K)) :=
   (kummerCohomMap K).hom
     (Multiplicative.toAdd (kummerMapCanonical K 2 (isUnit_of_invertible (2 : K)) a))
+
+/-- The Kummer class is the canonical Kummer map followed by the degree-one coefficient
+map from roots of unity to trivial `𝔽₂` coefficients. -/
+theorem kummerClass_def (a : Kˣ) :
+    kummerClass a = (kummerCohomMap K).hom
+      (Multiplicative.toAdd (kummerMapCanonical K 2 (isUnit_of_invertible (2 : K)) a)) :=
+  (rfl)
 
 variable (K)
 
@@ -574,7 +581,7 @@ Reading the explicit coefficient equivalence `μ₂ ≃ 𝔽₂` on explicit `H�
 canonical continuous cohomology is the same as comparing first and then applying the map that
 `TauCeti.kummerCoeffIsoTrivialF2` induces; the trailing transport is the one of
 `TauCeti.ofDiscreteModule_trivialF2`, which `kummerCoeffIsoTrivialF2` absorbs into its target. -/
-private theorem kummerCohomMap_explicitH1 (x : H1 (AbsoluteGaloisGroup K) (KummerCoeff K 2)) :
+theorem kummerCohomMap_explicitH1 (x : H1 (AbsoluteGaloisGroup K) (KummerCoeff K 2)) :
     (kummerCohomMap K).hom
         (explicitH1AddEquivContinuousCohomology (AbsoluteGaloisGroup K) (KummerCoeff K 2) x) =
       (eqToHom (congrArg (continuousCohomology 1)

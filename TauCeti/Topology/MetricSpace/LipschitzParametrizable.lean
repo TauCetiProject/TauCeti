@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
+import Mathlib.LinearAlgebra.Dual.Lemmas
 public import Mathlib.Topology.MetricSpace.HausdorffDimension
 public import Mathlib.MeasureTheory.Measure.Haar.Unique
 

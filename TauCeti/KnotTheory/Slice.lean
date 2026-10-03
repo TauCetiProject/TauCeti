@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 public import TauCeti.Geometry.Manifold.Instances.ClosedBall
 public import TauCeti.Geometry.Manifold.LocallyFlat.Neat
 public import TauCeti.KnotTheory.SmoothCircle

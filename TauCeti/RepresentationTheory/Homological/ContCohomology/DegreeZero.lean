@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RepresentationTheory.Homological.ContCohomology.LowDegree
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Functoriality
+import Mathlib.CategoryTheory.ConcreteCategory.EpiMono
 
 /-!
 # Degree zero of continuous cohomology, and compatible pairs

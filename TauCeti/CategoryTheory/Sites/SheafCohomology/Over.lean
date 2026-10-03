@@ -46,12 +46,6 @@ variable {C : Type u} [Category.{v} C] (J : GrothendieckTopology C) (U : C)
   [HasSheafify J AddCommGrpCat.{v}] [HasSheafify (J.over U) AddCommGrpCat.{v}]
   [(J.overPullback AddCommGrpCat.{v} U).IsRightAdjoint]
 
-private def sectionsCorepresentation (V : C) :
-    ((sheafSections J AddCommGrpCat.{v}).obj (op V) ⋙ forget AddCommGrpCat).CorepresentableBy
-      ((freeYonedaSheafFunctor J).obj V) where
-  homEquiv := (freeYonedaSheafSectionsEquiv J V _).toEquiv
-  homEquiv_comp g f := freeYonedaSheafSectionsEquiv_naturality_right J f g
-
 private def extendedSectionsCorepresentation (V : Over U) :
     ((sheafSections J AddCommGrpCat.{v}).obj (op V.left) ⋙ forget AddCommGrpCat).CorepresentableBy
       (((Over.forget U).sheafPullback AddCommGrpCat.{v} (J.over U) J).obj
@@ -71,7 +65,7 @@ abelian sheaf on `V.left`. -/
 def sheafPullbackFreeYonedaIso (V : Over U) :
     ((Over.forget U).sheafPullback AddCommGrpCat.{v} (J.over U) J).obj
       ((freeYonedaSheafFunctor (J.over U)).obj V) ≅ (freeYonedaSheafFunctor J).obj V.left :=
-  (extendedSectionsCorepresentation J U V).uniqueUpToIso (sectionsCorepresentation J V.left)
+  (extendedSectionsCorepresentation J U V).uniqueUpToIso (freeYonedaSheafCorepresentableBy J V.left)
 
 end
 

@@ -53,6 +53,11 @@ recomputed at the transform, whose roots are in bijection with those of `f`.
 * `Polynomial.aroots_tschirnhausPolynomial`, `Polynomial.rootSet_tschirnhausPolynomial`: the roots
   of the transform are the values of `T` at the roots of `f`.
   The `_field` variants cover nonmonic polynomials over fields.
+* `Polynomial.isRoot_tschirnhausPolynomial`: over a domain, `T(α)` is a root of the transform
+  whenever `α` is a root of the nonzero polynomial `f`.
+* `Polynomial.Monic.tschirnhausRootMap`, `Polynomial.tschirnhausRootMap`: the resulting map
+  `α ↦ T(α)` from the roots of `f` to the roots of its transform, for monic `f` over a domain and
+  for any `f` over a field; it is surjective whenever `f` splits.
 * `Polynomial.separable_tschirnhausPolynomial_iff`: the transform is separable if and only if `f`
   is separable and `T` is admissible.
 * `Polynomial.TschirnhausAdmissible.bijOn_rootSet`: an admissible `T` maps the roots of `f`
@@ -160,6 +165,27 @@ theorem roots_tschirnhausPolynomial [IsDomain R] {f : R[X]} (hf : f ≠ 0)
     roots_C_mul _ (pow_ne_zero _ (leadingCoeff_ne_zero.mpr hf)),
     roots_multiset_prod_X_sub_C]
 
+/-- For a nonzero polynomial over a domain, the value of `T` at any root of `f` is a root of the
+Tschirnhaus transform; no splitting hypothesis is needed. -/
+theorem isRoot_tschirnhausPolynomial [IsDomain R] {f : R[X]} (hf : f ≠ 0) {a : R}
+    (ha : f.IsRoot a) (T : R[X]) : (tschirnhausPolynomial f T).IsRoot (T.eval a) := by
+  let ψ := algebraMap R (FractionRing R)
+  let M := (f.map ψ).SplittingField
+  let φ : R →+* M := (algebraMap (FractionRing R) M).comp ψ
+  have hφ : Function.Injective φ :=
+    (algebraMap (FractionRing R) M).injective.comp (IsFractionRing.injective R _)
+  have hf' : f.map φ ≠ 0 := (Polynomial.map_ne_zero_iff hφ).mpr hf
+  have hs : (f.map φ).Splits := by
+    rw [← Polynomial.map_map]
+    exact SplittingField.splits _
+  have hmem : φ (T.eval a) ∈ (tschirnhausPolynomial (f.map φ) (T.map φ)).roots := by
+    rw [roots_tschirnhausPolynomial hf' hs]
+    refine Multiset.mem_map.2 ⟨φ a, ?_, by rw [eval_map_apply]⟩
+    rw [mem_roots hf', IsRoot, eval_map_apply, ha.eq_zero, map_zero]
+  rw [← map_tschirnhausPolynomial_of_injective f T φ hφ] at hmem
+  rw [IsRoot, ← hφ.eq_iff, map_zero, ← eval_map_apply]
+  exact (mem_roots'.1 hmem).2
+
 /-- The Tschirnhaus transform splits in every domain in which `f` splits. -/
 theorem splits_tschirnhausPolynomial [IsDomain R] {f : R[X]} (hs : f.Splits)
     (T : R[X]) : (tschirnhausPolynomial f T).Splits := by
@@ -253,6 +279,32 @@ theorem rootSet_tschirnhausPolynomial {f : K[X]} (hf : f.Monic)
   ext b
   simp [rootSet_def, aroots_tschirnhausPolynomial hf hs]
 
+/-- The map from the roots of a monic polynomial `f` to the roots of its Tschirnhaus transform,
+sending `α` to `T(α)`, in a domain `L`. -/
+noncomputable def Monic.tschirnhausRootMap {f : K[X]} (hf : f.Monic) (T : K[X]) :
+    f.rootSet L → (tschirnhausPolynomial f T).rootSet L :=
+  Set.MapsTo.restrict (fun a ↦ aeval a T) _ _ <| by
+    intro a ha
+    rw [mem_rootSet', ← eval_map_algebraMap] at ha ⊢
+    dsimp only
+    rw [map_tschirnhausPolynomial hf, ← eval_map_algebraMap]
+    exact ⟨(monic_tschirnhausPolynomial (hf.map _) _).ne_zero,
+      isRoot_tschirnhausPolynomial ha.1 ha.2 _⟩
+
+@[simp]
+theorem Monic.coe_tschirnhausRootMap {f : K[X]} (hf : f.Monic) (T : K[X]) (x : f.rootSet L) :
+    (hf.tschirnhausRootMap T x : L) = aeval (x : L) T :=
+  Set.MapsTo.val_restrict_apply _ _
+
+/-- Every root of the Tschirnhaus transform of a monic polynomial is the image of a root of the
+original polynomial. -/
+theorem Monic.tschirnhausRootMap_surjective {f : K[X]} (hf : f.Monic)
+    (hs : (f.map (algebraMap K L)).Splits) (T : K[X]) :
+    Function.Surjective (hf.tschirnhausRootMap (L := L) T) := by
+  refine (Set.MapsTo.restrict_surjective_iff _).2 ?_
+  rw [rootSet_tschirnhausPolynomial hf hs]
+  exact Set.surjOn_image _ _
+
 /-- If a monic polynomial splits after a base change, then its Tschirnhaus transform splits
 after the same base change. -/
 theorem splits_map_tschirnhausPolynomial {f : K[X]} (hf : f.Monic)
@@ -308,6 +360,36 @@ theorem ne_zero_tschirnhausPolynomial_field {f : K[X]} (hf : f ≠ 0)
   exact mul_ne_zero
     (C_ne_zero.mpr (pow_ne_zero _ (leadingCoeff_ne_zero.mpr (map_ne_zero hf))))
     (monic_multisetProd_X_sub_C _).ne_zero hm
+
+/-- The map from the roots of a field polynomial to the roots of its Tschirnhaus transform,
+sending `α` to `T(α)`. -/
+noncomputable def tschirnhausRootMap (f T : K[X]) :
+    f.rootSet L → (tschirnhausPolynomial f T).rootSet L :=
+  Set.MapsTo.restrict (fun a ↦ aeval a T) _ _ <| by
+    intro a ha
+    rw [mem_rootSet', ← eval_map_algebraMap] at ha ⊢
+    dsimp only
+    rw [map_tschirnhausPolynomial_of_injective f T _ (algebraMap K L).injective,
+      ← eval_map_algebraMap]
+    exact ⟨ne_zero_tschirnhausPolynomial_field ha.1 _,
+      isRoot_tschirnhausPolynomial ha.1 ha.2 _⟩
+
+@[simp]
+theorem coe_tschirnhausRootMap (f T : K[X]) (x : f.rootSet L) :
+    (tschirnhausRootMap f T x : L) = aeval (x : L) T :=
+  Set.MapsTo.val_restrict_apply _ _
+
+/-- Every root of the Tschirnhaus transform of a field polynomial is the image of a root of the
+original polynomial. For `f = 0` the transform is `0` or `1`, so both root sets are empty. -/
+theorem tschirnhausRootMap_surjective {f : K[X]}
+    (hs : (f.map (algebraMap K L)).Splits) (T : K[X]) :
+    Function.Surjective (tschirnhausRootMap (L := L) f T) := by
+  refine (Set.MapsTo.restrict_surjective_iff _).2 ?_
+  rcases eq_or_ne f 0 with rfl | hf
+  · rcases eq_or_ne (C X - T.map C : K[X][X]).natDegree 0 with h | h <;>
+      simp [tschirnhausPolynomial_def, h]
+  rw [rootSet_tschirnhausPolynomial_field hf hs]
+  exact Set.surjOn_image _ _
 
 /-- `T` is **admissible** for `f`, or *separates the roots* of `f`, when `a ↦ T(a)` is injective
 on the roots of `f` in its splitting field. By `Polynomial.tschirnhausAdmissible_iff_injOn`, the

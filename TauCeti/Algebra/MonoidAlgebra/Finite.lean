@@ -10,6 +10,7 @@ public import TauCeti.Algebra.MonoidAlgebra.MapDomain
 public import Mathlib.Algebra.MonoidAlgebra.Basic
 public import Mathlib.GroupTheory.QuotientGroup.Defs
 public import Mathlib.RingTheory.Finiteness.Cardinality
+public import Mathlib.RingTheory.Finiteness.Finsupp
 
 /-!
 # Finite morphisms of group algebras
@@ -24,6 +25,11 @@ augmentation, so finiteness forces its standard basis to be finite.
 
 This is the coordinate-ring finiteness criterion for morphisms of diagonalizable groups;
 it supplies the finiteness condition in the character description of their isogenies.
+
+Without commutativity, `R[N]` is still a finitely generated `R[M]`-module through any monoid
+homomorphism `p : M →* N` into a finite monoid, since it is already finitely generated over `R`
+(`TauCeti.MonoidAlgebra.mapDomainRingHom_moduleFinite_of_finite`). This is the finiteness behind
+restricting representations of a finite group along a homomorphism.
 -/
 
 public section
@@ -95,5 +101,19 @@ theorem mapDomainRingHom_finite_iff_finite_quotient [Nontrivial R] (p : M →* N
     exact Module.Finite.finite_basis (MonoidAlgebra.basis (N ⧸ p.range) R)
   · intro h
     exact mapDomainRingHom_finite_of_finite_quotient R p
+
+/-- **Finiteness over the algebra of any monoid mapping to a finite one.** For a monoid
+homomorphism `p : M →* N` with `N` finite, `R[N]` is a finitely generated `R[M]`-module through
+`mapDomainRingHom R p`, because it is already finitely generated over `R`. Neither monoid need be
+commutative, so the algebras need not be, and the statement uses the module structure
+`RingHom.toModule` rather than `RingHom.Finite`. -/
+theorem mapDomainRingHom_moduleFinite_of_finite {R : Type*} [Semiring R] {M N : Type*}
+    [Monoid M] [Monoid N] [Finite N] (p : M →* N) :
+    letI := (mapDomainRingHom R p).toModule
+    Module.Finite (MonoidAlgebra R M) (MonoidAlgebra R N) := by
+  let := (mapDomainRingHom R p).toModule
+  have : IsScalarTower R (MonoidAlgebra R M) (MonoidAlgebra R N) := ⟨fun c a b ↦ by
+    simp [RingHom.toModule_smul, mapDomain_smul, smul_mul_assoc]⟩
+  exact Module.Finite.of_restrictScalars_finite R (MonoidAlgebra R M) (MonoidAlgebra R N)
 
 end TauCeti.MonoidAlgebra

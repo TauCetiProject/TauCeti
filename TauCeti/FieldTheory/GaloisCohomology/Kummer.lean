@@ -78,7 +78,7 @@ corestriction on the invariant `σ b` of the fixing subgroup is the product of t
   `σ : L →ₐ[K] Kˢ`, with its coefficient identification `TauCeti.kummerCoeffMap`.
 * `TauCeti.kummerCor`: corestriction `H¹(G_L, μₙ) → H¹(G_K, μₙ)` along a `K`-embedding of a
   finite extension, with its coefficient identifications `TauCeti.kummerCoeffMapSymm` and
-  `TauCeti.unitsCoeffMapSymm`.
+  `TauCeti.unitsCoeffMapSymm`; `TauCeti.unitsCoeffMap` is the inverse of the latter.
 
 ## Main results
 
@@ -101,6 +101,9 @@ corestriction on the invariant `σ b` of the fixing subgroup is the product of t
   `TauCeti.kummerRes_kummerMap` is the same statement on units.
 * `TauCeti.explicitCor0_embeddedUnitsInvariants`: degree-zero corestriction on the invariants of
   `(Kˢ)ˣ` is the norm of `L/K`.
+* `TauCeti.unitsCoeffMap_embeddedUnitsInvariants`: for extensions `E/K` and `M/L` with
+  compatible embeddings, `unitsCoeffMap` carries the embedded unit of `a ∈ Eˣ` to the embedded
+  unit of its image in `Mˣ`.
 * `TauCeti.kummerIso_norm`: for a finite `L/K`, corestriction corresponds to the map of power
   classes `Lˣ ⧸ (Lˣ)ⁿ → Kˣ ⧸ (Kˣ)ⁿ` induced by the norm; `TauCeti.kummerCor_kummerMap` is the
   same statement on units.
@@ -695,6 +698,45 @@ theorem unitsCoeffMapSymm_smul (h : ↥σ.fieldRange.fixingSubgroup) (y : UnitsC
     Additive.toMul_smul, toMul_unitsCoeffMapSymm]
   exact Units.ext (by simp [absoluteGaloisGroupEquivFixingSubgroup_symm_apply])
 
+/-- **The units of `Kˢ` as units of `Lˢ`**, along the inverse of the identification of separable
+closures: the inverse of `TauCeti.unitsCoeffMapSymm` (`unitsCoeffMapSymm_unitsCoeffMap`), and the
+coefficient leg of restriction with unit coefficients, as `TauCeti.kummerCoeffMap` is for the
+roots of unity. -/
+def unitsCoeffMap : UnitsCoeff K →+ UnitsCoeff L :=
+  MonoidHom.toAdditive (Units.map (separableClosureRingEquiv K L σ).symm.toMonoidHom)
+
+/-- `unitsCoeffMap` applies the inverse identification of separable closures to a unit. -/
+@[simp]
+theorem toMul_unitsCoeffMap (x : UnitsCoeff K) :
+    (unitsCoeffMap K L σ x).toMul =
+      Units.map (separableClosureRingEquiv K L σ).symm.toMonoidHom x.toMul :=
+  (rfl)
+
+/-- **`unitsCoeffMap` is equivariant** along `G_L ≃ₜ* Gal(Kˢ/σ(L))`: an automorphism `g` of `Lˢ`
+over `L` acts on `(Kˢ)ˣ` through its image in the subgroup of `G_K` fixing `σ(L)`. -/
+@[simp↓]
+theorem unitsCoeffMap_smul (g : AbsoluteGaloisGroup L) (x : UnitsCoeff K) :
+    unitsCoeffMap K L σ
+        ((absoluteGaloisGroupEquivFixingSubgroup K L σ :
+          AbsoluteGaloisGroup L →ₜ* ↥σ.fieldRange.fixingSubgroup) g • x) =
+      g • unitsCoeffMap K L σ x := by
+  refine Additive.toMul.injective ?_
+  rw [Subgroup.smul_def (α := UnitsCoeff K), toMul_unitsCoeffMap, Additive.toMul_smul,
+    Additive.toMul_smul, toMul_unitsCoeffMap]
+  exact Units.ext (by simp [absoluteGaloisGroupEquivFixingSubgroup_apply])
+
+/-- The two coefficient identifications of the units are inverse to each other. -/
+@[simp]
+theorem unitsCoeffMapSymm_unitsCoeffMap (x : UnitsCoeff K) :
+    unitsCoeffMapSymm K L σ (unitsCoeffMap K L σ x) = x :=
+  Additive.toMul.injective <| Units.ext <| by simp
+
+/-- The two coefficient identifications of the units are inverse to each other. -/
+@[simp]
+theorem unitsCoeffMap_unitsCoeffMapSymm (y : UnitsCoeff L) :
+    unitsCoeffMap K L σ (unitsCoeffMapSymm K L σ y) = y :=
+  Additive.toMul.injective <| Units.ext <| by simp
+
 /-- The coefficient maps commute with the inclusion `μₙ ↪ (Kˢ)ˣ` of the Kummer sequence. -/
 @[simp]
 theorem unitsCoeffMapSymm_kummerCoeffIncl (y : KummerCoeff L n) :
@@ -715,6 +757,21 @@ theorem unitsCoeffMapSymm_coe_baseUnitsEquivInvariants (b : Lˣ) :
     unitsCoeffMapSymm K L σ (baseUnitsEquivInvariants L (Additive.ofMul b)) =
       embeddedUnitsInvariants K L σ b :=
   Additive.toMul.injective <| Units.ext <| by simp [separableClosureRingEquiv_algebraMap]
+
+/-- **The coefficient square of a compatible base change.** If the embeddings of `E` and `M` are
+compatible under `separableClosureRingEquiv K L σ`, then transporting the embedded unit `ρ a` of
+`Kˢ` to `Lˢ` by `unitsCoeffMap` gives the embedded unit `τ a` of its image in `M`. -/
+theorem unitsCoeffMap_embeddedUnitsInvariants (E M : Type*) [Field E] [Field M] [Algebra K E]
+    [Algebra L M] [Algebra E M] (ρ : E →ₐ[K] SeparableClosure K)
+    (τ : M →ₐ[L] SeparableClosure L)
+    (hcompat : ∀ x : E, separableClosureRingEquiv K L σ (τ (algebraMap E M x)) = ρ x)
+    (a : Eˣ) :
+    unitsCoeffMap K L σ (embeddedUnitsInvariants K E ρ a : UnitsCoeff K) =
+      (embeddedUnitsInvariants L M τ (Units.map (algebraMap E M : E →* M) a) : UnitsCoeff L) := by
+  refine Additive.toMul.injective (Units.ext ?_)
+  simp only [toMul_unitsCoeffMap, toMul_coe_embeddedUnitsInvariants, Units.coe_map]
+  apply (separableClosureRingEquiv K L σ).injective
+  simpa using (hcompat (a : E)).symm
 
 variable [FiniteDimensional K L]
 

@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.Spectrum.Prime.FreeLocus
 public import TauCeti.Algebra.Category.ModuleCat.ChangeOfRings
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Quasicoherent.FinitePresentationDescent
 public import TauCeti.AlgebraicGeometry.VectorBundle.FiniteLocallyFree
+import Mathlib.Algebra.Category.ModuleCat.Presheaf.EpiMono
 
 /-!
 # Exactness and base change of the sheaf associated with a module

@@ -139,6 +139,12 @@ half-edges; only which of them is the `A`-smoothing changes. -/
     D.mirror.smoothingTurn b = D.smoothingTurn b := by
   simp [smoothingTurn]
 
+/-- Reconnecting arcs does not change how the crossings are smoothed. -/
+@[simp] theorem smoothingTurn_reconnect (D : PDCode n) (p q : Fin (4 * n))
+    (c : Fin n → Bool) :
+    (D.reconnect p q).smoothingTurn c = D.smoothingTurn c := by
+  rw [smoothingTurn_def, smoothingTurn_def, reconnect_halfEdge]
+
 /-- Relabelling conjugates smoothing by the half-edge relabelling, after transporting the family
 of local smoothings along the crossing relabelling. -/
 @[simp] theorem smoothingTurn_relabel (D : PDCode n) (b : Fin n → Bool)
@@ -179,6 +185,13 @@ over-pair indicator. -/
   funext i
   cases hs : s i <;> simp [smoothingChoice, hs]
 
+/-- Reconnecting arcs does not change which smoothing a state selects. -/
+@[simp] theorem smoothingChoice_reconnect (D : PDCode n) (p q : Fin (4 * n))
+    (s : Fin n → Bool) :
+    (D.reconnect p q).smoothingChoice s = D.smoothingChoice s := by
+  funext i
+  cases hs : s i <;> simp [hs]
+
 /-- Relabelling reads a state's choice at the old crossing name. -/
 @[simp] theorem smoothingChoice_relabel (D : PDCode n) (s : Fin n → Bool)
     (half : Equiv.Perm (Fin (4 * n))) (cross : Equiv.Perm (Fin n)) :
@@ -216,6 +229,47 @@ theorem statePerm_def (D : PDCode n) (s : Fin n → Bool) :
     simp
   rw [statePerm, statePerm, smoothingChoice_relabel, smoothingTurn_relabel, hcomp,
     relabel_edgePair, PerfectMatching.congr_val, ← Equiv.permCongr_mul]
+
+section AddCrossing
+
+/-! ### Codes with one crossing more
+
+Let `D'` be a code with one crossing more than `D`, whose first `n` crossings keep the half-edges
+and over-strands of `D`, and whose last crossing takes the four new half-edge positions and has
+over-pair indicator `b`. Crossing insertion and the first Reidemeister move build such codes. A
+state of `D'` is a state of `D` together with a choice at the new crossing, and the lemmas below
+split its smoothing accordingly. -/
+
+variable {D : PDCode n} {D' : PDCode (n + 1)}
+
+/-- Smoothing `D'` is smoothing `D` together with the chosen local smoothing of the new
+crossing. -/
+theorem smoothingTurn_eq_permCongr_sumCongr
+    (hD : D'.halfEdge = (halfEdgeSuccEquiv n).permCongr (Perm.sumCongr D.halfEdge 1))
+    (c : Fin (n + 1) → Bool) :
+    D'.smoothingTurn c = (halfEdgeSuccEquiv n).permCongr
+      (Perm.sumCongr (D.smoothingTurn (Fin.init c)) (slotSmoothing (c (Fin.last n)))) :=
+  eq_permCongr_sumCongr_of_halfEdge_eq hD (fun i => slotSmoothing (c i))
+    (fun i slot => by simpa only [Fin.init_def] using D.smoothingTurn_crossing (Fin.init c) i slot)
+    (D'.smoothingTurn_crossing c)
+
+variable {b : Bool} (hO : D'.overPair = Fin.snoc (α := fun _ => Bool) D.overPair b)
+include hO
+
+/-- At the old crossings, a state of `D'` selects the smoothings its restriction selects
+in `D`. -/
+theorem init_smoothingChoice_of_overPair_eq (s : Fin (n + 1) → Bool) :
+    Fin.init (D'.smoothingChoice s) = D.smoothingChoice (Fin.init s) := by
+  funext i
+  cases hs : s i.castSucc <;> simp [Fin.init, hs, hO]
+
+/-- At the new crossing, a state of `D'` selects the local smoothing `slotSmoothing true` exactly
+when its choice there is `b`. -/
+theorem smoothingChoice_last_of_overPair_eq (s : Fin (n + 1) → Bool) :
+    D'.smoothingChoice s (Fin.last n) = (s (Fin.last n) == b) := by
+  cases hs : s (Fin.last n) <;> cases b <;> simp [hs, hO]
+
+end AddCrossing
 
 /-- The number of circles of the diagram smoothed according to the state `s`, the crossing-free
 circles of the code included. Each circle meeting a crossing is represented by the two directed

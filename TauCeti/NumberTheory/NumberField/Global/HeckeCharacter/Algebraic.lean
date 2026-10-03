@@ -93,6 +93,19 @@ theorem IsAlgebraic.inv {χ : HeckeCharacter K} (hχ : χ.IsAlgebraic) : χ⁻¹
   rw [infinityType_inv, h, map_neg, map_neg]
   abel
 
+/-- Multiplication by an algebraic Hecke character on the right preserves and reflects
+algebraicity. -/
+theorem IsAlgebraic.mul_iff_left {χ ψ : HeckeCharacter K} (hψ : ψ.IsAlgebraic) :
+    (χ * ψ).IsAlgebraic ↔ χ.IsAlgebraic := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h.mul hψ⟩
+  simpa only [mul_inv_cancel_right] using h.mul hψ.inv
+
+/-- Multiplication by an algebraic Hecke character on the left preserves and reflects
+algebraicity. -/
+theorem IsAlgebraic.mul_iff_right {χ ψ : HeckeCharacter K} (hχ : χ.IsAlgebraic) :
+    (χ * ψ).IsAlgebraic ↔ ψ.IsAlgebraic := by
+  simpa only [mul_comm χ] using hχ.mul_iff_left (χ := ψ)
+
 /-- Every natural power of an algebraic Hecke character is algebraic. -/
 theorem IsAlgebraic.pow {χ : HeckeCharacter K} (hχ : χ.IsAlgebraic) (m : ℕ) :
     (χ ^ m).IsAlgebraic := by
