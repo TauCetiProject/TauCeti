@@ -9,8 +9,6 @@ public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.OpenSubgroup
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Refinement
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Restriction
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Units
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.GroupCohomologyIso
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.Transgression
 public import TauCeti.Topology.Algebra.Group.OpenSubgroup.FiniteIndex
 
 /-!
@@ -68,6 +66,11 @@ The continuous cohomology of the ground subgroup is that of its underlying subgr
 group of the layer is read as the quotient of that subgroup by
 `L.top.toSubgroup.subgroupOf L.ground.toSubgroup`; this quotient is definitionally the Galois
 group `L.Gal` of the layer.
+
+The construction of `layerInfl` follows that of `TauCeti.ClassFieldTheory.layerBrLevelEquiv` and
+`TauCeti.ClassFieldTheory.brInfl` in `TauCeti.NumberTheory.ClassFieldTheory.Brauer.Formation`,
+which inflate from a layer `V ◁ G_K` whose ground is the whole absolute Galois group into
+`Br K = H²(G_K, (Kˢ)ˣ)`; this file extends it to layers with an arbitrary open ground subgroup.
 
 ## References
 
@@ -232,29 +235,26 @@ theorem explicitMap2_layerInfl_eq_zero (x : L.H (unitsFormation K) 2) :
     explicitMap2 L.ground.toSubgroup (UnitsCoeff K) L.top.toSubgroup (UnitsCoeff K)
       (ContinuousMonoidHom.subgroupInclusion (OpenSubgroup.toSubgroup_le.2 L.top_le_ground))
       (AddMonoidHom.id _) continuous_id (fun _ _ => rfl) (layerInfl L x) = 0 := by
-  induction x using H2_induction_on with
-  | h c =>
-    -- `explicitRes2_comp_explicitInfl2` restricts to `V` as a subgroup of `U`; here `V` is read
-    -- as a subgroup of `G_K`, where `subgroupInvMap` lives, so the cocycle computation is redone.
-    -- The inflated cocycle is constant on `V × V`, with value `c (1, 1)`, which `V` fixes.
-    set m₀ : UnitsCoeff K := (unitsCoeffEquivUnitsFormation K).symm
-      (c (1, 1) : (unitsFormation K).level L.top) with hm₀
-    have hfix (v : L.top.toSubgroup) : (v : AbsoluteGaloisGroup K) • m₀ = m₀ :=
-      (unitsCoeffEquivUnitsFormation K).injective <| by
-        rw [unitsCoeffEquivUnitsFormation_smul, hm₀, AddEquiv.apply_symm_apply]
-        exact (Formation.mem_level _).1 (c (1, 1)).2 _ v.2
-    have hone (v : L.top.toSubgroup) :
-        ((Subgroup.inclusion (OpenSubgroup.toSubgroup_le.2 L.top_le_ground) v :
-          L.ground.toSubgroup) : L.Gal) = 1 :=
-      (QuotientGroup.eq_one_iff _).2 (Subgroup.mem_subgroupOf.2 v.2)
-    rw [layerInfl_H2π]
-    refine (explicitMap2_mk _ _ _ _ _ _ _ _ _).trans ?_
-    rw [H2pi_eq_zero_iff, mem_B2_iff']
-    refine ⟨fun _ => m₀, continuous_const, fun v v' =>
-      Eq.trans ?_ (cocyclesMap2_apply _ _ _ _ _ _ _ _ _ v v').symm⟩
-    rw [AddMonoidHom.id_apply, ContinuousMonoidHom.subgroupInclusion_apply,
-      ContinuousMonoidHom.subgroupInclusion_apply, layerCocycle_apply, hone, hone,
-      Subgroup.smul_def, hfix, sub_add_cancel]
+  -- Restriction to `V` as a subgroup of `G_K` is restriction to `V` as a subgroup of `U`, which
+  -- kills inflation (`explicitRes2_comp_explicitInfl2`), followed by pullback along
+  -- `Subgroup.subgroupOfContinuousMulEquivOfLe`.
+  have h0 : explicitRes2 L.ground.toSubgroup (UnitsCoeff K)
+      (L.top.toSubgroup.subgroupOf L.ground.toSubgroup) (layerInfl L x) = 0 :=
+    DFunLike.congr_fun (explicitRes2_comp_explicitInfl2 L.ground.toSubgroup (UnitsCoeff K)
+      (L.top.toSubgroup.subgroupOf L.ground.toSubgroup)) (layerH2Equiv L x)
+  have h1 := explicitMap2_comp L.ground.toSubgroup (UnitsCoeff K)
+    (L.top.toSubgroup.subgroupOf L.ground.toSubgroup) (UnitsCoeff K)
+    (ContinuousMonoidHom.subgroupSubtype _) (AddMonoidHom.id _) continuous_id
+    (id_subgroupSubtype_smul _ _ _) L.top.toSubgroup (UnitsCoeff K)
+    ((Subgroup.subgroupOfContinuousMulEquivOfLe
+      (OpenSubgroup.toSubgroup_le.2 L.top_le_ground)).symm : _ →ₜ* _)
+    (AddMonoidHom.id _) continuous_id fun _ _ => rfl
+  rw [← explicitRes2_eq_explicitMap2] at h1
+  refine (DFunLike.congr_fun (explicitMap2_congr_of_eq _ _ _ _ _ _ _ _ ?_ ?_) _).trans
+    ((DFunLike.congr_fun h1 _).trans ?_)
+  · exact ContinuousMonoidHom.ext fun _ => rfl
+  · exact AddMonoidHom.ext fun _ => rfl
+  · rw [AddMonoidHom.comp_apply, h0, map_zero]
 
 /-- **Inflation commutes with restriction of layers**: for a restriction `V ◁ U' ≤ U` of a layer
 `V ◁ U` to an intermediate ground subgroup, inflating the restricted class to `U'` is restricting
