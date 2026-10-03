@@ -66,10 +66,14 @@ theorem unitsMap_even_mem_lipschitzGroup_of_finrank_eq_three (Q : QuadraticForm 
       algebraMap K _ (r⁻¹ : Kˣ) * ((x : even Q) : CliffordAlgebra Q) := by
     let y := Units.map (even Q).val.toMonoidHom x
     have hn : reverse (y : CliffordAlgebra Q) * y = algebraMap K _ (r : K) := by
+      -- `y` abbreviates a mapped unit: its value projection is the subalgebra inclusion of `x`.
+      -- `change` unfolds these wrappers to expose the expression in `hr`.
       change reverse ((x : even Q) : CliffordAlgebra Q) *
         ((x : even Q) : CliffordAlgebra Q) = _
       rw [hr, mul_assoc]
       simp only [← Subalgebra.coe_mul, Units.inv_mul, Subalgebra.coe_one, mul_one]
+    -- The inverse projection of `Units.map` includes `x⁻¹` in the ambient algebra.
+    -- `change` folds that definitional projection into `y⁻¹` for `reverse_inv_mul_inv`.
     change reverse ((y⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) =
       algebraMap K _ (r⁻¹ : Kˣ) * (y : CliffordAlgebra Q)
     rw [← reverse_inv_mul_inv hn, mul_assoc, Units.inv_mul, mul_one]
