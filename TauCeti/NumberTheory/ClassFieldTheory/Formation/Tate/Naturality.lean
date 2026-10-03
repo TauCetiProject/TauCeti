@@ -6,12 +6,14 @@ Authors: Codex
 module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Tate.Theorem
+public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Tate.GenericCorestriction
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Tate.TrivialRestrictionTrans
+public import TauCeti.RepresentationTheory.Homological.TateCohomology.Cup.Corestriction
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Cup.Functoriality
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Cup.Restriction.AllDegrees
 
 /-!
-# Restriction of the Tate isomorphism of a class formation
+# Restriction and corestriction of the Tate isomorphism of a class formation
 
 Restriction to an intermediate ground field preserves cup product with a degree-two class.
 Since the fundamental class restricts to the fundamental class of the smaller layer, the Tate
@@ -21,6 +23,10 @@ square relating inclusion of ground levels to transfer of abelianized Galois gro
 The range comparisons identify a layer's Galois group with its image in the larger group. The
 restriction maps defined branchwise by degree agree with generic Tate restriction through these
 comparisons, so the cup-product restriction law applies to the existing finite-layer maps.
+
+In the other direction, corestriction satisfies the projection formula. Since the fundamental
+class of the smaller layer is the restriction of the fundamental class of the larger layer, the
+same Tate isomorphism also commutes with corestriction, without a degree factor.
 
 ## References
 
@@ -117,6 +123,57 @@ theorem tateIso_res_trans (cf : ClassFormation F) {a b c : NormalLayer G}
       cf.tateIso a r (T.trivialTateRes r (T'.trivialTateRes r x)) := by
   simpa only [T.tateRes_trans T' F (r + 2), T.trivialTateRes_trans T' r,
     ModuleCat.comp_apply] using cf.tateIso_res (T.trans T') r x
+
+end ClassFormation
+
+namespace LayerRestriction
+
+variable {small big : NormalLayer G}
+
+attribute [local instance] instFintypeRange Subgroup.fintypeOfFinite
+
+/-- Corestricting cup product with the restriction of a degree-two layer class gives cup product
+with the original class after corestricting the trivial-coefficient argument. -/
+@[simp]
+theorem cupClass_cor (T : LayerRestriction small big) (F : Formation G) (u : big.H F 2) (r : ℤ)
+    (x : small.TrivialTateH r) :
+    T.tateCor F (r + 2) (cupClass F small (T.cohomologyRes F 2 u) r x) =
+      cupClass F big u r (T.trivialTateCor r x) := by
+  have hu : (T.tateRangeIso F 2).hom
+      ((small.tateHIsoH F 2).inv (T.cohomologyRes F 2 u)) =
+      TauCeti.TateCohomology.res (big.rep F) T.galHom.range 2
+        ((big.tateHIsoH F 2).inv u) := by
+    have hres : T.tateRes F 2 ((big.tateHIsoH F 2).inv u) =
+        (small.tateHIsoH F 2).inv (T.cohomologyRes F 2 u) := by
+      apply (small.tateHIsoH F 2).toLinearEquiv.injective
+      exact (ConcreteCategory.congr_hom (T.tateRes_comp_tateHIsoH_hom F 2) _).trans
+        ((congrArg (T.cohomologyRes F 2) ((big.tateHIsoH F 2).inv_hom_id_apply u)).trans
+          ((small.tateHIsoH F 2).inv_hom_id_apply _).symm)
+    rw [← hres, tateRes_eq_res, ModuleCat.comp_apply, Iso.inv_hom_id_apply]
+  rw [T.tateCor_eq_cor F (r + 2), ModuleCat.comp_apply, tateRangeIso_hom_cupClass, hu,
+    cupClass_apply, T.trivialTateCor_eq_cor r, ModuleCat.comp_apply]
+  have hnat := TauCeti.TateCohomology.cor_natural
+    (λ_ (big.rep F)).hom T.galHom.range (r + 2)
+  have hcup := TauCeti.TateCohomology.cup_projection
+    (Rep.trivial ℤ big.Gal ℤ) (big.rep F) T.galHom.range rfl
+      ((T.trivialTateRangeIso r).hom x) ((big.tateHIsoH F 2).inv u)
+  exact (ConcreteCategory.congr_hom hnat _).trans (congrArg _ hcup)
+
+end LayerRestriction
+
+namespace ClassFormation
+
+variable {F : Formation G} {small big : NormalLayer G}
+
+/-- The Tate isomorphism of a class formation commutes with corestriction from an intermediate
+ground field, in every integer degree. -/
+theorem tateIso_cor (cf : ClassFormation F) (T : LayerRestriction small big) (r : ℤ)
+    (x : small.TrivialTateH r) :
+    T.tateCor F (r + 2) (cf.tateIso small r x) =
+      cf.tateIso big r (T.trivialTateCor r x) := by
+  rw [tateIso_apply, tateIso_apply, cupFundamentalClass_apply, cupFundamentalClass_apply,
+    ← cf.fundamentalClass_restrict T]
+  exact T.cupClass_cor F (cf.fundamentalClass big) r x
 
 end ClassFormation
 

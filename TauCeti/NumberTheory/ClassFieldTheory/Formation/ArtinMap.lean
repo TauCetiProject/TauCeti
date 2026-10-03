@@ -49,6 +49,11 @@ restriction (`ClassFormation.tateIso_res`), restriction in degree `-2` is the tr
 symbol of `a ∈ A^U` over `E` is the transfer of its Artin symbol over `F`
 (`ClassFormation.artinMap_groundInclusion`).
 
+In the opposite direction, the ground-level norm `A^{U'} → A^U` is degree-zero
+corestriction, while degree `-2` corestriction is inclusion of abelianized Galois groups. The
+corestriction compatibility of the Tate isomorphism therefore gives the second Artin–Tate square,
+`ClassFormation.artinMap_groundNorm`.
+
 ## Main definitions
 
 * `TauCeti.ClassFieldTheory.ClassFormation.nakayamaNegTwo`: the Nakayama map
@@ -69,6 +74,8 @@ symbol of `a ∈ A^U` over `E` is the transfer of its Artin symbol over `F`
 * `TauCeti.ClassFieldTheory.ClassFormation.artinMap_conj`: the Artin map commutes with conjugation.
 * `TauCeti.ClassFieldTheory.ClassFormation.artinMap_groundInclusion`: inclusion of ground levels
   corresponds to the transfer of abelianized Galois groups.
+* `TauCeti.ClassFieldTheory.ClassFormation.artinMap_groundNorm`: the norm on ground levels
+  corresponds to inclusion of abelianized Galois groups.
 
 ## References
 
@@ -265,5 +272,30 @@ theorem artinMap_groundInclusion {small big : NormalLayer G} (T : LayerRestricti
         rw [tateIso_apply, cupFundamentalClass_artinMap]
     -- in degree `0`, restriction is the ground-level inclusion
     _ = small.zeroTateClass F (T.groundInclusion F a) := T.tateRes_zeroTateClass F a
+
+/-- **The norm on ground levels corresponds to inclusion of Galois groups**, one of the four
+Artin–Tate functoriality diagrams: for an intermediate field `F ⊆ E ⊆ K` of a layer `K/F`,
+the Artin symbol over `F` of the norm of `b ∈ A^{U'}` is the image under
+`Gal(K/E)^ab → Gal(K/F)^ab` of its Artin symbol over `E`. -/
+@[simp]
+theorem artinMap_groundNorm {small big : NormalLayer G} (T : LayerRestriction small big)
+    (b : F.level small.ground) :
+    cf.artinMap big (T.groundNorm F b) = T.inclusionHom (cf.artinMap small b) := by
+  set σ := cf.artinMap small b
+  rw [artinMap_eq_iff]
+  calc cf.cupFundamentalClass big (-2)
+        (big.tateHMinusTwoEquivAbelianization.symm (T.inclusionHom σ))
+      = cf.tateIso big (-2)
+          (T.trivialTateCor (-2) (small.tateHMinusTwoEquivAbelianization.symm σ)) := by
+        rw [tateIso_apply]
+        congr 1
+        rw [AddEquiv.symm_apply_eq, T.tateHMinusTwoEquivAbelianization_trivialTateCor,
+          AddEquiv.apply_symm_apply]
+    _ = T.tateCor F 0
+          (cf.tateIso small (-2) (small.tateHMinusTwoEquivAbelianization.symm σ)) :=
+        (cf.tateIso_cor T (-2) _).symm
+    _ = T.tateCor F 0 (small.zeroTateClass F b) := by
+        rw [tateIso_apply, cupFundamentalClass_artinMap]
+    _ = big.zeroTateClass F (T.groundNorm F b) := T.tateCor_zeroTateClass F b
 
 end TauCeti.ClassFieldTheory.ClassFormation
