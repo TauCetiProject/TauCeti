@@ -64,13 +64,11 @@ section Level
 def continuousFiniteQuotientCoeffMap (f : M →+[G] N) (U : OpenNormalSubgroup G) :
     ofDiscreteModule ℤ (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M) ⟶
       ofDiscreteModule ℤ (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup N) :=
-  ofDiscreteModuleMap (fixedPointsMap f U.toSubgroup).toIntLinearMap
-    (by
-      intro q m
-      -- The goal differs from the quotient-equivariance lemma only by the `\mathbb{Z}`-linear
-      -- wrapper used by `ofDiscreteModuleMap`; unfolding that wrapper is definitional.
-      change fixedPointsMap f U.toSubgroup (q • m) = q • fixedPointsMap f U.toSubgroup m
-      exact fixedPointsMap_quotient_smul f U.toSubgroup q m)
+  ofDiscreteModuleMap
+    (AddMonoidHom.toIntLinearMap (M := FixedPoints.addSubgroup U.toSubgroup M)
+      (M₂ := FixedPoints.addSubgroup U.toSubgroup N)
+      (fixedPointsQuotientMap f U.toSubgroup).toAddMonoidHom)
+    (map_smul (fixedPointsQuotientMap f U.toSubgroup))
 
 omit [IsTopologicalGroup G] in
 /-- The finite-level coefficient morphism acts as `f` on underlying elements. -/
@@ -78,17 +76,17 @@ omit [IsTopologicalGroup G] in
 theorem continuousFiniteQuotientCoeffMap_hom_apply (f : M →+[G] N)
     (U : OpenNormalSubgroup G) (m : FixedPoints.addSubgroup U.toSubgroup M) :
     (continuousFiniteQuotientCoeffMap f U).hom m = fixedPointsMap f U.toSubgroup m :=
-  ofDiscreteModuleMap_hom_apply _ _ m
+  Subtype.ext <| (congrArg Subtype.val (ofDiscreteModuleMap_hom_apply _ _ m)).trans <|
+    (coe_fixedPointsQuotientMap f U.toSubgroup m).trans (coe_fixedPointsMap f U.toSubgroup m).symm
 
 omit [IsTopologicalGroup G] in
 /-- The finite-level coefficient morphism associated to the identity is the identity. -/
 @[simp]
 theorem continuousFiniteQuotientCoeffMap_id (U : OpenNormalSubgroup G) :
     continuousFiniteQuotientCoeffMap (DistribMulActionHom.id G : M →+[G] M) U = 𝟙 _ := by
-  refine TopRep.hom_ext (DFunLike.ext _ _ fun m ↦ ?_)
-  exact (continuousFiniteQuotientCoeffMap_hom_apply _ _ m).trans
-    ((DFunLike.congr_fun (fixedPointsMap_id (M := M) U.toSubgroup) m).trans
-      (TopRep.id_apply _ m).symm)
+  simp only [continuousFiniteQuotientCoeffMap, fixedPointsQuotientMap_id]
+  -- The `ℤ`-linear wrapper of the identity is definitionally `LinearMap.id`.
+  exact ofDiscreteModuleMap_id
 
 omit [IsTopologicalGroup G] in
 /-- Finite-level coefficient morphisms preserve composition. -/
@@ -97,16 +95,10 @@ theorem continuousFiniteQuotientCoeffMap_comp (f : M →+[G] N) (g : N →+[G] P
     (U : OpenNormalSubgroup G) :
     continuousFiniteQuotientCoeffMap f U ≫ continuousFiniteQuotientCoeffMap g U =
       continuousFiniteQuotientCoeffMap (g.comp f) U := by
-  refine TopRep.hom_ext (DFunLike.ext _ _ fun m ↦ ?_)
-  -- Composition in `TopRep` is definitionally composition of the underlying homomorphisms.
-  change (continuousFiniteQuotientCoeffMap g U).hom
-      ((continuousFiniteQuotientCoeffMap f U).hom m) =
-    (continuousFiniteQuotientCoeffMap (g.comp f) U).hom m
-  rw [continuousFiniteQuotientCoeffMap_hom_apply f U m,
-    continuousFiniteQuotientCoeffMap_hom_apply g U
-      (fixedPointsMap f U.toSubgroup m),
-    continuousFiniteQuotientCoeffMap_hom_apply (g.comp f) U m]
-  exact DFunLike.congr_fun (fixedPointsMap_comp_fixedPointsMap f g U.toSubgroup) m
+  simp only [continuousFiniteQuotientCoeffMap,
+    ← fixedPointsQuotientMap_comp_fixedPointsQuotientMap]
+  -- The `ℤ`-linear wrapper of a composite is definitionally the composite of the wrappers.
+  exact ofDiscreteModuleMap_comp_ofDiscreteModuleMap _ _ _ _
 
 /-- Restriction of an equivariant coefficient map to fixed points commutes with the coefficient
 pairs defining the transition from the `U`-level to a deeper `V`-level. -/
