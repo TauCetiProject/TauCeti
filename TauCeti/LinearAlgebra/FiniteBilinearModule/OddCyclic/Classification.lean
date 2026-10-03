@@ -72,6 +72,7 @@ theorem exists_oddCyclic_isometry (A : FiniteQuadraticModule) [IsAddCyclic A]
 /-- Two odd cyclic quadratic modules of the same order are isometric exactly when their
 coefficients differ by a unit square modulo that order. No nondegeneracy hypothesis is needed;
 the criterion includes the trivial group `ZMod 1`. -/
+@[simp]
 theorem nonempty_isometry_oddCyclic_iff (m : ℕ) (hm : Odd m) (θ η : ℤ) :
     Nonempty (Isometry (oddCyclic m hm θ) (oddCyclic m hm η)) ↔
       ∃ u : (ZMod m)ˣ, (θ : ZMod m) = (η : ZMod m) * (u : ZMod m) ^ 2 := by
