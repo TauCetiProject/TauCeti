@@ -25,7 +25,10 @@ the boundary by the circle `AddCircle n`, and simplicity makes this parametrizat
 A simple closed polygon in `ℝ³` is the polygonal presentation of an oriented knot (Burde and
 Zieschang, Definition 1.3; Lickorish, Definition 1.1): the cyclic order of the vertices is the
 orientation, and the parametrization `Polygon.boundaryParamCircle` is the corresponding
-topological embedding of the circle. Nothing here depends on the dimension of the ambient space.
+topological embedding of the circle. The bundled type `TauCeti.SimplePolygon` carries the number of
+vertices as data, so that polygons with different numbers of vertices are presentations of the
+same type, and `TauCeti.SimplePolygon.realize` is its realization as a topological embedding of
+the unit circle `Circle`. Nothing here depends on the dimension of the ambient space.
 
 The first simple polygons are the triangles: `Affine.Triangle.toPolygon_isSimple`. The polygon with
 no vertices is vacuously simple and has empty boundary, so the results about the boundary assume
@@ -37,6 +40,10 @@ no vertices is vacuously simple and has empty boundary, so the results about the
   vertex of consecutive edges.
 * `Polygon.boundaryParam`: the periodic map `ℝ → P` running along edge `i` on `[i, i + 1]`.
 * `Polygon.boundaryParamCircle`: the induced map from the circle `AddCircle n` to `P`.
+* `TauCeti.SimplePolygon`: a simple polygon bundled with its number of vertices, the polygonal
+  presentation of a knot when `P = ℝ³`.
+* `TauCeti.SimplePolygon.realize`: the realization of a simple real polygon as a map from the
+  unit circle `Circle`.
 
 ## Main results
 
@@ -47,6 +54,8 @@ no vertices is vacuously simple and has empty boundary, so the results about the
   embedding of the circle.
 * `Polygon.IsSimple.isJordanCurve_boundary`: the boundary of a simple real polygon is a Jordan
   curve.
+* `TauCeti.SimplePolygon.isClosedEmbedding_realize`: the realization of a simple real polygon is a
+  closed embedding of the circle.
 * `Affine.Triangle.toPolygon_isSimple`: a triangle is a simple polygon.
 
 ## References
@@ -67,7 +76,8 @@ variable {R V P : Type*} {n : ℕ}
 
 section IsSimple
 
-variable [Ring R] [PartialOrder R] [AddCommGroup V] [Module R V] [AddTorsor V P]
+variable [Ring R] [PartialOrder R] [ZeroLEOneClass R] [AddCommGroup V] [Module R V]
+  [AddTorsor V P]
 
 variable (R) in
 /-- A polygon is **simple** when its edges are nondegenerate and two distinct edges meet only when
@@ -293,5 +303,75 @@ theorem toPolygon_isSimple (t : Affine.Triangle R P) : t.toPolygon.IsSimple R :=
   all_goals first
     | exact Or.inl ⟨by decide, hside _ hi hj⟩
     | exact Or.inr ⟨by decide, hside _ hj hi⟩
+
+end Affine.Triangle
+
+namespace TauCeti
+
+/-- A **simple polygon** in `P` over `R`: a polygon with a positive number of vertices that is
+simple over `R`. The number of vertices is part of the data, so that one type contains the simple
+polygons with any number of vertices. A simple polygon in `ℝ³` is the polygonal presentation of an
+oriented knot, realized as a topological embedding of the circle by `SimplePolygon.realize`. -/
+structure SimplePolygon (R : Type*) {V : Type*} (P : Type*) [Ring R] [PartialOrder R]
+    [ZeroLEOneClass R] [AddCommGroup V] [Module R V] [AddTorsor V P] where
+  /-- The number of vertices. -/
+  numVertices : ℕ
+  [neZero : NeZero numVertices]
+  /-- The underlying polygon. -/
+  toPolygon : Polygon P numVertices
+  /-- The underlying polygon is simple. -/
+  isSimple : toPolygon.IsSimple R
+
+namespace SimplePolygon
+
+attribute [instance] neZero
+
+variable {V P : Type*} [AddCommGroup V] [Module ℝ V] [AddTorsor V P] (p : SimplePolygon ℝ P)
+
+/-- The realization of a simple real polygon as a map from the unit circle: the circle
+parametrization `Polygon.boundaryParamCircle` of its boundary, read on `Circle` through the
+homeomorphism `AddCircle.homeomorphCircle` from `AddCircle n`, where `n` is the number of
+vertices. -/
+noncomputable def realize : Circle → P :=
+  p.toPolygon.boundaryParamCircle ∘
+    (AddCircle.homeomorphCircle (Nat.cast_ne_zero.2 (NeZero.ne p.numVertices))).symm
+
+/-- The realization passes through `Polygon.boundaryParam t` at the image of `t` in the circle. -/
+theorem realize_toCircle (t : ℝ) :
+    p.realize (AddCircle.toCircle (t : AddCircle (p.numVertices : ℝ))) =
+      p.toPolygon.boundaryParam t := by
+  rw [realize, comp_apply,
+    ← AddCircle.homeomorphCircle_apply (Nat.cast_ne_zero.2 (NeZero.ne p.numVertices)),
+    Homeomorph.symm_apply_apply, Polygon.boundaryParamCircle_coe]
+
+/-- The realization runs over the whole boundary of the polygon. -/
+theorem range_realize : range p.realize = p.toPolygon.boundary ℝ := by
+  rw [realize, (Homeomorph.surjective _).range_comp, Polygon.range_boundaryParamCircle]
+
+/-- **A simple real polygon is an embedded circle.** Its realization is a closed embedding of the
+unit circle into a Hausdorff ambient space. -/
+theorem isClosedEmbedding_realize [TopologicalSpace V] [ContinuousSMul ℝ V] [TopologicalSpace P]
+    [IsTopologicalAddTorsor P] [T2Space P] : IsClosedEmbedding p.realize :=
+  p.isSimple.isClosedEmbedding_boundaryParamCircle.comp (Homeomorph.isClosedEmbedding _)
+
+end SimplePolygon
+
+end TauCeti
+
+namespace Affine.Triangle
+
+variable {R V P : Type*} [Ring R] [PartialOrder R] [AddRightMono R] [ZeroLEOneClass R]
+  [Nontrivial R] [AddCommGroup V] [Module R V] [AddTorsor V P]
+
+/-- A triangle, as a simple polygon with three vertices. -/
+@[expose] def toSimplePolygon (t : Affine.Triangle R P) : TauCeti.SimplePolygon R P where
+  numVertices := 3
+  toPolygon := t.toPolygon
+  isSimple := t.toPolygon_isSimple
+
+@[simp]
+theorem numVertices_toSimplePolygon (t : Affine.Triangle R P) :
+    t.toSimplePolygon.numVertices = 3 :=
+  rfl
 
 end Affine.Triangle
