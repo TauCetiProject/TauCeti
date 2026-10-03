@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.HighestWeight.CompleteReducibility
-public import TauCeti.Algebra.Lie.Quotient
+public import TauCeti.Algebra.Lie.Killing.Quotient
 
 /-!
 # Levi complements of abelian ideals
@@ -48,15 +48,11 @@ it inside `S`, and that complement is a complement of `I` in `L`.
 
 The last step holds for any Lie subalgebra `P` with `I + P = L`: the quotient `P ⧸ (I ∩ P)` is
 isomorphic to `L ⧸ I`, and a complement of `I ∩ P` in `P` is a complement of `I` in `L`. These
-statements are recorded separately, since the induction proving Levi's theorem for solvable ideals
-uses them again.
+statements are supplied by `TauCeti/Algebra/Lie/Quotient.lean` and
+`TauCeti/Algebra/Lie/Killing/Quotient.lean`, since the induction for solvable ideals uses them
+again.
 
 ## Main results
-
-* `LieIdeal.isKilling_quotient_comap_incl`: if `I + P = L` and `L ⧸ I` is Killing, so is
-  `P ⧸ (I ∩ P)`.
-* `LieIdeal.isCompl_map_incl`: if `I + P = L`, a complement of `I ∩ P` in `P` is a complement of
-  `I` in `L`.
 
 * `LieIdeal.exists_isCompl_of_le_center`: a central ideal with Killing quotient has a
   complementary ideal.
@@ -272,36 +268,6 @@ private theorem exists_lieSubalgebra_codisjoint [CharZero K] [FiniteDimensional 
     exact hx
 
 end Abelian
-
-section Supplement
-
-variable {R : Type*} [CommRing R] [LieAlgebra R L] (I : LieIdeal R L) {P : LieSubalgebra R L}
-
-/-- A Lie subalgebra `P` supplementing an ideal `I` with Killing quotient has Killing quotient by
-`I ∩ P`, since `P ⧸ (I ∩ P)` is isomorphic to `L ⧸ I`. -/
-theorem _root_.LieIdeal.isKilling_quotient_comap_incl [IsKilling R (L ⧸ I)]
-    (hIP : Codisjoint I.toSubmodule P.toSubmodule) : IsKilling R (P ⧸ I.comap P.incl) := by
-  rw [← I.ker_mkQ_comp_incl]
-  exact isKilling_of_equiv
-    ((I.mkQ.comp P.incl).quotKerEquivOfSurjective (I.mkQ_comp_incl_surjective hIP)).symm
-
-/-- **A complement inside a supplement.** If a Lie subalgebra `P` supplements an ideal `I`, then a
-complement in `P` of the ideal `I ∩ P` of `P` is a complement of `I` in `L`. -/
-theorem _root_.LieIdeal.isCompl_map_incl (hIP : Codisjoint I.toSubmodule P.toSubmodule)
-    {J : LieSubalgebra R P} (hJ : IsCompl (I.comap P.incl).toSubmodule J.toSubmodule) :
-    IsCompl I.toSubmodule (J.map P.incl).toSubmodule := by
-  refine ⟨Submodule.disjoint_def.2 fun x hxI hxJ ↦ ?_,
-    codisjoint_iff.2 (Submodule.eq_top_iff'.2 fun x ↦ ?_)⟩
-  · obtain ⟨j, hj, rfl⟩ := (LieSubalgebra.mem_map ..).1 hxJ
-    rw [Submodule.disjoint_def.1 hJ.disjoint j (LieIdeal.mem_comap.2 hxI) hj, map_zero]
-  · obtain ⟨i, hi, s, hs, rfl⟩ := Submodule.mem_sup.1 (hIP.eq_top ▸ Submodule.mem_top (x := x))
-    obtain ⟨k, hk, j, hj, hkj⟩ := Submodule.mem_sup.1
-      (hJ.codisjoint.eq_top ▸ Submodule.mem_top (x := (⟨s, hs⟩ : P)))
-    refine Submodule.mem_sup.2 ⟨i + P.incl k, I.add_mem hi (LieIdeal.mem_comap.1 hk), P.incl j,
-      (LieSubalgebra.mem_map ..).2 ⟨j, hj, rfl⟩, ?_⟩
-    rw [add_assoc, ← map_add, hkj, LieSubalgebra.coe_incl]
-
-end Supplement
 
 /-- **A Levi complement of an abelian ideal.** Over a field of characteristic zero, an abelian
 ideal `I` of a finite-dimensional Lie algebra `L` whose quotient `L ⧸ I` has nondegenerate Killing

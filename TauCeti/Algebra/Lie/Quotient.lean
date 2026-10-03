@@ -42,6 +42,8 @@ and supporting receiver notation on the ideal and the homomorphism.
 * `LieIdeal.ker_liftQ_mkQ`: for ideals `J ≤ I`, the kernel of `L ⧸ J → L ⧸ I` is the image of `I`.
 * `LieIdeal.mkQ_comp_incl_surjective`: a Lie subalgebra `P` with `I + P = L` maps onto `L ⧸ I`.
 * `LieIdeal.ker_mkQ_comp_incl`: the kernel of `P → L ⧸ I` is the ideal `I ∩ P` of `P`.
+* `LieIdeal.isCompl_map_incl`: a complement of `I ∩ P` inside a supplement `P` of `I` is a
+  complement of `I` in `L`.
 -/
 
 public section
@@ -192,3 +194,35 @@ theorem quotKerEquivOfSurjective_apply_mk (f : L →ₗ⁅R⁆ L') (hf : Functio
     f.quotKerEquivOfSurjective hf (LieSubmodule.Quotient.mk x) = f x := (rfl)
 
 end LieHom
+
+namespace TauCeti
+
+variable {R L L' : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] [LieRing L'] [LieAlgebra R L']
+
+/-- The inverse of the first isomorphism theorem sends `f x` to the class of `x`. -/
+@[simp]
+theorem _root_.LieHom.quotKerEquivOfSurjective_symm_apply (f : L →ₗ⁅R⁆ L')
+    (hf : Function.Surjective f) (x : L) :
+    (f.quotKerEquivOfSurjective hf).symm (f x) = LieSubmodule.Quotient.mk x := by
+  simpa only [LieHom.quotKerEquivOfSurjective_apply_mk] using
+    (f.quotKerEquivOfSurjective hf).symm_apply_apply (LieSubmodule.Quotient.mk x)
+
+variable (I : LieIdeal R L) {P : LieSubalgebra R L}
+
+/-- **A complement inside a supplement.** If a Lie subalgebra `P` supplements an ideal `I`, then a
+complement in `P` of the ideal `I ∩ P` of `P` is a complement of `I` in `L`. -/
+theorem _root_.LieIdeal.isCompl_map_incl (hIP : Codisjoint I.toSubmodule P.toSubmodule)
+    {J : LieSubalgebra R P} (hJ : IsCompl (I.comap P.incl).toSubmodule J.toSubmodule) :
+    IsCompl I.toSubmodule (J.map P.incl).toSubmodule := by
+  refine ⟨Submodule.disjoint_def.2 fun x hxI hxJ ↦ ?_,
+    codisjoint_iff.2 (Submodule.eq_top_iff'.2 fun x ↦ ?_)⟩
+  · obtain ⟨j, hj, rfl⟩ := (LieSubalgebra.mem_map ..).1 hxJ
+    rw [Submodule.disjoint_def.1 hJ.disjoint j (LieIdeal.mem_comap.2 hxI) hj, map_zero]
+  · obtain ⟨i, hi, s, hs, rfl⟩ := Submodule.mem_sup.1 (hIP.eq_top ▸ Submodule.mem_top (x := x))
+    obtain ⟨k, hk, j, hj, hkj⟩ := Submodule.mem_sup.1
+      (hJ.codisjoint.eq_top ▸ Submodule.mem_top (x := (⟨s, hs⟩ : P)))
+    refine Submodule.mem_sup.2 ⟨i + P.incl k, I.add_mem hi (LieIdeal.mem_comap.1 hk), P.incl j,
+      (LieSubalgebra.mem_map ..).2 ⟨j, hj, rfl⟩, ?_⟩
+    rw [add_assoc, ← map_add, hkj, LieSubalgebra.coe_incl]
+
+end TauCeti
