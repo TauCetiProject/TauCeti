@@ -14,7 +14,6 @@ public import TauCeti.Algebra.Module.GradedModule.TensorProduct
 public import TauCeti.RingTheory.PrimitiveIdempotent
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.Casimir
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.Grading
-public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.Trace
 
 /-!
 # The braid complexes of a zigzag algebra
