@@ -50,6 +50,10 @@ space is a circle and its fundamental group is `ℤ`, so the hypothesis `1 ≤ k
 * A. Hatcher, *Algebraic Topology*, Cambridge University Press (2002), Proposition 1.40 (the
   fundamental group of the quotient of a simply connected space by a covering space action) and
   Example 2.43 (lens spaces).
+* The fundamental-group development (`fundamentalGroupMulEquiv`, its monodromy
+  characterization, `card_fundamentalGroup`, and `not_simplyConnectedSpace`) is adapted from the
+  computation of `π₁(RPⁿ)` in
+  `TauCeti.AlgebraicTopology.UniversalCover.RealProjective.FundamentalGroup.Basic`.
 -/
 
 public section

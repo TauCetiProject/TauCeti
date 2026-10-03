@@ -70,6 +70,9 @@ trivial and the lens space is a copy of the sphere.
 * D. Rolfsen, *Knots and Links*, Publish or Perish (1976), Chapter 9, §9G, Example 1: surgery on
   the unknot with coefficient `b/a` gives the lens space `L(b, a)`; the three-dimensional lens
   spaces are thus the manifolds obtained by Dehn surgery on the unknot.
+* The quotient API (`mk`, `mk_eq_mk_iff`, `isQuotientCoveringMap_mk`, and the compactness and
+  path-connectedness instances) is adapted from the real projective space formalization in
+  `TauCeti.AlgebraicTopology.UniversalCover.RealProjective.Basic`.
 -/
 
 public section
