@@ -221,7 +221,7 @@ theorem reidemeisterThree_edgePair_transport (x : Fin (4 * n)) :
   simp [reidemeisterThree_edgePair]
 
 /-- The replacement has the three internal arcs of `σ₂ σ₁ σ₂`. -/
-theorem reidemeisterThree_triangle (h : D.HasReidemeisterThreeTriangleArcs c) :
+theorem reidemeisterThree_triangleArcs (h : D.HasReidemeisterThreeTriangleArcs c) :
     (D.reidemeisterThree c).edgePair.val (D.crossing (c 0) 1) = D.crossing (c 1) 3 ∧
     (D.reidemeisterThree c).edgePair.val (D.crossing (c 1) 2) = D.crossing (c 2) 0 ∧
     (D.reidemeisterThree c).edgePair.val (D.crossing (c 0) 2) = D.crossing (c 2) 3 := by
@@ -282,9 +282,9 @@ theorem hasReidemeisterThreeTriangle_mirror_iff :
   simp [reidemeisterThreePerm, triangleEmbedding]
 
 /-- Mirroring commutes with the third Reidemeister move. -/
-theorem reidemeisterThree_mirror :
-    D.mirror.reidemeisterThree c =
-      (D.reidemeisterThree c).mirror := by
+theorem mirror_reidemeisterThree :
+    (D.reidemeisterThree c).mirror =
+      D.mirror.reidemeisterThree c := by
   apply PDCode.ext
   · simp
   · simp [reidemeisterThree]

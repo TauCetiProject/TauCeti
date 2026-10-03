@@ -12,7 +12,8 @@ public import TauCeti.KnotTheory.PDCode.ReidemeisterThree.Basic
 
 The Kauffman bracket and planarity proofs use the same twelve-slot inclusion and the same
 remainder after removing the three internal triangle arcs. This module supplies their common
-permutation calculus; smoothing and face traversal are handled by the two consumers.
+permutation calculus, exterior crossing-slot permutations, and lifted swap-forest orbit counts;
+smoothing and face traversal specialize these constructions in the two consumers.
 -/
 
 public section
@@ -87,6 +88,75 @@ theorem localLift_swap (a b : Fin 3 × Fin 4) :
     · exact fun h ↦ hx ⟨a, h.symm⟩
     · exact fun h ↦ hx ⟨b, h.symm⟩
 
+/-- Act by the specified slot permutation at each unselected crossing and fix all twelve
+slots of the selected triangle. -/
+def exteriorSlots (slots : Fin n → Perm (Fin 4)) : Perm (Fin (4 * n)) :=
+  D.halfEdge.permCongr ((crossingSlotEquiv n).permCongr
+    (Equiv.prodCongrRight fun i ↦ if i ∈ Set.range c then 1 else slots i))
+
+/-- Exterior slot permutations transport the crossingwise action through the diagram's
+half-edge labeling. -/
+theorem exteriorSlots_def (slots : Fin n → Perm (Fin 4)) :
+    exteriorSlots D c slots =
+      D.halfEdge.permCongr ((crossingSlotEquiv n).permCongr
+        (Equiv.prodCongrRight fun i ↦ if i ∈ Set.range c then 1 else slots i)) := (rfl)
+
+/-- Exterior slot permutations act crossing by crossing, with identity on selected crossings. -/
+theorem exteriorSlots_crossing (slots : Fin n → Perm (Fin 4)) (i : Fin n) (s : Fin 4) :
+    exteriorSlots D c slots (D.crossing i s) =
+      D.crossing i ((if i ∈ Set.range c then 1 else slots i) s) := by
+  simp only [exteriorSlots, crossing_apply, Equiv.permCongr_apply,
+    Equiv.symm_apply_apply, Equiv.prodCongrRight_apply]
+
+/-- Exterior slot permutations fix every slot of the selected triangle. -/
+theorem exteriorSlots_local (slots : Fin n → Perm (Fin 4)) (p : Fin 3 × Fin 4) :
+    exteriorSlots D c slots (triangleEmbedding D c p) = triangleEmbedding D c p := by
+  rw [triangleEmbedding_apply, exteriorSlots_crossing]
+  simp only [Set.mem_range_self, ↓reduceIte, Perm.one_apply]
+
+/-- Permutations supported on the selected triangle commute with exterior slot permutations. -/
+theorem localLift_commute_exteriorSlots (p : Perm (Fin 3 × Fin 4))
+    (slots : Fin n → Perm (Fin 4)) :
+    Commute (localLift D c p) (exteriorSlots D c slots) := by
+  apply Equiv.ext
+  intro x
+  obtain ⟨y, rfl⟩ := D.halfEdge.surjective x
+  obtain ⟨⟨i, s⟩, rfl⟩ := (crossingSlotEquiv n).surjective y
+  simp only [Perm.mul_apply, ← crossing_apply]
+  by_cases hi : i ∈ Set.range c
+  · obtain ⟨j, rfl⟩ := hi
+    rw [← triangleEmbedding_apply, exteriorSlots_local, localLift_apply, exteriorSlots_local]
+  · rw [exteriorSlots_crossing, localLift_fixed D c _ hi,
+      localLift_fixed D c _ hi, exteriorSlots_crossing]
+
+/-- Lift a swap-forest factorization into the diagram. If the remaining traversal fixes
+all second endpoints, inserting the forest removes one orbit per factor. -/
+theorem localLift_swapForest_orbitCount (factor base : Perm (Fin 3 × Fin 4))
+    (factors : List ((Fin 3 × Fin 4) × (Fin 3 × Fin 4)))
+    (outside : Perm (Fin (4 * n))) (hforest : factors.IsSwapForest)
+    (hfactor : factor = (factors.map (Function.uncurry Equiv.swap)).prod * base)
+    (hfixed : ∀ p ∈ factors,
+      (localLift D c base * outside) (triangleEmbedding D c p.2) = triangleEmbedding D c p.2) :
+    orbitCount (localLift D c factor * outside) + factors.length =
+      orbitCount (localLift D c base * outside) := by
+  rw [hfactor, map_mul]
+  have hprod : localLift D c ((factors.map (Function.uncurry Equiv.swap)).prod) =
+      ((factors.map fun p ↦
+        (triangleEmbedding D c p.1, triangleEmbedding D c p.2)).map
+          (Function.uncurry Equiv.swap)).prod := by
+    rw [map_list_prod]
+    simp only [List.map_map]
+    congr 1
+    apply List.map_congr_left
+    intro p hp
+    exact localLift_swap D c p.1 p.2
+  rw [hprod, mul_assoc]
+  have hcount := (hforest.map (triangleEmbedding D c)).orbitCount_prod_mul_add_length
+    (localLift D c base * outside) (fun p hp ↦ ?_)
+  · simpa only [List.length_map] using hcount
+  · obtain ⟨p, hmem, rfl⟩ := List.mem_map.mp hp
+    exact hfixed p hmem
+
 include h in
 /-- The prescribed triangle arcs agree with the local internal matching. -/
 theorem internalMatching_edgePair (p : Fin 3 × Fin 4) (hp : localInternal p) :
@@ -116,6 +186,21 @@ def outsideEdges : Perm (Fin (4 * n)) :=
 /-- Removing the internal arcs composes the original matching with their three swaps. -/
 theorem outsideEdges_def : outsideEdges D c =
     localLift D c localInternalMatching * D.edgePair.val := (rfl)
+
+/-- Cancel the internal matching against the removed triangle arcs when the intervening
+outside permutation commutes with that matching. -/
+theorem localLift_remove_internal (p : Perm (Fin 3 × Fin 4))
+    (outside : Perm (Fin (4 * n)))
+    (hcomm : Commute (localLift D c localInternalMatching) outside) :
+    localLift D c (p * localInternalMatching) * outside * outsideEdges D c =
+      localLift D c p * outside * D.edgePair.val := by
+  rw [map_mul, outsideEdges_def]
+  have hs : localLift D c localInternalMatching * localLift D c localInternalMatching = 1 := by
+    rw [← map_mul, localInternalMatching_mul_self, map_one]
+  calc
+    _ = localLift D c p * (localLift D c localInternalMatching * outside) *
+        localLift D c localInternalMatching * D.edgePair.val := by group
+    _ = _ := by rw [hcomm.eq]; simp only [mul_assoc, hs, mul_one]
 
 include h in
 /-- Removing the triangle arcs fixes each of their six incident slots. -/

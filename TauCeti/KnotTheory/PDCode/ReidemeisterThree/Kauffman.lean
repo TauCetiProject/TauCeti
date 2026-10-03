@@ -155,42 +155,14 @@ private theorem localPairing_internal (k : Fin 5) (p : Fin 3 × Fin 4)
   decide
 
 
-private def outsideSmoothing (u : Fin n → Bool) : Perm (Fin (4 * n)) :=
-  D.halfEdge.permCongr ((crossingSlotEquiv n).permCongr
-    (Equiv.prodCongrRight fun i ↦ if i ∈ Set.range c then 1 else slotSmoothing (u i)))
-
-private theorem outsideSmoothing_crossing (u : Fin n → Bool) (i : Fin n) (s : Fin 4) :
-    outsideSmoothing D c u (D.crossing i s) =
-      D.crossing i ((if i ∈ Set.range c then 1 else slotSmoothing (u i)) s) := by
-  simp only [outsideSmoothing, crossing_apply, Equiv.permCongr_apply,
-    Equiv.symm_apply_apply, Equiv.prodCongrRight_apply]
-
-private theorem outsideSmoothing_local (u : Fin n → Bool) (p : Fin 3 × Fin 4) :
-    outsideSmoothing D c u (triangleEmbedding D c p) = triangleEmbedding D c p := by
-  rw [triangleEmbedding_apply, outsideSmoothing_crossing]
-  simp only [Set.mem_range_self, ↓reduceIte, Perm.one_apply]
-
-private theorem localLift_commute_outside (p : Perm (Fin 3 × Fin 4)) (u : Fin n → Bool) :
-    Commute (localLift D c p) (outsideSmoothing D c u) := by
-  apply Equiv.ext
-  intro x
-  obtain ⟨y, rfl⟩ := D.halfEdge.surjective x
-  obtain ⟨⟨i, s⟩, rfl⟩ := (crossingSlotEquiv n).surjective y
-  simp only [Perm.mul_apply, ← crossing_apply]
-  by_cases hi : i ∈ Set.range c
-  · obtain ⟨j, rfl⟩ := hi
-    rw [← triangleEmbedding_apply, outsideSmoothing_local, localLift_apply, outsideSmoothing_local]
-  · rw [outsideSmoothing_crossing, localLift_fixed D c _ hi,
-      localLift_fixed D c _ hi, outsideSmoothing_crossing]
-
 private theorem smoothingTurn_split (u : Fin n → Bool) :
     D.smoothingTurn u = localLift D c (localSmoothing (u ∘ c)) *
-      outsideSmoothing D c u := by
+      exteriorSlots D c (fun i ↦ slotSmoothing (u i)) := by
   apply Equiv.ext
   intro x
   obtain ⟨y, rfl⟩ := D.halfEdge.surjective x
   obtain ⟨⟨i, s⟩, rfl⟩ := (crossingSlotEquiv n).surjective y
-  rw [smoothingTurn_crossing, Perm.mul_apply, ← crossing_apply, outsideSmoothing_crossing]
+  rw [smoothingTurn_crossing, Perm.mul_apply, ← crossing_apply, exteriorSlots_crossing]
   by_cases hi : i ∈ Set.range c
   · obtain ⟨j, rfl⟩ := hi
     simp only [Set.mem_range_self, ↓reduceIte, Perm.one_apply]
@@ -200,62 +172,31 @@ private theorem smoothingTurn_split (u : Fin n → Bool) :
     rw [localLift_fixed D c _ hi]
 
 private def pairingTraversal (u : Fin n → Bool) (k : Fin 5) : Perm (Fin (4 * n)) :=
-  localLift D c (localPairing k) * outsideSmoothing D c u * outsideEdges D c
+  localLift D c (localPairing k) * exteriorSlots D c (fun i ↦ slotSmoothing (u i)) *
+    outsideEdges D c
 
 include h in
 private theorem pairingTraversal_internal (u : Fin n → Bool) (k : Fin 5)
     (p : Fin 3 × Fin 4) (hp : localInternal p) :
     pairingTraversal D c u k (triangleEmbedding D c p) = triangleEmbedding D c p := by
   rw [pairingTraversal, Perm.mul_apply, Perm.mul_apply, outsideEdges_internal D c h.arcs p hp,
-    outsideSmoothing_local, localLift_apply, localPairing_internal k p hp]
+    exteriorSlots_local, localLift_apply, localPairing_internal k p hp]
 
 include h in
 private theorem localFactor_orbitCount (side : Bool) (q : Fin 3 → Bool)
     (u : Fin n → Bool) :
-    orbitCount (localLift D c (localFactor side q) * outsideSmoothing D c u *
-      outsideEdges D c) + (smoothingFactors side q).length =
+    orbitCount (localLift D c (localFactor side q) *
+      exteriorSlots D c (fun i ↦ slotSmoothing (u i)) * outsideEdges D c) +
+        (smoothingFactors side q).length =
         orbitCount (pairingTraversal D c u (pairingIndex side q)) := by
-  rw [localFactor_eq, map_mul]
-  have hprod : localLift D c
-      (((smoothingFactors side q).map (Function.uncurry Equiv.swap)).prod) =
-      (((smoothingFactors side q).map fun p ↦
-        (triangleEmbedding D c p.1, triangleEmbedding D c p.2)).map
-          (Function.uncurry Equiv.swap)).prod := by
-    rw [map_list_prod]
-    simp only [List.map_map]
-    congr 1
-    apply List.map_congr_left
-    intro p hp
-    exact localLift_swap D c p.1 p.2
-  rw [hprod, mul_assoc, mul_assoc]
-  have hf := (smoothingFactors_isSwapForest side q).map (triangleEmbedding D c)
-  have hcount := hf.orbitCount_prod_mul_add_length
-    (pairingTraversal D c u (pairingIndex side q)) (fun p hp ↦ ?_)
-  · simpa only [List.length_map, pairingTraversal, mul_assoc] using hcount
-  · obtain ⟨p, hmem, rfl⟩ := List.mem_map.mp hp
-    exact pairingTraversal_internal D c h u _ p.2 (smoothingFactors_internal side q p hmem)
-
-
-private theorem lift_internalMatching_sq :
-    localLift D c localInternalMatching * localLift D c localInternalMatching = 1 := by
-  rw [← map_mul]
-  rw [localInternalMatching_mul_self, map_one]
-
-private theorem localFactor_remove_internal (side : Bool) (q : Fin 3 → Bool)
-    (u : Fin n → Bool) :
-    localLift D c (localFactor side q) * outsideSmoothing D c u * outsideEdges D c =
-      localLift D c (if side then reidemeisterThreeSlots⁻¹ * localSmoothing q *
-        reidemeisterThreeSlots else localSmoothing q) * outsideSmoothing D c u *
-          D.edgePair.val := by
-  rw [localFactor, map_mul, outsideEdges_def]
-  have hc := (localLift_commute_outside D c localInternalMatching u).eq
-  have hs := lift_internalMatching_sq D c
-  calc
-    _ = localLift D c (if side then reidemeisterThreeSlots⁻¹ * localSmoothing q *
-          reidemeisterThreeSlots else localSmoothing q) *
-        (localLift D c localInternalMatching * outsideSmoothing D c u) *
-        localLift D c localInternalMatching * D.edgePair.val := by group
-    _ = _ := by rw [hc]; simp only [mul_assoc, hs, mul_one]
+  simpa only [pairingTraversal, mul_assoc] using
+    localLift_swapForest_orbitCount D c (localFactor side q)
+      (localPairing (pairingIndex side q)) (smoothingFactors side q)
+      (exteriorSlots D c (fun i ↦ slotSmoothing (u i)) * outsideEdges D c)
+      (smoothingFactors_isSwapForest side q) (localFactor_eq side q)
+      (fun p hp ↦ by
+        simpa only [pairingTraversal, mul_assoc] using
+          pairingTraversal_internal D c h u _ p.2 (smoothingFactors_internal side q p hp))
 
 include h in
 private theorem rawTraversal_orbitCount (side : Bool) (u : Fin n → Bool) :
@@ -264,7 +205,9 @@ private theorem rawTraversal_orbitCount (side : Bool) (u : Fin n → Bool) :
       else D.smoothingTurn u * D.edgePair.val) + (smoothingFactors side (u ∘ c)).length =
         orbitCount (pairingTraversal D c u (pairingIndex side (u ∘ c))) := by
   have hc := localFactor_orbitCount D c h side (u ∘ c) u
-  rw [localFactor_remove_internal] at hc
+  rw [localFactor, localLift_remove_internal D c _ _
+    (localLift_commute_exteriorSlots D c localInternalMatching
+      (fun i ↦ slotSmoothing (u i)))] at hc
   cases side with
   | false => simpa only [Bool.false_eq_true, ↓reduceIte, ← smoothingTurn_split] using hc
   | true =>
@@ -278,13 +221,16 @@ private theorem rawTraversal_orbitCount (side : Bool) (u : Fin n → Bool) :
     have heq : (D.reidemeisterThreePerm c).symm.permCongr
         (D.smoothingTurn u * (D.reidemeisterThreePerm c).permCongr D.edgePair.val) =
         (D.reidemeisterThreePerm c)⁻¹ * localLift D c (localSmoothing (u ∘ c)) *
-          D.reidemeisterThreePerm c * outsideSmoothing D c u * D.edgePair.val := by
+          D.reidemeisterThreePerm c * exteriorSlots D c (fun i ↦ slotSmoothing (u i)) *
+            D.edgePair.val := by
       rw [Equiv.permCongr_eq_mul, Equiv.permCongr_eq_mul, smoothingTurn_split D c u, ← Perm.inv_def]
-      have hcomm := (localLift_commute_outside D c reidemeisterThreeSlots u).eq
+      have hcomm := (localLift_commute_exteriorSlots D c reidemeisterThreeSlots
+        (fun i ↦ slotSmoothing (u i))).eq
       rw [hρ] at hcomm
       calc
         _ = (D.reidemeisterThreePerm c)⁻¹ * localLift D c (localSmoothing (u ∘ c)) *
-            (outsideSmoothing D c u * D.reidemeisterThreePerm c) * D.edgePair.val := by group
+            (exteriorSlots D c (fun i ↦ slotSmoothing (u i)) * D.reidemeisterThreePerm c) *
+              D.edgePair.val := by group
         _ = _ := by rw [← hcomm]; group
     rw [← Equiv.orbitCount_permCongr (D.reidemeisterThreePerm c).symm,
       heq]
@@ -364,15 +310,15 @@ private theorem rawLoopCount_pos (u : Fin n → Bool) : 1 ≤ rawLoopCount D u :
   have hn := (c 0).isLt
   omega
 
-private theorem outsideSmoothing_assemble (q q' : Fin 3 → Bool)
+private theorem exteriorSlots_assemble (q q' : Fin 3 → Bool)
     (r : {i : Fin n // i ∉ Set.range c} → Bool) :
-    outsideSmoothing D c (assembleState c q r) =
-      outsideSmoothing D c (assembleState c q' r) := by
+    exteriorSlots D c (fun i ↦ slotSmoothing (assembleState c q r i)) =
+      exteriorSlots D c (fun i ↦ slotSmoothing (assembleState c q' r i)) := by
   apply Equiv.ext
   intro x
   obtain ⟨z, rfl⟩ := D.halfEdge.surjective x
   obtain ⟨⟨i, t⟩, rfl⟩ := (crossingSlotEquiv n).surjective z
-  rw [← crossing_apply, outsideSmoothing_crossing, outsideSmoothing_crossing]
+  rw [← crossing_apply, exteriorSlots_crossing, exteriorSlots_crossing]
   by_cases hi : i ∈ Set.range c
   · simp only [hi, ↓reduceIte]
   · have hq := assembleState_outside c q r ⟨i, hi⟩
@@ -383,7 +329,7 @@ private theorem pairingTraversal_assemble (q : Fin 3 → Bool)
     (r : {i : Fin n // i ∉ Set.range c} → Bool) (k : Fin 5) :
     pairingTraversal D c (assembleState c q r) k =
       pairingTraversal D c (assembleState c (fun _ ↦ false) r) k := by
-  rw [pairingTraversal, pairingTraversal, outsideSmoothing_assemble D c q (fun _ ↦ false) r]
+  rw [pairingTraversal, pairingTraversal, exteriorSlots_assemble D c q (fun _ ↦ false) r]
 
 private def extraCircle (q : Fin 3 → Bool) : ℕ :=
   if q 0 = false ∧ q 1 = true ∧ q 2 = false then 1 else 0

@@ -14,8 +14,9 @@ import TauCeti.Data.Fin.Basic
 
 Replacing the three-crossing triangle preserves its boundary face traversal and the connected
 components of the underlying graph. Consequently the third Reidemeister move preserves the
-number of faces and planarity, for any surrounding PD-code. Only the three triangle arcs
-are required; the strand heights play no role.
+number of faces and planarity, for any surrounding PD-code. Faces and planarity require the
+three triangle arcs; preserving graph components requires only the two arcs connecting the
+first crossing to the second and the second to the third. The strand heights play no role.
 
 ## References
 
@@ -80,42 +81,13 @@ private theorem faceSkeleton_internal (p : Fin 3 × Fin 4) (hp : localInternal p
   simp only [localInternal_iff]
   decide
 
-private def outsideRotation : Perm (Fin (4 * n)) :=
-  D.halfEdge.permCongr ((crossingSlotEquiv n).permCongr
-    (Equiv.prodCongrRight fun i ↦ if i ∈ Set.range c then 1 else finRotate 4))
-
-private theorem outsideRotation_crossing (i : Fin n) (s : Fin 4) :
-    outsideRotation D c (D.crossing i s) =
-      D.crossing i ((if i ∈ Set.range c then 1 else finRotate 4) s) := by
-  simp only [outsideRotation, crossing_apply, Equiv.permCongr_apply,
-    Equiv.symm_apply_apply, Equiv.prodCongrRight_apply]
-
-private theorem outsideRotation_local (p : Fin 3 × Fin 4) :
-    outsideRotation D c (triangleEmbedding D c p) = triangleEmbedding D c p := by
-  rw [triangleEmbedding_apply, outsideRotation_crossing]
-  simp only [Set.mem_range_self, ↓reduceIte, Perm.one_apply]
-
-private theorem localLift_commute_outside (p : Perm (Fin 3 × Fin 4)) :
-    Commute (localLift D c p) (outsideRotation D c) := by
-  apply Equiv.ext
-  intro x
-  obtain ⟨y, rfl⟩ := D.halfEdge.surjective x
-  obtain ⟨⟨i, s⟩, rfl⟩ := (crossingSlotEquiv n).surjective y
-  simp only [Perm.mul_apply, ← crossing_apply]
-  by_cases hi : i ∈ Set.range c
-  · obtain ⟨j, rfl⟩ := hi
-    rw [← triangleEmbedding_apply, outsideRotation_local, localLift_apply,
-      outsideRotation_local]
-  · rw [outsideRotation_crossing, localLift_fixed D c _ hi,
-      localLift_fixed D c _ hi, outsideRotation_crossing]
-
 private theorem crossingRotation_split :
-    D.crossingRotation = localLift D c localRotation * outsideRotation D c := by
+    D.crossingRotation = localLift D c localRotation * exteriorSlots D c (fun _ ↦ finRotate 4) := by
   apply Equiv.ext
   intro x
   obtain ⟨y, rfl⟩ := D.halfEdge.surjective x
   obtain ⟨⟨i, s⟩, rfl⟩ := (crossingSlotEquiv n).surjective y
-  rw [crossingRotation_crossing, Perm.mul_apply, ← crossing_apply, outsideRotation_crossing]
+  rw [crossingRotation_crossing, Perm.mul_apply, ← crossing_apply, exteriorSlots_crossing]
   by_cases hi : i ∈ Set.range c
   · obtain ⟨j, rfl⟩ := hi
     simp only [Set.mem_range_self, ↓reduceIte, Perm.one_apply]
@@ -125,52 +97,27 @@ private theorem crossingRotation_split :
     rw [localLift_fixed D c _ hi]
 
 private def skeletonTraversal : Perm (Fin (4 * n)) :=
-  localLift D c faceSkeleton * outsideRotation D c * outsideEdges D c
+  localLift D c faceSkeleton * exteriorSlots D c (fun _ ↦ finRotate 4) * outsideEdges D c
 
 include h in
 private theorem skeletonTraversal_internal (p : Fin 3 × Fin 4) (hp : localInternal p) :
     skeletonTraversal D c (triangleEmbedding D c p) = triangleEmbedding D c p := by
   rw [skeletonTraversal, Perm.mul_apply, Perm.mul_apply, outsideEdges_internal D c h p hp,
-    outsideRotation_local, localLift_apply, faceSkeleton_internal p hp]
+    exteriorSlots_local, localLift_apply, faceSkeleton_internal p hp]
 
 include h in
 private theorem faceFactor_orbitCount (side : Bool) :
-    orbitCount (localLift D c (faceFactor side) * outsideRotation D c * outsideEdges D c) + 5 =
+    orbitCount (localLift D c (faceFactor side) * exteriorSlots D c (fun _ ↦ finRotate 4) *
+      outsideEdges D c) + 5 =
       orbitCount (skeletonTraversal D c) := by
-  rw [faceFactor_eq, map_mul]
-  have hprod : localLift D c (((faceFactors side).map (Function.uncurry Equiv.swap)).prod) =
-      (((faceFactors side).map fun p ↦
-        (triangleEmbedding D c p.1, triangleEmbedding D c p.2)).map
-          (Function.uncurry Equiv.swap)).prod := by
-    rw [map_list_prod]
-    simp only [List.map_map]
-    congr 1
-    apply List.map_congr_left
-    intro p hp
-    exact localLift_swap D c p.1 p.2
-  rw [hprod, mul_assoc, mul_assoc]
-  have hf := (faceFactors_isSwapForest side).map (triangleEmbedding D c)
-  have hc := hf.orbitCount_prod_mul_add_length (skeletonTraversal D c) (fun p hp ↦ ?_)
-  · have hlen : (faceFactors side).length = 5 := by cases side <;> rfl
-    simpa only [List.length_map, skeletonTraversal, mul_assoc, hlen] using hc
-  · obtain ⟨p, hmem, rfl⟩ := List.mem_map.mp hp
-    exact skeletonTraversal_internal D c h p.2 (faceFactors_internal side p hmem)
-
-private theorem faceFactor_remove_internal (side : Bool) :
-    localLift D c (faceFactor side) * outsideRotation D c * outsideEdges D c =
-      localLift D c (if side then reidemeisterThreeSlots⁻¹ * localRotation *
-        reidemeisterThreeSlots else localRotation) * outsideRotation D c * D.edgePair.val := by
-  rw [faceFactor, map_mul, outsideEdges_def]
-  have hc := (localLift_commute_outside D c localInternalMatching).eq
-  have hs : localLift D c localInternalMatching * localLift D c localInternalMatching = 1 := by
-    rw [← map_mul]
-    rw [localInternalMatching_mul_self, map_one]
-  calc
-    _ = localLift D c (if side then reidemeisterThreeSlots⁻¹ * localRotation *
-        reidemeisterThreeSlots else localRotation) *
-      (localLift D c localInternalMatching * outsideRotation D c) *
-      localLift D c localInternalMatching * D.edgePair.val := by group
-    _ = _ := by rw [hc]; simp only [mul_assoc, hs, mul_one]
+  have hlen : (faceFactors side).length = 5 := by cases side <;> rfl
+  simpa only [skeletonTraversal, mul_assoc, hlen] using
+    localLift_swapForest_orbitCount D c (faceFactor side) faceSkeleton (faceFactors side)
+      (exteriorSlots D c (fun _ ↦ finRotate 4) * outsideEdges D c)
+      (faceFactors_isSwapForest side) (faceFactor_eq side)
+      (fun p hp ↦ by
+        simpa only [skeletonTraversal, mul_assoc] using
+          skeletonTraversal_internal D c h p.2 (faceFactors_internal side p hp))
 
 include h in
 /-- The third Reidemeister move preserves the number of faces of the underlying graph. -/
@@ -178,7 +125,9 @@ include h in
     (D.reidemeisterThree c).faceCount = D.faceCount := by
   have hleft := faceFactor_orbitCount D c h false
   have hright := faceFactor_orbitCount D c h true
-  rw [faceFactor_remove_internal] at hleft hright
+  rw [faceFactor, localLift_remove_internal D c _ _
+    (localLift_commute_exteriorSlots D c localInternalMatching
+      (fun _ ↦ finRotate 4))] at hleft hright
   simp only [Bool.false_eq_true, ↓reduceIte, ← crossingRotation_split] at hleft
   simp only [↓reduceIte, map_mul, map_inv, localLift_slots] at hright
   have hr : (D.reidemeisterThree c).crossingRotation = D.crossingRotation := by
@@ -186,14 +135,15 @@ include h in
   have heq : (D.reidemeisterThreePerm c).symm.permCongr
       (D.crossingRotation * (D.reidemeisterThreePerm c).permCongr D.edgePair.val) =
       (D.reidemeisterThreePerm c)⁻¹ * localLift D c localRotation *
-        D.reidemeisterThreePerm c * outsideRotation D c * D.edgePair.val := by
+        D.reidemeisterThreePerm c * exteriorSlots D c (fun _ ↦ finRotate 4) * D.edgePair.val := by
     rw [Equiv.permCongr_eq_mul, Equiv.permCongr_eq_mul, crossingRotation_split D c,
       ← Perm.inv_def]
-    have hc := (localLift_commute_outside D c reidemeisterThreeSlots).eq
+    have hc := (localLift_commute_exteriorSlots D c reidemeisterThreeSlots (fun _ ↦ finRotate 4)).eq
     rw [localLift_slots] at hc
     calc
       _ = (D.reidemeisterThreePerm c)⁻¹ * localLift D c localRotation *
-        (outsideRotation D c * D.reidemeisterThreePerm c) * D.edgePair.val := by group
+        (exteriorSlots D c (fun _ ↦ finRotate 4) * D.reidemeisterThreePerm c) *
+          D.edgePair.val := by group
       _ = _ := by rw [← hc]; group
   rw [← heq, Equiv.orbitCount_permCongr] at hright
   rw [faceCount_def, faceCount_def, facePerm_def, facePerm_def, hr,
@@ -248,27 +198,40 @@ private theorem graphOrbit_perm (E : PDCode n)
     exact (hconn _ _).trans (hconn j s).symm
   · rw [reidemeisterThreePerm_crossing_of_notMem D c hi]
 
-include h in
 /-- The third Reidemeister move keeps the connected components of the underlying graph.
+Only the two arcs connecting the first crossing to the second and the second to the third
+are required; the third triangle arc is unrestricted.
 The equivalence sends the component represented by a half-edge to that represented by the
 same half-edge after the move. -/
-def reidemeisterThreeMonodromyOrbitEquiv :
+def reidemeisterThreeMonodromyOrbitEquiv
+    (h₀₁ : D.edgePair.val (D.crossing (c 0) 2) = D.crossing (c 1) 0)
+    (h₁₂ : D.edgePair.val (D.crossing (c 1) 1) = D.crossing (c 2) 3) :
     D.toPermutationTriple.MonodromyOrbit ≃
       (D.reidemeisterThree c).toPermutationTriple.MonodromyOrbit := by
   let E := D.reidemeisterThree c
-  -- Each triangle is connected in the crossing graph, so the local rewire acts trivially
+  -- The selected crossings are connected, so the local rewire acts trivially
   -- on its graph-component labels on both sides of the move.
-  have ht := (hasReidemeisterThreeTriangleArcs_iff D c).mp h
-  have hn := reidemeisterThree_triangle D c h
+  have hn₀₁ : E.edgePair.val (D.crossing (c 0) 1) = D.crossing (c 1) 3 := by
+    have ht := reidemeisterThree_edgePair_transport D c (D.crossing (c 1) 1)
+    rw [h₁₂] at ht
+    simpa only [E, reidemeisterThreePerm_apply_crossing, reidemeisterThreeSlots_apply,
+      Matrix.cons_val, Prod.fst, Prod.snd]
+      using ht
+  have hn₁₂ : E.edgePair.val (D.crossing (c 1) 2) = D.crossing (c 2) 0 := by
+    have ht := reidemeisterThree_edgePair_transport D c (D.crossing (c 0) 2)
+    rw [h₀₁] at ht
+    simpa only [E, reidemeisterThreePerm_apply_crossing, reidemeisterThreeSlots_apply,
+      Matrix.cons_val, Prod.fst, Prod.snd]
+      using ht
   have hρOld : ∀ x, graphOrbit D (D.reidemeisterThreePerm c x) = graphOrbit D x :=
-    graphOrbit_perm D c D (graphOrbit_triangle c D 2 0 1 3 ht.1 ht.2.1)
+    graphOrbit_perm D c D (graphOrbit_triangle c D 2 0 1 3 h₀₁ h₁₂)
   have hρNew : ∀ x, graphOrbit E (D.reidemeisterThreePerm c x) = graphOrbit E x := by
     apply graphOrbit_perm D c E
     intro j s
     simpa only [E, reidemeisterThree_crossing] using
       graphOrbit_triangle c E 1 3 2 0
-        (by simpa only [E, reidemeisterThree_crossing] using hn.1)
-        (by simpa only [E, reidemeisterThree_crossing] using hn.2.1) j s
+        (by simpa only [E, reidemeisterThree_crossing] using hn₀₁)
+        (by simpa only [E, reidemeisterThree_crossing] using hn₁₂) j s
   have heOld : ∀ x, graphOrbit D (D.edgePair.val x) = graphOrbit D x := by
     intro x
     simpa only [graphOrbit, toPermutationTriple_σ1] using D.toPermutationTriple.mk_σ1_apply x
@@ -306,27 +269,42 @@ def reidemeisterThreeMonodromyOrbitEquiv :
       simpa only [graphOrbit, toPermutationTriple_σ0] using D.toPermutationTriple.mk_σ0_apply x
     · simpa only [toPermutationTriple_σ1] using heNewOld x
 
+variable
+  (h₀₁ : D.edgePair.val (D.crossing (c 0) 2) = D.crossing (c 1) 0)
+  (h₁₂ : D.edgePair.val (D.crossing (c 1) 1) = D.crossing (c 2) 3)
+
 /-- The graph-component equivalence preserves the half-edge representing a component. -/
 @[simp] theorem reidemeisterThreeMonodromyOrbitEquiv_apply (x : Fin (4 * n)) :
-    reidemeisterThreeMonodromyOrbitEquiv D c h (Quotient.mk _ x) = Quotient.mk _ x := (rfl)
+    reidemeisterThreeMonodromyOrbitEquiv D c h₀₁ h₁₂ (Quotient.mk _ x) =
+      Quotient.mk _ x := (rfl)
 
 /-- The inverse graph-component equivalence also preserves its half-edge representative. -/
 @[simp] theorem reidemeisterThreeMonodromyOrbitEquiv_symm_apply (x : Fin (4 * n)) :
-    (reidemeisterThreeMonodromyOrbitEquiv D c h).symm (Quotient.mk _ x) =
+    (reidemeisterThreeMonodromyOrbitEquiv D c h₀₁ h₁₂).symm (Quotient.mk _ x) =
       Quotient.mk _ x := (rfl)
 
-include h in
-/-- The move preserves the number of connected components of the underlying graph. -/
-@[simp] theorem card_monodromyOrbit_reidemeisterThree :
+/-- The move preserves the number of connected components of the underlying graph when
+the first two triangle arcs are present. -/
+@[simp] theorem card_monodromyOrbit_reidemeisterThree
+    (h₀₁ : D.edgePair.val (D.halfEdge (crossingSlotEquiv n (c 0, 2))) =
+      D.halfEdge (crossingSlotEquiv n (c 1, 0)))
+    (h₁₂ : D.edgePair.val (D.halfEdge (crossingSlotEquiv n (c 1, 1))) =
+      D.halfEdge (crossingSlotEquiv n (c 2, 3))) :
     Nat.card (D.reidemeisterThree c).toPermutationTriple.MonodromyOrbit =
       Nat.card D.toPermutationTriple.MonodromyOrbit :=
-  Nat.card_congr (reidemeisterThreeMonodromyOrbitEquiv D c h).symm
+  Nat.card_congr (reidemeisterThreeMonodromyOrbitEquiv D c
+    (by simpa only [crossing_apply] using h₀₁)
+    (by simpa only [crossing_apply] using h₁₂)).symm
 
 include h in
 /-- A PD-code is planar exactly when its third Reidemeister replacement is planar. -/
 @[simp] theorem isPlanar_reidemeisterThree_iff :
     (D.reidemeisterThree c).IsPlanar ↔ D.IsPlanar := by
+  have ht := (hasReidemeisterThreeTriangleArcs_iff D c).mp h
   rw [isPlanar_iff_faceCount_eq, isPlanar_iff_faceCount_eq,
-    faceCount_reidemeisterThree D c h, card_monodromyOrbit_reidemeisterThree D c h]
+    faceCount_reidemeisterThree D c h,
+    card_monodromyOrbit_reidemeisterThree D c
+      (by simpa only [crossing_apply] using ht.1)
+      (by simpa only [crossing_apply] using ht.2.1)]
 
 end TauCeti.PDCode
