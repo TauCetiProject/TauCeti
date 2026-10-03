@@ -33,8 +33,8 @@ polynomial has degree at most one, so it contributes at most one more point, and
 fixed points are among its at most two roots. Contrapositively, a matrix fixing three distinct
 points of `ℙ¹(K)` is scalar, so an element of `PGL₂(K)` fixing three distinct points is trivial,
 and two elements agreeing on three distinct points are equal. This **three-point rigidity** is what
-makes a group acting on `ℙ¹(K)` through `PGL₂(K)` embed into the permutations of any invariant set
-of at least three points.
+makes a subgroup of `PGL₂(K)` embed into the permutations of any invariant set of at least three
+points of `ℙ¹(K)`.
 
 ## Main results
 
