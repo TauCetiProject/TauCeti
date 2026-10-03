@@ -17,11 +17,12 @@ public import TauCeti.InformationTheory.Coding.Reindex
 
 This file computes the Euclidean dual of the codes obtained from a linear code by the elementary
 constructions: puncturing, shortening, direct sums, reindexing, and linear (in particular
-monomial) transformations, and compares the automorphism groups of a code and of its dual.
+monomial) equivalences of the coordinate space, and compares the automorphism groups of a code
+and of its dual.
 
 For a set `s` of *retained* coordinates, puncturing and shortening are exchanged by duality:
 `(puncture C s)^⊥ = shorten C^⊥ s` and `(shorten C s)^⊥ = puncture C^⊥ s`. The dual of a direct
-sum is the direct sum of the duals. A linear transformation of the coordinate space acts on the
+sum is the direct sum of the duals. A linear equivalence of the coordinate space acts on the
 dual through its contragredient for the dot product. The contragredient of a monomial
 transformation which rescales coordinates by units `u` rescales by the inverse units `u⁻¹` and
 relabels the coordinates in the same way; in particular, monomially (respectively permutation)
