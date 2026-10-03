@@ -50,19 +50,10 @@ private def padicCompletionUnitsNormHom :
       ((powerClassMap (p ^ m) (Algebra.normUnits K : Lˣ →* Kˣ)).comp
         (QuotientGroup.quotientMulEquivOfEq
           (powerSubgroup_eq_range_powMonoidHom Lˣ (p ^ m)).symm).toMonoidHom)
-  refine MonoidHom.codRestrict
-    (MonoidHom.pi fun m ↦ (norm m).comp
-      ((Pi.evalMonoidHom _ m).comp (padicCompletionUnits p L).subtype)) _ ?_
-  intro x
-  rw [mem_padicCompletionUnits_iff]
-  intro m
-  have hx := (mem_padicCompletionUnits_iff p L x.1).mp x.2 m
-  have hnorm (y : Lˣ ⧸ (powMonoidHom (p ^ (m + 1)) : Lˣ →* Lˣ).range) :
-      padicCompletionTransition p K m (norm (m + 1) y) =
-        norm m (padicCompletionTransition p L m y) := by
-    induction y using QuotientGroup.induction_on with
-    | H y => simp [norm]
-  simpa using (hnorm (x.1 (m + 1))).trans (congrArg (norm m) hx)
+  refine padicCompletionUnitsLift p L K norm ?_
+  intro m y
+  induction y using QuotientGroup.induction_on with
+  | H y => simp [norm]
 
 omit [Fact p.Prime] in
 @[simp]
@@ -72,7 +63,9 @@ private theorem padicCompletionUnitsNormHom_apply (x : ↑(padicCompletionUnits 
       QuotientGroup.quotientMulEquivOfEq (powerSubgroup_eq_range_powMonoidHom Kˣ (p ^ m))
         (powerClassMap (p ^ m) (Algebra.normUnits K : Lˣ →* Kˣ)
           (QuotientGroup.quotientMulEquivOfEq
-            (powerSubgroup_eq_range_powMonoidHom Lˣ (p ^ m)).symm (x.1 m))) := (rfl)
+            (powerSubgroup_eq_range_powMonoidHom Lˣ (p ^ m)).symm (x.1 m))) := by
+  simp only [padicCompletionUnitsNormHom, padicCompletionUnitsLift_apply,
+    MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom]
 
 /-- The `ℤ_p`-linear norm `A(L) → A(K)` induced by the field norm at every finite level.
 Finiteness excludes the constant-one value of Mathlib's total norm on infinite extensions. -/
