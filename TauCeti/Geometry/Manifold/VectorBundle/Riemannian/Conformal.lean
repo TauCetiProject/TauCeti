@@ -19,7 +19,7 @@ the square of the height, and the Poincaré ball model is the Euclidean metric m
 
 ## Main definitions
 
-* `Bundle.ContMDiffRiemannianMetric.conformal`: the rescaled metric `f • g`.
+* `Bundle.ContMDiffRiemannianMetric.rescale`: the rescaled metric `f • g`.
 
 ## References
 
@@ -48,7 +48,7 @@ variable
 
 /-- The Riemannian metric `f • g` obtained by multiplying a `C^n` Riemannian metric `g` by a
 positive `C^n` function `f` on the base. -/
-def conformal (g : ContMDiffRiemannianMetric IB n F E) (f : B → ℝ)
+def rescale (g : ContMDiffRiemannianMetric IB n F E) (f : B → ℝ)
     (hf : ContMDiff IB 𝓘(ℝ) n f) (hf_pos : ∀ b, 0 < f b) :
     ContMDiffRiemannianMetric IB n F E where
   inner b := f b • g.inner b
@@ -73,9 +73,9 @@ def conformal (g : ContMDiffRiemannianMetric IB n F E) (f : B → ℝ)
 omit [∀ b, IsTopologicalAddGroup (E b)] in
 /-- The rescaled metric `f • g` is `f b` times `g` on the fibre over `b`. -/
 @[simp]
-theorem conformal_inner (g : ContMDiffRiemannianMetric IB n F E) (f : B → ℝ)
+theorem rescale_inner (g : ContMDiffRiemannianMetric IB n F E) (f : B → ℝ)
     (hf : ContMDiff IB 𝓘(ℝ) n f) (hf_pos : ∀ b, 0 < f b) (b : B) (v w : E b) :
-    (g.conformal f hf hf_pos).inner b v w = f b * g.inner b v w :=
+    (g.rescale f hf hf_pos).inner b v w = f b * g.inner b v w :=
   (rfl)
 
 end Bundle.ContMDiffRiemannianMetric

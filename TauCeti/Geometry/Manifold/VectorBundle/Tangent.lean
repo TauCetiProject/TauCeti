@@ -55,6 +55,8 @@ identification.
   tangent-space equivalence.
 * `TauCeti.Manifold.tangentMap_subtype_val`: the tangent map of the inclusion under this
   equivalence.
+* `TauCeti.Manifold.tangentSpaceOpenEquiv_mfderiv_apply`: under this equivalence, the differential
+  of a map between open submanifolds is that of any ambient map it restricts.
 * `TauCeti.Manifold.instT2SpaceTangentBundleModelSpace`: a model space has a Hausdorff tangent
   bundle. It is an instance in the `TauCeti` scope, for model spaces `H` whose Hausdorffness is
   not already an instance; over a Hausdorff manifold the tangent bundle is Hausdorff by the general
@@ -588,6 +590,24 @@ theorem tangentMap_subtype_val {U : Opens M}
     tangentMap I I (Subtype.val : U → M) p =
       ⟨(p.proj : M), tangentSpaceOpenEquiv (I := I) p.proj p.2⟩ := by
   simp only [tangentMap, mfderiv_subtype_val, ContinuousLinearEquiv.coe_coe]
+
+/-- If a differentiable map `f` between open submanifolds is the restriction of a map `A` of the
+ambient manifolds, then under the canonical tangent-space identifications the differential of `f`
+at `x` is the differential of `A` at `x`. -/
+theorem tangentSpaceOpenEquiv_mfderiv_apply
+    {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+    {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
+    {M' : Type*} [TopologicalSpace M'] [ChartedSpace H' M']
+    {U : Opens M} {V : Opens M'} {f : U → V} {A : M → M'} {x : U}
+    (hf : MDifferentiableAt I I' f x) (hA : MDifferentiableAt I I' A x)
+    (hcomp : Subtype.val ∘ f = A ∘ Subtype.val) (v : TangentSpace I x) :
+    tangentSpaceOpenEquiv (I := I') (f x) (mfderiv I I' f x v) =
+      mfderiv I I' A x (tangentSpaceOpenEquiv (I := I) x v) := by
+  have h := mfderiv_comp_apply x
+    (contMDiff_subtype_val.mdifferentiableAt one_ne_zero (x := f x)) hf v
+  rw [hcomp, mfderiv_comp_apply x hA (contMDiff_subtype_val.mdifferentiableAt one_ne_zero) v,
+    mfderiv_subtype_val, mfderiv_subtype_val] at h
+  exact h.symm
 
 /-- The tangent bundle of a model space is Hausdorff. -/
 theorem instT2SpaceTangentBundleModelSpace :
