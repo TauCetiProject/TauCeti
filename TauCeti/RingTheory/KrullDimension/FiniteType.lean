@@ -18,6 +18,7 @@ public import Mathlib.RingTheory.Spectrum.Prime.Topology
 public import Mathlib.RingTheory.TensorProduct.MvPolynomial
 public import TauCeti.RingTheory.KrullDimension.Integral
 public import TauCeti.RingTheory.KrullDimension.Quotient
+import Mathlib.RingTheory.Ideal.KrullsHeightTheorem
 
 /-!
 # Krull dimension of finitely generated algebras over a field

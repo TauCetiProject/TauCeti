@@ -213,8 +213,13 @@ section AddCommMonoid
 
 variable {k : Type w} {Q : Type u} [AddCommMonoid k] [Quiver.{v} Q]
 
-noncomputable instance : AddCommMonoid (pathAlgebra k Q) :=
-  inferInstanceAs (AddCommMonoid (Quiver.TotalPath Q →₀ k))
+-- Spell out the scalar-action fields as functions on `pathAlgebra`: directly inherited
+-- functions have `Finsupp` domains, while `inferInstanceAs` creates separate data wrappers.
+-- These explicit lambdas let `nsmul`/`zsmul` agree with the module action at instance-search
+-- transparency when the coefficients are `ℕ` or `ℤ`.
+noncomputable instance : AddCommMonoid (pathAlgebra k Q) where
+  __ := (inferInstance : AddCommMonoid (Quiver.TotalPath Q →₀ k))
+  nsmul := fun n f => (inferInstance : SMul ℕ (Quiver.TotalPath Q →₀ k)).smul n f
 
 noncomputable instance : Inhabited (pathAlgebra k Q) :=
   inferInstanceAs (Inhabited (Quiver.TotalPath Q →₀ k))
@@ -250,8 +255,9 @@ section Module
 
 variable {k : Type w} {Q : Type u} [Semiring k] [Quiver.{v} Q]
 
-noncomputable instance : Module k (pathAlgebra k Q) :=
-  inferInstanceAs (Module k (Quiver.TotalPath Q →₀ k))
+noncomputable instance : Module k (pathAlgebra k Q) where
+  __ := (inferInstance : Module k (Quiver.TotalPath Q →₀ k))
+  smul := fun r f => (inferInstance : SMul k (Quiver.TotalPath Q →₀ k)).smul r f
 
 /-- Scaling a basis path scales its coefficient. -/
 @[simp]
@@ -647,8 +653,10 @@ section Ring
 
 variable {k : Type w} {Q : Type u} [Quiver.{v} Q]
 
-noncomputable instance [AddCommGroup k] : AddCommGroup (pathAlgebra k Q) :=
-  inferInstanceAs (AddCommGroup (Quiver.TotalPath Q →₀ k))
+noncomputable instance [AddCommGroup k] : AddCommGroup (pathAlgebra k Q) where
+  __ := (inferInstance : AddCommGroup (Quiver.TotalPath Q →₀ k))
+  toAddCommMonoid := inferInstance
+  zsmul := fun n f => (inferInstance : SMul ℤ (Quiver.TotalPath Q →₀ k)).smul n f
 
 noncomputable instance [NonUnitalNonAssocRing k] : NonUnitalNonAssocRing (pathAlgebra k Q) where
 

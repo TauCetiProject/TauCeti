@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Skew.Basic
+import Mathlib.Tactic.LinearCombination
 
 /-!
 # The exterior skew-zigzag parameter

@@ -11,6 +11,7 @@ public import TauCeti.Algebra.Bialgebra.Quotient
 public import TauCeti.Algebra.HopfAlgebra.Basic
 public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Basic
 
+import Mathlib.RingTheory.Nilpotent.Defs
 import TauCeti.RingTheory.Flat.TensorProduct
 
 /-!

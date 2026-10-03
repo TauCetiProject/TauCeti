@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.QuadraticDiscriminant
 public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
+import Mathlib.Tactic.LinearCombination
 import TauCeti.Algebra.QuadraticDiscriminant
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 

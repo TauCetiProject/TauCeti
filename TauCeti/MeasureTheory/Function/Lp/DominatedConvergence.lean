@@ -13,8 +13,8 @@ import Mathlib.MeasureTheory.Integral.Lebesgue.DominatedConvergence
 # Dominated convergence in `Lᵖ` for eventually equal approximations
 
 For a finite nonzero exponent `q`, if the functions `f n` eventually agree with `g` at almost
-every point and the errors `‖f n - g‖` are eventually dominated by a fixed multiple of `‖g‖`,
-where `g ∈ Lᵖ`, then `f n → g` in the `Lᵖ` seminorm.  This is the shape produced by truncating a
+every point and the errors `‖f n - g‖` are eventually dominated by a fixed multiple of an
+`Lᵖ` function, then `f n → g` in the `Lᵖ` seminorm. This is the shape produced by truncating a
 function by cutoffs that are eventually `1` on every bounded set.
 
 ## Main declarations
@@ -31,24 +31,26 @@ open scoped ENNReal Topology
 
 /-- **Dominated convergence in `Lᵖ`.** For a finite nonzero exponent, if `f n` eventually agrees
 with `g` at almost every point and `‖f n - g‖` is eventually dominated by a fixed multiple of
-`‖g‖`, where `g ∈ Lᵖ`, then `f n → g` in the `Lᵖ` seminorm.  Both the measurability of `f n` and
-the domination are only needed eventually along `l`. -/
-theorem tendsto_eLpNorm_sub_of_eventually_eq {α ι F : Type*} [MeasurableSpace α]
-    {m : Measure α} [NormedAddCommGroup F] {l : Filter ι} [l.IsCountablyGenerated] {q : ℝ≥0∞}
+an `Lᵖ` function, then `f n → g` in the `Lᵖ` seminorm. Both the measurability of `f n` and
+the domination are only needed eventually along `l`. The limit needs only to be a.e. strongly
+measurable; the dominating function supplies the integrability of the errors. -/
+theorem tendsto_eLpNorm_sub_of_eventually_eq {α ι F G : Type*} [MeasurableSpace α]
+    {m : Measure α} [NormedAddCommGroup F] [NormedAddCommGroup G]
+    {l : Filter ι} [l.IsCountablyGenerated] {q : ℝ≥0∞}
     (hq0 : q ≠ 0) (hq : q ≠ ∞) {f : ι → α → F} {g : α → F}
-    (hf : ∀ᶠ n in l, AEStronglyMeasurable (f n) m) (hg : MemLp g q m)
-    {C : ℝ} (hC : 0 ≤ C) (hbound : ∀ᶠ n in l, ∀ᵐ x ∂m, ‖f n x - g x‖ ≤ C * ‖g x‖)
+    (hf : ∀ᶠ n in l, AEStronglyMeasurable (f n) m) (hg : AEStronglyMeasurable g m)
+    {bound : α → G} (hb : MemLp bound q m)
+    {C : ℝ} (hC : 0 ≤ C) (hbound : ∀ᶠ n in l, ∀ᵐ x ∂m, ‖f n x - g x‖ ≤ C * ‖bound x‖)
     (hlim : ∀ᵐ x ∂m, ∀ᶠ n in l, f n x = g x) :
     Tendsto (fun n => eLpNorm (f n - g) q m) l (𝓝 0) := by
   have hr : 0 < q.toReal := ENNReal.toReal_pos hq0 hq
   refine Tendsto.congr' (hf.mono fun n hn =>
-    (eLpNorm_eq_lintegral_rpow_enorm_toReal hq0 hq
-      (hn.sub hg.aestronglyMeasurable)).symm) ?_
+    (eLpNorm_eq_lintegral_rpow_enorm_toReal hq0 hq (hn.sub hg)).symm) ?_
   have hlint : Tendsto (fun n => ∫⁻ x, ‖(f n - g) x‖ₑ ^ q.toReal ∂m) l (𝓝 0) := by
     have hdom := tendsto_lintegral_filter_of_dominated_convergence' (μ := m)
       (F := fun n x => ‖(f n - g) x‖ₑ ^ q.toReal) (f := fun _ => 0)
-      (fun x => (ENNReal.ofReal C * ‖g x‖ₑ) ^ q.toReal)
-      (hf.mono fun n hn => (hn.sub hg.aestronglyMeasurable).enorm.pow_const _)
+      (fun x => (ENNReal.ofReal C * ‖bound x‖ₑ) ^ q.toReal)
+      (hf.mono fun n hn => (hn.sub hg).enorm.pow_const _)
       (hbound.mono fun _ hn => hn.mono fun x hx => by
         refine ENNReal.rpow_le_rpow ?_ hr.le
         rw [Pi.sub_apply, ← ofReal_norm, ← ofReal_norm, ← ENNReal.ofReal_mul hC]
@@ -57,7 +59,7 @@ theorem tendsto_eLpNorm_sub_of_eventually_eq {α ι F : Type*} [MeasurableSpace 
         simp_rw [ENNReal.mul_rpow_of_nonneg _ _ hr.le]
         rw [lintegral_const_mul' _ _ (ENNReal.rpow_ne_top_of_nonneg hr.le ENNReal.ofReal_ne_top)]
         exact ENNReal.mul_ne_top (ENNReal.rpow_ne_top_of_nonneg hr.le ENNReal.ofReal_ne_top)
-          (lintegral_rpow_enorm_lt_top_of_eLpNorm_lt_top hq0 hq hg).ne)
+          (lintegral_rpow_enorm_lt_top_of_eLpNorm_lt_top hq0 hq hb).ne)
       (hlim.mono fun x hx => tendsto_const_nhds.congr' (hx.mono fun n hn => by
         simp [hn, ENNReal.zero_rpow_of_pos hr]))
     simpa only [lintegral_zero] using hdom

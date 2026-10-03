@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Combinatorics.Quiver.Basic
 public import Mathlib.Data.Fintype.Sum
 public import Mathlib.Tactic.DeriveFintype
+public import TauCeti.Combinatorics.Quiver.UnderlyingGraph
 
 /-!
 # The extended Dynkin quiver of type `E₇~`
@@ -25,7 +25,9 @@ star `TauCeti.starCartanMatrix ![1, 3, 3]`, which is the generalized Cartan matr
 The arrows form the inductive family `TauCeti.Quiver.AffineE7.Arrow`, with one constructor for
 each kind of arrow, so that a definition by cases on an arrow lists exactly the arrows of `E₇~`.
 
-This file carries the vertex and arrow data alone.
+This file carries the vertex and arrow data, and the shape of the underlying graph: it is a tree,
+with at most one arrow between any two vertices, because every vertex is the source of at most one
+arrow and every arrow points towards the centre.
 
 ## Main definitions
 
@@ -91,6 +93,33 @@ instance instSubsingletonHom (a b : AffineE7) : Subsingleton (a ⟶ b) :=
 /-- Each arrow space of `TauCeti.Quiver.AffineE7` is finite, having at most one arrow. -/
 noncomputable instance instFintypeHom (a b : AffineE7) : Fintype (a ⟶ b) :=
   Fintype.ofFinite _
+
+
+/-! ### The underlying graph -/
+
+/-- The distance to the centre, which every arrow lowers. -/
+private def height : AffineE7 → ℕ
+  | .center => 0
+  | .short => 1
+  | .inner _ => 1
+  | .middle _ => 2
+  | .outer _ => 3
+
+private theorem height_lt ⦃a b : AffineE7⦄ (e : a ⟶ b) : height b < height a := by
+  cases e <;> simp [height]
+
+/-- The arrows out of a vertex of `TauCeti.Quiver.AffineE7` all share their target. -/
+private theorem eq_of_hom_of_hom ⦃a b b' : AffineE7⦄ (e : a ⟶ b) (e' : a ⟶ b') : b = b' := by
+  cases e <;> cases e' <;> rfl
+
+/-- **The underlying graph of `TauCeti.Quiver.AffineE7` is acyclic**, so it is the tree `E₇~`. -/
+theorem isAcyclic_underlyingGraph : (underlyingGraph AffineE7).IsAcyclic :=
+  isAcyclic_underlyingGraph_of_lt height height_lt eq_of_hom_of_hom
+
+/-- Two vertices of `TauCeti.Quiver.AffineE7` are joined by at most one arrow, counted in both
+directions. -/
+theorem subsingleton_hom_sum (a b : AffineE7) : Subsingleton ((a ⟶ b) ⊕ (b ⟶ a)) :=
+  subsingleton_hom_sum_of_lt height height_lt a b
 
 end AffineE7
 

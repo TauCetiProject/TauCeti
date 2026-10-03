@@ -14,6 +14,7 @@ public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Product
 public import TauCeti.Topology.Algebra.Group.Profinite.Rank
 public import TauCeti.NumberTheory.Padics.RingHoms
 public import Mathlib.Topology.MetricSpace.Ultra.TotallySeparated
+import Mathlib.Topology.Separation.Connected
 
 /-!
 # The additive group of the p-adic integers

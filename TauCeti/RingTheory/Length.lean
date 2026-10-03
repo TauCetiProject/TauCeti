@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.Length
 public import Mathlib.RingTheory.OrderOfVanishing.Basic
 -- Proof-only: `QuotSMulTop` supplies the transport used to prove `length_quotient_lsmul_congr`;
 -- no statement in this file mentions it.
+import Mathlib.RingTheory.Ideal.Quotient.Noetherian
 import Mathlib.RingTheory.QuotSMulTop
 
 /-!

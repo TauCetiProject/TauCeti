@@ -82,9 +82,13 @@ fixes `v` instead of negating it and is a transvection rather than a reflection 
   `QuadraticMap.IsometryEquiv` does not carry.
 * `TauCeti.QuadraticMap.orthogonalGroupCongr`: isometric quadratic maps have isomorphic orthogonal
   groups. Over an algebraically closed field this is what makes `O(Q)` depend only on the rank of
-  `Q`.
+  `Q`. The transport respects identity, composition, and inverses
+  (`orthogonalGroupCongr_refl`, `QuadraticMap.IsometryEquiv.orthogonalGroupCongr_trans`,
+  `QuadraticMap.IsometryEquiv.orthogonalGroupCongr_symm`) and preserves the determinant
+  (`QuadraticMap.IsometryEquiv.orthogonalDet_orthogonalGroupCongr`).
 * `QuadraticMap.IsometryEquiv.specialOrthogonalGroupCongr`: isometric quadratic maps have isomorphic
-  special orthogonal groups as well.
+  special orthogonal groups as well, functorially and compatibly with the inclusion into the full
+  orthogonal group.
 * `TauCeti.QuadraticMap.reflection_mem_orthogonalGroup`: the reflection in a vector of invertible
   norm is orthogonal; `TauCeti.QuadraticMap.reflection_mul_self` says it is an involution, and
   `TauCeti.QuadraticMap.reflection_apply_of_isOrtho` that it fixes the orthogonal hyperplane,
@@ -230,8 +234,11 @@ theorem coe_orthogonalGroupEquivIsometryEquiv_symm (Q : QuadraticMap R M N)
 
 section Congr
 
-variable {M₁ : Type*} {M₂ : Type*} [AddCommMonoid M₁] [Module R M₁] [AddCommMonoid M₂] [Module R M₂]
+variable {M₁ : Type*} {M₂ : Type*} {M₃ : Type*}
+  [AddCommMonoid M₁] [Module R M₁] [AddCommMonoid M₂] [Module R M₂]
+  [AddCommMonoid M₃] [Module R M₃]
   {Q₁ : QuadraticMap R M₁ N} {Q₂ : QuadraticMap R M₂ N}
+  {Q₃ : QuadraticMap R M₃ N}
 
 /-- Conjugation by an isometric equivalence carries `O(Q₁)` onto `O(Q₂)`. -/
 private theorem map_orthogonalGroup (e : Q₁.IsometryEquiv Q₂) :
@@ -270,6 +277,33 @@ theorem coe_orthogonalGroupCongr_symm_apply (e : Q₁.IsometryEquiv Q₂) (g : o
     (m : M₁) : ((orthogonalGroupCongr e).symm g : M₁ ≃ₗ[R] M₁) m
       = e.toLinearEquiv.symm ((g : M₂ ≃ₗ[R] M₂) (e.toLinearEquiv m)) := by
   simp [orthogonalGroupCongr, LinearEquiv.autCongr_symm_apply_apply]
+
+/-- Transporting the orthogonal group along the identity isometry is the identity equivalence. -/
+@[simp]
+theorem orthogonalGroupCongr_refl :
+    orthogonalGroupCongr (QuadraticMap.IsometryEquiv.refl Q₁) =
+      MulEquiv.refl (orthogonalGroup Q₁) := by
+  ext g m
+  simp
+  rfl
+
+/-- Orthogonal-group transport respects composition of isometries. -/
+@[simp]
+theorem _root_.QuadraticMap.IsometryEquiv.orthogonalGroupCongr_trans
+    (e₁₂ : Q₁.IsometryEquiv Q₂) (e₂₃ : Q₂.IsometryEquiv Q₃) :
+    orthogonalGroupCongr (e₁₂.trans e₂₃) =
+      (orthogonalGroupCongr e₁₂).trans (orthogonalGroupCongr e₂₃) := by
+  ext g m
+  simp
+  rfl
+
+/-- Inverting orthogonal-group transport is transport along the inverse isometry. -/
+theorem _root_.QuadraticMap.IsometryEquiv.orthogonalGroupCongr_symm
+    (e : Q₁.IsometryEquiv Q₂) :
+    (orthogonalGroupCongr e).symm = orthogonalGroupCongr e.symm := by
+  ext g m
+  simp
+  rfl
 
 end Congr
 
@@ -541,9 +575,11 @@ variable {Q : QuadraticMap R M N}
 
 section SpecialCongr
 
-variable {M₁ : Type*} {M₂ : Type*} [AddCommGroup M₁] [Module R M₁]
-  [AddCommGroup M₂] [Module R M₂]
+variable {M₁ : Type*} {M₂ : Type*} {M₃ : Type*}
+  [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂] [Module R M₂]
+  [AddCommGroup M₃] [Module R M₃]
   {Q₁ : QuadraticMap R M₁ N} {Q₂ : QuadraticMap R M₂ N}
+  {Q₃ : QuadraticMap R M₃ N}
 
 /-- Conjugation by an isometric equivalence carries `SO(Q₁)` onto `SO(Q₂)`. -/
 private theorem map_specialOrthogonalGroup (e : Q₁.IsometryEquiv Q₂) :
@@ -596,6 +632,66 @@ theorem _root_.QuadraticMap.IsometryEquiv.coe_specialOrthogonalGroupCongr_symm_a
   simp only [QuadraticMap.IsometryEquiv.specialOrthogonalGroupCongr,
     Subgroup.coe_congrOfMapEq_symm_apply,
     LinearEquiv.autCongr_symm_apply_apply]
+  rfl
+
+/-- Transporting an orthogonal automorphism along an isometry preserves its determinant.
+
+This has high simplifier priority so it fires before the general `orthogonalDet_apply` projection
+lemma hides the transport. -/
+@[simp high]
+theorem _root_.QuadraticMap.IsometryEquiv.orthogonalDet_orthogonalGroupCongr
+    (e : Q₁.IsometryEquiv Q₂) (g : orthogonalGroup Q₁) :
+    _root_.QuadraticMap.orthogonalDet Q₂ (orthogonalGroupCongr e g) =
+      _root_.QuadraticMap.orthogonalDet Q₁ g := by
+  rw [_root_.QuadraticMap.orthogonalDet_apply, _root_.QuadraticMap.orthogonalDet_apply]
+  calc
+    LinearEquiv.det ((orthogonalGroupCongr e g : orthogonalGroup Q₂) : M₂ ≃ₗ[R] M₂) =
+        LinearEquiv.det ((e.toLinearEquiv.symm.trans (g : M₁ ≃ₗ[R] M₁)).trans
+          e.toLinearEquiv) := by
+      apply congrArg LinearEquiv.det
+      ext m
+      rw [coe_orthogonalGroupCongr_apply]
+      rfl
+    _ = LinearEquiv.det (g : M₁ ≃ₗ[R] M₁) := LinearEquiv.det_conj _ _
+
+/-- Transport of special orthogonal groups commutes with their inclusions into the full
+orthogonal groups. -/
+@[simp]
+theorem _root_.QuadraticMap.IsometryEquiv.specialOrthogonalToOrthogonal_specialOrthogonalGroupCongr
+    (e : Q₁.IsometryEquiv Q₂) (g : specialOrthogonalGroup Q₁) :
+    _root_.QuadraticMap.specialOrthogonalToOrthogonal Q₂
+        (e.specialOrthogonalGroupCongr g) =
+      orthogonalGroupCongr e (_root_.QuadraticMap.specialOrthogonalToOrthogonal Q₁ g) := by
+  apply Subtype.ext
+  ext m
+  simp
+
+/-- Transporting the special orthogonal group along the identity isometry is the identity
+equivalence. -/
+@[simp]
+theorem _root_.QuadraticMap.IsometryEquiv.specialOrthogonalGroupCongr_refl :
+    (QuadraticMap.IsometryEquiv.refl Q₁).specialOrthogonalGroupCongr =
+      MulEquiv.refl (specialOrthogonalGroup Q₁) := by
+  ext g m
+  simp
+  rfl
+
+/-- Special-orthogonal-group transport respects composition of isometries. -/
+@[simp]
+theorem _root_.QuadraticMap.IsometryEquiv.specialOrthogonalGroupCongr_trans
+    (e₁₂ : Q₁.IsometryEquiv Q₂) (e₂₃ : Q₂.IsometryEquiv Q₃) :
+    (e₁₂.trans e₂₃).specialOrthogonalGroupCongr =
+      e₁₂.specialOrthogonalGroupCongr.trans e₂₃.specialOrthogonalGroupCongr := by
+  ext g m
+  simp
+  rfl
+
+/-- Inverting special-orthogonal-group transport is transport along the inverse isometry. -/
+theorem _root_.QuadraticMap.IsometryEquiv.specialOrthogonalGroupCongr_symm
+    (e : Q₁.IsometryEquiv Q₂) :
+    e.specialOrthogonalGroupCongr.symm = e.symm.specialOrthogonalGroupCongr := by
+  ext g m
+  simp
   rfl
 
 end SpecialCongr

@@ -10,6 +10,8 @@ public import Mathlib.RingTheory.PowerSeries.GaussNorm
 public import Mathlib.RingTheory.PowerSeries.Trunc
 public import Mathlib.RingTheory.Valuation.Basic
 public import TauCeti.RingTheory.PowerSeries.Restricted
+import Mathlib.Algebra.Order.GroupWithZero.Finset
+import Mathlib.Algebra.Order.Ring.IsNonarchimedean
 import Mathlib.Topology.Algebra.InfiniteSum.NatInt
 import Mathlib.Topology.Order.LiminfLimsup
 import Mathlib.RingTheory.Polynomial.GaussNorm

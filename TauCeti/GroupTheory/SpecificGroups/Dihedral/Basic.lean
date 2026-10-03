@@ -9,6 +9,7 @@ public import Mathlib.Data.ZMod.QuotientGroup
 public import Mathlib.GroupTheory.Complement
 public import Mathlib.GroupTheory.SpecificGroups.Dihedral
 public import TauCeti.Algebra.Group.Subgroup.ZPowers
+import Mathlib.Algebra.Group.TypeTags.Finite
 
 /-!
 # The dihedral groups: an enumeration, a recognition criterion, and the rotation subgroup

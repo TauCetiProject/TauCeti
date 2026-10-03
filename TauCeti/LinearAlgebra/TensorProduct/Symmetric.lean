@@ -9,6 +9,7 @@ public import Mathlib.Algebra.DirectSum.LinearMap
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import Mathlib.LinearAlgebra.TensorProduct.Basis
 public import TauCeti.LinearAlgebra.Trace.Square
+import Mathlib.RingTheory.TensorProduct.Finite
 
 /-!
 # Symmetric and antisymmetric tensors in a tensor square
