@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.FieldTheory.FunctionField.Place.ArtinSchreier
+public import TauCeti.Algebra.CharP.ArtinSchreier
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Eisenstein
 public import TauCeti.RingTheory.Valuation.Discrete.PowerSubSelf
 
