@@ -388,7 +388,8 @@ theorem mem_candidates_iff {fuel : ℕ} {q : DixonPrimeData G} :
       omega
     refine ⟨m - 1, List.mem_range.mpr ?_, ?_⟩
     · by_contra hlt
-      have := Nat.mul_le_mul_left e (show fuel + 1 ≤ m by omega)
+      have hfm : fuel + 1 ≤ m := by omega
+      have := Nat.mul_le_mul_left e hfm
       rw [Nat.mul_succ] at this
       omega
     · rwa [Nat.sub_add_cancel (Nat.pos_of_ne_zero hm0), ← hm, Nat.sub_add_cancel (by omega)]

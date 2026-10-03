@@ -17,15 +17,17 @@ An algorithm that works modulo `p` with a root of unity needs one it can compute
 `TauCeti.ZMod.primitiveRoot?`, which tests the residues `0, 1, …, p - 1` in turn and returns the
 first one that is a primitive `k`-th root of unity, together with the proof that it is one.
 
-The test is the finite criterion of `IsPrimitiveRoot.mk_of_lt`: `ζ ^ k = 1` and `ζ ^ l ≠ 1` for
-`0 < l < k`. It is decidable in `ZMod p`, so the search runs, and since every residue is tested
-the search fails only when there is nothing to find
-(`TauCeti.ZMod.isSome_primitiveRoot?_iff`).
+The test is the finite criterion of `IsPrimitiveRoot.mk_of_lt`: `0 < k`, `ζ ^ k = 1` and
+`ζ ^ l ≠ 1` for `0 < l < k`. It is decidable in `ZMod p`, so the search runs, and since every
+residue is tested, for `p ≠ 0` and `k ≠ 0` the search fails only when there is nothing to find
+(`TauCeti.ZMod.isSome_primitiveRoot?_iff`). The criterion deliberately excludes order zero, so the
+search always fails for `k = 0`, even though `0 : ZMod p` is a primitive `0`-th root of unity when
+`p ≠ 1`.
 
 ## Main definitions
 
-* `TauCeti.ZMod.primitiveRoot?`: the least residue modulo `p` that is a primitive `k`-th root of
-  unity, if there is one.
+* `TauCeti.ZMod.primitiveRoot?`: for `p ≠ 0` and `k ≠ 0`, the least residue modulo `p` that is a
+  primitive `k`-th root of unity, if there is one; always `none` when `k = 0`.
 
 ## Main results
 
