@@ -22,8 +22,10 @@ These computed values test the zero convention for rectangle averages separately
 weighted energy: averaging erases edges incident to `2` strictly, while the null cell contributes
 nothing to the integrals. The defect identity `l2sq_sub_stepGraphonAvg` and the Pythagoras
 increment `graphonPartitionEnergy_increment` are exercised on these partitions, together with
-a cut witness and the part-count bound of weak regularity. Averaging over singletons does not
-recover the original strict representative: the zero-mass atom's row and column are replaced by
+a cut witness and the iteration's part-count bound, starting from the coarse partition at a
+tolerance that forces refinement and checking that the null singleton persists. Averaging over
+singletons does not recover the original strict representative: the zero-mass atom's row and
+column are replaced by
 zero. The exported witness `exists_partition_stepGraphonAvg_ne_self_bernoulliMeasure` records this
 failure for a partition into all three singletons.
 
@@ -221,8 +223,43 @@ example : ∃ (Q : Finpartition (univ : Set (Fin 3)))
   · simpa [coarse_parts] using hcard
   · simpa only [coarse_energy] using henergy
 
--- A nonintegral reciprocal-square tolerance checks the ceiling and the iteration's part
--- bound at the public endpoint: ceil(1 / (3/4)^2) = 2, hence at most 16 parts.
+-- At tolerance 1/16, the coarse partition cannot be accepted. The 256-step invariant
+-- bounds the part count by 4^256 times the initial count, and its energy alternative
+-- contradicts the upper bound of one. Refinement retains the nonempty null singleton.
+example : ∃ (Q : Finpartition (univ : Set (Fin 3)))
+    (hQ : ∀ q ∈ Q.parts, MeasurableSet q), Q ≤ coarse ∧
+      ({2} : Set (Fin 3)) ∈ Q.parts ∧ Q ≠ coarse ∧
+      Q.parts.card ≤ 4 ^ Nat.ceil (1 / (1 / 16 : ℝ) ^ 2) * 2 ∧
+      cutNorm weights (adjacency.toSymmKernel -
+        (stepGraphonAvg Q hQ adjacency).toSymmKernel) ≤ 1 / 16 := by
+  classical
+  obtain ⟨Q, hQ, href, hcard, hgood | henergy⟩ :=
+    exists_partition_cutNorm_le_or_energy_add_mul_sq_lt weights adjacency
+      (ε := 1 / 16) (by norm_num) 255 coarse (fun _ _ ↦ MeasurableSet.of_discrete)
+  · obtain ⟨q, ⟨hq, hxq⟩, _⟩ := Q.isPartition_parts.2 2
+    obtain ⟨p, hp, hqp⟩ := href hq
+    have hxp : (2 : Fin 3) ∈ p := hqp hxq
+    have hp_eq : p = {2} := by
+      simp only [coarse_parts, Finset.mem_insert, Finset.mem_singleton] at hp
+      rcases hp with rfl | rfl
+      · rfl
+      · simp at hxp
+    have hq_eq : q = {2} :=
+      Set.Subset.antisymm (hp_eq ▸ hqp) (Set.singleton_subset_iff.mpr hxq)
+    refine ⟨Q, hQ, href, hq_eq ▸ hq, ?_, ?_, hgood⟩
+    · intro heq
+      subst Q
+      exact (not_le_of_gt lt_cutNorm_adjacency_sub_coarseAvg) hgood
+    · have hceil : Nat.ceil (1 / (1 / 16 : ℝ) ^ 2) = 256 := by norm_num
+      rw [hceil]
+      simpa [coarse_parts] using hcard
+  · have hbound := graphonPartitionEnergy_le_one weights Q hQ adjacency
+    rw [coarse_energy] at henergy
+    norm_num at henergy
+    linarith
+
+-- Separately check nonintegral ceiling arithmetic at the public endpoint:
+-- ceil(1 / (3/4)^2) = 2, hence at most 16 parts.
 example : ∃ (P : Finpartition (univ : Set (Fin 3)))
     (hP : ∀ p ∈ P.parts, MeasurableSet p), P.parts.card ≤ 16 ∧
       cutNorm weights (adjacency.toSymmKernel -
