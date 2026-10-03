@@ -107,21 +107,34 @@ theorem polar_eq_pairing (x y : A) :
     QuadraticMap.polar A.quadratic x y = A.toFiniteBilinearModule.pairing x y :=
   A.polar_eq_pairing' x y
 
-/-- If the underlying group has odd order, that order kills every quadratic value. -/
-theorem natCard_nsmul_quadratic_of_odd (hm : Odd (Nat.card A)) (x : A) :
-    Nat.card A • A.quadratic x = 0 := by
-  have hsq : Nat.card A • (Nat.card A • A.quadratic x) = 0 := by
+/-- If `n` kills an element, then `2 * n` kills its quadratic value. -/
+theorem two_mul_nsmul_quadratic_of_nsmul_eq_zero {n : ℕ} (x : A) (hx : n • x = 0) :
+    (2 * n) • A.quadratic x = 0 := by
+  rw [mul_nsmul, ← QuadraticMap.polar_self, polar_eq_pairing, ← map_nsmul, hx, map_zero]
+
+/-- Twice the order of the underlying group kills every quadratic value. -/
+theorem two_mul_natCard_nsmul_quadratic (x : A) :
+    (2 * Nat.card A) • A.quadratic x = 0 :=
+  A.two_mul_nsmul_quadratic_of_nsmul_eq_zero x (card_nsmul_eq_zero' (x := x))
+
+/-- An odd natural number killing an element also kills its quadratic value. -/
+theorem nsmul_quadratic_of_odd {n : ℕ} (hn : Odd n) (x : A) (hx : n • x = 0) :
+    n • A.quadratic x = 0 := by
+  have hsq : n • (n • A.quadratic x) = 0 := by
     rw [← mul_nsmul, ← Nat.cast_smul_eq_nsmul ℤ, Nat.cast_mul,
-      ← A.quadratic.map_smul, Nat.cast_smul_eq_nsmul ℤ, card_nsmul_eq_zero',
-      A.quadratic.map_zero]
-  have htwo : 2 • (Nat.card A • A.quadratic x) = 0 := by
-    rw [smul_comm, ← QuadraticMap.polar_self, A.polar_eq_pairing, ← map_nsmul,
-      card_nsmul_eq_zero', map_zero]
-  obtain ⟨k, hk⟩ := hm
-  have : (2 * k + 1) • (Nat.card A • A.quadratic x) = 0 := hk ▸ hsq
+      ← A.quadratic.map_smul, Nat.cast_smul_eq_nsmul ℤ, hx, A.quadratic.map_zero]
+  have htwo : 2 • (n • A.quadratic x) = 0 := by
+    simpa only [mul_nsmul'] using A.two_mul_nsmul_quadratic_of_nsmul_eq_zero x hx
+  obtain ⟨k, hk⟩ := hn
+  have : (2 * k + 1) • (n • A.quadratic x) = 0 := hk ▸ hsq
   rw [add_nsmul, mul_nsmul, htwo, smul_zero,
     one_nsmul, zero_add] at this
   exact this
+
+/-- If the underlying group has odd order, that order kills every quadratic value. -/
+theorem natCard_nsmul_quadratic_of_odd (hm : Odd (Nat.card A)) (x : A) :
+    Nat.card A • A.quadratic x = 0 :=
+  A.nsmul_quadratic_of_odd hm x (card_nsmul_eq_zero' (x := x))
 
 /-- The bilinear map of the underlying finite bilinear module is exactly the polar bilinear map. -/
 theorem toFiniteBilinearModule_toBilin :

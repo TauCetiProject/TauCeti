@@ -6,15 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.OddCyclic.Basic
-import Mathlib.Data.ZMod.Aut
 
 /-!
 # Classification of odd cyclic quadratic modules
 
-Every nondegenerate finite quadratic module whose underlying group is cyclic of odd order
-is isometric to an `oddCyclic` module with coefficient prime to its order. Two such cyclic
-forms are isometric exactly when their coefficients differ by a unit square modulo the order.
-The coefficient criterion also applies to degenerate forms and to the trivial group.
+Every finite quadratic module whose underlying group is cyclic of odd order is isometric to
+an `oddCyclic` module. For a nondegenerate module, the coefficient is prime to its order.
+Two such cyclic forms are isometric exactly when their coefficients differ by a unit square
+modulo the order. Both the presentation and the coefficient criterion apply to degenerate
+forms and to the trivial group.
 
 These results identify the cyclic constituents of odd-primary discriminant forms and their
 change-of-generator relation. They do not assert an orthogonal decomposition of a general
@@ -26,8 +26,6 @@ odd-primary module.
   Propositions 1.8.1 and 1.8.2.
 * C. T. C. Wall, *Quadratic forms on finite groups, and related topics*, Topology 2 (1963),
   281–298.
-* Mathlib's `zmodAddCyclicAddEquiv` supplies the underlying cyclic presentation;
-  `TauCeti.FiniteQuadraticModule.cyclicIsometryOfGenerator` supplies its quadratic isometry.
 -/
 
 public section
@@ -36,12 +34,11 @@ open AddSubgroup
 
 namespace TauCeti.FiniteQuadraticModule
 
-/-- Every nondegenerate quadratic module on an odd cyclic group has an odd cyclic presentation
-with coefficient prime to the group order. -/
-theorem exists_oddCyclic_isometry (A : FiniteQuadraticModule) [IsAddCyclic A]
-    (hm : Odd (Nat.card A)) (hA : A.IsNondegenerate) :
-    ∃ θ : ℤ, IsCoprime (Nat.card A : ℤ) θ ∧
-      Nonempty (Isometry (oddCyclic (Nat.card A) hm θ) A) := by
+/-- Every quadratic module on an odd cyclic group has an odd cyclic presentation.
+No nondegeneracy hypothesis is needed, and the presentation includes the trivial group. -/
+theorem exists_oddCyclic_isometry_of_odd (A : FiniteQuadraticModule) [IsAddCyclic A]
+    (hm : Odd (Nat.card A)) :
+    ∃ θ : ℤ, Nonempty (Isometry (oddCyclic (Nat.card A) hm θ) A) := by
   let e := zmodAddCyclicAddEquiv (G := A) inferInstance
   have hx : A.quadratic (e 1) ∈ (AddCircle (1 : ℚ))[(Nat.card A : ℤ)] :=
     torsionBy.nsmul_iff.mpr (A.natCard_nsmul_quadratic_of_odd hm (e 1))
@@ -59,9 +56,16 @@ theorem exists_oddCyclic_isometry (A : FiniteQuadraticModule) [IsAddCyclic A]
     have hm0 : (Nat.card A : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr hm.pos.ne'
     field_simp
     ring
-  let f : Isometry (oddCyclic (Nat.card A) hm (2 * t)) A :=
-    cyclicIsometryOfGenerator (Nat.card A) _ _ e hgen
-  refine ⟨2 * t, ?_, ⟨f⟩⟩
+  exact ⟨2 * t, ⟨cyclicIsometryOfGenerator (Nat.card A) _ _ e hgen⟩⟩
+
+/-- Every nondegenerate quadratic module on an odd cyclic group has an odd cyclic presentation
+with coefficient prime to the group order. -/
+theorem exists_oddCyclic_isometry (A : FiniteQuadraticModule) [IsAddCyclic A]
+    (hm : Odd (Nat.card A)) (hA : A.IsNondegenerate) :
+    ∃ θ : ℤ, IsCoprime (Nat.card A : ℤ) θ ∧
+      Nonempty (Isometry (oddCyclic (Nat.card A) hm θ) A) := by
+  obtain ⟨θ, ⟨f⟩⟩ := exists_oddCyclic_isometry_of_odd A hm
+  refine ⟨θ, ?_, ⟨f⟩⟩
   exact (isNondegenerate_oddCyclic_iff _ _ _).mp
     (f.isNondegenerate_iff.mpr hA)
 
