@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Modules.Differentials.LocallyFree
+public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.StandardSmooth
 public import TauCeti.AlgebraicGeometry.VectorBundle.Rank
 public import Mathlib.RingTheory.Smooth.StandardSmoothCotangent
 
@@ -23,9 +24,8 @@ When `X` is smooth of relative dimension one over `Spec R`, as a smooth curve ov
 
 ## Main declarations
 
-* `TauCeti.AlgebraicGeometry.FiniteLocallyFreeSheaf.relativeDifferentials`: the sheaf of
-  relative differentials of a smooth scheme, as a finite locally free sheaf;
-* `TauCeti.AlgebraicGeometry.FiniteLocallyFreeSheaf.rank_relativeDifferentials`: it has rank `n`
+* `TauCeti.AlgebraicGeometry.FiniteLocallyFreeSheaf.rank_relativeDifferentials_apply`: the
+  finite locally free sheaf `FiniteLocallyFreeSheaf.relativeDifferentials R X` has rank `n`
   everywhere when `X` is smooth of relative dimension `n`;
 * `TauCeti.AlgebraicGeometry.isInvertible_relativeDifferentials` and
   `TauCeti.AlgebraicGeometry.InvertibleSheaf.relativeDifferentials`: in relative dimension one
@@ -49,18 +49,6 @@ noncomputable section
 
 variable (R : Type u) [CommRing R] (X : Scheme.{u}) [X.Over (Spec (.of R))]
 
-/-- The sheaf of relative differentials of a scheme smooth over `Spec R`, as a finite locally
-free sheaf. -/
-def FiniteLocallyFreeSheaf.relativeDifferentials [Smooth (X ↘ Spec (.of R))] :
-    FiniteLocallyFreeSheaf X :=
-  ⟨X.relativeDifferentials R, isFiniteLocallyFree_relativeDifferentials R X⟩
-
-/-- The underlying sheaf of `FiniteLocallyFreeSheaf.relativeDifferentials R X` is `Ω_{X/R}`. -/
-@[simp]
-lemma FiniteLocallyFreeSheaf.relativeDifferentials_obj [Smooth (X ↘ Spec (.of R))] :
-    (FiniteLocallyFreeSheaf.relativeDifferentials R X).obj = X.relativeDifferentials R :=
-  (rfl)
-
 variable {X} in
 /-- Around every point of a scheme smooth of relative dimension `n` over `Spec R`, there is an
 affine open whose ring of functions is standard smooth of relative dimension `n` over `R`. -/
@@ -69,26 +57,11 @@ private lemma exists_isStandardSmoothOfRelativeDimension (n : ℕ)
     ∃ W : X.affineOpens, x ∈ W.1 ∧
       ((X.baseRingToStructurePresheaf R).app (op W.1)).hom.IsStandardSmoothOfRelativeDimension n
         := by
-  obtain ⟨U, hU, V, hV, hx, e, hf⟩ :=
-    SmoothOfRelativeDimension.exists_isStandardSmoothOfRelativeDimension
-      (n := n) (f := X ↘ Spec (.of R)) x
-  -- Shrink the charts to basic opens `D(r) ⊆ Spec R` and `D(s) ⊆ V`.
-  obtain ⟨r, s, hxs, e₁, hf₁⟩ := exists_basicOpen_le_appLE_of_appLE_of_isAffine
-    (isStandardSmoothOfRelativeDimension_stableUnderCompositionWithLocalizationAway n).right
-    (isStandardSmoothOfRelativeDimension_localizationPreserves n).away
-    x ⟨⊤, isAffineOpen_top _⟩ ⟨U, hU⟩ ⟨V, hV⟩ ⟨V, hV⟩ hx hx e hf (Opens.mem_top _)
-  refine ⟨⟨X.basicOpen s, hV.basicOpen s⟩, hxs, ?_⟩
-  -- Since `Γ(Spec R, D(r))` is the localization of `Γ(Spec R, ⊤) ≅ R` away from `r`, the map
-  -- out of `Γ(Spec R, ⊤)` is still standard smooth of relative dimension `n`.
-  have : IsLocalization.Away r Γ(Spec (.of R), (Spec (.of R)).basicOpen r) :=
-    (isAffineOpen_top _).isLocalization_basicOpen r
-  have h := (isStandardSmoothOfRelativeDimension_stableUnderCompositionWithLocalizationAway
-    n).left _ r _ hf₁
-  have heq : (X ↘ Spec (.of R)).appLE ⊤ (X.basicOpen s) le_top =
-      CommRingCat.ofHom (algebraMap Γ(Spec (.of R), ⊤) Γ(Spec (.of R),
-        (Spec (.of R)).basicOpen r)) ≫ (X ↘ Spec (.of R)).appLE _ _ e₁ := by
-    rw [RingHom.algebraMap_toAlgebra, CommRingCat.ofHom_hom, Scheme.Hom.map_appLE]
-  rw [Scheme.baseRingToStructurePresheaf_app_eq_appLE, heq, CommRingCat.hom_comp]
+  obtain ⟨W, hxW, h⟩ :=
+    SmoothOfRelativeDimension.exists_isStandardSmoothOfRelativeDimension_appLE_top
+      (X ↘ Spec (.of R)) n x
+  refine ⟨W, hxW, ?_⟩
+  rw [Scheme.baseRingToStructurePresheaf_app_eq_appLE, CommRingCat.hom_comp]
   exact (isStandardSmoothOfRelativeDimension_respectsIso (n := n)).right _
     (Scheme.ΓSpecIso (.of R)).symm.commRingCatIsoToRingEquiv h
 
@@ -114,7 +87,7 @@ variable {X}
 
 /-- On a scheme smooth of relative dimension `n` over `Spec R`, the sheaf of relative
 differentials has rank `n` at every point. -/
-theorem FiniteLocallyFreeSheaf.rank_relativeDifferentials (n : ℕ)
+theorem FiniteLocallyFreeSheaf.rank_relativeDifferentials_apply (n : ℕ)
     [SmoothOfRelativeDimension n (X ↘ Spec (.of R))] (x : X) :
     haveI := SmoothOfRelativeDimension.smooth n (X ↘ Spec (.of R))
     (FiniteLocallyFreeSheaf.relativeDifferentials R X).rank x = n := by
@@ -132,7 +105,8 @@ theorem FiniteLocallyFreeSheaf.rank_relativeDifferentials (n : ℕ)
     rwa [IsAffineOpen.range_fromSpec W.property]
   rw [← FiniteLocallyFreeSheaf.rank_pullback_apply,
     FiniteLocallyFreeSheaf.rank_eq_of_iso (F := FiniteLocallyFreeSheaf.free _ ι)
-      (eqToIso (FiniteLocallyFreeSheaf.pullback_obj_obj _ _) ≪≫
+      (eqToIso ((FiniteLocallyFreeSheaf.pullback_obj_obj _ _).trans
+          (congrArg _ (FiniteLocallyFreeSheaf.relativeDifferentials_obj R X))) ≪≫
         ((Scheme.Modules.restrictFunctorIsoPullback W.property.fromSpec).app
         (X.relativeDifferentials R)).symm ≪≫
         relativeDifferentialsRestrictIso R W.property.fromSpec ≪≫ e),
@@ -143,8 +117,9 @@ differentials is invertible. -/
 theorem isInvertible_relativeDifferentials [SmoothOfRelativeDimension 1 (X ↘ Spec (.of R))] :
     SheafOfModules.isInvertible X (X.relativeDifferentials R) := by
   have := SmoothOfRelativeDimension.smooth 1 (X ↘ Spec (.of R))
+  rw [← FiniteLocallyFreeSheaf.relativeDifferentials_obj]
   exact (FiniteLocallyFreeSheaf.relativeDifferentials R X).isInvertible_iff_forall_rank_eq_one.mpr
-    (FiniteLocallyFreeSheaf.rank_relativeDifferentials R 1)
+    (FiniteLocallyFreeSheaf.rank_relativeDifferentials_apply R 1)
 
 variable (X)
 
