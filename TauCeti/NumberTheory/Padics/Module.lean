@@ -57,8 +57,8 @@ additive isomorphism between two such modules preserves `Module.finrank`, and `�
   submodule.
 * `TauCeti.isTorsionFree_quotient_pPowerTorsion`: modulo its `p`-power torsion, a `ℤ_p`-module
   is torsion-free.
-* `TauCeti.padicIntCodRestrict`: a `ℚ_[p]`-valued `ℤ_[p]`-linear map with values in `ℤ_[p]`, as a
-  `ℤ_[p]`-valued functional.
+* `TauCeti.LinearMap.padicIntCodRestrict`: a `ℚ_[p]`-valued `ℤ_[p]`-linear map with values in
+  `ℤ_[p]`, as a `ℤ_[p]`-valued functional.
 -/
 
 public section
@@ -277,7 +277,7 @@ variable {p : ℕ} [Fact p.Prime] {X : Type*} [AddCommGroup X] [Module ℤ_[p] X
 
 /-- A `ℚ_[p]`-valued `ℤ_[p]`-linear map whose values lie in `ℤ_[p]`, as a `ℤ_[p]`-valued
 functional. -/
-def TauCeti.padicIntCodRestrict (Φ : X →ₗ[ℤ_[p]] ℚ_[p])
+def TauCeti.LinearMap.padicIntCodRestrict (Φ : X →ₗ[ℤ_[p]] ℚ_[p])
     (h : ∀ x, Φ x ∈ (1 : Submodule ℤ_[p] ℚ_[p])) : Module.Dual ℤ_[p] X where
   toFun x := ⟨Φ x, by
     obtain ⟨y, hy⟩ := Submodule.mem_one.mp (h x)
@@ -287,9 +287,9 @@ def TauCeti.padicIntCodRestrict (Φ : X →ₗ[ℤ_[p]] ℚ_[p])
   map_smul' c x := Subtype.ext (map_smul Φ c x)
 
 @[simp]
-theorem TauCeti.coe_padicIntCodRestrict_apply (Φ : X →ₗ[ℤ_[p]] ℚ_[p])
+theorem TauCeti.LinearMap.coe_padicIntCodRestrict_apply (Φ : X →ₗ[ℤ_[p]] ℚ_[p])
     (h : ∀ x, Φ x ∈ (1 : Submodule ℤ_[p] ℚ_[p])) (x : X) :
-    (TauCeti.padicIntCodRestrict Φ h x : ℚ_[p]) = Φ x :=
+    (TauCeti.LinearMap.padicIntCodRestrict Φ h x : ℚ_[p]) = Φ x :=
   (rfl)
 
 end IntegralFunctional

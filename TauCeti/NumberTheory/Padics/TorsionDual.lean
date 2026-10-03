@@ -317,10 +317,10 @@ theorem ker_torsionDualMap :
   have hint (x : P₀) : extendDual hf hfi ψ (pr x) ∈ (1 : Submodule ℤ_[p] ℚ_[p]) := by
     rw [← Submodule.Quotient.mk_eq_zero, ← torsionDualMap_eq hf hfi hπ, LinearMap.mem_ker.mp hψ,
       LinearMap.zero_apply]
-  refine ⟨padicIntCodRestrict (extendDual hf hfi ψ ∘ₗ pr) hint,
+  refine ⟨LinearMap.padicIntCodRestrict (extendDual hf hfi ψ ∘ₗ pr) hint,
     LinearMap.ext fun k ↦ Subtype.ext ?_⟩
-  rw [LinearMap.dualMap_apply, LinearMap.restrictScalars_apply, coe_padicIntCodRestrict_apply,
-    LinearMap.comp_apply]
+  rw [LinearMap.dualMap_apply, LinearMap.restrictScalars_apply,
+    LinearMap.coe_padicIntCodRestrict_apply, LinearMap.comp_apply]
   exact extendDual_eq_of_eq hf hfi ψ (pr (f k)) (k := k) (by
     simp [pr, hf.apply_apply_eq_zero])
 
@@ -349,10 +349,10 @@ theorem torsionDualMap_surjective [Module.Projective ℤ_[p] P₀] :
   have hint (k : P₁) : (Φ ∘ₗ f.restrictScalars ℤ_[p]) k ∈ (1 : Submodule ℤ_[p] ℚ_[p]) := by
     rw [← Submodule.Quotient.mk_eq_zero, LinearMap.comp_apply, LinearMap.restrictScalars_apply,
       hΦx, hf.apply_apply_eq_zero, map_zero, map_zero]
-  refine ⟨padicIntCodRestrict _ hint, LinearMap.ext fun t ↦ ?_⟩
+  refine ⟨LinearMap.padicIntCodRestrict _ hint, LinearMap.ext fun t ↦ ?_⟩
   obtain ⟨x, hx⟩ := hπ t
-  rw [torsionDualMap_apply_of_extension hf hfi hπ _ Φ (coe_padicIntCodRestrict_apply _ hint) t hx,
-    hΦx, ← hrt t]
+  rw [torsionDualMap_apply_of_extension hf hfi hπ _ Φ
+    (LinearMap.coe_padicIntCodRestrict_apply _ hint) t hx, hΦx, ← hrt t]
   rw [hx]
 
 variable (p) in
