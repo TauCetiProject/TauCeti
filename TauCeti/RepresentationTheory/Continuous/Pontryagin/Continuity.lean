@@ -65,8 +65,8 @@ variable (π : ContRepresentation ℂ (Multiplicative G) H)
   (hA : ∀ f : G →₁[μ] ℂ, π.integratedOperatorL1 hcont hbdd μ f ∈ A)
 
 /-- The characters of an algebra containing the integrated form which do not annihilate every
-integrated operator.  These are exactly the algebra characters from which the representation
-detects a point of the Pontryagin dual. -/
+integrated operator.  When `π` is unitary, these are exactly the algebra characters from which
+the representation detects a point of the Pontryagin dual. -/
 def integratedCharacterSet : Set (characterSpace ℂ A) :=
   {ω | ∃ f : G →₁[μ] ℂ, ω ⟨π.integratedOperatorL1 hcont hbdd μ f, hA f⟩ ≠ 0}
 
