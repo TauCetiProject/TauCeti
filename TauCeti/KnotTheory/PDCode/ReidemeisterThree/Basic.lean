@@ -269,9 +269,13 @@ theorem componentPerm_reidemeisterThree :
     (D.reidemeisterThree c).componentCount = D.componentCount := by
   simp [componentCount_eq]
 
+/-- Reversing every strand height preserves the three internal triangle arcs. -/
+@[simp] theorem hasReidemeisterThreeTriangleArcs_mirror_iff :
+    D.mirror.HasReidemeisterThreeTriangleArcs c ↔ D.HasReidemeisterThreeTriangleArcs c := by
+  simp only [hasReidemeisterThreeTriangleArcs_iff, mirror_edgePair, crossing_mirror]
 
 /-- Reversing every strand height preserves the triangle condition. -/
-theorem hasReidemeisterThreeTriangle_mirror_iff :
+@[simp] theorem hasReidemeisterThreeTriangle_mirror_iff :
     D.mirror.HasReidemeisterThreeTriangle c ↔ D.HasReidemeisterThreeTriangle c := by
   simp only [hasReidemeisterThreeTriangle_iff, mirror_edgePair, crossing_mirror,
     mirror_overPair, Bool.not_inj_iff]
@@ -282,7 +286,7 @@ theorem hasReidemeisterThreeTriangle_mirror_iff :
   simp [reidemeisterThreePerm, triangleEmbedding]
 
 /-- Mirroring commutes with the third Reidemeister move. -/
-theorem mirror_reidemeisterThree :
+@[simp] theorem mirror_reidemeisterThree :
     (D.reidemeisterThree c).mirror =
       D.mirror.reidemeisterThree c := by
   apply PDCode.ext
