@@ -218,6 +218,18 @@ def reverseRowBump (y : α) (row : List α) : List α × Option α :=
 theorem reverseRowBump_nil (y : α) : reverseRowBump y [] = ([y], none) := by
   simp [reverseRowBump]
 
+/-- A suffix whose letters are at least the incoming letter is unchanged. -/
+theorem reverseRowBump_append (y : α) (row after : List α)
+    (h : ∀ z ∈ after, y ≤ z) :
+    reverseRowBump y (row ++ after) =
+      ((reverseRowBump y row).1 ++ after, (reverseRowBump y row).2) := by
+  have hd : ∀ z ∈ after.reverse.map OrderDual.toDual, z ≤ OrderDual.toDual y := by
+    simpa using h
+  dsimp only [reverseRowBump]
+  simp only [List.reverse_append, List.map_append]
+  rw [rowBump_append _ _ _ hd]
+  simp [List.map_reverse, List.reverse_append]
+
 /-- Reverse insertion prepends precisely when no entry is strictly smaller. -/
 @[simp]
 theorem reverseRowBump_snd_eq_none_iff (y : α) (row : List α) :
@@ -266,6 +278,20 @@ theorem reverseRowBump_eq_some_iff (x y : α) (row result : List α) :
       rowBump_cons_of_lt (α := OrderDual α) (x := OrderDual.toDual y)
         (y := OrderDual.toDual x) _ hxy]
     simp [List.map_reverse, List.reverse_append, List.reverse_cons, List.append_assoc]
+
+/-- The letter returned by reverse insertion was an entry of the original row. -/
+theorem mem_of_reverseRowBump_snd_eq_some {x y : α} {row : List α}
+    (h : (reverseRowBump y row).2 = some x) : x ∈ row := by
+  obtain ⟨before, after, rfl, _, _, _⟩ :=
+    (reverseRowBump_eq_some_iff x y row (reverseRowBump y row).1).mp (Prod.ext rfl h)
+  simp
+
+/-- A letter returned by reverse insertion is strictly smaller than the incoming letter. -/
+theorem lt_of_reverseRowBump_snd_eq_some {x y : α} {row : List α}
+    (h : (reverseRowBump y row).2 = some x) : x < y := by
+  obtain ⟨_, _, _, _, _, hxy⟩ :=
+    (reverseRowBump_eq_some_iff x y row (reverseRowBump y row).1).mp (Prod.ext rfl h)
+  exact hxy
 
 /-- Reverse insertion conserves the letters: the changed row together with the returned letter
 has the content of the original row together with the incoming letter. -/
