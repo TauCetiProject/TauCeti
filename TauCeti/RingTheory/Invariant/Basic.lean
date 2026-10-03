@@ -32,6 +32,13 @@ open Polynomial
 
 namespace TauCeti.MulSemiringAction
 
+/-- Every fixed element belongs to the fixed subalgebra. This registers the fixed subalgebra
+as an invariant extension, so Mathlib's integral-extension and prime-orbit theorems apply. -/
+instance fixedPointsSubalgebraIsInvariant (R A G : Type*) [CommSemiring R] [CommSemiring A]
+    [Algebra R A] [Group G] [MulSemiringAction G A] [SMulCommClass G R A] :
+    Algebra.IsInvariant (FixedPoints.subalgebra R A G) A G where
+  isInvariant a ha := ⟨⟨a, ha⟩, rfl⟩
+
 section
 
 variable {G B : Type*} [Group G] [Fintype G] [CommRing B] [IsDomain B] [MulSemiringAction G B]
