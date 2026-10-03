@@ -125,7 +125,8 @@ theorem zigzagProjectivePathQuotientEquiv_mk (i : V)
 
 /-- Left multiplication on the path-projective quotient corresponds to multiplication by the
 zigzag class. This pins the later-factor-first convention of the comparison. -/
-@[simp]
+-- Apply before generic linearity rules rewrite the action inside the coercion.
+@[simp↓]
 theorem coe_zigzagProjectivePathQuotientEquiv_smul (i : V)
     (a : pathAlgebra k (DoubledQuiver G))
     (x : (Ideal.span {vertexIdempotent k (vertex G i)} : Ideal (pathAlgebra k (DoubledQuiver G)))
