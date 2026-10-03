@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.KnotTheory.PDCode.ReidemeisterThree.Basic
+public import TauCeti.KnotTheory.PDCode.Reidemeister.Three.Basic
 public import TauCeti.KnotTheory.PDCode.Kauffman
-import TauCeti.KnotTheory.PDCode.ReidemeisterThree.Local
+import TauCeti.KnotTheory.PDCode.Reidemeister.Three.Local
 import Mathlib.Tactic.LinearCombination
 
 /-!

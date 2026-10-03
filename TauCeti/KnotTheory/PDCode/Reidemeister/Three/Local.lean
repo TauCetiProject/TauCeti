@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.KnotTheory.PDCode.ReidemeisterThree.Basic
+public import TauCeti.KnotTheory.PDCode.Reidemeister.Three.Basic
 
 /-!
 # Local permutation calculus for the third Reidemeister move
