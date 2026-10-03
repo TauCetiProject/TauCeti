@@ -70,6 +70,7 @@ multiplication by `[L : K]` is surjective on `ℚ/ℤ`, restriction is surjectiv
   `inv_L (brRes x) = [L : K] • inv_K x`.
 * `TauCeti.ClassFieldTheory.brRes_surjective`: restriction of Brauer classes is surjective.
 * `TauCeti.ClassFieldTheory.invMap_brCor`: the corestriction square `inv_K (brCor y) = inv_L y`.
+* `TauCeti.ClassFieldTheory.brCor_bijective`: corestriction of Brauer classes is bijective.
 
 ## References
 
@@ -258,15 +259,10 @@ theorem invMap_brRes (x : Br K) :
       (separableClosureRingEquiv_symm_algebraMap_base K L σ)
   have hψ (e : 𝓤 f) : ψ (e : SeparableClosure K) ∈ 𝓥 f :=
     unramifiedExtension_le_restrictScalars_unramifiedExtension (K := K) L f
-      (map_unramifiedExtension_le ψ.toAlgHom f ((mem_map _).2 ⟨e, e.2, rfl⟩))
+      (ψ.toAlgHom.map_unramifiedExtension_le f ((mem_map _).2 ⟨e, e.2, rfl⟩))
   -- The embedding `K_f → L_f` induced by `ψ`.
   let ι : 𝓤 f →ₐ[K] 𝓥 f :=
-    { toFun e := ⟨ψ (e : SeparableClosure K), hψ e⟩
-      map_one' := Subtype.ext (map_one ψ)
-      map_mul' a b := Subtype.ext (map_mul ψ (a : SeparableClosure K) b)
-      map_zero' := Subtype.ext (map_zero ψ)
-      map_add' a b := Subtype.ext (map_add ψ (a : SeparableClosure K) b)
-      commutes' c := Subtype.ext (ψ.commutes c) }
+    (ψ.toAlgHom.comp (𝓤 f).val).codRestrict ((𝓥 f).restrictScalars K).toSubalgebra hψ
   let _ : Algebra (𝓤 f) (𝓥 f) := ι.toAlgebra
   have : IsScalarTower K (𝓤 f) (𝓥 f) := .of_algebraMap_eq fun c => (ι.commutes c).symm
   -- The canonical structures of nonarchimedean local field on `K_f` and `L_f`.
@@ -303,6 +299,14 @@ theorem invMap_brCor [FiniteDimensional K L] (y : Br L) :
     invMap K (brCor K L σ y) = invMap L y := by
   obtain ⟨x, rfl⟩ := brRes_surjective K L σ y
   rw [brCor_brRes, map_nsmul, invMap_brRes]
+
+/-- **Corestriction of Brauer classes along a finite extension of nonarchimedean local fields is
+bijective**, since it preserves the invariant. -/
+theorem brCor_bijective [FiniteDimensional K L] : Function.Bijective (brCor K L σ) := by
+  have h : ⇑(brCor K L σ) = (invMap K).symm ∘ invMap L :=
+    funext fun y => (invMap K).eq_symm_apply.2 (invMap_brCor K L σ y)
+  rw [h]
+  exact (invMap K).symm.bijective.comp (invMap L).bijective
 
 end Restriction
 

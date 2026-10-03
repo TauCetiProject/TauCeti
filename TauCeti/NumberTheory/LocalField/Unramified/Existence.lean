@@ -48,7 +48,7 @@ of `TauCeti.finiteIntermediateFieldValuativeRel`.
   `(q^f − 1)`-st root of unity `ζ` of `Ω`.
 * `TauCeti.unramifiedExtension_le_of_dvd`: it contains the unramified extension of degree `d`
   for every `d ∣ f`, when `f ≠ 0`.
-* `TauCeti.map_unramifiedExtension_le`: a `K`-algebra map `Ω → Ω'` carries it into the
+* `AlgHom.map_unramifiedExtension_le`: a `K`-algebra map `Ω → Ω'` carries it into the
   unramified extension of degree `f` inside `Ω'`.
 * `TauCeti.unramifiedExtension_le_restrictScalars_unramifiedExtension`: for an extension `L/K` of
   nonarchimedean local fields inside `Ω`, it lies in the unramified extension of `L` of degree `f`.
@@ -128,8 +128,8 @@ theorem unramifiedExtension_le_of_dvd {f g : ℕ} (hg : g ≠ 0) (h : f ∣ g) :
 variable {K Ω} in
 /-- A `K`-algebra map `ψ : Ω → Ω'` carries the unramified extension of degree `f` inside `Ω` into
 the one inside `Ω'`: it carries the roots of `X^{q^f} − X` to roots. -/
-theorem map_unramifiedExtension_le {Ω' : Type*} [Field Ω'] [Algebra K Ω'] (ψ : Ω →ₐ[K] Ω')
-    (f : ℕ) : (unramifiedExtension K Ω f).map ψ ≤ unramifiedExtension K Ω' f := by
+theorem _root_.AlgHom.map_unramifiedExtension_le {Ω' : Type*} [Field Ω'] [Algebra K Ω']
+    (ψ : Ω →ₐ[K] Ω') (f : ℕ) : (unramifiedExtension K Ω f).map ψ ≤ unramifiedExtension K Ω' f := by
   rw [unramifiedExtension_def, unramifiedExtension_def, adjoin_map]
   exact adjoin.mono _ _ _ (rootSet_mapsTo ψ).image_subset
 
