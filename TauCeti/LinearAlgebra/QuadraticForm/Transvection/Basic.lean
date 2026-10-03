@@ -101,7 +101,6 @@ private theorem map_transvectionParameterSubmodule (e : Q₁.IsometryEquiv Q₂)
     refine ⟨c, ?_⟩
     apply e.injective
     rw [map_smul, e.coe_polarKernelEquiv_symm_apply]
-    change c • e u = e (e.symm (y : M₂))
     exact hc.trans (e.apply_symm_apply y).symm
 
 /-- An isometric equivalence transports the quotient `u^⊥ / ((R ∙ u) ∩ u^⊥)` to the
@@ -123,7 +122,7 @@ theorem transvectionParameterEquiv_mk (e : Q₁.IsometryEquiv Q₂)
       Submodule.Quotient.mk ⟨e w, by
         rw [LinearMap.mem_ker, polarBilin_apply_apply, e.polar_apply]
         exact LinearMap.mem_ker.mp w.2⟩ := by
-  change Submodule.Quotient.mk (e.polarKernelEquiv u w) = _
+  rw [transvectionParameterEquiv, Submodule.Quotient.equiv_apply, Submodule.mapQ_apply]
   congr 1
   apply Subtype.ext
   exact e.coe_polarKernelEquiv_apply u w
