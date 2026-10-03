@@ -73,7 +73,7 @@ noncomputable instance instModulePadicCharacterContragredient :
 
 /-- The contragredient action on `ℚ_p / ℤ_p`-valued characters is precomposition. -/
 @[simp]
-theorem op_smul_padicCharacter_apply (a : MonoidAlgebra ℤ_[p] G)
+theorem _root_.MonoidAlgebra.op_smul_padicCharacter_apply (a : MonoidAlgebra ℤ_[p] G)
     (χ : X →ₗ[ℤ_[p]] ℚ_[p] ⧸ (1 : Submodule ℤ_[p] ℚ_[p])) (x : X) :
     (MulOpposite.op a • χ) x = χ (a • x) := rfl
 
@@ -120,7 +120,7 @@ def torsionDualLinearEquiv :
     induction x using induction_on with | h φ => ?_
     rw [AddEquiv.toFun_eq_coe, ← map_smul, torsionDualAddEquiv_mk,
       torsionDualAddEquiv_mk, RingHom.id_apply, ← MulOpposite.op_unop a,
-      op_smul_padicCharacter_apply, map_smul, ← torsionDualMap_comp_toLinearMap_apply]
+      MonoidAlgebra.op_smul_padicCharacter_apply, map_smul, ← torsionDualMap_comp_toLinearMap_apply]
     -- The contragredient action of `op a` on a base-ring functional is precomposition with `a`.
     refine congrArg (torsionDualMap p hf hfi hπ · t) (LinearMap.ext fun m ↦ ?_)
     rw [MonoidAlgebra.op_smul_dual_apply, LinearMap.comp_apply, DistribSMul.toLinearMap_apply]
