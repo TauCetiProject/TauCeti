@@ -18,6 +18,12 @@ as a space of finitely supported functions.
 
 * `TauCeti.MonoidAlgebra.tensorEquivFinsupp`: the equivalence
   `k[G] ⊗ W ≃ₗ G →₀ W`.
+
+## Main results
+
+* `TauCeti.MonoidAlgebra.tensorEquivFinsupp_single_tmul` and
+  `TauCeti.MonoidAlgebra.tensorEquivFinsupp_symm_single`: the equivalence and its inverse on
+  generators.
 -/
 
 public section
@@ -49,5 +55,13 @@ theorem tensorEquivFinsupp_single_tmul (g : G) (r : k) (w : W) :
       Finsupp.single g (r • w) := by
   classical
   simp [tensorEquivFinsupp, TensorProduct.finsuppScalarLeft_apply_tmul]
+
+/-- The inverse of the tensor/Finsupp equivalence sends a Finsupp supported at `g` to a pure
+tensor supported at `g`. -/
+@[simp]
+theorem tensorEquivFinsupp_symm_single (g : G) (w : W) :
+    tensorEquivFinsupp.symm (Finsupp.single g w) =
+      _root_.MonoidAlgebra.single g (1 : k) ⊗ₜ[k] w := by
+  rw [LinearEquiv.symm_apply_eq, tensorEquivFinsupp_single_tmul, one_smul]
 
 end TauCeti.MonoidAlgebra
