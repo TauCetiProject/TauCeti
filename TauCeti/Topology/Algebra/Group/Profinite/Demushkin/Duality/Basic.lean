@@ -9,7 +9,6 @@ public import TauCeti.Algebra.Module.ZMod.Injective
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.TrivialFp.Cup
 public import TauCeti.RingTheory.SimpleModule.InjectiveProjective
 public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.CupForm
-public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.FiniteCoefficients
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.TateDuality
 public import TauCeti.Topology.Algebra.GroupAction.InternalHom.DoubleDual
 
@@ -44,8 +43,8 @@ Injectivity of `α₀` on `M` is the general `TauCeti.IsProP.dualityMap0_injecti
 injectivity of `α₁` on the kernel of a trace `Coind_V^G M → M` that vanishes on invariants, which
 exists because `H⁰` is co-effaceable on an infinite pro-`p` group. Surjectivity of `α₂` on `M` is
 then the general count `TauCeti.ContCohomology.dualityMap2_bijective_of_injective_of_addEquiv_zmod`:
-`H²(G, 𝔽_p)` is `𝔽_p`, and bijectivity of `α₀` on `M'` together with the double duality `M ≅ M''`
-give `|H²(G, M)| = |H⁰(G, M')|`.
+`H²(G, 𝔽_p)` is `𝔽_p`, and injectivity of `α₂` on `M` and of `α₀` on `M'` together with the double
+duality `M ≅ M''` give `|H²(G, M)| = |H⁰(G, M')|`.
 
 ## Main results
 
@@ -260,16 +259,13 @@ theorem natCard_addMonoidHom_H2 (V : Type*) [AddCommGroup V] [Finite V]
 discrete `G`-module `M` killed by `p`: `H²(G, M) × H⁰(G, M') → H²(G, 𝔽_p)` is a perfect pairing,
 where `M' = Hom(M, 𝔽_p)`. It is injective by the dévissage and bijective by counting
 (`TauCeti.ContCohomology.dualityMap2_bijective_of_injective_of_addEquiv_zmod`), since `α₀` is
-bijective on `M'` and `H²(G, 𝔽_p)` is `𝔽_p`. -/
+injective on `M'` and `H²(G, 𝔽_p)` is `𝔽_p`. -/
 theorem dualityMap2_bijective : Function.Bijective (dualityMap2 G M (ZMod p)) := by
   have : NeZero p := ⟨(Fact.out : p.Prime).ne_zero⟩
   have hM' : ∀ φ : InternalHom G M (ZMod p), p • φ = 0 := InternalHom.nsmul_eq_zero_of_domain hM
-  have := hG.finite_H2 (InternalHom G (InternalHom G M (ZMod p)) (ZMod p))
-    (isPPrimaryTorsion_iff.2 fun m ↦ ⟨1, by
-      rw [pow_one]; exact InternalHom.nsmul_eq_zero_of_domain hM' m⟩)
   obtain ⟨e₂⟩ := hG.nonempty_addEquiv_H2_zmod htriv
   exact dualityMap2_bijective_of_injective_of_addEquiv_zmod (AddEquiv.refl _) e₂ hM
-    (hG.dualityMap0_bijective htriv _ hM') (hG.dualityMap2_injective htriv M hM)
+    (hG.dualityMap0_injective htriv _ hM') (hG.dualityMap2_injective htriv M hM)
 
 end IsDemushkin
 

@@ -36,6 +36,9 @@ If `a` is a square, both sides vanish. Otherwise, choose square roots `α` of `a
 
 ## Main results
 
+* `TauCeti.TwoCocycle.inflateClass_quadratic_eq_h2MuToUnits_cup`: the cyclic class represented
+  by the quadratic cocycle of `b` inflates to the image of `(a) ∪ (b)` in the multiplicative
+  coefficients.
 * `TauCeti.brauerCohomologyEquiv_quaternionClass`: the comparison sends `[(a, b)]` to
   `h2MuToUnits K ((a) ∪ (b))`.
 * `TauCeti.brauer2EquivH2_quaternionClass`: the `2`-torsion comparison sends `[(a, b)]` to
@@ -292,6 +295,29 @@ private theorem inflateZ2_quadratic_sub_mem_B2 {a b : Kˣ} {α β : (SeparableCl
     toMul_zero]
   exact coboundary_eq hα hβ g k
 
+/-- **The cyclic class of `b` inflates to `(a) ∪ (b)`.** Let `L/K` be a quadratic Galois
+subextension of `Kˢ/K`, and suppose that restriction to `L` is trivial exactly on the
+automorphisms that fix a chosen square root `α` of `a`. Then the inflation of the quadratic
+cocycle with value `b` is the image under `h2MuToUnits` of the cup product of the Kummer classes
+of `a` and `b`.
+
+Together with `TauCeti.quadraticNormQuotientEquiv_mk`, this says that under
+`H²(Gal(L/K), Lˣ) ≃ Kˣ / N_{L/K}(Lˣ)`, the class of `b` inflates to `(a) ∪ (b)`. -/
+theorem TwoCocycle.inflateClass_quadratic_eq_h2MuToUnits_cup {a b : Kˣ}
+    {α : (SeparableClosure K)ˣ}
+    (hα : α ^ 2 = Units.map (algebraMap K (SeparableClosure K)).toMonoidHom a)
+    (L : IntermediateField K (SeparableClosure K)) [FiniteDimensional K L] [IsGalois K L]
+    (hcard : Nat.card (L ≃ₐ[K] L) = 2)
+    (hr : ∀ g : AbsoluteGaloisGroup K, AlgEquiv.restrictNormalHom L g = 1 ↔ g • α = α) :
+    (TwoCocycle.quadratic hcard b).inflateClass L =
+      (h2MuToUnits K).hom ((trivialF2TopPairing (AbsoluteGaloisGroup K)).cup 1 1
+        (kummerClass a) (kummerClass b)) := by
+  obtain ⟨β, hβ⟩ := exists_pow_eq_units_map (n := 2) (isUnit_of_invertible (2 : K)) b
+  obtain ⟨W, hW, hWv⟩ := exists_h2MuToUnits_cup_kummerClass hα hβ
+  rw [TwoCocycle.inflateClass_def, hW]
+  exact congrArg _ (H2pi_eq_iff.2
+    (inflateZ2_quadratic_sub_mem_B2 hα hβ L hcard hr W hWv))
+
 /-! ### The symbol as a cup product -/
 
 /-- **The quaternion symbol as a cup product.** The comparison `Br(K) ≃ H²_cont(G_K, (Kˢ)ˣ)` sends
@@ -308,8 +334,6 @@ theorem brauerCohomologyEquiv_quaternionClass (a b : Kˣ) :
     rw [← sq, BrauerGroup.quaternionClass_sq_left, ofMul_one, map_zero]
     simp
   obtain ⟨α, hα⟩ := exists_pow_eq_units_map (n := 2) (isUnit_of_invertible (2 : K)) a
-  obtain ⟨β, hβ⟩ := exists_pow_eq_units_map (n := 2) (isUnit_of_invertible (2 : K)) b
-  obtain ⟨W, hW, hWv⟩ := exists_h2MuToUnits_cup_kummerClass hα hβ
   have hα' : (α : SeparableClosure K) ^ 2 = algebraMap K _ a := by
     rw [← Units.val_pow_eq_pow_val, hα]
     rfl
@@ -333,10 +357,10 @@ theorem brauerCohomologyEquiv_quaternionClass (a b : Kˣ) :
   -- `[(a, b)]` is the class of the quadratic cocycle of `b` over `L`, whose inflation is
   -- cohomologous to the cup cocycle
   rw [← BrauerGroup.crossedProductClass_quadratic hcard hgen hgenK b,
-    brauerCohomologyEquiv_crossedProductClass, TwoCocycle.inflateClass_def, hW]
-  exact congrArg _ (H2pi_eq_iff.2 (inflateZ2_quadratic_sub_mem_B2 hα hβ L hcard (fun g ↦
+    brauerCohomologyEquiv_crossedProductClass]
+  exact TwoCocycle.inflateClass_quadratic_eq_h2MuToUnits_cup hα L hcard fun g ↦
     (AlgEquiv.restrictNormalHom_adjoin_simple_eq_one_iff (α := (α : SeparableClosure K)) g).trans
-      (by rw [AlgEquiv.smul_units_def, Units.ext_iff]; rfl)) W hWv))
+      (by rw [AlgEquiv.smul_units_def, Units.ext_iff]; rfl)
 
 /-- **The symbol as a cup product, `ι [(a, b)] = (a) ∪ (b)`.** The identification
 `Br(K)[2] ≃ H²_cont(G_K, 𝔽₂)` sends the quaternion symbol `[(a, b)]` to the cup product of the

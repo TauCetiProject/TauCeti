@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Algebra.BCH.Local
+public import TauCeti.Geometry.Lie.Exponential.BCH
 public import TauCeti.Geometry.Lie.Exponential.Units.Compatibility
 
 /-!
@@ -28,6 +29,8 @@ local group law directly in the derivation model of the Lie algebra.
 * `TauCeti.unitsLocalBCH_map_lieExp`: the local exponential product equation.
 * `TauCeti.eq_unitsLocalBCH_of_tendsto_of_map_lieExp_eq`: uniqueness among small germs with the
   same exponential image.
+* `TauCeti.lieLocalBCH_eq_unitsLocalBCH`: the local BCH germ of the Lie group `Rˣ` is the
+  transported algebra-valued germ.
 -/
 
 public section
@@ -282,5 +285,12 @@ theorem eq_unitsLocalBCH_of_tendsto_of_map_lieExp_eq
       rw [unitsLocalBCH_def, Germ.coe_eq]
       filter_upwards [(tendsto_unitsLieAlgebraCoordinates R).eventually hg] with p hp
       simpa only [gR, e, e.symm_apply_apply, e.apply_symm_apply] using congrArg e.symm hp
+
+/-- The local Baker--Campbell--Hausdorff germ of the Lie group `Rˣ` is the Banach-algebra germ
+transported to its Lie algebra. -/
+theorem lieLocalBCH_eq_unitsLocalBCH :
+    lieLocalBCH (modelWithCornersSelf ℝ R) Rˣ = unitsLocalBCH R :=
+  eq_unitsLocalBCH_of_tendsto_of_map_lieExp_eq R _ lieLocalBCH_tendsto
+    (by rw [lieLocalBCH_map_lieExp, unitsLocalBCH_map_lieExp])
 
 end TauCeti

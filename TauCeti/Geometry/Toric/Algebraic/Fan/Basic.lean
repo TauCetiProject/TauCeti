@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Order.Preorder.Finite
 public import TauCeti.Geometry.Convex.Cone.Face.Basic
-public import TauCeti.Geometry.Toric.Algebraic.Cone
+public import TauCeti.Geometry.Toric.Algebraic.Cone.Basic
 public import TauCeti.Geometry.Toric.Algebraic.Lattice
 
 /-!

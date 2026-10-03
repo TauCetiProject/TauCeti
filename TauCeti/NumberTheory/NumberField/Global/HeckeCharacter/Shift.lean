@@ -13,7 +13,7 @@ import Mathlib.Topology.Instances.RealVectorSpace
 import TauCeti.Analysis.Normed.Field.CompactGroup
 import TauCeti.Analysis.SpecialFunctions.Complex.CpowCharacter
 import TauCeti.NumberTheory.NumberField.Global.Ideles.Norm.Compact
-import TauCeti.Topology.Algebra.ContinuousMonoidHom
+import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 
 /-!
 # The shift and the unitary part of a Hecke character

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Toric.Algebraic.Ray.Generation
+public import TauCeti.Geometry.Toric.Algebraic.Ray.Face
 
 /-!
 # Rays of a finite toric fan
@@ -15,6 +15,8 @@ finite and agrees, below any cone of the fan, with the rays of that cone. Every 
 fan contains a ray; this follows from the generation of a toric cone by its rays.
 
 The global ray type is the natural index for invariant boundary components of a toric variety.
+Containment of cones is detected by their rays, and any set of rays lying in a simplicial cone
+is the ray set of one of its faces. These facts determine which boundary components intersect.
 
 ## Main declarations
 
@@ -23,6 +25,9 @@ The global ray type is the natural index for invariant boundary components of a 
 * `TauCeti.Toric.Fan.Ray.toToricRay`: a fan ray contained in a cone, viewed as a ray of that cone.
 * `TauCeti.Toric.Fan.rayEquiv`: the equivalence between rays below a cone and its toric rays.
 * `TauCeti.Toric.Fan.exists_ray_le_of_ne_bot`: every nonzero cone of a fan contains a ray.
+* `TauCeti.Toric.Fan.le_iff_forall_ray_le`: containment of cones is detected by their rays.
+* `TauCeti.Toric.Fan.exists_cone_rays_eq`: a collection of rays in a simplicial cone is exactly
+  the ray set of a face.
 
 ## References
 
@@ -119,5 +124,34 @@ theorem exists_ray_le_of_ne_bot (sigma : Phi.cones) (hσ : sigma.1 ≠ ⊥) :
   let rho := Classical.choice (ToricRay.nonempty_of_ne_bot
     (Phi.isToricCone sigma.2).fg (Phi.isToricCone sigma.2).salient hσ)
   exact ⟨Ray.ofToricRay Phi sigma rho, rho.1.isFaceOf.le⟩
+
+/-- Containment of fan cones is detected by their rays. No regularity is needed. -/
+theorem le_iff_forall_ray_le {sigma tau : Phi.cones} :
+    sigma ≤ tau ↔ ∀ rho : Phi.Ray, rho.toCone ≤ sigma → rho.toCone ≤ tau := by
+  refine ⟨fun h _ hrho ↦ hrho.trans h, fun h ↦ ?_⟩
+  apply Subtype.coe_le_coe.mp
+  rw [← ToricRay.iSup_toPointedCone (Phi.isToricCone sigma.2).fg
+    (Phi.isToricCone sigma.2).salient]
+  exact iSup_le fun rho ↦ h (Ray.ofToricRay Phi sigma rho)
+    (Ray.toCone_ofToricRay_le Phi sigma rho)
+
+/-- Any collection of rays contained in a simplicial cone of a fan is exactly the collection of
+rays of a face of that cone. This includes the empty collection, which gives the zero cone. -/
+theorem exists_cone_rays_eq {S : Set Phi.Ray} {sigma : Phi.cones}
+    (hSigma : sigma.1.IsSimplicial) (hS : ∀ rho ∈ S, rho.toCone ≤ sigma) :
+    ∃ tau : Phi.cones, tau ≤ sigma ∧ ∀ rho : Phi.Ray, rho.toCone ≤ tau ↔ rho ∈ S := by
+  let A : Set (ToricRay sigma.1) := {rho | Ray.ofToricRay Phi sigma rho ∈ S}
+  obtain ⟨F, hF⟩ := exists_face_rays_eq_of_isSimplicial hSigma A
+  let tau : Phi.cones := ⟨F.toPointedCone, Phi.mem_of_isFaceOf sigma.2 F.isFaceOf⟩
+  have hTau : tau ≤ sigma := F.isFaceOf.le
+  have hRay (rho : Phi.Ray) (h : rho.toCone ≤ sigma) : rho.toCone ≤ tau ↔ rho ∈ S := by
+    let nu := rho.toToricRay Phi sigma h
+    have hInverse := congrArg Subtype.val ((Phi.rayEquiv sigma).symm_apply_apply ⟨rho, h⟩)
+    simp only [rayEquiv_apply, rayEquiv_symm_apply, Subtype.coe_mk] at hInverse
+    rw [← Subtype.coe_le_coe]
+    simpa only [nu, Ray.toPointedCone_toToricRay, A, Set.mem_ofPred_eq,
+      hInverse, tau] using hF nu
+  refine ⟨tau, hTau, fun rho ↦ ⟨fun h ↦ (hRay rho (h.trans hTau)).mp h,
+    fun h ↦ (hRay rho (hS rho h)).mpr h⟩⟩
 
 end TauCeti.Toric.Fan

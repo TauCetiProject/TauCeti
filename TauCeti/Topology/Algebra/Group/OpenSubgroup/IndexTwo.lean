@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Topology.Instances.ZMod
 public import TauCeti.GroupTheory.Index.Two
-public import TauCeti.Topology.Algebra.ContinuousMonoidHom
+public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 
 /-!
 # The character of an open subgroup of index two is continuous

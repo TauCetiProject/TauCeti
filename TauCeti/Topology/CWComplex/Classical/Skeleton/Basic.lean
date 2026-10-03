@@ -32,6 +32,21 @@ variable {X : Type w} [TopologicalSpace X] [T2Space X]
 /-- The `n`-th stage of the skeletal filtration, as an object of `TopCat`. -/
 abbrev skeletonObj (n : ℕ) : TopCat.{w} := TopCat.of (skeletonLT C (n : ℕ∞) : Set X)
 
+/-- If there are no cells of dimension at least `n`, the stage `skeletonLT C n` is the
+whole relative CW complex, including its base. -/
+lemma skeletonLT_eq_complex_of_isEmpty_cell (n : ℕ)
+    (hn : ∀ m, n ≤ m → IsEmpty (cell C m)) :
+    (skeletonLT C (n : ℕ∞) : Set X) = C := by
+  refine Set.Subset.antisymm (skeletonLT C _).subset_complex ?_
+  conv_lhs => rw [← union_iUnion_openCell_eq_complex (C := C)]
+  refine Set.union_subset (skeletonLT C _).base_subset ?_
+  refine Set.iUnion_subset fun m ↦ Set.iUnion_subset fun j ↦ ?_
+  have hm : m < n := by
+    by_contra h
+    exact (hn m (Nat.le_of_not_gt h)).false j
+  exact (openCell_subset_skeletonLT m j).trans
+    (skeletonLT_mono (by exact_mod_cast hm))
+
 variable {C}
 
 /-- The characteristic map of an `n`-cell sends the open unit ball into its open cell, which is

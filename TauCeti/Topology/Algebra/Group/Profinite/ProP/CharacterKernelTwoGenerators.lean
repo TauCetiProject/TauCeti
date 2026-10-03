@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.Commutator.Basic
-public import TauCeti.Topology.Algebra.ContinuousMonoidHom
+public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.PadicUnits
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Procyclic
 import TauCeti.GroupTheory.Commutator

@@ -28,6 +28,9 @@ Thus a topologically finitely generated abelian pro-`p` group is a finitely gene
 ## Main results
 
 * `TauCeti.IsProP.isCompactModule`: an abelian pro-`p` group is a compact `ℤ_[p]`-module.
+* `TauCeti.IsProP.topologicalClosure_closure_eq_top_iff_span_eq_top`: a finite subset
+  topologically generates an abelian pro-`p` group exactly when it spans its canonical
+  `ℤ_[p]`-module.
 * `TauCeti.IsProP.isTopologicallyFinitelyGenerated_iff_module_finite`: topological finite
   generation of an abelian pro-`p` group is equivalent to finite generation of its canonical
   `ℤ_[p]`-module.
@@ -75,6 +78,24 @@ theorem span_le_topologicalClosure_closure (hA : IsProP p A) (s : Set (Additive 
       (continuous_id.smul continuous_const)
   · simpa [hA.module_smul] using H.nsmul_mem hx n
 
+/-- **A finite subset topologically generates an abelian pro-`p` group exactly when it spans the
+canonical `ℤ_[p]`-module** `TauCeti.IsProP.module`. -/
+theorem topologicalClosure_closure_eq_top_iff_span_eq_top (hA : IsProP p A) {s : Set A}
+    (hs : s.Finite) :
+    (Subgroup.closure s).topologicalClosure = ⊤ ↔
+      letI := hA.module
+      Submodule.span ℤ_[p] (Additive.toMul ⁻¹' s) = ⊤ := by
+  let _ : Module ℤ_[p] (Additive A) := hA.module
+  let _ : ContinuousSMul ℤ_[p] (Additive A) := hA.continuousSMul_module
+  rw [← Subgroup.dense_iff_topologicalClosure_eq_top, ← Subgroup.dense_toAddSubgroup_iff,
+    Subgroup.toAddSubgroup_closure]
+  -- The span of a finite set is closed, and it lies in the closure of the subgroup the set
+  -- generates.
+  refine ⟨Submodule.span_eq_top_of_dense_closure (hs.preimage Additive.toMul.injective.injOn)
+    Submodule.subset_span, fun h ↦ ?_⟩
+  rw [AddSubgroup.dense_iff_topologicalClosure_eq_top]
+  exact top_unique fun x _ ↦ hA.span_le_topologicalClosure_closure _ (h ▸ Submodule.mem_top)
+
 /-- **Compact abelian pro-`p` groups have the same algebraic and topological notion of finite
 generation.** The module structure in the right-hand side is `TauCeti.IsProP.module`. -/
 theorem isTopologicallyFinitelyGenerated_iff_module_finite (hA : IsProP p A) :
@@ -82,56 +103,18 @@ theorem isTopologicallyFinitelyGenerated_iff_module_finite (hA : IsProP p A) :
       letI := hA.module
       Module.Finite ℤ_[p] (Additive A) := by
   let _ : Module ℤ_[p] (Additive A) := hA.module
-  let _ : ContinuousSMul ℤ_[p] (Additive A) := hA.continuousSMul_module
   constructor
   · intro hfg
     obtain ⟨s, hs⟩ := isTopologicallyFinitelyGenerated_iff.mp hfg
-    have ht : (Additive.ofMul '' (s : Set A)).Finite := s.finite_toSet.image _
-    -- The additive classes of `s` span: their `ℤ_p`-span is closed and contains the dense
-    -- subgroup they generate.
-    have hspan : Submodule.span ℤ_[p] (Additive.ofMul '' (s : Set A)) = ⊤ := by
-      refine Submodule.span_eq_top_of_dense_closure ht Submodule.subset_span ?_
-      rw [Equiv.image_eq_preimage_symm, Additive.ofMul_symm_eq, ← Subgroup.toAddSubgroup_closure,
-        Subgroup.dense_toAddSubgroup_iff, Subgroup.dense_iff_topologicalClosure_eq_top]
-      exact hs
-    exact Module.finite_def.2 (hspan ▸ Submodule.fg_span ht)
+    rw [hA.topologicalClosure_closure_eq_top_iff_span_eq_top s.finite_toSet] at hs
+    exact Module.finite_def.2
+      (hs ▸ Submodule.fg_span (s.finite_toSet.preimage Additive.toMul.injective.injOn))
   · intro hfinite
-    obtain ⟨s, hs⟩ := hfinite.fg_top
+    obtain ⟨t, ht⟩ := hfinite.fg_top
     classical
-    apply isTopologicallyFinitelyGenerated_iff.mpr
-    refine ⟨(s.image Additive.toMul), ?_⟩
-    have hspan_le := hA.span_le_topologicalClosure_closure (s : Set (Additive A))
-    have haddtop : (AddSubgroup.closure (s : Set (Additive A))).topologicalClosure = ⊤ := by
-      apply top_unique
-      intro x _
-      apply hspan_le
-      rw [hs]
-      trivial
-    have hclosure :
-        (Subgroup.closure (Additive.toMul '' (s : Set (Additive A)))).toAddSubgroup =
-          AddSubgroup.closure (s : Set (Additive A)) := by
-      rw [Subgroup.toAddSubgroup_closure]
-      congr 1
-      ext x
-      simp
-    apply SetLike.ext
-    intro x
-    constructor
-    · intro _
-      trivial
-    · intro _
-      have hx : Additive.ofMul x ∈
-          (AddSubgroup.closure (s : Set (Additive A))).topologicalClosure := by
-        rw [haddtop]
-        trivial
-      rw [← hclosure] at hx
-      -- `Additive A` has definitionally the topology of `A`; expose the carrier closures to
-      -- pass back through the type tag without relying on the subgroup operations.
-      change x ∈ _root_.closure
-        (Subgroup.closure (Additive.toMul '' (s : Set (Additive A))) : Set A) at hx
-      change x ∈ _root_.closure
-        (Subgroup.closure ((s.image Additive.toMul : Finset A) : Set A) : Set A)
-      simpa only [Finset.coe_image] using hx
+    refine isTopologicallyFinitelyGenerated_iff.mpr ⟨t.image Additive.toMul, ?_⟩
+    rwa [hA.topologicalClosure_closure_eq_top_iff_span_eq_top (Finset.finite_toSet _),
+      Finset.coe_image, Additive.toMul.injective.preimage_image]
 
 /-- **Closed subgroups of topologically finitely generated abelian pro-`p` groups are topologically
 finitely generated**, by finitely many of their own elements: a closed subgroup is a

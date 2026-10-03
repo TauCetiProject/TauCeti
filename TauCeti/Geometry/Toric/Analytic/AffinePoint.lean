@@ -367,6 +367,12 @@ theorem comap_apply_single (f : S →+ T) (x : AffineSemigroupComplexPoint T) (s
     comap f x (MonoidAlgebra.single (ofAdd s) 1) = x (MonoidAlgebra.single (ofAdd (f s)) 1) := by
   simp [comap_apply]
 
+/-- Pulling back preserves the distinguished point whose monomial values are all one. -/
+@[simp]
+theorem comap_default (f : S →+ T) :
+    comap f (default : AffineSemigroupComplexPoint T) = default :=
+  AffineSemigroupComplexPoint.ext fun s ↦ by rw [comap_apply_single]; simp
+
 /-- Pulling back along the identity does nothing. -/
 @[simp]
 theorem comap_id : comap (AddMonoidHom.id S) = id := by

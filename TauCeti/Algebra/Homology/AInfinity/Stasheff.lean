@@ -74,6 +74,10 @@ propositionally equal arities.
   is the unsuspended one scaled by that sign.
 * `TauCeti.AInfinity.suspendedStasheffSum_eq_zero_iff`: the suspended identity free of the
   structural coefficient `(-1) ^ (r + s * t)` holds exactly when the unsuspended identity does.
+* `TauCeti.AInfinity.stasheffTerm_eq_zero_of_inner_eq_zero`,
+  `TauCeti.AInfinity.stasheffTerm_eq_zero_of_outer_eq_zero` and
+  `TauCeti.AInfinity.stasheffTerm_of_even`: a term vanishes with either of its operations, and an
+  even inner arity `s` leaves only the sign `(-1) ^ p`.
 * `TauCeti.AInfinity.sum_stasheff_reflect`: the reflection `(p, s, t) ↦ (t, s, p)` of the
   decompositions indexing a Stasheff sum.
 * `TauCeti.AInfinity.stasheffSum_one`, `TauCeti.AInfinity.stasheffSum_two`,
@@ -361,6 +365,35 @@ theorem stasheffTerm_congr {e : ℕ → ℤ} {y : ℕ → A} (p s t : ℕ)
   · simp
   · rw [replaceBlock_of_gt _ _ _ _ hip, replaceBlock_of_gt _ _ _ _ hip]
     exact hx (i + s - 1) (by omega)
+
+/-- A Stasheff term vanishes when its inner operation, of arity `s`, is zero. -/
+theorem stasheffTerm_eq_zero_of_inner_eq_zero {p s t : ℕ} (h : m s = 0) :
+    stasheffTerm m d x p s t = 0 := by
+  have hinner : evalNat (m s) (fun j ↦ x (p + j)) = 0 := by
+    rw [h, evalNat_def, _root_.zero_apply]
+  rw [stasheffTerm_def, hinner, evalNat_def,
+    (m _).map_coord_zero (⟨p, by omega⟩ : Fin (p + 1 + t)) (by simp), smul_zero]
+
+/-- A Stasheff term vanishes when its outer operation, of arity `p + 1 + t`, is zero. -/
+theorem stasheffTerm_eq_zero_of_outer_eq_zero {p s t : ℕ} (h : m (p + 1 + t) = 0) :
+    stasheffTerm m d x p s t = 0 := by
+  rw [stasheffTerm_def, h, evalNat_def, _root_.zero_apply, smul_zero]
+
+/-- When the inner arity `s` is even, the sign of a Stasheff term is `(-1) ^ p`: both the
+structural exponent `s * t` and the Koszul exponent `(2 - s) * (d 0 + ⋯ + d (p - 1))` are even. -/
+theorem stasheffTerm_of_even {s : ℕ} (hs : Even s) (p t : ℕ) :
+    stasheffTerm m d x p s t =
+      negOnePowCast R (p : ℤ) • evalNat (m (p + 1 + t))
+        (replaceBlock x p s (evalNat (m s) fun j ↦ x (p + j))) := by
+  obtain ⟨r, rfl⟩ := hs
+  rw [stasheffTerm_def]
+  congr 1
+  have hexp : (p : ℤ) + ((r + r : ℕ) : ℤ) * t + (2 - ((r + r : ℕ) : ℤ)) *
+      ∑ i ∈ Finset.range p, d i =
+      p + 2 * (r * t + (1 - r) * ∑ i ∈ Finset.range p, d i) := by
+    push_cast
+    ring
+  rw [hexp, negOnePowCast_add, negOnePowCast_two_mul, mul_one]
 
 /-- The `(p, s, t)` term of the suspended Stasheff identity: the same substitution performed with
 the suspended operations, with no structural coefficient and with the Koszul coefficient of the

@@ -12,7 +12,7 @@ public import TauCeti.NumberTheory.Padics.RingHoms
 
 import Mathlib.NumberTheory.Cyclotomic.Gal
 import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
-import TauCeti.Topology.Algebra.ContinuousMonoidHom
+import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 
 /-!
 # Surjectivity of a local cyclotomic character

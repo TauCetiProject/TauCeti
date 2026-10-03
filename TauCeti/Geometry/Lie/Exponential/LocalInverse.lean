@@ -24,6 +24,8 @@ tangent-space exponential.
   at the identity coordinate.
 * `eventually_mulInvariantExp_log`: exponential followed after logarithm is locally the identity.
 * `eventually_mulInvariantLog_exp`: logarithm followed after exponential is locally the identity.
+* `TauCeti.eventuallyEq_of_tendsto_of_lieExp_eventuallyEq`: `lieExp` is locally injective at zero,
+  in filter form.
 * `isLocalDiffeomorphAt_lieExp_zero`: the canonical Lie-group exponential is a local
   `C∞` local diffeomorphism at zero.
 * `isLocalDiffeomorphAt_mulInvariantExpChart_zero`: the fully charted exponential is a local
@@ -426,6 +428,20 @@ theorem eventually_lieExp_lieLog [FiniteDimensional ℝ E] [LieGroup I ∞ G]
       GroupLieAlgebra I G) = g
   rw [L.apply_symm_apply]
   exact hg
+
+namespace TauCeti
+
+/-- **The Lie-group exponential is locally injective at zero.** Two functions into the Lie algebra
+that tend to zero along a filter and have eventually equal exponentials are eventually equal. -/
+theorem eventuallyEq_of_tendsto_of_lieExp_eventuallyEq [FiniteDimensional ℝ E]
+    [LieGroup I ∞ G] [T2Space G] [BoundarylessManifold I G] {α : Type*} {l : Filter α}
+    {f g : α → LeftInvariantDerivation I G} (hf : Tendsto f l (𝓝 0)) (hg : Tendsto g l (𝓝 0))
+    (h : (fun a ↦ lieExp (f a)) =ᶠ[l] fun a ↦ lieExp (g a)) : f =ᶠ[l] g := by
+  filter_upwards [hf.eventually (eventually_lieLog_lieExp (I := I) (G := G)),
+    hg.eventually (eventually_lieLog_lieExp (I := I) (G := G)), h] with a hfa hga ha
+  rw [← hfa, ← hga, ha]
+
+end TauCeti
 
 /-- In model-space coordinates, the tangent-space exponential is injective on a neighborhood of
 zero. -/

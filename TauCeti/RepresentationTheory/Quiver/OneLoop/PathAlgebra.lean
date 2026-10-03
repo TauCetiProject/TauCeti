@@ -19,8 +19,11 @@ semiring; over a division ring, it is infinite-dimensional.
 
 ## Main declarations
 
-* `TauCeti.PathAlgebra.oneLoopAlgEquiv`: its path algebra is `AddMonoidAlgebra k ℕ`, sending a
-  path to the monomial of degree its length (`TauCeti.PathAlgebra.oneLoopAlgEquiv_single`).
+* `TauCeti.PathAlgebra.oneLoopRingEquiv`: over any semiring, its path algebra is
+  `AddMonoidAlgebra k ℕ`.
+* `TauCeti.PathAlgebra.oneLoopAlgEquiv`: over a commutative semiring, this is an algebra
+  equivalence sending a path to the monomial of degree its length
+  (`TauCeti.PathAlgebra.oneLoopAlgEquiv_single`).
 * `TauCeti.not_module_finite_pathAlgebra_oneLoop`: the one-loop path algebra is not a finite
   module.
 -/
@@ -33,41 +36,11 @@ open _root_.Quiver
 
 universe w
 
-namespace Quiver
-
-namespace OneLoop
-
-private def pathOfLength : ℕ → _root_.Quiver.Path (vertex : OneLoop) vertex
-  | 0 => .nil
-  | n + 1 => (pathOfLength n).cons loop
-
-@[simp]
-private theorem length_pathOfLength (n : ℕ) : (pathOfLength n).length = n := by
-  induction n with
-  | zero => rfl
-  | succ n ih => simp [pathOfLength, ih]
-
-/-- Paths in the one-loop quiver are classified by their length. -/
-private def totalPathEquivNat : Quiver.TotalPath OneLoop ≃ ℕ where
-  toFun x := x.2.2.length
-  invFun n := ⟨vertex, vertex, pathOfLength n⟩
-  left_inv := by
-    rintro ⟨a, b, p⟩
-    induction p with
-    | nil => cases a; rfl
-    | @cons b c p e ih =>
-      cases a; cases b; cases c
-      simp only [Sigma.mk.injEq, heq_eq_eq, true_and] at ih
-      simp [pathOfLength, ih, eq_iff_true_of_subsingleton]
-  right_inv := length_pathOfLength
-
-end OneLoop
-
-end Quiver
-
 namespace PathAlgebra
 
-variable (k : Type w) [CommSemiring k]
+section Semiring
+
+variable (k : Type w) [Semiring k]
 
 private noncomputable def oneLoopLinearEquiv :
     pathAlgebra k Quiver.OneLoop ≃ₗ[k] AddMonoidAlgebra k ℕ :=
@@ -77,12 +50,7 @@ private noncomputable def oneLoopLinearEquiv :
 
 private theorem oneLoopLinearEquiv_single (x : Quiver.TotalPath Quiver.OneLoop) (c : k) :
     oneLoopLinearEquiv k (single x c) = AddMonoidAlgebra.single x.2.2.length c := by
-  simp [oneLoopLinearEquiv, Quiver.OneLoop.totalPathEquivNat]
-
-private theorem oneLoopLinearEquiv_map_one :
-    oneLoopLinearEquiv k (1 : pathAlgebra k Quiver.OneLoop) = 1 := by
-  rw [one_def]
-  simp [vertexIdempotent_eq_single, oneLoopLinearEquiv_single, ← AddMonoidAlgebra.one_def]
+  simp [oneLoopLinearEquiv]
 
 private theorem oneLoopLinearEquiv_map_mul (f g : pathAlgebra k Quiver.OneLoop) :
     oneLoopLinearEquiv k (f * g) = oneLoopLinearEquiv k f * oneLoopLinearEquiv k g := by
@@ -98,19 +66,58 @@ private theorem oneLoopLinearEquiv_map_mul (f g : pathAlgebra k Quiver.OneLoop) 
       obtain ⟨⟨⟩, ⟨⟩, q⟩ := y
       simp [oneLoopLinearEquiv_single, _root_.Quiver.Path.length_comp, Nat.add_comm]
 
+/-- Over any semiring, the one-loop path algebra is the additive monoid algebra on `ℕ`. -/
+noncomputable def oneLoopRingEquiv :
+    pathAlgebra k Quiver.OneLoop ≃+* AddMonoidAlgebra k ℕ where
+  __ := (oneLoopLinearEquiv k).toAddEquiv
+  map_mul' := oneLoopLinearEquiv_map_mul k
+
+/-- The ring equivalence sends a path to the monomial of degree its length. -/
+@[simp]
+theorem oneLoopRingEquiv_single (x : Quiver.TotalPath Quiver.OneLoop) (c : k) :
+    oneLoopRingEquiv k (single x c) = AddMonoidAlgebra.single x.2.2.length c :=
+  oneLoopLinearEquiv_single k x c
+
+/-- The inverse ring equivalence sends a monomial to the canonical path of its degree. -/
+@[simp]
+theorem oneLoopRingEquiv_symm_single (n : ℕ) (c : k) :
+    (oneLoopRingEquiv k).symm (AddMonoidAlgebra.single n c) =
+      single (Quiver.OneLoop.totalPathEquivNat.symm n) c := by
+  apply (oneLoopRingEquiv k).injective
+  simp
+
+end Semiring
+
+variable (k : Type w) [CommSemiring k]
+
 /-- The path algebra of the quiver with one vertex and one loop is the additive monoid algebra on
 `ℕ` (equivalently, the polynomial algebra in one variable). -/
 noncomputable def oneLoopAlgEquiv :
     pathAlgebra k Quiver.OneLoop ≃ₐ[k] AddMonoidAlgebra k ℕ :=
-  AlgEquiv.ofLinearEquiv (oneLoopLinearEquiv k) (oneLoopLinearEquiv_map_one k)
-    (oneLoopLinearEquiv_map_mul k)
+  { oneLoopRingEquiv k with
+    commutes' := fun r => by
+      rw [Algebra.algebraMap_eq_smul_one, Algebra.algebraMap_eq_smul_one]
+      exact ((oneLoopLinearEquiv k).map_smul r 1).trans
+        (congrArg (r • ·) (map_one (oneLoopRingEquiv k))) }
+
+/-- The underlying ring equivalence of `oneLoopAlgEquiv` is `oneLoopRingEquiv`. -/
+@[simp]
+theorem oneLoopAlgEquiv_toRingEquiv :
+    (oneLoopAlgEquiv k).toRingEquiv = oneLoopRingEquiv k := (rfl)
 
 /-- The isomorphism `oneLoopAlgEquiv` sends a path with coefficient `c` to the monomial of degree
 its length with coefficient `c`. -/
 @[simp]
 theorem oneLoopAlgEquiv_single (x : Quiver.TotalPath Quiver.OneLoop) (c : k) :
-    oneLoopAlgEquiv k (single x c) = AddMonoidAlgebra.single x.2.2.length c := by
-  simp [oneLoopAlgEquiv, oneLoopLinearEquiv_single]
+    oneLoopAlgEquiv k (single x c) = AddMonoidAlgebra.single x.2.2.length c :=
+  oneLoopRingEquiv_single k x c
+
+/-- The inverse algebra equivalence sends a monomial to the canonical path of its degree. -/
+@[simp]
+theorem oneLoopAlgEquiv_symm_single (n : ℕ) (c : k) :
+    (oneLoopAlgEquiv k).symm (AddMonoidAlgebra.single n c) =
+      single (Quiver.OneLoop.totalPathEquivNat.symm n) c :=
+  oneLoopRingEquiv_symm_single k n c
 
 end PathAlgebra
 

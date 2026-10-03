@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.Anharmonic
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.PeripheralLoops
 public import TauCeti.Topology.Homotopy.Path
 import Mathlib.Analysis.Convex.Contractible
@@ -28,6 +29,17 @@ Consequently `periph1 * periph0` is the class of `α₊ · δ · α₊.symm`, an
 the circle `|z| = 3` traversed **clockwise** in the affine coordinate `z`, transported to the
 basepoint along `α₊`. In the chart `w = 1/z` at `∞` the same circle runs counterclockwise.
 
+The anharmonic self-homeomorphism `z ↦ z / (z − 1)` of `ℂ ∖ {0, 1}` fixes the puncture `0` and
+exchanges `1` with `∞`, so it gives a second description of `periphInf`: the image of the loop `γ1`
+around `1`. The map moves the basepoint `1/2` to `−1`; transporting back along the path `α₋₁` from
+`−1` to `1/2` through the closed upper half-plane, it induces an automorphism `mob1InfMulAut` of
+`π₁(ℂ ∖ {0, 1}, 1/2)`, and
+
+  `mob1InfMulAut periph0 = periph0`,  `mob1InfMulAut periph1 = periphInf`.
+
+These values are what identify pulling covers back along `z ↦ z / (z − 1)` with the exchange of
+the branch points `1` and `∞` on permutation triples.
+
 ## Main declarations
 
 * `TauCeti.ThricePuncturedSphere.pPlus`: the point `1/2 + (√35/2)·i` of the circle `|z| = 3`.
@@ -39,6 +51,12 @@ basepoint along `α₊`. In the chart `w = 1/z` at `∞` the same circle runs co
 * `TauCeti.ThricePuncturedSphere.periph1_mul_periph0_eq_fromPath`,
   `TauCeti.ThricePuncturedSphere.periphInf_eq_fromPath`: `periph1 * periph0` is the class of
   `α₊ · δ · α₊.symm`, and `periphInf` is the class of `α₊ · δ.symm · α₊.symm`.
+* `TauCeti.ThricePuncturedSphere.αMob1Inf`: the path from `−1` to `1/2` through the upper
+  half-plane, with `range_αMob1Inf`.
+* `TauCeti.ThricePuncturedSphere.mob1InfMulAut`: the automorphism of `π₁(ℂ ∖ {0, 1}, 1/2)` induced
+  by `z ↦ z / (z − 1)` and `α₋₁`, with `mob1InfMulAut_periph0`, `mob1InfMulAut_periph1` and
+  `mob1InfMulAut_periphInf`, and the values `mob1InfMulAut_symm_periph0` and
+  `mob1InfMulAut_symm_periph1` of its inverse.
 
 ## References
 
@@ -393,6 +411,20 @@ private theorem range_γ1₂ : range γ1₂ ⊆ {z | 0 ≤ (z : ℂ).im} := by
   exact mul_nonneg_of_nonpos_of_nonpos (by norm_num) (sin_nonpos_of_pi_le
     (by linarith [two_pi_mul_tHalf]) (by linarith))
 
+/-- Two paths with the same endpoints in a simply connected subset are homotopic. -/
+private theorem homotopic_of_range_subset {V : Set ThricePuncturedSphere} (hV : IsSimplyConnected V)
+    {x y : ThricePuncturedSphere} {p q : Path x y} (hp : range p ⊆ V) (hq : range q ⊆ V) :
+    p.Homotopic q :=
+  let ⟨K, _⟩ := Path.exists_homotopy_forall_mem_of_isSimplyConnected hV
+    (range_subset_iff.1 hp) (range_subset_iff.1 hq)
+  ⟨K⟩
+
+/-- A subset of the real axis lies in both closed half-planes. -/
+private theorem subset_halfPlanes_of_real {S : Set ThricePuncturedSphere}
+    (hS : S ⊆ {z | (z : ℂ).im = 0}) :
+    S ⊆ {z | 0 ≤ (z : ℂ).im} ∧ S ⊆ {z | (z : ℂ).im ≤ 0} :=
+  ⟨hS.trans fun _ h ↦ h.symm.le, hS.trans fun _ h ↦ h.le⟩
+
 /-! ### The loop at infinity -/
 
 /-- **The big circle is the product of the two small ones.** The circle `|z| = 3`, traversed
@@ -400,26 +432,19 @@ counterclockwise and transported to the basepoint `1/2` along the vertical segme
 homotopic in `ℂ ∖ {0, 1}` to the loop `γ0` around `0` followed by the loop `γ1` around `1`. -/
 theorem αPlus_trans_δ_trans_symm_homotopic_γ0_trans_γ1 :
     ((αPlus.trans δ).trans αPlus.symm).Homotopic (γ0.trans γ1) := by
-  have homotopic_of_range_subset {V : Set ThricePuncturedSphere} (hV : IsSimplyConnected V)
-      {x y : ThricePuncturedSphere} {p q : Path x y} (hp : range p ⊆ V) (hq : range q ⊆ V) :
-      p.Homotopic q :=
-    let ⟨K, _⟩ := Path.exists_homotopy_forall_mem_of_isSimplyConnected hV
-      (range_subset_iff.1 hp) (range_subset_iff.1 hq)
-    ⟨K⟩
-  have hreal {S : Set ThricePuncturedSphere} (hS : S ⊆ {z | (z : ℂ).im = 0}) :
-      S ⊆ {z | 0 ≤ (z : ℂ).im} ∧ S ⊆ {z | (z : ℂ).im ≤ 0} :=
-    ⟨hS.trans fun _ h ↦ h.symm.le, hS.trans fun _ h ↦ h.le⟩
   -- the three pairs of pieces, each pair in a common closed half-plane
   have hA : (αPlus.trans δ₁).Homotopic (γ0₁.trans segNeg) :=
     homotopic_of_range_subset isSimplyConnected_upper
       (by rw [Path.trans_range]; exact union_subset range_αPlus range_δ₁)
-      (by rw [Path.trans_range]; exact union_subset range_γ0₁ (hreal range_segNeg).1)
+      (by
+        rw [Path.trans_range]
+        exact union_subset range_γ0₁ (subset_halfPlanes_of_real range_segNeg).1)
   have hB : δ₂.Homotopic (segNeg.symm.trans (γ0₂.trans (γ1₁.trans segPos))) :=
     homotopic_of_range_subset isSimplyConnected_lower range_δ₂
       (by
         simp only [Path.trans_range, Path.symm_range]
-        exact union_subset (hreal range_segNeg).2 <| union_subset range_γ0₂ <|
-          union_subset range_γ1₁ (hreal range_segPos).2)
+        exact union_subset (subset_halfPlanes_of_real range_segNeg).2 <| union_subset range_γ0₂ <|
+          union_subset range_γ1₁ (subset_halfPlanes_of_real range_segPos).2)
   have hC : (δ₃.trans αPlus.symm).Homotopic (segPos.symm.trans γ1₂) :=
     homotopic_of_range_subset isSimplyConnected_upper
       (by
@@ -427,7 +452,7 @@ theorem αPlus_trans_δ_trans_symm_homotopic_γ0_trans_γ1 :
         exact union_subset range_δ₃ range_αPlus)
       (by
         rw [Path.trans_range, Path.symm_range]
-        exact union_subset (hreal range_segPos).1 range_γ1₂)
+        exact union_subset (subset_halfPlanes_of_real range_segPos).1 range_γ1₂)
   -- assemble the pieces in the fundamental groupoid; the connecting segments cancel
   rw [← Path.Homotopic.Quotient.eq] at hA hB hC ⊢
   simp only [Path.Homotopic.Quotient.mk_trans, Path.Homotopic.Quotient.mk_symm] at hA hB hC ⊢
@@ -453,6 +478,234 @@ theorem periphInf_eq_fromPath :
     exact (Path.Homotopic.trans_assoc _ _ _).symm
   -- the class of the reversed loop is the inverse class by definition (`mk_symm` is `rfl`)
   exact Path.Homotopic.Quotient.eq.2 h
+
+/-! ### The anharmonic map exchanging `1` and `∞`
+
+The self-homeomorphism `mob1Inf : z ↦ z / (z − 1)` fixes the puncture `0`, exchanges the punctures
+`1` and `∞`, and moves the basepoint `1/2` to `−1`. It has real coefficients and reverses the sign
+of the imaginary part, so it exchanges the closed upper and lower half-planes, and the half-plane
+decomposition of the previous section computes the images of the peripheral loops as well. -/
+
+/-- `z ↦ z / (z − 1)` reverses the sign of the imaginary part. -/
+private theorem im_coe_mob1Inf (z : ThricePuncturedSphere) :
+    (mob1Inf z : ℂ).im = -(z : ℂ).im / normSq ((z : ℂ) - 1) := by
+  rw [coe_mob1Inf, div_im, sub_re, sub_im, one_re, one_im, sub_zero]
+  ring
+
+private theorem im_coe_mob1Inf_nonpos {z : ThricePuncturedSphere} (hz : 0 ≤ (z : ℂ).im) :
+    (mob1Inf z : ℂ).im ≤ 0 := by
+  rw [im_coe_mob1Inf]
+  exact div_nonpos_of_nonpos_of_nonneg (neg_nonpos.2 hz) (normSq_nonneg _)
+
+private theorem im_coe_mob1Inf_nonneg {z : ThricePuncturedSphere} (hz : (z : ℂ).im ≤ 0) :
+    0 ≤ (mob1Inf z : ℂ).im := by
+  rw [im_coe_mob1Inf]
+  exact div_nonneg (neg_nonneg.2 hz) (normSq_nonneg _)
+
+/-- The segment of the real axis between two real points `z = a` and `w = b` of `ℂ ∖ {0, 1}`
+lying on the same side of `0` and on the same side of `1`. -/
+private noncomputable def realSegment (z w : ThricePuncturedSphere) (a b : ℝ) (hz : (z : ℂ) = a)
+    (hw : (w : ℂ) = b) (h₀ : 0 < a * b) (h₁ : 0 < (a - 1) * (b - 1)) : Path z w where
+  toFun t := ⟨((1 - t) * a + t * b : ℝ),
+    -- a convex combination of two reals of the same sign is not zero, by convexity of the
+    -- open half-lines `Ioi 0` and `Iio 0`
+    have hne {a b : ℝ} (hab : 0 < a * b) : (1 - t) * a + t * b ≠ 0 := by
+      rcases mul_pos_iff.1 hab with ⟨ha, hb⟩ | ⟨ha, hb⟩
+      · exact (convex_Ioi 0 ha hb (sub_nonneg.2 t.2.2) t.2.1 (sub_add_cancel 1 _)).ne'
+      · exact (convex_Iio 0 ha hb (sub_nonneg.2 t.2.2) t.2.1 (sub_add_cancel 1 _)).ne
+    ⟨fun h ↦ hne h₀ (by exact_mod_cast h), fun h ↦ hne h₁ (by
+      have : ((1 - t) * a + t * b : ℝ) = 1 := by exact_mod_cast h
+      linear_combination this)⟩⟩
+  continuous_toFun := by fun_prop
+  source' := Subtype.ext (by simp [hz])
+  target' := Subtype.ext (by simp [hw])
+
+private theorem range_realSegment (z w : ThricePuncturedSphere) (a b : ℝ) (hz : (z : ℂ) = a)
+    (hw : (w : ℂ) = b) (h₀ : 0 < a * b) (h₁ : 0 < (a - 1) * (b - 1)) :
+    range (realSegment z w a b hz hw h₀ h₁) ⊆ {z | (z : ℂ).im = 0} := by
+  rintro _ ⟨t, rfl⟩
+  simp [realSegment]
+
+private theorem coe_mob1Inf_γ0_tHalf : (mob1Inf (γ0 tHalf) : ℂ) = (1 / 3 : ℝ) := by
+  rw [coe_mob1Inf, coe_γ0_tHalf]
+  push_cast
+  norm_num
+
+private theorem coe_mob1Inf_γ1_tHalf : (mob1Inf (γ1 tHalf) : ℂ) = (3 : ℝ) := by
+  rw [coe_mob1Inf, coe_γ1_tHalf]
+  push_cast
+  norm_num
+
+/-- The segment of the real axis from `−1 = mob1Inf (1/2)` to `−1/2 = γ0 (1/2)`. -/
+private noncomputable def segLeft : Path (mob1Inf basePt) (γ0 tHalf) :=
+  realSegment _ _ (-1) (-(1 / 2)) (by rw [coe_mob1Inf_basePt]; norm_num)
+    (by rw [coe_γ0_tHalf, ofReal_neg])
+    (by norm_num) (by norm_num)
+
+/-- The segment of the real axis from `1/3 = mob1Inf (−1/2)` to the basepoint `1/2`. -/
+private noncomputable def segMid : Path (mob1Inf (γ0 tHalf)) basePt :=
+  realSegment _ _ (1 / 3) (1 / 2) coe_mob1Inf_γ0_tHalf (by rw [coe_basePt]; norm_num)
+    (by norm_num) (by norm_num)
+
+/-- The segment of the real axis from `3/2 = γ1 (1/2)` to `3 = mob1Inf (3/2)`. -/
+private noncomputable def segRight : Path (γ1 tHalf) (mob1Inf (γ1 tHalf)) :=
+  realSegment _ _ (3 / 2) 3 coe_γ1_tHalf coe_mob1Inf_γ1_tHalf (by norm_num) (by norm_num)
+
+/-- The path `α₋₁` from `−1 = mob1Inf (1/2)` to the basepoint `1/2` through the closed upper
+half-plane: along the real axis to `−1/2`, then along the upper half of the circle `|z| = 1/2`
+(`range_αMob1Inf`). Any two such paths are homotopic, the closed upper half-plane of `ℂ ∖ {0, 1}`
+being simply connected. -/
+noncomputable def αMob1Inf : Path (mob1Inf basePt) basePt :=
+  segLeft.trans γ0₁.symm
+
+/-- The path `α₋₁` runs in the closed upper half-plane. -/
+theorem range_αMob1Inf : range αMob1Inf ⊆ {z | 0 ≤ (z : ℂ).im} := by
+  rw [αMob1Inf, Path.trans_range, Path.symm_range]
+  exact union_subset (subset_halfPlanes_of_real (range_realSegment ..)).1 range_γ0₁
+
+/-- The automorphism of `π₁(ℂ ∖ {0, 1}, 1/2)` induced by `z ↦ z / (z − 1)`: the isomorphism onto
+`π₁(ℂ ∖ {0, 1}, −1)` induced by the map, followed by the change of basepoint back to `1/2` along
+`α₋₁`. It sends the class of a loop `γ` to the class of `α₋₁⁻¹ ⬝ (mob1Inf ∘ γ) ⬝ α₋₁`. -/
+noncomputable def mob1InfMulAut : MulAut (FundamentalGroup ThricePuncturedSphere basePt) :=
+  (FundamentalGroup.homeomorphMulEquiv mob1Inf basePt).trans
+    (FundamentalGroup.fundamentalGroupMulEquivOfPath αMob1Inf)
+
+/-- `mob1InfMulAut` is the isomorphism induced by `z ↦ z / (z − 1)` followed by the change of
+basepoint along `α₋₁`. -/
+theorem mob1InfMulAut_def :
+    mob1InfMulAut = (FundamentalGroup.homeomorphMulEquiv mob1Inf basePt).trans
+      (FundamentalGroup.fundamentalGroupMulEquivOfPath αMob1Inf) :=
+  (rfl)
+
+/-- The value of `mob1InfMulAut` on the class of a loop. -/
+private theorem mob1InfMulAut_fromPath (γ : Path basePt basePt) :
+    mob1InfMulAut (FundamentalGroup.fromPath (.mk γ)) =
+      (Path.Homotopic.Quotient.mk αMob1Inf.symm).trans
+        ((Path.Homotopic.Quotient.mk (γ.map mob1Inf.continuous)).trans
+          (Path.Homotopic.Quotient.mk αMob1Inf)) := by
+  simp [mob1InfMulAut_def, FundamentalGroup.fundamentalGroupMulEquivOfPath_apply]
+  -- `FundamentalGroup.fromPath` is an abbreviation for the identity, which blocks rewriting with
+  -- `Path.Homotopic.Quotient.mk_map`; that lemma holds by `rfl`
+  rfl
+
+/-- The class of the image of a loop under `z ↦ z / (z − 1)` is the product of the classes of the
+images of its two halves at the time `1/2`. -/
+private theorem mk_map_mob1Inf {γ : Path basePt basePt} {p : Path basePt (γ tHalf)}
+    {q : Path (γ tHalf) basePt}
+    (h : Path.Homotopic.Quotient.mk γ =
+      (Path.Homotopic.Quotient.mk p).trans (Path.Homotopic.Quotient.mk q)) :
+    Path.Homotopic.Quotient.mk (γ.map mob1Inf.continuous) =
+      (Path.Homotopic.Quotient.mk (p.map mob1Inf.continuous)).trans
+        (Path.Homotopic.Quotient.mk (q.map mob1Inf.continuous)) := by
+  rw [← Path.Homotopic.Quotient.mk_trans, ← Path.map_trans, Path.Homotopic.Quotient.eq]
+  exact (Path.Homotopic.Quotient.eq.1 (h.trans (Path.Homotopic.Quotient.mk_trans _ _).symm)).map
+    ⟨mob1Inf, mob1Inf.continuous⟩
+
+/-- **`z ↦ z / (z − 1)` fixes the peripheral element at `0`.** -/
+@[simp]
+theorem mob1InfMulAut_periph0 : mob1InfMulAut periph0 = periph0 := by
+  -- The image of `γ0` is a circle about `0` through `−1` and `1/3`. Its lower half, from `−1` to
+  -- `1/3`, and its upper half, back to `−1`, are homotopic in the closed lower and upper
+  -- half-planes to paths made of the halves of `γ0` and segments of the real axis.
+  have hL : (γ0₁.map mob1Inf.continuous).Homotopic ((segLeft.trans γ0₂).trans segMid.symm) :=
+    homotopic_of_range_subset isSimplyConnected_lower
+      (by
+        rintro _ ⟨t, rfl⟩
+        exact im_coe_mob1Inf_nonpos (range_γ0₁ ⟨t, rfl⟩))
+      (by
+        simp only [Path.trans_range, Path.symm_range]
+        exact union_subset (union_subset (subset_halfPlanes_of_real (range_realSegment ..)).2
+          range_γ0₂) (subset_halfPlanes_of_real (range_realSegment ..)).2)
+  have hU : (γ0₂.map mob1Inf.continuous).Homotopic ((segMid.trans γ0₁).trans segLeft.symm) :=
+    homotopic_of_range_subset isSimplyConnected_upper
+      (by
+        rintro _ ⟨t, rfl⟩
+        exact im_coe_mob1Inf_nonneg (range_γ0₂ ⟨t, rfl⟩))
+      (by
+        simp only [Path.trans_range, Path.symm_range]
+        exact union_subset (union_subset (subset_halfPlanes_of_real (range_realSegment ..)).1
+          range_γ0₁) (subset_halfPlanes_of_real (range_realSegment ..)).1)
+  rw [← Path.Homotopic.Quotient.eq] at hL hU
+  -- `periph0` is by definition the class of `γ0`
+  have h0 : periph0 = FundamentalGroup.fromPath (.mk γ0) := periph0_def
+  rw [h0, mob1InfMulAut_fromPath, mk_map_mob1Inf mk_γ0, hL, hU]
+  simp only [mk_γ0, αMob1Inf, Path.trans_symm, Path.symm_symm, Path.Homotopic.Quotient.mk_trans,
+    Path.Homotopic.Quotient.mk_symm]
+  grind
+
+/-- **`z ↦ z / (z − 1)` carries the peripheral element at `1` to the peripheral element at `∞`.**
+The image of the loop `γ1` around `1` is a loop around `∞`, and transported back to the basepoint
+along `α₋₁` its class is `periphInf`. -/
+@[simp]
+theorem mob1InfMulAut_periph1 : mob1InfMulAut periph1 = periphInf := by
+  -- The image of `γ1` is the circle `|z − 1| = 2`, run clockwise from `−1`. Its upper half, from
+  -- `−1` to `3`, and its lower half, back to `−1`, are homotopic in the closed upper and lower
+  -- half-planes to paths made of the halves of `γ0` and `γ1` and segments of the real axis.
+  have hU : (γ1₁.map mob1Inf.continuous).Homotopic
+      (((segLeft.trans γ0₁.symm).trans γ1₂.symm).trans segRight) :=
+    homotopic_of_range_subset isSimplyConnected_upper
+      (by
+        rintro _ ⟨t, rfl⟩
+        exact im_coe_mob1Inf_nonneg (range_γ1₁ ⟨t, rfl⟩))
+      (by
+        simp only [Path.trans_range, Path.symm_range]
+        exact union_subset (union_subset (union_subset
+          (subset_halfPlanes_of_real (range_realSegment ..)).1 range_γ0₁) range_γ1₂)
+          (subset_halfPlanes_of_real (range_realSegment ..)).1)
+  have hL : (γ1₂.map mob1Inf.continuous).Homotopic
+      (((segRight.symm.trans γ1₁.symm).trans γ0₂.symm).trans segLeft.symm) :=
+    homotopic_of_range_subset isSimplyConnected_lower
+      (by
+        rintro _ ⟨t, rfl⟩
+        exact im_coe_mob1Inf_nonpos (range_γ1₂ ⟨t, rfl⟩))
+      (by
+        simp only [Path.trans_range, Path.symm_range]
+        exact union_subset (union_subset (union_subset
+          (subset_halfPlanes_of_real (range_realSegment ..)).2 range_γ1₁) range_γ0₂)
+          (subset_halfPlanes_of_real (range_realSegment ..)).2)
+  rw [← Path.Homotopic.Quotient.eq] at hL hU
+  -- `periph0` and `periph1` are by definition the classes of `γ0` and `γ1`
+  have h0 : periph0 = FundamentalGroup.fromPath (.mk γ0) := periph0_def
+  have h1 : periph1 = FundamentalGroup.fromPath (.mk γ1) := periph1_def
+  -- check `mob1InfMulAut periph1 * (periph1 * periph0) = 1`, which involves no inverse of a product
+  rw [periphInf_def, eq_inv_iff_mul_eq_one, h1, h0, mob1InfMulAut_fromPath,
+    FundamentalGroup.mul_def, FundamentalGroup.mul_def, FundamentalGroup.one_def,
+    mk_map_mob1Inf mk_γ1, hL, hU]
+  -- the word cancels letter by letter once it is reassociated to the right
+  have hcancel {x y z : ThricePuncturedSphere} (p : Path.Homotopic.Quotient x y)
+      (q : Path.Homotopic.Quotient x z) : p.trans (p.symm.trans q) = q := by
+    rw [← Path.Homotopic.Quotient.trans_assoc, Path.Homotopic.Quotient.trans_symm,
+      Path.Homotopic.Quotient.refl_trans]
+  have hcancel' {x y z : ThricePuncturedSphere} (p : Path.Homotopic.Quotient x y)
+      (q : Path.Homotopic.Quotient y z) : p.symm.trans (p.trans q) = q := by
+    rw [← Path.Homotopic.Quotient.trans_assoc, Path.Homotopic.Quotient.symm_trans,
+      Path.Homotopic.Quotient.refl_trans]
+  simp only [mk_γ0, mk_γ1, αMob1Inf, Path.trans_symm, Path.symm_symm,
+    Path.Homotopic.Quotient.mk_trans, Path.Homotopic.Quotient.mk_symm,
+    Path.Homotopic.Quotient.trans_assoc, hcancel, hcancel', Path.Homotopic.Quotient.trans_symm]
+
+/-- `z ↦ z / (z − 1)` carries the peripheral element at `∞` to the conjugate
+`periph0⁻¹ * periph1 * periph0` of the peripheral element at `1`. -/
+@[simp]
+theorem mob1InfMulAut_periphInf :
+    mob1InfMulAut periphInf = periph0⁻¹ * periph1 * periph0 := by
+  rw [periphInf_def, map_inv, map_mul, mob1InfMulAut_periph0, mob1InfMulAut_periph1,
+    periphInf_def]
+  group
+
+/-- The inverse of `mob1InfMulAut` fixes `periph0`. -/
+@[simp]
+theorem mob1InfMulAut_symm_periph0 : mob1InfMulAut.symm periph0 = periph0 := by
+  rw [MulEquiv.symm_apply_eq, mob1InfMulAut_periph0]
+
+/-- The inverse of `mob1InfMulAut` carries `periph1` to `periph1⁻¹ * periphInf * periph1`, the
+second component of the branch-point operation exchanging `1` and `∞`. -/
+@[simp]
+theorem mob1InfMulAut_symm_periph1 :
+    mob1InfMulAut.symm periph1 = periph1⁻¹ * periphInf * periph1 := by
+  rw [MulEquiv.symm_apply_eq, map_mul, map_mul, map_inv, mob1InfMulAut_periph1,
+    mob1InfMulAut_periphInf, periphInf_def]
+  group
 
 end ThricePuncturedSphere
 

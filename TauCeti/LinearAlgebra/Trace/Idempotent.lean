@@ -7,6 +7,10 @@ module
 
 public import Mathlib.LinearAlgebra.Trace
 
+import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
+import Mathlib.Tactic.LinearCombination
+import Mathlib.Tactic.NoncommRing
+
 /-!
 # The trace of an endomorphism whose square is a multiple of itself
 
@@ -25,6 +29,14 @@ normalisation, which is exactly what makes the identity usable when the scalar i
 
 * `TauCeti.LinearMap.trace_eq_mul_finrank_range`: if `f * f = a • f`, then
   `trace f = a * finrank (range f)`.
+* `TauCeti.LinearMap.two_mul_finrank_ker_one_add_of_sq_eq_one`: for an involution `σ`,
+  `2 dim ker (1 + σ) = dim M - tr σ`, applying the above to `f = 1 + σ`, whose square is `2 f`.
+* `TauCeti.LinearMap.three_mul_finrank_ker_one_add_add_sq_of_pow_three_eq_one`: for `υ ^ 3 = 1`,
+  `3 dim ker (1 + υ + υ²) = 2 dim M - tr υ - tr υ²`, applying it to `f = 1 + υ + υ²`, whose square
+  is `3 f`.
+
+These two dimension formulas need no hypothesis on the characteristic: when `2`, respectively `3`,
+vanishes in `K`, the essentially idempotent `f` is nilpotent and both sides are zero.
 -/
 
 public section
@@ -56,5 +68,36 @@ theorem LinearMap.trace_eq_mul_finrank_range {f : M →ₗ[K] M} {a : K} (hf : f
       rw [← smul_eq_mul, ← map_smul, ← _root_.LinearMap.range_smul f a⁻¹ (inv_ne_zero ha)]
       exact (_root_.LinearMap.IsIdempotentElem.isProj_range _ hidem).trace
     rw [← htrace, ← mul_assoc, mul_inv_cancel₀ ha, one_mul]
+
+/-- **The trace of an involution determines its `-1`-eigenspace**: if `σ ^ 2 = 1`, then
+`2 dim ker (1 + σ) = dim M - tr σ` in `K`. -/
+theorem LinearMap.two_mul_finrank_ker_one_add_of_sq_eq_one {σ : End K M} (hσ : σ ^ 2 = 1) :
+    2 * (finrank K (_root_.LinearMap.ker (1 + σ)) : K) =
+      finrank K M - _root_.LinearMap.trace K M σ := by
+  -- `f = 1 + σ` has `f * f = 2 • f`, so its trace is twice its rank
+  have hsq : (1 + σ) * (1 + σ) = (2 : K) • (1 + σ) := by
+    rw [Algebra.smul_def, map_ofNat]
+    linear_combination (norm := noncomm_ring) hσ
+  have htr := trace_eq_mul_finrank_range hsq
+  rw [map_add, _root_.LinearMap.trace_one] at htr
+  have hnull := congrArg (Nat.cast : ℕ → K) (1 + σ).finrank_range_add_finrank_ker
+  push_cast at hnull
+  linear_combination 2 * hnull + htr
+
+/-- **The traces of an order-three map determine the kernel of `1 + υ + υ²`**: if `υ ^ 3 = 1`,
+then `3 dim ker (1 + υ + υ²) = 2 dim M - tr υ - tr υ²` in `K`. -/
+theorem LinearMap.three_mul_finrank_ker_one_add_add_sq_of_pow_three_eq_one {υ : End K M}
+    (hυ : υ ^ 3 = 1) :
+    3 * (finrank K (_root_.LinearMap.ker (1 + υ + υ ^ 2)) : K) =
+      2 * finrank K M - _root_.LinearMap.trace K M υ - _root_.LinearMap.trace K M (υ ^ 2) := by
+  -- `f = 1 + υ + υ²` has `f * f = 3 • f`, so its trace is three times its rank
+  have hsq : (1 + υ + υ ^ 2) * (1 + υ + υ ^ 2) = (3 : K) • (1 + υ + υ ^ 2) := by
+    rw [Algebra.smul_def, map_ofNat]
+    linear_combination (norm := noncomm_ring) 2 * hυ + υ * hυ
+  have htr := trace_eq_mul_finrank_range hsq
+  rw [map_add, map_add, _root_.LinearMap.trace_one] at htr
+  have hnull := congrArg (Nat.cast : ℕ → K) (1 + υ + υ ^ 2).finrank_range_add_finrank_ker
+  push_cast at hnull
+  linear_combination 3 * hnull + htr
 
 end TauCeti

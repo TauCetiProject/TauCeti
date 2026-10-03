@@ -230,6 +230,17 @@ theorem tateRes_zero_H0π (T : LayerRestriction small big) (F : Formation G)
   rw [tateHZeroEquivNormQuotient_tateRes_H0π,
     NormalLayer.tateHZeroEquivNormQuotient_H0π, LinearEquiv.apply_symm_apply]
 
+-- Not `@[simp]`: the `@[simp]` lemma `tateRes_zero` rewrites its left-hand side first.
+/-- **In degree zero, restriction is the ground-level inclusion on zero-dimensional classes.** The
+zero-dimensional Tate class of an element of the ground level `A^U` of `K/F` restricts to the
+zero-dimensional Tate class of the same element in the ground level `A^{U'}` of `K/E`. -/
+theorem tateRes_zeroTateClass (T : LayerRestriction small big) (F : Formation G)
+    (a : F.level big.ground) :
+    T.tateRes F 0 (big.zeroTateClass F a) = small.zeroTateClass F (T.groundInclusion F a) := by
+  obtain ⟨x, rfl⟩ := (big.groundLevelEquiv F).surjective a
+  rw [NormalLayer.zeroTateClass_groundLevelEquiv, T.tateRes_zero_H0π,
+    ← NormalLayer.zeroTateClass_groundLevelEquiv, LinearEquiv.apply_symm_apply]
+
 /-- The **relative transfer of norm kernels** along a restriction: the transfer of the image of
 `Gal(K/E)` in `Gal(K/F)`, read back into the smaller layer through `repIso`. On representatives,
 degree `-1` restriction is this map (`tateRes_neg_one_HNegOneπ`); it is the wrong-way partner of

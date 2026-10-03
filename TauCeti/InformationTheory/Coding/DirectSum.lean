@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.LinearAlgebra.Pi
+public import TauCeti.InformationTheory.Coding.Equivalence
 public import TauCeti.InformationTheory.Hamming
 public import TauCeti.LinearAlgebra.Submodule.Prod
 
@@ -23,7 +24,10 @@ is the sum of the dimensions and its cardinality is the product of the cardinali
 and distance are additive across the two coordinate summands; consequently a natural number
 divides all weights of a direct sum exactly when it divides all weights of both summands.
 Canonical reindexings by the commutativity and associativity equivalences for `Sum` give the
-corresponding code identities.
+corresponding code identities. Relabelling, or monomially transforming, the two coordinate blocks
+separately acts on the two constituent codes separately. Hence permutation and monomial
+equivalence are compatible with direct sums, and the direct sum is commutative and associative up
+to permutation equivalence.
 
 The construction follows the direct-sum convention in Huffman and Pless, *Fundamentals of
 Error-Correcting Codes*, Section 1.6.
@@ -157,7 +161,54 @@ theorem map_directSum_sumAssoc (C : Submodule R (ι → A)) (D : Submodule R (κ
   simp only [mem_map_equiv, mem_directSum_iff]
   exact and_assoc
 
+/-- Relabelling the two coordinate blocks of a direct sum separately relabels the two
+constituent codes. -/
+@[simp]
+theorem map_directSum_sumCongr {ι' κ' : Type*} (C : Submodule R (ι → A))
+    (D : Submodule R (κ → A)) (e : ι' ≃ ι) (f : κ' ≃ κ) :
+    (directSum C D).map (LinearEquiv.funCongrLeft R A (e.sumCongr f)).toLinearMap =
+      directSum (C.map (LinearEquiv.funCongrLeft R A e).toLinearMap)
+        (D.map (LinearEquiv.funCongrLeft R A f).toLinearMap) := by
+  ext x
+  simp only [mem_map_equiv, mem_directSum_iff, LinearEquiv.funCongrLeft_symm]
+  refine and_congr (iff_of_eq (congrArg (· ∈ C) (funext fun i ↦ ?_)))
+    (iff_of_eq (congrArg (· ∈ D) (funext fun j ↦ ?_))) <;> simp
+
+/-- A direct sum is permutation equivalent to the direct sum taken in the other order. -/
+theorem isPermutationEquivalent_directSum_comm (C : Submodule R (ι → R))
+    (D : Submodule R (κ → R)) :
+    TauCeti.IsPermutationEquivalent (directSum C D) (directSum D C) :=
+  TauCeti.isPermutationEquivalent_iff.mpr
+    ⟨Equiv.sumComm ι κ, by rw [Equiv.sumComm_symm, map_directSum_sumComm]⟩
+
+/-- An iterated direct sum is permutation equivalent to the direct sum associated the other
+way. -/
+theorem isPermutationEquivalent_directSum_assoc (C : Submodule R (ι → R))
+    (D : Submodule R (κ → R)) (E : Submodule R (ν → R)) :
+    TauCeti.IsPermutationEquivalent (directSum (directSum C D) E)
+      (directSum C (directSum D E)) :=
+  TauCeti.isPermutationEquivalent_iff.mpr ⟨Equiv.sumAssoc ι κ ν, map_directSum_sumAssoc C D E⟩
+
 end Semiring
+
+section Monomial
+
+variable [CommSemiring R] {ι' κ' : Type*}
+
+/-- A monomial transformation acting blockwise on the two coordinate summands maps a direct sum
+to the direct sum of the images of the two constituent codes. -/
+@[simp]
+theorem map_directSum_monomialEquiv (C : Submodule R (ι → R)) (D : Submodule R (κ → R))
+    (u : ι → Rˣ) (v : κ → Rˣ) (e : ι ≃ ι') (f : κ ≃ κ') :
+    (directSum C D).map (TauCeti.monomialEquiv (Sum.elim u v) (e.sumCongr f)).toLinearMap =
+      directSum (C.map (TauCeti.monomialEquiv u e).toLinearMap)
+        (D.map (TauCeti.monomialEquiv v f).toLinearMap) := by
+  ext x
+  simp only [mem_map_equiv, mem_directSum_iff]
+  refine and_congr (iff_of_eq (congrArg (· ∈ C) (funext fun i ↦ ?_)))
+    (iff_of_eq (congrArg (· ∈ D) (funext fun j ↦ ?_))) <;> simp
+
+end Monomial
 
 section Finrank
 
@@ -232,3 +283,33 @@ theorem hammingDist_directSumEquivProd_symm (C : Submodule R (ι → A))
 end Hamming
 
 end Submodule
+
+namespace TauCeti
+
+open Submodule
+
+variable {R ι κ ι' κ' : Type*}
+
+/-- Permutation equivalence is compatible with direct sums: relabellings of the two summands
+combine to a relabelling of the direct sum. -/
+theorem IsPermutationEquivalent.directSum [Semiring R] {C : Submodule R (ι → R)}
+    {C' : Submodule R (ι' → R)} {D : Submodule R (κ → R)} {D' : Submodule R (κ' → R)}
+    (hC : IsPermutationEquivalent C C') (hD : IsPermutationEquivalent D D') :
+    IsPermutationEquivalent (directSum C D) (directSum C' D') := by
+  obtain ⟨e, rfl⟩ := isPermutationEquivalent_iff.mp hC
+  obtain ⟨f, rfl⟩ := isPermutationEquivalent_iff.mp hD
+  exact isPermutationEquivalent_iff.mpr
+    ⟨e.sumCongr f, by rw [Equiv.sumCongr_symm, map_directSum_sumCongr]⟩
+
+/-- Monomial equivalence is compatible with direct sums: monomial transformations of the two
+summands combine blockwise to one of the direct sum. -/
+theorem IsMonomialEquivalent.directSum [CommSemiring R] {C : Submodule R (ι → R)}
+    {C' : Submodule R (ι' → R)} {D : Submodule R (κ → R)} {D' : Submodule R (κ' → R)}
+    (hC : IsMonomialEquivalent C C') (hD : IsMonomialEquivalent D D') :
+    IsMonomialEquivalent (directSum C D) (directSum C' D') := by
+  obtain ⟨u, e, rfl⟩ := isMonomialEquivalent_iff.mp hC
+  obtain ⟨v, f, rfl⟩ := isMonomialEquivalent_iff.mp hD
+  exact isMonomialEquivalent_iff.mpr
+    ⟨Sum.elim u v, e.sumCongr f, map_directSum_monomialEquiv C D u v e f⟩
+
+end TauCeti

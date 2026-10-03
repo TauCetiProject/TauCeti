@@ -286,24 +286,10 @@ variable {n : ℕ} {G : GridDiagram n} (hG : G.IsKnot) (s : Fin n)
 the `X`-marking of column `s` is a knot grid with the same invariant `τ`. -/
 theorem tau_stabilizeX :
     ((G.isKnot_stabilizeX s.castSucc (G.X s).castSucc s).mpr hG).tau K = hG.tau K := by
-  set hG' := (G.isKnot_stabilizeX s.castSucc (G.X s).castSucc s).mpr hG
-  let _ := hG.unblockedHomologyModule K
-  let _ := hG'.unblockedHomologyModule K
-  -- `U` acts on both homologies as `p` does for any `p` with `p(U, …, U) = U`, and renaming the
-  -- variables of `p` along `s.predAbove` does not change `p(U, …, U)`.
-  let f : (G.stabilizeX s.castSucc (G.X s).castSucc s).unblockedHomology K →ₗ[Polynomial K]
-      G.unblockedHomology K :=
-    { toFun := G.stabilizeXHomologyMap s K
-      map_add' := map_add _
-      map_smul' := fun q y ↦ by
-        obtain ⟨p, rfl⟩ := aeval_const_X_surjective (Fin (n + 1)) K q
-        rw [hG'.aeval_smul_unblockedHomology, LinearMap.map_smulₛₗ, RingHom.id_apply,
-          ← hG.aeval_smul_unblockedHomology, AlgHom.coe_toRingHom, aeval_rename,
-          Function.comp_def] }
-  refine hG'.tau_eq_of_linearEquiv K hG
-    (LinearEquiv.ofBijective f (G.stabilizeXHomologyMap_bijective s K))
-    (LinearMap.isHomogeneous_def.mpr fun a y hy ↦ ?_)
-  rw [add_zero, mem_alexanderUnblockedHomologyGrading_piece_iff,
+  refine ((G.isKnot_stabilizeX s.castSucc (G.X s).castSucc s).mpr hG).tau_eq_of_semilinearMap K hG
+    (fun p ↦ by rw [AlgHom.coe_toRingHom, aeval_rename, Function.comp_def])
+    (G.stabilizeXHomologyMap s K) (G.stabilizeXHomologyMap_bijective s K) fun a y hy ↦ ?_
+  rw [mem_alexanderUnblockedHomologyGrading_piece_iff,
     ← OddComponentGridDiagram.mem_alexanderUnblockedHomologyGrading_piece_iff]
   rw [mem_alexanderUnblockedHomologyGrading_piece_iff,
     ← OddComponentGridDiagram.mem_alexanderUnblockedHomologyGrading_piece_iff] at hy

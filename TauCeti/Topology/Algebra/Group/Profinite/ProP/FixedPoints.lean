@@ -70,12 +70,7 @@ topology on `M`, only that the kernel of the action be open in `G`, and so appli
 theorem exists_ne_zero_invariant_of_isProP_of_isOpen_ker (hG : IsProP p G) [Nontrivial M]
     (hK : IsOpen ((MulAction.toPermHom G M).ker : Set G))
     (htors : ∀ m : M, ∃ k : ℕ, p ^ k • m = 0) : ∃ m : M, m ≠ 0 ∧ ∀ g : G, g • m = m := by
-  -- the action factors through the finite `p`-group `G ⧸ K`, `K` the open kernel of the action
-  let K : OpenNormalSubgroup G :=
-    { toOpenSubgroup := { toSubgroup := (MulAction.toPermHom G M).ker, isOpen' := hK }
-      isNormal' := (MulAction.toPermHom G M).normal_ker }
-  have hQ : IsPGroup p (MulAction.toPermHom G M).range :=
-    (isProP_iff.mp hG K).of_equiv (QuotientGroup.quotientKerEquivRange _)
+  have hQ := hG.isPGroup_range (MulAction.toPermHom G M) hK
   have h0 : (0 : M) ∈ MulAction.fixedPoints (MulAction.toPermHom G M).range M := by
     rintro ⟨_, g, rfl⟩
     simp [Subgroup.smul_def, Equiv.Perm.smul_def]

@@ -5,7 +5,7 @@ Authors: Claude
 -/
 module
 
-public import TauCeti.Combinatorics.DenseGraphLimits.AEEqFun
+public import TauCeti.Combinatorics.DenseGraphLimits.AEEqFun.Basic
 import TauCeti.Combinatorics.DenseGraphLimits.Kernel.Pullback
 
 /-!

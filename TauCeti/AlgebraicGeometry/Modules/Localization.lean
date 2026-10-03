@@ -81,6 +81,36 @@ lemma _root_.AlgebraicGeometry.Scheme.Modules.basicOpenRestrict_apply (f : Γ(X,
     M.basicOpenRestrict f x = M.presheaf.map (homOfLE (X.basicOpen_le f)).op x :=
   (rfl)
 
+/-- For an affine open `U`, the sections of an `𝒪_X`-module `M` over `U` are the global sections
+of its restriction to the affine chart `Spec Γ(X, U) ⟶ X`, as `Γ(X, U)`-modules. Here
+`Γ(X, U)` acts on the global sections of a module on `Spec Γ(X, U)` as their ring of
+global functions. -/
+def _root_.AlgebraicGeometry.Scheme.Modules.fromSpecSectionsEquiv (hU : IsAffineOpen U) :
+    Γ(M, U) ≃ₗ[Γ(X, U)] Γ(M.restrict hU.fromSpec, ⊤) :=
+  have h : hU.fromSpec ''ᵁ ⊤ = U := by
+    rw [Scheme.Hom.image_top_eq_opensRange, hU.opensRange_fromSpec]
+  have : IsIso (homOfLE h.le) := homOfLE_isIso_of_eq _ h
+  LinearEquiv.ofBijective
+    { toFun := M.presheaf.map (homOfLE h.le).op ≫ (M.restrictAppIso hU.fromSpec ⊤).inv
+      map_add' := map_add _
+      -- Linearity is `presheaf_map_fromSpec_appIso_hom` at `⊤`.
+      map_smul' r x := by
+        rw [RingHom.id_apply, Scheme.Modules.smul_Spec_def, ConcreteCategory.comp_apply,
+          M.map_smul, Scheme.Modules.smul_restrictAppIso_inv_apply,
+          ← ConcreteCategory.comp_apply, hU.presheaf_map_fromSpec_appIso_hom ⊤]
+        rfl }
+    (ConcreteCategory.bijective_of_isIso
+      (M.presheaf.map (homOfLE h.le).op ≫ (M.restrictAppIso hU.fromSpec ⊤).inv))
+
+/-- The identification `Γ(M, U) ≃ Γ(M.restrict hU.fromSpec, ⊤)` is restriction of sections to
+the image of the affine chart, which is `U`. -/
+lemma _root_.AlgebraicGeometry.Scheme.Modules.fromSpecSectionsEquiv_apply (hU : IsAffineOpen U)
+    (x : Γ(M, U)) :
+    M.fromSpecSectionsEquiv hU x = (M.restrictAppIso hU.fromSpec ⊤).inv
+      (M.presheaf.map (homOfLE (by
+        rw [Scheme.Hom.image_top_eq_opensRange, hU.opensRange_fromSpec])).op x) :=
+  (rfl)
+
 open Scheme.Modules in
 /-- The sections of a quasi-coherent `𝒪_X`-module over the basic open `X.basicOpen f` of an
 affine open `U` are the localization of its sections over `U` at the powers of `f`. -/
@@ -95,16 +125,8 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.isLocalizedModule_basicOpenRestr
   have h₁ : hU.fromSpec ''ᵁ ⊤ = U := by
     rw [Scheme.Hom.image_top_eq_opensRange, hU.opensRange_fromSpec]
   have h₂ : hU.fromSpec ''ᵁ D = X.basicOpen f := hU.fromSpec_image_basicOpen f
-  -- `e₁` identifies `Γ(M, U)` with `Γ(N, ⊤)`; its linearity is
-  -- `presheaf_map_fromSpec_appIso_hom` at `⊤`.
-  let e₁ : Γ(M, U) →ₗ[Γ(X, U)] Γ(N, ⊤) :=
-    { toFun := M.presheaf.map (homOfLE h₁.le).op ≫ (M.restrictAppIso hU.fromSpec ⊤).inv
-      map_add' := map_add _
-      map_smul' r x := by
-        rw [RingHom.id_apply, smul_Spec_def, ConcreteCategory.comp_apply, M.map_smul,
-          smul_restrictAppIso_inv_apply, ← ConcreteCategory.comp_apply,
-          hU.presheaf_map_fromSpec_appIso_hom ⊤]
-        rfl }
+  -- `e₁` identifies `Γ(M, U)` with `Γ(N, ⊤)`.
+  let e₁ : Γ(M, U) →ₗ[Γ(X, U)] Γ(N, ⊤) := (M.fromSpecSectionsEquiv hU).toLinearMap
   -- `e₂` identifies `Γ(N, D(f))` with `Γ(M, X.basicOpen f)`; its linearity is
   -- `presheaf_map_fromSpec_appIso_hom` at `D(f)`, followed by restriction to `X.basicOpen f`.
   let e₂ : Γ(N, D) →ₗ[Γ(X, U)] Γ(M, X.basicOpen f) :=
@@ -140,14 +162,10 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.isLocalizedModule_basicOpenRestr
         ← Functor.map_comp]
       rfl
     exact LinearMap.ext fun x ↦ ConcreteCategory.congr_hom h x
-  have h₁iso : IsIso (M.presheaf.map (homOfLE h₁.le).op) := by
-    have : IsIso (homOfLE h₁.le) := homOfLE_isIso_of_eq _ h₁
-    infer_instance
   have h₂iso : IsIso (M.presheaf.map (homOfLE h₂.ge).op) := by
     have : IsIso (homOfLE h₂.ge) := homOfLE_isIso_of_eq _ h₂.symm
     infer_instance
-  have he₁ : Function.Bijective e₁ := ConcreteCategory.bijective_of_isIso
-    (M.presheaf.map (homOfLE h₁.le).op ≫ (M.restrictAppIso hU.fromSpec ⊤).inv)
+  have he₁ : Function.Bijective e₁ := (M.fromSpecSectionsEquiv hU).bijective
   have he₂ : Function.Bijective e₂ := ConcreteCategory.bijective_of_isIso
     ((M.restrictAppIso hU.fromSpec D).hom ≫ M.presheaf.map (homOfLE h₂.ge).op)
   unfold IsLocalizedModule.Away at hφ ⊢

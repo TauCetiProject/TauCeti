@@ -23,6 +23,8 @@ the scalar data used by subresultant gcd criteria and projection operators.
 
 ## Main results
 
+* `TauCeti.coefficientRow_dotProduct`: a row of shifted polynomial coefficients reads any
+  coefficient of `A * q + B * p` from the coefficient vector of `(A, B)`.
 * `Polynomial.subresultantMatrix_mulVec`: the matrix acts on a pair of coefficient vectors as
   `(A, B) ↦ A * q + B * p`, read on the coefficients of degrees `j, …, m+n-j-1`.
 * `Polynomial.psc_zero`: the zeroth principal subresultant coefficient is the resultant.
@@ -113,6 +115,36 @@ theorem _root_.Polynomial.subresultantMatrix_comm [Semiring R] (p q : R[X]) (m n
   ext i k
   induction k using Fin.addCases <;> simp [subresultantMatrix]
 
+/-- A row of coefficients of shifted `q` and `p` reads the coefficient of degree `d` of
+`A * q + B * p`, where the two blocks of `v` are the coefficients of `A` and `B`.
+The row lengths are arbitrary, and the formal bounds dominate the actual input degrees. -/
+theorem coefficientRow_dotProduct [CommSemiring R] [DecidableEq R]
+    {p q : R[X]} {m n : ℕ} (hm : p.natDegree ≤ m) (hn : q.natDegree ≤ n)
+    (a b d : ℕ) (v : Fin (a + b) → R) :
+    (Fin.addCases
+      (fun l : Fin a => if (l : ℕ) ≤ d ∧ d ≤ l.val + n then q.coeff (d - l.val) else 0)
+      (fun l : Fin b => if (l : ℕ) ≤ d ∧ d ≤ l.val + m then p.coeff (d - l.val) else 0))
+      ⬝ᵥ v =
+      (ofFn a (fun l => v (Fin.castAdd b l)) * q +
+        ofFn b (fun l => v (Fin.natAdd a l)) * p).coeff d := by
+  simp only [dotProduct, Fin.sum_univ_add, Fin.addCases_left, Fin.addCases_right,
+    ofFn_eq_sum_monomial, Finset.sum_mul, coeff_add, finsetSum_coeff]
+  congr 1 <;> refine Finset.sum_congr rfl fun l _ => ?_
+  · rw [← C_mul_X_pow_eq_monomial, mul_assoc, coeff_C_mul, coeff_X_pow_mul']
+    by_cases h₁ : (l : ℕ) ≤ d
+    · by_cases h₂ : d ≤ l.val + n
+      · simp [h₁, h₂, mul_comm]
+      · have : q.coeff (d - l.val) = 0 := coeff_eq_zero_of_natDegree_lt (by omega)
+        simp [h₁, h₂, this]
+    · simp [h₁]
+  · rw [← C_mul_X_pow_eq_monomial, mul_assoc, coeff_C_mul, coeff_X_pow_mul']
+    by_cases h₁ : (l : ℕ) ≤ d
+    · by_cases h₂ : d ≤ l.val + m
+      · simp [h₁, h₂, mul_comm]
+      · have : p.coeff (d - l.val) = 0 := coeff_eq_zero_of_natDegree_lt (by omega)
+        simp [h₁, h₂, this]
+    · simp [h₁]
+
 /-- The principal subresultant matrix acts on a vector as the linear map `(A, B) ↦ A * q + B * p`,
 where `A` and `B` are the polynomials whose coefficients are the first `m - j` and the last `n - j`
 entries of the vector, read on the coefficients of degrees `j, …, m+n-j-1`.  The formal bounds
@@ -123,23 +155,7 @@ theorem _root_.Polynomial.subresultantMatrix_mulVec [CommSemiring R] [DecidableE
     (subresultantMatrix p q m n j).mulVec v i =
       (ofFn (m - j) (fun k => v (Fin.castAdd (n - j) k)) * q +
         ofFn (n - j) (fun k => v (Fin.natAdd (m - j) k)) * p).coeff (i + j) := by
-  simp only [Matrix.mulVec, dotProduct, Fin.sum_univ_add, subresultantMatrix_castAdd,
-    subresultantMatrix_natAdd, ofFn_eq_sum_monomial, Finset.sum_mul, coeff_add, finsetSum_coeff]
-  congr 1 <;> refine Finset.sum_congr rfl fun k _ => ?_
-  · rw [← C_mul_X_pow_eq_monomial, mul_assoc, coeff_C_mul, coeff_X_pow_mul']
-    by_cases h₁ : (k : ℕ) ≤ i + j
-    · by_cases h₂ : (i : ℕ) + j ≤ k + n
-      · simp [h₁, h₂, mul_comm]
-      · have : q.coeff (i + j - k) = 0 := coeff_eq_zero_of_natDegree_lt (by omega)
-        simp [h₁, h₂, this]
-    · simp [h₁]
-  · rw [← C_mul_X_pow_eq_monomial, mul_assoc, coeff_C_mul, coeff_X_pow_mul']
-    by_cases h₁ : (k : ℕ) ≤ i + j
-    · by_cases h₂ : (i : ℕ) + j ≤ k + m
-      · simp [h₁, h₂, mul_comm]
-      · have : p.coeff (i + j - k) = 0 := coeff_eq_zero_of_natDegree_lt (by omega)
-        simp [h₁, h₂, this]
-    · simp [h₁]
+  exact coefficientRow_dotProduct hm hn (m - j) (n - j) (i.val + j) v
 
 /-- The principal subresultant coefficient at index `j` and formal degree bounds `m` and `n`.
 

@@ -218,7 +218,7 @@ duality gap, with no topological hypothesis whatsoever. -/
 structure IsDualCertificate (c : X × Y → ℝ≥0∞) (π : Measure (X × Y)) (μ : Measure X)
     (ν : Measure Y) (φ : X → ℝ) (ψ : Y → ℝ) : Prop extends IsCoupling π μ ν where
   /-- The potentials satisfy the Kantorovich dual constraint everywhere. -/
-  dualFeasible : DualFeasible c φ ψ
+  dualFeasible : DualFeasible (fun z ↦ (c z : EReal)) φ ψ
   /-- The first potential is integrable against the first marginal. -/
   integrable_left : Integrable φ μ
   /-- The second potential is integrable against the second marginal. -/
@@ -303,7 +303,8 @@ theorem toReal_transportCost_eq :
 
 /-- **The certificate proves dual optimality.** No other integrable feasible pair has a larger
 value. -/
-theorem kantorovichDualValue_le {φ' : X → ℝ} {ψ' : Y → ℝ} (hfeas : DualFeasible c φ' ψ')
+theorem kantorovichDualValue_le {φ' : X → ℝ} {ψ' : Y → ℝ}
+    (hfeas : DualFeasible (fun z ↦ (c z : EReal)) φ' ψ')
     (hφ' : Integrable φ' μ) (hψ' : Integrable ψ' ν) :
     kantorovichDualValue μ ν φ' ψ' ≤ kantorovichDualValue μ ν φ ψ := by
   have hle := hfeas.ofReal_kantorovichDualValue_le_transportCost hφ' hψ'
@@ -323,7 +324,7 @@ being an optimality certificate is exactly having finite cost that does not exce
 the pair. The inequality is stated between real numbers: `ENNReal.ofReal` truncates a negative
 dual value to `0`, and then the extended-nonnegative inequality carries no information. -/
 theorem isDualCertificate_iff (hc : AEMeasurable c π) (hπ : IsCoupling π μ ν)
-    (hfeas : DualFeasible c φ ψ) (hφ : Integrable φ μ) (hψ : Integrable ψ ν) :
+    (hfeas : DualFeasible (fun z ↦ (c z : EReal)) φ ψ) (hφ : Integrable φ μ) (hψ : Integrable ψ ν) :
     IsDualCertificate c π μ ν φ ψ ↔
       ∫⁻ z, c z ∂π ≠ ⊤ ∧ (∫⁻ z, c z ∂π).toReal ≤ kantorovichDualValue μ ν φ ψ := by
   refine ⟨fun h ↦ ⟨lintegral_ne_top_of_ae_mem_dualContactSet hπ hφ hψ h.ae_mem_dualContactSet,
@@ -355,7 +356,8 @@ theorem isDualCertificate_iff (hc : AEMeasurable c π) (hπ : IsCoupling π μ �
 of finite cost whose dual value is attained by an integrable feasible pair is certified by that
 pair. -/
 theorem IsOptimalCoupling.isDualCertificate (hc : AEMeasurable c π)
-    (hopt : IsOptimalCoupling c π μ ν) (hfeas : DualFeasible c φ ψ) (hφ : Integrable φ μ)
+    (hopt : IsOptimalCoupling c π μ ν) (hfeas : DualFeasible (fun z ↦ (c z : EReal)) φ ψ)
+    (hφ : Integrable φ μ)
     (hψ : Integrable ψ ν) (htop : transportCost c μ ν ≠ ⊤)
     (hattain : (transportCost c μ ν).toReal = kantorovichDualValue μ ν φ ψ) :
     IsDualCertificate c π μ ν φ ψ := by
@@ -382,7 +384,7 @@ variable [MeasurableSpace X] [MeasurableSpace Y] {μ : Measure X} {ν : Measure 
 feasible pair is certified: its graph plan is an optimality certificate. This is the form in
 which the Brenier and polar-factorisation layers verify optimality of a map. -/
 theorem isDualCertificate_graphPlan (hc : AEMeasurable c (graphPlan T μ))
-    (hT : HasLaw T ν μ) (hfeas : DualFeasible c φ ψ) (hφ : Integrable φ μ)
+    (hT : HasLaw T ν μ) (hfeas : DualFeasible (fun z ↦ (c z : EReal)) φ ψ) (hφ : Integrable φ μ)
     (hψ : Integrable ψ ν) (hae : ∀ᵐ x ∂μ, (x, T x) ∈ dualContactSet c φ ψ) :
     IsDualCertificate c (graphPlan T μ) μ ν φ ψ where
   toIsCoupling := isCoupling_graphPlan hT
@@ -412,7 +414,8 @@ theorem isDualCertificate_graphPlan (hc : AEMeasurable c (graphPlan T μ))
 `TauCeti.transportCost_le_lintegral_of_hasLaw`, this exhibits the map as a minimizer among
 transport maps. -/
 theorem transportCost_eq_lintegral_of_ae_mem_dualContactSet
-    (hc : AEMeasurable c (graphPlan T μ)) (hT : HasLaw T ν μ) (hfeas : DualFeasible c φ ψ)
+    (hc : AEMeasurable c (graphPlan T μ)) (hT : HasLaw T ν μ)
+    (hfeas : DualFeasible (fun z ↦ (c z : EReal)) φ ψ)
     (hφ : Integrable φ μ) (hψ : Integrable ψ ν)
     (hae : ∀ᵐ x ∂μ, (x, T x) ∈ dualContactSet c φ ψ) :
     transportCost c μ ν = ∫⁻ x, c (x, T x) ∂μ := by
@@ -428,7 +431,8 @@ section CyclicallyMonotone
 /-- **The contact set of a dual feasible pair is `c`-cyclically monotone.** Rearranging the
 targets replaces each equality `φ (x i) + ψ (y i) = c (x i, y i)` by an inequality, while the
 two total sums of potentials agree because a permutation does not change a finite sum. -/
-theorem DualFeasible.isCyclicallyMonotone_dualContactSet (h : DualFeasible c φ ψ) :
+theorem DualFeasible.isCyclicallyMonotone_dualContactSet
+    (h : DualFeasible (fun z ↦ (c z : EReal)) φ ψ) :
     IsCyclicallyMonotone c (dualContactSet c φ ψ) := by
   rw [isCyclicallyMonotone_iff]
   intro n x y hmem σ

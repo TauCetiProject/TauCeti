@@ -79,7 +79,8 @@ primal value `∞`, in which case the continuous dual values are unbounded rathe
 real supremum. -/
 theorem isLUB_ofReal_kantorovichDualValue_continuous_of_lowerSemicontinuous
     (hc : LowerSemicontinuous c) :
-    IsLUB {r : ℝ≥0∞ | ∃ φ ψ, Continuous φ ∧ Continuous ψ ∧ DualFeasible c φ ψ ∧
+    IsLUB {r : ℝ≥0∞ | ∃ φ ψ, Continuous φ ∧ Continuous ψ ∧
+      DualFeasible (fun z ↦ (c z : EReal)) φ ψ ∧
       ENNReal.ofReal (kantorovichDualValue μ ν φ ψ) = r} (transportCost c μ ν) := by
   let : PseudoMetricSpace X := TopologicalSpace.pseudoMetrizableSpacePseudoMetric X
   let : PseudoMetricSpace Y := TopologicalSpace.pseudoMetrizableSpacePseudoMetric Y
@@ -108,8 +109,9 @@ theorem isLUB_ofReal_kantorovichDualValue_continuous_of_lowerSemicontinuous
       (isLUB_kantorovichDualValue_continuous
         (μ := μ) (ν := ν) hcn_cont hcn_nonneg).2 fun r hr ↦ by
           obtain ⟨φ, ψ, hφ, hψ, hfeas, rfl⟩ := hr
-          have hfeas' : DualFeasible c φ ψ :=
-            ((dualFeasible_ofReal_iff hcn_nonneg φ ψ).2 hfeas).mono_cost hcn_le
+          have hfeas' : DualFeasible (fun z ↦ (c z : EReal)) φ ψ :=
+            ((dualFeasible_ofReal_iff hcn_nonneg φ ψ).2 hfeas).mono_cost
+              fun z ↦ EReal.coe_ennreal_le_coe_ennreal_iff.2 (hcn_le z)
           exact (ENNReal.ofReal_le_iff_le_toReal hbtop).1
             (hb ⟨φ, ψ, hφ, hψ, hfeas', rfl⟩)
     have hcost_ne_top : transportCost (fun z ↦ ENNReal.ofReal (cn z)) μ ν ≠ ∞ :=
@@ -125,7 +127,8 @@ values. This formulation remains meaningful when the common value is `∞`. -/
 theorem transportCost_eq_sSup_ofReal_kantorovichDualValue_continuous_of_lowerSemicontinuous
     (hc : LowerSemicontinuous c) :
     transportCost c μ ν = sSup {r : ℝ≥0∞ | ∃ φ ψ, Continuous φ ∧ Continuous ψ ∧
-      DualFeasible c φ ψ ∧ ENNReal.ofReal (kantorovichDualValue μ ν φ ψ) = r} :=
+      DualFeasible (fun z ↦ (c z : EReal)) φ ψ ∧
+      ENNReal.ofReal (kantorovichDualValue μ ν φ ψ) = r} :=
   (isLUB_ofReal_kantorovichDualValue_continuous_of_lowerSemicontinuous hc).sSup_eq.symm
 
 end Compact
@@ -143,7 +146,8 @@ dual values only: an unbounded lower-semicontinuous cost need not have an integr
 optimizer. -/
 theorem isLUB_ofReal_kantorovichDualValue_integrable_of_lowerSemicontinuous
     (hc : LowerSemicontinuous c) :
-    IsLUB {r : ℝ≥0∞ | ∃ φ ψ, Integrable φ μ ∧ Integrable ψ ν ∧ DualFeasible c φ ψ ∧
+    IsLUB {r : ℝ≥0∞ | ∃ φ ψ, Integrable φ μ ∧ Integrable ψ ν ∧
+      DualFeasible (fun z ↦ (c z : EReal)) φ ψ ∧
       ENNReal.ofReal (kantorovichDualValue μ ν φ ψ) = r} (transportCost c μ ν) := by
   let : PseudoMetricSpace X := TopologicalSpace.pseudoMetrizableSpacePseudoMetric X
   let : PseudoMetricSpace Y := TopologicalSpace.pseudoMetrizableSpacePseudoMetric Y
@@ -161,8 +165,9 @@ theorem isLUB_ofReal_kantorovichDualValue_integrable_of_lowerSemicontinuous
       ⟨n, forall_mem_range.2 (lscApproxAux_le_natCast c n)⟩
     obtain ⟨π, φ, ψ, h, -⟩ :=
       exists_isDualCertificate_of_continuous (μ := μ) (ν := ν) hcn_cont hcn_nonneg hcn_bdd
-    have hfeas : DualFeasible c φ ψ :=
-      h.dualFeasible.mono_cost fun z ↦ ofReal_lscApproxAux_le c n z
+    have hfeas : DualFeasible (fun z ↦ (c z : EReal)) φ ψ :=
+      h.dualFeasible.mono_cost fun z ↦
+        EReal.coe_ennreal_le_coe_ennreal_iff.2 (ofReal_lscApproxAux_le c n z)
     have hle := hb ⟨φ, ψ, h.integrable_left, h.integrable_right, hfeas, rfl⟩
     rw [← h.transportCost_eq] at hle
     simpa only [cn, coe_lscApprox_apply] using hle
@@ -172,7 +177,8 @@ positive parts of all integrable dual values. -/
 theorem transportCost_eq_sSup_ofReal_kantorovichDualValue_integrable_of_lowerSemicontinuous
     (hc : LowerSemicontinuous c) :
     transportCost c μ ν = sSup {r : ℝ≥0∞ | ∃ φ ψ, Integrable φ μ ∧ Integrable ψ ν ∧
-      DualFeasible c φ ψ ∧ ENNReal.ofReal (kantorovichDualValue μ ν φ ψ) = r} :=
+      DualFeasible (fun z ↦ (c z : EReal)) φ ψ ∧
+      ENNReal.ofReal (kantorovichDualValue μ ν φ ψ) = r} :=
   (isLUB_ofReal_kantorovichDualValue_integrable_of_lowerSemicontinuous hc).sSup_eq.symm
 
 end Polish

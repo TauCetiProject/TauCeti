@@ -580,8 +580,8 @@ theorem volume_triangle_I_geodesicLine_one {d : ℝ} (hd : 0 < d) {C : ℍ} (hC 
     rw [← sub_lt_iff_lt_add']
     exact Real.lt_sqrt_of_sq_lt (by rw [hnC]; nlinarith [C.im_pos])
   -- the areas of the two ideal-vertex regions
-  have hV₁ := volume_idealRegionAbove hr₁0 h1a hC.le h1b
-  have hV₂ := volume_idealRegionAbove hr₂0 h2a hC.le h2b
+  have hV₁ := volume_idealRegionAbove hr₁0 h1a.le hC.le h1b.le
+  have hV₂ := volume_idealRegionAbove hr₂0 h2a.le hC.le h2b.le
   have hsub := idealRegionAbove_subset_of_normal_form hd hC
   rw [← hB, ← hc₂, ← hr₂, ← hc₁, ← hr₁] at hsub
   -- the triangle and the difference of the two regions have the same area

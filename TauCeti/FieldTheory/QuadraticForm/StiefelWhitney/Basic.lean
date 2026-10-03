@@ -25,7 +25,8 @@ the degree-one and degree-two parts of Delzant's total class `∏ᵢ (1 + (aᵢ)
 the mod-two Kummer cup pairing `TauCeti.kummerCup` on square classes, so `w₂` is visibly a function
 of the square classes of the coefficients.
 
-This file defines both classes on tuples of units and computes them in low rank and on squares.
+This file defines both classes on tuples of units, computes them in low rank and on squares, and
+expands them on a concatenation of tuples, that is on an orthogonal sum of diagonal forms.
 Both classes are unchanged by permuting the coefficients, `w₂` because the cup pairing is symmetric
 (`TauCeti.kummerCup_comm`). The class `w₁` is the Kummer class of the plain discriminant
 `a₁ ⋯ aₙ`, so it is an invariant of the isometry class of the diagonal form. The invariance of `w₂`
@@ -48,6 +49,8 @@ classes of regular forms are in `TauCeti.FieldTheory.QuadraticForm.StiefelWhitne
 * `TauCeti.sw1_fin_zero`, `TauCeti.sw1_fin_one`, `TauCeti.sw2_eq_zero_of_le_one`,
   `TauCeti.sw1_fin_two` and `TauCeti.sw2_fin_two`: both classes vanish in rank `0`,
   `w₁⟨a⟩ = (a)`, `w₂` vanishes in rank `1`, `w₁⟨a, b⟩ = (a) + (b)` and `w₂⟨a, b⟩ = (a) ∪ (b)`.
+* `TauCeti.sw1_append` and `TauCeti.sw2_append`: on an orthogonal sum, `w₁` is additive and
+  `w₂(q ⊥ r) = w₂(q) + w₂(r) + w₁(q) ∪ w₁(r)`.
 * `TauCeti.sw1_eq_zero_of_isSquare` and `TauCeti.sw2_eq_zero_of_isSquare`: both classes vanish on
   a tuple of squares, in particular on `⟨1, …, 1⟩`.
 
@@ -188,6 +191,30 @@ theorem sw2_fin_two (w : Fin 2 → Kˣ) :
       (kummerClass (w 0)) (kummerClass (w 1)) := by
   have hIoi : Ioi (1 : Fin 2) = ∅ := by decide
   simp [sw2_def, Fin.sum_univ_two, hIoi]
+
+/-! ### Orthogonal sums -/
+
+/-- **`w₁` is additive over orthogonal sums**: `w₁⟨a₁, …, aₘ, b₁, …, bₙ⟩ = w₁⟨a₁, …, aₘ⟩ +
+w₁⟨b₁, …, bₙ⟩`. -/
+@[simp]
+theorem sw1_append {m : ℕ} (v : Fin m → Kˣ) (w : Fin n → Kˣ) :
+    sw1 (Fin.append v w) = sw1 v + sw1 w := by
+  simp [sw1_def, Fin.sum_univ_add]
+
+/-- **The orthogonal-sum formula for `w₂`**: `w₂(q ⊥ r) = w₂(q) + w₂(r) + w₁(q) ∪ w₁(r)` for the
+diagonal forms `q = ⟨a₁, …, aₘ⟩` and `r = ⟨b₁, …, bₙ⟩`. The cross term collects the cups
+`(aᵢ) ∪ (bⱼ)` of the pairs with one coefficient in each form. -/
+@[simp]
+theorem sw2_append {m : ℕ} (v : Fin m → Kˣ) (w : Fin n → Kˣ) :
+    sw2 (Fin.append v w) = sw2 v + sw2 w +
+      (trivialF2TopPairing (AbsoluteGaloisGroup K)).cup 1 1 (sw1 v) (sw1 w) := by
+  rw [sw2_def, sw2_def, sw2_def, sum_sum_Ioi_append_of_mul
+    (fun a b : Kˣ => kummerCup K (squareClass a) (squareClass b))
+    (fun b => by rw [squareClass_one, map_zero, AddMonoidHom.zero_apply])
+    (fun a => by rw [squareClass_one, map_zero])
+    (fun a b c => by rw [squareClass_mul, map_add, AddMonoidHom.add_apply])
+    (fun a b c => by rw [squareClass_mul, map_add]) v w,
+    sw1_eq_kummerClass_prod, sw1_eq_kummerClass_prod, kummerCup_squareClass_squareClass]
 
 /-! ### Tuples of squares -/
 

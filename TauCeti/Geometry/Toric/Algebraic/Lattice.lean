@@ -10,7 +10,9 @@ public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.LinearAlgebra.Dual.BaseChange
 public import Mathlib.RingTheory.Flat.Basic
 public import Mathlib.RingTheory.TensorProduct.IsBaseChangeFree
+public import TauCeti.RingTheory.TensorProduct.IsBaseChange
 
+import Mathlib.RingTheory.Flat.TorsionFree
 import Mathlib.RingTheory.TensorProduct.IsBaseChangePi
 
 /-!
@@ -40,6 +42,10 @@ forcing the integral and real ranks to agree.
 * `TauCeti.Toric.IsIntegralLattice.injective`, `TauCeti.Toric.IsIntegralLattice.span_range_eq_top`
   and `TauCeti.Toric.IsIntegralLattice.finrank_eq`: an integral lattice is injective with full
   real span, and the integral rank of `N` equals the real dimension of `V`.
+* `TauCeti.Toric.linearIndependent_comp_iff_of_liftBaseChange_injective`: when the real-linear
+  map `ℝ ⊗[ℤ] N →ₗ[ℝ] V` induced by `i` is injective (as it is when `i` extends scalars from `ℤ`
+  to `ℝ`, by `IsBaseChange.liftBaseChange_injective`), a family of integral vectors is linearly
+  independent over `ℤ` exactly when its image is linearly independent over `ℝ`.
 * `TauCeti.Toric.IsIntegralLattice.extend` and `TauCeti.Toric.IsIntegralLattice.eq_extend`: a map
   of integral vectors extends to a unique real-linear map, so the real-linear map accompanying a
   map of lattices is determined by it rather than being extra data.
@@ -116,6 +122,19 @@ theorem IsIntegralLattice.injective (h : IsIntegralLattice i) :
   intro x y hxy
   refine Module.Flat.tensorProduct_mk_injective ℤ N ℝ (e.injective ?_)
   simpa only [TensorProduct.mk_apply, he] using hxy
+
+/-- When the real-linear map `ℝ ⊗[ℤ] N →ₗ[ℝ] V` induced by `i` is injective (for instance when
+`i` extends scalars from `ℤ` to `ℝ`, by `IsBaseChange.liftBaseChange_injective`), a family of
+integral vectors is linearly independent over `ℤ` exactly when its image under `i` is linearly
+independent over `ℝ`: a real linear relation among lattice vectors forces an integral one. The
+image of `i` need not span `V`. -/
+theorem linearIndependent_comp_iff_of_liftBaseChange_injective
+    (h : Function.Injective (i.toIntLinearMap.liftBaseChange ℝ)) {ι : Type*} {v : ι → N} :
+    LinearIndependent ℝ (i ∘ v) ↔ LinearIndependent ℤ v := by
+  refine ⟨fun hv ↦ LinearIndependent.of_comp i.toIntLinearMap (hv.restrict_scalars' ℤ),
+    fun hv ↦ ?_⟩
+  have := (Module.Flat.linearIndependent_one_tmul (S := ℝ) hv).map' _ (LinearMap.ker_eq_bot.2 h)
+  simpa [Function.comp_def] using this
 
 /-- The image of an integral lattice spans the ambient real vector space. -/
 theorem IsIntegralLattice.span_range_eq_top (h : IsIntegralLattice i) :

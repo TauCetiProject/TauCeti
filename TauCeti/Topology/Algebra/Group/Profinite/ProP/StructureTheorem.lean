@@ -22,11 +22,12 @@ summand. The isomorphism is an isomorphism of topological groups. This is the ab
 the classification of finitely generated pro-`p` groups; it describes, for instance, the
 abelianisation of any topologically finitely generated pro-`p` group.
 
-The statement records only a topological group isomorphism, not a `ℤ_[p]`-linear equivalence
-for the canonical `p`-adic exponentiation `TauCeti.IsProP.module`. (Every continuous
-homomorphism between abelian pro-`p` groups commutes with `p`-adic exponentiation,
-`TauCeti.IsProP.map_padicPow`, so no information is lost, but no linear equivalence is packaged
-here.) The rank `r` and the exponents `e i`, up to reindexing, are invariants of `A`.
+The statement records a topological group isomorphism. Every continuous homomorphism between
+abelian pro-`p` groups commutes with `p`-adic exponentiation, `TauCeti.IsProP.map_padicPow`, so
+no information is lost; the decomposition as topological modules for the canonical `p`-adic
+exponentiation `TauCeti.IsProP.module`, with the torsion submodule as finite factor, is
+`TauCeti.IsProP.exists_continuousLinearEquiv_pi_padicInt_prod_torsion`. The rank `r` and the
+exponents `e i`, up to reindexing, are invariants of `A`.
 The identification of `T` with the torsion subgroup and the uniqueness results are proved in
 `TauCeti.Topology.Algebra.Group.Profinite.ProP.Torsion`. In particular,
 `TauCeti.exists_equiv_exponents_of_continuousMulEquiv_pi_padicInt_prod_pi_zmod` compares the

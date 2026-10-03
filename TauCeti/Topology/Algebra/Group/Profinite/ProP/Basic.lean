@@ -42,8 +42,8 @@ separate topological fact is supplied by `QuotientGroup.instTotallyDisconnectedS
 * `IsProP.of_surjective`: a continuous surjective image of a pro-`p` group is pro-`p`.
 * `IsProP.quotient`: a quotient of a pro-`p` group by a normal subgroup is pro-`p`.
 * `IsProP.top`: the top subgroup of a pro-`p` group is pro-`p`.
-* `IsProP.isPGroup_range`: a continuous homomorphism from a pro-`p` group to a discrete group
-  has a `p`-group as its range.
+* `IsProP.isPGroup_range`: a homomorphism from a pro-`p` group with open kernel has a
+  `p`-group as its range.
 * `IsProP.isPGroup_map_mk'`: the image of a pro-`p` subgroup in the quotient by an open normal
   subgroup is a `p`-group.
 * `IsProP.exists_openNormalSubgroup_le_pow_dvd_relIndex`: in an infinite pro-`p` group every open
@@ -107,11 +107,11 @@ theorem isProP_iff_isPGroup : IsProP p G ↔ IsPGroup p G := by
     ((QuotientGroup.quotientMulEquivOfEq (openNormalSubgroupBot_toSubgroup G)).trans
       QuotientGroup.quotientBot)
 
-/-- The finite cyclic group `ℤ/pⁿ`, written multiplicatively and with its discrete topology, is
-pro-`p`. -/
-theorem isProP_multiplicative_zmod_pow (p n : ℕ) [Fact p.Prime] :
+/-- The cyclic group `ℤ/pⁿ`, written multiplicatively and with its discrete topology, is
+pro-`p`. This holds for every natural number `p`, including composite numbers. -/
+theorem isProP_multiplicative_zmod_pow (p n : ℕ) :
     IsProP p (Multiplicative (ZMod (p ^ n))) :=
-  (IsPGroup.of_card (n := n) (by simp [Nat.card_eq_fintype_card])).isProP
+  (ZModModule.isPGroup_multiplicative (n := p ^ n) (G := ZMod (p ^ n))).of_pow.isProP
 
 end Discrete
 
@@ -122,8 +122,9 @@ variable {H : Type v} [Group H] [TopologicalSpace H]
 
 /-- Each finite quotient of a pro-`p` group is killed by a single power of `p`: the exponent
 in `IsPGroup` can be chosen uniformly in the element. -/
-theorem exists_forall_pow_pow_eq_one [IsTopologicalGroup G] [CompactSpace G] (hG : IsProP p G)
-    (U : OpenNormalSubgroup G) : ∃ n : ℕ, ∀ g : G ⧸ U.toSubgroup, g ^ p ^ n = 1 :=
+theorem exists_forall_pow_pow_eq_one (hG : IsProP p G)
+    (U : OpenNormalSubgroup G) [Finite (G ⧸ U.toSubgroup)] :
+    ∃ n : ℕ, ∀ g : G ⧸ U.toSubgroup, g ^ p ^ n = 1 :=
   isPGroup_iff_exists_pow_pow_eq_one.mp (isProP_iff.mp hG U)
 
 /-- A profinite group that is pro-`p` and pro-`q` for coprime `p` and `q` is trivial: its finite
@@ -176,19 +177,21 @@ theorem top (hG : IsProP p G) : IsProP p (⊤ : Subgroup G) :=
 theorem of_equiv (hG : IsProP p G) (e : G ≃ₜ* H) : IsProP p H :=
   hG.of_surjective e.toMulEquiv.toMonoidHom e.continuous e.surjective
 
-/-- The range of a continuous homomorphism from a pro-`p` group to a discrete group is a
-`p`-group. -/
-theorem isPGroup_range [DiscreteTopology H] (hG : IsProP p G) (f : G →* H)
-    (hf : Continuous f) : IsPGroup p f.range :=
-  isProP_iff_isPGroup.mp <| hG.of_surjective (H := f.range) f.rangeRestrict
-    (continuous_induced_rng.mpr hf) f.rangeRestrict_surjective
+omit [TopologicalSpace H] in
+/-- The range of a homomorphism from a pro-`p` group with open kernel is a `p`-group.
+In particular, this applies to continuous homomorphisms to discrete groups. -/
+theorem isPGroup_range (hG : IsProP p G) (f : G →* H)
+    (hf : IsOpen (f.ker : Set G)) : IsPGroup p f.range :=
+  (hG ⟨⟨f.ker, hf⟩, inferInstance⟩).of_equiv (QuotientGroup.quotientKerEquivRange f)
 
 /-- The image of a pro-`p` subgroup in the quotient by an open normal subgroup is a
 `p`-group. -/
-theorem isPGroup_map_mk' [IsTopologicalGroup G] {P : Subgroup G} (hP : IsProP p P)
+theorem isPGroup_map_mk' {P : Subgroup G} (hP : IsProP p P)
     (U : OpenNormalSubgroup G) : IsPGroup p (P.map (QuotientGroup.mk' U.toSubgroup)) := by
   rw [← MonoidHom.domRestrict_range]
-  exact hP.isPGroup_range _ (QuotientGroup.continuous_mk.comp continuous_subtype_val)
+  apply hP.isPGroup_range
+  simpa [MonoidHom.ker_domRestrict, Subgroup.coe_subgroupOf] using
+    U.isOpen.preimage continuous_subtype_val
 
 /-- **Open normal subgroups of large `p`-power relative index.** In an infinite pro-`p` group every
 open normal subgroup `U` contains, for every `n`, an open normal subgroup `V` with

@@ -260,13 +260,7 @@ jobs:
       - name: Checkout the pinned merge policy (read-only)
         id: merge-policy
         continue-on-error: true
-        uses: actions/checkout@v4
-        with:
-          repository: TauCetiProject/TauCetiReview
-          ref: 95fa10ea655e8dacfcc84b8cd3f3e482e8c852ae
-          path: .tauceti-review
-          sparse-checkout: runner
-          persist-credentials: false
+        uses: ./.github/actions/checkout-merge-policy
 
       - name: Derive pipeline health from the same snapshot
         env:
