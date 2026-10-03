@@ -51,7 +51,8 @@ The algebra of matrix coefficients is the Layer 3 milestone of the
 span of the matrix coefficients of a fixed representation a translation-stable subspace of `C(G)`,
 stable under conjugation followed by inversion of the argument, and it feeds the Schur
 orthogonality relations of Layer 4. Conjugation alone leaves that span in general: it produces a
-matrix coefficient of the contragredient representation, which is not built here. The mathematical
+matrix coefficient of the contragredient representation, which is
+`ContRepresentation.dual` in `TauCeti/RepresentationTheory/Continuous/Dual.lean`. The mathematical
 development follows Daniel Bump, *Lie Groups*, second edition, Chapters 2–4.
 -/
 
