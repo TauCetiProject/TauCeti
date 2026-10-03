@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Combinatorics.SimpleGraph.Degree
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.SimpleGraph
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.SimplyLaced
 public import TauCeti.RepresentationTheory.Quiver.EulerForm
@@ -16,7 +17,8 @@ import Mathlib.Data.Fin.Tuple.Sort
 # Finite representation type of a tree quiver forces a positive definite Tits form
 
 This file proves the converse half of Gabriel's dichotomy for quivers whose underlying graph is a
-tree: such a quiver of finite representation type has a positive definite Tits form.
+tree: such a quiver of finite representation type, if it has no pair of opposite arrows
+`a ⟶ b`, `b ⟶ a`, has a positive definite Tits form.
 
 The argument is the graph-theoretic half of Gabriel's theorem. The extended Dynkin trees `D~ₘ₊₄`,
 `E₆~`, `E₇~` and `E₈~` obstruct finite representation type wherever they occur in the underlying
@@ -32,8 +34,8 @@ a finite tree containing none of them has a positive definite matrix `2I - A`:
 
 The Cartan matrices of the simply-laced Dynkin types are positive definite
 (`TauCeti.DynkinType.IsSimplyLaced.posDef_map_intCast_cartanMatrix`), and the Tits form of a quiver
-with at most one arrow between any two vertices is half the form of `2I - A` for its underlying
-graph.
+with no loops and at most one arrow in total, counting both directions, between any two distinct
+vertices is half the form of `2I - A` for its underlying graph.
 
 ## Main results
 
@@ -86,19 +88,6 @@ private theorem isContained_underlyingGraph_of_hom {X : Type*} [_root_.Quiver X]
     · exact hadj he.some
     · exact (hadj he.some).symm⟩, hφ⟩⟩
 
-/-- Two distinct neighbours of `v` other than a given vertex `x`, from a degree of at least
-three. -/
-private theorem exists_adj_adj_ne [Fintype V] [DecidableRel G.Adj] {v : V} (hv : 3 ≤ G.degree v)
-    (x : V) : ∃ a b, G.Adj v a ∧ G.Adj v b ∧ a ≠ b ∧ a ≠ x ∧ b ≠ x := by
-  classical
-  have hcard : 1 < ((G.neighborFinset v).erase x).card := by
-    have := Finset.pred_card_le_card_erase (s := G.neighborFinset v) (a := x)
-    rw [card_neighborFinset_eq_degree] at this
-    omega
-  obtain ⟨a, ha, b, hb, hab⟩ := Finset.one_lt_card.mp hcard
-  rw [Finset.mem_erase, mem_neighborFinset] at ha hb
-  exact ⟨a, b, ha.2, hb.2, hab, ha.1, hb.1⟩
-
 /-- **A vertex of degree at least four is the centre of a copy of `D~₄`.** Its four neighbours and
 the vertex itself carry the underlying graph of `TauCeti.Quiver.AffineD 0`, the four-leaf star. -/
 private theorem degree_le_three_of_not_isContained [Fintype V] [DecidableRel G.Adj]
@@ -135,8 +124,8 @@ private theorem eq_of_three_le_degree [Fintype V] [DecidableRel G.Adj] (hG : G.I
   by_contra huw
   let q : G.Walk u w := (hG.connected.preconnected u w).some.toPath.val
   have hq : q.IsPath := (hG.connected.preconnected u w).some.toPath.property
-  obtain ⟨a₀, a₁, ha₀, ha₁, ha, ha₀q, ha₁q⟩ := exists_adj_adj_ne hu q.snd
-  obtain ⟨b₀, b₁, hb₀, hb₁, hb, hb₀q, hb₁q⟩ := exists_adj_adj_ne hw q.penultimate
+  obtain ⟨a₀, a₁, ha₀, ha₁, ha, ha₀q, ha₁q⟩ := exists_adj_adj_ne_of_three_le_degree hu q.snd
+  obtain ⟨b₀, b₁, hb₀, hb₁, hb, hb₀q, hb₁q⟩ := exists_adj_adj_ne_of_three_le_degree hw q.penultimate
   -- The extra neighbours of `u` and `w` lie off the path.
   have hnot_u {a : V} (hua : G.Adj u a) (haq : a ≠ q.snd) : a ∉ q.support := fun hmem ↦
     haq (hG.isAcyclic.eq_snd_of_adj_start hq hua hmem)
