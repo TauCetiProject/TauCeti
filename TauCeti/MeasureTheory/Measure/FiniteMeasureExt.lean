@@ -6,7 +6,7 @@ Authors: Claude
 module
 
 public import Mathlib.MeasureTheory.Measure.FiniteMeasureExt
-public import Mathlib.MeasureTheory.Integral.RieszMarkovKakutani.Real
+import Mathlib.MeasureTheory.Integral.RieszMarkovKakutani.Real
 public import Mathlib.MeasureTheory.Measure.Tight
 
 /-!
@@ -32,11 +32,12 @@ on the Pontryagin dual of a locally compact abelian group that is not second cou
 * `TauCeti.MeasureTheory.ext_of_forall_mem_submonoid_integral_eq_of_polish` — two finite Borel
   measures on a Polish space with the same integrals on a point-separating submonoid of
   `E →ᵇ ℝ` are equal.
-* `TauCeti.MeasureTheory.abs_integral_mulExpNegMulSq_comp_sub_le_of_isTight` — the `6 √ε`
+* `TauCeti.MeasureTheory.abs_integral_mulExpNegMulSq_comp_sub_le_of_isTightMeasureSet` — the `6 √ε`
   comparison estimate behind the tight case.
-* `TauCeti.MeasureTheory.integral_eq_of_forall_mem_subalgebra_integral_eq_of_isTight` — two tight
-  finite Borel measures on a Hausdorff space with the same integrals on a point-separating star
-  subalgebra of `E →ᵇ 𝕜` give the same integral to every real bounded continuous function.
+* `TauCeti.MeasureTheory.integral_eq_of_forall_mem_subalgebra_integral_eq_of_isTightMeasureSet` —
+  two tight finite Borel measures on a Hausdorff space with the same integrals on a
+  point-separating star subalgebra of `E →ᵇ 𝕜` give the same integral to every real bounded
+  continuous function.
 * `TauCeti.MeasureTheory.ext_of_forall_mem_subalgebra_integral_eq_of_innerRegular` — on a locally
   compact Hausdorff space, two finite inner regular measures with the same integrals on such a
   subalgebra are equal.
@@ -109,7 +110,7 @@ variable [T2Space E] [BorelSpace E] {P P' : Measure E} [IsFiniteMeasure P] [IsFi
 real subalgebra `A` of `E →ᵇ ℝ` equally, then their integrals of `mulExpNegMulSq ε ∘ f` differ by
 at most `6 √ε`. This is the tight form of Mathlib's `dist_integral_mulExpNegMulSq_comp_le`, which
 assumes a complete second-countable pseudo-metric space instead. -/
-theorem abs_integral_mulExpNegMulSq_comp_sub_le_of_isTight
+theorem abs_integral_mulExpNegMulSq_comp_sub_le_of_isTightMeasureSet
     (hP : IsTightMeasureSet {P}) (hP' : IsTightMeasureSet {P'}) (f : E →ᵇ ℝ)
     {A : Subalgebra ℝ (E →ᵇ ℝ)} (hA : (A.map (toContinuousMapₐ ℝ)).SeparatesPoints)
     (heq : ∀ g ∈ A, ∫ x, (g : E → ℝ) x ∂P = ∫ x, (g : E → ℝ) x ∂P') {ε : ℝ} (hε : 0 < ε) :
@@ -154,7 +155,7 @@ theorem abs_integral_mulExpNegMulSq_comp_sub_le_of_isTight
 Borel measures on a Hausdorff space that integrate every member of a point-separating star
 subalgebra `A` of `E →ᵇ 𝕜` equally give the same integral to every real bounded continuous
 function. -/
-theorem integral_eq_of_forall_mem_subalgebra_integral_eq_of_isTight {𝕜 : Type*} [RCLike 𝕜]
+theorem integral_eq_of_forall_mem_subalgebra_integral_eq_of_isTightMeasureSet {𝕜 : Type*} [RCLike 𝕜]
     (hP : IsTightMeasureSet {P}) (hP' : IsTightMeasureSet {P'})
     {A : StarSubalgebra 𝕜 (E →ᵇ 𝕜)} (hA : (A.map (toContinuousMapStarₐ 𝕜)).SeparatesPoints)
     (heq : ∀ g ∈ A, ∫ x, (g : E → 𝕜) x ∂P = ∫ x, (g : E → 𝕜) x ∂P') (f : E →ᵇ ℝ) :
@@ -197,7 +198,7 @@ theorem integral_eq_of_forall_mem_subalgebra_integral_eq_of_isTight {𝕜 : Type
       - ∫ x, mulExpNegMulSq ε (f x) ∂P'|) (𝓝[>] 0) (𝓝 0) :=
     squeeze_zero' (.of_forall fun _ => abs_nonneg _)
       (eventually_nhdsWithin_of_forall fun ε hε =>
-        abs_integral_mulExpNegMulSq_comp_sub_le_of_isTight hP hP' f hA_toReal heq' hε) h0
+        abs_integral_mulExpNegMulSq_comp_sub_le_of_isTightMeasureSet hP hP' f hA_toReal heq' hε) h0
   exact eq_of_abs_sub_eq_zero (tendsto_nhds_unique hlim hlim0)
 
 /-- **A separating subalgebra determines a finite inner regular measure.** On a locally compact
@@ -211,7 +212,7 @@ theorem ext_of_forall_mem_subalgebra_integral_eq_of_innerRegular {𝕜 : Type*} 
     {A : StarSubalgebra 𝕜 (E →ᵇ 𝕜)} (hA : (A.map (toContinuousMapStarₐ 𝕜)).SeparatesPoints)
     (heq : ∀ g ∈ A, ∫ x, (g : E → 𝕜) x ∂P = ∫ x, (g : E → 𝕜) x ∂P') : P = P' :=
   Measure.ext_of_integral_eq_on_compactlySupported fun f => by
-    simpa using integral_eq_of_forall_mem_subalgebra_integral_eq_of_isTight
+    simpa using integral_eq_of_forall_mem_subalgebra_integral_eq_of_isTightMeasureSet
       isTightMeasureSet_singleton_of_innerRegular isTightMeasureSet_singleton_of_innerRegular hA
       heq f.toBoundedContinuousFunction
 
