@@ -7,8 +7,6 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Hopf.Translation
 public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.Surjective
-public import Mathlib.Algebra.Category.CommHopfAlgCat
-public import Mathlib.RingTheory.RingHom.Flat
 import TauCeti.RingTheory.Spectrum.Prime.GenericFreeness
 import TauCeti.RingTheory.RingHom.Flat
 

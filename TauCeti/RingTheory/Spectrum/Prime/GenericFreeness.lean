@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.FiniteType
-public import Mathlib.RingTheory.Polynomial.Basic
 public import Mathlib.Algebra.Polynomial.Basis
 public import TauCeti.RingTheory.Spectrum.Prime.FreeLocus
 public import TauCeti.RingTheory.Spectrum.Prime.Topology
