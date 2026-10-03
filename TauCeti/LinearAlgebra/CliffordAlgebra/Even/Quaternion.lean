@@ -111,15 +111,10 @@ theorem evenQuaternionEquiv_reverseEven_mul_self (a b : R) (c : Rˣ)
         (evenQuaternionEquiv a b c x) : ℍ[R, -(↑c⁻¹ : R) * a, 0, -(↑c⁻¹ : R) * b]) := by
   rw [map_mul, evenQuaternionEquiv_reverseEven, QuaternionAlgebra.star_mul_self]
 
-section Field
-
-variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V]
-  [Invertible (2 : K)]
-
-private def ternaryDiagonalIsometry (w : Fin 3 → Kˣ) :
-    (QuadraticMap.weightedSumSquares K w).IsometryEquiv
-      ((CliffordAlgebraQuaternion.Q (w 0 : K) (w 1 : K)).prod
-        ((w 2 : K) • QuadraticMap.sq)) where
+private def ternaryDiagonalIsometry (w : Fin 3 → Rˣ) :
+    (QuadraticMap.weightedSumSquares R w).IsometryEquiv
+      ((CliffordAlgebraQuaternion.Q (w 0 : R) (w 1 : R)).prod
+        ((w 2 : R) • QuadraticMap.sq)) where
   toFun x := ((x 0, x 1), x 2)
   invFun x := ![x.1.1, x.1.2, x.2]
   left_inv x := by ext i; fin_cases i <;> rfl
@@ -133,11 +128,27 @@ private def ternaryDiagonalIsometry (w : Fin 3 → Kˣ) :
 
 /-- The even Clifford algebra of the diagonal ternary form `⟨a, b, c⟩` is the quaternion
 algebra `(-a/c, -b/c)`. -/
-noncomputable def evenWeightedSumSquaresThreeQuaternionEquiv (w : Fin 3 → Kˣ) :
-    even (QuadraticMap.weightedSumSquares K w) ≃ₐ[K]
-      ℍ[K, (-((w 2)⁻¹) * w 0 : K), 0, (-((w 2)⁻¹) * w 1 : K)] :=
+noncomputable def evenWeightedSumSquaresThreeQuaternionEquiv (w : Fin 3 → Rˣ) :
+    even (QuadraticMap.weightedSumSquares R w) ≃ₐ[R]
+      ℍ[R, (-((w 2)⁻¹) * w 0 : R), 0, (-((w 2)⁻¹) * w 1 : R)] :=
   (evenEquivOfIsometry (ternaryDiagonalIsometry w)).trans
-    (evenQuaternionEquiv (w 0 : K) (w 1 : K) (w 2))
+    (evenQuaternionEquiv (w 0 : R) (w 1 : R) (w 2))
+
+/-- Quaternion conjugation is the image of reversal in the even Clifford algebra of the diagonal
+ternary form. -/
+@[simp]
+theorem evenWeightedSumSquaresThreeQuaternionEquiv_reverseEven (w : Fin 3 → Rˣ)
+    (x : even (QuadraticMap.weightedSumSquares R w)) :
+    evenWeightedSumSquaresThreeQuaternionEquiv w (reverseEven _ x) =
+      star (evenWeightedSumSquaresThreeQuaternionEquiv w x) := by
+  simp only [evenWeightedSumSquaresThreeQuaternionEquiv, AlgEquiv.trans_apply,
+    evenEquivOfIsometry_reverseEven]
+  exact evenQuaternionEquiv_reverseEven _ _ _ _
+
+section Field
+
+variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V]
+  [Invertible (2 : K)]
 
 /-- Every regular ternary quadratic form admits a quaternion model of its even Clifford
 algebra, in which reversal is quaternion conjugation. The two symbols are units and need not
@@ -156,9 +167,8 @@ theorem exists_evenQuaternionEquiv_of_finrank_eq_three (Q : QuadraticForm K V)
   refine ⟨-(w 2)⁻¹ * w 0, -(w 2)⁻¹ * w 1,
     (evenEquivOfIsometry f).trans (evenWeightedSumSquaresThreeQuaternionEquiv w), ?_⟩
   intro x
-  simp only [evenWeightedSumSquaresThreeQuaternionEquiv, AlgEquiv.trans_apply,
-    evenEquivOfIsometry_reverseEven]
-  exact evenQuaternionEquiv_reverseEven _ _ _ _
+  simp only [AlgEquiv.trans_apply, evenEquivOfIsometry_reverseEven]
+  exact evenWeightedSumSquaresThreeQuaternionEquiv_reverseEven w _
 
 end Field
 

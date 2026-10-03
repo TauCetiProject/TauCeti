@@ -273,34 +273,7 @@ theorem cliffordInvariant_mk_ternary_eq_hasseInvariant_mul (a b c : Kˣ) :
         BrauerGroup.quaternionClass a b * BrauerGroup.quaternionClass a c *
           BrauerGroup.quaternionClass b c := by
     simp [Fin.prod_univ_succ, mul_assoc]
-  have hca : -c⁻¹ * a = (-1) * c⁻¹ * a := by rw [neg_one_mul]
-  have hcb : -c⁻¹ * b = (-1) * c⁻¹ * b := by rw [neg_one_mul]
-  rw [cliffordInvariant_mk_ternary, hexp, hca, hcb]
-  rw [BrauerGroup.quaternionClass_mul_left ((-1) * c⁻¹) a,
-    BrauerGroup.quaternionClass_mul ((-1) * c⁻¹) ((-1) * c⁻¹) b,
-    BrauerGroup.quaternionClass_mul a ((-1) * c⁻¹) b,
-    BrauerGroup.quaternionClass_mul_left (-1) c⁻¹ ((-1) * c⁻¹),
-    BrauerGroup.quaternionClass_mul_left (-1) c⁻¹ b,
-    BrauerGroup.quaternionClass_mul a (-1) c⁻¹,
-    BrauerGroup.quaternionClass_mul (-1) (-1) c⁻¹,
-    BrauerGroup.quaternionClass_mul c⁻¹ (-1) c⁻¹]
-  simp only [
-    BrauerGroup.quaternionClass_inv_left, BrauerGroup.quaternionClass_inv_right,
-    BrauerGroup.quaternionClass_self, BrauerGroup.quaternionClass_comm c (-1),
-    BrauerGroup.quaternionClass_comm c b, BrauerGroup.quaternionClass_comm a (-1)]
-  calc
-    _ = BrauerGroup.quaternionClass a b * BrauerGroup.quaternionClass a c *
-          BrauerGroup.quaternionClass b c *
-        (BrauerGroup.quaternionClass (-1) a * BrauerGroup.quaternionClass (-1) b *
-          BrauerGroup.quaternionClass (-1) c) *
-        BrauerGroup.quaternionClass (-1) (-1) *
-        (BrauerGroup.quaternionClass (-1) c *
-          BrauerGroup.quaternionClass (-1) c) := by ac_rfl
-    _ = _ := by
-      have hc := BrauerGroup.quaternionClass_sq (-1) c
-      rw [pow_two] at hc
-      rw [hc, mul_one, BrauerGroup.quaternionClass_mul (-1) (a * b) c,
-        BrauerGroup.quaternionClass_mul (-1) a b]
+  rw [cliffordInvariant_mk_ternary, hexp, BrauerGroup.quaternionClass_neg_inv_mul_neg_inv_mul]
 
 /-- **Lam's Clifford--Hasse comparison for every rank-three regular-form class.** The second
 correction pairs `-1` with the discriminant, while the last is the constant symbol
