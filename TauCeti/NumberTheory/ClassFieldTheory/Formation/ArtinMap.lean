@@ -5,7 +5,9 @@ Authors: Claude
 -/
 module
 
+public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Tate.ArtinLowDegree
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Tate.Conjugation
+public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Tate.Naturality
 
 /-!
 # The abstract Artin map of a class formation
@@ -40,6 +42,13 @@ Tate's isomorphism commutes with conjugation (`ClassFormation.tateIso_conj`), so
 map and Artin reciprocity, and the Artin map is equivariant: the Artin symbol of `g · a` for the
 conjugate layer is the conjugate of the Artin symbol of `a` (`ClassFormation.artinMap_conj`).
 
+Raising the ground field from `F` to an intermediate field `E` of a layer `K/F` includes the ground
+level `A^U` into `A^{U'}` and restricts Tate cohomology. Since Tate's isomorphism commutes with
+restriction (`ClassFormation.tateIso_res`), restriction in degree `-2` is the transfer
+`Gal(K/F)^ab → Gal(K/E)^ab` and restriction in degree `0` is the ground-level inclusion, the Artin
+symbol of `a ∈ A^U` over `E` is the transfer of its Artin symbol over `F`
+(`ClassFormation.artinMap_groundInclusion`).
+
 ## Main definitions
 
 * `TauCeti.ClassFieldTheory.ClassFormation.nakayamaNegTwo`: the Nakayama map
@@ -58,6 +67,8 @@ conjugate layer is the conjugate of the Artin symbol of `a` (`ClassFormation.art
   the norm subgroup.
 * `TauCeti.ClassFieldTheory.ClassFormation.surjective_artinMap`: the Artin map is surjective.
 * `TauCeti.ClassFieldTheory.ClassFormation.artinMap_conj`: the Artin map commutes with conjugation.
+* `TauCeti.ClassFieldTheory.ClassFormation.artinMap_groundInclusion`: inclusion of ground levels
+  corresponds to the transfer of abelianized Galois groups.
 
 ## References
 
@@ -225,5 +236,22 @@ theorem artinMap_conj (g : G) (a : F.level L.ground) :
       (L.conjugateGalEquiv g).abelianizationCongr.toAdditive (cf.artinMap L a) := by
   rw [artinMap_apply, artinMap_apply, ← artinEquiv_conj, NormalLayer.normQuotientMk_apply,
     NormalLayer.normQuotientMk_apply, NormalLayer.conjugateNormQuotientEquiv_mk]
+
+/-! ### Restriction to an intermediate ground field -/
+
+/-- **Inclusion of ground levels corresponds to transfer**, one of the four Artin–Tate
+functoriality diagrams: for an intermediate field `F ⊆ E ⊆ K` of a layer `K/F`, the Artin symbol
+over `E` of an element `a` of the ground level `A^U` of `K/F` is the transfer
+`Gal(K/F)^ab → Gal(K/E)^ab` of its Artin symbol over `F`. -/
+@[simp]
+theorem artinMap_groundInclusion {small big : NormalLayer G} (T : LayerRestriction small big)
+    (a : F.level big.ground) :
+    cf.artinMap small (T.groundInclusion F a) = T.transferHom (cf.artinMap big a) := by
+  obtain ⟨x, hx⟩ := big.tateHMinusTwoEquivAbelianization.surjective (cf.artinMap big a)
+  rw [artinMap_eq_iff, ← hx, ← T.tateHMinusTwoEquivAbelianization_trivialTateRes,
+    AddEquiv.symm_apply_apply, ← tateIso_apply, ← cf.tateIso_res, tateIso_apply,
+    ← AddEquiv.symm_apply_apply big.tateHMinusTwoEquivAbelianization x, hx,
+    cupFundamentalClass_artinMap]
+  exact T.tateRes_zeroTateClass F a
 
 end TauCeti.ClassFieldTheory.ClassFormation
