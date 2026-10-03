@@ -5,6 +5,7 @@ Authors: Codex, Claude
 -/
 module
 
+public import TauCeti.Algebra.AddCircle
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Character
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Cup.Delta
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.LowDegree
@@ -50,6 +51,8 @@ formation, whose reciprocity isomorphism is cup product with the fundamental cla
   `σ ∪ χ` is the class of `1 ⊗ (-χ(σ))` in `Ĥ⁻¹(G, ℤ ⊗ ℚ/ℤ)`.
 * `TauCeti.TateCohomology.map_leftUnitor_cup_characterConnectingClass`: for `σ ∈ Gᵃᵇ`, the
   product `σ ∪ δχ ∈ Ĥ⁰(G, ℤ)` is `-k` times the class of `1` whenever `k / |G| ≡ χ(σ) (mod 1)`.
+* `TauCeti.TateCohomology.toRatAddCircle_map_leftUnitor_cup_characterConnectingClass`: under
+  the canonical embedding `Ĥ⁰(G, ℤ) = ℤ/|G|ℤ → ℚ/ℤ`, this product is `-χ(σ)`.
 
 ## References
 
@@ -248,5 +251,35 @@ theorem map_leftUnitor_cup_characterConnectingClass (σ : Additive (Abelianizati
       Finset.sum_apply, TensorProduct.map_tmul, Representation.trivial_apply, Finset.sum_const,
       Finset.card_univ]
     rw [← TensorProduct.tmul_smul, nsmul_eq_mul, mul_neg, mul_div_cancel₀ _ hcard]
+
+/-- Under the canonical embedding `Ĥ⁰(G, ℤ) = ℤ/|G|ℤ → ℚ/ℤ`, the Tate pairing of
+`σ ∈ Gᵃᵇ` with the connecting class of a character `χ` is the negative evaluation `-χ(σ)`. -/
+@[simp]
+theorem toRatAddCircle_map_leftUnitor_cup_characterConnectingClass
+    (σ : Additive (Abelianization G))
+    (χ : Additive (Abelianization G) →+ AddCircle (1 : ℚ)) :
+    ZMod.toRatAddCircle (Nat.card G)
+        (H0LinearEquivTrivialIntZModCard G
+          ((tateCohomologyFunctor 0).map (λ_ (Rep.trivial ℤ G ℤ)).hom
+            (cup (Rep.trivial ℤ G ℤ) (Rep.trivial ℤ G ℤ) (-2) 2 0 (by omega)
+              (HNegTwoAddEquivAbelianization.symm σ) (characterConnectingClass G χ)))) =
+      -χ σ := by
+  have hχ : χ σ ∈ AddSubgroup.torsionBy (AddCircle (1 : ℚ)) (Nat.card G : ℤ) := by
+    rw [AddSubgroup.torsionBy.nsmul_iff, ← map_nsmul]
+    obtain ⟨g, hg⟩ := QuotientGroup.mk_surjective (Additive.toMul σ)
+    obtain rfl : Additive.ofMul (Abelianization.of g) = σ := congrArg Additive.ofMul hg
+    rw [← ofMul_pow, ← map_pow, pow_card_eq_one', map_one, ofMul_one, map_zero]
+  rw [← ZMod.toRatAddCircle_range] at hχ
+  obtain ⟨z, hz⟩ := hχ
+  obtain ⟨k, rfl⟩ := ZMod.intCast_surjective z
+  have hk : (((k : ℚ) / Nat.card G : ℚ) : AddCircle (1 : ℚ)) = χ σ := by simpa using hz
+  rw [map_leftUnitor_cup_characterConnectingClass G σ χ k hk, map_zsmul,
+    H0LinearEquivTrivialIntZModCard_trivialTateHZeroOne]
+  calc
+    ZMod.toRatAddCircle (Nat.card G) ((-k : ℤ) • (1 : ZMod (Nat.card G))) =
+        -ZMod.toRatAddCircle (Nat.card G) ((k : ℤ) • (1 : ZMod (Nat.card G))) := by
+      rw [neg_zsmul, map_neg]
+    _ = -ZMod.toRatAddCircle (Nat.card G) (k : ZMod (Nat.card G)) := by rw [zsmul_one]
+    _ = -χ σ := congrArg Neg.neg hz
 
 end TauCeti.TateCohomology
