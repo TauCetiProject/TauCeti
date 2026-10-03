@@ -102,6 +102,33 @@ private theorem explicitCup11_kummerCoeffPairing_eq_zero_iff {ζ : K}
       (x := explicitCup11 G _ _ _ (ClassFieldTheory.kummerCoeffPairing P)
         continuous_of_discreteTopology (ClassFieldTheory.kummerCoeffPairing_smul P) x y)).symm
 
+/-- Transporting arbitrary degree-one classes through the two coefficient dictionaries
+preserves cup vanishing: the roots-of-unity cup vanishes exactly when the corresponding
+trivial-`𝔽₂` cup does. -/
+theorem cup_muNRepH1Equiv_eq_zero_iff {ζ : K} (hζ : IsPrimitiveRoot ζ 2)
+    (x y : H1 (AbsoluteGaloisGroup K) (KummerCoeff K 2)) :
+    (ClassFieldTheory.kummerCupPairing ζ hζ).cup 1 1
+        (ClassFieldTheory.muNRepH1Equiv 2 K x) (ClassFieldTheory.muNRepH1Equiv 2 K y) = 0 ↔
+      (trivialF2TopPairing (AbsoluteGaloisGroup K)).cup 1 1
+        ((kummerCohomMap K).hom
+          (explicitH1AddEquivContinuousCohomology (AbsoluteGaloisGroup K) (KummerCoeff K 2) x))
+        ((kummerCohomMap K).hom
+          (explicitH1AddEquivContinuousCohomology (AbsoluteGaloisGroup K) (KummerCoeff K 2) y))
+        = 0 := by
+  let G := AbsoluteGaloisGroup K
+  -- Give instance search the Hausdorff separation data of the Krull topology explicitly.
+  let : T2Space G := krullTopology_t2 (K := K) (L := SeparableClosure K)
+  let : R1Space G := T2Space.r1Space
+  let : LocallyCompactSpace G := WeaklyLocallyCompactSpace.locallyCompactSpace
+  have ht (z : continuousCohomology 2 (ofDiscreteModule ℤ G (trivialF2 G).V)) :=
+    map_eq_zero_iff _ (ConcreteCategory.bijective_of_isIso
+      (eqToHom (congrArg (continuousCohomology 2) (ofDiscreteModule_trivialF2 G)))).1 (x := z)
+  -- Naturality identifies each canonical cup with its explicit cup; all degree-two
+  -- transports are injective, so only the explicit coefficient comparison remains.
+  simpa only [ClassFieldTheory.cup_muNRepH1Equiv, AddEquiv.map_eq_zero_iff,
+    kummerCohomMap_explicitH1, trivialF2TopPairing_cup_one_one_explicitH1, ht] using
+    explicitCup11_kummerCoeffPairing_eq_zero_iff hζ x y
+
 /-- The roots-of-unity cup and the trivial-`𝔽₂` cup have the same vanishing criterion on
 Kummer classes, over every field in which `2` is invertible. -/
 @[simp]
@@ -111,22 +138,11 @@ theorem cup_muNRep_kummerClass_eq_zero_iff {ζ : K} (hζ : IsPrimitiveRoot ζ 2)
         (ClassFieldTheory.kummerClass K (isUnit_of_invertible (2 : K)) b) = 0 ↔
       (trivialF2TopPairing (AbsoluteGaloisGroup K)).cup 1 1
         (kummerClass a) (kummerClass b) = 0 := by
-  let G := AbsoluteGaloisGroup K
-  -- Give instance search the Hausdorff separation data of the Krull topology explicitly.
-  let : T2Space G := krullTopology_t2 (K := K) (L := SeparableClosure K)
-  let : R1Space G := T2Space.r1Space
-  let : LocallyCompactSpace G := WeaklyLocallyCompactSpace.locallyCompactSpace
-  rw [ClassFieldTheory.kummerClass_eq_muNRepH1Equiv_kummerMap,
-    ClassFieldTheory.kummerClass_eq_muNRepH1Equiv_kummerMap,
-    ClassFieldTheory.cup_muNRepH1Equiv,
-    AddEquiv.map_eq_zero_iff (ClassFieldTheory.muNRepH2Equiv 2 K),
-    kummerClass_eq_explicitCoeff1Equiv_kummerMap K a,
-    kummerClass_eq_explicitCoeff1Equiv_kummerMap K b,
-    trivialF2TopPairing_cup_one_one_explicitH1]
-  rw [map_eq_zero_iff _ (ConcreteCategory.bijective_of_isIso
-    (eqToHom (congrArg (continuousCohomology 2) (ofDiscreteModule_trivialF2 G)))).1,
-    AddEquiv.map_eq_zero_iff (explicitH2AddEquivContinuousCohomology G (trivialF2 G).V)]
-  exact explicitCup11_kummerCoeffPairing_eq_zero_iff hζ _ _
+  simpa only [ClassFieldTheory.kummerClass_eq_muNRepH1Equiv_kummerMap,
+    kummerClass_def, explicitIso_kummerMap] using
+    cup_muNRepH1Equiv_eq_zero_iff hζ
+      (Multiplicative.toAdd (kummerMap K 2 (isUnit_of_invertible (2 : K)) a))
+      (Multiplicative.toAdd (kummerMap K 2 (isUnit_of_invertible (2 : K)) b))
 
 /-- The mod-two local symbol vanishes exactly when the canonical trivial-`𝔽₂` Kummer cup
 vanishes. The statement is independent of the additive degree-two identification. -/
