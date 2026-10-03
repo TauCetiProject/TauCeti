@@ -411,11 +411,15 @@ def toSemistandard (S : StandardYoungTableau μ) : _root_.SemistandardYoungTable
   zeros' h := dite_eq_right h
 
 /-- The entries of the semistandard tableau of a standard Young tableau are its labels. -/
+@[simp]
 theorem toSemistandard_apply (S : StandardYoungTableau μ) {i j : ℕ} (h : (i, j) ∈ μ) :
     S.toSemistandard i j = (S ⟨(i, j), h⟩ : ℕ) :=
   dite_eq_left h
 
-/-- The entries of the semistandard tableau of a standard Young tableau, read at a cell. -/
+/-- The entries of the semistandard tableau of a standard Young tableau, read at a cell.
+
+Not a `simp` lemma: `TauCeti.StandardYoungTableau.toSemistandard_apply` already rewrites this
+left-hand side, discharging its membership side condition from `c.2`. -/
 theorem toSemistandard_apply_cell (S : StandardYoungTableau μ) (c : ↥μ.cells) :
     S.toSemistandard (c : ℕ × ℕ).1 (c : ℕ × ℕ).2 = (S c : ℕ) :=
   dite_eq_left c.2
@@ -445,6 +449,7 @@ theorem filter_toSemistandard_eq_singleton (S : StandardYoungTableau μ) {i : �
 
 /-- **The content of a standard Young tableau is the all-ones content**: each of the labels
 `0, …, μ.card - 1` is used exactly once, and no other entry occurs. -/
+@[simp]
 theorem content_toSemistandard (S : StandardYoungTableau μ) :
     ⇑(SemistandardYoungTableau.content S.toSemistandard) =
       fun i => if i < μ.card then 1 else 0 := by
@@ -483,23 +488,34 @@ noncomputable def ofSemistandard {T : _root_.SemistandardYoungTableau μ}
     exact hlt
   col_strict' {_ _ _} h hcell := T.col_strict h hcell
 
+/-- The labels of the standard tableau of a semistandard tableau of the all-ones content are the
+entries of that semistandard tableau. -/
+@[simp]
+theorem ofSemistandard_apply_cell {T : _root_.SemistandardYoungTableau μ}
+    (hT : ⇑(SemistandardYoungTableau.content T) = fun i => if i < μ.card then 1 else 0)
+    (c : ↥μ.cells) :
+    (ofSemistandard hT c : ℕ) = T (c : ℕ × ℕ).1 (c : ℕ × ℕ).2 :=
+  (rfl)
+
 /-- The semistandard tableau of the standard tableau of a semistandard tableau of the all-ones
 content is the tableau itself. -/
+@[simp]
 theorem toSemistandard_ofSemistandard {T : _root_.SemistandardYoungTableau μ}
     (hT : ⇑(SemistandardYoungTableau.content T) = fun i => if i < μ.card then 1 else 0) :
     (ofSemistandard hT).toSemistandard = T := by
   refine _root_.SemistandardYoungTableau.ext fun i j => ?_
   by_cases h : ((i, j) : ℕ × ℕ) ∈ μ
-  · -- On a cell the label of `ofSemistandard hT` is the entry of `T` by construction.
-    rw [toSemistandard_apply _ h]
-    exact (rfl)
+  · rw [toSemistandard_apply _ h]
+    exact ofSemistandard_apply_cell hT ⟨(i, j), h⟩
   · rw [(ofSemistandard hT).toSemistandard.zeros h, T.zeros h]
 
 /-- The standard tableau of the semistandard tableau of a standard tableau is the tableau
 itself. -/
+@[simp]
 theorem ofSemistandard_toSemistandard (S : StandardYoungTableau μ) :
     ofSemistandard (content_toSemistandard S) = S :=
-  ext fun c => Fin.ext (S.toSemistandard_apply_cell c)
+  ext fun c => Fin.ext
+    ((ofSemistandard_apply_cell (content_toSemistandard S) c).trans (S.toSemistandard_apply_cell c))
 
 /-- **The standard Young tableaux of shape `μ` are the semistandard tableaux of the all-ones
 content**: forgetting bijectivity is a bijection onto them. -/
