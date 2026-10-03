@@ -6,20 +6,19 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Ring.GeomSum
-import Mathlib.Tactic.NoncommRing
 
 /-!
-# Two-variable geometric sums in a noncommutative ring
+# Two-variable geometric sums in a noncommutative semiring
 
 Mathlib's `Commute.geom_sum₂_mul_add` and its relatives evaluate the two-variable geometric sum
 `S = ∑_{i < m} x ^ i * y ^ (m - 1 - i)` when `x` and `y` commute. Without that hypothesis `S` still
-satisfies a telescoping identity, `x * S + y ^ m = S * y + x ^ m`. It says that `S` intertwines
-`x` and `y` up to the error `x ^ m - y ^ m`, so `S` is an exact intertwiner `x * S = S * y` as soon
-as `x ^ m = y ^ m`.
+satisfies a telescoping identity, `x * S + y ^ m = S * y + x ^ m`. In a ring it says that `S`
+intertwines `x` and `y` up to the error `x ^ m - y ^ m`, so `S` is an exact intertwiner
+`x * S = S * y` as soon as `x ^ m = y ^ m`.
 
 ## Main result
 
-* `TauCeti.mul_geom_sum₂_add_pow`: `x * S + y ^ m = S * y + x ^ m` in any ring.
+* `TauCeti.mul_geom_sum₂_add_pow`: `x * S + y ^ m = S * y + x ^ m` in any semiring.
 -/
 
 public section
@@ -28,9 +27,9 @@ namespace TauCeti
 
 open Finset
 
-/-- Telescoping a two-variable geometric sum in a noncommutative ring:
+/-- Telescoping a two-variable geometric sum in a noncommutative semiring:
 `x * S + y ^ m = S * y + x ^ m` for `S = ∑_{i < m} x ^ i * y ^ (m - 1 - i)`. -/
-theorem mul_geom_sum₂_add_pow {S : Type*} [Ring S] (x y : S) (m : ℕ) :
+theorem mul_geom_sum₂_add_pow {S : Type*} [Semiring S] (x y : S) (m : ℕ) :
     x * (∑ i ∈ range m, x ^ i * y ^ (m - 1 - i)) + y ^ m =
       (∑ i ∈ range m, x ^ i * y ^ (m - 1 - i)) * y + x ^ m := by
   induction m with
@@ -49,7 +48,7 @@ theorem mul_geom_sum₂_add_pow {S : Type*} [Ring S] (x y : S) (m : ℕ) :
     rw [hsum]
     calc x * ((∑ i ∈ range m, x ^ i * y ^ (m - 1 - i)) * y + x ^ m) + y ^ (m + 1)
         = (x * (∑ i ∈ range m, x ^ i * y ^ (m - 1 - i)) + y ^ m) * y + x ^ (m + 1) := by
-          rw [pow_succ y, pow_succ' x]; noncomm_ring
+          rw [pow_succ y, pow_succ' x, mul_add, add_mul, ← mul_assoc, add_right_comm]
       _ = ((∑ i ∈ range m, x ^ i * y ^ (m - 1 - i)) * y + x ^ m) * y + x ^ (m + 1) := by rw [ih]
 
 end TauCeti
