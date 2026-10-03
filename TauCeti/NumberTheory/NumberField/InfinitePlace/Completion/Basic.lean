@@ -6,24 +6,25 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.Completion.Ramification
+public import TauCeti.Analysis.Normed.Ring.WithAbs
 
 /-!
-# Normalized absolute values on number-field completions
+# Normalized absolute values on archimedean completions
 
-The finite and infinite completions of a number field carry their usual norm, but the global
-product formula uses the normalized local absolute value: the norm at a real place and the square
-of the norm at a complex place.  This file packages those values as multiplicative maps with zero.
+`NumberField.InfinitePlace.completionNormalizedAbsValue` is the norm on `w.Completion` raised to
+`w.mult`, as a multiplicative map with zero. The exponent is one at real places and two at complex
+places. For a number field, its restriction agrees with the normalization in
+`NumberField.prod_abs_eq_one`; these completion-side maps supply the archimedean factors of the
+idele norm.
 
-At a finite place the required map is already Mathlib's `normHom` on `v.adicCompletion K`, and its
-comparison with `HeightOneSpectrum.adicAbv` is Mathlib's `FinitePlace.norm_embedding`.  The new
-infinite-place map is the norm on `w.Completion` raised to `w.mult`.  The latter exponent is one at
-real places and two at complex places, so its restriction to the number field agrees with the
-normalization used by `NumberField.prod_abs_eq_one`.  These completion-side maps are the local
-factors used by the global idele norm; the single all-places carrier is developed separately.
+`NumberField.InfinitePlace.Completion.norm_algebraMap` compares the completion norm with the place
+absolute value on the dense base field. The normalized value is continuous and takes every
+nonnegative real value.
 
-The archimedean completions also carry a nontrivial norm. Completed extensions at infinite
-places are finite dimensional, and the diagonal embeddings form scalar towers. These instances
-allow finite-dimensional topological algebra to be used with the canonical completion maps.
+Archimedean completions are nontrivially normed fields. Completed extensions at infinite places
+are finite dimensional, and the diagonal embeddings form scalar towers over any commutative
+semiring base. These instances allow finite-dimensional topological algebra to be used with the
+canonical completion maps.
 
 ## References
 
@@ -64,7 +65,7 @@ instance (v : InfinitePlace K) (w : InfinitePlace L) [w.LiesOver v] :
   exact Nat.pos_of_ne_zero h.2
 
 /-- The diagonal algebra structures on an archimedean completion form a scalar tower. -/
-instance {R : Type*} [CommRing R] [Algebra R L] (w : InfinitePlace L) :
+instance {R : Type*} [CommSemiring R] [Algebra R L] (w : InfinitePlace L) :
     IsScalarTower R L w.Completion :=
   (Completion.equiv w).isScalarTower R L
 

@@ -9,7 +9,7 @@ public import Mathlib.Topology.Algebra.Group.Units
 public import TauCeti.NumberTheory.NumberField.Global.Adeles.Basic
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.Basic
 public import TauCeti.NumberTheory.NumberField.Global.Places.Basic
-public import TauCeti.NumberTheory.NumberField.Global.Places.Completion
+public import TauCeti.NumberTheory.NumberField.InfinitePlace.Completion.Basic
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.ClassGroup
 
 /-!

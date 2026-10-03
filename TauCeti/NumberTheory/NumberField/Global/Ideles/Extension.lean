@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.NumberField.Global.Adeles.Extension
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.Norm.One
-public import TauCeti.NumberTheory.NumberField.Global.Places.Extension
+public import TauCeti.NumberTheory.NumberField.InfinitePlace.Completion.Extension
 public import TauCeti.NumberTheory.NumberField.LocalGlobal.Norm
 
 /-!
