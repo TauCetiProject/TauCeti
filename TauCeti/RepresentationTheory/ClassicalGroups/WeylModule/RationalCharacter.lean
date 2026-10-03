@@ -11,7 +11,7 @@ public import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.Rational
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.ColumnShift
 
 /-!
-# The rational character of `GL n` is a Laurent Schur polynomial
+# The rational character of `GL n` is a Laurent Schur polynomial: extreme shapes and rank two
 
 The rational Weyl module `TauCeti.rationalWeylRep k n λ` of a dominant weight `λ` is `det ^ λₙ`
 tensored with the Weyl module of the polynomial part `μ = λ.detShiftShape`, so its character is
@@ -36,13 +36,16 @@ the Schur polynomial by `(x₀ ⋯ x_{n-1}) ^ λₙ`
 `char (rationalWeylRep k n λ) (diag t) = s_λ(t)`
 
 holds for every polynomial weight whose polynomial part is an extreme shape, and those weights are
-*not* the ones whose own diagram is extreme: a weight `(c + a, c, …, c)` has a rectangle with a row
-on top, a shape with as many rows as columns.  This extends the range of shapes for which the
+*not* the ones whose own diagram is extreme: the diagram of a weight `(c + a, c, …, c)` with
+`0 < c` and `0 < a` is the `n`-row rectangle of width `c` with `a` further cells in its first row,
+which is neither a single row nor a single column.  This extends the range of shapes for which the
 character of a Weyl module is known to be a Schur polynomial.
 
 For `GL 2` the polynomial part of a weight is always a single row
-(`TauCeti.DominantWeight.colLen_zero_detShiftShape_le_one_of_le_two`), so for `GL 2` both
-statements hold with no condition on the weight.  The weight `λ = (2, 1)` of `GL 2` is the case
+(`TauCeti.DominantWeight.colLen_zero_detShiftShape_le_one_of_le_two`), so over `GL 2` the Laurent
+identity needs no hypothesis at all, and the identity against the weight's own diagram needs only
+that the weight be polynomial, which is what makes `s_λ` an honest polynomial.  The weight
+`λ = (2, 1)` of `GL 2` is the case
 `s_{(2,1)}(t₀, t₁) = t₀² t₁ + t₀ t₁² = (t₀t₁)(t₀ + t₁)`, of dimension `2`, which the Weyl dimension
 formula also gives.
 
@@ -69,8 +72,9 @@ presupposes or claims either.
 * `TauCeti.char_rationalWeylRep_diagonal_fin_two` and
   `TauCeti.char_rationalWeylRep_diagonal_eq_eval_shape_fin_two`, bundled as
   `TauCeti.char_rationalWeylFDRep_diagonal_fin_two` and
-  `TauCeti.char_rationalWeylFDRep_diagonal_eq_eval_shape_fin_two`: both statements for `GL 2`, with
-  no condition on the weight.
+  `TauCeti.char_rationalWeylFDRep_diagonal_eq_eval_shape_fin_two`: for `GL 2`, the Laurent identity
+  with no condition on the weight, and the identity against the weight's own diagram for a
+  polynomial weight.
 * `TauCeti.diagramSchurPoly_shape_of_eq_two_one`: `s_{(2,1)}(x₀, x₁) = x₀² x₁ + x₀ x₁²`, over any
   commutative semiring.
 * `TauCeti.char_rationalWeylRep_diagonal_of_eq_two_one`, bundled as
