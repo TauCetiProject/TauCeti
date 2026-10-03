@@ -130,6 +130,12 @@ theorem lensRotation_injective [NeZero k] : Function.Injective (lensRotation m �
 def lensGroup : Subgroup (EuclideanSpace ℂ (Fin k) ≃ₗᵢ[ℝ] EuclideanSpace ℂ (Fin k)) :=
   (lensRotation m ℓ).range
 
+/-- The elements of the lens group are the rotations by residues modulo `m`. -/
+@[simp]
+theorem mem_lensGroup_iff {g : EuclideanSpace ℂ (Fin k) ≃ₗᵢ[ℝ] EuclideanSpace ℂ (Fin k)} :
+    g ∈ lensGroup m ℓ ↔ ∃ a, lensRotation m ℓ a = g :=
+  MonoidHom.mem_range
+
 /-- The lens group is the cyclic group `ℤ/m`. -/
 def lensGroupEquiv [NeZero k] : Multiplicative (ZMod m) ≃* lensGroup m ℓ :=
   MonoidHom.ofInjective (lensRotation_injective m ℓ)
