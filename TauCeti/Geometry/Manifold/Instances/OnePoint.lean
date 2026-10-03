@@ -187,6 +187,7 @@ theorem invChart_infty : invChart (∞ : OnePoint 𝕜) = 0 :=
 theorem invChart_symm_zero : invChart.symm (0 : 𝕜) = (∞ : OnePoint 𝕜) := by
   simp [invChart]
 
+@[simp]
 theorem invChart_symm_of_ne_zero {w : 𝕜} (hw : w ≠ 0) :
     invChart.symm w = ((w⁻¹ : 𝕜) : OnePoint 𝕜) := by
   simp [invChart, hw]
