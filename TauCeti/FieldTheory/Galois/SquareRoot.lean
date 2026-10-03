@@ -30,7 +30,8 @@ identity fixes each of `n` square roots has at most `2ⁿ` elements.
 * `Subgroup.card_le_two_pow_of_forall_apply_eq_self`: a subgroup in which only the identity fixes
   each of `n` square roots has at most `2ⁿ` elements.
 * `Subgroup.card_eq_four_of_exists_apply_eq_neg`: a finite subgroup of order at most four
-  that negates two nonzero elements and their product has order four when `2 ≠ 0`.
+  that negates two elements and their nonzero product has order four when multiplication by
+  `2` is injective.
 -/
 
 public section
@@ -78,12 +79,15 @@ theorem card_le_two_pow_of_forall_apply_eq_self (H : Subgroup (L ≃ₐ[F] L))
   simpa using Nat.card_le_card_of_injective f hf
 
 /-- A finite subgroup of `L ≃ₐ[F] L` with at most four elements, containing elements that negate
-nonzero `y`, nonzero `z`, and `y * z`, has exactly four elements when `2 ≠ 0`. -/
+`y`, `z`, and their nonzero product, has exactly four elements when multiplication by `2` is
+injective. -/
 theorem card_eq_four_of_exists_apply_eq_neg {F L : Type*} [CommSemiring F] [Ring L]
-    [NoZeroDivisors L] [NeZero (2 : L)] [Algebra F L] (H : Subgroup (L ≃ₐ[F] L)) [Finite H]
-    (hle : Nat.card H ≤ 4) {y z : L} (hy : y ≠ 0)
-    (hz : z ≠ 0) (h₁ : ∃ τ ∈ H, τ y = -y) (h₂ : ∃ τ ∈ H, τ z = -z)
+    [Algebra F L] (H : Subgroup (L ≃ₐ[F] L)) [Finite H] (h2 : IsLeftRegular (2 : L))
+    (hle : Nat.card H ≤ 4) {y z : L} (hyz : y * z ≠ 0)
+    (h₁ : ∃ τ ∈ H, τ y = -y) (h₂ : ∃ τ ∈ H, τ z = -z)
     (h₃ : ∃ τ ∈ H, τ (y * z) = -(y * z)) : Nat.card H = 4 := by
+  have hy := left_ne_zero_of_mul hyz
+  have hz := right_ne_zero_of_mul hyz
   obtain ⟨τ₁, hτ₁, hτ₁y⟩ := h₁
   obtain ⟨τ₂, hτ₂, hτ₂z⟩ := h₂
   obtain ⟨τ₃, hτ₃, hτ₃yz⟩ := h₃
@@ -91,26 +95,26 @@ theorem card_eq_four_of_exists_apply_eq_neg {F L : Type*} [CommSemiring F] [Ring
   interval_cases hc : Nat.card H
   · have : Subsingleton H := (Nat.card_eq_one_iff_unique.mp hc).1
     exact absurd (congrArg Subtype.val (Subsingleton.elim (⟨τ₁, hτ₁⟩ : H) 1))
-      (AlgEquiv.ne_one_of_apply_eq_neg τ₁ hy hτ₁y)
+      (AlgEquiv.ne_one_of_apply_eq_neg τ₁ h2 hy hτ₁y)
   · obtain ⟨u, -, hu⟩ := (Nat.card_eq_two_iff' (1 : H)).mp hc
     have heq {τ : L ≃ₐ[F] L} (hτ : τ ∈ H) (hτ1 : τ ≠ 1) : τ = u :=
       congrArg Subtype.val (hu ⟨τ, hτ⟩ fun h => hτ1 (congrArg Subtype.val h))
     have h12 : τ₃ = τ₁ :=
-      (heq hτ₃ (AlgEquiv.ne_one_of_apply_eq_neg τ₃ (mul_ne_zero hy hz) hτ₃yz)).trans
-        (heq hτ₁ (AlgEquiv.ne_one_of_apply_eq_neg τ₁ hy hτ₁y)).symm
+      (heq hτ₃ (AlgEquiv.ne_one_of_apply_eq_neg τ₃ h2 hyz hτ₃yz)).trans
+        (heq hτ₁ (AlgEquiv.ne_one_of_apply_eq_neg τ₁ h2 hy hτ₁y)).symm
     have h22 : τ₃ = τ₂ :=
-      (heq hτ₃ (AlgEquiv.ne_one_of_apply_eq_neg τ₃ (mul_ne_zero hy hz) hτ₃yz)).trans
-        (heq hτ₂ (AlgEquiv.ne_one_of_apply_eq_neg τ₂ hz hτ₂z)).symm
+      (heq hτ₃ (AlgEquiv.ne_one_of_apply_eq_neg τ₃ h2 hyz hτ₃yz)).trans
+        (heq hτ₂ (AlgEquiv.ne_one_of_apply_eq_neg τ₂ h2 hz hτ₂z)).symm
     rw [h12, map_mul, hτ₁y, h12.symm.trans h22, hτ₂z, neg_mul_neg] at hτ₃yz
     exact False.elim
-      (AlgEquiv.ne_one_of_apply_eq_neg (1 : L ≃ₐ[F] L) (mul_ne_zero hy hz) hτ₃yz rfl)
+      (AlgEquiv.ne_one_of_apply_eq_neg (1 : L ≃ₐ[F] L) h2 hyz hτ₃yz rfl)
   · have hpow : τ₁ ^ 3 = 1 := by
       simpa only [hc, Subgroup.coe_pow, Subgroup.coe_one] using
         congrArg Subtype.val (pow_card_eq_one' (x := (⟨τ₁, hτ₁⟩ : H)))
     have hneg := congrArg (fun σ : L ≃ₐ[F] L => σ y) hpow
     simp only [pow_succ, pow_zero, AlgEquiv.mul_apply, AlgEquiv.one_apply, hτ₁y,
       map_neg, neg_neg] at hneg
-    exact False.elim (AlgEquiv.ne_one_of_apply_eq_neg (1 : L ≃ₐ[F] L) hy hneg.symm rfl)
+    exact False.elim (AlgEquiv.ne_one_of_apply_eq_neg (1 : L ≃ₐ[F] L) h2 hy hneg.symm rfl)
   · rfl
 
 end Subgroup
