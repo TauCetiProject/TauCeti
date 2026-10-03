@@ -257,11 +257,13 @@ theorem taylor_comp (g : AInfinityRightModuleHom NN PP) (f : AInfinityRightModul
     (g.comp f).taylor = g.taylor ∘ₗ f.barMap := by
   simp only [taylor_def, barMap_comp, LinearMap.comp_assoc]
 
+/-- The identity module morphism is a right identity for composition. -/
 @[simp]
 theorem comp_id (f : AInfinityRightModuleHom MM NN) :
     f.comp (AInfinityRightModuleHom.id MM) = f :=
   barMap_injective (by simp)
 
+/-- The identity module morphism is a left identity for composition. -/
 @[simp]
 theorem id_comp (f : AInfinityRightModuleHom MM NN) :
     (AInfinityRightModuleHom.id NN).comp f = f :=
