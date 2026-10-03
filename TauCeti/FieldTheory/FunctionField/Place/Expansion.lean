@@ -275,11 +275,24 @@ theorem truncatedExpansion_mul (hP : P.degree = 1) (ht : P.ord t = 1)
   classical
   let a := P.truncatedExpansion hP ht n x
   let b := P.truncatedExpansion hP ht n y
-  let u := ∑ j, algebraMap k F (a j) * t ^ (j : ℕ)
-  let v := ∑ j, algebraMap k F (b j) * t ^ (j : ℕ)
-  let f := fun j : Fin n × Fin n ↦
-    algebraMap k F (a j.1 * b j.2) * t ^ ((j.1 : ℕ) + (j.2 : ℕ))
+  -- Encode the finite vectors as polynomials without unfolding coefficient extraction.
+  let polynomial := fun c : Fin n → k ↦ ∑ j : Fin n, Polynomial.monomial (j : ℕ) (c j)
+  let u := (polynomial a).eval₂ (algebraMap k F) t
+  let v := (polynomial b).eval₂ (algebraMap k F) t
+  have heval (c : Fin n → k) :
+      (polynomial c).eval₂ (algebraMap k F) t =
+        ∑ j, algebraMap k F (c j) * t ^ (j : ℕ) := by
+    simp only [polynomial, Polynomial.eval₂_finsetSum, Polynomial.eval₂_monomial]
+  have hcoeff (c : Fin n → k) (j : Fin n) : (polynomial c).coeff j = c j := by
+    simp only [polynomial, Polynomial.finsetSum_coeff, Polynomial.coeff_monomial]
+    rw [Finset.sum_eq_single j]
+    · simp
+    · intro l _ hlj
+      simp [Fin.val_injective.ne hlj]
+    · simp
   have hu : u ∈ P.filtration 0 := by
+    dsimp only [u]
+    rw [heval]
     apply Submodule.sum_mem
     intro j _
     exact P.mem_filtration_zero_iff.mpr
@@ -293,69 +306,63 @@ theorem truncatedExpansion_mul (hP : P.degree = 1) (ht : P.ord t = 1)
       (P.mem_filtration_zero_iff.mpr y.2)
     have hy := P.mul_mem_filtration hu
       (P.sub_sum_truncatedExpansion_mem_filtration hP ht n y)
-    -- Expose the finite-sum abbreviations without unfolding coefficient extraction.
-    change ((x : F) - u) * (y : F) ∈ P.filtration (n + 0) at hx
-    change u * ((y : F) - v) ∈ P.filtration (0 + n) at hy
-    rw [add_zero] at hx
-    rw [zero_add] at hy
+    rw [← heval a, add_zero] at hx
+    rw [← heval b, zero_add] at hy
     convert (P.filtration n).add_mem hx hy using 1
     ring
-  have hprod : u * v = ∑ j, f j := by
-    dsimp only [u, v]
-    rw [Finset.sum_mul]
-    simp only [f, Finset.mul_sum, Fintype.sum_prod_type, map_mul, pow_add]
-    apply Finset.sum_congr rfl
-    intro j _
-    apply Finset.sum_congr rfl
-    intro l _
-    ring
-  -- Group the product terms of degree below `n` by their common degree.
-  have hlow :
-      (∑ j : Fin n, algebraMap k F
-        (∑ l : Fin n × Fin n with (l.1 : ℕ) + (l.2 : ℕ) = (j : ℕ), a l.1 * b l.2) *
-          t ^ (j : ℕ)) =
-        ∑ j : Fin n × Fin n with (j.1 : ℕ) + (j.2 : ℕ) < n, f j := by
-    calc
-      _ = ∑ j : Fin n, ∑ l : Fin n × Fin n with
-          (l.1 : ℕ) + (l.2 : ℕ) = (j : ℕ), f l := by
-        apply Finset.sum_congr rfl
-        intro j _
-        rw [map_sum, Finset.sum_mul]
-        apply Finset.sum_congr rfl
-        intro l hl
-        dsimp only [f]
-        rw [(Finset.mem_filter.mp hl).2]
-      _ = _ := by
-        rw [Fin.sum_univ_eq_sum_range
-          (fun d : ℕ ↦ ∑ l : Fin n × Fin n with (l.1 : ℕ) + (l.2 : ℕ) = d, f l),
-          Finset.sum_fiberwise_eq_sum_filter]
-        simp only [Finset.mem_range]
-  -- Every remaining product term has degree at least `n` and belongs to the filtration.
-  have hhigh : (∑ j : Fin n × Fin n with ¬(j.1 : ℕ) + (j.2 : ℕ) < n, f j) ∈
-      P.filtration n := by
+  let q := polynomial a * polynomial b
+  -- Mathlib supplies both multiplication of evaluations and coefficient convolution.
+  -- Reindex its antidiagonal only to retain the bounded-pair public formula.
+  have hconvolution (j : Fin n) : q.coeff j =
+      ∑ l : Fin n × Fin n with (l.1 : ℕ) + (l.2 : ℕ) = (j : ℕ), a l.1 * b l.2 := by
+    rw [Polynomial.coeff_mul]
+    symm
+    refine Finset.sum_bij (fun l _ ↦ ((l.1 : ℕ), (l.2 : ℕ))) ?_ ?_ ?_ ?_
+    · intro l hl
+      exact Finset.mem_antidiagonal.mpr (Finset.mem_filter.mp hl).2
+    · intro l _ m _ hlm
+      exact Prod.ext (Fin.ext (Prod.mk.inj hlm).1) (Fin.ext (Prod.mk.inj hlm).2)
+    · intro l hl
+      have hl' := Finset.mem_antidiagonal.mp hl
+      refine ⟨(⟨l.1, by omega⟩, ⟨l.2, by omega⟩), ?_, rfl⟩
+      simp only [Finset.mem_filter, Finset.mem_univ, true_and]
+      exact hl'
+    · intro l _
+      simp only [hcoeff]
+  -- Evaluate the product polynomial and discard only terms of degree at least `n`.
+  -- Include missing low degrees as zero terms so the truncation ranges over all `Fin n`.
+  let s := q.support ∪ Finset.range n
+  let f := fun d : ℕ ↦ algebraMap k F (q.coeff d) * t ^ d
+  have hprod : u * v = ∑ d ∈ s, f d := by
+    rw [← Polynomial.eval₂_mul, Polynomial.eval₂_eq_sum]
+    exact Polynomial.sum_eq_of_subset _ (by simp) Finset.subset_union_left
+  have hlow : (∑ d ∈ s with d < n, f d) = ∑ j : Fin n, f j := by
+    rw [Fin.sum_univ_eq_sum_range]
+    congr 1
+    ext d
+    simp only [Finset.mem_filter, Finset.mem_union, Finset.mem_range, s]
+    tauto
+  have hhigh : (∑ d ∈ s with ¬d < n, f d) ∈ P.filtration n := by
     apply Submodule.sum_mem
-    intro j hj
-    have hdegree : (n : ℤ) ≤ ((j.1 : ℕ) + (j.2 : ℕ) : ℕ) := by
-      exact_mod_cast Nat.le_of_not_lt (Finset.mem_filter.mp hj).2
-    have hpow := P.mem_filtration_ord (t ^ ((j.1 : ℕ) + (j.2 : ℕ)))
+    intro d hd
+    have hdegree : (n : ℤ) ≤ (d : ℤ) := by
+      exact_mod_cast Nat.le_of_not_lt (Finset.mem_filter.mp hd).2
+    have hpow := P.mem_filtration_ord (t ^ d)
     simp only [P.ord_pow, ht, mul_one] at hpow
     apply P.filtration_antitone hdegree
     have hm := P.mul_mem_filtration
-      (P.mem_filtration_zero_iff.mpr (P.algebraMap_mem_integers (a j.1 * b j.2))) hpow
+      (P.mem_filtration_zero_iff.mpr (P.algebraMap_mem_integers (q.coeff d))) hpow
     simpa only [zero_add] using hm
   have heq := (P.truncatedExpansion_eq_iff hP ht n (x * y)
-    (fun j ↦ ∑ l : Fin n × Fin n with (l.1 : ℕ) + (l.2 : ℕ) = (j : ℕ),
-      a l.1 * b l.2)).mpr (by
-        rw [hlow]
-        have hsplit := Finset.sum_filter_add_sum_filter_not
-          (Finset.univ : Finset (Fin n × Fin n))
-          (fun j ↦ (j.1 : ℕ) + (j.2 : ℕ) < n) f
-        convert (P.filtration n).add_mem hrem hhigh using 1
-        rw [hprod, ← hsplit]
-        -- Coercing the product in the valuation ring gives multiplication in `F`.
-        change (x : F) * (y : F) - _ = _
-        ring)
-  exact congrFun heq i
+    (fun j ↦ q.coeff j)).mpr (by
+      have hsplit := Finset.sum_filter_add_sum_filter_not s (fun d ↦ d < n) f
+      rw [hlow] at hsplit
+      convert (P.filtration n).add_mem hrem hhigh using 1
+      rw [hprod, ← hsplit]
+      -- Coercing the product in the valuation ring gives multiplication in `F`.
+      change (x : F) * (y : F) - _ = _
+      ring)
+  exact (congrFun heq i).trans (hconvolution i)
 
 /-- Increasing the truncation length preserves every coefficient already extracted. This
 compatibility allows the finite vectors to determine a single power-series coefficient
