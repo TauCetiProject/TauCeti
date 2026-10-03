@@ -36,12 +36,12 @@ variable {A : Type*} [Ring A] (e : A) (I : Ideal A) [I.IsTwoSided]
 /-- The restriction of the quotient map to the principal left ideal `Ae`. The target is an
 `A`-module through the quotient map `A → A/I`. -/
 noncomputable def spanSingletonQuotientMap :
-    (Ideal.span {e} : Ideal A) →ₗ[A] (Ideal.span {Ideal.Quotient.mk I e} : Ideal (A ⧸ I)) where
-  toFun x := ⟨Ideal.Quotient.mk I x, by
+    (Ideal.span {e} : Ideal A) →ₗ[A] (Ideal.span {Ideal.Quotient.mk I e} : Ideal (A ⧸ I)) :=
+  LinearMap.codRestrict
+    ((Ideal.span {Ideal.Quotient.mk I e} : Ideal (A ⧸ I)).restrictScalars A)
+    (I.mkQ.domRestrict (Ideal.span {e})) fun x => by
     obtain ⟨a, ha⟩ := Ideal.mem_span_singleton'.mp x.2
-    exact Ideal.mem_span_singleton'.mpr ⟨Ideal.Quotient.mk I a, by rw [← map_mul, ha]⟩⟩
-  map_add' x y := Subtype.ext (map_add _ _ _)
-  map_smul' a x := Subtype.ext (I.mkQ.map_smul a x)
+    exact Ideal.mem_span_singleton'.mpr ⟨Ideal.Quotient.mk I a, by rw [← map_mul, ha]; rfl⟩
 
 @[simp]
 theorem coe_spanSingletonQuotientMap (x : (Ideal.span {e} : Ideal A)) :
@@ -65,10 +65,9 @@ theorem ker_spanSingletonQuotientMap :
     Ideal.Quotient.eq_zero_iff_mem]
 
 /-- The relation map `I → Ae`, given by right multiplication by `e`. Its range is `Ie`. -/
-def spanSingletonRelationMap : I →ₗ[A] (Ideal.span {e} : Ideal A) where
-  toFun x := ⟨(x : A) * e, Ideal.mem_span_singleton'.mpr ⟨x, rfl⟩⟩
-  map_add' x y := Subtype.ext (add_mul (x : A) (y : A) e)
-  map_smul' a x := Subtype.ext (mul_assoc a (x : A) e)
+def spanSingletonRelationMap : I →ₗ[A] (Ideal.span {e} : Ideal A) :=
+  LinearMap.codRestrict (Ideal.span {e}) ((LinearMap.mulRight A e).domRestrict I)
+    fun x => Ideal.mem_span_singleton'.mpr ⟨x, rfl⟩
 
 omit [I.IsTwoSided] in
 @[simp]
