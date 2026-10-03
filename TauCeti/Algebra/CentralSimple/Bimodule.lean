@@ -273,6 +273,7 @@ theorem lift_of (c : M)
   simp [lift]
 
 /-- `Bimodule.lift f c hc` sends `1` to `c`. -/
+@[simp high]
 theorem lift_of_one (c : M)
     (hc : ∀ b : B, (b ⊗ₜ (1 : Aᵐᵒᵖ) : B ⊗[K] Aᵐᵒᵖ) • c
       = ((1 : B) ⊗ₜ MulOpposite.op (f b) : B ⊗[K] Aᵐᵒᵖ) • c) :
