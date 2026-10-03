@@ -12,7 +12,7 @@ import Mathlib.LinearAlgebra.Finsupp.Pi
 /-!
 # Untwisting a regular tensor representation
 
-Let `G` be a group, `k` a commutative ring, and `S` a `k`-linear representation of `G`.  The
+Let `G` be a group, `k` a commutative semiring, and `S` a `k`-linear representation of `G`.  The
 diagonal action on `k[G] ⊗ S` is equivalent to the action on the regular factor alone.  The
 equivalence sends
 
@@ -46,8 +46,8 @@ namespace Representation
 
 universe u v w
 
-variable {k : Type u} [CommRing k] {G : Type v} [Group G]
-  {W : Type w} [AddCommGroup W] [Module k W]
+variable {k : Type u} [CommSemiring k] {G : Type v} [Group G]
+  {W : Type w} [AddCommMonoid W] [Module k W]
 
 /-- The pointwise change of coordinates on finitely supported functions which sends the value at
 `g` through `σ(g⁻¹)`.  Its inverse sends the value at `g` through `σ(g)`. -/
@@ -118,7 +118,7 @@ def leftRegularTensorEquivTrivial (σ : Representation k G W) :
 
 /-- Untwisting sends `g ⊗ s` to `g ⊗ g⁻¹s`. -/
 @[simp]
-theorem leftRegularTensorEquivTrivial_single_tmul (σ : Representation k G W)
+theorem leftRegularTensorEquivTrivial_apply_single_tmul (σ : Representation k G W)
     (g : G) (r : k) (w : W) :
     leftRegularTensorEquivTrivial σ (MonoidAlgebra.single g r ⊗ₜ[k] w) =
       MonoidAlgebra.single g r ⊗ₜ[k] σ g⁻¹ w := by
@@ -126,7 +126,7 @@ theorem leftRegularTensorEquivTrivial_single_tmul (σ : Representation k G W)
 
 /-- The inverse of untwisting sends `g ⊗ s` to `g ⊗ gs`. -/
 @[simp]
-theorem leftRegularTensorEquivTrivial_symm_single_tmul (σ : Representation k G W)
+theorem leftRegularTensorEquivTrivial_symm_apply_single_tmul (σ : Representation k G W)
     (g : G) (r : k) (w : W) :
     (leftRegularTensorEquivTrivial σ).symm (MonoidAlgebra.single g r ⊗ₜ[k] w) =
       MonoidAlgebra.single g r ⊗ₜ[k] σ g w := by
@@ -137,49 +137,38 @@ section Finite
 
 variable [Finite G]
 
+omit [Group G] in
+open scoped Classical in
+/-- The coefficients of the vector corresponding to a functional under the standard-basis
+identification `k[G] ≃ Hom_k(k[G], k)` are the values of the functional on the basis. -/
+private theorem coeff_basis_toDualEquiv_symm_apply (f : Module.Dual k (MonoidAlgebra k G))
+    (g : G) :
+    ((MonoidAlgebra.basis G k).toDualEquiv.symm f).coeff g = f (MonoidAlgebra.single g 1) :=
+  -- The standard basis has `repr = coeffLinearEquiv`, so its coordinates are the coefficients.
+  (by simpa using (MonoidAlgebra.basis G k).coord_toDualEquiv_symm_apply g f :
+    (MonoidAlgebra.basis G k).repr _ g = _)
+
+open scoped Classical in
 /-- **The regular representation is self-dual.** The coefficient pairing identifies the dual of
 the left regular representation with the left regular representation. -/
 def dualLeftRegularEquiv :
-    (leftRegular k G).dual.Equiv (leftRegular k G) := by
-  classical
-  let b := MonoidAlgebra.basis G k
-  exact .mk b.toDualEquiv.symm (fun g ↦ by
+    (leftRegular k G).dual.Equiv (leftRegular k G) :=
+  .mk (MonoidAlgebra.basis G k).toDualEquiv.symm fun g ↦ by
     ext f h
-    change b.coord h (b.toDualEquiv.symm ((leftRegular k G).dual g f)) =
-      b.coord h ((leftRegular k G) g (b.toDualEquiv.symm f))
-    rw [b.coord_toDualEquiv_symm_apply]
-    have hcoeff (m : MonoidAlgebra k G) :
-        ((leftRegular k G) g m).coeff h = m.coeff (g⁻¹ * h) := by
-      induction m using MonoidAlgebra.induction_linear with
-      | zero => simp
-      | add x y hx hy => simp [hx, hy]
-      | single x r =>
-        rw [ofMulAction_single]
-        by_cases hx : x = g⁻¹ * h
-        · subst x
-          simp
-        · have hgx : g * x ≠ h := by
-            intro heq
-            apply hx
-            calc
-              x = g⁻¹ * (g * x) := by simp
-              _ = g⁻¹ * h := by rw [heq]
-          simp [hx, hgx]
-    rw [show b.coord h ((leftRegular k G) g (b.toDualEquiv.symm f)) =
-      b.coord (g⁻¹ * h) (b.toDualEquiv.symm f) by exact hcoeff _]
-    rw [b.coord_toDualEquiv_symm_apply]
-    simp [b, Module.Dual.transpose_apply])
+    simp [coeff_basis_toDualEquiv_symm_apply, Module.Dual.transpose_apply, smul_eq_mul]
 
 /-- Under regular self-duality, the coefficient at `g` is evaluation on the basis vector `g`. -/
 @[simp]
-theorem dualLeftRegularEquiv_coeff (f : Module.Dual k (MonoidAlgebra k G)) (g : G) :
-    (dualLeftRegularEquiv (k := k) (G := G) f).coeff g =
-      f (MonoidAlgebra.single g 1) := by
-  classical
-  let b := MonoidAlgebra.basis G k
-  change b.coord g (b.toDualEquiv.symm f) = f (b g)
-  rw [b.coord_toDualEquiv_symm_apply]
-  simp [b]
+theorem dualLeftRegularEquiv_apply_coeff (f : Module.Dual k (MonoidAlgebra k G)) (g : G) :
+    (dualLeftRegularEquiv (k := k) (G := G) f).coeff g = f (MonoidAlgebra.single g 1) :=
+  coeff_basis_toDualEquiv_symm_apply f g
+
+/-- The inverse of regular self-duality evaluates on the basis vector `g` as the coefficient
+at `g`. -/
+@[simp]
+theorem dualLeftRegularEquiv_symm_apply_single (x : MonoidAlgebra k G) (g : G) :
+    (dualLeftRegularEquiv (k := k) (G := G)).symm x (MonoidAlgebra.single g 1) = x.coeff g := by
+  rw [← dualLeftRegularEquiv_apply_coeff, Representation.Equiv.apply_symm_apply]
 
 end Finite
 
