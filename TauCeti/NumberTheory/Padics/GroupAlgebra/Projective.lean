@@ -8,15 +8,17 @@ module
 public import Mathlib.Algebra.Module.Projective
 public import Mathlib.Algebra.MonoidAlgebra.Module
 public import Mathlib.NumberTheory.Padics.PadicIntegers
+public import Mathlib.NumberTheory.Padics.RingHoms
 public import Mathlib.RingTheory.Jacobson.Radical
 import Mathlib.LinearAlgebra.Matrix.ToLin
 import Mathlib.RepresentationTheory.Maschke
-import Mathlib.NumberTheory.Padics.RingHoms
+import Mathlib.RingTheory.Finiteness.Cardinality
 import TauCeti.Algebra.MonoidAlgebra.Basic
 import TauCeti.Algebra.Module.LinearMap.Finite
 import TauCeti.Algebra.Module.Projective.Lift
 import TauCeti.Algebra.Module.Projective.Reduction
 import TauCeti.RingTheory.AdicCompletion.Finite
+import TauCeti.RingTheory.Ideal.Operations
 import TauCeti.RingTheory.Jacobson.MulOpposite
 import TauCeti.RingTheory.Huber.Matrix
 import TauCeti.RingTheory.Huber.Padic.Basic
@@ -54,9 +56,11 @@ of their maps to the simple `\mathbb Z_p[G]`-modules.
 * `TauCeti.nonempty_linearEquiv_of_projective_of_reduction`: finitely generated projective
   `\mathbb Z_p[G]`-modules with isomorphic reductions modulo `p` are isomorphic.
 * `TauCeti.exists_projective_reduction_linearEquiv`: conversely, every direct summand of the
-  reduction modulo `p` of a finitely generated projective `\mathbb Z_p[G]`-module, in particular
-  every finitely generated projective `\mathbb F_p[G]`-module, is the reduction of a finitely
-  generated projective `\mathbb Z_p[G]`-module.
+  reduction modulo `p` of a finitely generated projective `\mathbb Z_p[G]`-module is the reduction
+  of a finitely generated projective `\mathbb Z_p[G]`-module.
+* `TauCeti.exists_projective_reduction_bijective_of_projective`: every finitely generated
+  projective `\mathbb F_p[G]`-module is the reduction of a finitely generated projective
+  `\mathbb Z_p[G]`-module.
 
 ## References
 
@@ -201,9 +205,7 @@ finite group). Every direct summand `Y` of its reduction `N ⧸ p • N`, given 
 finitely generated projective submodule `X` of `N`.
 
 For `N` a finitely generated free module, this applies to every finitely generated projective
-`𝔽_p[G]`-module, viewed as a `ℤ_p[G]`-module: it is the reduction of a finitely generated projective
-`ℤ_p[G]`-module, unique up to isomorphism by
-`TauCeti.nonempty_linearEquiv_of_projective_of_reduction`. -/
+`𝔽_p[G]`-module; see `TauCeti.exists_projective_reduction_bijective_of_projective`. -/
 theorem exists_projective_reduction_linearEquiv (N : Type v) [AddCommGroup N] [Module ℤ_[p] N]
     [Module (MonoidAlgebra ℤ_[p] G) N] [IsScalarTower ℤ_[p] (MonoidAlgebra ℤ_[p] G) N]
     [Module.Finite (MonoidAlgebra ℤ_[p] G) N] [Module.Projective (MonoidAlgebra ℤ_[p] G) N]
@@ -233,6 +235,72 @@ theorem exists_projective_reduction_linearEquiv (N : Type v) [AddCommGroup N] [M
   intro i q hqi
   obtain ⟨X, hX, hXY⟩ := exists_projective_quotient_smul_top_linearEquiv (p : ℤ_[p]) i q hqi
   exact ⟨X, inferInstance, hX, hXY⟩
+
+/-- **Projective `𝔽_p[G]`-modules lift to `ℤ_p[G]`.** Every finitely generated projective module
+`Y` over the monoid algebra `𝔽_p[G]` of a finite monoid (in particular the group algebra of a
+finite group) is the reduction modulo `p` of a finitely generated projective `ℤ_p[G]`-module `X`:
+there is a bijection `X ⧸ p • X → Y` which is semilinear along the coefficient reduction
+`ℤ_p[G] → 𝔽_p[G]`. The module `X` is realised as a submodule of some `ℤ_p[G]ⁿ`, and it is unique
+up to isomorphism by `TauCeti.nonempty_linearEquiv_of_projective_of_reduction`. -/
+theorem exists_projective_reduction_bijective_of_projective (Y : Type v) [AddCommGroup Y]
+    [Module (MonoidAlgebra (ZMod p) G) Y] [Module.Finite (MonoidAlgebra (ZMod p) G) Y]
+    [Module.Projective (MonoidAlgebra (ZMod p) G) Y] :
+    ∃ (n : ℕ) (X : Submodule (MonoidAlgebra ℤ_[p] G) (Fin n → MonoidAlgebra ℤ_[p] G)),
+      Module.Finite (MonoidAlgebra ℤ_[p] G) X ∧ Module.Projective (MonoidAlgebra ℤ_[p] G) X ∧
+      ∃ f : (X ⧸ Ideal.span {(p : MonoidAlgebra ℤ_[p] G)} •
+          (⊤ : Submodule (MonoidAlgebra ℤ_[p] G) X)) →ₛₗ[MonoidAlgebra.mapRingHom G
+            (PadicInt.toZMod (p := p))] Y,
+        Function.Bijective f := by
+  let π := MonoidAlgebra.mapRingHom G (PadicInt.toZMod (p := p))
+  have hπ : Function.Surjective π := by
+    rw [MonoidAlgebra.coe_mapRingHom]
+    exact MonoidAlgebra.map_surjective _ (ZMod.ringHom_surjective _)
+  -- Present `Y` as a direct summand of `𝔽_p[G]ⁿ`, and view `𝔽_p[G]`-modules as
+  -- `ℤ_p[G]`-modules through `π`.
+  obtain ⟨n, s, hs⟩ := Module.Finite.exists_fin' (MonoidAlgebra (ZMod p) G) Y
+  obtain ⟨t, hst⟩ := Module.projective_lifting_property s LinearMap.id hs
+  let _ : Module (MonoidAlgebra ℤ_[p] G) Y := .compHom Y π
+  let _ : Module (MonoidAlgebra ℤ_[p] G) (Fin n → MonoidAlgebra (ZMod p) G) := .compHom _ π
+  -- `𝔽_p[G]ⁿ` is the reduction of `ℤ_p[G]ⁿ` modulo `p`.
+  let ρ : (Fin n → MonoidAlgebra ℤ_[p] G) →ₗ[MonoidAlgebra ℤ_[p] G]
+      (Fin n → MonoidAlgebra (ZMod p) G) :=
+    { toFun v i := π (v i)
+      map_add' v w := funext fun i ↦ map_add π (v i) (w i)
+      map_smul' a v := funext fun i ↦ map_mul π a (v i) }
+  have hρ : Function.Surjective ρ := fun w ↦
+    ⟨fun i ↦ (hπ (w i)).choose, funext fun i ↦ (hπ (w i)).choose_spec⟩
+  have hker : Ideal.span {(p : MonoidAlgebra ℤ_[p] G)} •
+      (⊤ : Submodule (MonoidAlgebra ℤ_[p] G) (Fin n → MonoidAlgebra ℤ_[p] G)) =
+        LinearMap.ker ρ := by
+    ext v
+    rw [← map_natCast (algebraMap ℤ_[p] (MonoidAlgebra ℤ_[p] G)) p,
+      Submodule.mem_span_algebraMap_smul_top_iff, LinearMap.mem_ker]
+    constructor
+    · rintro ⟨w, rfl⟩
+      funext i
+      -- The `i`-th coordinate of `ρ (p • w)` is `π (p • w i)` by definition of `ρ`.
+      change π ((p : ℤ_[p]) • w i) = 0
+      rw [Nat.cast_smul_eq_nsmul, nsmul_eq_mul, map_mul, map_natCast,
+        ← map_natCast (algebraMap (ZMod p) (MonoidAlgebra (ZMod p) G)), ZMod.natCast_self,
+        map_zero, zero_mul]
+    · intro hv
+      have hdvd (i : Fin n) (m : G) : (p : ℤ_[p]) ∣ (v i).coeff m := by
+        have hvi : π (v i) = 0 := congrFun hv i
+        rw [MonoidAlgebra.mapRingHom_eq_zero_iff, MonoidAlgebra.mem_ideal_smul_top_iff,
+          PadicInt.ker_toZMod, PadicInt.maximalIdeal_eq_span_p] at hvi
+        exact Ideal.mem_span_singleton.mp (hvi m)
+      choose w hw using fun i ↦ MonoidAlgebra.exists_eq_nsmul_of_dvd_coeff (hdvd i)
+      exact ⟨w, funext fun i ↦ by rw [Pi.smul_apply, hw i, Nat.cast_smul_eq_nsmul]⟩
+  let E := (Submodule.quotEquivOfEq _ _ hker).trans (ρ.quotKerEquivOfSurjective hρ)
+  let s' : (Fin n → MonoidAlgebra (ZMod p) G) →ₗ[MonoidAlgebra ℤ_[p] G] Y :=
+    { toFun := s, map_add' := s.map_add, map_smul' a w := s.map_smul (π a) w }
+  let t' : Y →ₗ[MonoidAlgebra ℤ_[p] G] (Fin n → MonoidAlgebra (ZMod p) G) :=
+    { toFun := t, map_add' := t.map_add, map_smul' a y := t.map_smul (π a) y }
+  obtain ⟨X, hXf, hXp, ⟨g⟩⟩ := exists_projective_reduction_linearEquiv p G
+    (Fin n → MonoidAlgebra ℤ_[p] G) (E.symm.toLinearMap ∘ₗ t') (s' ∘ₗ E.toLinearMap)
+    (LinearMap.ext fun y ↦ by simpa [s', t'] using LinearMap.congr_fun hst y)
+  exact ⟨n, X, hXf, hXp,
+    { toFun := g, map_add' := g.map_add, map_smul' a x := g.map_smul a x }, g.bijective⟩
 
 end Reduction
 
