@@ -43,8 +43,9 @@ restriction is then surjective.
   `G_L → G_K` and `(Kˢ)ˣ → (Lˢ)ˣ`.
 * `TauCeti.ClassFieldTheory.brRes_relBrInfl`: restriction carries a relative Brauer class to
   the relative class obtained by base change.
-  Its two ingredients are `restrictNormalHom_absoluteGaloisGroupEquivFixingSubgroup` (the
-  Galois-group square) and `unitsCoeffMap_embeddedUnitsInvariants` (the coefficient square).
+  Its two ingredients are `TauCeti.restrictNormalHom_absoluteGaloisGroupEquivFixingSubgroup`
+  (the Galois-group square) and `TauCeti.unitsCoeffMap_embeddedUnitsInvariants` (the coefficient
+  square).
 * `TauCeti.ClassFieldTheory.brCor_brRes`: `brCor (brRes x) = [L : K] • x`.
 
 ## References
@@ -125,64 +126,13 @@ variable (K₀ L₀ E M : Type) [Field K₀] [Field L₀] [Field E] [Field M] [A
   [Normal L₀ M] (sigma : L₀ →ₐ[K₀] SeparableClosure K₀)
   (rho : E →ₐ[K₀] SeparableClosure K₀) (tau : M →ₐ[L₀] SeparableClosure L₀)
 
-omit [FiniteDimensional K₀ E] [FiniteDimensional L₀ M] in
-/-- **Restriction to `M` is compatible with the embedded Galois groups.** If the embeddings of `E`
-and `M` are compatible under `separableClosureRingEquiv K L sigma`, then restricting
-`g : G_L`, viewed in `G_K` through `sigma`, to `E` agrees with restricting it first to `M` and then
-to `E`. -/
-theorem restrictNormalHom_absoluteGaloisGroupEquivFixingSubgroup
-    (hcompat : ∀ x : E,
-      separableClosureRingEquiv K₀ L₀ sigma (tau (algebraMap E M x)) = rho x)
-    (g : AbsoluteGaloisGroup L₀) :
-    rho.restrictNormalHom
-        (absoluteGaloisGroupEquivFixingSubgroup K₀ L₀ sigma g : AbsoluteGaloisGroup K₀) =
-      ((AlgEquiv.restrictNormalHom E).comp (AlgEquiv.restrictScalarsHom K₀))
-        (tau.restrictNormalHom g) := by
-  apply rho.restrictNormalHom_eq_iff.2
-  intro y
-  let e := separableClosureRingEquiv K₀ L₀ sigma
-  calc
-    _ = (absoluteGaloisGroupEquivFixingSubgroup K₀ L₀ sigma g : AbsoluteGaloisGroup K₀)
-          (e (tau (algebraMap E M y))) :=
-        congrArg _ (hcompat y).symm
-    _ = e (g (tau (algebraMap E M y))) := by
-        simpa only [e, RingEquiv.symm_apply_apply] using
-          absoluteGaloisGroupEquivFixingSubgroup_apply K₀ L₀ sigma g
-            (e (tau (algebraMap E M y)))
-    _ = e (tau (tau.restrictNormalHom g (algebraMap E M y))) :=
-        congrArg e (tau.restrictNormalHom_commutes g _).symm
-    _ = e (tau (algebraMap E M
-          (((AlgEquiv.restrictNormalHom E).comp (AlgEquiv.restrictScalarsHom K₀))
-            (tau.restrictNormalHom g) y))) :=
-        congrArg (fun z => e (tau z))
-          (AlgEquiv.restrictNormal_commutes
-            ((tau.restrictNormalHom g).restrictScalars K₀) E y).symm
-    _ = _ := hcompat _
-
-omit [Algebra K₀ M] [IsScalarTower K₀ L₀ M] [IsScalarTower K₀ E M] [FiniteDimensional K₀ E]
-  [FiniteDimensional L₀ M] [Normal K₀ E] [Normal L₀ M] in
-/-- **The coefficient square of a compatible base change.** If the embeddings of `E` and `M` are
-compatible under `separableClosureRingEquiv K L sigma`, then transporting the embedded unit
-`rho a` of `Kˢ` to `Lˢ` by `unitsCoeffMap` gives the embedded unit `tau a` of its image in `M`. -/
-theorem unitsCoeffMap_embeddedUnitsInvariants
-    (hcompat : ∀ x : E,
-      separableClosureRingEquiv K₀ L₀ sigma (tau (algebraMap E M x)) = rho x)
-    (a : Eˣ) :
-    unitsCoeffMap K₀ L₀ sigma (embeddedUnitsInvariants K₀ E rho a : UnitsCoeff K₀) =
-      (embeddedUnitsInvariants L₀ M tau (Units.map (algebraMap E M : E →* M) a) :
-        UnitsCoeff L₀) := by
-  refine Additive.toMul.injective (Units.ext ?_)
-  simp only [toMul_unitsCoeffMap, toMul_coe_embeddedUnitsInvariants, Units.coe_map]
-  apply (separableClosureRingEquiv K₀ L₀ sigma).injective
-  simpa using (hcompat (a : E)).symm
-
-/-- **Restriction commutes with relative Brauer inflation.** Suppose `E/K` and `M/L` are finite
+/-- **Restriction commutes with relative Brauer inflation.** Suppose `E/K₀` and `M/L₀` are finite
 normal extensions in a base-change square, with their embeddings into the chosen separable
-closures compatible under `separableClosureRingEquiv K L sigma`. Restricting the relative class
-of `E/K` from `Br K` to `Br L` is the relative class of `M/L` obtained by the usual base-change
-map
+closures compatible under `separableClosureRingEquiv K₀ L₀ sigma`. Restricting the relative class
+of `E/K₀` from `Br K₀` to `Br L₀` is the relative class of `M/L₀` obtained by the usual
+base-change map
 
-`H²(Gal(E/K), Eˣ) → H²(Gal(M/L), Mˣ)`.
+`H²(Gal(E/K₀), Eˣ) → H²(Gal(M/L₀), Mˣ)`.
 
 This is the finite-layer comparison used to reduce the restriction square for the local Brauer
 invariant to its arithmetic normalization on unramified layers. -/
@@ -220,8 +170,8 @@ theorem brRes_relBrInfl
       relBrCocycle_apply, relBrCocycle_apply, ContinuousMonoidHom.comp_toFun,
       ContinuousMonoidHom.comp_toFun, ContinuousMonoidHom.subgroupSubtype_apply,
       ContinuousMonoidHom.subgroupSubtype_apply, ContinuousMonoidHom.coe_coe,
-      restrictNormalHom_absoluteGaloisGroupEquivFixingSubgroup K₀ L₀ E M sigma rho tau hcompat g,
-      restrictNormalHom_absoluteGaloisGroupEquivFixingSubgroup K₀ L₀ E M sigma rho tau hcompat h]
+      restrictNormalHom_absoluteGaloisGroupEquivFixingSubgroup K₀ L₀ sigma E M rho tau hcompat g,
+      restrictNormalHom_absoluteGaloisGroupEquivFixingSubgroup K₀ L₀ sigma E M rho tau hcompat h]
     rw [congrFun (groupCohomology.coe_mapCocycles₂
       (f := ((AlgEquiv.restrictNormalHom E).comp (AlgEquiv.restrictScalarsHom K₀)))
       (φ := unitsBaseChangeHom K₀ E L₀ M) c)
@@ -238,7 +188,7 @@ theorem brRes_relBrInfl
     obtain ⟨a, rfl⟩ := (Rep.toAdditive (M := Gal(E/K₀)) (G := Eˣ)).symm.surjective z
     rw [← ofMul_toMul a, unitsBaseChangeHom_apply]
     simpa only [AddEquiv.apply_symm_apply, embeddedUnitsEquivInvariants_apply, toMul_ofMul] using
-      unitsCoeffMap_embeddedUnitsInvariants K₀ L₀ E M sigma rho tau hcompat a.toMul
+      unitsCoeffMap_embeddedUnitsInvariants K₀ L₀ sigma E M rho tau hcompat a.toMul
 
 end Relative
 
