@@ -133,51 +133,6 @@ local instance : ContinuousSMul G (trivialF2 G).V :=
   (isSmoothDiscrete_trivialF2 G).continuousSMul
 
 omit [TopologicalSpace G] [IsTopologicalGroup G] [LocallyCompactSpace G] in
-/-- Transport to the subgroup's trivial coefficient object preserves the underlying `ZMod 2`
-value. -/
-private theorem trivialF2Equiv_eqToHom_ofDiscreteModule_subgroup_trivialF2
-    (S : Subgroup G) (x : (ofDiscreteModule ℤ S (trivialF2 G).V).V) :
-    trivialF2Equiv S (eqToHom (ofDiscreteModule_subgroup_trivialF2 G S) x) =
-      trivialF2Equiv G x := by
-  change trivialF2Equiv S
-    ((eqToHom (ofDiscreteModule_subgroup_trivialF2 G S)).hom x) = trivialF2Equiv G x
-  rw [TopRep.eqToHom_hom_apply]
-  convert trivialF2Equiv_cast G (H := S)
-    ((trivialF2_V G).trans (trivialF2_V S).symm) x using 1
-  rfl
-
-omit [LocallyCompactSpace G] in
-/-- Degree-one restriction under the explicit and ambient/subgroup coefficient comparisons. -/
-private theorem trivialF2ResMap_explicitH1 (S : Subgroup G)
-    (x : H1 G (trivialF2 G).V) :
-    trivialF2ResMap G S 1
-        ((eqToHom (congrArg (continuousCohomology 1) (ofDiscreteModule_trivialF2 G))).hom
-          (explicitH1AddEquivContinuousCohomology G (trivialF2 G).V x)) =
-      (eqToHom (congrArg (continuousCohomology 1)
-        (ofDiscreteModule_subgroup_trivialF2 G S))).hom
-        (explicitH1AddEquivContinuousCohomology S (trivialF2 G).V (explicitRes1 G _ S x)) := by
-  let φ := ContinuousMonoidHom.subgroupSubtype S
-  have hf (s : S) (m : (trivialF2 G).V) :
-      AddMonoidHom.id (trivialF2 G).V (φ s • m) = s • AddMonoidHom.id (trivialF2 G).V m :=
-    rfl
-  have hmap := eqToHom_comp_trivialF2Map φ (ofDiscreteModule_trivialF2 G)
-    (ofDiscreteModule_subgroup_trivialF2 G S) (AddMonoidHom.id (trivialF2 G).V)
-    hf (fun m ↦ by
-      let m' : (ofDiscreteModule ℤ S (trivialF2 G).V).V := m
-      change trivialF2Equiv S
-          (eqToHom (ofDiscreteModule_subgroup_trivialF2 G S) m') =
-        trivialF2Equiv G (eqToHom (ofDiscreteModule_trivialF2 G) m)
-      rw [trivialF2Equiv_eqToHom_ofDiscreteModule_subgroup_trivialF2,
-        eqToHom_ofDiscreteModule_trivialF2_apply]) 1
-  have happ := ConcreteCategory.congr_hom hmap
-    (explicitH1AddEquivContinuousCohomology G (trivialF2 G).V x)
-  have hnat := explicitH1AddEquivContinuousCohomology_map G (trivialF2 G).V S
-    (trivialF2 G).V φ (AddMonoidHom.id (trivialF2 G).V) hf x
-  rw [trivialF2Map_subgroupSubtype, ConcreteCategory.comp_apply,
-    ConcreteCategory.comp_apply, hnat, ← explicitRes1_eq_explicitMap1] at happ
-  exact happ
-
-omit [TopologicalSpace G] [IsTopologicalGroup G] [LocallyCompactSpace G] in
 /-- The multiplication pairing transported from the ambient trivial `𝔽₂` carrier to a
 subgroup's canonical trivial coefficient object. -/
 private theorem eqToHom_ofDiscreteModuleSubgroupPairing_bil (S : Subgroup G)
@@ -189,20 +144,15 @@ private theorem eqToHom_ofDiscreteModuleSubgroupPairing_bil (S : Subgroup G)
         (eqToHom (ofDiscreteModule_subgroup_trivialF2 G S) x)
         (eqToHom (ofDiscreteModule_subgroup_trivialF2 G S) y) := by
   rw [ofDiscreteModulePairing_bil_apply]
-  let x' : (ofDiscreteModule ℤ S (trivialF2 G).V).V := x
-  let y' : (ofDiscreteModule ℤ S (trivialF2 G).V).V := y
-  let z' : (ofDiscreteModule ℤ S (trivialF2 G).V).V := trivialF2Pairing G x y
-  change eqToHom (ofDiscreteModule_subgroup_trivialF2 G S) z' =
-    (trivialF2TopPairing S).bil
-      (eqToHom (ofDiscreteModule_subgroup_trivialF2 G S) x')
-      (eqToHom (ofDiscreteModule_subgroup_trivialF2 G S) y')
   apply (trivialF2Equiv S).injective
-  rw [trivialF2Equiv_eqToHom_ofDiscreteModule_subgroup_trivialF2 G S,
-    trivialF2TopPairing_bil_apply,
-    trivialF2Equiv_eqToHom_ofDiscreteModule_subgroup_trivialF2 G S,
-    trivialF2Equiv_eqToHom_ofDiscreteModule_subgroup_trivialF2 G S,
-    AddEquiv.apply_symm_apply]
-  simp only [z', trivialF2Pairing_apply, AddEquiv.apply_symm_apply, x', y']
+  rw [trivialF2TopPairing_bil_apply, AddEquiv.apply_symm_apply]
+  -- Stated as terms rather than by rewriting: `x`, `y` and their product live in
+  -- `(trivialF2 G).V` but are transported out of `ofDiscreteModule ℤ S (trivialF2 G).V`, so the
+  -- goal is only type-correct up to unfolding and `rw` cannot abstract these occurrences.
+  refine (trivialF2Equiv_eqToHom_ofDiscreteModule_subgroup_trivialF2 G S _).trans ?_
+  rw [trivialF2Pairing_apply, AddEquiv.apply_symm_apply]
+  exact congrArg₂ (· * ·) (trivialF2Equiv_eqToHom_ofDiscreteModule_subgroup_trivialF2 G S x).symm
+    (trivialF2Equiv_eqToHom_ofDiscreteModule_subgroup_trivialF2 G S y).symm
 
 /-- The canonical cup product on a subgroup, expressed using explicit cocycles valued in the
 ambient trivial `𝔽₂` carrier. -/
@@ -281,7 +231,7 @@ theorem trivialF2CorMap_cup_one_one [CompactSpace G] [TotallyDisconnectedSpace G
   obtain ⟨y₀, rfl⟩ := (ConcreteCategory.bijective_of_isIso eS.hom).2 y
   obtain ⟨b, rfl⟩ := (explicitH1AddEquivContinuousCohomology S (trivialF2 G).V).surjective y₀
   simp only [eG, eS, eqToIso.hom]
-  rw [trivialF2ResMap_explicitH1,
+  rw [trivialF2ResMap_explicitH1AddEquivContinuousCohomology,
     trivialF2TopPairing_cup_one_one_explicitH1_subgroup,
     trivialF2CorMap_explicitH2AddEquivContinuousCohomology,
     ContCohomology.explicitCup_projection11,
