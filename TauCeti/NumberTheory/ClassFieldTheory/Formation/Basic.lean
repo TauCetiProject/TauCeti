@@ -430,6 +430,10 @@ class formation, cup product with the fundamental class of the layer carries tha
 isomorphically onto `TateH` in degree `0`, and the Artin map is the inverse of this isomorphism. -/
 abbrev TrivialTateH (r : ℤ) : ModuleCat ℤ := tateCohomology (Rep.trivial ℤ L.Gal ℤ) r
 
+/-- **Ordinary cohomology of a finite normal layer with trivial integral coefficients**,
+`H^n(U/V, ℤ)`. This is the positive-degree comparison target for `TrivialTateH`. -/
+abbrev TrivialH (n : ℕ) : ModuleCat ℤ := groupCohomology (Rep.trivial ℤ L.Gal ℤ) n
+
 /-! ### The two low Tate degrees -/
 
 /-- **Degree `-2` Tate cohomology with trivial integral coefficients is the additive
@@ -476,6 +480,18 @@ cohomology.** This is Mathlib's comparison `TateCohomology.isoGroupCohomology`, 
 carriers `TateH` and `H` of the layer, so that it composes with maps between those carriers. -/
 def tateHIsoH (r : ℕ) [NeZero r] : L.TateH F r ≅ L.H F r :=
   (TateCohomology.isoGroupCohomology r).app (L.rep F)
+
+/-- **In positive degrees Tate cohomology with trivial integral coefficients is ordinary
+cohomology.** -/
+def trivialTateHIsoH (r : ℕ) [NeZero r] : L.TrivialTateH r ≅ L.TrivialH r :=
+  (TateCohomology.isoGroupCohomology r).app (Rep.trivial ℤ L.Gal ℤ)
+
+/-- The positive-degree comparison for trivial coefficients is Mathlib's canonical comparison
+isomorphism. -/
+theorem trivialTateHIsoH_def (r : ℕ) [NeZero r] :
+    L.trivialTateHIsoH r =
+      (TateCohomology.isoGroupCohomology r).app (Rep.trivial ℤ L.Gal ℤ) :=
+  (rfl)
 
 /-- The identification of positive-degree Tate cohomology of a layer with its ordinary cohomology
 is Mathlib's comparison isomorphism at the coefficient module of the layer. -/
