@@ -222,7 +222,7 @@ theorem IsSimple.boundaryParam_eq_boundaryParam_iff (h : poly.IsSimple ℝ) {s t
       exact absurd hx (edgePath_ne_finRotate h.hasNondegenerateEdges _ (Int.fract_lt_one t))
 
 /-- The circle parametrization of a simple polygon is injective. -/
-theorem IsSimple.injective_boundaryParamCircle (h : poly.IsSimple ℝ) :
+theorem IsSimple.boundaryParamCircle_injective (h : poly.IsSimple ℝ) :
     Injective poly.boundaryParamCircle := by
   intro x y hxy
   obtain ⟨s, rfl⟩ := QuotientAddGroup.mk_surjective x
@@ -263,7 +263,7 @@ is a closed embedding of `AddCircle n` into a Hausdorff ambient space. -/
 theorem IsSimple.isClosedEmbedding_boundaryParamCircle [T2Space P] (h : poly.IsSimple ℝ) :
     IsClosedEmbedding poly.boundaryParamCircle :=
   haveI : Fact (0 < (n : ℝ)) := ⟨Nat.cast_pos.2 (Nat.pos_of_neZero n)⟩
-  poly.continuous_boundaryParamCircle.isClosedEmbedding h.injective_boundaryParamCircle
+  poly.continuous_boundaryParamCircle.isClosedEmbedding h.boundaryParamCircle_injective
 
 /-- **The boundary of a simple real polygon is a Jordan curve.** -/
 theorem IsSimple.isJordanCurve_boundary [T2Space P] (h : poly.IsSimple ℝ) :
@@ -273,7 +273,7 @@ theorem IsSimple.isJordanCurve_boundary [T2Space P] (h : poly.IsSimple ℝ) :
     TauCeti.isJordanCurve_iff.2
       ⟨(Homeomorph.Set.univ (AddCircle (n : ℝ))).trans (AddCircle.homeomorphCircle hn)⟩
   have himage := huniv.image poly.continuous_boundaryParamCircle.continuousOn
-    h.injective_boundaryParamCircle.injOn
+    h.boundaryParamCircle_injective.injOn
   rwa [image_univ, range_boundaryParamCircle] at himage
 
 end Topology
