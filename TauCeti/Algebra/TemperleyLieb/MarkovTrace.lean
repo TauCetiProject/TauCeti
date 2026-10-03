@@ -41,8 +41,9 @@ generator matrices on disjoint pairs of strands commute. The trace is the weight
 `tr x = trace (diagonal (spinWeight q) * spinRep x)` with spin weights `-q` for `true` and `-q⁻¹`
 for `false`. Every generator preserves the multiset of spins it touches, so the weight matrix
 commutes with the representation and the weighted trace is a trace. The weights sum to `δ`, which
-gives `tr (strandIncl x) = δ * tr x`, and the partial trace of `cup ⊗ cap` over its second strand
-is the identity, which gives the Markov property.
+gives `tr (strandIncl x) = δ * tr x`, and the weighted partial trace of `cup ⊗ cap` over its
+second strand, with that strand weighted by `markovWeight q`, is the identity, which gives the
+Markov property.
 
 ## Main definitions
 
