@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RepresentationTheory.FiniteIndex
+public import TauCeti.RepresentationTheory.FiniteIndex
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Coinduced.Functor
 
 /-!
@@ -171,17 +171,10 @@ theorem algebraicIndCoindIso_hom_mk_apply (g h : G) (a : A.obj.V) :
   have he := LinearMap.congr_fun (algebraicIndCoindIso_hom_toLinearMap.{u, v, w} R G U A)
     (Representation.IndV.mk U.toSubgroup.subtype
       (Representation.ofDistribMulAction R U.toSubgroup A.obj.V) g a)
-  let B := Rep.of (Representation.ofDistribMulAction R U.toSubgroup A.obj.V)
-  have hm : (Rep.indToCoind B (Representation.IndV.mk U.toSubgroup.subtype B.ρ g a)).1 h =
-      Rep.indToCoindAux B g a h := by
-    -- Compute the coinvariant and tensor lifts on the generator using their evaluation API.
-    simp only [Rep.indToCoind, Representation.IndV.mk, LinearMap.comp_apply,
-      Representation.Coinvariants.lift_mk, TensorProduct.mk_apply, TensorProduct.lift.tmul,
-      LinearEquiv.coe_coe, MonoidAlgebra.coeffLinearEquiv_apply, MonoidAlgebra.coeff_single,
-      Finsupp.linearCombination_single, one_smul]
-    exact congrFun (LinearMap.codRestrict_apply _ _ a) h
   exact (congrArg (fun f : Representation.coindV U.toSubgroup.subtype
-    (Representation.ofDistribMulAction R U.toSubgroup A.obj.V) ↦ f.1 h) he).trans hm
+    (Representation.ofDistribMulAction R U.toSubgroup A.obj.V) ↦ f.1 h) he).trans
+      (congrFun (Rep.indToCoind_mk
+        (Rep.of (Representation.ofDistribMulAction R U.toSubgroup A.obj.V)) g a) h)
 
 /-- Algebraic induction from an open subgroup agrees with locally constant topological
 coinduction. This assertion requires openness; it is not asserted for infinite-index closed
