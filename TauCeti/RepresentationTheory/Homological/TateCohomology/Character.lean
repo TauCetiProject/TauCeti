@@ -84,7 +84,8 @@ theorem characterConnectingClass_def (χ : Additive (Abelianization G) →+ AddC
 private abbrev ratCircleRep : Rep ℤ G := Rep.trivial ℤ G (AddCircle (1 : ℚ))
 
 /-- The canonical invariant in the first upward dimension shift of `ℚ/ℤ` attached to a
-character. Its connecting image is the ordinary degree-one class of the character. -/
+character. Its image under the dimension-shift isomorphism is the Tate degree-one class obtained
+from the ordinary character class in `H¹(G, ℚ/ℤ)`. -/
 def characterDimensionShift
     (χ : Additive (Abelianization G) →+ AddCircle (1 : ℚ)) :
     (dimensionShiftUp (Rep.ratAddCircleShortComplex G).X₃).ρ.invariants := by

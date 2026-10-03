@@ -18,8 +18,8 @@ with the character class. Evaluating that last low-degree product gives the resi
 `Ĥ⁰(G, ℤ) = ℤ/|G|ℤ` whose image in `ℚ/ℤ` is the value of the character.
 
 This is the low-degree normalization that fixes the sign in the character description of the
-Artin map. The proof rewrites `δχ` as the Tate connecting map applied to the character class, then
-applies the cup-product boundary law.
+Artin map: for `x ∈ Ĥ⁻²(G, ℤ)`, the class `x ∪ δχ` is the Tate connecting map of the tensored
+sequence applied to `x ∪ χ`, with positive sign because `x` has even degree.
 
 ## References
 
