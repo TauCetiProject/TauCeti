@@ -28,8 +28,9 @@ generators commute with the diagonal symplectic action.
 
 ## The sign convention
 
-The orthogonal story of `TauCeti.RepresentationTheory.ClassicalGroups.BrauerGenerators.Orthogonal`
-is repeated here with one genuine change, and it is a change of sign. The coordinate dot product
+The orthogonal story of
+`TauCeti.RepresentationTheory.ClassicalGroups.BrauerGenerators.Orthogonal.Basic` is repeated here
+with one genuine change, and it is a change of sign. The coordinate dot product
 is symmetric, so there the crossing is the bare flip of the two tensor factors. The standard
 symplectic form is alternating, so the bare flip `TauCeti.symplecticFlip` *anti*commutes with the
 cap and with the cup (`TauCeti.symplecticCap_comp_symplecticFlip` and
