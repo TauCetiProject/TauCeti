@@ -57,9 +57,9 @@ corresponding identities for the pointwise pairing `TauCeti.TopPairing.pointwise
 ## Degrees
 
 The resolution-level identity `TauCeti.TopPairing.resolutionCup_assoc` is stated, as everything in
-`TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Graded`, with the total degrees as
-explicit arguments together with the equations they satisfy, so that both parenthesizations land
-in the same term of the resolution and no transport appears. The bilinear forms
+`TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Graded.Basic`, with the total degrees
+as explicit arguments together with the equations they satisfy, so that both parenthesizations
+land in the same term of the resolution and no transport appears. The bilinear forms
 `TauCeti.TopPairing.resolutionCupPairing_assoc` and `TauCeti.TopPairing.cupCochain_assoc` land in
 degrees `m + n + p` and `m + (n + p)`, which are equal but not definitionally, so the right-hand
 side is transported through `HomologicalComplex.XIsoOfEq`; on cohomology the transport is

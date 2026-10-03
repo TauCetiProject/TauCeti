@@ -28,6 +28,12 @@ coefficients.
 
 * `TauCeti.TopPairing.cohomologyGRing`: the graded ring structure on `n ↦ Hⁿ(G, X)` given by the
   cup product along `P`.
+
+## Main results
+
+* `TauCeti.TopPairing.cohomologyGRing_mul`, `TauCeti.TopPairing.cohomologyGRing_one`: the
+  multiplication of homogeneous classes is the cup product along `P`, and the unit is the
+  degree-zero class of `u`.
 -/
 
 public section
@@ -48,9 +54,12 @@ variable {R : Type u} [CommRing R] [TopologicalSpace R]
 /-- **The graded cohomology ring of a coefficient pairing.** For an associative pairing
 `P : TopPairing X X X` with a `G`-invariant two-sided unit `u`, the cup product along `P` and the
 degree-zero class of `u` make `n ↦ Hⁿ(G, X)` a graded ring. The multiplication of homogeneous
-classes is `P.cup m n` and the unit is `degreeZeroClass X u hinv`, both by definition. -/
-@[expose, reducible]
-noncomputable def cohomologyGRing (P : TopPairing X X X) (u : X.V)
+classes is `P.cup m n` (`TauCeti.TopPairing.cohomologyGRing_mul`) and the unit is
+`degreeZeroClass X u hinv` (`TauCeti.TopPairing.cohomologyGRing_one`).
+
+This is not an instance, since `P` and `u` do not occur in its type; it is reducible so that
+instances defined from it unfold, see note [reducible non-instances]. -/
+noncomputable abbrev cohomologyGRing (P : TopPairing X X X) (u : X.V)
     (hinv : ∀ g : G, X.ρ g u = u) (hleft : ∀ x : X.V, P.bil u x = x)
     (hright : ∀ x : X.V, P.bil x u = x)
     (hassoc : ∀ x y z : X.V, P.bil (P.bil x y) z = P.bil x (P.bil y z)) :
@@ -76,6 +85,26 @@ noncomputable def cohomologyGRing (P : TopPairing X X X) (u : X.V)
     intCast n := n • degreeZeroClass X u hinv
     intCast_ofNat n := natCast_zsmul _ n
     intCast_negSucc_ofNat n := negSucc_zsmul _ n }
+
+section Characteristic
+
+variable (P : TopPairing X X X) (u : X.V) (hinv : ∀ g : G, X.ρ g u = u)
+  (hleft : ∀ x : X.V, P.bil u x = x) (hright : ∀ x : X.V, P.bil x u = x)
+  (hassoc : ∀ x y z : X.V, P.bil (P.bil x y) z = P.bil x (P.bil y z))
+
+/-- The multiplication of homogeneous classes in `TauCeti.TopPairing.cohomologyGRing` is the cup
+product along `P`. -/
+theorem cohomologyGRing_mul {m n : ℕ} (x : continuousCohomology m X)
+    (y : continuousCohomology n X) :
+    (P.cohomologyGRing u hinv hleft hright hassoc).mul x y = P.cup m n x y :=
+  rfl
+
+/-- The unit of `TauCeti.TopPairing.cohomologyGRing` is the degree-zero class of `u`. -/
+theorem cohomologyGRing_one :
+    (P.cohomologyGRing u hinv hleft hright hassoc).one = degreeZeroClass X u hinv :=
+  rfl
+
+end Characteristic
 
 end TopPairing
 

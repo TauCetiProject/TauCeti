@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.DirectSum.Algebra
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.GradedRing
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Graded.Ring
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.TrivialF2.Basic
 
 /-!
@@ -76,11 +76,14 @@ noncomputable instance instGRing : DirectSum.GRing (cohomF2 G) :=
 @[simp]
 theorem gMul_eq_cup {m n : ℕ} (x : cohomF2 G m) (y : cohomF2 G n) :
     GradedMonoid.GMul.mul x y = (trivialF2TopPairing G).cup m n x y :=
-  (rfl)
+  TopPairing.cohomologyGRing_mul _ _ _ (trivialF2TopPairing_bil_one_left G)
+    (trivialF2TopPairing_bil_one_right G) (trivialF2TopPairing_bil_assoc G) x y
 
 /-- The unit supplied by the graded ring structure is the degree-zero unit class. -/
 theorem gOne_eq_one : (GradedMonoid.GOne.one : cohomF2 G 0) = cohomF2.one G :=
-  (one_def G).symm
+  (TopPairing.cohomologyGRing_one _ _ _ (trivialF2TopPairing_bil_one_left G)
+    (trivialF2TopPairing_bil_one_right G) (trivialF2TopPairing_bil_assoc G)).trans
+    (one_def G).symm
 
 /-- The unit class is the `1` of the degree-zero ring `cohomF2 G 0`. -/
 @[simp]

@@ -7,8 +7,8 @@ module
 
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Comparison
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Functoriality
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Graded
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.GradedComm
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Graded.Basic
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Graded.Comm
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.TrivialF2
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Corestriction.TrivialF2
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.ProjectionFormula
