@@ -8,10 +8,10 @@ module
 public import TauCeti.RepresentationTheory.Intertwining
 public import TauCeti.RepresentationTheory.OfModule
 public import TauCeti.RingTheory.PrimitiveIdempotent
-public import Mathlib.RepresentationTheory.Character
 
 import Mathlib.LinearAlgebra.PID
 import TauCeti.Algebra.MonoidAlgebra.Trace
+import TauCeti.LinearAlgebra.Trace.Idempotent
 
 /-!
 # Intertwining maps out of, and the character of, the left ideal of a quasi-idempotent
@@ -47,8 +47,9 @@ For a finite group over a field the character of `k[G] a` is read off from the c
 `κ * χ(g) = ∑ σ, a_{σ⁻¹ g⁻¹ σ}`.
 
 Right multiplication by `a` maps `k[G]` into the ideal and acts on it as `κ`, so composing it with
-left multiplication by `g` gives an endomorphism of `k[G]` whose trace is `κ * χ(g)`; the
-right-hand side is the same trace computed in the basis of group elements.
+left multiplication by `g` gives an endomorphism of `k[G]` whose trace is `κ * χ(g)`
+(`TauCeti.LinearMap.trace_mul_eq_mul_trace_restrict_range`); the right-hand side is the same
+trace computed in the basis of group elements.
 
 ## Main definitions
 
@@ -203,25 +204,18 @@ theorem mul_char_ofModule'_span_singleton (ha : a * a = κ • a) (g : G) :
     κ * (ofModule' (k := k) (G := G) (Ideal.span {a} : Ideal k[G])).character g =
       ∑ σ : G, a.coeff (σ⁻¹ * g⁻¹ * σ) := by
   set I : Ideal k[G] := Ideal.span {a}
-  have hf : ∀ x, (LinearMap.mulLeft k (MonoidAlgebra.single g (1 : k)) *
-      LinearMap.mulRight k a) x ∈ I.restrictScalars k := fun x =>
-    I.mul_mem_left _ (I.mul_mem_left x (Ideal.subset_span (Set.mem_singleton a)))
-  -- the identity of carriers between `I` and its restriction of scalars to `k`
-  let e := (I.restrictScalarsEquiv k).restrictScalars k
-  have he : ∀ y, (e y : k[G]) = y := fun _ => rfl
-  have he' : ∀ y, (e.symm y : k[G]) = y := fun _ => rfl
-  rw [← MonoidAlgebra.trace_mulLeft_single_mul_mulRight,
-    ← LinearMap.trace_restrict_eq_of_forall_mem _ _ hf, character, ← smul_eq_mul, ← map_smul,
-    ← LinearMap.trace_conj' _ e]
-  congr 1
-  -- on the ideal, right multiplication by `a` is multiplication by `κ`
-  refine LinearMap.ext fun ⟨x, hx⟩ => Subtype.ext ?_
-  obtain ⟨r, rfl⟩ := Ideal.mem_span_singleton'.mp hx
-  simp only [LinearEquiv.conj_apply, LinearMap.comp_apply, LinearEquiv.coe_coe, he, he',
-    LinearMap.coe_restrict_apply, LinearMap.smul_apply, Submodule.coe_smul_of_tower,
-    TauCeti.Representation.ofModule'_apply, smul_eq_mul, Module.End.mul_apply,
-    LinearMap.mulRight_apply, LinearMap.mulLeft_apply]
-  rw [mul_assoc, ha, mul_smul_comm, mul_smul_comm]
+  -- right multiplication by `a` is essentially idempotent, with range the ideal `I`
+  have hc : LinearMap.mulRight k a * LinearMap.mulRight k a = κ • LinearMap.mulRight k a :=
+    LinearMap.ext fun x => by simp [mul_assoc, ha]
+  have hrange : LinearMap.range (LinearMap.mulRight k a) = I.restrictScalars k := by
+    ext x; simp [I, Ideal.mem_span_singleton', eq_comm]
+  -- the identity of carriers between `range (mulRight a)` and `I`
+  let e := (LinearEquiv.ofEq _ _ hrange).trans ((I.restrictScalarsEquiv k).restrictScalars k)
+  rw [← MonoidAlgebra.trace_mulLeft_single_mul_mulRight, (LinearMap.commute_mulLeft_right _ a).eq,
+    TauCeti.LinearMap.trace_mul_eq_mul_trace_restrict_range hc
+      (LinearMap.commute_mulLeft_right _ a).symm, character, ← LinearMap.trace_conj' _ e]
+  -- transported along `e`, left multiplication by `g` on the range is the action on `I`
+  congr 2
 
 end Character
 
