@@ -93,16 +93,19 @@ theorem indK0_of (M : FGModuleCat.{u} k[S]) :
 
 /-- **Induction of the class of a representation.** If `σ` is a representation of `G`
 equivalent to the representation induced from a representation `ρ` of `S`, then induction sends
-the class of the `k[S]`-module of `ρ` to the class of the `k[G]`-module of `σ`. -/
+the class of the `k[S]`-module of `ρ` to the class of the `k[G]`-module of `σ`. The space of `σ`
+is finite over `k` because the induced space is. -/
 theorem indK0_of_asModule_of_equiv {V W : Type u} [AddCommGroup V] [Module k V]
-    [Module.Finite k V] [AddCommGroup W] [Module k W] [Module.Finite k W]
+    [Module.Finite k V] [AddCommGroup W] [Module k W]
     (ρ : Representation k S V) (σ : Representation k G W) (e : (ρ.ind S.subtype).Equiv σ) :
     letI : Module.Finite k[S] ρ.asModule := Module.Finite.of_restrictScalars_finite k k[S] _
+    letI : Module.Finite k W := Module.Finite.equiv e.toLinearEquiv
     letI : Module.Finite k[G] σ.asModule := Module.Finite.of_restrictScalars_finite k k[G] _
     indK0 k S (ExactK0.of (FGModuleCat.of k[S] ρ.asModule)) =
       ExactK0.of (FGModuleCat.of k[G] σ.asModule) := by
   classical
   let : Module.Finite k[S] ρ.asModule := Module.Finite.of_restrictScalars_finite k k[S] _
+  let : Module.Finite k W := Module.Finite.equiv e.toLinearEquiv
   let : Module.Finite k[G] σ.asModule := Module.Finite.of_restrictScalars_finite k k[G] _
   rw [indK0_of]
   -- The coinduced module is the module of `coind`, which is equivalent to `ind` and so to `σ`.
@@ -115,6 +118,7 @@ theorem indK0_of_asModule_of_equiv {V W : Type u} [AddCommGroup V] [Module k V]
 
 /-- **Induction of the trivial line.** Induction from `S` sends the class of the trivial
 one-dimensional representation to the class of the permutation module `k[G ⧸ S]`. -/
+@[simp high + 1]
 theorem indK0_of_trivial :
     letI : Module.Finite k[S] (Representation.trivial k S k).asModule :=
       Module.Finite.of_restrictScalars_finite k k[S] _
@@ -129,6 +133,7 @@ end CommRing
 /-- **Induction of a finite-dimensional representation.** Over a field, induction from `S` sends
 the class of a finite-dimensional representation `A` of `S` to the class of the induced
 representation `TauCeti.indFDRep A`. -/
+@[simp high]
 theorem indK0_of_indFDRep (k : Type u) [Field k] {G : Type u} [Group G] [Finite G]
     {S : Subgroup G} (A : FDRep k S) :
     letI : Module.Finite k[S] (Representation.asModule A.ρ) :=
