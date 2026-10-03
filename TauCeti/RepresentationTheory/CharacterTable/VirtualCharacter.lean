@@ -51,8 +51,9 @@ complex character that is an integer combination of characters of representation
 
 ## Main results
 
-* `TauCeti.exists_eq_character_sub_character`: a virtual character is the difference of two
-  characters.
+* `TauCeti.mem_virtualCharacters_iff_exists_eq_character_sub_character`: the virtual characters
+  are exactly the differences of two characters, with `TauCeti.exists_eq_character_sub_character`
+  its forward direction.
 * `TauCeti.mul_mem_virtualCharacters` and `TauCeti.one_mem_virtualCharacters`: the lattice is
   closed under the pointwise product and contains the constant `1`.
 * `TauCeti.comp_mem_virtualCharacters`: pulling back along a monoid homomorphism preserves virtual
@@ -165,6 +166,15 @@ theorem exists_eq_character_sub_character {f : G → k} (hf : f ∈ virtualChara
   | neg f _ hf =>
     obtain ⟨A, B, rfl⟩ := hf
     exact ⟨B, A, (neg_sub _ _)⟩
+
+/-- **A function `G → k` is a virtual character exactly when it is a difference of two
+characters.** This holds over any field and for any monoid `G`, unlike the description
+`TauCeti.mem_virtualCharacters_iff` as an integer combination of irreducible characters. -/
+theorem mem_virtualCharacters_iff_exists_eq_character_sub_character {f : G → k} :
+    f ∈ virtualCharacters k G ↔ ∃ A B : FDRep k G, f = A.character - B.character :=
+  ⟨exists_eq_character_sub_character, by
+    rintro ⟨A, B, rfl⟩
+    exact sub_mem (character_mem_virtualCharacters A) (character_mem_virtualCharacters B)⟩
 
 /-- **The virtual-character lattice is closed under the pointwise product.** The product of two
 characters is the character of the tensor product, and multiplication by a fixed function is
