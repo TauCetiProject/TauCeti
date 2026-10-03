@@ -72,12 +72,9 @@ theorem exists_isManifold_sectionZero_of_contMDiff {n : ℕ} (hm : m ≠ 0)
     ∃ cs : ChartedSpace (Fin n → 𝕜) ↥{y | s y = 0},
       letI := cs
       IsManifold 𝓘(𝕜, Fin n → 𝕜) m ↥{y | s y = 0} ∧
-        ContMDiff 𝓘(𝕜, Fin n → 𝕜) 𝓘(𝕜, X) m
-          (Subtype.val : ↥{y | s y = 0} → X) ∧
         Manifold.IsImmersionOfComplement F 𝓘(𝕜, Fin n → 𝕜) 𝓘(𝕜, X) m
           (Subtype.val : ↥{y | s y = 0} → X) ∧
         ∀ z : ↥{y | s y = 0},
-          Function.Injective (mvfderiv 𝓘(𝕜, Fin n → 𝕜) Subtype.val z) ∧
           (mvfderiv 𝓘(𝕜, Fin n → 𝕜) Subtype.val z).range =
             (sectionLinearization (𝕜 := 𝕜) (F := F) b s z.1).ker := by
   let := ContMDiffVectorBundle.of_le (F := F) (E := E) (IB := I)
@@ -118,7 +115,6 @@ theorem exists_isManifold_sectionZero_of_contMDiff {n : ℕ} (hm : m ≠ 0)
   let := isManifold_sectionZero hf hF hS hN (fun z ↦ (hb z).continuousAt) he hsmooth
   refine ⟨sectionZeroChartedSpace hf hF hS hN (fun z ↦ (hb z).continuousAt) he,
     isManifold_sectionZero hf hF hS hN (fun z ↦ (hb z).continuousAt) he hsmooth,
-    contMDiff_coe_sectionZero hf hF hS hN (fun z ↦ (hb z).continuousAt) he hsmooth,
     isImmersionOfComplement_coe_sectionZero hf hF hS hN
       (fun z ↦ (hb z).continuousAt) he hsmooth, ?_⟩
   -- The inclusion derivative is a kernel inclusion composed with an equivalence.
@@ -127,8 +123,6 @@ theorem exists_isManifold_sectionZero_of_contMDiff {n : ℕ} (hm : m ≠ 0)
     ((ContinuousLinearMap.finrank_ker_eq_iff_index_eq (D z) (hS z)).2 (hN z))
   let T : (Fin n → 𝕜) →L[𝕜] X :=
     (D z).ker.subtypeL.comp (K.symm : (Fin n → 𝕜) →L[𝕜] (D z).ker)
-  have hinj := (isImmersionOfComplement_coe_sectionZero hf hF hS hN
-    (fun z ↦ (hb z).continuousAt) he hsmooth).mfderiv_injective hm z
   have hrange : T.range = (sectionLinearization (𝕜 := 𝕜) (F := F) b s z.1).ker := by
     rw [sectionLinearization_eq_symmL_comp (hb z) (he z)
       ((hcoord z z (he z)).differentiableAt hm) z.2,
@@ -146,6 +140,6 @@ theorem exists_isManifold_sectionZero_of_contMDiff {n : ℕ} (hm : m ≠ 0)
     -- The target is a normed space, so its canonical tangent identification is the identity.
     change mfderiv 𝓘(𝕜, Fin n → 𝕜) 𝓘(𝕜, X) Subtype.val z = T
     exact hd
-  exact ⟨hinj, hv.symm ▸ hrange⟩
+  exact hv.symm ▸ hrange
 
 end TauCeti

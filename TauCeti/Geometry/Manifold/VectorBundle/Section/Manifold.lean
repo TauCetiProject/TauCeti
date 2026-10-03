@@ -274,14 +274,4 @@ theorem isImmersionOfComplement_coe_sectionZero :
     rw [hA_symm, hL]
     exact sub_self _
 
-include hs in
-/-- The inclusion of a section's regular zero manifold into its Banach parameter space is
-smooth for the implicit-function atlas. -/
-theorem contMDiff_coe_sectionZero :
-    letI := sectionZeroChartedSpace hf hFred hsurj hindex hb he
-    ContMDiff (modelWithCornersSelf 𝕜 (Fin n → 𝕜)) (modelWithCornersSelf 𝕜 X) m
-      (Subtype.val : ↥{y | s y = 0} → X) := by
-  let _ := sectionZeroChartedSpace hf hFred hsurj hindex hb he
-  exact (isImmersionOfComplement_coe_sectionZero hf hFred hsurj hindex hb he hs).contMDiff
-
 end TauCeti
