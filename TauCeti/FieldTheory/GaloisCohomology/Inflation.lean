@@ -25,8 +25,8 @@ which local invariants are compared.
 More generally, for `K ⊆ K'` and `L ⊆ M'` with `M'` a `K'`-algebra, every `σ ∈ Gal(M'/K')` is
 `K`-linear and restricts to `L`. The inclusion `Lˣ → M'ˣ` is then a morphism
 `unitsBaseChangeHom K L K' M'` from the restriction of `Lˣ` along `Gal(M'/K') → Gal(L/K)` to
-`M'ˣ`, the coefficient map of the base change `Hⁿ(Gal(L/K), Lˣ) → Hⁿ(Gal(M'/K'), M'ˣ)`, which
-restricts the ground field from `K` to `K'` and inflates from `L` to `M'`.
+`M'ˣ`. Together with that homomorphism it induces the base change map
+`Hⁿ(Gal(L/K), Lˣ) → Hⁿ(Gal(M'/K'), M'ˣ)`.
 
 ## Main definitions
 
@@ -74,7 +74,7 @@ variable (K' M' : Type u) [Field K'] [Field M'] [Algebra K K'] [Algebra K' M'] [
 /-- **The units along a base change of Galois extensions**: for `K ⊆ K'` and `L ⊆ M'` with `L/K`
 normal and `M'` a `K'`-algebra, the inclusion `Lˣ → M'ˣ` is a morphism of
 `Gal(M'/K')`-representations from `Lˣ`, on which `Gal(M'/K')` acts through restriction to `L`, to
-`M'ˣ`. It is the coefficient map of restriction followed by inflation
+`M'ˣ`. Together with the homomorphism `Gal(M'/K') → Gal(L/K)` it induces the cohomology map
 `Hⁿ(Gal(L/K), Lˣ) → Hⁿ(Gal(M'/K'), M'ˣ)`. -/
 noncomputable def unitsBaseChangeHom :
     Rep.res ((AlgEquiv.restrictNormalHom L).comp (AlgEquiv.restrictScalarsHom K) :

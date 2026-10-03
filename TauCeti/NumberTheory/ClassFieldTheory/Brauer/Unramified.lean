@@ -86,9 +86,10 @@ subextension.
 
 ## References
 
-* J.-P. Serre, *Local Fields*, Chapter XII, §1.
+* J.-P. Serre, *Local Fields*, Chapter XII, §1 and Chapter XIII, §3.
 * J. W. S. Cassels and A. Fröhlich (eds.), *Algebraic Number Theory*, Chapter VI (Serre, *Local
   Class Field Theory*), §1.
+* J. S. Milne, *Class Field Theory*, Chapter III, §2.
 -/
 
 public section
@@ -260,6 +261,7 @@ variable {K'} in
 totally ramified and let `L'/K'` be an unramified layer containing `L`. Then the map
 `H²(Gal(L/K), Lˣ) → H²(Gal(L'/K'), L'ˣ)` induced by restriction `Gal(L'/K') → Gal(L/K)` sends the
 class of `a ∈ Kˣ` to the class of `a ^ ([L' : K'] / [L : K])`. -/
+@[simp]
 theorem map_unramifiedClass_baseChange (hK' : IsTotallyRamified K K') (a : Kˣ) :
     groupCohomology.map ((AlgEquiv.restrictNormalHom L).comp (AlgEquiv.restrictScalarsHom K))
         (unitsBaseChangeHom K L K' L') 2 (unramifiedClass K L (Additive.ofMul a)) =
@@ -277,6 +279,7 @@ variable {K'} in
 be totally ramified and let `L'/K'` be an unramified layer containing `L`. Then the map
 `H²(Gal(L/K), Lˣ) → H²(Gal(L'/K'), L'ˣ)` induced by restriction `Gal(L'/K') → Gal(L/K)` multiplies
 the local invariant by `[K' : K]`. -/
+@[simp]
 theorem unramifiedInv_map_baseChange (hK' : IsTotallyRamified K K')
     (x : H2 (Rep.ofMulDistribMulAction (L ≃ₐ[K] L) Lˣ)) :
     unramifiedInv K' L'

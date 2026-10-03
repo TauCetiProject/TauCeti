@@ -209,6 +209,7 @@ variable {K L K' L' : Type*}
 /-- **Arithmetic Frobenius under base change.** Let `L/K` and `L'/K'` be finite unramified
 extensions with `K ⊆ K'` and `L ⊆ L'`. The arithmetic Frobenius of `L'/K'`, restricted to `L`, is
 the power of the arithmetic Frobenius of `L/K` by the residue degree `f(K'/K)`. -/
+@[simp]
 theorem frobeniusAlgEquiv_restrictScalars_restrictNormal [IsUnramified K L] [IsUnramified K' L'] :
     ((frobeniusAlgEquiv (K := K') (L := L')).restrictScalars K).restrictNormal L =
       frobeniusAlgEquiv (K := K) (L := L) ^ inertiaDegree K K' := by
