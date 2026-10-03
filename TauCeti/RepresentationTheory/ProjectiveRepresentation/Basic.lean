@@ -55,6 +55,8 @@ itself becomes the **twisted regular representation**, which realizes every fact
   action rather than of the lift.
 * `TauCeti.IsProjectiveRep.toMonoidHom` and `TauCeti.IsProjectiveRep.of_monoidHom`: the projective
   representations with trivial factor set are exactly the linear representations.
+* `TauCeti.IsProjectiveRep.tensorProduct`: the tensor product of two projective representations is
+  projective with the product factor set.
 * `TauCeti.exists_isProjectiveRep`: every normalized factor set is the factor set of a projective
   representation.
 
@@ -164,6 +166,22 @@ itself. -/
 @[simp]
 theorem coe_toMonoidHom (h : IsProjectiveRep ρ (1 : G → G → kˣ)) : ⇑h.toMonoidHom = ρ :=
   (rfl)
+
+/-- **The tensor product of two projective representations** is a projective representation whose
+factor set is the product of the two factor sets. In particular a projective representation
+tensored with one carrying the inverse factor set is a linear representation. -/
+theorem tensorProduct {V' : Type*} [AddCommMonoid V'] [Module k V'] {ρ' : G → V' ≃ₗ[k] V'}
+    {α' : G → G → kˣ} (h : IsProjectiveRep ρ α) (h' : IsProjectiveRep ρ' α') :
+    IsProjectiveRep (fun g ↦ TensorProduct.congr (ρ g) (ρ' g)) (α * α') where
+  isFactorSet := have := h.isFactorSet; have := h'.isFactorSet; inferInstance
+  map_one := by
+    refine LinearEquiv.toLinearMap_injective (TensorProduct.ext' fun x y ↦ ?_)
+    simp [h.map_one, h'.map_one]
+  mul_apply g₁ g₂ x := by
+    induction x using TensorProduct.inductionOn with
+    | tmul x y =>
+      simp [h.mul_apply, h'.mul_apply, TensorProduct.smul_tmul', smul_smul, mul_comm]
+    | add x y hx hy => simp only [map_add, hx, hy, smul_add]
 
 end IsProjectiveRep
 
