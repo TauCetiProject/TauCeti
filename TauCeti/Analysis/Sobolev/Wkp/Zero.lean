@@ -69,7 +69,9 @@ noncomputable def iteratedGradientTestFunction (phi : 𝓓(Omega, ℝ)) (k : ℕ
     E → IteratedGradient E k :=
   iteratedGradientChain (phi : E → ℝ) k
 
-/-- The derivative fields of a test function are its classical iterated-gradient chain. -/
+/-- The derivative fields of a test function are its classical iterated-gradient chain.
+This bridge is intentionally not a simp lemma: test-function fields are the normal form used
+by the zero, successor, and `Lᵖ` representative simp lemmas below. -/
 theorem iteratedGradientTestFunction_eq_chain (phi : 𝓓(Omega, ℝ)) (k : ℕ) :
     iteratedGradientTestFunction phi k = iteratedGradientChain (phi : E → ℝ) k :=
   (rfl)
@@ -88,7 +90,7 @@ theorem iteratedGradientTestFunction_succ (phi : 𝓓(Omega, ℝ)) (k : ℕ) :
 /-- Every iterated gradient of a test function is smooth. -/
 theorem contDiff_iteratedGradientTestFunction (phi : 𝓓(Omega, ℝ)) (k : ℕ) :
     ContDiff ℝ ∞ (iteratedGradientTestFunction phi k) :=
-  contDiff_iteratedGradientChain phi.contDiff k
+  contDiff_iteratedGradientChain phi.contDiff k (by simp)
 
 /-- Every iterated gradient of a test function has compact support. -/
 theorem hasCompactSupport_iteratedGradientTestFunction (phi : 𝓓(Omega, ℝ)) (k : ℕ) :

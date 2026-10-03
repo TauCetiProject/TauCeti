@@ -42,10 +42,10 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
   {Omega : Opens E} {p : ENNReal} [Fact (1 ≤ p)]
 
 /-- Simultaneous `Lᵖ` convergence of the classical derivatives of test functions through
-order `k` implies convergence to a smooth Sobolev representative in the full `W^{k,p}` norm.
+order `k` implies convergence to a `C^k` Sobolev representative in the full `W^{k,p}` norm.
 This implication works on any open domain, not only on the whole space. -/
 theorem Wkp.tendsto_ofTestFunctionₗ_of_contDiff {I : Type*} {l : Filter I}
-    (k : ℕ) (u : Wkp mu Omega p k) {f : E → ℝ} (hf : ContDiff ℝ ∞ f)
+    (k : ℕ) (u : Wkp mu Omega p k) {f : E → ℝ} (hf : ContDiff ℝ k f)
     (hu : (value k u : E → ℝ) =ᵐ[mu.restrict Omega] f) (phi : I → 𝓓(Omega, ℝ))
     (hphi : ∀ i ≤ k, Tendsto (fun j => eLpNorm
       (iteratedFDeriv ℝ i (phi j : E → ℝ) - iteratedFDeriv ℝ i f)
@@ -77,7 +77,7 @@ theorem Wkp.tendsto_ofTestFunctionₗ_of_contDiff {I : Type*} {l : Filter I}
       -- The graph topology separates the preceding Sobolev order from the highest derivative.
       rw [tendsto_iff_lowerOrder_iteratedGradient]
       constructor
-      · convert ih (lowerOrder k u) (by simpa only [value_succ] using hu)
+      · convert ih (lowerOrder k u) (hf.of_le (by simp)) (by simpa only [value_succ] using hu)
           (fun i hi => hphi i (hi.trans (Nat.le_succ k))) using 1
         funext j
         exact lowerOrder_ofTestFunctionₗ k (phi j)
@@ -101,7 +101,7 @@ theorem Wkp.tendsto_ofTestFunctionₗ_of_contDiff {I : Type*} {l : Filter I}
             (hf.continuous_iteratedFDeriv (by simp)).aestronglyMeasurable)
         filter_upwards [htest, hgrad] with x hx hy
         simp only [Pi.sub_apply, hx, hy]
-        exact norm_iteratedGradientChain_sub (phi j).contDiff hf k x
+        exact norm_iteratedGradientChain_sub k ((phi j).contDiff.of_le (by simp)) hf x
 
 /-- Every whole-space higher-order Sobolev function with a smooth representative belongs to
 the closure of test functions in the full Sobolev norm, for finite `p`. -/
@@ -110,12 +110,13 @@ private theorem Wkp.mem_wkp0Submodule_top_of_contDiff (hp : p ≠ ⊤)
     (hu : (value k u : E → ℝ) =ᵐ[mu.restrict (⊤ : Opens E)] f) :
     u ∈ wkp0Submodule mu ⊤ p k := by
   obtain ⟨g, hg, _, hlim⟩ := exists_contDiff_hasCompactSupport_approximation
-    (zero_lt_one.trans_le Fact.out).ne' hp hf k (memLp_iteratedFDeriv_of_contDiff k u hf hu)
+    (zero_lt_one.trans_le Fact.out).ne' hp hf k
+      (memLp_iteratedFDeriv_of_contDiff k u (hf.of_le (by simp)) hu)
   let phi : ℕ → 𝓓((⊤ : Opens E), ℝ) := fun j =>
     ⟨g j, (hg j).1, (hg j).2, subset_univ _⟩
   have hconv : Tendsto (fun j => ofTestFunctionₗ (mu := mu) (p := p) k (phi j))
       atTop (𝓝 u) :=
-    tendsto_ofTestFunctionₗ_of_contDiff k u hf hu phi hlim
+    tendsto_ofTestFunctionₗ_of_contDiff k u (hf.of_le (by simp)) hu phi hlim
   exact (wkp0Submodule mu ⊤ p k).isClosed.mem_of_tendsto hconv
     (.of_forall fun j => ofTestFunctionₗ_mem_wkp0Submodule k (phi j))
 

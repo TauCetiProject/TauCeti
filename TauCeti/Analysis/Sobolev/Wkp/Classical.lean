@@ -58,10 +58,11 @@ theorem norm_iteratedGradientChain (f : E → ℝ) (k : ℕ) (x : E) :
     ((norm_iteratedFDeriv_iteratedGradientChain f 0 k x).trans
       (congrArg (fun j => ‖iteratedFDeriv ℝ (j + 1) f x‖) (Nat.zero_add k)))
 
-/-- Iterated-gradient fields preserve subtraction of smooth scalar functions. -/
+/-- Iterated-gradient fields through order `k + 1` preserve subtraction of `C^{k+1}`
+scalar functions. -/
 @[simp]
 theorem iteratedGradientChain_sub {f g : E → ℝ}
-    (hf : ContDiff ℝ ∞ f) (hg : ContDiff ℝ ∞ g) (k : ℕ) :
+    (k : ℕ) (hf : ContDiff ℝ (k + 1) f) (hg : ContDiff ℝ (k + 1) g) :
     iteratedGradientChain (f - g) k =
       iteratedGradientChain f k - iteratedGradientChain g k := by
   induction k with
@@ -71,18 +72,23 @@ theorem iteratedGradientChain_sub {f g : E → ℝ}
       simp only [Pi.sub_apply, gradient,
         fderiv_sub (hf.differentiable (by simp) x) (hg.differentiable (by simp) x), map_sub]
   | succ k ih =>
-      simp only [iteratedGradientChain_succ, ih]
+      rw [iteratedGradientChain_succ, iteratedGradientChain_succ, iteratedGradientChain_succ,
+        ih (hf.of_le (by simp)) (hg.of_le (by simp))]
       funext x
-      exact fderiv_sub ((contDiff_iteratedGradientChain hf k).differentiable (by simp) x)
-        ((contDiff_iteratedGradientChain hg k).differentiable (by simp) x)
+      have hfs := contDiff_iteratedGradientChain hf k (m := 1)
+        (by simp [add_comm, add_left_comm])
+      have hgs := contDiff_iteratedGradientChain hg k (m := 1)
+        (by simp [add_comm, add_left_comm])
+      exact fderiv_sub (hfs.differentiable (by simp) x) (hgs.differentiable (by simp) x)
 
-/-- The difference of two smooth iterated-gradient fields has the same norm as the difference
-of their multilinear derivatives. This identifies the error seminorms in smooth approximation. -/
+/-- The order-`k + 1` iterated-gradient fields of two `C^{k+1}` scalar functions have the same
+difference norm as their multilinear derivatives. This identifies the error seminorms in
+smooth approximation. -/
 theorem norm_iteratedGradientChain_sub {f g : E → ℝ}
-    (hf : ContDiff ℝ ∞ f) (hg : ContDiff ℝ ∞ g) (k : ℕ) (x : E) :
+    (k : ℕ) (hf : ContDiff ℝ (k + 1) f) (hg : ContDiff ℝ (k + 1) g) (x : E) :
     ‖iteratedGradientChain f k x - iteratedGradientChain g k x‖ =
       ‖iteratedFDeriv ℝ (k + 1) f x - iteratedFDeriv ℝ (k + 1) g x‖ := by
-  rw [← Pi.sub_apply, ← iteratedGradientChain_sub hf hg, norm_iteratedGradientChain]
+  rw [← Pi.sub_apply, ← iteratedGradientChain_sub k hf hg, norm_iteratedGradientChain]
   exact congrArg norm (fun_iteratedFDeriv_sub_apply
     (hf.of_le (by simp)).contDiffAt (hg.of_le (by simp)).contDiffAt)
 
@@ -94,17 +100,17 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
   {Omega : Opens E} {p : ENNReal} [Fact (1 ≤ p)]
 
-/-- The highest recorded weak derivative of a smooth Sobolev representative is its classical
+/-- The highest recorded weak derivative of a `C^{k+1}` Sobolev representative is its classical
 iterated-gradient field almost everywhere on the domain. -/
 theorem Wkp.iteratedGradient_ae_eq_of_contDiff (k : ℕ) (u : Wkp mu Omega p (k + 1))
-    {f : E → ℝ} (hf : ContDiff ℝ ∞ f)
+    {f : E → ℝ} (hf : ContDiff ℝ (k + 1) f)
     (hu : (value (k + 1) u : E → ℝ) =ᵐ[mu.restrict Omega] f) :
     (iteratedGradient k u : E → IteratedGradient E k) =ᵐ[mu.restrict Omega]
       iteratedGradientChain f k := by
   induction k with
   | zero =>
       have hd := ((hasWeakFDerivOn_value u).congr_ae hu).ae_eq_fderiv
-        (((contDiff_infty_iff_fderiv.mp hf).2.continuous.locallyIntegrable
+        (((hf.continuous_fderiv (by simp)).locallyIntegrable
           (μ := mu)).locallyIntegrableOn (Omega : Set E))
         (fun x _ => hf.differentiable (by simp) x)
       filter_upwards [hd] with x hx
@@ -117,17 +123,18 @@ theorem Wkp.iteratedGradient_ae_eq_of_contDiff (k : ℕ) (u : Wkp mu Omega p (k 
   | succ k ih =>
       have hprev : (value (k + 1) (lowerOrder (k + 1) u) : E → ℝ) =ᵐ[mu.restrict Omega] f := by
         simpa only [value_succ] using hu
-      have hs := contDiff_iteratedGradientChain hf k
-      have hc := (contDiff_infty_iff_fderiv.mp hs).2.continuous
-      have hd := ((hasWeakFDerivOn_iteratedGradient k u).congr_ae (ih _ hprev)).ae_eq_fderiv
+      have hs := contDiff_iteratedGradientChain hf k (m := 1) (by simp [add_comm, add_left_comm])
+      have hc := hs.continuous_fderiv (by simp)
+      have hd := ((hasWeakFDerivOn_iteratedGradient k u).congr_ae
+        (ih _ (hf.of_le (by simp)) hprev)).ae_eq_fderiv
         ((hc.locallyIntegrable (μ := mu)).locallyIntegrableOn (Omega : Set E))
         (fun x _ => hs.differentiable (by simp) x)
       simpa only [iteratedGradientChain_succ] using hd
 
-/-- Every classical derivative through order `k` of a smooth `W^{k,p}` representative belongs
+/-- Every classical derivative through order `k` of a `C^k` `W^{k,p}` representative belongs
 to `Lᵖ` on the domain. -/
 theorem Wkp.memLp_iteratedFDeriv_of_contDiff (k : ℕ) (u : Wkp mu Omega p k)
-    {f : E → ℝ} (hf : ContDiff ℝ ∞ f)
+    {f : E → ℝ} (hf : ContDiff ℝ k f)
     (hu : (value k u : E → ℝ) =ᵐ[mu.restrict Omega] f) :
     ∀ i ≤ k, MemLp (iteratedFDeriv ℝ i f) p (mu.restrict Omega) := by
   induction k with
@@ -141,7 +148,7 @@ theorem Wkp.memLp_iteratedFDeriv_of_contDiff (k : ℕ) (u : Wkp mu Omega p k)
   | succ k ih =>
       intro i hi
       by_cases hik : i ≤ k
-      · exact ih (lowerOrder k u) (by simpa only [value_succ] using hu) i hik
+      · exact ih (lowerOrder k u) (hf.of_le (by simp)) (by simpa only [value_succ] using hu) i hik
       · have hi' : i = k + 1 := by omega
         subst i
         have hchain := MemLp.ae_eq (iteratedGradient_ae_eq_of_contDiff k u hf hu)
