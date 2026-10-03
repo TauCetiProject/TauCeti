@@ -28,6 +28,10 @@ therefore the number of square classes: four away from residue characteristic tw
 over `ℚ_[2]`. These indices measure the failure of the Spin projection to be surjective on
 local points.
 
+The surjectivity theorems are
+`TauCeti.CliffordAlgebra.spinorNorm_surjective_of_three_le_finrank` and
+`TauCeti.CliffordAlgebra.orthogonalSpinorNorm_surjective_of_three_le_finrank`.
+
 ## References
 
 * O. T. O'Meara, *Introduction to Quadratic Forms*, §55, especially 55:6.
