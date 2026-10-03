@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RepresentationTheory.Irreducible
+public import Mathlib.RepresentationTheory.Semisimple
 public import TauCeti.RepresentationTheory.Subrepresentation
 public import Mathlib.RingTheory.SimpleModule.Rank
+import TauCeti.RingTheory.KrullSchmidt.Indecomposable
 import TauCeti.RingTheory.Semisimple.DoubleCentralizer
 import TauCeti.RingTheory.Semisimple.Schur
 
@@ -56,6 +58,8 @@ irreducible by.
   subrepresentations carries an irreducible representation.
 * `Representation.isIrreducible_of_asAlgebraHom_surjective`: a representation whose
   algebra map exhausts the endomorphisms is irreducible.
+* `Representation.isIrreducible_of_finrank_intertwiningMap_self_eq_one`: a semisimple
+  representation whose equivariant endomorphisms are the scalars is irreducible.
 * `Representation.asAlgebraHom_surjective_of_isIrreducible`: over an algebraically closed
   field, every finite-dimensional irreducible representation exhausts the endomorphisms.
 * `Representation.exists_isAtom_le`: every nonzero finite-dimensional subrepresentation
@@ -212,6 +216,45 @@ theorem isIrreducible_of_asAlgebraHom_surjective [Nontrivial V] (ρ : Representa
   obtain ⟨r, rfl⟩ := h T
   refine ⟨r, ρ.asModuleEquiv.injective ?_⟩
   rw [LinearMap.toSpanSingleton_apply, Representation.asModuleEquiv_map_smul, hT]
+
+/-- **A semisimple representation whose intertwiners are the scalars is irreducible.** If every
+subrepresentation has an invariant complement and the equivariant endomorphisms of `ρ` form a line,
+then `ρ` is irreducible: an idempotent equivariant endomorphism is a scalar `c` with `c * c = c`,
+hence `0` or `1`, so `ρ` is indecomposable (`isIndecomposableModule_of_forall_isIdempotentElem`),
+and an indecomposable semisimple module is simple (`IsIndecomposableModule.isSimpleModule`).
+
+Over a field in which the order of a finite group is invertible every representation is semisimple
+(Maschke), so there this is the converse of Schur's lemma for an absolutely irreducible
+representation. -/
+theorem isIrreducible_of_finrank_intertwiningMap_self_eq_one {ρ : Representation k G V}
+    [ρ.IsSemisimpleRepresentation] (h : Module.finrank k (IntertwiningMap ρ ρ) = 1) :
+    ρ.IsIrreducible := by
+  have : Nontrivial V := by
+    by_contra hV
+    rw [not_nontrivial_iff_subsingleton] at hV
+    have : Subsingleton (IntertwiningMap ρ ρ) :=
+      ⟨fun f g => IntertwiningMap.ext (Subsingleton.elim _ _)⟩
+    rw [Module.finrank_zero_of_subsingleton] at h
+    exact zero_ne_one h
+  have hid : (1 : IntertwiningMap ρ ρ) ≠ 0 := by
+    obtain ⟨v, hv⟩ := exists_ne (0 : V)
+    exact fun h0 => hv (by simpa using congrArg (fun f : IntertwiningMap ρ ρ => f v) h0)
+  have : IsSemisimpleModule (MonoidAlgebra k G) ρ.asModule :=
+    (isSemisimpleRepresentation_iff_isSemisimpleModule_asModule ρ).mp inferInstance
+  have : Nontrivial ρ.asModule := ρ.asModuleEquiv.toEquiv.nontrivial
+  rw [irreducible_iff_isSimpleModule_asModule]
+  -- an idempotent endomorphism is a scalar `c` with `c * c = c`, hence `0` or `1`
+  refine (isIndecomposableModule_of_forall_isIdempotentElem fun f hf => ?_).isSimpleModule
+  let e := IntertwiningMap.equivAlgEnd (ρ := ρ)
+  obtain ⟨c, hc⟩ := (finrank_eq_one_iff_of_nonzero' _ hid).mp h (e.symm f)
+  have hf' : f = algebraMap k _ c := by
+    rw [← e.apply_symm_apply f, ← hc, ← AlgEquiv.commutes e, IntertwiningMap.algebraMap_apply]
+  have hcc : IsIdempotentElem c := by
+    refine smul_left_injective k hid ?_
+    simpa [hf', IsIdempotentElem, ← map_mul, mul_smul] using congrArg e.symm hf
+  rcases IsIdempotentElem.iff_eq_zero_or_one.mp hcc with rfl | rfl
+  · exact Or.inl (by simp [hf'])
+  · exact Or.inr (by simp [hf'])
 
 open scoped MonoidAlgebra in
 /-- **Burnside density theorem.** The monoid algebra of a finite-dimensional irreducible

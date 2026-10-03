@@ -9,7 +9,7 @@ public import TauCeti.NumberTheory.LocalField.Unramified.Inertia.Basic
 public import TauCeti.NumberTheory.LocalField.Uniformizer
 public import TauCeti.Topology.Algebra.Group.Profinite.Sylow.Basic
 import TauCeti.Algebra.CharP.LocalRing
-import TauCeti.NumberTheory.LocalField.TamelyRamified
+import TauCeti.NumberTheory.LocalField.TamelyRamified.Basic
 import TauCeti.NumberTheory.LocalField.UnitFiltration.Pow
 import TauCeti.NumberTheory.LocalField.UnitFiltration.RamificationGroup
 import TauCeti.NumberTheory.LocalField.UnitsDecomposition

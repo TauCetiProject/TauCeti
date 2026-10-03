@@ -282,6 +282,42 @@ namespace AlgebraicInfinityType
 
 variable {K : Type*} [Field K]
 
+/-- The multiplicative monomial of an algebraic infinity type on global nonzero elements:
+`x ↦ ∏ σ, σ(x) ^ n σ`, with its nonzero value bundled as a complex unit. -/
+def embeddingCharacter [NumberField K] (n : AlgebraicInfinityType K) : Kˣ →* ℂˣ :=
+  ∏ σ : K →+* ℂ, Units.map σ.toMonoidHom ^ n σ
+
+/-- The zero algebraic infinity type gives the trivial embedding character. -/
+@[simp]
+theorem embeddingCharacter_zero [NumberField K] :
+    embeddingCharacter (0 : AlgebraicInfinityType K) = 1 := by
+  classical
+  ext x
+  simp [embeddingCharacter]
+
+/-- Adding algebraic infinity types multiplies their embedding characters. -/
+@[simp]
+theorem embeddingCharacter_add [NumberField K] (n m : AlgebraicInfinityType K) :
+    embeddingCharacter (n + m) = embeddingCharacter n * embeddingCharacter m := by
+  classical
+  ext x
+  simp [embeddingCharacter, zpow_add, Finset.prod_mul_distrib]
+
+/-- Negating an algebraic infinity type inverts its embedding character. -/
+@[simp]
+theorem embeddingCharacter_neg [NumberField K] (n : AlgebraicInfinityType K) :
+    embeddingCharacter (-n) = (embeddingCharacter n)⁻¹ := by
+  classical
+  ext x
+  simp [embeddingCharacter, zpow_neg, Finset.prod_inv_distrib]
+
+/-- The embedding character evaluates as the monomial in the complex embeddings. -/
+@[simp]
+theorem coe_embeddingCharacter_apply [NumberField K] (n : AlgebraicInfinityType K) (x : Kˣ) :
+    (n.embeddingCharacter x : ℂ) = ∏ σ : K →+* ℂ, σ (x : K) ^ n σ := by
+  classical
+  simp [embeddingCharacter]
+
 /-- The continuous infinity type associated to an algebraic infinity type.  At a real place the
 integer exponent gives both the modulus exponent and its parity.  At a complex place, exponents
 `a` and `b` at the chosen embedding and its conjugate give modulus exponent `a + b` and angular
