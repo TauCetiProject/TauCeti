@@ -23,10 +23,11 @@ zero-weight coordinate line is invariant, nor that the standard representation i
 These projections and the numbered root actions provide the invariant-subspace calculations
 needed to study simplicity and the unipotent radical.
 
-Here the coordinate algebra is the scalar extension of the prime-field carrier itself, not the
-possibly smaller subgroup generated after scalar extension. The carrier is not identified with
-the pinned simply connected group scheme of type `F₄`; transfer to that group requires such an
-identification.
+Here the coordinate algebra is the scalar extension of the prime-field carrier itself; it is also
+the subgroup generated after scalar extension, by
+`TauCeti.F4ShortRoot.PrimeField.baseChangeDefiningIdeal_eq_generatedDefiningIdeal`. The carrier
+is not identified with the pinned simply connected group scheme of type `F₄`; transfer to that
+group requires such an identification.
 
 ## References
 

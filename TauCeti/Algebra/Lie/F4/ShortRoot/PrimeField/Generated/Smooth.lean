@@ -20,9 +20,10 @@ its rank-four weight torus. After extending the coordinate maps to an algebraica
 characteristic-two field, their common-kernel quotient is reduced and smooth. The scalar
 extension of the prime-field carrier contains this generated subgroup.
 
-The containment need not be an equality merely from the common-kernel construction. Identifying
-the scalar extension of the prime-field carrier with the generated subgroup, and then recognizing
-it as the pinned simply connected group scheme of type `F₄`, are separate questions.
+The containment is an equality, because generation commutes with scalar extension along free
+algebras; see `TauCeti.F4ShortRoot.PrimeField.baseChangeDefiningIdeal_eq_generatedDefiningIdeal`.
+Recognizing the carrier as the pinned simply connected group scheme of type `F₄` is a separate
+question.
 
 ## References
 
