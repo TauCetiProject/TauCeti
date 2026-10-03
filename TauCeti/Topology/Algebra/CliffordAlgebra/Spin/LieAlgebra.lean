@@ -26,9 +26,9 @@ Lie algebra of the closed real Spin subgroup with the quadratic Lie subalgebra.
 
 ## Main results
 
-* `TauCeti.CliffordAlgebra.forall_expUnit_smul_mem_realCliffordSpinGroup_iff` characterizes the
+* `CliffordAlgebra.forall_expUnit_smul_mem_realCliffordSpinGroup_iff` characterizes the
   exponential lines contained in the real Spin subgroup.
-* `TauCeti.CliffordAlgebra.mem_lieAlgebra_realCliffordSpinGroup_iff_mem_quadraticLieSubalgebra`
+* `CliffordAlgebra.mem_lieAlgebra_realCliffordSpinGroup_iff_mem_quadraticLieSubalgebra`
   identifies its closed-subgroup Lie algebra in Clifford-algebra coordinates.
 -/
 
@@ -39,9 +39,9 @@ noncomputable section
 open Manifold NormedSpace
 open scoped Manifold
 
-namespace TauCeti.CliffordAlgebra
+namespace CliffordAlgebra
 
-open _root_.CliffordAlgebra
+open TauCeti TauCeti.CliffordAlgebra
 
 attribute [local instance] TauCeti.normedAlgebraRatOfReal
 
@@ -184,4 +184,4 @@ theorem
       (realCliffordForm n 0) (nondegenerate_realCliffordForm n 0)]
   rfl
 
-end TauCeti.CliffordAlgebra
+end CliffordAlgebra
