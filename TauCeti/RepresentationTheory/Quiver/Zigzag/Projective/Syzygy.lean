@@ -122,6 +122,12 @@ theorem zigzagProjectiveToHead_surjective (i : V) :
 
 variable {k G}
 
+/-- The head quotient sends `y ∈ P_i = J⁰ P_i` to its class modulo `J P_i`. -/
+@[simp]
+theorem zigzagProjectiveToHead_apply (i : V) (y : zigzagProjective k G i) :
+    zigzagProjectiveToHead k G i y = Submodule.Quotient.mk ⟨y, by simp⟩ :=
+  (rfl)
+
 /-- **The kernel of the head quotient is the radical `J P_i`.** -/
 @[simp]
 theorem ker_zigzagProjectiveToHead (i : V) :

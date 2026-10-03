@@ -50,13 +50,16 @@ the augmentation.
   head at the tail of an edge whose endpoints have degree one, with its terms identified by
   `TauCeti.zigzagPeriodicProjectiveResolutionXIso`.
 * `TauCeti.zigzagA2ProjectiveResolution`: the periodic projective resolution of each simple module
-  of the `A₂` zigzag algebra.
+  of the `A₂` zigzag algebra, with its terms identified by
+  `TauCeti.zigzagA2ProjectiveResolutionXIso`.
 
 ## Main results
 
 * `TauCeti.range_zigzagPeriodicDifferential_succ`: exactness of the periodic complex.
 * `TauCeti.zigzagPeriodicProjectiveResolution_complex_d` and
   `TauCeti.zigzagPeriodicProjectiveResolution_π_f_zero`: the differentials and the augmentation.
+* `TauCeti.zigzagA2ProjectiveResolution_complex_d` and
+  `TauCeti.zigzagA2ProjectiveResolution_π_f_zero`: the same for the `A₂` resolutions.
 
 ## References
 
@@ -272,6 +275,7 @@ theorem zigzagPeriodicProjectiveResolution_π_f_zero (hns : ∀ i : V, ∃ j, G.
 /-! ### The zigzag algebra of `A₂` -/
 
 /-- The dart of `A₂` leaving the node `i`. -/
+@[expose]
 def zigzagA2Dart (i : Fin 2) : zigzagA2Graph.Dart :=
   ⟨(i, i + 1), by fin_cases i <;> simp⟩
 
@@ -297,5 +301,31 @@ noncomputable def zigzagA2ProjectiveResolution (i : Fin 2) :
       (zigzagProjectiveRadicalLayer k zigzagA2Graph i 0)) :=
   zigzagPeriodicProjectiveResolution k exists_adj_zigzagA2Graph (zigzagA2Dart i)
     (degree_zigzagA2Graph i) (degree_zigzagA2Graph (i + 1))
+
+/-- The `n`-th term of the resolution of `S_i` is the vertex projective at
+`zigzagPeriodicVertex (zigzagA2Dart i) n`. -/
+noncomputable def zigzagA2ProjectiveResolutionXIso (i : Fin 2) (n : ℕ) :
+    (zigzagA2ProjectiveResolution k i).complex.X n ≅
+      ModuleCat.of (nonisolatedZigzagQuotient k zigzagA2Graph)
+        (zigzagProjective k zigzagA2Graph (zigzagPeriodicVertex (zigzagA2Dart i) n)) :=
+  zigzagPeriodicProjectiveResolutionXIso k _ _ _ _ n
+
+/-- The differentials of the resolution of `S_i` are the maps `zigzagPeriodicDifferential` along
+`zigzagA2Dart i`, read through `TauCeti.zigzagA2ProjectiveResolutionXIso`. -/
+@[simp]
+theorem zigzagA2ProjectiveResolution_complex_d (i : Fin 2) (n : ℕ) :
+    (zigzagA2ProjectiveResolution k i).complex.d (n + 1) n =
+      (zigzagA2ProjectiveResolutionXIso k i (n + 1)).hom ≫
+        ModuleCat.ofHom (zigzagPeriodicDifferential k (zigzagA2Dart i) n) ≫
+          (zigzagA2ProjectiveResolutionXIso k i n).inv :=
+  zigzagPeriodicProjectiveResolution_complex_d k _ _ _ _ n
+
+/-- The augmentation of the resolution of `S_i` is the head quotient of `P_i`, read through
+`TauCeti.zigzagA2ProjectiveResolutionXIso`. -/
+@[simp]
+theorem zigzagA2ProjectiveResolution_π_f_zero (i : Fin 2) :
+    (zigzagA2ProjectiveResolutionXIso k i 0).inv ≫ (zigzagA2ProjectiveResolution k i).π.f 0 =
+      ModuleCat.ofHom (zigzagProjectiveToHead k zigzagA2Graph i) :=
+  zigzagPeriodicProjectiveResolution_π_f_zero k _ _ _ _
 
 end TauCeti
