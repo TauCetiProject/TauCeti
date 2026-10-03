@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Quadratic.Realization
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Basic
+import TauCeti.Algebra.Lie.Derivation.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.Vectors
 
 /-!
@@ -91,12 +92,17 @@ theorem mem_quadraticLieSubalgebra_of_mem_even_of_reverse_eq_neg_of_lie_ι_mem_r
     have hsum :
         algebraMap K (CliffordAlgebra Q)
             (QuadraticMap.polar Q (f u) v + QuadraticMap.polar Q u (f v)) = 0 := by
+      have hxu := TauCeti.derivationLieAlgebra.leibniz
+        (TauCeti.innerDerivation K x) (ι Q u) (ι Q v)
+      have hxv := TauCeti.derivationLieAlgebra.leibniz
+        (TauCeti.innerDerivation K x) (ι Q v) (ι Q u)
+      simp only [TauCeti.coe_innerDerivation, LieAlgebra.ad_apply] at hxu hxv
       rw [map_add, ← ι_mul_ι_add_swap, ← ι_mul_ι_add_swap]
       calc
         ι Q (f u) * ι Q v + ι Q v * ι Q (f u) +
               (ι Q u * ι Q (f v) + ι Q (f v) * ι Q u) =
             ⁅x, ι Q u * ι Q v + ι Q v * ι Q u⁆ := by
-              rw [lie_add, lie_mul, lie_mul, hf_lie, hf_lie]
+              rw [lie_add, hxu, hxv, hf_lie, hf_lie]
               abel
         _ = ⁅x, algebraMap K (CliffordAlgebra Q) (QuadraticMap.polar Q u v)⁆ := by
               rw [ι_mul_ι_add_swap]
