@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Category.Grp.FilteredColimits
 public import Mathlib.Algebra.Category.ModuleCat.Colimits
+public import Mathlib.CategoryTheory.Action.Limits
 public import Mathlib.CategoryTheory.Limits.Filtered
 public import Mathlib.CategoryTheory.Limits.Preserves.Filtered
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete
@@ -15,15 +16,15 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDisc
 # Filtered colimits of smooth discrete representations
 
 Let `X : J ⥤ SmoothDiscreteTopRep k G` be a filtered diagram of smooth discrete representations.
-Its colimit exists and is computed on underlying modules: the colimit module of the underlying
-`k`-modules, with the discrete topology and the action of `G` induced by the actions at the stages.
+Its colimit exists and is computed on underlying modules: the colimit of the underlying actions in
+`Action (ModuleCat k) G`, with the discrete topology.
 
 Discreteness of the colimit is what makes this work. Every leg out of a discrete stage is then
 continuous; scalar multiplication `r ↦ r • x` is continuous because `x` comes from a stage, where it
 is; and the stabilizer of a point is open because, the diagram being filtered, it is the union of
 the stabilizers of its representatives at the stages.
 
-Consequently the forgetful functor from smooth discrete representations to types preserves
+Consequently the functor to underlying modules and the forgetful functor to types preserve
 filtered colimits: a colimit cocone in `SmoothDiscreteTopRep k G` of a filtered diagram is a colimit
 on underlying sets. This is the form in which continuous cohomology of a compact group is shown to
 commute with filtered colimits of coefficients.
@@ -34,6 +35,8 @@ commute with filtered colimits of coefficients.
   filtered colimits.
 * `TauCeti.SmoothDiscreteTopRep.forget_preservesFilteredColimits`: the forgetful functor to types
   preserves them.
+* `TauCeti.SmoothDiscreteTopRep.forget₂ModuleCat_preservesFilteredColimits`: so does the functor to
+  underlying modules.
 
 ## References
 
@@ -51,95 +54,84 @@ universe w v u
 variable {k : Type v} [Ring k] [TopologicalSpace k] {G : Type u} [Monoid G] [TopologicalSpace G]
 
 variable (k G) in
-/-- The underlying module of a smooth discrete representation, as a functor. -/
-private abbrev toModuleCat : SmoothDiscreteTopRep.{v, u, w} k G ⥤ ModuleCat.{w} k :=
-  smoothDiscreteι k G ⋙ TopRep.toActionTopModFunc ⋙ Action.forget _ G ⋙
-    forget₂ (TopModuleCat k) (ModuleCat k)
+/-- The underlying `k`-linear action of a smooth discrete representation, as a functor. -/
+private abbrev toAction : SmoothDiscreteTopRep.{v, u, w} k G ⥤ Action (ModuleCat.{w} k) G :=
+  smoothDiscreteι k G ⋙ TopRep.toActionTopModFunc ⋙
+    (forget₂ (TopModuleCat k) (ModuleCat k)).mapAction G
 
 namespace FilteredColimits
 
 variable {J : Type w} [SmallCategory J] (X : J ⥤ SmoothDiscreteTopRep.{v, u, w} k G)
 
-/-- The colimit leg of the underlying modules at `j`, read on the underlying module of `X.obj j`. -/
+/-- The colimit leg of the underlying actions at `j`, read on the underlying module of `X.obj j`. -/
 private noncomputable abbrev ι (j : J) :
-    (X.obj j).obj.V →ₗ[k] ↑(colimit (X ⋙ toModuleCat k G)) :=
-  (colimit.ι (X ⋙ toModuleCat k G) j).hom
+    (X.obj j).obj.V →ₗ[k] (colimit (X ⋙ toAction k G)).V :=
+  (colimit.ι (X ⋙ toAction k G) j).hom.hom
 
-/-- The legs of the colimit module are compatible with the transition maps. -/
+/-- The legs of the colimit action are compatible with the transition maps. -/
 private theorem ι_map_apply {i j : J} (f : i ⟶ j) (y : (X.obj i).obj.V) :
     ι X j ((X.map f).hom.hom y) = ι X i y :=
-  ConcreteCategory.congr_hom (colimit.w (X ⋙ toModuleCat k G) f) y
+  ConcreteCategory.congr_hom (congrArg Action.Hom.hom (colimit.w (X ⋙ toAction k G) f)) y
 
-/-- The action of `g` at each stage, as an endomorphism of the diagram of underlying modules. -/
-private noncomputable def actNatTrans (g : G) : X ⋙ toModuleCat k G ⟶ X ⋙ toModuleCat k G where
-  app j := ModuleCat.ofHom ((X.obj j).obj.ρ g).toLinearMap
-  naturality _ _ f := ModuleCat.hom_ext (LinearMap.ext fun y ↦
-    (TopRep.hom_comm_apply (X.map f).hom g y).symm)
+/-- The action on the colimit restricts to the action at each stage. -/
+private theorem ρ_ι_apply (g : G) {j : J} (y : (X.obj j).obj.V) :
+    ((colimit (X ⋙ toAction k G)).ρ g).hom (ι X j y) = ι X j ((X.obj j).obj.ρ g y) :=
+  (ConcreteCategory.congr_hom ((colimit.ι (X ⋙ toAction k G) j).comm g) y).symm
 
-/-- The action of `g` on the colimit module, induced by the actions at the stages. -/
-private noncomputable def act (g : G) :
-    ↑(colimit (X ⋙ toModuleCat k G)) →ₗ[k] ↑(colimit (X ⋙ toModuleCat k G)) :=
-  (colimMap (actNatTrans X g)).hom
+/-- The colimit module, with the discrete topology. -/
+private local instance : TopologicalSpace (colimit (X ⋙ toAction k G)).V := ⊥
 
-/-- The action on the colimit module restricts to the action at each stage. -/
-private theorem act_ι_apply (g : G) {j : J} (y : (X.obj j).obj.V) :
-    act X g (ι X j y) = ι X j ((X.obj j).obj.ρ g y) :=
-  ConcreteCategory.congr_hom (ι_colimMap (actNatTrans X g) j) y
+private local instance : DiscreteTopology (colimit (X ⋙ toAction k G)).V := ⟨rfl⟩
+
+/-- The continuous representation of `G` on the discrete colimit module, given by the action of
+the colimit in `Action (ModuleCat k) G`. -/
+private noncomputable def colimitρ : ContRepresentation k G (colimit (X ⋙ toAction k G)).V :=
+  .ofMonoidHom
+    { toFun g := ⟨((colimit (X ⋙ toAction k G)).ρ g).hom, continuous_of_discreteTopology⟩
+      map_one' := by ext; simp
+      map_mul' g h := by ext; simp }
+
+/-- `colimitρ X` acts through the action of the colimit in `Action (ModuleCat k) G`. -/
+private theorem colimitρ_apply (g : G) (x : (colimit (X ⋙ toAction k G)).V) :
+    colimitρ X g x = ((colimit (X ⋙ toAction k G)).ρ g).hom x :=
+  rfl
+
+/-- The representation on the colimit restricts to the representation at each stage. -/
+private theorem colimitρ_ι_apply (g : G) {j : J} (y : (X.obj j).obj.V) :
+    colimitρ X g (ι X j y) = ι X j ((X.obj j).obj.ρ g y) := by
+  rw [colimitρ_apply, ρ_ι_apply]
 
 variable [IsFiltered J]
 
-/-- The colimit of the underlying modules is a colimit on underlying sets. -/
+/-- The colimit of the underlying actions is a colimit on underlying sets. -/
 private noncomputable def isColimitForget :
-    IsColimit ((forget₂ (ModuleCat.{w} k) AddCommGrpCat ⋙ forget AddCommGrpCat).mapCocone
-      (colimit.cocone (X ⋙ toModuleCat k G))) :=
+    IsColimit ((Action.forget (ModuleCat.{w} k) G ⋙ forget₂ (ModuleCat.{w} k) AddCommGrpCat ⋙
+      forget AddCommGrpCat).mapCocone (colimit.cocone (X ⋙ toAction k G))) :=
   isColimitOfPreserves _ (colimit.isColimit _)
 
-/-- Every element of the colimit module comes from some stage. -/
-private theorem exists_ι_eq (x : ↑(colimit (X ⋙ toModuleCat k G))) :
+/-- Every element of the colimit comes from some stage. -/
+private theorem exists_ι_eq (x : (colimit (X ⋙ toAction k G)).V) :
     ∃ (j : J) (y : (X.obj j).obj.V), ι X j y = x :=
   Types.jointly_surjective_of_isColimit (isColimitForget X) x
 
-/-- Two elements of one stage with the same image in the colimit module agree at a deeper stage. -/
+/-- Two elements of one stage with the same image in the colimit agree at a deeper stage. -/
 private theorem exists_map_eq_of_ι_eq {j : J} {y y' : (X.obj j).obj.V} (h : ι X j y = ι X j y') :
     ∃ (l : J) (f : j ⟶ l), (X.map f).hom.hom y = (X.map f).hom.hom y' :=
   (Types.FilteredColimit.isColimit_eq_iff' (isColimitForget X) y y').1 h
 
-/-- The colimit module, with the discrete topology. -/
-private local instance : TopologicalSpace ↑(colimit (X ⋙ toModuleCat k G)) := ⊥
-
-private local instance : DiscreteTopology ↑(colimit (X ⋙ toModuleCat k G)) := ⟨rfl⟩
-
 /-- Scalar multiplication on the discrete colimit module is continuous: an element comes from a
 stage, on which scalar multiplication is continuous. -/
-private local instance : ContinuousSMul k ↑(colimit (X ⋙ toModuleCat k G)) := by
+private local instance : ContinuousSMul k (colimit (X ⋙ toAction k G)).V := by
   refine ⟨continuous_prod_of_discrete_right.2 fun x ↦ ?_⟩
   obtain ⟨j, y, rfl⟩ := exists_ι_eq X x
   have := (X.obj j).property.discreteTopology
   simp_rw [← map_smul]
   exact continuous_of_discreteTopology.comp (continuous_id.smul continuous_const)
 
-/-- The continuous representation of `G` on the discrete colimit module. -/
-private noncomputable def colimitρ : ContRepresentation k G ↑(colimit (X ⋙ toModuleCat k G)) :=
-  .ofMonoidHom
-    { toFun g := ⟨act X g, continuous_of_discreteTopology⟩
-      map_one' := ContinuousLinearMap.ext fun x ↦ by
-        obtain ⟨j, y, rfl⟩ := exists_ι_eq X x
-        simp only [ContinuousLinearMap.coe_mk', act_ι_apply, map_one,
-          one_apply_eq_self]
-      map_mul' g h := ContinuousLinearMap.ext fun x ↦ by
-        obtain ⟨j, y, rfl⟩ := exists_ι_eq X x
-        simp only [ContinuousLinearMap.coe_mk', mul_apply_eq_comp, act_ι_apply,
-          map_mul] }
-
-/-- The representation on the colimit restricts to the representation at each stage. -/
-private theorem colimitρ_ι_apply (g : G) {j : J} (y : (X.obj j).obj.V) :
-    colimitρ X g (ι X j y) = ι X j ((X.obj j).obj.ρ g y) :=
-  act_ι_apply X g y
-
 /-- The stabilizers of the colimit are open: the stabilizer of the image of `y` is the union of the
 stabilizers of the images of `y` at the deeper stages. -/
 private theorem isSmoothDiscrete_colimit : IsSmoothDiscrete k (TopRep.of (colimitρ X)) := by
-  refine ⟨inferInstanceAs (DiscreteTopology ↑(colimit (X ⋙ toModuleCat k G))), fun x ↦ ?_⟩
+  refine ⟨inferInstanceAs (DiscreteTopology (colimit (X ⋙ toAction k G)).V), fun x ↦ ?_⟩
   obtain ⟨j, y, rfl⟩ := exists_ι_eq X x
   refine isOpen_iff_forall_mem_open.2 fun g hg ↦ ?_
   -- `g` fixes the image of `y` at some deeper stage `l`
@@ -151,12 +143,12 @@ private theorem isSmoothDiscrete_colimit : IsSmoothDiscrete k (TopRep.of (colimi
   rw [Set.mem_ofPred_eq, TopRep.of_ρ, ← ι_map_apply X f, colimitρ_ι_apply, hg']
 
 /-- The colimit of a filtered diagram of smooth discrete representations: the colimit of the
-underlying modules, with the discrete topology and the induced action. -/
+underlying actions, with the discrete topology. -/
 private noncomputable def colimitObj : SmoothDiscreteTopRep.{v, u, w} k G :=
   ⟨TopRep.of (colimitρ X), isSmoothDiscrete_colimit X⟩
 
 /-- The colimit cocone of a filtered diagram of smooth discrete representations, whose legs are the
-colimit legs of the underlying modules. -/
+colimit legs of the underlying actions. -/
 private noncomputable def colimitCocone : Cocone X where
   pt := colimitObj X
   ι :=
@@ -168,26 +160,28 @@ private noncomputable def colimitCocone : Cocone X where
       naturality _ _ f := ObjectProperty.hom_ext _ <| TopRep.hom_ext <|
         DFunLike.ext _ _ fun y ↦ ι_map_apply X f y }
 
-/-- The morphism out of the colimit to the apex of a cocone `s`: the descended map of the
-underlying modules, which is continuous because the colimit is discrete. -/
+/-- The morphism out of the colimit to the apex of a cocone `s`: the descended morphism of the
+underlying actions, which is continuous because the colimit is discrete. -/
 private noncomputable def desc (s : Cocone X) : colimitObj X ⟶ s.pt :=
-  have hdesc (j : J) (y : (X.obj j).obj.V) :
-      (colimit.desc (X ⋙ toModuleCat k G) ((toModuleCat k G).mapCocone s)).hom (ι X j y) =
-        (s.ι.app j).hom.hom y :=
-    colimit.ι_desc_apply ((toModuleCat k G).mapCocone s) j y
   have : DiscreteTopology (colimitObj X).obj.V := (colimitObj X).property.discreteTopology
   ObjectProperty.homMk <| ConcreteCategory.ofHom
-    { toContinuousLinearMap := ⟨(colimit.desc (X ⋙ toModuleCat k G)
-        ((toModuleCat k G).mapCocone s)).hom, continuous_of_discreteTopology⟩
-      isIntertwining' g := ContinuousLinearMap.ext fun x ↦ by
-        obtain ⟨j, y, rfl⟩ := exists_ι_eq X x
-        exact (congrArg _ (colimitρ_ι_apply X g y)).trans <| (hdesc j _).trans <|
-          (TopRep.hom_comm_apply (s.ι.app j).hom g y).trans (congrArg _ (hdesc j y).symm) }
+    { toContinuousLinearMap := ⟨(colimit.desc (X ⋙ toAction k G)
+        ((toAction k G).mapCocone s)).hom.hom, continuous_of_discreteTopology⟩
+      isIntertwining' g := ContinuousLinearMap.ext fun x ↦ ConcreteCategory.congr_hom
+        ((colimit.desc (X ⋙ toAction k G) ((toAction k G).mapCocone s)).comm g) x }
+
+/-- `desc X s` is the descended morphism of the underlying actions. -/
+private theorem desc_hom_apply (s : Cocone X) (x : (colimit (X ⋙ toAction k G)).V) :
+    (desc X s).hom.hom x =
+      (colimit.desc (X ⋙ toAction k G) ((toAction k G).mapCocone s)).hom.hom x :=
+  rfl
 
 /-- The morphism out of the colimit restricts to the legs of `s`. -/
 private theorem desc_ι_apply (s : Cocone X) (j : J) (y : (X.obj j).obj.V) :
-    (desc X s).hom.hom (ι X j y) = (s.ι.app j).hom.hom y :=
-  colimit.ι_desc_apply ((toModuleCat k G).mapCocone s) j y
+    (desc X s).hom.hom (ι X j y) = (s.ι.app j).hom.hom y := by
+  rw [desc_hom_apply]
+  exact ConcreteCategory.congr_hom
+    (congrArg Action.Hom.hom (colimit.ι_desc ((toAction k G).mapCocone s) j)) y
 
 /-- The cocone `colimitCocone X` is a colimit in `SmoothDiscreteTopRep k G`. -/
 private noncomputable def colimitCoconeIsColimit : IsColimit (colimitCocone X) where
@@ -203,7 +197,7 @@ end FilteredColimits
 open FilteredColimits
 
 /-- **Smooth discrete representations have filtered colimits**, computed on underlying modules:
-the colimit of the underlying modules, with the discrete topology and the induced action. -/
+the colimit of the underlying actions in `Action (ModuleCat k) G`, with the discrete topology. -/
 instance hasFilteredColimits : HasFilteredColimits (SmoothDiscreteTopRep.{v, u, w} k G) where
   HasColimitsOfShape _ _ _ := ⟨fun X ↦ ⟨_, colimitCoconeIsColimit X⟩⟩
 
@@ -214,5 +208,14 @@ instance forget_preservesFilteredColimits :
     PreservesFilteredColimits (smoothDiscreteι k G ⋙ forget (TopRep.{w} k G)) where
   preserves_filtered_colimits _ _ _ := ⟨fun {X} ↦
     preservesColimit_of_preserves_colimit_cocone (colimitCoconeIsColimit X) (isColimitForget X)⟩
+
+/-- **Filtered colimits of smooth discrete representations are computed on underlying modules.**
+The functor to the underlying `k`-modules preserves filtered colimits. -/
+instance forget₂ModuleCat_preservesFilteredColimits :
+    PreservesFilteredColimits (smoothDiscreteι k G ⋙ TopRep.toActionTopModFunc ⋙
+      Action.forget _ G ⋙ forget₂ (TopModuleCat k) (ModuleCat.{w} k)) where
+  preserves_filtered_colimits _ _ _ := ⟨fun {X} ↦
+    preservesColimit_of_preserves_colimit_cocone (colimitCoconeIsColimit X)
+      (isColimitOfPreserves (Action.forget (ModuleCat.{w} k) G) (colimit.isColimit _))⟩
 
 end TauCeti.SmoothDiscreteTopRep
