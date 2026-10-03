@@ -236,6 +236,29 @@ theorem exists_projective_reduction_linearEquiv (N : Type v) [AddCommGroup N] [M
   obtain ⟨X, hX, hXY⟩ := exists_projective_quotient_smul_top_linearEquiv (p : ℤ_[p]) i q hqi
   exact ⟨X, inferInstance, hX, hXY⟩
 
+omit [Finite G] in
+/-- A vector over `ℤ_p[G]` is divisible by `p` exactly when each of its coordinates reduces to
+zero in `𝔽_p[G]`: the kernel of coordinatewise coefficient reduction is `p • ℤ_p[G]^ι`. -/
+private theorem mem_span_p_smul_top_pi_iff {ι : Type*} {v : ι → MonoidAlgebra ℤ_[p] G} :
+    v ∈ Ideal.span {(p : MonoidAlgebra ℤ_[p] G)} •
+        (⊤ : Submodule (MonoidAlgebra ℤ_[p] G) (ι → MonoidAlgebra ℤ_[p] G)) ↔
+      ∀ i, MonoidAlgebra.mapRingHom G (PadicInt.toZMod (p := p)) (v i) = 0 := by
+  rw [← map_natCast (algebraMap ℤ_[p] (MonoidAlgebra ℤ_[p] G)) p,
+    Submodule.mem_span_algebraMap_smul_top_iff]
+  constructor
+  · rintro ⟨w, rfl⟩ i
+    rw [Pi.smul_apply, Nat.cast_smul_eq_nsmul, nsmul_eq_mul, map_mul, map_natCast,
+      ← map_natCast (algebraMap (ZMod p) (MonoidAlgebra (ZMod p) G)), ZMod.natCast_self,
+      map_zero, zero_mul]
+  · intro hv
+    have hdvd (i : ι) (m : G) : (p : ℤ_[p]) ∣ (v i).coeff m := by
+      have hvi := hv i
+      rw [MonoidAlgebra.mapRingHom_eq_zero_iff, MonoidAlgebra.mem_ideal_smul_top_iff,
+        PadicInt.ker_toZMod, PadicInt.maximalIdeal_eq_span_p] at hvi
+      exact Ideal.mem_span_singleton.mp (hvi m)
+    choose w hw using fun i ↦ MonoidAlgebra.exists_eq_nsmul_of_dvd_coeff (hdvd i)
+    exact ⟨w, funext fun i ↦ by rw [Pi.smul_apply, hw i, Nat.cast_smul_eq_nsmul]⟩
+
 /-- **Projective `𝔽_p[G]`-modules lift to `ℤ_p[G]`.** Every finitely generated projective module
 `Y` over the monoid algebra `𝔽_p[G]` of a finite monoid (in particular the group algebra of a
 finite group) is the reduction modulo `p` of a finitely generated projective `ℤ_p[G]`-module `X`:
@@ -273,23 +296,7 @@ theorem exists_projective_reduction_bijective_of_projective (Y : Type v) [AddCom
       (⊤ : Submodule (MonoidAlgebra ℤ_[p] G) (Fin n → MonoidAlgebra ℤ_[p] G)) =
         LinearMap.ker ρ := by
     ext v
-    rw [← map_natCast (algebraMap ℤ_[p] (MonoidAlgebra ℤ_[p] G)) p,
-      Submodule.mem_span_algebraMap_smul_top_iff, LinearMap.mem_ker]
-    constructor
-    · rintro ⟨w, rfl⟩
-      funext i
-      rw [LinearMap.coe_mk, AddHom.coe_mk, Pi.smul_apply, Pi.zero_apply,
-        Nat.cast_smul_eq_nsmul, nsmul_eq_mul, map_mul, map_natCast,
-        ← map_natCast (algebraMap (ZMod p) (MonoidAlgebra (ZMod p) G)), ZMod.natCast_self,
-        map_zero, zero_mul]
-    · intro hv
-      have hdvd (i : Fin n) (m : G) : (p : ℤ_[p]) ∣ (v i).coeff m := by
-        have hvi : π (v i) = 0 := congrFun hv i
-        rw [MonoidAlgebra.mapRingHom_eq_zero_iff, MonoidAlgebra.mem_ideal_smul_top_iff,
-          PadicInt.ker_toZMod, PadicInt.maximalIdeal_eq_span_p] at hvi
-        exact Ideal.mem_span_singleton.mp (hvi m)
-      choose w hw using fun i ↦ MonoidAlgebra.exists_eq_nsmul_of_dvd_coeff (hdvd i)
-      exact ⟨w, funext fun i ↦ by rw [Pi.smul_apply, hw i, Nat.cast_smul_eq_nsmul]⟩
+    exact (mem_span_p_smul_top_pi_iff p G).trans funext_iff.symm
   let E := (Submodule.quotEquivOfEq _ _ hker).trans (ρ.quotKerEquivOfSurjective hρ)
   let s' : (Fin n → MonoidAlgebra (ZMod p) G) →ₗ[MonoidAlgebra ℤ_[p] G] Y :=
     { toFun := s, map_add' := s.map_add, map_smul' a w := s.map_smul (π a) w }
