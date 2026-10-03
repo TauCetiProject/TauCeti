@@ -69,6 +69,11 @@ noncomputable def iteratedGradientTestFunction (phi : 𝓓(Omega, ℝ)) (k : ℕ
     E → IteratedGradient E k :=
   iteratedGradientChain (phi : E → ℝ) k
 
+/-- The derivative fields of a test function are its classical iterated-gradient chain. -/
+theorem iteratedGradientTestFunction_eq_chain (phi : 𝓓(Omega, ℝ)) (k : ℕ) :
+    iteratedGradientTestFunction phi k = iteratedGradientChain (phi : E → ℝ) k :=
+  (rfl)
+
 @[simp]
 theorem iteratedGradientTestFunction_zero (phi : 𝓓(Omega, ℝ)) :
     iteratedGradientTestFunction phi 0 = fun x => gradient (phi : E → ℝ) x :=
