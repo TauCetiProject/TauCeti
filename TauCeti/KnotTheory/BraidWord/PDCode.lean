@@ -72,6 +72,14 @@ letters `(i, ε)` with `p = i` or `p = i + 1`. -/
 def crossingsAt (p : Fin n) : List (Fin w.length) :=
   (List.finRange w.length).filter fun j ↦ p = strand w[j.1].1 ∨ p = strandSucc w[j.1].1
 
+/-- Expand the crossings of a word involving a specified strand position as a filtered finite
+range. -/
+theorem crossingsAt_eq_filter (p : Fin n) :
+    w.crossingsAt p =
+      (List.finRange w.length).filter fun j ↦
+        p = strand w[j.1].1 ∨ p = strandSucc w[j.1].1 := by
+  simp [crossingsAt]
+
 /-- A crossing involves a strand position exactly when that position is one of its two strands. -/
 @[simp]
 theorem mem_crossingsAt {p : Fin n} {j : Fin w.length} :
@@ -135,10 +143,22 @@ slot `3` on the lower position `i` of the letter, slot `0` on the upper position
 def incomingSlot (j : Fin w.length) (p : Fin n) : Fin 4 :=
   if p = strand w[j.1].1 then 3 else 0
 
+/-- Expand the incoming slot according to whether the position is the lower strand of the
+crossing. -/
+theorem incomingSlot_def (j : Fin w.length) (p : Fin n) :
+    w.incomingSlot j p = if p = strand w[j.1].1 then 3 else 0 := by
+  simp [incomingSlot]
+
 /-- The slot of the crossing `j` at which a strand leaves it upwards on the position `p`:
 slot `2` on the lower position `i` of the letter, slot `1` on the upper position `i + 1`. -/
 def outgoingSlot (j : Fin w.length) (p : Fin n) : Fin 4 :=
   if p = strand w[j.1].1 then 2 else 1
+
+/-- Expand the outgoing slot according to whether the position is the lower strand of the
+crossing. -/
+theorem outgoingSlot_def (j : Fin w.length) (p : Fin n) :
+    w.outgoingSlot j p = if p = strand w[j.1].1 then 2 else 1 := by
+  simp [outgoingSlot]
 
 /-- A strand enters a crossing on the lower position of its letter at slot `3`. -/
 @[simp]
