@@ -30,8 +30,8 @@ the polynomial part is a complete invariant of that class.  Those classes are in
 diagrams of at most `n - 1` rows
 (`TauCeti.DominantWeight.colLen_zero_detShiftShape_le_pred` and
 `TauCeti.DominantWeight.detShiftShape_weightOfShape`), so the Weyl modules of such diagrams
-already exhaust the restrictions.  On characters the invariance needs no rewriting of shapes and is
-stated outright as `TauCeti.char_rationalWeylSLRep_shift`.
+already exhaust the restrictions.  On the bundled representations, where there is no carrier to
+rewrite, that invariance is stated outright as `TauCeti.rationalWeylSLFDRep_shift`.
 
 That these restrictions are *irreducible*, and that they exhaust the irreducible rational
 representations of `SL n k`, is the highest-weight classification for `SL n` and is not proved
@@ -50,8 +50,8 @@ scalars asks every unit of `k` to be an `n`-th power.
 * `TauCeti.rationalWeylSLRep_eq_weylSLRepOfShape`: **the determinant twist disappears on
   `SL n k`** -- the rational Weyl module of `λ` restricts to the Weyl module of the polynomial
   part of `λ`.
-* `TauCeti.char_rationalWeylSLRep_shift`: **the restricted character only depends on `λ` modulo
-  the constant weights**.
+* `TauCeti.rationalWeylSLFDRep_shift`: **the restriction only depends on `λ` modulo the constant
+  weights**.
 
 ## References
 
@@ -140,11 +140,21 @@ noncomputable abbrev rationalWeylSLFDRep (l : DominantWeight n) :
     FDRep k (Matrix.SpecialLinearGroup (Fin n) k) :=
   FDRep.of (V := ↥(weylModuleOfShape k n l.detShiftShape).toSubmodule) (rationalWeylSLRep k n l)
 
-/-- The bundled form of `TauCeti.rationalWeylSLRep_eq_weylSLRepOfShape`. -/
+/-- **The restriction depends on the weight only modulo the constant weights**: `λ` and
+`λ + m·(1, …, 1)` restrict to the same representation of `SL n k`.  Bundled as an equality of
+`FDRep` objects this says so outright, with no carrier to rewrite by hand: the two sides are built
+on the Weyl modules of the polynomial parts of `λ + m·(1, …, 1)` and of `λ`, which
+`TauCeti.DominantWeight.detShiftShape_shift` identifies.  Together with
+`TauCeti.DominantWeight.detShiftShape_eq_detShiftShape_iff`, which says that the polynomial part
+is a complete invariant of the class of `λ`, this is the sense in which the restricted rational
+Weyl modules are indexed by the dominant weights modulo the constant weights. -/
 @[simp]
-theorem rationalWeylSLFDRep_eq_weylSLFDRepOfShape (l : DominantWeight n) :
-    rationalWeylSLFDRep k n l = weylSLFDRepOfShape k n l.detShiftShape := by
-  rw [rationalWeylSLFDRep, rationalWeylSLRep_eq_weylSLRepOfShape]
+theorem rationalWeylSLFDRep_shift (l : DominantWeight n) (m : ℤ) :
+    rationalWeylSLFDRep k n (l.shift m) = rationalWeylSLFDRep k n l := by
+  have key : ∀ l' : DominantWeight n,
+      rationalWeylSLFDRep k n l' = weylSLFDRepOfShape k n l'.detShiftShape := fun l' => by
+    rw [rationalWeylSLFDRep, rationalWeylSLRep_eq_weylSLRepOfShape]
+  rw [key, key, DominantWeight.detShiftShape_shift]
 
 end Bundled
 
@@ -163,37 +173,6 @@ theorem char_weylSLRepOfShape (μ : YoungDiagram) (g : Matrix.SpecialLinearGroup
       = Representation.character (V := ↥(weylModuleOfShape k n μ).toSubmodule)
         (weylRepOfShape k n μ) (Matrix.SpecialLinearGroup.toGL g) :=
   (rfl)
-
-/-- **The restricted character of a rational Weyl module is the character of the Weyl module of
-its polynomial part**: the determinant factor of `TauCeti.char_rationalWeylRep` is `1` on
-`SL n k`.
-
-This is deliberately not a `simp` lemma: `TauCeti.rationalWeylSLRep_eq_weylSLRepOfShape` already
-rewrites the carrier away, so `simp` proves this outright. -/
-theorem char_rationalWeylSLRep (l : DominantWeight n)
-    (g : Matrix.SpecialLinearGroup (Fin n) k) :
-    Representation.character (V := ↥(weylModuleOfShape k n l.detShiftShape).toSubmodule)
-        (rationalWeylSLRep k n l) g
-      = Representation.character (V := ↥(weylModuleOfShape k n l.detShiftShape).toSubmodule)
-        (weylSLRepOfShape k n l.detShiftShape) g := by
-  rw [rationalWeylSLRep_eq_weylSLRepOfShape]
-
-/-- **The restricted character depends on the weight only modulo the constant weights**: `λ` and
-`λ + m·(1, …, 1)` have the same character on `SL n k`.  Unlike
-`TauCeti.rationalWeylSLRep_eq_weylSLRepOfShape`, this needs no rewriting of carriers, the
-character being a scalar.
-
-This is deliberately not a `simp` lemma either: with
-`TauCeti.rationalWeylSLRep_eq_weylSLRepOfShape` and
-`TauCeti.DominantWeight.detShiftShape_shift` both `simp`, the left-hand side here is already
-reduced to the right-hand side's normal form. -/
-theorem char_rationalWeylSLRep_shift (l : DominantWeight n) (m : ℤ)
-    (g : Matrix.SpecialLinearGroup (Fin n) k) :
-    Representation.character (V := ↥(weylModuleOfShape k n (l.shift m).detShiftShape).toSubmodule)
-        (rationalWeylSLRep k n (l.shift m)) g
-      = Representation.character (V := ↥(weylModuleOfShape k n l.detShiftShape).toSubmodule)
-        (rationalWeylSLRep k n l) g := by
-  rw [char_rationalWeylSLRep, char_rationalWeylSLRep, DominantWeight.detShiftShape_shift]
 
 end Field
 

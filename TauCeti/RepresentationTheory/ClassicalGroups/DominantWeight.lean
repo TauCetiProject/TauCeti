@@ -327,6 +327,7 @@ theorem detShiftShape_shift (l : DominantWeight n) (m : ℤ) :
 again: such a weight has vanishing last entry, so nothing is subtracted.  Together with
 `TauCeti.DominantWeight.colLen_zero_detShiftShape_le_pred` this makes the polynomial part a
 surjection onto the Young diagrams with at most `n - 1` rows. -/
+@[simp]
 theorem detShiftShape_weightOfShape {μ : YoungDiagram} (hμ : μ.colLen 0 ≤ n - 1) :
     (weightOfShape n μ).detShiftShape = μ := by
   have hdet : (weightOfShape n μ).detShift = 0 := by
