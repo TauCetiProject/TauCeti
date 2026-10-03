@@ -234,6 +234,32 @@ noncomputable def swap1InfSwap1InfIso : Γ.swap1Inf.swap1Inf.Iso Γ := by
       ((Fintype.equivFin Γ.E).trans ((Fintype.equivFin Γ.E).permCongr Γ.rotB)).symm) e =
         Γ.rotB⁻¹ e)
 
+/-- The isomorphism after two white-face exchanges fixes every black vertex. -/
+@[simp] theorem swap1InfSwap1InfIso_black_apply (b : Γ.B) :
+    Γ.swap1InfSwap1InfIso.black b = b := by
+  obtain ⟨e, rfl⟩ := Γ.blackEnd_surjective b
+  have h := Γ.swap1InfSwap1InfIso.map_blackEnd e
+  -- Express endpoint compatibility on the original edge carrier `Γ.E`.
+  change Γ.blackEnd (Γ.swap1InfSwap1InfIso.edge e) =
+    Γ.swap1InfSwap1InfIso.black (Γ.blackEnd e) at h
+  rw [swap1InfSwap1InfIso_edge_apply] at h
+  exact h.symm.trans (by
+    simpa only [Perm.inv_def, apply_symm_apply] using (Γ.blackEnd_rotB (Γ.rotB⁻¹ e)).symm)
+
+/-- The isomorphism after two white-face exchanges sends the new white vertex represented
+by an edge to its original white endpoint. -/
+@[simp] theorem swap1InfSwap1InfIso_white_apply (e : Γ.E) :
+    Γ.swap1InfSwap1InfIso.white
+        (Quotient.mk (SameCycle.setoid Γ.swap1Inf.facePerm) e) = Γ.whiteEnd e := by
+  have h := Γ.swap1InfSwap1InfIso.map_whiteEnd (Γ.rotB (Γ.rotW e))
+  -- Read the exposed source endpoint on `Γ.E` to simplify its quotient representative.
+  change Γ.whiteEnd (Γ.swap1InfSwap1InfIso.edge (Γ.rotB (Γ.rotW e))) =
+    Γ.swap1InfSwap1InfIso.white
+      (Quotient.mk _ ((Γ.rotW⁻¹ * Γ.facePerm * Γ.rotW) (Γ.rotB (Γ.rotW e)))) at h
+  simpa only [swap1InfSwap1InfIso_edge_apply,
+    facePerm_def, mul_inv_rev, Perm.mul_apply, Perm.inv_def, symm_apply_apply,
+    whiteEnd_rotW] using h.symm
+
 variable {n : ℕ}
 
 /-- Branch-point permutations act on graph isomorphism classes on the right, written as a
