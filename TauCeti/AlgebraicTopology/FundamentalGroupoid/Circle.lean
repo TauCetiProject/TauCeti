@@ -41,11 +41,12 @@ values (`TauCeti.CircleArcs.functor_ext`).
 
 Only after choosing the basepoint does the familiar based statement follow: if `γ₊` runs from `1`
 to `-1` in `upper` and `γ₋` does so in `lower`, then the class of the loop `γ₊ · γ₋⁻¹` generates
-`π₁(S¹, 1)` freely (`TauCeti.CircleArcs.zpowersHom_bijective`). The loop is sent to `1` by the
-functor with values `1` on `γ₊` and `-1` on `γ₋`, which gives injectivity, and every loop is a
-power of it because conjugating by `γ₊` retracts the groupoid onto `π₁(S¹, 1)` and that retraction
-agrees with the functor with values `1` and `(γ₊ · γ₋⁻¹)⁻¹` on the two arcs. The covering-space
-computation of the same group is `Circle.fundamentalGroupMulEquiv`.
+`π₁(S¹, 1)` freely (`TauCeti.CircleArcs.zpowersHom_bijective`). Writing `ℤ` additively, the
+loop is sent to `1` by the `ℤ`-valued functor with values `0` on `γ₊` and `-1` on `γ₋`, which gives
+injectivity, and every loop is a power of it because conjugating by `γ₊` retracts the groupoid onto
+`π₁(S¹, 1)` and that retraction agrees with the `π₁(S¹, 1)`-valued functor with values the identity
+on `γ₊` and `(γ₊ · γ₋⁻¹)⁻¹` on `γ₋`. The covering-space computation of the same group is
+`Circle.fundamentalGroupMulEquiv`.
 
 ## Main declarations
 
