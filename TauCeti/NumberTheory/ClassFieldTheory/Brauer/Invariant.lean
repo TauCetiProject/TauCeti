@@ -9,7 +9,6 @@ public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.MaximalUnramified
 import TauCeti.NumberTheory.ClassFieldTheory.Brauer.LocalH2Bound
 import TauCeti.NumberTheory.LocalField.FiniteExtension.Tower
 import TauCeti.NumberTheory.LocalField.Unramified.BaseChange
-import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
 
 /-!
 # The local invariant of the Brauer group
@@ -159,6 +158,7 @@ theorem range_relBrInfl_eq_range_relBrInfl_unramifiedExtension
     (hU ▸ Nat.le_of_dvd (Nat.pos_of_ne_zero hn) hE)).symm
 
 /-- **Every Brauer class of a nonarchimedean local field is split by an unramified extension.** -/
+@[simp]
 theorem unramifiedBr_eq_top : unramifiedBr K = ⊤ := by
   refine eq_top_iff.2 fun x _ => ?_
   obtain ⟨E, _, _, y, rfl⟩ := exists_relBrInfl_eq x
@@ -176,8 +176,10 @@ def invMap : Br K ≃+ AddCircle (1 : ℚ) :=
 
 /-- The local invariant of a Brauer class is its invariant in the unramified Brauer group. -/
 theorem invMap_eq_unramifiedBrInv (x : Br K) (hx : x ∈ unramifiedBr K) :
-    invMap K x = unramifiedBrInv K ⟨x, hx⟩ :=
-  (rfl)
+    invMap K x = unramifiedBrInv K ⟨x, hx⟩ := by
+  rw [invMap, AddEquiv.trans_apply, AddEquiv.trans_apply]
+  exact congrArg _ (Subtype.ext (by
+    rw [AddEquiv.addSubgroupCongr_apply, AddSubgroup.topEquiv_symm_apply_coe]))
 
 variable {K} in
 /-- **The normalization of the local invariant**: a class inflated from an unramified extension

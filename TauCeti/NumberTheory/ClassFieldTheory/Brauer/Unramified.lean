@@ -54,8 +54,8 @@ residue degree. The map `H²(Gal(L/K), Lˣ) → H²(Gal(L'/K'), L'ˣ)` induced b
 `Gal(L'/K') → Gal(L/K)` therefore sends the class of `a` to the class of
 `a ^ (f(K'/K) · [L' : K'] / [L : K])` (`TauCeti.map_cyclicClass_baseChange`). Its invariant is
 `e(K'/K) f(K'/K) · v_K(a) / [L : K]`, because `v_{K'}(a) = e(K'/K) · v_K(a)`. So this map
-multiplies the invariant by `e(K'/K) f(K'/K) = [K' : K]`: this is the unramified case of the
-formula `inv_{K'} ∘ res = [K' : K] · inv_K` for restriction of Brauer classes.
+multiplies the invariant by `e(K'/K) f(K'/K) = [K' : K]`: this is the formula
+`inv_{K'} ∘ res = [K' : K] · inv_K` for restriction of classes inflated from unramified layers.
 
 ## Main definitions
 
