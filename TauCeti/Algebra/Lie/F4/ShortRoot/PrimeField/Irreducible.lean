@@ -196,9 +196,9 @@ private theorem rootSubgroupPoints_inl_three_mulVec_zeroWeight_apply_ten (x y : 
     (((rootSubgroupPoints (.inl 3) k (Multiplicative.ofAdd 1) :
         Matrix.GeneralLinearGroup (Fin 26) k) : Matrix (Fin 26) (Fin 26) k) *ᵥ
           (x • Pi.single 12 1 + y • Pi.single 13 1)) 10 = x := by
+  have htwo₂ : (2 : ZMod 2) = 0 := by decide
   have htwo : (2 : k) = 0 := by
-    rw [← map_ofNat (algebraMap (ZMod 2) k) 2,
-      show (2 : ZMod 2) = 0 by decide, map_zero]
+    rw [← map_ofNat (algebraMap (ZMod 2) k) 2, htwo₂, map_zero]
   rw [Matrix.mulVec_add, Matrix.mulVec_smul, Matrix.mulVec_smul,
     Matrix.mulVec_single_one, Matrix.mulVec_single_one, coe_rootSubgroupPoints_one]
   simp [unitRootMatrix, rootMatrix_inl, rootDividedSquareMatrix_inl, raisingTarget,
