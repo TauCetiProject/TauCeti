@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Algebra.Opposite
 public import Mathlib.RingTheory.TensorProduct.Basic
-public import TauCeti.Algebra.Algebra.Frobenius.Casimir
+public import TauCeti.LinearAlgebra.TensorProduct.Basic
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.Trace
 
 /-!
