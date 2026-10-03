@@ -90,8 +90,7 @@ def _root_.QuadraticMap.IsometryEquiv.polarKernelEquiv
     [AddCommGroup N] [Module R N] {Q₁ : QuadraticMap R M₁ N} {Q₂ : QuadraticMap R M₂ N}
     (e : Q₁.IsometryEquiv Q₂) (x : M₁) :
     LinearMap.ker (Q₁.polarBilin x) ≃ₗ[R] LinearMap.ker (Q₂.polarBilin (e x)) :=
-  (e.toLinearEquiv.submoduleMap _).trans
-    (LinearEquiv.ofEq _ _ (e.map_polarKernel x))
+  e.toLinearEquiv.ofSubmodules _ _ (e.map_polarKernel x)
 
 /-- The equivalence between polar kernels acts through the original isometry. -/
 @[simp]
@@ -101,8 +100,7 @@ theorem _root_.QuadraticMap.IsometryEquiv.coe_polarKernelEquiv_apply
     [AddCommGroup N] [Module R N] {Q₁ : QuadraticMap R M₁ N} {Q₂ : QuadraticMap R M₂ N}
     (e : Q₁.IsometryEquiv Q₂) (x : M₁) (y : LinearMap.ker (Q₁.polarBilin x)) :
     ((e.polarKernelEquiv x y : LinearMap.ker (Q₂.polarBilin (e x))) : M₂) = e y :=
-  -- Keep the computation proof opaque so the public equivalence need not be exposed.
-  (rfl)
+  e.toLinearEquiv.ofSubmodules_apply (e.map_polarKernel x) y
 
 /-- The inverse equivalence between polar kernels acts through the inverse isometry. -/
 @[simp]
@@ -111,15 +109,8 @@ theorem _root_.QuadraticMap.IsometryEquiv.coe_polarKernelEquiv_symm_apply
     [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂] [Module R M₂]
     [AddCommGroup N] [Module R N] {Q₁ : QuadraticMap R M₁ N} {Q₂ : QuadraticMap R M₂ N}
     (e : Q₁.IsometryEquiv Q₂) (x : M₁) (y : LinearMap.ker (Q₂.polarBilin (e x))) :
-    (((e.polarKernelEquiv x).symm y : LinearMap.ker (Q₁.polarBilin x)) : M₁) = e.symm y := by
-  apply e.injective
-  calc
-    e ((e.polarKernelEquiv x).symm y : M₁) =
-        ((e.polarKernelEquiv x) ((e.polarKernelEquiv x).symm y) :
-          LinearMap.ker (Q₂.polarBilin (e x))) :=
-      (e.coe_polarKernelEquiv_apply x _).symm
-    _ = y := congrArg Subtype.val ((e.polarKernelEquiv x).apply_symm_apply y)
-    _ = e (e.symm y) := (e.apply_symm_apply y).symm
+    (((e.polarKernelEquiv x).symm y : LinearMap.ker (Q₁.polarBilin x)) : M₁) = e.symm y :=
+  e.toLinearEquiv.ofSubmodules_symm_apply (e.map_polarKernel x) y
 
 /-- The composition of two isometric equivalences acts by composing their underlying maps. -/
 @[simp]
