@@ -9,7 +9,7 @@ public import Mathlib.Topology.Homotopy.Lifting
 public import TauCeti.AlgebraicTopology.FundamentalGroup.Homeomorph
 public import TauCeti.AlgebraicTopology.NotSimplyConnected
 public import TauCeti.AlgebraicTopology.Sphere.SimplyConnected
-public import TauCeti.Geometry.Manifold.Instances.LensSpace
+public import TauCeti.AlgebraicTopology.UniversalCover.LensSpace.Basic
 
 /-!
 # The fundamental group of a lens space
@@ -68,7 +68,7 @@ variable (m : ℕ) [NeZero m] {k : ℕ} (ℓ : Fin (k + 1) → (ZMod m)ˣ)
 private theorem simplyConnectedSpace_sphere (hk : 1 ≤ k) :
     SimplyConnectedSpace (sphere (0 : EuclideanSpace ℂ (Fin (k + 1))) 1) := by
   refine TauCeti.simplyConnectedSpace_sphere ?_
-  rw [← finrank_eq_rank, (factFinrankEuclideanSpaceComplex k).out, Nat.ofNat_lt_cast]
+  rw [← finrank_eq_rank, finrank_real_of_complex, finrank_euclideanSpace_fin, Nat.ofNat_lt_cast]
   omega
 
 /-- **The fundamental group of a lens space `L(m; ℓ₀, …, ℓₖ)` with `1 ≤ k` is `ℤ/m`**, at any
