@@ -53,8 +53,9 @@ recomputed at the transform, whose roots are in bijection with those of `f`.
 * `Polynomial.aroots_tschirnhausPolynomial`, `Polynomial.rootSet_tschirnhausPolynomial`: the roots
   of the transform are the values of `T` at the roots of `f`.
   The `_field` variants cover nonmonic polynomials over fields.
-* `Polynomial.tschirnhausRootMap`: the resulting surjection from the roots of `f` onto the roots
-  of its transform.
+* `Polynomial.Monic.tschirnhausRootMap`, `Polynomial.tschirnhausRootMap`: the resulting
+  surjection from the roots of `f` onto the roots of its transform, for monic `f` over a domain
+  and for nonzero `f` over a field.
 * `Polynomial.separable_tschirnhausPolynomial_iff`: the transform is separable if and only if `f`
   is separable and `T` is admissible.
 * `Polynomial.TschirnhausAdmissible.bijOn_rootSet`: an admissible `T` maps the roots of `f`
@@ -255,6 +256,30 @@ theorem rootSet_tschirnhausPolynomial {f : K[X]} (hf : f.Monic)
   ext b
   simp [rootSet_def, aroots_tschirnhausPolynomial hf hs]
 
+/-- The map from the roots of a monic polynomial `f` to the roots of its Tschirnhaus transform,
+sending `α` to `T(α)`, in a domain `L` in which `f` splits. -/
+noncomputable def Monic.tschirnhausRootMap {f : K[X]} (hf : f.Monic)
+    (hs : (f.map (algebraMap K L)).Splits) (T : K[X]) :
+    f.rootSet L → (tschirnhausPolynomial f T).rootSet L :=
+  Set.MapsTo.restrict (fun a ↦ aeval a T) _ _ <| by
+    rw [rootSet_tschirnhausPolynomial hf hs]
+    exact Set.mapsTo_image _ _
+
+@[simp]
+theorem Monic.coe_tschirnhausRootMap {f : K[X]} (hf : f.Monic)
+    (hs : (f.map (algebraMap K L)).Splits) (T : K[X]) (x : f.rootSet L) :
+    (hf.tschirnhausRootMap hs T x : L) = aeval (x : L) T :=
+  Set.MapsTo.val_restrict_apply _ _
+
+/-- Every root of the Tschirnhaus transform of a monic polynomial is the image of a root of the
+original polynomial. -/
+theorem Monic.tschirnhausRootMap_surjective {f : K[X]} (hf : f.Monic)
+    (hs : (f.map (algebraMap K L)).Splits) (T : K[X]) :
+    Function.Surjective (hf.tschirnhausRootMap hs T) := by
+  rw [Monic.tschirnhausRootMap, Set.MapsTo.restrict_surjective_iff,
+    rootSet_tschirnhausPolynomial hf hs]
+  exact Set.surjOn_image _ _
+
 /-- If a monic polynomial splits after a base change, then its Tschirnhaus transform splits
 after the same base change. -/
 theorem splits_map_tschirnhausPolynomial {f : K[X]} (hf : f.Monic)
@@ -289,31 +314,29 @@ theorem rootSet_tschirnhausPolynomial_field {f : K[X]} (hf : f ≠ 0)
   ext b
   simp [rootSet_def, aroots_tschirnhausPolynomial_field hf hs]
 
-/-- The map from the roots of a nonzero polynomial to the roots of its Tschirnhaus transform,
-sending `α` to `T(α)`. -/
+/-- The map from the roots of a nonzero field polynomial to the roots of its Tschirnhaus
+transform, sending `α` to `T(α)`. -/
 noncomputable def tschirnhausRootMap {f : K[X]} (hf : f ≠ 0)
     (hs : (f.map (algebraMap K L)).Splits) (T : K[X]) :
-    f.rootSet L → (tschirnhausPolynomial f T).rootSet L := fun x ↦
-  ⟨aeval (x : L) T, by
+    f.rootSet L → (tschirnhausPolynomial f T).rootSet L :=
+  Set.MapsTo.restrict (fun a ↦ aeval a T) _ _ <| by
     rw [rootSet_tschirnhausPolynomial_field hf hs]
-    exact ⟨x, x.2, rfl⟩⟩
+    exact Set.mapsTo_image _ _
 
 @[simp]
 theorem coe_tschirnhausRootMap {f : K[X]} (hf : f ≠ 0)
     (hs : (f.map (algebraMap K L)).Splits) (T : K[X]) (x : f.rootSet L) :
     (tschirnhausRootMap hf hs T x : L) = aeval (x : L) T :=
-  (rfl)
+  Set.MapsTo.val_restrict_apply _ _
 
-/-- Every root of a Tschirnhaus transform is the image of a root of the original polynomial. -/
+/-- Every root of the Tschirnhaus transform of a nonzero field polynomial is the image of a root
+of the original polynomial. -/
 theorem tschirnhausRootMap_surjective {f : K[X]} (hf : f ≠ 0)
     (hs : (f.map (algebraMap K L)).Splits) (T : K[X]) :
     Function.Surjective (tschirnhausRootMap hf hs T) := by
-  intro y
-  have hy : (y : L) ∈ (fun a ↦ aeval a T) '' f.rootSet L := by
-    rw [← rootSet_tschirnhausPolynomial_field hf hs]
-    exact y.2
-  obtain ⟨x, hx, hxy⟩ := hy
-  exact ⟨⟨x, hx⟩, Subtype.ext hxy⟩
+  rw [tschirnhausRootMap, Set.MapsTo.restrict_surjective_iff,
+    rootSet_tschirnhausPolynomial_field hf hs]
+  exact Set.surjOn_image _ _
 
 /-- Over fields, if a polynomial splits after a base change, then its Tschirnhaus transform
 splits after the same base change. -/
