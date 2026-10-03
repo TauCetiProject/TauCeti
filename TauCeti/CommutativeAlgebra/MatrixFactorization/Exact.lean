@@ -39,7 +39,7 @@ variable {S : Type u} [CommRing S] {w : S}
 attribute [local instance] HasBinaryBiproducts.of_hasBinaryCoproducts
 
 /-- Finite-projective duplexes are closed under componentwise split extensions. -/
-theorem isProjective_extensionClosed :
+theorem isExtensionClosed_isProjective :
     ((ExactStructure.split (FGModuleCat.{u} S)).curvedDuplex w).IsExtensionClosed
       (isProjective S w) where
   prop_X₂ {T} hT h₁ h₃ := by
@@ -58,19 +58,19 @@ theorem isProjective_extensionClosed :
       Module.Projective.of_equiv' (FGModuleCat.isoToLinearEquiv s₁.isoBinaryBiproduct).symm⟩
 
 /-- The finite-projective subcategory contains a zero duplex. -/
-instance isProjective_containsZero : (isProjective S w).ContainsZero where
+instance containsZero_isProjective : (isProjective S w).ContainsZero where
   exists_zero := ⟨zero.obj, (inclusion (S := S) (w := w)).map_isZero isZero_zero,
     zero.property⟩
 
 /-- Finite projectivity of the two components is invariant under duplex isomorphisms. -/
-instance isProjective_isClosedUnderIsomorphisms :
+instance isClosedUnderIsomorphisms_isProjective :
     (isProjective S w).IsClosedUnderIsomorphisms :=
-  isProjective_extensionClosed.isClosedUnderIsomorphisms
+  isExtensionClosed_isProjective.isClosedUnderIsomorphisms
 
 /-- The finite-projective subcategory is closed under binary products. -/
-instance isProjective_isClosedUnderBinaryProducts :
+instance isClosedUnderBinaryProducts_isProjective :
     (isProjective S w).IsClosedUnderBinaryProducts :=
-  isProjective_extensionClosed.isClosedUnderBinaryProducts
+  isExtensionClosed_isProjective.isClosedUnderBinaryProducts
 
 /-- In a componentwise split conflation, projectivity of the middle components implies
 projectivity of both outer components, since each is a direct summand of the middle one. -/
@@ -101,13 +101,13 @@ variable (S w)
 on each underlying module, without requiring differential-compatible splittings. -/
 noncomputable def splitExact : ExactStructure (MatrixFactorization S w) :=
   ((ExactStructure.split (FGModuleCat.{u} S)).curvedDuplex w).fullSubcategory
-    (isProjective S w) isProjective_extensionClosed
+    (isProjective S w) isExtensionClosed_isProjective
 
 /-- The componentwise split structure is induced from the ambient curved-duplex structure. -/
 theorem splitExact_def :
     splitExact S w =
       ((ExactStructure.split (FGModuleCat.{u} S)).curvedDuplex w).fullSubcategory
-        (isProjective S w) isProjective_extensionClosed := (rfl)
+        (isProjective S w) isExtensionClosed_isProjective := (rfl)
 
 variable {S w}
 
@@ -123,7 +123,7 @@ in each parity. -/
 theorem isConflationExact_inclusion :
     (splitExact S w).IsConflationExact
       ((ExactStructure.split (FGModuleCat.{u} S)).curvedDuplex w) inclusion :=
-  ExactStructure.isConflationExact_ι isProjective_extensionClosed
+  ExactStructure.isConflationExact_ι isExtensionClosed_isProjective
 
 /-- An inflation in the finite-projective subcategory is precisely an ambient componentwise
 split inflation. Its cokernel remains finite projective. -/

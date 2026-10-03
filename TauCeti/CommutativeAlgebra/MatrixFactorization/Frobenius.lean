@@ -55,7 +55,7 @@ theorem splitExact_isInjective_of_mem_nullHomotopic {X : MatrixFactorization S w
     (hX : 𝟙 X ∈ (nullHomotopic (S := S) (w := w)).hom X X) :
     (splitExact S w).isInjective X := by
   rw [splitExact_def]
-  apply ExactStructure.isInjective_fullSubcategory_of_isInjective isProjective_extensionClosed
+  apply ExactStructure.isInjective_fullSubcategory_of_isInjective isExtensionClosed_isProjective
   apply ExactStructure.curvedDuplex_split_isInjective_of_mem_nullHomotopic
   obtain ⟨h₀, h₁, hh⟩ := (mem_nullHomotopic_iff (𝟙 X)).mp hX
   exact CurvedDuplex.mem_nullHomotopic_iff.mpr ⟨h₀, h₁, by simpa using hh⟩
@@ -66,7 +66,7 @@ theorem splitExact_isProjective_of_mem_nullHomotopic {X : MatrixFactorization S 
     (hX : 𝟙 X ∈ (nullHomotopic (S := S) (w := w)).hom X X) :
     (splitExact S w).isProjective X := by
   rw [splitExact_def]
-  apply ExactStructure.isProjective_fullSubcategory_of_isProjective isProjective_extensionClosed
+  apply ExactStructure.isProjective_fullSubcategory_of_isProjective isExtensionClosed_isProjective
   apply ExactStructure.curvedDuplex_split_isProjective_of_mem_nullHomotopic
   obtain ⟨h₀, h₁, hh⟩ := (mem_nullHomotopic_iff (𝟙 X)).mp hX
   exact CurvedDuplex.mem_nullHomotopic_iff.mpr ⟨h₀, h₁, by simpa using hh⟩
