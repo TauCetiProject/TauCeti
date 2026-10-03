@@ -63,8 +63,10 @@ trivial integral representation. -/
 def unitsValuationHom : Rep.ofMulDistribMulAction (L ≃ₐ[K] L) Lˣ ⟶ Rep.trivial ℤ (L ≃ₐ[K] L) ℤ :=
   Rep.ofHom <| LinearMap.intertwiningMap_of_isIntertwiningMap _ _
     (normalizedValuation L).toAdditiveLeft.toIntLinearMap fun σ x ↦ by
-      -- The target action is trivial. Equality of normalized valuations follows from equality
-      -- of the original valuations through their order comparison, without choosing a uniformizer.
+      -- `change` evaluates `Representation.ofMulDistribMulAction` on `Additive Lˣ`,
+      -- reduces the target's `Representation.trivial` action to the identity, and evaluates
+      -- `toAdditiveLeft.toIntLinearMap` as `Multiplicative.toAdd` of normalized valuation.
+      -- Equality then follows from the original valuations through their order comparison.
       change (normalizedValuation L (σ • x.toMul)).toAdd =
         (normalizedValuation L x.toMul).toAdd
       apply le_antisymm <;> rw [toAdd_normalizedValuation_le_iff_valuation_le] <;>
@@ -138,8 +140,7 @@ section Cyclic
 
 variable [IsCyclic (L ≃ₐ[K] L)]
 
-/-- Degree-minus-one Tate cohomology of the valuation-zero units is finite. The connecting
-map from degree minus two of trivial `ℤ` surjects onto it. -/
+/-- Degree-minus-one Tate cohomology of the valuation-zero units is finite. -/
 instance finite_tateCohomology_negOne_unitFiltration_zero :
     Finite (tateCohomology
       (Rep.ofMulDistribMulAction (L ≃ₐ[K] L) (unitFiltration L 0)) (-1)) := by
