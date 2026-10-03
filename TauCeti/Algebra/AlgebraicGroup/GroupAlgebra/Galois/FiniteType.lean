@@ -9,6 +9,8 @@ public import Mathlib.RingTheory.Adjoin.Tower
 public import Mathlib.RingTheory.FiniteType
 public import Mathlib.RingTheory.Invariant.Basic
 public import TauCeti.Algebra.AlgebraicGroup.GroupAlgebra.Galois.Invariants
+public import TauCeti.RingTheory.Invariant.Basic
+import all TauCeti.Algebra.AlgebraicGroup.GroupAlgebra.Galois.Invariants
 
 /-!
 # Finiteness of descended group algebras
@@ -73,12 +75,13 @@ theorem isIntegral_groupAlgebra_over_groupAlgebraInvariants
         Algebra.algebraMap_self, RingHom.id_apply] using
         congrArg (· * groupAlgebraAction rho σ y)
           ((mem_groupAlgebraInvariants_iff rho x).mp x.property σ)⟩
+  let _ : SMulCommClass (L ≃ₐ[k] L) k (MonoidAlgebra L (Multiplicative M)) :=
+    ⟨fun σ r x ↦ map_smul (groupAlgebraAction rho σ) r x⟩
   let _ : Algebra.IsInvariant (groupAlgebraInvariants rho)
       (MonoidAlgebra L (Multiplicative M)) (L ≃ₐ[k] L) :=
-    { isInvariant := fun x hx ↦ by
-        refine ⟨⟨x, (mem_groupAlgebraInvariants_iff rho x).mpr ?_⟩, rfl⟩
-        intro σ
-        simpa only [action_apply] using hx σ }
+    inferInstanceAs (Algebra.IsInvariant
+      (FixedPoints.subalgebra k (MonoidAlgebra L (Multiplicative M)) (L ≃ₐ[k] L))
+      (MonoidAlgebra L (Multiplicative M)) (L ≃ₐ[k] L))
   exact Algebra.IsInvariant.isIntegral
     (groupAlgebraInvariants rho) (MonoidAlgebra L (Multiplicative M)) (L ≃ₐ[k] L)
 
@@ -93,14 +96,19 @@ theorem moduleFinite_groupAlgebra_over_groupAlgebraInvariants
   let _ : Group.FG (Multiplicative M) := AddGroup.fg_iff_mul_fg.mp inferInstance
   let _ : Algebra.FiniteType k (MonoidAlgebra L (Multiplicative M)) :=
     Algebra.FiniteType.trans (R := k) (S := L) inferInstance inferInstance
-  let _ : Algebra.FiniteType (groupAlgebraInvariants rho)
-      (MonoidAlgebra L (Multiplicative M)) :=
-    Algebra.FiniteType.of_restrictScalars_finiteType k
-      (groupAlgebraInvariants rho) (MonoidAlgebra L (Multiplicative M))
-  let _ : Algebra.IsIntegral (groupAlgebraInvariants rho)
-      (MonoidAlgebra L (Multiplicative M)) :=
-    isIntegral_groupAlgebra_over_groupAlgebraInvariants rho
-  exact Algebra.IsIntegral.finite
+  let _ : SMul (L ≃ₐ[k] L) (MonoidAlgebra L (Multiplicative M)) :=
+    ⟨fun σ x ↦ groupAlgebraAction rho σ x⟩
+  let _ : MulSemiringAction (L ≃ₐ[k] L) (MonoidAlgebra L (Multiplicative M)) :=
+    MulSemiringAction.compHom _ (groupAlgebraAction rho)
+  let _ : SMulCommClass (L ≃ₐ[k] L) k (MonoidAlgebra L (Multiplicative M)) :=
+    ⟨fun σ r x ↦ map_smul (groupAlgebraAction rho σ) r x⟩
+  let _ : Algebra.IsInvariant (groupAlgebraInvariants rho)
+      (MonoidAlgebra L (Multiplicative M)) (L ≃ₐ[k] L) :=
+    inferInstanceAs (Algebra.IsInvariant
+      (FixedPoints.subalgebra k (MonoidAlgebra L (Multiplicative M)) (L ≃ₐ[k] L))
+      (MonoidAlgebra L (Multiplicative M)) (L ≃ₐ[k] L))
+  exact TauCeti.Algebra.IsInvariant.finite_of_finiteType k (groupAlgebraInvariants rho)
+    (MonoidAlgebra L (Multiplicative M)) (L ≃ₐ[k] L)
 
 /-- For a finite-type extension with finite automorphism group, the invariant algebra of the
 automorphism action on the group algebra of a finitely generated abelian group is finite type over

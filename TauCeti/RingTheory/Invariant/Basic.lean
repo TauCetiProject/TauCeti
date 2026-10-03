@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Polynomial.Roots
 public import Mathlib.RingTheory.Invariant.Basic
+public import Mathlib.RingTheory.IntegralClosure.IsIntegralClosure.Basic
 
 /-!
 # Divisibility by the characteristic polynomial of a group action
@@ -20,6 +21,8 @@ intermediate ring with a product of displacements of a generator of the top ring
 
 ## Main results
 
+* `TauCeti.Algebra.IsInvariant.finite_of_finiteType`: a finite-type algebra is module-finite
+  over an intermediate invariant ring for a finite group action.
 * `TauCeti.MulSemiringAction.charpoly_dvd`: if `g ↦ g • b` is injective and `f` vanishes at every
   `g • b`, then `charpoly G b ∣ f`.
 * `TauCeti.MulSemiringAction.eval_smul_charpoly`: evaluating `σ • charpoly H b` at `b` gives the
@@ -38,6 +41,24 @@ instance fixedPointsSubalgebraIsInvariant (R A G : Type*) [CommSemiring R] [Comm
     [Algebra R A] [Group G] [MulSemiringAction G A] [SMulCommClass G R A] :
     Algebra.IsInvariant (FixedPoints.subalgebra R A G) A G where
   isInvariant a ha := ⟨⟨a, ha⟩, rfl⟩
+
+end TauCeti.MulSemiringAction
+
+namespace TauCeti.Algebra.IsInvariant
+
+/-- A finite-type algebra is module-finite over an intermediate invariant ring for a finite
+group action. No Noetherian hypothesis on the base ring is needed. -/
+theorem finite_of_finiteType (R S A G : Type*) [CommRing R] [CommRing S] [CommRing A]
+    [Algebra R S] [Algebra R A] [Algebra S A] [IsScalarTower R S A]
+    [Group G] [Finite G] [MulSemiringAction G A] [Algebra.IsInvariant S A G]
+    [Algebra.FiniteType R A] : Module.Finite S A := by
+  let := Algebra.IsInvariant.isIntegral S A G
+  let := Algebra.FiniteType.of_restrictScalars_finiteType R S A
+  exact Algebra.IsIntegral.finite
+
+end TauCeti.Algebra.IsInvariant
+
+namespace TauCeti.MulSemiringAction
 
 section
 

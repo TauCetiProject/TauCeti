@@ -46,47 +46,48 @@ variable (R A : Type u) (G : Type v) [CommRing R] [CommRing A] [Algebra R A]
 noncomputable abbrev quotient : Scheme.{u} :=
   Spec (CommRingCat.of (FixedPoints.subalgebra R A G))
 
-instance : IsAffine (quotient R A G) :=
-  inferInstanceAs (IsAffine (Spec _))
-
 /-- The quotient projection, induced by the inclusion of invariant functions. -/
 noncomputable def projection : Spec (CommRingCat.of A) ⟶ quotient R A G :=
-  Spec.map (CommRingCat.ofHom (FixedPoints.subalgebra R A G).val.toRingHom)
-
-/-- The structure morphism of the invariant quotient over `Spec R`. -/
-noncomputable def structureMap : quotient R A G ⟶ Spec (CommRingCat.of R) :=
-  Spec.map (CommRingCat.ofHom (algebraMap R (FixedPoints.subalgebra R A G)))
+  Spec.algebraMap (FixedPoints.subalgebra R A G) A
 
 /-- The quotient projection lies over the invariant base ring. -/
 @[reassoc (attr := simp)]
 theorem projection_structureMap :
-    projection R A G ≫ structureMap R A G = Spec.algebraMap R A := by
-  rw [projection, structureMap, ← Spec.map_comp]
+    projection R A G ≫ Spec.algebraMap R (FixedPoints.subalgebra R A G) =
+      Spec.algebraMap R A := by
+  rw [projection, ← Spec.map_comp]
   rfl
 
 /-- The automorphism of the spectrum induced contravariantly by an element of the group. -/
 noncomputable def translate (g : G) : Spec (CommRingCat.of A) ⟶ Spec (CommRingCat.of A) :=
-  Spec.map (CommRingCat.ofHom (MulSemiringAction.toRingHom G A g))
+  Spec.map (CommRingCat.ofHom (MulSemiringAction.toRingEquiv G A g).toRingHom)
 
 @[simp]
 theorem translate_one : translate A G 1 = 𝟙 _ := by
-  rw [translate, ← Spec.map_id]
-  congr 1
-  ext a
-  exact one_smul G a
+  rw [translate, map_one]
+  exact Spec.map_id _
 
 /-- Pullback reverses composition: these morphisms form a right action on the spectrum. -/
 theorem translate_mul (g h : G) :
     translate A G (g * h) = translate A G g ≫ translate A G h := by
-  rw [translate, translate, translate, ← Spec.map_comp]
-  congr 1
-  ext a
-  exact mul_smul g h a
+  simp only [translate, map_mul]
+  change Spec.map (CommRingCat.ofHom (MulSemiringAction.toRingEquiv G A h).toRingHom ≫
+    CommRingCat.ofHom (MulSemiringAction.toRingEquiv G A g).toRingHom) = _
+  exact Spec.map_comp _ _
 
 instance (g : G) : IsIso (translate A G g) := by
-  refine ⟨⟨translate A G g⁻¹, ?_, ?_⟩⟩
-  · rw [← translate_mul, mul_inv_cancel, translate_one]
-  · rw [← translate_mul, inv_mul_cancel, translate_one]
+  exact isIso_SpecMap_iff.mpr (MulSemiringAction.toRingEquiv G A g).bijective
+
+/-- Contravariant translation by `g` is the standard spectrum action by `g⁻¹`. -/
+@[simp]
+theorem translate_apply (g : G) (x : PrimeSpectrum A) :
+    (translate A G g).base x = g⁻¹ • x := by
+  apply PrimeSpectrum.ext
+  change x.asIdeal.comap (MulSemiringAction.toRingEquiv G A g).toRingHom = _
+  rw [PrimeSpectrum.asIdeal_smul, Ideal.pointwise_smul_eq_comap]
+  change x.asIdeal.comap (MulSemiringAction.toRingEquiv G A g).toRingHom =
+    x.asIdeal.comap ((MulSemiringAction.toRingEquiv G A) g⁻¹)⁻¹.toRingHom
+  rw [map_inv, inv_inv]
 
 /-- The quotient projection is invariant under every group element. -/
 @[reassoc (attr := simp)]
@@ -127,7 +128,7 @@ theorem projection_desc {Y : Scheme.{u}} [IsAffine Y]
   have h : CommRingCat.ofHom
       ((Spec.preimage (f ≫ Y.isoSpec.hom)).hom.codRestrict
         (FixedPoints.subalgebra R A G).toSubring (preimage_mem_fixed (R := R) f hf)) ≫
-      CommRingCat.ofHom (FixedPoints.subalgebra R A G).val.toRingHom =
+      CommRingCat.ofHom (algebraMap (FixedPoints.subalgebra R A G) A) =
       Spec.preimage (f ≫ Y.isoSpec.hom) := by
     ext a
     rfl
@@ -174,9 +175,7 @@ instance : Surjective (projection R A G) := by
 /-- A finite-type algebra over an invariant base is module-finite over its fixed subalgebra;
 consequently its quotient projection is finite. -/
 instance [Algebra.FiniteType R A] : IsFinite (projection R A G) := by
-  let := Algebra.IsInvariant.isIntegral (FixedPoints.subalgebra R A G) A G
-  let := Algebra.FiniteType.of_restrictScalars_finiteType R (FixedPoints.subalgebra R A G) A
-  let := Algebra.IsIntegral.finite (R := FixedPoints.subalgebra R A G) (A := A)
+  let := TauCeti.Algebra.IsInvariant.finite_of_finiteType R (FixedPoints.subalgebra R A G) A G
   exact IsFinite.SpecMap_iff _ |>.mpr (RingHom.finite_algebraMap.mpr inferInstance)
 
 /-- The projection is a quotient map of topological spaces. -/
@@ -184,10 +183,10 @@ theorem isQuotientMap_projection : Topology.IsQuotientMap (projection R A G) :=
   (projection R A G).isClosedMap.isQuotientMap
     (projection R A G).continuous (Surjective.surj (f := projection R A G))
 
-/-- Two points have the same image exactly when their prime ideals are in the same orbit. -/
+/-- Two points have the same image exactly when they are in the same spectrum orbit. -/
 theorem projection_eq_iff_exists_smul (x y : PrimeSpectrum A) :
     projection R A G x = projection R A G y ↔
-      ∃ g : G, y.asIdeal = g • x.asIdeal := by
+      ∃ g : G, y = g • x := by
   -- The underlying map of `Spec.map` is contraction of prime ideals.
   change PrimeSpectrum.comap (algebraMap (FixedPoints.subalgebra R A G) A) x =
     PrimeSpectrum.comap (algebraMap (FixedPoints.subalgebra R A G) A) y ↔ _
@@ -195,9 +194,11 @@ theorem projection_eq_iff_exists_smul (x y : PrimeSpectrum A) :
   simp only [PrimeSpectrum.comap_asIdeal, ← Ideal.under_def]
   constructor
   · intro h
-    exact Algebra.IsInvariant.exists_smul_of_under_eq (FixedPoints.subalgebra R A G) A G
-      x.asIdeal y.asIdeal h
+    obtain ⟨g, hg⟩ := Algebra.IsInvariant.exists_smul_of_under_eq
+      (FixedPoints.subalgebra R A G) A G x.asIdeal y.asIdeal h
+    exact ⟨g, PrimeSpectrum.ext hg⟩
   · rintro ⟨g, hg⟩
-    simpa only [hg] using (Ideal.under_smul (FixedPoints.subalgebra R A G) x.asIdeal g).symm
+    simpa only [hg, PrimeSpectrum.asIdeal_smul] using
+      (Ideal.under_smul (FixedPoints.subalgebra R A G) x.asIdeal g).symm
 
 end TauCeti.AffineInvariantQuotient
