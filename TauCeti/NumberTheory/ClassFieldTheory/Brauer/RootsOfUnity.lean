@@ -26,9 +26,15 @@ Only invertibility in the field is required, not in its valuation ring. Thus in 
 zero the construction works for every nonzero `n`, including exponents divisible by the residue
 characteristic (`h2MuEquivZMod_mixed`).
 
+When `F` contains a primitive `n`th root of unity `ζ`, the root identifies the trivial
+coefficients `ℤ/n` with `μₙ`, and `h2FpEquivZMod hζ : H²(F, ℤ/n) ≃+ ZMod n` is the transported
+invariant. In particular `H²(F, ℤ/n)` then has exactly `n` elements.
+
 ## Main definitions
 
 * `h2MuEquivZMod`: the normalized identification `H²(F, μₙ) ≃+ ZMod n`.
+* `h2FpEquivZMod`: the normalized identification `H²(F, ℤ/n) ≃+ ZMod n` with trivial
+  coefficients, given a primitive `n`th root of unity in `F`.
 
 ## Main results
 
@@ -38,6 +44,9 @@ characteristic (`h2MuEquivZMod_mixed`).
 * `h2MuEquivZMod_eq_iff`: the invariant characterizes each residue.
 * `h2MuEquivZMod_mixed`: the identification exists for every nonzero exponent in
   characteristic zero.
+* `toRatAddCircle_h2FpEquivZMod`, `h2FpEquivZMod_eq_iff`: the normalization with trivial
+  coefficients.
+* `natCard_cohomFp_two_absoluteGaloisGroup_of_isPrimitiveRoot`: `H²(F, ℤ/n)` has `n` elements.
 
 ## References
 
@@ -130,5 +139,64 @@ by `p`. The witness is the normalized equivalence `h2MuEquivZMod`. -/
 theorem h2MuEquivZMod_mixed [CharZero F] (n : ℕ) (hn : n ≠ 0) :
     Nonempty (continuousCohomology 2 (muNRep n F) ≃+ ZMod n) :=
   ⟨h2MuEquivZMod F (Nat.cast_ne_zero.mpr hn).isUnit⟩
+
+/-! ### Trivial coefficients -/
+
+section TrivialFp
+
+variable {F} [NeZero n]
+
+/-- **The local invariant on `H²(F, ℤ/n)` with trivial coefficients**, for `F` containing a
+primitive `n`th root of unity `ζ`. The root identifies the trivial coefficients `ℤ/n` with `μₙ`
+(`muNRepH2EquivTrivialFp`), along which `h2MuEquivZMod` is transported. The identification of
+coefficients is essential: an arbitrary coefficient object, such as the zero module, need not
+have `H²` isomorphic to `ℤ/n`. -/
+def h2FpEquivZMod {ζ : F} (hζ : IsPrimitiveRoot ζ n) :
+    cohomFp n (Field.absoluteGaloisGroup F) 2 ≃+ ZMod n :=
+  (muNRepH2EquivTrivialFp n F hζ).symm.trans (h2MuEquivZMod F hζ.neZero'.out.isUnit)
+
+/-- The trivial-coefficient invariant of the transport of a roots-of-unity class is its
+roots-of-unity invariant. -/
+@[simp]
+theorem h2FpEquivZMod_muNRepH2EquivTrivialFp {ζ : F} (hζ : IsPrimitiveRoot ζ n)
+    (x : continuousCohomology 2 (muNRep n F)) :
+    h2FpEquivZMod hζ (muNRepH2EquivTrivialFp n F hζ x) =
+      h2MuEquivZMod F hζ.neZero'.out.isUnit x := by
+  rw [h2FpEquivZMod, AddEquiv.trans_apply, AddEquiv.symm_apply_apply]
+
+/-- The inverse trivial-coefficient invariant is the transport of the inverse roots-of-unity
+invariant. -/
+theorem h2FpEquivZMod_symm_apply {ζ : F} (hζ : IsPrimitiveRoot ζ n) (z : ZMod n) :
+    (h2FpEquivZMod hζ).symm z =
+      muNRepH2EquivTrivialFp n F hζ ((h2MuEquivZMod F hζ.neZero'.out.isUnit).symm z) :=
+  (rfl)
+
+/-- **The arithmetic normalization with trivial coefficients**: a class of `H²(F, ℤ/n)` maps to
+`k` exactly when the corresponding class of `H²(F, μₙ)` has Brauer invariant `k/n`. -/
+@[simp]
+theorem toRatAddCircle_h2FpEquivZMod {ζ : F} (hζ : IsPrimitiveRoot ζ n)
+    (x : cohomFp n (Field.absoluteGaloisGroup F) 2) :
+    ZMod.toRatAddCircle n (h2FpEquivZMod hζ x) =
+      invMap F (h2MuToBr n F ((muNRepH2EquivTrivialFp n F hζ).symm x)) := by
+  rw [← toRatAddCircle_h2MuEquivZMod F hζ.neZero'.out.isUnit,
+    ← h2FpEquivZMod_muNRepH2EquivTrivialFp hζ, AddEquiv.apply_symm_apply]
+
+/-- A class of `H²(F, ℤ/n)` maps to a residue exactly when the Brauer invariant of the
+corresponding class of `H²(F, μₙ)` is that residue's rational-circle image. -/
+theorem h2FpEquivZMod_eq_iff {ζ : F} (hζ : IsPrimitiveRoot ζ n)
+    (x : cohomFp n (Field.absoluteGaloisGroup F) 2) (z : ZMod n) :
+    h2FpEquivZMod hζ x = z ↔
+      invMap F (h2MuToBr n F ((muNRepH2EquivTrivialFp n F hζ).symm x)) =
+        ZMod.toRatAddCircle n z := by
+  rw [← (ZMod.toRatAddCircle_injective n).eq_iff, toRatAddCircle_h2FpEquivZMod]
+
+/-- If `F` contains a primitive `n`th root of unity, then `H²(F, ℤ/n)` with trivial coefficients
+has exactly `n` elements. -/
+theorem natCard_cohomFp_two_absoluteGaloisGroup_of_isPrimitiveRoot {ζ : F}
+    (hζ : IsPrimitiveRoot ζ n) :
+    Nat.card (cohomFp n (Field.absoluteGaloisGroup F) 2) = n :=
+  (Nat.card_congr (h2FpEquivZMod hζ).toEquiv).trans (Nat.card_zmod n)
+
+end TrivialFp
 
 end TauCeti.ClassFieldTheory
