@@ -10,7 +10,7 @@ public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.ProP
 public import TauCeti.NumberTheory.Padics.PrincipalUnits
 import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 import TauCeti.NumberTheory.Padics.PadicIntegers
-import TauCeti.Topology.Algebra.ContinuousMonoidHom
+import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 
 /-!
 # The cyclotomic orientation of the maximal pro-`p` Galois group

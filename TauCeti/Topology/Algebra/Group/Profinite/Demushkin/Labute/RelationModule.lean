@@ -125,6 +125,14 @@ noncomputable def labuteRelatorClass (χ : F →ₜ* ℤ_[p]ˣ) (r : F)
   Additive.ofMul
     ((⟨r, hr⟩ : (χ : F →* ℤ_[p]ˣ).ker) : TopologicalAbelianization (χ : F →* ℤ_[p]ˣ).ker)
 
+/-- The relator class is the class of the relator in the topological abelianization of the
+character kernel. -/
+theorem labuteRelatorClass_def (χ : F →ₜ* ℤ_[p]ˣ) (r : F) (hr : r ∈ (χ : F →* ℤ_[p]ˣ).ker) :
+    labuteRelatorClass χ r hr =
+      Additive.ofMul
+        ((⟨r, hr⟩ : (χ : F →* ℤ_[p]ˣ).ker) : TopologicalAbelianization (χ : F →* ℤ_[p]ˣ).ker) :=
+  (rfl)
+
 /-- Conjugating a relator before taking its class agrees with Labute's action. -/
 @[simp]
 theorem labuteAction_relatorClass (χ : F →ₜ* ℤ_[p]ˣ) (y r : F)

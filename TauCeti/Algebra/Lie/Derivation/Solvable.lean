@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 import TauCeti.Algebra.Lie.Killing.Perfect
+public import TauCeti.Algebra.Lie.NilpotentExtension
 public import TauCeti.Algebra.Lie.Quotient
 public import TauCeti.Algebra.Lie.SemiDirect.Basic
 public import TauCeti.Algebra.Lie.Solvable.Derived
@@ -16,13 +17,17 @@ public import TauCeti.Algebra.Lie.Solvable.Derived
 Over a field of characteristic zero, every derivation of a finite-dimensional Lie algebra `L`
 maps the solvable radical `radical K L` into the nilradical `nilradical K L`. In particular every
 derivation of a solvable Lie algebra has image in the nilradical, the nilradical is stable under
-all derivations, and `⁅L, radical K L⁆ ≤ nilradical K L`. Stability under derivations gives the
-nilradical of an ideal: for every ideal `I` of `L`, the nilradical of `I` consists of the elements
-of `I` lying in the nilradical of `L`.
+all derivations, and `⁅L, radical K L⁆ ≤ nilradical K L`. The last inclusion gives the radical
+criterion: an element of the radical with nilpotent adjoint action lies in the nilradical.
+Stability under derivations gives the nilradical of an ideal: for every ideal `I` of `L`, the
+nilradical of `I` consists of the elements of `I` lying in the nilradical of `L`.
 
 These are the facts on derivation values used to refine a cofinite enveloping ideal into one
 stable under all lifted derivations, without assuming that the original ideal is stable, and to
-compare nilradicals along a flag of ideals between the nilradical and the radical.
+compare nilradicals along a flag of ideals between the nilradical and the radical. The radical
+criterion places the radical component of an `ad`-nilpotent element in the nilradical, which is
+how Hochschild shows that `ad`-nilpotent elements act nilpotently on modules where the nilradical
+does.
 
 ## Main results
 
@@ -32,6 +37,8 @@ compare nilradicals along a flag of ideals between the nilradical and the radica
 * `LieDerivation.apply_mem_nilradical_of_isSolvable`: every derivation of a finite-dimensional
   solvable Lie algebra in characteristic zero takes values in its nilradical.
 * `TauCeti.LieAlgebra.lie_radical_le_nilradical`: `⁅L, radical K L⁆ ≤ nilradical K L`.
+* `TauCeti.LieAlgebra.mem_nilradical_of_mem_radical_of_isNilpotent_ad`: **the radical
+  criterion**, an `ad`-nilpotent element of the radical lies in the nilradical.
 * `LieDerivation.apply_mem_nilradical_of_mem_radical`: **every derivation maps the radical into
   the nilradical.**
 * `LieDerivation.apply_mem_nilradical_of_mem_nilradical`: the nilradical is stable under every
@@ -45,6 +52,8 @@ compare nilradicals along a flag of ideals between the nilradical and the radica
   the derivation argument in the proof of Proposition E.5.
 * [N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 1-3*][bourbaki1975], Chapter I, §5, for
   the radical and the nilradical under derivations.
+* G. Hochschild, *An Addition to Ado's Theorem*, Proc. Amer. Math. Soc. **17** (1966), 531–533,
+  for the radical criterion.
 -/
 
 public section
@@ -151,6 +160,30 @@ theorem lie_radical_le_nilradical : ⁅(⊤ : LieIdeal K L), radical K L⁆ ≤ 
     (fun D z _ ↦ D.apply_mem_nilradical_of_isSolvable z)
     ((LieIdeal.ad (radical K L) x).apply_mem_nilradical_of_isSolvable ⟨r, hr⟩)
   rwa [LieIdeal.ad_apply_apply, LieSubmodule.coe_bracket] at h
+
+/-- **The radical criterion**: over a field of characteristic zero, an element of the solvable
+radical of a finite-dimensional Lie algebra whose adjoint action is nilpotent lies in the
+nilradical. -/
+theorem mem_nilradical_of_mem_radical_of_isNilpotent_ad {x : L} (hx : x ∈ radical K L)
+    (hnil : IsNilpotent (ad K L x)) : x ∈ nilradical K L := by
+  -- `⁅L, radical K L⁆ ≤ nilradical K L` makes `K ∙ x ⊔ nilradical K L` an ideal
+  let J : LieIdeal K L :=
+    { toSubmodule := (K ∙ x) ⊔ (nilradical K L).toSubmodule
+      lie_mem := fun {y m} hm => by
+        obtain ⟨a, ha, n, hn, rfl⟩ := Submodule.mem_sup.mp hm
+        obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.mp ha
+        refine Submodule.mem_sup_right ?_
+        rw [lie_add, lie_smul]
+        exact add_mem (Submodule.smul_mem _ c (lie_radical_le_nilradical K L
+          (LieSubmodule.lie_mem_lie (LieSubmodule.mem_top y) hx)))
+          ((nilradical K L).lie_mem hn) }
+  -- its elements are `ad`-nilpotent, so it is nilpotent by Engel's theorem
+  have hJ : LieRing.IsNilpotent J := by
+    rw [LieAlgebra.isNilpotent_iff_forall (R := K)]
+    intro z
+    exact (J : LieSubalgebra K L).isNilpotent_ad_of_isNilpotent_ad (x := z)
+      (isNilpotent_ad_of_mem_span_singleton_sup_nilradical hnil z.2)
+  exact J.le_nilradical K L hJ (Submodule.mem_sup_left (Submodule.mem_span_singleton_self x))
 
 end LieAlgebra
 

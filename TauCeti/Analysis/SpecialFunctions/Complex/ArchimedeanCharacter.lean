@@ -11,7 +11,7 @@ public import TauCeti.Geometry.Lie.Exponential.Units.Complex
 
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 import TauCeti.Data.SignType.Basic
-import TauCeti.Topology.Algebra.ContinuousMonoidHom
+import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 
 /-!
 # Continuous characters of `ℝˣ` and `ℂˣ`

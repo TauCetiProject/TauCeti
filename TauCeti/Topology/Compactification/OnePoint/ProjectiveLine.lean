@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Compactification.OnePoint.ProjectiveLine
+-- `Matrix.ProjGenLinGroup.mulActionOfGL` descends the `GL₂` action to `PGL₂` below, and
+-- `PGL(2, K)` occurs in the statements.
+public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Projective
 public import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup.FinTwo
 
 /-!
@@ -14,6 +17,11 @@ public import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup.FinTwo
 Mathlib's `OnePoint.smul_some_eq_ite` and `OnePoint.smul_infty_eq_ite` give the *value* of the
 `GL (Fin 2) K` action on `OnePoint K`. This file adds the companion *criterion* for the
 exceptional case — when an affine point is carried to `∞` — which Mathlib does not state.
+
+It then descends the `GL (Fin 2) K` action to the projective general linear group `PGL(2, K)`,
+which is possible because the scalar matrices fix every point
+(`TauCeti.scalar_smul_onePoint_eq_self`), and faithful because they are the whole kernel
+(`TauCeti.ker_toPermHom_onePoint_eq_center`).
 
 It then equips `OnePoint K` with the action of the projective special linear group
 `PSL(2, K)`, transported from Mathlib's action of `PSL(2, K)` on `ℙ K (Fin 2 → K)` along
@@ -33,6 +41,12 @@ stabilizer of a cusp, moved to `∞`, consists of translations.
 
 * `OnePoint.smul_some_eq_infty_iff`: `g • (k : OnePoint K) = ∞` exactly when the denominator
   `g 1 0 * k + g 1 1` vanishes.
+* `TauCeti.scalar_smul_onePoint_eq_self` and `TauCeti.mem_center_of_forall_smul_onePoint_eq_self`:
+  a matrix fixes every point of the projective line exactly when it is scalar, whence
+  `TauCeti.ker_toPermHom_onePoint_eq_center`, the kernel of the permutation representation of
+  `GL₂(F)` on the projective line.
+* `OnePoint.instMulActionPGL`: the action of `PGL(2, K)` on `OnePoint K`, with `pglMk_smul` and its
+  faithfulness.
 * `OnePoint.instMulActionPSL`: the action of `PSL(2, K)` on `OnePoint K`, with `pslMk_smul`.
 * `Matrix.ProjectiveSpecialLinearGroup.IsParabolic.smul_eq_self_iff`: a parabolic element fixes
   a point exactly when it is `parabolicFixedPoint g` (in characteristic other than two).
@@ -79,6 +93,93 @@ lemma smul_some_eq_infty_iff {g : GL (Fin 2) K} {k : K} :
   split_ifs with hz
   · simp [hz]
   · simp [hz]
+
+end OnePoint
+
+namespace TauCeti
+
+open Matrix OnePoint
+
+variable {F : Type*} [Field F] [DecidableEq F]
+
+/-- **A scalar matrix fixes every point of the projective line**: it rescales every vector, hence
+preserves every line. -/
+@[simp]
+theorem scalar_smul_onePoint_eq_self (u : Fˣ) (x : OnePoint F) :
+    Matrix.GeneralLinearGroup.scalar (Fin 2) u • x = x := by
+  induction x using OnePoint.rec with
+  | infty => exact OnePoint.smul_infty_eq_self_iff.mpr (by simp [Matrix.scalar_apply])
+  | coe k => rw [OnePoint.smul_some_eq_ite]; simp [Matrix.scalar_apply]
+
+/-- **A matrix fixing every point of the projective line is central.** Fixing `∞` kills the lower
+left entry, fixing `0` then kills the upper right one, and fixing `1` makes the two diagonal
+entries agree; so the matrix is scalar, and the scalar matrices are the centre. -/
+theorem mem_center_of_forall_smul_onePoint_eq_self {g : GL (Fin 2) F}
+    (hg : ∀ x : OnePoint F, g • x = x) : g ∈ Subgroup.center (GL (Fin 2) F) := by
+  have h10 : g 1 0 = 0 := OnePoint.smul_infty_eq_self_iff.mp (hg ∞)
+  have h11 : g 1 1 ≠ 0 := by
+    have hdet := g.det_ne_zero
+    rw [Matrix.det_fin_two] at hdet
+    exact (mul_ne_zero_iff.mp (by simpa [h10] using hdet)).2
+  have h01 : g 0 1 = 0 := by
+    have h := hg ((0 : F) : OnePoint F)
+    rw [OnePoint.smul_some_eq_ite] at h
+    simpa [h10, h11, div_eq_zero_iff] using h
+  have h00 : g 0 0 = g 1 1 := by
+    have h := hg ((1 : F) : OnePoint F)
+    rw [OnePoint.smul_some_eq_ite] at h
+    simpa [h10, h01, h11, div_eq_one_iff_eq h11] using h
+  rw [Matrix.GeneralLinearGroup.center_eq_range_scalar, MonoidHom.mem_range]
+  refine ⟨Units.mk0 (g 1 1) h11, Units.ext ?_⟩
+  rw [Matrix.GeneralLinearGroup.coe_scalar, Matrix.scalar_apply]
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [h10, h01, h00]
+
+/-- **`PGL₂(F)` acts faithfully on the projective line**: the kernel of the permutation
+representation of `GL₂(F)` on `OnePoint F` is the centre of `GL₂(F)`. -/
+@[simp]
+theorem ker_toPermHom_onePoint_eq_center :
+    (MulAction.toPermHom (GL (Fin 2) F) (OnePoint F)).ker = Subgroup.center (GL (Fin 2) F) := by
+  refine le_antisymm (fun g hg => mem_center_of_forall_smul_onePoint_eq_self fun x => ?_)
+    (fun g hg => ?_)
+  · simpa using congrArg (fun p : Equiv.Perm (OnePoint F) => p x) (MonoidHom.mem_ker.mp hg)
+  · rw [Matrix.GeneralLinearGroup.center_eq_range_scalar, MonoidHom.mem_range] at hg
+    obtain ⟨u, rfl⟩ := hg
+    exact MonoidHom.mem_ker.mpr (Equiv.ext fun x => by simp)
+
+end TauCeti
+
+namespace OnePoint
+
+open Matrix
+
+variable {K : Type*} [Field K] [DecidableEq K]
+
+/-- **`PGL(2, K)` acts on the projective line**: the Möbius action of `GL (Fin 2) K` is trivial on
+the scalar matrices (`TauCeti.scalar_smul_onePoint_eq_self`), so it descends to the quotient. -/
+instance instMulActionPGL : MulAction PGL(2, K) (OnePoint K) :=
+  Matrix.ProjGenLinGroup.mulActionOfGL TauCeti.scalar_smul_onePoint_eq_self
+
+/-- The class in `PGL(2, K)` of an invertible matrix acts on `OnePoint K` as the matrix does. -/
+@[simp]
+lemma pglMk_smul (g : GL (Fin 2) K) (c : OnePoint K) :
+    Matrix.ProjGenLinGroup.mk g • c = g • c :=
+  Matrix.ProjGenLinGroup.mk_smul TauCeti.scalar_smul_onePoint_eq_self g c
+
+/-- **The action of `PGL(2, K)` on `OnePoint K` is faithful**: a matrix fixing every point of the
+projective line is central (`TauCeti.ker_toPermHom_onePoint_eq_center`), so it is trivial in
+`PGL(2, K)`. -/
+instance : FaithfulSMul PGL(2, K) (OnePoint K) where
+  eq_of_smul_eq_smul {x y} h := by
+    obtain ⟨g, rfl⟩ := Matrix.ProjGenLinGroup.mk_surjective x
+    obtain ⟨g', rfl⟩ := Matrix.ProjGenLinGroup.mk_surjective y
+    have hfix : ∀ c : OnePoint K, (g'⁻¹ * g) • c = c := fun c ↦ by
+      rw [mul_smul, (by simpa using h c : g • c = g' • c), ← mul_smul, inv_mul_cancel, one_smul]
+    have hcentre := TauCeti.mem_center_of_forall_smul_onePoint_eq_self hfix
+    have hone : Matrix.ProjGenLinGroup.mk (g'⁻¹ * g) = 1 :=
+      Matrix.ProjGenLinGroup.mk_eq_one.mpr hcentre
+    rw [map_mul, map_inv, inv_mul_eq_one] at hone
+    exact hone.symm
 
 /-- The projective special linear group `PSL(2, K)` acts on `OnePoint K`, via the canonical
 identification with `ℙ¹(K)`. -/

@@ -10,7 +10,7 @@ public import TauCeti.NumberTheory.NumberField.Global.Ideles.Congruence
 
 import TauCeti.Analysis.Normed.Field.NoSmallSubgroups
 import TauCeti.NumberTheory.NumberField.Global.Ideles.Ray.OpenSubgroup
-import TauCeti.Topology.Algebra.ContinuousMonoidHom
+import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 
 /-!
 # The finite components and the finite conductor of a Hecke character

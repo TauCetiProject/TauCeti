@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Matrix.FiniteDimensional
 public import Mathlib.RepresentationTheory.AlgebraRepresentation.Basic
 
 /-!
@@ -292,13 +293,13 @@ theorem finrank_linearMap_eq_one_of_nonempty_linearEquiv (e : S ≃ₗ[A] N) :
   rw [← (homCongrRight k (S := S) e).finrank_eq]
   exact hend
 
+omit [IsAlgClosed k] in
 /-- The hom space out of a finite-dimensional simple module into a simple module is
-finite-dimensional: by Schur's lemma it is a line or trivial. -/
+finite-dimensional over any field: it is isomorphic to the endomorphism space of the source
+or is trivial. -/
 theorem finiteDimensional_linearMap_of_isSimpleModule : FiniteDimensional k (S →ₗ[A] N) := by
   by_cases h : Nonempty (S ≃ₗ[A] N)
-  · have hend : FiniteDimensional k (S →ₗ[A] S) :=
-      Module.Finite.equiv
-        (endAlgEquivSelfOfIsSimpleModule (k := k) (A := A) (S := S)).toLinearEquiv.symm
+  · have hend : FiniteDimensional k (S →ₗ[A] S) := inferInstance
     exact Module.Finite.equiv (homCongrRight k (S := S) h.some)
   · exact finiteDimensional_linearMap_of_isEmpty_linearEquiv (not_nonempty_iff.mp h)
 

@@ -229,7 +229,7 @@ theorem asAlgebraHom_surjective_of_isIrreducible
   have : Nontrivial ρ.asModule := IsSimpleModule.nontrivial k[G] ρ.asModule
   have : Nontrivial V := hρ.nontrivial
   have : Module.Finite (Module.End k[G] ρ.asModule) ρ.asModule :=
-    finite_end_of_smulCommClass (R := k[G]) (M := ρ.asModule) k
+    Module.Finite.of_restrictScalars_finite k (Module.End k[G] ρ.asModule) ρ.asModule
   intro T
   let T' : Module.End (Module.End k[G] ρ.asModule) ρ.asModule :=
     { toFun := T

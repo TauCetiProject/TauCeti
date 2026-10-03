@@ -28,8 +28,9 @@ for the power-bounded and the topologically nilpotent elements. Wedhorn Proposit
 nonarchimedean, that is, to have a neighbourhood basis of zero by additive subgroups. A basis by
 open *ideals* would be too strong: a nonzero Tate ring has no proper open ideal.
 
-Together with `TauCeti/RingTheory/Huber/Bounded.lean` this is the boundedness prerequisite of the
-adic-spaces roadmap.
+The subring `A°` and its transport results do not require continuity of multiplication.
+Its integral-closure results require separate continuity, and the ideal `A°°` requires
+joint continuity.
 
 ## Provenance
 
@@ -37,13 +38,15 @@ adic-spaces roadmap.
 `IsPowerBounded.mul`, `IsPowerBounded.neg`, `IsPowerBounded.of_isTopologicallyNilpotent`,
 `IsPowerBounded.isTopologicallyNilpotent_mul_of_commute` and `powerBoundedSubring` are stated as
 in William Coram's mathlib4#40013 (there `PowerBounded.subring`, and the last two under different
-names), so that the two can be identified once that pull request lands. New here are
+names), with weaker assumptions where possible. Further results here include
 `IsPowerBounded.pow`, the nonarchimedean `IsPowerBounded.add` and `isTopologicallyNilpotent_add`,
 `topologicallyNilpotentIdeal` and `coe_topologicallyNilpotentIdeal` — #40013 carries `A°°` as a
 `Set.range` of an inclusion rather than as an ideal of `A°` — `IsBounded.isPowerBounded_of_mem`,
 and the transport lemmas. The selection and ordering of results follows AINTLIB's `Bounded.lean`,
-the roadmap's designated prior
-formalisation of this layer; its proofs were not used.
+a prior formalisation of this theory; its proofs were not used.
+
+Claude contributed the algebraic generalization of `IsPowerBounded.neg` and `isPowerBounded_neg`
+from rings to monoids with zero and distributive negation.
 
 ## Main definitions
 
@@ -83,7 +86,8 @@ formalisation of this layer; its proofs were not used.
 
 `topologicallyNilpotentIdeal` is an ideal of `A°`, not of `A`, and is distinct from Mathlib's
 `topologicalNilradical`, which is an ideal of the ring itself under `[IsLinearTopology R R]`. The
-present ideal is available whenever `A` is nonarchimedean, and
+present ideal requires a nonarchimedean additive group (`NonarchimedeanAddGroup A`) and
+jointly continuous multiplication (`ContinuousMul A`). The theorem
 `coe_topologicallyNilpotentIdeal` records that cutting down to `A°` loses no topologically
 nilpotent element.
 
@@ -231,13 +235,22 @@ private theorem add_pow_mem_of_mul_pow_mem {G : AddSubgroup A} {a b : A} (hab : 
 
 end CommRing
 
-section Ring
+section HasDistribNeg
 
-variable {A : Type*} [Ring A] [TopologicalSpace A] [SeparatelyContinuousMul A]
+variable {A : Type*} [MonoidWithZero A] [HasDistribNeg A] [TopologicalSpace A]
+  [ContinuousNeg A]
 
 /-- The negative of a power-bounded element is power-bounded. -/
 theorem IsPowerBounded.neg {a : A} (ha : IsPowerBounded a) : IsPowerBounded (-a) := by
-  refine (((isBounded_singleton (-1 : A)).union (isBounded_singleton 1)).mul ha).subset ?_
+  have hneg : IsBounded ({-1} : Set A) := by
+    rw [isBounded_iff]
+    intro U hU
+    refine ⟨Neg.neg ⁻¹' U, ?_, ?_⟩
+    · exact continuous_neg.continuousAt.preimage_mem_nhds (by simpa using hU)
+    · rintro _ ⟨x, hx, y, hy, rfl⟩
+      simpa only [Set.mem_singleton_iff.mp hy, mul_neg, mul_one] using
+        (Set.mem_preimage.mp hx)
+  refine ((hneg.union isBounded_pair_zero_one).mul ha).subset ?_
   rintro _ ⟨n, rfl⟩
   -- `rintro … ⟨n, rfl⟩` leaves the goal as a beta-redex `(fun x ↦ _ ^ x) n`, which blocks `rw`
   change (-a) ^ n ∈ _
@@ -250,7 +263,12 @@ theorem IsPowerBounded.neg {a : A} (ha : IsPowerBounded a) : IsPowerBounded (-a)
 theorem isPowerBounded_neg {a : A} : IsPowerBounded (-a) ↔ IsPowerBounded a :=
   ⟨fun h ↦ by simpa using h.neg, IsPowerBounded.neg⟩
 
-omit [SeparatelyContinuousMul A] in
+end HasDistribNeg
+
+section Ring
+
+variable {A : Type*} [Ring A] [TopologicalSpace A]
+
 /-- Topological nilpotence descends to a subring, which carries the subspace topology. -/
 theorem isTopologicallyNilpotent_mk {B : Subring A} {x : A} (hx : x ∈ B)
     (h : IsTopologicallyNilpotent x) : IsTopologicallyNilpotent (⟨x, hx⟩ : B) := by
@@ -363,10 +381,8 @@ end NonarchimedeanAddGroup
 
 section NonarchimedeanAddGroupCommRing
 
--- These need only a nonarchimedean additive group, not the full `NonarchimedeanRing` structure
--- that `powerBoundedSubring` requires. Separate continuity of multiplication is declared here
--- because the monic-polynomial results below use it through `isBounded_finite`; the closure
--- lemma omits it.
+-- Separate continuity of multiplication is needed for boundedness of finite sets in the
+-- monic-polynomial result; the closure lemma does not need it.
 variable {A : Type*} [CommRing A] [TopologicalSpace A] [NonarchimedeanAddGroup A]
   [SeparatelyContinuousMul A]
 
@@ -427,11 +443,11 @@ end NonarchimedeanAddGroupCommRing
 
 section Nonarchimedean
 
-variable {A : Type*} [CommRing A] [TopologicalSpace A] [NonarchimedeanRing A]
+variable {A : Type*} [CommRing A] [TopologicalSpace A] [NonarchimedeanAddGroup A]
 
 variable (A) in
 /-- The subring `A°` of power-bounded elements of a nonarchimedean commutative ring
-(Wedhorn Proposition 5.30). -/
+(Wedhorn Proposition 5.30). No continuity of multiplication is required. -/
 def powerBoundedSubring : Subring A where
   carrier := {a : A | IsPowerBounded a}
   mul_mem' := IsPowerBounded.mul
@@ -449,34 +465,13 @@ theorem mem_powerBoundedSubring {a : A} : a ∈ powerBoundedSubring A ↔ IsPowe
 theorem coe_powerBoundedSubring : (powerBoundedSubring A : Set A) = {a | IsPowerBounded a} :=
   Set.ext fun _ ↦ mem_powerBoundedSubring
 
-variable (A) in
-/-- The ideal `A°°` of topologically nilpotent elements inside `A°`
-(Wedhorn Proposition 5.30). -/
-def topologicallyNilpotentIdeal : Ideal (powerBoundedSubring A) where
-  carrier := {a | IsTopologicallyNilpotent (a : A)}
-  add_mem' := isTopologicallyNilpotent_add
-  zero_mem' := IsTopologicallyNilpotent.zero
-  smul_mem' a _ hb := a.2.isTopologicallyNilpotent_mul hb
-
-/-- Membership in `A°°` is topological nilpotence. -/
-@[simp]
-theorem mem_topologicallyNilpotentIdeal {a : powerBoundedSubring A} :
-    a ∈ topologicallyNilpotentIdeal A ↔ IsTopologicallyNilpotent (a : A) := Iff.rfl
-
-/-- `A°°` is exactly the set of topologically nilpotent elements of `A`: no topologically
-nilpotent element is lost by cutting down to `A°`. -/
-@[simp]
-theorem coe_topologicallyNilpotentIdeal :
-    Subtype.val '' (topologicallyNilpotentIdeal A : Set (powerBoundedSubring A)) =
-      {a : A | IsTopologicallyNilpotent a} :=
-  Set.ext fun a ↦ ⟨by rintro ⟨b, hb, rfl⟩; exact hb,
-    fun ha ↦ ⟨⟨a, IsPowerBounded.of_isTopologicallyNilpotent ha⟩, ha, rfl⟩⟩
-
 /-- In a linearly topologized ring, for instance an adic or a discrete ring, every element is
 power-bounded, so `A° = A`. -/
 @[simp]
 theorem powerBoundedSubring_eq_top [IsLinearTopology A A] : powerBoundedSubring A = ⊤ :=
   eq_top_iff.mpr fun _ _ ↦ isPowerBounded_iff.mpr (isBounded_of_isLinearTopology _)
+
+variable [SeparatelyContinuousMul A]
 
 /-- Wedhorn Proposition 5.30(4): the power-bounded subring `A°` is integrally closed in `A`. -/
 theorem isPowerBounded_of_isIntegral {x : A} (hx : IsIntegral (powerBoundedSubring A) x) :
@@ -505,6 +500,36 @@ instance isIntegrallyClosedIn_powerBoundedSubring :
     mem_powerBoundedSubring.mpr (isPowerBounded_of_isIntegral hx)
 
 end Nonarchimedean
+
+section NonarchimedeanContinuousMul
+
+variable {A : Type*} [CommRing A] [TopologicalSpace A] [NonarchimedeanAddGroup A]
+  [ContinuousMul A]
+
+variable (A) in
+/-- The ideal `A°°` of topologically nilpotent elements inside `A°`
+(Wedhorn Proposition 5.30). -/
+def topologicallyNilpotentIdeal : Ideal (powerBoundedSubring A) where
+  carrier := {a | IsTopologicallyNilpotent (a : A)}
+  add_mem' := isTopologicallyNilpotent_add
+  zero_mem' := IsTopologicallyNilpotent.zero
+  smul_mem' a _ hb := a.2.isTopologicallyNilpotent_mul hb
+
+/-- Membership in `A°°` is topological nilpotence. -/
+@[simp]
+theorem mem_topologicallyNilpotentIdeal {a : powerBoundedSubring A} :
+    a ∈ topologicallyNilpotentIdeal A ↔ IsTopologicallyNilpotent (a : A) := Iff.rfl
+
+/-- `A°°` is exactly the set of topologically nilpotent elements of `A`: no topologically
+nilpotent element is lost by cutting down to `A°`. -/
+@[simp]
+theorem coe_topologicallyNilpotentIdeal :
+    Subtype.val '' (topologicallyNilpotentIdeal A : Set (powerBoundedSubring A)) =
+      {a : A | IsTopologicallyNilpotent a} :=
+  Set.ext fun a ↦ ⟨by rintro ⟨b, hb, rfl⟩; exact hb,
+    fun ha ↦ ⟨⟨a, IsPowerBounded.of_isTopologicallyNilpotent ha⟩, ha, rfl⟩⟩
+
+end NonarchimedeanContinuousMul
 
 section Transport
 
@@ -565,7 +590,7 @@ theorem isTopologicallyNilpotent_ringEquiv_iff (e : A ≃+* B) (he : Continuous 
 section TransportSubring
 
 variable {A B : Type*} [CommRing A] [CommRing B] [TopologicalSpace A] [TopologicalSpace B]
-  [NonarchimedeanRing A] [NonarchimedeanRing B]
+  [NonarchimedeanAddGroup A] [NonarchimedeanAddGroup B]
 
 /-- `A°` is preserved by a topological ring isomorphism: `e` carries `A°` onto `B°`. This is the
 bundled form of `TauCeti.Huber.isPowerBounded_ringEquiv_iff`. -/
@@ -585,6 +610,13 @@ def powerBoundedSubringEquiv (e : A ≃+* B) (he : Continuous e) (he' : Continuo
 theorem powerBoundedSubringEquiv_apply (e : A ≃+* B) (he : Continuous e) (he' : Continuous e.symm)
     (a : powerBoundedSubring A) :
     ((powerBoundedSubringEquiv e he he' a : powerBoundedSubring B) : B) = e (a : A) := (rfl)
+
+end TransportSubring
+
+section TransportIdeal
+
+variable {A B : Type*} [CommRing A] [CommRing B] [TopologicalSpace A] [TopologicalSpace B]
+  [NonarchimedeanAddGroup A] [NonarchimedeanAddGroup B] [ContinuousMul A] [ContinuousMul B]
 
 /-- `A°°` is preserved by a topological ring isomorphism: the restricted isomorphism `A° ≃+* B°`
 carries `A°°` exactly onto `B°°`. See `TauCeti.Huber.map_topologicallyNilpotentIdeal` for the
@@ -613,7 +645,7 @@ theorem map_topologicallyNilpotentIdeal (e : A ≃+* B) (he : Continuous e)
       ((mem_topologicallyNilpotentIdeal_powerBoundedSubringEquiv_iff e he he' _).mp
         (by rwa [RingEquiv.apply_symm_apply]))
 
-end TransportSubring
+end TransportIdeal
 
 end Transport
 

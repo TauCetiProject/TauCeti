@@ -155,15 +155,7 @@ theorem exists_leviDecomposition [CharZero K] [FiniteDimensional K L] :
       IsSemisimple K S ∧ Nonempty (L ≃ₗ⁅K⁆ radical K L ⋊⁅ψ⁆ S) := by
   obtain ⟨S, hS⟩ := exists_leviComplement K L
   -- `S` is isomorphic to `L ⧸ radical K L`, which is Killing by Cartan's criterion.
-  let g := (radical K L).mkQ.comp S.incl
-  have hg : Function.Injective g := by
-    rw [injective_iff_map_eq_zero]
-    intro x hx
-    have hxR := LieIdeal.mem_comap.1
-      ((LieIdeal.ker_mkQ_comp_incl (I := radical K L) (P := S)) ▸ LieHom.mem_ker.2 hx)
-    exact Subtype.ext (Submodule.disjoint_def.1 hS.disjoint _ hxR x.2)
-  have : IsKilling K S := isKilling_of_equiv
-    (LieEquiv.ofBijective g ⟨hg, (radical K L).mkQ_comp_incl_surjective hS.codisjoint⟩).symm
+  have : IsKilling K S := isKilling_of_equiv ((radical K L).quotientEquivOfIsCompl S hS)
   exact ⟨S, _, inferInstance, (radical K L).nonempty_lieEquiv_semiDirectSum S hS⟩
 
 end TauCeti

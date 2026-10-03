@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Lie.Quotient
+public import Mathlib.LinearAlgebra.Projection
 
 /-!
 # Homomorphisms from quotients by Lie ideals
@@ -13,8 +14,9 @@ public import Mathlib.Algebra.Lie.Quotient
 Mathlib equips the quotient of a Lie algebra by a Lie ideal with its Lie algebra structure and
 provides the quotient map as a morphism of Lie modules. This file records that map as a
 homomorphism of Lie algebras and gives its universal property: a homomorphism killing the ideal
-factors uniquely through the quotient. For a surjective homomorphism, the induced map from the
-quotient by its kernel is an isomorphism, which is the first isomorphism theorem.
+factors uniquely through the quotient. A Lie subalgebra complementary to the ideal is isomorphic
+to the quotient. For a surjective homomorphism, the induced map from the quotient by its kernel is
+an isomorphism, which is the first isomorphism theorem.
 
 These declarations live in the root `LieIdeal` and `LieHom` namespaces, extending Mathlib's API
 and supporting receiver notation on the ideal and the homomorphism.
@@ -24,6 +26,8 @@ and supporting receiver notation on the ideal and the homomorphism.
 * `LieIdeal.mkQ`: the quotient map `L →ₗ⁅R⁆ L ⧸ I`.
 * `LieIdeal.liftQ`: the homomorphism `L ⧸ I →ₗ⁅R⁆ L'` induced by a homomorphism
   `L →ₗ⁅R⁆ L'` whose kernel contains `I`.
+* `LieIdeal.quotientEquivOfIsCompl`: the isomorphism `L ⧸ I ≃ₗ⁅R⁆ S` for a Lie subalgebra `S`
+  complementary to `I`.
 * `LieHom.quotKerEquivOfSurjective`: the first isomorphism theorem, identifying the quotient of
   `L` by the kernel of a surjective homomorphism with its target.
 
@@ -168,6 +172,47 @@ theorem ker_mkQ_comp_incl : (I.mkQ.comp P.incl).ker = I.comap P.incl := by
   rw [LieHom.mem_ker, mem_comap, LieHom.comp_apply, mkQ_apply, LieSubmodule.Quotient.mk_eq_zero']
 
 end Supplement
+
+section IsCompl
+
+variable (S : LieSubalgebra R L) (h : IsCompl I.toSubmodule S.toSubmodule)
+
+/-- A Lie subalgebra `S` complementary to a Lie ideal `I` is isomorphic to the quotient `L ⧸ I`,
+the class of `x : S` corresponding to `x`. This is the Lie algebra version of
+`Submodule.quotientEquivOfIsCompl`, which is its underlying linear equivalence
+(`LieIdeal.toLinearEquiv_quotientEquivOfIsCompl`). -/
+noncomputable def quotientEquivOfIsCompl : (L ⧸ I) ≃ₗ⁅R⁆ S :=
+  (LieEquiv.ofBijective (I.mkQ.comp S.incl) <| by
+    convert (Submodule.quotientEquivOfIsCompl I.toSubmodule S.toSubmodule h).symm.bijective
+    ext x
+    simp [mkQ_apply]).symm
+
+/-- The inverse of `LieIdeal.quotientEquivOfIsCompl` sends `x : S` to its class. -/
+@[simp]
+theorem quotientEquivOfIsCompl_symm_apply (x : S) :
+    (I.quotientEquivOfIsCompl S h).symm x = LieSubmodule.Quotient.mk (x : L) := by
+  simp [quotientEquivOfIsCompl]
+
+/-- `LieIdeal.quotientEquivOfIsCompl` sends the class of `x : S` to `x`. -/
+@[simp]
+theorem quotientEquivOfIsCompl_apply_mk_coe (x : S) :
+    I.quotientEquivOfIsCompl S h (LieSubmodule.Quotient.mk (x : L)) = x := by
+  rw [← quotientEquivOfIsCompl_symm_apply I S h, LieEquiv.apply_symm_apply]
+
+/-- The linear equivalence underlying `LieIdeal.quotientEquivOfIsCompl` is
+`Submodule.quotientEquivOfIsCompl`. -/
+theorem toLinearEquiv_quotientEquivOfIsCompl :
+    (I.quotientEquivOfIsCompl S h).toLinearEquiv =
+      Submodule.quotientEquivOfIsCompl I.toSubmodule S.toSubmodule h :=
+  LinearEquiv.ext fun z => by
+    obtain ⟨x, rfl⟩ :=
+      (Submodule.quotientEquivOfIsCompl I.toSubmodule S.toSubmodule h).symm.surjective z
+    simp only [LinearEquiv.apply_symm_apply, LieEquiv.coe_toLinearEquiv]
+    -- `Submodule.quotientEquivOfIsCompl` inverts to `Submodule.Quotient.mk`, of which
+    -- `LieSubmodule.Quotient.mk` is an abbreviation
+    exact I.quotientEquivOfIsCompl_apply_mk_coe S h x
+
+end IsCompl
 
 end LieIdeal
 

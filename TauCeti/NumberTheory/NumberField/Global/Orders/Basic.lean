@@ -22,6 +22,8 @@ maximal order itself is packaged as `maximalNumberFieldOrder K`.
 ## Main definitions
 
 * `TauCeti.GlobalNumberFields.NumberFieldOrder`: an order in a number field.
+* `TauCeti.GlobalNumberFields.NumberFieldOrder.toRingOfIntegers`: an order as a subalgebra of the
+  maximal order.
 * `TauCeti.GlobalNumberFields.maximalNumberFieldOrder`: the ring of integers as an order.
 
 ## Main results
@@ -81,6 +83,16 @@ theorem isIntegral (O : NumberFieldOrder K) (x : O.toSubalgebra) :
 theorem le_ringOfIntegers (O : NumberFieldOrder K) :
     O.toSubalgebra ≤ integralClosure ℤ K := fun x hx => by
   exact (O.isIntegral ⟨x, hx⟩)
+
+/-- An order `O`, viewed as a `ℤ`-subalgebra of the maximal order `𝓞 K`. -/
+def toRingOfIntegers (O : NumberFieldOrder K) : Subalgebra ℤ (𝓞 K) :=
+  O.toSubalgebra.comap (IsScalarTower.toAlgHom ℤ (𝓞 K) K)
+
+/-- An algebraic integer lies in the copy of `O` inside `𝓞 K` exactly when it lies in `O`. -/
+@[simp]
+theorem mem_toRingOfIntegers (O : NumberFieldOrder K) {x : 𝓞 K} :
+    x ∈ O.toRingOfIntegers ↔ (x : K) ∈ O.toSubalgebra :=
+  Iff.rfl
 
 /-- An order is a proper subring of its number field. -/
 theorem toSubalgebra_ne_top (O : NumberFieldOrder K) : O.toSubalgebra ≠ ⊤ := by
