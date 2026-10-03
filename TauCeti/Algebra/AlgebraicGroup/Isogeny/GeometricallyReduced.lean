@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Isogeny.Descent
 public import Mathlib.RingTheory.Nilpotent.GeometricallyReduced
-import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.FiniteFlat
+import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.Flat
 import Mathlib.RingTheory.TensorProduct.Finite
 import TauCeti.RingTheory.Spectrum.Prime.Topology
 
@@ -19,9 +19,9 @@ of finite type is an isogeny: faithful flatness follows from finiteness and domi
 The source need not be reduced, and the field need not be perfect. This criterion lets
 quotient and isogeny constructions use geometric hypotheses instead of assuming flatness.
 
-The algebraically closed case is
-`TauCeti.CommHopfAlgCat.faithfullyFlat_of_finite_of_dominant`. We apply it after extending
-scalars to an algebraic closure, then use faithfully flat descent of isogenies. The common
+The algebraically closed case is `TauCeti.CommHopfAlgCat.faithfullyFlat_of_dominant`, whose
+finite-type hypothesis on the source holds because the morphism is finite. We apply it after
+extending scalars to an algebraic closure, then use faithfully flat descent of isogenies. The common
 universe is required by the existing isogeny descent theorem.
 
 ## References
@@ -32,6 +32,7 @@ universe is required by the existing isogeny descent theorem.
 public section
 
 open CategoryTheory
+open scoped TensorProduct
 
 namespace TauCeti.CommHopfAlgCat
 
@@ -65,8 +66,13 @@ theorem isIsogeny_iff_finite_and_dominant (f : H ⟶ K) :
       rw [hmap]
       exact RingHom.Finite.tensorProductMap (f := AlgHom.id k L)
         (RingEquiv.refl L).finite hfin
+    have : Algebra.FiniteType L (L ⊗[k] K) := by
+      let := fL.hom.toAlgHom.toAlgebra
+      have : IsScalarTower L (L ⊗[k] H) (L ⊗[k] K) :=
+        .of_algebraMap_eq fun x ↦ (fL.hom.toAlgHom.commutes x).symm
+      have : Module.Finite (L ⊗[k] H) (L ⊗[k] K) := hfinL
+      exact .trans (S := L ⊗[k] H) inferInstance inferInstance
     exact (isIsogeny_baseChangeMap_iff (S := L) f).mp
-      ((isIsogeny_iff fL).mpr
-        ⟨hfinL, faithfullyFlat_of_finite_of_dominant fL hfinL hdomL⟩)
+      ((isIsogeny_iff fL).mpr ⟨hfinL, faithfullyFlat_of_dominant fL hdomL⟩)
 
 end TauCeti.CommHopfAlgCat
