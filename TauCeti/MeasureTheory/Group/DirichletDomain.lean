@@ -31,9 +31,9 @@ sets are geodesics, which is how the Dirichlet polygon of a Fuchsian group arise
 * `TauCeti.dirichletDomain G p`: the Dirichlet domain of the centre `p`.
 * `TauCeti.isClosed_dirichletDomain`: it is closed.
 * `TauCeti.smul_dirichletDomain`: translating the Dirichlet domain translates its centre.
-* `TauCeti.finite_dirichletCompetitors`: on a compact set, only finitely many group elements can
+* `TauCeti.finite_dirichletCompetitors`: on a bounded set, only finitely many group elements can
   move the centre to a point at least as close as the centre.
-* `TauCeti.exists_finset_dirichletDomain_inter_eq`: on a compact set, the Dirichlet domain is
+* `TauCeti.exists_finset_dirichletDomain_inter_eq`: on a bounded set, the Dirichlet domain is
   cut out by finitely many of its defining inequalities.
 * `TauCeti.exists_smul_mem_dirichletDomain`: for a properly discontinuous isometric action on a
   proper space, every orbit meets it.
@@ -94,6 +94,61 @@ theorem measurableSet_dirichletDomain [MeasurableSpace X] [OpensMeasurableSpace 
     MeasurableSet (dirichletDomain G p) :=
   (isClosed_dirichletDomain G p).measurableSet
 
+variable (G) in
+/-- The group elements whose translates of `p` compete with `p` somewhere on `K`: for some
+`x ∈ K`, the point `g • p` is at least as close to `x` as `p` is. These are precisely the
+inequalities which can be nontrivial on `K` when cutting out the Dirichlet domain. -/
+def dirichletCompetitors (p : X) (K : Set X) : Set G :=
+  {g | ∃ x ∈ K, dist x (g • p) ≤ dist x p}
+
+/-- Membership in the set of competitors of a Dirichlet centre on a set. -/
+@[simp]
+theorem mem_dirichletCompetitors {p : X} {K : Set X} {g : G} :
+    g ∈ dirichletCompetitors G p K ↔ ∃ x ∈ K, dist x (g • p) ≤ dist x p :=
+  Iff.rfl
+
+/-- **Only finitely many group elements compete with a Dirichlet centre on a bounded set.**
+For a properly discontinuous action on a proper metric space, a bounded set `K`
+meets the region where `g • p` is at least as close as `p` for only finitely many `g`. -/
+theorem finite_dirichletCompetitors [ProperSpace X] [ProperlyDiscontinuousSMul G X] (p : X)
+    {K : Set X} (hK : Bornology.IsBounded K) : (dirichletCompetitors G p K).Finite := by
+  -- If `K ⊆ closedBall p r`, every competing `g • p` lies in `closedBall p (2 * r)`.
+  obtain ⟨r, hr⟩ := hK.subset_closedBall p
+  refine (ProperlyDiscontinuousSMul.finite_disjoint_inter_image (K := {p})
+    (L := closedBall p (2 * r)) isCompact_singleton (isCompact_closedBall p (2 * r))).subset ?_
+  intro g hg
+  obtain ⟨x, hxK, hxg⟩ := hg
+  refine ⟨g • p, ⟨⟨p, Set.mem_singleton p, rfl⟩, ?_⟩⟩
+  have hxp : dist x p ≤ r := hr hxK
+  rw [mem_closedBall, dist_comm]
+  calc
+    dist p (g • p) ≤ dist p x + dist x (g • p) := dist_triangle _ _ _
+    _ ≤ r + r := add_le_add (by simpa [dist_comm] using hxp) (hxg.trans hxp)
+    _ = 2 * r := by ring
+
+/-- **A Dirichlet domain has finitely many defining inequalities on every bounded set.**
+For a bounded `K`, there is a finite set `s` of group elements such that intersecting `K` with
+the full Dirichlet domain is the same as imposing only the inequalities indexed by `s` on `K`.
+This is the local-finiteness input for viewing Dirichlet domains as locally finite intersections
+of half-spaces. -/
+theorem exists_finset_dirichletDomain_inter_eq [ProperSpace X] [ProperlyDiscontinuousSMul G X]
+    (p : X) {K : Set X} (hK : Bornology.IsBounded K) :
+    ∃ s : Finset G,
+      dirichletDomain G p ∩ K =
+        (⋂ g ∈ s, {x | dist x p ≤ dist x (g • p)}) ∩ K := by
+  let S := dirichletCompetitors G p K
+  have hS : S.Finite := finite_dirichletCompetitors p hK
+  refine ⟨hS.toFinset, Set.ext fun x ↦ ?_⟩
+  simp only [Set.mem_inter_iff, mem_dirichletDomain, Set.mem_iInter, Set.mem_ofPred_eq,
+    hS.mem_toFinset]
+  constructor
+  · exact fun ⟨hx, hxK⟩ ↦ ⟨fun g _ ↦ hx g, hxK⟩
+  · rintro ⟨hx, hxK⟩
+    refine ⟨fun g ↦ ?_, hxK⟩
+    by_cases hg : g ∈ S
+    · exact hx g hg
+    · exact le_of_not_ge fun h ↦ hg ⟨x, hxK, h⟩
+
 end SMul
 
 variable {G} [Group G] [MulAction G X]
@@ -119,65 +174,6 @@ theorem smul_dirichletDomain (g : G) (p : X) :
   · simpa [mul_smul] using H (g * h * g⁻¹)
 
 variable [ProperSpace X] [ProperlyDiscontinuousSMul G X]
-
-variable (G) in
-/-- The group elements whose translates of `p` compete with `p` somewhere on `K`: for some
-`x ∈ K`, the point `g • p` is at least as close to `x` as `p` is. These are precisely the
-inequalities which can be nontrivial on `K` when cutting out the Dirichlet domain. -/
-def dirichletCompetitors (p : X) (K : Set X) : Set G :=
-  {g | ∃ x ∈ K, dist x (g • p) ≤ dist x p}
-
-omit [IsIsometricSMul G X] [ProperSpace X] [ProperlyDiscontinuousSMul G X] in
-/-- Membership in the set of competitors of a Dirichlet centre on a set. -/
-@[simp]
-theorem mem_dirichletCompetitors {p : X} {K : Set X} {g : G} :
-    g ∈ dirichletCompetitors G p K ↔ ∃ x ∈ K, dist x (g • p) ≤ dist x p :=
-  Iff.rfl
-
-omit [IsIsometricSMul G X] in
-/-- **Only finitely many group elements compete with a Dirichlet centre on a compact set.**
-For a properly discontinuous action on a proper metric space, a compact set `K`
-meets the region where `g • p` is at least as close as `p` for only finitely many `g`.
-
-Indeed, after bounding `K` by a ball of radius `r` about `p`, every such `g • p` lies in the
-ball of radius `2r` about `p`; proper discontinuity makes the corresponding set of `g` finite. -/
-theorem finite_dirichletCompetitors (p : X) {K : Set X} (hK : IsCompact K) :
-    (dirichletCompetitors G p K).Finite := by
-  obtain ⟨r, hr⟩ := hK.isBounded.subset_closedBall p
-  refine (ProperlyDiscontinuousSMul.finite_disjoint_inter_image (K := {p})
-    (L := closedBall p (2 * r)) isCompact_singleton (isCompact_closedBall p (2 * r))).subset ?_
-  intro g hg
-  obtain ⟨x, hxK, hxg⟩ := hg
-  refine ⟨g • p, ⟨⟨p, Set.mem_singleton p, rfl⟩, ?_⟩⟩
-  have hxp : dist x p ≤ r := hr hxK
-  rw [mem_closedBall, dist_comm]
-  calc
-    dist p (g • p) ≤ dist p x + dist x (g • p) := dist_triangle _ _ _
-    _ ≤ r + r := add_le_add (by simpa [dist_comm] using hxp) (hxg.trans hxp)
-    _ = 2 * r := by ring
-
-omit [IsIsometricSMul G X] in
-/-- **A Dirichlet domain has finitely many defining inequalities on every compact set.**
-For a compact `K`, there is a finite set `s` of group elements such that intersecting `K` with
-the full Dirichlet domain is the same as imposing only the inequalities indexed by `s` on `K`.
-This is the local-finiteness input for viewing Dirichlet domains as locally finite intersections
-of half-spaces. -/
-theorem exists_finset_dirichletDomain_inter_eq (p : X) {K : Set X} (hK : IsCompact K) :
-    ∃ s : Finset G,
-      dirichletDomain G p ∩ K =
-        (⋂ g ∈ s, {x | dist x p ≤ dist x (g • p)}) ∩ K := by
-  let S := dirichletCompetitors G p K
-  have hS : S.Finite := finite_dirichletCompetitors p hK
-  refine ⟨hS.toFinset, Set.ext fun x ↦ ?_⟩
-  simp only [Set.mem_inter_iff, mem_dirichletDomain, Set.mem_iInter, Set.mem_ofPred_eq,
-    hS.mem_toFinset]
-  constructor
-  · exact fun ⟨hx, hxK⟩ ↦ ⟨fun g _ ↦ hx g, hxK⟩
-  · rintro ⟨hx, hxK⟩
-    refine ⟨fun g ↦ ?_, hxK⟩
-    by_cases hg : g ∈ S
-    · exact hx g hg
-    · exact le_of_not_ge fun h ↦ hg ⟨x, hxK, h⟩
 
 /-- **Every orbit meets the Dirichlet domain.** For a properly discontinuous isometric action on a
 proper space, each point has a translate in the Dirichlet domain of any centre: translate it by

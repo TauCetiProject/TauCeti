@@ -33,6 +33,13 @@ fundamental domain: distinct translates of a Dirichlet domain meet only along su
   closed hyperbolic half-space.
 * `TauCeti.UpperHalfPlane.volume_setOf_dist_eq_dist`: the hyperbolic perpendicular bisector of two
   distinct points is a null set.
+
+## References
+
+* Alan Beardon, *The Geometry of Discrete Groups*, Graduate Texts in Mathematics 91,
+  Springer, 1983, §9.4.
+* Svetlana Katok, *Fuchsian Groups*, Chicago Lectures in Mathematics, University of Chicago
+  Press, 1992, §3.2.
 -/
 
 public section
@@ -55,7 +62,8 @@ theorem dist_eq_dist_iff {z p q : ℍ} :
 
 /-- A point is hyperbolically at least as close to `p` as to `q` exactly when
 `q.im * |z - p|² ≤ p.im * |z - q|²` in the plane. When `p ≠ q`, this is the closed half-space
-bounded by the hyperbolic perpendicular bisector of `p` and `q`. -/
+bounded by the hyperbolic perpendicular bisector of `p` and `q`; compare Beardon, §9.4, and
+Katok, §3.2. -/
 theorem dist_le_dist_iff {z p q : ℍ} :
     dist z p ≤ dist z q ↔ q.im * dist (z : ℂ) p ^ 2 ≤ p.im * dist (z : ℂ) q ^ 2 := by
   have hz := z.im_pos
