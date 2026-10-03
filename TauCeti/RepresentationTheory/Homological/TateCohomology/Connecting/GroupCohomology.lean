@@ -6,7 +6,7 @@ Authors: Claude, Codex
 module
 
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.LowDegree
-public import TauCeti.Algebra.Homology.Embedding.ExtendHomologySequence
+public import TauCeti.Algebra.Homology.Embedding.ExtendHomology.Sequence
 public import Mathlib.Algebra.Homology.Embedding.HomEquiv
 
 /-!
