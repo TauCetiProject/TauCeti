@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Complex.Fuchsian.Cusp.Coordinate
 public import Mathlib.Topology.Path
-import Mathlib.Analysis.Complex.CoveringMap
 
 /-!
 # Cusp meridians and their lifts
@@ -91,30 +90,6 @@ theorem coe_meridian (n : ℤ) (z : ℍ) (t : unitInterval) :
   push_cast
   field_simp [D.width_pos.ne']
   ring
-
-/-- Continuous lifts with the same q-projection agree if they agree at one point of a
-preconnected source. -/
-theorem eq_of_coordinate_eq {A : Type*} [TopologicalSpace A] [PreconnectedSpace A]
-    {f g : A → ℍ} (hf : Continuous f) (hg : Continuous g)
-    (hq : ∀ a, coordinate D (f a) = coordinate D (g a)) (a₀ : A) (h₀ : f a₀ = g a₀) :
-    f = g := by
-  let F (z : ℍ) : ℂ := 2 * Real.pi * Complex.I * (↑(D.scaling • z) : ℂ) / D.width
-  have hF : Continuous F := by fun_prop
-  have he : (fun w : ℂ ↦ (⟨Complex.exp w, Complex.exp_ne_zero w⟩ : {w : ℂ // w ≠ 0})) ∘
-      (F ∘ f) = (fun w : ℂ ↦ (⟨Complex.exp w, Complex.exp_ne_zero w⟩ : {w : ℂ // w ≠ 0})) ∘
-      (F ∘ g) := by
-    funext a
-    apply Subtype.ext
-    simpa only [F, Function.comp_apply, coordinate_apply, Function.Periodic.qParam] using hq a
-  have hfg := Complex.isCoveringMap_exp.eq_of_comp_eq (hF.comp hf) (hF.comp hg) he a₀
-    (congrArg F h₀)
-  funext a
-  apply (MulAction.injective D.scaling)
-  apply UpperHalfPlane.coe_injective
-  have h := congrFun hfg a
-  have hw : (D.width : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr D.width_pos.ne'
-  have hc : (2 * (Real.pi : ℂ) * Complex.I) ≠ 0 := Complex.two_pi_I_ne_zero
-  exact mul_left_cancel₀ hc ((div_left_inj' hw).mp h)
 
 /-- The horizontal path is the unique continuous lift of the meridian starting at `z`.
 In particular its endpoint is the `n`th power of the selected primitive generator. -/
