@@ -121,6 +121,7 @@ def characterDimensionShift
 omit [Fintype G] in
 /-- The underlying value of `characterDimensionShift` is the image in the first upward dimension
 shift of the coinduced function `g ↦ χ(g)`. -/
+@[simp]
 theorem coe_characterDimensionShift
     (χ : Additive (Abelianization G) →+ AddCircle (1 : ℚ)) :
     (characterDimensionShift G χ : dimensionShiftUp (Rep.ratAddCircleShortComplex G).X₃) =
