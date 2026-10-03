@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.RibbonGraph.Classification
 public import TauCeti.Combinatorics.RibbonGraph.Genus
 public import TauCeti.Combinatorics.PermutationTriple.BranchPoints
 public import Mathlib.Algebra.Group.Action.TransferInstance
