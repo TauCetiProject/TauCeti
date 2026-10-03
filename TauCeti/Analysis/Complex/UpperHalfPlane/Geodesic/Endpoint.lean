@@ -17,16 +17,10 @@ import TauCeti.Analysis.Complex.UpperHalfPlane.Stabilizer
 The geodesic line `geodesicLine g` is the `g`-translate of the upward imaginary axis, which runs
 from the boundary point `0` to the boundary point `∞`. Its ideal endpoints are therefore
 `g • 0` (backward) and `g • ∞` (forward), for the action of `PSL(2, ℝ)` on `OnePoint ℝ`
-(`OnePoint.instMulActionPSL`). This file describes the two sides of a geodesic line, and the arc
-of ideal points on each side, by the sign of one real quadratic form, and determines that form
-from the endpoints.
-
-For a representative `!![a, b; c, d]` of `g`, the real part of `g⁻¹ • z` is a positive multiple of
-`sideForm g z = -(c d) |z|² + (a d + b c) Re z - a b` (`exists_pos_re_inv_smul_eq`), a quantity
-unchanged by negating the representative. Hence the left half-plane of `g` is `{sideForm g < 0}`,
-the geodesic line is `{sideForm g = 0}` and the right half-plane is `{sideForm g > 0}`. The same
-form describes the open arc of ideal points to the left of the line,
-`boundaryLeftHalfPlane g = g • {x : ℝ | x < 0}`, on its finite part
+(`OnePoint.instMulActionPSL`). This file describes the arc of ideal points on each side of a
+geodesic line, and determines from the endpoints the side form `sideForm g` of `HalfPlane.lean`,
+whose sign on `ℍ` is the side of the line. The open arc of ideal points to the left of the line,
+`boundaryLeftHalfPlane g = g • {x : ℝ | x < 0}`, is described on its finite part by the same form
 (`coe_mem_boundaryLeftHalfPlane_iff`).
 
 In terms of the endpoints: a geodesic line from `∞` down to the real point `e` has
@@ -45,9 +39,9 @@ point at parameter `0` and the forward endpoint
 
 ## Main declarations
 
-* `TauCeti.UpperHalfPlane.sideForm g`: the real quadratic form whose sign is the side of
-  `geodesicLine g`; `mem_leftHalfPlane_iff_sideForm_neg`, `mem_rightHalfPlane_iff_sideForm_pos`,
-  `mem_range_geodesicLine_iff_sideForm_eq_zero`, `mem_closure_leftHalfPlane_iff_sideForm_nonpos`.
+* `TauCeti.UpperHalfPlane.sideForm_eq_of_smul_zero_eq_infty`,
+  `sideForm_eq_of_smul_infty_eq_infty`, `exists_sideForm_eq_of_smul_zero_of_smul_infty`: the side
+  form of a geodesic line in terms of its endpoints.
 * `TauCeti.UpperHalfPlane.boundaryLeftHalfPlane g`: the open arc of ideal points to the left of
   `geodesicLine g`, with `coe_mem_boundaryLeftHalfPlane_iff` and
   `infty_mem_boundaryLeftHalfPlane_iff`.
@@ -63,7 +57,9 @@ point at parameter `0` and the forward endpoint
 Walkden, *Hyperbolic geometry* (MATH32051 lecture notes, Manchester 2019), §4.1 (the action of a
 Möbius transformation on `∂ℍ`, `γ(∞) = a/c`, `γ(-d/c) = ∞`) and §4.3 (geodesics are determined by
 their endpoints; Lemma 4.3.1, the semicircle with endpoints `ζ₋ < ζ₊` is carried to the imaginary
-axis by `z ↦ (z - ζ₊)/(z - ζ₋)`).
+axis by `z ↦ (z - ζ₊)/(z - ζ₋)`); Katok, *Fuchsian groups, geodesic flows on surfaces of
+constant negative curvature and symbolic coding of geodesics*, Clay Math. Proc. 10 (2010),
+Theorem 3.1 p. 10 (geodesics are semicircles and vertical lines).
 -/
 
 public section
@@ -76,94 +72,9 @@ open scoped MatrixGroups Pointwise OnePoint
 namespace TauCeti.UpperHalfPlane
 
 open Matrix.ProjectiveSpecialLinearGroup (upperRightHom upperRightHom_smul_coe
-  upperRightHom_smul_infty)
-open Matrix.SpecialLinearGroup (dilation)
-
-/-! ### The side form -/
-
-/-- The real quadratic form `-(c d) |z|² + (a d + b c) Re z - a b` of a representative
-`!![a, b; c, d]` of `g`, which does not depend on the representative. Its sign on `ℍ` is the side
-of `geodesicLine g` (`mem_leftHalfPlane_iff_sideForm_neg`). -/
-def sideForm (g : PSL(2, ℝ)) (z : ℂ) : ℝ :=
-  Quotient.liftOn' g (fun A : SL(2, ℝ) ↦ -(A 1 0 * A 1 1) * Complex.normSq z +
-      (A 0 0 * A 1 1 + A 0 1 * A 1 0) * z.re - A 0 0 * A 0 1) fun A B hAB ↦ by
-    rw [QuotientGroup.leftRel_apply,
-      Matrix.SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one] at hAB
-    rcases hAB with h | h
-    · rw [inv_mul_eq_one.mp h]
-    · rw [inv_mul_eq_iff_eq_mul, mul_neg_one] at h
-      subst h
-      simp only [Matrix.SpecialLinearGroup.coe_neg, Matrix.neg_apply]
-      ring
-
-/-- The side form of the class of a matrix, as a formula in its entries. -/
-theorem sideForm_mk (A : SL(2, ℝ)) (z : ℂ) :
-    sideForm (A : PSL(2, ℝ)) z = -(A 1 0 * A 1 1) * Complex.normSq z +
-      (A 0 0 * A 1 1 + A 0 1 * A 1 0) * z.re - A 0 0 * A 0 1 :=
-  (rfl)
-
-/-- At a real point the side form factors as `(d x - b) (a - c x)`. -/
-theorem sideForm_mk_ofReal (A : SL(2, ℝ)) (x : ℝ) :
-    sideForm (A : PSL(2, ℝ)) x = (A 1 1 * x - A 0 1) * (-A 1 0 * x + A 0 0) := by
-  rw [sideForm_mk, Complex.normSq_ofReal, Complex.ofReal_re]
-  ring
-
-/-- The real part of `g⁻¹ • z` is a positive multiple of the side form at `z`. -/
-theorem exists_pos_re_inv_smul_eq (g : PSL(2, ℝ)) (z : ℍ) :
-    ∃ κ : ℝ, 0 < κ ∧ (g⁻¹ • z : ℍ).re = κ * sideForm g z := by
-  induction g using QuotientGroup.induction_on with | H A => ?_
-  rw [← QuotientGroup.mk_inv, UpperHalfPlane.pslMk_smul, UpperHalfPlane.re,
-    UpperHalfPlane.coe_specialLinearGroup_apply, Matrix.SpecialLinearGroup.SL2_inv_expl,
-    sideForm_mk]
-  have hne : -(A 1 0 : ℂ) * z + A 0 0 ≠ 0 := by
-    convert UpperHalfPlane.denom_ne_zero (Matrix.SpecialLinearGroup.mapGL ℝ A⁻¹) z using 1
-    simp [denom, Matrix.SpecialLinearGroup.mapGL_coe_matrix, Matrix.inv_def,
-      Matrix.adjugate_fin_two]
-  refine ⟨(Complex.normSq (-(A 1 0 : ℂ) * z + A 0 0))⁻¹,
-    inv_pos.2 (Complex.normSq_pos.2 hne), ?_⟩
-  simp [Complex.div_re, Complex.normSq_apply]
-  ring
-
-/-- The left half-plane of `geodesicLine g` is where the side form is negative. -/
-theorem mem_leftHalfPlane_iff_sideForm_neg (g : PSL(2, ℝ)) (z : ℍ) :
-    z ∈ leftHalfPlane g ↔ sideForm g z < 0 := by
-  obtain ⟨κ, hκ, h⟩ := exists_pos_re_inv_smul_eq g z
-  rw [mem_leftHalfPlane_iff, h]
-  exact ⟨fun h' ↦ neg_of_mul_neg_right h' hκ.le, mul_neg_of_pos_of_neg hκ⟩
-
-/-- The right half-plane of `geodesicLine g` is where the side form is positive. -/
-theorem mem_rightHalfPlane_iff_sideForm_pos (g : PSL(2, ℝ)) (z : ℍ) :
-    z ∈ rightHalfPlane g ↔ 0 < sideForm g z := by
-  obtain ⟨κ, hκ, h⟩ := exists_pos_re_inv_smul_eq g z
-  rw [mem_rightHalfPlane_iff, h, mul_pos_iff_of_pos_left hκ]
-
-/-- The geodesic line of `g` is the zero set of the side form in `ℍ`. -/
-theorem mem_range_geodesicLine_iff_sideForm_eq_zero (g : PSL(2, ℝ)) (z : ℍ) :
-    z ∈ Set.range (geodesicLine g) ↔ sideForm g z = 0 := by
-  obtain ⟨κ, hκ, h⟩ := exists_pos_re_inv_smul_eq g z
-  rw [mem_range_geodesicLine_iff, h, mul_eq_zero, or_iff_right hκ.ne']
-
-/-- The closed left half-plane of `geodesicLine g` is where the side form is nonpositive. -/
-theorem mem_closure_leftHalfPlane_iff_sideForm_nonpos (g : PSL(2, ℝ)) (z : ℍ) :
-    z ∈ closure (leftHalfPlane g) ↔ sideForm g z ≤ 0 := by
-  obtain ⟨κ, hκ, h⟩ := exists_pos_re_inv_smul_eq g z
-  rw [mem_closure_leftHalfPlane_iff, h]
-  exact ⟨fun h' ↦ le_of_mul_le_mul_left (by rwa [mul_zero]) hκ,
-    mul_nonpos_of_nonneg_of_nonpos hκ.le⟩
-
-/-- Reparametrising a geodesic line by a dilation does not change its side form. -/
-@[simp]
-theorem sideForm_mul_dilation (g : PSL(2, ℝ)) (s : ℝ) :
-    sideForm (g * ↑(dilation s)) = sideForm g := by
-  funext z
-  induction g using QuotientGroup.induction_on with | H A => ?_
-  have h : Real.exp (s / 2) * Real.exp (-(s / 2)) = 1 := by rw [← Real.exp_add]; simp
-  rw [← QuotientGroup.mk_mul, sideForm_mk, sideForm_mk]
-  simp only [Matrix.SpecialLinearGroup.coe_mul, Matrix.SpecialLinearGroup.coe_dilation,
-    Matrix.mul_apply, Fin.sum_univ_two, Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_zero,
-    Matrix.cons_val_one, Matrix.empty_val', Matrix.cons_val_fin_one, mul_zero, add_zero, zero_add]
-  linear_combination (-(A 1 0 * A 1 1) * Complex.normSq z +
-      (A 0 0 * A 1 1 + A 0 1 * A 1 0) * z.re - A 0 0 * A 0 1) * h
+  upperRightHom_smul_infty mk_smul_zero_eq_infty_iff mk_smul_infty_eq_infty_iff
+  mk_smul_zero_eq_coe_iff mk_smul_infty_eq_coe_iff)
+open Matrix.SpecialLinearGroup (dilation eq_dilation_two_mul_log)
 
 /-! ### Dilations and `pslS` on the ideal boundary -/
 
@@ -218,32 +129,6 @@ theorem pslS_mul_dilation_mul_pslS (s : ℝ) :
 private theorem det_mk (A : SL(2, ℝ)) : A 0 0 * A 1 1 - A 0 1 * A 1 0 = 1 := by
   rw [← Matrix.det_fin_two]
   exact A.det_coe
-
-private theorem mk_smul_zero_eq_infty_iff (A : SL(2, ℝ)) :
-    (A : PSL(2, ℝ)) • ((0 : ℝ) : OnePoint ℝ) = ∞ ↔ A 1 1 = 0 := by
-  simp [OnePoint.smul_some_eq_infty_iff]
-
-private theorem mk_smul_infty_eq_infty_iff (A : SL(2, ℝ)) :
-    (A : PSL(2, ℝ)) • (∞ : OnePoint ℝ) = ∞ ↔ A 1 0 = 0 := by
-  simp [OnePoint.smul_infty_eq_self_iff]
-
-private theorem mk_smul_zero_eq_coe {A : SL(2, ℝ)} {e : ℝ}
-    (h : (A : PSL(2, ℝ)) • ((0 : ℝ) : OnePoint ℝ) = e) : A 1 1 ≠ 0 ∧ A 0 1 = e * A 1 1 := by
-  rw [OnePoint.pslMk_smul, OnePoint.smul_some_eq_ite] at h
-  simp only [Matrix.SpecialLinearGroup.coe_GL_coe_matrix, mul_zero, zero_add] at h
-  by_cases h' : A 1 1 = 0
-  · simp [h'] at h
-  simp only [h', ↓reduceIte, OnePoint.coe_eq_coe] at h
-  exact ⟨h', by rw [← h]; field_simp⟩
-
-private theorem mk_smul_infty_eq_coe {A : SL(2, ℝ)} {e : ℝ}
-    (h : (A : PSL(2, ℝ)) • (∞ : OnePoint ℝ) = e) : A 1 0 ≠ 0 ∧ A 0 0 = e * A 1 0 := by
-  rw [OnePoint.pslMk_smul, OnePoint.smul_infty_eq_ite] at h
-  simp only [Matrix.SpecialLinearGroup.coe_GL_coe_matrix] at h
-  by_cases h' : A 1 0 = 0
-  · simp [h'] at h
-  simp only [h', ↓reduceIte, OnePoint.coe_eq_coe] at h
-  exact ⟨h', by rw [← h]; field_simp⟩
 
 /-! ### The ideal arc on the left of a geodesic line -/
 
@@ -302,14 +187,14 @@ theorem coe_mem_boundaryLeftHalfPlane_iff (g : PSL(2, ℝ)) (x : ℝ) :
 theorem sideForm_eq_zero_of_smul_zero_eq {g : PSL(2, ℝ)} {e : ℝ}
     (h : g • ((0 : ℝ) : OnePoint ℝ) = e) : sideForm g e = 0 := by
   induction g using QuotientGroup.induction_on with | H A => ?_
-  rw [sideForm_mk_ofReal, (mk_smul_zero_eq_coe h).2]
+  rw [sideForm_mk_ofReal, (mk_smul_zero_eq_coe_iff.1 h).2]
   ring
 
 /-- The forward endpoint of a geodesic line is a zero of its side form. -/
 theorem sideForm_eq_zero_of_smul_infty_eq {g : PSL(2, ℝ)} {e : ℝ}
     (h : g • (∞ : OnePoint ℝ) = e) : sideForm g e = 0 := by
   induction g using QuotientGroup.induction_on with | H A => ?_
-  rw [sideForm_mk_ofReal, (mk_smul_infty_eq_coe h).2]
+  rw [sideForm_mk_ofReal, (mk_smul_infty_eq_coe_iff.1 h).2]
   ring
 
 /-! ### The side form in terms of the endpoints -/
@@ -321,7 +206,7 @@ theorem sideForm_eq_of_smul_zero_eq_infty {g : PSL(2, ℝ)} {e : ℝ}
     sideForm g z = e - z.re := by
   induction g using QuotientGroup.induction_on with | H A => ?_
   rw [mk_smul_zero_eq_infty_iff] at h₀
-  obtain ⟨-, ha⟩ := mk_smul_infty_eq_coe h₁
+  obtain ⟨-, ha⟩ := mk_smul_infty_eq_coe_iff.1 h₁
   have hdet := det_mk A
   rw [sideForm_mk, h₀, ha]
   rw [h₀, ha] at hdet
@@ -334,7 +219,7 @@ theorem sideForm_eq_of_smul_infty_eq_infty {g : PSL(2, ℝ)} {e : ℝ}
     sideForm g z = z.re - e := by
   induction g using QuotientGroup.induction_on with | H A => ?_
   rw [mk_smul_infty_eq_infty_iff] at h₁
-  obtain ⟨-, hb⟩ := mk_smul_zero_eq_coe h₀
+  obtain ⟨-, hb⟩ := mk_smul_zero_eq_coe_iff.1 h₀
   have hdet := det_mk A
   rw [sideForm_mk, h₁, hb]
   rw [h₁, hb] at hdet
@@ -348,8 +233,8 @@ theorem exists_sideForm_eq_of_smul_zero_of_smul_infty {g : PSL(2, ℝ)} {e₀ e�
     ∃ κ : ℝ, 0 < κ ∧ ∀ z : ℂ, sideForm g z =
       κ * (e₁ - e₀) * (((e₁ - e₀) / 2) ^ 2 - Complex.normSq (z - ((e₀ + e₁) / 2 : ℝ))) := by
   induction g using QuotientGroup.induction_on with | H A => ?_
-  obtain ⟨hd, hb⟩ := mk_smul_zero_eq_coe h₀
-  obtain ⟨hc, ha⟩ := mk_smul_infty_eq_coe h₁
+  obtain ⟨hd, hb⟩ := mk_smul_zero_eq_coe_iff.1 h₀
+  obtain ⟨hc, ha⟩ := mk_smul_infty_eq_coe_iff.1 h₁
   have hdet := det_mk A
   rw [ha, hb] at hdet
   refine ⟨(A 1 0 * A 1 1) ^ 2, by positivity, fun z ↦ ?_⟩
@@ -364,8 +249,8 @@ theorem infty_mem_boundaryLeftHalfPlane_iff {g : PSL(2, ℝ)} {e₀ e₁ : ℝ}
     (h₀ : g • ((0 : ℝ) : OnePoint ℝ) = e₀) (h₁ : g • (∞ : OnePoint ℝ) = e₁) :
     (∞ : OnePoint ℝ) ∈ boundaryLeftHalfPlane g ↔ e₀ < e₁ := by
   induction g using QuotientGroup.induction_on with | H A => ?_
-  obtain ⟨-, hb⟩ := mk_smul_zero_eq_coe h₀
-  obtain ⟨hc, ha⟩ := mk_smul_infty_eq_coe h₁
+  obtain ⟨-, hb⟩ := mk_smul_zero_eq_coe_iff.1 h₀
+  obtain ⟨hc, ha⟩ := mk_smul_infty_eq_coe_iff.1 h₁
   have hdet := det_mk A
   rw [ha, hb] at hdet
   rw [boundaryLeftHalfPlane, Set.mem_smul_set_iff_inv_smul_mem, ← QuotientGroup.mk_inv,
@@ -399,8 +284,8 @@ private theorem re_geodesicLine_eq_of_smul_zero_of_smul_infty {A : SL(2, ℝ)} {
     (t : ℝ) : (geodesicLine (A : PSL(2, ℝ)) t).re =
       (e₁ * (A 1 0 ^ 2 * Real.exp t ^ 2) + e₀ * A 1 1 ^ 2) /
         (A 1 0 ^ 2 * Real.exp t ^ 2 + A 1 1 ^ 2) := by
-  obtain ⟨-, hb⟩ := mk_smul_zero_eq_coe h₀
-  obtain ⟨-, ha⟩ := mk_smul_infty_eq_coe h₁
+  obtain ⟨-, hb⟩ := mk_smul_zero_eq_coe_iff.1 h₀
+  obtain ⟨-, ha⟩ := mk_smul_infty_eq_coe_iff.1 h₁
   rw [re_geodesicLine_mk, ha, hb]
   ring
 
@@ -409,8 +294,8 @@ theorem strictMono_re_geodesicLine {g : PSL(2, ℝ)} {e₀ e₁ : ℝ}
     (h₀ : g • ((0 : ℝ) : OnePoint ℝ) = e₀) (h₁ : g • (∞ : OnePoint ℝ) = e₁) (h : e₀ < e₁) :
     StrictMono fun t ↦ (geodesicLine g t).re := by
   induction g using QuotientGroup.induction_on with | H A => ?_
-  have hd := (mk_smul_zero_eq_coe h₀).1
-  have hc := (mk_smul_infty_eq_coe h₁).1
+  have hd := (mk_smul_zero_eq_coe_iff.1 h₀).1
+  have hc := (mk_smul_infty_eq_coe_iff.1 h₁).1
   intro s t hst
   simp only [re_geodesicLine_eq_of_smul_zero_of_smul_infty h₀ h₁]
   have hu : Real.exp s ^ 2 < Real.exp t ^ 2 := by gcongr
@@ -426,7 +311,7 @@ theorem lt_re_geodesicLine {g : PSL(2, ℝ)} {e₀ e₁ : ℝ}
     (h₀ : g • ((0 : ℝ) : OnePoint ℝ) = e₀) (h₁ : g • (∞ : OnePoint ℝ) = e₁) (h : e₀ < e₁)
     (t : ℝ) : e₀ < (geodesicLine g t).re := by
   induction g using QuotientGroup.induction_on with | H A => ?_
-  have hc := (mk_smul_infty_eq_coe h₁).1
+  have hc := (mk_smul_infty_eq_coe_iff.1 h₁).1
   rw [re_geodesicLine_eq_of_smul_zero_of_smul_infty h₀ h₁, lt_div_iff₀ (by positivity)]
   have key : 0 < (e₁ - e₀) * (A 1 0 ^ 2 * Real.exp t ^ 2) := by
     have := sub_pos.2 h
@@ -438,7 +323,7 @@ theorem re_geodesicLine_lt {g : PSL(2, ℝ)} {e₀ e₁ : ℝ}
     (h₀ : g • ((0 : ℝ) : OnePoint ℝ) = e₀) (h₁ : g • (∞ : OnePoint ℝ) = e₁) (h : e₀ < e₁)
     (t : ℝ) : (geodesicLine g t).re < e₁ := by
   induction g using QuotientGroup.induction_on with | H A => ?_
-  have hd := (mk_smul_zero_eq_coe h₀).1
+  have hd := (mk_smul_zero_eq_coe_iff.1 h₀).1
   rw [re_geodesicLine_eq_of_smul_zero_of_smul_infty h₀ h₁, div_lt_iff₀ (by positivity)]
   have key : 0 < (e₁ - e₀) * A 1 1 ^ 2 := by
     have := sub_pos.2 h
@@ -460,23 +345,13 @@ theorem exists_smul_zero_eq_and_smul_infty_eq {ξ η : OnePoint ℝ} (h : ξ ≠
   · rw [mul_smul, upperRightHom_smul_coe, zero_add, hx, smul_inv_smul]
   · rw [mul_smul, upperRightHom_smul_infty, hk]
 
-/-- A diagonal matrix of `SL(2, ℝ)` with positive entries is a dilation. -/
-private theorem eq_dilation_of_diag {A : SL(2, ℝ)} (h₁₀ : A 1 0 = 0) (h₀₁ : A 0 1 = 0)
-    (hpos : 0 < A 0 0) : A = dilation (2 * Real.log (A 0 0)) := by
-  have hdet := det_mk A
-  rw [h₁₀, h₀₁] at hdet
-  have h₁₁ : A 1 1 = (A 0 0)⁻¹ := eq_inv_of_mul_eq_one_right (by linear_combination hdet)
-  ext i j
-  fin_cases i <;> fin_cases j <;>
-    simp [h₁₀, h₀₁, h₁₁, Real.exp_neg, Real.exp_log hpos]
-
 /-- An element of `PSL(2, ℝ)` fixing the ideal points `0` and `∞` is a dilation. -/
 theorem exists_eq_dilation_of_smul_zero_of_smul_infty {k : PSL(2, ℝ)}
     (h₀ : k • ((0 : ℝ) : OnePoint ℝ) = ((0 : ℝ) : OnePoint ℝ)) (h₁ : k • (∞ : OnePoint ℝ) = ∞) :
     ∃ s : ℝ, k = ((dilation s : SL(2, ℝ)) : PSL(2, ℝ)) := by
   induction k using QuotientGroup.induction_on with | H A => ?_
   rw [mk_smul_infty_eq_infty_iff] at h₁
-  have h₀₁ : A 0 1 = 0 := by simpa using (mk_smul_zero_eq_coe h₀).2
+  have h₀₁ : A 0 1 = 0 := by simpa using (mk_smul_zero_eq_coe_iff.1 h₀).2
   have hdet := det_mk A
   rw [h₁, h₀₁] at hdet
   have h₀₀ : A 0 0 ≠ 0 := by
@@ -484,10 +359,10 @@ theorem exists_eq_dilation_of_smul_zero_of_smul_infty {k : PSL(2, ℝ)}
     simp [h] at hdet
   rcases lt_or_gt_of_ne h₀₀ with hneg | hpos
   · refine ⟨2 * Real.log (-A 0 0), ?_⟩
-    rw [← Matrix.ProjectiveSpecialLinearGroup.mk_neg A, eq_dilation_of_diag (A := -A)
+    rw [← Matrix.ProjectiveSpecialLinearGroup.mk_neg A, eq_dilation_two_mul_log (A := -A)
       (by simp [h₁]) (by simp [h₀₁]) (by simpa using hneg)]
     simp
-  · exact ⟨_, congrArg _ (eq_dilation_of_diag h₁ h₀₁ hpos)⟩
+  · exact ⟨_, congrArg _ (eq_dilation_two_mul_log h₁ h₀₁ hpos)⟩
 
 /-- Two elements with the same backward and the same forward endpoint differ by a dilation on the
 right: their geodesic lines are reparametrisations of each other. -/
@@ -528,11 +403,15 @@ theorem eq_of_geodesicLine_zero_eq_of_smul_infty_eq {g g' : PSL(2, ℝ)}
   have hcos : Real.cos θ ^ 2 = 1 := by
     linear_combination Real.cos_sq_add_sin_sq θ - Real.sin θ * h₁'
   rw [← inv_mul_eq_one, ← inv_inv g', ← mul_inv_rev, inv_eq_one, hθ]
+  -- `sin θ = 0`, so `cos θ = ±1` and the rotation is `±1`, trivial in `PSL(2, ℝ)`
   rcases sq_eq_one_iff.1 hcos with h | h
-  · rw [show Matrix.SpecialLinearGroup.rotation θ = 1 by
-      ext i j; fin_cases i <;> fin_cases j <;> simp [h, h₁'], QuotientGroup.mk_one]
-  · rw [show Matrix.SpecialLinearGroup.rotation θ = -1 by
-      ext i j; fin_cases i <;> fin_cases j <;> simp [h, h₁'],
-      Matrix.ProjectiveSpecialLinearGroup.mk_neg, QuotientGroup.mk_one]
+  · have hrot : Matrix.SpecialLinearGroup.rotation θ = 1 := by
+      ext i j
+      fin_cases i <;> fin_cases j <;> simp [h, h₁']
+    rw [hrot, QuotientGroup.mk_one]
+  · have hrot : Matrix.SpecialLinearGroup.rotation θ = -1 := by
+      ext i j
+      fin_cases i <;> fin_cases j <;> simp [h, h₁']
+    rw [hrot, Matrix.ProjectiveSpecialLinearGroup.mk_neg, QuotientGroup.mk_one]
 
 end TauCeti.UpperHalfPlane
