@@ -51,6 +51,7 @@ private noncomputable def realCliffordTwoTwoEvenUnitaryToSpecialLinearProd :
   map_mul' x y := by
     apply Prod.ext
     · apply Subtype.ext
+      -- The private constructor has no public coercion lemma, so expose its first matrix value.
       change (realCliffordTwoTwoEvenEquivMatrixProd
           (CliffordAlgebra.evenUnitaryGroupEvenPart (realCliffordForm 2 2) (x * y))).1 =
         (realCliffordTwoTwoEvenEquivMatrixProd
@@ -59,6 +60,7 @@ private noncomputable def realCliffordTwoTwoEvenUnitaryToSpecialLinearProd :
             (CliffordAlgebra.evenUnitaryGroupEvenPart (realCliffordForm 2 2) y)).1
       simp
     · apply Subtype.ext
+      -- The private constructor has no public coercion lemma, so expose its second matrix value.
       change (realCliffordTwoTwoEvenEquivMatrixProd
           (CliffordAlgebra.evenUnitaryGroupEvenPart (realCliffordForm 2 2) (x * y))).2 =
         (realCliffordTwoTwoEvenEquivMatrixProd
@@ -98,8 +100,10 @@ private theorem realCliffordTwoTwoEvenUnitaryToSpecialLinearProd_surjective :
     rw [map_mul, map_one, realCliffordTwoTwoEvenEquivMatrixProd_reverseEven]
     rw [hyModel]
     apply Prod.ext
+    -- The transported first coordinate must be exposed before `Matrix.mul_adjugate` applies.
     · change (A : Matrix (Fin 2) (Fin 2) ℝ) * Matrix.adjugate A = 1
       rw [Matrix.mul_adjugate, A.det_coe, one_smul]
+    -- The transported second coordinate must be exposed before `Matrix.mul_adjugate` applies.
     · change (B : Matrix (Fin 2) (Fin 2) ℝ) * Matrix.adjugate B = 1
       rw [Matrix.mul_adjugate, B.det_coe, one_smul]
   let u : (CliffordAlgebra (realCliffordForm 2 2))ˣ :=
@@ -119,11 +123,13 @@ private theorem realCliffordTwoTwoEvenUnitaryToSpecialLinearProd_surjective :
   refine ⟨z, ?_⟩
   apply Prod.ext
   · apply Subtype.ext
+    -- Unfold the private map's first coordinate; no public evaluation lemma exists for it.
     change (realCliffordTwoTwoEvenEquivMatrixProd
       (CliffordAlgebra.evenUnitaryGroupEvenPart (realCliffordForm 2 2) z)).1 =
         (A : Matrix (Fin 2) (Fin 2) ℝ)
     rw [hzy, hyModel]
   · apply Subtype.ext
+    -- Unfold the private map's second coordinate; no public evaluation lemma exists for it.
     change (realCliffordTwoTwoEvenEquivMatrixProd
       (CliffordAlgebra.evenUnitaryGroupEvenPart (realCliffordForm 2 2) z)).2 =
         (B : Matrix (Fin 2) (Fin 2) ℝ)

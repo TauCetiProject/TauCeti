@@ -74,6 +74,7 @@ private theorem realCliffordTwoOneEquivMatrixProd_ι_trace
 
 /-- In the split matrix model of `Cl(2,1)`, Clifford conjugation is matrix adjugation in each
 factor. -/
+@[simp]
 theorem realCliffordTwoOneEquivMatrixProd_star
     (x : CliffordAlgebra (realCliffordForm 2 1)) :
     realCliffordTwoOneEquivMatrixProd (star x) =
@@ -159,6 +160,7 @@ theorem realCliffordTwoTwoEvenEquivMatrixProd_reverseEven
 
 /-- In the split matrix model of `Cl⁺(2,2)`, the reverse norm-one equation is determinant one in
 both matrix factors. -/
+@[simp]
 theorem realCliffordTwoTwo_reverseEven_mul_self_eq_one_iff_det_eq_one
     (x : CliffordAlgebra.even (realCliffordForm 2 2)) :
     CliffordAlgebra.reverseEven (realCliffordForm 2 2) x * x = 1 ↔
@@ -172,11 +174,13 @@ theorem realCliffordTwoTwo_reverseEven_mul_self_eq_one_iff_det_eq_one
     rw [map_mul, map_one, realCliffordTwoTwoEvenEquivMatrixProd_reverseEven] at hm
     constructor
     · have hfst := congrArg Prod.fst hm
+      -- The projection is definitionally this equation, but no lemma rewrites the local model name.
       change Matrix.adjugate A * A = 1 at hfst
       rw [Matrix.adjugate_mul] at hfst
       have h00 := congrArg (fun M : Matrix (Fin 2) (Fin 2) ℝ => M 0 0) hfst
       simpa [A] using h00
     · have hsnd := congrArg Prod.snd hm
+      -- The projection is definitionally this equation, but no lemma rewrites the local model name.
       change Matrix.adjugate B * B = 1 at hsnd
       rw [Matrix.adjugate_mul] at hsnd
       have h00 := congrArg (fun M : Matrix (Fin 2) (Fin 2) ℝ => M 0 0) hsnd
@@ -185,8 +189,10 @@ theorem realCliffordTwoTwo_reverseEven_mul_self_eq_one_iff_det_eq_one
     apply realCliffordTwoTwoEvenEquivMatrixProd.injective
     rw [map_mul, map_one, realCliffordTwoTwoEvenEquivMatrixProd_reverseEven]
     apply Prod.ext
+    -- Expose the local matrix name so that the adjugate multiplication theorem applies.
     · change Matrix.adjugate A * A = 1
       rw [Matrix.adjugate_mul, hA, one_smul]
+    -- Expose the local matrix name so that the adjugate multiplication theorem applies.
     · change Matrix.adjugate B * B = 1
       rw [Matrix.adjugate_mul, hB, one_smul]
 
