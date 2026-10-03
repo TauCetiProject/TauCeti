@@ -26,7 +26,7 @@ namespace TauCeti
 
 /-- The Bockstein of the identity character of `ℤ/2` is the class of the extension `ℤ/4`. -/
 @[simp]
-theorem bockstein1_cyclicTwoClass :
+theorem bockstein1_cyclicTwoClass_eq_zmodFourExtensionClass :
     bockstein1 (Multiplicative (ZMod 2)) cyclicTwoClass = zmodFourExtensionClass := by
   rw [bockstein1_eq_cupFp_self, cupFp_cyclicTwoClass_self_eq_zmodFourExtensionClass]
 
