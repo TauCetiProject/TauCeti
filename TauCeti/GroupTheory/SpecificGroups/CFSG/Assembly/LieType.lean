@@ -71,6 +71,26 @@ def steinberg : (d : ValidLieTypeIndex) → d.AmbientGroup →* d.AmbientGroup
   | ⟨.trialityD4 _, hv⟩ =>
       GraphTwistedIndex.steinberg ⟨⟨_, hv⟩, by simp⟩
 
+/-- On a Suzuki index the assembled Steinberg map is that of the family. -/
+theorem steinberg_suzuki {m : ℕ} (hv : (LieTypeIndex.suzuki m).Valid) :
+    steinberg ⟨_, hv⟩ = SuzukiLieIndex.steinberg ⟨⟨_, hv⟩, by simp⟩ := by
+  rfl
+
+/-- On a Ree `G₂` index the assembled Steinberg map is that of the family. -/
+theorem steinberg_reeG2 {m : ℕ} (hv : (LieTypeIndex.reeG2 m).Valid) :
+    steinberg ⟨_, hv⟩ = (ReeG2LieIndex.of m hv).steinberg := by
+  rfl
+
+/-- On a Ree `F₄` index the assembled Steinberg map is that of the family. -/
+theorem steinberg_reeF4 {m : ℕ} (hv : (LieTypeIndex.reeF4 m).Valid) :
+    steinberg ⟨_, hv⟩ = (ReeF4LieIndex.of m hv).steinberg := by
+  rfl
+
+/-- On the Tits index the assembled Steinberg map is that of the Tits construction. -/
+theorem steinberg_tits (hv : LieTypeIndex.tits.Valid) :
+    steinberg ⟨_, hv⟩ = TitsLieIndex.of.steinberg := by
+  rfl
+
 /-- On ordinary and graph-twisted indices the assembled map has the recorded diagram action
 and field-order exponent. -/
 theorem steinberg_simpleRootSubgroup_of_not_usesHalfFrobenius
