@@ -83,15 +83,6 @@ theorem toPointedCone_toToricRay (rho : Phi.Ray) (sigma : Phi.cones)
     (rho.toToricRay Phi sigma h).toPointedCone = rho.toCone.1 :=
   (rfl)
 
-/-- Converting a fan ray to a toric ray and back recovers the original fan ray. -/
-@[simp]
-theorem ofToricRay_toToricRay (rho : Phi.Ray) (sigma : Phi.cones)
-    (h : rho.toCone ≤ sigma) :
-    ofToricRay Phi sigma (rho.toToricRay Phi sigma h) = rho := by
-  apply Subtype.ext
-  apply Subtype.ext
-  rfl
-
 /-- A fan ray is not the zero cone. -/
 theorem toCone_ne_bot (rho : Phi.Ray) : rho.toCone.1 ≠ ⊥ := by
   exact (rho.toToricRay Phi rho.toCone le_rfl).toPointedCone_ne_bot
@@ -155,9 +146,11 @@ theorem exists_cone_rays_eq {S : Set Phi.Ray} {sigma : Phi.cones}
   have hTau : tau ≤ sigma := F.isFaceOf.le
   have hRay (rho : Phi.Ray) (h : rho.toCone ≤ sigma) : rho.toCone ≤ tau ↔ rho ∈ S := by
     let nu := rho.toToricRay Phi sigma h
+    have hInverse := congrArg Subtype.val ((Phi.rayEquiv sigma).symm_apply_apply ⟨rho, h⟩)
+    simp only [rayEquiv_apply, rayEquiv_symm_apply, Subtype.coe_mk] at hInverse
     rw [← Subtype.coe_le_coe]
     simpa only [nu, Ray.toPointedCone_toToricRay, A, Set.mem_ofPred_eq,
-      Ray.ofToricRay_toToricRay, tau] using hF nu
+      hInverse, tau] using hF nu
   refine ⟨tau, hTau, fun rho ↦ ⟨fun h ↦ (hRay rho (h.trans hTau)).mp h,
     fun h ↦ (hRay rho (hS rho h)).mpr h⟩⟩
 
