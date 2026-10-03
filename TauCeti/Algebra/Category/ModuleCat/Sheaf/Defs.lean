@@ -6,14 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.Presheaf.Sheafification
-public import Mathlib.Algebra.Category.ModuleCat.Sheaf.PushforwardContinuous
 public import Mathlib.Algebra.Category.Ring.Limits
 
 /-!
 # Basic definitions for sheaves of modules
 
 This file collects the coefficient sheaf obtained by forgetting commutativity, the original
-commutative-ring actions on its section modules and their restrictions to slices, the counit
+commutative-ring actions on its section modules, the counit
 identifying the sheafification of the underlying presheaf of a sheaf of modules with that sheaf,
 and the vanishing of every sheaf of modules over a sheaf of rings whose sections are trivial.
 
@@ -69,13 +68,6 @@ instance _root_.SheafOfModules.sectionModule
     (P : _root_.SheafOfModules.{v} (ringCatSheaf R)) (U : Cᵒᵖ) :
     Module (R.obj.obj U) (P.val.obj U) :=
   inferInstanceAs (Module ((ringCatSheaf R).obj.obj U) (P.val.obj U))
-
-/-- Restriction to a slice uses the original commutative-ring action on each section module. -/
-instance _root_.SheafOfModules.overSectionModule
-    {R : Sheaf J CommRingCat.{u}} [J.HasSheafCompose (forget₂ CommRingCat RingCat.{u})]
-    (P : _root_.SheafOfModules.{v} (ringCatSheaf R)) (U V : C) (g : V ⟶ U) :
-    Module (R.obj.obj (Opposite.op V)) ((P.over U).val.obj (Opposite.op (Over.mk g))) :=
-  inferInstanceAs (Module (R.obj.obj (Opposite.op V)) (P.val.obj (Opposite.op V)))
 
 /-- Sheafifying the underlying presheaf of modules of a sheaf of `R`-modules `M`, for a sheaf of
 rings `R`, recovers `M`; this is the counit of the sheafification adjunction. -/

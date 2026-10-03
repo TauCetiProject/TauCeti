@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Category.ModuleCat.Presheaf.InternalHom
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Hom
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Over
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Closed
 import TauCeti.CategoryTheory.Monoidal.Closed.Basic
 import TauCeti.CategoryTheory.Monoidal.Closed.Functor
