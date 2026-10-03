@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Logic.Relation
 public import TauCeti.Analysis.Convex.Between
-public import TauCeti.Data.Fin.Basic
 public import TauCeti.Geometry.Polygon.Simple
 
 /-!
@@ -46,8 +45,7 @@ parallelogram it spans by a Δ-move (`Affine.Triangle.isDeltaMove_parallelogram`
 ## Main definitions
 
 * `Polygon.IsDeltaMove`: the condition for inserting a vertex to be a Δ-move.
-* `TauCeti.SimplePolygon.rotate`, `TauCeti.SimplePolygon.insertVertex` and
-  `TauCeti.SimplePolygon.deltaMove`: relabelling and inserting vertices of simple polygons.
+* `TauCeti.SimplePolygon.deltaMove`: the simple polygon obtained by a Δ-move.
 * `TauCeti.SimplePolygon.IsElementaryMove`: a cyclic relabelling, a Δ-move, or a subdivision of an
   edge of a simple polygon.
 * `TauCeti.SimplePolygon.CombinatoriallyEquivalent`: the equivalence relation they generate.
@@ -552,49 +550,8 @@ namespace TauCeti
 
 namespace SimplePolygon
 
-variable {R V P : Type*} [Ring R] [PartialOrder R] [AddCommGroup V] [Module R V] [AddTorsor V P]
-
-section ZeroLEOneClass
-
-variable [ZeroLEOneClass R]
-
-/-- The cyclic relabelling of a simple polygon, `Polygon.rotate`. -/
-@[expose] def rotate (p : SimplePolygon R P) : SimplePolygon R P where
-  numVertices := p.numVertices
-  toPolygon := p.toPolygon.rotate
-  isSimple := p.toPolygon.isSimple_rotate_iff.2 p.isSimple
-
-@[simp]
-theorem rotate_numVertices (p : SimplePolygon R P) : p.rotate.numVertices = p.numVertices :=
-  rfl
-
-@[simp]
-theorem rotate_toPolygon (p : SimplePolygon R P) : p.rotate.toPolygon = p.toPolygon.rotate :=
-  rfl
-
-/-- The simple polygon obtained from `p` by inserting `c` after vertex `i`, `Polygon.insertVertex`,
-when the result is simple. For `c` a point of edge `i`, this subdivides that edge. -/
-@[expose] def insertVertex (p : SimplePolygon R P) (i : Fin p.numVertices) (c : P)
-    (hq : (p.toPolygon.insertVertex i c).IsSimple R) : SimplePolygon R P where
-  numVertices := p.numVertices + 1
-  toPolygon := p.toPolygon.insertVertex i c
-  isSimple := hq
-
-@[simp]
-theorem insertVertex_numVertices (p : SimplePolygon R P) (i : Fin p.numVertices) (c : P)
-    (hq : (p.toPolygon.insertVertex i c).IsSimple R) :
-    (p.insertVertex i c hq).numVertices = p.numVertices + 1 :=
-  rfl
-
-@[simp]
-theorem insertVertex_toPolygon (p : SimplePolygon R P) (i : Fin p.numVertices) (c : P)
-    (hq : (p.toPolygon.insertVertex i c).IsSimple R) :
-    (p.insertVertex i c hq).toPolygon = p.toPolygon.insertVertex i c :=
-  rfl
-
-end ZeroLEOneClass
-
-variable [IsOrderedRing R] [Nontrivial R]
+variable {R V P : Type*} [Ring R] [PartialOrder R] [IsOrderedRing R] [Nontrivial R]
+  [AddCommGroup V] [Module R V] [AddTorsor V P]
 
 /-- The simple polygon obtained from `p` by the Δ-move inserting `c` after vertex `i`. -/
 @[expose] def deltaMove (p : SimplePolygon R P) (i : Fin p.numVertices) (c : P)

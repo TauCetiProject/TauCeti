@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Polygon.Basic
 public import Mathlib.Topology.Algebra.Affine
 public import Mathlib.Topology.Instances.AddCircle.Defs
 public import TauCeti.Geometry.Polygon.Basic
@@ -45,6 +44,8 @@ no vertices is vacuously simple and has empty boundary, so the results about the
 * `Polygon.boundaryParamCircle`: the induced map from the circle `AddCircle n` to `P`.
 * `TauCeti.SimplePolygon`: a simple polygon bundled with its number of vertices, the polygonal
   presentation of a knot when `P = ℝ³`.
+* `TauCeti.SimplePolygon.rotate` and `TauCeti.SimplePolygon.insertVertex`: relabelling and
+  inserting vertices of simple polygons.
 * `TauCeti.SimplePolygon.realize`: the realization of a simple real polygon as a map from the
   unit circle `Circle`.
 
@@ -355,6 +356,47 @@ structure SimplePolygon (R : Type*) {V : Type*} (P : Type*) [Ring R] [PartialOrd
 namespace SimplePolygon
 
 attribute [instance] neZero
+
+section Operations
+
+variable {R V P : Type*} [Ring R] [PartialOrder R] [ZeroLEOneClass R] [AddCommGroup V]
+  [Module R V] [AddTorsor V P]
+
+/-- The cyclic relabelling of a simple polygon, `Polygon.rotate`. -/
+@[expose] def rotate (p : SimplePolygon R P) : SimplePolygon R P where
+  numVertices := p.numVertices
+  toPolygon := p.toPolygon.rotate
+  isSimple := p.toPolygon.isSimple_rotate_iff.2 p.isSimple
+
+@[simp]
+theorem rotate_numVertices (p : SimplePolygon R P) : p.rotate.numVertices = p.numVertices :=
+  rfl
+
+@[simp]
+theorem rotate_toPolygon (p : SimplePolygon R P) : p.rotate.toPolygon = p.toPolygon.rotate :=
+  rfl
+
+/-- The simple polygon obtained from `p` by inserting `c` after vertex `i`, `Polygon.insertVertex`,
+when the result is simple. For `c` a point of edge `i`, this subdivides that edge. -/
+@[expose] def insertVertex (p : SimplePolygon R P) (i : Fin p.numVertices) (c : P)
+    (hq : (p.toPolygon.insertVertex i c).IsSimple R) : SimplePolygon R P where
+  numVertices := p.numVertices + 1
+  toPolygon := p.toPolygon.insertVertex i c
+  isSimple := hq
+
+@[simp]
+theorem insertVertex_numVertices (p : SimplePolygon R P) (i : Fin p.numVertices) (c : P)
+    (hq : (p.toPolygon.insertVertex i c).IsSimple R) :
+    (p.insertVertex i c hq).numVertices = p.numVertices + 1 :=
+  rfl
+
+@[simp]
+theorem insertVertex_toPolygon (p : SimplePolygon R P) (i : Fin p.numVertices) (c : P)
+    (hq : (p.toPolygon.insertVertex i c).IsSimple R) :
+    (p.insertVertex i c hq).toPolygon = p.toPolygon.insertVertex i c :=
+  rfl
+
+end Operations
 
 variable {V P : Type*} [AddCommGroup V] [Module ℝ V] [AddTorsor V P] (p : SimplePolygon ℝ P)
 
