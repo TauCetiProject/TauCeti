@@ -36,8 +36,8 @@ at every degree, finite or not, which is the semidirect decomposition `DihedralG
 ## Main definitions
 
 * `TauCeti.dihedralElements`: a computable enumeration of `DihedralGroup n`.
-* `TauCeti.dihedralHom`: the homomorphism `DihedralGroup n →* G` attached to two involutions whose
-  product has order `n`.
+* `TauCeti.dihedralHom`: the homomorphism `DihedralGroup n →* M` attached to two involutions
+  in a monoid whose product has order `n`.
 * `TauCeti.dihedralGroupMulEquiv`: that homomorphism as an isomorphism, when the two involutions
   generate `G` and neither is the identity.
 * `TauCeti.dihedralReflectionParity`, `TauCeti.dihedralRotations`: the reflection parity and the
@@ -123,9 +123,6 @@ private lemma zpow_cast_eq_zpow (hc : orderOf c = n) {i : ZMod n} {k : ℤ} (h :
     c ^ (ZMod.cast i : ℤ) = c ^ k := by
   rw [zpow_eq_zpow_iff_modEq, hc, ← ZMod.intCast_eq_intCast_iff, ZMod.intCast_zmod_cast, h]
 
-private lemma zpow_cast_zero (c : G) : c ^ (ZMod.cast (0 : ZMod n) : ℤ) = 1 := by
-  rw [ZMod.cast_zero, zpow_zero]
-
 private lemma zpow_cast_one (hc : orderOf c = n) : c ^ (ZMod.cast (1 : ZMod n) : ℤ) = c := by
   rw [zpow_cast_eq_zpow hc (k := 1) Int.cast_one, zpow_one]
 
@@ -171,14 +168,11 @@ private lemma dihedralFun_r (s c : G) (i : ZMod n) :
 private lemma dihedralFun_sr (s c : G) (i : ZMod n) :
     dihedralFun s c (.sr i) = s * c ^ (ZMod.cast i : ℤ) := rfl
 
-/-- The homomorphism out of the dihedral group determined by two involutions whose product has
-order `n`: a rotation `r i` goes to `(s * t) ^ i`, and a reflection `sr i` to `s * (s * t) ^ i`,
-the index `i` being read as an integer by `ZMod.cast`. These two values are
-`TauCeti.dihedralHom_r` and `TauCeti.dihedralHom_sr`. -/
-def dihedralHom (hs : s * s = 1) (ht : t * t = 1) (hn : orderOf (s * t) = n) :
+/-- The group-valued construction, used inside the unit group of the target monoid. -/
+private def dihedralGroupHom (hs : s * s = 1) (ht : t * t = 1) (hn : orderOf (s * t) = n) :
     DihedralGroup n →* G where
   toFun := dihedralFun s (s * t)
-  map_one' := by rw [DihedralGroup.one_def, dihedralFun_r, zpow_cast_zero]
+  map_one' := by simp only [DihedralGroup.one_def, dihedralFun_r, ZMod.cast_zero, zpow_zero]
   map_mul' := by
     rintro (i | i) (j | j)
     · rw [DihedralGroup.r_mul_r, dihedralFun_r, dihedralFun_r, dihedralFun_r, zpow_cast_add hn]
@@ -190,32 +184,16 @@ def dihedralHom (hs : s * s = 1) (ht : t * t = 1) (hn : orderOf (s * t) = n) :
         mul_assoc s, zpow_cast_mul_eq hs ht hn, ← mul_assoc, hs, one_mul, ← zpow_cast_add hn,
         neg_add_eq_sub]
 
-/-- `TauCeti.dihedralHom` sends the rotation `r i` to the power `(s * t) ^ i`. -/
-@[simp]
-theorem dihedralHom_r (hs : s * s = 1) (ht : t * t = 1) (hn : orderOf (s * t) = n) (i : ZMod n) :
-    dihedralHom hs ht hn (.r i) = (s * t) ^ (ZMod.cast i : ℤ) := by
-  unfold dihedralHom
-  exact dihedralFun_r s (s * t) i
-
-/-- `TauCeti.dihedralHom` sends the reflection `sr i` to `s * (s * t) ^ i`. -/
-@[simp]
-theorem dihedralHom_sr (hs : s * s = 1) (ht : t * t = 1) (hn : orderOf (s * t) = n) (i : ZMod n) :
-    dihedralHom hs ht hn (.sr i) = s * (s * t) ^ (ZMod.cast i : ℤ) := by
-  unfold dihedralHom
-  exact dihedralFun_sr s (s * t) i
-
-/-- **Two involutions other than the identity embed the dihedral group.** If neither of the
-involutions `s` and `t` is the identity, then `TauCeti.dihedralHom` is injective, where `n` is the
-order of `s * t`. -/
-theorem dihedralHom_injective (hs : s * s = 1) (ht : t * t = 1) (hs1 : s ≠ 1) (ht1 : t ≠ 1)
-    (hn : orderOf (s * t) = n) : Function.Injective (dihedralHom hs ht hn) := by
+private theorem dihedralGroupHom_injective (hs : s * s = 1) (ht : t * t = 1) (hs1 : s ≠ 1)
+    (ht1 : t ≠ 1) (hn : orderOf (s * t) = n) : Function.Injective (dihedralGroupHom hs ht hn) := by
   rw [injective_iff_map_eq_one]
   rintro (i | i) hi
   · -- A rotation in the kernel has index a multiple of the order of `s * t`, hence index zero.
-    rw [dihedralHom_r, zpow_cast_eq_one_iff hn] at hi
+    rw [dihedralGroupHom, MonoidHom.coe_mk, OneHom.coe_mk, dihedralFun_r,
+      zpow_cast_eq_one_iff hn] at hi
     rw [hi, DihedralGroup.r_zero]
   · -- A reflection in the kernel would put `s` in the centralizer of `s * t`.
-    rw [dihedralHom_sr] at hi
+    rw [dihedralGroupHom, MonoidHom.coe_mk, OneHom.coe_mk, dihedralFun_sr] at hi
     exfalso
     have hzpow : s = (s * t) ^ (-(ZMod.cast i : ℤ)) := by
       rw [zpow_neg, eq_inv_iff_mul_eq_one]
@@ -237,6 +215,72 @@ theorem dihedralHom_injective (hs : s * s = 1) (ht : t * t = 1) (hs1 : s ≠ 1) 
       nth_rewrite 2 [hzpow]
       rw [hm, zpow_add, zpow_mul, hsq, one_zpow, one_mul, zpow_one]
 
+end Recognition
+
+section MonoidHom
+
+variable {M : Type*} [Monoid M] {n : ℕ} {s t : M}
+
+/-- The homomorphism out of the dihedral group determined by two involutions in a monoid whose
+product has order `n`. The involutions are units, so rotations can be evaluated at integer
+representatives even when `n = 0`. The formulas are `TauCeti.dihedralHom_r_units` and
+`TauCeti.dihedralHom_sr_units`; for division monoids they simplify to `TauCeti.dihedralHom_r`
+and `TauCeti.dihedralHom_sr`. -/
+def dihedralHom (hs : s * s = 1) (ht : t * t = 1) (hn : orderOf (s * t) = n) :
+    DihedralGroup n →* M :=
+  (Units.coeHom M).comp (dihedralGroupHom (s := ⟨s, s, hs, hs⟩) (t := ⟨t, t, ht, ht⟩)
+    (Units.ext hs) (Units.ext ht) (by
+      rw [← orderOf_injective (Units.coeHom M) Units.val_injective]
+      exact hn))
+
+/-- A rotation maps to the corresponding integer power of the product of the two units. -/
+@[simp]
+theorem dihedralHom_r_units (hs : s * s = 1) (ht : t * t = 1) (hn : orderOf (s * t) = n)
+    (i : ZMod n) :
+    dihedralHom hs ht hn (.r i) =
+      (((⟨s, s, hs, hs⟩ * ⟨t, t, ht, ht⟩ : Mˣ) ^ (ZMod.cast i : ℤ) : Mˣ) : M) :=
+  (rfl)
+
+/-- A reflection maps to the first involution times the corresponding power of the unit product. -/
+@[simp]
+theorem dihedralHom_sr_units (hs : s * s = 1) (ht : t * t = 1) (hn : orderOf (s * t) = n)
+    (i : ZMod n) :
+    dihedralHom hs ht hn (.sr i) =
+      s * (((⟨s, s, hs, hs⟩ * ⟨t, t, ht, ht⟩ : Mˣ) ^ (ZMod.cast i : ℤ) : Mˣ) : M) :=
+  (rfl)
+
+/-- **Two involutions other than the identity embed the dihedral group in a monoid.** If neither
+of `s` and `t` is the identity, then `TauCeti.dihedralHom` is injective, where `n` is the order of
+`s * t`. -/
+theorem dihedralHom_injective (hs : s * s = 1) (ht : t * t = 1) (hs1 : s ≠ 1) (ht1 : t ≠ 1)
+    (hn : orderOf (s * t) = n) : Function.Injective (dihedralHom hs ht hn) :=
+  Units.val_injective.comp (dihedralGroupHom_injective (Units.ext hs) (Units.ext ht)
+    (fun h => hs1 (congrArg Units.val h)) (fun h => ht1 (congrArg Units.val h)) _)
+
+end MonoidHom
+
+section Evaluation
+
+variable {G : Type*} [DivisionMonoid G] {n : ℕ} {s t : G}
+
+/-- `TauCeti.dihedralHom` sends the rotation `r i` to the power `(s * t) ^ i`
+in a division monoid. -/
+theorem dihedralHom_r (hs : s * s = 1) (ht : t * t = 1) (hn : orderOf (s * t) = n) (i : ZMod n) :
+    dihedralHom hs ht hn (.r i) = (s * t) ^ (ZMod.cast i : ℤ) := by
+  simp only [dihedralHom_r_units, Units.val_zpow_eq_zpow_val, Units.val_mul]
+
+/-- `TauCeti.dihedralHom` sends the reflection `sr i` to `s * (s * t) ^ i`
+in a division monoid. -/
+theorem dihedralHom_sr (hs : s * s = 1) (ht : t * t = 1) (hn : orderOf (s * t) = n) (i : ZMod n) :
+    dihedralHom hs ht hn (.sr i) = s * (s * t) ^ (ZMod.cast i : ℤ) := by
+  simp only [dihedralHom_sr_units, Units.val_zpow_eq_zpow_val, Units.val_mul]
+
+end Evaluation
+
+section Recognition
+
+variable {G : Type*} [Group G] {n : ℕ} {s t : G}
+
 /-- The image of `TauCeti.dihedralHom` is the subgroup generated by the two involutions. -/
 theorem range_dihedralHom (hs : s * s = 1) (ht : t * t = 1) (hn : orderOf (s * t) = n) :
     (dihedralHom hs ht hn).range = Subgroup.closure {s, t} := by
@@ -245,11 +289,11 @@ theorem range_dihedralHom (hs : s * s = 1) (ht : t * t = 1) (hn : orderOf (s * t
     mul_mem hsmem (Subgroup.subset_closure (by simp))
   refine le_antisymm ?_ ?_
   · rintro _ ⟨i | i, rfl⟩
-    · exact zpow_mem hstmem _
-    · exact mul_mem hsmem (zpow_mem hstmem _)
+    · simpa only [dihedralHom_r] using zpow_mem hstmem (ZMod.cast i : ℤ)
+    · simpa only [dihedralHom_sr] using mul_mem hsmem (zpow_mem hstmem (ZMod.cast i : ℤ))
   · rw [Subgroup.closure_le]
     rintro x (rfl | rfl)
-    · exact ⟨DihedralGroup.sr 0, by rw [dihedralHom_sr, zpow_cast_zero, mul_one]⟩
+    · exact ⟨DihedralGroup.sr 0, by simp⟩
     · exact ⟨DihedralGroup.sr 1, by rw [dihedralHom_sr, zpow_cast_one hn, ← mul_assoc, hs, one_mul]⟩
 
 /-- **A group generated by two involutions other than the identity is dihedral.** If the
