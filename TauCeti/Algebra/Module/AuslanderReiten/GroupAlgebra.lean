@@ -36,9 +36,9 @@ namespace TauCeti.AuslanderReitenTranspose
 
 variable {R G P₀ P₁ : Type*} [CommRing R] [Group G] [Finite G]
   [AddCommMonoid P₀] [Module (MonoidAlgebra R G) P₀] [Module R P₀]
-  [IsScalarTower R (MonoidAlgebra R G) P₀] [SMulCommClass R (MonoidAlgebra R G) P₀]
+  [IsScalarTower R (MonoidAlgebra R G) P₀]
   [AddCommMonoid P₁] [Module (MonoidAlgebra R G) P₁] [Module R P₁]
-  [IsScalarTower R (MonoidAlgebra R G) P₁] [SMulCommClass R (MonoidAlgebra R G) P₁]
+  [IsScalarTower R (MonoidAlgebra R G) P₁]
 
 /-- Over a finite group algebra, the transpose of `f` is the cokernel of ordinary
 base-ring-dual precomposition with its contragredient action. -/

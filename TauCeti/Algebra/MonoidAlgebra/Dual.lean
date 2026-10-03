@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.MonoidAlgebra.Basic
 public import TauCeti.Algebra.MonoidAlgebra.Basic
 public import TauCeti.LinearAlgebra.Dual.RightAction
 import Mathlib.LinearAlgebra.Finsupp.Pi
@@ -68,7 +69,7 @@ section CoefficientMap
 
 variable {R G M : Type*} [CommSemiring R] [Group G]
   [AddCommMonoid M] [Module (MonoidAlgebra R G) M] [Module R M]
-  [IsScalarTower R (MonoidAlgebra R G) M] [SMulCommClass R (MonoidAlgebra R G) M]
+  [IsScalarTower R (MonoidAlgebra R G) M]
 
 private noncomputable def dualLinearMap :
     Module.Dual (MonoidAlgebra R G) M →ₗ[(MonoidAlgebra R G)ᵐᵒᵖ] Module.Dual R M where
@@ -102,9 +103,9 @@ section ContragredientMap
 
 variable {R G M N : Type*} [CommSemiring R] [Group G]
   [AddCommMonoid M] [Module (MonoidAlgebra R G) M] [Module R M]
-  [IsScalarTower R (MonoidAlgebra R G) M] [SMulCommClass R (MonoidAlgebra R G) M]
+  [IsScalarTower R (MonoidAlgebra R G) M]
   [AddCommMonoid N] [Module (MonoidAlgebra R G) N] [Module R N]
-  [IsScalarTower R (MonoidAlgebra R G) N] [SMulCommClass R (MonoidAlgebra R G) N]
+  [IsScalarTower R (MonoidAlgebra R G) N]
 
 /-- Precomposition with a group-algebra linear map, on base-ring duals equipped with the
 contragredient action. -/
@@ -147,15 +148,13 @@ private theorem dualLift_add (ψ : Module.Dual R M) (x y : M) :
   ext g
   simp
 
-variable [SMulCommClass R (MonoidAlgebra R G) M]
+variable [IsScalarTower R (MonoidAlgebra R G) M]
 
 private theorem dualLift_smul_base (ψ : Module.Dual R M) (r : R) (m : M) :
     dualLift (G := G) ψ (r • m) = r • dualLift ψ m := by
   ext g
   rw [dualLift_coeff (G := G), MonoidAlgebra.coeff_smul, Finsupp.smul_apply,
     dualLift_coeff (G := G), ← smul_comm r (MonoidAlgebra.single g⁻¹ (1 : R)) m, map_smul]
-
-variable [IsScalarTower R (MonoidAlgebra R G) M]
 
 private noncomputable def dualLinearEquivInv (ψ : Module.Dual R M) :
     Module.Dual (MonoidAlgebra R G) M where
@@ -213,7 +212,7 @@ theorem dualLinearEquiv_symm_apply_coeff (ψ : Module.Dual R M) (m : M) (g : G) 
 section Naturality
 
 variable {N : Type*} [AddCommMonoid N] [Module (MonoidAlgebra R G) N] [Module R N]
-  [IsScalarTower R (MonoidAlgebra R G) N] [SMulCommClass R (MonoidAlgebra R G) N]
+  [IsScalarTower R (MonoidAlgebra R G) N]
 
 /-- Group-algebra precomposition becomes contragredient base-ring precomposition under
 `dualLinearEquiv`. -/
