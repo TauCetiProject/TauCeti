@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Matrix.FiniteDimensional
 public import Mathlib.RingTheory.SimpleModule.Isotypic
+public import TauCeti.RingTheory.CompositionSeries.Additivity
 public import TauCeti.RingTheory.Semisimple.Schur
 public import TauCeti.RingTheory.Semisimple.RegularIsotypicComponent
 
@@ -33,26 +33,29 @@ isomorphism of its target, `TauCeti.homCongrRight`.
 
 Over an arbitrary field, an isomorphic factor instead contributes
 `finrank k (Module.End A S)`.  The corresponding scaled multiplicity formula is enough to recover
-the number of factors, since this endomorphism algebra has positive dimension.  Consequently the
-multiplicity invariance, constituent detection, and hom-space reconstruction theorems do not
-require the field to be algebraically closed.
+the number of factors, since this endomorphism algebra has positive dimension. Constituent
+detection and hom-space reconstruction therefore need no algebraic closure. Multiplicity
+invariance is proved over arbitrary rings by identifying the factor count with the
+Jordan-Hölder multiplicity.
 
-The multiplicity results are stated for a `k`-algebra `A` and `A`-modules that are `k`-modules
-compatibly, which is the generality the group-representation application needs: for `A = k[G]`
-the hom space is the space of intertwiners. The reconstruction result from simple-module classes
-needs only a semisimple ring, while reconstruction from hom-space dimensions returns to the
-finite-dimensional `k`-algebra setting.
+The hom-space dimension results are stated for a `k`-algebra `A` and `A`-modules that are
+`k`-modules compatibly. For `A = k[G]`, the hom space is the space of intertwiners. The
+reconstruction result from simple-module classes needs only a semisimple ring, while
+reconstruction from hom-space dimensions returns to the finite-dimensional `k`-algebra setting.
 
 ## Main results
 
 * `TauCeti.finrank_linearMap_eq_natCard_of_linearEquiv_pi`: **the multiplicity theorem.**  If
   `M ≃ₗ[A] ∀ i, N i` with every `N i` simple, then `finrank k (S →ₗ[A] M)` is the number of
   indices `i` with `N i ≅ S`.
-* `TauCeti.finrank_linearMap_pi_eq_natCard_mul_finrank_end`: over an arbitrary field, the same
-  count is multiplied by the dimension of the division algebra `End_A(S)`.
-* `TauCeti.natCard_eq_natCard_of_linearEquiv_pi`: consequently equivalent finite products of
-  simple modules have the same number of factors isomorphic to `S`; applied to two decompositions
-  of one module, this says that the multiplicity is well defined.
+* `LinearEquiv.finrank_linearMap_eq_natCard_mul_finrank_end`: over an arbitrary field, the same
+  count is multiplied by the dimension of the division algebra `End_A(S)`; the literal product
+  form is `TauCeti.finrank_linearMap_pi_eq_natCard_mul_finrank_end`.
+* `TauCeti.jordanHolderMultiplicity_pi_eq_natCard`: over any ring, the count of simple factors
+  is the Jordan-Hölder multiplicity.
+* `TauCeti.natCard_eq_natCard_of_linearEquiv_pi`: equivalent finite products of simple modules
+  over any ring have equally many factors isomorphic to `S`; applied to two decompositions of
+  one module, this says that the multiplicity is well defined.
 * `TauCeti.nonempty_linearEquiv_pi_of_natCard_eq`: conversely, two finite products of simple
   modules are linearly equivalent when their numbers of factors in every simple-module class
   agree.
@@ -91,9 +94,10 @@ The ring-general reconstruction theorem counts factors by `simpleModuleClass`; t
 reconstruction theorem converts those class fibres to the `Nonempty (S ≃ₗ[A] N i)` convention of
 the multiplicity theorem using `simpleModuleClass_eq_mk_iff`.
 
-Simplicity of `S` and finite dimensionality of `S` over `k` are standing hypotheses, but nothing
-is assumed about `M`: the multiplicity theorem takes the decomposition of `M` as data, and the
-existence of a decomposition is the separate semisimplicity input.
+The dimension formulas assume simplicity of `S` and finite dimensionality over `k`. The
+multiplicity theorem takes the decomposition of `M` as data; existence of a decomposition is the
+separate semisimplicity input. The ring-general factor-count statements need neither a base field
+nor simplicity of the module whose occurrences are counted.
 
 ## References
 
@@ -140,6 +144,16 @@ theorem finrank_linearMap_pi_eq_natCard_mul_finrank_end :
   rw [hpi, Finset.sum_congr rfl fun i _ ↦ hval i]
   simp [Nat.card_eq_fintype_card, Fintype.card_subtype, Finset.sum_ite]
 
+/-- The multiplicity formula over an arbitrary field, for a module given with a finite
+simple decomposition. Each copy of `S` contributes the dimension of `End_A(S)`. -/
+theorem _root_.LinearEquiv.finrank_linearMap_eq_natCard_mul_finrank_end {M : Type*}
+    [AddCommGroup M] [Module k M] [Module A M] [IsScalarTower k A M]
+    (e : M ≃ₗ[A] ∀ i, N i) :
+    Module.finrank k (S →ₗ[A] M) =
+      Nat.card {i // Nonempty (S ≃ₗ[A] N i)} * Module.finrank k (Module.End A S) := by
+  rw [(homCongrRight k (S := S) e).finrank_eq,
+    finrank_linearMap_pi_eq_natCard_mul_finrank_end (k := k)]
+
 end ArbitraryField
 
 variable {k A S : Type*} [Field k] [IsAlgClosed k] [Ring A] [Algebra k A]
@@ -166,8 +180,8 @@ multiplicity of `S` in `M` is an invariant of `M`; see
 theorem finrank_linearMap_eq_natCard_of_linearEquiv_pi {M : Type*} [AddCommGroup M] [Module k M]
     [Module A M] [IsScalarTower k A M] (e : M ≃ₗ[A] ∀ i, N i) :
     Module.finrank k (S →ₗ[A] M) = Nat.card {i // Nonempty (S ≃ₗ[A] N i)} := by
-  rw [← finrank_linearMap_pi_eq_natCard (k := k) (S := S) (N := N),
-    ← (homCongrRight k (S := S) e).finrank_eq]
+  rw [e.finrank_linearMap_eq_natCard_mul_finrank_end (k := k),
+    finrank_linearMap_eq_one_of_nonempty_linearEquiv (LinearEquiv.refl A S), mul_one]
 
 omit [IsAlgClosed k] in
 /-- A module with a finite decomposition into simple modules has a finite-dimensional space of
@@ -190,37 +204,48 @@ theorem finrank_linearMap_pos_iff_exists_nonempty_linearEquiv {M : Type*} [AddCo
   have : Module.Finite k (Module.End A S) :=
     finiteDimensional_linearMap_of_isSimpleModule
   have : Nontrivial S := IsSimpleModule.nontrivial A S
-  rw [(homCongrRight k (S := S) e).finrank_eq,
-    finrank_linearMap_pi_eq_natCard_mul_finrank_end (k := k), mul_pos_iff_of_pos_right
+  rw [e.finrank_linearMap_eq_natCard_mul_finrank_end (k := k),
+    mul_pos_iff_of_pos_right
       (Module.finrank_pos : 0 < Module.finrank k (Module.End A S)), Nat.card_pos_iff,
     nonempty_subtype]
   exact and_iff_left inferInstance
 
-omit [IsAlgClosed k] in
-/-- **The multiplicity is well defined.**  Equivalent finite products of simple modules have the
-same number of factors isomorphic to a given simple module.
+end Multiplicity
 
-For two decompositions `e : M ≃ₗ[A] ∀ i, N i` and `f : M ≃ₗ[A] ∀ j, P j` of one module, apply
-this to `e.symm.trans f` to see that the multiplicity of `S` in `M` does not depend on the
-decomposition.
+/-! ### Multiplicity invariance over arbitrary rings -/
 
-This is the Jordan-Hölder invariance of the multiplicity, obtained from the multiplicity theorem
-rather than from a refinement argument: multiplying either count by the positive dimension
-of `End_A(S)` gives the same hom-space dimension. -/
+section RingMultiplicity
+
+variable {A S : Type*} [Ring A] [AddCommGroup S] [Module A S]
+variable {ι : Type*} [Finite ι] {N : ι → Type*} [∀ i, AddCommGroup (N i)]
+  [∀ i, Module A (N i)] [∀ i, IsSimpleModule A (N i)]
+
+/-- The Jordan-Hölder multiplicity in a finite product of simple modules counts the factors
+isomorphic to the given module. -/
+theorem jordanHolderMultiplicity_pi_eq_natCard :
+    jordanHolderMultiplicity A (∀ i, N i) S = Nat.card {i // Nonempty (S ≃ₗ[A] N i)} := by
+  classical
+  let _ : Fintype ι := Fintype.ofFinite ι
+  rw [jordanHolderMultiplicity_pi]
+  have hval (i : ι) : jordanHolderMultiplicity A (N i) S =
+      if Nonempty (S ≃ₗ[A] N i) then 1 else 0 := by
+    split_ifs with h
+    · exact jordanHolderMultiplicity_eq_one_of_isSimpleModule_of_linearEquiv S h.some.symm
+    · exact jordanHolderMultiplicity_eq_zero_of_isEmpty_linearEquiv_of_isSimpleModule S
+        ⟨fun e ↦ h ⟨e.symm⟩⟩
+  simp_rw [hval]
+  simp [Nat.card_eq_fintype_card, Fintype.card_subtype]
+
+/-- Equivalent finite products of simple modules contain equally many copies of every module.
+This is Jordan-Hölder invariance over an arbitrary ring, without a choice of base field. -/
 theorem natCard_eq_natCard_of_linearEquiv_pi {κ : Type*} [Finite κ] {P : κ → Type*}
-    [∀ j, AddCommGroup (P j)] [∀ j, Module k (P j)] [∀ j, Module A (P j)]
-    [∀ j, IsScalarTower k A (P j)] [∀ j, IsSimpleModule A (P j)]
+    [∀ j, AddCommGroup (P j)] [∀ j, Module A (P j)] [∀ j, IsSimpleModule A (P j)]
     (e : (∀ i, N i) ≃ₗ[A] ∀ j, P j) :
     Nat.card {i // Nonempty (S ≃ₗ[A] N i)} = Nat.card {j // Nonempty (S ≃ₗ[A] P j)} := by
-  have : Module.Finite k (Module.End A S) :=
-    finiteDimensional_linearMap_of_isSimpleModule
-  have : Nontrivial S := IsSimpleModule.nontrivial A S
-  apply Nat.eq_of_mul_eq_mul_right (Module.finrank_pos (R := k) (M := Module.End A S))
-  rw [← finrank_linearMap_pi_eq_natCard_mul_finrank_end (k := k) (S := S) (N := N),
-    ← finrank_linearMap_pi_eq_natCard_mul_finrank_end (k := k) (S := S) (N := P)]
-  exact (homCongrRight k (S := S) e).finrank_eq
+  rw [← jordanHolderMultiplicity_pi_eq_natCard, ← jordanHolderMultiplicity_pi_eq_natCard]
+  exact jordanHolderMultiplicity_eq_of_linearEquiv e S
 
-end Multiplicity
+end RingMultiplicity
 
 /-! ### Reconstructing a finite sum from its multiplicities -/
 
@@ -301,12 +326,8 @@ theorem nonempty_linearEquiv_of_finrank_linearMap_eq
       rw [Nat.card_congr (Equiv.subtypeEquivRight hpredM),
         Nat.card_congr (Equiv.subtypeEquivRight hpredP)]
       apply Nat.eq_of_mul_eq_mul_right hendpos
-      rw [← finrank_linearMap_pi_eq_natCard_mul_finrank_end (k := k) (S := S)
-          (N := fun i ↦ SM i),
-        ← (homCongrRight k (S := S) epM).finrank_eq, h S,
-        (homCongrRight k (S := S) epP).finrank_eq,
-        finrank_linearMap_pi_eq_natCard_mul_finrank_end (k := k) (S := S)
-          (N := fun i ↦ SP i)]
+      rw [← epM.finrank_linearMap_eq_natCard_mul_finrank_end (k := k) (S := S),
+        ← epP.finrank_linearMap_eq_natCard_mul_finrank_end (k := k) (S := S), h S]
   exact ⟨epM |>.trans (nonempty_linearEquiv_pi_of_natCard_eq hfiber).some |>.trans epP.symm⟩
 
 end ReconstructionFromHom

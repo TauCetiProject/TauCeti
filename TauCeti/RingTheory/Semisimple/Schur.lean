@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Matrix.FiniteDimensional
 public import Mathlib.RepresentationTheory.AlgebraRepresentation.Basic
 
 /-!
@@ -298,8 +299,7 @@ finite-dimensional over any field: it is isomorphic to the endomorphism space of
 or is trivial. -/
 theorem finiteDimensional_linearMap_of_isSimpleModule : FiniteDimensional k (S →ₗ[A] N) := by
   by_cases h : Nonempty (S ≃ₗ[A] N)
-  · have hend : FiniteDimensional k (S →ₗ[A] S) :=
-      .of_injective (LinearMap.restrictScalarsₗ k A S S k) (LinearMap.restrictScalars_injective k)
+  · have hend : FiniteDimensional k (S →ₗ[A] S) := inferInstance
     exact Module.Finite.equiv (homCongrRight k (S := S) h.some)
   · exact finiteDimensional_linearMap_of_isEmpty_linearEquiv (not_nonempty_iff.mp h)
 
