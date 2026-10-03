@@ -94,8 +94,9 @@ theorem kummerCup_comm (x y : SquareClassGroup K) : kummerCup K x y = kummerCup 
     rw [← two_smul (ZMod 2) y, CharTwo.two_eq_zero (R := ZMod 2), zero_smul]
   have h2 : kummerCup K y x + kummerCup K y x = 0 := by
     rw [← AddMonoidHom.add_apply, ← map_add, hy, map_zero, AddMonoidHom.zero_apply]
-  rw [kummerCup_apply, TopPairing.cup_one_one_eq_neg_flip, trivialF2TopPairing_flip,
-    ← kummerCup_apply]
+  rw [kummerCup_apply, TopPairing.cup_gradedComm, ContinuousCohomology.degreeCast_rfl,
+    CategoryTheory.Iso.refl_hom, CategoryTheory.ConcreteCategory.id_apply, mul_one, pow_one,
+    neg_one_smul, trivialF2TopPairing_flip, ← kummerCup_apply]
   exact neg_eq_of_add_eq_zero_right h2
 
 end TauCeti

@@ -77,8 +77,6 @@ The same homotopy in bidegree `(1, 1)` is formalized on the explicit inhomogeneo
 * `TauCeti.TopPairing.cup_gradedComm`: **graded commutativity in every bidegree**,
   `a ⌣_P b = (-1)^(m n) (b ⌣_{P.flip} a)`, with the degree transport between `n + m` and `m + n`
   explicit.
-* `TauCeti.TopPairing.cup_one_one_eq_neg_flip`: its case `(1, 1)`,
-  `cup P 1 1 a b = - cup P.flip 1 1 b a`.
 
 ## References
 
@@ -467,14 +465,6 @@ theorem cup_gradedComm (m n : ℕ) (a : continuousCohomology m X)
         (π Z (m + (n + 1)) _), key, map_smul, map_smul, ← Iso.symm_hom,
       ContinuousCohomology.degreeCast_symm, ← ConcreteCategory.comp_apply,
       ContinuousCohomology.degreeCast_hom_comp_degreeCast_hom]
-
-/-- **Graded commutativity of the cup product in bidegree `(1, 1)`**:
-`cup P 1 1 a b = - cup P.flip 1 1 b a`. This is the identity against which the cup square
-`H¹(G, M) × H¹(G, M) → H²(G, M)` of a commutative coefficient ring is stated. -/
-theorem cup_one_one_eq_neg_flip (a : continuousCohomology 1 X) (b : continuousCohomology 1 Y) :
-    P.cup 1 1 a b = -P.flip.cup 1 1 b a := by
-  rw [P.cup_gradedComm, ContinuousCohomology.degreeCast_rfl, Iso.refl_hom,
-    ConcreteCategory.id_apply, mul_one, pow_one, neg_one_smul]
 
 end cupOne
 
