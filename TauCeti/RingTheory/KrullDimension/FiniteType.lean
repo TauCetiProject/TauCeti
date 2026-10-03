@@ -71,7 +71,7 @@ type over a field a local property.
   finite, has height the number of variables.
 * `TauCeti.height_eq_ringKrullDim_of_isMaximal`: every maximal ideal of a finitely generated
   algebra `A` with irreducible spectrum over `k` has height `dim A`.
-* `TauCeti.isMaximal_under_of_finiteType`: along a homomorphism of `k`-algebras `A → B` with `B`
+* `Ideal.isMaximal_under_of_finiteType`: along a homomorphism of `k`-algebras `A → B` with `B`
   finitely generated, maximal ideals of `B` contract to maximal ideals of `A`.
 * `TauCeti.topologicalKrullDim_inter_eq_of_finiteType`: in `Spec A`, a nonempty open part of an
   irreducible closed subset has the dimension of that subset.
@@ -261,8 +261,8 @@ theorem height_eq_ringKrullDim_of_isMaximal {A : Type*} [CommRing A] [Algebra k 
 variable (k) in
 /-- Let `A → B` be a homomorphism of algebras over a field `k`, with `B` finitely generated over
 `k`. Then every maximal ideal of `B` contracts to a maximal ideal of `A`. -/
-theorem isMaximal_under_of_finiteType {A B : Type*} [CommRing A] [CommRing B] [Algebra k A]
-    [Algebra k B] [Algebra A B] [IsScalarTower k A B] [Algebra.FiniteType k B]
+theorem _root_.Ideal.isMaximal_under_of_finiteType {A B : Type*} [CommRing A] [CommRing B]
+    [Algebra k A] [Algebra k B] [Algebra A B] [IsScalarTower k A B] [Algebra.FiniteType k B]
     (q : Ideal B) [q.IsMaximal] : (q.under A).IsMaximal := by
   -- `A ⧸ q ∩ A` is a domain embedded in the field `B ⧸ q`, which is finite over `k` by Zariski's
   -- lemma; so it is integral over `k`, hence a field.
