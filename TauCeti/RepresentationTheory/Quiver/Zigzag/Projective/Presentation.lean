@@ -39,8 +39,8 @@ by multiplying elements of the zigzag relation ideal on the right by the vertex 
 noncomputable def zigzagProjectivePathRelations (i : V) :
     Submodule (pathAlgebra k (DoubledQuiver G))
       (Ideal.span {vertexIdempotent k (vertex G i)} : Ideal (pathAlgebra k (DoubledQuiver G))) :=
-  LinearMap.range (spanSingletonRelationMap (zigzagIdeal k G).asIdeal
-    (vertexIdempotent k (vertex G i)))
+  LinearMap.range (spanSingletonRelationMap (vertexIdempotent k (vertex G i))
+    (zigzagIdeal k G).asIdeal)
 
 /-- Membership in the path-projective relations is precisely membership in the zigzag ideal.
 The fixed-point condition `x eᵢ = x` already holds because `x` belongs to `kQ eᵢ`. -/
@@ -68,7 +68,7 @@ noncomputable def zigzagProjectivePresentation (i : V) :
       →ₗ[pathAlgebra k (DoubledQuiver G)] zigzagProjective k G i :=
   ((LinearEquiv.ofEq _ _ (quotient_span_eq_projective k G i)).restrictScalars
     (pathAlgebra k (DoubledQuiver G))).toLinearMap.comp
-      (spanSingletonQuotientMap (zigzagIdeal k G).asIdeal (vertexIdempotent k (vertex G i)))
+      (spanSingletonQuotientMap (vertexIdempotent k (vertex G i)) (zigzagIdeal k G).asIdeal)
 
 /-- The presentation sends a path-algebra element to its zigzag class. -/
 @[simp]

@@ -17,10 +17,11 @@ so the vertex projectives of a bound quiver are obtained from the path-algebra p
 imposing the relations on them. The comparison is `A`-linear, with the target acted on through
 the quotient map.
 
-Use `TauCeti.spanSingletonQuotientMap I e` for the restriction and
-`TauCeti.spanSingletonRelationMap I e` for right multiplication of the relations by `e`.
-The kernel is characterized by `TauCeti.ker_spanSingletonQuotientMap I e`; when `e` is
-idempotent, `TauCeti.range_spanSingletonRelationMap I e` identifies it with the relation-map range.
+The generator `e` is the first argument, as in `TauCeti.spanSingletonGenerator e`.
+Use `TauCeti.spanSingletonQuotientMap e I` for the restriction and
+`TauCeti.spanSingletonRelationMap e I` for right multiplication of the relations by `e`.
+The kernel is characterized by `TauCeti.ker_spanSingletonQuotientMap e I`; when `e` is
+idempotent, `TauCeti.range_spanSingletonRelationMap e I` identifies it with the relation-map range.
 
 See Assem--Simson--Skowroński, *Elements of the Representation Theory of Associative Algebras I*,
 Chapter III, Section 2, for vertex projectives of bound quivers.
@@ -30,7 +31,7 @@ public section
 
 namespace TauCeti
 
-variable {A : Type*} [Ring A] (I : Ideal A) [I.IsTwoSided] (e : A)
+variable {A : Type*} [Ring A] (e : A) (I : Ideal A) [I.IsTwoSided]
 
 /-- The restriction of the quotient map to the principal left ideal `Ae`. The target is an
 `A`-module through the quotient map `A → A/I`. -/
@@ -44,11 +45,11 @@ noncomputable def spanSingletonQuotientMap :
 
 @[simp]
 theorem coe_spanSingletonQuotientMap (x : (Ideal.span {e} : Ideal A)) :
-    (spanSingletonQuotientMap I e x : A ⧸ I) = Ideal.Quotient.mk I x := (rfl)
+    (spanSingletonQuotientMap e I x : A ⧸ I) = Ideal.Quotient.mk I x := (rfl)
 
 /-- Every element of the principal left ideal in the quotient lifts to the original one. -/
 theorem spanSingletonQuotientMap_surjective :
-    Function.Surjective (spanSingletonQuotientMap I e) := by
+    Function.Surjective (spanSingletonQuotientMap e I) := by
   intro y
   obtain ⟨b, hb⟩ := Ideal.mem_span_singleton'.mp y.2
   obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective b
@@ -57,7 +58,7 @@ theorem spanSingletonQuotientMap_surjective :
 
 /-- The restricted quotient map kills exactly the elements of `Ae` lying in `I`. -/
 theorem ker_spanSingletonQuotientMap :
-    LinearMap.ker (spanSingletonQuotientMap I e) = Submodule.comap (Ideal.span {e}).subtype I := by
+    LinearMap.ker (spanSingletonQuotientMap e I) = Submodule.comap (Ideal.span {e}).subtype I := by
   ext x
   simp only [LinearMap.mem_ker, Submodule.mem_comap, Submodule.subtype_apply]
   rw [← Subtype.val_inj, coe_spanSingletonQuotientMap, Submodule.coe_zero,
@@ -72,11 +73,11 @@ def spanSingletonRelationMap : I →ₗ[A] (Ideal.span {e} : Ideal A) where
 omit [I.IsTwoSided] in
 @[simp]
 theorem coe_spanSingletonRelationMap (x : I) :
-    (spanSingletonRelationMap I e x : A) = (x : A) * e := (rfl)
+    (spanSingletonRelationMap e I x : A) = (x : A) * e := (rfl)
 
 /-- For an idempotent, the kernel is precisely `Ie`, rather than just `I ∩ Ae`. -/
 theorem range_spanSingletonRelationMap (he : IsIdempotentElem e) :
-    LinearMap.range (spanSingletonRelationMap I e) =
+    LinearMap.range (spanSingletonRelationMap e I) =
       Submodule.comap (Ideal.span {e}).subtype I := by
   ext x
   constructor
