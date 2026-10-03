@@ -158,6 +158,7 @@ private theorem mul_eq_zero_of_mem_jacobson_pow {m n : ℕ} (hmn : m + n = 3) (h
 /-! ### The volume map -/
 
 /-- **The image of the volume map is the socle `J² P_i`.** -/
+@[simp]
 theorem range_zigzagProjectiveVolumeMul (i : V) :
     LinearMap.range (zigzagProjectiveVolumeMul k G i) = zigzagProjectiveRadicalPower k G i 2 := by
   apply le_antisymm
@@ -175,6 +176,7 @@ theorem range_zigzagProjectiveVolumeMul (i : V) :
       smul_mul_assoc, zigzagVertexIdempotent, zigzagMk_vertexIdempotent_mul_zigzagVolume]
 
 /-- **The kernel of the volume map is the radical `J P_i`.** -/
+@[simp]
 theorem ker_zigzagProjectiveVolumeMul (i : V) :
     LinearMap.ker (zigzagProjectiveVolumeMul k G i) = zigzagProjectiveRadicalPower k G i 1 := by
   apply le_antisymm
@@ -275,6 +277,7 @@ section Finite
 variable [Fintype V] [DecidableRel G.Adj]
 
 /-- **At a tail of degree one, the image of an arrow map is the radical `J P_{d.fst}`.** -/
+@[simp]
 theorem range_zigzagProjectiveArrowMul (d : G.Dart) (hd : G.degree d.fst = 1) :
     LinearMap.range (zigzagProjectiveArrowMul k G d) =
       zigzagProjectiveRadicalPower k G d.fst 1 := by
@@ -290,6 +293,7 @@ theorem range_zigzagProjectiveArrowMul (d : G.Dart) (hd : G.degree d.fst = 1) :
     exact two_le_finrank_range_zigzagProjectiveArrowMul (k := k) hns d
 
 /-- **At a head of degree one, the kernel of an arrow map is the socle `J² P_{d.snd}`.** -/
+@[simp]
 theorem ker_zigzagProjectiveArrowMul (d : G.Dart) (hd : G.degree d.snd = 1) :
     LinearMap.ker (zigzagProjectiveArrowMul k G d) =
       zigzagProjectiveRadicalPower k G d.snd 2 := by
