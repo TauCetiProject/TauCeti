@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Pullback.Presentation
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Presentation
+public import TauCeti.CategoryTheory.Monoidal.Rigid.Functor
 
 /-!
 # Pullback of tensor products from an affine base
@@ -21,7 +22,9 @@ associativity and unit compatibilities are retained.
 In particular, pullback from quasicoherent sheaves on `Y` to modules on `X` is strong
 monoidal. The tensor comparisons are also exposed as natural isomorphisms with either
 quasicoherent factor fixed. These affine computations let tensor and duality constructions
-on sheaves be compared with their module counterparts.
+on sheaves be compared with their module counterparts. For instance, pullback from `Y`
+carries a quasicoherent sheaf with a left dual in `QuasicoherentSheaf Y` to one with a left
+dual in `QuasicoherentSheaf X`.
 
 ## References
 
@@ -149,6 +152,29 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.pullbackFromAffine_η :
   exact (congrArg (· ≫ Functor.OplaxMonoidal.η (pullback f))
     ((pullback f).map_id (𝟙_ Y.Modules))).trans
       ((Category.id_comp _).trans (pullback_η f))
+
+namespace QuasicoherentSheaf
+
+/-- Pullback along a morphism to an affine scheme preserves dualizability of quasicoherent
+sheaves: the pullback of a left dual of `E` is a left dual of the pullback of `E`. -/
+theorem nonempty_hasLeftDual_pullback (E : QuasicoherentSheaf Y)
+    (hE : Nonempty (HasLeftDual E)) : Nonempty (HasLeftDual ((pullback f).obj E)) := by
+  obtain ⟨hE⟩ := hE
+  -- Strong monoidal pullback carries the exact pairing of `ᘁE` and `E` to one in `X.Modules`
+  -- between the pulled-back underlying sheaves.
+  let : ExactPairing (C := X.Modules) ((Scheme.Modules.pullback f).obj (ᘁE).obj)
+      ((Scheme.Modules.pullback f).obj E.obj) :=
+    ((ObjectProperty.ι _ : QuasicoherentSheaf Y ⥤ Y.Modules) ⋙
+      Scheme.Modules.pullback f).mapExactPairing (ᘁE) E
+  let : ExactPairing (C := X.Modules) ((pullback f).obj (ᘁE)).obj ((pullback f).obj E).obj :=
+    exactPairingCongr (C := X.Modules) (eqToIso (pullback_obj_obj f (ᘁE)))
+      (eqToIso (pullback_obj_obj f E))
+  let : ExactPairing ((pullback f).obj (ᘁE)) ((pullback f).obj E) :=
+    @ObjectProperty.exactPairingFullSubcategory X.Modules _ _ _
+      (Scheme.Modules.isMonoidal_isQuasicoherent X) _ _ this
+  exact ⟨⟨(pullback f).obj (ᘁE)⟩⟩
+
+end QuasicoherentSheaf
 
 end
 
