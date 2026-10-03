@@ -337,6 +337,7 @@ noncomputable def realize : Circle → P :=
     (AddCircle.homeomorphCircle (Nat.cast_ne_zero.2 (NeZero.ne p.numVertices))).symm
 
 /-- The realization passes through `Polygon.boundaryParam t` at the image of `t` in the circle. -/
+@[simp]
 theorem realize_toCircle (t : ℝ) :
     p.realize (AddCircle.toCircle (t : AddCircle (p.numVertices : ℝ))) =
       p.toPolygon.boundaryParam t := by
@@ -372,6 +373,11 @@ variable {R V P : Type*} [Ring R] [PartialOrder R] [AddRightMono R] [ZeroLEOneCl
 @[simp]
 theorem numVertices_toSimplePolygon (t : Affine.Triangle R P) :
     t.toSimplePolygon.numVertices = 3 :=
+  rfl
+
+@[simp]
+theorem toPolygon_toSimplePolygon (t : Affine.Triangle R P) :
+    t.toSimplePolygon.toPolygon = t.toPolygon :=
   rfl
 
 end Affine.Triangle
