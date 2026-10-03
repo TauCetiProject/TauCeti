@@ -166,7 +166,8 @@ def cellularChainGroupMap (n : ℕ) :
     cellularChainGroup C R n ⟶ cellularChainGroup C' R n :=
   TopPair.singularHomologyMap (skeletonPairMap C C' hf n) R n
 
-/-- The map on a cellular chain group is relative singular homology of the skeletal pair map. -/
+/-- The map on a cellular chain group is relative singular homology of the skeletal pair map.
+This formula allows importing modules to rewrite without exposing the definition's body. -/
 lemma cellularChainGroupMap_def (n : ℕ) :
     cellularChainGroupMap C C' hf R n =
       TopPair.singularHomologyMap (skeletonPairMap C C' hf n) R n := (rfl)
