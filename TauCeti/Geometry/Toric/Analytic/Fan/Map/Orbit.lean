@@ -45,9 +45,10 @@ that of the least target cone, viewed as a face of the chosen target cone. -/
 theorem analyticChartMap_distinguishedPoint {σ : Φ.cones} {τ : Ψ.cones}
     (h : MapsTo f.realMap (σ.1 : Set V) (τ.1 : Set V')) :
     f.analyticChartMap hΦ hΨ h (distinguishedPoint Φ.lattice (⊤ : σ.1.Face)) =
-      distinguishedPoint Ψ.lattice
-        (⟨f.leastCone σ.2, Ψ.isFaceOf_of_le τ.2 (f.leastCone_mem σ.2)
-          (f.leastCone_le σ.2 τ.2 (by rintro _ ⟨x, hx, rfl⟩; exact h hx))⟩ : τ.1.Face) := by
+      distinguishedPoint Ψ.lattice (Ψ.orbitFace
+        (τ := ⟨f.leastCone σ.2, f.leastCone_mem σ.2⟩) (σ := τ)
+        (Subtype.coe_le_coe.1
+          (f.leastCone_le σ.2 τ.2 (by rintro _ ⟨x, hx, rfl⟩; exact h hx)))) := by
   classical
   -- The bundled chart carrier is the affine complex-point carrier; full transparency
   -- lets the chart formula apply to its distinguished point.
@@ -59,11 +60,22 @@ theorem analyticChartMap_distinguishedPoint {σ : Φ.cones} {τ : Ψ.cones}
       f.map_lattice h m : N →+ ℤ) = (m : N' →+ ℤ).comp f.latticeMap := by
     ext n
     simp
+  have hleast : f.leastCone σ.2 ≤ τ.1 :=
+    f.leastCone_le σ.2 τ.2 (by rintro _ ⟨x, hx, rfl⟩; exact h hx)
+  have hleast' : (⟨f.leastCone σ.2, f.leastCone_mem σ.2⟩ : Ψ.cones) ≤ τ :=
+    Subtype.coe_le_coe.1 hleast
   have hvanish := f.realCharacter_eq_zero_on_leastCone_iff σ.2
-    (dualSemigroup_anti Ψ.lattice
-      (f.leastCone_le σ.2 τ.2 (by rintro _ ⟨x, hx, rfl⟩; exact h hx)) m.2)
+    (dualSemigroup_anti Ψ.lattice hleast m.2)
   simp only [hchar]
-  exact if_congr hvanish.symm rfl rfl
+  apply if_congr
+  · constructor
+    · intro hs y hy
+      exact hvanish.symm.1 hs y ((SetLike.ext_iff.mp (Ψ.coe_orbitFace hleast') y).1 hy)
+    · intro ht y hy
+      exact hvanish.1 (fun z hz ↦
+        ht z ((SetLike.ext_iff.mp (Ψ.coe_orbitFace hleast') z).2 hz)) y hy
+  · rfl
+  · rfl
 
 /-- Analytic toric maps send distinguished points to the distinguished points of the least
 target cones. -/

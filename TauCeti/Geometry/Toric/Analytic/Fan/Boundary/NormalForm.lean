@@ -66,10 +66,10 @@ theorem analyticAffineChartι_mem_analyticBoundaryComponent_iff (σ : Φ.cones) 
         ((isRegular_iff.mp hΦ) σ.1 σ.2).toIsToricCone hb x).1 (ρ.toToricRay Φ σ h) = 0 := by
   have hσ := (isRegular_iff.mp hΦ) σ.1 σ.2
   by_cases h : ρ.toCone ≤ σ
-  · have hF : (⟨ρ.toCone.1, Φ.isFaceOf_of_le σ.2 ρ.toCone.2 h⟩ : σ.1.Face) =
+  · have hF : Φ.orbitFace h =
         (ρ.toToricRay Φ σ h).1 :=
-      PointedCone.Face.ext fun v ↦
-        (Iff.of_eq (congrArg (v ∈ ·) (Ray.toPointedCone_toToricRay Φ ρ σ h))).symm
+      PointedCone.Face.ext fun v ↦ SetLike.ext_iff.mp
+        ((Φ.coe_orbitFace h).trans (Ray.toPointedCone_toToricRay Φ ρ σ h).symm) v
     rw [exists_prop_of_true h]
     refine (Set.ext_iff.1 (Φ.preimage_analyticAffineChartι_analyticBoundaryComponent hΦ h) x).trans
       ?_
