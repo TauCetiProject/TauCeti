@@ -126,7 +126,6 @@ theorem unitSphereIsomHom_apply (e : E ≃ₗᵢ[ℝ] E) :
 
 /-- The isometry of the round sphere induced by a linear isometry acts on the sphere as the linear
 isometry does. -/
-@[simp]
 theorem unitSphereIsomHom_smul (e : E ≃ₗᵢ[ℝ] E) (x : sphere (0 : E) 1) :
     unitSphereIsomHom (n := n) e • x = e • x :=
   Subtype.ext (by simp)
