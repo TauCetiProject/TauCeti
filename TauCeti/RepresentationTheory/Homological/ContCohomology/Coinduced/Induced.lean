@@ -156,7 +156,8 @@ theorem algebraicIndCoindIso_inv_toLinearMap :
 
 /-- On a tensor generator, the comparison is the equivariant function supported on its
 right coset, with value `a` at `g`. -/
-@[simp]
+-- Use this auxiliary-function formula for explicit rewriting: `simp` already rewrites the
+-- comparison through `algebraicIndCoindIso_hom_apply`, and the formula exposes decidability.
 theorem algebraicIndCoindIso_hom_mk_apply (g h : G) (a : A.obj.V) :
     (dsimp% only [Representation.IndV.mk, LinearMap.coe_comp,
       Function.comp_apply, TensorProduct.mk_apply]
