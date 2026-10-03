@@ -98,6 +98,7 @@ theorem inner_tangentSpace_sphere (x : sphere (0 : E) 1) (v w : TangentSpace (�
 
 /-- The round norm of a tangent vector to the sphere is the norm in `E` of its image under the
 differential of the inclusion. -/
+@[simp]
 theorem norm_tangentSpace_sphere (x : sphere (0 : E) 1) (v : TangentSpace (𝓡 n) x) :
     ‖v‖ = ‖mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) x v‖ := by
   rw [norm_eq_sqrt_real_inner, norm_eq_sqrt_real_inner, inner_tangentSpace_sphere]

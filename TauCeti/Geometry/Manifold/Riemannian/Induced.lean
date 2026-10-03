@@ -53,9 +53,6 @@ fibrewise building block of the induced metric. -/
 private def pullbackInner (A : E →L[ℝ] F) : E →L[ℝ] E →L[ℝ] ℝ :=
   (innerSL ℝ : F →L[ℝ] F →L[ℝ] ℝ).bilinearComp A A
 
-private theorem pullbackInner_apply (A : E →L[ℝ] F) (v w : E) :
-    pullbackInner A v w = inner ℝ (A v) (A w) := (rfl)
-
 private theorem contDiff_pullbackInner : ContDiff ℝ n (pullbackInner (E := E) (F := F)) := by
   have h : (pullbackInner (E := E) (F := F)) = fun A ↦
       ((ContinuousLinearMap.compL ℝ E F ℝ).flip A).comp
@@ -68,7 +65,7 @@ private theorem contDiff_pullbackInner : ContDiff ℝ n (pullbackInner (E := E) 
 
 private theorem pullbackInner_self_pos {A : E →L[ℝ] F} (hA : Function.Injective A) {v : E}
     (hv : v ≠ 0) : 0 < pullbackInner A v v := by
-  rw [pullbackInner_apply]
+  rw [pullbackInner, ContinuousLinearMap.bilinearComp_apply, innerSL_apply_apply]
   exact real_inner_self_pos.2 ((map_ne_zero_iff A hA).2 hv)
 
 /-- The unit ball of the pulled-back inner product is bounded: an injective linear map out of a
@@ -78,7 +75,8 @@ private theorem isVonNBounded_pullbackInner [FiniteDimensional ℝ E] {A : E →
     Bornology.IsVonNBounded ℝ {v : E | pullbackInner A v v < 1} := by
   obtain ⟨K, -, hK⟩ := (A : E →ₗ[ℝ] F).exists_antilipschitzWith (LinearMap.ker_eq_bot.2 hA)
   refine (NormedSpace.isVonNBounded_closedBall ℝ E K).subset fun v hv ↦ ?_
-  rw [Set.mem_ofPred_eq, pullbackInner_apply, real_inner_self_eq_norm_sq] at hv
+  rw [Set.mem_ofPred_eq, pullbackInner, ContinuousLinearMap.bilinearComp_apply,
+    innerSL_apply_apply, real_inner_self_eq_norm_sq] at hv
   have h1 : ‖A v‖ ≤ 1 := by nlinarith [norm_nonneg (A v)]
   rw [Metric.mem_closedBall, dist_zero_right]
   calc ‖v‖ ≤ K * ‖A v‖ := ZeroHomClass.bound_of_antilipschitz (A : E →ₗ[ℝ] F) hK v

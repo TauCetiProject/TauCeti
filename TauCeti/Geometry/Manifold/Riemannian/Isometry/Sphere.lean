@@ -62,6 +62,7 @@ variable {n k : ℕ} [Fact (finrank ℝ E = n + 1)] [Fact (finrank ℝ F = k + 1
 /-- The differential of the restriction of a linear isometry to the unit spheres, read in the
 ambient space through the inclusion of the target sphere, is the linear isometry applied to the
 tangent vector read in the ambient space. -/
+@[simp]
 theorem mvfderiv_coe_sphere_unitSphereEquiv (e : E ≃ₗᵢ[ℝ] F) (x : sphere (0 : E) 1)
     (v : TangentSpace (𝓡 n) x) :
     mvfderiv (𝓡 k) ((↑) : sphere (0 : F) 1 → F) (unitSphereEquiv e x)
