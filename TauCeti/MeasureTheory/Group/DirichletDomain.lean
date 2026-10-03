@@ -182,10 +182,10 @@ proper space, each point has a translate in the Dirichlet domain of any centre: 
 the inverse of an element `g` for which `g • p` is a closest point of the orbit of `p`. -/
 theorem exists_smul_mem_dirichletDomain (p x : X) : ∃ g : G, g • x ∈ dirichletDomain G p := by
   -- Only finitely many points of the orbit of `p` are at most as far from `x` as `p` is.
-  set S : Set G := {g | ((g • ·) '' {p} ∩ closedBall x (dist x p)).Nonempty}
-  have hS : S.Finite := finite_disjoint_inter_image isCompact_singleton (isCompact_closedBall _ _)
+  set S := dirichletCompetitors G p {x}
+  have hS : S.Finite := finite_dirichletCompetitors p Bornology.isBounded_singleton
   have hmemS {g : G} : g ∈ S ↔ dist x (g • p) ≤ dist x p := by
-    simp [S, dist_comm]
+    simp [S]
   have h1 : (1 : G) ∈ S := hmemS.mpr (by simp)
   obtain ⟨g, hgS, hmin⟩ := exists_min_image S (fun g ↦ dist x (g • p)) hS ⟨1, h1⟩
   refine ⟨g⁻¹, fun h ↦ ?_⟩
