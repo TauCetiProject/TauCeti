@@ -25,7 +25,9 @@ a functor of the object of the site and records their universal property and its
 * `TauCeti.CategoryTheory.sheafH'_eq`, identifying Mathlib's `Sheaf.H'` with `Ext` from that
   functor;
 * `TauCeti.CategoryTheory.freeYonedaSheafSectionsEquiv`, the additive equivalence between
-  morphisms from that sheaf to `F` and sections of `F` over `U`;
+  morphisms from that sheaf to `F` and sections of `F` over `U`, and
+  `TauCeti.CategoryTheory.freeYonedaSheafCorepresentableBy`, the same universal property phrased
+  as a corepresentation of the sections functor;
 * `TauCeti.CategoryTheory.mono_freeYonedaSheafFunctor_map`, saying that a monomorphism of site
   objects induces a monomorphism between the corresponding free abelian sheaves.
 
@@ -113,6 +115,13 @@ lemma freeYonedaSheafSectionsEquiv_naturality_right {U : C}
   rw [Adjunction.homEquiv_naturality_right, Adjunction.homEquiv_naturality_right,
     yonedaEquiv_comp]
   rfl
+
+/-- The free abelian sheaf on `U` corepresents the functor of sections over `U`. -/
+def freeYonedaSheafCorepresentableBy (U : C) :
+    ((sheafSections J AddCommGrpCat.{v}).obj (op U) ⋙ forget AddCommGrpCat).CorepresentableBy
+      ((freeYonedaSheafFunctor J).obj U) where
+  homEquiv := (freeYonedaSheafSectionsEquiv J U _).toEquiv
+  homEquiv_comp g f := freeYonedaSheafSectionsEquiv_naturality_right J f g
 
 /-- The equivalence `freeYonedaSheafSectionsEquiv` is natural in the object of the site:
 precomposing with the map induced by `i : U ⟶ V` is restricting sections along `i`. -/

@@ -48,8 +48,8 @@ of `TauCeti.finiteIntermediateFieldValuativeRel`.
   `(q^f − 1)`-st root of unity `ζ` of `Ω`.
 * `TauCeti.unramifiedExtension_le_of_dvd`: it contains the unramified extension of degree `d`
   for every `d ∣ f`, when `f ≠ 0`.
-* `AlgHom.map_unramifiedExtension_le`: a `K`-algebra map `Ω → Ω'` carries it into the
-  unramified extension of degree `f` inside `Ω'`.
+* `TauCeti.map_unramifiedExtension_le`: an embedding carries an unramified extension into the
+  unramified extension of the same degree in the target.
 * `TauCeti.unramifiedExtension_le_restrictScalars_unramifiedExtension`: for an extension `L/K` of
   nonarchimedean local fields inside `Ω`, it lies in the unramified extension of `L` of degree `f`.
 * `TauCeti.isGalois_unramifiedExtension`: it is Galois over `K`.
@@ -126,12 +126,15 @@ theorem unramifiedExtension_le_of_dvd {f g : ℕ} (hg : g ≠ 0) (h : f ∣ g) :
   rwa [pow_iterate, Function.IsFixedPt, ← pow_mul] at h
 
 variable {K Ω} in
-/-- A `K`-algebra map `ψ : Ω → Ω'` carries the unramified extension of degree `f` inside `Ω` into
-the one inside `Ω'`: it carries the roots of `X^{q^f} − X` to roots. -/
-theorem _root_.AlgHom.map_unramifiedExtension_le {Ω' : Type*} [Field Ω'] [Algebra K Ω']
-    (ψ : Ω →ₐ[K] Ω') (f : ℕ) : (unramifiedExtension K Ω f).map ψ ≤ unramifiedExtension K Ω' f := by
-  rw [unramifiedExtension_def, unramifiedExtension_def, adjoin_map]
-  exact adjoin.mono _ _ _ (rootSet_mapsTo ψ).image_subset
+/-- An embedding of extensions of `K` carries the unramified extension of degree `f` into the
+unramified extension of degree `f` in the target. Equality need not hold, since the target may
+contain roots of `X ^ q ^ f - X` that are absent from the source. -/
+theorem map_unramifiedExtension_le {E : Type*} [Field E] [Algebra K E] (f : ℕ)
+    (ι : Ω →ₐ[K] E) :
+    (unramifiedExtension K Ω f).map ι ≤ unramifiedExtension K E f := by
+  rw [unramifiedExtension_def, unramifiedExtension_def, adjoin_map, adjoin_le_iff]
+  rintro _ ⟨x, hx, rfl⟩
+  exact subset_adjoin K _ (Polynomial.rootSet_mapsTo ι hx)
 
 variable {K Ω} in
 /-- **Unramified extensions grow with the ground field.** For an extension `L/K` of

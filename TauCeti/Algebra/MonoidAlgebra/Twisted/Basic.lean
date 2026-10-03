@@ -35,7 +35,8 @@ a basis and the multiplication table above holds on the nose.
 ## Main definitions and results
 
 * `TauCeti.IsFactorSet`: a normalized factor set, that is, a normalized multiplicative `2`-cocycle
-  `α : G → G → kˣ`;
+  `α : G → G → kˣ`, with the pointwise product and inverse of factor sets again factor sets
+  (`TauCeti.IsFactorSet.mul`, `TauCeti.IsFactorSet.inv`);
 * `TauCeti.IsFactorSet.exists_eq_apply_mk`: a factor set on a group `G` that is trivial whenever
   one of its arguments lies in a normal subgroup `N` is pulled back from a factor set on `G ⧸ N`;
 * `TauCeti.twistedMonoidAlgebra k G α`: the twisted monoid algebra `k_α[G]`;
@@ -113,6 +114,23 @@ instance : IsFactorSet (1 : G → G → kˣ) where
   cocycle _ _ _ := by simp
   one_left _ := rfl
   one_right _ := rfl
+
+/-- The pointwise product of two factor sets is a factor set. It is the factor set of a tensor
+product of projective representations (`TauCeti.IsProjectiveRep.tensorProduct`). -/
+instance mul (α β : G → G → kˣ) [IsFactorSet α] [IsFactorSet β] : IsFactorSet (α * β) where
+  cocycle g h j := by
+    simp only [Pi.mul_apply]
+    rw [mul_mul_mul_comm, cocycle (α := α), cocycle (α := β), mul_mul_mul_comm]
+  one_left g := by simp [one_left (α := α), one_left (α := β)]
+  one_right g := by simp [one_right (α := α), one_right (α := β)]
+
+/-- The pointwise inverse of a factor set is a factor set. -/
+instance inv (α : G → G → kˣ) [IsFactorSet α] : IsFactorSet α⁻¹ where
+  cocycle g h j := by
+    simp only [Pi.inv_apply]
+    rw [← mul_inv, cocycle (α := α), mul_inv]
+  one_left g := by simp [one_left (α := α)]
+  one_right g := by simp [one_right (α := α)]
 
 end Monoid
 

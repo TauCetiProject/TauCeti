@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.GaloisCohomology.Corestriction.Basic
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.TrivialF2
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.TrivialF2.Basic
 
 /-!
 # Corestriction and cup products across a finite field extension

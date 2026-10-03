@@ -59,6 +59,7 @@ two-strand case above is the part of it that the presentation alone can see.
   `δ`.
 * `TauCeti.TemperleyLieb.e`: the generators.
 * `TauCeti.TemperleyLieb.lift`: the universal property.
+* `TauCeti.TemperleyLieb.strandIncl`: the inclusion adding a straight last strand.
 * `TauCeti.TemperleyLieb.aug`: the augmentation killing every generator.
 * `TauCeti.TemperleyLieb.algEquivOfLeOne`: the algebra on at most one strand is the
   base ring.
@@ -224,6 +225,19 @@ theorem adjoin_range_e : Algebra.adjoin R (Set.range (e δ (n := n))) = ⊤ := b
     simp only [← Set.range_comp, Function.comp_def, mkAlgHom_ι]
   rw [hrange, ← AlgHom.map_adjoin, FreeAlgebra.adjoin_range_ι, Algebra.map_top]
   exact (AlgHom.range_eq_top _).2 mkAlgHom_surjective
+
+/-- The algebra map from `TemperleyLieb R δ (n + 1)` to `TemperleyLieb R δ (n + 2)` that adds a
+last strand and leaves it straight: each generator is sent to the generator of the same index,
+and the new strand is never capped. This is the inclusion along which the Markov property of a
+trace is stated. -/
+def strandIncl : TemperleyLieb R δ (n + 1) →ₐ[R] TemperleyLieb R δ (n + 2) :=
+  lift (fun i : Fin n ↦ e δ i.castSucc) (fun _ ↦ e_mul_self _)
+    (fun h ↦ e_mul_e_mul_e (by simpa using h)) (fun h ↦ (commute_e (by simpa using h)).eq)
+
+/-- The strand inclusion sends each generator to the generator of the same index. -/
+@[simp]
+theorem strandIncl_e (i : Fin n) : strandIncl (e δ i) = e δ i.castSucc := by
+  rw [strandIncl, lift_e]
 
 section Augmentation
 

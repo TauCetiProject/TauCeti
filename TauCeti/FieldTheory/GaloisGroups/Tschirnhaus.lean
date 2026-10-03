@@ -26,6 +26,11 @@ nonzero and the transform is admissible.
 For a nonzero `f` and any field extension `E` in which `f` splits, the roots of the transform are
 exactly the values of `T` at the roots of `f`, with multiplicity, so the transform splits in `E`
 as well.
+Consequently restriction along Mathlib's chosen embedding of splitting fields gives a surjection
+from the Galois group of `f` onto the Galois group of any Tschirnhaus transform. On roots, this
+quotient map intertwines the polynomial map `α ↦ T(α)`. These declarations specialize
+`Polynomial.Gal.restrict`, `Polynomial.Gal.restrict_surjective`, and
+`Polynomial.Gal.galActionHom_restrict` from Mathlib's `Mathlib.FieldTheory.PolynomialGaloisGroup`.
 Admissibility is `Polynomial.TschirnhausAdmissible f T`: injectivity of `α ↦ T(α)` on the root set
 of `f` in its splitting field. Under it, a separable `f` has a separable transform and each
 splitting field of `f` is a splitting field of the transform; and for a nonzero `f`, the
@@ -38,6 +43,11 @@ substitution — is a constraint on the Galois image of `f`.
 
 ## Main results
 
+* `Polynomial.Gal.restrictTschirnhaus` and
+  `Polynomial.Gal.restrictTschirnhaus_surjective`: a transform's Galois group is a quotient of
+  the original Galois group.
+* `Polynomial.Gal.tschirnhausActionHom_apply_rootMap`: the induced action intertwines the map
+  `α ↦ T(α)` on roots.
 * `Polynomial.TschirnhausAdmissible.isSplittingField` and
   `Polynomial.TschirnhausAdmissible.nonempty_algEquiv_splittingField`: the splitting fields agree.
 * `Polynomial.TschirnhausAdmissible.nonempty_mulEquiv_gal`: the Galois groups are isomorphic.
@@ -94,6 +104,66 @@ theorem TschirnhausAdmissible.algEquiv_ext [IsSplittingField F E f]
   exact AlgEquiv.ext fun x ↦ DFunLike.congr_fun heq x
 
 end Extension
+
+namespace Gal
+
+/-- Restriction from the Galois group of a polynomial to that of a Tschirnhaus transform.
+
+The transform splits in the splitting field of the original polynomial, so restriction along
+the embedding of splitting fields chosen by `Polynomial.Gal.restrict` defines this homomorphism
+without an admissibility hypothesis. -/
+noncomputable def restrictTschirnhaus (f T : F[X]) :
+    f.Gal →* (f.tschirnhausPolynomial T).Gal := by
+  letI : Fact (((f.tschirnhausPolynomial T).map
+      (algebraMap F f.SplittingField)).Splits) :=
+    ⟨splits_map_tschirnhausPolynomial_field (SplittingField.splits f) T⟩
+  exact restrict (f.tschirnhausPolynomial T) f.SplittingField
+
+/-- The Galois group of a Tschirnhaus transform is a quotient of the Galois group of the
+original polynomial. No separation hypothesis on the transformed roots is needed. -/
+theorem restrictTschirnhaus_surjective (f T : F[X]) :
+    Function.Surjective (restrictTschirnhaus f T) := by
+  let _ : Fact (((f.tschirnhausPolynomial T).map
+      (algebraMap F f.SplittingField)).Splits) :=
+    ⟨splits_map_tschirnhausPolynomial_field (SplittingField.splits f) T⟩
+  let _ : Normal F f.SplittingField := Normal.of_isSplittingField f
+  rw [restrictTschirnhaus]
+  exact restrict_surjective (f.tschirnhausPolynomial T) f.SplittingField
+
+/-- The action of the original Galois group on the roots of a Tschirnhaus transform, obtained by
+restricting to the transform's Galois group. -/
+noncomputable def tschirnhausActionHom (f T : F[X]) :
+    f.Gal →* Equiv.Perm ((f.tschirnhausPolynomial T).rootSet f.SplittingField) := by
+  letI : Fact (((f.tschirnhausPolynomial T).map
+      (algebraMap F f.SplittingField)).Splits) :=
+    ⟨splits_map_tschirnhausPolynomial_field (SplittingField.splits f) T⟩
+  exact (galActionHom (f.tschirnhausPolynomial T) f.SplittingField).comp
+    (restrictTschirnhaus f T)
+
+/-- The action induced by restriction on each transformed root is the original splitting-field
+automorphism. -/
+@[simp]
+theorem coe_tschirnhausActionHom_apply (f T : F[X]) (g : f.Gal)
+    (y : (f.tschirnhausPolynomial T).rootSet f.SplittingField) :
+    ↑(tschirnhausActionHom f T g y) = g y := by
+  let _ : Fact (((f.tschirnhausPolynomial T).map
+      (algebraMap F f.SplittingField)).Splits) :=
+    ⟨splits_map_tschirnhausPolynomial_field (SplittingField.splits f) T⟩
+  rw [tschirnhausActionHom, MonoidHom.comp_apply, restrictTschirnhaus]
+  exact galActionHom_restrict (f.tschirnhausPolynomial T) f.SplittingField g y
+
+/-- The root map `α ↦ T(α)` is equivariant for restriction to the Galois group of the
+Tschirnhaus transform. -/
+@[simp]
+theorem tschirnhausActionHom_apply_rootMap (f T : F[X]) (g : f.Gal)
+    (x : f.rootSet f.SplittingField) :
+    tschirnhausActionHom f T g (tschirnhausRootMap f T x) =
+      tschirnhausRootMap f T ⟨g (x : f.SplittingField), rootSet_mapsTo g.toAlgHom x.2⟩ := by
+  apply Subtype.ext
+  rw [coe_tschirnhausActionHom_apply, coe_tschirnhausRootMap,
+    coe_tschirnhausRootMap, aeval_algHom_apply]
+
+end Gal
 
 /-- **Every splitting field of `f` is a splitting field of an admissible transform.** For a
 separable `f` and an admissible `T`, the transform splits in any splitting field `L` of `f` and

@@ -38,6 +38,9 @@ As elsewhere in this development, `ℚ/ℤ` is the rational circle `AddCircle (1
   `TauCeti.ClassFieldTheory.NormalLayer.characterConnectingClass_sub`: `δχ` is additive in `χ`.
 * `TauCeti.ClassFieldTheory.NormalLayer.artinCharacterCup_apply`: the Artin character cup is the
   Tate cup product transported through the right unitor and the positive-degree comparison.
+* `TauCeti.ClassFieldTheory.NormalLayer.artinCharacterCup_groundLevelEquiv`: for the ground-level
+  element attached to an invariant `x`, the Artin character cup is the image of `δχ` under the
+  coefficient map `ℤ → A^V`, `n ↦ n • x`.
 * `TauCeti.ClassFieldTheory.NormalLayer.artinCharacterCup_eq_zero_of_mem_normSubgroup`: the cup
   vanishes when its ground-level argument is a norm.
 
@@ -130,6 +133,19 @@ theorem artinCharacterCup_apply (a : F.level L.ground)
           (TateCohomology.cup (L.rep F) (Rep.trivial ℤ L.Gal ℤ) 0 2 2 (zero_add 2)
             (L.zeroTateClass F a) (L.characterConnectingClass χ))) :=
   by simp [artinCharacterCup]
+
+/-- For the ground-level element attached to an invariant `x ∈ (A^V)^{U/V}`, the Artin character
+cup `a₀ ∪ δχ` is the image of `δχ` under the map of coefficients `ℤ → A^V`, `n ↦ n • x`, written
+as `n ↦ n ⊗ x ↦ x ⊗ n ↦ n • x`. -/
+theorem artinCharacterCup_groundLevelEquiv (x : (L.rep F).ρ.invariants)
+    (χ : Additive (Abelianization L.Gal) →+ AddCircle (1 : ℚ)) :
+    L.artinCharacterCup F (L.groundLevelEquiv F x) χ =
+      (L.tateHIsoH F 2).hom ((tateCohomologyFunctor 2).map
+        (Rep.tensorInvariant (Rep.trivial ℤ L.Gal ℤ) x ≫ (β_ _ (L.rep F)).hom ≫
+          (ρ_ (L.rep F)).hom) (L.characterConnectingClass χ)) := by
+  rw [artinCharacterCup_apply, zeroTateClass_groundLevelEquiv, TateCohomology.cup_zero_left,
+    TateCohomology.cup0H_H0π]
+  simp only [Functor.map_comp, ModuleCat.comp_apply]
 
 /-- The Artin character cup vanishes on the norm subgroup. -/
 theorem artinCharacterCup_eq_zero_of_mem_normSubgroup (a : F.level L.ground)

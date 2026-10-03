@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.FiniteExtension
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.TrivialF2
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.TrivialF2.Basic
 
 /-!
 # Restriction across a finite extension of fields

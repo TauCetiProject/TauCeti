@@ -259,7 +259,7 @@ theorem invMap_brRes (x : Br K) :
       (separableClosureRingEquiv_symm_algebraMap_base K L σ)
   have hψ (e : 𝓤 f) : ψ (e : SeparableClosure K) ∈ 𝓥 f :=
     unramifiedExtension_le_restrictScalars_unramifiedExtension (K := K) L f
-      (ψ.toAlgHom.map_unramifiedExtension_le f ((mem_map _).2 ⟨e, e.2, rfl⟩))
+      (map_unramifiedExtension_le f ψ.toAlgHom ((mem_map _).2 ⟨e, e.2, rfl⟩))
   -- The embedding `K_f → L_f` induced by `ψ`.
   let ι : 𝓤 f →ₐ[K] 𝓥 f :=
     (ψ.toAlgHom.comp (𝓤 f).val).codRestrict ((𝓥 f).restrictScalars K).toSubalgebra hψ
