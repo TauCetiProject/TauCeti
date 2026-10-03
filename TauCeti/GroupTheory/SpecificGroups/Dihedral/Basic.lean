@@ -184,16 +184,25 @@ private def dihedralGroupHom (hs : s * s = 1) (ht : t * t = 1) (hn : orderOf (s 
         mul_assoc s, zpow_cast_mul_eq hs ht hn, ← mul_assoc, hs, one_mul, ← zpow_cast_add hn,
         neg_add_eq_sub]
 
+private lemma dihedralGroupHom_r (hs : s * s = 1) (ht : t * t = 1)
+    (hn : orderOf (s * t) = n) (i : ZMod n) :
+    dihedralGroupHom hs ht hn (.r i) = (s * t) ^ (ZMod.cast i : ℤ) :=
+  (rfl)
+
+private lemma dihedralGroupHom_sr (hs : s * s = 1) (ht : t * t = 1)
+    (hn : orderOf (s * t) = n) (i : ZMod n) :
+    dihedralGroupHom hs ht hn (.sr i) = s * (s * t) ^ (ZMod.cast i : ℤ) :=
+  (rfl)
+
 private theorem dihedralGroupHom_injective (hs : s * s = 1) (ht : t * t = 1) (hs1 : s ≠ 1)
     (ht1 : t ≠ 1) (hn : orderOf (s * t) = n) : Function.Injective (dihedralGroupHom hs ht hn) := by
   rw [injective_iff_map_eq_one]
   rintro (i | i) hi
   · -- A rotation in the kernel has index a multiple of the order of `s * t`, hence index zero.
-    rw [dihedralGroupHom, MonoidHom.coe_mk, OneHom.coe_mk, dihedralFun_r,
-      zpow_cast_eq_one_iff hn] at hi
+    rw [dihedralGroupHom_r, zpow_cast_eq_one_iff hn] at hi
     rw [hi, DihedralGroup.r_zero]
   · -- A reflection in the kernel would put `s` in the centralizer of `s * t`.
-    rw [dihedralGroupHom, MonoidHom.coe_mk, OneHom.coe_mk, dihedralFun_sr] at hi
+    rw [dihedralGroupHom_sr] at hi
     exfalso
     have hzpow : s = (s * t) ^ (-(ZMod.cast i : ℤ)) := by
       rw [zpow_neg, eq_inv_iff_mul_eq_one]
