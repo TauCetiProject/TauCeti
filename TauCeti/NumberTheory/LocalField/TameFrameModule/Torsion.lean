@@ -19,9 +19,9 @@ file computes the `p`-power torsion of the tame-frame module
 
 `M₀ = R[G]² / R[G]·(σ - a, τ - b)`
 
-when the relation map `x ↦ x · (σ - a, τ - b)` is injective, `R` has no additive torsion, and the
-scalars in `J` are exactly the multiples of `p ^ k`: the torsion is `R[G] ⧸ J`, as a left
-`R[G]`-module.
+when the relation map `x ↦ x · (σ - a, τ - b)` is injective, multiplication by `p` is injective
+on `R`, and the scalars in `J` are exactly the multiples of `p ^ k`: the torsion is `R[G] ⧸ J`,
+as a left `R[G]`-module.
 
 Modulo `J` every group element `g` is a scalar `c(g)`, and `c` is multiplicative modulo `p ^ k`.
 The twisted norm `x = ∑_g c(g) g⁻¹` then satisfies `x (σ - a) ≡ 0` and `x (τ - b) ≡ 0` modulo
@@ -141,6 +141,23 @@ private theorem coeff_nsmul (n : ℕ) (u : MonoidAlgebra R G) (g : G) :
     (n • u).coeff g = n * u.coeff g := by
   rw [coeff_smul_apply, nsmul_eq_mul]
 
+private theorem isSMulRegular_relationModule {n : ℕ} (hn : IsSMulRegular R n) :
+    IsSMulRegular (Fin 2 →₀ MonoidAlgebra R G) n := by
+  change Function.Injective ((n • ·) :
+    (Fin 2 →₀ MonoidAlgebra R G) → Fin 2 →₀ MonoidAlgebra R G)
+  intro x y hxy
+  change n • x = n • y at hxy
+  apply Finsupp.ext
+  intro i
+  apply MonoidAlgebra.coeff_injective
+  apply Finsupp.ext
+  intro g
+  apply hn
+  have hi : n • x i = n • y i := by
+    simpa only [Finsupp.nsmul_apply] using congrArg (fun z ↦ z i) hxy
+  have hig := congrArg (fun z ↦ (MonoidAlgebra.coeffAddEquiv z) g) hi
+  simpa only [map_nsmul, Finsupp.nsmul_apply, MonoidAlgebra.coeffAddEquiv_apply] using hig
+
 section RightMultiple
 
 variable {σ τ : G} {a b : R}
@@ -231,7 +248,7 @@ private theorem exists_tameFrameRelationMap_eq_nsmul {n : ℕ} {x : MonoidAlgebr
 
 /-- If the relation map sends `w` to `n • y`, then `x` kills the class of `y` in the tame-frame
 module exactly when `x w` is divisible by `n`. -/
-private theorem smul_toQuotient_eq_zero_iff [IsAddTorsionFree R] {n : ℕ} (hn : n ≠ 0)
+private theorem smul_toQuotient_eq_zero_iff {n : ℕ} (hn : IsSMulRegular R n)
     (hinj : Function.Injective (tameFrameRelationMap R G σ τ a b)) {w : MonoidAlgebra R G}
     {y : Fin 2 →₀ MonoidAlgebra R G} (hy : tameFrameRelationMap R G σ τ a b w = n • y)
     (x : MonoidAlgebra R G) :
@@ -243,11 +260,12 @@ private theorem smul_toQuotient_eq_zero_iff [IsAddTorsionFree R] {n : ℕ} (hn :
     refine ⟨u, hinj ?_⟩
     rw [map_nsmul, hu, ← smul_eq_mul, map_smul, hy, smul_comm]
   · rintro ⟨u, hu⟩
-    refine ⟨u, (nsmul_right_inj hn).1 ?_⟩
-    rw [← map_nsmul, ← hu, ← smul_eq_mul, map_smul, hy, smul_comm]
+    exact ⟨u, isSMulRegular_relationModule hn (by
+      change n • tameFrameRelationMap R G σ τ a b u = n • (x • y)
+      rw [← map_nsmul, ← hu, ← smul_eq_mul, map_smul, hy, smul_comm])⟩
 
-variable [IsAddTorsionFree R] [Finite G] {p k : ℕ} {c : G → R} {y₀ : Fin 2 →₀ MonoidAlgebra R G}
-  (hp : p ≠ 0) (hinj : Function.Injective (tameFrameRelationMap R G σ τ a b))
+variable [Finite G] {p k : ℕ} {c : G → R} {y₀ : Fin 2 →₀ MonoidAlgebra R G}
+  (hp : IsSMulRegular R p) (hinj : Function.Injective (tameFrameRelationMap R G σ τ a b))
   (hJ : Ideal.comap (algebraMap R (MonoidAlgebra R G))
     (Ideal.span {single σ (1 : R) - single 1 a, single τ 1 - single 1 b}) =
       Ideal.span {(p : R) ^ k})
@@ -266,7 +284,7 @@ private theorem smul_toQuotient_eq_zero_of_mem
         ((tameFrameRelations R G σ τ a b).toQuotient y₀)) := by
     rw [Ideal.span, Submodule.span_le]
     rintro x (rfl | rfl) <;>
-      exact (smul_toQuotient_eq_zero_iff (pow_ne_zero k hp) hinj hy₀ _).2
+      exact (smul_toQuotient_eq_zero_iff (hp.pow k) hinj hy₀ _).2
         (MonoidAlgebra.exists_eq_nsmul_of_dvd_coeff fun g ↦
           hpk ▸ dvd_coeff_mul_twistedNorm hJ hc (Ideal.subset_span (by simp)) g)
   exact hle hx
@@ -285,7 +303,7 @@ private theorem mem_of_smul_toQuotient_eq_zero
     have := smul_toQuotient_eq_zero_of_mem hp hinj hJ hc hy₀ he
     rwa [sub_smul, hx, zero_sub, neg_eq_zero] at this
   -- Comparing coefficients at `1` shows that `p ^ k` divides `e`.
-  obtain ⟨u, hu⟩ := (smul_toQuotient_eq_zero_iff (pow_ne_zero k hp) hinj hy₀ _).1 he₀
+  obtain ⟨u, hu⟩ := (smul_toQuotient_eq_zero_iff (hp.pow k) hinj hy₀ _).1 he₀
   have hu₁ := congrArg (fun y ↦ y.coeff 1) hu
   simp only [coeff_single_mul_apply, inv_one, one_mul, coeff_twistedNorm, coeff_nsmul] at hu₁
   have hc₁ : (p : R) ^ k ∣ c 1 - 1 := dvd_sub_of_single_sub_mem hJ hc (by simp)
@@ -324,7 +342,7 @@ private theorem exists_smul_toQuotient_eq
   have hu₁ := congrArg (fun y ↦ y.coeff 1) hu
   simp only [coeff_mul_single_apply, inv_one, mul_one, coeff_nsmul] at hu₁
   have hd : w.coeff 1 = p ^ n * u.coeff 1 := by
-    refine nsmul_right_injective (pow_ne_zero k hp) ?_
+    refine hp.pow k ?_
     simp only [nsmul_eq_mul]
     push_cast at hu₁ ⊢
     rw [mul_comm, hu₁]
@@ -346,22 +364,25 @@ private theorem exists_smul_toQuotient_eq
   refine ⟨u.coeff 1, ?_⟩
   -- Dividing by `p ^ (n + k)`, `y = d y₀` modulo the relation.
   have hy : y = single (1 : G) (u.coeff 1) • y₀ + tameFrameRelationMap R G σ τ a b v := by
-    refine (nsmul_right_inj (pow_ne_zero (n + k) hp)).1 ?_
-    rw [← hw, smul_add, ← map_nsmul, ← hv, pow_add, mul_smul, smul_comm (p ^ k), ← hy₀,
-      ← map_smul, ← map_nsmul, ← map_add, smul_eq_mul, add_sub_cancel]
+    exact isSMulRegular_relationModule (hp.pow (n + k)) (by
+      change p ^ (n + k) • y = p ^ (n + k) •
+        (single (1 : G) (u.coeff 1) • y₀ + tameFrameRelationMap R G σ τ a b v)
+      rw [← hw, smul_add, ← map_nsmul, ← hv, pow_add, mul_smul, smul_comm (p ^ k), ← hy₀,
+        ← map_smul, ← map_nsmul, ← map_add, smul_eq_mul, add_sub_cancel])
   rw [hy, map_add, map_smul, tameFrameRelationMap_apply, map_smul,
     Module.Relations.toQuotient_relation, smul_zero, add_zero]
 
 omit hp hinj hJ hc
 
 /-- **The torsion of the tame-frame module.** Let `G` be a finite group generated by `σ, τ`, and
-let `R` be a commutative ring without additive torsion, such as `ℤ_p`. Suppose that the
-tame-frame relation `x ↦ x · (σ - a, τ - b)` is injective and that the scalars in the left ideal
-`J = (σ - a, τ - b)` of `R[G]` are exactly the multiples of `p ^ k`, for `p ≠ 0`. Then the `p`-power
+let `R` be a commutative ring on which multiplication by `p` is injective, such as `ℤ_p`.
+Suppose that the tame-frame relation `x ↦ x · (σ - a, τ - b)` is injective and that the scalars in
+the left ideal
+`J = (σ - a, τ - b)` of `R[G]` are exactly the multiples of `p ^ k`. Then the `p`-power
 torsion of the tame-frame module `M₀ = R[G]² / R[G]·(σ - a, τ - b)` is isomorphic to `R[G] ⧸ J` as
 a left `R[G]`-module. -/
 theorem nonempty_tameFrameModule_torsion_linearEquiv_of_relationMap_injective
-    (hgen : Subgroup.closure {σ, τ} = ⊤) (hp : p ≠ 0)
+    (hgen : Subgroup.closure {σ, τ} = ⊤) (hp : IsSMulRegular R p)
     (hinj : Function.Injective (tameFrameRelationMap R G σ τ a b))
     (hJ : Ideal.comap (algebraMap R (MonoidAlgebra R G))
       (Ideal.span {single σ (1 : R) - single 1 a, single τ 1 - single 1 b}) =
@@ -388,7 +409,7 @@ theorem nonempty_tameFrameModule_torsion_linearEquiv_of_relationMap_injective
     | H x =>
       refine mem_pPowerTorsion_iff.mpr ⟨k, ?_⟩
       rw [hφ, smul_comm, ← Nat.cast_smul_eq_nsmul (MonoidAlgebra R G),
-        (smul_toQuotient_eq_zero_iff (pow_ne_zero k hp) hinj hy₀ _).2 ⟨_, (nsmul_eq_mul _ _).symm⟩,
+        (smul_toQuotient_eq_zero_iff (hp.pow k) hinj hy₀ _).2 ⟨_, (nsmul_eq_mul _ _).symm⟩,
         smul_zero]
   have hinjφ : Function.Injective φ := by
     rw [← LinearMap.ker_eq_bot, eq_bot_iff]
@@ -439,7 +460,7 @@ theorem nonempty_tameFrameModule_torsion_linearEquiv [Finite G] {σ τ : G}
       ⟨hinj, MonoidAlgebra.toSpanSingleton_mk_one_surjective hgen'⟩)).symm
   obtain ⟨k, hk⟩ := PadicInt.ideal_eq_span_pow_p hne
   exact nonempty_tameFrameModule_torsion_linearEquiv_of_relationMap_injective hgen
-    (Fact.out : p.Prime).ne_zero
+    (IsSMulRegular.nat_of_isAddTorsionFree (M := ℤ_[p]) (Fact.out : p.Prime).ne_zero)
     (tameFrameRelationMap_injective_of_card_ne_zero (isOfFinOrder_of_finite σ)
       (isOfFinOrder_of_finite τ) hcard) hk
 
