@@ -86,20 +86,29 @@ private theorem tateWeilLevel_transition (x y : TateModule ℓ W.toAffine.Point)
 open scoped Classical in
 private def tateWeilAdd : TateModule ℓ W.toAffine.Point →+
     TateModule ℓ W.toAffine.Point →+ PadicTateTwist ℓ K where
-  toFun x :=
-    { toFun := fun y ↦ TateModule.mk
-        (fun n ↦ tateWeilLevel W hℓ n (TateModule.proj n x) (TateModule.proj n y))
-        (tateWeilLevel_transition W hℓ x y)
-      map_zero' := by apply TateModule.ext; intro n; simp
-      map_add' y z := by apply TateModule.ext; intro n; simp }
-  map_zero' := by apply AddMonoidHom.ext; intro y; apply TateModule.ext; intro n; simp
-  map_add' x y := by apply AddMonoidHom.ext; intro z; apply TateModule.ext; intro n; simp
+  toFun x := TateModule.lift
+    (fun n ↦ (tateWeilLevel W hℓ n (TateModule.proj n x)).comp (TateModule.proj n))
+    (fun n ↦ AddMonoidHom.ext fun y ↦ tateWeilLevel_transition W hℓ x y n)
+  map_zero' := by
+    apply AddMonoidHom.ext
+    intro y
+    apply TateModule.ext
+    intro n
+    simp only [map_zero, ← AddMonoidHom.comp_apply, TateModule.proj_lift]
+    simp
+  map_add' x y := by
+    apply AddMonoidHom.ext
+    intro z
+    apply TateModule.ext
+    intro n
+    simp only [AddMonoidHom.add_apply, map_add, ← AddMonoidHom.comp_apply, TateModule.proj_lift]
+    simp
 
 open scoped Classical in
 private theorem proj_tateWeilAdd (x y : TateModule ℓ W.toAffine.Point) (n : ℕ) :
     TateModule.proj n (tateWeilAdd W hℓ x y) =
       tateWeilLevel W hℓ n (TateModule.proj n x) (TateModule.proj n y) :=
-  by simp [tateWeilAdd]
+  DFunLike.congr_fun (TateModule.proj_lift _ _ n) y
 
 open scoped Classical in
 /-- **The ℓ-adic Weil pairing**, with values in the Tate twist `ℤ_ℓ(1)`, obtained from the
