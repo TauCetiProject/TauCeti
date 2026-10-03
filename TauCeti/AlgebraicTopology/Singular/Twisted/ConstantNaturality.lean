@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Functoriality
-public import TauCeti.AlgebraicTopology.Singular.Basic
 
 /-!
 # The constant-system comparison for relative singular homology
@@ -34,40 +33,6 @@ noncomputable section
 open CategoryTheory Limits TauCeti
 
 universe u v w
-
-namespace TauCeti
-
-variable {C : Type u} [Category.{w} C] [HasCoproducts.{v} C] [Preadditive C]
-
--- Isolate the singular/simplicial presentation of quotient naturality.
-private lemma singularChainComplexπ_pair_naturality
-    {P Q : TopPair.{v}} (f : P ⟶ Q) (M : C) :
-    ((AlgebraicTopology.singularChainComplexFunctor C).obj M).map (TopPair.Hom.fst f) ≫
-        Q.singularChainComplexπ M =
-      P.singularChainComplexπ M ≫ TopPair.singularChainComplexMap f M := by
-  rw [TauCeti.singularChainComplexFunctor_obj_map]
-  have h : SSet.chainComplexMap (TopPair.toSSetPair.map f).right M ≫
-      Q.singularChainComplexπ M =
-        P.singularChainComplexπ M ≫ TopPair.singularChainComplexMap f M :=
-    ((SSetPair.chainComplexFunctorπ C).app M).naturality (TopPair.toSSetPair.map f)
-  rwa [TopPair.toSSetPair_map_right] at h
-
-private lemma singularChainComplexπ_coefficient_naturality
-    (P : TopPair.{v}) {M N : C} (φ : M ⟶ N) :
-    ((AlgebraicTopology.singularChainComplexFunctor C).map φ).app P.fst ≫
-        P.singularChainComplexπ N =
-      P.singularChainComplexπ M ≫
-        ((SSetPair.chainComplexFunctor C).map φ).app (TopPair.toSSetPair.obj P) := by
-  rw [TauCeti.singularChainComplexFunctor_map_app]
-  have h : ((SSet.chainComplexFunctor C).map φ).app (TopPair.toSSetPair.obj P).right ≫
-      P.singularChainComplexπ N = P.singularChainComplexπ M ≫
-        ((SSetPair.chainComplexFunctor C).map φ).app (TopPair.toSSetPair.obj P) :=
-    congrArg (fun η ↦ η.app (TopPair.toSSetPair.obj P))
-      ((SSetPair.chainComplexFunctorπ C).naturality φ)
-  simp only [TopPair.toSSetPair_obj_right] at h
-  exact h
-
-end TauCeti
 
 namespace TopPair
 
