@@ -91,13 +91,13 @@ theorem IsAdicComplete.exists_isIdempotentElem_eq [IsAdicComplete I S] {T : Type
     | zero => rw [zero_add, pow_one, ← hf, map_sub, map_mul, hfx 0, he'.eq, sub_self]
     | succ n ih =>
       rw [hx_succ, newtonIdempotent_mul_self_sub]
-      have := Ideal.mul_mem_mul_smul_top ih
-        (Ideal.mul_mem_smul_top_right _ (4 * (x n * x n - x n) - 3) ih)
-      rw [← pow_add] at this
-      exact Submodule.smul_mono_left (Ideal.pow_le_pow_right (by omega)) this
+      rw [← Ideal.mem_map_algebraMap_iff] at ih ⊢
+      refine Ideal.map_mono (Ideal.pow_le_pow_right (by omega : n + 1 + 1 ≤ n + 1 + (n + 1))) ?_
+      rw [pow_add, Ideal.map_algebraMap_mul]
+      exact Ideal.mul_mem_mul ih (Ideal.mul_mem_right _ _ ih)
   have hstep (n : ℕ) : x (n + 1) - x n ∈ I ^ (n + 1) • (⊤ : Submodule R S) := by
-    rw [hx_succ, newtonIdempotent_sub]
-    exact Ideal.mul_mem_smul_top_right _ _ (hdefect n)
+    rw [hx_succ, newtonIdempotent_sub, ← Ideal.mem_map_algebraMap_iff]
+    exact Ideal.mul_mem_right _ _ ((Ideal.mem_map_algebraMap_iff _).mpr (hdefect n))
   -- The iterates form a Cauchy sequence, whose limit is the required idempotent.
   have hcauchy {m n : ℕ} (hmn : m ≤ n) : x m ≡ x n [SMOD (I ^ m • ⊤ : Submodule R S)] := by
     induction n, hmn using Nat.le_induction with
@@ -118,9 +118,11 @@ theorem IsAdicComplete.exists_isIdempotentElem_eq [IsAdicComplete I S] {T : Type
         (x n * x n - x n) + x n * (L - x n) + (L - x n) * L - (L - x n) := by
       noncomm_ring
     rw [hsplit]
-    refine sub_mem (add_mem (add_mem ?_ (Ideal.mul_mem_smul_top_left _ _ hd))
-      (Ideal.mul_mem_smul_top_right _ _ hd)) hd
-    exact Submodule.smul_mono_left (Ideal.pow_le_pow_right (by omega)) (hdefect n)
+    rw [← Ideal.mem_map_algebraMap_iff] at hd ⊢
+    refine sub_mem (add_mem (add_mem ?_ (Ideal.mul_mem_left _ _ hd))
+      (Ideal.mul_mem_right _ _ hd)) hd
+    exact Ideal.map_mono (Ideal.pow_le_pow_right (by omega))
+      ((Ideal.mem_map_algebraMap_iff _).mpr (hdefect n))
   · have h1 : x 1 - L ∈ I • (⊤ : Submodule R S) := by
       simpa using SModEq.sub_mem.mp (hL 1)
     rw [← hfx 1, ← sub_eq_zero, ← map_sub, ← neg_sub, map_neg, neg_eq_zero, hf]

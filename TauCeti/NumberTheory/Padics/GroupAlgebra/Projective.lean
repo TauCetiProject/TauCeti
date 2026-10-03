@@ -278,9 +278,8 @@ theorem exists_projective_reduction_bijective_of_projective (Y : Type v) [AddCom
     constructor
     · rintro ⟨w, rfl⟩
       funext i
-      -- The `i`-th coordinate of `ρ (p • w)` is `π (p • w i)` by definition of `ρ`.
-      change π ((p : ℤ_[p]) • w i) = 0
-      rw [Nat.cast_smul_eq_nsmul, nsmul_eq_mul, map_mul, map_natCast,
+      rw [LinearMap.coe_mk, AddHom.coe_mk, Pi.smul_apply, Pi.zero_apply,
+        Nat.cast_smul_eq_nsmul, nsmul_eq_mul, map_mul, map_natCast,
         ← map_natCast (algebraMap (ZMod p) (MonoidAlgebra (ZMod p) G)), ZMod.natCast_self,
         map_zero, zero_mul]
     · intro hv
