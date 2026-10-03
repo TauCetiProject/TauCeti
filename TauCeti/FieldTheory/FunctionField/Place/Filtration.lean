@@ -133,6 +133,7 @@ theorem mem_filtration_one_iff {z : F} : z ∈ P.filtration 1 ↔ P.valuation z 
 /-- The positive part of the order filtration is the maximal-ideal filtration of the valuation
 ring: an integral function belongs to `𝔪_P ^ n` exactly when its image in the function field lies
 in `P.filtration n`, that is, when `v_P(x) ≤ exp (-n)`. -/
+@[simp]
 theorem mem_maximalIdeal_pow_iff_coe_mem_filtration (n : ℕ) (x : P.integers) :
     x ∈ IsLocalRing.maximalIdeal P.integers ^ n ↔ (x : F) ∈ P.filtration n := by
   let e : P.integers ≃+* P.valuation.valuationSubring :=

@@ -209,6 +209,15 @@ theorem mem_integers_decompositionSubgroup_apply {x : F'} :
     (g : F' ≃ₐ[F] F') x ∈ P.integers ↔ x ∈ P.integers := by
   simp only [mem_integers_iff, valuation_decompositionSubgroup_apply]
 
+omit [Algebra k F] [IsScalarTower k F F'] in
+/-- Two automorphisms fixing `P` that agree on the valuation ring of `P` are equal, because that
+valuation ring has `F'` for its field of fractions. -/
+theorem decompositionSubgroup_eq_of_forall_mem_integers {g h : P.integers.decompositionSubgroup F}
+    (hgh : ∀ x ∈ P.integers, (g : F' ≃ₐ[F] F') x = (h : F' ≃ₐ[F] F') x) : g = h :=
+  Subtype.ext <| AlgEquiv.ext fun y ↦ DFunLike.congr_fun
+    (IsFractionRing.ringHom_ext (A := P.integers) (f1 := ((g : F' ≃ₐ[F] F') : F' →+* F'))
+      (f2 := ((h : F' ≃ₐ[F] F') : F' →+* F')) fun x ↦ hgh x x.2) y
+
 end Transport
 
 /-- Two equal places have the same valuation ring; the isomorphism between the two carriers is
