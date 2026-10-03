@@ -171,6 +171,7 @@ theorem sliceGenus_le_genus (S : SmoothSliceSurface K) : sliceGenus K ≤ S.genu
   iInf_le _ S
 
 /-- A lower bound for the slice genus is a lower bound for the genus of every slice surface. -/
+@[simp]
 theorem le_sliceGenus_iff {m : ℕ∞} :
     m ≤ sliceGenus K ↔ ∀ S : SmoothSliceSurface K, m ≤ S.genus :=
   le_iInf_iff
@@ -181,11 +182,9 @@ theorem exists_genus_eq_sliceGenus [Nonempty (SmoothSliceSurface K)] :
   ENat.exists_eq_iInf _
 
 /-- The slice genus is finite exactly when a slice surface exists. -/
-theorem sliceGenus_lt_top_iff : sliceGenus K < ⊤ ↔ Nonempty (SmoothSliceSurface K) := by
-  refine ⟨fun h ↦ ?_, fun ⟨S⟩ ↦ (sliceGenus_le_genus S).trans_lt (ENat.natCast_lt_top _)⟩
-  by_contra hS
-  rw [not_nonempty_iff] at hS
-  simp [sliceGenus] at h
+@[simp]
+theorem sliceGenus_lt_top_iff : sliceGenus K < ⊤ ↔ Nonempty (SmoothSliceSurface K) :=
+  ENat.iInf_natCast_lt_top
 
 /-- Two knots with the same image have the same slice genus. -/
 theorem sliceGenus_congr_range (h : range K = range K') : sliceGenus K = sliceGenus K' :=
@@ -236,7 +235,7 @@ theorem IsSmoothSliceDisc.genus_toSmoothSliceSurface
 
 /-- **Smoothly slice knots have slice genus `0`.** -/
 theorem IsSmoothlySlice.sliceGenus_eq_zero (h : IsSmoothlySlice K) : sliceGenus K = 0 := by
-  obtain ⟨Φ, hΦ⟩ := isSmoothlySlice_iff.1 h
+  obtain ⟨Φ, hΦ⟩ := h
   exact nonpos_iff_eq_zero.1 <| by
     simpa using sliceGenus_le_genus hΦ.toSmoothSliceSurface
 

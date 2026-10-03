@@ -139,15 +139,10 @@ structure IsSmoothSliceDisc (K : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 
 
 /-- A smooth circle embedding `K : S¹ → Sⁿ` is **smoothly slice** if it bounds a smooth slice disc
 in the closed unit ball `Dⁿ⁺¹`. -/
-def IsSmoothlySlice (K : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)) : Prop :=
+@[expose] def IsSmoothlySlice (K : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)) : Prop :=
   ∃ Φ : closedBall (0 : ℂ) 1 → closedBall (0 : E) 1, IsSmoothSliceDisc K Φ
 
 variable {K : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)}
-
-/-- A knot is smoothly slice exactly when it has a smooth slice disc. -/
-theorem isSmoothlySlice_iff :
-    IsSmoothlySlice K ↔ ∃ Φ : closedBall (0 : ℂ) 1 → closedBall (0 : E) 1, IsSmoothSliceDisc K Φ :=
-  Iff.rfl
 
 namespace IsSmoothSliceDisc
 
