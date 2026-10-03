@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.Algebra.SMul
 public import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 public import Mathlib.Geometry.Manifold.Instances.Quotient
 public import Mathlib.Geometry.Manifold.LocalInvariantProperties
+public import TauCeti.Topology.Algebra.ConstMulAction
 public import TauCeti.Topology.IsLocalHomeomorph
 
 /-!
@@ -246,7 +247,7 @@ instance hasGroupoid_smulGroupoid_quotient (Γ : Type*) [Group Γ] [MulAction Γ
 
 /-- The orbit space `X / Γ` of a free, properly discontinuous action of a subgroup `Γ` of `G` is a
 (G, X)-manifold. -/
-instance hasGroupoid_smulGroupoid_quotient_subgroup (Γ : Subgroup G) [ContinuousConstSMul Γ X]
+instance hasGroupoid_smulGroupoid_quotient_subgroup (Γ : Subgroup G)
     [ProperlyDiscontinuousSMul Γ X] [IsCancelSMul Γ X] :
     HasGroupoid (MulAction.orbitRel.Quotient Γ X) (smulGroupoid G X) :=
   hasGroupoid_of_le (hasGroupoid_smulGroupoid_quotient Γ)
