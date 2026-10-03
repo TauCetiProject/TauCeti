@@ -70,7 +70,7 @@ private theorem norm_iteratedFDeriv_cutoff_sub_one_le {χ : E → ℝ} {k : ℕ}
       pow_le_one₀ (by positivity) (inv_le_one_of_one_le₀ hR)
     exact (mul_le_mul hp (hB i hi _) (norm_nonneg _) zero_le_one).trans (by linarith)
 
-/-- Expanding cutoffs approximate every classical derivative of a `Cᵏ` function in `Lᵖ`.
+/-- Expanding cutoffs approximate the `k`-th classical derivative of a `Cᵏ` function in `Lᵖ`.
 Only the derivatives up to the requested order need to be integrable; the measure need not
 be translation invariant. -/
 theorem tendsto_eLpNorm_iteratedFDeriv_cutoff_sub
