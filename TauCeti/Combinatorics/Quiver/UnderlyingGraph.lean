@@ -67,31 +67,31 @@ theorem underlyingGraph_adj_of_hom {a b : V} (e : a ⟶ b) (hab : a ≠ b) :
     (underlyingGraph V).Adj a b :=
   underlyingGraph_adj.mpr ⟨hab, .inl ⟨e⟩⟩
 
-/-- An arrow which strictly lowers a height function is not a loop, so its ends are adjacent in
-the underlying graph. -/
-private theorem nonempty_hom_of_adj_of_le {α : Type*} [LinearOrder α] {ht : V → α}
+/-- If every arrow strictly lowers a height function, then two vertices adjacent in the underlying
+graph are joined by an arrow out of the one whose height is not below the other's. -/
+private theorem nonempty_hom_of_adj_of_not_lt {α : Type*} [Preorder α] {ht : V → α}
     (hlt : ∀ ⦃a b : V⦄, (a ⟶ b) → ht b < ht a) {a b : V} (hab : (underlyingGraph V).Adj a b)
-    (hle : ht b ≤ ht a) : Nonempty (a ⟶ b) :=
-  ((underlyingGraph_adj.mp hab).2.resolve_right fun ⟨e⟩ ↦ (hlt e).not_ge hle)
+    (hnlt : ¬ht a < ht b) : Nonempty (a ⟶ b) :=
+  ((underlyingGraph_adj.mp hab).2.resolve_right fun ⟨e⟩ ↦ hnlt (hlt e))
 
 /-- **The underlying graph of an in-forest is acyclic.** If every vertex of a quiver is the source
 of at most one arrow, and every arrow strictly lowers a height function `ht`, then the underlying
-graph of the quiver has no cycle: at a vertex of a cycle where `ht` is largest, both edges of the
+graph of the quiver has no cycle: at a vertex of a cycle where `ht` is maximal, both edges of the
 cycle would have to be arrows out of that vertex, and they lead to distinct vertices. -/
-theorem isAcyclic_underlyingGraph_of_lt {α : Type*} [LinearOrder α] (ht : V → α)
+theorem isAcyclic_underlyingGraph_of_lt {α : Type*} [Preorder α] (ht : V → α)
     (hlt : ∀ ⦃a b : V⦄, (a ⟶ b) → ht b < ht a) (hout : ∀ a : V, Subsingleton (Σ b, a ⟶ b)) :
     (underlyingGraph V).IsAcyclic := by
   classical
   intro v c hc
-  obtain ⟨u, hu, hmax⟩ := c.support.toFinset.exists_max_image ht ⟨v, by simp⟩
+  obtain ⟨u, hu, hmax⟩ := c.support.toFinset.exists_maximalFor ht ⟨v, by simp⟩
   have hu : u ∈ c.support := List.mem_toFinset.mp hu
-  have hmax' (x : V) (hx : x ∈ (c.rotate u hu).support) : ht x ≤ ht u :=
-    hmax x (List.mem_toFinset.mpr ((c.mem_support_rotate_iff u hu).mp hx))
+  have hmax' (x : V) (hx : x ∈ (c.rotate u hu).support) : ¬ht u < ht x := fun h ↦
+    h.not_ge (hmax (List.mem_toFinset.mpr ((c.mem_support_rotate_iff u hu).mp hx)) h.le)
   have hc' := hc.rotate hu
   have hnil := hc'.not_nil
-  obtain ⟨e⟩ := nonempty_hom_of_adj_of_le hlt ((c.rotate u hu).adj_snd hnil)
+  obtain ⟨e⟩ := nonempty_hom_of_adj_of_not_lt hlt ((c.rotate u hu).adj_snd hnil)
     (hmax' _ ((c.rotate u hu).getVert_mem_support 1))
-  obtain ⟨e'⟩ := nonempty_hom_of_adj_of_le hlt ((c.rotate u hu).adj_penultimate hnil).symm
+  obtain ⟨e'⟩ := nonempty_hom_of_adj_of_not_lt hlt ((c.rotate u hu).adj_penultimate hnil).symm
     (hmax' _ ((c.rotate u hu).getVert_mem_support _))
   exact hc'.snd_ne_penultimate (congrArg Sigma.fst (Subsingleton.elim (h := hout u) ⟨_, e⟩ ⟨_, e'⟩))
 
@@ -99,7 +99,7 @@ theorem isAcyclic_underlyingGraph_of_lt {α : Type*} [LinearOrder α] (ht : V �
 under the hypotheses of `TauCeti.Quiver.isAcyclic_underlyingGraph_of_lt`, two arrows in opposite
 directions would raise and lower the height function at once, and two arrows in the same direction
 share their source. -/
-theorem subsingleton_hom_sum_of_lt {α : Type*} [LinearOrder α] (ht : V → α)
+theorem subsingleton_hom_sum_of_lt {α : Type*} [Preorder α] (ht : V → α)
     (hlt : ∀ ⦃a b : V⦄, (a ⟶ b) → ht b < ht a) (hout : ∀ a : V, Subsingleton (Σ b, a ⟶ b))
     (a b : V) : Subsingleton ((a ⟶ b) ⊕ (b ⟶ a)) := by
   have hsub (a b : V) : Subsingleton (a ⟶ b) :=

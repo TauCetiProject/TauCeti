@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Combinatorics.Quiver.Basic
 public import Mathlib.Data.Fintype.Sum
 public import Mathlib.Tactic.DeriveFintype
 public import TauCeti.Combinatorics.Quiver.UnderlyingGraph
