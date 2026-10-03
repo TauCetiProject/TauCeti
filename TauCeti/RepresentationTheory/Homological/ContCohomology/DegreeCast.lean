@@ -95,6 +95,10 @@ noncomputable def cocyclesDegreeCast {n k : ℕ} (h : n = k) :
 
 /-- The underlying cochain of a transported cocycle is the corresponding transport in the
 homogeneous cochain complex. -/
+-- Not a `simp` lemma: `simp` rewrites the implicit carrier
+-- `(TopRep.homogeneousCochains X).X k` on the left-hand side through
+-- `CategoryTheory.Functor.mapHomologicalComplex_obj_X`, so the statement is not in `simp`-normal
+-- form; use it with `rw`.
 theorem iCycles_cocyclesDegreeCast {n k : ℕ} (h : n = k)
     (z : _root_.ContinuousCohomology.cocycles X n) :
     (TopRep.homogeneousCochains X).iCycles k (cocyclesDegreeCast h z) =
@@ -118,6 +122,7 @@ theorem π_eq_degreeCast_π {n k : ℕ} (h : n = k) (z : _root_.ContinuousCohomo
   simp
 
 /-- The class of a transported cocycle is the transport of its class. -/
+@[simp]
 theorem π_cocyclesDegreeCast {n k : ℕ} (h : n = k)
     (z : _root_.ContinuousCohomology.cocycles X n) :
     _root_.ContinuousCohomology.π X k (cocyclesDegreeCast h z) =

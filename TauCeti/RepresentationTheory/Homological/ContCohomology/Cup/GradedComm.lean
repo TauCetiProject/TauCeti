@@ -376,36 +376,32 @@ private theorem cupOneLeftAux_add_left (n : ℕ) (a a' : (TopRep.resolution'X X 
     P.cupOneLeftAux n (a + a') b = P.cupOneLeftAux n a b + P.cupOneLeftAux n a' b := by
   apply ContinuousMap.ext
   intro g
-  change P.flip.resolutionCup n 0 n _ (b g, a g + a' g) =
-    P.flip.resolutionCup n 0 n _ (b g, a g) + P.flip.resolutionCup n 0 n _ (b g, a' g)
-  rw [P.flip.resolutionCup_add_right]
+  rw [ContinuousMap.add_apply, cupOneLeftAux_apply, cupOneLeftAux_apply, cupOneLeftAux_apply,
+    ContinuousMap.add_apply, P.flip.resolutionCup_add_right]
 
 private theorem cupOneLeftAux_smul_left (n : ℕ) (r : R)
     (a : (TopRep.resolution'X X 1).V) (b : (TopRep.resolution'X Y (n + 1)).V) :
     P.cupOneLeftAux n (r • a) b = r • P.cupOneLeftAux n a b := by
   apply ContinuousMap.ext
   intro g
-  change P.flip.resolutionCup n 0 n _ (b g, r • a g) =
-    r • P.flip.resolutionCup n 0 n _ (b g, a g)
-  rw [P.flip.resolutionCup_smul_right]
+  rw [ContinuousMap.smul_apply, cupOneLeftAux_apply, cupOneLeftAux_apply,
+    ContinuousMap.smul_apply, P.flip.resolutionCup_smul_right]
 
 private theorem cupOneLeftAux_add_right (n : ℕ) (a : (TopRep.resolution'X X 1).V)
     (b b' : (TopRep.resolution'X Y (n + 1)).V) :
     P.cupOneLeftAux n a (b + b') = P.cupOneLeftAux n a b + P.cupOneLeftAux n a b' := by
   apply ContinuousMap.ext
   intro g
-  change P.flip.resolutionCup n 0 n _ (b g + b' g, a g) =
-    P.flip.resolutionCup n 0 n _ (b g, a g) + P.flip.resolutionCup n 0 n _ (b' g, a g)
-  rw [P.flip.resolutionCup_add_left]
+  rw [ContinuousMap.add_apply, cupOneLeftAux_apply, cupOneLeftAux_apply, cupOneLeftAux_apply,
+    ContinuousMap.add_apply, P.flip.resolutionCup_add_left]
 
 private theorem cupOneLeftAux_smul_right (n : ℕ) (r : R)
     (a : (TopRep.resolution'X X 1).V) (b : (TopRep.resolution'X Y (n + 1)).V) :
     P.cupOneLeftAux n a (r • b) = r • P.cupOneLeftAux n a b := by
   apply ContinuousMap.ext
   intro g
-  change P.flip.resolutionCup n 0 n _ (r • b g, a g) =
-    r • P.flip.resolutionCup n 0 n _ (b g, a g)
-  rw [P.flip.resolutionCup_smul_left]
+  rw [ContinuousMap.smul_apply, cupOneLeftAux_apply, cupOneLeftAux_apply,
+    ContinuousMap.smul_apply, P.flip.resolutionCup_smul_left]
 
 /-- **The cup-one product in bidegree `(1, n + 1)`**, as an `R`-bilinear map on the
 coinduction resolution. -/
@@ -446,6 +442,9 @@ def cupOneLeftCochain (n : ℕ) : (TopRep.homogeneousCochains X).X 1 →ₗ[R]
     (fun r a b ↦ Subtype.ext (LinearMap.map_smul _ r b.1))
 
 /-- The underlying resolution element of `cupOneLeftCochain` is `cupOneLeft`. -/
+-- Not a `simp` lemma, for the same reason as `coe_cupOneCochain`: `simp` rewrites the implicit
+-- carrier `(TopRep.resolution' Z).X (n + 1)` on the left-hand side through
+-- `CategoryTheory.Functor.mapHomologicalComplex_obj_X`; use it with `rw`.
 theorem coe_cupOneLeftCochain (n : ℕ) (a : (TopRep.homogeneousCochains X).X 1)
     (b : (TopRep.homogeneousCochains Y).X (n + 1)) :
     Subtype.val (P.cupOneLeftCochain n a b) = P.cupOneLeft n a.1 b.1 := by
@@ -469,8 +468,8 @@ private theorem apply_sub_apply_eq_neg_d_zero {a : (TopRep.homogeneousCochains X
     apply eq_neg_iff_add_eq_zero.mpr
     rw [add_comm]
     exact hloop.symm
-  change a.val h x - a.val g x = -a.val g h
-  rw [hpath, hsym]
+  rw [ContinuousMap.sub_apply, ContinuousMap.neg_apply, TopRep.d_zero, TopRep.hom_ofHom,
+    ContRepresentation.coind₁ι_toFun, ContinuousMap.const_apply, hpath, hsym]
   abel
 
 /-- Pairing a constant degree-zero resolution element with `b` is the pointwise pairing by its
@@ -583,20 +582,8 @@ theorem cup_one_succ_eq_signed_flip (n : ℕ) (a : continuousCohomology 1 X)
   obtain ⟨a, rfl⟩ := (TopRep.homogeneousCochains X).homologyπ_surjective 1 a
   obtain ⟨b, rfl⟩ := (TopRep.homogeneousCochains Y).homologyπ_surjective (n + 1) b
   rw [cup_π, cup_π]
-  let h : 1 + (n + 1) = n + 1 + 1 := by omega
-  apply (show Function.Injective
-      (fun x ↦ (ContinuousCohomology.degreeCast Z h).hom x) from fun x y hxy ↦ by
-        have := congrArg (fun z ↦ (ContinuousCohomology.degreeCast Z h).inv z) hxy
-        simpa using this)
-  rw [← ContinuousCohomology.degreeCast_symm h]
-  change (ContinuousCohomology.degreeCast Z h).hom
-      (π Z (1 + (n + 1)) (P.cupCocycles 1 (n + 1) a b)) =
-    (ContinuousCohomology.degreeCast Z h).hom
-      ((ContinuousCohomology.degreeCast Z h).inv
-        ((-1 : R) ^ (n + 1) •
-          π Z (n + 1 + 1) (P.flip.cupCocycles (n + 1) 1 b a)))
-  rw [Iso.inv_hom_id_apply]
-  exact P.degreeCast_π_cupCocycles_one_succ n a b
+  rw [← ContinuousCohomology.degreeCast_symm (by omega : 1 + (n + 1) = n + 1 + 1), Iso.symm_hom,
+    ← P.degreeCast_π_cupCocycles_one_succ n a b, Iso.hom_inv_id_apply]
 
 end cupOneLeft
 
