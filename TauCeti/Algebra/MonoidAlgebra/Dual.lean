@@ -58,7 +58,8 @@ noncomputable instance instModuleDualContragredient :
 
 /-- The contragredient group-algebra action on the base-ring dual is precomposition. -/
 @[simp]
-theorem op_smul_dual_apply (a : MonoidAlgebra R G) (ψ : Module.Dual R M) (m : M) :
+theorem _root_.MonoidAlgebra.op_smul_dual_apply (a : MonoidAlgebra R G) (ψ : Module.Dual R M)
+    (m : M) :
     (MulOpposite.op a • ψ) m = ψ (a • m) := rfl
 
 end ContragredientAction
@@ -89,7 +90,7 @@ private noncomputable def dualLinearMap :
     change ((a • φ) m).coeff 1 = (φ (MulOpposite.unop a • m)).coeff 1
     simp only [LinearMap.smul_apply]
     rw [map_smul]
-    exact TauCeti.MonoidAlgebra.coeff_one_mul_comm _ _
+    exact _root_.MonoidAlgebra.coeff_one_mul_comm _ _
 
 @[simp]
 private theorem dualLinearMap_apply (φ : Module.Dual (MonoidAlgebra R G) M) (m : M) :
@@ -157,25 +158,23 @@ private theorem dualLift_smul_base (ψ : Module.Dual R M) (r : R) (m : M) :
 
 variable [IsScalarTower R (MonoidAlgebra R G) M]
 
-private theorem dualLift_smul (ψ : Module.Dual R M) (a : MonoidAlgebra R G) (m : M) :
-    dualLift (G := G) ψ (a • m) = a • dualLift ψ m := by
-  induction a using MonoidAlgebra.induction_on with
-  | of h =>
-      ext g
-      simp only [dualLift_coeff (G := G), MonoidAlgebra.of_apply]
-      rw [← mul_smul]
-      simp
-  | add a b ha hb =>
-      rw [add_smul, dualLift_add (G := G), ha, hb, add_smul]
-  | smul r a ha =>
-      rw [IsScalarTower.smul_assoc, dualLift_smul_base (G := G), ha,
-        IsScalarTower.smul_assoc]
-
 private noncomputable def dualLinearEquivInv (ψ : Module.Dual R M) :
     Module.Dual (MonoidAlgebra R G) M where
   toFun := dualLift (G := G) ψ
   map_add' := dualLift_add (G := G) ψ
-  map_smul' := dualLift_smul (G := G) ψ
+  map_smul' a m := by
+    rw [RingHom.id_apply]
+    induction a using MonoidAlgebra.induction_on with
+    | of h =>
+        ext g
+        simp only [dualLift_coeff (G := G), MonoidAlgebra.of_apply]
+        rw [← mul_smul]
+        simp
+    | add a b ha hb =>
+        rw [add_smul, dualLift_add (G := G), ha, hb, add_smul]
+    | smul r a ha =>
+        rw [IsScalarTower.smul_assoc, dualLift_smul_base (G := G), ha,
+          IsScalarTower.smul_assoc]
 
 /-- For a finite group, taking the coefficient at the identity identifies the group-algebra
 linear dual with the base-ring dual carrying the contragredient action. -/
