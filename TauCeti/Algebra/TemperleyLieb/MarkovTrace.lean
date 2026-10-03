@@ -46,7 +46,7 @@ is the identity, which gives the Markov property.
 * `TauCeti.TemperleyLieb.spinGenerator`: the matrix of a generator in the spin model.
 * `TauCeti.TemperleyLieb.spinRep`: the spin representation of the Temperley-Lieb algebra.
 * `TauCeti.TemperleyLieb.spinWeight`: the weight of a spin configuration.
-* `TauCeti.Matrix.extendLast`: a matrix on `m` spins acting on `m + 1` spins, as the
+* `Matrix.extendLast`: a matrix on `m` spins acting on `m + 1` spins, as the
   identity on the last one: the Kronecker product `1 ⊗ₖ X`, reindexed along `Fin.snocEquiv`.
 * `TauCeti.TemperleyLieb.markovTrace`: the Markov trace.
 
@@ -70,7 +70,7 @@ is the identity, which gives the Markov property.
 
 public section
 
-open Function Matrix TauCeti.Matrix
+open Function Matrix
 open scoped Kronecker
 
 namespace TauCeti.TemperleyLieb

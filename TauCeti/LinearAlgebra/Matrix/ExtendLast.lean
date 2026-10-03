@@ -12,7 +12,7 @@ public import Mathlib.Data.Fin.Tuple.Basic
 /-!
 # Extending matrices on Boolean configurations
 
-`TauCeti.Matrix.extendLast` extends a matrix indexed by `Fin m → Bool` to one indexed by
+`Matrix.extendLast` extends a matrix indexed by `Fin m → Bool` to one indexed by
 `Fin (m + 1) → Bool`, acting as the identity on the last coordinate. It is the Kronecker product
 `1 ⊗ₖ X`, reindexed along `Fin.snocEquiv`. The construction composes Mathlib's tensor-product
 inclusion, Kronecker algebra equivalence, and matrix reindexing equivalence.
@@ -20,10 +20,9 @@ inclusion, Kronecker algebra equivalence, and matrix reindexing equivalence.
 
 public section
 
-open Matrix
 open scoped Kronecker
 
-namespace TauCeti.Matrix
+namespace Matrix
 
 variable {R : Type*} [CommSemiring R] {m : ℕ}
 
@@ -50,4 +49,4 @@ theorem extendLast_apply (X : Matrix (Fin m → Bool) (Fin m → Bool) R)
       else 0 := by
   simp [extendLast_eq, one_apply]
 
-end TauCeti.Matrix
+end Matrix
