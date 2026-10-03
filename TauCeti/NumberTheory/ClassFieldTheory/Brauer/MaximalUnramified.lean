@@ -8,7 +8,7 @@ module
 public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.Basic
 public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.Unramified
 public import TauCeti.NumberTheory.LocalField.Unramified.Existence
-import TauCeti.Algebra.AddCircle
+import TauCeti.LinearAlgebra.Submodule.DirectedUnion
 import TauCeti.NumberTheory.LocalField.FiniteExtension.Tower
 
 /-!
@@ -154,6 +154,7 @@ private theorem directed_range_relBrInfl :
 
 /-- `x ∈ Br K` lies in the unramified Brauer group exactly when it is inflated from the unramified
 extension of some degree `f ≥ 1`. -/
+@[simp]
 theorem mem_unramifiedBr_iff {x : Br K} :
     x ∈ unramifiedBr K ↔ ∃ (f : ℕ+) (y : groupCohomology
       (Rep.ofMulDistribMulAction Gal(𝓤 f/K) (𝓤 f)ˣ) 2), relBrInfl K (𝓤 f) (𝓤 f).val y = x := by
@@ -188,30 +189,25 @@ private theorem exists_mem_range_relBrInfl (x : unramifiedBr K) :
     ∃ f : ℕ+, (x : Br K) ∈ (relBrInfl K (𝓤 f) (𝓤 f).val).range :=
   (AddSubgroup.mem_iSup_of_directed (directed_range_relBrInfl K)).1 x.2
 
-/-- The invariant of the unramified Brauer group, read on any unramified layer from which a class
-is inflated (`unramifiedBrInvFun_eq`). -/
-private def unramifiedBrInvFun (x : unramifiedBr K) : AddCircle (1 : ℚ) :=
-  rangeInv K (exists_mem_range_relBrInfl K x).choose
-    ⟨x, (exists_mem_range_relBrInfl K x).choose_spec⟩
+/-- The invariant of the unramified Brauer group, glued from the invariants of the layers. -/
+private def unramifiedBrInvHom : unramifiedBr K →+ AddCircle (1 : ℚ) :=
+  -- `Br K` carries the `ℤ`-module structure of a cohomology group; `toIntSubmodule` and
+  -- `toIntLinearMap` use the canonical one of an additive group.
+  letI : Module ℤ (Br K) := AddCommGroup.toIntModule _
+  (Submodule.iSupLift (fun f : ℕ+ => (relBrInfl K (𝓤 f) (𝓤 f).val).range.toIntSubmodule)
+    ((directed_range_relBrInfl K).mono_comp _ fun _ _ h => AddSubgroup.toIntSubmodule.monotone h)
+    (fun f => (rangeInv K f).toIntLinearMap)
+    (fun f g h => LinearMap.ext fun x => rangeInv_compat K f g x x.2 (h x.2))
+    (unramifiedBr K).toIntSubmodule (AddSubgroup.toIntSubmodule.map_iSup _).le).toAddMonoidHom
 
 /-- The invariant of the unramified Brauer group may be read on any layer of a class. -/
-private theorem unramifiedBrInvFun_eq (x : unramifiedBr K) (f : ℕ+)
+private theorem unramifiedBrInvHom_eq (x : unramifiedBr K) (f : ℕ+)
     (hx : (x : Br K) ∈ (relBrInfl K (𝓤 f) (𝓤 f).val).range) :
-    unramifiedBrInvFun K x = rangeInv K f ⟨x, hx⟩ :=
-  rangeInv_compat K _ f x _ hx
-
-/-- The invariant of the unramified Brauer group, as a homomorphism. -/
-private def unramifiedBrInvHom : unramifiedBr K →+ AddCircle (1 : ℚ) where
-  toFun := unramifiedBrInvFun K
-  map_zero' := (unramifiedBrInvFun_eq K 0 1 (zero_mem _)).trans (map_zero _)
-  map_add' x y := by
-    obtain ⟨f, hx⟩ := exists_mem_range_relBrInfl K x
-    obtain ⟨g, hy⟩ := exists_mem_range_relBrInfl K y
-    have hx' := range_relBrInfl_le K f (f * g) (by simp) hx
-    have hy' := range_relBrInfl_le K g (f * g) (by simp) hy
-    rw [unramifiedBrInvFun_eq K (x + y) _ (add_mem hx' hy'), unramifiedBrInvFun_eq K x _ hx',
-      unramifiedBrInvFun_eq K y _ hy', ← map_add]
-    rfl
+    unramifiedBrInvHom K x = rangeInv K f ⟨x, hx⟩ :=
+  letI : Module ℤ (Br K) := AddCommGroup.toIntModule _
+  Submodule.iSupLift_of_mem
+    (K := fun f : ℕ+ => (relBrInfl K (𝓤 f) (𝓤 f).val).range.toIntSubmodule)
+    (f := fun f => (rangeInv K f).toIntLinearMap) (T := (unramifiedBr K).toIntSubmodule) x hx
 
 /-- The invariant of an unramified layer is injective. -/
 private theorem layerInv_injective (f : ℕ+) : Function.Injective (layerInv K f) :=
@@ -244,13 +240,13 @@ def unramifiedBrInv : unramifiedBr K ≃+ AddCircle (1 : ℚ) :=
     obtain ⟨f, hxf⟩ := exists_mem_range_relBrInfl K x
     obtain ⟨y, hy⟩ := AddMonoidHom.mem_range.1 hxf
     have h0 : layerInv K f y = 0 :=
-      (rangeInv_eq K f hxf y hy).symm.trans ((unramifiedBrInvFun_eq K x f hxf).symm.trans hx)
+      (rangeInv_eq K f hxf y hy).symm.trans ((unramifiedBrInvHom_eq K x f hxf).symm.trans hx)
     rw [(injective_iff_map_eq_zero _).1 (layerInv_injective K f) y h0, map_zero] at hy
     exact Subtype.ext hy.symm, fun q => by
     obtain ⟨n, hn, hq⟩ := AddCircle.exists_mem_torsionBy_rat q
     obtain ⟨y, rfl⟩ := exists_layerInv_eq K ⟨n, hn⟩ hq
     have hy := (mem_unramifiedBr_iff K).2 ⟨_, y, rfl⟩
-    exact ⟨⟨_, hy⟩, (unramifiedBrInvFun_eq K ⟨_, hy⟩ _ ⟨y, rfl⟩).trans (rangeInv_eq K _ _ y rfl)⟩⟩
+    exact ⟨⟨_, hy⟩, (unramifiedBrInvHom_eq K ⟨_, hy⟩ _ ⟨y, rfl⟩).trans (rangeInv_eq K _ _ y rfl)⟩⟩
 
 variable {K} in
 /-- A class inflated from an unramified extension `E` of `K` inside `Kˢ` lies in the unramified
@@ -278,6 +274,6 @@ theorem unramifiedBrInv_relBrInfl (E : IntermediateField K (SeparableClosure K))
   obtain ⟨f, rfl⟩ : ∃ f : ℕ+, E = 𝓤 f :=
     ⟨⟨_, Module.finrank_pos⟩, E.eq_unramifiedExtension_finrank⟩
   rw [unramifiedInv_eq_layerInv K f]
-  exact (unramifiedBrInvFun_eq K _ f ⟨y, rfl⟩).trans (rangeInv_eq K f _ y rfl)
+  exact (unramifiedBrInvHom_eq K _ f ⟨y, rfl⟩).trans (rangeInv_eq K f _ y rfl)
 
 end TauCeti.ClassFieldTheory
