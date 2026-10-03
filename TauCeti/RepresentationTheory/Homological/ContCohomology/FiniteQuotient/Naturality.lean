@@ -27,7 +27,7 @@ of the system in Neukirch–Schmidt–Wingberg, *Cohomology of Number Fields*, (
 
 ## Main definitions
 
-* `TauCeti.ContCohomology.continuousFiniteQuotientCoeffPair`: the coefficient morphism
+* `TauCeti.ContCohomology.continuousFiniteQuotientCoeffMap`: the coefficient morphism
   `M^U → N^U` at one level.
 * `TauCeti.ContCohomology.continuousFiniteQuotientSystemMap`: the resulting natural
   transformation of finite-quotient systems.
@@ -38,8 +38,9 @@ of the system in Neukirch–Schmidt–Wingberg, *Cohomology of Number Fields*, (
   commute with transition maps.
 * `TauCeti.ContCohomology.continuousFiniteQuotientSystemMap_id` and
   `continuousFiniteQuotientSystemMap_comp`: the construction is functorial in the coefficients.
-* `TauCeti.ContCohomology.continuousFiniteQuotientComparisonApp_naturality`: the comparison to
-  `Hⁿ(G, -)` is natural in the coefficients.
+* `TauCeti.ContCohomology.continuousFiniteQuotientComparisonApp_naturality` and
+  `continuousFiniteQuotientComparison_naturality`: the comparison to `Hⁿ(G, -)` is natural in
+  the coefficients, levelwise and as a natural transformation.
 -/
 
 public section
@@ -60,7 +61,7 @@ section Level
 
 /-- The canonical coefficient morphism `M^U → N^U` induced by an equivariant homomorphism
 `M →+[G] N`, regarded as a morphism of topological representations of `G ⧸ U`. -/
-def continuousFiniteQuotientCoeffPair (f : M →+[G] N) (U : OpenNormalSubgroup G) :
+def continuousFiniteQuotientCoeffMap (f : M →+[G] N) (U : OpenNormalSubgroup G) :
     ofDiscreteModule ℤ (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M) ⟶
       ofDiscreteModule ℤ (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup N) :=
   ofDiscreteModuleMap (fixedPointsMap f U.toSubgroup).toIntLinearMap
@@ -74,60 +75,60 @@ def continuousFiniteQuotientCoeffPair (f : M →+[G] N) (U : OpenNormalSubgroup 
 omit [IsTopologicalGroup G] in
 /-- The finite-level coefficient morphism acts as `f` on underlying elements. -/
 @[simp]
-theorem continuousFiniteQuotientCoeffPair_hom_apply (f : M →+[G] N)
+theorem continuousFiniteQuotientCoeffMap_hom_apply (f : M →+[G] N)
     (U : OpenNormalSubgroup G) (m : FixedPoints.addSubgroup U.toSubgroup M) :
-    (continuousFiniteQuotientCoeffPair f U).hom m = fixedPointsMap f U.toSubgroup m :=
+    (continuousFiniteQuotientCoeffMap f U).hom m = fixedPointsMap f U.toSubgroup m :=
   ofDiscreteModuleMap_hom_apply _ _ m
 
 omit [IsTopologicalGroup G] in
 /-- The finite-level coefficient morphism associated to the identity is the identity. -/
 @[simp]
-theorem continuousFiniteQuotientCoeffPair_id (U : OpenNormalSubgroup G) :
-    continuousFiniteQuotientCoeffPair (DistribMulActionHom.id G : M →+[G] M) U = 𝟙 _ := by
+theorem continuousFiniteQuotientCoeffMap_id (U : OpenNormalSubgroup G) :
+    continuousFiniteQuotientCoeffMap (DistribMulActionHom.id G : M →+[G] M) U = 𝟙 _ := by
   refine TopRep.hom_ext (DFunLike.ext _ _ fun m ↦ ?_)
-  exact (continuousFiniteQuotientCoeffPair_hom_apply _ _ m).trans
+  exact (continuousFiniteQuotientCoeffMap_hom_apply _ _ m).trans
     ((DFunLike.congr_fun (fixedPointsMap_id (M := M) U.toSubgroup) m).trans
       (TopRep.id_apply _ m).symm)
 
 omit [IsTopologicalGroup G] in
 /-- Finite-level coefficient morphisms preserve composition. -/
 @[simp]
-theorem continuousFiniteQuotientCoeffPair_comp (f : M →+[G] N) (g : N →+[G] P)
+theorem continuousFiniteQuotientCoeffMap_comp (f : M →+[G] N) (g : N →+[G] P)
     (U : OpenNormalSubgroup G) :
-    continuousFiniteQuotientCoeffPair f U ≫ continuousFiniteQuotientCoeffPair g U =
-      continuousFiniteQuotientCoeffPair (g.comp f) U := by
+    continuousFiniteQuotientCoeffMap f U ≫ continuousFiniteQuotientCoeffMap g U =
+      continuousFiniteQuotientCoeffMap (g.comp f) U := by
   refine TopRep.hom_ext (DFunLike.ext _ _ fun m ↦ ?_)
   -- Composition in `TopRep` is definitionally composition of the underlying homomorphisms.
-  change (continuousFiniteQuotientCoeffPair g U).hom
-      ((continuousFiniteQuotientCoeffPair f U).hom m) =
-    (continuousFiniteQuotientCoeffPair (g.comp f) U).hom m
-  rw [continuousFiniteQuotientCoeffPair_hom_apply f U m,
-    continuousFiniteQuotientCoeffPair_hom_apply g U
+  change (continuousFiniteQuotientCoeffMap g U).hom
+      ((continuousFiniteQuotientCoeffMap f U).hom m) =
+    (continuousFiniteQuotientCoeffMap (g.comp f) U).hom m
+  rw [continuousFiniteQuotientCoeffMap_hom_apply f U m,
+    continuousFiniteQuotientCoeffMap_hom_apply g U
       (fixedPointsMap f U.toSubgroup m),
-    continuousFiniteQuotientCoeffPair_hom_apply (g.comp f) U m]
+    continuousFiniteQuotientCoeffMap_hom_apply (g.comp f) U m]
   exact DFunLike.congr_fun (fixedPointsMap_comp_fixedPointsMap f g U.toSubgroup) m
 
 /-- Restriction of an equivariant coefficient map to fixed points commutes with the coefficient
 pairs defining the transition from the `U`-level to a deeper `V`-level. -/
-theorem continuousFiniteQuotientCoeffPair_transition_square (f : M →+[G] N)
+theorem continuousFiniteQuotientCoeffMap_transition_square (f : M →+[G] N)
     {U V : OpenNormalSubgroup G} (hVU : V ≤ U) :
     (TopRep.resFunctor (continuousFiniteQuotientMap G hVU :
           G ⧸ V.toSubgroup →* G ⧸ U.toSubgroup)).map
-          (continuousFiniteQuotientCoeffPair f U) ≫
+          (continuousFiniteQuotientCoeffMap f U) ≫
         continuousFiniteQuotientPair G N hVU =
       continuousFiniteQuotientPair G M hVU ≫
-        continuousFiniteQuotientCoeffPair f V := by
+        continuousFiniteQuotientCoeffMap f V := by
   refine TopRep.hom_ext (DFunLike.ext _ _ fun m ↦ ?_)
   -- Restriction and composition in `TopRep` are definitionally the displayed nested maps.
   change (continuousFiniteQuotientPair G N hVU).hom
-      ((continuousFiniteQuotientCoeffPair f U).hom m) =
-    (continuousFiniteQuotientCoeffPair f V).hom
+      ((continuousFiniteQuotientCoeffMap f U).hom m) =
+    (continuousFiniteQuotientCoeffMap f V).hom
       ((continuousFiniteQuotientPair G M hVU).hom m)
-  rw [continuousFiniteQuotientCoeffPair_hom_apply f U m,
+  rw [continuousFiniteQuotientCoeffMap_hom_apply f U m,
     continuousFiniteQuotientPair_hom_apply G N hVU
       (fixedPointsMap f U.toSubgroup m),
     continuousFiniteQuotientPair_hom_apply G M hVU m,
-    continuousFiniteQuotientCoeffPair_hom_apply f V (fixedPointsInclusion hVU m)]
+    continuousFiniteQuotientCoeffMap_hom_apply f V (fixedPointsInclusion hVU m)]
   exact (DFunLike.congr_fun (fixedPointsMap_comp_fixedPointsInclusion f hVU) m).symm
 
 end Level
@@ -142,13 +143,13 @@ noncomputable def continuousFiniteQuotientCoeffApp (f : M →+[G] N)
         (ofDiscreteModule ℤ (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup M)) ⟶
       continuousCohomology n
         (ofDiscreteModule ℤ (G ⧸ U.toSubgroup) (FixedPoints.addSubgroup U.toSubgroup N)) :=
-  TauCeti.ContinuousCohomology.coeffMap (continuousFiniteQuotientCoeffPair f U) n
+  TauCeti.ContinuousCohomology.coeffMap (continuousFiniteQuotientCoeffMap f U) n
 
 /-- The finite-level coefficient map is the canonical continuous-cohomology coefficient map. -/
 theorem continuousFiniteQuotientCoeffApp_eq_coeffMap (f : M →+[G] N)
     (U : OpenNormalSubgroup G) (n : ℕ) :
     continuousFiniteQuotientCoeffApp f U n =
-      TauCeti.ContinuousCohomology.coeffMap (continuousFiniteQuotientCoeffPair f U) n :=
+      TauCeti.ContinuousCohomology.coeffMap (continuousFiniteQuotientCoeffMap f U) n :=
   (rfl)
 
 /-- **Naturality of the canonical transition in the coefficients**: the maps induced by
@@ -168,9 +169,9 @@ theorem continuousFiniteQuotientTransition_naturality (f : M →+[G] N)
     (continuousFiniteQuotientMap G hVU)
     (continuousFiniteQuotientPair G M hVU)
     (continuousFiniteQuotientPair G N hVU)
-    (continuousFiniteQuotientCoeffPair f U)
-    (continuousFiniteQuotientCoeffPair f V)
-    (continuousFiniteQuotientCoeffPair_transition_square f hVU) n
+    (continuousFiniteQuotientCoeffMap f U)
+    (continuousFiniteQuotientCoeffMap f V)
+    (continuousFiniteQuotientCoeffMap_transition_square f hVU) n
 
 /-- An equivariant homomorphism of discrete coefficient modules induces a natural transformation
 between their canonical finite-quotient systems in every degree. -/
@@ -221,7 +222,7 @@ theorem continuousFiniteQuotientSystemMap_id (n : ℕ) :
   simp only [Opposite.op_unop] at hs
   rw [Category.assoc, hs,
     continuousFiniteQuotientCoeffApp_eq_coeffMap,
-    continuousFiniteQuotientCoeffPair_id, TauCeti.ContinuousCohomology.coeffMap_id]
+    continuousFiniteQuotientCoeffMap_id, TauCeti.ContinuousCohomology.coeffMap_id]
   simp
 
 /-- System maps preserve composition of equivariant coefficient homomorphisms. -/
@@ -241,9 +242,9 @@ theorem continuousFiniteQuotientSystemMap_comp (f : M →+[G] N) (g : N →+[G] 
     continuousFiniteQuotientCoeffApp_eq_coeffMap,
     continuousFiniteQuotientCoeffApp_eq_coeffMap]
   rw [← reassoc_of% (TauCeti.ContinuousCohomology.coeffMap_comp
-    (continuousFiniteQuotientCoeffPair f U.unop)
-    (continuousFiniteQuotientCoeffPair g U.unop) n),
-    continuousFiniteQuotientCoeffPair_comp]
+    (continuousFiniteQuotientCoeffMap f U.unop)
+    (continuousFiniteQuotientCoeffMap g U.unop) n),
+    continuousFiniteQuotientCoeffMap_comp]
 
 end System
 
@@ -252,10 +253,10 @@ section Comparison
 omit [IsTopologicalGroup G] in
 /-- The coefficient square formed by the inclusion `M^U → M`, the inclusion `N^U → N`,
 and an equivariant homomorphism `M →+[G] N` commutes. -/
-private theorem continuousFiniteQuotientCoeffPair_comparison_square (f : M →+[G] N)
+private theorem continuousFiniteQuotientCoeffMap_comparison_square (f : M →+[G] N)
     (U : OpenNormalSubgroup G) :
     (TopRep.resFunctor (ContinuousMonoidHom.quotientMk U.toSubgroup :
-          G →* G ⧸ U.toSubgroup)).map (continuousFiniteQuotientCoeffPair f U) ≫
+          G →* G ⧸ U.toSubgroup)).map (continuousFiniteQuotientCoeffMap f U) ≫
         ofDiscreteModulePair
           (ContinuousMonoidHom.quotientMk U.toSubgroup : G →* G ⧸ U.toSubgroup)
           (FixedPoints.addSubgroup U.toSubgroup N).subtype.toIntLinearMap
@@ -274,14 +275,14 @@ private theorem continuousFiniteQuotientCoeffPair_comparison_square (f : M →+[
       (ContinuousMonoidHom.quotientMk U.toSubgroup : G →* G ⧸ U.toSubgroup)
       (FixedPoints.addSubgroup U.toSubgroup N).subtype.toIntLinearMap
       (fun g m ↦ subtype_quotientMk_smul G N U.toSubgroup g m)).hom
-      ((continuousFiniteQuotientCoeffPair f U).hom m') =
+      ((continuousFiniteQuotientCoeffMap f U).hom m') =
     (ofDiscreteModuleMap f.toAddMonoidHom.toIntLinearMap
       (fun g m ↦ map_smul f g m)).hom
       ((ofDiscreteModulePair
         (ContinuousMonoidHom.quotientMk U.toSubgroup : G →* G ⧸ U.toSubgroup)
         (FixedPoints.addSubgroup U.toSubgroup M).subtype.toIntLinearMap
         (fun g m ↦ subtype_quotientMk_smul G M U.toSubgroup g m)).hom m')
-  rw [continuousFiniteQuotientCoeffPair_hom_apply f U m',
+  rw [continuousFiniteQuotientCoeffMap_hom_apply f U m',
     ofDiscreteModulePair_hom_apply
       (ContinuousMonoidHom.quotientMk U.toSubgroup : G →* G ⧸ U.toSubgroup)
       (FixedPoints.addSubgroup U.toSubgroup N).subtype.toIntLinearMap
@@ -321,10 +322,32 @@ theorem continuousFiniteQuotientComparisonApp_naturality (f : M →+[G] N)
       (ContinuousMonoidHom.quotientMk U.toSubgroup : G →* G ⧸ U.toSubgroup)
       (FixedPoints.addSubgroup U.toSubgroup N).subtype.toIntLinearMap
       (fun g m ↦ subtype_quotientMk_smul G N U.toSubgroup g m))
-    (continuousFiniteQuotientCoeffPair f U)
+    (continuousFiniteQuotientCoeffMap f U)
     (ofDiscreteModuleMap f.toAddMonoidHom.toIntLinearMap
       (fun g m ↦ map_smul f g m))
-    (continuousFiniteQuotientCoeffPair_comparison_square f U) n).symm
+    (continuousFiniteQuotientCoeffMap_comparison_square f U) n).symm
+
+/-- **Naturality of the finite-quotient comparison transformation in the coefficients**: the
+system map induced by `f` followed by the comparison to `Hⁿ(G, N)` is the comparison to
+`Hⁿ(G, M)` followed by the constant coefficient map induced by `f`. Equivalently, the canonical
+cocones `continuousFiniteQuotientCocone` are compatible with the system maps. -/
+@[reassoc]
+theorem continuousFiniteQuotientComparison_naturality (f : M →+[G] N) (n : ℕ) :
+    continuousFiniteQuotientSystemMap f n ≫ continuousFiniteQuotientComparison G N n =
+      continuousFiniteQuotientComparison G M n ≫
+        (Functor.const (OpenNormalSubgroup G)ᵒᵖ).map
+          (TauCeti.ContinuousCohomology.coeffMap
+            (ofDiscreteModuleMap f.toAddMonoidHom.toIntLinearMap
+              (fun g m ↦ map_smul f g m)) n) := by
+  refine NatTrans.ext (funext fun U ↦ ?_)
+  apply (cancel_epi (eqToHom (continuousFiniteQuotientSystem_obj G M n U.unop).symm)).1
+  have hs := continuousFiniteQuotientSystemMap_app f n U.unop
+  have hM := continuousFiniteQuotientComparison_app G M n U.unop
+  have hN := continuousFiniteQuotientComparison_app G N n U.unop
+  simp only [Opposite.op_unop] at hs hM hN
+  rw [NatTrans.comp_app, NatTrans.comp_app, Functor.const_map_app, reassoc_of% hM,
+    ← continuousFiniteQuotientComparisonApp_naturality, ← hs, ← hN]
+  simp
 
 end Comparison
 
