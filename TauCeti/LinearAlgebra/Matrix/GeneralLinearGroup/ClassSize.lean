@@ -40,8 +40,7 @@ where `t` is the trace and `d` the determinant:
 Each is the class size of the normal form the element is conjugate to, by the normal-form theorems
 of `TauCeti/LinearAlgebra/Matrix/GeneralLinearGroup/NormalForm.lean`. Only the elliptic case needs
 a quadratic extension `E/F`, to supply the element of the non-split torus; since the class size
-does not depend on it, the statement makes no mention of `E`, and the proof uses the degree-`2`
-extension `FiniteField.Extension F p 2`.
+does not depend on it, the statement makes no mention of `E`.
 
 These sizes are what is needed to write down the columns of the character table of `GL₂(𝔽_q)` for
 a given `q`. The last section does this for the uniform worked case `q = 3`: `GL₂(𝔽₃)` has
