@@ -287,6 +287,8 @@ def gradedIdempotentCoordinate (he : IsIdempotentElem e) (he₀ : e ∈ 𝒜 0) 
       LaurentPolynomial ℤ :=
   LaurentK0.lift _ (smulGradedDimensionInvariant he he₀)
 
+/-- **The idempotent coordinate of a class.** Evaluating `gradedIdempotentCoordinate` on the class
+`[M]` of a finite graded module recovers the graded dimension `∑ₚ dim_k(e • Mₚ) qᵖ` of `e • M`. -/
 @[simp]
 theorem gradedIdempotentCoordinate_of (he : IsIdempotentElem e) (he₀ : e ∈ 𝒜 0)
     (M : (gradedFiniteModules 𝒜).FullSubcategory) :
