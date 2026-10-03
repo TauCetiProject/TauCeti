@@ -31,8 +31,8 @@ distinct vertices, whatever their direction (`TauCeti.Quiver.underlyingGraph_con
   all share their target, and every arrow strictly lowers a height function, has a forest as its
   underlying graph.
 * `TauCeti.Quiver.subsingleton_hom_sum_of_lt`: for fixed vertices `a` and `b`, if each directional
-  arrow type is subsingleton and all arrows lower an asymmetric height relation, then at most one
-  arrow joins `a` and `b`, counted in both directions.
+  arrow type is subsingleton and arrows between them lower an asymmetric height relation, then at
+  most one arrow joins `a` and `b`, counted in both directions.
 -/
 
 public section
@@ -99,18 +99,17 @@ theorem isAcyclic_underlyingGraph_of_lt {α : Type*} [LT α] [IsStrictOrder α (
     (hmax' _ ((c.rotate u hu).getVert_mem_support _))
   exact hc'.snd_ne_penultimate (hout e e')
 
-/-- For fixed vertices `a` and `b`, if each of `a ⟶ b` and `b ⟶ a` is subsingleton and every
-arrow lowers a height function into a type with an asymmetric relation, then
+/-- For fixed vertices `a` and `b`, if each of `a ⟶ b` and `b ⟶ a` is subsingleton and arrows
+between them lower a height function into a type with an asymmetric relation, then
 `(a ⟶ b) ⊕ (b ⟶ a)` is subsingleton. -/
 theorem subsingleton_hom_sum_of_lt {α : Type*} [LT α] [Std.Asymm (α := α) (· < ·)]
-    (ht : V → α)
-    (hlt : ∀ ⦃a b : V⦄, (a ⟶ b) → ht b < ht a) (a b : V)
+    (ht : V → α) (a b : V) (hlt : (a ⟶ b) → ht b < ht a) (hlt' : (b ⟶ a) → ht a < ht b)
     [Subsingleton (a ⟶ b)] [Subsingleton (b ⟶ a)] : Subsingleton ((a ⟶ b) ⊕ (b ⟶ a)) := by
   refine ⟨?_⟩
   rintro (e | e) (e' | e')
   · exact congrArg _ (Subsingleton.elim e e')
-  · exact (asymm (hlt e) (hlt e')).elim
-  · exact (asymm (hlt e) (hlt e')).elim
+  · exact (asymm (hlt e) (hlt' e')).elim
+  · exact (asymm (hlt' e) (hlt e')).elim
   · exact congrArg _ (Subsingleton.elim e e')
 
 end UnderlyingGraph
