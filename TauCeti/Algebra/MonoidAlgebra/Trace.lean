@@ -36,7 +36,7 @@ conjugates of `g⁻¹`, each conjugate counted once for every element conjugatin
 * `TauCeti.MonoidAlgebra.trace_mulRight`: the trace of right multiplication by `x` on `k[G]` is
   `|G| * x_1`.
 * `TauCeti.MonoidAlgebra.trace_mulLeft`: the same for left multiplication.
-* `TauCeti.MonoidAlgebra.trace_mulLeft_single_mul_mulRight`: the trace of `x ↦ g * x * y` on a
+* `MonoidAlgebra.trace_mulLeft_single_mul_mulRight`: the trace of `x ↦ g * x * y` on a
   finite group algebra is `∑ σ, y_{σ⁻¹ g⁻¹ σ}`.
 -/
 
@@ -86,6 +86,8 @@ theorem MonoidAlgebra.trace_mulLeft {k G : Type*} [CommSemiring k] [Monoid G]
   rw [LinearMap.trace_eq_matrix_trace k (MonoidAlgebra.basis G k), Algebra.toMatrix_lmul_eq,
     trace_leftMulMatrix_monoidAlgebra, Nat.card_eq_fintype_card]
 
+end TauCeti
+
 /-- **The trace of a two-sided multiplication on a finite group algebra.** The endomorphism
 `x ↦ g * x * y` of `k[G]` has trace `∑ σ, y_{σ⁻¹ g⁻¹ σ}`: its diagonal entry at `σ` is the
 coefficient of `σ` in `g σ y`. -/
@@ -98,5 +100,3 @@ theorem MonoidAlgebra.trace_mulLeft_single_mul_mulRight {k G : Type*} [CommSemir
   rw [LinearMap.trace_eq_matrix_trace k (MonoidAlgebra.basis G k), Matrix.trace]
   refine Finset.sum_congr rfl fun σ _ => ?_
   simp [LinearMap.toMatrix_apply, ← mul_assoc, mul_inv_rev]
-
-end TauCeti

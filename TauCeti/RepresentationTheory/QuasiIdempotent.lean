@@ -210,7 +210,7 @@ theorem mul_char_ofModule'_span_singleton (ha : a * a = κ • a) (g : G) :
   let e := (I.restrictScalarsEquiv k).restrictScalars k
   have he : ∀ y, (e y : k[G]) = y := fun _ => rfl
   have he' : ∀ y, (e.symm y : k[G]) = y := fun _ => rfl
-  rw [← TauCeti.MonoidAlgebra.trace_mulLeft_single_mul_mulRight,
+  rw [← MonoidAlgebra.trace_mulLeft_single_mul_mulRight,
     ← LinearMap.trace_restrict_eq_of_forall_mem _ _ hf, character, ← smul_eq_mul, ← map_smul,
     ← LinearMap.trace_conj' _ e]
   congr 1
