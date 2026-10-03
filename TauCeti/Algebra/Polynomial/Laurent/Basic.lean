@@ -33,8 +33,8 @@ every `R[T;T⁻¹]`-module. That automorphism is what a shift-compatible invaria
 
 * `TauCeti.laurentEval`: evaluation of a Laurent polynomial at a unit of an `R`-algebra.
 * `TauCeti.laurentEvalEquiv`: the units of `A` are the `R`-algebra maps `R[T;T⁻¹] →ₐ[R] A`.
-* `TauCeti.laurentTAut`: multiplication by `T` on an `R[T;T⁻¹]`-module, as an additive
-  automorphism.
+* `TauCeti.laurentTAut`: the action of `T` as an additive automorphism under a
+  `DistribMulAction (LaurentPolynomial R) N`; Laurent modules are a specialization.
 
 ## Main results
 
@@ -211,13 +211,14 @@ noncomputable def laurentTAut : AddAut N :=
   DistribMulAction.toAddEquiv N (unitOfInvertible (T 1 : LaurentPolynomial R))
 
 @[simp]
-lemma laurentTAut_apply (x : N) : laurentTAut R N x = (T 1 : LaurentPolynomial R) • x :=
-  (rfl)
+lemma laurentTAut_apply (x : N) : laurentTAut R N x = (T 1 : LaurentPolynomial R) • x := by
+  simp only [laurentTAut, DistribMulAction.toAddEquiv_apply, Units.smul_def, val_unitOfInvertible]
 
 @[simp]
 lemma laurentTAut_symm_apply (x : N) :
-    (laurentTAut R N).symm x = (T (-1) : LaurentPolynomial R) • x :=
-  (rfl)
+    (laurentTAut R N).symm x = (T (-1) : LaurentPolynomial R) • x := by
+  simp only [laurentTAut, DistribMulAction.toAddEquiv_symm_apply, Units.smul_def,
+    val_inv_unitOfInvertible, invOf_T]
 
 end TAut
 
