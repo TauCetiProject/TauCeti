@@ -80,8 +80,8 @@ lemma mk_canonicalBundle_eq_iff (K : SchemeWeilDivisor X) :
     ((SchemeWeilDivisor.toLineBundleClass_eq_mk_iff hdim).mpr ⟨Iso.refl _⟩).symm
   rw [hc, SchemeWeilDivisor.toLineBundleClass_eq_iff,
     ← SchemeWeilDivisor.linearlyEquivalent_equivFunctionFieldDivisor_iff hex hdim hF,
-    (SchemeWeilDivisor.equivFunctionFieldDivisor hex hdim).apply_symm_apply,
-    ← WeilDivisor.OrderSystem.divisorClass_eq_iff, hW, eq_comm]
+    ← WeilDivisor.OrderSystem.divisorClass_eq_iff]
+  simp [hW, eq_comm]
 
 /-- The canonical bundle is isomorphic to the sheaf of every canonical divisor. -/
 lemma nonempty_iso_canonicalBundle_sheaf {K : SchemeWeilDivisor X}
@@ -112,12 +112,13 @@ theorem nonempty_cohomologyOneDualEquivCohomologyZero_tensor_dual
   have hK := (mk_canonicalBundle_eq_iff hex hdim hF hk K).mp (hω.symm.trans hωK.symm)
   have hneg : SchemeWeilDivisor.toLineBundleClass hdim (-D) = (LineBundleClass.mk L)⁻¹ := by
     apply eq_inv_of_mul_eq_one_left
-    rw [← hL, ← SchemeWeilDivisor.toLineBundleClass_add,
-      neg_add_cancel, SchemeWeilDivisor.toLineBundleClass_zero]
+    rw [← hL, ← SchemeWeilDivisor.toLineBundleClass_add]
+    simp
   have htensor : SchemeWeilDivisor.toLineBundleClass hdim (K - D) =
       LineBundleClass.mk (tensorProduct ω (dual L)) := by
-    rw [sub_eq_add_neg, SchemeWeilDivisor.toLineBundleClass_add, hneg, hωK,
+    rw [sub_eq_add_neg, SchemeWeilDivisor.toLineBundleClass_add,
       LineBundleClass.mk_tensorProduct, ← LineBundleClass.inv_mk]
+    simp [hneg, hωK]
   obtain ⟨etensor⟩ := (SchemeWeilDivisor.toLineBundleClass_eq_mk_iff hdim).mp htensor
   rw [SchemeWeilDivisor.toInvertibleSheaf_obj] at etensor
   obtain ⟨η, -, hη, hgreat⟩ := exists_isGreatest_of_divisorClass_eq_canonicalClass hF hk hK
@@ -135,7 +136,7 @@ theorem nonempty_cohomologyZeroDualEquivCohomologyOne_tensor_dual
   let N := tensorProduct ω (dual L)
   have hNN : LineBundleClass.mk (tensorProduct ω (dual N)) = LineBundleClass.mk L := by
     simp only [N, LineBundleClass.mk_tensorProduct, ← LineBundleClass.inv_mk]
-    simp only [mul_inv_rev, inv_inv, mul_left_comm, mul_inv_cancel, mul_one]
+    simp [-LineBundleClass.inv_mk, mul_left_comm]
   obtain ⟨eNN⟩ := LineBundleClass.mk_eq_mk_iff.mp hNN
   obtain ⟨e⟩ := nonempty_cohomologyOneDualEquivCohomologyZero_tensor_dual
     hex hdim hF hk N ω hω
