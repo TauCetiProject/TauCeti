@@ -67,15 +67,10 @@ theorem analyticChartMap_distinguishedPoint {σ : Φ.cones} {τ : Ψ.cones}
   have hvanish := f.realCharacter_eq_zero_on_leastCone_iff σ.2
     (dualSemigroup_anti Ψ.lattice hleast m.2)
   simp only [hchar]
-  apply if_congr
-  · constructor
-    · intro hs y hy
-      exact hvanish.symm.1 hs y ((SetLike.ext_iff.mp (Ψ.coe_orbitFace hleast') y).1 hy)
-    · intro ht y hy
-      exact hvanish.1 (fun z hz ↦
-        ht z ((SetLike.ext_iff.mp (Ψ.coe_orbitFace hleast') z).2 hz)) y hy
-  · rfl
-  · rfl
+  have htop (x : V) : x ∈ (⊤ : σ.1.Face) ↔ x ∈ σ.1 := Iff.rfl
+  have horbit (y : V') : y ∈ Ψ.orbitFace hleast' ↔ y ∈ f.leastCone σ.2 :=
+    SetLike.ext_iff.mp (Ψ.coe_orbitFace hleast') y
+  exact if_congr (by simpa only [htop, horbit] using hvanish.symm) rfl rfl
 
 /-- Analytic toric maps send distinguished points to the distinguished points of the least
 target cones. -/
