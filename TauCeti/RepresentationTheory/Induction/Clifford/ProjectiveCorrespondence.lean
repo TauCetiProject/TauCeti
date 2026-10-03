@@ -90,7 +90,6 @@ include h
 
 /-- **`N` acts on `A ⊗ X` through `A` alone**: `ρ` restricts to `A` on `N`, and `N` is trivial in
 the inertia quotient, on which `U` is defined. -/
-@[simp]
 theorem tensorRep_inclusion_tmul (n : N) (x : A) (y : X) :
     h.tensorRep hU (Subgroup.inclusion (le_inertia A) n) (x ⊗ₜ y) = A.ρ n x ⊗ₜ y := by
   have hn : ((Subgroup.inclusion (le_inertia A) n : inertia A) :
