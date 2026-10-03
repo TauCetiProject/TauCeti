@@ -49,6 +49,17 @@ layers need in order to glue to one invariant on the union of their images in th
 representing unit of a cyclic class, while restriction multiplies its invariant by `[E : K]`
 (`unramifiedInv_restrict`).
 
+The invariant also transforms along a change of ground field. Let `K'/K` be totally ramified, and
+let `L'/K'` be an unramified layer containing `L`. Since the residue fields of `K` and `K'` agree,
+the arithmetic Frobenius of `L'/K'` restricts to that of `L/K`. The map
+`H²(Gal(L/K), Lˣ) → H²(Gal(L'/K'), L'ˣ)` induced by restriction `Gal(L'/K') → Gal(L/K)` therefore
+sends the class of `a` to the class of `a ^ ([L' : K'] / [L : K])`
+(`TauCeti.map_cyclicClass_baseChange`). Its invariant is `e(K'/K) · v_K(a) / [L : K]`, because
+`v_{K'}(a) = e(K'/K) · v_K(a)`. So this map multiplies the invariant by `e(K'/K) = [K' : K]`. This
+is the totally ramified case of the formula `inv_{K'} ∘ res = [K' : K] · inv_K` for restriction of
+Brauer classes; a general finite extension `K'/K` is totally ramified over its maximal unramified
+subextension.
+
 ## Main definitions
 
 * `TauCeti.ClassFieldTheory.unramifiedClass`: the class in `H²(Gal(L/K), Lˣ)` of an element of
@@ -73,12 +84,17 @@ representing unit of a cyclic class, while restriction multiplies its invariant 
   sends the class of `a` to the class of `a ^ [M : L]`.
 * `TauCeti.ClassFieldTheory.unramifiedInv_map`: inflation along unramified layers preserves the
   invariant.
+* `TauCeti.ClassFieldTheory.map_unramifiedClass_baseChange`: base change along a totally ramified
+  extension `K'/K` sends the class of `a` to the class of `a ^ ([L' : K'] / [L : K])`.
+* `TauCeti.ClassFieldTheory.unramifiedInv_map_baseChange`: base change along a totally ramified
+  extension `K'/K` multiplies the invariant by `[K' : K]`.
 
 ## References
 
-* J.-P. Serre, *Local Fields*, Chapter XII, §1.
+* J.-P. Serre, *Local Fields*, Chapter XII, §1 and Chapter XIII, §3.
 * J. W. S. Cassels and A. Fröhlich (eds.), *Algebraic Number Theory*, Chapter VI (Serre, *Local
   Class Field Theory*), §1.
+* J. S. Milne, *Class Field Theory*, Chapter III, §2.
 -/
 
 public section
@@ -257,8 +273,15 @@ theorem unramifiedClass_restrict (a : Kˣ) :
   have : IsUnramified K E := IsUnramified.tower_bot K E L
   exact cyclicClass_restrict (mem_zpowers_frobeniusAlgEquiv K L)
     (mem_zpowers_frobeniusAlgEquiv E L)
-    (by simpa only [AlgEquiv.restrictScalarsHom_apply, IsUnramified.inertiaDegree_eq_finrank]
-      using frobeniusAlgEquiv_restrictScalars (K := K) (L := E) (M := L)) a
+    (by
+      let _ : ValuativeExtension L L := ⟨fun _ _ ↦ Iff.rfl⟩
+      have h := frobeniusAlgEquiv_restrictScalars_restrictNormal
+        (K := K) (L := L) (K' := E) (L' := L)
+      have hself (σ : L ≃ₐ[K] L) : σ.restrictNormal L = σ := by
+        ext x
+        simpa using σ.restrictNormal_commutes L x
+      simpa only [hself, AlgEquiv.restrictScalarsHom_apply,
+        IsUnramified.inertiaDegree_eq_finrank] using h) a
 
 /-- Restriction of an unramified relative Brauer class multiplies its invariant by the
 degree of the ground-field extension. -/
@@ -288,5 +311,68 @@ theorem unramifiedInv_restrict (x : H2 (Rep.ofMulDistribMulAction (L ≃ₐ[K] L
   field_simp
 
 end Restriction
+
+/-! ### Base change along a totally ramified extension -/
+
+section BaseChange
+
+variable (K' : Type) [Field K'] [ValuativeRel K'] [TopologicalSpace K']
+  [IsNonarchimedeanLocalField K'] [Algebra K K'] [ValuativeExtension K K']
+
+variable (L' : Type) [Field L'] [ValuativeRel L'] [TopologicalSpace L']
+  [IsNonarchimedeanLocalField L'] [Algebra K' L'] [ValuativeExtension K' L']
+  [FiniteDimensional K' L'] [IsGalois K' L'] [IsUnramified K' L']
+  [Algebra K L'] [IsScalarTower K K' L'] [Algebra L L'] [IsScalarTower K L L']
+  [ValuativeExtension L L']
+
+variable {K'} in
+/-- **Base change of unramified classes along a totally ramified extension.** Let `K'/K` be
+totally ramified and let `L'/K'` be an unramified layer containing `L`. Then the map
+`H²(Gal(L/K), Lˣ) → H²(Gal(L'/K'), L'ˣ)` induced by restriction `Gal(L'/K') → Gal(L/K)` sends the
+class of `a ∈ Kˣ` to the class of `a ^ ([L' : K'] / [L : K])`. -/
+@[simp]
+theorem map_unramifiedClass_baseChange (hK' : IsTotallyRamified K K') (a : Kˣ) :
+    groupCohomology.map ((AlgEquiv.restrictNormalHom L).comp (AlgEquiv.restrictScalarsHom K))
+        (unitsBaseChangeHom K L K' L') 2 (unramifiedClass K L (Additive.ofMul a)) =
+      unramifiedClass K' L' (Additive.ofMul (Units.map (algebraMap K K' : K →* K') a ^
+        (Module.finrank K' L' / Module.finrank K L))) :=
+  -- The residue degree of `K'/K` is one, so arithmetic Frobenius of `L'/K'` restricts to that of
+  -- `L/K`.
+  map_cyclicClass_baseChange (mem_zpowers_frobeniusAlgEquiv K L)
+    (mem_zpowers_frobeniusAlgEquiv K' L')
+    (by rw [frobeniusAlgEquiv_restrictScalars_restrictNormal, hK'.inertiaDegree_eq_one, pow_one])
+    a
+
+variable {K'} in
+/-- **The unramified invariant under base change along a totally ramified extension.** Let `K'/K`
+be totally ramified and let `L'/K'` be an unramified layer containing `L`. Then the map
+`H²(Gal(L/K), Lˣ) → H²(Gal(L'/K'), L'ˣ)` induced by restriction `Gal(L'/K') → Gal(L/K)` multiplies
+the local invariant by `[K' : K]`. -/
+@[simp]
+theorem unramifiedInv_map_baseChange (hK' : IsTotallyRamified K K')
+    (x : H2 (Rep.ofMulDistribMulAction (L ≃ₐ[K] L) Lˣ)) :
+    unramifiedInv K' L'
+        (groupCohomology.map ((AlgEquiv.restrictNormalHom L).comp (AlgEquiv.restrictScalarsHom K))
+          (unitsBaseChangeHom K L K' L') 2 x) =
+      Module.finrank K K' • unramifiedInv K L x := by
+  obtain ⟨a, rfl⟩ := unramifiedClass_surjective K L x
+  -- `[L' : K'] = f(L'/K') = f(L'/K) = f(L/K) · f(L'/L) = [L : K] · f(L'/L)`.
+  have : ValuativeExtension K L' := ValuativeExtension.trans K L L'
+  have hm : Module.finrank K' L' = Module.finrank K L * inertiaDegree L L' := by
+    rw [← IsUnramified.inertiaDegree_eq_finrank, ← IsUnramified.inertiaDegree_eq_finrank,
+      ← inertiaDegree_tower, ← one_mul (inertiaDegree K' L'), ← hK'.inertiaDegree_eq_one,
+      ← inertiaDegree_tower]
+  rw [← ofMul_toMul a, map_unramifiedClass_baseChange K L L' hK', unramifiedInv_unramifiedClass,
+    unramifiedInv_unramifiedClass, map_pow, toAdd_pow, toAdd_normalizedValuation_algebraMap, hm,
+    Nat.mul_div_cancel_left _ Module.finrank_pos, ← AddCircle.coe_nsmul]
+  congr 1
+  rw [(isTotallyRamified_iff_ramificationIndex_eq_finrank K K').1 hK']
+  have hL : (Module.finrank K L : ℚ) ≠ 0 := Nat.cast_ne_zero.2 Module.finrank_pos.ne'
+  have hf : (inertiaDegree L L' : ℚ) ≠ 0 := Nat.cast_ne_zero.2 inertiaDegree_pos.ne'
+  rw [nsmul_eq_mul, nsmul_eq_mul]
+  push_cast
+  field_simp
+
+end BaseChange
 
 end TauCeti.ClassFieldTheory

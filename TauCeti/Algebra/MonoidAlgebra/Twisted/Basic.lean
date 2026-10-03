@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Algebra.Subalgebra.Basic
 public import Mathlib.Algebra.MonoidAlgebra.Basic
+public import Mathlib.GroupTheory.QuotientGroup.Defs
 public import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
 public import Mathlib.LinearAlgebra.FreeModule.Basic
 
@@ -35,6 +36,8 @@ a basis and the multiplication table above holds on the nose.
 
 * `TauCeti.IsFactorSet`: a normalized factor set, that is, a normalized multiplicative `2`-cocycle
   `α : G → G → kˣ`;
+* `TauCeti.IsFactorSet.exists_eq_apply_mk`: a factor set on a group `G` that is trivial whenever
+  one of its arguments lies in a normal subgroup `N` is pulled back from a factor set on `G ⧸ N`;
 * `TauCeti.twistedMonoidAlgebra k G α`: the twisted monoid algebra `k_α[G]`;
 * `TauCeti.TwistedMonoidAlgebra.of`: its basis elements, with the multiplication table
   `TauCeti.TwistedMonoidAlgebra.of_mul_of`, the basis `TauCeti.TwistedMonoidAlgebra.basis`, and the
@@ -124,6 +127,72 @@ theorem apply_inv_eq_inv_apply (g : G) : α g g⁻¹ = α g⁻¹ g := by
   simpa [one_left (α := α), one_right (α := α)] using cocycle (α := α) g g⁻¹ g
 
 end Group
+
+section Comp
+
+variable {k G H : Type*} [CommSemiring k] [Monoid G] [Monoid H]
+
+/-- A function on `H` whose pullback along a surjective homomorphism `f : G →* H` is a normalized
+factor set is itself a normalized factor set. -/
+theorem of_comp {β : H → H → kˣ} (f : G →* H) (hf : Function.Surjective f)
+    (h : IsFactorSet fun g₁ g₂ ↦ β (f g₁) (f g₂)) : IsFactorSet β where
+  -- Each instance of the axioms on `H` is the image under `f` of one on `G`.
+  cocycle a b c := by
+    obtain ⟨g₁, rfl⟩ := hf a
+    obtain ⟨g₂, rfl⟩ := hf b
+    obtain ⟨g₃, rfl⟩ := hf c
+    simpa only [map_mul] using h.cocycle g₁ g₂ g₃
+  one_left a := by
+    obtain ⟨g, rfl⟩ := hf a
+    simpa only [map_one] using h.one_left g
+  one_right a := by
+    obtain ⟨g, rfl⟩ := hf a
+    simpa only [map_one] using h.one_right g
+
+end Comp
+
+section Quotient
+
+/-! ### Descent to a quotient group
+
+A factor set that is trivial whenever one of its arguments lies in a normal subgroup `N` is
+constant on the cosets of `N` in each argument, so it is pulled back from a factor set on `G ⧸ N`.
+-/
+
+variable {k G : Type*} [CommSemiring k] [Group G] {α : G → G → kˣ} [IsFactorSet α]
+  {N : Subgroup G}
+
+/-- A factor set that is trivial whenever its second argument lies in `N` does not change when its
+second argument is multiplied on the right by an element of `N`. -/
+theorem apply_mul_right_of_mem (hr : ∀ g, ∀ n ∈ N, α g n = 1) (g h : G) {n : G} (hn : n ∈ N) :
+    α g (h * n) = α g h := by
+  simpa [hr _ _ hn] using (cocycle (α := α) g h n).symm
+
+/-- A factor set that is trivial whenever one of its arguments lies in the normal subgroup `N` does
+not change when its first argument is multiplied on the right by an element of `N`. -/
+theorem apply_mul_left_of_mem [N.Normal] (hr : ∀ g, ∀ n ∈ N, α g n = 1)
+    (hl : ∀ g, ∀ n ∈ N, α n g = 1) (g h : G) {n : G} (hn : n ∈ N) :
+    α (g * n) h = α g h := by
+  have hc : α (g * n) h = α g (n * h) := by
+    simpa [hr _ _ hn, hl _ _ hn] using cocycle (α := α) g n h
+  have hconj : n * h = h * (h⁻¹ * n * h) := by simp [mul_assoc]
+  rw [hc, hconj, apply_mul_right_of_mem hr g h (Subgroup.Normal.conj_mem' ‹_› n hn h)]
+
+/-- **A factor set that is trivial whenever one of its arguments lies in the normal subgroup `N` is
+inflated from `G ⧸ N`**: it is the pullback of a normalized factor set on the quotient. -/
+theorem exists_eq_apply_mk [N.Normal] (hr : ∀ g, ∀ n ∈ N, α g n = 1)
+    (hl : ∀ g, ∀ n ∈ N, α n g = 1) :
+    ∃ β : G ⧸ N → G ⧸ N → kˣ, IsFactorSet β ∧ ∀ g h : G, α g h = β g h := by
+  have hβ (a₁ b₁ a₂ b₂ : G) (ha : QuotientGroup.leftRel N a₁ a₂)
+      (hb : QuotientGroup.leftRel N b₁ b₂) : α a₁ b₁ = α a₂ b₂ := by
+    rw [QuotientGroup.leftRel_apply] at ha hb
+    rw [← mul_inv_cancel_left a₁ a₂, ← mul_inv_cancel_left b₁ b₂,
+      apply_mul_left_of_mem hr hl _ _ ha, apply_mul_right_of_mem hr _ _ hb]
+  let β : G ⧸ N → G ⧸ N → kˣ := Quotient.lift₂ α hβ
+  exact ⟨β, of_comp (QuotientGroup.mk' N) (QuotientGroup.mk'_surjective N) ‹IsFactorSet α›,
+    fun _ _ ↦ rfl⟩
+
+end Quotient
 
 end IsFactorSet
 

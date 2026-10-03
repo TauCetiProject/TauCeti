@@ -8,6 +8,7 @@ module
 public import TauCeti.FieldTheory.GaloisCohomology.Inflation
 public import TauCeti.FieldTheory.GaloisCohomology.Norm
 public import TauCeti.RepresentationTheory.Homological.GroupCohomology.FiniteCyclic
+public import TauCeti.RepresentationTheory.Homological.TateCohomology.HerbrandQuotient
 public import Mathlib.FieldTheory.Galois.Basic
 import TauCeti.GroupTheory.QuotientGroup.KerEquiv
 
@@ -30,7 +31,15 @@ explicit representative is what connects the norm quotient to crossed products: 
 crossed product of the carry cocycle of `a` is the cyclic algebra `(L/K, g, a)`.
 
 Along a tower `K ⊆ L ⊆ M` of cyclic Galois extensions whose generators are compatible, inflation
-sends the class of `a` to the class of `a ^ [M : L]` (`TauCeti.map_cyclicClass`).
+sends the class of `a` to the class of `a ^ [M : L]` (`TauCeti.map_cyclicClass`). More generally,
+for cyclic Galois extensions `L/K` and `M'/K'` with `K ⊆ K'`, `L ⊆ M'` and compatible generators,
+the map induced by restriction `Gal(M'/K') → Gal(L/K)` sends the class of `a` to the class of
+`a ^ ([M' : K'] / [L : K])` (`TauCeti.map_cyclicClass_baseChange`).
+
+Independently of any generator, Hilbert's Theorem 90 makes `H¹(Gal(L/K), Lˣ)` vanish, so the order
+of `H²(Gal(L/K), Lˣ)` is the Herbrand quotient of `Lˣ`
+(`TauCeti.natCard_H2_units_eq_herbrandQuotient`). This is the form in which a computation of that
+Herbrand quotient, such as `h(Lˣ) = [L : K]` for local fields, bounds `H²`.
 
 ## Main definitions
 
@@ -49,6 +58,10 @@ sends the class of `a` to the class of `a ^ [M : L]` (`TauCeti.map_cyclicClass`)
   represents the class of `a`.
 * `TauCeti.map_cyclicClass`: inflation along a tower of cyclic Galois extensions sends the class of
   `a` to the class of `a ^ [M : L]`.
+* `TauCeti.map_cyclicClass_baseChange`: base change of cyclic Galois extensions with compatible
+  generators sends the class of `a` to the class of `a ^ ([M' : K'] / [L : K])`.
+* `TauCeti.natCard_H2_units_eq_herbrandQuotient`: the order of `H²(Gal(L/K), Lˣ)` is the
+  Herbrand quotient of `Lˣ`.
 
 ## References
 
@@ -193,6 +206,53 @@ theorem map_cyclicClass (hgg' : AlgEquiv.restrictNormalHom L g' = g) (a : Kˣ) :
 
 end Inflation
 
+/-! ### Base change of cyclic Galois extensions -/
+
+section BaseChange
+
+variable {K' M' : Type} [Field K'] [Field M'] [Algebra K K'] [Algebra K' M'] [Algebra K M']
+  [IsScalarTower K K' M'] [Algebra L M'] [IsScalarTower K L M'] [FiniteDimensional K' M']
+  [IsGalois K' M'] {g' : M' ≃ₐ[K'] M'} (hg' : ∀ σ, σ ∈ Subgroup.zpowers g')
+
+/-- **Base change of cyclic classes.** Let `L/K` and `M'/K'` be cyclic Galois extensions with
+`K ⊆ K'` and `L ⊆ M'`, whose generators are compatible, `g'|_L = g`. Then the map
+`H²(Gal(L/K), Lˣ) → H²(Gal(M'/K'), M'ˣ)` induced by restriction `Gal(M'/K') → Gal(L/K)` and the
+inclusion `Lˣ → M'ˣ` sends the class of `a ∈ Kˣ` to the class of `a ^ ([M' : K'] / [L : K])`. -/
+theorem map_cyclicClass_baseChange (hgg' : (g'.restrictScalars K).restrictNormal L = g)
+    (a : Kˣ) :
+    groupCohomology.map ((AlgEquiv.restrictNormalHom L).comp (AlgEquiv.restrictScalarsHom K))
+        (unitsBaseChangeHom K L K' M') 2 (cyclicClass hg (Additive.ofMul a)) =
+      cyclicClass hg' (Additive.ofMul (Units.map (algebraMap K K' : K →* K') a ^
+        (Module.finrank K' M' / Module.finrank K L))) := by
+  have := isCyclic_of_forall_mem_zpowers hg
+  have := isCyclic_of_forall_mem_zpowers hg'
+  set φ := (AlgEquiv.restrictNormalHom L).comp (AlgEquiv.restrictScalarsHom K :
+    (M' ≃ₐ[K'] M') →* (M' ≃ₐ[K] M'))
+  have hφ : φ g' = g := hgg'
+  -- Restriction is onto, since it sends the generator `g'` to the generator `g`.
+  have hsurj : Function.Surjective φ := fun σ ↦ by
+    obtain ⟨k, rfl⟩ := Subgroup.mem_zpowers_iff.1 (hg σ)
+    exact ⟨g' ^ k, by rw [map_zpow, hφ]⟩
+  have hdvd : Module.finrank K L ∣ Module.finrank K' M' := by
+    rw [← IsGalois.card_aut_eq_finrank, ← IsGalois.card_aut_eq_finrank]
+    exact Subgroup.card_dvd_of_surjective hsurj
+  refine map_groupCohomologyπEven_two _ _ hg' _ hg hφ _
+    (Module.finrank K' M' / Module.finrank K L) ?_
+    (unitsToFixedUnits g (Additive.ofMul a))
+    (unitsToFixedUnits g' (Additive.ofMul
+      (Units.map (algebraMap K K' : K →* K') a ^ (Module.finrank K' M' / Module.finrank K L)))) ?_
+  · rw [IsGalois.card_aut_eq_finrank, IsGalois.card_aut_eq_finrank, Nat.div_mul_cancel hdvd]
+  · -- Both sides are images of `a ^ ([M' : K'] / [L : K])` in `M'ˣ`, through `Lˣ` on the right.
+    rw [coe_unitsToFixedUnits, coe_unitsToFixedUnits]
+    refine Eq.trans ?_ (congrArg (_ • ·) (unitsBaseChangeHom_apply K L K' M' _)).symm
+    have hmap : Units.map (algebraMap K' M' : K' →* M') (Units.map (algebraMap K K' : K →* K') a) =
+        Units.map (algebraMap L M' : L →* M') (Units.map (algebraMap K L : K →* L) a) :=
+      Units.ext <| by
+        simp only [Units.coe_map, MonoidHom.coe_ofClass, ← IsScalarTower.algebraMap_apply]
+    rw [map_pow, hmap, ofMul_pow, map_nsmul]
+
+end BaseChange
+
 end Periodic
 
 /-- The classes of `a` and `b` agree exactly when `a / b` is a norm from `L`. -/
@@ -254,5 +314,18 @@ theorem cyclicNormQuotientEquiv_mk (a : Kˣ) :
   rw [AddMonoidHom.coe_toMultiplicativeRight, Function.comp_apply, Function.comp_apply,
     toAdd_ofAdd]
 
+omit [IsGalois K L] in
+/-- **The order of `H²` of a cyclic extension is the Herbrand quotient of its units.** For a
+finite extension `L/K` whose automorphism group is cyclic, Hilbert's Theorem 90
+(`groupCohomology.H1ofAutOnUnitsUnique`) makes `H¹(Aut(L/K), Lˣ)` vanish, so the order of
+`H²(Aut(L/K), Lˣ)` is the Herbrand quotient of `Lˣ`. -/
+theorem natCard_H2_units_eq_herbrandQuotient [IsCyclic (L ≃ₐ[K] L)] :
+    (Nat.card (H2 (Rep.ofMulDistribMulAction (L ≃ₐ[K] L) Lˣ)) : ℚ) =
+      TateCohomology.herbrandQuotient (Rep.ofMulDistribMulAction (L ≃ₐ[K] L) Lˣ) :=
+  -- Mathlib states Hilbert 90 for `Rep.ofAlgebraAutOnUnits K L`, which is defined as this
+  -- representation; instance search does not unfold that definition, so it is supplied here.
+  haveI : Subsingleton (H1 (Rep.ofMulDistribMulAction (L ≃ₐ[K] L) Lˣ)) :=
+    (H1ofAutOnUnitsUnique K L).instSubsingleton
+  (TateCohomology.herbrandQuotient_eq_natCard_H2 _).symm
 
 end TauCeti

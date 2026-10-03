@@ -61,6 +61,8 @@ use this to reduce the trace of an operator exchanging `A` and `B` on `W_w` to i
   `w`.
 * `TauCeti.evenPeriodPolynomials_ne_bot`, `TauCeti.periodPolynomials_ne_bot`: `W_w^+` and `W_w`
   are nonzero for positive even `w` over a nontrivial ring, witnessed by `X^w - Y^w`.
+* `TauCeti.binaryFormRep_S_sq_of_even`, `TauCeti.binaryFormRep_U_pow_three_of_even`: for even
+  `w`, `S` and `U` act on `V_w` with orders dividing `2` and `3`, since `-1` acts trivially.
 * `TauCeti.codisjoint_ker_one_add_S_ker_one_add_U_add_U_sq`: over a field of characteristic
   zero, `ker(1 + S) + ker(1 + U + U²) = V_w` for positive even `w`.
 
@@ -350,12 +352,12 @@ private lemma U_mul_S_eq_neg_T :
   fin_cases i <;> fin_cases j <;> rfl
 
 /-- For even `w`, `S` acts on `V_w` as an involution, since `S² = -1` acts trivially. -/
-private lemma binaryFormRep_S_sq_of_even (hw : Even w) :
+theorem binaryFormRep_S_sq_of_even (hw : Even w) :
     binaryFormRep R w (op (S : Matrix (Fin 2) (Fin 2) ℤ)) ^ 2 = 1 := by
   rw [← map_pow, ← op_pow, sq, S_mul_S_eq, binaryFormRep_op_neg_of_even hw, op_one, map_one]
 
 /-- For even `w`, `U = T S` acts on `V_w` with cube `1`, since `U³ = -1` acts trivially. -/
-private lemma binaryFormRep_U_pow_three_of_even (hw : Even w) :
+theorem binaryFormRep_U_pow_three_of_even (hw : Even w) :
     binaryFormRep R w (op ((T * S : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ)) ^ 3 = 1 := by
   rw [← map_pow, ← op_pow, pow_three, U_mul_U_mul_U_eq_neg_one, binaryFormRep_op_neg_of_even hw,
     op_one, map_one]

@@ -505,6 +505,28 @@ theorem norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq (k : ℕ)
   | succ k =>
       exact norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_add_two k u
 
+/-- Convergence in a positive-order Sobolev norm is equivalent to convergence of the
+preceding Sobolev component and the highest weak derivative. -/
+theorem tendsto_iff_lowerOrder_iteratedGradient (k : ℕ) {I : Type*} {l : Filter I}
+    {v : I → Wkp mu Omega p (k + 1)} {u : Wkp mu Omega p (k + 1)} :
+    Filter.Tendsto v l (nhds u) ↔
+      Filter.Tendsto (fun i => lowerOrder k (v i)) l (nhds (lowerOrder k u)) ∧
+      Filter.Tendsto (fun i => iteratedGradient k (v i)) l
+        (nhds (iteratedGradient k u)) := by
+  cases k with
+  | zero =>
+      simpa only [lowerOrder_zero, iteratedGradient_zero] using W1p.tendsto_iff_value_gradient
+  | succ k =>
+      -- Each later stage is a subtype of a `WithLp` product; its product equivalence recovers
+      -- exactly the two characteristic projections, without a norm estimate.
+      rw [tendsto_subtype_rng,
+        (WithLp.prodContinuousLinearEquiv 2 ℝ _ _).toHomeomorph.isEmbedding.tendsto_nhds_iff]
+      simp only [Function.comp_def, ContinuousLinearEquiv.coe_toHomeomorph,
+        WithLp.prodContinuousLinearEquiv_apply,
+        lowerOrder_succ, iteratedGradient_succ, WeakDerivStep.prev_coe,
+        WeakDerivStep.weakFDeriv_coe]
+      exact Prod.tendsto_iff _ _
+
 end Wkp
 
 end TauCeti

@@ -43,6 +43,11 @@ which quantifies over both subgroups. Neither reduces a comparison to generators
   splits into the product of their same-position commutators when the required cross terms commute.
 * `Commute.mul_pow_eq_pow_mul_pow_mul_commutatorElement_pow_choose_two`: the binomial formula
   `(a * b) ^ n = a ^ n * b ^ n * ⁅b, a⁆ ^ (n choose 2)` when `⁅b, a⁆` commutes with `a` and `b`.
+* `Commute.inv_pow_mul_pow_mul_pow_eq_commutatorElement_pow_mul_pow`: conjugating `b ^ n` by
+  `a ^ k` multiplies it by `⁅b, a⁆ ^ (k * n)` when `⁅b, a⁆` commutes with `a` and `b`.
+* `Commute.mul_pow_two_mul_add_one_eq_pow_mul_inv_pow_mul_pow_mul_pow`: under the same
+  hypotheses, `(a * b) ^ (2 * k + 1)` is `a ^ (2 * k + 1)` times the conjugate of
+  `b ^ (2 * k + 1)` by `a ^ k`.
 * `TauCeti.commutatorElement_pow_left_of_commute`, `TauCeti.commutatorElement_pow_right_of_commute`:
   the collection formulas `⁅a ^ n, b⁆ = ⁅a, b⁆ ^ n * ⁅a, ⁅a, b⁆⁆ ^ (n choose 2)` and
   `⁅a, b ^ n⁆ = ⁅a, b⁆ ^ n * ⁅b, ⁅a, b⁆⁆ ^ (n choose 2)` when the iterated commutator commutes
@@ -114,6 +119,36 @@ theorem _root_.Commute.mul_pow_eq_pow_mul_pow_mul_commutatorElement_pow_choose_t
           rw [(hc n (n + 1) n).symm.eq]
       _ = a ^ (n + 1) * b ^ (n + 1) * ⁅b, a⁆ ^ (n + 1).choose 2 := by
           rw [h2, pow_succ' a, pow_add ⁅b, a⁆]; simp only [mul_assoc]
+
+/-- **Conjugating a power in nilpotency class two**: when the commutator `⁅b, a⁆` commutes with
+`a` and with `b`, for instance when it is central, conjugating `b ^ n` by `a ^ k` multiplies it
+by `⁅b, a⁆ ^ (k * n)`. -/
+theorem _root_.Commute.inv_pow_mul_pow_mul_pow_eq_commutatorElement_pow_mul_pow {a b : G}
+    (ha : Commute a ⁅b, a⁆) (hb : Commute b ⁅b, a⁆) (k n : ℕ) :
+    (a ^ k)⁻¹ * b ^ n * a ^ k = ⁅b, a⁆ ^ (k * n) * b ^ n := by
+  have hn : Commute a ⁅b ^ n, a⁆ := hb.commutatorElement_pow_left n ▸ ha.pow_right n
+  have hz : ⁅b ^ n, a ^ k⁆ = ⁅b, a⁆ ^ (k * n) := by
+    rw [← hn.commutatorElement_pow_right k, ← hb.commutatorElement_pow_left n, ← pow_mul']
+  calc (a ^ k)⁻¹ * b ^ n * a ^ k = (a ^ k)⁻¹ * (⁅b ^ n, a ^ k⁆ * a ^ k) * b ^ n := by
+        rw [commutatorElement_def]; group
+    _ = ⁅b, a⁆ ^ (k * n) * b ^ n := by
+        rw [hz, (ha.pow_pow k (k * n)).symm.eq, inv_mul_cancel_left]
+
+/-- **Odd powers of a product in nilpotency class two**: when the commutator `⁅b, a⁆` commutes
+with `a` and with `b`, for instance when it is central, `(a * b) ^ (2 * k + 1)` is
+`a ^ (2 * k + 1)` times the conjugate of `b ^ (2 * k + 1)` by `a ^ k`. The commutator correction
+`⁅b, a⁆ ^ ((2 * k + 1) choose 2)` of the binomial formula is exactly the one produced by this
+conjugation. -/
+theorem _root_.Commute.mul_pow_two_mul_add_one_eq_pow_mul_inv_pow_mul_pow_mul_pow {a b : G}
+    (ha : Commute a ⁅b, a⁆) (hb : Commute b ⁅b, a⁆) (k : ℕ) :
+    (a * b) ^ (2 * k + 1) = a ^ (2 * k + 1) * ((a ^ k)⁻¹ * b ^ (2 * k + 1) * a ^ k) := by
+  -- The two commutator exponents agree: `(2 * k + 1).choose 2 = k * (2 * k + 1)`.
+  have hchoose : (2 * k + 1).choose 2 = k * (2 * k + 1) := by
+    rw [Nat.choose_two_right, Nat.add_sub_cancel, mul_comm (2 * k + 1), mul_assoc,
+      Nat.mul_div_cancel_left _ two_pos]
+  rw [ha.mul_pow_eq_pow_mul_pow_mul_commutatorElement_pow_choose_two hb,
+    ha.inv_pow_mul_pow_mul_pow_eq_commutatorElement_pow_mul_pow hb, hchoose, mul_assoc,
+    (hb.pow_pow _ _).eq]
 
 /-- **Collection of a power in the left input**: when the iterated commutator `⁅a, ⁅a, b⁆⁆`
 commutes with `a` and with `⁅a, b⁆`, for instance when it is central,

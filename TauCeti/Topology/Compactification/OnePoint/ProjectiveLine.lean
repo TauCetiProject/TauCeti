@@ -48,6 +48,9 @@ stabilizer of a cusp, moved to `∞`, consists of translations.
 * `OnePoint.instMulActionPGL`: the action of `PGL(2, K)` on `OnePoint K`, with `pglMk_smul` and its
   faithfulness.
 * `OnePoint.instMulActionPSL`: the action of `PSL(2, K)` on `OnePoint K`, with `pslMk_smul`.
+* `Matrix.ProjectiveSpecialLinearGroup.mk_smul_zero_eq_infty_iff`,
+  `mk_smul_infty_eq_infty_iff`, `mk_smul_zero_eq_coe_iff`, `mk_smul_infty_eq_coe_iff`: where the
+  class of `!![a, b; c, d]` sends the points `0` and `∞`, in terms of its entries.
 * `Matrix.ProjectiveSpecialLinearGroup.IsParabolic.smul_eq_self_iff`: a parabolic element fixes
   a point exactly when it is `parabolicFixedPoint g` (in characteristic other than two).
 * `Matrix.ProjectiveSpecialLinearGroup.isParabolic_iff_exists_eq_upperRightHom`: an element
@@ -223,6 +226,38 @@ theorem upperRightHom_smul_infty (x : K) : upperRightHom x • (∞ : OnePoint K
 theorem upperRightHom_smul_coe (x k : K) :
     upperRightHom x • (k : OnePoint K) = ((k + x : K) : OnePoint K) := by
   simp [upperRightHom_apply, smul_some_eq_ite, SpecialLinearGroup.transvection_coe]
+
+/-- The class of `!![a, b; c, d]` sends `0` to `∞` exactly when `d = 0`. -/
+theorem mk_smul_zero_eq_infty_iff (A : SL(2, K)) :
+    (A : PSL(2, K)) • ((0 : K) : OnePoint K) = ∞ ↔ A 1 1 = 0 := by
+  simp
+
+/-- The class of `!![a, b; c, d]` fixes `∞` exactly when `c = 0`. -/
+theorem mk_smul_infty_eq_infty_iff (A : SL(2, K)) :
+    (A : PSL(2, K)) • (∞ : OnePoint K) = ∞ ↔ A 1 0 = 0 := by
+  simp [smul_infty_eq_self_iff]
+
+/-- The class of `!![a, b; c, d]` sends `0` to the affine point `e` exactly when `d ≠ 0` and
+`b = e d`. -/
+theorem mk_smul_zero_eq_coe_iff {A : SL(2, K)} {e : K} :
+    (A : PSL(2, K)) • ((0 : K) : OnePoint K) = e ↔ A 1 1 ≠ 0 ∧ A 0 1 = e * A 1 1 := by
+  rw [pslMk_smul, smul_some_eq_ite]
+  simp only [SpecialLinearGroup.coe_GL_coe_matrix, mul_zero, zero_add]
+  by_cases h : A 1 1 = 0
+  · simp [h]
+  · simp only [h, ↓reduceIte, OnePoint.coe_eq_coe, ne_eq, not_false_eq_true, true_and]
+    exact ⟨fun h' ↦ by rw [← h']; field_simp, fun h' ↦ by rw [h']; field_simp⟩
+
+/-- The class of `!![a, b; c, d]` sends `∞` to the affine point `e` exactly when `c ≠ 0` and
+`a = e c`. -/
+theorem mk_smul_infty_eq_coe_iff {A : SL(2, K)} {e : K} :
+    (A : PSL(2, K)) • (∞ : OnePoint K) = e ↔ A 1 0 ≠ 0 ∧ A 0 0 = e * A 1 0 := by
+  rw [pslMk_smul, smul_infty_eq_ite]
+  simp only [SpecialLinearGroup.coe_GL_coe_matrix]
+  by_cases h : A 1 0 = 0
+  · simp [h]
+  · simp only [h, ↓reduceIte, OnePoint.coe_eq_coe, ne_eq, not_false_eq_true, true_and]
+    exact ⟨fun h' ↦ by rw [← h']; field_simp, fun h' ↦ by rw [h']; field_simp⟩
 
 /-- The fixed point of a parabolic element of `PSL(2, K)`, well defined because the formula
 `Matrix.GeneralLinearGroup.parabolicFixedPoint` is unchanged by negating the representative. For a

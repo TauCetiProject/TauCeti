@@ -39,6 +39,32 @@ universe u v
 variable {k : Type u} {G : Type v} [Field k] [IsAlgClosed k] [Group G]
   {N : Subgroup G} [N.Normal] (A : FDRep k N) [Simple A]
 
+/-- **Operators implementing conjugation on `N` form a projective representation.** Over an
+algebraically closed field, a normalized family of automorphisms of `A`, indexed by the inertia
+group, in which `ρ g` carries the action of `n` to the action of `g n g⁻¹`, is a projective
+representation. -/
+theorem exists_isProjectiveRep_of_apply_apply_conjNormal {ρ : inertia A → A ≃ₗ[k] A}
+    (hone : ρ 1 = 1)
+    (hinter : ∀ (g : inertia A) (n : N) (x : A),
+      ρ g (A.ρ n x) = A.ρ (MulAut.conjNormal (g : G) n) (ρ g x)) :
+    ∃ α : inertia A → inertia A → kˣ, IsProjectiveRep ρ α := by
+  have hA := FDRep.isIrreducible_of_simple A
+  have : Nontrivial A := hA.nontrivial
+  -- By Schur's lemma `ρ g ∘ ρ h` and `ρ (g * h)` differ by a nonzero scalar, since both
+  -- carry the action of `n` to the action of `(g * h) n (g * h)⁻¹`.
+  have hmul (g h : inertia A) : ∃ c : kˣ, ∀ x,
+      ρ g (ρ h x) = (c : k) • ρ (g * h) x := by
+    refine IsIrreducible.exists_unit_smul_of_intertwines
+      (σ := A.ρ.comp (MulAut.conjNormal ((g : G) * h)).toMonoidHom)
+      ((ρ h).trans (ρ g)) (ρ (g * h)) (fun n x ↦ ?_) (hinter (g * h))
+    have hc : MulAut.conjNormal ((g : G) * h) n =
+        MulAut.conjNormal (g : G) (MulAut.conjNormal (h : G) n) := by
+      simp [map_mul]
+    rw [LinearEquiv.trans_apply, hinter, hinter, MonoidHom.comp_apply,
+      MulEquiv.coe_toMonoidHom, hc, LinearEquiv.trans_apply]
+  choose α hα using hmul
+  exact ⟨α, IsProjectiveRep.of_map_one_mul_apply hone hα⟩
+
 /-- Every irreducible finite-dimensional representation of a normal subgroup over an
 algebraically closed field extends projectively to its inertia group. The lift restricts
 exactly to the original representation and implements the ambient conjugation action.
@@ -50,8 +76,6 @@ theorem exists_isProjectiveRep_inertia_restrict_eq :
       (∀ (g : inertia A) (n : N) (x : A),
         ρ g (A.ρ n x) = A.ρ (MulAut.conjNormal (g : G) n) (ρ g x)) := by
   classical
-  have hA := FDRep.isIrreducible_of_simple A
-  have hnt : Nontrivial A := hA.nontrivial
   let r : N →* (A ≃ₗ[k] A) :=
     (LinearMap.GeneralLinearGroup.generalLinearEquiv k A).toMonoidHom.comp A.ρ.toHomUnits
   have hr (n : N) (x : A) : r n x = A.ρ n x := by simp [r]
@@ -70,17 +94,7 @@ theorem exists_isProjectiveRep_inertia_restrict_eq :
   have hone : ρ 1 = 1 := by
     simp only [ρ, Subgroup.coe_one, dite_eq_left N.one_mem]
     exact r.map_one
-  have hmul (g h : inertia A) : ∃ c : kˣ, ∀ x,
-      ρ g (ρ h x) = (c : k) • ρ (g * h) x := by
-    refine IsIrreducible.exists_unit_smul_of_intertwines
-      (σ := A.ρ.comp (MulAut.conjNormal ((g : G) * h)).toMonoidHom)
-      ((ρ h).trans (ρ g)) (ρ (g * h)) (fun n x ↦ ?_) (hinter (g * h))
-    have hc : MulAut.conjNormal ((g : G) * h) n =
-        MulAut.conjNormal (g : G) (MulAut.conjNormal (h : G) n) := by
-      simp [map_mul]
-    rw [LinearEquiv.trans_apply, hinter, hinter, MonoidHom.comp_apply,
-      MulEquiv.coe_toMonoidHom, hc, LinearEquiv.trans_apply]
-  choose α hα using hmul
-  exact ⟨ρ, α, IsProjectiveRep.of_map_one_mul_apply hone hα, hres, hinter⟩
+  obtain ⟨α, hα⟩ := exists_isProjectiveRep_of_apply_apply_conjNormal A hone hinter
+  exact ⟨ρ, α, hα, hres, hinter⟩
 
 end TauCeti

@@ -28,8 +28,9 @@ Sections 1.2--1.4.
   complement of its row space.
 * `LinearCode.isGeneratorMatrix_iff_isParityCheckMatrix_euclideanDual` converts generator matrices
   into parity-check matrices for the dual code.
-* `LinearCode.exists_isParityCheckMatrix` constructs a full-row-rank parity-check matrix from a
-  basis of the dual code.
+* `LinearCode.isParityCheckMatrix_of_basis_euclideanDual`: a basis of the dual code gives a
+  parity-check matrix, and `LinearCode.exists_isParityCheckMatrix` uses it to construct one with
+  linearly independent rows.
 -/
 
 public section
@@ -78,29 +79,25 @@ theorem isParityCheckMatrix_iff_isGeneratorMatrix_euclideanDual
   simpa only [Submodule.euclideanDual_euclideanDual] using
     (isGeneratorMatrix_iff_isParityCheckMatrix_euclideanDual (C := C.euclideanDual) (G := H)).symm
 
+/-- The matrix whose rows are the vectors of a basis of the Euclidean dual of `C` is a
+parity-check matrix for `C`. -/
+theorem isParityCheckMatrix_of_basis_euclideanDual {C : LinearCode F ι}
+    (b : Module.Basis ρ F C.euclideanDual) :
+    C.IsParityCheckMatrix (Matrix.of fun r ↦ (b r : ι → F)) :=
+  have := Module.Finite.finite_basis b
+  let _ := Fintype.ofFinite ρ
+  isParityCheckMatrix_iff_isGeneratorMatrix_euclideanDual.mpr (isGeneratorMatrix_of_basis b)
+
 /-- Every finite-length linear code has a parity-check matrix whose rows form a basis of the
 Euclidean dual. Its row type has cardinality equal to the codimension of the code. -/
 theorem exists_isParityCheckMatrix (C : LinearCode F ι) :
     ∃ H : Matrix (Fin (Fintype.card ι - Module.finrank F C)) ι F,
       C.IsParityCheckMatrix H ∧ LinearIndependent F H.row := by
-  obtain ⟨H₀, hH₀, hli⟩ := exists_isGeneratorMatrix C.euclideanDual
-  have hdim : Fintype.card ι - Module.finrank F C = Module.finrank F C.euclideanDual := by
+  have hdim : Module.finrank F C.euclideanDual = Fintype.card ι - Module.finrank F C := by
     have := Submodule.finrank_add_finrank_euclideanDual C
     omega
-  let e : Fin (Fintype.card ι - Module.finrank F C) ≃
-      Fin (Module.finrank F C.euclideanDual) := Equiv.cast (congrArg Fin hdim)
-  let H := H₀.submatrix e id
-  have hgen : IsGeneratorMatrix C.euclideanDual H := by
-    rw [isGeneratorMatrix_def]
-    dsimp only [H]
-    exact (H₀.generatedBy_submatrix_rows_eq_of_surjective e e.surjective).trans
-      ((isGeneratorMatrix_def C.euclideanDual H₀).mp hH₀)
-  refine ⟨H, isParityCheckMatrix_iff_isGeneratorMatrix_euclideanDual.mpr hgen, ?_⟩
-  have hrow : H.row = H₀.row ∘ e := by
-    funext r i
-    simp only [H, Matrix.row_apply, Matrix.submatrix_apply, Function.comp_apply, id_eq]
-  rw [hrow]
-  exact hli.comp e e.injective
+  let b := Module.finBasisOfFinrankEq F C.euclideanDual hdim
+  exact ⟨_, isParityCheckMatrix_of_basis_euclideanDual b, linearIndependent_row_of_basis b⟩
 
 end LinearCode
 

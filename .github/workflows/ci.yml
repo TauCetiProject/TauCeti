@@ -37,13 +37,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Checkout the pinned merge policy (read-only)
-        uses: actions/checkout@v4
-        with:
-          repository: TauCetiProject/TauCetiReview
-          ref: 95fa10ea655e8dacfcc84b8cd3f3e482e8c852ae
-          path: .tauceti-review
-          sparse-checkout: runner
-          persist-credentials: false
+        uses: ./.github/actions/checkout-merge-policy
 
       - run: python3 scripts/pr_status/test_readiness.py
 

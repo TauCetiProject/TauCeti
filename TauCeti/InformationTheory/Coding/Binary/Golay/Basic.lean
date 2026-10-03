@@ -106,21 +106,23 @@ theorem mem_code_iff {x : Fin 24 → ZMod 2} :
 theorem generator_mul_transpose_eq_zero : generator * generator.transpose = 0 := by
   decide +kernel
 
+/-- Encoding is injective because the generator is systematic. -/
+theorem vecMul_generator_injective : Function.Injective (fun a ↦ a ᵥ* generator) := by
+  intro a b hab
+  have h := congrArg (fun x : Fin 24 → ZMod 2 ↦ fun i : Fin 12 ↦ x (i.castAdd 12)) hab
+  simpa only [vecMul_generator, Fin.append_left] using h
+
 /-- Systematic encoding gives a linear equivalence between messages and codewords. -/
 noncomputable def encodingEquiv : (Fin 12 → ZMod 2) ≃ₗ[ZMod 2] code :=
-  (LinearEquiv.ofInjective generator.vecMulLinear (by
-    intro a b hab
-    have h := congrArg (fun x : Fin 24 → ZMod 2 ↦ fun i : Fin 12 ↦ x (i.castAdd 12)) hab
-    simpa only [Matrix.vecMulLinear_apply, vecMul_generator, Fin.append_left] using h)).trans
-    (LinearEquiv.ofEq _ _ (by rw [code_def, Matrix.generatedBy_def]))
+  LinearCode.IsGeneratorMatrix.encodingEquiv
+    ((LinearCode.isGeneratorMatrix_def _ _).mpr code_def.symm)
+    (Matrix.vecMul_injective_iff.mp vecMul_generator_injective)
 
 /-- The encoding equivalence sends a message to its systematic encoding. -/
 @[simp]
 theorem encodingEquiv_apply (a : Fin 12 → ZMod 2) :
     (encodingEquiv a : Fin 24 → ZMod 2) = Fin.append a (a ᵥ* block) := by
-  simp only [encodingEquiv, LinearEquiv.trans_apply, LinearEquiv.coe_ofEq_apply]
-  exact (LinearEquiv.ofInjective_apply (f := generator.vecMulLinear) a).trans
-    (vecMul_generator a)
+  rw [encodingEquiv, LinearCode.IsGeneratorMatrix.coe_encodingEquiv_apply, vecMul_generator]
 
 /-- Decoding reads the first twelve coordinates. -/
 @[simp]

@@ -30,6 +30,12 @@ but `rightHalfPlane g' = leftHalfPlane g` (`rightHalfPlane_mul_pslS`) — `z ↦
 `{z | z.re = 0}` setwise and sends `1 + i` to `-1/2 + i/2`. That every pair of representatives
 with the same line image gives the same *unordered* pair of sides is not proved here.
 
+The sides also have an equation. For a representative `!![a, b; c, d]` of `g`, the real part of
+`g⁻¹ • z` is a positive multiple of `sideForm g z = -(c d) |z|² + (a d + b c) Re z - a b`
+(`exists_pos_re_inv_smul_eq`), a quantity unchanged by negating the representative. Hence the
+left half-plane of `g` is `{sideForm g < 0}`, the geodesic line is `{sideForm g = 0}` and the
+right half-plane is `{sideForm g > 0}`.
+
 ## Main declarations
 
 * `TauCeti.UpperHalfPlane.rightHalfPlane g`, `TauCeti.UpperHalfPlane.leftHalfPlane g` — the two
@@ -58,6 +64,11 @@ with the same line image gives the same *unordered* pair of sides is not proved 
 * `TauCeti.UpperHalfPlane.rightHalfPlane_mul_dilation`, `leftHalfPlane_mul_dilation` — by
   contrast, reparametrising a geodesic line by a dilation (`geodesicLine_mul_dilation`) changes
   neither half-plane.
+* `TauCeti.UpperHalfPlane.sideForm g`: the real quadratic form whose sign is the side of
+  `geodesicLine g`, with `sideForm_mk` and `sideForm_mk_ofReal` in the entries of a
+  representative; `mem_leftHalfPlane_iff_sideForm_neg`, `mem_rightHalfPlane_iff_sideForm_pos`,
+  `mem_range_geodesicLine_iff_sideForm_eq_zero`, `mem_closure_leftHalfPlane_iff_sideForm_nonpos`;
+  `sideForm_mul_dilation`: it too is unchanged by a dilation.
 -/
 
 public section
@@ -291,5 +302,97 @@ theorem leftHalfPlane_mul_dilation (g : PSL(2, ℝ)) (s : ℝ) :
     fun h ↦ mul_neg_of_pos_of_neg (Real.exp_pos _) h⟩
 
 end Dilation
+
+/-! ### The side form -/
+
+section SideForm
+
+open Matrix.SpecialLinearGroup (dilation)
+
+/-- The real quadratic form `-(c d) |z|² + (a d + b c) Re z - a b` of a representative
+`!![a, b; c, d]` of `g`, which does not depend on the representative. Its sign on `ℍ` is the side
+of `geodesicLine g` (`mem_leftHalfPlane_iff_sideForm_neg`). -/
+def sideForm (g : PSL(2, ℝ)) (z : ℂ) : ℝ :=
+  Quotient.liftOn' g (fun A : SL(2, ℝ) ↦ -(A 1 0 * A 1 1) * Complex.normSq z +
+      (A 0 0 * A 1 1 + A 0 1 * A 1 0) * z.re - A 0 0 * A 0 1) fun A B hAB ↦ by
+    rw [QuotientGroup.leftRel_apply,
+      Matrix.SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one] at hAB
+    rcases hAB with h | h
+    · rw [inv_mul_eq_one.mp h]
+    · rw [inv_mul_eq_iff_eq_mul, mul_neg_one] at h
+      subst h
+      simp only [Matrix.SpecialLinearGroup.coe_neg, Matrix.neg_apply]
+      ring
+
+/-- The side form of the class of a matrix, as a formula in its entries. -/
+theorem sideForm_mk (A : SL(2, ℝ)) (z : ℂ) :
+    sideForm (A : PSL(2, ℝ)) z = -(A 1 0 * A 1 1) * Complex.normSq z +
+      (A 0 0 * A 1 1 + A 0 1 * A 1 0) * z.re - A 0 0 * A 0 1 :=
+  (rfl)
+
+/-- At a real point the side form factors as `(d x - b) (a - c x)`. -/
+theorem sideForm_mk_ofReal (A : SL(2, ℝ)) (x : ℝ) :
+    sideForm (A : PSL(2, ℝ)) x = (A 1 1 * x - A 0 1) * (-A 1 0 * x + A 0 0) := by
+  rw [sideForm_mk, Complex.normSq_ofReal, Complex.ofReal_re]
+  ring
+
+/-- The real part of `g⁻¹ • z` is a positive multiple of the side form at `z`. -/
+theorem exists_pos_re_inv_smul_eq (g : PSL(2, ℝ)) (z : ℍ) :
+    ∃ κ : ℝ, 0 < κ ∧ (g⁻¹ • z : ℍ).re = κ * sideForm g z := by
+  induction g using QuotientGroup.induction_on with | H A => ?_
+  rw [← QuotientGroup.mk_inv, UpperHalfPlane.pslMk_smul, UpperHalfPlane.re,
+    UpperHalfPlane.coe_specialLinearGroup_apply, Matrix.SpecialLinearGroup.SL2_inv_expl,
+    sideForm_mk]
+  have hne : -(A 1 0 : ℂ) * z + A 0 0 ≠ 0 := by
+    convert UpperHalfPlane.denom_ne_zero (Matrix.SpecialLinearGroup.mapGL ℝ A⁻¹) z using 1
+    simp [denom, Matrix.SpecialLinearGroup.mapGL_coe_matrix, Matrix.inv_def,
+      Matrix.adjugate_fin_two]
+  refine ⟨(Complex.normSq (-(A 1 0 : ℂ) * z + A 0 0))⁻¹,
+    inv_pos.2 (Complex.normSq_pos.2 hne), ?_⟩
+  simp [Complex.div_re, Complex.normSq_apply]
+  ring
+
+/-- The left half-plane of `geodesicLine g` is where the side form is negative. -/
+theorem mem_leftHalfPlane_iff_sideForm_neg (g : PSL(2, ℝ)) (z : ℍ) :
+    z ∈ leftHalfPlane g ↔ sideForm g z < 0 := by
+  obtain ⟨κ, hκ, h⟩ := exists_pos_re_inv_smul_eq g z
+  rw [mem_leftHalfPlane_iff, h]
+  exact ⟨fun h' ↦ neg_of_mul_neg_right h' hκ.le, mul_neg_of_pos_of_neg hκ⟩
+
+/-- The right half-plane of `geodesicLine g` is where the side form is positive. -/
+theorem mem_rightHalfPlane_iff_sideForm_pos (g : PSL(2, ℝ)) (z : ℍ) :
+    z ∈ rightHalfPlane g ↔ 0 < sideForm g z := by
+  obtain ⟨κ, hκ, h⟩ := exists_pos_re_inv_smul_eq g z
+  rw [mem_rightHalfPlane_iff, h, mul_pos_iff_of_pos_left hκ]
+
+/-- The geodesic line of `g` is the zero set of the side form in `ℍ`. -/
+theorem mem_range_geodesicLine_iff_sideForm_eq_zero (g : PSL(2, ℝ)) (z : ℍ) :
+    z ∈ Set.range (geodesicLine g) ↔ sideForm g z = 0 := by
+  obtain ⟨κ, hκ, h⟩ := exists_pos_re_inv_smul_eq g z
+  rw [mem_range_geodesicLine_iff, h, mul_eq_zero, or_iff_right hκ.ne']
+
+/-- The closed left half-plane of `geodesicLine g` is where the side form is nonpositive. -/
+theorem mem_closure_leftHalfPlane_iff_sideForm_nonpos (g : PSL(2, ℝ)) (z : ℍ) :
+    z ∈ closure (leftHalfPlane g) ↔ sideForm g z ≤ 0 := by
+  obtain ⟨κ, hκ, h⟩ := exists_pos_re_inv_smul_eq g z
+  rw [mem_closure_leftHalfPlane_iff, h]
+  exact ⟨fun h' ↦ le_of_mul_le_mul_left (by rwa [mul_zero]) hκ,
+    mul_nonpos_of_nonneg_of_nonpos hκ.le⟩
+
+/-- Reparametrising a geodesic line by a dilation does not change its side form. -/
+@[simp]
+theorem sideForm_mul_dilation (g : PSL(2, ℝ)) (s : ℝ) :
+    sideForm (g * ↑(dilation s)) = sideForm g := by
+  funext z
+  induction g using QuotientGroup.induction_on with | H A => ?_
+  have h : Real.exp (s / 2) * Real.exp (-(s / 2)) = 1 := by rw [← Real.exp_add]; simp
+  rw [← QuotientGroup.mk_mul, sideForm_mk, sideForm_mk]
+  simp only [Matrix.SpecialLinearGroup.coe_mul, Matrix.SpecialLinearGroup.coe_dilation,
+    Matrix.mul_apply, Fin.sum_univ_two, Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_zero,
+    Matrix.cons_val_one, Matrix.empty_val', Matrix.cons_val_fin_one, mul_zero, add_zero, zero_add]
+  linear_combination (-(A 1 0 * A 1 1) * Complex.normSq z +
+      (A 0 0 * A 1 1 + A 0 1 * A 1 0) * z.re - A 0 0 * A 0 1) * h
+
+end SideForm
 
 end TauCeti.UpperHalfPlane

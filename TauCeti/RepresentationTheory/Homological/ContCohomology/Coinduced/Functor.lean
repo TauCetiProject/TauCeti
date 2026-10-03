@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RepresentationTheory.Coinduced
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Coinduced.Discrete
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete.Basic
 
 import all TauCeti.RepresentationTheory.Homological.ContCohomology.Coinduced.Discrete
 import TauCeti.RepresentationTheory.Continuous.TopRep.EqToHom

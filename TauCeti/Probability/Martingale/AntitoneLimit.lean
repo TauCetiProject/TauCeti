@@ -17,8 +17,8 @@ Layer-4 result that will consume this existence lemma.
 
 ## Main results
 
-- `exists_integrable_tendsto_ae_condExp_of_antitone` (roadmap alias
-  `condExp_exists_ae_limit_antitone`): a.e. limit existence for antitone filtrations.
+- `exists_integrable_tendsto_ae_condExp_of_antitone`: a.e. limit existence for antitone
+  filtrations.
 
 Adapted from `cameronfreer/exchangeability`
 (`Probability/Martingale/Crossings/AntitoneLimit.lean`, pin
@@ -99,11 +99,5 @@ lemma exists_integrable_tendsto_ae_condExp_of_antitone
     simpa [Xlim, hω] using Classical.choose_spec hω
   exact ⟨Xlim, (hf.uniformIntegrable_condExp h_le).integrable_of_ae_tendsto h_ae_tendsto,
     h_ae_tendsto⟩
-
--- The bare `_antitone` is the exact roadmap Layer-4 target name that api-design requires exposing;
--- the primary theorem above uses the Mathlib `_of_antitone` convention. This alias is the handle.
-/-- Roadmap Layer 4 target name (`TauCetiRoadmap/Exchangeability`) for
-`exists_integrable_tendsto_ae_condExp_of_antitone`. -/
-alias condExp_exists_ae_limit_antitone := exists_integrable_tendsto_ae_condExp_of_antitone
 
 end MeasureTheory
