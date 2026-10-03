@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Tate.ArtinLowDegree
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Tate.Conjugation
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Tate.Naturality
+public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Character
 
 import TauCeti.Algebra.Module.CharacterModule
 import TauCeti.NumberTheory.ClassFieldTheory.Formation.Tate.Inflation
@@ -86,6 +87,8 @@ Artin symbol for `L/F` (`ClassFormation.artinMap_quotient`).
   corresponds to the transfer of abelianized Galois groups.
 * `TauCeti.ClassFieldTheory.ClassFormation.artinMap_groundNorm`: the norm between ground levels
   corresponds to the map of abelianized Galois groups induced by inclusion.
+* `TauCeti.ClassFieldTheory.ClassFormation.character_artinMap`: the character formula for the
+  Artin map, with the sign imposed by the Tate cup-product convention.
 * `TauCeti.ClassFieldTheory.ClassFormation.artinMap_quotient`: refinement of the top field
   corresponds to the quotient map of abelianized Galois groups.
 
@@ -337,7 +340,10 @@ private theorem inv_cupFundamentalClass_zero (x : L.TrivialTateH 0) :
   rw [← L.degree_eq_natCard_gal]
   simpa only [Nat.cast_one] using (ZMod.toRatAddCircle_natCast L.degree 1).symm
 
-private theorem inv_artinCharacterCup_eq_neg_apply (a : F.level L.ground)
+/-- **The character formula for the Artin map.** With the current Tate cup-product and low-degree
+comparison conventions, the invariant of `a₀ ∪ δχ` is the negative of the character evaluation
+`χ (artinMap a)`. -/
+theorem character_artinMap (a : F.level L.ground)
     (chi : Additive (Abelianization L.Gal) →+ AddCircle (1 : ℚ)) :
     cf.inv L (L.artinCharacterCup F a chi) = -chi (cf.artinMap L a) := by
   let sigma := L.tateHMinusTwoEquivAbelianization.symm (cf.artinMap L a)
@@ -428,9 +434,8 @@ private theorem inv_artinCharacterCup_eq_neg_apply (a : F.level L.ground)
   have hsigma : sigma = TateCohomology.HNegTwoAddEquivAbelianization.symm
       (cf.artinMap L a) := by
     apply L.tateHMinusTwoEquivAbelianization.injective
-    rw [show L.tateHMinusTwoEquivAbelianization sigma = cf.artinMap L a by
-        exact AddEquiv.apply_symm_apply _ _,
-      NormalLayer.tateHMinusTwoEquivAbelianization_apply, AddEquiv.apply_symm_apply]
+    simp only [sigma, AddEquiv.apply_symm_apply,
+      NormalLayer.tateHMinusTwoEquivAbelianization_apply]
   simp only [pairing, NormalLayer.characterConnectingClass_def, hsigma]
   exact TateCohomology.toRatAddCircle_map_leftUnitor_cup_characterConnectingClass
     L.Gal (cf.artinMap L a) chi
@@ -450,12 +455,12 @@ theorem artinMap_quotient {old new : NormalLayer G} (T : LayerRefinement old new
   apply neg_injective
   calc
     -chi (cf.artinMap old a) = cf.inv old (old.artinCharacterCup F a chi) :=
-      (cf.inv_artinCharacterCup_eq_neg_apply old a chi).symm
+      (cf.character_artinMap old a chi).symm
     _ = cf.inv new
         (new.artinCharacterCup F (T.groundEquiv F a) (chi.comp T.quotientHom)) :=
       (cf.inv_artinCharacterCup_comp_quotientHom T a chi).symm
     _ = -(chi.comp T.quotientHom) (cf.artinMap new (T.groundEquiv F a)) :=
-      cf.inv_artinCharacterCup_eq_neg_apply new (T.groundEquiv F a) (chi.comp T.quotientHom)
+      cf.character_artinMap new (T.groundEquiv F a) (chi.comp T.quotientHom)
     _ = -chi (T.quotientHom (cf.artinMap new (T.groundEquiv F a))) := rfl
 
 end TauCeti.ClassFieldTheory.ClassFormation
