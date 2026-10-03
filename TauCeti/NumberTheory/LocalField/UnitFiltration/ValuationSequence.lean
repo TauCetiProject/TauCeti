@@ -25,12 +25,17 @@ The valuation sequence then shows that degree minus one of `U(L,0)` is finite, a
 `h(U(L,0)) = 1` transfers to the multiplicative group without choosing a Galois-invariant
 uniformizer, which generally does not exist.
 
+Together with the unit quotient calculation and cyclic two-periodicity, this relation gives
+the order of the relative Brauer group for a cyclic extension. That order calculation is an
+input to identifying the full Brauer group with its unramified classes, which in turn allows
+the unramified invariant to extend to the full local invariant.
+
 The constructions reuse the kernel and surjectivity of `TauCeti.normalizedValuation`, and
 Mathlib's `groupCohomology.H1ofAutOnUnitsUnique` (Riccardo Brasca and Amelia Livingston).
 
 ## References
 
-* Romyar Sharifi, *Algebraic Number Theory*, proof of Theorem 9.1.13:
+* Romyar Sharifi, *Algebraic Number Theory*, proof of Theorem 9.1.13 and Definition 9.1.14:
   https://www.math.ucla.edu/~sharifi/notes/algnum-ch09.html
 -/
 
