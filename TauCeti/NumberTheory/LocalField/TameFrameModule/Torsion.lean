@@ -142,21 +142,10 @@ private theorem coeff_nsmul (n : ℕ) (u : MonoidAlgebra R G) (g : G) :
   rw [coeff_smul_apply, nsmul_eq_mul]
 
 private theorem isSMulRegular_relationModule {n : ℕ} (hn : IsSMulRegular R n) :
-    IsSMulRegular (Fin 2 →₀ MonoidAlgebra R G) n := by
-  change Function.Injective ((n • ·) :
-    (Fin 2 →₀ MonoidAlgebra R G) → Fin 2 →₀ MonoidAlgebra R G)
-  intro x y hxy
-  change n • x = n • y at hxy
-  apply Finsupp.ext
-  intro i
-  apply MonoidAlgebra.coeff_injective
-  apply Finsupp.ext
-  intro g
-  apply hn
-  have hi : n • x i = n • y i := by
-    simpa only [Finsupp.nsmul_apply] using congrArg (fun z ↦ z i) hxy
-  have hig := congrArg (fun z ↦ (MonoidAlgebra.coeffAddEquiv z) g) hi
-  simpa only [map_nsmul, Finsupp.nsmul_apply, MonoidAlgebra.coeffAddEquiv_apply] using hig
+    IsSMulRegular (Fin 2 →₀ MonoidAlgebra R G) n :=
+  (hn.finsupp.of_injective
+    MonoidAlgebra.coeffAddEquiv.toAddMonoidHom.toNatLinearMap
+    MonoidAlgebra.coeff_injective).finsupp
 
 section RightMultiple
 
@@ -261,7 +250,8 @@ private theorem smul_toQuotient_eq_zero_iff {n : ℕ} (hn : IsSMulRegular R n)
     rw [map_nsmul, hu, ← smul_eq_mul, map_smul, hy, smul_comm]
   · rintro ⟨u, hu⟩
     exact ⟨u, isSMulRegular_relationModule hn (by
-      change n • tameFrameRelationMap R G σ τ a b u = n • (x • y)
+      -- Applying the injectivity of `(n • ·)` leaves its lambda unreduced.
+      beta_reduce
       rw [← map_nsmul, ← hu, ← smul_eq_mul, map_smul, hy, smul_comm])⟩
 
 variable [Finite G] {p k : ℕ} {c : G → R} {y₀ : Fin 2 →₀ MonoidAlgebra R G}
@@ -365,8 +355,8 @@ private theorem exists_smul_toQuotient_eq
   -- Dividing by `p ^ (n + k)`, `y = d y₀` modulo the relation.
   have hy : y = single (1 : G) (u.coeff 1) • y₀ + tameFrameRelationMap R G σ τ a b v := by
     exact isSMulRegular_relationModule (hp.pow (n + k)) (by
-      change p ^ (n + k) • y = p ^ (n + k) •
-        (single (1 : G) (u.coeff 1) • y₀ + tameFrameRelationMap R G σ τ a b v)
+      -- Applying the injectivity of `(p ^ (n + k) • ·)` leaves its lambda unreduced.
+      beta_reduce
       rw [← hw, smul_add, ← map_nsmul, ← hv, pow_add, mul_smul, smul_comm (p ^ k), ← hy₀,
         ← map_smul, ← map_nsmul, ← map_add, smul_eq_mul, add_sub_cancel])
   rw [hy, map_add, map_smul, tameFrameRelationMap_apply, map_smul,
