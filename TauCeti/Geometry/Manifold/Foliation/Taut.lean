@@ -61,6 +61,11 @@ theorem isClosedTransversal_iff (γ : ℝ → M) : F.IsClosedTransversal γ ↔
 def Taut : Prop :=
   ∀ x : M, ∃ γ : ℝ → M, F.IsClosedTransversal γ ∧ ∃ t : ℝ, γ t ∈ F.leaf x
 
+@[simp]
+theorem taut_iff : F.Taut ↔
+    ∀ x : M, ∃ γ : ℝ → M, F.IsClosedTransversal γ ∧ ∃ t : ℝ, γ t ∈ F.leaf x :=
+  Iff.rfl
+
 theorem isClosedTransversal_periodic (hγ : F.IsClosedTransversal γ) :
     Function.Periodic γ 1 := hγ.2.1
 
