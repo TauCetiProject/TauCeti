@@ -451,6 +451,15 @@ theorem muNRepCohomologyEquivTrivialFp_apply {ζ : F} (hζ : IsPrimitiveRoot ζ 
       TauCeti.ContinuousCohomology.coeffMap (muNRepIsoTrivialFp n F hζ).hom d x :=
   (rfl)
 
+-- Not `@[simp]`: the transport is the intended normal form, and this lemma unfolds it.
+/-- The inverse coefficient transport is the coefficient map `coeffMap` of the inverse of the
+coefficient isomorphism `muNRepIsoTrivialFp`. -/
+theorem muNRepCohomologyEquivTrivialFp_symm_apply {ζ : F} (hζ : IsPrimitiveRoot ζ n) (d : ℕ)
+    (x : cohomFp n (Field.absoluteGaloisGroup F) d) :
+    (muNRepCohomologyEquivTrivialFp n F hζ d).symm x =
+      TauCeti.ContinuousCohomology.coeffMap (muNRepIsoTrivialFp n F hζ).inv d x :=
+  (rfl)
+
 /-- In degree one, the coefficient transport is the pullback of explicit cocycles along the
 coefficient identification `muNRepEquivTrivialFp` of the chosen primitive root. -/
 theorem muNRepCohomologyEquivTrivialFp_one_apply {ζ : F} (hζ : IsPrimitiveRoot ζ n)
