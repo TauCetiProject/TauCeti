@@ -94,13 +94,13 @@ variable (P : TopPairing X X X) (u : X.V) (hinv : ∀ g : G, X.ρ g u = u)
 
 /-- The multiplication of homogeneous classes in `TauCeti.TopPairing.cohomologyGRing` is the cup
 product along `P`. -/
-theorem cohomologyGRing_mul {m n : ℕ} (x : continuousCohomology m X)
+@[simp] theorem cohomologyGRing_mul {m n : ℕ} (x : continuousCohomology m X)
     (y : continuousCohomology n X) :
     (P.cohomologyGRing u hinv hleft hright hassoc).mul x y = P.cup m n x y :=
   rfl
 
 /-- The unit of `TauCeti.TopPairing.cohomologyGRing` is the degree-zero class of `u`. -/
-theorem cohomologyGRing_one :
+@[simp] theorem cohomologyGRing_one :
     (P.cohomologyGRing u hinv hleft hright hassoc).one = degreeZeroClass X u hinv :=
   rfl
 
