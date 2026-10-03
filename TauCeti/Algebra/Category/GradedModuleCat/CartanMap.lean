@@ -47,6 +47,8 @@ Grothendieck groups live in the same universe as the coefficient data.
 * `TauCeti.isExtensionClosed_gradedFiniteModules` and
   `TauCeti.isExtensionClosed_gradedFiniteProjectiveModules`: both properties are extension closed
   in the abelian category of graded modules.
+* `TauCeti.gradedFiniteModules_shift` and `TauCeti.gradedFiniteProjectiveModules_shift`: both
+  properties are stable under the grading shift.
 * `TauCeti.gradedFiniteModulesExactStructure_conflation_iff` and
   `TauCeti.gradedFiniteProjectiveModulesExactStructure_conflation_iff`: the conflations of the two
   structures are the short exact sequences of graded modules with terms in the subcategory.
@@ -292,12 +294,11 @@ theorem isExtensionClosed_gradedFiniteProjectiveModules :
     have hex : Function.Exact S.f.hom S.g.hom :=
       (ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1 hS'
     have hf : Function.Injective S.f.hom := by
+      have := NormalEpiCategory.preservesMonomorphisms_of_preservesKernels
+        (GradedModuleCat.toModuleCat (𝒜 := 𝒜))
       have := hS.mono_f
-      rw [← LinearMap.ker_eq_bot, LinearMap.ker_eq_bot']
-      intro x hx
-      have h0 : GradedModuleCat.kernelι S.f = 0 := (cancel_mono S.f).1 (by simp)
-      simpa [GradedModuleCat.kernelι] using
-        LinearMap.congr_fun (congrArg GradedModuleCat.Hom.hom h0) ⟨x, hx⟩
+      exact (ModuleCat.mono_iff_injective ((GradedModuleCat.toModuleCat (𝒜 := 𝒜)).map S.f)).1
+        inferInstance
     let _ : Module.Projective A S.X₁ := h₁.2
     let _ : Module.Projective A S.X₃ := h₃.2
     obtain ⟨l, hl⟩ := Module.projective_lifting_property S.g.hom LinearMap.id
@@ -326,14 +327,19 @@ private theorem isExtensionClosed_gradedFiniteProjectiveModules' :
   rw [gradedModuleExactStructure, GradedExactStructure.abelian_toExactStructure]
   exact isExtensionClosed_gradedFiniteProjectiveModules
 
-private theorem gradedFiniteModules_shift :
+/-- Finite graded modules are stable under the grading shift. -/
+theorem gradedFiniteModules_shift :
     (gradedFiniteModules 𝒜).inverseImage (GradedModuleCat.shift 𝒜).functor =
-      gradedFiniteModules 𝒜 :=
+      gradedFiniteModules 𝒜 := by
+  ext M
   rfl
 
-private theorem gradedFiniteProjectiveModules_shift :
+/-- Finite graded modules with projective underlying module are stable under the grading
+shift. -/
+theorem gradedFiniteProjectiveModules_shift :
     (gradedFiniteProjectiveModules 𝒜).inverseImage (GradedModuleCat.shift 𝒜).functor =
-      gradedFiniteProjectiveModules 𝒜 :=
+      gradedFiniteProjectiveModules 𝒜 := by
+  ext M
   rfl
 
 private theorem gradedFiniteModules_shift' :
