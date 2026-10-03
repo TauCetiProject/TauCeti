@@ -56,17 +56,15 @@ over `f(V)`.
 
 public section
 
-open CategoryTheory Limits TopologicalSpace AlgebraicGeometry Opposite
-
-namespace TauCeti
-
-namespace AlgebraicGeometry
+open CategoryTheory Limits TopologicalSpace Opposite
 
 universe u
 
 noncomputable section
 
-namespace Scheme.Modules
+namespace AlgebraicGeometry.Scheme.Modules
+
+open TauCeti TauCeti.AlgebraicGeometry.Scheme.Modules
 
 variable {X Y : Scheme.{u}} (f : Y ⟶ X) [IsOpenImmersion f]
 
@@ -75,7 +73,7 @@ cohomology of its restriction along `f`, naturally in the sheaf of modules. -/
 def cohomologyOnOpensRangeNatIso (n : ℕ) :
     SheafOfModules.toSheaf X.ringCatSheaf ⋙
         CategoryTheory.Sheaf.cohomologyPresheafFunctor (Opens.grothendieckTopology X) n ⋙
-          (evaluation X.Opensᵒᵖ AddCommGrpCat.{u}).obj (op f.opensRange) ≅
+          (CategoryTheory.evaluation X.Opensᵒᵖ AddCommGrpCat.{u}).obj (op f.opensRange) ≅
       Scheme.Modules.restrictFunctor f ⋙ cohomologyFunctor Y n :=
   let J := Opens.grothendieckTopology X
   let e := f.isOpenEmbedding.overEquivalence
@@ -129,10 +127,6 @@ theorem subsingleton_cohomology_of_two_le_of_isAffineOpen [IsLocallyNoetherian X
   exact subsingleton_cohomology_of_two_le M hUV n hn (hacyclic hU) (hacyclic hV)
     (hacyclic (hU.inf hV))
 
-end Scheme.Modules
+end AlgebraicGeometry.Scheme.Modules
 
 end
-
-end AlgebraicGeometry
-
-end TauCeti
