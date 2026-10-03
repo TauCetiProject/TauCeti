@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.LinearAlgebra.Dual.BaseChange
 public import Mathlib.RingTheory.Flat.Basic
 public import Mathlib.RingTheory.TensorProduct.IsBaseChangeFree
+public import TauCeti.RingTheory.TensorProduct.IsBaseChange
 
 import Mathlib.RingTheory.Flat.TorsionFree
 import Mathlib.RingTheory.TensorProduct.IsBaseChangePi
@@ -43,9 +44,8 @@ forcing the integral and real ranks to agree.
   real span, and the integral rank of `N` equals the real dimension of `V`.
 * `TauCeti.Toric.linearIndependent_comp_iff_of_liftBaseChange_injective`: when the real-linear
   map `ℝ ⊗[ℤ] N →ₗ[ℝ] V` induced by `i` is injective (as it is when `i` extends scalars from `ℤ`
-  to `ℝ`, by `TauCeti.Toric.liftBaseChange_injective_of_isBaseChange`), a family of integral
-  vectors is linearly independent over `ℤ` exactly when its image is linearly independent over
-  `ℝ`.
+  to `ℝ`, by `IsBaseChange.liftBaseChange_injective`), a family of integral vectors is linearly
+  independent over `ℤ` exactly when its image is linearly independent over `ℝ`.
 * `TauCeti.Toric.IsIntegralLattice.extend` and `TauCeti.Toric.IsIntegralLattice.eq_extend`: a map
   of integral vectors extends to a unique real-linear map, so the real-linear map accompanying a
   map of lattices is determined by it rather than being extra data.
@@ -123,19 +123,8 @@ theorem IsIntegralLattice.injective (h : IsIntegralLattice i) :
   refine Module.Flat.tensorProduct_mk_injective ℤ N ℝ (e.injective ?_)
   simpa only [TensorProduct.mk_apply, he] using hxy
 
-/-- When `i` exhibits `V` as the extension of scalars of `N` from `ℤ` to `ℝ` (as an integral
-lattice does, by `IsIntegralLattice.isBaseChange`), the induced real-linear map
-`ℝ ⊗[ℤ] N →ₗ[ℝ] V` is injective. -/
-theorem liftBaseChange_injective_of_isBaseChange (h : IsBaseChange ℝ i.toIntLinearMap) :
-    Function.Injective (i.toIntLinearMap.liftBaseChange ℝ) := by
-  have : i.toIntLinearMap.liftBaseChange ℝ = h.equiv.toLinearMap := by
-    ext
-    simp [IsBaseChange.equiv_tmul]
-  rw [this]
-  exact h.equiv.injective
-
 /-- When the real-linear map `ℝ ⊗[ℤ] N →ₗ[ℝ] V` induced by `i` is injective (for instance when
-`i` extends scalars from `ℤ` to `ℝ`, by `liftBaseChange_injective_of_isBaseChange`), a family of
+`i` extends scalars from `ℤ` to `ℝ`, by `IsBaseChange.liftBaseChange_injective`), a family of
 integral vectors is linearly independent over `ℤ` exactly when its image under `i` is linearly
 independent over `ℝ`: a real linear relation among lattice vectors forces an integral one. The
 image of `i` need not span `V`. -/
