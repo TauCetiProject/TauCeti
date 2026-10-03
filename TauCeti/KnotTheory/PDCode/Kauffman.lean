@@ -139,6 +139,12 @@ half-edges; only which of them is the `A`-smoothing changes. -/
     D.mirror.smoothingTurn b = D.smoothingTurn b := by
   simp [smoothingTurn]
 
+/-- Reconnecting arcs does not change how the crossings are smoothed. -/
+@[simp] theorem smoothingTurn_reconnect (D : PDCode n) (p q : Fin (4 * n))
+    (c : Fin n → Bool) :
+    (D.reconnect p q).smoothingTurn c = D.smoothingTurn c := by
+  rw [smoothingTurn_def, smoothingTurn_def, reconnect_halfEdge]
+
 /-- Relabelling conjugates smoothing by the half-edge relabelling, after transporting the family
 of local smoothings along the crossing relabelling. -/
 @[simp] theorem smoothingTurn_relabel (D : PDCode n) (b : Fin n → Bool)
@@ -178,6 +184,13 @@ over-pair indicator. -/
     D.mirror.smoothingChoice s = D.smoothingChoice fun j ↦ !(s j) := by
   funext i
   cases hs : s i <;> simp [smoothingChoice, hs]
+
+/-- Reconnecting arcs does not change which smoothing a state selects. -/
+@[simp] theorem smoothingChoice_reconnect (D : PDCode n) (p q : Fin (4 * n))
+    (s : Fin n → Bool) :
+    (D.reconnect p q).smoothingChoice s = D.smoothingChoice s := by
+  funext i
+  cases hs : s i <;> simp [hs]
 
 /-- Relabelling reads a state's choice at the old crossing name. -/
 @[simp] theorem smoothingChoice_relabel (D : PDCode n) (s : Fin n → Bool)

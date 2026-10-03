@@ -199,23 +199,6 @@ end Values
 
 end Splice
 
-section Reconnect
-
-variable (D : PDCode n) (p q : Fin (4 * n))
-
-/-- Reconnecting arcs does not change how the crossings are smoothed. -/
-@[simp] theorem smoothingTurn_reconnect (c : Fin n → Bool) :
-    (D.reconnect p q).smoothingTurn c = D.smoothingTurn c := by
-  rw [smoothingTurn_def, smoothingTurn_def, reconnect_halfEdge]
-
-/-- Reconnecting arcs does not change which smoothing a state selects. -/
-@[simp] theorem smoothingChoice_reconnect (s : Fin n → Bool) :
-    (D.reconnect p q).smoothingChoice s = D.smoothingChoice s := by
-  funext i
-  cases hs : s i <;> simp [hs]
-
-end Reconnect
-
 section Insert
 
 /-- **Crossing insertion**: route the arc of `D` ending at the half-edge `p` and the arc ending at
