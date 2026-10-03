@@ -9,6 +9,7 @@ public import Mathlib.RepresentationTheory.Irreducible
 public import Mathlib.RepresentationTheory.Semisimple
 public import TauCeti.RepresentationTheory.Subrepresentation
 public import Mathlib.RingTheory.SimpleModule.Rank
+import TauCeti.RingTheory.KrullSchmidt.Indecomposable
 import TauCeti.RingTheory.Semisimple.DoubleCentralizer
 import TauCeti.RingTheory.Semisimple.Schur
 
@@ -218,9 +219,9 @@ theorem isIrreducible_of_asAlgebraHom_surjective [Nontrivial V] (ρ : Representa
 
 /-- **A semisimple representation whose intertwiners are the scalars is irreducible.** If every
 subrepresentation has an invariant complement and the equivariant endomorphisms of `ρ` form a line,
-then `ρ` is irreducible: a subrepresentation `S` with complement `T` gives the projection onto `S`
-along `T`, an equivariant endomorphism which is therefore a scalar `c`, and `c` is `0` when `S` is
-zero and `1` when `T` is zero, one of which must happen.
+then `ρ` is irreducible: an idempotent equivariant endomorphism is a scalar `c` with `c * c = c`,
+hence `0` or `1`, so `ρ` is indecomposable (`isIndecomposableModule_of_forall_isIdempotentElem`),
+and an indecomposable semisimple module is simple (`IsIndecomposableModule.isSimpleModule`).
 
 Over a field in which the order of a finite group is invertible every representation is semisimple
 (Maschke), so there this is the converse of Schur's lemma for an absolutely irreducible
@@ -235,33 +236,25 @@ theorem isIrreducible_of_finrank_intertwiningMap_self_eq_one {ρ : Representatio
       ⟨fun f g => IntertwiningMap.ext (Subsingleton.elim _ _)⟩
     rw [Module.finrank_zero_of_subsingleton] at h
     exact zero_ne_one h
-  have hid : IntertwiningMap.id ρ ≠ 0 := by
+  have hid : (1 : IntertwiningMap ρ ρ) ≠ 0 := by
     obtain ⟨v, hv⟩ := exists_ne (0 : V)
     exact fun h0 => hv (by simpa using congrArg (fun f : IntertwiningMap ρ ρ => f v) h0)
-  refine ⟨fun S => ?_⟩
-  obtain ⟨T, hST⟩ := exists_isCompl S
-  -- the projection onto `S` along `T`, an equivariant endomorphism of `ρ`
-  let p : IntertwiningMap ρ ρ := S.subtype.comp ((IntertwiningMap.fst k _ _).comp
-    (Subrepresentation.equivProdOfIsCompl hST).toIntertwiningMap)
-  have hc := Subrepresentation.isCompl_toSubmodule.mpr hST
-  have hS (v : V) (hv : v ∈ S) : p v = v := by
-    simp [p, Submodule.prodEquivOfIsCompl_symm_apply_left _ _ hc (⟨v, hv⟩ : S.toSubmodule)]
-  have hT (v : V) (hv : v ∈ T) : p v = 0 := by
-    simp [p, Submodule.prodEquivOfIsCompl_symm_apply_right _ _ hc (⟨v, hv⟩ : T.toSubmodule)]
-  obtain ⟨c, hcp⟩ := (finrank_eq_one_iff_of_nonzero' _ hid).mp h p
-  by_cases hc1 : c = 1
-  · -- the projection is the identity, so the complement is zero
-    have hT0 : T = ⊥ := Subrepresentation.toSubmodule_injective
-      (Submodule.eq_bot_iff _ |>.mpr fun v hv => by
-        rw [← hT v hv, ← hcp, hc1, one_smul, IntertwiningMap.id_apply])
-    exact Or.inr (eq_top_of_isCompl_bot (hT0 ▸ hST))
-  · -- the projection is a scalar other than `1`, so it fixes no nonzero vector of `S`
-    refine Or.inl (Subrepresentation.toSubmodule_injective (Submodule.eq_bot_iff _ |>.mpr
-      fun v hv => ?_))
-    have hv' : c • v = v := by
-      simpa [← hcp] using hS v hv
-    have : (c - 1) • v = 0 := by rw [sub_smul, one_smul, hv', sub_self]
-    exact (smul_eq_zero.mp this).resolve_left (sub_ne_zero.mpr hc1)
+  have : IsSemisimpleModule (MonoidAlgebra k G) ρ.asModule :=
+    (isSemisimpleRepresentation_iff_isSemisimpleModule_asModule ρ).mp inferInstance
+  have : Nontrivial ρ.asModule := ρ.asModuleEquiv.toEquiv.nontrivial
+  rw [irreducible_iff_isSimpleModule_asModule]
+  -- an idempotent endomorphism is a scalar `c` with `c * c = c`, hence `0` or `1`
+  refine (isIndecomposableModule_of_forall_isIdempotentElem fun f hf => ?_).isSimpleModule
+  let e := IntertwiningMap.equivAlgEnd (ρ := ρ)
+  obtain ⟨c, hc⟩ := (finrank_eq_one_iff_of_nonzero' _ hid).mp h (e.symm f)
+  have hf' : f = algebraMap k _ c := by
+    rw [← e.apply_symm_apply f, ← hc, ← AlgEquiv.commutes e, IntertwiningMap.algebraMap_apply]
+  have hcc : IsIdempotentElem c := by
+    refine smul_left_injective k hid ?_
+    simpa [hf', IsIdempotentElem, ← map_mul, mul_smul] using congrArg e.symm hf
+  rcases IsIdempotentElem.iff_eq_zero_or_one.mp hcc with rfl | rfl
+  · exact Or.inl (by simp [hf'])
+  · exact Or.inr (by simp [hf'])
 
 open scoped MonoidAlgebra in
 /-- **Burnside density theorem.** The monoid algebra of a finite-dimensional irreducible

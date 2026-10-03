@@ -585,42 +585,6 @@ private theorem exists_char_sub_eq_of_ne_zero {V W : Type*} [AddCommGroup V] [Mo
     abel
 
 open _root_.Representation in
-/-- A representation of dimension zero, recognised by its zero-dimensional space of equivariant
-endomorphisms, has character zero. -/
-private theorem character_eq_zero_of_finrank_intertwiningMap_eq_zero (C : FDRep k G)
-    (hC : finrank k (IntertwiningMap C.ρ C.ρ) = 0) : C.character = 0 := by
-  have : Subsingleton C := by
-    by_contra hC'
-    rw [not_subsingleton_iff_nontrivial] at hC'
-    obtain ⟨v, hv⟩ := exists_ne (0 : C)
-    have hid : IntertwiningMap.id C.ρ ≠ 0 := fun h0 =>
-      hv (by simpa using congrArg (fun φ : IntertwiningMap C.ρ C.ρ => φ v) h0)
-    exact (finrank_pos_iff_exists_ne_zero.mpr ⟨_, hid⟩).ne' hC
-  funext g
-  rw [← FDRep.character_ρ, Representation.character, Subsingleton.elim (C.ρ g) 0, map_zero,
-    Pi.zero_apply]
-
-open _root_.Representation in
-/-- When `B` admits no nonzero intertwiner into `A`, the norm of `χ_A - χ_B` is
-`dim End(A) + dim End(B)`: the cross terms are the dimensions of the intertwiner spaces between
-`A` and `B` in the two directions, which agree by symmetry of the pairing. -/
-private theorem characterPairing_ofCharacter_sub_self [Fintype G] [Invertible (Nat.card G : k)]
-    (A B : FDRep k G) [Subsingleton (IntertwiningMap B.ρ A.ρ)] :
-    ClassFunction.characterPairing
-        (ClassFunction.ofCharacter A.ρ - ClassFunction.ofCharacter B.ρ)
-        (ClassFunction.ofCharacter A.ρ - ClassFunction.ofCharacter B.ρ) =
-      finrank k (IntertwiningMap A.ρ A.ρ) + finrank k (IntertwiningMap B.ρ B.ρ) := by
-  have hAB : ClassFunction.characterPairing (ClassFunction.ofCharacter A.ρ)
-      (ClassFunction.ofCharacter B.ρ) = 0 := by
-    rw [ClassFunction.characterPairing_ofCharacter_eq_finrank, finrank_zero_of_subsingleton,
-      Nat.cast_zero]
-  simp only [map_sub, LinearMap.sub_apply]
-  rw [ClassFunction.characterPairing_symm (ClassFunction.ofCharacter B.ρ), hAB,
-    ClassFunction.characterPairing_ofCharacter_eq_finrank,
-    ClassFunction.characterPairing_ofCharacter_eq_finrank]
-  ring
-
-open _root_.Representation in
 /-- **A virtual character of norm `1` and natural degree is the character of an absolutely
 irreducible representation, over any field of characteristic zero.** If `f` is an integer
 combination of characters of representations of `G` over `k`, with `⟨f, f⟩ = 1` and `f 1` a
@@ -659,13 +623,13 @@ theorem exists_simple_character_eq_of_characterPairing_self_eq_one [Fintype G] [
   have : Subsingleton (IntertwiningMap B.ρ A.ρ) := ⟨fun φ ψ => (hφ φ).trans (hφ ψ).symm⟩
   have hf' : f = ClassFunction.ofCharacter A.ρ - ClassFunction.ofCharacter B.ρ :=
     Subtype.ext (funext fun g => by simp [hAB, ClassFunction.ofCharacter_apply, FDRep.character_ρ])
-  rw [hf', characterPairing_ofCharacter_sub_self] at hnorm
+  rw [hf', ClassFunction.characterPairing_ofCharacter_sub_self] at hnorm
   have hsum : finrank k (IntertwiningMap A.ρ A.ρ) + finrank k (IntertwiningMap B.ρ B.ρ) = 1 := by
     exact_mod_cast hnorm
   rcases Nat.add_eq_one_iff.mp hsum with ⟨ha, hb⟩ | ⟨ha, hb⟩
   · -- `A = 0` would make the degree `f 1 = -dim B` negative
     have := (isIrreducible_of_finrank_intertwiningMap_self_eq_one hb).nontrivial
-    rw [hAB, Pi.sub_apply, character_eq_zero_of_finrank_intertwiningMap_eq_zero A ha,
+    rw [hAB, Pi.sub_apply, FDRep.character_eq_zero_of_finrank_intertwiningMap_eq_zero A ha,
       Pi.zero_apply, zero_sub, FDRep.char_one] at hn
     have hd : finrank k B + n = 0 := by
       exact_mod_cast (by linear_combination -hn : (finrank k B : k) + n = 0)
@@ -677,7 +641,7 @@ theorem exists_simple_character_eq_of_characterPairing_self_eq_one [Fintype G] [
       rw [ClassFunction.ofFDRep_eq_ofCharacter,
         ClassFunction.characterPairing_ofCharacter_eq_finrank, ha] at hEnd
       exact_mod_cast hEnd.symm
-    · rw [hAB, character_eq_zero_of_finrank_intertwiningMap_eq_zero B hb, sub_zero]
+    · rw [hAB, FDRep.character_eq_zero_of_finrank_intertwiningMap_eq_zero B hb, sub_zero]
 
 end NormCharZero
 
