@@ -6,16 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Boundary.Collar.Global
-public import TauCeti.Topology.Homeomorph.Extend
-public import Mathlib.Topology.PartitionOfUnity
+import TauCeti.Topology.Homeomorph.Extend
+import Mathlib.Topology.PartitionOfUnity
 import Mathlib.Algebra.BigOperators.Field
 import Mathlib.Tactic.Linarith
 
 /-!
 # Brown's collaring theorem
 
-A map `f : N → M` is *locally collared* (`TauCeti.IsLocallyCollared`) when every point of `N` has
-an open neighbourhood `U` such that `f` restricted to `U` has a collar, an open embedding
+A map `f : N → M` is *locally collared* (`TauCeti.IsLocallyCollared`, defined in
+`TauCeti.Geometry.Manifold.Boundary.Collar.Global`) when every point of `N` has an open
+neighbourhood `U` such that `f` restricted to `U` has a collar, an open embedding
 `c : U × [0, 1) → M` with zero slice `f`, which meets the image of `f` only along that zero slice.
 This is M. Brown's notion: `f(U)` is collared in `(M \ f(N)) ∪ f(U)`. The condition on the image
 keeps the positive-depth part of a local collar away from the rest of `f(N)`.
@@ -41,15 +42,9 @@ composed. This is the case of compact boundaries, and of the codimension-one sph
 theorem is applied in Brown's study of locally flat embeddings. Over a paracompact domain the
 cover is only locally finite, and the pushes must instead be composed locally.
 
-## Main definitions
-
-* `TauCeti.IsLocallyCollared f`: every point has an open neighbourhood on which `f` is collared,
-  by a collar meeting the image of `f` only in its zero slice.
-
 ## Main results
 
 * `TauCeti.IsLocallyCollared.isCollared`: **Brown's collaring theorem**, for a compact domain.
-* `TauCeti.IsCollared.isLocallyCollared`: a collared map is locally collared.
 * `TauCeti.isCollared_iff_injective_and_isLocallyCollared`: a map from a compact space to a
   Hausdorff space is collared exactly when it is injective and locally collared.
 
@@ -68,35 +63,6 @@ open Set Topology Function
 namespace TauCeti
 
 variable {M N : Type*} [TopologicalSpace M] [TopologicalSpace N] {f : N → M}
-
-/-- A map `f : N → M` is **locally collared** if every point of `N` has an open neighbourhood `U`
-such that the restriction of `f` to `U` admits a collar `c : U × [0, 1) → M` whose points of
-positive depth avoid the image of `f`, so that the collar takes values in `(M \ f(N)) ∪ f(U)`.
-This is M. Brown's definition of a locally collared subset: `f(U)` is collared in
-`(M \ f(N)) ∪ f(U)`. -/
-def IsLocallyCollared (f : N → M) : Prop :=
-  ∀ x, ∃ U : Set N, IsOpen U ∧ x ∈ U ∧ ∃ c : U × Ico (0 : ℝ) 1 → M,
-    IsCollar (f ∘ ((↑) : U → N)) c ∧ ∀ p, c p ∈ range f → (p.2 : ℝ) = 0
-
-/-- Being locally collared spelled out. The module system does not expose the body of
-`TauCeti.IsLocallyCollared`, so this lemma is how the definition is introduced and eliminated
-downstream. -/
-theorem isLocallyCollared_iff : IsLocallyCollared f ↔
-    ∀ x, ∃ U : Set N, IsOpen U ∧ x ∈ U ∧ ∃ c : U × Ico (0 : ℝ) 1 → M,
-      IsCollar (f ∘ ((↑) : U → N)) c ∧ ∀ p, c p ∈ range f → (p.2 : ℝ) = 0 :=
-  Iff.rfl
-
-/-- A collared map is locally collared: the global collar serves as a local collar everywhere. -/
-theorem IsCollared.isLocallyCollared (h : IsCollared f) : IsLocallyCollared f := by
-  obtain ⟨c, hc⟩ := isCollared_iff.1 h
-  exact fun x => ⟨univ, isOpen_univ, mem_univ x, _, hc.restrict isOpen_univ,
-    fun p hp => congrArg Subtype.val (hc.preimage_range.subset hp).2⟩
-
-/-- A locally collared map is continuous. -/
-theorem IsLocallyCollared.continuous (h : IsLocallyCollared f) : Continuous f := by
-  refine continuous_iff_continuousAt.2 fun x => ?_
-  obtain ⟨U, hU, hxU, c, hc, -⟩ := h x
-  exact (continuousOn_iff_continuous_domRestrict.2 hc.continuous).continuousAt (hU.mem_nhds hxU)
 
 /-! ### The proof of Brown's theorem -/
 
@@ -493,7 +459,7 @@ theorem IsLocallyCollared.isCollared [CompactSpace N] [T2Space M] (h : IsLocally
     (hf : Injective f) : IsCollared f := by
   have hfc := h.continuous
   have : T2Space N := .of_injective_continuous hf hfc
-  choose U hUo hxU c hc hcf using h
+  choose U hUo hxU c hc hcf using isLocallyCollared_iff.1 h
   obtain ⟨t, ht⟩ := isCompact_univ.elim_finite_subcover U hUo
     fun x _ => mem_iUnion.2 ⟨x, hxU x⟩
   let V : Fin t.card → Set N := fun i => U (t.equivFin.symm i)
