@@ -36,7 +36,12 @@ No perfectness, finite type, or Noetherian hypothesis is needed for the local cr
   image can be checked using any family of maximal localizations.
 
 Together with `Function.Injective.mem_range_iff_existsUnique`, these give the unique regular
-preimage criterion when `Ω[A⁄R]` is torsion-free.
+preimage criterion when `Ω[A⁄R]` is torsion-free. For a fraction ring `F`, set
+`hinj := TauCeti.KaehlerDifferential.injective_map_of_isLocalization R A F A⁰ le_rfl`.
+Then `hinj.mem_range_iff_existsUnique (b := ω)` characterizes global range membership by
+the existence of a unique preimage. Composing its symmetry with
+`TauCeti.KaehlerDifferential.mem_range_map_iff_forall_isMaximal R A F Aₚ ω` gives the
+unique-preimage criterion using any compatible family `Aₚ` of maximal localizations.
 
 ## References
 
