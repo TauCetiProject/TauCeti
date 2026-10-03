@@ -40,7 +40,7 @@ The proof is by induction on `|G|`.  Let `W` be irreducible.
 * Choose an irreducible constituent `V` of `Res_A W`.  Schur's lemma makes `A` act on `V` by
   scalars.  If the inertia group of `V` were all of `G`, those scalars would be invariant under
   conjugation and `A` would act on all of `W` by them
-  (`TauCeti.Representation.apply_eq_smul_of_ne_bot`); then `x` would act centrally, that is
+  (`Representation.apply_eq_smul_of_ne_bot`); then `x` would act centrally, that is
   `x ∈ Z`.  So the inertia group `T` is proper.
 * By the Clifford correspondence (`FDRep.exists_simple_liesOver_inertia_nonempty_iso_indFDRep`)
   `W ≅ Ind_T^G U` for an irreducible `U` of `T`, and `T` is nilpotent and smaller, so
@@ -112,7 +112,7 @@ private theorem exists_character_eq_indClassFun_top [IsAlgClosed k] (W : FDRep k
 acting on an irreducible `W` through commuting operators, and let `σ` be an irreducible constituent
 of the restriction.  Schur's lemma makes `A` act on `σ` through scalars; if the inertia group of `σ`
 is all of `G`, those scalars are invariant under conjugation, so `A` acts on all of `W` through them
-(`TauCeti.Representation.apply_eq_smul_of_ne_bot`), and its operators commute with those of `G`. -/
+(`Representation.apply_eq_smul_of_ne_bot`), and its operators commute with those of `G`. -/
 private theorem commute_of_inertia_eq_top [IsAlgClosed k] (W : FDRep k G) [Simple W]
     {A : Subgroup G} [A.Normal] (hA : ∀ a b : A, Commute (W.ρ a) (W.ρ b))
     {σ : Subrepresentation (W.ρ.comp A.subtype)} (hσ : IsAtom σ)
