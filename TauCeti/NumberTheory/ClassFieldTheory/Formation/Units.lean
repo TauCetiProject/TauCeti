@@ -211,6 +211,7 @@ def layerCoeffEquiv :
   map_add' _ _ := Subtype.ext (map_add (unitsCoeffEquivUnitsFormation K).symm _ _)
 
 /-- `layerCoeffEquiv` moves no element of `(Kˢ)ˣ`: it only changes the coefficient dictionary. -/
+@[simp]
 theorem layerCoeffEquiv_apply_coe (x : (L.rep (unitsFormation K)).V) :
     (layerCoeffEquiv L x : UnitsCoeff K) =
       (unitsCoeffEquivUnitsFormation K).symm (x : (unitsFormation K).level L.top) :=
