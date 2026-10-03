@@ -224,6 +224,7 @@ theorem tateIso_infl (cf : ClassFormation F) (T : LayerRefinement old new) (r : 
 /-- **The invariant of the Artin character cup is unchanged by inflation.** For `a ∈ A^U` and a
 character `χ` of `Gal(K/F)^ab`, the invariant over the refinement `L/F` of `a₀ ∪ δ(χ ∘ π)` is the
 invariant over `K/F` of `a₀ ∪ δχ`, where `π : Gal(L/F)^ab → Gal(K/F)^ab` is the quotient map. -/
+@[simp]
 theorem inv_artinCharacterCup_comp_quotientHom (cf : ClassFormation F) (T : LayerRefinement old new)
     (a : F.level old.ground) (χ : Additive (Abelianization old.Gal) →+ AddCircle (1 : ℚ)) :
     cf.inv new (new.artinCharacterCup F (T.groundEquiv F a) (χ.comp T.quotientHom)) =

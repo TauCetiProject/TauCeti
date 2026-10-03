@@ -219,13 +219,6 @@ theorem posMap_characterConnectingClass
     (χ : Additive (Abelianization Q) →+ AddCircle (1 : ℚ)) :
     posMap φ f 2 (characterConnectingClass Q χ) =
       characterConnectingClass G (χ.comp (Abelianization.map φ).toAdditive) := by
-  have key : (_root_.TateCohomology.isoGroupCohomology 2).inv.app (Rep.trivial ℤ Q ℤ) ≫
-      posMap φ f 2 = groupCohomology.map φ f 2 ≫
-        (_root_.TateCohomology.isoGroupCohomology 2).inv.app (Rep.trivial ℤ G ℤ) := by
-    rw [posMap_def, Iso.inv_hom_id_app_assoc]
-    -- The two sides differ only in the objects of `groupCohomology.functor`, which are
-    -- `groupCohomology` after unfolding, as in `posMap_comp_isoGroupCohomology_hom`.
-    rfl
   -- In ordinary cohomology, the connecting maps of `ℤ → ℚ → ℚ/ℤ` over `Q` and over `G` are
   -- intertwined by change of group, and change of group pulls a homomorphism `Q → ℚ/ℤ` back
   -- along `φ`.
@@ -248,7 +241,11 @@ theorem posMap_characterConnectingClass
     -- the pulled-back cocycle is `g ↦ χ (φ g)` on both sides
     congr 2
   rw [characterConnectingClass_def, characterConnectingClass_def, ← hδ]
-  exact congr($key _)
+  -- In positive degrees `fromGroupCohomology` is the inverse comparison `isoGroupCohomology.inv`,
+  -- through which change of group is ordinary change of group.
+  have key (y) := congr($(fromGroupCohomology_comp_posMap φ f 2) y)
+  simp only [Rep.fromGroupCohomology_succ, Iso.app_inv] at key
+  exact key _
 
 end Character
 
