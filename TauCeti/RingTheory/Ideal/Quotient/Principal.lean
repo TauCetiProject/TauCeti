@@ -19,6 +19,8 @@ the quotient map.
 
 Use `TauCeti.spanSingletonQuotientMap I e` for the restriction and
 `TauCeti.spanSingletonRelationMap I e` for right multiplication of the relations by `e`.
+The kernel is characterized by `TauCeti.ker_spanSingletonQuotientMap I e`; when `e` is
+idempotent, `TauCeti.range_spanSingletonRelationMap I e` identifies it with the relation-map range.
 
 See Assem--Simson--Skowroński, *Elements of the Representation Theory of Associative Algebras I*,
 Chapter III, Section 2, for vertex projectives of bound quivers.
