@@ -44,9 +44,9 @@ nontrivial unit as soon as `u` and `w` are linearly independent.
 * `CliffordAlgebra.coe_spinToSpecialOrthogonal_spinTransvection`: the lift acts on the quadratic
   space as the Eichler transvection `E_{u,w}`.
 * `CliffordAlgebra.spinTransvection_add`: `L_{u,w + w'} = L_{u,w} * L_{u,w'}`.
-* `QuadraticMap.IsometryEquiv.spinGroupMap_spinTransvection` and
+* `QuadraticMap.Isometry.spinGroupMap_spinTransvection` and
   `QuadraticMap.IsometryEquiv.spinGroupEquiv_spinTransvection`: the canonical lifts are natural
-  under isometric equivalences, in normalized map form and equivalence form.
+  under isometries, in general map form and equivalence-specialized form.
 * `QuadraticMap.IsometryEquiv.spinGroupEquiv_comp_spinTransvectionHom`: the Spin root-subgroup
   homomorphisms are natural under isometric equivalences.
 * `CliffordAlgebra.spinTransvection_eq_one_iff`: for `u ≠ 0`, `L_{u,w} = 1` exactly when
@@ -241,32 +241,20 @@ def spinTransvection (hQ : Q.Nondegenerate) (hu : Q u = 0) (huw : polar Q u w = 
 theorem coe_spinTransvection (hQ : Q.Nondegenerate) (hu : Q u = 0) (huw : polar Q u w = 0) :
     (spinTransvection hQ hu huw : CliffordAlgebra Q) = 1 + ι Q w * ι Q u := (rfl)
 
-/-- The Spin-group map induced by an isometric equivalence transports the canonical lift of an
-Eichler transvection. -/
+/-- The Spin-group map induced by an isometry transports the canonical lift of an Eichler
+transvection, provided both quadratic forms are nondegenerate. -/
 @[simp]
-theorem _root_.QuadraticMap.IsometryEquiv.spinGroupMap_spinTransvection
+theorem _root_.QuadraticMap.Isometry.spinGroupMap_spinTransvection
     {V₂ : Type*} [AddCommGroup V₂] [Module K V₂] {Q₂ : QuadraticForm K V₂}
-    (e : Q.IsometryEquiv Q₂) (hQ : Q.Nondegenerate) (hu : Q u = 0)
+    (f : Q →qᵢ Q₂) (hQ : Q.Nondegenerate) (hQ₂ : Q₂.Nondegenerate) (hu : Q u = 0)
     (huw : polar Q u w = 0) :
-    e.toIsometry.spinGroupMap (spinTransvection hQ hu huw) =
-      spinTransvection (u := e u) (w := e w) (e.nondegenerate_iff.mp hQ)
-        ((e.map_app u).trans hu) ((e.polar_apply u w).trans huw) := by
+    f.spinGroupMap (spinTransvection hQ hu huw) =
+      spinTransvection (u := f u) (w := f w) hQ₂
+        ((f.map_app u).trans hu) ((f.polar_apply u w).trans huw) := by
   apply Subtype.ext
-  calc
-    (e.toIsometry.spinGroupMap (spinTransvection hQ hu huw) : CliffordAlgebra Q₂) =
-        CliffordAlgebra.map e.toIsometry (spinTransvection hQ hu huw : CliffordAlgebra Q) :=
-      QuadraticMap.Isometry.coe_spinGroupMap_apply _ _
-    _ = CliffordAlgebra.map e.toIsometry (1 + ι Q w * ι Q u) :=
-      congrArg (CliffordAlgebra.map e.toIsometry) (coe_spinTransvection hQ hu huw)
-    _ = 1 + ι Q₂ (e.toIsometry w) * ι Q₂ (e.toIsometry u) := by
-      rw [map_add, map_one, map_mul, CliffordAlgebra.map_apply_ι,
-        CliffordAlgebra.map_apply_ι]
-    _ = 1 + ι Q₂ (e w) * ι Q₂ (e u) := by
-      rw [QuadraticMap.IsometryEquiv.toIsometry_apply,
-        QuadraticMap.IsometryEquiv.toIsometry_apply]
-    _ = (spinTransvection (u := e u) (w := e w) (e.nondegenerate_iff.mp hQ)
-        ((e.map_app u).trans hu) ((e.polar_apply u w).trans huw) : CliffordAlgebra Q₂) :=
-      (coe_spinTransvection _ _ _).symm
+  rw [QuadraticMap.Isometry.coe_spinGroupMap_apply, coe_spinTransvection,
+    coe_spinTransvection, map_add, map_one, map_mul, CliffordAlgebra.map_apply_ι,
+    CliffordAlgebra.map_apply_ι]
 
 /-- Transporting the canonical Spin lift of an Eichler transvection along an isometric equivalence
 transports both of its defining vectors. -/
@@ -279,7 +267,7 @@ theorem _root_.QuadraticMap.IsometryEquiv.spinGroupEquiv_spinTransvection
       spinTransvection (u := e u) (w := e w) (e.nondegenerate_iff.mp hQ)
         ((e.map_app u).trans hu) ((e.polar_apply u w).trans huw) := by
   rw [QuadraticMap.IsometryEquiv.spinGroupEquiv_apply]
-  exact e.spinGroupMap_spinTransvection hQ hu huw
+  exact e.toIsometry.spinGroupMap_spinTransvection hQ (e.nondegenerate_iff.mp hQ) hu huw
 
 /-- The Spin lifts of the Eichler transvections with a fixed isotropic vector `u` compose
 additively in `w`. -/
@@ -412,7 +400,7 @@ theorem _root_.QuadraticMap.IsometryEquiv.spinGroupEquiv_comp_spinTransvectionHo
     rw [hparam, e.transvectionParameterEquiv_mk, toMul_spinTransvectionHom_mk hQ hu huw,
       toMul_spinTransvectionHom_mk (e.nondegenerate_iff.mp hQ) ((e.map_app u).trans hu)
         ((e.polar_apply u w).trans huw), htransport,
-      QuadraticMap.IsometryEquiv.spinGroupEquiv_apply, e.spinGroupMap_spinTransvection]
+      e.spinGroupEquiv_spinTransvection]
 
 /-- **The Spin lifts lift the Eichler transvections**: followed by the projection
 `Spin(Q) → SO(Q)`, the homomorphism `w ↦ L_{u,w}` is `w ↦ E_{u,w}`. -/
