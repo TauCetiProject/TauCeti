@@ -7,8 +7,6 @@ module
 
 public import TauCeti.NumberTheory.NumberField.Global.Adeles.Discrete
 
-import Mathlib.Algebra.Order.ToIntervalMod
-
 /-!
 # A standard fundamental domain for the rational adeles
 
