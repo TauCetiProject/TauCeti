@@ -141,6 +141,10 @@ compact, connected, orientable surface of genus `g` with one boundary circle has
 def genus (S : SmoothSliceSurface K) : ℕ :=
   finrank ℚ S.firstHomology / 2
 
+/-- The genus of a slice surface is half the dimension of its first rational homology. -/
+theorem genus_def (S : SmoothSliceSurface K) : S.genus = finrank ℚ S.firstHomology / 2 :=
+  (rfl)
+
 /-- A slice surface for `K` is one for every knot `K'` with the same image. -/
 def congrRange (S : SmoothSliceSurface K) (h : range K = range K') : SmoothSliceSurface K' where
   carrier := S.carrier
@@ -165,6 +169,10 @@ def sliceGenus (K : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)) : ℕ∞ 
   ⨅ S : SmoothSliceSurface K, (S.genus : ℕ∞)
 
 variable {K K' : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)}
+
+/-- The slice genus is the infimum of the genera of all slice surfaces. -/
+theorem sliceGenus_def : sliceGenus K = ⨅ S : SmoothSliceSurface K, (S.genus : ℕ∞) :=
+  (rfl)
 
 /-- The slice genus is at most the genus of any slice surface. -/
 theorem sliceGenus_le_genus (S : SmoothSliceSurface K) : sliceGenus K ≤ S.genus :=
@@ -231,7 +239,7 @@ theorem IsSmoothSliceDisc.genus_toSmoothSliceSurface
   have := ModuleCat.isZero_iff_subsingleton.1 <|
     isZero_singularHomologyFunctor_of_contractibleSpace (ModuleCat.of ℚ ℚ)
       (TopCat.of h.toSmoothSliceSurface.carrier) one_ne_zero
-  rw [genus, finrank_zero_of_subsingleton, Nat.zero_div]
+  rw [genus_def, finrank_zero_of_subsingleton, Nat.zero_div]
 
 /-- **Smoothly slice knots have slice genus `0`.** -/
 theorem IsSmoothlySlice.sliceGenus_eq_zero (h : IsSmoothlySlice K) : sliceGenus K = 0 := by
