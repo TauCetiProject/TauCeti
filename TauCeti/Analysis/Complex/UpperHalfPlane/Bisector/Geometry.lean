@@ -81,7 +81,7 @@ private theorem exists_pos_re_inv_bisector_smul_eq {p q : ℍ} (hpq : p ≠ q) (
       (a ^ 2 * Complex.normSq (w : ℂ) - 1) / (2 * N) := by
     have hr' : ((bisector p q)⁻¹ • z : ℍ).re =
         (((↑(rotation (Real.pi / 4)) : PSL(2, ℝ))⁻¹ • v : ℍ)).re := by
-      simp only [bisector_def, mul_inv_rev, mul_smul, v, w, g, d]
+      simp only [bisector, mul_inv_rev, mul_smul, v, w, g, d]
     have ht : Real.sin (Real.pi / 4) * Real.cos (Real.pi / 4) = 1 / 2 := by
       rw [Real.sin_pi_div_four, Real.cos_pi_div_four]
       nlinarith [Real.sq_sqrt (show (0 : ℝ) ≤ 2 by positivity)]
