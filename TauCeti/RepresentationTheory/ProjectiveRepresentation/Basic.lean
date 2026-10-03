@@ -175,13 +175,14 @@ theorem tensorProduct {V' : Type*} [AddCommMonoid V'] [Module k V'] {ρ' : G →
     IsProjectiveRep (fun g ↦ TensorProduct.congr (ρ g) (ρ' g)) (α * α') where
   isFactorSet := have := h.isFactorSet; have := h'.isFactorSet; inferInstance
   map_one := by
-    refine LinearEquiv.toLinearMap_injective (TensorProduct.ext' fun x y ↦ ?_)
-    simp [h.map_one, h'.map_one]
+    rw [h.map_one, h'.map_one, LinearEquiv.one_eq_refl, LinearEquiv.one_eq_refl,
+      TensorProduct.congr_refl_refl, LinearEquiv.one_eq_refl]
   mul_apply g₁ g₂ x := by
-    induction x using TensorProduct.inductionOn with
-    | tmul x y =>
-      simp [h.mul_apply, h'.mul_apply, TensorProduct.smul_tmul', smul_smul, mul_comm]
-    | add x y hx hy => simp only [map_add, hx, hy, smul_add]
+    have := TensorProduct.map_mul (ρ g₁ : V →ₗ[k] V) (ρ g₂) (ρ' g₁ : V' →ₗ[k] V') (ρ' g₂)
+    rw [h.toLinearMap_mul, h'.toLinearMap_mul, TensorProduct.map_smul_left,
+      TensorProduct.map_smul_right, smul_smul, ← TensorProduct.toLinearMap_congr,
+      ← TensorProduct.toLinearMap_congr, ← TensorProduct.toLinearMap_congr] at this
+    exact congr($this.symm x)
 
 end IsProjectiveRep
 

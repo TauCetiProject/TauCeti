@@ -71,12 +71,10 @@ noncomputable def equivOfRange (f : IntertwiningMap ρ σ) (hf : Function.Inject
 
 /-- **An intertwining map commutes with the action of the monoid algebra**, not only with that of
 the group elements. -/
+@[simp]
 theorem apply_asAlgebraHom (f : IntertwiningMap ρ σ) (r : MonoidAlgebra A G) (v : V) :
-    f (ρ.asAlgebraHom r v) = σ.asAlgebraHom r (f v) := by
-  induction r using MonoidAlgebra.induction_linear with
-  | zero => simp
-  | add r s hr hs => simp [hr, hs]
-  | single g a => simp [asAlgebraHom_single, f.isIntertwining]
+    f (ρ.asAlgebraHom r v) = σ.asAlgebraHom r (f v) :=
+  (equivLinearMapAsModule ρ σ f).map_smul r (ρ.asModuleEquiv.symm v)
 
 @[simp]
 theorem equivOfRange_apply_coe (f : IntertwiningMap ρ σ) (hf : Function.Injective f)

@@ -188,8 +188,8 @@ noncomputable def homAction (q : inertia A ⧸ N.subgroupOf (inertia A)) :
 theorem homAction_mk_apply (t : inertia A)
     (φ : Representation.IntertwiningMap A.ρ (σ.comp (Subgroup.inclusion (le_inertia A))))
     (x : A) :
-    h.homAction σ t φ x = σ t (φ ((ρ t).symm x)) :=
-  (rfl)
+    h.homAction σ t φ x = σ t (φ ((ρ t).symm x)) := by
+  rw [homAction, QuotientGroup.mk, Quotient.liftOn'_mk'', homActionAux_apply]
 
 /-- **`Hom_N(A, W)` is a projective representation of the inertia quotient whose factor set is the
 inverse of `β`.** Over an algebraically closed field and for an irreducible `A`, the class of `β`
@@ -243,8 +243,8 @@ noncomputable def evalTensor : (h.tensorRep σ).IntertwiningMap σ :=
 @[simp]
 theorem evalTensor_tmul (x : A)
     (φ : Representation.IntertwiningMap A.ρ (σ.comp (Subgroup.inclusion (le_inertia A)))) :
-    h.evalTensor σ (x ⊗ₜ φ) = φ x :=
-  (rfl)
+    h.evalTensor σ (x ⊗ₜ φ) = φ x := by
+  rw [evalTensor, LinearMap.toIntertwiningMap, TensorProduct.lift.tmul, LinearMap.mk₂_apply]
 
 end Action
 
@@ -324,7 +324,8 @@ theorem tensorRepEquiv_tmul [σ.IsIrreducible]
     (hφ : φ ≠ 0) (x : A)
     (ψ : Representation.IntertwiningMap A.ρ (σ.comp (Subgroup.inclusion (le_inertia A)))) :
     h.tensorRepEquiv σ hφ (x ⊗ₜ ψ) = ψ x :=
-  (rfl)
+  (congrFun (IntertwiningMap.coe_ofBijective _ _ (h.evalTensor σ) _) _).trans
+    (h.evalTensor_tmul σ x ψ)
 
 end Field
 
