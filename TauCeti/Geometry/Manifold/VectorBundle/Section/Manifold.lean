@@ -144,27 +144,6 @@ theorem isManifold_sectionZero :
     Set.inter_univ, Set.preimage_id, Function.comp_id, Function.id_comp] using
     contDiffOn_sectionZeroChartAt_trans hf hFred hsurj hindex hs z w
 
-include hs in
-/-- The inclusion of a section's regular zero manifold into its Banach parameter space is
-smooth for the implicit-function atlas. -/
-theorem contMDiff_coe_sectionZero :
-    letI := sectionZeroChartedSpace hf hFred hsurj hindex hb he
-    ContMDiff (modelWithCornersSelf 𝕜 (Fin n → 𝕜)) (modelWithCornersSelf 𝕜 X) m
-      (Subtype.val : ↥{y | s y = 0} → X) := by
-  let _ := sectionZeroChartedSpace hf hFred hsurj hindex hb he
-  intro z
-  rw [contMDiffAt_iff]
-  refine ⟨continuous_subtype_val.continuousAt, ?_⟩
-  have htarget := (sectionZeroChartAt hf hFred hsurj hindex z).map_source
-    (mem_sectionZeroChartAt_source hf hFred hsurj hindex hb he z)
-  have hcont := (contDiffOn_coe_sectionZeroChartAt_symm hf hFred hsurj hindex hs z).contDiffAt
-    ((sectionZeroChartAt hf hFred hsurj hindex z).open_target.mem_nhds htarget)
-  simpa only [extChartAt, OpenPartialHomeomorph.extend_coe,
-    OpenPartialHomeomorph.extend_coe_symm, modelWithCornersSelf_coe,
-    modelWithCornersSelf_coe_symm, OpenPartialHomeomorph.refl_apply,
-    chartAt_self_eq, sectionZeroChartedSpace_chartAt, Function.comp_def,
-    Set.range_id, id_eq] using hcont.contDiffWithinAt
-
 /-- The derivative of the zero-manifold inclusion at a zero is the inclusion of the kernel
 of the fiber-coordinate derivative `D z`, read through its identification with the index model. -/
 theorem hasMFDerivAt_coe_sectionZero (z : ↥{y | s y = 0}) :
@@ -294,5 +273,15 @@ theorem isImmersionOfComplement_coe_sectionZero :
     · rfl
     rw [hA_symm, hL]
     exact sub_self _
+
+include hs in
+/-- The inclusion of a section's regular zero manifold into its Banach parameter space is
+smooth for the implicit-function atlas. -/
+theorem contMDiff_coe_sectionZero :
+    letI := sectionZeroChartedSpace hf hFred hsurj hindex hb he
+    ContMDiff (modelWithCornersSelf 𝕜 (Fin n → 𝕜)) (modelWithCornersSelf 𝕜 X) m
+      (Subtype.val : ↥{y | s y = 0} → X) := by
+  let _ := sectionZeroChartedSpace hf hFred hsurj hindex hb he
+  exact (isImmersionOfComplement_coe_sectionZero hf hFred hsurj hindex hb he hs).contMDiff
 
 end TauCeti
