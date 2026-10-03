@@ -19,13 +19,11 @@ form `w ^ p - w` in the base field, the extension has degree `p` and its Galois 
 is the additive group of `ZMod p`. This supplies the field-theoretic input for the
 ramification theory of Artin–Schreier covers.
 
-The splitting construction translates Mathlib's `Subfield.splits_bot`; the degree
-computation uses the translation character and `IsGalois.card_aut_eq_finrank`.
-
 ## References
 
 * H. Stichtenoth, *Algebraic Function Fields and Codes*, 2nd ed., GTM 254, Springer, 2009,
   Proposition 3.7.8.
+* Mathlib: `Subfield.splits_bot` and `IsGalois.card_aut_eq_finrank`.
 -/
 
 public section
