@@ -132,7 +132,7 @@ theorem finite_dirichletCompetitors [ProperSpace X] [ProperlyDiscontinuousSMul G
 For a bounded `K`, there is a finite set `s` of group elements such that intersecting `K` with
 the full Dirichlet domain is the same as imposing only the inequalities indexed by `s` on `K`.
 This is the local-finiteness input for viewing Dirichlet domains as locally finite intersections
-of half-spaces. -/
+of the distance-dominance regions `{x | dist x p ≤ dist x (g • p)}`. -/
 theorem exists_finset_dirichletDomain_inter_eq [ProperSpace X] [ProperlyDiscontinuousSMul G X]
     (p : X) {K : Set X} (hK : Bornology.IsBounded K) :
     ∃ s : Finset G,

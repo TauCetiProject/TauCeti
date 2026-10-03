@@ -11,15 +11,16 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Measure
 
 /-!
-# Hyperbolic perpendicular bisectors and half-spaces
+# Hyperbolic perpendicular bisectors and distance dominance
 
 For two points `p` and `q` of the upper half-plane, the points equidistant from them in the
 hyperbolic metric are cut out by the equation `q.im * |z - p|² = p.im * |z - q|²` in the plane.
 When `p ≠ q` this is a Euclidean line (if `p.im = q.im`) or a Euclidean circle, so the hyperbolic
 perpendicular bisector of `p` and `q` has zero invariant area.
 
-When `p ≠ q`, the corresponding weak inequality describes the closed hyperbolic half-space
-consisting of points at least as close to `p` as to `q`. This is the form used in the defining
+Likewise, the points at least as close to `p` as to `q` (the distance-dominance, or Voronoi,
+region of `p` relative to `q`) are cut out by the weak inequality
+`q.im * |z - p|² ≤ p.im * |z - q|²` in the plane. This is the planar form of the defining
 inequalities of a Dirichlet domain.
 
 This is the measure-theoretic input making the Dirichlet domain of a Fuchsian group a
@@ -29,8 +30,8 @@ fundamental domain: distinct translates of a Dirichlet domain meet only along su
 
 * `TauCeti.UpperHalfPlane.dist_eq_dist_iff`: the planar equation of the hyperbolic perpendicular
   bisector.
-* `TauCeti.UpperHalfPlane.dist_le_dist_iff`: the planar inequality defining the corresponding
-  closed hyperbolic half-space.
+* `TauCeti.UpperHalfPlane.dist_le_dist_iff`: the planar inequality for the region of points at
+  least as close to `p` as to `q`.
 * `TauCeti.UpperHalfPlane.volume_setOf_dist_eq_dist`: the hyperbolic perpendicular bisector of two
   distinct points is a null set.
 
@@ -61,9 +62,8 @@ theorem dist_eq_dist_iff {z p q : ℍ} :
   constructor <;> intro h <;> nlinarith [h]
 
 /-- A point is hyperbolically at least as close to `p` as to `q` exactly when
-`q.im * |z - p|² ≤ p.im * |z - q|²` in the plane. When `p ≠ q`, this is the closed half-space
-bounded by the hyperbolic perpendicular bisector of `p` and `q`; compare Beardon, §9.4, and
-Katok, §3.2. -/
+`q.im * |z - p|² ≤ p.im * |z - q|²` in the plane. This is the planar form of a defining
+inequality of a Dirichlet domain; compare Beardon, §9.4, and Katok, §3.2. -/
 theorem dist_le_dist_iff {z p q : ℍ} :
     dist z p ≤ dist z q ↔ q.im * dist (z : ℂ) p ^ 2 ≤ p.im * dist (z : ℂ) q ^ 2 := by
   have hz := z.im_pos
