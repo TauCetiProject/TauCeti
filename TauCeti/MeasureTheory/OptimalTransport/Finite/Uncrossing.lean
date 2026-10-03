@@ -87,6 +87,39 @@ theorem exists_uncross (A : TransportMatrix μ ν) {i₁ i₂ : ι} {j₁ j₂ :
   intro q
   rw [toRealFun_ofRealFun]
 
+/-- The cost change determined by a four-cell update, for any real cost. No sign or
+ordering assumptions are needed for this exact formula. -/
+theorem cost_eq_of_uncross_update (A B : TransportMatrix μ ν) (c : ι × κ → ℝ)
+    (δ : ℝ) (i₁ i₂ : ι) (j₁ j₂ : κ)
+    (hB : (open Classical in ∀ q, B.toRealFun q = A.toRealFun q +
+      δ * (Pi.single (M := fun _ : ι × κ ↦ ℝ) (i₁, j₁) (1 : ℝ) q +
+        Pi.single (M := fun _ : ι × κ ↦ ℝ) (i₂, j₂) (1 : ℝ) q -
+        Pi.single (M := fun _ : ι × κ ↦ ℝ) (i₁, j₂) (1 : ℝ) q -
+        Pi.single (M := fun _ : ι × κ ↦ ℝ) (i₂, j₁) (1 : ℝ) q))) :
+    B.cost c = A.cost c +
+      δ * (c (i₁, j₁) + c (i₂, j₂) - c (i₁, j₂) - c (i₂, j₁)) := by
+  classical
+  rw [B.cost_def, A.cost_def]
+  simp_rw [hB, mul_add]
+  rw [Finset.sum_add_distrib]
+  congr 1
+  calc
+    ∑ q, c q * (δ * (Pi.single (M := fun _ : ι × κ ↦ ℝ) (i₁, j₁) (1 : ℝ) q +
+      Pi.single (M := fun _ : ι × κ ↦ ℝ) (i₂, j₂) (1 : ℝ) q -
+      Pi.single (M := fun _ : ι × κ ↦ ℝ) (i₁, j₂) (1 : ℝ) q -
+      Pi.single (M := fun _ : ι × κ ↦ ℝ) (i₂, j₁) (1 : ℝ) q)) =
+        δ * ∑ q, c q * (Pi.single (M := fun _ : ι × κ ↦ ℝ) (i₁, j₁) (1 : ℝ) q +
+          Pi.single (M := fun _ : ι × κ ↦ ℝ) (i₂, j₂) (1 : ℝ) q -
+          Pi.single (M := fun _ : ι × κ ↦ ℝ) (i₁, j₂) (1 : ℝ) q -
+          Pi.single (M := fun _ : ι × κ ↦ ℝ) (i₂, j₁) (1 : ℝ) q) := by
+            rw [Finset.mul_sum]
+            apply Finset.sum_congr rfl
+            intro q _
+            ring
+    _ = _ := by
+      simp [mul_add, mul_sub, Finset.sum_add_distrib,
+        Finset.sum_sub_distrib, Pi.single_apply]
+
 /-- A four-cell uncrossing empties one crossing cell and does not increase cost whenever
 the uncrossed assignment satisfies the local Monge inequality. The same witness and transfer
 amount satisfy the exact four-cell update and cost formulas. -/
@@ -108,28 +141,7 @@ theorem exists_uncross_cost_le (A : TransportMatrix μ ν) (c : ι × κ → ℝ
         B.toRealFun q = A.toRealFun q)) := by
   classical
   obtain ⟨B, δ, hδ0, hδ, hB⟩ := A.exists_uncross
-  have hcost : B.cost c = A.cost c +
-      δ * (c (i₁, j₁) + c (i₂, j₂) - c (i₁, j₂) - c (i₂, j₁)) := by
-    rw [B.cost_def, A.cost_def]
-    simp_rw [hB, mul_add]
-    rw [Finset.sum_add_distrib]
-    congr 1
-    calc
-      ∑ q, c q * (δ * (Pi.single (M := fun _ : ι × κ ↦ ℝ) (i₁, j₁) (1 : ℝ) q +
-        Pi.single (M := fun _ : ι × κ ↦ ℝ) (i₂, j₂) (1 : ℝ) q -
-        Pi.single (M := fun _ : ι × κ ↦ ℝ) (i₁, j₂) (1 : ℝ) q -
-        Pi.single (M := fun _ : ι × κ ↦ ℝ) (i₂, j₁) (1 : ℝ) q)) =
-          δ * ∑ q, c q * (Pi.single (M := fun _ : ι × κ ↦ ℝ) (i₁, j₁) (1 : ℝ) q +
-            Pi.single (M := fun _ : ι × κ ↦ ℝ) (i₂, j₂) (1 : ℝ) q -
-            Pi.single (M := fun _ : ι × κ ↦ ℝ) (i₁, j₂) (1 : ℝ) q -
-            Pi.single (M := fun _ : ι × κ ↦ ℝ) (i₂, j₁) (1 : ℝ) q) := by
-              rw [Finset.mul_sum]
-              apply Finset.sum_congr rfl
-              intro q _
-              ring
-      _ = _ := by
-        simp [mul_add, mul_sub, Finset.sum_add_distrib,
-          Finset.sum_sub_distrib, Pi.single_apply]
+  have hcost := A.cost_eq_of_uncross_update B c δ i₁ i₂ j₁ j₂ hB
   have hcost_le : B.cost c ≤ A.cost c := by
     rw [hcost]
     have hcross : c (i₁, j₁) + c (i₂, j₂) - c (i₁, j₂) - c (i₂, j₁) ≤ 0 := by
