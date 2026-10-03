@@ -184,7 +184,9 @@ theorem tensorProduct {V' : Type*} [AddCommMonoid V'] [Module k V'] {ρ' : G →
     calc TensorProduct.congr (ρ g₁) (ρ' g₁) (TensorProduct.congr (ρ g₂) (ρ' g₂) x)
         = TensorProduct.map ((ρ g₁ : V →ₗ[k] V) * (ρ g₂ : V →ₗ[k] V))
             ((ρ' g₁ : V' →ₗ[k] V') * (ρ' g₂ : V' →ₗ[k] V')) x := by
-          rw [hc, hc, TensorProduct.map_mul, Module.End.mul_apply]
+          rw [← LinearEquiv.mul_apply, ← TensorProduct.congr_mul, ← LinearEquiv.coe_toLinearMap,
+            TensorProduct.toLinearMap_congr, LinearEquiv.coe_toLinearMap_mul,
+            LinearEquiv.coe_toLinearMap_mul]
       _ = TensorProduct.map ((α g₁ g₂ : k) • (ρ (g₁ * g₂) : V →ₗ[k] V))
             ((α' g₁ g₂ : k) • (ρ' (g₁ * g₂) : V' →ₗ[k] V')) x := by
           rw [h.toLinearMap_mul, h'.toLinearMap_mul]
