@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Toric.Algebraic.Fan.LeastCone
 public import TauCeti.Geometry.Toric.Analytic.Fan.Map.Torus
-public import TauCeti.Geometry.Toric.Analytic.Fan.Orbit
 
 /-!
 # Orbit and affine-chart preimages under toric maps
@@ -60,7 +59,9 @@ theorem analyticChartMap_distinguishedPoint {σ : Φ.cones} {τ : Ψ.cones}
       f.map_lattice h m : N →+ ℤ) = (m : N' →+ ℤ).comp f.latticeMap := by
     ext n
     simp
-  have hvanish := f.realCharacter_eq_zero_on_leastCone_iff σ.2 τ.2 h m.2
+  have hvanish := f.realCharacter_eq_zero_on_leastCone_iff σ.2
+    (dualSemigroup_anti Ψ.lattice
+      (f.leastCone_le σ.2 τ.2 (by rintro _ ⟨x, hx, rfl⟩; exact h hx)) m.2)
   simp only [hchar]
   exact if_congr hvanish.symm rfl rfl
 

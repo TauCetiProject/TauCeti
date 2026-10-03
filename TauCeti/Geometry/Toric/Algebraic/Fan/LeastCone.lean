@@ -12,9 +12,9 @@ public import TauCeti.Geometry.Toric.Algebraic.Fan.Basic
 /-!
 # Characters on the least target cone
 
-For a fan morphism, a character nonnegative on a target cone containing the image of a source
-cone vanishes on that image exactly when it vanishes on the least target cone. Indeed, its
-zero locus cuts out a face of the target cone, and this face must contain the least cone.
+For a fan morphism, a character nonnegative on the least target cone of a source cone vanishes
+on the image of the source cone exactly when it vanishes on the least target cone. Indeed, its
+zero locus cuts out a face of the least target cone, and this face must contain the least cone.
 This character criterion identifies the image of distinguished points and orbit strata under
 toric maps without choosing coordinates.
 
@@ -32,11 +32,11 @@ variable {N N' V V' : Type*} [AddCommGroup N] [AddCommGroup N']
   [AddCommGroup V] [AddCommGroup V'] [Module ℝ V] [Module ℝ V']
   {i : N →+ V} {i' : N' →+ V'} {Φ : Fan i} {Ψ : Fan i'}
 
-/-- A character nonnegative on a target cone containing the image of `σ` vanishes on the least
-such cone exactly when its pullback vanishes on `σ`. Neither fan needs to be regular. -/
+/-- A character nonnegative on the least target cone of `σ` vanishes on that cone exactly when
+its pullback vanishes on `σ`. Neither fan needs to be regular. -/
 theorem realCharacter_eq_zero_on_leastCone_iff (f : FanHom Φ Ψ) {σ : PointedCone ℝ V}
-    (hσ : σ ∈ Φ.cones) {τ : PointedCone ℝ V'} (hτ : τ ∈ Ψ.cones)
-    (hστ : Set.MapsTo f.realMap σ τ) {m : N' →+ ℤ} (hm : m ∈ dualSemigroup Ψ.lattice τ) :
+    (hσ : σ ∈ Φ.cones) {m : N' →+ ℤ}
+    (hm : m ∈ dualSemigroup Ψ.lattice (f.leastCone hσ)) :
     (∀ y ∈ f.leastCone hσ, Ψ.lattice.realCharacter m y = 0) ↔
       ∀ x ∈ σ, Φ.lattice.realCharacter (m.comp f.latticeMap) x = 0 := by
   rw [Φ.lattice.realCharacter_comp Ψ.lattice f.latticeMap f.realMap f.map_lattice]
@@ -46,10 +46,10 @@ theorem realCharacter_eq_zero_on_leastCone_iff (f : FanHom Φ Ψ) {σ : PointedC
   · intro h
     have hface := PointedCone.isFaceOf_inf_ker ((mem_dualSemigroup Ψ.lattice m).1 hm)
     have hle : f.leastCone hσ ≤
-        τ ⊓ PointedCone.ofSubmodule (LinearMap.ker (Ψ.lattice.realCharacter m)) :=
-      f.leastCone_le hσ (Ψ.mem_of_isFaceOf hτ hface) (by
+        f.leastCone hσ ⊓ PointedCone.ofSubmodule (LinearMap.ker (Ψ.lattice.realCharacter m)) :=
+      f.leastCone_le hσ (Ψ.mem_of_isFaceOf (f.leastCone_mem hσ) hface) (by
         rintro _ ⟨x, hx, rfl⟩
-        exact ⟨hστ hx, h x hx⟩)
+        exact ⟨f.mapsTo_leastCone hσ hx, h x hx⟩)
     intro y hy
     exact (hle hy).2
 
