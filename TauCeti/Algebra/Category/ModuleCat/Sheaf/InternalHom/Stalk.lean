@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.InternalHom.Basic
 public import TauCeti.Algebra.Category.ModuleCat.Presheaf.Stalk
-public import Mathlib.CategoryTheory.Sites.LeftExact
 
 /-!
 # The stalk comparison for internal Hom

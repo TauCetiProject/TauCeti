@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Stalk
 public import Mathlib.Algebra.Category.ModuleCat.Presheaf.Pushforward
+public import TauCeti.Topology.Sheaves.Stalks
 
 /-!
 # Linear maps from stalks of presheaves of modules
@@ -32,30 +33,6 @@ variable {X : TopCat.{u}} {R : X.Presheaf CommRingCat.{u}}
   (M : PresheafOfModules.{u} (R ⋙ forget₂ _ _)) (x : X)
   {T : Type u} [AddCommGroup T]
 
-/-- The additive universal property of a module stalk, using maps compatible with restriction. -/
-def stalkLiftAddHom
-    (f : ∀ (U : Opens X), x ∈ U → M.obj (op U) →+ T)
-    (hf : ∀ {U V : Opens X} (i : U ⟶ V) (hx : x ∈ U) (m : M.obj (op V)),
-      f U hx (M.map i.op m) = f V (i.le hx) m) :
-    ↑(TopCat.Presheaf.stalk M.presheaf x) →+ T :=
-  (colimit.desc ((OpenNhds.inclusion x).op ⋙ M.presheaf)
-    { pt := AddCommGrpCat.of T
-      ι :=
-        { app := fun U ↦ AddCommGrpCat.ofHom (f U.unop.1 U.unop.2)
-          naturality := fun {U V} i ↦ by
-            ext m
-            exact hf i.unop V.unop.2 m } }).hom
-
-/-- The additive map induced from compatible section maps takes a germ to its prescribed value. -/
-theorem stalkLiftAddHom_germ
-    (f : ∀ (U : Opens X), x ∈ U → M.obj (op U) →+ T)
-    (hf : ∀ {U V : Opens X} (i : U ⟶ V) (hx : x ∈ U) (m : M.obj (op V)),
-      f U hx (M.map i.op m) = f V (i.le hx) m)
-    (U : Opens X) (hx : x ∈ U) (m : M.obj (op U)) :
-    M.stalkLiftAddHom x f hf (TopCat.Presheaf.germ M.presheaf U x hx m) = f U hx m :=
-  ConcreteCategory.congr_hom
-    (colimit.ι_desc (F := (OpenNhds.inclusion x).op ⋙ M.presheaf) _ (op ⟨U, hx⟩)) m
-
 variable [Module (R.stalk x) T]
 
 /-- Compatible section maps that are linear for the ring germ maps induce a linear map from
@@ -67,17 +44,17 @@ def stalkLift
     (hs : ∀ (U : Opens X) (hx : x ∈ U) (r : R.obj (op U)) (m : M.obj (op U)),
       f U hx (r • m) = R.germ U x hx r • f U hx m) :
     ↑(TopCat.Presheaf.stalk M.presheaf x) →ₗ[R.stalk x] T where
-  toFun := M.stalkLiftAddHom x f hf
+  toFun := TopCat.Presheaf.stalkLiftAddHom M.presheaf x f hf
   map_add' := map_add _
   map_smul' r m := by
     obtain ⟨U, hxU, r, rfl⟩ := R.exists_germ_eq r
     obtain ⟨V, hVU, hxV, m, rfl⟩ := TopCat.Presheaf.exists_le_germ_eq M.presheaf m hxU
     rw [← R.germ_res_apply (homOfLE hVU) x hxV r,
       ← M.germ_smul (R := R) x V hxV (R.map (homOfLE hVU).op r) m]
-    exact (M.stalkLiftAddHom_germ x f hf V hxV _).trans
+    exact (TopCat.Presheaf.stalkLiftAddHom_germ M.presheaf x f hf V hxV _).trans
       ((hs V hxV (R.map (homOfLE hVU).op r) m).trans
         (congrArg (fun t : T ↦ R.germ V x hxV (R.map (homOfLE hVU).op r) • t)
-          (M.stalkLiftAddHom_germ x f hf V hxV m).symm))
+          (TopCat.Presheaf.stalkLiftAddHom_germ M.presheaf x f hf V hxV m).symm))
 
 /-- The linear map induced from compatible section maps takes a germ to its prescribed value. -/
 theorem stalkLift_germ
@@ -88,7 +65,7 @@ theorem stalkLift_germ
       f U hx (r • m) = R.germ U x hx r • f U hx m)
     (U : Opens X) (hx : x ∈ U) (m : M.obj (op U)) :
     M.stalkLift x f hf hs (TopCat.Presheaf.germ M.presheaf U x hx m) = f U hx m :=
-  M.stalkLiftAddHom_germ x f hf U hx m
+  TopCat.Presheaf.stalkLiftAddHom_germ M.presheaf x f hf U hx m
 
 /-- Linear maps out of a stalk are determined by their values on germs. -/
 @[ext]
