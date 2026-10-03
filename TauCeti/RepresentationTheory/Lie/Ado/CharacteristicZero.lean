@@ -190,11 +190,7 @@ private theorem isAdoStage_lieSpan_insert (T : LieSubalgebra K L) {x : L} (hx : 
     LieSubalgebra.coe_lieSpan_eq_span_of_forall_lie_eq_zero (by simp)
   refine isAdoStage_of_sup (H := LieSubalgebra.lieSpan K L {x})
     (by rw [LieSubalgebra.lieSpan_insert_toSubmodule T hx, hH, sup_comm])
-    (Submodule.disjoint_def.mpr fun y hyT hyx ↦ ?_) (fun h hh t ht ↦ ?_) hZ ?_ hT
-  · rw [hH] at hyx
-    obtain ⟨a, rfl⟩ := Submodule.mem_span_singleton.mp hyx
-    by_contra ha
-    exact hxT (by simpa [smul_ne_zero_iff.mp ha |>.1] using T.smul_mem (a⁻¹) hyT)
+    (hH ▸ Submodule.disjoint_span_singleton_of_notMem hxT) (fun h hh t ht ↦ ?_) hZ ?_ hT
   · rw [← LieSubalgebra.mem_toSubmodule, hH] at hh
     obtain ⟨a, rfl⟩ := Submodule.mem_span_singleton.mp hh
     rw [smul_lie]
@@ -225,14 +221,6 @@ private theorem isAdoStage_of_forall_ne (U : LieSubalgebra K L) (P : LieSubalgeb
     have := Submodule.finrank_le T'.toSubmodule
     exact ih _ (by omega) T' hPT' hT'U hT' rfl
 
-omit [FiniteDimensional K L] in
-/-- `T` lies strictly below the Lie span of `x` and `T` when `x ∉ T`. -/
-private theorem lt_lieSpan_insert (T : LieSubalgebra K L) {x : L} (hxT : x ∉ T) :
-    T < LieSubalgebra.lieSpan K L (insert x (T : Set L)) :=
-  IsConcreteLE.lt_iff_le_and_exists.mpr
-    ⟨fun _ ht ↦ LieSubalgebra.subset_lieSpan (Set.mem_insert_of_mem _ ht),
-      x, LieSubalgebra.subset_lieSpan (Set.mem_insert _ _), hxT⟩
-
 /-- The nilradical is an Ado stage, by a flag of codimension-one steps from the centre inside the
 nilradical. -/
 private theorem isAdoStage_nilradical :
@@ -249,7 +237,7 @@ private theorem isAdoStage_nilradical :
   obtain ⟨x, hxN, hxT, hx⟩ := (LieAlgebra.nilradical K L).exists_mem_notMem_lie_mem_of_lt hlt
   have hxnorm : x ∈ T.normalizer := (T.mem_normalizer_iff x).mpr fun t ht ↦ hx t (hTN' t ht)
   refine ⟨_, fun z hz ↦ LieSubalgebra.subset_lieSpan (Set.mem_insert_of_mem _ (hZ z hz)),
-    lt_lieSpan_insert T hxT, fun w hw ↦ ?_, isAdoStage_lieSpan_insert T hxnorm
+    T.lt_lieSpan_insert hxT, fun w hw ↦ ?_, isAdoStage_lieSpan_insert T hxnorm
       (fun t ht ↦ (LieAlgebra.nilradical K L).lie_mem (hTN' t ht)) hxT hZ (Or.inr ⟨hxN, hTN'⟩) hT⟩
   obtain ⟨a, t, ht, rfl⟩ := (T.mem_lieSpan_insert_iff hxnorm).mp hw
   exact (LieIdeal.mem_toLieSubalgebra K L _ _).mpr
@@ -277,7 +265,7 @@ private theorem isAdoStage_radical : IsAdoStage K L (LieAlgebra.radical K L).toL
   have hxnorm : x ∈ T.normalizer := (T.mem_normalizer_iff x).mpr fun t ht ↦
     hNT _ (lie_mem_nilradical_of_mem_radical x (hTR' t ht))
   refine ⟨_, fun z hz ↦ LieSubalgebra.subset_lieSpan (Set.mem_insert_of_mem _ (hNT z hz)),
-    lt_lieSpan_insert T hxT, fun w hw ↦ ?_, isAdoStage_lieSpan_insert T hxnorm
+    T.lt_lieSpan_insert hxT, fun w hw ↦ ?_, isAdoStage_lieSpan_insert T hxnorm
       (fun t ht ↦ lie_mem_nilradical_of_mem_radical x (hTR' t ht)) hxT
       (fun z hz ↦ hNT z (LieAlgebra.center_le_nilradical K L hz)) (Or.inl hNT) hT⟩
   obtain ⟨a, t, ht, rfl⟩ := (T.mem_lieSpan_insert_iff hxnorm).mp hw
