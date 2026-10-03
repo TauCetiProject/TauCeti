@@ -13,8 +13,9 @@ public import TauCeti.Topology.Sheaves.Stalks
 # Linear maps from stalks of presheaves of modules
 
 Mathlib endows the stalk of a presheaf of modules with a module structure over the stalk of
-its ring presheaf. This file gives its linear universal property: compatible additive maps
-on sections that respect scalar multiplication by germs induce a linear map from the stalk.
+its ring presheaf, without requiring commutativity. This file gives its linear universal property:
+compatible additive maps on sections that respect scalar multiplication by germs induce a linear
+map from the stalk.
 It also constructs the stalk map of a morphism defined on a neighborhood, for use with
 local morphisms such as sections of an internal Hom.
 -/
@@ -29,8 +30,8 @@ noncomputable section
 
 namespace PresheafOfModules
 
-variable {X : TopCat.{u}} {R : X.Presheaf CommRingCat.{u}}
-  (M : PresheafOfModules.{u} (R ⋙ forget₂ _ _)) (x : X)
+variable {X : TopCat.{u}} {R : X.Presheaf RingCat.{u}}
+  (M : PresheafOfModules.{u} R) (x : X)
   {T : Type u} [AddCommGroup T]
 
 variable [Module (R.stalk x) T]
@@ -50,7 +51,7 @@ def stalkLift
     obtain ⟨U, hxU, r, rfl⟩ := R.exists_germ_eq r
     obtain ⟨V, hVU, hxV, m, rfl⟩ := TopCat.Presheaf.exists_le_germ_eq M.presheaf m hxU
     rw [← R.germ_res_apply (homOfLE hVU) x hxV r,
-      ← M.germ_smul (R := R) x V hxV (R.map (homOfLE hVU).op r) m]
+      ← M.germ_ringCat_smul (R := R) x V hxV (R.map (homOfLE hVU).op r) m]
     exact (TopCat.Presheaf.stalkLiftAddHom_germ M.presheaf x f hf V hxV _).trans
       ((hs V hxV (R.map (homOfLE hVU).op r) m).trans
         (congrArg (fun t : T ↦ R.germ V x hxV (R.map (homOfLE hVU).op r) • t)
@@ -67,11 +68,11 @@ theorem stalkLift_germ
     M.stalkLift x f hf hs (TopCat.Presheaf.germ M.presheaf U x hx m) = f U hx m :=
   TopCat.Presheaf.stalkLiftAddHom_germ M.presheaf x f hf U hx m
 
-variable {N : PresheafOfModules.{u} (R ⋙ forget₂ _ _)}
+variable {N : PresheafOfModules.{u} R}
 
 variable (U : Opens X)
-  (φ : (pushforward₀OfCommRingCat (Over.forget U) R).obj M ⟶
-    (pushforward₀OfCommRingCat (Over.forget U) R).obj N)
+  (φ : (pushforward₀ (Over.forget U) R).obj M ⟶
+    (pushforward₀ (Over.forget U) R).obj N)
 
 private def stalkMapOverSection (hxU : x ∈ U) :
     ∀ (V : Opens X), x ∈ V → M.obj (op V) →+ ↑(TopCat.Presheaf.stalk N.presheaf x) :=
@@ -114,7 +115,7 @@ private theorem stalkMapOverSection_smul (hxU : x ∈ U) :
           (M.map_smul (homOfLE inf_le_left : V ⊓ U ⟶ V).op r m)).trans ?_
       refine (congrArg (TopCat.Presheaf.germ N.presheaf (V ⊓ U) x ⟨hxV, hxU⟩)
         ((φ.app (op (Over.mk (homOfLE inf_le_right : V ⊓ U ⟶ U)))).hom.map_smul _ _)).trans ?_
-      exact (N.germ_smul (R := R) x (V ⊓ U) ⟨hxV, hxU⟩ _ _).trans
+      exact (N.germ_ringCat_smul (R := R) x (V ⊓ U) ⟨hxV, hxU⟩ _ _).trans
         (congrArg (fun t ↦ t • TopCat.Presheaf.germ N.presheaf (V ⊓ U) x ⟨hxV, hxU⟩
           (φ.app (op (Over.mk (homOfLE inf_le_right : V ⊓ U ⟶ U)))
             (M.map (homOfLE inf_le_left : V ⊓ U ⟶ V).op m)))

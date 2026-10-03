@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.InternalHom.Basic
 public import TauCeti.Algebra.Category.ModuleCat.Presheaf.Stalk
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Stalk
 
 /-!
 # The stalk comparison for internal Hom
@@ -40,22 +41,30 @@ namespace SheafOfModules
 variable {X : TopCat.{u}} {R : Sheaf (Opens.grothendieckTopology X) CommRingCat.{u}}
   (M N : SheafOfModules.{u} (TauCeti.SheafOfModules.ringCatSheaf R))
 
-/-- The stalk of a sheaf of modules carries Mathlib's module structure over the stalk of
-the original commutative-ring sheaf. The carrier and action are unchanged by forgetting
-commutativity in the coefficient sheaf. -/
-instance stalkModule (P : SheafOfModules.{u} (TauCeti.SheafOfModules.ringCatSheaf R)) (x : X) :
-    Module ↑(TopCat.Presheaf.stalk R.obj x) ↑(TopCat.Presheaf.stalk P.val.presheaf x) :=
-  let Q : PresheafOfModules.{u} (R.obj ⋙ forget₂ CommRingCat RingCat.{u}) := P.val
-  inferInstanceAs (Module ↑(TopCat.Presheaf.stalk R.obj x)
-    ↑(TopCat.Presheaf.stalk Q.presheaf x))
-
 variable (x : X)
 
 private def ihomSectionStalkMap (U : Opens X) (hx : x ∈ U)
     (s : ((ihom M).obj N).val.obj (op U)) :
     ↑(TopCat.Presheaf.stalk M.val.presheaf x) →ₗ[↑(TopCat.Presheaf.stalk R.obj x)]
-      ↑(TopCat.Presheaf.stalk N.val.presheaf x) :=
-  M.val.stalkMapOver (R := R.obj) x U (M.ihomObjEquiv N U s).val hx
+      ↑(TopCat.Presheaf.stalk N.val.presheaf x) := by
+  -- Forgetting commutativity gives a different chosen scalar colimit; rebundle its additive
+  -- map over the original commutative-ring stalk using the characteristic germ equation.
+  let f := M.val.stalkMapOver (R := (TauCeti.SheafOfModules.ringCatSheaf R).obj)
+    x U (M.ihomObjEquiv N U s).val hx
+  refine { toFun := f, map_add' := map_add f, map_smul' := ?_ }
+  intro r m
+  obtain ⟨V, hxV, r, rfl⟩ := TopCat.Presheaf.exists_germ_eq R.obj r
+  obtain ⟨W, hW, hxW, m, rfl⟩ :=
+    TopCat.Presheaf.exists_le_germ_eq M.val.presheaf m (V := V ⊓ U) ⟨hxV, hx⟩
+  let m : M.val.obj (op W) := m
+  let i : W ⟶ U := homOfLE (hW.trans inf_le_right)
+  let j : W ⟶ V := homOfLE (hW.trans inf_le_left)
+  rw [← TopCat.Presheaf.germ_res_apply R.obj j x hxW r]
+  erw [← M.val.germ_smul (R := R.obj) x W hxW (R.obj.map j.op r) m]
+  erw [M.val.stalkMapOver_germ x U _ hx W i hxW (R.obj.map j.op r • m),
+    M.val.stalkMapOver_germ x U _ hx W i hxW m,
+    ((M.ihomObjEquiv N U s).val.app (op (Over.mk i))).hom.map_smul]
+  exact N.val.germ_smul (R := R.obj) x W hxW _ _
 
 private theorem ihomSectionStalkMap_germ (U : Opens X) (hx : x ∈ U)
     (s : ((ihom M).obj N).val.obj (op U)) (V : Opens X) (i : V ⟶ U)
@@ -63,7 +72,8 @@ private theorem ihomSectionStalkMap_germ (U : Opens X) (hx : x ∈ U)
     ihomSectionStalkMap M N x U hx s (TopCat.Presheaf.germ M.val.presheaf V x hxV m) =
       TopCat.Presheaf.germ N.val.presheaf V x hxV
         ((M.ihomObjEquiv N U s).val.app (op (Over.mk i)) m) :=
-  M.val.stalkMapOver_germ (R := R.obj) x U _ hx V i hxV m
+  M.val.stalkMapOver_germ (R := (TauCeti.SheafOfModules.ringCatSheaf R).obj)
+    x U (M.ihomObjEquiv N U s).val hx V i hxV m
 
 private theorem ihomSectionStalkMap_add (U : Opens X) (hx : x ∈ U)
     (s t : ((ihom M).obj N).val.obj (op U)) :
@@ -117,22 +127,49 @@ stalks, obtained by letting germs of local morphisms act on germs of sections. -
 def ihomStalkComparison :
     ↑(TopCat.Presheaf.stalk ((ihom M).obj N).val.presheaf x) →ₗ[↑(TopCat.Presheaf.stalk R.obj x)]
       (↑(TopCat.Presheaf.stalk M.val.presheaf x) →ₗ[↑(TopCat.Presheaf.stalk R.obj x)]
-        ↑(TopCat.Presheaf.stalk N.val.presheaf x)) :=
-  ((ihom M).obj N).val.stalkLift (R := R.obj) x
-    (fun U hx ↦ AddMonoidHom.mk' (ihomSectionStalkMap M N x U hx)
-      (ihomSectionStalkMap_add M N x U hx))
+        ↑(TopCat.Presheaf.stalk N.val.presheaf x)) := by
+  -- Pin the coefficient presheaf so section scalar inference avoids repeatedly unfolding
+  -- the sheaf forgetful construction and its chosen stalk module structures.
+  let P : PresheafOfModulesOfCommRing.{u} R.obj := ((ihom M).obj N).val
+  let f : ∀ (U : Opens X), x ∈ U → P.obj (op U) →+
+      (↑(TopCat.Presheaf.stalk M.val.presheaf x) →ₗ[↑(TopCat.Presheaf.stalk R.obj x)]
+        ↑(TopCat.Presheaf.stalk N.val.presheaf x)) := fun U hx ↦
+    AddMonoidHom.mk' (ihomSectionStalkMap M N x U hx)
+    (ihomSectionStalkMap_add M N x U hx)
+  let l := TopCat.Presheaf.stalkLiftAddHom P.presheaf x f
     (ihomSectionStalkMap_res M N x)
-    (ihomSectionStalkMap_smul M N x)
+  refine { toFun := l, map_add' := map_add l, map_smul' := ?_ }
+  intro r s
+  obtain ⟨U, hxU, r, rfl⟩ := TopCat.Presheaf.exists_germ_eq R.obj r
+  obtain ⟨V, hVU, hxV, s, rfl⟩ :=
+    TopCat.Presheaf.exists_le_germ_eq P.presheaf s hxU
+  let s : P.obj (op V) := s
+  rw [← TopCat.Presheaf.germ_res_apply R.obj (homOfLE hVU) x hxV r]
+  erw [← P.germ_smul (R := R.obj)
+    x V hxV (R.obj.map (homOfLE hVU).op r) s]
+  erw [TopCat.Presheaf.stalkLiftAddHom_germ P.presheaf x f
+    (ihomSectionStalkMap_res M N x) V hxV (R.obj.map (homOfLE hVU).op r •
+      s),
+    TopCat.Presheaf.stalkLiftAddHom_germ P.presheaf x f
+      (ihomSectionStalkMap_res M N x) V hxV s]
+  exact ihomSectionStalkMap_smul M N x V hxV (R.obj.map (homOfLE hVU).op r) s
 
-/-- On a germ of a local internal-Hom section, the comparison is the stalk map of its local
-morphism. -/
+/-- On a germ of a local internal-Hom section, the comparison has the underlying additive
+map of the stalk map of its local morphism. The two linear maps use respectively the original
+commutative-ring stalk and the stalk after forgetting commutativity as their scalar rings. -/
 theorem ihomStalkComparison_germ (U : Opens X) (hx : x ∈ U)
     (s : ((ihom M).obj N).val.obj (op U)) :
-    M.ihomStalkComparison N x
-        (TopCat.Presheaf.germ ((ihom M).obj N).val.presheaf U x hx s) =
-      M.val.stalkMapOver (R := R.obj) x U (M.ihomObjEquiv N U s).val hx := by
-  exact ((ihom M).obj N).val.stalkLift_germ (R := R.obj) x _
-    (ihomSectionStalkMap_res M N x) (ihomSectionStalkMap_smul M N x) U hx s
+    (M.ihomStalkComparison N x
+        (TopCat.Presheaf.germ ((ihom M).obj N).val.presheaf U x hx s)).toAddHom =
+      (M.val.stalkMapOver (R := (TauCeti.SheafOfModules.ringCatSheaf R).obj)
+        x U (M.ihomObjEquiv N U s).val hx).toAddHom := by
+  apply AddHom.ext
+  intro m
+  exact congrArg (fun φ ↦ φ m)
+    (TopCat.Presheaf.stalkLiftAddHom_germ ((ihom M).obj N).val.presheaf x
+      (fun U hx ↦ AddMonoidHom.mk' (ihomSectionStalkMap M N x U hx)
+        (ihomSectionStalkMap_add M N x U hx))
+      (ihomSectionStalkMap_res M N x) U hx s)
 
 /-- The comparison evaluates two germs by applying the local morphism to a representative
 section in its domain. -/
@@ -143,8 +180,11 @@ theorem ihomStalkComparison_germ_apply (U : Opens X) (hx : x ∈ U)
         (TopCat.Presheaf.germ M.val.presheaf V x hxV m) =
       TopCat.Presheaf.germ N.val.presheaf V x hxV
         ((M.ihomObjEquiv N U s).val.app (op (Over.mk i)) m) := by
-  rw [ihomStalkComparison_germ]
-  exact M.val.stalkMapOver_germ (R := R.obj) x U _ hx V i hxV m
+  exact (congrArg (fun f : _ →ₙ+ _ ↦
+    f (TopCat.Presheaf.germ M.val.presheaf V x hxV m))
+      (ihomStalkComparison_germ M N x U hx s)).trans
+        (M.val.stalkMapOver_germ (R := (TauCeti.SheafOfModules.ringCatSheaf R).obj)
+          x U (M.ihomObjEquiv N U s).val hx V i hxV m)
 
 /-- The stalk comparison is covariant in the target: a morphism of target sheaves acts by
 postcomposition with its stalk map. -/
