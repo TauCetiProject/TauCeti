@@ -17,9 +17,14 @@ every point and the errors `‖f n - g‖` are eventually dominated by a fixed m
 where `g ∈ Lᵖ`, then `f n → g` in the `Lᵖ` seminorm.  This is the shape produced by truncating a
 function by cutoffs that are eventually `1` on every bounded set.
 
+The pointwise-convergence version also allows an independent `Lᵖ` dominating function.
+It applies to bounded multipliers and their difference quotients, which need not eventually
+agree with their limits.
+
 ## Main declarations
 
-* `TauCeti.tendsto_eLpNorm_sub_of_eventually_eq`: the convergence `eLpNorm (f n - g) q m → 0`.
+* `TauCeti.tendsto_eLpNorm_sub_of_eventually_eq`: convergence for eventually equal approximations.
+* `TauCeti.tendsto_eLpNorm_sub_of_tendsto_ae`: convergence under pointwise limits and domination.
 -/
 
 public section
@@ -60,6 +65,37 @@ theorem tendsto_eLpNorm_sub_of_eventually_eq {α ι F : Type*} [MeasurableSpace 
           (lintegral_rpow_enorm_lt_top_of_eLpNorm_lt_top hq0 hq hg).ne)
       (hlim.mono fun x hx => tendsto_const_nhds.congr' (hx.mono fun n hn => by
         simp [hn, ENNReal.zero_rpow_of_pos hr]))
+    simpa only [lintegral_zero] using hdom
+  have h0 : (0 : ℝ≥0∞) ^ (1 / q.toReal) = 0 := ENNReal.zero_rpow_of_pos (one_div_pos.2 hr)
+  simpa only [h0] using hlint.ennrpow_const (1 / q.toReal)
+
+/-- **Dominated convergence in `Lᵖ`.** For a finite nonzero exponent, almost-everywhere
+convergence and an eventual `Lᵖ` bound on the errors imply convergence in the `Lᵖ` seminorm.
+The measure need not be finite or sigma-finite. -/
+theorem tendsto_eLpNorm_sub_of_tendsto_ae {α ι F : Type*} [MeasurableSpace α]
+    {m : Measure α} [NormedAddCommGroup F] {l : Filter ι} [l.IsCountablyGenerated] {q : ℝ≥0∞}
+    (hq0 : q ≠ 0) (hq : q ≠ ∞) {f : ι → α → F} {g : α → F} {b : α → ℝ}
+    (hf : ∀ᶠ n in l, AEStronglyMeasurable (f n) m) (hg : AEStronglyMeasurable g m)
+    (hb : MemLp b q m) (hbound : ∀ᶠ n in l, ∀ᵐ x ∂m, ‖f n x - g x‖ ≤ b x)
+    (hlim : ∀ᵐ x ∂m, Tendsto (fun n => f n x) l (𝓝 (g x))) :
+    Tendsto (fun n => eLpNorm (f n - g) q m) l (𝓝 0) := by
+  have hr : 0 < q.toReal := ENNReal.toReal_pos hq0 hq
+  refine Tendsto.congr' (hf.mono fun n hn =>
+    (eLpNorm_eq_lintegral_rpow_enorm_toReal hq0 hq
+      (hn.sub hg)).symm) ?_
+  have hlint : Tendsto (fun n => ∫⁻ x, ‖(f n - g) x‖ₑ ^ q.toReal ∂m) l (𝓝 0) := by
+    have hdom := tendsto_lintegral_filter_of_dominated_convergence' (μ := m)
+      (F := fun n x => ‖(f n - g) x‖ₑ ^ q.toReal) (f := fun _ => 0)
+      (fun x => ‖b x‖ₑ ^ q.toReal)
+      (hf.mono fun n hn => (hn.sub hg).enorm.pow_const _)
+      (hbound.mono fun _ hn => hn.mono fun x hx => by
+        refine ENNReal.rpow_le_rpow ?_ hr.le
+        rw [Pi.sub_apply, ← ofReal_norm, ← ofReal_norm]
+        exact ENNReal.ofReal_le_ofReal (hx.trans (le_abs_self _)))
+      (lintegral_rpow_enorm_lt_top_of_eLpNorm_lt_top hq0 hq hb).ne
+      (hlim.mono fun x hx => by
+        have ht := (hx.sub_const (g x)).enorm.ennrpow_const q.toReal
+        simpa [ENNReal.zero_rpow_of_pos hr] using ht)
     simpa only [lintegral_zero] using hdom
   have h0 : (0 : ℝ≥0∞) ^ (1 / q.toReal) = 0 := ENNReal.zero_rpow_of_pos (one_div_pos.2 hr)
   simpa only [h0] using hlint.ennrpow_const (1 / q.toReal)
