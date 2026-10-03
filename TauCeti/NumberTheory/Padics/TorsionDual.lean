@@ -33,7 +33,9 @@ The comparison is the connecting map of the long exact sequence for
 direct summand of `M` over `ℤ_p`, and it is surjective because `P₀` is projective.
 
 The modules may carry an action of a `ℤ_p`-algebra `A` for which the maps are `A`-linear; the
-connecting map is then `A`-equivariant. Applied to the group algebra `A = ℤ_p[G]` of a finite group,
+connecting map is then compatible with the contragredient actions of `A`: precomposing a functional
+on `P₁` with the action of `a ∈ A` corresponds to precomposing a character of `M[p^∞]` with the
+action of `a`. Applied to the group algebra `A = ℤ_p[G]` of a finite group,
 this identifies `E¹(M) = Ext¹_{ℤ_p[G]}(M, ℤ_p[G])` of a module of projective dimension one with the
 Pontryagin dual of its `p`-power torsion.
 
@@ -47,7 +49,8 @@ Pontryagin dual of its `p`-power torsion.
 * `TauCeti.torsionDualMap_apply`: the connecting map on representatives.
 * `TauCeti.ker_torsionDualMap`: its kernel is the range of `Hom(P₀, ℤ_p) → Hom(P₁, ℤ_p)`.
 * `TauCeti.torsionDualMap_surjective`: it is surjective when `P₀` is projective over `ℤ_p`.
-* `TauCeti.torsionDualMap_comp_toLinearMap_apply`: it is equivariant for the action of `A`.
+* `TauCeti.torsionDualMap_comp_toLinearMap_apply`: it is compatible with the contragredient
+  actions of `A` on functionals and on characters.
 
 ## References
 
@@ -234,8 +237,9 @@ theorem torsionDualMap_apply (ψ : Dual ℤ_[p] P₁) (t : pPowerTorsion p A M) 
   obtain rfl : (⟨π x, hy⟩ : pPowerTorsion p A M) = t := Subtype.ext hx
   rw [torsionDualMap_eq hf hfi hπ ψ ⟨x, hy⟩, extendDual_eq hf hfi ψ _ hk]
 
-/-- The connecting map is equivariant: precomposing a functional with the action of `a ∈ A` on
-`P₁` corresponds to the action of `a` on the `p`-power torsion. -/
+/-- The connecting map is compatible with the contragredient actions of `A`: precomposing a
+functional with the action of `a ∈ A` on `P₁` corresponds to evaluating its image at `a • t`. -/
+@[simp]
 theorem torsionDualMap_comp_toLinearMap_apply (ψ : Dual ℤ_[p] P₁) (a : A)
     (t : pPowerTorsion p A M) :
     torsionDualMap p hf hfi hπ (ψ ∘ₗ DistribSMul.toLinearMap ℤ_[p] P₁ a) t =
@@ -281,27 +285,35 @@ private theorem coe_integralLift {X : Type*} [AddCommGroup X] [Module ℤ_[p] X]
   rfl
 
 omit [Module ℤ_[p] P₁] [IsScalarTower ℤ_[p] A P₁] [Module ℤ_[p] P₀] [IsScalarTower ℤ_[p] A P₀] in
-/-- Modulo its `p`-power torsion, a module over `ℤ_p` is torsion-free: a nonzero `p`-adic integer
-is a unit times a power of `p`. -/
+/-- Over `ℤ_p`, the `p`-power torsion is the whole torsion submodule: a nonzero `p`-adic integer is
+a unit times a power of `p`. -/
+private theorem restrictScalars_pPowerTorsion :
+    (pPowerTorsion p A M).restrictScalars ℤ_[p] = Submodule.torsion ℤ_[p] M := by
+  ext x
+  rw [Submodule.restrictScalars_mem, mem_pPowerTorsion_iff, Submodule.mem_torsion_iff]
+  constructor
+  · rintro ⟨k, hk⟩
+    have hp : (p : ℤ_[p]) ≠ 0 := Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero
+    refine ⟨⟨(p : ℤ_[p]) ^ k, pow_mem (mem_nonZeroDivisors_of_ne_zero hp) k⟩, ?_⟩
+    rw [Submonoid.mk_smul, ← Nat.cast_pow, Nat.cast_smul_eq_nsmul, hk]
+  · rintro ⟨⟨r, hr⟩, hrx⟩
+    have hr0 : r ≠ 0 := nonZeroDivisors.ne_zero hr
+    refine ⟨r.valuation, ?_⟩
+    -- `p ^ v(r)` is `r` divided by its unit part.
+    have hpow : (p : ℤ_[p]) ^ r.valuation = ↑(PadicInt.unitCoeff hr0)⁻¹ * r := by
+      rw [eq_comm, Units.inv_mul_eq_iff_eq_mul]
+      exact PadicInt.unitCoeff_spec hr0
+    rw [← Nat.cast_smul_eq_nsmul ℤ_[p], Nat.cast_pow, hpow, mul_smul, ← Submonoid.mk_smul _ hr, hrx,
+      smul_zero]
+
+omit [Module ℤ_[p] P₁] [IsScalarTower ℤ_[p] A P₁] [Module ℤ_[p] P₀] [IsScalarTower ℤ_[p] A P₀] in
+/-- Modulo its `p`-power torsion, a module over `ℤ_p` is torsion-free: the quotient is the quotient
+by the whole torsion submodule. -/
 private theorem isTorsionFree_quotient_pPowerTorsion :
-    IsTorsionFree ℤ_[p] (M ⧸ pPowerTorsion p A M) := by
-  rw [isTorsionFree_iff_smul_eq_zero]
-  intro r z hz
-  induction z using Submodule.Quotient.induction_on with | H x => ?_
-  by_cases hr : r = 0
-  · exact .inl hr
-  right
-  rw [← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero, mem_pPowerTorsion_iff] at hz
-  obtain ⟨k, hk⟩ := hz
-  rw [Submodule.Quotient.mk_eq_zero, mem_pPowerTorsion_iff]
-  refine ⟨k + r.valuation, ?_⟩
-  -- `p ^ v(r)` is `r` divided by its unit part.
-  have hpow : (p : ℤ_[p]) ^ r.valuation = ↑(PadicInt.unitCoeff hr)⁻¹ * r := by
-    rw [eq_comm, Units.inv_mul_eq_iff_eq_mul]
-    exact PadicInt.unitCoeff_spec hr
-  rw [← Nat.cast_smul_eq_nsmul ℤ_[p]] at hk ⊢
-  rw [Nat.cast_pow, pow_add, mul_smul, hpow, mul_smul, smul_comm _ (_ : ℤ_[p]), ← Nat.cast_pow,
-    hk, smul_zero]
+    IsTorsionFree ℤ_[p] (M ⧸ pPowerTorsion p A M) :=
+  let e := (Submodule.Quotient.restrictScalarsEquiv ℤ_[p] (pPowerTorsion p A M)).symm ≪≫ₗ
+    Submodule.quotEquivOfEq _ _ restrictScalars_pPowerTorsion
+  e.injective.moduleIsTorsionFree _ (map_smul e)
 
 variable [Module.Finite ℤ_[p] M] (hf : Function.Exact f π) (hfi : Function.Injective f)
   (hπ : Function.Surjective π)
