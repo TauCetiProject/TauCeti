@@ -7,7 +7,7 @@ module
 
 import TauCeti.Algebra.Group.Submonoid.Finiteness
 public import TauCeti.Geometry.Toric.Algebraic.DualSemigroup.Basic
-public import TauCeti.Geometry.Toric.Algebraic.Cone
+public import TauCeti.Geometry.Toric.Algebraic.Cone.Basic
 import Mathlib.LinearAlgebra.Dual.Basis
 
 /-!

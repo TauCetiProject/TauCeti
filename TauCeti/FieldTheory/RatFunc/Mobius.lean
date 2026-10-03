@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
+public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Projective
 public import TauCeti.FieldTheory.RatFunc.Automorphism
+-- Non-public: `Matrix.GeneralLinearGroup.mem_center_iff_entries` identifies the kernel of the
+-- action below with the centre of `GL₂(k)`, in the proofs only.
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.CenterFinTwo
 
 /-!
 # Linear fractional transformations of the rational function field
@@ -27,6 +30,8 @@ over `k` has nonzero determinant, so the construction applies to `GL₂(k)`.
 * `RatFunc.mobius` (with `mobius_def`) and `RatFunc.mobiusAut`: the same for an invertible
   matrix.
 * `RatFunc.mobiusAutHom`: the group homomorphism `GL₂(k) →* Aut(k(X)/k)`.
+* `RatFunc.pglEquivAlgEquiv`: the isomorphism `PGL₂(k) ≃* Aut(k(X)/k)`, evaluated on a class of
+  matrices by `RatFunc.pglEquivAlgEquiv_mk`.
 * `RatFunc.translationAut`: the translation `X ↦ X + c`.
 
 ## Main results
@@ -161,6 +166,36 @@ noncomputable def mobiusAutOf : RatFunc K ≃ₐ[K] RatFunc K :=
 theorem mobiusAutOf_X : mobiusAutOf hdet X = mobiusOf a b c d :=
   algEquivOfAdjoinEqTop_X _
 
+/-- **A linear fractional transformation is the identity exactly for a scalar coefficient
+matrix**: `(a X + b) / (c X + d) = X` if and only if `b = 0`, `c = 0` and `a = d`. -/
+theorem mobiusOf_eq_X_iff : mobiusOf a b c d = X ↔ b = 0 ∧ c = 0 ∧ a = d := by
+  constructor
+  · intro h
+    rw [mobiusOf_def, div_eq_iff (mobiusOf_den_ne_zero hdet)] at h
+    have hpoly : (Polynomial.C a * Polynomial.X + Polynomial.C b : Polynomial K) =
+        Polynomial.C c * Polynomial.X ^ 2 + Polynomial.C d * Polynomial.X := by
+      refine algebraMap_injective K ?_
+      simp only [map_add, map_mul, map_pow, algebraMap_C, algebraMap_X]
+      linear_combination h
+    refine ⟨?_, ?_, ?_⟩
+    · simpa using congrArg (fun p : Polynomial K ↦ p.coeff 0) hpoly
+    · simpa using (congrArg (fun p : Polynomial K ↦ p.coeff 2) hpoly).symm
+    · simpa using congrArg (fun p : Polynomial K ↦ p.coeff 1) hpoly
+  · rintro ⟨rfl, rfl, rfl⟩
+    have ha : a ≠ 0 := by
+      intro h
+      rw [h] at hdet
+      simp at hdet
+    rw [mobiusOf_def, map_zero, add_zero, zero_mul, zero_add, mul_comm, mul_div_assoc,
+      div_self (C_ne_zero ha), mul_one]
+
+/-- **A linear fractional transformation gives the identity automorphism exactly for a scalar
+coefficient matrix.** -/
+theorem mobiusAutOf_eq_one_iff : mobiusAutOf hdet = 1 ↔ b = 0 ∧ c = 0 ∧ a = d := by
+  rw [← mobiusOf_eq_X_iff hdet]
+  refine ⟨fun h ↦ ?_, fun h ↦ algEquiv_ext (by rw [mobiusAutOf_X, h, AlgEquiv.one_apply])⟩
+  rw [← mobiusAutOf_X hdet, h, AlgEquiv.one_apply]
+
 section Comp
 
 variable {a' b' c' d' : K} (hdet' : a' * d' - b' * c' ≠ 0)
@@ -265,6 +300,107 @@ noncomputable def mobiusAutHom : GL (Fin 2) K →* (RatFunc K ≃ₐ[K] RatFunc 
 @[simp]
 theorem mobiusAutHom_apply_X : mobiusAutHom A X = mobius A⁻¹ :=
   mobiusAut_X _
+
+/-- **The identity automorphism comes exactly from the central matrices.** -/
+theorem mobiusAut_eq_one_iff : mobiusAut A = 1 ↔ A ∈ Subgroup.center (GL (Fin 2) K) := by
+  rw [mobiusAut, mobiusAutOf_eq_one_iff, Matrix.GeneralLinearGroup.mem_center_iff_entries]
+
+/-- **The kernel of the linear fractional action is the centre of `GL₂(k)`**: the scalar matrices.
+So `PGL₂(k)` acts faithfully on `k(X)`. -/
+theorem ker_mobiusAutHom :
+    (mobiusAutHom : GL (Fin 2) K →* _).ker = Subgroup.center (GL (Fin 2) K) := by
+  ext A
+  rw [MonoidHom.mem_ker, mobiusAutHom, MonoidHom.coe_mk, OneHom.coe_mk, mobiusAut_eq_one_iff,
+    Subgroup.inv_mem_iff]
+
+/-- **Every generator of `k(X)` over `k` is a linear fractional transformation**: its numerator and
+denominator have degree at most one, and the determinant of their coefficients is nonzero. -/
+theorem exists_mobiusOf_eq_of_adjoin_eq_top {f : RatFunc K}
+    (htop : IntermediateField.adjoin K {f} = ⊤) :
+    ∃ a b c d : K, a * d - b * c ≠ 0 ∧ mobiusOf a b c d = f := by
+  have hmax : max f.num.natDegree f.denom.natDegree = 1 := by
+    rw [← finrank_eq_max_natDegree f]
+    exact IntermediateField.finrank_eq_one_iff_eq_top.mpr htop
+  have hnumle : f.num.natDegree ≤ 1 := le_of_max_le_left hmax.le
+  have hdenle : f.denom.natDegree ≤ 1 := le_of_max_le_right hmax.le
+  have hnum := Polynomial.eq_X_add_C_of_natDegree_le_one hnumle
+  have hden := Polynomial.eq_X_add_C_of_natDegree_le_one hdenle
+  set a := f.num.coeff 1 with ha
+  set b := f.num.coeff 0 with hb
+  set c := f.denom.coeff 1 with hc
+  set d := f.denom.coeff 0 with hd
+  have hdet : a * d - b * c ≠ 0 := by
+    by_cases hc0 : c = 0
+    · -- the denominator is the constant `d ≠ 0`, so the numerator has degree one and `a ≠ 0`
+      have hdeg : f.denom.natDegree = 0 := by
+        refine Polynomial.natDegree_eq_zero_iff_degree_le_zero.mpr ?_
+        rw [hden, hc0, map_zero, zero_mul, zero_add]
+        exact Polynomial.degree_C_le
+      have hnum1 : f.num.natDegree = 1 := by
+        rw [hdeg] at hmax
+        simpa using hmax
+      have hane : a ≠ 0 := by
+        rw [ha, ← hnum1]
+        exact Polynomial.leadingCoeff_ne_zero.mpr fun h0 ↦ by simp [h0] at hnum1
+      have hdne : d ≠ 0 := by
+        intro h0
+        refine f.denom_ne_zero ?_
+        rw [hden, hc0, h0, map_zero, zero_mul, zero_add]
+      rw [hc0, mul_zero, sub_zero]
+      exact mul_ne_zero hane hdne
+    · -- otherwise the denominator would divide the numerator, against their coprimality
+      intro hzero
+      have hca : (Polynomial.C c * Polynomial.C (a * c⁻¹) : Polynomial K) = Polynomial.C a := by
+        rw [← Polynomial.C_mul]
+        congr 1
+        field_simp
+      have hcb : (Polynomial.C d * Polynomial.C (a * c⁻¹) : Polynomial K) = Polynomial.C b := by
+        rw [← Polynomial.C_mul]
+        congr 1
+        field_simp
+        linear_combination hzero
+      have hdvd : f.denom ∣ f.num := ⟨Polynomial.C (a * c⁻¹), by
+        rw [hnum, hden]
+        linear_combination (-(Polynomial.X : Polynomial K)) * hca - hcb⟩
+      have hunit := (isCoprime_num_denom f).isUnit_of_dvd' hdvd dvd_rfl
+      have hdeg0 := Polynomial.natDegree_eq_zero_of_isUnit hunit
+      have hle : 1 ≤ f.denom.natDegree := Polynomial.le_natDegree_of_ne_zero (hc ▸ hc0)
+      omega
+  refine ⟨a, b, c, d, hdet, ?_⟩
+  rw [mobiusOf_def, ← num_div_denom f]
+  conv_rhs => rw [hnum, hden]
+  simp only [map_add, map_mul, algebraMap_C, algebraMap_X]
+
+/-- **Every automorphism of `k(X)` over `k` is a linear fractional transformation.** -/
+theorem mobiusAutHom_surjective :
+    Function.Surjective (mobiusAutHom : GL (Fin 2) K →* (RatFunc K ≃ₐ[K] RatFunc K)) := by
+  intro σ
+  obtain ⟨a, b, c, d, hdet, hf⟩ :=
+    exists_mobiusOf_eq_of_adjoin_eq_top (adjoin_apply_X_eq_top σ)
+  have hunit : IsUnit (!![a, b; c, d] : Matrix (Fin 2) (Fin 2) K) := by
+    rw [Matrix.isUnit_iff_isUnit_det, Matrix.det_fin_two_of]
+    exact isUnit_iff_ne_zero.mpr hdet
+  refine ⟨hunit.unit⁻¹, ?_⟩
+  refine algEquiv_ext ?_
+  rw [mobiusAutHom_apply_X, inv_inv, mobius_def]
+  have hentries : ∀ i j : Fin 2,
+      ((hunit.unit : Matrix (Fin 2) (Fin 2) K)) i j = (!![a, b; c, d] : Matrix _ _ K) i j :=
+    fun _ _ ↦ by rw [IsUnit.unit_spec]
+  rw [hentries 0 0, hentries 0 1, hentries 1 0, hentries 1 1]
+  simpa using hf
+
+/-- **`PGL₂(k)` is the automorphism group of the rational function field** (Stichtenoth,
+Exercise 1.2): the linear fractional transformations exhaust the automorphisms of `k(X)` over `k`,
+and two matrices give the same automorphism exactly when they differ by a scalar. -/
+noncomputable def pglEquivAlgEquiv : PGL(2, K) ≃* (RatFunc K ≃ₐ[K] RatFunc K) :=
+  (QuotientGroup.quotientMulEquivOfEq ker_mobiusAutHom.symm).trans
+    (QuotientGroup.quotientKerEquivOfSurjective _ mobiusAutHom_surjective)
+
+/-- The isomorphism `PGL₂(k) ≃* Aut(k(X)/k)` sends the class of a matrix to its linear fractional
+transformation; with `RatFunc.mobiusAutHom_apply_X` this evaluates it at `X`. -/
+@[simp]
+theorem pglEquivAlgEquiv_mk (A : GL (Fin 2) K) :
+    pglEquivAlgEquiv (Matrix.ProjGenLinGroup.mk A) = mobiusAutHom A := by rfl
 
 end GeneralLinear
 

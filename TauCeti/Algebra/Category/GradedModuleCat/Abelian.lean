@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
+public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.CategoryTheory.Limits.Preserves.Shapes.AbelianImages
 public import TauCeti.Algebra.Category.GradedModuleCat.Basic
 public import TauCeti.Algebra.Module.GradedModule.DirectSum
@@ -47,6 +48,8 @@ graded abelian category, whose canonical exact structure is
   `TauCeti.GradedModuleCat.mem_productFan_pt_piece_iff`: the homogeneous elements of kernels,
   cokernels and finite products.
 * The instance `Abelian (TauCeti.GradedModuleCat 𝒜)`.
+* `TauCeti.GradedModuleCat.epi_iff_surjective`: epimorphisms are precisely the maps whose
+  underlying linear maps are surjective.
 -/
 
 public section
@@ -276,5 +279,30 @@ instance {M N : GradedModuleCat.{v} 𝒜} (f : M ⟶ N) :
 
 instance : Abelian (GradedModuleCat.{v} 𝒜) :=
   Abelian.ofCoimageImageComparisonIsIso
+
+/-- A morphism of graded modules is an epimorphism exactly when its underlying map is
+surjective. -/
+theorem epi_iff_surjective (f : M ⟶ N) : Epi f ↔ Function.Surjective f.hom := by
+  constructor
+  · intro hf
+    have hzero : cokernelπ f = 0 := (cancel_epi f).mp (by simp)
+    intro y
+    have hy := LinearMap.congr_fun (congrArg Hom.hom hzero) y
+    exact (Submodule.Quotient.mk_eq_zero _).mp hy
+  · intro hf
+    have : Epi (toModuleCat.map f) := (ModuleCat.epi_iff_surjective _).mpr hf
+    exact (toModuleCat (𝒜 := 𝒜)).epi_of_epi_map inferInstance
+
+/-- The forgetful functor preserves homology because kernels and cokernels are formed on
+underlying modules. -/
+instance : (toModuleCat (𝒜 := 𝒜)).PreservesHomology where
+
+/-- A short complex of graded modules is exact exactly when its underlying linear maps are
+exact. No additional condition on the internal degrees is needed. -/
+theorem exact_iff {S : ShortComplex (GradedModuleCat.{v} 𝒜)} :
+    S.Exact ↔ Function.Exact S.f.hom S.g.hom := by
+  rw [← S.exact_map_iff_of_faithful toModuleCat,
+    ShortComplex.ShortExact.moduleCat_exact_iff_function_exact]
+  rfl
 
 end TauCeti.GradedModuleCat

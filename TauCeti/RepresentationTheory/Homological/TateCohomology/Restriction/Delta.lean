@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Claude
+Authors: Claude, Codex
 -/
 module
 
@@ -9,6 +9,8 @@ public import TauCeti.RepresentationTheory.Homological.TateCohomology.Restrictio
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Restriction.Boundary
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Connecting.GroupHomology
 public import TauCeti.RepresentationTheory.Homological.GroupHomology.Transfer.Delta
+
+public import TauCeti.RepresentationTheory.Homological.TateCohomology.Connecting.GroupCohomology
 
 /-!
 # Restriction commutes with the connecting maps of Tate cohomology
@@ -68,59 +70,7 @@ variable {R G : Type u} [CommRing R] [Group G]
 
 section ZeroExtension
 
-/-- The complex of inhomogeneous cochains of `M`, connected to the zero chain complex by the
-zero map: the complex of inhomogeneous cochains extended by zero to negative degrees. -/
-private def cochainsConnectData (M : Rep R G) :
-    CochainComplex.ConnectData HomologicalComplex.zero (inhomogeneousCochains M) where
-  d₀ := 0
-  comp_d₀ := by simp
-  d₀_comp := by simp
-
-@[simp]
-private theorem cochainsConnectData_d₀ (M : Rep R G) : (cochainsConnectData M).d₀ = 0 :=
-  rfl
-
-variable (R G) in
-/-- The complex of inhomogeneous cochains extended by zero to negative degrees, as a functor. -/
-private def cochainsExtFunctor : Rep R G ⥤ CochainComplex (ModuleCat R) ℤ where
-  obj M := (cochainsConnectData M).cochainComplex
-  map f := CochainComplex.ConnectData.map _ _ (𝟙 _) (cochainsMap (.id G) f) (by simp)
-  map_id M := by
-    rw [cochainsMap_id]
-    exact CochainComplex.ConnectData.map_id _
-  map_comp f g := by
-    rw [cochainsMap_id_comp, CochainComplex.ConnectData.map_comp_map, Category.comp_id]
-
-private instance : (cochainsExtFunctor R G).PreservesZeroMorphisms where
-  map_zero M N := by
-    ext (n | n) : 1
-    · rfl
-    · exact (isZero_zero _).eq_of_src _ _
-
-/-- The extended complexes of a short exact sequence form a short exact sequence. -/
-private theorem map_cochainsExtFunctor_shortExact {S : ShortComplex (Rep R G)}
-    (hS : S.ShortExact) : (S.map (cochainsExtFunctor R G)).ShortExact := by
-  rw [HomologicalComplex.shortExact_iff_degreewise_shortExact]
-  rintro (n | n)
-  · exact map_cochainsFunctor_eval_shortExact hS n
-  · have h : IsZero ((HomologicalComplex.zero : ChainComplex (ModuleCat R) ℕ).X n) :=
-      isZero_zero _
-    exact ShortComplex.ShortExact.mk' (ShortComplex.exact_of_isZero_X₂ _ h)
-      ⟨fun _ _ _ ↦ h.eq_of_tgt _ _⟩ ⟨fun _ _ _ ↦ h.eq_of_src _ _⟩
-
 variable [Fintype G]
-
-variable (R G) in
-/-- The identity in nonnegative degrees, from the extended complex of cochains to the Tate
-complex. -/
-private def cochainsExtToTate : cochainsExtFunctor R G ⟶ tateComplexFunctor R G where
-  app M := CochainComplex.ConnectData.map _ _ 0 (𝟙 _)
-    (by rw [HomologicalComplex.zero_f, zero_comp, cochainsConnectData_d₀, zero_comp])
-  naturality M N f := by
-    ext (n | n) : 1
-    -- In nonnegative degrees both composites are `cochainsMap (.id G) f`.
-    · rfl
-    · exact (isZero_zero _).eq_of_src _ _
 
 attribute [local instance] Subgroup.fintypeOfFinite
 
@@ -138,25 +88,6 @@ private def cochainsExtToTateRes (H : Subgroup G) :
     · rfl
     · exact (isZero_zero _).eq_of_src _ _
 
-/-- In positive degrees, the identity of cochains induces on cohomology the composite of the two
-comparisons with the cohomology of the complex of inhomogeneous cochains. -/
-private theorem homologyMap_cochainsExtToTate (M : Rep R G) (n : ℕ) :
-    HomologicalComplex.homologyMap ((cochainsExtToTate R G).app M) ((n + 1 : ℕ) : ℤ) =
-      ((cochainsConnectData M).homologyIsoPos (n + 1) _ rfl).hom ≫
-        ((tateComplexConnectData M).homologyIsoPos (n + 1) _ rfl).inv := by
-  refine (CochainComplex.ConnectData.homologyMap_map_of_eq_succ _ _ _ _
-    (by rw [HomologicalComplex.zero_f, zero_comp, cochainsConnectData_d₀, zero_comp])
-    (n + 1) _ rfl).trans ?_
-  rw [HomologicalComplex.homologyMap_id, Category.id_comp]
-
-/-- In positive degrees, the identity of cochains induces an isomorphism from the cohomology of
-the extended complex of cochains to Tate cohomology. -/
-private theorem isIso_homologyMap_cochainsExtToTate (M : Rep R G) (n : ℕ) :
-    IsIso (HomologicalComplex.homologyMap ((cochainsExtToTate R G).app M) ((n + 1 : ℕ) : ℤ)) := by
-  rw [homologyMap_cochainsExtToTate]
-  exact Iso.isIso_hom ((cochainsConnectData M).homologyIsoPos (n + 1) _ rfl ≪≫
-    ((tateComplexConnectData M).homologyIsoPos (n + 1) _ rfl).symm)
-
 /-- In positive degrees, the identity of cochains followed by Tate restriction is restriction of
 cochains. -/
 private theorem homologyMap_cochainsExtToTate_comp_posRes (M : Rep R G) (H : Subgroup G)
@@ -172,21 +103,6 @@ private theorem homologyMap_cochainsExtToTate_comp_posRes (M : Rep R G) (H : Sub
   refine (Category.assoc _ _ _).trans (congrArg (_ ≫ ·) ?_)
   refine (Iso.inv_comp_eq _).2 (((Iso.eq_comp_inv _).2 ?_).trans (Category.assoc _ _ _))
   exact posRes_comp_isoGroupCohomology_hom M H n
-
-/-- In degree zero, the identity of cochains induces an epimorphism from the cohomology of the
-extended complex of cochains, the invariants, onto Tate cohomology. -/
-private theorem epi_homologyMap_cochainsExtToTate_zero (M : Rep R G) :
-    Epi (HomologicalComplex.homologyMap ((cochainsExtToTate R G).app M) 0) := by
-  let φ := (HomologicalComplex.shortComplexFunctor _ _ 0).map ((cochainsExtToTate R G).app M)
-  -- In nonnegative degrees the map is the identity of the cochains of `M`, and in negative
-  -- degrees its source is zero.
-  have : IsIso φ.τ₂ := (inferInstance : IsIso (𝟙 ((inhomogeneousCochains M).X 0)))
-  have hmono : ∀ j, Mono (((cochainsExtToTate R G).app M).f j) := by
-    rintro (n | n)
-    · exact (inferInstance : Mono (𝟙 ((inhomogeneousCochains M).X n)))
-    · exact ⟨fun _ _ _ ↦ (isZero_zero _).eq_of_tgt _ _⟩
-  have : Mono φ.τ₃ := hmono _
-  exact inferInstanceAs (Epi (ShortComplex.homologyMap φ))
 
 /-- On degree-zero cycles, the extended complex of cochains over `G` maps to the invariants `Mᴴ`
 in the same way through the identity of cochains followed by the inclusion `Mᴳ ⊆ Mᴴ`, and through
@@ -205,9 +121,9 @@ private theorem cyclesMap_cochainsExtToTate_zero_comp_inclusion (M : Rep R G) (H
         -- The inclusion `Mᴳ ⊆ Mᴴ` followed by the embedding of `Mᴴ` is the embedding of `Mᴳ`.
         simp only [Category.assoc]; rfl
     _ = HomologicalComplex.iCycles ((cochainsExtFunctor R G).obj M) 0 ≫ (cochainsIso₀ M).hom :=
-        -- The identity of cochains is the identity in degree zero.
-        (congrArg (_ ≫ ·) (H0CyclesIso_hom_comp_subtype M)).trans
-          ((reassoc_of% HomologicalComplex.cyclesMap_i ((cochainsExtToTate R G).app M) 0) _)
+        by
+          erw [H0CyclesIso_hom_comp_subtype, HomologicalComplex.cyclesMap_i_assoc,
+            cochainsExtToTate_app_f_ofNat, Category.id_comp]
     _ = HomologicalComplex.iCycles ((cochainsExtFunctor R G).obj M) 0 ≫
         ((cochainsExtToTateRes H).app M).f 0 ≫ (cochainsIso₀ (Rep.res H.subtype M)).hom :=
         congrArg (_ ≫ ·) (cochainsMap_f_0_comp_cochainsIso₀ H.subtype (𝟙 _)).symm
@@ -234,15 +150,6 @@ private theorem homologyMap_cochainsExtToTate_comp_H0Res (M : Rep R G) (H : Subg
     (congrArg (_ ≫ ·) (H0π_comp_H0Res M H)))).trans ?_
   exact ((reassoc_of% cyclesMap_cochainsExtToTate_zero_comp_inclusion M H) _).trans
     (congrArg (_ ≫ ·) (hπ (Rep.res H.subtype M)).symm)
-
-/-- In nonnegative degrees, the identity of cochains induces an epimorphism from the cohomology of
-the extended complex of cochains onto Tate cohomology. -/
-private theorem epi_homologyMap_cochainsExtToTate (M : Rep R G) {r : ℤ} (hr : 0 ≤ r) :
-    Epi (HomologicalComplex.homologyMap ((cochainsExtToTate R G).app M) r) := by
-  obtain ⟨_ | n, rfl⟩ := Int.eq_ofNat_of_zero_le hr
-  · exact epi_homologyMap_cochainsExtToTate_zero M
-  · have := isIso_homologyMap_cochainsExtToTate M n
-    infer_instance
 
 /-- In nonnegative degrees, the identity of cochains followed by Tate restriction is restriction
 of cochains. -/

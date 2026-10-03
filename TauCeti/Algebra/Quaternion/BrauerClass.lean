@@ -185,6 +185,22 @@ theorem quaternionClass_mul_sq_left (a b c : Kˣ) :
   rw [mul_comm a (c ^ 2)]
   exact quaternionClass_eq_of_algEquiv (QuaternionAlgebra.rescaleIEquiv (a : K) (b : K) c)
 
+/-- Inverting the second argument does not change a quaternion symbol. -/
+@[simp]
+theorem quaternionClass_inv_right (a b : Kˣ) :
+    quaternionClass a b⁻¹ = quaternionClass a b := by
+  calc
+    quaternionClass a b⁻¹ = quaternionClass a (b * (b⁻¹) ^ 2) := by
+      congr 2
+      all_goals group
+    _ = quaternionClass a b := quaternionClass_mul_sq_right a b b⁻¹
+
+/-- Inverting the first argument does not change a quaternion symbol. -/
+@[simp]
+theorem quaternionClass_inv_left (a b : Kˣ) :
+    quaternionClass a⁻¹ b = quaternionClass a b := by
+  rw [quaternionClass_comm, quaternionClass_inv_right, quaternionClass_comm]
+
 /-- **The quaternion symbol is its own inverse**: quaternion conjugation is an isomorphism of
 `ℍ[K,a,b]` with its opposite algebra. -/
 @[simp]
@@ -262,6 +278,22 @@ theorem quaternionClass_self (a : Kˣ) : quaternionClass a a = quaternionClass a
   calc quaternionClass a a = quaternionClass a (-1 * -a) := by rw [neg_one_mul, neg_neg]
     _ = quaternionClass a (-1) * quaternionClass a (-a) := quaternionClass_mul a (-1) (-a)
     _ = quaternionClass a (-1) := by rw [quaternionClass_neg_self, mul_one]
+
+/-- The symbol `[(-a/c, -b/c)]` expanded by bilinearity:
+`[(a,b)] · [(a,c)] · [(b,c)] · [(-1,abc)] · [(-1,-1)]`. This is the symbol identity behind
+the ternary case of Lam's Clifford--Hasse comparison. -/
+theorem quaternionClass_neg_inv_mul_neg_inv_mul (a b c : Kˣ) :
+    quaternionClass (-c⁻¹ * a) (-c⁻¹ * b) =
+      quaternionClass a b * quaternionClass a c * quaternionClass b c *
+        quaternionClass (-1) (a * b * c) * quaternionClass (-1) (-1) := by
+  have hsq (x y : Kˣ) (z : BrauerGroup K) :
+      quaternionClass x y * (quaternionClass x y * z) = z := by
+    rw [← mul_assoc, ← pow_two, quaternionClass_sq, one_mul]
+  rw [neg_eq_neg_one_mul c⁻¹]
+  simp only [quaternionClass_mul, quaternionClass_mul_left, quaternionClass_inv_left,
+    quaternionClass_inv_right, quaternionClass_self c, quaternionClass_comm c (-1),
+    quaternionClass_comm c b, quaternionClass_comm a (-1)]
+  simp only [mul_comm, mul_assoc, mul_left_comm, hsq]
 
 /-! ### The symbol on square classes -/
 

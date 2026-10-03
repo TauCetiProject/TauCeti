@@ -13,6 +13,7 @@ import all TauCeti.Algebra.GroupAction.PermutationRepresentation
 import TauCeti.Topology.Covering.Clopen
 import TauCeti.AlgebraicTopology.UniversalCover.Deck.Connected.Basic
 import TauCeti.AlgebraicTopology.UniversalCover.Deck.Fiber.Monodromy
+import TauCeti.AlgebraicTopology.FundamentalGroup.BasepointChange
 
 /-!
 # Numbered, pointed and bare connected covers of degree `n`
@@ -55,6 +56,12 @@ therefore descends to the other two rigidifications.
 
 Over a path-connected base the degree does not depend on the basepoint, and over a preconnected
 base a connected cover has positive degree.
+
+The basepoint can be moved. A bare cover at `x₀` is a bare cover at any point of the connected
+component of `x₀`, with no choice involved. A numbered cover is moved along a path `γ` from `x₀` to
+`x₁`: lifting `γ` identifies the two fibres, so the numbering of the fibre over `x₀` induces one of
+the fibre over `x₁`, and the numbered monodromy of `π₁(X, x₁)` is that of `π₁(X, x₀)` read through
+the change of basepoint along `γ`.
 
 Over a path-connected, locally path-connected base, a numbered cover is determined up to
 isomorphism by its monodromy representation read through the numbering,
@@ -99,6 +106,10 @@ Relabelling the fibre conjugates the induced permutations.
 * `TauCeti.ConnectedCover.nonempty_equiv_fin_of_mem_connectedComponent`: the degree is the same
   over the whole connected component of the base point;
   `TauCeti.ConnectedCover.ne_zero`: over a preconnected base the degree is positive.
+* `TauCeti.ConnectedFiberNumberedCover.basepointChange`, `TauCeti.ConnectedCover.basepointChange`,
+  `TauCeti.ConnectedCoverClass.basepointChange`: moving the basepoint, with
+  `TauCeti.ConnectedFiberNumberedCover.permCongrHom_comp_monodromyPerm_basepointChange` computing
+  the numbered monodromy of the moved cover.
 * `TauCeti.connectedFiberNumberedCoverIso_iff_permCongrHom_comp_monodromyPerm_eq`: two numbered
   covers are isomorphic exactly when their numbered monodromy representations agree.
 * `TauCeti.ConnectedFiberNumberedCover.exists_permCongrHom_comp_monodromyPerm_eq`: over a
@@ -716,6 +727,96 @@ theorem ConnectedPointedCoverClass.forgetPoint_surjective (hn : n ≠ 0) :
     Function.Surjective (forgetPoint : ConnectedPointedCoverClass x n → _) := by
   rintro ⟨c⟩
   exact ⟨mk (c.numbering.markLabel ⟨0, Nat.pos_of_ne_zero hn⟩), rfl⟩
+
+/-! ### Moving the basepoint -/
+
+section BasepointChange
+
+variable {x₀ x₁ : X}
+
+/-- Moving the basepoint of a numbered cover along a path `γ` from `x₀` to `x₁`: the same cover,
+with the fibre over `x₁` numbered by transporting it back to the fibre over `x₀` along `γ`. The
+numbering depends on `γ`, through the monodromy of loops at `x₀`. -/
+noncomputable def ConnectedFiberNumberedCover.basepointChange
+    (c : ConnectedFiberNumberedCover x₀ n) (γ : Path x₀ x₁) : ConnectedFiberNumberedCover x₁ n where
+  cover := c.cover
+  ν := (coveringFiberEquiv c.cover.isCoveringMap_proj (.mk γ)).symm.trans c.ν
+
+namespace ConnectedFiberNumberedCover
+
+variable (c : ConnectedFiberNumberedCover x₀ n) (γ : Path x₀ x₁)
+
+@[simp]
+theorem basepointChange_cover : (c.basepointChange γ).cover = c.cover :=
+  (rfl)
+
+/-- The numbering of the moved cover transports the fibre over `x₁` back to the fibre over `x₀`
+along `γ` and numbers it there. The two fibres live over the same cover only up to
+`basepointChange_cover`, so the equality is heterogeneous. -/
+theorem basepointChange_ν :
+    (c.basepointChange γ).ν ≍
+      (coveringFiberEquiv c.cover.isCoveringMap_proj (.mk γ)).symm.trans c.ν :=
+  HEq.rfl
+
+/-- **Moving the basepoint along `γ` conjugates the numbered monodromy by `γ`.** The numbered
+monodromy representation of `π₁(X, x₁)` of the moved cover is that of `π₁(X, x₀)` precomposed with
+the basepoint-change isomorphism `π₁(X, x₁) ≃* π₁(X, x₀)`, which sends the class of a loop `g` at
+`x₁` to the class of `γ ⬝ g ⬝ γ⁻¹`. -/
+theorem permCongrHom_comp_monodromyPerm_basepointChange :
+    (c.basepointChange γ).ν.permCongrHom.toMonoidHom.comp
+        ((c.basepointChange γ).cover.isCoveringMap_proj.monodromyPerm x₁) =
+      (c.ν.permCongrHom.toMonoidHom.comp (c.cover.isCoveringMap_proj.monodromyPerm x₀)).comp
+        (FundamentalGroup.fundamentalGroupMulEquivOfPath γ).symm.toMonoidHom := by
+  have hp := c.cover.isCoveringMap_proj
+  -- transporting back along `γ` is the monodromy along the reversed path
+  have hback (e : ⇑c.cover.proj ⁻¹' {x₁}) :
+      (coveringFiberEquiv hp (.mk γ)).symm e =
+        hp.monodromy (Path.Homotopic.Quotient.mk γ).symm e := by
+    rw [Equiv.symm_apply_eq, coveringFiberEquiv_apply, ← hp.monodromy_trans_apply,
+      Path.Homotopic.Quotient.symm_trans, hp.monodromy_refl, id]
+  refine MonoidHom.ext fun g => Equiv.ext fun i => congrArg c.ν ?_
+  -- The fibres of the moved cover are those of `c` only definitionally (`basepointChange_cover`),
+  -- so the goal is restated over `c.cover` before rewriting.
+  change (coveringFiberEquiv hp (.mk γ)).symm
+      (hp.monodromy g (coveringFiberEquiv hp (.mk γ) (c.ν.symm i))) =
+    hp.monodromy ((FundamentalGroup.fundamentalGroupMulEquivOfPath γ).symm g) (c.ν.symm i)
+  rw [FundamentalGroup.fundamentalGroupMulEquivOfPath_symm_apply, hp.monodromy_trans_apply,
+    hp.monodromy_trans_apply, hback, coveringFiberEquiv_apply]
+
+end ConnectedFiberNumberedCover
+
+/-- Moving the basepoint of a bare cover of degree `n` from `x₀` to a point `x₁` of its connected
+component: the same cover, which has degree `n` over `x₁` as well
+(`TauCeti.ConnectedCover.nonempty_equiv_fin_of_mem_connectedComponent`). -/
+def ConnectedCover.basepointChange (c : ConnectedCover x₀ n) (h : x₁ ∈ connectedComponent x₀) :
+    ConnectedCover x₁ n where
+  cover := c.cover
+  nonempty_equiv_fin := c.nonempty_equiv_fin_of_mem_connectedComponent h
+
+@[simp]
+theorem ConnectedCover.basepointChange_cover (c : ConnectedCover x₀ n)
+    (h : x₁ ∈ connectedComponent x₀) : (c.basepointChange h).cover = c.cover :=
+  (rfl)
+
+/-- Moving the basepoint of a numbered cover along a path and then forgetting the numbering is
+forgetting the numbering and then moving the basepoint. -/
+theorem ConnectedFiberNumberedCover.forgetNumbering_basepointChange
+    (c : ConnectedFiberNumberedCover x₀ n) (γ : Path x₀ x₁) (h : x₁ ∈ connectedComponent x₀) :
+    (c.basepointChange γ).forgetNumbering = c.forgetNumbering.basepointChange h :=
+  ConnectedCover.ext (rfl)
+
+/-- Moving the basepoint of a bare cover to a point of its connected component, on isomorphism
+classes. -/
+def ConnectedCoverClass.basepointChange (C : ConnectedCoverClass x₀ n)
+    (h : x₁ ∈ connectedComponent x₀) : ConnectedCoverClass x₁ n :=
+  Quotient.map (·.basepointChange h) (fun _ _ hcc => hcc) C
+
+@[simp]
+theorem ConnectedCoverClass.basepointChange_mk (c : ConnectedCover x₀ n)
+    (h : x₁ ∈ connectedComponent x₀) : (mk c).basepointChange h = mk (c.basepointChange h) :=
+  (rfl)
+
+end BasepointChange
 
 /-! ### Numbered monodromy -/
 

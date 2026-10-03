@@ -11,7 +11,7 @@ public import TauCeti.NumberTheory.NumberField.Global.InfinityType.Basic
 public import TauCeti.NumberTheory.NumberField.Global.Places.Connected
 
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
-import TauCeti.Topology.Algebra.ContinuousMonoidHom
+import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 
 /-!
 # The infinity type of a Hecke character

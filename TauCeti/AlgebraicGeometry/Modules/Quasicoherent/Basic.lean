@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Modules.Dual
-public import TauCeti.AlgebraicGeometry.Modules.Pullback
+public import TauCeti.AlgebraicGeometry.Modules.Pullback.Basic
 public import TauCeti.CategoryTheory.Monoidal.Rigid.Subcategory
 
 /-!

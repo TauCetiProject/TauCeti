@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.GroupAction.Equiv
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.LowDegree
-public import TauCeti.Topology.Algebra.ContinuousMonoidHom
+public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 
 /-!
 # Functoriality of explicit continuous cohomology in degrees one and two

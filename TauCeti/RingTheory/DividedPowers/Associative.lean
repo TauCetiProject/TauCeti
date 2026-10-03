@@ -24,10 +24,8 @@ algebra to be commutative. This is the form used by the Kostant integral form of
 enveloping algebra. The multiplication and commuting-sum formulas below show why these rational
 elements can generate an integral algebra and a coalgebra: their structure constants are integers.
 
-This is a prerequisite for the explicit Chevalley--Demazure construction in Layer 9 of the
-ReductiveGroups roadmap. That construction starts from divided powers of Chevalley root vectors in
-the generally noncommutative universal enveloping algebra. No integral-form or group-scheme
-definition is made here.
+The Chevalley--Demazure construction starts from divided powers of Chevalley root vectors in
+the generally noncommutative universal enveloping algebra.
 
 ## Main definitions and results
 
@@ -41,7 +39,7 @@ definition is made here.
 * `TauCeti.Associative.dividedPower_sub`: the corresponding signed expansion for a difference.
 * `TauCeti.Associative.map_dividedPower`: divided powers are natural under algebra homomorphisms.
 * `TauCeti.Associative.dividedPower_apply_mem_of_pow_two_eq_zero`: a square-zero endomorphism
-  preserving an integral submodule has all divided powers preserving it.
+  preserving a set containing zero has all divided powers preserving it.
 * `TauCeti.Associative.dividedPower_units_conj`: divided powers are equivariant for conjugation by
   a unit.
 
@@ -97,13 +95,7 @@ theorem dividedPower_apply (f : Module.End ℚ V) (n : ℕ) (v : V) :
 theorem dividedPower_apply_eq_zero_iff (f : Module.End ℚ V) (n : ℕ) (v : V) :
     dividedPower n f • v = 0 ↔ (f ^ n) v = 0 := by
   rw [dividedPower_apply]
-  constructor
-  · intro h
-    have hn : (n.factorial : ℚ) ≠ 0 := by exact_mod_cast n.factorial_ne_zero
-    have h' := congrArg (fun z : V => (n.factorial : ℚ) • z) h
-    simpa [smul_smul, hn] using h'
-  · intro h
-    rw [h, smul_zero]
+  simp [Nat.factorial_ne_zero]
 
 /-- If a divided power annihilates a vector, so does the next ordinary power. -/
 theorem pow_succ_apply_eq_zero_of_dividedPower_apply_eq_zero
@@ -124,13 +116,13 @@ theorem dividedPower_apply_mem_of_pow_eq_zero
       LinearMap.zero_apply]
     exact hzero
 
-/-- Every divided power of a square-zero endomorphism preserves an additive subgroup once the
+/-- Every divided power of a square-zero endomorphism preserves a set containing zero once the
 endomorphism itself does. -/
 theorem dividedPower_apply_mem_of_pow_two_eq_zero
-    (f : Module.End ℚ V) (N : AddSubgroup V) (hf : f ^ 2 = 0)
+    (f : Module.End ℚ V) (N : Set V) (hzero : 0 ∈ N) (hf : f ^ 2 = 0)
     (hN : ∀ {v : V}, v ∈ N → f v ∈ N) (n : ℕ) {v : V} (hv : v ∈ N) :
     dividedPower n f v ∈ N := by
-  apply dividedPower_apply_mem_of_pow_eq_zero f N (zero_mem N) 2 hf _ n hv
+  apply dividedPower_apply_mem_of_pow_eq_zero f N hzero 2 hf _ n hv
   intro k hk
   have hk' : k = 0 ∨ k = 1 := by omega
   rcases hk' with rfl | rfl
@@ -222,12 +214,7 @@ theorem self_mul_dividedPower (n : ℕ) (x : A) :
 into `m + 1` copies of `x^[m+1] · z`, for any `z`. -/
 theorem succ_nsmul_dividedPower_succ_mul (m : ℕ) (x z : A) :
     (m + 1) • (dividedPower (m + 1) x * z) = x * (dividedPower m x * z) := by
-  calc
-    (m + 1) • (dividedPower (m + 1) x * z) = ((m + 1) • dividedPower (m + 1) x) * z := by
-      simp only [nsmul_eq_mul]
-      rw [mul_assoc]
-    _ = (x * dividedPower m x) * z := by rw [self_mul_dividedPower]
-    _ = x * (dividedPower m x * z) := mul_assoc _ _ _
+  rw [← smul_mul_assoc, ← self_mul_dividedPower, mul_assoc]
 
 /-- The first-order recurrence solved for the successor divided power. -/
 theorem dividedPower_succ (n : ℕ) (x : A) :

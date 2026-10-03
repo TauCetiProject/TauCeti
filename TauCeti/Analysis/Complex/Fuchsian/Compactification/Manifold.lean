@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.Fuchsian.Compactification.Cusp.Chart
 public import TauCeti.Analysis.Complex.Fuchsian.CoarseQuotient
 public import TauCeti.Analysis.Complex.Fuchsian.Cusp.Extension
+public import TauCeti.Analysis.Complex.RiemannSurface.LocalMultiplicity
 import Mathlib.Analysis.Complex.RemovableSingularity
 
 /-!
@@ -300,3 +301,21 @@ theorem mdifferentiableAt_comp_ofQuotient_iff {E' : Type*} [NormedAddCommGroup E
     (e.map_source (mem_chart_source ℂ p))) (e.left_inv (mem_chart_source ℂ p))
 
 end Subgroup.CompactifiedQuotient
+
+namespace TauCeti.Subgroup.CompactifiedQuotient
+
+open _root_.Subgroup.CompactifiedQuotient RiemannSurface
+
+variable {Γ : Subgroup PSL(2, ℝ)} [DiscreteTopology Γ]
+
+/-- At a point of the coarse quotient, a map on the compactification has the same local
+multiplicity as its restriction. No holomorphy assumption is needed because the charts agree. -/
+@[simp]
+theorem localMultiplicity_ofQuotient {Y : Type*} [TopologicalSpace Y] [ChartedSpace ℂ Y]
+    (F : Γ.CompactifiedQuotient → Y) (p : orbitRel.Quotient Γ ℍ) :
+    localMultiplicity F (ofQuotient p) = localMultiplicity (F ∘ ofQuotient) p := by
+  rw [localMultiplicity_def, localMultiplicity_def, chartAt_ofQuotient,
+    ofQuotientChart_ofQuotient]
+  simp only [ofQuotientChart_symm_apply, Function.comp_apply]
+
+end TauCeti.Subgroup.CompactifiedQuotient

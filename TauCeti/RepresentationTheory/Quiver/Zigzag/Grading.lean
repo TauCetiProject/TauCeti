@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.Graded.ExtendByZero
 public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.Grading
 public import TauCeti.RingTheory.GradedAlgebra.Homogeneous.Quotient
 public import TauCeti.RingTheory.TwoSidedIdeal.Homogeneous
@@ -267,38 +268,22 @@ theorem zigzagGrade_eq_bot_of_three_le {n : ℕ} (hn : 3 ≤ n) : zigzagGrade k 
 This signed indexing is needed to state every internal grading shift. -/
 noncomputable def zigzagIntegerGrade (d : ℤ) :
     Submodule k (nonisolatedZigzagQuotient k G) :=
-  if 0 ≤ d then zigzagGrade k G d.toNat else ⊥
+  Graded.extendByZero (zigzagGrade k G) d
 
 @[simp]
 theorem zigzagIntegerGrade_ofNat (d : ℕ) :
-    zigzagIntegerGrade k G d = zigzagGrade k G d := by
-  simp [zigzagIntegerGrade]
+    zigzagIntegerGrade k G d = zigzagGrade k G d :=
+  Graded.extendByZero_natCast _ d
 
 /-- The integer extension of the path-length grading vanishes in negative degrees. -/
 theorem zigzagIntegerGrade_eq_bot_of_neg {d : ℤ} (hd : d < 0) :
-    zigzagIntegerGrade k G d = ⊥ := by
-  simp [zigzagIntegerGrade, (not_le_of_gt hd)]
+    zigzagIntegerGrade k G d = ⊥ :=
+  Graded.extendByZero_of_neg _ hd
 
 /-- **The integer extension of the path-length grading is an internal direct sum**: the pieces
 in nonnegative degrees are those of `TauCeti.zigzagGrade`, and those in negative degrees vanish. -/
-theorem isInternal_zigzagIntegerGrade : DirectSum.IsInternal (zigzagIntegerGrade k G) := by
-  have hN := isInternal_zigzagGrade k G
-  rw [DirectSum.isInternal_submodule_iff_iSupIndep_and_iSup_eq_top] at hN ⊢
-  obtain ⟨hind, htop⟩ := hN
-  refine ⟨fun d ↦ ?_, ?_⟩
-  · rcases lt_or_ge d 0 with hd | hd
-    · simp [zigzagIntegerGrade_eq_bot_of_neg k G hd]
-    · obtain ⟨n, rfl⟩ := Int.eq_ofNat_of_zero_le hd
-      rw [zigzagIntegerGrade_ofNat]
-      refine (hind n).mono_right (iSup₂_le fun j hj ↦ ?_)
-      rcases lt_or_ge j 0 with hj0 | hj0
-      · simp [zigzagIntegerGrade_eq_bot_of_neg k G hj0]
-      · obtain ⟨m, rfl⟩ := Int.eq_ofNat_of_zero_le hj0
-        rw [zigzagIntegerGrade_ofNat]
-        exact le_iSup₂_of_le m (fun h ↦ hj (by rw [h])) le_rfl
-  · rw [eq_top_iff, ← htop]
-    exact iSup_le fun n ↦ (zigzagIntegerGrade_ofNat k G n).symm.le.trans
-      (le_iSup (zigzagIntegerGrade k G) (n : ℤ))
+theorem isInternal_zigzagIntegerGrade : DirectSum.IsInternal (zigzagIntegerGrade k G) :=
+  Graded.isInternal_extendByZero (isInternal_zigzagGrade k G)
 
 /-- **An arrow coordinate vanishes off degree one**: the pieces of degree other than one are
 spanned by vertex idempotents and volume classes, which have no arrow component. -/
@@ -334,20 +319,7 @@ theorem zigzagBasis_coord_dart_eq_zero_of_mem_zigzagIntegerGrade (hns : ∀ i : 
 /-- Multiplication adds signed degrees in the integer extension of the path-length grading. -/
 theorem mul_mem_zigzagIntegerGrade {m n : ℤ}
     {x y : nonisolatedZigzagQuotient k G} (hx : x ∈ zigzagIntegerGrade k G m)
-    (hy : y ∈ zigzagIntegerGrade k G n) : x * y ∈ zigzagIntegerGrade k G (m + n) := by
-  by_cases hm : 0 ≤ m
-  · by_cases hn : 0 ≤ n
-    · simp only [zigzagIntegerGrade, hm, ↓reduceIte] at hx
-      simp only [zigzagIntegerGrade, hn, ↓reduceIte] at hy
-      simp only [zigzagIntegerGrade, add_nonneg hm hn, ↓reduceIte]
-      simpa [Int.toNat_add hm hn] using mul_mem_zigzagGrade k G hx hy
-    · simp only [zigzagIntegerGrade, hn, ↓reduceIte] at hy
-      rw [Submodule.mem_bot] at hy
-      subst y
-      simp
-  · simp only [zigzagIntegerGrade, hm, ↓reduceIte] at hx
-    rw [Submodule.mem_bot] at hx
-    subst x
-    simp
+    (hy : y ∈ zigzagIntegerGrade k G n) : x * y ∈ zigzagIntegerGrade k G (m + n) :=
+  Graded.mul_mem_extendByZero (mul_mem_zigzagGrade k G) hx hy
 
 end TauCeti

@@ -11,7 +11,7 @@ public import Mathlib.Analysis.Normed.Module.Basic
 /-!
 # The unit sphere is a closed cofibration in the closed unit ball
 
-The unit sphere of a real normed space has the homotopy extension property inside the closed
+The unit sphere of a real seminormed space has the homotopy extension property inside the closed
 unit ball.  Concretely, the cylinder `I × D` over the closed unit ball `D` retracts onto
 `{0} × D ∪ I × S`, where `S` is the unit sphere, by radial projection away from the point of the
 cylinder axis at height `2`: the ray from that point through `(t, x)` leaves the cylinder either
@@ -44,7 +44,7 @@ open Metric Set unitInterval
 
 universe u
 
-variable {E : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E]
+variable {E : Type u} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-- Radial projection of the cylinder over the closed unit ball away from the point at height `2`
 on its axis, written in the ambient coordinates `ℝ × E`.  Where the ray exits through the bottom
@@ -113,8 +113,7 @@ private lemma ballRadialProjection_spec (p : I × closedBall (0 : E) 1) :
     have hn : (2 : ℝ)⁻¹ < ‖(p.2 : E)‖ := by linarith
     have hnpos : (0 : ℝ) < ‖(p.2 : E)‖ := lt_trans (by norm_num) hn
     have hunit : ‖(‖(p.2 : E)‖⁻¹ • (p.2 : E))‖ = 1 := by
-      rw [norm_smul, Real.norm_eq_abs, abs_of_pos (inv_pos.2 hnpos),
-        inv_mul_cancel₀ (ne_of_gt hnpos)]
+      simp [norm_smul, ne_of_gt hnpos]
     rw [max_eq_left hn.le]
     refine ⟨?_, ?_, Or.inr ?_⟩
     · rw [Set.mem_Icc]
@@ -164,8 +163,8 @@ private lemma ballCylinderRetraction_apply (p : I × closedBall (0 : E) 1) :
       (⟨(ballRadialProjection p).1, (ballRadialProjection_spec p).1⟩,
         ⟨(ballRadialProjection p).2, (ballRadialProjection_spec p).2.1⟩) := rfl
 
-/-- **The unit sphere of a real normed space has the homotopy extension property inside the
-closed unit ball**: the inclusion of the boundary sphere of a disk is a closed cofibration. -/
+/-- **The unit sphere of a real seminormed space has the homotopy extension property inside the
+closed unit ball**: the inclusion of the unit sphere is a closed cofibration. -/
 theorem hasHomotopyExtensionProperty_sphere_closedBall :
     HasHomotopyExtensionProperty
       (Subtype.val ⁻¹' sphere (0 : E) 1 : Set (closedBall (0 : E) 1)) := by

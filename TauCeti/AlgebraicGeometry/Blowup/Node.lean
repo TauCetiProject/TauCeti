@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Blowup.AffineCharts
-public import TauCeti.AlgebraicGeometry.Curves.Node
+public import TauCeti.AlgebraicGeometry.Curves.Node.Basic
 public import TauCeti.RingTheory.Node.Blowup
 public import TauCeti.AlgebraicGeometry.Scheme.RegularLocalRing
 public import TauCeti.RingTheory.RegularLocalRing.Node

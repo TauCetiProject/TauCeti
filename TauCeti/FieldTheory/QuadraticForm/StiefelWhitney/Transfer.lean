@@ -35,8 +35,14 @@ through the Kummer isomorphism, together with the law `cor (a) = (N_{L/K} a)`
   class-level transfer along a nonzero functional.
 * `TauCeti.sw1Class_traceTransfer_mk_rankOne`: `w₁(Tr_*⟨a⟩) = w₁(Tr_*⟨1⟩) + cor (a)` for a
   finite separable extension.
-* `TauCeti.sw1Class_formClass_traceTransfer_smul_sq`: the same identity for the twisted trace
-  forms `x ↦ Tr_{L/K}(a x²)` and `x ↦ Tr_{L/K}(x²)` on `L` themselves.
+* `TauCeti.sw1Class_formClass_scharlauTransfer_smul_sq` and
+  `TauCeti.sw1Class_formClass_traceTransfer_smul_sq`: the same identity for the transferred forms
+  `x ↦ s(a x²)` and `x ↦ s(x²)` on `L` themselves, in particular for the twisted trace forms.
+* `TauCeti.sw1_eq_add_galoisCor_of_equivalent_scharlauTransfer` and
+  `TauCeti.sw1_eq_add_galoisCor_of_equivalent_traceTransfer`: the identity read on diagonal
+  presentations: if `s_*⟨1⟩ ≅ ⟨t₁, …, tₘ⟩` and `s_*⟨a⟩ ≅ ⟨b₁, …, bₙ⟩`, then
+  `∑ⱼ (bⱼ) = ∑ᵢ (tᵢ) + cor (a)`. This is the form in which the formula is applied to an explicit
+  diagonalization of the two transferred forms over a fixed base field.
 
 ## References
 
@@ -66,6 +72,18 @@ theorem sw1Class_scharlauTransfer_mk_rankOne (s : L →ₗ[K] K) (hs : s ≠ 0) 
     RegularFormClass.discr_scharlauTransfer_mk_rankOne, map_add,
     kummerSquareClassEquiv_squareClass, galoisCor_kummerClass]
 
+/-- **The first Stiefel–Whitney class of a transferred line, on the forms themselves**: for a
+`K`-linear functional `s : L → K` and `a ∈ Lˣ`, the first Stiefel–Whitney classes of the regular
+forms `x ↦ s(a x²)` and `x ↦ s(x²)` on `L` differ by `cor (a)`. Regularity of the two forms is a
+hypothesis. -/
+theorem sw1Class_formClass_scharlauTransfer_smul_sq (s : L →ₗ[K] K) (a : Lˣ)
+    (ha : (((a : L) • QuadraticMap.sq (R := L) (A := L)).scharlauTransfer s).Nondegenerate)
+    (h1 : ((QuadraticMap.sq (R := L) (A := L)).scharlauTransfer s).Nondegenerate) :
+    sw1Class (formClass _ ha) = sw1Class (formClass _ h1) + galoisCor K L σ 1 (kummerClass a) := by
+  rw [sw1Class_eq_kummerSquareClassEquiv_discr, sw1Class_eq_kummerSquareClassEquiv_discr,
+    discr_formClass_scharlauTransfer_smul_sq s a ha h1, map_add,
+    kummerSquareClassEquiv_squareClass, galoisCor_kummerClass]
+
 /-- **The relative Stiefel–Whitney formula in degree one, on the trace forms themselves**: for a
 finite extension `L/K` and `a ∈ Lˣ`, the first Stiefel–Whitney classes of the regular
 forms `x ↦ Tr_{L/K}(a x²)` and `x ↦ Tr_{L/K}(x²)` on `L` differ by `cor (a)`. Regularity of the
@@ -74,11 +92,42 @@ theorem sw1Class_formClass_traceTransfer_smul_sq (a : Lˣ)
     (ha : (((a : L) • QuadraticMap.sq (R := L) (A := L)).traceTransfer K).Nondegenerate)
     (h1 : ((QuadraticMap.sq (R := L) (A := L)).traceTransfer K).Nondegenerate) :
     sw1Class (formClass _ ha) = sw1Class (formClass _ h1) + galoisCor K L σ 1 (kummerClass a) := by
-  simp only [QuadraticMap.traceTransfer_eq_scharlauTransfer] at ha h1
-  rw [sw1Class_eq_kummerSquareClassEquiv_discr, sw1Class_eq_kummerSquareClassEquiv_discr]
-  simp only [QuadraticMap.traceTransfer_eq_scharlauTransfer]
-  rw [discr_formClass_scharlauTransfer_smul_sq _ a ha h1, map_add,
-    kummerSquareClassEquiv_squareClass, galoisCor_kummerClass]
+  simp only [QuadraticMap.traceTransfer_eq_scharlauTransfer] at ha h1 ⊢
+  exact sw1Class_formClass_scharlauTransfer_smul_sq σ _ a ha h1
+
+/-- **The relative Stiefel–Whitney formula in degree one, on diagonal presentations**: for a
+`K`-linear functional `s : L → K` and `a ∈ Lˣ`, if the transferred forms `x ↦ s(x²)` and
+`x ↦ s(a x²)` on `L` are isometric to `⟨t₁, …, tₘ⟩` and `⟨b₁, …, bₙ⟩`, then
+`∑ⱼ (bⱼ) = ∑ᵢ (tᵢ) + cor (a)`. No regularity hypothesis is needed: isometry with a diagonal form
+with unit coefficients already makes both transferred forms regular. -/
+theorem sw1_eq_add_galoisCor_of_equivalent_scharlauTransfer (s : L →ₗ[K] K) (a : Lˣ) {m n : ℕ}
+    {t : Fin m → Kˣ} {b : Fin n → Kˣ}
+    (ht : ((QuadraticMap.sq (R := L) (A := L)).scharlauTransfer s).Equivalent
+      (QuadraticMap.weightedSumSquares K fun i => (t i : K)))
+    (hb : (((a : L) • QuadraticMap.sq (R := L) (A := L)).scharlauTransfer s).Equivalent
+      (QuadraticMap.weightedSumSquares K fun i => (b i : K))) :
+    sw1 b = sw1 t + galoisCor K L σ 1 (kummerClass a) := by
+  obtain ⟨et⟩ := ht
+  obtain ⟨eb⟩ := hb
+  have h1 := et.nondegenerate_iff.2 <|
+    QuadraticMap.nondegenerate_weightedSumSquares fun i => (t i).isUnit.isRegular
+  have ha := eb.nondegenerate_iff.2 <|
+    QuadraticMap.nondegenerate_weightedSumSquares fun i => (b i).isUnit.isRegular
+  rw [← sw1Class_formClass _ h1 t ⟨et⟩, ← sw1Class_formClass _ ha b ⟨eb⟩,
+    sw1Class_formClass_scharlauTransfer_smul_sq σ s a ha h1]
+
+/-- **The relative Stiefel–Whitney formula in degree one, on diagonal presentations of the trace
+forms**: for a finite extension `L/K` and `a ∈ Lˣ`, if `Tr_*⟨1⟩ ≅ ⟨t₁, …, tₘ⟩` and
+`Tr_*⟨a⟩ ≅ ⟨b₁, …, bₙ⟩`, then `∑ⱼ (bⱼ) = ∑ᵢ (tᵢ) + cor (a)`. -/
+theorem sw1_eq_add_galoisCor_of_equivalent_traceTransfer (a : Lˣ) {m n : ℕ}
+    {t : Fin m → Kˣ} {b : Fin n → Kˣ}
+    (ht : ((QuadraticMap.sq (R := L) (A := L)).traceTransfer K).Equivalent
+      (QuadraticMap.weightedSumSquares K fun i => (t i : K)))
+    (hb : (((a : L) • QuadraticMap.sq (R := L) (A := L)).traceTransfer K).Equivalent
+      (QuadraticMap.weightedSumSquares K fun i => (b i : K))) :
+    sw1 b = sw1 t + galoisCor K L σ 1 (kummerClass a) := by
+  simp only [QuadraticMap.traceTransfer_eq_scharlauTransfer] at ht hb
+  exact sw1_eq_add_galoisCor_of_equivalent_scharlauTransfer σ _ a ht hb
 
 variable [Algebra.IsSeparable K L]
 

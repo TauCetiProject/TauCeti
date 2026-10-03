@@ -31,15 +31,16 @@ never takes the value `⊥`), then `f⋆⋆` is the largest lower-semicontinuous
 `f`; in particular `f⋆⋆ = f` when `f` is proper, convex and lower semicontinuous. If `f` has no
 such affine minorant, for instance when `f x = ⊥` at some point
 (`TauCeti.fenchelConjugate_eq_top_of_eq_bot`), then `f⋆ ≡ ⊤` and `f⋆⋆ ≡ ⊥`, even though the
-lower-semicontinuous convex minorants of `f` need not all be `⊥`. The theorem needs a separation
-theorem and is not proved here. For a bare bilinear pairing only the inequality `f⋆⋆ ≤ f` holds
-(for the zero pairing, `f⋆⋆` is the constant `⨅ x, f x`). This file contains the algebraic part
-of the theory, valid on a bare dual pair:
-the conjugate itself, the Fenchel–Young inequality, the antitone Galois connection between the
-functions on `E` and on `F` that the conjugate and its transpose `B.flip` form, the
-biconjugate inequality `f⋆⋆ ≤ f`, the triple-conjugate identity `f⋆⋆⋆ = f⋆`, the normalisation
-rule for an additive constant, the convexity of every conjugate, and its lower semicontinuity
-for any topology on `F` making every functional `B x` continuous.
+lower-semicontinuous convex minorants of `f` need not all be `⊥`. The equality `f⋆⋆ = f` needs a
+separation theorem and is proved in `TauCeti.Analysis.Convex.FenchelMoreau`, for a pairing that
+represents every continuous linear functional. For a bare bilinear pairing only the inequality
+`f⋆⋆ ≤ f` holds (for the zero pairing, `f⋆⋆` is the constant `⨅ x, f x`). This file contains the
+algebraic part of the theory, valid on a bare dual pair: the conjugate itself, the Fenchel–Young
+inequality, the antitone Galois connection between the functions on `E` and on `F` that the
+conjugate and its transpose `B.flip` form, the biconjugate inequality `f⋆⋆ ≤ f` and the bound of
+`f⋆⋆` from below by every affine minorant of `f`, the triple-conjugate identity `f⋆⋆⋆ = f⋆`, the
+normalisation rule for an additive constant, the convexity of every conjugate, and its lower
+semicontinuity for any topology on `F` making every functional `B x` continuous.
 
 The codomain is `EReal` throughout: the supremum defining `f⋆` can be `+∞` even for a finite `f`,
 and it is `-∞` exactly when `f ≡ +∞`. The only subtraction that occurs is `⟪x, y⟫ - f x`, a real
@@ -67,7 +68,9 @@ topology, the inner product being continuous in each variable.
   `(f, g)` satisfies the Fenchel–Young inequality; the conjugate for `B` and the conjugate for
   the transposed pairing `B.flip` form an antitone Galois connection;
 * `TauCeti.fenchelConjugate_flip_fenchelConjugate_le` — the biconjugate inequality `f⋆⋆ ≤ f`,
-  and `TauCeti.fenchelConjugate_fenchelConjugate_flip_fenchelConjugate` — `f⋆⋆⋆ = f⋆`;
+  `TauCeti.coe_add_le_fenchelConjugate_flip_fenchelConjugate` — every affine minorant
+  `x ↦ ⟪x, y⟫ + c` of `f` lies below `f⋆⋆`, and
+  `TauCeti.fenchelConjugate_fenchelConjugate_flip_fenchelConjugate` — `f⋆⋆⋆ = f⋆`;
 * `TauCeti.fenchelConjugate_eq_bot_iff` — `f⋆ y = -∞` exactly when `f ≡ +∞`, and
   `TauCeti.fenchelConjugate_eq_top_of_eq_bot` — `f⋆ ≡ +∞` as soon as `f` takes the value `-∞`;
 * `TauCeti.fenchelConjugate_add_const` — adding a real constant to `f` subtracts it from `f⋆`;
@@ -217,6 +220,20 @@ theorem fenchelConjugate_fenchelConjugate_flip_fenchelConjugate (f : E → EReal
     fenchelConjugate B (fenchelConjugate B.flip (fenchelConjugate B f)) =
       fenchelConjugate B f :=
   OrderDual.toDual.injective ((fenchelConjugate_galoisConnection B).u_l_u_eq_u f)
+
+/-- Every affine minorant `x ↦ B x y + c` of `f` lies below the biconjugate `f⋆⋆`: the
+minorant bounds `f⋆ y` by `-c`. -/
+theorem coe_add_le_fenchelConjugate_flip_fenchelConjugate {c : ℝ}
+    (h : ∀ x, ((B x y + c : ℝ) : EReal) ≤ f x) (x : E) :
+    ((B x y + c : ℝ) : EReal) ≤ fenchelConjugate B.flip (fenchelConjugate B f) x := by
+  have hy : fenchelConjugate B f y ≤ ((-c : ℝ) : EReal) := fenchelConjugate_le B fun x' => by
+    rw [EReal.coe_sub_le_comm, ← EReal.coe_sub, sub_neg_eq_add]
+    exact h x'
+  have hxy := sub_le_fenchelConjugate B.flip (fenchelConjugate B f) y x
+  rw [LinearMap.flip_apply] at hxy
+  refine le_trans ?_ hxy
+  rw [← sub_neg_eq_add, EReal.coe_sub]
+  exact EReal.sub_le_sub le_rfl hy
 
 /-- Adding a real constant to a function subtracts it from the conjugate. -/
 @[simp]

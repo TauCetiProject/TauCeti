@@ -198,6 +198,11 @@ protected noncomputable abbrev singularHomologyMap (n : ℕ) :
     P.singularHomology R n ⟶ P'.singularHomology R n :=
   SSetPair.homologyMap (toSSetPair.map f) R n
 
+/-- Relative singular homology sends the identity map of a pair to the identity. -/
+@[simp]
+lemma singularHomologyMap_id (n : ℕ) : P.singularHomologyMap (𝟙 P) R n = 𝟙 _ := by
+  rw [TopPair.singularHomologyMap, CategoryTheory.Functor.map_id, SSetPair.homologyMap_id]
+
 variable {P P'} in
 /-- Relative singular homology sends a composite of maps of pairs to the composite of the induced
 maps. -/

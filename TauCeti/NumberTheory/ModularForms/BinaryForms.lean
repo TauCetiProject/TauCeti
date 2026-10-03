@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.Adjugate
-public import TauCeti.RingTheory.MvPolynomial.LinearSubst
+public import TauCeti.RingTheory.MvPolynomial.Trace
 
 /-!
 # The action of integral matrices on binary forms
@@ -30,6 +30,13 @@ of both period polynomials and modular symbols of weight `w + 2`.
   (P ∣ M) ∣ N`.
 * `TauCeti.binaryFormRep_op_neg`, `TauCeti.binaryFormRep_op_scalar`: negated and scalar matrices
   act by `(-1)ʷ` and by the `w`th power of the scalar.
+* `TauCeti.trace_binaryFormRep_eq_dickson_eval`: the trace is the Dickson weight polynomial
+  evaluated at the matrix trace and determinant.
+
+## References
+
+* A. Popa and D. Zagier, *An elementary proof of the Eichler--Selberg trace formula*,
+  J. Reine Angew. Math. **762** (2020), 105--122, arXiv:1711.00327, Section 4.
 -/
 
 public section
@@ -49,6 +56,24 @@ noncomputable def binaryFormRep :
     (MonoidHom.op (Int.castRingHom R).mapMatrix.toMonoidHom)
 
 variable {R w}
+
+/-- Integral substitution is homogeneous substitution after mapping the matrix entries into
+its coefficient ring. -/
+theorem binaryFormRep_op (M : Matrix (Fin 2) (Fin 2) ℤ) :
+    binaryFormRep R w (op M) =
+      linearSubstRep (Fin 2) R w (op (M.map (Int.castRingHom R))) := (rfl)
+
+/-- The trace of an integral matrix on binary forms is its Dickson weight polynomial. -/
+theorem trace_binaryFormRep_eq_dickson_eval {K : Type*} [CommRing K] (w : ℕ)
+    (M : Matrix (Fin 2) (Fin 2) ℤ) :
+    LinearMap.trace K (homogeneousSubmodule (Fin 2) K w) (binaryFormRep K w (op M)) =
+      (Polynomial.dickson 2 (M.det : K) w).eval (M.trace : K) := by
+  have hd : (M.map (Int.castRingHom K)).det = (M.det : K) := (Int.cast_det M).symm
+  have ht : (M.map (Int.castRingHom K)).trace = (M.trace : K) :=
+    (AddMonoidHom.map_trace (Int.castRingHom K) M).symm
+  rw [binaryFormRep_op]
+  simpa only [hd, ht] using
+    trace_linearSubstRep_eq_dickson_eval w (M.map (Int.castRingHom K))
 
 @[simp]
 theorem coe_binaryFormRep_apply (M : Matrix (Fin 2) (Fin 2) ℤ)

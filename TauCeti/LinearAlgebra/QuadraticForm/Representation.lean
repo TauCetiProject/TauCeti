@@ -21,14 +21,14 @@ For scalar values, it defines the represented-unit value set, proves its element
 invariance, and gives the criterion that, for a form with trivial radical, representing a unit is
 equivalent to isotropy after adjoining the one-dimensional form with that unit as its negative
 coefficient. A nondegenerate form has trivial radical by Mathlib's `radical_eq_bot` theorem. A
-nondegenerate isotropic form over a field also contains an isotropic pair: two isotropic vectors
-whose polar pairing is one. If the orthogonal sum of a form with trivial radical and an
-anisotropic form on a nonzero space is isotropic, the two summands therefore share a nonzero
-opposite value; for two nondegenerate summands, the first with some unit value and the second on
-a nonzero space, isotropy of the sum is equivalent to such a shared opposite unit value. These
-results provide the basic bridge from value questions to isotropy questions,
-following Lam,
-*Introduction to Quadratic Forms over Fields*, I.2.3 and I.3.5.
+nondegenerate form over a field pairs every nonzero isotropic vector with an isotropic partner
+of polar pairing one, so a nondegenerate isotropic form contains such an isotropic pair. If the
+orthogonal sum of a form with trivial radical and an anisotropic form on a nonzero space is
+isotropic, the two summands therefore share a nonzero opposite value; for two nondegenerate
+summands, the first with some unit value and the second on a nonzero space, isotropy of the sum is
+equivalent to such a shared opposite unit value. These results provide the basic bridge from value
+questions to isotropy questions, following Lam, *Introduction to Quadratic Forms over Fields*,
+I.2.3 and I.3.5.
 -/
 
 public section
@@ -304,12 +304,11 @@ theorem _root_.QuadraticMap.Anisotropic.exists_ne_zero_eq_neg_of_not_anisotropic
     obtain ⟨x, hx⟩ := represents_of_radical_eq_bot_of_not_anisotropic U hU hUiso (-W y)
     exact ⟨x, y, by simpa [hx] using fun h ↦ hy (hW y h), hx⟩
 
-/-- A nondegenerate isotropic quadratic form contains two isotropic vectors whose polar pairing
-is one. -/
-theorem _root_.QuadraticMap.Nondegenerate.exists_isotropic_pair
-    {Q : QuadraticForm K V} (hQ : Q.Nondegenerate) (hiso : ¬Q.Anisotropic) :
-    ∃ x y : V, x ≠ 0 ∧ Q x = 0 ∧ Q y = 0 ∧ polar Q x y = 1 := by
-  obtain ⟨x, hx, hxQ⟩ := (not_anisotropic_iff_exists Q).mp hiso
+/-- For a nondegenerate quadratic form, every nonzero isotropic vector `x` has an isotropic partner
+`y` with `polar Q x y = 1`, so that `x, y` is a hyperbolic pair. -/
+theorem _root_.QuadraticMap.Nondegenerate.exists_isotropic_polar_eq_one
+    {Q : QuadraticForm K V} (hQ : Q.Nondegenerate) {x : V} (hx : x ≠ 0) (hxQ : Q x = 0) :
+    ∃ y : V, Q y = 0 ∧ polar Q x y = 1 := by
   obtain ⟨w, hw⟩ : ∃ w, polar Q x w ≠ 0 := by
     by_contra h
     push Not at h
@@ -331,9 +330,18 @@ theorem _root_.QuadraticMap.Nondegenerate.exists_isotropic_pair
   have hxz : polar Q x z = polar Q x w := by
     simp [z, polar_sub_right, polar_smul_right, polar_self, hxQ]
   let y := (polar Q x w)⁻¹ • z
-  refine ⟨x, y, hx, hxQ, ?_, ?_⟩
+  refine ⟨y, ?_, ?_⟩
   · simp [y, Q.map_smul, hzQ]
   · simp [y, polar_smul_right, hxz, hw]
+
+/-- A nondegenerate isotropic quadratic form contains two isotropic vectors whose polar pairing
+is one. -/
+theorem _root_.QuadraticMap.Nondegenerate.exists_isotropic_pair
+    {Q : QuadraticForm K V} (hQ : Q.Nondegenerate) (hiso : ¬Q.Anisotropic) :
+    ∃ x y : V, x ≠ 0 ∧ Q x = 0 ∧ Q y = 0 ∧ polar Q x y = 1 := by
+  obtain ⟨x, hx, hxQ⟩ := (not_anisotropic_iff_exists Q).mp hiso
+  obtain ⟨y, hyQ, hxy⟩ := hQ.exists_isotropic_polar_eq_one hx hxQ
+  exact ⟨x, y, hx, hxQ, hyQ, hxy⟩
 
 /-- Multiplying a represented scalar by the square of a unit preserves representation. -/
 @[simp] theorem _root_.QuadraticMap.represents_mul_sq_iff (Q : QuadraticMap R M R) (a : R)

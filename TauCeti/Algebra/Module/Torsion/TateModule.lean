@@ -46,6 +46,8 @@ introducing an elliptic-curve-specific copy of the inverse-limit machinery.
   `ℤ_p → ZMod (p ^ n)`.
 * `TauCeti.TateModule.continuous_iff`: a map into the Tate module is continuous exactly when
   all its finite-level components are locally constant.
+* `TauCeti.TateModule.continuous_map_apply`: a family of homomorphisms moving each torsion point
+  locally constantly acts jointly continuously on Tate modules.
 * `TauCeti.TateModule.proj_surjective`: if the transition maps are surjective, so is every
   projection.
 * `TauCeti.TateModule.nonempty_linearEquiv_of_natCard`: if `A[p^n]` has `(p^n)^r` elements for
@@ -377,6 +379,23 @@ theorem continuous_map {B : Type*} [AddCommGroup B] (f : A →+ B) :
   change IsLocallyConstant
     ((levelMap (p := p) f n : TateModuleLevel p A n → TateModuleLevel p B n) ∘ proj n)
   exact (isLocallyConstant_proj (p := p) (A := A) n).comp (levelMap (p := p) f n)
+
+/-- **Homomorphisms moving torsion locally constantly act continuously on Tate modules.** If
+`f : G → (A →+ B)` is a family of homomorphisms parametrised by a topological space `G`, and
+`g ↦ f g x` is locally constant for every `p`-power torsion point `x`, then
+`(g, y) ↦ map (f g) y` is jointly continuous. This is how a profinite Galois group acting on the
+torsion points of `A` acts continuously on `T_p A`. -/
+theorem continuous_map_apply {G : Type*} [TopologicalSpace G] {B : Type*} [AddCommGroup B]
+    {f : G → A →+ B} (hf : ∀ n (x : TateModuleLevel p A n), IsLocallyConstant fun g ↦ f g x) :
+    Continuous fun q : G × TateModule p A ↦ map (p := p) (f q.1) q.2 := by
+  refine continuous_iff.2 fun n ↦ (IsLocallyConstant.iff_eventually_eq _).2 fun q₀ ↦ ?_
+  have hg := (continuous_fst.tendsto q₀).eventually
+    ((IsLocallyConstant.iff_eventually_eq _).1 (hf n (proj n q₀.2)) q₀.1)
+  have hy := (continuous_snd.tendsto q₀).eventually
+    ((IsLocallyConstant.iff_eventually_eq _).1 (isLocallyConstant_proj (p := p) (A := A) n) q₀.2)
+  filter_upwards [hg, hy] with q hgq hyq
+  rw [proj_map, proj_map, hyq]
+  exact Subtype.ext hgq
 
 /-! ### Freeness -/
 

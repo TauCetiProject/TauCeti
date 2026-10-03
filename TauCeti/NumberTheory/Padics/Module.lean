@@ -11,6 +11,7 @@ public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import Mathlib.Topology.Algebra.Group.ClosedSubgroup
 public import Mathlib.Topology.Algebra.Module.ClosedSubmodule
+public import Mathlib.Algebra.Module.Torsion.Basic
 import Mathlib.Algebra.Group.Equiv.TypeTags
 import Mathlib.LinearAlgebra.Dimension.Constructions
 
@@ -46,6 +47,8 @@ additive isomorphism between two such modules preserves `Module.finrank`, and `�
 * `AddEquiv.finrank_padicInt_eq`: a continuous additive isomorphism preserves the `ℤ_[p]`-rank.
 * `TauCeti.eq_of_continuousMulEquiv_pi_padicInt`: topologically isomorphic groups `ℤ_[p] ^ r` and
   `ℤ_[p] ^ r'` have `r = r'`.
+* `Submodule.torsion_padicInt`: the torsion submodule of a `ℤ_[p]`-module is its torsion subgroup.
+  This is purely algebraic, the `ℤ_[p]` counterpart of `Submodule.torsion_int`.
 -/
 
 public section
@@ -189,3 +192,32 @@ theorem AddEquiv.coe_toPadicIntLinearEquiv_symm (e : E ≃+ F) (h₁ : Continuou
   (rfl)
 
 end
+
+section Torsion
+
+variable (p : ℕ) [hp : Fact p.Prime] {M : Type*} [AddCommGroup M] [Module ℤ_[p] M]
+
+/-- **The torsion submodule of a `ℤ_[p]`-module is its torsion subgroup.** This is the `ℤ_[p]`
+analogue of `Submodule.torsion_int`. -/
+theorem Submodule.torsion_padicInt :
+    (torsion ℤ_[p] M).toAddSubgroup = AddCommGroup.torsion M := by
+  -- A nonzero `p`-adic integer is a unit times a power of `p`, so an element it kills is killed
+  -- by a positive integer; conversely a positive integer is a nonzero `p`-adic integer.
+  ext x
+  simp only [mem_toAddSubgroup, mem_torsion_iff, AddCommGroup.mem_torsion]
+  constructor
+  · rintro ⟨⟨a, ha⟩, hax⟩
+    have ha0 : a ≠ 0 := nonZeroDivisors.coe_ne_zero ⟨a, ha⟩
+    refine isOfFinAddOrder_iff_nsmul_eq_zero.mpr ⟨p ^ a.valuation, pow_pos hp.out.pos _, ?_⟩
+    -- `p ^ v(a)` is `a` divided by its unit part.
+    have hpow : ((p ^ a.valuation : ℕ) : ℤ_[p]) = ↑(PadicInt.unitCoeff ha0)⁻¹ * a := by
+      rw [eq_comm, Units.inv_mul_eq_iff_eq_mul, Nat.cast_pow]
+      exact PadicInt.unitCoeff_spec ha0
+    rw [← Nat.cast_smul_eq_nsmul ℤ_[p], hpow, mul_smul]
+    simpa using hax
+  · intro hx
+    obtain ⟨n, hn, hnx⟩ := isOfFinAddOrder_iff_nsmul_eq_zero.mp hx
+    exact ⟨⟨n, mem_nonZeroDivisors_of_ne_zero (Nat.cast_ne_zero.mpr hn.ne')⟩,
+      by simpa [Nat.cast_smul_eq_nsmul] using hnx⟩
+
+end Torsion

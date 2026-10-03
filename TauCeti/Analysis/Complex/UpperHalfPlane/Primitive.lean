@@ -41,6 +41,24 @@ variable {f : ℂ → E}
 
 namespace TauCeti
 
+/-- A holomorphic integrand on a ball has a primitive agreeing with any given primitive on
+the intersection of that ball with the upper half-plane. -/
+theorem exists_hasDerivAt_eqOn_ball_inter_upperHalfPlane {g : ℂ → E} {c : ℂ} {r : ℝ}
+    (hg : DifferentiableOn ℂ g (Metric.ball c r))
+    (hf : ∀ z ∈ Metric.ball c r ∩ upperHalfPlaneSet, HasDerivAt f (g z) z) :
+    ∃ G : ℂ → E, (∀ z ∈ Metric.ball c r, HasDerivAt G (g z) z) ∧
+      EqOn G f (Metric.ball c r ∩ upperHalfPlaneSet) := by
+  obtain ⟨P, hP⟩ := hg.isExactOn_ball
+  have hVopen : IsOpen (Metric.ball c r ∩ upperHalfPlaneSet) :=
+    Metric.isOpen_ball.inter isOpen_upperHalfPlaneSet
+  have hVpre : IsPreconnected (Metric.ball c r ∩ upperHalfPlaneSet) :=
+    ((convex_ball _ _).inter (convex_halfSpace_im_gt 0)).isPreconnected
+  obtain ⟨k, hk⟩ := hVopen.exists_eq_add_of_deriv_eq hVpre
+    (fun z hz => (hf z hz).differentiableAt.differentiableWithinAt)
+    (fun z hz => (hP z hz.1).differentiableAt.differentiableWithinAt)
+    (fun z hz => (hf z hz).deriv.trans (hP z hz.1).deriv.symm)
+  exact ⟨fun z => P z + k, fun z hz => (hP z hz).add_const k, fun z hz => (hk hz).symm⟩
+
 omit [CompleteSpace E] in
 -- This proof adapts
 -- `Complex.IsConservativeOn.eventually_nhds_wedgeIntegral_sub_wedgeIntegral` from

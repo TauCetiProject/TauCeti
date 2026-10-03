@@ -9,6 +9,7 @@ public import Mathlib.NumberTheory.PrimesCongruentOne
 public import Mathlib.RepresentationTheory.Maschke
 public import TauCeti.Data.ZMod.ValMinAbs
 public import TauCeti.RepresentationTheory.CharacterTable.Values
+public import TauCeti.RingTheory.ZMod.PrimitiveRoot
 public import TauCeti.RingTheory.ZMod.Torsion
 
 /-!
@@ -30,15 +31,21 @@ determined by its residue modulo `p`.
 
 Such primes always exist: there are arbitrarily large primes congruent to `1` modulo `e`
 (`Nat.exists_prime_gt_modEq_one`, itself a cyclotomic-polynomial argument), and any of them beyond
-`max |G| (2⌊√|G|⌋)` is good. The existence proof is not part of any computation; a concrete group
-supplies a concrete prime, as the dihedral instances in
-`TauCeti/RepresentationTheory/CharacterTable/Dixon/Dihedral.lean` do.
+`max |G| (2⌊√|G|⌋)` is good. The existence proof is not part of any computation. What the
+computation does instead is search: `TauCeti.DixonPrimeData.candidates` tests the numbers
+`e + 1, 2e + 1, 3e + 1, …` in turn, keeps the good primes among them, and pairs each with the least
+primitive `e`-th root of unity modulo it (`TauCeti.ZMod.primitiveRoot?`). The existence theorem
+then says that the search reaches every good prime once it runs far enough
+(`TauCeti.DixonPrimeData.exists_mem_candidates`).
 
 ## Main definitions
 
 * `TauCeti.IsGoodDixonPrime`: the good-prime predicate.
 * `TauCeti.DixonPrimeData`: a good prime together with a choice of primitive `e`-th root of unity
   modulo it, the data the algorithm consumes.
+* `TauCeti.DixonPrimeData.ofPrime?`: the Dixon prime data at a given prime, if it is good.
+* `TauCeti.DixonPrimeData.candidates`: the Dixon prime data at the good primes among the first
+  numbers congruent to `1` modulo the exponent.
 
 ## Main results
 
@@ -54,6 +61,10 @@ supplies a concrete prime, as the dihedral instances in
   recovered from, and so determined by, its residue modulo `p`. This is what the size bound is
   for.
 * `TauCeti.exists_isGoodDixonPrime`: **good Dixon primes exist** for every finite group.
+* `TauCeti.DixonPrimeData.isSome_ofPrime?_iff`: the data at `p` is found exactly when `p` is a
+  good Dixon prime.
+* `TauCeti.DixonPrimeData.mem_candidates_iff` and `TauCeti.DixonPrimeData.exists_mem_candidates`:
+  the search returns the data at every good prime within its range, and nothing else.
 
 ## Implementation notes
 
@@ -272,12 +283,132 @@ theorem root_ne_zero : d.root ≠ 0 := d.isUnit_root.ne_zero
 
 end DixonPrimeData
 
-/-- Every finite group admits Dixon prime data. The witness is noncomputable, which is why concrete
-instances are supplied by hand. -/
+/-- Every finite group admits Dixon prime data. The witness is noncomputable; a computation that
+needs the data finds it with `TauCeti.DixonPrimeData.candidates` instead. -/
 instance instNonemptyDixonPrimeData (G : Type*) [Group G] [Finite G] :
     Nonempty (DixonPrimeData G) := by
   obtain ⟨p, hp⟩ := exists_isGoodDixonPrime G
   obtain ⟨ζ, hζ⟩ := hp.exists_isPrimitiveRoot
   exact ⟨⟨p, ζ, hp, hζ⟩⟩
+
+/-! ### Searching for Dixon prime data
+
+The order and the exponent of `G` enter the search as natural numbers `n` and `e`, together with
+proofs that they are `Nat.card G` and `Monoid.exponent G`: Mathlib's `Monoid.exponent` is
+noncomputable, and a caller that runs the search supplies the two numbers it already knows. -/
+
+namespace DixonPrimeData
+
+variable {G : Type*} [Group G] (e : ℕ) (he : e = Monoid.exponent G) (n : ℕ) (hn : n = Nat.card G)
+
+/-- **The Dixon prime data at `p`, if `p` is a good Dixon prime.** The four arithmetic conditions
+of `TauCeti.IsGoodDixonPrime` are decided on the numbers `n` and `e`, and the primitive root is the
+least one modulo `p` (`TauCeti.ZMod.primitiveRoot?`). -/
+def ofPrime? (p : ℕ) : Option (DixonPrimeData G) :=
+  if hp : p.Prime ∧ ¬p ∣ n ∧ e ∣ p - 1 ∧ 2 * Nat.sqrt n < p then
+    (ZMod.primitiveRoot? p e).map fun ζ ↦
+      { p
+        root := ζ.1
+        isGoodDixonPrime := by
+          subst he hn
+          exact ⟨hp.1, hp.2.1, hp.2.2.1, hp.2.2.2⟩
+        isPrimitiveRoot_root := he ▸ ζ.2 }
+  else none
+
+variable {e he n hn}
+
+/-- Data returned at `p` lives at the prime `p`. -/
+theorem p_eq_of_ofPrime?_eq_some {p : ℕ} {q : DixonPrimeData G}
+    (h : ofPrime? e he n hn p = some q) : q.p = p := by
+  unfold ofPrime? at h
+  split_ifs at h
+  obtain ⟨ζ, -, rfl⟩ := Option.map_eq_some_iff.mp h
+  rfl
+
+/-- **The data at `p` is found exactly when `p` is a good Dixon prime.** A good prime has a
+primitive `e`-th root of unity, so the root search at it cannot fail. -/
+theorem isSome_ofPrime?_iff {p : ℕ} : (ofPrime? e he n hn p).isSome ↔ IsGoodDixonPrime G p := by
+  constructor
+  · intro h
+    obtain ⟨q, hq⟩ := Option.isSome_iff_exists.mp h
+    exact p_eq_of_ofPrime?_eq_some hq ▸ q.isGoodDixonPrime
+  · intro hp
+    have := hp.neZero
+    have := hp.finite
+    subst he hn
+    rw [ofPrime?, dite_eq_left_of_eq_true
+      (eq_true ⟨hp.prime, hp.not_dvd_natCard, hp.exponent_dvd, hp.two_mul_sqrt_lt⟩),
+      Option.isSome_map, ZMod.isSome_primitiveRoot?_iff Monoid.exponent_ne_zero_of_finite]
+    exact hp.exists_isPrimitiveRoot
+
+/-- **The search returns given Dixon prime data at its prime** as soon as its root is the one the
+primitive-root search finds there. -/
+theorem ofPrime?_eq_some {q : DixonPrimeData G}
+    (hroot : (ZMod.primitiveRoot? q.p e).map Subtype.val = some q.root) :
+    ofPrime? e he n hn q.p = some q := by
+  have hp := q.isGoodDixonPrime
+  subst he hn
+  rw [ofPrime?, dite_eq_left_of_eq_true
+    (eq_true ⟨hp.prime, hp.not_dvd_natCard, hp.exponent_dvd, hp.two_mul_sqrt_lt⟩)]
+  obtain ⟨ζ, hζ, hval⟩ := Option.map_eq_some_iff.mp hroot
+  rw [hζ, Option.map_some]
+  exact congrArg some (DixonPrimeData.ext rfl (heq_of_eq hval))
+
+variable (e he n hn)
+
+/-- **The search for Dixon prime data.** The numbers `e (k + 1) + 1` for `k < fuel` are tested in
+increasing order, and the Dixon prime data at each good prime among them is kept. When `e ≠ 0`
+(for instance when `G` is finite), these are exactly the numbers above `1` and at most
+`e · fuel + 1` congruent to `1` modulo `e`. -/
+def candidates (fuel : ℕ) : List (DixonPrimeData G) :=
+  (List.range fuel).filterMap fun k ↦ ofPrime? e he n hn (e * (k + 1) + 1)
+
+variable {e he n hn}
+
+/-- **The search finds the data at every good prime within its range, and nothing else.** The data
+`q` is found within `fuel` steps exactly when it is the data the search computes at its prime and
+that prime is at most `e · fuel + 1`. -/
+theorem mem_candidates_iff {fuel : ℕ} {q : DixonPrimeData G} :
+    q ∈ candidates e he n hn fuel ↔ ofPrime? e he n hn q.p = some q ∧ q.p ≤ e * fuel + 1 := by
+  rw [candidates, List.mem_filterMap]
+  constructor
+  · rintro ⟨k, hk, hq⟩
+    have hp := p_eq_of_ofPrime?_eq_some hq
+    rw [List.mem_range] at hk
+    refine ⟨hp ▸ hq, hp ▸ ?_⟩
+    have : e * (k + 1) ≤ e * fuel := Nat.mul_le_mul_left e hk
+    omega
+  · rintro ⟨hq, hle⟩
+    have hgood := q.isGoodDixonPrime
+    have := hgood.finite
+    have he0 : 0 < e := he ▸ Nat.pos_of_ne_zero Monoid.exponent_ne_zero_of_finite
+    obtain ⟨m, hm⟩ := he ▸ hgood.exponent_dvd
+    have htwo := hgood.prime.two_le
+    have hm0 : m ≠ 0 := by
+      rintro rfl
+      omega
+    refine ⟨m - 1, List.mem_range.mpr ?_, ?_⟩
+    · by_contra hlt
+      have hfm : fuel + 1 ≤ m := by omega
+      have := Nat.mul_le_mul_left e hfm
+      rw [Nat.mul_succ] at this
+      omega
+    · rwa [Nat.sub_add_cancel (Nat.pos_of_ne_zero hm0), ← hm, Nat.sub_add_cancel (by omega)]
+
+/-- **Every good Dixon prime is reached by the search** once it runs far enough. -/
+theorem exists_mem_candidates {p fuel : ℕ} (hp : IsGoodDixonPrime G p) (hfuel : p ≤ e * fuel + 1) :
+    ∃ q ∈ candidates e he n hn fuel, q.p = p := by
+  obtain ⟨q, hq⟩ := Option.isSome_iff_exists.mp ((isSome_ofPrime?_iff (he := he) (hn := hn)).mpr hp)
+  have hqp := p_eq_of_ofPrime?_eq_some hq
+  exact ⟨q, mem_candidates_iff.mpr ⟨hqp ▸ hq, hqp ▸ hfuel⟩, hqp⟩
+
+/-- Running the search longer only appends to what it has already found. -/
+theorem candidates_prefix {fuel fuel' : ℕ} (h : fuel ≤ fuel') :
+    candidates e he n hn fuel <+: candidates e he n hn fuel' := by
+  obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le h
+  rw [candidates, candidates, List.range_add, List.filterMap_append]
+  exact List.prefix_append _ _
+
+end DixonPrimeData
 
 end TauCeti

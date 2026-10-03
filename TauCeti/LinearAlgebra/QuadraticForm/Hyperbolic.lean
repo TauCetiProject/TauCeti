@@ -40,6 +40,12 @@ hypothesis and is proved directly in `TauCeti/LinearAlgebra/QuadraticForm/Repres
   whose discriminant differs from that of the hyperbolic plane by a square is hyperbolic.
 * `TauCeti.equivalent_weightedSumSquares_self_neg_hyperbolicPlane`: in characteristic not two, every
   `⟨a, -a⟩`, for `a ≠ 0`, is hyperbolic.
+* `QuadraticForm.equivalent_restrict_span_pair_hyperbolicPlane`: two isotropic vectors with polar
+  pairing one span a hyperbolic plane.
+* `QuadraticForm.equivalent_hyperbolicPlane_prod_restrict_orthogonal`,
+  `QuadraticMap.Nondegenerate.nondegenerate_restrict_orthogonal_span_pair`: such a pair splits a
+  finite-dimensional form as the orthogonal sum of its hyperbolic plane and the orthogonal
+  complement, which is regular when the form is.
 * `TauCeti.exists_hyperbolicPlane_prod_equivalent`: in characteristic not two, every
   finite-dimensional nondegenerate isotropic form splits off a hyperbolic plane.
 * `TauCeti.formClass_hyperbolicPlane`: the regular-form class of the hyperbolic plane is
@@ -277,6 +283,49 @@ private noncomputable def hyperbolicPairIsometryEquiv [Invertible (2 : K)]
       polar_smul_right, hxy, smul_eq_mul, mul_zero, add_zero, mul_one]
     ring
 
+private theorem range_hyperbolicPairMap [Invertible (2 : K)] (x y : V) :
+    LinearMap.range (hyperbolicPairMap (K := K) x y) = Submodule.span K {x, y} := by
+  apply le_antisymm
+  · rintro _ ⟨p, rfl⟩
+    exact Submodule.mem_span_pair.mpr ⟨p.1 + p.2, p.1 - p.2, rfl⟩
+  · rw [Submodule.span_le, Set.insert_subset_iff, Set.singleton_subset_iff]
+    refine ⟨⟨(⅟2, ⅟2), ?_⟩, ⟨(⅟2, -⅟2), ?_⟩⟩ <;>
+      simp only [hyperbolicPairMap, LinearMap.coe_mk, AddHom.coe_mk, sub_self, sub_neg_eq_add,
+        add_neg_cancel, invOf_two_add_invOf_two, zero_smul, one_smul, add_zero, zero_add]
+
+/-- Two isotropic vectors `x, y` with `polar Q x y = 1` span a hyperbolic plane. -/
+theorem _root_.QuadraticForm.equivalent_restrict_span_pair_hyperbolicPlane [Invertible (2 : K)]
+    (Q : QuadraticForm K V) {x y : V} (hxQ : Q x = 0) (hyQ : Q y = 0) (hxy : polar Q x y = 1) :
+    (Q.restrict (Submodule.span K {x, y})).Equivalent (hyperbolicPlane K) := by
+  rw [← range_hyperbolicPairMap]
+  exact ⟨(hyperbolicPairIsometryEquiv Q x y hxQ hyQ hxy).symm⟩
+
+/-- Two isotropic vectors `x, y` with `polar Q x y = 1` split `Q` as the orthogonal sum of the
+hyperbolic plane they span and its orthogonal complement. -/
+theorem _root_.QuadraticForm.equivalent_hyperbolicPlane_prod_restrict_orthogonal
+    [FiniteDimensional K V] [Invertible (2 : K)] (Q : QuadraticForm K V) {x y : V}
+    (hxQ : Q x = 0) (hyQ : Q y = 0) (hxy : polar Q x y = 1) :
+    Q.Equivalent ((hyperbolicPlane K).prod
+      (Q.restrict (LinearMap.BilinForm.orthogonal Q.polarBilin (Submodule.span K {x, y})))) := by
+  set W := Submodule.span K {x, y}
+  obtain ⟨eH⟩ := Q.equivalent_restrict_span_pair_hyperbolicPlane hxQ hyQ hxy
+  have hcomp : IsCompl W (LinearMap.BilinForm.orthogonal Q.polarBilin W) :=
+    (eH.symm.nondegenerate_iff.mp nondegenerate_hyperbolicPlane).isCompl_orthogonal
+  exact QuadraticMap.Equivalent.trans
+    ⟨(QuadraticMap.IsometryEquiv.prodRestrictOrthogonal Q W hcomp).symm⟩
+    (QuadraticMap.Equivalent.prod ⟨eH⟩ (QuadraticMap.Equivalent.refl _))
+
+/-- In a regular finite-dimensional quadratic space, the orthogonal complement of the hyperbolic
+plane spanned by isotropic vectors `x, y` with `polar Q x y = 1` is regular. -/
+theorem _root_.QuadraticMap.Nondegenerate.nondegenerate_restrict_orthogonal_span_pair
+    [FiniteDimensional K V] [Invertible (2 : K)] {Q : QuadraticForm K V} (hQ : Q.Nondegenerate)
+    {x y : V} (hxQ : Q x = 0) (hyQ : Q y = 0) (hxy : polar Q x y = 1) :
+    (Q.restrict
+      (LinearMap.BilinForm.orthogonal Q.polarBilin (Submodule.span K {x, y}))).Nondegenerate := by
+  obtain ⟨eH⟩ := Q.equivalent_restrict_span_pair_hyperbolicPlane hxQ hyQ hxy
+  exact hQ.nondegenerate_restrict_orthogonal
+    (eH.symm.nondegenerate_iff.mp nondegenerate_hyperbolicPlane)
+
 /-- Over a field in which two is invertible, every finite-dimensional nondegenerate isotropic
 quadratic form splits as the orthogonal sum of a hyperbolic plane and a nondegenerate diagonal
 form. -/
@@ -284,25 +333,10 @@ theorem exists_hyperbolicPlane_prod_equivalent [FiniteDimensional K V] [Invertib
     (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) (hiso : ¬Q.Anisotropic) :
     ∃ p : RegularFormPresentation K,
       Q.Equivalent ((hyperbolicPlane K).prod (presentedForm p)) := by
-  obtain ⟨x, y, hx, hxQ, hyQ, hxy⟩ := hQ.exists_isotropic_pair hiso
-  let W := LinearMap.range (hyperbolicPairMap (K := K) x y)
-  let eH := hyperbolicPairIsometryEquiv Q x y hxQ hyQ hxy
-  have hWQ : (Q.restrict W).Nondegenerate :=
-    eH.nondegenerate_iff.mp nondegenerate_hyperbolicPlane
-  have hcomp : IsCompl W (LinearMap.BilinForm.orthogonal Q.polarBilin W) :=
-    hWQ.isCompl_orthogonal
-  have horth : (Q.restrict (LinearMap.BilinForm.orthogonal Q.polarBilin W)).Nondegenerate :=
-    hQ.nondegenerate_restrict_orthogonal hWQ
-  obtain ⟨p, hp⟩ := exists_presentedForm_equivalent
-    (Q.restrict (LinearMap.BilinForm.orthogonal Q.polarBilin W)) horth
-  have hdecomp : Q.Equivalent
-      ((Q.restrict W).prod (Q.restrict (LinearMap.BilinForm.orthogonal Q.polarBilin W))) :=
-    ⟨(QuadraticMap.IsometryEquiv.prodRestrictOrthogonal Q W hcomp).symm⟩
-  have hreplace :
-      ((Q.restrict W).prod (Q.restrict (LinearMap.BilinForm.orthogonal Q.polarBilin W))).Equivalent
-        ((hyperbolicPlane K).prod (presentedForm p)) :=
-    QuadraticMap.Equivalent.prod
-      (⟨eH.symm⟩ : (Q.restrict W).Equivalent (hyperbolicPlane K)) hp
-  exact ⟨p, hdecomp.trans hreplace⟩
+  obtain ⟨x, y, -, hxQ, hyQ, hxy⟩ := hQ.exists_isotropic_pair hiso
+  obtain ⟨p, hp⟩ := exists_presentedForm_equivalent _
+    (hQ.nondegenerate_restrict_orthogonal_span_pair hxQ hyQ hxy)
+  exact ⟨p, (Q.equivalent_hyperbolicPlane_prod_restrict_orthogonal hxQ hyQ hxy).trans
+    (QuadraticMap.Equivalent.prod (QuadraticMap.Equivalent.refl _) hp)⟩
 
 end TauCeti

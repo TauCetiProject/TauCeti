@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
-public import TauCeti.RepresentationTheory.LinearCharacter
+public import TauCeti.RepresentationTheory.CharacterTwist
 
 /-!
 # Determinant-power representations of the general linear group
@@ -19,11 +19,16 @@ polynomial representations.
 
 * `TauCeti.detPowerRep` is the representation on the scalar module with action by `det(g)^m`.
 * `TauCeti.detRep` is the determinant representation, the case `m = 1`.
+* `TauCeti.tprodDetPowerSLEquiv`: the restriction of `det^m ⊗ ρ` to `SL n k` is the restriction of
+  `ρ`, along `TensorProduct.lid`.
 
 ## Main results
 
 * `TauCeti.detPowerRep_def` is its defining equation, as the one-dimensional representation of the
   linear character `det ^ m`.
+* `TauCeti.detPowerRep_comp_toGL`: every determinant power restricts to the trivial
+  representation of the special linear subgroup, which is why **the determinant twist is invisible
+  to `SL n k`** (`TauCeti.tprodDetPowerSLEquiv`).
 
 ## References
 
@@ -33,8 +38,9 @@ polynomial representations.
 public section
 
 open Matrix
+open scoped TensorProduct
 
-universe u
+universe u v
 
 namespace TauCeti
 
@@ -93,6 +99,49 @@ theorem detPowerRep_comp_toGL (m : ℤ) : (detPowerRep k n m).comp Matrix.Specia
   change detPowerRep k n m (Matrix.SpecialLinearGroup.toGL g) x = x
   rw [detPowerRep_apply]
   simp
+
+/-! ## The determinant twist on the special linear group -/
+
+/-- **`TensorProduct.lid` carries the restricted action of `det^m ⊗ ρ` to the restricted action of
+`ρ`**: the determinant is `1` on `SL n k`, so the twisting factor is `1`.  This is the
+equivariance datum behind `TauCeti.tprodDetPowerSLEquiv`, recorded on elements so that it can be
+used without unfolding that equivalence. -/
+theorem lid_detPowerRep_tprod_toGL_apply {V : Type v} [AddCommMonoid V] [Module k V] (m : ℤ)
+    (ρ : Representation k (GL (Fin n) k) V) (g : Matrix.SpecialLinearGroup (Fin n) k)
+    (x : k ⊗[k] V) :
+    _root_.TensorProduct.lid k V
+        (((detPowerRep k n m).tprod ρ) (Matrix.SpecialLinearGroup.toGL g) x)
+      = ρ (Matrix.SpecialLinearGroup.toGL g) (_root_.TensorProduct.lid k V x) := by
+  have hdet : (((Matrix.GeneralLinearGroup.det : GL (Fin n) k →* kˣ) ^ m)
+      (Matrix.SpecialLinearGroup.toGL g) : kˣ) = 1 := by
+    simp
+  rw [detPowerRep_def, Representation.lid_ofLinearCharacter_tprod_apply, hdet, Units.val_one,
+    one_smul]
+
+/-- **The determinant twist is invisible to the special linear group**: for every representation
+`ρ` of `GL n k`, the restriction of `det^m ⊗ ρ` to `SL n k` is the restriction of `ρ`, along
+`TensorProduct.lid`.  This is the restricted counterpart of
+`Representation.tprodEquivCharTwist`, where the twisting character `det ^ m` has become `1`. -/
+noncomputable def tprodDetPowerSLEquiv {V : Type v} [AddCommMonoid V] [Module k V] (m : ℤ)
+    (ρ : Representation k (GL (Fin n) k) V) :
+    Representation.Equiv
+      (((detPowerRep k n m).tprod ρ).comp Matrix.SpecialLinearGroup.toGL)
+      (ρ.comp Matrix.SpecialLinearGroup.toGL) :=
+  .mk (_root_.TensorProduct.lid k V) fun g =>
+    LinearMap.ext fun x => lid_detPowerRep_tprod_toGL_apply k n m ρ g x
+
+@[simp]
+theorem toLinearMap_tprodDetPowerSLEquiv {V : Type v} [AddCommMonoid V] [Module k V] (m : ℤ)
+    (ρ : Representation k (GL (Fin n) k) V) :
+    (tprodDetPowerSLEquiv k n m ρ).toLinearMap =
+      (_root_.TensorProduct.lid k V).toLinearMap :=
+  (rfl)
+
+@[simp]
+theorem tprodDetPowerSLEquiv_tmul {V : Type v} [AddCommMonoid V] [Module k V] (m : ℤ)
+    (ρ : Representation k (GL (Fin n) k) V) (x : k) (v : V) :
+    tprodDetPowerSLEquiv k n m ρ (x ⊗ₜ[k] v) = x • v :=
+  (rfl)
 
 /-- The determinant-power representation as a finite-dimensional representation. -/
 noncomputable abbrev detPowerFDRep (m : ℤ) : FDRep k (GL (Fin n) k) :=
