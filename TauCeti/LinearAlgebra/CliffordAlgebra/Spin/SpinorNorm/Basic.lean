@@ -271,7 +271,10 @@ variable {K : Type u} {V : Type v} [Field K] [AddCommGroup V] [Module K V]
   [FiniteDimensional K V] [Invertible (2 : K)]
 
 /-- The spinor norm of a pair of reflections is the square class of the product of the
-quadratic values of its defining vectors. -/
+quadratic values of its defining vectors.
+
+Use `TauCeti.spinorNorm_reflectionPairSpecialOrthogonal Q hQ v w` to evaluate the pair
+defined by `v` and `w`. -/
 theorem spinorNorm_reflectionPairSpecialOrthogonal (Q : QuadraticForm K V)
     (hQ : Q.Nondegenerate) (v w : V) [Invertible (Q v)] [Invertible (Q w)] :
     spinorNorm Q hQ (reflectionPairSpecialOrthogonal Q v w) =
@@ -280,7 +283,10 @@ theorem spinorNorm_reflectionPairSpecialOrthogonal (Q : QuadraticForm K V)
     orthogonalSpinorNorm_reflectionOrthogonal]
 
 /-- Surjectivity of the spinor norm on the special orthogonal group implies its
-surjectivity on the full orthogonal group. -/
+surjectivity on the full orthogonal group.
+
+Apply `TauCeti.orthogonalSpinorNorm_surjective_of_spinorNorm_surjective Q hQ hsurj`
+to a surjectivity proof `hsurj` for the spinor norm on `SO(Q)`. -/
 theorem orthogonalSpinorNorm_surjective_of_spinorNorm_surjective
     (Q : QuadraticForm K V) (hQ : Q.Nondegenerate)
     (hsurj : Function.Surjective (spinorNorm Q hQ)) :
