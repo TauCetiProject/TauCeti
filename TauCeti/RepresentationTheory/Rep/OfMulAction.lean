@@ -7,9 +7,13 @@ module
 
 public import Mathlib.RepresentationTheory.Rep.Basic
 public import TauCeti.GroupTheory.QuotientGroup.Basic
+public import TauCeti.RepresentationTheory.OfMulAction
 
 /-!
-# Permutation representations on the cosets of a subgroup
+# Regular and coset permutation representations
+
+The endomorphism of the left regular representation `k[G]` corresponding to `x : k[G]`
+under `Rep.leftRegularHomEquiv` is right multiplication by `x`.
 
 For a group `G` and a subgroup `H`, the permutation representation `k[G ⧸ H]` interpolates
 between the two extremes `H = ⊤` and `H = ⊥`.  This file identifies those extremes: the cosets
@@ -18,6 +22,11 @@ carry the left regular representation.
 
 Both identifications go through `ofMulActionIsoCongr`, which turns a `G`-equivariant equivalence
 of `G`-sets into an isomorphism of the permutation representations they carry.
+
+## Main results
+
+* `Rep.leftRegularHomEquiv_symm_apply`: endomorphisms of the left regular representation are
+  right multiplications.
 
 ## Main definitions
 
@@ -33,6 +42,27 @@ indexed by the cosets.
 -/
 
 public section
+
+namespace Rep
+
+open scoped MonoidAlgebra
+
+variable {k G : Type*} [CommRing k] [Monoid G]
+
+-- Not `@[simp]`: default simplification expands the underlying hom equivalence before matching
+-- this formula.
+/-- The endomorphism of the left regular representation `k[G]` corresponding to `x`
+under `Rep.leftRegularHomEquiv` is right multiplication by `x`. -/
+theorem leftRegularHomEquiv_symm_apply (x a : k[G]) :
+    ((Rep.leftRegularHomEquiv (Rep.leftRegular k G)).symm x).hom a = a * x := by
+  induction a using MonoidAlgebra.induction_on with
+  | of g =>
+    rw [MonoidAlgebra.of_apply, Rep.leftRegularHomEquiv_symm_single,
+      TauCeti.single_mul_eq_smul_ofMulAction, one_smul]
+  | add a b ha hb => rw [map_add, ha, hb, add_mul]
+  | smul c a ha => rw [map_smul, ha, smul_mul_assoc]
+
+end Rep
 
 namespace TauCeti
 
