@@ -253,6 +253,11 @@ lemma complexBasePair_eq_ofInclusion :
     complexBasePair C = TopPair.ofInclusion (X := TopCat.of X) (base_subset_complex (C := C)) := by
   simp only [complexBasePair, skeletonLT_zero_eq_base]
 
+/-- The topological pair of a CW complex with empty base has empty subspace. -/
+instance isEmpty_complexBasePair_snd [IsEmpty D] : IsEmpty (complexBasePair C).snd := by
+  rw [complexBasePair_eq_ofInclusion]
+  exact inferInstanceAs (IsEmpty D)
+
 /-- Inclusion of a skeleton relative to the base into the whole relative CW complex. -/
 def skeletonBasePairToComplex (n : ℕ) : skeletonBasePair C n ⟶ complexBasePair C :=
   TopPair.ofInclusionMap _ _ (ContinuousMap.inclusion (skeletonLT C _).subset_complex)

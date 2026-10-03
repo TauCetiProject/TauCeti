@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Diffeomorphism.Group
 public import TauCeti.Geometry.Diffeomorphism.Topology
 public import TauCeti.Geometry.Sphere.LinearIsometry
 public import TauCeti.LinearAlgebra.OrthogonalGroup
+import Mathlib.Analysis.InnerProductSpace.Calculus
 
 /-!
 # The orthogonal group acts on the sphere by diffeomorphisms

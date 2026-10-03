@@ -8,6 +8,7 @@ module
 public import Mathlib.FieldTheory.Galois.IsGaloisGroup
 public import Mathlib.FieldTheory.PolynomialGaloisGroup
 public import TauCeti.RingTheory.Polynomial.Factors
+import Mathlib.GroupTheory.GroupAction.Transitive
 import TauCeti.GroupTheory.Perm.PermCongr
 
 /-!

@@ -11,6 +11,8 @@ public import TauCeti.Geometry.Manifold.MFDeriv.Variation
 public import TauCeti.Geometry.Manifold.Riemannian.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Energy
 public import TauCeti.Geometry.Manifold.Riemannian.VariationField
+import Mathlib.Analysis.Calculus.ContDiff.Deriv
+import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 
 /-!
 # The first variation of energy

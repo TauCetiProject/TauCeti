@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.LocalField.IntegerRing.Basic
 public import TauCeti.NumberTheory.LocalField.AbsoluteRamificationIndex
 public import Mathlib.Topology.Algebra.Module.Equiv.Basic
+import Mathlib.NumberTheory.Padics.ProperSpace
 import TauCeti.NumberTheory.LocalField.FiniteExtension.Basic
 import Mathlib.Topology.Homeomorph.Lemmas
 

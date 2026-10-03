@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Calculus.Deriv.Polynomial
 public import Mathlib.Analysis.Calculus.FDeriv.Mul
 public import Mathlib.Analysis.Matrix.Normed
 public import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
+import Mathlib.Analysis.Calculus.Deriv.Mul
 
 /-!
 # The derivative of the determinant at the identity

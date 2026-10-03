@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Group.Subgroup.ModularLaw
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.PadicInt.Basic
 public import TauCeti.Topology.Algebra.Group.Generation
+import Mathlib.Topology.Separation.Connected
 
 /-!
 # The kernel of a character of a pro-`p` group, from its values on topological generators

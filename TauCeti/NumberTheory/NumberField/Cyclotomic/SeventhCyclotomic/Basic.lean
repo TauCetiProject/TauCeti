@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.NumberField.Cyclotomic.Galois
 public import TauCeti.FieldTheory.Galois.FixedField
+import Mathlib.NumberTheory.NumberField.Cyclotomic.Basic
 import Mathlib.Tactic.NormNum.Prime
 
 /-!

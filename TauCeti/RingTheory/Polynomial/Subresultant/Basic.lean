@@ -89,6 +89,33 @@ theorem _root_.Polynomial.subresultantMatrix_natAdd [Semiring R]
         p.coeff (i.val + j - k.val) else 0 := by
   simp [subresultantMatrix]
 
+/-- When the formal bounds dominate the degrees, subresultant entries are simply
+coefficients of the shifted input polynomials. -/
+theorem _root_.Polynomial.subresultantMatrix_apply_eq_coeff [Semiring R]
+    {p q : R[X]} {m n : ℕ}
+    (hm : p.natDegree ≤ m) (hn : q.natDegree ≤ n) (j : ℕ)
+    (i k : Fin ((m - j) + (n - j))) :
+    subresultantMatrix p q m n j i k =
+      k.addCases (fun k => (X ^ k.val * q).coeff (i.val + j))
+        (fun k => (X ^ k.val * p).coeff (i.val + j)) := by
+  induction k using Fin.addCases with
+  | left k =>
+    simp only [subresultantMatrix_castAdd, Fin.addCases_left, coeff_X_pow_mul']
+    by_cases h : k.val ≤ i.val + j
+    · by_cases h' : i.val + j ≤ k.val + n
+      · simp [h, h']
+      · have hdeg : q.natDegree < i.val + j - k.val := by omega
+        simp [h, h', coeff_eq_zero_of_natDegree_lt hdeg]
+    · simp [h]
+  | right k =>
+    simp only [subresultantMatrix_natAdd, Fin.addCases_right, coeff_X_pow_mul']
+    by_cases h : k.val ≤ i.val + j
+    · by_cases h' : i.val + j ≤ k.val + m
+      · simp [h, h']
+      · have hdeg : p.natDegree < i.val + j - k.val := by omega
+        simp [h, h', coeff_eq_zero_of_natDegree_lt hdeg]
+    · simp [h]
+
 /-- At index zero, the principal subresultant matrix is Mathlib's Sylvester matrix. -/
 @[simp]
 theorem _root_.Polynomial.subresultantMatrix_zero [Semiring R]

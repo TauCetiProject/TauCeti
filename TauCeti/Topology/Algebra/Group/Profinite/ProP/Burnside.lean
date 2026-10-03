@@ -7,6 +7,7 @@ module
 
 import Mathlib.GroupTheory.Nilpotent
 import Mathlib.Order.Atoms.Finite
+import Mathlib.Topology.Separation.Connected
 import TauCeti.GroupTheory.PGroup
 import TauCeti.Topology.Algebra.Group.Generation
 import TauCeti.Topology.Algebra.Group.Profinite.ProP.Frattini.Step
