@@ -110,6 +110,18 @@ private noncomputable def discreteIndIsoCoind :
     rw [algebraicIndDiscreteRep_ρ, algebraicCoindDiscreteRep_ρ]
     exact e.symm.toIntertwiningMap.isIntertwining' g
 
+/-- The discrete comparison uses Mathlib's induction-to-coinduction map. -/
+private theorem discreteIndIsoCoind_hom_toLinearMap :
+    (discreteIndIsoCoind R G U A).hom.toLinearMap =
+      Rep.indToCoind (Rep.of
+        (Representation.ofDistribMulAction R U.toSubgroup A.obj.V)) := rfl
+
+/-- The inverse discrete comparison uses Mathlib's sum over right cosets. -/
+private theorem discreteIndIsoCoind_inv_toLinearMap :
+    (discreteIndIsoCoind R G U A).inv.toLinearMap =
+      Rep.coindToInd (Rep.of
+        (Representation.ofDistribMulAction R U.toSubgroup A.obj.V)) := rfl
+
 /-- Induction and coinduction from an open subgroup are isomorphic as smooth discrete
 representations. Its underlying map is Mathlib's `Rep.indToCoind`. -/
 noncomputable def algebraicIndIsoCoind :
@@ -126,7 +138,7 @@ theorem algebraicIndIsoCoind_hom_toLinearMap :
   intro x
   rw [algebraicIndIsoCoind, Functor.mapIso_hom]
   exact (toSmoothDiscrete_map_hom_apply R G (discreteIndIsoCoind R G U A).hom x).trans
-    (by rfl)
+    (LinearMap.congr_fun (discreteIndIsoCoind_hom_toLinearMap R G U A) x)
 
 /-- The inverse smooth comparison is the algebraic sum over right cosets. -/
 @[simp]
@@ -138,7 +150,7 @@ theorem algebraicIndIsoCoind_inv_toLinearMap :
   intro x
   rw [algebraicIndIsoCoind, Functor.mapIso_inv]
   exact (toSmoothDiscrete_map_hom_apply R G (discreteIndIsoCoind R G U A).inv x).trans
-    (by rfl)
+    (LinearMap.congr_fun (discreteIndIsoCoind_inv_toLinearMap R G U A) x)
 
 /-- On a tensor generator, the comparison is the equivariant function supported on its
 right coset, with value `a` at `g`. -/
