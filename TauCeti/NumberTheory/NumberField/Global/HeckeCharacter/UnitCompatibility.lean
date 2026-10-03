@@ -102,14 +102,15 @@ private theorem coe_infiniteComponent_complex (χ : HeckeCharacter K)
 monomial of any algebraic infinity type matching the character on the identity component. -/
 theorem coe_prod_infiniteComponent_eq_embeddingCharacter (χ : HeckeCharacter K)
     (n : AlgebraicInfinityType K)
-    (e : FiniteOrderInfinityType K)
-    (hn : χ.infinityType = AlgebraicInfinityType.toContinuous n +
-      FiniteOrderInfinityType.toContinuous e)
+    (hn : χ.infinityType.AgreesOnIdentityComponent (AlgebraicInfinityType.toContinuous n))
     (x : Kˣ) (hx : IsTotallyPositive (x : K)) :
     ((∏ w : InfinitePlace K,
       χ.infiniteComponent w (Units.map (algebraMap K w.Completion).toMonoidHom x)) : ℂ) =
       (n.embeddingCharacter x : ℂ) := by
   classical
+  obtain ⟨e, he⟩ :=
+    (ContinuousInfinityType.agreesOnIdentityComponent_iff_exists_finiteOrderInfinityType
+      χ.infinityType (AlgebraicInfinityType.toContinuous n)).mp hn
   rw [AlgebraicInfinityType.coe_embeddingCharacter_apply,
     ← Finset.prod_fiberwise Finset.univ InfinitePlace.mk]
   refine Finset.prod_congr rfl fun w _ ↦ ?_
@@ -123,7 +124,7 @@ theorem coe_prod_infiniteComponent_eq_embeddingCharacter (χ : HeckeCharacter K)
         or_self] at h
       simpa only [eq_comm] using h
     rw [hfiber, Finset.prod_singleton]
-    exact coe_infiniteComponent_real χ n e hn ⟨w, hw⟩ x ((isTotallyPositive_iff.mp hx) w hw)
+    exact coe_infiniteComponent_real χ n e he ⟨w, hw⟩ x ((isTotallyPositive_iff.mp hx) w hw)
   · have hne : w.embedding ≠ ComplexEmbedding.conjugate w.embedding := fun h ↦
       hw (InfinitePlace.isReal_iff.mpr (ComplexEmbedding.isReal_iff.mpr h.symm))
     have hfiber : (Finset.univ.filter fun σ : K →+* ℂ ↦ InfinitePlace.mk σ = w) =
@@ -135,15 +136,14 @@ theorem coe_prod_infiniteComponent_eq_embeddingCharacter (χ : HeckeCharacter K)
       rw [InfinitePlace.mk_embedding] at h
       simpa only [eq_comm] using h
     rw [hfiber, Finset.prod_pair hne]
-    exact coe_infiniteComponent_complex χ n e hn
+    exact coe_infiniteComponent_complex χ n e he
       ⟨w, InfinitePlace.not_isReal_iff_isComplex.mp hw⟩ x
 
 /-- The monomial of a matching algebraic infinity type is trivial on a congruence subgroup of
 integer units whose modulus includes every real place. This subgroup has finite index. -/
 theorem exists_modulus_embeddingCharacter_eq_one (χ : HeckeCharacter K)
-    (n : AlgebraicInfinityType K) (e : FiniteOrderInfinityType K)
-    (hn : χ.infinityType = AlgebraicInfinityType.toContinuous n +
-      FiniteOrderInfinityType.toContinuous e) :
+    (n : AlgebraicInfinityType K)
+    (hn : χ.infinityType.AgreesOnIdentityComponent (AlgebraicInfinityType.toContinuous n)) :
     ∃ 𝔪 : Modulus K, 𝔪.infinitePart = (narrowModulus K).infinitePart ∧
       ∀ u ∈ unitsCongruenceSubgroup 𝔪,
         n.embeddingCharacter (Units.map (algebraMap (𝓞 K) K).toMonoidHom u) = 1 := by
@@ -172,29 +172,27 @@ theorem exists_modulus_embeddingCharacter_eq_one (χ : HeckeCharacter K)
     simpa only [infiniteComponent_apply, IdeleClassGroup.ofCompletion_apply,
       InfinitePlace.ideleInfiniteCoord_unitEmbedding] using hsplit
   apply Units.ext
-  refine (χ.coe_prod_infiniteComponent_eq_embeddingCharacter n e hn x hpos).symm.trans ?_
+  refine (χ.coe_prod_infiniteComponent_eq_embeddingCharacter n hn x hpos).symm.trans ?_
   simpa only [Units.coe_prod] using congrArg Units.val hinf
 
 /-- The exact kernel of the embedding monomial on integer units has finite index. No sign
 condition is imposed on these units. -/
-theorem embeddingCharacter_units_ker_finiteIndex (χ : HeckeCharacter K)
-    (n : AlgebraicInfinityType K) (e : FiniteOrderInfinityType K)
-    (hn : χ.infinityType = AlgebraicInfinityType.toContinuous n +
-      FiniteOrderInfinityType.toContinuous e) :
+theorem finiteIndex_embeddingCharacter_units_ker (χ : HeckeCharacter K)
+    (n : AlgebraicInfinityType K)
+    (hn : χ.infinityType.AgreesOnIdentityComponent (AlgebraicInfinityType.toContinuous n)) :
     (n.embeddingCharacter.comp (Units.map (algebraMap (𝓞 K) K).toMonoidHom)).ker.FiniteIndex := by
-  obtain ⟨𝔪, _, h𝔪⟩ := χ.exists_modulus_embeddingCharacter_eq_one n e hn
+  obtain ⟨𝔪, _, h𝔪⟩ := χ.exists_modulus_embeddingCharacter_eq_one n hn
   exact Subgroup.finiteIndex_of_le (fun u hu ↦ MonoidHom.mem_ker.mpr (h𝔪 u hu))
 
 /-- The embedding monomial restricted to all integer units is a character of finite order,
 with a single positive exponent annihilating every value. -/
 theorem isOfFinOrder_embeddingCharacter_units (χ : HeckeCharacter K)
-    (n : AlgebraicInfinityType K) (e : FiniteOrderInfinityType K)
-    (hn : χ.infinityType = AlgebraicInfinityType.toContinuous n +
-      FiniteOrderInfinityType.toContinuous e) :
+    (n : AlgebraicInfinityType K)
+    (hn : χ.infinityType.AgreesOnIdentityComponent (AlgebraicInfinityType.toContinuous n)) :
     IsOfFinOrder (n.embeddingCharacter.comp
       (Units.map (algebraMap (𝓞 K) K).toMonoidHom)) := by
   let f := n.embeddingCharacter.comp (Units.map (algebraMap (𝓞 K) K).toMonoidHom)
-  have : f.ker.FiniteIndex := χ.embeddingCharacter_units_ker_finiteIndex n e hn
+  have : f.ker.FiniteIndex := χ.finiteIndex_embeddingCharacter_units_ker n hn
   refine isOfFinOrder_iff_pow_eq_one.mpr
     ⟨f.ker.index, Nat.pos_of_ne_zero Subgroup.FiniteIndex.index_ne_zero, ?_⟩
   apply MonoidHom.ext
@@ -205,12 +203,12 @@ theorem isOfFinOrder_embeddingCharacter_units (χ : HeckeCharacter K)
 /-- Each embedding monomial value at a global integer unit is a root of unity, including units
 with negative real signs. -/
 theorem isOfFinOrder_prod_embeddings_unit (χ : HeckeCharacter K)
-    (n : AlgebraicInfinityType K) (e : FiniteOrderInfinityType K)
-    (hn : χ.infinityType = AlgebraicInfinityType.toContinuous n +
-      FiniteOrderInfinityType.toContinuous e) (u : (𝓞 K)ˣ) :
+    (n : AlgebraicInfinityType K)
+    (hn : χ.infinityType.AgreesOnIdentityComponent (AlgebraicInfinityType.toContinuous n))
+    (u : (𝓞 K)ˣ) :
     IsOfFinOrder (∏ σ : K →+* ℂ, σ ((u : 𝓞 K) : K) ^ n σ) := by
   simpa using (Units.coeHom ℂ).isOfFinOrder
-    ((MonoidHom.eval u).isOfFinOrder (χ.isOfFinOrder_embeddingCharacter_units n e hn))
+    ((MonoidHom.eval u).isOfFinOrder (χ.isOfFinOrder_embeddingCharacter_units n hn))
 
 end HeckeCharacter
 end TauCeti.GlobalNumberFields

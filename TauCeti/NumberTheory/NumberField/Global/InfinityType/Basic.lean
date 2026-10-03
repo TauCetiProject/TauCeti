@@ -287,6 +287,30 @@ variable {K : Type*} [Field K]
 def embeddingCharacter [NumberField K] (n : AlgebraicInfinityType K) : Kˣ →* ℂˣ :=
   ∏ σ : K →+* ℂ, Units.map σ.toMonoidHom ^ n σ
 
+/-- The zero algebraic infinity type gives the trivial embedding character. -/
+@[simp]
+theorem embeddingCharacter_zero [NumberField K] :
+    embeddingCharacter (0 : AlgebraicInfinityType K) = 1 := by
+  classical
+  ext x
+  simp [embeddingCharacter]
+
+/-- Adding algebraic infinity types multiplies their embedding characters. -/
+@[simp]
+theorem embeddingCharacter_add [NumberField K] (n m : AlgebraicInfinityType K) :
+    embeddingCharacter (n + m) = embeddingCharacter n * embeddingCharacter m := by
+  classical
+  ext x
+  simp [embeddingCharacter, zpow_add, Finset.prod_mul_distrib]
+
+/-- Negating an algebraic infinity type inverts its embedding character. -/
+@[simp]
+theorem embeddingCharacter_neg [NumberField K] (n : AlgebraicInfinityType K) :
+    embeddingCharacter (-n) = (embeddingCharacter n)⁻¹ := by
+  classical
+  ext x
+  simp [embeddingCharacter, zpow_neg, Finset.prod_inv_distrib]
+
 /-- The embedding character evaluates as the monomial in the complex embeddings. -/
 @[simp]
 theorem coe_embeddingCharacter_apply [NumberField K] (n : AlgebraicInfinityType K) (x : Kˣ) :
