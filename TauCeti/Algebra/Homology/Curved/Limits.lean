@@ -68,20 +68,24 @@ variable {C : Type u} [Category.{v} C] [Preadditive C] {R : Type w'} [Semiring R
 variable (C w) in
 /-- The even differentials of curved duplexes, as a natural transformation between the
 evaluation functors. -/
--- Exposed so that its components unfold to the differentials in the componentwise limits.
-@[expose, simps]
 def d₀NatTrans : eval₀ C w ⟶ eval₁ C w where
   app X := X.d₀
   naturality _ _ f := f.comm₀
 
+/-- The components of `d₀NatTrans` are the even differentials. -/
+@[simp]
+theorem d₀NatTrans_app (X : CurvedDuplex C w) : (d₀NatTrans C w).app X = X.d₀ := (rfl)
+
 variable (C w) in
 /-- The odd differentials of curved duplexes, as a natural transformation between the
 evaluation functors. -/
--- Exposed so that its components unfold to the differentials in the componentwise limits.
-@[expose, simps]
 def d₁NatTrans : eval₁ C w ⟶ eval₀ C w where
   app X := X.d₁
   naturality _ _ f := f.comm₁
+
+/-- The components of `d₁NatTrans` are the odd differentials. -/
+@[simp]
+theorem d₁NatTrans_app (X : CurvedDuplex C w) : (d₁NatTrans C w).app X = X.d₁ := (rfl)
 
 /-! ### Limits -/
 
@@ -137,8 +141,10 @@ noncomputable def coneOfHasLimitEval : Cone F where
     { app j :=
         { f₀ := limit.π (F ⋙ eval₀ C w) j
           f₁ := limit.π (F ⋙ eval₁ C w) j
-          comm₀ := (limMap_π (Functor.whiskerLeft F (d₀NatTrans C w)) j).symm
-          comm₁ := (limMap_π (Functor.whiskerLeft F (d₁NatTrans C w)) j).symm }
+          comm₀ := ((limMap_π (Functor.whiskerLeft F (d₀NatTrans C w)) j).trans
+              (congrArg (_ ≫ ·) (d₀NatTrans_app _))).symm
+          comm₁ := ((limMap_π (Functor.whiskerLeft F (d₁NatTrans C w)) j).trans
+              (congrArg (_ ≫ ·) (d₁NatTrans_app _))).symm }
       naturality i j φ := hom_ext ((id_comp _).trans (limit.w (F ⋙ eval₀ C w) φ).symm)
         ((id_comp _).trans (limit.w (F ⋙ eval₁ C w) φ).symm) }
 
@@ -231,8 +237,10 @@ noncomputable def coconeOfHasColimitEval : Cocone F where
     { app j :=
         { f₀ := colimit.ι (F ⋙ eval₀ C w) j
           f₁ := colimit.ι (F ⋙ eval₁ C w) j
-          comm₀ := ι_colimMap (Functor.whiskerLeft F (d₀NatTrans C w)) j
-          comm₁ := ι_colimMap (Functor.whiskerLeft F (d₁NatTrans C w)) j }
+          comm₀ := (ι_colimMap (Functor.whiskerLeft F (d₀NatTrans C w)) j).trans
+              (congrArg (· ≫ _) (d₀NatTrans_app _))
+          comm₁ := (ι_colimMap (Functor.whiskerLeft F (d₁NatTrans C w)) j).trans
+              (congrArg (· ≫ _) (d₁NatTrans_app _)) }
       naturality i j φ := hom_ext ((colimit.w (F ⋙ eval₀ C w) φ).trans (comp_id _).symm)
         ((colimit.w (F ⋙ eval₁ C w) φ).trans (comp_id _).symm) }
 
