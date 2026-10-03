@@ -46,7 +46,11 @@ theorem isInteriorPoint_iff_mem_interior_range (hk : k ≠ 0)
       open_target := e.open_target
       contMDiffOn_toFun := contMDiffOn_of_mem_maximalAtlas he
       contMDiffOn_invFun := contMDiffOn_symm_of_mem_maximalAtlas he }
-  have he' : IsLocalDiffeomorphAt I I k e x := φ.isLocalDiffeomorphAt I I k hx
+  -- The partial diffeomorphism retains the chart's underlying function.
+  have hφcoe : (φ : M → H) = (e : M → H) := rfl
+  have he' : IsLocalDiffeomorphAt I I k e x := by
+    rw [← hφcoe]
+    exact φ.isLocalDiffeomorphAt I I k hx
   simpa only [ModelWithCorners.IsInteriorPoint, extChartAt_self_apply] using
     he'.isInteriorPoint_iff hk
 

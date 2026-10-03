@@ -10,20 +10,23 @@ public import TauCeti.Geometry.Manifold.Boundary.Charts
 public import TauCeti.Geometry.Manifold.LocallyFlat.Smooth
 
 /-!
-# Neat smooth embeddings of manifolds with boundary are locally flat
+# Neat smooth embeddings of half-space charted spaces are locally flat
 
 `TauCeti.IsLocallyFlat.of_isSmoothEmbedding` proves that a smooth embedding into a *boundaryless*
-manifold is locally flat. This file treats an ambient manifold with boundary. The embeddings
-considered are the *neat* ones, which meet the boundary of the ambient manifold exactly in their
-own boundary: `f ⁻¹' ∂N = ∂M`. A properly embedded slice disc `D² → D⁴` is the motivating
-example. For manifolds modelled on Euclidean half-spaces `𝓡∂ k` and `𝓡∂ m`, such an embedding is
-locally flat with tangential model the half-space `EuclideanHalfSpace k`. Ambient charts take
-values in `EuclideanHalfSpace k × F`, with `F` the complement of the immersion, and carry the image
-of `f` exactly onto `EuclideanHalfSpace k × {0}`. At a boundary point this is the standard picture
-`(ℝᵏ⁻¹ × [0, ∞)) × {0} ⊆ (ℝᵏ⁻¹ × [0, ∞)) × ℝᵐ⁻ᵏ` of a neat submanifold.
+manifold is locally flat. This file treats *neat* embeddings between charted spaces modelled on
+Euclidean half-spaces `𝓡∂ k` and `𝓡∂ m`, meeting the boundary of the ambient space exactly in their
+own boundary: `f ⁻¹' ∂N = ∂M`. The maximal-atlas charts in the immersion's normal form supply the
+smoothness needed here; global `IsManifold` instances are unnecessary. Such an embedding is locally
+flat with tangential model the half-space `EuclideanHalfSpace k`. Ambient charts take values in
+`EuclideanHalfSpace k × F`, with `F` the complement of the immersion, and carry the image of `f`
+exactly onto `EuclideanHalfSpace k × {0}`.
+
+A properly embedded slice disc `D² → D⁴` in manifolds with boundary is the motivating example.
+At a boundary point the standard picture of a neat submanifold is
+`(ℝᵏ⁻¹ × [0, ∞)) × {0} ⊆ (ℝᵏ⁻¹ × [0, ∞)) × ℝᵐ⁻ᵏ`.
 
 The immersion normal form `Manifold.IsImmersionAtOfComplement` reads `f` in charts as
-`u ↦ L (u, 0)` for a linear equivalence `L : E × F ≃L E'`. When the ambient manifold has boundary
+`u ↦ L (u, 0)` for a linear equivalence `L : E × F ≃L E'`. When the ambient model has boundary,
 the ambient chart only covers a piece of the half-space `range (𝓡∂ m)`, so `L⁻¹` composed with it
 is not an open map into `E × F`. What is needed is a linear equivalence `A : E' ≃L E × F` that
 still reads `f` as `u ↦ (u, 0)` and carries the half-space `range (𝓡∂ m)` onto
@@ -53,10 +56,10 @@ multiple of the boundary coordinate is supplied by
 * `TauCeti.exists_isSliceChart_of_isImmersionAtOfComplement_of_straightening`: a straightening of
   the ambient model gives a slice chart valued in `H × F`.
 * `TauCeti.exists_isSliceChart_of_isImmersionAtOfComplement_of_preimage_boundary`: the slice chart
-  of a neat embedding of half-space manifolds at a point.
+  of a neat embedding of half-space charted spaces at a point.
 * `TauCeti.IsLocallyFlat.of_isImmersionOfComplement_of_isEmbedding_of_preimage_boundary` and
   `TauCeti.IsLocallyFlat.of_isSmoothEmbedding_of_preimage_boundary`: a neat `C^n` embedding of
-  half-space manifolds, `n ≠ 0`, is locally flat with tangential model the half-space.
+  half-space charted spaces, `n ≠ 0`, is locally flat with tangential model the half-space.
 
 ## References
 
