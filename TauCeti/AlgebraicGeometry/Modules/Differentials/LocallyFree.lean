@@ -18,8 +18,9 @@ module, which is finite projective for a smooth algebra. The open-cover criterio
 local freeness then gives the result on the whole scheme.
 
 This produces the cotangent bundle of a smooth scheme without any Noetherian or field
-hypothesis. For a smooth curve, identifying its rank as one is the further step needed to
-regard the differential sheaf as the canonical line bundle.
+hypothesis, packaged as the finite locally free sheaf
+`FiniteLocallyFreeSheaf.relativeDifferentials`. For a smooth curve, identifying its rank as one
+is the further step needed to regard the differential sheaf as the canonical line bundle.
 
 ## References
 
@@ -88,6 +89,18 @@ theorem isFiniteLocallyFree_relativeDifferentials [Smooth (X ↘ Spec (.of R))] 
 instance isLocallyFree_relativeDifferentials [Smooth (X ↘ Spec (.of R))] :
     (X.relativeDifferentials R).IsLocallyFree :=
   (isFiniteLocallyFree_relativeDifferentials R X).1
+
+/-- The sheaf of relative differentials of a scheme smooth over `Spec R`, as a finite locally
+free sheaf. -/
+def FiniteLocallyFreeSheaf.relativeDifferentials [Smooth (X ↘ Spec (.of R))] :
+    FiniteLocallyFreeSheaf X :=
+  ⟨X.relativeDifferentials R, isFiniteLocallyFree_relativeDifferentials R X⟩
+
+/-- The underlying sheaf of `FiniteLocallyFreeSheaf.relativeDifferentials R X` is `Ω_{X/R}`. -/
+@[simp]
+lemma FiniteLocallyFreeSheaf.relativeDifferentials_obj [Smooth (X ↘ Spec (.of R))] :
+    (FiniteLocallyFreeSheaf.relativeDifferentials R X).obj = X.relativeDifferentials R :=
+  (rfl)
 
 end
 

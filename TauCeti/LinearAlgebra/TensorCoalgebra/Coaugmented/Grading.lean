@@ -192,4 +192,45 @@ theorem isHomogeneous_deconcatenation (G : InternalGrading R M) :
     rw [map_smul]
     exact Submodule.smul_mem _ r hx
 
+section CounitComponent
+
+universe uN
+
+variable {N : Type uN} [AddCommGroup N] [Module R N]
+
+/-- Applying the tensor-coalgebra counit to the tensor-word factor preserves total degree for
+the tensor-product grading of `N ⊗ Tᶜ(M)`: only the degree-zero part of the tensor word
+survives. -/
+theorem isHomogeneous_rid_comp_lTensor_counit (G : InternalGrading R N)
+    (H : InternalGrading R M) :
+    LinearMap.IsHomogeneous
+      ((TensorProduct.rid R N).toLinearMap ∘ₗ
+        (Coalgebra.counit (R := R) (A := TensorWords R M)).lTensor N)
+      (G.tensorProduct (grading H)).piece G.piece 0 := by
+  rw [LinearMap.isHomogeneous_def]
+  intro p z hz
+  rw [InternalGrading.tensorProduct_piece_eq_iSup] at hz
+  let K := (TensorProduct.rid R N).toLinearMap ∘ₗ
+    (Coalgebra.counit (R := R) (A := TensorWords R M)).lTensor N
+  have hle :
+      (⨆ r, Submodule.map₂ (TensorProduct.mk R N (TensorWords R M))
+        (G.piece r) ((grading H).piece (p - r))) ≤
+        (G.piece p).comap K := by
+    refine iSup_le fun r ↦ Submodule.map₂_le.mpr fun x hx y hy ↦ ?_
+    rw [Submodule.mem_comap]
+    dsimp only [K]
+    rw [TensorProduct.mk_apply, LinearMap.comp_apply,
+      LinearMap.lTensor_tmul, LinearEquiv.coe_coe, TensorProduct.rid_tmul]
+    by_cases hzero : p - r = 0
+    · have hpr : p = r := sub_eq_zero.mp hzero
+      rw [hpr]
+      exact Submodule.smul_mem _ _ hx
+    · have hy' : y ∈ gradedPiece H (p - r) := by
+        simpa only [grading_piece] using hy
+      rw [counit_eq_counit, counit_eq_zero_of_mem_gradedPiece H hy' hzero, zero_smul]
+      exact zero_mem _
+  simpa only [add_zero, Submodule.mem_comap] using hle hz
+
+end CounitComponent
+
 end TauCeti.TensorWords
