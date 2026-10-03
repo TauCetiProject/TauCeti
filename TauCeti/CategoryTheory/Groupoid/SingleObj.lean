@@ -158,10 +158,11 @@ theorem functor_singleObj_ext_of_map_eq {C : Type u} [CategoryTheory.Groupoid.{v
     (hconn : ∀ x : C, Nonempty (x₀ ⟶ x)) {F F' : C ⥤ SingleObj M}
     (h : ∀ (x : C) (f : x₀ ⟶ x), F.map f = F'.map f) : F = F' := by
   refine CategoryTheory.Functor.ext (fun _ ↦ rfl) fun a b f ↦ ?_
+  -- The object components agree by `rfl`, so the coherence morphisms are identities.
+  simp only [eqToHom_refl, Category.id_comp, Category.comp_id]
   obtain ⟨e⟩ := hconn a
-  exact (show F.map f = F'.map f by
-    rw [← IsIso.inv_hom_id_assoc e f, F.map_comp, F'.map_comp]
-    simp only [Functor.map_inv, h]).trans (by simp)
+  rw [← IsIso.inv_hom_id_assoc e f, F.map_comp, F'.map_comp]
+  simp only [Functor.map_inv, h]
 
 end Ext
 
