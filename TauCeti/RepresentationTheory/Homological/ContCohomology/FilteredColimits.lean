@@ -73,38 +73,6 @@ universe w' w v u
 variable {k : Type v} [Ring k] [TopologicalSpace k]
   {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 
-/-! ### Composition of coefficient maps on resolutions and cochains -/
-
-section Composition
-
-/-- On the coinduced resolutions, the maps induced by two composable coefficient morphisms compose
-to the map induced by their composite `e`, elementwise. This is Mathlib's
-`ContinuousCohomology.resolutionMap_comp` at the identity of `G`, read on elements; the composite is
-passed as `e` with the equation `h` because the coefficient morphism of `resolutionMap` is typed on
-`TopRep.res id X`, where an equation between composites in `TopRep k G` cannot be rewritten. -/
-private theorem resolutionMap_id_apply_of_comp_eq {X Y Z : TopRep.{u} k G} (a : X ⟶ Y)
-    (b : Y ⟶ Z) {e : X ⟶ Z} (h : a ≫ b = e) (i : ℕ) (x : (TopRep.resolutionX X i).V) :
-    (resolutionMap (ContinuousMonoidHom.id G) b i).hom
-        ((resolutionMap (ContinuousMonoidHom.id G) a i).hom x) =
-      (resolutionMap (ContinuousMonoidHom.id G) e i).hom x := by
-  subst h
-  -- the composite of the identity of `G` with itself is the identity, by definition
-  exact (ConcreteCategory.congr_hom (resolutionMap_comp (ContinuousMonoidHom.id G)
-    (ContinuousMonoidHom.id G) a b i) x).symm
-
-/-- On homogeneous cochains, the maps induced by two composable coefficient morphisms compose to
-the map induced by their composite `e`, elementwise: Mathlib's
-`ContinuousCohomology.cochainsMap_comp` at the identity of `G`, stated as
-`resolutionMap_id_apply_of_comp_eq` is. -/
-private theorem cochainsMap_id_apply_of_comp_eq {X Y Z : TopRep.{u} k G} (a : X ⟶ Y)
-    (b : Y ⟶ Z) {e : X ⟶ Z} (h : a ≫ b = e) (n : ℕ) (x : (TopRep.homogeneousCochains X).X n) :
-    (cochainsMap (ContinuousMonoidHom.id G) b).f n
-        ((cochainsMap (ContinuousMonoidHom.id G) a).f n x) =
-      (cochainsMap (ContinuousMonoidHom.id G) e).f n x :=
-  Subtype.ext (resolutionMap_id_apply_of_comp_eq a b h (n + 1) x.1)
-
-end Composition
-
 /-! ### Descent through a filtered colimit of coefficients -/
 
 section Descent
@@ -243,8 +211,27 @@ end Descent
 
 section Cohomology
 
-variable [CompactSpace G] {J : Type w'} [Category.{w} J] [IsFiltered J]
+variable {J : Type w'} [Category.{w} J]
   {X : J ⥤ SmoothDiscreteTopRep.{v, u, u} k G} {c : Cocone X}
+
+/-- The transition maps of the diagram followed by the legs of the cocone are the legs, on
+continuous cohomology classes. -/
+private theorem coeffMap_ι_app_map_apply {i j : J} (f : i ⟶ j) (n : ℕ)
+    (y : continuousCohomology n (X.obj i).obj) :
+    (coeffMap (c.ι.app j).hom n).hom ((coeffMap (X.map f).hom n).hom y) =
+      (coeffMap (c.ι.app i).hom n).hom y := by
+  rw [← ConcreteCategory.comp_apply, ← coeffMap_comp,
+    ← ObjectProperty.FullSubcategory.comp_hom, c.w]
+
+/-- The transition maps of the diagram compose, on continuous cohomology classes. -/
+private theorem coeffMap_map_comp_apply {i j l : J} (f : i ⟶ j) (g : j ⟶ l) (n : ℕ)
+    (y : continuousCohomology n (X.obj i).obj) :
+    (coeffMap (X.map g).hom n).hom ((coeffMap (X.map f).hom n).hom y) =
+      (coeffMap (X.map (f ≫ g)).hom n).hom y := by
+  rw [← ConcreteCategory.comp_apply, ← coeffMap_comp,
+    ← ObjectProperty.FullSubcategory.comp_hom, ← X.map_comp]
+
+variable [CompactSpace G] [IsFiltered J]
   (hc : IsColimit ((smoothDiscreteι k G ⋙ forget (TopRep k G)).mapCocone c))
 include hc
 
@@ -343,13 +330,11 @@ private theorem exists_coeffMap_eq_coeffMap_of_isColimit {n : ℕ} {i j : J}
   -- the difference of the two classes at the common stage vanishes in the colimit
   obtain ⟨l, f, hf⟩ := exists_coeffMap_eq_zero_of_isColimit hc
     ((coeffMap (X.map a).hom n).hom yi - (coeffMap (X.map b).hom n).hom yj) (by
-      rw [map_sub, ← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply, ← coeffMap_comp,
-        ← coeffMap_comp, ← ObjectProperty.FullSubcategory.comp_hom,
-        ← ObjectProperty.FullSubcategory.comp_hom, c.w, c.w, h, sub_self])
+      rw [map_sub, coeffMap_ι_app_map_apply (c := c) a,
+        coeffMap_ι_app_map_apply (c := c) b, h, sub_self])
   refine ⟨l, a ≫ f, b ≫ f, ?_⟩
-  rw [map_sub, sub_eq_zero, ← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply,
-    ← coeffMap_comp, ← coeffMap_comp, ← ObjectProperty.FullSubcategory.comp_hom,
-    ← ObjectProperty.FullSubcategory.comp_hom, ← X.map_comp, ← X.map_comp] at hf
+  rw [map_sub, sub_eq_zero, coeffMap_map_comp_apply (X := X) a f,
+    coeffMap_map_comp_apply (X := X) b f] at hf
   exact hf
 
 variable (n : ℕ) [UnivLE.{w', u}] [UnivLE.{w, u}]
