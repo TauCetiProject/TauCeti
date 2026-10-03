@@ -15,7 +15,7 @@ For a normal subgroup `N` of `G`, Mathlib's `Subgroup.upperCentralSeriesStep N` 
 the centre of `G ⧸ N`.  This file records three facts about it that are used to find abelian normal
 subgroups of a nilpotent group modulo a normal subgroup, without passing to the quotient.
 
-* It is again normal (`TauCeti.Subgroup.normal_upperCentralSeriesStep`), so the step can be
+* It is again normal (`Subgroup.normal_upperCentralSeriesStep`), so the step can be
   iterated. Mathlib only registers this for characteristic `N`.
 * In a nilpotent group it is strictly larger than `N` unless `N = ⊤`
   (`TauCeti.lt_upperCentralSeriesStep`): the centre of a nontrivial nilpotent group is
@@ -36,22 +36,24 @@ linear characters.
 
 public section
 
+namespace Subgroup
+
+variable {G : Type*} [Group G]
+
+/-- The upper central series step above a normal subgroup is normal: it is the preimage of the
+centre of the quotient. -/
+instance normal_upperCentralSeriesStep (N : Subgroup G) [N.Normal] :
+    (upperCentralSeriesStep N).Normal := by
+  rw [upperCentralSeriesStep_eq_comap_center]
+  infer_instance
+
+end Subgroup
+
 namespace TauCeti
 
 open scoped commutatorElement
 
 variable {G : Type*} [Group G]
-
-namespace Subgroup
-
-/-- The upper central series step above a normal subgroup is normal: it is the preimage of the
-centre of the quotient. -/
-instance normal_upperCentralSeriesStep (N : _root_.Subgroup G) [N.Normal] :
-    (_root_.Subgroup.upperCentralSeriesStep N).Normal := by
-  rw [_root_.Subgroup.upperCentralSeriesStep_eq_comap_center]
-  infer_instance
-
-end Subgroup
 
 /-- **In a nilpotent group, the upper central series step strictly enlarges every proper normal
 subgroup.**  Otherwise the upper central series of `G` would stay inside `N` forever, while it
