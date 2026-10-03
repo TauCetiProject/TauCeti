@@ -48,7 +48,7 @@ trivial and the lens space is a copy of the sphere.
 * `TauCeti.LensSpace`: the lens space `L(m; ℓ₀, …, ℓₖ)`, the orbit space of the unit sphere of
   `ℂᵏ⁺¹`.
 * `TauCeti.LensSpace.mk`: the projection from the sphere.
-* `TauCeti.LensSpace.inductionOn`, `TauCeti.LensSpace.lift`, and `TauCeti.LensSpace.lift_unique`:
+* `TauCeti.LensSpace.induction_on`, `TauCeti.LensSpace.lift`, and `TauCeti.LensSpace.lift_unique`:
   elimination principles for the quotient.
 
 ## Main results
@@ -127,11 +127,6 @@ theorem lensRotation_injective [NeZero k] : Function.Injective (lensRotation m �
 def lensGroup : Subgroup (EuclideanSpace ℂ (Fin k) ≃ₗᵢ[ℝ] EuclideanSpace ℂ (Fin k)) :=
   (lensRotation m ℓ).range
 
-/-- The elements of the lens group are the rotations by residues modulo `m`. -/
-theorem mem_lensGroup_iff {e : EuclideanSpace ℂ (Fin k) ≃ₗᵢ[ℝ] EuclideanSpace ℂ (Fin k)} :
-    e ∈ lensGroup m ℓ ↔ ∃ a, lensRotation m ℓ a = e :=
-  Iff.rfl
-
 /-- The lens group is the cyclic group `ℤ/m`. -/
 def lensGroupEquiv [NeZero k] : Multiplicative (ZMod m) ≃* lensGroup m ℓ :=
   MonoidHom.ofInjective (lensRotation_injective m ℓ)
@@ -205,7 +200,7 @@ theorem mk_surjective : Function.Surjective (mk m ℓ) :=
 /-- To prove a property of every point of a lens space, it suffices to prove it on the image of
 every unit vector. -/
 @[elab_as_elim]
-protected theorem inductionOn {motive : LensSpace m ℓ → Prop} (x : LensSpace m ℓ)
+protected theorem induction_on {motive : LensSpace m ℓ → Prop} (x : LensSpace m ℓ)
     (h : ∀ y : sphere (0 : EuclideanSpace ℂ (Fin (k + 1))) 1, motive (mk m ℓ y)) :
     motive x :=
   Quotient.inductionOn' x h
@@ -255,7 +250,7 @@ protected theorem lift_unique {α : Sort*} (f : sphere (0 : EuclideanSpace ℂ (
     (g : LensSpace m ℓ → α) (hg : ∀ x, g (mk m ℓ x) = f x) :
     g = LensSpace.lift m ℓ f h := by
   funext x
-  exact LensSpace.inductionOn m ℓ x fun y => (hg y).trans (LensSpace.lift_mk m ℓ f h y).symm
+  exact LensSpace.induction_on m ℓ x fun y => (hg y).trans (LensSpace.lift_mk m ℓ f h y).symm
 
 /-- **The projection from the sphere to a lens space is a quotient covering map**, with fibres the
 orbits of the lens group. -/
