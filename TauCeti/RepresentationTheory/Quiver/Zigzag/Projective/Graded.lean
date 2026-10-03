@@ -16,8 +16,9 @@ subspaces. This makes each vertex projective an object of `TauCeti.GradedModuleC
 ungraded projectivity implies categorical projectivity. Internal shifts use `(P{d})_p = P_{p-d}`.
 
 The categorical space `Hom(P_i, P_j{d})` is linearly equivalent to the homogeneous-map submodule
-already computed for the zigzag projectives. Its Laurent support is finite, and its target-shift
-graded dimension is exactly `TauCeti.zigzagProjectiveQHom`. Thus the quantum Cartan entries are
+already computed for the zigzag projectives. When the graph has no isolated vertices
+(`∀ i, ∃ j, G.Adj i j`), its Laurent support is finite, and its target-shift graded dimension is
+exactly `TauCeti.zigzagProjectiveQHom`. Thus the quantum Cartan entries are
 actual graded categorical Hom dimensions, ready for projective Euler evaluation.
 
 These constructions concern the relation quotient. On a component with an edge it is the ordinary
@@ -89,8 +90,8 @@ theorem zigzagGradedProjective_piece (i : V) (p : ℤ) :
     (zigzagGradedProjective k G i).grading.piece p = zigzagProjectiveGrade k G i p :=
   (rfl)
 
-/-- Shifting the categorical projective agrees with the previously defined projective shift.
-This is not a simp lemma: `InternalGrading.shift_piece` already gives the unshifted normal form. -/
+-- This is not a simp lemma: `InternalGrading.shift_piece` already gives the unshifted normal form.
+/-- Shifting the categorical projective agrees with the previously defined projective shift. -/
 theorem zigzagGradedProjective_shift_piece (i : V) (d p : ℤ) :
     ((zigzagGradedProjective k G i).shiftObj d).grading.piece p =
       zigzagProjectiveShiftGrade k G i d p := by
@@ -169,8 +170,11 @@ theorem targetShiftGradedDimension_zigzagGradedProjective_hom
         (zigzagGradedProjective k G j).shiftObj d)
       (hasFiniteLaurentSupport_zigzagGradedProjective_hom k G hns i j) =
         zigzagProjectiveQHom k G hns i j := by
+  rw [← targetShiftGradedDimension_equiv
+    (hasFiniteLaurentSupport_zigzagProjectiveTargetShiftHom k G hns i j)
+    (fun d => (zigzagGradedProjectiveHomEquiv k G i j d).symm)]
+  -- The q-Hom definition is opaque across modules, so use its public coefficient formula.
   ext n
-  rw [coeff_targetShiftGradedDimension, coeff_zigzagProjectiveQHom,
-    finrank_zigzagGradedProjective_hom]
+  rw [coeff_targetShiftGradedDimension, coeff_zigzagProjectiveQHom]
 
 end TauCeti
