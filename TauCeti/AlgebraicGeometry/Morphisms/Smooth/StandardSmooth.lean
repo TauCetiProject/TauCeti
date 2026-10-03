@@ -19,24 +19,23 @@ ring map up to all of `Y`.
 
 ## Main declarations
 
-* `SmoothOfRelativeDimension.exists_isStandardSmoothOfRelativeDimension_appLE_top`:
-  standard smooth charts whose ring map starts at the global sections of the affine target.
+* `SmoothOfRelativeDimension.exists_isStandardSmoothOfRelativeDimension_appLE_top`, in Mathlib's
+  `AlgebraicGeometry` namespace: standard smooth charts whose ring map starts at the global
+  sections of the affine target.
 -/
 
 public section
 
 open CategoryTheory AlgebraicGeometry TopologicalSpace RingHom
 
-namespace TauCeti
-
-namespace AlgebraicGeometry
+namespace AlgebraicGeometry.SmoothOfRelativeDimension
 
 universe u
 
 /-- If `f : X ⟶ Y` is smooth of relative dimension `n` and `Y` is affine, then around every point
 of `X` there is an affine open `W` such that `Γ(Y, ⊤) → Γ(X, W)` is standard smooth of relative
 dimension `n`. -/
-theorem SmoothOfRelativeDimension.exists_isStandardSmoothOfRelativeDimension_appLE_top
+theorem exists_isStandardSmoothOfRelativeDimension_appLE_top
     {X Y : Scheme.{u}} (f : X ⟶ Y) [IsAffine Y] (n : ℕ) [SmoothOfRelativeDimension n f]
     (x : X) :
     ∃ W : X.affineOpens, x ∈ W.1 ∧ (f.appLE ⊤ W.1 le_top).hom.IsStandardSmoothOfRelativeDimension n
@@ -60,6 +59,4 @@ theorem SmoothOfRelativeDimension.exists_isStandardSmoothOfRelativeDimension_app
   exact (isStandardSmoothOfRelativeDimension_stableUnderCompositionWithLocalizationAway n).left
     _ r _ hf₁
 
-end AlgebraicGeometry
-
-end TauCeti
+end AlgebraicGeometry.SmoothOfRelativeDimension
