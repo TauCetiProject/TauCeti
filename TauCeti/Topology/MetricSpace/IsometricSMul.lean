@@ -24,13 +24,13 @@ variable {M X : Type*} [PseudoEMetricSpace X]
 /-- A submonoid of a monoid acting by isometries acts by isometries. -/
 @[to_additive /-- An additive submonoid of an additive monoid acting by isometries acts by
 isometries. -/]
-instance Submonoid.isIsometricSMul [Monoid M] [SMul M X] [IsIsometricSMul M X]
+instance Submonoid.isIsometricSMul [MulOneClass M] [SMul M X] [IsIsometricSMul M X]
     (S : Submonoid M) : IsIsometricSMul S X :=
   ⟨fun s ↦ isometry_smul X (s : M)⟩
 
 /-- A subgroup of a group acting by isometries acts by isometries. -/
 @[to_additive /-- An additive subgroup of an additive group acting by isometries acts by
 isometries. -/]
-instance Subgroup.isIsometricSMul [Group M] [MulAction M X] [IsIsometricSMul M X]
+instance Subgroup.isIsometricSMul [Group M] [SMul M X] [IsIsometricSMul M X]
     (S : Subgroup M) : IsIsometricSMul S X :=
   ⟨fun s ↦ isometry_smul X (s : M)⟩
