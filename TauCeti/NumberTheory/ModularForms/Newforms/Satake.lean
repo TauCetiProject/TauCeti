@@ -27,14 +27,15 @@ pair, recorded as a multiset of cardinality two, and are defined at every `p` wi
 hypotheses: at a prime dividing the level they are `a_p` and `0`, the Euler factor being linear
 there, and at a prime not dividing it both are nonzero.
 
-A single **Satake angle** is canonical only when the two parameters are complex conjugate. At a
-prime `p` with `χ(p) = 1` — for instance any prime not dividing the level when the nebentypus is
+A single **Satake angle** is canonical only when the normalized coefficient is real. At a prime
+`p` with `χ(p) = 1` — for instance any prime not dividing the level when the nebentypus is
 trivial — the coefficient `a_p` is real, because the Petersson adjoint of `T_p` is
-`χ(p)⁻¹ T_p` (`HeckeRing.GL2.Newform.qExpansion_coeff_eq_dirichletLift_mul_conj`). Under the
-Ramanujan–Deligne bound `|a_p| ≤ 2 p^{(k-1)/2}`, taken as an explicit hypothesis since it is not
-proved here, there is then a unique `θ_p ∈ [0, π]` with `a_p = 2 p^{(k-1)/2} cos θ_p`, and the
-Satake parameters are `p^{(k-1)/2} e^{± i θ_p}`. The angle `satakeAngle` is defined only under
-these hypotheses, which it takes as arguments; it equals `arccos (Re a_p / (2 p^{(k-1)/2}))`.
+`χ(p)⁻¹ T_p` (`HeckeRing.GL2.Newform.qExpansion_coeff_eq_dirichletLift_mul_conj`). More generally,
+the angle API takes the reality of `a_p` as an explicit hypothesis. Under the Ramanujan–Deligne
+bound `|a_p| ≤ 2 p^{(k-1)/2}`, also explicit since it is not proved here, there is then a unique
+`θ_p ∈ [0, π]` with `a_p = 2 p^{(k-1)/2} cos θ_p`. When moreover `χ(p) = 1`, the Satake parameters
+are `p^{(k-1)/2} e^{± i θ_p}`. The angle equals
+`arccos (Re a_p / (2 p^{(k-1)/2}))`.
 
 The parameters are taken in the arithmetic normalisation of the coefficients `a_p`, with
 absolute value `p^{(k-1)/2}` under the Ramanujan–Deligne bound, rather than in the unitary
@@ -43,8 +44,8 @@ normalisation `a_p / p^{(k-1)/2}`.
 ## Main definitions
 
 * `HeckeRing.GL2.Newform.satakeParameters`: the Satake parameters of a newform at `p`.
-* `HeckeRing.GL2.Newform.satakeAngle`: the Satake angle of a newform at a prime `p` with
-  `χ(p) = 1`, under the Ramanujan–Deligne bound.
+* `HeckeRing.GL2.Newform.satakeAngle`: the Satake angle of a newform at a prime `p` where `a_p`
+  is real, under the Ramanujan–Deligne bound.
 
 ## Main results
 
@@ -57,12 +58,12 @@ normalisation `a_p / p^{(k-1)/2}`.
   Euler product of `L(s, f)` through them.
 * `HeckeRing.GL2.Newform.qExpansion_coeff_eq_dirichletLift_mul_conj`: `a_p = χ(p) · conj a_p`
   at a prime not dividing the level.
-* `HeckeRing.GL2.Newform.qExpansion_coeff_eq_two_mul_rpow_mul_cos_satakeAngle`: at a prime with
-  `χ(p) = 1` and under the Ramanujan–Deligne bound, `a_p = 2 p^{(k-1)/2} cos θ_p`, and
+* `HeckeRing.GL2.Newform.qExpansion_coeff_eq_two_mul_rpow_mul_cos_satakeAngle`: when `a_p` is real
+  and satisfies the Ramanujan–Deligne bound, `a_p = 2 p^{(k-1)/2} cos θ_p`, and
   `HeckeRing.GL2.Newform.satakeAngle_eq_of_qExpansion_coeff_eq` says that `θ_p` is the only
   angle in `[0, π]` with this property; `HeckeRing.GL2.Newform.satakeAngle_eq_arccos` computes
   it as `arccos (Re a_p / (2 p^{(k-1)/2}))`.
-* `HeckeRing.GL2.Newform.satakeParameters_eq_exp_satakeAngle`: under the same hypotheses the
+* `HeckeRing.GL2.Newform.satakeParameters_eq_exp_satakeAngle`: when moreover `χ(p) = 1`, the
   Satake parameters are `p^{(k-1)/2} e^{± i θ_p}`.
 
 ## References
@@ -126,6 +127,7 @@ theorem card_satakeParameters (f : Newform N k) (p : ℕ) :
   rw [h, Multiset.card_pair]
 
 /-- The Satake parameters at `p` are the roots of `X² - a_p X + χ(p) p^{k-1}`. -/
+@[simp]
 theorem mem_satakeParameters_iff (f : Newform N k) (p : ℕ) (z : ℂ) :
     z ∈ f.satakeParameters p ↔
       z ^ 2 - (qExpansion 1 f.toCuspForm).coeff p * z +
@@ -191,8 +193,8 @@ theorem LSeries_eulerProduct_hasProd_satakeParameters (f : Newform N k) {s : ℂ
         ((f.satakeParameters p).map fun α ↦ 1 - α * (p.val : ℂ) ^ (-s)).prod⁻¹)
       (LSeries (fun n ↦ (qExpansion 1 f.toCuspForm).coeff n) s) := by
   convert f.LSeries_eulerProduct_hasProd hs using 2 with p
-  rw [prod_map_one_sub_mul_satakeParameters, show -2 * s = 2 * -s by ring,
-    Complex.cpow_ofNat_mul]
+  have hs_neg : -2 * s = 2 * -s := by ring
+  rw [prod_map_one_sub_mul_satakeParameters, hs_neg, Complex.cpow_ofNat_mul]
 
 /-! ### The Satake angle -/
 
@@ -208,17 +210,32 @@ theorem qExpansion_coeff_eq_dirichletLift_mul_conj (f : Newform N k) {p : ℕ} (
   rw [hcoeff, f.dirichletLift_apply_of_coprime hpN]
   exact f.toEigenformAwayFromLevel.eigenvalue_eq_mul_conj hp hpN
 
+/-- At a prime with `χ(p) = 1`, the `p`-th coefficient of a newform is real. -/
+theorem conj_qExpansion_coeff_eq_self_of_dirichletLift_eq_one (f : Newform N k) {p : ℕ}
+    (hp : p.Prime) (hχ : f.dirichletLift p = 1) :
+    conj ((qExpansion 1 f.toCuspForm).coeff p) = (qExpansion 1 f.toCuspForm).coeff p := by
+  have hpN : p.Coprime N := by
+    by_contra h
+    rw [f.dirichletLift_apply_eq_zero p h] at hχ
+    exact zero_ne_one hχ
+  simpa [hχ] using (f.qExpansion_coeff_eq_dirichletLift_mul_conj hp hpN).symm
+
 /-- `(p^{(k-1)/2})² = p^{k-1}`. -/
 private theorem sq_ofReal_rpow (p : ℕ) (k : ℤ) :
     (((p : ℝ) ^ (((k : ℝ) - 1) / 2) : ℝ) : ℂ) ^ 2 = (p : ℂ) ^ (k - 1) := by
-  rw [← Complex.ofReal_pow, ← Real.rpow_natCast, ← Real.rpow_mul (Nat.cast_nonneg p),
-    show ((k : ℝ) - 1) / 2 * ((2 : ℕ) : ℝ) = ((k - 1 : ℤ) : ℝ) by push_cast; ring,
+  have hk : ((k : ℝ) - 1) / 2 * ((2 : ℕ) : ℝ) = ((k - 1 : ℤ) : ℝ) := by
+    push_cast
+    ring
+  rw [← Complex.ofReal_pow, ← Real.rpow_natCast, ← Real.rpow_mul (Nat.cast_nonneg p), hk,
     Real.rpow_intCast, Complex.ofReal_zpow, Complex.ofReal_natCast]
 
-/-- At a prime with `χ(p) = 1` and under the Ramanujan–Deligne bound `|a_p| ≤ 2 p^{(k-1)/2}`,
-the coefficient is `a_p = 2 p^{(k-1)/2} cos θ` for `θ = arccos (Re a_p / (2 p^{(k-1)/2}))`. -/
+/-- When `a_p` is real and satisfies the Ramanujan–Deligne bound
+`|a_p| ≤ 2 p^{(k-1)/2}`, it is `2 p^{(k-1)/2} cos θ` for
+`θ = arccos (Re a_p / (2 p^{(k-1)/2}))`. -/
 private theorem qExpansion_coeff_eq_two_mul_rpow_mul_cos_arccos (f : Newform N k) {p : ℕ}
-    (hp : p.Prime) (hχ : f.dirichletLift p = 1)
+    (hp : p.Prime)
+    (hreal : conj ((qExpansion 1 f.toCuspForm).coeff p) =
+      (qExpansion 1 f.toCuspForm).coeff p)
     (hR : ‖(qExpansion 1 f.toCuspForm).coeff p‖ ≤ 2 * (p : ℝ) ^ (((k : ℝ) - 1) / 2)) :
     (qExpansion 1 f.toCuspForm).coeff p =
       ((2 * (p : ℝ) ^ (((k : ℝ) - 1) / 2) * Real.cos (Real.arccos
@@ -226,85 +243,88 @@ private theorem qExpansion_coeff_eq_two_mul_rpow_mul_cos_arccos (f : Newform N k
         ℝ) : ℂ) := by
   set a := (qExpansion 1 f.toCuspForm).coeff p
   set r := (p : ℝ) ^ (((k : ℝ) - 1) / 2)
-  have hpN : p.Coprime N := by
-    by_contra h
-    rw [f.dirichletLift_apply_eq_zero p h] at hχ
-    exact zero_ne_one hχ
-  -- `χ(p) = 1` makes `a_p` real
-  have hreal : (a.re : ℂ) = a := by
-    have h := f.qExpansion_coeff_eq_dirichletLift_mul_conj hp hpN
-    rw [hχ, one_mul, eq_comm, Complex.conj_eq_iff_re] at h
-    exact h
+  have hreal' : (a.re : ℂ) = a := by
+    rw [Complex.conj_eq_iff_re] at hreal
+    exact hreal
   have hr : 0 < 2 * r := mul_pos two_pos (Real.rpow_pos_of_pos (Nat.cast_pos.mpr hp.pos) _)
   have habs : |a.re| ≤ 2 * r := (Complex.abs_re_le_norm a).trans hR
   rw [Real.cos_arccos ((le_div_iff₀ hr).mpr (by linarith [neg_abs_le a.re]))
-    ((div_le_one hr).mpr (le_of_abs_le habs)), mul_div_cancel₀ _ hr.ne', hreal]
+    ((div_le_one hr).mpr (le_of_abs_le habs)), mul_div_cancel₀ _ hr.ne', hreal']
 
-/-- At a prime with `χ(p) = 1` and under the Ramanujan–Deligne bound `|a_p| ≤ 2 p^{(k-1)/2}`,
+/-- When `a_p` is real and satisfies the Ramanujan–Deligne bound `|a_p| ≤ 2 p^{(k-1)/2}`,
 there is an angle `θ ∈ [0, π]` with `a_p = 2 p^{(k-1)/2} cos θ`. -/
 theorem exists_qExpansion_coeff_eq_two_mul_rpow_mul_cos (f : Newform N k) {p : ℕ}
-    (hp : p.Prime) (hχ : f.dirichletLift p = 1)
+    (hp : p.Prime)
+    (hreal : conj ((qExpansion 1 f.toCuspForm).coeff p) =
+      (qExpansion 1 f.toCuspForm).coeff p)
     (hR : ‖(qExpansion 1 f.toCuspForm).coeff p‖ ≤ 2 * (p : ℝ) ^ (((k : ℝ) - 1) / 2)) :
     ∃ θ ∈ Set.Icc 0 Real.pi, (qExpansion 1 f.toCuspForm).coeff p =
       ((2 * (p : ℝ) ^ (((k : ℝ) - 1) / 2) * Real.cos θ : ℝ) : ℂ) :=
   ⟨_, ⟨Real.arccos_nonneg _, Real.arccos_le_pi _⟩,
-    f.qExpansion_coeff_eq_two_mul_rpow_mul_cos_arccos hp hχ hR⟩
+    f.qExpansion_coeff_eq_two_mul_rpow_mul_cos_arccos hp hreal hR⟩
 
-/-- The **Satake angle** of a newform `f` at a prime `p` with `χ(p) = 1`, under the
+/-- The **Satake angle** of a newform `f` at a prime `p` where `a_p` is real, under the
 Ramanujan–Deligne bound `|a_p| ≤ 2 p^{(k-1)/2}`: the unique `θ_p ∈ [0, π]` with
 `a_p = 2 p^{(k-1)/2} cos θ_p` (`qExpansion_coeff_eq_two_mul_rpow_mul_cos_satakeAngle`,
 `satakeAngle_eq_of_qExpansion_coeff_eq`). It is `arccos (Re a_p / (2 p^{(k-1)/2}))`
 (`satakeAngle_eq_arccos`). -/
-def satakeAngle (f : Newform N k) {p : ℕ} (hp : p.Prime) (hχ : f.dirichletLift p = 1)
-    (hR : ‖(qExpansion 1 f.toCuspForm).coeff p‖ ≤ 2 * (p : ℝ) ^ (((k : ℝ) - 1) / 2)) : ℝ :=
-  (f.exists_qExpansion_coeff_eq_two_mul_rpow_mul_cos hp hχ hR).choose
+def satakeAngle (f : Newform N k) {p : ℕ} (_hp : p.Prime)
+    (_hreal : conj ((qExpansion 1 f.toCuspForm).coeff p) =
+      (qExpansion 1 f.toCuspForm).coeff p)
+    (_hR : ‖(qExpansion 1 f.toCuspForm).coeff p‖ ≤ 2 * (p : ℝ) ^ (((k : ℝ) - 1) / 2)) : ℝ :=
+  Real.arccos (((qExpansion 1 f.toCuspForm).coeff p).re /
+    (2 * (p : ℝ) ^ (((k : ℝ) - 1) / 2)))
 
-variable (f : Newform N k) {p : ℕ} (hp : p.Prime) (hχ : f.dirichletLift p = 1)
+variable (f : Newform N k) {p : ℕ} (hp : p.Prime)
+  (hreal : conj ((qExpansion 1 f.toCuspForm).coeff p) =
+    (qExpansion 1 f.toCuspForm).coeff p)
   (hR : ‖(qExpansion 1 f.toCuspForm).coeff p‖ ≤ 2 * (p : ℝ) ^ (((k : ℝ) - 1) / 2))
 
 /-- The Satake angle is nonnegative. -/
-theorem satakeAngle_nonneg : 0 ≤ f.satakeAngle hp hχ hR :=
-  (f.exists_qExpansion_coeff_eq_two_mul_rpow_mul_cos hp hχ hR).choose_spec.1.1
+theorem satakeAngle_nonneg : 0 ≤ f.satakeAngle hp hreal hR :=
+  Real.arccos_nonneg _
 
 /-- The Satake angle is at most `π`. -/
-theorem satakeAngle_le_pi : f.satakeAngle hp hχ hR ≤ Real.pi :=
-  (f.exists_qExpansion_coeff_eq_two_mul_rpow_mul_cos hp hχ hR).choose_spec.1.2
+theorem satakeAngle_le_pi : f.satakeAngle hp hreal hR ≤ Real.pi :=
+  Real.arccos_le_pi _
 
-/-- **The Satake angle at a prime with `χ(p) = 1`**: under the Ramanujan–Deligne bound
+/-- **The Satake angle for a real coefficient**: under the Ramanujan–Deligne bound
 `|a_p| ≤ 2 p^{(k-1)/2}`, the coefficient is `a_p = 2 p^{(k-1)/2} cos θ_p`. -/
 theorem qExpansion_coeff_eq_two_mul_rpow_mul_cos_satakeAngle :
     (qExpansion 1 f.toCuspForm).coeff p =
-      ((2 * (p : ℝ) ^ (((k : ℝ) - 1) / 2) * Real.cos (f.satakeAngle hp hχ hR) : ℝ) : ℂ) :=
-  (f.exists_qExpansion_coeff_eq_two_mul_rpow_mul_cos hp hχ hR).choose_spec.2
+      ((2 * (p : ℝ) ^ (((k : ℝ) - 1) / 2) * Real.cos (f.satakeAngle hp hreal hR) : ℝ) :
+        ℂ) := by
+  simpa [satakeAngle] using
+    f.qExpansion_coeff_eq_two_mul_rpow_mul_cos_arccos hp hreal hR
 
 /-- **The Satake angle is the only angle in `[0, π]` with `a_p = 2 p^{(k-1)/2} cos θ`.** -/
 theorem satakeAngle_eq_of_qExpansion_coeff_eq {θ : ℝ} (hθ₀ : 0 ≤ θ) (hθπ : θ ≤ Real.pi)
     (h : (qExpansion 1 f.toCuspForm).coeff p =
       ((2 * (p : ℝ) ^ (((k : ℝ) - 1) / 2) * Real.cos θ : ℝ) : ℂ)) :
-    f.satakeAngle hp hχ hR = θ := by
+    f.satakeAngle hp hreal hR = θ := by
   have hr : 0 < 2 * (p : ℝ) ^ (((k : ℝ) - 1) / 2) :=
     mul_pos two_pos (Real.rpow_pos_of_pos (Nat.cast_pos.mpr hp.pos) _)
-  have hcos := (f.qExpansion_coeff_eq_two_mul_rpow_mul_cos_satakeAngle hp hχ hR).symm.trans h
+  have hcos := (f.qExpansion_coeff_eq_two_mul_rpow_mul_cos_satakeAngle hp hreal hR).symm.trans h
   rw [Complex.ofReal_inj, mul_right_inj' hr.ne'] at hcos
-  exact Real.injOn_cos ⟨f.satakeAngle_nonneg hp hχ hR, f.satakeAngle_le_pi hp hχ hR⟩
+  exact Real.injOn_cos ⟨f.satakeAngle_nonneg hp hreal hR, f.satakeAngle_le_pi hp hreal hR⟩
     ⟨hθ₀, hθπ⟩ hcos
 
 /-- The Satake angle is `arccos (Re a_p / (2 p^{(k-1)/2}))`. -/
+@[simp]
 theorem satakeAngle_eq_arccos :
-    f.satakeAngle hp hχ hR = Real.arccos (((qExpansion 1 f.toCuspForm).coeff p).re /
-      (2 * (p : ℝ) ^ (((k : ℝ) - 1) / 2))) :=
-  f.satakeAngle_eq_of_qExpansion_coeff_eq hp hχ hR (Real.arccos_nonneg _) (Real.arccos_le_pi _)
-    (f.qExpansion_coeff_eq_two_mul_rpow_mul_cos_arccos hp hχ hR)
+    f.satakeAngle hp hreal hR = Real.arccos (((qExpansion 1 f.toCuspForm).coeff p).re /
+      (2 * (p : ℝ) ^ (((k : ℝ) - 1) / 2))) := by
+  rw [satakeAngle]
 
 /-- **The Satake parameters at a prime with `χ(p) = 1`**: under the Ramanujan–Deligne bound they
 are the complex conjugates `p^{(k-1)/2} e^{± i θ_p}`. -/
-theorem satakeParameters_eq_exp_satakeAngle :
+theorem satakeParameters_eq_exp_satakeAngle (hχ : f.dirichletLift p = 1) :
     f.satakeParameters p =
-      {((p : ℝ) ^ (((k : ℝ) - 1) / 2) : ℝ) * Complex.exp (f.satakeAngle hp hχ hR * Complex.I),
+      {((p : ℝ) ^ (((k : ℝ) - 1) / 2) : ℝ) * Complex.exp (f.satakeAngle hp hreal hR * Complex.I),
         ((p : ℝ) ^ (((k : ℝ) - 1) / 2) : ℝ) *
-          Complex.exp (-f.satakeAngle hp hχ hR * Complex.I)} := by
+          Complex.exp (-f.satakeAngle hp hreal hR * Complex.I)} := by
   rw [satakeParameters_eq_pair_iff, hχ, one_mul, ← sq_ofReal_rpow,
-    f.qExpansion_coeff_eq_two_mul_rpow_mul_cos_satakeAngle hp hχ hR]
+    f.qExpansion_coeff_eq_two_mul_rpow_mul_cos_satakeAngle hp hreal hR]
   constructor
   · rw [← mul_add, ← Complex.two_cos]
     push_cast
