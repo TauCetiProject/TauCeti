@@ -61,11 +61,7 @@ def bocksteinShortExact : DiscreteShortExact G (ZMod 2) (ZMod 4) (ZMod 2) where
   incl_equivariant := fun _ _ ↦ rfl
   proj_equivariant := fun _ _ ↦ rfl
   incl_injective := ZMod.mulCastHom_injective 2 rfl two_ne_zero
-  proj_surjective := by
-    intro x
-    refine ⟨x.cast, ?_⟩
-    revert x
-    decide
+  proj_surjective := ZMod.castHom_surjective (by decide : (2 : ℕ) ∣ 4)
   exact := ZMod.exact_mulCastHom_castHom 2 rfl
 
 /-- The inclusion in the Bockstein sequence is doubling. -/
@@ -115,8 +111,7 @@ theorem explicitBockstein1_mk (f : Z1 G (ZMod 2)) :
   · intro g
     simp only [bocksteinShortExact_proj, RingHom.toAddMonoidHom_eq_coe,
       AddMonoidHom.coe_ofClass, ZMod.castHom_apply]
-    have h : ∀ x : ZMod 2, ((x.cast : ZMod 4).cast : ZMod 2) = x := by decide
-    exact h _
+    simpa using ZMod.cast_cast_add_two_mul_cast (f.val g) 0
   · intro g h
     rw [bocksteinShortExact_incl, ZMod.mulCastHom_apply]
     have hf := (mem_Z1_iff.mp f.property).2 g h
