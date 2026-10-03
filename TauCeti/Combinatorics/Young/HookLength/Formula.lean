@@ -69,6 +69,8 @@ lengths sum to `n` and the shifts `r - 1 - i` are a reflection of `0, 1, …, r 
 * `TauCeti.standardCount_eq_factorial_div_prod_hookLength` and
   `TauCeti.cast_standardCount_eq_factorial_div_prod_hookLength`: **the hook-length formula in
   quotient form**, over `ℕ` and over a semifield of characteristic zero.
+* `TauCeti.cast_factorial_div_standardCount_eq_prod_hookLength`: the same formula solved for the
+  hook product instead.
 
 ## References
 
@@ -311,6 +313,19 @@ theorem cast_standardCount_eq_factorial_div_prod_hookLength {K : Type*} [Semifie
     rw [← Nat.cast_prod]
     exact_mod_cast μ.prod_hookLength_pos.ne'
   rw [eq_div_iff hp, ← Nat.cast_prod, ← Nat.cast_mul, standardCount_mul_prod_hookLength]
+
+/-- **The hook-length formula solved for the hook product**: dividing `n !` by the number `f^μ` of
+standard Young tableaux of shape `μ` returns the product of the hook lengths.  This is the
+companion of `TauCeti.cast_standardCount_eq_factorial_div_prod_hookLength`, dividing the
+multiplicative formula through by the other factor; the divisor `f^μ` is nonzero because every
+shape has a standard Young tableau. -/
+theorem cast_factorial_div_standardCount_eq_prod_hookLength {K : Type*} [Semifield K] [CharZero K]
+    (μ : YoungDiagram) :
+    (μ.card ! : K) / (standardCount μ : K)
+      = ∏ c ∈ μ.cells, (YoungDiagram.hookLength μ c : K) := by
+  have hne : (standardCount μ : K) ≠ 0 := Nat.cast_ne_zero.mpr (standardCount_ne_zero μ)
+  rw [div_eq_iff hne, ← Nat.cast_prod, ← Nat.cast_mul, mul_comm,
+    standardCount_mul_prod_hookLength]
 
 end TauCeti
 
