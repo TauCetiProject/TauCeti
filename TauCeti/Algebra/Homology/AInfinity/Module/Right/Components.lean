@@ -49,7 +49,7 @@ the unsuspended module Stasheff equations in the operations `m` of the module an
 * `TauCeti.AInfinityRightModule.stasheff_tmul_of_tprod`: the suspended module Stasheff equation
   of each arity.
 * `TauCeti.AInfinityRightModule.stasheff`: the unsuspended module Stasheff equation of each arity
-  on homogeneous inputs, with `m_one_m_one` its arity-one case on arbitrary inputs.
+  on homogeneous inputs, with `stasheff_arity_one` its arity-one case on arbitrary inputs.
 
 ## References
 
@@ -235,7 +235,11 @@ theorem m_mem_piece (MM : AInfinityRightModule AA M) (n : ℕ) {x : M} {p : ℤ}
   have h := MM.isHomogeneous_b_tmul_tprod n hx' _ _ ha'
   rw [InternalGrading.shift_piece, Finset.sum_sub_distrib, Finset.sum_const, Finset.card_univ,
     Fintype.card_fin, nsmul_eq_mul, mul_one] at h
-  rw [m_apply, show p + ∑ i, d i + (1 - n) = p - 1 + (∑ i, d i - n) + 1 + 1 by ring]
+  -- The target degree is the degree of `h`: the suspended inputs have total degree
+  -- `(p - 1) + (∑ i, d i - n)`, `b_{n+1}^M` raises it by one, and reading the output in the
+  -- unshifted grading of `M` adds one more.
+  have hdeg : p + ∑ i, d i + (1 - n) = p - 1 + (∑ i, d i - n) + 1 + 1 := by ring
+  rw [m_apply, hdeg]
   exact h
 
 end Unsuspended
@@ -516,7 +520,7 @@ theorem stasheff (MM : AInfinityRightModule AA M) (n : ℕ) {x : M} {e : ℤ}
 
 /-- The unsuspended module Stasheff equation of arity one: the unary module operation squares to
 zero. -/
-theorem m_one_m_one (MM : AInfinityRightModule AA M) (x : M) (a c : Fin 0 → A) :
+theorem stasheff_arity_one (MM : AInfinityRightModule AA M) (x : M) (a c : Fin 0 → A) :
     MM.m 1 (MM.m 1 x a) c = 0 := by
   have hone : ∀ e : Fin 0 → A, TensorWords.of R A 0 (PiTensorProduct.tprod R e) = 1 :=
     fun e ↦ by
