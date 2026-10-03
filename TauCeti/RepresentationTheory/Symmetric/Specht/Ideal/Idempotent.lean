@@ -32,14 +32,8 @@ positive.
 
 The scalar can equally be written `n! / f^μ`, with `f^μ` the number of standard Young tableaux of
 shape `μ`: the two readings agree because the standard basis theorem identifies `dim S^μ = f^μ`.
-That identification needs the straightening algorithm, so it is run separately, in
-`TauCeti.RepresentationTheory.Symmetric.Specht.Ideal.Dimension`; the dimension of the ideal is
-what appears below. Nothing in this file assumes the comparison of `ℚ[Sₙ] c_t` with the
-polytabloid presentation of `S^μ`.
-
-The two extreme shapes are the cases in which the dimension, and hence the scalar, can be read off
-directly; those evaluations live with the rest of the extreme-shape theory, in
-`TauCeti.RepresentationTheory.Symmetric.Specht.Ideal.Extremes`, which is downstream of this file.
+It is the dimension of the ideal that appears below; nothing here assumes the comparison of
+`ℚ[Sₙ] c_t` with the polytabloid presentation of `S^μ`.
 
 ## Main statements
 
@@ -64,8 +58,6 @@ companions) by an opaque scalar.
 ## References
 
 * W. Fulton and J. Harris, *Representation Theory: A First Course* (1991), Lemma 4.26.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 2, the “idempotent theory” item `c_t * c_t = (n! / f^λ) • c_t`.
 -/
 
 public section
