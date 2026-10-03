@@ -80,7 +80,7 @@ Mathlib's `isotypicComponent A M S` is the sum of the submodules of `M` isomorph
 `IsIsotypicOfType.linearEquiv_fun` writes it as a finite power of `S` once `S` is simple and `M` is
 finite-dimensional.  What the multiplicity theorem adds is the value of the exponent: every
 `A`-linear map out of `S` lands in the isotypic component
-(`TauCeti.apply_mem_isotypicComponent`), so `TauCeti.linearMapIsotypicComponentEquiv` identifies
+(`LinearMap.apply_mem_isotypicComponent`), so `TauCeti.linearMapIsotypicComponentEquiv` identifies
 their hom spaces out of `S`, and the count above identifies the exponent with
 `finrank k (S →ₗ[A] M)`. This is the decomposition-free description of the component that a
 multiplicity computation needs.

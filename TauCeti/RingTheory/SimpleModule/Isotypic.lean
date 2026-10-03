@@ -55,7 +55,7 @@ theorem isotypicComponent_self_eq_top : isotypicComponent R S S = ⊤ :=
 variable [IsSimpleModule R S]
 
 /-- A map out of a simple module takes its values in the isotypic component of that type. -/
-theorem apply_mem_isotypicComponent (f : S →ₗ[R] M) (s : S) :
+theorem _root_.LinearMap.apply_mem_isotypicComponent (f : S →ₗ[R] M) (s : S) :
     f s ∈ isotypicComponent R M S := by
   have h := LinearMap.le_comap_isotypicComponent (M := S) (N := M) S f
   rw [isotypicComponent_self_eq_top] at h
@@ -71,9 +71,9 @@ def linearMapIsotypicComponentEquiv :
   toFun g := (isotypicComponent R M S).subtype ∘ₗ g
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
-  invFun f := f.codRestrict _ (apply_mem_isotypicComponent f)
-  left_inv _ := rfl
-  right_inv _ := rfl
+  invFun f := f.codRestrict _ f.apply_mem_isotypicComponent
+  left_inv _ := by ext s; rfl
+  right_inv _ := by ext s; rfl
 
 @[simp]
 theorem linearMapIsotypicComponentEquiv_apply
@@ -83,7 +83,7 @@ theorem linearMapIsotypicComponentEquiv_apply
 @[simp]
 theorem linearMapIsotypicComponentEquiv_symm_apply (f : S →ₗ[R] M) (s : S) :
     (linearMapIsotypicComponentEquiv k).symm f s =
-      ⟨f s, apply_mem_isotypicComponent f s⟩ := (rfl)
+      ⟨f s, f.apply_mem_isotypicComponent s⟩ := (rfl)
 
 end Hom
 
