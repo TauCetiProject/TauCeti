@@ -178,11 +178,19 @@ theorem tensorProduct {V' : Type*} [AddCommMonoid V'] [Module k V'] {ρ' : G →
     rw [h.map_one, h'.map_one, LinearEquiv.one_eq_refl, LinearEquiv.one_eq_refl,
       TensorProduct.congr_refl_refl, LinearEquiv.one_eq_refl]
   mul_apply g₁ g₂ x := by
-    have := TensorProduct.map_mul (ρ g₁ : V →ₗ[k] V) (ρ g₂) (ρ' g₁ : V' →ₗ[k] V') (ρ' g₂)
-    rw [h.toLinearMap_mul, h'.toLinearMap_mul, TensorProduct.map_smul_left,
-      TensorProduct.map_smul_right, smul_smul, ← TensorProduct.toLinearMap_congr,
-      ← TensorProduct.toLinearMap_congr, ← TensorProduct.toLinearMap_congr] at this
-    exact congr($this.symm x)
+    have hc (g : G) (y : TensorProduct k V V') : TensorProduct.congr (ρ g) (ρ' g) y
+        = TensorProduct.map (ρ g : V →ₗ[k] V) (ρ' g : V' →ₗ[k] V') y :=
+      congr($(TensorProduct.toLinearMap_congr (ρ g) (ρ' g)) y)
+    calc TensorProduct.congr (ρ g₁) (ρ' g₁) (TensorProduct.congr (ρ g₂) (ρ' g₂) x)
+        = TensorProduct.map ((ρ g₁ : V →ₗ[k] V) * (ρ g₂ : V →ₗ[k] V))
+            ((ρ' g₁ : V' →ₗ[k] V') * (ρ' g₂ : V' →ₗ[k] V')) x := by
+          rw [hc, hc, TensorProduct.map_mul, Module.End.mul_apply]
+      _ = TensorProduct.map ((α g₁ g₂ : k) • (ρ (g₁ * g₂) : V →ₗ[k] V))
+            ((α' g₁ g₂ : k) • (ρ' (g₁ * g₂) : V' →ₗ[k] V')) x := by
+          rw [h.toLinearMap_mul, h'.toLinearMap_mul]
+      _ = ((α * α') g₁ g₂ : k) • TensorProduct.congr (ρ (g₁ * g₂)) (ρ' (g₁ * g₂)) x := by
+          rw [TensorProduct.map_smul_left, TensorProduct.map_smul_right, smul_smul, hc,
+            Pi.mul_apply, Pi.mul_apply, Units.val_mul, mul_comm, LinearMap.smul_apply]
 
 end IsProjectiveRep
 
