@@ -41,6 +41,8 @@ file does not treat degree two.
 
 ## Main results
 
+* `TauCeti.ClassFieldTheory.exists_classField_trivializing`: a finite smooth Galois module becomes
+  trivial over a finite Galois extension containing the roots of unity of its exponent.
 * `TauCeti.ClassFieldTheory.finite_continuousCohomology_of_le_one`: `Hⁱ(G_F, A)` is finite for
   `i ≤ 1` and every finite smooth discrete `A : GalRep n F`, `n` invertible in `F`.
 
@@ -65,6 +67,32 @@ variable {F : Type u} [Field F] [ValuativeRel F] [TopologicalSpace F] [IsNonarch
 
 attribute [local instance] TopRep.distribMulAction
 
+omit [ValuativeRel F] [TopologicalSpace F] [IsNonarchimedeanLocalField F] in
+/-- A finite smooth Galois module becomes trivial over a finite Galois extension containing
+all the roots of unity of its exponent. The extension is presented by its open normal subgroup. -/
+theorem exists_classField_trivializing (hn : (n : F) ≠ 0) (A : GalRep n F)
+    (hA : IsSmoothDiscrete (ZMod n) A) [Finite A.V] :
+    ∃ W : OpenNormalSubgroup (AbsoluteGaloisGroup F),
+      (∃ ζ : classField F W, IsPrimitiveRoot ζ n) ∧
+      ∀ g ∈ W, ∀ a : A.V, (absoluteGaloisGroupRestrictEquiv F).symm g • a = a := by
+  have := hA.discreteTopology
+  have := hA.continuousSMul
+  have : NeZero (n : F) := ⟨hn⟩
+  have : NeZero n := ⟨by rintro rfl; exact hn Nat.cast_zero⟩
+  set e := absoluteGaloisGroupRestrictEquiv F
+  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_primitiveRoot (SeparableClosure F) n
+  have hopen : IsOpen ({g : AbsoluteGaloisGroup F | ∀ a : A.V, e.symm g • a = a} ∩
+      (MulAction.stabilizer (AbsoluteGaloisGroup F) ζ : Set (AbsoluteGaloisGroup F))) := by
+    refine IsOpen.inter ?_ (stabilizer_isOpen_of_isIntegral ζ)
+    rw [Set.ofPred_forall]
+    exact isOpen_iInter_of_finite fun a ↦ (hA.stabilizer_isOpen a).preimage e.symm.continuous
+  obtain ⟨W, hW⟩ := ProfiniteGrp.exist_openNormalSubgroup_sub_open_nhds_of_one hopen
+    ⟨fun a ↦ by rw [map_one, one_smul], MulAction.one_smul ζ⟩
+  have hζL : ζ ∈ classField F W := mem_classField.2 fun g hg ↦ (hW hg).2
+  exact ⟨W, ⟨⟨⟨ζ, hζL⟩, IsPrimitiveRoot.of_map_of_injective
+    (f := (classField F W).val) hζ (classField F W).val.injective⟩,
+    fun g hg ↦ (hW hg).1⟩⟩
+
 /-- **Finiteness of `H⁰` and `H¹` of a finite Galois module over a local field.** Let `F` be a
 nonarchimedean local field and `n` a natural number invertible in `F`. For every finite smooth
 discrete `G_F`-module `A` killed by `n`, the continuous cohomology `Hⁱ(G_F, A)` is finite for
@@ -81,27 +109,13 @@ theorem finite_continuousCohomology_of_le_one (hn : (n : F) ≠ 0) (A : GalRep n
   -- Structure of the proof: choose a finite Galois `L/F` trivializing `A` and containing `μ_n`,
   -- and apply the reduction through the subgroup `G_L` of `G_F` to Kummer theory. The subgroups
   -- are chosen in `Γ = Gal(Fˢ/F)` and pulled back to `G_F` along the restriction isomorphism `e`.
-  set e := absoluteGaloisGroupRestrictEquiv F
-  -- a primitive `n`th root of unity `ζ` in `Fˢ`
-  have : NeZero (n : F) := ⟨hn⟩
   have : NeZero n := ⟨by rintro rfl; exact hn Nat.cast_zero⟩
-  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_primitiveRoot (SeparableClosure F) n
-  -- an open normal subgroup `W` of `Γ` acting trivially on `A` and fixing `ζ`
-  have hopen : IsOpen ({g : AbsoluteGaloisGroup F | ∀ a : A.V, e.symm g • a = a} ∩
-      (MulAction.stabilizer (AbsoluteGaloisGroup F) ζ : Set (AbsoluteGaloisGroup F))) := by
-    refine IsOpen.inter ?_ (stabilizer_isOpen_of_isIntegral ζ)
-    rw [Set.ofPred_forall]
-    exact isOpen_iInter_of_finite fun a ↦ (hA.stabilizer_isOpen a).preimage e.symm.continuous
-  obtain ⟨W, hW⟩ := ProfiniteGrp.exist_openNormalSubgroup_sub_open_nhds_of_one hopen
-    ⟨fun a ↦ by rw [map_one, one_smul], MulAction.one_smul ζ⟩
-  -- its class field `L`, a nonarchimedean local field containing `ζ`
+  set e := absoluteGaloisGroupRestrictEquiv F
+  obtain ⟨W, ⟨ζ, hζ'⟩, hW⟩ := exists_classField_trivializing hn A hA
   set L := classField F W
   let := finiteExtensionValuativeRel F L
   let := finiteExtensionNormedFieldTopology F L
   have := finiteExtension_isNonarchimedeanLocalField F L
-  have hζL : ζ ∈ L := mem_classField.2 fun g hg ↦ (hW hg).2
-  have hζ' : IsPrimitiveRoot (⟨ζ, hζL⟩ : L) n :=
-    IsPrimitiveRoot.of_map_of_injective (f := L.val) hζ L.val.injective
   -- the subgroup `U = Gal(Fˢ/L) ≅ G_L`, which is `W`, and its image `V ≅ U` in `G_F`
   set U := (galoisSubgroup F L L.val).toSubgroup
   have hUW : U = W.toSubgroup := (galoisSubgroup_toSubgroup F L L.val).trans <| by
@@ -126,6 +140,6 @@ theorem finite_continuousCohomology_of_le_one (hn : (n : F) ≠ 0) (A : GalRep n
     rw [← Nat.cast_smul_eq_nsmul (ZMod n), ZMod.natCast_self, zero_smul]
   · -- `V` acts trivially on `A`, being the image of `U = W`
     obtain ⟨u, hu, rfl⟩ := Subgroup.mem_map.1 hv
-    exact (hW (hUW ▸ hu : u ∈ W.toSubgroup)).1 a
+    exact hW u (hUW ▸ hu : u ∈ W.toSubgroup) a
 
 end TauCeti.ClassFieldTheory
