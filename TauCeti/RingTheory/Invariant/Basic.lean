@@ -7,10 +7,12 @@ module
 
 public import Mathlib.Algebra.Polynomial.Roots
 public import Mathlib.RingTheory.Invariant.Basic
-public import Mathlib.RingTheory.IntegralClosure.IsIntegralClosure.Basic
 
 /-!
-# Divisibility by the characteristic polynomial of a group action
+# Fixed rings and characteristic polynomials of group actions
+
+The fixed subring and fixed subalgebra are invariant extensions, so the integral-extension
+and prime-orbit theorems apply to them.
 
 Let a finite group `G` act on an integral domain `B`. Mathlib's
 `MulSemiringAction.charpoly G b = ∏ g : G, (X - C (g • b))` is the monic polynomial whose roots
@@ -21,8 +23,8 @@ intermediate ring with a product of displacements of a generator of the top ring
 
 ## Main results
 
-* `TauCeti.Algebra.IsInvariant.finite_of_finiteType`: a finite-type algebra is module-finite
-  over an intermediate invariant ring for a finite group action.
+* The fixed-subring and fixed-subalgebra instances of `Algebra.IsInvariant` identify the
+  invariant extensions.
 * `TauCeti.MulSemiringAction.charpoly_dvd`: if `g ↦ g • b` is injective and `f` vanishes at every
   `g • b`, then `charpoly G b ∣ f`.
 * `TauCeti.MulSemiringAction.eval_smul_charpoly`: evaluating `σ • charpoly H b` at `b` gives the
@@ -33,28 +35,18 @@ public section
 
 open Polynomial
 
-namespace TauCeti.MulSemiringAction
-
-/-- Every fixed element belongs to the fixed subalgebra. This registers the fixed subalgebra
-as an invariant extension, so Mathlib's integral-extension and prime-orbit theorems apply. -/
-instance fixedPointsSubalgebraIsInvariant (R A G : Type*) [CommSemiring R] [CommSemiring A]
-    [Algebra R A] [Group G] [MulSemiringAction G A] [SMulCommClass G R A] :
-    Algebra.IsInvariant (FixedPoints.subalgebra R A G) A G where
-  isInvariant a ha := ⟨⟨a, ha⟩, rfl⟩
-
-end TauCeti.MulSemiringAction
-
 namespace TauCeti.Algebra.IsInvariant
 
-/-- A finite-type algebra is module-finite over an intermediate invariant ring for a finite
-group action. No Noetherian hypothesis on the base ring is needed. -/
-theorem finite_of_finiteType (R S A G : Type*) [CommRing R] [CommRing S] [CommRing A]
-    [Algebra R S] [Algebra R A] [Algebra S A] [IsScalarTower R S A]
-    [Group G] [Finite G] [MulSemiringAction G A] [Algebra.IsInvariant S A G]
-    [Algebra.FiniteType R A] : Module.Finite S A := by
-  let := Algebra.IsInvariant.isIntegral S A G
-  let := Algebra.FiniteType.of_restrictScalars_finiteType R S A
-  exact Algebra.IsIntegral.finite
+/-- The fixed subring is an invariant extension: every fixed element lies in its image. -/
+instance (A G : Type*) [CommRing A] [Group G] [MulSemiringAction G A] :
+    Algebra.IsInvariant (FixedPoints.subring A G) A G where
+  isInvariant a ha := ⟨⟨a, ha⟩, rfl⟩
+
+/-- The fixed subalgebra is an invariant extension: every fixed element lies in its image. -/
+instance (R A G : Type*) [CommSemiring R] [CommSemiring A] [Algebra R A] [Group G]
+    [MulSemiringAction G A] [SMulCommClass G R A] :
+    Algebra.IsInvariant (FixedPoints.subalgebra R A G) A G where
+  isInvariant a ha := ⟨⟨a, ha⟩, rfl⟩
 
 end TauCeti.Algebra.IsInvariant
 
