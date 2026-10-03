@@ -95,14 +95,21 @@ theorem existsUnique_functionFieldMap_iff_galoisEquivariant
     have hr (z : W₂.toAffine.FunctionField) : r z ∈ b₁.fieldRange.toSubalgebra := by
       apply (W₁.mem_range_functionFieldMap_iff_fixed _).mpr
       intro σ
-      exact (hg σ (b₂ z)).trans
+      -- Evaluate `r` and `b₂` to expose the coefficient-map equality.
+      change W₁.functionFieldGaloisAction σ
+          (g (Affine.FunctionField.map W₂.toAffine (algebraMap F K) z)) =
+        g (Affine.FunctionField.map W₂.toAffine (algebraMap F K) z)
+      exact (hg σ _).trans
         (congrArg g (functionFieldGaloisAction_map_algebraMap W₂ σ z))
     let f : W₂.toAffine.FunctionField →ₐ[F] W₁.toAffine.FunctionField :=
       (AlgEquiv.ofInjectiveField b₁).symm.toAlgHom.comp (r.codRestrict _ hr)
     have hf (z : W₂.toAffine.FunctionField) :
         Affine.FunctionField.map W₁.toAffine (algebraMap F K) (f z) =
           g (Affine.FunctionField.map W₂.toAffine (algebraMap F K) z) := by
-      exact congrArg Subtype.val ((AlgEquiv.ofInjectiveField b₁).apply_symm_apply ⟨r z, hr z⟩)
+      -- Evaluate `f` through its restricted composite, and identify the two base-change maps.
+      change b₁ ((AlgEquiv.ofInjectiveField b₁).symm ⟨r z, hr z⟩) = r z
+      simpa only [AlgEquiv.ofInjectiveField, AlgEquiv.ofInjective_apply] using
+        congrArg Subtype.val ((AlgEquiv.ofInjectiveField b₁).apply_symm_apply ⟨r z, hr z⟩)
     refine ⟨f, hf, ?_⟩
     intro f' hf'
     apply AlgHom.ext
