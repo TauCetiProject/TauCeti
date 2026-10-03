@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Dyadic.Cyclic
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Dyadic.RankTwo
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Orthogonal.GaussSum
+import TauCeti.Data.ZMod.Torsion
 
 /-!
 # Gauss sums of the dyadic generators
@@ -82,15 +83,6 @@ theorem gaussSign_dyadicU : (dyadicU k).gaussSign = 0 :=
 
 /-! ## Reduction of the exponent by two -/
 
-/-- An element of `ℤ/2^{n+1}` killed by `2` is the reduction of a multiple of `2^n`. -/
-private theorem exists_eq_two_pow_mul_of_two_zsmul_eq_zero {n : ℕ} {x : ZMod (2 ^ (n + 1))}
-    (hx : (2 : ℤ) • x = 0) : ∃ t : ℤ, x = ((2 ^ n * t : ℤ) : ZMod (2 ^ (n + 1))) := by
-  obtain ⟨j, rfl⟩ := ZMod.intCast_surjective x
-  rw [zsmul_eq_mul, ← Int.cast_mul, ZMod.intCast_zmod_eq_zero_iff_dvd, Nat.cast_pow,
-    Nat.cast_ofNat, pow_succ, mul_comm (2 ^ n : ℤ)] at hx
-  obtain ⟨t, rfl⟩ := Int.dvd_of_mul_dvd_mul_left two_ne_zero hx
-  exact ⟨t, rfl⟩
-
 /-- The form `x₁² + x₁x₂ + x₂²` of `v^{(2)}` commutes with reducing integers. -/
 private theorem intCast_sq_add_mul_add_sq {m : ℕ} (a b : ℤ) :
     (a : ZMod m) ^ 2 + a * b + b ^ 2 = ((a ^ 2 + a * b + b ^ 2 : ℤ) : ZMod m) := by
@@ -101,6 +93,17 @@ private theorem intCast_sq_add_mul_add_sq {m : ℕ} (a b : ℤ) :
 private theorem two_zsmul_intCast {m : ℕ} (j : ℤ) :
     (2 : ℤ) • (j : ZMod m) = ((2 * j : ℤ) : ZMod m) := by
   rw [zsmul_eq_mul, Int.cast_mul]
+
+/-- `q_θ^{(2)}(2^k)` has `2^k` elements. Its carrier is `ℤ/2^k` by definition; this is the only
+place below where that representation is used to count it. -/
+private theorem natCard_dyadicCyclic [NeZero k] (θ : ℤ) : Nat.card (dyadicCyclic k θ) = 2 ^ k :=
+  Nat.card_zmod (2 ^ k)
+
+/-- `v^{(2)}(2^k)` has `2^k · 2^k` elements. Its carrier is `(ℤ/2^k)²` by definition; this is the
+only place below where that representation is used to count it. -/
+private theorem natCard_dyadicV : Nat.card (dyadicV k) = 2 ^ k * 2 ^ k := by
+  rw [show Nat.card (dyadicV k) = Nat.card (ZMod (2 ^ k) × ZMod (2 ^ k)) from rfl, Nat.card_prod,
+    Nat.card_zmod]
 
 variable {k} in
 /-- The Gauss-sum invariant of `q_θ^{(2)}(2^{k+2})` is that of `q_θ^{(2)}(2^k)`, for odd `θ`
@@ -115,7 +118,7 @@ private theorem gaussSign_dyadicCyclic_add_two [NeZero k] {θ : ℤ} (hθ : Odd 
   -- Both conditions are computed on `ℤ/2^{k+3}` itself, the carrier of the module.
   have hiso (x : ZMod (2 ^ (k + 1 + 2))) (hx : (2 : ℤ) • x = 0) :
       (dyadicCyclic (k + 1 + 2) θ).quadratic x = 0 := by
-    obtain ⟨t, rfl⟩ := exists_eq_two_pow_mul_of_two_zsmul_eq_zero (n := k + 2) hx
+    obtain ⟨t, rfl⟩ := ZMod.exists_eq_pow_mul_of_zsmul_eq_zero (p := 2) (n := k + 2) hx
     rw [dyadicCyclic_quadratic_intCast]
     exact (AddCircle.coe_eq_zero_iff (1 : ℚ)).2
       ⟨θ * 2 ^ k * t ^ 2, by push_cast; field_simp; ring⟩
@@ -147,9 +150,9 @@ private theorem gaussSign_dyadicV_add_two :
       (dyadicV (k + 2)).quadratic x = 0 := by
     obtain ⟨x₁, x₂⟩ := x
     obtain ⟨s, rfl⟩ :=
-      exists_eq_two_pow_mul_of_two_zsmul_eq_zero (n := k + 1) (congrArg Prod.fst hx)
+      ZMod.exists_eq_pow_mul_of_zsmul_eq_zero (p := 2) (n := k + 1) (congrArg Prod.fst hx)
     obtain ⟨t, rfl⟩ :=
-      exists_eq_two_pow_mul_of_two_zsmul_eq_zero (n := k + 1) (congrArg Prod.snd hx)
+      ZMod.exists_eq_pow_mul_of_zsmul_eq_zero (p := 2) (n := k + 1) (congrArg Prod.snd hx)
     rw [dyadicV_quadratic, intCast_sq_add_mul_add_sq, ZMod.toRatAddCircle_intCast]
     exact (AddCircle.coe_eq_zero_iff (1 : ℚ)).2
       ⟨2 ^ k * (s ^ 2 + s * t + t ^ 2), by push_cast; field_simp; ring⟩
@@ -276,10 +279,7 @@ private theorem gaussSum_dyadicCyclic_two {θ : ℤ} (hθ : Odd θ) :
 private theorem gaussSign_dyadicCyclic_two {θ : ℤ} (hθ : Odd θ) :
     (dyadicCyclic 2 θ).gaussSign = θ := by
   refine gaussSign_eq_of_gaussSum_eq _ ?_
-  -- The carrier is `ℤ/4` by definitional unfolding.
-  have hc : Nat.card (dyadicCyclic 2 θ) = 2 ^ 2 := by
-    rw [show Nat.card (dyadicCyclic 2 θ) = Nat.card (ZMod (2 ^ 2)) from rfl, Nat.card_zmod]
-  rw [gaussSum_dyadicCyclic_two hθ, hc, ZMod.toRatAddCircle_intCast, Nat.cast_pow,
+  rw [gaussSum_dyadicCyclic_two hθ, natCard_dyadicCyclic, ZMod.toRatAddCircle_intCast, Nat.cast_pow,
     Real.sqrt_sq (by norm_num)]
   push_cast
   ring_nf
@@ -293,11 +293,8 @@ private theorem gaussSign_dyadicV_zero : (dyadicV 0).gaussSign = 0 := by
     rw [show (Finset.univ : Finset (ZMod (2 ^ 0) × ZMod (2 ^ 0))) = {0} by decide,
       Finset.sum_singleton, dyadicV_quadratic]
     simp
-  have hc : Nat.card (dyadicV 0) = 1 := by
-    rw [show Nat.card (dyadicV 0) = Nat.card (ZMod (2 ^ 0) × ZMod (2 ^ 0)) from rfl]
-    simp
   refine gaussSign_eq_of_gaussSum_eq _ ?_
-  rw [gaussSum_eq_sum, hc]
+  rw [gaussSum_eq_sum, natCard_dyadicV]
   refine key.trans ?_
   simp
 
@@ -348,12 +345,8 @@ private theorem toRatAddCircle_eight_four :
 /-- **The Gauss-sum invariant of `v^{(2)}(2)` is `4`.** -/
 private theorem gaussSign_dyadicV_one : (dyadicV 1).gaussSign = 4 := by
   refine gaussSign_eq_of_gaussSum_eq _ ?_
-  have hc : Nat.card (dyadicV 1) = 2 ^ 2 := by
-    rw [show Nat.card (dyadicV 1) = Nat.card (ZMod (2 ^ 1) × ZMod (2 ^ 1)) from rfl, Nat.card_prod,
-      Nat.card_zmod]
-    norm_num
-  rw [gaussSum_dyadicV_one, hc, toRatAddCircle_eight_four, expCircle_one_div_two, Nat.cast_pow,
-    Real.sqrt_sq (by norm_num)]
+  rw [gaussSum_dyadicV_one, natCard_dyadicV, toRatAddCircle_eight_four, expCircle_one_div_two,
+    Nat.cast_mul, Real.sqrt_mul_self (by positivity)]
   push_cast
   ring
 
@@ -399,11 +392,8 @@ theorem gaussSign_dyadicV : (dyadicV k).gaussSign = 4 * k := by
 /-- **The Gauss sum of `v^{(2)}(2^k)` is `(-2)^k`**, in the half-norm convention. -/
 @[simp]
 theorem gaussSum_dyadicV : (dyadicV k).gaussSum = (-2 : ℂ) ^ k := by
-  have hc : Nat.card (dyadicV k) = 2 ^ k * 2 ^ k := by
-    rw [show Nat.card (dyadicV k) = Nat.card (ZMod (2 ^ k) × ZMod (2 ^ k)) from rfl,
-      Nat.card_prod, Nat.card_zmod]
-  rw [(isNondegenerate_dyadicV k).gaussSum_eq, gaussSign_dyadicV, hc,
-    show (4 : ZMod 8) * k = k • 4 by rw [nsmul_eq_mul, mul_comm], map_nsmul,
+  rw [(isNondegenerate_dyadicV k).gaussSum_eq, gaussSign_dyadicV, natCard_dyadicV,
+    ← nsmul_eq_mul' (4 : ZMod 8) k, map_nsmul,
     AddChar.map_nsmul_eq_pow, toRatAddCircle_eight_four, expCircle_one_div_two, Nat.cast_mul,
     Real.sqrt_mul_self (by positivity)]
   push_cast

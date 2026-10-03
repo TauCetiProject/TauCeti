@@ -23,7 +23,7 @@ consequences follow from it: the fiber is counted, made finite, and a sum over i
 sum over the kernel; and summing `g ∘ f` along a surjective `f` counts each value of `g` as often
 as the kernel has elements.
 
-Finiteness is the one of the three that needs no preimage: an empty fiber is finite as well, so the
+Finiteness is the one of the four that needs no preimage: an empty fiber is finite as well, so the
 statement is available before any point of the fiber is known, which is what a caller quantifying
 over all values of `f` wants.
 
