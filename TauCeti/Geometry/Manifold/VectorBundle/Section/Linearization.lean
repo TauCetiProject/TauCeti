@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.VectorBundle.MDifferentiable
 public import Mathlib.Analysis.Calculus.FDeriv.CompCLM
 public import TauCeti.Analysis.Fredholm.Index
+import Mathlib.Topology.Algebra.Module.TransferInstance
 
 /-!
 # Linearization of a section at a zero
@@ -143,6 +144,33 @@ theorem surjective_sectionLinearization_iff
   rw [sectionLinearization_eq_symmL_comp hb he hs hzero,
     ← e.symm_continuousLinearEquivAt_eq' he]
   exact Function.Surjective.of_comp_iff' (e.continuousLinearEquivAt 𝕜 (b x) he).symm.bijective _
+
+/-- At a zero, the intrinsic linearization and any differentiable fiber-coordinate
+expression have the same Fredholm index. -/
+theorem index_sectionLinearization
+    (hb : MDifferentiableAt 𝓘(𝕜, X) I b x) (he : b x ∈ e.baseSet)
+    (hs : DifferentiableAt 𝕜 (fun y ↦ (e ⟨b y, s y⟩).2) x) (hzero : s x = 0) :
+    LinearMap.index (sectionLinearization (𝕜 := 𝕜) (F := F) b s x).toLinearMap =
+      ContinuousLinearMap.index (fderiv 𝕜 (fun y ↦ (e ⟨b y, s y⟩).2) x) := by
+  rw [sectionLinearization_eq_symmL_comp hb he hs hzero,
+    ← e.symm_continuousLinearEquivAt_eq' he, ContinuousLinearMap.toLinearMap_comp,
+    ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap]
+  rw [LinearMap.index_equiv_comp, ContinuousLinearMap.index_def]
+
+/-- A section's intrinsic linearization at a zero is Fredholm exactly when its derivative
+in any differentiable fiber-coordinate expression is Fredholm. -/
+theorem isFredholm_sectionLinearization_iff [CompleteSpace 𝕜]
+    (hb : MDifferentiableAt 𝓘(𝕜, X) I b x) (he : b x ∈ e.baseSet)
+    (hs : DifferentiableAt 𝕜 (fun y ↦ (e ⟨b y, s y⟩).2) x) (hzero : s x = 0) :
+    ContinuousLinearMap.IsFredholm (sectionLinearization (𝕜 := 𝕜) (F := F) b s x) ↔
+      ContinuousLinearMap.IsFredholm (fderiv 𝕜 (fun y ↦ (e ⟨b y, s y⟩).2) x) := by
+  rw [sectionLinearization_eq_symmL_comp hb he hs hzero,
+    ← e.symm_continuousLinearEquivAt_eq' he]
+  let A := e.continuousLinearEquivAt 𝕜 (b x) he
+  let := A.toContinuousAddEquiv.isTopologicalAddGroup
+  let := A.continuousSMul
+  let := A.symm.toHomeomorph.t2Space
+  exact ContinuousLinearMap.isFredholm_equiv_comp
 
 /-- The Fredholm index of a section's coordinate derivative at a zero is independent of
 the bundle trivialization. No Fredholm hypothesis is needed for this equality of indices. -/

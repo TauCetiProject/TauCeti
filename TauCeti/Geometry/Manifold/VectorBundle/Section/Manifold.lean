@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.ZeroChart
-public import Mathlib.Geometry.Manifold.IsManifold.Basic
+public import Mathlib.Geometry.Manifold.ContMDiff.Basic
 
 /-!
 # Smooth atlases on regular zero sets of bundle sections
@@ -21,7 +21,8 @@ to the neighbourhood where the implicit-function coordinate map has invertible d
 The inverse charts are then smooth throughout their targets. Chart transitions are inverse
 charts followed by continuous linear projections of ambient displacement, so no global
 trivialization is needed. Atlas assembly follows `levelSetChartedSpace` and
-`isManifold_levelSet` for ordinary maps.
+`isManifold_levelSet` for ordinary maps. The inclusion into the parameter space is smooth
+for this atlas.
 
 Smoothness is stated in fiber coordinates at zeros in the chosen trivializations and regular
 implicit-coordinate neighbourhoods, and is required only for nonzero differentiability order.
@@ -142,5 +143,61 @@ theorem isManifold_sectionZero :
   simpa only [modelWithCornersSelf_coe, modelWithCornersSelf_coe_symm, Set.range_id,
     Set.inter_univ, Set.preimage_id, Function.comp_id, Function.id_comp] using
     contDiffOn_sectionZeroChartAt_trans hf hFred hsurj hindex hs z w
+
+include hs in
+/-- The inclusion of a section's regular zero manifold into its Banach parameter space is
+smooth for the implicit-function atlas. -/
+theorem contMDiff_coe_sectionZero :
+    letI := sectionZeroChartedSpace hf hFred hsurj hindex hb he
+    ContMDiff (modelWithCornersSelf 𝕜 (Fin n → 𝕜)) (modelWithCornersSelf 𝕜 X) m
+      (Subtype.val : ↥{y | s y = 0} → X) := by
+  let _ := sectionZeroChartedSpace hf hFred hsurj hindex hb he
+  intro z
+  rw [contMDiffAt_iff]
+  refine ⟨continuous_subtype_val.continuousAt, ?_⟩
+  have htarget := (sectionZeroChartAt hf hFred hsurj hindex z).map_source
+    (mem_sectionZeroChartAt_source hf hFred hsurj hindex hb he z)
+  have hcont := (contDiffOn_coe_sectionZeroChartAt_symm hf hFred hsurj hindex hs z).contDiffAt
+    ((sectionZeroChartAt hf hFred hsurj hindex z).open_target.mem_nhds htarget)
+  simpa only [extChartAt, OpenPartialHomeomorph.extend_coe,
+    OpenPartialHomeomorph.extend_coe_symm, modelWithCornersSelf_coe,
+    modelWithCornersSelf_coe_symm, OpenPartialHomeomorph.refl_apply,
+    chartAt_self_eq, sectionZeroChartedSpace_chartAt, Function.comp_def,
+    Set.range_id, id_eq] using hcont.contDiffWithinAt
+
+/-- The derivative of the zero-manifold inclusion at a zero is the inclusion of the
+linearization's kernel, read through that kernel's identification with the index model. -/
+theorem hasMFDerivAt_coe_sectionZero (z : ↥{y | s y = 0}) :
+    letI := sectionZeroChartedSpace hf hFred hsurj hindex hb he
+    HasMFDerivAt (modelWithCornersSelf 𝕜 (Fin n → 𝕜)) (modelWithCornersSelf 𝕜 X)
+      (Subtype.val : ↥{y | s y = 0} → X) z
+      ((D z).ker.subtypeL.comp
+        (((D z).kerModelEquiv (hFred z).finite_ker
+          ((ContinuousLinearMap.finrank_ker_eq_iff_index_eq (D z) (hsurj z)).2
+            (hindex z))).symm : (Fin n → 𝕜) →L[𝕜] (D z).ker)) := by
+  let _ := sectionZeroChartedSpace hf hFred hsurj hindex hb he
+  let K := (D z).kerModelEquiv (hFred z).finite_ker
+    ((ContinuousLinearMap.finrank_ker_eq_iff_index_eq (D z) (hsurj z)).2 (hindex z))
+  let ψ := sectionZeroChart (hf z) (LinearMap.range_eq_top.2 (hsurj z))
+    (hFred z).closedComplemented_ker z.2
+  have hderiv : HasFDerivAt (fun k ↦ (ψ.symm k : X)) (D z).ker.subtypeL (K.symm 0) := by
+    simpa only [map_zero] using (hasStrictFDerivAt_coe_sectionZeroChart_symm
+      (hb z) (he z) (hf z) _ _ z.2).hasFDerivAt
+  have hcomp := hderiv.comp 0 K.symm.hasFDerivAt
+  have hcoord : HasFDerivAt
+      (fun k ↦ ((sectionZeroChartAt hf hFred hsurj hindex z).symm k : X))
+      ((D z).ker.subtypeL.comp (K.symm : (Fin n → 𝕜) →L[𝕜] (D z).ker)) 0 := by
+    simpa only [Function.comp_def, sectionZeroChartAt_symm_apply] using hcomp
+  refine ⟨continuous_subtype_val.continuousAt, ?_⟩
+  -- In the preferred zero chart, the derivative is exactly the derivative of the inverse
+  -- parametrization. The model tangent-space casts in `HasMFDerivAt` are identities here.
+  simp only [writtenInExtChartAt, extChartAt, OpenPartialHomeomorph.extend_coe,
+    OpenPartialHomeomorph.extend_coe_symm, modelWithCornersSelf_coe,
+    modelWithCornersSelf_coe_symm, chartAt_self_eq, OpenPartialHomeomorph.refl_apply,
+    sectionZeroChartedSpace_chartAt, sectionZeroChartAt_apply_self,
+    Function.comp_def, Set.range_id, id_eq]
+  convert hcoord.hasFDerivWithinAt using 1
+  ext v
+  rfl
 
 end TauCeti
