@@ -384,7 +384,7 @@ private theorem map_mkₐ_eq_zero_iff {A : Type*} [CommRing A] [Algebra k A] (�
     (y : K ⊗[k] A) :
     Algebra.TensorProduct.map (AlgHom.id K K) (Ideal.Quotient.mkₐ k 𝔞) y = 0 ↔
       ∀ j, equivFinsuppOfBasisLeft b y j ∈ 𝔞 := by
-  simp [map_id_apply_eq_lTensor, lTensor_eq_zero_iff_forall_equivFinsuppOfBasisLeft b,
+  simp [map_id_apply_eq_lTensor, b.lTensor_eq_zero_iff_forall_equivFinsuppOfBasisLeft,
     Ideal.Quotient.eq_zero_iff_mem]
 
 variable (H) in
@@ -442,7 +442,7 @@ theorem mem_baseChangeHopfIdeal_iff_forall_equivFinsuppOfBasisLeft_mem (J : Hopf
     (y : baseChange (K := K) H) :
     y ∈ baseChangeHopfIdeal (K := K) J ↔ ∀ j, equivFinsuppOfBasisLeft b y j ∈ J := by
   rw [mem_baseChangeHopfIdeal_iff, hom_baseChangeMap_apply,
-    lTensor_eq_zero_iff_forall_equivFinsuppOfBasisLeft b]
+    b.lTensor_eq_zero_iff_forall_equivFinsuppOfBasisLeft]
   simp only [BialgHom.coe_toLinearMap]
   exact forall_congr' fun j ↦ (mkQuotient_eq_zero_iff H J _).trans HopfIdeal.mem_toIdeal
 
@@ -470,18 +470,20 @@ private theorem comul_mem_of_mem_coefficientSet (I : HopfIdeal K (baseChange (K 
       rw [Ideal.mem_comap, Ideal.mem_comap, RingHom.mem_ker, map_mkₐ_eq_zero_iff b] <;> intro i
     · rw [AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom, Algebra.TensorProduct.includeLeft_apply,
         tensorSquareBaseChangeHom, Algebra.TensorProduct.lift_tmul, map_one, mul_one,
-        map_id_apply_eq_lTensor, equivFinsuppOfBasisLeft_lTensor_apply, AlgHom.toLinearMap_apply]
+        map_id_apply_eq_lTensor, Module.Basis.equivFinsuppOfBasisLeft_lTensor_apply,
+        AlgHom.toLinearMap_apply]
       exact Ideal.mem_sup_left (HopfIdeal.includeLeft_mem_leftTensorIdeal k H
         (Ideal.subset_span (s := coefficientSet b I) ⟨a, HopfIdeal.mem_toIdeal.mp ha, i, rfl⟩))
     · rw [AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom, Algebra.TensorProduct.includeRight_apply,
         tensorSquareBaseChangeHom, Algebra.TensorProduct.lift_tmul, map_one, one_mul,
-        map_id_apply_eq_lTensor, equivFinsuppOfBasisLeft_lTensor_apply, AlgHom.toLinearMap_apply]
+        map_id_apply_eq_lTensor, Module.Basis.equivFinsuppOfBasisLeft_lTensor_apply,
+        AlgHom.toLinearMap_apply]
       exact Ideal.mem_sup_right (HopfIdeal.includeRight_mem_rightTensorIdeal k H
         (Ideal.subset_span (s := coefficientSet b I) ⟨a, HopfIdeal.mem_toIdeal.mp ha, i, rfl⟩))
   have hcomul := hle (I.comul_mem hy)
   rw [Ideal.mem_comap, RingHom.mem_ker, map_mkₐ_eq_zero_iff b] at hcomul
   simpa only [tensorSquareBaseChangeHom_comul, map_id_apply_eq_lTensor,
-    equivFinsuppOfBasisLeft_lTensor_apply, AlgHom.toLinearMap_apply,
+    Module.Basis.equivFinsuppOfBasisLeft_lTensor_apply, AlgHom.toLinearMap_apply,
     Bialgebra.comulAlgHom_apply] using hcomul j
 
 variable {ι : Type y} {N : ι → _root_.CommHopfAlgCat.{v} k}
@@ -515,7 +517,7 @@ theorem baseChangeHopfIdeal_commonKernelHopfIdeal [Module.Free k K] (f : ∀ i, 
     rintro _ ⟨z, hz, j, rfl⟩
     have hfz : (baseChangeMap (K := K) (f i)).hom z = 0 :=
       RingHom.mem_ker.mp (commonKernelHopfIdeal_toIdeal_le_ker _ i (HopfIdeal.mem_toIdeal.mpr hz))
-    rw [hom_baseChangeMap_apply, lTensor_eq_zero_iff_forall_equivFinsuppOfBasisLeft b] at hfz
+    rw [hom_baseChangeMap_apply, b.lTensor_eq_zero_iff_forall_equivFinsuppOfBasisLeft] at hfz
     exact hfz j
   rw [mem_baseChangeHopfIdeal_iff_forall_equivFinsuppOfBasisLeft_mem b]
   refine fun j ↦ hI₀ ?_

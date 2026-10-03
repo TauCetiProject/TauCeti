@@ -22,8 +22,8 @@ consists of pure tensors.
 
 * `TensorProduct.tensor_eq_of_forall_tensorComponent_eq`: contractions against a projective right
   factor detect equality.
-* `TensorProduct.equivFinsuppOfBasisLeft_lTensor_apply` and
-  `TensorProduct.lTensor_eq_zero_iff_forall_equivFinsuppOfBasisLeft`: coordinates in a basis of
+* `Module.Basis.equivFinsuppOfBasisLeft_lTensor_apply` and
+  `Module.Basis.lTensor_eq_zero_iff_forall_equivFinsuppOfBasisLeft`: coordinates in a basis of
   the left factor commute with maps of the right factor, so such a map kills an element exactly
   when it kills every coordinate.
 * `Module.Basis.map_baseChange_repr`: applying a scalar map to a coordinate in a base-changed
@@ -102,6 +102,16 @@ theorem tensor_eq_of_forall_tensorComponent_eq [Module.Projective R N] {x y : M 
     _ = TensorProduct.map LinearMap.id p (TensorProduct.map LinearMap.id s y) := congrArg _ hmap
     _ = y := hleft y
 
+end TensorProduct
+
+namespace Module.Basis
+
+universe u v w
+
+variable {R : Type u} {M : Type v} {N : Type w}
+variable [CommSemiring R] [AddCommMonoid M] [Module R M]
+variable [AddCommMonoid N] [Module R N]
+
 section EquivFinsuppOfBasisLeft
 
 variable {ι : Type*} [DecidableEq ι] {P : Type*} [AddCommMonoid P] [Module R P]
@@ -124,7 +134,7 @@ theorem lTensor_eq_zero_iff_forall_equivFinsuppOfBasisLeft (g : N →ₗ[R] P) (
 
 end EquivFinsuppOfBasisLeft
 
-end TensorProduct
+end Module.Basis
 
 namespace Module.Basis
 
