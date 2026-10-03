@@ -133,12 +133,16 @@ lemma totalPair_obj_skeletonBaseTriple (n : ℕ) :
 lemma outerPair_obj_skeletonBaseTriple (n : ℕ) :
     TopTriple.outerPair.obj (skeletonBaseTriple C n) = skeletonPair C (n + 1) := rfl
 
-/-- The inclusion `(Xⁿ, X⁻¹) ⟶ (Xⁿ⁺¹, X⁻¹)` of consecutive base pairs.  It is exposed so that it
-is definitionally the map from the inner pair to the total pair of the triple
-`TauCeti.skeletonBaseTriple C n`, which states the long exact sequence of that triple with it. -/
-@[expose]
+/-- The inclusion `(Xⁿ, X⁻¹) ⟶ (Xⁿ⁺¹, X⁻¹)` of consecutive base pairs.  It is the map from the
+inner pair to the total pair of the triple `TauCeti.skeletonBaseTriple C n`
+(`TauCeti.skeletonBasePairToSucc_def`). -/
 def skeletonBasePairToSucc (n : ℕ) : skeletonBasePair C n ⟶ skeletonBasePair C (n + 1) :=
   TopTriple.innerToTotal.app (skeletonBaseTriple C n)
+
+/-- `TauCeti.skeletonBasePairToSucc` is the map from the inner pair to the total pair of the
+triple `TauCeti.skeletonBaseTriple C n`. -/
+lemma skeletonBasePairToSucc_def (n : ℕ) :
+    skeletonBasePairToSucc C n = TopTriple.innerToTotal.app (skeletonBaseTriple C n) := (rfl)
 
 /-- The map of pairs `(Xⁿ, X⁻¹) ⟶ (Xⁿ, Xⁿ⁻¹)` which is the identity on `Xⁿ`. -/
 def skeletonBasePairToSkeletonPair (n : ℕ) : skeletonBasePair C n ⟶ skeletonPair C n :=

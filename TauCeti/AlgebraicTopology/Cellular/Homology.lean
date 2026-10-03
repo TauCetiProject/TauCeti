@@ -99,8 +99,9 @@ lemma skeletonBaseTripleδ_def (n : ℕ) :
 @[reassoc (attr := simp)]
 lemma skeletonBaseTripleδ_comp_singularHomologyMap_skeletonBasePairToSucc (n : ℕ) :
     skeletonBaseTripleδ C R n ≫
-      (skeletonBasePair C n).singularHomologyMap (skeletonBasePairToSucc C n) R n = 0 :=
-  (skeletonBaseTriple C n).singularHomologyδ_comp R (n + 1) n
+      (skeletonBasePair C n).singularHomologyMap (skeletonBasePairToSucc C n) R n = 0 := by
+  rw [skeletonBasePairToSucc_def]
+  exact (skeletonBaseTriple C n).singularHomologyδ_comp R (n + 1) n
 
 /-- The map `Hₙ₊₁(Xⁿ⁺¹, X⁻¹) ⟶ Hₙ₊₁(Xⁿ⁺¹, Xⁿ)` followed by the connecting morphism
 `Hₙ₊₁(Xⁿ⁺¹, Xⁿ) ⟶ Hₙ(Xⁿ, X⁻¹)` is zero. -/
@@ -175,14 +176,20 @@ stated with the maps of `TauCeti.skeletonBasePair`. -/
 lemma skeletonBaseTriple_singularHomology_exact_inner (n : ℕ) :
     (ShortComplex.mk _ _
       (skeletonBaseTripleδ_comp_singularHomologyMap_skeletonBasePairToSucc C R n)).Exact :=
-  (skeletonBaseTriple C n).singularHomology_exact_inner R (n + 1) n
+  ShortComplex.exact_of_iso
+    (S₁ := ShortComplex.mk _ _ ((skeletonBaseTriple C n).singularHomologyδ_comp R (n + 1) n))
+    (ShortComplex.isoMk (Iso.refl _) (Iso.refl _) (Iso.refl _)
+      ((Category.id_comp _).trans (Category.comp_id _).symm)
+      (by simp [skeletonBasePairToSucc_def]))
+    ((skeletonBaseTriple C n).singularHomology_exact_inner R (n + 1) n)
 
 /-- The map `Hₙ(Xⁿ, X⁻¹) ⟶ Hₙ(Xⁿ⁺¹, X⁻¹)` is an epimorphism: its cokernel embeds in
 `Hₙ(Xⁿ⁺¹, Xⁿ) = 0`. -/
 instance epi_singularHomologyMap_skeletonBasePairToSucc (n : ℕ)
     [HasExactColimitsOfShape (Discrete (cell C (n + 1))) A] :
-    Epi ((skeletonBasePair C n).singularHomologyMap (skeletonBasePairToSucc C n) R n) :=
-  ((skeletonBaseTriple C n).singularHomology_exact_total R n).epi_f
+    Epi ((skeletonBasePair C n).singularHomologyMap (skeletonBasePairToSucc C n) R n) := by
+  rw [skeletonBasePairToSucc_def]
+  exact ((skeletonBaseTriple C n).singularHomology_exact_total R n).epi_f
     ((isZero_singularHomology_skeletonPair_of_ne C R (by lia)).eq_of_tgt _ _)
 
 section Base
