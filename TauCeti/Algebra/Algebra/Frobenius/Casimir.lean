@@ -31,9 +31,8 @@ This is what makes `1 ↦ ∑ i, x i ⊗ y i` a map of `A`-bimodules `A → A �
 a symmetric Frobenius algebra; for a Frobenius coalgebra in Mathlib's sense
 (`Coalgebra.IsFrobenius`) with counit `φ`, the element is the comultiplication of `1`.
 
-The tensor identity itself needs only a nonunital semiring `A` with a `k`-module structure:
-neither a multiplicative identity nor compatibility between scalar multiplication and multiplication
-is used.
+The tensor identity itself needs only a `k`-module `A` with an associative multiplication.
+No multiplicative identity, distributivity, or compatibility with scalar multiplication is needed.
 
 ## Main results
 
@@ -51,7 +50,7 @@ namespace LinearMap
 
 open scoped TensorProduct
 
-variable {k A : Type*} [CommSemiring k] [NonUnitalSemiring A] [Module k A]
+variable {k A : Type*} [CommSemiring k] [AddCommMonoid A] [Semigroup A] [Module k A]
 
 /-- **The Casimir element of a trace commutes with multiplication.** If `φ` is a trace on `A`
 and the finite families `x` and `y` are dual for `(a, b) ↦ φ (a * b)`, then
