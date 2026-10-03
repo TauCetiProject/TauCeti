@@ -78,7 +78,7 @@ theorem ofReal_integral_sub_integral_le_wassersteinEDist_one {f : X → ℝ}
     (hf : LipschitzWith 1 f) (hμ : Integrable f μ) (hν : Integrable f ν) :
     ENNReal.ofReal (∫ x, f x ∂μ - ∫ x, f x ∂ν) ≤ wassersteinEDist 1 μ ν := by
   -- `(f, -f)` is a feasible dual pair for the cost `edist`, so Kantorovich weak duality applies
-  have hfeas : DualFeasible (fun z : X × X ↦ edist z.1 z.2) f (fun y ↦ -f y) := by
+  have hfeas : DualFeasible (fun z : X × X ↦ (edist z.1 z.2 : EReal)) f (fun y ↦ -f y) := by
     refine dualFeasible_iff_ofReal_add_le.2 fun x y ↦ ?_
     calc ENNReal.ofReal (f x + -f y) ≤ edist (f x) (f y) := by
           rw [edist_dist, Real.dist_eq, ← sub_eq_add_neg]

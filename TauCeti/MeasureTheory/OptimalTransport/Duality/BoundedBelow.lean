@@ -55,9 +55,9 @@ with dual feasibility for the nonnegative residual cost. -/
 -- Normalize before simplification rewrites subtraction inside the potential functions.
 @[simp↓]
 theorem dualFeasible_residual_iff (h : IntegrableSplitLowerBound c μ ν) :
-    DualFeasible h.residual (fun x ↦ φ x - h.fst x) (fun y ↦ ψ y - h.snd y) ↔
-      ∀ x y, (φ x : EReal) + (ψ y : EReal) ≤ c (x, y) := by
-  rw [dualFeasible_iff]
+    DualFeasible (fun z ↦ (h.residual z : EReal))
+      (fun x ↦ φ x - h.fst x) (fun y ↦ ψ y - h.snd y) ↔ DualFeasible c φ ψ := by
+  rw [dualFeasible_iff, dualFeasible_iff]
   apply forall_congr' fun x ↦ forall_congr' fun y ↦ ?_
   rw [← h.coe_residual_add (x, y)]
   have heq : ((φ x - h.fst x : ℝ) : EReal) + ((ψ y - h.snd y : ℝ) : EReal) +
@@ -72,7 +72,7 @@ theorem dualFeasible_residual_iff (h : IntegrableSplitLowerBound c μ ν) :
 integrable marginal terms. -/
 theorem kantorovichDualValue_le_planCostBddBelow (h : IntegrableSplitLowerBound c μ ν)
     (hφ : Integrable φ μ) (hψ : Integrable ψ ν)
-    (hf : ∀ x y, (φ x : EReal) + (ψ y : EReal) ≤ c (x, y))
+    (hf : DualFeasible c φ ψ)
     {π : Measure (X × Y)} (hπ : IsCoupling π μ ν) :
     (kantorovichDualValue μ ν φ ψ : EReal) ≤ planCostBddBelow π hπ h := by
   have hr := (dualFeasible_residual_iff h).2 hf
@@ -89,7 +89,7 @@ theorem kantorovichDualValue_le_planCostBddBelow (h : IntegrableSplitLowerBound 
 hypothesis is needed. -/
 theorem kantorovichDualValue_le_transportCostBddBelow (h : IntegrableSplitLowerBound c μ ν)
     (hφ : Integrable φ μ) (hψ : Integrable ψ ν)
-    (hf : ∀ x y, (φ x : EReal) + (ψ y : EReal) ≤ c (x, y)) :
+    (hf : DualFeasible c φ ψ) :
     (kantorovichDualValue μ ν φ ψ : EReal) ≤ transportCostBddBelow c μ ν h :=
   le_transportCostBddBelow h fun _ hπ ↦
     kantorovichDualValue_le_planCostBddBelow h hφ hψ hf hπ
@@ -107,7 +107,7 @@ bound of the values of all integrable feasible real potentials. The value may be
 theorem isLUB_kantorovichDualValue_of_lowerSemicontinuous_residual_bddBelow
     (h : IntegrableSplitLowerBound c μ ν) (hres : LowerSemicontinuous h.residual) :
     IsLUB {r : EReal | ∃ (φ : X → ℝ) (ψ : Y → ℝ), Integrable φ μ ∧ Integrable ψ ν ∧
-      (∀ x y, (φ x : EReal) + (ψ y : EReal) ≤ c (x, y)) ∧
+      DualFeasible c φ ψ ∧
       (kantorovichDualValue μ ν φ ψ : EReal) = r} (transportCostBddBelow c μ ν h) := by
   have hlu := isLUB_ofReal_kantorovichDualValue_integrable_of_lowerSemicontinuous
     (μ := μ) (ν := ν) hres
@@ -118,15 +118,16 @@ theorem isLUB_kantorovichDualValue_of_lowerSemicontinuous_residual_bddBelow
     let k := kantorovichDualValue μ ν h.fst h.snd
     have hk : (k : EReal) ≤ b := hbound
       ⟨h.fst, h.snd, h.integrable_fst, h.integrable_snd,
-        fun x y ↦ by simpa only [← EReal.coe_add] using h.le_cost x y, rfl⟩
+        dualFeasible_iff.2 (fun x y ↦ by
+          simpa only [← EReal.coe_add] using h.le_cost x y), rfl⟩
     have hnonneg : 0 ≤ b - (k : EReal) :=
       (EReal.le_sub_iff_add_le (.inl (EReal.coe_ne_bot k))
         (.inl (EReal.coe_ne_top k))).2 (by simpa using hk)
     have hr : transportCost h.residual μ ν ≤ (b - (k : EReal)).toENNReal := by
       apply hlu.2
       rintro r ⟨φ, ψ, hφ, hψ, hf, rfl⟩
-      have hf' : ∀ x y, ((φ x + h.fst x : ℝ) : EReal) +
-          ((ψ y + h.snd y : ℝ) : EReal) ≤ c (x, y) := by
+      have hf' : DualFeasible c (fun x ↦ φ x + h.fst x)
+          (fun y ↦ ψ y + h.snd y) := by
         apply (dualFeasible_residual_iff h).1
         simpa only [add_sub_cancel_right] using hf
       have hval := hbound ⟨fun x ↦ φ x + h.fst x, fun y ↦ ψ y + h.snd y,
@@ -150,7 +151,7 @@ theorem transportCostBddBelow_eq_sSup_kantorovichDualValue_of_lowerSemicontinuou
     (h : IntegrableSplitLowerBound c μ ν) (hres : LowerSemicontinuous h.residual) :
     transportCostBddBelow c μ ν h = sSup {r : EReal | ∃ (φ : X → ℝ) (ψ : Y → ℝ),
       Integrable φ μ ∧ Integrable ψ ν ∧
-      (∀ x y, (φ x : EReal) + (ψ y : EReal) ≤ c (x, y)) ∧
+      DualFeasible c φ ψ ∧
       (kantorovichDualValue μ ν φ ψ : EReal) = r} :=
   (isLUB_kantorovichDualValue_of_lowerSemicontinuous_residual_bddBelow h hres).sSup_eq.symm
 
@@ -161,7 +162,7 @@ theorem isLUB_kantorovichDualValue_of_lowerSemicontinuous_bddBelow
     (h : IntegrableSplitLowerBound c μ ν) (hc : LowerSemicontinuous c)
     (ha : UpperSemicontinuous h.fst) (hb : UpperSemicontinuous h.snd) :
     IsLUB {r : EReal | ∃ (φ : X → ℝ) (ψ : Y → ℝ), Integrable φ μ ∧ Integrable ψ ν ∧
-      (∀ x y, (φ x : EReal) + (ψ y : EReal) ≤ c (x, y)) ∧
+      DualFeasible c φ ψ ∧
       (kantorovichDualValue μ ν φ ψ : EReal) = r} (transportCostBddBelow c μ ν h) := by
   apply isLUB_kantorovichDualValue_of_lowerSemicontinuous_residual_bddBelow h
   rw [funext h.residual_def]
@@ -175,7 +176,7 @@ theorem transportCostBddBelow_eq_sSup_kantorovichDualValue
     (ha : UpperSemicontinuous h.fst) (hb : UpperSemicontinuous h.snd) :
     transportCostBddBelow c μ ν h = sSup {r : EReal | ∃ (φ : X → ℝ) (ψ : Y → ℝ),
       Integrable φ μ ∧ Integrable ψ ν ∧
-      (∀ x y, (φ x : EReal) + (ψ y : EReal) ≤ c (x, y)) ∧
+      DualFeasible c φ ψ ∧
       (kantorovichDualValue μ ν φ ψ : EReal) = r} :=
   (isLUB_kantorovichDualValue_of_lowerSemicontinuous_bddBelow h hc ha hb).sSup_eq.symm
 
