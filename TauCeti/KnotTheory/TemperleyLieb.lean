@@ -48,6 +48,9 @@ the braid route and the diagram route agree on it.
 ## Main results
 
 * `TauCeti.TemperleyLieb.jonesDelta_inv`: the loop value is unchanged by inverting the unit.
+* `TauCeti.TemperleyLieb.jonesDelta_mul_add` and `TauCeti.TemperleyLieb.jonesDelta_mul_add_inv`:
+  closing up the two smoothings of a positive or negative crossing on a new strand multiplies by
+  `-a ^ 3` or by its inverse, the identities behind invariance under stabilization.
 * `TauCeti.TemperleyLieb.jones_sigma`: the representation sends `sigma i` to `jonesUnit a i`.
 * `TauCeti.TemperleyLieb.jonesUnit_mul_jonesUnit_comm`: units for disjoint crossings satisfy the
   distant-generator braid relation.
@@ -184,14 +187,14 @@ theorem jonesDelta_eq_neg_add (a : Rˣ) :
 
 /-- The two smoothings of a positive crossing on a new strand, closed up by the Markov trace,
 contribute `a * δ + a⁻¹ = -a ^ 3`. -/
-private theorem jonesDelta_mul_add (a : Rˣ) :
+theorem jonesDelta_mul_add (a : Rˣ) :
     (a : R) * jonesDelta a + ((a⁻¹ : Rˣ) : R) = ((-a ^ 3 : Rˣ) : R) := by
   simp only [jonesDelta_def, Units.val_neg, Units.val_pow_eq_pow_val]
   linear_combination (-((a⁻¹ : Rˣ) : R)) * a.mul_inv
 
 /-- The two smoothings of a negative crossing on a new strand, closed up by the Markov trace,
 contribute `a⁻¹ * δ + a = -a⁻¹ ^ 3`. -/
-private theorem jonesDelta_mul_add_inv (a : Rˣ) :
+theorem jonesDelta_mul_add_inv (a : Rˣ) :
     ((a⁻¹ : Rˣ) : R) * jonesDelta a + (a : R) = ((-a ^ 3 : Rˣ)⁻¹ : Rˣ) := by
   have h := jonesDelta_mul_add a⁻¹
   rw [jonesDelta_inv, inv_inv] at h
