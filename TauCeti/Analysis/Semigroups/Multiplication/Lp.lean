@@ -204,7 +204,7 @@ theorem ContractionSemigroup.ofLpMultiplication_mem_domain_iff (hp : p ≠ ∞)
       simp only [lp.coeFn_add, Pi.add_apply]
       have hne : (1 + (m i : ℝ)) ≠ 0 := by positivity
       -- The subtype `z` records the assumed summability of the weighted vector.
-      change (1 + (m i : ℝ))⁻¹ * (x i + (m i : ℝ) * x i) = x i
+      simp only [z]
       field_simp [hne]
     rw [← heq]
     exact S.resolvent_mem_domain 1 zero_lt_one (x + z)
