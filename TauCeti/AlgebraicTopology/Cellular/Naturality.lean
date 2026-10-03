@@ -62,6 +62,16 @@ lemma cellularCyclesIso_hom_naturality (n : ℕ) :
   rw [cellularChainGroupMap_def, ← TopPair.singularHomologyMap_comp_assoc,
     ← TopPair.singularHomologyMap_comp_assoc, skeletonBasePairMap_comp_toSkeletonPair]
 
+/-- The inverse identification from relative skeletal homology to cellular cycles is natural
+under cellular maps, without a dimension bound. -/
+@[reassoc]
+lemma cellularCyclesIso_inv_naturality (n : ℕ) :
+    (skeletonBasePair C n).singularHomologyMap (skeletonBasePairMap C C' hf n) R n ≫
+        (cellularCyclesIso C' R n).inv =
+      (cellularCyclesIso C R n).inv ≫ cyclesMap (cellularChainComplexMap C C' hf R) n := by
+  rw [Iso.comp_inv_eq, Category.assoc, Iso.eq_inv_comp]
+  exact (cellularCyclesIso_hom_naturality C C' hf R n).symm
+
 variable [FiniteDimensional C] [FiniteDimensional C']
 
 /-- The cellular–singular comparison is natural under cellular maps of finite-dimensional
@@ -79,5 +89,16 @@ lemma cellularSingularHomologyIso_hom_naturality (n : ℕ) :
     cellularCyclesIso_hom_naturality_assoc]
   rw [← TopPair.singularHomologyMap_comp, ← TopPair.singularHomologyMap_comp,
     skeletonBasePairMap_comp_toComplex]
+
+/-- The inverse cellular–singular comparison is natural under cellular maps of
+finite-dimensional relative CW complexes. -/
+@[reassoc]
+lemma cellularSingularHomologyIso_inv_naturality (n : ℕ) :
+    (complexBasePair C).singularHomologyMap (complexBasePairMap C C' hf) R n ≫
+        (cellularSingularHomologyIso C' R n).inv =
+      (cellularSingularHomologyIso C R n).inv ≫
+        homologyMap (cellularChainComplexMap C C' hf R) n := by
+  rw [Iso.comp_inv_eq, Category.assoc, Iso.eq_inv_comp]
+  exact (cellularSingularHomologyIso_hom_naturality C C' hf R n).symm
 
 end TauCeti
