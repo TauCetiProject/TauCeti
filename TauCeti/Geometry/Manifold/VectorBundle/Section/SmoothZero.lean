@@ -123,17 +123,8 @@ theorem exists_isManifold_sectionZero_of_contMDiff {n : ℕ} (hm : m ≠ 0)
     ((ContinuousLinearMap.finrank_ker_eq_iff_index_eq (D z) (hS z)).2 (hN z))
   let T : (Fin n → 𝕜) →L[𝕜] X :=
     (D z).ker.subtypeL.comp (K.symm : (Fin n → 𝕜) →L[𝕜] (D z).ker)
-  have hrange : T.range = (sectionLinearization (𝕜 := 𝕜) (F := F) b s z.1).ker := by
-    rw [sectionLinearization_eq_symmL_comp (hb z) (he z)
-      ((hcoord z z (he z)).differentiableAt hm) z.2,
-      ← (e z).symm_continuousLinearEquivAt_eq' (he z)]
-    simp only [T, ContinuousLinearMap.toLinearMap_comp, Submodule.toLinearMap_subtypeL,
-      ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap]
-    rw [LinearMap.range_comp_of_range_eq_top (D z).ker.subtype
-      (f := K.symm.toLinearEquiv.toLinearMap) K.symm.toLinearEquiv.range,
-      LinearMap.ker_comp_of_ker_eq_bot _
-        (LinearMap.ker_eq_bot.2 ((e z).continuousLinearEquivAt 𝕜 (b z.1) (he z)).symm.injective)]
-    exact Submodule.range_subtype _
+  have hrange : T.range = (sectionLinearization (𝕜 := 𝕜) (F := F) b s z.1).ker :=
+    range_subtypeL_comp_eq_ker_sectionLinearization (hb z) (he z) (hf z).hasFDerivAt z.2 K
   have hd := (hasMFDerivAt_coe_sectionZero hf hF hS hN
     (fun z ↦ (hb z).continuousAt) he z).mfderiv
   have hv : mvfderiv 𝓘(𝕜, Fin n → 𝕜) (Subtype.val : ↥{y | s y = 0} → X) z = T := by
