@@ -31,8 +31,6 @@ square divides `disc O`. In particular an order with squarefree discriminant is 
 
 ## Main definitions
 
-* `TauCeti.GlobalNumberFields.NumberFieldOrder.toRingOfIntegers`: an order as a subalgebra of the
-  maximal order.
 * `TauCeti.GlobalNumberFields.NumberFieldOrder.index`: the index `[𝓞 K : O]`.
 * `TauCeti.GlobalNumberFields.NumberFieldOrder.discr`: the discriminant of an order.
 
@@ -66,15 +64,6 @@ namespace NumberFieldOrder
 
 variable {K : Type*} [Field K] [NumberField K] (O : NumberFieldOrder K)
 
-/-- An order `O`, viewed as a `ℤ`-subalgebra of the maximal order `𝓞 K`. -/
-def toRingOfIntegers : Subalgebra ℤ (𝓞 K) :=
-  O.toSubalgebra.comap (IsScalarTower.toAlgHom ℤ (𝓞 K) K)
-
-/-- An algebraic integer lies in the copy of `O` inside `𝓞 K` exactly when it lies in `O`. -/
-@[simp]
-theorem mem_toRingOfIntegers {x : 𝓞 K} : x ∈ O.toRingOfIntegers ↔ (x : K) ∈ O.toSubalgebra :=
-  Iff.rfl
-
 /-- The index `[𝓞 K : O]` of an order in the maximal order. -/
 def index : ℕ :=
   (Subalgebra.toSubmodule O.toRingOfIntegers).cardQuot
@@ -106,8 +95,8 @@ theorem discr_ne_zero : O.discr ≠ 0 := by
 /-- An order is `ℤ`-linearly equivalent to its copy inside the maximal order. -/
 private def equivToRingOfIntegers :
     O.toSubalgebra ≃ₗ[ℤ] Subalgebra.toSubmodule O.toRingOfIntegers where
-  toFun x := ⟨⟨x, O.le_ringOfIntegers x.2⟩, x.2⟩
-  invFun y := ⟨((y : 𝓞 K) : K), y.2⟩
+  toFun x := ⟨⟨x, O.le_ringOfIntegers x.2⟩, O.mem_toRingOfIntegers.mpr x.2⟩
+  invFun y := ⟨((y : 𝓞 K) : K), O.mem_toRingOfIntegers.mp y.2⟩
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
   left_inv _ := rfl

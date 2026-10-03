@@ -30,6 +30,7 @@ the contribution of each representative to the ambient binary-form trace.
 * `TauCeti.TraceFormulaMatrixModule.trace_binaryFormAction_upperTriangular_eq_dickson_eval`:
   the corresponding statement for a projective determinant matrix.
 * `TauCeti.PopaZagier.weight_upperTriangular`: the unnormalised Popa--Zagier weight.
+* `TauCeti.PopaZagier.upperTriangularCoeff`: the normalised coefficient of `(a b; 0 d)`.
 * `TauCeti.TraceFormulaMatrixModule.coeff_popaZagierElement_upperTriangular`: the coefficient
   of a positive-diagonal upper-triangular matrix.
 * `TauCeti.TraceFormulaMatrixModule.trace_popaZagierElement_single_upperTriangularRep`: the
@@ -123,6 +124,23 @@ theorem weight_upperTriangular (a b d : ℤ) (ha : 0 < a) (hd : 0 < d) :
     Fin.isValue]
   grind [weight₁, weight₂, weight₃, weight₄, chainWeight₃]
 
+/-- The coefficient of the positive-diagonal upper-triangular matrix `(a b; 0 d)` in
+Popa--Zagier's explicit Hecke element: `1` in the interior of the interval `0 ≤ b ≤ d - a`,
+`1/6` at a scalar matrix, `1/2` at a non-scalar endpoint, and `0` outside the interval. -/
+def upperTriangularCoeff (a b d : ℤ) : ℚ :=
+  if 0 < b ∧ b < d - a then 1
+  else if a = d ∧ b = 0 then 1 / 6
+  else if 0 ≤ b ∧ b ≤ d - a then 1 / 2
+  else 0
+
+/-- The defining equation for `upperTriangularCoeff`. -/
+theorem upperTriangularCoeff_def (a b d : ℤ) :
+    upperTriangularCoeff a b d =
+      if 0 < b ∧ b < d - a then 1
+      else if a = d ∧ b = 0 then 1 / 6
+      else if 0 ≤ b ∧ b ≤ d - a then 1 / 2
+      else 0 := (rfl)
+
 end PopaZagier
 
 namespace TraceFormulaMatrixModule
@@ -161,16 +179,14 @@ Hecke element. Interior matrices have coefficient `1`, non-scalar endpoints have
 theorem coeff_popaZagierElement_upperTriangular {n : ℤ} (A : TraceFormulaMatrix n)
     (hc : A.1 1 0 = 0) (ha : 0 < A.1 0 0) (hd : 0 < A.1 1 1) :
     (popaZagierElement ℚ n).coeff (mk A) =
-      if 0 < A.1 0 1 ∧ A.1 0 1 < A.1 1 1 - A.1 0 0 then 1
-      else if A.1 0 0 = A.1 1 1 ∧ A.1 0 1 = 0 then 1 / 6
-      else if 0 ≤ A.1 0 1 ∧ A.1 0 1 ≤ A.1 1 1 - A.1 0 0 then 1 / 2
-      else 0 := by
+      PopaZagier.upperTriangularCoeff (A.1 0 0) (A.1 0 1) (A.1 1 1) := by
   rw [coeff_popaZagierElement_mk_of_pos A (Or.inr ⟨hc, ha⟩)]
   have hm : A.1 = !![A.1 0 0, A.1 0 1; 0, A.1 1 1] := by
     ext i j
     fin_cases i <;> fin_cases j <;> simp [hc]
   conv_lhs =>
     rw [hm, PopaZagier.weight_upperTriangular _ _ _ ha hd]
+  rw [PopaZagier.upperTriangularCoeff_def]
   split_ifs <;> norm_num
 
 /-- The contribution of one canonical upper-triangular representative to the trace of
@@ -180,10 +196,7 @@ theorem trace_popaZagierElement_single_upperTriangularRep {n : ℤ} (hn : 0 < n)
     LinearMap.trace ℚ (homogeneousSubmodule (Fin 2) ℚ w)
         (periodAction hw
           (single (mk A) ((popaZagierElement ℚ n).coeff (mk A)))) =
-      (if 0 < A.1 0 1 ∧ A.1 0 1 < A.1 1 1 - A.1 0 0 then 1
-        else if A.1 0 0 = A.1 1 1 ∧ A.1 0 1 = 0 then 1 / 6
-        else if 0 ≤ A.1 0 1 ∧ A.1 0 1 ≤ A.1 1 1 - A.1 0 0 then 1 / 2
-        else 0) *
+      PopaZagier.upperTriangularCoeff (A.1 0 0) (A.1 0 1) (A.1 1 1) *
         (Polynomial.dickson 2 (n : ℚ) w).eval ((A.1 0 0 + A.1 1 1 : ℤ) : ℚ) := by
   obtain ⟨hc, ha, -, -⟩ := hA
   have had : A.1 0 0 * A.1 1 1 = n :=

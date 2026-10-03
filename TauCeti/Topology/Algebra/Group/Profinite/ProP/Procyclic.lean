@@ -77,7 +77,8 @@ theorem topologicalClosure_closure_padicPow_eq_top_iff [Nontrivial P] (hP : IsPr
     exact Subgroup.topologicalClosure_minimal _
       ((Subgroup.closure_le _).mpr (Set.singleton_subset_iff.mpr hmem)) isClosed_proPFrattini
   · rintro ⟨u, rfl⟩
-    rw [hP.topologicalClosure_closure_padicPow a u, ha]
+    simpa only [closedZpowers_def, Subgroup.zpowers_eq_closure, ha] using
+      hP.closedZpowers_padicPow a u
 
 /-- **Two topological generators of a procyclic pro-`p` group differ by a unit exponent**: if
 `a` and `b` both topologically generate `P`, then `b = a ^ u` for a unit `u` of `ℤ_[p]`. -/

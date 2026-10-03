@@ -123,8 +123,10 @@ theorem topologicalClosure_closure_range_eq_top_of_isConj_padicPow (hH : IsProP 
   have hyi : q (y i) = hQ.padicPow (q (x i)) (u i) :=
     (isConj_iff_eq.mp (q.map_isConj (h i))).symm.trans (hH.mk_padicPow_quotient _ (x i) (u i))
   have hmem : q (x i) ∈ (Subgroup.closure {q (y i)}).topologicalClosure := by
-    rw [hyi, hQ.topologicalClosure_closure_padicPow]
-    exact Subgroup.le_topologicalClosure _ (Subgroup.subset_closure rfl)
+    have : q (x i) ∈ closedZpowers (q (y i)) := by
+      rw [hyi, hQ.closedZpowers_padicPow]
+      exact mem_closedZpowers _
+    simpa only [closedZpowers_def, Subgroup.zpowers_eq_closure] using this
   refine Subgroup.topologicalClosure_mono (Subgroup.closure_mono ?_) hmem
   rw [Set.singleton_subset_iff, ← Set.range_comp]
   exact ⟨i, rfl⟩

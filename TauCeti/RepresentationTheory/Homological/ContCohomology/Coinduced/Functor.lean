@@ -33,7 +33,9 @@ and compares it with Mathlib's algebraic coinduction `Representation.coind`. The
 * `TauCeti.coindTraceHom`: for finite-index `U`, the trace as a morphism of smooth discrete
   `G`-representations;
 * `TauCeti.discreteCoindEquivAlgebraic`: for an open subgroup `U`, the linear equivalence between
-  locally constant coinduction and Mathlib's `Representation.coindV`.
+  locally constant coinduction and Mathlib's `Representation.coindV`;
+* `TauCeti.algebraicCoindCounit`: evaluation at `1` on algebraic coinduction with its discrete
+  topology, for comparing the two restriction–evaluation Shapiro maps.
 
 ## Main results
 
@@ -482,6 +484,41 @@ representation. -/
 noncomputable abbrev algebraicCoindAsSmooth : SmoothDiscreteTopRep.{u, v, max v w} R G :=
   (toSmoothDiscrete R G).obj (algebraicCoindDiscreteRep R G U A)
 
+/-- Evaluation at `1` on algebraic coinduction, with the discrete topology. Over a commutative
+ring this is the counit of Mathlib's restriction–coinduction adjunction. -/
+noncomputable def algebraicCoindCounit :
+    ContIntertwiningMap
+      (TopRep.res U.toSubgroup.subtype (algebraicCoindAsSmooth R G U A).obj).ρ A.obj.ρ where
+  toContinuousLinearMap :=
+    ⟨LinearMap.proj 1 ∘ₗ
+      (Representation.coindV U.toSubgroup.subtype
+        (Representation.ofDistribMulAction R U.toSubgroup A.obj.V)).subtype,
+      by
+        let : DiscreteTopology (algebraicCoindAsSmooth R G U A).obj.V :=
+          (algebraicCoindAsSmooth R G U A).property.discreteTopology
+        exact continuous_of_discreteTopology⟩
+  isIntertwining' u := by
+    ext f
+    let f' : Representation.coindV U.toSubgroup.subtype
+      (Representation.ofDistribMulAction R U.toSubgroup A.obj.V) := f
+    -- The smooth-discrete dictionary preserves the carrier and its action; name that action
+    -- before applying the algebraic representation equality.
+    change ((algebraicCoindDiscreteRep R G U A).ρ (u : G) f').1 1 = A.obj.ρ u (f'.1 1)
+    rw [algebraicCoindDiscreteRep_ρ]
+    -- The restriction membership proof in `Representation.coind` prevents the generic
+    -- point-evaluation rewrite. Its value is definitionally right translation, after which
+    -- equivariance is exactly the defining law of `f'`.
+    refine Eq.trans (b := f'.1 (1 * (u : G))) rfl ?_
+    simpa only [one_mul, mul_one, Subgroup.coe_subtype] using
+      (f'.2 u 1).trans (TopRep.distribMulAction_smul A.obj u (f'.1 1))
+
+/-- The algebraic counit evaluates the underlying equivariant function at `1`. -/
+@[simp]
+theorem algebraicCoindCounit_apply
+    (f : Representation.coindV U.toSubgroup.subtype
+      (Representation.ofDistribMulAction R U.toSubgroup A.obj.V)) :
+    (dsimp% only (algebraicCoindCounit R G U A f)) = f.1 1 := (rfl)
+
 /-- The discrete representation isomorphism underlying the topological/algebraic comparison. -/
 private noncomputable def discreteCoindIsoAlgebraic :
     coindDiscreteRep R G U.toSubgroup ((ofSmoothDiscrete R U.toSubgroup).obj A) ≅
@@ -549,6 +586,52 @@ theorem topologicalCoindIsoAlgebraic_inv_hom_hom_apply_coe
   (topologicalCoindIsoAlgebraic_inv_hom_hom_apply_coe_impl R G U A f g).trans
     (discreteCoindEquivAlgebraic_symm_apply R G U A f g)
 
+variable {R G} in
+/-- The topological/algebraic coinduction comparison preserves the evaluation counit. -/
+@[reassoc]
+theorem topologicalCoindIsoAlgebraic_hom_comp_counit
+    (B : SmoothDiscreteTopRep.{u, v, max v w} R U.toSubgroup) :
+    (TopRep.resFunctor U.toSubgroup.subtype).map
+        (topologicalCoindIsoAlgebraic R G U B).hom.hom ≫
+      TopRep.ofHom (algebraicCoindCounit R G U B) =
+        TopRep.ofHom (coindCounit R G U.toSubgroup B) := by
+  ext f
+  let f' : DiscreteCoind G U.toSubgroup B.obj.V := f
+  -- Restriction preserves the underlying map; its bundled carrier must be named to apply
+  -- the two counits' point-evaluation lemmas.
+  change algebraicCoindCounit R G U B ((topologicalCoindIsoAlgebraic R G U B).hom.hom.hom f') =
+    coindCounit R G U.toSubgroup B f'
+  exact (algebraicCoindCounit_apply R G U B _).trans
+    ((topologicalCoindIsoAlgebraic_hom_hom_hom_apply_coe R G U B f' 1).trans
+      (coindCounit_apply R G U.toSubgroup B f').symm)
+
 end AlgebraicComparison
+
+section AlgebraicCounit
+
+universe u v w
+
+variable {R : Type u} [CommRing R] [TopologicalSpace R]
+  {G : Type v} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
+  (U : OpenSubgroup G) (A : SmoothDiscreteTopRep.{u, v, max v w} R U.toSubgroup)
+
+attribute [local instance] TopRep.distribMulAction TopRep.smulCommClass
+
+/-- The continuous algebraic evaluation counit is the counit of Mathlib's algebraic
+restriction–coinduction adjunction after forgetting continuity. -/
+theorem algebraicCoindCounit_toLinearMap :
+    (algebraicCoindCounit R G U A).toContinuousLinearMap.toLinearMap =
+      ((Rep.resCoindAdjunction R U.toSubgroup.subtype).counit.app
+        (Rep.of (Representation.ofDistribMulAction R U.toSubgroup A.obj.V))).hom.toLinearMap := by
+  ext f
+  let f' : Representation.coindV U.toSubgroup.subtype
+    (Representation.ofDistribMulAction R U.toSubgroup A.obj.V) := f
+  -- Mathlib has no point-evaluation lemma for the counit (its generated simps lemmas were
+  -- removed), so unfold only the adjunction and its hom equivalence at this boundary.
+  exact (algebraicCoindCounit_apply R G U A f').trans (by
+    simp [Rep.resCoindAdjunction, Rep.resCoindHomEquiv]
+    rfl)
+
+end AlgebraicCounit
 
 end TauCeti

@@ -8,6 +8,10 @@ module
 public import Mathlib.FieldTheory.Galois.Basic
 public import Mathlib.RingTheory.Norm.Transitivity
 public import Mathlib.RingTheory.Valuation.RamificationGroup
+public import TauCeti.FieldTheory.FunctionField.Place.Extension.Degree
+-- `TauCeti.Place.restrict_surjective_of_finiteDimensional` is what makes the fibre of a place of a
+-- function field nonempty, hence its ramification index positive.
+public import TauCeti.FieldTheory.FunctionField.Place.Extension.Existence
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Fundamental
 public import TauCeti.FieldTheory.FunctionField.Place.Map
 public import TauCeti.FieldTheory.IntermediateField.ScalarTower
@@ -60,6 +64,11 @@ decomposition group, and is identified with Mathlib's `ValuationSubring.decompos
   `TauCeti.Place.relativeDegree_eq_of_restrict_eq`: `e` and `f` are constant on a fibre, whence
   `TauCeti.Place.ncard_mul_ramificationIdx_mul_relativeDegree_eq_finrank`, the product form
   `r · e · f = [F' : F]` of the fundamental identity (Stichtenoth, Corollary 3.7.2).
+* `TauCeti.Place.ramificationIdxIn`: the common ramification index of the places over a place of
+  `F`, zero exactly on an empty fibre (`TauCeti.Place.ramificationIdxIn_eq_zero_iff`) and positive
+  for an extension of function fields (`TauCeti.Place.ramificationIdxIn_pos`), with
+  `TauCeti.Place.ramificationIdxIn_mul_sum_fibre_eq` summing `e - 1` over a fibre:
+  `∑_{P' ∣ P} (e(P' ∣ P) - 1) · deg P' = [F' : F] · (1 - 1/e) · deg P`, cleared of the division.
 * `TauCeti.Place.stabilizer_eq_decompositionSubgroup`: the stabilizer of a place is the
   decomposition group of its valuation ring, and
   `TauCeti.Place.ncard_mul_card_stabilizer_eq_finrank` is the orbit--stabilizer count of a
@@ -362,6 +371,81 @@ theorem ncard_mul_ramificationIdx_mul_relativeDegree_eq_finrank (P : Place k F')
   · rwa [Finset.sum_const, smul_eq_mul, ← Set.ncard_eq_toFinset_card _ hfin] at heq
   · rw [← ramificationIdx_eq_of_restrict_eq (hfin.mem_toFinset.mp hQ),
       ← relativeDegree_eq_of_restrict_eq (hfin.mem_toFinset.mp hQ)]
+
+
+open scoped Classical in
+/-- **The ramification index of a place of the base in a Galois extension**: all the places of `F'`
+over `P` share one ramification index (`TauCeti.Place.ramificationIdx_eq_of_restrict_eq`), and this
+is it.  It is `0` when no place of `F'` lies over `P`, which does not happen for an extension of
+function fields (`TauCeti.Place.restrict_surjective_of_finiteDimensional`).  This is the analogue
+for places of Mathlib's `Ideal.ramificationIdxIn`. -/
+noncomputable def ramificationIdxIn (P : Place k F) (F' : Type v') [Field F'] [Algebra F F']
+    [Algebra k F'] [IsScalarTower k F F'] [FiniteDimensional F F'] : ℕ :=
+  if h : ∃ P' : Place k F', P'.restrict k F = P then ramificationIdx F h.choose else 0
+
+/-- The ramification index of a place of the base is the ramification index of any place above
+it. -/
+theorem ramificationIdxIn_eq_ramificationIdx {P : Place k F} {P' : Place k F'}
+    (hP' : P'.restrict k F = P) : P.ramificationIdxIn F' = ramificationIdx F P' := by
+  have hex : ∃ Q : Place k F', Q.restrict k F = P := ⟨P', hP'⟩
+  rw [ramificationIdxIn, dite_eq_left hex]
+  exact ramificationIdx_eq_of_restrict_eq (by rw [hex.choose_spec, hP'])
+
+/-- The ramification index of a place of the base vanishes exactly when no place lies above it. -/
+@[simp]
+theorem ramificationIdxIn_eq_zero_iff {P : Place k F} :
+    P.ramificationIdxIn F' = 0 ↔ ∀ P' : Place k F', P'.restrict k F ≠ P := by
+  constructor
+  · intro h P' hP'
+    rw [ramificationIdxIn_eq_ramificationIdx hP'] at h
+    exact absurd h (ramificationIdx_pos F P').ne'
+  · intro h
+    rw [ramificationIdxIn, dite_eq_right]
+    exact fun ⟨P', hP'⟩ ↦ h P' hP'
+
+/-- **The ramification index of a place of the base is positive** for an extension of function
+fields: some place of `F'` lies above it. -/
+theorem ramificationIdxIn_pos (hF : IsFunctionField k F) (hF' : IsFunctionField k F')
+    {P : Place k F} : 0 < P.ramificationIdxIn F' := by
+  obtain ⟨P', hP'⟩ := restrict_surjective_of_finiteDimensional (k' := k) hF hF' P
+  rw [ramificationIdxIn_eq_ramificationIdx hP']
+  exact ramificationIdx_pos F P'
+
+/-- **The branch contribution of a Galois fibre**: the places over a place `P` of `F` share one
+ramification index `e` and one relative degree `f`, and there are `[F' : F] / (e f)` of them, so
+
+`∑_{P' ∣ P} (e(P' ∣ P) - 1) · deg P' = [F' : F] · (1 - 1/e) · deg P`.
+
+This is that identity multiplied by `e`, which clears the division.  Summed over the places of `F`
+it turns the degree of the tame different into the branch data `(γ; e₁, …, e_r)` of `F' / F`, whose
+deficit the Hurwitz bound is about. -/
+theorem ramificationIdxIn_mul_sum_fibre_eq {P : Place k F} {P' : Place k F'}
+    (hP' : P'.restrict k F = P) :
+    (P.ramificationIdxIn F' : ℤ) *
+        ∑ Q ∈ (finite_setOf_restrict_eq (k' := k) (F' := F') k F P).toFinset,
+          ((ramificationIdx F Q : ℤ) - 1) * Q.degree =
+      Module.finrank F F' * (((P.ramificationIdxIn F' : ℤ) - 1) * P.degree) := by
+  classical
+  have hfin := finite_setOf_restrict_eq (k' := k) (F' := F') k F P
+  rw [ramificationIdxIn_eq_ramificationIdx hP']
+  have hterm : ∀ Q ∈ hfin.toFinset, ((ramificationIdx F Q : ℤ) - 1) * Q.degree =
+      ((ramificationIdx F P' : ℤ) - 1) * (relativeDegree k F P' * P.degree) := by
+    intro Q hQ
+    have hQP : Q.restrict k F = P := hfin.mem_toFinset.mp hQ
+    have hres : Q.restrict k F = P'.restrict k F := by rw [hQP, hP']
+    have hdeg : (Q.degree : ℤ) = P.degree * relativeDegree k F Q := by
+      rw [← hQP]
+      exact_mod_cast congrArg (Nat.cast : ℕ → ℤ)
+        (degree_eq_degree_restrict_mul_relativeDegree k F Q)
+    rw [ramificationIdx_eq_of_restrict_eq hres, hdeg, relativeDegree_eq_of_restrict_eq hres]
+    ring
+  rw [Finset.sum_congr rfl hterm, Finset.sum_const, nsmul_eq_mul,
+    ← Set.ncard_eq_toFinset_card _ hfin]
+  have hfund := ncard_mul_ramificationIdx_mul_relativeDegree_eq_finrank (k := k) (F := F) P'
+  rw [hP'] at hfund
+  rw [← hfund]
+  push_cast
+  ring
 
 end Galois
 
