@@ -27,8 +27,7 @@ the names record: the identifications are
 `TauCeti.symmetricTensorsEquivSymmetricPower` and
 `TauCeti.antisymmetricTensorsEquivExteriorPower` of
 `TauCeti/LinearAlgebra/TensorSquare.lean`, and they turn the restriction of `π g ⊗ π g` into
-`SymmetricPower.map (π g)` and `exteriorPower.map 2 (π g)`. They are not imported here: they
-carry the symmetric- and exterior-power stack, which nothing in this file needs.
+`SymmetricPower.map (π g)` and `exteriorPower.map 2 (π g)`.
 
 ## Main definitions
 
