@@ -163,16 +163,14 @@ private theorem isAdoStage_of_sup {T T' H : LieSubalgebra K L}
       have hloc (r : H') (s : I) : ∃ n : ℕ, ((ψ r).toLinearMap ^ n) s = 0 := by
         obtain ⟨n, hn⟩ : IsNilpotent (LieAlgebra.ad K L ((r : T') : L)) :=
           LieAlgebra.isNilpotent_ad_of_mem_nilradical (hN _ (hHT' _ r.2))
+        -- `ψ r` is intertwined with `ad r` by the inclusion `I → L`, hence so are their powers
+        let f : I →ₗ[K] L := T'.incl.toLinearMap ∘ₗ I.incl.toLinearMap
+        have hf : (LieAlgebra.ad K L ((r : T') : L)).comp f = f.comp (ψ r).toLinearMap :=
+          LinearMap.ext fun s ↦ (hψ r s).symm
         refine ⟨n, Subtype.ext (Subtype.ext ?_)⟩
-        have hpow (m : ℕ) : ((((ψ r).toLinearMap ^ m) s : T') : L) =
-            ((LieAlgebra.ad K L ((r : T') : L)) ^ m) ((s : T') : L) := by
-          induction m with
-          | zero => rfl
-          | succ m ih =>
-            rw [pow_succ', Module.End.mul_apply, LieDerivation.coeFn_coe, hψ, ih,
-              pow_succ', Module.End.mul_apply, LieAlgebra.ad_apply]
-        rw [hpow, hn, LinearMap.zero_apply]
-        rfl
+        have hpow := LinearMap.congr_fun (Module.End.commute_pow_left_of_commute hf n) s
+        rw [hn, LinearMap.zero_comp] at hpow
+        exact hpow.symm
       exact hall (fun s ↦ hσN _ (hN _ (hTT' _ (ι s).2))) _ fun s ↦ hloc _ s
 
 /-- **A codimension-one step of the Ado flag.** An Ado stage at `T` extends to the Lie span
