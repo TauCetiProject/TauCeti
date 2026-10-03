@@ -146,10 +146,14 @@ private theorem realCliffordZeroFourAugmentedIsometry_apply (v : Fin 4 → ℝ) 
   classical
   apply Prod.ext
   · funext i
+    -- The product/composite isometry has no application lemma; expose its first projection so the
+    -- split-isometry coordinate theorem can rewrite it.
     change (realCliffordSplitIsometry 0 0 3 1 v).1 i = _
     convert realCliffordSplitIsometry_fst_neg 0 0 3 1 v i using 1
     all_goals fin_cases i <;> simp
-  · change realCliffordZeroOneIsometry
+  · -- Likewise, expose the second projection before applying the one-dimensional coordinate
+    -- theorem; rewriting cannot see through the composed isometry wrapper.
+    change realCliffordZeroOneIsometry
       (realCliffordSplitIsometry 0 0 3 1 v).2 = v 3
     rw [realCliffordZeroOneIsometry_apply]
     convert realCliffordSplitIsometry_snd_neg 0 0 3 1 v (0 : Fin 1)
