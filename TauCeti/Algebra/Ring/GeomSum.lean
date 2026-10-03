@@ -19,10 +19,12 @@ as `x ^ m = y ^ m`.
 
 ## Main result
 
-* `mul_geom_sum₂_add_pow`: `x * S + y ^ m = S * y + x ^ m` in any ring.
+* `TauCeti.mul_geom_sum₂_add_pow`: `x * S + y ^ m = S * y + x ^ m` in any ring.
 -/
 
 public section
+
+namespace TauCeti
 
 open Finset
 
@@ -49,3 +51,5 @@ theorem mul_geom_sum₂_add_pow {S : Type*} [Ring S] (x y : S) (m : ℕ) :
         = (x * (∑ i ∈ range m, x ^ i * y ^ (m - 1 - i)) + y ^ m) * y + x ^ (m + 1) := by
           rw [pow_succ y, pow_succ' x]; noncomm_ring
       _ = ((∑ i ∈ range m, x ^ i * y ^ (m - 1 - i)) * y + x ^ m) * y + x ^ (m + 1) := by rw [ih]
+
+end TauCeti

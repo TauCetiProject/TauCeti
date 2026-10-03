@@ -28,7 +28,7 @@ namespace LinearMap
 open Module
 
 variable {R A M : Type*} [CommRing R] [CommRing A] [Algebra R A] [Module.Free R A]
-  [AddCommGroup M] [Module R M] [Module A M] [IsScalarTower R A M] [Module.Free A M]
+  [AddCommMonoid M] [Module R M] [Module A M] [IsScalarTower R A M] [Module.Free A M]
 
 /-- **The trace along a tower of scalars.** For a free `A`-module `M`, where `A` is a free
 `R`-algebra, the `R`-trace of an `A`-linear endomorphism is the algebra trace of its `A`-trace. -/

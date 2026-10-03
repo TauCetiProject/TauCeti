@@ -58,7 +58,7 @@ namespace TauCeti
 open _root_.MonoidAlgebra
 
 variable {A : Type*} [CommRing A] [IsLocalRing A] {p : ℕ} [Fact p.Prime] {G : Type*} [Group G]
-  [Finite G] (X : Type*) [AddCommGroup X] [Module A X] [Module (MonoidAlgebra A G) X]
+  [Finite G] (X : Type*) [AddCommMonoid X] [Module A X] [Module (MonoidAlgebra A G) X]
   [IsScalarTower A (MonoidAlgebra A G) X] [Module.Finite (MonoidAlgebra A G) X]
   [Module.Projective (MonoidAlgebra A G) X]
 
@@ -103,7 +103,11 @@ theorem trace_ofModule'_eq_zero_of_dvd_orderOf (hp : ¬IsUnit (p : A)) {g : G}
   have : IsLocalRing (MonoidAlgebra A Q) := TauCeti.MonoidAlgebra.isLocalRing_of_isPGroup hp hQ
   have : IsLocalHom (MonoidAlgebra.lift A A Q 1) :=
     TauCeti.MonoidAlgebra.isLocalHom_lift_one_of_isPGroup hp hQ
-  have : Module.Free (MonoidAlgebra A Q) X := Module.free_of_flat_of_isLocalRing
+  -- `X` is a module over the ring `A[Q]`, so it carries the additive group structure that
+  -- `Module.free_of_flat_of_isLocalRing` asks for.
+  have : Module.Free (MonoidAlgebra A Q) X :=
+    let _ := Module.addCommMonoidToAddCommGroup (MonoidAlgebra A Q) (M := X)
+    Module.free_of_flat_of_isLocalRing
   -- The element `s` commutes with `Q`, so it acts `A[Q]`-linearly.
   have hcomm : ∀ r : MonoidAlgebra A Q, φ r * single s 1 = single s 1 * φ r := by
     intro r

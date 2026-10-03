@@ -81,7 +81,7 @@ theorem exists_isUnit_mul_eq_mul_map_of_pow_eq_one (M : Matrix n n R) {m : ℕ}
     rw [isUnit_iff_isUnit_det] at hunit ⊢
     rw [← RingHom.map_det] at hunit
     exact isUnit_of_map_unit ε _ hunit
-  · have h := mul_geom_sum₂_add_pow M N m
+  · have h := TauCeti.mul_geom_sum₂_add_pow M N m
     rwa [hM, hNm, add_left_inj] at h
 
 /-- **The trace of a matrix of invertible finite order is constant.** If `ε : R → A` is a local
@@ -101,7 +101,7 @@ end Matrix
 namespace LinearMap
 
 variable {A R M : Type*} [CommRing A] [CommRing R] [Algebra A R] (ε : R →ₐ[A] A) [IsLocalHom ε]
-  [AddCommGroup M] [Module R M] [Module.Free R M]
+  [AddCommMonoid M] [Module R M] [Module.Free R M]
 
 /-- **The trace of an endomorphism of invertible finite order is constant.** If `ε : R → A` is a
 local `A`-algebra retraction and `f ^ m = 1` with `m` invertible in `A`, then the trace of the
