@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Quiver.Zigzag.BaseChange.Basis
+public import TauCeti.RepresentationTheory.Quiver.Zigzag.BaseChange.Basic
 public import Mathlib.RingTheory.TensorProduct.Basic
 
 /-!
