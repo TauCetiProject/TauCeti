@@ -9,22 +9,30 @@ public import TauCeti.FieldTheory.GaloisCohomology.Cyclic
 public import TauCeti.FieldTheory.GaloisCohomology.Solvable
 public import TauCeti.NumberTheory.LocalField.FiniteExtension.IntermediateField
 public import TauCeti.NumberTheory.LocalField.Solvable
+public import TauCeti.NumberTheory.LocalField.UnitFiltration.TateCohomology
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.ValuationSequence
 
 /-!
-# The local second-cohomology bound from the unit Herbrand quotient
+# The local second-cohomology bound
 
 For a cyclic extension `L/K` of nonarchimedean local fields, Hilbert 90 and two-periodicity
-identify the order of `H²(Gal(L/K), Lˣ)` with the Herbrand quotient of `Lˣ`. The equivariant
-valuation sequence then gives the exact formula
+identify the order of `H²(Gal(L/K), Lˣ)` with the Herbrand quotient of `Lˣ`, and the equivariant
+valuation sequence gives `h(Lˣ) = [L : K] · h(U_L)`. Since the valuation-zero units have Herbrand
+quotient `h(U_L) = 1` (`TauCeti.TateCohomology.herbrandQuotient_unitFiltration_zero`), this gives
 
-`#H²(Gal(L/K), Lˣ) = [L : K] · h(U_L)`.
+`#H²(Gal(L/K), Lˣ) = [L : K]`.
 
-Consequently the unit calculation `h(U_L) = 1` gives equality with `[L : K]`. For a general
-finite Galois extension, solvability of the local Galois group and the field-theoretic solvable
-reduction propagate the resulting prime-degree cyclic bound. The final theorem in this file
-isolates this propagation: its sole arithmetic input is the unit Herbrand-quotient calculation
-for the intermediate prime-degree extensions.
+For a general finite Galois extension, the local Galois group is solvable, and the
+field-theoretic solvable reduction propagates the prime-degree cyclic case to the bound
+`#H²(Gal(L/K), Lˣ) ∣ [L : K]`. This bounds the relative Brauer group of a finite Galois layer;
+compared with the unramified layer of the same degree, it shows that every local Brauer class is
+split by an unramified extension.
+
+## Main results
+
+* `TauCeti.natCard_H2_units_eq_finrank`: `#H²(Gal(L/K), Lˣ) = [L : K]` for cyclic `L/K`.
+* `TauCeti.natCard_H2_units_dvd_finrank`: `#H²(Gal(L/K), Lˣ) ∣ [L : K]` for every finite Galois
+  `L/K`.
 
 ## References
 
@@ -45,46 +53,18 @@ variable (K L : Type) [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L] [Module.Finite K L]
   [IsGalois K L]
 
-/-- For a cyclic extension of local fields, the order of `H²(Gal(L/K), Lˣ)` is the degree
-times the Herbrand quotient of the valuation-zero units. -/
-theorem natCard_H2_units_eq_finrank_mul_herbrandQuotient_unitFiltration_zero
-    [IsCyclic (L ≃ₐ[K] L)] :
-    Nat.card (groupCohomology (Rep.ofMulDistribMulAction (L ≃ₐ[K] L) Lˣ) 2) =
-      finrank K L * TateCohomology.herbrandQuotient
-        (Rep.ofMulDistribMulAction (L ≃ₐ[K] L) (unitFiltration L 0)) := by
-  rw [natCard_H2_units_eq_herbrandQuotient,
-    herbrandQuotient_units_eq_finrank_mul]
-
-/-- For a cyclic extension of local fields whose valuation-zero units have Herbrand quotient
-one, `H²(Gal(L/K), Lˣ)` has order `[L : K]`. -/
-theorem natCard_H2_units_eq_finrank_of_herbrandQuotient_unitFiltration_zero
-    [IsCyclic (L ≃ₐ[K] L)]
-    (hunit : TateCohomology.herbrandQuotient
-      (Rep.ofMulDistribMulAction (L ≃ₐ[K] L) (unitFiltration L 0)) = 1) :
-    Nat.card (groupCohomology (Rep.ofMulDistribMulAction (L ≃ₐ[K] L) Lˣ) 2) =
-      finrank K L := by
-  have h := natCard_H2_units_eq_finrank_mul_herbrandQuotient_unitFiltration_zero K L
-  rw [hunit, mul_one] at h
+/-- **The local `H²` of a cyclic extension.** For a cyclic extension `L/K` of nonarchimedean
+local fields, `H²(Gal(L/K), Lˣ)` has order `[L : K]`. -/
+theorem natCard_H2_units_eq_finrank [IsCyclic (L ≃ₐ[K] L)] :
+    Nat.card (groupCohomology (Rep.ofMulDistribMulAction (L ≃ₐ[K] L) Lˣ) 2) = finrank K L := by
+  have h := natCard_H2_units_eq_herbrandQuotient (K := K) (L := L)
+  rw [herbrandQuotient_units_eq_finrank_mul, TateCohomology.herbrandQuotient_unitFiltration_zero,
+    mul_one] at h
   exact_mod_cast h
 
-/-- **The local `H²` bound reduces to the unit Herbrand quotient in prime-degree
-subextensions.** If the valuation-zero units have Herbrand quotient one in every prime-degree
-Galois subextension of `L/K`, then the order of `H²(Gal(L/K), Lˣ)` divides `[L : K]`.
-
-The intermediate fields carry their canonical spectral-norm local-field structures in the
-hypothesis. This is precisely the form in which the local-unit calculation is consumed. -/
-theorem natCard_H2_units_dvd_finrank_of_prime_unit_herbrandQuotient_eq_one
-    (hunit : ∀ (E : IntermediateField K L) (F : IntermediateField E L)
-      [IsGalois E F] [IsCyclic (F ≃ₐ[E] F)], (finrank E F).Prime →
-        letI := finiteIntermediateFieldValuativeRel K L E
-        letI := finiteIntermediateFieldTopology K L E
-        haveI := finiteIntermediateField_isNonarchimedeanLocalField K L E
-        letI := finiteIntermediateFieldValuativeRel E L F
-        letI := finiteIntermediateFieldTopology E L F
-        haveI := finiteIntermediateField_isNonarchimedeanLocalField E L F
-        haveI := finiteIntermediateField_valuativeExtension E L F
-        TateCohomology.herbrandQuotient
-          (Rep.ofMulDistribMulAction (F ≃ₐ[E] F) (unitFiltration F 0)) = 1) :
+/-- **The local `H²` bound.** For a finite Galois extension `L/K` of nonarchimedean local fields,
+the order of `H²(Gal(L/K), Lˣ)` divides `[L : K]`. -/
+theorem natCard_H2_units_dvd_finrank :
     Nat.card (groupCohomology (Rep.ofMulDistribMulAction (L ≃ₐ[K] L) Lˣ) 2) ∣
       finrank K L := by
   refine natCard_groupCohomology_two_units_dvd_finrank (K := K) (L := L) fun E F _ hp ↦ ?_
@@ -99,7 +79,6 @@ theorem natCard_H2_units_dvd_finrank_of_prime_unit_herbrandQuotient_eq_one
   let _ : Fact (finrank E F).Prime := ⟨hp⟩
   let _ : IsCyclic (F ≃ₐ[E] F) :=
     isCyclic_of_prime_card (IsGalois.card_aut_eq_finrank E F)
-  rw [natCard_H2_units_eq_finrank_of_herbrandQuotient_unitFiltration_zero E F
-    (hunit E F hp)]
+  rw [natCard_H2_units_eq_finrank E F]
 
 end TauCeti
