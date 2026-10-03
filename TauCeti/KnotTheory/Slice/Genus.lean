@@ -243,7 +243,7 @@ theorem IsSmoothSliceDisc.genus_toSmoothSliceSurface
 
 /-- **Smoothly slice knots have slice genus `0`.** -/
 theorem IsSmoothlySlice.sliceGenus_eq_zero (h : IsSmoothlySlice K) : sliceGenus K = 0 := by
-  obtain ⟨Φ, hΦ⟩ := h
+  obtain ⟨Φ, hΦ⟩ := h.elim
   exact nonpos_iff_eq_zero.1 <| by
     simpa using sliceGenus_le_genus hΦ.toSmoothSliceSurface
 
