@@ -91,6 +91,7 @@ end TauCeti
 /-- **The trace of a two-sided multiplication on a finite group algebra.** The endomorphism
 `x ↦ g * x * y` of `k[G]` has trace `∑ σ, y_{σ⁻¹ g⁻¹ σ}`: its diagonal entry at `σ` is the
 coefficient of `σ` in `g σ y`. -/
+@[simp]
 theorem MonoidAlgebra.trace_mulLeft_single_mul_mulRight {k G : Type*} [CommSemiring k] [Group G]
     [Fintype G] (g : G) (y : MonoidAlgebra k G) :
     LinearMap.trace k (MonoidAlgebra k G)
