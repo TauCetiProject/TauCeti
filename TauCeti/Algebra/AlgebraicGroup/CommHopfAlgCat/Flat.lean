@@ -46,6 +46,8 @@ the morphism need not be finite.
 * J. S. Milne, *Algebraic Groups* (2017), §5, for flatness of group homomorphisms
   and the translation argument, and Propositions 1.65(a) and 1.70.
 * H. Matsumura, *Commutative Ring Theory*, Theorem 24.1, for generic freeness.
+* W. C. Waterhouse, *Introduction to Affine Group Schemes*, §14, for faithful flatness of
+  dominant homomorphisms via generic flatness and translation.
 -/
 
 public section

@@ -8,7 +8,6 @@ module
 public import Mathlib.RingTheory.FiniteType
 public import Mathlib.RingTheory.Polynomial.Basic
 public import Mathlib.Algebra.Polynomial.Basis
-public import Mathlib.RingTheory.MvPolynomial.Basic
 public import TauCeti.RingTheory.Spectrum.Prime.FreeLocus
 public import TauCeti.RingTheory.Spectrum.Prime.Topology
 
@@ -119,7 +118,10 @@ private theorem freeLocus_mem_nhds_polynomial {R : Type uR} [CommRing R] [Algebr
       exact Submodule.mem_sup_right ⟨c, rfl⟩
     let ψ : (Fin t → R) →ₗ[A] N (j + 1) ⧸ (N j).submoduleOf (N (j + 1)) :=
       ((N j).submoduleOf (N (j + 1))).mkQ ∘ₗ ((φ j).restrictScalars A).codRestrict _ hmem
-    have hψc (c : Fin t → R) : ψ c = Submodule.Quotient.mk ⟨φ j c, hmem c⟩ := rfl
+    have hψc (c : Fin t → R) : ψ c = Submodule.Quotient.mk ⟨φ j c, hmem c⟩ := by
+      rw [LinearMap.comp_apply, Submodule.mkQ_apply]
+      refine congrArg _ (Subtype.ext ?_)
+      exact (LinearMap.codRestrict_apply _ _ c).trans (LinearMap.restrictScalars_apply _ _ c)
     have hψ : Function.Surjective ψ := by
       intro z
       obtain ⟨⟨y, hy⟩, rfl⟩ := Submodule.Quotient.mk_surjective _ z
