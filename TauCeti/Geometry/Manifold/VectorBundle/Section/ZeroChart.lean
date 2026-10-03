@@ -332,16 +332,8 @@ theorem exists_sectionZeroChartModel {m : ℕ∞ω} {n : ℕ}
     have hc := hψ.comp 0 K.symm.contDiff.contDiffAt
     simpa only [map_zero, Function.comp_def, ← hχ] using hc
   · rwa [hderiv.fderiv]
-  · rw [hderiv.fderiv, sectionLinearization_eq_symmL_comp hb he
-      hf.hasFDerivAt.differentiableAt hz, hf.hasFDerivAt.fderiv,
-      ← e.symm_continuousLinearEquivAt_eq' he]
-    simp only [ContinuousLinearMap.toLinearMap_comp, Submodule.toLinearMap_subtypeL,
-      ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap]
-    rw [LinearMap.range_comp_of_range_eq_top T.ker.subtype
-      (f := K.symm.toLinearEquiv.toLinearMap) K.symm.toLinearEquiv.range,
-      LinearMap.ker_comp_of_ker_eq_bot T.toLinearMap
-        (LinearMap.ker_eq_bot.2 (e.continuousLinearEquivAt 𝕜 (b x) he).symm.injective)]
-    exact Submodule.range_subtype _
+  · rw [hderiv.fderiv]
+    exact range_subtypeL_comp_eq_ker_sectionLinearization hb he hf.hasFDerivAt hz K
 
 end Fredholm
 

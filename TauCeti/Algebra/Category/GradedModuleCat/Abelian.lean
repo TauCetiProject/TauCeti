@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
+public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.CategoryTheory.Limits.Preserves.Shapes.AbelianImages
 public import TauCeti.Algebra.Category.GradedModuleCat.Basic
 public import TauCeti.Algebra.Module.GradedModule.DirectSum
@@ -291,5 +292,17 @@ theorem epi_iff_surjective (f : M ⟶ N) : Epi f ↔ Function.Surjective f.hom :
   · intro hf
     have : Epi (toModuleCat.map f) := (ModuleCat.epi_iff_surjective _).mpr hf
     exact (toModuleCat (𝒜 := 𝒜)).epi_of_epi_map inferInstance
+
+/-- The forgetful functor preserves homology because kernels and cokernels are formed on
+underlying modules. -/
+instance : (toModuleCat (𝒜 := 𝒜)).PreservesHomology where
+
+/-- A short complex of graded modules is exact exactly when its underlying linear maps are
+exact. No additional condition on the internal degrees is needed. -/
+theorem exact_iff {S : ShortComplex (GradedModuleCat.{v} 𝒜)} :
+    S.Exact ↔ Function.Exact S.f.hom S.g.hom := by
+  rw [← S.exact_map_iff_of_faithful toModuleCat,
+    ShortComplex.ShortExact.moduleCat_exact_iff_function_exact]
+  rfl
 
 end TauCeti.GradedModuleCat

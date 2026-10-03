@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.SimpleRing.Basic
 public import Mathlib.Algebra.Central.Basic
 public import TauCeti.Algebra.Quaternion.SplittingCriterion
+public import Mathlib.GroupTheory.Subgroup.Center
 import Mathlib.RingTheory.SimpleRing.Congr
 import Mathlib.RingTheory.SimpleRing.Matrix
 import Mathlib.Tactic.LinearCombination
@@ -30,6 +31,9 @@ criterion gives either a division algebra or a two-by-two matrix algebra. The tw
 * `TauCeti.QuaternionAlgebra.mem_center_iff` and
   `TauCeti.QuaternionAlgebra.isCentral_of_isLeftRegular_j_sq_or_isLeftRegular_discr`: centrality for
   symbols with a regular parameter.
+* `TauCeti.QuaternionAlgebra.center_units_eq_range_unitsMap_algebraMap`: the center of a
+  quaternion unit group with unit symbols consists exactly of scalar units, over a base ring
+  in which two is left-regular, including the split case.
 
 The split/division dichotomy used here is the norm-equation criterion in
 `TauCeti.Algebra.Quaternion.SplittingCriterion`.
@@ -87,11 +91,9 @@ variable [CommRing K]
 
 private theorem center_coordinates_eq_zero (a b : K) (h2 : IsLeftRegular (2 : K))
     (hb : IsLeftRegular b) {x : ℍ[K,a,b]}
-    (hx : x ∈ Subalgebra.center K ℍ[K,a,b]) :
+    (hi : (⟨0, 1, 0, 0⟩ : ℍ[K,a,b]) * x = x * (⟨0, 1, 0, 0⟩ : ℍ[K,a,b]))
+    (hj : (⟨0, 0, 1, 0⟩ : ℍ[K,a,b]) * x = x * (⟨0, 0, 1, 0⟩ : ℍ[K,a,b])) :
     x.imI = 0 ∧ x.imJ = 0 ∧ x.imK = 0 := by
-  rw [Subalgebra.mem_center_iff] at hx
-  have hi := hx (⟨0, 1, 0, 0⟩ : ℍ[K,a,b])
-  have hj := hx (⟨0, 0, 1, 0⟩ : ℍ[K,a,b])
   have hiK := congrArg _root_.QuaternionAlgebra.imK hi
   have hjI := congrArg _root_.QuaternionAlgebra.imI hj
   have hjK := congrArg _root_.QuaternionAlgebra.imK hj
@@ -116,7 +118,9 @@ theorem mem_center_iff (a b : K) (h2 : IsRegular (2 : K)) (hb : IsRegular b)
     x ∈ Subalgebra.center K ℍ[K,a,b] ↔
       x.imI = 0 ∧ x.imJ = 0 ∧ x.imK = 0 := by
   constructor
-  · exact center_coordinates_eq_zero a b h2.left hb.left
+  · intro hx
+    exact center_coordinates_eq_zero a b h2.left hb.left
+      (Subalgebra.mem_center_iff.mp hx _) (Subalgebra.mem_center_iff.mp hx _)
   · intro hx
     have hx' : x = algebraMap K ℍ[K,a,b] x.re := by
       rw [_root_.QuaternionAlgebra.coe_algebraMap]
@@ -141,6 +145,39 @@ instance instIsCentral (a : K) (b : Kˣ) [Invertible (2 : K)] :
   let h2 : IsLeftRegular (2 : K) := (isUnit_of_invertible (2 : K)).isRegular.left
   let hb : IsLeftRegular (b : K) := b.isUnit.isRegular.left
   isCentral_of_isLeftRegular_secondParameter a (b : K) h2 hb
+
+/-- Over a base ring in which two is left-regular, the center of the unit group of a quaternion
+symbol with unit parameters is exactly the scalar units. This includes split quaternion algebras. -/
+theorem center_units_eq_range_unitsMap_algebraMap (a b : Kˣ) (h2 : IsLeftRegular (2 : K)) :
+    Subgroup.center ℍ[K,(a : K),(b : K)]ˣ =
+      (Units.map (algebraMap K ℍ[K,(a : K),(b : K)]).toMonoidHom).range := by
+  ext x
+  constructor
+  · intro hx
+    have hi : IsUnit (⟨0, 1, 0, 0⟩ : ℍ[K,(a : K),(b : K)]) :=
+      _root_.QuaternionAlgebra.isUnit_iff_normForm_isUnit _ _ _ _ |>.mpr (by
+        simp [_root_.QuaternionAlgebra.normForm_apply_coordinates])
+    have hj : IsUnit (⟨0, 0, 1, 0⟩ : ℍ[K,(a : K),(b : K)]) :=
+      _root_.QuaternionAlgebra.isUnit_iff_normForm_isUnit _ _ _ _ |>.mpr (by
+        simp [_root_.QuaternionAlgebra.normForm_apply_coordinates])
+    have hxi := congrArg Units.val (Subgroup.mem_center_iff.mp hx hi.unit)
+    have hxj := congrArg Units.val (Subgroup.mem_center_iff.mp hx hj.unit)
+    have hc := center_coordinates_eq_zero (a : K) (b : K)
+      h2 b.isUnit.isRegular.left
+      (by simpa only [Units.val_mul, hi.unit_spec] using hxi)
+      (by simpa only [Units.val_mul, hj.unit_spec] using hxj)
+    have hs : (x : ℍ[K,(a : K),(b : K)]) = algebraMap K _ x.val.re := by
+      ext <;> simp [hc.1, hc.2.1, hc.2.2]
+    have hu : IsUnit x.val.re := by
+      have hn := (_root_.QuaternionAlgebra.isUnit_iff_normForm_isUnit _ _ _ _).mp x.isUnit
+      rw [hs] at hn
+      simpa only [_root_.QuaternionAlgebra.coe_algebraMap,
+        _root_.QuaternionAlgebra.normForm_coe,
+        isUnit_pow_iff (by decide : (2 : ℕ) ≠ 0)] using hn
+    exact ⟨hu.unit, Units.ext (by simpa using hs.symm)⟩
+  · rintro ⟨r, rfl⟩
+    refine Subgroup.mem_center_iff.mpr fun y => Units.ext ?_
+    exact (Algebra.commutes (r : K) (y : ℍ[K,(a : K),(b : K)])).symm
 
 end UnitParameter
 

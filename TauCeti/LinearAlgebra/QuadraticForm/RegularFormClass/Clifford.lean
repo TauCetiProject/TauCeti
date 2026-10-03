@@ -11,6 +11,7 @@ public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Hasse
 import Mathlib.LinearAlgebra.CliffordAlgebra.Equivs
 import TauCeti.Algebra.BrauerGroup.Splitting
 import TauCeti.LinearAlgebra.CliffordAlgebra.CentralSimple.Even
+import TauCeti.LinearAlgebra.CliffordAlgebra.Even.Quaternion
 import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality
 
 /-!
@@ -33,6 +34,9 @@ Every Clifford invariant is `2`-torsion, because the reversion of a Clifford alg
 with its opposite algebra, and in odd rank the even Clifford algebra is itself a Clifford algebra in
 one lower rank. In ranks at most two the Clifford and Hasse invariants agree: the Clifford algebra
 of `⟨a, b⟩` is the quaternion algebra `ℍ[K, a, b]`, while in ranks `0` and `1` the algebra is `K`.
+In rank three the even Clifford algebra is the quaternion algebra `(-a/c,-b/c)`. Expanding that
+symbol gives the first nontrivial case of Lam's comparison with the Hasse invariant, including
+both correction terms.
 
 ## Main definitions
 
@@ -55,11 +59,17 @@ of `⟨a, b⟩` is the quaternion algebra `ℍ[K, a, b]`, while in ranks `0` and
 * `TauCeti.RegularFormClass.cliffordInvariant_eq_hasseInvariant_of_rank_le_two`: in ranks at most
   two the Clifford invariant is the Hasse invariant; in particular the hyperbolic plane has trivial
   invariant (`TauCeti.RegularFormClass.cliffordInvariant_hyperbolicClass`).
+* `TauCeti.RegularFormClass.cliffordInvariant_eq_hasseInvariant_mul_of_rank_eq_three`: in rank
+  three the Clifford invariant is the Hasse invariant times the discriminant and constant sign
+  corrections from Lam V.3.20.
+* `TauCeti.RegularFormClass.cliffordInvariant_eq_hasseInvariant_mul_of_rank_le_three`: the exact
+  Lam V.3.20 formula simultaneously in every rank at most three.
 
 ## References
 
 * T. Y. Lam, *Introduction to Quadratic Forms over Fields*, Graduate Studies in Mathematics 67,
-  American Mathematical Society (2005), Chapter V, Theorems 2.4 and 2.5 and Definition 3.12.
+  American Mathematical Society (2005), Chapter V, Theorems 2.4 and 2.5, Definition 3.12, and
+  Theorem 3.20.
 -/
 
 public section
@@ -225,6 +235,20 @@ theorem cliffordInvariant_mk_binary (a b : Kˣ) :
   exact cliffordInvariant_mk_of_even _ even_two _
     ((CliffordAlgebra.equivOfIsometry f).trans CliffordAlgebraQuaternion.equiv)
 
+/-- **The Clifford invariant of a ternary form** is the quaternion symbol
+`[(-a/c, -b/c)]`. -/
+@[simp]
+theorem cliffordInvariant_mk_ternary (a b c : Kˣ) :
+    cliffordInvariant (Quotient.mk (regularFormSetoid K) ⟨3, ![a, b, c]⟩) =
+      BrauerGroup.quaternionClass (-c⁻¹ * a) (-c⁻¹ * b) := by
+  rw [BrauerGroup.quaternionClass_def]
+  refine cliffordInvariant_mk_of_odd _ (by norm_num [Odd]) _ ?_
+  have hw : (fun i ↦ ((![a, b, c] i : Kˣ) : K)) = ![(a : K), (b : K), (c : K)] := by
+    funext i
+    fin_cases i <;> rfl
+  rw [presentedForm_eq_weightedSumSquares_coe, hw]
+  exact CliffordAlgebra.evenWeightedSumSquaresThreeQuaternionEquiv (a : K) b c
+
 /-- **In ranks at most two the Clifford invariant is the Hasse invariant.** This is the low-rank
 case of Lam V.3.20, whose correction terms vanish for `n ≤ 2`. -/
 theorem cliffordInvariant_eq_hasseInvariant_of_rank_le_two {x : RegularFormClass K}
@@ -238,6 +262,61 @@ theorem cliffordInvariant_eq_hasseInvariant_of_rank_le_two {x : RegularFormClass
       obtain rfl : n = 2 := le_antisymm (by simpa using hx) (by simpa using h)
       have hw : w = ![w 0, w 1] := by ext i; fin_cases i <;> rfl
       rw [hw, cliffordInvariant_mk_binary, hasseInvariant_mk_binary]
+
+/-- **Lam's Clifford--Hasse comparison in rank three.** For `q = ⟨a,b,c⟩`,
+`c(q) = s(q) · [(-1,abc)] · [(-1,-1)]`. These are exactly the two correction terms in
+Lam V.3.20, since both relevant binomial exponents are one in rank three. -/
+theorem cliffordInvariant_mk_ternary_eq_hasseInvariant_mul (a b c : Kˣ) :
+    cliffordInvariant (Quotient.mk (regularFormSetoid K) ⟨3, ![a, b, c]⟩) =
+      hasseInvariant (Quotient.mk (regularFormSetoid K) ⟨3, ![a, b, c]⟩) *
+        BrauerGroup.quaternionClass (-1) (a * b * c) *
+          BrauerGroup.quaternionClass (-1) (-1) := by
+  have hexp :
+      hasseInvariant (Quotient.mk (regularFormSetoid K) ⟨3, ![a, b, c]⟩) =
+        BrauerGroup.quaternionClass a b * BrauerGroup.quaternionClass a c *
+          BrauerGroup.quaternionClass b c := by
+    simp [Fin.prod_univ_succ, mul_assoc]
+  rw [cliffordInvariant_mk_ternary, hexp, BrauerGroup.quaternionClass_neg_inv_mul_neg_inv_mul]
+
+/-- **Lam's Clifford--Hasse comparison for every rank-three regular-form class.** The second
+correction pairs `-1` with the discriminant, while the last is the constant symbol
+`[(-1,-1)]`. -/
+theorem cliffordInvariant_eq_hasseInvariant_mul_of_rank_eq_three {x : RegularFormClass K}
+    (hx : x.rank = 3) :
+    cliffordInvariant x = hasseInvariant x *
+      BrauerGroup.quaternionClassOnSquareClasses (squareClass (-1 : Kˣ)) (discr x) *
+        BrauerGroup.quaternionClass (-1) (-1) := by
+  induction x using Quotient.inductionOn with
+  | h p =>
+    obtain ⟨n, w⟩ := p
+    obtain rfl : n = 3 := by simpa using hx
+    have hw : w = ![w 0, w 1, w 2] := by ext i; fin_cases i <;> rfl
+    have hprod :
+        (∏ i, (⟨3, ![w 0, w 1, w 2]⟩ : RegularFormPresentation K).2 i) =
+          w 0 * w 1 * w 2 := by
+      rw [Fin.prod_univ_three]
+      rfl
+    rw [hw, cliffordInvariant_mk_ternary_eq_hasseInvariant_mul, discr_mk,
+      hprod, BrauerGroup.quaternionClassOnSquareClasses_squareClass]
+
+/-- **Lam's exact Clifford--Hasse comparison in every rank at most three.** The correction
+exponents are `C(n-1,2)` and `C(n+1,4)`, the binomial-coefficient form of Lam V.3.20. Rank three
+is the first case in which either correction is nontrivial. -/
+theorem cliffordInvariant_eq_hasseInvariant_mul_of_rank_le_three {x : RegularFormClass K}
+    (hx : x.rank ≤ 3) :
+    cliffordInvariant x = hasseInvariant x *
+      BrauerGroup.quaternionClassOnSquareClasses (squareClass (-1 : Kˣ)) (discr x) ^
+        (x.rank - 1).choose 2 *
+      BrauerGroup.quaternionClass (-1) (-1) ^ (x.rank + 1).choose 4 := by
+  interval_cases hrank : x.rank
+  · rw [cliffordInvariant_eq_hasseInvariant_of_rank_le_two (by omega)]
+    simp [Nat.choose_eq_zero_of_lt]
+  · rw [cliffordInvariant_eq_hasseInvariant_of_rank_le_two (by omega)]
+    simp [Nat.choose_eq_zero_of_lt]
+  · rw [cliffordInvariant_eq_hasseInvariant_of_rank_le_two (by omega)]
+    simp
+  · rw [cliffordInvariant_eq_hasseInvariant_mul_of_rank_eq_three hrank]
+    norm_num [Nat.choose_eq_zero_of_lt]
 
 /-- The hyperbolic plane has trivial Clifford invariant: its Clifford algebra `ℍ[K, 1, -1]` is
 split. -/

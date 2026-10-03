@@ -14,6 +14,7 @@ import TauCeti.NumberTheory.LocalField.UnitFiltration.Pow
 import TauCeti.NumberTheory.LocalField.UnitFiltration.RamificationGroup
 import TauCeti.NumberTheory.LocalField.UnitsDecomposition
 import TauCeti.NumberTheory.LocalField.Unramified.Inertia.Finite
+import TauCeti.Topology.Algebra.Group.Profinite.ProP.Burnside
 import TauCeti.Topology.Algebra.Group.Profinite.ProP.Subgroup
 import TauCeti.Topology.Algebra.Group.Profinite.Sylow.Conjugacy
 import TauCeti.Topology.Algebra.Group.Profinite.Sylow.Functoriality
@@ -54,6 +55,10 @@ and a continuous surjection carries a Sylow pro-`p` subgroup onto a Sylow subgro
 the unique Sylow `p`-subgroup of `G_0`, the image of `P_K` is all of `G_1`. Consequently `L` lies
 in `K^{t}` exactly when `G_1` of `L/K` is trivial, that is, exactly when `L/K` is tamely ramified.
 
+Being a normal pro-`p` subgroup, `P_K` can be discarded when counting topological generators of
+`G_K`, up to its commutator subgroup: by the Frattini argument along `P_K`, a set generating `G_K`
+modulo `⁅P_K, P_K⁆` already generates `G_K`.
+
 ## Main definitions
 
 * `TauCeti.maximalTameExtension K Ω`: the maximal tamely ramified extension `K^{t}` of `K` in `Ω`.
@@ -77,6 +82,8 @@ in `K^{t}` exactly when `G_1` of `L/K` is trivial, that is, exactly when `L/K` i
 * `TauCeti.isProPSylow_wildInertiaSubgroup` and
   `TauCeti.eq_subgroupOf_wildInertiaSubgroup_of_isProPSylow`: `P_K` is the unique Sylow pro-`p`
   subgroup of `I_K`.
+* `TauCeti.topologicalClosure_eq_top_of_sup_wildInertiaCommutator`: a set topologically generating
+  `G_K` together with `⁅P_K, P_K⁆` topologically generates `G_K`.
 * `TauCeti.map_wildInertiaSubgroup_restrictNormalHom`: the image of `P_K` in the Galois group of a
   finite Galois subextension `L` is the first lower ramification group `G_1` of `L/K`.
 * `TauCeti.le_maximalTameExtension_iff`: a finite Galois subextension `L` lies in `K^{t}` exactly
@@ -87,7 +94,8 @@ in `K^{t}` exactly when `G_1` of `L/K` is trivial, that is, exactly when `L/K` i
 ## References
 
 * [J.-P. Serre, *Corps Locaux*][serre1968], Chapter IV, §2.
-* J. Neukirch, A. Schmidt, K. Wingberg, *Cohomology of Number Fields*, Chapter VII, §5.
+* J. Neukirch, A. Schmidt, K. Wingberg, *Cohomology of Number Fields*, (3.9.1) and Chapter VII,
+  §5.
 -/
 
 public section
@@ -569,6 +577,20 @@ theorem eq_subgroupOf_wildInertiaSubgroup_of_isProPSylow {Q : Subgroup (inertiaS
     isCompact_iff_compactSpace.1 (isClosed_inertiaSubgroup K).isCompact
   exact (IsProPSylow.eq_of_normal p _ _ _ (isProPSylow_wildInertiaSubgroup K p) hQ
     Subgroup.normal_subgroupOf).symm
+
+/-! ### The Frattini argument along wild inertia -/
+
+variable {K} in
+/-- **Relative Frattini reduction along wild inertia** (NSW (3.9.1)). A set which topologically
+generates `G_K` together with the commutator subgroup `⁅P_K, P_K⁆` of wild inertia already
+topologically generates `G_K`. -/
+theorem topologicalClosure_eq_top_of_sup_wildInertiaCommutator
+    {s : Set (Field.absoluteGaloisGroup K)}
+    (hs : (Subgroup.closure s ⊔
+      ⁅wildInertiaSubgroup K, wildInertiaSubgroup K⁆).topologicalClosure = ⊤) :
+    (Subgroup.closure s).topologicalClosure = ⊤ := by
+  have : Fact (ringChar 𝓀[K]).Prime := ⟨CharP.char_is_prime 𝓀[K] _⟩
+  exact (isProP_wildInertiaSubgroup K _).topologicalClosure_eq_top_of_sup_commutator hs
 
 /-! ### The image of wild inertia at finite level -/
 

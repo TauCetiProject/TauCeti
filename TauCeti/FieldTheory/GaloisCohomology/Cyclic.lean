@@ -8,6 +8,7 @@ module
 public import TauCeti.FieldTheory.GaloisCohomology.Inflation
 public import TauCeti.FieldTheory.GaloisCohomology.Norm
 public import TauCeti.RepresentationTheory.Homological.GroupCohomology.FiniteCyclic
+public import TauCeti.RepresentationTheory.Homological.TateCohomology.HerbrandQuotient
 public import Mathlib.FieldTheory.Galois.Basic
 import TauCeti.GroupTheory.QuotientGroup.KerEquiv
 
@@ -32,6 +33,11 @@ crossed product of the carry cocycle of `a` is the cyclic algebra `(L/K, g, a)`.
 Along a tower `K ⊆ L ⊆ M` of cyclic Galois extensions whose generators are compatible, inflation
 sends the class of `a` to the class of `a ^ [M : L]` (`TauCeti.map_cyclicClass`).
 
+Independently of any generator, Hilbert's Theorem 90 makes `H¹(Gal(L/K), Lˣ)` vanish, so the order
+of `H²(Gal(L/K), Lˣ)` is the Herbrand quotient of `Lˣ`
+(`TauCeti.natCard_H2_units_eq_herbrandQuotient`). This is the form in which a computation of that
+Herbrand quotient, such as `h(Lˣ) = [L : K]` for local fields, bounds `H²`.
+
 ## Main definitions
 
 * `TauCeti.cyclicClass`: the class in `H²(Gal(L/K), Lˣ)` of an element of `Kˣ`, by
@@ -49,6 +55,8 @@ sends the class of `a` to the class of `a ^ [M : L]` (`TauCeti.map_cyclicClass`)
   represents the class of `a`.
 * `TauCeti.map_cyclicClass`: inflation along a tower of cyclic Galois extensions sends the class of
   `a` to the class of `a ^ [M : L]`.
+* `TauCeti.natCard_H2_units_eq_herbrandQuotient`: the order of `H²(Gal(L/K), Lˣ)` is the
+  Herbrand quotient of `Lˣ`.
 
 ## References
 
@@ -254,5 +262,18 @@ theorem cyclicNormQuotientEquiv_mk (a : Kˣ) :
   rw [AddMonoidHom.coe_toMultiplicativeRight, Function.comp_apply, Function.comp_apply,
     toAdd_ofAdd]
 
+omit [IsGalois K L] in
+/-- **The order of `H²` of a cyclic extension is the Herbrand quotient of its units.** For a
+finite extension `L/K` whose automorphism group is cyclic, Hilbert's Theorem 90
+(`groupCohomology.H1ofAutOnUnitsUnique`) makes `H¹(Aut(L/K), Lˣ)` vanish, so the order of
+`H²(Aut(L/K), Lˣ)` is the Herbrand quotient of `Lˣ`. -/
+theorem natCard_H2_units_eq_herbrandQuotient [IsCyclic (L ≃ₐ[K] L)] :
+    (Nat.card (H2 (Rep.ofMulDistribMulAction (L ≃ₐ[K] L) Lˣ)) : ℚ) =
+      TateCohomology.herbrandQuotient (Rep.ofMulDistribMulAction (L ≃ₐ[K] L) Lˣ) :=
+  -- Mathlib states Hilbert 90 for `Rep.ofAlgebraAutOnUnits K L`, which is defined as this
+  -- representation; instance search does not unfold that definition, so it is supplied here.
+  haveI : Subsingleton (H1 (Rep.ofMulDistribMulAction (L ≃ₐ[K] L) Lˣ)) :=
+    (H1ofAutOnUnitsUnique K L).instSubsingleton
+  (TateCohomology.herbrandQuotient_eq_natCard_H2 _).symm
 
 end TauCeti

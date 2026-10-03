@@ -121,6 +121,25 @@ theorem sectionLinearization_eq_symmL_comp
     Trivialization.symm_apply_apply_mk _ (mem_baseSet_trivializationAt F E (b x)),
     Trivialization.symmL_apply _ he]
 
+/-- At a zero, the kernel inclusion composed with the inverse of a kernel-model equivalence
+has range equal to the kernel of the intrinsic section linearization. -/
+theorem range_subtypeL_comp_eq_ker_sectionLinearization {T : X →L[𝕜] F}
+    {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+    (hb : MDifferentiableAt 𝓘(𝕜, X) I b x) (he : b x ∈ e.baseSet)
+    (hf : HasFDerivAt (fun y ↦ (e ⟨b y, s y⟩).2) T x) (hz : s x = 0)
+    (K : T.ker ≃L[𝕜] G) :
+    (T.ker.subtypeL.comp (K.symm : G →L[𝕜] T.ker)).range =
+      (sectionLinearization (𝕜 := 𝕜) (F := F) b s x).ker := by
+  rw [sectionLinearization_eq_symmL_comp hb he hf.differentiableAt hz,
+    hf.fderiv, ← e.symm_continuousLinearEquivAt_eq' he]
+  simp only [ContinuousLinearMap.toLinearMap_comp, Submodule.toLinearMap_subtypeL,
+    ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap]
+  rw [LinearMap.range_comp_of_range_eq_top T.ker.subtype
+    (f := K.symm.toLinearEquiv.toLinearMap) K.symm.toLinearEquiv.range,
+    LinearMap.ker_comp_of_ker_eq_bot T.toLinearMap
+      (LinearMap.ker_eq_bot.2 (e.continuousLinearEquivAt 𝕜 (b x) he).symm.injective)]
+  exact Submodule.range_subtype _
+
 /-- Reading the intrinsic linearization in a trivialization recovers the derivative of the
 section's fiber coordinates. -/
 theorem continuousLinearMapAt_comp_sectionLinearization
@@ -143,6 +162,44 @@ theorem surjective_sectionLinearization_iff
   rw [sectionLinearization_eq_symmL_comp hb he hs hzero,
     ← e.symm_continuousLinearEquivAt_eq' he]
   exact Function.Surjective.of_comp_iff' (e.continuousLinearEquivAt 𝕜 (b x) he).symm.bijective _
+
+/-- At a zero, the intrinsic linearization and any differentiable fiber-coordinate
+expression have the same Fredholm index. -/
+theorem index_sectionLinearization
+    (hb : MDifferentiableAt 𝓘(𝕜, X) I b x) (he : b x ∈ e.baseSet)
+    (hs : DifferentiableAt 𝕜 (fun y ↦ (e ⟨b y, s y⟩).2) x) (hzero : s x = 0) :
+    LinearMap.index (sectionLinearization (𝕜 := 𝕜) (F := F) b s x).toLinearMap =
+      ContinuousLinearMap.index (fderiv 𝕜 (fun y ↦ (e ⟨b y, s y⟩).2) x) := by
+  rw [sectionLinearization_eq_symmL_comp hb he hs hzero,
+    ← e.symm_continuousLinearEquivAt_eq' he, ContinuousLinearMap.toLinearMap_comp,
+    ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap]
+  rw [LinearMap.index_equiv_comp, ContinuousLinearMap.index_def]
+
+/-- A section's intrinsic linearization at a zero is Fredholm exactly when its derivative
+in any differentiable fiber-coordinate expression is Fredholm. -/
+theorem isFredholm_sectionLinearization_iff
+    (hb : MDifferentiableAt 𝓘(𝕜, X) I b x) (he : b x ∈ e.baseSet)
+    (hs : DifferentiableAt 𝕜 (fun y ↦ (e ⟨b y, s y⟩).2) x) (hzero : s x = 0) :
+    ContinuousLinearMap.IsFredholm (sectionLinearization (𝕜 := 𝕜) (F := F) b s x) ↔
+      ContinuousLinearMap.IsFredholm (fderiv 𝕜 (fun y ↦ (e ⟨b y, s y⟩).2) x) := by
+  rw [sectionLinearization_eq_symmL_comp hb he hs hzero,
+    ← e.symm_continuousLinearEquivAt_eq' he]
+  let A := e.continuousLinearEquivAt 𝕜 (b x) he
+  -- Transport a norm to the fiber while retaining its given topology and module structure.
+  let : NormedAddCommGroup (E (b x)) :=
+    { (NormedAddCommGroup.induced (E (b x)) F A.toLinearEquiv A.injective).replaceTopology
+        A.toHomeomorph.isInducing.eq_induced with
+      toAddCommGroup := inferInstance
+      norm := fun v ↦ ‖A v‖
+      dist_eq := (NormedAddCommGroup.induced (E (b x)) F A.toLinearEquiv A.injective).dist_eq }
+  let : NormedSpace 𝕜 (E (b x)) :=
+    { norm_smul_le c v := by simpa only [← map_smul A c v] using! norm_smul_le c (A v) }
+  constructor
+  · intro h
+    simpa only [A, ← ContinuousLinearMap.comp_assoc, ContinuousLinearEquiv.coe_comp_coe_symm,
+      ContinuousLinearMap.id_comp] using h.equiv_comp (F := E (b x)) (G := F) A
+  · intro h
+    exact h.equiv_comp (G := E (b x)) A.symm
 
 /-- The Fredholm index of a section's coordinate derivative at a zero is independent of
 the bundle trivialization. No Fredholm hypothesis is needed for this equality of indices. -/

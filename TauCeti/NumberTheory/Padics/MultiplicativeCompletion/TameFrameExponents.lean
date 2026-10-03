@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.MonoidAlgebra.TwoGeneratorQuotient
+public import TauCeti.NumberTheory.LocalField.WorkedExamples.UnramifiedQuadratic
 public import TauCeti.NumberTheory.Padics.MultiplicativeCompletion.Torsion
 import Mathlib.NumberTheory.Cyclotomic.CyclotomicCharacter
 import TauCeti.NumberTheory.Multiplicity
@@ -277,5 +278,26 @@ theorem not_exists_tameFrame_exponents_one_one (L : Type*) [Field L]
   have hbodd : Odd b := exponent_odd hb
   exact MonoidAlgebra.natCard_quotient_span_one_sub_natCast_ne_two haodd hbodd
     (hcard.trans hq)
+
+/-- The identity pair on the unramified quadratic extension `ℚ₂(ζ₃)/ℚ₂` does not admit sharp
+tame-frame exponents. This is the concrete rejection test showing that the generating hypothesis
+of `exists_tameFrame_exponents` cannot be removed. -/
+theorem not_exists_tameFrame_exponents_one_one_unramifiedQuadratic :
+    ¬ ∃ a b : ℕ,
+      (∀ ζ ∈ pPowerRootsOfUnity 2 UnramifiedQuadratic,
+        Units.map ((1 : UnramifiedQuadratic ≃ₐ[ℚ_[2]] UnramifiedQuadratic) :
+          UnramifiedQuadratic →* UnramifiedQuadratic) ζ = ζ ^ a) ∧
+      (∀ ζ ∈ pPowerRootsOfUnity 2 UnramifiedQuadratic,
+        Units.map ((1 : UnramifiedQuadratic ≃ₐ[ℚ_[2]] UnramifiedQuadratic) :
+          UnramifiedQuadratic →* UnramifiedQuadratic) ζ = ζ ^ b) ∧
+      Nat.card (MonoidAlgebra ℤ_[2]
+        (UnramifiedQuadratic ≃ₐ[ℚ_[2]] UnramifiedQuadratic) ⧸ Ideal.span
+          {single (1 : UnramifiedQuadratic ≃ₐ[ℚ_[2]] UnramifiedQuadratic) (1 : ℤ_[2]) - a,
+            single (1 : UnramifiedQuadratic ≃ₐ[ℚ_[2]] UnramifiedQuadratic) (1 : ℤ_[2]) - b}) =
+        localRootOfUnityOrder 2 UnramifiedQuadratic
+          (finite_pPowerRootsOfUnity (by norm_num)) := by
+  let _ := nontrivial_algEquiv_unramifiedQuadratic
+  exact not_exists_tameFrame_exponents_one_one UnramifiedQuadratic ℚ_[2] (by norm_num)
+    (finite_pPowerRootsOfUnity (by norm_num)) localRootOfUnityOrder_two_unramifiedQuadratic
 
 end TauCeti

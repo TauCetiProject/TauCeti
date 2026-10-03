@@ -225,6 +225,45 @@ theorem IsGradedCoderivationOver.square_eq_zero_iff_counit
         (Coalgebra.counit (R := R) (A := C)).lTensor N ∘ₗ (D ∘ₗ D) = 0 :=
   h.square_eq_zero_iff_counit_of_negOnePow_eq_neg_one G b D hD (by norm_num) hb
 
+/-- Two coderivations over the same coalgebra operator on a cofree comodule are equal when their
+counit components agree. -/
+theorem IsGradedCoderivationOver.eq_of_counit_comp_eq
+    (G : InternalGrading R (N ⊗[R] C))
+    (b : C →ₗ[R] C) (D E : (N ⊗[R] C) →ₗ[R] N ⊗[R] C)
+    (hD : IsGradedCoderivationOver G q b D)
+    (hE : IsGradedCoderivationOver G q b E)
+    (hcounit :
+      (TensorProduct.rid R N).toLinearMap ∘ₗ
+          (Coalgebra.counit (R := R) (A := C)).lTensor N ∘ₗ D =
+        (TensorProduct.rid R N).toLinearMap ∘ₗ
+          (Coalgebra.counit (R := R) (A := C)).lTensor N ∘ₗ E) :
+    D = E := by
+  let _ : AddCommGroup N := Module.addCommMonoidToAddCommGroup R
+  let _ : AddCommGroup C := Module.addCommMonoidToAddCommGroup R
+  let _ : AddCommGroup (N ⊗[R] C) := Module.addCommMonoidToAddCommGroup R
+  let ρ := coact (R := R) (C := C) (M := N ⊗[R] C)
+  have hcomm : ρ ∘ₗ (D - E) = (D - E).rTensor C ∘ₗ ρ := by
+    rw [LinearMap.comp_sub, hD, hE, LinearMap.rTensor_sub, LinearMap.sub_comp]
+    module
+  let f : Hom R C (N ⊗[R] C) (N ⊗[R] C) :=
+    { toLinearMap := D - E
+      map_coact := by
+        simpa only [LinearMap.rTensor] using hcomm.symm }
+  have hf_counit :
+      (TensorProduct.rid R N).toLinearMap ∘ₗ
+          (Coalgebra.counit (R := R) (A := C)).lTensor N ∘ₗ f.toLinearMap = 0 := by
+    dsimp only [f]
+    apply LinearMap.ext
+    intro x
+    have h := LinearMap.congr_fun hcounit x
+    simp only [LinearMap.comp_apply, LinearMap.sub_apply, map_sub, LinearMap.zero_apply]
+    exact sub_eq_zero.mpr h
+  have hf : f = 0 := (Hom.eq_zero_iff_counit f).2 hf_counit
+  have hsub := congrArg (fun g : Hom R C (N ⊗[R] C) (N ⊗[R] C) ↦ g.toLinearMap) hf
+  have : D - E = 0 := by
+    simpa only [f, Hom.zero_toLinearMap] using hsub
+  exact sub_eq_zero.mp this
+
 end Cofree
 
 end Comodule

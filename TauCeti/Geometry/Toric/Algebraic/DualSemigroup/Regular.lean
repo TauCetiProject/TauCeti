@@ -21,8 +21,8 @@ nonnegative at the ray indices and arbitrary at the complementary indices, that 
 This is the coordinate model `(ι →₀ ℕ) × (κ →₀ ℤ)` consumed by
 `TauCeti.Toric.regularAffinePointEquiv`, so for a regular cone it exhibits the complex points of
 the affine toric chart as `ℂ ^ k × (ℂ ^ *) ^ (n - k)`, with `k` the number of rays and `n` the
-rank of the lattice. As a consequence, the dual semigroup of a regular cone is finitely
-generated.
+rank of the lattice. Finite generation for all lattice-rational cones is proved in
+`TauCeti.Geometry.Toric.Algebraic.DualSemigroup.Finiteness`.
 
 ## Main declarations
 
@@ -41,8 +41,6 @@ generated.
   coordinates, with respect to one extending basis, of the dual basis characters of another.
 * `TauCeti.Toric.IsRegularCone.nonempty_dualSemigroup_addEquiv`: the dual semigroup of a regular
   cone with `k` rays in a lattice of rank `n` is isomorphic to `ℕ ^ k × ℤ ^ (n - k)`.
-* `TauCeti.Toric.IsRegularCone.fg_dualSemigroup`: the dual semigroup of a regular cone is
-  finitely generated.
 
 ## References
 
@@ -250,19 +248,6 @@ theorem nonempty_dualSemigroup_addEquiv (hi : IsIntegralLattice i) (hσ : IsRegu
   let e := Equiv.sumCongr (Equiv.refl (ToricRay σ)) (finCongr hl)
   exact ⟨regularDualSemigroupEquiv hi hσ.toIsToricCone (b := b.reindex e)
     fun ρ ↦ by simpa [e] using hb ρ⟩
-
-/-- The dual semigroup of a regular cone is finitely generated. -/
-theorem fg_dualSemigroup (hi : IsIntegralLattice i) (hσ : IsRegularCone i σ) :
-    AddMonoid.FG (dualSemigroup hi σ) := by
-  obtain ⟨e⟩ := hσ.nonempty_dualSemigroup_addEquiv hi
-  have := ToricRay.finite_of_fg hσ.fg
-  have : AddMonoid.FG (Fin (Module.finrank ℤ N - Nat.card (ToricRay σ)) →₀ ℤ) := by
-    rw [← AddGroup.fg_iff_addMonoid_fg, ← Module.Finite.iff_addGroup_fg]
-    infer_instance
-  have : AddMonoid.FG (ToricRay σ →₀ ℕ) := by
-    rw [← Module.Finite.iff_addMonoid_fg]
-    infer_instance
-  exact AddMonoid.fg_of_surjective e.symm.toAddMonoidHom e.symm.surjective
 
 end IsRegularCone
 
