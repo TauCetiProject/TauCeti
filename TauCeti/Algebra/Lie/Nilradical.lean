@@ -235,8 +235,8 @@ instance isNilpotentSup (I J : LieIdeal R L) [LieRing.IsNilpotent I] [LieRing.Is
 /-- **A proper subspace of a nilpotent ideal is normalized by a new element of the ideal.** If a
 submodule `T` lies strictly below a nilpotent ideal `I`, some `x ∈ I` outside `T` satisfies
 `⁅x, I⁆ ⊆ T`.  The element is taken from the last term of `⁅I, ⁅I, … ⁅I, L⁆…⁆⁆` not contained in
-`T`.  Repeated application builds a flag of subalgebras from `T` up to `I`, each an ideal of the
-next with codimension one. -/
+`T`.  When `R` is a field, `I` is finite-dimensional and `T` is a subalgebra, repeated application
+builds a flag of subalgebras from `T` up to `I`, each an ideal of the next with codimension one. -/
 theorem exists_mem_notMem_lie_mem_of_lt (I : LieIdeal R L) [LieRing.IsNilpotent I]
     {T : Submodule R L} (hT : T < I.toSubmodule) :
     ∃ x ∈ I, x ∉ T ∧ ∀ y ∈ I, ⁅x, y⁆ ∈ T := by
