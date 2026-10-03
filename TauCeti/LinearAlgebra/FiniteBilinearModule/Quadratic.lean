@@ -125,11 +125,7 @@ theorem nsmul_quadratic_of_odd {n : ℕ} (hn : Odd n) (x : A) (hx : n • x = 0)
       ← A.quadratic.map_smul, Nat.cast_smul_eq_nsmul ℤ, hx, A.quadratic.map_zero]
   have htwo : 2 • (n • A.quadratic x) = 0 := by
     simpa only [mul_nsmul'] using A.two_mul_nsmul_quadratic_of_nsmul_eq_zero x hx
-  obtain ⟨k, hk⟩ := hn
-  have : (2 * k + 1) • (n • A.quadratic x) = 0 := hk ▸ hsq
-  rw [add_nsmul, mul_nsmul, htwo, smul_zero,
-    one_nsmul, zero_add] at this
-  exact this
+  exact (nsmul_eq_zero_iff_of_coprime hn.coprime_two_right).mp ⟨hsq, htwo⟩
 
 /-- If the underlying group has odd order, that order kills every quadratic value. -/
 theorem natCard_nsmul_quadratic_of_odd (hm : Odd (Nat.card A)) (x : A) :
