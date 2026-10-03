@@ -26,10 +26,9 @@ not split.
 
 The construction parallels `TauCeti/CategoryTheory/GrothendieckGroup/Monoidal/Basic.lean` for
 split `K₀`, with the biproduct relations replaced by conflations: the multiplication is the
-two-variable descent `TauCeti.ExactK0.BiadditiveInvariant.bilift` of `(X, Y) ↦ [X ⊗ Y]`, and the
-ring axioms are equalities of bundled additive maps, checked on the classes of objects by
-`TauCeti.ExactK0.hom_ext`. The canonical comparison `TauCeti.ExactK0.fromSplit` from split `K₀` is
-then a ring homomorphism, `TauCeti.ExactK0.fromSplitRingHom`.
+two-variable descent `TauCeti.ExactK0.BiadditiveInvariant.bilift` of `(X, Y) ↦ [X ⊗ Y]`. The
+canonical comparison `TauCeti.ExactK0.fromSplit` from split `K₀` is a ring homomorphism,
+`TauCeti.ExactK0.fromSplitRingHom`.
 
 ## Main definitions
 
@@ -115,11 +114,11 @@ classes. -/
 theorem of_mul_of (X Y : C) : (of X : ExactK0 E) * of Y = of (X ⊗ Y) :=
   mulHom_of_of X Y
 
-/-- Exact `K₀` with the multiplication descended from the tensor product, before associativity and
-the unit are available: each field is additivity of `TauCeti.ExactK0.mulHom` in one of its two
-variables. It makes Mathlib's bundled multiplications `AddMonoidHom.mulLeft₃` and
-`AddMonoidHom.mulRight₃` available for the associativity proof; it is private, so the `Ring`
-instance below repeats its one-line fields rather than extending it. -/
+-- This structure makes Mathlib's bundled multiplications `AddMonoidHom.mulLeft₃` and
+-- `AddMonoidHom.mulRight₃` available for the associativity proof; it is private, so the `Ring`
+-- instance below repeats its one-line fields rather than extending it.
+/-- Exact `K₀` with the multiplication descended from the tensor product is a non-unital,
+non-associative ring: the multiplication distributes over addition on both sides. -/
 @[reducible]
 private noncomputable def nonUnitalNonAssocRing : NonUnitalNonAssocRing (ExactK0 E) where
   left_distrib a b c := map_add (mulHom E a) b c
@@ -141,9 +140,9 @@ private theorem mulLeft₃_eq_mulRight₃ :
 
 end Associativity
 
+-- Associativity comes from the associator of `C`, and the unit laws from its unitors.
 /-- The tensor product makes the exact Grothendieck group of a monoidal exact category a ring, with
-`[X] * [Y] = [X ⊗ Y]` and unit the class of the tensor unit: associativity is the associator of
-`C`, and the unit laws are its unitors. -/
+`[X] * [Y] = [X ⊗ Y]` and unit the class of the tensor unit. -/
 noncomputable instance instRing : Ring (ExactK0 E) where
   __ := (inferInstance : AddCommGroup (ExactK0 E))
   left_distrib a b c := map_add (mulHom E a) b c
