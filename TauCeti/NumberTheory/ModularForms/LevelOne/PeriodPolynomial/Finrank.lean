@@ -44,7 +44,7 @@ injective, are isomorphisms: the even and odd parts `W_w^±` together span `W_w`
   `V_w`.
 * `TauCeti.finrank_periodPolynomials_add_eq`: for positive even `w`,
   `dim W_w + (w + 1) = 2 ⌈w / 4⌉ + 2 ⌈w / 3⌉`.
-* `TauCeti.periodPolynomials_zero`: `W_0 = 0`.
+* `TauCeti.periodPolynomials_zero`: `W_0 = 0` when `2 ≠ 0`.
 * `TauCeti.finrank_periodPolynomials_eq_finrank_modularForm_add_finrank_cuspForm`: for every `w`,
   `dim W_w = dim M_{w+2}(SL(2, ℤ)) + dim S_{w+2}(SL(2, ℤ))` over `ℂ`.
 
@@ -107,22 +107,26 @@ theorem finrank_ker_one_add_S [CharZero K] (hw : Even w) :
   have h := LinearMap.two_mul_finrank_ker_one_add_of_sq_eq_one
     (binaryFormRep_S_sq_of_even (R := K) hw)
   rw [finrank_homogeneousSubmodule_fin_two, trace_binaryFormRep_S] at h
+  set d := finrank K (LinearMap.ker (1 + binaryFormRep K w (op (S : Matrix (Fin 2) (Fin 2) ℤ))))
   obtain ⟨m, rfl⟩ := hw
   have hs : (dickson 2 (1 : K) (m + m)).eval 0 = (-1) ^ m := by
     rw [← two_mul]
     exact dickson_two_one_eval_zero_two_mul m
   rw [hs] at h
-  apply Nat.cast_injective (R := K)
-  -- `2 dim = w + 1 - (-1) ^ (w / 2)`, according to the parity of `w / 2`
+  -- `2 d = w + 1 - (-1) ^ (w / 2)`, according to the parity of `w / 2`
   rcases Nat.even_or_odd m with ⟨i, rfl⟩ | ⟨i, rfl⟩
-  · rw [show (i + i + (i + i) + 3) / 4 = i by omega]
-    rw [Even.neg_one_pow ⟨i, rfl⟩] at h
-    push_cast at h ⊢
-    linear_combination h / 2
-  · rw [show (2 * i + 1 + (2 * i + 1) + 3) / 4 = i + 1 by omega]
-    rw [Odd.neg_one_pow ⟨i, rfl⟩] at h
-    push_cast at h ⊢
-    linear_combination h / 2
+  · rw [Even.neg_one_pow ⟨i, rfl⟩] at h
+    have hd : (d : K) = (2 * i : ℕ) := by
+      push_cast at h ⊢
+      linear_combination h / 2
+    have := Nat.cast_injective hd
+    omega
+  · rw [Odd.neg_one_pow ⟨i, rfl⟩] at h
+    have hd : (d : K) = (2 * i + 2 : ℕ) := by
+      push_cast at h ⊢
+      linear_combination h / 2
+    have := Nat.cast_injective hd
+    omega
 
 /-- **The binary forms of even degree `w` killed by `1 + U + U²` form a space of dimension
 `2 ⌈w / 3⌉`.** -/
@@ -134,28 +138,34 @@ theorem finrank_ker_one_add_U_add_U_sq [CharZero K] (hw : Even w) :
   have h := LinearMap.three_mul_finrank_ker_one_add_add_sq_of_pow_three_eq_one
     (binaryFormRep_U_pow_three_of_even (R := K) hw)
   rw [finrank_homogeneousSubmodule_fin_two, trace_binaryFormRep_U, trace_binaryFormRep_U_sq] at h
-  apply Nat.cast_injective (R := K)
-  -- `3 dim = 2 (w + 1) - P_{w+2}(1, 1) - P_{w+2}(-1, 1)`, according to `w mod 6`
+  set d := finrank K (LinearMap.ker
+    (1 + binaryFormRep K w (op ((T * S : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ)) +
+      binaryFormRep K w (op ((T * S : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ)) ^ 2))
+  -- `3 d = 2 (w + 1) - P_{w+2}(1, 1) - P_{w+2}(-1, 1)`, according to `w mod 6`
   obtain ⟨j, r, hr, rfl⟩ : ∃ j r, (r = 0 ∨ r = 2 ∨ r = 4) ∧ w = 6 * j + r :=
     ⟨w / 6, w % 6, by obtain ⟨m, rfl⟩ := hw; omega, (Nat.div_add_mod w 6).symm⟩
   have hU₂ := dickson_two_one_eval_neg_one_three_mul_add (R := K) (2 * j) r
-  rw [← mul_assoc, show 3 * 2 = 6 by rfl] at hU₂
+  simp only [← mul_assoc, Nat.reduceMul] at hU₂
   rw [dickson_two_one_eval_one_six_mul_add, hU₂] at h
   rcases hr with rfl | rfl | rfl
-  · rw [show (6 * j + 0 + 2) / 3 = 2 * j by omega]
-    norm_num at h
-    push_cast at h ⊢
-    linear_combination h / 3
-  · rw [show (6 * j + 2 + 2) / 3 = 2 * j + 1 by omega]
-    norm_num [dickson_two] at h
-    push_cast at h ⊢
-    linear_combination h / 3
-  · rw [show (6 * j + 4 + 2) / 3 = 2 * j + 2 by omega]
-    rw [show (4 : ℕ) = 1 + 3 by rfl, dickson_two_one_eval_one_add_three,
-      dickson_two_one_eval_neg_one_add_three] at h
-    norm_num at h
-    push_cast at h ⊢
-    linear_combination h / 3
+  · have hd : (d : K) = (4 * j : ℕ) := by
+      norm_num at h
+      push_cast at h ⊢
+      linear_combination h / 3
+    have := Nat.cast_injective hd
+    omega
+  · have hd : (d : K) = (4 * j + 2 : ℕ) := by
+      norm_num [dickson_two] at h
+      push_cast at h ⊢
+      linear_combination h / 3
+    have := Nat.cast_injective hd
+    omega
+  · have hd : (d : K) = (4 * j + 4 : ℕ) := by
+      norm_num [dickson_add_two] at h
+      push_cast at h ⊢
+      linear_combination h / 3
+    have := Nat.cast_injective hd
+    omega
 
 /-! ### The dimension of `W_w` -/
 
@@ -172,12 +182,25 @@ theorem finrank_periodPolynomials_add_eq [CharZero K] (hw : Even w) (hw₀ : w �
     finrank_ker_one_add_U_add_U_sq hw] at h
   omega
 
-/-- **In degree `0` there are no nonzero period polynomials**: `S` fixes the constants, so `1 + S`
-is injective on `V_0`. -/
-theorem periodPolynomials_zero [CharZero K] : periodPolynomials K 0 = ⊥ := by
-  have h := finrank_ker_one_add_S (K := K) (w := 0) ⟨0, rfl⟩
-  rw [Submodule.finrank_eq_zero] at h
-  rw [eq_bot_iff, ← h, periodPolynomials_def]
+/-- **In degree `0` there are no nonzero period polynomials** when `2 ≠ 0`: `S` fixes the
+constants, so `1 + S` is injective on `V_0`. -/
+@[simp]
+theorem periodPolynomials_zero [NeZero (2 : K)] : periodPolynomials K 0 = ⊥ := by
+  -- `S` has trace `1` on the line `V_0`, so `2 dim ker (1 + S) = 0`
+  have h := LinearMap.two_mul_finrank_ker_one_add_of_sq_eq_one
+    (binaryFormRep_S_sq_of_even (R := K) ⟨0, rfl⟩)
+  rw [finrank_homogeneousSubmodule_fin_two, trace_binaryFormRep_S] at h
+  have hle := Submodule.finrank_le
+    (LinearMap.ker (1 + binaryFormRep K 0 (op (S : Matrix (Fin 2) (Fin 2) ℤ))))
+  rw [finrank_homogeneousSubmodule_fin_two] at hle
+  have hker : LinearMap.ker (1 + binaryFormRep K 0 (op (S : Matrix (Fin 2) (Fin 2) ℤ))) = ⊥ := by
+    rw [← Submodule.finrank_eq_zero]
+    interval_cases hd : finrank K
+      (LinearMap.ker (1 + binaryFormRep K 0 (op (S : Matrix (Fin 2) (Fin 2) ℤ))))
+    · rfl
+    · norm_num at h
+      exact absurd h two_ne_zero
+  rw [eq_bot_iff, ← hker, periodPolynomials_def]
   exact inf_le_left
 
 /-- **The period-polynomial space has the dimension of `M_{w+2} ⊕ S_{w+2}`**: over `ℂ`,

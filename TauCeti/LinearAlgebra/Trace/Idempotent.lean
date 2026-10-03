@@ -69,8 +69,8 @@ theorem LinearMap.trace_eq_mul_finrank_range {f : M →ₗ[K] M} {a : K} (hf : f
       exact (_root_.LinearMap.IsIdempotentElem.isProj_range _ hidem).trace
     rw [← htrace, ← mul_assoc, mul_inv_cancel₀ ha, one_mul]
 
-/-- **The `-1`-eigenspace of an involution has dimension `(dim M - tr σ) / 2`**: if `σ ^ 2 = 1`,
-then `2 dim ker (1 + σ) = dim M - tr σ`. -/
+/-- **The trace of an involution determines its `-1`-eigenspace**: if `σ ^ 2 = 1`, then
+`2 dim ker (1 + σ) = dim M - tr σ` in `K`. -/
 theorem LinearMap.two_mul_finrank_ker_one_add_of_sq_eq_one {σ : End K M} (hσ : σ ^ 2 = 1) :
     2 * (finrank K (_root_.LinearMap.ker (1 + σ)) : K) =
       finrank K M - _root_.LinearMap.trace K M σ := by
@@ -84,8 +84,8 @@ theorem LinearMap.two_mul_finrank_ker_one_add_of_sq_eq_one {σ : End K M} (hσ :
   push_cast at hnull
   linear_combination 2 * hnull + htr
 
-/-- **The kernel of `1 + υ + υ²` has dimension `(2 dim M - tr υ - tr υ²) / 3`**: if `υ ^ 3 = 1`,
-then `3 dim ker (1 + υ + υ²) = 2 dim M - tr υ - tr υ²`. -/
+/-- **The traces of an order-three map determine the kernel of `1 + υ + υ²`**: if `υ ^ 3 = 1`,
+then `3 dim ker (1 + υ + υ²) = 2 dim M - tr υ - tr υ²` in `K`. -/
 theorem LinearMap.three_mul_finrank_ker_one_add_add_sq_of_pow_three_eq_one {υ : End K M}
     (hυ : υ ^ 3 = 1) :
     3 * (finrank K (_root_.LinearMap.ker (1 + υ + υ ^ 2)) : K) =

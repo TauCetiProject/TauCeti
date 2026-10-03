@@ -165,17 +165,13 @@ theorem dickson_two_one_eval_zero_two_mul (m : ℕ) :
 /-- `P_{n+5}(1, 1) = -P_{n+2}(1, 1)`, so `n ↦ P_{n+2}(1, 1)` has period `6`. -/
 theorem dickson_two_one_eval_one_add_three (n : ℕ) :
     (dickson 2 (1 : R) (n + 3)).eval 1 = -(dickson 2 (1 : R) n).eval 1 := by
-  rw [show n + 3 = n + 1 + 2 by ring, dickson_add_two, show n + 1 + 1 = n + 2 by ring,
-    dickson_add_two]
-  simp only [eval_sub, eval_mul, eval_X, eval_C, one_mul]
+  simp only [dickson_add_two, eval_sub, eval_mul, eval_X, eval_C, one_mul]
   ring
 
 /-- `P_{n+5}(-1, 1) = P_{n+2}(-1, 1)`: `n ↦ P_{n+2}(-1, 1)` has period `3`. -/
 theorem dickson_two_one_eval_neg_one_add_three (n : ℕ) :
     (dickson 2 (1 : R) (n + 3)).eval (-1) = (dickson 2 (1 : R) n).eval (-1) := by
-  rw [show n + 3 = n + 1 + 2 by ring, dickson_add_two, show n + 1 + 1 = n + 2 by ring,
-    dickson_add_two]
-  simp only [eval_sub, eval_mul, eval_X, eval_C, one_mul]
+  simp only [dickson_add_two, eval_sub, eval_mul, eval_X, eval_C, one_mul]
   ring
 
 /-- `P_{n+2}(1, 1)` has period `6` in `n`. -/
@@ -184,7 +180,7 @@ theorem dickson_two_one_eval_one_six_mul_add (j r : ℕ) :
   induction j with
   | zero => simp
   | succ j ih =>
-    rw [show 6 * (j + 1) + r = 6 * j + r + 3 + 3 by ring, dickson_two_one_eval_one_add_three,
+    rw [Nat.mul_succ, add_right_comm, dickson_two_one_eval_one_add_three,
       dickson_two_one_eval_one_add_three, neg_neg, ih]
 
 /-- `P_{n+2}(-1, 1)` has period `3` in `n`. -/
@@ -193,6 +189,6 @@ theorem dickson_two_one_eval_neg_one_three_mul_add (j r : ℕ) :
   induction j with
   | zero => simp
   | succ j ih =>
-    rw [show 3 * (j + 1) + r = 3 * j + r + 3 by ring, dickson_two_one_eval_neg_one_add_three, ih]
+    rw [Nat.mul_succ, add_right_comm, dickson_two_one_eval_neg_one_add_three, ih]
 
 end Polynomial
