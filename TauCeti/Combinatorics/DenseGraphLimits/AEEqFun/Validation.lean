@@ -21,8 +21,8 @@ On the unit interval, corrupt a graphon's zero row and zero column with the asym
 symmetric nor range-bounded everywhere. Averaging and clamping repairs it: the origin becomes
 `1`, and the rest of the zero row and column become `0`. The repair preserves the class, every
 homomorphism density, and the graphon-space point. In particular, a repaired constant graphon
-need not be the same strict graphon. Constant and finite-graph examples also exercise the
-existence of representatives and their return to the quotient.
+need not be the same strict graphon. A finite-graph example checks all four entries of the
+two-point adjacency matrix on an atomic carrier.
 
 On a uniform two-point space, an asymmetric function cannot be represented by a graphon;
 neither can the constant function `2` on a point mass. These checks distinguish almost-everywhere
@@ -30,7 +30,7 @@ constraints from constraints that could accidentally ignore positive-mass except
 
 The examples use the strict-representative construction `Graphon.clampSymm` and the bridge
 `exists_graphon_repr_iff`. The auxiliary functions are private; the exported theorem
-`Graphon.not_injective_toAEEqFun_unitInterval` records why strict equality cannot be recovered.
+`Graphon.toAEEqFun_not_injective_unitInterval` records why strict equality cannot be recovered.
 
 ## References
 
@@ -95,7 +95,7 @@ example (W : Graphon I (volume : Measure I)) :
 
 -- Checking the class of the original, invalid representative avoids silently replacing
 -- the contract with one that only accepts functions satisfying the constraints everywhere.
-private theorem corrupted_class (W : Graphon I (volume : Measure I)) :
+example (W : Graphon I (volume : Measure I)) :
     Graphon.toAEEqFun W =
       AEEqFun.mk (Function.uncurry (corrupted W))
         (measurable_corrupted W).aestronglyMeasurable := by
@@ -113,7 +113,7 @@ example (W : Graphon I (volume : Measure I)) :
 /-- Passing to the almost-everywhere class loses strict equality, already on the unit interval.
 A null-set modification of the constant graphon `1/2` gives a different strict graphon with the
 same class. -/
-theorem Graphon.not_injective_toAEEqFun_unitInterval :
+theorem Graphon.toAEEqFun_not_injective_unitInterval :
     ¬ Function.Injective (Graphon.toAEEqFun (Ω := I) (μ := (volume : Measure I))) := by
   intro hinj
   let W := Graphon.const (volume : Measure I) ⟨1 / 2, by norm_num, by norm_num⟩
@@ -128,22 +128,13 @@ example : homDensity (⊤ : SimpleGraph (Fin 3))
     SimpleGraph.card_edgeFinset_top_eq_card_choose_two]
   norm_num
 
--- The corrupted class has a strict representative at the original quotient point,
--- even though the input function fails pointwise constraints.
-example (W : Graphon I (volume : Measure I)) :
-    ∃ V : Graphon I (volume : Measure I),
-      Graphon.toAEEqFun V = AEEqFun.mk (Function.uncurry (corrupted W))
-        (measurable_corrupted W).aestronglyMeasurable ∧
-      (⟦V⟧ : GraphonSpaceI) = ⟦W⟧ := by
-  exact ⟨W, corrupted_class W, rfl⟩
-
--- A nonconstant finite-graph example on an atomic carrier: the round trip recovers all
--- four entries of the two-point adjacency matrix, not just the off-diagonal ones.
-example : ∃ V : Graphon (Fin 2) (uniformOn Set.univ),
-    Graphon.toAEEqFun V =
-      Graphon.toAEEqFun (finiteGraphGraphonOnFin (⊤ : SimpleGraph (Fin 2))) ∧
-    V 0 0 = 0 ∧ V 0 1 = 1 ∧ V 1 0 = 1 ∧ V 1 1 = 0 := by
-  refine ⟨finiteGraphGraphonOnFin (⊤ : SimpleGraph (Fin 2)), rfl, ?_⟩
+-- A nonconstant finite-graph example on an atomic carrier checks all four entries
+-- of the two-point adjacency matrix, not just the off-diagonal ones.
+example :
+    (finiteGraphGraphonOnFin (⊤ : SimpleGraph (Fin 2))) 0 0 = 0 ∧
+    (finiteGraphGraphonOnFin (⊤ : SimpleGraph (Fin 2))) 0 1 = 1 ∧
+    (finiteGraphGraphonOnFin (⊤ : SimpleGraph (Fin 2))) 1 0 = 1 ∧
+    (finiteGraphGraphonOnFin (⊤ : SimpleGraph (Fin 2))) 1 1 = 0 := by
   simp [finiteGraphGraphonOnFin_apply]
 
 -- Range violations at an atom cannot be removed by changing representatives.
