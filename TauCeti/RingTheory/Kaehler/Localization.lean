@@ -30,14 +30,20 @@ No perfectness, finite type, or Noetherian hypothesis is needed for the local cr
 
 * `TauCeti.KaehlerDifferential.range_map_eq_localized₀_range`: localization of differentials
   localizes their image in the target differential module.
-* `TauCeti.KaehlerDifferential.injective_map_of_isLocalization`: torsion-free differentials
-  embed in their localization at non-zero-divisors.
 * `TauCeti.KaehlerDifferential.mem_range_map_iff_forall_isMaximal`: membership in the global
   image can be checked using any family of maximal localizations.
 
-Together with `Function.Injective.mem_range_iff_existsUnique`, these give the unique regular
-preimage criterion when `Ω[A⁄R]` is torsion-free. For a fraction ring `F`, set
-`hinj := TauCeti.KaehlerDifferential.injective_map_of_isLocalization R A F A⁰ le_rfl`.
+Mathlib's `IsLocalizedModule.injective_iff_isRegular` gives injectivity when `Ω[A⁄R]` is
+torsion-free. For a fraction ring `F`, it applies directly through the existing
+`KaehlerDifferential.isLocalizedModule_map` instance:
+
+```lean
+have hinj : Function.Injective (KaehlerDifferential.map R R A F) :=
+  (IsLocalizedModule.injective_iff_isRegular A⁰
+    (KaehlerDifferential.map R R A F)).2 fun s ↦
+      (isRegular_iff_mem_nonZeroDivisors.mpr s.property).isSMulRegular
+```
+
 Then `hinj.mem_range_iff_existsUnique (b := ω)` characterizes global range membership by
 the existence of a unique preimage. Composing its symmetry with
 `TauCeti.KaehlerDifferential.mem_range_map_iff_forall_isMaximal R A F Aₚ ω` gives the
@@ -86,13 +92,6 @@ theorem range_map_eq_localized₀_range (S : Submonoid A) [IsLocalization S B] :
     simp [map_D, ← IsScalarTower.algebraMap_apply A B F]
   rw [← hmap]
   exact LinearMap.range_localizedMap_eq_localized₀_range _ _ _ _
-
-/-- Torsion-free differentials embed in the differentials of any localization at
-non-zero-divisors. In particular, this applies to a fraction ring. -/
-theorem injective_map_of_isLocalization (S : Submonoid A) [IsLocalization S B]
-    [Module.IsTorsionFree A Ω[A⁄R]] (hS : S ≤ A⁰) : Function.Injective (map R R A B) :=
-  (IsLocalizedModule.injective_iff_isRegular S (map R R A B)).mpr
-    fun s ↦ (isRegular_iff_mem_nonZeroDivisors.mpr (hS s.property)).isSMulRegular
 
 section Maximal
 
