@@ -82,7 +82,9 @@ private theorem coextendScalars_apply_mapDomain_mul
     (show ↑((ModuleCat.restrictScalars (MonoidAlgebra.mapDomainRingHom k φ)).obj
       (ModuleCat.of k[G] k[G])) from a))
 
-private theorem leftRegularHomEquiv_symm_single_one_apply (g : G) (a : k[G]) :
+/-- The endomorphism of the left regular representation `k[G]` corresponding to `single g 1`
+under `Rep.leftRegularHomEquiv` is right multiplication by `single g 1`. -/
+theorem _root_.Rep.leftRegularHomEquiv_symm_single_one_apply (g : G) (a : k[G]) :
     ((Rep.leftRegularHomEquiv (Rep.leftRegular k G)).symm (.single g 1)).hom a =
       a * .single g 1 := by
   induction a using MonoidAlgebra.induction_linear with
@@ -93,8 +95,10 @@ private theorem leftRegularHomEquiv_symm_single_one_apply (g : G) (a : k[G]) :
       Rep.leftRegularHomEquiv_symm_single]
     simp [MonoidAlgebra.single_mul_single]
 
--- `k[G]` acts on `coind'` by right multiplication on the source `k[G]`.
-private theorem coind'_asAlgebraHom_hom_apply (A : Rep k H) (r : k[G])
+/-- `k[G]` acts on the coinduced representation `Representation.coind' φ A`, whose elements are
+the morphisms `Rep.res φ (Rep.leftRegular k G) ⟶ A`, by right multiplication on the source
+`k[G]`. -/
+theorem coind'_asAlgebraHom_hom_apply (A : Rep k H) (r : k[G])
     (f : Rep.res φ (Rep.leftRegular k G) ⟶ A) (a : k[G]) :
     ((coind' φ A).asAlgebraHom r f).hom a = f.hom (a * r) := by
   induction r using MonoidAlgebra.induction_linear with
@@ -102,7 +106,7 @@ private theorem coind'_asAlgebraHom_hom_apply (A : Rep k H) (r : k[G])
   | add r r' hr hr' => simp [Rep.add_hom, hr, hr', mul_add]
   | single g c =>
     rw [← mul_one c, ← smul_eq_mul, ← MonoidAlgebra.smul_single, map_smul, mul_smul_comm,
-      map_smul, asAlgebraHom_single_one, ← leftRegularHomEquiv_symm_single_one_apply]
+      map_smul, asAlgebraHom_single_one, ← Rep.leftRegularHomEquiv_symm_single_one_apply]
     rfl
 
 /-- A `k[H]`-linear map `k[G] → V` is an `H`-equivariant `k`-linear map from the restriction of
