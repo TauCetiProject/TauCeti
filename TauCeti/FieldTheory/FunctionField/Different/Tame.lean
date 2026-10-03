@@ -159,6 +159,44 @@ theorem isTame_of_residueField_charZero [CharZero (P'.restrict k F).ResidueField
   exact ⟨Algebra.HasSeparableResidueFieldsAt.isSeparable_quotient _ _,
     Nat.cast_ne_zero.mpr (P'.ramificationIdx_pos F).ne'⟩
 
+/-- **Over a perfect constant field a place is tame exactly when the characteristic does not divide
+its ramification index.** -/
+theorem isTame_iff_not_dvd_ramificationIdx [PerfectField k] (hF : IsFunctionField k F) (p : ℕ)
+    [CharP k p] : IsTame k F P' ↔ ¬ p ∣ ramificationIdx F P' := by
+  classical
+  have _ : (centerIntegralClosure k F P').asIdeal.IsMaximal :=
+    (centerIntegralClosure k F P').isPrime.isMaximal (centerIntegralClosure k F P').ne_bot
+  let _ : Field (((P'.restrict k F).integers) ⧸
+      IsLocalRing.maximalIdeal ((P'.restrict k F).integers)) :=
+    Ideal.Quotient.field _
+  -- The residue field below the place is a finite, hence algebraic, extension of the perfect `k`,
+  -- so it is perfect, and so is its fraction field, Mathlib's residue field at that ideal.
+  have _ : FiniteDimensional k (P'.restrict k F).ResidueField :=
+    Place.finiteDimensional_residueField (P'.restrict k F) hF
+  have _ : PerfectField (((P'.restrict k F).integers) ⧸
+      IsLocalRing.maximalIdeal ((P'.restrict k F).integers)) :=
+    Algebra.IsAlgebraic.perfectField (L := (P'.restrict k F).ResidueField) k
+  have _ : Algebra.IsAlgebraic (((P'.restrict k F).integers) ⧸
+      IsLocalRing.maximalIdeal ((P'.restrict k F).integers))
+      (IsLocalRing.maximalIdeal ((P'.restrict k F).integers)).ResidueField :=
+    isAlgebraic_of_isFractionRing
+      (((P'.restrict k F).integers) ⧸ IsLocalRing.maximalIdeal ((P'.restrict k F).integers))
+      (((P'.restrict k F).integers) ⧸ IsLocalRing.maximalIdeal ((P'.restrict k F).integers))
+      (((P'.restrict k F).integers) ⧸ IsLocalRing.maximalIdeal ((P'.restrict k F).integers))
+      (IsLocalRing.maximalIdeal ((P'.restrict k F).integers)).ResidueField
+  have _ : PerfectField
+      (IsLocalRing.maximalIdeal ((P'.restrict k F).integers)).ResidueField :=
+    Algebra.IsAlgebraic.perfectField
+      (((P'.restrict k F).integers) ⧸ IsLocalRing.maximalIdeal ((P'.restrict k F).integers))
+  -- The residue field below the place has the characteristic of `k`, which does not divide the
+  -- ramification index.
+  have _ : CharP (((P'.restrict k F).integers) ⧸
+      IsLocalRing.maximalIdeal ((P'.restrict k F).integers)) p :=
+    charP_of_injective_algebraMap
+      (algebraMap k (P'.restrict k F).ResidueField).injective p
+  rw [isTame_iff, and_iff_right (Algebra.HasSeparableResidueFieldsAt.isSeparable_quotient _ _),
+    Ne, CharP.cast_eq_zero_iff _ p]
+
 /-- **In characteristic zero every place is tame**: if the constant field `k` has characteristic
 zero, every place of `F'` is tame over `F`. -/
 theorem isTame_of_charZero [CharZero k] : IsTame k F P' :=

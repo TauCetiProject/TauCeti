@@ -55,6 +55,8 @@ group is read off from it.
   uniqueness of the positive elementary-divisor exponents up to reindexing.
 * `TauCeti.IsProP.mem_torsion_module_iff`, `TauCeti.IsProP.finite_torsion_module`: the torsion
   submodule of the canonical `ℤ_[p]`-module is the torsion subgroup, and is finite.
+* `TauCeti.IsProP.isTorsionFree_module_iff`: the canonical `ℤ_[p]`-module is torsion-free
+  exactly when the group is.
 * `TauCeti.IsProP.exists_continuousLinearEquiv_pi_padicInt_prod_torsion`: the structure theorem as
   a continuous `ℤ_[p]`-linear equivalence `A ≃ ℤ_p ^ r × T`, with `T` the torsion submodule.
 
@@ -160,6 +162,17 @@ theorem mem_torsion_module_iff (hA : IsProP p A) (x : Additive A) :
   let _ := hA.module
   rw [← Submodule.mem_toAddSubgroup, Submodule.torsion_padicInt, AddCommGroup.mem_torsion,
     CommGroup.mem_torsion, ← isOfFinAddOrder_ofMul_iff, ofMul_toMul]
+
+/-- The canonical `ℤ_[p]`-module of an abelian pro-`p` group is torsion-free exactly when the
+group is. -/
+theorem isTorsionFree_module_iff (hA : IsProP p A) :
+    letI := hA.module
+    Module.IsTorsionFree ℤ_[p] (Additive A) ↔ IsMulTorsionFree A := by
+  let _ := hA.module
+  rw [Submodule.isTorsionFree_iff_torsion_eq_bot, CommGroup.isMulTorsionFree_iff_torsion_eq_bot,
+    Submodule.eq_bot_iff, Subgroup.eq_bot_iff_forall]
+  exact ⟨fun h x hx ↦ by simpa using h (Additive.ofMul x) ((hA.mem_torsion_module_iff _).2 hx),
+    fun h x hx ↦ by simpa using h x.toMul ((hA.mem_torsion_module_iff x).1 hx)⟩
 
 /-- The torsion submodule of the canonical `ℤ_[p]`-module of a topologically finitely generated
 abelian pro-`p` group is finite. -/

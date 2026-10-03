@@ -5,29 +5,28 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.Induced.Basic
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Coinduced.Induced
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Shapiro.Algebraic
 
 /-!
 # Continuous Shapiro on induced coefficients
 
-For an open subgroup of a profinite group, continuous cohomology with algebraically
-induced smooth discrete coefficients is isomorphic to the subgroup's cohomology in every
-degree. The isomorphism first uses Mathlib's finite-index induction–coinduction comparison
-and then the canonical continuous Shapiro map. The forward map therefore has the same
-restriction/evaluation normalization as Shapiro on locally constant coinduction.
+For an open subgroup of a profinite group, continuous cohomology with genuine algebraically
+induced smooth discrete coefficients is isomorphic to the cohomology of the subgroup. The
+forward map is the compatible-pair map of subgroup inclusion and the transported evaluation
+counit. The finite-index comparison carries it to the algebraic coinduced Shapiro map in
+every degree, and it is natural in the coefficient representation.
 
-Induction uses the tensor-coinvariant carrier, with the discrete topology supplied by
-`TauCeti.algebraicIndAsSmooth`. The scalar ring may live in its own universe; the coefficient
-universe contains both the group and the ring, since the induced tensor product contains
-the group algebra. The groups retain their original profinite topologies.
+The coefficient carrier and finite-index comparison come from Amelia Livingston's
+`Representation.ind` and `Rep.indCoindIso` in Mathlib. These cohomology groups retain the
+original topology on the group. The common group/coefficient universe contains the ring
+universe, combining the pinned induction comparison with the canonical continuous Shapiro API.
 
 ## References
 
-* Mathlib's `Rep.indCoindIso`, by Amelia Livingston.
 * L. Ribes, P. Zalesskii, *Profinite Groups*, second edition, Thm. 6.10.5.
 * J. Neukirch, A. Schmidt, K. Wingberg, *Cohomology of Number Fields*, second edition,
-  (1.6.4), with the footnote on p. 61 distinguishing coinduction from induction.
+  (1.6.4), with the footnote on p. 61 that uses `Ind` for coinduction.
 -/
 
 public section
@@ -40,44 +39,96 @@ universe u v
 
 variable {R : Type v} [CommRing R] [TopologicalSpace R]
   {G : Type (max u v)} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-  [CompactSpace G] [TotallyDisconnectedSpace G]
-  (U : OpenSubgroup G) (A : SmoothDiscreteTopRep.{v, max u v, max u v} R U.toSubgroup)
+  [CompactSpace G] (U : OpenSubgroup G)
+  (A : SmoothDiscreteTopRep.{v, max u v, max u v} R U.toSubgroup)
 
-/-- Continuous Shapiro for the algebraically induced representation of an open subgroup,
-with the discrete topology, in every degree. -/
-noncomputable def inducedShapiroIso (n : ℕ) :
+/-- Restriction followed by the evaluation counit on genuine induced coefficients, equipped
+with their smooth discrete topology. -/
+noncomputable def inducedShapiroMap (n : ℕ) :
+    continuousCohomology n (algebraicIndAsSmooth.{max u v, v, 0} R G U A).obj ⟶
+      continuousCohomology n A.obj :=
+  _root_.ContinuousCohomology.map (ContinuousMonoidHom.subgroupSubtype U.toSubgroup)
+    (algebraicIndCounit.{max u v, v, 0} R G U A) n
+
+/-- The compatible pair defining induced Shapiro consists of subgroup inclusion and the
+induced evaluation counit. -/
+theorem inducedShapiroMap_def (n : ℕ) :
+    inducedShapiroMap.{u, v} U A n =
+      _root_.ContinuousCohomology.map (ContinuousMonoidHom.subgroupSubtype U.toSubgroup)
+        (algebraicIndCounit.{max u v, v, 0} R G U A) n := (rfl)
+
+/-- The finite-index induction/coinduction comparison intertwines their canonical continuous
+Shapiro maps in every degree. -/
+@[reassoc]
+theorem coeffMap_algebraicIndCoindIso_comp_algebraicShapiroMap (n : ℕ) :
+    coeffMap (algebraicIndCoindIso.{max u v, v, 0} R G U A).hom.hom n ≫ algebraicShapiroMap U A n =
+      inducedShapiroMap.{u, v} U A n := by
+  have h := map_comp_coeffMap (ContinuousMonoidHom.subgroupSubtype U.toSubgroup)
+    (algebraicIndCounit.{max u v, v, 0} R G U A) (TopRep.ofHom (algebraicCoindCounit R G U A))
+    (algebraicIndCoindIso.{max u v, v, 0} R G U A).hom.hom (𝟙 A.obj)
+    ((algebraicIndCounit_def R G U A).symm.trans (Category.comp_id _).symm) n
+  simpa only [coeffMap_id, Category.comp_id, algebraicShapiroMap_def,
+    inducedShapiroMap_def] using h.symm
+
+/-- Induced Shapiro is an isomorphism for an open subgroup of a profinite group. -/
+theorem isIso_inducedShapiroMap [TotallyDisconnectedSpace G] (n : ℕ) :
+    IsIso (inducedShapiroMap.{u, v} U A n) := by
+  let e := (smoothDiscreteι R G).mapIso (algebraicIndCoindIso.{max u v, v, 0} R G U A)
+  let eH := (continuousCohomologyFunctor (R := R) G n).mapIso e
+  have : IsIso (coeffMap (algebraicIndCoindIso.{max u v, v, 0} R G U A).hom.hom n) :=
+    inferInstanceAs (IsIso eH.hom)
+  have := isIso_algebraicShapiroMap U A n
+  rw [← coeffMap_algebraicIndCoindIso_comp_algebraicShapiroMap.{u, v}]
+  infer_instance
+
+/-- Continuous Shapiro's isomorphism with genuine induced smooth discrete coefficients. Its
+forward map is subgroup restriction followed by the transported evaluation counit. -/
+noncomputable def inducedShapiroIso [TotallyDisconnectedSpace G] (n : ℕ) :
     continuousCohomology n (algebraicIndAsSmooth.{max u v, v, 0} R G U A).obj ≅
       continuousCohomology n A.obj :=
-  (continuousCohomologyFunctor (R := R) G n).mapIso
-    ((smoothDiscreteι R G).mapIso (algebraicIndIsoCoind.{max u v, v, 0} R G U A)) ≪≫
-      algebraicShapiroIso U A n
+  have := isIso_inducedShapiroMap.{u, v} U A n
+  asIso (inducedShapiroMap.{u, v} U A n)
 
-/-- The induced Shapiro map is coefficient transport by the algebraic finite-index
-comparison followed by restriction and evaluation at `1`. -/
+/-- The induced Shapiro isomorphism has the restriction/evaluation forward map. -/
 @[simp]
-theorem inducedShapiroIso_hom (n : ℕ) :
-    (inducedShapiroIso.{u, v} (R := R) (G := G) U A n).hom =
-      coeffMap (R := R) (G := G) (algebraicIndIsoCoind.{max u v, v, 0} R G U A).hom.hom n
-        ≫ algebraicShapiroMap U A n := by
-  -- The inclusion forgets the smoothness property, and cohomology maps coefficients by
-  -- `coeffMap`; reduce those categorical wrappers, then use the existing Shapiro computation.
-  dsimp only [inducedShapiroIso, continuousCohomologyFunctor, Functor.mapIso,
-    Iso.trans_hom, smoothDiscreteι]
-  rw [algebraicShapiroIso_hom]
-  rfl
+theorem inducedShapiroIso_hom [TotallyDisconnectedSpace G] (n : ℕ) :
+    (inducedShapiroIso.{u, v} U A n).hom = inducedShapiroMap.{u, v} U A n := by
+  rw [inducedShapiroIso, asIso_hom]
+
+/-- The topological induction/coinduction comparison carries induced continuous Shapiro to
+the canonical coinduced Shapiro map. -/
+@[reassoc]
+theorem coeffMap_topologicalIndCoindIso_comp_shapiroMapTopRep (n : ℕ) :
+    coeffMap (topologicalIndCoindIso.{max u v, v, 0} R G U A).hom.hom n ≫
+        shapiroMapTopRep U.toSubgroup A n = inducedShapiroMap.{u, v} U A n := by
+  rw [← coeffMap_topologicalCoindIsoAlgebraic_comp_algebraicShapiroMap,
+    ← Category.assoc, ← coeffMap_comp]
+  rw [topologicalIndCoindIso_hom_comp_topologicalCoindIsoAlgebraic,
+    coeffMap_algebraicIndCoindIso_comp_algebraicShapiroMap.{u, v}]
 
 /-- The induced Shapiro isomorphism agrees with locally constant Shapiro under the
 induction–coinduction coefficient comparison. -/
 @[reassoc]
-theorem coeffMap_topologicalIndIsoCoind_comp_shapiroIso (n : ℕ) :
-    coeffMap (R := R) (G := G) (topologicalIndIsoCoind.{max u v, v, 0} R G U A).hom.hom n ≫
+theorem coeffMap_topologicalIndCoindIso_comp_shapiroIso [TotallyDisconnectedSpace G]
+    (n : ℕ) :
+    coeffMap (topologicalIndCoindIso.{max u v, v, 0} R G U A).hom.hom n ≫
       (shapiroIsoTopRep U.toSubgroup U.isClosed A n).hom =
-        (inducedShapiroIso.{u, v} (R := R) (G := G) U A n).hom := by
-  rw [topologicalIndIsoCoind_def, Iso.trans_hom, ObjectProperty.FullSubcategory.comp_hom,
-    coeffMap_comp, Category.assoc, shapiroIsoTopRep_hom, inducedShapiroIso_hom]
-  rw [← coeffMap_topologicalCoindIsoAlgebraic_comp_algebraicShapiroMap U A n]
-  simp only [← Category.assoc, ← coeffMap_comp]
-  simp only [Category.assoc, Iso.symm_hom, ObjectProperty.isoInv_hom_id_hom,
-    Category.comp_id]
+        (inducedShapiroIso.{u, v} U A n).hom := by
+  rw [shapiroIsoTopRep_hom]
+  exact (coeffMap_topologicalIndCoindIso_comp_shapiroMapTopRep.{u, v} U A n).trans
+    (inducedShapiroIso_hom.{u, v} U A n).symm
+
+variable {A}
+  {B : SmoothDiscreteTopRep.{v, max u v, max u v} R U.toSubgroup}
+
+/-- Induced continuous Shapiro is natural in the smooth discrete coefficient representation. -/
+@[reassoc]
+theorem inducedShapiroMap_naturality (f : A ⟶ B) (n : ℕ) :
+    coeffMap (algebraicIndMap.{max u v, v, 0} R G U f).hom n ≫ inducedShapiroMap.{u, v} U B n =
+      inducedShapiroMap.{u, v} U A n ≫ coeffMap f.hom n := by
+  exact (map_comp_coeffMap (ContinuousMonoidHom.subgroupSubtype U.toSubgroup)
+    (algebraicIndCounit.{max u v, v, 0} R G U A) (algebraicIndCounit.{max u v, v, 0} R G U B)
+    (algebraicIndMap.{max u v, v, 0} R G U f).hom f.hom
+    (algebraicIndCounit_naturality R G U f) n).symm
 
 end TauCeti.ContinuousCohomology

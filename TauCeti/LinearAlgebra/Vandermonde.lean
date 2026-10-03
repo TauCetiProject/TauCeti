@@ -81,16 +81,23 @@ nontrivial ring without zero divisors, which the lowering identity does not; it 
 which holds over any nontrivial ring.  The trivial ring is handled separately, where the identity is
 vacuous.
 
-## The odd Vandermonde product
+## Integrality of weighted Vandermonde products
 
-For integer nodes `x₀, …, xₙ₋₁`, the Vandermonde determinant of the squares weighted by the nodes,
-`∏ᵢ xᵢ · det (vandermonde (xᵢ²))`, is the determinant of the matrix of odd powers
-`xᵢ^{2k+1}`.  It is the numerator of the Weyl dimension formula for the symplectic groups, and it
-is divisible by `1! · 3! ⋯ (2n - 1)!`.  The proof is the odd analogue of Mathlib's
-`Matrix.superFactorial_dvd_vandermonde_det`: the falling-factorial basis is replaced by the monic
-odd polynomials `x (x² - 1²) ⋯ (x² - k²)`, each of which is the falling factorial of degree
-`2k + 1` at `x + k` (`TauCeti.mul_prod_sq_sub_sq_eq_descPochhammer_eval`), hence takes values
-divisible by `(2k + 1)!` at the integers.
+Weight the rows of a Vandermonde determinant by `wᵢ`.  If `p j` is monic of degree `j`, the column
+of `u^j` may be replaced by the column of the values of `p j` without changing the determinant, so
+if `d j` divides every weighted value `wᵢ · (p j).eval (uᵢ)` then `∏ⱼ d j` divides
+`∏ᵢ wᵢ · det (vandermonde u)` (`TauCeti.prod_dvd_prod_mul_det_vandermonde`).  With `p j` the falling
+factorial and `w = 1` this is the argument of Mathlib's `Matrix.superFactorial_dvd_vandermonde_det`.
+Two weighted products arise as numerators of Weyl dimension formulas, and both are divisible by
+`1! · 3! ⋯ (2n - 1)!`:
+
+* the odd Vandermonde product `∏ᵢ xᵢ · ∏_{i < j} (xᵢ² - xⱼ²)`, the numerator for the symplectic
+  groups, with the monic odd polynomials `x (x² - 1²) ⋯ (x² - k²)`, each of which is the falling
+  factorial of degree `2k + 1` at `x + k` (`TauCeti.mul_prod_sq_sub_sq_eq_descPochhammer_eval`);
+* the product `∏ᵢ (2xᵢ + 1) · ∏_{i < j} (xᵢ - xⱼ)(xᵢ + xⱼ + 1)` of the differences of the values
+  `x (x + 1)`, the numerator for the odd orthogonal groups, with the polynomials
+  `∏_{c < k} (x - c)(x + c + 1)`, whose weighted values are sums of two falling factorials of
+  degree `2k + 1` (`TauCeti.two_mul_add_one_mul_prod_sub_mul_add_add_one_eq`).
 
 ## Main results
 
@@ -99,10 +106,15 @@ divisible by `(2k + 1)!` at the integers.
   determinants.**
 * `TauCeti.sum_mul_det_vandermonde_update_sub_one` and `TauCeti.sum_mul_prod_sub_update_sub_one`:
   **the lowering identity for Vandermonde determinants.**
+* `TauCeti.prod_dvd_prod_mul_det_vandermonde` and `TauCeti.prod_dvd_prod_mul_prod_sub`:
+  **integrality for weighted Vandermonde products.**
 * `TauCeti.prod_factorial_dvd_prod_mul_det_vandermonde_sq` and
   `TauCeti.prod_factorial_dvd_prod_mul_prod_sq_sub_sq`: **integrality for the odd Vandermonde
   product** `∏ᵢ xᵢ · ∏_{i < j} (xⱼ² - xᵢ²)`, which is divisible by `1! · 3! ⋯ (2n - 1)!`, a
   positive integer (`TauCeti.prod_factorial_two_mul_add_one_pos`).
+* `TauCeti.prod_factorial_dvd_prod_two_mul_add_one_mul_prod_sub_mul_add_add_one`: **integrality
+  for the Vandermonde product of the values `x (x + 1)`** weighted by `2x + 1`, which is divisible
+  by `1! · 3! ⋯ (2n - 1)!` too.
 -/
 
 public section
@@ -112,13 +124,6 @@ namespace TauCeti
 open Finset Matrix Polynomial
 
 /-! ### The discrete antiderivative of a falling factorial -/
-
-/-- Shifting the argument of a falling factorial by one strips off its trailing linear factor:
-the degree `m + 1` falling factorial at `x + 1` is `(x + 1)` times the degree `m` one at `x`. -/
-private theorem descPochhammer_succ_eval_add_one {R : Type*} [CommRing R] (m : ℕ) (x : R) :
-    (descPochhammer R (m + 1)).eval (x + 1) = (x + 1) * (descPochhammer R m).eval x := by
-  rw [descPochhammer_succ_left, eval_mul, eval_X, eval_comp, eval_sub, eval_X, eval_one,
-    add_sub_cancel_right]
 
 /-- **The discrete derivative of a falling factorial**: the falling factorial of degree `m + 1`
 increases by `m + 1` times the falling factorial of degree `m`.  This is the analogue of
@@ -484,6 +489,54 @@ theorem sum_mul_prod_sub_update_sub_one {R : Type*} [CommRing R] (m : ℕ) (b : 
     Fin.sum_univ_eq_sum_range (fun i : ℕ => (i : R)) m] at hcancel
   exact hcancel
 
+/-! ### Integrality of weighted Vandermonde determinants -/
+
+/-- **Integrality for a weighted Vandermonde determinant.**  Let `p j` be monic of degree `j` and
+suppose that `d j` divides the weighted value `w i * (p j).eval (u i)` at every node.  Then
+`∏ j, d j` divides `∏ i, w i * det (vandermonde u)`: replacing the column of `u^j` by that of the
+values of `p j` does not change the determinant, after which column `j` of the weighted matrix is a
+multiple of `d j`.  With `p j` the falling factorial and `w = 1` this is the argument of Mathlib's
+`Matrix.superFactorial_dvd_vandermonde_det`. -/
+theorem prod_dvd_prod_mul_det_vandermonde {R : Type*} [CommRing R] {n : ℕ} (u w d : Fin n → R)
+    (p : Fin n → R[X]) (hdeg : ∀ j, (p j).natDegree = j) (hmonic : ∀ j, (p j).Monic)
+    (hdvd : ∀ i j, d j ∣ w i * (p j).eval (u i)) :
+    (∏ j, d j) ∣ (∏ i, w i) * (Matrix.vandermonde u).det := by
+  choose c hc using hdvd
+  rw [Matrix.det_eval_matrixOfPolynomials_eq_det_vandermonde _ p hdeg hmonic,
+    ← Matrix.det_mul_column]
+  have hmat : (Matrix.of fun i j : Fin n =>
+        w i * Matrix.of (fun i j : Fin n => (p j).eval (u i)) i j)
+      = Matrix.of fun i j : Fin n => d j * c i j := by
+    ext i j
+    simp only [Matrix.of_apply, hc]
+  have hrow := Matrix.det_mul_row d (Matrix.of c)
+  simp only [Matrix.of_apply] at hrow
+  rw [hmat, hrow]
+  exact dvd_mul_right _ _
+
+/-- **Integrality for a weighted Vandermonde product.**  For sequences of nodes `uₖ` and weights
+`wₖ`, if `p j` is monic of degree `j` for `j < m` and `d j` divides `wᵢ * (p j).eval (uᵢ)` for
+`i, j < m`, then
+`∏_{k < m} d k` divides `∏_{k < m} wₖ · ∏_{k < l < m} (uₖ - uₗ)`.  This is
+`TauCeti.prod_dvd_prod_mul_det_vandermonde` with the determinant expanded; the sign relating the two
+orders of the differences does not affect divisibility. -/
+theorem prod_dvd_prod_mul_prod_sub {R : Type*} [CommRing R] (m : ℕ) (u w d : ℕ → R)
+    (p : ℕ → R[X]) (hdeg : ∀ j < m, (p j).natDegree = j) (hmonic : ∀ j < m, (p j).Monic)
+    (hdvd : ∀ i < m, ∀ j < m, d j ∣ w i * (p j).eval (u i)) :
+    (∏ k ∈ Finset.range m, d k)
+      ∣ ∏ k ∈ Finset.range m, w k * ∏ l ∈ Finset.Ico (k + 1) m, (u k - u l) := by
+  have hdet := det_vandermonde_eq_prod_range m u
+  set s : R := (-1) ^ (∑ i : Fin m, (Finset.Ioi i).card)
+  have hs : s * s = 1 := by rw [← mul_pow, neg_one_mul, neg_neg, one_pow]
+  have hprod : ∏ k ∈ Finset.range m, ∏ l ∈ Finset.Ico (k + 1) m, (u k - u l)
+      = s * (Matrix.vandermonde fun i : Fin m => u i).det := by
+    rw [hdet, ← mul_assoc, hs, one_mul]
+  rw [Finset.prod_mul_distrib, hprod, ← Fin.prod_univ_eq_prod_range w m, mul_left_comm,
+    ← Fin.prod_univ_eq_prod_range d m]
+  exact (prod_dvd_prod_mul_det_vandermonde (fun i : Fin m => u i) (fun i => w i) (fun j => d j)
+    (fun j => p j) (fun j => hdeg j j.2) (fun j => hmonic j j.2)
+    fun i j => hdvd i i.2 j j.2).mul_left _
+
 /-! ### Products of squared differences, weighted by the nodes -/
 
 /-- The divisor `1! · 3! ⋯ (2n - 1)!` of the odd Vandermonde product is positive, so it may be
@@ -501,47 +554,50 @@ theorem prod_factorial_dvd_prod_mul_det_vandermonde_sq {n : ℕ} (x : Fin n → 
       ∣ (∏ i, x i) * (Matrix.vandermonde fun i => x i ^ 2).det := by
   -- Replace the column of `x^{2k+1}` by the column of the monic odd polynomial
   -- `x (x² - 1²) ⋯ (x² - k²)`, whose values are multiples of `(2k + 1)!`.
-  let p : Fin n → ℤ[X] := fun j => ∏ m ∈ Finset.range j, (X - C (((m : ℤ) + 1) ^ 2))
-  have hmonic : ∀ j, (p j).Monic := fun j =>
-    monic_prod_of_monic (Finset.range j) (fun m => X - C (((m : ℤ) + 1) ^ 2))
-      fun m _ => monic_X_sub_C _
-  have hdeg : ∀ j, (p j).natDegree = j := fun j => by
-    rw [natDegree_prod_of_monic (s := Finset.range j) (f := fun m => X - C (((m : ℤ) + 1) ^ 2))
-      (h := fun m _ => monic_X_sub_C _)]
-    simp only [natDegree_X_sub_C, Finset.sum_const, Finset.card_range, smul_eq_mul, mul_one]
-  have hent : ∀ (i : Fin n) (j : Fin n), ((2 * (j : ℕ) + 1).factorial : ℤ)
-      ∣ x i * (p j).eval (x i ^ 2) := fun i j => by
-    simpa [p, eval_prod] using factorial_dvd_mul_prod_sq_sub_sq j (x i)
-  rw [Matrix.det_eval_matrixOfPolynomials_eq_det_vandermonde _ p hdeg hmonic,
-    ← Matrix.det_mul_column]
-  have hmat : (Matrix.of fun i j : Fin n =>
-        x i * Matrix.of (fun i j : Fin n => (p j).eval (x i ^ 2)) i j)
-      = Matrix.of fun i j : Fin n => ((2 * (j : ℕ) + 1).factorial : ℤ)
-          * (x i * (p j).eval (x i ^ 2) / ((2 * (j : ℕ) + 1).factorial : ℤ)) := by
-    ext i j
-    simp only [Matrix.of_apply]
-    rw [Int.mul_ediv_cancel' (hent i j)]
-  have hrow := Matrix.det_mul_row (fun j : Fin n => ((2 * (j : ℕ) + 1).factorial : ℤ))
-    (Matrix.of fun i j : Fin n =>
-      x i * (p j).eval (x i ^ 2) / ((2 * (j : ℕ) + 1).factorial : ℤ))
-  simp only [Matrix.of_apply] at hrow
-  rw [hmat, hrow, Fin.prod_univ_eq_prod_range (fun k => ((2 * k + 1).factorial : ℤ)) n]
-  exact dvd_mul_right _ _
+  rw [← Fin.prod_univ_eq_prod_range (fun k => ((2 * k + 1).factorial : ℤ)) n]
+  exact prod_dvd_prod_mul_det_vandermonde _ x _
+    (fun j => ∏ m ∈ Finset.range j, (X - C (((m : ℤ) + 1) ^ 2)))
+    (fun j => by rw [natDegree_finsetProd_X_sub_C_eq_card, Finset.card_range])
+    (fun j => monic_prod_X_sub_C _ _)
+    fun i j => by simpa [eval_prod] using factorial_dvd_mul_prod_sq_sub_sq j (x i)
 
 /-- **Integrality for the odd Vandermonde product, unwound.**  For a sequence of integers, the
 product `∏_{k < m} bₖ · ∏_{k < l < m} (bₖ² - bₗ²)` is divisible by `1! · 3! ⋯ (2m - 1)!`.  This is
-`TauCeti.prod_factorial_dvd_prod_mul_det_vandermonde_sq` with the determinant expanded; the sign
-relating the two orders of the differences does not affect divisibility. -/
+`TauCeti.prod_factorial_dvd_prod_mul_det_vandermonde_sq` with the determinant expanded. -/
 theorem prod_factorial_dvd_prod_mul_prod_sq_sub_sq (m : ℕ) (b : ℕ → ℤ) :
     (∏ k ∈ Finset.range m, ((2 * k + 1).factorial : ℤ))
-      ∣ ∏ k ∈ Finset.range m, b k * ∏ l ∈ Finset.Ico (k + 1) m, (b k ^ 2 - b l ^ 2) := by
-  have hdet := det_vandermonde_eq_prod_range m fun k => b k ^ 2
-  set s : ℤ := (-1) ^ (∑ i : Fin m, (Finset.Ioi i).card)
-  have hs : s * s = 1 := by rw [← mul_pow]; norm_num
-  have hprod : ∏ k ∈ Finset.range m, ∏ l ∈ Finset.Ico (k + 1) m, (b k ^ 2 - b l ^ 2)
-      = s * (Matrix.vandermonde fun i : Fin m => b i ^ 2).det := by
-    rw [hdet, ← mul_assoc, hs, one_mul]
-  rw [Finset.prod_mul_distrib, hprod, ← Fin.prod_univ_eq_prod_range b m, mul_left_comm]
-  exact (prod_factorial_dvd_prod_mul_det_vandermonde_sq fun i : Fin m => b i).mul_left _
+      ∣ ∏ k ∈ Finset.range m, b k * ∏ l ∈ Finset.Ico (k + 1) m, (b k ^ 2 - b l ^ 2) :=
+  prod_dvd_prod_mul_prod_sub m (fun k => b k ^ 2) b _
+    (fun j => ∏ m ∈ Finset.range j, (X - C (((m : ℤ) + 1) ^ 2)))
+    (fun j _ => by rw [natDegree_finsetProd_X_sub_C_eq_card, Finset.card_range])
+    (fun j _ => monic_prod_X_sub_C _ _)
+    fun i _ j _ => by simpa [eval_prod] using factorial_dvd_mul_prod_sq_sub_sq j (b i)
+
+/-! ### The Vandermonde product of `x (x + 1)`, weighted by `2x + 1` -/
+
+/-- **Integrality for the Vandermonde product of the values `x (x + 1)`.**  For a sequence of
+integers, the product `∏_{k < m} (2bₖ + 1) · ∏_{k < l < m} (bₖ - bₗ) (bₖ + bₗ + 1)` is divisible by
+`1! · 3! ⋯ (2m - 1)!`.  The factors are the differences `bₖ (bₖ + 1) - bₗ (bₗ + 1)`, so in the
+Vandermonde determinant of the nodes `x (x + 1)`, weighted by `2x + 1`, the column of
+`(x (x + 1))^j` may be replaced by the column of `∏_{c < j} (x - c) (x + c + 1)`, whose weighted
+values are multiples of `(2j + 1)!`
+(`TauCeti.factorial_dvd_two_mul_add_one_mul_prod_sub_mul_add_add_one`). -/
+theorem prod_factorial_dvd_prod_two_mul_add_one_mul_prod_sub_mul_add_add_one (m : ℕ)
+    (b : ℕ → ℤ) :
+    (∏ k ∈ Finset.range m, ((2 * k + 1).factorial : ℤ))
+      ∣ ∏ k ∈ Finset.range m,
+          (2 * b k + 1) * ∏ l ∈ Finset.Ico (k + 1) m, (b k - b l) * (b k + b l + 1) := by
+  have h := prod_dvd_prod_mul_prod_sub m (fun k => b k * (b k + 1)) (fun k => 2 * b k + 1) _
+    (fun j => ∏ c ∈ Finset.range j, (X - C ((c : ℤ) * (c + 1))))
+    (fun j _ => by rw [natDegree_finsetProd_X_sub_C_eq_card, Finset.card_range])
+    (fun j _ => monic_prod_X_sub_C _ _)
+    fun i _ j _ => by
+      have hrow : ∏ c ∈ Finset.range j, (b i * (b i + 1) - c * (c + 1))
+          = ∏ c ∈ Finset.range j, (b i - c) * (b i + c + 1) :=
+        Finset.prod_congr rfl fun c _ => by ring
+      simpa [eval_prod, hrow] using
+        factorial_dvd_two_mul_add_one_mul_prod_sub_mul_add_add_one j (b i)
+  convert h using 3 with k _
+  exact Finset.prod_congr rfl fun l _ => by ring
 
 end TauCeti
