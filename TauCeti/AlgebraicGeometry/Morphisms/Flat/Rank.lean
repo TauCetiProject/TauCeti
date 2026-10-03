@@ -15,6 +15,9 @@ This packages Mathlib's `Scheme.Hom.finrank_comp_left_of_isIso` for objects of `
 `TauCeti.finrank_eq_of_iso` accepts an isomorphism over the base directly, incorporating its
 commuting triangle. It is used to compare an affine group scheme with the Hopf spectrum of its
 coordinate algebra, and also transports rank through isomorphisms with Cartier duals.
+
+For `e : X ≅ Y` in `Over S`, use `TauCeti.finrank_eq_of_iso e` to obtain
+`X.hom.finrank = Y.hom.finrank` when `Y.hom` is finite and flat.
 -/
 
 public section
