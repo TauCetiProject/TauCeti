@@ -53,8 +53,8 @@ open scoped TensorProduct
 
 variable {k A : Type*} [CommSemiring k] [NonUnitalSemiring A] [Module k A]
 
-/-- **The Casimir element of a trace commutes with multiplication.** If `φ` is a trace on `A` and the
-finite families `x` and `y` are dual for `(a, b) ↦ φ (a * b)`, then
+/-- **The Casimir element of a trace commutes with multiplication.** If `φ` is a trace on `A`
+and the finite families `x` and `y` are dual for `(a, b) ↦ φ (a * b)`, then
 `∑ i, (a * x i) ⊗ y i = ∑ i, x i ⊗ (y i * a)` for every `a : A`. -/
 theorem sum_mul_tmul_eq_sum_tmul_mul {ι : Type*} [Fintype ι] (φ : A →ₗ[k] k)
     (hφ : ∀ a b : A, φ (a * b) = φ (b * a)) {x y : ι → A}
