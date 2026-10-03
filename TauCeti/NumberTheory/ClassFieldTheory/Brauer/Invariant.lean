@@ -287,9 +287,11 @@ surjective**, since multiplication by `[L : K]` is surjective on `ℚ/ℤ`. -/
 theorem brRes_surjective : Function.Surjective (brRes K L σ) := by
   have := finite_of_valuativeExtension K L
   have hn : (Module.finrank K L : ℤ) ≠ 0 := Nat.cast_ne_zero.2 Module.finrank_pos.ne'
-  refine fun y => ⟨(invMap K).symm (DivisibleBy.div (invMap L y) (Module.finrank K L : ℤ)),
-    (invMap L).injective ?_⟩
-  rw [invMap_brRes, AddEquiv.apply_symm_apply, ← natCast_zsmul, DivisibleBy.div_cancel _ hn]
+  intro y
+  obtain ⟨q, hq⟩ := DivisibleBy.surjective_smul _ ℤ hn (invMap L y)
+  refine ⟨(invMap K).symm q, (invMap L).injective ?_⟩
+  rw [invMap_brRes, AddEquiv.apply_symm_apply, ← natCast_zsmul]
+  exact hq
 
 /-- **The corestriction square of the local invariant**: corestriction of Brauer classes along a
 finite extension `L/K` of nonarchimedean local fields preserves the invariant,
