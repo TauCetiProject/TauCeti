@@ -589,9 +589,15 @@ theorem zigzagBraidComplex_d (i : V) :
 
 /-- The differential of `B_i` vanishes out of every degree other than `-1`. -/
 @[simp]
-theorem zigzagBraidComplex_d_eq_zero (i : V) {a : ℤ} (b : ℤ) (ha : a ≠ -1) :
+theorem zigzagBraidComplex_d_eq_zero₀ (i : V) {a : ℤ} (b : ℤ) (ha : a ≠ -1) :
     (zigzagBraidComplex k G i).d a b = 0 :=
   HomologicalComplex.double_d_eq_zero₀ _ _ _ _ ha
+
+/-- The differential of `B_i` vanishes into every degree other than `0`. -/
+@[simp]
+theorem zigzagBraidComplex_d_eq_zero₁ (i : V) (a : ℤ) {b : ℤ} (hb : b ≠ 0) :
+    (zigzagBraidComplex k G i).d a b = 0 :=
+  HomologicalComplex.double_d_eq_zero₁ _ _ _ _ hb
 
 /-- `B_i` vanishes outside cohomological degrees `-1` and `0`. -/
 theorem isZero_zigzagBraidComplex_X (i : V) {j : ℤ} (h₀ : j ≠ -1) (h₁ : j ≠ 0) :
@@ -608,9 +614,15 @@ theorem zigzagBraidInverseComplex_d (i : V) :
 
 /-- The differential of `B_i'` vanishes out of every degree other than `0`. -/
 @[simp]
-theorem zigzagBraidInverseComplex_d_eq_zero (i : V) {a : ℤ} (b : ℤ) (ha : a ≠ 0) :
+theorem zigzagBraidInverseComplex_d_eq_zero₀ (i : V) {a : ℤ} (b : ℤ) (ha : a ≠ 0) :
     (zigzagBraidInverseComplex k G i).d a b = 0 :=
   HomologicalComplex.double_d_eq_zero₀ _ _ _ _ ha
+
+/-- The differential of `B_i'` vanishes into every degree other than `1`. -/
+@[simp]
+theorem zigzagBraidInverseComplex_d_eq_zero₁ (i : V) (a : ℤ) {b : ℤ} (hb : b ≠ 1) :
+    (zigzagBraidInverseComplex k G i).d a b = 0 :=
+  HomologicalComplex.double_d_eq_zero₁ _ _ _ _ hb
 
 /-- `B_i'` vanishes outside cohomological degrees `0` and `1`. -/
 theorem isZero_zigzagBraidInverseComplex_X (i : V) {j : ℤ} (h₀ : j ≠ 0) (h₁ : j ≠ 1) :
