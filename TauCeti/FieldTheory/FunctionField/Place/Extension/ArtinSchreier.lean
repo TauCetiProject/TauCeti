@@ -159,6 +159,27 @@ theorem ord_eq_of_pow_sub_self_eq_of_gcd_ord_eq_one
   rw [ramificationIdx_eq_of_pow_sub_self_eq_of_gcd_ord_eq_one k F hn hgen hy hu hcop] at hkey
   exact mul_left_cancel₀ (by exact_mod_cast (by omega : n ≠ 0)) hkey
 
+/-- Shared setup for reduced Artin–Schreier poles: translating the generator by `-w` turns a
+reduced pole of `u - (w ^ p - w)` into the prime-to-`p` pole case of
+`finrank_eq_and_ramificationIdx_eq_of_pow_sub_self_eq`. -/
+private theorem finrank_eq_and_ramificationIdx_eq_of_exists_reduced_artinSchreier_pole
+    (p : ℕ) [Fact p.Prime] [CharP F p] {y : F'} {u : F}
+    (hgen : F⟮y⟯ = ⊤) (hy : y ^ p - y = algebraMap F F' u)
+    (hpole : ∃ w : F, (P'.restrict k F).ord (u - (w ^ p - w)) < 0 ∧
+      ¬ (p : ℤ) ∣ (P'.restrict k F).ord (u - (w ^ p - w))) :
+    Module.finrank F F' = p ∧ ramificationIdx F P' = p := by
+  obtain ⟨w, hwneg, hwdvd⟩ := hpole
+  -- Translating the generator by `-w` does not change the field it generates.
+  have hadj : F⟮y - algebraMap F F' w⟯ = ⊤ := by
+    simpa [sub_eq_add_neg] using
+      (IntermediateField.adjoin_simple_add_algebraMap y (-w)).trans hgen
+  apply finrank_eq_and_ramificationIdx_eq_of_pow_sub_self_eq k F
+    (Fact.out : p.Prime).one_lt hadj
+  · rw [sub_algebraMap_pow_sub_self_eq, hy, ← map_sub]
+  · exact hwneg
+  · exact Int.isCoprime_iff_gcd_eq_one.mp
+      ((Nat.prime_iff_prime_int.mp (Fact.out : p.Prime)).coprime_iff_not_dvd.mpr hwdvd)
+
 /-- A reduced Artin–Schreier pole is totally ramified: if some representative
 `u - (w ^ p - w)` of the class of `u` has a pole of order prime to `p` below `P'`, then `P'` is
 totally ramified over that place. No perfection hypothesis on the residue field is needed. -/
@@ -168,15 +189,9 @@ theorem isTotallyRamified_of_exists_reduced_artinSchreier_pole
     (hpole : ∃ w : F, (P'.restrict k F).ord (u - (w ^ p - w)) < 0 ∧
       ¬ (p : ℤ) ∣ (P'.restrict k F).ord (u - (w ^ p - w))) :
     IsTotallyRamified F P' := by
-  obtain ⟨w, hwneg, hwdvd⟩ := hpole
-  apply isTotallyRamified_of_pow_sub_self_eq_of_gcd_ord_eq_one k F
-    (Fact.out : p.Prime).one_lt (show F⟮y - algebraMap F F' w⟯ = ⊤ by
-      simpa [sub_eq_add_neg] using
-        (IntermediateField.adjoin_simple_add_algebraMap y (-w)).trans hgen)
-  · rw [sub_algebraMap_pow_sub_self_eq, hy, ← map_sub]
-  · exact hwneg
-  · exact Int.isCoprime_iff_gcd_eq_one.mp
-      ((Nat.prime_iff_prime_int.mp (Fact.out : p.Prime)).coprime_iff_not_dvd.mpr hwdvd)
+  have h := finrank_eq_and_ramificationIdx_eq_of_exists_reduced_artinSchreier_pole k F p
+    hgen hy hpole
+  rw [isTotallyRamified_iff, h.1, h.2]
 
 /-- At a reduced Artin–Schreier pole the ramification index is `p`. -/
 theorem ramificationIdx_eq_of_exists_reduced_artinSchreier_pole
@@ -184,15 +199,8 @@ theorem ramificationIdx_eq_of_exists_reduced_artinSchreier_pole
     (hgen : F⟮y⟯ = ⊤) (hy : y ^ p - y = algebraMap F F' u)
     (hpole : ∃ w : F, (P'.restrict k F).ord (u - (w ^ p - w)) < 0 ∧
       ¬ (p : ℤ) ∣ (P'.restrict k F).ord (u - (w ^ p - w))) :
-    ramificationIdx F P' = p := by
-  obtain ⟨w, hwneg, hwdvd⟩ := hpole
-  apply ramificationIdx_eq_of_pow_sub_self_eq_of_gcd_ord_eq_one k F
-    (Fact.out : p.Prime).one_lt (show F⟮y - algebraMap F F' w⟯ = ⊤ by
-      simpa [sub_eq_add_neg] using
-        (IntermediateField.adjoin_simple_add_algebraMap y (-w)).trans hgen)
-  · rw [sub_algebraMap_pow_sub_self_eq, hy, ← map_sub]
-  · exact hwneg
-  · exact Int.isCoprime_iff_gcd_eq_one.mp
-      ((Nat.prime_iff_prime_int.mp (Fact.out : p.Prime)).coprime_iff_not_dvd.mpr hwdvd)
+    ramificationIdx F P' = p :=
+  (finrank_eq_and_ramificationIdx_eq_of_exists_reduced_artinSchreier_pole k F p
+    hgen hy hpole).2
 
 end TauCeti.Place
