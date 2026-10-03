@@ -16,8 +16,9 @@ unsuspends its Taylor components to maps
 `f_{n+1}^M : M ⊗ A^⊗n ⟶ N`
 
 of cohomological degree `-n`.  The indexing counts algebra inputs: `component 0` is the unary
-linear part.  The Koszul twists are the same ones used to unsuspend the operations of a right
-`A∞` module, with the module input in position zero.
+linear part.  The component is the module-first unsuspension
+`TauCeti.AInfinityRightModule.unsuspend` of the suspended Taylor component, the same one used to
+unsuspend the operations of a right `A∞` module.
 
 The suspension formula makes the signs executable on homogeneous elements, while component
 extensionality lets later constructions work entirely with the unsuspended maps.  The expanded
@@ -44,7 +45,7 @@ morphism equations and composition signs can therefore be stated without exposin
 public section
 
 open scoped BigOperators TensorProduct
-open _root_.MultilinearMap (evalNat evalNat_def suspExp suspExp_def)
+open _root_.MultilinearMap (evalNat suspExp)
 
 namespace TauCeti
 
@@ -63,17 +64,7 @@ variable {MM : AInfinityRightModule AA M} {NN : AInfinityRightModule AA N}
 module input first, and cohomological degree `-n`. -/
 noncomputable def component (f : AInfinityRightModuleHom MM NN) (n : ℕ) :
     M →ₗ[R] MultilinearMap R (fun _ : Fin n ↦ A) N :=
-  { toFun x :=
-      ((f.suspendedComponent n ∘ₗ
-          TensorProduct.mk R M (TensorPower R n A) (MM.grading.koszulTwist n x)
-        ).compMultilinearMap (PiTensorProduct.tprod R)).compLinearMap
-          fun i ↦ AA.grading.koszulTwist ((n : ℤ) - 1 - i)
-    map_add' x y := by
-      ext a
-      simp
-    map_smul' r x := by
-      ext a
-      simp }
+  AInfinityRightModule.unsuspend MM.grading AA.grading n (f.suspendedComponent n)
 
 /-- The unsuspended component evaluates the suspended component on Koszul-twisted inputs. -/
 theorem component_apply (f : AInfinityRightModuleHom MM NN) (n : ℕ) (x : M)
@@ -83,15 +74,15 @@ theorem component_apply (f : AInfinityRightModuleHom MM NN) (n : ℕ) (x : M)
         (MM.grading.koszulTwist n x ⊗ₜ[R]
           PiTensorProduct.tprod R fun i ↦
             AA.grading.koszulTwist ((n : ℤ) - 1 - i) (a i)) :=
-  (rfl)
+  AInfinityRightModule.unsuspend_apply _ _ n _ x a
 
 /-- The suspended component evaluates the unsuspended component on Koszul-twisted inputs. -/
 theorem suspendedComponent_tmul_tprod (f : AInfinityRightModuleHom MM NN) (n : ℕ) (x : M)
     (a : Fin n → A) :
     f.suspendedComponent n (x ⊗ₜ[R] PiTensorProduct.tprod R a) =
       f.component n (MM.grading.koszulTwist n x)
-        fun i ↦ AA.grading.koszulTwist ((n : ℤ) - 1 - i) (a i) := by
-  simp only [component_apply, InternalGrading.koszulTwist_koszulTwist]
+        fun i ↦ AA.grading.koszulTwist ((n : ℤ) - 1 - i) (a i) :=
+  AInfinityRightModule.apply_tmul_tprod_eq_unsuspend _ _ n _ x a
 
 /-- On a pure bar word, the Taylor map evaluates the unsuspended component on Koszul-twisted
 inputs. -/
@@ -109,22 +100,8 @@ theorem suspendedComponent_tmul_tprod_of_mem (f : AInfinityRightModuleHom MM NN)
     (ha : ∀ i < n, a i ∈ AA.grading.piece (d i)) :
     f.suspendedComponent n
         (x ⊗ₜ[R] PiTensorProduct.tprod R fun i : Fin n ↦ a i) =
-      negOnePowCast R (n * e + suspExp n d) • evalNat (f.component n x) a := by
-  rw [suspendedComponent_tmul_tprod]
-  have htwist :
-      (fun i : Fin n ↦ AA.grading.koszulTwist ((n : ℤ) - 1 - i) (a i)) =
-        fun i : Fin n ↦ negOnePowCast R (((n : ℤ) - 1 - i) * d i) • a i := by
-    funext i
-    rw [AA.grading.koszulTwist_apply_of_mem (ha i i.isLt), negOnePowCast_eq_intCast]
-  rw [htwist, MM.grading.koszulTwist_apply_of_mem hx, ← negOnePowCast_eq_intCast,
-    map_smul, smul_apply]
-  refine congrArg _ (MultilinearMap.map_smul_univ
-    (f.component n x)
-    (fun i ↦ negOnePowCast R (((n : ℤ) - 1 - i) * d i))
-    fun i ↦ a i) |>.trans ?_
-  rw [smul_smul, evalNat_def, suspExp_def, negOnePowCast_add, negOnePowCast_sum,
-    ← Fin.prod_univ_eq_prod_range
-      (fun i ↦ negOnePowCast R (((n : ℤ) - 1 - i) * d i)) n]
+      negOnePowCast R (n * e + suspExp n d) • evalNat (f.component n x) a :=
+  AInfinityRightModule.apply_tmul_tprod_of_mem _ _ n _ hx d a ha
 
 /-- On homogeneous inputs, the Taylor map is the unsuspended component multiplied by the Koszul
 sign of suspending the module input and all algebra inputs. -/
@@ -151,19 +128,10 @@ theorem component_mem_piece (f : AInfinityRightModuleHom MM NN) (n : ℕ)
     {x : M} {e : ℤ} (hx : x ∈ MM.grading.piece e) (a : Fin n → A) (d : Fin n → ℤ)
     (ha : ∀ i, a i ∈ AA.grading.piece (d i)) :
     f.component n x a ∈ NN.grading.piece (e + ∑ i, d i - n) := by
-  have hx' : MM.grading.koszulTwist n x ∈ (MM.grading.shift 1).piece (e - 1) := by
-    rw [InternalGrading.shift_piece, sub_add_cancel]
-    exact MM.grading.koszulTwist_mem_piece hx _
-  have ha' : ∀ i, AA.grading.koszulTwist ((n : ℤ) - 1 - i) (a i) ∈
-      (AA.grading.shift 1).piece (d i - 1) := fun i ↦ by
-    rw [InternalGrading.shift_piece, sub_add_cancel]
-    exact AA.grading.koszulTwist_mem_piece (ha i) _
-  have h := f.suspendedComponent_tmul_tprod_mem n hx' _ _ ha'
-  rw [InternalGrading.shift_piece, Finset.sum_sub_distrib, Finset.sum_const,
-    Finset.card_univ, Fintype.card_fin, nsmul_eq_mul, mul_one] at h
-  have hdeg : e + ∑ i, d i - n = e - 1 + (∑ i, d i - n) + 1 := by ring
-  rw [component_apply, hdeg]
-  exact h
+  have h := AInfinityRightModule.unsuspend_mem_piece MM.grading AA.grading n 0
+    (fun hx a d ha ↦ by simpa only [add_zero] using f.suspendedComponent_tmul_tprod_mem n hx a d ha)
+    hx a d ha
+  rwa [InternalGrading.shift_piece, zero_sub, neg_add_cancel_right] at h
 
 /-- Two module morphisms are equal when all their unsuspended components agree. -/
 @[ext]
