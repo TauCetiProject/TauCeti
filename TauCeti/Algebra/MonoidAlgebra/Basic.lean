@@ -49,6 +49,22 @@ instance instIsMulCommutativeMonoidAlgebra [IsMulCommutative M] :
 
 end Commutative
 
+section Semiring
+
+variable {R : Type*} [Semiring R] {M : Type*}
+
+/-- An element of `R[M]` all of whose coefficients are divisible by `n` is `n` times an element. -/
+theorem _root_.MonoidAlgebra.exists_eq_nsmul_of_dvd_coeff {n : ℕ} {x : MonoidAlgebra R M}
+    (h : ∀ m, (n : R) ∣ x.coeff m) : ∃ y, x = n • y := by
+  choose c hc using h
+  refine ⟨∑ m ∈ x.coeff.support, MonoidAlgebra.single m (c m), ?_⟩
+  conv_lhs => rw [← MonoidAlgebra.sum_coeff_single x]
+  rw [Finsupp.sum, Finset.smul_sum]
+  refine Finset.sum_congr rfl fun m _ ↦ ?_
+  rw [MonoidAlgebra.smul_single, hc m, nsmul_eq_mul]
+
+end Semiring
+
 variable {R : Type*} [Ring R] {G : Type*} [One G]
 
 /-- Over a nontrivial ring, the difference `single g 1 - 1` between the basis element at `g` and the
@@ -75,15 +91,6 @@ theorem mem_ideal_smul_top_iff {I : Ideal R} {x : MonoidAlgebra R M} :
     refine Submodule.sum_mem _ fun m _ ↦ ?_
     simpa [MonoidAlgebra.smul_single'] using
       Submodule.smul_mem_smul (hx m) (Submodule.mem_top (x := MonoidAlgebra.single m (1 : R)))
-
-/-- An element of `R[M]` all of whose coefficients are divisible by `n` is `n` times an element. -/
-theorem _root_.MonoidAlgebra.exists_eq_nsmul_of_dvd_coeff {n : ℕ} {x : MonoidAlgebra R M}
-    (h : ∀ m, (n : R) ∣ x.coeff m) : ∃ y, x = n • y := by
-  have hx : x ∈ Ideal.span {(n : R)} • (⊤ : Submodule R (MonoidAlgebra R M)) :=
-    TauCeti.MonoidAlgebra.mem_ideal_smul_top_iff.2 fun m ↦ Ideal.mem_span_singleton.2 (h m)
-  rw [Submodule.ideal_span_singleton_smul, Submodule.mem_smul_pointwise_iff_exists] at hx
-  obtain ⟨y, -, hy⟩ := hx
-  exact ⟨y, by rw [← hy, Nat.cast_smul_eq_nsmul]⟩
 
 /-- Applying a ring homomorphism `f` to the coefficients kills exactly `ker f • R[M]`. -/
 @[simp]
