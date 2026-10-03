@@ -43,6 +43,41 @@ namespace TauCeti
 
 namespace TypeDStd
 
+/-- **The numbered raising and lowering generators at a type-`D` node form an `sl₂` triple.** -/
+theorem isSl2Triple_rootGenerator {K : Type*} [CommRing K] [Nontrivial K]
+    (n : ℕ) (hn : 4 ≤ n) (i : Fin n) :
+    _root_.IsSl2Triple (cartanGenerator (K := K) n hn i)
+      (rootGenerator (K := K) n hn (.inl i))
+      (rootGenerator (K := K) n hn (.inr i)) where
+  h_ne_zero := by
+    intro hzero
+    have hentry := congrArg
+      (fun A : LieAlgebra.Orthogonal.typeD (Fin n) K =>
+        (A : Matrix (Fin n ⊕ Fin n) (Fin n ⊕ Fin n) K) (.inl i) (.inl i)) hzero
+    rw [val_cartanGenerator] at hentry
+    change typeDDiagonalMatrix
+      (fun j => (DynkinType.typeDSimpleRoot n hn i j : K)) (.inl i) (.inl i) = 0 at hentry
+    simp only [typeDDiagonalMatrix_apply, typeDDiagonalValue_inl, ↓reduceIte] at hentry
+    by_cases hi : (i : ℕ) + 1 < n
+    · rw [DynkinType.typeDSimpleRoot_of_add_one_lt hn hi] at hentry
+      have hne : i ≠ ⟨(i : ℕ) + 1, hi⟩ := by simp [Fin.ext_iff]
+      simp [hne] at hentry
+    · have hi_last : i = ⟨n - 1, by omega⟩ := by
+        apply Fin.ext
+        simp
+        omega
+      rw [hi_last, DynkinType.typeDSimpleRoot_of_not_add_one_lt hn] at hentry
+      · have hne : n - 1 ≠ n - 2 := by omega
+        simp [Fin.ext_iff, hne] at hentry
+      · omega
+  lie_e_f := by simp
+  lie_h_e_nsmul := by
+    rw [lie_cartanGenerator_rootGenerator, rootGeneratorWeight_inl, CartanMatrix.D_diag]
+    simp only [Int.cast_smul_eq_zsmul, two_zsmul, two_nsmul]
+  lie_h_f_nsmul := by
+    rw [lie_cartanGenerator_rootGenerator, rootGeneratorWeight_inr, CartanMatrix.D_diag]
+    simp only [Int.cast_smul_eq_zsmul, neg_zsmul, two_zsmul, two_nsmul]
+
 section Domain
 
 variable {K : Type*} [CommRing K] [IsDomain K] [NeZero (2 : K)]
@@ -71,20 +106,6 @@ theorem linearIndependent_cartanGenerator (n : ℕ) (hn : 4 ≤ n) :
     LinearIndependent K (cartanGenerator (K := K) n hn) := by
   exact (linearIndependent_cartanGenerator_subtype (K := K) n hn).map'
     (typeDDiagonalCartan K (Fin n)).toSubmodule.subtype (Submodule.ker_subtype _)
-
-/-- **The numbered raising and lowering generators at a type-`D` node form an `sl₂` triple.** -/
-theorem isSl2Triple_rootGenerator (n : ℕ) (hn : 4 ≤ n) (i : Fin n) :
-    _root_.IsSl2Triple (cartanGenerator (K := K) n hn i)
-      (rootGenerator (K := K) n hn (.inl i))
-      (rootGenerator (K := K) n hn (.inr i)) where
-  h_ne_zero := (linearIndependent_cartanGenerator n hn).ne_zero i
-  lie_e_f := by simp
-  lie_h_e_nsmul := by
-    rw [lie_cartanGenerator_rootGenerator, rootGeneratorWeight_inl, CartanMatrix.D_diag]
-    simp only [Int.cast_smul_eq_zsmul, two_zsmul, two_nsmul]
-  lie_h_f_nsmul := by
-    rw [lie_cartanGenerator_rootGenerator, rootGeneratorWeight_inr, CartanMatrix.D_diag]
-    simp only [Int.cast_smul_eq_zsmul, neg_zsmul, two_zsmul, two_nsmul]
 
 end Domain
 
