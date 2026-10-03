@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Lie.Sl2
 public import TauCeti.Algebra.Lie.Orthogonal.TypeD.Root.Generators
 public import TauCeti.Algebra.Lie.Orthogonal.TypeD.DiagonalCartan
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.TypeD.SimpleRoots
@@ -25,6 +26,8 @@ and Lie-span theorems then expose the resulting split Cartan structure.
 ## Main declarations
 
 * `TypeDStd.linearIndependent_cartanGenerator`: the ambient Cartan generators are independent.
+* `TypeDStd.isSl2Triple_rootGenerator`: the generators at every numbered node form an
+  `sl₂` triple.
 * `TypeDStd.typeDDiagonalCartan_eq_lieSpan_cartanGenerator`: they span the diagonal Cartan as a
   Lie subalgebra.
 
@@ -68,6 +71,20 @@ theorem linearIndependent_cartanGenerator (n : ℕ) (hn : 4 ≤ n) :
     LinearIndependent K (cartanGenerator (K := K) n hn) := by
   exact (linearIndependent_cartanGenerator_subtype (K := K) n hn).map'
     (typeDDiagonalCartan K (Fin n)).toSubmodule.subtype (Submodule.ker_subtype _)
+
+/-- **The numbered raising and lowering generators at a type-`D` node form an `sl₂` triple.** -/
+theorem isSl2Triple_rootGenerator (n : ℕ) (hn : 4 ≤ n) (i : Fin n) :
+    _root_.IsSl2Triple (cartanGenerator (K := K) n hn i)
+      (rootGenerator (K := K) n hn (.inl i))
+      (rootGenerator (K := K) n hn (.inr i)) where
+  h_ne_zero := (linearIndependent_cartanGenerator n hn).ne_zero i
+  lie_e_f := by simp
+  lie_h_e_nsmul := by
+    rw [lie_cartanGenerator_rootGenerator, rootGeneratorWeight_inl, CartanMatrix.D_diag]
+    simp only [Int.cast_smul_eq_zsmul, two_zsmul, two_nsmul]
+  lie_h_f_nsmul := by
+    rw [lie_cartanGenerator_rootGenerator, rootGeneratorWeight_inr, CartanMatrix.D_diag]
+    simp only [Int.cast_smul_eq_zsmul, neg_zsmul, two_zsmul, two_nsmul]
 
 end Domain
 
