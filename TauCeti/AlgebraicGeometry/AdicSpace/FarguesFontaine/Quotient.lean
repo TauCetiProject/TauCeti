@@ -22,6 +22,9 @@ The wandering Frobenius windows embed openly into this orbit space. The images o
 `V₀` cover it, so it is quasi-compact and `T0`. These topological charts are the inputs for
 constructing the quotient sheaf and identifying its affinoid charts.
 
+The adic curve additionally requires a sheaf of complete separated topological rings on this
+orbit space and identifications of its window charts with affinoid adic spaces.
+
 The construction works over any perfect commutative coefficient ring of characteristic `p`,
 with the stated adic topology, and does not require `𝒴` to be nonempty. Nonemptiness for
 `R = 𝒪_F` and a pseudouniformiser `ϖ` requires a separate construction of a point of `𝒴`.
