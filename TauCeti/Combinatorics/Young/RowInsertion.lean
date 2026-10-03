@@ -267,6 +267,41 @@ theorem reverseRowBump_eq_some_iff (x y : α) (row result : List α) :
         (y := OrderDual.toDual x) _ hxy]
     simp [List.map_reverse, List.reverse_append, List.reverse_cons, List.append_assoc]
 
+/-- Reverse insertion conserves the letters: the changed row together with the returned letter
+has the content of the original row together with the incoming letter. -/
+theorem reverseRowBump_perm (y : α) (row : List α) :
+    ((reverseRowBump y row).1 ++ (reverseRowBump y row).2.toList).Perm (y :: row) := by
+  dsimp only [reverseRowBump]
+  refine ((List.reverse_perm _).append_right _).trans
+    (List.Perm.trans ?_ ((List.reverse_perm row).cons y))
+  simpa [Option.toList_map] using (rowBump_perm (OrderDual.toDual y)
+    (row.reverse.map OrderDual.toDual)).map OrderDual.ofDual
+
+/-- A reverse bump preserves row length; prepending increases it by one. -/
+theorem length_reverseRowBump (y : α) (row : List α) :
+    (reverseRowBump y row).1.length + (reverseRowBump y row).2.toList.length =
+      row.length + 1 := by
+  simpa using (reverseRowBump_perm y row).length_eq
+
+/-- Reverse inserting into a weakly increasing row preserves weak increase. -/
+theorem sortedLE_reverseRowBump (y : α) {row : List α} (hrow : row.SortedLE) :
+    (reverseRowBump y row).1.SortedLE := by
+  have hd : (row.reverse.map OrderDual.toDual).SortedLE :=
+    List.sortedLE_map_toDual.mpr hrow.reverse
+  simpa [reverseRowBump] using sortedLE_rowBump (OrderDual.toDual y) hd
+
+/-- Reverse inserting a new letter into a row without repetitions introduces no repetition. -/
+theorem nodup_reverseRowBump (y : α) {row : List α} (hrow : row.Nodup) (hy : y ∉ row) :
+    (reverseRowBump y row).1.Nodup :=
+  (List.nodup_append.mp ((reverseRowBump_perm y row).nodup_iff.mpr
+    (List.nodup_cons.mpr ⟨hy, hrow⟩))).1
+
+/-- Reverse inserting a new letter into a strictly increasing row preserves strict increase. -/
+theorem sortedLT_reverseRowBump (y : α) {row : List α} (hrow : row.SortedLT) (hy : y ∉ row) :
+    (reverseRowBump y row).1.SortedLT :=
+  (sortedLE_reverseRowBump y hrow.sortedLE).sortedLT_of_nodup
+    (nodup_reverseRowBump y hrow.nodup hy)
+
 /-- Reverse insertion recovers a forward bump in a weakly increasing row. -/
 theorem reverseRowBump_rowBump_of_sortedLE (x y : α) {row : List α}
     (hrow : row.SortedLE) (hbump : (rowBump x row).2 = some y) :
