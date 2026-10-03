@@ -136,26 +136,6 @@ theorem algebraicIndCoindIso_inv_apply
   exact (LinearMap.congr_fun (Rep.indCoindIso_inv_hom_toLinearMap.{max u w, v, u}
     (Rep.of (Representation.ofDistribMulAction R U.toSubgroup A.obj.V))) f).symm
 
-/-- The forward smooth comparison is the algebraic induction-to-coinduction map. -/
-@[simp]
-theorem algebraicIndCoindIso_hom_toLinearMap :
-    (algebraicIndCoindIso.{u, v, w} R G U A).hom.hom.hom.toContinuousLinearMap.toLinearMap =
-      Rep.indToCoind (Rep.of
-        (Representation.ofDistribMulAction R U.toSubgroup A.obj.V)) := by
-  apply LinearMap.ext
-  intro x
-  exact algebraicIndCoindIso_hom_apply.{u, v, w} R G U A x
-
-/-- The inverse smooth comparison is the algebraic sum over right cosets. -/
-@[simp]
-theorem algebraicIndCoindIso_inv_toLinearMap :
-    (algebraicIndCoindIso.{u, v, w} R G U A).inv.hom.hom.toContinuousLinearMap.toLinearMap =
-      Rep.coindToInd (Rep.of
-        (Representation.ofDistribMulAction R U.toSubgroup A.obj.V)) := by
-  apply LinearMap.ext
-  intro x
-  exact algebraicIndCoindIso_inv_apply.{u, v, w} R G U A x
-
 /-- On a tensor generator, the comparison is the equivariant function supported on its
 right coset, with value `a` at `g`. -/
 -- Use this auxiliary-function formula for explicit rewriting: `simp` already rewrites the
@@ -168,13 +148,9 @@ theorem algebraicIndCoindIso_hom_mk_apply (g h : G) (a : A.obj.V) :
         (Representation.ofDistribMulAction R U.toSubgroup A.obj.V) g a)).1 h) =
       Rep.indToCoindAux (Rep.of
         (Representation.ofDistribMulAction R U.toSubgroup A.obj.V)) g a h := by
-  have he := LinearMap.congr_fun (algebraicIndCoindIso_hom_toLinearMap.{u, v, w} R G U A)
-    (Representation.IndV.mk U.toSubgroup.subtype
-      (Representation.ofDistribMulAction R U.toSubgroup A.obj.V) g a)
-  exact (congrArg (fun f : Representation.coindV U.toSubgroup.subtype
-    (Representation.ofDistribMulAction R U.toSubgroup A.obj.V) ↦ f.1 h) he).trans
-      (congrFun (Rep.indToCoind_mk
-        (Rep.of (Representation.ofDistribMulAction R U.toSubgroup A.obj.V)) g a) h)
+  rw [algebraicIndCoindIso_hom_apply]
+  exact congrFun (Rep.indToCoind_mk
+    (Rep.of (Representation.ofDistribMulAction R U.toSubgroup A.obj.V)) g a) h
 
 /-- Algebraic induction from an open subgroup agrees with locally constant topological
 coinduction. This assertion requires openness; it is not asserted for infinite-index closed
