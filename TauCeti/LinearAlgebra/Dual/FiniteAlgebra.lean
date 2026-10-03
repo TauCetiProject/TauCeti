@@ -21,6 +21,9 @@ without choosing a lattice in the function space.
 The symbol-side evaluation takes values in the opposite endomorphism ring. Precomposition
 reverses products, so this convention extends generator equivariance to the free algebra
 without any commutativity assumption on the operators.
+
+The pairing need only be bilinear over the base ring, even when the first family is linear
+over a scalar algebra.
 -/
 
 public section
@@ -38,7 +41,7 @@ variable {R K M V ι : Type*} [CommSemiring R] [Semiring K] [Algebra R K]
 /-- An adjointness identity on generators extends to the free algebra, with the adjoint
 operators evaluated in the opposite endomorphism ring. -/
 theorem pairing_freeAlgebra_lift
-    (P : V →ₗ[K] M →ₗ[R] K) (t : ι → Module.End K V) (u : ι → Module.End R M)
+    (P : V →ₗ[R] M →ₗ[R] K) (t : ι → Module.End K V) (u : ι → Module.End R M)
     (h : ∀ i v x, P (t i v) x = P v (u i x)) (a : FreeAlgebra R ι) (v : V) (x : M) :
     P (FreeAlgebra.lift R t a v) x =
       P v ((FreeAlgebra.lift R (fun i ↦ op (u i)) a).unop x) := by
@@ -61,7 +64,7 @@ variable {R K M V ι : Type*} [CommRing R] [Semiring K] [Algebra R K]
 module, its generated algebra is finite over the base ring. The operators need not commute,
 and the module carrying the first family need not be finite. -/
 theorem finite_adjoin_of_injective_pairing [IsNoetherian R M]
-    (P : V →ₗ[K] M →ₗ[R] K) (hP : Function.Injective P)
+    (P : V →ₗ[R] M →ₗ[R] K) (hP : Function.Injective P)
     (t : ι → Module.End K V) (u : ι → Module.End R M)
     (h : ∀ i v x, P (t i v) x = P v (u i x)) :
     Module.Finite R (Algebra.adjoin R (Set.range t)) := by
