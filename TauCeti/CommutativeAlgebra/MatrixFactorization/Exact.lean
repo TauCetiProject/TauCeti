@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CommutativeAlgebra.MatrixFactorization.DiskFactorization
+public import TauCeti.CommutativeAlgebra.MatrixFactorization.Biproduct
 public import TauCeti.Algebra.Homology.Curved.Exact
 public import TauCeti.CategoryTheory.Exact.ExtensionClosed
 

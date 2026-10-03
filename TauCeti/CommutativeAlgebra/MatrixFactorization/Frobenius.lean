@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CommutativeAlgebra.MatrixFactorization.Exact
+public import TauCeti.CommutativeAlgebra.MatrixFactorization.DiskFactorization
 public import TauCeti.Algebra.Homology.Curved.Frobenius
 public import TauCeti.CategoryTheory.Exact.FullSubcategory
 
@@ -58,7 +59,8 @@ theorem splitExact_isInjective_of_mem_nullHomotopic {X : MatrixFactorization S w
   apply ExactStructure.isInjective_fullSubcategory_of_isInjective isExtensionClosed_isProjective
   apply ExactStructure.curvedDuplex_split_isInjective_of_mem_nullHomotopic
   obtain ⟨h₀, h₁, hh⟩ := (mem_nullHomotopic_iff (𝟙 X)).mp hX
-  exact CurvedDuplex.mem_nullHomotopic_iff.mpr ⟨h₀, h₁, by simpa using hh⟩
+  exact CurvedDuplex.mem_nullHomotopic_iff.mpr
+    ⟨h₀, h₁, by simpa only [ObjectProperty.FullSubcategory.id_hom] using hh⟩
 
 /-- Contractible matrix factorizations are relatively projective for the componentwise split
 exact structure. -/
@@ -69,7 +71,8 @@ theorem splitExact_isProjective_of_mem_nullHomotopic {X : MatrixFactorization S 
   apply ExactStructure.isProjective_fullSubcategory_of_isProjective isExtensionClosed_isProjective
   apply ExactStructure.curvedDuplex_split_isProjective_of_mem_nullHomotopic
   obtain ⟨h₀, h₁, hh⟩ := (mem_nullHomotopic_iff (𝟙 X)).mp hX
-  exact CurvedDuplex.mem_nullHomotopic_iff.mpr ⟨h₀, h₁, by simpa using hh⟩
+  exact CurvedDuplex.mem_nullHomotopic_iff.mpr
+    ⟨h₀, h₁, by simpa only [ObjectProperty.FullSubcategory.id_hom] using hh⟩
 
 /-- The canonical embedding into the disk sum is a componentwise split inflation. -/
 theorem splitExact_isInflation_toDiskSum (X : MatrixFactorization S w) :
