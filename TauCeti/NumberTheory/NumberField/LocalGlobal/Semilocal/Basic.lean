@@ -56,15 +56,20 @@ The places above `v` are indexed by the subtype
 * `TauCeti.semilocalContinuousEquiv`: the semi-local decomposition as a continuous algebra
   equivalence when the tensor product carries its module topology over `K_v`.
 
-## Implementation notes
+## Topology
 
-The continuous equivalence `TauCeti.semilocalContinuousEquiv` and its companion formulas
-(`semilocalContinuousEquiv_tmul`, `semilocalEquiv_symm_algebraMap`,
-`semilocalContinuousEquiv_symm_algebraMap`) follow the archimedean construction
-`TauCeti.GlobalNumberFields.infiniteSemilocalContinuousEquiv` and its companion formulas in
-`TauCeti.NumberTheory.NumberField.Global.Places.Semilocal`: continuity in both directions comes
-from `IsModuleTopology.continuous_of_linearMap`, using the module topology of the
-finite-dimensional product of completions.
+Both sides of the semi-local decomposition are finite-dimensional `K_v`-vector spaces. Each
+carries its canonical `K_v`-module topology, which on `∏_{w ∣ v} L_w` is the product topology,
+and `K_v`-linear maps between such spaces are continuous. So when `K_v ⊗[K] L` carries its module
+topology, `semilocalEquiv v` is a homeomorphism. This placewise identification of topological
+rings is the finite-place input for identifying the finite adeles of `L` with the scalar
+extension of the finite adeles of `K` to `L`.
+
+## Provenance
+
+The continuous equivalence and its companion formulas follow the archimedean analogue
+`TauCeti.GlobalNumberFields.infiniteSemilocalContinuousEquiv` in
+`TauCeti.NumberTheory.NumberField.Global.Places.Semilocal`.
 
 ## References
 
