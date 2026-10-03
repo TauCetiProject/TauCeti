@@ -5,30 +5,61 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.FiniteBilinearModule.Dyadic.Cyclic
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Dyadic.RankTwo
-public import TauCeti.LinearAlgebra.FiniteBilinearModule.GaussSum
+public import TauCeti.LinearAlgebra.FiniteBilinearModule.Orthogonal.GaussSum
+import TauCeti.Data.ZMod.Torsion
 
 /-!
-# The Gauss sum of the dyadic hyperbolic generator
+# Gauss sums of the dyadic generators
 
-Nikulin's generator `u^{(2)}(2^k)` has quadratic form `q(x, y) = xy / 2^k` on
-`(ℤ/2^k)²`. Its first coordinate axis is a quadratic Lagrangian, so the module is metabolic.
-Consequently its Gauss sum is `2^k` and its Gauss-sum invariant is zero. These formulas also
-hold at `k = 0`, where the module is trivial.
+Nikulin's dyadic generators are the cyclic forms `q_θ^{(2)}(2^k)` on `ℤ/2^k`, for odd `θ` and
+`k ≥ 1`, with `q(x) = θx² / 2^{k+1}`, and the rank-two forms `u^{(2)}(2^k)` and `v^{(2)}(2^k)` on
+`(ℤ/2^k)²`, with `q(x) = x₁x₂ / 2^k` and `q(x) = (x₁² + x₁x₂ + x₂²) / 2^k`. This file computes
+their Gauss-sum invariants, which are the dyadic values of Nikulin's Proposition 1.11.2:
 
-The calculation uses the explicit quadratic Lagrangian from
-`TauCeti.LinearAlgebra.FiniteBilinearModule.Dyadic.RankTwo`. Isotropy for the polar pairing
-alone would not suffice to determine the Gauss sum.
+```text
+sign q_θ^{(2)}(2^k) ≡ θ + 4kω(θ),   where ω(θ) = (θ² - 1) / 8,
+sign u^{(2)}(2^k)   ≡ 0,
+sign v^{(2)}(2^k)   ≡ 4k            (mod 8),
+```
+
+together with the Gauss sums `2^k` of `u^{(2)}(2^k)` and `(-2)^k` of `v^{(2)}(2^k)`.
+
+The first coordinate axis of `u^{(2)}(2^k)` is a quadratic Lagrangian, so that module is metabolic.
+Isotropy for the polar pairing alone would not suffice to determine the Gauss sum.
+
+The other two families are reduced by two in the exponent. In `q_θ^{(2)}(2^{k+2})`, with
+`k ≥ 1`, and in `v^{(2)}(2^{k+2})`, the `2`-torsion is quadratic-isotropic, and `q(2y)` is the
+form of the same generator of exponent `2^k` evaluated on the reduction of `y`; by
+`TauCeti.FiniteQuadraticModule.gaussSign_eq_of_quadratic_zsmul_eq` the invariant does not change.
+The base cases are explicit sums: `q_θ^{(2)}(2)` has Gauss sum `1 + e^{2πiθ/4}`, which is the
+Gauss sum of the discriminant form of `⟨2⟩` or of its negative according to `θ` modulo `4`;
+`q_θ^{(2)}(4)` has Gauss sum `2e^{2πiθ/8}`; `v^{(2)}(1)` is trivial; and `v^{(2)}(2)` has Gauss
+sum `-2`, because its form takes the value `1/2` on the three nonzero elements of `(ℤ/2)²`.
+
+## Main declarations
+
+* `TauCeti.FiniteQuadraticModule.gaussSign_dyadicCyclic`: `sign q_θ^{(2)}(2^k) = θ + 4kω(θ)`.
+* `TauCeti.FiniteQuadraticModule.gaussSign_dyadicU` and
+  `TauCeti.FiniteQuadraticModule.gaussSum_dyadicU`: `sign u^{(2)}(2^k) = 0` and its Gauss sum
+  is `2^k`.
+* `TauCeti.FiniteQuadraticModule.gaussSign_dyadicV` and
+  `TauCeti.FiniteQuadraticModule.gaussSum_dyadicV`: `sign v^{(2)}(2^k) = 4k` and its Gauss sum
+  is `(-2)^k`.
 
 ## References
 
 * V. V. Nikulin, *Integral symmetric bilinear forms and some of their applications*,
-  Proposition 1.11.2, the value on `u^{(2)}(2^k)`.
+  Proposition 1.11.2, the values on the dyadic generators.
 * C. T. C. Wall, *Quadratic forms on finite groups, and related topics*, Topology 2 (1963),
-  281–298, for the Gauss sum of a metabolic quadratic module.
+  281–298, for the Gauss sum of a metabolic quadratic module and the reduction by isotropic
+  subgroups.
 -/
-
 public section
+
+open Complex ComplexConjugate
+open scoped Real
 
 namespace TauCeti.FiniteQuadraticModule
 
@@ -49,5 +80,324 @@ theorem gaussSum_dyadicU : (dyadicU k).gaussSum = (2 : ℂ) ^ k := by
 @[simp]
 theorem gaussSign_dyadicU : (dyadicU k).gaussSign = 0 :=
   gaussSign_eq_zero_of_isMetabolic (isNondegenerate_dyadicU k) (isMetabolic_dyadicU k)
+
+/-! ## Reduction of the exponent by two -/
+
+/-- The form `x₁² + x₁x₂ + x₂²` of `v^{(2)}` commutes with reducing integers. -/
+private theorem intCast_sq_add_mul_add_sq {m : ℕ} (a b : ℤ) :
+    (a : ZMod m) ^ 2 + a * b + b ^ 2 = ((a ^ 2 + a * b + b ^ 2 : ℤ) : ZMod m) := by
+  push_cast
+  ring
+
+/-- Doubling the reduction of an integer `j` gives the reduction of `2j`. -/
+private theorem two_zsmul_intCast {m : ℕ} (j : ℤ) :
+    (2 : ℤ) • (j : ZMod m) = ((2 * j : ℤ) : ZMod m) := by
+  rw [zsmul_eq_mul, Int.cast_mul]
+
+/-- `q_θ^{(2)}(2^k)` has `2^k` elements. Its carrier is `ℤ/2^k` by definition; this is the only
+place below where that representation is used to count it. -/
+private theorem natCard_dyadicCyclic [NeZero k] (θ : ℤ) : Nat.card (dyadicCyclic k θ) = 2 ^ k :=
+  Nat.card_zmod (2 ^ k)
+
+/-- `v^{(2)}(2^k)` has `2^k · 2^k` elements. Its carrier is `(ℤ/2^k)²` by definition; this is the
+only place below where that representation is used to count it. -/
+private theorem natCard_dyadicV : Nat.card (dyadicV k) = 2 ^ k * 2 ^ k := by
+  rw [show Nat.card (dyadicV k) = Nat.card (ZMod (2 ^ k) × ZMod (2 ^ k)) from rfl, Nat.card_prod,
+    Nat.card_zmod]
+
+variable {k} in
+/-- The Gauss-sum invariant of `q_θ^{(2)}(2^{k+2})` is that of `q_θ^{(2)}(2^k)`, for odd `θ`
+and `k ≥ 1`. The `2`-torsion of `ℤ/2^{k+2}` is generated by `2^{k+1}`, on which `q` takes the
+integral value `θ 2^{k-1}`, and `q(2y) = θy² / 2^{k+1}` is the form of `q_θ^{(2)}(2^k)` on the
+reduction of `y` modulo `2^k`. -/
+private theorem gaussSign_dyadicCyclic_add_two [NeZero k] {θ : ℤ} (hθ : Odd θ) :
+    (dyadicCyclic (k + 2) θ).gaussSign = (dyadicCyclic k θ).gaussSign := by
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero (NeZero.ne k)
+  have hdvd : 2 ^ (k + 1) ∣ 2 ^ (k + 1 + 2) := pow_dvd_pow 2 (by omega)
+  let r := (ZMod.castHom hdvd (ZMod (2 ^ (k + 1)))).toAddMonoidHom
+  -- Both conditions are computed on `ℤ/2^{k+3}` itself, the carrier of the module.
+  have hiso (x : ZMod (2 ^ (k + 1 + 2))) (hx : (2 : ℤ) • x = 0) :
+      (dyadicCyclic (k + 1 + 2) θ).quadratic x = 0 := by
+    obtain ⟨t, rfl⟩ := ZMod.exists_eq_pow_mul_of_zsmul_eq_zero (p := 2) (n := k + 2) hx
+    rw [dyadicCyclic_quadratic_intCast]
+    exact (AddCircle.coe_eq_zero_iff (1 : ℚ)).2
+      ⟨θ * 2 ^ k * t ^ 2, by push_cast; field_simp; ring⟩
+  have hq (y : ZMod (2 ^ (k + 1 + 2))) :
+      (dyadicCyclic (k + 1 + 2) θ).quadratic ((2 : ℤ) • y) =
+        (dyadicCyclic (k + 1) θ).quadratic (r y) := by
+    obtain ⟨j, rfl⟩ := ZMod.intCast_surjective y
+    simp only [r, RingHom.toAddMonoidHom_eq_coe, AddMonoidHom.coe_ofClass, map_intCast,
+      two_zsmul_intCast, dyadicCyclic_quadratic_intCast]
+    congr 1
+    push_cast
+    field_simp
+    ring
+  exact gaussSign_eq_of_quadratic_zsmul_eq ((isNondegenerate_dyadicCyclic_iff _ θ).2 hθ)
+    ((isNondegenerate_dyadicCyclic_iff _ θ).2 hθ) 2
+    ((isIsotropic_def _).2 fun x hx ↦ hiso x ((zsmulAddGroupHom_apply 2 x).symm.trans hx)) r
+    (ZMod.castHom_surjective hdvd) hq
+
+/-- The Gauss-sum invariant of `v^{(2)}(2^{k+2})` is that of `v^{(2)}(2^k)`. The
+`2`-torsion of `(ℤ/2^{k+2})²` is `(2^{k+1}ℤ/2^{k+2})²`, on which
+`q(x) = (x₁² + x₁x₂ + x₂²) / 2^{k+2}` is integral, and `q(2y)` is the form of `v^{(2)}(2^k)`
+on the reduction of `y` modulo `2^k`. -/
+private theorem gaussSign_dyadicV_add_two :
+    (dyadicV (k + 2)).gaussSign = (dyadicV k).gaussSign := by
+  have hdvd : 2 ^ k ∣ 2 ^ (k + 2) := pow_dvd_pow 2 (by omega)
+  let r := (ZMod.castHom hdvd (ZMod (2 ^ k))).toAddMonoidHom
+  -- Both conditions are computed on `(ℤ/2^{k+2})²` itself, the carrier of the module.
+  have hiso (x : ZMod (2 ^ (k + 2)) × ZMod (2 ^ (k + 2))) (hx : (2 : ℤ) • x = 0) :
+      (dyadicV (k + 2)).quadratic x = 0 := by
+    obtain ⟨x₁, x₂⟩ := x
+    obtain ⟨s, rfl⟩ :=
+      ZMod.exists_eq_pow_mul_of_zsmul_eq_zero (p := 2) (n := k + 1) (congrArg Prod.fst hx)
+    obtain ⟨t, rfl⟩ :=
+      ZMod.exists_eq_pow_mul_of_zsmul_eq_zero (p := 2) (n := k + 1) (congrArg Prod.snd hx)
+    rw [dyadicV_quadratic, intCast_sq_add_mul_add_sq, ZMod.toRatAddCircle_intCast]
+    exact (AddCircle.coe_eq_zero_iff (1 : ℚ)).2
+      ⟨2 ^ k * (s ^ 2 + s * t + t ^ 2), by push_cast; field_simp; ring⟩
+  have hq (y : ZMod (2 ^ (k + 2)) × ZMod (2 ^ (k + 2))) :
+      (dyadicV (k + 2)).quadratic ((2 : ℤ) • y) = (dyadicV k).quadratic (r.prodMap r y) := by
+    obtain ⟨y₁, y₂⟩ := y
+    obtain ⟨i, rfl⟩ := ZMod.intCast_surjective y₁
+    obtain ⟨j, rfl⟩ := ZMod.intCast_surjective y₂
+    simp only [Prod.smul_mk, two_zsmul_intCast, AddMonoidHom.coe_prodMap, Prod.map_apply, r,
+      RingHom.toAddMonoidHom_eq_coe, AddMonoidHom.coe_ofClass, map_intCast, dyadicV_quadratic]
+    rw [intCast_sq_add_mul_add_sq, intCast_sq_add_mul_add_sq, ZMod.toRatAddCircle_intCast,
+      ZMod.toRatAddCircle_intCast]
+    congr 1
+    push_cast
+    field_simp
+    ring
+  exact gaussSign_eq_of_quadratic_zsmul_eq (isNondegenerate_dyadicV _) (isNondegenerate_dyadicV _)
+    2 ((isIsotropic_def _).2 fun x hx ↦ hiso x ((zsmulAddGroupHom_apply 2 x).symm.trans hx))
+    (r.prodMap r) (Prod.map_surjective.2 ⟨ZMod.castHom_surjective hdvd,
+      ZMod.castHom_surjective hdvd⟩) hq
+
+/-! ## Base cases -/
+
+/-- `(8 : ℤ/8) = 0`, the relation behind every congruence modulo `8` below. -/
+private theorem eight_eq_zero : (8 : ZMod 8) = 0 := by decide
+
+/-- The Gauss sum of `q_θ^{(2)}(2)` is `1 + e^{2πiθ/4}`. -/
+private theorem gaussSum_dyadicCyclic_one (θ : ℤ) :
+    (dyadicCyclic 1 θ).gaussSum = 1 + expCircle ((θ / 4 : ℚ) : AddCircle (1 : ℚ)) := by
+  let : Fintype (dyadicCyclic 1 θ) := inferInstanceAs (Fintype (ZMod (2 ^ 1)))
+  have h₀ : (dyadicCyclic 1 θ).quadratic ((0 : ℤ) : ZMod (2 ^ 1)) = 0 := by
+    rw [dyadicCyclic_quadratic_intCast]
+    norm_num
+  have h₁ : (dyadicCyclic 1 θ).quadratic ((1 : ℤ) : ZMod (2 ^ 1)) = ((θ / 4 : ℚ)) := by
+    rw [dyadicCyclic_quadratic_intCast]
+    norm_num
+  -- The carrier of `dyadicCyclic 1 θ` is `ℤ/2` only after unfolding, so the sum is computed on
+  -- `ℤ/2` and transported by definitional unfolding.
+  have key : ∑ x : ZMod (2 ^ 1), expCircle ((dyadicCyclic 1 θ).quadratic x) =
+      1 + expCircle ((θ / 4 : ℚ) : AddCircle (1 : ℚ)) := by
+    rw [show (Finset.univ : Finset (ZMod (2 ^ 1))) =
+        {((0 : ℤ) : ZMod (2 ^ 1)), ((1 : ℤ) : ZMod (2 ^ 1))} by decide,
+      Finset.sum_pair (by decide), h₀, h₁, AddChar.map_zero_eq_one]
+  rw [gaussSum_eq_sum]
+  exact key
+
+/-- **The Gauss-sum invariant of `q_θ^{(2)}(2)` is `θ + 4ω(θ)`** for odd `θ`, where
+`ω(θ) = (θ² - 1) / 8`: it is `1` for `θ ≡ 1 (mod 4)` and `-1` for `θ ≡ 3 (mod 4)`, the values
+of the discriminant form of `⟨2⟩` and of its negative. -/
+private theorem gaussSign_dyadicCyclic_one {θ : ℤ} (hθ : Odd θ) :
+    (dyadicCyclic 1 θ).gaussSign = ((θ + 4 * ((θ ^ 2 - 1) / 8) : ℤ) : ZMod 8) := by
+  have hA := (isNondegenerate_dyadicCyclic_iff 1 θ).2 hθ
+  have hB := isNondegenerate_zmodStandard 2 even_two
+  obtain ⟨s, rfl⟩ := hθ
+  obtain ⟨t, rfl | rfl⟩ := Int.even_or_odd' s
+  · -- `θ = 4t + 1`: the Gauss sum is `1 + i`, that of the discriminant form of `⟨2⟩`.
+    have hω : ((2 * (2 * t) + 1) ^ 2 - 1) / 8 = 2 * t ^ 2 + t :=
+      Int.ediv_eq_of_eq_mul_left (by norm_num) (by ring)
+    have he : expCircle ((((2 * (2 * t) + 1 : ℤ) : ℚ) / 4 : ℚ) : AddCircle (1 : ℚ)) = I := by
+      rw [← expCircle_one_div_four, ← AddCircle.coe_add_intCast (1 / 4) t]
+      congr 2
+      push_cast
+      ring
+    rw [hω, gaussSign_eq_of_gaussSum_eq_mul hA hB zero_le_one
+        (by rw [gaussSum_dyadicCyclic_one, he, gaussSum_zmodStandard_two, ofReal_one, one_mul]),
+      gaussSign_zmodStandard_two]
+    push_cast
+    linear_combination (-(t ^ 2 + t) : ZMod 8) * eight_eq_zero
+  · -- `θ = 4t + 3`: the Gauss sum is `1 - i`, that of the negative of the form of `⟨2⟩`.
+    have hω : ((2 * (2 * t + 1) + 1) ^ 2 - 1) / 8 = 2 * t ^ 2 + 3 * t + 1 :=
+      Int.ediv_eq_of_eq_mul_left (by norm_num) (by ring)
+    have he : expCircle ((((2 * (2 * t + 1) + 1 : ℤ) : ℚ) / 4 : ℚ) : AddCircle (1 : ℚ)) =
+        conj I := by
+      rw [← expCircle_one_div_four, ← expCircle_neg, ← AddCircle.coe_neg,
+        ← AddCircle.coe_add_intCast (-(1 / 4)) (t + 1)]
+      congr 2
+      push_cast
+      ring
+    rw [hω, gaussSign_eq_of_gaussSum_eq_mul hA ((isNondegenerate_neg _).2 hB) zero_le_one
+        (by rw [gaussSum_dyadicCyclic_one, he, gaussSum_neg, gaussSum_zmodStandard_two, map_add,
+          map_one, ofReal_one, one_mul]),
+      gaussSign_neg, gaussSign_zmodStandard_two]
+    push_cast
+    linear_combination (-(t ^ 2 + 2 * t + 1) : ZMod 8) * eight_eq_zero
+
+/-- **The Gauss sum of `q_θ^{(2)}(4)` is `2 e^{2πiθ/8}`** for odd `θ`: the terms at `0` and `2`
+cancel, and those at `1` and `3` agree. -/
+private theorem gaussSum_dyadicCyclic_two {θ : ℤ} (hθ : Odd θ) :
+    (dyadicCyclic 2 θ).gaussSum = 2 * expCircle ((θ / 8 : ℚ) : AddCircle (1 : ℚ)) := by
+  let : Fintype (dyadicCyclic 2 θ) := inferInstanceAs (Fintype (ZMod (2 ^ 2)))
+  obtain ⟨s, rfl⟩ := hθ
+  have h₀ : (dyadicCyclic 2 (2 * s + 1)).quadratic ((0 : ℤ) : ZMod (2 ^ 2)) = 0 := by
+    rw [dyadicCyclic_quadratic_intCast]
+    norm_num
+  have h₁ : (dyadicCyclic 2 (2 * s + 1)).quadratic ((1 : ℤ) : ZMod (2 ^ 2)) =
+      ((((2 * s + 1 : ℤ) : ℚ) / 8 : ℚ)) := by
+    rw [dyadicCyclic_quadratic_intCast]
+    norm_num
+  have h₂ : (dyadicCyclic 2 (2 * s + 1)).quadratic ((2 : ℤ) : ZMod (2 ^ 2)) = ((1 / 2 : ℚ)) := by
+    rw [dyadicCyclic_quadratic_intCast, ← AddCircle.coe_add_intCast (1 / 2) s]
+    congr 1
+    push_cast
+    ring
+  have h₃ : (dyadicCyclic 2 (2 * s + 1)).quadratic ((3 : ℤ) : ZMod (2 ^ 2)) =
+      ((((2 * s + 1 : ℤ) : ℚ) / 8 : ℚ)) := by
+    rw [dyadicCyclic_quadratic_intCast,
+      ← AddCircle.coe_add_intCast (((2 * s + 1 : ℤ) : ℚ) / 8) (2 * s + 1)]
+    congr 1
+    push_cast
+    ring
+  -- The carrier of `dyadicCyclic 2 θ` is `ℤ/4` only after unfolding, so the sum is computed on
+  -- `ℤ/4` and transported by definitional unfolding.
+  have key : ∑ x : ZMod (2 ^ 2), expCircle ((dyadicCyclic 2 (2 * s + 1)).quadratic x) =
+      2 * expCircle ((((2 * s + 1 : ℤ) : ℚ) / 8 : ℚ) : AddCircle (1 : ℚ)) := by
+    rw [show (Finset.univ : Finset (ZMod (2 ^ 2))) = {((0 : ℤ) : ZMod (2 ^ 2)),
+        ((1 : ℤ) : ZMod (2 ^ 2)), ((2 : ℤ) : ZMod (2 ^ 2)), ((3 : ℤ) : ZMod (2 ^ 2))} by decide,
+      Finset.sum_insert (by decide), Finset.sum_insert (by decide), Finset.sum_pair (by decide),
+      h₀, h₁, h₂, h₃, AddChar.map_zero_eq_one, expCircle_one_div_two]
+    ring
+  rw [gaussSum_eq_sum]
+  exact key
+
+/-- **The Gauss-sum invariant of `q_θ^{(2)}(4)` is `θ`** for odd `θ`. -/
+private theorem gaussSign_dyadicCyclic_two {θ : ℤ} (hθ : Odd θ) :
+    (dyadicCyclic 2 θ).gaussSign = θ := by
+  refine gaussSign_eq_of_gaussSum_eq _ ?_
+  rw [gaussSum_dyadicCyclic_two hθ, natCard_dyadicCyclic, ZMod.toRatAddCircle_intCast, Nat.cast_pow,
+    Real.sqrt_sq (by norm_num)]
+  push_cast
+  ring_nf
+
+/-- **The Gauss-sum invariant of `v^{(2)}(1)` is zero**: the module is trivial. -/
+private theorem gaussSign_dyadicV_zero : (dyadicV 0).gaussSign = 0 := by
+  let : Fintype (dyadicV 0) := inferInstanceAs (Fintype (ZMod (2 ^ 0) × ZMod (2 ^ 0)))
+  -- The carrier of `dyadicV 0` is `(ℤ/1)²` only after unfolding, so the sum is computed there and
+  -- transported by definitional unfolding.
+  have key : ∑ x : ZMod (2 ^ 0) × ZMod (2 ^ 0), expCircle ((dyadicV 0).quadratic x) = 1 := by
+    rw [show (Finset.univ : Finset (ZMod (2 ^ 0) × ZMod (2 ^ 0))) = {0} by decide,
+      Finset.sum_singleton, dyadicV_quadratic]
+    simp
+  refine gaussSign_eq_of_gaussSum_eq _ ?_
+  rw [gaussSum_eq_sum, natCard_dyadicV]
+  refine key.trans ?_
+  simp
+
+/-- **The Gauss sum of `v^{(2)}(2)` is `-2`**: the form takes the value `1/2` on the three
+nonzero elements of `(ℤ/2)²`. -/
+private theorem gaussSum_dyadicV_one : (dyadicV 1).gaussSum = -2 := by
+  let : Fintype (dyadicV 1) := inferInstanceAs (Fintype (ZMod (2 ^ 1) × ZMod (2 ^ 1)))
+  have hv (i j : ℤ) : (dyadicV 1).quadratic ((i : ZMod (2 ^ 1)), (j : ZMod (2 ^ 1))) =
+      (((i ^ 2 + i * j + j ^ 2 : ℤ) / 2 : ℚ) : AddCircle (1 : ℚ)) := by
+    rw [dyadicV_quadratic, intCast_sq_add_mul_add_sq, ZMod.toRatAddCircle_intCast]
+    norm_num
+  have h₀₀ : (dyadicV 1).quadratic (((0 : ℤ) : ZMod (2 ^ 1)), ((0 : ℤ) : ZMod (2 ^ 1))) = 0 := by
+    rw [hv]
+    norm_num
+  have h₀₁ : (dyadicV 1).quadratic (((0 : ℤ) : ZMod (2 ^ 1)), ((1 : ℤ) : ZMod (2 ^ 1))) =
+      ((1 / 2 : ℚ) : AddCircle (1 : ℚ)) := by
+    rw [hv]
+    norm_num
+  have h₁₀ : (dyadicV 1).quadratic (((1 : ℤ) : ZMod (2 ^ 1)), ((0 : ℤ) : ZMod (2 ^ 1))) =
+      ((1 / 2 : ℚ) : AddCircle (1 : ℚ)) := by
+    rw [hv]
+    norm_num
+  have h₁₁ : (dyadicV 1).quadratic (((1 : ℤ) : ZMod (2 ^ 1)), ((1 : ℤ) : ZMod (2 ^ 1))) =
+      ((1 / 2 : ℚ) : AddCircle (1 : ℚ)) := by
+    rw [hv, ← AddCircle.coe_add_intCast (1 / 2) 1]
+    norm_num
+  -- The carrier of `dyadicV 1` is `(ℤ/2)²` only after unfolding, so the sum is computed there and
+  -- transported by definitional unfolding.
+  have key : ∑ x : ZMod (2 ^ 1) × ZMod (2 ^ 1), expCircle ((dyadicV 1).quadratic x) = -2 := by
+    rw [show (Finset.univ : Finset (ZMod (2 ^ 1) × ZMod (2 ^ 1))) =
+        {(((0 : ℤ) : ZMod (2 ^ 1)), ((0 : ℤ) : ZMod (2 ^ 1))),
+          (((0 : ℤ) : ZMod (2 ^ 1)), ((1 : ℤ) : ZMod (2 ^ 1))),
+          (((1 : ℤ) : ZMod (2 ^ 1)), ((0 : ℤ) : ZMod (2 ^ 1))),
+          (((1 : ℤ) : ZMod (2 ^ 1)), ((1 : ℤ) : ZMod (2 ^ 1)))} by decide,
+      Finset.sum_insert (by decide), Finset.sum_insert (by decide), Finset.sum_pair (by decide),
+      h₀₀, h₀₁, h₁₀, h₁₁, AddChar.map_zero_eq_one, expCircle_one_div_two]
+    ring
+  rw [gaussSum_eq_sum]
+  exact key
+
+/-- `4 ∈ ℤ/8` corresponds to `1/2` in `ℚ/ℤ`. -/
+private theorem toRatAddCircle_eight_four :
+    ZMod.toRatAddCircle 8 4 = ((1 / 2 : ℚ) : AddCircle (1 : ℚ)) := by
+  have h := ZMod.toRatAddCircle_natCast 8 4
+  norm_num at h
+  exact h
+
+/-- **The Gauss-sum invariant of `v^{(2)}(2)` is `4`.** -/
+private theorem gaussSign_dyadicV_one : (dyadicV 1).gaussSign = 4 := by
+  refine gaussSign_eq_of_gaussSum_eq _ ?_
+  rw [gaussSum_dyadicV_one, natCard_dyadicV, toRatAddCircle_eight_four, expCircle_one_div_two,
+    Nat.cast_mul, Real.sqrt_mul_self (by positivity)]
+  push_cast
+  ring
+
+/-! ## The values on the dyadic generators -/
+
+/-- The closed formula for `q_θ^{(2)}(2^{j+1})`, by induction on `j` in steps of two. -/
+private theorem gaussSign_dyadicCyclic_add_one {θ : ℤ} (hθ : Odd θ) (j : ℕ) :
+    (dyadicCyclic (j + 1) θ).gaussSign =
+      ((θ + 4 * ((j + 1 : ℕ) : ℤ) * ((θ ^ 2 - 1) / 8) : ℤ) : ZMod 8) := by
+  induction j using Nat.strong_induction_on with
+  | _ j ih =>
+    rcases j with _ | _ | j
+    · simpa using gaussSign_dyadicCyclic_one hθ
+    · refine (gaussSign_dyadicCyclic_two hθ).trans ?_
+      push_cast
+      linear_combination (-((θ ^ 2 - 1) / 8 : ℤ) : ZMod 8) * eight_eq_zero
+    · refine (gaussSign_dyadicCyclic_add_two (k := j + 1) hθ).trans ((ih j (by omega)).trans ?_)
+      push_cast
+      linear_combination (-((θ ^ 2 - 1) / 8 : ℤ) : ZMod 8) * eight_eq_zero
+
+/-- **The Gauss-sum invariant of `q_θ^{(2)}(2^k)` is `θ + 4kω(θ)`** for odd `θ` and `k ≥ 1`,
+where `ω(θ) = (θ² - 1) / 8`. This is Nikulin's value `sign q_θ^{(2)}(2^k) ≡ θ + 4kω(θ)
+(mod 8)`; it depends only on `θ` modulo `8` and on the parity of `k`. -/
+@[simp]
+theorem gaussSign_dyadicCyclic [NeZero k] {θ : ℤ} (hθ : Odd θ) :
+    (dyadicCyclic k θ).gaussSign = ((θ + 4 * k * ((θ ^ 2 - 1) / 8) : ℤ) : ZMod 8) := by
+  obtain ⟨j, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero (NeZero.ne k)
+  exact gaussSign_dyadicCyclic_add_one hθ j
+
+/-- **The Gauss-sum invariant of `v^{(2)}(2^k)` is `4k`.** This is Nikulin's value
+`sign v^{(2)}(2^k) ≡ 4k (mod 8)`; it also holds at `k = 0`, where the module is trivial. -/
+@[simp]
+theorem gaussSign_dyadicV : (dyadicV k).gaussSign = 4 * k := by
+  induction k using Nat.strong_induction_on with
+  | _ k ih =>
+    rcases k with _ | _ | k
+    · simpa using gaussSign_dyadicV_zero
+    · simpa using gaussSign_dyadicV_one
+    · refine (gaussSign_dyadicV_add_two k).trans ((ih k (by omega)).trans ?_)
+      push_cast
+      linear_combination (-1 : ZMod 8) * eight_eq_zero
+
+/-- **The Gauss sum of `v^{(2)}(2^k)` is `(-2)^k`**, in the half-norm convention. -/
+@[simp]
+theorem gaussSum_dyadicV : (dyadicV k).gaussSum = (-2 : ℂ) ^ k := by
+  rw [(isNondegenerate_dyadicV k).gaussSum_eq, gaussSign_dyadicV, natCard_dyadicV,
+    ← nsmul_eq_mul' (4 : ZMod 8) k, map_nsmul,
+    AddChar.map_nsmul_eq_pow, toRatAddCircle_eight_four, expCircle_one_div_two, Nat.cast_mul,
+    Real.sqrt_mul_self (by positivity)]
+  push_cast
+  rw [← mul_pow]
+  norm_num
 
 end TauCeti.FiniteQuadraticModule

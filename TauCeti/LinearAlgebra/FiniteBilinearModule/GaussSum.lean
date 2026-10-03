@@ -81,6 +81,8 @@ pairing vanishes, while its Gauss sum is `(1 + i)² = 2i ≠ 2`, so it is not me
 * `TauCeti.FiniteQuadraticModule.gaussSign`: the Gauss-sum invariant `sign q ∈ ℤ/8`, with its
   defining property `TauCeti.FiniteQuadraticModule.IsNondegenerate.gaussSum_eq` and its
   uniqueness `TauCeti.FiniteQuadraticModule.gaussSign_eq_of_gaussSum_eq`.
+* `TauCeti.FiniteQuadraticModule.gaussSign_eq_of_gaussSum_eq_mul`: nondegenerate modules whose
+  Gauss sums differ by a nonnegative real factor have the same invariant.
 * `TauCeti.FiniteQuadraticModule.gaussSign_prod`, `TauCeti.FiniteQuadraticModule.gaussSign_neg`
   and `TauCeti.FiniteQuadraticModule.gaussSign_eq_zero_of_isMetabolic`: additivity, behaviour under
   negation, and vanishing on metabolic modules.
@@ -474,6 +476,24 @@ theorem IsNondegenerate.gaussSum_eq (hA : A.IsNondegenerate) :
     A.gaussSum = √(Nat.card A) * expCircle (ZMod.toRatAddCircle 8 A.gaussSign) := by
   obtain ⟨k, hk⟩ := hA.exists_gaussSum_eq
   rwa [gaussSign_eq_of_gaussSum_eq A hk]
+
+variable {A} in
+/-- **Gauss sums that differ by a nonnegative real factor have the same invariant.** If
+`G(A) = c · G(B)` for a real `c ≥ 0` and both modules are nondegenerate, then `sign A = sign B`:
+comparing absolute values gives `c √#B = √#A`. -/
+theorem gaussSign_eq_of_gaussSum_eq_mul {B : FiniteQuadraticModule} (hA : A.IsNondegenerate)
+    (hB : B.IsNondegenerate) {c : ℝ} (hc : 0 ≤ c) (h : A.gaussSum = c * B.gaussSum) :
+    A.gaussSign = B.gaussSign := by
+  set ζ := expCircle (ZMod.toRatAddCircle 8 B.gaussSign)
+  have h₁ : A.gaussSum = ((c * √(Nat.card B) : ℝ) : ℂ) * ζ := by
+    rw [h, hB.gaussSum_eq]
+    push_cast
+    ring
+  have h₂ : √(Nat.card A) = c * √(Nat.card B) := by
+    have := congrArg norm h₁
+    rwa [norm_mul, norm_expCircle, mul_one, hA.norm_gaussSum, norm_real,
+      Real.norm_of_nonneg (by positivity)] at this
+  exact gaussSign_eq_of_gaussSum_eq A (by rw [h₁, ← h₂])
 
 variable {A} in
 /-- The Gauss-sum invariant is an isometry invariant. -/

@@ -43,7 +43,7 @@ the unit `a`. On the one-crossing kink diagram `TauCeti.PDCode.kink` it takes th
 `-a ^ 3`, the framing factor of the first Reidemeister move. Whether the bracket descends from
 diagrams to knots is the question of its behaviour under the Reidemeister moves, which are
 separate constructions on PD-codes; the first move is in
-`TauCeti/KnotTheory/PDCode/ReidemeisterOne.lean`.
+`TauCeti/KnotTheory/PDCode/Reidemeister/One.lean`.
 
 For an oriented PD-code, `TauCeti.OrientedPDCode.normalizedKauffmanBracket` multiplies the bracket
 by the writhe correction `(-a ^ 3) ^ (-writhe)`. This is the normalization used to obtain the

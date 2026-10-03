@@ -5,9 +5,8 @@ Authors: Claude
 -/
 module
 
-public import Mathlib.Algebra.Homology.Embedding.ExtendHomology
 public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
-public import Mathlib.Algebra.Homology.HomologySequence
+public import TauCeti.Algebra.Homology.Embedding.ExtendHomology.Basic
 
 /-!
 # The homology sequence of an extended short exact sequence
@@ -24,40 +23,13 @@ This is what allows a connecting map computed on a complex reindexed along an em
 the Tate complex, whose negative part is the complex of inhomogeneous chains reindexed by
 `n ↦ -(n + 1)`, to be compared with the connecting map of the original complex.
 
-This file is adapted from the unmerged
+This file is adapted from
 [TauCetiProject/TauCeti#10141](https://github.com/TauCetiProject/TauCeti/pull/10141).
 -/
 
 public section
 
 open CategoryTheory Category Limits
-
-namespace HomologicalComplex
-
-variable {ι ι' : Type*} {c : ComplexShape ι} {c' : ComplexShape ι'}
-  {C : Type*} [Category* C] [Abelian C] (e : c.Embedding c')
-
-variable {K L : HomologicalComplex C c} (φ : K ⟶ L)
-
-/-- The identification of the opcycles of an extended complex is natural. -/
-@[reassoc (attr := simp)]
-lemma extendOpcyclesIso_hom_naturality {j : ι} {j' : ι'} (hj' : e.f j = j') :
-    opcyclesMap (extendMap φ e) j' ≫ (L.extendOpcyclesIso e hj').hom =
-      (K.extendOpcyclesIso e hj').hom ≫ opcyclesMap φ j := by
-  simp [← cancel_epi ((K.extend e).pOpcycles j'), extendMap_f φ e hj']
-
-variable (K) in
-/-- The identifications of the opcycles and cycles of an extended complex are compatible with the
-maps `opcyclesToCycles`. -/
-@[reassoc]
-lemma extend_opcyclesToCycles_comp_extendCyclesIso_hom {i j : ι} {i' j' : ι'} (hi' : e.f i = i')
-    (hj' : e.f j = j') :
-    (K.extend e).opcyclesToCycles i' j' ≫ (K.extendCyclesIso e hj').hom =
-      (K.extendOpcyclesIso e hi').hom ≫ K.opcyclesToCycles i j := by
-  simp [← cancel_epi ((K.extend e).pOpcycles i'), ← cancel_mono (K.iCycles j),
-    K.extend_d_eq e hi' hj']
-
-end HomologicalComplex
 
 namespace CategoryTheory.ShortComplex.ShortExact
 
@@ -79,7 +51,7 @@ lemma extend (hS : S.ShortExact) (e : c.Embedding c') :
   · have h : ∀ K : HomologicalComplex C c, IsZero ((K.extend e).X i') :=
       fun K ↦ K.isZero_extend_X e i' (by simpa using hi')
     exact ShortComplex.ShortExact.mk' (ShortComplex.exact_of_isZero_X₂ _ (h _))
-      ⟨fun _ _ _ ↦ (h _).eq_of_tgt _ _⟩ ⟨fun _ _ _ ↦ (h _).eq_of_src _ _⟩
+      ((h _).mono _) ((h _).epi _)
 
 variable (hS : S.ShortExact) (e : c.Embedding c') {i j : ι} (hij : c.Rel i j)
   {i' j' : ι'} (hi' : e.f i = i') (hj' : e.f j = j')
@@ -99,8 +71,8 @@ private noncomputable def extendSnakeInputHom :
     { τ₁ := (S.X₁.extendOpcyclesIso e hi').hom
       τ₂ := (S.X₂.extendOpcyclesIso e hi').hom
       τ₃ := (S.X₃.extendOpcyclesIso e hi').hom
-      comm₁₂ := (extendOpcyclesIso_hom_naturality e S.f hi').symm
-      comm₂₃ := (extendOpcyclesIso_hom_naturality e S.g hi').symm }
+      comm₁₂ := (extendOpcyclesIso_hom_naturality S.f e hi').symm
+      comm₂₃ := (extendOpcyclesIso_hom_naturality S.g e hi').symm }
   f₂ :=
     { τ₁ := (S.X₁.extendCyclesIso e hj').hom
       τ₂ := (S.X₂.extendCyclesIso e hj').hom
@@ -114,14 +86,14 @@ private noncomputable def extendSnakeInputHom :
       comm₁₂ := (extendHomologyIso_hom_naturality S.f e hj').symm
       comm₂₃ := (extendHomologyIso_hom_naturality S.g e hj').symm }
   comm₀₁ := by ext <;> exact extendHomologyIso_hom_homologyι _ e hi'
-  comm₁₂ := by ext <;> exact (extend_opcyclesToCycles_comp_extendCyclesIso_hom e _ hi' hj').symm
+  comm₁₂ := by ext <;> exact (extend_opcyclesToCycles_comp_extendCyclesIso_hom _ e hi' hj').symm
   comm₂₃ := by ext <;> exact (homologyπ_extendHomologyIso_hom _ e hj').symm
 
 /-- **The connecting maps of an extended short exact sequence.** Under the identifications
 `HomologicalComplex.extendHomologyIso` of the homology of the extended complexes with the homology
 of the original ones, the connecting map of the extension of `S` along `e` in degrees
 `e.f i ⟶ e.f j` is the connecting map of `S` in degrees `i ⟶ j`. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 lemma extend_δ_comp_extendHomologyIso_hom (hij' : c'.Rel i' j') :
     (hS.extend e).δ i' j' hij' ≫ (S.X₁.extendHomologyIso e hj').hom =
       (S.X₃.extendHomologyIso e hi').hom ≫ hS.δ i j hij :=
