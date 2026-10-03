@@ -39,8 +39,8 @@ The resulting direct sum is a `ZMod 2`-algebra whose multiplication preserves de
 ## Main results
 
 * `TauCeti.cohomF2.of_mul_of`: multiplication of homogeneous elements is the cup product.
-* `TauCeti.cohomF2.one_eq_one`, `TauCeti.cohomF2.of_one`: the unit class is the `1` of the
-  degree-zero ring and of `gradedCohomF2`.
+* `TauCeti.cohomF2.one_eq_one`: the unit class is the `1` of the degree-zero ring; with
+  `DirectSum.of_zero_one`, it is therefore also the `1` of `gradedCohomF2`.
 * `TauCeti.cohomF2.algebraMap_apply`: scalars from `ZMod 2` lie in degree zero.
 
 The cup-product identities used here are the Alexander–Whitney identities in Brown,
@@ -90,11 +90,6 @@ theorem gOne_eq_one : (GradedMonoid.GOne.one : cohomF2 G 0) = cohomF2.one G :=
 @[simp]
 theorem one_eq_one : cohomF2.one G = (1 : cohomF2 G 0) :=
   (gOne_eq_one G).symm
-
--- Not `@[simp]`: `simp` proves it from `one_eq_one` and `DirectSum.of_zero_one`.
-/-- The unit class is the unit of the graded mod-two cohomology algebra. -/
-theorem of_one : DirectSum.of (cohomF2 G) 0 (cohomF2.one G) = 1 := by
-  rw [one_eq_one, DirectSum.of_zero_one]
 
 /-- Homogeneous classes commute: the Koszul sign of `TauCeti.TopPairing.cup_gradedComm` acts
 trivially (`TauCeti.trivialF2TopPairing_cup_comm`). -/
