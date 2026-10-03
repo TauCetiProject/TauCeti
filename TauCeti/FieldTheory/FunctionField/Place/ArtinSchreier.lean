@@ -16,6 +16,8 @@ In characteristic `p`, a function `u` defines the same Artin–Schreier extensio
 `u - (w ^ p - w)`. At a place with perfect residue field, such a representative can be
 chosen integral or with pole order prime to `p`. This is the local input for computing
 ramification and the different of Artin–Schreier extensions.
+On the extension side, `TauCeti.sub_algebraMap_pow_sub_self_eq` records that translating a
+generator `y` of `y ^ p - y = u` by `w` passes to the representative `u - (w ^ p - w)`.
 
 `exists_ord_sub_pow_sub_self_gt_of_dvd_ord` cancels a leading pole term whose order is
 divisible by the exponent, by lifting a root of its residue. Iteration gives
@@ -37,6 +39,22 @@ uses the junk value `ord_P 0 = 0` as a positive order of vanishing.
 -/
 
 public section
+
+namespace TauCeti
+
+/-- Translating an Artin–Schreier generator `y` by `w ∈ F` translates the right-hand side of
+`y ^ p - y = u` by `w ^ p - w`. -/
+theorem sub_algebraMap_pow_sub_self_eq {F F' : Type*} [Field F] [CommRing F'] [Algebra F F']
+    (p : ℕ) [Fact p.Prime] [CharP F p] (y : F') (w : F) :
+    (y - algebraMap F F' w) ^ p - (y - algebraMap F F' w) =
+      (y ^ p - y) - algebraMap F F' (w ^ p - w) := by
+  rcases subsingleton_or_nontrivial F' with _ | _
+  · exact Subsingleton.elim _ _
+  let _ : CharP F' p := charP_of_injective_algebraMap (algebraMap F F').injective p
+  rw [sub_pow_char, map_sub, map_pow]
+  ring
+
+end TauCeti
 
 namespace TauCeti.Place
 

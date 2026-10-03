@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.FieldTheory.FunctionField.Place.ArtinSchreier
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Eisenstein
 public import TauCeti.RingTheory.Valuation.Discrete.PowerSubSelf
 
@@ -44,22 +45,6 @@ public section
 
 open Polynomial
 open scoped IntermediateField
-
-namespace TauCeti
-
-/-- Translating an Artin–Schreier generator `y` by `w ∈ F` translates the right-hand side of
-`y ^ p - y = u` by `w ^ p - w`. -/
-theorem sub_algebraMap_pow_sub_self_eq {F F' : Type*} [Field F] [CommRing F'] [Algebra F F']
-    (p : ℕ) [Fact p.Prime] [CharP F p] (y : F') (w : F) :
-    (y - algebraMap F F' w) ^ p - (y - algebraMap F F' w) =
-      (y ^ p - y) - algebraMap F F' (w ^ p - w) := by
-  rcases subsingleton_or_nontrivial F' with _ | _
-  · exact Subsingleton.elim _ _
-  let _ : CharP F' p := charP_of_injective_algebraMap (algebraMap F F').injective p
-  rw [sub_pow_char, map_sub, map_pow]
-  ring
-
-end TauCeti
 
 namespace TauCeti.Place
 
@@ -192,6 +177,18 @@ theorem isTotallyRamified_of_exists_reduced_artinSchreier_pole
   have h := finrank_eq_and_ramificationIdx_eq_of_exists_reduced_artinSchreier_pole k F p
     hgen hy hpole
   rw [isTotallyRamified_iff, h.1, h.2]
+
+/-- A reduced Artin–Schreier pole forces the extension to have degree `p`: if some
+representative `u - (w ^ p - w)` of the class of `u` has a pole of order prime to `p` below
+`P'`, then `[F' : F] = p`. -/
+theorem finrank_eq_of_exists_reduced_artinSchreier_pole
+    (p : ℕ) [Fact p.Prime] [CharP F p] {y : F'} {u : F}
+    (hgen : F⟮y⟯ = ⊤) (hy : y ^ p - y = algebraMap F F' u)
+    (hpole : ∃ w : F, (P'.restrict k F).ord (u - (w ^ p - w)) < 0 ∧
+      ¬ (p : ℤ) ∣ (P'.restrict k F).ord (u - (w ^ p - w))) :
+    Module.finrank F F' = p :=
+  (finrank_eq_and_ramificationIdx_eq_of_exists_reduced_artinSchreier_pole k F p
+    hgen hy hpole).1
 
 /-- At a reduced Artin–Schreier pole the ramification index is `p`. -/
 theorem ramificationIdx_eq_of_exists_reduced_artinSchreier_pole
