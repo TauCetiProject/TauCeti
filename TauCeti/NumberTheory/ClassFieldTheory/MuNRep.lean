@@ -394,6 +394,14 @@ theorem muNRepEquivTrivialFp_smul {ζ : F} (hζ : IsPrimitiveRoot ζ n)
     muNRepEquivTrivialFp n F hζ (g • x) = g • muNRepEquivTrivialFp n F hζ x := by
   rw [TopRep.distribMulAction_smul, muNRep_ρ_apply_eq_self hζ, smul_trivialFp_V]
 
+/-- The coefficient identification of a primitive root is invariant under the action of `G_F` on
+`μₙ`, which is trivial. This is the simp-normal form of `muNRepEquivTrivialFp_smul`. -/
+@[simp]
+theorem muNRepEquivTrivialFp_ρ_apply {ζ : F} (hζ : IsPrimitiveRoot ζ n)
+    (g : Field.absoluteGaloisGroup F) (x : (muNRep n F).V) :
+    muNRepEquivTrivialFp n F hζ ((muNRep n F).ρ g x) = muNRepEquivTrivialFp n F hζ x := by
+  rw [muNRep_ρ_apply_eq_self hζ]
+
 /-- **The coefficient isomorphism `μₙ ≅ ℤ/n` of a primitive root** as coefficient objects: the
 identification `muNRepEquivTrivialFp` packaged as an isomorphism of topological representations,
 continuous because both sides are discrete and equivariant because `G_F` acts trivially on both
