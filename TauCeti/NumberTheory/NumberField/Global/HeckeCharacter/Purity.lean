@@ -12,10 +12,11 @@ public import TauCeti.NumberTheory.NumberField.Global.HeckeCharacter.NormTwist
 
 Let `χ` be an algebraic Hecke character of a number field `K`, described on the identity component
 by integer exponents `n σ` at the embeddings `σ : K → ℂ`.  Then `χ` is **pure**: the sum
-`n σ + n σ̄` of the exponents at an embedding and its complex conjugate is the same integer `w` for
-every `σ`, the **weight** of `n`, and `|χ| = ‖·‖ ^ (w / 2)` on the idele class group.  In particular
-an exponent at a real embedding is the shift of `χ` itself, so over a field with a real place the
-shift of an algebraic character is an integer, and its unitary part is again algebraic.
+`n σ + n (conjugate σ)` of the exponents at an embedding and its conjugate is the same integer
+`w` for every `σ`, the **weight** of `n`.  On the idele class group, `|χ| = ‖·‖ ^ (w / 2)`.
+Consequently, an exponent at a real embedding is the shift of `χ` itself.  Thus, over a field with
+a real place, the shift of an algebraic character is an integer, and its unitary part is again
+algebraic.
 
 The weight is read off from the archimedean components: the shift `σ` of `χ` is the real part of
 the modulus exponent at every real place and half of it at every complex place
@@ -29,7 +30,7 @@ the finiteness of the class group.
 * `TauCeti.GlobalNumberFields.HeckeCharacter.add_conjugate_eq_two_mul_shift`: the exponents at an
   embedding and its conjugate add up to twice the shift.
 * `TauCeti.GlobalNumberFields.HeckeCharacter.add_conjugate_eq_add_conjugate`: purity, the sum
-  `n σ + n σ̄` does not depend on `σ`.
+  `n σ + n (conjugate σ)` does not depend on `σ`.
 * `TauCeti.GlobalNumberFields.HeckeCharacter.IsAlgebraic.exists_intCast_eq_two_mul_shift`: twice
   the shift of an algebraic character is an integer.
 * `TauCeti.GlobalNumberFields.HeckeCharacter.IsAlgebraic.exists_intCast_eq_shift_of_isReal`: over
@@ -80,7 +81,7 @@ theorem add_conjugate_eq_two_mul_shift {χ : HeckeCharacter K} {n : AlgebraicInf
     · simpa only [he, ComplexEmbedding.conjugate, star_star, add_comm] using h
 
 /-- **Purity of an algebraic Hecke character.**  If integer exponents `n` describe `χ` on the
-identity component, then the sum `n σ + n σ̄` of the exponents at an embedding and its complex
+identity component, then the sum `n σ + n (conjugate σ)` of the exponents at an embedding and its
 conjugate is the same for all embeddings `σ`. -/
 theorem add_conjugate_eq_add_conjugate {χ : HeckeCharacter K} {n : AlgebraicInfinityType K}
     (hn : χ.infinityType.AgreesOnIdentityComponent (AlgebraicInfinityType.toContinuous n))
