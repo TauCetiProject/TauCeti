@@ -116,7 +116,7 @@ theorem existsUnique_sub_algebraMap_mem_ratFundamentalDomain (a : 𝔸[ℚ]) :
 
 /-- The rational translates of the standard fundamental domain cover the full rational adele
 ring. -/
-theorem iUnion_add_ratFundamentalDomain :
+theorem iUnion_ratFundamentalDomain_add_algebraMap :
     (⋃ q : ℚ, (fun a : 𝔸[ℚ] ↦ a + algebraMap ℚ 𝔸[ℚ] q) '' ratFundamentalDomain) =
       Set.univ := by
   apply Set.eq_univ_of_forall
