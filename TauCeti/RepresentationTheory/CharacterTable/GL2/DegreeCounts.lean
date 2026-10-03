@@ -392,7 +392,6 @@ section CardThree
 
 /-- **`GL₂(𝔽₃)` has two irreducible characters of degree `1`**, the characters `α ∘ det` for the
 two characters `α` of `𝔽₃ˣ`. -/
-@[simp]
 theorem ncard_irreducibleCharacters_GL2_degree_one_of_card_eq_three (hq : Fintype.card F = 3) :
     {chi ∈ irreducibleCharacters ℂ (GL (Fin 2) F) | chi 1 = 1}.ncard = 2 := by
   rw [ncard_irreducibleCharacters_GL2_degree_one F hq.ge, hq]
