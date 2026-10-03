@@ -18,10 +18,6 @@ ramification group `G₁(L/K)`. Its degree over `K` is `[L : K] / p ^ (v_p e(L/K
 is the residue characteristic. These statements accept any compatible local-field structures
 on `L`.
 
-The fixed-field identification uses Mathlib's `InfiniteGalois.restrict_fixedField` and the
-surjectivity of absolute wild inertia onto finite wild inertia. Degrees use Mathlib's finite
-Galois correspondence and the Sylow cardinality theorem.
-
 ## References
 
 * [J.-P. Serre, *Corps Locaux*][serre1968], Chapter IV, §2.
@@ -60,6 +56,7 @@ variable (L : IntermediateField K (AlgebraicClosure K)) [Module.Finite K L] [IsG
 
 /-- The fixed field of finite wild inertia, lifted to the algebraic closure, is the intersection
 of `L` with the maximal tamely ramified extension. -/
+@[simp]
 theorem lift_fixedField_lowerRamificationGroup_one :
     lift (fixedField (lowerRamificationGroup K L 1)) =
       maximalTameExtension K (AlgebraicClosure K) ⊓ L := by
