@@ -34,8 +34,8 @@ that does not vanish at the root.
 * `Polynomial.natDegree_C_sub_X`: the reversed linear factor `C x - X` has degree `1`.
 * `Polynomial.exists_eq_C_mul_X_sub_C_of_natDegree_le_one`: a polynomial of `natDegree ≤ 1` with
   root `x` is `C γ * (X - C x)` for some `γ`.
-* `Polynomial.linear_eval_mul_pos_of_no_roots`: constant nonzero sign on a root-free
-  closed interval.
+* `Polynomial.eval_mul_pos_of_natDegree_le_one_of_no_roots`: constant nonzero sign on a root-free
+  closed interval for polynomials of degree at most one.
 * `Polynomial.derivative_root_factors`: factor the derivative of a polynomial with two root powers.
 * `Polynomial.IsRoot.exists_eq_pow_succ_mul`: factor out a positive power of `X - C x`, leaving a
   cofactor nonzero at `x`.
@@ -102,7 +102,7 @@ theorem rootMultiplicity_add_eq_left_of_dvd {A : Type*} [Ring A] {p q : A[X]} {a
     exact dvd_add (pow_rootMultiplicity_dvd p a) ((pow_dvd_pow _ (Nat.le_succ _)).trans hq)
 
 /-- A polynomial of degree at most one has constant nonzero sign on an interval without a root. -/
-theorem linear_eval_mul_pos_of_no_roots {R : Type*} [Field R] [LinearOrder R]
+theorem eval_mul_pos_of_natDegree_le_one_of_no_roots {R : Type*} [Field R] [LinearOrder R]
     [IsStrictOrderedRing R] {p : R[X]} (hdeg : p.natDegree ≤ 1) {a b : R}
     (hab : a ≤ b) (hroot : ∀ x ∈ Set.Icc a b, p.eval x ≠ 0) :
     0 < p.eval a * p.eval b := by
