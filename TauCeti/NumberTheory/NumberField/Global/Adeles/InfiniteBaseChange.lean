@@ -116,6 +116,27 @@ theorem infiniteAdeleBaseChangeHom_bijective :
   rw [← h]
   exact (baseChangeLinearEquiv K L).bijective
 
+/-- Base change of infinite adeles is an algebra equivalence over the infinite adele ring of
+the base field, independently of a topology on the tensor product. -/
+def infiniteAdeleBaseChangeAlgEquiv :
+    InfiniteAdeleRing K ⊗[K] L ≃ₐ[InfiniteAdeleRing K] InfiniteAdeleRing L :=
+  AlgEquiv.ofBijective (infiniteAdeleBaseChangeHom K L)
+    (infiniteAdeleBaseChangeHom_bijective K L)
+
+/-- Forgetting invertibility recovers the canonical base-change homomorphism. -/
+@[simp]
+theorem infiniteAdeleBaseChangeAlgEquiv_toAlgHom :
+    (infiniteAdeleBaseChangeAlgEquiv K L).toAlgHom = infiniteAdeleBaseChangeHom K L :=
+  (rfl)
+
+/-- The algebraic inverse comparison sends a diagonal field element to `1 ⊗ x`. -/
+@[simp]
+theorem infiniteAdeleBaseChangeAlgEquiv_symm_algebraMap (x : L) :
+    (infiniteAdeleBaseChangeAlgEquiv K L).symm
+      (algebraMap L (InfiniteAdeleRing L) x) = 1 ⊗ₜ[K] x := by
+  apply (infiniteAdeleBaseChangeAlgEquiv K L).injective
+  simp [infiniteAdeleBaseChangeAlgEquiv]
+
 variable [TopologicalSpace (InfiniteAdeleRing K ⊗[K] L)]
   [IsModuleTopology (InfiniteAdeleRing K) (InfiniteAdeleRing K ⊗[K] L)]
 
@@ -123,8 +144,7 @@ variable [TopologicalSpace (InfiniteAdeleRing K ⊗[K] L)]
 ring of the base field. The source carries its module topology over that ring. -/
 def infiniteAdeleBaseChangeEquiv :
     InfiniteAdeleRing K ⊗[K] L ≃A[InfiniteAdeleRing K] InfiniteAdeleRing L := by
-  let e := AlgEquiv.ofBijective (infiniteAdeleBaseChangeHom K L)
-    (infiniteAdeleBaseChangeHom_bijective K L)
+  let e := infiniteAdeleBaseChangeAlgEquiv K L
   letI : ContinuousSMul (InfiniteAdeleRing K) (InfiniteAdeleRing L) :=
     continuousSMul_of_algebraMap _ _ (by
       rw [algebraMap_infiniteAdeleExtensionAlgebra]
@@ -152,8 +172,7 @@ def infiniteAdeleBaseChangeEquiv :
 @[simp]
 theorem infiniteAdeleBaseChangeEquiv_toAlgHom :
     (infiniteAdeleBaseChangeEquiv K L).toAlgHom = infiniteAdeleBaseChangeHom K L := by
-  rw [infiniteAdeleBaseChangeEquiv]
-  rfl
+  exact infiniteAdeleBaseChangeAlgEquiv_toAlgHom K L
 
 /-- The continuous comparison sends a pure tensor to the extended adele times the diagonal
 field element. -/
@@ -180,10 +199,10 @@ theorem infiniteAdeleBaseChangeEquiv_tmul_apply (a : InfiniteAdeleRing K) (x : L
   rfl
 
 /-- The inverse comparison sends a diagonal field element to `1 ⊗ x`. -/
+@[simp]
 theorem infiniteAdeleBaseChangeEquiv_symm_algebraMap (x : L) :
     (infiniteAdeleBaseChangeEquiv K L).symm
       (algebraMap L (InfiniteAdeleRing L) x) = 1 ⊗ₜ[K] x := by
-  apply (infiniteAdeleBaseChangeEquiv K L).injective
-  simp
+  exact infiniteAdeleBaseChangeAlgEquiv_symm_algebraMap K L x
 
 end TauCeti.GlobalNumberFields
