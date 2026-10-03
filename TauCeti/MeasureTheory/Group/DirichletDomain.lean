@@ -54,7 +54,11 @@ open scoped Pointwise
 
 namespace TauCeti
 
-variable (G : Type*) {X : Type*} [Group G] [PseudoMetricSpace X] [MulAction G X]
+variable (G : Type*) {X : Type*} [PseudoMetricSpace X]
+
+section SMul
+
+variable [SMul G X]
 
 /-- The **Dirichlet domain** of a centre `p`: the points at least as close to `p` as to every
 point `g • p` of its orbit. -/
@@ -85,6 +89,10 @@ variable (G) in
 theorem measurableSet_dirichletDomain [MeasurableSpace X] [OpensMeasurableSpace X] (p : X) :
     MeasurableSet (dirichletDomain G p) :=
   (isClosed_dirichletDomain G p).measurableSet
+
+end SMul
+
+variable {G} [Group G] [MulAction G X]
 
 /-- The Dirichlet domains of two points of one orbit meet only in points equidistant from
 them. -/
