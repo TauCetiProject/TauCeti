@@ -29,8 +29,9 @@ Identifying modules on the slice site at an open `U` with modules on the open su
 pulling back along an isomorphism of schemes, preserve free modules, so trivializations of a
 module by free modules can be moved between slices, open subschemes and open immersions.
 
-Pushforward of modules along a scheme morphism is lax monoidal, so pullback, its left adjoint, is
-oplax monoidal, with unit map the identification `f^* 𝒪_Y ≅ 𝒪_X`. These structures are compatible
+Pushforward of modules along a scheme morphism is lax symmetric monoidal, so pullback, its left
+adjoint, is oplax monoidal, with unit map the identification `f^* 𝒪_Y ≅ 𝒪_X` and tensor comparison
+compatible with symmetry (`pullback_map_braiding_hom_comp_δ`). These structures are compatible
 with composition: the composition isomorphism of pullbacks carries the comparison maps of
 `(f ≫ g)^*` to the composites of those of `g^*` and `f^*`.
 
@@ -274,6 +275,10 @@ sections (`pushforward_ε`). -/
 instance pushforwardLaxMonoidal : (pushforward f).LaxMonoidal :=
   TauCeti.SheafOfModules.pushforwardLaxMonoidal f.toRingCatSheafHom
 
+/-- Pushforward of modules along a scheme morphism respects the symmetry of tensor products. -/
+instance pushforwardLaxBraided : (pushforward f).LaxBraided :=
+  TauCeti.SheafOfModules.pushforwardLaxBraided f.toRingCatSheafHom
+
 /-- The unit map `𝒪_Y ⟶ f_* 𝒪_X` of the pushforward of modules is given by `f` on sections. -/
 @[simp]
 lemma pushforward_ε :
@@ -314,6 +319,15 @@ lemma pullback_δ (M N : Y.Modules) :
             (pullbackPushforwardAdjunction f).unit.app N) ≫
           Functor.LaxMonoidal.μ (pushforward f) _ _) :=
   Adjunction.leftAdjointOplaxMonoidal_δ _ _ _
+
+/-- The canonical tensor comparison of module pullback respects symmetry, without any
+flatness, finiteness or quasi-coherence hypothesis. -/
+@[reassoc]
+lemma pullback_map_braiding_hom_comp_δ (M N : Y.Modules) :
+    (pullback f).map (β_ M N).hom ≫ Functor.OplaxMonoidal.δ (pullback f) N M =
+      Functor.OplaxMonoidal.δ (pullback f) M N ≫
+        (β_ ((pullback f).obj M) ((pullback f).obj N)).hom :=
+  (pullbackPushforwardAdjunction f).map_braiding_hom_comp_δ M N
 
 instance : IsIso (Functor.OplaxMonoidal.η (pullback f)) := by
   rw [pullback_η]
