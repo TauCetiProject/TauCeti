@@ -56,11 +56,8 @@ theorem isInducing_presentationLimitPresheafMap_standardSieve_of_isUnit
   let f : T × T → A := fun p ↦ (p.1 : A) * Ring.inverse (p.2 : A)
   let R : Finset A := Finset.univ.image f
   -- Each arrow of the refining Laurent sieve also belongs to the standard sieve.
-  have hRS {V : Opens ↥(spa Aplus)} (g : V ⟶ W) (hg : laurentSieve Aplus R W g) : S g := by
-    obtain ⟨J, hJ⟩ := (laurentSieve_image_apply_iff_exists_laurentPiece f g).mp hg
-    obtain ⟨t, ht, hsub⟩ := exists_rationalSubset_superset_laurentPiece_mul_inverse Aplus hT hu J
-    exact (Sieve.mem_ofArrows_iff _ _ g).mpr ⟨⟨t, ht⟩,
-      homOfLE (le_inf g.le fun v hv ↦ mem_spaBasicOpen.mpr (hsub (hJ hv))), rfl⟩
+  have hRS : laurentSieve Aplus R W ≤ S :=
+    laurentSieve_mul_inverse_le_ofArrows_inf_spaBasicOpen hT hu W
   let j (g : (V : Opens ↥(spa Aplus)) × { f : V ⟶ W // laurentSieve Aplus R W f }) :
       (V : Opens ↥(spa Aplus)) × { f : V ⟶ W // S f } :=
     ⟨g.1, g.2.1, hRS g.2.1 g.2.2⟩
