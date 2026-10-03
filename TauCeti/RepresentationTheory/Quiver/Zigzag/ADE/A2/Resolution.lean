@@ -59,22 +59,6 @@ universe w
 
 variable (k : Type w) [Field k]
 
-/-- The dart of `A₂` leaving the node `i`. -/
-@[expose]
-def zigzagA2Dart (i : Fin 2) : zigzagA2Graph.Dart :=
-  ⟨(i, i + 1), by fin_cases i <;> simp⟩
-
-@[simp]
-theorem zigzagA2Dart_fst (i : Fin 2) : (zigzagA2Dart i).fst = i := (rfl)
-
-@[simp]
-theorem zigzagA2Dart_snd (i : Fin 2) : (zigzagA2Dart i).snd = i + 1 := (rfl)
-
-/-- Both nodes of `A₂` have degree one. -/
-@[simp]
-theorem degree_zigzagA2Graph (i : Fin 2) : zigzagA2Graph.degree i = 1 := by
-  fin_cases i <;> decide
-
 /-- **The periodic projective resolution of a simple module of the `A₂` zigzag algebra.** The
 simple head `S_i = P_i / J P_i` at the node `i` has the period-four projective resolution
 

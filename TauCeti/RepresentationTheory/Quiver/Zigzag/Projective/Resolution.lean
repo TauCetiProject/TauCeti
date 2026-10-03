@@ -42,7 +42,7 @@ The resolution is used through its characterising API: the `n`-th term is
 
 ## Main results
 
-* `TauCeti.range_zigzagPeriodicDifferential_succ`: exactness of the periodic complex.
+* `TauCeti.range_zigzagPeriodicDifferential_succ_eq_ker`: exactness of the periodic complex.
 * `TauCeti.zigzagPeriodicProjectiveResolution_complex_d` and
   `TauCeti.zigzagPeriodicProjectiveResolution_π_f_zero`: the differentials and the augmentation.
 
@@ -178,8 +178,8 @@ variable [Fintype V] [DecidableRel G.Adj]
 
 /-- **Exactness of the periodic complex.** If both endpoints of `d` have degree one, the image of
 each differential is the kernel of the previous one. -/
-theorem range_zigzagPeriodicDifferential_succ (hns : ∀ i : V, ∃ j, G.Adj i j) (d : G.Dart)
-    (hfst : G.degree d.fst = 1) (hsnd : G.degree d.snd = 1) : ∀ n : ℕ,
+theorem range_zigzagPeriodicDifferential_succ_eq_ker (hns : ∀ i : V, ∃ j, G.Adj i j)
+    (d : G.Dart) (hfst : G.degree d.fst = 1) (hsnd : G.degree d.snd = 1) : ∀ n : ℕ,
     LinearMap.range (zigzagPeriodicDifferential k d (n + 1)) =
       LinearMap.ker (zigzagPeriodicDifferential k d n)
   | 0 => (range_zigzagProjectiveVolumeMul hns d.snd).trans
@@ -190,7 +190,7 @@ theorem range_zigzagPeriodicDifferential_succ (hns : ∀ i : V, ∃ j, G.Adj i j
       (ker_zigzagProjectiveArrowMul hns d.symm hfst).symm
   | 3 => (range_zigzagProjectiveArrowMul hns d hfst).trans
       (ker_zigzagProjectiveVolumeMul hns d.fst).symm
-  | n + 4 => range_zigzagPeriodicDifferential_succ hns d hfst hsnd n
+  | n + 4 => range_zigzagPeriodicDifferential_succ_eq_ker hns d hfst hsnd n
 
 /-- **The periodic projective resolution along an `A₂` component.** Let `d` be a dart of a finite
 graph without isolated vertices whose two endpoints both have degree one.  Then the simple head
@@ -228,7 +228,7 @@ noncomputable def zigzagPeriodicProjectiveResolution (hns : ∀ i : V, ∃ j, G.
         ShortComplex.moduleCat_exact_iff_range_eq_ker]
       simp only [zigzagPeriodicComplex_d, HomologicalComplex.shortComplexFunctor'_obj_f,
         HomologicalComplex.shortComplexFunctor'_obj_g]
-      exact range_zigzagPeriodicDifferential_succ k hns d hfst hsnd m
+      exact range_zigzagPeriodicDifferential_succ_eq_ker k hns d hfst hsnd m
 
 /-- The `n`-th term of the periodic resolution is the vertex projective at
 `zigzagPeriodicVertex d n`. -/
