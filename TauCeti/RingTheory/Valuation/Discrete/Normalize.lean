@@ -36,7 +36,7 @@ extension.
   particular the two have the same valuation subring.
 * `Valuation.normalization_surjective`: the normalization of a nontrivial valuation is
   surjective.
-* `Valuation.IsTrivialOn.normalization`: normalization preserves triviality on a base ring.
+* `Valuation.IsTrivialOn.normalization`: normalization preserves triviality on a base semiring.
 -/
 
 public section
@@ -264,17 +264,10 @@ theorem normalization_surjective (hv : ordIndex v ≠ 0) :
     rw [normalization_apply v (zpow_ne_zero _ ht0), ord_zpow, ht,
       Int.mul_ediv_cancel _ he, neg_neg]
 
-/-- Normalization preserves triviality on a base ring. -/
-theorem IsTrivialOn.normalization {A : Type*} [CommRing A] [Algebra A F]
-    [v.IsTrivialOn A] : (_root_.Valuation.normalization v).IsTrivialOn A where
-  eq_one a ha := by
-    have h1 : v (algebraMap A F a) = 1 := IsTrivialOn.eq_one a ha
-    have h0 : algebraMap A F a ≠ 0 := by
-      rintro h
-      rw [h, map_zero] at h1
-      exact zero_ne_one h1
-    rw [normalization_apply v h0, ord_def, h1]
-    simp
+/-- Normalization preserves triviality on a base semiring. -/
+theorem IsTrivialOn.normalization {A : Type*} [CommSemiring A] [Algebra A F]
+    [v.IsTrivialOn A] : (_root_.Valuation.normalization v).IsTrivialOn A :=
+  (isEquiv_normalization v).symm.isTrivialOn inferInstance
 
 end Normalization
 
