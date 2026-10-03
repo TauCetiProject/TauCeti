@@ -38,6 +38,8 @@ preserves every short exact sequence.
   `Rep.shortExact_map_tensorLeft_of_rightInverse`: tensoring on the left preserves a short exact
   sequence whose first map has a `k`-linear retraction, or whose last map has a `k`-linear
   section.
+* `Rep.shortExact_map_tensorRight_of_injective`: tensoring on the right preserves a short exact
+  sequence as soon as the tensored first map stays injective.
 * `Rep.shortExact_map_tensorRight_of_flat`, `Rep.shortExact_map_tensorRight_of_leftInverse`,
   `Rep.shortExact_map_tensorRight_of_rightInverse`: the same for tensoring on the right, through
   the braiding.
@@ -140,6 +142,18 @@ theorem shortExact_map_tensorLeft_of_rightInverse {S : ShortComplex (Rep.{u} k G
   have : Epi S.g := (epi_iff_surjective S.g).2 hs.surjective
   obtain ⟨r, hr⟩ := exists_leftInverse_of_rightInverse hS hs
   exact shortExact_map_tensorLeft_of_leftInverse hS M hr
+
+/-- Tensoring on the right with `M` sends an exact sequence ending in an epimorphism to a
+short exact sequence when the tensored first map is injective. -/
+theorem shortExact_map_tensorRight_of_injective {S : ShortComplex (Rep.{u} k G)}
+    (hS : S.Exact) [Epi S.g]
+    (M : Rep k G) (hf : Function.Injective (LinearMap.rTensor M.V S.f.hom.toLinearMap)) :
+    (S.map (tensorRight M)).ShortExact where
+  exact := (exact_iff_function_exact _).2 <| rTensor_exact M.V
+    ((exact_iff_function_exact S).1 hS) ((epi_iff_surjective S.g).1 inferInstance)
+  mono_f := (mono_iff_injective _).2 hf
+  epi_g := (epi_iff_surjective _).2 <|
+    LinearMap.rTensor_surjective M.V ((epi_iff_surjective S.g).1 inferInstance)
 
 /-- Tensoring on the right with `M` sends an exact sequence ending in an epimorphism to a
 short exact sequence if the first map has a `k`-linear retraction. -/
