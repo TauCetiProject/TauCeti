@@ -35,9 +35,9 @@ noncomputable section
 namespace TauCeti.AuslanderReitenTranspose
 
 variable {R G P₀ P₁ : Type*} [CommRing R] [Group G] [Finite G]
-  [AddCommGroup P₀] [Module (MonoidAlgebra R G) P₀] [Module R P₀]
+  [AddCommMonoid P₀] [Module (MonoidAlgebra R G) P₀] [Module R P₀]
   [IsScalarTower R (MonoidAlgebra R G) P₀] [SMulCommClass R (MonoidAlgebra R G) P₀]
-  [AddCommGroup P₁] [Module (MonoidAlgebra R G) P₁] [Module R P₁]
+  [AddCommMonoid P₁] [Module (MonoidAlgebra R G) P₁] [Module R P₁]
   [IsScalarTower R (MonoidAlgebra R G) P₁] [SMulCommClass R (MonoidAlgebra R G) P₁]
 
 /-- Over a finite group algebra, the transpose of `f` is the cokernel of ordinary
@@ -56,5 +56,14 @@ theorem groupAlgebraDualEquiv_mk (f : P₁ →ₗ[MonoidAlgebra R G] P₀)
     groupAlgebraDualEquiv f (mk f φ) =
       Submodule.Quotient.mk (MonoidAlgebra.dualLinearEquiv φ) :=
   quotientEquiv_mk f _ _ _ φ
+
+/-- The inverse of `groupAlgebraDualEquiv` sends the class of a base-ring functional to the class
+of the corresponding group-algebra functional. -/
+@[simp]
+theorem groupAlgebraDualEquiv_symm_mk (f : P₁ →ₗ[MonoidAlgebra R G] P₀)
+    (ψ : Module.Dual R P₁) :
+    (groupAlgebraDualEquiv f).symm (Submodule.Quotient.mk ψ) =
+      mk f (MonoidAlgebra.dualLinearEquiv.symm ψ) :=
+  quotientEquiv_symm_mk f _ _ _ ψ
 
 end TauCeti.AuslanderReitenTranspose

@@ -124,8 +124,7 @@ def contragredientDualMap (f : M →ₗ[MonoidAlgebra R G] N) :
 theorem contragredientDualMap_apply (f : M →ₗ[MonoidAlgebra R G] N)
     (ψ : Module.Dual R N) (m : M) :
     contragredientDualMap f ψ m = ψ (f m) := by
-  change (ψ.comp (f.restrictScalars R)) m = ψ (f m)
-  rfl
+  simp [contragredientDualMap]
 
 end ContragredientMap
 
@@ -208,9 +207,8 @@ coefficients. -/
 @[simp]
 theorem dualLinearEquiv_symm_apply_coeff (ψ : Module.Dual R M) (m : M) (g : G) :
     (dualLinearEquiv.symm ψ m).coeff g =
-      ψ (MonoidAlgebra.single g⁻¹ (1 : R) • m) := by
-  change (dualLift ψ m).coeff g = _
-  exact dualLift_coeff (G := G) ψ m g
+      ψ (MonoidAlgebra.single g⁻¹ (1 : R) • m) :=
+  dualLift_coeff (G := G) ψ m g
 
 section Naturality
 
@@ -224,7 +222,8 @@ theorem dualLinearEquiv_comp_lcomp (f : M →ₗ[MonoidAlgebra R G] N) :
         (f.lcomp (MonoidAlgebra R G)ᵐᵒᵖ (MonoidAlgebra R G)) =
       (contragredientDualMap f).comp (dualLinearEquiv (G := G) (M := N)).toLinearMap := by
   ext ψ m
-  rfl
+  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearMap.lcomp_apply,
+    dualLinearEquiv_apply, contragredientDualMap_apply]
 
 /-- The coefficient-at-one duality carries the range of group-algebra precomposition to the
 range of contragredient base-ring precomposition. -/
