@@ -112,6 +112,16 @@ theorem range_geodesicLine_geodesicBetween_swap (z w : ℍ) :
   · rfl
   rw [geodesicBetween_swap hzw, range_geodesicLine_mul_pslS, range_geodesicLine_mul_dilation]
 
+/-- The geodesic line from `geodesicLine g s` to a later point `geodesicLine g t` of the same line
+is the line `g`, reparametrised to start at parameter `s`. -/
+theorem geodesicBetween_geodesicLine_of_lt (g : PSL(2, ℝ)) {s t : ℝ} (hst : s < t) :
+    geodesicBetween (geodesicLine g s) (geodesicLine g t) = g * ↑(dilation s) := by
+  symm
+  refine eq_geodesicBetween_of_geodesicLine_eq ((geodesicLine_injective g).ne hst.ne) ?_ ?_
+  · rw [geodesicLine_mul_dilation, add_zero]
+  · rw [geodesicLine_mul_dilation, dist_geodesicLine, abs_sub_comm, abs_of_pos (sub_pos.2 hst),
+      add_sub_cancel]
+
 /-- Two distinct points of a geodesic line determine it: the geodesic line through them has the
 same image. -/
 theorem range_geodesicLine_geodesicBetween_of_mem {g : PSL(2, ℝ)} {z w : ℍ}
@@ -121,14 +131,7 @@ theorem range_geodesicLine_geodesicBetween_of_mem {g : PSL(2, ℝ)} {z w : ℍ}
   obtain ⟨t, rfl⟩ := hw
   have hst : s ≠ t := fun h ↦ hzw (h ▸ rfl)
   rcases lt_or_gt_of_ne hst with h | h
-  · have : geodesicBetween (geodesicLine g s) (geodesicLine g t) = g * ↑(dilation s) := by
-      symm
-      refine eq_geodesicBetween_of_geodesicLine_eq hzw ?_ ?_
-      · rw [geodesicLine_mul_dilation, add_zero]
-      · rw [geodesicLine_mul_dilation, dist_geodesicLine, abs_of_neg (by linarith)]
-        congr 1
-        ring
-    rw [this, range_geodesicLine_mul_dilation]
+  · rw [geodesicBetween_geodesicLine_of_lt g h, range_geodesicLine_mul_dilation]
   · have : geodesicBetween (geodesicLine g s) (geodesicLine g t) = g * ↑(dilation s) * pslS := by
       symm
       refine eq_geodesicBetween_of_geodesicLine_eq hzw ?_ ?_
