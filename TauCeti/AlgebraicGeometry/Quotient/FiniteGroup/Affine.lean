@@ -15,7 +15,7 @@ public import TauCeti.RingTheory.Invariant.Basic
 For a finite group acting on a commutative ring `A`, the invariant-spectrum projection is
 integral and surjective, and its topological fibres are precisely the orbits of prime ideals.
 If `A` is of finite type over its fixed subring, the projection is finite; in particular,
-this holds when `A` is of finite type over an invariant base ring `R`.
+this holds when `A` is of finite type over an invariant base semiring `R`.
 These results supplement the affine-target universal property in
 `TauCeti.AlgebraicGeometry.Quotient.Affine`.
 
@@ -26,7 +26,7 @@ Neither flatness nor finite presentation of the quotient projection is asserted.
 * The projection is integral and surjective for finite groups.
 * `isFinite_projection`: the projection is finite when `A` is of finite type over its
   fixed subring.
-* `isFinite_projection_of_finiteType`: finiteness over an invariant base ring suffices.
+* `isFinite_projection_of_finiteType`: finiteness over an invariant base semiring suffices.
 * `isQuotientMap_projection`: the projection is a topological quotient map.
 * `projection_eq_iff_exists_smul`: its fibres are prime-ideal orbits.
 
@@ -70,7 +70,7 @@ theorem isFinite_projection [Algebra.FiniteType (FixedPoints.subring A G) A] :
   exact IsFinite.SpecMap_iff _ |>.mpr (RingHom.finite_algebraMap.mpr Algebra.IsIntegral.finite)
 
 /-- The quotient projection is finite when `A` is of finite type over an invariant base `R`. -/
-theorem isFinite_projection_of_finiteType (R : Type w) [CommRing R] [Algebra R A]
+theorem isFinite_projection_of_finiteType (R : Type w) [CommSemiring R] [Algebra R A]
     [SMulCommClass G R A] [Algebra.FiniteType R A] : IsFinite (projection A G) := by
   let : Algebra.FiniteType (FixedPoints.subring A G) A :=
     Algebra.FiniteType.of_restrictScalars_finiteType R (FixedPoints.subalgebra R A G) A
