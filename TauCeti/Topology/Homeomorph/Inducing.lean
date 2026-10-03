@@ -16,15 +16,15 @@ homeomorphisms of the source and of every factor.
 
 ## Main results
 
-* `TauCeti.isInducing_iff_of_homeomorph`: maps intertwined by homeomorphisms of the source and
+* `Homeomorph.isInducing_iff_of_homeomorph`: maps intertwined by homeomorphisms of the source and
   target are inducing simultaneously.
-* `TauCeti.isInducing_pi_iff_of_homeomorph`: the same for maps into a product, with one
+* `Homeomorph.isInducing_pi_iff_of_homeomorph`: the same for maps into a product, with one
   homeomorphism for every factor.
 -/
 
 public section
 
-namespace TauCeti
+namespace Homeomorph
 
 open Topology
 
@@ -46,6 +46,6 @@ theorem isInducing_pi_iff_of_homeomorph {X X' ι : Type*} [TopologicalSpace X]
     [∀ i, TopologicalSpace (Y' i)] (e : X ≃ₜ X') (e' : ∀ i, Y i ≃ₜ Y' i)
     {r : X → ∀ i, Y i} {r' : X' → ∀ i, Y' i} (h : ∀ x i, e' i (r x i) = r' (e x) i) :
     IsInducing r ↔ IsInducing r' :=
-  isInducing_iff_of_homeomorph e (Homeomorph.piCongrRight e') fun x ↦ funext (h x)
+  e.isInducing_iff_of_homeomorph (Homeomorph.piCongrRight e') fun x ↦ funext (h x)
 
-end TauCeti
+end Homeomorph

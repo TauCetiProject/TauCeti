@@ -218,7 +218,7 @@ theorem isInducing_presentationLimitPresheafMap_standardSieve (hP : P.ringOfDefi
       (presentationLimitMap (P := Q)
         (locOpensComap_mono P Aplus U s _ hden
           (inf_le_left : pieces t ≤ spaBasicOpen Aplus U s))).hom.1 x :=
-    (isInducing_pi_iff_of_homeomorph (eB _) (fun t ↦ eB (locOpensComap P Aplus U s _ hden
+    ((eB _).isInducing_pi_iff_of_homeomorph (fun t ↦ eB (locOpensComap P Aplus U s _ hden
       (pieces t))) fun x t ↦ by
         rw [eB_apply, eB_apply]
         exact eqToHom_apply_presentationLimitPresheaf_map_apply Q
@@ -226,15 +226,15 @@ theorem isInducing_presentationLimitPresheafMap_standardSieve (hP : P.ringOfDefi
   have hApl : IsInducing fun
       (x : presentationLimit (P := P) Aplus (spaBasicOpen Aplus U s)) (t : T) ↦
       (presentationLimitMap (P := P) (inf_le_left : pieces t ≤ _)).hom.1 x :=
-    (isInducing_pi_iff_of_homeomorph
-      (σ (spaBasicOpen Aplus U s) (spaBasicOpen_mem_spaRationalOpens hU) le_rfl)
+    ((σ (spaBasicOpen Aplus U s) (spaBasicOpen_mem_spaRationalOpens hU)
+      le_rfl).isInducing_pi_iff_of_homeomorph
       (fun t ↦ σ (pieces t) (hrat t) inf_le_left) fun x t ↦ by
         rw [σ_apply, σ_apply]
         exact presentationLimitLocIso_hom_presentationLimitMap_apply P Aplus U s _ hden hAplus
           hU (spaBasicOpen_mem_spaRationalOpens hU) (hrat t) le_rfl inf_le_left x).mpr hBpl
   have hA₀ : IsInducing fun (x : F.obj (op (spaBasicOpen Aplus U s))) (t : T) ↦
       (F.map (homOfLE inf_le_left : pieces t ⟶ spaBasicOpen Aplus U s).op).hom.1 x :=
-    (isInducing_pi_iff_of_homeomorph (eA _) (fun t ↦ eA (pieces t)) fun x t ↦ by
+    ((eA _).isInducing_pi_iff_of_homeomorph (fun t ↦ eA (pieces t)) fun x t ↦ by
       rw [eA_apply, eA_apply]
       exact eqToHom_apply_presentationLimitPresheaf_map_apply P
         (inf_le_left : pieces t ≤ spaBasicOpen Aplus U s) x).mpr hApl
