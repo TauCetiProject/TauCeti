@@ -95,18 +95,13 @@ instance : (gradedFiniteProjectiveModulesForget 𝒜).Additive := by
   dsimp [gradedFiniteProjectiveModulesForget]
   infer_instance
 
-private theorem isConflationExact_toModuleCat :
-    (ExactStructure.abelian (GradedModuleCat.{uA} 𝒜)).IsConflationExact
-      (ExactStructure.abelian (ModuleCat.{uA} A)) GradedModuleCat.toModuleCat where
-  map_conflation {S} hS := by
-    rw [ExactStructure.abelian_conflation] at hS ⊢
-    let hf : Mono S.f := hS.mono_f
-    let hg : Epi S.g := hS.epi_g
-    let hmono : (GradedModuleCat.toModuleCat (𝒜 := 𝒜)).PreservesMonomorphisms :=
-      NormalEpiCategory.preservesMonomorphisms_of_preservesKernels _
-    let hepi : (GradedModuleCat.toModuleCat (𝒜 := 𝒜)).PreservesEpimorphisms :=
-      NormalMonoCategory.preservesEpimorphisms_of_preservesCokernels _
-    exact hS.map GradedModuleCat.toModuleCat
+section ConflationExact
+
+local instance : PreservesFiniteLimits (GradedModuleCat.toModuleCat.{uA} (𝒜 := 𝒜)) :=
+  Functor.preservesFiniteLimits_of_preservesHomology _
+
+local instance : PreservesFiniteColimits (GradedModuleCat.toModuleCat.{uA} (𝒜 := 𝒜)) :=
+  Functor.preservesFiniteColimits_of_preservesHomology _
 
 /-- Forgetting grading preserves the conflations of finite modules. -/
 theorem isConflationExact_gradedFiniteModulesForget :
@@ -121,7 +116,8 @@ theorem isConflationExact_gradedFiniteModulesForget :
     (fun M => (ModuleCat.isFG_iff _).2 (inferInstanceAs (Module.Finite A M.obj)))
     (isExtensionClosed_finiteModules A)
     (by simpa only [gradedModuleExactStructure, GradedExactStructure.abelian_toExactStructure]
-      using isConflationExact_toModuleCat 𝒜)
+      using (ExactStructure.isConflationExact_abelian
+        (GradedModuleCat.toModuleCat.{uA} (𝒜 := 𝒜))))
 
 /-- Forgetting grading preserves the conflations of finite projectives. -/
 theorem isConflationExact_gradedFiniteProjectiveModulesForget :
@@ -140,7 +136,10 @@ theorem isConflationExact_gradedFiniteProjectiveModulesForget :
     (ExactStructure.isExtensionClosed_of_le_isProjective
       (finiteProjectiveModules_le_isProjective A))
     (by simpa only [gradedModuleExactStructure, GradedExactStructure.abelian_toExactStructure]
-      using isConflationExact_toModuleCat 𝒜)
+      using (ExactStructure.isConflationExact_abelian
+        (GradedModuleCat.toModuleCat.{uA} (𝒜 := 𝒜))))
+
+end ConflationExact
 
 /-- Forgetting the shift of a finite graded module gives the same underlying module. -/
 def gradedFiniteModulesForgetShiftIso :
