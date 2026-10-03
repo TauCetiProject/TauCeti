@@ -48,7 +48,7 @@ variable {X Y : Type w} [TopologicalSpace X] [T2Space X]
 /-- The identification of cellular cycles with the homology of the skeleton relative to
 the base is natural under cellular maps, without a dimension bound. -/
 @[reassoc]
-lemma cellularCyclesIso_naturality (n : ℕ) :
+lemma cellularCyclesIso_hom_naturality (n : ℕ) :
     cyclesMap (cellularChainComplexMap C C' hf R) n ≫ (cellularCyclesIso C' R n).hom =
       (cellularCyclesIso C R n).hom ≫
         (skeletonBasePair C n).singularHomologyMap (skeletonBasePairMap C C' hf n) R n := by
@@ -67,7 +67,7 @@ variable [FiniteDimensional C] [FiniteDimensional C']
 /-- The cellular–singular comparison is natural under cellular maps of finite-dimensional
 relative CW complexes. The singular map is induced by the original map of the whole pairs. -/
 @[reassoc]
-lemma cellularSingularHomologyIso_naturality (n : ℕ) :
+lemma cellularSingularHomologyIso_hom_naturality (n : ℕ) :
     homologyMap (cellularChainComplexMap C C' hf R) n ≫
         (cellularSingularHomologyIso C' R n).hom =
       (cellularSingularHomologyIso C R n).hom ≫
@@ -76,7 +76,7 @@ lemma cellularSingularHomologyIso_naturality (n : ℕ) :
   simp only [homologyπ_naturality_assoc,
     homologyπ_comp_cellularSingularHomologyIso_hom,
     homologyπ_comp_cellularSingularHomologyIso_hom_assoc,
-    cellularCyclesIso_naturality_assoc]
+    cellularCyclesIso_hom_naturality_assoc]
   rw [← TopPair.singularHomologyMap_comp, ← TopPair.singularHomologyMap_comp,
     skeletonBasePairMap_comp_toComplex]
 
