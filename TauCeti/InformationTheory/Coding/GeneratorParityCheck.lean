@@ -81,9 +81,10 @@ theorem isParityCheckMatrix_iff_isGeneratorMatrix_euclideanDual
 
 /-- The matrix whose rows are the vectors of a basis of the Euclidean dual of `C` is a
 parity-check matrix for `C`. -/
-theorem isParityCheckMatrix_of_basis_euclideanDual [Finite ρ] {C : LinearCode F ι}
+theorem isParityCheckMatrix_of_basis_euclideanDual {C : LinearCode F ι}
     (b : Module.Basis ρ F C.euclideanDual) :
     C.IsParityCheckMatrix (Matrix.of fun r ↦ (b r : ι → F)) :=
+  have := Module.Finite.finite_basis b
   let _ := Fintype.ofFinite ρ
   isParityCheckMatrix_iff_isGeneratorMatrix_euclideanDual.mpr (isGeneratorMatrix_of_basis b)
 
