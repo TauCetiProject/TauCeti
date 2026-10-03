@@ -349,29 +349,36 @@ theorem isFiniteOrder_normPow_iff {s : ℂ} : (normPow K s).IsFiniteOrder ↔ s 
 
 /-! ### Absolute values of the components and the shift -/
 
-/-- **The absolute value of a real component is a power of the shift.**  At a real place `w`,
-the component of `χ` satisfies `|χ_w(x)| = |x| ^ σ`, where `σ` is the shift of `χ`. -/
+/-- **The absolute value of an infinite component is the shift-th power of the normalized
+absolute value.** -/
+theorem norm_infiniteComponent_apply (χ : HeckeCharacter K) (w : InfinitePlace K)
+    (u : w.Completionˣ) :
+    ‖(χ.infiniteComponent w u : ℂ)‖ = infiniteCompletionNormalizedAbsValue w u ^ χ.shift := by
+  rw [infiniteComponent_apply, norm_apply_eq_rpow_shift,
+    IdeleClassGroup.ofCompletion_apply, ideleClassNorm_mk, coe_ideleNorm_ofCompletion]
+
+/-- **The absolute value of a real component is the shift-th power of `|x|`.**  At a real place
+`w`, the component of `χ` satisfies `|χ_w(x)| = |x| ^ σ`, where `σ` is the shift of `χ`. -/
 theorem norm_realComponent_apply (χ : HeckeCharacter K) (w : {w : InfinitePlace K // w.IsReal})
     (x : ℝˣ) : ‖(χ.realComponent w x : ℂ)‖ = |(x : ℝ)| ^ χ.shift := by
-  conv_lhs => rw [← χ.unitaryPart_mul_normPow_shift]
-  rw [realComponent_mul, ContinuousMonoidHom.mul_apply, Units.val_mul, norm_mul,
-    realComponent_apply, infiniteComponent_apply, norm_unitaryPart, one_mul,
-    realComponent_normPow, coe_normCpowCharacter_apply,
-    Complex.norm_cpow_eq_rpow_re_of_pos (norm_pos_iff.2 x.ne_zero), Complex.ofReal_re,
-    Real.norm_eq_abs]
+  rw [realComponent_apply, norm_infiniteComponent_apply,
+    infiniteCompletionNormalizedAbsValue_of_isReal _ w.2]
+  simp
 
-/-- **The absolute value of a complex component is a power of the shift.**  At a complex place
-`w`, the component of `χ` satisfies `|χ_w(z)| = |z| ^ (2 * σ)`, where `σ` is the shift of `χ`,
-since the normalized absolute value of a complex place is the square of the usual one. -/
+/-- **The absolute value of a complex component is the power of `‖z‖` with exponent twice the
+shift.**  At a complex place `w`, the component of `χ` satisfies
+`|χ_w(z)| = |z| ^ (2 * σ)`, where `σ` is the shift of `χ`, since the normalized absolute value of
+a complex place is the square of the usual one. -/
 theorem norm_complexComponent_apply (χ : HeckeCharacter K)
     (w : {w : InfinitePlace K // w.IsComplex}) (z : ℂˣ) :
     ‖(χ.complexComponent w z : ℂ)‖ = ‖(z : ℂ)‖ ^ (2 * χ.shift) := by
-  conv_lhs => rw [← χ.unitaryPart_mul_normPow_shift]
-  rw [complexComponent_mul, ContinuousMonoidHom.mul_apply, Units.val_mul, norm_mul,
-    complexComponent_apply, infiniteComponent_apply, norm_unitaryPart, one_mul,
-    complexComponent_normPow, coe_normCpowCharacter_apply,
-    Complex.norm_cpow_eq_rpow_re_of_pos (norm_pos_iff.2 z.ne_zero)]
-  simp
+  rw [complexComponent_apply, norm_infiniteComponent_apply,
+    infiniteCompletionNormalizedAbsValue_of_isComplex _ w.2]
+  simp only [Units.symm_mapContinuousMulEquiv, Units.mapContinuousMulEquiv_apply, Units.coe_map,
+    MonoidHom.coe_ofClass, ContinuousMulEquiv.coe_toMulEquiv,
+    norm_continuousMulEquivComplexOfIsComplex_symm]
+  rw [← Real.rpow_natCast, ← Real.rpow_mul (norm_nonneg _)]
+  norm_num
 
 /-- **The real part of a real modulus exponent is the shift.**  The infinity type of `χ` has a
 complex exponent `s_w` at each real place `w`; its real part is the shift of `χ`, independently

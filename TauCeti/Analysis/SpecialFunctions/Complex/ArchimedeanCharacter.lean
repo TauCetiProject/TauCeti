@@ -121,8 +121,8 @@ theorem coe_realUnitsCharacter_apply (s : ℂ) (ε : ZMod 2) (x : ℝˣ) :
 contributes absolute value `1`. -/
 theorem norm_realUnitsCharacter_apply (s : ℂ) (ε : ZMod 2) (x : ℝˣ) :
     ‖(realUnitsCharacter s ε x : ℂ)‖ = |(x : ℝ)| ^ s.re := by
-  rw [coe_realUnitsCharacter_apply, norm_mul, norm_pow,
-    norm_cpow_eq_rpow_re_of_pos (abs_pos.2 x.ne_zero)]
+  rw [realUnitsCharacter, ContinuousMonoidHom.mul_apply, Units.val_mul, norm_mul,
+    norm_coe_normCpowCharacter_apply]
   rcases lt_or_gt_of_ne x.ne_zero with h | h <;> simp [h]
 
 /-- With parity `0`, `realUnitsCharacter s 0` is the norm-power character `x ↦ |x| ^ s`. -/
@@ -255,8 +255,8 @@ theorem coe_complexUnitsCharacter_apply (s : ℂ) (k : ℤ) (z : ℂˣ) :
 character contributes absolute value `1`. -/
 theorem norm_complexUnitsCharacter_apply (s : ℂ) (k : ℤ) (z : ℂˣ) :
     ‖(complexUnitsCharacter s k z : ℂ)‖ = ‖(z : ℂ)‖ ^ s.re := by
-  rw [coe_complexUnitsCharacter_apply, norm_mul, norm_zpow, norm_div,
-    norm_cpow_eq_rpow_re_of_pos (norm_pos_iff.2 z.ne_zero)]
+  rw [complexUnitsCharacter, ContinuousMonoidHom.mul_apply, Units.val_mul, norm_mul,
+    norm_coe_normCpowCharacter_apply]
   simp [z.ne_zero]
 
 /-- Integer embedding exponents `a` and `b` give the algebraic character `z ↦ z^a conj(z)^b`.

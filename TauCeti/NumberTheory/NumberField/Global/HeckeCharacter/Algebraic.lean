@@ -60,6 +60,14 @@ parities are not constrained. -/
 def IsAlgebraic (χ : HeckeCharacter K) : Prop :=
   χ.infinityType.IsAlgebraicOnIdentityComponent
 
+/-- An algebraic Hecke character has integer embedding exponents that describe its infinity type
+on the identity component. -/
+theorem IsAlgebraic.exists_agreesOnIdentityComponent {χ : HeckeCharacter K}
+    (hχ : χ.IsAlgebraic) :
+    ∃ n : AlgebraicInfinityType K,
+      χ.infinityType.AgreesOnIdentityComponent (AlgebraicInfinityType.toContinuous n) := by
+  exact ContinuousInfinityType.isAlgebraicOnIdentityComponent_def χ.infinityType |>.mp hχ
+
 /-- Algebraicity is equivalent to an algebraic infinity type together with an unrestricted
 finite-order sign twist at the real places. -/
 theorem isAlgebraic_iff {χ : HeckeCharacter K} :

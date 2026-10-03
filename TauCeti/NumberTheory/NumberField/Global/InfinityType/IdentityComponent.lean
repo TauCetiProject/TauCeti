@@ -38,6 +38,14 @@ def AgreesOnIdentityComponent (t u : ContinuousInfinityType K) : Prop :=
   t.realExponent = u.realExponent ∧ t.complexExponent = u.complexExponent ∧
     t.complexAngularFrequency = u.complexAngularFrequency
 
+/-- Agreement on the identity component is exactly agreement of the real exponents, complex
+exponents, and complex angular frequencies. -/
+theorem agreesOnIdentityComponent_def (t u : ContinuousInfinityType K) :
+    t.AgreesOnIdentityComponent u ↔
+      t.realExponent = u.realExponent ∧ t.complexExponent = u.complexExponent ∧
+        t.complexAngularFrequency = u.complexAngularFrequency :=
+  Iff.rfl
+
 /-- Agreement on the identity component is equivalent to a finite-order sign twist. -/
 theorem agreesOnIdentityComponent_iff_exists_finiteOrderInfinityType
     (t u : ContinuousInfinityType K) :
@@ -66,6 +74,14 @@ agree with the parameters of integer exponents at the embeddings into `ℂ`. -/
 def IsAlgebraicOnIdentityComponent (t : ContinuousInfinityType K) : Prop :=
   ∃ n : AlgebraicInfinityType K, t.AgreesOnIdentityComponent
     (AlgebraicInfinityType.toContinuous n)
+
+/-- Algebraicity on the identity component means agreement there with integer embedding
+exponents. -/
+theorem isAlgebraicOnIdentityComponent_def (t : ContinuousInfinityType K) :
+    t.IsAlgebraicOnIdentityComponent ↔
+      ∃ n : AlgebraicInfinityType K,
+        t.AgreesOnIdentityComponent (AlgebraicInfinityType.toContinuous n) :=
+  Iff.rfl
 
 /-- An infinity type is algebraic on the identity component precisely when it is an algebraic
 infinity type times a finite-order real sign type. -/

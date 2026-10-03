@@ -13,12 +13,12 @@ public import TauCeti.NumberTheory.NumberField.Global.HeckeCharacter.NormTwist
 Let `χ` be an algebraic Hecke character of a number field `K`, described on the identity component
 by integer exponents `n σ` at the embeddings `σ : K → ℂ`.  Then `χ` is **pure**: the sum
 `n σ + n (conjugate σ)` of the exponents at an embedding and its conjugate is the same integer
-`w` for every `σ`, the **weight** of `n`.  On the idele class group, `|χ| = ‖·‖ ^ (w / 2)`.
+`m` for every `σ`, the **weight** of `n`.  On the idele class group, `|χ| = ‖·‖ ^ (m / 2)`.
 Consequently, an exponent at a real embedding is the shift of `χ` itself.  Thus, over a field with
 a real place, the shift of an algebraic character is an integer, and its unitary part is again
 algebraic.
 
-The weight is read off from the archimedean components: the shift `σ` of `χ` is the real part of
+The weight is read off from the archimedean components: the shift of `χ` is the real part of
 the modulus exponent at every real place and half of it at every complex place
 (`HeckeCharacter.re_realExponent_infinityType`, `HeckeCharacter.re_complexExponent_infinityType`).
 The global input is the existence of the shift, that is, the triviality of `|χ|` on the compact
@@ -27,15 +27,17 @@ the finiteness of the class group.
 
 ## Main results
 
-* `TauCeti.GlobalNumberFields.HeckeCharacter.add_conjugate_eq_two_mul_shift`: the exponents at an
-  embedding and its conjugate add up to twice the shift.
+* `TauCeti.GlobalNumberFields.HeckeCharacter.intCast_add_intCast_conjugate_eq_two_mul_shift`: the
+  exponents at an embedding and its conjugate add up to twice the shift after casting to `ℝ`.
 * `TauCeti.GlobalNumberFields.HeckeCharacter.add_conjugate_eq_add_conjugate`: purity, the sum
   `n σ + n (conjugate σ)` does not depend on `σ`.
+* `TauCeti.GlobalNumberFields.HeckeCharacter.exists_weight`: the common integer weight controls
+  both the embedding exponents and the shift.
 * `TauCeti.GlobalNumberFields.HeckeCharacter.IsAlgebraic.exists_intCast_eq_two_mul_shift`: twice
   the shift of an algebraic character is an integer.
 * `TauCeti.GlobalNumberFields.HeckeCharacter.IsAlgebraic.exists_intCast_eq_shift_of_isReal`: over
   a field with a real place, the shift of an algebraic character is an integer.
-* `TauCeti.GlobalNumberFields.HeckeCharacter.IsAlgebraic.isAlgebraic_unitaryPart_iff`: the unitary
+* `TauCeti.GlobalNumberFields.HeckeCharacter.IsAlgebraic.unitaryPart_iff`: the unitary
   part of an algebraic character is algebraic exactly when its shift is an integer.
 
 ## References
@@ -49,6 +51,7 @@ the finiteness of the class group.
 public section
 
 open NumberField
+open scoped NumberField NNReal
 
 namespace TauCeti.GlobalNumberFields.HeckeCharacter
 
@@ -57,28 +60,27 @@ variable {K : Type*} [Field K] [NumberField K]
 /-- **Purity of an algebraic Hecke character, with its weight.**  If integer exponents `n`
 describe `χ` on the identity component, then for every embedding `σ` the exponents at `σ` and at
 its complex conjugate add up to twice the shift of `χ`. -/
-theorem add_conjugate_eq_two_mul_shift {χ : HeckeCharacter K} {n : AlgebraicInfinityType K}
+theorem intCast_add_intCast_conjugate_eq_two_mul_shift {χ : HeckeCharacter K}
+    {n : AlgebraicInfinityType K}
     (hn : χ.infinityType.AgreesOnIdentityComponent (AlgebraicInfinityType.toContinuous n))
     (σ : K →+* ℂ) :
     (n σ : ℝ) + n (ComplexEmbedding.conjugate σ) = 2 * χ.shift := by
-  obtain ⟨e, he⟩ :=
-    (ContinuousInfinityType.agreesOnIdentityComponent_iff_exists_finiteOrderInfinityType _ _).mp hn
+  obtain ⟨hr, hc, -⟩ :=
+    ContinuousInfinityType.agreesOnIdentityComponent_def _ _ |>.mp hn
   rcases (InfinitePlace.mk σ).isReal_or_isComplex with hw | hw
   · have hσ : ComplexEmbedding.IsReal σ := InfinitePlace.isReal_mk_iff.mp hw
     have h := χ.re_realExponent_infinityType ⟨_, hw⟩
-    simp only [he, ContinuousInfinityType.add_realExponent, Pi.add_apply,
-      AlgebraicInfinityType.toContinuous_realExponent,
-      FiniteOrderInfinityType.toContinuous_realExponent, add_zero,
+    rw [congrFun hr ⟨_, hw⟩] at h
+    simp only [AlgebraicInfinityType.toContinuous_realExponent,
       InfinitePlace.embedding_mk_eq_of_isReal hσ, Complex.intCast_re] at h
     rw [ComplexEmbedding.isReal_iff.mp hσ, h, two_mul]
   · have h := χ.re_complexExponent_infinityType ⟨_, hw⟩
-    simp only [he, ContinuousInfinityType.add_complexExponent, Pi.add_apply,
-      AlgebraicInfinityType.toContinuous_complexExponent,
-      FiniteOrderInfinityType.toContinuous_complexExponent, add_zero, Complex.add_re,
+    rw [congrFun hc ⟨_, hw⟩] at h
+    simp only [AlgebraicInfinityType.toContinuous_complexExponent, Complex.add_re,
       Complex.intCast_re] at h
-    rcases InfinitePlace.embedding_mk_eq σ with he | he
-    · rwa [he] at h
-    · simpa only [he, ComplexEmbedding.conjugate, star_star, add_comm] using h
+    rcases InfinitePlace.embedding_mk_eq σ with hemb | hemb
+    · rwa [hemb] at h
+    · simpa only [hemb, ComplexEmbedding.involutive_conjugate K σ, add_comm] using h
 
 /-- **Purity of an algebraic Hecke character.**  If integer exponents `n` describe `χ` on the
 identity component, then the sum `n σ + n (conjugate σ)` of the exponents at an embedding and its
@@ -87,15 +89,29 @@ theorem add_conjugate_eq_add_conjugate {χ : HeckeCharacter K} {n : AlgebraicInf
     (hn : χ.infinityType.AgreesOnIdentityComponent (AlgebraicInfinityType.toContinuous n))
     (σ τ : K →+* ℂ) :
     n σ + n (ComplexEmbedding.conjugate σ) = n τ + n (ComplexEmbedding.conjugate τ) := by
-  have h := (add_conjugate_eq_two_mul_shift hn σ).trans (add_conjugate_eq_two_mul_shift hn τ).symm
+  have h := (intCast_add_intCast_conjugate_eq_two_mul_shift hn σ).trans
+    (intCast_add_intCast_conjugate_eq_two_mul_shift hn τ).symm
   exact_mod_cast h
+
+/-- **The weight of an algebraic infinity type.**  If `n` describes `χ` on the identity
+component, its conjugate-pair sums have a common integer value whose real cast is twice the shift
+of `χ`. -/
+theorem exists_weight {χ : HeckeCharacter K} {n : AlgebraicInfinityType K}
+    (hn : χ.infinityType.AgreesOnIdentityComponent (AlgebraicInfinityType.toContinuous n)) :
+    ∃ m : ℤ, (∀ σ : K →+* ℂ, n σ + n (ComplexEmbedding.conjugate σ) = m) ∧
+      (m : ℝ) = 2 * χ.shift := by
+  obtain ⟨w⟩ := (inferInstance : Nonempty (InfinitePlace K))
+  refine ⟨n w.embedding + n (ComplexEmbedding.conjugate w.embedding), ?_, ?_⟩
+  · exact fun σ ↦ add_conjugate_eq_add_conjugate hn σ w.embedding
+  · push_cast
+    exact intCast_add_intCast_conjugate_eq_two_mul_shift hn w.embedding
 
 /-- At a real embedding, the exponent of an algebraic Hecke character is its shift. -/
 theorem intCast_eq_shift_of_isReal {χ : HeckeCharacter K} {n : AlgebraicInfinityType K}
     (hn : χ.infinityType.AgreesOnIdentityComponent (AlgebraicInfinityType.toContinuous n))
     {σ : K →+* ℂ} (hσ : ComplexEmbedding.IsReal σ) :
     (n σ : ℝ) = χ.shift := by
-  have h := add_conjugate_eq_two_mul_shift hn σ
+  have h := intCast_add_intCast_conjugate_eq_two_mul_shift hn σ
   rw [ComplexEmbedding.isReal_iff.mp hσ] at h
   linarith
 
@@ -103,27 +119,32 @@ theorem intCast_eq_shift_of_isReal {χ : HeckeCharacter K} {n : AlgebraicInfinit
 type. -/
 theorem IsAlgebraic.exists_intCast_eq_two_mul_shift {χ : HeckeCharacter K} (hχ : χ.IsAlgebraic) :
     ∃ m : ℤ, (m : ℝ) = 2 * χ.shift := by
-  obtain ⟨n, e, he⟩ := isAlgebraic_iff.mp hχ
-  have hn := (ContinuousInfinityType.agreesOnIdentityComponent_iff_exists_finiteOrderInfinityType
-    _ _).mpr ⟨e, he⟩
-  obtain ⟨w⟩ := (inferInstance : Nonempty (InfinitePlace K))
-  exact ⟨n w.embedding + n (ComplexEmbedding.conjugate w.embedding), by
-    push_cast
-    exact add_conjugate_eq_two_mul_shift hn w.embedding⟩
+  obtain ⟨n, hn⟩ := hχ.exists_agreesOnIdentityComponent
+  obtain ⟨m, -, hm⟩ := exists_weight hn
+  exact ⟨m, hm⟩
+
+/-- **The absolute value of an algebraic Hecke character is a half-integral power of the idele
+class norm.**  The numerator is the integer weight of the character. -/
+theorem IsAlgebraic.exists_weight_norm_apply {χ : HeckeCharacter K} (hχ : χ.IsAlgebraic) :
+    ∃ m : ℤ, ∀ c : IdeleClassGroup (𝓞 K) K,
+      ‖(χ c : ℂ)‖ = ((ideleClassNorm c : ℝ≥0) : ℝ) ^ ((m : ℝ) / 2) := by
+  obtain ⟨m, hm⟩ := hχ.exists_intCast_eq_two_mul_shift
+  refine ⟨m, fun c ↦ ?_⟩
+  rw [norm_apply_eq_rpow_shift]
+  congr 1
+  linarith
 
 /-- **Over a field with a real place, the shift of an algebraic Hecke character is an
 integer.**  For a totally imaginary field the shift can be a half-integer. -/
 theorem IsAlgebraic.exists_intCast_eq_shift_of_isReal {χ : HeckeCharacter K}
     (hχ : χ.IsAlgebraic) {w : InfinitePlace K} (hw : w.IsReal) :
     ∃ m : ℤ, (m : ℝ) = χ.shift := by
-  obtain ⟨n, e, he⟩ := isAlgebraic_iff.mp hχ
-  have hn := (ContinuousInfinityType.agreesOnIdentityComponent_iff_exists_finiteOrderInfinityType
-    _ _).mpr ⟨e, he⟩
+  obtain ⟨n, hn⟩ := hχ.exists_agreesOnIdentityComponent
   exact ⟨n w.embedding, intCast_eq_shift_of_isReal hn (InfinitePlace.isReal_iff.mp hw)⟩
 
 /-- The unitary part of an algebraic Hecke character is algebraic exactly when the shift is an
 integer. -/
-theorem IsAlgebraic.isAlgebraic_unitaryPart_iff {χ : HeckeCharacter K} (hχ : χ.IsAlgebraic) :
+theorem IsAlgebraic.unitaryPart_iff {χ : HeckeCharacter K} (hχ : χ.IsAlgebraic) :
     χ.unitaryPart.IsAlgebraic ↔ ∃ m : ℤ, (m : ℝ) = χ.shift := by
   rw [unitaryPart_def, hχ.mul_normPow_iff]
   refine ⟨fun ⟨m, hm⟩ ↦ ⟨-m, ?_⟩, fun ⟨m, hm⟩ ↦ ⟨-m, ?_⟩⟩
@@ -137,6 +158,6 @@ theorem IsAlgebraic.isAlgebraic_unitaryPart_iff {χ : HeckeCharacter K} (hχ : �
 algebraic. -/
 theorem IsAlgebraic.unitaryPart_of_isReal {χ : HeckeCharacter K} (hχ : χ.IsAlgebraic)
     {w : InfinitePlace K} (hw : w.IsReal) : χ.unitaryPart.IsAlgebraic :=
-  hχ.isAlgebraic_unitaryPart_iff.mpr (hχ.exists_intCast_eq_shift_of_isReal hw)
+  hχ.unitaryPart_iff.mpr (hχ.exists_intCast_eq_shift_of_isReal hw)
 
 end TauCeti.GlobalNumberFields.HeckeCharacter
