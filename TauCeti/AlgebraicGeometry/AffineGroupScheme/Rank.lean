@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.AffineGroupScheme.Equivalence
-public import TauCeti.AlgebraicGeometry.Morphisms.FlatRank
+public import TauCeti.AlgebraicGeometry.Morphisms.Flat.Rank
 
 /-!
 # Rank of finite flat affine group schemes
