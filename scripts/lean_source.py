@@ -842,7 +842,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--mathlib-root", type=pathlib.Path, default=pathlib.Path(
         ".lake/packages/mathlib/Mathlib"))
     parser.add_argument("--source-root", type=pathlib.Path, default=pathlib.Path("TauCeti"))
-    parser.add_argument("--write-baseline", action="store_true")
+    parser.add_argument("--write-baseline", action="store_true",
+                        help="overwrite the baseline with every current finding; needs a full run, "
+                             "so it cannot be combined with --only-modules")
     parser.add_argument("--only-modules", type=pathlib.Path, default=None,
                         help="a file of module names (one per line): report findings only in "
                              "those modules' files. A PR can add a violation only where it changes "
@@ -852,8 +854,13 @@ def main(argv: list[str] | None = None) -> int:
                         help="with --only-modules, the same source tree at the change's merge base: "
                              "if the namespaces Tau Ceti owns differ between the two, every file is "
                              "checked, because ownership decided in one file changes the findings "
-                             "of others")
+                             "of others. The base tree still contains any file the change deletes, "
+                             "so a deleted owning type is caught here too.")
     args = parser.parse_args(argv)
+    if args.write_baseline and args.only_modules is not None:
+        # A scoped run sees only some files' findings, so writing them would silently drop every
+        # other file's baseline entries.
+        parser.error("--write-baseline needs a full run; it cannot be combined with --only-modules")
 
     try:
         namespace_names = mathlib_namespaces(args.mathlib_root)
