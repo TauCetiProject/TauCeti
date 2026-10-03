@@ -231,7 +231,7 @@ private theorem tendsto_restrict_localTest (hp : p ≠ ∞) (hU : U ≤ Omega)
           iteratedGradient_restrict_localTest hp hU chi hchi (phi i) (hinterior i) 0 u
   | more k _ ih =>
       intro u
-      rw [tendsto_iff_lowerOrder_iteratedGradient k]
+      rw [tendsto_iff_lowerOrder_iteratedGradient (k + 1)]
       constructor
       · have h := ih (lowerOrder (k + 1) u)
         simp_rw [localTest_lowerOrder] at h
