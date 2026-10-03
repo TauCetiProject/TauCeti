@@ -121,7 +121,8 @@ theorem algebraicIndCoindIso_hom_apply
       (Rep.indCoindIso.{max u w, v, u}
         (Rep.of (Representation.ofDistribMulAction R U.toSubgroup A.obj.V))).hom.hom x := by
   rw [algebraicIndCoindIso, Functor.mapIso_hom, toSmoothDiscrete_map_hom_apply]
-  rfl
+  exact (LinearMap.congr_fun (Rep.indCoindIso_hom_hom_toLinearMap.{max u w, v, u}
+    (Rep.of (Representation.ofDistribMulAction R U.toSubgroup A.obj.V))) x).symm
 
 /-- The inverse smooth-discrete comparison acts by Mathlib's finite-index inverse. -/
 @[simp]
@@ -132,7 +133,8 @@ theorem algebraicIndCoindIso_inv_apply
       (Rep.indCoindIso.{max u w, v, u}
         (Rep.of (Representation.ofDistribMulAction R U.toSubgroup A.obj.V))).inv.hom f := by
   rw [algebraicIndCoindIso, Functor.mapIso_inv, toSmoothDiscrete_map_hom_apply]
-  rfl
+  exact (LinearMap.congr_fun (Rep.indCoindIso_inv_hom_toLinearMap.{max u w, v, u}
+    (Rep.of (Representation.ofDistribMulAction R U.toSubgroup A.obj.V))) f).symm
 
 /-- The forward smooth comparison is the algebraic induction-to-coinduction map. -/
 @[simp]
