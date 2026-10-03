@@ -149,8 +149,8 @@ theorem algebraicIndCoindIso_hom_mk_apply (g h : G) (a : A.obj.V) :
       Rep.indToCoindAux (Rep.of
         (Representation.ofDistribMulAction R U.toSubgroup A.obj.V)) g a h := by
   rw [algebraicIndCoindIso_hom_apply]
-  exact congrFun (Rep.indToCoind_mk
-    (Rep.of (Representation.ofDistribMulAction R U.toSubgroup A.obj.V)) g a) h
+  exact congrFun (indToCoind_mk
+    (A := Rep.of (Representation.ofDistribMulAction R U.toSubgroup A.obj.V)) g a) h
 
 /-- Algebraic induction from an open subgroup agrees with locally constant topological
 coinduction. This assertion requires openness; it is not asserted for infinite-index closed
