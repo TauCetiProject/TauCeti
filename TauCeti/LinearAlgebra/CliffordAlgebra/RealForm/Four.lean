@@ -27,6 +27,8 @@ the model.
 * `TauCeti.realCliffordZeroThreeEquivQuaternionProd_star` identifies Clifford conjugation with
   componentwise quaternion conjugation.
 * `TauCeti.realCliffordFourZeroEvenEquivQuaternionProd` identifies `Cl⁺(4,0)` with `ℍ × ℍ`.
+* `TauCeti.realCliffordFourZeroEvenEquivQuaternionProd_ι` gives its bilinear-generator
+  coordinates.
 * `TauCeti.realCliffordFourZeroEvenEquivQuaternionProd_reverseEven` identifies reversal with
   componentwise quaternion conjugation.
 
@@ -133,6 +135,26 @@ private noncomputable def realCliffordZeroFourAugmentedIsometry :
     ((QuadraticMap.IsometryEquiv.refl (realCliffordForm 0 3)).prod
       realCliffordZeroOneIsometry)
 
+@[simp]
+private theorem realCliffordFormNegIsometry_four_zero (v : Fin 4 → ℝ) :
+    realCliffordFormNegIsometry 4 0 v = v := by
+  funext i
+  simpa using realCliffordFormNegIsometry_neg_of_pos 4 0 v i
+
+private theorem realCliffordZeroFourAugmentedIsometry_apply (v : Fin 4 → ℝ) :
+    realCliffordZeroFourAugmentedIsometry v = (![v 0, v 1, v 2], v 3) := by
+  classical
+  apply Prod.ext
+  · funext i
+    change (realCliffordSplitIsometry 0 0 3 1 v).1 i = _
+    convert realCliffordSplitIsometry_fst_neg 0 0 3 1 v i using 1
+    all_goals fin_cases i <;> simp
+  · change realCliffordZeroOneIsometry
+      (realCliffordSplitIsometry 0 0 3 1 v).2 = v 3
+    rw [realCliffordZeroOneIsometry_apply]
+    convert realCliffordSplitIsometry_snd_neg 0 0 3 1 v (0 : Fin 1)
+      using 1 <;> simp
+
 /-- The even Clifford algebra of the positive-definite four-dimensional real form is a product of
 two Hamilton quaternion algebras. -/
 noncomputable def realCliffordFourZeroEvenEquivQuaternionProd :
@@ -142,6 +164,24 @@ noncomputable def realCliffordFourZeroEvenEquivQuaternionProd :
       ((CliffordAlgebra.evenEquivOfIsometry realCliffordZeroFourAugmentedIsometry).trans
         ((CliffordAlgebra.equivEven (realCliffordForm 0 3)).symm.trans
           realCliffordZeroThreeEquivQuaternionProd)))
+
+/-- The quaternion-pair coordinates of the image of a product of two compact
+four-dimensional Clifford generators. -/
+@[simp]
+theorem realCliffordFourZeroEvenEquivQuaternionProd_ι (m n : Fin 4 → ℝ) :
+    realCliffordFourZeroEvenEquivQuaternionProd
+        ((CliffordAlgebra.even.ι (realCliffordForm 4 0)).bilin m n) =
+      (-(⟨m 3, m 0, m 1, m 2⟩ * ⟨-n 3, n 0, n 1, n 2⟩ : ℍ[ℝ]),
+        -(⟨m 3, m 0, m 1, -m 2⟩ * ⟨-n 3, n 0, n 1, -n 2⟩ : ℍ[ℝ])) := by
+  classical
+  simp only [realCliffordFourZeroEvenEquivQuaternionProd, AlgEquiv.trans_apply]
+  rw [CliffordAlgebra.evenEquivEvenNeg_apply, CliffordAlgebra.evenToNeg_ι,
+    map_neg, CliffordAlgebra.evenEquivOfIsometry_ι,
+    map_neg, CliffordAlgebra.evenEquivOfIsometry_ι, map_neg,
+    CliffordAlgebra.equivEven_symm_apply, CliffordAlgebra.ofEven_ι]
+  simp only [realCliffordFormNegIsometry_four_zero,
+    realCliffordZeroFourAugmentedIsometry_apply]
+  ext <;> simp [realCliffordZeroThreeEquivQuaternionProd_ι] <;> ring
 
 /-- In the compact four-dimensional quaternion-pair model, Clifford reversal is componentwise
 quaternion conjugation. -/

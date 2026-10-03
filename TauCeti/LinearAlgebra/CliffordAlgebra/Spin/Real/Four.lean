@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Quaternion.ComplexMatrix
+public import TauCeti.Algebra.Star.Unitary
 public import TauCeti.LinearAlgebra.CliffordAlgebra.RealForm.Four
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.LowRank.Four
 
@@ -44,21 +45,6 @@ open scoped Quaternion
 
 namespace TauCeti
 
-private def unitaryProdEquiv (A B : Type*) [Monoid A] [Monoid B]
-    [StarMul A] [StarMul B] : unitary (A × B) ≃* unitary A × unitary B where
-  toFun u :=
-    (⟨u.1.1, by
-      have h := u.2
-      exact ⟨congrArg Prod.fst h.1, congrArg Prod.fst h.2⟩⟩,
-     ⟨u.1.2, by
-      have h := u.2
-      exact ⟨congrArg Prod.snd h.1, congrArg Prod.snd h.2⟩⟩)
-  invFun u := ⟨(u.1.1, u.2.1), by
-    constructor <;> apply Prod.ext <;> simp⟩
-  left_inv u := by apply Subtype.ext; rfl
-  right_inv _ := rfl
-  map_mul' _ _ := rfl
-
 /-- The even unitary carrier of the compact four-dimensional real Clifford algebra is a product
 of two unit-quaternion groups. -/
 noncomputable def realCliffordFourZeroEvenUnitaryEquivQuaternionUnitaryProd :
@@ -67,7 +53,7 @@ noncomputable def realCliffordFourZeroEvenUnitaryEquivQuaternionUnitaryProd :
   (CliffordAlgebra.evenUnitaryGroupEquivUnitaryOfAlgEquiv
     (realCliffordForm 4 0) realCliffordFourZeroEvenEquivQuaternionProd
     realCliffordFourZeroEvenEquivQuaternionProd_reverseEven).trans
-      (unitaryProdEquiv ℍ[ℝ] ℍ[ℝ])
+      (Unitary.prodEquiv ℍ[ℝ] ℍ[ℝ])
 
 /-- The quaternion pair underlying the compact even-unitary equivalence is obtained by applying
 the even Clifford-algebra equivalence to the Clifford value. -/
@@ -78,6 +64,8 @@ theorem coe_realCliffordFourZeroEvenUnitaryEquivQuaternionUnitaryProd_apply
         ((realCliffordFourZeroEvenUnitaryEquivQuaternionUnitaryProd x).2 : ℍ[ℝ])) =
       realCliffordFourZeroEvenEquivQuaternionProd
         (CliffordAlgebra.evenUnitaryGroupEvenPart (realCliffordForm 4 0) x) := by
+  rw [realCliffordFourZeroEvenUnitaryEquivQuaternionUnitaryProd, MulEquiv.trans_apply,
+    Unitary.coe_prodEquiv_apply]
   exact CliffordAlgebra.coe_evenUnitaryGroupEquivUnitaryOfAlgEquiv_apply
     (realCliffordForm 4 0) realCliffordFourZeroEvenEquivQuaternionProd
       realCliffordFourZeroEvenEquivQuaternionProd_reverseEven x
@@ -94,31 +82,22 @@ theorem coe_realCliffordFourZeroEvenUnitaryEquivQuaternionUnitaryProd_symm_apply
       (realCliffordFourZeroEvenEquivQuaternionProd.symm
           ((q.1 : ℍ[ℝ]), (q.2 : ℍ[ℝ])) :
         CliffordAlgebra.even (realCliffordForm 4 0)) := by
-  exact CliffordAlgebra.coe_evenUnitaryGroupEquivUnitaryOfAlgEquiv_symm_apply
+  rw [realCliffordFourZeroEvenUnitaryEquivQuaternionUnitaryProd,
+    MulEquiv.symm_trans_apply]
+  refine (CliffordAlgebra.coe_evenUnitaryGroupEquivUnitaryOfAlgEquiv_symm_apply
     (realCliffordForm 4 0) realCliffordFourZeroEvenEquivQuaternionProd
       realCliffordFourZeroEvenEquivQuaternionProd_reverseEven
-      ((unitaryProdEquiv ℍ[ℝ] ℍ[ℝ]).symm q)
-
-private noncomputable def realSpinFourEquivEvenUnitary :
-    spinGroup (realCliffordForm 4 0) ≃*
-      CliffordAlgebra.evenUnitaryGroup (realCliffordForm 4 0) :=
-  MulEquiv.ofBijective
-    (CliffordAlgebra.spinGroupToEvenUnitary (realCliffordForm 4 0))
-    ⟨CliffordAlgebra.spinGroupToEvenUnitary_injective _, fun x => by
-      have hx : (x : (CliffordAlgebra (realCliffordForm 4 0))ˣ) ∈
-          (spinGroup.toUnits : spinGroup (realCliffordForm 4 0) →*
-            (CliffordAlgebra (realCliffordForm 4 0))ˣ).range := by
-        rw [CliffordAlgebra.range_spinGroup_toUnits_eq_evenUnitaryGroup_of_finrank_le_four
-          (realCliffordForm 4 0) (nondegenerate_realCliffordForm 4 0) (by simp) (by simp)]
-        exact x.2
-      obtain ⟨s, hs⟩ := hx
-      refine ⟨s, Subtype.ext ?_⟩
-      simpa only [CliffordAlgebra.coe_spinGroupToEvenUnitary_apply] using hs⟩
+      ((Unitary.prodEquiv ℍ[ℝ] ℍ[ℝ]).symm q)).trans ?_
+  exact congrArg (fun p : ℍ[ℝ] × ℍ[ℝ] =>
+    (realCliffordFourZeroEvenEquivQuaternionProd.symm p :
+      CliffordAlgebra (realCliffordForm 4 0)))
+    (Unitary.coe_prodEquiv_symm_apply ℍ[ℝ] ℍ[ℝ] q)
 
 /-- The compact real Spin group in dimension four is a product of two unit-quaternion groups. -/
 noncomputable def realSpinFourEquivQuaternionUnitaryProd :
     spinGroup (realCliffordForm 4 0) ≃* unitary ℍ[ℝ] × unitary ℍ[ℝ] :=
-  realSpinFourEquivEvenUnitary.trans
+  (CliffordAlgebra.spinGroupEquivEvenUnitaryOfFinrankLeFour
+    (realCliffordForm 4 0) (nondegenerate_realCliffordForm 4 0) (by simp) (by simp)).trans
     realCliffordFourZeroEvenUnitaryEquivQuaternionUnitaryProd
 
 /-- The compact `Spin(4)` equivalence evaluates the quaternion-pair algebra model on the
@@ -131,6 +110,8 @@ theorem coe_realSpinFourEquivQuaternionUnitaryProd_apply
       realCliffordFourZeroEvenEquivQuaternionProd
         (CliffordAlgebra.evenUnitaryGroupEvenPart (realCliffordForm 4 0)
           (CliffordAlgebra.spinGroupToEvenUnitary (realCliffordForm 4 0) s)) := by
+  rw [realSpinFourEquivQuaternionUnitaryProd, MulEquiv.trans_apply,
+    CliffordAlgebra.spinGroupEquivEvenUnitaryOfFinrankLeFour_apply]
   exact coe_realCliffordFourZeroEvenUnitaryEquivQuaternionUnitaryProd_apply _
 
 /-- The inverse compact `Spin(4)` equivalence recovers the Clifford value from the inverse
