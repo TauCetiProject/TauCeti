@@ -86,18 +86,11 @@ theorem isLocallyCollared_iff : IsLocallyCollared f ↔
       IsCollar (f ∘ ((↑) : U → N)) c ∧ ∀ p, c p ∈ range f → (p.2 : ℝ) = 0 :=
   Iff.rfl
 
-/-- A global collar meets the image of the collared map only along its zero slice. -/
-theorem IsCollar.coe_snd_eq_zero_of_apply_mem_range {c : N × Ico (0 : ℝ) 1 → M}
-    (h : IsCollar f c) {p : N × Ico (0 : ℝ) 1} (hp : c p ∈ range f) : (p.2 : ℝ) = 0 := by
-  obtain ⟨x, hx⟩ := hp
-  have hcp : c p = c (x, ⟨0, by norm_num⟩) := by rw [h.apply_zero, hx]
-  simpa using congrArg (fun q : N × Ico (0 : ℝ) 1 => (q.2 : ℝ)) (h.isOpenEmbedding.injective hcp)
-
 /-- A collared map is locally collared: the global collar serves as a local collar everywhere. -/
 theorem IsCollared.isLocallyCollared (h : IsCollared f) : IsLocallyCollared f := by
   obtain ⟨c, hc⟩ := isCollared_iff.1 h
   exact fun x => ⟨univ, isOpen_univ, mem_univ x, _, hc.restrict isOpen_univ,
-    fun p hp => hc.coe_snd_eq_zero_of_apply_mem_range hp⟩
+    fun p hp => congrArg Subtype.val (hc.preimage_range.subset hp).2⟩
 
 /-- A locally collared map is continuous. -/
 theorem IsLocallyCollared.continuous (h : IsLocallyCollared f) : Continuous f := by
