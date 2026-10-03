@@ -49,6 +49,7 @@ variable {k : Type u} {F : Type v} {F' : Type v'}
 variable [Field k] [Field F] [Field F']
 variable [Algebra k F] [Algebra k F'] [Algebra F F'] [IsScalarTower k F F']
 
+omit [Algebra k F] [IsScalarTower k F F'] in
 /-- The decomposition group acts faithfully on the valuation ring of a place. Indeed, two field
 automorphisms agreeing on the valuation ring agree on its fraction field. -/
 instance instFaithfulSMulIntegers (P : Place k F') :
