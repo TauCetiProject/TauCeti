@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.UniversalCover.LensSpace.Basic
+public import TauCeti.Analysis.InnerProductSpace.Euclidean.Space
 public import TauCeti.Geometry.Diffeomorphism.Sphere
 public import TauCeti.Geometry.Manifold.Instances.Quotient
 
@@ -21,7 +22,8 @@ the sphere is an analytic local diffeomorphism.
 
 As for Mathlib's spheres (`EuclideanSpace.instChartedSpaceSphere`), the manifold structure is
 stated for any `n` with `Fact (finrank ℝ (EuclideanSpace ℂ (Fin (k + 1))) = n + 1)`, and the
-instance `TauCeti.factFinrankEuclideanSpaceComplex` supplies `n = 2k + 1`. This lets instance
+instance `TauCeti.factFinrankEuclideanSpaceComplex`
+(`TauCeti.Analysis.InnerProductSpace.Euclidean.Space`) supplies `n = 2k + 1`. This lets instance
 search find the structure for a concrete model such as `𝓡 3`, where it could not solve
 `2 * k + 1 = 3` for `k`.
 
@@ -46,12 +48,6 @@ open scoped Manifold ContDiff
 namespace TauCeti
 
 noncomputable section
-
-/-- The real dimension of `ℂᵏ⁺¹` is `2k + 2`, written as `(2k + 1) + 1` so that the unit sphere,
-and hence a lens space, is found to be a manifold of dimension `2k + 1`. -/
-instance factFinrankEuclideanSpaceComplex (k : ℕ) :
-    Fact (finrank ℝ (EuclideanSpace ℂ (Fin (k + 1))) = 2 * k + 1 + 1) :=
-  ⟨by rw [finrank_real_of_complex, finrank_euclideanSpace_fin]; ring⟩
 
 section Smooth
 

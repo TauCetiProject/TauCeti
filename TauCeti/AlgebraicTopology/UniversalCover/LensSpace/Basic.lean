@@ -28,8 +28,9 @@ space** `L(m; ℓ₀, …, ℓₖ)`. The three-dimensional lens space `L(p, q)` 
 The rotations are linear isometries of `ℂᵏ⁺¹` viewed as a real inner product space, so the
 acting group is realised as a subgroup `TauCeti.lensGroup m ℓ` of the linear isometry group,
 which acts on the unit sphere through `LinearIsometryEquiv.instMulActionUnitSphere`. It is
-the image of the injective homomorphism `TauCeti.lensRotation m ℓ` out of `ℤ/m`, written
-multiplicatively. A finite group acts properly discontinuously, so the projection from the sphere
+the image of the homomorphism `TauCeti.lensRotation m ℓ` out of `ℤ/m`, written
+multiplicatively, which is injective when there is at least one coordinate, as there is for
+`ℂᵏ⁺¹`. A finite group acts properly discontinuously, so the projection from the sphere
 is a quotient covering map. This file develops the topology of the quotient; its manifold
 structure is in `TauCeti.Geometry.Manifold.Instances.LensSpace`, and its fundamental group in
 `TauCeti.AlgebraicTopology.UniversalCover.LensSpace.FundamentalGroup`.
@@ -52,8 +53,8 @@ not coprime to `m` would give an action that is not free, whose orbit space is n
 
 ## Main results
 
-* `TauCeti.lensRotation_injective`: the representation is faithful, so
-  `TauCeti.lensGroupEquiv` identifies the lens group with `ℤ/m`.
+* `TauCeti.lensRotation_injective`: the representation is faithful when there is at least one
+  coordinate (`[NeZero k]`), so `TauCeti.lensGroupEquiv` identifies the lens group with `ℤ/m`.
 * `TauCeti.lensGroup_isCancelSMul`: the lens group acts freely on the unit sphere.
 * `TauCeti.LensSpace.mk_eq_mk_iff`: two unit vectors have the same image exactly when a rotation
   carries one to the other.

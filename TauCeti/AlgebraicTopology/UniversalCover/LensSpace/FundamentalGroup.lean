@@ -64,18 +64,11 @@ noncomputable section
 
 variable (m : ℕ) [NeZero m] {k : ℕ} (ℓ : Fin (k + 1) → (ZMod m)ˣ)
 
-/-- The unit sphere `S²ᵏ⁺¹` of `ℂᵏ⁺¹` is simply connected once `1 ≤ k`. -/
-private theorem simplyConnectedSpace_sphere (hk : 1 ≤ k) :
-    SimplyConnectedSpace (sphere (0 : EuclideanSpace ℂ (Fin (k + 1))) 1) := by
-  refine TauCeti.simplyConnectedSpace_sphere ?_
-  rw [← finrank_eq_rank, finrank_real_of_complex, finrank_euclideanSpace_fin, Nat.ofNat_lt_cast]
-  omega
-
 /-- **The fundamental group of a lens space `L(m; ℓ₀, …, ℓₖ)` with `1 ≤ k` is `ℤ/m`**, at any
 basepoint `x` with a chosen lift `e` to the sphere. -/
 def fundamentalGroupMulEquiv (hk : 1 ≤ k) {x : LensSpace m ℓ} (e : mk m ℓ ⁻¹' {x}) :
     FundamentalGroup (LensSpace m ℓ) x ≃* Multiplicative (ZMod m) :=
-  haveI := simplyConnectedSpace_sphere hk
+  haveI := simplyConnectedSpace_sphere_euclideanSpace_complex hk
   ((isQuotientCoveringMap_mk m ℓ).fundamentalGroupEquiv e).trans
     ((MulEquiv.op (lensGroupEquiv m ℓ).symm).trans MulOpposite.opMulEquiv.symm)
 
@@ -87,7 +80,7 @@ theorem fundamentalGroupMulEquiv_apply_eq_iff (hk : 1 ≤ k) {x : LensSpace m �
     fundamentalGroupMulEquiv m ℓ hk e γ = a ↔
       lensRotation m ℓ a (e : EuclideanSpace ℂ (Fin (k + 1))) =
         ((isCoveringMap_mk m ℓ).monodromy γ e : EuclideanSpace ℂ (Fin (k + 1))) := by
-  have := simplyConnectedSpace_sphere hk
+  have := simplyConnectedSpace_sphere_euclideanSpace_complex hk
   rw [fundamentalGroupMulEquiv, MulEquiv.trans_apply, MulEquiv.trans_apply,
     MulEquiv.symm_apply_eq]
   simp only [MulEquiv.op_apply_apply, MulOpposite.coe_opMulEquiv, Function.comp_apply,
