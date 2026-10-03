@@ -9,7 +9,9 @@ public import TauCeti.Geometry.Manifold.Foliation.Basic
 public import TauCeti.Geometry.Manifold.MFDeriv.Curve
 public import Mathlib.Topology.Connected.PathConnected
 import Mathlib.Analysis.Calculus.MeanValue
-import Mathlib.Analysis.LocallyConvex.HahnBanach
+import Mathlib.Analysis.Normed.Group.Quotient
+import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Quotient
+import Mathlib.Topology.Algebra.Module.FiniteDimension
 
 /-!
 # Leaves of a foliation
@@ -125,6 +127,17 @@ theorem SameLeaf.symm (h : F.SameLeaf x y) : F.SameLeaf y x :=
 theorem SameLeaf.trans (hxy : F.SameLeaf x y) (hyz : F.SameLeaf y z) : F.SameLeaf x z :=
   (sameLeaf_equivalence F).trans hxy hyz
 
+/-- Induction principle for lying on the same leaf of `F`: a property of pairs of points holds for
+all pairs on the same leaf once it holds for the ends of every curve tangent to `F` and is
+preserved by reflexivity, symmetry, and transitivity. -/
+@[elab_as_elim]
+theorem SameLeaf.induction_on {motive : M → M → Prop} (h : F.SameLeaf x y)
+    (rel : ∀ x y, F.JoinedByTangentCurve x y → motive x y) (refl : ∀ x, motive x x)
+    (symm : ∀ x y, F.SameLeaf x y → motive x y → motive y x)
+    (trans : ∀ x y z, F.SameLeaf x y → F.SameLeaf y z → motive x y → motive y z → motive x z) :
+    motive x y :=
+  Relation.EqvGen.rec rel refl symm trans h
+
 /-- Lying on the same leaf is symmetric, as an equivalence. -/
 theorem sameLeaf_comm : F.SameLeaf x y ↔ F.SameLeaf y x :=
   ⟨SameLeaf.symm, SameLeaf.symm⟩
@@ -192,19 +205,16 @@ theorem isPathConnected_leaf (x : M) : IsPathConnected (F.leaf x) := by
   -- along the generated equivalence relation because equivalent points have the same leaf.
   suffices key : ∀ y z, F.SameLeaf y z → JoinedIn (F.leaf y) y z from
     ⟨x, mem_leaf_self F x, fun _ hy ↦ key _ _ hy⟩
-  intro y z h
-  induction h with
-  | rel y z h =>
-    obtain ⟨γ, hγ, htan, rfl, rfl⟩ := h
+  refine fun y z h ↦ SameLeaf.induction_on h (fun y z h ↦ ?_) (fun y ↦ ?_) (fun y z h ih ↦ ?_)
+    (fun y z w hyz _ ihyz ihzw ↦ ?_)
+  · obtain ⟨γ, hγ, htan, rfl, rfl⟩ := h
     refine JoinedIn.ofLine hγ.continuousOn rfl rfl ?_
     rintro _ ⟨t, ht, rfl⟩
     exact sameLeaf_of_contMDiffOn_of_tangent hγ htan (left_mem_Icc.mpr zero_le_one) ht
-  | refl y => exact JoinedIn.refl (mem_leaf_self F y)
-  | symm y z h ih =>
-    rw [leaf_eq_of_mem h]
+  · exact JoinedIn.refl (mem_leaf_self F y)
+  · rw [leaf_eq_of_mem h]
     exact ih.symm
-  | trans y z w hyz _ ihyz ihzw =>
-    rw [leaf_eq_of_mem hyz] at ihzw
+  · rw [leaf_eq_of_mem hyz] at ihzw
     exact ihyz.trans ihzw
 
 section ofSubmodule
@@ -216,15 +226,11 @@ their difference lies in `S`. -/
 @[simp]
 theorem sameLeaf_ofSubmodule_iff : (ofSubmodule S hn).SameLeaf x y ↔ y - x ∈ S := by
   constructor
-  · -- A curve with velocity in `S` has constant image under a projection killing exactly `S`.
-    obtain ⟨P, hP⟩ := Submodule.ClosedComplemented.of_finiteDimensional S
-    set q : E →L[ℝ] E := ContinuousLinearMap.id ℝ E - S.subtypeL.comp P with hq_def
-    have hq : ∀ v, q v = 0 ↔ v ∈ S := by
-      intro v
-      simp only [hq_def, FunLike.coe_sub, Pi.sub_apply, ContinuousLinearMap.id_apply,
-        ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply, sub_eq_zero]
-      refine ⟨fun h ↦ h ▸ (P v).2, fun hv ↦ ?_⟩
-      rw [hP ⟨v, hv⟩]
+  · -- A curve with velocity in `S` has constant image in the quotient `E ⧸ S`, which is a normed
+    -- space because the finite-dimensional subspace `S` is closed.
+    have : IsClosed (S : Set E) := S.closed_of_finiteDimensional
+    set q : E →L[ℝ] E ⧸ S := S.mkQL
+    have hq : ∀ v, q v = 0 ↔ v ∈ S := fun _ ↦ Submodule.Quotient.mk_eq_zero S
     have hr : Equivalence fun x y : E ↦ y - x ∈ S :=
       ⟨fun x ↦ by simp, fun h ↦ by simpa using S.neg_mem h,
         fun hxy hyz ↦ by simpa using S.add_mem hyz hxy⟩
