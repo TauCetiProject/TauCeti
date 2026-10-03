@@ -10,8 +10,9 @@ public import Mathlib.Analysis.Normed.Algebra.Exponential
 /-!
 # The quadratic truncation and Taylor estimate for the exponential
 
-The third partial sum of `NormedSpace.expSeries` is `1 + x + 2⁻¹ • x ^ 2` in any
-topological algebra over a field; this identity needs no norm or completeness assumption.
+For an algebra `A` over a field, with `A` a topological ring, the third partial sum of
+`NormedSpace.expSeries` is `1 + x + 2⁻¹ • x ^ 2`. This identity needs no norm or completeness
+assumption.
 In a complete normed algebra, the exponential agrees with this quadratic truncation to third
 order at the origin. This file records that estimate in `Asymptotics.IsBigO` form.
 
@@ -42,8 +43,8 @@ section Algebra
 variable (𝕂 : Type*) {A : Type*} [Field 𝕂] [Ring A] [Algebra 𝕂 A]
   [TopologicalSpace A] [IsTopologicalRing A]
 
-/-- In a topological algebra over a field, the third partial sum of the exponential series is
-the quadratic truncation `1 + x + 2⁻¹ • x ^ 2`. -/
+/-- For an algebra `A` over a field, with `A` a topological ring, the third partial sum of the
+exponential series is the quadratic truncation `1 + x + 2⁻¹ • x ^ 2`. -/
 @[simp]
 theorem expSeries_partialSum_three (x : A) :
     (expSeries 𝕂 A).partialSum 3 x = 1 + x + (2⁻¹ : 𝕂) • x ^ 2 := by
