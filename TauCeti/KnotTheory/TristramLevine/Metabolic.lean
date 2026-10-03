@@ -62,7 +62,7 @@ open TauCeti.KnotTheory in
 where the Tristram--Levine form is nonsingular. -/
 theorem IsMetabolic.tristramLevineSignature_eq_zero {V : Matrix ι ι ℝ} (hV : V.IsMetabolic)
     {ω : ℂ} (hω : (tristramLevineForm V ω).det ≠ 0) : tristramLevineSignature V ω = 0 := by
-  obtain ⟨P, hP, s, hs, h⟩ := hV
+  obtain ⟨P, hP, s, hs, h⟩ := isMetabolic_def.1 hV
   rw [← tristramLevineSignature_congr hP, tristramLevineSignature_def]
   refine (isHermitian_tristramLevineForm _ ω).signature_eq_zero_of_forall_mem_eq_zero ?_ hs.le
     fun i hi j hj => by simp [h i hi j hj, h j hj i hi]

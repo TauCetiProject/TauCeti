@@ -61,9 +61,16 @@ variable {R S : Type*} [CommRing R] [CommRing S] {ι κ : Type*} [Fintype ι] [F
 
 /-- A square matrix `V` is *metabolic* when some congruence `V ↦ P * V * Pᵀ` by a matrix with unit
 determinant makes it vanish on `s × s` for a set `s` of exactly half of the coordinates. -/
-@[expose] def IsMetabolic (V : Matrix ι ι R) : Prop :=
+def IsMetabolic (V : Matrix ι ι R) : Prop :=
   ∃ P : Matrix ι ι R, IsUnit P.det ∧ ∃ s : Finset ι, Fintype.card ι = 2 * s.card ∧
     ∀ i ∈ s, ∀ j ∈ s, (P * V * Pᵀ) i j = 0
+
+/-- Unfold `Matrix.IsMetabolic`: a unimodular congruence makes `V` vanish on half of the
+coordinates. -/
+theorem isMetabolic_def {V : Matrix ι ι R} :
+    V.IsMetabolic ↔ ∃ P : Matrix ι ι R, IsUnit P.det ∧ ∃ s : Finset ι,
+      Fintype.card ι = 2 * s.card ∧ ∀ i ∈ s, ∀ j ∈ s, (P * V * Pᵀ) i j = 0 :=
+  Iff.rfl
 
 /-- A matrix vanishing on half of the coordinates is metabolic. -/
 theorem isMetabolic_of_forall_mem_eq_zero {V : Matrix ι ι R} {s : Finset ι}
