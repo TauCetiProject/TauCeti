@@ -41,6 +41,7 @@ universe uk uA
 variable {k : Type uk} [CommRing k] {A : Type uA} [Ring A] [Algebra k A]
   (𝒜 : ℤ → Submodule k A)
 
+-- Expose object computation so the morphism simp lemmas below compare maps without transports.
 /-- Forget the grading of a finitely generated graded module. -/
 @[expose]
 def gradedFiniteModulesForget :
