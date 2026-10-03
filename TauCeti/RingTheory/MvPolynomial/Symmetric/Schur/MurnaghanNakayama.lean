@@ -54,8 +54,10 @@ Specht modules and is not proved here.
 ## References
 
 * [I. G. Macdonald, *Symmetric Functions and Hall Polynomials*][macdonald1995], Chapter I,
-  Section 3, Example 11.
-* R. P. Stanley, *Enumerative Combinatorics, Vol. 2*, Theorem 7.17.1.
+  Section 3, Example 11, and Chapter I, Section 7, where the power sums are expanded in the Schur
+  functions.
+* R. P. Stanley, *Enumerative Combinatorics, Vol. 2*, Theorem 7.17.1, and Theorem 7.17.3, the
+  border-strip-tableau form of the iterated expansion.
 -/
 
 public section
