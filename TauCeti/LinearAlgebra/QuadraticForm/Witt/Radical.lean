@@ -85,7 +85,8 @@ example : RegularFormClass.wittIndex (regularQuotientClass (0 : QuadraticForm K 
 plane: discarding the radical does not discard the regular isotropic summand. -/
 example : RegularFormClass.wittIndex
     (regularQuotientClass ((0 : QuadraticForm ℚ ℚ).prod (hyperbolicPlane ℚ))) = 1 := by
-  rw [regularQuotientClass_zero_prod _ nondegenerate_hyperbolicPlane,
+  rw [regularQuotientClass_zero_prod, regularQuotientClass_eq_formClass _
+    nondegenerate_hyperbolicPlane,
     formClass_hyperbolicPlane, RegularFormClass.wittIndex_hyperbolicClass]
 
 end TauCeti

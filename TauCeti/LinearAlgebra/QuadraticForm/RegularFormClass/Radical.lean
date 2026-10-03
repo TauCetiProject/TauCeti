@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Basic
+import Mathlib.LinearAlgebra.Isomorphisms
 
 /-!
 # The regular quotient class of a quadratic form
@@ -75,12 +76,28 @@ theorem regularQuotientClass_eq_of_equivalent {Q : QuadraticForm K V} {Q' : Quad
   rw [regularQuotientClass_def, regularQuotientClass_def, formClass_eq_iff]
   exact h.lift_radical
 
-/-- Adjoining a zero summand to a regular form preserves its regular quotient class. -/
+/-- The regular quotient class of an orthogonal product is the sum of the quotient classes. -/
 @[simp]
-theorem regularQuotientClass_zero_prod (Q : QuadraticForm K W) (hQ : Q.Nondegenerate) :
-    regularQuotientClass ((0 : QuadraticForm K V).prod Q) = formClass Q hQ := by
-  rw [regularQuotientClass_def, formClass_eq_iff]
-  exact QuadraticMap.equivalent_lift_radical_zero_prod Q hQ.radical_eq_bot
+theorem regularQuotientClass_prod (Q : QuadraticForm K V) (Q' : QuadraticForm K W) :
+    regularQuotientClass (Q.prod Q') = regularQuotientClass Q + regularQuotientClass Q' := by
+  rw [regularQuotientClass_def, regularQuotientClass_def, regularQuotientClass_def,
+    ← formClass_prod, formClass_eq_iff]
+  let f := Q.radical.mkQ.prodMap Q'.radical.mkQ
+  have hf : Function.Surjective f :=
+    Q.radical.mkQ_surjective.prodMap Q'.radical.mkQ_surjective
+  have hr : (Q.prod Q').radical = f.ker := by
+    simp [f, QuadraticMap.radical_prod, LinearMap.ker_prodMap, Submodule.ker_mkQ]
+  refine ⟨{
+    toLinearEquiv := (Submodule.quotEquivOfEq _ _ hr).trans (f.quotKerEquivOfSurjective hf)
+    map_app' := ?_ }⟩
+  intro x
+  induction x using Submodule.Quotient.induction_on with
+  | _ x => simp [f]
+
+/-- Adjoining a zero summand preserves the regular quotient class, also for singular forms. -/
+theorem regularQuotientClass_zero_prod (Q : QuadraticForm K W) :
+    regularQuotientClass ((0 : QuadraticForm K V).prod Q) = regularQuotientClass Q := by
+  rw [regularQuotientClass_prod, regularQuotientClass_zero, zero_add]
 
 /-- Two quadratic forms are isometric exactly when their radical dimensions and regular
 quotient classes agree. No regularity is required of either original form. -/

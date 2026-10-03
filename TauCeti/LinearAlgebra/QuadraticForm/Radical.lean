@@ -10,7 +10,7 @@ public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 public import Mathlib.LinearAlgebra.QuadraticForm.Prod
 import Mathlib.LinearAlgebra.Isomorphisms
 public import Mathlib.LinearAlgebra.QuadraticForm.Radical
-public import Mathlib.LinearAlgebra.Projection
+import Mathlib.LinearAlgebra.Projection
 
 /-!
 # Radical API for quadratic forms
@@ -262,20 +262,22 @@ theorem Equivalent.lift_radical {Q : QuadraticMap R M P} {Q' : QuadraticMap R M'
     (Q.lift Q.radical le_rfl).Equivalent (Q'.lift Q'.radical le_rfl) :=
   h.elim fun e => ⟨e.liftRadical⟩
 
-/-- Adjoining a zero summand to a map with trivial radical does not change its quotient form. -/
+/-- Adjoining a zero summand does not change the quotient by the radical. -/
 theorem equivalent_lift_radical_zero_prod
-    (Q : QuadraticMap R M' P) (hQ : Q.radical = ⊥) :
+    (Q : QuadraticMap R M' P) :
     (((0 : QuadraticMap R M P).prod Q).lift
-      ((0 : QuadraticMap R M P).prod Q).radical le_rfl).Equivalent Q := by
-  let f := LinearMap.snd R M M'
-  have hf : Function.Surjective f := fun x => ⟨(0, x), rfl⟩
+      ((0 : QuadraticMap R M P).prod Q).radical le_rfl).Equivalent
+        (Q.lift Q.radical le_rfl) := by
+  let f := Q.radical.mkQ.comp (LinearMap.snd R M M')
+  have hf : Function.Surjective f :=
+    Q.radical.mkQ_surjective.comp (fun x => ⟨(0, x), rfl⟩)
   have hr : ((0 : QuadraticMap R M P).prod Q).radical = f.ker := by
     ext x
     simp only [mem_radical_iff', prod_apply, zero_apply, zero_add, Prod.snd_add,
-      LinearMap.mem_ker, f, LinearMap.snd_apply]
-    refine ⟨fun ⟨hx, h⟩ => ?_, fun hx => by simp [hx]⟩
-    have hxrad : x.2 ∈ Q.radical := mem_radical_iff'.mpr ⟨hx, fun y => h (0, y)⟩
-    simpa [hQ] using hxrad
+      LinearMap.mem_ker, f, LinearMap.comp_apply, LinearMap.snd_apply,
+      Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero]
+    exact ⟨fun ⟨hx, h⟩ => ⟨hx, fun y => h (0, y)⟩,
+      fun ⟨hx, h⟩ => ⟨hx, fun y => h y.2⟩⟩
   refine ⟨{
     toLinearEquiv := (Submodule.quotEquivOfEq _ _ hr).trans (f.quotKerEquivOfSurjective hf)
     map_app' := ?_ }⟩
@@ -303,6 +305,34 @@ theorem equivalent_zero_prod_lift_radical {K V N : Type*} [Field K]
   rw [← lift_mk (Q := Q) le_rfl (e x.2 : V), he]
 
 end QuadraticMap
+
+namespace TauCeti
+
+variable {R M M' M'' P : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+  [AddCommGroup M'] [Module R M'] [AddCommGroup M''] [Module R M'']
+  [AddCommGroup P] [Module R P]
+
+/-- The identity induces the identity on the radical quotient. -/
+@[simp]
+theorem liftRadical_refl (Q : QuadraticMap R M P) :
+    (QuadraticMap.IsometryEquiv.refl Q).liftRadical =
+      QuadraticMap.IsometryEquiv.refl (Q.lift Q.radical le_rfl) := by
+  apply DFunLike.ext
+  intro x
+  induction x using Submodule.Quotient.induction_on with
+  | _ x => rfl
+
+/-- Composition commutes with inducing isometries on radical quotients. -/
+@[simp]
+theorem liftRadical_trans {Q : QuadraticMap R M P} {Q' : QuadraticMap R M' P}
+    {Q'' : QuadraticMap R M'' P} (e : Q.IsometryEquiv Q') (e' : Q'.IsometryEquiv Q'') :
+    (e.trans e').liftRadical = e.liftRadical.trans e'.liftRadical := by
+  apply DFunLike.ext
+  intro x
+  induction x using Submodule.Quotient.induction_on with
+  | _ x => rfl
+
+end TauCeti
 
 namespace QuadraticMap.Nondegenerate
 
