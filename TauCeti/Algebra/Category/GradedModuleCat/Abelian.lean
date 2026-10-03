@@ -47,6 +47,8 @@ graded abelian category, whose canonical exact structure is
   `TauCeti.GradedModuleCat.mem_productFan_pt_piece_iff`: the homogeneous elements of kernels,
   cokernels and finite products.
 * The instance `Abelian (TauCeti.GradedModuleCat 𝒜)`.
+* `TauCeti.GradedModuleCat.epi_iff_surjective`: epimorphisms are precisely the maps whose
+  underlying linear maps are surjective.
 -/
 
 public section
@@ -276,5 +278,18 @@ instance {M N : GradedModuleCat.{v} 𝒜} (f : M ⟶ N) :
 
 instance : Abelian (GradedModuleCat.{v} 𝒜) :=
   Abelian.ofCoimageImageComparisonIsIso
+
+/-- A morphism of graded modules is an epimorphism exactly when its underlying map is
+surjective. -/
+theorem epi_iff_surjective (f : M ⟶ N) : Epi f ↔ Function.Surjective f.hom := by
+  constructor
+  · intro hf
+    have hzero : cokernelπ f = 0 := (cancel_epi f).mp (by simp)
+    intro y
+    have hy := LinearMap.congr_fun (congrArg Hom.hom hzero) y
+    exact (Submodule.Quotient.mk_eq_zero _).mp hy
+  · intro hf
+    have : Epi (toModuleCat.map f) := (ModuleCat.epi_iff_surjective _).mpr hf
+    exact (toModuleCat (𝒜 := 𝒜)).epi_of_epi_map inferInstance
 
 end TauCeti.GradedModuleCat
