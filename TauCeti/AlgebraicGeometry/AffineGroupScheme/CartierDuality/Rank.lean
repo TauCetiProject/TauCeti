@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.AffineGroupScheme.CartierDuality.FiniteLocallyFree
+public import TauCeti.AlgebraicGeometry.AffineGroupScheme.Rank
 public import TauCeti.LinearAlgebra.Dual.Rank
 
 /-!
@@ -45,23 +46,9 @@ theorem finrank_eq_rankAtStalk_coordinateHopfAlgebra
     (G : FiniteLocallyFreeCommAffineGroupSchemeCat (CommRingCat.of R))
     (x : PrimeSpectrum R) :
     G.obj.obj.X.hom.finrank x = Module.rankAtStalk (R := R) (coordinateHopfAlgebra R G) x := by
-  let E :=
-    finiteLocallyFreeBicommutativeHopfAlgCatOpEquivFiniteLocallyFreeCommAffineGroupSchemeCat R
-  let H := coordinateHopfAlgebra R G
-  let F := (finiteLocallyFreeCommAffineGroupSchemeProperty (CommRingCat.of R)).ι ⋙
-    (affineGroupSchemeProperty (CommRingCat.of R)).ι ⋙ Grp.forget _
-  let e : (E.functor.obj (op H)).obj.obj.X ≅ G.obj.obj.X :=
-    F.mapIso (E.counitIso.app G)
-  let e' : (E.functor.obj (op H)).obj.obj.X ≅
-      ((hopfSpec (CommRingCat.of R)).obj (op H.obj)).X :=
-    (Grp.forget _).mapIso
-      ((functorCompιIso R).app (op H))
-  let i := e'.symm ≪≫ e
-  have hi : i.hom.left ≫ G.obj.obj.X.hom =
-      ((hopfSpec (CommRingCat.of R)).obj (op H.obj)).X.hom := i.hom.w
-  have h := finrank_hopfSpec R H.obj x
-  rw [← hi, Scheme.Hom.finrank_comp_left_of_isIso] at h
-  exact h
+  let e := CommHopfAlgCat.ofIso ((rightOpInverseCompιIso R).app (op G))
+  exact (AffineGroupSchemeCat.finrank_eq_rankAtStalk_coordinateHopfAlgebra R G.obj x).trans
+    (congrFun (Module.rankAtStalk_eq_of_equiv e.toAlgEquiv.toLinearEquiv) x).symm
 
 /-- Cartier duality preserves the entire locally constant rank function over the affine base. -/
 @[simp]
@@ -69,11 +56,9 @@ theorem finrank_cartierDual
     (G : FiniteLocallyFreeCommAffineGroupSchemeCat (CommRingCat.of R)) :
     (cartierDual R G).obj.obj.X.hom.finrank = G.obj.obj.X.hom.finrank := by
   ext x
-  let F := forget₂ (FiniteLocallyFreeBicommutativeHopfAlgCat R) (CommHopfAlgCat R) ⋙
-    forget₂ (CommHopfAlgCat R) (CommBialgCat R) ⋙
-    forget₂ (CommBialgCat R) (CommAlgCat R) ⋙ forget₂ (CommAlgCat R) (AlgCat R)
-  let e := F.mapIso
-    (coordinateHopfAlgebraCartierDualIso R G)
+  let e := CommHopfAlgCat.ofIso
+    ((forget₂ (FiniteLocallyFreeBicommutativeHopfAlgCat R) (CommHopfAlgCat R)).mapIso
+      (coordinateHopfAlgebraCartierDualIso R G))
   calc
     _ = Module.rankAtStalk (R := R) (coordinateHopfAlgebra R (cartierDual R G)) x :=
       finrank_eq_rankAtStalk_coordinateHopfAlgebra R (cartierDual R G) x

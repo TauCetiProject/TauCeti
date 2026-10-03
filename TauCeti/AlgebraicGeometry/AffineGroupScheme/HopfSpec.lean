@@ -56,6 +56,8 @@ same-universe restriction is inherited from Mathlib's current `hopfSpec` constru
   module exactly when it is flat and finitely presented as an algebra.
 * `TauCeti.moduleProjective_iff_flat_and_locallyOfFinitePresentation_hopfSpec`: the corresponding
   characterization in terms of the structural morphism of a Hopf spectrum.
+* `TauCeti.finrank_hopfSpec`: the rank function of a finite flat Hopf spectrum is the local rank
+  of its coordinate algebra.
 -/
 
 public section
@@ -381,8 +383,6 @@ theorem finrank_hopfSpec (R : Type u) [CommRing R] (H : CommHopfAlgCat.{u} R)
     [Module.Finite R H] [Module.Flat R H] (x : PrimeSpectrum R) :
     (((hopfSpec (CommRingCat.of R)).obj (op H)).X.hom).finrank x =
       Module.rankAtStalk (R := R) H x := by
-  let _ := (moduleFinite_iff_isFinite_hopfSpec R H).mp inferInstance
-  let _ := (moduleFlat_iff_flat_hopfSpec R H).mp inferInstance
   let _ : IsFinite (Spec.map (CommRingCat.ofHom (algebraMap R H))) :=
     (IsFinite.SpecMap_iff _).mpr (RingHom.finite_algebraMap.mpr inferInstance)
   let _ : Flat (Spec.map (CommRingCat.ofHom (algebraMap R H))) :=
