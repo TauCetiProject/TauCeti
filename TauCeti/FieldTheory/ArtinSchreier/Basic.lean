@@ -138,7 +138,8 @@ noncomputable def translationHom (hy : y ^ p - y = algebraMap K L u) :
     linear_combination hfix
 
 /-- The translation character computes the action on the chosen root. -/
-theorem translationHom_apply (hy : y ^ p - y = algebraMap K L u) (σ : Gal(L/K)) :
+theorem aut_apply_eq_add_translationHom (hy : y ^ p - y = algebraMap K L u)
+    (σ : Gal(L/K)) :
     σ y = y + (ZMod.cast (translationHom hy σ).toAdd : L) := by
   simp [translationHom, translation_spec]
 
@@ -150,7 +151,7 @@ theorem translationHom_injective (hy : y ^ p - y = algebraMap K L u)
   apply AlgEquiv.coe_toAlgHom_injective
   apply (PowerBasis.ofAdjoinSimpleEqTop (integral_root hy) hgen).algHom_ext
   simp only [PowerBasis.ofAdjoinSimpleEqTop_gen, AlgEquiv.coe_toAlgHom]
-  rw [translationHom_apply hy σ, translationHom_apply hy τ, h]
+  rw [aut_apply_eq_add_translationHom hy σ, aut_apply_eq_add_translationHom hy τ, h]
 
 /-- Every generated Artin–Schreier extension has a cyclic Galois group. -/
 theorem isCyclic (hy : y ^ p - y = algebraMap K L u) (hgen : K⟮y⟯ = ⊤) :
@@ -199,7 +200,7 @@ theorem autEquivZMod_apply (hy : y ^ p - y = algebraMap K L u) (hgen : K⟮y⟯ 
 theorem autEquivZMod_symm_apply (hy : y ^ p - y = algebraMap K L u) (hgen : K⟮y⟯ = ⊤)
     (hu : ∀ w : K, w ^ p - w ≠ u) (c : Multiplicative (ZMod p)) :
     (autEquivZMod hy hgen hu).symm c y = y + (ZMod.cast c.toAdd : L) := by
-  rw [translationHom_apply hy, ← autEquivZMod_apply hy hgen hu,
+  rw [aut_apply_eq_add_translationHom hy, ← autEquivZMod_apply hy hgen hu,
     MulEquiv.apply_symm_apply]
 
 end TauCeti.ArtinSchreier
