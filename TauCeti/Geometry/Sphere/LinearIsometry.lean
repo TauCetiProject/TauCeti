@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
 public import Mathlib.Analysis.Normed.Operator.LinearIsometry
 public import Mathlib.Analysis.Normed.Group.BallSphere
 public import Mathlib.Analysis.Normed.Module.Basic
@@ -26,6 +27,8 @@ This file develops that restriction independently of the manifold structure on s
   obtained by restricting a linear isometry equivalence.
 * `LinearIsometryEquiv.instMulActionUnitSphere`: the action of the linear isometry group of `E`
   on the unit sphere of `E`, which is by isometries.
+* `LinearIsometryEquiv.isPretransitive_unitSphere`: for a real inner product space this action is
+  transitive.
 
 ## Main results
 
@@ -185,6 +188,20 @@ instance : IsIsometricSMul (E ≃ₗᵢ[R] E) (sphere (0 : E) 1) :=
   ⟨fun e => Isometry.of_dist_eq fun x y => by simp [Subtype.dist_eq]⟩
 
 end Seminormed
+
+section InnerProduct
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+
+/-- The linear isometry group of a real inner product space acts transitively on its unit sphere:
+the reflection in the hyperplane orthogonal to `x - y` exchanges `x` and `y`. -/
+instance isPretransitive_unitSphere :
+    MulAction.IsPretransitive (E ≃ₗᵢ[ℝ] E) (sphere (0 : E) 1) where
+  exists_smul_eq x y := ⟨(ℝ ∙ ((x : E) - y))ᗮ.reflection, Subtype.ext <| by
+    rw [coe_smul_unitSphere]
+    exact Submodule.reflection_sub (by simp)⟩
+
+end InnerProduct
 
 end LinearIsometryEquiv
 
