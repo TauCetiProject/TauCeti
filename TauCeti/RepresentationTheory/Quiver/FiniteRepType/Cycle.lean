@@ -5,13 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.Preadditive.Indecomposable
 public import TauCeti.Combinatorics.SimpleGraph.CycleGraph
-public import TauCeti.RepresentationTheory.Quiver.FiniteRepType.Embedding
 public import TauCeti.RepresentationTheory.Quiver.FiniteRepType.Tree
-public import TauCeti.RepresentationTheory.Quiver.Representation.DimensionVector
-public import TauCeti.RingTheory.AdjoinRoot.Basic
-public import TauCeti.RingTheory.Polynomial.Truncated
+import TauCeti.CategoryTheory.Preadditive.Indecomposable
+import TauCeti.RepresentationTheory.Quiver.FiniteRepType.Embedding
+import TauCeti.RepresentationTheory.Quiver.Representation.DimensionVector
+import TauCeti.RingTheory.AdjoinRoot.Basic
+import TauCeti.RingTheory.Polynomial.Truncated
 
 /-!
 # Cycles in the underlying graph obstruct finite representation type
@@ -37,7 +37,8 @@ forest as underlying graph (`TauCeti.IsFiniteRepType.isAcyclic_underlyingGraph`)
 length at least three are the copies of `SimpleGraph.cycleGraph`, which Mathlib's
 `SimpleGraph.isAcyclic_iff_free_cycleGraph` identifies as the obstructions to acyclicity. With the
 tree case of Gabriel's dichotomy (`TauCeti.IsFiniteRepType.posDef_titsForm_of_isTree`) this gives
-the dichotomy's converse half for every connected quiver without a pair of opposite arrows
+the dichotomy's converse half for every finite connected quiver with finitely many arrows between
+any two vertices and without a pair of opposite arrows
 (`TauCeti.IsFiniteRepType.posDef_titsForm_of_connected`).
 
 ## Main results
@@ -59,6 +60,11 @@ graph records as a single edge, and a cycle of length one is a loop, excluded al
 `TauCeti.IsFiniteRepType.isEmpty_hom_self`. Length three is also what the construction needs: the
 closing edge must be the only edge of the cycle joining `x (n + 2)` and `x 0`, so that the other
 arrows can act by the identity.
+
+The construction and the indecomposability argument adapt the nilpotent Jordan blocks on the
+one-loop quiver in `TauCeti/RepresentationTheory/Quiver/OneLoop/FiniteRepType.lean`
+(`oneLoopNilpotentRepApp_root_mul` and `TauCeti.indecomposable_oneLoopNilpotentRep`), with the
+loop spread out around the cycle.
 
 The statements are for representations with vertex spaces in the universe of the base field, the
 universe in which the truncated polynomial algebras live.
