@@ -19,7 +19,7 @@ public section
 
 namespace MulChar
 
-/-- A multiplicative character takes values in a subset closed under `0` whenever all its values
+/-- A multiplicative character takes values in a subset containing `0` whenever all its values
 on units lie there. -/
 theorem apply_mem_of_forall_unit {R R' S : Type*} [CommMonoid R]
     [CommMonoidWithZero R'] [SetLike S R'] [ZeroMemClass S R'] (χ : MulChar R R') (s : S)
