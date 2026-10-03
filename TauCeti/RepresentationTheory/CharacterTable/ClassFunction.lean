@@ -190,7 +190,7 @@ theorem invMap_invMap (f : ClassFunction k G) : invMap (invMap f) = f :=
 
 /-- Change of coefficients along a ring homomorphism `σ : k →+* k'`: the class function
 `g ↦ σ (f g)`. Along `algebraMap K L` it carries the character of a representation over `K` to the
-character of its scalar extension to `L`. -/
+character of its scalar extension to `L` (`TauCeti.ClassFunction.ofFDRep_baseChange`). -/
 def map {k' : Type w} [Semiring k'] (σ : k →+* k') :
     ClassFunction k G →ₛₗ[σ] ClassFunction k' G where
   toFun f := ⟨fun g => σ (f.1 g), fun g h => congrArg σ (f.2 g h)⟩
@@ -201,6 +201,17 @@ def map {k' : Type w} [Semiring k'] (σ : k →+* k') :
 @[simp]
 theorem map_apply {k' : Type w} [Semiring k'] (σ : k →+* k') (f : ClassFunction k G) (g : G) :
     (map σ f).1 g = σ (f.1 g) :=
+  (rfl)
+
+/-- Changing coefficients along the identity changes nothing. -/
+@[simp]
+theorem map_id (f : ClassFunction k G) : map (RingHom.id k) f = f :=
+  (rfl)
+
+/-- Changing coefficients along `σ₁` and then along `σ₂` is changing them along `σ₂.comp σ₁`. -/
+@[simp]
+theorem map_map {k' : Type w} {k'' : Type w'} [Semiring k'] [Semiring k''] (σ₁ : k →+* k')
+    (σ₂ : k' →+* k'') (f : ClassFunction k G) : map σ₂ (map σ₁ f) = map (σ₂.comp σ₁) f :=
   (rfl)
 
 /-- Class functions on `G` are linearly equivalent to functions on its conjugacy classes. -/

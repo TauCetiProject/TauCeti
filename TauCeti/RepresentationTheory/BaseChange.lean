@@ -11,6 +11,7 @@ public import Mathlib.RepresentationTheory.Intertwining
 public import Mathlib.Data.Finsupp.SMul
 public import Mathlib.LinearAlgebra.DirectSum.Finsupp
 public import TauCeti.LinearAlgebra.TensorProduct.Basis
+public import TauCeti.RepresentationTheory.CharacterTable.ClassFunction
 public import TauCeti.RepresentationTheory.PermutationModule
 -- Non-public: the flat base change of a kernel (`LinearMap.tensorKerEquiv`), the scalar extension
 -- of a space of linear maps (`IsBaseChange.linearMapLeftRight`) and of a finite product
@@ -56,7 +57,9 @@ of a permutation lattice `ℤ[X]` modulo a prime is `k[X]` and its rationalizati
   fixed vector.
 * `Representation.character_baseChange`: the character of a base-changed representation is the
   image of the character.
-* `FDRep.character_of_baseChange`: the same for the scalar extension of an object of `FDRep`.
+* `FDRep.character_baseChange`: the same for the scalar extension of an object of `FDRep`.
+* `TauCeti.ClassFunction.ofFDRep_baseChange`: the same as class functions, the coefficients changed
+  along `algebraMap K L`.
 * `Representation.finrank_intertwiningMap_baseChange`: base change preserves the dimension of an
   intertwiner space.
 * `Representation.Equiv.baseChange`: base change transports an equivalence of representations.
@@ -186,12 +189,22 @@ theorem _root_.Representation.character_baseChange {G : Type*} [Monoid G]
 
 /-- **The character of a scalar extension in `FDRep`** is the character of the original
 representation read in the larger field: `χ_{L ⊗[K] V} = algebraMap K L ∘ χ_V`. -/
-theorem _root_.FDRep.character_of_baseChange {K L : Type u} [Field K] [Field L] [Algebra K L]
+theorem _root_.FDRep.character_baseChange {K L : Type u} [Field K] [Field L] [Algebra K L]
     {G : Type*} [Monoid G] (V : FDRep K G) :
     (FDRep.of (_root_.Representation.baseChange L V.ρ)).character =
-      algebraMap K L ∘ V.character := by
-  funext g
-  simp [FDRep.character, _root_.Representation.baseChange_apply, LinearMap.trace_baseChange]
+      algebraMap K L ∘ V.character :=
+  funext (_root_.Representation.character_baseChange V.ρ)
+
+/-- **The class function of a scalar extension in `FDRep`** is the class function of the original
+representation with its coefficients changed along `algebraMap K L`. -/
+@[simp]
+theorem _root_.TauCeti.ClassFunction.ofFDRep_baseChange {K L : Type u} [Field K] [Field L]
+    [Algebra K L] {G : Type*} [Group G] (V : FDRep K G) :
+    ClassFunction.ofFDRep (FDRep.of (_root_.Representation.baseChange L V.ρ)) =
+      ClassFunction.map (algebraMap K L) (ClassFunction.ofFDRep V) :=
+  Subtype.ext (funext fun g => by
+    rw [ClassFunction.ofFDRep_apply, ClassFunction.map_apply, ClassFunction.ofFDRep_apply,
+      FDRep.character_baseChange, Function.comp_apply])
 
 end Character
 
