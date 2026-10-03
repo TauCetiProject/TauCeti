@@ -8,7 +8,6 @@ module
 public import TauCeti.LinearAlgebra.CliffordAlgebra.RealForm.Basic
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Basic
 public import Mathlib.Analysis.Matrix.Normed
-public import Mathlib.LinearAlgebra.Matrix.ToLin
 
 /-!
 # Normed real Clifford algebras
@@ -27,6 +26,7 @@ with the module topology already installed on Clifford algebras.
 * `CliffordAlgebra.realCliffordNormedRing` is the normed-ring structure induced by the
   left-regular representation.
 * `CliffordAlgebra.instNormedRingRealCliffordAlgebra` gives `Cliff(p, q)` a normed-ring structure.
+* `CliffordAlgebra.instNormOneClassRealCliffordAlgebra` proves that the unit has norm one.
 * `CliffordAlgebra.instNormedAlgebraRealCliffordAlgebra` makes it a real normed algebra.
 -/
 
@@ -70,22 +70,20 @@ noncomputable instance instMetricSpaceRealCliffordAlgebra (p q : ℕ) :
   exact (LinearMap.isClosedEmbedding_of_injective
     (LinearMap.ker_eq_bot.mpr hinjective)).isEmbedding.eq_induced
 
-/-- The normed additive group induced by the left-regular matrix norm on a real Clifford algebra. -/
-noncomputable instance instNormedAddCommGroupRealCliffordAlgebra (p q : ℕ) :
-    NormedAddCommGroup (CliffordAlgebra (realCliffordForm p q)) where
-  norm := (realCliffordNormedRing p q).norm
-  dist_eq := (realCliffordNormedRing p q).dist_eq
-
 /-- A real Clifford algebra is a normed ring for its left-regular matrix norm. -/
 noncomputable instance instNormedRingRealCliffordAlgebra (p q : ℕ) :
     NormedRing (CliffordAlgebra (realCliffordForm p q)) where
+  norm := (realCliffordNormedRing p q).norm
   dist_eq := (realCliffordNormedRing p q).dist_eq
   norm_mul_le := (realCliffordNormedRing p q).norm_mul_le
 
-/-- A real Clifford algebra is a real normed space for its left-regular matrix norm. -/
-noncomputable instance instNormedSpaceRealCliffordAlgebra (p q : ℕ) :
-    NormedSpace ℝ (CliffordAlgebra (realCliffordForm p q)) where
-  norm_smul_le := (realCliffordNormedAlgebra p q).norm_smul_le
+/-- The unit of a real Clifford algebra has norm one for the left-regular matrix norm. -/
+noncomputable instance instNormOneClassRealCliffordAlgebra (p q : ℕ) :
+    NormOneClass (CliffordAlgebra (realCliffordForm p q)) :=
+  let b := basis (realCliffordForm p q) (Pi.basisFun ℝ (Fin (p + q)))
+  NormOneClass.induced (CliffordAlgebra (realCliffordForm p q))
+    (Matrix (Finset (Fin (p + q))) (Finset (Fin (p + q))) ℝ)
+    (Algebra.leftMulMatrix b)
 
 /-- A real Clifford algebra is a normed algebra for its left-regular matrix norm. -/
 noncomputable instance instNormedAlgebraRealCliffordAlgebra (p q : ℕ) :
