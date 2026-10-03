@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Polygon.Basic
 public import Mathlib.Topology.Algebra.Affine
 public import Mathlib.Topology.Instances.AddCircle.Defs
+public import TauCeti.Geometry.Polygon.Basic
 public import TauCeti.Topology.JordanCurve.Basic
 import Mathlib.Data.ZMod.Basic
 import Mathlib.Topology.Algebra.Order.Floor
@@ -49,6 +50,7 @@ no vertices is vacuously simple and has empty boundary, so the results about the
 
 ## Main results
 
+* `Polygon.isSimple_rotate_iff`: relabelling the vertices cyclically keeps a polygon simple.
 * `Polygon.range_boundaryParam`: the parametrization runs over the whole boundary.
 * `Polygon.IsSimple.boundaryParam_eq_boundaryParam_iff`: for a simple polygon, two parameters
   give the same point exactly when they agree modulo `n`.
@@ -91,6 +93,32 @@ structure IsSimple (poly : Polygon P n) : Prop where
   the first and the start of the second. -/
   eq_vertex_of_mem_edgeSet : ∀ ⦃i j : Fin n⦄ ⦃x : P⦄, i ≠ j → x ∈ poly.edgeSet R i →
     x ∈ poly.edgeSet R j → (j = finRotate n i ∧ x = poly j) ∨ (i = finRotate n j ∧ x = poly i)
+
+omit [ZeroLEOneClass R] in
+/-- Relabelling the vertices cyclically keeps a polygon simple. -/
+@[simp]
+theorem isSimple_rotate_iff (poly : Polygon P n) : poly.rotate.IsSimple R ↔ poly.IsSimple R := by
+  constructor
+  · intro h
+    refine ⟨fun j => ?_, fun j₁ j₂ x hne hx₁ hx₂ => ?_⟩
+    · have := h.hasNondegenerateEdges ((finRotate n).symm j)
+      rwa [rotate_apply, rotate_apply, Equiv.apply_symm_apply] at this
+    · obtain ⟨k₁, rfl⟩ := (finRotate n).surjective j₁
+      obtain ⟨k₂, rfl⟩ := (finRotate n).surjective j₂
+      rw [← edgeSet_rotate] at hx₁ hx₂
+      rcases h.eq_vertex_of_mem_edgeSet ((finRotate n).injective.ne_iff.1 hne) hx₁ hx₂ with
+        ⟨e, rfl⟩ | ⟨e, rfl⟩
+      · exact .inl ⟨congrArg (finRotate n) e, rotate_apply _ _⟩
+      · exact .inr ⟨congrArg (finRotate n) e, rotate_apply _ _⟩
+  · intro h
+    refine ⟨fun j => ?_, fun j₁ j₂ x hne hx₁ hx₂ => ?_⟩
+    · rw [rotate_apply, rotate_apply]
+      exact h.hasNondegenerateEdges _
+    · rw [edgeSet_rotate] at hx₁ hx₂
+      rcases h.eq_vertex_of_mem_edgeSet ((finRotate n).injective.ne hne) hx₁ hx₂ with
+        ⟨e, rfl⟩ | ⟨e, rfl⟩
+      · exact .inl ⟨(finRotate n).injective e, (rotate_apply _ _).symm⟩
+      · exact .inr ⟨(finRotate n).injective e, (rotate_apply _ _).symm⟩
 
 end IsSimple
 

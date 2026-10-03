@@ -22,10 +22,11 @@ this is the same as being ambient isotopic (Burde–Zieschang, Proposition 1.10,
 here).
 
 Polygons are Mathlib's `Polygon P n`, cyclic lists of vertices. The Δ-move across edge `i` with new
-vertex `c` is `Polygon.insertVertex`, which puts `c` between vertex `i` and the next one. Its
-condition, `Polygon.IsDeltaMove`, asks that the edge's endpoints and `c` be affinely independent,
-so that they span a genuine triangle `D`, and that every other edge meet `D` only at the endpoints
-of edge `i`. This form is symmetric between the two polygons. For a simple polygon it is exactly
+vertex `c` is `Polygon.insertVertex`, which puts `c` between vertex `i` and the next one; it
+replaces edge `i` by the two segments through `c` (`Polygon.boundary_insertVertex`). Its condition,
+`Polygon.IsDeltaMove`, asks that the edge's endpoints and `c` be affinely independent, so that they
+span a genuine triangle `D`, and that every other edge meet `D` only at the endpoints of edge `i`.
+This form is symmetric between the two polygons. For a simple polygon it is exactly
 the textbook condition `D ∩ k = u` (`Polygon.isDeltaMove_iff_of_isSimple`), and for a simple
 polygon after the move it is exactly the condition `D ∩ k' = v ∪ w` of the inverse move
 (`Polygon.isDeltaMove_iff_of_isSimple_insertVertex`). A Δ-move keeps a polygon simple, and so does
@@ -44,17 +45,15 @@ parallelogram it spans by a Δ-move (`Affine.Triangle.isDeltaMove_parallelogram`
 
 ## Main definitions
 
-* `Polygon.rotate`: the cyclic relabelling of the vertices of a polygon.
-* `Polygon.insertVertex`: the polygon with a new vertex inserted after vertex `i`.
 * `Polygon.IsDeltaMove`: the condition for inserting a vertex to be a Δ-move.
+* `TauCeti.SimplePolygon.rotate`, `TauCeti.SimplePolygon.insertVertex` and
+  `TauCeti.SimplePolygon.deltaMove`: relabelling and inserting vertices of simple polygons.
 * `TauCeti.SimplePolygon.IsElementaryMove`: a cyclic relabelling, a Δ-move, or a subdivision of an
   edge of a simple polygon.
 * `TauCeti.SimplePolygon.CombinatoriallyEquivalent`: the equivalence relation they generate.
 
 ## Main results
 
-* `Polygon.boundary_insertVertex`: inserting a vertex replaces the edge `u` by the two other sides
-  `v` and `w` of the triangle.
 * `Polygon.IsDeltaMove.closedInterior_inter_boundary` and
   `Polygon.IsDeltaMove.closedInterior_inter_boundary_insertVertex`: the triangle meets the polygon
   before the move in `u`, and after the move in `v ∪ w`.
@@ -80,98 +79,12 @@ namespace Polygon
 
 variable {R V P : Type*} {n : ℕ}
 
-/-! ### Relabelling and inserting vertices -/
+/-! ### The Δ-move condition -/
 
-/-- The cyclic relabelling of a polygon: vertex `i` of `poly.rotate` is vertex `i + 1` of `poly`.
-It has the same edges in the same cyclic order (`Polygon.edgeSet_rotate`), so it presents the same
-oriented polygon. -/
-def rotate (poly : Polygon P n) : Polygon P n :=
-  ⟨poly.vertices ∘ finRotate n⟩
-
-@[simp]
-theorem rotate_apply (poly : Polygon P n) (i : Fin n) : poly.rotate i = poly (finRotate n i) :=
-  (rfl)
-
-/-- The polygon with the new vertex `c` inserted after vertex `i`, at position `i + 1`. Its edges
-are those of `poly`, except that the edge from vertex `i` to the next vertex is replaced by the
-edges from vertex `i` to `c` and from `c` to the next vertex (`Polygon.boundary_insertVertex`). -/
-def insertVertex (poly : Polygon P n) (i : Fin n) (c : P) : Polygon P (n + 1) :=
-  ⟨Fin.insertNth i.succ c poly.vertices⟩
-
-variable (poly : Polygon P n) (i : Fin n) (c : P)
-
-@[simp]
-theorem insertVertex_apply_succ_self : poly.insertVertex i c i.succ = c :=
-  Fin.insertNth_apply_same (α := fun _ ↦ P) _ _ _
-
-@[simp]
-theorem insertVertex_apply_succAbove (k : Fin n) :
-    poly.insertVertex i c (i.succ.succAbove k) = poly k :=
-  Fin.insertNth_apply_succAbove (α := fun _ ↦ P) _ _ _ _
-
-@[simp]
-theorem insertVertex_apply_castSucc_self : poly.insertVertex i c i.castSucc = poly i := by
-  rw [← Fin.succAbove_succ_self, insertVertex_apply_succAbove]
-
-/-- The vertex after the new vertex `c` is the vertex after `i` in `poly`. -/
-theorem insertVertex_apply_finRotate_succ_self :
-    poly.insertVertex i c (finRotate (n + 1) i.succ) = poly (finRotate n i) := by
-  rw [Fin.finRotate_succ_eq_succ_succAbove, insertVertex_apply_succAbove]
-
-/-! ### Edges after relabelling and inserting vertices -/
-
-section Edges
+section Condition
 
 variable [Ring R] [PartialOrder R] [AddCommGroup V] [Module R V] [AddTorsor V P]
-
-@[simp]
-theorem edgeSet_rotate (j : Fin n) : poly.rotate.edgeSet R j = poly.edgeSet R (finRotate n j) := by
-  rw [edgeSet, edgeSet, rotate_apply, rotate_apply]
-
-@[simp]
-theorem boundary_rotate : poly.rotate.boundary R = poly.boundary R := by
-  simp only [boundary, edgeSet_rotate]
-  exact (finRotate n).surjective.iUnion_comp (poly.edgeSet R)
-
-/-- The first new edge runs from vertex `i` to the new vertex `c`. -/
-@[simp]
-theorem edgeSet_insertVertex_castSucc_self :
-    (poly.insertVertex i c).edgeSet R i.castSucc = affineSegment R (poly i) c := by
-  rw [edgeSet, finRotate_apply, Fin.coeSucc_eq_succ, insertVertex_apply_castSucc_self,
-    insertVertex_apply_succ_self]
-
-/-- The second new edge runs from the new vertex `c` to the vertex after `i`. -/
-@[simp]
-theorem edgeSet_insertVertex_succ_self :
-    (poly.insertVertex i c).edgeSet R i.succ = affineSegment R c (poly (finRotate n i)) := by
-  rw [edgeSet, insertVertex_apply_succ_self, insertVertex_apply_finRotate_succ_self]
-
-/-- Every edge of `poly` other than edge `i` is an edge of `poly.insertVertex i c`. -/
-theorem edgeSet_insertVertex_succAbove {k : Fin n} (hk : k ≠ i) :
-    (poly.insertVertex i c).edgeSet R (i.succ.succAbove k) = poly.edgeSet R k := by
-  rw [edgeSet, Fin.finRotate_succ_succAbove_of_ne hk, insertVertex_apply_succAbove,
-    insertVertex_apply_succAbove, edgeSet]
-
-/-- Inserting the vertex `c` after vertex `i` replaces edge `i` by the segments from vertex `i` to
-`c` and from `c` to the next vertex. -/
-theorem boundary_insertVertex :
-    (poly.insertVertex i c).boundary R = (⋃ (k : Fin n) (_ : k ≠ i), poly.edgeSet R k) ∪
-      (affineSegment R (poly i) c ∪ affineSegment R c (poly (finRotate n i))) := by
-  ext x
-  simp only [boundary, mem_iUnion, mem_union]
-  constructor
-  · rintro ⟨j, hj⟩
-    obtain rfl | ⟨k, rfl⟩ := Fin.eq_self_or_eq_succAbove i.succ j
-    · exact .inr (.inr (by rwa [edgeSet_insertVertex_succ_self] at hj))
-    · by_cases hk : k = i
-      · subst hk
-        rw [Fin.succAbove_succ_self, edgeSet_insertVertex_castSucc_self] at hj
-        exact .inr (.inl hj)
-      · exact .inl ⟨k, hk, by rwa [edgeSet_insertVertex_succAbove _ _ _ hk] at hj⟩
-  · rintro (⟨k, hk, hx⟩ | hx | hx)
-    · exact ⟨i.succ.succAbove k, by rwa [edgeSet_insertVertex_succAbove _ _ _ hk]⟩
-    · exact ⟨i.castSucc, by rwa [edgeSet_insertVertex_castSucc_self]⟩
-    · exact ⟨i.succ, by rwa [edgeSet_insertVertex_succ_self]⟩
+  (poly : Polygon P n) (i : Fin n) (c : P)
 
 variable (R) in
 /-- Inserting the vertex `c` after vertex `i` is a **Δ-move**: the endpoints `a`, `b` of edge `i`
@@ -209,38 +122,12 @@ theorem IsDeltaMove.edgeSet_inter_closedInterior_subset (h : poly.IsDeltaMove R 
     poly.edgeSet R k ∩ h.triangle.closedInterior ⊆ {poly i, poly (finRotate n i)} :=
   h.edgeSet_inter_subset hk
 
-end Edges
+end Condition
 
 section IsSimple
 
 variable [Ring R] [PartialOrder R] [AddCommGroup V] [Module R V] [AddTorsor V P]
-
-/-- Relabelling the vertices cyclically keeps a polygon simple. -/
-@[simp]
-theorem isSimple_rotate_iff : poly.rotate.IsSimple R ↔ poly.IsSimple R := by
-  constructor
-  · intro h
-    refine ⟨fun j => ?_, fun j₁ j₂ x hne hx₁ hx₂ => ?_⟩
-    · have := h.hasNondegenerateEdges ((finRotate n).symm j)
-      rwa [rotate_apply, rotate_apply, Equiv.apply_symm_apply] at this
-    · obtain ⟨k₁, rfl⟩ := (finRotate n).surjective j₁
-      obtain ⟨k₂, rfl⟩ := (finRotate n).surjective j₂
-      rw [← edgeSet_rotate] at hx₁ hx₂
-      rcases h.eq_vertex_of_mem_edgeSet ((finRotate n).injective.ne_iff.1 hne) hx₁ hx₂ with
-        ⟨e, rfl⟩ | ⟨e, rfl⟩
-      · exact .inl ⟨congrArg (finRotate n) e, rotate_apply _ _⟩
-      · exact .inr ⟨congrArg (finRotate n) e, rotate_apply _ _⟩
-  · intro h
-    refine ⟨fun j => ?_, fun j₁ j₂ x hne hx₁ hx₂ => ?_⟩
-    · rw [rotate_apply, rotate_apply]
-      exact h.hasNondegenerateEdges _
-    · rw [edgeSet_rotate] at hx₁ hx₂
-      rcases h.eq_vertex_of_mem_edgeSet ((finRotate n).injective.ne hne) hx₁ hx₂ with
-        ⟨e, rfl⟩ | ⟨e, rfl⟩
-      · exact .inl ⟨(finRotate n).injective e, (rotate_apply _ _).symm⟩
-      · exact .inr ⟨(finRotate n).injective e, (rotate_apply _ _).symm⟩
-
-variable {poly i}
+  {poly : Polygon P n} {i : Fin n} (c : P)
 
 /-- In a simple polygon with a vertex `c` inserted after vertex `i`, a point of an old edge `k`
 lying on the first new edge is vertex `i`, and edge `k` is the edge before vertex `i`. -/
@@ -294,17 +181,17 @@ include h
 omit [IsOrderedRing R] in
 /-- The two endpoints of the edge replaced by a Δ-move are distinct. -/
 theorem left_ne_right : poly i ≠ poly (finRotate n i) := by
-  simpa using h.affineIndependent.injective.ne (show (0 : Fin 3) ≠ 1 by decide)
+  simpa using h.affineIndependent.injective.ne (a₁ := 0) (a₂ := 1) (by decide)
 
 omit [IsOrderedRing R] in
 /-- The new vertex of a Δ-move differs from the start of the replaced edge. -/
 theorem left_ne_apex : poly i ≠ c := by
-  simpa using h.affineIndependent.injective.ne (show (0 : Fin 3) ≠ 2 by decide)
+  simpa using h.affineIndependent.injective.ne (a₁ := 0) (a₂ := 2) (by decide)
 
 omit [IsOrderedRing R] in
 /-- The new vertex of a Δ-move differs from the end of the replaced edge. -/
 theorem apex_ne_right : c ≠ poly (finRotate n i) := by
-  simpa using h.affineIndependent.injective.ne (show (2 : Fin 3) ≠ 1 by decide)
+  simpa using h.affineIndependent.injective.ne (a₁ := 2) (a₂ := 1) (by decide)
 
 omit [Nontrivial R] in
 /-- The two new edges meet only at the new vertex. -/
@@ -327,19 +214,22 @@ theorem left_notMem_affineSegment : poly i ∉ affineSegment R c (poly (finRotat
 omit [Nontrivial R] in
 /-- The replaced edge is a side of the triangle of a Δ-move. -/
 theorem edgeSet_subset_closedInterior : poly.edgeSet R i ⊆ h.triangle.closedInterior :=
-  h.triangle.affineSegment_subset_closedInterior (show (0 : Fin 3) ≠ 1 by decide)
+  (h.triangle.closedInterior_face_eq_affineSegment (i := 0) (j := 1)
+    (by decide)).symm.subset.trans (h.triangle.closedInterior_face_subset_closedInterior _)
 
 omit [Nontrivial R] in
 /-- The first new edge is a side of the triangle of a Δ-move. -/
 theorem affineSegment_left_subset_closedInterior :
     affineSegment R (poly i) c ⊆ h.triangle.closedInterior :=
-  h.triangle.affineSegment_subset_closedInterior (show (0 : Fin 3) ≠ 2 by decide)
+  (h.triangle.closedInterior_face_eq_affineSegment (i := 0) (j := 2)
+    (by decide)).symm.subset.trans (h.triangle.closedInterior_face_subset_closedInterior _)
 
 omit [Nontrivial R] in
 /-- The second new edge is a side of the triangle of a Δ-move. -/
 theorem affineSegment_right_subset_closedInterior :
     affineSegment R c (poly (finRotate n i)) ⊆ h.triangle.closedInterior :=
-  h.triangle.affineSegment_subset_closedInterior (show (2 : Fin 3) ≠ 1 by decide)
+  (h.triangle.closedInterior_face_eq_affineSegment (i := 2) (j := 1)
+    (by decide)).symm.subset.trans (h.triangle.closedInterior_face_subset_closedInterior _)
 
 omit [Nontrivial R] in
 /-- Before a Δ-move, the triangle meets the polygon exactly in the edge it replaces: `D ∩ k = u`
@@ -559,11 +449,9 @@ variable {R V P : Type*} [Ring R] [AddCommGroup V] [Module R V] [AddTorsor V P]
 
 /-- Inserting a vertex `c` after vertex `1` of a triangle `abd` gives the quadrilateral `abcd`. -/
 theorem toPolygon_insertVertex_one (t : Affine.Triangle R P) (c : P) :
-    t.toPolygon.insertVertex 1 c = ⟨![t.points 0, t.points 1, c, t.points 2]⟩ := by
-  rw [Polygon.insertVertex]
-  congr 1
-  funext j
-  fin_cases j <;> rfl
+    t.toPolygon.insertVertex 1 c = ⟨![t.points 0, t.points 1, c, t.points 2]⟩ :=
+  congrArg Polygon.mk <| (Polygon.insertVertex_vertices _ _ _).trans <| funext fun j => by
+    fin_cases j <;> rfl
 
 variable [PartialOrder R] [IsOrderedRing R]
 
@@ -573,9 +461,9 @@ edge `bd`, turning the triangle `abd` into the parallelogram `abcd`
 (`Affine.Triangle.toPolygon_insertVertex_one`). -/
 theorem isDeltaMove_parallelogram (t : Affine.Triangle R P) :
     t.toPolygon.IsDeltaMove R 1 ((t.points 2 -ᵥ t.points 0) +ᵥ t.points 1) := by
-  set a := t.points 0
-  set b := t.points 1
-  set d := t.points 2
+  set a := t.points 0 with ha
+  set b := t.points 1 with hb
+  set d := t.points 2 with hd
   set c := (d -ᵥ a) +ᵥ b
   -- Measured from `a`, the sides `u = b - a` and `v = d - a` are linearly independent, and the
   -- fourth vertex is `c - a = u + v`.
@@ -593,14 +481,15 @@ theorem isDeltaMove_parallelogram (t : Affine.Triangle R P) :
       ← linearIndependent_equiv (finSuccAboveEquiv (0 : Fin 3))]
     have hdb : d -ᵥ b = (d -ᵥ a) - (b -ᵥ a) := (vsub_sub_vsub_cancel_right d b a).symm
     have hcb : c -ᵥ b = d -ᵥ a := vadd_vsub _ _
-    convert (show LinearIndependent R ![(d -ᵥ a) - (b -ᵥ a), d -ᵥ a] from
+    have hli' : LinearIndependent R ![(d -ᵥ a) - (b -ᵥ a), d -ᵥ a] :=
       LinearIndependent.pair_iff.2 fun r s hrs => by
         obtain ⟨h₁, h₂⟩ := LinearIndependent.pair_iff.1 hli (-r) (r + s) (by
           rw [← hrs, smul_sub, add_smul, neg_smul]
           abel)
         rw [neg_eq_zero] at h₁
         rw [h₁, zero_add] at h₂
-        exact ⟨h₁, h₂⟩) using 1
+        exact ⟨h₁, h₂⟩
+    convert hli' using 1
     ext j
     fin_cases j
     · exact hdb
@@ -625,12 +514,14 @@ theorem isDeltaMove_parallelogram (t : Affine.Triangle R P) :
   obtain ⟨w, hw0, hw1, hx⟩ := hT hxT
   rw [Polygon.edgeSet, hpoints] at hxk
   rw [hpoints, h12]
-  rcases (show k = 0 ∨ k = 2 by revert hk; fin_cases k <;> decide) with rfl | rfl
+  have hk' : k = 0 ∨ k = 2 := by
+    revert hk
+    fin_cases k <;> decide
+  rcases hk' with rfl | rfl
   · -- The edge `ab`: a point `a + s • u` of it in the triangle has `w₁ = w₂ = 0`, so it is `b`.
-    rw [h01] at hxk
+    rw [h01, ← ha, ← hb] at hxk
     obtain ⟨s, -, rfl⟩ := hxk
     rw [AffineMap.lineMap_vsub_left] at hx
-    change s • (b -ᵥ a) = _ at hx
     obtain ⟨-, h⟩ := LinearIndependent.pair_iff.1 hli (w 0 + w 2 - s) (w 1 + w 2) (by
       rw [sub_smul, hx]
       abel)
@@ -641,10 +532,9 @@ theorem isDeltaMove_parallelogram (t : Affine.Triangle R P) :
     simp only [add_zero, zero_smul, one_smul]
     rfl
   · -- The edge `da`: a point `a + s • v` of it in the triangle has `w₀ = w₂ = 0`, so it is `d`.
-    rw [h20] at hxk
+    rw [h20, ← ha, ← hd] at hxk
     obtain ⟨s, -, rfl⟩ := hxk
     rw [AffineMap.lineMap_vsub_right] at hx
-    change (1 - s) • (d -ᵥ a) = _ at hx
     obtain ⟨h, -⟩ := LinearIndependent.pair_iff.1 hli (w 0 + w 2) (w 1 + w 2 - (1 - s)) (by
       rw [sub_smul, hx]
       abel)
@@ -662,8 +552,11 @@ namespace TauCeti
 
 namespace SimplePolygon
 
-variable {R V P : Type*} [Ring R] [PartialOrder R] [IsOrderedRing R] [Nontrivial R] [AddCommGroup V]
-  [Module R V] [AddTorsor V P]
+variable {R V P : Type*} [Ring R] [PartialOrder R] [AddCommGroup V] [Module R V] [AddTorsor V P]
+
+section ZeroLEOneClass
+
+variable [ZeroLEOneClass R]
 
 /-- The cyclic relabelling of a simple polygon, `Polygon.rotate`. -/
 @[expose] def rotate (p : SimplePolygon R P) : SimplePolygon R P where
@@ -671,31 +564,44 @@ variable {R V P : Type*} [Ring R] [PartialOrder R] [IsOrderedRing R] [Nontrivial
   toPolygon := p.toPolygon.rotate
   isSimple := p.toPolygon.isSimple_rotate_iff.2 p.isSimple
 
+@[simp]
+theorem rotate_numVertices (p : SimplePolygon R P) : p.rotate.numVertices = p.numVertices :=
+  rfl
+
+@[simp]
+theorem rotate_toPolygon (p : SimplePolygon R P) : p.rotate.toPolygon = p.toPolygon.rotate :=
+  rfl
+
+/-- The simple polygon obtained from `p` by inserting `c` after vertex `i`, `Polygon.insertVertex`,
+when the result is simple. For `c` a point of edge `i`, this subdivides that edge. -/
+@[expose] def insertVertex (p : SimplePolygon R P) (i : Fin p.numVertices) (c : P)
+    (hq : (p.toPolygon.insertVertex i c).IsSimple R) : SimplePolygon R P where
+  numVertices := p.numVertices + 1
+  toPolygon := p.toPolygon.insertVertex i c
+  isSimple := hq
+
+@[simp]
+theorem insertVertex_numVertices (p : SimplePolygon R P) (i : Fin p.numVertices) (c : P)
+    (hq : (p.toPolygon.insertVertex i c).IsSimple R) :
+    (p.insertVertex i c hq).numVertices = p.numVertices + 1 :=
+  rfl
+
+@[simp]
+theorem insertVertex_toPolygon (p : SimplePolygon R P) (i : Fin p.numVertices) (c : P)
+    (hq : (p.toPolygon.insertVertex i c).IsSimple R) :
+    (p.insertVertex i c hq).toPolygon = p.toPolygon.insertVertex i c :=
+  rfl
+
+end ZeroLEOneClass
+
+variable [IsOrderedRing R] [Nontrivial R]
+
 /-- The simple polygon obtained from `p` by the Δ-move inserting `c` after vertex `i`. -/
 @[expose] def deltaMove (p : SimplePolygon R P) (i : Fin p.numVertices) (c : P)
     (h : p.toPolygon.IsDeltaMove R i c) : SimplePolygon R P where
   numVertices := p.numVertices + 1
   toPolygon := p.toPolygon.insertVertex i c
   isSimple := h.isSimple_insertVertex p.isSimple
-
-omit [Nontrivial R] in
-@[simp]
-theorem rotate_numVertices (p : SimplePolygon R P) : p.rotate.numVertices = p.numVertices :=
-  rfl
-
-omit [Nontrivial R] in
-@[simp]
-theorem rotate_toPolygon (p : SimplePolygon R P) : p.rotate.toPolygon = p.toPolygon.rotate :=
-  rfl
-
-omit [Nontrivial R] in
-/-- The simple polygon obtained from `p` by inserting `c` after vertex `i`, when the result is
-simple. For `c` a point of edge `i`, this subdivides that edge. -/
-@[expose] def subdivide (p : SimplePolygon R P) (i : Fin p.numVertices) (c : P)
-    (hq : (p.toPolygon.insertVertex i c).IsSimple R) : SimplePolygon R P where
-  numVertices := p.numVertices + 1
-  toPolygon := p.toPolygon.insertVertex i c
-  isSimple := hq
 
 @[simp]
 theorem deltaMove_numVertices (p : SimplePolygon R P) (i : Fin p.numVertices) (c : P)
@@ -706,20 +612,6 @@ theorem deltaMove_numVertices (p : SimplePolygon R P) (i : Fin p.numVertices) (c
 theorem deltaMove_toPolygon (p : SimplePolygon R P) (i : Fin p.numVertices) (c : P)
     (h : p.toPolygon.IsDeltaMove R i c) :
     (p.deltaMove i c h).toPolygon = p.toPolygon.insertVertex i c :=
-  rfl
-
-omit [Nontrivial R] in
-@[simp]
-theorem subdivide_numVertices (p : SimplePolygon R P) (i : Fin p.numVertices) (c : P)
-    (hq : (p.toPolygon.insertVertex i c).IsSimple R) :
-    (p.subdivide i c hq).numVertices = p.numVertices + 1 :=
-  rfl
-
-omit [Nontrivial R] in
-@[simp]
-theorem subdivide_toPolygon (p : SimplePolygon R P) (i : Fin p.numVertices) (c : P)
-    (hq : (p.toPolygon.insertVertex i c).IsSimple R) :
-    (p.subdivide i c hq).toPolygon = p.toPolygon.insertVertex i c :=
   rfl
 
 /-- The **elementary moves** on simple polygons: a cyclic relabelling of the vertices, which keeps
@@ -740,7 +632,7 @@ inductive IsElementaryMove : SimplePolygon R P → SimplePolygon R P → Prop
   /-- Subdivide an edge at one of its points, a degenerate Δ-move. -/
   | subdivide (p : SimplePolygon R P) (i : Fin p.numVertices) (c : P)
       (hc : c ∈ p.toPolygon.edgeSet R i) (hq : (p.toPolygon.insertVertex i c).IsSimple R) :
-      IsElementaryMove p (p.subdivide i c hq)
+      IsElementaryMove p (p.insertVertex i c hq)
 
 /-- **Combinatorial equivalence** of simple polygons (Burde–Zieschang, Definition 1.7): the
 equivalence relation generated by Δ-moves, including the degenerate ones that subdivide an edge,
@@ -779,12 +671,9 @@ theorem induction {motive : SimplePolygon R P → SimplePolygon R P → Prop}
     (symm : ∀ {p q : SimplePolygon R P}, CombinatoriallyEquivalent p q → motive p q → motive q p)
     (trans : ∀ {p q r : SimplePolygon R P}, CombinatoriallyEquivalent p q →
       CombinatoriallyEquivalent q r → motive p q → motive q r → motive p r)
-    {p q : SimplePolygon R P} (h : CombinatoriallyEquivalent p q) : motive p q := by
-  induction h with
-  | rel _ _ hmove => exact move hmove
-  | refl p => exact refl p
-  | symm _ _ hpq ih => exact symm hpq ih
-  | trans _ _ _ hpq hqr ih ih' => exact trans hpq hqr ih ih'
+    {p q : SimplePolygon R P} (h : CombinatoriallyEquivalent p q) : motive p q :=
+  Relation.EqvGen.rec (motive := fun p q _ => motive p q) (fun _ _ => move) refl (fun _ _ => symm)
+    (fun _ _ _ => trans) h
 
 end CombinatoriallyEquivalent
 
@@ -804,11 +693,10 @@ theorem combinatoriallyEquivalent_deltaMove (p : SimplePolygon R P) (i : Fin p.n
     CombinatoriallyEquivalent p (p.deltaMove i c h) :=
   (IsElementaryMove.deltaMove p i c h).combinatoriallyEquivalent
 
-
 /-- A simple polygon is combinatorially equivalent to the result of subdividing one of its edges. -/
 theorem combinatoriallyEquivalent_subdivide (p : SimplePolygon R P) (i : Fin p.numVertices)
     (c : P) (hc : c ∈ p.toPolygon.edgeSet R i) (hq : (p.toPolygon.insertVertex i c).IsSimple R) :
-    CombinatoriallyEquivalent p (p.subdivide i c hq) :=
+    CombinatoriallyEquivalent p (p.insertVertex i c hq) :=
   (IsElementaryMove.subdivide p i c hc hq).combinatoriallyEquivalent
 
 end SimplePolygon

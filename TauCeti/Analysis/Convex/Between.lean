@@ -12,8 +12,7 @@ public import Mathlib.Analysis.Convex.Between
 
 Two sides of a nondegenerate triangle meet only at their common vertex. This is the affine-space
 form of Mathlib's `segment_inter_eq_endpoint_of_linearIndependent_sub`, with affine independence
-of the three vertices in place of linear independence of the two edge vectors. The segment between
-two vertices of a simplex lies in its closed interior.
+of the three vertices in place of linear independence of the two edge vectors.
 -/
 
 public section
@@ -42,11 +41,3 @@ theorem AffineIndependent.affineSegment_inter_eq_endpoint {a b c : P}
     rw [neg_smul, ← sub_eq_add_neg, hst, sub_self])
   rw [← ht, neg_eq_zero.1 h0, AffineMap.lineMap_apply_zero]
   rfl
-
-omit [ZeroLEOneClass R] in
-/-- The segment between two vertices of a simplex lies in its closed interior. -/
-theorem Affine.Simplex.affineSegment_subset_closedInterior [IsOrderedRing R] {n : ℕ}
-    (s : Affine.Simplex R P n) {i j : Fin (n + 1)} (hij : i ≠ j) :
-    affineSegment R (s.points i) (s.points j) ⊆ s.closedInterior := by
-  rw [← s.closedInterior_face_eq_affineSegment hij]
-  exact s.closedInterior_face_subset_closedInterior _
