@@ -7,6 +7,8 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 public import Mathlib.LinearAlgebra.QuadraticForm.Prod
+public import Mathlib.LinearAlgebra.QuadraticForm.Radical
+import Mathlib.LinearAlgebra.Matrix.DotProduct
 
 /-!
 # Basic rules for the quadratic form of a matrix
@@ -29,6 +31,7 @@ the signature theory so that consumers needing only these rules do not import it
 * `Matrix.toQuadraticForm'_transpose`: a matrix and its transpose carry the same form.
 * `Matrix.toQuadraticForm'_add_transpose`: the form of `A + Aᵀ` is twice the form of `A`.
 * `Matrix.toQuadraticForm'_diagonal`: a diagonal matrix gives a weighted sum of squares.
+* `Matrix.nondegenerate_toQuadraticForm'`: the form is nondegenerate when `A + Aᵀ` is invertible.
 -/
 
 public section
@@ -85,6 +88,27 @@ theorem toQuadraticForm'_diagonal (d : ι → R) :
   refine Finset.sum_congr rfl fun i _ => ?_
   rw [mulVec_diagonal, smul_eq_mul]
   ring
+
+/-- The quadratic form of `A` is nondegenerate when the matrix `A + Aᵀ` of its polar form is
+invertible. -/
+theorem nondegenerate_toQuadraticForm' {A : Matrix ι ι R} (hA : IsUnit (A + Aᵀ).det) :
+    A.toQuadraticForm'.Nondegenerate := by
+  have hker : A.toQuadraticForm'.polarBilin.ker = ⊥ := by
+    refine (Submodule.eq_bot_iff _).2 fun x hx => ?_
+    -- The polar form is `(x, y) ↦ x ⬝ᵥ (A + Aᵀ) *ᵥ y`, so `x` is in the left kernel of `A + Aᵀ`.
+    have hvec : x ᵥ* (A + Aᵀ) = 0 := by
+      refine dotProduct_eq_zero_iff.1 fun y => ?_
+      have := LinearMap.congr_fun (LinearMap.mem_ker.1 hx) y
+      rw [polarBilin_apply_apply, Matrix.toQuadraticForm', LinearMap.BilinMap.polar_toQuadraticMap,
+        toLinearMap₂'_apply', toLinearMap₂'_apply', LinearMap.zero_apply] at this
+      rw [← dotProduct_mulVec, add_mulVec, dotProduct_add, ← this]
+      congr 1
+      rw [dotProduct_mulVec, vecMul_transpose, dotProduct_comm]
+    rw [← vecMul_one x, ← mul_nonsing_inv _ hA, ← vecMul_vecMul, hvec, zero_vecMul]
+  refine ⟨le_bot_iff.1 (hker ▸ radical_le_ker_polarBilin (Q := A.toQuadraticForm')), ?_⟩
+  rw [hker]
+  nontriviality R
+  simp
 
 /-- Congruence by a matrix with unit determinant is an isometry of the attached quadratic
 forms. -/

@@ -43,6 +43,8 @@ complex matrix is its real signature (`Matrix.IsHermitian.signature_map_ofReal`)
 * `Matrix.IsHermitian.signature_map_ofReal`: a real matrix keeps its real signature.
 * `Matrix.IsHermitian.signature_neg` and `Matrix.IsHermitian.signature_map_starRingEnd`:
   negation negates the signature, entrywise conjugation preserves it.
+* `Matrix.IsHermitian.signature_eq_zero_of_forall_mem_eq_zero`: an invertible Hermitian matrix
+  vanishing on half of the coordinates has signature zero.
 
 ## References
 
@@ -233,6 +235,22 @@ theorem signature_eq_zero_of_congr_neg [DecidableEq ι] {P : Matrix ι ι 𝕜}
     convert hA.signature_congr hP using 2
     exact hneg.symm
   rw [hA.signature_neg] at h
+  omega
+
+/-- **A nondegenerate Hermitian form vanishing on half of the coordinates has signature zero.**
+The realification of `A` is invertible and vanishes on the corresponding half of its coordinates,
+so this is the real statement `Matrix.signature_eq_zero_of_forall_mem_eq_zero`. -/
+theorem signature_eq_zero_of_forall_mem_eq_zero [DecidableEq ι] (hA : A.IsHermitian)
+    (hdet : IsUnit A.det) {s : Finset ι} (hs : Fintype.card ι ≤ 2 * s.card)
+    (h : ∀ i ∈ s, ∀ j ∈ s, A i j = 0) : hA.signature = 0 := by
+  have hdet' : IsUnit (A.realify + A.realifyᵀ).det := by
+    rw [hA.isSymm_realify.eq, ← two_smul ℝ, det_smul]
+    exact (isUnit_iff_ne_zero.2 two_ne_zero).pow _ |>.mul (isUnit_det_realify hdet)
+  have hzero : ∀ p ∈ s.disjSum s, ∀ q ∈ s.disjSum s, A.realify p q = 0 := by
+    rintro (i | i) hi (j | j) hj <;> simp_all
+  have h2 := hA.signature_realify
+  rw [Matrix.signature_eq_zero_of_forall_mem_eq_zero hdet'
+    (by simp only [Fintype.card_sum, Finset.card_disjSum]; omega) hzero] at h2
   omega
 
 /-- A two-dimensional Hermitian form with zero diagonal has signature zero, including
