@@ -15,7 +15,7 @@ For a tower of fields `K ⊆ E ⊆ L`, the actions of `Gal(L/E)` and `Gal(L/K)` 
 agree along the inclusion of Galois groups. The identity on units is therefore an equivariant
 coefficient map for restriction of relative Galois cohomology. In degree two this is the
 restriction map on relative Brauer groups. If the generators are related by the degree of the
-ground-field extension, `TauCeti.restrict_cyclicClass` proves that restriction preserves the
+ground-field extension, `TauCeti.cyclicClass_restrict` proves that restriction preserves the
 unit representing a cyclic class. The proof uses the carry-cocycle description of
 `TauCeti.H2π_eq_cyclicClass` and `TauCeti.map_groupCohomologyπEven_two_of_pow`.
 
@@ -63,7 +63,7 @@ variable {K E L : Type} [Field K] [Field E] [Field L]
 
 /-- Restriction from `Gal(L/K)` to `Gal(L/E)` preserves the cyclic class of `a`, when the
 chosen generator of `Gal(L/E)` is the `[E : K]`-th power of that of `Gal(L/K)`. -/
-theorem restrict_cyclicClass (hg : ∀ σ, σ ∈ Subgroup.zpowers g)
+theorem cyclicClass_restrict (hg : ∀ σ, σ ∈ Subgroup.zpowers g)
     (hgE : ∀ σ, σ ∈ Subgroup.zpowers gE)
     (hgg : AlgEquiv.restrictScalarsHom K gE = g ^ Module.finrank K E) (a : Kˣ) :
     groupCohomology.map (AlgEquiv.restrictScalarsHom K) (unitsRestrictionHom K E L) 2

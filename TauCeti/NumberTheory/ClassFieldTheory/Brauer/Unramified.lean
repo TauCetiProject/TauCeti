@@ -243,7 +243,7 @@ variable (E : Type) [Field E] [ValuativeRel E] [TopologicalSpace E]
 /-- Restricting an unramified cyclic class to an intermediate ground field preserves its
 representing unit, included into the new ground field. -/
 @[simp]
-theorem restrict_unramifiedClass (a : Kˣ) :
+theorem unramifiedClass_restrict (a : Kˣ) :
     letI : FiniteDimensional E L := FiniteDimensional.right K E L
     letI : IsGalois E L := IsGalois.tower_top_of_isGalois K E L
     letI : IsUnramified E L := IsUnramified.tower_top K E L
@@ -255,7 +255,7 @@ theorem restrict_unramifiedClass (a : Kˣ) :
   let _ : IsUnramified E L := IsUnramified.tower_top K E L
   have : FiniteDimensional K E := FiniteDimensional.left K E L
   have : IsUnramified K E := IsUnramified.tower_bot K E L
-  exact restrict_cyclicClass (mem_zpowers_frobeniusAlgEquiv K L)
+  exact cyclicClass_restrict (mem_zpowers_frobeniusAlgEquiv K L)
     (mem_zpowers_frobeniusAlgEquiv E L)
     (by simpa only [AlgEquiv.restrictScalarsHom_apply, IsUnramified.inertiaDegree_eq_finrank]
       using frobeniusAlgEquiv_restrictScalars (K := K) (L := E) (M := L)) a
@@ -276,7 +276,7 @@ theorem unramifiedInv_restrict (x : H2 (Rep.ofMulDistribMulAction (L ≃ₐ[K] L
   have : FiniteDimensional K E := FiniteDimensional.left K E L
   obtain ⟨a, rfl⟩ := unramifiedClass_surjective K L x
   have : IsUnramified K E := IsUnramified.tower_bot K E L
-  rw [← ofMul_toMul a, restrict_unramifiedClass, unramifiedInv_unramifiedClass,
+  rw [← ofMul_toMul a, unramifiedClass_restrict, unramifiedInv_unramifiedClass,
     unramifiedInv_unramifiedClass, toAdd_normalizedValuation_algebraMap,
     IsUnramified.ramificationIndex_eq_one, Nat.cast_one, one_mul, ← AddCircle.coe_nsmul,
     nsmul_eq_mul]
