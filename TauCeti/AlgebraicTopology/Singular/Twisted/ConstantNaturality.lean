@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Functoriality
+public import TauCeti.AlgebraicTopology.Singular.Basic
 
 /-!
 # The constant-system comparison for relative singular homology
@@ -44,9 +45,12 @@ private lemma singularChainComplexπ_pair_naturality
     ((AlgebraicTopology.singularChainComplexFunctor C).obj M).map (TopPair.Hom.fst f) ≫
         Q.singularChainComplexπ M =
       P.singularChainComplexπ M ≫ TopPair.singularChainComplexMap f M := by
-  have h := ((SSetPair.chainComplexFunctorπ C).app M).naturality (TopPair.toSSetPair.map f)
-  convert h using 1
-  rfl
+  rw [TauCeti.singularChainComplexFunctor_obj_map]
+  have h : SSet.chainComplexMap (TopPair.toSSetPair.map f).right M ≫
+      Q.singularChainComplexπ M =
+        P.singularChainComplexπ M ≫ TopPair.singularChainComplexMap f M :=
+    ((SSetPair.chainComplexFunctorπ C).app M).naturality (TopPair.toSSetPair.map f)
+  rwa [TopPair.toSSetPair_map_right] at h
 
 private lemma singularChainComplexπ_coefficient_naturality
     (P : TopPair.{v}) {M N : C} (φ : M ⟶ N) :
@@ -54,11 +58,14 @@ private lemma singularChainComplexπ_coefficient_naturality
         P.singularChainComplexπ N =
       P.singularChainComplexπ M ≫
         ((SSetPair.chainComplexFunctor C).map φ).app (TopPair.toSSetPair.obj P) := by
-  have h := congrArg (fun η ↦ η.app (TopPair.toSSetPair.obj P))
-    ((SSetPair.chainComplexFunctorπ C).naturality φ)
-  simp only [NatTrans.comp_app] at h
-  convert h using 1
-  rfl
+  rw [TauCeti.singularChainComplexFunctor_map_app]
+  have h : ((SSet.chainComplexFunctor C).map φ).app (TopPair.toSSetPair.obj P).right ≫
+      P.singularChainComplexπ N = P.singularChainComplexπ M ≫
+        ((SSetPair.chainComplexFunctor C).map φ).app (TopPair.toSSetPair.obj P) :=
+    congrArg (fun η ↦ η.app (TopPair.toSSetPair.obj P))
+      ((SSetPair.chainComplexFunctorπ C).naturality φ)
+  simp only [TopPair.toSSetPair_obj_right] at h
+  exact h
 
 end TauCeti
 
@@ -196,6 +203,29 @@ lemma twistedChainComplexShortComplexConstantIso_hom_τ₂ :
 lemma twistedChainComplexShortComplexConstantIso_hom_τ₃ :
     (P.twistedChainComplexShortComplexConstantIso M).hom.τ₃ =
       (P.twistedChainComplexConstantIso M).hom :=
+  (rfl)
+
+@[simp]
+lemma twistedChainComplexShortComplexConstantIso_inv_τ₁ :
+    (P.twistedChainComplexShortComplexConstantIso M).inv.τ₁ =
+      (LocalCoefficientSystem.twistedChainComplexConstantIso P.snd M).inv ≫
+        LocalCoefficientSystem.twistedChainComplexCoefficientMap
+          (LocalCoefficientSystem.pullbackConstantIso P.map.hom M).inv := by
+  dsimp only [twistedChainComplexShortComplexConstantIso, ShortComplex.isoMk,
+    ShortComplex.homMk]
+  erw [Iso.trans_inv, LocalCoefficientSystem.twistedChainComplexCoefficientIso_inv]
+  rfl
+
+@[simp]
+lemma twistedChainComplexShortComplexConstantIso_inv_τ₂ :
+    (P.twistedChainComplexShortComplexConstantIso M).inv.τ₂ =
+      (LocalCoefficientSystem.twistedChainComplexConstantIso P.fst M).inv :=
+  (rfl)
+
+@[simp]
+lemma twistedChainComplexShortComplexConstantIso_inv_τ₃ :
+    (P.twistedChainComplexShortComplexConstantIso M).inv.τ₃ =
+      (P.twistedChainComplexConstantIso M).inv :=
   (rfl)
 
 /-- The constant-system comparison preserves the connecting morphism of relative homology.
