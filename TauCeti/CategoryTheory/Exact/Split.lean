@@ -50,6 +50,10 @@ structure.
   `TauCeti.ExactStructure.split`.
 * `TauCeti.ExactStructure.split_isInflation_iff_isDeflation_unop`: split inflations of `Cᵒᵖ`
   are the opposites of split deflations of `C`.
+* `TauCeti.ExactStructure.split_isInflation_biprod_lift_id_left` and
+  `TauCeti.ExactStructure.split_isDeflation_biprod_desc_id_left`, with their `_right` variants:
+  the graph `biprod.lift (𝟙 X) g` of a morphism is a split inflation, and dually
+  `biprod.desc (𝟙 X) g` is a split deflation.
 
 ## References
 
@@ -357,6 +361,45 @@ theorem isSplitMono_of_split_isInflation {X Y : C} {i : X ⟶ Y}
 theorem isSplitEpi_of_split_isDeflation {Y Z : C} {p : Y ⟶ Z}
     (hp : (ExactStructure.split C).IsDeflation p) : IsSplitEpi p :=
   ConflationClass.isSplitEpi_of_split_isDeflation hp
+
+/-- The graph `biprod.lift (𝟙 X) g : X ⟶ X ⊞ Z` of a morphism `g : X ⟶ Z` is a split inflation:
+the shear `(x, z) ↦ (x, z - g x)` carries it to `biprod.inl`. -/
+theorem split_isInflation_biprod_lift_id_left {X Z : C} (g : X ⟶ Z) :
+    (ExactStructure.split C).IsInflation (biprod.lift (𝟙 X) g) :=
+  (split_isInflation_iff _).2 ⟨Z,
+    { hom := biprod.lift biprod.fst (biprod.snd - biprod.fst ≫ g)
+      inv := biprod.lift biprod.fst (biprod.snd + biprod.fst ≫ g)
+      hom_inv_id := by ext <;> simp
+      inv_hom_id := by ext <;> simp }, by ext <;> simp⟩
+
+/-- The graph `biprod.lift g (𝟙 X) : X ⟶ Z ⊞ X` of a morphism `g : X ⟶ Z` is a split
+inflation. -/
+theorem split_isInflation_biprod_lift_id_right {X Z : C} (g : X ⟶ Z) :
+    (ExactStructure.split C).IsInflation (biprod.lift g (𝟙 X)) :=
+  (split_isInflation_iff _).2 ⟨Z,
+    { hom := biprod.lift biprod.snd (biprod.fst - biprod.snd ≫ g)
+      inv := biprod.lift (biprod.snd + biprod.fst ≫ g) biprod.fst
+      hom_inv_id := by ext <;> simp
+      inv_hom_id := by ext <;> simp }, by ext <;> simp⟩
+
+/-- The map `biprod.desc (𝟙 X) g : X ⊞ Z ⟶ X` is a split deflation: the shear
+`(x, z) ↦ (x + g z, z)` carries it to the projection onto `X`. -/
+theorem split_isDeflation_biprod_desc_id_left {X Z : C} (g : Z ⟶ X) :
+    (ExactStructure.split C).IsDeflation (biprod.desc (𝟙 X) g) :=
+  (split_isDeflation_iff _).2 ⟨Z,
+    { hom := biprod.desc biprod.inr (biprod.inl + g ≫ biprod.inr)
+      inv := biprod.desc (biprod.inr - g ≫ biprod.inl) biprod.inl
+      hom_inv_id := by ext <;> simp
+      inv_hom_id := by ext <;> simp }, by ext <;> simp⟩
+
+/-- The map `biprod.desc g (𝟙 X) : Z ⊞ X ⟶ X` is a split deflation. -/
+theorem split_isDeflation_biprod_desc_id_right {X Z : C} (g : Z ⟶ X) :
+    (ExactStructure.split C).IsDeflation (biprod.desc g (𝟙 X)) :=
+  (split_isDeflation_iff _).2 ⟨Z,
+    { hom := biprod.desc (biprod.inl + g ≫ biprod.inr) biprod.inr
+      inv := biprod.desc (biprod.inl - g ≫ biprod.inr) biprod.inr
+      hom_inv_id := by ext <;> simp
+      inv_hom_id := by ext <;> simp }, by ext <;> simp⟩
 
 /-- A morphism of `Cᵒᵖ` is a split inflation exactly when its unopposite is a split deflation
 of `C`: splittings of short complexes correspond under `ShortComplex.Splitting.op` and
