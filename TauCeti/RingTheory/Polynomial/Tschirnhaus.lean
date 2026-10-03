@@ -57,7 +57,7 @@ recomputed at the transform, whose roots are in bijection with those of `f`.
   whenever `α` is a root of the nonzero polynomial `f`.
 * `Polynomial.Monic.tschirnhausRootMap`, `Polynomial.tschirnhausRootMap`: the resulting map
   `α ↦ T(α)` from the roots of `f` to the roots of its transform, for monic `f` over a domain and
-  for any `f` over a field; it is surjective whenever `f` splits (and is nonzero).
+  for any `f` over a field; it is surjective whenever `f` splits.
 * `Polynomial.separable_tschirnhausPolynomial_iff`: the transform is separable if and only if `f`
   is separable and `T` is admissible.
 * `Polynomial.TschirnhausAdmissible.bijOn_rootSet`: an admissible `T` maps the roots of `f`
@@ -379,12 +379,15 @@ theorem coe_tschirnhausRootMap (f T : K[X]) (x : f.rootSet L) :
     (tschirnhausRootMap f T x : L) = aeval (x : L) T :=
   Set.MapsTo.val_restrict_apply _ _
 
-/-- Every root of the Tschirnhaus transform of a nonzero field polynomial is the image of a root
-of the original polynomial. -/
-theorem tschirnhausRootMap_surjective {f : K[X]} (hf : f ≠ 0)
+/-- Every root of the Tschirnhaus transform of a field polynomial is the image of a root of the
+original polynomial. For `f = 0` the transform is `0` or `1`, so both root sets are empty. -/
+theorem tschirnhausRootMap_surjective {f : K[X]}
     (hs : (f.map (algebraMap K L)).Splits) (T : K[X]) :
     Function.Surjective (tschirnhausRootMap (L := L) f T) := by
   refine (Set.MapsTo.restrict_surjective_iff _).2 ?_
+  rcases eq_or_ne f 0 with rfl | hf
+  · rcases eq_or_ne (C X - T.map C : K[X][X]).natDegree 0 with h | h <;>
+      simp [tschirnhausPolynomial_def, h]
   rw [rootSet_tschirnhausPolynomial_field hf hs]
   exact Set.surjOn_image _ _
 
