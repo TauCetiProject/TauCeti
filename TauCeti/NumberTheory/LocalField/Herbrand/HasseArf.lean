@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.LocalField.Norm.Conductor
-public import TauCeti.NumberTheory.LocalField.Norm.Unramified
+public import TauCeti.NumberTheory.LocalField.Herbrand.Jump
 
 /-!
 # The prime-degree case of Hasse--Arf
@@ -28,8 +27,6 @@ constant through `t`, so the inverse Herbrand function fixes `t`.
   prime-degree case of the Hasse--Arf integrality statement.
 * `TauCeti.LocalFieldsRamification.UpperJump.eq_of_finrank_prime`: a prime-degree extension has
   at most one upper break.
-* `TauCeti.LocalFieldsRamification.UpperJump.unitFiltration_le_normGroup_iff_of_finrank_prime`:
-  the conductor formula at a nonnegative prime-degree break.
 
 ## References
 
@@ -144,48 +141,5 @@ theorem UpperJump.exists_eq_intCast_of_finrank_prime
   rcases hu.eq_neg_one_or_exists_eq_natCast_of_finrank_prime hdegree with hu | ⟨t, hu⟩
   · exact ⟨-1, by simpa using hu⟩
   · exact ⟨t, by exact_mod_cast hu⟩
-
-variable {K L} in
-/-- At an upper break of a prime-degree Galois extension, a unit-filtration step lies in the norm
-group exactly when its depth is strictly above the break. Thus the conductor is one more than the
-unique break; this is zero when the break is `-1` in the unramified case. -/
-theorem UpperJump.unitFiltration_le_normGroup_iff_of_finrank_prime
-    {u : RamificationIndexDomain} (hu : UpperJump K L u)
-    (hdegree : (Module.finrank K L).Prime) (v : ℕ) :
-    unitFiltration K v ≤ normGroup K L ↔ (u : ℝ) < v := by
-  have : Fact (Nat.card (L ≃ₐ[K] L)).Prime :=
-    ⟨IsGalois.card_aut_eq_finrank K L ▸ hdegree⟩
-  rcases hu.eq_neg_one_or_exists_eq_natCast_of_finrank_prime hdegree with hneg | ⟨t, hut⟩
-  · have hu_eq : u = ⟨(-1 : ℝ), le_rfl⟩ := Subtype.ext hneg
-    subst u
-    let zero : RamificationIndexDomain := ⟨(0 : ℝ), by norm_num⟩
-    have hdrop := (upperJump_iff K L ⟨(-1 : ℝ), le_rfl⟩).1 hu zero
-      (Subtype.mk_lt_mk.2 (by norm_num))
-    have hzero_ne_top : upperRamificationGroup K L zero ≠ ⊤ :=
-      (hdrop.trans_le le_top).ne
-    have hzero_bot : upperRamificationGroup K L zero = ⊥ :=
-      (upperRamificationGroup K L zero).eq_bot_or_eq_top_of_prime_card.resolve_right hzero_ne_top
-    have hGzero : lowerRamificationGroup K L 0 = ⊥ := by
-      rw [upperRamificationGroup_of_coe_le_zero K L (v := zero) (by norm_num)] at hzero_bot
-      rw [← lowerRamificationGroupReal_intCast K L (0 : ℤ)]
-      convert hzero_bot using 1
-      norm_num [zero]
-    have he : ramificationIndex K L = 1 := by
-      rw [← natCard_lowerRamificationGroup_zero K L, hGzero]
-      simp
-    have hunramified : TauCeti.IsUnramified K L :=
-      (TauCeti.isUnramified_iff_ramificationIndex_eq_one K L).2 he
-    let _ : TauCeti.IsUnramified K L := hunramified
-    constructor
-    · intro
-      have : (0 : ℝ) ≤ v := Nat.cast_nonneg v
-      linarith
-    · intro
-      rw [← TauCeti.map_normUnits_unitFiltration K L v]
-      rintro _ ⟨y, -, rfl⟩
-      exact TauCeti.mem_normGroup_iff.2 ⟨y, by simp⟩
-  · have hu_eq : u = ⟨t, Nat.cast_mem_ramificationIndexDomain t⟩ := Subtype.ext hut
-    subst u
-    simpa only [Nat.cast_lt] using TauCeti.unitFiltration_le_normGroup_iff hdegree hu
 
 end TauCeti.LocalFieldsRamification
