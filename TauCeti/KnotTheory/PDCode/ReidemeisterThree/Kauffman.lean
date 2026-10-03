@@ -206,7 +206,7 @@ include h in
 private theorem pairingTraversal_internal (u : Fin n → Bool) (k : Fin 5)
     (p : Fin 3 × Fin 4) (hp : localInternal p) :
     pairingTraversal D c u k (triangleEmbedding D c p) = triangleEmbedding D c p := by
-  rw [pairingTraversal, Perm.mul_apply, Perm.mul_apply, outsideEdges_internal D c h p hp,
+  rw [pairingTraversal, Perm.mul_apply, Perm.mul_apply, outsideEdges_internal D c h.arcs p hp,
     outsideSmoothing_local, localLift_apply, localPairing_internal k p hp]
 
 include h in
@@ -260,7 +260,7 @@ private theorem localFactor_remove_internal (side : Bool) (q : Fin 3 → Bool)
 include h in
 private theorem rawTraversal_orbitCount (side : Bool) (u : Fin n → Bool) :
     orbitCount (if side then
-      (D.reidemeisterThree c h).smoothingTurn u * (D.reidemeisterThree c h).edgePair.val
+      (D.reidemeisterThree c).smoothingTurn u * (D.reidemeisterThree c).edgePair.val
       else D.smoothingTurn u * D.edgePair.val) + (smoothingFactors side (u ∘ c)).length =
         orbitCount (pairingTraversal D c u (pairingIndex side (u ∘ c))) := by
   have hc := localFactor_orbitCount D c h side (u ∘ c) u
@@ -270,11 +270,11 @@ private theorem rawTraversal_orbitCount (side : Bool) (u : Fin n → Bool) :
   | true =>
     simp only [↓reduceIte, map_mul, map_inv] at hc
     have hρ := localLift_slots D c
-    have hS : (D.reidemeisterThree c h).smoothingTurn u = D.smoothingTurn u := by
-      simp only [smoothingTurn_def, halfEdge_reidemeisterThree]
+    have hS : (D.reidemeisterThree c).smoothingTurn u = D.smoothingTurn u := by
+      simp only [smoothingTurn_def, reidemeisterThree_halfEdge]
     rw [hρ] at hc
     simp only [↓reduceIte]
-    rw [hS, edgePair_reidemeisterThree]
+    rw [hS, reidemeisterThree_edgePair]
     have heq : (D.reidemeisterThreePerm c).symm.permCongr
         (D.smoothingTurn u * (D.reidemeisterThreePerm c).permCongr D.edgePair.val) =
         (D.reidemeisterThreePerm c)⁻¹ * localLift D c (localSmoothing (u ∘ c)) *
@@ -430,7 +430,7 @@ private theorem pairingTraversal_loops_lower
 include h in
 private theorem rawLoopCount_assemble (side : Bool) (q : Fin 3 → Bool)
     (r : {i : Fin n // i ∉ Set.range c} → Bool) :
-    rawLoopCount (if side then D.reidemeisterThree c h else D) (assembleState c q r) - 1 =
+    rawLoopCount (if side then D.reidemeisterThree c else D) (assembleState c q r) - 1 =
       pairingExponent D c r (pairingIndex side q) + extraCircle q := by
   have hc := rawTraversal_orbitCount D c h side (assembleState c q r)
   have hq : assembleState c q r ∘ c = q := by
@@ -441,7 +441,7 @@ private theorem rawLoopCount_assemble (side : Bool) (q : Fin 3 → Bool)
   have hp := pairingTraversal_loops_lower D c h r (pairingIndex side q)
   simp only [pairingExponent]
   cases side <;> simp only [Bool.false_eq_true, ↓reduceIte, rawLoopCount,
-    crossinglessComponentCount_reidemeisterThree] at * <;> omega
+    reidemeisterThree_crossinglessComponentCount] at * <;> omega
 
 private def overWeight {R : Type*} [CommRing R] (a : Rˣ) (b : Bool) : R :=
   if b then ((a⁻¹ : Rˣ) : R) else (a : R)
@@ -543,20 +543,19 @@ private theorem localLoopValue {R : Type*} [CommRing R] (δ : R) (K : Fin 5 → 
   cases side <;> cases x <;> cases y <;> cases z <;>
     simp [pairingIndex, leftPairingIndex, extraCircle, pairingValue, pow_succ, mul_comm]
 
-include h in
 private theorem overPair_outside (side : Bool) (i : {i : Fin n // i ∉ Set.range c}) :
-    (if side then D.reidemeisterThree c h else D).overPair i = D.overPair i := by
+    (if side then D.reidemeisterThree c else D).overPair i = D.overPair i := by
   have h0 : (i : Fin n) ≠ c 0 := fun he ↦ i.property ⟨0, he.symm⟩
   have h2 : (i : Fin n) ≠ c 2 := fun he ↦ i.property ⟨2, he.symm⟩
   cases side <;> simp [Equiv.swap_apply_of_ne_of_ne h0 h2]
 
 include h in
 private theorem kauffmanBracket_split {R : Type*} [CommRing R] (a : Rˣ) (side : Bool) :
-    (if side then D.reidemeisterThree c h else D).kauffmanBracket a =
+    (if side then D.reidemeisterThree c else D).kauffmanBracket a =
       ∑ r : {i : Fin n // i ∉ Set.range c} → Bool,
         (∏ i : {i : Fin n // i ∉ Set.range c}, smoothingWeight a (D.overPair i) (r i)) *
         ∑ q : Fin 3 → Bool,
-          (∏ j, smoothingWeight a ((if side then D.reidemeisterThree c h else D).overPair (c j))
+          (∏ j, smoothingWeight a ((if side then D.reidemeisterThree c else D).overPair (c j))
             (q j)) *
           (if side then pairingValue (jonesDelta a)
             (jonesDelta a ^ pairingExponent D c r 3) (jonesDelta a ^ pairingExponent D c r 2)
@@ -576,13 +575,14 @@ private theorem kauffmanBracket_split {R : Type*} [CommRing R] (a : Rˣ) (side :
   apply Finset.sum_congr rfl
   intro q hq
   rw [assembleState_prod, rawLoopCount_assemble D c h side q r, localLoopValue]
-  simp only [overPair_outside D c h]
+  simp only [overPair_outside D c]
   ring
 
+include h in
 /-- The third Reidemeister move preserves the Kauffman bracket, for every surrounding
 PD-code and all six acyclic strand height orders. -/
 @[simp] theorem kauffmanBracket_reidemeisterThree {R : Type*} [CommRing R] (a : Rˣ) :
-    (D.reidemeisterThree c h).kauffmanBracket a = D.kauffmanBracket a := by
+    (D.reidemeisterThree c).kauffmanBracket a = D.kauffmanBracket a := by
   classical
   have hs0 := kauffmanBracket_split D c h a false
   have hs1 := kauffmanBracket_split D c h a true
@@ -591,7 +591,7 @@ PD-code and all six acyclic strand height orders. -/
   apply Finset.sum_congr rfl
   intro r hr
   congr 1
-  have ho : (fun j ↦ (D.reidemeisterThree c h).overPair (c j)) =
+  have ho : (fun j ↦ (D.reidemeisterThree c).overPair (c j)) =
       ![D.overPair (c 2), D.overPair (c 1), D.overPair (c 0)] := by
     funext j
     have h01 : c 0 ≠ c 1 := c.injective.ne (by decide)

@@ -22,18 +22,7 @@ namespace TauCeti.PDCode.ReidemeisterThree
 open Equiv Equiv.Perm
 
 variable {n : ℕ} (D : PDCode n) (c : Fin 3 ↪ Fin n)
-  (h : D.HasReidemeisterThreeTriangle c)
-
-/-- Include the twelve selected crossing slots in the ambient half-edge type. -/
-def triangleEmbedding (D : PDCode n) (c : Fin 3 ↪ Fin n) :
-    Fin 3 × Fin 4 ↪ Fin (4 * n) :=
-  (c.prodMap (Function.Embedding.refl _)).trans
-    ((crossingSlotEquiv n).toEmbedding.trans D.halfEdge.toEmbedding)
-
-/-- The selected-slot inclusion agrees with the named crossing half-edges. -/
-theorem triangleEmbedding_apply (D : PDCode n) (c : Fin 3 ↪ Fin n)
-    (i : Fin 3) (s : Fin 4) : triangleEmbedding D c (i, s) = D.crossing (c i) s := by
-  simp [triangleEmbedding, crossing_apply]
+  (h : D.HasReidemeisterThreeTriangleArcs c)
 
 /-- The three internal arcs of the original Reidemeister triangle, extended by identity. -/
 def localInternalMatching : Perm (Fin 3 × Fin 4) :=
@@ -103,10 +92,10 @@ include h in
 theorem internalMatching_edgePair (p : Fin 3 × Fin 4) (hp : localInternal p) :
     D.edgePair.val (triangleEmbedding D c p) =
       triangleEmbedding D c (localInternalMatching p) := by
-  have ht := (hasReidemeisterThreeTriangle_iff D c).mp h
+  have ht := (hasReidemeisterThreeTriangleArcs_iff D c).mp h
   obtain hp | hp | hp | hp | hp | hp := hp
   all_goals subst p
-  · have he := ht.2.2.1
+  · have he := ht.2.2
     have hm : localInternalMatching (0, 1) = (2, 0) := by decide
     simpa only [hm, triangleEmbedding_apply] using he
   · have hm : localInternalMatching (0, 2) = (1, 0) := by decide
@@ -116,7 +105,7 @@ theorem internalMatching_edgePair (p : Fin 3 × Fin 4) (hp : localInternal p) :
   · have hm : localInternalMatching (1, 1) = (2, 3) := by decide
     simpa only [hm, triangleEmbedding_apply] using ht.2.1
   · have hm : localInternalMatching (2, 0) = (0, 1) := by decide
-    simpa only [hm, triangleEmbedding_apply] using D.edgePair.apply_eq_of_apply_eq ht.2.2.1
+    simpa only [hm, triangleEmbedding_apply] using D.edgePair.apply_eq_of_apply_eq ht.2.2
   · have hm : localInternalMatching (2, 3) = (1, 1) := by decide
     simpa only [hm, triangleEmbedding_apply] using D.edgePair.apply_eq_of_apply_eq ht.2.1
 

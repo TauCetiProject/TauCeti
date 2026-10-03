@@ -14,7 +14,8 @@ import TauCeti.Data.Fin.Basic
 
 Replacing the three-crossing triangle preserves its boundary face traversal and the connected
 components of the underlying graph. Consequently the third Reidemeister move preserves the
-number of faces and planarity, for any surrounding PD-code.
+number of faces and planarity, for any surrounding PD-code. Only the three triangle arcs
+are required; the strand heights play no role.
 
 ## References
 
@@ -30,7 +31,7 @@ namespace TauCeti.PDCode
 open Equiv Equiv.Perm ReidemeisterThree
 
 variable {n : ℕ} (D : PDCode n) (c : Fin 3 ↪ Fin n)
-  (h : D.HasReidemeisterThreeTriangle c)
+  (h : D.HasReidemeisterThreeTriangleArcs c)
 
 private def localRotation : Perm (Fin 3 × Fin 4) :=
   Equiv.prodCongrRight fun _ ↦ finRotate 4
@@ -171,16 +172,17 @@ private theorem faceFactor_remove_internal (side : Bool) :
       localLift D c localInternalMatching * D.edgePair.val := by group
     _ = _ := by rw [hc]; simp only [mul_assoc, hs, mul_one]
 
+include h in
 /-- The third Reidemeister move preserves the number of faces of the underlying graph. -/
 @[simp] theorem faceCount_reidemeisterThree :
-    (D.reidemeisterThree c h).faceCount = D.faceCount := by
+    (D.reidemeisterThree c).faceCount = D.faceCount := by
   have hleft := faceFactor_orbitCount D c h false
   have hright := faceFactor_orbitCount D c h true
   rw [faceFactor_remove_internal] at hleft hright
   simp only [Bool.false_eq_true, ↓reduceIte, ← crossingRotation_split] at hleft
   simp only [↓reduceIte, map_mul, map_inv, localLift_slots] at hright
-  have hr : (D.reidemeisterThree c h).crossingRotation = D.crossingRotation := by
-    simp only [crossingRotation_def, halfEdge_reidemeisterThree]
+  have hr : (D.reidemeisterThree c).crossingRotation = D.crossingRotation := by
+    simp only [crossingRotation_def, reidemeisterThree_halfEdge]
   have heq : (D.reidemeisterThreePerm c).symm.permCongr
       (D.crossingRotation * (D.reidemeisterThreePerm c).permCongr D.edgePair.val) =
       (D.reidemeisterThreePerm c)⁻¹ * localLift D c localRotation *
@@ -195,7 +197,7 @@ private theorem faceFactor_remove_internal (side : Bool) :
       _ = _ := by rw [← hc]; group
   rw [← heq, Equiv.orbitCount_permCongr] at hright
   rw [faceCount_def, faceCount_def, facePerm_def, facePerm_def, hr,
-    edgePair_reidemeisterThree]
+    reidemeisterThree_edgePair]
   calc
     _ = orbitCount (D.crossingRotation *
         (D.reidemeisterThreePerm c).permCongr D.edgePair.val) :=
@@ -246,26 +248,27 @@ private theorem graphOrbit_perm (E : PDCode n)
     exact (hconn _ _).trans (hconn j s).symm
   · rw [reidemeisterThreePerm_crossing_of_notMem D c hi]
 
+include h in
 /-- The third Reidemeister move keeps the connected components of the underlying graph.
 The equivalence sends the component represented by a half-edge to that represented by the
 same half-edge after the move. -/
 def reidemeisterThreeMonodromyOrbitEquiv :
     D.toPermutationTriple.MonodromyOrbit ≃
-      (D.reidemeisterThree c h).toPermutationTriple.MonodromyOrbit := by
-  let E := D.reidemeisterThree c h
+      (D.reidemeisterThree c).toPermutationTriple.MonodromyOrbit := by
+  let E := D.reidemeisterThree c
   -- Each triangle is connected in the crossing graph, so the local rewire acts trivially
   -- on its graph-component labels on both sides of the move.
-  have ht := (hasReidemeisterThreeTriangle_iff D c).mp h
+  have ht := (hasReidemeisterThreeTriangleArcs_iff D c).mp h
   have hn := reidemeisterThree_triangle D c h
   have hρOld : ∀ x, graphOrbit D (D.reidemeisterThreePerm c x) = graphOrbit D x :=
     graphOrbit_perm D c D (graphOrbit_triangle c D 2 0 1 3 ht.1 ht.2.1)
   have hρNew : ∀ x, graphOrbit E (D.reidemeisterThreePerm c x) = graphOrbit E x := by
     apply graphOrbit_perm D c E
     intro j s
-    simpa only [E, crossing_reidemeisterThree] using
+    simpa only [E, reidemeisterThree_crossing] using
       graphOrbit_triangle c E 1 3 2 0
-        (by simpa only [E, crossing_reidemeisterThree] using hn.1)
-        (by simpa only [E, crossing_reidemeisterThree] using hn.2.1) j s
+        (by simpa only [E, reidemeisterThree_crossing] using hn.1)
+        (by simpa only [E, reidemeisterThree_crossing] using hn.2.1) j s
   have heOld : ∀ x, graphOrbit D (D.edgePair.val x) = graphOrbit D x := by
     intro x
     simpa only [graphOrbit, toPermutationTriple_σ1] using D.toPermutationTriple.mk_σ1_apply x
@@ -275,14 +278,14 @@ def reidemeisterThreeMonodromyOrbitEquiv :
   have heOldNew : ∀ x, graphOrbit E (D.edgePair.val x) = graphOrbit E x := by
     intro x
     have hx := heNew (D.reidemeisterThreePerm c x)
-    rw [edgePair_reidemeisterThree_transport D c h, hρNew, hρNew] at hx
+    rw [reidemeisterThree_edgePair_transport D c, hρNew, hρNew] at hx
     exact hx
   have heNewOld : ∀ x, graphOrbit D (E.edgePair.val x) = graphOrbit D x := by
     intro x
     obtain ⟨y, rfl⟩ := (D.reidemeisterThreePerm c).surjective x
-    rw [edgePair_reidemeisterThree_transport D c h, hρOld, hρOld, heOld]
+    rw [reidemeisterThree_edgePair_transport D c, hρOld, hρOld, heOld]
   have hr : E.crossingRotation = D.crossingRotation := by
-    simp only [E, crossingRotation_def, halfEdge_reidemeisterThree]
+    simp only [E, crossingRotation_def, reidemeisterThree_halfEdge]
   -- The labels are invariant under both rotation and edge generators. Identity on
   -- half-edges therefore descends to mutually inverse maps of the component quotients.
   refine
@@ -312,16 +315,18 @@ def reidemeisterThreeMonodromyOrbitEquiv :
     (reidemeisterThreeMonodromyOrbitEquiv D c h).symm (Quotient.mk _ x) =
       Quotient.mk _ x := (rfl)
 
+include h in
 /-- The move preserves the number of connected components of the underlying graph. -/
 @[simp] theorem card_monodromyOrbit_reidemeisterThree :
-    Nat.card (D.reidemeisterThree c h).toPermutationTriple.MonodromyOrbit =
+    Nat.card (D.reidemeisterThree c).toPermutationTriple.MonodromyOrbit =
       Nat.card D.toPermutationTriple.MonodromyOrbit :=
   Nat.card_congr (reidemeisterThreeMonodromyOrbitEquiv D c h).symm
 
+include h in
 /-- A PD-code is planar exactly when its third Reidemeister replacement is planar. -/
 @[simp] theorem isPlanar_reidemeisterThree_iff :
-    (D.reidemeisterThree c h).IsPlanar ↔ D.IsPlanar := by
+    (D.reidemeisterThree c).IsPlanar ↔ D.IsPlanar := by
   rw [isPlanar_iff_faceCount_eq, isPlanar_iff_faceCount_eq,
-    faceCount_reidemeisterThree, card_monodromyOrbit_reidemeisterThree]
+    faceCount_reidemeisterThree D c h, card_monodromyOrbit_reidemeisterThree D c h]
 
 end TauCeti.PDCode

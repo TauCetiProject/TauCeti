@@ -16,8 +16,9 @@ The braid form of the third Reidemeister move replaces the three-crossing tangle
 are read counterclockwise as northwest, southwest, southeast, northeast. Its six boundary
 attachments are transported to the corresponding ports of the replacement tangle; every
 half-edge outside the three selected crossings stays fixed. The three over-pair indicators
-must give an acyclic height order on the three strands.
-All six orders are allowed. The over-pair indicators at the first and third crossing exchange
+give an acyclic height order on the three strands for a valid Reidemeister move.
+All six orders are allowed. The raw rewire and its component identities are defined without
+this condition. The over-pair indicators at the first and third crossing exchange
 places, so each pair of physical strands keeps its over-strand.
 
 The construction uses a permutation of the twelve local half-edges. This permutation mixes
@@ -72,14 +73,22 @@ private theorem reidemeisterThreeSlots_opposite (p : Fin 3 × Fin 4) :
   revert p
   decide
 
-private def triangleEmbedding (D : PDCode n) (c : Fin 3 ↪ Fin n) :
+namespace ReidemeisterThree
+
+/-- Include the twelve selected crossing slots in the ambient half-edge type. -/
+def triangleEmbedding (D : PDCode n) (c : Fin 3 ↪ Fin n) :
     Fin 3 × Fin 4 ↪ Fin (4 * n) :=
   (c.prodMap (Function.Embedding.refl _)).trans
     ((crossingSlotEquiv n).toEmbedding.trans D.halfEdge.toEmbedding)
 
-private theorem triangleEmbedding_apply (D : PDCode n) (c : Fin 3 ↪ Fin n)
+/-- The selected-slot inclusion agrees with the named crossing half-edges. -/
+theorem triangleEmbedding_apply (D : PDCode n) (c : Fin 3 ↪ Fin n)
     (i : Fin 3) (s : Fin 4) : triangleEmbedding D c (i, s) = D.crossing (c i) s := by
   simp [triangleEmbedding, crossing_apply]
+
+end ReidemeisterThree
+
+open ReidemeisterThree
 
 /-- The local half-edge permutation transporting the boundary ports and triangular arcs
 from `σ₁ σ₂ σ₁` to `σ₂ σ₁ σ₂`, fixing half-edges at every other crossing. -/
@@ -133,14 +142,30 @@ private theorem reidemeisterThreePerm_crossingTurn (D : PDCode n) (c : Fin 3 ↪
     simp only [crossing_apply]
     simpa only [crossing_apply] using (D.crossingTurn_crossing _ _).symm
 
-/-- The three crossings form the triangular tangle of `σ₁ σ₂ σ₁`, with a consistent
-height order on its three strands. Crossing slots are northwest, southwest, southeast,
-northeast. No condition is imposed on the surrounding arcs. -/
-def HasReidemeisterThreeTriangle (D : PDCode n) (c : Fin 3 ↪ Fin n) : Prop :=
+/-- The three internal arcs of the triangular tangle `σ₁ σ₂ σ₁`. Crossing slots are
+northwest, southwest, southeast, northeast. This condition is independent of strand heights;
+no condition is imposed on the surrounding arcs. -/
+def HasReidemeisterThreeTriangleArcs (D : PDCode n) (c : Fin 3 ↪ Fin n) : Prop :=
   D.edgePair.val (D.crossing (c 0) 2) = D.crossing (c 1) 0 ∧
   D.edgePair.val (D.crossing (c 1) 1) = D.crossing (c 2) 3 ∧
-  D.edgePair.val (D.crossing (c 0) 1) = D.crossing (c 2) 0 ∧
+  D.edgePair.val (D.crossing (c 0) 1) = D.crossing (c 2) 0
+
+/-- The triangle arc condition specifies exactly its three internal arcs. -/
+theorem hasReidemeisterThreeTriangleArcs_iff (D : PDCode n) (c : Fin 3 ↪ Fin n) :
+    D.HasReidemeisterThreeTriangleArcs c ↔
+      D.edgePair.val (D.crossing (c 0) 2) = D.crossing (c 1) 0 ∧
+      D.edgePair.val (D.crossing (c 1) 1) = D.crossing (c 2) 3 ∧
+      D.edgePair.val (D.crossing (c 0) 1) = D.crossing (c 2) 0 := Iff.rfl
+
+/-- The three crossings form the triangular tangle of `σ₁ σ₂ σ₁`, with a consistent
+height order on its three strands. No condition is imposed on the surrounding arcs. -/
+def HasReidemeisterThreeTriangle (D : PDCode n) (c : Fin 3 ↪ Fin n) : Prop :=
+  D.HasReidemeisterThreeTriangleArcs c ∧
   (D.overPair (c 0) = D.overPair (c 2) → D.overPair (c 1) = D.overPair (c 0))
+
+/-- A Reidemeister triangle has the prescribed internal arcs, independently of its heights. -/
+theorem HasReidemeisterThreeTriangle.arcs {D : PDCode n} {c : Fin 3 ↪ Fin n}
+    (h : D.HasReidemeisterThreeTriangle c) : D.HasReidemeisterThreeTriangleArcs c := h.1
 
 /-- A triangle consists of the three internal arcs and an acyclic strand height order. -/
 theorem hasReidemeisterThreeTriangle_iff (D : PDCode n) (c : Fin 3 ↪ Fin n) :
@@ -148,63 +173,64 @@ theorem hasReidemeisterThreeTriangle_iff (D : PDCode n) (c : Fin 3 ↪ Fin n) :
       D.edgePair.val (D.crossing (c 0) 2) = D.crossing (c 1) 0 ∧
       D.edgePair.val (D.crossing (c 1) 1) = D.crossing (c 2) 3 ∧
       D.edgePair.val (D.crossing (c 0) 1) = D.crossing (c 2) 0 ∧
-      (D.overPair (c 0) = D.overPair (c 2) → D.overPair (c 1) = D.overPair (c 0)) := Iff.rfl
+      (D.overPair (c 0) = D.overPair (c 2) → D.overPair (c 1) = D.overPair (c 0)) := by
+  simp only [HasReidemeisterThreeTriangle, HasReidemeisterThreeTriangleArcs, and_assoc]
 
-/-- The third Reidemeister move in braid form, performed at three distinct crossings.
-The hypothesis specifies the triangular arcs and a consistent strand height order. -/
-def reidemeisterThree (D : PDCode n) (c : Fin 3 ↪ Fin n)
-    (_h : D.HasReidemeisterThreeTriangle c) : PDCode n where
+/-- The third Reidemeister rewire in braid form at three distinct crossings.
+The rewire is defined for every PD-code. It is a Reidemeister move when the selected crossings
+satisfy `HasReidemeisterThreeTriangle`. -/
+def reidemeisterThree (D : PDCode n) (c : Fin 3 ↪ Fin n) : PDCode n where
   halfEdge := D.halfEdge
   edgePair := PerfectMatching.congr (reidemeisterThreePerm D c) D.edgePair
   crossinglessComponentCount := D.crossinglessComponentCount
   overPair := D.overPair ∘ Equiv.swap (c 0) (c 2)
 
-variable (D : PDCode n) (c : Fin 3 ↪ Fin n) (h : D.HasReidemeisterThreeTriangle c)
+variable (D : PDCode n) (c : Fin 3 ↪ Fin n)
 
 /-- The move keeps the names of its half-edges. -/
-@[simp] theorem halfEdge_reidemeisterThree :
-    (D.reidemeisterThree c h).halfEdge = D.halfEdge := (rfl)
+@[simp] theorem reidemeisterThree_halfEdge :
+    (D.reidemeisterThree c).halfEdge = D.halfEdge := (rfl)
 
 /-- The move keeps the slots at each named crossing. -/
-theorem crossing_reidemeisterThree (i : Fin n) (s : Fin 4) :
-    (D.reidemeisterThree c h).crossing i s = D.crossing i s := by
+theorem reidemeisterThree_crossing (i : Fin n) (s : Fin 4) :
+    (D.reidemeisterThree c).crossing i s = D.crossing i s := by
   simp [crossing_apply, reidemeisterThree]
 
 /-- The first and third crossing exchange their over-pair indicators; all other crossing
 indicators stay at their old names. -/
-@[simp] theorem overPair_reidemeisterThree (i : Fin n) :
-    (D.reidemeisterThree c h).overPair i = D.overPair (Equiv.swap (c 0) (c 2) i) := by
+@[simp] theorem reidemeisterThree_overPair (i : Fin n) :
+    (D.reidemeisterThree c).overPair i = D.overPair (Equiv.swap (c 0) (c 2) i) := by
   simp [reidemeisterThree]
 
 /-- The move keeps crossing-free circles. -/
-@[simp] theorem crossinglessComponentCount_reidemeisterThree :
-    (D.reidemeisterThree c h).crossinglessComponentCount = D.crossinglessComponentCount := by
+@[simp] theorem reidemeisterThree_crossinglessComponentCount :
+    (D.reidemeisterThree c).crossinglessComponentCount = D.crossinglessComponentCount := by
   simp [reidemeisterThree]
 
 /-- The arc matching after the move is the transport of the original matching by the local
 half-edge permutation. -/
-theorem edgePair_reidemeisterThree :
-    (D.reidemeisterThree c h).edgePair.val =
+theorem reidemeisterThree_edgePair :
+    (D.reidemeisterThree c).edgePair.val =
       (reidemeisterThreePerm D c).permCongr D.edgePair.val := by
   simp [reidemeisterThree, PerfectMatching.congr_val]
 
 /-- Transport an arc across the replacement of the local twelve half-edges. -/
-theorem edgePair_reidemeisterThree_transport (x : Fin (4 * n)) :
-    (D.reidemeisterThree c h).edgePair.val (reidemeisterThreePerm D c x) =
+theorem reidemeisterThree_edgePair_transport (x : Fin (4 * n)) :
+    (D.reidemeisterThree c).edgePair.val (reidemeisterThreePerm D c x) =
       reidemeisterThreePerm D c (D.edgePair.val x) := by
-  simp [edgePair_reidemeisterThree]
+  simp [reidemeisterThree_edgePair]
 
 /-- The replacement has the three internal arcs of `σ₂ σ₁ σ₂`. -/
-theorem reidemeisterThree_triangle :
-    (D.reidemeisterThree c h).edgePair.val (D.crossing (c 0) 1) = D.crossing (c 1) 3 ∧
-    (D.reidemeisterThree c h).edgePair.val (D.crossing (c 1) 2) = D.crossing (c 2) 0 ∧
-    (D.reidemeisterThree c h).edgePair.val (D.crossing (c 0) 2) = D.crossing (c 2) 3 := by
-  have h₁ := edgePair_reidemeisterThree_transport D c h (D.crossing (c 1) 1)
-  have h₂ := edgePair_reidemeisterThree_transport D c h (D.crossing (c 0) 2)
-  have h₃ := edgePair_reidemeisterThree_transport D c h (D.crossing (c 0) 1)
+theorem reidemeisterThree_triangle (h : D.HasReidemeisterThreeTriangleArcs c) :
+    (D.reidemeisterThree c).edgePair.val (D.crossing (c 0) 1) = D.crossing (c 1) 3 ∧
+    (D.reidemeisterThree c).edgePair.val (D.crossing (c 1) 2) = D.crossing (c 2) 0 ∧
+    (D.reidemeisterThree c).edgePair.val (D.crossing (c 0) 2) = D.crossing (c 2) 3 := by
+  have h₁ := reidemeisterThree_edgePair_transport D c (D.crossing (c 1) 1)
+  have h₂ := reidemeisterThree_edgePair_transport D c (D.crossing (c 0) 2)
+  have h₃ := reidemeisterThree_edgePair_transport D c (D.crossing (c 0) 1)
   rw [h.2.1] at h₁
   rw [h.1] at h₂
-  rw [h.2.2.1] at h₃
+  rw [h.2.2] at h₃
   have hp₁ : reidemeisterThreeSlots (1, 1) = (0, 1) := by
     simp only [reidemeisterThreeSlots.eq_def]; decide
   have hp₂ : reidemeisterThreeSlots (2, 3) = (1, 3) := by
@@ -227,20 +253,20 @@ theorem reidemeisterThree_triangle :
 
 /-- Component traversal is conjugated by the local rewire. -/
 theorem componentPerm_reidemeisterThree :
-    (D.reidemeisterThree c h).componentPerm =
+    (D.reidemeisterThree c).componentPerm =
       (reidemeisterThreePerm D c).permCongr D.componentPerm := by
   rw [componentPerm_def, componentPerm_def, Equiv.permCongr_mul,
-    reidemeisterThreePerm_crossingTurn, edgePair_reidemeisterThree]
+    reidemeisterThreePerm_crossingTurn, reidemeisterThree_edgePair]
   simp only [crossingTurn_def, reidemeisterThree]
 
 /-- The third Reidemeister move preserves crossing-bearing link components. -/
 @[simp] theorem crossingComponentCount_reidemeisterThree :
-    (D.reidemeisterThree c h).crossingComponentCount = D.crossingComponentCount := by
+    (D.reidemeisterThree c).crossingComponentCount = D.crossingComponentCount := by
   simp [crossingComponentCount_def, componentPerm_reidemeisterThree]
 
 /-- The third Reidemeister move preserves the total number of link components. -/
 @[simp] theorem componentCount_reidemeisterThree :
-    (D.reidemeisterThree c h).componentCount = D.componentCount := by
+    (D.reidemeisterThree c).componentCount = D.componentCount := by
   simp [componentCount_eq]
 
 
@@ -257,8 +283,8 @@ theorem hasReidemeisterThreeTriangle_mirror_iff :
 
 /-- Mirroring commutes with the third Reidemeister move. -/
 theorem reidemeisterThree_mirror :
-    D.mirror.reidemeisterThree c ((hasReidemeisterThreeTriangle_mirror_iff D c).mpr h) =
-      (D.reidemeisterThree c h).mirror := by
+    D.mirror.reidemeisterThree c =
+      (D.reidemeisterThree c).mirror := by
   apply PDCode.ext
   · simp
   · simp [reidemeisterThree]
