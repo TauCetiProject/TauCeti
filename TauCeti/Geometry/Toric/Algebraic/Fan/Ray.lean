@@ -174,7 +174,7 @@ def subfanRayEmbedding : (Phi.subfan S hS hface).Ray ↪ Phi.Ray where
 
 /-- The ray embedding of a subfan leaves the underlying cone unchanged. -/
 @[simp]
-theorem subfanRayEmbedding_toCone (rho : (Phi.subfan S hS hface).Ray) :
+theorem toCone_subfanRayEmbedding (rho : (Phi.subfan S hS hface).Ray) :
     (Phi.subfanRayEmbedding S hS hface rho).toCone.1 = rho.toCone.1 :=
   (rfl)
 
@@ -186,7 +186,7 @@ theorem range_subfanRayEmbedding :
   simp only [Set.mem_ofPred_eq]
   constructor
   · rintro ⟨tau, rfl⟩
-    simpa only [subfan_cones, subfanRayEmbedding_toCone] using tau.toCone.2
+    simpa only [subfan_cones, toCone_subfanRayEmbedding] using tau.toCone.2
   · intro h
     exact ⟨⟨⟨rho.toCone.1, by simpa only [subfan_cones] using h⟩, rho.2⟩,
       Subtype.ext (Subtype.ext rfl)⟩
@@ -205,17 +205,11 @@ variable {N N' N'' V V' V'' : Type*} [AddCommGroup N] [AddCommGroup N'] [AddComm
 /-- A fan equivalence identifies the rays of the two fans by transporting their cones. -/
 def rayEquiv (e : FanEquiv Phi Psi) : Phi.Ray ≃ Psi.Ray :=
   e.coneEquiv.toEquiv.subtypeEquiv fun sigma ↦ by
-    have h := congrArg (fun C : PointedCone ℝ V' ↦
-      Module.finrank ℝ (Submodule.span ℝ (C : Set V'))) (e.coneEquiv_apply_coe sigma)
-    have hm : Module.finrank ℝ
-        (Submodule.span ℝ (sigma.1.map (e.realEquiv : V →ₗ[ℝ] V') : Set V')) =
-        Module.finrank ℝ (Submodule.span ℝ (sigma.1 : Set V)) := by
-      rw [PointedCone.coe_map, Submodule.span_image, e.realEquiv.finrank_map_eq]
-    exact (h.trans hm).symm ▸ Iff.rfl
+    simp only [OrderIso.coe_toEquiv, e.finrank_span_coneEquiv]
 
 /-- The ray equivalence transports the underlying cone by the cone equivalence. -/
 @[simp]
-theorem rayEquiv_toCone (e : FanEquiv Phi Psi) (rho : Phi.Ray) :
+theorem toCone_rayEquiv (e : FanEquiv Phi Psi) (rho : Phi.Ray) :
     (e.rayEquiv rho).toCone = e.coneEquiv rho.toCone :=
   (rfl)
 
@@ -227,7 +221,7 @@ theorem rayEquiv_symm (e : FanEquiv Phi Psi) : e.rayEquiv.symm = e.symm.rayEquiv
   apply e.rayEquiv.injective
   rw [Equiv.apply_symm_apply]
   apply Subtype.ext
-  simp only [rayEquiv_toCone, ← coneEquiv_symm, OrderIso.apply_symm_apply]
+  simp only [toCone_rayEquiv, ← coneEquiv_symm, OrderIso.apply_symm_apply]
 
 /-- The identity fan equivalence induces the identity on rays. -/
 @[simp]
@@ -235,7 +229,7 @@ theorem rayEquiv_refl (Phi : Fan i) : (FanEquiv.refl Phi).rayEquiv = Equiv.refl 
   apply Equiv.ext
   intro rho
   apply Subtype.ext
-  simp only [rayEquiv_toCone, coneEquiv_refl, OrderIso.refl_apply, Equiv.refl_apply]
+  simp only [toCone_rayEquiv, coneEquiv_refl, OrderIso.refl_apply, Equiv.refl_apply]
 
 /-- Ray transport respects composition of fan equivalences. -/
 @[simp]
@@ -244,6 +238,6 @@ theorem rayEquiv_trans (e : FanEquiv Phi Psi) (e' : FanEquiv Psi Omega) :
   apply Equiv.ext
   intro rho
   apply Subtype.ext
-  simp only [Equiv.trans_apply, rayEquiv_toCone, coneEquiv_trans, OrderIso.trans_apply]
+  simp only [Equiv.trans_apply, toCone_rayEquiv, coneEquiv_trans, OrderIso.trans_apply]
 
 end TauCeti.Toric.FanEquiv

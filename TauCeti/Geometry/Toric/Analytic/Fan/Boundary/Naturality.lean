@@ -39,6 +39,20 @@ variable {N N' V V' : Type u} [AddCommGroup N] [AddCommGroup N']
   [AddCommGroup V] [AddCommGroup V'] [Module ℝ V] [Module ℝ V']
   {i : N →+ V} {i' : N' →+ V'} {Phi : Fan i} {Psi : Fan i'}
 
+namespace FanHom
+
+/-- On a source orbit, membership of its image in a target boundary component is exactly
+containment of the target ray in the least target cone. -/
+theorem analyticMap_mem_analyticBoundaryComponent_iff (f : FanHom Phi Psi)
+    (hPhi : Phi.IsRegular) (hPsi : Psi.IsRegular) {rho : Psi.Ray} {sigma : Phi.cones}
+    {x : Phi.analyticRealization hPhi} (hx : x ∈ Phi.analyticConeOrbit hPhi sigma) :
+    f.analyticMap hPhi hPsi x ∈ Psi.analyticBoundaryComponent hPsi rho ↔
+      rho.toCone.1 ≤ f.leastCone sigma.2 :=
+  (Psi.mem_analyticBoundaryComponent_iff hPsi
+    (f.mapsTo_analyticConeOrbit hPhi hPsi sigma hx)).trans Subtype.coe_le_coe.symm
+
+end FanHom
+
 namespace FanEquiv
 
 variable (e : FanEquiv Phi Psi) (hPhi : Phi.IsRegular) (hPsi : Psi.IsRegular)
@@ -51,12 +65,9 @@ theorem analyticMap_mem_analyticBoundaryComponent_iff (rho : Phi.Ray)
     e.toFanHom.analyticMap hPhi hPsi x ∈ Psi.analyticBoundaryComponent hPsi (e.rayEquiv rho) ↔
       x ∈ Phi.analyticBoundaryComponent hPhi rho := by
   obtain ⟨sigma, hx⟩ := Phi.exists_mem_analyticConeOrbit hPhi x
-  have hm := e.toFanHom.mapsTo_analyticConeOrbit hPhi hPsi sigma hx
-  have hc : (⟨e.toFanHom.leastCone sigma.2, e.toFanHom.leastCone_mem sigma.2⟩ : Psi.cones) =
-      e.coneEquiv sigma := Subtype.ext (e.toFanHom_leastCone sigma)
-  rw [hc] at hm
-  rw [Psi.mem_analyticBoundaryComponent_iff hPsi hm,
-    Phi.mem_analyticBoundaryComponent_iff hPhi hx, rayEquiv_toCone]
+  rw [e.toFanHom.analyticMap_mem_analyticBoundaryComponent_iff hPhi hPsi hx,
+    e.toFanHom_leastCone, Phi.mem_analyticBoundaryComponent_iff hPhi hx,
+    toCone_rayEquiv, Subtype.coe_le_coe]
   exact e.coneEquiv.le_iff_le
 
 /-- Pullback along a fan isomorphism gives the component indexed by the original ray. -/
@@ -93,14 +104,12 @@ theorem subfanAnalyticMap_mem_analyticBoundaryComponent_iff (rho : Phi.Ray)
     (hx : x ∈ (Phi.subfan S hS hface).analyticConeOrbit (hPhi.subfan S hS hface) sigma) :
     Phi.subfanAnalyticMap hPhi S hS hface x ∈ Phi.analyticBoundaryComponent hPhi rho ↔
       rho.toCone.1 ≤ sigma.1 := by
-  have hm := (Phi.subfanInclusion S hS hface).mapsTo_analyticConeOrbit
-    (hPhi.subfan S hS hface) hPhi sigma hx
-  rw [FanHom.analyticMap_subfanInclusion] at hm
-  rw [Phi.mem_analyticBoundaryComponent_iff hPhi hm, ← Subtype.coe_le_coe]
-  simp only [subfanInclusion_leastCone]
+  simpa only [FanHom.analyticMap_subfanInclusion, subfanInclusion_leastCone] using
+    (Phi.subfanInclusion S hS hface).analyticMap_mem_analyticBoundaryComponent_iff
+      (hPhi.subfan S hS hface) hPhi hx
 
 /-- The pullback of a retained boundary component is the corresponding component of the open
-subfan. No nonemptiness hypothesis on the subfan is needed. -/
+subfan. -/
 @[simp]
 theorem preimage_subfanAnalyticMap_analyticBoundaryComponent
     (rho : (Phi.subfan S hS hface).Ray) :
@@ -112,12 +121,11 @@ theorem preimage_subfanAnalyticMap_analyticBoundaryComponent
     (hPhi.subfan S hS hface) x
   rw [mem_preimage, Phi.subfanAnalyticMap_mem_analyticBoundaryComponent_iff hPhi S hS hface _ hx,
     (Phi.subfan S hS hface).mem_analyticBoundaryComponent_iff (hPhi.subfan S hS hface) hx,
-    ← Subtype.coe_le_coe, subfanRayEmbedding_toCone]
+    ← Subtype.coe_le_coe, toCone_subfanRayEmbedding]
 
-/-- A boundary component whose ray is omitted from an open subfan has empty preimage. Face
-closure rules out an orbit of the subfan whose cone contains that ray. -/
+/-- A boundary component whose ray is omitted from an open subfan has empty preimage. -/
 @[simp]
-theorem preimage_subfanAnalyticMap_analyticBoundaryComponent_of_not_mem
+theorem preimage_subfanAnalyticMap_analyticBoundaryComponent_of_notMem
     (rho : Phi.Ray) (hrho : rho.toCone.1 ∉ S) :
     Phi.subfanAnalyticMap hPhi S hS hface ⁻¹' Phi.analyticBoundaryComponent hPhi rho = ∅ := by
   apply eq_empty_iff_forall_notMem.mpr
@@ -131,7 +139,7 @@ theorem preimage_subfanAnalyticMap_analyticBoundaryComponent_of_not_mem
 
 /-- A component of an open subfan maps precisely onto the trace of the ambient component on
 the open image of the subfan realization. -/
-theorem image_subfanAnalyticMap_analyticBoundaryComponent
+theorem image_subfanAnalyticMap_analyticBoundaryComponent_eq_inter_range
     (rho : (Phi.subfan S hS hface).Ray) :
     Phi.subfanAnalyticMap hPhi S hS hface ''
         (Phi.subfan S hS hface).analyticBoundaryComponent (hPhi.subfan S hS hface) rho =
