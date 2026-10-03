@@ -185,7 +185,7 @@ open scoped Classical in
 /-- The two full pentagon chain-map coefficient sums agree exactly when their complements
 after removing the common-initial-side sources and their recut partners agree. -/
 theorem sum_rectanglePentagonWeight_eq_sum_pentagonRectangleWeight_iff_sdiff_initialOverlap
-    (R : Type*) [CommRing R] (x z : GridState n) :
+    (R : Type*) [CommSemiring R] [IsCancelAdd R] (x z : GridState n) :
     (∑ D ∈ G.rectanglePentagonDecompositions C x z, G.rectanglePentagonWeight C R D) =
         ∑ E ∈ G.pentagonRectangleDecompositions C x z, G.pentagonRectangleWeight C R E ↔
       (∑ D ∈ G.rectanglePentagonDecompositions C x z \ G.initialOverlapSources C x z,
