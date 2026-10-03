@@ -78,7 +78,7 @@ corestriction on the invariant `σ b` of the fixing subgroup is the product of t
   `σ : L →ₐ[K] Kˢ`, with its coefficient identification `TauCeti.kummerCoeffMap`.
 * `TauCeti.kummerCor`: corestriction `H¹(G_L, μₙ) → H¹(G_K, μₙ)` along a `K`-embedding of a
   finite extension, with its coefficient identifications `TauCeti.kummerCoeffMapSymm` and
-  `TauCeti.unitsCoeffMapSymm`.
+  `TauCeti.unitsCoeffMapSymm`; `TauCeti.unitsCoeffMap` is the inverse of the latter.
 
 ## Main results
 
@@ -694,6 +694,45 @@ theorem unitsCoeffMapSymm_smul (h : ↥σ.fieldRange.fixingSubgroup) (y : UnitsC
   rw [Subgroup.smul_def (α := UnitsCoeff K), toMul_unitsCoeffMapSymm, Additive.toMul_smul,
     Additive.toMul_smul, toMul_unitsCoeffMapSymm]
   exact Units.ext (by simp [absoluteGaloisGroupEquivFixingSubgroup_symm_apply])
+
+/-- **The units of `Kˢ` as units of `Lˢ`**, along the inverse of the identification of separable
+closures: the inverse of `TauCeti.unitsCoeffMapSymm` (`unitsCoeffMapSymm_unitsCoeffMap`), and the
+coefficient leg of restriction with unit coefficients, as `TauCeti.kummerCoeffMap` is for the
+roots of unity. -/
+def unitsCoeffMap : UnitsCoeff K →+ UnitsCoeff L :=
+  MonoidHom.toAdditive (Units.map (separableClosureRingEquiv K L σ).symm.toMonoidHom)
+
+/-- `unitsCoeffMap` applies the inverse identification of separable closures to a unit. -/
+@[simp]
+theorem toMul_unitsCoeffMap (x : UnitsCoeff K) :
+    (unitsCoeffMap K L σ x).toMul =
+      Units.map (separableClosureRingEquiv K L σ).symm.toMonoidHom x.toMul :=
+  (rfl)
+
+/-- **`unitsCoeffMap` is equivariant** along `G_L ≃ₜ* Gal(Kˢ/σ(L))`: an automorphism `g` of `Lˢ`
+over `L` acts on `(Kˢ)ˣ` through its image in the subgroup of `G_K` fixing `σ(L)`. -/
+@[simp↓]
+theorem unitsCoeffMap_smul (g : AbsoluteGaloisGroup L) (x : UnitsCoeff K) :
+    unitsCoeffMap K L σ
+        ((absoluteGaloisGroupEquivFixingSubgroup K L σ :
+          AbsoluteGaloisGroup L →ₜ* ↥σ.fieldRange.fixingSubgroup) g • x) =
+      g • unitsCoeffMap K L σ x := by
+  refine Additive.toMul.injective ?_
+  rw [Subgroup.smul_def (α := UnitsCoeff K), toMul_unitsCoeffMap, Additive.toMul_smul,
+    Additive.toMul_smul, toMul_unitsCoeffMap]
+  exact Units.ext (by simp [absoluteGaloisGroupEquivFixingSubgroup_apply])
+
+/-- The two coefficient identifications of the units are inverse to each other. -/
+@[simp]
+theorem unitsCoeffMapSymm_unitsCoeffMap (x : UnitsCoeff K) :
+    unitsCoeffMapSymm K L σ (unitsCoeffMap K L σ x) = x :=
+  Additive.toMul.injective <| Units.ext <| by simp
+
+/-- The two coefficient identifications of the units are inverse to each other. -/
+@[simp]
+theorem unitsCoeffMap_unitsCoeffMapSymm (y : UnitsCoeff L) :
+    unitsCoeffMap K L σ (unitsCoeffMapSymm K L σ y) = y :=
+  Additive.toMul.injective <| Units.ext <| by simp
 
 /-- The coefficient maps commute with the inclusion `μₙ ↪ (Kˢ)ˣ` of the Kummer sequence. -/
 @[simp]
