@@ -76,21 +76,22 @@ theorem galoisRes_eq_zero_iff (hL : Module.finrank K L = 2)
     (x : continuousCohomology 2 (trivialF2 (AbsoluteGaloisGroup K))) :
     galoisRes K L σ 2 x = 0 ↔
       ∃ y : continuousCohomology 1 (trivialF2 (AbsoluteGaloisGroup K)),
-        (trivialF2TopPairing (AbsoluteGaloisGroup K)).cup 1 1
-          (galoisCharacter K L σ hL) y = x := by
+        x = (trivialF2TopPairing (AbsoluteGaloisGroup K)).cup 1 1
+          (galoisCharacter K L σ hL) y := by
   let U := galoisSubgroup K L σ
   let hU : U.toSubgroup.index = 2 := (galoisSubgroup_index K L σ).trans hL
   let _ : U.toSubgroup.FiniteIndex := ⟨by omega⟩
-  have hexact := indexTwo_exact_cup_res2 U hU
+  have hexact := U.exact_cup_res2_of_index_two hU
   rw [galoisCharacter_def]
   constructor
   · intro hx
     have hx' : trivialF2ResMap (AbsoluteGaloisGroup K) U.toSubgroup 2 x = 0 := by
       apply (ConcreteCategory.bijective_of_isIso (galoisF2Iso K L σ 2).hom).injective
       simpa only [galoisRes_def, ConcreteCategory.comp_apply, map_zero] using hx
-    exact (hexact x).1 hx'
+    obtain ⟨y, hy⟩ := (hexact x).1 hx'
+    exact ⟨y, hy.symm⟩
   · rintro ⟨y, hy⟩
-    have hx' := (hexact x).2 ⟨y, hy⟩
+    have hx' := (hexact x).2 ⟨y, hy.symm⟩
     have hx'' : trivialF2ResMap (AbsoluteGaloisGroup K)
         (galoisSubgroup K L σ).toSubgroup 2 x = 0 := by
       simpa only [U] using hx'
