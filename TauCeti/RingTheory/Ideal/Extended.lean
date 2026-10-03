@@ -34,6 +34,9 @@ from `R`, so the Krull intersection theorem applies to its powers.
 
 ## Main results
 
+* `Ideal.mul_mem_smul_top_left`, `Ideal.mul_mem_smul_top_right` and `Ideal.mul_mem_mul_smul_top`:
+  the `R`-submodule `I • (⊤ : Submodule R A)` is stable under multiplication by `A` on either side,
+  and a product of elements of `I • ⊤` and `J • ⊤` lies in `(I * J) • ⊤`.
 * `Ideal.smul_top_eq_restrictScalars_map`: **the extended ideal is `I • ⊤`**, the identity
   `I • (⊤ : Submodule R A) = Submodule.restrictScalars R (I.map (algebraMap R A))`.
 * `Ideal.instIsTwoSidedMapAlgebraMap`: the extended ideal is two-sided.
@@ -71,7 +74,7 @@ variable {R A : Type*} [CommSemiring R] [Semiring A] [Algebra R A] (I J : Ideal 
 
 /-- The `R`-submodule `I • ⊤` of `A` is stable under left multiplication by `A`: the scalars come
 from the centre, so they move across a product. -/
-private theorem mul_mem_smul_top (a : A) {x : A} (hx : x ∈ I • (⊤ : Submodule R A)) :
+theorem mul_mem_smul_top_left (a : A) {x : A} (hx : x ∈ I • (⊤ : Submodule R A)) :
     a * x ∈ I • (⊤ : Submodule R A) := by
   refine Submodule.smul_induction_on hx (fun r hr y _ ↦ ?_) fun y z hy hz ↦ ?_
   · have : a * r • y = r • (a * y) := by
@@ -81,12 +84,34 @@ private theorem mul_mem_smul_top (a : A) {x : A} (hx : x ∈ I • (⊤ : Submod
   · rw [mul_add]
     exact Submodule.add_mem _ hy hz
 
+/-- The `R`-submodule `I • ⊤` of `A` is stable under right multiplication by `A`. -/
+theorem mul_mem_smul_top_right (a : A) {x : A} (hx : x ∈ I • (⊤ : Submodule R A)) :
+    x * a ∈ I • (⊤ : Submodule R A) := by
+  refine Submodule.smul_induction_on hx (fun r hr y _ ↦ ?_) fun y z hy hz ↦ ?_
+  · rw [smul_mul_assoc]
+    exact Submodule.smul_mem_smul hr Submodule.mem_top
+  · rw [add_mul]
+    exact Submodule.add_mem _ hy hz
+
+variable {I J} in
+/-- **Products multiply the scalar ideals**: the product of an element of `I • ⊤` and an element
+of `J • ⊤` lies in `(I * J) • ⊤`. In particular the filtration `I ^ n • ⊤` of `A` is
+multiplicative. -/
+theorem mul_mem_mul_smul_top {x y : A} (hx : x ∈ I • (⊤ : Submodule R A))
+    (hy : y ∈ J • (⊤ : Submodule R A)) : x * y ∈ (I * J) • (⊤ : Submodule R A) := by
+  rw [← Ideal.smul_eq_mul, Submodule.smul_assoc]
+  refine Submodule.smul_induction_on hx (fun r hr a _ ↦ ?_) fun a b ha hb ↦ ?_
+  · rw [smul_mul_assoc]
+    exact Submodule.smul_mem_smul hr (mul_mem_smul_top_left J a hy)
+  · rw [add_mul]
+    exact Submodule.add_mem _ ha hb
+
 /-- The `R`-submodule `I • ⊤` of `A`, packaged as a left ideal of `A`. -/
 private def smulTopIdeal : Ideal A where
   carrier := ↑(I • (⊤ : Submodule R A))
   add_mem' := Submodule.add_mem _
   zero_mem' := Submodule.zero_mem _
-  smul_mem' a _ hx := mul_mem_smul_top I a hx
+  smul_mem' a _ hx := mul_mem_smul_top_left I a hx
 
 /-- **The extension of an ideal along `algebraMap R A` is `I • ⊤`.** This is
 `Ideal.smul_top_eq_map` with the commutativity of `A` removed: what replaces it is that the image
@@ -127,12 +152,7 @@ theorem map_algebraMap_mul :
       Ideal.mul_mem_mul (Ideal.mem_map_of_mem (algebraMap R A) hr)
         (Ideal.mem_map_of_mem (algebraMap R A) hs)
   · rw [mem_map_algebraMap_iff] at hx hy ⊢
-    rw [← Ideal.smul_eq_mul, Submodule.smul_assoc]
-    refine Submodule.smul_induction_on hx (fun r hr a _ ↦ ?_) fun a b ha hb ↦ ?_
-    · rw [smul_mul_assoc]
-      exact Submodule.smul_mem_smul hr (mul_mem_smul_top J a hy)
-    · rw [add_mul]
-      exact Submodule.add_mem _ ha hb
+    exact mul_mem_mul_smul_top hx hy
 
 /-- **Extension along `algebraMap R A` commutes with powers.** -/
 theorem map_algebraMap_pow (n : ℕ) :

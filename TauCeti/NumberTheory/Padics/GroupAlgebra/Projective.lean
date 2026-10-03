@@ -13,8 +13,10 @@ import Mathlib.LinearAlgebra.Matrix.ToLin
 import Mathlib.RepresentationTheory.Maschke
 import Mathlib.NumberTheory.Padics.RingHoms
 import TauCeti.Algebra.MonoidAlgebra.Basic
+import TauCeti.Algebra.Module.LinearMap.Finite
 import TauCeti.Algebra.Module.Projective.Lift
 import TauCeti.Algebra.Module.Projective.Reduction
+import TauCeti.RingTheory.AdicCompletion.Finite
 import TauCeti.RingTheory.Jacobson.MulOpposite
 import TauCeti.RingTheory.Huber.Matrix
 import TauCeti.RingTheory.Huber.Padic.Basic
@@ -219,6 +221,10 @@ theorem exists_projective_reduction_linearEquiv (N : Type v) [AddCommGroup N] [M
   have : IsAdicComplete (Ideal.span {(p : ℤ_[p])}) ℤ_[p] := by
     rw [← PadicInt.maximalIdeal_eq_span_p]
     infer_instance
+  have : Module.Finite ℤ_[p] (Module.End (MonoidAlgebra ℤ_[p] G) N) :=
+    .linearMap_of_isNoetherianRing
+  have : IsAdicComplete (Ideal.span {(p : ℤ_[p])}) (Module.End (MonoidAlgebra ℤ_[p] G) N) :=
+    .of_finite _ _
   -- Write `p` in `ℤ_p[G]` as the image of `p` in `ℤ_p`, and apply the general lifting theorem.
   revert i q hqi
   rw [← map_natCast (algebraMap ℤ_[p] (MonoidAlgebra ℤ_[p] G)) p]

@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.AdicCompletion.Basic
 public import Mathlib.RingTheory.Idempotents
 import Mathlib.Tactic.NoncommRing
+import TauCeti.RingTheory.Ideal.Extended
 
 /-!
 # Lifting idempotents in adically complete algebras
@@ -48,22 +49,6 @@ public section
 namespace TauCeti
 
 variable {R S : Type*} [CommRing R] [Ring S] [Algebra R S] (I : Ideal R)
-
-/-- The submodule `J • S` of an `R`-algebra `S`, for an ideal `J` of `R`, is a two-sided ideal:
-it is closed under multiplication by elements of `S` on either side, these being `R`-linear. -/
-private theorem mul_mem_smul_top_of_mem {J : Ideal R} {a : S} (ha : a ∈ J • (⊤ : Submodule R S))
-    (y z : S) : y * a * z ∈ J • (⊤ : Submodule R S) := by
-  simpa [mul_assoc] using
-    Submodule.smul_top_le_comap_smul_top J (LinearMap.mulLeft R y ∘ₗ LinearMap.mulRight R z) ha
-
-/-- Products in `S` multiply the exponents of the filtration `I ^ m • S`. -/
-private theorem mul_mem_pow_smul_top {m n : ℕ} {a b : S} (ha : a ∈ I ^ m • (⊤ : Submodule R S))
-    (hb : b ∈ I ^ n • (⊤ : Submodule R S)) : a * b ∈ I ^ (m + n) • (⊤ : Submodule R S) := by
-  refine Submodule.smul_induction_on ha (fun r hr s _ ↦ ?_) fun a a' ha ha' ↦ ?_
-  · rw [smul_mul_assoc, pow_add, Submodule.mul_smul]
-    simpa using Submodule.smul_mem_smul hr (by simpa using mul_mem_smul_top_of_mem hb s 1)
-  · rw [add_mul]
-    exact add_mem ha ha'
 
 /-- One step of Newton's iteration for `X ^ 2 - X`. -/
 private def newtonIdempotent (x : S) : S :=
@@ -106,12 +91,13 @@ theorem IsAdicComplete.exists_isIdempotentElem_eq [IsAdicComplete I S] {T : Type
     | zero => rw [zero_add, pow_one, ← hf, map_sub, map_mul, hfx 0, he'.eq, sub_self]
     | succ n ih =>
       rw [hx_succ, newtonIdempotent_mul_self_sub]
-      have := mul_mem_pow_smul_top I ih
-        (by simpa using mul_mem_smul_top_of_mem ih 1 (4 * (x n * x n - x n) - 3))
+      have := Ideal.mul_mem_mul_smul_top ih
+        (Ideal.mul_mem_smul_top_right _ (4 * (x n * x n - x n) - 3) ih)
+      rw [← pow_add] at this
       exact Submodule.smul_mono_left (Ideal.pow_le_pow_right (by omega)) this
   have hstep (n : ℕ) : x (n + 1) - x n ∈ I ^ (n + 1) • (⊤ : Submodule R S) := by
     rw [hx_succ, newtonIdempotent_sub]
-    simpa using mul_mem_smul_top_of_mem (hdefect n) 1 (1 - 2 * x n)
+    exact Ideal.mul_mem_smul_top_right _ _ (hdefect n)
   -- The iterates form a Cauchy sequence, whose limit is the required idempotent.
   have hcauchy {m n : ℕ} (hmn : m ≤ n) : x m ≡ x n [SMOD (I ^ m • ⊤ : Submodule R S)] := by
     induction n, hmn using Nat.le_induction with
@@ -129,11 +115,11 @@ theorem IsAdicComplete.exists_isIdempotentElem_eq [IsAdicComplete I S] {T : Type
       rw [← neg_sub, neg_mem_iff]
       exact SModEq.sub_mem.mp (hL n)
     have hsplit : L * L - L - 0 =
-        (x n * x n - x n) + x n * (L - x n) * 1 + 1 * (L - x n) * L - (L - x n) := by
+        (x n * x n - x n) + x n * (L - x n) + (L - x n) * L - (L - x n) := by
       noncomm_ring
     rw [hsplit]
-    refine sub_mem (add_mem (add_mem ?_ (mul_mem_smul_top_of_mem hd _ _))
-      (mul_mem_smul_top_of_mem hd _ _)) hd
+    refine sub_mem (add_mem (add_mem ?_ (Ideal.mul_mem_smul_top_left _ _ hd))
+      (Ideal.mul_mem_smul_top_right _ _ hd)) hd
     exact Submodule.smul_mono_left (Ideal.pow_le_pow_right (by omega)) (hdefect n)
   · have h1 : x 1 - L ∈ I • (⊤ : Submodule R S) := by
       simpa using SModEq.sub_mem.mp (hL 1)

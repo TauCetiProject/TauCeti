@@ -9,11 +9,8 @@ public import Mathlib.Algebra.Algebra.Basic
 public import Mathlib.Algebra.Module.Projective
 public import Mathlib.RingTheory.AdicCompletion.Basic
 public import Mathlib.RingTheory.Ideal.Span
-public import Mathlib.RingTheory.Noetherian.Defs
 public import TauCeti.Algebra.Module.LinearMap.EndQuotient
 import Mathlib.LinearAlgebra.Projection
-import TauCeti.Algebra.Module.LinearMap.Finite
-import TauCeti.RingTheory.AdicCompletion.Finite
 import TauCeti.RingTheory.AdicCompletion.Idempotent
 import TauCeti.RingTheory.Ideal.Operations
 
@@ -32,8 +29,9 @@ reduction of a finitely generated projective `A`-module.
 The summand of `N ⧸ r • N` is cut out by an idempotent endomorphism, which lifts to an idempotent
 endomorphism of `N`. Reduction of endomorphisms is onto because `N` is projective
 (`Ideal.endMapQ_surjective`), and its kernel is `r • End_A(N)`
-(`Ideal.endMapQ_span_algebraMap_eq_zero_iff`). The ring `End_A(N)` is finite over `R`, hence
-`(r)`-adically complete, so `TauCeti.IsAdicComplete.exists_isIdempotentElem_eq` lifts the
+(`Ideal.endMapQ_span_algebraMap_eq_zero_iff`). The results only assume that the ring
+`End_A(N)` is `(r)`-adically complete, which holds in the setting above because `End_A(N)` is
+then finite over `R`; `TauCeti.IsAdicComplete.exists_isIdempotentElem_eq` then lifts the
 idempotent. Over a semiprimary ring the same lifting needs no completeness, the kernel being nil;
 that case is used in `TauCeti/Algebra/Module/ProjectiveCover/Existence.lean`.
 
@@ -58,29 +56,29 @@ public section
 namespace TauCeti
 
 variable {R : Type*} [CommRing R] (r : R) {A : Type*} [Ring A] [Algebra R A]
-  [IsNoetherianRing R] [IsAdicComplete (Ideal.span {r}) R]
-  {N : Type*} [AddCommGroup N] [Module A N] [Module R N] [IsScalarTower R A N] [Module.Finite R N]
-  [Module.Projective A N]
+  {N : Type*} [AddCommGroup N] [Module A N] [Module R N] [IsScalarTower R A N]
+  [Module.Projective A N] [IsAdicComplete (Ideal.span {r}) (Module.End A N)]
 
-/-- **Idempotents lift from the reduction modulo `r`.** For a projective `A`-module `N`, finitely
-generated over the `(r)`-adically complete Noetherian ring `R`, every idempotent endomorphism of
-`N ⧸ r • N` is the reduction of an idempotent endomorphism of `N`. -/
+/-- **Idempotents lift from the reduction modulo `r`.** For a projective `A`-module `N` whose
+endomorphism ring is `(r)`-adically complete, every idempotent endomorphism of `N ⧸ r • N` is the
+reduction of an idempotent endomorphism of `N`.
+
+The completeness hypothesis holds when `R` is Noetherian and `(r)`-adically complete and `N` is
+finitely generated over `R`, by `Module.Finite.linearMap_of_isNoetherianRing` and
+`IsAdicComplete.of_finite`. -/
 theorem exists_isIdempotentElem_endMapQ_eq
     {e : Module.End A (N ⧸ Ideal.span {algebraMap R A r} • (⊤ : Submodule A N))}
     (he : IsIdempotentElem e) :
     ∃ f : Module.End A N, IsIdempotentElem f ∧
       Ideal.endMapQ (Ideal.span {algebraMap R A r}) N f = e := by
-  have : Module.Finite A N := .of_restrictScalars_finite R A N
-  have : Module.Finite R (Module.End A N) := .linearMap_of_isNoetherianRing
-  have : IsAdicComplete (Ideal.span {r}) (Module.End A N) := .of_finite _ _
   refine IsAdicComplete.exists_isIdempotentElem_eq (Ideal.span {r}) _ (fun f ↦ ?_)
     (Ideal.endMapQ_surjective _ N e) he
   rw [Ideal.endMapQ_span_algebraMap_eq_zero_iff, Submodule.ideal_span_singleton_smul,
     Submodule.mem_smul_pointwise_iff_exists]
   simp only [Submodule.mem_top, true_and]
 
-/-- **Direct summands lift from the reduction modulo `r`.** Let `N` be a projective `A`-module,
-finitely generated over the `(r)`-adically complete Noetherian ring `R`, and let `Y` be a direct
+/-- **Direct summands lift from the reduction modulo `r`.** Let `N` be a finitely generated
+projective `A`-module whose endomorphism ring is `(r)`-adically complete, and let `Y` be a direct
 summand of `N ⧸ r • N`, given by maps `i : Y → N ⧸ r • N` and `q : N ⧸ r • N → Y` with
 `q ∘ i = id`. Then `Y ≃ X ⧸ r • X` for a finitely generated projective submodule `X` of `N`,
 namely the range of an idempotent lifting `i ∘ q`.
@@ -88,13 +86,13 @@ namely the range of an idempotent lifting `i ∘ q`.
 In particular, when `A` is finite over `R`, a finitely generated projective module over `A ⧸ r A`,
 which is a direct summand of the reduction of a finitely generated free `A`-module, is the reduction
 of a finitely generated projective `A`-module. -/
-theorem exists_projective_quotient_smul_top_linearEquiv {Y : Type*} [AddCommGroup Y] [Module A Y]
+theorem exists_projective_quotient_smul_top_linearEquiv [Module.Finite A N] {Y : Type*}
+    [AddCommGroup Y] [Module A Y]
     (i : Y →ₗ[A] N ⧸ Ideal.span {algebraMap R A r} • (⊤ : Submodule A N))
     (q : (N ⧸ Ideal.span {algebraMap R A r} • (⊤ : Submodule A N)) →ₗ[A] Y)
     (hqi : q ∘ₗ i = LinearMap.id) :
     ∃ X : Submodule A N, Module.Finite A X ∧ Module.Projective A X ∧
       Nonempty ((X ⧸ Ideal.span {algebraMap R A r} • (⊤ : Submodule A X)) ≃ₗ[A] Y) := by
-  have : Module.Finite A N := .of_restrictScalars_finite R A N
   have hqi' (y : Y) : q (i y) = y := LinearMap.congr_fun hqi y
   obtain ⟨e, he, hee⟩ := exists_isIdempotentElem_endMapQ_eq r (e := i ∘ₗ q)
     (LinearMap.ext fun x ↦ congrArg i (hqi' (q x)))
