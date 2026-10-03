@@ -27,7 +27,6 @@ norm group exactly when `u < v`. At the unramified break `-1` the conductor is z
 
 ## Main results
 
-* `TauCeti.unitFiltration_le_normGroup_iff`: the conductor criterion at a natural upper break.
 * `TauCeti.LocalFieldsRamification.UpperJump.unitFiltration_le_normGroup_iff_of_finrank_prime`:
   the conductor criterion at any prime-degree upper break, including the unramified break `-1`.
 
@@ -129,8 +128,10 @@ theorem relIndex_normUnits_unitFiltration_zero (hℓ : (Module.finrank K L).Prim
     relIndex_normUnits_unitFiltration_of_le_break hℓ (Nat.zero_le t) ht
 
 /-- A unit-filtration step is contained in the field norm group exactly when its depth is
-strictly above the prime-degree upper break. Equivalently, the conductor is `t + 1`. -/
-theorem unitFiltration_le_normGroup_iff (hℓ : (Module.finrank K L).Prime) {t v : ℕ}
+strictly above the prime-degree upper break. Equivalently, the conductor is `t + 1`. This
+natural-break case is the input to
+`LocalFieldsRamification.UpperJump.unitFiltration_le_normGroup_iff_of_finrank_prime`. -/
+private theorem unitFiltration_le_normGroup_iff (hℓ : (Module.finrank K L).Prime) {t v : ℕ}
     (ht : UpperJump K L ⟨t, Nat.cast_mem_ramificationIndexDomain t⟩) :
     unitFiltration K v ≤ normGroup K L ↔ t < v := by
   constructor
