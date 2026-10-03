@@ -152,21 +152,16 @@ section Ext
 
 variable {M : Type*} [Monoid M]
 
-/-- Two functors to the one-object category of a monoid are equal once they agree on every
-morphism. -/
-theorem functor_singleObj_ext {C : Type u} [Category.{v} C] {F F' : C ⥤ SingleObj M}
-    (h : ∀ (a b : C) (f : a ⟶ b), F.map f = F'.map f) : F = F' :=
-  CategoryTheory.Functor.ext (fun _ ↦ rfl) fun a b f ↦ (h a b f).trans (by simp)
-
 /-- In a groupoid, two functors to the one-object category of a monoid are equal once they agree
 on every morphism out of an object `x₀` which admits a morphism to every object. -/
 theorem functor_singleObj_ext_of_map_eq {C : Type u} [CategoryTheory.Groupoid.{v} C] (x₀ : C)
     (hconn : ∀ x : C, Nonempty (x₀ ⟶ x)) {F F' : C ⥤ SingleObj M}
     (h : ∀ (x : C) (f : x₀ ⟶ x), F.map f = F'.map f) : F = F' := by
-  refine functor_singleObj_ext fun a b f ↦ ?_
+  refine CategoryTheory.Functor.ext (fun _ ↦ rfl) fun a b f ↦ ?_
   obtain ⟨e⟩ := hconn a
-  rw [← IsIso.inv_hom_id_assoc e f, F.map_comp, F'.map_comp]
-  simp only [Functor.map_inv, h]
+  exact (show F.map f = F'.map f by
+    rw [← IsIso.inv_hom_id_assoc e f, F.map_comp, F'.map_comp]
+    simp only [Functor.map_inv, h]).trans (by simp)
 
 end Ext
 
