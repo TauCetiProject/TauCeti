@@ -280,15 +280,18 @@ section TwoOne
 variable {l : DominantWeight 2} (h0 : l.1 0 = 2) (h1 : l.1 1 = 1)
 
 include h1 in
-/-- The weight `(2, 1)` of `GL 2` carries the determinant-twist exponent `1`. -/
-theorem detShift_eq_one_of_eq_two_one : l.detShift = 1 := by
+/-- A weight of `GL 2` whose last entry is `1` carries the determinant-twist exponent `1`: the
+exponent of a weight is its last entry. -/
+theorem detShift_eq_one_of_apply_one_eq_one : l.detShift = 1 := by
   rw [DominantWeight.detShift_succ]
   simpa using h1
 
 include h1 in
-/-- The weight `(2, 1)` of `GL 2` is polynomial. -/
-theorem isPolynomial_of_eq_two_one : l.IsPolynomial :=
-  l.isPolynomial_iff_zero_le_detShift.mpr (by rw [detShift_eq_one_of_eq_two_one h1]; norm_num)
+/-- A weight of `GL 2` whose last entry is `1` is polynomial: both its entries are at least that
+entry, hence nonnegative. -/
+theorem isPolynomial_of_apply_one_eq_one : l.IsPolynomial :=
+  l.isPolynomial_iff_zero_le_detShift.mpr
+    (by rw [detShift_eq_one_of_apply_one_eq_one h1]; norm_num)
 
 include h0 h1 in
 /-- **The polynomial part of the weight `(2, 1)` of `GL 2` is a single cell**: subtracting the last
@@ -296,7 +299,7 @@ entry `1` leaves the weight `(1, 0)`.  So the rational Weyl module of `(2, 1)` i
 twist of the standard representation. -/
 theorem card_detShiftShape_eq_one_of_eq_two_one : l.detShiftShape.card = 1 := by
   have hr0 := DominantWeight.rowLen_detShiftShape l 0
-  rw [h0, detShift_eq_one_of_eq_two_one h1] at hr0
+  rw [h0, detShift_eq_one_of_apply_one_eq_one h1] at hr0
   norm_num at hr0
   rw [YoungDiagram.card_eq_sum_range_rowLen _
       (l.colLen_zero_detShiftShape_le_one_of_le_two le_rfl),
@@ -308,11 +311,11 @@ determinant twist `x₀ x₁ · (x₀ + x₁)` of the Schur polynomial of a sing
 the two variables. -/
 theorem diagramSchurPoly_shape_of_eq_two_one (R : Type*) [CommSemiring R] :
     diagramSchurPoly 2 R l.shape = X 0 ^ 2 * X 1 + X 0 * X 1 ^ 2 := by
-  rw [diagramSchurPoly_shape_eq_prod_X_pow_mul (isPolynomial_of_eq_two_one h1),
+  rw [diagramSchurPoly_shape_eq_prod_X_pow_mul (isPolynomial_of_apply_one_eq_one h1),
     diagramSchurPoly_eq_hsymm_of_colLen_le_one
       (l.colLen_zero_detShiftShape_le_one_of_le_two le_rfl),
     card_detShiftShape_eq_one_of_eq_two_one h0 h1, hsymm_one,
-    detShift_eq_one_of_eq_two_one h1]
+    detShift_eq_one_of_apply_one_eq_one h1]
   simp only [Int.toNat_one, pow_one, Fin.prod_univ_two, Fin.sum_univ_two]
   ring
 
@@ -331,7 +334,7 @@ theorem char_rationalWeylRep_diagonal_of_eq_two_one (t : Fin 2 → kˣ) :
     Representation.character (V := ↥(weylModuleOfShape k 2 l.detShiftShape).toSubmodule)
         (rationalWeylRep k 2 l) (diagGL t) =
       (t 0 : k) ^ 2 * (t 1 : k) + (t 0 : k) * (t 1 : k) ^ 2 := by
-  rw [char_rationalWeylRep_diagonal_eq_eval_shape_fin_two k (isPolynomial_of_eq_two_one h1) t,
+  rw [char_rationalWeylRep_diagonal_eq_eval_shape_fin_two k (isPolynomial_of_apply_one_eq_one h1) t,
     diagramSchurPoly_shape_of_eq_two_one h0 h1]
   simp
 
