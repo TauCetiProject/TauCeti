@@ -7,10 +7,8 @@ module
 
 public import TauCeti.Combinatorics.Young.HookLength.Formula
 public import TauCeti.RepresentationTheory.Symmetric.Specht.Ideal.Idempotent
--- Non-public: the comparison of the two Specht-module presentations, the standard basis of the
--- Specht module and the count of standard Young tableaux of an extreme shape are all used inside
--- proofs, never in the type of an exported declaration.
-import TauCeti.Combinatorics.Young.StandardTableau.Reading
+-- Non-public: the comparison of the two Specht-module presentations and the standard basis of the
+-- Specht module are both used inside proofs, never in the type of an exported declaration.
 import TauCeti.RepresentationTheory.Symmetric.Specht.Comparison
 import TauCeti.RepresentationTheory.Symmetric.Specht.StandardBasis
 
@@ -50,8 +48,6 @@ the shape alone, so the normalisation that makes `c_t` a genuine idempotent is
 * `TauCeti.YoungTableau.finrank_spechtIdeal_mul_prod_hookLength` and
   `TauCeti.YoungTableau.finrank_spechtIdeal_eq_factorial_div_prod_hookLength`: the hook-length
   formula for that dimension, in multiplicative and in quotient form.
-* `TauCeti.YoungTableau.finrank_spechtIdeal_eq_one_iff`: the ideal is a line exactly on the
-  shapes with at most one row or at most one column.
 * `TauCeti.YoungTableau.youngSymmetrizer_sq_eq_factorial_div_standardCount`: **essential
   idempotence with the scalar `n! / f^μ`**, and
   `TauCeti.YoungTableau.standardCount_smul_youngSymmetrizer_sq` its division-free form.
@@ -61,14 +57,6 @@ the shape alone, so the normalisation that makes `c_t` a genuine idempotent is
   normalisation it gives, and
   `TauCeti.YoungTableau.youngSymmetrizerOver_sq_eq_prod_hookLength` the same identity in a
   `ℚ`-algebra.
-
-## Implementation notes
-
-The evaluation of the dimension is kept out of
-`TauCeti.RepresentationTheory.Symmetric.Specht.Ideal.Idempotent`, where the scalar is produced,
-because it needs the straightening algorithm behind the standard basis of the Specht module and
-the comparison of the two presentations of `S^μ`, neither of which essential idempotence itself
-uses.
 
 ## References
 
@@ -114,16 +102,6 @@ form. The division is exact, by `YoungDiagram.prod_hookLength_dvd_factorial`. -/
 theorem finrank_spechtIdeal_eq_factorial_div_prod_hookLength (t : YoungTableau μ) :
     finrank ℚ (spechtIdeal t) = μ.card ! / ∏ c ∈ μ.cells, μ.hookLength c := by
   rw [finrank_spechtIdeal, standardCount_eq_factorial_div_prod_hookLength]
-
-/-- **The Young-symmetrizer ideal is a line exactly on the extreme shapes**: the shapes with at
-most one column (`μ.rowLen 0 ≤ 1`) and those with at most one row (`μ.colLen 0 ≤ 1`), and no
-others. The two implications for the shapes themselves are
-`TauCeti.YoungTableau.finrank_spechtIdeal_of_rowSubgroup_eq_top` and
-`TauCeti.YoungTableau.finrank_spechtIdeal_of_colSubgroup_eq_top`, stated through the row and
-column groups of `t`; what is added here is the converse. -/
-theorem finrank_spechtIdeal_eq_one_iff (t : YoungTableau μ) :
-    finrank ℚ (spechtIdeal t) = 1 ↔ μ.rowLen 0 ≤ 1 ∨ μ.colLen 0 ≤ 1 := by
-  rw [finrank_spechtIdeal, standardCount_eq_one_iff]
 
 /-! ### The scalar of essential idempotence -/
 
