@@ -119,7 +119,7 @@ theorem continuous_lipschitzVectorAction_toLinearMap :
     Continuous (fun x : lipschitzGroup Q =>
       (lipschitzVectorAction Q x : Module.End K V)) := by
   let b := Module.finBasis K V
-  rw [Module.End.continuous_iff_apply_basis b]
+  rw [b.continuous_iff_apply]
   intro j
   exact (continuous_lipschitzVectorAction_apply Q (b j)).congr fun _ => rfl
 

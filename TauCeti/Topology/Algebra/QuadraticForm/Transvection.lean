@@ -30,7 +30,7 @@ special orthogonal group.
 
 * M. Eichler, *Quadratische Formen und orthogonale Gruppen*, Springer (1952).
 * `CliffordAlgebra.continuous_lipschitzVectorAction_toLinearMap`, for the finite-basis
-  endomorphism-continuity argument factored through `Module.End.continuous_iff_apply_basis`.
+  endomorphism-continuity argument factored through `Module.Basis.continuous_iff_apply`.
 * `CliffordAlgebra.continuous_spinTransvectionHom`, for the quotient-descent argument.
 -/
 
@@ -57,7 +57,7 @@ private theorem continuous_transvection_toLinearMap {X : Type w} [TopologicalSpa
     Continuous (fun x ↦ (transvection Q (hu x) (huw x) : Module.End K V)) := by
   let _ : IsTopologicalAddGroup V := IsModuleTopology.isTopologicalAddGroup K V
   let b := Module.finBasis K V
-  rw [Module.End.continuous_iff_apply_basis b]
+  rw [b.continuous_iff_apply]
   intro j
   have hpolar : Continuous (Q.polarBilin (b j)) :=
     IsModuleTopology.continuous_of_linearMap (Q.polarBilin (b j))
@@ -105,9 +105,12 @@ theorem continuous_transvectionHom {u : V} (hu : Q u = 0) :
         transvection_mem_specialOrthogonalGroup hu (hw w)⟩ :
           TauCeti.QuadraticMap.specialOrthogonalGroup Q)) := by
     apply Continuous.subtype_mk
-    convert continuous_transvection (fun _ ↦ u)
+    exact (continuous_transvection (fun _ ↦ u)
       (fun w : LinearMap.ker (Q.polarBilin u) ↦ (w : V)) (fun _ ↦ hu) hw
-      continuous_const continuous_subtype_val using 1
+      continuous_const continuous_subtype_val).congr fun _ ↦ by
+        apply LinearEquiv.ext
+        intro x
+        rfl
   convert hraw using 1
   funext w
   apply Additive.toMul.injective
