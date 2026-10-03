@@ -56,6 +56,7 @@ of a permutation lattice `ℤ[X]` modulo a prime is `k[X]` and its rationalizati
   fixed vector.
 * `Representation.character_baseChange`: the character of a base-changed representation is the
   image of the character.
+* `FDRep.character_of_baseChange`: the same for the scalar extension of an object of `FDRep`.
 * `Representation.finrank_intertwiningMap_baseChange`: base change preserves the dimension of an
   intertwiner space.
 * `Representation.Equiv.baseChange`: base change transports an equivalence of representations.
@@ -182,6 +183,16 @@ theorem _root_.Representation.character_baseChange {G : Type*} [Monoid G]
     (_root_.Representation.baseChange L ρ).character g = algebraMap K L (ρ.character g) := by
   simp [_root_.Representation.character, _root_.Representation.baseChange_apply,
     LinearMap.trace_baseChange]
+
+/-- **The character of a scalar extension in `FDRep`** is the character of the original
+representation read in the larger field: `χ_{L ⊗[K] V} = algebraMap K L ∘ χ_V`. -/
+@[simp]
+theorem _root_.FDRep.character_of_baseChange {K L : Type u} [Field K] [Field L] [Algebra K L]
+    {G : Type*} [Monoid G] (V : FDRep K G) :
+    (FDRep.of (_root_.Representation.baseChange L V.ρ)).character =
+      algebraMap K L ∘ V.character := by
+  funext g
+  simp [FDRep.character, _root_.Representation.baseChange_apply, LinearMap.trace_baseChange]
 
 end Character
 

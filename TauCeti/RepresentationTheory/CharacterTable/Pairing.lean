@@ -99,6 +99,14 @@ theorem characterPairing_isSymm :
     characterPairing (k := k) (G := G).IsSymm :=
   ⟨characterPairing_symm⟩
 
+/-- **The character pairing commutes with a change of coefficient field**: pairing the images of
+two class functions under a field homomorphism `σ` gives the image of their pairing. -/
+@[simp]
+theorem characterPairing_map {k' : Type*} [Field k'] (σ : k →+* k')
+    (f₁ f₂ : ClassFunction k G) :
+    characterPairing (map σ f₁) (map σ f₂) = σ (characterPairing f₁ f₂) := by
+  simp [characterPairing_apply]
+
 /-- **The character pairing is invariant under inverting the group element**: the inversion twist
 `TauCeti.ClassFunction.invMap` is an isometry of the pairing. -/
 @[simp]
