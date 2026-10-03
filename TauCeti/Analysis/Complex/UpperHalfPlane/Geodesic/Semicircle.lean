@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.Angle
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.Between
+public import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.FromTo
 public import TauCeti.Analysis.Complex.UpperHalfPlane.HalfPlane
 public import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.Affine
 
@@ -31,7 +32,9 @@ semicircle, oriented clockwise exactly when `Q` is to the right of `P`
 (`exists_velocity_geodesicBetween_zero_eq`). When `P.re = Q.re` the geodesic is the vertical line
 through `P` (`geodesicBetween_eq_toPoint_of_re_eq`,
 `mem_rightHalfPlane_geodesicBetween_iff_of_re_eq`,
-`exists_velocity_geodesicBetween_zero_eq_of_re_eq`).
+`exists_velocity_geodesicBetween_zero_eq_of_re_eq`). Conversely, a geodesic line running between
+two points (other than `∞`) of a circle centred on the real axis, with distinct real parts, lies
+on that circle (`IsGeodesicFromTo.normSq_geodesicLine_sub`).
 
 Source: Katok, *Fuchsian groups, geodesic flows…*, Clay Math. Proc. 10 (2010), §3 Theorem 3.1
 (p. 10): the geodesics in `ℍ` are the semicircles and the rays orthogonal to the real axis.
@@ -42,7 +45,7 @@ public section
 noncomputable section
 
 open Matrix.ProjectiveSpecialLinearGroup UpperHalfPlane
-open scoped MatrixGroups Pointwise Real
+open scoped MatrixGroups Pointwise OnePoint Real
 
 namespace TauCeti.UpperHalfPlane
 
@@ -421,5 +424,20 @@ theorem exists_velocity_geodesicBetween_zero_eq_of_re_eq {P Q : ℍ} (h : P.re =
     rw [← Complex.ofReal_sub, ← Complex.ofReal_mul, hμ]
     push_cast
     ring
+
+/-! ### Geodesic lines through two points of a semicircle -/
+
+/-- A geodesic line running between two points (other than `∞`) of a circle centred on the real
+axis, with distinct real parts, lies on that circle. -/
+theorem IsGeodesicFromTo.normSq_geodesicLine_sub {g : PSL(2, ℝ)} {p q : ℍ ⊕ OnePoint ℝ} {m r : ℝ}
+    (hg : IsGeodesicFromTo g p q) (hp : p ≠ .inr ∞) (hq : q ≠ .inr ∞)
+    (hpm : Complex.normSq (toComplex p - m) = r) (hqm : Complex.normSq (toComplex q - m) = r)
+    (hre : (toComplex p).re ≠ (toComplex q).re) (t : ℝ) :
+    Complex.normSq ((geodesicLine g t : ℂ) - m) = r := by
+  obtain ⟨α, hα, hs⟩ := exists_sideForm_eq_mul_normSq_sub (hg.sideForm_toComplex_left hp)
+    (hg.sideForm_toComplex_right hq) hpm hqm hre
+  have h := (mem_range_geodesicLine_iff_sideForm_eq_zero g _).1 ⟨t, rfl⟩
+  rw [hs, mul_eq_zero, sub_eq_zero] at h
+  exact h.resolve_left hα
 
 end TauCeti.UpperHalfPlane
