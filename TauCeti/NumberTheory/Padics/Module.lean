@@ -12,6 +12,8 @@ public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import Mathlib.Topology.Algebra.Group.ClosedSubgroup
 public import Mathlib.Topology.Algebra.Module.ClosedSubmodule
 public import Mathlib.Algebra.Module.Torsion.Basic
+public import Mathlib.Algebra.Algebra.Operations
+public import Mathlib.LinearAlgebra.Dual.Defs
 import Mathlib.Algebra.Group.Equiv.TypeTags
 import Mathlib.LinearAlgebra.Dimension.Constructions
 
@@ -49,6 +51,8 @@ additive isomorphism between two such modules preserves `Module.finrank`, and `�
   `ℤ_[p] ^ r'` have `r = r'`.
 * `Submodule.torsion_padicInt`: the torsion submodule of a `ℤ_[p]`-module is its torsion subgroup.
   This is purely algebraic, the `ℤ_[p]` counterpart of `Submodule.torsion_int`.
+* `TauCeti.padicIntCodRestrict`: a `ℚ_[p]`-valued `ℤ_[p]`-linear map with values in `ℤ_[p]`, as a
+  `ℤ_[p]`-valued functional.
 -/
 
 public section
@@ -221,3 +225,26 @@ theorem Submodule.torsion_padicInt :
       by simpa [Nat.cast_smul_eq_nsmul] using hnx⟩
 
 end Torsion
+
+section IntegralFunctional
+
+variable {p : ℕ} [Fact p.Prime] {X : Type*} [AddCommGroup X] [Module ℤ_[p] X]
+
+/-- A `ℚ_[p]`-valued `ℤ_[p]`-linear map whose values lie in `ℤ_[p]`, as a `ℤ_[p]`-valued
+functional. -/
+def TauCeti.padicIntCodRestrict (Φ : X →ₗ[ℤ_[p]] ℚ_[p])
+    (h : ∀ x, Φ x ∈ (1 : Submodule ℤ_[p] ℚ_[p])) : Module.Dual ℤ_[p] X where
+  toFun x := ⟨Φ x, by
+    obtain ⟨y, hy⟩ := Submodule.mem_one.mp (h x)
+    rw [← hy]
+    exact y.2⟩
+  map_add' x y := Subtype.ext (map_add Φ x y)
+  map_smul' c x := Subtype.ext (map_smul Φ c x)
+
+@[simp]
+theorem TauCeti.coe_padicIntCodRestrict_apply (Φ : X →ₗ[ℤ_[p]] ℚ_[p])
+    (h : ∀ x, Φ x ∈ (1 : Submodule ℤ_[p] ℚ_[p])) (x : X) :
+    (TauCeti.padicIntCodRestrict Φ h x : ℚ_[p]) = Φ x :=
+  (rfl)
+
+end IntegralFunctional

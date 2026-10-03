@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.Dual.Defs
 public import Mathlib.LinearAlgebra.Quotient.Basic
 public import Mathlib.NumberTheory.Padics.PadicIntegers
 public import TauCeti.Algebra.Module.Torsion.PrimaryComponent
+public import TauCeti.NumberTheory.Padics.Module
 import Mathlib.Algebra.Module.Projective
 import Mathlib.LinearAlgebra.BilinearMap
 import Mathlib.LinearAlgebra.FreeModule.PID
@@ -51,6 +52,8 @@ Pontryagin dual of its `p`-power torsion.
 * `TauCeti.isTorsionFree_quotient_pPowerTorsion`: modulo its `p`-power torsion, a `ℤ_p`-module is
   torsion-free.
 * `TauCeti.torsionDualMap_apply`: the connecting map on representatives.
+* `TauCeti.torsionDualMap_apply_of_extension`: the connecting map at a functional extending along
+  `f` to a `ℚ_p`-valued functional `Φ` sends `π x` to the class of `Φ x`.
 * `TauCeti.ker_torsionDualMap`: its kernel is the range of `Hom(P₀, ℤ_p) → Hom(P₁, ℤ_p)`.
 * `TauCeti.torsionDualMap_surjective`: it is surjective when `P₀` is projective over `ℤ_p`.
 * `TauCeti.torsionDualMap_comp_toLinearMap_apply`: it is compatible with the contragredient
@@ -130,10 +133,6 @@ private def extendDualFun (hf : Function.Exact f π) (ψ : Dual ℤ_[p] P₁)
     (y : (pPowerTorsion p A M).comap π) : ℚ_[p] :=
   (ψ (exists_nsmul_eq hf y).choose.2 : ℚ_[p]) / (p : ℚ_[p]) ^ (exists_nsmul_eq hf y).choose.1
 
-private theorem cast_nsmul_padicInt (n : ℕ) (a : ℤ_[p]) :
-    ((n • a : ℤ_[p]) : ℚ_[p]) = n * a := by
-  rw [nsmul_eq_mul, PadicInt.coe_mul, PadicInt.coe_natCast]
-
 omit [Algebra ℤ_[p] A] [IsScalarTower ℤ_[p] A P₁] [Module ℤ_[p] P₀] [IsScalarTower ℤ_[p] A P₀] in
 private theorem extendDualFun_eq (hf : Function.Exact f π) (hfi : Function.Injective f)
     (ψ : Dual ℤ_[p] P₁) (y : (pPowerTorsion p A M).comap π) {n : ℕ} {k : P₁}
@@ -145,7 +144,7 @@ private theorem extendDualFun_eq (hf : Function.Exact f π) (hfi : Function.Inje
   have hkk : p ^ n • nk.2 = p ^ nk.1 • k := hfi <| by
     rw [map_nsmul, map_nsmul, ← hspec, ← h, smul_comm]
   have hcast := congrArg (fun z : ℤ_[p] ↦ (z : ℚ_[p])) (congrArg ψ hkk)
-  simp only [map_nsmul, cast_nsmul_padicInt, Nat.cast_pow] at hcast
+  push_cast [map_nsmul, nsmul_eq_mul] at hcast
   have hp : (p : ℚ_[p]) ≠ 0 := Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero
   rw [extendDualFun, div_eq_div_iff (pow_ne_zero _ hp) (pow_ne_zero _ hp)]
   linear_combination hcast
@@ -173,10 +172,10 @@ private def extendDual :
           mul_comm, mul_smul, mul_comm, mul_smul, smul_comm (p ^ n₁)]
       have hp : (p : ℚ_[p]) ≠ 0 := Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero
       rw [extendDualFun_eq hf hfi ψ _ h, extendDualFun_eq hf hfi ψ _ h₁,
-        extendDualFun_eq hf hfi ψ _ h₂, map_add, map_nsmul, map_nsmul, PadicInt.coe_add,
-        cast_nsmul_padicInt, cast_nsmul_padicInt]
+        extendDualFun_eq hf hfi ψ _ h₂]
+      -- Normalize the casts, then clear the powers of `p`.
+      push_cast [map_add, map_nsmul, nsmul_eq_mul]
       field_simp
-      push_cast
       ring)
     (fun c ψ y ↦ by
       obtain ⟨⟨n, k⟩, h⟩ := exists_nsmul_eq hf y
@@ -279,6 +278,20 @@ theorem torsionDualMap_apply (ψ : Dual ℤ_[p] P₁) (t : pPowerTorsion p A M) 
   obtain rfl : (⟨π x, hy⟩ : pPowerTorsion p A M) = t := Subtype.ext hx
   rw [torsionDualMap_eq hf hfi hπ ψ ⟨x, hy⟩, extendDual_eq hf hfi ψ _ hk]
 
+/-- The connecting map at a functional `ψ` that extends along `f` to a `ℚ_p`-valued functional `Φ`
+on `P₀`: it sends `π x` to the class of `Φ x`. -/
+theorem torsionDualMap_apply_of_extension (ψ : Dual ℤ_[p] P₁) (Φ : P₀ →ₗ[ℤ_[p]] ℚ_[p])
+    (hΦ : ∀ k, (ψ k : ℚ_[p]) = Φ (f k)) (t : pPowerTorsion p A M) {x : P₀} (hx : π x = t) :
+    torsionDualMap p hf hfi hπ ψ t = Submodule.Quotient.mk (Φ x) := by
+  have hy : x ∈ (pPowerTorsion p A M).comap π := by
+    rw [Submodule.mem_comap, hx]
+    exact t.2
+  obtain ⟨⟨n, k⟩, hk⟩ := exists_nsmul_eq hf ⟨x, hy⟩
+  rw [torsionDualMap_apply hf hfi hπ ψ t hx hk, hΦ]
+  -- `Φ (f k) / p ^ n = Φ (p ^ n • x) / p ^ n = Φ x`.
+  have hp : (p : ℚ_[p]) ≠ 0 := Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero
+  simp [← hk, hp]
+
 /-- The connecting map is compatible with the contragredient actions of `A`: precomposing a
 functional with the action of `a ∈ A` on `P₁` corresponds to evaluating its image at `a • t`. -/
 @[simp]
@@ -297,12 +310,9 @@ theorem torsionDualMap_comp_toLinearMap_apply (ψ : Dual ℤ_[p] P₁) (a : A)
 theorem torsionDualMap_dualMap (φ : Dual ℤ_[p] P₀) :
     torsionDualMap p hf hfi hπ ((f.restrictScalars ℤ_[p]).dualMap φ) = 0 := by
   ext t
-  obtain ⟨x, n, k, hx, hk⟩ := exists_lift_nsmul_eq hf hπ t
-  have hp : (p : ℚ_[p]) ≠ 0 := Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero
-  rw [torsionDualMap_apply hf hfi hπ _ t hx hk, LinearMap.dualMap_apply,
-    LinearMap.restrictScalars_apply, ← hk, map_nsmul, cast_nsmul_padicInt, Nat.cast_pow,
-    mul_div_cancel_left₀ _ (pow_ne_zero _ hp), LinearMap.zero_apply,
-    Submodule.Quotient.mk_eq_zero]
+  obtain ⟨x, hx⟩ := hπ t
+  rw [torsionDualMap_apply_of_extension hf hfi hπ _ (Algebra.linearMap ℤ_[p] ℚ_[p] ∘ₗ φ)
+    (fun _ ↦ rfl) t hx, LinearMap.zero_apply, Submodule.Quotient.mk_eq_zero]
   exact Submodule.mem_one.mpr ⟨φ x, rfl⟩
 
 end TorsionDual
@@ -310,21 +320,6 @@ end TorsionDual
 section Bijective
 
 variable [Module ℤ_[p] M] [IsScalarTower ℤ_[p] A M]
-
-/-- A `ℚ_p`-valued linear map taking values in `ℤ_p`, as a `ℤ_p`-valued linear map. -/
-private def integralLift {X : Type*} [AddCommGroup X] [Module ℤ_[p] X] (Φ : X →ₗ[ℤ_[p]] ℚ_[p])
-    (h : ∀ x, Φ x ∈ (1 : Submodule ℤ_[p] ℚ_[p])) : Dual ℤ_[p] X where
-  toFun x := ⟨Φ x, by
-    obtain ⟨y, hy⟩ := Submodule.mem_one.mp (h x)
-    rw [← hy]
-    exact y.2⟩
-  map_add' x y := Subtype.ext (map_add Φ x y)
-  map_smul' c x := Subtype.ext (map_smul Φ c x)
-
-private theorem coe_integralLift {X : Type*} [AddCommGroup X] [Module ℤ_[p] X]
-    (Φ : X →ₗ[ℤ_[p]] ℚ_[p]) (h : ∀ x, Φ x ∈ (1 : Submodule ℤ_[p] ℚ_[p])) (x : X) :
-    (integralLift Φ h x : ℚ_[p]) = Φ x :=
-  rfl
 
 variable [Module.Finite ℤ_[p] M] (hf : Function.Exact f π) (hfi : Function.Injective f)
   (hπ : Function.Surjective π)
@@ -366,8 +361,9 @@ theorem ker_torsionDualMap :
   have hint (x : P₀) : extendDual hf hfi ψ (pr x) ∈ (1 : Submodule ℤ_[p] ℚ_[p]) := by
     rw [← Submodule.Quotient.mk_eq_zero, ← torsionDualMap_eq hf hfi hπ, LinearMap.mem_ker.mp hψ,
       LinearMap.zero_apply]
-  refine ⟨integralLift (extendDual hf hfi ψ ∘ₗ pr) hint, LinearMap.ext fun k ↦ Subtype.ext ?_⟩
-  rw [LinearMap.dualMap_apply, LinearMap.restrictScalars_apply, coe_integralLift,
+  refine ⟨padicIntCodRestrict (extendDual hf hfi ψ ∘ₗ pr) hint,
+    LinearMap.ext fun k ↦ Subtype.ext ?_⟩
+  rw [LinearMap.dualMap_apply, LinearMap.restrictScalars_apply, coe_padicIntCodRestrict_apply,
     LinearMap.comp_apply]
   exact extendDual_eq_of_eq hf hfi ψ (pr (f k)) (k := k) (by
     simp [pr, hf.apply_apply_eq_zero])
@@ -397,12 +393,10 @@ theorem torsionDualMap_surjective [Module.Projective ℤ_[p] P₀] :
   have hint (k : P₁) : (Φ ∘ₗ f.restrictScalars ℤ_[p]) k ∈ (1 : Submodule ℤ_[p] ℚ_[p]) := by
     rw [← Submodule.Quotient.mk_eq_zero, LinearMap.comp_apply, LinearMap.restrictScalars_apply,
       hΦx, hf.apply_apply_eq_zero, map_zero, map_zero]
-  refine ⟨integralLift _ hint, LinearMap.ext fun t ↦ ?_⟩
-  obtain ⟨x, n, k, hx, hk⟩ := exists_lift_nsmul_eq hf hπ t
-  have hp : (p : ℚ_[p]) ≠ 0 := Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero
-  rw [torsionDualMap_apply hf hfi hπ _ t hx hk, coe_integralLift, LinearMap.comp_apply,
-    LinearMap.restrictScalars_apply, ← hk, map_nsmul, nsmul_eq_mul, Nat.cast_pow,
-    mul_div_cancel_left₀ _ (pow_ne_zero _ hp), hΦx, ← hrt t]
+  refine ⟨padicIntCodRestrict _ hint, LinearMap.ext fun t ↦ ?_⟩
+  obtain ⟨x, hx⟩ := hπ t
+  rw [torsionDualMap_apply_of_extension hf hfi hπ _ Φ (coe_padicIntCodRestrict_apply _ hint) t hx,
+    hΦx, ← hrt t]
   rw [hx]
 
 variable (p) in

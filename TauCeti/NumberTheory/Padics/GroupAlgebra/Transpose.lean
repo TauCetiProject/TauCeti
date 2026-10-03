@@ -71,41 +71,6 @@ variable {P₁ P₀ M : Type*} [AddCommGroup P₁] [Module (MonoidAlgebra ℤ_[p
   {f : P₁ →ₗ[MonoidAlgebra ℤ_[p] G] P₀} {π : P₀ →ₗ[MonoidAlgebra ℤ_[p] G] M}
   (hf : Function.Exact f π) (hfi : Function.Injective f) (hπ : Function.Surjective π)
 
-omit [Finite G] [Module.Projective ℤ_[p] P₀] in
-/-- Contragredient precomposition with `f` is the dual map of `f` over `ℤ_p`. -/
-private theorem contragredientDualMap_eq_dualMap (φ : Dual ℤ_[p] P₀) :
-    MonoidAlgebra.contragredientDualMap f φ = (f.restrictScalars ℤ_[p]).dualMap φ :=
-  LinearMap.ext fun m ↦ by
-    rw [MonoidAlgebra.contragredientDualMap_apply, LinearMap.dualMap_apply,
-      LinearMap.restrictScalars_apply]
-
-omit [Finite G] [Module.Projective ℤ_[p] P₀] in
-/-- The two descriptions of the functionals on `P₁` that extend along `f`: as the range of the
-contragredient precomposition and as the range of the dual map agree, as additive subgroups. -/
-private theorem restrictScalars_range_contragredientDualMap :
-    (LinearMap.range (MonoidAlgebra.contragredientDualMap f)).restrictScalars ℤ =
-      (LinearMap.range (f.restrictScalars ℤ_[p]).dualMap).restrictScalars ℤ := by
-  ext ψ
-  simp only [Submodule.restrictScalars_mem, LinearMap.mem_range]
-  exact exists_congr fun φ ↦ by rw [contragredientDualMap_eq_dualMap]
-
-/-- The quotients of `Hom_{ℤ_p}(P₁, ℤ_p)` by the two descriptions of the functionals extending
-along `f` agree. -/
-private def quotientRangeEquiv :
-    (Dual ℤ_[p] P₁ ⧸ LinearMap.range (MonoidAlgebra.contragredientDualMap f)) ≃ₗ[ℤ]
-      (Dual ℤ_[p] P₁ ⧸ LinearMap.range (f.restrictScalars ℤ_[p]).dualMap) :=
-  (Submodule.Quotient.restrictScalarsEquiv ℤ _).symm.trans <|
-    (Submodule.quotEquivOfEq _ _ restrictScalars_range_contragredientDualMap).trans
-      (Submodule.Quotient.restrictScalarsEquiv ℤ _)
-
-omit [Finite G] [Module.Projective ℤ_[p] P₀] in
-@[simp]
-private theorem quotientRangeEquiv_mk (ψ : Dual ℤ_[p] P₁) :
-    quotientRangeEquiv (f := f) (Submodule.Quotient.mk ψ) = Submodule.Quotient.mk ψ := by
-  rw [quotientRangeEquiv, LinearEquiv.trans_apply, LinearEquiv.trans_apply,
-    Submodule.Quotient.restrictScalarsEquiv_symm_mk, Submodule.quotEquivOfEq_mk,
-    Submodule.Quotient.restrictScalarsEquiv_mk]
-
 /-- **The transpose of a `ℤ_p[G]`-module of projective dimension one is the Pontryagin dual of
 its `p`-power torsion.** For a finite group `G` and an exact sequence `0 → P₁ → P₀ → M → 0` of
 `ℤ_p[G]`-modules with `P₀` projective over `ℤ_p` and `M` finitely generated over `ℤ_p`, the
@@ -117,7 +82,8 @@ def torsionDualAddEquiv :
     AuslanderReitenTranspose f ≃+
       (pPowerTorsion p (MonoidAlgebra ℤ_[p] G) M →ₗ[ℤ_[p]] ℚ_[p] ⧸ (1 : Submodule ℤ_[p] ℚ_[p])) :=
   (groupAlgebraDualEquiv f).toAddEquiv.trans <|
-    quotientRangeEquiv.toAddEquiv.trans (torsionDualEquiv p hf hfi hπ).toAddEquiv
+    (MonoidAlgebra.quotientRangeContragredientDualMapEquiv f).toAddEquiv.trans
+      (torsionDualEquiv p hf hfi hπ).toAddEquiv
 
 /-- `TauCeti.AuslanderReitenTranspose.torsionDualAddEquiv` sends the class of a group-algebra
 functional to the image of its coefficient-at-one functional under the connecting map. -/
