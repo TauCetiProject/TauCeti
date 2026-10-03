@@ -78,7 +78,7 @@ theorem manifoldSectionLinearization_zero (hb : ContinuousAt b x) :
     filter_upwards [hb.preimage_mem_nhds
       (e₀.open_baseSet.mem_nhds (mem_baseSet_trivializationAt F E (b x)))] with y hy
     exact congrArg Prod.snd (e₀.zeroSection 𝕜 hy)
-  rw [manifoldSectionLinearization_def, hcoord.mvfderiv_eq, mvfderiv_const]
+  rw [manifoldSectionLinearization_def, mvfderiv, hcoord.mfderiv_eq, mfderiv_const]
   simp
 
 /-- At a zero, the manifold-source linearization can be computed in any bundle trivialization
@@ -108,7 +108,12 @@ theorem manifoldSectionLinearization_eq_symmL_comp
     dsimp only [c, u]
     simp only [ContinuousLinearEquiv.coe_coe]
     rw [Trivialization.coordChangeL_apply e e₀ hy, e.symm_apply_apply_mk hy.1]
-  rw [manifoldSectionLinearization_def, ← hcoord.mvfderiv_eq, hcu]
+  have hcu' : mvfderiv IM (fun y ↦ (e₀ ⟨b y, s y⟩).2) x = (c x).comp (mvfderiv IM u x) := by
+    rw [← hcu]
+    simp only [mvfderiv]
+    rw [hcoord.mfderiv_eq]
+    rfl
+  rw [manifoldSectionLinearization_def, hcu']
   ext v
   simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe, c, u, e₀]
   rw [Trivialization.coordChangeL_apply e (trivializationAt F E (b x))

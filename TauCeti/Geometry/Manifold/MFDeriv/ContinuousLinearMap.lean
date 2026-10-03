@@ -12,9 +12,9 @@ import Mathlib.Analysis.Calculus.FDeriv.CompCLM
 /-!
 # Manifold derivatives of continuous-linear-map applications
 
-This file records two local-calculus facts for vector-valued maps on manifolds. Manifold
-derivatives respect germs, and at a zero of a vector-valued map the derivative of a varying
-continuous linear map applied to that map has no contribution from the varying operator.
+This file records a local-calculus fact for vector-valued maps on manifolds: at a zero of a
+vector-valued map, the derivative of a varying continuous linear map applied to that map has no
+contribution from the varying operator.
 
 The zero-value formula is the manifold counterpart of `HasFDerivAt.clm_apply`, specialized to
 the case used when differentiating changes of fiber coordinates at the zero of a bundle section.
@@ -22,8 +22,8 @@ the case used when differentiating changes of fiber coordinates at the zero of a
 
 public section
 
-open Filter Set
-open scoped Manifold Topology
+open Set
+open scoped Manifold
 
 variable {𝕜 E H M F F' : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E]
@@ -32,13 +32,6 @@ variable {𝕜 E H M F F' : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   [NormedAddCommGroup F'] [NormedSpace 𝕜 F']
   {x : M}
-
-/-- Vector-valued manifold derivatives depend only on the germ of the map. -/
-theorem Filter.EventuallyEq.mvfderiv_eq {f g : M → F} (h : f =ᶠ[𝓝 x] g) :
-    mvfderiv I f x = mvfderiv I g x := by
-  simp only [mvfderiv]
-  rw [h.mfderiv_eq]
-  rfl
 
 namespace TauCeti
 
