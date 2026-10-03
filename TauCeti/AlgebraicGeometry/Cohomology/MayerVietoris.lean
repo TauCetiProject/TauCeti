@@ -36,10 +36,10 @@ together with the vanishing it gives when `U` and `V` cover `X`.
 
 The last two statements are the shape in which Mayer-Vietoris is used on a curve: a separated
 scheme covered by two affine opens has no cohomology above degree one in coefficients for which
-the affine opens are acyclic. For quasi-coherent `M`, Serre's acyclicity of affines will supply
-that input after the still-missing comparison `Sheaf.H' F i U ≅ Sheaf.H (F.over U) i` is
-established. The coefficients `M : X.Modules` here are arbitrary, and the acyclicity is taken as
-a hypothesis rather than proved.
+the affine opens are acyclic. The coefficients `M : X.Modules` here are arbitrary, and the
+acyclicity is taken as a hypothesis rather than proved; for quasi-coherent `M` on a locally
+Noetherian scheme, `TauCeti/AlgebraicGeometry/Cohomology/OpenImmersion.lean` supplies it from
+Serre's vanishing theorem on affine opens.
 
 This advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer B, "coherent sheaves and
 cohomology `Hⁱ(X, ℱ)`: … vanishing above dimension (`H² = 0` on a curve)". No formalization is
@@ -146,9 +146,10 @@ theorem subsingleton_cohomology_succ (hUV : U ⊔ V = ⊤) (n : ℕ)
 positive degrees has no cohomology in degrees at least two.
 
 This is the form Mayer-Vietoris takes on a separated scheme covered by two affine opens: the
-intersection is then affine as well. For quasi-coherent `M`, applying Serre's acyclicity requires
-the still-missing comparison `Sheaf.H' F i U ≅ Sheaf.H (F.over U) i`; for a general
-`M : X.Modules` the hypotheses have to come from elsewhere. -/
+intersection is then affine as well. For quasi-coherent `M` on a locally Noetherian scheme the
+hypotheses are Serre's vanishing theorem on affine opens, which gives
+`Scheme.Modules.subsingleton_cohomology_of_two_le_of_isAffineOpen`; for a general
+`M : X.Modules` they have to come from elsewhere. -/
 theorem subsingleton_cohomology_of_two_le (hUV : U ⊔ V = ⊤) (n : ℕ) (hn : 2 ≤ n)
     (hU : ∀ i, 0 < i → Subsingleton (cohomologyOn M i U))
     (hV : ∀ i, 0 < i → Subsingleton (cohomologyOn M i V))
