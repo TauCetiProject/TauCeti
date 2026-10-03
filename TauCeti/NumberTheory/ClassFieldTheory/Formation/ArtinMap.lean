@@ -247,11 +247,23 @@ over `E` of an element `a` of the ground level `A^U` of `K/F` is the transfer
 theorem artinMap_groundInclusion {small big : NormalLayer G} (T : LayerRestriction small big)
     (a : F.level big.ground) :
     cf.artinMap small (T.groundInclusion F a) = T.transferHom (cf.artinMap big a) := by
-  obtain ⟨x, hx⟩ := big.tateHMinusTwoEquivAbelianization.surjective (cf.artinMap big a)
-  rw [artinMap_eq_iff, ← hx, ← T.tateHMinusTwoEquivAbelianization_trivialTateRes,
-    AddEquiv.symm_apply_apply, ← tateIso_apply, ← cf.tateIso_res, tateIso_apply,
-    ← AddEquiv.symm_apply_apply big.tateHMinusTwoEquivAbelianization x, hx,
-    cupFundamentalClass_artinMap]
-  exact T.tateRes_zeroTateClass F a
+  set σ := cf.artinMap big a
+  rw [artinMap_eq_iff]
+  calc cf.cupFundamentalClass small (-2)
+        (small.tateHMinusTwoEquivAbelianization.symm (T.transferHom σ))
+      = cf.tateIso small (-2)
+          (T.trivialTateRes (-2) (big.tateHMinusTwoEquivAbelianization.symm σ)) := by
+        -- in degree `-2`, restriction is the transfer
+        rw [tateIso_apply]
+        congr 1
+        rw [AddEquiv.symm_apply_eq, T.tateHMinusTwoEquivAbelianization_trivialTateRes,
+          AddEquiv.apply_symm_apply]
+    -- Tate's isomorphism commutes with restriction
+    _ = T.tateRes F 0 (cf.tateIso big (-2) (big.tateHMinusTwoEquivAbelianization.symm σ)) :=
+        (cf.tateIso_res T (-2) _).symm
+    _ = T.tateRes F 0 (big.zeroTateClass F a) := by
+        rw [tateIso_apply, cupFundamentalClass_artinMap]
+    -- in degree `0`, restriction is the ground-level inclusion
+    _ = small.zeroTateClass F (T.groundInclusion F a) := T.tateRes_zeroTateClass F a
 
 end TauCeti.ClassFieldTheory.ClassFormation
