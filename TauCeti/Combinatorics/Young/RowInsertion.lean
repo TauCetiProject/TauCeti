@@ -230,6 +230,19 @@ theorem reverseRowBump_append (y : α) (row after : List α)
   rw [rowBump_append _ _ _ hd]
   simp [List.map_reverse, List.reverse_append]
 
+/-- A final entry at least the incoming letter is passed without changing it. -/
+@[simp]
+theorem reverseRowBump_append_singleton_of_le {x y : α} (row : List α) (h : y ≤ x) :
+    reverseRowBump y (row ++ [x]) =
+      ((reverseRowBump y row).1 ++ [x], (reverseRowBump y row).2) := by
+  simpa using reverseRowBump_append y row [x] (by simpa using h)
+
+/-- A strictly smaller final entry is replaced and returned. -/
+@[simp]
+theorem reverseRowBump_append_singleton_of_lt {x y : α} (row : List α) (h : x < y) :
+    reverseRowBump y (row ++ [x]) = (row ++ [y], some x) := by
+  simp [reverseRowBump, List.reverse_append, h, List.map_reverse]
+
 /-- Reverse insertion prepends precisely when no entry is strictly smaller. -/
 @[simp]
 theorem reverseRowBump_snd_eq_none_iff (y : α) (row : List α) :
