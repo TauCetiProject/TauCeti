@@ -14,7 +14,8 @@ Let `P` be a rational place of `F / k` and let `t` have order one at `P`. Every 
 integral at `P` has a unique expansion modulo the `n`-th order filtration as a polynomial in
 `t` with `n` coefficients in `k`. This file constructs these finite coefficient vectors and
 characterizes them by the order of the remainder. The coefficients depend only on the
-function modulo the same filtration, and successive truncations agree.
+function modulo the same filtration, and successive truncations agree. Constants have only
+a constant coefficient, and multiplication of integral functions gives coefficient convolution.
 
 These are finite truncations: no completeness assumption or infinite series is used. They
 provide the finite approximation and uniqueness statements for the power-series construction
@@ -210,6 +211,117 @@ theorem truncatedExpansion_smul (hP : P.degree = 1) (ht : P.ord t = 1)
     mul_sub, mul_assoc, Finset.mul_sum]
   rw [← ValuationSubring.algebraMap_apply P.integers ((algebraMap k P.integers c) * x)]
   simp only [map_mul, ValuationSubring.algebraMap_apply, P.coe_algebraMap_constants]
+
+/-- The unit has constant coefficient one and all positive-degree coefficients zero. -/
+@[simp]
+theorem truncatedExpansion_one (hP : P.degree = 1) (ht : P.ord t = 1) (n : ℕ) :
+    P.truncatedExpansion hP ht n 1 = fun i : Fin n ↦ if (i : ℕ) = 0 then 1 else 0 := by
+  apply (P.truncatedExpansion_eq_iff hP ht n 1 _).mpr
+  cases n <;> simp [P.mem_filtration_zero_iff]
+
+/-- Constants have their given constant coefficient and zero positive-degree coefficients. -/
+@[simp]
+theorem truncatedExpansion_algebraMap (hP : P.degree = 1) (ht : P.ord t = 1)
+    (n : ℕ) (c : k) :
+    P.truncatedExpansion hP ht n (algebraMap k P.integers c) =
+      fun i : Fin n ↦ if (i : ℕ) = 0 then c else 0 := by
+  rw [Algebra.algebraMap_eq_smul_one, P.truncatedExpansion_smul hP ht,
+    P.truncatedExpansion_one hP ht]
+  ext i
+  by_cases hi : (i : ℕ) = 0 <;> simp [hi]
+
+/-- The coefficient of a product is the convolution of the coefficients of its factors.
+The sum ranges over bounded pairs of indices whose degrees add to the requested degree;
+terms of degree at least `n` vanish modulo the `n`-th order filtration. -/
+theorem truncatedExpansion_mul (hP : P.degree = 1) (ht : P.ord t = 1)
+    (n : ℕ) (x y : P.integers) (i : Fin n) :
+    P.truncatedExpansion hP ht n (x * y) i =
+      ∑ j : Fin n × Fin n with (j.1 : ℕ) + (j.2 : ℕ) = (i : ℕ),
+        P.truncatedExpansion hP ht n x j.1 * P.truncatedExpansion hP ht n y j.2 := by
+  classical
+  let a := P.truncatedExpansion hP ht n x
+  let b := P.truncatedExpansion hP ht n y
+  let u := ∑ j, algebraMap k F (a j) * t ^ (j : ℕ)
+  let v := ∑ j, algebraMap k F (b j) * t ^ (j : ℕ)
+  let f := fun j : Fin n × Fin n ↦
+    algebraMap k F (a j.1 * b j.2) * t ^ ((j.1 : ℕ) + (j.2 : ℕ))
+  have hu : u ∈ P.filtration 0 := by
+    apply Submodule.sum_mem
+    intro j _
+    exact P.mem_filtration_zero_iff.mpr
+      (mul_mem (P.algebraMap_mem_integers _) (pow_mem
+        (P.mem_integers_iff_ord_nonneg.mpr (by omega : 0 ≤ P.ord t)) _))
+  -- Replacing either integral factor by its finite expansion preserves the product modulo
+  -- the filtration, since multiplying a remainder by an integral function preserves its order.
+  have hrem : (x : F) * (y : F) - u * v ∈ P.filtration n := by
+    have hx := P.mul_mem_filtration
+      (P.sub_sum_truncatedExpansion_mem_filtration hP ht n x)
+      (P.mem_filtration_zero_iff.mpr y.2)
+    have hy := P.mul_mem_filtration hu
+      (P.sub_sum_truncatedExpansion_mem_filtration hP ht n y)
+    -- Expose the finite-sum abbreviations without unfolding coefficient extraction.
+    change ((x : F) - u) * (y : F) ∈ P.filtration (n + 0) at hx
+    change u * ((y : F) - v) ∈ P.filtration (0 + n) at hy
+    rw [add_zero] at hx
+    rw [zero_add] at hy
+    convert (P.filtration n).add_mem hx hy using 1
+    ring
+  have hprod : u * v = ∑ j, f j := by
+    dsimp only [u, v]
+    rw [Finset.sum_mul]
+    simp only [f, Finset.mul_sum, Fintype.sum_prod_type, map_mul, pow_add]
+    apply Finset.sum_congr rfl
+    intro j _
+    apply Finset.sum_congr rfl
+    intro l _
+    ring
+  -- Group the product terms of degree below `n` by their common degree.
+  have hlow :
+      (∑ j : Fin n, algebraMap k F
+        (∑ l : Fin n × Fin n with (l.1 : ℕ) + (l.2 : ℕ) = (j : ℕ), a l.1 * b l.2) *
+          t ^ (j : ℕ)) =
+        ∑ j : Fin n × Fin n with (j.1 : ℕ) + (j.2 : ℕ) < n, f j := by
+    calc
+      _ = ∑ j : Fin n, ∑ l : Fin n × Fin n with
+          (l.1 : ℕ) + (l.2 : ℕ) = (j : ℕ), f l := by
+        apply Finset.sum_congr rfl
+        intro j _
+        rw [map_sum, Finset.sum_mul]
+        apply Finset.sum_congr rfl
+        intro l hl
+        dsimp only [f]
+        rw [(Finset.mem_filter.mp hl).2]
+      _ = _ := by
+        rw [Fin.sum_univ_eq_sum_range
+          (fun d : ℕ ↦ ∑ l : Fin n × Fin n with (l.1 : ℕ) + (l.2 : ℕ) = d, f l),
+          Finset.sum_fiberwise_eq_sum_filter]
+        simp only [Finset.mem_range]
+  -- Every remaining product term has degree at least `n` and belongs to the filtration.
+  have hhigh : (∑ j : Fin n × Fin n with ¬(j.1 : ℕ) + (j.2 : ℕ) < n, f j) ∈
+      P.filtration n := by
+    apply Submodule.sum_mem
+    intro j hj
+    have hdegree : (n : ℤ) ≤ ((j.1 : ℕ) + (j.2 : ℕ) : ℕ) := by
+      exact_mod_cast Nat.le_of_not_lt (Finset.mem_filter.mp hj).2
+    have hpow := P.mem_filtration_ord (t ^ ((j.1 : ℕ) + (j.2 : ℕ)))
+    simp only [P.ord_pow, ht, mul_one] at hpow
+    apply P.filtration_antitone hdegree
+    have hm := P.mul_mem_filtration
+      (P.mem_filtration_zero_iff.mpr (P.algebraMap_mem_integers (a j.1 * b j.2))) hpow
+    simpa only [zero_add] using hm
+  have heq := (P.truncatedExpansion_eq_iff hP ht n (x * y)
+    (fun j ↦ ∑ l : Fin n × Fin n with (l.1 : ℕ) + (l.2 : ℕ) = (j : ℕ),
+      a l.1 * b l.2)).mpr (by
+        rw [hlow]
+        have hsplit := Finset.sum_filter_add_sum_filter_not
+          (Finset.univ : Finset (Fin n × Fin n))
+          (fun j ↦ (j.1 : ℕ) + (j.2 : ℕ) < n) f
+        convert (P.filtration n).add_mem hrem hhigh using 1
+        rw [hprod, ← hsplit]
+        -- Coercing the product in the valuation ring gives multiplication in `F`.
+        change (x : F) * (y : F) - _ = _
+        ring)
+  exact congrFun heq i
 
 /-- Increasing the truncation length preserves every coefficient already extracted. This
 compatibility allows the finite vectors to determine a single power-series coefficient
