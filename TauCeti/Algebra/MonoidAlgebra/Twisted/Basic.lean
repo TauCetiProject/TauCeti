@@ -150,6 +150,14 @@ section Comp
 
 variable {k G H : Type*} [CommSemiring k] [Monoid G] [Monoid H]
 
+/-- The pullback of a normalized factor set along a homomorphism `f : G →* H` is a normalized
+factor set. -/
+theorem comp (f : G →* H) (β : H → H → kˣ) [IsFactorSet β] :
+    IsFactorSet fun g₁ g₂ ↦ β (f g₁) (f g₂) where
+  cocycle g₁ g₂ g₃ := by simpa only [map_mul] using cocycle (α := β) (f g₁) (f g₂) (f g₃)
+  one_left g := by simpa only [map_one] using one_left (α := β) (f g)
+  one_right g := by simpa only [map_one] using one_right (α := β) (f g)
+
 /-- A function on `H` whose pullback along a surjective homomorphism `f : G →* H` is a normalized
 factor set is itself a normalized factor set. -/
 theorem of_comp {β : H → H → kˣ} (f : G →* H) (hf : Function.Surjective f)
