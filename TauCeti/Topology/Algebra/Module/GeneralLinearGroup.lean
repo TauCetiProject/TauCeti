@@ -9,6 +9,7 @@ public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import Mathlib.Topology.Algebra.Group.Units
 public import Mathlib.LinearAlgebra.GeneralLinearGroup.Basic
 public import TauCeti.Topology.Algebra.Module.ModuleTopology
+import Mathlib.Topology.Instances.Matrix
 
 /-!
 # The topology of finite-dimensional linear automorphisms
@@ -122,6 +123,39 @@ section FiniteDimensional
 
 variable {K V : Type*} [Field K] [TopologicalSpace K] [IsTopologicalSemiring K]
   [AddCommGroup V] [Module K V] [FiniteDimensional K V]
+  [TopologicalSpace V] [IsModuleTopology K V]
+
+omit [FiniteDimensional K V] in
+/-- A family of endomorphisms of a finite-dimensional space is continuous exactly when its
+values on the vectors of a finite basis vary continuously. -/
+theorem _root_.Module.End.continuous_iff_apply_basis {X ι : Type*} [TopologicalSpace X]
+    [Finite ι] (b : Module.Basis ι K V) (f : X → Module.End K V) :
+    Continuous f ↔ ∀ i, Continuous (fun x ↦ f x (b i)) := by
+  classical
+  let _ : Fintype ι := Fintype.ofFinite ι
+  let _ : ContinuousAdd V := IsModuleTopology.toContinuousAdd K V
+  let _ : ContinuousAdd (Module.End K V) :=
+    IsModuleTopology.toContinuousAdd K (Module.End K V)
+  constructor
+  · intro hf i
+    exact (IsModuleTopology.continuous_of_linearMap
+      ((LinearMap.applyₗ : V →ₗ[K] Module.End K V →ₗ[K] V) (b i))).comp hf
+  · intro h
+    let : IsModuleTopology K (Matrix ι ι K) :=
+      inferInstanceAs (IsModuleTopology K (ι → ι → K))
+    have hmatrix : Continuous (fun x ↦ LinearMap.toMatrix b b (f x)) := by
+      apply continuous_matrix
+      intro i j
+      have hcoord : Continuous (b.coord i) :=
+        IsModuleTopology.continuous_of_linearMap (b.coord i)
+      simp only [LinearMap.toMatrix_apply, ← Module.Basis.coord_apply]
+      exact hcoord.comp (h j)
+    have hback : Continuous (LinearMap.toMatrixAlgEquiv b).symm :=
+      IsModuleTopology.continuous_of_linearMap
+        (LinearMap.toMatrixAlgEquiv b).symm.toLinearMap
+    convert hback.comp hmatrix using 1
+    funext x
+    exact ((LinearMap.toMatrixAlgEquiv b).symm_apply_apply _).symm
 
 /-- The endomorphism algebra of a finite-dimensional space over a Hausdorff field is Hausdorff. -/
 instance instT2SpaceModuleEnd [T2Space K] : T2Space (Module.End K V) :=

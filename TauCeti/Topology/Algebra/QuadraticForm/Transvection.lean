@@ -8,7 +8,6 @@ module
 public import TauCeti.LinearAlgebra.QuadraticForm.Transvection.Basic
 public import TauCeti.Topology.Algebra.Module.GeneralLinearGroup
 public import TauCeti.Topology.Algebra.QuadraticForm.Continuity
-import Mathlib.Topology.Instances.Matrix
 
 /-!
 # Continuity of Eichler transvections
@@ -30,6 +29,9 @@ special orthogonal group.
 ## References
 
 * M. Eichler, *Quadratische Formen und orthogonale Gruppen*, Springer (1952).
+* `CliffordAlgebra.continuous_lipschitzVectorAction_toLinearMap`, for the finite-basis
+  endomorphism-continuity argument factored through `Module.End.continuous_iff_apply_basis`.
+* `CliffordAlgebra.continuous_spinTransvectionHom`, for the quotient-descent argument.
 -/
 
 public section
@@ -55,36 +57,19 @@ private theorem continuous_transvection_toLinearMap {X : Type w} [TopologicalSpa
     Continuous (fun x ↦ (transvection Q (hu x) (huw x) : Module.End K V)) := by
   let _ : IsTopologicalAddGroup V := IsModuleTopology.isTopologicalAddGroup K V
   let b := Module.finBasis K V
-  let : IsModuleTopology K
-      (Matrix (Fin (Module.finrank K V)) (Fin (Module.finrank K V)) K) :=
-    inferInstanceAs (IsModuleTopology K
-      (Fin (Module.finrank K V) → Fin (Module.finrank K V) → K))
-  have hmatrix : Continuous (fun x ↦
-      LinearMap.toMatrix b b (transvection Q (hu x) (huw x) : Module.End K V)) := by
-    apply continuous_matrix
-    intro i j
-    have hcoord : Continuous (b.coord i) :=
-      IsModuleTopology.continuous_of_linearMap (b.coord i)
-    simp only [LinearMap.toMatrix_apply, ← Module.Basis.coord_apply]
-    have hpolar : Continuous (Q.polarBilin (b j)) :=
-      IsModuleTopology.continuous_of_linearMap (Q.polarBilin (b j))
-    have hpu : Continuous (fun x ↦ polar Q (b j) (u x)) := hpolar.comp huc
-    have hpw : Continuous (fun x ↦ polar Q (b j) (w x)) := hpolar.comp hwc
-    have hQw : Continuous (fun x ↦ Q (w x)) := Q.continuous.comp hwc
-    have hformula : Continuous (fun x ↦
-        b j + polar Q (b j) (u x) • w x - polar Q (b j) (w x) • u x -
-          (Q (w x) * polar Q (b j) (u x)) • u x) := by
-      exact (continuous_const.add (hpu.smul hwc)).sub (hpw.smul huc) |>.sub
-        ((hQw.mul hpu).smul huc)
-    have happ : Continuous (fun x ↦ transvection Q (hu x) (huw x) (b j)) :=
-      hformula.congr fun x ↦ (transvection_apply (hu x) (huw x) (b j)).symm
-    exact hcoord.comp happ
-  have hback : Continuous (LinearMap.toMatrixAlgEquiv b).symm :=
-    IsModuleTopology.continuous_of_linearMap
-      (LinearMap.toMatrixAlgEquiv b).symm.toLinearMap
-  convert hback.comp hmatrix using 1
-  funext x
-  exact ((LinearMap.toMatrixAlgEquiv b).symm_apply_apply _).symm
+  rw [Module.End.continuous_iff_apply_basis b]
+  intro j
+  have hpolar : Continuous (Q.polarBilin (b j)) :=
+    IsModuleTopology.continuous_of_linearMap (Q.polarBilin (b j))
+  have hpu : Continuous (fun x ↦ polar Q (b j) (u x)) := hpolar.comp huc
+  have hpw : Continuous (fun x ↦ polar Q (b j) (w x)) := hpolar.comp hwc
+  have hQw : Continuous (fun x ↦ Q (w x)) := Q.continuous.comp hwc
+  have hformula : Continuous (fun x ↦
+      b j + polar Q (b j) (u x) • w x - polar Q (b j) (w x) • u x -
+        (Q (w x) * polar Q (b j) (u x)) • u x) := by
+    exact (continuous_const.add (hpu.smul hwc)).sub (hpw.smul huc) |>.sub
+      ((hQw.mul hpu).smul huc)
+  exact hformula.congr fun x ↦ (transvection_apply (hu x) (huw x) (b j)).symm
 
 /-- Continuously varying isotropic vectors and orthogonal parameters determine continuously
 varying Eichler transvections. -/
