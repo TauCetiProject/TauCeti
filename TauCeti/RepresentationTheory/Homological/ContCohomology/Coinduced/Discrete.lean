@@ -651,9 +651,12 @@ theorem trace_conj (g : G) (hVU : V = U.map (MulAut.conj g).toMonoidHom)
     (f : DiscreteCoind G U M) : trace G V M (conj U V M g hVU.le f) = trace G U M f := by
   have hmem (y : G) : y ∈ V ↔ g⁻¹ * y * g ∈ U := by
     rw [hVU, Subgroup.mem_map_equiv, MulAut.conj_symm_apply]
+  -- Conjugating the quotient `(a g⁻¹)⁻¹ (b g⁻¹)` back by `g` recovers `a⁻¹ b`.
+  have hconj (a b : G) : g⁻¹ * ((a * g⁻¹)⁻¹ * (b * g⁻¹)) * g = a⁻¹ * b := by
+    simp [mul_assoc]
   let E : G ⧸ U ≃ G ⧸ V := Quotient.congr (Equiv.mulRight g⁻¹) fun a b => by
     simp only [QuotientGroup.leftRel_apply, Equiv.coe_mulRight, hmem]
-    rw [show g⁻¹ * ((a * g⁻¹)⁻¹ * (b * g⁻¹)) * g = a⁻¹ * b by simp [mul_assoc]]
+    rw [hconj]
   have hE (x : G) : E (x : G ⧸ U) = ((x * g⁻¹ : G) : G ⧸ V) := rfl
   rw [trace_eq_sum_transversal (fun q => (E.symm q).out * g⁻¹)
     (fun q => by rw [← hE, QuotientGroup.out_eq', Equiv.apply_symm_apply]), trace_apply]

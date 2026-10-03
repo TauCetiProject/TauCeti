@@ -67,8 +67,7 @@ variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [CompactSpace G] [TotallyDisconnectedSpace G]
   (U V : Subgroup G) (M : Type u) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
   [DistribMulAction G M] [ContinuousSMul G M]
-  (g : G) (hVU : V = U.map (MulAut.conj g).toMonoidHom)
-  (κ : V →ₜ* U) (hκ : ∀ v : V, (κ v : G) = g⁻¹ * v * g)
+  (g : G) (κ : V →ₜ* U) (hκ : ∀ v : V, (κ v : G) = g⁻¹ * v * g)
   (f : TopRep.res (κ : V →* U) (ofDiscreteModule ℤ U M) ⟶ ofDiscreteModule ℤ V M)
   (hf : ∀ m : M, f.hom m = g • m)
 
@@ -79,11 +78,11 @@ include hκ hf in
 map for `V`. Both are compatible-pair maps from `Hⁿ(G, Coind_U^G M)` to `Hⁿ(V, M)`; they differ by
 the pair of the inner automorphism `x ↦ g⁻¹ x g` of `G` and the action of `g`, which induces the
 identity. -/
-theorem shapiroMap_comp_map_of_conj (n : ℕ) :
+theorem shapiroMap_comp_map_of_conj (hVU : V ≤ U.map (MulAut.conj g).toMonoidHom) (n : ℕ) :
     shapiroMap U M n ≫ _root_.ContinuousCohomology.map κ f n =
       coeffMap (ofDiscreteModuleMap
-          (DiscreteCoind.conj U V M g hVU.le).toAddMonoidHom.toIntLinearMap
-          fun h F => _root_.map_smul (DiscreteCoind.conj U V M g hVU.le) h F) n ≫
+          (DiscreteCoind.conj U V M g hVU).toAddMonoidHom.toIntLinearMap
+          fun h F => _root_.map_smul (DiscreteCoind.conj U V M g hVU) h F) n ≫
         shapiroMap V M n := by
   let X := ofDiscreteModule ℤ G (DiscreteCoind G U M)
   -- The inner compatible pair `(x ↦ g⁻¹ x g, F ↦ g • F)` on `Hⁿ(G, Coind_U^G M)`.
@@ -116,8 +115,8 @@ theorem shapiroMap_comp_map_of_conj (n : ℕ) :
     congr 1
     group
   have hFΦ (Φ : DiscreteCoind G U M) : F Φ = g • Φ 1 := by simp [F]
-  let Ψ := ofDiscreteModuleMap (DiscreteCoind.conj U V M g hVU.le).toAddMonoidHom.toIntLinearMap
-    fun h Φ => _root_.map_smul (DiscreteCoind.conj U V M g hVU.le) h Φ
+  let Ψ := ofDiscreteModuleMap (DiscreteCoind.conj U V M g hVU).toAddMonoidHom.toIntLinearMap
+    fun h Φ => _root_.map_smul (DiscreteCoind.conj U V M g hVU) h Φ
   let evV := ofDiscreteModulePair (ContinuousMonoidHom.subgroupSubtype V : V →* G)
     (DiscreteCoind.eval G V M).toIntLinearMap fun v Φ => eval_subgroupSubtype_smul G V M v Φ
   -- A coefficient map followed by a compatible-pair map is a single compatible-pair map.
@@ -140,12 +139,12 @@ theorem shapiroMap_comp_map_of_conj (n : ℕ) :
     let BV := (TopRep.resFunctor (ContinuousMonoidHom.subgroupSubtype V : V →* G)).map B
     let ΨV := (TopRep.resFunctor (ContinuousMonoidHom.subgroupSubtype V : V →* G)).map Ψ
     have h₁ : BV.hom Φ = g • Φ := ofDiscreteModulePair_hom_apply (c : G →* G) _ _ Φ
-    have h₂ : ΨV.hom (g • Φ) = DiscreteCoind.conj U V M g hVU.le (g • Φ) :=
+    have h₂ : ΨV.hom (g • Φ) = DiscreteCoind.conj U V M g hVU (g • Φ) :=
       ofDiscreteModuleMap_hom_apply (G := G)
-        (DiscreteCoind.conj U V M g hVU.le).toAddMonoidHom.toIntLinearMap
-        (fun h Φ => _root_.map_smul (DiscreteCoind.conj U V M g hVU.le) h Φ) (g • Φ)
-    have h₃ : evV.hom (DiscreteCoind.conj U V M g hVU.le (g • Φ)) =
-        DiscreteCoind.conj U V M g hVU.le (g • Φ) 1 :=
+        (DiscreteCoind.conj U V M g hVU).toAddMonoidHom.toIntLinearMap
+        (fun h Φ => _root_.map_smul (DiscreteCoind.conj U V M g hVU) h Φ) (g • Φ)
+    have h₃ : evV.hom (DiscreteCoind.conj U V M g hVU (g • Φ)) =
+        DiscreteCoind.conj U V M g hVU (g • Φ) 1 :=
       (ofDiscreteModulePair_hom_apply (ContinuousMonoidHom.subgroupSubtype V : V →* G)
         (DiscreteCoind.eval G V M).toIntLinearMap
         (fun v Φ => eval_subgroupSubtype_smul G V M v Φ) _).trans
@@ -160,19 +159,20 @@ theorem shapiroMap_comp_map_of_conj (n : ℕ) :
     exact (congrArg (fun m : M => g • m) ((ofDiscreteModulePair_hom_apply _ _ _ Φ).trans
       (DiscreteCoind.eval_apply Φ))).trans (hFΦ Φ).symm
 
-include hVU hκ hf in
+include hκ hf in
 /-- **Corestriction is invariant under conjugation**, in every degree: for `g : G`, an open
 subgroup `U` of finite index and `V = gUg⁻¹`, corestriction from `V` after the conjugation
 `(g)_* : Hⁿ(U, M) ⟶ Hⁿ(V, M)` is corestriction from `U`. Here `(g)_*` is the map of the compatible
 pair of `κ : V → U`, `v ↦ g⁻¹ v g`, and the action of `g` on `M`; both are taken as hypotheses on
 their values, so that the statement applies to any presentation of the pair. -/
 @[reassoc]
-theorem map_comp_corestriction_of_conj (hU : IsOpen (U : Set G)) [U.FiniteIndex]
+theorem map_comp_corestriction_of_conj (hVU : V = U.map (MulAut.conj g).toMonoidHom)
+    (hU : IsOpen (U : Set G)) [U.FiniteIndex]
     (hV : IsOpen (V : Set G)) [V.FiniteIndex] (n : ℕ) :
     _root_.ContinuousCohomology.map κ f n ≫ corestriction V M hV n = corestriction U M hU n := by
   have := isIso_shapiroMap U (U.isClosed_of_isOpen hU) M n
   rw [← cancel_epi (shapiroMap U M n), shapiroMap_comp_corestriction,
-    reassoc_of% (shapiroMap_comp_map_of_conj U V M g hVU κ hκ f hf n),
+    reassoc_of% (shapiroMap_comp_map_of_conj U V M g κ hκ f hf hVU.le n),
     shapiroMap_comp_corestriction, ← coeffMap_comp]
   -- It remains that the conjugation map of coinduced modules commutes with the traces.
   congr 1
@@ -226,9 +226,10 @@ theorem trivialF2Map_comp_trivialF2CorMap_of_conj (hU : IsOpen (U : Set G)) [U.F
   rw [trivialF2CorMap_def, trivialF2CorMap_def, ← cancel_epi (eqToHom (congrArg
     (continuousCohomology n) (ofDiscreteModule_subgroup_trivialF2 G U))), reassoc_of% h]
   simp only [eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
-  exact ContinuousCohomology.map_comp_corestriction_of_conj_assoc U V (trivialF2 G).V g hVU κ hκ _
+  exact ContinuousCohomology.map_comp_corestriction_of_conj_assoc U V (trivialF2 G).V g κ hκ _
     (fun m => (ofDiscreteModulePair_hom_apply _ _ _ m).trans
-      ((TopRep.distribMulAction_smul _ g m).trans (trivialF2_ρ_apply_apply G g m)).symm) hU hV n _
+      ((TopRep.distribMulAction_smul _ g m).trans (trivialF2_ρ_apply_apply G g m)).symm) hVU hU hV
+    n _
 
 end TrivialF2
 

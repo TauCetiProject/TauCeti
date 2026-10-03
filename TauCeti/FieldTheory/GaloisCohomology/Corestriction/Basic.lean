@@ -187,8 +187,9 @@ theorem galoisCor_embedding_independent (τ : L →ₐ[K] SeparableClosure K) (n
   ext v : 1
   simp [κ]
 
-/-- **The conjugate class does not depend on the embedding**: two `K`-embeddings
-`σ τ : L →ₐ[K] Kˢ` induce the same endomorphism `galoisConj` of `Hⁿ(G_L, 𝔽₂)`. -/
+/-- **The endomorphism `galoisConj = res ∘ cor - id` does not depend on the embedding**: two
+`K`-embeddings `σ τ : L →ₐ[K] Kˢ` induce the same endomorphism `galoisConj` of `Hⁿ(G_L, 𝔽₂)`.
+For a quadratic extension it is conjugation by the nontrivial coset of `G_L` in `G_K`. -/
 theorem galoisConj_embedding_independent (τ : L →ₐ[K] SeparableClosure K) (n : ℕ) :
     galoisConj K L σ n = galoisConj K L τ n := by
   rw [galoisConj_def, galoisConj_def, galoisCor_embedding_independent K L σ τ,
