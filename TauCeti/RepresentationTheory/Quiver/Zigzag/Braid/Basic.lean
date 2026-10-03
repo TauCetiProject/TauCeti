@@ -6,13 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.Double
-public import TauCeti.Algebra.Algebra.Frobenius.Casimir
 public import TauCeti.Algebra.Category.GradedModuleCat.Abelian
 public import TauCeti.Algebra.CentralSimple.Bimodule
 public import TauCeti.Algebra.DirectSum.Internal
 public import TauCeti.Algebra.Module.GradedModule.Opposite
 public import TauCeti.Algebra.Module.GradedModule.TensorProduct
 public import TauCeti.RingTheory.PrimitiveIdempotent
+public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.Casimir
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.Grading
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.Trace
 
@@ -51,16 +51,15 @@ dart at `i`, and the coevaluation is `1 ↦ e_i ⊗ x_i + x_i ⊗ e_i`, with `x_
 generator.
 
 The coevaluation is a map of bimodules because its value at `1` is the image of the **Casimir
-element** `∑_b b ⊗ b^∨` of the symmetric Frobenius trace `TauCeti.zigzagAlgebraTrace` under
-`u ↦ u (e_i ⊗ e_i)`, with `b` running over the vertex, arrow and volume basis and `b^∨` over its
-dual basis, and the Casimir element of a trace commutes with the algebra
-(`TauCeti.sum_mul_tmul_eq_sum_tmul_mul`).
+element** `TauCeti.zigzagCasimir`, `∑_b b ⊗ b^∨` for the symmetric Frobenius trace
+`TauCeti.zigzagAlgebraTrace`, under `u ↦ u (e_i ⊗ e_i)`, with `b` running over the vertex, arrow and
+volume basis and `b^∨` over its dual basis, and the Casimir element commutes with the algebra
+(`TauCeti.tmul_one_mul_zigzagCasimir`).
 
 ## Main definitions
 
 * `TauCeti.zigzagBraidBimodule`: the bimodule `P_i ⊗_k e_i Z`.
 * `TauCeti.zigzagBraidEvaluation`: the multiplication map `P_i ⊗_k e_i Z → Z`.
-* `TauCeti.zigzagCasimir`: the Casimir element `∑_b b ⊗ b^∨` of the trace pairing.
 * `TauCeti.zigzagBraidCoevaluation`: the coevaluation `Z → P_i ⊗_k e_i Z`.
 * `TauCeti.zigzagEnvelopingGrading`: the internal grading of `Z ⊗[k] Zᵐᵒᵖ`.
 * `TauCeti.zigzagBimoduleGrade`, `TauCeti.zigzagBraidBimoduleGrade`: the internal gradings of the
@@ -75,7 +74,6 @@ dual basis, and the Casimir element of a trace commutes with the algebra
 
 ## Main results
 
-* `TauCeti.tmul_one_mul_zigzagCasimir`: the Casimir element commutes with `Z`.
 * `TauCeti.zigzagBraidComplex_d`, `TauCeti.zigzagBraidInverseComplex_d`: the differentials of `B_i`
   and `B_i'` are the evaluation and the coevaluation.
 * `TauCeti.isInternal_zigzagBimoduleGrade`, `TauCeti.isInternal_zigzagBraidBimoduleGrade`: the
@@ -176,55 +174,13 @@ theorem zigzagBraidEvaluation_tmul (i : V) (x y : 𝒵) :
 
 end Evaluation
 
-/-! ### The Casimir element and the coevaluation -/
+/-! ### The coevaluation -/
 
 section Coevaluation
 
 variable [Finite V]
 
-/-- **The Casimir element of the zigzag algebra**, `∑_b b ⊗ b^∨` in `Z ⊗[k] Zᵐᵒᵖ`, with `b` running
-over the vertex, arrow and volume basis and `b^∨` over its dual basis for the trace pairing,
-indexed by `TauCeti.zigzagDualIndex`. -/
-noncomputable def zigzagCasimir : 𝒵ᵉ := by
-  classical
-  let _ : Fintype V := Fintype.ofFinite V
-  exact ∑ b, zigzagAlgebraBasis k G b ⊗ₜ[k] op (zigzagAlgebraBasis k G (zigzagDualIndex G b))
-
 variable {k G}
-
-/-- The Casimir element as a sum over the basis, for any choice of finiteness and decidability
-instances. -/
-theorem zigzagCasimir_eq_sum [Fintype V] [DecidableRel G.Adj] :
-    zigzagCasimir k G =
-      ∑ b, zigzagAlgebraBasis k G b ⊗ₜ[k] op (zigzagAlgebraBasis k G (zigzagDualIndex G b)) := by
-  rw [zigzagCasimir]
-  convert rfl
-
-/-- **The Casimir element commutes with the zigzag algebra**: `(a ⊗ 1) C = (1 ⊗ a) C`, that is,
-`a C = C a` for the bimodule structure of `Z ⊗[k] Zᵐᵒᵖ`. -/
-theorem tmul_one_mul_zigzagCasimir (a : 𝒵) :
-    (a ⊗ₜ[k] (1 : 𝒵ᵐᵒᵖ)) * zigzagCasimir k G = ((1 : 𝒵) ⊗ₜ[k] op a) * zigzagCasimir k G := by
-  classical
-  cases nonempty_fintype V
-  -- The basis and its dual basis are dual for the trace in the sense of the Casimir lemma.
-  have hx (y : 𝒵) : ∑ b, zigzagAlgebraTrace k G
-      (y * zigzagAlgebraBasis k G (zigzagDualIndex G b)) • zigzagAlgebraBasis k G b = y := by
-    simp_rw [zigzagAlgebraTrace_mul_zigzagAlgebraBasis_zigzagDualIndex]
-    exact (zigzagAlgebraBasis k G).sum_repr y
-  have hy (y : 𝒵) : ∑ b, zigzagAlgebraTrace k G
-      (zigzagAlgebraBasis k G b * y) • zigzagAlgebraBasis k G (zigzagDualIndex G b) = y := by
-    rw [← Equiv.sum_comp (zigzagDualIndex_involutive G).toPerm]
-    simp only [Function.Involutive.coe_toPerm, zigzagDualIndex_zigzagDualIndex]
-    simp_rw [zigzagAlgebraTrace_mul_comm k G _ y]
-    exact hx y
-  have key := sum_mul_tmul_eq_sum_tmul_mul (zigzagAlgebraTrace k G)
-    (zigzagAlgebraTrace_mul_comm k G) hx hy a
-  have := congrArg (TensorProduct.map LinearMap.id (opLinearEquiv k).toLinearMap) key
-  simp only [map_sum, TensorProduct.map_tmul, LinearMap.id_coe, id_eq, LinearEquiv.coe_coe,
-    coe_opLinearEquiv] at this
-  rw [zigzagCasimir_eq_sum, Finset.mul_sum, Finset.mul_sum]
-  simp only [Algebra.TensorProduct.tmul_mul_tmul, one_mul, ← op_mul]
-  exact this
 
 /-- The Casimir element cut down at `i` lies in `P_i ⊗_k e_i Z`. -/
 theorem zigzagCasimir_mul_mem_zigzagBraidBimodule (i : V) :
