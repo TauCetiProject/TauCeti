@@ -136,6 +136,8 @@ theorem cup_muNRep_kummerClass_eq_zero_iff {ζ : K} (hζ : IsPrimitiveRoot ζ 2)
         (ClassFieldTheory.kummerClass K (isUnit_of_invertible (2 : K)) b) = 0 ↔
       (trivialF2TopPairing (AbsoluteGaloisGroup K)).cup 1 1
         (kummerClass a) (kummerClass b) = 0 := by
+  -- `kummerClass` has an unexposed body in `Basic`, so the imported characteristic
+  -- lemma is needed to identify its canonical Kummer map without unfolding it.
   simpa only [ClassFieldTheory.kummerClass_eq_muNRepH1Equiv_kummerMap,
     kummerClass_def, explicitIso_kummerMap] using
     cup_muNRepH1Equiv_eq_zero_iff hζ
