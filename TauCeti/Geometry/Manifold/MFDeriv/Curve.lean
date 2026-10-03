@@ -332,7 +332,7 @@ within `s`. -/
 theorem curveVelocityWithin_eq_derivWithin {γ : 𝕜 → F} :
     curveVelocityWithin 𝓘(𝕜, F) γ s t = derivWithin γ s t := by
   rw [curveVelocityWithin_apply, mfderivWithin_eq_fderivWithin]
-  rfl
+  exact fderivWithin_derivWithin (f := γ) (s := s) (x := t)
 
 /-- The velocity of a curve in a normed space, read in its own model, is its derivative. -/
 @[simp]

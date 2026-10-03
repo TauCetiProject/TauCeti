@@ -14,14 +14,14 @@ import Mathlib.Analysis.LocallyConvex.HahnBanach
 /-!
 # Leaves of a foliation
 
-The leaves of a foliation of a real manifold are the maximal connected integral manifolds of its
-tangent distribution. This file defines them through the curves tangent to the foliation: two
-points lie on the same leaf when they are joined by a finite chain of curves, each `C¹` on a
-compact interval, whose velocities lie in the tangent distribution. On a boundaryless real
-manifold modelled on a finite-dimensional space the Frobenius theorem, which is not proved here,
-supplies flat charts in which a curve tangent to the foliation has locally constant transverse
-coordinates, so that this relation recovers the leaves in the chart sense; conversely, any two
-points of a connected integral manifold are joined by such a chain inside it.
+This file defines the leaves of a foliation of a real manifold through the curves tangent to the
+foliation: two points lie on the same leaf when they are joined by a finite chain of curves, each
+`C¹` on a compact interval, whose velocities lie in the tangent distribution. On a boundaryless
+real manifold modelled on a finite-dimensional space, the flat charts of the Frobenius theorem
+make a curve tangent to the foliation have locally constant transverse coordinates, so that there
+these leaves are the leaves in the chart sense, the maximal connected integral manifolds of the
+tangent distribution; conversely, any two points of a connected integral manifold are joined by
+such a chain inside it.
 
 The leaves partition the manifold, and each leaf is path-connected. For the foliation of a real
 normed space `E` by the translates of a finite-dimensional subspace `S`, the leaf through `x` is
@@ -41,8 +41,8 @@ every leaf) and the Euler-class bound on its leaves refer to.
 
 * `TauCeti.Foliation.sameLeaf_equivalence`: lying on the same leaf is an equivalence relation, and
   `TauCeti.Foliation.sameLeaf_le` says it is the least one relating the ends of tangent curves.
-* `TauCeti.Foliation.sameLeaf_of_contMDiffOn`: a curve tangent to `F` on a compact interval stays
-  in one leaf.
+* `TauCeti.Foliation.sameLeaf_of_contMDiffOn_of_tangent`: a curve tangent to `F` on a compact
+  interval stays in one leaf.
 * `TauCeti.Foliation.leaf_eq_leaf_iff` and `TauCeti.Foliation.disjoint_leaf_iff`: two leaves are
   equal or disjoint.
 * `TauCeti.Foliation.isPathConnected_leaf`: every leaf is path-connected.
@@ -111,13 +111,9 @@ theorem sameLeaf_le {r : M → M → Prop} (hr : Equivalence r) (h : F.JoinedByT
 
 variable (F) in
 /-- Every point lies on its own leaf. -/
-@[refl]
+@[refl, simp]
 theorem SameLeaf.refl (x : M) : F.SameLeaf x x :=
   (sameLeaf_equivalence F).refl x
-
-/-- Every point lies on its own leaf; `SameLeaf.refl` with the point implicit. -/
-theorem SameLeaf.rfl : F.SameLeaf x x :=
-  SameLeaf.refl F x
 
 /-- Lying on the same leaf is symmetric. -/
 @[symm]
@@ -144,6 +140,7 @@ theorem mem_leaf_self (x : M) : x ∈ F.leaf x :=
   SameLeaf.refl F x
 
 /-- Two leaves are equal exactly when their base points lie on the same leaf. -/
+@[simp]
 theorem leaf_eq_leaf_iff : F.leaf x = F.leaf y ↔ F.SameLeaf x y := by
   refine ⟨fun h ↦ ?_, fun h ↦ Set.ext fun z ↦ ⟨h.symm.trans, h.trans⟩⟩
   rw [← mem_leaf, h]
@@ -155,13 +152,14 @@ theorem leaf_eq_of_mem (h : y ∈ F.leaf x) : F.leaf y = F.leaf x :=
 
 /-- Two leaves are disjoint exactly when their base points do not lie on the same leaf; so the
 leaves of a foliation partition the manifold. -/
+@[simp]
 theorem disjoint_leaf_iff : Disjoint (F.leaf x) (F.leaf y) ↔ ¬ F.SameLeaf x y := by
   refine ⟨fun h hxy ↦ ?_, fun h ↦ Set.disjoint_left.mpr fun z hxz hyz ↦ h (hxz.trans hyz.symm)⟩
   exact Set.disjoint_left.mp h hxy (mem_leaf_self F y)
 
 /-- A curve which is `C¹` on a compact interval `[a, b]` and tangent to `F` there stays in one leaf
 of `F`. -/
-theorem sameLeaf_of_contMDiffOn {γ : ℝ → M} {a b s t : ℝ}
+theorem sameLeaf_of_contMDiffOn_of_tangent {γ : ℝ → M} {a b s t : ℝ}
     (hγ : ContMDiffOn 𝓘(ℝ, ℝ) I 1 γ (Icc a b))
     (htan : ∀ u ∈ Icc a b, curveVelocityWithin I γ (Icc a b) u ∈ F.distribution (γ u))
     (hs : s ∈ Icc a b) (ht : t ∈ Icc a b) : F.SameLeaf (γ s) (γ t) := by
@@ -200,7 +198,7 @@ theorem isPathConnected_leaf (x : M) : IsPathConnected (F.leaf x) := by
     obtain ⟨γ, hγ, htan, rfl, rfl⟩ := h
     refine JoinedIn.ofLine hγ.continuousOn rfl rfl ?_
     rintro _ ⟨t, ht, rfl⟩
-    exact sameLeaf_of_contMDiffOn hγ htan (left_mem_Icc.mpr zero_le_one) ht
+    exact sameLeaf_of_contMDiffOn_of_tangent hγ htan (left_mem_Icc.mpr zero_le_one) ht
   | refl y => exact JoinedIn.refl (mem_leaf_self F y)
   | symm y z h ih =>
     rw [leaf_eq_of_mem h]
