@@ -248,7 +248,7 @@ private theorem tendsto_restrict_localTest (hp : p ≠ ∞) (hU : U ≤ Omega)
 /-- On every open subdomain with compact closure inside `Ω`, restrictions of test functions
 on `Ω` approximate the restriction of a `W^{k,p}(Ω)` element in the full Sobolev norm.
 The order is arbitrary, and no boundary regularity is assumed. -/
-theorem exists_testFunction_approximation (hp : p ≠ ∞)
+theorem exists_testFunction_approximation_restrictL (hp : p ≠ ∞)
     (hcompact : IsCompact (closure (U : Set E)))
     (hclosure : closure (U : Set E) ⊆ Omega) (k : ℕ) (u : Wkp mu Omega p k) :
     ∃ psi : ℕ → 𝓓(Omega, ℝ),
@@ -286,7 +286,7 @@ theorem restrictL_mem_closure_range_ofTestFunctionₗ (hp : p ≠ ∞)
       closure (Set.range (fun psi : 𝓓(Omega, ℝ) =>
         restrictL (SetLike.coe_subset_coe.mp (subset_closure.trans hclosure)) k
           (ofTestFunctionₗ (mu := mu) (p := p) k psi))) := by
-  obtain ⟨psi, hpsi⟩ := exists_testFunction_approximation hp hcompact hclosure k u
+  obtain ⟨psi, hpsi⟩ := exists_testFunction_approximation_restrictL hp hcompact hclosure k u
   exact mem_closure_of_tendsto hpsi (Eventually.of_forall fun j => ⟨psi j, rfl⟩)
 
 end TauCeti.Wkp
