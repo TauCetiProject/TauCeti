@@ -32,10 +32,11 @@ public section
 noncomputable section
 
 open CategoryTheory TopologicalSpace AlgebraicGeometry
+open TauCeti.AlgebraicGeometry.Scheme.Modules
 
 universe u
 
-namespace TauCeti.AlgebraicGeometry.Scheme.Modules
+namespace TauCeti.AlgebraicGeometry
 
 variable {X : Scheme.{u}} (M : X.Modules) (U V : Opens X)
 
@@ -82,4 +83,4 @@ lemma sectionsQuotientEquivCohomologyOne_mk (hUV : U ⊔ V = ⊤)
       (Opens.mayerVietorisSquare U V) ((_root_.SheafOfModules.toSheaf X.ringCatSheaf).obj M)
       hU hV s)
 
-end TauCeti.AlgebraicGeometry.Scheme.Modules
+end TauCeti.AlgebraicGeometry
