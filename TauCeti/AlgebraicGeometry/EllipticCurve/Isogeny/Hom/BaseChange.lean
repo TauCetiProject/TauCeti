@@ -133,6 +133,7 @@ variable [W₂.IsElliptic]
 open scoped Classical in
 /-- The tautological point of a transported morphism is its transported tautological point.
 The cast identifies the two coefficient maps using the function-field commuting square. -/
+@[simp]
 theorem tautologicalPoint_map (h : Hom W₁ W₂) (f : F →+* K) :
     (h.map f).tautologicalPoint =
       AddEquiv.cast (M := fun V : WeierstrassCurve (W₁.map f).FunctionField ↦ V.toAffine.Point)
