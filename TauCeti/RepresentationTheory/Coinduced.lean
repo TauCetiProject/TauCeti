@@ -174,4 +174,13 @@ theorem coextendScalarsEquivCoind_apply
     TauCeti.Representation.asModuleLinearEquivOfEquiv_apply]
   rfl
 
+/-- The inverse of `Representation.coextendScalarsEquivCoind` sends a coinduced function `y` to
+the homomorphism taking the value `y g` at `single g 1`. -/
+@[simp]
+theorem coextendScalarsEquivCoind_symm_apply_single (y : (coind φ ρ).asModule) (g : G) :
+    ((coextendScalarsEquivCoind φ ρ).symm y (.single g 1) : V) =
+      Subtype.val (p := (· ∈ coindV φ ρ)) y g := by
+  conv_rhs => rw [← (coextendScalarsEquivCoind φ ρ).apply_symm_apply y]
+  rw [coextendScalarsEquivCoind_apply]
+
 end Representation
