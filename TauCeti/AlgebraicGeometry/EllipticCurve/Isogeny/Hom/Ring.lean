@@ -39,7 +39,7 @@ morphisms, along the faithful, additive base change (`TauCeti.Isogeny.Hom.map_in
 ## Main results
 
 * `TauCeti.Isogeny.Hom.pointMap_add`: every morphism acts additively on points, over any field
-  (Silverman III.4.8), with `pointMap_neg`, `pointMap_sub` and `pointMap_zsmul`.
+  (Silverman III.4.8), with `pointMap_neg`, `pointMap_sub`, `pointMap_nsmul` and `pointMap_zsmul`.
 * `TauCeti.Isogeny.Hom.comp_add`: composition is additive in the inner morphism, over any field.
 * `TauCeti.Isogeny.Hom.compLeftHom`: postcomposition by a morphism, as an additive homomorphism.
 * The `Ring (Hom W W)` and `IsDomain (Hom W W)` instances.
@@ -109,6 +109,12 @@ theorem pointMap_neg (f : Hom W₁ W₂) (P : W₁.Point) : f.pointMap (-P) = -f
 theorem pointMap_sub (f : Hom W₁ W₂) (P Q : W₁.Point) :
     f.pointMap (P - Q) = f.pointMap P - f.pointMap Q :=
   f.pointMapHom.map_sub P Q
+
+/-- **Every morphism commutes with natural multiples of points.** -/
+@[simp]
+theorem pointMap_nsmul (f : Hom W₁ W₂) (n : ℕ) (P : W₁.Point) :
+    f.pointMap (n • P) = n • f.pointMap P :=
+  f.pointMapHom.map_nsmul n P
 
 /-- **Every morphism commutes with integer multiples of points.** -/
 @[simp]
