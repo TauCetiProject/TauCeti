@@ -416,9 +416,7 @@ when its Taylor map only reads the letter component through the linear part. -/
 def IsStrict (f : AInfinityHom AA BB) : Prop :=
   f.taylor = f.linearPart ∘ₗ ReducedTensorWords.letter R A
 
-/-- Strictness is equivalent to the Taylor map factoring through the letter component.
-This exposes the characterization to importing modules, where the body of `IsStrict` is
-unavailable for unfolding. -/
+/-- Strictness is equivalent to the Taylor map factoring through the letter component. -/
 theorem isStrict_iff (f : AInfinityHom AA BB) :
     f.IsStrict ↔ f.taylor = f.linearPart ∘ₗ ReducedTensorWords.letter R A := (Iff.rfl)
 

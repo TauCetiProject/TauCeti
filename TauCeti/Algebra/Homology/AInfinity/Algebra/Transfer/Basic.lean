@@ -244,9 +244,7 @@ the higher bar differential of `𝒜`. -/
 noncomputable def transferBarDifferential : Module.End R (ReducedTensorWords R H) :=
   (𝒜.barTensorTrick c hh hincl hproj).perturbedDifferential 𝒜.higherBarDifferential
 
-/-- The transferred bar differential is the perturbed differential of the bar tensor trick.
-This exposes the equation to importing modules, where the body of `transferBarDifferential`
-is unavailable for unfolding. -/
+/-- The transferred bar differential is the perturbed differential of the bar tensor trick. -/
 theorem transferBarDifferential_def :
     𝒜.transferBarDifferential c hh hincl hproj =
       (𝒜.barTensorTrick c hh hincl hproj).perturbedDifferential 𝒜.higherBarDifferential := (rfl)

@@ -117,7 +117,7 @@ include hι hπ hη
 
 /-- The morphism between transferred structures induced by a strict morphism and compatible
 contractions. Its bar map is the letterwise retract map. -/
-noncomputable def transferHom :
+private noncomputable def transferBarHom :
     AInfinityHom (𝒜.transfer c hh hi hp) (ℬ.transfer c' hh' hi' hp') where
   barMap := ReducedTensorWords.map (R := R) g
   isCoalgHom_barMap := isCoalgHom_map g
@@ -134,43 +134,65 @@ noncomputable def transferHom :
     exact (transferBarDifferential_naturality c c' hh hi hp hh' hi' hp' f g hι hπ hη).symm
 
 /-- The induced morphism acts letterwise by the retract map on the bar construction. -/
-@[simp]
-theorem barMap_transferHom :
-    (transferHom c c' hh hi hp hh' hi' hp' f g hι hπ hη).barMap =
+private theorem barMap_transferBarHom :
+    (transferBarHom c c' hh hi hp hh' hi' hp' f g hι hπ hη).barMap =
       ReducedTensorWords.map (R := R) g := (rfl)
 
 /-- The linear part of the induced morphism is the original retract map. -/
-@[simp]
-theorem linearPart_transferHom :
-    (transferHom c c' hh hi hp hh' hi' hp' f g hι hπ hη).linearPart = g := by
+private theorem linearPart_transferBarHom :
+    (transferBarHom c c' hh hi hp hh' hi' hp' f g hι hπ hη).linearPart = g := by
   apply LinearMap.ext
   intro x
-  rw [AInfinityHom.linearPart_apply, AInfinityHom.taylor_def, barMap_transferHom,
+  rw [AInfinityHom.linearPart_apply, AInfinityHom.taylor_def, barMap_transferBarHom,
     LinearMap.comp_apply, map_ofLetter, letter_ofLetter]
 
 /-- Transfer sends compatible strict morphisms to strict morphisms. -/
+private theorem isStrict_transferBarHom :
+    (transferBarHom c c' hh hi hp hh' hi' hp' f g hι hπ hη).IsStrict := by
+  rw [AInfinityHom.isStrict_iff, AInfinityHom.taylor_def, barMap_transferBarHom,
+    linearPart_transferBarHom, letter_comp_map]
+
+/-- The strict morphism between transferred structures induced by a strict morphism and
+compatible contractions. Its underlying linear map is the retract map. -/
+noncomputable def transferStrictHom :
+    AInfinityStrictHom (𝒜.transfer c hh hi hp) (ℬ.transfer c' hh' hi' hp') :=
+  (isStrict_transferBarHom c c' hh hi hp hh' hi' hp' f g hι hπ hη).toStrictHom
+
+/-- The underlying linear map of the induced strict morphism is the retract map. -/
 @[simp]
-theorem isStrict_transferHom :
-    (transferHom c c' hh hi hp hh' hi' hp' f g hι hπ hη).IsStrict := by
-  rw [AInfinityHom.isStrict_iff, AInfinityHom.taylor_def, barMap_transferHom,
-    linearPart_transferHom, letter_comp_map]
+theorem transferStrictHom_toLinearMap :
+    (transferStrictHom c c' hh hi hp hh' hi' hp' f g hι hπ hη).toLinearMap = g := by
+  rw [transferStrictHom, AInfinityHom.IsStrict.toStrictHom_toLinearMap,
+    linearPart_transferBarHom]
+
+/-- The induced strict morphism acts by the retract map. -/
+@[simp]
+theorem coe_transferStrictHom :
+    ⇑(transferStrictHom c c' hh hi hp hh' hi' hp' f g hι hπ hη) = g := by
+  rw [← AInfinityStrictHom.coe_toLinearMap, transferStrictHom_toLinearMap]
+
+/-- The induced strict morphism acts letterwise on the bar construction. -/
+@[simp]
+theorem barMap_transferStrictHom :
+    (transferStrictHom c c' hh hi hp hh' hi' hp' f g hι hπ hη).barMap =
+      ReducedTensorWords.map (R := R) g := by
+  rw [AInfinityStrictHom.barMap_def, transferStrictHom_toLinearMap]
 
 /-- The retract map preserves all transferred operations. -/
 theorem map_m_transfer (n : ℕ) (x : Fin n → H) :
     g ((𝒜.transfer c hh hi hp).m n x) =
       (ℬ.transfer c' hh' hi' hp').m n (fun i ↦ g (x i)) := by
-  have h := (isStrict_transferHom c c' hh hi hp hh' hi' hp' f g hι hπ hη).toStrictHom.map_m n x
-  simpa only [← AInfinityStrictHom.coe_toLinearMap,
-    AInfinityHom.IsStrict.toStrictHom_toLinearMap, linearPart_transferHom] using h
+  simpa only [coe_transferStrictHom] using
+    (transferStrictHom c c' hh hi hp hh' hi' hp' f g hι hπ hη).map_m n x
 
 /-- The extending inclusion is natural under maps compatible with the contractions. -/
 theorem transferInclusion_naturality :
     f.toAInfinityHom.comp (𝒜.transferInclusion c hh hi hp) =
       (ℬ.transferInclusion c' hh' hi' hp').comp
-        (transferHom c c' hh hi hp hh' hi' hp' f g hι hπ hη) := by
+        (transferStrictHom c c' hh hi hp hh' hi' hp' f g hι hπ hη).toAInfinityHom := by
   apply AInfinityHom.barMap_injective
   simp only [AInfinityHom.barMap_comp, AInfinityStrictHom.barMap_toAInfinityHom,
-    barMap_transferHom]
+    barMap_transferStrictHom]
   -- Use the basic perturbation lemma on the tensor-trick contractions.
   have h := (𝒜.barTensorTrick c hh hi hp).perturb_incl_naturality
     (ℬ.barTensorTrick c' hh' hi' hp') f.barMap (ReducedTensorWords.map (R := R) g)
@@ -186,12 +208,12 @@ theorem transferInclusion_naturality :
 
 /-- The projection onto the transferred structure is natural under compatible maps. -/
 theorem transferProjection_naturality :
-    (transferHom c c' hh hi hp hh' hi' hp' f g hι hπ hη).comp
+    (transferStrictHom c c' hh hi hp hh' hi' hp' f g hι hπ hη).toAInfinityHom.comp
         (𝒜.transferProjection c hh hi hp) =
       (ℬ.transferProjection c' hh' hi' hp').comp f.toAInfinityHom := by
   apply AInfinityHom.barMap_injective
   simp only [AInfinityHom.barMap_comp, AInfinityStrictHom.barMap_toAInfinityHom,
-    barMap_transferHom]
+    barMap_transferStrictHom]
   have h := (𝒜.barTensorTrick c hh hi hp).perturb_proj_naturality
     (ℬ.barTensorTrick c' hh' hi' hp') f.barMap (ReducedTensorWords.map (R := R) g)
     𝒜.gradedCoderiv_differential_add_higherBarDifferential_comp_self
