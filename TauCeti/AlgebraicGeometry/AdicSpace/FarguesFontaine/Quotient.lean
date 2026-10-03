@@ -48,7 +48,7 @@ def spaX (hI : IsAdic (Ideal.span {(p : WittVector p R), teichmuller p ϖ})) :=
   Quotient (MulAction.orbitRel (Subgroup.zpowers (frobeniusHomeomorph hI)) (spaY p ϖ))
 
 /-- The Frobenius orbit space carries the quotient topology from `𝒴`. -/
-instance topologicalSpace_spaX
+instance topologicalSpaceSpaX
     (hI : IsAdic (Ideal.span {(p : WittVector p R), teichmuller p ϖ})) :
     TopologicalSpace (spaX hI) :=
   inferInstanceAs (TopologicalSpace
