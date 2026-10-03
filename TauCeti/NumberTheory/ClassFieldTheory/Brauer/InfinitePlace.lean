@@ -47,6 +47,7 @@ def infiniteInvMap (w : InfinitePlace K) : Br w.Completion →+ AddCircle (1 : �
 
 /-- At a real place the archimedean invariant is the real invariant transported through
 Mathlib's identification of the completion with `ℝ`. -/
+@[simp]
 theorem infiniteInvMap_of_isReal (w : InfinitePlace K) (hw : w.IsReal) :
     infiniteInvMap w =
       realInv.comp (brCongr (Completion.ringEquivRealOfIsReal hw)).toAddMonoidHom := by
