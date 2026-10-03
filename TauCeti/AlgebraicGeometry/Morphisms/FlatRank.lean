@@ -12,6 +12,9 @@ public import Mathlib.AlgebraicGeometry.Morphisms.FlatRank
 
 The rank function of a finite flat morphism is invariant under isomorphisms over its base.
 This packages Mathlib's `Scheme.Hom.finrank_comp_left_of_isIso` for objects of `Over S`.
+`TauCeti.finrank_eq_of_iso` accepts an isomorphism over the base directly, incorporating its
+commuting triangle. It is used to compare an affine group scheme with the Hopf spectrum of its
+coordinate algebra, and also transports rank through isomorphisms with Cartier duals.
 -/
 
 public section
