@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.AddCircle
 public import TauCeti.NumberTheory.LocalField.Norm.Unramified
 public import TauCeti.NumberTheory.LocalField.ResidueCorrespondence
-public import TauCeti.FieldTheory.GaloisCohomology.Cyclic
+public import TauCeti.FieldTheory.GaloisCohomology.UnitsRestriction
 import TauCeti.GroupTheory.QuotientGroup.KerEquiv
 import TauCeti.NumberTheory.LocalField.Frobenius
 
@@ -45,7 +45,9 @@ The invariants of different unramified layers are compatible. For unramified lay
 (`TauCeti.map_cyclicClass`), whose invariant is again `v_K(a) / n`.
 So inflation preserves the invariant: this is the compatibility the invariants of the unramified
 layers need in order to glue to one invariant on the union of their images in the Brauer group of
-`K`.
+`K`. Enlarging the ground field from `K` to an intermediate field `E` preserves the
+representing unit of a cyclic class, while restriction multiplies its invariant by `[E : K]`
+(`unramifiedInv_restrict`).
 
 ## Main definitions
 
@@ -56,6 +58,9 @@ layers need in order to glue to one invariant on the union of their images in th
 * `TauCeti.ClassFieldTheory.unramifiedInv`: the invariant `H²(Gal(L/K), Lˣ) → ℚ/ℤ`.
 
 ## Main results
+
+* `TauCeti.ClassFieldTheory.unramifiedInv_restrict`: restriction to an intermediate ground
+  field multiplies the invariant by the ground-field degree.
 
 * `TauCeti.ClassFieldTheory.unramifiedClass_eq_zero_iff`: the class of `a` vanishes exactly when
   `a` is a norm from `L`.
@@ -226,5 +231,62 @@ theorem unramifiedInv_map (x : H2 (Rep.ofMulDistribMulAction (L ≃ₐ[K] L) Lˣ
   field_simp
 
 end Inflation
+
+/-! ### Restriction to an intermediate ground field -/
+
+section Restriction
+
+variable (E : Type) [Field E] [ValuativeRel E] [TopologicalSpace E]
+  [IsNonarchimedeanLocalField E] [Algebra K E] [Algebra E L] [IsScalarTower K E L]
+  [ValuativeExtension K E] [ValuativeExtension E L]
+
+/-- Restricting an unramified cyclic class to an intermediate ground field preserves its
+representing unit, included into the new ground field. -/
+@[simp]
+theorem restrict_unramifiedClass (a : Kˣ) :
+    letI : FiniteDimensional E L := FiniteDimensional.right K E L
+    letI : IsGalois E L := IsGalois.tower_top_of_isGalois K E L
+    letI : IsUnramified E L := IsUnramified.tower_top K E L
+    groupCohomology.map (AlgEquiv.restrictScalarsHom K) (unitsRestrictionHom K E L) 2
+        (unramifiedClass K L (Additive.ofMul a)) =
+      unramifiedClass E L (Additive.ofMul (Units.map (algebraMap K E : K →* E) a)) := by
+  let _ : FiniteDimensional E L := FiniteDimensional.right K E L
+  let _ : IsGalois E L := IsGalois.tower_top_of_isGalois K E L
+  let _ : IsUnramified E L := IsUnramified.tower_top K E L
+  have : FiniteDimensional K E := FiniteDimensional.left K E L
+  have : IsUnramified K E := IsUnramified.tower_bot K E L
+  exact restrict_cyclicClass (mem_zpowers_frobeniusAlgEquiv K L)
+    (mem_zpowers_frobeniusAlgEquiv E L)
+    (by simpa only [AlgEquiv.restrictScalarsHom_apply, IsUnramified.inertiaDegree_eq_finrank]
+      using frobeniusAlgEquiv_restrictScalars (K := K) (L := E) (M := L)) a
+
+/-- Restriction of an unramified relative Brauer class multiplies its invariant by the
+degree of the ground-field extension. -/
+@[simp]
+theorem unramifiedInv_restrict (x : H2 (Rep.ofMulDistribMulAction (L ≃ₐ[K] L) Lˣ)) :
+    letI : FiniteDimensional E L := FiniteDimensional.right K E L
+    letI : IsGalois E L := IsGalois.tower_top_of_isGalois K E L
+    letI : IsUnramified E L := IsUnramified.tower_top K E L
+    unramifiedInv E L
+        (groupCohomology.map (AlgEquiv.restrictScalarsHom K) (unitsRestrictionHom K E L) 2 x) =
+      Module.finrank K E • unramifiedInv K L x := by
+  let _ : FiniteDimensional E L := FiniteDimensional.right K E L
+  let _ : IsGalois E L := IsGalois.tower_top_of_isGalois K E L
+  let _ : IsUnramified E L := IsUnramified.tower_top K E L
+  have : FiniteDimensional K E := FiniteDimensional.left K E L
+  obtain ⟨a, rfl⟩ := unramifiedClass_surjective K L x
+  have : IsUnramified K E := IsUnramified.tower_bot K E L
+  rw [← ofMul_toMul a, restrict_unramifiedClass, unramifiedInv_unramifiedClass,
+    unramifiedInv_unramifiedClass, toAdd_normalizedValuation_algebraMap,
+    IsUnramified.ramificationIndex_eq_one, Nat.cast_one, one_mul, ← AddCircle.coe_nsmul,
+    nsmul_eq_mul]
+  congr 1
+  have hE : (Module.finrank K E : ℚ) ≠ 0 := Nat.cast_ne_zero.2 Module.finrank_pos.ne'
+  have hL : (Module.finrank E L : ℚ) ≠ 0 := Nat.cast_ne_zero.2 Module.finrank_pos.ne'
+  rw [← Module.finrank_mul_finrank K E L]
+  push_cast
+  field_simp
+
+end Restriction
 
 end TauCeti.ClassFieldTheory

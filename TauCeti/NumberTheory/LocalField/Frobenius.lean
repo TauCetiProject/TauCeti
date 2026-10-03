@@ -14,15 +14,17 @@ public import Mathlib.RingTheory.Frobenius
 
 The arithmetic Frobenius of a finite unramified extension is compatible with restriction through
 a normal intermediate field. This identifies the Frobenius elements at different finite levels
-of an unramified tower, rather than merely identifying arbitrary generators of their cyclic Galois
-groups. The Teichmüller lifts of a residue element's Frobenius image and its power by the
-cardinality of the base residue field agree. Frobenius raises prime-to-residue-characteristic
-roots of unity to that same power.
+of an unramified tower. Enlarging the ground field replaces Frobenius by the power given by
+the residue degree of the ground-field extension. The Teichmüller lifts of a residue element's
+Frobenius image and its power by the cardinality of the base residue field agree. Frobenius
+raises prime-to-residue-characteristic roots of unity to that same power.
 
 ## Main result
 
 * `TauCeti.frobeniusAlgEquiv_restrictNormal`: restricting arithmetic Frobenius to a normal
   intermediate field gives arithmetic Frobenius there.
+* `TauCeti.frobeniusAlgEquiv_restrictScalars`: enlarging the ground field raises arithmetic
+  Frobenius to the power given by its residue degree.
 * `TauCeti.frobeniusAlgEquiv_teichmullerLift`: the Teichmüller lifts of the Frobenius action
   on a residue element and its `q`-th power agree.
 * `TauCeti.frobeniusAlgEquiv_rootsOfUnity`: on prime-to-residue-characteristic roots of
@@ -189,5 +191,45 @@ theorem frobeniusAlgEquiv_restrictNormal :
   have hv := (Valuation.mem_maximalIdeal_iff (v := valuation L)).1 hd
   rw [hdcoe] at hv
   simpa only [σ] using hv
+
+omit [Normal K L] in
+/-- Enlarging the ground field replaces arithmetic Frobenius by its power by the residue
+degree of the ground-field extension. The two automorphisms are compared in `Gal(M/K)`. -/
+theorem frobeniusAlgEquiv_restrictScalars :
+    letI : ValuativeExtension K M := ValuativeExtension.trans K L M
+    ∀ [IsUnramified K M],
+    letI : FiniteDimensional L M := FiniteDimensional.right K L M
+    letI : IsGalois L M := IsGalois.tower_top_of_isGalois K L M
+    letI : IsUnramified L M := IsUnramified.tower_top K L M
+    (frobeniusAlgEquiv (K := L) (L := M)).restrictScalars K =
+      frobeniusAlgEquiv (K := K) (L := M) ^ inertiaDegree K L := by
+  let _ : ValuativeExtension K M := ValuativeExtension.trans K L M
+  intro
+  let _ : FiniteDimensional L M := FiniteDimensional.right K L M
+  let _ : IsGalois L M := IsGalois.tower_top_of_isGalois K L M
+  let _ : IsUnramified L M := IsUnramified.tower_top K L M
+  apply (residueFieldAutEquiv (K := K) (L := M)).injective
+  let : Fintype 𝓀[K] := Fintype.ofFinite _
+  let : Fintype 𝓀[L] := Fintype.ofFinite _
+  ext x
+  have hres :
+      (frobeniusAlgEquiv (K := L) (L := M)).restrictScalars K • x =
+        frobeniusAlgEquiv (K := L) (L := M) • x := by
+    obtain ⟨y, rfl⟩ := IsLocalRing.residue_surjective x
+    rw [← IsLocalRing.ResidueField.residue_smul, ← IsLocalRing.ResidueField.residue_smul]
+    congr 1
+  have hφ := congrArg (fun e : 𝓀[M] ≃ₐ[𝓀[L]] 𝓀[M] ↦ e x)
+    (residueField_toAlgEquiv_frobeniusAlgEquiv (K := L) (L := M))
+  simp only [MulSemiringAction.toAlgEquiv_apply,
+    FiniteField.coe_frobeniusAlgEquivOfAlgebraic, Fintype.card_eq_nat_card] at hφ
+  have hφK : residueFieldAutEquiv (frobeniusAlgEquiv (K := K) (L := M)) =
+      FiniteField.frobeniusAlgEquivOfAlgebraic 𝓀[K] 𝓀[M] := by
+    rw [residueFieldAutEquiv_apply, MulSemiringAction.toAlgAut_apply,
+      residueField_toAlgEquiv_frobeniusAlgEquiv]
+  rw [map_pow, hφK, AlgEquiv.coe_pow,
+    FiniteField.coe_frobeniusAlgEquivOfAlgebraic_iterate, Fintype.card_eq_nat_card,
+    ← natCard_residueField K L]
+  simpa only [residueFieldAutEquiv_apply, MulSemiringAction.toAlgAut_apply,
+    MulSemiringAction.toAlgEquiv_apply, hres] using hφ
 
 end TauCeti
