@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.Place.Filtration
+public import Mathlib.Algebra.Polynomial.OfFn
 
 /-!
 # Truncated uniformizer expansions at rational places
@@ -276,20 +277,16 @@ theorem truncatedExpansion_mul (hP : P.degree = 1) (ht : P.ord t = 1)
   let a := P.truncatedExpansion hP ht n x
   let b := P.truncatedExpansion hP ht n y
   -- Encode the finite vectors as polynomials without unfolding coefficient extraction.
-  let polynomial := fun c : Fin n → k ↦ ∑ j : Fin n, Polynomial.monomial (j : ℕ) (c j)
+  let polynomial := Polynomial.ofFn (R := k) n
   let u := (polynomial a).eval₂ (algebraMap k F) t
   let v := (polynomial b).eval₂ (algebraMap k F) t
   have heval (c : Fin n → k) :
       (polynomial c).eval₂ (algebraMap k F) t =
         ∑ j, algebraMap k F (c j) * t ^ (j : ℕ) := by
-    simp only [polynomial, Polynomial.eval₂_finsetSum, Polynomial.eval₂_monomial]
+    simp only [polynomial, Polynomial.ofFn_eq_sum_monomial,
+      Polynomial.eval₂_finsetSum, Polynomial.eval₂_monomial]
   have hcoeff (c : Fin n → k) (j : Fin n) : (polynomial c).coeff j = c j := by
-    simp only [polynomial, Polynomial.finsetSum_coeff, Polynomial.coeff_monomial]
-    rw [Finset.sum_eq_single j]
-    · simp
-    · intro l _ hlj
-      simp [Fin.val_injective.ne hlj]
-    · simp
+    exact Polynomial.ofFn_coeff_eq_val_of_lt c j.isLt
   have hu : u ∈ P.filtration 0 := by
     dsimp only [u]
     rw [heval]
