@@ -114,15 +114,17 @@ private theorem vertexIndex_eq_vertexIndex_iff [NeZero n] {k l : ℤ} :
 variable [NeZero n] (poly : Polygon P n)
 
 /-- The boundary parametrization of a polygon with `n` vertices: the periodic map `ℝ → P` that
-runs along the edge from vertex `i` to the next one at unit speed on `[i, i + 1]`, for every
+runs along the edge from vertex `i` to the next one in one unit of time, on `[i, i + 1]`, for every
 integer `i` read modulo `n`. -/
 noncomputable def boundaryParam (t : ℝ) : P :=
   poly.edgePath ℝ (vertexIndex n ⌊t⌋) (Int.fract t)
 
 /-- On `[k, k + 1]` the boundary parametrization runs along the edge starting at vertex `k mod n`,
 including at the right end point, where the next edge starts at the same vertex. -/
-private theorem boundaryParam_eq_edgePath (k : ℤ) {t : ℝ} (ht : t ∈ Icc (k : ℝ) (k + 1)) :
-    poly.boundaryParam t = poly.edgePath ℝ (vertexIndex n k) (t - k) := by
+theorem boundaryParam_eq_edgePath (k : ℤ) {t : ℝ} (ht : t ∈ Icc (k : ℝ) (k + 1)) :
+    poly.boundaryParam t = poly.edgePath ℝ ((ZMod.finEquiv n).symm k) (t - k) := by
+  -- `vertexIndex n k` is `(ZMod.finEquiv n).symm k` by definition.
+  change _ = poly.edgePath ℝ (vertexIndex n k) _
   rcases ht.2.lt_or_eq with htk | rfl
   · have hfloor : ⌊t⌋ = k := Int.floor_eq_iff.2 ⟨ht.1, htk⟩
     rw [boundaryParam, hfloor, Int.fract, hfloor]
@@ -134,6 +136,7 @@ theorem boundaryParam_natCast_add (i : Fin n) {s : ℝ} (hs : s ∈ Icc (0 : ℝ
     poly.boundaryParam ((i : ℕ) + s) = poly.edgePath ℝ i s := by
   have h := poly.boundaryParam_eq_edgePath (i : ℕ) (t := (i : ℕ) + s)
     ⟨by simpa using hs.1, by simpa using hs.2⟩
+  change _ = poly.edgePath ℝ (vertexIndex n (i : ℕ)) _ at h
   simpa [vertexIndex_natCast] using h
 
 /-- The boundary parametrization passes through vertex `i` at time `i`. -/
@@ -269,8 +272,8 @@ end Polygon
 
 namespace Affine.Triangle
 
-variable {R V P : Type*} [Field R] [PartialOrder R] [IsOrderedRing R] [AddCommGroup V]
-  [Module R V] [AddTorsor V P]
+variable {R V P : Type*} [Ring R] [PartialOrder R] [AddRightMono R] [ZeroLEOneClass R]
+  [Nontrivial R] [AddCommGroup V] [Module R V] [AddTorsor V P]
 
 /-- **A triangle is a simple polygon.** -/
 theorem toPolygon_isSimple (t : Affine.Triangle R P) : t.toPolygon.IsSimple R := by

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Convex.Between
-import Mathlib.LinearAlgebra.AffineSpace.FiniteDimensional
 
 /-!
 # Segments in affine spaces
@@ -18,23 +17,21 @@ of the three vertices in place of linear independence of the two edge vectors.
 
 public section
 
-variable {R V P : Type*} [Field R] [PartialOrder R] [IsOrderedRing R] [AddCommGroup V]
-  [Module R V] [AddTorsor V P]
+variable {R V P : Type*} [Ring R] [PartialOrder R] [AddRightMono R] [ZeroLEOneClass R]
+  [AddCommGroup V] [Module R V] [AddTorsor V P]
 
 /-- Two sides of a nondegenerate triangle meet only at their common vertex. -/
 theorem AffineIndependent.affineSegment_inter_eq_endpoint {a b c : P}
     (h : AffineIndependent R ![a, b, c]) : affineSegment R a b ∩ affineSegment R b c = {b} := by
-  refine Set.Subset.antisymm (fun x ⟨hab, hbc⟩ => ?_) (Set.singleton_subset_iff.2
-    ⟨right_mem_affineSegment R a b, left_mem_affineSegment R b c⟩)
-  by_contra hxb
-  -- `x ≠ b` lies on both lines `ab` and `bc`, so both are the line `xb`, which then contains
-  -- all three vertices.
-  have hxab : line[R, x, b] = line[R, a, b] :=
-    affineSpan_pair_eq_of_left_mem_of_ne (Wbtw.mem_affineSpan hab) hxb
-  have hxbc : line[R, b, x] = line[R, b, c] :=
-    affineSpan_pair_eq_of_right_mem_of_ne (Wbtw.mem_affineSpan hbc) hxb
-  rw [Set.pair_comm] at hxbc
-  have ha : a ∈ line[R, x, b] := hxab ▸ left_mem_affineSpan_pair R a b
-  have hc : c ∈ line[R, x, b] := hxbc ▸ right_mem_affineSpan_pair R b c
-  exact (affineIndependent_iff_not_collinear_set.1 h)
-    (collinear_triple_of_mem_affineSpan_pair ha (right_mem_affineSpan_pair R x b) hc)
+  -- Translate by `-b` and apply Mathlib's vector-space form, whose segments both start at `0`.
+  have hli : LinearIndependent R ![a -ᵥ b - 0, c -ᵥ b - 0] := by
+    convert ((affineIndependent_iff_linearIndependent_vsub R _ 1).1 h).comp
+      ![⟨0, by decide⟩, ⟨2, by decide⟩] (by decide) using 1
+    ext i
+    fin_cases i <;> simp
+  have hseg := segment_inter_eq_endpoint_of_linearIndependent_sub R hli
+  rw [segment_symm, segment_eq_image_lineMap, segment_eq_image_lineMap] at hseg
+  apply (vsub_left_injective b).image_injective
+  rw [Set.image_inter (vsub_left_injective b), affineSegment_vsub_const_image,
+    affineSegment_vsub_const_image, Set.image_singleton, vsub_self]
+  exact hseg
