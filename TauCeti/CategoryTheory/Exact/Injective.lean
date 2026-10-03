@@ -352,14 +352,6 @@ abbrev op {X : C} (P : E.ProjectivePresentation X) :
   conflation := (E.op_conflation_op_iff _).mpr P.conflation
   isInjective := (E.isProjective_iff_isInjective_op P.P).mp P.isProjective
 
-/-- Opposing a projective presentation preserves its middle term up to taking opposites. -/
-@[simp] theorem op_I {X : C} (P : E.ProjectivePresentation X) :
-    P.op.I = Opposite.op P.P := (rfl)
-
-/-- The cokernel term of the opposite presentation is the opposite kernel term. -/
-@[simp] theorem op_K {X : C} (P : E.ProjectivePresentation X) :
-    P.op.K = Opposite.op P.K := (rfl)
-
 /-- The opposite presentation starts with the opposite deflation. -/
 @[simp] theorem op_i {X : C} (P : E.ProjectivePresentation X) :
     P.op.i = P.p.op := (rfl)
