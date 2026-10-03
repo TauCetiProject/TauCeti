@@ -44,6 +44,8 @@ of the Tate module of the layer with `M₀ ⊕ ℤ_p[G]^N` in the proof of NSW (
   whose scalars are the multiples of `p ^ k`.
 * `TauCeti.nonempty_tameFrameModule_torsion_linearEquiv`: the same over `ℤ_p`, when
   `ℤ_p[G] ⧸ J` is finite.
+* `TauCeti.tameFrameModule_torsion_linearEquiv`: for supplied sharp exponents of a tame frame,
+  the `p`-power torsion of `M₀` is that of `A(L)`.
 * `TauCeti.exists_tameFrameModule_torsion_linearEquiv`: for a tame frame of `L/K`, there are
   sharp exponents for which the `p`-power torsion of `M₀` is that of `A(L)`.
 
@@ -134,24 +136,10 @@ private theorem dvd_coeff_twistedNorm_mul {s : G} {e : R}
 
 end Lifts
 
-section Divisibility
-
 omit [Group G] in
 private theorem coeff_nsmul (n : ℕ) (u : MonoidAlgebra R G) (g : G) :
     (n • u).coeff g = n * u.coeff g := by
   rw [coeff_smul_apply, nsmul_eq_mul]
-
-omit [Group G] in
-/-- An element of `R[G]` all of whose coefficients are divisible by `n` is `n` times an element. -/
-private theorem exists_eq_nsmul_of_dvd_coeff {n : ℕ} {x : MonoidAlgebra R G}
-    (h : ∀ g, (n : R) ∣ x.coeff g) : ∃ u, x = n • u := by
-  have hx : x ∈ Ideal.span {(n : R)} • (⊤ : Submodule R (MonoidAlgebra R G)) :=
-    MonoidAlgebra.mem_ideal_smul_top_iff.2 fun g ↦ Ideal.mem_span_singleton.2 (h g)
-  rw [Submodule.ideal_span_singleton_smul, Submodule.mem_smul_pointwise_iff_exists] at hx
-  obtain ⟨u, -, hu⟩ := hx
-  exact ⟨u, by rw [← hu, Nat.cast_smul_eq_nsmul]⟩
-
-end Divisibility
 
 section RightMultiple
 
@@ -193,6 +181,7 @@ private theorem exists_mul_eq_nsmul_of_mem (hgen : Submonoid.closure {σ, τ} = 
         simp [mul_comm]
       have hs' : w * single s 1 = n • v + e' • w := by
         rw [← hv, mul_sub, he', sub_add_cancel]
+      -- Expose the two basis factors so the induction hypothesis rewrites the right factor.
       rw [show single (s * h) (1 : R) = single s 1 * single h 1 by simp, ← mul_assoc, hs', add_mul,
         smul_mul_assoc, smul_mul_assoc, smul_add, ← smul_comm e' n u, ← hu, smul_sub, smul_smul]
       abel
@@ -206,6 +195,7 @@ private theorem exists_mul_eq_nsmul_of_mem (hgen : Submonoid.closure {σ, τ} = 
     | single g r =>
       obtain ⟨e, u, hu⟩ := hsingle g
       refine ⟨r * e, r • u, ?_⟩
+      -- Express the coefficient-`r` basis term as a scalar multiple of the normalized one.
       rw [← smul_comm r n u, ← hu, smul_sub, smul_smul,
         show single g r = r • single g (1 : R) by rw [smul_single', mul_one], mul_smul_comm]
   obtain ⟨y, z, rfl⟩ := Submodule.mem_span_pair.mp hx
@@ -233,8 +223,8 @@ private theorem exists_tameFrameRelationMap_eq_nsmul {n : ℕ} {x : MonoidAlgebr
     (h₀ : ∀ g, (n : R) ∣ (x * (single σ (1 : R) - single 1 a)).coeff g)
     (h₁ : ∀ g, (n : R) ∣ (x * (single τ (1 : R) - single 1 b)).coeff g) :
     ∃ y, tameFrameRelationMap R G σ τ a b x = n • y := by
-  obtain ⟨u₀, hu₀⟩ := exists_eq_nsmul_of_dvd_coeff h₀
-  obtain ⟨u₁, hu₁⟩ := exists_eq_nsmul_of_dvd_coeff h₁
+  obtain ⟨u₀, hu₀⟩ := MonoidAlgebra.exists_eq_nsmul_of_dvd_coeff h₀
+  obtain ⟨u₁, hu₁⟩ := MonoidAlgebra.exists_eq_nsmul_of_dvd_coeff h₁
   refine ⟨Finsupp.single 0 u₀ + Finsupp.single 1 u₁, ?_⟩
   ext i : 1
   fin_cases i <;> simp [hu₀, hu₁]
@@ -277,7 +267,7 @@ private theorem smul_toQuotient_eq_zero_of_mem
     rw [Ideal.span, Submodule.span_le]
     rintro x (rfl | rfl) <;>
       exact (smul_toQuotient_eq_zero_iff (pow_ne_zero k hp) hinj hy₀ _).2
-        (exists_eq_nsmul_of_dvd_coeff fun g ↦
+        (MonoidAlgebra.exists_eq_nsmul_of_dvd_coeff fun g ↦
           hpk ▸ dvd_coeff_mul_twistedNorm hJ hc (Ideal.subset_span (by simp)) g)
   exact hle hx
 
@@ -300,6 +290,7 @@ private theorem mem_of_smul_toQuotient_eq_zero
   simp only [coeff_single_mul_apply, inv_one, one_mul, coeff_twistedNorm, coeff_nsmul] at hu₁
   have hc₁ : (p : R) ^ k ∣ c 1 - 1 := dvd_sub_of_single_sub_mem hJ hc (by simp)
   have hdvd : (p : R) ^ k ∣ e := by
+    -- Split `e` into the two terms whose divisibility is supplied by `hu₁` and `hc₁`.
     rw [show e = e * c 1 - e * (c 1 - 1) by ring, hu₁, ← hpk]
     exact dvd_sub (dvd_mul_right _ _) (dvd_mul_of_dvd_right (hpk ▸ hc₁) _)
   simpa using Ideal.add_mem _ he ((single_one_mem_iff_dvd hJ e).2 hdvd)
@@ -351,7 +342,7 @@ private theorem exists_smul_toQuotient_eq
     rw [← hu'₁, hd]
     push_cast
     ring
-  obtain ⟨v, hv⟩ := exists_eq_nsmul_of_dvd_coeff hcoeff
+  obtain ⟨v, hv⟩ := MonoidAlgebra.exists_eq_nsmul_of_dvd_coeff hcoeff
   refine ⟨u.coeff 1, ?_⟩
   -- Dividing by `p ^ (n + k)`, `y = d y₀` modulo the relation.
   have hy : y = single (1 : G) (u.coeff 1) • y₀ + tameFrameRelationMap R G σ τ a b v := by
@@ -452,6 +443,28 @@ theorem nonempty_tameFrameModule_torsion_linearEquiv [Finite G] {σ τ : G}
     (tameFrameRelationMap_injective_of_card_ne_zero (isOfFinOrder_of_finite σ)
       (isOfFinOrder_of_finite τ) hcard) hk
 
+/-- **The torsion of the tame-frame module for supplied sharp exponents.** Let `σ, τ` generate
+the finite automorphism group of `L/K`. If `a, b` describe their action on the `p`-power roots of
+unity and the quotient `ℤ_p[G] ⧸ (σ - a, τ - b)` has the sharp cardinality `q(L)`, then the
+`p`-power torsion of the tame-frame module is isomorphic to that of the `p`-adic completion `A(L)`
+as a left `ℤ_p[G]`-module. -/
+theorem tameFrameModule_torsion_linearEquiv {L : Type*} [Field L] {K : Type*} [Field K]
+    [Algebra K L] [Finite (L ≃ₐ[K] L)] (h : Finite (pPowerRootsOfUnity p L)) (σ τ : L ≃ₐ[K] L)
+    (hgen : Subgroup.closure {σ, τ} = ⊤) (a b : ℕ)
+    (ha : ∀ ζ ∈ pPowerRootsOfUnity p L, Units.map (σ : L →* L) ζ = ζ ^ a)
+    (hb : ∀ ζ ∈ pPowerRootsOfUnity p L, Units.map (τ : L →* L) ζ = ζ ^ b)
+    (hcard : Nat.card (MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L) ⧸ Ideal.span
+      {single σ (1 : ℤ_[p]) - a, single τ (1 : ℤ_[p]) - b}) = localRootOfUnityOrder p L h) :
+    Nonempty (pPowerTorsion p (MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L))
+        (TameFrameModule ℤ_[p] (L ≃ₐ[K] L) σ τ (a : ℤ_[p]) (b : ℤ_[p]))
+      ≃ₗ[MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L)]
+      pPowerTorsion p (MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L))
+        (Additive ↑(padicCompletionUnits p L))) := by
+  obtain ⟨f⟩ := nonempty_tameFrameModule_torsion_linearEquiv hgen a b
+    (hcard ▸ (localRootOfUnityOrder_pos p L h).ne')
+  obtain ⟨g⟩ := nonempty_quotient_tameFrameExponents_linearEquiv h σ τ a b ha hb hcard
+  exact ⟨f.trans g⟩
+
 /-- **The torsion of the tame-frame module of a tame frame is `μ_{p^∞}(L)`.** Let `σ, τ` generate
 the finite automorphism group `G` of `L/K`, with `τ` of order prime to `p`, and suppose `L` has
 finitely many `p`-power roots of unity. Then there are natural numbers `a, b` through which `σ, τ`
@@ -474,10 +487,9 @@ theorem exists_tameFrameModule_torsion_linearEquiv {L : Type*} [Field L] {K : Ty
         ≃ₗ[MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L)]
         pPowerTorsion p (MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L))
           (Additive ↑(padicCompletionUnits p L))) := by
-  obtain ⟨a, b, ha, hb, hcard, ⟨e⟩⟩ := exists_tameFrame_exponents h σ τ hgen hτ
-  obtain ⟨f⟩ := nonempty_tameFrameModule_torsion_linearEquiv hgen a b
-    (hcard ▸ (localRootOfUnityOrder_pos p L h).ne')
-  exact ⟨a, b, ha, hb, hcard, ⟨f.trans e⟩⟩
+  obtain ⟨a, b, ha, hb, hcard, -⟩ := exists_tameFrame_exponents h σ τ hgen hτ
+  exact ⟨a, b, ha, hb, hcard,
+    tameFrameModule_torsion_linearEquiv h σ τ hgen a b ha hb hcard⟩
 
 end Padic
 
