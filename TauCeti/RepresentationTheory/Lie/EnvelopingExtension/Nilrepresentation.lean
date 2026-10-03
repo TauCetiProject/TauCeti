@@ -71,6 +71,30 @@ variable {K : Type u} {S : Type v} {H : Type w} {V : Type x}
   [AddCommGroup V] [Module K V] [FiniteDimensional K V]
   (ψ : H →ₗ⁅K⁆ LieDerivation K S S)
 
+/-- The enveloping ideal behind the extensions in this file: a cofinite two-sided ideal of `U(S)`,
+stable under the lifted derivations `ψ h`, contained in the kernel of the enveloping extension of
+`σ`, and with the same nilpotent generators as `σ`. -/
+private theorem exists_stable_envelopingIdeal (N : LieIdeal K S) (σ : S →ₗ⁅K⁆ Module.End K V)
+    (hσ : ∀ s ∈ N, IsNilpotent (σ s)) (hψ : ∀ h s, ψ h s ∈ N) :
+    ∃ (J : Ideal (UniversalEnvelopingAlgebra K S)) (_ : J.IsTwoSided)
+      (_ : ∀ h : H, UniversalEnvelopingAlgebra.envelopingDerivation K S (ψ h) ∈
+        stableDerivations K (J.restrictScalars K)),
+      FiniteDimensional K (UniversalEnvelopingAlgebra K S ⧸ J) ∧
+      J ≤ RingHom.ker (UniversalEnvelopingAlgebra.lift K σ) ∧
+      ∀ s, IsNilpotent (Ideal.Quotient.mk J (UniversalEnvelopingAlgebra.ι K s)) ↔
+        IsNilpotent (σ s) := by
+  let f := (UniversalEnvelopingAlgebra.lift K σ).toRingHom
+  let I := RingHom.ker f
+  have : FiniteDimensional K (UniversalEnvelopingAlgebra K S ⧸ I) :=
+    UniversalEnvelopingAlgebra.finiteDimensional_quotient_ker_lift K S σ
+  have hI (s : S) : IsNilpotent (Ideal.Quotient.mk I (UniversalEnvelopingAlgebra.ι K s)) ↔
+      IsNilpotent (σ s) := by
+    rw [← IsNilpotent.map_iff (RingHom.kerLift_injective f), RingHom.kerLift_mk]
+    simp only [f, AlgHom.toRingHom_eq_coe, RingHom.coe_coe, UniversalEnvelopingAlgebra.lift_ι_apply]
+  obtain ⟨n, hle, hfin, hstable, hnil⟩ :=
+    N.exists_cofinite_refinement_stableDerivations I fun s hs ↦ (hI s).mpr (hσ s hs)
+  exact ⟨_, inferInstance, fun h ↦ hstable (ψ h) (hψ h), hfin, hle, fun s ↦ by rw [hnil, hI]⟩
+
 /-- A finite-dimensional representation `σ` of `S` extends to a finite-dimensional representation
 `ρ` of the split extension `S ⋊⁅ψ⁆ H`, provided every derivation `ψ h` takes values in a Lie ideal
 `N` of `S` whose elements act nilpotently under `σ`. The extension detects every direction of `S`
@@ -85,21 +109,7 @@ theorem exists_semiDirectSum_rep_of_forall_mem (N : LieIdeal K S) (σ : S →ₗ
       (∀ s, IsNilpotent (ρ (SemiDirectSum.inl ψ s)) ↔ IsNilpotent (σ s)) ∧
       ((∀ s, IsNilpotent (σ s)) → ∀ y : S ⋊⁅ψ⁆ H,
         (∀ s, ∃ n : ℕ, ((ψ y.right).toLinearMap ^ n) s = 0) → IsNilpotent (ρ y)) := by
-  let f := (UniversalEnvelopingAlgebra.lift K σ).toRingHom
-  let I := RingHom.ker f
-  have : FiniteDimensional K (UniversalEnvelopingAlgebra K S ⧸ I) :=
-    UniversalEnvelopingAlgebra.finiteDimensional_quotient_ker_lift K S σ
-  have hI (s : S) : IsNilpotent (Ideal.Quotient.mk I (UniversalEnvelopingAlgebra.ι K s)) ↔
-      IsNilpotent (σ s) := by
-    rw [← IsNilpotent.map_iff (RingHom.kerLift_injective f), RingHom.kerLift_mk]
-    simp only [f, AlgHom.toRingHom_eq_coe, RingHom.coe_coe, UniversalEnvelopingAlgebra.lift_ι_apply]
-  obtain ⟨n, hle, hfin, hstable, hnil⟩ :=
-    N.exists_cofinite_refinement_stableDerivations I fun s hs ↦ (hI s).mpr (hσ s hs)
-  let J := (I ⊔ N.envelopingIdeal) ^ n
-  have hJ (h : H) := hstable (ψ h) (hψ h)
-  have hJnil (s : S) : IsNilpotent (Ideal.Quotient.mk J (UniversalEnvelopingAlgebra.ι K s)) ↔
-      IsNilpotent (σ s) := by
-    rw [hnil, hI]
+  obtain ⟨J, _, hJ, hfin, hle, hJnil⟩ := exists_stable_envelopingIdeal ψ N σ hσ hψ
   refine ⟨_, inferInstance, inferInstance, hfin, envelopingQuotientRep K S ψ J hJ,
     ker_envelopingQuotientRep_comp_inl_le K S ψ J hJ σ hle, fun s ↦ ?_, fun hall y hy ↦
       isNilpotent_envelopingQuotientRep_of_locallyNilpotent K S ψ J hJ
@@ -135,12 +145,10 @@ theorem exists_semiDirectSum_rep_of_isNilpotent [LieRing.IsNilpotent (S ⋊⁅ψ
     ∃ (W : Type (max u v)) (_ : AddCommGroup W) (_ : Module K W) (_ : FiniteDimensional K W)
       (ρ : S ⋊⁅ψ⁆ H →ₗ⁅K⁆ Module.End K W),
       (ρ.comp (SemiDirectSum.inl ψ)).ker ≤ σ.ker ∧ ∀ y, IsNilpotent (ρ y) := by
-  obtain ⟨W, _, _, _, ρ, hker, -, hnil⟩ :=
-    exists_semiDirectSum_rep_of_forall_mem ψ ⊤ σ (fun s _ ↦ hσ s) fun _ _ ↦ LieSubmodule.mem_top _
-  refine ⟨W, _, _, inferInstance, ρ, hker, fun y ↦ hnil hσ y ?_⟩
-  obtain ⟨n, hn⟩ := SemiDirectSum.isNilpotent_derivation_of_isNilpotent_ad_inr ψ y.right
-    (LieModule.isNilpotent_toEnd_of_isNilpotent K (S ⋊⁅ψ⁆ H) (S ⋊⁅ψ⁆ H)
-      (SemiDirectSum.inr ψ y.right))
-  exact fun s ↦ ⟨n, by simp [hn]⟩
+  obtain ⟨J, _, hJ, hfin, hle, hJnil⟩ :=
+    exists_stable_envelopingIdeal ψ ⊤ σ (fun s _ ↦ hσ s) fun _ _ ↦ LieSubmodule.mem_top _
+  exact ⟨_, inferInstance, inferInstance, hfin, envelopingQuotientRep K S ψ J hJ,
+    ker_envelopingQuotientRep_comp_inl_le K S ψ J hJ σ hle,
+    isNilpotent_envelopingQuotientRep_of_isNilpotent K S ψ J hJ fun s _ ↦ (hJnil s).mpr (hσ s)⟩
 
 end TauCeti
