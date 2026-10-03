@@ -22,6 +22,8 @@ rotates by `π / 4` in `SL(2, ℝ)`, which rotates the tangent by `π / 2`.
 Use `TauCeti.UpperHalfPlane.bisector p q` to construct the bisector and
 `TauCeti.UpperHalfPlane.bisector_def p q` for its defining equation. These share the namespace
 of the geodesic and half-plane API used in the membership characterizations below.
+The field notation `p.bisector q` does not resolve: `ℍ` is Mathlib's `UpperHalfPlane` type,
+whose namespace differs from `TauCeti.UpperHalfPlane`.
 
 ## References
 
