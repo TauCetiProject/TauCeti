@@ -36,11 +36,12 @@ by the computations of `TauCeti.RepresentationTheory.Quiver.Zigzag.Projective.Sy
 * `x_j : P_j → P_j` has image `J² P_j` and kernel `J P_j`;
 * the arrow `P_{d.snd} → P_{d.fst}` has image `J P_{d.fst}` and kernel `J² P_{d.snd}`.
 
-The construction follows the formal precedent `TauCeti.dualNumberProjectiveResolution` in
-`TauCeti.Algebra.Homology.Ext.DualNumbers`: a private periodic complex with a separate
-augmentation built through `ChainComplex.toSingle₀Equiv`, the same proof of `quasiIso`, terms
-identified by an `XIso` given by `Iso.refl`, and characterising lemmas for the differentials and
-the augmentation.
+Like the periodic resolution `TauCeti.dualNumberProjectiveResolution` of
+`TauCeti.Algebra.Homology.Ext.DualNumbers`, on which it is modelled, the resolution is meant to be
+used through its characterising API: the `n`-th term is `P_{zigzagPeriodicVertex d n}` via the
+`XIso`, and the `[simp]` lemmas `_complex_d` and `_π_f_zero` identify the differentials with
+right multiplication by arrows and volume classes and the augmentation with the quotient onto
+the simple head.
 
 ## Main definitions
 
