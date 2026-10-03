@@ -24,6 +24,9 @@ It therefore descends to the orthogonal group modulo square classes. Restricting
 to the special orthogonal group gives the spinor norm, whose kernel is exactly the image of the
 Spin group.
 
+Open `TauCeti` for the reflection-pair and surjectivity helpers below, and `CliffordAlgebra`
+for the spinor-norm homomorphisms they describe.
+
 ## Main results
 
 * `CliffordAlgebra.orthogonalSpinorNorm`: the square-class-valued spinor norm on `O(Q)`.
