@@ -191,7 +191,7 @@ theorem _root_.Quiver.exists_isSinkAdmissible_reflectList_equiv [Finite V]
       have := hsub a b
       (hmulti a b).some.subsingleton
     have hG₁ : (@underlyingGraph V q₁).IsAcyclic := by
-      rwa [underlyingGraph_congr fun a b ↦ (hmulti a b).some.nonempty_congr]
+      rwa [underlyingGraph_congr fun a b _ ↦ (hmulti a b).some.nonempty_congr]
     have h₁ (a b : V) : Nonempty ((@_root_.Quiver.Hom V q₁ a b ⊕ @_root_.Quiver.Hom V q₁ b a) ≃
         (@_root_.Quiver.Hom V q' a b ⊕ @_root_.Quiver.Hom V q' b a)) :=
       ⟨(hmulti a b).some.trans (h a b).some⟩
