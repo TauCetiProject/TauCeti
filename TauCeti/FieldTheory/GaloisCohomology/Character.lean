@@ -18,7 +18,7 @@ fixing subgroups are normal and therefore independent of the embedding, so the r
 attached to the extension alone.
 
 This is the field-extension form of
-`TauCeti.ContCohomology.indexTwoCharacterClass`. It is the character used by the index-two exact
+`OpenSubgroup.indexTwoCharacterClass`. It is the character used by the index-two exact
 sequence and by the norm-of-restriction formula for the Evens norm.
 
 ## Main definitions and results
@@ -48,14 +48,14 @@ variable (K : Type u) [Field K] (L : Type v) [Field L] [Algebra K L]
 index-two character whose kernel is the subgroup fixing the embedded copy `σ(L)`. -/
 def galoisCharacter (hL : Module.finrank K L = 2) :
     continuousCohomology 1 (trivialF2 (AbsoluteGaloisGroup K)) :=
-  ContCohomology.indexTwoCharacterClass (galoisSubgroup K L σ)
+  (galoisSubgroup K L σ).indexTwoCharacterClass
     ((galoisSubgroup_index K L σ).trans hL)
 
 /-- The quadratic character is the index-two character class of the Galois subgroup cut out by
 the chosen embedding. -/
 theorem galoisCharacter_def (hL : Module.finrank K L = 2) :
     galoisCharacter K L σ hL =
-      ContCohomology.indexTwoCharacterClass (galoisSubgroup K L σ)
+      (galoisSubgroup K L σ).indexTwoCharacterClass
         ((galoisSubgroup_index K L σ).trans hL) :=
   (rfl)
 
@@ -64,7 +64,7 @@ theorem galoisCharacter_embedding_independent
     (τ : L →ₐ[K] SeparableClosure K) (hL : Module.finrank K L = 2) :
     galoisCharacter K L σ hL = galoisCharacter K L τ hL := by
   rw [galoisCharacter_def, galoisCharacter_def]
-  exact ContCohomology.indexTwoCharacterClass_congr
+  exact OpenSubgroup.indexTwoCharacterClass_congr
     (galoisSubgroup_eq_of_finrank_eq_two K L σ τ hL) _ _
 
 end TauCeti

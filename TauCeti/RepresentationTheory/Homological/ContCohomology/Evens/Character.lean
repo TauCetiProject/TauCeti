@@ -23,7 +23,7 @@ identity for the Evens norm.
 
 ## Main definition
 
-* `TauCeti.ContCohomology.indexTwoCharacterClass`: the class in `H¹(G, 𝔽₂)` of the
+* `OpenSubgroup.indexTwoCharacterClass`: the class in `H¹(G, 𝔽₂)` of the
   character whose kernel is `U`.
 
 ## Reference
@@ -36,9 +36,9 @@ public section
 
 noncomputable section
 
-open CategoryTheory
+open CategoryTheory TauCeti TauCeti.ContCohomology
 
-namespace TauCeti.ContCohomology
+namespace OpenSubgroup
 
 universe u
 
@@ -77,4 +77,4 @@ theorem indexTwoCharacterClass_congr {U V : OpenSubgroup G}
   subst V
   rfl
 
-end TauCeti.ContCohomology
+end OpenSubgroup
