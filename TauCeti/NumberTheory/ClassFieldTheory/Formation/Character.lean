@@ -1,15 +1,16 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Claude
+Authors: Claude, Codex
 -/
 module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Basic
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Character
+public import TauCeti.RepresentationTheory.Homological.TateCohomology.Cup.Product
 
 /-!
-# The connecting class of a character of a finite normal layer
+# Character classes for the Artin map of a finite normal layer
 
 Let `Γ = U ⧸ V` be the Galois group of a finite normal layer. A character `χ : Γ^ab → ℚ/ℤ` is a
 homomorphism `Γ → ℚ/ℤ`, which is a class in `H¹(Γ, ℚ/ℤ)` for the trivial action. The connecting
@@ -24,6 +25,8 @@ As elsewhere in this development, `ℚ/ℤ` is the rational circle `AddCircle (1
 
 * `TauCeti.ClassFieldTheory.NormalLayer.characterConnectingClass`: the connecting class
   `δχ ∈ H²(Γ, ℤ)` of a character `χ : Γ^ab → ℚ/ℤ`, in the Tate group of degree `2`.
+* `TauCeti.ClassFieldTheory.NormalLayer.artinCharacterCup`: the class `a₀ ∪ δχ` in
+  `H²(Γ, A^V)` used in the character formula for the Artin map.
 
 ## Main results
 
@@ -33,6 +36,10 @@ As elsewhere in this development, `ℚ/ℤ` is the rational circle `AddCircle (1
   `TauCeti.ClassFieldTheory.NormalLayer.characterConnectingClass_zero`,
   `TauCeti.ClassFieldTheory.NormalLayer.characterConnectingClass_neg`,
   `TauCeti.ClassFieldTheory.NormalLayer.characterConnectingClass_sub`: `δχ` is additive in `χ`.
+* `TauCeti.ClassFieldTheory.NormalLayer.artinCharacterCup_apply`: the Artin character cup is the
+  Tate cup product transported through the right unitor and the positive-degree comparison.
+* `TauCeti.ClassFieldTheory.NormalLayer.artinCharacterCup_eq_zero_of_mem_normSubgroup`: the cup
+  vanishes when its ground-level argument is a norm.
 
 ## References
 
@@ -42,7 +49,7 @@ As elsewhere in this development, `ℚ/ℤ` is the rational circle `AddCircle (1
 
 public noncomputable section
 
-open CategoryTheory
+open CategoryTheory MonoidalCategory Rep
 
 namespace TauCeti.ClassFieldTheory.NormalLayer
 
@@ -89,5 +96,50 @@ theorem characterConnectingClass_sub
     L.characterConnectingClass (χ₁ - χ₂) =
       L.characterConnectingClass χ₁ - L.characterConnectingClass χ₂ := by
   simp only [characterConnectingClass_def, map_sub]
+
+section Formation
+
+variable (F : Formation G)
+
+/-- The class `a₀ ∪ δχ ∈ H²(Γ, A^V)` used in the character formula for the Artin map, where `a₀`
+is the degree-zero Tate class of `a` and `δχ` is the connecting class of the character `χ`.
+The cup product lands in the cohomology of `A^V ⊗ ℤ`; the right unitor identifies this
+coefficient representation with `A^V`, and positive Tate cohomology is then identified with
+ordinary group cohomology. -/
+def artinCharacterCup :
+    F.level L.ground →+
+      (Additive (Abelianization L.Gal) →+ AddCircle (1 : ℚ)) →+ L.H F 2 where
+  toFun a :=
+    { toFun := fun χ =>
+        (L.tateHIsoH F 2).hom <|
+          (tateCohomologyFunctor 2).map (ρ_ (L.rep F)).hom <|
+            TateCohomology.cup (L.rep F) (Rep.trivial ℤ L.Gal ℤ) 0 2 2 (zero_add 2)
+              (L.zeroTateClass F a) (L.characterConnectingClass χ)
+      map_zero' := by simp
+      map_add' := by intros; simp }
+  map_zero' := by ext; simp
+  map_add' := by intros; ext; simp
+
+/-- The Artin character cup evaluates as the Tate cup product of `a₀` with `δχ`, transported
+through the right unitor and the comparison between positive Tate and ordinary cohomology. -/
+theorem artinCharacterCup_apply (a : F.level L.ground)
+    (χ : Additive (Abelianization L.Gal) →+ AddCircle (1 : ℚ)) :
+    L.artinCharacterCup F a χ =
+      (L.tateHIsoH F 2).hom
+        ((tateCohomologyFunctor 2).map (ρ_ (L.rep F)).hom
+          (TateCohomology.cup (L.rep F) (Rep.trivial ℤ L.Gal ℤ) 0 2 2 (zero_add 2)
+            (L.zeroTateClass F a) (L.characterConnectingClass χ))) :=
+  by simp [artinCharacterCup]
+
+/-- The Artin character cup vanishes on the norm subgroup. -/
+theorem artinCharacterCup_eq_zero_of_mem_normSubgroup (a : F.level L.ground)
+    (χ : Additive (Abelianization L.Gal) →+ AddCircle (1 : ℚ))
+    (ha : a ∈ L.normSubgroup F) :
+    L.artinCharacterCup F a χ = 0 := by
+  rw [← L.zeroTateClass_eq_zero_iff F a] at ha
+  rw [artinCharacterCup_apply, ha]
+  simp
+
+end Formation
 
 end TauCeti.ClassFieldTheory.NormalLayer

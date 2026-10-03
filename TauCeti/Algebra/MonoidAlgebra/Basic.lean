@@ -51,6 +51,22 @@ instance instIsMulCommutativeMonoidAlgebra [IsMulCommutative M] :
 
 end Commutative
 
+section Semiring
+
+variable {R : Type*} [Semiring R] {M : Type*}
+
+/-- An element of `R[M]` all of whose coefficients are divisible by `n` is `n` times an element. -/
+theorem _root_.MonoidAlgebra.exists_eq_nsmul_of_dvd_coeff {n : ℕ} {x : MonoidAlgebra R M}
+    (h : ∀ m, (n : R) ∣ x.coeff m) : ∃ y, x = n • y := by
+  choose c hc using h
+  refine ⟨∑ m ∈ x.coeff.support, MonoidAlgebra.single m (c m), ?_⟩
+  conv_lhs => rw [← MonoidAlgebra.sum_coeff_single x]
+  rw [Finsupp.sum, Finset.smul_sum]
+  refine Finset.sum_congr rfl fun m _ ↦ ?_
+  rw [MonoidAlgebra.smul_single, hc m, nsmul_eq_mul]
+
+end Semiring
+
 variable {R : Type*} [Ring R] {G : Type*} [One G]
 
 /-- Over a nontrivial ring, the difference `single g 1 - 1` between the basis element at `g` and the
