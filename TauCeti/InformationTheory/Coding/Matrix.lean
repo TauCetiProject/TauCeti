@@ -51,8 +51,8 @@ arranged by an equivalence `ι ≃ ρ ⊕ τ` singling out the information coord
   matrix rank.
 * `Matrix.checkedBy_eq_orthogonal_generatedBy`: checking by `H` is orthogonality to the rows
   of `H`.
-* `TauCeti.LinearCode.basisEquivGeneratorMatrix`: bases of a code correspond to its generator
-  matrices with linearly independent rows.
+* `TauCeti.LinearCode.basisEquivFullRankGeneratorMatrix`: bases of a code correspond to its
+  generator matrices with linearly independent rows.
 * `TauCeti.LinearCode.IsGeneratorMatrix.encodingEquiv`: such a generator matrix identifies
   messages with codewords by `a ↦ a ᵥ* G`.
 * `TauCeti.LinearCode.exists_isGeneratorMatrix`: generator presentations with linearly independent
@@ -414,7 +414,7 @@ end Basis
 
 /-- Bases of `C` indexed by `ρ` correspond exactly to generator matrices for `C` with row type `ρ`
 and linearly independent rows: a basis corresponds to the matrix whose rows are its vectors. -/
-def basisEquivGeneratorMatrix (C : LinearCode F ι) (ρ : Type*) [Fintype ρ] :
+def basisEquivFullRankGeneratorMatrix (C : LinearCode F ι) (ρ : Type*) [Fintype ρ] :
     Module.Basis ρ F C ≃ {G : Matrix ρ ι F // C.IsGeneratorMatrix G ∧ LinearIndependent F G.row}
     where
   toFun b := ⟨Matrix.of fun r ↦ (b r : ι → F), isGeneratorMatrix_of_basis b,
@@ -425,17 +425,17 @@ def basisEquivGeneratorMatrix (C : LinearCode F ι) (ρ : Type*) [Fintype ρ] :
 
 /-- The generator matrix attached to a basis has the basis vectors as its rows. -/
 @[simp]
-theorem coe_basisEquivGeneratorMatrix_apply [Fintype ρ] {C : LinearCode F ι}
+theorem coe_basisEquivFullRankGeneratorMatrix_apply [Fintype ρ] {C : LinearCode F ι}
     (b : Module.Basis ρ F C) :
-    (basisEquivGeneratorMatrix C ρ b : Matrix ρ ι F) = Matrix.of fun r ↦ (b r : ι → F) :=
+    (basisEquivFullRankGeneratorMatrix C ρ b : Matrix ρ ι F) = Matrix.of fun r ↦ (b r : ι → F) :=
   (rfl)
 
 /-- The basis attached to a generator matrix with linearly independent rows is formed by its
 rows. -/
 @[simp]
-theorem basisEquivGeneratorMatrix_symm_apply [Fintype ρ] {C : LinearCode F ι}
+theorem basisEquivFullRankGeneratorMatrix_symm_apply [Fintype ρ] {C : LinearCode F ι}
     (G : {G : Matrix ρ ι F // C.IsGeneratorMatrix G ∧ LinearIndependent F G.row}) :
-    (basisEquivGeneratorMatrix C ρ).symm G = G.2.1.basis G.2.2 :=
+    (basisEquivFullRankGeneratorMatrix C ρ).symm G = G.2.1.basis G.2.2 :=
   (rfl)
 
 /-- Every finite-length linear code has a generator matrix with one row per dimension, and those
