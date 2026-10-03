@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Curves.Node.Basic
+public import TauCeti.AlgebraicGeometry.Curves.SingularLocus
 public import Mathlib.AlgebraicGeometry.Morphisms.FormallyUnramified
 import TauCeti.RingTheory.Node.Jacobian.Locus
 
@@ -18,8 +19,9 @@ In particular its structure morphism is a closed immersion and is unramified. Th
 supplies the singular-locus condition in the scheme-theoretic criterion for nodal curves.
 The identification retains the scheme structure even when `a` is nilpotent or a zero divisor.
 
-The construction uses the first Fitting ideal of the relative differentials and the
-algebraic identification `NodeAlgebra.jacobianQuotientEquiv`.
+The relative singular locus is cut out by the two coordinates `x` and `y`
+(`NodeAlgebra.singularLocus_ideal_top`). The construction uses the first Fitting ideal
+of the relative differentials and the algebraic identification `NodeAlgebra.jacobianQuotientEquiv`.
 
 ## References
 
@@ -39,12 +41,30 @@ universe u
 
 variable {R : Type u} [CommRing R] (a : R)
 
--- Reuse the direct structure morphism of the node chart, avoiding the `Spec` instance diamond.
-attribute [local instance] nodeSpecOverSpec
+/-- The direct structure morphism on the node chart, used to avoid the `Spec`-over-`Spec`
+instance diamond when applying the singular-locus API. -/
+local instance (priority := high) nodeSpecOverSpec :
+    (Spec (.of (NodeAlgebra R a))).Over (Spec (.of R)) where
+  hom := Spec.map (CommRingCat.ofHom (algebraMap R (NodeAlgebra R a)))
 
-attribute [local instance] instFlatOverSchemeSpecOfInferInstanceOverClass
-  instLocallyOfFinitePresentationOverSchemeSpecOfInferInstanceOverClass
-  instPureRelativeDimensionOfNatNatOverSchemeSpecOfInferInstanceOverClass
+local instance : Flat (Spec (.of (NodeAlgebra R a)) ↘ Spec (.of R)) :=
+  flat_spec a
+
+local instance :
+    LocallyOfFinitePresentation (Spec (.of (NodeAlgebra R a)) ↘ Spec (.of R)) :=
+  locallyOfFinitePresentation_spec a
+
+local instance :
+    PureRelativeDimension 1 (Spec (.of (NodeAlgebra R a)) ↘ Spec (.of R)) :=
+  pureRelativeDimension_spec a
+
+/-- The relative singular locus of the local model of a node `Spec R[x, y] ⧸ (xy - a)` over `R`
+is cut out by the ideal `(x, y)` of the two coordinates. -/
+theorem singularLocus_ideal_top :
+    ((Spec (.of (NodeAlgebra R a))).singularLocus R).ideal ⟨⊤, isAffineOpen_top _⟩ =
+      (Ideal.span {coord a 0, coord a 1}).map
+        (Scheme.ΓSpecIso (.of (NodeAlgebra R a))).inv.hom := by
+  rw [Scheme.singularLocus_ideal_top_Spec, fittingIdeal_differential_one]
 
 private abbrev singularIdeal := (Spec (.of (NodeAlgebra R a))).singularLocus R
 
