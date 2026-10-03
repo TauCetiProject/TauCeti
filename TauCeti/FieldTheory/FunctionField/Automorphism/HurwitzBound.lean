@@ -5,19 +5,22 @@ Authors: The Tau Ceti contributors
 -/
 module
 
--- `TauCeti.one_div_forty_two_le_hyperbolic_deficit` is the numerical half of the bound.
-public import TauCeti.Data.Rat.BranchDeficit
--- `TauCeti.IsFunctionField.fixedField` makes the fixed field a function field over `k`.
+-- `TauCeti.IsFunctionField` and `IntermediateField.fixedField` occur in the statements below, with
+-- `TauCeti.IsFunctionField.fixedField` making the fixed field a function field over `k`.
 public import TauCeti.FieldTheory.FunctionField.Automorphism.FixedField
--- `IntermediateField.finiteDimensional_fixedField` and `IntermediateField.isGalois_fixedField` are
--- what make `F` a finite Galois extension of the fixed field, so that the statement below can speak
--- of the ramification of `F` over it.
+-- `TauCeti.Place.IsTame` occurs in the statements below.
+public import TauCeti.FieldTheory.FunctionField.Different.Tame
+-- `TauCeti.genus` occurs in the statements below.
+public import TauCeti.FieldTheory.FunctionField.RiemannRoch.Genus
+-- `IntermediateField.finiteDimensional_fixedField` and `IntermediateField.isGalois_fixedField` make
+-- `F` a finite Galois extension of the fixed field, which the tameness hypothesis of the statements
+-- below needs in order to elaborate at all.
 public import TauCeti.FieldTheory.Galois.FixedField
--- `TauCeti.Divisor.degree_tameDifferent_eq_finrank_mul_sum` reads the tame different as branch
--- data, and `TauCeti.Place.ramificationIdxIn` is the index it is indexed by.
-public import TauCeti.FieldTheory.FunctionField.Different.Galois
--- `TauCeti.two_mul_genus_sub_two_eq_iff_forall_isTame` is the tame Hurwitz genus formula.
-public import TauCeti.FieldTheory.FunctionField.Different.Hurwitz
+-- Non-public, all three in the proofs only: the numerical bound on the deficit of branch data, the
+-- branch-data form of the tame different, and the tame Hurwitz genus formula.
+import TauCeti.Data.Rat.BranchDeficit
+import TauCeti.FieldTheory.FunctionField.Different.Galois
+import TauCeti.FieldTheory.FunctionField.Different.Hurwitz
 
 /-!
 # The Hurwitz bound on a tame automorphism group
@@ -81,15 +84,11 @@ theorem natCard_le_eighty_four_mul_genus_sub_one (hF : IsFunctionField k F)
     (htame : ∀ P : Place k F, Place.IsTame k (IntermediateField.fixedField G) P) :
     Nat.card G ≤ 84 * (genus k F - 1) := by
   classical
-  set E := IntermediateField.fixedField G
-  have _ : Fintype G := Fintype.ofFinite G
+  set E := IntermediateField.fixedField G with hE
   have hcard : Module.finrank ↥E F = Nat.card G := by
-    rw [Nat.card_eq_fintype_card]
-    exact FixedPoints.finrank_eq_card G F
+    rw [hE]
+    exact IntermediateField.finrank_fixedField_eq_natCard G
   have hGpos : 0 < Nat.card G := Nat.card_pos
-  have hfd : FiniteDimensional ↥E F :=
-    FiniteDimensional.of_finrank_pos (by rw [hcard]; exact hGpos)
-  have hgal : IsGalois ↥E F := IsGalois.of_fixed_field F G
   have hFE : IsFunctionField k ↥E := hF.fixedField G
   have hexE : IsIntegrallyClosedIn k ↥E := isIntegrallyClosedIn_intermediateField hex E
   -- The ramified places of the fixed field form a finite set.
@@ -163,13 +162,13 @@ theorem natCard_le_eighty_four_mul_genus_sub_one_of_charZero [CharZero k] (hF : 
     (hex : IsIntegrallyClosedIn k F) (G : Subgroup (F ≃ₐ[k] F)) [Finite G]
     (hgenus : 2 ≤ genus k F) :
     Nat.card G ≤ 84 * (genus k F - 1) :=
-  natCard_le_eighty_four_mul_genus_sub_one hF hex G hgenus fun _ ↦ Place.isTame_of_charZero _ _ _
+  natCard_le_eighty_four_mul_genus_sub_one hF hex G hgenus fun P ↦
+    Place.isTame_of_charZero k ↥(IntermediateField.fixedField G) P
 
 /-- **The Hurwitz bound for the whole automorphism group**: over a constant field of characteristic
-zero, a function field of genus `g ≥ 2` with a finite automorphism group has
-`|Aut(F / k)| ≤ 84 (g - 1)`.  Finiteness itself is the separate Layer 11 milestone; this is the
-bound on it. -/
-theorem natCard_algEquiv_le_eighty_four_mul_genus_sub_one_of_charZero [CharZero k]
+zero, a function field of genus `g ≥ 2` whose automorphism group is finite has
+`|Aut(F / k)| ≤ 84 (g - 1)`. -/
+theorem card_algEquiv_le_eighty_four_mul_genus_sub_one_of_charZero [CharZero k]
     [Finite (F ≃ₐ[k] F)] (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F)
     (hgenus : 2 ≤ genus k F) :
     Nat.card (F ≃ₐ[k] F) ≤ 84 * (genus k F - 1) := by
