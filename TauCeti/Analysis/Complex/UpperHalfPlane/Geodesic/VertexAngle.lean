@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.InteriorAngle
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.Ray
+import TauCeti.Analysis.Complex.Angle
+import TauCeti.Analysis.Complex.NormSq
 import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.Orientation
 import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.Semicircle
 
@@ -126,65 +128,6 @@ theorem vertexAngle_smul (h : PSL(2, ℝ)) {p q r : ℍ ⊕ OnePoint ℝ} (hpq :
 
 /-! ### Angles with the upward vertical -/
 
-/-- A point at squared distance `ρ ^ 2` from `m`, with `0 < ρ`, is at distance `ρ`. -/
-private theorem norm_sub_eq_of_normSq {z : ℂ} {m ρ : ℝ} (hρ : 0 < ρ)
-    (h : Complex.normSq (z - m) = ρ ^ 2) : ‖z - m‖ = ρ := by
-  rwa [Complex.normSq_eq_norm_sq, pow_left_inj₀ (norm_nonneg _) hρ.le two_ne_zero] at h
-
-/-- The angle between `I` and `I * w`, for `w` in the upper half-plane, is the argument of `w`. -/
-private theorem angle_I_I_mul {w : ℂ} (hw : 0 < w.im) :
-    InnerProductGeometry.angle Complex.I (Complex.I * w) = Real.arccos (w.re / ‖w‖) := by
-  have h := Complex.angle_mul_left Complex.I_ne_zero 1 w
-  rw [mul_one] at h
-  rw [h, Complex.angle_one_left (fun h0 ↦ by simp [h0] at hw), Complex.arg_of_im_pos hw,
-    abs_of_nonneg (Real.arccos_nonneg _)]
-
-/-- An ideal point `x` of the circle of centre `m` and radius `ρ`, to the left of a point `w` of
-the closed upper half-plane on that circle, is its left endpoint `m - ρ`. -/
-private theorem eq_coe_sub_of_normSq_eq_of_lt {x m ρ : ℝ} {w : ℂ} (hρ : 0 < ρ)
-    (hx : Complex.normSq ((x : ℂ) - m) = ρ ^ 2) (hw : Complex.normSq (w - m) = ρ ^ 2)
-    (hxw : (x : ℂ).re < w.re) : x = m - ρ := by
-  rw [← Complex.ofReal_sub, Complex.normSq_ofReal] at hx
-  rw [Complex.normSq_apply] at hw
-  simp only [Complex.sub_re, Complex.sub_im, Complex.ofReal_re, Complex.ofReal_im,
-    sub_zero] at hw hxw
-  have hlt : x - m < ρ := by nlinarith [mul_self_nonneg w.im]
-  have h : (x - m + ρ) * (x - m - ρ) = 0 := by linear_combination hx
-  linarith [(mul_eq_zero.1 h).resolve_right (sub_ne_zero.2 hlt.ne)]
-
-/-- An ideal point `x` of the circle of centre `m` and radius `ρ`, to the right of a point `w` of
-the closed upper half-plane on that circle, is its right endpoint `m + ρ`. -/
-private theorem eq_coe_add_of_normSq_eq_of_lt {x m ρ : ℝ} {w : ℂ} (hρ : 0 < ρ)
-    (hx : Complex.normSq ((x : ℂ) - m) = ρ ^ 2) (hw : Complex.normSq (w - m) = ρ ^ 2)
-    (hwx : w.re < (x : ℂ).re) : x = m + ρ := by
-  rw [← Complex.ofReal_sub, Complex.normSq_ofReal] at hx
-  rw [Complex.normSq_apply] at hw
-  simp only [Complex.sub_re, Complex.sub_im, Complex.ofReal_re, Complex.ofReal_im,
-    sub_zero] at hw hwx
-  have hlt : -ρ < x - m := by nlinarith [mul_self_nonneg w.im]
-  have h : (x - m + ρ) * (x - m - ρ) = 0 := by linear_combination hx
-  linarith [(mul_eq_zero.1 h).resolve_left (by linarith)]
-
-/-- **The radical line of two circles.** Let `a` lie on two circles centred on the real axis,
-of centres `m₁`, `m₂` and radii `ρ₁`, `ρ₂`, and let `w` lie on the first circle, to the left of
-`a` and strictly outside the second. Then every point `z` of the first circle to the left of `a` is
-strictly outside the second: on the first circle, `|z - m₂|² - ρ₂²` is an affine function of
-`Re z`, vanishing at `a`. -/
-private theorem lt_normSq_sub_of_normSq_eq {a w z : ℂ} {m₁ ρ₁ m₂ ρ₂ : ℝ}
-    (ha₁ : Complex.normSq (a - m₁) = ρ₁ ^ 2) (ha₂ : Complex.normSq (a - m₂) = ρ₂ ^ 2)
-    (hw₁ : Complex.normSq (w - m₁) = ρ₁ ^ 2) (hw₂ : ρ₂ ^ 2 < Complex.normSq (w - m₂))
-    (hz₁ : Complex.normSq (z - m₁) = ρ₁ ^ 2) (hwa : w.re < a.re) (hza : z.re < a.re) :
-    ρ₂ ^ 2 < Complex.normSq (z - m₂) := by
-  simp only [Complex.normSq_apply, Complex.sub_re, Complex.sub_im, Complex.ofReal_re,
-    Complex.ofReal_im, sub_zero] at ha₁ ha₂ hw₁ hw₂ hz₁ ⊢
-  have hz : (z.re - m₂) * (z.re - m₂) + z.im * z.im - ρ₂ ^ 2 = 2 * (m₁ - m₂) * (z.re - a.re) := by
-    linear_combination hz₁ - ha₁ + ha₂
-  have hw : (w.re - m₂) * (w.re - m₂) + w.im * w.im - ρ₂ ^ 2 = 2 * (m₁ - m₂) * (w.re - a.re) := by
-    linear_combination hw₁ - ha₁ + ha₂
-  have hm : 2 * (m₁ - m₂) < 0 :=
-    neg_of_mul_pos_left (hw ▸ sub_pos.2 hw₂) (sub_neg.2 hwa).le
-  linarith [mul_pos_of_neg_of_neg hm (sub_neg.2 hza)]
-
 /-- On a circle of centre `m` through `A ∈ ℍ` and a point `q` (other than `∞`) of different real
 part, the point of the ray from `A` towards `q` at parameter `1` is again on the circle, and lies
 on the same side of `A` as `q`. -/
@@ -260,13 +203,13 @@ theorem vertexAngle_infty_of_re_lt {p q : ℍ ⊕ OnePoint ℝ} {m ρ : ℝ} (h�
     have hμ' : 0 < -μ := neg_pos.2 (neg_of_mul_neg_left hμ (sub_pos.2 hpq).le)
     rw [h, ← neg_neg ((μ : ℂ) * _), ← neg_mul, ← Complex.ofReal_neg, ← Complex.real_smul,
       InnerProductGeometry.angle_neg_right, InnerProductGeometry.angle_smul_right_of_pos _ _ hμ',
-      angle_I_I_mul (by simpa using A.im_pos), norm_sub_eq_of_normSq hρ hpm]
+      Complex.angle_I_I_mul (by simpa using A.im_pos), Complex.norm_sub_eq_of_normSq_sub_eq hρ hpm]
     simp
   · -- an ideal left vertex is the left endpoint `m - ρ` of the semicircle
     obtain ⟨x, rfl⟩ := OnePoint.ne_infty_iff_exists.1 fun h ↦ hp (congrArg _ h)
     rw [toComplex_inr_coe] at hpm hpq ⊢
     rw [Complex.ofReal_re, vertexAngle_inr, eq_comm, sub_eq_zero,
-      eq_coe_sub_of_normSq_eq_of_lt hρ hpm hqm hpq, sub_sub_cancel_left, neg_div,
+      Complex.eq_sub_of_normSq_eq_of_lt_re hρ hpm hqm hpq, sub_sub_cancel_left, neg_div,
       div_self hρ.ne', Real.arccos_neg_one]
 
 /-- **The angle at the right vertex of a triangle with an ideal vertex at `∞`.** If `p` and `q`
@@ -284,12 +227,12 @@ theorem vertexAngle_infty_of_lt_re {p q : ℍ ⊕ OnePoint ℝ} {m ρ : ℝ} (h�
     obtain ⟨μ, hμ, h⟩ := exists_vertexAngle_inl_infty_eq hp hqm hpm hpq.ne'
     rw [h, ← Complex.real_smul, InnerProductGeometry.angle_smul_right_of_pos _ _
         (pos_of_mul_neg_left hμ (sub_neg.2 hpq).le),
-      angle_I_I_mul (by simpa using B.im_pos), norm_sub_eq_of_normSq hρ hqm]
+      Complex.angle_I_I_mul (by simpa using B.im_pos), Complex.norm_sub_eq_of_normSq_sub_eq hρ hqm]
     simp
   · -- an ideal right vertex is the right endpoint `m + ρ` of the semicircle
     obtain ⟨x, rfl⟩ := OnePoint.ne_infty_iff_exists.1 fun h ↦ hq (congrArg _ h)
     rw [toComplex_inr_coe] at hqm hpq ⊢
-    rw [Complex.ofReal_re, vertexAngle_inr, eq_coe_add_of_normSq_eq_of_lt hρ hqm hpm hpq,
+    rw [Complex.ofReal_re, vertexAngle_inr, Complex.eq_add_of_normSq_eq_of_re_lt hρ hqm hpm hpq,
       add_sub_cancel_left, div_self hρ.ne', Real.arccos_one]
 
 /-- **An angle split by the upward vertical.** Let `A ∈ ℍ` lie on two semicircles, of centres
@@ -338,7 +281,7 @@ theorem vertexAngle_eq_add_of_mem_circles {A : ℍ} {p q : ℍ ⊕ OnePoint ℝ}
     rw [hCre, hCim, ← hA₂]
     linarith [mul_lt_mul'' h₁ h₁ A.im_pos.le A.im_pos.le]
   · -- `D` is on the first circle, to the left of `A`, like `p`
-    exact lt_normSq_sub_of_normSq_eq hA₁ hA₂ hp₁ hp₂ hDm hpA (by rwa [coe_re])
+    exact Complex.lt_normSq_sub_of_normSq_eq hA₁ hA₂ hp₁ hp₂ hDm hpA (by rwa [coe_re])
   · rw [← hgC, mem_leftHalfPlane_iff, re_toPoint_inv_smul]
     exact div_neg_of_neg_of_pos (sub_neg.2 hDA) A.im_pos
 
