@@ -278,26 +278,6 @@ variable [CompleteSpace 𝕜]
   [TopologicalSpace HB] {I : ModelWithCorners 𝕜 EB HB} [ChartedSpace HB B]
   [ContMDiffVectorBundle 1 F E I]
 
-omit [CompleteSpace X] [CompleteSpace F] [CompleteSpace 𝕜] in
-/-- At a zero, the kernel inclusion composed with the inverse of a kernel-model equivalence
-has range equal to the kernel of the intrinsic section linearization. -/
-theorem range_subtypeL_comp_eq_ker_sectionLinearization
-    {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
-    (hb : MDifferentiableAt 𝓘(𝕜, X) I b x) (he : b x ∈ e.baseSet)
-    (hf : HasFDerivAt (fun y ↦ (e ⟨b y, s y⟩).2) T x) (hz : s x = 0)
-    (K : T.ker ≃L[𝕜] G) :
-    (T.ker.subtypeL.comp (K.symm : G →L[𝕜] T.ker)).range =
-      (sectionLinearization (𝕜 := 𝕜) (F := F) b s x).ker := by
-  rw [sectionLinearization_eq_symmL_comp hb he hf.differentiableAt hz,
-    hf.fderiv, ← e.symm_continuousLinearEquivAt_eq' he]
-  simp only [ContinuousLinearMap.toLinearMap_comp, Submodule.toLinearMap_subtypeL,
-    ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap]
-  rw [LinearMap.range_comp_of_range_eq_top T.ker.subtype
-    (f := K.symm.toLinearEquiv.toLinearMap) K.symm.toLinearEquiv.range,
-    LinearMap.ker_comp_of_ker_eq_bot T.toLinearMap
-      (LinearMap.ker_eq_bot.2 (e.continuousLinearEquivAt 𝕜 (b x) he).symm.injective)]
-  exact Submodule.range_subtype _
-
 /-- A regular zero of a Fredholm section has a local parametrization of dimension the index.
 The parametrization is as smooth at its origin as the section's coordinates, and its derivative
 is injective with image exactly the kernel of the intrinsic section linearization.
