@@ -193,8 +193,13 @@ instance instT2Space : T2Space (LensSpace m ℓ) :=
     (sphere (0 : EuclideanSpace ℂ (Fin (k + 1))) 1))))
 
 /-- The projection from the unit sphere of `ℂᵏ⁺¹` to the lens space. -/
-@[expose] def mk : sphere (0 : EuclideanSpace ℂ (Fin (k + 1))) 1 → LensSpace m ℓ :=
+def mk : sphere (0 : EuclideanSpace ℂ (Fin (k + 1))) 1 → LensSpace m ℓ :=
   Quotient.mk (MulAction.orbitRel (lensGroup m ℓ) (sphere (0 : EuclideanSpace ℂ (Fin (k + 1))) 1))
+
+/-- The projection from the sphere is the quotient map of the orbit relation of the lens group. -/
+theorem mk_def : mk m ℓ = Quotient.mk
+    (MulAction.orbitRel (lensGroup m ℓ) (sphere (0 : EuclideanSpace ℂ (Fin (k + 1))) 1)) :=
+  (rfl)
 
 /-- Every point of a lens space is the image of a unit vector. -/
 theorem mk_surjective : Function.Surjective (mk m ℓ) :=

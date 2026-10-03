@@ -79,7 +79,7 @@ instance instIsManifold : IsManifold (𝓡 n) ω (LensSpace m ℓ) :=
 
 /-- The projection from the sphere to a lens space is an analytic local diffeomorphism. -/
 theorem isLocalDiffeomorph_mk : IsLocalDiffeomorph (𝓡 n) (𝓡 n) ω (mk m ℓ) :=
-  isLocalDiffeomorph_quotientMk
+  mk_def m ℓ ▸ isLocalDiffeomorph_quotientMk
 
 end LensSpace
 
