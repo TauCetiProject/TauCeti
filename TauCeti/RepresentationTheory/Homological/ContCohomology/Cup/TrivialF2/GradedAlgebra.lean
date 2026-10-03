@@ -80,6 +80,7 @@ theorem gMul_eq_cup {m n : ℕ} (x : cohomF2 G m) (y : cohomF2 G n) :
     (trivialF2TopPairing_bil_one_right G) (trivialF2TopPairing_bil_assoc G) x y
 
 /-- The unit supplied by the graded ring structure is the degree-zero unit class. -/
+@[simp]
 theorem gOne_eq_one : (GradedMonoid.GOne.one : cohomF2 G 0) = cohomF2.one G :=
   (TopPairing.cohomologyGRing_one _ _ _ (trivialF2TopPairing_bil_one_left G)
     (trivialF2TopPairing_bil_one_right G) (trivialF2TopPairing_bil_assoc G)).trans
