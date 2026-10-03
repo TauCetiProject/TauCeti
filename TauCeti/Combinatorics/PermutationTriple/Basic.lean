@@ -309,11 +309,12 @@ instance : DecidableRel (@Equivalent n) :=
           MulAction.orbitRel (Perm (Fin n)) (PermutationTriple n) t t'))
 
 /-- Isomorphism classes of degree-`n` permutation triples. -/
-def IsoClass (n : ℕ) : Type :=
+-- The carrier and literal constructor are exposed for the generic quotient/subtype API.
+@[expose] def IsoClass (n : ℕ) : Type :=
   MulAction.orbitRel.Quotient (Perm (Fin n)) (PermutationTriple n)
 
 /-- The isomorphism class of a permutation triple. -/
-def IsoClass.mk (t : PermutationTriple n) : IsoClass n :=
+@[expose] def IsoClass.mk (t : PermutationTriple n) : IsoClass n :=
   Quotient.mk'' t
 
 /-- Two triples determine the same isomorphism class exactly when they are isomorphic. -/
