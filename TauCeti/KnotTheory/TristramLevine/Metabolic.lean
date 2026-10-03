@@ -36,9 +36,6 @@ has a metabolic Seifert matrix is treated here.
   Tristram--Levine signature wherever its form is nonsingular.
 * `TauCeti.KnotTheory.tristramLevineSignature_eq_of_isMetabolic`: algebraically concordant
   matrices have the same Tristram--Levine signature wherever both forms are nonsingular.
-* `TauCeti.KnotTheory.not_isMetabolic_map_trefoilSeifertMatrix` and
-  `TauCeti.KnotTheory.not_isMetabolic_trefoilSeifertMatrix`: the Seifert matrix of the trefoil is
-  not metabolic, even over an ordered field, so the trefoil is not algebraically slice.
 
 ## References
 
@@ -65,7 +62,7 @@ open TauCeti.KnotTheory in
 where the Tristram--Levine form is nonsingular. -/
 theorem IsMetabolic.tristramLevineSignature_eq_zero {V : Matrix ι ι ℝ} (hV : V.IsMetabolic)
     {ω : ℂ} (hω : (tristramLevineForm V ω).det ≠ 0) : tristramLevineSignature V ω = 0 := by
-  obtain ⟨P, hP, s, hs, h⟩ := isMetabolic_def.1 hV
+  obtain ⟨P, hP, s, hs, h⟩ := hV
   rw [← tristramLevineSignature_congr hP, tristramLevineSignature_def]
   refine (isHermitian_tristramLevineForm _ ω).signature_eq_zero_of_forall_mem_eq_zero ?_ hs.le
     fun i hi j hj => by simp [h i hi j hj, h j hj i hi]
@@ -100,28 +97,5 @@ theorem tristramLevineSignature_eq_of_isMetabolic {V : Matrix ι ι ℝ} {W : Ma
   rw [tristramLevineSignature_fromBlocks_zero, ← transpose_transpose W, ← transpose_neg,
     tristramLevineSignature_transpose, tristramLevineSignature_neg_transpose] at h0
   omega
-
-section Examples
-
-variable {𝕜 : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
-
-/-- **The trefoil is not algebraically slice**: its Seifert matrix is not metabolic, even over an
-ordered field, because its signature is `-2` while `V + Vᵀ` has determinant `3`. -/
-theorem not_isMetabolic_map_trefoilSeifertMatrix :
-    ¬ (trefoilSeifertMatrix.map ((↑) : ℤ → 𝕜)).IsMetabolic := by
-  intro h
-  have hdet : IsUnit (trefoilSeifertMatrix.map ((↑) : ℤ → 𝕜) +
-      (trefoilSeifertMatrix.map ((↑) : ℤ → 𝕜))ᵀ).det := by
-    rw [map_trefoilSeifertMatrix, isUnit_iff_ne_zero, det_fin_two]
-    norm_num
-  have := h.signature_eq_zero hdet
-  rw [signature_trefoilSeifertMatrix] at this
-  omega
-
-/-- The integral Seifert matrix of the trefoil is not metabolic. -/
-theorem not_isMetabolic_trefoilSeifertMatrix : ¬ trefoilSeifertMatrix.IsMetabolic :=
-  fun h => not_isMetabolic_map_trefoilSeifertMatrix (𝕜 := ℚ) (h.map (Int.castRingHom ℚ))
-
-end Examples
 
 end TauCeti.KnotTheory

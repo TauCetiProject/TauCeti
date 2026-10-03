@@ -35,6 +35,8 @@ classical theorem that a slice knot has signature zero.
 
 * `Matrix.isMetabolic_congr`: being metabolic is invariant under unimodular congruence.
 * `Matrix.isMetabolic_submatrix_equiv_iff`: being metabolic is invariant under reindexing.
+* `Matrix.isMetabolic_neg_iff` and `Matrix.isMetabolic_transpose_iff`: being metabolic is invariant
+  under negation and under transposition.
 * `Matrix.IsMetabolic.map`: ring homomorphisms preserve metabolic matrices.
 * `Matrix.IsMetabolic.fromBlocks`: the block sum of metabolic matrices is metabolic.
 * `Matrix.isMetabolic_fromBlocks_neg`: the block sum `V ⊕ -V` is metabolic, for every `V`.
@@ -59,16 +61,9 @@ variable {R S : Type*} [CommRing R] [CommRing S] {ι κ : Type*} [Fintype ι] [F
 
 /-- A square matrix `V` is *metabolic* when some congruence `V ↦ P * V * Pᵀ` by a matrix with unit
 determinant makes it vanish on `s × s` for a set `s` of exactly half of the coordinates. -/
-def IsMetabolic (V : Matrix ι ι R) : Prop :=
+@[expose] def IsMetabolic (V : Matrix ι ι R) : Prop :=
   ∃ P : Matrix ι ι R, IsUnit P.det ∧ ∃ s : Finset ι, Fintype.card ι = 2 * s.card ∧
     ∀ i ∈ s, ∀ j ∈ s, (P * V * Pᵀ) i j = 0
-
-/-- Unfold `Matrix.IsMetabolic`: a unimodular congruence makes `V` vanish on half of the
-coordinates. -/
-theorem isMetabolic_def {V : Matrix ι ι R} :
-    V.IsMetabolic ↔ ∃ P : Matrix ι ι R, IsUnit P.det ∧ ∃ s : Finset ι,
-      Fintype.card ι = 2 * s.card ∧ ∀ i ∈ s, ∀ j ∈ s, (P * V * Pᵀ) i j = 0 :=
-  Iff.rfl
 
 /-- A matrix vanishing on half of the coordinates is metabolic. -/
 theorem isMetabolic_of_forall_mem_eq_zero {V : Matrix ι ι R} {s : Finset ι}
@@ -115,6 +110,30 @@ theorem isMetabolic_submatrix_equiv_iff {V : Matrix ι ι R} (e : ι ≃ κ) :
     (V.submatrix e.symm e.symm).IsMetabolic ↔ V.IsMetabolic := by
   refine ⟨fun h => ?_, fun h => h.submatrix_equiv e⟩
   simpa using h.submatrix_equiv e.symm
+
+/-- The negation of a metabolic matrix is metabolic. -/
+theorem IsMetabolic.neg {V : Matrix ι ι R} (hV : V.IsMetabolic) : (-V).IsMetabolic := by
+  obtain ⟨P, hP, s, hs, h⟩ := hV
+  refine ⟨P, hP, s, hs, fun i hi j hj => ?_⟩
+  rw [Matrix.mul_neg, Matrix.neg_mul, neg_apply, h i hi j hj, neg_zero]
+
+/-- **Being metabolic is invariant under negation.** -/
+@[simp]
+theorem isMetabolic_neg_iff {V : Matrix ι ι R} : (-V).IsMetabolic ↔ V.IsMetabolic :=
+  ⟨fun h => neg_neg V ▸ h.neg, IsMetabolic.neg⟩
+
+/-- The transpose of a metabolic matrix is metabolic. -/
+theorem IsMetabolic.transpose {V : Matrix ι ι R} (hV : V.IsMetabolic) : Vᵀ.IsMetabolic := by
+  obtain ⟨P, hP, s, hs, h⟩ := hV
+  refine ⟨P, hP, s, hs, fun i hi j hj => ?_⟩
+  have hT : P * Vᵀ * Pᵀ = (P * V * Pᵀ)ᵀ := by
+    rw [transpose_mul, transpose_mul, transpose_transpose, Matrix.mul_assoc]
+  rw [hT, transpose_apply, h j hj i hi]
+
+/-- **Being metabolic is invariant under transposition.** -/
+@[simp]
+theorem isMetabolic_transpose_iff {V : Matrix ι ι R} : Vᵀ.IsMetabolic ↔ V.IsMetabolic :=
+  ⟨fun h => transpose_transpose V ▸ h.transpose, IsMetabolic.transpose⟩
 
 /-- The image of a metabolic matrix under a ring homomorphism is metabolic. In particular an
 integral metabolic matrix stays metabolic over `ℚ` and over `ℝ`. -/

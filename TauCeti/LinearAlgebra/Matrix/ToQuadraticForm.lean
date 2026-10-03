@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 public import Mathlib.LinearAlgebra.QuadraticForm.Prod
-public import Mathlib.LinearAlgebra.QuadraticForm.Radical
+public import TauCeti.LinearAlgebra.QuadraticForm.Radical
 import Mathlib.LinearAlgebra.Matrix.DotProduct
 
 /-!
@@ -31,6 +31,7 @@ the signature theory so that consumers needing only these rules do not import it
 * `Matrix.toQuadraticForm'_transpose`: a matrix and its transpose carry the same form.
 * `Matrix.toQuadraticForm'_add_transpose`: the form of `A + Aᵀ` is twice the form of `A`.
 * `Matrix.toQuadraticForm'_diagonal`: a diagonal matrix gives a weighted sum of squares.
+* `Matrix.polarBilin_toQuadraticForm'_apply`: the polar form is the bilinear form of `A + Aᵀ`.
 * `Matrix.nondegenerate_toQuadraticForm'`: the form is nondegenerate when `A + Aᵀ` is invertible.
 -/
 
@@ -89,26 +90,23 @@ theorem toQuadraticForm'_diagonal (d : ι → R) :
   rw [mulVec_diagonal, smul_eq_mul]
   ring
 
+/-- The polar form of the quadratic form of `A` is the bilinear form of `A + Aᵀ`. -/
+theorem polarBilin_toQuadraticForm'_apply (A : Matrix ι ι R) (x y : ι → R) :
+    A.toQuadraticForm'.polarBilin x y = x ⬝ᵥ (A + Aᵀ) *ᵥ y := by
+  rw [polarBilin_apply_apply, Matrix.toQuadraticForm', LinearMap.BilinMap.polar_toQuadraticMap,
+    toLinearMap₂'_apply', toLinearMap₂'_apply', add_mulVec, dotProduct_add]
+  congr 1
+  rw [mulVec_transpose, dotProduct_comm x, dotProduct_mulVec]
+
 /-- The quadratic form of `A` is nondegenerate when the matrix `A + Aᵀ` of its polar form is
 invertible. -/
 theorem nondegenerate_toQuadraticForm' {A : Matrix ι ι R} (hA : IsUnit (A + Aᵀ).det) :
     A.toQuadraticForm'.Nondegenerate := by
-  have hker : A.toQuadraticForm'.polarBilin.ker = ⊥ := by
-    refine (Submodule.eq_bot_iff _).2 fun x hx => ?_
-    -- The polar form is `(x, y) ↦ x ⬝ᵥ (A + Aᵀ) *ᵥ y`, so `x` is in the left kernel of `A + Aᵀ`.
-    have hvec : x ᵥ* (A + Aᵀ) = 0 := by
-      refine dotProduct_eq_zero_iff.1 fun y => ?_
-      have := LinearMap.congr_fun (LinearMap.mem_ker.1 hx) y
-      rw [polarBilin_apply_apply, Matrix.toQuadraticForm', LinearMap.BilinMap.polar_toQuadraticMap,
-        toLinearMap₂'_apply', toLinearMap₂'_apply', LinearMap.zero_apply] at this
-      rw [← dotProduct_mulVec, add_mulVec, dotProduct_add, ← this]
-      congr 1
-      rw [dotProduct_mulVec, vecMul_transpose, dotProduct_comm]
-    rw [← vecMul_one x, ← mul_nonsing_inv _ hA, ← vecMul_vecMul, hvec, zero_vecMul]
-  refine ⟨le_bot_iff.1 (hker ▸ radical_le_ker_polarBilin (Q := A.toQuadraticForm')), ?_⟩
-  rw [hker]
-  nontriviality R
-  simp
+  refine nondegenerate_of_ker_polarBilin_eq_bot ((Submodule.eq_bot_iff _).2 fun x hx => ?_)
+  have hvec : x ᵥ* (A + Aᵀ) = 0 := dotProduct_eq_zero_iff.1 fun y => by
+    rw [← dotProduct_mulVec, ← polarBilin_toQuadraticForm'_apply, LinearMap.mem_ker.1 hx,
+      LinearMap.zero_apply]
+  rw [← vecMul_one x, ← mul_nonsing_inv _ hA, ← vecMul_vecMul, hvec, zero_vecMul]
 
 /-- Congruence by a matrix with unit determinant is an isometry of the attached quadratic
 forms. -/
