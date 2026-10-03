@@ -99,6 +99,15 @@ theorem mem_filtration_decompositionSubgroup_apply {a : ℤ} {x : F'} :
     (g : F' ≃ₐ[F] F') x ∈ P.filtration a ↔ x ∈ P.filtration a := by
   simp only [mem_filtration_iff, valuation_decompositionSubgroup_apply]
 
+omit [Algebra k F] [IsScalarTower k F F'] in
+/-- Two automorphisms fixing `P` that agree on the valuation ring of `P` are equal, because that
+valuation ring has `F'` for its field of fractions. -/
+theorem decompositionSubgroup_eq_of_forall_mem_integers {g h : P.integers.decompositionSubgroup F}
+    (hgh : ∀ x ∈ P.integers, (g : F' ≃ₐ[F] F') x = (h : F' ≃ₐ[F] F') x) : g = h :=
+  Subtype.ext <| AlgEquiv.ext fun y ↦ DFunLike.congr_fun
+    (IsFractionRing.ringHom_ext (A := P.integers) (f1 := ((g : F' ≃ₐ[F] F') : F' →+* F'))
+      (f2 := ((h : F' ≃ₐ[F] F') : F' →+* F')) fun x ↦ hgh x x.2) y
+
 end Transport
 
 section Defs
@@ -199,16 +208,7 @@ theorem iInf_ramificationGroup_eq_bot : ⨅ i, ramificationGroup F P i = ⊥ := 
     have := (P.mem_filtration_iff_le_ord h0).mp hmem
     omega
   rw [Subgroup.mem_bot]
-  refine Subtype.ext (AlgEquiv.ext fun y ↦ ?_)
-  -- Unfold the nested subgroup and equivalence coercions to state pointwise equality in `F'`.
-  change (g : F' ≃ₐ[F] F') y = y
-  rcases eq_or_ne y 0 with rfl | hy0
-  · simp
-  · rcases ValuationSubring.mem_or_inv_mem P.integers y with hy | hy
-    · exact hfix y hy
-    · have h := hfix _ hy
-      rw [map_inv₀] at h
-      exact inv_injective h
+  exact decompositionSubgroup_eq_of_forall_mem_integers F P hfix
 
 /-- **The ramification groups of a place whose inertia group is finite are trivial from some index
 on** (Stichtenoth, Proposition 3.8.5). -/

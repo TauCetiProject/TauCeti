@@ -137,7 +137,8 @@ theorem mem_maximalIdeal_pow_iff_coe_mem_filtration (n : ℕ) (x : P.integers) :
     x ∈ IsLocalRing.maximalIdeal P.integers ^ n ↔ (x : F) ∈ P.filtration n := by
   let e : P.integers ≃+* P.valuation.valuationSubring :=
     RingEquiv.subringCongr (congrArg ValuationSubring.toSubring P.integers_def)
-  have he : ((e x : P.valuation.valuationSubring) : F) = (x : F) := rfl
+  have he : ((e x : P.valuation.valuationSubring) : F) = (x : F) :=
+    RingEquiv.coe_subringCongr_apply _ x
   rw [← Ideal.apply_mem_of_equiv_iff (I := IsLocalRing.maximalIdeal P.integers ^ n)
     (f := e) (x := x), Ideal.map_pow, IsLocalRing.map_ringEquiv_maximalIdeal]
   let π : P.valuation.Uniformizer := Classical.choice inferInstance
