@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Algebra.Defs
 public import Mathlib.LinearAlgebra.TensorProduct.Basic
 public import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
 
@@ -20,8 +19,9 @@ every element expands in either family with coefficients read off by pairing aga
 a = ∑ i, φ (a * y i) • x i,        a = ∑ i, φ (x i * a) • y i.
 ```
 
-For a symmetric Frobenius algebra these are a basis and its dual basis. The **Casimir element**
-`∑ i, x i ⊗ y i` of `A ⊗[k] A` then commutes with `A` in the bimodule sense:
+For a finite free symmetric Frobenius algebra, a basis and its dual basis give such families;
+the expansion identities also allow redundant families. The **Casimir element** `∑ i, x i ⊗ y i`
+of `A ⊗[k] A` then commutes with `A` in the bimodule sense:
 
 ```text
 ∑ i, (a * x i) ⊗ y i = ∑ i, x i ⊗ (y i * a).
@@ -29,11 +29,15 @@ For a symmetric Frobenius algebra these are a basis and its dual basis. The **Ca
 
 This is what makes `1 ↦ ∑ i, x i ⊗ y i` a map of `A`-bimodules `A → A ⊗[k] A`, the coevaluation of
 a symmetric Frobenius algebra; for a Frobenius coalgebra in Mathlib's sense
-(`Coalgebra.IsFrobenius`) the element is the comultiplication of `1`.
+(`Coalgebra.IsFrobenius`) with counit `φ`, the element is the comultiplication of `1`.
+
+The tensor identity itself needs only a nonunital semiring `A` with a `k`-module structure:
+neither a multiplicative identity nor compatibility between scalar multiplication and multiplication
+is used.
 
 ## Main results
 
-* `TauCeti.sum_mul_tmul_eq_sum_tmul_mul`: the Casimir element of a trace commutes with `A`.
+* `LinearMap.sum_mul_tmul_eq_sum_tmul_mul`: the Casimir element of a trace commutes with `A`.
 
 ## References
 
@@ -43,13 +47,13 @@ a symmetric Frobenius algebra; for a Frobenius coalgebra in Mathlib's sense
 
 public section
 
-namespace TauCeti
+namespace LinearMap
 
 open scoped TensorProduct
 
-variable {k A : Type*} [CommSemiring k] [Semiring A] [Algebra k A]
+variable {k A : Type*} [CommSemiring k] [NonUnitalSemiring A] [Module k A]
 
-/-- **The Casimir element of a trace commutes with the algebra.** If `φ` is a trace on `A` and the
+/-- **The Casimir element of a trace commutes with multiplication.** If `φ` is a trace on `A` and the
 finite families `x` and `y` are dual for `(a, b) ↦ φ (a * b)`, then
 `∑ i, (a * x i) ⊗ y i = ∑ i, x i ⊗ (y i * a)` for every `a : A`. -/
 theorem sum_mul_tmul_eq_sum_tmul_mul {ι : Type*} [Fintype ι] (φ : A →ₗ[k] k)
@@ -70,4 +74,4 @@ theorem sum_mul_tmul_eq_sum_tmul_mul {ι : Type*} [Fintype ι] (φ : A →ₗ[k]
   refine Finset.sum_congr rfl fun j _ => ?_
   rw [← TensorProduct.tmul_sum, hy]
 
-end TauCeti
+end LinearMap
