@@ -27,7 +27,7 @@ zeros can be checked in any bundle trivialization, and the chain rule
 
 The convention is that of McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*,
 2nd ed., Appendix A.3. The calculation uses Mathlib's bundle coordinate changes and the
-zero-value derivative rule `TauCeti.mvfderiv_clm_apply_of_eq_zero`.
+zero-value derivative rule `TauCeti.mvfderiv_eq_comp_of_eventuallyEq_clm_apply`.
 -/
 
 public section
@@ -37,18 +37,16 @@ open scoped Manifold Topology
 
 namespace TauCeti
 
-variable {𝕜 EM HM M B F EB HB : Type*} {E : B → Type*}
+variable {𝕜 EM HM M B F : Type*} {E : B → Type*}
   [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup EM] [NormedSpace 𝕜 EM]
   [TopologicalSpace HM] {IM : ModelWithCorners 𝕜 EM HM}
   [TopologicalSpace M] [ChartedSpace HM M]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-  [NormedAddCommGroup EB] [NormedSpace 𝕜 EB]
-  [TopologicalSpace HB] {I : ModelWithCorners 𝕜 EB HB}
-  [TopologicalSpace B] [ChartedSpace HB B]
+  [TopologicalSpace B]
   [∀ a, TopologicalSpace (E a)] [TopologicalSpace (TotalSpace F E)]
   [∀ a, AddCommGroup (E a)] [∀ a, Module 𝕜 (E a)]
-  [FiberBundle F E] [VectorBundle 𝕜 F E] [ContMDiffVectorBundle 1 F E I]
+  [FiberBundle F E] [VectorBundle 𝕜 F E]
   {b : M → B} {s : ∀ y, E (b y)} {x : M}
 
 variable {e e' : Trivialization F (π F E)}
@@ -85,37 +83,33 @@ theorem sectionLinearization_zero (hb : ContinuousAt b x) :
   rw [sectionLinearization_def, mvfderiv, hcoord.mfderiv_eq, mfderiv_const]
   simp
 
-/-- At a zero of a section along a differentiable map, its coordinate derivatives in two
+/-- At a zero of a section along a continuous map, its coordinate derivatives in two
 bundle trivializations differ by postcomposition with the fiber coordinate change. -/
 theorem mvfderiv_section_coordChange_of_eq_zero
-    (hb : MDifferentiableAt IM I b x)
+    (hb : ContinuousAt b x)
     (he : b x ∈ e.baseSet) (he' : b x ∈ e'.baseSet)
     (hs : MDifferentiableAt IM 𝓘(𝕜, F) (fun y ↦ (e ⟨b y, s y⟩).2) x) (hzero : s x = 0) :
     mvfderiv IM (fun y ↦ (e' ⟨b y, s y⟩).2) x =
       (e.coordChangeL 𝕜 e' (b x) : F →L[𝕜] F).comp
         (mvfderiv IM (fun y ↦ (e ⟨b y, s y⟩).2) x) := by
-  have hc : MDifferentiableAt IM 𝓘(𝕜, F →L[𝕜] F)
-      (fun y ↦ (e.coordChangeL 𝕜 e' (b y) : F →L[𝕜] F)) x :=
-    hb.coordChangeL he he'
+  have hc : ContinuousAt (fun y ↦ (e.coordChangeL 𝕜 e' (b y) : F →L[𝕜] F)) x :=
+    ((continuousOn_coordChange 𝕜 e e').continuousAt
+      ((e.open_baseSet.inter e'.open_baseSet).mem_nhds ⟨he, he'⟩)).comp hb
   have hz : (e ⟨b x, s x⟩).2 = 0 := by
     rw [hzero]
     exact congrArg Prod.snd (e.zeroSection 𝕜 he)
   have hcoord : (fun y ↦ (e.coordChangeL 𝕜 e' (b y) : F →L[𝕜] F) ((e ⟨b y, s y⟩).2))
       =ᶠ[𝓝 x] (fun y ↦ (e' ⟨b y, s y⟩).2) := by
-    filter_upwards [hb.continuousAt.preimage_mem_nhds
+    filter_upwards [hb.preimage_mem_nhds
       ((e.open_baseSet.inter e'.open_baseSet).mem_nhds ⟨he, he'⟩)] with y hy
     rw [ContinuousLinearEquiv.coe_coe, Trivialization.coordChangeL_apply e e' hy,
       e.symm_apply_apply_mk hy.1]
-  rw [← mvfderiv_clm_apply_of_eq_zero hc hs hz, mvfderiv, mvfderiv, hcoord.mfderiv_eq]
-  -- The remaining `NormedSpace.fromTangentSpace` and `tangentSpaceCast` factors are identity
-  -- maps of `F`: Mathlib's tangent space to a normed space is that space by definition, and it
-  -- offers no rewrite lemmas for these casts, so they are discharged definitionally.
-  rfl
+  exact mvfderiv_eq_comp_of_eventuallyEq_clm_apply hcoord hc hs hz
 
 /-- At a zero, the linearization can be computed in any bundle trivialization whose fiber
 coordinates are differentiable at the point. -/
 theorem sectionLinearization_eq_symmL_comp
-    (hb : MDifferentiableAt IM I b x) (he : b x ∈ e.baseSet)
+    (hb : ContinuousAt b x) (he : b x ∈ e.baseSet)
     (hs : MDifferentiableAt IM 𝓘(𝕜, F) (fun y ↦ (e ⟨b y, s y⟩).2) x) (hzero : s x = 0) :
     sectionLinearization (F := F) IM b s x =
       (e.symmL 𝕜 (b x)).comp (mvfderiv IM (fun y ↦ (e ⟨b y, s y⟩).2) x) := by
@@ -133,16 +127,14 @@ theorem sectionLinearization_eq_symmL_comp
 has range equal to the kernel of the intrinsic section linearization. -/
 theorem range_subtypeL_comp_eq_ker_sectionLinearization {T : TangentSpace IM x →L[𝕜] F}
     {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
-    (hb : MDifferentiableAt IM I b x) (he : b x ∈ e.baseSet)
+    (hb : ContinuousAt b x) (he : b x ∈ e.baseSet)
     (hf : HasMFDerivAt IM 𝓘(𝕜, F) (fun y ↦ (e ⟨b y, s y⟩).2) x T) (hz : s x = 0)
     (K : T.ker ≃L[𝕜] G) :
     (T.ker.subtypeL.comp (K.symm : G →L[𝕜] T.ker)).range =
       (sectionLinearization (F := F) IM b s x).ker := by
   have hT : mvfderiv IM (fun y ↦ (e ⟨b y, s y⟩).2) x = T := by
-    rw [mvfderiv, hf.mfderiv]
-    -- `NormedSpace.fromTangentSpace` is by definition the identity of `F`, viewed as its own
-    -- tangent space; Mathlib offers no rewrite lemma for this cast, so it is discharged by `rfl`.
-    rfl
+    rw [hf.mdifferentiableAt.mvfderiv]
+    exact hf.2.fderivWithin IM.uniqueDiffWithinAt_image
   rw [sectionLinearization_eq_symmL_comp hb he hf.mdifferentiableAt hz,
     hT, ← e.symm_continuousLinearEquivAt_eq' he]
   simp only [ContinuousLinearMap.toLinearMap_comp, Submodule.toLinearMap_subtypeL,
@@ -156,7 +148,7 @@ theorem range_subtypeL_comp_eq_ker_sectionLinearization {T : TangentSpace IM x �
 /-- Reading the intrinsic linearization in a trivialization recovers the derivative of the
 section's fiber coordinates. -/
 theorem continuousLinearMapAt_comp_sectionLinearization
-    (hb : MDifferentiableAt IM I b x) (he : b x ∈ e.baseSet)
+    (hb : ContinuousAt b x) (he : b x ∈ e.baseSet)
     (hs : MDifferentiableAt IM 𝓘(𝕜, F) (fun y ↦ (e ⟨b y, s y⟩).2) x) (hzero : s x = 0) :
     (e.continuousLinearMapAt 𝕜 (b x)).comp (sectionLinearization (F := F) IM b s x) =
       mvfderiv IM (fun y ↦ (e ⟨b y, s y⟩).2) x := by
@@ -167,7 +159,7 @@ theorem continuousLinearMapAt_comp_sectionLinearization
 /-- A zero is regular for the intrinsic linearization exactly when its coordinate derivative
 is surjective. -/
 theorem surjective_sectionLinearization_iff
-    (hb : MDifferentiableAt IM I b x) (he : b x ∈ e.baseSet)
+    (hb : ContinuousAt b x) (he : b x ∈ e.baseSet)
     (hs : MDifferentiableAt IM 𝓘(𝕜, F) (fun y ↦ (e ⟨b y, s y⟩).2) x) (hzero : s x = 0) :
     Function.Surjective (sectionLinearization (F := F) IM b s x) ↔
       Function.Surjective (mvfderiv IM (fun y ↦ (e ⟨b y, s y⟩).2) x) := by
@@ -178,7 +170,7 @@ theorem surjective_sectionLinearization_iff
 /-- At a zero, the intrinsic linearization and any differentiable fiber-coordinate
 expression have the same Fredholm index. -/
 theorem index_sectionLinearization
-    (hb : MDifferentiableAt IM I b x) (he : b x ∈ e.baseSet)
+    (hb : ContinuousAt b x) (he : b x ∈ e.baseSet)
     (hs : MDifferentiableAt IM 𝓘(𝕜, F) (fun y ↦ (e ⟨b y, s y⟩).2) x) (hzero : s x = 0) :
     LinearMap.index (sectionLinearization (F := F) IM b s x).toLinearMap =
       LinearMap.index (mvfderiv IM (fun y ↦ (e ⟨b y, s y⟩).2) x).toLinearMap := by
@@ -190,7 +182,7 @@ theorem index_sectionLinearization
 /-- A section's intrinsic linearization at a zero is Fredholm exactly when its derivative
 in any differentiable fiber-coordinate expression is Fredholm. -/
 theorem isFredholm_sectionLinearization_iff
-    (hb : MDifferentiableAt IM I b x) (he : b x ∈ e.baseSet)
+    (hb : ContinuousAt b x) (he : b x ∈ e.baseSet)
     (hs : MDifferentiableAt IM 𝓘(𝕜, F) (fun y ↦ (e ⟨b y, s y⟩).2) x) (hzero : s x = 0) :
     ContinuousLinearMap.IsFredholm (sectionLinearization (F := F) IM b s x) ↔
       ContinuousLinearMap.IsFredholm (mvfderiv IM (fun y ↦ (e ⟨b y, s y⟩).2) x) := by
@@ -221,7 +213,7 @@ theorem isFredholm_sectionLinearization_iff
 /-- The Fredholm index of a section's coordinate derivative at a zero is independent of
 the bundle trivialization. No Fredholm hypothesis is needed for this equality of indices. -/
 theorem index_mvfderiv_section_coordChange_of_eq_zero
-    (hb : MDifferentiableAt IM I b x)
+    (hb : ContinuousAt b x)
     (he : b x ∈ e.baseSet) (he' : b x ∈ e'.baseSet)
     (hs : MDifferentiableAt IM 𝓘(𝕜, F) (fun y ↦ (e ⟨b y, s y⟩).2) x) (hzero : s x = 0) :
     LinearMap.index (mvfderiv IM (fun y ↦ (e' ⟨b y, s y⟩).2) x).toLinearMap =
@@ -233,7 +225,7 @@ theorem index_mvfderiv_section_coordChange_of_eq_zero
 /-- Fredholmness of a section's coordinate derivative at a zero is independent of
 the bundle trivialization. -/
 theorem isFredholm_mvfderiv_section_coordChange_iff_of_eq_zero
-    (hb : MDifferentiableAt IM I b x)
+    (hb : ContinuousAt b x)
     (he : b x ∈ e.baseSet) (he' : b x ∈ e'.baseSet)
     (hs : MDifferentiableAt IM 𝓘(𝕜, F) (fun y ↦ (e ⟨b y, s y⟩).2) x) (hzero : s x = 0) :
     ContinuousLinearMap.IsFredholm (mvfderiv IM (fun y ↦ (e' ⟨b y, s y⟩).2) x) ↔
@@ -252,7 +244,7 @@ theorem isFredholm_mvfderiv_section_coordChange_iff_of_eq_zero
 /-- Surjectivity of a section's coordinate derivative at a zero is independent of
 the bundle trivialization, so regular zeros can be tested in any fiber coordinates. -/
 theorem surjective_mvfderiv_section_coordChange_iff_of_eq_zero
-    (hb : MDifferentiableAt IM I b x)
+    (hb : ContinuousAt b x)
     (he : b x ∈ e.baseSet) (he' : b x ∈ e'.baseSet)
     (hs : MDifferentiableAt IM 𝓘(𝕜, F) (fun y ↦ (e ⟨b y, s y⟩).2) x) (hzero : s x = 0) :
     Function.Surjective (mvfderiv IM (fun y ↦ (e' ⟨b y, s y⟩).2) x) ↔

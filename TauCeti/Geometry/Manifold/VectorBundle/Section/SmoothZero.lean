@@ -88,8 +88,8 @@ theorem exists_isManifold_sectionZero_of_contMDiff {n : ℕ} (hm : m ≠ 0)
       ContDiffAt 𝕜 m (fun y ↦ (e z ⟨b y, s y⟩).2) w.1 := by
     exact contMDiffAt_iff_contDiffAt.1
       (((e z).contMDiffAt_iff ((e z).mem_source.2 hw)).1 (hs w.1 w.2)).2
-  have hb (z : ↥{y | s y = 0}) : MDifferentiableAt 𝓘(𝕜, X) I b z.1 :=
-    ((contMDiffAt_totalSpace.1 (hs z.1 z.2)).1).mdifferentiableAt hm
+  have hb (z : ↥{y | s y = 0}) : ContinuousAt b z.1 :=
+    (contMDiffAt_totalSpace.1 (hs z.1 z.2)).1.continuousAt
   -- Transport the intrinsic hypotheses to the coordinate derivatives used by the atlas.
   let D (z : ↥{y | s y = 0}) := fderiv 𝕜 (fun y ↦ (e z ⟨b y, s y⟩).2) z.1
   -- The smooth-to-strict-derivative theorem uses the real/complex mean value theorem.
@@ -99,30 +99,36 @@ theorem exists_isManifold_sectionZero_of_contMDiff {n : ℕ} (hm : m ≠ 0)
   have hmd (z : ↥{y | s y = 0}) :
       MDifferentiableAt 𝓘(𝕜, X) 𝓘(𝕜, F) (fun y ↦ (e z ⟨b y, s y⟩).2) z.1 :=
     ((hcoord z z (he z)).differentiableAt hm).mdifferentiableAt
+  -- The coordinate derivative is `D z` read on the tangent space through
+  -- `NormedSpace.fromTangentSpace`; Fredholmness, surjectivity, and index transport along it.
   have hD (z : ↥{y | s y = 0}) :
-      mvfderiv 𝓘(𝕜, X) (fun y ↦ (e z ⟨b y, s y⟩).2) z.1 = D z :=
+      mvfderiv 𝓘(𝕜, X) (fun y ↦ (e z ⟨b y, s y⟩).2) z.1 =
+        (D z).comp (NormedSpace.fromTangentSpace (𝕜 := 𝕜) z.1).toContinuousLinearMap :=
     mvfderiv_eq_fderiv
   have hF (z : ↥{y | s y = 0}) : ContinuousLinearMap.IsFredholm (D z) := by
-    rw [← hD]
-    exact (isFredholm_sectionLinearization_iff (hb z) (he z) (hmd z) z.2).1 (hFred z.1 z.2)
+    have h := (isFredholm_sectionLinearization_iff (hb z) (he z) (hmd z) z.2).1
+      (hFred z.1 z.2)
+    rwa [hD, ContinuousLinearMap.isFredholm_comp_equiv] at h
   have hS (z : ↥{y | s y = 0}) : Function.Surjective (D z) := by
-    rw [← hD]
-    exact (surjective_sectionLinearization_iff (hb z) (he z) (hmd z) z.2).1 (hsurj z.1 z.2)
+    have h := (surjective_sectionLinearization_iff (hb z) (he z) (hmd z) z.2).1
+      (hsurj z.1 z.2)
+    rw [hD, ContinuousLinearMap.coe_comp] at h
+    exact h.of_comp
   have hN (z : ↥{y | s y = 0}) : ContinuousLinearMap.index (D z) = n := by
-    rw [ContinuousLinearMap.index_def, ← hindex z.1 z.2,
-      index_sectionLinearization (hb z) (he z) (hmd z) z.2]
-    exact congrArg (fun T : X →L[𝕜] F ↦ LinearMap.index T.toLinearMap) (hD z).symm
+    rw [ContinuousLinearMap.index_def, ← LinearMap.index_comp_equiv (D z).toLinearMap
+      (NormedSpace.fromTangentSpace (𝕜 := 𝕜) z.1).toLinearEquiv, ← hindex z.1 z.2,
+      index_sectionLinearization (hb z) (he z) (hmd z) z.2, hD,
+      ContinuousLinearMap.toLinearMap_comp, ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap]
   have hsmooth : m ≠ 0 → ∀ z w : ↥{y | s y = 0}, b w.1 ∈ (e z).baseSet →
       w.1 ∈ (hf z).implicitCoordSource (LinearMap.range_eq_top.2 (hS z))
         (hF z).closedComplemented_ker →
       ContDiffAt 𝕜 m (fun y ↦ (e z ⟨b y, s y⟩).2) w.1 :=
     fun _ z w hw _ ↦ hcoord z w hw
-  let _ := sectionZeroChartedSpace hf hF hS hN (fun z ↦ (hb z).continuousAt) he
-  let := isManifold_sectionZero hf hF hS hN (fun z ↦ (hb z).continuousAt) he hsmooth
-  refine ⟨sectionZeroChartedSpace hf hF hS hN (fun z ↦ (hb z).continuousAt) he,
-    isManifold_sectionZero hf hF hS hN (fun z ↦ (hb z).continuousAt) he hsmooth,
-    isImmersionOfComplement_coe_sectionZero hf hF hS hN
-      (fun z ↦ (hb z).continuousAt) he hsmooth, ?_⟩
+  let _ := sectionZeroChartedSpace hf hF hS hN hb he
+  let := isManifold_sectionZero hf hF hS hN hb he hsmooth
+  refine ⟨sectionZeroChartedSpace hf hF hS hN hb he,
+    isManifold_sectionZero hf hF hS hN hb he hsmooth,
+    isImmersionOfComplement_coe_sectionZero hf hF hS hN hb he hsmooth, ?_⟩
   -- The inclusion derivative is a kernel inclusion composed with an equivalence.
   intro z
   let K := (D z).kerModelEquiv (hF z).finite_ker
@@ -132,8 +138,7 @@ theorem exists_isManifold_sectionZero_of_contMDiff {n : ℕ} (hm : m ≠ 0)
   have hrange : T.range = (sectionLinearization (F := F) 𝓘(𝕜, X) b s z.1).ker :=
     range_subtypeL_comp_eq_ker_sectionLinearization (hb z) (he z)
       (hf z).hasFDerivAt.hasMFDerivAt z.2 K
-  have hd := (hasMFDerivAt_coe_sectionZero hf hF hS hN
-    (fun z ↦ (hb z).continuousAt) he z).mfderiv
+  have hd := (hasMFDerivAt_coe_sectionZero hf hF hS hN hb he z).mfderiv
   have hv : mvfderiv 𝓘(𝕜, Fin n → 𝕜) (Subtype.val : ↥{y | s y = 0} → X) z = T := by
     -- The target is a normed space, so its canonical tangent identification is the identity.
     change mfderiv 𝓘(𝕜, Fin n → 𝕜) 𝓘(𝕜, X) Subtype.val z = T
