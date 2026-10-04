@@ -14,9 +14,9 @@ public import TauCeti.LinearAlgebra.TensorCoalgebra.Splice
 
 `TauCeti.TensorWords.prepend` sends a letter `a` and a tensor word `y₁ ⋯ y_k`, the empty word
 included, to the nonempty word `a y₁ ⋯ y_k`.  Its uncurried form is the concatenation map
-`M ⊗ Tᶜ(M) → T̄ᶜ(M)` onto the reduced tensor words.  Through it, the cofree right bar comodule
-`sA ⊗ Tᶜ(sA)` of an `A∞` algebra `A`, regarded as a right module over itself, is compared with the
-reduced bar construction `T̄ᶜ(sA)` of `A`.
+`M ⊗ Tᶜ(M) → ReducedTensorWords R M` onto the reduced tensor words.  Through it, the cofree right
+bar comodule `sA ⊗ Tᶜ(sA)` of an `A∞` algebra `A`, regarded as a right module over itself, is
+compared with the reduced bar construction `ReducedTensorWords R A` of `A`.
 
 On positive-length words it is `TauCeti.ReducedTensorWords.prepend`, and on the empty word it
 is the single letter.  The remaining lemmas evaluate it on blocks of a tuple, as subwords or
@@ -89,7 +89,7 @@ namespace TensorWords
 variable (R : Type uR) (M : Type uM) [CommSemiring R] [AddCommMonoid M] [Module R M]
 
 /-- Prepend a letter to a tensor word: `a` and `y₁ ⋯ y_k` give the nonempty word `a y₁ ⋯ y_k`.
-Uncurried, this is the concatenation map `M ⊗ Tᶜ(M) → T̄ᶜ(M)`. -/
+Uncurried, this is the concatenation map `M ⊗ Tᶜ(M) → ReducedTensorWords R M`. -/
 noncomputable def prepend : M →ₗ[R] TensorWords R M →ₗ[R] ReducedTensorWords R M :=
   (DirectSum.toModule R ℕ (M →ₗ[R] ReducedTensorWords R M) fun k ↦
     ((TensorProduct.mk R (TensorPower R 1 M) (TensorPower R k M)).compr₂

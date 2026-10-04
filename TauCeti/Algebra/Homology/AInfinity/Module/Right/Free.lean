@@ -16,9 +16,9 @@ operations are those of the algebra: `m_n^A(x, a₁, …, a_{n-1}) = m_n(x, a₁
 
 The construction is made on the suspended bar side.  Concatenation `x ⊗ w ↦ x w`, the uncurried
 `TauCeti.TensorWords.prepend`, maps the cofree right bar comodule `sA ⊗ Tᶜ(sA)` to the reduced bar
-construction `T̄ᶜ(sA)`.  The Taylor map of the module is the Taylor map of the algebra read through
-concatenation.  Concatenation then carries the coderivation this Taylor map generates over the bar
-differential of `A` to the bar differential of `A` itself
+construction `ReducedTensorWords R A`.  The Taylor map of the module is the Taylor map of the
+algebra read through concatenation.  Concatenation then carries the coderivation this Taylor map
+generates over the bar differential of `A` to the bar differential of `A` itself
 (`TauCeti.AInfinityAlgebra.lift_prepend_comp_barDifferential_toRightModule`): a block collapsed by
 the module structure either starts at the module input or lies in the word to its right, and the
 Koszul twist of the module input is the sign with which the bar differential passes the first
@@ -178,7 +178,7 @@ theorem toRightModule_taylor_tmul (x : A) (w : TensorWords R A) :
 
 /-- Concatenation intertwines the bar differential of the free module of rank one with the bar
 differential of the algebra: it is a chain map from the cofree bar comodule `sA ⊗ Tᶜ(sA)` of the
-module to the reduced bar construction `T̄ᶜ(sA)` of the algebra. -/
+module to the reduced bar construction `ReducedTensorWords R A` of the algebra. -/
 theorem lift_prepend_comp_barDifferential_toRightModule :
     TensorProduct.lift (prepend R A) ∘ₗ AA.toRightModule.barDifferential =
       AA.barDifferential ∘ₗ TensorProduct.lift (prepend R A) := by
