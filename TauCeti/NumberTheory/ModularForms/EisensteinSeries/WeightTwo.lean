@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.ModularForms.EisensteinSeries.E2.Transform
+public import TauCeti.NumberTheory.ModularForms.EisensteinSeries.E2.Bounds
 public import Mathlib.NumberTheory.ModularForms.EisensteinSeries.E2.MDifferentiable
 public import TauCeti.NumberTheory.ModularForms.Cusps.Basic
-public import TauCeti.NumberTheory.ModularForms.CuspDescent
+public import TauCeti.NumberTheory.ModularForms.Degeneracy
 public import TauCeti.NumberTheory.ModularForms.Cusps.Rat.Slash
 
 /-!
@@ -17,11 +17,23 @@ public import TauCeti.NumberTheory.ModularForms.Cusps.Rat.Slash
 For a positive integer `t`, the function `E₂(z) - t E₂(tz)` is a holomorphic modular form
 of weight two on `Γ₀(t)`. The anomalous transformation terms of Mathlib's normalized
 `EisensteinSeries.E2` cancel under the integral conjugation attached to `diag(t, 1)`.
-Its constant term is `1 - t`, so it supplies an Eisenstein form whenever `t > 1`, while
-the correction at `t = 1` is zero.
+Its constant term is `1 - t`, so it is a noncuspidal modular form with nonzero constant
+term whenever `t > 1`, while the correction at `t = 1` is zero.
 
 The construction uses Mathlib's `EisensteinSeries.E2_slash_action` and its convergent
 Fourier expansion, rather than introducing another definition of `E₂`.
+
+## Main results
+
+* `TauCeti.EisensteinSeries.correctedE2`: the corrected weight-two modular form on `Γ₀(t)`.
+* `TauCeti.EisensteinSeries.coe_correctedE2`, `TauCeti.EisensteinSeries.correctedE2_apply`: its
+  underlying function and values.
+* `TauCeti.EisensteinSeries.hasSum_correctedE2`,
+  `TauCeti.EisensteinSeries.qExpansion_coeff_correctedE2`: its convergent Fourier expansion and
+  coefficient formula.
+* `TauCeti.EisensteinSeries.correctedE2_eq_zero_iff`,
+  `TauCeti.EisensteinSeries.correctedE2_mem_cuspFormSubmodule_iff`: the corrected form is zero or
+  cuspidal exactly at level one.
 
 ## References
 
@@ -38,28 +50,6 @@ open scoped MatrixGroups ModularForm Manifold Topology ArithmeticFunction.sigma
 namespace TauCeti.EisensteinSeries
 
 open _root_.EisensteinSeries
-
-/-- The anomalous term in the weight-two transformation law is bounded at infinity. -/
-lemma isBoundedAtImInfty_D2 (γ : SL(2, ℤ)) : IsBoundedAtImInfty (D2 γ) := by
-  refine isBoundedAtImInfty_iff.mpr ⟨‖(2 * Real.pi * Complex.I : ℂ)‖, 1, fun z hz ↦ ?_⟩
-  have hd : 0 < ‖denom γ z‖ := norm_pos_iff.mpr (denom_ne_zero γ z)
-  have hci : ‖(γ 1 0 : ℂ)‖ * z.im ≤ ‖denom γ z‖ := by
-    simpa [ModularGroup.denom_apply, Complex.mul_im, Complex.add_im,
-      abs_mul, abs_of_pos z.im_pos] using Complex.abs_im_le_norm (denom γ z)
-  have hc : ‖(γ 1 0 : ℂ)‖ ≤ ‖denom γ z‖ :=
-    (le_mul_of_one_le_right (norm_nonneg _) hz).trans hci
-  simpa [D2, norm_div, norm_mul] using
-    (div_le_iff₀ hd).mpr (mul_le_mul_of_nonneg_left hc (norm_nonneg (2 * Real.pi * Complex.I : ℂ)))
-
-/-- Although `E₂` is not modular, each of its integral weight-two slashes is bounded
-at infinity. -/
-lemma isBoundedAtImInfty_E2_slash (γ : SL(2, ℤ)) : IsBoundedAtImInfty (E2 ∣[(2 : ℤ)] γ) := by
-  rw [E2_slash_action]
-  exact isBoundedAtImInfty_E2.sub ((isBoundedAtImInfty_D2 γ).smul _)
-
-/-- `E₂` is bounded in weight two at every cusp of the modular group. -/
-lemma isBoundedAt_E2 {c : OnePoint ℝ} (hc : IsCusp c 𝒮ℒ) : c.IsBoundedAt E2 2 :=
-  (OnePoint.isBoundedAt_iff_forall_SL2Z hc).mpr fun γ _ ↦ isBoundedAtImInfty_E2_slash γ
 
 variable (t : ℕ) [NeZero t]
 
@@ -107,7 +97,7 @@ def correctedE2 : ModularForm ((Gamma0 t).map (mapGL ℝ)) 2 where
         using! (hE g hg).sub (hscale g hg)
 
 /-- The underlying function of the corrected weight-two Eisenstein series. -/
-lemma correctedE2_coe :
+lemma coe_correctedE2 :
     ⇑(correctedE2 t) =
       _root_.EisensteinSeries.E2 - _root_.EisensteinSeries.E2 ∣[(2 : ℤ)] scaleGL t := (rfl)
 
@@ -116,7 +106,7 @@ lemma correctedE2_coe :
 lemma correctedE2_apply (z : ℍ) :
     correctedE2 t z = _root_.EisensteinSeries.E2 z - t *
       _root_.EisensteinSeries.E2 (scaleGL t • z) := by
-  rw [correctedE2_coe]
+  rw [coe_correctedE2]
   simp [slash_scaleGL_apply]
 
 /-- The convergent Fourier expansion of the corrected weight-two series. -/
@@ -191,7 +181,7 @@ lemma correctedE2_eq_zero_iff : correctedE2 t = 0 ↔ t = 1 := by
     exact correctedE2_one
 
 /-- The correction is cuspidal exactly when it is the level-one zero form. Thus at every
-level `t > 1` it is an Eisenstein form with nonzero constant term. -/
+level `t > 1` it is a noncuspidal modular form with nonzero constant term. -/
 theorem correctedE2_mem_cuspFormSubmodule_iff :
     correctedE2 t ∈ ModularForm.cuspFormSubmodule ((Gamma0 t).map (mapGL ℝ)) 2 ↔ t = 1 := by
   constructor
