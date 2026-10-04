@@ -23,7 +23,9 @@ regular forms on finite-dimensional spaces of the same dimension. Use either the
 equality of the rank, discriminant, and Hasse invariant, together with the bound `n ≤ 3`.
 
 The file also records isotropy in rank two: a regular binary form is isotropic exactly when its
-discriminant is the class of `-1`, that is, exactly when it is a hyperbolic plane.
+discriminant is the class of `-1`, that is, exactly when it is a hyperbolic plane. Through the
+isotropy of `⟨-c⟩ ⊥ q`, this describes the units represented by a form `q` of rank one: they are
+the units in its discriminant square class.
 
 ## Main results
 
@@ -38,6 +40,8 @@ discriminant is the class of `-1`, that is, exactly when it is a hyperbolic plan
 * `TauCeti.RegularFormClass.not_anisotropic_iff_discr_eq_neg_one_of_rank_eq_two`,
   `QuadraticForm.not_anisotropic_iff_discr_eq_neg_one_of_finrank_eq_two`: a regular binary form
   is isotropic exactly when its discriminant is the class of `-1`.
+* `QuadraticForm.mem_unitValueSet_iff_squareClass_eq_discr_of_finrank_eq_one`: a regular form of
+  dimension one represents exactly the units in its discriminant square class.
 
 ## References
 
@@ -177,5 +181,20 @@ theorem not_anisotropic_iff_discr_eq_neg_one_of_finrank_eq_two {V : Type*} [AddC
   rw [← anisotropic_formClass Q hQ]
   exact RegularFormClass.not_anisotropic_iff_discr_eq_neg_one_of_rank_eq_two
     (by rwa [rank_formClass])
+
+/-- **Representation in dimension one.** A regular quadratic form on a space of dimension one
+represents a unit `c` exactly when `c` lies in the discriminant square class. -/
+theorem mem_unitValueSet_iff_squareClass_eq_discr_of_finrank_eq_one {V : Type*} [AddCommGroup V]
+    [Module K V] [FiniteDimensional K V] (Q : _root_.QuadraticForm K V) (hQ : Q.Nondegenerate)
+    (hV : Module.finrank K V = 1) (c : Kˣ) :
+    c ∈ Q.unitValueSet ↔ squareClass c = RegularFormClass.discr (formClass Q hQ) := by
+  -- `Q` represents `c` exactly when the binary class `⟨-c⟩ ⊥ Q` is hyperbolic.
+  obtain ⟨u, hu⟩ : ∃ u : Kˣ, RegularFormClass.discr (formClass Q hQ) = squareClass u :=
+    ⟨_, (squareClass_toMul_out _).symm⟩
+  rw [mem_unitValueSet_iff_not_anisotropic_mk_rankOne_add Q hQ,
+    RegularFormClass.not_anisotropic_iff_discr_eq_neg_one_of_rank_eq_two (by simp [hV]),
+    RegularFormClass.discr_mk_rankOne_add, hu, ← squareClass_mul,
+    squareClass_eq_iff_isSquare_mul, squareClass_eq_iff_isSquare_mul]
+  simp
 
 end QuadraticForm

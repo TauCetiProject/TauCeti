@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.GroupAction.QuotientAddGroup
 public import TauCeti.RepresentationTheory.Continuous.Invariants
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CocycleComparison
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.DegreeZero
@@ -304,3 +305,43 @@ theorem explicitH0Iso_coeffMap (N : Type u) [AddCommGroup N] [TopologicalSpace N
 end Transport
 
 end TauCeti.ContCohomology
+
+namespace TauCeti
+
+section CoefficientLifting
+
+open CategoryTheory ContCohomology _root_.TauCeti.ContinuousCohomology
+
+variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+
+/-- In degree zero, a class of `H⁰(G, M)` killed by `k` is the image of a class of
+`H⁰(G, M[k])`, where `M[k]` is the `G`-submodule killed by `k`. -/
+theorem exists_coeffMap_ker_nsmul_eq (M : Type u) [AddCommGroup M] [TopologicalSpace M]
+    [DiscreteTopology M] [DistribMulAction G M] {k : ℕ}
+    (hK : ∀ g : G, ∀ m ∈ (nsmulAddMonoidHom k : M →+ M).ker, g • m ∈ (nsmulAddMonoidHom k).ker)
+    {x : continuousCohomology 0 (ofDiscreteModule ℤ G M)} (hx : k • x = 0) :
+    letI := (nsmulAddMonoidHom k : M →+ M).ker.restrictDistribMulAction hK
+    ∃ z : continuousCohomology 0 (ofDiscreteModule ℤ G (nsmulAddMonoidHom k : M →+ M).ker),
+      coeffMap (ofDiscreteModuleMap (nsmulAddMonoidHom k : M →+ M).ker.subtype.toIntLinearMap
+        ((nsmulAddMonoidHom k : M →+ M).ker.restrictDistribMulAction_coe_smul hK)) 0 z = x := by
+  set K := (nsmulAddMonoidHom k : M →+ M).ker
+  let := K.restrictDistribMulAction hK
+  set e := explicitH0IsoContinuousCohomology G M
+  -- the invariant element `m` underlying `x` is killed by `k`
+  set m : H0 G M := e.inv x
+  have hm : k • (m : M) = 0 := by
+    rw [← AddSubgroup.coe_nsmul, ← map_nsmul, hx, _root_.map_zero, AddSubgroup.coe_zero]
+  let ι : K →+[G] M :=
+    { K.subtype with map_smul' := K.restrictDistribMulAction_coe_smul hK }
+  let mK : H0 G K := ⟨⟨m, hm⟩, (FixedPoints.mem_addSubgroup G K _).2 fun g ↦ Subtype.ext <|
+    (K.restrictDistribMulAction_coe_smul hK g _).trans
+      ((FixedPoints.mem_addSubgroup G M _).1 m.2 g)⟩
+  refine ⟨(explicitH0IsoContinuousCohomology G K).hom mK, ?_⟩
+  have hmK : explicitCoeff0 G K ι mK = m := Subtype.ext (coe_explicitCoeff0 G K ι mK)
+  rw [explicitH0Iso_coeffMap G K M ι mK, hmK]
+  simpa only [m, e] using
+    (Iso.inv_hom_id_apply (explicitH0IsoContinuousCohomology G M) x)
+
+end CoefficientLifting
+
+end TauCeti

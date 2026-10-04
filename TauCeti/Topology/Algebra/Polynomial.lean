@@ -6,10 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Polynomial.BigOperators
+public import Mathlib.Algebra.Polynomial.Eval.Degree
 public import Mathlib.Topology.Algebra.Ring.Basic
 
 /-!
-# Continuity of the coefficients of products of polynomial families
+# Continuity of polynomial families
 
 For a family of polynomials `f x` over a topological semiring, indexed by a parameter `x`, the
 coefficients of a product are finite sums of products of coefficients of the factors. Hence if
@@ -17,10 +18,16 @@ every coefficient of each factor is continuous at a point, so is every coefficie
 This is used to treat the product of a finite family of polynomials with continuous coefficients
 as a single polynomial family.
 
+If the degrees of the family are bounded and its coefficients are continuous, then the evaluation
+`(x, t) ↦ (f x).eval t` is jointly continuous, since it is a finite sum of products of
+coefficients with powers of `t`.
+
 ## Main results
 
 * `Polynomial.continuousAt_coeff_mul`: coefficients of a product of two families.
 * `Polynomial.continuousAt_coeff_prod`: coefficients of a finite product of families.
+* `Polynomial.continuous_eval_of_continuous_coeff`: joint continuity of the evaluation of a family
+  of bounded degree.
 -/
 
 public section
@@ -55,5 +62,14 @@ theorem continuousAt_coeff_prod {f : ι → X → R[X]} (s : Finset ι)
     simp only [Finset.prod_insert hk]
     exact continuousAt_coeff_mul (hf k (Finset.mem_insert_self k s))
       (ih fun l hl => hf l (Finset.mem_insert_of_mem hl)) i
+
+/-- If a family of polynomials has degree at most `d` and its coefficients of index at most `d` are
+continuous, then its evaluation is jointly continuous in the parameter and the point. -/
+theorem continuous_eval_of_continuous_coeff {f : X → R[X]} {d : ℕ}
+    (hf : ∀ i ≤ d, Continuous fun x => (f x).coeff i) (hd : ∀ x, (f x).natDegree ≤ d) :
+    Continuous fun z : X × R => (f z.1).eval z.2 := by
+  simp_rw [fun z : X × R => eval_eq_sum_range' (Nat.lt_succ_of_le (hd z.1)) z.2]
+  exact continuous_finsetSum _ fun i hi =>
+    ((hf i (Finset.mem_range_succ_iff.1 hi)).comp continuous_fst).mul (continuous_snd.pow i)
 
 end Polynomial

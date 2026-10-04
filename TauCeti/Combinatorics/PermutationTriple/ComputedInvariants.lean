@@ -8,23 +8,32 @@ module
 public import TauCeti.Combinatorics.PermutationTriple.EulerCharacteristic
 public import TauCeti.Combinatorics.PermutationTriple.GeometryType
 public import TauCeti.GroupTheory.Perm.ComputedCycleType
+import TauCeti.Combinatorics.PermutationTriple.Examples
+import TauCeti.Combinatorics.PermutationTriple.Decidable
 
 /-!
 # Executable invariants of permutation triples
 
-The canonical cycle data, Euler characteristic, genus, order triple, and geometry type of a
-permutation triple are phrased using Mathlib's abstract permutation invariants.  This file gives
-executable versions of the four derived numerical invariants.  They read the cycle lengths from
+The canonical cycle data of a permutation triple is executable using
 `Equiv.Perm.computedCycleType`, whose finite search lists one length at the least element of each
-cycle.
+cycle. This file gives executable cycle counts, Euler characteristic, genus, order triple, and
+geometry type, each identified with its canonical mathematical counterpart. Fixed points are
+included, and the empty multiset has least common multiple one, so the order computation also
+applies in degree zero.
 
-Each computed invariant is identified with its canonical counterpart.  Computations can therefore
-use the definitions in this file, while mathematical statements continue to use
-`PermutationTriple.eulerChar`, `PermutationTriple.genus`, `PermutationTriple.orderTriple`, and
-`PermutationTriple.geometryType`.
+The genus computation preserves the canonical truncation on disconnected triples. Its geometric
+interpretation still requires connectedness; in particular the empty triple has computed genus
+one. The definitions are exposed so ordinary importing modules can reduce them with kernel
+`decide`, as well as evaluating them with `#eval`.
+
+Computations can use the definitions in this file, while mathematical statements continue to use
+`PermutationTriple.cycleCounts`, `PermutationTriple.eulerChar`, `PermutationTriple.genus`,
+`PermutationTriple.orderTriple`, and `PermutationTriple.geometryType`.
 
 ## Main declarations
 
+* `TauCeti.PermutationTriple.computedCycleCounts`: the cardinalities of the three full cycle
+  decompositions.
 * `TauCeti.PermutationTriple.computedEulerChar`: the Euler characteristic computed from the
   cardinalities of the three executable cycle decompositions.
 * `TauCeti.PermutationTriple.computedGenus`: the genus computed from `computedEulerChar`.
@@ -45,6 +54,16 @@ namespace TauCeti
 namespace PermutationTriple
 
 variable {n : ℕ}
+
+/-- The ordered numbers of cycles, including fixed points, computed from the full cycle data. -/
+@[expose] def computedCycleCounts (t : PermutationTriple n) : ℕ × ℕ × ℕ :=
+  (t.cycleData.1.card, t.cycleData.2.1.card, t.cycleData.2.2.card)
+
+/-- The executable cycle counts agree with the canonical cycle counts. -/
+@[simp]
+theorem computedCycleCounts_eq (t : PermutationTriple n) :
+    t.computedCycleCounts = t.cycleCounts := by
+  rw [computedCycleCounts, cycleCounts_eq_card_cycleData]
 
 /-- The Euler characteristic of a permutation triple, computed from its executable cycle
 decompositions. -/
@@ -106,6 +125,60 @@ theorem computedGeometryType_eq (t : PermutationTriple n) :
     simp [heq]
   · have hlt := (geometryType_eq_hyperbolic_iff t).mp hgeom
     simp [hlt.not_gt, hlt.ne]
+
+/-! ### Small computations
+
+The examples include an empty triple and a disconnected triple, whose computed genus records
+the canonical truncation, and connected Euclidean and hyperbolic triples.
+-/
+
+open Equiv
+
+example : (cyclicTriple 0).cycleData = (0, 0, 0) ∧
+    (cyclicTriple 0).computedCycleCounts = (0, 0, 0) ∧
+    (cyclicTriple 0).computedOrderTriple = (1, 1, 1) ∧
+    (cyclicTriple 0).computedEulerChar = 0 ∧ (cyclicTriple 0).computedGenus = 1 := by
+  decide +kernel
+
+example : (cyclicTriple 1).cycleData = ({1}, {1}, {1}) ∧
+    (cyclicTriple 1).computedCycleCounts = (1, 1, 1) ∧
+    (cyclicTriple 1).computedOrderTriple = (1, 1, 1) ∧
+    (cyclicTriple 1).computedEulerChar = 2 ∧ (cyclicTriple 1).computedGenus = 0 := by
+  decide +kernel
+
+example : (1 : PermutationTriple 2).cycleData = ({1, 1}, {1, 1}, {1, 1}) ∧
+    (1 : PermutationTriple 2).computedCycleCounts = (2, 2, 2) ∧
+    (1 : PermutationTriple 2).computedOrderTriple = (1, 1, 1) ∧
+    (1 : PermutationTriple 2).computedEulerChar = 4 ∧
+    (1 : PermutationTriple 2).computedGenus = 0 := by
+  decide +kernel
+
+example : torusTriple.cycleData = ({4}, {4}, {2, 2}) ∧
+    torusTriple.computedCycleCounts = (1, 1, 2) ∧
+    torusTriple.computedOrderTriple = (4, 4, 2) ∧
+    torusTriple.computedEulerChar = 0 ∧ torusTriple.computedGenus = 1 := by
+  decide +kernel
+
+-- A connected degree-four triple of orders `(3, 4, 4)`, whose reciprocal sum is `5/6`.
+private def hyperbolicExample : PermutationTriple 4 :=
+  ofTwo (Equiv.swap 0 1 * Equiv.swap 1 2) (finRotate 4)
+
+example : hyperbolicExample.cycleData = ({3, 1}, {4}, {4}) ∧
+    hyperbolicExample.computedCycleCounts = (2, 1, 1) ∧
+    hyperbolicExample.computedOrderTriple = (3, 4, 4) ∧
+    hyperbolicExample.computedEulerChar = 0 ∧ hyperbolicExample.computedGenus = 1 := by
+  decide +kernel
+
+example : hyperbolicExample.IsConnected := by decide +kernel
+
+example : torusTriple.computedGeometryType = .euclidean := by simp [geometryType_torusTriple]
+
+example : hyperbolicExample.computedGeometryType = .hyperbolic := by
+  rw [computedGeometryType_eq, geometryType_eq_hyperbolic_iff]
+  have h : hyperbolicExample.computedOrderTriple = (3, 4, 4) := by decide +kernel
+  simp only [computedOrderTriple_eq, Prod.ext_iff, orderTriple_σ0, orderTriple_σ1,
+    orderTriple_σinf] at h
+  norm_num [h.1, h.2.1, h.2.2]
 
 end PermutationTriple
 

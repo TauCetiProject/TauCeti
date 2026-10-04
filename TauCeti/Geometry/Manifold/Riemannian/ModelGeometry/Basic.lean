@@ -171,6 +171,17 @@ instance (G : ModelGeometry) : LocallyCompactSpace G.Space := by
     | _ => infer_instance
   exact ChartedSpace.locallyCompactSpace G.ChartSpace G.Space
 
+/-- Each model is locally path connected in its standard manifold topology. -/
+instance (G : ModelGeometry) : LocallyPathConnectedSpace G.Space := by
+  have : LocallyPathConnectedSpace G.ChartSpace := by
+    cases G with
+    | sphereProd =>
+      exact inferInstanceAs (LocallyPathConnectedSpace (EuclideanSpace ℝ (Fin 2) × ℝ))
+    | hyperbolicProd =>
+      exact inferInstanceAs (LocallyPathConnectedSpace (WithLp 2 (ℝ × ℝ) × ℝ))
+    | _ => infer_instance
+  exact ChartedSpace.locallyPathConnectedSpace G.ChartSpace G.Space
+
 /-- All eight models are analytic manifolds in their standard charts. -/
 instance (G : ModelGeometry) : IsManifold G.model ω G.Space := by
   cases G <;> infer_instance

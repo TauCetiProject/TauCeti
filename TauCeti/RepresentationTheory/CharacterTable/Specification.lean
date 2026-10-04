@@ -49,6 +49,8 @@ orthonormality forbids repetitions, so the matching is a permutation.
   becomes the characterization `TauCeti.isCharacterTableSpec_iff_exists_perm` of the matrices
   satisfying it, and `TauCeti.IsCharacterTableSpec.exists_perm_eq`: any two of them differ by a
   permutation of rows.
+* `TauCeti.IsCharacterTableSpec.sum_apply_mk_one_eq_sum_characterDegree`: the identity column of
+  such a matrix sums to the sum of the character degrees.
 * `TauCeti.IsCharacterTableSpec.exists_eq_characterTable`: the row-by-row form of uniqueness, that
   every row is a row of the character table.
 
@@ -338,6 +340,15 @@ theorem IsCharacterTableSpec.exists_perm_eq
   obtain ⟨σ, rfl⟩ := isCharacterTableSpec_iff_exists_perm.mp hM
   obtain ⟨τ, rfl⟩ := isCharacterTableSpec_iff_exists_perm.mp hN
   exact ⟨τ⁻¹ * σ, by ext i C; simp⟩
+
+/-- **The identity column of a matrix satisfying the specification sums to the sum of the character
+degrees**: it is the identity column of the character table with its rows permuted. -/
+theorem IsCharacterTableSpec.sum_apply_mk_one_eq_sum_characterDegree
+    (hM : IsCharacterTableSpec G M) :
+    ∑ i, M i (ConjClasses.mk 1) = ∑ i, (characterDegree ℂ (G := G) i : ℂ) := by
+  obtain ⟨σ, rfl⟩ := characterTable_unique_rows hM
+  simp only [Matrix.submatrix_apply, id_eq, characterTable_one]
+  exact Equiv.sum_comp σ fun i => (characterDegree ℂ (G := G) i : ℂ)
 
 end Spec
 

@@ -22,10 +22,12 @@ identity, and preserves the integer-stage API used by the rational solver.
 * `TauCeti.ClassData.complexTableOfInteger`: cast and reindex an integer table into the type
   expected by `TauCeti.IsCharacterTableSpec`.
 
-## Main result
+## Main results
 
 * `TauCeti.ClassData.IsIntegerCharacterTableSpec.isCharacterTableSpec`: a successful integer
   certificate yields the complex character-table specification.
+* `TauCeti.ClassData.IsIntegerCharacterTableSpec.sum_characterDegree_eq_sum_degree`: the degrees
+  of a successful certificate sum to the sum of the character degrees of the group.
 -/
 
 public section
@@ -110,6 +112,20 @@ theorem centralCharacterRow_complexTableOfInteger
 theorem isCharacterTableSpec :
     IsCharacterTableSpec G (d.complexTableOfInteger table) :=
   IsExactCharacterTableSpec.isCharacterTableSpec h (Int.castRingHom ℂ) fun x => by simp
+
+/-- **The degree vector of a certified integer table sums to the sum of the character degrees** of
+`G`: the identity column of the cast table is the degree vector, and it lists the character
+degrees up to order. -/
+theorem sum_characterDegree_eq_sum_degree :
+    ∑ i, characterDegree ℂ (G := G) i = ∑ j, degree j := by
+  have hcol : ∑ i, d.complexTableOfInteger table i (ConjClasses.mk 1) = ∑ j, (degree j : ℂ) := by
+    rw [← (finCongr d.numClasses_eq_card_conjClasses).sum_comp]
+    refine Finset.sum_congr rfl fun j _ => ?_
+    rw [← d.classOf_index 1, complexTableOfInteger_apply_classOf, h.table_index_one,
+      Int.cast_natCast]
+  have key := h.isCharacterTableSpec.sum_apply_mk_one_eq_sum_characterDegree
+  rw [hcol] at key
+  exact_mod_cast key.symm
 
 end IsIntegerCharacterTableSpec
 

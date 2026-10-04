@@ -69,10 +69,10 @@ Nothing here proves or assumes it; every statement below is conditional on a cov
   cover of a projective `P` exactly when `N` is superfluous; over a coatomic submodule lattice
   `TauCeti.isProjectiveCover_mkQ_iff_le_jacobson` reads this off the radical, so that `R ↠ R ⧸ I`
   is a projective cover exactly when `I ≤ Ring.jacobson R`.
-* `TauCeti.IsProjectiveCover.exists_comp_eq`: a map into a simple module factors through a
-  projective cover of its source, and `TauCeti.IsProjectiveCover.homEquivOfIsSimpleModule`:
+* `TauCeti.IsProjectiveCover.exists_comp_eq`: every map from a covering module into a semisimple
+  module factors through the cover, and `TauCeti.IsProjectiveCover.homEquivOfIsSemisimpleModule`:
   precomposition with a projective cover `f : P →ₗ[R] M` is an isomorphism
-  `Hom_R(M, T) ≃ₗ[k] Hom_R(P, T)` for every simple `T`.
+  `Hom_R(M, T) ≃ₗ[k] Hom_R(P, T)` for every semisimple `T`.
 
 ## References
 
@@ -147,8 +147,9 @@ theorem IsProjectiveCover.exists_surjective [Module.Projective R Q] {f : P →�
   exact ⟨h, hh, hf.isSuperfluous_ker.surjective_of_surjective_comp (by rw [hh]; exact hg)⟩
 
 /-- **A projective cover of a finitely generated module is finitely generated.** If `M` is finitely
-generated, then so is the source of any projective cover of `M`. This holds over an arbitrary ring:
-no hypothesis on `R`, and no finiteness hypothesis beyond `Module.Finite R M`, is needed. -/
+generated, then so is the source of any projective cover of `M`. This holds over a semiring when
+the covering and covered modules are additive groups; no finiteness hypothesis beyond
+`Module.Finite R M` is needed. -/
 theorem IsProjectiveCover.finite [Module.Finite R M] {f : P →ₗ[R] M}
     (hf : IsProjectiveCover f) : Module.Finite R P := by
   obtain ⟨n, g, hg⟩ := Module.Finite.exists_fin' R M
@@ -202,7 +203,7 @@ theorem IsProjectiveCover.nonempty_linearEquiv_ker {P' : Type*} [AddCommGroup P'
 
 /-- Composing a projective cover with a surjection whose kernel is superfluous again gives a
 projective cover. -/
-theorem IsProjectiveCover.comp {N : Type*} [AddCommGroup N] [Module R N] {f : P →ₗ[R] M}
+theorem IsProjectiveCover.comp {N : Type*} [AddCommMonoid N] [Module R N] {f : P →ₗ[R] M}
     (hf : IsProjectiveCover f) {g : M →ₗ[R] N} (hg : Function.Surjective g)
     (hgker : IsSuperfluous (LinearMap.ker g)) : IsProjectiveCover (g ∘ₗ f) where
   projective := hf.projective
@@ -252,66 +253,55 @@ theorem isProjectiveCover_mkQ_iff_le_jacobson [Module.Projective R P]
     IsProjectiveCover N.mkQ ↔ N ≤ Module.jacobson R P :=
   isProjectiveCover_mkQ_iff.trans isSuperfluous_iff_le_jacobson
 
-/-! ### A projective cover is invisible to a simple target -/
+/-! ### A projective cover is invisible to a semisimple target -/
 
-section Simple
+section Semisimple
 
-variable {T : Type*} [AddCommGroup T] [Module R T] [IsSimpleModule R T]
+variable {T : Type*} [AddCommGroup T] [Module R T] [IsSemisimpleModule R T]
 
-/-- Every map from the source of a projective cover into a simple module factors through the
+/-- Every map from the source of a projective cover into a semisimple module factors through the
 cover: the kernel of the cover is superfluous, hence contained in the radical of the source, which
 the map annihilates. -/
 theorem IsProjectiveCover.exists_comp_eq {f : P →ₗ[R] M} (hf : IsProjectiveCover f)
     (φ : P →ₗ[R] T) : ∃ ψ : M →ₗ[R] T, ψ ∘ₗ f = φ := by
   have hle : LinearMap.ker f ≤ LinearMap.ker φ :=
     hf.ker_le_jacobson.trans (IsSemisimpleModule.jacobson_le_ker R R P T φ)
-  refine ⟨((LinearMap.ker f).liftQ φ hle) ∘ₗ
-    (f.quotKerEquivOfSurjective hf.surjective).symm.toLinearMap, ?_⟩
+  refine ⟨f.liftOfSurjective hf.surjective ⟨φ, hle⟩, ?_⟩
   ext p
-  have hmk : (f.quotKerEquivOfSurjective hf.surjective).symm (f p) = Submodule.Quotient.mk p := by
-    rw [LinearEquiv.symm_apply_eq]
-    simp [LinearMap.quotKerEquivOfSurjective]
-  simp [hmk]
+  simp
 
 variable (k : Type*) [CommSemiring k] [Algebra k R] [Module k T] [IsScalarTower k R T]
 
-/-- **A projective cover is invisible to a simple target.** Precomposition with a projective cover
-`f : P →ₗ[R] M` is a `k`-linear isomorphism from `Hom_R(M, T)` to `Hom_R(P, T)` for every simple
-`R`-module `T`: it is injective because `f` is onto, and surjective by
+/-- **A projective cover is invisible to a semisimple target.** Precomposition with a projective
+cover `f : P →ₗ[R] M` is a `k`-linear isomorphism from `Hom_R(M, T)` to `Hom_R(P, T)` for every
+semisimple `R`-module `T`: it is injective because `f` is onto, and surjective by
 `TauCeti.IsProjectiveCover.exists_comp_eq`.
 
 Compare `TauCeti.homCongrRight`, which transports a hom space along an isomorphism of its target:
-here the map on the source side is only a cover, and it is the simplicity of `T` that makes the
+here the map on the source side is only a cover, and it is the semisimplicity of `T` that makes the
 induced map on hom spaces invertible. -/
-noncomputable def IsProjectiveCover.homEquivOfIsSimpleModule {f : P →ₗ[R] M}
+noncomputable def IsProjectiveCover.homEquivOfIsSemisimpleModule {f : P →ₗ[R] M}
     (hf : IsProjectiveCover f) : (M →ₗ[R] T) ≃ₗ[k] (P →ₗ[R] T) :=
-  LinearEquiv.ofBijective
-    { toFun ψ := ψ ∘ₗ f
-      map_add' _ _ := rfl
-      map_smul' _ _ := rfl }
-    ⟨fun ψ ψ' h => LinearMap.ext fun m => by
-        obtain ⟨p, rfl⟩ := hf.surjective m
-        exact DFunLike.congr_fun h p,
-      fun φ => hf.exists_comp_eq φ⟩
+  LinearEquiv.ofBijective (LinearMap.lcomp k T f)
+    ⟨LinearMap.lcomp_injective_of_surjective f hf.surjective, fun φ => hf.exists_comp_eq φ⟩
 
 variable {k}
 
 @[simp]
-theorem IsProjectiveCover.homEquivOfIsSimpleModule_apply {f : P →ₗ[R] M}
-    (hf : IsProjectiveCover f) (ψ : M →ₗ[R] T) : hf.homEquivOfIsSimpleModule k ψ = ψ ∘ₗ f :=
+theorem IsProjectiveCover.homEquivOfIsSemisimpleModule_apply {f : P →ₗ[R] M}
+    (hf : IsProjectiveCover f) (ψ : M →ₗ[R] T) : hf.homEquivOfIsSemisimpleModule k ψ = ψ ∘ₗ f :=
   (rfl)
 
-/-- The inverse of `TauCeti.IsProjectiveCover.homEquivOfIsSimpleModule` is the factorization
+/-- The inverse of `TauCeti.IsProjectiveCover.homEquivOfIsSemisimpleModule` is the factorization
 through the cover. -/
 @[simp]
-theorem IsProjectiveCover.homEquivOfIsSimpleModule_symm_comp {f : P →ₗ[R] M}
+theorem IsProjectiveCover.homEquivOfIsSemisimpleModule_symm_comp {f : P →ₗ[R] M}
     (hf : IsProjectiveCover f) (φ : P →ₗ[R] T) :
-    ((hf.homEquivOfIsSimpleModule k).symm φ) ∘ₗ f = φ := by
-  rw [← IsProjectiveCover.homEquivOfIsSimpleModule_apply (k := k) hf
-      ((hf.homEquivOfIsSimpleModule k).symm φ),
-    LinearEquiv.apply_symm_apply]
+    ((hf.homEquivOfIsSemisimpleModule k).symm φ) ∘ₗ f = φ := by
+  simpa only [IsProjectiveCover.homEquivOfIsSemisimpleModule_apply] using
+    (hf.homEquivOfIsSemisimpleModule k).apply_symm_apply φ
 
-end Simple
+end Semisimple
 
 end Ring
 

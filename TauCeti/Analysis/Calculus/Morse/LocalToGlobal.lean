@@ -295,7 +295,7 @@ theorem exists_stableSet_eq_biUnion_orbit_localStableSet
     ∃ r > 0, ∃ rho > 0,
       Flow.stableSet (negativeGradientFlow f hf) x =
         ⋃ z ∈ h.localStableSet r rho, (negativeGradientFlow f hf).orbit (x + z) := by
-  obtain ⟨r, hr, rho, hrho, _, _, _, _, _, _, _, hconv⟩ :=
+  obtain ⟨r, hr, rho, hrho, _, _, _, _, _, _, _, _, hconv⟩ :=
     h.exists_localStableSet_eq_lipschitzGraph 1 one_pos
   exact ⟨r, hr, rho, hrho, h.stableSet_eq_biUnion_orbit_localStableSet hf hr hrho hconv⟩
 
@@ -306,7 +306,7 @@ theorem exists_unstableSet_eq_biUnion_orbit_localUnstableSet
     ∃ r > 0, ∃ rho > 0,
       Flow.unstableSet (negativeGradientFlow f hf) x =
         ⋃ z ∈ h.localUnstableSet r rho, (negativeGradientFlow f hf).orbit (x + z) := by
-  obtain ⟨r, hr, rho, hrho, _, _, _, _, _, _, _, hconv⟩ :=
+  obtain ⟨r, hr, rho, hrho, _, _, _, _, _, _, _, _, hconv⟩ :=
     h.exists_localUnstableSet_eq_lipschitzGraph 1 one_pos
   exact ⟨r, hr, rho, hrho, h.unstableSet_eq_biUnion_orbit_localUnstableSet hf hr hrho hconv⟩
 
