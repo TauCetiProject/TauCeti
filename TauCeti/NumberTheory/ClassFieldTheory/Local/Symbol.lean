@@ -279,8 +279,8 @@ theorem localSymbol_kummerClass_eq_zero_of_add_eq_one (hn : IsUnit (n : F)) {a b
 
 end LocalSymbol
 
-/-- **Antisymmetry of the Hilbert pairing**: the local symbol selected by a primitive root of
-unity is antisymmetric. -/
+/-- **Antisymmetry of the chosen-root local symbol**: the local symbol along the coefficient
+pairing of a primitive `n`th root of unity is antisymmetric, for any identification `tr`. -/
 theorem localSymbol_antisymm [NeZero n] (ζ : F) (hζ : IsPrimitiveRoot ζ n)
     (tr : continuousCohomology 2 (muNRep n F) ≃+ ZMod n)
     (x y : continuousCohomology 1 (muNRep n F)) :
