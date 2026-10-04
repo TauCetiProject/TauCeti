@@ -136,6 +136,20 @@ theorem lt_of_rowBump_snd_eq_some {x y : α} {row : List α}
     (rowBump_eq_some_iff x y row (rowBump x row).1).mp (Prod.ext rfl h)
   exact hxy
 
+/-- Index form of a bump: it replaces the entry at some position `j` by `x`, where every earlier
+entry is at most `x` and the replaced entry is strictly greater. -/
+theorem exists_set_of_rowBump_snd_eq_some {x y : α} {row : List α}
+    (h : (rowBump x row).2 = some y) :
+    ∃ j, ∃ hj : j < row.length, (rowBump x row).1 = row.set j x ∧ row[j] = y ∧
+      (∀ (i : ℕ) (hi : i < j), row[i] ≤ x) ∧ x < y := by
+  obtain ⟨before, after, hrow, hres, hle, hxy⟩ :=
+    (rowBump_eq_some_iff x y row (rowBump x row).1).mp (Prod.ext rfl h)
+  rw [hres]
+  subst hrow
+  refine ⟨before.length, by simp, by simp, by simp, fun i hi => ?_, hxy⟩
+  rw [List.getElem_append_left hi]
+  exact hle _ (List.getElem_mem _)
+
 /-- Row insertion conserves the letters: the changed row together with the bumped letter
 has the content of the original row together with the inserted letter. -/
 theorem rowBump_perm (x : α) (row : List α) :
@@ -305,6 +319,24 @@ theorem lt_of_reverseRowBump_snd_eq_some {x y : α} {row : List α}
   obtain ⟨_, _, _, _, _, hxy⟩ :=
     (reverseRowBump_eq_some_iff x y row (reverseRowBump y row).1).mp (Prod.ext rfl h)
   exact hxy
+
+/-- Index form of a reverse bump: it replaces the entry at some position `d` by `y`, where every
+later entry is at least `y` and the replaced entry is strictly smaller. -/
+theorem exists_set_of_reverseRowBump_snd_eq_some {x y : α} {row : List α}
+    (h : (reverseRowBump y row).2 = some x) :
+    ∃ d, ∃ hd : d < row.length, (reverseRowBump y row).1 = row.set d y ∧ row[d] = x ∧
+      (∀ (i : ℕ) (hi : i < row.length), d < i → y ≤ row[i]) ∧ x < y := by
+  obtain ⟨before, after, hrow, hres, hle, hxy⟩ :=
+    (reverseRowBump_eq_some_iff x y row (reverseRowBump y row).1).mp (Prod.ext rfl h)
+  rw [hres]
+  subst hrow
+  refine ⟨before.length, by simp, by simp, by simp, fun i hi hdi => ?_, hxy⟩
+  obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_lt hdi
+  have hm : m < after.length := by simp at hi; omega
+  have hidx : before.length + m + 1 - before.length = m + 1 := by omega
+  rw [List.getElem_append_right (by omega)]
+  simp only [hidx, List.getElem_cons_succ]
+  exact hle _ (List.getElem_mem hm)
 
 /-- Reverse insertion conserves the letters: the changed row together with the returned letter
 has the content of the original row together with the incoming letter. -/

@@ -146,39 +146,6 @@ open List
 
 variable {α : Type*} [LinearOrder α]
 
-/-! ### Index form of a single bump -/
-
-/-- A forward bump replaces the entry at some position `j` by `x`, where every earlier entry is
-at most `x` and the replaced entry is strictly greater. -/
-private theorem exists_set_of_rowBump_eq_some {x y : α} {row : List α}
-    (h : (rowBump x row).2 = some y) :
-    ∃ j, ∃ hj : j < row.length, (rowBump x row).1 = row.set j x ∧ row[j] = y ∧
-      (∀ (i : ℕ) (hi : i < j), row[i] ≤ x) ∧ x < y := by
-  obtain ⟨before, after, hrow, hres, hle, hxy⟩ :=
-    (rowBump_eq_some_iff x y row (rowBump x row).1).mp (Prod.ext rfl h)
-  rw [hres]
-  subst hrow
-  refine ⟨before.length, by simp, by simp, by simp, fun i hi => ?_, hxy⟩
-  rw [getElem_append_left hi]
-  exact hle _ (getElem_mem _)
-
-/-- A reverse bump replaces the entry at some position `d` by `y`, where every later entry is
-at least `y` and the replaced entry is strictly smaller. -/
-private theorem exists_set_of_reverseRowBump_eq_some {x y : α} {row : List α}
-    (h : (reverseRowBump y row).2 = some x) :
-    ∃ d, ∃ hd : d < row.length, (reverseRowBump y row).1 = row.set d y ∧ row[d] = x ∧
-      (∀ (i : ℕ) (hi : i < row.length), d < i → y ≤ row[i]) ∧ x < y := by
-  obtain ⟨before, after, hrow, hres, hle, hxy⟩ :=
-    (reverseRowBump_eq_some_iff x y row (reverseRowBump y row).1).mp (Prod.ext rfl h)
-  rw [hres]
-  subst hrow
-  refine ⟨before.length, by simp, by simp, by simp, fun i hi hdi => ?_, hxy⟩
-  obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_lt hdi
-  have hm : m < after.length := by simp at hi; omega
-  rw [getElem_append_right (by omega)]
-  simp only [show before.length + m + 1 - before.length = m + 1 by omega, getElem_cons_succ]
-  exact hle _ (getElem_mem hm)
-
 /-! ### Row insertion -/
 
 /-- **Schensted row insertion** `T ← x` of a letter `x` into a tableau given by its rows `T`:
@@ -301,7 +268,7 @@ private theorem isRowAbove_rowBump {x y : α} {upper lower : List α}
     (h : upper.IsRowAbove lower) (hbump : (rowBump x upper).2 = some y) :
     (rowBump x upper).1.IsRowAbove (rowBump y lower).1 := by
   obtain ⟨j, hj, hU', hUj, hpre, hxy⟩ :=
-    exists_set_of_rowBump_eq_some hbump
+    exists_set_of_rowBump_snd_eq_some hbump
   rw [hU']
   cases hlow : (rowBump y lower).2 with
   | none =>
@@ -327,7 +294,7 @@ private theorem isRowAbove_rowBump {x y : α} {upper lower : List α}
       · exact (hpre _ (by omega)).trans_lt hxy
   | some w =>
     obtain ⟨j', hj', hL', hLj', hpre', hyw⟩ :=
-      exists_set_of_rowBump_eq_some hlow
+      exists_set_of_rowBump_snd_eq_some hlow
     rw [hL']
     -- the first entry of `lower` exceeding `y` is weakly left of column `j`
     have hjj : j' ≤ j := by
@@ -475,7 +442,7 @@ private theorem reverseStep_reverseRowBump {U L L' : List α} {c : ℕ} {hc : c 
     exact fun hall => absurd (hall _ (getElem_mem hcU)) (not_le.mpr (hUL.getElem_lt c hcU hc))
   obtain ⟨x, hx⟩ := Option.ne_none_iff_exists'.mp hsome
   obtain ⟨d, hd, hU', hUd, hpost, hxy⟩ :=
-    exists_set_of_reverseRowBump_eq_some hx
+    exists_set_of_reverseRowBump_snd_eq_some hx
   -- the replaced position is weakly right of column `c`
   have hcd : c ≤ d := by
     by_contra hcon
