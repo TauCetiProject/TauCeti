@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Group.Prod
 public import TauCeti.Geometry.Toric.Algebraic.DualSemigroup.Basic
 
 /-!
@@ -60,23 +61,16 @@ theorem mem_dualSemigroup_prod (m : N × N' →+ ℤ) :
 the product of the factor dual semigroups. The inverse takes the coproduct of characters. -/
 noncomputable def dualSemigroupProdEquiv :
     dualSemigroup (hi.prod hi') (σ.prod τ) ≃+
-      dualSemigroup hi σ × dualSemigroup hi' τ where
-  toFun m :=
-    (⟨(m : N × N' →+ ℤ).comp (AddMonoidHom.inl N N'),
-      ((mem_dualSemigroup_prod hi hi' σ τ _).mp m.2).1⟩,
-     ⟨(m : N × N' →+ ℤ).comp (AddMonoidHom.inr N N'),
-      ((mem_dualSemigroup_prod hi hi' σ τ _).mp m.2).2⟩)
-  invFun m := ⟨(m.1 : N →+ ℤ).coprod (m.2 : N' →+ ℤ), by
-    rw [mem_dualSemigroup_prod hi hi' σ τ]
-    simp only [AddMonoidHom.coprod_comp_inl, AddMonoidHom.coprod_comp_inr]
-    exact ⟨m.1.2, m.2.2⟩⟩
-  left_inv m := by
-    apply Subtype.ext
-    exact AddMonoidHom.coprod_unique _
-  right_inv m := by
-    ext <;> simp
-  map_add' m n := by
-    ext <;> simp
+      dualSemigroup hi σ × dualSemigroup hi' τ :=
+  let e := (AddMonoidHom.coprodEquiv (M := N) (N := N') (P := ℤ)).symm
+  ({ e.toEquiv.subtypeEquiv (fun m ↦ by
+        simpa only [e, AddEquiv.toEquiv_eq_coe, EquivLike.coe_coe,
+          AddMonoidHom.coprodEquiv_symm_apply, AddSubmonoid.mem_prod] using
+          mem_dualSemigroup_prod hi hi' σ τ m) with
+      map_add' := fun m n ↦ Subtype.ext (map_add e (m : N × N' →+ ℤ) n) } :
+    dualSemigroup (hi.prod hi') (σ.prod τ) ≃+
+      (dualSemigroup hi σ).prod (dualSemigroup hi' τ)).trans
+    (AddSubmonoid.prodEquiv _ _)
 
 /-- The first component of the product equivalence evaluates a character on the first factor. -/
 @[simp]
@@ -84,7 +78,8 @@ theorem dualSemigroupProdEquiv_fst_apply
     (m : dualSemigroup (hi.prod hi') (σ.prod τ)) (n : N) :
     ((dualSemigroupProdEquiv hi hi' σ τ m).1 : N →+ ℤ) n =
       (m : N × N' →+ ℤ) (n, 0) :=
-  (rfl)
+  (congrArg (fun p : (N →+ ℤ) × (N' →+ ℤ) ↦ p.1 n)
+    (AddMonoidHom.coprodEquiv_symm_apply (m : N × N' →+ ℤ)))
 
 /-- The second component of the product equivalence evaluates a character on the second factor. -/
 @[simp]
@@ -92,7 +87,8 @@ theorem dualSemigroupProdEquiv_snd_apply
     (m : dualSemigroup (hi.prod hi') (σ.prod τ)) (n : N') :
     ((dualSemigroupProdEquiv hi hi' σ τ m).2 : N' →+ ℤ) n =
       (m : N × N' →+ ℤ) (0, n) :=
-  (rfl)
+  (congrArg (fun p : (N →+ ℤ) × (N' →+ ℤ) ↦ p.2 n)
+    (AddMonoidHom.coprodEquiv_symm_apply (m : N × N' →+ ℤ)))
 
 /-- The inverse product equivalence sums the values of the two factor characters. -/
 @[simp]
@@ -100,6 +96,6 @@ theorem dualSemigroupProdEquiv_symm_apply
     (m : dualSemigroup hi σ × dualSemigroup hi' τ) (n : N × N') :
     ((dualSemigroupProdEquiv hi hi' σ τ).symm m : N × N' →+ ℤ) n =
       (m.1 : N →+ ℤ) n.1 + (m.2 : N' →+ ℤ) n.2 :=
-  (rfl)
+  (AddMonoidHom.coprodEquiv_apply ((m.1 : N →+ ℤ), (m.2 : N' →+ ℤ)) n)
 
 end TauCeti.Toric
