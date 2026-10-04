@@ -18,8 +18,9 @@ morphism uniquely and commute with the structure morphisms to the base.
 
 We package this construction as `TauCeti.AlgebraicGeometry.relativeSpec`, from the
 opposite category of quasi-coherent algebras to affine schemes over the base. The
-construction uses Mathlib's `colimMap` on the affine gluing diagrams, so no additional
-choice of gluing or chart identifications is needed.
+functor provides the geometric side of the correspondence between quasi-coherent
+commutative algebras and affine schemes over the base, and is an input to the natural
+universal property of relative Spec.
 
 ## References
 
@@ -119,7 +120,8 @@ lemma _root_.CategoryTheory.CommMon.relativeSpecMap_id (A : CommMon X.Modules)
   have h : CommRingCat.ofHom (CommMon.sectionsAlgHom (𝟙 A) U.1).toRingHom =
       𝟙 (CommRingCat.of Γ(A.X, U.1)) := by
     rw [CommMon.sectionsAlgHom_id]
-    rfl
+    ext x
+    simp
   rw [h, Spec.map_id]
   exact Category.id_comp _
 
@@ -132,7 +134,8 @@ lemma _root_.CategoryTheory.CommMon.relativeSpecMap_comp (f : A ⟶ B) (g : B �
   let gU := CommRingCat.ofHom (CommMon.sectionsAlgHom g U.1).toRingHom
   have hU : CommRingCat.ofHom (CommMon.sectionsAlgHom (f ≫ g) U.1).toRingHom = fU ≫ gU := by
     rw [CommMon.sectionsAlgHom_comp]
-    rfl
+    ext x
+    simp [fU, gU]
   -- Explicit sources keep the spectrum formulas independent of the cover's
   -- object accessor when composing chart maps.
   let ιA : Spec (CommRingCat.of Γ(A.X, U.1)) ⟶ A.relativeSpec := A.relativeSpecCover.f U

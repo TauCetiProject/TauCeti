@@ -173,8 +173,9 @@ lemma _root_.CategoryTheory.CommMon.toSectionsPresheaf_app (U : X.Opensᵒᵖ) :
     A.toSectionsPresheaf.app U = CommRingCat.ofHom (algebraMap Γ(X, U.unop) Γ(A.X, U.unop)) :=
   (rfl)
 
-/-- An algebra morphism on sections of commutative sheaf algebras. This is the image
-under the sections functor followed by Mathlib's monoid-object/algebra equivalence. -/
+/-- The algebra map on sections induced by a morphism of commutative `𝒪ₓ`-algebras.
+It sends each section to its image under the morphism and preserves the structure map
+from `Γ(X, U)`. -/
 def _root_.CategoryTheory.CommMon.sectionsAlgHom {A B : CommMon X.Modules}
     (f : A ⟶ B) (U : X.Opens) : Γ(A.X, U) →ₐ[Γ(X, U)] Γ(B.X, U) :=
   (ModuleCat.MonModuleEquivalenceAlgebra.functor.map
@@ -189,16 +190,23 @@ lemma _root_.CategoryTheory.CommMon.sectionsAlgHom_apply {A B : CommMon X.Module
 @[simp]
 lemma _root_.CategoryTheory.CommMon.sectionsAlgHom_id (A : CommMon X.Modules) (U : X.Opens) :
     CommMon.sectionsAlgHom (𝟙 A) U = AlgHom.id Γ(X, U) Γ(A.X, U) := by
+  let F := (Scheme.Modules.sectionsFunctor U).mapCommMon ⋙
+    CommMon.forget₂Mon (ModuleCat.{u} Γ(X, U)) ⋙ ModuleCat.MonModuleEquivalenceAlgebra.functor
+  change (F.map (𝟙 A)).hom = _
   ext x
-  rfl
+  change (F.map (𝟙 A)).hom x = x
+  simpa only [AlgCat.hom_id, AlgHom.id_apply] using
+    congrArg (fun f ↦ f.hom x) (F.map_id A)
 
 @[simp]
 lemma _root_.CategoryTheory.CommMon.sectionsAlgHom_comp {A B C : CommMon X.Modules}
     (f : A ⟶ B) (g : B ⟶ C) (U : X.Opens) :
     CommMon.sectionsAlgHom (f ≫ g) U =
       (CommMon.sectionsAlgHom g U).comp (CommMon.sectionsAlgHom f U) := by
-  ext x
-  rfl
+  let F := (Scheme.Modules.sectionsFunctor U).mapCommMon ⋙
+    CommMon.forget₂Mon (ModuleCat.{u} Γ(X, U)) ⋙ ModuleCat.MonModuleEquivalenceAlgebra.functor
+  change (F.map (f ≫ g)).hom = (F.map g).hom.comp (F.map f).hom
+  simpa only [AlgCat.hom_comp] using congrArg AlgCat.Hom.hom (F.map_comp f g)
 
 /-- A morphism of commutative sheaf algebras induces a morphism of their presheaves of rings. -/
 def _root_.CategoryTheory.CommMon.sectionsPresheafMap {A B : CommMon X.Modules}
@@ -226,16 +234,28 @@ lemma _root_.CategoryTheory.CommMon.sectionsPresheafMap_app {A B : CommMon X.Mod
 @[simp]
 lemma _root_.CategoryTheory.CommMon.sectionsPresheafMap_id (A : CommMon X.Modules) :
     CommMon.sectionsPresheafMap (𝟙 A) = 𝟙 A.sectionsPresheaf := by
-  ext U x
-  rfl
+  apply NatTrans.ext
+  funext U
+  rw [CommMon.sectionsPresheafMap_app, CommMon.sectionsAlgHom_id]
+  change CommRingCat.ofHom (AlgHom.id Γ(X, U.unop) Γ(A.X, U.unop)).toRingHom =
+    𝟙 (CommRingCat.of Γ(A.X, U.unop))
+  ext x
+  simp only [CommRingCat.hom_ofHom, CommRingCat.hom_id, AlgHom.toRingHom_eq_coe,
+    RingHom.coe_coe, AlgHom.id_apply, RingHom.id_apply]
 
 @[simp]
 lemma _root_.CategoryTheory.CommMon.sectionsPresheafMap_comp {A B C : CommMon X.Modules}
     (f : A ⟶ B) (g : B ⟶ C) :
     CommMon.sectionsPresheafMap (f ≫ g) =
       CommMon.sectionsPresheafMap f ≫ CommMon.sectionsPresheafMap g := by
-  ext U x
-  rfl
+  apply NatTrans.ext
+  funext U
+  rw [NatTrans.comp_app, CommMon.sectionsPresheafMap_app,
+    CommMon.sectionsPresheafMap_app, CommMon.sectionsPresheafMap_app,
+    CommMon.sectionsAlgHom_comp]
+  dsimp only [CommMon.sectionsPresheaf]
+  rw [← CommRingCat.ofHom_comp]
+  congr 1
 
 /-- Algebra morphisms commute with the structure map from the structure presheaf. -/
 @[reassoc (attr := simp)]
