@@ -9,7 +9,7 @@ public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.Dualizable
 public import TauCeti.AlgebraicGeometry.Modules.Pullback.Affine
 public import TauCeti.AlgebraicGeometry.Modules.Tilde.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Tilde.Monoidal
-public import TauCeti.AlgebraicGeometry.VectorBundle.Dual
+public import TauCeti.AlgebraicGeometry.VectorBundle.Dual.Basic
 public import TauCeti.AlgebraicGeometry.VectorBundle.OpenCover
 public import TauCeti.CategoryTheory.Monoidal.Rigid.Functor
 
