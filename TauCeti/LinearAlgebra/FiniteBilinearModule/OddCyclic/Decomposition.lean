@@ -15,7 +15,8 @@ public import TauCeti.LinearAlgebra.QuadraticForm.Prod
 
 Every nondegenerate finite quadratic module of odd order is an orthogonal sum of Nikulin's odd
 cyclic generators `q_θ^{(p)}(p^k)`: cyclic groups of odd prime-power order `p^k` with the
-quadratic form `θx²/2` of the pairing `b(x, y) = θxy/p^k`, for `θ` prime to `p`.
+quadratic form `q(x) = θ(p^k + 1)x²/(2p^k)` of the pairing `b(x, y) = θxy/p^k`, for `θ`
+prime to `p`.
 
 The decomposition splits off one cyclic summand at a time. In a nondegenerate module `A` and for
 an odd prime `p` dividing `#A`, let `x` have the largest order `p^k` among elements of `p`-power
