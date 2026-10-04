@@ -18,8 +18,9 @@ space, the elements of `W^{1,p}(Ω)` with a representative which is smooth on `�
 of `Ω` is assumed.
 
 The approximants are smooth only on `Ω`, not up to its boundary, and they are not compactly
-supported in `Ω`: on a bounded domain `W^{1,p}_0(Ω)` is a proper subspace, so test functions are
-not dense. On the whole space, density of globally smooth representatives at every order is
+supported in `Ω`: on standard nontrivial bounded domains (for example, Euclidean balls in positive
+dimension), `W^{1,p}_0(Ω)` is a proper subspace, so test functions are not dense. On the whole
+space, density of globally smooth representatives at every order is
 `TauCeti.Wkp.dense_contDiff_representatives`.
 
 ## The argument
@@ -35,8 +36,9 @@ is locally finite in `Ω`, hence smooth there.
 The series `∑ j, ζ j u` need not converge to `u` in `W^{1,p}(Ω)`: its partial sums are cutoffs
 of `u`, and those converge to `u` only for `u ∈ W^{1,p}_0(Ω)`. So the comparison with `u` is made
 through the corrections instead. These are absolutely summable in the Banach space `W^{1,p}(Ω)`,
-to some `w` of norm at most `ε / 2`, and their partial sums converge pointwise on `Ω` to `f - u`.
-Hence `u + w` is within `ε` of `u`, and its value is represented by `f`.
+to some `w` of norm at most `ε / 2`; after passing to a subsequence, representatives of their
+partial sums converge almost everywhere on `Ω` to `f - u`. Hence `u + w` is within `ε` of `u`, and
+its value is represented by `f`.
 
 ## Main declarations
 
