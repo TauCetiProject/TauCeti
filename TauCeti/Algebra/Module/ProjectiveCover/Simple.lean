@@ -70,16 +70,8 @@ theorem ker_eq_jacobson_smul_top_of_surjective
   let N := Ring.jacobson R • (⊤ : Submodule R P)
   have hle : N ≤ LinearMap.ker f :=
     (Ring.jacobson_smul_top_le R P).trans (IsSemisimpleModule.jacobson_le_ker R R P S f)
-  let g := N.liftQ f hle
-  have hg : Function.Surjective g := by
-    intro s
-    obtain ⟨p, rfl⟩ := hf s
-    exact ⟨N.mkQ p, by simp [g]⟩
-  have := IsSimpleModule.nontrivial R S
-  have hinj := LinearMap.injective_of_ne_zero (LinearMap.ne_zero_of_surjective hg)
-  apply le_antisymm _ hle
-  intro p hp
-  exact (Submodule.Quotient.mk_eq_zero N).mp (hinj (by simpa [g] using hp))
+  have hN : IsCoatom N := isSimpleModule_iff_isCoatom.mp inferInstance
+  exact (hN.le_iff_eq (LinearMap.isCoatom_ker_of_surjective hf).ne_top).mp hle
 
 /-- A surjection from a projective module with simple head and coatomic submodule lattice
 onto a simple module is a projective cover. -/
