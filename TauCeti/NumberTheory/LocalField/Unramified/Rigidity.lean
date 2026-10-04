@@ -33,10 +33,11 @@ Write `q = #𝓀[K]` and `f = f(L/K)`. The extension `L` is generated over `K` b
 `(q^f − 1)`-st root of unity `ζ`, and `q^f − 1` is prime to the residue characteristic. Reduction
 is therefore injective on the `(q^f − 1)`-st roots of unity of `𝒪[M]`, and by Hensel's lemma every
 such root of unity of `𝓀[M]` lifts. An embedding `ι` is determined by `ι ζ`, which is the unique
-lift of the residue of `ι ζ`. Conversely, given a residue embedding `φ`, the lift `ξ` of `φ(ζ̄)` is
-a root of the minimal polynomial `g` of `ζ` over `𝒪[K]`: its residue is a root of the reduction of
-`g`, and not of the reduction of the cofactor `(X^{q^f−1} − 1) / g`, because `X^{q^f−1} − 1` is
-separable over `𝓀[M]`. So `ζ ↦ ξ` defines a `K`-embedding lifting `φ`, since `ζ̄` generates `𝓀[L]`.
+lift of the residue of `ι ζ`. Conversely, given a residue embedding `φ`, the lift `ξ` of the image
+under `φ` of the residue of `ζ` is a root of the minimal polynomial `g` of `ζ` over `𝒪[K]`: its
+residue is a root of the reduction of `g`, and not of the reduction of the cofactor
+`(X^{q^f−1} − 1) / g`, because `X^{q^f−1} − 1` is separable over `𝓀[M]`. So `ζ ↦ ξ` defines a
+`K`-embedding lifting `φ`, since the residue of `ζ` generates `𝓀[L]`.
 
 ## Main definitions
 
@@ -133,13 +134,14 @@ theorem IsUnramified.residueFieldHom_bijective :
     have h' := eq_of_residue_eq_of_pow_eq_one hNM (hιz ι₁) (hιz ι₂)
       (by rw [← AlgHom.residueFieldHom_residue, ← AlgHom.residueFieldHom_residue, h])
     simpa [pb, z] using congrArg Subtype.val h'
-  -- Lift `φ ζ̄` to an `N`-th root of unity `ξ` of `𝒪[M]`.
+  -- Lift the image under `φ` of the residue of `ζ` to an `N`-th root of unity `ξ` of `𝒪[M]`.
   have hφ : φ (residue 𝒪[L] z) ^ N = 1 := by rw [← map_pow, ← map_pow, hz.pow_eq_one, map_one,
     map_one]
   obtain ⟨u, hu⟩ := rootsOfUnityResidue_surjective hNM (rootsOfUnity.mkOfPowEq _ hφ)
   have hres : residue 𝒪[M] ((u : 𝒪[M]ˣ) : 𝒪[M]) = φ (residue 𝒪[L] z) := by
     simpa using congrArg (fun v : rootsOfUnity N 𝓀[M] ↦ ((v : 𝓀[M]ˣ) : 𝓀[M])) hu
-  -- `φ ζ̄` is a root of the reduction of the minimal polynomial `g` of `ζ` over `𝒪[K]`.
+  -- The image under `φ` of the residue of `ζ` is a root of the reduction of the minimal
+  -- polynomial `g` of `ζ` over `𝒪[K]`.
   have hζO : IsIntegral 𝒪[K] ζ := (Valuation.Integers.isIntegral_iff_valuation_le_one
     (Valuation.integer.integers (valuation K)) ζ).2 hζ1
   have hgz : aeval z (minpoly 𝒪[K] ζ) = 0 := FaithfulSMul.algebraMap_injective 𝒪[L] L (by
@@ -149,7 +151,7 @@ theorem IsUnramified.residueFieldHom_bijective :
     have h1 := aeval_algHom_apply (φ.restrictScalars 𝒪[K]) (residue 𝒪[L] z) (minpoly 𝒪[K] ζ)
     rw [AlgHom.restrictScalars_apply, AlgHom.restrictScalars_apply] at h1
     rw [hres, h1, ← ResidueField.algebraMap_eq, aeval_algebraMap_apply, hgz, map_zero, map_zero]
-  -- So `ζ ↦ ξ` defines a `K`-embedding, whose residue map agrees with `φ` on the generator `ζ̄`.
+  -- So `ζ ↦ ξ` defines a `K`-embedding, whose residue map agrees with `φ` on the residue of `ζ`.
   have hroot : aeval ((u : 𝒪[M]ˣ) : M) (minpoly K pb.gen) = 0 :=
     aeval_minpoly_eq_zero_of_aeval_residue_eq_zero hNM hζO hζ.pow_eq_one
       ((mem_rootsOfUnity' N _).1 u.2) hgφ
