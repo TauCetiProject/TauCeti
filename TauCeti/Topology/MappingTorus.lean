@@ -11,7 +11,7 @@ public import Mathlib.Topology.Instances.AddCircle.Real
 public import Mathlib.Topology.Constructions
 public import Mathlib.GroupTheory.GroupAction.Defs
 public import TauCeti.Topology.Instances.AddCircle.Defs
-import TauCeti.GroupTheory.Perm.Basic
+import TauCeti.Topology.Homeomorph.Semiconj
 
 /-!
 # Mapping tori and fibering over the circle
@@ -147,18 +147,6 @@ section Map
 
 variable {G : Type*} [TopologicalSpace G]
 
-/-- Forgetting the topology is multiplicative, so powers are computed as permutations. -/
-private lemma coe_zpow_eq_toEquiv_zpow {X : Type*} [TopologicalSpace X] (f : X ≃ₜ X) (n : ℤ) :
-    ⇑(f ^ n) = ⇑(f.toEquiv ^ n) :=
-  congrArg DFunLike.coe
-    (map_zpow (MonoidHom.mk' (Homeomorph.toEquiv (X := X) (Y := X)) fun _ _ ↦ rfl) f n)
-
-private lemma semiconj_zpow {φ : F ≃ₜ F} {ψ : G ≃ₜ G} {g : F → G}
-    (h : Function.Semiconj g φ ψ) (n : ℤ) :
-    Function.Semiconj g ⇑(φ ^ n) ⇑(ψ ^ n) := by
-  rw [coe_zpow_eq_toEquiv_zpow, coe_zpow_eq_toEquiv_zpow]
-  exact Function.Semiconj.perm_zpow_right h n
-
 /-- A continuous map intertwining two monodromies induces a map of their mapping tori. -/
 def map (φ : F ≃ₜ F) (ψ : G ≃ₜ G) (g : C(F, G)) (h : Function.Semiconj g φ ψ) :
     C(MappingTorus φ, MappingTorus ψ) :=
@@ -167,7 +155,7 @@ def map (φ : F ≃ₜ F) (ψ : G ≃ₜ G) (g : C(F, G)) (h : Function.Semiconj
       obtain ⟨n, rfl⟩ := AddAction.mem_orbit_iff.mp hab
       -- The action orbit witness must be unfolded to expose its two coordinates.
       change mk ψ (g ((φ ^ n) b.1)) (b.2 + n) = mk ψ (g b.1) b.2
-      rw [semiconj_zpow h]
+      rw [h.homeomorph_zpow_right n]
       exact mk_vadd ψ n (g b.1) b.2
     continuous_toFun := isQuotientMap_quotient_mk'.continuous_iff.mpr <|
       (continuous_mk ψ).comp ((g.continuous.comp continuous_fst).prodMk continuous_snd) }
