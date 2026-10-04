@@ -53,7 +53,9 @@ map is a morphism of chain complexes.
   `Δ[a] ⊗ Δ[b]`, with `SSet.stdSimplex.prodConeChain_d` its boundary formula.
 * `SSet.shuffleChain`: the shuffle chain of `Δ[p] ⊗ Δ[q]`, with its defining recursion
   `SSet.shuffleChain_zero_zero`, `SSet.shuffleChain_succ_zero`, `SSet.shuffleChain_zero_succ` and
-  `SSet.shuffleChain_succ_succ`, and its naturality in the coefficient object.
+  `SSet.shuffleChain_succ_succ`, its boundary formula `SSet.shuffleChain_d_succ_succ`,
+  `SSet.shuffleChain_d_succ_zero` and `SSet.shuffleChain_d_zero_succ`, and its naturality in the
+  coefficient object.
 * `SSet.shuffle`: the shuffle map, a morphism of chain complexes.
 * `SSet.ιChainComplex_tensorHom_ιChainComplex_shuffle_f`: its value on the summand of a pair of
   simplices, and `SSet.ιChainComplex_tensorHom_ιChainComplex_shuffle_f_zero` in degree zero.
@@ -520,6 +522,37 @@ private lemma shuffleChain_d (n : ℕ) : ∀ (p q : ℕ) (h : p + q = n + 1),
           smul_zero, zero_add, add_zero, hStep_xFaces, hStep_yFaces, vStep_xFaces, vStep_yFaces,
           whiskerLeft_hStep]
         module
+
+/-- The boundary of the shuffle chain of `Δ[p + 1] ⊗ Δ[q + 1]`: the alternating sum of its faces
+in the first factor plus `(-1)^(p + 1)` times the alternating sum of its faces in the second
+factor, each face being the image of a smaller shuffle chain under a face map. -/
+lemma shuffleChain_d_succ_succ (p q n : ℕ) (h : p + 1 + (q + 1) = n + 1) :
+    shuffleChain T (p + 1) (q + 1) (n + 1) h ≫
+        (((Δ[p + 1] : SSet.{w}) ⊗ Δ[q + 1]).chainComplex T).d (n + 1) n =
+      shuffleChain T p (q + 1) n (by omega) ≫ ∑ j : Fin (p + 2), (-1 : ℤ) ^ (j : ℕ) •
+          (chainComplexMap (stdSimplex.δ j ▷ (Δ[q + 1] : SSet.{w})) T).f n +
+        (-1 : ℤ) ^ (p + 1) • shuffleChain T (p + 1) q n (by omega) ≫
+          ∑ j : Fin (q + 2), (-1 : ℤ) ^ (j : ℕ) •
+            (chainComplexMap ((Δ[p + 1] : SSet.{w}) ◁ stdSimplex.δ j) T).f n :=
+  shuffleChain_d T n (p + 1) (q + 1) h
+
+/-- The boundary of the shuffle chain of `Δ[p + 1] ⊗ Δ[0]`: the alternating sum of its faces in
+the first factor. -/
+lemma shuffleChain_d_succ_zero (p n : ℕ) (h : p + 1 + 0 = n + 1) :
+    shuffleChain T (p + 1) 0 (n + 1) h ≫
+        (((Δ[p + 1] : SSet.{w}) ⊗ Δ[0]).chainComplex T).d (n + 1) n =
+      shuffleChain T p 0 n (by omega) ≫ ∑ j : Fin (p + 2), (-1 : ℤ) ^ (j : ℕ) •
+        (chainComplexMap (stdSimplex.δ j ▷ (Δ[0] : SSet.{w})) T).f n := by
+  rw [shuffleChain_d, yFace, smul_zero, add_zero, xFace, xFaces]
+
+/-- The boundary of the shuffle chain of `Δ[0] ⊗ Δ[q + 1]`: the alternating sum of its faces in
+the second factor. -/
+lemma shuffleChain_d_zero_succ (q n : ℕ) (h : 0 + (q + 1) = n + 1) :
+    shuffleChain T 0 (q + 1) (n + 1) h ≫
+        (((Δ[0] : SSet.{w}) ⊗ Δ[q + 1]).chainComplex T).d (n + 1) n =
+      shuffleChain T 0 q n (by omega) ≫ ∑ j : Fin (q + 2), (-1 : ℤ) ^ (j : ℕ) •
+        (chainComplexMap ((Δ[0] : SSet.{w}) ◁ stdSimplex.δ j) T).f n := by
+  rw [shuffleChain_d, xFace, pow_zero, one_smul, zero_add, yFace, yFaces]
 
 end ShuffleChain
 
