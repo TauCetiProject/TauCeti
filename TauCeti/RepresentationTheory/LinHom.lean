@@ -79,9 +79,7 @@ finite-dimensional vector spaces over a field. -/
 def dualTensorHomOfProjective [Module.Finite k V] [Module.Projective k V]
     (ρ : Representation k G V) (σ : Representation k G W) :
     (ρ.dual.tprod σ).Equiv (linHom ρ σ) :=
-  .mk (dualTensorHomEquiv k V W) fun g ↦ by
-    ext f w v
-    simp [Module.Dual.transpose_apply]
+  .mk (dualTensorHomEquiv k V W) (dualTensorHom_comm ρ σ)
 
 @[simp]
 theorem dualTensorHomOfProjective_apply [Module.Finite k V] [Module.Projective k V]
