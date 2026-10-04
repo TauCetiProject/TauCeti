@@ -138,6 +138,7 @@ theorem finrank_mul_degree_different_of_pow_sub_self_eq
       push_cast at hcon
       linear_combination (p - 1 : ℤ) * hcon
 
+omit [FiniteDimensional F F'] [Algebra.IsSeparable F F'] in
 /-- **The Artin--Schreier genus formula**, cross-multiplied for a possible constant-field
 extension. The representatives may vary with the place. Pole orders are weighted by residue
 field degrees, not by the number of poles. -/
@@ -147,6 +148,10 @@ theorem artinSchreier_genus_formula [Algebra.IsSeparable k k']
     (Module.finrank k k' : ℤ) * (2 * genus k' F' - 2) =
       (p : ℤ) * (2 * genus k F - 2) +
         (p - 1 : ℤ) * ∑ P ∈ S, (m P + 1 : ℤ) * P.degree := by
+  let _ := ArtinSchreier.isSplittingField hy hgen
+  let _ := Polynomial.IsSplittingField.finiteDimensional F'
+    (Polynomial.X ^ p - Polynomial.X - Polynomial.C u)
+  let _ := ArtinSchreier.isGalois hy hgen
   let _ : FiniteDimensional k k' := hF.finiteDimensional_baseExtension hF'
   rw [hurwitz_genus_formula hF hF' hex hex', ArtinSchreier.finrank_eq hy hgen hu,
     finrank_mul_degree_different_of_pow_sub_self_eq hF hF' p hgen hy S m hpole hreg hu]
