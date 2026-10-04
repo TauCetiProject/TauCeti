@@ -130,6 +130,12 @@ def unramifiedExtensionPNat (f : ℕ+) : FiniteUnramifiedSubextension K Ω :=
   ⟨unramifiedExtension K Ω f,
     (isFiniteUnramifiedSubextension_iff_exists_eq_unramifiedExtension K Ω _).2 ⟨f, rfl⟩⟩
 
+/-- The underlying field of the finite unramified subextension of degree `f`. -/
+@[simp]
+theorem coe_unramifiedExtensionPNat (f : ℕ+) :
+    (unramifiedExtensionPNat K Ω f).1 = unramifiedExtension K Ω f :=
+  congrArg Subtype.val (unramifiedExtensionPNat.eq_def K Ω f)
+
 /-- Positive integers classify the finite unramified subextensions of a separably closed
 extension. This forward equivalence is kept private; the public API uses
 `finiteUnramifiedSubextensionDegreeEquiv` in the degree direction. -/
@@ -163,10 +169,26 @@ namespace FiniteUnramifiedSubextension
 def degree (E : FiniteUnramifiedSubextension K Ω) : ℕ+ :=
   finiteUnramifiedSubextensionDegreeEquiv K Ω E
 
+/-- The degree classification sends a finite unramified subextension to its degree. -/
+theorem finiteUnramifiedSubextensionDegreeEquiv_apply
+    (E : FiniteUnramifiedSubextension K Ω) :
+    finiteUnramifiedSubextensionDegreeEquiv K Ω E = E.degree :=
+  (degree.eq_def K Ω E).symm
+
 @[simp]
 theorem degree_unramifiedExtensionPNat (f : ℕ+) :
     (unramifiedExtensionPNat K Ω f).degree = f :=
   (unramifiedExtensionEquivFiniteUnramifiedSubextension K Ω).symm_apply_apply f
+
+/-- The inverse degree classification sends `f` to the canonical unramified extension of
+degree `f`. -/
+@[simp]
+theorem finiteUnramifiedSubextensionDegreeEquiv_symm_apply (f : ℕ+) :
+    (finiteUnramifiedSubextensionDegreeEquiv K Ω).symm f =
+      unramifiedExtensionPNat K Ω f := by
+  apply (finiteUnramifiedSubextensionDegreeEquiv K Ω).injective
+  rw [Equiv.apply_symm_apply, finiteUnramifiedSubextensionDegreeEquiv_apply,
+    degree_unramifiedExtensionPNat]
 
 /-- The positive degree of a finite unramified subextension is its vector-space dimension over
 the base field. -/
@@ -198,8 +220,7 @@ theorem le_iff_degree_dvd {E F : FiniteUnramifiedSubextension K Ω} :
     simpa only [coe_degree] using unramifiedExtension_finrank K Ω E
   have hF : unramifiedExtension K Ω F.degree = F.1 := by
     simpa only [coe_degree] using unramifiedExtension_finrank K Ω F
-  change E.1 ≤ F.1 ↔ _
-  rw [← hE, ← hF]
+  rw [← Subtype.coe_le_coe, ← hE, ← hF]
   exact unramifiedExtension_le_unramifiedExtension_iff K Ω E.degree.ne_zero F.degree.ne_zero
 
 instance : Lattice (FiniteUnramifiedSubextension K Ω) where
@@ -234,6 +255,20 @@ instance : Lattice (FiniteUnramifiedSubextension K Ω) where
     exact Nat.dvd_gcd ((le_iff_degree_dvd K Ω).1 hEF)
       ((le_iff_degree_dvd K Ω).1 hEG))
 
+/-- The positive degree of a meet is the positive natural associated to the greatest common
+divisor of the two degrees. This records the defining meet equation of the lattice instance. -/
+@[simp]
+theorem degree_inf_pnat (E F : FiniteUnramifiedSubextension K Ω) :
+    (E ⊓ F).degree = (Nat.gcd E.degree F.degree).toPNat' :=
+  degree_unramifiedExtensionPNat K Ω _
+
+/-- The positive degree of a join is the positive natural associated to the least common
+multiple of the two degrees. This records the defining join equation of the lattice instance. -/
+@[simp]
+theorem degree_sup_pnat (E F : FiniteUnramifiedSubextension K Ω) :
+    (E ⊔ F).degree = (Nat.lcm E.degree F.degree).toPNat' :=
+  degree_unramifiedExtensionPNat K Ω _
+
 /-- The degree of a meet of finite unramified subextensions is the greatest common divisor of
 the two degrees. -/
 @[simp]
@@ -241,8 +276,7 @@ theorem degree_inf (E F : FiniteUnramifiedSubextension K Ω) :
     Module.finrank K (E ⊓ F).1 =
       Nat.gcd (Module.finrank K E.1) (Module.finrank K F.1) := by
   rw [← coe_degree K Ω (E ⊓ F), ← coe_degree K Ω E, ← coe_degree K Ω F]
-  rw [show (E ⊓ F).degree = (Nat.gcd E.degree F.degree).toPNat' from
-      degree_unramifiedExtensionPNat K Ω _,
+  rw [degree_inf_pnat,
     PNat.toPNat'_coe (Nat.gcd_pos_of_pos_left F.degree E.degree.pos)]
 
 /-- The degree of a join of finite unramified subextensions is the least common multiple of the
@@ -252,8 +286,7 @@ theorem degree_sup (E F : FiniteUnramifiedSubextension K Ω) :
     Module.finrank K (E ⊔ F).1 =
       Nat.lcm (Module.finrank K E.1) (Module.finrank K F.1) := by
   rw [← coe_degree K Ω (E ⊔ F), ← coe_degree K Ω E, ← coe_degree K Ω F]
-  rw [show (E ⊔ F).degree = (Nat.lcm E.degree F.degree).toPNat' from
-      degree_unramifiedExtensionPNat K Ω _,
+  rw [degree_sup_pnat,
     PNat.toPNat'_coe (Nat.pos_of_ne_zero (Nat.lcm_ne_zero E.degree.ne_zero F.degree.ne_zero))]
 
 end FiniteUnramifiedSubextension
