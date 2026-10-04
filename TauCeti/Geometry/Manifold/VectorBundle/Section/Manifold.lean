@@ -99,7 +99,8 @@ theorem contMDiffOn_coe_sectionZeroChartAt_symm (z : ↥{y | s y = 0}) :
   intro k hk
   let w := (sectionZeroChartAt hf hFred hsurj hindex z).symm k
   have ht := (mem_sectionZeroChartAt_target_iff hf hFred hsurj hindex z k).1 hk
-  have hw := sectionZeroChartAt_symm_mem hf hFred hsurj hindex z hk
+  have hw := sectionZeroChartAt_symm_mem_source_and_baseSet_and_implicitCoordSource
+    hf hFred hsurj hindex z hk
   have hval : (w : M) = (chartAt X z.1).symm (Φ.symm (0, K.symm k)) :=
     coe_sectionZeroChartAt_symm_apply hf hFred hsurj hindex z hk
   have hround : chartAt X z.1 w.1 = Φ.symm (0, K.symm k) := by
@@ -244,7 +245,8 @@ theorem isImmersionOfComplement_coe_sectionZero :
     (D z).contDiff.comp_contDiffOn ((contMDiffOn_iff_contDiffOn.1
       (contMDiffOn_chart.comp
         (contMDiffOn_coe_sectionZeroChartAt_symm hf hFred hsurj hindex hs z)
-        (fun k hk ↦ (sectionZeroChartAt_symm_mem hf hFred hsurj hindex z hk).1))).sub
+        (fun k hk ↦ (sectionZeroChartAt_symm_mem_source_and_baseSet_and_implicitCoordSource
+          hf hFred hsurj hindex z hk).1))).sub
           contDiffOn_const)
   have hminus : ContDiffOn 𝕜 m (fun p : (Fin n → 𝕜) × F ↦ (p.1, p.2 - g p.1))
       (Prod.fst ⁻¹' χ.target) :=

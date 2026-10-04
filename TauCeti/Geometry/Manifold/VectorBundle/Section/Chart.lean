@@ -148,6 +148,7 @@ theorem sectionZeroChartAt_apply (z w : ↥{y | s y = 0}) :
 
 /-- The target is the implicit zero slice whose inverse stays in the regular neighbourhood,
 the source-chart target, and the bundle-trivialization domain. -/
+@[simp]
 theorem mem_sectionZeroChartAt_target_iff (z : ↥{y | s y = 0}) (k : Fin n → 𝕜) :
     k ∈ (sectionZeroChartAt hf hFred hsurj hindex z).target ↔
       let K := (D z).kerModelEquiv (hFred z).finite_ker
@@ -189,9 +190,10 @@ theorem coe_sectionZeroChartAt_symm_apply (z : ↥{y | s y = 0}) {k : Fin n → 
     OpenPartialHomeomorph.coe_restrOpen_symm]
   rw [OpenPartialHomeomorph.coe_restrOpen_symm]
 
-/-- The inverse chart remains in the ambient source-chart target and the regular
-implicit-function neighbourhood. -/
-theorem sectionZeroChartAt_symm_mem (z : ↥{y | s y = 0}) {k : Fin n → 𝕜}
+/-- The inverse chart remains in the ambient source-chart source, the bundle-trivialization
+base set, and the regular implicit-function neighbourhood. -/
+theorem sectionZeroChartAt_symm_mem_source_and_baseSet_and_implicitCoordSource
+    (z : ↥{y | s y = 0}) {k : Fin n → 𝕜}
     (hk : k ∈ (sectionZeroChartAt hf hFred hsurj hindex z).target) :
     let y := ((sectionZeroChartAt hf hFred hsurj hindex z).symm k : M)
     y ∈ (chartAt X z.1).source ∧ b y ∈ (e z).baseSet ∧
