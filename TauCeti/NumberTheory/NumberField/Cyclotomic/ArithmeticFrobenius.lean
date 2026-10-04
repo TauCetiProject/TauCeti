@@ -17,8 +17,10 @@ For a prime `p` coprime to `n`, the arithmetic Frobenius of an `n`-th cyclotomic
 The statements use a prime of the ring of integers lying over `(p)` in `ℤ`, so the exponent
 is the rational prime itself. The formula identifies the Frobenius element in the Galois group.
 
-The proof uses `TauCeti.NumberField.isArithFrobAt_iff_galEquivZMod_eq_absNorm` and the
-comparison between the base rings `𝓞 ℚ` and `ℤ` in `Ideal.IntegersRat`.
+## Implementation notes
+
+The proof uses `TauCeti.NumberField.isArithFrobAt_iff_galEquivZMod_eq_absNorm` and
+`Ideal.isArithFrobAt_ringOfIntegers_rat_iff` to compare the base rings `𝓞 ℚ` and `ℤ`.
 
 ## References
 
@@ -36,11 +38,11 @@ variable {n p : ℕ} [NeZero n] [Fact p.Prime]
   {K : Type*} [Field K] [NumberField K] [IsCyclotomicExtension {n} ℚ K]
   (Q : Ideal (𝓞 K)) [Q.IsPrime] [Q.LiesOver (span {(p : ℤ)})]
 
-/-- At a rational prime coprime to `n`, the cyclotomic exponent of an arithmetic Frobenius
-is `p mod n`, as a unit of `ZMod n`. -/
-theorem galEquivZMod_eq_unitOfCoprime_of_isArithFrobAt (hp : p.Coprime n)
-    {σ : K ≃ₐ[ℚ] K} (hσ : IsArithFrobAt ℤ σ Q) :
-    Rat.galEquivZMod n K σ = ZMod.unitOfCoprime p hp := by
+/-- At a rational prime coprime to `n`, an automorphism is arithmetic Frobenius exactly
+when its cyclotomic exponent is `p mod n`, as a unit of `ZMod n`. -/
+theorem isArithFrobAt_iff_galEquivZMod_eq_unitOfCoprime (hp : p.Coprime n)
+    (σ : K ≃ₐ[ℚ] K) :
+    IsArithFrobAt ℤ σ Q ↔ Rat.galEquivZMod n K σ = ZMod.unitOfCoprime p hp := by
   -- Contract `Q` to the rational ring of integers and identify its norm with `p`.
   have hnorm : absNorm (Q.under (𝓞 ℚ)) = p := by
     rw [absNorm_under_ringOfIntegers_rat, absNorm_apply, Submodule.cardQuot_apply,
@@ -48,19 +50,21 @@ theorem galEquivZMod_eq_unitOfCoprime_of_isArithFrobAt (hp : p.Coprime n)
   let v : HeightOneSpectrum (𝓞 ℚ) :=
     ⟨Q.under (𝓞 ℚ), inferInstance, fun h ↦ (Fact.out : p.Prime).ne_zero
       (hnorm.symm.trans (by simp [h]))⟩
+  -- The structure literal makes `v.asIdeal` definitionally the contraction of `Q`.
+  -- This also supplies the `Q.LiesOver v.asIdeal` instance for the norm formula.
   have hn : (n : 𝓞 ℚ) ∉ v.asIdeal := by
     rw [Rat.HeightOneSpectrum.natCast_mem_iff_absNorm_asIdeal_dvd, hnorm]
     exact (Fact.out : p.Prime).coprime_iff_not_dvd.mp hp
-  apply Units.ext
-  rw [ZMod.coe_unitOfCoprime]
   -- Transport the Frobenius condition from `ℤ` to `𝓞 ℚ` before using the norm formula.
-  exact ((isArithFrobAt_iff_galEquivZMod_eq_absNorm v hn Q σ).mp
-    ((isArithFrobAt_ringOfIntegers_rat_iff σ Q).mpr hσ)).trans (congrArg Nat.cast hnorm)
+  rw [← isArithFrobAt_ringOfIntegers_rat_iff,
+    isArithFrobAt_iff_galEquivZMod_eq_absNorm v hn Q σ, hnorm,
+    ← ZMod.coe_unitOfCoprime p hp, Units.val_inj]
 
 /-- Mathlib's chosen arithmetic Frobenius at a prime above `p` has cyclotomic exponent
-`ZMod.unitOfCoprime p hp`. The formula holds also at `p = 2` when `n` is odd. -/
+`ZMod.unitOfCoprime p hp`. -/
 theorem galEquivZMod_arithFrobAt [IsGalois ℚ K] [Finite (𝓞 K ⧸ Q)] (hp : p.Coprime n) :
     Rat.galEquivZMod n K (arithFrobAt ℤ (K ≃ₐ[ℚ] K) Q) = ZMod.unitOfCoprime p hp :=
-  galEquivZMod_eq_unitOfCoprime_of_isArithFrobAt Q hp (IsArithFrobAt.arithFrobAt _ _ _)
+  (isArithFrobAt_iff_galEquivZMod_eq_unitOfCoprime Q hp _).mp
+    (IsArithFrobAt.arithFrobAt _ _ _)
 
 end TauCeti.NumberField

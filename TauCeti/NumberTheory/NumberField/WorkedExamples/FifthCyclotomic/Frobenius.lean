@@ -14,10 +14,9 @@ import Mathlib.Tactic.NormNum.Prime
 The arithmetic Frobenius at `2`, `3`, `7`, and `19` in a fifth cyclotomic field has cyclotomic
 exponent `2`, `3`, `2`, and `-1`, respectively. At `11` it is the identity. These are
 computations of the automorphisms themselves, complementing the residue degrees and prime
-counts in `Cyclotomic.FiveSplitting`.
+counts in `TauCeti.NumberTheory.NumberField.Cyclotomic.FiveSplitting`.
 
-Each statement applies to every arithmetic Frobenius at the indicated prime. In particular,
-the dyadic case uses the same arithmetic normalization as the odd primes.
+Each statement characterizes arithmetic Frobenius at the indicated prime.
 
 ## References
 
@@ -31,49 +30,52 @@ open scoped NumberField
 
 namespace TauCeti.NumberField.FifthCyclotomic
 
+local instance : Fact (Nat.Prime 5) := ⟨Nat.prime_five⟩
+
 variable {K : Type*} [Field K] [NumberField K] [IsCyclotomicExtension {5} ℚ K]
-  {σ : K ≃ₐ[ℚ] K} (Q : Ideal (𝓞 K)) [Q.IsPrime]
+  (Q : Ideal (𝓞 K)) [Q.IsPrime] (σ : K ≃ₐ[ℚ] K)
 
-/-- At a prime above `2`, arithmetic Frobenius has exponent `2 mod 5`. -/
-theorem galEquivZMod_eq_two_of_isArithFrobAt_two [Q.LiesOver (span {(2 : ℤ)})]
-    (hσ : IsArithFrobAt ℤ σ Q) :
-    (Rat.galEquivZMod 5 K σ : ZMod 5) = 2 := by
-  have h := galEquivZMod_eq_unitOfCoprime_of_isArithFrobAt Q
-    (by decide : Nat.Coprime 2 5) hσ
-  exact (congrArg Units.val h).trans (by decide)
+/-- At a prime above `2`, arithmetic Frobenius is characterized by exponent `2 mod 5`. -/
+theorem isArithFrobAt_two_iff_galEquivZMod_eq_two [Q.LiesOver (span {(2 : ℤ)})] :
+    IsArithFrobAt ℤ σ Q ↔ Rat.galEquivZMod 5 K σ = Units.mk0 (2 : ZMod 5) (by decide) := by
+  have h : ZMod.unitOfCoprime 2 (by decide : Nat.Coprime 2 5) =
+      Units.mk0 (2 : ZMod 5) (by decide) :=
+    Units.ext (by rw [ZMod.coe_unitOfCoprime]; decide)
+  rw [isArithFrobAt_iff_galEquivZMod_eq_unitOfCoprime Q (by decide : Nat.Coprime 2 5) σ, h]
 
-/-- At a prime above `3`, arithmetic Frobenius has exponent `3 mod 5`. -/
-theorem galEquivZMod_eq_three_of_isArithFrobAt_three [Q.LiesOver (span {(3 : ℤ)})]
-    (hσ : IsArithFrobAt ℤ σ Q) :
-    (Rat.galEquivZMod 5 K σ : ZMod 5) = 3 := by
-  have h := galEquivZMod_eq_unitOfCoprime_of_isArithFrobAt Q
-    (by decide : Nat.Coprime 3 5) hσ
-  exact (congrArg Units.val h).trans (by decide)
+/-- At a prime above `3`, arithmetic Frobenius is characterized by exponent `3 mod 5`. -/
+theorem isArithFrobAt_three_iff_galEquivZMod_eq_three [Q.LiesOver (span {(3 : ℤ)})] :
+    IsArithFrobAt ℤ σ Q ↔ Rat.galEquivZMod 5 K σ = Units.mk0 (3 : ZMod 5) (by decide) := by
+  have h : ZMod.unitOfCoprime 3 (by decide : Nat.Coprime 3 5) =
+      Units.mk0 (3 : ZMod 5) (by decide) :=
+    Units.ext (by rw [ZMod.coe_unitOfCoprime]; decide)
+  rw [isArithFrobAt_iff_galEquivZMod_eq_unitOfCoprime Q (by decide : Nat.Coprime 3 5) σ, h]
 
-/-- At a prime above `7`, arithmetic Frobenius has exponent `2 mod 5`. -/
-theorem galEquivZMod_eq_two_of_isArithFrobAt_seven [Q.LiesOver (span {(7 : ℤ)})]
-    (hσ : IsArithFrobAt ℤ σ Q) :
-    (Rat.galEquivZMod 5 K σ : ZMod 5) = 2 := by
+/-- At a prime above `7`, arithmetic Frobenius is characterized by exponent `2 mod 5`. -/
+theorem isArithFrobAt_seven_iff_galEquivZMod_eq_two [Q.LiesOver (span {(7 : ℤ)})] :
+    IsArithFrobAt ℤ σ Q ↔ Rat.galEquivZMod 5 K σ = Units.mk0 (2 : ZMod 5) (by decide) := by
   have : Fact (Nat.Prime 7) := ⟨by norm_num⟩
-  have h := galEquivZMod_eq_unitOfCoprime_of_isArithFrobAt Q
-    (by decide : Nat.Coprime 7 5) hσ
-  exact (congrArg Units.val h).trans (by decide)
+  have h : ZMod.unitOfCoprime 7 (by decide : Nat.Coprime 7 5) =
+      Units.mk0 (2 : ZMod 5) (by decide) :=
+    Units.ext (by rw [ZMod.coe_unitOfCoprime]; decide)
+  rw [isArithFrobAt_iff_galEquivZMod_eq_unitOfCoprime Q (by decide : Nat.Coprime 7 5) σ, h]
 
-/-- At a prime above `19`, arithmetic Frobenius has exponent `-1 mod 5`. -/
-theorem galEquivZMod_eq_neg_one_of_isArithFrobAt_nineteen [Q.LiesOver (span {(19 : ℤ)})]
-    (hσ : IsArithFrobAt ℤ σ Q) : Rat.galEquivZMod 5 K σ = -1 := by
+/-- At a prime above `19`, arithmetic Frobenius is characterized by exponent `-1 mod 5`. -/
+theorem isArithFrobAt_nineteen_iff_galEquivZMod_eq_neg_one [Q.LiesOver (span {(19 : ℤ)})] :
+    IsArithFrobAt ℤ σ Q ↔ Rat.galEquivZMod 5 K σ = -1 := by
   have : Fact (Nat.Prime 19) := ⟨by norm_num⟩
-  have h := galEquivZMod_eq_unitOfCoprime_of_isArithFrobAt Q
-    (by decide : Nat.Coprime 19 5) hσ
-  exact h.trans (Units.ext (by decide))
+  have h : ZMod.unitOfCoprime 19 (by decide : Nat.Coprime 19 5) = (-1 : (ZMod 5)ˣ) :=
+    Units.ext (by rw [ZMod.coe_unitOfCoprime]; decide)
+  rw [isArithFrobAt_iff_galEquivZMod_eq_unitOfCoprime Q (by decide : Nat.Coprime 19 5) σ, h]
 
-/-- At a prime above `11`, arithmetic Frobenius is the identity. -/
-theorem eq_one_of_isArithFrobAt_eleven [Q.LiesOver (span {(11 : ℤ)})]
-    (hσ : IsArithFrobAt ℤ σ Q) : σ = 1 := by
+/-- At a prime above `11`, an automorphism is arithmetic Frobenius exactly when it is
+the identity. -/
+theorem isArithFrobAt_eleven_iff_eq_one [Q.LiesOver (span {(11 : ℤ)})] :
+    IsArithFrobAt ℤ σ Q ↔ σ = 1 := by
   have : Fact (Nat.Prime 11) := ⟨by norm_num⟩
-  apply (Rat.galEquivZMod 5 K).injective
-  rw [map_one, galEquivZMod_eq_unitOfCoprime_of_isArithFrobAt Q
-    (by decide : Nat.Coprime 11 5) hσ]
-  exact Units.ext (by decide)
+  have h : ZMod.unitOfCoprime 11 (by decide : Nat.Coprime 11 5) = (1 : (ZMod 5)ˣ) :=
+    Units.ext (by rw [ZMod.coe_unitOfCoprime]; decide)
+  rw [isArithFrobAt_iff_galEquivZMod_eq_unitOfCoprime Q (by decide : Nat.Coprime 11 5) σ, h,
+    map_eq_one_iff (Rat.galEquivZMod 5 K) (Rat.galEquivZMod 5 K).injective]
 
 end TauCeti.NumberField.FifthCyclotomic
