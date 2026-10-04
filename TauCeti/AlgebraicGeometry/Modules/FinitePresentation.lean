@@ -26,6 +26,8 @@ presentations can be refined to basic opens. A finite global presentation on an 
 gives a finite module presentation, and Mathlib's localization descent glues these finite
 presentations of modules. The analogous finite-type comparison supplies ambient cokernel
 closure for maps from quasicoherent sheaves of finite type to finitely presented sheaves.
+Over a Noetherian ring, ambient kernels of maps from quasicoherent sheaves of finite type
+to quasicoherent sheaves are also finitely presented.
 This supplies the affine algebraic description of coherent sheaves on locally Noetherian
 schemes without imposing a Noetherian hypothesis on the affine result.
 
@@ -373,6 +375,28 @@ instance _root_.AlgebraicGeometry.Scheme.Modules.isFinitePresentation_cokernel_s
       cokernel.mapIso _ _ eM eN ((tilde.adjunction (R := R)).counit.naturality f)
   exact (SheafOfModules.isFinitePresentation (Spec R).ringCatSheaf).prop_of_iso e
     (isFinitePresentation_tilde (cokernel g))
+
+/-- Over a Noetherian ring, the ambient kernel of a morphism from a quasicoherent sheaf
+of finite type to a quasicoherent sheaf is finitely presented. -/
+instance _root_.AlgebraicGeometry.Scheme.Modules.isFinitePresentation_kernel_spec
+    [IsNoetherianRing R] (f : M ⟶ N) [M.IsQuasicoherent] [M.IsFiniteType]
+    [N.IsQuasicoherent] : (kernel f).IsFinitePresentation := by
+  let g := (moduleSpecΓFunctor (R := R)).map f
+  have : Module.Finite R (moduleSpecΓFunctor.obj M) :=
+    finite_moduleSpecΓ M
+  have : Module.FinitePresentation R (LinearMap.ker g.hom) :=
+    Module.finitePresentation_of_finite R _
+  have : Module.FinitePresentation R (kernel g : ModuleCat R) :=
+    Module.FinitePresentation.of_equiv (ModuleCat.kernelIsoKer g).symm.toLinearEquiv
+  let eM := @asIso _ _ _ _ M.fromTildeΓ
+    (isIso_fromTildeΓ_of_isQuasicoherent (R := R) M)
+  let eN := @asIso _ _ _ _ N.fromTildeΓ
+    (isIso_fromTildeΓ_of_isQuasicoherent (R := R) N)
+  let e : tilde (kernel g) ≅ kernel f :=
+    PreservesKernel.iso (tilde.functor R) g ≪≫
+      kernel.mapIso _ _ eM eN ((tilde.adjunction (R := R)).counit.naturality f)
+  exact (SheafOfModules.isFinitePresentation (Spec R).ringCatSheaf).prop_of_iso e
+    (isFinitePresentation_tilde (kernel g))
 
 end
 

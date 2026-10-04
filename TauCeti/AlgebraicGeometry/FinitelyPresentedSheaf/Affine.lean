@@ -83,6 +83,7 @@ lemma globalSectionsFunctor_comp_forget :
 
 /-- Coherent sheaves on `Spec R` are equivalent to finite `R`-modules. The functors are tilde
 and global sections, with the unit and counit inherited from the tilde adjunction. -/
+-- Expose the object maps so the unit and counit equations have homogeneous types.
 @[expose]
 def tildeEquiv : FGModuleCat.{u} R ≌ FinitelyPresentedSheaf (Spec R) where
   functor := tildeFunctor R
@@ -196,33 +197,6 @@ instance preservesFiniteColimits_inclusion :
   exact preservesFiniteColimits_of_natIso (Functor.isoWhiskerRight (tildeEquiv R).counitIso F)
 
 end FinitelyPresentedSheaf
-
-open _root_.AlgebraicGeometry.Scheme.Modules
-
-variable {R : CommRingCat.{u}} {M N : (Spec R).Modules}
-
-/-- Over a Noetherian ring, the ambient kernel of a morphism from a finitely presented sheaf
-to a quasicoherent sheaf is finitely presented. -/
-instance _root_.AlgebraicGeometry.Scheme.Modules.isFinitePresentation_kernel_spec
-    [IsNoetherianRing R] (f : M ⟶ N) [M.IsFinitePresentation] [N.IsQuasicoherent] :
-    (kernel f).IsFinitePresentation := by
-  have : M.IsQuasicoherent := SheafOfModules.instIsQuasicoherentOfIsFinitePresentation M
-  let g := (moduleSpecΓFunctor (R := R)).map f
-  have : Module.FinitePresentation R (moduleSpecΓFunctor.obj M) :=
-    finitePresentation_moduleSpecΓ M
-  have : Module.FinitePresentation R (LinearMap.ker g.hom) :=
-    Module.finitePresentation_of_finite R _
-  have : Module.FinitePresentation R (kernel g : ModuleCat R) :=
-    Module.FinitePresentation.of_equiv (ModuleCat.kernelIsoKer g).symm.toLinearEquiv
-  let eM := @asIso _ _ _ _ M.fromTildeΓ
-    (isIso_fromTildeΓ_of_isQuasicoherent (R := R) M)
-  let eN := @asIso _ _ _ _ N.fromTildeΓ
-    (isIso_fromTildeΓ_of_isQuasicoherent (R := R) N)
-  let e : tilde (kernel g) ≅ kernel f :=
-    PreservesKernel.iso (tilde.functor R) g ≪≫
-      kernel.mapIso _ _ eM eN ((tilde.adjunction (R := R)).counit.naturality f)
-  exact (SheafOfModules.isFinitePresentation (Spec R).ringCatSheaf).prop_of_iso e
-    (isFinitePresentation_tilde (kernel g))
 
 end
 
