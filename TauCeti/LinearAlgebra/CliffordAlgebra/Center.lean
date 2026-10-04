@@ -29,7 +29,8 @@ description: if `v₁, …, vₙ` is an anisotropic orthogonal basis and
 ```
 
 The result is stated for any anisotropic orthogonal spanning list of odd length; such a list is a
-basis, so the form is automatically nondegenerate and the dimension odd. Conversely, every
+basis (`QuadraticMap.nondegenerate_and_length_eq_finrank_of_pairwise_isOrtho`), so the form is
+automatically nondegenerate and the dimension odd. Conversely, every
 nondegenerate quadratic form has such a list, by
 `QuadraticMap.Nondegenerate.exists_list_pairwise_isOrtho`. Reordering or rescaling the list changes
 `ω` by a nonzero scalar, hence leaves the generated subalgebra unchanged.
@@ -57,43 +58,6 @@ open Module
 universe u v
 
 variable {K : Type u} {V : Type v} [Field K] [AddCommGroup V] [Module K V] {Q : QuadraticForm K V}
-
-/-- An anisotropic orthogonal spanning list is a basis: the form is nondegenerate and the list has
-the length of the dimension. -/
-private theorem nondegenerate_and_length_eq_finrank [NeZero (2 : K)] {l : List V}
-    (hl : l.Pairwise Q.IsOrtho) (hspan : Submodule.span K {x : V | x ∈ l} = ⊤)
-    (hQl : ∀ v ∈ l, Q v ≠ 0) :
-    Q.Nondegenerate ∧ l.length = finrank K V := by
-  let _ : Invertible (2 : K) := invertibleOfNonzero (NeZero.ne (2 : K))
-  let v : Fin l.length → V := fun i ↦ l[i]
-  have hortho : LinearMap.BilinForm.iIsOrtho Q.polarBilin v := by
-    intro i j hij
-    refine QuadraticMap.isOrtho_polarBilin.mpr ?_
-    rcases lt_or_gt_of_ne (Fin.val_ne_of_ne hij) with h | h
-    · exact List.pairwise_iff_getElem.mp hl i j i.isLt j.isLt h
-    · exact QuadraticMap.isOrtho_comm.mp (List.pairwise_iff_getElem.mp hl j i j.isLt i.isLt h)
-  have hself : ∀ i, Q.polarBilin (v i) (v i) ≠ 0 := fun i ↦ by
-    rw [QuadraticMap.polarBilin_apply_apply, QuadraticMap.polar_self, two_smul, ← two_mul]
-    exact mul_ne_zero (NeZero.ne 2) (hQl _ (List.getElem_mem _))
-  have hrange : Set.range v = {x : V | x ∈ l} := by
-    ext x
-    simp [v, List.mem_iff_getElem, Fin.exists_iff]
-  let b : Basis (Fin l.length) K V :=
-    Basis.mk (LinearMap.BilinForm.linearIndependent_of_iIsOrtho hortho hself)
-      (by rw [hrange, hspan])
-  have hb : ⇑b = v := Basis.coe_mk _ _
-  refine ⟨QuadraticMap.nondegenerate_polar_iff.mp ?_, by simpa using (finrank_eq_card_basis b).symm⟩
-  exact (LinearMap.BilinForm.iIsOrtho.nondegenerate_iff_not_isOrtho_basis_self _ b
-    (hb ▸ hortho)).mpr (hb ▸ hself)
-
-/-- The scalar square `(-1) ^ (n.choose 2) * Q v₁ ⋯ Q vₙ` of the volume element of an anisotropic
-list is nonzero. -/
-private theorem volume_sq_coeff_ne_zero {l : List V} (hQl : ∀ v ∈ l, Q v ≠ 0) :
-    (-1 : K) ^ l.length.choose 2 * (l.map Q).prod ≠ 0 := by
-  refine mul_ne_zero (pow_ne_zero _ (neg_ne_zero.mpr one_ne_zero)) (List.prod_ne_zero ?_)
-  intro hmem
-  obtain ⟨v, hv, hv0⟩ := List.mem_map.mp hmem
-  exact (hQl v hv) hv0
 
 private theorem center_even_component_is_scalar [FiniteDimensional K V] [NeZero (2 : K)]
     (hQ : Q.Nondegenerate) (hV : Odd (finrank K V)) {x : CliffordAlgebra Q}
@@ -154,7 +118,7 @@ theorem add_smul_volume_injective [NeZero (2 : K)] {l : List V} (hl : l.Pairwise
   have hωOdd : ω ∈ evenOdd Q 1 := prod_map_ι_mem_evenOdd_one_of_odd_length hlen
   have hω : ω ≠ 0 := by
     intro hzero
-    apply volume_sq_coeff_ne_zero hQl
+    apply neg_one_pow_choose_two_mul_prod_map_ne_zero hQl
     apply algebraMap_injective Q
     simpa [ω, hzero] using (prod_map_ι_sq_scalar (Q := Q) hl).symm
   intro p q hpq
@@ -186,7 +150,8 @@ theorem mem_center_iff_exists_eq_add_smul_volume [NeZero (2 : K)] {l : List V}
     x ∈ Subalgebra.center K (CliffordAlgebra Q) ↔
       ∃ a b : K, x = algebraMap K (CliffordAlgebra Q) a + b • (l.map (ι Q)).prod := by
   let _ : Invertible (2 : K) := invertibleOfNonzero (NeZero.ne (2 : K))
-  obtain ⟨hQ, hlenV⟩ := nondegenerate_and_length_eq_finrank hl hspan hQl
+  obtain ⟨hQ, hlenV⟩ :=
+    QuadraticMap.nondegenerate_and_length_eq_finrank_of_pairwise_isOrtho hl hspan hQl
   have _ : FiniteDimensional K V := .of_finrank_pos (hlenV ▸ hlen.pos)
   have hV : Odd (finrank K V) := hlenV ▸ hlen
   let ω : CliffordAlgebra Q := (l.map (ι Q)).prod
@@ -195,7 +160,7 @@ theorem mem_center_iff_exists_eq_add_smul_volume [NeZero (2 : K)] {l : List V}
   have hωCenter : ω ∈ Subalgebra.center K (CliffordAlgebra Q) :=
     prod_map_ι_mem_center_of_odd_length hl hlen hspan
   have hωsq : ω * ω = algebraMap K (CliffordAlgebra Q) c := prod_map_ι_sq_scalar hl
-  have hc : c ≠ 0 := volume_sq_coeff_ne_zero hQl
+  have hc : c ≠ 0 := neg_one_pow_choose_two_mul_prod_map_ne_zero hQl
   constructor
   · intro hx
     obtain ⟨e, he, o, ho, heo, heCenter, hoCenter⟩ := center_homogeneous_components hx
