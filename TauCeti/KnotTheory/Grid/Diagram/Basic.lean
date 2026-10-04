@@ -977,12 +977,6 @@ theorem mem_XSet_swapColumns (a b : Fin n) (p : Fin n × Fin n) :
     p ∈ (G.swapColumns a b).XSet ↔ (Equiv.swap a b p.1, p.2) ∈ G.XSet := by
   simp [swapColumns]
 
-/-- Swapping columns back transports the swapped diagram's X-markings to the original set. -/
-theorem XSet_eq_map_swapColumns (a b : Fin n) :
-    G.XSet = (G.swapColumns a b).XSet.map
-      ((Equiv.swap a b).prodCongr (Equiv.refl (Fin n))).toEmbedding := by
-  simpa only [XSet, swapColumns_X] using G.X.pointSet_eq_map_swapColumns a b
-
 /-- A set of squares swapped back avoids the original X-markings exactly when the set
 avoids the swapped diagram's X-markings. -/
 theorem disjoint_map_swapColumns_XSet_iff (a b : Fin n) (S : Finset (Fin n × Fin n)) :
