@@ -226,8 +226,10 @@ scalar extension, over every commutative `𝔽₃`-algebra. -/
 theorem baseChangeDefiningIdeal_eq_generatedDefiningIdeal :
     baseChangeDefiningIdeal k = generatedDefiningIdeal k := by
   simpa only [baseChangeDefiningIdeal_def, definingIdeal_def, generatedDefiningIdeal_def,
+    CommHopfAlgCat.baseChangeHopfIdeal_commonKernelHopfIdeal,
     ← baseChangeGenerator_def] using
-    CommHopfAlgCat.comapOfSurjective_baseChangeHopfIdeal_commonKernelHopfIdeal generator
+    CommHopfAlgCat.comapOfSurjective_commonKernelHopfIdeal
+      (fun i ↦ CommHopfAlgCat.baseChangeMap (K := k) (generator i))
       (GeneralLinear.coordinateHopfAlgebraBaseChangeIso (ZMod 3) k 7).inv
       (ConcreteCategory.bijective_of_isIso
         (GeneralLinear.coordinateHopfAlgebraBaseChangeIso (ZMod 3) k 7).inv).2
@@ -241,8 +243,9 @@ noncomputable def coordinateHopfAlgebraGeneratedIso :
       (GeneralLinear.coordinateHopfAlgebraBaseChangeIso (ZMod 3) k 7)
       (by
         simpa only [generatedDefiningIdeal_def,
-          ← baseChangeGenerator_def] using
-          CommHopfAlgCat.map_baseChangeHopfIdeal_commonKernelHopfIdeal generator
+          ← baseChangeGenerator_def, CommHopfAlgCat.baseChangeHopfIdeal_commonKernelHopfIdeal] using
+          CommHopfAlgCat.map_commonKernelHopfIdeal
+            (fun i ↦ CommHopfAlgCat.baseChangeMap (K := k) (generator i))
             (GeneralLinear.coordinateHopfAlgebraBaseChangeIso (ZMod 3) k 7)) ≪≫
     eqToIso (generatedCoordinateHopfAlgebra_def k).symm
 
