@@ -42,6 +42,8 @@ centre gives the `Γ.withCenter` readings.
   `K` has finite index relative to `f(H)`.
 * `Subgroup.finiteIndex_of_map_eq`: the image of a finite-index subgroup under a surjective
   homomorphism has finite index.
+* `TauCeti.Subgroup.relIndex_map_range`: the relative index of `f(H)` in `f(G)` is the index
+  of `H ⊔ ker f`, for any group homomorphism `f`.
 * `MonoidHom.finiteIndex_range_comp`: finite index of ranges is preserved by composition
   with a homomorphism of finite-index range.
 * `MonoidHom.mk_mul_out_bijective`: right cosets of a composite range are represented by
@@ -345,6 +347,20 @@ theorem index_eq_two_mul_index_withCenter (ha : a ∈ Subgroup.center G) (haΓ :
 end Subgroup
 
 namespace TauCeti
+
+namespace Subgroup
+
+/-- The relative index of the image of a subgroup in the range of a homomorphism is the index
+of the subgroup enlarged by the kernel. -/
+@[to_additive TauCeti.AddSubgroup.relIndex_map_range
+  /-- The relative index of the image of an additive subgroup in the range of a
+homomorphism is the index of the subgroup enlarged by the kernel. -/]
+theorem relIndex_map_range {G G' : Type*} [Group G] [Group G']
+    (f : G →* G') (H : Subgroup G) :
+    (H.map f).relIndex f.range = (H ⊔ f.ker).index := by
+  rw [← Subgroup.map_top f, Subgroup.relIndex_map_map, top_sup_eq, Subgroup.relIndex_top_right]
+
+end Subgroup
 
 /-- **Cancel a known nonzero subgroup order from the order-index formula.** If `H` has order `c`
 and its ambient group has order `c * d`, with `c > 0`, then `H` has index `d`. -/

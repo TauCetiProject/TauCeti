@@ -9,6 +9,7 @@ public import Mathlib.GroupTheory.IndexNSmul
 
 import Mathlib.GroupTheory.FiniteAbelian.Basic
 import Mathlib.LinearAlgebra.Dimension.Constructions
+import TauCeti.GroupTheory.Index.Basic
 
 /-!
 # The index of `n • G` in a finitely generated commutative group
@@ -91,18 +92,15 @@ variable {G : Type*} [CommGroup G]
 A step of `index_range_pow_mul_card_ker`. -/
 -- Statement adapted from the private `relIndex_range_comp_subtype` in Michael Stoll's
 -- `EllipticCurves` (`EllipticCurves/Mathlib/SelmerGroup.lean`, pin `66889eada51a`); the proof
--- here is Mathlib's `Subgroup.relIndex_map_map` rather than the source's own surjection
+-- here uses `TauCeti.Subgroup.relIndex_map_range` rather than the source's own surjection
 -- `G → nG ⧸ nU` and quotient-isomorphism argument.
 @[to_additive]
 private lemma relIndex_range_comp_subtype (U : Subgroup G) (n : ℕ) :
     (((powMonoidHom (α := G) n).comp U.subtype).range).relIndex
         (powMonoidHom (α := G) n).range =
       ((powMonoidHom (α := G) n).ker ⊔ U).index := by
-  set φG := powMonoidHom (α := G) n
-  -- `Uⁿ` is `φG(U)` and `Gⁿ` is `φG(⊤)`, so `relIndex_map_map` applies; `⊤ ⊔ ker = ⊤`
-  -- turns the resulting relative index into a plain index.
-  have hU : (φG.comp U.subtype).range = U.map φG := by ext x; simp
-  rw [hU, MonoidHom.range_eq_map φG, relIndex_map_map, top_sup_eq, relIndex_top_right, sup_comm]
+  rw [MonoidHom.range_comp, Subgroup.range_subtype, TauCeti.Subgroup.relIndex_map_range,
+    sup_comm]
 
 /-- The second isomorphism theorem applied to `G[n]` and `U`: `(U : G[n] ⊔ U) * #U[n] = #G[n]`.
 A step of `index_range_pow_mul_card_ker`. -/

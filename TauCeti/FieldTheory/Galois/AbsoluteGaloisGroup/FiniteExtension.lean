@@ -74,6 +74,10 @@ isomorphism `G_K ⧸ Gal(Kˢ/σ(L)) ≃* Gal(L/K)`. This part uses normality but
   (`TauCeti.finiteIndex_fixingSubgroup_fieldRange`, `TauCeti.finiteIndex_galoisSubgroup`).
 * `TauCeti.galoisSubgroupEquiv_apply_separableClosureRingEquiv`: the isomorphism intertwines the
   actions of `G_L` on `Lˢ` and of `G_K` on `Kˢ` through `separableClosureRingEquiv K L σ`.
+* `TauCeti.range_absoluteGaloisGroupExtend`: the image in Mathlib's absolute Galois group is
+  `galoisSubgroup K L σ` transported to the algebraic-closure model.
+* `TauCeti.mem_range_absoluteGaloisGroupExtend_iff`: membership in that image means fixing `σ(L)`.
+* `TauCeti.index_range_absoluteGaloisGroupExtend`: that image has index `[L : K]`.
 * `TauCeti.absoluteGaloisGroupExtend_apply_separableClosureRingEquiv`: the embedding of Mathlib's
   absolute Galois groups intertwines the actions on the identified separable closures.
 * `TauCeti.quotientFixingSubgroupFieldRangeEquiv_mk`: the isomorphism sends the class of `g`
@@ -222,6 +226,15 @@ theorem range_absoluteGaloisGroupExtend :
         (absoluteGaloisGroupRestrictEquiv K).symm.toMulEquiv.toMonoidHom := by
   simp [absoluteGaloisGroupExtend, MonoidHom.range_comp, Subgroup.map_top,
     Subgroup.range_subtype]
+
+/-- An automorphism in Mathlib's `G_K` lies in the image of `G_L` exactly when its restriction
+to the separable closure fixes `σ x` for every `x : L`. -/
+@[simp]
+theorem mem_range_absoluteGaloisGroupExtend_iff {g : Field.absoluteGaloisGroup K} :
+    g ∈ (absoluteGaloisGroupExtend K L σ).range ↔
+      ∀ x : L, absoluteGaloisGroupRestrictEquiv K g (σ x) = σ x := by
+  rw [range_absoluteGaloisGroupExtend, Subgroup.mem_map_equiv]
+  exact mem_galoisSubgroup_iff K L σ
 
 /-- The image of the embedding `G_L → G_K` has index `[L : K]`. -/
 theorem index_range_absoluteGaloisGroupExtend :

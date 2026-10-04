@@ -8,6 +8,7 @@ module
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Cyclotomic.Character
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.FiniteExtension
 public import TauCeti.NumberTheory.Cyclotomic.CyclotomicCharacter
+import TauCeti.GroupTheory.Index.Basic
 import TauCeti.RingTheory.RootsOfUnity.AlgebraicallyClosed
 
 /-!
@@ -35,6 +36,9 @@ naturality of the cyclotomic character, `TauCeti.cyclotomicCharacter_eq_of_injec
 hypothesis on the characteristic is needed: when `p` is the characteristic, all characters
 involved are trivial.
 
+The image of `G_L` is contained in that of `G_K`, with relative index dividing `[L : K]`.
+This comparison needs no valuation or topology on `L`.
+
 ## Main results
 
 * `TauCeti.cyclotomicCharacter_absoluteGaloisGroupRestrictEquiv`: the cyclotomic character of
@@ -42,6 +46,12 @@ involved are trivial.
 * `TauCeti.localCyclotomicCharacter_absoluteGaloisGroupExtend`,
   `TauCeti.localCyclotomicCharacter_comp_absoluteGaloisGroupExtend`: the cyclotomic character of
   `G_L` is that of `G_K` read through `absoluteGaloisGroupExtend K L σ`.
+* `TauCeti.range_localCyclotomicCharacter_eq_map`: the image over `L` is the base character's
+  image of the embedded absolute Galois subgroup.
+* `TauCeti.range_localCyclotomicCharacter_le_range`: the image over `L` is contained in the
+  image over `K`.
+* `TauCeti.relIndex_range_localCyclotomicCharacter_dvd_finrank`: the relative index of these
+  images divides `[L : K]`.
 -/
 
 public section
@@ -88,5 +98,29 @@ theorem localCyclotomicCharacter_comp_absoluteGaloisGroupExtend :
     (localCyclotomicCharacter p K).comp (absoluteGaloisGroupExtend K L σ) =
       localCyclotomicCharacter p L :=
   MonoidHom.ext (localCyclotomicCharacter_absoluteGaloisGroupExtend p K L σ)
+
+include σ
+
+/-- The cyclotomic image of a finite extension is the image of its absolute Galois subgroup
+under the base field's cyclotomic character. -/
+theorem range_localCyclotomicCharacter_eq_map :
+    (localCyclotomicCharacter p L).range =
+      (absoluteGaloisGroupExtend K L σ).range.map (localCyclotomicCharacter p K) := by
+  rw [MonoidHom.map_range, localCyclotomicCharacter_comp_absoluteGaloisGroupExtend]
+
+/-- The cyclotomic image of a finite extension is contained in that of the base field. -/
+theorem range_localCyclotomicCharacter_le_range :
+    (localCyclotomicCharacter p L).range ≤ (localCyclotomicCharacter p K).range := by
+  rw [range_localCyclotomicCharacter_eq_map p K L σ]
+  exact Subgroup.map_le_range _ _
+
+/-- The relative index of the cyclotomic image of a finite extension in that of its base field
+divides the extension degree. This also applies when the base character is not surjective. -/
+theorem relIndex_range_localCyclotomicCharacter_dvd_finrank :
+    (localCyclotomicCharacter p L).range.relIndex (localCyclotomicCharacter p K).range ∣
+      Module.finrank K L := by
+  rw [range_localCyclotomicCharacter_eq_map p K L σ, Subgroup.relIndex_map_range,
+    ← index_range_absoluteGaloisGroupExtend K L σ]
+  exact Subgroup.index_dvd_of_le le_sup_left
 
 end TauCeti

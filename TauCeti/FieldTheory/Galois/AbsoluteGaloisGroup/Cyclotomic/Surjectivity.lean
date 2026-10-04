@@ -12,6 +12,7 @@ public import TauCeti.NumberTheory.Padics.RingHoms
 
 import Mathlib.NumberTheory.Cyclotomic.Gal
 import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
+import TauCeti.NumberTheory.Cyclotomic.Irreducible
 import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 
 /-!
@@ -19,8 +20,18 @@ import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 
 This file gives a criterion for the local `p`-adic cyclotomic character to be surjective: every
 `p`-power cyclotomic polynomial must be irreducible over the base field. It is intended for local
-Galois-theory applications where those finite-layer irreducibility results are available; see
-Serre, *Local Fields*, Chapter IV, §4.
+Galois-theory applications where those finite-layer irreducibility results are available.
+Over `ℚ_p`, irreducibility gives the full image `ℤ_pˣ`.
+
+## Main results
+
+* `TauCeti.localCyclotomicCharacter_surjective_of_irreducible`: the irreducibility criterion.
+* `TauCeti.range_localCyclotomicCharacter_ratPadic_eq_top`: the image over `ℚ_p` is all of `ℤ_pˣ`.
+
+## References
+
+* J.-P. Serre, *Local Fields*, Chapter IV, §4, for the cyclotomic extensions of `ℚ_p` and
+  their Galois groups.
 -/
 
 public section
@@ -106,5 +117,13 @@ theorem localCyclotomicCharacter_surjective_of_irreducible
     t htmono htnonempty (htclosed 0).isCompact htclosed
   refine ⟨σ, Units.ext (PadicInt.ext_of_toZModPow.mp fun n ↦ ?_)⟩
   exact Set.mem_iInter.mp hσ n
+
+/-- The cyclotomic image of `G_{ℚ_p}` is all of `ℤ_pˣ`. -/
+@[simp]
+theorem range_localCyclotomicCharacter_ratPadic_eq_top (p : ℕ) [Fact p.Prime] :
+    (localCyclotomicCharacter p ℚ_[p]).range = ⊤ := by
+  rw [MonoidHom.range_eq_top]
+  exact localCyclotomicCharacter_surjective_of_irreducible
+    (irreducible_cyclotomic_prime_pow_ratPadic p)
 
 end TauCeti
