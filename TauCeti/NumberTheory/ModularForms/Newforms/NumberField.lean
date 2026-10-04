@@ -9,7 +9,7 @@ public import Mathlib.NumberTheory.NumberField.Basic
 public import TauCeti.NumberTheory.ModularForms.Newforms.Fields
 import TauCeti.LinearAlgebra.End.Adjoin
 import TauCeti.LinearAlgebra.Eigenspace.JointEigenvector.Basic
-import TauCeti.NumberTheory.DirichletCharacter.Basic
+import TauCeti.NumberTheory.MulChar.Basic
 public import TauCeti.NumberTheory.ModularForms.HeckeSlash.Finite
 import TauCeti.NumberTheory.ModularForms.Newforms.FullEigenform
 import TauCeti.RingTheory.RootsOfUnity.Basic

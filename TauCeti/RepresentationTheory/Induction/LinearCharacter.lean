@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Induction.Character
-public import TauCeti.RepresentationTheory.LinearCharacter
+public import TauCeti.RepresentationTheory.LinearCharacter.Basic
 
 /-!
 # Inducing a linear character

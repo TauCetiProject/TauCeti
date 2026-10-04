@@ -9,7 +9,7 @@ public import TauCeti.Analysis.PDE.Regularity.LevelSetDecay
 public import TauCeti.Analysis.PDE.Regularity.LocalBoundedness
 import Mathlib.Analysis.SpecialFunctions.Log.Base
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
-import TauCeti.MeasureTheory.Measure.AddHaar
+import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
 # Oscillation decay for weak solutions (De Giorgi)

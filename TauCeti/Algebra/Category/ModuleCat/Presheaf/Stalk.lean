@@ -68,6 +68,47 @@ theorem stalkLift_germ
     M.stalkLift x f hf hs (TopCat.Presheaf.germ M.presheaf U x hx m) = f U hx m :=
   TopCat.Presheaf.stalkLiftAddHom_germ M.presheaf x f hf U hx m
 
+section CommRing
+
+variable {S : X.Presheaf CommRingCat.{u}}
+  (N : PresheafOfModules.{u} (S ⋙ forget₂ CommRingCat RingCat.{u}))
+  [Module (S.stalk x) T]
+
+/-- Compatible section maps linear for the original commutative-ring germs induce a linear
+map from the module stalk. This retains the commutative-ring stalk carrier, which differs
+from the stalk of the presheaf obtained by forgetting commutativity. -/
+def stalkLiftCommRing
+    (f : ∀ (U : Opens X), x ∈ U → N.obj (op U) →+ T)
+    (hf : ∀ {U V : Opens X} (i : U ⟶ V) (hx : x ∈ U) (m : N.obj (op V)),
+      f U hx (N.map i.op m) = f V (i.le hx) m)
+    (hs : ∀ (U : Opens X) (hx : x ∈ U) (r : S.obj (op U)) (m : N.obj (op U)),
+      f U hx (r • m) = S.germ U x hx r • f U hx m) :
+    ↑(TopCat.Presheaf.stalk N.presheaf x) →ₗ[S.stalk x] T where
+  toFun := TopCat.Presheaf.stalkLiftAddHom N.presheaf x f hf
+  map_add' := map_add _
+  map_smul' r m := by
+    obtain ⟨U, hxU, r, rfl⟩ := S.exists_germ_eq r
+    obtain ⟨V, hVU, hxV, m, rfl⟩ := TopCat.Presheaf.exists_le_germ_eq N.presheaf m hxU
+    rw [← S.germ_res_apply (homOfLE hVU) x hxV r,
+      ← N.germ_smul (R := S) x V hxV (S.map (homOfLE hVU).op r) m]
+    exact (TopCat.Presheaf.stalkLiftAddHom_germ N.presheaf x f hf V hxV _).trans
+      ((hs V hxV (S.map (homOfLE hVU).op r) m).trans
+        (congrArg (fun t : T ↦ S.germ V x hxV (S.map (homOfLE hVU).op r) • t)
+          (TopCat.Presheaf.stalkLiftAddHom_germ N.presheaf x f hf V hxV m).symm))
+
+/-- The commutative-ring linear stalk lift takes a germ to its prescribed value. -/
+theorem stalkLiftCommRing_germ
+    (f : ∀ (U : Opens X), x ∈ U → N.obj (op U) →+ T)
+    (hf : ∀ {U V : Opens X} (i : U ⟶ V) (hx : x ∈ U) (m : N.obj (op V)),
+      f U hx (N.map i.op m) = f V (i.le hx) m)
+    (hs : ∀ (U : Opens X) (hx : x ∈ U) (r : S.obj (op U)) (m : N.obj (op U)),
+      f U hx (r • m) = S.germ U x hx r • f U hx m)
+    (U : Opens X) (hx : x ∈ U) (m : N.obj (op U)) :
+    N.stalkLiftCommRing x f hf hs (TopCat.Presheaf.germ N.presheaf U x hx m) = f U hx m :=
+  TopCat.Presheaf.stalkLiftAddHom_germ N.presheaf x f hf U hx m
+
+end CommRing
+
 variable {N : PresheafOfModules.{u} R}
 
 variable (U : Opens X)

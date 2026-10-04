@@ -40,6 +40,10 @@ while its regularity and involutivity are predicates on that family.
   fibres.
 * `TauCeti.isContMDiffDistribution_top` and `TauCeti.isInvolutiveDistribution_top`: the whole
   tangent bundle is a `C^n` involutive distribution.
+* `TauCeti.mlieBracket_sum_smul_mem`: if vector fields differentiable at `x` have values and
+  pairwise Lie brackets at `x` in a subspace `D` of the tangent space there, then so does the Lie
+  bracket of any two of their combinations with coefficients differentiable at `x`. This is the
+  computation behind the frame criterion for involutivity.
 * `TauCeti.isContMDiffDistribution_const` and `TauCeti.isInvolutiveDistribution_const`: a fixed
   finite-dimensional (respectively closed) subspace `S` of a normed space `E`, taken at every
   point, is a `C^n` (respectively involutive) distribution on `E`.
@@ -208,6 +212,13 @@ def IsInvolutiveDistribution (D : Π x : M, Submodule 𝕜 (TangentSpace I x)) :
 
 variable {D : Π x : M, Submodule 𝕜 (TangentSpace I x)}
 
+/-- The defining property of an involutive distribution. -/
+theorem isInvolutiveDistribution_iff : IsInvolutiveDistribution I D ↔
+    ∀ ⦃U : Set M⦄, IsOpen U → ∀ ⦃V W : Π x : M, TangentSpace I x⦄,
+      MDiff[U] (T% V) → MDiff[U] (T% W) → (∀ x ∈ U, V x ∈ D x) → (∀ x ∈ U, W x ∈ D x) →
+        ∀ x ∈ U, mlieBracket I V W x ∈ D x :=
+  Iff.rfl
+
 /-- The Lie bracket of two vector fields that are differentiable and tangent to an involutive
 distribution on an open set is tangent to it there. -/
 theorem IsInvolutiveDistribution.mlieBracket_mem (hD : IsInvolutiveDistribution I D) {U : Set M}
@@ -232,6 +243,62 @@ theorem isInvolutiveDistribution_const {S : Submodule 𝕜 E} (hS : IsClosed (S 
   rw [mlieBracket_eq_lieBracket]
   -- `lieBracket 𝕜 V W x` is by definition `fderiv 𝕜 W x (V x) - fderiv 𝕜 V x (W x)`.
   exact S.sub_mem (hWS _) (hVS _)
+
+section Combination
+
+variable {X : ι → Π x : M, TangentSpace I x} {x : M}
+
+/-- A finite combination of vector fields differentiable at `x`, with coefficients differentiable
+at `x`, is differentiable at `x`. -/
+private theorem mdifferentiableAt_sum_smul {s : Finset ι} {f : ι → M → 𝕜}
+    (hf : ∀ i ∈ s, MDiffAt (f i) x) (hX : ∀ i ∈ s, MDiffAt (T% (X i)) x) :
+    MDiffAt (T% (∑ i ∈ s, f i • X i)) x := by
+  rw [Finset.sum_fn]
+  exact MDifferentiableAt.sum_section fun i hi ↦ (hf i hi).smul_section (hX i hi)
+
+/-- Let the vector fields `X i` be differentiable at `x`, with values at `x` and pairwise Lie
+brackets at `x` in a subspace `D` of the tangent space there. Then the Lie bracket at `x` of two
+combinations `∑ i, f i • X i` and `∑ j, g j • X j` whose coefficients are differentiable at `x`
+also lies in `D`.
+
+This is the pointwise computation behind the classical criterion for involutivity: a distribution
+whose local frames are closed under the Lie bracket is involutive. -/
+theorem mlieBracket_sum_smul_mem [IsManifold I 2 M] [CompleteSpace E]
+    {D : Submodule 𝕜 (TangentSpace I x)} {s : Finset ι}
+    (hX : ∀ i ∈ s, MDiffAt (T% (X i)) x) (hXD : ∀ i ∈ s, X i x ∈ D)
+    (hXX : ∀ i ∈ s, ∀ j ∈ s, mlieBracket I (X i) (X j) x ∈ D) {f g : ι → M → 𝕜}
+    (hf : ∀ i ∈ s, MDiffAt (f i) x) (hg : ∀ i ∈ s, MDiffAt (g i) x) :
+    mlieBracket I (∑ i ∈ s, f i • X i) (∑ j ∈ s, g j • X j) x ∈ D := by
+  classical
+  -- Expand the right-hand combination against a vector field `Y` whose brackets with the frame
+  -- lie in `D`.
+  have right {Y : Π x : M, TangentSpace I x} (hY : ∀ j ∈ s, mlieBracket I Y (X j) x ∈ D) :
+      ∀ t ⊆ s, mlieBracket I Y (∑ j ∈ t, g j • X j) x ∈ D := by
+    intro t hts
+    induction t using Finset.induction_on with
+    | empty => simp [mlieBracket_zero_right]
+    | insert a t hat ih =>
+      obtain ⟨ha, ht⟩ := Finset.insert_subset_iff.mp hts
+      rw [Finset.sum_insert hat, mlieBracket_add_right ((hg a ha).smul_section (hX a ha))
+        (mdifferentiableAt_sum_smul (fun i hi ↦ hg i (ht hi)) fun i hi ↦ hX i (ht hi)),
+        mlieBracket_smul_right (hg a ha) (hX a ha)]
+      exact D.add_mem (D.add_mem (D.smul_mem _ (hXD a ha)) (D.smul_mem _ (hY a ha))) (ih ht)
+  -- Then expand the left-hand combination, reducing to brackets of frame fields with the
+  -- right-hand combination.
+  have left : ∀ t ⊆ s, mlieBracket I (∑ i ∈ t, f i • X i) (∑ j ∈ s, g j • X j) x ∈ D := by
+    intro t hts
+    induction t using Finset.induction_on with
+    | empty => simp [mlieBracket_zero_left]
+    | insert a t hat ih =>
+      obtain ⟨ha, ht⟩ := Finset.insert_subset_iff.mp hts
+      rw [Finset.sum_insert hat, mlieBracket_add_left ((hf a ha).smul_section (hX a ha))
+        (mdifferentiableAt_sum_smul (fun i hi ↦ hf i (ht hi)) fun i hi ↦ hX i (ht hi)),
+        mlieBracket_smul_left (hf a ha) (hX a ha)]
+      exact D.add_mem (D.add_mem (D.smul_mem _ (hXD a ha))
+        (D.smul_mem _ (right (hXX a ha) s subset_rfl))) (ih ht)
+  exact left s subset_rfl
+
+end Combination
 
 end Involutive
 

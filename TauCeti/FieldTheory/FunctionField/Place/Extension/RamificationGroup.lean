@@ -153,7 +153,7 @@ theorem ramificationGroup_zero : ramificationGroup F P 0 = P.integers.inertiaSub
       mem_maximalIdeal_iff_valuation_lt_one, ← mem_filtration_one_iff]
     have hsub : ((g • x - x : P.integers) : F') =
         ((g • x : P.integers) : F') - ((x : P.integers) : F') := rfl
-    rw [hsub, coe_decompositionSubgroup_smul]
+    rw [hsub, ValuationSubring.coe_decompositionSubgroup_smul]
     norm_num
   exact ⟨fun h x ↦ (key x).mpr (h (x : F') x.2), fun h x hx ↦ (key ⟨x, hx⟩).mp (h ⟨x, hx⟩)⟩
 
@@ -199,16 +199,8 @@ theorem iInf_ramificationGroup_eq_bot : ⨅ i, ramificationGroup F P i = ⊥ := 
     have := (P.mem_filtration_iff_le_ord h0).mp hmem
     omega
   rw [Subgroup.mem_bot]
-  refine Subtype.ext (AlgEquiv.ext fun y ↦ ?_)
-  -- Unfold the nested subgroup and equivalence coercions to state pointwise equality in `F'`.
-  change (g : F' ≃ₐ[F] F') y = y
-  rcases eq_or_ne y 0 with rfl | hy0
-  · simp
-  · rcases ValuationSubring.mem_or_inv_mem P.integers y with hy | hy
-    · exact hfix y hy
-    · have h := hfix _ hy
-      rw [map_inv₀] at h
-      exact inv_injective h
+  exact ValuationSubring.decompositionSubgroup.ext P.integers fun x ↦
+    hfix x x.2
 
 /-- **The ramification groups of a place whose inertia group is finite are trivial from some index
 on** (Stichtenoth, Proposition 3.8.5). -/

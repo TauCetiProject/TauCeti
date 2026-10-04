@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.Invariant
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Corestriction.Conjugation
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Corestriction.Transitivity
 
 /-!
@@ -33,7 +34,9 @@ are required to have:
 * restriction to an open subgroup `V ≤ U` multiplies the invariant by the index `[U : V]`
   (`subgroupInvMap_explicitMap2_subgroupInclusion`, and `subgroupInvMap_explicitRes2` for
   `U = G_K`);
-* corestriction from `V` to `U` preserves the invariant (`subgroupInvMap_explicitCor2Le`).
+* corestriction from `V` to `U` preserves the invariant (`subgroupInvMap_explicitCor2Le`);
+* conjugation by `g : G_K`, from `U` to `gUg⁻¹`, preserves the invariant
+  (`subgroupInvMap_explicitMap2_of_conj`).
 
 ## Main definitions
 
@@ -49,6 +52,8 @@ are required to have:
 * `TauCeti.ClassFieldTheory.subgroupInvMap_explicitMap2_subgroupInclusion`: restriction multiplies
   the invariant by the relative index.
 * `TauCeti.ClassFieldTheory.subgroupInvMap_explicitCor2Le`: corestriction preserves the invariant.
+* `TauCeti.ClassFieldTheory.subgroupInvMap_explicitMap2_of_conj`: conjugation preserves the
+  invariant.
 
 ## Implementation notes
 
@@ -193,5 +198,24 @@ theorem subgroupInvMap_explicitMap2_subgroupInclusion (x : H2 U (UnitsCoeff K)) 
     explicitCor2Le_explicitMap2_subgroupInclusion, map_nsmul]
 
 end Relative
+
+/-- **Conjugation preserves the invariant**: for `g : G_K`, an open subgroup `U` and its conjugate
+`V = gUg⁻¹`, the class `(g)_* x ∈ H²(V, (Kˢ)ˣ)` of the compatible pair of `κ : V → U`,
+`v ↦ g⁻¹ v g`, and the action `f` of `g` on `(Kˢ)ˣ` has the invariant of `x`, because
+corestriction to `G_K` does not see the conjugation
+(`TauCeti.ContCohomology.explicitCor2_explicitMap2_of_conj`). -/
+theorem subgroupInvMap_explicitMap2_of_conj (U V : Subgroup (AbsoluteGaloisGroup K))
+    [U.FiniteIndex] [V.FiniteIndex] (hU : IsOpen (U : Set (AbsoluteGaloisGroup K)))
+    (hV : IsOpen (V : Set (AbsoluteGaloisGroup K))) (g : AbsoluteGaloisGroup K) (κ : V →ₜ* U)
+    (hκ : ∀ v : V, (κ v : AbsoluteGaloisGroup K) = g⁻¹ * v * g)
+    (f : UnitsCoeff K →+ UnitsCoeff K) (hf : ∀ m : UnitsCoeff K, f m = g • m)
+    (hVU : V = U.map (MulAut.conj g).toMonoidHom) (x : H2 U (UnitsCoeff K)) :
+    subgroupInvMap K V hV
+        (explicitMap2 U (UnitsCoeff K) V (UnitsCoeff K) κ f continuous_of_discreteTopology
+          (fun v m => by
+            simp only [hf, Subgroup.smul_def, hκ, smul_smul, mul_assoc, mul_inv_cancel_left]) x) =
+      subgroupInvMap K U hU x := by
+  rw [subgroupInvMap_apply, subgroupInvMap_apply,
+    explicitCor2_explicitMap2_of_conj U V (UnitsCoeff K) g κ hκ f hf hVU hU hV]
 
 end TauCeti.ClassFieldTheory

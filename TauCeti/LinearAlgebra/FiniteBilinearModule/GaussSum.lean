@@ -350,12 +350,6 @@ theorem isLagrangian_zmultiples_and_not_isMetabolic_zmodStandard_two_prod :
 
 /-! ## The eighth power of the Gauss sum -/
 
-/-- `2#A` kills every value of the quadratic map, because `2 q(x) = b(x, x)` and `#A` kills `x`. -/
-private theorem two_mul_natCard_nsmul_quadratic (x : A) :
-    (2 * Nat.card A) • A.quadratic x = 0 := by
-  rw [mul_nsmul, ← QuadraticMap.polar_self, polar_eq_pairing, ← map_nsmul, card_nsmul_eq_zero',
-    map_zero]
-
 /-- Multiplication by a quaternion `a + bi + cj + dk` of norm `2#A - 1` is a bijection of `A⁴`
 which negates `q(x₁) + ⋯ + q(x₄)`. Its composite with multiplication by the conjugate quaternion
 is multiplication by `2#A - 1`, which is `-1` on `A`. -/

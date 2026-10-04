@@ -23,10 +23,11 @@ zero-weight coordinate line is invariant, nor that the standard representation i
 These projections and the numbered root actions provide the invariant-subspace calculations
 needed to study simplicity and the unipotent radical.
 
-Here the coordinate algebra is the scalar extension of the prime-field carrier itself, not the
-possibly smaller subgroup generated after scalar extension. The carrier is not identified with
-the pinned simply connected group scheme of type `F₄`; transfer to that group requires such an
-identification.
+Here the coordinate algebra is the scalar extension of the prime-field carrier itself; it is also
+the subgroup generated after scalar extension, by
+`TauCeti.F4ShortRoot.PrimeField.baseChangeDefiningIdeal_eq_generatedDefiningIdeal`. The carrier
+is not identified with the pinned simply connected group scheme of type `F₄`; transfer to that
+group requires such an identification.
 
 ## References
 
@@ -52,11 +53,6 @@ universe u
 noncomputable section
 
 variable (k : Type u) [CommRing k] [Algebra (ZMod 2) k]
-
-/-- The coordinate Hopf algebra of the scalar extension of the short-root prime-field carrier. -/
-abbrev coordinateHopfAlgebra : CommHopfAlgCat k :=
-  CommHopfAlgCat.baseChange (K := k)
-    (CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra (ZMod 2) 26) definingIdeal)
 
 /-- The coordinate morphism of the carrier's inclusion in `GL₂₆` after scalar extension. -/
 def coordinateMap : GeneralLinear.coordinateHopfAlgebra k 26 ⟶ coordinateHopfAlgebra k :=

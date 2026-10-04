@@ -8,6 +8,7 @@ module
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.ConjugateSubgroups
 public import TauCeti.FieldTheory.GaloisCohomology.Restriction
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Corestriction.Conjugation
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Corestriction.IndexTwo.EvensConj
 
 /-!
 # Corestriction across a finite extension of fields
@@ -42,6 +43,9 @@ are attached to `L/K` alone.
   restriction is `y ↦ y + galoisConj y`.
 * `TauCeti.galoisConj_galoisRes`: on a restricted class, `galoisConj` is multiplication by
   `[L : K] - 1`.
+* `TauCeti.galoisConj_evensConj`: for a quadratic extension, `galoisConj` is the conjugation
+  `OpenSubgroup.evensConj` of the index-two subgroup `galoisSubgroup K L σ`, read through
+  `galoisF2Iso`.
 * `TauCeti.galoisCor_embedding_independent`, `TauCeti.galoisConj_embedding_independent`:
   corestriction and `galoisConj` do not depend on the embedding of `L` into `Kˢ`.
 
@@ -149,6 +153,18 @@ theorem galoisConj_galoisRes (n : ℕ)
   rw [galoisCor_galoisRes, map_nsmul, hd, zero_add, succ_nsmul'] at h
   rw [hd, zero_add, Nat.add_sub_cancel]
   exact (add_left_cancel h).symm
+
+/-- **For a quadratic extension, `galoisConj` is the index-two conjugation.** Read through the
+identification `galoisF2Iso` of `G_L` with the open subgroup `galoisSubgroup K L σ` of index two,
+`galoisConj` is the conjugation `OpenSubgroup.evensConj` of the nontrivial coset of that subgroup;
+this is what lets identities stated with `evensConj` be read on the `L/K` side. -/
+theorem galoisConj_evensConj (hL : Module.finrank K L = 2) (n : ℕ) :
+    galoisConj K L σ n =
+      (galoisF2Iso K L σ n).inv ≫
+        (galoisSubgroup K L σ).evensConj ((galoisSubgroup_index K L σ).trans hL) n ≫
+          (galoisF2Iso K L σ n).hom := by
+  rw [OpenSubgroup.evensConj_def, Preadditive.sub_comp, Preadditive.comp_sub, Category.id_comp,
+    Iso.inv_hom_id, galoisConj_def, galoisCor_def, galoisRes_def, Category.assoc, Category.assoc]
 
 /-! ### Independence of the embedding -/
 

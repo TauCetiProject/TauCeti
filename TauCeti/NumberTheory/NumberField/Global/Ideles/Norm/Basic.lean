@@ -9,7 +9,7 @@ public import Mathlib.Topology.Algebra.Group.Units
 public import TauCeti.NumberTheory.NumberField.Global.Adeles.Basic
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.Basic
 public import TauCeti.NumberTheory.NumberField.Global.Places.Basic
-public import TauCeti.NumberTheory.NumberField.Global.Places.Completion
+public import TauCeti.NumberTheory.NumberField.InfinitePlace.Completion.Basic
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.ClassGroup
 
 /-!
@@ -23,7 +23,7 @@ The **idele norm** is the product of the normalized local absolute values of the
 ‖x‖ = ∏_{w | ∞} |x_w|_w · ∏_{v < ∞} ‖x_v‖_v,
 ```
 where `|·|_w` is the absolute value at a real place and its square at a complex place
-(`infiniteCompletionNormalizedAbsValue`), and `‖·‖_v` is the norm of the `v`-adic completion, which
+(`completionNormalizedAbsValue`), and `‖·‖_v` is the norm of the `v`-adic completion, which
 sends a uniformizer to `(N v)⁻¹`.  Almost every finite factor is `1`, so the product is a finite
 one.  The idele norm is a group homomorphism to the positive reals, and the product formula says
 exactly that it is trivial on the principal ideles, which is what lets it descend to the idele
@@ -66,7 +66,7 @@ class group.
 public section
 noncomputable section
 
-open IsDedekindDomain NumberField
+open IsDedekindDomain NumberField NumberField.InfinitePlace
 open scoped NNReal
 
 variable {K : Type*} [Field K]
@@ -270,11 +270,11 @@ theorem hasFiniteMulSupport_norm_ideleFiniteCoord (x : IdeleGroup (𝓞 K) K) :
 /-- The product of the normalized local absolute values of the coordinates of an idele, as a real
 number; `coe_ideleNorm` states this formula for the bundled `ideleNorm`. -/
 private def ideleNormAux (x : IdeleGroup (𝓞 K) K) : ℝ :=
-  (∏ w, infiniteCompletionNormalizedAbsValue w (w.ideleInfiniteCoord x)) *
+  (∏ w, completionNormalizedAbsValue w (w.ideleInfiniteCoord x)) *
     ∏ᶠ v : HeightOneSpectrum (𝓞 K), ‖(v.ideleFiniteCoord x : v.adicCompletion K)‖
 
 private lemma ideleNormAux_nonneg (x : IdeleGroup (𝓞 K) K) : 0 ≤ ideleNormAux x :=
-  mul_nonneg (Finset.prod_nonneg fun w _ ↦ by simp [infiniteCompletionNormalizedAbsValue_apply])
+  mul_nonneg (Finset.prod_nonneg fun w _ ↦ by simp [completionNormalizedAbsValue_apply])
     (finprod_nonneg fun _ ↦ norm_nonneg _)
 
 private lemma ideleNormAux_mul (x y : IdeleGroup (𝓞 K) K) :
@@ -297,7 +297,7 @@ def ideleNorm : IdeleGroup (𝓞 K) K →* ℝ≥0ˣ :=
 /-- The idele norm is the product of the normalized local absolute values of the coordinates. -/
 theorem coe_ideleNorm (x : IdeleGroup (𝓞 K) K) :
     ((ideleNorm x : ℝ≥0) : ℝ) =
-      (∏ w, infiniteCompletionNormalizedAbsValue w (w.ideleInfiniteCoord x)) *
+      (∏ w, completionNormalizedAbsValue w (w.ideleInfiniteCoord x)) *
         ∏ᶠ v : HeightOneSpectrum (𝓞 K), ‖(v.ideleFiniteCoord x : v.adicCompletion K)‖ :=
   Real.coe_toNNReal _ (ideleNormAux_nonneg x)
 
@@ -316,7 +316,7 @@ theorem mixedEmbedding_norm_eq_ideleNorm {z : IdeleGroup (𝓞 K) K}
     InfiniteAdeleRing.mixedEmbedding_norm_ringEquiv_mixedSpace,
     InfiniteAdeleRing.norm_def]
   simp only [coe_ideleNorm, finprod_congr hfin, finprod_one, mul_one,
-    infiniteCompletionNormalizedAbsValue_apply, InfinitePlace.coe_ideleInfiniteCoord]
+    completionNormalizedAbsValue_apply, InfinitePlace.coe_ideleInfiniteCoord]
 
 /-- **The product formula on ideles**: the idele norm of a principal idele is `1`. -/
 @[simp]
@@ -335,7 +335,7 @@ theorem ideleNorm_unitEmbedding (x : Kˣ) : ideleNorm (IdeleGroup.unitEmbedding 
   rw [coe_ideleNorm, finprod_congr hfin, finprod_normalizedAbsValue_inl x.ne_zero]
   simp only [InfinitePlace.ideleInfiniteCoord_unitEmbedding, Units.coe_map,
     RingHom.toMonoidHom_eq_coe,
-    MonoidHom.coe_ofClass, infiniteCompletionNormalizedAbsValue_algebraMap,
+    MonoidHom.coe_ofClass, completionNormalizedAbsValue_algebraMap,
     InfinitePlace.prod_eq_abs_norm]
   have h0 : |Algebra.norm ℚ (x : K)| ≠ 0 := by simp [Algebra.norm_eq_zero_iff]
   push_cast
@@ -363,7 +363,7 @@ value of the `w`-coordinate. -/
 @[simp]
 theorem coe_ideleNorm_ofCompletion (w : InfinitePlace K) (u : w.Completionˣ) :
     ((ideleNorm (IdeleGroup.ofCompletion (𝓞 K) K w u) : ℝ≥0) : ℝ) =
-      infiniteCompletionNormalizedAbsValue w u := by
+      completionNormalizedAbsValue w u := by
   rw [coe_ideleNorm, Finset.prod_eq_single w (fun w' _ hw' ↦ by
     simp [w'.ideleInfiniteCoord_ofCompletion_of_ne hw']) (by simp)]
   simp
@@ -402,11 +402,11 @@ private lemma continuous_ideleNormAux : Continuous (ideleNormAux (K := K)) := by
   have hU : IsOpen U :=
     (hW.preimage Units.continuous_val).inter (hW.preimage Units.continuous_coe_inv)
   have hinf : Continuous fun x : IdeleGroup (𝓞 K) K ↦
-      ∏ w, infiniteCompletionNormalizedAbsValue w (w.ideleInfiniteCoord x) :=
-    continuous_finsetProd _ fun w _ ↦ (continuous_infiniteCompletionNormalizedAbsValue w).comp
+      ∏ w, completionNormalizedAbsValue w (w.ideleInfiniteCoord x) :=
+    continuous_finsetProd _ fun w _ ↦ (continuous_completionNormalizedAbsValue w).comp
       (((continuous_apply w).comp continuous_fst).comp Units.continuous_val)
   have hU_eq (u : IdeleGroup (𝓞 K) K) (hu : u ∈ U) :
-      ideleNormAux u = ∏ w, infiniteCompletionNormalizedAbsValue w (w.ideleInfiniteCoord u) := by
+      ideleNormAux u = ∏ w, completionNormalizedAbsValue w (w.ideleInfiniteCoord u) := by
     rw [ideleNormAux, finprod_congr (norm_ideleFiniteCoord_eq_one_of_forall_mem hu.1 hu.2),
       finprod_one, mul_one]
   refine continuous_iff_continuousAt.mpr fun x ↦ ?_
@@ -433,7 +433,7 @@ concentrated at a single infinite place. -/
 theorem ideleNorm_surjective : Function.Surjective (ideleNorm (K := K)) := by
   intro t
   obtain ⟨w⟩ := (inferInstance : Nonempty (InfinitePlace K))
-  obtain ⟨x, hx⟩ := exists_infiniteCompletionNormalizedAbsValue_eq w (t : ℝ≥0).coe_nonneg
+  obtain ⟨x, hx⟩ := exists_completionNormalizedAbsValue_eq w (t : ℝ≥0).coe_nonneg
   have hx0 : x ≠ 0 := by
     rintro rfl
     rw [map_zero] at hx

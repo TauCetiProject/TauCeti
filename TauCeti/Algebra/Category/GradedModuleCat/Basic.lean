@@ -242,6 +242,11 @@ abbrev shiftObj (n : ℤ) : GradedModuleCat.{v} 𝒜 where
     rw [InternalGrading.shift_piece] at hx ⊢
     simpa [add_assoc] using SetLike.GradedSMul.smul_mem (B := M.grading.piece) ha hx⟩
 
+/-- A shift of a graded module has the same underlying `k`-module, so it is finite whenever the
+module is. -/
+instance [Module.Finite k M] (n : ℤ) : Module.Finite k (M.shiftObj n) :=
+  inferInstanceAs (Module.Finite k M)
+
 theorem mem_shiftObj_piece_iff (n p : ℤ) (x : M) :
     x ∈ (M.shiftObj n).grading.piece p ↔ x ∈ M.grading.piece (p - n) := by
   simp [sub_eq_add_neg]
