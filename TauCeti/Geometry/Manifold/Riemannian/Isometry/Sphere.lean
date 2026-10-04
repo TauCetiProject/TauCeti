@@ -118,6 +118,17 @@ theorem unitSphereRiemannianIsometry_symm (e : E ≃ₗᵢ[ℝ] F) :
       unitSphereDiffeomorph_symm, coe_unitSphereDiffeomorph_apply,
       coe_unitSphereRiemannianIsometry_apply]
 
+/-- The composite of the isometries induced by `e` and `e'` is the isometry induced by
+`e.trans e'`. -/
+@[simp]
+theorem unitSphereRiemannianIsometry_trans {G : Type*} [NormedAddCommGroup G]
+    [InnerProductSpace ℝ G] {l : ℕ} [Fact (finrank ℝ G = l + 1)] (e : E ≃ₗᵢ[ℝ] F)
+    (e' : F ≃ₗᵢ[ℝ] G) :
+    (unitSphereRiemannianIsometry (n := n) (k := k) e).trans
+        (unitSphereRiemannianIsometry (k := l) e') =
+      unitSphereRiemannianIsometry (e.trans e') :=
+  TauCeti.RiemannianIsometry.ext fun x ↦ Subtype.ext (by simp)
+
 /-- The homomorphism from the linear isometry group `O(E)` to the isometry group of the round unit
 sphere of `E`, restricting a linear isometry to the sphere. -/
 def unitSphereIsomHom : (E ≃ₗᵢ[ℝ] E) →* TauCeti.Isom (𝓡 n) (sphere (0 : E) 1) where
