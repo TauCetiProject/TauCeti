@@ -253,10 +253,11 @@ corestriction from `U`. As in `TauCeti.ContinuousCohomology.map_comp_corestricti
 `g` on `M`, both given through their values. -/
 theorem explicitCor2_explicitMap2_of_conj (g : G) (κ : V →ₜ* U)
     (hκ : ∀ v : V, (κ v : G) = g⁻¹ * v * g) (f : M →+ M) (hf : ∀ m : M, f m = g • m)
-    (hfκ : ∀ (v : V) (m : M), f (κ v • m) = v • f m)
     (hVU : V = U.map (MulAut.conj g).toMonoidHom) (hU : IsOpen (U : Set G)) [U.FiniteIndex]
     (hV : IsOpen (V : Set G)) [V.FiniteIndex] (x : H2 U M) :
-    explicitCor2 G M V hV (explicitMap2 U M V M κ f continuous_of_discreteTopology hfκ x) =
+    explicitCor2 G M V hV (explicitMap2 U M V M κ f continuous_of_discreteTopology
+      (fun v m => by
+        simp only [hf, Subgroup.smul_def, hκ, smul_smul, mul_assoc, mul_inv_cancel_left]) x) =
       explicitCor2 G M U hU x := by
   have : LocallyCompactSpace U := (U.isClosed_of_isOpen hU).locallyCompactSpace
   have : LocallyCompactSpace V := (V.isClosed_of_isOpen hV).locallyCompactSpace
@@ -265,7 +266,7 @@ theorem explicitCor2_explicitMap2_of_conj (g : G) (κ : V →ₜ* U)
   refine (explicitH2AddEquivContinuousCohomology G M).injective ?_
   rw [← ContinuousCohomology.explicitH2AddEquivContinuousCohomology_corestriction,
     ← ContinuousCohomology.explicitH2AddEquivContinuousCohomology_corestriction,
-    ← explicitH2AddEquivContinuousCohomology_map U M V M κ f hfκ x, ← ConcreteCategory.comp_apply]
+    ← explicitH2AddEquivContinuousCohomology_map U M V M κ f _ x, ← ConcreteCategory.comp_apply]
   exact ConcreteCategory.congr_hom (ContinuousCohomology.map_comp_corestriction_of_conj U V M g κ hκ
     _ (fun m => (ofDiscreteModulePair_hom_apply _ _ _ m).trans (hf m)) hVU hU hV 2) _
 

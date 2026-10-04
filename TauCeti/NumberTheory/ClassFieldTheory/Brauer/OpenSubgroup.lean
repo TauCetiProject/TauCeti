@@ -209,12 +209,13 @@ theorem subgroupInvMap_explicitMap2_of_conj (U V : Subgroup (AbsoluteGaloisGroup
     (hV : IsOpen (V : Set (AbsoluteGaloisGroup K))) (g : AbsoluteGaloisGroup K) (κ : V →ₜ* U)
     (hκ : ∀ v : V, (κ v : AbsoluteGaloisGroup K) = g⁻¹ * v * g)
     (f : UnitsCoeff K →+ UnitsCoeff K) (hf : ∀ m : UnitsCoeff K, f m = g • m)
-    (hfκ : ∀ (v : V) (m : UnitsCoeff K), f (κ v • m) = v • f m)
     (hVU : V = U.map (MulAut.conj g).toMonoidHom) (x : H2 U (UnitsCoeff K)) :
     subgroupInvMap K V hV
-        (explicitMap2 U (UnitsCoeff K) V (UnitsCoeff K) κ f continuous_of_discreteTopology hfκ x) =
+        (explicitMap2 U (UnitsCoeff K) V (UnitsCoeff K) κ f continuous_of_discreteTopology
+          (fun v m => by
+            simp only [hf, Subgroup.smul_def, hκ, smul_smul, mul_assoc, mul_inv_cancel_left]) x) =
       subgroupInvMap K U hU x := by
   rw [subgroupInvMap_apply, subgroupInvMap_apply,
-    explicitCor2_explicitMap2_of_conj U V (UnitsCoeff K) g κ hκ f hf hfκ hVU hU hV]
+    explicitCor2_explicitMap2_of_conj U V (UnitsCoeff K) g κ hκ f hf hVU hU hV]
 
 end TauCeti.ClassFieldTheory

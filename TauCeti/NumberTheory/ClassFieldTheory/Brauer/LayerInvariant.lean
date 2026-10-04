@@ -520,7 +520,7 @@ theorem layerInv_conjugateCohomologyIso (g : AbsoluteGaloisGroup K)
     subgroupInvMap_explicitMap2_of_conj K L.ground.toSubgroup (L.conjugate g).ground.toSubgroup
       L.ground.isOpen (L.conjugate g).ground.isOpen g _ (conjugateGroundHom_apply_coe L g)
       (DistribSMul.toAddMonoidHom (UnitsCoeff K) g) (DistribSMul.toAddMonoidHom_apply _ g)
-      (conjugateGroundHom_smul L g) (toSubgroup_ground_conjugate L g),
+      (toSubgroup_ground_conjugate L g),
     layerInv_apply]
 
 end Invariant
