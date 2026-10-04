@@ -125,11 +125,11 @@ theorem sideColumns_eq_sideColumns : S.sideColumns = R.sideColumns := by
 
 /-- A returning rectangle starting on the initial side column starts on the terminal side row:
 its two rows are those of the outgoing rectangle, in the opposite order. -/
-private theorem bottom_eq_top_of_left_eq_left (h : S.left = R.left) : S.bottom = R.top := by
+theorem bottom_eq_top_of_left_eq_left (h : S.left = R.left) : S.bottom = R.top := by
   rw [bottom_def, h, R.map_left, top_def]
 
 /-- A returning rectangle starting on the initial side column ends on the initial side row. -/
-private theorem top_eq_bottom_of_left_eq_left (h : S.left = R.left) : S.top = R.bottom := by
+theorem top_eq_bottom_of_left_eq_left (h : S.left = R.left) : S.top = R.bottom := by
   rw [top_def, R.right_eq_right_of_left_eq_left S h, R.map_right, bottom_def]
 
 /-- A returning rectangle starting on the terminal side column has the same two side rows, in the
