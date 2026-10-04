@@ -27,6 +27,8 @@ root or extension of the base field is needed for this reduction.
 
 ## Main results
 
+* `TauCeti.CliffordAlgebra.exists_nonempty_algEquiv_even_of_finrank_pos`: in positive dimension,
+  the even algebra is isomorphic to the Clifford algebra of a regular form in one lower dimension.
 * `TauCeti.CliffordAlgebra.exists_nonempty_algEquiv_even_of_odd_finrank`: the even algebra is
   isomorphic to the Clifford algebra of a regular form of even dimension.
 * `TauCeti.CliffordAlgebra.isSimpleRing_even_of_odd_finrank`: the even algebra is a simple ring.
@@ -51,21 +53,19 @@ open Module _root_.QuadraticMap
 variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V]
   [FiniteDimensional K V] [NeZero (2 : K)] {Q : QuadraticForm K V}
 
-/-- The even Clifford algebra of a regular odd-dimensional quadratic space is isomorphic to the
-full Clifford algebra of a regular form in one lower, hence even, dimension: splitting off a line
-`⟨a⟩` from `Q ≅ ⟨a⟩ ⊥ P` gives `even Q ≃ₐ[K] CliffordAlgebra (-a⁻¹ • P)`. The new form lives on
+/-- In positive dimension, the even Clifford algebra of a regular quadratic space is isomorphic
+to the full Clifford algebra of a regular form in one lower dimension: splitting off a line `⟨a⟩`
+from `Q ≅ ⟨a⟩ ⊥ P` gives `even Q ≃ₐ[K] CliffordAlgebra (-a⁻¹ • P)`. The new form lives on
 `Fin n → K`, so the isomorphism also moves the algebra into the universe of `K`. -/
-theorem exists_nonempty_algEquiv_even_of_odd_finrank (hQ : Q.Nondegenerate)
-    (hV : Odd (finrank K V)) :
-    ∃ (n : ℕ) (P : QuadraticForm K (Fin n → K)), P.Nondegenerate ∧ Even n ∧
+theorem exists_nonempty_algEquiv_even_of_finrank_pos (hQ : Q.Nondegenerate)
+    (hV : 0 < finrank K V) :
+    ∃ (n : ℕ) (P : QuadraticForm K (Fin n → K)), P.Nondegenerate ∧ n + 1 = finrank K V ∧
       Nonempty (even Q ≃ₐ[K] CliffordAlgebra P) := by
   let : Invertible (2 : K) := invertibleOfNonzero (NeZero.ne (2 : K))
   obtain ⟨⟨n, w⟩, ⟨e⟩⟩ := exists_presentedForm_equivalent Q hQ
-  have hn : Odd n := by
-    have he : finrank K V = n := by simpa using e.toLinearEquiv.finrank_eq
-    exact he ▸ hV
+  have he : finrank K V = n := by simpa using e.toLinearEquiv.finrank_eq
   cases n with
-  | zero => simp at hn
+  | zero => omega
   | succ n =>
     let P := presentedForm (⟨n, fun i => w i.succ⟩ : RegularFormPresentation K)
     let a : Kˣ := -(w 0)⁻¹
@@ -74,9 +74,19 @@ theorem exists_nonempty_algEquiv_even_of_odd_finrank (hQ : Q.Nondegenerate)
       (nondegenerate_smul_iff a.isUnit P).mpr (nondegenerate_presentedForm _)
     have en := e.trans (presentedFormConsIsometryEquiv w).symm
     have ec := en.trans (QuadraticMap.IsometryEquiv.prodComm _ P)
-    have hn' : Even n := by
-      simpa [← Nat.not_even_iff_odd, Nat.even_add_one] using hn
-    exact ⟨n, _, hP, hn', ⟨(evenEquivOfIsometry ec).trans (evenProdSMulSqEquiv P (w 0))⟩⟩
+    exact ⟨n, _, hP, he.symm, ⟨(evenEquivOfIsometry ec).trans (evenProdSMulSqEquiv P (w 0))⟩⟩
+
+/-- The even Clifford algebra of a regular odd-dimensional quadratic space is isomorphic to the
+full Clifford algebra of a regular form in one lower, hence even, dimension; this is
+`TauCeti.CliffordAlgebra.exists_nonempty_algEquiv_even_of_finrank_pos` read in odd dimension. -/
+theorem exists_nonempty_algEquiv_even_of_odd_finrank (hQ : Q.Nondegenerate)
+    (hV : Odd (finrank K V)) :
+    ∃ (n : ℕ) (P : QuadraticForm K (Fin n → K)), P.Nondegenerate ∧ Even n ∧
+      Nonempty (even Q ≃ₐ[K] CliffordAlgebra P) := by
+  obtain ⟨n, P, hP, hn, e⟩ := exists_nonempty_algEquiv_even_of_finrank_pos hQ hV.pos
+  refine ⟨n, P, hP, ?_, e⟩
+  rw [← hn, Nat.odd_add_one, Nat.not_odd_iff_even] at hV
+  exact hV
 
 /-- The even Clifford algebra of a regular odd-dimensional quadratic space is a simple ring.
 Together with centrality and inherited finite dimensionality, this defines its Brauer class. -/

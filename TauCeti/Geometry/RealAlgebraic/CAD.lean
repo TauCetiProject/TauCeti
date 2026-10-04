@@ -8,7 +8,7 @@ module
 public import Mathlib.Data.Setoid.Partition
 public import Mathlib.Topology.Algebra.MvPolynomial
 public import TauCeti.Geometry.RealAlgebraic.Semialgebraic.Basic
-public import TauCeti.Geometry.RealAlgebraic.Stack
+public import TauCeti.Geometry.RealAlgebraic.Stack.Basic
 
 /-!
 # Cylindrical algebraic decompositions

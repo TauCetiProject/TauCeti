@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.MvPolynomial.Equiv
 public import TauCeti.RingTheory.Polynomial.Reductum
 public import TauCeti.RingTheory.Polynomial.Subresultant.Basic
 import TauCeti.Algebra.Polynomial.Derivative
@@ -43,6 +44,11 @@ is how the projection enters Collins' delineability theorem.
 * `Finset.mem_collinsProjection`: the explicit description of its elements.
 * `Finset.collinsProjection_mono`: the projection is monotone in the family.
 * `Finset.collinsProjection_image_map`: an injective coefficient map commutes with projection.
+* `Finset.collinsProjection_image_finSuccEquiv'_map`,
+  `Finset.collinsProjection_image_finSuccEquiv_map`: for a family of polynomials in `n + 1`
+  variables, singling out a variable and projecting commutes with an injective coefficient map.
+  In particular the projection of a family with integer coefficients, viewed over `ℝ`, is the
+  image of the projection computed entirely over `ℤ`.
 * `Finset.psc_map_mem_image_collinsProjection`,
   `Finset.psc_map_derivative_mem_image_collinsProjection`: principal subresultant coefficients
   of specialized polynomials, at the specialized degrees, come from the projection.
@@ -146,6 +152,40 @@ theorem collinsProjection_image_map {φ : R →+* S} (hφ : Function.Injective �
     funext (psc_map_map φ r s m n)
   simp only [collinsProjection, image_union, image_biUnion, biUnion_image, biUnion_biUnion,
     reducta_map, image_image, hdeg, derivative_map, hpsc, hcoeff]
+
+section MvPolynomial
+
+variable {n : ℕ} [DecidableEq (MvPolynomial (Fin n) S)] [DecidableEq (MvPolynomial (Fin n) R)[X]]
+  [DecidableEq (MvPolynomial (Fin n) S)[X]]
+
+/-- **Projection of multivariate families along an injective coefficient map.** Let `P` be a
+finite family of polynomials in the variables `X 0, …, X n` over `R`, viewed as polynomials in
+the distinguished variable `X i` over the polynomials in the other variables. Mapping the
+coefficients along an injective `φ : R →+* S` before singling out `X i` gives a family whose
+Collins projection is the image of the Collins projection computed over `R`. -/
+theorem collinsProjection_image_finSuccEquiv'_map {φ : R →+* S} (hφ : Function.Injective φ)
+    (P : Finset (MvPolynomial (Fin (n + 1)) R)) (i : Fin (n + 1)) :
+    (P.image fun f ↦ MvPolynomial.finSuccEquiv' S i (f.map φ)).collinsProjection =
+      (P.image (MvPolynomial.finSuccEquiv' R i)).collinsProjection.image (MvPolynomial.map φ) := by
+  -- `collinsProjection_image_map` is stated with classical `DecidableEq` instances; `convert`
+  -- identifies them with the ones here, leaving the two descriptions of the mapped family.
+  convert collinsProjection_image_map (MvPolynomial.map_injective φ hφ) _ using 2
+  ext
+  simp [MvPolynomial.finSuccEquiv'_map]
+
+/-- **Projection of multivariate families along an injective coefficient map**, for the
+distinguished variable `X 0` singled out by `MvPolynomial.finSuccEquiv`. For
+`φ = Int.castRingHom ℝ`, this says that the Collins projection of a family of polynomials with
+integer coefficients, read over `ℝ`, is the image of the Collins projection computed entirely
+over `ℤ`. -/
+theorem collinsProjection_image_finSuccEquiv_map {φ : R →+* S} (hφ : Function.Injective φ)
+    (P : Finset (MvPolynomial (Fin (n + 1)) R)) :
+    (P.image fun f ↦ MvPolynomial.finSuccEquiv S n (f.map φ)).collinsProjection =
+      (P.image (MvPolynomial.finSuccEquiv R n)).collinsProjection.image (MvPolynomial.map φ) := by
+  simpa only [MvPolynomial.finSuccEquiv'_zero] using
+    collinsProjection_image_finSuccEquiv'_map hφ P 0
+
+end MvPolynomial
 
 /-- **Specialization of principal subresultant coefficients.** For members `p, q` of the family
 and any coefficient map `φ`, the principal subresultant coefficients of `p.map φ` and `q.map φ`
