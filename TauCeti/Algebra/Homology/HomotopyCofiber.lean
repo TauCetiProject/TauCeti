@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 public import Mathlib.Algebra.Homology.HomotopyCofiber
 public import TauCeti.Algebra.Homology.HomologySequenceLemmas
 public import TauCeti.Algebra.Homology.OneObject
