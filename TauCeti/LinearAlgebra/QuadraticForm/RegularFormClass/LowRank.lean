@@ -192,10 +192,9 @@ theorem mem_unitValueSet_iff_squareClass_eq_discr_of_finrank_eq_one {V : Type*} 
   obtain ⟨u, hu⟩ : ∃ u : Kˣ, RegularFormClass.discr (formClass Q hQ) = squareClass u :=
     ⟨_, (squareClass_toMul_out _).symm⟩
   rw [mem_unitValueSet_iff_not_anisotropic_mk_rankOne_add Q hQ,
-    RegularFormClass.not_anisotropic_iff_discr_eq_neg_one_of_rank_eq_two
-      (by rw [RegularFormClass.rank_add, RegularFormClass.rank_mk, rank_formClass, hV]),
-    RegularFormClass.discr_add, RegularFormClass.discr_mk, hu, Fin.prod_univ_one,
-    ← squareClass_mul, squareClass_eq_iff_isSquare_mul, squareClass_eq_iff_isSquare_mul]
+    RegularFormClass.not_anisotropic_iff_discr_eq_neg_one_of_rank_eq_two (by simp [hV]),
+    RegularFormClass.discr_mk_rankOne_add, hu, ← squareClass_mul,
+    squareClass_eq_iff_isSquare_mul, squareClass_eq_iff_isSquare_mul]
   simp
 
 end QuadraticForm

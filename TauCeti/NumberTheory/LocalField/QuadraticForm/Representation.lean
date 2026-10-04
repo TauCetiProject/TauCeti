@@ -27,7 +27,9 @@ it is isotropic.
 
 Each case follows from the isotropy list by the criterion that `q` represents `c` exactly when
 `⟨-c⟩ ⊥ q` is isotropic (`QuadraticForm.mem_unitValueSet_iff_not_anisotropic_mk_rankOne_add`). The
-invariants of `⟨-c⟩ ⊥ q` are `(n + 1, [-c] + d, s · (-c, d)_K)`, by the orthogonal-sum formulas.
+invariants of `⟨-c⟩ ⊥ q` are `(n + 1, [-c] + d, s · (-c, d)_K)`, by the orthogonal-sum formulas
+`TauCeti.RegularFormClass.discr_mk_rankOne_add` and
+`TauCeti.RegularFormClass.localHasse_mk_rankOne_add`.
 
 ## Main results
 
@@ -74,13 +76,11 @@ theorem mem_unitValueSet_iff_squareClass_ne_or_localHasse_eq_of_finrank_eq_three
   -- quaternary criterion reads off its discriminant `[-c u]` and Hasse invariant `s · (-c, u)_K`.
   rw [mem_unitValueSet_iff_not_anisotropic_mk_rankOne_add Q hQ,
     RegularFormClass.not_anisotropic_iff_discr_ne_zero_or_localHasse_eq_of_rank_eq_four
-      (by rw [RegularFormClass.rank_add, RegularFormClass.rank_mk, rank_formClass, hV]),
-    RegularFormClass.discr_add, RegularFormClass.localHasse_add,
-    RegularFormClass.localHasse_mk_rankOne, RegularFormClass.discr_mk, hu, Fin.prod_univ_one,
-    one_mul, ← squareClass_mul, ← squareClass_mul, hilbertSymbolOnSquareClasses_squareClass,
-    hilbertSymbolOnSquareClasses_squareClass, ne_eq, ne_eq, squareClass_eq_zero_iff,
-    squareClass_eq_iff_isSquare_mul, hdiscr]
+      (by simp [hV]),
+    RegularFormClass.discr_mk_rankOne_add, RegularFormClass.localHasse_mk_rankOne_add, hu]
   generalize RegularFormClass.localHasse (formClass Q hQ) = s
+  simp only [← squareClass_mul, hilbertSymbolOnSquareClasses_squareClass, ne_eq,
+    squareClass_eq_zero_iff, squareClass_eq_iff_isSquare_mul, hdiscr]
   by_cases hsq : IsSquare (-c * u)
   · -- Here `-c` lies in the square class of `u`, so `(-c, u)_K = (u, u)_K = (-1, u)_K`.
     have hcu : hilbertSymbol (-c) u = hilbertSymbol (-1) u := by
