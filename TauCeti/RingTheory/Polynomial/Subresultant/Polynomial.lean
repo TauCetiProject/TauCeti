@@ -86,6 +86,33 @@ theorem _root_.Polynomial.subresultantCoeffMatrix_natAdd [Semiring R]
       if (l : ℕ) ≤ d ∧ d ≤ l.val + m then p.coeff (d - l.val) else 0 := by
   simp [subresultantCoeffMatrix]
 
+/-- When the formal bounds dominate the degrees, a coefficient matrix reads shifted input
+coefficients, at degree `k` in its first row and at degree `i.val + j` elsewhere. -/
+theorem _root_.Polynomial.subresultantCoeffMatrix_apply_eq_coeff [Semiring R]
+    {p q : R[X]} {m n : ℕ} (hm : p.natDegree ≤ m) (hn : q.natDegree ≤ n)
+    (j k : ℕ) (i l : Fin ((m - j) + (n - j))) :
+    subresultantCoeffMatrix p q m n j k i l =
+      l.addCases (fun l => (X ^ l.val * q).coeff (if i.val = 0 then k else i.val + j))
+        (fun l => (X ^ l.val * p).coeff (if i.val = 0 then k else i.val + j)) := by
+  generalize hd : (if i.val = 0 then k else i.val + j) = d
+  induction l using Fin.addCases with
+  | left l =>
+    simp only [subresultantCoeffMatrix_castAdd, Fin.addCases_left, coeff_X_pow_mul', hd]
+    by_cases h : l.val ≤ d
+    · by_cases h' : d ≤ l.val + n
+      · simp only [h, h', and_self, ↓reduceIte]
+      · have hdeg : q.natDegree < d - l.val := by omega
+        simp only [h, h', and_false, ↓reduceIte, coeff_eq_zero_of_natDegree_lt hdeg]
+    · simp only [h, false_and, ↓reduceIte]
+  | right l =>
+    simp only [subresultantCoeffMatrix_natAdd, Fin.addCases_right, coeff_X_pow_mul', hd]
+    by_cases h : l.val ≤ d
+    · by_cases h' : d ≤ l.val + m
+      · simp only [h, h', and_self, ↓reduceIte]
+      · have hdeg : p.natDegree < d - l.val := by omega
+        simp only [h, h', and_false, ↓reduceIte, coeff_eq_zero_of_natDegree_lt hdeg]
+    · simp only [h, false_and, ↓reduceIte]
+
 /-- A subresultant coefficient matrix replaces the row of degree `j` of the principal
 matrix by the row of degree `k`. -/
 theorem _root_.Polynomial.subresultantCoeffMatrix_eq_updateRow [Semiring R]
@@ -163,6 +190,48 @@ theorem _root_.Polynomial.subresultantCoeff_def [CommRing R]
     (p q : R[X]) (m n j k : ℕ) :
     subresultantCoeff p q m n j k = (subresultantCoeffMatrix p q m n j k).det := by
   rw [subresultantCoeff]
+
+/-- At the smaller right terminal index, a coefficient minor reads a coefficient of the right
+input times a power of its coefficient at the bound. The empty determinant is excluded. -/
+@[simp]
+theorem _root_.Polynomial.subresultantCoeff_right_bound [CommRing R] (p q : R[X]) {m n k : ℕ}
+    (hnm : n < m) (hk : k ≤ n) :
+    subresultantCoeff p q m n n k = q.coeff k * q.coeff n ^ (m - n - 1) := by
+  classical
+  let M := subresultantCoeffMatrix p q m n n k
+  let i₀ : Fin ((m - n) + (n - n)) := ⟨0, by omega⟩
+  have htri : M.IsUpperTriangular := by
+    intro i l hli
+    have hli' : l.val < i.val := by simpa using Fin.lt_def.mp hli
+    have hi0 : i.val ≠ 0 := by omega
+    induction l using Fin.addCases with
+    | left l =>
+      have hbound : ¬ i.val + n ≤ l.val + n := by
+        simp only [Fin.val_castAdd] at hli'
+        omega
+      simp [M, subresultantCoeffMatrix_castAdd, hi0, hbound]
+    | right l => exact Fin.elim0 (Fin.cast (by simp) l)
+  have hdiag (i : Fin ((m - n) + (n - n))) :
+      M i i = if i = i₀ then q.coeff k else q.coeff n := by
+    induction i using Fin.addCases with
+    | left i =>
+      simp only [M, subresultantCoeffMatrix_castAdd, Fin.val_castAdd]
+      by_cases hi : i.val = 0
+      · have hi₀ : Fin.castAdd (n - n) i = i₀ := by ext; exact hi
+        simp [hi, hi₀, hk]
+      · have hi₀ : Fin.castAdd (n - n) i ≠ i₀ := by
+          intro h
+          exact hi (congrArg Fin.val h)
+        simp [hi, hi₀]
+    | right i => exact Fin.elim0 (Fin.cast (by simp) i)
+  rw [subresultantCoeff_def, Matrix.det_of_isUpperTriangular htri]
+  simp_rw [hdiag]
+  rw [← Finset.mul_prod_erase _ _ (Finset.mem_univ i₀)]
+  have hprod : (∏ x ∈ Finset.univ.erase i₀, if x = i₀ then q.coeff k else q.coeff n) =
+      ∏ _x ∈ Finset.univ.erase i₀, q.coeff n :=
+    Finset.prod_congr rfl fun x hx => ite_eq_right (Finset.ne_of_mem_erase hx)
+  rw [hprod]
+  simp
 
 /-- The coefficient minor at `k = j` is the principal subresultant coefficient. -/
 @[simp]

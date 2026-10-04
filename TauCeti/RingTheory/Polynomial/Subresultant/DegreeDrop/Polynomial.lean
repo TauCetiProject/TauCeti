@@ -36,33 +36,6 @@ open Polynomial
 
 variable {R : Type*}
 
-/-- When the formal bounds dominate the degrees, a coefficient matrix reads shifted input
-coefficients, at degree `k` in its first row and at degree `i.val + j` elsewhere. -/
-theorem _root_.Polynomial.subresultantCoeffMatrix_apply_eq_coeff [Semiring R]
-    {p q : R[X]} {m n : ℕ} (hm : p.natDegree ≤ m) (hn : q.natDegree ≤ n)
-    (j k : ℕ) (i l : Fin ((m - j) + (n - j))) :
-    subresultantCoeffMatrix p q m n j k i l =
-      l.addCases (fun l => (X ^ l.val * q).coeff (if i.val = 0 then k else i.val + j))
-        (fun l => (X ^ l.val * p).coeff (if i.val = 0 then k else i.val + j)) := by
-  generalize hd : (if i.val = 0 then k else i.val + j) = d
-  induction l using Fin.addCases with
-  | left l =>
-    simp only [subresultantCoeffMatrix_castAdd, Fin.addCases_left, coeff_X_pow_mul', hd]
-    by_cases h : l.val ≤ d
-    · by_cases h' : d ≤ l.val + n
-      · simp only [h, h', and_self, ↓reduceIte]
-      · have hdeg : q.natDegree < d - l.val := by omega
-        simp only [h, h', and_false, ↓reduceIte, coeff_eq_zero_of_natDegree_lt hdeg]
-    · simp only [h, false_and, ↓reduceIte]
-  | right l =>
-    simp only [subresultantCoeffMatrix_natAdd, Fin.addCases_right, coeff_X_pow_mul', hd]
-    by_cases h : l.val ≤ d
-    · by_cases h' : d ≤ l.val + m
-      · simp only [h, h', and_self, ↓reduceIte]
-      · have hdeg : p.natDegree < d - l.val := by omega
-        simp only [h, h', and_false, ↓reduceIte, coeff_eq_zero_of_natDegree_lt hdeg]
-    · simp only [h, false_and, ↓reduceIte]
-
 private theorem lastRow_of_degree_drop [Semiring R] {p q : R[X]} {m n j k : ℕ}
     (hm : p.natDegree ≤ m) (hn : q.natDegree ≤ n) (hjm : j < m) (hjn : j ≤ n)
     (i l : Fin ((m - j) + (n + 1 - j))) (hi : i.val = (m - j) + (n - j)) :
@@ -194,50 +167,9 @@ theorem _root_.Polynomial.subresultant_eq_C_sign_mul_coeff_pow_mul_of_left_degre
         (by omega) (by omega) k
   · simp only [coeff_C_mul, subresultant_coeff, hk, and_false, ↓reduceIte, mul_zero]
 
-/-- At the smaller right terminal index, a coefficient minor reads a coefficient of the right
-input times a power of its coefficient at the bound. The empty determinant is excluded. -/
-@[simp]
-theorem _root_.Polynomial.subresultantCoeff_right_bound (p q : R[X]) {m n k : ℕ}
-    (hnm : n < m) (hk : k ≤ n) :
-    subresultantCoeff p q m n n k = q.coeff k * q.coeff n ^ (m - n - 1) := by
-  classical
-  let M := subresultantCoeffMatrix p q m n n k
-  let i₀ : Fin ((m - n) + (n - n)) := ⟨0, by omega⟩
-  have htri : M.IsUpperTriangular := by
-    intro i l hli
-    have hli' : l.val < i.val := by simpa using Fin.lt_def.mp hli
-    have hi0 : i.val ≠ 0 := by omega
-    induction l using Fin.addCases with
-    | left l =>
-      have hbound : ¬ i.val + n ≤ l.val + n := by
-        simp only [Fin.val_castAdd] at hli'
-        omega
-      simp [M, subresultantCoeffMatrix_castAdd, hi0, hbound]
-    | right l => exact Fin.elim0 (Fin.cast (by simp) l)
-  have hdiag (i : Fin ((m - n) + (n - n))) :
-      M i i = if i = i₀ then q.coeff k else q.coeff n := by
-    induction i using Fin.addCases with
-    | left i =>
-      simp only [M, subresultantCoeffMatrix_castAdd, Fin.val_castAdd]
-      by_cases hi : i.val = 0
-      · have hi₀ : Fin.castAdd (n - n) i = i₀ := by ext; exact hi
-        simp [hi, hi₀, hk]
-      · have hi₀ : Fin.castAdd (n - n) i ≠ i₀ := by
-          intro h
-          exact hi (congrArg Fin.val h)
-        simp [hi, hi₀]
-    | right i => exact Fin.elim0 (Fin.cast (by simp) i)
-  rw [subresultantCoeff_def, Matrix.det_of_isUpperTriangular htri]
-  simp_rw [hdiag]
-  rw [← Finset.mul_prod_erase _ _ (Finset.mem_univ i₀)]
-  have hprod : (∏ x ∈ Finset.univ.erase i₀, if x = i₀ then q.coeff k else q.coeff n) =
-      ∏ _x ∈ Finset.univ.erase i₀, q.coeff n :=
-    Finset.prod_congr rfl fun x hx => ite_eq_right (Finset.ne_of_mem_erase hx)
-  rw [hprod]
-  simp
-
 /-- When only the right bound drops, the subresultant at its smaller terminal index survives
 as a scalar multiple of the right polynomial, rather than a terminal subresultant polynomial. -/
+@[simp]
 theorem _root_.Polynomial.subresultant_right_bound_of_degree_drop {p q : R[X]} {m n N : ℕ}
     (hm : p.natDegree ≤ m) (hn : q.natDegree ≤ n) (hnm : n < m) (hnN : n < N) :
     subresultant p q m N n =
@@ -255,6 +187,7 @@ theorem _root_.Polynomial.subresultant_right_bound_of_degree_drop {p q : R[X]} {
 
 /-- The smaller left terminal index likewise survives as a scalar multiple of the left input,
 with the sign from swapping the formal column blocks. -/
+@[simp]
 theorem _root_.Polynomial.subresultant_left_bound_of_degree_drop {p q : R[X]} {m M n : ℕ}
     (hm : p.natDegree ≤ m) (hn : q.natDegree ≤ n) (hmn : m < n) (hmM : m < M) :
     subresultant p q M n m =
@@ -267,6 +200,7 @@ theorem _root_.Polynomial.subresultant_left_bound_of_degree_drop {p q : R[X]} {m
 
 /-- Dropping both formal bounds forces every subresultant polynomial to vanish, not merely
 its principal coefficient. Outside the strict range the polynomial is zero by convention. -/
+@[simp]
 theorem _root_.Polynomial.subresultant_eq_zero_of_natDegree_lt_bounds {p q : R[X]}
     {m n j : ℕ} (hm : p.natDegree < m) (hn : q.natDegree < n) :
     subresultant p q m n j = 0 := by
