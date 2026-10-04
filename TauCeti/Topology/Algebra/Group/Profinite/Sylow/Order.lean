@@ -68,7 +68,7 @@ theorem IsProPSylow.eq_bot_iff {q : Nat.Primes} (hP : IsProPSylow q P) :
     P = ⊥ ↔ profiniteOrder G q = 0 := by
   have : CompactSpace P := isCompact_iff_compactSpace.mp hP.isClosed.isCompact
   rw [← not_ne_iff, ← P.nontrivial_iff_ne_bot, not_nontrivial_iff_subsingleton,
-    ← profiniteOrder_eq_one_iff, hP.profiniteOrder_eq, Supernatural.primaryPart_eq_one_iff]
+    ← profiniteOrder_eq_bot_iff, hP.profiniteOrder_eq, Supernatural.primaryPart_eq_bot_iff]
 
 /-- **The trivial subgroup is Sylow pro-`p` exactly when `p` does not divide the order.** The
 trivial subgroup of a profinite group `G` is a Sylow pro-`q` subgroup if and only if the exponent
