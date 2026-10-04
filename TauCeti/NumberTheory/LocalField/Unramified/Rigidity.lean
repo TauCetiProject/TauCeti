@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.LocalField.GaloisAction
+public import TauCeti.NumberTheory.LocalField.FiniteExtension.Basic
 public import TauCeti.NumberTheory.LocalField.Unramified.Basic
-import Mathlib.FieldTheory.Minpoly.IsIntegrallyClosed
 import Mathlib.RingTheory.Adjoin.PowerBasis
 import TauCeti.NumberTheory.LocalField.Henselian
 import TauCeti.NumberTheory.LocalField.Unramified.Factorization
