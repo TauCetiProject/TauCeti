@@ -128,6 +128,23 @@ theorem Hom.map_groupLikeWeightSpace_le (f : Hom R C M N) (c : GroupLike R C) :
   rintro _ ⟨m, hm, rfl⟩
   exact f.map_mem_groupLikeWeightSpace hm
 
+/-- An injective comodule morphism detects weight vectors when tensoring with the coalgebra
+preserves injections. -/
+theorem Hom.comap_groupLikeWeightSpace [Module.Flat R C] (f : Hom R C M N)
+    (hf : Function.Injective f) (c : GroupLike R C) :
+    (_root_.GroupLike.weightSpace (M := N) c).comap f.toLinearMap =
+      _root_.GroupLike.weightSpace (M := M) c := by
+  ext m
+  simp only [Submodule.mem_comap, Hom.coe_toLinearMap, _root_.GroupLike.mem_weightSpace]
+  constructor
+  · intro hm
+    apply Module.Flat.rTensor_preserves_injective_linearMap f.toLinearMap hf
+    rw [LinearMap.rTensor_def, f.map_coact_apply, hm, TensorProduct.map_tmul]
+    rfl
+  · intro hm
+    rw [← f.map_coact_apply, hm, TensorProduct.map_tmul]
+    rfl
+
 /-- A comodule has a nonzero weight vector exactly when one of its group-like weight spaces is
 nonzero. -/
 theorem hasNonzeroWeightVector_iff_exists_groupLikeWeightSpace_ne_bot :

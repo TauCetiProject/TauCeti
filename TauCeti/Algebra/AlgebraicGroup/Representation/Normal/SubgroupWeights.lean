@@ -11,6 +11,7 @@ public import TauCeti.Algebra.Bialgebra.GroupLike.Map
 public import TauCeti.Algebra.Coalgebra.Comodule.Corestrict
 public import TauCeti.Algebra.Coalgebra.Comodule.Weight.Space
 public import TauCeti.Algebra.Coalgebra.Subcomodule.PointSeparation
+public import TauCeti.Algebra.Coalgebra.Subcomodule.Induced
 
 /-!
 # Weight spaces of a closed subgroup in a representation
@@ -87,6 +88,17 @@ theorem mem_weightSpace {χ : GroupLike R (H ⧸ I.toIdeal)} {v : V} :
   letI : Comodule R (H ⧸ I.toIdeal) V :=
     Comodule.Corestrict (Bialgebra.Quotient.mkBialgHom I.toIdeal).toCoalgHom
   _root_.GroupLike.mem_weightSpace
+
+/-- An injective ambient comodule morphism detects subgroup weight spaces if the subgroup's
+coordinate algebra is flat over the base. -/
+theorem comap_weightSpace {W : Type*} [AddCommMonoid W] [Module R W] [Comodule R H W]
+    [Module.Flat R (H ⧸ I.toIdeal)] (f : Comodule.Hom R H V W)
+    (hf : Function.Injective f) (χ : GroupLike R (H ⧸ I.toIdeal)) :
+    (I.weightSpace W χ).comap f.toLinearMap = I.weightSpace V χ := by
+  let q := (Bialgebra.Quotient.mkBialgHom (R := R) I.toIdeal).toCoalgHom
+  let : Comodule R (H ⧸ I.toIdeal) V := Comodule.Corestrict q
+  let : Comodule R (H ⧸ I.toIdeal) W := Comodule.Corestrict q
+  exact (Comodule.corestrictHom q f).comap_groupLikeWeightSpace hf χ
 
 /-- A weight vector of a closed subgroup is detected by the universal point of the subgroup, the
 quotient map `H → H ⧸ I`, even over a nonreduced base ring. -/
@@ -201,6 +213,23 @@ underlying subspace. -/
 theorem IsNormal.iSupWeightSpaceSubcomodule_toSubmodule {I : HopfIdeal k H} (hI : I.IsNormal) :
     (hI.iSupWeightSpaceSubcomodule V).toSubmodule = ⨆ χ, I.weightSpace V χ :=
   Subcomodule.ofEndOfPointStable_toSubmodule _ _
+
+/-- Restricting to the sum of the subgroup's weight spaces gives a representation spanned by
+its own subgroup weight spaces. -/
+@[simp]
+theorem IsNormal.iSup_weightSpace_iSupWeightSpaceSubcomodule_eq_top {I : HopfIdeal k H}
+    (hI : I.IsNormal) :
+    ⨆ χ, I.weightSpace (hI.iSupWeightSpaceSubcomodule V) χ = ⊤ := by
+  let W := hI.iSupWeightSpaceSubcomodule V
+  let : AddCommGroup W := Module.addCommMonoidToAddCommGroup k
+  let f := Subcomodule.subtype W
+  have hrange : LinearMap.range f.toLinearMap = ⨆ χ, I.weightSpace V χ := by
+    simpa only [f, Subcomodule.subtype_toLinearMap] using
+      W.range_subtype.trans (hI.iSupWeightSpaceSubcomodule_toSubmodule V)
+  have h := Submodule.biSup_comap_eq_top_of_range_eq_biSup (R := k) (R₂ := k)
+    (M := W) (M₂ := V) (τ₁₂ := RingHom.id k) Set.univ Set.univ_nonempty
+    (I.weightSpace V) f.toLinearMap (by simpa only [Set.mem_univ, iSup_pos] using hrange)
+  simpa only [Set.mem_univ, iSup_pos, comap_weightSpace (I := I) f W.subtype_injective] using h
 
 end Field
 

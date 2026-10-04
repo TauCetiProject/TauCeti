@@ -242,6 +242,11 @@ theorem subtype_toLinearMap : (Subcomodule.subtype N).toLinearMap = SMulMemClass
 theorem subtype_apply (n : N) : Subcomodule.subtype N n = n :=
   (rfl)
 
+/-- The inclusion of a subcomodule is injective. -/
+theorem subtype_injective : Function.Injective (Subcomodule.subtype N) := by
+  intro x y h
+  exact Subtype.ext (by simpa only [subtype_apply] using h)
+
 end Subcomodule
 
 namespace Comodule.Hom

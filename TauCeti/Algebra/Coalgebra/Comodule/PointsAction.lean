@@ -9,6 +9,8 @@ public import TauCeti.Algebra.Coalgebra.Comodule.Corestrict
 public import TauCeti.Algebra.Coalgebra.Comodule.TensorProduct
 public import TauCeti.Algebra.Coalgebra.Comodule.Trivial
 import TauCeti.LinearAlgebra.End.ScalarExtension
+import TauCeti.LinearAlgebra.TensorProduct.Submodule
+import Mathlib.RingTheory.Flat.Basic
 public import Mathlib.RingTheory.Bialgebra.Convolution
 public import Mathlib.RepresentationTheory.Basic
 
@@ -133,6 +135,19 @@ lemma baseChange_comp_endOfPoint (f : Hom R H V W) (g : H →ₐ[R] A) :
   simp only [LinearMap.coe_comp, Function.comp_apply, LinearMap.restrictScalars_apply,
     endOfPoint_tmul, map_smul, LinearMap.baseChange_tmul, hc, Hom.map_coact_apply,
     Hom.coe_toLinearMap]
+
+/-- An injective comodule morphism preserves and detects scalar-extended subspace stabilizers
+over a flat value algebra. -/
+theorem Hom.map_endOfPoint_baseChange_eq_iff [Module.Flat R A] (f : Hom R H V W)
+    (hf : Function.Injective f) (L : Submodule R V) (g : H →ₐ[R] A) :
+    (L.baseChange A).map (endOfPoint V g) = L.baseChange A ↔
+      ((L.map f.toLinearMap).baseChange A).map (endOfPoint W g) =
+        (L.map f.toLinearMap).baseChange A := by
+  have hfA : Function.Injective (f.toLinearMap.baseChange A) :=
+    Module.Flat.lTensor_preserves_injective_linearMap f.toLinearMap hf
+  rw [← (Submodule.map_injective_of_injective hfA).eq_iff,
+    Submodule.baseChange_map, ← Submodule.map_comp, baseChange_comp_endOfPoint,
+    Submodule.map_comp]
 
 end Functorial
 

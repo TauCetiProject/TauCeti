@@ -115,6 +115,12 @@ theorem mem_toSubmodule {N : Subcomodule R C M} {m : M} : m âˆˆ N.toSubmodule â†
 theorem toSubmodule_carrier (N : Subcomodule R C M) : N.toSubmodule = N.carrier :=
   rfl
 
+/-- The linear inclusion of a subcomodule has its underlying submodule as range. -/
+@[simp]
+theorem range_subtype (N : Subcomodule R C M) :
+    LinearMap.range (SMulMemClass.subtype N) = N.toSubmodule :=
+  Submodule.range_subtype N.toSubmodule
+
 /-- A subcomodule of a noetherian module is finitely generated as an `R`-module. -/
 theorem finite (N : Subcomodule R C M) [IsNoetherian R M] :
     Module.Finite R N.toSubmodule := by
