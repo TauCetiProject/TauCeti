@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Representation.SubspaceStabilizer
-public import TauCeti.Algebra.Coalgebra.Comodule.CoalgHom
+public import TauCeti.Algebra.Coalgebra.Comodule.Corestrict
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Comap
 
 /-!
@@ -18,8 +18,9 @@ subgroup is a subcomodule after corestriction to `H/I`. It is the kernel of rest
 `V → H/I`, viewed as a morphism to the subgroup's regular comodule.
 
 This equips the defining subspace in Chevalley's stabilizer construction with its subgroup
-representation. Its top exterior power can consequently be used as an invariant line inside
-the restricted exterior representation. No reducedness or smoothness is required.
+representation. It is intended as input to an exterior-power construction of an invariant
+line under additional hypotheses, such as finite-dimensionality over a field. The
+subcomodule construction itself requires no reducedness or smoothness.
 
 ## References
 
