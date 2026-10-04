@@ -218,6 +218,7 @@ theorem layerCoeffEquiv_apply_coe (x : (L.rep (unitsFormation K)).V) :
   (rfl)
 
 /-- `layerCoeffEquiv` is equivariant for the Galois group of the layer. -/
+@[simp]
 theorem layerCoeffEquiv_ρ
     (g : L.ground.toSubgroup ⧸ L.top.toSubgroup.subgroupOf L.ground.toSubgroup)
     (x : (L.rep (unitsFormation K)).V) :

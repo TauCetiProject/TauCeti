@@ -194,6 +194,7 @@ theorem layerInfl_injective : Function.Injective (layerInfl L) := by
 
 /-- **Restriction to the top subgroup kills inflated classes**: restricting `layerInfl L x` from
 the ground subgroup `U` to the top subgroup `V` gives `0`. -/
+@[simp]
 theorem explicitMap2_layerInfl_eq_zero (x : L.H (unitsFormation K) 2) :
     explicitMap2 L.ground.toSubgroup (UnitsCoeff K) L.top.toSubgroup (UnitsCoeff K)
       (ContinuousMonoidHom.subgroupInclusion (OpenSubgroup.toSubgroup_le.2 L.top_le_ground))
