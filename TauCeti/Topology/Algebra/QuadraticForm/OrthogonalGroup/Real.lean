@@ -15,11 +15,13 @@ The orthogonal group of a nondegenerate quadratic form on a finite-dimensional r
 is compact exactly when the form is positive or negative definite. The topology is the canonical
 topology on linear automorphisms, recording each automorphism and its inverse; no topology on the
 underlying vector space needs to be chosen. The criterion includes the zero-dimensional space.
+
+The criterion is `QuadraticForm.isCompact_orthogonalGroup_iff_posDef_or_negDef`.
 -/
 
 public section
 
-namespace TauCeti.QuadraticMap
+namespace QuadraticForm
 
 variable {V : Type*} [AddCommGroup V] [Module ℝ V] [FiniteDimensional ℝ V]
 
@@ -33,4 +35,4 @@ theorem isCompact_orthogonalGroup_iff_posDef_or_negDef (Q : _root_.QuadraticForm
   exact (TauCeti.QuadraticMap.isCompact_orthogonalGroup_iff Q hQ).trans
     (_root_.QuadraticForm.anisotropic_iff_posDef_or_negDef Q)
 
-end TauCeti.QuadraticMap
+end QuadraticForm
