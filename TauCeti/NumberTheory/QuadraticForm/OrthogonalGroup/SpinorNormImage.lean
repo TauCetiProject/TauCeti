@@ -58,18 +58,18 @@ variable {V : Type*} [AddCommGroup V] [Module ℚ V] [FiniteDimensional ℚ V]
   {Q : QuadraticForm ℚ V} (U : OrthogonalCompactOpens Q)
 
 /-- The local spinor norm restricted to the derived special orthogonal reference subgroup. -/
+@[expose]
 def OrthogonalCompactOpens.localSpinorNorm (hQ : Q.Nondegenerate) (p : Nat.Primes) :
     U.specialOrthogonal p →* Multiplicative (SquareClassGroup ℚ_[p]) :=
   (CliffordAlgebra.spinorNorm (Q.baseChange ℚ_[p])
     (QuadraticForm.Nondegenerate.baseChange hQ)).comp (U.specialOrthogonal p).subtype
 
 /-- The restricted local spinor norm agrees with the ambient spinor norm. -/
-@[simp]
+@[simp 1100]
 theorem OrthogonalCompactOpens.localSpinorNorm_apply (hQ : Q.Nondegenerate)
     (p : Nat.Primes) (g : U.specialOrthogonal p) :
     U.localSpinorNorm hQ p g = CliffordAlgebra.spinorNorm (Q.baseChange ℚ_[p])
-      (QuadraticForm.Nondegenerate.baseChange hQ) g := by
-  rw [localSpinorNorm, MonoidHom.comp_apply, Subgroup.subtype_apply]
+      (QuadraticForm.Nondegenerate.baseChange hQ) g := rfl
 
 /-- The reference subgroup in the local square-class group is the image of the derived special
 orthogonal reference subgroup under the spinor norm. -/
