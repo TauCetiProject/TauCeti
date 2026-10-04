@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.UniversalCover.LensSpace.Basic
-public import TauCeti.Geometry.Manifold.Riemannian.ModelGeometry
+public import TauCeti.Geometry.Manifold.Riemannian.ModelGeometry.Basic
 public import TauCeti.Geometry.Manifold.SMulGroupoid
 
 /-!
