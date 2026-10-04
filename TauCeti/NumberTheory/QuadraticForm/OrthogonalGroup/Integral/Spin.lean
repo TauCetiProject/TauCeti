@@ -28,6 +28,9 @@ family, without an additional integrality hypothesis on the rational Spin points
 Membership and transport statements do not require nondegeneracy. The construction includes
 the zero-dimensional case, where Mathlib's Spin group is trivial.
 
+The integral family lives in `TauCeti.CliffordAlgebra`; its ambient group and projection are
+`spinGroup` and `CliffordAlgebra.spinToOrthogonal`.
+
 ## Main results
 
 * `TauCeti.CliffordAlgebra.isOpen_integralSpinSubgroup` and
