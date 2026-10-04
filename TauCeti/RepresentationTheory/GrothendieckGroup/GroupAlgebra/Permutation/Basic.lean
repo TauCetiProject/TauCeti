@@ -126,14 +126,14 @@ theorem permK0_sum : permK0 k G (X ⊕ Y) = permK0 k G X + permK0 k G Y := by
 
 /-- The permutation class of the empty `G`-set is `0`. -/
 @[simp]
-theorem permK0_of_isEmpty [IsEmpty X] : permK0 k G X = 0 :=
+theorem permK0_of_isEmpty (X : Type u) [MulAction G X] [IsEmpty X] : permK0 k G X = 0 :=
   ExactK0.of_eq_zero_of_isZero <| FGModuleCat.isZero_of_subsingleton _
     ((Representation.ofMulAction k G X).asModuleEquiv.trans
       (MonoidAlgebra.coeffLinearEquiv k)).toEquiv.subsingleton
 
 /-- **The permutation class of a point.** A one-point `G`-set has the class of the trivial line. -/
 @[simp]
-theorem permK0_of_subsingleton [Subsingleton X] [Nonempty X] :
+theorem permK0_of_subsingleton (X : Type u) [MulAction G X] [Subsingleton X] [Nonempty X] :
     letI : Module.Finite k[G] (Representation.trivial k G k).asModule :=
       Module.Finite.of_restrictScalars_finite k k[G] _
     permK0 k G X = ExactK0.of (FGModuleCat.of k[G] (Representation.trivial k G k).asModule) :=

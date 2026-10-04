@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.Induction
-public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.Permutation.Basic
+public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.Permutation.FixedPointCount
 public import TauCeti.RepresentationTheory.Induction.Artin.PermutationIdentity
 
 /-!
@@ -50,8 +50,6 @@ induction theorem in `G₀(k[G])` and to its modular form.
 * `TauCeti.natCard_nsmul_of_trivial_sub_finsum_artinCoeff`: over any commutative ring, the
   difference of the two sides of Artin's identity is the difference of the two Artin permutation
   classes.
-* `TauCeti.permK0_eq_of_natCard_fixedBy_eq`: in characteristic zero, finite `G`-sets with the same
-  fixed-point counts have the same permutation class.
 * `TauCeti.natCard_nsmul_of_trivial_eq_finsum_artinCoeff`: **Artin's identity** in `G₀(k[G])` over
   a field of characteristic zero.
 
@@ -142,15 +140,6 @@ end CommRing
 section CharZero
 
 variable (k : Type u) [Field k] [CharZero k] {G : Type u} [Group G] [Finite G]
-
-/-- **Fixed-point counts determine permutation classes in characteristic zero.** Over a field of
-characteristic zero, two finite `G`-sets on which every element has the same number of fixed
-points have the same permutation class: their permutation representations are equivalent. -/
-theorem permK0_eq_of_natCard_fixedBy_eq {X Y : Type u} [MulAction G X] [MulAction G Y]
-    [Finite X] [Finite Y] (h : ∀ g : G, Nat.card (fixedBy X g) = Nat.card (fixedBy Y g)) :
-    permK0 k G X = permK0 k G Y := by
-  obtain ⟨e⟩ := (nonempty_equiv_ofMulAction_iff_forall_natCard_fixedBy_eq k).mpr h
-  rw [permK0_eq_of_equiv k X _ e, permK0_def]
 
 variable (G) in
 /-- **Artin's identity in the Grothendieck group, in characteristic zero.** Over a field of
