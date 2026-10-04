@@ -218,6 +218,15 @@ theorem decompositionSubgroup_eq_of_forall_mem_integers {g h : P.integers.decomp
     (IsFractionRing.ringHom_ext (A := P.integers) (f1 := ((g : F' ≃ₐ[F] F') : F' →+* F'))
       (f2 := ((h : F' ≃ₐ[F] F') : F' →+* F')) fun x ↦ hgh x x.2) y
 
+/-- The decomposition group acts faithfully on the valuation ring of a place. Indeed, two field
+automorphisms agreeing on the valuation ring agree on its fraction field. -/
+instance instFaithfulSMulIntegers (P : Place k F') :
+    FaithfulSMul (P.integers.decompositionSubgroup F) P.integers where
+  eq_of_smul_eq_smul {g h} heq := decompositionSubgroup_eq_of_forall_mem_integers F P fun x hx ↦ by
+    have hval := congrArg Subtype.val (heq ⟨x, hx⟩)
+    change (g : F' ≃ₐ[F] F') x = (h : F' ≃ₐ[F] F') x at hval
+    exact hval
+
 end Transport
 
 /-- Two equal places have the same valuation ring; the isomorphism between the two carriers is

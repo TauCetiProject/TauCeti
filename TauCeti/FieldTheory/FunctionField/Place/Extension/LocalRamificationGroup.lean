@@ -49,14 +49,6 @@ variable {k : Type u} {F : Type v} {F' : Type v'}
 variable [Field k] [Field F] [Field F']
 variable [Algebra k F] [Algebra k F'] [Algebra F F'] [IsScalarTower k F F']
 
-omit [Algebra k F] [IsScalarTower k F F'] in
-/-- The decomposition group acts faithfully on the valuation ring of a place. Indeed, two field
-automorphisms agreeing on the valuation ring agree on its fraction field. -/
-instance instFaithfulSMulIntegers (P : Place k F') :
-    FaithfulSMul (P.integers.decompositionSubgroup F) P.integers where
-  eq_of_smul_eq_smul {g h} heq := decompositionSubgroup_eq_of_forall_mem_integers F P fun x hx ↦ by
-    simpa only [coe_decompositionSubgroup_smul] using congrArg Subtype.val (heq ⟨x, hx⟩)
-
 /-- The lower ramification groups defined using the order filtration of the function field are
 the generic local-ring ramification groups of the valuation ring. -/
 theorem ramificationGroup_eq_isLocalRing_ramificationGroup (P : Place k F') (i : ℕ) :
