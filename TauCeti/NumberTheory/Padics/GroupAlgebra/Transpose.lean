@@ -186,12 +186,12 @@ theorem nonempty_linearEquiv_prod_of_pPowerTorsion_linearEquiv
       (pPowerTorsion p (MonoidAlgebra ℤ_[p] G) N →ₗ[ℤ_[p]] ℚ_[p] ⧸ (1 : Submodule ℤ_[p] ℚ_[p])) :=
     { (e.restrictScalars ℤ_[p]).arrowCongrAddEquiv (.refl ℤ_[p] _) with
       map_smul' a χ := LinearMap.ext fun t ↦ by
-        change (a • χ) (e.symm t) =
-          (a • χ ∘ₗ (e.restrictScalars ℤ_[p]).symm.toLinearMap) t
+        simp only [AddEquiv.toFun_eq_coe, RingHom.id_apply,
+          LinearEquiv.arrowCongrAddEquiv_apply, LinearMap.comp_apply,
+          LinearEquiv.coe_coe, LinearEquiv.refl_apply, LinearEquiv.restrictScalars_symm_apply]
         erw [DomMulAct.mk_smul_linearMap_apply (MulOpposite.unop a),
           DomMulAct.mk_smul_linearMap_apply (MulOpposite.unop a)]
-        change χ (MulOpposite.unop a • e.symm t) = χ (e.symm (MulOpposite.unop a • t))
-        rw [e.symm.map_smul] }
+        exact congrArg χ (e.symm.map_smul (MulOpposite.unop a) t).symm }
   -- Both transposes are the Pontryagin duals of the `p`-power torsion, compatibly with the
   -- action of `ℤ_p[G]ᵐᵒᵖ`, so `e` induces an isomorphism of transposes.
   exact nonempty_linearEquiv_prod_of_linearEquiv hf hπ hg hρ

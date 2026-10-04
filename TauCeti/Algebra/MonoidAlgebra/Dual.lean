@@ -22,9 +22,9 @@ contragredient action: `op a` sends `ψ` to the functional `m ↦ ψ(a • m)`.
 
 This file constructs that equivalence explicitly and proves its naturality under precomposition.
 The range statement is the bridge used to express an Auslander--Reiten transpose through an
-ordinary base-ring dual. The contragredient action, precomposition, and range comparison also
-apply to arbitrary monoids; over a commutative ring, the corresponding quotient comparison is
-base-ring linear.
+ordinary base-ring dual. The contragredient action and precomposition need only semiring
+coefficients and also apply to arbitrary monoids. The range comparison uses commutative semiring
+coefficients; over a commutative ring, the corresponding quotient comparison is base-ring linear.
 
 ## Main definitions
 
@@ -120,14 +120,15 @@ end CoefficientMap
 
 section ContragredientMap
 
-variable {R G M N : Type*} [CommSemiring R] [Monoid G]
+variable {R G M N : Type*} [Semiring R] [Monoid G]
   [AddCommMonoid M] [Module (MonoidAlgebra R G) M] [Module R M]
-  [IsScalarTower R (MonoidAlgebra R G) M]
+  [SMulCommClass R (MonoidAlgebra R G) M]
   [AddCommMonoid N] [Module (MonoidAlgebra R G) N] [Module R N]
-  [IsScalarTower R (MonoidAlgebra R G) N]
+  [SMulCommClass R (MonoidAlgebra R G) N]
+  [LinearMap.CompatibleSMul M N R (MonoidAlgebra R G)]
 
 /-- Precomposition with a monoid-algebra linear map, on base-ring duals equipped with the
-contragredient action. -/
+contragredient action. Scalar compatibility ensures that the map is also base-ring linear. -/
 def LinearMap.contragredientDualMap (f : M →ₗ[MonoidAlgebra R G] N) :
     Module.Dual R N →ₗ[(MonoidAlgebra R G)ᵐᵒᵖ] Module.Dual R M where
   toFun ψ := ψ.comp (f.restrictScalars R)
@@ -146,6 +147,16 @@ theorem LinearMap.contragredientDualMap_apply (f : M →ₗ[MonoidAlgebra R G] N
     contragredientDualMap f ψ m = ψ (f m) := by
   simp [contragredientDualMap]
 
+end ContragredientMap
+
+section ContragredientMapComparison
+
+variable {R G M N : Type*} [CommSemiring R] [Monoid G]
+  [AddCommMonoid M] [Module (MonoidAlgebra R G) M] [Module R M]
+  [IsScalarTower R (MonoidAlgebra R G) M]
+  [AddCommMonoid N] [Module (MonoidAlgebra R G) N] [Module R N]
+  [IsScalarTower R (MonoidAlgebra R G) N]
+
 /-- Restricting contragredient dual precomposition to the base ring gives the usual dual map. -/
 theorem LinearMap.contragredientDualMap_eq_dualMap (f : M →ₗ[MonoidAlgebra R G] N) :
     (contragredientDualMap f).restrictScalars R = (f.restrictScalars R).dualMap := by
@@ -160,7 +171,7 @@ theorem LinearMap.restrictScalars_range_contragredientDualMap
       LinearMap.range (f.restrictScalars R).dualMap := by
   rw [← LinearMap.range_restrictScalars, contragredientDualMap_eq_dualMap]
 
-end ContragredientMap
+end ContragredientMapComparison
 
 section ContragredientQuotient
 
@@ -272,14 +283,16 @@ noncomputable def TauCeti.MonoidAlgebra.dualLinearEquiv :
 
 /-- The forward group-algebra duality map takes the coefficient at the identity. -/
 @[simp]
-theorem LinearMap.dualLinearEquiv_apply (φ : Module.Dual (MonoidAlgebra R G) M) (m : M) :
+theorem TauCeti.MonoidAlgebra.dualLinearEquiv_apply
+    (φ : Module.Dual (MonoidAlgebra R G) M) (m : M) :
     dualLinearEquiv φ m = (φ m).coeff 1 :=
   dualLinearMap_apply φ m
 
 /-- The inverse group-algebra duality map records the translates of a functional as its
 coefficients. -/
 @[simp]
-theorem LinearMap.dualLinearEquiv_symm_apply_coeff (ψ : Module.Dual R M) (m : M) (g : G) :
+theorem TauCeti.MonoidAlgebra.dualLinearEquiv_symm_apply_coeff
+    (ψ : Module.Dual R M) (m : M) (g : G) :
     (dualLinearEquiv.symm ψ m).coeff g =
       ψ (MonoidAlgebra.single g⁻¹ (1 : R) • m) :=
   dualLift_coeff (G := G) ψ m g
