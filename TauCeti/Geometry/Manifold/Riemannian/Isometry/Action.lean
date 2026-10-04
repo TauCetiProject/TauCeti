@@ -11,8 +11,8 @@ public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Group
 # The action of the isometry group
 
 The isometry group `Isom(M)` of a Riemannian manifold acts on `M` by evaluation: `Φ • x = Φ x`.
-This file records that action and its faithfulness, mirroring the action of the
-self-diffeomorphism group in `TauCeti.Geometry.Diffeomorphism.Action`.
+This file records that action, its faithfulness and the regularity of each element's action,
+mirroring the action of the self-diffeomorphism group in `TauCeti.Geometry.Diffeomorphism.Action`.
 
 A Riemannian manifold is *homogeneous* when its isometry group acts transitively, which is
 `MulAction.IsPretransitive (Isom I M) M` for the action recorded here. The model spaces of
@@ -23,6 +23,10 @@ is the pair `(X, Isom(X))`.
 
 * `TauCeti.RiemannianIsometry.applyMulAction`: the action of `Isom I M` on `M` by evaluation.
 * `TauCeti.RiemannianIsometry.applyFaithfulSMul`: the action is faithful.
+* `TauCeti.RiemannianIsometry.applyContinuousConstSMul` and
+  `TauCeti.RiemannianIsometry.applyContMDiffConstSMul`: each isometry acts by a smooth
+  homeomorphism, so `Isom(M)` generates a structure groupoid on `M` and `(Isom M, M)`-manifolds are
+  smooth manifolds.
 
 ## References
 
@@ -59,6 +63,14 @@ theorem smul_def (Φ : Isom I M) (x : M) : Φ • x = Φ x := rfl
 /-- The isometry group acts faithfully on `M`. -/
 instance applyFaithfulSMul : FaithfulSMul (Isom I M) M :=
   ⟨fun h ↦ RiemannianIsometry.ext h⟩
+
+/-- Each isometry acts on `M` by a homeomorphism. -/
+instance applyContinuousConstSMul : ContinuousConstSMul (Isom I M) M :=
+  ⟨fun Φ ↦ Φ.toDiffeomorph.continuous⟩
+
+/-- Each isometry acts on `M` by a smooth map. -/
+instance applyContMDiffConstSMul : ContMDiffConstSMul I ∞ (Isom I M) M :=
+  ⟨fun Φ ↦ Φ.toDiffeomorph.contMDiff⟩
 
 end TauCeti.RiemannianIsometry
 
