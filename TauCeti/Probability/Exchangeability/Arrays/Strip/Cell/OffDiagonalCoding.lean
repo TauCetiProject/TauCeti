@@ -231,6 +231,7 @@ theorem JointlyExchangeable.condIndepFun_offDiagonalPair_crossingStripsAndDiagon
     (Set.univ ×ˢ Set.range e) ∪ (Set.range e ×ˢ Set.univ) ∪ {p : ℕ × ℕ | p.1 = p.2} with hD
   -- The square context and the entries of the square other than the pair generate the same
   -- information, and that information is part of the crossing strips and the diagonal.
+  have : True := (let _ := hD; True.intro)
   have hRC : MeasurableSpace.comap ((S ×ˢ S \ C).domRestrict (π := fun _ => α)) inferInstance ≤
       MeasurableSpace.comap (offDiagonalPairSquareContext (α := α) e i j) inferInstance := by
     rw [← squareStripsOfContext_comp (α := α) e i j hij hi hj, ← MeasurableSpace.comap_comp]

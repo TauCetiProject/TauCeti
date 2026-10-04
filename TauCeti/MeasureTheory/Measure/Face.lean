@@ -40,7 +40,7 @@ combination with positive weights can charge `t` when the combination does not. 
 theorem isExtreme_setOf_measure_eq_zero (C : Set (Measure α)) (t : Set α) :
     IsExtreme ℝ≥0∞ C {μ ∈ C | μ t = 0} := by
   refine ⟨fun μ hμ => hμ.1, ?_⟩
-  rintro μ₁ hμ₁ μ₂ hμ₂ μ ⟨-, hμ0⟩ ⟨a, b, ha, hb, -, rfl⟩
+  rintro μ₁ hμ₁ μ₂ _ μ ⟨-, hμ0⟩ ⟨a, b, ha, _, -, rfl⟩
   have h : a * μ₁ t + b * μ₂ t = 0 := by
     simpa [Measure.add_apply, Measure.smul_apply] using hμ0
   rw [add_eq_zero, mul_eq_zero, mul_eq_zero] at h

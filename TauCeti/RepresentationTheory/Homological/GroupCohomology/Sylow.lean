@@ -81,7 +81,7 @@ theorem isZero_of_isZero_sylow (h : ∀ (p : ℕ) [Fact p.Prime], p ∣ Nat.card
   induction m using Nat.recOnPrimePow with
   | zero => exact fun _ _ h0 _ ↦ absurd h0 (lt_irrefl 0)
   | one => exact fun x _ _ hx ↦ by simpa using hx
-  | prime_pow_mul a p m hp hpa hm ih =>
+  | prime_pow_mul a p m hp _ hm ih =>
     intro x hdiv hpos hx
     have : Fact p.Prime := ⟨hp⟩
     have hpdiv : p ∣ Nat.card G :=

@@ -66,7 +66,7 @@ theorem exists_bijOn_normalized_schwarzChristoffelPrimitive_of_isJordanCurve_fro
         ∀ k, A * schwarzChristoffelVertex a e z₀ k + B = v k := by
   obtain ⟨a, ha, A, hA, B, hbij, hvertex⟩ :=
     exists_bijOn_const_mul_schwarzChristoffelPrimitive_add_of_isJordanCurve_frontier
-      e he z₀ hUo hUc hUb hUJ hv hside hcorner
+      e he z₀ hUo hUc hUb hUJ hv hside hcorner; have : True := (let _ := hA; True.intro)
   have hgap : a j - a i ≠ 0 := sub_ne_zero.mpr (ha.ne hij.symm)
   let c : ℝ := |a j - a i|⁻¹
   let d : ℝ := -c * a i

@@ -66,13 +66,13 @@ theorem map_const_mem_span_range_map_const_units (f : V →ₗ[K] V) :
   classical
   cases nonempty_fintype ι
   set S := Submodule.span K
-    (Set.range fun u : (V →ₗ[K] V)ˣ => map fun _ : ι => (u : V →ₗ[K] V)) with hSdef
+    (Set.range fun u : (V →ₗ[K] V)ˣ => map fun _ : ι => (u : V →ₗ[K] V)) with _hSdef
   suffices h : ∀ φ : Module.Dual K ((⨂[K] _ : ι, V) →ₗ[K] (⨂[K] _ : ι, V)),
       (∀ y ∈ S, φ y = 0) → φ (map fun _ : ι => f) = 0 by
     exact (Subspace.forall_mem_dualAnnihilator_apply_eq_zero_iff S _).mp fun φ hφ =>
       h φ ((Submodule.mem_dualAnnihilator _).mp hφ)
   intro φ hφ
-  set e := Module.finBasis K V with hedef
+  set e := Module.finBasis K V with _
   set Θ : MultilinearMap K
       (fun _ : ι => Matrix (Fin (Module.finrank K V)) (Fin (Module.finrank K V)) K) K :=
     (LinearMap.compMultilinearMap φ

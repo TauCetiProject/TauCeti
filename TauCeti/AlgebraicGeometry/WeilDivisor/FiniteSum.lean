@@ -103,7 +103,7 @@ lemma pushforward_ofFinsupp (f : X → Y) (m : X →₀ ℕ) :
       ∑ x ∈ m.support, (m x : ℤ) • ofPoint (f x) := by
   classical
   rw [ofFinsupp_eq_sum, map_sum]
-  refine Finset.sum_congr rfl fun x hx => ?_
+  refine Finset.sum_congr rfl fun x _ => ?_
   rw [map_zsmul, pushforward_ofPoint]
 
 /-- With positive weights on the support, a divisor from finitely supported multiplicities has
@@ -225,7 +225,7 @@ lemma pushforward_ofFinsetWithMultiplicity (f : X → Y) (s : Finset X) (m : X �
       ∑ x ∈ s, (m x : ℤ) • ofPoint (f x) := by
   classical
   rw [ofFinsetWithMultiplicity_eq_sum, map_sum]
-  refine Finset.sum_congr rfl fun x hx => ?_
+  refine Finset.sum_congr rfl fun x _ => ?_
   rw [map_zsmul, pushforward_ofPoint]
 
 /-- With positive weights at selected points with nonzero multiplicity, a named finite-set

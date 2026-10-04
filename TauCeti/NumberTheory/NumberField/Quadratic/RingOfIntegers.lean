@@ -87,7 +87,7 @@ private theorem den_eq_one_of_squarefree_mul_sq_isInt {d : ℤ} (hd : Squarefree
     rcases Int.isUnit_iff.mp hunit with h1 | h1
     · exact h1
     · have hpos : (0 : ℤ) < (B.den : ℤ) := by exact_mod_cast B.pos
-      omega
+      let _ := hpos; omega
   exact_mod_cast hb1
 
 variable {θ : 𝓞 K} {d : ℤ}
@@ -187,7 +187,7 @@ private theorem exists_half_int_coords (hmin : minpoly ℤ θ = X ^ 2 - C d)
   have hfr := finrank_rat_eq_two hmin hgen
   obtain ⟨bs, hbs, hb⟩ := Internal.exists_basis_eq_one_self_of_notMem_range_of_isIntegral
     hfr (gen_notMem_range hmin) θ.isIntegral_coe
-  set a := bs.repr (z : K) 0
+  let _ := hb; set a := bs.repr (z : K) 0
   set c := bs.repr (z : K) 1
   have hz : (z : K) = algebraMap ℚ K a + algebraMap ℚ K c * (θ : K) := by
     have hsum := bs.sum_repr (z : K)
@@ -249,8 +249,8 @@ theorem adjoin_rat_halfGen_eq_top (hmin : minpoly ℤ θ = X ^ 2 - C d)
 theorem minpoly_halfGen (hmin : minpoly ℤ θ = X ^ 2 - C d) (hd4 : d % 4 = 1) :
     minpoly ℤ (halfGen hmin hd4) = X ^ 2 - X + C ((1 - d) / 4) := by
   set ω := halfGen hmin hd4 with hω
-  set c : ℤ := (1 - d) / 4 with hc
-  have h4 : 4 * c = 1 - d := by omega
+  let _ := hω; set c : ℤ := (1 - d) / 4 with hc
+  let _ := hc; have h4 : 4 * c = 1 - d := by omega
   have hmonic : (X ^ 2 - X + C c : ℤ[X]).Monic := by
     simpa using (isMonicOfDegree_sub_add_two (R := ℤ) 1 c).monic
   have hdeg : (X ^ 2 - X + C c : ℤ[X]).natDegree = 2 := by

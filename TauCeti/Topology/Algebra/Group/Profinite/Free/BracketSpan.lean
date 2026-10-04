@@ -72,6 +72,7 @@ theorem exists_apply_mem_gradedBracketSpan_basisModificationDelta_eq {k : ℕ}
   set W : Submodule (ZMod p) (gradedPiece p (freeProP p X) (k + 1 + 1)) :=
     ((gradedBracketSpan p (freeProP p X) k).comap (LinearMap.proj x₀)).map
       (basisModificationDelta p X (Nat.le_add_left 1 k) ρ) with hW
+  have : True := (let _ := hW; True.intro)
   have hmemW : ∀ ω : X → gradedPiece p (freeProP p X) (k + 1),
       ω x₀ ∈ gradedBracketSpan p (freeProP p X) k →
         basisModificationDelta p X (Nat.le_add_left 1 k) ρ ω ∈ W := fun ω hω ↦

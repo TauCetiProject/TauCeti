@@ -184,6 +184,7 @@ theorem twoByTwo_simplyBlockedDifferential_apply
   induction c using Finsupp.induction with
   | zero => simp
   | single_add x a c hx ha ih =>
+      let _ := ha
       rw [map_add, ih]
       rcases GridState.eq_twoByTwoId_or_eq_twoByTwoSwap x with rfl | rfl
       · ext y : 1

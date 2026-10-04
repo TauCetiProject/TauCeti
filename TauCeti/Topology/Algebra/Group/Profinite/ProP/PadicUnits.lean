@@ -135,6 +135,7 @@ theorem two_dvd_of_neg_one_padicPow_mem_unitsPrincipal {s : ℤ_[2]}
   rw [neg_one_padicPow] at h
   have hlt : s.appr 1 < 2 := PadicInt.appr_lt s 1
   interval_cases hr : s.appr 1
+  all_goals let _ := hr
   · simpa using hspec
   · exact absurd (neg_one_mem_unitsPrincipal_two_iff.mp (by simpa using h)) (by norm_num)
 

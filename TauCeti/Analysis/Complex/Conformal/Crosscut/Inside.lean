@@ -94,10 +94,10 @@ theorem exists_pos_forall_mem_image_inter_ball_and_image_sdiff_closedBall {U : S
   have hgmem : ∀ w ∈ f '' U, g w ∈ U := fun w hw => Function.invFunOn_mem hw
   have hd0 : deriv f z₀ ≠ 0 :=
     deriv_ne_zero_of_injOn hf hU hinj hz₀b
-  have hzζ : z₀ - ζ ≠ 0 := sub_ne_zero.mpr (Metric.ne_of_mem_sphere hz₀s hρ.ne')
-  set v := deriv f z₀ * (z₀ - ζ) with hv_def
+  let _ := hd0; have hzζ : z₀ - ζ ≠ 0 := sub_ne_zero.mpr (Metric.ne_of_mem_sphere hz₀s hρ.ne')
+  let _ := hzζ; set v := deriv f z₀ * (z₀ - ζ) with hv_def
   -- the pulled-back segment has velocity `z₀ - ζ` at `t = 0`
-  have hφ : HasDerivAt (fun t : ℝ => g (v * t + f z₀)) (z₀ - ζ) 0 :=
+  let _ := hv_def; have hφ : HasDerivAt (fun t : ℝ => g (v * t + f z₀)) (z₀ - ζ) 0 :=
     hasDerivAt_invFunOn_comp_segment hf hU hinj hz₀b (z₀ - ζ)
   have hφ0 : g (v * ((0 : ℝ) : ℂ) + f z₀) = z₀ := by simp [hgf z₀ hz₀b]
   have hnorm : ‖z₀ - ζ‖ = ρ := by rwa [← dist_eq_norm, ← mem_sphere]
@@ -172,7 +172,7 @@ theorem mem_closure_image_inter_sphere_inter_setOf_im_pos_and_mem_closure_inter_
   rw [zero_add] at hθ₀
   -- the imaginary coordinate of the crosscut, as a function of the angle
   set χ : ℝ → ℝ := fun θ => ((f (circleMap ζ ρ θ) - f z₀) / v).im with hχ_def
-  have hχ : HasDerivAt χ 1 θ₀ := by
+  let _ := hχ_def; have hχ : HasDerivAt χ 1 θ₀ := by
     have h1 : HasDerivAt (circleMap ζ ρ) (circleMap 0 ρ θ₀ * I) θ₀ :=
       hasDerivAt_circleMap ζ ρ θ₀
     have h2 : HasDerivAt f (deriv f z₀) (circleMap ζ ρ θ₀) := by rw [hθ₀]; exact hfz
@@ -268,8 +268,8 @@ theorem image_inter_ball_subset_filledHull_or_image_sdiff_closedBall_subset_fill
   have hγKcl : closure (f '' (U ∩ sphere ζ ρ)) ⊆ K :=
     hK.closure_subset_iff.mpr hγK
   set p := f z₀ with hp_def
-  set v := deriv f z₀ * (z₀ - ζ) with hv_def
-  have hv : v ≠ 0 :=
+  let _ := hp_def; set v := deriv f z₀ * (z₀ - ζ) with hv_def
+  let _ := hv_def; have hv : v ≠ 0 :=
     mul_ne_zero (deriv_ne_zero_of_injOn hf hUo hinj hz₀.1)
       (sub_ne_zero.mpr (Metric.ne_of_mem_sphere hz₀.2 hρ.ne'))
   obtain ⟨η, hη, hnear, hfar⟩ :=
@@ -287,7 +287,7 @@ theorem image_inter_ball_subset_filledHull_or_image_sdiff_closedBall_subset_fill
   -- the two-sidedness theorem, applied to `K` and the segment on `[-η/2, η/2]`
   have hpγ : p ∈ f '' (U ∩ sphere ζ ρ) := mem_image_of_mem f hz₀
   have hpK : p ∈ K := hγKcl (subset_closure hpγ)
-  have hseg : ∀ t ∈ Icc (-(η / 2)) (η / 2), v * t + p ∈ K → t = 0 := by
+  let _ := hpK; have hseg : ∀ t ∈ Icc (-(η / 2)) (η / 2), v * t + p ∈ K → t = 0 := by
     intro t ht hKt
     by_contra ht0
     rcases lt_or_gt_of_ne ht0 with hneg | hpos

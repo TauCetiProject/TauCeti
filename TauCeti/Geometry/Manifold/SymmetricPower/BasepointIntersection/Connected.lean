@@ -72,7 +72,7 @@ theorem mapsTo_basepointDivisor_of_isPreconnected_of_eventually_mem (z : α)
   -- the parameters near which `f` is contained in the divisor form an open set `S`; it suffices to
   -- show that `S` is relatively closed in `U`, since `U` is preconnected and meets `S` at `w`
   set S : Set ℂ := {t | ∀ᶠ s in 𝓝 t, f s ∈ Sym.basepointDivisor z} with hS
-  have hSD : S ⊆ f ⁻¹' Sym.basepointDivisor z := fun s hs => hs.self_of_nhds
+  let _ := hS; have hSD : S ⊆ f ⁻¹' Sym.basepointDivisor z := fun s hs => hs.self_of_nhds
   suffices hsub : U ⊆ S from fun t ht => hSD (hsub ht)
   refine hU.subset_of_closure_inter_subset isOpen_setOfPred_eventually_nhds ⟨w, hw, hev⟩ ?_
   rintro t ⟨htS, htU⟩

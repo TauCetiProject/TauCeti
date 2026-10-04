@@ -91,7 +91,9 @@ omit [IsStrictOrderedRing R] in
 /-- A nonzero polynomial alone forms a signed remainder sequence. -/
 theorem singleton {p : Polynomial R} (hp : p ≠ 0) : IsSignedRemainderSeq [p] where
   nonzero := by simpa
-  relation i p0 p1 p2 h0 h1 h2 := by
+  relation i p0 p1 p2 h0 h1 h2 := have : True := (let _ := h1; True.intro)
+  have : True := (let _ := h0; True.intro)
+  by
     have hi : i + 2 < 1 := by
       simpa using (List.getElem?_eq_some_iff.mp h2).1
     omega
@@ -110,7 +112,9 @@ theorem pair {p q : Polynomial R} (hp : p ≠ 0) (hdvd : q ∣ p) :
     rcases hs with rfl | rfl
     · exact hp
     · exact hq
-  relation i p0 p1 p2 h0 h1 h2 := by
+  relation i p0 p1 p2 h0 h1 h2 := have : True := (let _ := h1; True.intro)
+  have : True := (let _ := h0; True.intro)
+  by
     have hi : i + 2 < 2 := by
       have := List.getElem?_eq_some_iff.mp h2
       simpa using this.1

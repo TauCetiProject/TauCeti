@@ -208,7 +208,6 @@ private theorem mem_span_anisotropic [NeZero (2 : K)] (hQ : Q.Nondegenerate) (x 
       · simpa only [polar_add_right, polar_self, hxQ, smul_zero, zero_add] using hxy
       · exact hxy
     let a := polar Q x y' / Q y'
-    have ha : a ≠ 0 := div_ne_zero hxy' hy'Q
     let z := x + a • y'
     have hzQ_eq : Q z = 2 * (polar Q x y') ^ 2 / Q y' := by
       dsimp only [z, a]
@@ -299,9 +298,9 @@ theorem span_spinGroup_eq_even_of_span_anisotropic
           Submodule.span K (spinGroup Q : Set (CliffordAlgebra Q)) :=
         Submodule.subset_span (one_mem (spinGroup Q))
       simpa only [Algebra.smul_def, mul_one] using Submodule.smul_mem _ r hone
-    · intro x y hx hy ihx ihy
+    · intro x y _ _ ihx ihy
       exact Submodule.add_mem _ ihx ihy
-    · intro v w x hx ih
+    · intro v w x _ ih
       exact mul_mem_span_spinGroup (Q := Q)
         (ι_mul_ι_mem_span_spinGroup_of_span_anisotropic Q hspan hsq v w) ih
 

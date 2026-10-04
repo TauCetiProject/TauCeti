@@ -488,6 +488,7 @@ theorem periodIntegrand_adjugate_slash {k : ℤ} (hk : k = w + 2) (f : ℍ → �
   set g' := Matrix.GeneralLinearGroup.map (algebraMap ℚ ℝ) g with hg'
   have hD : ((g : Matrix (Fin 2) (Fin 2) ℚ).det : ℂ) ≠ 0 := by exact_mod_cast hg.ne'
   -- the adjugate sends `(aτ + b, cτ + d)` to `det g • (τ, 1)`
+  have : True := (let _ := hD; True.intro)
   have hvec : ((adjugate A).map (Int.cast : ℤ → R)).map (algebraMap R ℂ) *ᵥ
       ![num g' τ, denom g' τ] = ((g : Matrix (Fin 2) (Fin 2) ℚ).det : ℂ) • ![(τ : ℂ), 1] := by
     have hent (i j : Fin 2) : ((g' i j : ℝ) : ℂ) = ((A i j : ℤ) : ℂ) := by

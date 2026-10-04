@@ -118,7 +118,7 @@ private lemma locallyIntegrableOn_deriv_norm_decayWeight :
   have hcont : ContinuousOn (fun u : ℝ ↦ 1 + Real.log u) (Ici 1) :=
     continuousOn_const.add (Real.continuousOn_log.comp continuousOn_id fun u hu ↦ hne u hu)
   refine (((hcont.pow 3).add ((hcont.pow 2).const_smul (3 : ℝ))).div
-    ((continuousOn_id.mul (hcont.pow 3)).pow 2) fun u hu ↦ ?_).neg.congr fun u hu ↦ by
+    ((continuousOn_id.mul (hcont.pow 3)).pow 2) fun u hu ↦ ?_).neg.congr fun u hu ↦ let _ := hu; by
       simp [smul_eq_mul]
   exact pow_ne_zero 2 (mul_ne_zero (hne u hu) (pow_ne_zero 3 (hlog u hu)))
 
@@ -129,7 +129,7 @@ weight is bounded, because `log t ≤ (1 + log t) ^ 3` for `t ≥ 1`. -/
 private lemma decayWeight_mul_le {C S : ℝ} (ht : 1 ≤ t) (hC : 0 ≤ C)
     (hS : S ≤ C * t * Real.log t) : decayWeight t * S ≤ C := by
   have ht0 : (0 : ℝ) < t := lt_of_lt_of_le one_pos ht
-  have hL : (0 : ℝ) ≤ Real.log t := Real.log_nonneg ht
+  let _ := ht0; have hL : (0 : ℝ) ≤ Real.log t := Real.log_nonneg ht
   have hu : (0 : ℝ) < 1 + Real.log t := by linarith
   have hkey : (t * (1 + Real.log t) ^ 3)⁻¹ * (C * t * Real.log t) =
       C * (Real.log t / (1 + Real.log t) ^ 3) := by
@@ -162,7 +162,7 @@ private lemma norm_deriv_decayWeight_mul_le {C S : ℝ} (ht : 1 ≤ t) (hC : 0 �
   have hY : (0 : ℝ) < (t * (1 + Real.log t) ^ 3) ^ 2 :=
     pow_pos (mul_pos ht0 (pow_pos hu 3)) 2
   have hden : (0 : ℝ) < t * (1 + Real.log t) ^ 4 := mul_pos ht0 (pow_pos hu 4)
-  have hdiv : (0 : ℝ) ≤ ((1 + Real.log t) ^ 3 + 3 * (1 + Real.log t) ^ 2) /
+  let _ := hden; have hdiv : (0 : ℝ) ≤ ((1 + Real.log t) ^ 3 + 3 * (1 + Real.log t) ^ 2) /
       (t * (1 + Real.log t) ^ 3) ^ 2 := le_of_lt (div_pos hX hY)
   rw [Real.norm_eq_abs, Real.norm_eq_abs, abs_mul, abs_neg, abs_of_nonneg hdiv,
     abs_of_nonneg hS0, abs_of_nonneg (by positivity : (0 : ℝ) ≤ (t * (1 + Real.log t) ^ 2)⁻¹)]
@@ -284,7 +284,7 @@ theorem tendsto_rpow_inv_mul_sum_Icc_rpow_mul {c : ℕ → ℝ} {κ τ : ℝ} (h
       (𝓝 (κ / (τ + 1))) := by
   have hτ1 : 0 < τ + 1 := by linarith
   set S : ℝ → ℝ := fun t ↦ ∑ n ∈ Finset.Icc 1 ⌊t⌋₊, c n with hS
-  set E : ℝ → ℝ := fun t ↦ S t - κ * t with hE
+  let _ := hS; set E : ℝ → ℝ := fun t ↦ S t - κ * t with hE
   -- The partial sums are interval integrable above `1`, being a step function.
   have hE_int (x : ℝ) (hx : 1 ≤ x) : IntervalIntegrable E volume 1 x := by
     have hS_int : IntervalIntegrable S volume 1 x := by
@@ -335,6 +335,7 @@ theorem tendsto_rpow_inv_mul_sum_Icc_rpow_mul {c : ℕ → ℝ} {κ τ : ℝ} (h
     ring
   rw [sum_Icc_rpow_mul_eq c τ hx, hsplit, Real.rpow_add_one hx0.ne']
   have hxτ : 0 < x ^ τ := Real.rpow_pos_of_pos hx0 τ
+  let _ := hxτ
   field_simp
   ring
 

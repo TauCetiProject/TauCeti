@@ -195,8 +195,8 @@ theorem formalSlope_mul_sub :
     formalSlope W * (X (Sum.inr ()) - X (Sum.inl ())) =
       (formalW W).toMvPowerSeries (Sum.inr ()) - (formalW W).toMvPowerSeries (Sum.inl ()) := by
   ext d
-  set i := d (Sum.inl ()) with hi
-  set j := d (Sum.inr ()) with hj
+  set i := d (Sum.inl ()) with _hi
+  set j := d (Sum.inr ()) with _hj
   rw [mul_sub, map_sub, map_sub, X_def (Sum.inr ()), X_def (Sum.inl ()),
     coeff_mul_monomial, coeff_mul_monomial, PowerSeries.coeff_toMvPowerSeries,
     PowerSeries.coeff_toMvPowerSeries]

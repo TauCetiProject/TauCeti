@@ -254,7 +254,7 @@ private lemma intersection_eq_zero_and_exists_factors (hcard : 3 < Fintype.card 
       exfalso
       have hp₃1 : 1 ≤ p₃ := by have := pos_of_mul_pos_right (hp₃ ▸ hpos) hwi.le; omega
       have hq₃1 : 1 ≤ q₃ := by have := pos_of_mul_pos_right (hq₃ ▸ hpos) hwk.le; omega
-      have h₃ : 1 ≤ p₃ * q₃ := by nlinarith
+      let _ := hq₃1; have h₃ : 1 ≤ p₃ * q₃ := by nlinarith
       have h₄ : 1 ≤ q₁ * q₂ := by nlinarith
       have h₅ : 1 ≤ q₁ * q₂ * p₃ := by nlinarith
       linarith
@@ -608,7 +608,7 @@ theorem exists_weight_intersection_star_four_eq (hcard : 4 < Fintype.card T.Comp
   have hpq₁ : p₁ * q₁ = 1 := by omega
   have hpq₂ : p₂ * q₂ = 1 := by omega
   have hpq₃ : p₃ * q₃ = 1 := by omega
-  have hp₁le : p₁ ≤ p₁ * q₁ := le_mul_of_one_le_right (by omega) hq₁1
+  let _ := hpq₃; have hp₁le : p₁ ≤ p₁ * q₁ := le_mul_of_one_le_right (by omega) hq₁1
   have hq₁le : q₁ ≤ p₁ * q₁ := le_mul_of_one_le_left (by omega) hp₁1
   have hp₂le : p₂ ≤ p₂ * q₂ := le_mul_of_one_le_right (by omega) hq₂1
   have hq₂le : q₂ ≤ p₂ * q₂ := le_mul_of_one_le_left (by omega) hp₂1
@@ -857,10 +857,15 @@ theorem intersection_eq_zero_of_chain_five (hcard : 5 < Fintype.card T.Component
   -- of it shows that all five weights agree and that each of its five edges has that weight.
   obtain ⟨e₂i, e₂j, e₃j, e₃k⟩ := T.intersection_eq_weight_of_chain_five hcard hh hi hj hk hl
     hhj hhk hhl hik hil hjl hhi hij hjk hkl
+  let _ := e₂j
+  let _ := e₃k
   obtain ⟨e₄k, e₄l, e₅l, e₅h⟩ := T.intersection_eq_weight_of_chain_five hcard hj hk hl hh hi
     hjl hhj.symm hij'.symm hhk.symm hik.symm hil.symm hjk hkl hlh0 hhi
+  let _ := e₅h
+  let _ := e₄l
   obtain ⟨e₁h, e₁i, -, -⟩ := T.intersection_eq_weight_of_chain_five hcard hl hh hi hj hk
     hil.symm hjl.symm hkl'.symm hhj hhk hik hlh0 hhi hij hjk
+  let _ := e₁i
   have hcomm : T.intersection h l = T.intersection l h := T.intersection_comm h l
   linarith [T.chain_five_form_neg hcard hhi' hhj hhk hhl hij' hik hil hjk' hjl hkl'
     hhj0 hhk0 hik0 hil0 hjl0 1 1 1 1 1 one_ne_zero]
@@ -897,7 +902,7 @@ theorem intersection_eq_zero_of_star_five (hcard : 5 < Fintype.card T.Component)
     T.exists_weight_intersection_star_four_eq (by omega) h₁ h₂ h₄ h₅ h₂₄ h₂₅ h₄₅ e₁₂ e₁₄ e₁₅
   have hww : (w : ℤ) = w' := by omega
   -- The vector taking the value two at the centre and one at each leg is isotropic.
-  have hneg := T.intersection_five_neg hcard h₁₂ h₁₃ h₁₄ h₁₅ h₂₃ h₂₄ h₂₅ h₃₄ h₃₅ h₄₅
+  let _ := hww; have hneg := T.intersection_five_neg hcard h₁₂ h₁₃ h₁₄ h₁₅ h₂₃ h₂₄ h₂₅ h₃₄ h₃₅ h₄₅
     (y₁ := 2) (y₂ := 1) (y₃ := 1) (y₄ := 1) (y₅ := 1) (by omega)
   rw [h₁, h₂, h₃, h₄, h₅, a₁₂, a₁₃, a₁₄, a₁₅, z₂₃, z₂₄, z₂₅, z₃₄, z₃₅, z₄₅] at hneg
   simp only [one_pow, mul_one] at hneg
@@ -978,6 +983,7 @@ theorem exists_weight_intersection_fork_five_eq (hcard : 5 < Fintype.card T.Comp
           rw [hwi] at aq₁
           rw [mul_comm]
           exact aq₁
+        let _ := ahi
         linarith [T.fork_five_form_neg hcard hhi' hhj hhk hhl hij' hik hil hjk' hjl' hkl
           zhj zhk zhl zik zil zkl 1 2 2 1 1 one_ne_zero]
       · have hwh : 2 * (T.weight h : ℤ) = w := by
@@ -986,6 +992,7 @@ theorem exists_weight_intersection_fork_five_eq (hcard : 5 < Fintype.card T.Comp
         have ahi : T.intersection h i = w := by
           rw [hwi, mul_one] at aq₁
           exact aq₁
+        let _ := ahi
         linarith [T.fork_five_form_neg hcard hhi' hhj hhk hhl hij' hik hil hjk' hjl' hkl
           zhj zhk zhl zik zil zkl 2 2 2 1 1 (by omega)]
     · have hpqpos : 0 < p₁ * q₁ := mul_pos (by omega) (by omega)
@@ -1043,18 +1050,31 @@ private theorem chain_six_factors (hcard : 6 < Fintype.card T.Component)
   obtain ⟨zhj', zhk', zhl, zik', zil, zjl⟩ :=
     T.intersection_eq_zero_of_chain_five (by omega) hh hi hj hk hl hhj hhk hhl hik hil hjl
       ehi eij ejk ekl
+  let _ := zhk'
+  let _ := zik'
+  let _ := zhj'
   have zgl : T.intersection g l = 0 := by
     by_contra hne
     have egl : 0 < T.intersection g l := (T.offDiagonal_nonneg g l hgl).lt_of_ne (Ne.symm hne)
     have elg : 0 < T.intersection l g := T.intersection_comm g l ▸ egl
     obtain ⟨ahi, wh, aij, wi⟩ := T.intersection_eq_weight_of_chain_five (by omega)
       hg hh hi hj hk hgi hgj hgk hhj hhk hik egh ehi eij ejk
+    let _ := wh
+    let _ := wi
     obtain ⟨aij', wi', ajk, wj⟩ := T.intersection_eq_weight_of_chain_five (by omega)
       hh hi hj hk hl hhj hhk hhl hik hil hjl ehi eij ejk ekl
+    let _ := wi'
+    let _ := wj
+    let _ := aij'
     obtain ⟨akl, wk, alg, wl⟩ := T.intersection_eq_weight_of_chain_five (by omega)
       hj hk hl hg hh hjl hgj.symm hhj.symm hgk.symm hhk.symm hhl.symm ejk ekl elg egh
+    let _ := wl
+    let _ := wk
     obtain ⟨alg', wl', agh, wg⟩ := T.intersection_eq_weight_of_chain_five (by omega)
       hk hl hg hh hi hgk.symm hhk.symm hik.symm hhl.symm hil.symm hgi ekl elg egh ehi
+    let _ := wg
+    let _ := alg'
+    let _ := wl'
     have agl : T.intersection g l = (T.weight l : ℤ) := T.intersection_comm l g ▸ alg
     have hform := T.intersection_six_neg hcard hgh hgi hgj hgk hgl hhi hhj hhk hhl hij hik
       hil hjk hjl hkl (y₁ := 1) (y₂ := 1) (y₃ := 1) (y₄ := 1) (y₅ := 1) (y₆ := 1)

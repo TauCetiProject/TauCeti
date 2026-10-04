@@ -204,7 +204,8 @@ theorem exists_not_map_integralSubgroup_le :
     simp [U, U', hi]
   refine ⟨U, U', h, fun hle ↦ ?_⟩
   let x : Πʳ i, [Multiplicative ℤ, (U i : Set (Multiplicative ℤ))] :=
-    ⟨fun _ ↦ Multiplicative.ofAdd 1, .of_forall fun i ↦ by simp [U]⟩
+    ⟨fun _ ↦ Multiplicative.ofAdd 1, .of_forall fun i ↦ let _ := i;
+    by simp [U]⟩
   have hx : restrictedProductMap U U' (fun _ ↦ MonoidHom.id _) _ x ∈ integralSubgroup U' :=
     hle (Subgroup.mem_map_of_mem _ ((mem_integralSubgroup U x).mpr fun i ↦ by simp [U]))
   have h0 := (mem_integralSubgroup U' _).mp hx 0

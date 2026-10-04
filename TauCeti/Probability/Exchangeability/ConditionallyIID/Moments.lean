@@ -404,7 +404,9 @@ theorem ConditionallyIIDWith.integral_empiricalFrequency_sub_sq [IsFiniteMeasure
       h.measurable_directing
   have he : ∀ i ∈ Finset.range n,
       AEMeasurable ((X i ⁻¹' B).indicator (1 : Ω → ℝ)) μ := fun i hi ↦
-    measurable_one.aemeasurable.indicator₀ ((h.aemeasurable i).nullMeasurableSet_preimage hB)
+    let _ := hi
+    measurable_one.aemeasurable.indicator₀
+      ((h.aemeasurable i).nullMeasurableSet_preimage hB)
   -- the `[0, 1]` bounds feeding the `|·| ≤ 1` hypotheses of `integral_sq_average_sub`
   have hq0 : ∀ ω, 0 ≤ ((ν ω : Measure α) B).toReal := fun _ ↦ ENNReal.toReal_nonneg
   have hq1 : ∀ ω, ((ν ω : Measure α) B).toReal ≤ 1 := fun _ ↦ measureReal_le_one
@@ -417,6 +419,8 @@ theorem ConditionallyIIDWith.integral_empiricalFrequency_sub_sq [IsFiniteMeasure
     (fun i _ ω ↦ abs_le.mpr ⟨by linarith [he0 i ω], he1 i ω⟩)
     (fun ω ↦ abs_le.mpr ⟨by linarith [hq0 ω], hq1 ω⟩)
     (fun i hi j hj ↦
+      let _ := hj
+      let _ := hi
       h.integral_indicator_sub_directing_mul_indicator_sub_directing i j hB)
     hn
 

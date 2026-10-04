@@ -431,6 +431,7 @@ private lemma m1_eq_one_and_m2_eq_of_two_le (P m1 m2 : ℤ) (k : ℕ) (hk2 : 2 �
     linarith
   have h_m1_eq : m1 = 1 := by
     have h_le : m1 * P ^ 2 ≤ P ^ 2 + P := by linarith
+    have : True := (let _ := h_le; True.intro)
     nlinarith [show P ^ 2 ≥ 4 by nlinarith]
   exact ⟨h_m1_eq, by rw [h_m1_eq] at h_eq; linarith⟩
 

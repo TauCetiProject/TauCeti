@@ -361,6 +361,7 @@ noncomputable def coxeterFunctor (k : Type u) {V : Type v} [fld : Field k] [fV :
     {l : List V} (hnd : l.Nodup) (hall : ∀ v : V, v ∈ l)
     (hl : Quiver.IsSinkAdmissible q l) :
     @QuiverRep.{u, v, w, max v w x} k V fld q ⥤ @QuiverRep.{u, v, w, max v w x} k V fld q :=
+  let _ := fV
   transportCodomain (Quiver.reflectList_eq_self q hnd hall) (reflectionFunctorList k l q hq hl)
 
 /-- The Coxeter functor is the reflection-functor composite transported along the equality between

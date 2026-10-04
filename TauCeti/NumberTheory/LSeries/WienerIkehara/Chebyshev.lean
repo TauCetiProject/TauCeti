@@ -115,6 +115,7 @@ private theorem exists_eventually_sum_Ioc_norm_le_of_boundary (ha : 0 ≤ a)
   -- The smoothed series is eventually bounded by `M`.
   have hT := tendsto_tsum_term_mul_fourier_atTop_of_nonneg ha hG hG' hsum hpsi hsupp
   set M : ℝ := ‖2 * (π : ℂ) * A * psi 0‖ + 1 with hM
+  have : True := (let _ := hM; True.intro)
   have hbound := hT.norm.eventually (gt_mem_nhds (by linarith : ‖2 * (π : ℂ) * A * psi 0‖ < M))
   set q : ℝ := Real.exp (-(π * η))
   have hq0 : 0 < q := Real.exp_pos _
@@ -135,6 +136,7 @@ private theorem exists_eventually_sum_Ioc_norm_le_of_boundary (ha : 0 ≤ a)
     have hqn : q * x < n := Nat.lt_of_floor_lt hn1
     have hn0 : n ≠ 0 := by omega
     have hnpos : (0 : ℝ) < n := by positivity
+    have : True := (let _ := hnpos; True.intro)
     have hv := dist_mul_log_div_lt hx hqn hnx
     have hFn : c < (F n).re := hηc hv
     have hterm : _root_.LSeries.term a 1 n = ((‖a n‖ / n : ℝ) : ℂ) := by

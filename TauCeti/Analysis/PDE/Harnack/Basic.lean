@@ -154,7 +154,7 @@ private lemma exists_forall_isHarnackPair {K U : Set E} (hK : IsCompact K) (hU :
   refine hK.induction_on
     (p := fun t ↦ ∃ C, 0 ≤ C ∧ ∀ z ∈ t ∩ U, IsHarnackPair U z x₀ C ∧ IsHarnackPair U x₀ z C)
     ⟨0, le_rfl, by simp⟩ (fun t t' htt' ⟨C, hC, h⟩ ↦ ⟨C, hC, fun z hz ↦ h z ⟨htt' hz.1, hz.2⟩⟩)
-    (fun t t' ⟨C, hC, h⟩ ⟨C', hC', h'⟩ ↦ ⟨max C C', le_max_of_le_left hC, ?_⟩) (fun z hz ↦ ?_)
+    (fun t t' ⟨C, hC, h⟩ ⟨C', _, h'⟩ ↦ ⟨max C C', le_max_of_le_left hC, ?_⟩) (fun z hz ↦ ?_)
   · rintro w ⟨hw | hw, hwU⟩
     · exact ⟨(h w ⟨hw, hwU⟩).1.mono hx₀U (le_max_left _ _),
         (h w ⟨hw, hwU⟩).2.mono hwU (le_max_left _ _)⟩
@@ -163,7 +163,7 @@ private lemma exists_forall_isHarnackPair {K U : Set E} (hK : IsCompact K) (hU :
   -- Near `z ∈ K`, compare with `z` by the local estimate and then `z` with `x₀`.
   have hzU := hKU hz
   obtain ⟨C₁, hC₁, h₁⟩ := exists_isHarnackPair hU hUc hzU hx₀U
-  obtain ⟨C₂, hC₂, h₂⟩ := exists_isHarnackPair hU hUc hx₀U hzU
+  obtain ⟨C₂, _, h₂⟩ := exists_isHarnackPair hU hUc hx₀U hzU
   refine ⟨_, nhdsWithin_le_nhds (eventually_isHarnackPair hU hzU),
     3 ^ finrank ℝ E * max C₁ C₂, by positivity, fun w ⟨hw, _⟩ ↦
       ⟨(hw.1.trans (by positivity) h₁).mono hx₀U ?_, ?_⟩⟩

@@ -138,7 +138,7 @@ theorem Contractable.condExp_block_comp_tailProcess_ae_eq {μ : Measure Ω} [IsF
     μ[fun ω ↦ f (fun i ↦ X (k i) ω) | tailProcess X]
       =ᵐ[μ] μ[fun ω ↦ f (fun i ↦ X (l i) ω) | tailProcess X] := by
   set c := max (Finset.univ.sup fun i ↦ k i) (Finset.univ.sup fun i ↦ l i) + 1 with hc
-  have hkc : ∀ i, k i < c := fun i ↦ by
+  let _ := hc; have hkc : ∀ i, k i < c := fun i ↦ by
     have := Finset.le_sup (f := fun i ↦ k i) (Finset.mem_univ i)
     have := le_max_left (Finset.univ.sup fun i ↦ k i) (Finset.univ.sup fun i ↦ l i)
     omega

@@ -98,7 +98,6 @@ theorem sampleGraph_homDensityFin_concentration {V : Type*} [Fintype V]
       have hq1R : (1 : ℝ) ≤ q := by exact_mod_cast hq
       have hVnR : (q : ℝ) ≤ n := by
         have hεn : ε * (n : ℝ) ≤ n := by nlinarith
-        have htwo : 2 * (q : ℝ) ^ 2 ≤ n := hn.trans hεn
         nlinarith
       have hVn : Fintype.card V ≤ n := by exact_mod_cast hVnR
       let ν : Measure (Ω × (Fin n → ℝ)) :=
@@ -132,8 +131,6 @@ theorem sampleGraph_homDensityFin_concentration {V : Type*} [Fintype V]
         rw [hc]
         field_simp
       have hchoose : ((q.choose 2 : ℕ) : ℝ) ≤ (q : ℝ) ^ 2 := by
-        have hsubq : ((q - 1 : ℕ) : ℝ) ≤ q := by
-          exact_mod_cast Nat.sub_le q 1
         rw [Nat.cast_choose_two]
         nlinarith [Nat.cast_nonneg (α := ℝ) (q - 1)]
       have hbias : |(∫ y, f y ∂exposureMeasure μ n) - homDensity F W| ≤ ε / 2 := by
@@ -158,7 +155,6 @@ theorem sampleGraph_homDensityFin_concentration {V : Type*} [Fintype V]
               |f x - ∫ y, f y ∂exposureMeasure μ n| +
                 |(∫ y, f y ∂exposureMeasure μ n) - homDensity F W| :=
             abs_sub_le _ _ _
-          have hx' : ε ≤ |f x - homDensity F W| := by simpa only [f] using hx
           linarith [abs_nonneg (f x - ∫ y, f y ∂exposureMeasure μ n)]
         rcases le_abs.mp hcenter with h | h
         · exact Or.inl h

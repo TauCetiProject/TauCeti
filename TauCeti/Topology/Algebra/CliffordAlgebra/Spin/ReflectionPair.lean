@@ -80,9 +80,9 @@ theorem joined_one_spinReflectionPair_realCliffordForm_zero {n : ℕ} (hn : 2 �
       (spinReflectionPair (realCliffordForm n 0) v w hv hw) := by
   let uv : realCliffordUnitLevel n :=
     ⟨v, (mem_realCliffordUnitLevel n v).mpr hv⟩
-  let uw : realCliffordUnitLevel n :=
+  let _ := uv; let uw : realCliffordUnitLevel n :=
     ⟨w, (mem_realCliffordUnitLevel n w).mpr hw⟩
-  obtain ⟨k, rfl⟩ : ∃ k, n = k + 2 := by
+  let _ := uw; obtain ⟨k, rfl⟩ : ∃ k, n = k + 2 := by
     exact ⟨n - 2, by omega⟩
   let _ : PathConnectedSpace (realCliffordUnitLevel (k + 2)) :=
     pathConnectedSpace_realCliffordUnitLevel_add_two k

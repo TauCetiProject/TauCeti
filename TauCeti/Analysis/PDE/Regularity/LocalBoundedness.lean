@@ -285,8 +285,6 @@ private theorem setIntegral_ball_max_sub_sq_succ_le
       ((Metric.ball_subset_ball hr₀R).trans hball))
       (Eventually.of_forall fun x => hnn k x)
       ((inter_subset_right.trans (hψts.trans (Metric.closedBall_subset_ball hρr₀))).eventuallyLE)
-  have hI0 : 0 ≤ ∫ x in (Omega : Set (EuclideanSpace ℝ ι)) ∩ tsupport ψ,
-      max (W1p.value u x - k) 0 ^ 2 ∂mu := integral_nonneg (hnn k)
   refine hlhs.trans (hstep.trans ?_)
   rw [hρr₁, hlk]
   calc 2 * (1 + (2 * Lam / lam) ^ 2) * S ^ 2 * (c / (R / 2 ^ (j + 3))) ^ 2 *

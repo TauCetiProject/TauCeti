@@ -123,7 +123,7 @@ theorem exists_weight_forall_genWeightSpace_add_eq_bot [Nontrivial M] :
   -- the successor map on weights: add the chosen positive root
   set nxt : Weight K H M → Weight K H M :=
     fun χ ↦ ⟨(r χ : H → K) + (χ : H → K), hrne χ⟩ with hnxt
-  obtain ⟨χ₀⟩ := nonempty_weight K H M
+  let _ := hnxt; obtain ⟨χ₀⟩ := nonempty_weight K H M
   -- the roots picked up between two iterates
   have telescope : ∀ p q : ℕ, p ≤ q →
       ((nxt^[q] χ₀ : Weight K H M) : H → K) =

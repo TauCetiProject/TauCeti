@@ -162,12 +162,14 @@ theorem degree_tameDifferent_eq_finrank_mul_sum [IsGalois F F'] (hF : IsFunction
   -- Fibres over distinct places are disjoint, so the sum splits over the fibres.
   have hdisj : (s : Set (Place k F)).PairwiseDisjoint fibre := by
     intro P hP Q hQ hPQ
+    have : True := (let _ := hQ; True.intro)
+    have : True := (let _ := hP; True.intro)
     simp only [Function.onFun, Finset.disjoint_left]
     intro P' hP' hQ'
     exact hPQ (((hmem P P').mp hP').symm.trans ((hmem Q P').mp hQ'))
   rw [hdeg, Finset.sum_biUnion hdisj, Finset.mul_sum]
   push_cast
-  refine Finset.sum_congr rfl fun P hP ↦ ?_
+  refine Finset.sum_congr rfl fun P _ ↦ ?_
   -- One fibre: clear the division by the common ramification index.
   obtain ⟨P', hP'⟩ := hsurj P
   have hpos : 0 < P.ramificationIdxIn F' := by

@@ -191,7 +191,10 @@ private theorem subst_subst_pair_formalAdd_eq_X {σ' : Type*}
   rw [subst_comp_subst_apply (hasSubst_pair ha hb) hg,
     show (fun s : Unit ⊕ Unit ↦ subst g (Sum.elim (fun _ ↦ a) (fun _ ↦ b) s)) =
       (Sum.elim X (fun _ ↦ 0) : Unit ⊕ Unit → MvPowerSeries Unit O) from
-      funext fun s ↦ by rcases s with u | u; exacts [hga, hgb]]
+      funext fun s ↦ by
+        rcases s with _ | _
+        · exact hga
+        · exact hgb]
   exact subst_unitR_formalAdd W
 
 /-- The addition series at a pair, read through a further substitution `g` that kills both
@@ -207,7 +210,10 @@ private theorem subst_subst_pair_formalAdd_eq_zero {σ' : Type*}
   rw [subst_comp_subst_apply (hasSubst_pair ha hb) hg,
     show (fun s : Unit ⊕ Unit ↦ subst g (Sum.elim (fun _ ↦ a) (fun _ ↦ b) s)) =
       (0 : Unit ⊕ Unit → MvPowerSeries Unit O) from
-      funext fun s ↦ by rcases s with u | u; exacts [hga, hgb]]
+      funext fun s ↦ by
+        rcases s with _ | _
+        · exact hga
+        · exact hgb]
   exact subst_zero_of_constantCoeff_zero (constantCoeff_formalAdd W)
 
 /-- The addition series at a pair of parameters is nonzero, as soon as some substitution
@@ -299,15 +305,15 @@ private theorem thetaPoint_add (hΔ : (fracCurve W σ KK).Δ ≠ 0)
     W.thetaPoint hΔ h₁ hq₁0 + W.thetaPoint hΔ h₂ hq₂0 = W.thetaPoint hΔ hF hF0 := by
   classical
   set ρ := algebraMap (MvPowerSeries σ O) KK with hρ
-  have hinj : Function.Injective ρ := IsFractionRing.injective (MvPowerSeries σ O) KK
+  let _ := hρ; have hinj : Function.Injective ρ := IsFractionRing.injective (MvPowerSeries σ O) KK
   set Λp := subst (pairSubstitution q₁ q₂) (formalSlope W) with hΛp
-  set Np := subst (pairSubstitution q₁ q₂) (formalIntercept W) with hNp
-  set Tp := subst (pairSubstitution q₁ q₂) (formalThirdRoot W) with hTp
-  set w₁ := PowerSeries.subst q₁ (formalW W) with hw₁'
-  set w₂ := PowerSeries.subst q₂ (formalW W) with hw₂'
-  set wT := PowerSeries.subst Tp (formalW W) with hwT'
+  let _ := hΛp; set Np := subst (pairSubstitution q₁ q₂) (formalIntercept W) with hNp
+  let _ := hNp; set Tp := subst (pairSubstitution q₁ q₂) (formalThirdRoot W) with hTp
+  let _ := hTp; set w₁ := PowerSeries.subst q₁ (formalW W) with hw₁'
+  let _ := hw₁'; set w₂ := PowerSeries.subst q₂ (formalW W) with hw₂'
+  let _ := hw₂'; set wT := PowerSeries.subst Tp (formalW W) with hwT'
   -- the chord identities, read in `KK`
-  have hslope : ρ Λp * (ρ q₂ - ρ q₁) = ρ w₂ - ρ w₁ := by
+  let _ := hwT'; have hslope : ρ Λp * (ρ q₂ - ρ q₁) = ρ w₂ - ρ w₁ := by
     rw [← map_sub, ← map_sub, ← map_mul]
     exact congrArg ρ (subst_pair_formalSlope_mul W h₁ h₂)
   have hNint : ρ Np = ρ w₁ - ρ Λp * ρ q₁ := by
@@ -360,7 +366,7 @@ private theorem thetaPoint_add (hΔ : (fracCurve W σ KK).Δ ≠ 0)
     Affine.Point.some _ _ h₃ from hadd) ?_
   -- identify the third point with the point of parameter `F(q₁, q₂)`
   set sp := PowerSeries.subst Tp (PowerSeries.invOfUnit (formalInverseDenom W) 1) with hsp'
-  have hu : ρ (PowerSeries.subst Tp (formalInverseDenom W)) * ρ sp = 1 := by
+  let _ := hsp'; have hu : ρ (PowerSeries.subst Tp (formalInverseDenom W)) * ρ sp = 1 := by
     rw [← map_mul, ← map_one ρ]
     exact congrArg ρ (subst_pair_formalInverseDenom_mul W h₁ h₂)
   have hsp0 := right_ne_zero_of_mul_eq_one hu
@@ -464,8 +470,8 @@ private theorem pair_intercept_ne_zero_of_ne (hΔ : (fracCurve W σ KK).Δ ≠ 0
   classical
   intro h0
   set ρ := algebraMap (MvPowerSeries σ O) KK with hρ
-  have hinj : Function.Injective ρ := IsFractionRing.injective (MvPowerSeries σ O) KK
-  have hs₂ : PowerSeries.HasSubst q₂ := PowerSeries.HasSubst.of_constantCoeff_zero h₂
+  let _ := hρ; have hinj : Function.Injective ρ := IsFractionRing.injective (MvPowerSeries σ O) KK
+  let _ := hinj; have hs₂ : PowerSeries.HasSubst q₂ := PowerSeries.HasSubst.of_constantCoeff_zero h₂
   -- a vanishing intercept collapses the cross combination, so the `x`-coordinates agree
   have hqw : q₁ * PowerSeries.subst q₂ (formalW W) -
       q₂ * PowerSeries.subst q₁ (formalW W) = 0 := by
@@ -576,10 +582,10 @@ private theorem assoc_formalAdd_universal :
       (formalAdd Universal.curve) := by
   classical
   set R := MvPolynomial Coeff ℤ with hR
-  set KK := FractionRing (MvPowerSeries (Unit ⊕ Unit ⊕ Unit) R) with hKK
+  let _ := hR; set KK := FractionRing (MvPowerSeries (Unit ⊕ Unit ⊕ Unit) R) with hKK
   -- the specialization separating the first parameter from the other two
-  set χ := coordSpecialize (O := R) (Sum.inl () : Unit ⊕ Unit ⊕ Unit) with hχdef
-  have hχ : HasSubst χ := hasSubst_coordSpecialize _
+  let _ := hKK; set χ := coordSpecialize (O := R) (Sum.inl () : Unit ⊕ Unit ⊕ Unit) with hχdef
+  let _ := hχdef; have hχ : HasSubst χ := hasSubst_coordSpecialize _
   have hΔ := fracCurve_universal_Δ_ne_zero KK
   have hc₁ : constantCoeff (X (Sum.inl ()) : MvPowerSeries (Unit ⊕ Unit ⊕ Unit) R) = 0 :=
     constantCoeff_X _
@@ -600,17 +606,17 @@ private theorem assoc_formalAdd_universal :
     (i := (Sum.inl () : Unit ⊕ Unit ⊕ Unit)) (j := Sum.inr (Sum.inr ())) (by simp)
   -- the specialization separating the middle parameter from the other two
   set χ' := coordSpecialize (O := R) (Sum.inr (Sum.inl ()) : Unit ⊕ Unit ⊕ Unit) with hχ'def
-  have hχ' : HasSubst χ' := hasSubst_coordSpecialize _
+  let _ := hχ'def; have hχ' : HasSubst χ' := hasSubst_coordSpecialize _
   have hχ'2 := subst_coordSpecialize_X_self (O := R) (Sum.inr (Sum.inl ()) : Unit ⊕ Unit ⊕ Unit)
   have hχ'3 := subst_coordSpecialize_X_of_ne (O := R)
     (i := (Sum.inr (Sum.inl ()) : Unit ⊕ Unit ⊕ Unit)) (j := Sum.inr (Sum.inr ())) (by simp)
   -- the two inner sums
   set F₁₂ := subst (pairSubstitution (X (Sum.inl ()) : MvPowerSeries (Unit ⊕ Unit ⊕ Unit) R)
     (X (Sum.inr (Sum.inl ())))) (formalAdd Universal.curve) with hF₁₂def
-  set F₂₃ := subst (pairSubstitution
+  let _ := hF₁₂def; set F₂₃ := subst (pairSubstitution
     (X (Sum.inr (Sum.inl ())) : MvPowerSeries (Unit ⊕ Unit ⊕ Unit) R)
     (X (Sum.inr (Sum.inr ())))) (formalAdd Universal.curve) with hF₂₃def
-  have hF₁₂c : constantCoeff F₁₂ = 0 :=
+  let _ := hF₂₃def; have hF₁₂c : constantCoeff F₁₂ = 0 :=
     constantCoeff_subst_pair_formalAdd Universal.curve (constantCoeff_X _)
         (constantCoeff_X _)
   have hF₂₃c : constantCoeff F₂₃ = 0 :=

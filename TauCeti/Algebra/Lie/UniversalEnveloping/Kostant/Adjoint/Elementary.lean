@@ -296,7 +296,7 @@ theorem adjointElementaryGroup_eq_closure_isNonZero (A : CommAlgCat.{w} ℤ) :
       exact Subgroup.one_mem _
   · apply Subgroup.closure_mono
     simp only [Set.iUnion_subset_iff, Set.range_subset_iff]
-    intro α hα t
+    intro α _ t
     exact Set.mem_iUnion_of_mem α (Set.mem_range_self t)
 
 /-! ## The Chevalley relations -/

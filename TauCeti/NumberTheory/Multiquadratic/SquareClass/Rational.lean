@@ -182,7 +182,6 @@ private theorem finrank_adjoin_sqrt_eight_ninths_three_quarters :
       (adjoin ℚ {Real.sqrt (8 / 9), Real.sqrt (3 / 4)} : IntermediateField ℚ ℝ) = 4 := by
   have hcop : Pairwise (IsCoprime on (![2, 3] : Fin 2 → ℤ)) := by
     have h : IsCoprime (2 : ℤ) 3 := Int.isCoprime_iff_gcd_eq_one.mpr (by decide)
-    have h' : IsCoprime (3 : ℤ) 2 := h.symm
     intro i j hij
     fin_cases i <;> fin_cases j <;> simp_all [Function.onFun]
   have hsf : ∀ i, Squarefree ((![2, 3] : Fin 2 → ℤ) i) := by

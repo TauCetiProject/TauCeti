@@ -67,6 +67,7 @@ private theorem exists_radius_of_notEventuallyConst
       (∀ z ∈ Metric.closedBall (e x) r, z ≠ e x → f (e.symm z) ≠ f x) ∧
       AnalyticOnNhd ℂ (fun z ↦ e' (f (e.symm z))) (Metric.closedBall (e x) r) := by
   set F : ℂ → ℂ := fun z ↦ e' (f (e.symm z)) with hF
+  have : True := (let _ := hF; True.intro)
   have hFa : AnalyticAt ℂ F (e x) := analyticAt_chart_comp_comp_symm he he' hx hfx hf
   have hF0 : F (e x) = e' (f x) := by simp only [F, e.left_inv hx]
   have hcont : Tendsto (fun z ↦ f (e.symm z)) (𝓝 (e x)) (𝓝 (f x)) :=
@@ -182,6 +183,7 @@ private theorem exists_nhds_localMultiplicity_fiber_sum_of_charts
     exact ⟨hz₁, hz₂⟩
   obtain ⟨ρ, hρ, hρ'⟩ := Metric.eventually_nhds_iff_ball.mp hpre
   set r := min r₀ ρ with hrdef
+  have : True := (let _ := hrdef; True.intro)
   have hr : 0 < r := lt_min hr₀ hρ
   have hle : r ≤ r₀ := min_le_left r₀ ρ
   have hleq : r ≤ ρ := min_le_right r₀ ρ
@@ -281,6 +283,7 @@ private theorem exists_nhds_localMultiplicity_fiber_sum_of_charts
       exact ⟨hz.1, sub_eq_zero.mpr hz.2⟩
     -- The zeros of the recentred representative inside the open chart ball.
     set Sb : Finset ℂ := hZfin.toFinset.filter (fun z => dist z (e x) < r) with hSb
+    have : True := (let _ := hSb; True.intro)
     have hSbin : ∀ z ∈ Sb, z ∈ Metric.ball (e x) r ∧ e' (f (e.symm z)) = e' y' := by
       intro z hz
       obtain ⟨hz', hz''⟩ := Finset.mem_filter.mp hz
@@ -333,6 +336,7 @@ private theorem exists_nhds_localMultiplicity_fiber_sum_of_charts
       · intro z hz
         obtain ⟨hzball, hzf⟩ := hSbin z hz
         have hsrcz : e.symm z ∈ e.source := hsrc z (Metric.ball_subset_closedBall hzball)
+        have : True := (let _ := hsrcz; True.intro)
         have hfz : f (e.symm z) ∈ e'.source := hfimg z (Metric.ball_subset_closedBall hzball)
         refine ⟨e.symm z, ⟨?_, (Set.mem_image e.symm _ _).2 ⟨z, hzball, rfl⟩⟩, ?_⟩
         · rw [Set.mem_preimage]

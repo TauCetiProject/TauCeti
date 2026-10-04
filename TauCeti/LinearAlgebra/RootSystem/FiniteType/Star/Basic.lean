@@ -391,7 +391,8 @@ theorem sum_starCartanMatrix_mul_starMark_none :
       (starCartanMatrix ℓ none (some ⟨i, s⟩) : ℚ) * starMark ℓ (some ⟨i, s⟩)
         = -((ℓ i : ℚ) * ∏ j ∈ ({i}ᶜ : Finset α), ((ℓ j : ℚ) + 1)) := by
     intro i _
-    set Q : ℚ := ∏ j ∈ ({i}ᶜ : Finset α), ((ℓ j : ℚ) + 1) with hQ
+    set Q : ℚ := ∏ j ∈ ({i}ᶜ : Finset α), ((ℓ j : ℚ) + 1) with hQ;
+    let _ := hQ;
     set g : ℕ → ℚ := fun u ↦ ((ℓ i : ℚ) + 1 - u) * Q with hg
     have hgarm : ∀ s : Fin (ℓ i), g ((s : ℕ) + 1) = starMark ℓ (some ⟨i, s⟩) := by
       intro s

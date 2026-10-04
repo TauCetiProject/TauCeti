@@ -229,7 +229,7 @@ private theorem StronglyContinuousSemigroup.tendsto_average_resolvent_integrand
   let T := S.expShift lambda
   have h := T.tendsto_average_orbit_zero x
   refine h.congr' ?_
-  filter_upwards [self_mem_nhdsWithin] with t (ht : 0 < t)
+  filter_upwards [self_mem_nhdsWithin] with t (_ : 0 < t)
   congr 1
   apply MeasureTheory.setIntegral_congr_fun measurableSet_Ioc
   intro u hu

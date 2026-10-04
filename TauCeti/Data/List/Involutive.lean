@@ -39,6 +39,6 @@ theorem predicate_foldl_iff_of_involutive {I J : Type*} (p : I → Prop)
   · intro h
     induction l generalizing a with
     | nil => exact h
-    | cons j l ih => exact ih _ (hreflect a j h)
+    | cons j _ ih => exact ih _ (hreflect a j h)
 
 end TauCeti

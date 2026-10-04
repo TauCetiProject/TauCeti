@@ -242,6 +242,8 @@ theorem commute_commute (D : GridRectangleDecomposition x z) (h : D.HasDisjointS
 private theorem sidePairs_ne (D : GridRectangleDecomposition x z) (h : D.HasDisjointSides) :
     s(D.first.left, D.first.right) ≠ s(D.second.left, D.second.right) := by
   obtain ⟨hll, hlr, hrl, hrr⟩ := D.hasDisjointSides_iff.mp h
+  let _ := hrr
+  let _ := hrl
   intro hpairs
   rw [Sym2.eq, Sym2.rel_iff'] at hpairs
   rcases hpairs with hpairs | hpairs

@@ -118,7 +118,7 @@ instance _root_.SheafOfModules.GeneratingSections.isIso_mapIso_π [IsIso σ.π] 
   (GeneratingSections.isIso_equivOfIso_π _ _)
 
 /-- Carrying generating sections along a functor and an isomorphism preserves finiteness. -/
-instance _root_.SheafOfModules.GeneratingSections.isFiniteType_mapIso [hσ : σ.IsFiniteType] :
+instance _root_.SheafOfModules.GeneratingSections.isFiniteType_mapIso [_hσ : σ.IsFiniteType] :
     (σ.mapIso F η e).IsFiniteType :=
   (GeneratingSections.isFiniteType_equivOfIso _ _)
 
@@ -195,7 +195,7 @@ instance _root_.SheafOfModules.GeneratingSections.isFiniteType_ofIteratedSlice
     [(J.over Y.left).WEqualsLocallyBijective AddCommGrpCat.{u}]
     [HasWeakSheafify ((J.over Z).over Y) AddCommGrpCat.{u}]
     [((J.over Z).over Y).WEqualsLocallyBijective AddCommGrpCat.{u}]
-    (σ : ((M.over Z).over Y).GeneratingSections) [hσ : σ.IsFiniteType] :
+    (σ : ((M.over Z).over Y).GeneratingSections) [_hσ : σ.IsFiniteType] :
     σ.ofIteratedSlice.IsFiniteType :=
   GeneratingSections.isFiniteType_mapIso σ (Sheaf.iteratedSliceEquivalence R Y).inverse
     (Sheaf.iteratedSliceEquivalenceUnitSheafIso R Y)

@@ -184,6 +184,7 @@ theorem isEquiv_comap_pointPlace {x y : F} (h : W.toAffine.Nonsingular x y) {n :
   have hn : psiFunctionField W n ≠ 0 :=
     psiFunctionField_ne_zero_of_Δ_ne_zero W W.isUnit_Δ.ne_zero (left_ne_zero_of_smul hP0)
   set v := (CoordinateRing.pointPlace h.left).valuation W.toAffine.FunctionField with hvdef
+  have : True := (let _ := hvdef; True.intro)
   set u := v.comap (mulByIntIsogeny W hn).fieldPullback.toRingHom with hudef
   -- an explicit element of value strictly between `0` and `1`: `[n]*x - x'` vanishes at `P`
   -- (so its value is below `1`) but is not the zero function (so its value is not `0`)

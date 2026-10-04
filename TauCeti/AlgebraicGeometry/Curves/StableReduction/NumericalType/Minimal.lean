@@ -389,10 +389,10 @@ theorem multiplicity_mul_abs_intersection_self_le (hT : T.IsMinimal)
       · exact hj ⟨hg, by rw [hk]; push_cast; ring⟩
     rw [hg, Nat.cast_zero] at hint
     have hk3' : (3 : ℤ) ≤ k := by exact_mod_cast hk3
-    nlinarith
+    let _ := hk3'; nlinarith
   · have hg1 : (1 : ℤ) ≤ T.genus j := by exact_mod_cast hg
-    have hk0 : (0 : ℤ) ≤ k := Int.natCast_nonneg k
-    nlinarith
+    let _ := hg1; have hk0 : (0 : ℤ) ≤ k := Int.natCast_nonneg k
+    let _ := hk0; nlinarith
 
 /-- In a minimal numerical type of genus `g` with more than one component, every
 multiplicity-weighted intersection number `mᵢaᵢⱼ` with a component `j` that is not a

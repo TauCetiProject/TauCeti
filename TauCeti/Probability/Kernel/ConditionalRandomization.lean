@@ -203,10 +203,6 @@ theorem iCondIndepFun.map_prod_pi_coding_eq
   let F : Ω × (∀ i, ξ i) → δ × (∀ i, β i) :=
     fun p => (Z p.1, fun i => f i (Z p.1) (p.2 i))
   let G : Ω → δ × (∀ i, β i) := fun ω => (Z ω, fun i => X i ω)
-  have hF : Measurable F := hZ.comp measurable_fst |>.prodMk <|
-    Measurable.of_eval fun i => (hf i).comp
-      ((hZ.comp measurable_fst).prodMk ((measurable_pi_apply i).comp measurable_snd))
-  have hG : Measurable G := hZ.prodMk (Measurable.of_eval hX)
   let C : Set (Set (δ × (∀ i, β i))) := Set.image2 (· ×ˢ ·)
     {s : Set δ | MeasurableSet s}
     (Set.univ.pi '' Set.univ.pi fun i => {s : Set (β i) | MeasurableSet s})

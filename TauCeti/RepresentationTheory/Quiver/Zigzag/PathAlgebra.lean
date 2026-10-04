@@ -254,7 +254,7 @@ private def shortPathIndex :
 private theorem shortPathIndex_injective : Function.Injective (shortPathIndex G) := by
   have hlen : ∀ x, (shortPathIndex G x).2.2.length =
       Sum.elim (fun _ : V => 0) (Sum.elim (fun _ : G.Dart => 1) fun _ : G.Dart => 2) x := by
-    rintro (v | d | d) <;> simp [shortPathIndex]
+    rintro (_ | d | d) <;> simp [shortPathIndex]
   rintro x y hxy
   have hl : Sum.elim (fun _ : V => 0) (Sum.elim (fun _ : G.Dart => 1) fun _ : G.Dart => 2) x
       = Sum.elim (fun _ : V => 0) (Sum.elim (fun _ : G.Dart => 1) fun _ : G.Dart => 2) y := by

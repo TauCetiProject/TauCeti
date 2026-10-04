@@ -551,8 +551,6 @@ private theorem degreeCast_π_cupCocycles_one_succ (n : ℕ) (a : cocycles X 1)
       (-1 : R) ^ (n + 1) •
         π Z (n + 1 + 1) (P.flip.cupCocycles (n + 1) 1 b a) := by
   let h : 1 + (n + 1) = n + 1 + 1 := by omega
-  let c : cocycles Z (n + 1 + 1) := ContinuousCohomology.cocyclesDegreeCast h
-    (P.cupCocycles 1 (n + 1) a b)
   have hc := ContinuousCohomology.iCycles_cocyclesDegreeCast h
     (P.cupCocycles 1 (n + 1) a b)
   have hcπ := ContinuousCohomology.π_cocyclesDegreeCast h

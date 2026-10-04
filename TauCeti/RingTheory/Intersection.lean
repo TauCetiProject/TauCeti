@@ -242,7 +242,7 @@ theorem length_quotient_span_pair_mul_eq_add {f g h : R} (hfprime : (Ideal.span 
     (hh : h ∉ Ideal.span {f}) :
     Module.length R (R ⧸ Ideal.span {f, g * h})
       = Module.length R (R ⧸ Ideal.span {f, g}) + Module.length R (R ⧸ Ideal.span {f, h}) :=
-  length_quotient_span_pair_mul_eq_add_of_mem_nonZeroDivisors
+  let _ := hfprime; length_quotient_span_pair_mul_eq_add_of_mem_nonZeroDivisors
     (mem_nonZeroDivisors_of_ne_zero fun hzero => hh ((Submodule.Quotient.mk_eq_zero _).mp hzero))
 
 end Quotient

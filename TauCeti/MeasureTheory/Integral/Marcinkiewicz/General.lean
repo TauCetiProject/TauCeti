@@ -344,10 +344,8 @@ private theorem lintegral_rpow_le_of_meas_ofReal_lt_le_of_measurable
   have hp : (0 : ℝ) < p := hp₀.trans hlt₀
   have hp₁ : (0 : ℝ) < p₁ := hp.trans hlt₁
   have hK₀ : (0 : ℝ) < p * c ^ (p₀ - p) / (p - p₀) := by
-    have hd : (0 : ℝ) < p - p₀ := by linarith
     positivity
   have hK₁ : (0 : ℝ) < p * c ^ (p₁ - p) / (p₁ - p) := by
-    have hd : (0 : ℝ) < p₁ - p := by linarith
     positivity
   rcases eq_or_ne (ENNReal.ofReal (p * c ^ (p₀ - p) / (p - p₀)) * A₀ +
       ENNReal.ofReal (p * c ^ (p₁ - p) / (p₁ - p)) * A₁) 0 with hA | hA
@@ -479,7 +477,7 @@ theorem meas_ofReal_lt_le_add_setLIntegral (hv : AEMeasurable v μ) (ht : 0 < t)
           ∫⁻ x in {x | ENNReal.ofReal (c * t) < ‖v x‖ₑ}, ‖v x‖ₑ ^ p₀ ∂μ +
         A₁ * ENNReal.ofReal (e ^ (-p₁)) * ENNReal.ofReal (t ^ (-p₁)) *
           ∫⁻ x in {x | ‖v x‖ₑ ≤ ENNReal.ofReal (c * t)}, ‖v x‖ₑ ^ p₁ ∂μ := by
-  set g : α → G := hv.mk v with hgdef
+  set g : α → G := hv.mk v with _
   have hvg : v =ᵐ[μ] g := hv.ae_eq_mk
   have hgmeas : Measurable g := hv.measurable_mk
   set S : Set α := {x | ENNReal.ofReal (c * t) < ‖g x‖ₑ} with hSdef
@@ -509,7 +507,7 @@ theorem meas_ofReal_lt_le_add_setLIntegral (hv : AEMeasurable v μ) (ht : 0 < t)
         _ ≤ ENNReal.ofReal t := ENNReal.ofReal_le_ofReal (by nlinarith)
     exact absurd (hy'.trans_le hle) (lt_irrefl _)
   -- Each weak-type bound turns into a bound on the measure of a superlevel set.
-  have hdiv : ∀ (r q : ℝ) (B : ℝ≥0∞) (w : α → G) (hw : AEMeasurable w μ) (hq : 0 < q),
+  have hdiv : ∀ (r q : ℝ) (B : ℝ≥0∞) (w : α → G) (_ : AEMeasurable w μ) (_ : 0 < q),
       (∀ (h : α → G), AEMeasurable h μ → ∀ r' : ℝ≥0∞,
         r' ^ q * ν {y | r' < T h y} ≤ B * ∫⁻ x, ‖h x‖ₑ ^ q ∂μ) → 0 < r →
       ν {y | ENNReal.ofReal r < T w y} ≤

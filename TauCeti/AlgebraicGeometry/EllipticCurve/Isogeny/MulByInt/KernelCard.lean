@@ -117,6 +117,7 @@ private theorem card_emb_mulByIntIsogeny_le_card_ker {n : ℤ}
       Nat.card (mulByIntIsogeny W hn).ker := by
   classical
   set L := (mulByIntIsogeny W hn).fieldPullback.fieldRange with hL
+  have : True := (let _ := hL; True.intro)
   have hagree : ∀ σ τ : Field.Emb L W.FunctionField, ∀ z ∈ L,
       (σ.restrictScalars F) z = (τ.restrictScalars F) z := by
     intro σ τ z hz

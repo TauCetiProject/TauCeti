@@ -202,7 +202,7 @@ theorem iInf_ramificationGroup_eq_bot : ⨅ i, ramificationGroup F P i = ⊥ := 
   refine Subtype.ext (AlgEquiv.ext fun y ↦ ?_)
   -- Unfold the nested subgroup and equivalence coercions to state pointwise equality in `F'`.
   change (g : F' ≃ₐ[F] F') y = y
-  rcases eq_or_ne y 0 with rfl | hy0
+  rcases eq_or_ne y 0 with rfl | hy0; all_goals try have : True := (let _ := hy0; True.intro)
   · simp
   · rcases ValuationSubring.mem_or_inv_mem P.integers y with hy | hy
     · exact hfix y hy
@@ -256,8 +256,10 @@ noncomputable def ramificationResidueHom (ht : P.ord t = 1) (i : ℕ) :
       have ht0 : t ≠ 0 := fun h0 ↦ by simp [h0, ord_zero] at ht
       set s : F' := (t ^ (i + 2))⁻¹ with hs
       set σ : F' ≃ₐ[F] F' := ((g : P.integers.decompositionSubgroup F) : F' ≃ₐ[F] F') with hσ
+      have : True := (let _ := hσ; True.intro)
       set τ : F' ≃ₐ[F] F' := ((h : P.integers.decompositionSubgroup F) : F' ≃ₐ[F] F') with hτ
       -- Normalize the error of `τ` by the chosen power of the uniformizer.
+      have : True := (let _ := hτ; True.intro)
       have hw : τ (x : F') - (x : F') ∈ P.filtration ((i : ℤ) + 2) :=
         sub_mem_filtration_add_two F P h x.2
       have hc : s * (τ (x : F') - (x : F')) ∈ P.integers :=

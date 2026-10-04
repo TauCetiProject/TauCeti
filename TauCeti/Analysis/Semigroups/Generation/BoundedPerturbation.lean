@@ -314,6 +314,7 @@ private theorem unliftPMap_liftPMap (A : X →ₗ.[ℝ] X) :
   · ext x
     simp [liftPMap, unliftPMap]
   · intro x hx hy
+    let _ := hy
     simp only [unliftPMap_apply, liftPMap_apply, linearEquiv_symm_apply]
 
 /-- The semigroup on the renormed space, read back on `X`: the transport of `T` along

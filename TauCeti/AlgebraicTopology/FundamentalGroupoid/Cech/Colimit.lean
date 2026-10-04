@@ -122,7 +122,7 @@ private lemma coconeLeg_singleton_compat (c : Cocone (cechDiagram U)) (i j : ι)
   have key : ∀ k (f : s ⟶ CechIndex.singleton k)
       (h : (cechIntersection U (CechIndex.singleton i) : Set X) ∩
         cechIntersection U (CechIndex.singleton j) ⊆ cechIntersection U (CechIndex.singleton k)),
-      fundamentalGroupoidFunctor.map (TopCat.ofHom (ContinuousMap.inclusion h)) ≫
+      let _ := f; fundamentalGroupoidFunctor.map (TopCat.ofHom (ContinuousMap.inclusion h)) ≫
         coconeLeg U c (CechIndex.singleton k) =
       fundamentalGroupoidFunctor.map (TopCat.ofHom (ContinuousMap.inclusion hs)) ≫
         coconeLeg U c s := fun k f h ↦ by

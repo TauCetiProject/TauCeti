@@ -215,7 +215,8 @@ theorem inertiaDeg_under_fixedField_mul_card_inf (Q : Ideal (𝓞 L)) [Q.IsPrime
     (Q.under (𝓞 ↥(fixedField H))).inertiaDeg (𝓞 K)
         * Nat.card ((MulAction.stabilizer (L ≃ₐ[K] L) Q ⊓ H : Subgroup (L ≃ₐ[K] L)))
       = Q.inertiaDeg (𝓞 K) := by
-  set E := fixedField H with hE
+  set E := fixedField H with hE;
+  let _ := hE;
   have : IsScalarTower K ↥E L := E.isScalarTower_mid'
   have : IsGalois ↥E L := IsGalois.of_fixed_field L H
   have : Algebra.IsUnramifiedAt (𝓞 ↥E) Q := Algebra.IsUnramifiedAt.of_restrictScalars (𝓞 K) Q

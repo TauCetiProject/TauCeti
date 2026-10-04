@@ -692,7 +692,8 @@ private theorem suspendedStasheff_eq_smul {G : InternalGrading R M}
         AInfinityAlgebra.coaugmentedBarDifferential_comp_reducedInclusion, LinearMap.comp_apply,
         AInfinityAlgebra.barDifferential_def, ReducedTensorWords.gradedCoderiv_of_tprod]
       simp only [map_sum, TensorProduct.tmul_sum]
-      refine Finset.sum_congr rfl fun p hp ↦ (Finset.sum_subset (fun s hs ↦ ?_) ?_).symm
+      refine Finset.sum_congr rfl fun p hp ↦
+        (let _ := hp; (Finset.sum_subset (fun s hs ↦ ?_) ?_).symm)
       · rw [Finset.mem_Icc] at hs
         rw [Finset.mem_range]
         omega

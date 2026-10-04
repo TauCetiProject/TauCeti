@@ -162,7 +162,7 @@ instance _root_.SheafOfModules.GeneratingSections.isIso_restrict_π {M : SheafOf
 instance _root_.SheafOfModules.GeneratingSections.isFiniteType_restrict
     {M : SheafOfModules.{u} R} {X Y : C} (G : (M.over X).GeneratingSections) (f : Y ⟶ X)
     [hG : G.IsFiniteType] : (G.restrict f).IsFiniteType :=
-  GeneratingSections.isFiniteType_mapIso _ _ _ _
+  let _ := hG; GeneratingSections.isFiniteType_mapIso _ _ _ _
 
 /-- Local generators for `M` transported to a refining covering family `Y`: each `Y i` maps to the
 member `q.X (index i)` of the original cover by `map i`, and the generators of `M.over (Y i)` are

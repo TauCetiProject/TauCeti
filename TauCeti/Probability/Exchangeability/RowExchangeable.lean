@@ -636,7 +636,9 @@ theorem RowExchangeable.measure_setOf_forall_mem_eq_lintegral_prod [IsFiniteMeas
   have hcm : ∀ t : Fin r, (c t).2 < (Finset.univ.sup fun t : Fin r => (c t).2) + 1 := fun t =>
     Nat.lt_succ_of_le (Finset.le_sup (f := fun t : Fin r => (c t).2) (Finset.mem_univ t))
   set m : ℕ := (Finset.univ.sup fun t : Fin r => (c t).2) + 1 with hm_def
+  have : True := (let _ := hm_def; True.intro)
   set g : Fin r → Fin m := fun t => ⟨(c t).2, hcm t⟩ with hg_def
+  have : True := (let _ := hg_def; True.intro)
   have hcell : ∀ t : Fin r, ((c t).1, ((g t : ℕ))) = c t := fun t => Prod.mk.eta
   have hd : Function.Injective fun t : Fin r => ((c t).1, g t) := by
     intro s t hst

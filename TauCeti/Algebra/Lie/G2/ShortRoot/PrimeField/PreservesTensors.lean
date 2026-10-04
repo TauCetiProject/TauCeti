@@ -103,6 +103,7 @@ theorem exists_map_genericMatrix_generator_inl (k : Fin 2 ⊕ Fin 2) :
           Matrix (Fin 7) (Fin 7) (AdditiveGroup.coordinateHopfAlgebra (ZMod 3))) := by
   set B : CommAlgCat (ZMod 3) :=
     CommAlgCat.of (ZMod 3) (AdditiveGroup.coordinateHopfAlgebra (ZMod 3)) with hB
+  have : True := (let _ := hB; True.intro)
   set q : HopfAlgebra.points (R := ZMod 3)
       (H := AdditiveGroup.coordinateHopfAlgebra (ZMod 3)) B :=
     toConv (AlgHom.id (ZMod 3) (AdditiveGroup.coordinateHopfAlgebra (ZMod 3))) with hq
@@ -132,6 +133,7 @@ theorem exists_map_genericMatrix_generator_inr :
   set B : CommAlgCat (ZMod 3) :=
     CommAlgCat.of (ZMod 3) ((DiagonalizableGroup.coordinateRing (ZMod 3)
       (SplitTorus.characterGroup (Fin 2))).obj) with hB
+  have : True := (let _ := hB; True.intro)
   set q : HopfAlgebra.points (R := ZMod 3)
       (H := (DiagonalizableGroup.coordinateRing (ZMod 3)
         (SplitTorus.characterGroup (Fin 2))).obj) B :=

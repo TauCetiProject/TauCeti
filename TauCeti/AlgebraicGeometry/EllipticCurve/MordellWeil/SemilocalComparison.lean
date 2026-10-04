@@ -389,7 +389,7 @@ theorem localRes_mem_selmerGroupA {v : HeightOneSpectrum (𝓞 F)} (hv : v ∉ W
   simp only [mem_selmerGroupA_iff, AdjoinRoot.modPowEquivPiFactors_mk,
     mem_selmerGroupFactor_unit_iff] at hm
   rw [W.localRes_mem_selmerGroupA_iff v a]
-  intro q w hw
+  intro q w _
   -- find the global factor `p` below the local factor `q`
   obtain ⟨p, hq⟩ := Polynomial.Factors.exists_dvd_map (algebraMap F F_[v]) W.f_ne_zero q.prime
     (q.dvd.trans (W.baseChange_f F_[v]).dvd)

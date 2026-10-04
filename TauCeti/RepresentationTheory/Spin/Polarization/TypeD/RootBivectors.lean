@@ -187,11 +187,6 @@ theorem lie_typeDSimpleRootBivector_typeDSimpleNegativeRootBivector (hn : 2 ≤ 
   · rw [P.typeDSimpleRootBivector_def b, P.typeDSimpleNegativeRootBivector_def b,
       P.typeDSimpleCorootBivector_def b, dite_eq_right h, dite_eq_right h, dite_eq_right h,
       lie_ι_mul_ι_ι_mul_ι (Q := Q)]
-    have hne : (⟨n - 2, by omega⟩ : Fin n) ≠ ⟨n - 1, by omega⟩ := by
-      intro heq
-      have := congrArg Fin.val heq
-      simp only at this
-      omega
     have hlast : polar Q (P.dualVector b ⟨n - 1, by omega⟩ : V)
         (b ⟨n - 1, by omega⟩ : V) = 1 := by
       rw [polar_comm, P.polar_dualVector_self]

@@ -328,8 +328,8 @@ theorem totallyBounded_of_comp_add_sub_of_unifTight (hp' : p ≠ ∞)
   set f' : Lp F p mu := (j : Lp F p mu)
   set A : E → F := ballAverage mu r ⇑f
   set A' : E → F := ballAverage mu r ⇑f'
-  have hfm : AEStronglyMeasurable (⇑f) mu := Lp.aestronglyMeasurable f
-  have hf'm : AEStronglyMeasurable (⇑f') mu := Lp.aestronglyMeasurable f'
+  have _ : AEStronglyMeasurable (⇑f) mu := Lp.aestronglyMeasurable f
+  have _ : AEStronglyMeasurable (⇑f') mu := Lp.aestronglyMeasurable f'
   have hAm : AEStronglyMeasurable A mu :=
     (continuous_ballAverage hp hp' (Lp.memLp f) hr).aestronglyMeasurable
   have hA'm : AEStronglyMeasurable A' mu :=

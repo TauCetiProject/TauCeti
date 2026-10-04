@@ -364,7 +364,7 @@ theorem exists_isFiniteMeasure_eq_nevanlinnaKernel_add_of_im_eq_zero {F : ℂ �
     linarith
   have hrect : (Icc a b ×ℂ Icc 0 1 : Set ℂ) ⊆ Complex.slitPlane := by
     rintro z ⟨hz1, hz2⟩
-    exact Complex.mem_slitPlane_iff.2 (Or.inl (lt_of_lt_of_le hapos hz1.1))
+    let _ := hz2; exact Complex.mem_slitPlane_iff.2 (Or.inl (lt_of_lt_of_le hapos hz1.1))
   refine measure_Icc_eq_zero_of_eq_nevanlinnaKernel_add hrep hab one_pos
     (Complex.continuous_im.comp_continuousOn ((hF.mono hrect).continuousOn))
     fun u hu ↦ hzero u (lt_of_lt_of_le hapos hu.1)

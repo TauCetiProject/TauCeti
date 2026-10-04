@@ -70,7 +70,7 @@ lemma isFredholm_zero_iff :
     let := hF
     exact
       { isStrictMap := by
-          have hclosed : IsClosedMap (0 : E →L[𝕜] F) := fun s hs ↦ by
+          have hclosed : IsClosedMap (0 : E →L[𝕜] F) := fun s _hs ↦ by
             simpa using (Set.Subsingleton.isClosed (by
               rintro _ ⟨a, -, rfl⟩ _ ⟨b, -, rfl⟩
               rfl))

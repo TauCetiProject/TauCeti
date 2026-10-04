@@ -174,7 +174,8 @@ private lemma affine_sum_nonneg (hf : T.IsSelfIntersectionMinusTwoFork t c branc
   have hchainSum {i : ℕ} (hi : i < t) :
       (∑ j ∈ range t, T.intersection (c i) (d j) * y j) =
         ∑ j ∈ range t, T.intersection (c i) (c j) * y j :=
-    Finset.sum_congr rfl fun j hj ↦ by rw [hd_lt (mem_range.mp hj)]
+    Finset.sum_congr rfl fun j hj ↦ have : True := (let _ := hi; True.intro)
+    by rw [hd_lt (mem_range.mp hj)]
   -- The affine certificate has six kinds of rows.  Each helper first restricts the row to
   -- its nonzero neighbours and then verifies the resulting weighted sum.
   have hbranchRow :
@@ -316,7 +317,7 @@ private lemma left_weight_eq (hf : T.IsSelfIntersectionMinusTwoFork t c branch)
       affine_sum_nonneg hf ht α d y hd_lt hd_t hy0 hyInterior hyLast hyt
         hinterior hedge hwb hw₁ ha₂b hrow0 hrow1
     exact (T.not_forall_sum_intersection_mul_nonneg_of_pos hinj hcard
-      (y := y) (fun i hi ↦ by simp only [y]; split_ifs <;> omega)
+      (y := y) (fun i _ ↦ by simp only [y]; split_ifs <;> omega)
       ⟨0, by omega, by rw [hy0]; exact hαpos⟩) hrow
 
 private theorem exists_weight_intersection_eq_of_four_lt

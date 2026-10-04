@@ -250,7 +250,7 @@ theorem volume_image_eq_zero_iff (hUo : IsOpen U) (hf : DifferentiableOn ℂ f U
   rw [volume_image_eq_lintegral_enorm_deriv_sq hUo hf hs.nullMeasurableSet hsU hinj,
     lintegral_eq_zero_iff' hm]
   refine ⟨fun h => ?_, fun h => ?_⟩
-  · have hfalse : ∀ᵐ z ∂volume.restrict s, False := by
+  · have hfalse : ∀ᵐ _ ∂volume.restrict s, False := by
       filter_upwards [h, hd] with z hz hz0
       exact hz0 (enorm_eq_zero.mp (pow_eq_zero_iff two_ne_zero |>.mp hz))
     simpa [ae_iff, Measure.restrict_apply_univ] using hfalse

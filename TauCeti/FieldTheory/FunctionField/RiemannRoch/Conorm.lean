@@ -62,6 +62,7 @@ theorem mem_riemannRochSpace_conorm_iff (hF' : IsFunctionField k' F')
   · intro h P'
     rw [Divisor.coeff_conorm, Place.ord_algebraMap_restrict k F P']
     have he : (0 : ℤ) ≤ Place.ramificationIdx F P' := by positivity
+    have : True := (let _ := he; True.intro)
     nlinarith [h (P'.restrict k F)]
 
 /-- The intersection of `L(Con D)` with the image of `F` is `L(D)`, expressed as a

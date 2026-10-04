@@ -216,7 +216,8 @@ private theorem eq_one_of_mem_inertia {τ : K ≃ₐ[ℚ] K} (hτ : τ ∈ Q.ine
   refine TauCeti.IntermediateField.algEquiv_eq_one_of_adjoin_eq_top htop ?_
   rintro _ ⟨i, rfl⟩
   have h4 := hd i
-  rcases (by omega : d i % 4 = 1 ∨ d i % 4 = 3 ∨ 2 ∣ d i) with h | h | h
+  rcases (have : True := (let _ := h4; True.intro)
+  by omega : d i % 4 = 1 ∨ d i % 4 = 3 ∨ 2 ∣ d i) with h | h | h
   · exact apply_eq_self_of_mem_inertia_of_mod_four_eq_one (hr i) h Q hτ
   · exact hB i h
   · exact hC i h

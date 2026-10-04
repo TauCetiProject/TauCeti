@@ -230,7 +230,7 @@ theorem exists_pow_mul_mem_holomorphyRing (hF : IsFunctionField k F) {S : Set (P
   classical
   have hT : {P : Place k F | P.ord z < 0}.Finite := Place.finite_setOf_ord_neg hF z
   set n : ℕ := hT.toFinset.sup fun P ↦ (-P.ord z).toNat with hn
-  refine ⟨n, mem_holomorphyRing_iff_forall_ord_nonneg.mpr fun P hP ↦ ?_⟩
+  let _ := hn; refine ⟨n, mem_holomorphyRing_iff_forall_ord_nonneg.mpr fun P hP ↦ ?_⟩
   have hxP : 0 ≤ P.ord x := mem_holomorphyRing_iff_forall_ord_nonneg.mp hx P hP
   rw [P.ord_mul (pow_ne_zero n hx0) hz0, P.ord_pow]
   rcases le_or_gt 0 (P.ord z) with hzP | hzP
@@ -247,7 +247,7 @@ theorem exists_pow_mul_mem_holomorphyRing (hF : IsFunctionField k F) {S : Set (P
     Finset.le_sup (f := fun P : Place k F ↦ (-P.ord z).toNat) (hT.mem_toFinset.mpr hzP)
   have h1 : ((-P.ord z).toNat : ℤ) = -P.ord z := Int.toNat_of_nonneg (by omega)
   have h2 : ((-P.ord z).toNat : ℤ) ≤ n := by exact_mod_cast hle
-  have h3 : (n : ℤ) ≤ n * P.ord x := le_mul_of_one_le_right (Nat.cast_nonneg n) hxpos
+  let _ := h2; have h3 : (n : ℤ) ≤ n * P.ord x := le_mul_of_one_le_right (Nat.cast_nonneg n) hxpos
   linarith
 
 /-! ### Integrally closed subrings are holomorphy rings -/

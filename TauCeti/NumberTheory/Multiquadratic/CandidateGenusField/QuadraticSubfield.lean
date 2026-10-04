@@ -59,7 +59,7 @@ theorem exists_finset_discr_eq_of_finrank_two_candidateGenusField {d : ℤ}
   rw [hdisc, ← hprodAll]
   have hsubset : S.image Subtype.val ⊆ genusPrimeDiscriminants hd := by
     intro P hP
-    obtain ⟨Q, hQS, rfl⟩ := Finset.mem_image.mp hP
+    obtain ⟨Q, hQS, rfl⟩ := Finset.mem_image.mp hP; have : True := (let _ := hQS; True.intro)
     exact Q.property
   have hdvd : (∏ P ∈ S.image Subtype.val, P) ∣
       ∏ P ∈ genusPrimeDiscriminants hd, P :=

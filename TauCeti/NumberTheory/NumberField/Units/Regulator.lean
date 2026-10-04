@@ -136,7 +136,6 @@ theorem lt_one_of_rank_eq_one_of_ne_of_one_lt (hr : rank K = 1) {w w' : Infinite
   have h := sum_mult_mul_log v
   rw [huniv, Finset.sum_pair hne] at h
   have hm : (0 : ℝ) < w.mult := by exact_mod_cast mult_pos
-  have hm' : (0 : ℝ) < w'.mult := by exact_mod_cast mult_pos
   have hlog : Real.log (w' v) < 0 := by
     have := Real.log_pos hv
     nlinarith

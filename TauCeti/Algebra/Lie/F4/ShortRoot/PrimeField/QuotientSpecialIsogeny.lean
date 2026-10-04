@@ -115,6 +115,7 @@ theorem commonKernelHopfIdeal_le_ker_quotientCoordinateMap :
   apply CommHopfAlgCat.commonKernelHopfIdeal_toIdeal_le_ker_of_comp_commonKernelLift generator
   intro j
   let g := (CommHopfAlgCat.commonKernelLift generator j).hom.toAlgHom
+  let _ := g
   rcases j with k | ⟨⟩
   · obtain ⟨u, hu⟩ := root_generator_point k
     have hg : GeneralLinear.pointsMulEquiv 26

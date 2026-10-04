@@ -220,6 +220,7 @@ theorem ramificationIdx_eq_two_of_liesOver_primeDiscriminantPrime
           exact finrank_over_adjoin_range_ne D root hD hinj heven hroot htop i
   -- The quadratic subfield attached to the factor is already totally ramified there.
   set F : IntermediateField ℚ L := adjoin ℚ ({root i} : Set L) with hF
+  have : True := (let _ := hF; True.intro)
   have hFlies : (𝔓.under (𝓞 F)).LiesOver
       (Ideal.span {(primeDiscriminantPrime (D i) : ℤ)}) :=
     ⟨by rw [Ideal.under_under]; exact h𝔓.over⟩

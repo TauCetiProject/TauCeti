@@ -195,7 +195,7 @@ theorem periodPolynomials_zero [NeZero (2 : K)] : periodPolynomials K 0 = ⊥ :=
   rw [finrank_homogeneousSubmodule_fin_two] at hle
   have hker : LinearMap.ker (1 + binaryFormRep K 0 (op (S : Matrix (Fin 2) (Fin 2) ℤ))) = ⊥ := by
     rw [← Submodule.finrank_eq_zero]
-    interval_cases hd : finrank K
+    interval_cases _ : finrank K
       (LinearMap.ker (1 + binaryFormRep K 0 (op (S : Matrix (Fin 2) (Fin 2) ℤ))))
     · rfl
     · norm_num at h

@@ -149,8 +149,6 @@ private theorem dim_add_le_one_add_dim_add_of_effective (hF : IsFunctionField k 
   classical
   obtain ⟨D, z, hDA, hspace, hzD, hz0, hzord⟩ :=
     exists_section_exact_on_support hF hA (B := B)
-  have hAle : riemannRochSpace A ≤ riemannRochSpace (A + B) :=
-    riemannRochSpace_mono (le_add_of_nonneg_right hB)
   let LA : Submodule k (riemannRochSpace (A + B)) :=
     (riemannRochSpace A).submoduleOf (riemannRochSpace (A + B))
   have hDB : D + B ≤ A + B := by

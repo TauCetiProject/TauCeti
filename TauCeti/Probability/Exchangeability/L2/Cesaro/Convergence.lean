@@ -229,7 +229,7 @@ private theorem tendsto_dist_blockAverage_moving_prefix_toLp {μ : Measure Ω}
   filter_upwards [hk] with m hkm
   -- A block placed beyond both the selection's range and the prefix.
   set l : ℕ := max (Finset.univ.sup fun i : Fin (m + 1) ↦ k m i) m + 1 with hl
-  have hsel_lt : ∀ i : Fin (m + 1), k m i < l := by
+  let _ := hl; have hsel_lt : ∀ i : Fin (m + 1), k m i < l := by
     intro i
     have hle : k m i ≤ Finset.univ.sup fun i : Fin (m + 1) ↦ k m i :=
       Finset.le_sup (Finset.mem_univ i)

@@ -87,7 +87,7 @@ private theorem exists_monotone_leave_radius {γ : ℝ → ℂ} {s : ℂ} {t₀ 
     exists_strictMonoOn_norm_sub_right h_at hL_R h_tendsto_R hγ_at h_diff_R
   obtain ⟨r_L, hr_L_pos, hanti_raw⟩ :=
     exists_strictAntiOn_norm_sub_left h_at hL_L h_tendsto_L hγ_at h_diff_L
-  set ρ : ℝ := min r (min r_R r_L) with hρ_def
+  set ρ : ℝ := min r (min r_R r_L) with _
   have hρ_pos : 0 < ρ := lt_min hr_pos (lt_min hr_R_pos hr_L_pos)
   have hρ_R : ρ ≤ r_R := (min_le_right _ _).trans (min_le_left _ _)
   have hρ_L : ρ ≤ r_L := (min_le_right _ _).trans (min_le_right _ _)
@@ -247,8 +247,8 @@ theorem exists_exit_times_truncated_integral_split {γ : ℝ → ℂ} {s : ℂ} 
     hγ_cont.mono (Icc_subset_Icc hlt.le (by linarith [hρ_le_r, hru]))
   have hγ_cont_L : ContinuousOn γ (Icc (t₀ - ρ) t₀) :=
     hγ_cont.mono (Icc_subset_Icc (by linarith [hρ_le_r, hlr]) htu.le)
-  set τL := firstExitTimeLeft γ t₀ ρ s with hτL_def
-  set τR := firstExitTimeRight γ t₀ ρ s with hτR_def
+  set τL := firstExitTimeLeft γ t₀ ρ s with _
+  set τR := firstExitTimeRight γ t₀ ρ s with _
   have h_toL : Tendsto τL (𝓝[>] (0 : ℝ)) (𝓝[<] t₀) :=
     firstExitTimeLeft_tendsto hρ_pos hγ_cont_L h_at h_leave_L
   have h_toR : Tendsto τR (𝓝[>] (0 : ℝ)) (𝓝[>] t₀) :=

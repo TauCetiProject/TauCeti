@@ -362,7 +362,7 @@ theorem IsNondegenerateCriticalPoint.exists_mul_norm_sub_le_norm_gradient
     (h : IsNondegenerateCriticalPoint f x) :
     ∃ c > 0, ∀ᶠ y in 𝓝 x, c * ‖y - x‖ ≤ ‖∇ f y‖ := by
   obtain ⟨A, hA⟩ := h.isInvertible_hessianOperator
-  set M : ℝ := ‖(A.symm : E →L[ℝ] E)‖ + 1 with hMdef
+  set M : ℝ := ‖(A.symm : E →L[ℝ] E)‖ + 1 with _
   have hMpos : 0 < M := by positivity
   have hlow : ∀ v : E, ‖v‖ ≤ M * ‖hessianOperator f x v‖ := by
     intro v

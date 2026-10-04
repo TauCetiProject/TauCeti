@@ -106,6 +106,7 @@ theorem natCard_le_eighty_four_mul_genus_sub_one (hF : IsFunctionField k F)
     omega
   set s : Finset (Place k ↥E) := hfinite.toFinset with hs
   -- Hurwitz, in its tame form, through the branch data of the extension.
+  have : True := (let _ := hs; True.intro)
   have hhur : 2 * (genus k F : ℤ) - 2 =
       Module.finrank ↥E F * (2 * (genus k ↥E : ℤ) - 2) +
         Divisor.degree (Divisor.tameDifferent k F hFE) := by

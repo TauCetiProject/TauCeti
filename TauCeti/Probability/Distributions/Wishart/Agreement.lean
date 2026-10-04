@@ -82,6 +82,7 @@ theorem hasLaw_wishartGram_gaussian_nonsingularWishartMeasure {ν : ℕ}
     {X : Fin ν → Ω → EuclideanSpace ℝ (Fin p)} (hS : S.PosDef) (hp : p ≤ ν)
     (hX : ∀ r, HasLaw (X r) (multivariateGaussian 0 S) P) (hindep : iIndepFun X P) :
     HasLaw (fun ω => wishartGram fun r => X r ω) (nonsingularWishartMeasure (ν : ℝ) S) P :=
+  let _ := mΩ
   wishartGramMeasure_eq_nonsingularWishartMeasure hS hp ▸ hasLaw_wishartGram_gaussian hX hindep
 
 /-- **A Gaussian sample of size at least the dimension has an almost surely nonsingular Gram

@@ -210,7 +210,7 @@ private theorem sum_Icc_eq_add_sum_range (F : ℤ → K) (N : ℕ) :
     simp only [hs, ht, Finset.mem_inter, Finset.mem_image, Finset.mem_range, Finset.mem_singleton]
     constructor
     · rintro ⟨⟨j, hj, rfl⟩, k, hk, hk'⟩
-      omega
+      let _ := hk; let _ := hj; omega
     · rintro rfl
       exact ⟨⟨0, by omega, by simp⟩, 0, by omega, by simp⟩
   have hkey := Finset.sum_union_inter (s₁ := s) (s₂ := t) (f := F)

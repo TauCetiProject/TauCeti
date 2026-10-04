@@ -148,7 +148,7 @@ theorem natCard_nsmul_one_mem_indVirtualCharacters_isCyclic :
   have hnat (C : CyclicSubgroup G) :
       (Nat.card (C : Subgroup G) : k) *
           indClassFun (C : Subgroup G) (fun _ : (C : Subgroup G) ↦ (1 : k)) g =
-        ∑ x : G, if h : x⁻¹ * g * x ∈ (C : Subgroup G) then
+        ∑ x : G, if _ : x⁻¹ * g * x ∈ (C : Subgroup G) then
           (1 : k) else 0 :=
     natCard_mul_indClassFun
       (ClassFunction.mem_iff.mpr fun _ _ ↦ rfl) g

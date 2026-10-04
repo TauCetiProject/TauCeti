@@ -142,8 +142,10 @@ theorem heckeTScalarGamma0_mul (m n : ℕ) :
     heckeTScalarGamma0 N m * heckeTScalarGamma0 N n = heckeTScalarGamma0 N (m * n) := by
   rcases Nat.eq_zero_or_pos m with rfl | hm
   · simp
+  let _ := hm
   rcases Nat.eq_zero_or_pos n with rfl | hn
   · simp
+  let _ := hn
   by_cases hmN : Nat.Coprime m N
   · by_cases hnN : Nat.Coprime n N
     · have hmm : (![m, m] : Fin 2 → ℕ) = fun _ ↦ m := by ext i; fin_cases i <;> rfl

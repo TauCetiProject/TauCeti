@@ -98,9 +98,7 @@ private lemma ballRadialProjection_spec (p : I × closedBall (0 : E) 1) :
     (ballRadialProjection p).1 ∈ I ∧ (ballRadialProjection p).2 ∈ closedBall (0 : E) 1 ∧
       ((ballRadialProjection p).1 = 0 ∨ (ballRadialProjection p).2 ∈ sphere (0 : E) 1) := by
   have ht1 : (p.1 : ℝ) ≤ 1 := p.1.2.2
-  have ht0 : (0 : ℝ) ≤ (p.1 : ℝ) := p.1.2.1
   have hn1 : ‖(p.2 : E)‖ ≤ 1 := mem_closedBall_zero_iff.1 p.2.2
-  have hn0 : (0 : ℝ) ≤ ‖(p.2 : E)‖ := norm_nonneg _
   simp only [ballRadialProjection]
   split_ifs with h
   · have h2t : (0 : ℝ) < 2 - (p.1 : ℝ) := by linarith

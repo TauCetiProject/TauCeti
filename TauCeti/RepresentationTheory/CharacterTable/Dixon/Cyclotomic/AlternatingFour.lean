@@ -415,7 +415,7 @@ theorem isSome_dixonCyclotomicCharacterTable_alternatingGroupFour :
       simpa only [numClasses_alternatingGroupFourClassData] using i.isLt
     have hi'_lt : i'.val < 4 := by
       simpa only [numClasses_alternatingGroupFourClassData] using i'.isLt
-    interval_cases hi : i.val <;> interval_cases hi' : i'.val <;> try rfl
+    interval_cases _ : i.val <;> interval_cases _ : i'.val <;> try rfl
     all_goals
       simp only [Nat.reduceEqDiff, reduceCtorEq, ↓reduceIte] at h₁ h₂
       first

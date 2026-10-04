@@ -244,7 +244,7 @@ theorem nonempty_iso_iff_dimVector_eq_of_indecomposable
     (hM : Indecomposable M) (hN : Indecomposable N)
     (hfdM : IsFinDim.{u, v, w, max v w x} k V M) (hfdN : IsFinDim.{u, v, w, max v w x} k V N) :
     Nonempty (M ≅ N) ↔ dimVector M = dimVector N :=
-  ⟨fun ⟨e⟩ ↦ dimVector_eq_of_iso e, fun hd ↦
+  let _ := hq; let _ := q; ⟨fun ⟨e⟩ ↦ dimVector_eq_of_iso e, fun hd ↦
     nonempty_iso_of_dimVector_eq_of_indecomposable_of_isAcyclic hac hpd M N hM hN hfdM hfdN hd⟩
 
 end Uniqueness

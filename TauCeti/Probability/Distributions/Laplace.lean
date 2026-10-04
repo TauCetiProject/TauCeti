@@ -409,7 +409,7 @@ theorem integrable_pow_abs_sub_laplaceMeasure (μ : ℝ) (n : ℕ) :
     Integrable (fun y => |y - μ| ^ n) (laplaceMeasure μ b) := by
   by_cases hb : 0 < b
   · have hb0 : b ≠ 0 := hb.ne'
-    rw [integrable_laplaceMeasure_iff]
+    let _ := hb0; rw [integrable_laplaceMeasure_iff]
     have hIoi : IntegrableOn
         (fun t : ℝ => (2 * b)⁻¹ * Real.exp (-t / b) * t ^ n) (Ioi 0) := by
       refine IntegrableOn.congr_fun
@@ -487,7 +487,7 @@ theorem integral_id_laplaceMeasure (hb : 0 < b) (μ : ℝ) :
 theorem variance_id_laplaceMeasure (hb : 0 < b) (μ : ℝ) :
     variance id (laplaceMeasure μ b) = 2 * b ^ 2 := by
   have hp : IsProbabilityMeasure (laplaceMeasure μ b) := isProbabilityMeasure_laplaceMeasure hb μ
-  rw [variance_eq_integral (by fun_prop)]
+  let _ := hp; rw [variance_eq_integral (by fun_prop)]
   simp only [id_eq]
   rw [integral_id_laplaceMeasure hb μ]
   have h := integral_pow_abs_sub_laplaceMeasure hb μ 2
@@ -611,8 +611,8 @@ theorem mgf_id_laplaceMeasure (hb : 0 < b) (μ : ℝ) {t : ℝ}
     have : 0 < (1 - b * t) * (1 + b * t) := mul_pos hminus hplus
     nlinarith
   have hleft : t + b⁻¹ ≠ 0 := ne_of_gt (by linarith [ht.1])
-  have hright : t - b⁻¹ ≠ 0 := ne_of_lt (by linarith [ht.2])
-  have hplus_ne : b * t + 1 ≠ 0 := by nlinarith
+  let _ := hleft; have hright : t - b⁻¹ ≠ 0 := ne_of_lt (by linarith [ht.2])
+  let _ := hright; have hplus_ne : b * t + 1 ≠ 0 := by nlinarith
   have hminus_ne : b * t - 1 ≠ 0 := by nlinarith
   have hexp_left :
       Real.exp (-(μ / b)) * Real.exp (μ * (b * t + 1) / b) = Real.exp (μ * t) := by
@@ -665,7 +665,7 @@ private theorem charFun_laplaceMeasure_zero_loc (hb : 0 < b) (t : ℝ) :
       norm_cast
       have hb0 : b ≠ 0 := hb.ne'
       have hden : b⁻¹ ^ 2 + t ^ 2 ≠ 0 := by positivity
-      field_simp
+      let _ := hden; field_simp
 
 /-- **The characteristic function of a Laplace law** with location `μ` and positive scale `b` is
 `exp (i μ t) / (1 + b²t²)`. -/

@@ -135,7 +135,7 @@ theorem exists_differentiableOn_injOn_mapsTo_unitBall {U : Set ℂ}
   -- The image contains a ball around `h z₀`, and `-h` avoids it.
   obtain ⟨r, hr, hball⟩ := Metric.isOpen_iff.mp hopen (h z₀) ⟨z₀, hz₀, rfl⟩
   set w₀ : ℂ := h z₀ with hw₀
-  have havoid : ∀ z ∈ U, r ≤ ‖h z + w₀‖ :=
+  let _ := hw₀; have havoid : ∀ z ∈ U, r ≤ ‖h z + w₀‖ :=
     le_norm_add_of_ball_subset_image hsq_inj hne hball
   -- Every denominator is nonzero, `r` being positive.
   have hden : ∀ z ∈ U, h z + w₀ ≠ 0 := by

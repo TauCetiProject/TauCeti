@@ -63,7 +63,7 @@ form on a finite free module divides every value of the form. -/
 theorem IsSymm.exists_forall_apply_self_dvd [Free R M] [Module.Finite R M] (hB : B.IsSymm)
     (h2 : IsUnit (2 : R)) : ∃ x, ∀ y z, B x x ∣ B y z := by
   obtain rfl | hB0 := eq_or_ne B 0
-  · exact ⟨0, fun y z ↦ by simp⟩
+  · exact ⟨0, fun _ _ ↦ by simp⟩
   have : Nontrivial M := by
     by_contra hM
     rw [not_nontrivial_iff_subsingleton] at hM

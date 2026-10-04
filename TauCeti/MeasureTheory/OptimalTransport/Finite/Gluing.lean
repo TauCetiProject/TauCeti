@@ -102,7 +102,7 @@ private theorem finiteGluingWeight_sum (π : PMF (α × β)) (σ : PMF (β × γ
             ∑ a, (π (a, b) * ∑ c, σ (b, c)) /
               π.map Prod.snd b := by
                 apply Finset.sum_congr rfl
-                intro a ha
+                intro a _
                 simp only [div_eq_mul_inv, Finset.sum_mul, Finset.mul_sum]
         _ = ((∑ a, π (a, b)) * (∑ c, σ (b, c))) /
               π.map Prod.snd b := by
@@ -122,7 +122,7 @@ private theorem finiteGluingWeight_sum (π : PMF (α × β)) (σ : PMF (β × γ
           rw [Finset.sum_comm]
     _ = ∑ b : β, π.map Prod.snd b := by
       apply Finset.sum_congr rfl
-      intro b hb
+      intro b _
       exact hslice b
     _ = 1 := by
       simpa only [tsum_fintype] using (π.map Prod.snd).tsum_coe
@@ -157,7 +157,7 @@ private theorem finiteGluing_map_apply (h : π.map Prod.snd = σ.map Prod.fst)
   rw [finiteGluing, PMF.map_ofFintype]
   simp only [PMF.ofFintype_apply, Finset.sum_filter]
   apply Finset.sum_congr rfl
-  intro a ha
+  intro a _
   by_cases hx : f a = x <;> simp [hx]
 
 /-- The pointwise outer gluing formula. -/
@@ -170,13 +170,13 @@ theorem outerGluing_apply (h : π.map Prod.snd = σ.map Prod.fst) (a : α) (c : 
   rw [outerGluing, finiteGluing_map_apply π σ h
     (fun p : α × β × γ => (p.1, p.2.2)) (a, c)]
   apply Finset.sum_bij (fun (x : α × β × γ) _ => x.2.1)
-  · intro x hx
+  · intro x _
     simp_all
   · intro x₁ h₁ x₂ h₂ he
     rcases x₁ with ⟨a₁, b₁, c₁⟩
     rcases x₂ with ⟨a₂, b₂, c₂⟩
     simp_all [Prod.ext_iff]
-  · intro b hb
+  · intro b _
     exact ⟨(a, b, c), by simp, rfl⟩
   · intro x hx
     rcases x with ⟨a', b', c'⟩
@@ -199,13 +199,13 @@ theorem map_prodMap_id_fst_finiteGluing (h : π.map Prod.snd = σ.map Prod.fst) 
       finiteGluing_map_apply π σ h (fun q : α × β × γ => (q.1, q.2.1)) p
     _ = ∑ c, finiteGluingWeight π σ p.2 p.1 c := by
         apply Finset.sum_bij (fun (x : α × β × γ) _ => x.2.2)
-        · intro x hx
+        · intro x _
           simp_all
         · intro a₁ h₁ a₂ h₂ he
           rcases a₁ with ⟨a₁, b₁, c₁⟩
           rcases a₂ with ⟨a₂, b₂, c₂⟩
           simp_all [Prod.ext_iff]
-        · intro c hc
+        · intro c _
           exact ⟨(p.1, p.2, c), by simp, rfl⟩
         · intro x hx
           rcases x with ⟨a, b, c⟩
@@ -243,13 +243,13 @@ theorem map_snd_finiteGluing (h : π.map Prod.snd = σ.map Prod.fst) :
       finiteGluing_map_apply π σ h (fun q : α × β × γ => (q.2.1, q.2.2)) p
     _ = ∑ a, finiteGluingWeight π σ p.1 a p.2 := by
         apply Finset.sum_bij (fun (x : α × β × γ) _ => x.1)
-        · intro x hx
+        · intro x _
           simp_all
         · intro a₁ h₁ a₂ h₂ he
           rcases a₁ with ⟨a₁, b₁, c₁⟩
           rcases a₂ with ⟨a₂, b₂, c₂⟩
           simp_all [Prod.ext_iff]
-        · intro a ha
+        · intro a _
           exact ⟨(a, p.1, p.2), by simp, rfl⟩
         · intro x hx
           simp_all

@@ -67,7 +67,7 @@ lemma integral_min_one_mass_mul_norm_sq_le_energyFormIntegral_one_zero_mass_self
     (μ := μ) (a := fun _ => (1 : Matrix n n ℝ)) (c := m) (U := U) zero_le_one ?_ hm
     hlower henergy
   filter_upwards with x
-  intro ξ
+  let _ := x; intro ξ
   rw [← Matrix.toQuadraticForm'_apply, toQuadraticForm'_one]
   simp
 
@@ -77,7 +77,7 @@ lemma energyFormIntegral_one_zero_mass_self_nonneg (hm : ∀ᵐ x ∂μ, 0 ≤ m
   refine energyFormIntegral_zero_drift_self_nonneg
     (μ := μ) (a := fun _ => (1 : Matrix n n ℝ)) (c := m) (U := U) ?_ hm
   filter_upwards with x
-  intro ξ
+  let _ := x; intro ξ
   rw [← Matrix.toQuadraticForm'_apply, toQuadraticForm'_one]
   exact sq_nonneg ‖ξ‖
 

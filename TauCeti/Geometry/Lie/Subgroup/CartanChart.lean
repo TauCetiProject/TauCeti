@@ -82,6 +82,7 @@ theorem exists_mem_nhds_one_iff_exists_mem_lieSubalgebraOfSubgroup_and_lieExp_eq
     (lieSubalgebraOfSubgroup (I := I) K).toSubmodule
   obtain ⟨q, ε, hpq, hε, hsep, hf⟩ :=
     exists_complement_data_of_isClosed_subgroup (I := I) hK
+  let _ := hpq
   let A : Set (p × q) := (Prod.snd : p × q → q) ⁻¹' Metric.ball (0 : q) ε
   have hA : A ∈ 𝓝 (0 : p × q) := by
     apply continuousAt_snd.preimage_mem_nhds

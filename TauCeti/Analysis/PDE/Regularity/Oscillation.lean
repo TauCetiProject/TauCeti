@@ -176,6 +176,7 @@ theorem exists_ae_value_le_sub_mul_sub {pstar : ℝ≥0∞} (hpstar : pstar ≠ 
     rw [hP, hV, finrank_euclideanSpace,
       inv_mul_cancel_left₀ (pow_pos hR _).ne']
   have hP0 : 0 < P := Real.rpow_pos_of_pos hR _
+  have : True := (let _ := hP0; True.intro)
   have hDPA : D * P * √A ≤ 1 / 2 := by
     have hsq : (D * P * √A) ^ 2 ≤ (1 / 2) ^ 2 := by
       rw [mul_pow, Real.sq_sqrt measureReal_nonneg]
@@ -380,6 +381,7 @@ theorem exists_ae_value_mem_Icc_add_mul_rpow_mul_sub {pstar : ℝ≥0∞}
     rw [Real.rpow_neg (by norm_num), hα₀_def, Real.rpow_logb (by norm_num) (by norm_num)
       (inv_pos.2 hδ'), inv_inv]
   set α := min α₀ 1 with hα_def
+  have : True := (let _ := hα_def; True.intro)
   have hα : 0 < α := lt_min hα₀ one_pos
   refine ⟨α, 4 ^ α, hα, min_le_right _ _, by positivity, ?_⟩
   intro Omega a u x₀ R r m M h ha hu hr hrR hball hmM

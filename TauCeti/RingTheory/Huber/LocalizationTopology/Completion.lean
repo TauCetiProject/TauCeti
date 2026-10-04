@@ -570,7 +570,7 @@ theorem existsUnique_continuous_ringHom_completion_locTopology {B : Type*} [Comm
   let _ := locUniformSpace P T s S hden
   have _ := isUniformAddGroup_locUniformSpace P T s S hden
   have _ := isTopologicalRing_locUniformSpace P T s S hden
-  obtain ⟨f, ⟨hfc, hfe⟩, huniq⟩ :=
+  obtain ⟨f, ⟨hfc, hfe⟩, _⟩ :=
     existsUnique_continuous_ringHom_locTopology P T s S hden hφ hs hpow
   have hext : (UniformSpace.Completion.extensionHom f hfc).comp
       (toCompletionLoc P T s S hden) = φ := by

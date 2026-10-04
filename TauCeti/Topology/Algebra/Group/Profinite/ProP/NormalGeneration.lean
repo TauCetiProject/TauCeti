@@ -95,7 +95,7 @@ theorem topologicalClosure_normalClosure_eq_iff_topologicalClosure_sup_eq {s : S
     (normalClosure s).topologicalClosure = R ↔
       (Subgroup.closure s ⊔ pLowerCentralStep p R).topologicalClosure = R := by
   set K := (Subgroup.closure s ⊔ pLowerCentralStep p R).topologicalClosure with hK
-  have hKR : K ≤ R :=
+  let _ := hK; have hKR : K ≤ R :=
     topologicalClosure_minimal _ (sup_le ((Subgroup.closure_le _).mpr hs) (pLowerCentralStep_le hR))
       hR
   constructor

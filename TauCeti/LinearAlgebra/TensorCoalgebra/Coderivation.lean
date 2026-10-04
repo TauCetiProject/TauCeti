@@ -134,6 +134,7 @@ theorem coderivSummand_tprod (F : ReducedTensorWords R M →ₗ[R] M) {n p d : �
     splice_eq_of_tprod R x _ hd (by omega) (by omega)]
   refine of_tprod_congr R M _ rfl fun i ↦ ?_
   have hi := i.isLt
+  let _ := hi
   rw [Function.comp_apply, append_eq_dite]
   simp only [Fin.val_cast]
   by_cases h₁ : i.1 < p

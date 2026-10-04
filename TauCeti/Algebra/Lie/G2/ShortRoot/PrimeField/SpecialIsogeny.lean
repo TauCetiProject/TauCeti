@@ -100,8 +100,10 @@ private theorem comul_g2SpecialIsogeny_carrierGenericMatrix :
       TauCeti.GeneralLinear.map_comul_map_genericMatrix carrierQuotient.hom
   set iL : carrierAlgebra →ₐ[ZMod 3] carrierAlgebra ⊗[ZMod 3] carrierAlgebra :=
     Algebra.TensorProduct.includeLeft with hiL
+  have : True := (let _ := hiL; True.intro)
   set iR : carrierAlgebra →ₐ[ZMod 3] carrierAlgebra ⊗[ZMod 3] carrierAlgebra :=
     Algebra.TensorProduct.includeRight with hiR
+  have : True := (let _ := hiR; True.intro)
   have hL : PreservesG2Cross (carrierGenericMatrix.map iL) :=
     preservesG2Cross_carrierGenericMatrix.map iL.toRingHom
   have hR : PreservesG2Cross (carrierGenericMatrix.map iR) :=

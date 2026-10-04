@@ -300,11 +300,6 @@ theorem f4ShortRootQuotientToIdealEquiv_firstColumn_opposite_of_long
       show β = f4OppositeRootIndex α from rfl]
     exact congrArg f4ShortRootSubspace.mkQ (f4Modular_lie_rootVector_opposite α)
   let α' := f4SignedSimpleRootIndex (isogenyReverse k)
-  have hα'short : f4Length α' = 1 := by
-    have hα'eq : α' = f4SpecialIsogenyIndexEquiv α :=
-      (f4SpecialIsogenyIndexEquiv_f4SignedSimpleRootIndex k).symm
-    rw [hα'eq]
-    exact (f4Length_f4SpecialIsogenyIndexEquiv_eq_one_iff α).2 hk
   have hinput : (i : Fin 48) = f4OppositeRootIndex α' := by
     -- Coercing the subtype index `i` exposes its chosen reversed root.
     change f4SpecialIsogenyIndexEquiv β = f4OppositeRootIndex α'
@@ -476,9 +471,6 @@ private theorem f4ShortRootQuotientToIdealEquiv_firstColumn_cartan_of_long
   let α' := f4SignedSimpleRootIndex (isogenyReverse k)
   have hα' : f4SpecialIsogenyIndexEquiv α = α' :=
     f4SpecialIsogenyIndexEquiv_f4SignedSimpleRootIndex k
-  have hα'short : f4Length α' = 1 := by
-    rw [← hα']
-    exact (f4Length_f4SpecialIsogenyIndexEquiv_eq_one_iff α).2 hk
   let iα : F4ShortRootIndex := ⟨f4SpecialIsogenyIndexEquiv α, by
     exact (f4Length_f4SpecialIsogenyIndexEquiv_eq_one_iff α).2 hk⟩
   let b := f4ShortRootWeightIndexEquiv.symm (Sum.inl iα)

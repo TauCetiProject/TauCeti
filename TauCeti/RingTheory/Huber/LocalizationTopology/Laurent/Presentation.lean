@@ -280,7 +280,7 @@ theorem existsUnique_continuous_ringHom_laurentQuotient_restriction (ht : t ∈ 
   have hu' : IsUnit (toCompletionLoc P (T') s S' hden' s) :=
     isUnit_toCompletionLoc_of_dvd P (T') s S' hden' dvd_rfl
   set φ := restrictionRingHomOfSubset P T s S hden T' S' hden' hTT' with hφdef
-  have hφ : ContinuousAt φ 0 :=
+  let _ := hφdef; have hφ : ContinuousAt φ 0 :=
     (continuous_restrictionRingHomOfSubset P T s S hden T' S' hden' hTT').continuousAt
   set b : Fin 1 → UniformSpace.Completion S' :=
     fun _ ↦ ((divBy t s : S') : UniformSpace.Completion S') with hbdef

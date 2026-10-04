@@ -73,7 +73,7 @@ theorem rank_continuousZModDual_le_of_convergesToOne {s : Set G} (hs : Converges
   let R : continuousZModDual p G →ₗ[ZMod p] (s →₀ ZMod p) :=
     AddMonoidHom.toZModLinearMap p
       { toFun := fun x ↦ Finsupp.ofSupportFinite _ (hsupp x)
-        map_zero' := Finsupp.ext fun z ↦ by
+        map_zero' := Finsupp.ext fun _ ↦ by
           simp [Finsupp.ofSupportFinite_coe]
         map_add' := fun x y ↦ Finsupp.ext fun z ↦ by
           simp [Finsupp.ofSupportFinite_coe, toMul_add] }

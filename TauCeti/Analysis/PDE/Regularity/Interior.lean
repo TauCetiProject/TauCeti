@@ -202,7 +202,7 @@ theorem memLp_localizedForcing {ψ : EuclideanSpace ℝ ι → ℝ} (hψ : ContD
     (hψc : HasCompactSupport ψ) (f : Lp ℝ 2 (mu.restrict Omega)) (u : W1p mu Omega 2) :
     MemLp (localizedForcing A ψ f u) 2 (mu.restrict Omega) := by
   obtain ⟨M, hM, hψM, hgradM⟩ := (hψ.of_le (by simp)).exists_abs_le_and_norm_gradient_le hψc
-  have hDc : HasCompactSupport (divMatrixGradient A ψ) := hψc.mono' fun x hx =>
+  let _ := hM; have hDc : HasCompactSupport (divMatrixGradient A ψ) := hψc.mono' fun x hx =>
     by_contra fun hxψ => hx (divMatrixGradient_eq_zero_of_notMem_tsupport hψ hxψ)
   obtain ⟨C, hC⟩ :=
     (continuous_divMatrixGradient (A := A) hψ).norm.bddAbove_range_of_hasCompactSupport hDc.norm
@@ -306,7 +306,7 @@ private theorem setIntegral_matrixBilinearForm_cutoff_eq {f : Lp ℝ 2 (mu.restr
   have hφ' := φ.continuous
   have hgψ := ContDiff.continuous_gradient hψ
   have hgφ := continuous_gradient_testFunction φ
-  have hD := continuous_divMatrixGradient (A := A) hψ
+  let _ := hgφ; have hD := continuous_divMatrixGradient (A := A) hψ
   have hcs : ∀ K : EuclideanSpace ℝ ι → ℝ, (∀ x, ψ x = 0 → ∇ ψ x = 0 →
       divMatrixGradient A ψ x = 0 → K x = 0) → HasCompactSupport K := fun K hK =>
     hψc.mono' fun x hx => by_contra fun hxψ => hx (hK x (image_eq_zero_of_notMem_tsupport hxψ)
@@ -551,7 +551,7 @@ theorem exists_isWeakSolutionDirichlet_top_ae_eq_on_of_isCompact
     unfold divMatrixGradient
     apply Finset.sum_eq_zero
     intro i hi
-    have hfield : (fun y => matrixBilinearForm A (EuclideanSpace.basisFun ι ℝ i)
+    let _ := hi; have hfield : (fun y => matrixBilinearForm A (EuclideanSpace.basisFun ι ℝ i)
         (∇ ψ y)) =ᶠ[nhds x] fun _ => 0 := by
       filter_upwards [hgrad_near] with y hy
       simp [hy]

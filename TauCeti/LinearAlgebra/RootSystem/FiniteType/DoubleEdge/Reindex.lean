@@ -84,8 +84,8 @@ private lemma doubleEdgeCartanMatrix_apply_eq_path (p q n : ℕ) (hp : 0 < p) (h
       false_and, and_false, ite_false, doubleEdgePathEquiv_inl_val,
       doubleEdgePathEquiv_inr_val, Fin.ext_iff]
   · have hx := x.isLt
-    have hy := y.isLt
-    rw [chainEntry_def]
+    let _ := hx; have hy := y.isLt
+    let _ := hy; rw [chainEntry_def]
     split_ifs <;> omega
   · have hx := x.isLt
     have hy := y.isLt
@@ -96,8 +96,8 @@ private lemma doubleEdgeCartanMatrix_apply_eq_path (p q n : ℕ) (hp : 0 < p) (h
   · have hx := x.isLt
     have hy := y.isLt
     have hxle : (x : ℕ) ≤ q - 1 := by omega
-    have hyle : (y : ℕ) ≤ q - 1 := by omega
-    rw [chainEntry_def]
+    let _ := hxle; have hyle : (y : ℕ) ≤ q - 1 := by omega
+    let _ := hyle; rw [chainEntry_def]
     split_ifs <;> omega
 
 /-! ## Reindexing a path-shaped diagram -/
@@ -189,8 +189,8 @@ private theorem IsFiniteType.exists_equiv_forall_eq_doubleEdgeCartanMatrix_of_si
     have horder' : (iso' u : ℕ) + 1 = (iso' v : ℕ) := by
       simp only [iso', RelIso.trans_apply, pathGraphRevIso_apply, Fin.val_rev]
       have hu := (iso u).isLt
-      have hv := (iso v).isLt
-      omega
+      let _ := hu; have hv := (iso v).isLt
+      let _ := hv; omega
     exact exists_equiv_forall_eq_doubleEdgeCartanMatrix_of_pathEquiv h iso'.toEquiv
       (adj_iff_of_iso_pathGraph iso') horder' hvu hsimple
 

@@ -119,13 +119,13 @@ private theorem exists_lipschitzNormUnit (Q : QuadraticForm R V)
         change -(algebraMap R (CliffordAlgebra Q)) (Q v) =
           (algebraMap R (CliffordAlgebra Q)) (-Q v)
         exact (map_neg _ _).symm
-  | inv x hx ih =>
+  | inv x _ ih =>
       obtain ⟨r, hr, hr'⟩ := ih
       obtain ⟨h₁, h₂⟩ := star_mul_self_and_self_mul_star_inv hr hr'
       exact ⟨r⁻¹, h₁, h₂⟩
   | one =>
       exact ⟨1, by simp, by simp⟩
-  | mul x y hx hy ihx ihy =>
+  | mul x y _ _ ihx ihy =>
       obtain ⟨r, hr, hr'⟩ := ihx
       obtain ⟨s, hs, hs'⟩ := ihy
       obtain ⟨h₁, h₂⟩ := star_mul_self_and_self_mul_star_mul hr hr' hs hs'

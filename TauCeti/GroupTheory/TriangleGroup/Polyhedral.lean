@@ -114,7 +114,6 @@ theorem range_tetrahedralRep :
   let a : Perm (Fin 4) := swap 0 1 * swap 2 3
   let b : Perm (Fin 4) := ([0, 1, 2] : List (Fin 4)).formPerm
   let G : Subgroup (Perm (Fin 4)) := Subgroup.closure {a, b}
-  have ha : a ∈ G := Subgroup.subset_closure (Set.mem_insert a {b})
   have hb : b ∈ G := Subgroup.subset_closure (Set.mem_insert_of_mem a rfl)
   have haEven : a ∈ alternatingGroup (Fin 4) :=
     Perm.mul_mem_alternatingGroup_of_isSwap

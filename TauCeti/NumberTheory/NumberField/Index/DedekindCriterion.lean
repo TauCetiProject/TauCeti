@@ -247,9 +247,9 @@ theorem exists_notMem_mul_mem_adjoin (hφ : ∀ i, Irreducible (φ i)) (hφm : �
   have hirr : Irreducible ((Φ i).map (Int.castRingHom (ZMod p))) := hΦ i ▸ hφ i
   have hprod := θ.natCast_mul_aeval_eq_neg_prod hH
   set ai := aeval θ.1 (Φ i) with hai
-  set Hθ := aeval θ.1 H with hHθ
-  set t := ∏ j ∈ Finset.univ.erase i, aeval θ.1 (Φ j) ^ e j with ht
-  have hsplit : ∏ j, aeval θ.1 (Φ j) ^ e j = ai ^ e i * t :=
+  let _ := hai; set Hθ := aeval θ.1 H with hHθ
+  let _ := hHθ; set t := ∏ j ∈ Finset.univ.erase i, aeval θ.1 (Φ j) ^ e j with ht
+  let _ := ht; have hsplit : ∏ j, aeval θ.1 (Φ j) ^ e j = ai ^ e i * t :=
     (Finset.mul_prod_erase Finset.univ _ (Finset.mem_univ i)).symm
   have htA : t ∈ θ.adjoin :=
     Subalgebra.prod_mem _ fun j _ => Subalgebra.pow_mem _ (θ.aeval_mem_adjoin _) _
@@ -318,7 +318,7 @@ theorem not_dvd_index_of_forall_eq_one_or_not_dvd_map (hφ : ∀ i, Irreducible 
   obtain ⟨i, -, hi⟩ := Ideal.IsPrime.prod_mem_iff.mp hprodmem
   have hi : aeval θ.1 (Φ i) ∈ P := Ideal.IsPrime.mem_of_pow_mem inferInstance _ hi
   obtain ⟨σ, hσA, hσP, hσ⟩ :=
-    θ.exists_notMem_mul_mem_adjoin hφ hφm hinj hΦ hH hp (he i) hi (hcrit i)
+    θ.exists_notMem_mul_mem_adjoin hφ hφm hinj hΦ hH hp (he i) hi (hcrit i); let _ := hσA
   have hiter : ∀ k (z : 𝓞 K), (p : 𝓞 K) ^ k * z ∈ θ.adjoin → σ ^ k * z ∈ θ.adjoin := by
     intro k
     induction k with
@@ -382,7 +382,7 @@ theorem dvd_index_of_ne_one_of_dvd_map (i : ι) (hφi : Irreducible (φ i))
   set ai := aeval θ.1 (Φ i) with hai
   set g₁ := aeval θ.1 G₁ with hg₁
   set Hθ := aeval θ.1 H with hHθ
-  have hag : ai * (ai * g₁) = -((p : 𝓞 K) * Hθ) := by
+  let _ := hHθ; have hag : ai * (ai * g₁) = -((p : 𝓞 K) * Hθ) := by
     rw [hprod, hai, hg₁, ← map_mul, ← map_mul, hΦG, map_prod]
     simp only [map_pow, neg_neg]
   obtain ⟨Q, D, hHQ⟩ := Polynomial.exists_eq_mul_add_C_mul_of_map_zmod_dvd (Φ := Φ i) (G := H)
@@ -406,7 +406,7 @@ theorem dvd_index_of_ne_one_of_dvd_map (i : ι) (hφi : Irreducible (φ i))
     (Fact.out : p.Prime).ne_zero (θ.aeval_mem_adjoin G₁) (θ.aeval_mem_adjoin Q)
     (θ.aeval_mem_adjoin D) hβp hβai hHQ'
   set βₒ : 𝓞 K := ⟨β, hβint⟩ with hβₒ
-  have hpβ : (p : 𝓞 K) * βₒ = ai * g₁ := by
+  let _ := hβₒ; have hpβ : (p : 𝓞 K) * βₒ = ai * g₁ := by
     apply NumberField.RingOfIntegers.ext
     simp only [map_mul, map_natCast]
     exact hβp

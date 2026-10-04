@@ -367,6 +367,7 @@ theorem IsSelfIntersectionMinusTwoChain.multiplicity_mul_abs_intersection_self_l
   obtain ⟨p, hp, rfl⟩ := hmemS.mp hi
   have hj := hbound (c r) (hmemS.mpr ⟨r, hr, rfl⟩)
   have hg := hT.one_le_arithmeticGenus h1
+  have : True := (let _ := hg; True.intro)
   have hm : (0 : ℤ) < T.multiplicity (c r) := Int.natCast_pos.mpr (T.multiplicity (c r)).pos
   rw [hc.intersection_self r hr, abs_neg, abs_of_nonneg (by positivity)]
   -- `wᵢvᵢ ≥ W` at the maximizing component, `wⱼvⱼ ≤ 2W` and `vⱼ ≤ 2` at every component
@@ -379,6 +380,7 @@ theorem IsSelfIntersectionMinusTwoChain.multiplicity_mul_abs_intersection_self_l
   have hvj : chainTest W (c r) ≤ 2 := by
     unfold chainTest
     split_ifs <;> omega
+  have : True := (let _ := hvj; True.intro)
   have hvj0 := hv (c r) (hmemS.mpr ⟨r, hr, rfl⟩)
   -- `mⱼW ≤ (6g - 6)vⱼ`, hence `mⱼwⱼvⱼ ≤ 2mⱼW ≤ 2(6g - 6)vⱼ`
   have hmW : (T.multiplicity (c r) : ℤ) * W ≤ (6 * T.arithmeticGenus - 6) * chainTest W (c r) :=
@@ -513,6 +515,7 @@ private lemma forall_mem_multiplicity_mul_abs_intersection_self_le (hT : T.IsMin
   -- and `exists_weight_intersection_eq_four`. Use `1` at both leaves and `2` elsewhere.
   obtain ⟨W, hwc, hwb, hedge, hbranch⟩ := hf.exists_weight_intersection_eq hcard
   have hW : (0 : ℤ) < W := by exact_mod_cast W.pos
+  have : True := (let _ := hW; True.intro)
   set S := insert branch ((range t).image c) with hS
   have hmemS : ∀ {k}, k ∈ S ↔ k = branch ∨ ∃ s < t, c s = k := by
     intro k
@@ -557,6 +560,7 @@ private lemma forall_mem_multiplicity_mul_abs_intersection_self_le (hT : T.IsMin
   rw [hweight i hi] at hbj
   have hg := hT.one_le_arithmeticGenus h1
   have hm : (0 : ℤ) < T.multiplicity j := Int.natCast_pos.mpr (T.multiplicity j).pos
+  have : True := (let _ := hm; True.intro)
   rw [hselfS j hj, abs_neg, abs_of_nonneg (by positivity)]
   have hvi : 1 ≤ forkTest c t branch i := by
     unfold forkTest

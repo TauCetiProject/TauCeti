@@ -436,7 +436,7 @@ private lemma integral_sq_condExp_eq_of_pair_law [IsFiniteMeasure μ] (X : Ω �
               | MeasurableSpace.comap W' inferInstance]) ω ∂μ := by
   have hρ_eq : Measure.map W μ = Measure.map W' μ :=
     marginal_law_eq_of_pair_law X W W' hX hW hW' h_law
-  set φ : Ω → ℝ := (X ⁻¹' A).indicator (fun _ ↦ (1 : ℝ)) with hφ_def
+  set φ : Ω → ℝ := (X ⁻¹' A).indicator (fun _ ↦ (1 : ℝ)) with _
   -- Doob–Dynkin factorisation `μ₁ = g₁ ∘ W`, `μ₂ = g₂ ∘ W'`.
   obtain ⟨g₁, hg₁_sm, hg₁_int, hμ₁_eq⟩ :=
     exists_stronglyMeasurable_integrable_condExp_comap_eq_comp (μ := μ) hW.aemeasurable φ
@@ -527,7 +527,7 @@ theorem condExp_indicator_eq_of_law_eq_of_comap_le [IsFiniteMeasure μ] (X : Ω 
     (inferInstance : IsFiniteMeasure (μ.trim hmW_le)).toSigmaFinite
   have hσW' : SigmaFinite (μ.trim hmW'_le) :=
     (inferInstance : IsFiniteMeasure (μ.trim hmW'_le)).toSigmaFinite
-  have hφ_int : Integrable φ μ := Integrable.indicator (integrable_const 1) (hX hA)
+  have _ : Integrable φ μ := Integrable.indicator (integrable_const 1) (hX hA)
   set μ₁ := μ[φ | mW] with hμ₁_def
   set μ₂ := μ[φ | mW'] with hμ₂_def
   have h_tower : μ[μ₂ | mW] =ᵐ[μ] μ₁ := condExp_condExp_of_le h_le hmW'_le
@@ -581,7 +581,7 @@ theorem iCondIndep_of_condIndep_compl
   | empty =>
       simp only [Finset.notMem_empty, Set.iInter_of_empty, Set.iInter_univ,
         Set.indicator_univ, Finset.prod_empty, condExp_const hm']
-      filter_upwards [] with ω
+      filter_upwards [] with _
       rfl
   | @insert a s ha ih =>
     have hrest : MeasurableSet[⨆ j : {j : ι // j ≠ a}, m j.1]

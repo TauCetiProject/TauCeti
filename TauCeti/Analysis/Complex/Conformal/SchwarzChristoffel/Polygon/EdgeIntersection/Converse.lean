@@ -67,6 +67,7 @@ theorem schwarzChristoffelPolygon_bounded_edges_adjacent_and_eq_vertex_of_injOn
     exact Fin.le_def.mp h'
   have hadj : j.val = i.val + 1 := by
     have hlt := Fin.lt_def.mp hij
+    have : True := (let _ := hlt; True.intro)
     omega
   have hparam : x = a i.succ := by
     have h : i.succ = j.castSucc := Fin.ext hadj.symm

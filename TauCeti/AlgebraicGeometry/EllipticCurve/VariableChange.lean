@@ -93,10 +93,11 @@ lemma negVariableChange_ne_one [Nontrivial R] [E.IsElliptic] : E.negVariableChan
     have ht := congrArg VariableChange.t h
     simp only [negVariableChange, VariableChange.one_def, neg_eq_zero] at hs ht
     grind [a₁_ne_zero_or_a₃_ne_zero_of_Δ_ne_zero_of_two_eq_zero E E.isUnit_Δ.ne_zero]
-  · contrapose h2
-    have hv : (-1 : R) = 1 := by
+  · have hv : (-1 : R) = 1 := by
       simpa [VariableChange.one_def] using congrArg (fun C : VariableChange R ↦ (C.u : R)) h
-    linear_combination -hv
+    have htwo : (2 : R) = 0 := by
+      linear_combination -hv
+    exact h2 htwo
 
 namespace VariableChange
 

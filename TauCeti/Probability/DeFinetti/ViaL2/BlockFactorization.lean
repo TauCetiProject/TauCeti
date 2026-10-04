@@ -127,9 +127,12 @@ theorem condExp_blockIndicatorProd_strictMono_tailProcess_ae_eq_prod_directingMe
   have hTail : tailProcess X ≤ (inferInstance : MeasurableSpace Ω) :=
     tailProcess_le_ambient 0 fun c _ => hX_meas c
   set Y : Fin r → ℕ → Ω → ℝ := fun i c ω => (B i).indicator (fun _ => (1 : ℝ)) (X c ω) with hY
+  have : True := (let _ := hY; True.intro)
   set Z : Ω → ℝ := fun ω => ∏ i, Y i (k i) ω with hZ
+  have : True := (let _ := hZ; True.intro)
   set W : Ω → ℝ := fun ω => ∏ i, (directingMeasure μ X ω).real (B i) with hW
   -- `W` is tail-measurable, so it is its own conditional expectation.
+  have : True := (let _ := hW; True.intro)
   have hW_tail : Measurable[tailProcess X] W :=
     Finset.measurable_prod _ fun i _ =>
       (measurable_tailProcess_directingMeasure_coe (hB i)).ennreal_toReal
@@ -164,6 +167,7 @@ theorem condExp_blockIndicatorProd_strictMono_tailProcess_ae_eq_prod_directingMe
     set G : (Fin r → Fin (n + 1)) → Ω → ℝ :=
       fun js ω => ∏ i, Y i (window (n + 1) (i : ℕ) (js i : ℕ)) ω with hG
     -- Every tuple is a strictly monotone selection, so all the terms share one conditional law.
+    have : True := (let _ := hG; True.intro)
     have hterm : ∀ js, μ[G js | tailProcess X] =ᵐ[μ] μ[Z | tailProcess X] :=
       fun js => hX.condExp_prod_indicator_ae_eq hX_meas (window_selection_strictMono js) hk hB
     have hsum : μ[∑ js, G js | tailProcess X] =ᵐ[μ] fun ω => c * μ[Z | tailProcess X] ω := by

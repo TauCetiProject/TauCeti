@@ -115,7 +115,7 @@ theorem isFinDim_sourceReflectionFunctorList_obj :
       @IsFinDim.{u, v, w, max v w x} k V fld q M →
       @IsFinDim.{u, v, w, max v w x} k V fld (Quiver.reflectList q l)
         ((sourceReflectionFunctorList k l q hl).obj M)
-  | [], q, hq, hl, M, hfd => by
+  | [], q, _, hl, M, hfd => by
       rw [sourceReflectionFunctorList_nil]
       exact hfd
   | i :: l, q, hq, hl, M, hfd => by

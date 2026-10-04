@@ -34,7 +34,19 @@ globs = ["TauCeti.*"]
 # copyright/Authors contract is enforced directly by scripts/HeaderStyle.lean through
 # scripts/lint-style.sh. Keep the option enabled for forward compatibility if Mathlib changes how
 # the command linter discovers library files.
-leanOptions = { weak.linter.mathlibStandardSet = true, weak.linter.style.longFile = 1500, weak.linter.style.longFileDefValue = 1500, weak.linter.style.header = true, warningAsError = true }
+[leanOptions]
+warningAsError = true
+
+[leanOptions.weak.linter]
+mathlibStandardSet = true
+
+[leanOptions.weak.linter.style]
+longFile = 1500
+longFileDefValue = 1500
+header = true
+
+[leanOptions.weak.linter.unusedVariables]
+analyzeTactics = true
 
 
 # Human-owned governance: the axiom-allowlist audit (`lake exe axioms`). Inspects the

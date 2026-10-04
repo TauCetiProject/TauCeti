@@ -317,7 +317,7 @@ private lemma intersection_ends_eq_zero (T : NumericalType.{u}) (t : ℕ) :
         (hc.ne hb hf hbf) (hc.ne hd hf hdf) hab hbd hde hef
     set W : ℤ := (T.weight (c 1) : ℤ) with hWdef
     -- Every edge strictly inside the chain equals the weight of both of its endpoints.
-    have hstep : ∀ j, 1 ≤ j → j + 2 < t →
+    let _ := hWdef; have hstep : ∀ j, 1 ≤ j → j + 2 < t →
         T.intersection (c j) (c (j + 1)) = (T.weight (c j) : ℤ) ∧
           T.intersection (c j) (c (j + 1)) = (T.weight (c (j + 1)) : ℤ) := by
       intro j h1 h2

@@ -336,7 +336,6 @@ private theorem sumCongr_true_false_mul_claspMatching (T : Perm α) :
         swap (.inl (.inl (e p))) (.inr 0) *
         swap (.inl (.inl (e q))) (.inr 3) * swap (.inl (.inl (e q))) (.inl (.inr 3)) *
         swap (.inl (.inl (e q))) (.inr 1) := by
-  have hinv := he.apply_apply
   have hne := he.apply_ne
   have h₁ := apply_ne_self_of_ne he hqe
   have h₂ := apply_ne_apply_of_ne (e := e) hqp
@@ -358,7 +357,6 @@ private theorem sumCongr_false_true_mul_claspMatching (T : Perm α) :
         swap (.inl (.inl q)) (.inl (.inr 0)) * swap (.inl (.inl q)) (.inr 0) *
         swap (.inl (.inl q)) (.inl (.inr 2)) *
         swap (.inl (.inl (e p))) (.inr 2) * swap (.inl (.inl (e q))) (.inr 3) := by
-  have hinv := he.apply_apply
   have hne := he.apply_ne
   have h₁ := apply_ne_self_of_ne he hqe
   have h₂ := apply_ne_apply_of_ne (e := e) hqp
@@ -378,7 +376,6 @@ private theorem sumCongr_true_true_mul_claspMatching (T : Perm α) :
         swap (.inl (.inl p)) (.inl (.inr 1)) * swap (.inl (.inl q)) (.inl (.inr 0)) *
         swap (.inl (.inl (e p))) (.inr 2) * swap (.inl (.inl (e q))) (.inr 3) *
         swap (.inl (.inr 2)) (.inr 0) * swap (.inl (.inr 3)) (.inr 1) := by
-  have hinv := he.apply_apply
   have hne := he.apply_ne
   have h₁ := apply_ne_self_of_ne he hqe
   have h₂ := apply_ne_apply_of_ne (e := e) hqp

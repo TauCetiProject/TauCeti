@@ -151,6 +151,7 @@ private theorem hasDerivAt_resolventMoment (hb : S.HasGrowthBound omega M) (n : 
   have hdiff : ∀ᵐ t ∂volume.restrict (Set.Ioi 0), ∀ l ∈ U,
       HasDerivAt (F · t) (F' l t) l := by
     filter_upwards [] with t l hl
+    have : True := (let _ := hl; True.intro)
     dsimp only [F, F']
     exact S.hasDerivAt_pow_mul_resolvent_integrand n t l x
   have h := hasDerivAt_integral_of_dominated_loc_of_deriv_le

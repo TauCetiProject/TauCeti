@@ -456,7 +456,7 @@ instance {M : Y.Modules} (q : SheafOfModules.LocalGeneratorsData.{w} (R := Y.rin
     [q.IsFiniteType] (f : X ⟶ Y) : (q.pullback f).IsFiniteType where
   isFiniteType i := SheafOfModules.GeneratingSections.isFiniteType_mapIso (q.generators i)
     (pullbackOver f (q.X i)) (pullbackOverUnitIso f _) (pullbackOverObjIso f _ M)
-    (hσ := SheafOfModules.LocalGeneratorsData.IsFiniteType.isFiniteType (p := q) i)
+    (_hσ := SheafOfModules.LocalGeneratorsData.IsFiniteType.isFiniteType (p := q) i)
 
 /-- Carrying locally free data along a morphism of schemes gives locally free data. -/
 instance {M : Y.Modules} (q : SheafOfModules.LocalGeneratorsData.{w} (R := Y.ringCatSheaf) M)

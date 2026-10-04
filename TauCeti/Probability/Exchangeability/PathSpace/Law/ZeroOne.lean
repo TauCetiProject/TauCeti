@@ -72,6 +72,7 @@ theorem infinitePi_of_exchangeableSigma_trivial [StandardBorelSpace α]
       (directingProbabilityMeasure ρ fun n (x : ℕ → α) => x n) :=
     mixedIIDWith_of_contractable (hexch.contractable fun n => (hcoord n).aemeasurable) hcoord
   set ν := directingProbabilityMeasure ρ fun n (x : ℕ → α) => x n with hν
+  have : True := (let _ := hν; True.intro)
   have hν_meas : Measurable ν := hmix.measurable_mixingRepresentative
   -- Preimages under the canonical witness are exchangeable events.
   have hpre : ∀ {A : Set (ProbabilityMeasure α)}, MeasurableSet A →

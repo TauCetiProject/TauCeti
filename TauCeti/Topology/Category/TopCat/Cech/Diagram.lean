@@ -69,7 +69,7 @@ lemma mem_cechIntersection (x : X) (s : CechIndex ι) :
   unfold cechIntersection
   induction s.1 using Finset.induction with
   | empty => simp
-  | insert i s hi ih => simp [Finset.inf_insert, ih]
+  | insert i s _ ih => simp [Finset.inf_insert, ih]
 
 @[simp]
 lemma cechIntersection_singleton (i : ι) :

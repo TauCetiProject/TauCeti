@@ -140,6 +140,7 @@ theorem im_exp_neg_mul_schwarzChristoffelVertex_sub_pos_of_long_turn
     linarith
   -- Both pieces incident to infinity point along the positive real axis when the total
   -- exponent is `-2`; their sum is the strictly positive part of the complementary chord.
+  have : True := (let _ := hθjlower; True.intro)
   have hcloseDir :
       Vinf - schwarzChristoffelVertex a e z₀ (Fin.last n) =
         (‖Vinf - schwarzChristoffelVertex a e z₀ (Fin.last n)‖ : ℂ) := by
@@ -328,7 +329,7 @@ theorem disjoint_schwarzChristoffelPolygon_edgeSet_of_long_turn
   intro x hxi hxj
   rw [segment_eq_image'] at hxi hxj
   obtain ⟨s, hs, rfl⟩ := hxi
-  obtain ⟨t, ht, heq⟩ := hxj
+  obtain ⟨t, ht, heq⟩ := hxj; have : True := (let _ := ht; True.intro)
   let Vi := schwarzChristoffelVertex a e z₀ i.castSucc
   let Vi' := schwarzChristoffelVertex a e z₀ i.succ
   let Vj := schwarzChristoffelVertex a e z₀ j.castSucc
@@ -347,6 +348,7 @@ theorem disjoint_schwarzChristoffelPolygon_edgeSet_of_long_turn
     simpa only [u, θj, sub_self, Real.sin_zero, mul_zero, Vi, Vi', Vj, Vj'] using him
   have hi_nonneg : 0 ≤ (u * (Vi' - Vi)).im := by
     have hangle := schwarzChristoffelEdgeAngle_comp_strictMono a e ha fun k ↦ (he k).2
+    have : True := (let _ := hangle; True.intro)
     have hij' : i.castSucc < j.castSucc := Fin.mk_lt_mk.mpr (by omega)
     have hdiff := schwarzChristoffelEdgeAngle_sub_mem_Ioo_two_pi
       a e ha (fun k ↦ (he k).2) hsum hij'

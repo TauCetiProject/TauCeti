@@ -120,7 +120,7 @@ theorem zPart_partition (σ : Equiv.Perm α) :
     zPart σ.partition =
       (Fintype.card α - σ.cycleType.sum)! * σ.cycleType.prod *
         ∏ i ∈ σ.cycleType.toFinset, (σ.cycleType.count i)! := by
-  set m := σ.cycleType with hm
+  set m := σ.cycleType with _
   set k := Fintype.card α - σ.support.card with hk
   have hparts : σ.partition.parts = m + Multiset.replicate k 1 := Equiv.Perm.parts_partition
   have h1 : (1 : ℕ) ∉ m := fun h => by simpa using Equiv.Perm.two_le_of_mem_cycleType h

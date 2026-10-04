@@ -151,8 +151,8 @@ private theorem _root_.ContinuousLinearMap.codRestrict_domRestrict_adjoint_surje
       (((T†).domRestrict (LinearMap.range (T : E →ₗ[𝕜] F))).codRestrict
         (LinearMap.ker (T : E →ₗ[𝕜] F))ᗮ fun y => ContinuousLinearMap.adjoint_mem_orthogonal_ker T
           y) := by
-  set K := LinearMap.ker (T : E →ₗ[𝕜] F) with hK
-  set R := LinearMap.range (T : E →ₗ[𝕜] F) with hR
+  set K := LinearMap.ker (T : E →ₗ[𝕜] F) with _
+  set R := LinearMap.range (T : E →ₗ[𝕜] F) with _
   set e : Kᗮ ≃L[𝕜] R := ContinuousLinearMap.orthogonalKerEquivRange T hT with he
   have he_apply (x : Kᗮ) : (e x : F) = T (x : E) := by
     simpa only [he] using ContinuousLinearMap.orthogonalKerEquivRange_apply T hT x

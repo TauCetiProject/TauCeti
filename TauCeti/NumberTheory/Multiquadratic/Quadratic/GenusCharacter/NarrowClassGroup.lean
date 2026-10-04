@@ -108,9 +108,9 @@ theorem genusCharFunCoprimeIdealHom_eq_of_mk0_eq
     rw [map_mul, ← hIJ, hAC']
     simp
   obtain ⟨a, ha, hapos, hIAspan⟩ :=
-    (NumberField.NarrowClassGroup.mk0_eq_one_iff.mp hIA)
+    (NumberField.NarrowClassGroup.mk0_eq_one_iff.mp hIA); have : True := (let _ := ha; True.intro)
   obtain ⟨b, hb, hbpos, hJAspan⟩ :=
-    (NumberField.NarrowClassGroup.mk0_eq_one_iff.mp hJA)
+    (NumberField.NarrowClassGroup.mk0_eq_one_iff.mp hJA); have : True := (let _ := hb; True.intro)
   have hcharIA := genusCharFunCoprimeIdealHom_eq_one_of_eq_span_singleton
     hs heven hprod hmin hgen hsf hts (I := IA) hapos hIAspan
   have hcharJA := genusCharFunCoprimeIdealHom_eq_one_of_eq_span_singleton

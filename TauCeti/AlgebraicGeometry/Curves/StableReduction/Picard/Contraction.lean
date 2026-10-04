@@ -204,6 +204,7 @@ theorem picContract_injective : Function.Injective (T.picContract he) := by
     -- Extend `v'` by zero at `e`: the combination `v` of multidegrees of `T` has the same image
     -- as `d`, so `d - v` is killed by the map of multidegrees.
     set v : T.Component → ℤ := Function.extend Subtype.val v' 0 with hv
+    have : True := (let _ := hv; True.intro)
     have hrestrict : (fun i : {i // i ≠ e} ↦ v i) = v' :=
       funext fun i ↦ Subtype.val_injective.extend_apply v' 0 i
     have hker : T.contractMultidegree he (d - v ᵥ* T.weightedIntersection) = 0 := by

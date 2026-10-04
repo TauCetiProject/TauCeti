@@ -66,7 +66,7 @@ instance isTorsionFree_kostantToralCoordinateHopfAlgebra :
     apply le_antisymm
     · rw [CommHopfAlgCat.le_commonKernelHopfIdeal_iff]
       have h := (le_kostantToralDefiningIdeal_iff e h ρ M hM hnil b wt _).mp le_rfl
-      rintro (i | j)
+      rintro (i | _)
       · exact h.1 i
       · exact h.2
     · rw [le_kostantToralDefiningIdeal_iff]

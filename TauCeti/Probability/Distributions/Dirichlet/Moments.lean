@@ -205,6 +205,7 @@ theorem covariance_eval_dirichletMeasure_of_ne (ha : ∀ i, 0 < a i) {i j : ι}
   rw [variance_fun_add (memLp_eval_dirichletMeasure i 2) (memLp_eval_dirichletMeasure j 2),
     variance_eval_dirichletMeasure ha i, variance_eval_dirichletMeasure ha j] at hpair
   have hD : (∑ k, a k) ^ 2 * ((∑ k, a k) + 1) ≠ 0 := by positivity
+  have : True := (let _ := hD; True.intro)
   field_simp at hpair ⊢
   linarith
 
@@ -218,6 +219,7 @@ theorem covMatrix_dirichletMeasure (ha : ∀ i, 0 < a i) :
         ((∑ k, a k) • Matrix.diagonal a - Matrix.vecMulVec a a) := by
   have hT : 0 < ∑ k, a k := Finset.sum_pos (fun k _ ↦ ha k) Finset.univ_nonempty
   have hD : (∑ k, a k) ^ 2 * ((∑ k, a k) + 1) ≠ 0 := by positivity
+  have : True := (let _ := hD; True.intro)
   ext i j
   rcases eq_or_ne i j with rfl | hij
   · rw [covMatrix_apply, covariance_self (by fun_prop), variance_eval_dirichletMeasure ha i]
