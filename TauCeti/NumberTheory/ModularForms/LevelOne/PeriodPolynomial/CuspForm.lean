@@ -94,6 +94,7 @@ private theorem periodPolynomial_apply (hk : k = w + 2) (f : CuspForm 𝒮ℒ k)
   (rfl)
 
 /-- **The values of the period polynomial**: `r_f(x, y) = ∫₀^{i∞} f(τ) (x - τy)ʷ dτ`. -/
+@[simp]
 theorem eval_periodPolynomial (hk : k = w + 2) (f : CuspForm 𝒮ℒ k) (x y : ℂ) :
     eval ![x, y] (periodPolynomial hk f : MvPolynomial (Fin 2) ℂ) =
       cuspIntegral (fun τ ↦ f τ * (x - τ * y) ^ w) ((0 : ℚ) : OnePoint ℚ) ∞ := by
@@ -176,7 +177,8 @@ theorem periodPolynomial_injective (hk : k = w + 2) :
   rw [← LinearMap.ker_eq_bot, LinearMap.ker_eq_bot']
   intro f hf
   rw [periodPolynomial_apply, ← map_zero (binaryFormDual ℂ w)] at hf
-  have hφ := binaryFormDual_injective hf
+  have hφ := binaryFormDual_injective
+    (fun j _ ↦ .of_ne_zero (Nat.cast_ne_zero.2 (Nat.choose_pos ‹_›).ne')) hf
   refine toTop_injective (periodMap_injective (R := ℂ) hk ?_)
   rw [map_zero, map_zero]
   refine LinearMap.ext_on (span_maninSymbol_eq_top (R := ℂ) (w := w) ⊤) ?_

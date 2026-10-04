@@ -47,7 +47,8 @@ action of `M` on `D φ` is the adjugate action on `φ`, transposed. Applied to t
   `(x', y') = M (x, y)`.
 * `TauCeti.eval_binaryFormDual`: `D φ` takes the value `φ ((xY - yX)ʷ)` at `(x, y)`.
 * `TauCeti.binaryFormRep_binaryFormDual`: `(D φ) ∣ M = D (φ ∘ (· ∣ adj M))`.
-* `TauCeti.binaryFormDual_injective`: `D` is injective over a domain of characteristic zero.
+* `TauCeti.binaryFormDual_injective`: `D` is injective when the binomial coefficients
+  `w choose j` are not zero divisors.
 
 ## References
 
@@ -283,6 +284,7 @@ theorem binaryFormDual_apply (φ : homogeneousSubmodule (Fin 2) R w →ₗ[R] R)
   simp [binaryFormDual, Module.Basis.equivFun_symm_apply, mul_assoc]
 
 /-- The value of `D φ` at `(x, y)` is `φ ((xY - yX)ʷ)`. -/
+@[simp]
 theorem eval_binaryFormDual (φ : homogeneousSubmodule (Fin 2) R w →ₗ[R] R) (v : Fin 2 → R) :
     eval v (binaryFormDual R w φ : MvPolynomial (Fin 2) R) = φ (linearFormPow R w (v 0) (v 1)) := by
   rw [binaryFormDual_apply, linearFormPow_eq_sum, map_sum, Submodule.coe_sum, map_sum]
@@ -353,8 +355,9 @@ theorem binaryFormRep_binaryFormDual (M : Matrix (Fin 2) (Fin 2) ℤ)
       (φ ∘ₗ binaryFormAdjugateRep R w M) hcomp] at this
   exact this
 
-/-- `D` is injective when the binomial coefficients are not zero divisors. -/
-theorem binaryFormDual_injective [IsDomain R] [CharZero R] :
+/-- `D` is injective when the binomial coefficients `w choose j` are not zero divisors, for
+instance over a domain of characteristic zero or of characteristic `p > w`. -/
+theorem binaryFormDual_injective (h : ∀ j ≤ w, IsRegular (w.choose j : R)) :
     Function.Injective (binaryFormDual R w) := by
   rw [← LinearMap.ker_eq_bot, LinearMap.ker_eq_bot']
   intro φ hφ
@@ -365,8 +368,7 @@ theorem binaryFormDual_injective [IsDomain R] [CharZero R] :
     simpa [binaryFormDual_apply, Finsupp.single_apply] using this
   refine (binaryFormMonomialBasis R w).ext fun j ↦ ?_
   have hj := hc (Fin.rev j)
-  rw [Fin.rev_rev] at hj
-  have hb : w.choose (w - j) ≠ 0 := (Nat.choose_pos (Nat.sub_le w j)).ne'
-  simpa [hb] using hj
+  rw [Fin.rev_rev, mul_assoc, ((isUnit_neg_one (α := R)).pow _).mul_right_eq_zero] at hj
+  exact ((h _ (Nat.lt_succ_iff.mp j.rev.2)).left.mul_left_eq_zero_iff).1 hj
 
 end TauCeti
