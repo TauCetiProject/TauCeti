@@ -93,54 +93,19 @@ theorem finite_H (hn : (n : F) ≠ 0) (A : GalRep n F)
   by_cases hi1 : i ≤ 1
   · exact finite_continuousCohomology_of_le_one hn A hA hi1
   obtain rfl : i = 2 := by omega
-  have := hA.discreteTopology
-  have := hA.continuousSMul
-  suffices Finite (continuousCohomology 2 (ofDiscreteModule ℤ (Field.absoluteGaloisGroup F) A.V))
-    from Finite.of_equiv _ (ofDiscreteModuleRestrictScalarsIntEquiv A 2).toEquiv
   have : NeZero n := ⟨by rintro rfl; exact hn Nat.cast_zero⟩
-  -- Choose a finite Galois extension trivializing the action and containing the roots of unity.
-  set e := absoluteGaloisGroupRestrictEquiv F
-  obtain ⟨W, ⟨ζ, hζ⟩, hW⟩ := exists_classField_trivializing hn A hA
-  let L := classField F W
-  let := finiteExtensionValuativeRel F L
-  let := finiteExtensionNormedFieldTopology F L
-  have := finiteExtension_isNonarchimedeanLocalField F L
-  set U := (galoisSubgroup F L L.val).toSubgroup
-  have hUW : U = W.toSubgroup := (galoisSubgroup_toSubgroup F L L.val).trans <| by
-    rw [IntermediateField.fieldRange_val]
-    exact fixingSubgroup_classField W
-  set V := U.map (e.symm : AbsoluteGaloisGroup F →* Field.absoluteGaloisGroup F)
-  have : V.Normal := (hUW ▸ W.isNormal' : U.Normal).map _ e.symm.surjective
-  let ψ : U ≃ₜ* V :=
-    { e.symm.toMulEquiv.subgroupMap U with
-      continuous_toFun := continuous_induced_rng.2 (e.symm.continuous.comp continuous_subtype_val)
-      continuous_invFun := continuous_induced_rng.2 (e.continuous.comp continuous_subtype_val) }
-  -- Transport its absolute Galois group to the corresponding open normal subgroup of G_F.
-  have hV : IsOpen (V : Set (Field.absoluteGaloisGroup F)) :=
-    e.symm.isOpenMap _ (galoisSubgroup F L L.val).isOpen
-  have : CompactSpace V := isCompact_iff_compactSpace.mp (V.isClosed_of_isOpen hV).isCompact
-  refine finite_continuousCohomology_of_isOpen_of_normal_of_prime (V := V)
-    hV 2 (N := n) ?_ A.V (fun a ↦ ?_)
-    fun v hv a ↦ ?_
-  -- Coinduction reduces to trivial prime-order modules on this subgroup in degrees one and two.
-  · intro j hj₀ hj M _ _ _ _ _ _ hM hMn hMtriv
-    have := isAddCyclic_of_prime_card rfl (hp := ⟨hM⟩)
-    rcases (by omega : j = 1 ∨ j = 2) with rfl | rfl
-    · have := finite_H1_of_isPrimitiveRoot_of_natCard_dvd L hζ
-        ((galoisSubgroupEquiv F L L.val).trans ψ) M hMn hMtriv
-      exact Finite.of_equiv _ (explicitH1AddEquivContinuousCohomology V M).toEquiv
-    · have : NeZero (Nat.card M) := ⟨hM.ne_zero⟩
-      -- A primitive n-th root supplies a primitive root of every order dividing n.
-      have hζM : IsPrimitiveRoot (ζ ^ (n / Nat.card M)) (Nat.card M) := by
-        have h := hζ.pow_of_dvd
-          (Nat.div_pos (Nat.le_of_dvd (NeZero.pos n) hMn) (NeZero.pos _)).ne'
-          (Nat.div_dvd_of_dvd hMn)
-        rwa [Nat.div_div_self hMn (NeZero.ne n)] at h
-      have := finite_H2_of_isPrimitiveRoot_of_natCard_eq hζM
-        ((galoisSubgroupEquiv F L L.val).trans ψ) M rfl hMtriv
-      exact Finite.of_equiv _ (explicitH2AddEquivContinuousCohomology V M).toEquiv
-  · rw [← Nat.cast_smul_eq_nsmul (ZMod n), ZMod.natCast_self, zero_smul]
-  · obtain ⟨u, hu, rfl⟩ := Subgroup.mem_map.1 hv
-    exact hW u (hUW ▸ hu : u ∈ W.toSubgroup) a
+  refine finite_continuousCohomology_of_prime_ge_two hn A hA 2 ?_
+  intro L _ _ _ _ ζ hζ H _ _ _ _ φ j hj₀ hj M _ _ _ _ _ _ hM hMn hMtriv
+  obtain rfl : j = 2 := by omega
+  have := isAddCyclic_of_prime_card rfl (hp := ⟨hM⟩)
+  have : NeZero (Nat.card M) := ⟨hM.ne_zero⟩
+  -- A primitive n-th root supplies a primitive root of every order dividing n.
+  have hζM : IsPrimitiveRoot (ζ ^ (n / Nat.card M)) (Nat.card M) := by
+    have h := hζ.pow_of_dvd
+      (Nat.div_pos (Nat.le_of_dvd (NeZero.pos n) hMn) (NeZero.pos _)).ne'
+      (Nat.div_dvd_of_dvd hMn)
+    rwa [Nat.div_div_self hMn (NeZero.ne n)] at h
+  have := finite_H2_of_isPrimitiveRoot_of_natCard_eq hζM φ M rfl hMtriv
+  exact Finite.of_equiv _ (explicitH2AddEquivContinuousCohomology H M).toEquiv
 
 end TauCeti.ClassFieldTheory
