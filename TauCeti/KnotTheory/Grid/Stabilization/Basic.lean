@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Logic.Equiv.Fin.Rotate
 public import TauCeti.KnotTheory.Grid.Diagram.Basic
+public import TauCeti.KnotTheory.Grid.Rotation
 
 import TauCeti.Data.Fin.Basic
 
@@ -48,6 +49,9 @@ types, and `GridDiagram.IsDestabilization` reverses the relation.
 * `TauCeti.GridDiagram.stabilizeX_castSucc_swapColumns` and
   `TauCeti.GridDiagram.stabilizeX_swapRows`: swapping the new column or row of an
   `X`-stabilization with an adjacent old one moves it to the other side.
+* `TauCeti.GridDiagram.rotate_stabilizeX_succ`: reversing both coordinates exchanges the two
+  corner types of `X`-stabilization, whose new `O`-marking is the north-east or the south-west
+  corner of the new block.
 * `TauCeti.GridDiagram.stabilizeX_last_relabelRows`,
   `TauCeti.GridDiagram.stabilizeX_last_relabelColumns` and
   `TauCeti.GridDiagram.stabilizeO_last_relabelColumns`: a cyclic permutation moves a new last row
@@ -233,6 +237,25 @@ theorem transpose_insertPoint (x : GridState n) (newColumn newRow : Fin (n + 1))
     (x.insertPoint newColumn newRow).transpose = x.transpose.insertPoint newRow newColumn :=
   GridState.ext fun r ↦ by simp [insertPoint, transpose, Equiv.optionCongr_symm]
 
+/-- Reversing both coordinates of a grid state with an inserted point reverses the coordinates of
+the inserted point. -/
+theorem rotate_insertPoint (x : GridState n) (newColumn newRow : Fin (n + 1)) :
+    (x.insertPoint newColumn newRow).rotate = x.rotate.insertPoint newColumn.rev newRow.rev := by
+  refine GridState.ext fun c ↦ ?_
+  induction c using Fin.succAboveCases newColumn.rev with
+  | x => rw [rotate_apply, Fin.rev_rev, insertPoint_apply_newColumn, insertPoint_apply_newColumn]
+  | p i =>
+    rw [rotate_apply, Fin.rev_succAbove, Fin.rev_rev, insertPoint_apply_succAbove,
+      Fin.rev_succAbove, insertPoint_apply_succAbove, rotate_apply]
+
+/-- Reversing both coordinates of a grid state with a split point reverses the inserted row and
+column and the split column. -/
+theorem rotate_splitPoint (x : GridState n) (newColumn newRow : Fin (n + 1))
+    (splitColumn : Fin n) :
+    (x.splitPoint newColumn newRow splitColumn).rotate =
+      x.rotate.splitPoint newColumn.rev newRow.rev splitColumn.rev := by
+  rw [splitPoint, splitPoint, swapColumns_rotate, rotate_insertPoint, Fin.rev_succAbove]
+
 /-- Swapping an inserted row `k.castSucc` with the old row `k` just above it moves the inserted
 row to `k.succ`. -/
 theorem insertPoint_swapRows (x : GridState n) (newColumn : Fin (n + 1)) (k : Fin n) :
@@ -415,6 +438,28 @@ theorem predAbove_X_stabilizeX (s : Fin n) (c : Fin (n + 1)) :
     split_ifs with h
     · simp [h]
     · exact Fin.predAbove_succAbove _ _
+
+/-- Reversing both coordinates of an `O`-stabilization reverses the inserted row and column and
+the split column. -/
+theorem rotate_stabilizeO (newColumn newRow : Fin (n + 1)) (splitColumn : Fin n) :
+    (G.stabilizeO newColumn newRow splitColumn).rotate =
+      G.rotate.stabilizeO newColumn.rev newRow.rev splitColumn.rev := by
+  ext c <;> simp [GridState.rotate_insertPoint, GridState.rotate_splitPoint]
+
+/-- Reversing both coordinates of an `X`-stabilization reverses the inserted row and column and
+the split column. -/
+theorem rotate_stabilizeX (newColumn newRow : Fin (n + 1)) (splitColumn : Fin n) :
+    (G.stabilizeX newColumn newRow splitColumn).rotate =
+      G.rotate.stabilizeX newColumn.rev newRow.rev splitColumn.rev := by
+  ext c <;> simp [GridState.rotate_insertPoint, GridState.rotate_splitPoint]
+
+/-- The half-turn exchanges the two corner types of `X`-stabilization: the stabilization of `G`
+whose new `O`-marking is the north-east corner of the new block is carried to the stabilization
+of `G.rotate` whose new `O`-marking is the south-west corner. -/
+theorem rotate_stabilizeX_succ (s : Fin n) :
+    (G.stabilizeX s.succ (G.X s).succ s).rotate =
+      G.rotate.stabilizeX s.rev.castSucc (G.rotate.X s.rev).castSucc s.rev := by
+  rw [rotate_stabilizeX, Fin.rev_succ, Fin.rev_succ, rotate_X, GridState.rotate_apply, Fin.rev_rev]
 
 /-- Exchanging the marking types turns an `O`-stabilization into an `X`-stabilization. -/
 @[simp]
