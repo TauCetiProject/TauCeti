@@ -134,7 +134,7 @@ theorem adjointWeightSpace_root_eq_span
 
 /-- Multiplication by a normalized root vector is injective, including over rings with
 zero divisors. Its distinguished matrix entry recovers the scalar. -/
-theorem rootVector_smul_injective
+theorem rootVector_smul_left_injective
     (p : SplitTorus.CoordinateRootIndex (Fin (r + 1))) :
     Function.Injective (fun c : R => c • rootVector (R := R) p) := by
   intro a b h
@@ -152,7 +152,7 @@ def rootSpaceEquiv (p : SplitTorus.CoordinateRootIndex (Fin (r + 1))) :
     R ≃ₗ[R] Derivation.adjointWeightSpace (diagonalTorusCoordinateMap r R).hom
       (Multiplicative.ofAdd ((diagonalRootDatum.{u} r).root p)) :=
   (LinearEquiv.ofInjective (LinearMap.toSpanSingleton R _ (rootVector (R := R) p))
-    (rootVector_smul_injective p)).trans
+    (rootVector_smul_left_injective p)).trans
       (LinearEquiv.ofEq _ _ (by
         rw [LinearMap.range_toSpanSingleton, adjointWeightSpace_root_eq_span]))
 
@@ -169,8 +169,7 @@ theorem rootSpaceEquiv_apply_coe
   erw [LinearEquiv.ofInjective_apply]
   exact LinearMap.toSpanSingleton_apply _ _ _ _
 
-/-- The inverse root-space parametrization gives the coefficient of the normalized
-root vector. -/
+/-- The coefficient from the inverse root-space parametrization reconstructs the vector. -/
 theorem rootSpaceEquiv_symm_apply_smul
     (p : SplitTorus.CoordinateRootIndex (Fin (r + 1)))
     (x : Derivation.adjointWeightSpace (diagonalTorusCoordinateMap r R).hom
@@ -179,12 +178,29 @@ theorem rootSpaceEquiv_symm_apply_smul
   rw [← rootSpaceEquiv_apply_coe]
   exact congrArg Subtype.val ((rootSpaceEquiv (R := R) p).apply_symm_apply x)
 
+/-- The inverse root-space parametrization is the distinguished matrix entry. -/
+@[simp]
+theorem rootSpaceEquiv_symm_apply
+    (p : SplitTorus.CoordinateRootIndex (Fin (r + 1)))
+    (x : Derivation.adjointWeightSpace (diagonalTorusCoordinateMap r R).hom
+      (Multiplicative.ofAdd ((diagonalRootDatum.{u} r).root p))) :
+    (rootSpaceEquiv (R := R) p).symm x =
+      (tangentMatrix (r + 1) (Derivation.cotangentLinearEquiv (R := R) (B := R) x) :
+        Matrix (Fin (r + 1)) (Fin (r + 1)) R) p.1.1 p.1.2 := by
+  have hm := congrArg (fun y =>
+    (tangentMatrix (r + 1) (Derivation.cotangentLinearEquiv (B := R) y) :
+      Matrix (Fin (r + 1)) (Fin (r + 1)) R) p.1.1 p.1.2)
+    (rootSpaceEquiv_symm_apply_smul p x)
+  -- Match the scalar structure on the quotient-indexed cotangent module.
+  erw [map_smul, map_smul, tangentMatrix_cotangentLinearEquiv_rootVector] at hm
+  simpa [LieAlgebra.SpecialLinear.val_single, Matrix.single_apply] using hm
+
 /-- The normalized root vector is nonzero over every nontrivial commutative base ring. -/
 theorem rootVector_ne_zero [Nontrivial R]
     (p : SplitTorus.CoordinateRootIndex (Fin (r + 1))) :
     rootVector (R := R) p ≠ 0 := by
   intro h
-  have hc : (1 : R) = 0 := rootVector_smul_injective p (by simp [h])
+  have hc : (1 : R) = 0 := rootVector_smul_left_injective p (by simp [h])
   exact one_ne_zero hc
 
 end
