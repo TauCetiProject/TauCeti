@@ -21,13 +21,6 @@ it is faithfully flat exactly when it is dominant. The source group may be nonre
 homomorphism need not be finite. These criteria establish flatness of quotient projections
 without assuming it as part of the input.
 
-The algebraically closed case is `TauCeti.CommHopfAlgCat.faithfullyFlat_of_dominant`.
-Injectivity survives extension to an algebraic closure, where the target is reduced; faithful
-flatness then descends. This argument is adapted from the prior formalization of
-`TauCeti.CommHopfAlgCat.isIsogeny_iff_finite_and_dominant` in
-`TauCeti.Algebra.AlgebraicGroup.Isogeny.GeometricallyReduced`, whose proof now uses this criterion.
-The common universe is required by the ring-map descent API.
-
 ## References
 
 * J. S. Milne, *Algebraic Groups* (2017), Propositions 1.65(a) and 1.70.
@@ -51,6 +44,9 @@ faithfully flat exactly when its coordinate map is injective, over any field. -/
 theorem faithfullyFlat_iff_injective_of_isGeometricallyReduced (f : H ⟶ K) :
     f.hom.toAlgHom.toRingHom.FaithfullyFlat ↔ Function.Injective f.hom := by
   refine ⟨fun hf ↦ hf.injective, fun hinj ↦ ?_⟩
+  -- The algebraic-closure/descent argument is adapted from the prior formalization of
+  -- `TauCeti.CommHopfAlgCat.isIsogeny_iff_finite_and_dominant` in
+  -- `TauCeti.Algebra.AlgebraicGroup.Isogeny.GeometricallyReduced`.
   let L := AlgebraicClosure k
   let fL := baseChangeMap (K := L) f
   have hdomL : DenseRange (PrimeSpectrum.comap fL.hom.toAlgHom.toRingHom) :=

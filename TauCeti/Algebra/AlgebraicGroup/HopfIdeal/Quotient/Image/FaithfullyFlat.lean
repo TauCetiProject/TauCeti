@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Image.Basic
-public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.GeometricallyReduced
+public import TauCeti.Algebra.AlgebraicGroup.GeometricallyReduced.FaithfullyFlat
 
 /-!
 # Faithful flatness of the morphism onto an affine group image
@@ -17,7 +17,6 @@ the injective factor `imageι f : H / ker f ⟶ K` is faithfully flat. The ambie
 nonreduced, the field may be imperfect, and the homomorphism need not be finite.
 
 This supplies the flatness needed to identify the image with the fppf quotient by the kernel.
-Geometric reducedness descends to the image along its injective coordinate map.
 
 ## References
 

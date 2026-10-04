@@ -16,12 +16,8 @@ group is the fppf quotient of that group by its kernel. This holds over any fiel
 target can be nonreduced. For finite-type affine groups, geometric reducedness is equivalent
 to smoothness. The kernel itself may be nonreduced, as with inseparable homomorphisms.
 
-Faithful flatness comes from the image-factor criterion, and finite presentation follows from
-finite type over the noetherian image coordinate ring.
-
-The comparisons are the existing `kernelFppfQuotientHom`; no new quotient or comparison is
-constructed. For the image factorization, its kernel ideal equals the original kernel ideal,
-so the original subgroup, including its scheme structure, is the one being divided out.
+The image factorization has the original scheme-theoretic kernel, so the quotient is by the
+original subgroup, including its possibly nonreduced scheme structure.
 
 ## References
 

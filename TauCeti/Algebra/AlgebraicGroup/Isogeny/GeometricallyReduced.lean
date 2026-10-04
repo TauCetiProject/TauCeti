@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Isogeny.Basic
-public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.GeometricallyReduced
+public import TauCeti.Algebra.AlgebraicGroup.GeometricallyReduced.FaithfullyFlat
 
 /-!
 # Finite dominant homomorphisms to geometrically reduced groups
@@ -15,11 +15,6 @@ Over any field, a finite dominant homomorphism to a geometrically reduced affine
 of finite type is an isogeny: faithful flatness follows from finiteness and dominance.
 The source need not be reduced, and the field need not be perfect. This criterion lets
 quotient and isogeny constructions use geometric hypotheses instead of assuming flatness.
-
-Faithful flatness follows from
-`TauCeti.CommHopfAlgCat.faithfullyFlat_iff_dominant_of_isGeometricallyReduced`, whose finite-type
-hypothesis on the source holds because the morphism is finite. The common universe is required
-by the ring-map descent API used in that criterion.
 
 ## References
 
