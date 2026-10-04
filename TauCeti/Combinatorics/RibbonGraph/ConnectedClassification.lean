@@ -90,6 +90,7 @@ theorem connectedIsoClassEquiv_mk_equivFinOfCardEq
   connectedIsoClassEquiv_mk Γ _
 
 /-- Forgetting connectedness commutes with the classification of all ribbon graphs. -/
+@[simp]
 theorem forget_connectedIsoClassEquiv (c : Quotient (connectedIsoSetoid.{u} n)) :
     (connectedIsoClassEquiv n c).forget =
       isoClassEquiv n (Quotient.map (sa := connectedIsoSetoid n) (sb := isoSetoid n) Subtype.val

@@ -66,6 +66,7 @@ def IsConnected : PermutationTriple.IsoClass n → Prop :=
     obtain ⟨τ, rfl⟩ := PermutationTriple.equivalent_iff_exists_smul_eq.mp h
     exact propext (PermutationTriple.isConnected_smul_iff τ t).symm
 
+/-- A triple class is connected exactly when its representative is connected. -/
 @[simp]
 theorem isConnected_mk (t : PermutationTriple n) :
     (mk t).IsConnected ↔ t.IsConnected := by
@@ -141,25 +142,36 @@ def equivSubtype (n : ℕ) :
     ConnectedIsoClass n ≃ {c : PermutationTriple.IsoClass n // c.IsConnected} :=
   (Equiv.subtypeQuotientEquivQuotientSubtype PermutationTriple.IsConnected
     PermutationTriple.IsoClass.IsConnected
-    (fun t => (PermutationTriple.IsoClass.isConnected_mk t).symm)
+    (fun t => by
+      simpa only [PermutationTriple.IsoClass.quotient_mk] using
+        (PermutationTriple.IsoClass.isConnected_mk t).symm)
     (fun t t' => by
       simp only [MulAction.orbitRel_apply, MulAction.mem_orbit_iff,
         Subtype.ext_iff, ConnectedTriple.coe_smul])).symm
 
+/-- The connected class of a representative corresponds to its ordinary class together with
+the induced connectedness proof. -/
 @[simp]
 theorem equivSubtype_mk (t : ConnectedTriple n) :
     equivSubtype n (mk t) = ⟨PermutationTriple.IsoClass.mk t.1,
-      (PermutationTriple.IsoClass.isConnected_mk t.1).2 t.2⟩ :=
-  (rfl)
+      (PermutationTriple.IsoClass.isConnected_mk t.1).2 t.2⟩ := by
+  apply Subtype.ext
+  dsimp only
+  rw [← PermutationTriple.IsoClass.quotient_mk]
+  exact congrArg Subtype.val
+    (Equiv.subtypeQuotientEquivQuotientSubtype_symm_mk
+      (s₁ := MulAction.orbitRel (Perm (Fin n)) (PermutationTriple n))
+      (s₂ := MulAction.orbitRel (Perm (Fin n)) (ConnectedTriple n)) _ _ _ _ t)
 
 /-- The isomorphism class of a connected triple, viewed among all permutation triples. -/
 def forget (c : ConnectedIsoClass n) : PermutationTriple.IsoClass n :=
   (equivSubtype n c).1
 
+/-- Forgetting connectedness sends a connected representative to its ordinary triple class. -/
 @[simp]
 theorem forget_mk (t : ConnectedTriple n) :
     (mk t).forget = PermutationTriple.IsoClass.mk t.1 :=
-  (rfl)
+  congrArg Subtype.val (equivSubtype_mk t)
 
 /-- Recovering a connected quotient class from a connected representative of an ordinary class. -/
 @[simp]
