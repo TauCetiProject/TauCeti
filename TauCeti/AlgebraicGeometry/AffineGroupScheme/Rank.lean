@@ -40,6 +40,6 @@ theorem finrank_eq_rankAtStalk_coordinateHopfAlgebra (R : Type u) [CommRing R]
     ((MorphismProperty.over_iso_iff (@IsFinite) i).mpr inferInstance)
   let _ : Module.Flat R H := (moduleFlat_iff_flat_hopfSpec R H).mpr
     ((MorphismProperty.over_iso_iff (@Flat) i).mpr inferInstance)
-  exact (congrFun i.finrank_eq x).symm.trans (finrank_hopfSpec R H x)
+  exact (congrFun (finrank_eq_of_iso_over i) x).symm.trans (finrank_hopfSpec R H x)
 
 end TauCeti.AffineGroupSchemeCat

@@ -12,11 +12,11 @@ public import Mathlib.AlgebraicGeometry.Morphisms.FlatRank
 
 The rank function of a finite flat morphism is invariant under isomorphisms over its base.
 This packages Mathlib's `Scheme.Hom.finrank_comp_left_of_isIso` for objects of `Over S`.
-`TauCeti.CategoryTheory.Iso.finrank_eq` accepts an isomorphism over the base directly, incorporating
+`TauCeti.finrank_eq_of_iso_over` accepts an isomorphism over the base directly, incorporating
 its commuting triangle. It is used to compare an affine group scheme with the Hopf spectrum of its
 coordinate algebra, and also transports rank through isomorphisms with Cartier duals.
 
-For `e : X ≅ Y` in `Over S`, open `TauCeti` and use `e.finrank_eq` to obtain
+For `e : X ≅ Y` in `Over S`, use `TauCeti.finrank_eq_of_iso_over e` to obtain
 `X.hom.finrank = Y.hom.finrank` when `Y.hom` is finite and flat.
 -/
 
@@ -24,14 +24,14 @@ public section
 
 open CategoryTheory AlgebraicGeometry
 
-namespace TauCeti.CategoryTheory.Iso
+namespace TauCeti
 
 universe u
 
 /-- Isomorphic schemes over a fixed base have the same rank function when the target
 structural morphism is finite and flat. -/
-theorem finrank_eq {S : Scheme.{u}} {X Y : Over S} (e : X ≅ Y)
+theorem finrank_eq_of_iso_over {S : Scheme.{u}} {X Y : Over S} (e : X ≅ Y)
     [Flat Y.hom] [IsFinite Y.hom] : X.hom.finrank = Y.hom.finrank := by
   rw [← e.hom.w, Scheme.Hom.finrank_comp_left_of_isIso]
 
-end TauCeti.CategoryTheory.Iso
+end TauCeti
