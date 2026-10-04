@@ -154,7 +154,9 @@ theorem baseChangeDefiningIdeal_eq_generatedDefiningIdeal :
   simpa only [baseChangeDefiningIdeal_def, definingIdeal_def, generatedDefiningIdeal_def,
     ← baseChangeGenerator_def] using
     CommHopfAlgCat.comapOfSurjective_baseChangeHopfIdeal_commonKernelHopfIdeal generator
-      (GeneralLinear.coordinateHopfAlgebraBaseChangeIso (ZMod 2) k 26)
+      (GeneralLinear.coordinateHopfAlgebraBaseChangeIso (ZMod 2) k 26).inv
+      (ConcreteCategory.bijective_of_isIso
+        (GeneralLinear.coordinateHopfAlgebraBaseChangeIso (ZMod 2) k 26).inv).2
 
 /-- The coordinate Hopf algebra of the scalar-extended carrier is that of the subgroup generated
 after scalar extension. -/
