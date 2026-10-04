@@ -66,7 +66,7 @@ theorem H1pi_eq_zero_iff_exists_smul_sub_eq (f : Z1 G M) :
 /-- A finite cyclic group has vanishing first continuous cohomology if the kernel of the group
 norm consists of `(g - 1)`-images. No discreteness assumption on the coefficient group is
 required. -/
-theorem subsingleton_H1_of_isCyclic [Fintype G]
+theorem subsingleton_H1_of_forall_mem_zpowers [Fintype G]
     (h : ∀ m : M, (∑ x : G, x • m) = 0 → ∃ b : M, g • b - b = m) :
     Subsingleton (H1 G M) := by
   suffices hz : ∀ x : H1 G M, x = 0 from ⟨fun x y ↦ (hz x).trans (hz y).symm⟩
