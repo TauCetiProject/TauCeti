@@ -9,6 +9,7 @@ public import Mathlib.Dynamics.PeriodicPts.Defs
 public import Mathlib.Data.Finset.Card
 public import Mathlib.GroupTheory.Perm.Cycle.Basic
 import Mathlib.GroupTheory.Perm.ViaEmbedding
+import Mathlib.Tactic.Abel
 
 /-!
 # Elementary facts about permutations
@@ -19,7 +20,9 @@ a permutation transporting two points outside a fixed set to another such pair,
 the values of the three-cycle written as a product of two transpositions sharing a point,
 a characterization of permutations with a unique fixed point, functions constant on a permutation
 orbit, the orbit relation of an involution, a positive-power representative of a relation inside a
-periodic orbit, a permutation transported along an injection, the combination of two
+periodic orbit, a function whose difference `z ↦ c (σ⁻¹ z) - c z` joins points in the same orbit
+(`Equiv.Perm.SameCycle.exists_comp_symm_sub_eq`, `Equiv.Perm.exists_comp_symm_sub_eq_sum`), a
+permutation transported along an injection, the combination of two
 permutations transported along injections with disjoint ranges, the fact that a permutation
 is a single cycle on each of its own orbits, the transport of its cycles along an equivalence of
 types, and the factorization of an invariant function
@@ -82,6 +85,32 @@ theorem exists_pos_pow_eq_of_mem_periodicPts (h : σ.SameCycle x y)
   rw [← zpow_natCast, Nat.cast_add, Int.toNat_of_nonneg hnonneg]
   exact hred
 
+/-- Two points `x`, `y` in the same orbit of `σ` are joined along the orbit: some `c : α → M`
+has difference `z ↦ c (σ⁻¹ z) - c z` equal to `Pi.single y a - Pi.single x a`. -/
+theorem exists_comp_symm_sub_eq [DecidableEq α] {M : Type*} [AddCommGroup M]
+    (h : σ.SameCycle x y) (a : M) :
+    ∃ c : α → M, (fun z => c (σ.symm z) - c z) = Pi.single y a - Pi.single x a := by
+  -- Adding `s • [w]` to `c` adds `s • ([σ w] - [w])` to its difference.
+  have step (c : α → M) (w : α) (s : ℤ) :
+      (fun z => (c + s • Pi.single w a : α → M) (σ.symm z) - (c + s • Pi.single w a : α → M) z) =
+        (fun z => c (σ.symm z) - c z) + s • (Pi.single (σ w) a - Pi.single w a) := by
+    ext z
+    simp only [Pi.add_apply, Pi.sub_apply, Pi.smul_apply, Pi.single_apply, Equiv.symm_apply_eq]
+    split_ifs <;> simp only [smul_sub] <;> abel
+  obtain ⟨k, rfl⟩ := h
+  induction k using Int.induction_on with
+  | zero => exact ⟨0, funext fun z => by simp⟩
+  | succ k ih =>
+    obtain ⟨c, hc⟩ := ih
+    refine ⟨c + (1 : ℤ) • Pi.single ((σ ^ (k : ℤ)) x) a, ?_⟩
+    rw [step, hc, ← Equiv.Perm.mul_apply, ← zpow_one_add, add_comm (1 : ℤ)]
+    abel
+  | pred k ih =>
+    obtain ⟨c, hc⟩ := ih
+    refine ⟨c + (-1 : ℤ) • Pi.single ((σ ^ (-k - 1 : ℤ)) x) a, ?_⟩
+    rw [step, hc, ← Equiv.Perm.mul_apply, ← zpow_one_add, show (1 + (-k - 1) : ℤ) = -k by omega]
+    abel
+
 end Equiv.Perm.SameCycle
 
 namespace Equiv.Perm
@@ -112,6 +141,18 @@ theorem factorsThrough_of_forall_isCycleOn {ι β : Type*} {g : α → ι}
     (hσ : ∀ i, σ.IsCycleOn {x | g x = i}) {f : α → β} (hf : ∀ x, f (σ x) = f x) :
     f.FactorsThrough g :=
   fun _ b hab => ((hσ (g b)).2 hab rfl).apply_eq_of_apply_eq hf
+
+/-- Finitely many pairs `u i`, `v i`, each in a single orbit of `σ`, are joined along the
+orbits: some `c : α → M` has difference `z ↦ c (σ⁻¹ z) - c z` equal to
+`∑ i, Pi.single (v i) a - ∑ i, Pi.single (u i) a`. -/
+theorem exists_comp_symm_sub_eq_sum [DecidableEq α] {ι M : Type*} [Fintype ι] [AddCommGroup M]
+    {σ : Perm α} {u v : ι → α} (h : ∀ i, σ.SameCycle (u i) (v i)) (a : M) :
+    ∃ c : α → M, (fun z => c (σ.symm z) - c z) =
+      ∑ i, Pi.single (v i) a - ∑ i, Pi.single (u i) a := by
+  choose c hc using fun i => (h i).exists_comp_symm_sub_eq a
+  refine ⟨∑ i, c i, funext fun z => ?_⟩
+  simp only [Finset.sum_apply, Pi.sub_apply, ← Finset.sum_sub_distrib]
+  exact Finset.sum_congr rfl fun i _ => congrFun (hc i) z
 
 /-- A permutation commuting with a cycle can be corrected by a power of that cycle to fix its
 support pointwise, without changing it outside the support. -/

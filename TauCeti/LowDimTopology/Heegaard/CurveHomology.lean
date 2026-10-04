@@ -263,45 +263,14 @@ theorem sub_mem_curveCycles (hc : H.IsConnectingChain x y c) (hd : H.IsConnectin
 
 end IsConnectingChain
 
-open Classical in
-/-- Along a permutation `f` whose fibres of `ℓ` are cycles, a choice of one point `v i` in each
-fibre is joined to another such choice `u i` by a `1`-chain `c`, with boundary
-`q ↦ c (f⁻¹ q) - c q` equal to `∑ v - ∑ u`. -/
-private theorem exists_comp_symm_sub_eq [Finite Point] (f : Equiv.Perm Point) (ℓ : Point → Fin n)
-    (hf : ∀ i, f.IsCycleOn {p | ℓ p = i}) (u v : Fin n → Point) (hu : ∀ i, ℓ (u i) = i)
-    (hv : ∀ i, ℓ (v i) = i) :
-    ∃ c : Point → ℤ, (fun q => c (f.symm q) - c q) =
-      ∑ i, Pi.single (v i) 1 - ∑ i, Pi.single (u i) 1 := by
-  -- Along a single orbit: the chain `∑_{j < k} [f^j p]` has boundary `[f^k p] - [p]`.
-  have orbit (p : Point) (k : ℕ) : ∃ c : Point → ℤ,
-      (fun q => c (f.symm q) - c q) = Pi.single ((f ^ k) p) 1 - Pi.single p 1 := by
-    induction k with
-    | zero => exact ⟨0, funext fun q => by simp⟩
-    | succ k ih =>
-      obtain ⟨c, hc⟩ := ih
-      refine ⟨c + Pi.single ((f ^ k) p) 1, funext fun q => ?_⟩
-      have hq := congrFun hc q
-      simp only [Pi.sub_apply] at hq
-      simp only [Pi.add_apply, Pi.sub_apply, Pi.single_apply, Equiv.symm_apply_eq, pow_succ',
-        Equiv.Perm.mul_apply] at hq ⊢
-      split_ifs at hq ⊢ <;> omega
-  have hpath (i : Fin n) : ∃ c : Point → ℤ,
-      (fun q => c (f.symm q) - c q) = Pi.single (v i) 1 - Pi.single (u i) 1 := by
-    obtain ⟨k, hk⟩ := (hf i).exists_pow_eq' (Set.toFinite _) (hu i) (hv i)
-    simpa [hk] using orbit (u i) k
-  choose c hc using hpath
-  refine ⟨∑ i, c i, funext fun q => ?_⟩
-  simp only [Finset.sum_apply, Pi.sub_apply, ← Finset.sum_sub_distrib]
-  exact Finset.sum_congr rfl fun i _ => by simpa using congrFun (hc i) q
-
 /-- Any two generators are connected by a chain. -/
 theorem exists_isConnectingChain (x y : H.Generator) : ∃ c, H.IsConnectingChain x y c := by
   classical
-  have : Finite Point := @Finite.of_fintype _ H.pointFintype
-  obtain ⟨a, ha⟩ := exists_comp_symm_sub_eq H.alphaNext H.alpha H.alphaNext_isCycleOn
-    (H.point x) (H.point y) (by simp) (by simp)
-  obtain ⟨b, hb⟩ := exists_comp_symm_sub_eq H.betaNext H.beta H.betaNext_isCycleOn
-    (fun j => H.point y (y.1.symm j)) (fun j => H.point x (x.1.symm j)) (by simp) (by simp)
+  obtain ⟨a, ha⟩ := Equiv.Perm.exists_comp_symm_sub_eq_sum (u := H.point x) (v := H.point y)
+    (fun i => (H.alphaNext_isCycleOn i).2 (by simp) (by simp)) (1 : ℤ)
+  obtain ⟨b, hb⟩ := Equiv.Perm.exists_comp_symm_sub_eq_sum
+    (u := fun j => H.point y (y.1.symm j)) (v := fun j => H.point x (x.1.symm j))
+    (fun j => (H.betaNext_isCycleOn j).2 (by simp) (by simp)) (1 : ℤ)
   refine ⟨(a, b), ?_, ?_⟩
   · rw [H.generatorChain_eq_sum_single, H.generatorChain_eq_sum_single, ← ha]
     exact funext fun q => H.alphaArcBoundary_apply a q
