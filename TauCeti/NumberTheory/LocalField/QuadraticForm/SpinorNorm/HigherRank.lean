@@ -29,8 +29,8 @@ over `ℚ_[2]`. These indices measure the failure of the Spin projection to be s
 local points.
 
 The surjectivity theorems are
-`TauCeti.CliffordAlgebra.spinorNorm_surjective_of_three_le_finrank` and
-`TauCeti.CliffordAlgebra.orthogonalSpinorNorm_surjective_of_three_le_finrank`.
+`TauCeti.QuadraticMap.spinorNorm_surjective_of_three_le_finrank` and
+`TauCeti.QuadraticMap.orthogonalSpinorNorm_surjective_of_three_le_finrank`.
 
 ## References
 
@@ -42,7 +42,7 @@ public section
 
 namespace TauCeti
 
-namespace CliffordAlgebra
+namespace QuadraticMap
 
 open TauCeti _root_.CliffordAlgebra _root_.QuadraticMap TauCeti.QuadraticMap
 open _root_.ValuativeRel
@@ -143,6 +143,6 @@ theorem index_range_spinToSpecialOrthogonal_eq_eight_of_three_le_finrank
 
 end PadicTwo
 
-end CliffordAlgebra
+end QuadraticMap
 
 end TauCeti

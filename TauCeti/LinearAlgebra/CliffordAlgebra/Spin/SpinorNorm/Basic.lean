@@ -39,9 +39,9 @@ for the spinor-norm homomorphisms they describe.
   the kernel of the spinor norm.
 * `CliffordAlgebra.spinToSpinorNormKernel`: the Spin action corestricted to that kernel.
 * `CliffordAlgebra.spinToSpinorNormKernel_surjective`: the corestricted action is surjective.
-* `TauCeti.spinorNorm_reflectionPairSpecialOrthogonal`: the spinor norm of a
+* `TauCeti.QuadraticMap.spinorNorm_reflectionPairSpecialOrthogonal`: the spinor norm of a
   reflection pair.
-* `TauCeti.orthogonalSpinorNorm_surjective_of_spinorNorm_surjective`: surjectivity
+* `TauCeti.QuadraticMap.orthogonalSpinorNorm_surjective_of_spinorNorm_surjective`: surjectivity
   on `SO(Q)` implies surjectivity on `O(Q)`.
 
 ## References
@@ -266,6 +266,8 @@ end CliffordAlgebra
 
 namespace TauCeti
 
+namespace QuadraticMap
+
 open _root_.CliffordAlgebra _root_.QuadraticMap
 
 universe u v
@@ -276,7 +278,7 @@ variable {K : Type u} {V : Type v} [Field K] [AddCommGroup V] [Module K V]
 /-- The spinor norm of a pair of reflections is the square class of the product of the
 quadratic values of its defining vectors.
 
-After `open TauCeti`, use `spinorNorm_reflectionPairSpecialOrthogonal Q hQ v w` to evaluate
+After `open TauCeti`, use `Q.spinorNorm_reflectionPairSpecialOrthogonal hQ v w` to evaluate
 the pair defined by `v` and `w`. -/
 theorem spinorNorm_reflectionPairSpecialOrthogonal (Q : QuadraticForm K V)
     (hQ : Q.Nondegenerate) (v w : V) [Invertible (Q v)] [Invertible (Q w)] :
@@ -289,7 +291,7 @@ theorem spinorNorm_reflectionPairSpecialOrthogonal (Q : QuadraticForm K V)
 surjectivity on the full orthogonal group.
 
 After `open TauCeti`, apply
-`orthogonalSpinorNorm_surjective_of_spinorNorm_surjective Q hQ hsurj`
+`Q.orthogonalSpinorNorm_surjective_of_spinorNorm_surjective hQ hsurj`
 to a surjectivity proof `hsurj` for the spinor norm on `SO(Q)`. -/
 theorem orthogonalSpinorNorm_surjective_of_spinorNorm_surjective
     (Q : QuadraticForm K V) (hQ : Q.Nondegenerate)
@@ -297,5 +299,7 @@ theorem orthogonalSpinorNorm_surjective_of_spinorNorm_surjective
     Function.Surjective (orthogonalSpinorNorm Q hQ) := by
   apply Function.Surjective.of_comp (g := specialOrthogonalToOrthogonal Q)
   simpa only [Function.comp_def, ← spinorNorm_apply] using hsurj
+
+end QuadraticMap
 
 end TauCeti
