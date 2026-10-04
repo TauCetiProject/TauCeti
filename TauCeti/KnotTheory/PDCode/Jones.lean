@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Polynomial.Laurent.Basic
 public import TauCeti.KnotTheory.PDCode.Circle
 public import TauCeti.KnotTheory.PDCode.Oriented.ClaspInsertion
+public import TauCeti.KnotTheory.PDCode.Oriented.Reidemeister.Two
 public import TauCeti.KnotTheory.PDCode.Oriented.Reidemeister.One
 public import TauCeti.KnotTheory.PDCode.Oriented.Reidemeister.Three
 public import TauCeti.KnotTheory.PDCode.Trefoil
@@ -185,6 +186,13 @@ theorem jonesPolynomial_insertClasp (D : OrientedPDCode n) (p q : Fin (4 * n)) (
     (D.insertClasp p q b hqp hqe).jonesPolynomial = D.jonesPolynomial :=
   (jonesPolynomial_eq_jonesPolynomial_iff _ _).2 <|
     normalizedKauffmanBracket_insertClasp (R := ℤ[T;T⁻¹]) D p q b hqp hqe _
+
+/-- The Jones polynomial is invariant under the circle-and-arc second Reidemeister move. -/
+@[simp] theorem jonesPolynomial_insertCircleClasp (D : OrientedPDCode n)
+    (p : Fin (4 * n)) (o b : Bool) :
+    (D.insertCircleClasp p o b).jonesPolynomial = (D.adjoinCircle o).jonesPolynomial :=
+  (jonesPolynomial_eq_jonesPolynomial_iff _ _).2
+    (D.normalizedKauffmanBracket_insertCircleClasp p o b _)
 
 /-- **The third Reidemeister move leaves the Jones polynomial unchanged**, for every surrounding
 diagram and all six height orders of the three strands. -/

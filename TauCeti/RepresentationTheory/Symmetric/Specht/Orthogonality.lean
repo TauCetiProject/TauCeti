@@ -56,6 +56,9 @@ its conjugate coincide.
   `TauCeti.sum_symmetricCharacterTable_mul_div_zPart` its rational form `∑_ν χ^μ(ν) χ^μ'(ν)/z_ν`.
 * `TauCeti.sum_finrank_spechtModule_sq`: **`∑_{μ ⊢ n} (f^μ)² = n !`**, column orthogonality at the
   identity class.
+* `TauCeti.sum_finrank_spechtModule_mul_spechtChar`: **`∑_{μ ⊢ n} f^μ χ^μ(σ)` is `n !` at the
+  identity and `0` elsewhere**, column orthogonality against the identity class: the character of
+  the regular representation is `∑_μ f^μ χ^μ`.
 
 ## References
 
@@ -276,20 +279,30 @@ theorem sum_symmetricCharacterTable_mul_div_zPart (μ μ' : n.Partition) :
   · rw [ite_eq_left rfl, ite_eq_left rfl, mul_one, Int.cast_natCast]
   · rw [ite_eq_right hne, ite_eq_right hne, mul_zero, Int.cast_zero]
 
-/-- **The dimensions of the Specht modules square-sum to `n !`.** This is column orthogonality at
-the class of the identity, whose weight `z` is the order of `Sₙ` and whose column holds the
-degrees `f^μ = dim_ℚ S^μ`. -/
-theorem sum_finrank_spechtModule_sq (n : ℕ) :
-    ∑ μ : n.Partition, finrank ℚ (spechtModule μ) ^ 2 = n ! := by
-  have hz : zPart ((partitionEquivConjClasses n).symm (ConjClasses.mk 1)) = n ! := by
-    rw [zPart_partitionEquivConjClasses_symm_mk, zPart_partition_one, Fintype.card_fin]
+/-- **Column orthogonality against the identity class**: `∑_{μ ⊢ n} f^μ χ^μ(σ)` is `n !` when
+`σ = 1` and `0` otherwise, where `f^μ = dim_ℚ S^μ`. This is the decomposition of the character of
+the regular representation of `Sₙ` into the Specht characters, each with multiplicity its
+degree. -/
+theorem sum_finrank_spechtModule_mul_spechtChar (σ : Equiv.Perm (Fin n)) :
+    ∑ μ : n.Partition, (finrank ℚ (spechtModule μ) : ℤ) * spechtChar μ σ =
+      if σ = 1 then (n ! : ℤ) else 0 := by
   have hcol := symmetricCharacterTable_column_orthogonality
     ((partitionEquivConjClasses n).symm (ConjClasses.mk 1))
-    ((partitionEquivConjClasses n).symm (ConjClasses.mk 1))
-  rw [ite_eq_left rfl, hz] at hcol
-  refine Nat.cast_injective (R := ℤ) ?_
-  push_cast
+    ((partitionEquivConjClasses n).symm (ConjClasses.mk σ))
+  simp only [(partitionEquivConjClasses n).symm.injective.eq_iff, ConjClasses.mk_eq_mk_iff_isConj,
+    isConj_one_right, symmetricCharacterTable_one] at hcol
+  rw [zPart_partitionEquivConjClasses_symm_mk, zPart_partition_one, Fintype.card_fin] at hcol
   rw [← hcol]
-  exact Finset.sum_congr rfl fun μ _ ↦ by rw [symmetricCharacterTable_one]; ring
+  exact Finset.sum_congr rfl fun μ _ ↦ by rw [spechtChar_eq_value, symmetricCharacterTable_apply]
+
+/-- **The dimensions of the Specht modules square-sum to `n !`.** This is column orthogonality at
+the class of the identity, whose weight `z` is the order of `Sₙ` and whose column holds the
+degrees `f^μ = dim_ℚ S^μ`: the value at `σ = 1` of
+`TauCeti.sum_finrank_spechtModule_mul_spechtChar`. -/
+theorem sum_finrank_spechtModule_sq (n : ℕ) :
+    ∑ μ : n.Partition, finrank ℚ (spechtModule μ) ^ 2 = n ! := by
+  have h := sum_finrank_spechtModule_mul_spechtChar (n := n) 1
+  simp only [spechtChar_one, ite_true] at h
+  exact_mod_cast (Finset.sum_congr rfl fun μ _ ↦ sq _).trans h
 
 end TauCeti
