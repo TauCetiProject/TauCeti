@@ -77,10 +77,6 @@ instance : IsNonarchimedeanLocalField DyadicSqrtTwo :=
 /-- The square root `√2` generating `ℚ₂(√2)`, the class of `X`. -/
 def sqrtTwo : DyadicSqrtTwo := AdjoinRoot.root (X ^ 2 - C 2 : ℚ_[2][X])
 
-@[simp]
-theorem sqrtTwo_sq : sqrtTwo ^ 2 = 2 :=
-  (root_X_pow_sub_C_pow 2 (2 : ℚ_[2])).trans (map_ofNat (AdjoinRoot.of _) 2)
-
 /-- `√2` generates `ℚ₂(√2)` as a field extension of `ℚ₂`. -/
 theorem adjoin_sqrtTwo_eq_top : ℚ_[2]⟮sqrtTwo⟯ = ⊤ :=
   IntermediateField.adjoin_root_eq_top _
@@ -92,8 +88,10 @@ theorem finrank_eq_two : Module.finrank ℚ_[2] DyadicSqrtTwo = 2 := by
 
 instance : Algebra.IsQuadraticExtension ℚ_[2] DyadicSqrtTwo := ⟨finrank_eq_two⟩
 
-private theorem integral_sqrtTwo : IsIntegral 𝒪[ℚ_[2]] sqrtTwo :=
-  ⟨X ^ 2 - C 2, by monicity!, by simp [map_ofNat]⟩
+private theorem integral_sqrtTwo : IsIntegral 𝒪[ℚ_[2]] sqrtTwo := by
+  have hsq : sqrtTwo ^ 2 = 2 :=
+    (root_X_pow_sub_C_pow 2 (2 : ℚ_[2])).trans (map_ofNat (AdjoinRoot.of _) 2)
+  exact ⟨X ^ 2 - C 2, by monicity!, by simp [hsq, map_ofNat]⟩
 
 /-- `√2`, viewed as an element of the ring of integers. -/
 def integerSqrtTwo : 𝒪[DyadicSqrtTwo] :=
@@ -131,7 +129,9 @@ private theorem isRoot :
   have htwoL : ((2 : 𝒪[DyadicSqrtTwo]) : DyadicSqrtTwo) = 2 :=
     map_ofNat (Subring.subtype 𝒪[DyadicSqrtTwo]) 2
   apply Subtype.ext
-  simp [map_ofNat, htwoL]
+  have hsq : sqrtTwo ^ 2 = 2 :=
+    (root_X_pow_sub_C_pow 2 (2 : ℚ_[2])).trans (map_ofNat (AdjoinRoot.of _) 2)
+  simp [hsq, map_ofNat, htwoL]
 
 /-- `√2` is a uniformizer of the integer ring of `ℚ₂(√2)`. -/
 theorem irreducible_integerSqrtTwo : Irreducible integerSqrtTwo :=
@@ -170,7 +170,11 @@ theorem adjoin_integerSqrtTwo_eq_top : Algebra.adjoin 𝒪[ℚ_[2]] {integerSqrt
 /-- Every nonidentity automorphism sends `√2` to `-√2`. -/
 theorem apply_sqrtTwo_of_ne_one {σ : DyadicSqrtTwo ≃ₐ[ℚ_[2]] DyadicSqrtTwo} (hσ : σ ≠ 1) :
     σ sqrtTwo = -sqrtTwo := by
-  have hsq : σ sqrtTwo ^ 2 = sqrtTwo ^ 2 := by rw [← map_pow, sqrtTwo_sq, map_ofNat]
+  have hsq : σ sqrtTwo ^ 2 = sqrtTwo ^ 2 := by
+    rw [← map_pow]
+    have hsq : sqrtTwo ^ 2 = 2 :=
+      (root_X_pow_sub_C_pow 2 (2 : ℚ_[2])).trans (map_ofNat (AdjoinRoot.of _) 2)
+    rw [hsq, map_ofNat]
   refine (sq_eq_sq_iff_eq_or_eq_neg.1 hsq).resolve_left fun h ↦ hσ ?_
   exact AlgEquiv.coe_toAlgHom_injective (AdjoinRoot.algHom_ext h)
 
