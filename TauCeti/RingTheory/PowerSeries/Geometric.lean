@@ -1,0 +1,36 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.RingTheory.PowerSeries.WellKnown
+
+/-!
+# The geometric series in `a X`
+
+Mathlib's `PowerSeries.mk_one_mul_one_sub_eq_one` says that `∑ Xⁿ` inverts `1 - X`.  Rescaling
+`X` by an element `a` of the coefficient ring turns it into the statement that the geometric
+series `∑ aⁿ Xⁿ` inverts `1 - a X`, with no invertibility assumption on `a`.  This is the
+one-variable factor of the generating functions of the complete homogeneous symmetric
+polynomials, `∏ᵢ (1 - xᵢ X)⁻¹ = ∑ₙ hₙ Xⁿ`.
+
+## Main results
+
+* `PowerSeries.mk_pow_mul_one_sub_C_mul_X_eq_one`: `(∑ aⁿ Xⁿ) * (1 - a X) = 1`.
+-/
+
+public section
+
+namespace PowerSeries
+
+/-- **The geometric series in `a X`**: `∑ aⁿ Xⁿ` is a multiplicative inverse of `1 - a X`, for
+every element `a` of the coefficient ring. -/
+theorem mk_pow_mul_one_sub_C_mul_X_eq_one {R : Type*} [CommRing R] (a : R) :
+    mk (fun n => a ^ n) * (1 - C a * X) = 1 := by
+  have h := congrArg (rescale a) (mk_one_mul_one_sub_eq_one (S := R))
+  rw [map_mul, map_sub, map_one, rescale_mk, rescale_X] at h
+  simpa using h
+
+end PowerSeries
