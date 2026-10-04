@@ -10,6 +10,7 @@ public import TauCeti.NumberTheory.ClassFieldTheory.Formation.ArtinMap
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.ClassFormation
 public import TauCeti.NumberTheory.ClassFieldTheory.LocalExistence.NormSubgroup
 
+import TauCeti.GroupTheory.QuotientGroup.KerEquiv
 import TauCeti.NumberTheory.ClassFieldTheory.Formation.GaloisMaps
 
 /-!
@@ -87,6 +88,7 @@ variable {K}
 
 /-- The abelianization class of `localAbelianArtinHom` is the Artin map of the local class
 formation. -/
+@[simp]
 theorem of_localAbelianArtinHom (hV : V.IsAbelianClassFieldLayer) (x : Kˣ) :
     Additive.ofMul (Abelianization.of (localAbelianArtinHom K hV x)) =
       (localClassFormation K).artinMap (ofOpenNormal V)
@@ -122,8 +124,9 @@ def localAbelianGaloisEquiv (hV : V.IsAbelianClassFieldLayer) :
 `localAbelianArtinHom K hV x`. -/
 @[simp]
 theorem localAbelianGaloisEquiv_mk (hV : V.IsAbelianClassFieldLayer) (x : Kˣ) :
-    localAbelianGaloisEquiv K hV (QuotientGroup.mk x) = localAbelianArtinHom K hV x :=
-  (rfl)
+    localAbelianGaloisEquiv K hV (QuotientGroup.mk x) = localAbelianArtinHom K hV x := by
+  rw [localAbelianGaloisEquiv, MulEquiv.trans_apply, QuotientGroup.quotientMulEquivOfEq_mk,
+    QuotientGroup.quotientKerEquivOfSurjective_apply_mk]
 
 /-- **`localAbelianGaloisEquiv` is the Artin map of the local class formation**: composed with
 `Abelianization.of`, which is injective because the layer is abelian, it is
@@ -199,9 +202,8 @@ theorem localNormSubgroup_inf_of_isAbelian (hV : V.IsAbelianClassFieldLayer)
   | H w =>
     rw [Subgroup.mem_inf, mk_mem_ker_galHom_iff le_rfl, mk_mem_ker_galHom_iff hUV,
       mk_mem_ker_galHom_iff hUW]
-    change (w : AbsoluteGaloisGroup K) ∈ (V ⊓ W).toSubgroup ↔
-      (w : AbsoluteGaloisGroup K) ∈ V.toSubgroup ∧ (w : AbsoluteGaloisGroup K) ∈ W.toSubgroup
-    rw [OpenNormalSubgroup.toSubgroup_inf, Subgroup.mem_inf]
+    -- Membership in an open normal subgroup is membership in its underlying subgroup.
+    exact (SetLike.ext_iff.1 (OpenNormalSubgroup.toSubgroup_inf V W) _).trans Subgroup.mem_inf
 
 /-- **Intersections, for abelian layers.** -/
 private theorem localNormSubgroup_sup_of_isAbelian (hV : V.IsAbelianClassFieldLayer)
@@ -246,6 +248,7 @@ private theorem localNormSubgroup_sup_of_isAbelian (hV : V.IsAbelianClassFieldLa
 out by `V` and `W`, which is cut out by `V ⊔ W`, is the product of the two norm subgroups. No
 abelianity is needed: by norm limitation every norm subgroup is that of its maximal abelian
 sublayer, and the maximal abelian sublayer of `V ⊔ W` is the join of those of `V` and `W`. -/
+@[simp]
 theorem localNormSubgroup_sup (V W : OpenNormalSubgroup (AbsoluteGaloisGroup K)) :
     localNormSubgroup K (V ⊔ W) = localNormSubgroup K V ⊔ localNormSubgroup K W := by
   rw [← localNormSubgroup_maximalAbelianLayer, OpenNormalSubgroup.maximalAbelianLayer_sup,
