@@ -33,6 +33,7 @@ noncomputable section
 
 open CategoryTheory TopologicalSpace AlgebraicGeometry
 open TauCeti.AlgebraicGeometry.Scheme.Modules
+open TauCeti.CategoryTheory.GrothendieckTopology.MayerVietorisSquare
 
 universe u
 
@@ -42,7 +43,7 @@ variable {X : Scheme.{u}} (M : X.Modules) (U V : Opens X)
 
 /-- The Čech coboundary for two open subsets, with sign `s| - t|`. -/
 def cechDifference : (Γ(M, U) × Γ(M, V)) →+ Γ(M, U ⊓ V) :=
-  TauCeti.CategoryTheory.mayerVietorisSectionsDifference (Opens.mayerVietorisSquare U V)
+  mayerVietorisSectionsDifference (Opens.mayerVietorisSquare U V)
     ((_root_.SheafOfModules.toSheaf X.ringCatSheaf).obj M)
 
 @[simp]
@@ -50,7 +51,7 @@ lemma cechDifference_apply (s : Γ(M, U)) (t : Γ(M, V)) :
     cechDifference M U V (s, t) =
       M.val.map (CategoryTheory.homOfLE inf_le_left).op s -
         M.val.map (CategoryTheory.homOfLE inf_le_right).op t :=
-  TauCeti.CategoryTheory.mayerVietorisSectionsDifference_apply
+  mayerVietorisSectionsDifference_apply
     (Opens.mayerVietorisSquare U V) ((_root_.SheafOfModules.toSheaf X.ringCatSheaf).obj M) s t
 
 /-- The two-open Čech comparison in degree one: if the members cover the scheme and
@@ -59,7 +60,7 @@ first cohomology of the scheme. -/
 def sectionsQuotientEquivCohomologyOne (hUV : U ⊔ V = ⊤)
     (hU : Subsingleton (cohomologyOn M 1 U)) (hV : Subsingleton (cohomologyOn M 1 V)) :
     (Γ(M, U ⊓ V) ⧸ (cechDifference M U V).range) ≃+ Cohomology M 1 :=
-  (TauCeti.CategoryTheory.mayerVietorisSectionsQuotientEquiv
+  (mayerVietorisSectionsQuotientEquiv
     (Opens.mayerVietorisSquare U V) ((_root_.SheafOfModules.toSheaf X.ringCatSheaf).obj M)
     hU hV).trans <|
       (eqToIso (congrArg (cohomologyOn M 1) hUV)).addCommGroupIsoToAddEquiv.trans
@@ -74,12 +75,12 @@ lemma sectionsQuotientEquivCohomologyOne_mk (hUV : U ⊔ V = ⊤)
     sectionsQuotientEquivCohomologyOne M U V hUV hU hV (QuotientAddGroup.mk s) =
       (cohomologyOnTopIso M 1).hom
         ((eqToIso (congrArg (cohomologyOn M 1) hUV)).hom
-          (TauCeti.CategoryTheory.mayerVietorisSectionClass
+          (mayerVietorisSectionClass
             (Opens.mayerVietorisSquare U V)
             ((_root_.SheafOfModules.toSheaf X.ringCatSheaf).obj M) s)) := by
   exact congrArg
     (fun x ↦ (cohomologyOnTopIso M 1).hom ((eqToIso (congrArg (cohomologyOn M 1) hUV)).hom x))
-    (TauCeti.CategoryTheory.mayerVietorisSectionsQuotientEquiv_mk
+    (mayerVietorisSectionsQuotientEquiv_mk
       (Opens.mayerVietorisSquare U V) ((_root_.SheafOfModules.toSheaf X.ringCatSheaf).obj M)
       hU hV s)
 

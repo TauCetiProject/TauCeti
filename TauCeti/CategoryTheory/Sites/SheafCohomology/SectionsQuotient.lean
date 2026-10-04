@@ -25,7 +25,7 @@ the intersection nor acyclicity in higher degrees is assumed. The class of a sec
 is characterized by the Mayer–Vietoris connecting homomorphism, fixing its sign.
 
 The construction uses Mathlib's Mayer–Vietoris sequence and first isomorphism theorem
-for abelian groups, and `cohomologyZeroSectionsEquiv` for the degree-zero terms.
+for abelian groups, and `Sheaf.cohomologyZeroSectionsEquiv` for the degree-zero terms.
 
 ## References
 
@@ -40,7 +40,7 @@ open CategoryTheory Limits Opposite
 
 universe v u
 
-namespace TauCeti.CategoryTheory
+namespace TauCeti.CategoryTheory.GrothendieckTopology.MayerVietorisSquare
 
 variable {C : Type u} [Category.{v} C] {J : GrothendieckTopology C}
   [HasWeakSheafify J (Type v)] [HasSheafify J AddCommGrpCat.{v}]
@@ -69,22 +69,23 @@ lemma mayerVietorisSectionsDifference_apply
 /-- The first-cohomology class of a section on the intersection, with the sign of
 Mathlib's Mayer–Vietoris connecting homomorphism. -/
 def mayerVietorisSectionClass : F.obj.obj (op S.X₁) →+ F.H' 1 S.X₄ :=
-  (S.δ F 0 1 rfl).hom.comp (cohomologyZeroSectionsEquiv F S.X₁).symm.toAddMonoidHom
+  (S.δ F 0 1 rfl).hom.comp (Sheaf.cohomologyZeroSectionsEquiv F S.X₁).symm.toAddMonoidHom
 
 @[simp]
 lemma mayerVietorisSectionClass_apply (s : F.obj.obj (op S.X₁)) :
     mayerVietorisSectionClass S F s =
-      S.δ F 0 1 rfl ((cohomologyZeroSectionsEquiv F S.X₁).symm s) :=
+      S.δ F 0 1 rfl ((Sheaf.cohomologyZeroSectionsEquiv F S.X₁).symm s) :=
   (rfl)
 
 private lemma difference_eq_fromBiprod
     (x₂ : F.H' 0 S.X₂) (x₃ : F.H' 0 S.X₃) :
     mayerVietorisSectionsDifference S F
-        (cohomologyZeroSectionsEquiv F S.X₂ x₂, cohomologyZeroSectionsEquiv F S.X₃ x₃) =
-      cohomologyZeroSectionsEquiv F S.X₁
+        (Sheaf.cohomologyZeroSectionsEquiv F S.X₂ x₂, Sheaf.cohomologyZeroSectionsEquiv F S.X₃ x₃) =
+      Sheaf.cohomologyZeroSectionsEquiv F S.X₁
         (S.fromBiprod F 0 ((AddCommGrpCat.biprodIsoProd _ _).inv (x₂, x₃))) := by
   rw [S.fromBiprod_biprodIsoProd_inv_apply, map_sub,
-    cohomologyZeroSectionsEquiv_naturality_left, cohomologyZeroSectionsEquiv_naturality_left]
+    Sheaf.cohomologyZeroSectionsEquiv_naturality_left,
+    Sheaf.cohomologyZeroSectionsEquiv_naturality_left]
   exact mayerVietorisSectionsDifference_apply S F _ _
 
 /-- A section on the intersection has zero connecting class exactly when it is a
@@ -98,18 +99,18 @@ lemma mayerVietorisSectionClass_eq_zero_iff (s : F.obj.obj (op S.X₁)) :
       ((S.sequence_exact F 0 1 rfl).exact' 1 2 3)
   constructor
   · intro hs
-    obtain ⟨x, hx⟩ := (hex ((cohomologyZeroSectionsEquiv F S.X₁).symm s)).mp hs
+    obtain ⟨x, hx⟩ := (hex ((Sheaf.cohomologyZeroSectionsEquiv F S.X₁).symm s)).mp hs
     let p := (AddCommGrpCat.biprodIsoProd _ _).hom x
-    refine ⟨cohomologyZeroSectionsEquiv F S.X₂ p.1,
-      cohomologyZeroSectionsEquiv F S.X₃ p.2, ?_⟩
+    refine ⟨Sheaf.cohomologyZeroSectionsEquiv F S.X₂ p.1,
+      Sheaf.cohomologyZeroSectionsEquiv F S.X₃ p.2, ?_⟩
     rw [← mayerVietorisSectionsDifference_apply, difference_eq_fromBiprod]
     simp only [p, Prod.mk.eta, Iso.hom_inv_id_apply, hx, AddEquiv.apply_symm_apply]
   · rintro ⟨s₂, s₃, rfl⟩
-    let x₂ := (cohomologyZeroSectionsEquiv F S.X₂).symm s₂
-    let x₃ := (cohomologyZeroSectionsEquiv F S.X₃).symm s₃
+    let x₂ := (Sheaf.cohomologyZeroSectionsEquiv F S.X₂).symm s₂
+    let x₃ := (Sheaf.cohomologyZeroSectionsEquiv F S.X₃).symm s₃
     apply (hex _).mpr
     refine ⟨(AddCommGrpCat.biprodIsoProd _ _).inv (x₂, x₃), ?_⟩
-    apply (cohomologyZeroSectionsEquiv F S.X₁).injective
+    apply (Sheaf.cohomologyZeroSectionsEquiv F S.X₁).injective
     rw [← difference_eq_fromBiprod]
     simp [x₂, x₃]
 
@@ -123,11 +124,11 @@ lemma range_mayerVietorisSectionsDifference :
 
 /-- If first cohomology vanishes on both covering objects, every first-cohomology
 class on the covered object comes from a section on the intersection. -/
-lemma surjective_mayerVietorisSectionClass
+lemma mayerVietorisSectionClass_surjective
     (h₂ : Subsingleton (F.H' 1 S.X₂)) (h₃ : Subsingleton (F.H' 1 S.X₃)) :
     Function.Surjective (mayerVietorisSectionClass S F) :=
   ((AddCommGrpCat.epi_iff_surjective _).mp (S.epi_δ F 0 1 rfl h₂ h₃)).comp
-    (cohomologyZeroSectionsEquiv F S.X₁).symm.surjective
+    (Sheaf.cohomologyZeroSectionsEquiv F S.X₁).symm.surjective
 
 /-- For a two-member cover whose members have vanishing first cohomology, first
 cohomology is sections on the intersection modulo differences of local sections. -/
@@ -136,7 +137,7 @@ def mayerVietorisSectionsQuotientEquiv
     (F.obj.obj (op S.X₁) ⧸ (mayerVietorisSectionsDifference S F).range) ≃+ F.H' 1 S.X₄ :=
   (QuotientAddGroup.quotientAddEquivOfEq (range_mayerVietorisSectionsDifference S F)).trans
     (QuotientAddGroup.quotientKerEquivOfSurjective (mayerVietorisSectionClass S F)
-      (surjective_mayerVietorisSectionClass S F h₂ h₃))
+      (mayerVietorisSectionClass_surjective S F h₂ h₃))
 
 /-- The quotient comparison sends the class of a section to its connecting class. -/
 @[simp]
@@ -149,4 +150,4 @@ lemma mayerVietorisSectionsQuotientEquiv_mk
     QuotientAddGroup.quotientAddEquivOfEq_mk]
   exact QuotientAddGroup.kerLift_mk (mayerVietorisSectionClass S F) s
 
-end TauCeti.CategoryTheory
+end TauCeti.CategoryTheory.GrothendieckTopology.MayerVietorisSquare

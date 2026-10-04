@@ -49,6 +49,14 @@ universe w v u t
 
 variable {C : Type u} [Category.{v} C] [Abelian C] [HasExt.{w} C]
 
+/-- Composition of degree-zero Ext classes corresponds to composition of morphisms. -/
+@[simp]
+theorem ext_addEquiv₀_comp {X Y Z : C}
+    (x : Ext.{w} X Y 0) (y : Ext.{w} Y Z 0) :
+    Ext.addEquiv₀ (x.comp y (zero_add 0)) = Ext.addEquiv₀ x ≫ Ext.addEquiv₀ y := by
+  apply (Ext.mk₀_bijective X Z).injective
+  simp only [Ext.mk₀_addEquiv₀_apply, ← Ext.mk₀_comp_mk₀]
+
 /-! ### Transport along isomorphisms -/
 
 variable {X X' Y Y' : C}
