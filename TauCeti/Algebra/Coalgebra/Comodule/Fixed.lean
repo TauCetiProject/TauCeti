@@ -121,7 +121,7 @@ theorem fixedMap_comp {P : Type*} [AddCommMonoid P] [Module R P] [Comodule R C P
   rfl
 
 /-- An injective comodule morphism induces an injective map on invariants. -/
-theorem injective_fixedMap (f : Hom R C M N) (hf : Function.Injective f) :
+theorem fixedMap_injective (f : Hom R C M N) (hf : Function.Injective f) :
     Function.Injective f.fixedMap := by
   intro x y h
   apply Subtype.ext

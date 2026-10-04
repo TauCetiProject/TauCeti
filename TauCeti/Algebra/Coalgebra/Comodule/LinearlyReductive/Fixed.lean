@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Exact.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.LinearlyReductive
-public import TauCeti.Algebra.Coalgebra.Subcomodule.Finite
+import TauCeti.Algebra.Coalgebra.Subcomodule.Finite
 import TauCeti.Algebra.Coalgebra.Subcomodule.Comap
 
 /-!
@@ -23,9 +23,9 @@ under any comodule morphism is the intersection of its image with the target inv
 with preservation of injections, this gives exactness on short exact sequences. This is the
 representation-theoretic input to descent of invariant functions in affine homogeneous spaces.
 
-For a completely reducible source the same lifting result holds over a commutative ring,
-provided the coefficient coalgebra is flat. Over a field, local finite dimensionality reduces
-an arbitrary lift to this case.
+For a completely reducible source the same lifting, image, surjectivity, and exactness results
+hold over a commutative ring, provided the coefficient coalgebra is flat. Over a field, local
+finite dimensionality reduces an arbitrary lift to this case.
 
 ## References
 
@@ -46,6 +46,7 @@ variable {C : Type v} [AddCommMonoid C] [Module R C] [Coalgebra R C] [One C]
   [Module.Flat R C]
 variable {M : Type w} [AddCommMonoid M] [Module R M] [Comodule R C M]
 variable {N : Type x} [AddCommMonoid N] [Module R N] [Comodule R C N]
+variable {P : Type y} [AddCommMonoid P] [Module R P] [Comodule R C P]
 
 /-- If the source is completely reducible, every invariant vector in the image of a comodule
 morphism has an invariant preimage. Flatness of the coalgebra suffices over a general ring. -/
@@ -77,6 +78,67 @@ theorem Hom.exists_fixed_preimage_of_isCompletelyReducible (f : Hom R C M N)
     (i.mem_fixedSubcomodule_iff_of_injective hi _).mp (hbi.symm ▸ hn)
   exact ⟨b, by simpa using P.subtype.mem_fixedSubcomodule hbfix, hfb⟩
 
+omit [Module.Flat R C] in
+private theorem Hom.map_fixedSubcomodule_of_fixed_preimage (f : Hom R C M N)
+    (hLift : ∀ {n : N}, n ∈ fixedSubcomodule R C N →
+      n ∈ LinearMap.range f.toLinearMap → ∃ m ∈ fixedSubcomodule R C M, f m = n) :
+    (fixedSubcomodule R C M).toSubmodule.map f.toLinearMap =
+      LinearMap.range f.toLinearMap ⊓ (fixedSubcomodule R C N).toSubmodule := by
+  ext n
+  constructor
+  · rintro ⟨m, hm, rfl⟩
+    exact ⟨⟨m, rfl⟩, f.mem_fixedSubcomodule hm⟩
+  · rintro ⟨hnrange, hn⟩
+    exact hLift hn hnrange
+
+/-- Taking invariant vectors commutes with the image of a comodule morphism whose source is
+completely reducible, over a commutative ring with a flat coefficient coalgebra. -/
+theorem Hom.map_fixedSubcomodule_of_isCompletelyReducible (f : Hom R C M N)
+    (hM : IsCompletelyReducible R C M) :
+    (fixedSubcomodule R C M).toSubmodule.map f.toLinearMap =
+      LinearMap.range f.toLinearMap ⊓ (fixedSubcomodule R C N).toSubmodule :=
+  f.map_fixedSubcomodule_of_fixed_preimage (f.exists_fixed_preimage_of_isCompletelyReducible hM)
+
+omit [Module.Flat R C] in
+private theorem Hom.fixedMap_surjective_of_fixed_preimage (f : Hom R C M N)
+    (hLift : ∀ {n : N}, n ∈ fixedSubcomodule R C N →
+      n ∈ LinearMap.range f.toLinearMap → ∃ m ∈ fixedSubcomodule R C M, f m = n)
+    (hf : Function.Surjective f) :
+    Function.Surjective f.fixedMap := by
+  intro n
+  obtain ⟨m, hm, hfm⟩ := hLift n.property (hf n)
+  exact ⟨⟨m, hm⟩, Subtype.ext (by simpa using hfm)⟩
+
+/-- A surjective comodule morphism with completely reducible source remains surjective on
+invariant vectors, over a commutative ring with a flat coefficient coalgebra. -/
+theorem Hom.fixedMap_surjective_of_isCompletelyReducible (f : Hom R C M N)
+    (hM : IsCompletelyReducible R C M) (hf : Function.Surjective f) :
+    Function.Surjective f.fixedMap :=
+  f.fixedMap_surjective_of_fixed_preimage (f.exists_fixed_preimage_of_isCompletelyReducible hM) hf
+
+omit [Module.Flat R C] in
+private theorem Hom.exact_fixedMap_of_fixed_preimage (f : Hom R C M N) (g : Hom R C N P)
+    (hLift : ∀ {n : N}, n ∈ fixedSubcomodule R C N →
+      n ∈ LinearMap.range f.toLinearMap → ∃ m ∈ fixedSubcomodule R C M, f m = n)
+    (hfg : Function.Exact f g) :
+    Function.Exact f.fixedMap g.fixedMap := by
+  intro n
+  constructor
+  · intro hn
+    have hgn : g (n : N) = 0 := by simpa using congrArg Subtype.val hn
+    obtain ⟨m, hm, hfm⟩ := hLift n.property ((hfg n).mp hgn)
+    exact ⟨⟨m, hm⟩, Subtype.ext (by simpa using hfm)⟩
+  · rintro ⟨m, rfl⟩
+    apply Subtype.ext
+    simpa using hfg.apply_apply_eq_zero m
+
+/-- Taking invariants preserves an exact pair of comodule morphisms when the source of the
+first morphism is completely reducible and the coefficient coalgebra is flat. -/
+theorem Hom.exact_fixedMap_of_isCompletelyReducible (f : Hom R C M N) (g : Hom R C N P)
+    (hM : IsCompletelyReducible R C M) (hfg : Function.Exact f g) :
+    Function.Exact f.fixedMap g.fixedMap :=
+  f.exact_fixedMap_of_fixed_preimage g (f.exists_fixed_preimage_of_isCompletelyReducible hM) hfg
+
 end Ring
 
 section Field
@@ -107,39 +169,23 @@ reductive coalgebra. -/
 theorem Hom.map_fixedSubcomodule_of_isLinearlyReductive (f : Hom k C M N)
     (hC : Coalgebra.IsLinearlyReductive.{u, v, u} k C) :
     (fixedSubcomodule k C M).toSubmodule.map f.toLinearMap =
-      LinearMap.range f.toLinearMap ⊓ (fixedSubcomodule k C N).toSubmodule := by
-  ext n
-  constructor
-  · rintro ⟨m, hm, rfl⟩
-    exact ⟨⟨m, rfl⟩, f.mem_fixedSubcomodule hm⟩
-  · rintro ⟨hnrange, hn⟩
-    exact f.exists_fixed_preimage_of_isLinearlyReductive hC hn hnrange
+      LinearMap.range f.toLinearMap ⊓ (fixedSubcomodule k C N).toSubmodule :=
+  f.map_fixedSubcomodule_of_fixed_preimage (f.exists_fixed_preimage_of_isLinearlyReductive hC)
 
 /-- A surjective comodule morphism over a linearly reductive coalgebra remains surjective on
 invariant vectors, even for infinite-dimensional comodules. -/
-theorem Hom.surjective_fixedMap_of_isLinearlyReductive (f : Hom k C M N)
+theorem Hom.fixedMap_surjective_of_isLinearlyReductive (f : Hom k C M N)
     (hC : Coalgebra.IsLinearlyReductive.{u, v, u} k C) (hf : Function.Surjective f) :
-    Function.Surjective f.fixedMap := by
-  intro n
-  obtain ⟨m, hm, hfm⟩ := f.exists_fixed_preimage_of_isLinearlyReductive hC n.property (hf n)
-  exact ⟨⟨m, hm⟩, Subtype.ext (by simpa using hfm)⟩
+    Function.Surjective f.fixedMap :=
+  f.fixedMap_surjective_of_fixed_preimage (f.exists_fixed_preimage_of_isLinearlyReductive hC) hf
 
 /-- Taking invariants preserves exact pairs of comodule morphisms over a linearly reductive
 coalgebra. Combined with injectivity and surjectivity of the restricted maps, this preserves
 short exact sequences of arbitrary rational representations. -/
 theorem Hom.exact_fixedMap_of_isLinearlyReductive (f : Hom k C M N) (g : Hom k C N P)
     (hC : Coalgebra.IsLinearlyReductive.{u, v, u} k C) (hfg : Function.Exact f g) :
-    Function.Exact f.fixedMap g.fixedMap := by
-  intro n
-  constructor
-  · intro hn
-    have hgn : g (n : N) = 0 := by simpa using congrArg Subtype.val hn
-    obtain ⟨m, hm, hfm⟩ :=
-      f.exists_fixed_preimage_of_isLinearlyReductive hC n.property ((hfg n).mp hgn)
-    exact ⟨⟨m, hm⟩, Subtype.ext (by simpa using hfm)⟩
-  · rintro ⟨m, rfl⟩
-    apply Subtype.ext
-    simpa using hfg.apply_apply_eq_zero m
+    Function.Exact f.fixedMap g.fixedMap :=
+  f.exact_fixedMap_of_fixed_preimage g (f.exists_fixed_preimage_of_isLinearlyReductive hC) hfg
 
 end Field
 
