@@ -30,7 +30,7 @@ The construction uses `h2MuToBr`, `invMap`, and
 ## Main results
 
 * `finite_continuousCohomology_muNRep_two`: finiteness with roots-of-unity coefficients.
-* `finite_H2_of_isPrimitiveRoot_of_natCard_eq`: finiteness for cyclic trivial coefficients.
+* `finite_H2_of_isPrimitiveRoot_of_natCard_dvd`: finiteness for cyclic trivial coefficients.
 * `finite_H`: finiteness with arbitrary finite smooth discrete coefficients through degree two.
 
 ## References
@@ -64,26 +64,33 @@ theorem finite_continuousCohomology_muNRep_two (hn : IsUnit (n : F)) :
   exact Finite.of_injective f fun x y h => h2MuToBr_injective n F hn
     ((invMap F).injective (congrArg Subtype.val h))
 
-/-- Degree-two cohomology of a cyclic trivial module of order `n` is finite over a local field
-containing a primitive `n`th root of unity. The group may be any topological copy of `G_F`. -/
-theorem finite_H2_of_isPrimitiveRoot_of_natCard_eq [NeZero n] {ζ : F}
+/-- Degree-two cohomology of a cyclic trivial module of order dividing `n` is finite over a local
+field containing a primitive `n`th root of unity. The group may be any topological copy of `G_F`. -/
+theorem finite_H2_of_isPrimitiveRoot_of_natCard_dvd [NeZero n] {ζ : F}
     (hζ : IsPrimitiveRoot ζ n) {H : Type} [Group H] [TopologicalSpace H] [ContinuousMul H]
     (φ : AbsoluteGaloisGroup F ≃ₜ* H) (M : Type) [AddCommGroup M]
     [TopologicalSpace M] [DiscreteTopology M] [DistribMulAction H M] [ContinuousSMul H M]
-    [IsAddCyclic M] (hM : Nat.card M = n) (htriv : ∀ (h : H) (m : M), h • m = m) :
+    [IsAddCyclic M] (hMn : Nat.card M ∣ n) (htriv : ∀ (h : H) (m : M), h • m = m) :
     Finite (H2 H M) := by
-  have := hζ.neZero'
-  have := finite_continuousCohomology_muNRep_two (NeZero.ne (n : F)).isUnit
-  have : Finite (H2 (AbsoluteGaloisGroup F) (KummerCoeff F n)) :=
-    Finite.of_equiv _ (muNRepH2Equiv n F).symm.toEquiv
-  have hcard : Nat.card (KummerCoeff F n) = Nat.card M :=
+  have : NeZero (Nat.card M) := ⟨fun h ↦ NeZero.ne n (Nat.eq_zero_of_zero_dvd (h ▸ hMn))⟩
+  -- A primitive n-th root supplies a primitive root of every order dividing n.
+  have hζM : IsPrimitiveRoot (ζ ^ (n / Nat.card M)) (Nat.card M) := by
+    have h := hζ.pow_of_dvd
+      (Nat.div_pos (Nat.le_of_dvd (NeZero.pos n) hMn) (NeZero.pos _)).ne'
+      (Nat.div_dvd_of_dvd hMn)
+    rwa [Nat.div_div_self hMn (NeZero.ne n)] at h
+  have := hζM.neZero'
+  have := finite_continuousCohomology_muNRep_two (NeZero.ne (Nat.card M : F)).isUnit
+  have : Finite (H2 (AbsoluteGaloisGroup F) (KummerCoeff F (Nat.card M))) :=
+    Finite.of_equiv _ (muNRepH2Equiv (Nat.card M) F).symm.toEquiv
+  have hcard : Nat.card (KummerCoeff F (Nat.card M)) = Nat.card M :=
     (Nat.card_congr Additive.toMul).trans
-      (((hζ.map_of_injective (algebraMap F (SeparableClosure F)).injective).card_rootsOfUnity).trans
-        hM.symm)
-  exact Finite.of_equiv _ (explicitMap2Equiv H M (AbsoluteGaloisGroup F) (KummerCoeff F n) φ
+      (hζM.map_of_injective (algebraMap F (SeparableClosure F)).injective).card_rootsOfUnity
+  exact Finite.of_equiv _ (explicitMap2Equiv H M (AbsoluteGaloisGroup F)
+    (KummerCoeff F (Nat.card M)) φ
     (addEquivOfAddCyclicCardEq hcard.symm) continuous_of_discreteTopology
     continuous_of_discreteTopology fun g m ↦ by
-      rw [htriv, smul_kummerCoeff_eq_self hζ]).symm.toEquiv
+      rw [htriv, smul_kummerCoeff_eq_self hζM]).symm.toEquiv
 
 /-- Cohomology in degrees zero through two of a finite smooth discrete Galois module over a
 nonarchimedean local field is finite, provided its exponent is invertible in the field. -/
@@ -98,14 +105,7 @@ theorem finite_H (hn : (n : F) ≠ 0) (A : GalRep n F)
   intro L _ _ _ _ ζ hζ H _ _ _ _ φ j hj₀ hj M _ _ _ _ _ _ hM hMn hMtriv
   obtain rfl : j = 2 := by omega
   have := isAddCyclic_of_prime_card rfl (hp := ⟨hM⟩)
-  have : NeZero (Nat.card M) := ⟨hM.ne_zero⟩
-  -- A primitive n-th root supplies a primitive root of every order dividing n.
-  have hζM : IsPrimitiveRoot (ζ ^ (n / Nat.card M)) (Nat.card M) := by
-    have h := hζ.pow_of_dvd
-      (Nat.div_pos (Nat.le_of_dvd (NeZero.pos n) hMn) (NeZero.pos _)).ne'
-      (Nat.div_dvd_of_dvd hMn)
-    rwa [Nat.div_div_self hMn (NeZero.ne n)] at h
-  have := finite_H2_of_isPrimitiveRoot_of_natCard_eq hζM φ M rfl hMtriv
+  have := finite_H2_of_isPrimitiveRoot_of_natCard_dvd hζ φ M hMn hMtriv
   exact Finite.of_equiv _ (explicitH2AddEquivContinuousCohomology H M).toEquiv
 
 end TauCeti.ClassFieldTheory
