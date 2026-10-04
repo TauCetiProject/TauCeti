@@ -32,9 +32,8 @@ manifold. With `E = EuclideanSpace ℝ (Fin 4)` this is the spherical model geom
 ## Main statements
 
 * `LinearIsometryEquiv.mvfderiv_coe_sphere_unitSphereEquiv`: the differential of the restriction
-  to the spheres, read in the ambient space, is the linear isometry itself;
-  `LinearIsometryEquiv.mvfderiv_coe_sphere_unitSphereRiemannianIsometry` restates it for the
-  Riemannian isometry.
+  to the spheres, read in the ambient space, is the linear isometry itself. Use
+  `LinearIsometryEquiv.coe_unitSphereRiemannianIsometry` to apply it to the Riemannian isometry.
 * `LinearIsometryEquiv.unitSphereIsomHom_injective`: the homomorphism `O(E) →* Isom(S(E))` is
   injective.
 * `TauCeti.isPretransitive_isom_sphere`: the isometry group of the round sphere acts transitively
@@ -92,18 +91,6 @@ simp lemma: the simp normal form of `unitSphereRiemannianIsometry e x` for `F = 
 theorem coe_unitSphereRiemannianIsometry (e : E ≃ₗᵢ[ℝ] F) :
     ⇑(unitSphereRiemannianIsometry (n := n) (k := k) e) = unitSphereEquiv e :=
   funext fun x ↦ Subtype.ext (by simp)
-
-/-- The differential of the isometry induced by `e`, read in the ambient spaces through the
-inclusions of the spheres, is `e`. -/
-@[simp]
-theorem mvfderiv_coe_sphere_unitSphereRiemannianIsometry (e : E ≃ₗᵢ[ℝ] F)
-    (x : sphere (0 : E) 1) (v : TangentSpace (𝓡 n) x) :
-    mvfderiv (𝓡 k) ((↑) : sphere (0 : F) 1 → F)
-        (unitSphereRiemannianIsometry (n := n) (k := k) e x)
-        (mfderiv (𝓡 n) (𝓡 k) (unitSphereRiemannianIsometry e) x v) =
-      e (mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) x v) := by
-  rw [coe_unitSphereRiemannianIsometry]
-  exact mvfderiv_coe_sphere_unitSphereEquiv e x v
 
 /-- For `F = E`, the isometry induced by `e` acts on the sphere as `e` does. -/
 @[simp]
