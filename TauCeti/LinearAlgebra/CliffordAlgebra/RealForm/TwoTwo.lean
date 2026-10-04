@@ -290,7 +290,8 @@ theorem realCliffordTwoTwoEvenEquivMatrixProd_reverseEven
     realCliffordTwoOneEquivMatrixProd_star]
   rfl
 
-/-- The even split Clifford algebra is directly finite, as its product of matrix models is. -/
+/-- The even split Clifford algebra is directly finite, so its left and right
+inverse equations are equivalent. -/
 instance realCliffordTwoTwoEvenIsDedekindFiniteMonoid :
     IsDedekindFiniteMonoid (CliffordAlgebra.even (realCliffordForm 2 2)) :=
   (MulEquivClass.isDedekindFiniteMonoid_iff

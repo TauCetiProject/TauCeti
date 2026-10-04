@@ -221,7 +221,8 @@ theorem realCliffordThreeOneEvenEquivComplexMatrix_reverseEven
     realCliffordOneTwoEquivComplexMatrix_star]
   rfl
 
-/-- The even Lorentzian Clifford algebra is directly finite, as its matrix model is. -/
+/-- The even Lorentzian Clifford algebra is directly finite, so its left and right
+inverse equations are equivalent. -/
 instance realCliffordThreeOneEvenIsDedekindFiniteMonoid :
     IsDedekindFiniteMonoid (CliffordAlgebra.even (realCliffordForm 3 1)) :=
   (MulEquivClass.isDedekindFiniteMonoid_iff
