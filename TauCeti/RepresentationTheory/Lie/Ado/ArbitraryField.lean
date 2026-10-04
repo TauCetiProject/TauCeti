@@ -86,10 +86,7 @@ variable [FiniteDimensional K L]
 
 /-- **Hochschild's strengthening of the Ado–Iwasawa theorem.** A finite-dimensional Lie algebra
 over an arbitrary field has a faithful finite-dimensional representation that preserves
-nilpotence of the adjoint action: every `ad`-nilpotent element acts nilpotently.
-
-The characteristic is dispatched on `ringChar K`, which is `0` or a prime because `K` is a
-field. -/
+nilpotence of the adjoint action: every `ad`-nilpotent element acts nilpotently. -/
 theorem exists_faithful_preserving_ad_nilpotence :
     ∃ (V : Type (max u v)) (_ : AddCommGroup V) (_ : Module K V) (_ : FiniteDimensional K V)
       (ρ : L →ₗ⁅K⁆ Module.End K V),
@@ -102,8 +99,7 @@ theorem exists_faithful_preserving_ad_nilpotence :
 
 /-- **The Ado–Iwasawa theorem with nilpotence on the nilradical.** A finite-dimensional Lie
 algebra over an arbitrary field has a faithful finite-dimensional representation in which every
-element of the nilradical acts nilpotently. Elements of the nilradical are `ad`-nilpotent, so this
-is read off from `TauCeti.exists_faithful_preserving_ad_nilpotence`. -/
+element of the nilradical acts nilpotently. -/
 theorem exists_faithful_nilrepresentation :
     ∃ (V : Type (max u v)) (_ : AddCommGroup V) (_ : Module K V) (_ : FiniteDimensional K V)
       (ρ : L →ₗ⁅K⁆ Module.End K V),
