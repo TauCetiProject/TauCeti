@@ -23,6 +23,8 @@ the composite, which sends a linear automorphism to its invertible matrix in the
 ## Main statements
 
 * `Module.Basis.toLin'_toGL`: reading the matrix back through `toLin'` recovers the automorphism.
+* `Module.Basis.coe_toGL`: the matrix of `f` is `LinearMap.toMatrix b b f`, so its `(i, j)` entry
+  is the `i`-th coordinate of `f (b j)`.
 * `Module.Basis.toGL_smulOfUnit`: multiplication by a unit has the scalar matrix of that unit.
 -/
 
@@ -47,6 +49,22 @@ theorem toLin'_toGL (b : Module.Basis ι k V) (f : V ≃ₗ[k] V) :
     Matrix.GeneralLinearGroup.toLin' b (b.toGL f) =
       (LinearMap.GeneralLinearGroup.generalLinearEquiv k V).symm f := by
   simp [toGL]
+
+/-- The invertible matrix of `f` in the basis `b` is its matrix `LinearMap.toMatrix b b f`: the
+`(i, j)` entry is the `i`-th coordinate of `f (b j)`. -/
+@[simp]
+theorem coe_toGL (b : Module.Basis ι k V) (f : V ≃ₗ[k] V) :
+    (b.toGL f : Matrix ι ι k) = LinearMap.toMatrix b b f := by
+  ext i j
+  have hf : ((LinearMap.GeneralLinearGroup.generalLinearEquiv k V).symm f).toLinearEquiv = f :=
+    (LinearMap.GeneralLinearGroup.generalLinearEquiv k V).apply_symm_apply f
+  -- Read off the `j`-th column of the matrix from the action of `toLin'` on `b j`.
+  have h := Matrix.GeneralLinearGroup.toLin'_apply b (b.toGL f) (b j)
+  rw [toLin'_toGL, hf, b.repr_self, Finsupp.single_eq_pi_single, Matrix.mulVec_single_one,
+    Fintype.linearCombination_apply, ← b.equivFun_symm_apply] at h
+  rw [LinearMap.toMatrix_apply, LinearEquiv.coe_coe, ← b.equivFun_apply, h,
+    LinearEquiv.apply_symm_apply]
+  rfl
 
 /-- Multiplication by a unit `a` has matrix the scalar matrix `a` in every basis. -/
 @[simp]
