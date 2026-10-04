@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Toric.Algebraic.Fan.Over
-public import TauCeti.Geometry.Toric.Algebraic.Fan.Product
+public import TauCeti.Geometry.Toric.Algebraic.Fan.Product.Basic
 public import TauCeti.Geometry.Toric.Algebraic.Product
 
 /-!
@@ -44,27 +44,9 @@ variable {N N' : Type} {V V' : Type*} [AddCommGroup N] [AddCommGroup N']
   [AddCommGroup V] [AddCommGroup V'] [Module ℝ V] [Module ℝ V']
   {i : N →+ V} {i' : N' →+ V'}
 
-private theorem affineToricSchemeMap_comp_eqToHom {sigma : PointedCone ℝ V}
-    {tau tau' : PointedCone ℝ V'} (hi : IsIntegralLattice i) (hi' : IsIntegralLattice i')
-    (f : N →+ N') (g : V →ₗ[ℝ] V') (hfg : ∀ n, g (i n) = i' (f n))
-    (h : tau = tau') (hmaps : Set.MapsTo g sigma tau)
-    (hmaps' : Set.MapsTo g sigma tau') :
-    affineToricSchemeMap hi hi' f g hfg hmaps ≫
-        eqToHom (congrArg (affineToricScheme hi') h) =
-      affineToricSchemeMap hi hi' f g hfg hmaps' := by
-  subst tau'
-  simp
-
 namespace FanHom
 
 variable (Phi : Fan i) (Psi : Fan i')
-
-private theorem affineToricChartι_eqToHom {Omega : Fan i} {sigma tau : Omega.cones}
-    (h : sigma = tau) :
-    eqToHom (congrArg Omega.affineToricChart h) ≫ Omega.affineToricChartι tau =
-      Omega.affineToricChartι sigma := by
-  subst tau
-  simp
 
 /-- On a product affine chart, the algebraic map of the first fan projection is the affine
 toric projection followed by the corresponding chart inclusion. -/
@@ -80,34 +62,10 @@ theorem affineToricChartι_prodCone_comp_fst_algebraicMap
             simpa only [LinearMap.coe_fst, Submodule.prod_coe] using
               (Set.mapsTo_fst_prod (s := (sigma.1 : Set V)) (t := (tau.1 : Set V')))) ≫
         Phi.affineToricChartι sigma := by
-  rw [affineToricChartι_comp_algebraicMap]
-  let kappa : Phi.cones := ⟨(FanHom.fst Phi Psi).leastCone (Phi.prodCone Psi sigma tau).2,
-    (FanHom.fst Phi Psi).leastCone_mem (Phi.prodCone Psi sigma tau).2⟩
-  have hkappa : kappa = sigma := Subtype.ext (fst_leastCone_prodCone sigma tau)
-  let e : Phi.affineToricChart kappa ⟶ Phi.affineToricChart sigma :=
-    eqToHom (congrArg (affineToricScheme Phi.lattice) (congrArg Subtype.val hkappa))
-  have he : e ≫ Phi.affineToricChartι sigma = Phi.affineToricChartι kappa := by
-    convert affineToricChartι_eqToHom hkappa
-  have hmap : (FanHom.fst Phi Psi).affineToricChartMap (Phi.prodCone Psi sigma tau) ≫ e =
-      affineToricSchemeMap (σ := sigma.1.prod tau.1) (τ := sigma.1)
-        (Phi.lattice.prod Psi.lattice) Phi.lattice
-        (AddMonoidHom.fst N N') (LinearMap.fst ℝ V V') (fun _ ↦ by simp)
-        (by
-          simpa only [LinearMap.coe_fst, Submodule.prod_coe] using
-            (Set.mapsTo_fst_prod (s := (sigma.1 : Set V)) (t := (tau.1 : Set V')))) := by
-    rw [affineToricChartMap_def]
-    have hcanonical : Set.MapsTo (LinearMap.fst ℝ V V') (sigma.1.prod tau.1) sigma.1 := by
-      simpa only [LinearMap.coe_fst, Submodule.prod_coe] using
-        (Set.mapsTo_fst_prod (s := (sigma.1 : Set V)) (t := (tau.1 : Set V')))
-    have hleast : Set.MapsTo (LinearMap.fst ℝ V V') (sigma.1.prod tau.1) kappa.1 := by
-      simpa only [kappa, Fan.coe_prodCone, FanHom.fst_realMap] using
-        (FanHom.fst Phi Psi).mapsTo_leastCone (Phi.prodCone Psi sigma tau).2
-    convert affineToricSchemeMap_comp_eqToHom (Phi.lattice.prod Psi.lattice) Phi.lattice
-      (AddMonoidHom.fst N N') (LinearMap.fst ℝ V V') (fun _ ↦ by simp)
-      (congrArg Subtype.val hkappa) hleast hcanonical using 1
-    congr 1
-    simp only [FanHom.fst_latticeMap, FanHom.fst_realMap]
-  rw [← he, ← Category.assoc, hmap]
+  convert affineToricChartι_comp_algebraicMap_of_leastCone_eq (FanHom.fst Phi Psi)
+    (Phi.prodCone Psi sigma tau) sigma (fst_leastCone_prodCone sigma tau)
+    (fun _ hx ↦ by simpa only [FanHom.fst_realMap, LinearMap.fst_apply] using hx.1) using 3
+  simp only [FanHom.fst_latticeMap, FanHom.fst_realMap]
 
 /-- On a product affine chart, the algebraic map of the second fan projection is the affine
 toric projection followed by the corresponding chart inclusion. -/
@@ -123,34 +81,10 @@ theorem affineToricChartι_prodCone_comp_snd_algebraicMap
             simpa only [LinearMap.coe_snd, Submodule.prod_coe] using
               (Set.mapsTo_snd_prod (s := (sigma.1 : Set V)) (t := (tau.1 : Set V')))) ≫
         Psi.affineToricChartι tau := by
-  rw [affineToricChartι_comp_algebraicMap]
-  let kappa : Psi.cones := ⟨(FanHom.snd Phi Psi).leastCone (Phi.prodCone Psi sigma tau).2,
-    (FanHom.snd Phi Psi).leastCone_mem (Phi.prodCone Psi sigma tau).2⟩
-  have hkappa : kappa = tau := Subtype.ext (snd_leastCone_prodCone sigma tau)
-  let e : Psi.affineToricChart kappa ⟶ Psi.affineToricChart tau :=
-    eqToHom (congrArg (affineToricScheme Psi.lattice) (congrArg Subtype.val hkappa))
-  have he : e ≫ Psi.affineToricChartι tau = Psi.affineToricChartι kappa := by
-    convert affineToricChartι_eqToHom hkappa
-  have hmap : (FanHom.snd Phi Psi).affineToricChartMap (Phi.prodCone Psi sigma tau) ≫ e =
-      affineToricSchemeMap (σ := sigma.1.prod tau.1) (τ := tau.1)
-        (Phi.lattice.prod Psi.lattice) Psi.lattice
-        (AddMonoidHom.snd N N') (LinearMap.snd ℝ V V') (fun _ ↦ by simp)
-        (by
-          simpa only [LinearMap.coe_snd, Submodule.prod_coe] using
-            (Set.mapsTo_snd_prod (s := (sigma.1 : Set V)) (t := (tau.1 : Set V')))) := by
-    rw [affineToricChartMap_def]
-    have hcanonical : Set.MapsTo (LinearMap.snd ℝ V V') (sigma.1.prod tau.1) tau.1 := by
-      simpa only [LinearMap.coe_snd, Submodule.prod_coe] using
-        (Set.mapsTo_snd_prod (s := (sigma.1 : Set V)) (t := (tau.1 : Set V')))
-    have hleast : Set.MapsTo (LinearMap.snd ℝ V V') (sigma.1.prod tau.1) kappa.1 := by
-      simpa only [kappa, Fan.coe_prodCone, FanHom.snd_realMap] using
-        (FanHom.snd Phi Psi).mapsTo_leastCone (Phi.prodCone Psi sigma tau).2
-    convert affineToricSchemeMap_comp_eqToHom (Phi.lattice.prod Psi.lattice) Psi.lattice
-      (AddMonoidHom.snd N N') (LinearMap.snd ℝ V V') (fun _ ↦ by simp)
-      (congrArg Subtype.val hkappa) hleast hcanonical using 1
-    congr 1
-    simp only [FanHom.snd_latticeMap, FanHom.snd_realMap]
-  rw [← he, ← Category.assoc, hmap]
+  convert affineToricChartι_comp_algebraicMap_of_leastCone_eq (FanHom.snd Phi Psi)
+    (Phi.prodCone Psi sigma tau) tau (snd_leastCone_prodCone sigma tau)
+    (fun _ hx ↦ by simpa only [FanHom.snd_realMap, LinearMap.snd_apply] using hx.2) using 3
+  simp only [FanHom.snd_latticeMap, FanHom.snd_realMap]
 
 end FanHom
 
