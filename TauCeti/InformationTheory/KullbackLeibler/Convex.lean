@@ -25,17 +25,25 @@ For absolutely continuous measures, relative entropy is the integral of
 `InformationTheory.klFun` of the Radon–Nikodym density. Strict convexity of this integrand
 on `[0, ∞)` forces those densities to agree almost everywhere in the equality case.
 
+Strict convexity also holds quantitatively. The midpoint convexity defect of `klFun` at two
+nonnegative reals bounds the square of their distance relative to their sum, and integrating
+this bound shows that the convexity defect of relative entropy at the midpoint of two measures
+controls the `L¹(ρ)` distance of their densities, that is, their total variation distance. This
+is the estimate that makes a minimizing sequence of an entropy minimization problem over a
+convex set of measures a Cauchy sequence.
+
 ## References
 
 * Mathlib, `InformationTheory.klDiv_eq_lintegral_klFun_of_ac` and
   `InformationTheory.strictConvexOn_klFun`.
 * I. Csiszár, *I-divergence geometry of probability distributions and minimization problems*,
-  Ann. Probability 3 (1975), 146–158.
+  Ann. Probability 3 (1975), 146–158. The quantitative midpoint estimate plays the role of the
+  parallelogram identity in the proof of his Theorem 2.1.
 -/
 
 public section
 
-open MeasureTheory InformationTheory Set
+open MeasureTheory InformationTheory Set Real
 open scoped ENNReal NNReal
 
 namespace TauCeti
@@ -179,5 +187,116 @@ theorem strictConvexOn_toReal_klDiv :
   rw [ENNReal.toReal_add (by finiteness) (by finiteness), ENNReal.toReal_mul,
     ENNReal.toReal_mul, ENNReal.coe_toReal, ENNReal.coe_toReal] at h
   simpa only [NNReal.smul_def, smul_eq_mul] using h
+
+/-! ### Quantitative strict convexity -/
+
+/-- One half of the midpoint convexity defect of the entropy integrand dominates a squared
+difference of square roots, written here in terms of `a = √x` and `c = √m`. -/
+private theorem sq_sub_le_mul_log_sub (a : ℝ) {c : ℝ} (ha : 0 ≤ a) (hc : 0 < c) :
+    (a - c) ^ 2 ≤ a ^ 2 * log (a ^ 2) - a ^ 2 * log (c ^ 2) - a ^ 2 + c ^ 2 := by
+  rcases ha.eq_or_lt with rfl | ha
+  · simp
+  have hlog : 1 - c / a ≤ log a - log c := by
+    rw [← log_div ha.ne' hc.ne']
+    simpa [inv_div] using one_sub_inv_le_log_of_pos (div_pos ha hc)
+  have hca : a ^ 2 * (1 - c / a) = a ^ 2 - a * c := by field_simp
+  rw [log_pow, log_pow]
+  push_cast
+  nlinarith [mul_le_mul_of_nonneg_left hlog (sq_nonneg a)]
+
+/-- **Quantitative strict convexity of the entropy integrand.** The midpoint convexity defect
+of `InformationTheory.klFun` at two nonnegative reals bounds the square of their distance,
+relative to their sum. -/
+theorem sq_sub_le_mul_klFun_add_klFun_sub {x y : ℝ} (hx : 0 ≤ x) (hy : 0 ≤ y) :
+    (x - y) ^ 2 ≤ 4 * (x + y) * (klFun x + klFun y - 2 * klFun (2⁻¹ * x + 2⁻¹ * y)) := by
+  set m := 2⁻¹ * x + 2⁻¹ * y with hm
+  rcases (show 0 ≤ m by positivity).eq_or_lt with hm0 | hm0
+  · obtain rfl : x = 0 := by linarith
+    obtain rfl : y = 0 := by linarith
+    simp
+  -- The defect is a sum of two terms, each dominating a squared difference of square roots.
+  have hdef : klFun x + klFun y - 2 * klFun m =
+      (√x ^ 2 * log (√x ^ 2) - √x ^ 2 * log (√m ^ 2) - √x ^ 2 + √m ^ 2) +
+        (√y ^ 2 * log (√y ^ 2) - √y ^ 2 * log (√m ^ 2) - √y ^ 2 + √m ^ 2) := by
+    rw [sq_sqrt hx, sq_sqrt hy, sq_sqrt hm0.le, hm]
+    simp only [klFun]
+    ring
+  have hJ := add_le_add (sq_sub_le_mul_log_sub _ (sqrt_nonneg x) (sqrt_pos.2 hm0))
+    (sq_sub_le_mul_log_sub _ (sqrt_nonneg y) (sqrt_pos.2 hm0))
+  rw [← hdef] at hJ
+  have hxy : (x - y) ^ 2 = (√x - √y) ^ 2 * (√x + √y) ^ 2 := by
+    rw [← mul_pow, show (√x - √y) * (√x + √y) = √x ^ 2 - √y ^ 2 by ring, sq_sqrt hx,
+      sq_sqrt hy]
+  have h1 : (√x + √y) ^ 2 ≤ 2 * (x + y) := by
+    nlinarith [sq_sqrt hx, sq_sqrt hy, sq_nonneg (√x - √y)]
+  have h2 : (√x - √y) ^ 2 ≤ 2 * (klFun x + klFun y - 2 * klFun m) := by
+    nlinarith [sq_nonneg (√x + √y - 2 * √m)]
+  rw [hxy]
+  calc (√x - √y) ^ 2 * (√x + √y) ^ 2 ≤ (2 * (klFun x + klFun y - 2 * klFun m)) * (2 * (x + y)) :=
+        mul_le_mul h2 h1 (sq_nonneg _) (by nlinarith [sq_nonneg (√x - √y)])
+    _ = _ := by ring
+
+/-- The linear form of `TauCeti.sq_sub_le_mul_klFun_add_klFun_sub`, with a free scale `t`. -/
+private theorem mul_abs_sub_add_two_mul_klFun_le {x y : ℝ} (hx : 0 ≤ x) (hy : 0 ≤ y) {t : ℝ}
+    (ht : 0 ≤ t) :
+    t * |x - y| + 2 * klFun (2⁻¹ * x + 2⁻¹ * y) ≤ t ^ 2 * (x + y) + klFun x + klFun y := by
+  have h := sq_sub_le_mul_klFun_add_klFun_sub hx hy
+  set J := klFun x + klFun y - 2 * klFun (2⁻¹ * x + 2⁻¹ * y) with hJdef
+  have hJ : 0 ≤ J := by
+    have := convexOn_klFun.2 hx hy (by norm_num : (0 : ℝ) ≤ 2⁻¹) (by norm_num : (0 : ℝ) ≤ 2⁻¹)
+      (by norm_num)
+    simp only [smul_eq_mul] at this
+    linarith
+  suffices t * |x - y| ≤ t ^ 2 * (x + y) + J by linarith [hJdef]
+  refine (pow_le_pow_iff_left₀ (by positivity) (by positivity) two_ne_zero).1 ?_
+  rw [mul_pow, sq_abs]
+  nlinarith [sq_nonneg (t ^ 2 * (x + y) - J), mul_le_mul_of_nonneg_left h (sq_nonneg t)]
+
+/-- **Quantitative strict convexity of relative entropy.** For finite measures `μ`, `ν` and a
+finite reference `ρ`, the convexity defect of relative entropy at the midpoint of `μ` and `ν`
+controls the `L¹(ρ)` distance of their densities: for every scale `t ≥ 0`,
+`t * ‖dμ/dρ - dν/dρ‖₁ + 2 * klDiv (μ/2 + ν/2) ρ ≤ t² * (μ(univ) + ν(univ)) + klDiv μ ρ +
+klDiv ν ρ`. Choosing `t` as the square root of the defect bounds the distance by a multiple of
+that square root. The inequality holds trivially when an endpoint entropy is infinite. -/
+theorem mul_lintegral_enorm_sub_add_two_mul_klDiv_le (t : ℝ≥0) :
+    t * ∫⁻ x, ‖(μ.rnDeriv ρ x).toReal - (ν.rnDeriv ρ x).toReal‖ₑ ∂ρ +
+        2 * klDiv ((2⁻¹ : ℝ≥0) • μ + (2⁻¹ : ℝ≥0) • ν) ρ ≤
+      t ^ 2 * (μ univ + ν univ) + klDiv μ ρ + klDiv ν ρ := by
+  by_cases hμ : klDiv μ ρ = ∞
+  · simp [hμ]
+  by_cases hν : klDiv ν ρ = ∞
+  · simp [hν]
+  have hμac := (klDiv_ne_top_iff.1 hμ).1
+  have hνac := (klDiv_ne_top_iff.1 hν).1
+  have hac := (hμac.smul_left (2⁻¹ : ℝ≥0)).add_left (hνac.smul_left (2⁻¹ : ℝ≥0))
+  rw [klDiv_eq_lintegral_klFun_of_ac hac, klDiv_eq_lintegral_klFun_of_ac hμac,
+    klDiv_eq_lintegral_klFun_of_ac hνac, ← Measure.lintegral_rnDeriv hμac,
+    ← Measure.lintegral_rnDeriv hνac, ← lintegral_const_mul _ (by fun_prop),
+    ← lintegral_const_mul _ (by fun_prop), ← lintegral_add_left (by fun_prop),
+    ← lintegral_add_left (by fun_prop), ← lintegral_const_mul _ (by fun_prop),
+    ← lintegral_add_left (by fun_prop), ← lintegral_add_left (by fun_prop)]
+  refine lintegral_mono_ae ?_
+  filter_upwards [klFun_rnDeriv_smul_add_smul (μ := μ) (ν := ν) (ρ := ρ) (a := 2⁻¹) (b := 2⁻¹),
+    Measure.rnDeriv_lt_top μ ρ, Measure.rnDeriv_lt_top ν ρ] with x hmix hμx hνx
+  rw [hmix]
+  nth_rewrite 3 [← ENNReal.ofReal_toReal hμx.ne]
+  nth_rewrite 3 [← ENNReal.ofReal_toReal hνx.ne]
+  set f := (μ.rnDeriv ρ x).toReal
+  set g := (ν.rnDeriv ρ x).toReal
+  have hf : 0 ≤ f := ENNReal.toReal_nonneg
+  have hg : 0 ≤ g := ENNReal.toReal_nonneg
+  have hm : 0 ≤ klFun (2⁻¹ * f + 2⁻¹ * g) := klFun_nonneg (by positivity)
+  push_cast
+  calc _ = ENNReal.ofReal (t * |f - g| + 2 * klFun (2⁻¹ * f + 2⁻¹ * g)) := by
+        rw [ENNReal.ofReal_add (by positivity) (by positivity), ENNReal.ofReal_mul t.coe_nonneg,
+          ENNReal.ofReal_mul zero_le_two, Real.enorm_eq_ofReal_abs]
+        simp
+    _ ≤ ENNReal.ofReal (t ^ 2 * (f + g) + klFun f + klFun g) :=
+        ENNReal.ofReal_le_ofReal (mul_abs_sub_add_two_mul_klFun_le hf hg t.coe_nonneg)
+    _ = _ := by
+        rw [ENNReal.ofReal_add (add_nonneg (by positivity) (klFun_nonneg hf)) (klFun_nonneg hg),
+          ENNReal.ofReal_add (by positivity) (klFun_nonneg hf), ENNReal.ofReal_mul (by positivity),
+          ENNReal.ofReal_add hf hg, ENNReal.ofReal_pow t.coe_nonneg]
+        simp [mul_add]
 
 end TauCeti
