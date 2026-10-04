@@ -440,61 +440,20 @@ theorem sym2_mk_eq_of_swapColumns_eq {x : GridState n} {a b c d : Fin n} (hab : 
       simpa using congrArg (fun e : Equiv.Perm (Fin n) => e a) hswap
     rw [hbc, Sym2.eq_swap]
 
-/-- The map from unordered off-diagonal column pairs to the state obtained by swapping those
-columns is injective on the off-diagonal image. -/
-private theorem injOn_sym2_lift_swapColumns_offDiag (x : GridState n) :
-    Set.InjOn
-      (Sym2.lift
-        ⟨fun a b => x.swapColumns a b, fun a b => by
-          ext c
-          simp [swapColumns, Equiv.swap_comm]⟩)
-      ((((Finset.univ : Finset (Fin n)).offDiag.image Sym2.mk.uncurry) :
-        Set (Sym2 (Fin n)))) := by
-  intro z hz w hw hzw
-  obtain ⟨⟨a, b⟩, hab, hgz⟩ := Finset.mem_image.mp hz
-  obtain ⟨⟨c, d⟩, -, hgw⟩ := Finset.mem_image.mp hw
-  rw [← hgz, ← hgw] at hzw ⊢
-  exact sym2_mk_eq_of_swapColumns_eq (x := x) (by simpa [Finset.mem_offDiag] using hab)
-    (by
-      simpa using hzw)
-
 /-- A grid state has exactly `n.choose 2` column-swap neighbours. -/
 @[simp]
 theorem card_columnSwapNeighbors (x : GridState n) :
     x.columnSwapNeighbors.card = n.choose 2 := by
-  classical
-  let pairSwap : Sym2 (Fin n) → GridState n :=
-    Sym2.lift
-      ⟨fun a b => x.swapColumns a b, fun a b => by
-        ext c
-        simp [swapColumns, Equiv.swap_comm]⟩
-  have hpairSwap_injOn :
-      Set.InjOn pairSwap
-        (((Finset.univ : Finset (Fin n)).offDiag.image Sym2.mk.uncurry) :
-          Set (Sym2 (Fin n))) := by
-    simpa [pairSwap] using injOn_sym2_lift_swapColumns_offDiag x
-  have himage :
-      x.columnSwapNeighbors =
-        ((Finset.univ : Finset (Fin n)).offDiag.image Sym2.mk.uncurry).image pairSwap := by
-    ext y
-    constructor
-    · intro hy
-      rw [mem_columnSwapNeighbors] at hy
-      obtain ⟨a, b, hab, rfl⟩ := hy
-      exact Finset.mem_image.mpr
-        ⟨s(a, b), Finset.mem_image.mpr ⟨(a, b), by simpa [Finset.mem_offDiag], rfl⟩, rfl⟩
-    · intro hy
-      obtain ⟨z, hz, rfl⟩ := Finset.mem_image.mp hy
-      obtain ⟨⟨a, b⟩, hab, rfl⟩ := Finset.mem_image.mp hz
-      rw [mem_columnSwapNeighbors]
-      exact ⟨a, b, by simpa [Finset.mem_offDiag] using hab, rfl⟩
-  calc
-    x.columnSwapNeighbors.card =
-        (((Finset.univ : Finset (Fin n)).offDiag.image Sym2.mk.uncurry).image pairSwap).card :=
-      congrArg Finset.card himage
-    _ = ((Finset.univ : Finset (Fin n)).offDiag.image Sym2.mk.uncurry).card :=
-      Finset.card_image_of_injOn hpairSwap_injOn
-    _ = n.choose 2 := by rw [Sym2.card_image_offDiag, Finset.card_univ, Fintype.card_fin]
+  let f : Sym2 (Fin n) → GridState n :=
+    Sym2.lift ⟨fun a b => x.swapColumns a b, fun a b => swapColumns_comm a b x⟩
+  have h : x.columnSwapNeighbors = (Finset.univ.offDiag.image Sym2.mk.uncurry).image f := by
+    rw [x.columnSwapNeighbors_eq_offDiag_image, Finset.image_image]
+    rfl
+  rw [h, Finset.card_image_of_injOn, Sym2.card_image_offDiag, Finset.card_univ, Fintype.card_fin]
+  rintro _ hz _ hw hzw
+  obtain ⟨⟨a, b⟩, hab, rfl⟩ := Finset.mem_image.mp hz
+  obtain ⟨⟨c, d⟩, -, rfl⟩ := Finset.mem_image.mp hw
+  exact sym2_mk_eq_of_swapColumns_eq (Finset.mem_offDiag.mp hab).2.2 hzw
 
 /-- A grid state on a grid of size at most `1` has no column-swap neighbours. -/
 theorem columnSwapNeighbors_eq_empty_of_le_one (x : GridState n) (hn : n ≤ 1) :
@@ -615,32 +574,8 @@ together with the two target-state grid points in the swapped columns. -/
 theorem swapColumns_pointSet_eq_insert_insert_inter (x : GridState n) (a b : Fin n) :
     (x.swapColumns a b).pointSet =
       insert (a, x b) (insert (b, x a) (x.pointSet ∩ (x.swapColumns a b).pointSet)) := by
-  rcases eq_or_ne a b with rfl | h
-  · simp [swapColumns]
-  ext p
-  simp only [Finset.mem_insert]
-  constructor
-  · intro hp
-    rcases eq_or_ne p.1 a with ha | ha
-    · refine Or.inl ?_
-      have : p.2 = x b := by
-        simpa [ha] using ((mem_pointSet (x.swapColumns a b) p).mp hp).symm
-      exact Prod.ext ha this
-    · rcases eq_or_ne p.1 b with hb | hb
-      · refine Or.inr (Or.inl ?_)
-        have : p.2 = x a := by
-          simpa [hb] using ((mem_pointSet (x.swapColumns a b) p).mp hp).symm
-        exact Prod.ext hb this
-      · refine Or.inr (Or.inr ?_)
-        have hx : p ∈ x.pointSet := by
-          rw [mem_pointSet] at hp ⊢
-          rw [swapColumns_apply, Equiv.swap_apply_of_ne_of_ne ha hb] at hp
-          exact hp
-        exact (mem_pointSet_inter_swapColumns_iff x h p).mpr ⟨hx, ha, hb⟩
-  · rintro (rfl | rfl | hp)
-    · simp
-    · simp
-    · exact Finset.mem_of_mem_inter_right hp
+  simpa [Finset.inter_comm] using
+    (x.swapColumns a b).pointSet_eq_insert_insert_inter_swapColumns a b
 
 /-- A grid state and a swap of two distinct columns share exactly `n - 2` grid points. -/
 theorem card_pointSet_inter_swapColumns (x : GridState n) {a b : Fin n} (h : a ≠ b) :

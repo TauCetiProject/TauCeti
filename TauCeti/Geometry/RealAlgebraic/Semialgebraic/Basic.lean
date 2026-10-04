@@ -33,6 +33,9 @@ Every closure property proved here follows directly from the definition:
   over `Fin n → R` with distinguished coordinate `0`; the vertical slice is a subset of
   `Fin 1 → R`, the one-coordinate space of the definition.
 
+Conversely, every semialgebraic set is described by a condition on the signs of finitely many
+polynomials (`TauCeti.IsSemialgebraic.exists_eq_setOf_sign_eval`).
+
 ## References
 
 S. Basu, R. Pollack, and M.-F. Roy,
@@ -324,5 +327,21 @@ theorem IsSemialgebraic.preimage_cons_right {n : ℕ} {s : Set (Fin (n + 1) → 
     (Fin.cons (X 0) fun j => C (x j) : Fin (n + 1) → MvPolynomial (Fin 1) R)
   rw [hf] at h
   exact h
+
+/-! ### Sign-condition normal form -/
+
+/-- **Sign-condition normal form.** Every semialgebraic set is described by a condition on the
+signs of finitely many polynomials. -/
+theorem IsSemialgebraic.exists_eq_setOf_sign_eval {s : Set (σ → R)} (hs : IsSemialgebraic s) :
+    ∃ (m : ℕ) (p : Fin m → MvPolynomial σ R) (Φ : (Fin m → SignType) → Prop),
+      s = {x | Φ fun i => SignType.sign (eval x (p i))} := by
+  refine IsSemialgebraic.induction (fun p => ⟨1, fun _ => p, fun ε => ε 0 = 0, by simp⟩)
+    (fun p => ⟨1, fun _ => p, fun ε => ε 0 = 1, by simp [sign_eq_one_iff]⟩)
+    ⟨0, Fin.elim0, fun _ => False, by simp⟩
+    (fun s _ ⟨m, p, Φ, hs⟩ => ⟨m, p, fun ε => ¬Φ ε, hs ▸ compl_ofPred _⟩)
+    (fun s t _ _ ⟨m, p, Φ, hs⟩ ⟨m', p', Φ', ht⟩ => ⟨m + m', Fin.append p p',
+      fun ε => Φ (fun i => ε (Fin.castAdd m' i)) ∨ Φ' (fun i => ε (Fin.natAdd m i)), ?_⟩) hs
+  ext x
+  simp [hs, ht]
 
 end TauCeti

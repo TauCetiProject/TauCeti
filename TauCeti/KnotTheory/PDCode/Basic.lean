@@ -9,15 +9,14 @@ public import TauCeti.Combinatorics.Enumerative.PerfectMatching
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 public import Mathlib.Logic.Equiv.Fin.Rotate
 import Mathlib.Tactic.FinCases
-import Mathlib.Tactic.NormNum
 
 /-!
 # PD-codes
 
 A PD-code records finite combinatorial crossing data for a link. The `halfEdge` permutation lists
-the four visits at each crossing, while the perfect matching `edgePair` joins the two visits of
-each arc. Opposite slots form the two local strands, one of which is selected by `overPair`.
-Crossing-free components are recorded separately.
+the four half-edges at each crossing, while the perfect matching `edgePair` joins the two
+half-edges at the ends of each arc. Opposite slots form the two local strands, one of which is
+selected by `overPair`. Crossing-free components are recorded separately.
 
 `OrientedPDCode` decorates this data with compatible directions on the arcs and crossing-free
 components. `FramedOrientedPDCode` further assigns an integer framing to every component. The
@@ -57,15 +56,14 @@ especially Proposition 4.5.8.
 
 * `TauCeti.OrientedPDCode.crossingSign_eq_one_iff` and
   `crossingSign_eq_neg_one_iff` characterize the two possible crossing signs.
-* `TauCeti.PDCode.mirror_mirror` and `relabel_relabel` give the basic operation laws.
+* `TauCeti.PDCode.mirror_mirror` and `TauCeti.PDCode.relabel_relabel` give the basic operation
+  laws.
 * `TauCeti.OrientedPDCode.unlinkEquiv` classifies zero-crossing oriented PD-codes.
 -/
 
 public section
 
 namespace TauCeti
-
-open Function
 
 namespace PDCode
 
@@ -76,9 +74,8 @@ def crossingSlotEquiv (n : ℕ) : Fin n × Fin 4 ≃ Fin (4 * n) :=
 /-- The crossing-slot equivalence numbers slot `s` at crossing `i` by `s + 4 * i`. -/
 @[simp]
 theorem crossingSlotEquiv_apply_val (n : ℕ) (i : Fin n) (slot : Fin 4) :
-    (crossingSlotEquiv n (i, slot)).val = slot.val + 4 * i.val := by
-  simp only [crossingSlotEquiv.eq_1, Equiv.trans_apply, finCongr_apply]
-  rfl
+    (crossingSlotEquiv n (i, slot)).val = slot.val + 4 * i.val :=
+  (rfl)
 
 /-- The half-edge positions of a code with one crossing more: the `4 * n` positions of the first
 `n` crossings, followed by the four slots of the new last crossing. -/
@@ -90,19 +87,14 @@ added last. -/
 @[simp]
 theorem crossingSlotEquiv_succ_castSucc {n : ℕ} (i : Fin n) (slot : Fin 4) :
     crossingSlotEquiv (n + 1) (i.castSucc, slot) =
-      halfEdgeSuccEquiv n (.inl (crossingSlotEquiv n (i, slot))) := by
-  ext
-  simp only [crossingSlotEquiv_apply_val, Fin.val_castSucc, halfEdgeSuccEquiv, Equiv.trans_apply,
-    finCongr_apply, Fin.val_cast, finSumFinEquiv_apply_left, Fin.val_castAdd]
+      halfEdgeSuccEquiv n (.inl (crossingSlotEquiv n (i, slot))) :=
+  (rfl)
 
 /-- The slots of the last crossing occupy the last four half-edge positions. -/
 @[simp]
 theorem crossingSlotEquiv_succ_last {n : ℕ} (slot : Fin 4) :
-    crossingSlotEquiv (n + 1) (Fin.last n, slot) = halfEdgeSuccEquiv n (.inr slot) := by
-  ext
-  simp only [crossingSlotEquiv_apply_val, Fin.val_last, halfEdgeSuccEquiv, Equiv.trans_apply,
-    finCongr_apply, Fin.val_cast, finSumFinEquiv_apply_right, Fin.val_natAdd]
-  omega
+    crossingSlotEquiv (n + 1) (Fin.last n, slot) = halfEdgeSuccEquiv n (.inr slot) :=
+  Fin.ext (Nat.add_comm _ _)
 
 -- Not `@[simp]`: `crossingSlotEquiv_apply_val` already rewrites the left-hand side.
 /-- The slot of a half-edge is recovered from its position modulo four. -/
@@ -114,17 +106,14 @@ theorem crossingSlotEquiv_apply_val_mod_four (n : ℕ) (i : Fin n) (slot : Fin 4
 /-- A half-edge position of the first `n` crossings keeps its value when a crossing is added. -/
 @[simp]
 theorem halfEdgeSuccEquiv_apply_inl_val {n : ℕ} (x : Fin (4 * n)) :
-    (halfEdgeSuccEquiv n (.inl x)).val = x.val := by
-  simp only [halfEdgeSuccEquiv, Equiv.trans_apply, finCongr_apply, Fin.val_cast,
-    finSumFinEquiv_apply_left, Fin.val_castAdd]
+    (halfEdgeSuccEquiv n (.inl x)).val = x.val :=
+  (rfl)
 
 /-- The slots of the added crossing follow the `4 * n` positions of the first `n` crossings. -/
 @[simp]
 theorem halfEdgeSuccEquiv_apply_inr_val {n : ℕ} (slot : Fin 4) :
-    (halfEdgeSuccEquiv n (.inr slot)).val = slot.val + 4 * n := by
-  simp only [halfEdgeSuccEquiv, Equiv.trans_apply, finCongr_apply, Fin.val_cast,
-    finSumFinEquiv_apply_right, Fin.val_natAdd]
-  omega
+    (halfEdgeSuccEquiv n (.inr slot)).val = slot.val + 4 * n :=
+  Nat.add_comm _ _
 
 /-- The slot opposite a given slot in the cyclic order at a crossing. -/
 def oppositeCrossingSlot : Equiv.Perm (Fin 4) :=
@@ -197,10 +186,7 @@ namespace Fin
 /-- The opposite crossing slot is different from the original slot. -/
 theorem oppositeCrossingSlot_ne (slot : Fin 4) :
     TauCeti.PDCode.oppositeCrossingSlot slot ≠ slot := by
-  intro h
-  have hv := congrArg Fin.val h
-  rw [TauCeti.PDCode.oppositeCrossingSlot_apply] at hv
-  fin_cases slot <;> simp at hv
+  fin_cases slot <;> decide
 
 end Fin
 
@@ -209,15 +195,15 @@ namespace TauCeti
 /-- A finite unoriented PD-code with `n` crossings.
 
 The `4 * n` half-edges are grouped into four slots for each crossing by `halfEdge`, listed
-counterclockwise around the crossing. The perfect matching `edgePair` joins the two visits of each
-arc. Slots `0` and `2` form one local strand, while slots `1` and `3` form the other.
-`crossinglessComponentCount` counts circle components with no crossing visits.
+counterclockwise around the crossing. The perfect matching `edgePair` joins the two half-edges at
+the ends of each arc. Slots `0` and `2` form one local strand, while slots `1` and `3` form the
+other. `crossinglessComponentCount` counts circle components which meet no crossing.
 `overPair i = false` selects the `0`-`2` strand as over, while `true` selects the `1`-`3` strand. -/
 @[ext]
 structure PDCode (n : ℕ) where
   /-- The half-edge labels occupying the four slots of each crossing. -/
   halfEdge : Equiv.Perm (Fin (4 * n))
-  /-- The perfect matching pairing the two visits of each arc. -/
+  /-- The perfect matching pairing the two half-edges at the ends of each arc. -/
   edgePair : PerfectMatching (Fin (4 * n))
   /-- The number of circle components which meet no crossing. -/
   crossinglessComponentCount : ℕ
@@ -229,15 +215,17 @@ structure PDCode (n : ℕ) where
 structure OrientedPDCode (n : ℕ) extends PDCode n where
   /-- Whether an arc points away from its incident crossing (`true`) or toward it (`false`). -/
   orientation : Fin (4 * n) → Bool
-  /-- The direction on an arc reverses at its paired visit. -/
+  /-- The direction on an arc reverses at its paired half-edge. -/
   orientation_edgePair : ∀ h, orientation (edgePair.val h) = !orientation h
   /-- The orientation reverses between the opposite slots belonging to each local strand. -/
   orientation_oppositeCrossingSlot : ∀ i slot,
     orientation (halfEdge (PDCode.crossingSlotEquiv n (i, PDCode.oppositeCrossingSlot slot))) =
       !orientation (halfEdge (PDCode.crossingSlotEquiv n (i, slot)))
-  /-- The chosen orientations of circle components which meet no crossing. -/
+  /-- The orientations of the circle components which meet no crossing, one entry per component.
+  For such a circle, `true` and `false` simply label its two orientations, which
+  `TauCeti.OrientedPDCode.reverse` exchanges. -/
   crossinglessComponents : Multiset Bool
-  /-- The orientation list accounts for exactly the crossing-free components of the base code. -/
+  /-- The orientation multiset has one entry per crossing-free component of the underlying code. -/
   crossinglessComponents_card : crossinglessComponents.card = crossinglessComponentCount
 
 /-- A framed oriented PD-code.
@@ -248,7 +236,7 @@ its framing integer. These integers measure the chosen framing relative to the S
 framing. The diagram's blackboard framing instead has coefficient equal to the component writhe. -/
 @[ext (flat := false)]
 structure FramedOrientedPDCode (n : ℕ) extends OrientedPDCode n where
-  /-- The Seifert-relative framing coefficient of the component through each crossing visit. -/
+  /-- The Seifert-relative framing coefficient of the component through each half-edge. -/
   framing : Fin (4 * n) → ℤ
   /-- Framing is constant along an arc. -/
   framing_edgePair : ∀ h, framing (edgePair.val h) = framing h
@@ -357,20 +345,22 @@ def mirror (D : PDCode n) : PDCode n where
   overPair := fun i => !D.overPair i
 
 /-- Reflection leaves the half-edge order unchanged. -/
-@[simp] theorem mirror_halfEdge (D : PDCode n) : D.mirror.halfEdge = D.halfEdge := by
-  simp [mirror]
+@[simp] theorem mirror_halfEdge (D : PDCode n) : D.mirror.halfEdge = D.halfEdge := (rfl)
+
 /-- Reflection leaves the arc matching unchanged. -/
-@[simp] theorem mirror_edgePair (D : PDCode n) : D.mirror.edgePair = D.edgePair := by
-  simp [mirror]
+@[simp] theorem mirror_edgePair (D : PDCode n) : D.mirror.edgePair = D.edgePair := (rfl)
+
 /-- Reflection preserves the number of crossing-free components. -/
 @[simp] theorem mirror_crossinglessComponentCount (D : PDCode n) :
-    D.mirror.crossinglessComponentCount = D.crossinglessComponentCount := by simp [mirror]
+    D.mirror.crossinglessComponentCount = D.crossinglessComponentCount := (rfl)
+
 /-- Reflection complements each over-strand choice. -/
 @[simp] theorem mirror_overPair (D : PDCode n) (i : Fin n) :
-    D.mirror.overPair i = !D.overPair i := by simp [mirror]
+    D.mirror.overPair i = !D.overPair i := (rfl)
+
 /-- Reflection leaves every labelled crossing slot unchanged. -/
 theorem crossing_mirror (D : PDCode n) (i : Fin n) (slot : Fin 4) :
-    D.mirror.crossing i slot = D.crossing i slot := by simp [mirror, crossing]
+    D.mirror.crossing i slot = D.crossing i slot := (rfl)
 
 /-- Reflection interchanges over- and under-slots. -/
 @[simp]
@@ -381,12 +371,7 @@ theorem isOver_mirror (D : PDCode n) (i : Fin n) (slot : Fin 4) :
 /-- Reflecting a PD-code twice gives the original code. -/
 @[simp]
 theorem mirror_mirror (D : PDCode n) : D.mirror.mirror = D := by
-  apply PDCode.ext
-  · simp
-  · simp
-  · simp
-  · funext i
-    simp [mirror]
+  ext <;> simp
 
 /-- Reflection fixes every PD-code without crossings. -/
 @[simp]
@@ -487,32 +472,40 @@ theorem crossingBlockEquiv_trans {m r : ℕ} (cross₁ : Fin n ≃ Fin m) (cross
   obtain ⟨⟨i, slot⟩, rfl⟩ := (crossingSlotEquiv n).surjective h
   simp
 
-/-- Relabel half-edge visits and crossings along equivalences of their finite index types. The
-half-edge equivalence need not be the one induced by the crossing equivalence. -/
+/-- Relabel the half-edges and crossings of a code along equivalences of their index types: the
+half-edge `h` becomes `half h` and the crossing `j` becomes `cross j`. Slots are kept, so the
+half-edge in slot `s` of crossing `cross j` is `half` of the half-edge in slot `s` of crossing `j`;
+arcs join the images of the half-edges they joined, the over-strand choice at `cross j` is the one
+at `j`, and the number of crossing-free components is unchanged. The half-edge equivalence need
+not be the one induced by the crossing equivalence. -/
 def relabel {m : ℕ} (D : PDCode n) (half : Fin (4 * n) ≃ Fin (4 * m))
     (cross : Fin n ≃ Fin m) : PDCode m where
   halfEdge := (crossingBlockEquiv cross).equivCongr half D.halfEdge
   edgePair := PerfectMatching.congr half D.edgePair
   crossinglessComponentCount := D.crossinglessComponentCount
-  overPair := Equiv.arrowCongr cross (Equiv.refl Bool) D.overPair
+  overPair := D.overPair ∘ cross.symm
 
 section Relabel
 
 variable {m : ℕ} (D : PDCode n) (half : Fin (4 * n) ≃ Fin (4 * m)) (cross : Fin n ≃ Fin m)
 
-/-- Relabelling transports the half-edge order between the new finite names. -/
+/-- The half-edge permutation of a relabelled code is
+`half ∘ D.halfEdge ∘ (crossingBlockEquiv cross).symm`: the half-edge in slot `s` of crossing
+`cross j` is `half` of the half-edge of `D` in slot `s` of crossing `j`. -/
 @[simp] theorem relabel_halfEdge : (D.relabel half cross).halfEdge =
-    (crossingBlockEquiv cross).equivCongr half D.halfEdge := by simp [relabel]
+    (crossingBlockEquiv cross).equivCongr half D.halfEdge := (rfl)
+
 /-- Relabelling transports the perfect matching along the half-edge equivalence. -/
 @[simp] theorem relabel_edgePair : (D.relabel half cross).edgePair =
-    PerfectMatching.congr half D.edgePair := by simp [relabel]
+    PerfectMatching.congr half D.edgePair := (rfl)
+
 /-- Relabelling preserves the number of crossing-free components. -/
 @[simp] theorem relabel_crossinglessComponentCount :
-    (D.relabel half cross).crossinglessComponentCount = D.crossinglessComponentCount := by
-  simp [relabel]
+    (D.relabel half cross).crossinglessComponentCount = D.crossinglessComponentCount := (rfl)
+
 /-- Relabelling reads the over-strand choice at the old crossing name. -/
 @[simp] theorem relabel_overPair (i : Fin m) :
-    (D.relabel half cross).overPair i = D.overPair (cross.symm i) := by simp [relabel]
+    (D.relabel half cross).overPair i = D.overPair (cross.symm i) := (rfl)
 
 -- Not `@[simp]`: `crossing_apply` already rewrites the left-hand side, and `simp` proves this
 -- from `crossing_apply`, `relabel_halfEdge` and `crossingBlockEquiv_apply_crossingSlotEquiv`.
@@ -525,32 +518,19 @@ theorem crossing_relabel (i : Fin m) (slot : Fin 4) :
 /-- The over/under status after relabelling is read at the old crossing name. -/
 @[simp]
 theorem isOver_relabel (i : Fin m) (slot : Fin 4) :
-    (D.relabel half cross).isOver i slot = D.isOver (cross.symm i) slot := by
-  simp [isOver]
+    (D.relabel half cross).isOver i slot = D.isOver (cross.symm i) slot := (rfl)
 
 /-- Relabelling by identity equivalences does nothing. -/
 @[simp]
 theorem relabel_refl : D.relabel (Equiv.refl _) (Equiv.refl _) = D := by
-  apply PDCode.ext
-  · simp
-  · exact PerfectMatching.congr_refl D.edgePair
-  · simp
-  · funext i
-    simp
+  ext <;> simp
 
 /-- Consecutive relabellings compose their half-edge and crossing equivalences. -/
 @[simp]
 theorem relabel_relabel {r : ℕ} (half₂ : Fin (4 * m) ≃ Fin (4 * r)) (cross₂ : Fin m ≃ Fin r) :
     (D.relabel half cross).relabel half₂ cross₂ =
       D.relabel (half.trans half₂) (cross.trans cross₂) := by
-  apply PDCode.ext
-  · simp only [relabel_halfEdge, crossingBlockEquiv_trans]
-    exact congrArg (fun e => e D.halfEdge)
-      (Equiv.equivCongr_trans (crossingBlockEquiv cross) half (crossingBlockEquiv cross₂) half₂)
-  · simpa only [relabel_edgePair] using PerfectMatching.congr_trans half half₂ D.edgePair
-  · simp
-  · funext i
-    simp
+  ext <;> simp
 
 /-- Reflection commutes with relabelling. -/
 @[simp]
@@ -572,14 +552,13 @@ def kink : PDCode 1 where
   overPair := fun _ ↦ true
 
 /-- The kink numbers its half-edges by their crossing slots. -/
-@[simp] theorem kink_halfEdge : kink.halfEdge = 1 := by simp [kink]
+@[simp] theorem kink_halfEdge : kink.halfEdge = 1 := (rfl)
 
 /-- The kink has no crossing-free component. -/
-@[simp] theorem kink_crossinglessComponentCount : kink.crossinglessComponentCount = 0 := by
-  simp [kink]
+@[simp] theorem kink_crossinglessComponentCount : kink.crossinglessComponentCount = 0 := (rfl)
 
 /-- The over-strand of the kink is the slot pair `1`-`3`. -/
-@[simp] theorem kink_overPair (i : Fin 1) : kink.overPair i = true := by simp [kink]
+@[simp] theorem kink_overPair (i : Fin 1) : kink.overPair i = true := (rfl)
 
 /-- The half-edge of the kink in a given crossing slot is that slot. -/
 theorem kink_crossing (i : Fin 1) (t : Fin 4) :
@@ -599,7 +578,12 @@ namespace OrientedPDCode
 
 variable {n : ℕ}
 
-/-- The sign of an oriented crossing, with slots read counterclockwise in the oriented plane. -/
+/-- The sign of crossing `i`: `1` if the crossing is right-handed and `-1` if it is left-handed,
+as in Lickorish, Chapter 1. The slots are read counterclockwise in the oriented plane and
+`orientation` is `true` at the half-edges where the strands leave the crossing. The crossing is
+right-handed when a counterclockwise quarter turn takes the direction of the over-strand to that
+of the under-strand; in terms of the code, the sign is `1` exactly when `overPair i` records
+whether the orientations at slots `0` and `1` differ. -/
 def crossingSign (D : OrientedPDCode n) (i : Fin n) : ℤ :=
   if Bool.xor (D.orientation (D.crossing i 0)) (D.orientation (D.crossing i 1)) =
       D.overPair i then 1 else -1
@@ -628,9 +612,8 @@ theorem crossingSign_eq_neg_one_iff (D : OrientedPDCode n) (i : Fin n) :
 
 /-- Every crossing sign is either positive or negative. -/
 theorem crossingSign_eq_one_or_neg_one (D : OrientedPDCode n) (i : Fin n) :
-    D.crossingSign i = 1 ∨ D.crossingSign i = -1 := by
-  simp only [crossingSign]
-  split <;> simp_all
+    D.crossingSign i = 1 ∨ D.crossingSign i = -1 :=
+  (em _).imp (crossingSign_eq_one_iff D i).2 (crossingSign_eq_neg_one_iff D i).2
 
 /-- The writhe of an oriented code is the sum of its crossing signs. -/
 def writhe (D : OrientedPDCode n) : ℤ :=
@@ -650,24 +633,24 @@ def reverse (D : OrientedPDCode n) : OrientedPDCode n where
 
 /-- Forgetting orientation after reversal leaves the underlying code unchanged. -/
 @[simp] theorem reverse_toPDCode (D : OrientedPDCode n) :
-    D.reverse.toPDCode = D.toPDCode := by simp [reverse]
-/-- Reversal complements the direction at every crossing visit. -/
+    D.reverse.toPDCode = D.toPDCode := (rfl)
+
+/-- Reversal complements the direction at every half-edge. -/
 @[simp] theorem reverse_orientation (D : OrientedPDCode n) (h : Fin (4 * n)) :
-    D.reverse.orientation h = !D.orientation h := by simp [reverse]
+    D.reverse.orientation h = !D.orientation h := (rfl)
+
 /-- Reversal complements the orientations of all crossing-free components. -/
 @[simp] theorem reverse_crossinglessComponents (D : OrientedPDCode n) :
-    D.reverse.crossinglessComponents = D.crossinglessComponents.map (!·) := by simp [reverse]
+    D.reverse.crossinglessComponents = D.crossinglessComponents.map (!·) := (rfl)
+
 /-- Reversing every component orientation preserves each crossing sign. -/
 @[simp] theorem crossingSign_reverse (D : OrientedPDCode n) (i : Fin n) :
     D.reverse.crossingSign i = D.crossingSign i := by
   simp [crossingSign]
+
 /-- Reversing every component orientation twice gives the original code. -/
 @[simp] theorem reverse_reverse (D : OrientedPDCode n) : D.reverse.reverse = D := by
-  apply OrientedPDCode.ext
-  · simp
-  · funext h
-    simp
-  · simp [Multiset.map_map]
+  ext <;> simp
 
 /-- Reflect an oriented diagram, preserving all component orientations. -/
 def mirror (D : OrientedPDCode n) : OrientedPDCode n where
@@ -680,46 +663,37 @@ def mirror (D : OrientedPDCode n) : OrientedPDCode n where
 
 /-- Forgetting orientation after reflection gives reflection of the underlying code. -/
 @[simp] theorem mirror_toPDCode (D : OrientedPDCode n) :
-    D.mirror.toPDCode = D.toPDCode.mirror := by simp [mirror]
+    D.mirror.toPDCode = D.toPDCode.mirror := (rfl)
+
 /-- Reflection preserves the orientation of every arc. -/
 @[simp] theorem mirror_orientation (D : OrientedPDCode n) :
-    D.mirror.orientation = D.orientation := by simp [mirror]
+    D.mirror.orientation = D.orientation := (rfl)
+
 /-- Reflection preserves the oriented crossing-free components. -/
 @[simp] theorem mirror_crossinglessComponents (D : OrientedPDCode n) :
-    D.mirror.crossinglessComponents = D.crossinglessComponents := by simp [mirror]
+    D.mirror.crossinglessComponents = D.crossinglessComponents := (rfl)
 
 /-- Reflection reverses the sign of every crossing. -/
 @[simp]
 theorem crossingSign_mirror (D : OrientedPDCode n) (i : Fin n) :
     D.mirror.crossingSign i = -D.crossingSign i := by
-  rw [crossingSign, crossingSign]
-  simp only [mirror_orientation, mirror_toPDCode, PDCode.crossing_mirror, PDCode.mirror_overPair]
-  generalize Bool.xor (D.orientation (D.crossing i 0))
-    (D.orientation (D.crossing i 1)) = parity
-  generalize D.overPair i = ov
-  cases parity <;> cases ov <;> norm_num
+  rw [crossingSign_def, crossingSign_def]
+  split_ifs <;> simp_all
 
 /-- Reflecting an oriented PD-code twice gives the original code. -/
 @[simp]
 theorem mirror_mirror (D : OrientedPDCode n) : D.mirror.mirror = D := by
-  apply OrientedPDCode.ext
-  · exact PDCode.mirror_mirror D.toPDCode
-  · simp
-  · simp
+  ext <;> simp
 
-/-- Relabel half-edge visits and crossings along equivalences of their finite index types. -/
+/-- Relabel half-edges and crossings along equivalences of their finite index types. -/
 def relabel {m : ℕ} (D : OrientedPDCode n) (half : Fin (4 * n) ≃ Fin (4 * m))
     (cross : Fin n ≃ Fin m) : OrientedPDCode m where
   toPDCode := D.toPDCode.relabel half cross
-  orientation := Equiv.arrowCongr half (Equiv.refl Bool) D.orientation
-  orientation_edgePair := by
-    intro h
-    simp [PDCode.relabel, Function.comp_apply]
-  orientation_oppositeCrossingSlot := by
-    intro i slot
-    simp [PDCode.relabel, Function.comp_apply, PDCode.crossingBlockEquiv]
+  orientation := D.orientation ∘ half.symm
+  orientation_edgePair := by simp
+  orientation_oppositeCrossingSlot := by simp
   crossinglessComponents := D.crossinglessComponents
-  crossinglessComponents_card := by simp [PDCode.relabel]
+  crossinglessComponents_card := by simp
 
 section Relabel
 
@@ -728,13 +702,15 @@ variable {m : ℕ} (D : OrientedPDCode n) (half : Fin (4 * n) ≃ Fin (4 * m))
 
 /-- Forgetting orientation after relabelling gives relabelling of the underlying code. -/
 @[simp] theorem relabel_toPDCode :
-    (D.relabel half cross).toPDCode = D.toPDCode.relabel half cross := by simp [relabel]
+    (D.relabel half cross).toPDCode = D.toPDCode.relabel half cross := (rfl)
+
 /-- Relabelling transports arc orientations along the half-edge equivalence. -/
 @[simp] theorem relabel_orientation (h : Fin (4 * m)) :
-    (D.relabel half cross).orientation h = D.orientation (half.symm h) := by simp [relabel]
+    (D.relabel half cross).orientation h = D.orientation (half.symm h) := (rfl)
+
 /-- Relabelling leaves crossing-free oriented components unchanged. -/
 @[simp] theorem relabel_crossinglessComponents :
-    (D.relabel half cross).crossinglessComponents = D.crossinglessComponents := by simp [relabel]
+    (D.relabel half cross).crossinglessComponents = D.crossinglessComponents := (rfl)
 
 /-- The crossing sign after relabelling is read at the old crossing name. -/
 @[simp]
@@ -746,22 +722,14 @@ theorem crossingSign_relabel (i : Fin m) :
 /-- Relabelling by identity equivalences does nothing. -/
 @[simp]
 theorem relabel_refl : D.relabel (Equiv.refl _) (Equiv.refl _) = D := by
-  apply OrientedPDCode.ext
-  · exact PDCode.relabel_refl D.toPDCode
-  · funext h
-    simp
-  · simp
+  ext <;> simp
 
 /-- Consecutive relabellings compose their half-edge and crossing equivalences. -/
 @[simp]
 theorem relabel_relabel {r : ℕ} (half₂ : Fin (4 * m) ≃ Fin (4 * r)) (cross₂ : Fin m ≃ Fin r) :
     (D.relabel half cross).relabel half₂ cross₂ =
       D.relabel (half.trans half₂) (cross.trans cross₂) := by
-  apply OrientedPDCode.ext
-  · exact PDCode.relabel_relabel D.toPDCode half cross half₂ cross₂
-  · funext h
-    simp
-  · simp
+  ext <;> simp
 
 /-- Relabelling matches the crossings bijectively, so it preserves the writhe. -/
 @[simp] theorem writhe_relabel : (D.relabel half cross).writhe = D.writhe := by
@@ -772,7 +740,7 @@ end Relabel
 
 /-- Reflection negates the writhe. -/
 @[simp] theorem writhe_mirror (D : OrientedPDCode n) : D.mirror.writhe = -D.writhe := by
-  simp [writhe_def, Finset.sum_neg_distrib]
+  simp [writhe_def]
 
 /-- Reversing every component orientation preserves the writhe. -/
 @[simp] theorem writhe_reverse (D : OrientedPDCode n) : D.reverse.writhe = D.writhe := by
@@ -811,42 +779,35 @@ def mirror (D : FramedOrientedPDCode n) : FramedOrientedPDCode n where
   framing_oppositeCrossingSlot := by simp
   crossinglessFramings := D.crossinglessFramings.map fun component =>
     (component.1, -component.2)
-  crossinglessFramings_map_fst := by
-    simpa only [OrientedPDCode.mirror, Multiset.map_map, Function.comp_apply] using
-      D.crossinglessFramings_map_fst
+  crossinglessFramings_map_fst := by simp
 
 /-- Forgetting framing after reflection gives reflection of the underlying oriented code. -/
 @[simp] theorem mirror_toOrientedPDCode (D : FramedOrientedPDCode n) :
-    D.mirror.toOrientedPDCode = D.toOrientedPDCode.mirror := by simp [mirror]
-/-- Reflection negates the Seifert-relative framing coefficient at every crossing visit. -/
+    D.mirror.toOrientedPDCode = D.toOrientedPDCode.mirror := (rfl)
+
+/-- Reflection negates the Seifert-relative framing coefficient at every half-edge. -/
 @[simp] theorem mirror_framing (D : FramedOrientedPDCode n) :
-    D.mirror.framing = -D.framing := by
-  funext h
-  simp [mirror]
+    D.mirror.framing = -D.framing := (rfl)
+
 /-- Reflection preserves orientation and negates framing on every crossing-free component. -/
 @[simp] theorem mirror_crossinglessFramings (D : FramedOrientedPDCode n) :
     D.mirror.crossinglessFramings =
-      D.crossinglessFramings.map (fun component => (component.1, -component.2)) := by
-  simp [mirror]
+      D.crossinglessFramings.map (fun component => (component.1, -component.2)) := (rfl)
+
 /-- Reflecting a framed oriented PD-code twice gives the original code. -/
 @[simp] theorem mirror_mirror (D : FramedOrientedPDCode n) : D.mirror.mirror = D := by
   apply FramedOrientedPDCode.ext <;> simp
 
-/-- Relabel crossing visits and crossings along equivalences of their finite index types while
+/-- Relabel half-edges and crossings along equivalences of their finite index types while
 transporting the framing function. -/
 def relabel {m : ℕ} (D : FramedOrientedPDCode n) (half : Fin (4 * n) ≃ Fin (4 * m))
     (cross : Fin n ≃ Fin m) : FramedOrientedPDCode m where
   toOrientedPDCode := D.toOrientedPDCode.relabel half cross
-  framing := Equiv.arrowCongr half (Equiv.refl ℤ) D.framing
-  framing_edgePair := by
-    intro h
-    simp [OrientedPDCode.relabel, PDCode.relabel, Function.comp_apply]
-  framing_oppositeCrossingSlot := by
-    intro i slot
-    simp [OrientedPDCode.relabel, PDCode.relabel, Function.comp_apply,
-      PDCode.crossingBlockEquiv]
+  framing := D.framing ∘ half.symm
+  framing_edgePair := by simp
+  framing_oppositeCrossingSlot := by simp
   crossinglessFramings := D.crossinglessFramings
-  crossinglessFramings_map_fst := by simp [OrientedPDCode.relabel]
+  crossinglessFramings_map_fst := by simp
 
 section Relabel
 
@@ -855,31 +816,26 @@ variable {m : ℕ} (D : FramedOrientedPDCode n) (half : Fin (4 * n) ≃ Fin (4 *
 
 /-- Forgetting framing after relabelling gives relabelling of the underlying oriented code. -/
 @[simp] theorem relabel_toOrientedPDCode :
-    (D.relabel half cross).toOrientedPDCode = D.toOrientedPDCode.relabel half cross := by
-  simp [relabel]
+    (D.relabel half cross).toOrientedPDCode = D.toOrientedPDCode.relabel half cross := (rfl)
+
 /-- Relabelling transports framing values along the half-edge equivalence. -/
 @[simp] theorem relabel_framing (h : Fin (4 * m)) :
-    (D.relabel half cross).framing h = D.framing (half.symm h) := by simp [relabel]
+    (D.relabel half cross).framing h = D.framing (half.symm h) := (rfl)
+
 /-- Relabelling preserves all crossing-free orientation-framing pairs. -/
 @[simp] theorem relabel_crossinglessFramings :
-    (D.relabel half cross).crossinglessFramings = D.crossinglessFramings := by simp [relabel]
+    (D.relabel half cross).crossinglessFramings = D.crossinglessFramings := (rfl)
+
 /-- Relabelling by identity equivalences does nothing to a framed oriented code. -/
 @[simp] theorem relabel_refl : D.relabel (Equiv.refl _) (Equiv.refl _) = D := by
-  apply FramedOrientedPDCode.ext
-  · simp
-  · funext h
-    simp
-  · simp
+  ext <;> simp
+
 /-- Consecutive framed relabellings compose their half-edge and crossing equivalences. -/
 @[simp]
 theorem relabel_relabel {r : ℕ} (half₂ : Fin (4 * m) ≃ Fin (4 * r)) (cross₂ : Fin m ≃ Fin r) :
     (D.relabel half cross).relabel half₂ cross₂ =
       D.relabel (half.trans half₂) (cross.trans cross₂) := by
-  apply FramedOrientedPDCode.ext
-  · simp
-  · funext h
-    simp
-  · simp
+  ext <;> simp
 
 end Relabel
 
@@ -898,21 +854,20 @@ def reverse (D : FramedOrientedPDCode n) : FramedOrientedPDCode n where
 
 /-- Forgetting framing after reversal gives reversal of the underlying oriented code. -/
 @[simp] theorem reverse_toOrientedPDCode (D : FramedOrientedPDCode n) :
-    D.reverse.toOrientedPDCode = D.toOrientedPDCode.reverse := by simp [reverse]
-/-- Reversal preserves the framing at every crossing visit. -/
+    D.reverse.toOrientedPDCode = D.toOrientedPDCode.reverse := (rfl)
+
+/-- Reversal preserves the framing at every half-edge. -/
 @[simp] theorem reverse_framing (D : FramedOrientedPDCode n) :
-    D.reverse.framing = D.framing := by simp [reverse]
+    D.reverse.framing = D.framing := (rfl)
+
 /-- Reversal complements only the orientation in each crossing-free framing pair. -/
 @[simp] theorem reverse_crossinglessFramings (D : FramedOrientedPDCode n) :
     D.reverse.crossinglessFramings =
-      D.crossinglessFramings.map (fun component => (!component.1, component.2)) := by
-  simp [reverse]
+      D.crossinglessFramings.map (fun component => (!component.1, component.2)) := (rfl)
+
 /-- Reversing every component orientation twice gives the original framed code. -/
 @[simp] theorem reverse_reverse (D : FramedOrientedPDCode n) : D.reverse.reverse = D := by
-  apply FramedOrientedPDCode.ext
-  · simp
-  · simp
-  · simp [Multiset.map_map]
+  ext <;> simp
 
 /-- Reflection and orientation reversal commute. -/
 @[simp]
@@ -932,6 +887,7 @@ theorem reverse_relabel {m : ℕ} (D : FramedOrientedPDCode n)
     (half : Fin (4 * n) ≃ Fin (4 * m)) (cross : Fin n ≃ Fin m) :
     (D.relabel half cross).reverse = D.reverse.relabel half cross := by
   ext <;> simp
+
 end FramedOrientedPDCode
 
 namespace OrientedPDCode
@@ -940,38 +896,26 @@ namespace OrientedPDCode
 orientations. Multiplicity records distinct components without imposing an ordering on them. -/
 def unlink (orientations : Multiset Bool) : OrientedPDCode 0 where
   halfEdge := Equiv.refl _
-  edgePair := PerfectMatching.mk (Equiv.refl _) (by intro h; exact rfl)
-    (by intro h; exact Fin.elim0 h)
+  edgePair := PerfectMatching.mk (Equiv.refl _) (fun _ ↦ rfl) (fun h ↦ h.elim0)
   crossinglessComponentCount := orientations.card
   overPair := fun h => nomatch h
   orientation := fun h => nomatch h
-  orientation_edgePair := by intro h; exact nomatch h
-  orientation_oppositeCrossingSlot := by intro i; exact Fin.elim0 i
+  orientation_edgePair h := h.elim0
+  orientation_oppositeCrossingSlot i := i.elim0
   crossinglessComponents := orientations
   crossinglessComponents_card := rfl
 
 /-- The unlink constructor retains exactly its component-orientation multiset. -/
 @[simp]
 theorem crossinglessComponents_unlink (orientations : Multiset Bool) :
-    (unlink orientations).crossinglessComponents = orientations := by
-  simp [unlink]
+    (unlink orientations).crossinglessComponents = orientations :=
+  (rfl)
 
 /-- Every zero-crossing oriented PD-code is its canonical crossing-free unlink code. -/
 theorem eq_unlink (D : OrientedPDCode 0) :
-    D = unlink D.crossinglessComponents := by
-  apply OrientedPDCode.ext
-  · apply PDCode.ext
-    · ext h
-      exact Fin.elim0 h
-    · apply Subtype.ext
-      ext h
-      exact Fin.elim0 h
-    · exact D.crossinglessComponents_card.symm
-    · funext i
-      exact Fin.elim0 i
-  · funext h
-    exact Fin.elim0 h
-  · exact rfl
+    D = unlink D.crossinglessComponents :=
+  OrientedPDCode.ext (PDCode.ext (Equiv.ext (·.elim0)) (Subtype.ext (Equiv.ext (·.elim0)))
+    D.crossinglessComponents_card.symm (funext (·.elim0))) (funext (·.elim0)) rfl
 
 /-- Multisets of orientations are equivalent to zero-crossing oriented PD-codes. -/
 def unlinkEquiv : Multiset Bool ≃ OrientedPDCode 0 where
@@ -991,8 +935,8 @@ def empty : OrientedPDCode 0 := unlink 0
 
 /-- The empty diagram has no crossing-free components. -/
 @[simp]
-theorem crossinglessComponents_empty : empty.crossinglessComponents = 0 := by
-  simp [empty]
+theorem crossinglessComponents_empty : empty.crossinglessComponents = 0 :=
+  (rfl)
 
 /-- A crossing-free oriented unknot with the specified choice of orientation. -/
 def unknot (orientation : Bool) : OrientedPDCode 0 :=
@@ -1001,8 +945,8 @@ def unknot (orientation : Bool) : OrientedPDCode 0 :=
 /-- The oriented unknot retains its specified component orientation. -/
 @[simp]
 theorem crossinglessComponents_unknot (orientation : Bool) :
-    (unknot orientation).crossinglessComponents = {orientation} := by
-  simp [unknot]
+    (unknot orientation).crossinglessComponents = {orientation} :=
+  (rfl)
 
 /-- A crossing-free oriented circle is distinct from the empty diagram. -/
 theorem unknot_ne_empty (orientation : Bool) :
@@ -1033,10 +977,7 @@ def positiveKink : OrientedPDCode 1 where
     rw [PDCode.kink_edgePair_apply]
     fin_cases i
     fin_cases t <;> decide
-  orientation_oppositeCrossingSlot := by
-    intro i slot
-    fin_cases i
-    fin_cases slot <;> decide
+  orientation_oppositeCrossingSlot := by decide
   crossinglessComponents := 0
   crossinglessComponents_card := by simp
 
