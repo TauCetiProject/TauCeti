@@ -323,8 +323,9 @@ theorem tendsto_schwarzChristoffelBoundary_sub_log_atTop_of_sum_eq_neg_one
     have hx0 : (x : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr hx.ne'
     have hq : (1 : ℂ) + Complex.I / (x : ℂ) ≠ 0 := fun h => by
       simpa [div_im, hx.ne'] using congrArg Complex.im h
-    rw [show (x : ℂ) + Complex.I = (x : ℂ) * (1 + Complex.I / (x : ℂ)) by field_simp,
-      log_ofReal_mul hx hq]
+    -- Factor out the positive real `x` so that `log_ofReal_mul` splits the logarithm.
+    have hfactor : (x : ℂ) + Complex.I = (x : ℂ) * (1 + Complex.I / (x : ℂ)) := by field_simp
+    rw [hfactor, log_ofReal_mul hx hq]
     ring
   simpa only [sub_add_sub_cancel, add_zero] using
     (tendsto_schwarzChristoffelBoundary_sub_log_add_I a e z₀ hsum tendsto_abs_atTop_atTop).add
@@ -345,7 +346,9 @@ theorem tendsto_schwarzChristoffelBoundary_sub_log_neg_atBot_of_sum_eq_neg_one
       have h := (hinv.const_mul Complex.I).const_add (-1 : ℂ)
       simpa [q, div_eq_mul_inv, Complex.ofReal_inv] using h
     · filter_upwards [eventually_lt_atBot (0 : ℝ)] with x hx
-      rw [show (q x).im = -x / (x * x) by simp [q, Complex.div_im]]
+      -- The imaginary part of `I / (-x)` is `-x / x ^ 2`, which is nonnegative for `x < 0`.
+      have him : (q x).im = -x / (x * x) := by simp [q, Complex.div_im]
+      rw [him]
       exact div_nonneg (neg_nonneg.mpr hx.le) (mul_self_nonneg x)
   have hlogSmall : Tendsto (fun x => log (q x)) atBot (𝓝 (Real.pi * Complex.I)) := by
     simpa only [Function.comp_def, norm_neg, norm_one, Real.log_one, ofReal_zero, zero_add] using
@@ -358,11 +361,13 @@ theorem tendsto_schwarzChristoffelBoundary_sub_log_neg_atBot_of_sum_eq_neg_one
     have hq0 : q x ≠ 0 := fun h => by
       simpa [q, div_im, hx.ne] using congrArg Complex.im h
     have hx0 : (x : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr hx.ne
-    rw [show (x : ℂ) + Complex.I = ((-x : ℝ) : ℂ) * q x by
+    -- Factor out the positive real `-x` so that `log_ofReal_mul` splits the logarithm.
+    have hfactor : (x : ℂ) + Complex.I = ((-x : ℝ) : ℂ) * q x := by
       simp only [q]
       push_cast
       field_simp
-      ring, log_ofReal_mul (neg_pos.mpr hx) hq0]
+      ring
+    rw [hfactor, log_ofReal_mul (neg_pos.mpr hx) hq0]
     ring
   simpa only [sub_add_sub_cancel] using
     (tendsto_schwarzChristoffelBoundary_sub_log_add_I a e z₀ hsum tendsto_abs_atBot_atTop).add
