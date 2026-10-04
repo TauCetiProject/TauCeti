@@ -46,9 +46,8 @@ here.
 * `TauCeti.OrientedPDCode.alexanderGenerator_insertClasp_inl_inl_apply_self` and
   `TauCeti.OrientedPDCode.alexanderGenerator_insertClasp_inl_inl_apply_right`: after the
   insertion, the two old ends of each cut arc still give the same generator.
-* `TauCeti.OrientedPDCode.clasp_relations`: the computation behind the clasp, for scalars in any
-  commutative ring: when the weights at the second crossing are inverse to those at the first and
-  one strand is over at both, the relations at the second crossing return the incoming arcs.
+* `TauCeti.OrientedPDCode.clasp_relations`: the computation behind the clasp: the relations at the
+  second new crossing return the arcs entering the first.
 
 ## References
 
@@ -136,16 +135,25 @@ private theorem alexanderWeight_insertClasp_over :
         (D.insertClasp p q b hqp hqe).alexanderWeight (Fin.last (n + 1)) 0 = 1) := by
   cases b <;> simp [PDCode.isOver_zero, PDCode.isOver_one]
 
-/-- The relations of a clasp. Let `x₀` and `x₁` be the arcs entering the first crossing at its
-slots `0` and `1`, and `x₂`, `x₃` the arcs leaving it at slots `2` and `3`, given by the relations
-there. If the weights at the second crossing are inverse to those at the first, and one strand is
-over at both, then the relations at slots `0` and `1` of the second crossing return `x₁` and
-`x₀`. The scalars may lie in any commutative ring. -/
-theorem clasp_relations {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
-    {wA₀ wA₁ wB₀ wB₁ : R} (h₀ : wB₀ * wA₁ = 1) (h₁ : wB₁ * wA₀ = 1)
-    (hover : (wA₀ = 1 ∧ wB₁ = 1) ∨ (wA₁ = 1 ∧ wB₀ = 1)) {x₀ x₁ x₂ x₃ : M}
-    (hx₂ : x₂ = wA₀ • x₀ + (1 - wA₀) • x₁) (hx₃ : x₃ = wA₁ • x₁ + (1 - wA₁) • x₂) :
-    wB₀ • x₃ + (1 - wB₀) • x₂ = x₁ ∧ wB₁ • x₂ + (1 - wB₁) • x₁ = x₀ := by
+/-- The relations of the clasp. Let `x₀` and `x₁` be the arcs entering the first new crossing at
+its slots `0` and `1`, and `x₂`, `x₃` the arcs leaving it at slots `2` and `3`, given by the
+relations there. Slots `0` and `1` of the second new crossing are joined to slots `3` and `2` of the
+first, and its relations there return `x₁` and `x₀`: its weights are inverse to those of the first
+crossing, and the same strand is over at both. -/
+theorem clasp_relations {M : Type*} [AddCommGroup M] [Module ℤ[T;T⁻¹] M] {x₀ x₁ x₂ x₃ : M}
+    (hx₂ : x₂ = (D.insertClasp p q b hqp hqe).alexanderWeight (Fin.last n).castSucc 0 • x₀ +
+      (1 - (D.insertClasp p q b hqp hqe).alexanderWeight (Fin.last n).castSucc 0) • x₁)
+    (hx₃ : x₃ = (D.insertClasp p q b hqp hqe).alexanderWeight (Fin.last n).castSucc 1 • x₁ +
+      (1 - (D.insertClasp p q b hqp hqe).alexanderWeight (Fin.last n).castSucc 1) • x₂) :
+    (D.insertClasp p q b hqp hqe).alexanderWeight (Fin.last (n + 1)) 0 • x₃ +
+        (1 - (D.insertClasp p q b hqp hqe).alexanderWeight (Fin.last (n + 1)) 0) • x₂ = x₁ ∧
+      (D.insertClasp p q b hqp hqe).alexanderWeight (Fin.last (n + 1)) 1 • x₂ +
+        (1 - (D.insertClasp p q b hqp hqe).alexanderWeight (Fin.last (n + 1)) 1) • x₁ = x₀ := by
+  have h₀ := alexanderWeight_insertClasp_last_zero_mul D p q b hqp hqe
+  have h₁ := alexanderWeight_insertClasp_last_one_mul D p q b hqp hqe
+  have hover := alexanderWeight_insertClasp_over D p q b hqp hqe
+  generalize (D.insertClasp p q b hqp hqe).alexanderWeight (Fin.last n).castSucc = wA,
+    (D.insertClasp p q b hqp hqe).alexanderWeight (Fin.last (n + 1)) = wB at *
   rcases hover with ⟨hA, hB⟩ | ⟨hA, hB⟩
   · rw [hA, one_smul, sub_self, zero_smul, add_zero] at hx₂
     rw [hx₃, hx₂, hB]
@@ -182,9 +190,7 @@ private theorem alexanderGenerator_insertClasp_inr_two_three :
     Fin.isValue, Fin.reduceAdd, zero_add] at rA₀ rA₁ rB₀ rB₁ arc₀ arc₁
   rw [← arc₀, ← arc₁] at rB₀
   rw [← arc₁] at rB₁
-  obtain ⟨h₀, h₁⟩ := clasp_relations (alexanderWeight_insertClasp_last_zero_mul D p q b hqp hqe)
-    (alexanderWeight_insertClasp_last_one_mul D p q b hqp hqe)
-    (alexanderWeight_insertClasp_over D p q b hqp hqe) rA₀ rA₁
+  obtain ⟨h₀, h₁⟩ := clasp_relations D p q b hqp hqe rA₀ rA₁
   refine ⟨rB₀.trans h₀, ?_⟩
   rw [rB₁, rB₀, h₀, h₁]
 
@@ -260,9 +266,7 @@ private theorem claspSecond_relations :
           claspSecond D p q b hqp hqe 1 +
         (1 - (D.insertClasp p q b hqp hqe).alexanderWeight (Fin.last (n + 1)) 1) •
           claspSecond D p q b hqp hqe 2 := by
-  obtain ⟨h₀, h₁⟩ := clasp_relations (alexanderWeight_insertClasp_last_zero_mul D p q b hqp hqe)
-    (alexanderWeight_insertClasp_last_one_mul D p q b hqp hqe)
-    (alexanderWeight_insertClasp_over D p q b hqp hqe) (x₀ := claspFirst D p q b hqp hqe 0)
+  obtain ⟨h₀, h₁⟩ := clasp_relations D p q b hqp hqe (x₀ := claspFirst D p q b hqp hqe 0)
     (x₁ := claspFirst D p q b hqp hqe 1) (x₂ := claspFirst D p q b hqp hqe 2)
     (x₃ := claspFirst D p q b hqp hqe 3) (by simp [claspFirst]) (by simp [claspFirst])
   simp only [claspSecond, Matrix.cons_val]
@@ -417,6 +421,52 @@ theorem alexanderModuleInsertClaspEquiv_apply_alexanderGenerator_inl_inl (x : Fi
           (.inl (halfEdgeSuccEquiv (n + 1) (.inl (halfEdgeSuccEquiv n (.inl x)))))) =
       D.alexanderGenerator (.inl x) := by
   simp [alexanderModuleInsertClaspEquiv, insertClaspHom_alexanderGenerator, insertClaspValue]
+
+/-- The equivalence sends the generators of the slots of the first new crossing to the generators
+of the half-edges `p` and `q` at slots `0` and `1`, and at slots `2` and `3` to the combinations
+of these that the relations at slots `0` and `1` of that crossing prescribe. -/
+@[simp]
+theorem alexanderModuleInsertClaspEquiv_apply_alexanderGenerator_inl_inl_inr (s : Fin 4) :
+    D.alexanderModuleInsertClaspEquiv p q b hqp hqe
+        ((D.insertClasp p q b hqp hqe).alexanderGenerator
+          (.inl (halfEdgeSuccEquiv (n + 1) (.inl (halfEdgeSuccEquiv n (.inr s)))))) =
+      ![D.alexanderGenerator (.inl p), D.alexanderGenerator (.inl q),
+        (D.insertClasp p q b hqp hqe).alexanderWeight (Fin.last n).castSucc 0 •
+            D.alexanderGenerator (.inl p) +
+          (1 - (D.insertClasp p q b hqp hqe).alexanderWeight (Fin.last n).castSucc 0) •
+            D.alexanderGenerator (.inl q),
+        (D.insertClasp p q b hqp hqe).alexanderWeight (Fin.last n).castSucc 1 •
+            D.alexanderGenerator (.inl q) +
+          (1 - (D.insertClasp p q b hqp hqe).alexanderWeight (Fin.last n).castSucc 1) •
+            ((D.insertClasp p q b hqp hqe).alexanderWeight (Fin.last n).castSucc 0 •
+                D.alexanderGenerator (.inl p) +
+              (1 - (D.insertClasp p q b hqp hqe).alexanderWeight (Fin.last n).castSucc 0) •
+                D.alexanderGenerator (.inl q))] s := by
+  simp [alexanderModuleInsertClaspEquiv, insertClaspHom_alexanderGenerator, insertClaspValue,
+    claspFirst]
+
+/-- The equivalence sends the generators of the slots of the second new crossing at slots `0` and
+`1` to the images of slots `3` and `2` of the first new crossing, to which they are joined, and at
+slots `2` and `3` to the generators of the half-edges `q` and `p`. -/
+@[simp]
+theorem alexanderModuleInsertClaspEquiv_apply_alexanderGenerator_inl_inr (s : Fin 4) :
+    D.alexanderModuleInsertClaspEquiv p q b hqp hqe
+        ((D.insertClasp p q b hqp hqe).alexanderGenerator
+          (.inl (halfEdgeSuccEquiv (n + 1) (.inr s)))) =
+      ![(D.insertClasp p q b hqp hqe).alexanderWeight (Fin.last n).castSucc 1 •
+            D.alexanderGenerator (.inl q) +
+          (1 - (D.insertClasp p q b hqp hqe).alexanderWeight (Fin.last n).castSucc 1) •
+            ((D.insertClasp p q b hqp hqe).alexanderWeight (Fin.last n).castSucc 0 •
+                D.alexanderGenerator (.inl p) +
+              (1 - (D.insertClasp p q b hqp hqe).alexanderWeight (Fin.last n).castSucc 0) •
+                D.alexanderGenerator (.inl q)),
+        (D.insertClasp p q b hqp hqe).alexanderWeight (Fin.last n).castSucc 0 •
+            D.alexanderGenerator (.inl p) +
+          (1 - (D.insertClasp p q b hqp hqe).alexanderWeight (Fin.last n).castSucc 0) •
+            D.alexanderGenerator (.inl q),
+        D.alexanderGenerator (.inl q), D.alexanderGenerator (.inl p)] s := by
+  simp [alexanderModuleInsertClaspEquiv, insertClaspHom_alexanderGenerator, insertClaspValue,
+    claspSecond, claspFirst]
 
 /-- The equivalence sends the generator of a crossing-free component to the generator of the same
 component. -/
