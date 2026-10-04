@@ -148,14 +148,16 @@ theorem syntomicOfRelativeDimension_SpecMap_iff {R S : CommRingCat.{u}} (φ : R 
 /-- Pulling back a syntomic morphism preserves its relative dimension. -/
 instance {S : Scheme.{u}} (g : X ⟶ S) (h : Y ⟶ S) [SyntomicOfRelativeDimension n h] :
     SyntomicOfRelativeDimension n (pullback.fst g h) :=
-  MorphismProperty.of_isPullback (P := @SyntomicOfRelativeDimension n)
-    (IsPullback.of_hasPullback g h).flip inferInstance
+  letI := MorphismProperty.instIsStableUnderBaseChangeAlongOfIsStableUnderBaseChange
+    (@SyntomicOfRelativeDimension n) g
+  MorphismProperty.pullback_fst (P := @SyntomicOfRelativeDimension n) g h inferInstance
 
 /-- Pulling back a syntomic morphism preserves its relative dimension. -/
 instance {S : Scheme.{u}} (g : X ⟶ S) (h : Y ⟶ S) [SyntomicOfRelativeDimension n g] :
     SyntomicOfRelativeDimension n (pullback.snd g h) :=
-  MorphismProperty.of_isPullback (P := @SyntomicOfRelativeDimension n)
-    (IsPullback.of_hasPullback g h) inferInstance
+  letI := MorphismProperty.instIsStableUnderBaseChangeAlongOfIsStableUnderBaseChange
+    (@SyntomicOfRelativeDimension n) h
+  MorphismProperty.pullback_snd (P := @SyntomicOfRelativeDimension n) g h inferInstance
 
 /-- A syntomic morphism of relative dimension `n` has all fibres of dimension at most `n`. -/
 instance (priority := low) SyntomicOfRelativeDimension.relativeDimensionLE
