@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.TensorProduct.MonoidAlgebra
 public import Mathlib.AlgebraicGeometry.Pullbacks
+public import TauCeti.Algebra.Bialgebra.MonoidAlgebra.Product
 public import TauCeti.Geometry.Toric.Algebraic.AffineScheme
 public import TauCeti.Geometry.Toric.Algebraic.DualSemigroup.Product
 
@@ -18,8 +18,8 @@ of the factors. Its coordinate ring is their tensor product: a tensor of two mon
 the monomial of the sum of the two pulled-back characters. The two projections agree with
 the toric morphisms induced by the lattice projections.
 
-The construction uses `dualSemigroupProdEquiv`, Mathlib's monoid-algebra base-change and
-currying equivalences, and `AlgebraicGeometry.pullbackSpecIso`. No regularity, rationality,
+The construction uses `dualSemigroupProdEquiv`, `TauCeti.MonoidAlgebra.prodTensorBialgEquiv`,
+and `AlgebraicGeometry.pullbackSpecIso`. No regularity, rationality,
 or finite-generation hypothesis on the cones is required. These affine comparisons provide
 the local product description for toric fan schemes. The scheme-level comparison uses lattices
 in `Type`, so the affine spectra and `Spec ℂ` belong to the same universe, as for the complex
@@ -51,12 +51,9 @@ product, canonically and without choosing bases. -/
 noncomputable def affineCoordinateRingProdEquiv :
     affineCoordinateRing hi σ ⊗[ℂ] affineCoordinateRing hi' τ ≃ₐ[ℂ]
       affineCoordinateRing (hi.prod hi') (σ.prod τ) :=
-  (Algebra.TensorProduct.comm ℂ _ _).trans <|
-    ((MonoidAlgebra.scalarTensorEquiv ℂ (affineCoordinateRing hi' τ)
-      (M := Multiplicative (dualSemigroup hi σ))).restrictScalars ℂ).trans <|
-    (MonoidAlgebra.curryAlgEquiv ℂ (A := ℂ)
-      (M := Multiplicative (dualSemigroup hi σ))
-      (N := Multiplicative (dualSemigroup hi' τ))).symm.trans <|
+  (TauCeti.MonoidAlgebra.prodTensorBialgEquiv ℂ
+    (G := Multiplicative (dualSemigroup hi σ))
+    (H := Multiplicative (dualSemigroup hi' τ))).symm.toAlgEquiv.trans <|
     MonoidAlgebra.domCongr ℂ ℂ
       ((MulEquiv.prodMultiplicative _ _).symm.trans
         (dualSemigroupProdEquiv hi hi' σ τ).symm.toMultiplicative)
@@ -70,7 +67,19 @@ theorem affineCoordinateRingProdEquiv_single_tmul_single
         (MonoidAlgebra.single (ofAdd m) z ⊗ₜ[ℂ] MonoidAlgebra.single (ofAdd m') z') =
       MonoidAlgebra.single
         (ofAdd ((dualSemigroupProdEquiv hi hi' σ τ).symm (m, m'))) (z * z') := by
-  simp [affineCoordinateRingProdEquiv, Algebra.smul_def, mul_comm]
+  calc
+    _ = affineCoordinateRingProdEquiv hi hi' σ τ
+        ((z * z') • (MonoidAlgebra.single (ofAdd m) 1 ⊗ₜ[ℂ]
+          MonoidAlgebra.single (ofAdd m') 1)) := by
+      rw [← TensorProduct.smul_tmul_smul]
+      simp only [MonoidAlgebra.smul_single', mul_one]
+    _ = _ := by
+      simp only [map_smul, affineCoordinateRingProdEquiv, AlgEquiv.trans_apply,
+        BialgEquiv.coe_toAlgEquiv,
+        TauCeti.MonoidAlgebra.prodTensorBialgEquiv_symm_tmul_single,
+        MonoidAlgebra.domCongr_single, MulEquiv.trans_apply,
+        MulEquiv.prodMultiplicative_symm_apply, AddEquiv.toMultiplicative_apply_apply,
+        toAdd_ofAdd, MonoidAlgebra.smul_single', mul_one]
 
 /-- The inverse product comparison splits a monomial into monomials on the two factors. -/
 @[simp]
