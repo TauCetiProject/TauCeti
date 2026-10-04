@@ -32,8 +32,8 @@ soon as `e` is **full**, that is, generates `A` as a two-sided ideal, `AeA = A`:
 `1 = ∑ aᵢ e bᵢ`, an element killed by `eA` is killed by `1`, and a homomorphism `f : eA → eM` is
 the action of `∑ aᵢ • f(e bᵢ)`. So for a full idempotent the two functors are mutually inverse
 equivalences (`IsIdempotentElem.cornerEquivalence`), and the corner functor is linear over any
-commutative ring `R` over which `A` is an algebra. This is the Morita equivalence between `A` and
-`eAe`, in Mathlib's sense (`IsIdempotentElem.moritaEquivalenceCorner`).
+commutative semiring `R` over which `A` is an algebra. This is the Morita equivalence between `A`
+and `eAe`, in Mathlib's sense (`IsIdempotentElem.moritaEquivalenceCorner`).
 
 Fullness is the hypothesis that makes the corner ring see every module. It is the hypothesis
 used to reduce a finite-dimensional algebra to a **basic** one: there the idempotent is the sum of
@@ -127,14 +127,15 @@ theorem smulTopMulRight_neg (a : A) : he.smulTopMulRight (-a) = -he.smulTopMulRi
   LinearMap.ext fun x ↦ Subtype.ext (mul_neg x.1 a)
 
 /-- The element `x * e` of the corner ring attached to an element `x` of `eA`. -/
-private def smulTopToCorner : ↥(e • (⊤ : Submodule ℤ A)) →ₗ[he.Corner] he.Corner where
+def smulTopToCorner : ↥(e • (⊤ : Submodule ℤ A)) →ₗ[he.Corner] he.Corner where
   toFun x := ⟨x.1 * e, (Subsemigroup.mem_corner_iff he).2
     ⟨by rw [← mul_assoc, ← smul_eq_mul e x.1, he.smul_eq_self_of_mem_smul_top x.2],
       by rw [mul_assoc, he.eq]⟩⟩
   map_add' x y := Subtype.ext (add_mul x.1 y.1 e)
   map_smul' b x := Subtype.ext (mul_assoc b.1 x.1 e)
 
-private theorem val_smulTopToCorner_apply (x : ↥(e • (⊤ : Submodule ℤ A))) :
+@[simp]
+theorem val_smulTopToCorner_apply (x : ↥(e • (⊤ : Submodule ℤ A))) :
     (he.smulTopToCorner x).1 = x * e := (rfl)
 
 /-! ### Homomorphisms out of `eA` as an `A`-module -/
@@ -188,10 +189,12 @@ to modules over `A`. -/
       map_add' := fun f f' ↦ LinearMap.comp_add f f' g.hom
       map_smul' := fun _ _ ↦ rfl }
 
+@[simp]
 theorem cornerFunctor_obj (M : ModuleCat.{v} A) :
     he.cornerFunctor.obj M = ModuleCat.of he.Corner ↥(e • (⊤ : Submodule ℤ M)) :=
   (rfl)
 
+@[simp]
 theorem cornerCoindFunctor_obj (N : ModuleCat.{max u v} he.Corner) :
     he.cornerCoindFunctor.obj N =
       ModuleCat.of A (↥(e • (⊤ : Submodule ℤ A)) →ₗ[he.Corner] N) :=
@@ -225,7 +228,7 @@ def smulTopCoindEquiv :
   map_smul' b f := by
     rw [RingHom.id_apply, ← f.1.map_smul, Corner.coe_smul, smul_smulTop_linearMap_apply]
     congr 1
-    exact Subtype.ext (by simp [he.mul_corner_val, he.corner_val_mul])
+    exact Subtype.ext (by simp)
   invFun n := ⟨LinearMap.toSpanSingleton he.Corner N n ∘ₗ he.smulTopToCorner,
     he.mem_smul_top_iff_smul_eq_self.2 (by
       ext x
@@ -249,6 +252,10 @@ def smulTopCoindEquiv :
 theorem smulTopCoindEquiv_apply
     (f : ↥(e • (⊤ : Submodule ℤ (↥(e • (⊤ : Submodule ℤ A)) →ₗ[he.Corner] N)))) :
     he.smulTopCoindEquiv N f = f.1 he.smulTopGen := (rfl)
+
+@[simp]
+theorem smulTopCoindEquiv_symm_apply_coe_apply (n : N) (x : ↥(e • (⊤ : Submodule ℤ A))) :
+    ((he.smulTopCoindEquiv N).symm n).1 x = he.smulTopToCorner x • n := (rfl)
 
 end Counit
 
@@ -293,7 +300,8 @@ theorem smulTopActionHom_injective : Function.Injective (he.smulTopActionHom M) 
   rw [← LinearMap.ker_eq_bot, LinearMap.ker_eq_bot']
   intro m hm
   -- The elements of `A` killing `m` form an additive subgroup containing every `a * e * b`.
-  simpa using one_mem_of_forall_mul_mul_mem hfull
+  simpa only [AddMonoidHom.mem_ker, LinearMap.toAddMonoidHom_coe, LinearMap.toSpanSingleton_apply,
+    one_smul] using one_mem_of_forall_mul_mul_mem hfull
     (LinearMap.toSpanSingleton A M m).toAddMonoidHom.ker fun a b ↦ by
       have h := congrArg Subtype.val
         (LinearMap.congr_fun hm ⟨e * b, Submodule.smul_mem_pointwise_smul b e ⊤ trivial⟩)
@@ -326,7 +334,9 @@ theorem smulTopActionHom_surjective : Function.Surjective (he.smulTopActionHom M
     rw [hxy, ← f.map_smul]
     exact congrArg (fun z ↦ (f z : M))
       (Subtype.ext (by simp [val_smulTopToCorner_apply, mul_assoc, ← mul_assoc e e, he.eq]))
-  exact ⟨m, LinearMap.ext fun x ↦ Subtype.ext (by simpa using hm x)⟩
+  exact ⟨m, LinearMap.ext fun x ↦ Subtype.ext (by
+    simpa only [coe_smulTopActionHom_apply_apply, smulTopMulRight_one, LinearMap.id_coe, id_eq]
+      using hm x)⟩
 
 end Unit
 
@@ -371,7 +381,7 @@ variable (R : Type w) [CommSemiring R] [Algebra R A]
 
 open scoped ModuleCat.Algebra
 
-/-- The corner functor is linear over any commutative ring `R` over which `A` is an algebra. -/
+/-- The corner functor is linear over any commutative semiring `R` over which `A` is an algebra. -/
 instance : he.cornerFunctor.{v}.Linear R where
   map_smul f r := ModuleCat.hom_ext (LinearMap.ext fun x ↦ Subtype.ext <|
     (he.coe_cornerFunctor_map_hom_apply (r • f) x).trans

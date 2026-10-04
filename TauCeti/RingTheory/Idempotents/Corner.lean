@@ -104,10 +104,12 @@ namespace IsIdempotentElem
 variable {A : Type u} [Semiring A] {e : A} (he : IsIdempotentElem e)
 
 /-- An element of the corner ring `eAe` is fixed by `e` on the left. -/
+@[simp]
 theorem mul_corner_val (b : he.Corner) : e * b.1 = b.1 :=
   ((Subsemigroup.mem_corner_iff he).1 b.2).1
 
 /-- An element of the corner ring `eAe` is fixed by `e` on the right. -/
+@[simp]
 theorem corner_val_mul (b : he.Corner) : b.1 * e = b.1 :=
   ((Subsemigroup.mem_corner_iff he).1 b.2).2
 

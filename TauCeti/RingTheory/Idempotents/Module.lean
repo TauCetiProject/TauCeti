@@ -64,9 +64,10 @@ hypothesis in the intended applications.
   sum. This is what makes the sum direct.
 * `TauCeti.finrank_eq_sum_finrank_smul_top`: for a module finite-dimensional over a division
   ring `S`, the dimensions of the pieces add up to the dimension of the module.
-* `IsIdempotentElem.Corner.coe_smul`: for a single idempotent `e`, the piece `e • M` is a module
-  over the corner ring `eAe` (`IsIdempotentElem.Corner`), which acts by restricting the action of
-  `R`. This is the module structure the corner functor `M ↦ eM` of Morita theory is built on.
+* `IsIdempotentElem.instModuleCornerSmulTop`: for a single idempotent `e`, the piece `e • M` is a
+  module over the corner ring `eAe` (`IsIdempotentElem.Corner`), which acts by restricting the
+  action of `A`, as recorded by `IsIdempotentElem.Corner.coe_smul`. This is the module structure the
+  corner functor `M ↦ eM` of Morita theory is built on.
 
 ## References
 
