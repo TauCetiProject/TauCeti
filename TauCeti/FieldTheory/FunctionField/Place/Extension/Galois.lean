@@ -7,7 +7,6 @@ module
 
 public import Mathlib.FieldTheory.Galois.Basic
 public import Mathlib.RingTheory.Norm.Transitivity
-public import Mathlib.RingTheory.Valuation.RamificationGroup
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Degree
 -- `TauCeti.Place.restrict_surjective_of_finiteDimensional` is what makes the fibre of a place of a
 -- function field nonempty, hence its ramification index positive.
@@ -15,6 +14,7 @@ public import TauCeti.FieldTheory.FunctionField.Place.Extension.Existence
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Fundamental
 public import TauCeti.FieldTheory.FunctionField.Place.Map
 public import TauCeti.FieldTheory.IntermediateField.ScalarTower
+public import TauCeti.RingTheory.Valuation.RamificationGroup
 
 /-!
 # The Galois action on the places lying over a place
@@ -83,37 +83,6 @@ decomposition group, and is identified with Mathlib's `ValuationSubring.decompos
 public section
 
 open scoped Pointwise
-
-namespace ValuationSubring
-
-universe w w'
-
-variable {K : Type w} {L : Type w'} [Field K] [Field L] [Algebra K L]
-
-/-- The action of a decomposition group on its valuation subring is the restriction of its
-action on the fraction field. -/
-theorem coe_decompositionSubgroup_smul (A : ValuationSubring L)
-    (g : A.decompositionSubgroup K) (x : A) :
-    ((g • x : A) : L) = (g : L ≃ₐ[K] L) (x : L) := by
-  rw [← AlgEquiv.smul_def, ← Submonoid.smul_def]
-  rfl
-
-/-- Two automorphisms in the decomposition group of a valuation subring that agree on the
-valuation subring are equal, because its ambient field is its field of fractions. -/
-theorem decompositionSubgroup_eq_of_forall_mem (A : ValuationSubring L)
-    {g h : A.decompositionSubgroup K}
-    (hgh : ∀ x : A, (g : L ≃ₐ[K] L) x = (h : L ≃ₐ[K] L) x) : g = h :=
-  Subtype.ext <| AlgEquiv.ext fun y ↦ DFunLike.congr_fun
-    (IsFractionRing.ringHom_ext (A := A) (f1 := ((g : L ≃ₐ[K] L) : L →+* L))
-      (f2 := ((h : L ≃ₐ[K] L) : L →+* L)) hgh) y
-
-/-- The decomposition group of a valuation subring acts faithfully on that subring. -/
-instance instFaithfulSMulDecompositionSubgroup (A : ValuationSubring L) :
-    FaithfulSMul (A.decompositionSubgroup K) A where
-  eq_of_smul_eq_smul {g h} heq := decompositionSubgroup_eq_of_forall_mem A fun x ↦ by
-    simpa only [coe_decompositionSubgroup_smul] using congrArg Subtype.val (heq x)
-
-end ValuationSubring
 
 namespace TauCeti
 
