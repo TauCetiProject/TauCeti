@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RepresentationTheory.Homological.GroupCohomology.FiniteCyclic
 public import Mathlib.RepresentationTheory.Homological.GroupCohomology.Functoriality
+import TauCeti.Data.Nat.Carry
 import TauCeti.RepresentationTheory.Homological.GroupCohomology.Resolution
 import TauCeti.RepresentationTheory.Homological.Resolution
 
@@ -303,26 +304,13 @@ private theorem carryCochain_apply (a : A) (p : G × G) :
   simp only [carryCochain, LinearMap.pi_apply]
   split_ifs <;> rfl
 
-/-- The carries of `(i + j) + l` and of `i + (j + l)` modulo `n` agree: both count the multiples
-of `n` in `i + j + l`. -/
-private theorem carry_add_carry {n i j l : ℕ} (hi : i < n) (hj : j < n) (hl : l < n) :
-    (if n ≤ (i + j) % n + l then 1 else 0) + (if n ≤ i + j then 1 else 0) =
-      (if n ≤ j + l then 1 else 0) + (if n ≤ i + (j + l) % n then 1 else 0) := by
-  have key : ∀ m, m < 2 * n → m % n = if n ≤ m then m - n else m := by
-    intro m hm
-    split_ifs with h
-    · rw [Nat.mod_eq_sub_mod h, Nat.mod_eq_of_lt (by omega)]
-    · exact Nat.mod_eq_of_lt (by omega)
-  rw [key (i + j) (by omega), key (j + l) (by omega)]
-  split_ifs <;> omega
-
 private theorem carryCochain_mem_cocycles₂ (a : A) (ha : A.ρ g a = a) :
     carryCochain A g hg a ∈ cocycles₂ A := by
   have hfix : ∀ x : G, A.ρ x a = a := fun x =>
     (Representation.mem_invariants_iff_of_forall_mem_zpowers A.ρ g hg a).2 ha x
   rw [mem_cocycles₂_iff]
   intro x y z
-  have h := carry_add_carry (log_lt g hg x) (log_lt g hg y) (log_lt g hg z)
+  have h := TauCeti.Nat.carry_add_carry (log_lt g hg x) (log_lt g hg y) (log_lt g hg z)
   simp only [carryCochain_apply, log_mul]
   split_ifs at h ⊢ <;> simp_all
 

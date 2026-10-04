@@ -7,6 +7,8 @@ module
 
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.LowDegree
 
+import TauCeti.Data.Nat.Carry
+
 /-!
 # Second cohomology of finite cyclic groups
 
@@ -65,46 +67,6 @@ variable {G : Type u} [Group G] [TopologicalSpace G] [Fintype G]
   {M : Type v} [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
   [DistribMulAction G M]
 
-private def sumCocycle (f : Z2 G M) (g : G) : H0 G M :=
-  ⟨∑ x : G, (f : G × G → M) (x, g), by
-    rw [FixedPoints.mem_addSubgroup]
-    intro y
-    have hf := (mem_Z2_iff.mp f.property).2
-    calc
-      y • ∑ x : G, (f : G × G → M) (x, g) =
-          ∑ x : G, y • (f : G × G → M) (x, g) := by rw [Finset.smul_sum]
-      _ = ∑ x : G, ((f : G × G → M) (y * x, g) +
-          (f : G × G → M) (y, x) - (f : G × G → M) (y, x * g)) := by
-        apply Finset.sum_congr rfl
-        intro x _
-        have h := hf y x g
-        rw [eq_sub_iff_add_eq]
-        exact h.symm
-      _ = (∑ x : G, (f : G × G → M) (y * x, g)) +
-          ∑ x : G, (f : G × G → M) (y, x) -
-            ∑ x : G, (f : G × G → M) (y, x * g) := by
-        simp only [Finset.sum_add_distrib, Finset.sum_sub_distrib]
-      _ = ∑ x : G, (f : G × G → M) (x, g) := by
-        have hleft : (∑ x : G, (f : G × G → M) (y * x, g)) =
-            ∑ x : G, (f : G × G → M) (x, g) :=
-          Fintype.sum_bijective _ (Group.mulLeft_bijective y) _ _ (fun _ ↦ rfl)
-        have hright : (∑ x : G, (f : G × G → M) (y, x * g)) =
-            ∑ x : G, (f : G × G → M) (y, x) :=
-          Fintype.sum_bijective _ (Group.mulRight_bijective g) _ _ (fun _ ↦ rfl)
-        rw [hleft, hright, add_sub_cancel_right]⟩
-
-@[simp]
-private theorem sumCocycle_val (f : Z2 G M) (g : G) :
-    (sumCocycle f g : M) = ∑ x : G, (f : G × G → M) (x, g) :=
-  (rfl)
-
-/-- The sum `∑ x, f (x, g)` of a two-cocycle is invariant. -/
-theorem sum_cocycle_mem_H0 (G' : Type u) [Group G'] [TopologicalSpace G'] [Fintype G']
-    (M' : Type v) [AddCommGroup M'] [TopologicalSpace M'] [IsTopologicalAddGroup M']
-    [DistribMulAction G' M'] (f : Z2 G' M') (g' : G') :
-    ∑ x : G', (f : G' × G' → M') (x, g') ∈ H0 G' M' :=
-  (sumCocycle f g').property
-
 section Cyclic
 
 variable [DiscreteTopology G] [ContinuousSMul G M]
@@ -133,9 +95,7 @@ private theorem cyclicLog_mul (x y : G) :
 private noncomputable def finEquivCyclic : Fin (orderOf g) ≃ G where
   toFun i := g ^ (i : ℕ)
   invFun x := ⟨cyclicLog g hg x, cyclicLog_lt g hg x⟩
-  left_inv i := Fin.ext (by
-    change cyclicLog g hg (g ^ (i : ℕ)) = i
-    rw [cyclicLog_pow, Nat.mod_eq_of_lt i.2])
+  left_inv i := Fin.ext (by simp only [cyclicLog_pow, Nat.mod_eq_of_lt i.2])
   right_inv := pow_cyclicLog g hg
 
 include hg in
@@ -154,22 +114,11 @@ private theorem sum_range_cocycle (f : Z2 G M) :
   rw [← Fin.sum_univ_eq_sum_range, sumCocycle_val]
   exact (finEquivCyclic g hg).sum_comp (fun x ↦ (f : G × G → M) (x, g))
 
-private theorem carry_add_carry {n i j k : ℕ} (hi : i < n) (hj : j < n) (hk : k < n) :
-    (if n ≤ (i + j) % n + k then 1 else 0) + (if n ≤ i + j then 1 else 0) =
-      (if n ≤ j + k then 1 else 0) + (if n ≤ i + (j + k) % n then 1 else 0) := by
-  have hmod : ∀ m, m < 2 * n → m % n = if n ≤ m then m - n else m := by
-    intro m hm
-    split_ifs with h
-    · rw [Nat.mod_eq_sub_mod h, Nat.mod_eq_of_lt (by omega)]
-    · exact Nat.mod_eq_of_lt (by omega)
-  rw [hmod (i + j) (by omega), hmod (j + k) (by omega)]
-  split_ifs <;> omega
-
 private noncomputable def carryCocycle (a : H0 G M) : Z2 G M :=
   ⟨fun p ↦ if orderOf g ≤ cyclicLog g hg p.1 + cyclicLog g hg p.2 then a.1 else 0,
     mem_Z2_iff.mpr ⟨continuous_of_discreteTopology, by
       intro x y z
-      have hcarry := carry_add_carry (cyclicLog_lt g hg x) (cyclicLog_lt g hg y)
+      have hcarry := TauCeti.Nat.carry_add_carry (cyclicLog_lt g hg x) (cyclicLog_lt g hg y)
         (cyclicLog_lt g hg z)
       have hfix : x • (a : M) = a := (FixedPoints.mem_addSubgroup G M a).mp a.property x
       simp only [cyclicLog_mul]
@@ -180,15 +129,24 @@ private theorem carryCocycle_apply (a : H0 G M) (x y : G) :
     (carryCocycle g hg a : G × G → M) (x, y) =
       if orderOf g ≤ cyclicLog g hg x + cyclicLog g hg y then a else 0 :=
   by
-    change (if orderOf g ≤ cyclicLog g hg x + cyclicLog g hg y then (a : M) else 0) = _
+    simp only [carryCocycle]
     split_ifs <;> rfl
 
 private def cyclicZ2Map : Z2 G M →+
     H0 G M ⧸ (groupNorm G M).range.addSubgroupOf (H0 G M) :=
   (QuotientAddGroup.mk' _).comp
     { toFun := fun f ↦ sumCocycle f g
-      map_zero' := Subtype.ext (by simp [sumCocycle])
-      map_add' := fun f f' ↦ Subtype.ext (by simp [sumCocycle, Finset.sum_add_distrib]) }
+      map_zero' := Subtype.ext (by
+        simp only [sumCocycle_val, AddSubgroup.coe_zero, Pi.zero_apply,
+          Finset.sum_const_zero])
+      map_add' := fun f f' ↦ Subtype.ext (by
+        simp only [sumCocycle_val, AddSubgroup.coe_add, Pi.add_apply,
+          Finset.sum_add_distrib]) }
+
+omit [DiscreteTopology G] [ContinuousSMul G M] in
+private theorem cyclicZ2Map_apply (f : Z2 G M) :
+    cyclicZ2Map g f = QuotientAddGroup.mk (sumCocycle f g) :=
+  rfl
 
 omit [DiscreteTopology G] [ContinuousSMul G M] in
 private theorem B2_le_ker_cyclicZ2Map :
@@ -197,7 +155,7 @@ private theorem B2_le_ker_cyclicZ2Map :
   rw [AddSubgroup.mem_addSubgroupOf] at hf
   obtain ⟨c, hc, hcf⟩ := mem_B2_iff.mp hf
   rw [AddMonoidHom.mem_ker]
-  change QuotientAddGroup.mk (sumCocycle f g) = 0
+  rw [cyclicZ2Map_apply]
   rw [QuotientAddGroup.eq_zero_iff, AddSubgroup.mem_addSubgroupOf]
   refine ⟨c g, ?_⟩
   simp only [sumCocycle_val, groupNorm_apply]
@@ -245,7 +203,7 @@ private theorem cyclicPrimitive_mul (f : Z2 G M) (b : M)
         sum_range_cocycle g hg, hb, sub_self]
     rw [← hkn] at htotal
     rw [Finset.sum_range_succ] at htotal
-    rw [show cyclicLog g hg x = k from rfl]
+    dsimp only [k] at htotal ⊢
     rw [hx] at htotal
     calc
       (f : G × G → M) (1, 1) = 0 + (f : G × G → M) (1, 1) :=
@@ -258,6 +216,32 @@ private theorem cyclicPrimitive_mul (f : Z2 G M) (b : M)
           ∑ i ∈ Finset.range k,
             (g ^ i • b - (f : G × G → M) (g ^ i, g))) -
           (f : G × G → M) (x, g) := by abel
+
+include hg in
+omit [TopologicalSpace G] [DiscreteTopology G] [Fintype G] [TopologicalSpace M]
+  [IsTopologicalAddGroup M] [ContinuousSMul G M] in
+/-- A `2`-cocycle that vanishes whenever its second argument is a cyclic generator vanishes
+identically. -/
+private theorem cocycle_eq_zero_of_eq_zero_on_generator [Finite G] (q : G × G → M)
+    (hq : IsCocycle₂ q) (hqg : ∀ x : G, q (x, g) = 0) (x y : G) : q (x, y) = 0 := by
+  let _ := Fintype.ofFinite G
+  have hqpow : ∀ (n : ℕ) (x : G), q (x, g ^ n) = 0 := by
+    intro n
+    induction n with
+    | zero =>
+        intro x
+        rw [pow_zero]
+        have h11 : q (1, 1) = 0 := by
+          rw [← map_one_fst_of_isCocycle₂ hq g]
+          exact hqg 1
+        rw [map_one_snd_of_isCocycle₂ hq x, h11, smul_zero]
+    | succ n ih =>
+        intro x
+        have h := hq x (g ^ n) g
+        rw [hqg, ih, hqg, zero_add, smul_zero, zero_add] at h
+        simpa only [pow_succ] using h.symm
+  rw [← pow_cyclicLog g hg y]
+  exact hqpow (cyclicLog g hg y) x
 
 include hg in
 omit [ContinuousSMul G M] in
@@ -307,25 +291,9 @@ private theorem mem_B2_of_cyclicZ2Map_eq_zero (f : Z2 G M)
     dsimp only [q]
     rw [d1_apply, hcg, hrec]
     abel
-  have hqpow : ∀ (n : ℕ) (x : G), q (x, g ^ n) = 0 := by
-    intro n
-    induction n with
-    | zero =>
-        intro x
-        rw [pow_zero]
-        have h11 : q (1, 1) = 0 := by
-          rw [← map_one_fst_of_isCocycle₂ hq g]
-          exact hqg 1
-        rw [map_one_snd_of_isCocycle₂ hq x, h11, smul_zero]
-    | succ n ih =>
-        intro x
-        have h := hq x (g ^ n) g
-        rw [hqg, ih, hqg, zero_add, smul_zero, zero_add] at h
-        simpa only [pow_succ] using h.symm
   rw [mem_B2_iff']
   refine ⟨c, continuous_of_discreteTopology, fun x y ↦ ?_⟩
-  have hzero := hqpow (cyclicLog g hg y) x
-  rw [pow_cyclicLog g hg y] at hzero
+  have hzero := cocycle_eq_zero_of_eq_zero_on_generator g hg q hq hqg x y
   dsimp only [q] at hzero
   rw [d1_apply] at hzero
   exact (sub_eq_zero.mp hzero).symm
@@ -384,12 +352,11 @@ private theorem cyclicH2Map_injective : Function.Injective (cyclicH2Map g :
     rw [AddMonoidHom.mem_ker] at hx
     induction x using QuotientAddGroup.induction_on with
     | H f =>
-        change cyclicH2Map g (H2pi G M f) = 0 at hx
-        rw [cyclicH2Map_mk] at hx
-        change H2pi G M f = 0
+        have hx' : cyclicH2Map g (H2pi G M f) = 0 := hx
+        rw [cyclicH2Map_mk] at hx'
         apply H2pi_eq_zero_iff.mpr
         apply mem_B2_of_cyclicZ2Map_eq_zero g hg f
-        exact hx
+        exact hx'
   · rintro rfl
     exact (cyclicH2Map g).map_zero
 
@@ -413,7 +380,12 @@ theorem explicitH2CyclicEquiv_mk (G' : Type u) [Group G'] [TopologicalSpace G']
     explicitH2CyclicEquiv G' M' g' hg' (f : H2 G' M') =
       QuotientAddGroup.mk (s := (groupNorm G' M').range.addSubgroupOf (H0 G' M'))
         ⟨∑ x : G', (f : G' × G' → M') (x, g'), sum_cocycle_mem_H0 G' M' f g'⟩ := by
-  exact cyclicH2Map_mk g' f
+  calc
+    explicitH2CyclicEquiv G' M' g' hg' (f : H2 G' M') =
+        QuotientAddGroup.mk (sumCocycle f g') := cyclicH2Map_mk g' f
+    _ = QuotientAddGroup.mk
+        ⟨∑ x : G', (f : G' × G' → M') (x, g'), sum_cocycle_mem_H0 G' M' f g'⟩ :=
+      congrArg QuotientAddGroup.mk (Subtype.ext (sumCocycle_val f g'))
 
 end Cyclic
 
