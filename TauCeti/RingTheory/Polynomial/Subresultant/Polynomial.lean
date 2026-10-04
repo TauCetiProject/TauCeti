@@ -86,6 +86,35 @@ theorem _root_.Polynomial.subresultantCoeffMatrix_natAdd [Semiring R]
       if (l : ℕ) ≤ d ∧ d ≤ l.val + m then p.coeff (d - l.val) else 0 := by
   simp [subresultantCoeffMatrix]
 
+/-- When the formal bounds dominate the input degrees, coefficient-matrix entries are
+coefficients of shifted input polynomials, including the replaced first row. -/
+theorem _root_.Polynomial.subresultantCoeffMatrix_apply_eq_coeff [Semiring R]
+    {p q : R[X]} {m n : ℕ} (hm : p.natDegree ≤ m) (hn : q.natDegree ≤ n)
+    (j k : ℕ) (i l : Fin ((m - j) + (n - j))) :
+    subresultantCoeffMatrix p q m n j k i l =
+      l.addCases
+        (fun l => (X ^ l.val * q).coeff (if i.val = 0 then k else i.val + j))
+        (fun l => (X ^ l.val * p).coeff (if i.val = 0 then k else i.val + j)) := by
+  induction l using Fin.addCases with
+  | left l =>
+      simp only [subresultantCoeffMatrix_castAdd, Fin.addCases_left, coeff_X_pow_mul']
+      generalize (if i.val = 0 then k else i.val + j) = d
+      by_cases h : l.val ≤ d
+      · by_cases h' : d ≤ l.val + n
+        · simp [h, h']
+        · have hz : q.coeff (d - l.val) = 0 := coeff_eq_zero_of_natDegree_lt (by omega)
+          simp [h, h', hz]
+      · simp [h]
+  | right l =>
+      simp only [subresultantCoeffMatrix_natAdd, Fin.addCases_right, coeff_X_pow_mul']
+      generalize (if i.val = 0 then k else i.val + j) = d
+      by_cases h : l.val ≤ d
+      · by_cases h' : d ≤ l.val + m
+        · simp [h, h']
+        · have hz : p.coeff (d - l.val) = 0 := coeff_eq_zero_of_natDegree_lt (by omega)
+          simp [h, h', hz]
+      · simp [h]
+
 /-- A subresultant coefficient matrix replaces the row of degree `j` of the principal
 matrix by the row of degree `k`. -/
 theorem _root_.Polynomial.subresultantCoeffMatrix_eq_updateRow [Semiring R]
