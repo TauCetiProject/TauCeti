@@ -110,11 +110,19 @@ theorem e_mul_f_pow_succ (hef : E * F - F * E = H)
   induction n with
   | zero => simpa using hEF
   | succ n ih =>
-      rw [pow_succ', ← mul_assoc, hEF, add_mul, mul_assoc F E _, ih,
-        mul_add, mul_smul_comm, ← mul_assoc, ← pow_succ', h_mul_f_pow hhf,
-        ← mul_assoc F (F ^ n), ← pow_succ']
-      simp only [nsmul_eq_mul', Nat.cast_add, Nat.cast_one]
-      noncomm_ring
+      calc
+        E * F ^ (n + 1 + 1) =
+            F * (E * F ^ (n + 1)) + H * F ^ (n + 1) := by
+          rw [pow_succ', ← mul_assoc, hEF]
+          noncomm_ring
+        _ = F * (F ^ (n + 1) * E + (n + 1) • (F ^ n * (H - n))) +
+            F ^ (n + 1) * (H - 2 * ((n + 1 : ℕ) : A)) := by
+          rw [ih, h_mul_f_pow hhf]
+        _ = F ^ (n + 1 + 1) * E +
+            (n + 1 + 1) • (F ^ (n + 1) * (H - ((n + 1 : ℕ) : A))) := by
+          simp only [mul_add, ← mul_assoc, ← pow_succ',
+            nsmul_eq_mul', Nat.cast_add, Nat.cast_one]
+          noncomm_ring
 
 /-- The lowering element commuted past a power of the raising element:
 `⁅F, Eⁿ⁺¹⁆ = -(n + 1) Eⁿ (H + n)`, the mirror of `e_mul_f_pow_succ` under the Chevalley
