@@ -18,10 +18,10 @@ Let `(Σ, α, β, z)` be a pointed Heegaard diagram of a closed `3`-manifold `Y`
 to those of `y` by paths in the `α`-curves, join the points of `y` back to those of `x` by paths
 in the `β`-curves, and take the class of the resulting loop in
 `H₁(Σ) / ⟨[α₁], …, [β₁], …⟩ ≅ H₁(Y)`. Changing the paths changes the loop by whole curves, so
-the class is well defined. It vanishes exactly when some domain connects `x` to `y`, and it is
-the difference of the spin^c structures `s_z(x)` and `s_z(y)` (Ozsváth–Szabó, Lemma 2.19). So
-`ε` sorts the generators into the spin^c summands of the Heegaard Floer chain complex, and the
-differential only counts disks between generators in the same summand.
+the class is well defined. It vanishes exactly when some domain connects `x` to `y`, and
+`s_z(x) - s_z(y)` is the Poincaré dual of `ε(x, y)` (Ozsváth–Szabó, Lemma 2.19). So `ε` sorts
+the generators into the spin^c summands of the Heegaard Floer chain complex, and the differential
+only counts disks between generators in the same summand.
 
 This file develops `ε` for the incidence data `TauCeti.HeegaardRegionSystem`. A `1`-chain on
 `α ∪ β` is a pair of integer functions on intersection points: a coefficient on the `α`-arc and
@@ -347,7 +347,12 @@ theorem epsilon_eq_zero_iff : H.epsilon x y = 0 ↔ ∃ D, H.IsDomainBetween x y
   rw [hc.epsilon_eq, CurveHomology.mk_eq_zero_iff, mem_arcRelations_iff]
   refine exists_congr fun D => ⟨fun h => ?_, fun h => hc.sub_mem_curveCycles h.isConnectingChain⟩
   rw [mem_curveCycles_iff] at h
-  simpa [sub_eq_zero.mp (by simpa using h.1), sub_eq_zero.mp (by simpa using h.2)] using hc
+  have h_alpha : H.alphaArcBoundary c.1 = H.alphaArcBoundary (H.domainBoundary D).1 :=
+    sub_eq_zero.mp (by simpa only [Prod.fst_sub, map_sub] using h.1)
+  have h_beta : H.betaArcBoundary c.2 = H.betaArcBoundary (H.domainBoundary D).2 :=
+    sub_eq_zero.mp (by simpa only [Prod.snd_sub, map_sub] using h.2)
+  apply isConnectingChain_domainBoundary_iff.mp
+  exact ⟨h_alpha.symm.trans hc.1, h_beta.symm.trans hc.2⟩
 
 /-- If a domain connects `x` to `y`, then `ε(x, y) = 0`. -/
 theorem IsDomainBetween.epsilon_eq_zero {D : Region → ℤ} (hD : H.IsDomainBetween x y D) :

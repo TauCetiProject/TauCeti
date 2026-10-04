@@ -107,8 +107,9 @@ theorem exists_comp_symm_sub_eq [DecidableEq α] {M : Type*} [AddCommGroup M]
     abel
   | pred k ih =>
     obtain ⟨c, hc⟩ := ih
+    have h_exp : (1 + (-k - 1) : ℤ) = -k := by omega
     refine ⟨c + (-1 : ℤ) • Pi.single ((σ ^ (-k - 1 : ℤ)) x) a, ?_⟩
-    rw [step, hc, ← Equiv.Perm.mul_apply, ← zpow_one_add, show (1 + (-k - 1) : ℤ) = -k by omega]
+    rw [step, hc, ← Equiv.Perm.mul_apply, ← zpow_one_add, h_exp]
     abel
 
 end Equiv.Perm.SameCycle
