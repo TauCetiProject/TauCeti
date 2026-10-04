@@ -6,11 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.Sheaf.LocallyFree
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Quasicoherent.Refinement
 
 /-!
-# Finite presentation of locally free sheaves
+# Finite presentation of sheaves of modules
 
-This file supplies a general site-level criterion for a locally free sheaf of modules to be
+A finite global presentation yields finite presentations on the trivial cover. This file also
+supplies a general site-level criterion for a locally free sheaf of modules to be
 finitely presented. Locally free data gives presentations with the chosen bases as generators
 and no relations, so finiteness of the local bases is enough.
 
@@ -41,6 +43,15 @@ variable {C : Type u₁} [Category.{v₁} C] {J : GrothendieckTopology C}
   [∀ Y : C, HasSheafify (J.over Y) AddCommGrpCat.{u}]
   [∀ Y : C, (J.over Y).WEqualsLocallyBijective AddCommGrpCat.{u}]
   {M : SheafOfModules.{u} R}
+
+/-- A finite global presentation gives finite presentations on the trivial covering family. -/
+instance _root_.SheafOfModules.Presentation.isFinitePresentation_quasicoherentData
+    [HasSheafify J AddCommGrpCat.{u}] [J.WEqualsLocallyBijective AddCommGrpCat.{u}]
+    [Limits.HasBinaryProducts C] (P : M.Presentation) [P.IsFinite] :
+    P.quasicoherentData.IsFinitePresentation where
+  isFinite_presentation X := by
+    dsimp only [_root_.SheafOfModules.Presentation.quasicoherentData]
+    apply +allowSynthFailures _root_.SheafOfModules.Presentation.isFinite_map
 
 /-- Locally free data with finite local bases exhibits a finitely presented sheaf.
 
