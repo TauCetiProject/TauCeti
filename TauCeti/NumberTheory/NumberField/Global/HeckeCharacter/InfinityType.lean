@@ -388,7 +388,7 @@ theorem re_realExponent_infinityType (χ : HeckeCharacter K)
     (w : {w : InfinitePlace K // w.IsReal}) :
     (χ.infinityType.realExponent w).re = χ.shift := by
   have h := χ.norm_realComponent_apply w (Units.mk0 2 two_ne_zero)
-  rw [realComponent_eq, norm_realUnitsCharacter_apply, Units.val_mk0, abs_two] at h
+  rw [realComponent_eq, norm_coe_realUnitsCharacter_apply, Units.val_mk0, abs_two] at h
   exact (Real.rpow_right_inj two_pos (by norm_num)).1 h
 
 /-- **The real part of a complex modulus exponent is twice the shift.**  The infinity type of
@@ -399,7 +399,7 @@ theorem re_complexExponent_infinityType (χ : HeckeCharacter K)
     (w : {w : InfinitePlace K // w.IsComplex}) :
     (χ.infinityType.complexExponent w).re = 2 * χ.shift := by
   have h := χ.norm_complexComponent_apply w (Units.mk0 2 two_ne_zero)
-  rw [complexComponent_eq, norm_complexUnitsCharacter_apply, Units.val_mk0,
+  rw [complexComponent_eq, norm_coe_complexUnitsCharacter_apply, Units.val_mk0,
     Complex.norm_two] at h
   exact (Real.rpow_right_inj two_pos (by norm_num)).1 h
 

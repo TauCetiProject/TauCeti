@@ -119,7 +119,7 @@ theorem coe_realUnitsCharacter_apply (s : ℂ) (ε : ZMod 2) (x : ℝˣ) :
 
 /-- The absolute value of `realUnitsCharacter s ε` at `x` is `|x| ^ re s`; the sign character
 contributes absolute value `1`. -/
-theorem norm_realUnitsCharacter_apply (s : ℂ) (ε : ZMod 2) (x : ℝˣ) :
+theorem norm_coe_realUnitsCharacter_apply (s : ℂ) (ε : ZMod 2) (x : ℝˣ) :
     ‖(realUnitsCharacter s ε x : ℂ)‖ = |(x : ℝ)| ^ s.re := by
   rw [realUnitsCharacter, ContinuousMonoidHom.mul_apply, Units.val_mul, norm_mul,
     norm_coe_normCpowCharacter_apply]
@@ -253,7 +253,7 @@ theorem coe_complexUnitsCharacter_apply (s : ℂ) (k : ℤ) (z : ℂˣ) :
 
 /-- The absolute value of `complexUnitsCharacter s k` at `z` is `|z| ^ re s`; the angular
 character contributes absolute value `1`. -/
-theorem norm_complexUnitsCharacter_apply (s : ℂ) (k : ℤ) (z : ℂˣ) :
+theorem norm_coe_complexUnitsCharacter_apply (s : ℂ) (k : ℤ) (z : ℂˣ) :
     ‖(complexUnitsCharacter s k z : ℂ)‖ = ‖(z : ℂ)‖ ^ s.re := by
   rw [complexUnitsCharacter, ContinuousMonoidHom.mul_apply, Units.val_mul, norm_mul,
     norm_coe_normCpowCharacter_apply]
