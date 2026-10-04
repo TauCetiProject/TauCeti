@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Norm.Defs
-public import Mathlib.Topology.Algebra.Module.ModuleTopology
+public import Mathlib.Topology.Algebra.Module.FiniteDimension
 import Mathlib.Topology.Instances.Matrix
 
 /-!
@@ -39,5 +39,15 @@ theorem continuous_algebraNorm (R S : Type*) [CommRing R] [Ring S] [Algebra R S]
   exact (IsModuleTopology.continuous_of_linearMap
     (Algebra.leftMulMatrix b).toLinearMap).matrix_det.congr fun x ↦
       (Algebra.norm_eq_matrix_det b x).symm
+
+/-- The norm of a finite-dimensional Hausdorff topological algebra over a complete
+nontrivially normed field is continuous. -/
+@[continuity, fun_prop]
+theorem continuous_algebraNorm_of_finiteDimensional (𝕜 E : Type*)
+    [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] [Ring E] [Algebra 𝕜 E]
+    [TopologicalSpace E] [IsTopologicalAddGroup E] [ContinuousSMul 𝕜 E] [T2Space E]
+    [FiniteDimensional 𝕜 E] : Continuous (Algebra.norm 𝕜 : E → 𝕜) := by
+  let := isModuleTopologyOfFiniteDimensional (𝕜 := 𝕜) (E := E)
+  exact continuous_algebraNorm 𝕜 E
 
 end TauCeti

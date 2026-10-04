@@ -34,19 +34,6 @@ namespace TauCeti.GlobalNumberFields
 
 variable (K L : Type*) [Field K] [NumberField K] [Field L] [NumberField L] [Algebra K L]
 
--- `FiniteAdeleRing` is a type synonym for the restricted product, with a different function
--- coercion. This identity bridges its evaluation with evaluation on a principal stage.
-private theorem finiteAdeleNorm_inclusion_apply {S : Set (HeightOneSpectrum (𝓞 L))}
-    (hS : Filter.cofinite ≤ Filter.principal S)
-    (x : Πʳ w : HeightOneSpectrum (𝓞 L),
-      [w.adicCompletion L, w.adicCompletionIntegers L]_[Filter.principal S])
-    (v : HeightOneSpectrum (𝓞 K)) :
-    (finiteAdeleNorm K L (RestrictedProduct.inclusion _ _ hS x) :
-      Πʳ v : HeightOneSpectrum (𝓞 K), [v.adicCompletion K, v.adicCompletionIntegers K]) v =
-      ∏ᶠ w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal},
-        Algebra.norm (v.adicCompletion K) (x w.1) :=
-  finiteAdeleNorm_apply _ _
-
 /-- The relative norm of finite adeles is continuous for the restricted-product topology. -/
 @[continuity, fun_prop]
 theorem continuous_finiteAdeleNorm : Continuous (finiteAdeleNorm K L) := by
@@ -58,20 +45,27 @@ theorem continuous_finiteAdeleNorm : Continuous (finiteAdeleNorm K L) := by
     simpa only [T, compl_compl] using hS.image (HeightOneSpectrum.under (𝓞 K))
   refine (TauCeti.continuous_restrictedProduct_iff_of_forall_mem hT ?_).mpr ?_
   · intro x v hv
-    erw [Function.comp_apply, finiteAdeleNorm_inclusion_apply]
-    apply finprod_norm_mem_adicCompletionIntegers K L x v
+    -- Normalize the `RestrictedProduct` evaluation to the `FiniteAdeleRing` evaluation
+    -- in the norm's component formula; the type synonym has a different `DFunLike` instance.
+    have h := (finiteAdeleNorm_apply (RestrictedProduct.inclusion _ _ hS x) v).trans
+      (congrArg finprod (funext fun w ↦ congrArg (Algebra.norm (v.adicCompletion K))
+        (RestrictedProduct.inclusion_apply _ _ hS w.1)))
+    refine (congrArg (· ∈ v.adicCompletionIntegers K) h).mpr
+      (finprod_norm_mem_adicCompletionIntegers K L x v ?_)
     intro w hwv
     have hw : w ∈ S := by
       by_contra hw
       exact hv ⟨w, hw, hwv⟩
     exact Filter.eventually_principal.mp x.2 w hw
   · refine continuous_pi fun v ↦ ?_
-    refine Continuous.congr ?_ fun x ↦ (finiteAdeleNorm_inclusion_apply K L hS x v).symm
+    refine Continuous.congr ?_ fun x ↦
+      ((finiteAdeleNorm_apply (RestrictedProduct.inclusion _ _ hS x) v).trans
+        (congrArg finprod (funext fun w ↦ congrArg (Algebra.norm (v.adicCompletion K))
+          (RestrictedProduct.inclusion_apply _ _ hS w.1)))).symm
     refine continuous_finprod (fun w ↦ ?_) (locallyFinite_of_finite _)
-    let := isModuleTopologyOfFiniteDimensional (𝕜 := v.adicCompletion K)
-      (E := w.1.adicCompletion L)
-    exact (TauCeti.continuous_algebraNorm (v.adicCompletion K) (w.1.adicCompletion L)).comp
-      (RestrictedProduct.continuous_eval w.1)
+    exact (TauCeti.continuous_algebraNorm_of_finiteDimensional
+      (v.adicCompletion K) (w.1.adicCompletion L)).comp
+        (RestrictedProduct.continuous_eval w.1)
 
 omit [NumberField K] in
 /-- The relative norm of infinite adeles is continuous. -/
@@ -80,8 +74,7 @@ theorem continuous_infiniteAdeleNorm : Continuous (infiniteAdeleNorm K L) := by
   refine continuous_pi fun v ↦ ?_
   simp only [infiniteAdeleNorm_apply]
   refine continuous_finprod (fun w ↦ ?_) (locallyFinite_of_finite _)
-  let := isModuleTopologyOfFiniteDimensional (𝕜 := v.Completion) (E := w.1.Completion)
-  exact (TauCeti.continuous_algebraNorm v.Completion w.1.Completion).comp
+  exact (TauCeti.continuous_algebraNorm_of_finiteDimensional v.Completion w.1.Completion).comp
     (continuous_apply w.1)
 
 /-- The relative norm of full adeles is continuous. -/
