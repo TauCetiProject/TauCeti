@@ -57,8 +57,17 @@ variable {K : Type*} [Field K] [NumberField K]
 /-- A Hecke character is **algebraic** (of Weil type `A₀`) when its infinity type agrees with
 the continuous infinity type of integer embedding exponents on the identity component.  Real sign
 parities are not constrained. -/
-@[expose] def IsAlgebraic (χ : HeckeCharacter K) : Prop :=
+def IsAlgebraic (χ : HeckeCharacter K) : Prop :=
   χ.infinityType.IsAlgebraicOnIdentityComponent
+
+/-- Algebraicity is witnessed by integer embedding exponents whose continuous infinity type
+agrees with that of the character on the identity component. -/
+theorem isAlgebraic_iff_exists_agreesOnIdentityComponent {χ : HeckeCharacter K} :
+    χ.IsAlgebraic ↔
+      ∃ n : AlgebraicInfinityType K,
+        χ.infinityType.AgreesOnIdentityComponent (AlgebraicInfinityType.toContinuous n) :=
+  ContinuousInfinityType.isAlgebraicOnIdentityComponent_iff_exists_agreesOnIdentityComponent
+    χ.infinityType
 
 /-- Algebraicity is equivalent to an algebraic infinity type together with an unrestricted
 finite-order sign twist at the real places. -/
