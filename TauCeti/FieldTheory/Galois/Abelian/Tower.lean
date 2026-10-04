@@ -38,7 +38,7 @@ variable {K L : Type*} [Field K] [Field L] [Algebra K L]
 
 /-- A covering pair of intermediate fields in a finite abelian Galois extension has prime
 relative degree. The algebra and tower instances retain the caller's chosen inclusion map. -/
-theorem finrank_prime_of_covBy (E F : IntermediateField K L) (h : E ⋖ F)
+theorem prime_finrank_of_covBy (E F : IntermediateField K L) (h : E ⋖ F)
     [aEF : Algebra E F] [IsScalarTower K E F] [IsScalarTower E F L] :
     (Module.finrank E F).Prime := by
   have : Module.Finite E F := Module.Finite.of_restrictScalars_finite K E F
@@ -74,7 +74,7 @@ namespace TauCeti
 
 /-- A finite abelian Galois extension admits a bottom-to-top series of intermediate fields with
 prime relative degree at every step. The successive algebras are induced by inclusion. Every
-node is abelian Galois over the base, and every step is abelian Galois, by Mathlib's tower API.
+node is abelian Galois over the base, and every step is abelian Galois.
 The trivial extension gives a series of length zero. -/
 theorem exists_prime_finrank_intermediateField_series
     (K L : Type*) [Field K] [Field L] [Algebra K L]
@@ -98,8 +98,9 @@ theorem exists_prime_finrank_intermediateField_series
     IsScalarTower.of_algebraMap_eq fun x ↦
       (IntermediateField.inclusion (s.step i).le).commutes x |>.symm
   have : IsScalarTower (s i.castSucc) (s i.succ) L :=
-    IsScalarTower.of_algebraMap_eq fun x ↦ rfl
-  exact ⟨IntermediateField.finrank_prime_of_covBy _ _ (s.step i),
+    IsScalarTower.of_algebraMap_eq fun x ↦
+      (IntermediateField.coe_inclusion (s.step i).le x).symm
+  exact ⟨IntermediateField.prime_finrank_of_covBy _ _ (s.step i),
     IsAbelianGalois.tower_bot (s i.castSucc) (s i.succ) L⟩
 
 end TauCeti
