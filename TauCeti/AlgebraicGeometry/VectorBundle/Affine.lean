@@ -94,7 +94,10 @@ namespace FiniteLocallyFreeSheaf
 variable (R) in
 /-- Finitely generated projective `R`-modules are equivalent to finite locally free sheaves on
 `Spec R`, by `M ↦ M~` with inverse the global sections. This is the restriction of Mathlib's
-`AlgebraicGeometry.tildeEquiv` to these full subcategories. -/
+`AlgebraicGeometry.tildeEquiv` to these full subcategories.
+
+The body is exposed because the dependent unit and counit component equations below only
+typecheck when the corresponding functor projections reduce. -/
 @[expose, simps! functor_obj_obj functor_map_hom inverse_obj_obj inverse_map_hom
   unitIso_hom_app_hom]
 def finiteProjectiveEquiv :
