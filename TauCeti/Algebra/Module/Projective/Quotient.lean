@@ -15,10 +15,8 @@ Let `f : A →+* B` be a surjective ring homomorphism and `I` an ideal of `A` co
 of `f`. If `M` is a projective `A`-module, then its reduction `M ⧸ I • M`, endowed with any
 `B`-module structure through which `A` acts via `f`, is a projective `B`-module.
 
-The proof uses the universal lifting property directly: a lifting problem over `B` is restricted
-along `f` to a lifting problem over `A`, solved using projectivity of `M`, and the resulting lift
-descends through `I • M` because `I` acts by zero on `B`-modules. No commutativity is assumed. This
-is how reductions such as `ℤ_p[G]`-modules modulo `p` become projective `𝔽_p[G]`-modules.
+No commutativity is assumed. A typical application is reduction of coefficients: a projective
+`ℤ_p[G]`-module reduces modulo `p` to a projective `𝔽_p[G]`-module.
 
 ## Main results
 
