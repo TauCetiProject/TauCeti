@@ -11,8 +11,10 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.Basic
 # Basic Spin-group carrier facts
 
 This file records the carrier-level criterion that a product of two Clifford vectors with
-unit product of norms belongs to the Spin group.  The action and its orthogonal comparison are
-defined in `Spin.Action` and `Pin.Action`.
+unit product of norms belongs to the Spin group. It also identifies membership in the range of
+`spinGroup.toUnits` with membership of the underlying Clifford value, allowing results to pass
+between the unit group and the ambient Clifford algebra. The action and its orthogonal comparison
+are defined in `Spin.Action` and `Pin.Action`.
 -/
 
 public section

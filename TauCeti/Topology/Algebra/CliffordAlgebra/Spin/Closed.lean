@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Compact
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.CliffordGroup
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Basic
 public import Mathlib.Topology.Algebra.Star.Unitary
 
 /-!
@@ -21,9 +22,9 @@ continuous. On the zero space the Spin group is trivial. Over a locally compact 
 group is therefore a locally compact Hausdorff topological group, the Spin point group over `ℝ` and
 `ℚ_p`.
 
-This module also proves that every real Spin carrier is closed in the units of its Clifford
-algebra, providing the closed-subgroup input for its Lie-group structure. The corresponding
-special-orthogonal carrier is provided separately in `RealSpecialOrthogonal.lean`.
+This module also proves that every nondegenerate Spin carrier is closed in the units of its
+Clifford algebra, providing the closed-subgroup input for Lie-group structures. The corresponding
+real special-orthogonal carrier is provided separately in `RealSpecialOrthogonal.lean`.
 
 ## References
 
@@ -35,8 +36,8 @@ special-orthogonal carrier is provided separately in `RealSpecialOrthogonal.lean
   Clifford algebra.
 * `CliffordAlgebra.locallyCompactSpace_spinGroup`: over a locally compact field it is locally
   compact.
-* `TauCeti.CliffordAlgebra.isClosed_range_realCliffordSpinGroup_toUnits`: every real Spin carrier is
-  closed in the Clifford-algebra units.
+* `CliffordAlgebra.isClosed_range_spinGroup_toUnits`: the range of the Spin group in the
+  Clifford-algebra units is closed.
 -/
 
 public section
@@ -87,48 +88,28 @@ theorem locallyCompactSpace_spinGroup [LocallyCompactSpace K] (hQ : Q.Nondegener
     LocallyCompactSpace (spinGroup Q) :=
   (isClosed_spinGroup Q hQ).locallyCompactSpace
 
-end CliffordAlgebra
-
-namespace TauCeti
-
-namespace CliffordAlgebra
-
-open _root_.CliffordAlgebra
-
 noncomputable section
 
-/-- The real Spin carrier of any signature is closed in the units of its Clifford algebra. -/
-theorem isClosed_range_realCliffordSpinGroup_toUnits (p q : ℕ) :
-    IsClosed (Set.range (spinGroup.toUnits (Q := realCliffordForm p q))) := by
-  let Q := realCliffordForm p q
-  let A := CliffordAlgebra Q
-  have hs : IsClosed (realCliffordSpinGroup p q : Set A) :=
-    isClosed_spinGroup Q (nondegenerate_realCliffordForm p q)
-  let f : Aˣ → A := fun u => u
-  have hu : IsClosed (f ⁻¹' (realCliffordSpinGroup p q : Set A)) := by
+/-- The range of the Spin group of a nondegenerate quadratic form in the units of its Clifford
+algebra is closed. -/
+theorem isClosed_range_spinGroup_toUnits (hQ : Q.Nondegenerate) :
+    IsClosed (Set.range (spinGroup.toUnits (Q := Q))) := by
+  let f : (CliffordAlgebra Q)ˣ → CliffordAlgebra Q := fun u => u
+  have hs : IsClosed (spinGroup Q : Set (CliffordAlgebra Q)) := isClosed_spinGroup Q hQ
+  have hu : IsClosed (f ⁻¹' (spinGroup Q : Set (CliffordAlgebra Q))) := by
     simpa only [f] using hs.preimage Units.continuous_val
-  have hcoe (x : realCliffordSpinGroup p q) :
-      ((spinGroup.toUnits (Q := Q) x : Aˣ) : A) = (x : A) := by
-    -- `spinGroup.toUnits` stores the subtype value as its unit value by definition.
-    rfl
   have hset : Set.range (spinGroup.toUnits (Q := Q)) =
-      f ⁻¹' (realCliffordSpinGroup p q : Set A) := by
+      f ⁻¹' (spinGroup Q : Set (CliffordAlgebra Q)) := by
+    rw [← MonoidHom.coe_range]
     ext u
-    constructor
-    · rintro ⟨x, rfl⟩
-      have hx : (x : A) ∈ (realCliffordSpinGroup p q : Set A) := x.2
-      simpa only [f, Set.mem_preimage, hcoe x] using hx
-    · intro hu'
-      refine ⟨⟨u, hu'⟩, ?_⟩
-      apply Units.ext
-      exact hcoe ⟨u, hu'⟩
+    change u ∈ (spinGroup.toUnits (Q := Q)).range ↔
+      (u : CliffordAlgebra Q) ∈ spinGroup Q
+    exact mem_spinGroup_toUnits_range_iff u
   rw [hset]
   exact hu
 
 end
 
 end CliffordAlgebra
-
-end TauCeti
 
 end
