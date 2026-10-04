@@ -15,7 +15,9 @@ vector-valued map `u`, the derivative of a varying continuous linear map `c` app
 no contribution from the varying operator. Since that contribution is multiplied by `u = 0`, the
 operator `c` need only be continuous, not differentiable.
 
-The zero-value formula is the manifold counterpart of `HasFDerivAt.clm_apply`, specialized to
+On a normed space this is `HasFDerivWithinAt.clm_apply_of_eq_zero`, a variant of
+`HasFDerivWithinAt.clm_apply` needing only continuity of `c`. The manifold formula
+`mvfderiv_eq_comp_of_eventuallyEq_clm_apply` is its counterpart in charts, specialized to
 the case used when differentiating changes of fiber coordinates at the zero of a bundle section.
 It is stated for any map agreeing with `y ↦ c y (u y)` near the point, which is how fiber
 coordinates in two trivializations are related.
@@ -41,7 +43,7 @@ namespace TauCeti
 
 /-- The normed-space form of the zero-value rule: at a zero of `u`, the variation of `c` is
 multiplied by `u y = O(y - z)`, so it contributes nothing to the derivative. -/
-private theorem hasFDerivWithinAt_clm_apply_of_eq_zero {c : E → F →L[𝕜] F'} {u : E → F}
+theorem _root_.HasFDerivWithinAt.clm_apply_of_eq_zero {c : E → F →L[𝕜] F'} {u : E → F}
     {u' : E →L[𝕜] F} {s : Set E} {z : E}
     (hc : ContinuousWithinAt c s z) (hu : HasFDerivWithinAt u u' s z) (hu0 : u z = 0) :
     HasFDerivWithinAt (fun y ↦ c y (u y)) ((c z).comp u') s z := by
@@ -77,7 +79,7 @@ theorem mvfderiv_eq_comp_of_eventuallyEq_clm_apply {f : M → F'} {c : M → F �
       (extChartAt I x x) := by
     rw [ContinuousWithinAt, extChartAt_to_inv]
     exact hc.tendsto.comp hsymm
-  have hD := hasFDerivWithinAt_clm_apply_of_eq_zero hc' hu' (by rwa [extChartAt_to_inv])
+  have hD := hu'.clm_apply_of_eq_zero hc' (by rwa [extChartAt_to_inv])
   rw [extChartAt_to_inv] at hD
   have hfD : HasFDerivWithinAt (writtenInExtChartAt I 𝓘(𝕜, F') x f)
       ((c x).comp (fderivWithin 𝕜 (writtenInExtChartAt I 𝓘(𝕜, F) x u) (range I)
