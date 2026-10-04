@@ -44,7 +44,7 @@ public section
 
 open CategoryTheory Limits Opposite
 
-universe v u
+universe w v u
 
 namespace TauCeti
 
@@ -65,7 +65,7 @@ noncomputable def freeYonedaSheafFunctor :
 
 /-- Mathlib's cohomology presheaf is the Ext bifunctor from free abelian representable
 sheaves. -/
-lemma cohomologyPresheafFunctor_eq [HasExt.{v} (_root_.CategoryTheory.Sheaf J AddCommGrpCat.{v})]
+lemma cohomologyPresheafFunctor_eq [HasExt.{w} (_root_.CategoryTheory.Sheaf J AddCommGrpCat.{v})]
     (n : ℕ) :
     _root_.CategoryTheory.Sheaf.cohomologyPresheafFunctor J n =
       Functor.flip ((freeYonedaSheafFunctor J).op ⋙ Abelian.extFunctor n) :=
@@ -73,10 +73,10 @@ lemma cohomologyPresheafFunctor_eq [HasExt.{v} (_root_.CategoryTheory.Sheaf J Ad
 
 /-- Mathlib's sheaf cohomology over an object of a site is `Ext` from the corresponding free
 abelian sheaf. -/
-lemma sheafH'_eq [HasExt.{v} (_root_.CategoryTheory.Sheaf J AddCommGrpCat.{v})]
+lemma sheafH'_eq [HasExt.{w} (_root_.CategoryTheory.Sheaf J AddCommGrpCat.{v})]
     (F : _root_.CategoryTheory.Sheaf J AddCommGrpCat.{v}) (n : ℕ) (U : C) :
-    _root_.CategoryTheory.Sheaf.H'.{v} F n U =
-      AddCommGrpCat.of (Abelian.Ext.{v} ((freeYonedaSheafFunctor J).obj U) F n) :=
+    _root_.CategoryTheory.Sheaf.H'.{w} F n U =
+      AddCommGrpCat.of (Abelian.Ext.{w} ((freeYonedaSheafFunctor J).obj U) F n) :=
   (rfl)
 
 /-- Morphisms from the free abelian sheaf on `U` to an abelian sheaf `F` are additively equivalent

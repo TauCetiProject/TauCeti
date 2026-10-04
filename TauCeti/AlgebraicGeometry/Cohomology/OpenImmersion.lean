@@ -81,7 +81,7 @@ def cohomologyOnOpensRangeNatIso (n : ℕ) :
   -- Cohomology on `f(Y)` is cohomology on the over category of `f(Y)`, which is equivalent to the
   -- site of open subsets of `Y`; the transported sheaf is the underlying sheaf of `M|_Y`.
   Functor.isoWhiskerLeft (SheafOfModules.toSheaf X.ringCatSheaf)
-      (CategoryTheory.cohomologyPresheafEvaluationIsoFunctorOverH J f.opensRange n) ≪≫
+      (J.cohomologyPresheafEvaluationIsoFunctorOverH f.opensRange n) ≪≫
     Functor.isoWhiskerLeft
       (SheafOfModules.toSheaf X.ringCatSheaf ⋙ J.overPullback AddCommGrpCat.{u} f.opensRange)
       ((CategoryTheory.Sheaf.cohomologyPresheafEvaluationIsoFunctorH (J.over f.opensRange) n
