@@ -39,8 +39,8 @@ The centre and uniqueness of its scalar/volume coordinates are supplied by
   over any commutative ring.
 * `TauCeti.CliffordAlgebra.reverseEven_prod_map_ι_of_pairwise_isOrtho`: reversal on an even
   orthogonal volume element.
-* `TauCeti.CliffordAlgebra.reverse_add_smul_volume_eq_self_iff_of_odd_choose_two`: the fixed-point
-  criterion for a negative-sign anisotropic orthogonal volume element over a field with `2 ≠ 0`.
+* `TauCeti.CliffordAlgebra.reverse_add_smul_volume_eq_self_iff`: the fixed-point criterion for an
+  even anisotropic orthogonal volume element over a field with `2 ≠ 0`.
 * `TauCeti.CliffordAlgebra.reverseEven_eq_self_iff_of_mem_center`: the central fixed-point criterion
   for a regular quadratic space of even positive dimension over a field with `2 ≠ 0`.
 * `TauCeti.CliffordAlgebra.forall_mem_center_reverseEven_eq_self_iff`: the criterion for reversal
@@ -104,16 +104,20 @@ end CommRing
 variable {K : Type u} {V : Type v} [Field K] [AddCommGroup V] [Module K V]
   [NeZero (2 : K)] {Q : QuadraticForm K V}
 
-/-- For an even anisotropic orthogonal volume element whose reversal sign is negative, reversal
-fixes `a + b • ω` exactly when its volume coordinate `b` vanishes. -/
-theorem reverse_add_smul_volume_eq_self_iff_of_odd_choose_two
+/-- For an even anisotropic orthogonal volume element, reversal fixes `a + b • ω` exactly when
+its reversal sign is positive or its volume coordinate `b` vanishes. -/
+theorem reverse_add_smul_volume_eq_self_iff
     {l : List V} (hl : l.Pairwise Q.IsOrtho)
     (hlen : Even l.length) (hne : l ≠ []) (hQl : ∀ v ∈ l, Q v ≠ 0)
-    (hsign : Odd (l.length.choose 2)) (a b : K) :
+    (a b : K) :
     reverse (algebraMap K (CliffordAlgebra Q) a + b • (l.map (ι Q)).prod) =
-      algebraMap K (CliffordAlgebra Q) a + b • (l.map (ι Q)).prod ↔ b = 0 := by
+      algebraMap K (CliffordAlgebra Q) a + b • (l.map (ι Q)).prod ↔
+        Even (l.length.choose 2) ∨ b = 0 := by
   rw [reverse_add_smul_volume hl]
-  simp only [hsign.neg_one_pow, neg_one_mul, neg_smul]
+  by_cases hsign : Even (l.length.choose 2)
+  · simp [hsign, hsign.neg_one_pow]
+  have hodd : Odd (l.length.choose 2) := Nat.not_even_iff_odd.mp hsign
+  simp only [hsign, false_or, hodd.neg_one_pow, neg_one_mul, neg_smul]
   constructor
   · intro h
     have hcoord : (a, -b) = (a, b) :=
@@ -147,16 +151,14 @@ theorem reverseEven_eq_self_iff_of_mem_center (hQ : Q.Nondegenerate)
         Subtype.ext (by simpa using hab)
       rw [hxcoord, reverseEven_add_smul_volume hl hle, hlen, hsign.neg_one_pow, one_mul]
     exact iff_of_true hfix (Or.inl hsign)
-  · have hodd : Odd (l.length.choose 2) := by
-      rw [hlen, ← Nat.not_even_iff_odd]
-      exact hsign
-    simp only [hsign, false_or]
+  · simp only [hsign, false_or]
     constructor
     · intro hfix
       have hrev := congrArg (fun y : even Q => (y : CliffordAlgebra Q)) hfix
       rw [coe_reverseEven_apply, hab] at hrev
       have hb :=
-        (reverse_add_smul_volume_eq_self_iff_of_odd_choose_two hl hle hne hQl hodd a b).mp hrev
+        ((reverse_add_smul_volume_eq_self_iff hl hle hne hQl a b).mp hrev).resolve_left
+          (by simpa only [hlen] using hsign)
       refine ⟨a, Subtype.ext ?_⟩
       simpa [hb] using hab
     · rintro ⟨a, rfl⟩
