@@ -45,6 +45,7 @@ theorem pPowerRootsOfUnity_eq_iSup_rootsOfUnity :
 
 /-- In a reduced ring of exponential characteristic `p`, the only root of unity of `p`-power
 order is `1`, since the Frobenius is injective. -/
+@[simp]
 theorem pPowerRootsOfUnity_eq_bot (R : Type*) [CommRing R] [IsReduced R] [ExpChar R p] :
     pPowerRootsOfUnity p R = ⊥ := by
   refine (Subgroup.eq_bot_iff_forall _).2 fun x hx ↦ ?_
