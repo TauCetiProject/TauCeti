@@ -218,6 +218,7 @@ theorem decompositionSubgroup_eq_of_forall_mem_integers {g h : P.integers.decomp
     (IsFractionRing.ringHom_ext (A := P.integers) (f1 := ((g : F' ≃ₐ[F] F') : F' →+* F'))
       (f2 := ((h : F' ≃ₐ[F] F') : F' →+* F')) fun x ↦ hgh x x.2) y
 
+omit [Algebra k F] [IsScalarTower k F F'] in
 /-- The decomposition group acts faithfully on the valuation ring of a place. Indeed, two field
 automorphisms agreeing on the valuation ring agree on its fraction field. -/
 instance instFaithfulSMulIntegers (P : Place k F') :
