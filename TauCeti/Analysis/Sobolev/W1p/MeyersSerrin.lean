@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.W1p.CompactSupport
-import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 
 /-!
 # Smooth functions are dense in `W^{1,p}(Ω)` (Meyers–Serrin)
