@@ -177,6 +177,7 @@ end MaximalProPQuotient
 /-- **The supernatural order of `ℤ̂` is `∏_ℓ ℓ ^ ∞`**, the greatest supernatural number. For
 every prime `ℓ`, `ℤ̂` maps continuously onto its maximal pro-`ℓ` quotient `ℤ_ℓ`, whose order is
 `ℓ ^ ∞`. -/
+@[simp]
 theorem profiniteOrder_eq_top : profiniteOrder zHat = ⊤ := by
   ext ℓ
   have : Fact (ℓ : ℕ).Prime := ⟨ℓ.prop⟩

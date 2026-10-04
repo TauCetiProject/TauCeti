@@ -166,6 +166,7 @@ theorem isProP_multiplicative_padicInt (p : ℕ) [Fact p.Prime] :
 /-- **The supernatural order of `ℤ_p` is `p ^ ∞`.** The additive group of the `p`-adic integers is
 pro-`p`, so no other prime divides its order, and its quotient by the level `p ^ m ℤ_p` has order
 `p ^ m` for every `m`. -/
+@[simp]
 theorem profiniteOrder_multiplicative_padicInt (p : ℕ) [Fact p.Prime] :
     profiniteOrder (Multiplicative ℤ_[p]) =
       Supernatural.primePower (⟨p, Fact.out⟩ : Nat.Primes) ⊤ := by
