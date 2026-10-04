@@ -73,11 +73,12 @@ structure NormalClosureData (K M : Type*) [Field K] [NumberField K] [Field M]
 
 variable {K M : Type*} [Field K] [NumberField K] [Field M] [NumberField M]
 
-/-- **A normal closure of a number field is Galois over `ℚ`.** Normality is the splitting half of
-`isNormalClosure`; separability is automatic in characteristic zero. This is the hypothesis under
+/-- **A normal closure of a number field is Galois over `ℚ`.** This is the hypothesis under
 which `AlgHom.intermediateFieldEquivSubgroup` applies to `d.embedding`, giving the subfields of `K`
 as the subgroups of `Gal(M/ℚ)` containing the stabilizer of `d.embedding`. -/
 theorem NormalClosureData.isGalois (d : NormalClosureData K M) : IsGalois ℚ M :=
+  -- Normality is the splitting half of `isNormalClosure`; separability is automatic in
+  -- characteristic zero.
   have := d.isNormalClosure
   { to_normal := IsNormalClosure.normal (K := K) }
 
