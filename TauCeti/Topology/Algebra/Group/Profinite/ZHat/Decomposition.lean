@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.CharZero.Idempotent
 public import TauCeti.Data.Nat.Prime.Basic
 public import TauCeti.Data.ZMod.Divisibility
 public import TauCeti.Topology.Algebra.Group.Profinite.ZHat.Component
@@ -300,11 +301,7 @@ theorem idem_ne_one : idem.{u} ℓ ≠ 1 := fun h ↦ by
 /-- The prime idempotent `ω_ℓ` is unequal to every integer in the profinite integers. -/
 theorem idem_ne_intCast (n : ℤ) : idem.{u} ℓ ≠ n := by
   intro h
-  have hnCast : IsIdempotentElem (n : Additive zHat.{u}) := h ▸ isIdempotentElem_idem ℓ
-  have hn : IsIdempotentElem n := by
-    apply Int.cast_injective (α := Additive zHat.{u})
-    simpa only [Int.cast_mul] using hnCast.eq
-  rcases IsIdempotentElem.iff_eq_zero_or_one.mp hn with rfl | rfl
+  rcases isIdempotentElem_intCast_iff.mp (h ▸ isIdempotentElem_idem ℓ) with rfl | rfl
   · exact idem_ne_zero ℓ (by simpa using h)
   · exact idem_ne_one ℓ (by simpa using h)
 
