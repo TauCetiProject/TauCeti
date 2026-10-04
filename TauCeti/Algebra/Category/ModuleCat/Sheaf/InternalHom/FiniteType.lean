@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.InternalHom.Stalk
-public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Quasicoherent.Refinement
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.GeneratingSections
 
 /-!
 # Injectivity of the internal-Hom stalk comparison
