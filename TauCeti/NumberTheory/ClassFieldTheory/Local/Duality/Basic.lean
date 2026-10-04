@@ -234,10 +234,8 @@ theorem tateDualMap_comp {A B C : GalRep n F} (f : A ⟶ B) (g : B ⟶ C) :
     tateDualMap (f ≫ g) = tateDualMap g ≫ tateDualMap f :=
   TopRep.hom_ext <| DFunLike.ext _ _ fun ψ => (tateDualEquiv A).injective <|
     AddMonoidHom.ext fun a => by
-      rw [tateDualEquiv_tateDualMap_apply]
-      change _ = tateDualEquiv A ((tateDualMap f).hom ((tateDualMap g).hom ψ)) a
-      rw [tateDualEquiv_tateDualMap_apply, tateDualEquiv_tateDualMap_apply]
-      rfl
+      rw [TopRep.comp_apply, tateDualEquiv_tateDualMap_apply, tateDualEquiv_tateDualMap_apply,
+        tateDualEquiv_tateDualMap_apply, TopRep.comp_apply]
 
 /-- Evaluation is natural in the coefficient module: `⟨f* ψ, a⟩ = ⟨ψ, f a⟩`. -/
 theorem tateEvaluationPairing_tateDualMap {A B : GalRep n F} [DiscreteTopology A.V]
