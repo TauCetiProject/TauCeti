@@ -200,6 +200,13 @@ theorem mk_rankOne_mul_self (a : Kˣ) :
   rw [discr_mk_rankOne_mul, rank_mk, discr_mk, Fin.prod_univ_one, one_nsmul, ← two_nsmul,
     ZModModule.char_nsmul_eq_zero 2]
 
+/-- **A rank-one class only depends on the square class of its weight**: `⟨a c²⟩ ≅ ⟨a⟩`. -/
+theorem mk_rankOne_mul_mul_self (a c : Kˣ) :
+    Quotient.mk (regularFormSetoid K) ⟨1, fun _ => a * c * c⟩ =
+      Quotient.mk (regularFormSetoid K) ⟨1, fun _ => a⟩ := by
+  rw [← mk_rankOne_mul_mk_rankOne, ← mk_rankOne_mul_mk_rankOne, mul_assoc, mk_rankOne_mul_self,
+    mul_one]
+
 /-- **A ternary form of trivial discriminant is a pure quaternion norm form**: a class of rank
 three and trivial discriminant is the class of `⟨-a, -b, ab⟩` for some units `a` and `b`. -/
 theorem exists_eq_mk_neg_neg_mul {x : RegularFormClass K} (hr : x.rank = 3) (hd : discr x = 0) :
