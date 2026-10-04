@@ -71,6 +71,8 @@ def toProd : Sol ≃ ℝ × ℝ × ℝ := Equiv.refl _
 
 instance : TopologicalSpace Sol := inferInstanceAs (TopologicalSpace (ℝ × ℝ × ℝ))
 
+instance : T2Space Sol := inferInstanceAs (T2Space (ℝ × ℝ × ℝ))
+
 instance : ChartedSpace (ℝ × ℝ × ℝ) Sol := inferInstanceAs (ChartedSpace (ℝ × ℝ × ℝ) (ℝ × ℝ × ℝ))
 
 instance : IsManifold 𝓘(ℝ, ℝ × ℝ × ℝ) ω Sol :=
