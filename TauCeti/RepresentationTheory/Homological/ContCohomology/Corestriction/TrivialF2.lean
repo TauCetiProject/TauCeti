@@ -29,8 +29,9 @@ restriction `TauCeti.trivialF2ResMap`, and transports the identity `cor ∘ res 
   recovers the trivial `𝔽₂` object of `U`.
 * `TauCeti.trivialF2ResMap_comp_trivialF2CorMap`, `TauCeti.trivialF2CorMap_trivialF2ResMap`:
   restriction followed by corestriction is multiplication by the index `[G : U]`.
-* `TauCeti.trivialF2ResMap_explicitH1AddEquivContinuousCohomology`: in degree one, restriction
-  is explicit restriction of cocycles.
+* `TauCeti.trivialF2ResMap_explicitH1AddEquivContinuousCohomology`,
+  `TauCeti.trivialF2ResMap_explicitH2AddEquivContinuousCohomology`: in degrees one and two,
+  restriction is explicit restriction of cocycles.
 * `TauCeti.trivialF2CorMap_explicitH1AddEquivContinuousCohomology`,
   `TauCeti.trivialF2CorMap_explicitH2AddEquivContinuousCohomology`: in degrees one and two,
   corestriction is the explicit transversal formula on cocycles.
@@ -164,6 +165,38 @@ theorem trivialF2ResMap_explicitH1AddEquivContinuousCohomology (x : H1 G (trivia
     (trivialF2 G).V φ (AddMonoidHom.id (trivialF2 G).V) hf x
   rw [trivialF2Map_subgroupSubtype, ConcreteCategory.comp_apply,
     ConcreteCategory.comp_apply, hnat, ← explicitRes1_eq_explicitMap1] at happ
+  exact happ
+
+omit [CompactSpace G] [TotallyDisconnectedSpace G] [U.FiniteIndex] in
+open ContCohomology in
+/-- **Degree-two restriction with trivial `𝔽₂` coefficients is explicit restriction of
+cocycles.** A class of `H²(G, 𝔽₂)` presented by an explicit cocycle valued in the carrier of
+`trivialF2 G` is sent to the class of its restriction `TauCeti.ContCohomology.explicitRes2` to
+`U`, both read in continuous cohomology through the identifications of the coefficient objects
+with the trivial `𝔽₂` objects. -/
+theorem trivialF2ResMap_explicitH2AddEquivContinuousCohomology [LocallyCompactSpace G]
+    [LocallyCompactSpace U] (x : H2 G (trivialF2 G).V) :
+    trivialF2ResMap G U 2
+        ((eqToHom (congrArg (continuousCohomology 2) (ofDiscreteModule_trivialF2 G))).hom
+          (explicitH2AddEquivContinuousCohomology G (trivialF2 G).V x)) =
+      (eqToHom (congrArg (continuousCohomology 2) (ofDiscreteModule_subgroup_trivialF2 G U))).hom
+        (explicitH2AddEquivContinuousCohomology U (trivialF2 G).V (explicitRes2 G _ U x)) := by
+  let φ := ContinuousMonoidHom.subgroupSubtype U
+  have hf (s : U) (m : (trivialF2 G).V) :
+      AddMonoidHom.id (trivialF2 G).V (φ s • m) = s • AddMonoidHom.id (trivialF2 G).V m :=
+    rfl
+  -- As in degree one, the carrier identification is stated as a term: `m` lives in
+  -- `(trivialF2 G).V` but is transported out of `ofDiscreteModule ℤ U (trivialF2 G).V`.
+  have hmap := eqToHom_comp_trivialF2Map φ (ofDiscreteModule_trivialF2 G)
+    (ofDiscreteModule_subgroup_trivialF2 G U) (AddMonoidHom.id (trivialF2 G).V) hf
+    (fun m ↦ (trivialF2Equiv_eqToHom_ofDiscreteModule_subgroup_trivialF2 G U m).trans
+      (congrArg (trivialF2Equiv G) (eqToHom_ofDiscreteModule_trivialF2_apply G m).symm)) 2
+  have happ := ConcreteCategory.congr_hom hmap
+    (explicitH2AddEquivContinuousCohomology G (trivialF2 G).V x)
+  have hnat := explicitH2AddEquivContinuousCohomology_map G (trivialF2 G).V U
+    (trivialF2 G).V φ (AddMonoidHom.id (trivialF2 G).V) hf x
+  rw [trivialF2Map_subgroupSubtype, ConcreteCategory.comp_apply,
+    ConcreteCategory.comp_apply, hnat, ← explicitRes2_eq_explicitMap2] at happ
   exact happ
 
 open ContCohomology in
