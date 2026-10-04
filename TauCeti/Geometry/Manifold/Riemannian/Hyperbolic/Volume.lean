@@ -13,7 +13,8 @@ public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Total
 
 This file connects the bundled `TauCeti.HyperbolicMetric` with the Riemannian volume API.  A
 hyperbolic metric is data, so its volume is defined as the total volume of the carried Riemannian
-metric.  Metric-independence is the volume consequence of Mostow rigidity.
+metric.  Metric-independence is the volume consequence of Mostow rigidity, which is taken here as
+the hypothesis `TauCeti.IsMostowRigid` rather than proved.
 
 The volume construction follows J. M. Lee, *Introduction to Riemannian Manifolds*, 2nd ed.,
 Chapter 2. Metric-independence uses Mostow rigidity in J. Ratcliffe, *Foundations of Hyperbolic
@@ -22,8 +23,8 @@ Manifolds*, 3rd ed., Theorem 11.8.5.
 ## Main definitions
 
 * `TauCeti.hypVolumeOfMetric`: total Riemannian volume of a bundled hyperbolic metric.
-* `TauCeti.hypVolume`: the volume obtained from a hyperbolic structure; Mostow rigidity makes
-  this independent of the chosen metric in dimension at least three.
+* `TauCeti.hypVolume`: the volume obtained from a hyperbolic structure; under
+  `TauCeti.IsMostowRigid` this is independent of the chosen metric in dimension at least three.
 -/
 
 public section
@@ -115,8 +116,9 @@ theorem hypVolumeOfMetric_eq_of_mostow [BoundarylessManifold I M]
 /-- The hyperbolic volume of a compact manifold carrying a hyperbolic metric.
 
 The definition chooses one bundled hyperbolic metric. On a closed connected manifold of
-dimension at least three, `TauCeti.hypVolume_eq_hypVolumeOfMetric` shows that Mostow rigidity
-makes the result equal to the volume of every hyperbolic metric. -/
+dimension at least three, `TauCeti.hypVolume_eq_hypVolumeOfMetric` shows that, under the
+Mostow-rigidity hypothesis `TauCeti.IsMostowRigid`, the result equals the volume of every
+hyperbolic metric. Mostow rigidity itself is not proved in this file. -/
 noncomputable def hypVolume (h : IsHyperbolic (I := I) (M := M)) : ℝ :=
   hypVolumeOfMetric (I := I) (Classical.choice (isHyperbolic_iff.mp h))
 
