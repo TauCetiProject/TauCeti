@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.GroupTheory.GroupAction.Orbit.Finset
 public import TauCeti.GroupTheory.Perm.Partition
 import Mathlib.Data.ZMod.QuotientGroup
 
@@ -23,8 +24,8 @@ partition API.
 
 ## Main definitions
 
-* `Equiv.Perm.cycleLenOf`: the length of the cycle containing a point, computed by filtering the
-  carrier.
+* `Equiv.Perm.cycleLenOf`: the length of the cycle containing a point, computed as the size of
+  its orbit `Finset.orbitFinset {σ} i`.
 * `Equiv.Perm.IsCycleMin`: the predicate that a point is the least point of its cycle.
 * `Equiv.Perm.computedCycleType`: the multiset of cycle lengths at the cycle minima.
 
@@ -50,18 +51,23 @@ section DecidableEq
 
 variable [DecidableEq α]
 
-/-- The length of the cycle of `σ` containing `i`, computed by filtering the finite carrier. -/
+/-- A point lies in the computed orbit `Finset.orbitFinset {σ} i` exactly when it lies in the
+cycle of `σ` containing `i`. -/
+theorem _root_.Equiv.Perm.mem_orbitFinset_singleton_iff_sameCycle {σ : Perm α} {i j : α} :
+    j ∈ Finset.orbitFinset {σ} i ↔ σ.SameCycle i j := by
+  rw [Finset.mem_orbitFinset, Finset.coe_singleton, ← Subgroup.zpowers_eq_closure,
+    Equiv.Perm.sameCycle_iff_mem_orbit_zpowers]
+
+/-- The length of the cycle of `σ` containing `i`, computed as the size of the orbit of `i`
+under `σ`. -/
 @[expose] def _root_.Equiv.Perm.cycleLenOf (σ : Perm α) (i : α) : ℕ :=
-  (Finset.univ.filter (σ.SameCycle i)).card
+  (Finset.orbitFinset {σ} i).card
 
 /-- The computed cycle length is positive. -/
 @[simp]
 theorem _root_.Equiv.Perm.cycleLenOf_pos (σ : Perm α) (i : α) :
-    0 < σ.cycleLenOf i := by
-  rw [Equiv.Perm.cycleLenOf, Finset.card_pos]
-  refine ⟨i, ?_⟩
-  simp only [Finset.mem_filter, Finset.mem_univ, true_and]
-  exact Equiv.Perm.SameCycle.refl σ i
+    0 < σ.cycleLenOf i :=
+  Finset.card_pos.mpr ⟨i, Finset.mem_orbitFinset_self _ i⟩
 
 /-- Points in the same cycle have the same computed cycle length. -/
 theorem _root_.Equiv.Perm.cycleLenOf_eq_of_sameCycle {σ : Perm α} {i j : α}
@@ -69,17 +75,16 @@ theorem _root_.Equiv.Perm.cycleLenOf_eq_of_sameCycle {σ : Perm α} {i j : α}
   unfold Equiv.Perm.cycleLenOf
   congr 1
   ext k
-  simp only [Finset.mem_filter, Finset.mem_univ, true_and]
+  simp only [Equiv.Perm.mem_orbitFinset_singleton_iff_sameCycle]
   exact ⟨fun hik => hij.symm.trans hik, fun hjk => hij.trans hjk⟩
 
 /-- The executable cycle length agrees with the abstract minimal period of the point. -/
 theorem _root_.Equiv.Perm.cycleLenOf_eq_minimalPeriod (σ : Perm α) (i : α) :
     σ.cycleLenOf i = Function.minimalPeriod σ i := by
-  have hmem : ∀ j, j ∈ Finset.univ.filter (σ.SameCycle i) ↔
-      j ∈ MulAction.orbit (Subgroup.zpowers σ) i := by
-    intro j
-    rw [Finset.mem_filter, Equiv.Perm.sameCycle_iff_mem_orbit_zpowers]
-    exact and_iff_right (Finset.mem_univ j)
+  have hmem : ∀ j, j ∈ Finset.orbitFinset {σ} i ↔ j ∈ MulAction.orbit (Subgroup.zpowers σ) i :=
+    fun j => by
+      rw [Equiv.Perm.mem_orbitFinset_singleton_iff_sameCycle,
+        Equiv.Perm.sameCycle_iff_mem_orbit_zpowers]
   let _ := Fintype.ofFinset _ hmem
   rw [Equiv.Perm.cycleLenOf, ← Fintype.card_ofFinset _ hmem]
   exact (MulAction.minimalPeriod_eq_card (a := σ) (b := i)).symm
@@ -100,20 +105,17 @@ variable [LinearOrder α]
 
 /-- The least point in the cycle of `i`. This is an executable canonical representative. -/
 def _root_.Equiv.Perm.cycleMin (σ : Perm α) (i : α) : α :=
-  (Finset.univ.filter (σ.SameCycle i)).min'
-    ⟨i, by
-      simp only [Finset.mem_filter, Finset.mem_univ, true_and]
-      exact Equiv.Perm.SameCycle.refl σ i⟩
+  (Finset.orbitFinset {σ} i).min' ⟨i, Finset.mem_orbitFinset_self _ i⟩
 
 /-- The least representative of a cycle belongs to that cycle. -/
 theorem _root_.Equiv.Perm.sameCycle_cycleMin (σ : Perm α) (i : α) :
     σ.SameCycle i (σ.cycleMin i) := by
-  exact (Finset.mem_filter.mp (Finset.min'_mem _ _)).2
+  exact Equiv.Perm.mem_orbitFinset_singleton_iff_sameCycle.mp (Finset.min'_mem _ _)
 
 /-- The canonical representative is no larger than any point in its cycle. -/
 theorem _root_.Equiv.Perm.cycleMin_le_of_sameCycle {σ : Perm α} {i j : α}
     (hij : σ.SameCycle i j) : σ.cycleMin i ≤ j :=
-  Finset.min'_le _ _ (by simp only [Finset.mem_filter, Finset.mem_univ, true_and]; exact hij)
+  Finset.min'_le _ _ (Equiv.Perm.mem_orbitFinset_singleton_iff_sameCycle.mpr hij)
 
 /-- Two points have the same canonical representative exactly when they lie in the same cycle. -/
 @[simp]
@@ -126,7 +128,7 @@ theorem _root_.Equiv.Perm.cycleMin_eq_cycleMin_iff {σ : Perm α} {i j : α} :
     unfold Equiv.Perm.cycleMin
     congr 1
     ext k
-    simp only [Finset.mem_filter, Finset.mem_univ, true_and]
+    simp only [Equiv.Perm.mem_orbitFinset_singleton_iff_sameCycle]
     exact ⟨fun hik => hij.symm.trans hik, fun hjk => hij.trans hjk⟩
 
 /-- A point is a cycle minimum when it is no larger than every point in its cycle. -/
@@ -151,7 +153,7 @@ theorem _root_.Equiv.Perm.cycleMin_eq_self_iff {σ : Perm α} {i : α} :
     · exact Equiv.Perm.cycleMin_le_of_sameCycle (Equiv.Perm.SameCycle.refl σ i)
     · apply Finset.le_min'
       intro j hj
-      exact hi j (Finset.mem_filter.mp hj).2
+      exact hi j (Equiv.Perm.mem_orbitFinset_singleton_iff_sameCycle.mp hj)
 
 /-- Taking the cycle minimum is idempotent. -/
 @[simp]
@@ -200,7 +202,8 @@ theorem _root_.Equiv.Perm.computedCycleType_eq_fullCycleType (σ : Perm α) :
   rw [Equiv.Perm.cycleLenOf]
   congr 1
   ext j
-  simp only [Finset.mem_filter, Finset.mem_univ, true_and]
+  simp only [Finset.mem_filter, Finset.mem_univ, true_and,
+    Equiv.Perm.mem_orbitFinset_singleton_iff_sameCycle]
   rw [← Equiv.Perm.cycleMin_eq_cycleMin_iff, hmin, eq_comm]
 
 end LinearOrder
