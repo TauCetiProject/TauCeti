@@ -25,7 +25,8 @@ homotopies through loops, whose basepoint may move (`Circle.degree_eq_of_homotop
 under homotopies of based loops (`Circle.degree_eq_of_homotopic`). It is additive under the
 concatenation (`Circle.degree_trans`) and the pointwise product (`Circle.degree_mul`) of loops,
 because angle functions concatenate and add, and reversing a loop negates it
-(`Circle.degree_symm`).
+(`Circle.degree_symm`). Raising a loop pointwise to the `n`-th power multiplies its degree by `n`
+(`Circle.degree_map_pow`).
 
 The degree is the integer that Tau Ceti's identification
 `Circle.fundamentalGroupMulEquiv : π₁(Circle, x) ≃* Multiplicative ℤ` assigns to the class of the
@@ -44,6 +45,7 @@ which the Maslov index of a loop of totally real subspaces is defined.
 * `Circle.degree_trans`, `Circle.degree_symm`: the degree of a concatenation of loops is the sum
   of the degrees, and reversing a loop negates its degree.
 * `Circle.degree_mul`: the degree of a pointwise product of loops is the sum of the degrees.
+* `Circle.degree_map_pow`: the pointwise `n`-th power of a loop has `n` times its degree.
 -/
 
 public section
@@ -197,6 +199,18 @@ theorem degree_mul {x y : Circle} (γ₁ : Path x x) (γ₂ : Path y y) :
     (fun t => by simp [exp_add, hΘ₁, hΘ₂]) ?_
   rw [Int.cast_add, add_mul, ← sub_eq_degree_mul γ₁ Θ₁.continuous hΘ₁,
     ← sub_eq_degree_mul γ₂ Θ₂.continuous hΘ₂]
+  ring
+
+/-- The pointwise `n`-th power of a loop has `n` times its degree. -/
+@[simp]
+theorem degree_map_pow {x : Circle} (γ : Path x x) (n : ℕ) :
+    degree (γ.map (continuous_pow n)) = n * degree γ := by
+  obtain ⟨θ, hθ', -⟩ := isCoveringMap_exp.exists_path_lifts γ.toContinuousMap (Complex.arg x)
+    (by simp [exp_arg])
+  have hθ (t : I) : exp (θ t) = γ t := congr_fun hθ' t
+  refine degree_eq_of_sub_eq _ (θ := fun t => n * θ t) (by fun_prop) (fun t => by simp [hθ]) ?_
+  rw [← mul_sub, sub_eq_degree_mul γ θ.continuous hθ]
+  push_cast
   ring
 
 end Circle
