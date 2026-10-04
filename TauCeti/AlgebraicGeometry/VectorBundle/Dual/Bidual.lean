@@ -17,6 +17,9 @@ The canonical map to the double dual is a natural isomorphism. It is the existin
 `TauCeti.doubleDualMap`, whose evaluation equation pairs a local functional with the original
 section. Thus dualization loses no information about the sheaf or its morphisms.
 
+The functor and natural isomorphism follow the finite-projective module formalization in
+`TauCeti.Algebra.Category.ModuleCat.FiniteProjective.Monoidal` as their template.
+
 The construction uses the precomposition maps of Mathlib's `MonoidalClosed.internalHom` and
 `TauCeti.doubleDualMap`; invertibility follows from the exact pairing with the internal-Hom dual.
 -/
