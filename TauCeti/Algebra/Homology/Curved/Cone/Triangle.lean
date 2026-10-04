@@ -20,10 +20,6 @@ The last map is **minus** the canonical projection to the parity shift, followed
 identification with the shift by `1`. This is the same sign as Mathlib's
 `CochainComplex.mappingCone.triangle`: the cone differential has lower-left block `f`.
 
-The proof uses the componentwise split conflation
-`X ⟶ diskSum(X) ⊕ Y ⟶ cone(f)`. The contractible first summand disappears in the homotopy
-category, and the connecting map is minus the cone projection.
-
 ## Main results
 
 * `HomotopyCategory.coneTriangle_distinguished`: concrete cone triangles are distinguished.
@@ -134,29 +130,29 @@ noncomputable def coneTriangle (f : X ⟶ Y) : Triangle (HomotopyCategory C w) :
     (coneTriangle f).mor₃ = -(nullHomotopic C w).quotientFunctor.map (coneProjection f) ≫
       (parityShiftCompQuotientFunctorIso C w).hom.app X := (rfl)
 
+variable [HasZeroObject C]
+
 private noncomputable def diskSumBiprodIso (X Y : CurvedDuplex C w) :
     (nullHomotopic C w).quotientFunctor.obj Y ≅
-      (nullHomotopic C w).quotientFunctor.obj (CurvedDuplex.biprod (diskSum X) Y) where
-  hom := (nullHomotopic C w).quotientFunctor.map (biprodInr (diskSum X) Y)
-  inv := (nullHomotopic C w).quotientFunctor.map (biprodSnd (diskSum X) Y)
-  hom_inv_id := by rw [← Functor.map_comp]; simp
-  inv_hom_id := by
-    have h : (nullHomotopic C w).quotientFunctor.map
-        (biprodFst (diskSum X) Y ≫ biprodInl (diskSum X) Y) = 0 := by
-      rw [MorphismIdeal.quotientFunctor_map_eq_zero_iff]
-      simpa using (nullHomotopic C w).comp_mem_right (biprodInl (diskSum X) Y)
-        ((nullHomotopic C w).comp_mem_left (biprodFst (diskSum X) Y)
-          (id_diskSum_mem_nullHomotopic X))
-    have total : biprodFst (diskSum X) Y ≫ biprodInl (diskSum X) Y +
-        biprodSnd (diskSum X) Y ≫ biprodInr (diskSum X) Y =
-          𝟙 (CurvedDuplex.biprod (diskSum X) Y) := by
-      ext <;> simp only [add_f₀, add_f₁, comp_f₀, comp_f₁, biprodFst_f₀, biprodFst_f₁,
-        biprodSnd_f₀, biprodSnd_f₁, biprodInl_f₀, biprodInl_f₁, biprodInr_f₀, biprodInr_f₁,
-        id_f₀, id_f₁] <;> exact biprod.total
-    rw [← Functor.map_comp]
-    simpa [h] using congrArg ((nullHomotopic C w).quotientFunctor.map) total
-
-variable [HasZeroObject C]
+      (nullHomotopic C w).quotientFunctor.obj (CurvedDuplex.biprod (diskSum X) Y) := by
+  -- Compare the componentwise biproduct with the categorical one used by the stable API.
+  let b : BinaryBicone (diskSum X) Y :=
+    { pt := CurvedDuplex.biprod (diskSum X) Y
+      fst := biprodFst (diskSum X) Y
+      snd := biprodSnd (diskSum X) Y
+      inl := biprodInl (diskSum X) Y
+      inr := biprodInr (diskSum X) Y }
+  let hb : IsLimit b.toCone := BinaryFan.IsLimit.mk _ (fun f g ↦ biprodLift f g)
+    (fun f g ↦ biprodLift_fst f g) (fun f g ↦ biprodLift_snd f g)
+    (fun f g _ h₀ h₁ ↦ biprod_hom_ext
+      (h₀.trans (biprodLift_fst f g).symm) (h₁.trans (biprodLift_snd f g).symm))
+  let e := biprod.uniqueUpToIso _ _ (isBinaryBilimitOfIsLimit b hb)
+  exact (eqToIso (by simp)).symm ≪≫
+    (ExactStructure.curvedDuplexSplitStableToHomotopy C w).mapIso
+      (((ExactStructure.split C).curvedDuplex w).projectiveStableIsoBiprod
+        (ExactStructure.curvedDuplex_split_isProjective_of_mem_nullHomotopic
+          (id_diskSum_mem_nullHomotopic X)) Y) ≪≫
+    eqToIso (by simp) ≪≫ (nullHomotopic C w).quotientFunctor.mapIso e.symm
 
 /-- The concrete mapping-cone triangle is distinguished for Happel's triangulation of the
 homotopy category of curved duplexes. No zero-curvature hypothesis is required. -/
@@ -178,8 +174,12 @@ theorem coneTriangle_distinguished (f : X ⟶ Y) :
       rw [MorphismIdeal.quotientFunctor_map_eq_iff, h]
       simpa using (nullHomotopic C w).comp_mem_right (biprodInl (diskSum X) Y)
         ((nullHomotopic C w).comp_mem_left (toDiskSum X) (id_diskSum_mem_nullHomotopic X))
-    simpa [diskSumBiprodIso, coneTriangle, ← Functor.map_comp] using heq.symm
-  · simp [diskSumBiprodIso, coneTriangle, ← Functor.map_comp]
+    simpa [diskSumBiprodIso, coneTriangle,
+      ExactStructure.curvedDuplexSplitStableToHomotopy_map_projectiveStableFunctor_map,
+      ← Functor.map_comp] using heq.symm
+  · simp [diskSumBiprodIso, coneTriangle,
+      ExactStructure.curvedDuplexSplitStableToHomotopy_map_projectiveStableFunctor_map,
+      ← Functor.map_comp]
   · simp [coneTriangle]
 
 /-- Distinguished triangles are precisely those isomorphic to concrete mapping-cone triangles
