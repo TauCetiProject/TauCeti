@@ -77,12 +77,9 @@ theorem squareClassValuation_mk (a : Kˣ) :
 
 /-- The valuation map on square classes is surjective. -/
 theorem squareClassValuation_surjective : Function.Surjective (squareClassValuation K) := by
-  intro c
-  obtain ⟨a, ha⟩ := normalizedValuationMod_surjective (K := K) 2 c.toAdd
-  refine ⟨QuotientGroup.mk' (Subgroup.square Kˣ) a.toMul, ?_⟩
-  simpa only [QuotientGroup.mk'_apply, squareClassValuation_mk,
-    ← normalizedValuationMod_ofMul, ofMul_toMul, ofAdd_toAdd] using
-    congrArg Multiplicative.ofAdd ha
+  apply QuotientGroup.lift_surjective_of_surjective
+  exact Multiplicative.ofAdd.surjective.comp
+    ((normalizedValuationMod_surjective (K := K) 2).comp Additive.ofMul.surjective)
 
 /-- A unit of the field has an integer-unit square-class representative exactly when its
 normalized valuation is even. -/
