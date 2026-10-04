@@ -533,33 +533,34 @@ theorem baseChangeHopfIdeal_commonKernelHopfIdeal [Module.Free k K] (f : ∀ i, 
 
 end FreeBaseChange
 
-/-- Free scalar extension of a common-kernel Hopf ideal, pulled back through the inverse of
-an ambient isomorphism, is the common kernel of the transported scalar-extended family. -/
+/-- Free scalar extension of a common-kernel Hopf ideal, pulled back through a surjective
+ambient morphism, is the common kernel of the transported scalar-extended family. -/
 theorem comapOfSurjective_baseChangeHopfIdeal_commonKernelHopfIdeal
     {ι : Type y} {N : ι → _root_.CommHopfAlgCat.{v} k}
     {H' : _root_.CommHopfAlgCat.{max w v} K} [Module.Free k K]
-    (f : ∀ i, H ⟶ N i) (e : baseChange (K := K) H ≅ H') :
+    (f : ∀ i, H ⟶ N i) (g : H' ⟶ baseChange (K := K) H)
+    (hg : Function.Surjective g.hom) :
     (baseChangeHopfIdeal (K := K) (commonKernelHopfIdeal f)).comapOfSurjective
-        e.inv.hom (ConcreteCategory.bijective_of_isIso e.inv).2 =
-      commonKernelHopfIdeal (fun i ↦ e.inv ≫ baseChangeMap (K := K) (f i)) := by
+        g.hom hg =
+      commonKernelHopfIdeal (fun i ↦ g ≫ baseChangeMap (K := K) (f i)) := by
   rw [baseChangeHopfIdeal_commonKernelHopfIdeal]
   apply le_antisymm
   · refine (le_commonKernelHopfIdeal_iff _ _).2 fun i x hx ↦ ?_
     -- Expose the composite Hopf morphism application beneath the kernel's ring-hom coercions.
-    change (baseChangeMap (K := K) (f i)).hom (e.inv.hom x) = 0
+    change (baseChangeMap (K := K) (f i)).hom (g.hom x) = 0
     exact RingHom.mem_ker.mp (commonKernelHopfIdeal_toIdeal_le_ker _ i
       (HopfIdeal.mem_comapOfSurjective.mp hx))
   · intro x hx
     apply HopfIdeal.mem_comapOfSurjective.mpr
     have hle :
         (commonKernelHopfIdeal
-          (fun i ↦ e.inv ≫ baseChangeMap (K := K) (f i))).map e.inv.hom ≤
+          (fun i ↦ g ≫ baseChangeMap (K := K) (f i))).map g.hom ≤
         commonKernelHopfIdeal (fun i ↦ baseChangeMap (K := K) (f i)) := by
       refine (le_commonKernelHopfIdeal_iff _ _).2 fun i ↦ ?_
       rw [HopfIdeal.map_toIdeal, Ideal.map_le_iff_le_comap]
       intro y hy
       exact commonKernelHopfIdeal_toIdeal_le_ker _ i hy
-    exact hle (HopfIdeal.mem_map_of_mem e.inv.hom hx)
+    exact hle (HopfIdeal.mem_map_of_mem g.hom hx)
 
 /-- An ambient isomorphism carries the free scalar extension of a common-kernel Hopf ideal
 to the common kernel of the transported scalar-extended family. -/
@@ -569,7 +570,8 @@ theorem map_baseChangeHopfIdeal_commonKernelHopfIdeal
     (f : ∀ i, H ⟶ N i) (e : baseChange (K := K) H ≅ H') :
     (baseChangeHopfIdeal (K := K) (commonKernelHopfIdeal f)).map e.hom.hom =
       commonKernelHopfIdeal (fun i ↦ e.inv ≫ baseChangeMap (K := K) (f i)) := by
-  rw [← comapOfSurjective_baseChangeHopfIdeal_commonKernelHopfIdeal f e]
+  rw [← comapOfSurjective_baseChangeHopfIdeal_commonKernelHopfIdeal f e.inv
+    (ConcreteCategory.bijective_of_isIso e.inv).2]
   ext y
   rw [HopfIdeal.mem_map_iff_of_surjective (ConcreteCategory.bijective_of_isIso e.hom).2,
     HopfIdeal.mem_comapOfSurjective]
