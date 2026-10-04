@@ -61,24 +61,6 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 variable [NormedAddCommGroup F] [InnerProductSpace ℝ F]
 variable {n k : ℕ} [Fact (finrank ℝ E = n + 1)] [Fact (finrank ℝ F = k + 1)]
 
-/-- The differential of the restriction of a linear isometry to the unit spheres, read in the
-ambient space through the inclusion of the target sphere, is the linear isometry applied to the
-tangent vector read in the ambient space. -/
-@[simp]
-theorem mvfderiv_coe_sphere_unitSphereEquiv (e : E ≃ₗᵢ[ℝ] F) (x : sphere (0 : E) 1)
-    (v : TangentSpace (𝓡 n) x) :
-    mvfderiv (𝓡 k) ((↑) : sphere (0 : F) 1 → F) (unitSphereEquiv e x)
-        (mfderiv (𝓡 n) (𝓡 k) (unitSphereEquiv e) x v) =
-      e (mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) x v) := by
-  have hcomp : ((↑) : sphere (0 : F) 1 → F) ∘ unitSphereEquiv e =
-      e ∘ ((↑) : sphere (0 : E) 1 → E) :=
-    funext fun y ↦ coe_unitSphereEquiv_apply e y
-  rw [← mvfderiv_comp_apply x (contMDiff_coe_sphere.mdifferentiableAt one_ne_zero)
-    ((contMDiff_unitSphereEquiv (m := 1) e).mdifferentiableAt one_ne_zero), hcomp,
-    mvfderiv_comp_apply x ((e.contDiff (n := 1)).contMDiff.mdifferentiableAt one_ne_zero)
-      (contMDiff_coe_sphere.mdifferentiableAt one_ne_zero), mvfderiv_eq_fderiv, e.fderiv]
-  simp [mvfderiv]
-
 /-- The restriction of a linear isometry to the unit spheres is a Riemannian isometry for the round
 metrics. -/
 def unitSphereRiemannianIsometry (e : E ≃ₗᵢ[ℝ] F) :
@@ -194,9 +176,7 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
 /-- The round sphere is a homogeneous Riemannian manifold: its isometry group acts transitively,
 since already the linear isometries of `E` do. -/
 instance isPretransitive_isom_sphere :
-    MulAction.IsPretransitive (Isom (𝓡 n) (sphere (0 : E) 1)) (sphere (0 : E) 1) where
-  exists_smul_eq x y := by
-    obtain ⟨e, he⟩ := MulAction.exists_smul_eq (E ≃ₗᵢ[ℝ] E) x y
-    exact ⟨e.unitSphereIsomHom, by simpa using he⟩
+    MulAction.IsPretransitive (Isom (𝓡 n) (sphere (0 : E) 1)) (sphere (0 : E) 1) :=
+  .of_smul_eq LinearIsometryEquiv.unitSphereIsomHom fun {e x} ↦ e.unitSphereIsomHom_smul x
 
 end TauCeti
