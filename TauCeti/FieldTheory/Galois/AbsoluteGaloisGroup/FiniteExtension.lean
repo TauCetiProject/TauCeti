@@ -63,6 +63,9 @@ isomorphism `G_K ⧸ Gal(Kˢ/σ(L)) ≃* Gal(L/K)`. This part uses normality but
   `σ(L)` as an open normal subgroup of `G_K`.
 * `TauCeti.fixingOpenNormalSubgroup K L`: for a finite `L/K`, the open normal subgroup of `G_K`
   fixing the normal closure of `L` in `Kˢ`, with no embedding chosen.
+* `TauCeti.absoluteGaloisGroupExtend K L σ`: the injective continuous homomorphism
+  `Field.absoluteGaloisGroup L →* Field.absoluteGaloisGroup K` between Mathlib's absolute Galois
+  groups, `galoisSubgroupEquiv K L σ` followed by the inclusion of `galoisSubgroup K L σ`.
 
 ## Main results
 
@@ -71,6 +74,8 @@ isomorphism `G_K ⧸ Gal(Kˢ/σ(L)) ≃* Gal(L/K)`. This part uses normality but
   (`TauCeti.finiteIndex_fixingSubgroup_fieldRange`, `TauCeti.finiteIndex_galoisSubgroup`).
 * `TauCeti.galoisSubgroupEquiv_apply_separableClosureRingEquiv`: the isomorphism intertwines the
   actions of `G_L` on `Lˢ` and of `G_K` on `Kˢ` through `separableClosureRingEquiv K L σ`.
+* `TauCeti.absoluteGaloisGroupExtend_apply_separableClosureRingEquiv`: the embedding of Mathlib's
+  absolute Galois groups intertwines the actions on the identified separable closures.
 * `TauCeti.quotientFixingSubgroupFieldRangeEquiv_mk`: the isomorphism sends the class of `g`
   to `σ.restrictNormalHom g`.
 * `TauCeti.exists_galoisOpenNormalSubgroup_eq`: every open normal subgroup of `G_K` is
@@ -185,6 +190,54 @@ theorem galoisSubgroupEquiv_symm_apply (h : ↥(galoisSubgroup K L σ).toSubgrou
       (separableClosureRingEquiv K L σ).symm
         ((h : AbsoluteGaloisGroup K) (separableClosureRingEquiv K L σ x)) :=
   absoluteGaloisGroupEquivFixingSubgroup_symm_apply K L σ h x
+
+/-! ### The embedding of Mathlib's absolute Galois groups -/
+
+/-- **The absolute Galois group of a finite extension inside that of `K`**, along a `K`-embedding
+`σ : L →ₐ[K] Kˢ`: identify `G_L` with the open subgroup of `G_K` fixing `σ(L)`, and include that
+subgroup in `G_K`. The two absolute Galois groups use Mathlib's algebraic closures, while the
+subgroup identification uses Tau Ceti's separable closures; `absoluteGaloisGroupRestrictEquiv`
+transports between the two models. -/
+def absoluteGaloisGroupExtend : Field.absoluteGaloisGroup L →* Field.absoluteGaloisGroup K :=
+  (absoluteGaloisGroupRestrictEquiv K).symm.toMulEquiv.toMonoidHom.comp
+    ((galoisSubgroup K L σ).toSubgroup.subtype.comp
+      ((galoisSubgroupEquiv K L σ).toMulEquiv.toMonoidHom.comp
+        (absoluteGaloisGroupRestrictEquiv L).toMulEquiv.toMonoidHom))
+
+/-- Reading `absoluteGaloisGroupExtend` on separable closures gives the inclusion of the open
+subgroup identified with `G_L`. -/
+@[simp]
+theorem absoluteGaloisGroupRestrictEquiv_absoluteGaloisGroupExtend
+    (τ : Field.absoluteGaloisGroup L) :
+    absoluteGaloisGroupRestrictEquiv K (absoluteGaloisGroupExtend K L σ τ) =
+      (galoisSubgroupEquiv K L σ (absoluteGaloisGroupRestrictEquiv L τ) :
+        AbsoluteGaloisGroup K) :=
+  (absoluteGaloisGroupRestrictEquiv K).apply_symm_apply _
+
+/-- The embedding of absolute Galois groups intertwines the actions on the identified separable
+closures. -/
+theorem absoluteGaloisGroupExtend_apply_separableClosureRingEquiv
+    (τ : Field.absoluteGaloisGroup L) (x : SeparableClosure L) :
+    absoluteGaloisGroupRestrictEquiv K (absoluteGaloisGroupExtend K L σ τ)
+        (separableClosureRingEquiv K L σ x) =
+      separableClosureRingEquiv K L σ (absoluteGaloisGroupRestrictEquiv L τ x) := by
+  rw [absoluteGaloisGroupRestrictEquiv_absoluteGaloisGroupExtend]
+  exact galoisSubgroupEquiv_apply_separableClosureRingEquiv K L σ _ x
+
+/-- The embedding `G_L → G_K` induced by an embedding of a finite extension is continuous. -/
+theorem continuous_absoluteGaloisGroupExtend : Continuous (absoluteGaloisGroupExtend K L σ) :=
+  (absoluteGaloisGroupRestrictEquiv K).symm.continuous_toFun.comp <|
+    continuous_subtype_val.comp <|
+      (galoisSubgroupEquiv K L σ).continuous_toFun.comp
+        (absoluteGaloisGroupRestrictEquiv L).continuous_toFun
+
+/-- The map `G_L → G_K` induced by an embedding of a finite extension is injective. -/
+theorem injective_absoluteGaloisGroupExtend :
+    Function.Injective (absoluteGaloisGroupExtend K L σ) :=
+  (absoluteGaloisGroupRestrictEquiv K).symm.injective.comp <|
+    Subtype.val_injective.comp <|
+      (galoisSubgroupEquiv K L σ).injective.comp
+        (absoluteGaloisGroupRestrictEquiv L).injective
 
 /-! ### Normal extensions: the quotient by the open subgroup -/
 
