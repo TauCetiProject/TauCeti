@@ -88,7 +88,7 @@ variable (p : ℕ) [Fact p.Prime] (K : Type*) [Field K] [Algebra ℚ_[p] K]
 /-- At an odd prime, exactly one of the free and nonexceptional Demushkin arithmetic cases
 applies. The exceptional value `q = 2` cannot occur because the local root-of-unity order is a
 power of `p`. -/
-theorem odd_markedCase_exists_unique (hp : p ≠ 2) :
+theorem odd_isFreeCase_xor_isQNeTwoCase (hp : p ≠ 2) :
     (IsFreeCase p K ∧ ¬ IsQNeTwoCase p K) ∨
       (¬ IsFreeCase p K ∧ IsQNeTwoCase p K) := by
   let _ : CharZero K :=
