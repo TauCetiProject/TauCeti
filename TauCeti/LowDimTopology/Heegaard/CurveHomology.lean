@@ -45,7 +45,8 @@ the class of a cycle in `α ∪ β`, nothing is lost for it.
 * `TauCeti.HeegaardRegionSystem.curveCycles`: the `1`-chains that are combinations of whole
   `α`- and `β`-curves.
 * `TauCeti.HeegaardRegionSystem.arcRelations`: boundaries of domains plus whole curves.
-* `TauCeti.HeegaardRegionSystem.CurveHomology`: the `1`-cycles modulo `arcRelations`.
+* `TauCeti.HeegaardRegionSystem.CurveHomology`: the `1`-cycles modulo `arcRelations`, with
+  its class map `CurveHomology.mk` and universal property `CurveHomology.lift`.
 * `TauCeti.HeegaardRegionSystem.IsConnectingChain`: a `1`-chain made of paths from `x` to `y`
   along `α` and from `y` to `x` along `β`.
 * `TauCeti.HeegaardRegionSystem.epsilon`: the class `ε(x, y)`.
@@ -201,6 +202,26 @@ theorem CurveHomology.mk_eq_mk_iff {c d : H.arcCycles} :
     CurveHomology.mk H c = CurveHomology.mk H d ↔
       (c - d : (Point → ℤ) × (Point → ℤ)) ∈ H.arcRelations := by
   rw [← sub_eq_zero, ← map_sub, mk_eq_zero_iff, AddSubgroup.coe_sub]
+
+/-- Two additive homomorphisms out of `CurveHomology` agree once they agree on classes of
+cycles. -/
+@[ext]
+theorem CurveHomology.hom_ext {A : Type*} [AddMonoid A] {f g : H.CurveHomology →+ A}
+    (h : f.comp (CurveHomology.mk H) = g.comp (CurveHomology.mk H)) : f = g :=
+  QuotientAddGroup.addMonoidHom_ext _ h
+
+/-- An additive homomorphism on `1`-cycles that vanishes on the relations descends to
+`CurveHomology`. -/
+def CurveHomology.lift {A : Type*} [AddMonoid A] (f : H.arcCycles →+ A)
+    (hf : ∀ c : H.arcCycles, (c : (Point → ℤ) × (Point → ℤ)) ∈ H.arcRelations → f c = 0) :
+    H.CurveHomology →+ A :=
+  QuotientAddGroup.lift _ f fun c hc => hf c (AddSubgroup.mem_addSubgroupOf.mp hc)
+
+@[simp]
+theorem CurveHomology.lift_mk {A : Type*} [AddMonoid A] (f : H.arcCycles →+ A)
+    (hf : ∀ c : H.arcCycles, (c : (Point → ℤ) × (Point → ℤ)) ∈ H.arcRelations → f c = 0)
+    (c : H.arcCycles) : CurveHomology.lift H f hf (CurveHomology.mk H c) = f c :=
+  (rfl)
 
 end CurveHomology
 
