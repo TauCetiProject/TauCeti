@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Polynomial.Reductum
+public import TauCeti.RingTheory.Polynomial.Subresultant.DegreeDrop.Basic
 public import TauCeti.RingTheory.Polynomial.Subresultant.Polynomial
 import TauCeti.LinearAlgebra.Matrix.CornerMinor
 
