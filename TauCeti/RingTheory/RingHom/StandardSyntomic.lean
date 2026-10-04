@@ -36,30 +36,25 @@ universe u v
 
 /-- A ring homomorphism is standard syntomic of relative dimension `n` if its target,
 with the algebra structure induced by the homomorphism, is such an algebra. -/
+@[expose]
 def IsStandardSyntomicOfRelativeDimension (n : ℕ) {R : Type u} {S : Type v}
     [CommRing R] [CommRing S] (f : R →+* S) : Prop :=
   @Algebra.IsStandardSyntomicOfRelativeDimension n R S _ _ f.toAlgebra
 
 variable {n : ℕ} {R : Type u} {S : Type v} [CommRing R] [CommRing S]
 
-/-- Characterize a standard syntomic ring map of relative dimension `n` by its induced
-algebra structure. -/
-theorem isStandardSyntomicOfRelativeDimension_iff (n : ℕ) (f : R →+* S) :
-    IsStandardSyntomicOfRelativeDimension n f ↔
-      @Algebra.IsStandardSyntomicOfRelativeDimension n R S _ _ f.toAlgebra := .rfl
-
 /-- The ring-homomorphism and algebra formulations agree on an algebra map. -/
 @[simp]
 theorem isStandardSyntomicOfRelativeDimension_algebraMap [Algebra R S] :
     IsStandardSyntomicOfRelativeDimension n (algebraMap R S) ↔
       Algebra.IsStandardSyntomicOfRelativeDimension n R S := by
-  rw [isStandardSyntomicOfRelativeDimension_iff n, toAlgebra_algebraMap]
+  rw [IsStandardSyntomicOfRelativeDimension, toAlgebra_algebraMap]
 
 variable (R) in
 /-- The identity ring map is standard syntomic of relative dimension zero. -/
 theorem IsStandardSyntomicOfRelativeDimension.id :
     IsStandardSyntomicOfRelativeDimension 0 (RingHom.id R) := by
-  rw [isStandardSyntomicOfRelativeDimension_iff 0]
+  unfold IsStandardSyntomicOfRelativeDimension
   have : Algebra.IsStandardSyntomicOfRelativeDimension 0 R (MvPolynomial (Fin 0) R) :=
     inferInstance
   exact Algebra.IsStandardSyntomicOfRelativeDimension.of_algEquiv

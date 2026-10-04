@@ -140,6 +140,7 @@ instance syntomicOfRelativeDimension_SpecMap (R S : Type u) [CommRing R] [CommRi
     (isStandardSyntomicOfRelativeDimension_algebraMap.mpr inferInstance)
 
 /-- The affine criterion for syntomicity is localization on the source of the induced ring map. -/
+@[simp]
 theorem syntomicOfRelativeDimension_SpecMap_iff {R S : CommRingCat.{u}} (φ : R ⟶ S) :
     SyntomicOfRelativeDimension n (Spec.map φ) ↔
       RingHom.Locally (@IsStandardSyntomicOfRelativeDimension n) φ.hom :=
@@ -180,7 +181,7 @@ instance (priority := low) SyntomicOfRelativeDimension.relativeDimensionLE
   let := φ.toAlgebra
   have : Algebra.IsStandardSyntomicOfRelativeDimension n
       Γ(U.1.toScheme, ⊤) Γ(V.1.toScheme, ⊤) :=
-    (isStandardSyntomicOfRelativeDimension_iff n φ).mp h'
+    by simpa only [IsStandardSyntomicOfRelativeDimension] using h'
   have hdim := Algebra.IsStandardSyntomicOfRelativeDimension.relativeDimensionLE_SpecMap
     n Γ(U.1.toScheme, ⊤) Γ(V.1.toScheme, ⊤)
   have : IsAffine U.1.toScheme := U.2
