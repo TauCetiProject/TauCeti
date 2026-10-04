@@ -28,6 +28,7 @@ variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M]
 
 /-- A Clifford unit belongs to the range of the canonical map from the Spin group exactly when
 its Clifford value belongs to the Spin group. -/
+@[simp↓]
 theorem mem_spinGroup_toUnits_range_iff (u : (CliffordAlgebra Q)ˣ) :
     u ∈ (spinGroup.toUnits (Q := Q)).range ↔ (u : CliffordAlgebra Q) ∈ spinGroup Q := by
   constructor
