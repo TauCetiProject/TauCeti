@@ -158,7 +158,6 @@ instance instSubsingleton [Nonempty X] : Subsingleton (Delineation P) where
     rfl
 
 /-- Restriction of a delineation along a continuous map of bases. -/
-@[expose, simps]
 def comp (f : Y → X) (hf : Continuous f) : Delineation fun k y ↦ P k (f y) where
   count := D.count
   root i y := D.root i (f y)
@@ -178,6 +177,21 @@ def comp (f : Y → X) (hf : Continuous f) : Delineation fun k y ↦ P k (f y) w
     refine (congrArg _ (sectorSet_comp D.root f j)).mpr ?_
     exact signInvariant_image (u := Prod.map f id).1
       ((D.signInvariant_sectorSet k j).mono (image_preimage_subset _ _))
+
+/-- The restriction of a delineation has the same number of sections. -/
+@[simp]
+theorem comp_count (f : Y → X) (hf : Continuous f) : (D.comp f hf).count = D.count := (rfl)
+
+/-- The root functions of the restriction of a delineation are the original root functions
+composed with the map of bases. -/
+@[simp]
+theorem comp_root (f : Y → X) (hf : Continuous f) (i : Fin (D.comp f hf).count) (y : Y) :
+    (D.comp f hf).root i y = D.root (Fin.cast (D.comp_count f hf) i) (f y) := (rfl)
+
+/-- The restriction of a delineation has the same multiplicities. -/
+@[simp]
+theorem comp_multiplicity (f : Y → X) (hf : Continuous f) (k : ι) (i : Fin (D.comp f hf).count) :
+    (D.comp f hf).multiplicity k i = D.multiplicity k (Fin.cast (D.comp_count f hf) i) := (rfl)
 
 end Delineation
 
