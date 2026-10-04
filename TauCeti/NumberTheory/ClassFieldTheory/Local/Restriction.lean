@@ -78,9 +78,10 @@ theorem unitsCoeffMapSymm_localFormationHomInv_smul {U : Subgroup (AbsoluteGaloi
   simp [localFormationHomInv_apply_coe, Subgroup.smul_def, AlgEquiv.smul_units_def]
 
 omit [FiniteDimensional K E] in
-/-- The inverse of the coefficient equivalence of `localFormationRestrict` is
-`unitsCoeffMapSymm`. -/
-private theorem localFormationCoeffEquiv_symm_apply (y : UnitsCoeff E) :
+/-- The inverse of the coefficient equivalence of `localFormationRestrict` is the coefficient map
+`unitsCoeffMapSymm` of Kummer theory: both send a unit of `Eˢ` to its image in `Kˢ` under the
+identification `Eˢ ≃ Kˢ` extending `iota`. -/
+theorem localFormationCoeffEquiv_symm_apply (y : UnitsCoeff E) :
     (localFormationCoeffEquiv K E iota).symm y = unitsCoeffMapSymm K E iota y :=
   Additive.toMul.injective (by
     rw [toMul_localFormationCoeffEquiv_symm_apply, toMul_unitsCoeffMapSymm])
