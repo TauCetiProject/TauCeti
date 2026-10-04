@@ -36,10 +36,6 @@ the metric that a manifold with a geometric structure receives through its chart
 
 * J. M. Lee, *Introduction to Riemannian Manifolds*, 2nd ed., Springer GTM 176 (2018), Chapter 2
   (pullback metrics).
-* The proof of `Bundle.contMDiffAt_bilinearForm_pullback`, which reads the pulled-back section in
-  tangent coordinates through `ContMDiffAt.mfderiv_const`, follows the proof pattern of
-  `TauCeti.inducedRiemannianMetric` in https://github.com/TauCetiProject/TauCeti/pull/11460, which
-  treats the case of a flat target.
 -/
 
 public section
@@ -57,6 +53,11 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ F H'}
   {N : Type*} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J 1 N] {n : ℕ∞ω}
+
+/- The proof of `Bundle.contMDiffAt_bilinearForm_pullback`, which reads the pulled-back section in
+tangent coordinates through `ContMDiffAt.mfderiv_const`, follows the proof pattern of
+`TauCeti.inducedRiemannianMetric` in https://github.com/TauCetiProject/TauCeti/pull/11460, which
+treats the case of a flat target. -/
 
 /-- The pullback of a family `b` of bilinear forms on the tangent spaces of `N` that is a `C^n`
 section at `f x₀`, along a map `f` that is `C^(n+1)` at `x₀`, is a `C^n` section at `x₀`: the family
