@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Morita.Basic
-public import Mathlib.RingTheory.TwoSidedIdeal.Operations
 public import TauCeti.RingTheory.Idempotents.Module
 public import TauCeti.RingTheory.TwoSidedIdeal.Span
 
