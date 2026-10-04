@@ -116,12 +116,12 @@ private theorem tateDualEquiv_apply (A : GalRep n F) (φ : (tateDual A).V) :
     tateDualEquiv A φ = φ.toAddMonoidHom :=
   InternalHom.evalPairing_apply φ
 
-/-- The action on the Tate dual is the conjugation action `homAction` on additive maps. This is the
-one place where the operator of `ofDiscreteModule` is identified with the action on `InternalHom`;
-the other action lemmas are derived from it. -/
+/-- The action on the Tate dual is the conjugation action `homAction` on additive maps. -/
 theorem tateDualEquiv_ρ (A : GalRep n F) (g : Field.absoluteGaloisGroup F)
     (φ : (tateDual A).V) :
     tateDualEquiv A ((tateDual A).ρ g φ) = TauCeti.homAction g (tateDualEquiv A φ) := by
+  -- This is the one place where the operator of `ofDiscreteModule` is identified with the action
+  -- on `InternalHom`; the other action lemmas are derived from it.
   rw [tateDualEquiv_apply, tateDualEquiv_apply]
   -- The operator of `g` on `ofDiscreteModule` is `g • ·` on its carrier `InternalHom`
   -- (`ofDiscreteModule_ρ_apply_apply`), which `rw` cannot see through the `tateDual` wrapper.
