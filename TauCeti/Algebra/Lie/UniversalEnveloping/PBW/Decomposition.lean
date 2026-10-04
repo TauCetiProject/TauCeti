@@ -121,20 +121,35 @@ theorem relativePBWBasis_apply
 
 end Adapted
 
+end TauCeti.UniversalEnvelopingAlgebra
+
+namespace UniversalEnvelopingAlgebra
+
+open LieAlgebra Module TauCeti.UniversalEnvelopingAlgebra
+open scoped TensorProduct
+
+attribute [local instance 100] LieRing.ofAssociativeRing
+
+universe u v w₁ w₂
+
+variable {R : Type u} {L : Type v} [CommRing R] [LieRing L] [LieAlgebra R L]
+
+local notation "U" => UniversalEnvelopingAlgebra R L
+
 section Subalgebras
 
 variable (A B : LieSubalgebra R L)
 
 /-- Multiply the images of two enveloping algebras inside the ambient enveloping algebra. -/
 noncomputable def mulMap :
-    _root_.UniversalEnvelopingAlgebra R A ⊗[R] _root_.UniversalEnvelopingAlgebra R B →ₗ[R] U :=
+    UniversalEnvelopingAlgebra R A ⊗[R] UniversalEnvelopingAlgebra R B →ₗ[R] U :=
   (TensorProduct.lift (LinearMap.mul R U)).comp
     (TensorProduct.map (map R A.incl).toLinearMap (map R B.incl).toLinearMap)
 
 /-- On pure tensors the multiplication map is multiplication in the ambient algebra. -/
 @[simp]
-theorem mulMap_tmul (a : _root_.UniversalEnvelopingAlgebra R A)
-    (b : _root_.UniversalEnvelopingAlgebra R B) :
+theorem mulMap_tmul (a : UniversalEnvelopingAlgebra R A)
+    (b : UniversalEnvelopingAlgebra R B) :
     mulMap A B (a ⊗ₜ b) = map R A.incl a * map R B.incl b := by
   simp [mulMap]
 
@@ -165,25 +180,25 @@ theorem mulMap_bijective (h : IsCompl (A : Submodule R L) (B : Submodule R L))
 algebras of complementary free Lie subalgebras with the ambient enveloping algebra. -/
 noncomputable def mulEquiv (h : IsCompl (A : Submodule R L) (B : Submodule R L))
     [Module.Free R A] [Module.Free R B] :
-    _root_.UniversalEnvelopingAlgebra R A ⊗[R] _root_.UniversalEnvelopingAlgebra R B ≃ₗ[R] U :=
+    UniversalEnvelopingAlgebra R A ⊗[R] UniversalEnvelopingAlgebra R B ≃ₗ[R] U :=
   LinearEquiv.ofBijective (mulMap A B) (mulMap_bijective A B h)
 
 /-- The relative PBW equivalence is normalized by multiplication of the two factors. -/
 @[simp]
 theorem mulEquiv_tmul (h : IsCompl (A : Submodule R L) (B : Submodule R L))
-    [Module.Free R A] [Module.Free R B] (a : _root_.UniversalEnvelopingAlgebra R A)
-    (b : _root_.UniversalEnvelopingAlgebra R B) :
+    [Module.Free R A] [Module.Free R B] (a : UniversalEnvelopingAlgebra R A)
+    (b : UniversalEnvelopingAlgebra R B) :
     mulEquiv A B h (a ⊗ₜ b) = map R A.incl a * map R B.incl b :=
   mulMap_tmul A B a b
 
 /-- The inverse relative PBW equivalence recovers the tensor factors of a product. -/
 @[simp]
 theorem mulEquiv_symm_mul (h : IsCompl (A : Submodule R L) (B : Submodule R L))
-    [Module.Free R A] [Module.Free R B] (a : _root_.UniversalEnvelopingAlgebra R A)
-    (b : _root_.UniversalEnvelopingAlgebra R B) :
+    [Module.Free R A] [Module.Free R B] (a : UniversalEnvelopingAlgebra R A)
+    (b : UniversalEnvelopingAlgebra R B) :
     (mulEquiv A B h).symm (map R A.incl a * map R B.incl b) = a ⊗ₜ b := by
   rw [← mulEquiv_tmul A B h, LinearEquiv.symm_apply_apply]
 
 end Subalgebras
 
-end TauCeti.UniversalEnvelopingAlgebra
+end UniversalEnvelopingAlgebra
