@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.Presentation.Serre
 public import TauCeti.Algebra.Octonion.Derivation
-import Mathlib.Tactic.LinearCombination
+import TauCeti.Algebra.Lie.Sl2.Basic
 
 /-!
 # Chevalley generators of type `G₂` in the derivations of the split octonions
@@ -282,38 +282,31 @@ noncomputable def g₂ToDerivationLieAlgebra :
 
 /-! ### Generation -/
 
+attribute [local instance 100] LieRing.ofAssociativeRing
+
 /-- A Lie subalgebra of `Der 𝕆` containing the special linear derivations of the off-diagonal
 matrix units contains every special linear derivation: brackets of opposite matrix units give the
 diagonal elements `Eᵢᵢ - Eⱼⱼ`, and these together span `𝔰𝔩₃`. -/
 private theorem slDerivation_mem {S : LieSubalgebra R (derivationLieAlgebra R (Octonion R))}
     (hsingle : ∀ i j (h : i ≠ j), slDerivation (single i j h (1 : R)) ∈ S)
     (M : LieAlgebra.SpecialLinear.sl (Fin 3) R) : slDerivation M ∈ S := by
-  have hdiag : ∀ i j, i ≠ j → slDerivation (singleSubSingle i j (1 : R)) ∈ S := by
-    intro i j h
-    have hm := S.lie_mem (hsingle i j h) (hsingle j i h.symm)
-    rw [← LieHom.map_lie] at hm
-    convert hm using 2
-    apply Subtype.ext
-    simp [Ring.lie_def]
-  have hsmul : ∀ (f : R →ₗ[R] LieAlgebra.SpecialLinear.sl (Fin 3) R) (r : R), f r = r • f 1 :=
-    fun f r => by rw [← map_smul, smul_eq_mul, mul_one]
-  -- `M` in terms of the six off-diagonal matrix units and `E₀₀ - E₂₂` and `E₁₁ - E₂₂`.
-  have hM : M = single 0 1 (by decide) (M.1 0 1) + single 0 2 (by decide) (M.1 0 2) +
-      single 1 0 (by decide) (M.1 1 0) + single 1 2 (by decide) (M.1 1 2) +
-      single 2 0 (by decide) (M.1 2 0) + single 2 1 (by decide) (M.1 2 1) +
-      singleSubSingle 0 2 (M.1 0 0) + singleSubSingle 1 2 (M.1 1 1) := by
-    have h : M.1 0 0 + M.1 1 1 + M.1 2 2 = 0 := by
-      simpa [Matrix.trace, Fin.sum_univ_three] using LinearMap.mem_ker.mp M.2
-    apply Subtype.ext
-    ext i j
-    fin_cases i <;> fin_cases j <;> simp
-    linear_combination h
-  rw [hM]
-  simp only [map_add]
-  refine add_mem (add_mem (add_mem (add_mem (add_mem (add_mem (add_mem ?_ ?_) ?_) ?_) ?_) ?_)
-    ?_) ?_ <;> rw [hsmul, map_smul] <;> refine S.smul_mem _ ?_
-  exacts [hsingle _ _ _, hsingle _ _ _, hsingle _ _ _, hsingle _ _ _, hsingle _ _ _,
-    hsingle _ _ _, hdiag _ _ (by decide), hdiag _ _ (by decide)]
+  have hsingle' : ∀ i j (h : i ≠ j) (c : R), slDerivation (single i j h c) ∈ S := fun i j h c => by
+    simpa [← map_smul] using S.smul_mem c (hsingle i j h)
+  -- The pullback of `S` to `gl₃`, as a submodule of trace-zero matrices.
+  let N : Submodule R (Matrix (Fin 3) (Fin 3) R) :=
+    (S.toSubmodule.comap slDerivation.toLinearMap).map (sl (Fin 3) R).incl.toLinearMap
+  have hN : ∀ M : LieAlgebra.SpecialLinear.sl (Fin 3) R, slDerivation M ∈ S → M.1 ∈ N :=
+    fun M hM => ⟨M, hM, rfl⟩
+  obtain ⟨M', hM', hMM'⟩ : M.1 ∈ N := by
+    refine mem_of_trace_eq_zero_of_single_mem (fun {p q} hpq c => ?_) (fun p q c => ?_)
+      (LinearMap.mem_ker.mp M.2)
+    · simpa using hN _ (hsingle' p q hpq c)
+    · rcases eq_or_ne p q with rfl | hpq
+      · simp
+      · refine (val_singleSubSingle p q c).symm ▸ hN _ ?_
+        rw [← lie_single_single_eq_singleSubSingle hpq, LieHom.map_lie]
+        exact S.lie_mem (hsingle' _ _ _ _) (hsingle _ _ _)
+  rwa [← Subtype.ext hMM']
 
 /-- When `3` is invertible, a Lie subalgebra of `Der 𝕆` containing the upper and lower vector
 derivations of the three basis vectors is everything: the bracket of the upper vector derivation
