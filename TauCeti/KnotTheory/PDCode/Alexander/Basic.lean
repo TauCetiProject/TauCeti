@@ -116,6 +116,7 @@ theorem alexanderWeight_of_not_isOver {i : Fin n} {slot : Fin 4} (h : D.isOver i
 
 /-- The weights of two opposite slots of a crossing are inverse to each other: both are `1` on the
 over-strand, and on the under-strand one slot points into the crossing and the other out of it. -/
+@[simp]
 theorem alexanderWeight_add_two_mul_alexanderWeight (i : Fin n) (slot : Fin 4) :
     D.alexanderWeight i (slot + 2) * D.alexanderWeight i slot = 1 := by
   have hover : D.isOver i (slot + 2) = D.isOver i slot := by

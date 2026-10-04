@@ -46,8 +46,6 @@ here.
 * `TauCeti.OrientedPDCode.alexanderGenerator_insertClasp_inl_inl_apply_self` and
   `TauCeti.OrientedPDCode.alexanderGenerator_insertClasp_inl_inl_apply_right`: after the
   insertion, the two old ends of each cut arc still give the same generator.
-* `TauCeti.OrientedPDCode.clasp_relations`: the computation behind the clasp: the relations at the
-  second new crossing return the arcs entering the first.
 
 ## References
 
@@ -140,7 +138,7 @@ its slots `0` and `1`, and `x₂`, `x₃` the arcs leaving it at slots `2` and `
 relations there. Slots `0` and `1` of the second new crossing are joined to slots `3` and `2` of the
 first, and its relations there return `x₁` and `x₀`: its weights are inverse to those of the first
 crossing, and the same strand is over at both. -/
-theorem clasp_relations {M : Type*} [AddCommGroup M] [Module ℤ[T;T⁻¹] M] {x₀ x₁ x₂ x₃ : M}
+private theorem clasp_relations {M : Type*} [AddCommGroup M] [Module ℤ[T;T⁻¹] M] {x₀ x₁ x₂ x₃ : M}
     (hx₂ : x₂ = (D.insertClasp p q b hqp hqe).alexanderWeight (Fin.last n).castSucc 0 • x₀ +
       (1 - (D.insertClasp p q b hqp hqe).alexanderWeight (Fin.last n).castSucc 0) • x₁)
     (hx₃ : x₃ = (D.insertClasp p q b hqp hqe).alexanderWeight (Fin.last n).castSucc 1 • x₁ +
