@@ -44,11 +44,15 @@ generator carries `n / (2 (n + 1))`.  That identification is an isometry of fini
 modules, so it also transports nondegeneracy from the discriminant form of the nondegenerate
 lattice to the model.
 
+The identification of this simple-root model with the classical coordinate model
+`{x ∈ ℤ^{n+1} | ∑ xᵢ = 0}` is in `TauCeti.LinearAlgebra.IntegralLattice.RootLattice.TypeA.ZeroSum`.
+
 ## Main declarations
 
 * `TauCeti.IntegralLattice.typeARootLattice`: the lattice, with Gram matrix `CartanMatrix.A n`.
 * `TauCeti.IntegralLattice.form_typeASimpleRoot_typeASimpleRoot`: its simple-root Gram matrix is
   `CartanMatrix.A n`.
+* `TauCeti.IntegralLattice.typeASimpleRootBasis`: the simple roots as a `ℤ`-basis of the lattice.
 * `TauCeti.IntegralLattice.isEven_typeARootLattice`: it is even.
 * `TauCeti.IntegralLattice.isPosDef_typeARootLattice`: it is positive definite.
 * `TauCeti.IntegralLattice.determinant_typeARootLattice`: its determinant is `n + 1`.
@@ -158,6 +162,22 @@ theorem mem_typeARootLattice_carrier_iff (x : Fin n → ℚ) :
   classical
   rw [typeARootLattice, ofGramMatrix_carrier, Module.Basis.mem_span_iff_repr_mem]
   simp [Pi.basisFun_repr]
+
+/-- The simple roots, as a `ℤ`-basis of the type `Aₙ` root lattice. -/
+noncomputable def typeASimpleRootBasis : Module.Basis (Fin n) ℤ (typeARootLattice n) :=
+  ofGramMatrix.basis (Pi.basisFun ℚ (Fin n)) (CartanMatrix.A n) (CartanMatrix.A_isSymm n)
+
+@[simp]
+theorem coe_typeASimpleRootBasis_apply (i : Fin n) :
+    (typeASimpleRootBasis n i : Fin n → ℚ) = typeASimpleRoot n i :=
+  ofGramMatrix.coe_basis _ _ _ i
+
+/-- The Gram matrix of the type `Aₙ` root lattice in its simple-root basis is
+`CartanMatrix.A n`. -/
+@[simp]
+theorem gramMatrix_typeASimpleRootBasis :
+    (typeARootLattice n).gramMatrix (typeASimpleRootBasis n) = CartanMatrix.A n :=
+  gramMatrix_ofGramMatrix _ _ _
 
 noncomputable instance instIsNondegenerateTypeARootLattice :
     (typeARootLattice n).IsNondegenerate := by
