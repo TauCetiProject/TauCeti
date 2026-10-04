@@ -14,7 +14,7 @@ import TauCeti.Analysis.Distribution.DuBoisReymond
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.Sobolev.WeakDeriv.Laplacian
 import TauCeti.MeasureTheory.Constructions.HaarToSphere
-import TauCeti.MeasureTheory.Measure.AddHaar
+import TauCeti.MeasureTheory.Group.Integral
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 

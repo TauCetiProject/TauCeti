@@ -13,16 +13,17 @@ import Mathlib.Tactic.NoncommRing
 import Mathlib.Topology.Algebra.Group.Units
 
 /-!
-# The units of a real normed division algebra have no small subgroups
+# The units of a real normed algebra have no small subgroups
 
-Let `𝕜` be a normed division ring that is a normed algebra over `ℝ`, such as `ℝ` or `ℂ`. An element
-`z ≠ 1` of `𝕜` has a power at distance more than `1 / 2` from `1`: as long as `w` stays within
-`1 / 2` of `1`, squaring multiplies the distance by `‖w + 1‖ ≥ 3 / 2`. Hence the only subgroup of
-`𝕜ˣ` inside the closed ball of radius `1 / 2` around `1` is trivial. For the unit circle alone,
+Let `A` be a real normed algebra, such as `ℝ`, `ℂ`, or an algebra of bounded operators. An element
+`z ≠ 1` of `A` has a power at distance more than `1 / 2` from `1`: as long as `w` stays within
+`1 / 2` of `1`, the identity `w² - 1 = 2 • (w - 1) + (w - 1)²` shows that squaring multiplies
+the distance to `1` by at least `3 / 2`. Hence the only subgroup of `Aˣ` inside the closed ball
+of radius `1 / 2` around `1` is trivial. For the unit circle alone,
 Mathlib's `Circle.eq_one_of_forall_pow_mem_centeredArc_pi_div_two` is the analogous statement; the
 version here applies to characters with values in `ℂˣ` that need not be unitary.
 
-For a continuous homomorphism `f` from a topological group `G` to `𝕜ˣ`, the preimage of that ball
+For a continuous homomorphism `f` from a topological group `G` to `Aˣ`, the preimage of that ball
 is a neighbourhood of `1`, and every subgroup of `G` inside it lies in the kernel of `f`. This is
 how a continuous character of a group with arbitrarily small open subgroups, such as the units of
 a nonarchimedean local field, is seen to be trivial on one of them.
@@ -33,7 +34,7 @@ a nonarchimedean local field, is seen to be trivial on one of them.
   multiplies the distance to `1` by at least `3 / 2`.
 * `TauCeti.eq_one_of_forall_norm_pow_sub_one_le`: an element all of whose powers lie within
   `1 / 2` of `1` is `1`.
-* `ContinuousMonoidHom.exists_mem_nhds_one_forall_le_ker`: a continuous homomorphism into `𝕜ˣ` is
+* `ContinuousMonoidHom.exists_mem_nhds_one_forall_le_ker`: a continuous homomorphism into `Aˣ` is
   trivial on every subgroup contained in a suitable neighbourhood of `1`.
 -/
 
@@ -43,28 +44,28 @@ open Topology
 
 namespace TauCeti
 
-variable {𝕜 : Type*} [NormedDivisionRing 𝕜] [NormedAlgebra ℝ 𝕜]
+section
+
+variable {A : Type*} [SeminormedRing A] [NormedAlgebra ℝ A]
 
 /-- **Squaring pushes an element near `1` away from `1`.** If `‖w - 1‖ ≤ 1 / 2`, then
-`‖w ^ 2 - 1‖ ≥ 3 / 2 * ‖w - 1‖`, because `w ^ 2 - 1 = (w - 1) * (w + 1)` and
-`‖w + 1‖ ≥ ‖2‖ - ‖w - 1‖ ≥ 3 / 2`. -/
-theorem three_div_two_mul_norm_sub_one_le_norm_sq_sub_one {w : 𝕜} (hw : ‖w - 1‖ ≤ 1 / 2) :
+`‖w ^ 2 - 1‖ ≥ 3 / 2 * ‖w - 1‖`. This holds even in a real seminormed algebra. -/
+theorem three_div_two_mul_norm_sub_one_le_norm_sq_sub_one {w : A} (hw : ‖w - 1‖ ≤ 1 / 2) :
     3 / 2 * ‖w - 1‖ ≤ ‖w ^ 2 - 1‖ := by
-  have htwo : ‖(2 : 𝕜)‖ = 2 := by
-    rw [← map_ofNat (algebraMap ℝ 𝕜) 2, norm_algebraMap', Real.norm_ofNat]
-  have hadd : 3 / 2 ≤ ‖w + 1‖ := by
-    have h := norm_sub_norm_le (2 : 𝕜) (-(w - 1))
-    rw [norm_neg, sub_neg_eq_add, htwo] at h
-    have heq : (2 : 𝕜) + (w - 1) = w + 1 := by rw [← one_add_one_eq_two]; abel
-    rw [heq] at h
-    linarith
-  have hsq : w ^ 2 - 1 = (w - 1) * (w + 1) := by noncomm_ring
-  rw [hsq, norm_mul]
-  nlinarith [norm_nonneg (w - 1)]
+  have hsq : w ^ 2 - 1 = (2 : ℝ) • (w - 1) + (w - 1) * (w - 1) := by
+    rw [two_smul]
+    noncomm_ring
+  have h := norm_sub_norm_le ((2 : ℝ) • (w - 1)) (-((w - 1) * (w - 1)))
+  simp only [norm_smul, Real.norm_ofNat, norm_neg, sub_neg_eq_add, ← hsq] at h
+  nlinarith [norm_mul_le (w - 1) (w - 1), norm_nonneg (w - 1)]
 
-/-- **No small subgroups.** An element of a real normed division algebra all of whose powers lie
+end
+
+variable {A : Type*} [NormedRing A] [NormedAlgebra ℝ A]
+
+/-- **No small subgroups.** An element of a real normed algebra all of whose powers lie
 within `1 / 2` of `1` is `1` itself. -/
-theorem eq_one_of_forall_norm_pow_sub_one_le {z : 𝕜} (h : ∀ n : ℕ, ‖z ^ n - 1‖ ≤ 1 / 2) :
+theorem eq_one_of_forall_norm_pow_sub_one_le {z : A} (h : ∀ n : ℕ, ‖z ^ n - 1‖ ≤ 1 / 2) :
     z = 1 := by
   by_contra hz
   have hr : 0 < ‖z - 1‖ := norm_pos_iff.mpr (sub_ne_zero.mpr hz)
@@ -86,20 +87,20 @@ end TauCeti
 
 namespace ContinuousMonoidHom
 
-variable {G 𝕜 : Type*} [Group G] [TopologicalSpace G] [NormedDivisionRing 𝕜] [NormedAlgebra ℝ 𝕜]
+variable {G A : Type*} [Group G] [TopologicalSpace G] [NormedRing A] [NormedAlgebra ℝ A]
 
-/-- **A continuous homomorphism into `𝕜ˣ` kills every small subgroup.** For a continuous
-homomorphism `f` from a topological group to the units of a real normed division algebra, there is
+/-- **A continuous homomorphism into `Aˣ` kills every small subgroup.** For a continuous
+homomorphism `f` from a topological group to the units of a real normed algebra, there is
 a neighbourhood `N` of `1` such that every subgroup contained in `N` lies in the kernel of `f`. -/
-theorem exists_mem_nhds_one_forall_le_ker (f : G →ₜ* 𝕜ˣ) :
+theorem exists_mem_nhds_one_forall_le_ker (f : G →ₜ* Aˣ) :
     ∃ N ∈ 𝓝 (1 : G), ∀ H : Subgroup G, (H : Set G) ⊆ N → H ≤ f.ker := by
   -- Take for `N` the preimage of the open ball of radius `1 / 2` around `1`.
-  refine ⟨(fun g ↦ ‖((f g : 𝕜ˣ) : 𝕜) - 1‖) ⁻¹' Set.Iio (1 / 2), ?_, fun H hH g hg ↦ ?_⟩
+  refine ⟨(fun g ↦ ‖((f g : Aˣ) : A) - 1‖) ⁻¹' Set.Iio (1 / 2), ?_, fun H hH g hg ↦ ?_⟩
   · refine (isOpen_Iio.preimage ?_).mem_nhds (by simp)
     fun_prop
   · rw [MonoidHom.mem_ker]
     refine Units.ext (TauCeti.eq_one_of_forall_norm_pow_sub_one_le fun n ↦ ?_)
-    have hn : ‖((f (g ^ n) : 𝕜ˣ) : 𝕜) - 1‖ < 1 / 2 := hH (H.pow_mem hg n)
+    have hn : ‖((f (g ^ n) : Aˣ) : A) - 1‖ < 1 / 2 := hH (H.pow_mem hg n)
     rw [map_pow, Units.val_pow_eq_pow_val] at hn
     exact hn.le
 

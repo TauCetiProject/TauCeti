@@ -192,8 +192,10 @@ theorem brRes_relBrInfl
 
 end Relative
 
-/-- The transport of `H²` from `Gal(Kˢ/σ(L))` to `G_L` and back is the identity. -/
-private theorem explicitMap2_symm_explicitMap2
+/-- **The transport of `H²` from `Gal(Kˢ/σ(L))` to `G_L` and back is the identity**: the transport
+used by `brCor` is a left inverse of the transport used by `brRes`. Both are the two directions of
+`explicitMap2Equiv` for the coefficient identification `(Kˢ)ˣ ≃ (Lˢ)ˣ`. -/
+theorem explicitMap2_unitsCoeffMapSymm_explicitMap2_unitsCoeffMap
     (x : H2 ↥σ.fieldRange.fixingSubgroup (UnitsCoeff K)) :
     explicitMap2 (AbsoluteGaloisGroup L) (UnitsCoeff L) ↥σ.fieldRange.fixingSubgroup
         (UnitsCoeff K)
@@ -206,12 +208,23 @@ private theorem explicitMap2_symm_explicitMap2
             AbsoluteGaloisGroup L →ₜ* ↥σ.fieldRange.fixingSubgroup)
           (unitsCoeffMap K L σ) continuous_of_discreteTopology (unitsCoeffMap_smul K L σ) x) =
       x := by
-  -- Compose the two transports, recognise the composite pair as the identity, then cancel.
-  rw [← AddMonoidHom.comp_apply, ← explicitMap2_comp, explicitMap2_congr_of_eq _ _ _ _ _
-    (ContinuousMonoidHom.id _) _ (AddMonoidHom.id _) (hq := continuous_id)
-    (hψ := fun _ _ => rfl) (ContinuousMonoidHom.ext fun h => by simp)
-    (AddMonoidHom.ext fun x => by simp)]
-  simp
+  let e : UnitsCoeff K ≃+ UnitsCoeff L :=
+    (unitsCoeffMap K L σ).toAddEquiv (unitsCoeffMapSymm K L σ)
+      (AddMonoidHom.ext (unitsCoeffMapSymm_unitsCoeffMap K L σ))
+      (AddMonoidHom.ext (unitsCoeffMap_unitsCoeffMapSymm K L σ))
+  let F := explicitMap2Equiv _ _ _ _ (absoluteGaloisGroupEquivFixingSubgroup K L σ) e
+    continuous_of_discreteTopology continuous_of_discreteTopology (unitsCoeffMap_smul K L σ)
+  -- Both transports are the two directions of `F`, so the composite cancels.
+  have hforward : F x = explicitMap2 (↥σ.fieldRange.fixingSubgroup) (UnitsCoeff K)
+      (AbsoluteGaloisGroup L) (UnitsCoeff L) (absoluteGaloisGroupEquivFixingSubgroup K L σ :
+        AbsoluteGaloisGroup L →ₜ* ↥σ.fieldRange.fixingSubgroup)
+      (unitsCoeffMap K L σ) continuous_of_discreteTopology (unitsCoeffMap_smul K L σ) x :=
+    explicitMap2Equiv_apply _ _ _ _ (absoluteGaloisGroupEquivFixingSubgroup K L σ) e
+      continuous_of_discreteTopology continuous_of_discreteTopology (unitsCoeffMap_smul K L σ) x
+  rw [← hforward]
+  exact (explicitMap2Equiv_symm_apply _ _ _ _ (absoluteGaloisGroupEquivFixingSubgroup K L σ) e
+    continuous_of_discreteTopology continuous_of_discreteTopology (unitsCoeffMap_smul K L σ)
+    (F x)).symm.trans (F.symm_apply_apply x)
 
 variable [FiniteDimensional K L]
 
@@ -250,7 +263,8 @@ theorem brCor_apply (y : Br L) :
 @[simp]
 theorem brCor_brRes (x : Br K) : brCor K L σ (brRes K L σ x) = Module.finrank K L • x := by
   -- Cancel the coefficient transports, leaving corestriction after restriction on `H²`.
-  simp only [brCor_apply, brRes_apply, AddEquiv.symm_apply_apply, explicitMap2_symm_explicitMap2]
+  simp only [brCor_apply, brRes_apply, AddEquiv.symm_apply_apply,
+    explicitMap2_unitsCoeffMapSymm_explicitMap2_unitsCoeffMap]
   -- `cor ∘ res` is multiplication by the index `[G_K : Gal(Kˢ/σ(L))] = [L : K]`.
   rw [explicitCor2_comp_res2, ← galoisSubgroup_toSubgroup K L σ, galoisSubgroup_index]
   simp

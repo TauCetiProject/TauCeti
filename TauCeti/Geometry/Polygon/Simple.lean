@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Polygon.Basic
 public import Mathlib.Topology.Algebra.Affine
 public import Mathlib.Topology.Instances.AddCircle.Defs
+public import TauCeti.Geometry.Polygon.Basic
 public import TauCeti.Topology.JordanCurve.Basic
 import Mathlib.Data.ZMod.Basic
 import Mathlib.Topology.Algebra.Order.Floor
@@ -44,11 +44,14 @@ no vertices is vacuously simple and has empty boundary, so the results about the
 * `Polygon.boundaryParamCircle`: the induced map from the circle `AddCircle n` to `P`.
 * `TauCeti.SimplePolygon`: a simple polygon bundled with its number of vertices, the polygonal
   presentation of a knot when `P = ℝ³`.
+* `TauCeti.SimplePolygon.rotate` and `TauCeti.SimplePolygon.insertVertex`: relabelling and
+  inserting vertices of simple polygons.
 * `TauCeti.SimplePolygon.realize`: the realization of a simple real polygon as a map from the
   unit circle `Circle`.
 
 ## Main results
 
+* `Polygon.isSimple_rotate_iff`: relabelling the vertices cyclically keeps a polygon simple.
 * `Polygon.range_boundaryParam`: the parametrization runs over the whole boundary.
 * `Polygon.IsSimple.boundaryParam_eq_boundaryParam_iff`: for a simple polygon, two parameters
   give the same point exactly when they agree modulo `n`.
@@ -91,6 +94,32 @@ structure IsSimple (poly : Polygon P n) : Prop where
   the first and the start of the second. -/
   eq_vertex_of_mem_edgeSet : ∀ ⦃i j : Fin n⦄ ⦃x : P⦄, i ≠ j → x ∈ poly.edgeSet R i →
     x ∈ poly.edgeSet R j → (j = finRotate n i ∧ x = poly j) ∨ (i = finRotate n j ∧ x = poly i)
+
+omit [ZeroLEOneClass R] in
+/-- Relabelling the vertices cyclically keeps a polygon simple. -/
+@[simp]
+theorem isSimple_rotate_iff (poly : Polygon P n) : poly.rotate.IsSimple R ↔ poly.IsSimple R := by
+  constructor
+  · intro h
+    refine ⟨fun j => ?_, fun j₁ j₂ x hne hx₁ hx₂ => ?_⟩
+    · have := h.hasNondegenerateEdges ((finRotate n).symm j)
+      rwa [rotate_apply, rotate_apply, Equiv.apply_symm_apply] at this
+    · obtain ⟨k₁, rfl⟩ := (finRotate n).surjective j₁
+      obtain ⟨k₂, rfl⟩ := (finRotate n).surjective j₂
+      rw [← edgeSet_rotate] at hx₁ hx₂
+      rcases h.eq_vertex_of_mem_edgeSet ((finRotate n).injective.ne_iff.1 hne) hx₁ hx₂ with
+        ⟨e, rfl⟩ | ⟨e, rfl⟩
+      · exact .inl ⟨congrArg (finRotate n) e, rotate_apply _ _⟩
+      · exact .inr ⟨congrArg (finRotate n) e, rotate_apply _ _⟩
+  · intro h
+    refine ⟨fun j => ?_, fun j₁ j₂ x hne hx₁ hx₂ => ?_⟩
+    · rw [rotate_apply, rotate_apply]
+      exact h.hasNondegenerateEdges _
+    · rw [edgeSet_rotate] at hx₁ hx₂
+      rcases h.eq_vertex_of_mem_edgeSet ((finRotate n).injective.ne hne) hx₁ hx₂ with
+        ⟨e, rfl⟩ | ⟨e, rfl⟩
+      · exact .inl ⟨(finRotate n).injective e, (rotate_apply _ _).symm⟩
+      · exact .inr ⟨(finRotate n).injective e, (rotate_apply _ _).symm⟩
 
 end IsSimple
 
@@ -327,6 +356,47 @@ structure SimplePolygon (R : Type*) {V : Type*} (P : Type*) [Ring R] [PartialOrd
 namespace SimplePolygon
 
 attribute [instance] neZero
+
+section Operations
+
+variable {R V P : Type*} [Ring R] [PartialOrder R] [ZeroLEOneClass R] [AddCommGroup V]
+  [Module R V] [AddTorsor V P]
+
+/-- The cyclic relabelling of a simple polygon, `Polygon.rotate`. -/
+@[expose] def rotate (p : SimplePolygon R P) : SimplePolygon R P where
+  numVertices := p.numVertices
+  toPolygon := p.toPolygon.rotate
+  isSimple := p.toPolygon.isSimple_rotate_iff.2 p.isSimple
+
+@[simp]
+theorem rotate_numVertices (p : SimplePolygon R P) : p.rotate.numVertices = p.numVertices :=
+  rfl
+
+@[simp]
+theorem rotate_toPolygon (p : SimplePolygon R P) : p.rotate.toPolygon = p.toPolygon.rotate :=
+  rfl
+
+/-- The simple polygon obtained from `p` by inserting `c` after vertex `i`, `Polygon.insertVertex`,
+when the result is simple. For `c` a point of edge `i`, this subdivides that edge. -/
+@[expose] def insertVertex (p : SimplePolygon R P) (i : Fin p.numVertices) (c : P)
+    (hq : (p.toPolygon.insertVertex i c).IsSimple R) : SimplePolygon R P where
+  numVertices := p.numVertices + 1
+  toPolygon := p.toPolygon.insertVertex i c
+  isSimple := hq
+
+@[simp]
+theorem insertVertex_numVertices (p : SimplePolygon R P) (i : Fin p.numVertices) (c : P)
+    (hq : (p.toPolygon.insertVertex i c).IsSimple R) :
+    (p.insertVertex i c hq).numVertices = p.numVertices + 1 :=
+  rfl
+
+@[simp]
+theorem insertVertex_toPolygon (p : SimplePolygon R P) (i : Fin p.numVertices) (c : P)
+    (hq : (p.toPolygon.insertVertex i c).IsSimple R) :
+    (p.insertVertex i c hq).toPolygon = p.toPolygon.insertVertex i c :=
+  rfl
+
+end Operations
 
 variable {V P : Type*} [AddCommGroup V] [Module ℝ V] [AddTorsor V P] (p : SimplePolygon ℝ P)
 

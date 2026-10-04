@@ -98,6 +98,38 @@ theorem oddCyclic_pairing_intCast (i j : ℤ) :
   -- The two representatives differ by the integer `θij`.
   exact (AddCircle.coe_eq_zero_iff (1 : ℚ)).2 ⟨θ * i * j, by push_cast; field_simp; ring⟩
 
+/-- The odd cyclic pairing is multiplication of residue classes followed by the rational-circle
+character. -/
+@[simp low]
+theorem oddCyclic_pairing (x y : ZMod m) :
+    (oddCyclic m hm θ).toFiniteBilinearModule.pairing x y =
+      ZMod.toRatAddCircle m ((θ : ZMod m) * x * y) := by
+  obtain ⟨i, rfl⟩ := ZMod.intCast_surjective x
+  obtain ⟨j, rfl⟩ := ZMod.intCast_surjective y
+  rw [oddCyclic_pairing_intCast]
+  simpa only [Int.cast_mul] using (ZMod.toRatAddCircle_intCast m (θ * i * j)).symm
+
+/-- The odd cyclic quadratic form is the rational-circle character of `θx²/2`, with division
+by `2` performed using its integer inverse `(m + 1) / 2` modulo `m`. -/
+@[simp low]
+theorem oddCyclic_quadratic (x : ZMod m) :
+    (oddCyclic m hm θ).quadratic x =
+      ZMod.toRatAddCircle m ((θ : ZMod m) * (((m + 1) / 2 : ℕ) : ZMod m) * x ^ 2) := by
+  obtain ⟨j, rfl⟩ := ZMod.intCast_surjective x
+  have hhalf : 2 * ((m + 1) / 2) = m + 1 := by
+    obtain ⟨k, rfl⟩ := hm
+    omega
+  have hhalfq : 2 * (((m + 1) / 2 : ℕ) : ℚ) = m + 1 := by
+    exact_mod_cast hhalf
+  have hr := ZMod.toRatAddCircle_intCast m (θ * (((m + 1) / 2 : ℕ) : ℤ) * j ^ 2)
+  simp only [Int.cast_mul, Int.cast_natCast, Int.cast_pow] at hr
+  rw [oddCyclic_quadratic_intCast, hr]
+  congr 1
+  have hm0 : (m : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr hm.pos.ne'
+  field_simp
+  rw [← hhalfq]
+  ring
+
 /-- **`oddCyclic m hm θ` is nondegenerate exactly when `θ` is prime to `m`.** If `d > 1` divides
 both, the nonzero element `m / d` lies in the radical. -/
 @[simp]

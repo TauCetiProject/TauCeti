@@ -29,6 +29,8 @@ caller has already done.
   subrepresentation containing its image.
 * `Representation.IntertwiningMap.equivOfRange`: an injective intertwining map is an equivalence
   onto a subrepresentation that its image fills.
+* `Representation.IntertwiningMap.lcomp`: precomposition with an intertwining map, as an
+  intertwining map of the conjugation representations `Representation.linHom`.
 
 ## Main results
 
@@ -81,5 +83,28 @@ theorem equivOfRange_apply_coe (f : IntertwiningMap ρ σ) (hf : Function.Inject
     {P : Subrepresentation σ} (hP : LinearMap.range f.toLinearMap = P.toSubmodule) (v : V) :
     ((f.equivOfRange hf hP v : P.toSubmodule) : W) = f v := by
   rfl
+
+section lcomp
+
+variable {A G V V' W : Type*} [CommSemiring A] [Group G]
+  [AddCommMonoid V] [Module A V] [AddCommMonoid V'] [Module A V'] [AddCommMonoid W] [Module A W]
+  {ρ : Representation A G V} {ρ' : Representation A G V'}
+
+/-- **Precomposition with an intertwining map.** An intertwining map `u : ρ' → ρ` induces the
+intertwining map `φ ↦ φ ∘ u` from the conjugation representation `linHom ρ σ` to
+`linHom ρ' σ`. -/
+def lcomp (u : IntertwiningMap ρ' ρ) (σ : Representation A G W) :
+    IntertwiningMap (linHom ρ σ) (linHom ρ' σ) where
+  toLinearMap := LinearMap.lcomp A W u.toLinearMap
+  isIntertwining' g := by
+    ext φ v
+    simp [linHom_apply, IntertwiningMap.isIntertwining]
+
+@[simp]
+theorem lcomp_apply (u : IntertwiningMap ρ' ρ) (σ : Representation A G W) (φ : V →ₗ[A] W) :
+    u.lcomp σ φ = φ ∘ₗ u.toLinearMap :=
+  (rfl)
+
+end lcomp
 
 end Representation.IntertwiningMap
