@@ -224,12 +224,20 @@ def pairingToTateDual {A B : GalRep n F} [DiscreteTopology A.V]
         ⟨AddMonoidHom.toZModLinearMap n (pairingToTateDualAddHom P), continuous_of_discreteTopology⟩
       isIntertwining' g := ContinuousLinearMap.ext (pairingToTateDualAddHom_ρ P g) }
 
+/-- The defining equation of `pairingToTateDual`: its underlying map is the additive currying.
+It holds by `rfl`, since `TopRep.ofHom` and `AddMonoidHom.toZModLinearMap` keep the underlying
+function. -/
+private theorem pairingToTateDual_hom_apply {A B : GalRep n F} [DiscreteTopology A.V]
+    (P : TopPairing A B (muNRep n F)) (a : A.V) :
+    (pairingToTateDual P).hom a = pairingToTateDualAddHom P a :=
+  rfl
+
 /-- `pairingToTateDual P` sends `a` to the character `b ↦ P a b`. -/
 @[simp]
 theorem tateDualEquiv_pairingToTateDual_apply {A B : GalRep n F} [DiscreteTopology A.V]
     (P : TopPairing A B (muNRep n F)) (a : A.V) (b : B.V) :
-    tateDualEquiv B ((pairingToTateDual P).hom a) b = P.bil a b :=
-  tateDualEquiv_pairingToTateDualAddHom_apply P a b
+    tateDualEquiv B ((pairingToTateDual P).hom a) b = P.bil a b := by
+  rw [pairingToTateDual_hom_apply, tateDualEquiv_pairingToTateDualAddHom_apply]
 
 /-- A morphism of Galois representations, regarded as an equivariant additive homomorphism. -/
 private def tateDualSourceMap {A B : GalRep n F} (f : A ⟶ B) :

@@ -84,35 +84,20 @@ def muNRepToTateDual : muNRep n F ⟶ tateDual (muNRep n F) :=
 @[simp]
 theorem tateDualEquiv_muNRepToTateDual_apply (x y : (muNRep n F).V) :
     tateDualEquiv (muNRep n F) ((muNRepToTateDual ζ hζ).hom x) y =
-      (kummerCupPairing ζ hζ).bil x y :=
-  tateDualEquiv_pairingToTateDual_apply (kummerCupPairing ζ hζ) x y
+      (kummerCupPairing ζ hζ).bil x y := by
+  rw [muNRepToTateDual, tateDualEquiv_pairingToTateDual_apply]
 
 /-- **The chosen-root identification of `μₙ` with its Tate dual is bijective.** -/
 theorem muNRepToTateDual_bijective : Function.Bijective (muNRepToTateDual ζ hζ).hom := by
-  refine ⟨fun x y hxy => ?_, fun φ => ?_⟩
+  have : Finite (muNRep n F).V := Finite.of_equiv _ (muNRepZModEquiv ζ hζ).symm.toEquiv
+  refine Function.Injective.bijective_of_nat_card_le (fun x y hxy => ?_) ?_
   · have := congrArg
       (fun ψ => tateDualEquiv (muNRep n F) ψ (muNRepGenerator ζ hζ)) hxy
     simpa [kummerCupPairing_apply_generator ζ hζ] using this
-  · refine ⟨tateDualEquiv (muNRep n F) φ (muNRepGenerator ζ hζ), ?_⟩
-    apply (tateDualEquiv (muNRep n F)).injective
-    ext x
-    rw [tateDualEquiv_muNRepToTateDual_apply]
-    let i := (muNRepZModEquiv ζ hζ x).val
-    have hx : x = i • muNRepGenerator ζ hζ := eq_nsmul_muNRepGenerator ζ hζ x
-    calc
-      (kummerCupPairing ζ hζ).bil
-          (tateDualEquiv (muNRep n F) φ (muNRepGenerator ζ hζ)) x =
-        (kummerCupPairing ζ hζ).bil
-          (tateDualEquiv (muNRep n F) φ (muNRepGenerator ζ hζ))
-            (i • muNRepGenerator ζ hζ) := congrArg _ hx
-      _ = i • (kummerCupPairing ζ hζ).bil
-          (tateDualEquiv (muNRep n F) φ (muNRepGenerator ζ hζ))
-            (muNRepGenerator ζ hζ) := by rw [map_nsmul]
-      _ = i • tateDualEquiv (muNRep n F) φ (muNRepGenerator ζ hζ) := by
-        rw [kummerCupPairing_apply_generator]
-      _ = tateDualEquiv (muNRep n F) φ (i • muNRepGenerator ζ hζ) := by
-        rw [map_nsmul]
-      _ = tateDualEquiv (muNRep n F) φ x := congrArg _ hx.symm
+  · have hM (x : (muNRep n F).V) : n • x = 0 :=
+      (muNRepZModEquiv ζ hζ).injective (by simp)
+    rw [Nat.card_congr (tateDualEquiv (muNRep n F)).toEquiv,
+      natCard_addMonoidHom_of_addEquiv_zmod (muNRepZModEquiv ζ hζ) hM]
 
 /-- **The `(1, 1)` Tate pairing on `μₙ`, transported through the chosen-root identification, is
 the local symbol.** -/
