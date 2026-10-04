@@ -85,9 +85,16 @@ theorem graphClass_comp_subtype [LocallyCompactSpace G] (U : OpenSubgroup G)
           ((eqToHom (congrArg (continuousCohomology 1) (ofDiscreteModule_trivialF2 G))).hom
             (explicitH1AddEquivContinuousCohomology G (trivialF2 G).V
               (evensHomCocycle y hy))) := by
-  rw [OpenSubgroup.indexTwoCharacterClass_def, trivialF2TopPairing_cup_one_one_explicitH1,
-    trivialF2TopPairing_cup_one_one_explicitH1, ← map_add, ← map_add,
-    graphClass_eq_explicitGraphClass, explicitGraphClass_comp_subtype]
+  have h := congrArg (explicitH2AddEquivContinuousCohomology G (trivialF2 G).V)
+    (explicitGraphClass_comp_subtype U hU y hy)
+  simp only [map_add] at h
+  have h := congrArg
+    (eqToHom (congrArg (continuousCohomology 2) (ofDiscreteModule_trivialF2 G))).hom h
+  simp only [map_add] at h
+  simp only [graphClass_eq_explicitGraphClass]
+  simp only [OpenSubgroup.indexTwoCharacterClass_def,
+    trivialF2TopPairing_cup_one_one_explicitH1]
+  rw [h]
 
 variable [CompactSpace G] [TotallyDisconnectedSpace G]
 
@@ -110,9 +117,18 @@ theorem trivialF2ResMap_graphClass (U : OpenSubgroup G) (hU : U.toSubgroup.index
               (evensHomCocycleAmbient U.toSubgroup α hα)))) := by
   have : LocallyCompactSpace U.toSubgroup :=
     (U.toSubgroup.isClosed_of_isOpen U.isOpen).locallyCompactSpace
-  rw [OpenSubgroup.evensConj_explicitH1AddEquivContinuousCohomology,
-    trivialF2TopPairing_cup_one_one_explicitH1_subgroup, graphClass_eq_explicitGraphClass,
-    trivialF2ResMap_explicitH2AddEquivContinuousCohomology, explicitRes2_explicitGraphClass]
+  have h := congrArg
+    (fun z ↦
+      (eqToHom (congrArg (continuousCohomology 2) (ofDiscreteModule_subgroup_trivialF2 G
+        U.toSubgroup))).hom
+        (explicitH2AddEquivContinuousCohomology U.toSubgroup (trivialF2 G).V z))
+    (explicitRes2_explicitGraphClass U hU α hα)
+  simp only [graphClass_eq_explicitGraphClass,
+    trivialF2ResMap_explicitH2AddEquivContinuousCohomology]
+  simp only [
+    OpenSubgroup.evensConj_explicitH1AddEquivContinuousCohomology,
+    trivialF2TopPairing_cup_one_one_explicitH1_subgroup]
+  exact h
 
 /-- **Polarization of the graph class, on canonical cohomology.** For an open subgroup `U` of
 index two in a profinite group `G` and continuous homomorphisms `α β : U → 𝔽₂` with canonical
@@ -138,10 +154,17 @@ theorem graphClass_polarization (U : OpenSubgroup G) (hU : U.toSubgroup.index = 
   have : U.toSubgroup.FiniteIndex := ⟨by omega⟩
   have : LocallyCompactSpace U.toSubgroup :=
     (U.toSubgroup.isClosed_of_isOpen U.isOpen).locallyCompactSpace
-  rw [OpenSubgroup.evensConj_explicitH1AddEquivContinuousCohomology,
+  have h := congrArg (explicitH2AddEquivContinuousCohomology G (trivialF2 G).V)
+    (explicitGraphClass_polarization U hU α β hα hβ)
+  simp only [map_sub] at h
+  have h := congrArg
+    (eqToHom (congrArg (continuousCohomology 2) (ofDiscreteModule_trivialF2 G))).hom h
+  simp only [map_sub] at h
+  simp only [graphClass_eq_explicitGraphClass]
+  simp only [
+    OpenSubgroup.evensConj_explicitH1AddEquivContinuousCohomology,
     trivialF2TopPairing_cup_one_one_explicitH1_subgroup,
-    trivialF2CorMap_explicitH2AddEquivContinuousCohomology, graphClass_eq_explicitGraphClass,
-    graphClass_eq_explicitGraphClass, graphClass_eq_explicitGraphClass, ← map_sub, ← map_sub,
-    ← map_sub, ← map_sub, explicitGraphClass_polarization]
+    trivialF2CorMap_explicitH2AddEquivContinuousCohomology]
+  rw [h]
 
 end TauCeti.ContCohomology
