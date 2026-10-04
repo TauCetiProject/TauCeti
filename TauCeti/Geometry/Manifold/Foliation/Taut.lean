@@ -70,19 +70,16 @@ def Taut : Prop :=
   ∀ x : M, ∃ γ : ℝ → M, F.IsClosedTransversal γ ∧ ∃ t : ℝ, γ t ∈ F.leaf x
 
 /-- The C¹ regularity field of a closed transversal. -/
-@[simp]
 theorem isClosedTransversal_contMDiff (hγ : F.IsClosedTransversal γ) :
     ContMDiff 𝓘(ℝ, ℝ) I 1 γ :=
   hγ.1
 
 /-- The nonzero velocity field of a closed transversal. -/
-@[simp]
 theorem isClosedTransversal_velocity_ne_zero (hγ : F.IsClosedTransversal γ) (t : ℝ) :
     curveVelocity I γ t ≠ 0 :=
   (hγ.2.2 t).1
 
 /-- The complementary-distribution field of a closed transversal. -/
-@[simp]
 theorem isClosedTransversal_isCompl (hγ : F.IsClosedTransversal γ) (t : ℝ) :
     IsCompl (Submodule.span ℝ {curveVelocity I γ t}) (F.distribution (γ t)) :=
   (hγ.2.2 t).2
