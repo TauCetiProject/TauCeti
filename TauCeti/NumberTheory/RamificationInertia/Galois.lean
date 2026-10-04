@@ -13,7 +13,9 @@ import TauCeti.RingTheory.Unramified.AlgEquiv
 
 This file records Galois consequences of the fundamental identity for primes in finite
 extensions of domains. First, in a Galois extension the number of primes above a prime ideal is
-maximal exactly when the common ramification index and inertia degree are both `1`. Second, the
+maximal exactly when the common ramification index and inertia degree are both `1`, and, by
+orbit–stabilizer alone, exactly when the decomposition group of one (equivalently, every) prime
+above it is trivial; neither criterion needs separability of the residue extensions. Second, the
 cardinality of the inertia subgroup of a prime `P` upstairs is the ramification index of `P`
 itself over the base, rather than the `Ideal.ramificationIdxIn` of the prime below it.
 
@@ -29,6 +31,11 @@ a single prime upstairs.
 
 * `Ideal.ncard_primesOver_eq_natCard_iff_of_isGaloisGroup`: the domain/flat Galois counting
   criterion.
+* `Ideal.ncard_primesOver_eq_natCard_iff_stabilizer_eq_bot`,
+  `Ideal.ncard_primesOver_eq_natCard_iff_forall_stabilizer_eq_bot`: the same count is maximal
+  exactly when the decomposition groups above the prime are trivial.
+* `Ideal.stabilizer_eq_bot_iff_ramificationIdxIn_eq_one_and_inertiaDegIn_eq_one`: a decomposition
+  group is trivial exactly when `e = f = 1`.
 * `Ideal.card_inertia_eq_ramificationIdx`: the un-`In` form of the inertia count.
 * `Ideal.isUnramifiedAt_pointwise_smul_iff`: unramifiedness is invariant under translation by
   an algebra automorphism.
@@ -42,7 +49,9 @@ a single prime upstairs.
 ## Provenance
 
 Built directly on Mathlib's Galois fundamental identity
-(`Ideal.ncard_primesOver_mul_ramificationIdxIn_mul_inertiaDegIn`), on its inertia count
+(`Ideal.ncard_primesOver_mul_ramificationIdxIn_mul_inertiaDegIn`), on its description of the
+primes above a prime as one orbit (`Algebra.IsInvariant.orbit_eq_primesOver`) together with
+orbit–stabilizer (`MulAction.index_stabilizer`), on its inertia count
 (`Ideal.card_inertia_eq_ramificationIdxIn`), on its conjugation formula for inertia subgroups
 (`Ideal.inertia_smul`) and on its transitivity statement
 (`Ideal.exists_smul_eq_of_isGaloisGroup`), together with the transport of unramifiedness along
@@ -67,6 +76,52 @@ theorem ncard_primesOver_eq_natCard_iff_of_isGaloisGroup {A B : Type*}
       P.ramificationIdxIn B = 1 ∧ P.inertiaDegIn B = 1 := by
   have h := ncard_primesOver_mul_ramificationIdxIn_mul_inertiaDegIn P B G
   rw [← mul_eq_one, ← h, left_eq_mul₀ (left_ne_zero_of_mul (h ▸ Nat.card_pos.ne'))]
+
+section Stabilizer
+
+open MulAction
+
+variable {A B : Type*} [CommRing A] [CommRing B] [Algebra A B] (G : Type*) [Group G] [Finite G]
+  [MulSemiringAction G B] [SMulCommClass G A B] [Algebra.IsInvariant A B G]
+
+/-- **Complete splitting through the decomposition group.** If `G` acts on `B` with invariants
+`A`, then the number of primes of `B` over `P` equals the order of `G` exactly when the
+decomposition group `stabilizer G Q` of one prime `Q` over `P` is trivial. This is
+orbit–stabilizer for the transitive action of `G` on the primes over `P`; no hypothesis on the
+residue extensions is needed. -/
+theorem ncard_primesOver_eq_natCard_iff_stabilizer_eq_bot (P : Ideal A) (Q : Ideal B)
+    [Q.IsPrime] [Q.LiesOver P] :
+    (P.primesOver B).ncard = Nat.card G ↔ stabilizer G Q = ⊥ := by
+  rw [← Algebra.IsInvariant.orbit_eq_primesOver A B G P Q, ← index_stabilizer]
+  refine ⟨fun h ↦ Subgroup.card_eq_one.1 ?_, fun h ↦ by rw [h, Subgroup.index_bot]⟩
+  have hmul := (stabilizer G Q).card_mul_index
+  rw [h] at hmul
+  exact Nat.eq_of_mul_eq_mul_right Nat.card_pos (by rw [hmul, one_mul])
+
+/-- **Complete splitting through all decomposition groups.** If `G` acts on `B` with invariants
+`A`, then the number of primes of `B` over a prime `P` of `A` equals the order of `G` exactly when
+the decomposition group of every prime over `P` is trivial. -/
+theorem ncard_primesOver_eq_natCard_iff_forall_stabilizer_eq_bot [FaithfulSMul A B]
+    (P : Ideal A) [P.IsPrime] :
+    (P.primesOver B).ncard = Nat.card G ↔ ∀ Q ∈ P.primesOver B, stabilizer G Q = ⊥ := by
+  have : Algebra.IsIntegral A B := Algebra.IsInvariant.isIntegral A B G
+  obtain ⟨⟨Q, _, _⟩⟩ := (inferInstance : Nonempty (P.primesOver B))
+  exact ⟨fun h Q' ⟨_, _⟩ ↦ (ncard_primesOver_eq_natCard_iff_stabilizer_eq_bot G P Q').1 h,
+    fun h ↦ (ncard_primesOver_eq_natCard_iff_stabilizer_eq_bot G P Q).2 (h Q ⟨‹_›, ‹_›⟩)⟩
+
+end Stabilizer
+
+/-- **The decomposition group is trivial exactly when `e = f = 1`.** In a finite flat Galois
+extension of domains, the decomposition group of a prime `Q` over `P` is trivial exactly when the
+common ramification index and inertia degree over `P` are both `1`. Unlike
+`Ideal.card_stabilizer_eq`, this needs no separability of the residue extension. -/
+theorem stabilizer_eq_bot_iff_ramificationIdxIn_eq_one_and_inertiaDegIn_eq_one {A B : Type*}
+    [CommRing A] [IsDomain A] [CommRing B] [IsDomain B] [Algebra A B] [Module.Finite A B]
+    [Module.Flat A B] (G : Type*) [Group G] [Finite G] [MulSemiringAction G B]
+    [IsGaloisGroup G A B] (P : Ideal A) [P.IsPrime] (Q : Ideal B) [Q.IsPrime] [Q.LiesOver P] :
+    MulAction.stabilizer G Q = ⊥ ↔ P.ramificationIdxIn B = 1 ∧ P.inertiaDegIn B = 1 := by
+  rw [← ncard_primesOver_eq_natCard_iff_stabilizer_eq_bot G P Q,
+    ncard_primesOver_eq_natCard_iff_of_isGaloisGroup G P]
 
 /-- The cardinality of the inertia subgroup of `P` is the ramification index of `P` over `R`.
 This is `Ideal.card_inertia_eq_ramificationIdxIn` stated with the ramification index of `P`
