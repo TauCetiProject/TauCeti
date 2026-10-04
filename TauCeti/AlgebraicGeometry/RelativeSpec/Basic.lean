@@ -192,8 +192,12 @@ lemma _root_.CategoryTheory.CommMon.sectionsAlgHom_id (A : CommMon X.Modules) (U
     CommMon.sectionsAlgHom (𝟙 A) U = AlgHom.id Γ(X, U) Γ(A.X, U) := by
   let F := (Scheme.Modules.sectionsFunctor U).mapCommMon ⋙
     CommMon.forget₂Mon (ModuleCat.{u} Γ(X, U)) ⋙ ModuleCat.MonModuleEquivalenceAlgebra.functor
+  -- `sectionsAlgHom` spells out the three functor maps; `map_id` is stated for
+  -- their composite `F`. `change` identifies these definitionally equal presentations.
   change (F.map (𝟙 A)).hom = _
   ext x
+  -- The identities use the algebra instances on `F.obj A` and on `Γ(A.X, U)`.
+  -- Rewriting the bundled maps does not match these instances; evaluation removes them.
   change (F.map (𝟙 A)).hom x = x
   simpa only [AlgCat.hom_id, AlgHom.id_apply] using
     congrArg (fun f ↦ f.hom x) (F.map_id A)
@@ -205,6 +209,8 @@ lemma _root_.CategoryTheory.CommMon.sectionsAlgHom_comp {A B C : CommMon X.Modul
       (CommMon.sectionsAlgHom g U).comp (CommMon.sectionsAlgHom f U) := by
   let F := (Scheme.Modules.sectionsFunctor U).mapCommMon ⋙
     CommMon.forget₂Mon (ModuleCat.{u} Γ(X, U)) ⋙ ModuleCat.MonModuleEquivalenceAlgebra.functor
+  -- `sectionsAlgHom` spells out the three functor maps; rewriting with `map_comp`
+  -- requires first presenting them as the map of the composite functor `F`.
   change (F.map (f ≫ g)).hom = (F.map g).hom.comp (F.map f).hom
   simpa only [AlgCat.hom_comp] using congrArg AlgCat.Hom.hom (F.map_comp f g)
 
@@ -236,9 +242,8 @@ lemma _root_.CategoryTheory.CommMon.sectionsPresheafMap_id (A : CommMon X.Module
     CommMon.sectionsPresheafMap (𝟙 A) = 𝟙 A.sectionsPresheaf := by
   apply NatTrans.ext
   funext U
-  rw [CommMon.sectionsPresheafMap_app, CommMon.sectionsAlgHom_id]
-  change CommRingCat.ofHom (AlgHom.id Γ(X, U.unop) Γ(A.X, U.unop)).toRingHom =
-    𝟙 (CommRingCat.of Γ(A.X, U.unop))
+  rw [CommMon.sectionsPresheafMap_app, CommMon.sectionsAlgHom_id, NatTrans.id_app]
+  dsimp only [CommMon.sectionsPresheaf]
   ext x
   simp only [CommRingCat.hom_ofHom, CommRingCat.hom_id, AlgHom.toRingHom_eq_coe,
     RingHom.coe_coe, AlgHom.id_apply, RingHom.id_apply]
