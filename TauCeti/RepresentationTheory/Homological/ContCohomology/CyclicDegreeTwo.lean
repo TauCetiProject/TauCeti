@@ -30,7 +30,6 @@ is exactly that the displayed sum is a norm.
 
 ## Main definitions and results
 
-* `TauCeti.groupNorm`: the norm of a finite group action.
 * `TauCeti.ContCohomology.sum_cocycle_mem_H0`: the sum attached to a two-cocycle is invariant.
 * `TauCeti.ContCohomology.explicitH2CyclicEquiv`: the cyclic `H²` computation.
 * `TauCeti.ContCohomology.explicitH2CyclicEquiv_mk`: its formula on cocycle classes.
@@ -46,18 +45,6 @@ public section
 namespace TauCeti
 
 universe u v
-
-/-- The norm of a finite group action, `m ↦ ∑ g, g • m`. -/
-def groupNorm (G : Type u) [Group G] [Fintype G] (M : Type v) [AddCommGroup M]
-    [DistribMulAction G M] : M →+ M where
-  toFun m := ∑ g : G, g • m
-  map_zero' := by simp
-  map_add' m n := by simp only [smul_add, Finset.sum_add_distrib]
-
-@[simp]
-theorem groupNorm_apply (G : Type u) [Group G] [Fintype G] (M : Type v) [AddCommGroup M]
-    [DistribMulAction G M] (m : M) : groupNorm G M m = ∑ g : G, g • m :=
-  (rfl)
 
 namespace ContCohomology
 
@@ -103,7 +90,7 @@ omit [TopologicalSpace G] [DiscreteTopology G] [TopologicalSpace M]
   [IsTopologicalAddGroup M] [ContinuousSMul G M] in
 private theorem sum_range_pow_smul (m : M) :
     ∑ i ∈ Finset.range (orderOf g), g ^ i • m = groupNorm G M m := by
-  rw [← Fin.sum_univ_eq_sum_range]
+  rw [groupNorm_apply, ← Fin.sum_univ_eq_sum_range]
   exact (finEquivCyclic g hg).sum_comp (fun x ↦ x • m)
 
 include hg in

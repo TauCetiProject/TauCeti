@@ -38,6 +38,7 @@ H⁰(G, M) = M^G,   H¹(G, M) = Z¹/B¹,   H²(G, M) = Z²/B².
 * `TauCeti.ContCohomology.H0`, `H1`, `H2`, their class maps `H1pi`, `H2pi`, and the discrete
   carriers `DiscreteH1`, `DiscreteH2` used by the comparison with canonical cohomology, together
   with their identifications `discreteH1Equiv`, `discreteH2Equiv` with `H1` and `H2`.
+* `TauCeti.groupNorm`: the norm `m ↦ ∑ g, g • m` of a finite group action.
 * `TauCeti.ContCohomology.sumCocycle`: the invariant obtained by summing a finite-group
   `2`-cocycle over its first argument.
 * `TauCeti.ContCohomology.explicitMap0`: the compatible-pair pullback on the explicit degree-zero
@@ -526,6 +527,18 @@ theorem Z2_le_C2 : Z2 G M ≤ C2 G M := inf_le_left
 end Cocycles
 
 section FiniteGroup
+
+/-- The norm of a finite group action, `m ↦ ∑ g, g • m`. -/
+def _root_.TauCeti.groupNorm (G : Type u) [Group G] [Fintype G] (M : Type v) [AddCommGroup M]
+    [DistribMulAction G M] : M →+ M where
+  toFun m := ∑ g : G, g • m
+  map_zero' := by simp
+  map_add' m n := by simp only [smul_add, Finset.sum_add_distrib]
+
+@[simp]
+theorem _root_.TauCeti.groupNorm_apply (G : Type u) [Group G] [Fintype G] (M : Type v)
+    [AddCommGroup M] [DistribMulAction G M] (m : M) : groupNorm G M m = ∑ g : G, g • m :=
+  (rfl)
 
 variable {G : Type u} [Group G] [TopologicalSpace G] [Fintype G]
   {M : Type v} [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
