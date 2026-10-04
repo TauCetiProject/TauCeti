@@ -139,11 +139,13 @@ theorem IsSimple.three_le [NeZero n] (h : poly.IsSimple R) : 3 ≤ n := by
   obtain rfl : n = 2 := by omega
   have h01 : poly 0 ≠ poly 1 := h.hasNondegenerateEdges 0
   have hhalf : (2⁻¹ : R) ∈ Icc (0 : R) 1 := ⟨by positivity, by norm_num⟩
+  have hrot0 : finRotate 2 0 = 1 := by simp [finRotate_apply]
+  have hrot1 : finRotate 2 1 = 0 := by simp [finRotate_apply]
   have hm0 : AffineMap.lineMap (poly 0) (poly 1) (2⁻¹ : R) ∈ poly.edgeSet R 0 := by
-    rw [edgeSet, show finRotate 2 0 = 1 by simp [finRotate_apply]]
+    rw [edgeSet, hrot0]
     exact ⟨2⁻¹, hhalf, rfl⟩
   have hm1 : AffineMap.lineMap (poly 0) (poly 1) (2⁻¹ : R) ∈ poly.edgeSet R 1 := by
-    rw [edgeSet, show finRotate 2 1 = 0 by simp [finRotate_apply], affineSegment_comm]
+    rw [edgeSet, hrot1, affineSegment_comm]
     exact ⟨2⁻¹, hhalf, rfl⟩
   rcases h.eq_vertex_of_mem_edgeSet Fin.zero_ne_one hm0 hm1 with ⟨-, hx⟩ | ⟨-, hx⟩
   · rcases AffineMap.lineMap_eq_right_iff.1 hx with h' | h'
@@ -371,7 +373,8 @@ theorem IsSimple.exists_mem_nhds_inter_boundary_eq [T2Space P] (h : poly.IsSimpl
             rw [← add_assoc, ← finRotate_apply, ← finRotate_apply, ← he, hk'k]
           rw [add_eq_left] at he2
           obtain ⟨m, rfl⟩ : ∃ m, n = m + 3 := ⟨n - 3, by omega⟩
-          simp [Fin.ext_iff, Fin.val_add, Nat.mod_eq_of_lt (show 2 < m + 3 by omega)] at he2
+          have hm2 : 2 < m + 3 := by omega
+          simp [Fin.ext_iff, Fin.val_add, Nat.mod_eq_of_lt hm2] at he2
       · by_cases hjk : j = k
         · subst hjk
           exact subset_union_right

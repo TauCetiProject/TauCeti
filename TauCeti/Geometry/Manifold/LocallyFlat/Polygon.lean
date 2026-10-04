@@ -8,9 +8,11 @@ module
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Geometry.Manifold.LocallyFlat.Basic
 public import TauCeti.Geometry.Polygon.Simple
-import Mathlib.Analysis.LocallyConvex.Separation
 import Mathlib.Topology.Algebra.Module.Equiv.Pi
-import Mathlib.Topology.Algebra.Module.Equiv.Prod
+import TauCeti.Analysis.Convex.Between
+import TauCeti.Analysis.LocallyConvex.Separation
+import TauCeti.Analysis.Normed.Affine.Coordinate
+import TauCeti.Analysis.Normed.Affine.Ray
 
 /-!
 # Polygonal knots are locally flat
@@ -61,119 +63,6 @@ open Set Topology
 
 variable {V P F' : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [MetricSpace P]
   [NormedAddTorsor V P] [NormedAddCommGroup F'] [NormedSpace ℝ F']
-
-namespace TauCeti
-
-/-- Two vectors with `0 ∉ [-d₁, d₂]`, that is nonzero and not on a common ray from `0`, are
-separated by a continuous functional which is negative on `d₁` and positive on `d₂`; it can be
-chosen nonzero at any vector `u` on which some functional `ℓ₀` takes the value `1`. -/
-private theorem exists_strongDual_neg_pos_ne_zero {d₁ d₂ : V} (h : (0 : V) ∉ segment ℝ (-d₁) d₂)
-    (ℓ₀ : StrongDual ℝ V) {u : V} (hu : ℓ₀ u = 1) :
-    ∃ ℓ : StrongDual ℝ V, ℓ d₁ < 0 ∧ 0 < ℓ d₂ ∧ ℓ u ≠ 0 := by
-  have hclosed : IsClosed (segment ℝ (-d₁) d₂) := by
-    rw [segment_eq_image_lineMap]
-    exact (isCompact_Icc.image AffineMap.lineMap_continuous).isClosed
-  obtain ⟨f, c, hf0, hfc⟩ := geometric_hahn_banach_point_closed (convex_segment _ _) hclosed h
-  have h₁ : c < -f d₁ := by simpa using hfc _ (left_mem_segment ℝ _ _)
-  have h₂ : c < f d₂ := hfc _ (right_mem_segment ℝ _ _)
-  rw [map_zero] at hf0
-  by_cases hfu : f u = 0
-  · -- Perturb `f` by a small multiple of `ℓ₀`, small enough to keep both signs.
-    set ε := c / (|ℓ₀ d₁| + |ℓ₀ d₂| + 1) with hε
-    have hpos : 0 < |ℓ₀ d₁| + |ℓ₀ d₂| + 1 := by positivity
-    have hεpos : 0 < ε := div_pos hf0 hpos
-    have hεc : ε * (|ℓ₀ d₁| + |ℓ₀ d₂| + 1) = c := div_mul_cancel₀ _ hpos.ne'
-    refine ⟨f + ε • ℓ₀, ?_, ?_, ?_⟩
-    · simp only [add_apply, smul_apply, smul_eq_mul]
-      nlinarith [le_abs_self (ℓ₀ d₁), abs_nonneg (ℓ₀ d₂)]
-    · simp only [add_apply, smul_apply, smul_eq_mul]
-      nlinarith [neg_abs_le (ℓ₀ d₂), abs_nonneg (ℓ₀ d₁)]
-    · simp [hfu, hu, hεpos.ne']
-  · exact ⟨f, by linarith, by linarith, hfu⟩
-
-/-- If the segments from `z` to `a` and to `b` meet only at `z`, then `a - z` and `b - z` are
-nonzero and do not lie on a common ray from `0`: `0 ∉ [-(a - z), b - z]`. -/
-private theorem zero_notMem_segment_of_affineSegment_inter_eq {a b z : P} (ha : a ≠ z) (hb : b ≠ z)
-    (hab : affineSegment ℝ z a ∩ affineSegment ℝ z b = {z}) :
-    (0 : V) ∉ segment ℝ (-(a -ᵥ z)) (b -ᵥ z) := by
-  rintro ⟨s, t, hs, ht, hst, he⟩
-  rw [smul_neg, neg_add_eq_zero] at he
-  have hm : t • (b -ᵥ z) +ᵥ z ∈ affineSegment ℝ z a ∩ affineSegment ℝ z b :=
-    ⟨⟨s, ⟨hs, by linarith⟩, by rw [AffineMap.lineMap_apply, he]⟩,
-      ⟨t, ⟨ht, by linarith⟩, by rw [AffineMap.lineMap_apply]⟩⟩
-  rw [hab, mem_singleton_iff, ← vsub_eq_zero_iff_eq, vadd_vsub, smul_eq_zero] at hm
-  rcases hm with rfl | hm
-  · rw [zero_smul, smul_eq_zero] at he
-    rcases he with rfl | he
-    · linarith
-    · exact ha (vsub_eq_zero_iff_eq.1 he)
-  · exact hb (vsub_eq_zero_iff_eq.1 hm)
-
-/-- Within distance `‖c - z‖` of `z`, the segment from `z` to `c` is the ray from `z` through
-`c`. -/
-private theorem mem_affineSegment_iff_of_dist_lt {c y z : P} (hy : dist y z < ‖c -ᵥ z‖) :
-    y ∈ affineSegment ℝ z c ↔ ∃ t : ℝ, 0 ≤ t ∧ y = t • (c -ᵥ z) +ᵥ z := by
-  constructor
-  · rintro ⟨t, ht, rfl⟩
-    exact ⟨t, ht.1, AffineMap.lineMap_apply _ _ _⟩
-  · rintro ⟨t, ht, rfl⟩
-    refine ⟨t, ⟨ht, ?_⟩, AffineMap.lineMap_apply _ _ _⟩
-    rw [dist_vadd_left, norm_smul, Real.norm_of_nonneg ht] at hy
-    by_contra! ht1
-    nlinarith [norm_nonneg (c -ᵥ z)]
-
-/-- If `ℓ d₁ < 0 < ℓ d₂`, the union of the rays from `z` along `d₁` and along `d₂` is the range of
-a continuous map `g` with `ℓ (g s - z) = s`: it runs out along `d₁` for negative parameters and
-along `d₂` for positive ones. -/
-private theorem exists_continuous_range_eq_rays (ℓ : StrongDual ℝ V) {d₁ d₂ : V} (h₁ : ℓ d₁ < 0)
-    (h₂ : 0 < ℓ d₂) (z : P) : ∃ g : ℝ → P, Continuous g ∧ (∀ s, ℓ (g s -ᵥ z) = s) ∧
-      ∀ y, y ∈ range g ↔
-        (∃ t : ℝ, 0 ≤ t ∧ y = t • d₁ +ᵥ z) ∨ (∃ t : ℝ, 0 ≤ t ∧ y = t • d₂ +ᵥ z) := by
-  refine ⟨fun s => ((max s 0 / ℓ d₂) • d₂ + (min s 0 / ℓ d₁) • d₁) +ᵥ z, by fun_prop,
-    fun s => ?_, fun y => ⟨?_, ?_⟩⟩
-  · rw [vadd_vsub, map_add, map_smul, map_smul, smul_eq_mul, smul_eq_mul,
-      div_mul_cancel₀ _ h₂.ne', div_mul_cancel₀ _ h₁.ne, max_add_min, add_zero]
-  · rintro ⟨s, rfl⟩
-    rcases le_total 0 s with hs | hs
-    · exact .inr ⟨s / ℓ d₂, div_nonneg hs h₂.le, by simp [max_eq_left hs, min_eq_right hs]⟩
-    · exact .inl ⟨s / ℓ d₁, div_nonneg_of_nonpos hs h₁.le,
-        by simp [max_eq_right hs, min_eq_left hs]⟩
-  · rintro (⟨t, ht, rfl⟩ | ⟨t, ht, rfl⟩)
-    · have hs : t * ℓ d₁ ≤ 0 := mul_nonpos_of_nonneg_of_nonpos ht h₁.le
-      exact ⟨t * ℓ d₁, by simp [max_eq_right hs, min_eq_left hs, mul_div_cancel_right₀ _ h₁.ne]⟩
-    · have hs : 0 ≤ t * ℓ d₂ := mul_nonneg ht h₂.le
-      exact ⟨t * ℓ d₂, by simp [max_eq_left hs, min_eq_right hs, mul_div_cancel_right₀ _ h₂.ne']⟩
-
-/-- A continuous linear equivalence `e : V ≃L[ℝ] ℝ × F'` can have its first coordinate replaced by
-any continuous functional `ℓ` not vanishing on `e.symm (1, 0)`. Centred at `z`, this gives a
-homeomorphism `P ≃ₜ ℝ × F'` whose first coordinate is `y ↦ ℓ (y -ᵥ z)`. -/
-private theorem exists_homeomorph_fst_eq (e : V ≃L[ℝ] ℝ × F') (ℓ : StrongDual ℝ V)
-    (hℓ : ℓ (e.symm (1, 0)) ≠ 0) (z : P) : ∃ Φ : P ≃ₜ ℝ × F', ∀ y, (Φ y).1 = ℓ (y -ᵥ z) := by
-  set a := ℓ (e.symm (1, 0))
-  have key (q : ℝ × F') : ℓ (e.symm q) = q.1 * a + ℓ (e.symm (0, q.2)) := by
-    have hq : q = q.1 • ((1 : ℝ), (0 : F')) + (0, q.2) := by ext <;> simp
-    calc ℓ (e.symm q) = ℓ (e.symm (q.1 • ((1 : ℝ), (0 : F')) + (0, q.2))) := by rw [← hq]
-      _ = q.1 * a + ℓ (e.symm (0, q.2)) := by rw [map_add, map_add, map_smul, map_smul, smul_eq_mul]
-  refine ⟨{ toFun := fun y => (ℓ (y -ᵥ z), (e (y -ᵥ z)).2)
-            invFun := fun q => e.symm ((q.1 - ℓ (e.symm (0, q.2))) / a, q.2) +ᵥ z
-            left_inv := fun y => ?_
-            right_inv := fun q => ?_
-            continuous_toFun := by fun_prop
-            continuous_invFun := by fun_prop }, fun y => rfl⟩
-  · have hy := key (e (y -ᵥ z))
-    rw [e.symm_apply_apply] at hy
-    have h1 : (ℓ (y -ᵥ z) - ℓ (e.symm (0, (e (y -ᵥ z)).2))) / a = (e (y -ᵥ z)).1 := by
-      rw [div_eq_iff hℓ]
-      linarith
-    dsimp only
-    rw [h1, Prod.mk.eta, e.symm_apply_apply, vsub_vadd]
-  · have hq := key ((q.1 - ℓ (e.symm (0, q.2))) / a, q.2)
-    simp only [vadd_vsub, e.apply_symm_apply]
-    refine Prod.ext ?_ rfl
-    rw [hq, div_mul_cancel₀ _ hℓ]
-    ring
-
-end TauCeti
 
 namespace Polygon
 
