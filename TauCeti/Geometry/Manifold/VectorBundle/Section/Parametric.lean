@@ -164,14 +164,15 @@ private theorem exists_section_badParameter_neighborhood {n : ℕ∞ω} {x : M} 
     rw [ker_sectionLinearization hbl he hcl hz] at hn
     rw [hD₁, ← pow_two]
     exact hn
-  have hleft₀ : φ.symm (φ x) = x := extChartAt_to_inv x
-  have hfzero : f (φ x, l) = 0 := by
-    -- Unfold the local abbreviations `f` and `c` to reach the section value.
-    change c (φ.symm (φ x), l) = 0
-    rw [hleft₀]
-    change (e ⟨b (x, l), s (x, l)⟩).2 = 0
-    rw [hz]
-    exact congrArg Prod.snd (e.zeroSection ℝ he)
+  -- A section zero in the chart source and over the trivialization's base set is a coordinate
+  -- zero.
+  have hfzero_of : ∀ {x' : M} {k : Λ}, x' ∈ φ.source → b (x', k) ∈ e.baseSet →
+      s (x', k) = 0 → f (φ x', k) = 0 := by
+    intro x' k hx' hbase hzero
+    simp only [f, c]
+    rw [φ.left_inv hx', hzero]
+    exact congrArg Prod.snd (e.zeroSection ℝ hbase)
+  have hfzero : f (φ x, l) = 0 := hfzero_of (mem_extChartAt_source x) he hz
   -- Apply local Sard--Smale to the coordinate equation, before restricting to section zeros.
   obtain ⟨N, hN, -, -, hA⟩ :=
     exists_mem_nhds_isClosed_isNowhereDense_image_not_surjective_levelSetParameterMap
@@ -217,15 +218,9 @@ private theorem exists_section_badParameter_neighborhood {n : ℕ∞ω} {x : M} 
   simp only [mem_ofPred_eq] at hw hwe
   have hx'φ : x' ∈ φ.source := by rwa [extChartAt_source]
   have hleft : φ.symm (φ x') = x' := φ.left_inv hx'φ
-  have hfw : f (φ x', k) = 0 := by
-    -- Unfold the local abbreviations `f` and `c` to reach the section value.
-    change c (φ.symm (φ x'), k) = 0
-    rw [hleft]
-    change (e ⟨b (x', k), s (x', k)⟩).2 = 0
-    rw [hw]
-    exact congrArg Prod.snd (e.zeroSection ℝ hwe)
-  let v : ↥{p | f p = 0} := ⟨(φ x', k), hfw⟩
-  have hvQ := hVsub (show v ∈ Subtype.val ⁻¹' V from hwV)
+  let v : ↥{p | f p = 0} := ⟨(φ x', k), hfzero_of hx'φ hwe hw⟩
+  have hvV : v ∈ Subtype.val ⁻¹' V := by simpa [v, ψ] using hwV
+  have hvQ : v ∈ Φ.source ∩ Φ ⁻¹' N := hVsub hvV
   have hvback : Φ.symm (Φ v) = v := Φ.left_inv hvQ.1
   -- Away from the centre the coordinate derivative is the intrinsic one followed by the
   -- derivative of the inverse chart; so a regular coordinate zero is a regular section zero.
