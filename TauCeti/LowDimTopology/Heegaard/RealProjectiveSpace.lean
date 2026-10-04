@@ -55,13 +55,6 @@ namespace TauCeti
 
 namespace HeegaardRegionSystem
 
-/-- On two points labelled by a single curve, the transposition is one cycle on the curve. -/
-private theorem isCycleOn_swap_setOf_realProjectiveSpace (f : Fin 2 → Fin 1) (i : Fin 1) :
-    (Equiv.swap (0 : Fin 2) 1).IsCycleOn {p | f p = i} := by
-  convert Equiv.Perm.isCycleOn_swap (a := (0 : Fin 2)) (b := 1) (by decide) using 1
-  ext p
-  fin_cases p <;> simp [Subsingleton.elim (f _) i]
-
 /-- The genus-one Heegaard diagram of `ℝP³` whose two attaching circles meet in two points, with
 its basepoint in the region `r`. -/
 def realProjectiveSpace (r : Fin 2) : HeegaardRegionSystem 1 (Fin 2) (Fin 2) Unit where
@@ -69,9 +62,9 @@ def realProjectiveSpace (r : Fin 2) : HeegaardRegionSystem 1 (Fin 2) (Fin 2) Uni
   alpha _ := 0
   beta _ := 0
   alphaNext := Equiv.swap 0 1
-  alphaNext_isCycleOn := isCycleOn_swap_setOf_realProjectiveSpace _
+  alphaNext_isCycleOn := isCycleOn_swap_fin_two_fiber _
   betaNext := Equiv.swap 0 1
-  betaNext_isCycleOn := isCycleOn_swap_setOf_realProjectiveSpace _
+  betaNext_isCycleOn := isCycleOn_swap_fin_two_fiber _
   alphaLeft := ![0, 1]
   alphaRight := ![1, 0]
   betaLeft := ![1, 0]

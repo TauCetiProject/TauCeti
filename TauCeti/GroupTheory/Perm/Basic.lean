@@ -10,6 +10,7 @@ public import Mathlib.Data.Finset.Card
 public import Mathlib.GroupTheory.Perm.Cycle.Basic
 import Mathlib.GroupTheory.Perm.ViaEmbedding
 import Mathlib.Tactic.Abel
+import Mathlib.Tactic.FinCases
 
 /-!
 # Elementary facts about permutations
@@ -22,6 +23,7 @@ a characterization of permutations with a unique fixed point, functions constant
 orbit, the orbit relation of an involution, a positive-power representative of a relation inside a
 periodic orbit, a function whose difference `z ↦ c (σ⁻¹ z) - c z` joins points in the same orbit
 (`Equiv.Perm.SameCycle.exists_comp_symm_sub_eq`, `Equiv.Perm.exists_comp_symm_sub_eq_sum`), a
+transposition forming one cycle on a `Fin 2` fibre over `Fin 1`, a
 permutation transported along an injection, the combination of two
 permutations transported along injections with disjoint ranges, the fact that a permutation
 is a single cycle on each of its own orbits, the transport of its cycles along an equivalence of
@@ -113,6 +115,17 @@ theorem exists_comp_symm_sub_eq [DecidableEq α] {M : Type*} [AddCommGroup M]
     abel
 
 end Equiv.Perm.SameCycle
+
+namespace TauCeti
+
+/-- The transposition of `Fin 2` is one cycle on every fibre of a map to `Fin 1`. -/
+theorem isCycleOn_swap_fin_two_fiber (f : Fin 2 → Fin 1) (i : Fin 1) :
+    (Equiv.swap (0 : Fin 2) 1).IsCycleOn {p | f p = i} := by
+  convert Equiv.Perm.isCycleOn_swap (a := (0 : Fin 2)) (b := 1) (by decide) using 1
+  ext p
+  fin_cases p <;> simp [Subsingleton.elim (f _) i]
+
+end TauCeti
 
 namespace Equiv.Perm
 
