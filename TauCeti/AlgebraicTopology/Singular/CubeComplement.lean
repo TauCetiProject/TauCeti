@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.DirectedUnion
-public import TauCeti.AlgebraicTopology.Singular.MayerVietoris.Reduced
 public import TauCeti.AlgebraicTopology.Singular.Sphere
 public import Mathlib.Topology.LocallyConstant.Basic
 public import TauCeti.Analysis.Normed.Module.Ball.Homeomorph

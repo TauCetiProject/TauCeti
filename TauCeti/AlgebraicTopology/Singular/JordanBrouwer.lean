@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.CubeComplement
-public import TauCeti.AlgebraicTopology.Singular.Sphere
 public import TauCeti.Analysis.InnerProductSpace.Hemisphere
 public import Mathlib.Algebra.Category.ModuleCat.Products
 public import Mathlib.Algebra.Field.ULift
@@ -17,15 +16,17 @@ public import Mathlib.LinearAlgebra.Dimension.Constructions
 
 Let `Y` be a Hausdorff space in which the complement of every point has vanishing reduced
 homology, such as a sphere. If `h : Sᵈ⁻¹ → Y` is an embedding of the unit sphere of a
-`d`-dimensional real inner product space, then the reduced homology of `Y ∖ h(Sᵈ⁻¹)` is that of `Y`
+`d`-dimensional real normed space, then the reduced homology of `Y ∖ h(Sᵈ⁻¹)` is that of `Y`
 shifted down by `d`: `H_redᵢ(Y ∖ h(Sᵈ⁻¹)) ≅ H_redᵢ₊d(Y)`. For `Y = Sⁿ` this is the second half of
 Hatcher's Proposition 2B.1: the complement of an embedded `k`-sphere in `Sⁿ` has the reduced
 homology of an `(n - k - 1)`-sphere.
 
-The proof is by induction on `d`. The unit sphere `Sᵈ⁻¹` is empty when `d = 0`. Otherwise it is the
-union of the two closed hemispheres around a unit vector `p`, which meet in the equator, the unit
-sphere of `(ℝ ∙ p)ᗮ`. The hemispheres are discs (`TauCeti.hemisphereHomeomorph`), so the
-complements of their images are acyclic
+The sphere of a `d`-dimensional real normed space is homeomorphic to that of a Euclidean space of
+the same dimension (`ContinuousLinearEquiv.unitBallHomeomorph`), so it suffices to treat inner
+product spaces. The proof is then by induction on `d`. The unit sphere `Sᵈ⁻¹` is empty when
+`d = 0`. Otherwise it is the union of the two closed hemispheres around a unit vector `p`, which
+meet in the equator, the unit sphere of `(ℝ ∙ p)ᗮ`. The hemispheres are discs
+(`TauCeti.hemisphereHomeomorph`), so the complements of their images are acyclic
 (`TauCeti.isZero_reducedSingularHomologyFunctor_compl_range_closedBall`). These two complements
 are open, their intersection is `Y ∖ h(Sᵈ⁻¹)` and their union is the complement of the image of the
 equator, so the Mayer–Vietoris sequence (`TopCat.reducedMayerVietorisIsoOfIsZero`) shifts degrees
@@ -39,7 +40,7 @@ complement has exactly two path components: the **Jordan–Brouwer separation th
 
 * `TauCeti.reducedSingularHomologyComplRangeSphereIso`: in a Hausdorff space `Y` whose point
   complements are acyclic, `H_redᵢ(Y ∖ h(Sᵈ⁻¹)) ≅ H_redᵢ₊d(Y)` for every embedding `h` of the unit
-  sphere of a `d`-dimensional real inner product space.
+  sphere of a `d`-dimensional real normed space.
 * `TauCeti.isZero_reducedSingularHomologyFunctor_sphere_compl_range_sphere` and
   `TauCeti.reducedSingularHomologySphereComplRangeSphereIso`: for `Y = Sⁿ`, the reduced homology of
   the complement of an embedded `Sᵈ⁻¹` vanishes in degrees `i ≠ n - d` and is one copy of the
@@ -67,6 +68,8 @@ section General
 
 variable {A : Type w} [Ring A] (M : ModuleCat.{w} A) {Y : Type w} [TopologicalSpace Y] [T2Space Y]
   (hY : ∀ (y : Y) (n : ℕ), IsZero ((reducedSingularHomologyFunctor M n).obj (of ↥({y}ᶜ : Set Y))))
+
+section InnerProduct
 
 variable {E : Type u} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
@@ -168,10 +171,22 @@ private def reducedSingularHomologyComplRangeSphereIsoAux :
         (hi.comp (injective_equatorInclusion p)) (i + 1) ≪≫
       eqToIso (congrArg (fun k ↦ (reducedSingularHomologyFunctor M k).obj (of Y)) (by omega))
 
+end InnerProduct
+
+/-- The unit spheres of two finite-dimensional real normed spaces of the same dimension are
+homeomorphic, through `ContinuousLinearEquiv.unitBallHomeomorph`. -/
+private def sphereHomeomorphOfFinrankEq {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [FiniteDimensional ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+    (hEF : finrank ℝ E = finrank ℝ F) : sphere (0 : E) 1 ≃ₜ sphere (0 : F) 1 :=
+  let L : E ≃L[ℝ] F := ContinuousLinearEquiv.ofFinrankEq hEF
+  (L.unitBallHomeomorph.image _).trans (Homeomorph.setCongr L.image_unitBallHomeomorph_sphere)
+
+variable {E : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+
 include hY in
 /-- **The homology of the complement of an embedded sphere.** Let `Y` be a Hausdorff space in which
 the complement of every point has vanishing reduced homology, and let `h` be a continuous injection
-into `Y` of the unit sphere of a real inner product space of dimension `d`. Then
+into `Y` of the unit sphere of a real normed space of dimension `d`. Then
 `H_redᵢ(Y ∖ h(Sᵈ⁻¹)) ≅ H_redᵢ₊d(Y)`, with coefficients in any module.
 
 This is Hatcher, *Algebraic Topology*, Proposition 2B.1(b), in a general form. Like
@@ -181,45 +196,63 @@ def reducedSingularHomologyComplRangeSphereIso {h : sphere (0 : E) 1 → Y} (hc 
     (hi : Function.Injective h) (i : ℕ) :
     (reducedSingularHomologyFunctor M i).obj (of ↥(range h)ᶜ) ≅
       (reducedSingularHomologyFunctor M (i + finrank ℝ E)).obj (of Y) :=
-  reducedSingularHomologyComplRangeSphereIsoAux M hY _ E rfl h hc hi i
+  -- Replace `E` by a Euclidean space of the same dimension, which has the same unit sphere.
+  let e := sphereHomeomorphOfFinrankEq (E := E) (F := EuclideanSpace ℝ (Fin (finrank ℝ E)))
+    finrank_euclideanSpace_fin.symm
+  (reducedSingularHomologyFunctor M i).mapIso
+      (isoOfHomeo (Homeomorph.setCongr (by rw [e.symm.surjective.range_comp h]))) ≪≫
+    reducedSingularHomologyComplRangeSphereIsoAux M hY _ _ finrank_euclideanSpace_fin
+      (h ∘ e.symm) (hc.comp e.symm.continuous) (hi.comp e.symm.injective) i
 
 end General
 
 section Sphere
 
 variable {A : Type w} [Ring A] (M : ModuleCat.{w} A)
-  {F : Type w} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
-  {E : Type u} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  {F : Type w} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {E : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {h : sphere (0 : E) 1 → sphere (0 : F) 1}
 
+/-- The reduced homology of the unit sphere of an `(n + 1)`-dimensional real normed space is that
+of the unit sphere of a Euclidean space of the same dimension. -/
+private def reducedSingularHomologySphereIsoEuclidean {n : ℕ} (hF : finrank ℝ F = n + 1) (k : ℕ) :
+    (reducedSingularHomologyFunctor M k).obj (of (sphere (0 : F) 1)) ≅
+      (reducedSingularHomologyFunctor M k).obj
+        (of (sphere (0 : EuclideanSpace ℝ (ULift.{w} (Fin (n + 1)))) 1)) :=
+  haveI : FiniteDimensional ℝ F := .of_finrank_pos (by omega)
+  (reducedSingularHomologyFunctor M k).mapIso
+    (isoOfHomeo (sphereHomeomorphOfFinrankEq (by simp [hF])))
+
 /-- **The complement of an embedded sphere in a sphere is acyclic outside one degree.** Let `h` be a
-continuous injection of the unit sphere of a real inner product space `E` into the unit sphere of
-an `(n + 1)`-dimensional one. Then the reduced homology of the complement of its image vanishes in
-every degree `i` with `i + dim E ≠ n` (Hatcher, *Algebraic Topology*, Proposition 2B.1(b)). -/
+continuous injection of the unit sphere of a finite-dimensional real normed space `E` into the unit
+sphere of an `(n + 1)`-dimensional one. Then the reduced homology of the complement of its image
+vanishes in every degree `i` with `i + dim E ≠ n` (Hatcher, *Algebraic Topology*,
+Proposition 2B.1(b)). -/
 theorem isZero_reducedSingularHomologyFunctor_sphere_compl_range_sphere {n : ℕ}
     (hF : finrank ℝ F = n + 1) (hc : Continuous h) (hi : Function.Injective h) {i : ℕ}
     (hin : i + finrank ℝ E ≠ n) :
     IsZero ((reducedSingularHomologyFunctor M i).obj (of ↥(range h)ᶜ)) :=
-  (isZero_reducedSingularHomologyFunctor_sphere_of_ne M hF hin).of_iso
+  ((isZero_reducedSingularHomologyFunctor_sphere_of_ne M (by simp) hin).of_iso
+    (reducedSingularHomologySphereIsoEuclidean M hF _)).of_iso
     (reducedSingularHomologyComplRangeSphereIso M
       (isZero_reducedSingularHomologyFunctor_sphere_compl_singleton M) hc hi i)
 
 /-- **The complement of an embedded sphere in a sphere has the homology of a sphere.** Let `h` be a
-continuous injection of the unit sphere of a real inner product space `E` into the unit sphere of a
-real inner product space of dimension `i + dim E + 1`. Then the reduced homology of the complement
-of its image in degree `i` is one copy of the coefficients (Hatcher, *Algebraic Topology*,
-Proposition 2B.1(b)). Like `TauCeti.reducedSingularHomologySphereIso`, the isomorphism depends on
-chosen points, and is one choice of generator rather than a canonical identification. -/
+continuous injection of the unit sphere of a finite-dimensional real normed space `E` into the unit
+sphere of a real normed space of dimension `i + dim E + 1`. Then the reduced homology of the
+complement of its image in degree `i` is one copy of the coefficients (Hatcher, *Algebraic
+Topology*, Proposition 2B.1(b)). Like `TauCeti.reducedSingularHomologySphereIso`, the isomorphism
+depends on chosen points, and is one choice of generator rather than a canonical identification. -/
 def reducedSingularHomologySphereComplRangeSphereIso {i : ℕ}
     (hF : finrank ℝ F = i + finrank ℝ E + 1) (hc : Continuous h) (hi : Function.Injective h) :
     (reducedSingularHomologyFunctor M i).obj (of ↥(range h)ᶜ) ≅ M :=
   reducedSingularHomologyComplRangeSphereIso M
       (isZero_reducedSingularHomologyFunctor_sphere_compl_singleton M) hc hi i ≪≫
-    reducedSingularHomologySphereIso M hF
+    reducedSingularHomologySphereIsoEuclidean M hF _ ≪≫ reducedSingularHomologySphereIso M (by simp)
 
 /-- **The Jordan–Brouwer separation theorem.** The complement of the image of a continuous injection
-of the unit sphere of a finite-dimensional real inner product space `E` into the unit sphere of a
-real inner product space of dimension `dim E + 1` has exactly two path components (Hatcher,
+of the unit sphere of a finite-dimensional real normed space `E` into the unit sphere of a real
+normed space of dimension `dim E + 1` has exactly two path components (Hatcher,
 *Algebraic Topology*, Corollary 2B.2). -/
 theorem card_zerothHomotopy_sphere_compl_range_eq_two (hEF : finrank ℝ F = finrank ℝ E + 1)
     (hc : Continuous h) (hi : Function.Injective h) :
