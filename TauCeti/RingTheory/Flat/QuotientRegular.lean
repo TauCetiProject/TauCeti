@@ -19,10 +19,10 @@ Let `B` be a flat algebra over a commutative ring `R` and `g ∈ B`. If multipli
 flat `R`-module.
 
 Conversely, if `g` is a nonzerodivisor on `B` and `B ⧸ (g)` is flat over `R`, then `g` stays a
-nonzerodivisor after every base change. Thus, when `B` itself is flat over `R`, flatness of the
-quotient is equivalent to universal regularity of `g`. This is the algebraic criterion that makes
-a relative effective Cartier divisor remain an effective Cartier divisor after arbitrary base
-change.
+nonzerodivisor after every base change. Thus, when `B` itself is flat over `R` and `g` is a
+nonzerodivisor on `B`, flatness of the quotient is equivalent to universal regularity of `g`.
+This is the algebraic criterion that makes a relative effective Cartier divisor remain an
+effective Cartier divisor after arbitrary base change.
 
 This is the claim inside Wedhorn's proof of Lemma 8.31(2): for `B = A⟨X⟩` over a complete
 noetherian Tate ring `A`, and `g = f - X` or `g = 1 - f X`, the quotient is flat because
@@ -40,10 +40,11 @@ once `I ⊗[R] (B ⧸ (g)) → R ⊗[R] (B ⧸ (g))` is injective for every fini
 * `Module.Flat.isSMulRegular_one_tmul_of_quotient_span_singleton`: after any algebra base change
   `R → S`, the element `1 ⊗ g` is a nonzerodivisor on `S ⊗[R] B`.
 * `Module.Flat.quotient_span_singleton_iff_forall_lTensor_mulLeft_injective`: for a flat
-  `R`-algebra `B`, flatness of `B ⧸ (g)` is equivalent to injectivity after tensoring with every
-  `R`-module.
+  `R`-algebra `B` and a nonzerodivisor `g` on `B`, flatness of `B ⧸ (g)` is equivalent to
+  injectivity after tensoring with every `R`-module.
 * `Module.Flat.quotient_span_singleton_iff_forall_isSMulRegular_one_tmul`: for a flat
-  `R`-algebra `B`, flatness of `B ⧸ (g)` is equivalent to this universal regularity.
+  `R`-algebra `B` and a nonzerodivisor `g` on `B`, flatness of `B ⧸ (g)` is equivalent to this
+  universal regularity.
 
 ## Implementation notes
 
