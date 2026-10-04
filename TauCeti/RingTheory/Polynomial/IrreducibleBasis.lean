@@ -31,8 +31,11 @@ operators for cylindrical algebraic decomposition (McCallum's and Lazard's) are 
 irreducible basis of the input family together with the contents, and the signs and roots of
 the original family are recovered from those of the basis and the contents. By Gauss's lemma
 the basis stays irreducible over the fraction field of `D`, and its members stay pairwise
-coprime there, so the product of the basis is squarefree over the fraction field; this is the
-form in which discriminants and resultants of basis members are nonzero.
+coprime there, so the product of the basis is squarefree over the fraction field. Pairwise
+coprimality is the form in which resultants of distinct basis members are nonzero. Nonzero
+discriminants additionally need separability, which follows from squarefreeness in
+characteristic zero (as for `R = ℝ`) but can fail in positive characteristic, where an
+irreducible member can be inseparable.
 
 ## Main definitions and results
 
