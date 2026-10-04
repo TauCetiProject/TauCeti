@@ -30,6 +30,8 @@ discriminant group.
 * `TauCeti.IntegralLattice.gramDet`: its signed determinant.
 * `TauCeti.IntegralLattice.determinant`: the basis-independent signed determinant.
 * `TauCeti.IntegralLattice.discriminant`: the nonnegative absolute determinant.
+* `TauCeti.IntegralLattice.determinantUnit`: the signed determinant of a nondegenerate lattice as a
+  nonzero rational number.
 
 ## Main results
 
@@ -232,6 +234,18 @@ theorem determinant_ne_zero_iff (L : IntegralLattice V) :
     L.determinant ≠ 0 ↔ L.form.Nondegenerate := by
   classical
   rw [determinant, gramDet_ne_zero_iff]
+
+/-- The signed Gram determinant of a nondegenerate integral lattice, regarded as a nonzero
+rational number. -/
+noncomputable def determinantUnit (L : IntegralLattice V) [L.IsNondegenerate] : ℚˣ :=
+  Units.mk0 (L.determinant : ℚ) <| by
+    exact_mod_cast (L.determinant_ne_zero_iff.mpr L.form_nondegenerate)
+
+/-- The value underlying `determinantUnit` is the integral Gram determinant cast to `ℚ`. -/
+@[simp]
+theorem coe_determinantUnit (L : IntegralLattice V) [L.IsNondegenerate] :
+    (L.determinantUnit : ℚ) = L.determinant :=
+  (rfl)
 
 /-- The integral form on the carrier is nondegenerate exactly when the ambient rational form is. -/
 theorem nondegenerate_integralForm_iff (L : IntegralLattice V) :

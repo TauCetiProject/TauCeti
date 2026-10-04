@@ -33,6 +33,9 @@ Fourth, translating the variable moves the roots: the roots of `f(X + t)` are th
 with `x + t` a root of `f`, so `x ↦ x + t` is a bijection between the two root sets, and
 `f(X + t)` is separable exactly when `f` is.
 
+Fifth, if every root of a nonzero polynomial is among a family of points `θ i`, then its roots
+are exactly the `θ i` in which it has positive multiplicity.
+
 Finally, the roots of a polynomial gcd form the multiset intersection of the roots of its
 inputs. In characteristic zero this identifies the degree lost to the gcd with the derivative as
 the number of distinct roots.
@@ -51,6 +54,8 @@ the number of distinct roots.
 * `Polynomial.rootSetCompXAddCEquiv`: the bijection `x ↦ x + t` from the roots of `f(X + t)` to
   the roots of `f`.
 * `Polynomial.separable_comp_X_add_C_iff`: `f(X + t)` is separable exactly when `f` is.
+* `Polynomial.isRoot_iff_of_rootMultiplicity`: if every root of a nonzero polynomial is among
+  the `θ i`, then its roots are the `θ i` in which it has positive multiplicity.
 * `Polynomial.rootMultiplicity_gcd`: a root's multiplicity in a gcd is the minimum of its
   multiplicities in the two inputs.
 * `Polynomial.natDegree_sub_natDegree_gcd_derivative_eq_card_roots_toFinset`: over an
@@ -170,6 +175,18 @@ theorem _root_.Polynomial.separable_comp_X_add_C_iff {t : F} :
     (f.comp (X + C t)).Separable ↔ f.Separable := by
   refine ⟨fun h => ?_, fun h => h.comp_X_add_C t⟩
   simpa [comp_assoc, add_assoc] using h.comp_X_add_C (-t)
+
+/-- If every root of a nonzero polynomial `p` is some `θ i`, and the multiplicity of each `θ i`
+as a root of `p` is `m i`, then the roots of `p` are the `θ i` with `0 < m i`. -/
+theorem _root_.Polynomial.isRoot_iff_of_rootMultiplicity {ι : Type*} {p : F[X]} {θ : ι → F}
+    {m : ι → ℕ} (hm : ∀ i, p.rootMultiplicity (θ i) = m i)
+    (hθ : ∀ t, p.IsRoot t → ∃ i, θ i = t) (hp : p ≠ 0) (t : F) :
+    p.IsRoot t ↔ ∃ i, θ i = t ∧ 0 < m i := by
+  refine ⟨fun ht ↦ ?_, fun ⟨i, hi, hpos⟩ ↦ ?_⟩
+  · obtain ⟨i, rfl⟩ := hθ t ht
+    exact ⟨i, rfl, hm i ▸ (rootMultiplicity_pos hp).2 ht⟩
+  · rw [← hi, ← rootMultiplicity_pos hp, hm i]
+    exact hpos
 
 section GCD
 

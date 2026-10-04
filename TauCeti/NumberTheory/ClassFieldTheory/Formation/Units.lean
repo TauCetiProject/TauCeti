@@ -109,6 +109,22 @@ def localFormationHom : AbsoluteGaloisGroup L →* AbsoluteGaloisGroup K :=
   (TauCeti.galoisSubgroup K L σ).toSubgroup.subtype.comp
     (TauCeti.galoisSubgroupEquiv K L σ).toMulEquiv.toMonoidHom
 
+/-- The embedding of absolute Galois groups underlying restriction of the units formation is
+continuous. -/
+theorem continuous_localFormationHom : Continuous (localFormationHom K L σ) :=
+  continuous_subtype_val.comp (TauCeti.galoisSubgroupEquiv K L σ).continuous_toFun
+
+/-- The embedding of absolute Galois groups underlying restriction of the units formation is
+injective. -/
+theorem injective_localFormationHom : Function.Injective (localFormationHom K L σ) :=
+  Subtype.val_injective.comp (TauCeti.galoisSubgroupEquiv K L σ).injective
+
+/-- The embedding of absolute Galois groups underlying restriction of the units formation is an
+open map. -/
+theorem isOpenMap_localFormationHom : IsOpenMap (localFormationHom K L σ) :=
+  (TauCeti.galoisSubgroup K L σ).isOpen.isOpenMap_subtype_val.comp
+    (TauCeti.galoisSubgroupEquiv K L σ).isOpenMap
+
 /-- The additive equivalence on the coefficient modules underlying restriction of the units
 formation along `L/K`. It sends a unit of `Kˢ` to its image in `Lˢ` under the inverse of the
 chosen identification `Lˢ ≃ Kˢ`. -/

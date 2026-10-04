@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Galois.Basic
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.BaseChange
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.BaseChange.Basic
 
 /-!
 # Galois conjugation of isogenies

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.BaseChange
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.BaseChange.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.Add
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.MapAlong
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.PointMap

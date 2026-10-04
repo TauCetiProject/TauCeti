@@ -9,7 +9,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Gener
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.PointPlace
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.DegreeOneReduction
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Galois
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Map
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Map.Basic
 -- Proof-only: a nontrivial valuation bounded by `1` on a Dedekind domain is adic up to equivalence.
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.Basic
 

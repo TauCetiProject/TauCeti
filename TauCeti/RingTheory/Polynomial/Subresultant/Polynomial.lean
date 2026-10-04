@@ -177,6 +177,48 @@ theorem _root_.Polynomial.subresultantCoeff_def [CommRing R]
     subresultantCoeff p q m n j k = (subresultantCoeffMatrix p q m n j k).det := by
   rw [subresultantCoeff]
 
+/-- At the smaller right terminal index, a coefficient minor reads a coefficient of the right
+input times a power of its coefficient at the bound. The empty determinant is excluded. -/
+@[simp]
+theorem _root_.Polynomial.subresultantCoeff_right_bound [CommRing R] (p q : R[X]) {m n k : ℕ}
+    (hnm : n < m) (hk : k ≤ n) :
+    subresultantCoeff p q m n n k = q.coeff k * q.coeff n ^ (m - n - 1) := by
+  classical
+  let M := subresultantCoeffMatrix p q m n n k
+  let i₀ : Fin ((m - n) + (n - n)) := ⟨0, by omega⟩
+  have htri : M.IsUpperTriangular := by
+    intro i l hli
+    have hli' : l.val < i.val := by simpa using Fin.lt_def.mp hli
+    have hi0 : i.val ≠ 0 := by omega
+    induction l using Fin.addCases with
+    | left l =>
+      have hbound : ¬ i.val + n ≤ l.val + n := by
+        simp only [Fin.val_castAdd] at hli'
+        omega
+      simp [M, subresultantCoeffMatrix_castAdd, hi0, hbound]
+    | right l => exact Fin.elim0 (Fin.cast (by simp) l)
+  have hdiag (i : Fin ((m - n) + (n - n))) :
+      M i i = if i = i₀ then q.coeff k else q.coeff n := by
+    induction i using Fin.addCases with
+    | left i =>
+      simp only [M, subresultantCoeffMatrix_castAdd, Fin.val_castAdd]
+      by_cases hi : i.val = 0
+      · have hi₀ : Fin.castAdd (n - n) i = i₀ := by ext; exact hi
+        simp [hi, hi₀, hk]
+      · have hi₀ : Fin.castAdd (n - n) i ≠ i₀ := by
+          intro h
+          exact hi (congrArg Fin.val h)
+        simp [hi, hi₀]
+    | right i => exact Fin.elim0 (Fin.cast (by simp) i)
+  rw [subresultantCoeff_def, Matrix.det_of_isUpperTriangular htri]
+  simp_rw [hdiag]
+  rw [← Finset.mul_prod_erase _ _ (Finset.mem_univ i₀)]
+  have hprod : (∏ x ∈ Finset.univ.erase i₀, if x = i₀ then q.coeff k else q.coeff n) =
+      ∏ _x ∈ Finset.univ.erase i₀, q.coeff n :=
+    Finset.prod_congr rfl fun x hx => ite_eq_right (Finset.ne_of_mem_erase hx)
+  rw [hprod]
+  simp
+
 /-- The coefficient minor at `k = j` is the principal subresultant coefficient. -/
 @[simp]
 theorem _root_.Polynomial.subresultantCoeff_index [CommRing R]
@@ -200,6 +242,15 @@ theorem _root_.Polynomial.subresultantCoeff_comm [CommRing R]
   rw [subresultantCoeff_def, subresultantCoeff_def, subresultantCoeffMatrix_comm,
     Matrix.det_reindex, finCongr_symm, ← Equiv.trans_assoc, ← finAddFlip.eq_def,
     sign_finAddFlip_trans_finCongr, mul_comm (n - j)]
+  simp
+
+/-- At the smaller left terminal index, a coefficient minor reads a coefficient of the left
+input times a power of its coefficient at the bound. The empty determinant is excluded. -/
+@[simp]
+theorem _root_.Polynomial.subresultantCoeff_left_bound [CommRing R] (p q : R[X]) {m n k : ℕ}
+    (hmn : m < n) (hk : k ≤ m) :
+    subresultantCoeff p q m n m k = p.coeff k * p.coeff m ^ (n - m - 1) := by
+  rw [subresultantCoeff_comm, subresultantCoeff_right_bound q p hmn hk]
   simp
 
 /-- Scaling the left polynomial by `r` scales every coefficient minor by `r ^ (n - j)`. -/
