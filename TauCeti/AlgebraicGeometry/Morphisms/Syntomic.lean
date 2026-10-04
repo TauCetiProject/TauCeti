@@ -27,7 +27,7 @@ complete-intersection input to the singular-locus criterion for nodal families.
 
 public section
 
-open CategoryTheory Limits AlgebraicGeometry
+open CategoryTheory Limits AlgebraicGeometry TauCeti.RingHom
 
 namespace TauCeti.AlgebraicGeometry
 
@@ -51,6 +51,26 @@ instance : HasRingHomProperty (@SyntomicOfRelativeDimension n)
     (isStandardSyntomicOfRelativeDimension_isStableUnderBaseChange n).localizationPreserves.away
     (isStandardSyntomicOfRelativeDimension_stableUnderCompositionWithLocalizationAway n)
     fun _ ↦ syntomicOfRelativeDimension_iff n _
+
+/-- Over an affine target, every source point has a standard syntomic affine chart over
+the global sections of the target. -/
+theorem SyntomicOfRelativeDimension.exists_isStandardSyntomicOfRelativeDimension_appLE_top
+    [IsAffine Y] [SyntomicOfRelativeDimension n f] (x : X) :
+    ∃ (V : X.affineOpens) (_ : x ∈ V.1) (e : V.1 ≤ f ⁻¹ᵁ ⊤),
+      IsStandardSyntomicOfRelativeDimension n (f.appLE ⊤ V e).hom := by
+  obtain ⟨V, hV, hx, -⟩ := TopologicalSpace.Opens.isBasis_iff_nbhd.mp X.isBasis_affineOpens
+    (TopologicalSpace.Opens.mem_top x)
+  have e : V ≤ f ⁻¹ᵁ ⊤ := by simp
+  have h := (HasRingHomProperty.iff_appLE (P := @SyntomicOfRelativeDimension n)).mp
+    ‹SyntomicOfRelativeDimension n f› ⟨⊤, isAffineOpen_top Y⟩ ⟨V, hV⟩ e
+  rw [RingHom.locally_iff_isLocalization (isStandardSyntomicOfRelativeDimension_respectsIso n)] at h
+  obtain ⟨s, hs, hfs⟩ := h
+  have hx' : x ∈ ⨆ r ∈ s, X.basicOpen r := (iSup_basicOpen_of_span_eq_top V s hs).symm ▸ hx
+  obtain ⟨r, hr, hxr⟩ : ∃ r ∈ s, x ∈ X.basicOpen r := by simpa using hx'
+  refine ⟨⟨X.basicOpen r, hV.basicOpen r⟩, hxr, (X.basicOpen_le r).trans e, ?_⟩
+  rw [← f.appLE_map e (homOfLE (X.basicOpen_le r)).op]
+  have : IsLocalization.Away r Γ(X, X.basicOpen r) := hV.isLocalization_basicOpen r
+  exact hfs r hr _
 
 /-- Syntomic morphisms of fixed relative dimension are stable under arbitrary base change. -/
 instance syntomicOfRelativeDimension_isStableUnderBaseChange :
@@ -125,17 +145,17 @@ theorem syntomicOfRelativeDimension_SpecMap_iff {R S : CommRingCat.{u}} (φ : R 
       RingHom.Locally (@IsStandardSyntomicOfRelativeDimension n) φ.hom :=
   HasRingHomProperty.Spec_iff
 
+set_option backward.isDefEq.respectTransparency.types false in
 /-- Pulling back a syntomic morphism preserves its relative dimension. -/
 instance {S : Scheme.{u}} (g : X ⟶ S) (h : Y ⟶ S) [SyntomicOfRelativeDimension n h] :
-    SyntomicOfRelativeDimension n (pullback.fst g h) := by
-  exact (syntomicOfRelativeDimension_isStableUnderBaseChange n).of_isPullback
-    (IsPullback.of_hasPullback g h).flip inferInstance
+    SyntomicOfRelativeDimension n (pullback.fst g h) :=
+  MorphismProperty.pullback_fst g h inferInstance
 
+set_option backward.isDefEq.respectTransparency.types false in
 /-- Pulling back a syntomic morphism preserves its relative dimension. -/
 instance {S : Scheme.{u}} (g : X ⟶ S) (h : Y ⟶ S) [SyntomicOfRelativeDimension n g] :
-    SyntomicOfRelativeDimension n (pullback.snd g h) := by
-  exact (syntomicOfRelativeDimension_isStableUnderBaseChange n).of_isPullback
-    (IsPullback.of_hasPullback g h) inferInstance
+    SyntomicOfRelativeDimension n (pullback.snd g h) :=
+  MorphismProperty.pullback_snd g h inferInstance
 
 /-- A syntomic morphism of relative dimension `n` has all fibres of dimension at most `n`. -/
 instance (priority := low) SyntomicOfRelativeDimension.relativeDimensionLE

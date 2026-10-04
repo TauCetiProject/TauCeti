@@ -25,7 +25,7 @@ complete-intersection definition follows the Stacks Project, *Syntomic morphisms
 
 public section
 
-namespace TauCeti
+namespace TauCeti.RingHom
 
 universe u v
 
@@ -110,4 +110,4 @@ theorem locally_isStandardSyntomicOfRelativeDimension_propertyIsLocal (n : ℕ) 
     (isStandardSyntomicOfRelativeDimension_isStableUnderBaseChange n).localizationPreserves.away
     (isStandardSyntomicOfRelativeDimension_stableUnderCompositionWithLocalizationAway n)
 
-end TauCeti
+end TauCeti.RingHom
