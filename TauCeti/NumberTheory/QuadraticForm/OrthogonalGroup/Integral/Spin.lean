@@ -126,16 +126,6 @@ private noncomputable instance invertibleTwoRat : Invertible (2 : ℚ) :=
 variable {W : Type*} [AddCommGroup W] [Module ℚ W]
   (Q₀ : QuadraticForm ℚ W) (b₀ : Basis ι ℚ W)
 
-/-- Local integral Spin membership is precisely local integrality of the scalar-extended
-rational orthogonal action. -/
-theorem mem_integralSpinSubgroup_baseChange_iff (s : spinGroup Q₀) :
-    spinGroupBaseChange (A := ℚ_[p]) Q₀ s ∈
-        integralSpinSubgroup (Q₀.baseChange ℚ_[p]) (b₀.baseChange ℚ_[p]) ↔
-      orthogonalGroupBaseChange (A := ℚ_[p]) Q₀ (spinToOrthogonal Q₀ s) ∈
-        integralOrthogonalSubgroup (Q₀.baseChange ℚ_[p]) (b₀.baseChange ℚ_[p]) := by
-  let : FiniteDimensional ℚ W := Module.Finite.of_basis b₀
-  rw [mem_integralSpinSubgroup_iff, spinToOrthogonal_baseChange]
-
 /-- Every rational Spin point belongs to the integral Spin subgroups in a fixed rational basis
 at almost every prime. The exceptional primes are those of its orthogonal action and inverse. -/
 theorem eventually_mem_integralSpinSubgroup (s : spinGroup Q₀) :
@@ -146,7 +136,7 @@ theorem eventually_mem_integralSpinSubgroup (s : spinGroup Q₀) :
   filter_upwards [eventually_mem_integralOrthogonalSubgroup Q₀ b₀ (spinToOrthogonal Q₀ s)]
     with p hp
   let : Fact (p : ℕ).Prime := ⟨p.property⟩
-  exact (mem_integralSpinSubgroup_baseChange_iff Q₀ b₀ s).mpr hp
+  simpa only [mem_integralSpinSubgroup_iff, spinToOrthogonal_baseChange] using hp
 
 end Rational
 end
