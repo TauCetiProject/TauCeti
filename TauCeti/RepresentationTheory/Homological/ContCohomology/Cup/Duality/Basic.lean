@@ -115,11 +115,15 @@ systems `𝔽_p` and `ℤ/pⁱ` of a Demushkin group.
   `dualityMap2_bijective_of_injective_of_addEquiv_zmod`: for `N ≃+ ZMod n` and
   `H²(G, N) ≃+ ZMod n`, if `αᵢ` is injective on `M` and `α₂₋ᵢ` is injective on its dual `M'`
   (and, for `i = 1`, `H¹(G, M')` is finite), then `αᵢ` is bijective on `M`, by counting.
-* `TauCeti.ContCohomology.dualityMap2_zmod_bijective`,
-  `dualityMap0_zmod_bijective_of_addEquiv` and `dualityMap0_zmod_bijective_of_finrank_eq_one`:
-  bijectivity of `α₂` and of `α₀` for a trivial action on `ZMod n`, the latter when
-  `H²(G, ZMod n)` is `ZMod n`; and `dualityMap1_zmod_bijective_iff`: `α₁` is then bijective exactly
-  when the cup product of multiplication on `H¹(G, ZMod n)` is a perfect pairing.
+* `TauCeti.ContCohomology.dualityMap2_zmod_bijective`: `α₂` is bijective for a trivial action on
+  `ZMod n`.
+* `TauCeti.ContCohomology.dualityMap0_zmod_bijective_of_addEquiv`: for a trivial action on
+  `ZMod n`, `α₀` is bijective when `H²(G, ZMod n) ≃+ ZMod n`; and
+  `dualityMap0_zmod_bijective_of_finrank_eq_one`: the same for `n` prime when `H²(G, ZMod n)` has
+  `ℤ/n`-dimension `1`.
+* `TauCeti.ContCohomology.dualityMap1_zmod_bijective_iff`: for a trivial action on `ZMod n`, `α₁`
+  is bijective exactly when the cup product of multiplication on `H¹(G, ZMod n)` is a perfect
+  pairing.
 
 ## References
 

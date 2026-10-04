@@ -16,10 +16,11 @@ import TauCeti.Algebra.Module.ZMod.Dual
 # Local Tate duality for the trivial module `ℤ/n`
 
 Let `K` be a nonarchimedean local field containing a primitive `n`th root of unity `ζ`. This file
-proves Tate's local duality for the trivial module `ℤ/n` with values in `ℤ/n`: the three duality
-maps `αᵢ : Hⁱ(G_K, ℤ/n) → Hom(H²⁻ⁱ(G_K, Hom(ℤ/n, ℤ/n)), H²(G_K, ℤ/n))`
-(`TauCeti.ContCohomology.dualityMap0`, `dualityMap1`, `dualityMap2`) are bijective. The root `ζ`
-identifies the trivial coefficients `ℤ/n` with `μₙ`, so this is the duality of `μₙ` with itself,
+completes Tate's local duality for the trivial module `ℤ/n` with values in `ℤ/n`: it proves that
+the duality maps `αᵢ : Hⁱ(G_K, ℤ/n) → Hom(H²⁻ⁱ(G_K, Hom(ℤ/n, ℤ/n)), H²(G_K, ℤ/n))` in degrees `0`
+and `1` (`TauCeti.ContCohomology.dualityMap0`, `dualityMap1`) are bijective, `α₂`
+(`TauCeti.ContCohomology.dualityMap2`) being bijective for every group acting trivially. The root
+`ζ` identifies the trivial coefficients `ℤ/n` with `μₙ`, so this is the duality of `μₙ` with itself,
 and it is the base case from which local duality for a general finite module is reached by
 Shapiro's lemma and the four lemma.
 
