@@ -32,9 +32,7 @@ the norm subgroups of `V` and `W` into statements about subgroups of the finite 
 abelian extensions has the intersection of their norm subgroups as its norm subgroup
 (`localNormSubgroup_inf_of_isAbelian`), and the intersection of two finite Galois extensions has
 the product of their norm subgroups (`localNormSubgroup_sup`; by norm limitation this needs no
-abelianity). Finally, distinct finite abelian extensions have distinct norm subgroups
-(`localClassField_unique`); this is the uniqueness half of the local class-field correspondence,
-and it is false without the abelianity hypotheses.
+abelianity).
 
 ## Main definitions
 
@@ -51,8 +49,6 @@ and it is false without the abelianity hypotheses.
   of finite abelian extensions is the intersection of their norm subgroups.
 * `TauCeti.ClassFieldTheory.localNormSubgroup_sup`: the norm subgroup of an intersection of finite
   Galois extensions is the product of their norm subgroups.
-* `TauCeti.ClassFieldTheory.localClassField_unique`: a finite abelian extension is determined by
-  its norm subgroup.
 
 ## References
 
@@ -255,21 +251,6 @@ theorem localNormSubgroup_sup (V W : OpenNormalSubgroup (AbsoluteGaloisGroup K))
     localNormSubgroup_sup_of_isAbelian V.isAbelianClassFieldLayer_maximalAbelianLayer
       W.isAbelianClassFieldLayer_maximalAbelianLayer,
     localNormSubgroup_maximalAbelianLayer, localNormSubgroup_maximalAbelianLayer]
-
-/-- **Uniqueness: a finite abelian extension is determined by its norm subgroup.** Two abelian
-layers with the same norm subgroup are equal. Without the abelianity hypotheses this is false: a
-nonabelian layer and its maximal abelian sublayer have the same norm subgroup. -/
-theorem localClassField_unique (hV : V.IsAbelianClassFieldLayer)
-    (hW : W.IsAbelianClassFieldLayer) (h : localNormSubgroup K V = localNormSubgroup K W) :
-    V = W := by
-  have hU : (V ⊓ W).IsAbelianClassFieldLayer := hV.inf hW
-  have hUV : V ⊓ W ≤ V := inf_le_left
-  have hUW : V ⊓ W ≤ W := inf_le_right
-  rw [localNormSubgroup_eq_comap_ker hU hUV, localNormSubgroup_eq_comap_ker hU hUW] at h
-  have hker := Subgroup.comap_injective (surjective_localAbelianArtinHom hU) h
-  ext g
-  have := SetLike.ext_iff.1 hker (QuotientGroup.mk ⟨g, by simp⟩)
-  rwa [mk_mem_ker_galHom_iff hUV, mk_mem_ker_galHom_iff hUW] at this
 
 end Lattice
 

@@ -179,6 +179,7 @@ theorem maximalAbelianLayer_le {V W : OpenNormalSubgroup G} (hVW : V ≤ W)
 /-- The maximal abelian sublayer of a join is the join of the maximal abelian sublayers: the
 maximal abelian subextension of an intersection of two finite Galois extensions is the
 intersection of their maximal abelian subextensions. -/
+@[simp]
 theorem maximalAbelianLayer_sup (V W : OpenNormalSubgroup G) :
     maximalAbelianLayer (V ⊔ W) = maximalAbelianLayer V ⊔ maximalAbelianLayer W :=
   toSubgroup_injective <| by
