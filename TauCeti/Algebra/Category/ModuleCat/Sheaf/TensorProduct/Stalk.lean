@@ -88,6 +88,9 @@ theorem tensorStalkComparison_germ_unit_tmul (U : Opens X) (hx : x ∈ U)
       TopCat.Presheaf.germ M.val.presheaf U x hx m ⊗ₜ[↑(TopCat.Presheaf.stalk R.obj x)]
         TopCat.Presheaf.germ N.val.presheaf U x hx n) := by
   rw [tensorStalkComparison_apply]
+  -- `M.val`, `N.val` live over `(ringCatSheaf R).obj`, while the presheaf-level germ lemmas are
+  -- stated over `R.obj ⋙ forget₂ CommRingCat RingCat`; the two agree only by unfolding
+  -- `ringCatSheaf`, so these rewrites need `erw`.
   erw [PresheafOfModules.stalkMapCommRing_germ,
     ((_root_.SheafOfModules.evaluation _ (op U)).mapIso (tensorProductIso R M N)).inv_hom_id_apply,
     PresheafOfModules.sheafificationStalkEquiv_symm_germ_unit,

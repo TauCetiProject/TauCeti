@@ -58,25 +58,32 @@ private def tensorGermMap (U : Opens X) (hx : x ∈ U) :
         ↑(TopCat.Presheaf.stalk N.presheaf x) :=
   (tensorGermSemilinear M N x U hx).toAddMonoidHom
 
--- Both sides agree by unfolding the identity cast in `tensorGermSemilinear` and `germSemilinear`.
 @[simp]
 private theorem tensorGermMap_tmul (U : Opens X) (hx : x ∈ U)
     (m : M.obj (op U)) (n : N.obj (op U)) :
     tensorGermMap M N x U hx (m ⊗ₜ[R.obj (op U)] n) =
       TopCat.Presheaf.germ M.presheaf U x hx m ⊗ₜ[↑(TopCat.Presheaf.stalk R x)]
         TopCat.Presheaf.germ N.presheaf U x hx n := by
-  rfl
+  -- The cast `eqToHom (tensorObj_obj …)` in `tensorGermSemilinear` is the identity by `rfl`.
+  change TensorProduct.map (M.germSemilinear x U hx) (N.germSemilinear x U hx) (m ⊗ₜ n) = _
+  rw [TensorProduct.map_tmul, germSemilinear_apply, germSemilinear_apply]
 
 private theorem tensorGermMap_res {U V : Opens X} (i : U ⟶ V) (hx : x ∈ U)
     (t : (tensorPresheaf M N).obj (op V)) :
     tensorGermMap M N x U hx ((tensorPresheaf M N).map i.op t) =
       tensorGermMap M N x V (i.le hx) t := by
+  -- `TensorProduct.inductionOn` retypes `t` at the raw tensor product of the sections rather than
+  -- at the carrier of `(tensorPresheaf M N).obj (op V)` (the two agree only up to the `rfl`
+  -- identification `tensorObj_obj`), and the restriction appears as `ConcreteCategory.hom` rather
+  -- than `ModuleCat.Hom.hom`; the rewrites below need `erw` to see through these wrappers.
   induction t using TensorProduct.inductionOn with
   | tmul m n =>
       erw [PresheafOfModulesOfCommRing.Monoidal.tensorObj_map_tmul,
         tensorGermMap_tmul, tensorGermMap_tmul]
       have hm := TopCat.Presheaf.germ_res_apply M.presheaf i x hx m
       have hn := TopCat.Presheaf.germ_res_apply N.presheaf i x hx n
+      -- `germ_res_apply` applies `M.presheaf.map` via `ConcreteCategory.hom`, while
+      -- `presheaf_map_apply_coe` is stated with `AddCommGrpCat.Hom.hom`; `erw` unfolds the former.
       erw [PresheafOfModules.presheaf_map_apply_coe] at hm hn
       exact congrArg₂ (fun a b ↦ a ⊗ₜ b) hm hn
   | add a b ha hb =>
@@ -113,7 +120,8 @@ theorem tensorStalkComparison_germ_tmul (U : Opens X) (hx : x ∈ U)
           (m ⊗ₜ[R.obj (op U)] n)) =
       TopCat.Presheaf.germ M.presheaf U x hx m ⊗ₜ[↑(TopCat.Presheaf.stalk R x)]
         TopCat.Presheaf.germ N.presheaf U x hx n) :=
-  (PresheafOfModulesOfCommRing.Monoidal.tensorObj M N).stalkLiftCommRing_germ x
-    (tensorGermMap M N x) (tensorGermMap_res M N x) (tensorGermMap_smul M N x) U hx _
+  ((PresheafOfModulesOfCommRing.Monoidal.tensorObj M N).stalkLiftCommRing_germ x
+    (tensorGermMap M N x) (tensorGermMap_res M N x) (tensorGermMap_smul M N x) U hx _).trans
+      (tensorGermMap_tmul M N x U hx m n)
 
 end PresheafOfModules

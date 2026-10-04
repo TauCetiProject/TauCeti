@@ -110,9 +110,8 @@ theorem stalkLiftCommRing_germ
   TopCat.Presheaf.stalkLiftAddHom_germ N.presheaf x f hf U hx m
 
 /-- The germ map of a presheaf of modules over a presheaf of commutative rings, as a map
-semilinear along the ring germ map. It is exposed so that it agrees with `germ` by `rfl`
-downstream. -/
-@[expose] def germSemilinear (U : Opens X) (hx : x ∈ U) :
+semilinear along the ring germ map. -/
+def germSemilinear (U : Opens X) (hx : x ∈ U) :
     N.obj (op U) →ₛₗ[(S.germ U x hx).hom] ↑(TopCat.Presheaf.stalk N.presheaf x) where
   toFun := TopCat.Presheaf.germ N.presheaf U x hx
   map_add' := map_add _
@@ -122,7 +121,7 @@ downstream. -/
 @[simp]
 theorem germSemilinear_apply (U : Opens X) (hx : x ∈ U) (m : N.obj (op U)) :
     N.germSemilinear x U hx m = TopCat.Presheaf.germ N.presheaf U x hx m :=
-  rfl
+  (rfl)
 
 variable {N} {N' : PresheafOfModules.{u} (S ⋙ forget₂ CommRingCat RingCat.{u})}
 
