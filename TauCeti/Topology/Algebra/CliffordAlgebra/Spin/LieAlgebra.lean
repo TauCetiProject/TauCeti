@@ -42,7 +42,7 @@ open scoped Manifold
 
 namespace CliffordAlgebra
 
-open TauCeti TauCeti.CliffordAlgebra
+open TauCeti
 
 attribute [local instance] TauCeti.normedAlgebraRatOfReal
 
@@ -235,7 +235,8 @@ theorem
       x ∈ quadraticLieSubalgebra (realCliffordForm p q) := by
   rw [TauCeti.Lie.unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff
     (by simpa only [MonoidHom.coe_range] using
-      isClosed_range_realCliffordSpinGroup_toUnits p q),
+      (isClosed_range_spinGroup_toUnits (realCliffordForm p q)
+        (nondegenerate_realCliffordForm p q))),
     forall_expUnit_smul_mem_realCliffordSpinGroup_iff_mem_quadraticLieSubalgebra]
 
 end CliffordAlgebra
