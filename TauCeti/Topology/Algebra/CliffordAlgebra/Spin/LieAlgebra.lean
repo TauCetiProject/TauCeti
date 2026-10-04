@@ -168,6 +168,8 @@ forall_expUnit_smul_mem_realCliffordSpinGroup_iff_mem_even_and_reverse_eq_neg_an
   rcases p with _ | p
   · rcases q with _ | q
     · let Q := realCliffordForm 0 0
+      let _ : Subsingleton (Fin 0 → ℝ) :=
+        ⟨fun a b ↦ funext fun i ↦ Fin.elim0 i⟩
       constructor
       · intro hline
         have hexp (t : ℝ) : exp (t • x) = 1 := by
