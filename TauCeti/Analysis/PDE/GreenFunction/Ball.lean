@@ -55,6 +55,7 @@ dimension two that kernel vanishes identically, so the planar case is instead
   the unit sphere.
 * `TauCeti.ballGreenKernel_pos`: positivity inside the ball outside dimension two.
 * `TauCeti.ballPoissonKernel`: the Poisson kernel of the unit ball.
+* `TauCeti.contDiffOn_ballPoissonKernel`: joint smoothness of the Poisson kernel off the diagonal.
 * `TauCeti.harmonicAt_ballPoissonKernel_left`, `TauCeti.harmonicOnNhd_ballPoissonKernel_left`:
   for a boundary point `y`, the Poisson kernel is harmonic in its pole away from `y`.
 * `TauCeti.fderiv_ballGreenKernel_normal`: the outward normal derivative of the Green kernel on
@@ -424,6 +425,25 @@ theorem continuous_ballPoissonKernel_on_sphere
   · fun_prop
   · fun_prop
   · exact hden
+
+/-- The Poisson kernel of the unit ball is smooth, jointly in the pole and the boundary variable,
+away from the diagonal. -/
+theorem contDiffOn_ballPoissonKernel {k : WithTop ℕ∞} :
+    ContDiffOn ℝ k (fun p : EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) ↦
+      ballPoissonKernel n p.1 p.2) {p | p.1 ≠ p.2} := by
+  intro p hp
+  have hsub : p.1 - p.2 ≠ 0 := sub_ne_zero.mpr hp
+  have hn : (0 : ℝ) < n := by exact_mod_cast pos_of_ne_zero_euclideanSpace hsub
+  have hω := volume_real_unitBall_pos n
+  have hden : (n : ℝ) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1) * ‖p.1 - p.2‖ ^ n ≠
+      0 := by
+    have := norm_pos_iff.mpr hsub
+    positivity
+  simp only [ballPoissonKernel_def]
+  refine ContDiffAt.contDiffWithinAt (ContDiffAt.div ?_ ?_ hden)
+  · exact contDiffAt_const.sub ((contDiff_norm_sq ℝ).contDiffAt.comp p contDiffAt_fst)
+  · exact contDiffAt_const.mul (((contDiffAt_norm ℝ hsub).comp p
+      (contDiffAt_fst.sub contDiffAt_snd)).pow n)
 
 /-- The Poisson kernel is integrable over any subset of the sphere when its pole
 lies off the sphere. -/

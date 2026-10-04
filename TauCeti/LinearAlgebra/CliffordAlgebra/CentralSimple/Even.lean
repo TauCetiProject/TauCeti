@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.CentralSimple.Degree
 public import TauCeti.LinearAlgebra.CliffordAlgebra.CentralSimple.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
 import Mathlib.RingTheory.SimpleRing.Congr
@@ -30,6 +31,9 @@ root or extension of the base field is needed for this reduction.
   isomorphic to the Clifford algebra of a regular form of even dimension.
 * `TauCeti.CliffordAlgebra.isSimpleRing_even_of_odd_finrank`: the even algebra is a simple ring.
 * `TauCeti.CliffordAlgebra.isCentral_even_of_odd_finrank`: the even algebra is central.
+* `TauCeti.CliffordAlgebra.deg_even_of_odd_finrank`: its degree is
+  `2 ^ ((finrank K V - 1) / 2)`.
+* `TauCeti.CliffordAlgebra.deg_even_of_finrank_eq_five`: in dimension five its degree is four.
 
 ## References
 
@@ -94,5 +98,28 @@ theorem isCentral_even_of_odd_finrank (hQ : Q.Nondegenerate) (hV : Odd (finrank 
   refine ⟨fun x hx => ?_⟩
   obtain ⟨k, hk⟩ := hC.1 ((MulEquivClass.apply_mem_center_iff e).mpr hx)
   exact ⟨k, by simpa [Algebra.ofId] using congr(e.symm $hk)⟩
+
+/-- **The degree of the even Clifford algebra in odd dimension.** For a quadratic form on a
+space of dimension `2m + 1`, the even Clifford algebra has dimension `2 ^ (2m)`, hence degree
+`2 ^ m`. When the form is regular, the preceding results also make this algebra central simple. -/
+theorem deg_even_of_odd_finrank (hV : Odd (finrank K V)) :
+    Algebra.deg K (even Q) = 2 ^ ((finrank K V - 1) / 2) := by
+  let _ : Invertible (2 : K) := invertibleOfNonzero (NeZero.ne (2 : K))
+  let _ : Nontrivial V := Module.nontrivial_of_finrank_pos hV.pos
+  apply Algebra.deg_eq_of_finrank_eq_sq
+  rw [CliffordAlgebra.finrank_even Q]
+  obtain ⟨m, hm⟩ := hV
+  simp [hm, pow_mul, Nat.mul_comm]
+
+/-- **A five-dimensional even Clifford algebra has degree four.** For a regular form, this is the
+algebra-size part of the description of `Spin₅` as the unitary group of a degree-four central
+simple algebra with its canonical symplectic involution. -/
+theorem deg_even_of_finrank_eq_five (hV : finrank K V = 5) :
+    Algebra.deg K (even Q) = 4 := by
+  have hodd : Odd (finrank K V) := by
+    rw [hV]
+    exact ⟨2, by norm_num⟩
+  rw [deg_even_of_odd_finrank (Q := Q) hodd, hV]
+  norm_num
 
 end TauCeti.CliffordAlgebra

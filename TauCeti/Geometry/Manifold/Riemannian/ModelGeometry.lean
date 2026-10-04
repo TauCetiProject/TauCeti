@@ -158,6 +158,19 @@ instance (G : ModelGeometry) : Nonempty G.Space := by
 instance (G : ModelGeometry) : ChartedSpace G.ChartSpace G.Space := by
   cases G <;> infer_instance
 
+/-- Every model is Hausdorff. -/
+instance (G : ModelGeometry) : T2Space G.Space := by
+  cases G <;> infer_instance
+
+/-- Every model is locally compact, being locally homeomorphic to a finite-dimensional space. -/
+instance (G : ModelGeometry) : LocallyCompactSpace G.Space := by
+  have : LocallyCompactSpace G.ChartSpace := by
+    cases G with
+    | sphereProd => exact inferInstanceAs (LocallyCompactSpace (EuclideanSpace ℝ (Fin 2) × ℝ))
+    | hyperbolicProd => exact inferInstanceAs (LocallyCompactSpace (WithLp 2 (ℝ × ℝ) × ℝ))
+    | _ => infer_instance
+  exact ChartedSpace.locallyCompactSpace G.ChartSpace G.Space
+
 /-- All eight models are analytic manifolds in their standard charts. -/
 instance (G : ModelGeometry) : IsManifold G.model ω G.Space := by
   cases G <;> infer_instance

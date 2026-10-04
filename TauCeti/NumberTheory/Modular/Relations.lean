@@ -21,6 +21,7 @@ the lower-triangular matrix `T′ = (1 0; 1 1)`.
 
 ## Main results
 
+* `TauCeti.ModularGroup.T_mul_S_pow_three`: `(T * S)³ = -1` in `SL(2, ℤ)`.
 * `TauCeti.ModularGroup.coe_S_sq`, `TauCeti.ModularGroup.coe_S_inv`: `S² = 1` and `S⁻¹ = S`.
 * `TauCeti.ModularGroup.coe_T_mul_coe_S_pow_three`, `TauCeti.ModularGroup.coe_T_mul_coe_S_inv`,
   `TauCeti.ModularGroup.coe_T_mul_coe_S_sq_inv`: `U³ = 1`, `U⁻¹ = U²` and `(U²)⁻¹ = U`.
@@ -39,6 +40,11 @@ open scoped MatrixGroups
 namespace TauCeti.ModularGroup
 
 open _root_.ModularGroup
+
+/-- `U³ = -1` in `SL(2, ℤ)`, for `U = T * S`. -/
+theorem T_mul_S_pow_three : (T * S) ^ 3 = (-1 : SL(2, ℤ)) := by
+  ext i j
+  fin_cases i <;> fin_cases j <;> rfl
 
 /-- The class of `S` has order dividing `2` in `PSL(2, ℤ)`: in `SL(2, ℤ)`, `S² = -1`. -/
 @[simp]

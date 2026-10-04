@@ -8,7 +8,9 @@ module
 public import TauCeti.Algebra.Polynomial.Laurent.Basic
 public import TauCeti.KnotTheory.PDCode.Circle
 public import TauCeti.KnotTheory.PDCode.Oriented.ClaspInsertion
-public import TauCeti.KnotTheory.PDCode.Oriented.Reidemeister.Two
+public import TauCeti.KnotTheory.PDCode.Oriented.Reidemeister.Circle
+public import TauCeti.KnotTheory.PDCode.Oriented.Reidemeister.Two.Basic
+public import TauCeti.KnotTheory.PDCode.Oriented.Reidemeister.Two.Circles
 public import TauCeti.KnotTheory.PDCode.Oriented.Reidemeister.One
 public import TauCeti.KnotTheory.PDCode.Oriented.Reidemeister.Three
 public import TauCeti.KnotTheory.PDCode.Trefoil
@@ -34,8 +36,9 @@ bracket (`TauCeti.OrientedPDCode.jonesPolynomial_eq_jonesPolynomial_iff`). Every
 of the normalized bracket is therefore one of the Jones polynomial.
 
 In particular the Jones polynomial is unchanged by the first Reidemeister move, by clasp
-insertion, which along a common face is the second Reidemeister move, and by the third Reidemeister
-move. These are the local moves behind its invariance for oriented links (Lickorish, Theorem 3.5).
+insertion, which along a common face is the second Reidemeister move, by the second-move clasps
+involving crossing-free circles, and by the third Reidemeister move. These are the local moves
+behind its invariance for oriented links (Lickorish, Theorem 3.5).
 Reversing the orientation of every component leaves the Jones polynomial unchanged, and
 mirroring substitutes `t⁻¹` for `t`. The unknot has Jones polynomial `1`, and the right-handed
 trefoil has `t + t³ - t⁴`.
@@ -178,6 +181,12 @@ theorem jonesPolynomial_reidemeisterOne (D : OrientedPDCode n) (h : Fin (4 * n))
   (jonesPolynomial_eq_jonesPolynomial_iff _ _).2 <|
     normalizedKauffmanBracket_reidemeisterOne (R := ℤ[T;T⁻¹]) D h b _
 
+/-- The Jones polynomial is invariant under the first Reidemeister move on an isolated
+circle, including a circle in an otherwise empty diagram. -/
+@[simp] theorem jonesPolynomial_adjoinKink (D : OrientedPDCode n) (o b : Bool) :
+    (D.adjoinKink o b).jonesPolynomial = (D.adjoinCircle o).jonesPolynomial :=
+  (jonesPolynomial_eq_jonesPolynomial_iff _ _).2 (normalizedKauffmanBracket_adjoinKink D o b _)
+
 /-- **Clasp insertion leaves the Jones polynomial unchanged.** Along a common face of the two arcs
 this is the second Reidemeister move. -/
 @[simp]
@@ -193,6 +202,14 @@ theorem jonesPolynomial_insertClasp (D : OrientedPDCode n) (p q : Fin (4 * n)) (
     (D.insertCircleClasp p o b).jonesPolynomial = (D.adjoinCircle o).jonesPolynomial :=
   (jonesPolynomial_eq_jonesPolynomial_iff _ _).2
     (D.normalizedKauffmanBracket_insertCircleClasp p o b _)
+
+/-- The Jones polynomial is unchanged by the two-circle second Reidemeister move. -/
+@[simp] theorem jonesPolynomial_adjoinTwoCircleClasp (D : OrientedPDCode n)
+    (o₁ o₂ b : Bool) :
+    (D.adjoinTwoCircleClasp o₁ o₂ b).jonesPolynomial =
+      ((D.adjoinCircle o₁).adjoinCircle o₂).jonesPolynomial :=
+  (jonesPolynomial_eq_jonesPolynomial_iff _ _).2
+    (D.normalizedKauffmanBracket_adjoinTwoCircleClasp o₁ o₂ b _)
 
 /-- **The third Reidemeister move leaves the Jones polynomial unchanged**, for every surrounding
 diagram and all six height orders of the three strands. -/
@@ -237,11 +254,11 @@ theorem jonesPolynomial_reverse (D : OrientedPDCode n) :
 
 /-- The Jones polynomial depends on an oriented PD-code only through its relabelling class. -/
 @[simp]
-theorem jonesPolynomial_relabel (D : OrientedPDCode n) (half : Equiv.Perm (Fin (4 * n)))
-    (cross : Equiv.Perm (Fin n)) :
+theorem jonesPolynomial_relabel {m : ℕ} (D : OrientedPDCode n)
+    (half : Fin (4 * n) ≃ Fin (4 * m)) (cross : Fin n ≃ Fin m) :
     (D.relabel half cross).jonesPolynomial = D.jonesPolynomial := by
   let e := Equiv.piCongrLeft (fun _ : Fin n ↦ Bool) cross.symm
-  have he : (fun s : Fin n → Bool ↦ s ∘ cross) = e := by
+  have he : (fun s : Fin m → Bool ↦ s ∘ cross) = e := by
     funext s i
     simp [e, Equiv.piCongrLeft_apply]
   refine Fintype.sum_bijective (fun s ↦ s ∘ cross) (he ▸ e.bijective) _ _ fun s ↦ ?_
@@ -262,6 +279,14 @@ theorem jonesPolynomial_eq_pow (D : OrientedPDCode 0) :
 theorem jonesPolynomial_unknot (orientation : Bool) : (unknot orientation).jonesPolynomial = 1 := by
   rw [jonesPolynomial_eq_pow, ← crossinglessComponents_card, crossinglessComponents_unknot]
   simp
+
+/-- An isolated kink in an otherwise empty diagram has Jones polynomial one, for either
+orientation and either crossing sign. -/
+-- Evaluate this special case before the general `jonesPolynomial_adjoinKink` rewrite.
+@[simp 1100] theorem jonesPolynomial_adjoinKink_empty (o b : Bool) :
+    (empty.adjoinKink o b).jonesPolynomial = 1 := by
+  rw [jonesPolynomial_adjoinKink, jonesPolynomial_eq_pow]
+  simp [← crossinglessComponents_card]
 
 end OrientedPDCode
 

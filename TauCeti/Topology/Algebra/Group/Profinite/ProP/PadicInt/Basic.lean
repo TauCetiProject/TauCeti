@@ -9,6 +9,7 @@ public import Mathlib.GroupTheory.NoncommCoprod
 public import Mathlib.NumberTheory.Padics.ProperSpace
 public import TauCeti.Topology.Algebra.ContinuousMulEquiv
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Basic
+public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Order
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.PadicPow
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Product
 public import TauCeti.Topology.Algebra.Group.Profinite.Rank
@@ -45,6 +46,7 @@ scalar multiplication by `l`, that is coordinatewise multiplication by `l`.
   `TauCeti.exists_padicIntLevel_le`: it consists of the multiples of `p ^ m`, has index `p ^ m`,
   and every open subgroup contains some level.
 * `TauCeti.isProP_multiplicative_padicInt`: `Multiplicative ℤ_[p]` is pro-`p`.
+* `TauCeti.profiniteOrder_multiplicative_padicInt`: its supernatural order is `p ^ ∞`.
 * `TauCeti.topologicallyGenerates_ofAdd_one_padicInt`: the element `1` topologically
   generates `Multiplicative ℤ_[p]`.
 * `TauCeti.topologicalGeneratorRank_multiplicative_padicInt`: its topological generator rank is
@@ -160,6 +162,19 @@ theorem isProP_multiplicative_padicInt (p : ℕ) [Fact p.Prime] :
   exact hsource.of_surjective (QuotientGroup.map _ U.toSubgroup (MonoidHom.id _) fun x hx ↦ hm hx)
     (QuotientGroup.map_surjective_of_surjective _ _ _
       ((QuotientGroup.mk'_surjective U.toSubgroup).comp Function.surjective_id) _)
+
+/-- **The supernatural order of `ℤ_p` is `p ^ ∞`.** The additive group of the `p`-adic integers is
+pro-`p`, so no other prime divides its order, and its quotient by the level `p ^ m ℤ_p` has order
+`p ^ m` for every `m`. -/
+@[simp]
+theorem profiniteOrder_multiplicative_padicInt (p : ℕ) [Fact p.Prime] :
+    profiniteOrder (Multiplicative ℤ_[p]) =
+      Supernatural.primePower (⟨p, Fact.out⟩ : Nat.Primes) ⊤ := by
+  refine le_antisymm
+    (isProP_iff_profiniteOrder_le_primePower.mp (isProP_multiplicative_padicInt p))
+    ((Supernatural.primePower_le_iff _ _ _).mpr (top_le_iff.mpr ?_))
+  exact (profiniteOrder_apply_eq_top_iff _ _).mpr fun m ↦
+    ⟨padicIntLevel p m, by rw [← Subgroup.index_eq_card, index_padicIntLevel]⟩
 
 /-- The element `1 : ℤ_[p]` topologically generates the additive group of the `p`-adic
 integers. -/

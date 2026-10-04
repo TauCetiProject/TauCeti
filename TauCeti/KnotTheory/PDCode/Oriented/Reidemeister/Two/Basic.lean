@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.KnotTheory.PDCode.Reidemeister.Two
+public import TauCeti.KnotTheory.PDCode.Reidemeister.Two.Basic
 
 /-!
 # Oriented circle-and-arc Reidemeister clasps

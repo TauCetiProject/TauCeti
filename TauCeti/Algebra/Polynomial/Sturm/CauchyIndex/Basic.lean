@@ -134,6 +134,22 @@ theorem support_cauchyJump_subset (p q : R[X]) :
 theorem finite_support_cauchyJump (p q : R[X]) : (Function.support (cauchyJump p q)).Finite :=
   p.roots.toFinset.finite_toSet.subset (support_cauchyJump_subset p q)
 
+/-- Negating the numerator reverses every Cauchy jump. -/
+@[simp]
+theorem cauchyJump_neg_right (p q : R[X]) (a : R) :
+    cauchyJump p (-q) a = -cauchyJump p q a := by
+  classical
+  have hm : (-q).rootMultiplicity a = q.rootMultiplicity a := by
+    rw [← count_roots, roots_neg, count_roots]
+  simp only [cauchyJump_def, hm, mul_neg, signRight_neg, SignType.coe_neg]
+  split_ifs <;> simp
+
+/-- Negating the numerator reverses the Cauchy index on any set. -/
+@[simp]
+theorem cauchyIndex_neg_right (p q : R[X]) (s : Set R) :
+    cauchyIndex p (-q) s = -cauchyIndex p q s := by
+  simp_rw [cauchyIndex_def, cauchyJump_neg_right, finsum_neg_distrib]
+
 /-- The Cauchy index as a finite sum over the distinct roots of `p` in `s`. -/
 theorem cauchyIndex_eq_sum (p q : R[X]) (s : Set R) [DecidablePred (· ∈ s)] :
     cauchyIndex p q s = ∑ x ∈ p.roots.toFinset with x ∈ s, cauchyJump p q x := by

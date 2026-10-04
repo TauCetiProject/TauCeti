@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Matrix.Adjugate
+public import TauCeti.LinearAlgebra.Matrix.Adjugate.Basic
 public import Mathlib.LinearAlgebra.Matrix.Trace
 import Mathlib.Data.Matrix.Basis
 

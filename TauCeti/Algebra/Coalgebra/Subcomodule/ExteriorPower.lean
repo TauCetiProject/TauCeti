@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Coalgebra.Comodule.ExteriorAlgebra.Corestrict
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Induced
+import TauCeti.LinearAlgebra.ExteriorPower.Basic
 
 /-!
 # Exterior images of subrepresentations
@@ -84,8 +85,7 @@ theorem finrank_exteriorPowerImage (W : Subcomodule k H M)
     Module.finrank k (W.exteriorPowerImage n).toSubmodule =
       (Module.finrank k W.toSubmodule).choose n := by
   rw [exteriorPowerImage_toSubmodule,
-    LinearMap.finrank_range_of_inj (_root_.exteriorPower.map_injective_field
-      W.toSubmodule.injective_subtype), _root_.exteriorPower.finrank_eq]
+    exteriorPower.finrank_range_map W.toSubmodule.injective_subtype]
 
 /-- The top exterior image of a finite-dimensional subrepresentation is a line. -/
 theorem finrank_exteriorPowerImage_finrank (W : Subcomodule k H M)

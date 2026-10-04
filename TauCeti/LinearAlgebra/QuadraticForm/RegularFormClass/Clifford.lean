@@ -10,10 +10,12 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Brauer
 public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Hasse
 import Mathlib.LinearAlgebra.CliffordAlgebra.Equivs
 import TauCeti.Algebra.BrauerGroup.Splitting
+import TauCeti.Algebra.Quaternion.Binary
 import TauCeti.LinearAlgebra.CliffordAlgebra.CentralSimple.Even
-import TauCeti.LinearAlgebra.CliffordAlgebra.LowRank.Four
 import TauCeti.LinearAlgebra.CliffordAlgebra.Even.Quaternion
+import TauCeti.LinearAlgebra.CliffordAlgebra.Even.Scaling
 import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality
+import TauCeti.LinearAlgebra.CliffordAlgebra.QuaternionPlane
 
 /-!
 # The Clifford invariant of a regular quadratic form
@@ -37,8 +39,13 @@ one lower rank. In ranks at most two the Clifford and Hasse invariants agree: th
 of `⟨a, b⟩` is the quaternion algebra `ℍ[K, a, b]`, while in ranks `0` and `1` the algebra is `K`.
 In rank three the even Clifford algebra is the quaternion algebra `(-a/c,-b/c)`. Expanding that
 symbol gives the first nontrivial case of Lam's comparison with the Hasse invariant, including
-both correction terms. In rank four the Clifford algebra is the tensor product
-`(a,b) ⊗ (-c/(ab),-d/(ab))`, giving its invariant as a product of two quaternion symbols.
+both correction terms.
+
+Two recurrences reduce the invariant of any diagonal form to quaternion symbols. Splitting off a
+binary plane, the Clifford algebra of `⟨a, b⟩ ⊥ q` is `ℍ[K, a, b] ⊗ C(-a⁻¹b⁻¹ · q)`, so
+`c(⟨a, b⟩ ⊥ x) = [(a, b)] · c(⟨-ab⟩ ⊗ x)` when `x` has even rank. Splitting off a line, the even
+Clifford algebra of `q ⊥ ⟨a⟩` is `C(-a⁻¹ · q)`, so `c(x ⊥ ⟨a⟩) = c(⟨-a⟩ ⊗ x)` when `x` has even
+rank. In rank four the first gives `c⟨a, b, c, d⟩ = [(a, b)] · [(-abc, -abd)]`.
 
 ## Main definitions
 
@@ -58,6 +65,10 @@ both correction terms. In rank four the Clifford algebra is the tensor product
 * `TauCeti.RegularFormClass.cliffordInvariant_eq_one_of_rank_le_one`: it is trivial in ranks `0`
   and `1`.
 * `TauCeti.RegularFormClass.cliffordInvariant_mk_binary`: `c⟨a, b⟩ = [(a, b)]`.
+* `TauCeti.RegularFormClass.cliffordInvariant_mk_binary_add`: splitting a binary plane off the
+  Clifford invariant of a class of even rank.
+* `TauCeti.RegularFormClass.cliffordInvariant_add_mk_rankOne`: the Clifford invariant of a class of
+  odd rank, through the rescaled class of even rank obtained by splitting off a line.
 * `TauCeti.RegularFormClass.cliffordInvariant_mk_quaternary`: the Clifford invariant of a
   four-dimensional diagonal form as a product of two quaternion symbols.
 * `TauCeti.RegularFormClass.cliffordInvariant_eq_hasseInvariant_of_rank_le_two`: in ranks at most
@@ -72,8 +83,8 @@ both correction terms. In rank four the Clifford algebra is the tensor product
 ## References
 
 * T. Y. Lam, *Introduction to Quadratic Forms over Fields*, Graduate Studies in Mathematics 67,
-  American Mathematical Society (2005), Chapter V, Theorems 2.4 and 2.5, Definition 3.12, and
-  Theorem 3.20.
+  American Mathematical Society (2005), Chapter V, §2 (Theorems 2.4 and 2.5), Definition 3.12,
+  and Theorem 3.20.
 -/
 
 public section
@@ -225,19 +236,24 @@ theorem cliffordInvariant_zero : cliffordInvariant (0 : RegularFormClass K) = 1 
 theorem cliffordInvariant_one : cliffordInvariant (1 : RegularFormClass K) = 1 :=
   cliffordInvariant_eq_one_of_rank_le_one rank_one.le
 
+/-- The binary presented form `⟨a, b⟩` is Mathlib's quaternion plane
+`CliffordAlgebraQuaternion.Q a b`, whose Clifford algebra is `ℍ[K, a, b]`: the shared isometry
+`QuaternionAlgebra.weightedSumSquaresIsometryEquivQ`, transported along `presentedForm_two`. -/
+private def binaryIsometryEquiv (a b : Kˣ) :
+    (presentedForm (⟨2, ![a, b]⟩ : RegularFormPresentation K)).IsometryEquiv
+      (CliffordAlgebraQuaternion.Q (a : K) b) :=
+  presentedForm_two ![a, b] ▸ QuaternionAlgebra.weightedSumSquaresIsometryEquivQ _
+
 /-- **The Clifford invariant of a binary form `⟨a, b⟩` is the quaternion symbol `[(a, b)]`**: the
 Clifford algebra of `⟨a, b⟩` is the quaternion algebra `ℍ[K, a, b]`. -/
 @[simp]
 theorem cliffordInvariant_mk_binary (a b : Kˣ) :
     cliffordInvariant (Quotient.mk (regularFormSetoid K) ⟨2, ![a, b]⟩) =
       BrauerGroup.quaternionClass a b := by
-  let f : (presentedForm (⟨2, ![a, b]⟩ : RegularFormPresentation K)).IsometryEquiv
-      (CliffordAlgebraQuaternion.Q (a : K) b) :=
-    ⟨LinearEquiv.finTwoArrow K K, fun v => by
-      simp [presentedForm_two, weightedSumSquares_apply, CliffordAlgebraQuaternion.Q_apply]⟩
   rw [BrauerGroup.quaternionClass_def]
   exact cliffordInvariant_mk_of_even _ even_two _
-    ((CliffordAlgebra.equivOfIsometry f).trans CliffordAlgebraQuaternion.equiv)
+    ((CliffordAlgebra.equivOfIsometry (binaryIsometryEquiv a b)).trans
+      CliffordAlgebraQuaternion.equiv)
 
 /-- **The Clifford invariant of a ternary form** is the quaternion symbol
 `[(-a/c, -b/c)]`. -/
@@ -253,24 +269,94 @@ theorem cliffordInvariant_mk_ternary (a b c : Kˣ) :
   rw [presentedForm_eq_weightedSumSquares_coe, hw]
   exact CliffordAlgebra.evenWeightedSumSquaresThreeQuaternionEquiv (a : K) b c
 
+/-! ### Splitting off a binary plane and a line -/
+
+/-- Scaling every weight of a presentation by `c` presents the scalar multiple `c • q`. -/
+private def scaleIsometryEquiv (c : Kˣ) (p : RegularFormPresentation K) :
+    ((c : K) • presentedForm p).IsometryEquiv
+      (presentedForm (⟨p.1, fun i => c * p.2 i⟩ : RegularFormPresentation K)) :=
+  ⟨LinearEquiv.refl K _, fun x => by simp [Finset.mul_sum, mul_assoc]⟩
+
+/-- **Splitting a binary plane off the Clifford invariant** (Lam, Chapter V, §2): for a class `x`
+of even rank, `c(⟨a, b⟩ ⊥ x) = [(a, b)] · c(⟨-ab⟩ ⊗ x)`. Indeed the Clifford algebra of
+`⟨a, b⟩ ⊥ q` is `ℍ[K, a, b] ⊗ C(-a⁻¹b⁻¹ · q)`, and `-a⁻¹b⁻¹` and `-ab` differ by a square. -/
+theorem cliffordInvariant_mk_binary_add (a b : Kˣ) {x : RegularFormClass K} (hx : Even x.rank) :
+    cliffordInvariant (Quotient.mk (regularFormSetoid K) ⟨2, ![a, b]⟩ + x) =
+      BrauerGroup.quaternionClass a b *
+        cliffordInvariant (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => -(a * b)⟩ * x) := by
+  have hsq : (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => -(a * b)⟩ : RegularFormClass K) =
+      Quotient.mk _ ⟨1, fun _ => -(a⁻¹ * b⁻¹)⟩ := by
+    have h : -(a * b) = -(a⁻¹ * b⁻¹) * (a * b) * (a * b) := by
+      ext
+      simp only [Units.val_neg, Units.val_mul, Units.val_inv_eq_inv_val]
+      field_simp
+    rw [h, ← mk_rankOne_mul_mk_rankOne, ← mk_rankOne_mul_mk_rankOne, mul_assoc,
+      mk_rankOne_mul_self, mul_one]
+  rw [hsq]
+  induction x using Quotient.inductionOn with
+  | h p =>
+    have hp : Even p.1 := by simpa using hx
+    let p' : RegularFormPresentation K := ⟨p.1, fun i => -(a⁻¹ * b⁻¹) * p.2 i⟩
+    rw [mk_mul_mk, RegularFormPresentation.rankOne_tmul, mk_add_mk,
+      cliffordInvariant_mk_of_even p' hp (cliffordCSA p' hp) AlgEquiv.refl,
+      BrauerGroup.quaternionClass_def, ← BrauerGroup.mk_tensorProduct]
+    refine cliffordInvariant_mk_of_even _ (by simpa using even_two.add hp) _ ?_
+    exact (CliffordAlgebra.equivOfIsometry (presentedFormAppendIsometryEquiv _ p)).trans <|
+      (CliffordAlgebra.equivOfIsometry
+        ((binaryIsometryEquiv a b).prod (QuadraticMap.IsometryEquiv.refl _))).trans <|
+      (CliffordAlgebra.quaternionPlaneEquivTensor (presentedForm p) a b).trans <|
+      Algebra.TensorProduct.congr AlgEquiv.refl
+        (CliffordAlgebra.equivOfIsometry (scaleIsometryEquiv (-(a⁻¹ * b⁻¹)) p))
+
+/-- **Splitting a line off the Clifford invariant**: for a class `x` of even rank,
+`c(x ⊥ ⟨a⟩) = c(⟨-a⟩ ⊗ x)`. The even Clifford algebra of `q ⊥ ⟨a⟩` is the Clifford algebra of
+`-a⁻¹ · q`, and `-a⁻¹` and `-a` differ by a square. -/
+theorem cliffordInvariant_add_mk_rankOne (a : Kˣ) {x : RegularFormClass K} (hx : Even x.rank) :
+    cliffordInvariant (x + Quotient.mk (regularFormSetoid K) ⟨1, fun _ => a⟩) =
+      cliffordInvariant (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => -a⟩ * x) := by
+  have hsq : (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => -a⟩ : RegularFormClass K) =
+      Quotient.mk _ ⟨1, fun _ => -a⁻¹⟩ := by
+    have h : -a = -a⁻¹ * a * a := by
+      ext
+      simp only [Units.val_neg, Units.val_mul, Units.val_inv_eq_inv_val]
+      field_simp
+    rw [h, ← mk_rankOne_mul_mk_rankOne, ← mk_rankOne_mul_mk_rankOne, mul_assoc,
+      mk_rankOne_mul_self, mul_one]
+  rw [hsq]
+  induction x using Quotient.inductionOn with
+  | h p =>
+    have hp : Even p.1 := by simpa using hx
+    let p' : RegularFormPresentation K := ⟨p.1, fun i => -a⁻¹ * p.2 i⟩
+    have hodd : Odd (RegularFormPresentation.append p ⟨1, fun _ => a⟩).1 := by
+      simpa using hp.add_one
+    rw [mk_mul_mk, RegularFormPresentation.rankOne_tmul, mk_add_mk,
+      cliffordInvariant_mk_of_even p' hp (cliffordCSA p' hp) AlgEquiv.refl]
+    refine cliffordInvariant_mk_of_odd _ hodd _ ?_
+    let line : (presentedForm (⟨1, fun _ => a⟩ : RegularFormPresentation K)).IsometryEquiv
+        ((a : K) • QuadraticMap.sq) :=
+      ⟨LinearEquiv.funUnique (Fin 1) K K, fun v => by rw [presentedForm_apply]; simp⟩
+    exact (CliffordAlgebra.evenEquivOfIsometry (presentedFormAppendIsometryEquiv p _)).trans <|
+      (CliffordAlgebra.evenEquivOfIsometry
+        ((QuadraticMap.IsometryEquiv.refl _).prod line)).trans <|
+      (TauCeti.CliffordAlgebra.evenProdSMulSqEquiv (presentedForm p) a).trans <|
+      CliffordAlgebra.equivOfIsometry (scaleIsometryEquiv (-a⁻¹) p)
+
 /-- **The Clifford invariant of a quaternary form** is the product of quaternion symbols
-`[(a,b)] · [(-c/(ab),-d/(ab))]`. This is the explicit rank-four Clifford-algebra computation
-underlying the next case of Lam's Clifford--Hasse comparison. -/
+`[(a, b)] · [(-abc, -abd)]`, by splitting off the plane `⟨a, b⟩`. -/
 @[simp]
 theorem cliffordInvariant_mk_quaternary (a b c d : Kˣ) :
     cliffordInvariant (Quotient.mk (regularFormSetoid K) ⟨4, ![a, b, c, d]⟩) =
       BrauerGroup.quaternionClass a b *
-        BrauerGroup.quaternionClass (-((a * b)⁻¹ * c)) (-((a * b)⁻¹ * d)) := by
-  rw [BrauerGroup.quaternionClass_def, BrauerGroup.quaternionClass_def,
-    ← BrauerGroup.mk_tensorProduct]
-  refine cliffordInvariant_mk_of_even _ (by exact ⟨2, rfl⟩) _ ?_
-  have hw : (fun i ↦ ((![a, b, c, d] i : Kˣ) : K)) =
-      ![(a : K), (b : K), (c : K), (d : K)] := by
-    funext i
-    fin_cases i <;> rfl
-  rw [presentedForm_eq_weightedSumSquares_coe, hw]
-  simpa only [Units.val_neg, Units.val_mul, Units.val_inv_eq_inv_val] using
-    CliffordAlgebra.weightedSumSquaresFourEquivTensorQuaternion a b (c : K) (d : K)
+        BrauerGroup.quaternionClass (-(a * b) * c) (-(a * b) * d) := by
+  have h4 : (Quotient.mk (regularFormSetoid K) ⟨4, ![a, b, c, d]⟩ : RegularFormClass K) =
+      Quotient.mk _ ⟨2, ![a, b]⟩ + Quotient.mk _ ⟨2, ![c, d]⟩ := by
+    rw [mk_add_mk, RegularFormPresentation.append_def]
+    exact congrArg _ (Sigma.ext rfl (heq_of_eq (by funext i; fin_cases i <;> rfl)))
+  have hw : (⟨2, fun i => -(a * b) * ![c, d] i⟩ : RegularFormPresentation K) =
+      ⟨2, ![-(a * b) * c, -(a * b) * d]⟩ :=
+    congrArg _ (by funext i; fin_cases i <;> rfl)
+  rw [h4, cliffordInvariant_mk_binary_add a b (by simp), mk_mul_mk,
+    RegularFormPresentation.rankOne_tmul, hw, cliffordInvariant_mk_binary]
 
 /-- **In ranks at most two the Clifford invariant is the Hasse invariant.** This is the low-rank
 case of Lam V.3.20, whose correction terms vanish for `n ≤ 2`. -/

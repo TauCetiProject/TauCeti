@@ -79,6 +79,8 @@ def toProd : Nil ≃ ℝ × ℝ × ℝ := Equiv.refl _
 
 instance : TopologicalSpace Nil := inferInstanceAs (TopologicalSpace (ℝ × ℝ × ℝ))
 
+instance : T2Space Nil := inferInstanceAs (T2Space (ℝ × ℝ × ℝ))
+
 instance : ChartedSpace (ℝ × ℝ × ℝ) Nil := inferInstanceAs (ChartedSpace (ℝ × ℝ × ℝ) (ℝ × ℝ × ℝ))
 
 instance : IsManifold 𝓘(ℝ, ℝ × ℝ × ℝ) ω Nil :=

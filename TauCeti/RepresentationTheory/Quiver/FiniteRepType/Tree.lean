@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Combinatorics.SimpleGraph.Degree
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.SimpleGraph
-public import TauCeti.LinearAlgebra.RootSystem.FiniteType.SimplyLaced
 public import TauCeti.RepresentationTheory.Quiver.EulerForm
 public import TauCeti.RepresentationTheory.Quiver.FiniteRepType.ExtendedDynkin
 public import TauCeti.RepresentationTheory.Quiver.FiniteRepType.Obstructions
@@ -35,7 +34,8 @@ a finite tree containing none of them has a positive definite matrix `2I - A`:
 The Cartan matrices of the simply-laced Dynkin types are positive definite
 (`TauCeti.DynkinType.IsSimplyLaced.posDef_map_intCast_cartanMatrix`), and the Tits form of a quiver
 with no loops and at most one arrow in total, counting both directions, between any two distinct
-vertices is half the form of `2I - A` for its underlying graph.
+vertices is half the form of `2I - A` for its underlying graph
+(`TauCeti.titsForm_posDef_iff_posDef_graphCartanMatrix`).
 
 ## Main results
 
@@ -349,37 +349,7 @@ theorem _root_.SimpleGraph.IsTree.posDef_graphCartanMatrix [Finite V] [Decidable
 
 section Quiver
 
-open _root_.Matrix
-
 variable {k : Type u} [Field k] {Q : Type v} [_root_.Quiver.{w} Q]
-
-/-- Over a quiver of finite representation type with no pair of opposite arrows, two vertices are
-joined by one arrow, in one direction, exactly when they are adjacent in the underlying graph. -/
-private theorem card_hom_add_card_hom [∀ a b : Q, Fintype (a ⟶ b)]
-    [DecidableRel (underlyingGraph Q).Adj] (h : IsFiniteRepType.{u, v, w, u} k Q)
-    (hopp : ∀ ⦃a b : Q⦄, a ≠ b → (a ⟶ b) → IsEmpty (b ⟶ a)) (a b : Q) :
-    Fintype.card (a ⟶ b) + Fintype.card (b ⟶ a) =
-      if (underlyingGraph Q).Adj a b then 1 else 0 := by
-  rcases eq_or_ne a b with rfl | hab
-  · have := h.isEmpty_hom_self a
-    simp
-  have hle (x y : Q) : Fintype.card (x ⟶ y) ≤ 1 :=
-    Fintype.card_le_one_iff_subsingleton.mpr (h.subsingleton_hom x y)
-  have hab' := hle a b
-  have hba' := hle b a
-  rcases isEmpty_or_nonempty (a ⟶ b) with hl | hl
-  · rcases isEmpty_or_nonempty (b ⟶ a) with hr | hr
-    · have : ¬ (underlyingGraph Q).Adj a b := by
-        simp [underlyingGraph_adj, not_nonempty_iff.mpr hl, not_nonempty_iff.mpr hr]
-      rw [ite_eq_right_iff.mpr (absurd · this), Fintype.card_eq_zero, Fintype.card_eq_zero]
-    · have := Fintype.card_pos (α := b ⟶ a)
-      have : (underlyingGraph Q).Adj a b := (underlyingGraph_adj_of_hom hr.some hab.symm).symm
-      simp only [Fintype.card_eq_zero, this, ↓reduceIte]
-      omega
-  · have := hopp hab hl.some
-    have := Fintype.card_pos (α := a ⟶ b)
-    simp only [Fintype.card_eq_zero, underlyingGraph_adj_of_hom hl.some hab, ↓reduceIte]
-    omega
 
 /-- **Finite representation type of a tree quiver forces a positive definite Tits form.** A finite
 quiver of finite representation type whose underlying graph is a tree, and which has no pair of
@@ -388,48 +358,19 @@ opposite arrows `a ⟶ b`, `b ⟶ a`, has a positive definite Tits form.
 This is the converse of `TauCeti.isFiniteRepType_of_titsForm_posDef` for such quivers. The
 underlying graph contains none of the extended Dynkin trees, which obstruct finite representation
 type, so it is a Dynkin diagram (`SimpleGraph.IsTree.posDef_graphCartanMatrix`), and twice the Tits
-form is the form of the matrix `2I - A` of the underlying graph. -/
+form is the form of the matrix `2I - A` of the underlying graph
+(`TauCeti.titsForm_posDef_iff_posDef_graphCartanMatrix`). -/
 theorem IsFiniteRepType.posDef_titsForm_of_isTree [Fintype Q] [∀ a b : Q, Fintype (a ⟶ b)]
     (h : IsFiniteRepType.{u, v, w, u} k Q)
     (hopp : ∀ ⦃a b : Q⦄, a ≠ b → (a ⟶ b) → IsEmpty (b ⟶ a))
     (htree : (underlyingGraph Q).IsTree) : (titsForm Q).PosDef := by
   classical
-  have hpd := htree.posDef_graphCartanMatrix
+  rw [titsForm_posDef_iff_posDef_graphCartanMatrix Q (h.card_hom_add_card_hom_le_one hopp)]
+  exact htree.posDef_graphCartanMatrix
     (fun m ⟨f⟩ ↦ not_isFiniteRepType_of_copy_affineD m f h)
     (fun ⟨f⟩ ↦ not_isFiniteRepType_of_copy_affineE6 f h)
     (fun ⟨f⟩ ↦ not_isFiniteRepType_of_copy_affineE7 f h)
     (fun ⟨f⟩ ↦ not_isFiniteRepType_of_copy_affineE8 f h)
-  intro d hd
-  set M := (underlyingGraph Q).graphCartanMatrix ℚ
-  set x : Q → ℚ := fun i ↦ (d i : ℚ)
-  have hx : x ≠ 0 := fun h0 ↦ hd (funext fun i ↦ by simpa [x] using congrFun h0 i)
-  -- Twice the Tits form is the form of `2I - A`.
-  have hxM : x ⬝ᵥ M *ᵥ x = 2 * (titsForm Q d : ℚ) := by
-    have hterm (i j : Q) : x i * (M i j * x j) =
-        (if i = j then 2 * (x i * x j) else 0) -
-          (Fintype.card (i ⟶ j) : ℚ) * (x i * x j) - (Fintype.card (j ⟶ i) : ℚ) * (x j * x i) := by
-      have hc := congrArg (Nat.cast : ℕ → ℚ) (card_hom_add_card_hom h hopp i j)
-      push_cast at hc
-      simp only [M, graphCartanMatrix_apply]
-      split_ifs at hc ⊢ with hij hadj
-      · subst hij
-        exact absurd hadj (underlyingGraph Q).irrefl
-      · subst hij
-        linear_combination (x i * x i) * hc
-      · linear_combination (x i * x j) * hc
-      · linear_combination (x i * x j) * hc
-    have hsymm : ∑ i, ∑ j, (Fintype.card (j ⟶ i) : ℚ) * (x j * x i) =
-        ∑ i, ∑ j, (Fintype.card (i ⟶ j) : ℚ) * (x i * x j) :=
-      Finset.sum_comm
-    rw [titsForm_def, eulerForm_eq_sum_card]
-    simp only [dotProduct, Matrix.mulVec, Finset.mul_sum, hterm, Finset.sum_sub_distrib,
-      Finset.sum_ite_eq, Finset.mem_univ, ↓reduceIte, hsymm]
-    push_cast
-    simp only [x, ← Finset.mul_sum]
-    ring
-  have hpos := hpd.dotProduct_mulVec_pos hx
-  rw [star_trivial, hxM] at hpos
-  exact_mod_cast pos_of_mul_pos_right hpos zero_le_two
 
 end Quiver
 

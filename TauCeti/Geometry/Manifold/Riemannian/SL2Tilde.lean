@@ -88,6 +88,8 @@ instance. Its topology and charts are those of `ℝ × ℝ × ℝ`. -/
 
 instance : TopologicalSpace SL2Tilde := inferInstanceAs (TopologicalSpace (ℝ × ℝ × ℝ))
 
+instance : T2Space SL2Tilde := inferInstanceAs (T2Space (ℝ × ℝ × ℝ))
+
 instance : ChartedSpace (ℝ × ℝ × ℝ) SL2Tilde :=
   inferInstanceAs (ChartedSpace (ℝ × ℝ × ℝ) (ℝ × ℝ × ℝ))
 

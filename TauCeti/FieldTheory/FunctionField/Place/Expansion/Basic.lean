@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.Place.Filtration
+public import TauCeti.Algebra.BigOperators.Finset.Pairs
 public import Mathlib.Algebra.Polynomial.OfFn
 
 /-!
@@ -314,18 +315,9 @@ theorem truncatedExpansion_mul (hP : P.degree = 1) (ht : P.ord t = 1)
       ∑ l : Fin n × Fin n with (l.1 : ℕ) + (l.2 : ℕ) = (j : ℕ), a l.1 * b l.2 := by
     rw [Polynomial.coeff_mul]
     symm
-    refine Finset.sum_bij (fun l _ ↦ ((l.1 : ℕ), (l.2 : ℕ))) ?_ ?_ ?_ ?_
-    · intro l hl
-      exact Finset.mem_antidiagonal.mpr (Finset.mem_filter.mp hl).2
-    · intro l _ m _ hlm
-      exact Prod.ext (Fin.ext (Prod.mk.inj hlm).1) (Fin.ext (Prod.mk.inj hlm).2)
-    · intro l hl
-      have hl' := Finset.mem_antidiagonal.mp hl
-      refine ⟨(⟨l.1, by omega⟩, ⟨l.2, by omega⟩), ?_, rfl⟩
-      simp only [Finset.mem_filter, Finset.mem_univ, true_and]
-      exact hl'
-    · intro l _
-      simp only [hcoeff]
+    apply sum_fin_product_eq_sum_antidiagonal j.isLt
+    intro l _
+    simp only [hcoeff]
   -- Evaluate the product polynomial and discard only terms of degree at least `n`.
   -- Include missing low degrees as zero terms so the truncation ranges over all `Fin n`.
   let s := q.support ∪ Finset.range n
@@ -383,6 +375,22 @@ theorem truncatedExpansion_castSucc (hP : P.degree = 1) (ht : P.ord t = 1)
     (fun j ↦ P.truncatedExpansion hP ht (n + 1) x j.castSucc)).mpr
     (by convert hlow using 1; ring)
   exact (congrFun heq i).symm
+
+/-- Increasing the truncation length preserves the coefficients at all indices of the
+shorter expansion. -/
+@[simp]
+theorem truncatedExpansion_castLE (hP : P.degree = 1) (ht : P.ord t = 1)
+    {n m : ℕ} (hnm : n ≤ m)
+    (x : P.integers) (i : Fin n) :
+    P.truncatedExpansion hP ht m x (i.castLE hnm) = P.truncatedExpansion hP ht n x i := by
+  induction m, hnm using Nat.le_induction with
+  | base => rfl
+  | succ m hnm ih =>
+    -- Both casts preserve the underlying natural index; expose the successor cast so the
+    -- finite-expansion compatibility lemma applies.
+    rw [show i.castLE (Nat.le_succ_of_le hnm) = (i.castLE hnm).castSucc from rfl,
+      P.truncatedExpansion_castSucc hP ht]
+    exact ih
 
 /-- Two integral functions have the same length-`n` coefficient vector exactly when they
 agree modulo the `n`-th order filtration. Thus coefficient extraction descends to finite

@@ -70,8 +70,7 @@ theorem map_ι_span_pow_eq_span_exteriorAlgebra :
   have htop := congrArg (Submodule.map (ExteriorAlgebra.map
     (span R (Set.range (b ∘ e))).subtype).toLinearMap)
     c.exteriorPower_eq_span_ιMulti
-  rw [ExteriorAlgebra.exteriorPower, Submodule.map_pow,
-    ExteriorAlgebra.ι_range_map_map, Submodule.range_subtype] at htop
+  rw [TauCeti.ExteriorAlgebra.exteriorPower_map_map, Submodule.range_subtype] at htop
   rw [← hrange, Submodule.map_span]
   simp only [Submodule.map_span, Set.image_singleton, AlgHom.toLinearMap_apply,
     ExteriorAlgebra.map_apply_ιMulti, c, Function.comp_def,

@@ -191,6 +191,14 @@ theorem _root_.Polynomial.self_mem_reducta (p : R[X]) : p ∈ p.reducta := by
   rw [mem_reducta]
   exact ⟨p.natDegree + 1, by omega, p.reductum_natDegree_add_one⟩
 
+/-- The reductum at every cutoff belongs to the reducta, including cutoffs past the degree. -/
+@[simp]
+theorem _root_.Polynomial.reductum_mem_reducta (p : R[X]) (k : ℕ) : p.reductum k ∈ p.reducta := by
+  by_cases hk : k < p.natDegree + 2
+  · exact mem_reducta.2 ⟨k, hk, rfl⟩
+  · rw [p.reductum_eq_self (by omega)]
+    exact p.self_mem_reducta
+
 /-- Deleting the leading term produces a member of the reducta. -/
 theorem _root_.Polynomial.eraseLead_mem_reducta (p : R[X]) :
     p.eraseLead ∈ p.reducta := by
@@ -347,6 +355,15 @@ polynomial.  This gives an explicit member of `p.reducta` witnessing
 theorem _root_.Polynomial.map_reductum_natDegree_map_add_one (f : R →+* S) (p : R[X]) :
     (p.reductum ((p.map f).natDegree + 1)).map f = p.map f := by
   rw [← reductum_map, reductum_natDegree_add_one]
+
+/-- Cutting off immediately above the degree after specialization gives a reductum whose own
+degree is the specialized degree, so formal degree bounds taken at this reductum are the actual
+degrees after specialization. -/
+theorem _root_.Polynomial.natDegree_reductum_natDegree_map_add_one (f : R →+* S) (p : R[X]) :
+    (p.reductum ((p.map f).natDegree + 1)).natDegree = (p.map f).natDegree := by
+  refine Nat.le_antisymm (Nat.lt_succ_iff.mp (p.natDegree_reductum_lt _)) ?_
+  conv_lhs => rw [← map_reductum_natDegree_map_add_one f p]
+  exact natDegree_map_le
 
 /-- Every coefficient specialization is the image of a member of the original polynomial's finite
 set of reducta. -/

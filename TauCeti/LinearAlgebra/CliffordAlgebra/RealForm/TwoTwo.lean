@@ -8,7 +8,8 @@ module
 public import Mathlib.RingTheory.TensorProduct.Pi
 public import TauCeti.LinearAlgebra.CliffordAlgebra.BottPeriodicity
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Even.Scaling
-public import TauCeti.LinearAlgebra.Matrix.AdjugateFinTwo
+public import TauCeti.LinearAlgebra.Matrix.Adjugate.Basic
+public import TauCeti.LinearAlgebra.Matrix.Adjugate.FinTwo
 
 /-!
 # The split four-dimensional real even Clifford algebra
@@ -299,32 +300,16 @@ theorem realCliffordTwoTwo_reverseEven_mul_self_eq_one_iff_det_eq_one
         (realCliffordTwoTwoEvenEquivMatrixProd x).2.det = 1 := by
   let A := (realCliffordTwoTwoEvenEquivMatrixProd x).1
   let B := (realCliffordTwoTwoEvenEquivMatrixProd x).2
+  rw [← Matrix.adjugate_mul_self_eq_one_iff_det_eq_one A,
+    ← Matrix.adjugate_mul_self_eq_one_iff_det_eq_one B]
   constructor
   · intro h
     have hm := congrArg realCliffordTwoTwoEvenEquivMatrixProd h
     rw [map_mul, map_one, realCliffordTwoTwoEvenEquivMatrixProd_reverseEven] at hm
-    constructor
-    · have hfst := congrArg Prod.fst hm
-      -- The projection is definitionally this equation, but no lemma rewrites the local model name.
-      change Matrix.adjugate A * A = 1 at hfst
-      rw [Matrix.adjugate_mul] at hfst
-      have h00 := congrArg (fun M : Matrix (Fin 2) (Fin 2) ℝ => M 0 0) hfst
-      simpa [A] using h00
-    · have hsnd := congrArg Prod.snd hm
-      -- The projection is definitionally this equation, but no lemma rewrites the local model name.
-      change Matrix.adjugate B * B = 1 at hsnd
-      rw [Matrix.adjugate_mul] at hsnd
-      have h00 := congrArg (fun M : Matrix (Fin 2) (Fin 2) ℝ => M 0 0) hsnd
-      simpa [B] using h00
+    exact ⟨congrArg Prod.fst hm, congrArg Prod.snd hm⟩
   · rintro ⟨hA, hB⟩
     apply realCliffordTwoTwoEvenEquivMatrixProd.injective
     rw [map_mul, map_one, realCliffordTwoTwoEvenEquivMatrixProd_reverseEven]
-    apply Prod.ext
-    -- Expose the local matrix name so that the adjugate multiplication theorem applies.
-    · change Matrix.adjugate A * A = 1
-      rw [Matrix.adjugate_mul, hA, one_smul]
-    -- Expose the local matrix name so that the adjugate multiplication theorem applies.
-    · change Matrix.adjugate B * B = 1
-      rw [Matrix.adjugate_mul, hB, one_smul]
+    exact Prod.ext hA hB
 
 end TauCeti
