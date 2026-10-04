@@ -98,27 +98,6 @@ theorem eval_apply (g : G) (f : coordinateRing R G) :
     eval R G g f = functionAlgEquiv R G f g := by
   simp [eval]
 
-section Pullback
-
-variable (G : Type v) (H : Type w)
-
-/-- Pull functions back along a map of types. -/
-def functionPullback (f : G → H) : (H → R) →ₐ[R] (G → R) where
-  toFun a := a ∘ f
-  map_one' := rfl
-  map_mul' _ _ := rfl
-  map_zero' := rfl
-  map_add' _ _ := rfl
-  commutes' _ := rfl
-
-@[simp]
-theorem functionPullback_apply (f : G → H) (a : H → R) (g : G) :
-    functionPullback R G H f a g = a (f g) := by
-  unfold functionPullback
-  rfl
-
-end Pullback
-
 section Group
 
 variable [Group G]

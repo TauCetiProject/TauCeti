@@ -27,6 +27,7 @@ count the central characters of a group algebra whose centre has been split into
 * `Pi.evalAlgHom_injective`: distinct coordinates give distinct evaluation homomorphisms.
 * `Pi.evalAlgHomEquiv`: the coordinates of `ι → R` are exactly the `R`-algebra homomorphisms
   `(ι → R) →ₐ[R] R`.
+* `Pi.pullback`: pull functions back along a map of types.
 -/
 
 public section
@@ -46,6 +47,23 @@ theorem evalAlgHom_injective [Nontrivial R] :
   rw [evalAlgHom_apply, evalAlgHom_apply, Pi.single_eq_same,
     Pi.single_eq_of_ne (Ne.symm hne)] at h
   exact one_ne_zero h
+
+variable {α β : Type*}
+
+/-- Pull functions back along a map of types. -/
+def pullback (f : α → β) : (β → R) →ₐ[R] (α → R) where
+  toFun a := a ∘ f
+  map_one' := rfl
+  map_mul' _ _ := rfl
+  map_zero' := rfl
+  map_add' _ _ := rfl
+  commutes' _ := rfl
+
+@[simp]
+theorem pullback_apply (f : α → β) (a : β → R) (x : α) :
+    pullback R f a x = a (f x) := by
+  unfold pullback
+  rfl
 
 variable [NoZeroDivisors R] [Nontrivial R] [Finite ι]
 
