@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.Basic
-import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.Generators
 
 /-!
 # Basic Spin-group carrier facts
