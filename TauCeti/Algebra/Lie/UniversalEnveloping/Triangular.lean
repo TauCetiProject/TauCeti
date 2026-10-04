@@ -153,7 +153,7 @@ theorem triangularMulEquiv_tmul (f : U (negativeNilradical H b)) (h : U H)
           UniversalEnvelopingAlgebra.map K (positiveNilradical H b).incl e := by
   simp only [triangularMulEquiv, LinearEquiv.trans_apply, TensorProduct.congr_tmul,
     LinearEquiv.refl_apply, borelMulEquiv_tmul, LieSubalgebra.mulEquiv_tmul, map_mul,
-    map_incl_map_inclusion, mul_assoc]
+    ← AlgHom.comp_apply, map_incl_comp_map_inclusion, mul_assoc]
 
 /-- The inverse triangular decomposition recovers the three factors of an ordered product. -/
 @[simp]

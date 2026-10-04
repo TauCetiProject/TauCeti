@@ -203,8 +203,8 @@ private theorem vermaCoeff_vermaMk_mul_mul (f : U (negativeNilradical H b)) (h :
   have hr : UniversalEnvelopingAlgebra.map K (borelSubalgebra H b).incl r =
       UniversalEnvelopingAlgebra.map K H.incl h *
         UniversalEnvelopingAlgebra.map K (positiveNilradical H b).incl e := by
-    rw [map_mul, UniversalEnvelopingAlgebra.map_incl_map_inclusion,
-      UniversalEnvelopingAlgebra.map_incl_map_inclusion]
+    rw [map_mul, ← AlgHom.comp_apply, UniversalEnvelopingAlgebra.map_incl_comp_map_inclusion,
+      ← AlgHom.comp_apply, UniversalEnvelopingAlgebra.map_incl_comp_map_inclusion]
   have hχ : _root_.UniversalEnvelopingAlgebra.lift K (borelCharacter H b lam) r =
       cartanEval lam h * Coalgebra.counit (R := K) e := by
     rw [map_mul, lift_borelCharacter_map_cartan, lift_borelCharacter_map_positiveNilradical]

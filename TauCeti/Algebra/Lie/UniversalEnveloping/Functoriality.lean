@@ -135,10 +135,9 @@ theorem map_comp (f : LieHom R L M) (g : LieHom R M N) :
 /-- For Lie subalgebras `A ≤ B` of `L`, mapping `U(A)` into `U(B)` and then into `U(L)` is the map
 induced by the inclusion of `A` in `L`. -/
 @[simp]
-theorem map_incl_map_inclusion {A B : LieSubalgebra R L} (h : A ≤ B)
-    (a : _root_.UniversalEnvelopingAlgebra R A) :
-    map R B.incl (map R (LieSubalgebra.inclusion h) a) = map R A.incl a := by
-  rw [← AlgHom.comp_apply, ← map_comp]
+theorem map_incl_comp_map_inclusion {A B : LieSubalgebra R L} (h : A ≤ B) :
+    (map R B.incl).comp (map R (LieSubalgebra.inclusion h)) = map R A.incl := by
+  rw [← map_comp]
   -- `B.incl ∘ inclusion h` and `A.incl` are both the coercion `A → L`
   rfl
 
