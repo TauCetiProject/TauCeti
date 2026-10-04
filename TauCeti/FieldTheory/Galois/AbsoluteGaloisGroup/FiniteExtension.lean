@@ -229,7 +229,6 @@ theorem range_absoluteGaloisGroupExtend :
 
 /-- An automorphism in Mathlib's `G_K` lies in the image of `G_L` exactly when its restriction
 to the separable closure fixes `σ x` for every `x : L`. -/
-@[simp]
 theorem mem_range_absoluteGaloisGroupExtend_iff {g : Field.absoluteGaloisGroup K} :
     g ∈ (absoluteGaloisGroupExtend K L σ).range ↔
       ∀ x : L, absoluteGaloisGroupRestrictEquiv K g (σ x) = σ x := by
