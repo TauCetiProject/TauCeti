@@ -47,14 +47,15 @@ variable (p : ℕ) [Fact p.Prime] {G : Type*} [Group G] [Finite G]
 local notation "A" => MonoidAlgebra ℤ_[p] G
 
 /-- **From a stable isomorphism to an isomorphism** (NSW (5.6.11)). Let `G` be a finite group and
-let `M`, `N` be `ℤ_p[G]`-modules with `N` finitely generated. Suppose that `M ⊕ P ≃ N ⊕ Q` for
-finitely generated projective `ℤ_p[G]`-modules `P` and `Q`, and that
+let `M`, `N` be `ℤ_p[G]`-modules with `N` finitely generated over `ℤ_p`. Suppose that
+`M ⊕ P ≃ N ⊕ Q` for finitely generated projective `ℤ_p[G]`-modules `P` and `Q`, and that
 `M ⊗ ℚ_p ≃ (N ⊕ F) ⊗ ℚ_p` for a finitely generated projective `ℤ_p[G]`-module `F`. Then
 `M ≃ N ⊕ F` as `ℤ_p[G]`-modules. The case of interest is the free module `F = ℤ_p[G]^m`. -/
 theorem nonempty_linearEquiv_prod_of_stable
     {M N F P Q : Type*}
     [AddCommGroup M] [Module ℤ_[p] M] [Module A M] [IsScalarTower ℤ_[p] A M]
-    [AddCommGroup N] [Module ℤ_[p] N] [Module A N] [IsScalarTower ℤ_[p] A N] [Module.Finite A N]
+    [AddCommGroup N] [Module ℤ_[p] N] [Module A N] [IsScalarTower ℤ_[p] A N]
+    [Module.Finite ℤ_[p] N]
     [AddCommGroup F] [Module ℤ_[p] F] [Module A F] [IsScalarTower ℤ_[p] A F]
     [Module.Finite A F] [Module.Projective A F]
     [AddCommGroup P] [Module A P] [Module.Finite A P] [Module.Projective A P]
@@ -69,7 +70,6 @@ theorem nonempty_linearEquiv_prod_of_stable
   have : IsScalarTower ℤ_[p] A P := .of_compHom _ _ _
   let _ : Module ℤ_[p] Q := .compHom Q (algebraMap ℤ_[p] A)
   have : IsScalarTower ℤ_[p] A Q := .of_compHom _ _ _
-  have : Module.Finite ℤ_[p] N := .trans A N
   -- Rationally, `(F × P) × N ≃ (N × F) × P ≃ M × P ≃ N × Q ≃ Q × N`; cancel `N ⊗ ℚ_p`.
   obtain ⟨g⟩ := IsFractionRing.nonempty_tensor_linearEquiv_of_prod_tensor_linearEquiv ℚ_[p]
     (M := F × P) (N := Q) (P := N)
