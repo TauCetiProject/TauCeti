@@ -24,10 +24,12 @@ root.
 
 * `TauCeti.TypeDStd.typeDRootWeight`: the concrete Cartan root indexed by a root of the pinned
   type-`D` datum.
+* `TauCeti.TypeDStd.typeDWeightEquiv_symm_typeDRootWeight`: its diagonal-basis coordinates are
+  the corresponding classical root vector.
 * `TauCeti.TypeDStd.typeDRootWeight_apply_cartanGenerator`: its coordinates on the numbered
   Cartan generators are the coordinates of the corresponding abstract root.
-* `TauCeti.TypeDStd.rootSpace_typeDDiagonalCartan_ne_bot_iff_eq_typeDRootWeight`: every nonzero
-  root of the concrete diagonal Cartan occurs exactly in this enumeration.
+* `TauCeti.TypeDStd.rootSpace_typeDDiagonalCartan_ne_bot_iff_exists_eq_typeDRootWeight`: every
+  nonzero root of the concrete diagonal Cartan occurs exactly in this enumeration.
 
 ## References
 
@@ -50,6 +52,15 @@ noncomputable def typeDRootWeight (n : ℕ) (hn : 4 ≤ n)
     Module.Dual K (typeDDiagonalCartan K (Fin n)) :=
   typeDWeightEquiv (fun i => (DynkinType.typeDRootEquiv n hn k).1 i)
 
+/-- The diagonal-basis coordinates of the concrete root indexed by `k` are the corresponding
+classical type-`D` root vector. -/
+@[simp]
+theorem typeDWeightEquiv_symm_typeDRootWeight (n : ℕ) (hn : 4 ≤ n)
+    (k : Fin (2 * n * (n - 1))) :
+    (typeDWeightEquiv (K := K)).symm (typeDRootWeight n hn k) =
+      fun i => ((DynkinType.typeDRootEquiv n hn k).1 i : K) := by
+  rw [typeDRootWeight, LinearEquiv.symm_apply_apply]
+
 /-- The concrete root indexed by `k`, evaluated on the `j`-th numbered Cartan generator, is the
 `j`-th fundamental-weight coordinate of the `k`-th root of the pinned type-`D` datum. -/
 @[simp]
@@ -58,7 +69,8 @@ theorem typeDRootWeight_apply_cartanGenerator (n : ℕ) (hn : 4 ≤ n)
     typeDRootWeight (K := K) n hn k
         ⟨cartanGenerator n hn j, cartanGenerator_mem_typeDDiagonalCartan n hn j⟩ =
       ((DynkinType.typeDSimplyConnectedRootDatum n hn).root k j : K) := by
-  rw [typeDRootWeight, typeDWeightEquiv_apply,
+  rw [← (typeDWeightEquiv (K := K)).apply_symm_apply (typeDRootWeight n hn k),
+    typeDWeightEquiv_symm_typeDRootWeight, typeDWeightEquiv_apply,
     DynkinType.root_typeDSimplyConnectedRootDatum]
   simp only [val_cartanGenerator, typeDDiagonalMatrix_apply,
     typeDDiagonalValue_inl, eq_self, ite_true]
@@ -91,7 +103,7 @@ theorem typeDRootWeight_injective (n : ℕ) (hn : 4 ≤ n) (h2 : (2 : K) ≠ 0) 
   have hcast :
       (fun i => ((DynkinType.typeDRootEquiv n hn k).1 i : K)) =
         fun i => ((DynkinType.typeDRootEquiv n hn l).1 i : K) := by
-    simpa only [typeDRootWeight, LinearEquiv.symm_apply_apply] using hkl
+    simpa only [typeDWeightEquiv_symm_typeDRootWeight] using hkl
   funext i
   exact Int.cast_injOn_of_ringChar_ne_two hchar
     (typeDRoot_value_mem (DynkinType.typeDRootEquiv n hn k) i)
@@ -104,7 +116,7 @@ theorem typeDRootWeight_ne_zero (n : ℕ) (hn : 4 ≤ n)
   intro hk
   have hcoord := congrArg (typeDWeightEquiv (K := K)).symm hk
   have hzero : (fun i => ((DynkinType.typeDRootEquiv n hn k).1 i : K)) = 0 := by
-    simpa only [typeDRootWeight, LinearEquiv.symm_apply_apply, map_zero] using hcoord
+    simpa only [typeDWeightEquiv_symm_typeDRootWeight, map_zero] using hcoord
   obtain ⟨i, j, hij, hshape | hshape | hshape⟩ :=
     DynkinType.TypeDRoot.exists_eq_single_sub_or_add_or_neg_add
       (DynkinType.typeDRootEquiv n hn k)
@@ -120,7 +132,7 @@ private theorem typeDRootWeight_eq_typeDWeightSub_of_val_eq
     (hk : (DynkinType.typeDRootEquiv n hn k).1 = Pi.single i 1 - Pi.single j 1) :
     typeDRootWeight (K := K) n hn k = typeDWeightSub i j := by
   apply (typeDWeightEquiv (K := K)).symm.injective
-  simp only [typeDRootWeight, LinearEquiv.symm_apply_apply, typeDWeightSub_def, map_sub,
+  simp only [typeDWeightEquiv_symm_typeDRootWeight, typeDWeightSub_def, map_sub,
     typeDWeightEquiv_symm_epsilon]
   funext a
   simp [hk, Pi.single_apply]
@@ -130,7 +142,7 @@ private theorem typeDRootWeight_eq_typeDWeightAdd_of_val_eq
     (hk : (DynkinType.typeDRootEquiv n hn k).1 = Pi.single i 1 + Pi.single j 1) :
     typeDRootWeight (K := K) n hn k = typeDWeightAdd i j := by
   apply (typeDWeightEquiv (K := K)).symm.injective
-  simp only [typeDRootWeight, LinearEquiv.symm_apply_apply, typeDWeightAdd_def, map_add,
+  simp only [typeDWeightEquiv_symm_typeDRootWeight, typeDWeightAdd_def, map_add,
     typeDWeightEquiv_symm_epsilon]
   funext a
   simp [hk, Pi.single_apply]
@@ -140,7 +152,7 @@ private theorem typeDRootWeight_eq_neg_typeDWeightAdd_of_val_eq
     (hk : (DynkinType.typeDRootEquiv n hn k).1 = -(Pi.single i 1 + Pi.single j 1)) :
     typeDRootWeight (K := K) n hn k = -typeDWeightAdd i j := by
   apply (typeDWeightEquiv (K := K)).symm.injective
-  simp only [typeDRootWeight, LinearEquiv.symm_apply_apply, map_neg, typeDWeightAdd_def,
+  simp only [typeDWeightEquiv_symm_typeDRootWeight, map_neg, typeDWeightAdd_def,
     map_add, typeDWeightEquiv_symm_epsilon]
   funext a
   simp [hk, Pi.single_apply]
@@ -148,19 +160,27 @@ private theorem typeDRootWeight_eq_neg_typeDWeightAdd_of_val_eq
 /-- Every root in the pinned type-`D` enumeration has a nontrivial root space in the concrete
 split orthogonal Lie algebra. -/
 theorem rootSpace_typeDRootWeight_ne_bot (n : ℕ) (hn : 4 ≤ n)
-    [IsDomain K] (h2 : (2 : K) ≠ 0) (k : Fin (2 * n * (n - 1))) :
+    [Nontrivial K] (k : Fin (2 * n * (n - 1))) :
     LieAlgebra.rootSpace (typeDDiagonalCartan K (Fin n))
       (typeDRootWeight n hn k) ≠ ⊥ := by
-  apply (rootSpace_typeDDiagonalCartan_ne_bot_iff h2 _
-    (typeDRootWeight_ne_zero n hn k)).mpr
   obtain ⟨i, j, hij, hk | hk | hk⟩ :=
     DynkinType.TypeDRoot.exists_eq_single_sub_or_add_or_neg_add
       (DynkinType.typeDRootEquiv n hn k)
-  · exact ⟨i, j, hij, Or.inl (typeDRootWeight_eq_typeDWeightSub_of_val_eq n hn k hk)⟩
-  · exact ⟨i, j, hij,
-      Or.inr (Or.inl (typeDRootWeight_eq_typeDWeightAdd_of_val_eq n hn k hk))⟩
-  · exact ⟨i, j, hij,
-      Or.inr (Or.inr (typeDRootWeight_eq_neg_typeDWeightAdd_of_val_eq n hn k hk))⟩
+  · rw [typeDRootWeight_eq_typeDWeightSub_of_val_eq n hn k hk]
+    intro hbot
+    have hmem := differenceRootGenerator_mem_rootSpace (K := K) i j
+    rw [hbot] at hmem
+    exact differenceRootGenerator_ne_zero i j (by simpa using hmem)
+  · rw [typeDRootWeight_eq_typeDWeightAdd_of_val_eq n hn k hk]
+    intro hbot
+    have hmem := sumRootGenerator_mem_rootSpace (K := K) i j
+    rw [hbot] at hmem
+    exact sumRootGenerator_ne_zero i j hij (by simpa using hmem)
+  · rw [typeDRootWeight_eq_neg_typeDWeightAdd_of_val_eq n hn k hk]
+    intro hbot
+    have hmem := negSumRootGenerator_mem_rootSpace (K := K) i j
+    rw [hbot] at hmem
+    exact negSumRootGenerator_ne_zero i j hij (by simpa using hmem)
 
 private theorem exists_typeDRootWeight_eq_typeDWeightSub
     (n : ℕ) (hn : 4 ≤ n) {i j : Fin n} (hij : i ≠ j) :
@@ -196,7 +216,7 @@ private theorem exists_typeDRootWeight_eq_neg_typeDWeightAdd
 /-- **The nonzero roots of the concrete split diagonal Cartan are exactly the roots of the pinned
 type-`D` root datum.** The index on the right is the datum's full root index, and
 `typeDRootWeight_apply_cartanGenerator` identifies its fundamental-weight coordinates. -/
-theorem rootSpace_typeDDiagonalCartan_ne_bot_iff_eq_typeDRootWeight
+theorem rootSpace_typeDDiagonalCartan_ne_bot_iff_exists_eq_typeDRootWeight
     (n : ℕ) (hn : 4 ≤ n) (chi : Module.Dual K (typeDDiagonalCartan K (Fin n)))
     [IsDomain K] (h2 : (2 : K) ≠ 0) (hchi : chi ≠ 0) :
     LieAlgebra.rootSpace (typeDDiagonalCartan K (Fin n)) chi ≠ ⊥ ↔
@@ -212,6 +232,6 @@ theorem rootSpace_typeDDiagonalCartan_ne_bot_iff_eq_typeDRootWeight
     · obtain ⟨k, hk⟩ := exists_typeDRootWeight_eq_neg_typeDWeightAdd (K := K) n hn hij
       exact ⟨k, hchi.trans hk.symm⟩
   · rintro ⟨k, rfl⟩
-    exact rootSpace_typeDRootWeight_ne_bot (K := K) n hn h2 k
+    exact rootSpace_typeDRootWeight_ne_bot (K := K) n hn k
 
 end TauCeti.TypeDStd
