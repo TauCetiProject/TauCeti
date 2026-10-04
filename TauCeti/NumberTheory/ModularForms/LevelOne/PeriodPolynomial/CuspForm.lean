@@ -133,38 +133,41 @@ private theorem U_inv_mul_U_inv_eq : ((T * S)⁻¹ * (T * S)⁻¹ : SL(2, ℤ)) 
 two-term and three-term Manin relations. -/
 private theorem periodForm_mem_periodPolynomials (hk : k = w + 2) (f : CuspForm 𝒮ℒ k) :
     periodForm hk f ∈ periodPolynomials ℂ w := by
-  have hφ (g : SL(2, ℤ)) (P : homogeneousSubmodule (Fin 2) ℂ w) :
-      periodMap ℂ ⊤ hk (toTop f) (symbol ⊤ ∞ ((0 : ℚ) : OnePoint ℚ)
-          (binaryFormAdjugateRep ℂ w (g : Matrix (Fin 2) (Fin 2) ℤ) P)) =
-        periodMap ℂ ⊤ hk (toTop f) (maninSymbol ⊤ g⁻¹ P) := by
-    rw [binaryFormAdjugateRep_apply, ← Matrix.SpecialLinearGroup.coe_inv,
-      periodMap_symbol_binaryFormRep]
-  have h₁ (P : homogeneousSubmodule (Fin 2) ℂ w) :
-      periodMap ℂ ⊤ hk (toTop f) (symbol ⊤ ∞ ((0 : ℚ) : OnePoint ℚ) P) =
-        periodMap ℂ ⊤ hk (toTop f) (maninSymbol ⊤ 1 P) := by
+  -- the period functional, after the adjugate action of `g`, is the period map on the Manin
+  -- symbol of `g⁻¹`
+  have hφ (g : SL(2, ℤ)) :
+      periodMap ℂ ⊤ hk (toTop f) ∘ₗ symbol ⊤ ∞ ((0 : ℚ) : OnePoint ℚ) ∘ₗ
+          binaryFormAdjugateRep ℂ w (g : Matrix (Fin 2) (Fin 2) ℤ) =
+        periodMap ℂ ⊤ hk (toTop f) ∘ₗ maninSymbol ⊤ g⁻¹ := by
+    ext P
+    simp only [LinearMap.comp_apply, binaryFormAdjugateRep_apply,
+      ← Matrix.SpecialLinearGroup.coe_inv, periodMap_symbol_binaryFormRep]
+  have h₁ : symbol ⊤ ∞ ((0 : ℚ) : OnePoint ℚ) =
+      (maninSymbol ⊤ 1 : homogeneousSubmodule (Fin 2) ℂ w →ₗ[ℂ] ModularSymbols ℂ ⊤ w) := by
+    ext P
     rw [maninSymbol_apply, map_one, one_smul, one_smul]
+  -- the two-term relation, through `S⁻¹ = -S`
+  have h₂ : maninSymbol ⊤ 1 + maninSymbol ⊤ S⁻¹ =
+      (0 : homogeneousSubmodule (Fin 2) ℂ w →ₗ[ℂ] ModularSymbols ℂ ⊤ w) := by
+    rw [S_inv_eq, maninSymbol_mul_S, maninSymbol_neg, add_neg_cancel]
+  -- the three-term relation, through `U⁻¹ = -U²` and `U⁻² = -U`
+  have h₃ : maninSymbol ⊤ 1 + maninSymbol ⊤ (T * S)⁻¹ + maninSymbol ⊤ ((T * S)⁻¹ * (T * S)⁻¹) =
+      (0 : homogeneousSubmodule (Fin 2) ℂ w →ₗ[ℂ] ModularSymbols ℂ ⊤ w) := by
+    rw [U_inv_mul_U_inv_eq, U_inv_eq, maninSymbol_neg, maninSymbol_neg, add_right_comm,
+      maninSymbol_add_mul_T_mul_S_add_mul_T_mul_S_sq]
   rw [mem_periodPolynomials_iff, periodForm_apply]
   simp only [binaryFormRep_binaryFormDual, ← map_add]
   constructor
-  · -- the two-term relation, through `S⁻¹ = -S`
-    convert map_zero (binaryFormDual ℂ w)
-    ext P
-    simp only [LinearMap.add_apply, LinearMap.comp_apply, LinearMap.zero_apply]
-    rw [hφ, h₁, S_inv_eq, maninSymbol_mul_S, maninSymbol_neg, ← map_add, ← LinearMap.add_apply,
-      add_neg_cancel, LinearMap.zero_apply, map_zero]
-  · -- the three-term relation, through `U⁻¹ = -U²` and `U⁻² = -U`
-    convert map_zero (binaryFormDual ℂ w)
-    ext P
-    have hUU : binaryFormAdjugateRep ℂ w ((T * S : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ)
-        (binaryFormAdjugateRep ℂ w ((T * S : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ) P) =
-          binaryFormAdjugateRep ℂ w
-            ((T * S * (T * S) : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ) P := by
-      rw [← Module.End.mul_apply, ← map_mul, ← Matrix.SpecialLinearGroup.coe_mul]
-    simp only [LinearMap.add_apply, LinearMap.comp_apply, LinearMap.zero_apply, hUU]
-    rw [hφ (T * S), hφ (T * S * (T * S)), h₁, _root_.mul_inv_rev (T * S) (T * S),
-      U_inv_mul_U_inv_eq, U_inv_eq, maninSymbol_neg, maninSymbol_neg, ← map_add, ← map_add,
-      ← LinearMap.add_apply, ← LinearMap.add_apply, add_right_comm,
-      maninSymbol_add_mul_T_mul_S_add_mul_T_mul_S_sq, LinearMap.zero_apply, map_zero]
+  · rw [LinearMap.comp_assoc, hφ, h₁, ← LinearMap.comp_add, h₂]
+    simp
+  · have hUU : binaryFormAdjugateRep ℂ w ((T * S : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ) ∘ₗ
+          binaryFormAdjugateRep ℂ w ((T * S : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ) =
+        binaryFormAdjugateRep ℂ w ((T * S * (T * S) : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ) := by
+      rw [← Module.End.mul_eq_comp, ← map_mul, ← Matrix.SpecialLinearGroup.coe_mul]
+    simp only [LinearMap.comp_assoc, hUU]
+    rw [hφ, hφ, _root_.mul_inv_rev (T * S) (T * S), h₁, ← LinearMap.comp_add,
+      ← LinearMap.comp_add, h₃]
+    simp
 
 private theorem periodForm_injective (hk : k = w + 2) : Function.Injective (periodForm hk) := by
   rw [← LinearMap.ker_eq_bot, LinearMap.ker_eq_bot']

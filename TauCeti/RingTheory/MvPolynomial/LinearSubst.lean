@@ -34,6 +34,7 @@ forms of degree `n`, through which the modular group acts on period polynomials.
 * `MvPolynomial.aeval_linearSubst`: `linearSubst M p` evaluated at `x` is `p` evaluated at
   `M *ᵥ x`.
 * `MvPolynomial.linearSubst_mul`: the substitution is a right action.
+* `MvPolynomial.map_linearSubst`: changing coefficients commutes with substitution.
 * `MvPolynomial.linearSubst_diagonal_monomial`: a diagonal matrix scales each monomial by
   the product of its diagonal entries raised to the corresponding exponents.
 * `MvPolynomial.coeff_linearSubst_upperTriangular_monomial`: under an upper-triangular
@@ -74,6 +75,15 @@ theorem linearSubst_eq_aeval (M : Matrix σ σ R) :
 theorem linearSubst_X (M : Matrix σ σ R) (i : σ) :
     linearSubst M (X i) = ∑ j, C (M i j) * X j :=
   aeval_X _ _
+
+/-- Changing the coefficients commutes with substitution, after mapping the matrix entries. -/
+theorem map_linearSubst {S : Type*} [CommSemiring S] (f : R →+* S) (M : Matrix σ σ R)
+    (p : MvPolynomial σ R) :
+    map f (linearSubst M p) = linearSubst (M.map f) (map f p) := by
+  induction p using MvPolynomial.induction_on with
+  | C a => simp [linearSubst_eq_aeval]
+  | add p q hp hq => simp [hp, hq]
+  | mul_X p i hp => simp [hp]
 
 /-- A diagonal change of variables scales a monomial by the product of its eigenvalues. -/
 @[simp]

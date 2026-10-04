@@ -41,6 +41,7 @@ action of `M` on `D φ` is the adjugate action on `φ`, transposed. Applied to t
   (P ∣ M) ∣ N`.
 * `TauCeti.binaryFormRep_op_neg`, `TauCeti.binaryFormRep_op_scalar`: negated and scalar matrices
   act by `(-1)ʷ` and by the `w`th power of the scalar.
+* `TauCeti.mapHomogeneousSubmodule_binaryFormRep`: changing coefficients commutes with the action.
 * `TauCeti.trace_binaryFormRep_eq_dickson_eval`: the trace is the Dickson weight polynomial
   evaluated at the matrix trace and determinant.
 * `TauCeti.binaryFormRep_adjugate_linearFormPow`: `(xY - yX)ʷ ∣ adj M = (x'Y - y'X)ʷ` for
@@ -167,62 +168,23 @@ theorem coe_binaryFormMonomialBasis {R : Type*} [CommSemiring R] {w : ℕ} (j : 
   simp only [coe_finsuppDegreeFinTwoEquiv_symm, X_pow_eq_monomial, monomial_mul_monomial,
     one_mul]
 
-/-- Map the coefficients of a homogeneous binary form along a ring homomorphism. -/
-private noncomputable def mapBinaryForm {S : Type*} [CommRing S] (f : S →+* R)
-    (P : homogeneousSubmodule (Fin 2) S w) : homogeneousSubmodule (Fin 2) R w :=
-  ⟨MvPolynomial.map f P, P.2.map f⟩
-
+/-- Changing coefficients sends the monomial basis to the monomial basis. -/
 @[simp]
-private theorem coe_mapBinaryForm {S : Type*} [CommRing S] (f : S →+* R)
-    (P : homogeneousSubmodule (Fin 2) S w) :
-    (mapBinaryForm f P : MvPolynomial (Fin 2) R) = MvPolynomial.map f P :=
-  rfl
+theorem mapHomogeneousSubmodule_binaryFormMonomialBasis {S R : Type*} [CommSemiring S]
+    [CommSemiring R] (f : S →+* R) (j : Fin (w + 1)) :
+    mapHomogeneousSubmodule f w (binaryFormMonomialBasis S w j) = binaryFormMonomialBasis R w j :=
+  Subtype.ext <| by simp
 
-@[simp]
-private theorem mapBinaryForm_add {S : Type*} [CommRing S] (f : S →+* R)
-    (P Q : homogeneousSubmodule (Fin 2) S w) :
-    mapBinaryForm f (P + Q) = mapBinaryForm f P + mapBinaryForm f Q := by
-  ext
-  simp
-
-@[simp]
-private theorem mapBinaryForm_zero {S : Type*} [CommRing S] (f : S →+* R) :
-    mapBinaryForm f (0 : homogeneousSubmodule (Fin 2) S w) = 0 := by
-  ext
-  simp
-
-open scoped Classical in
-@[simp]
-private theorem mapBinaryForm_sum {S ι : Type*} [CommRing S] (f : S →+* R)
-    (s : Finset ι) (P : ι → homogeneousSubmodule (Fin 2) S w) :
-    mapBinaryForm f (∑ i ∈ s, P i) = ∑ i ∈ s, mapBinaryForm f (P i) := by
-  induction s using Finset.induction_on with
-  | empty => simp
-  | insert i s hi => simp [*]
-
-@[simp]
-private theorem mapBinaryForm_smul {S : Type*} [CommRing S] (f : S →+* R) (a : S)
-    (P : homogeneousSubmodule (Fin 2) S w) :
-    mapBinaryForm f (a • P) = f a • mapBinaryForm f P := by
-  apply Subtype.ext
-  simp [smul_eq_C_mul]
-
-@[simp]
-private theorem mapBinaryForm_binaryFormMonomialBasis {S : Type*} [CommRing S]
-    (f : S →+* R) (j : Fin (w + 1)) :
-    mapBinaryForm f (binaryFormMonomialBasis S w j) = binaryFormMonomialBasis R w j := by
-  ext
-  simp
-
-private theorem mapBinaryForm_binaryFormRep {S : Type*} [CommRing S] (f : S →+* R)
+/-- Changing coefficients commutes with the action of integral matrices. -/
+theorem mapHomogeneousSubmodule_binaryFormRep {S : Type*} [CommRing S] (f : S →+* R)
     (M : Matrix (Fin 2) (Fin 2) ℤ) (P : homogeneousSubmodule (Fin 2) S w) :
-    mapBinaryForm f (binaryFormRep S w (op M) P) =
-      binaryFormRep R w (op M) (mapBinaryForm f P) := by
+    mapHomogeneousSubmodule f w (binaryFormRep S w (op M) P) =
+      binaryFormRep R w (op M) (mapHomogeneousSubmodule f w P) := by
   apply Subtype.ext
-  simp only [coe_mapBinaryForm, coe_binaryFormRep_apply, linearSubst_eq_aeval, aeval_def,
-    algebraMap_eq, map_eval₂]
+  rw [coe_mapHomogeneousSubmodule_apply, coe_binaryFormRep_apply, map_linearSubst,
+    Matrix.map_map, coe_binaryFormRep_apply, coe_mapHomogeneousSubmodule_apply]
   congr 3
-  funext i
+  funext a
   simp
 
 variable (R w) in
@@ -321,14 +283,14 @@ theorem binaryFormRep_binaryFormDual (M : Matrix (Fin 2) (Fin 2) ℤ)
     (binaryFormMonomialBasis A w).constr A fun j ↦ X (φ (binaryFormMonomialBasis R w j))
   have hfX (r : R) : f (X r) = r := eval₂Hom_X' (Int.castRingHom R) id r
   have hφ (P : homogeneousSubmodule (Fin 2) A w) :
-      f (φA P) = φ (mapBinaryForm f P) := by
-    have hmap : mapBinaryForm f P = ∑ j : Fin (w + 1),
+      f (φA P) = φ (mapHomogeneousSubmodule f w P) := by
+    have hmap : mapHomogeneousSubmodule f w P = ∑ j : Fin (w + 1),
         f ((binaryFormMonomialBasis A w).repr P j) • binaryFormMonomialBasis R w j := by
       apply (binaryFormMonomialBasis R w).repr.injective
       ext j
-      have hrepr : (binaryFormMonomialBasis R w).repr (mapBinaryForm f P) j =
+      have hrepr : (binaryFormMonomialBasis R w).repr (mapHomogeneousSubmodule f w P) j =
           f ((binaryFormMonomialBasis A w).repr P j) := by
-        simp [binaryFormMonomialBasis, mapBinaryForm, homogeneousMonomialBasis_repr_apply,
+        simp [binaryFormMonomialBasis, homogeneousMonomialBasis_repr_apply,
           MvPolynomial.coeff_map]
       rw [hrepr]
       simp [Finsupp.single_apply]
@@ -336,19 +298,19 @@ theorem binaryFormRep_binaryFormDual (M : Matrix (Fin 2) (Fin 2) ℤ)
     simp [φA, hfX]
   have hdual (ψA : homogeneousSubmodule (Fin 2) A w →ₗ[A] A)
       (ψ : homogeneousSubmodule (Fin 2) R w →ₗ[R] R)
-      (hψ : ∀ P, f (ψA P) = ψ (mapBinaryForm f P)) :
-      mapBinaryForm f (binaryFormDual A w ψA) = binaryFormDual R w ψ := by
+      (hψ : ∀ P, f (ψA P) = ψ (mapHomogeneousSubmodule f w P)) :
+      mapHomogeneousSubmodule f w (binaryFormDual A w ψA) = binaryFormDual R w ψ := by
     rw [binaryFormDual_apply, binaryFormDual_apply]
-    simp only [mapBinaryForm_sum, mapBinaryForm_smul, map_mul, map_neg, map_one,
-      map_pow, map_natCast, mapBinaryForm_binaryFormMonomialBasis, hψ]
+    simp only [map_sum, map_smulₛₗ, map_mul, map_neg, map_one,
+      map_pow, map_natCast, mapHomogeneousSubmodule_binaryFormMonomialBasis, hψ]
   have hcomp (P : homogeneousSubmodule (Fin 2) A w) :
       f ((φA ∘ₗ binaryFormAdjugateRep A w M) P) =
-        (φ ∘ₗ binaryFormAdjugateRep R w M) (mapBinaryForm f P) := by
+        (φ ∘ₗ binaryFormAdjugateRep R w M) (mapHomogeneousSubmodule f w P) := by
     rw [LinearMap.comp_apply, LinearMap.comp_apply, hφ, binaryFormAdjugateRep_apply,
-      binaryFormAdjugateRep_apply, mapBinaryForm_binaryFormRep]
+      binaryFormAdjugateRep_apply, mapHomogeneousSubmodule_binaryFormRep]
   have h := binaryFormRep_binaryFormDual_of_infinite_domain (R := A) M φA
-  have := congrArg (mapBinaryForm f) h
-  rw [mapBinaryForm_binaryFormRep, hdual φA φ hφ,
+  have := congrArg (mapHomogeneousSubmodule f w) h
+  rw [mapHomogeneousSubmodule_binaryFormRep, hdual φA φ hφ,
     hdual (φA ∘ₗ binaryFormAdjugateRep A w M)
       (φ ∘ₗ binaryFormAdjugateRep R w M) hcomp] at this
   exact this
