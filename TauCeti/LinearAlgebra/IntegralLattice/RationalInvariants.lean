@@ -8,7 +8,6 @@ module
 public import TauCeti.LinearAlgebra.IntegralLattice.Gram
 public import TauCeti.LinearAlgebra.IntegralLattice.Norm
 public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Discriminant
-import TauCeti.LinearAlgebra.QuadraticForm.Radical
 
 /-!
 # Rational form invariants of an integral lattice
@@ -22,10 +21,8 @@ The comparison lets arithmetic invariants of the rational quadratic space be rea
 an integral Gram matrix. It is the bridge between the determinant theory of integral lattices and
 the regular-form invariants used in local and global classification.
 
-## Main definitions
+## Main definition
 
-* `TauCeti.IntegralLattice.determinantUnit`: the nonzero rational number represented by the
-  signed integral Gram determinant.
 * `TauCeti.IntegralLattice.rationalFormClass`: the regular-form class of the ambient norm form.
 
 ## Main results
@@ -48,24 +45,6 @@ universe u w
 
 variable {V : Type u} [AddCommGroup V] [Module ℚ V]
 variable {W : Type w} [AddCommGroup W] [Module ℚ W]
-
-/-- The signed Gram determinant of a nondegenerate integral lattice, regarded as a nonzero
-rational number. -/
-noncomputable def determinantUnit (L : IntegralLattice V) [L.IsNondegenerate] : ℚˣ :=
-  Units.mk0 (L.determinant : ℚ) <| by
-    exact_mod_cast (L.determinant_ne_zero_iff.mpr L.form_nondegenerate)
-
-/-- The value underlying `determinantUnit` is the integral Gram determinant cast to `ℚ`. -/
-@[simp]
-theorem coe_determinantUnit (L : IntegralLattice V) [L.IsNondegenerate] :
-    (L.determinantUnit : ℚ) = L.determinant :=
-  (rfl)
-
-/-- The ambient rational norm form of a nondegenerate integral lattice is nondegenerate. -/
-theorem nondegenerate_norm (L : IntegralLattice V) [L.IsNondegenerate] :
-    L.norm.Nondegenerate := by
-  rw [norm_def]
-  exact L.form_nondegenerate.toQuadraticMap L.form_flip
 
 /-- The regular isometry class of the ambient rational norm form of a nondegenerate integral
 lattice. -/
@@ -96,10 +75,7 @@ theorem toMatrix_norm_rationalBasis (L : IntegralLattice V) :
   rw [QuadraticForm.toMatrix, norm_def,
     QuadraticMap.associated_left_inverse' ℚ L.form_flip]
   simp only [LinearMap.toMatrix₂_apply, Matrix.map_apply, rationalBasis_apply]
-  change L.form ((Module.Free.chooseBasis ℤ L i : L) : V)
-      ((Module.Free.chooseBasis ℤ L j : L) : V) =
-    (L.gramMatrix (Module.Free.chooseBasis ℤ L) i j : ℚ)
-  exact (L.intCast_gramMatrix_apply (Module.Free.chooseBasis ℤ L) i j).symm
+  rw [algebraMap_int_eq, eq_intCast, intCast_gramMatrix_apply]
 
 /-- The discriminant of the ambient rational form is the square class of the signed integral
 Gram determinant. -/
