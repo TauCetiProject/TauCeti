@@ -9,7 +9,6 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.CentralSimple.Even
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement
 
 import Mathlib.Algebra.Central.Basic
-import Mathlib.LinearAlgebra.CliffordAlgebra.Conjugation
 import Mathlib.LinearAlgebra.Projection
 import TauCeti.LinearAlgebra.CliffordAlgebra.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.Grading
@@ -30,8 +29,8 @@ description: if `v₁, …, vₙ` is an anisotropic orthogonal basis and
 
 The result is stated for any anisotropic orthogonal spanning list of odd length; such a list is a
 basis (`QuadraticMap.nondegenerate_and_length_eq_finrank_of_pairwise_isOrtho`), so the form is
-automatically nondegenerate and the dimension odd. Conversely, every
-nondegenerate quadratic form has such a list, by
+automatically nondegenerate and the dimension odd. Conversely, every nondegenerate quadratic
+form on a finite-dimensional space has such a list, by
 `QuadraticMap.Nondegenerate.exists_list_pairwise_isOrtho`. Reordering or rescaling the list changes
 `ω` by a nonzero scalar, hence leaves the generated subalgebra unchanged.
 
@@ -140,7 +139,8 @@ spanning list of odd length and let `ω` be the ordered product of its Clifford 
 element is central exactly when it is a scalar plus a scalar multiple of `ω`.
 
 Such a list is a basis, so the form is nondegenerate and the dimension odd. Conversely, every
-nondegenerate form has such a list, by `QuadraticMap.Nondegenerate.exists_list_pairwise_isOrtho`. -/
+nondegenerate form on a finite-dimensional space has such a list, by
+`QuadraticMap.Nondegenerate.exists_list_pairwise_isOrtho`. -/
 theorem mem_center_iff_exists_eq_add_smul_volume [NeZero (2 : K)] {l : List V}
     (hl : l.Pairwise Q.IsOrtho) (hlen : Odd l.length)
     (hspan : Submodule.span K {x : V | x ∈ l} = ⊤) (hQl : ∀ v ∈ l, Q v ≠ 0)
