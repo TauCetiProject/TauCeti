@@ -352,6 +352,12 @@ def stateWeight (s : Fin n → Bool) (a : Rˣ) : Rˣ :=
 theorem stateWeight_def (s : Fin n → Bool) (a : Rˣ) :
     stateWeight s a = ∏ i, bif s i then a else a⁻¹ := (rfl)
 
+/-- Concatenating states multiplies their weights. -/
+@[simp]
+theorem stateWeight_append {m : ℕ} (s : Fin n → Bool) (t : Fin m → Bool) (a : Rˣ) :
+    stateWeight (Fin.append s t) a = stateWeight s a * stateWeight t a := by
+  simp [stateWeight_def, Fin.prod_univ_add]
+
 /-- Negating a state inverts its weight, since it exchanges the `A`- and `B`-smoothings. -/
 @[simp] theorem stateWeight_not (s : Fin n → Bool) (a : Rˣ) :
     stateWeight (fun i ↦ !(s i)) a = (stateWeight s a)⁻¹ := by

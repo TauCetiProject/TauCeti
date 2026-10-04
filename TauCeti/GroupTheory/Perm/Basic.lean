@@ -13,8 +13,10 @@ import Mathlib.GroupTheory.Perm.ViaEmbedding
 /-!
 # Elementary facts about permutations
 
-This file records general-purpose facts about permutations: a transposition preserves the
-complement of a set containing neither of its swapped points, an identity between transpositions,
+This file records general-purpose facts about permutations: a map intertwining two permutations
+intertwines their integer powers (`Function.Semiconj.perm_zpow_right`), a transposition
+preserves the complement of a set containing neither of its swapped points, an identity between
+transpositions,
 a permutation transporting two points outside a fixed set to another such pair,
 the values of the three-cycle written as a product of two transpositions sharing a point,
 a characterization of permutations with a unique fixed point, functions constant on a permutation
@@ -30,14 +32,15 @@ permutation with functions on its cycle quotient (`TauCeti.invariantColouringEqu
 
 public section
 
-namespace Equiv.Perm.SameCycle
+namespace Function.Semiconj
 
-variable {α : Type*} {β : Sort*} {σ : Equiv.Perm α} {x y : α} {f : α → β}
+variable {α γ : Type*} {σ : Equiv.Perm α} {τ : Equiv.Perm γ} {g : α → γ}
 
-variable {γ : Type*} {τ : Equiv.Perm γ} {g : α → γ}
-
-private theorem map_zpow_apply (hg : ∀ z, g (σ z) = τ (g z)) (k : ℤ) (z : α) :
-    g ((σ ^ k) z) = (τ ^ k) (g z) := by
+/-- A map intertwining two permutations also intertwines all of their integer powers. This
+extends `Function.Semiconj.iterate_right` to negative exponents. -/
+theorem perm_zpow_right (hg : Function.Semiconj g σ τ) (k : ℤ) :
+    Function.Semiconj g ⇑(σ ^ k) ⇑(τ ^ k) := by
+  intro z
   have hinv : Function.Semiconj g (σ⁻¹ : Equiv.Perm α) (τ⁻¹ : Equiv.Perm γ) :=
     Function.Semiconj.inverses_right hg σ.right_inv τ.left_inv
   cases k with
@@ -48,11 +51,19 @@ private theorem map_zpow_apply (hg : ∀ z, g (σ z) = τ (g z)) (k : ℤ) (z : 
       simpa only [zpow_negSucc, ← inv_pow, Equiv.Perm.coe_pow] using
         (Function.Semiconj.iterate_right hinv (m + 1) z)
 
+end Function.Semiconj
+
+namespace Equiv.Perm.SameCycle
+
+variable {α : Type*} {β : Sort*} {σ : Equiv.Perm α} {x y : α} {f : α → β}
+
+variable {γ : Type*} {τ : Equiv.Perm γ} {g : α → γ}
+
 /-- A function invariant under one application of a permutation is constant on every orbit of
 that permutation. -/
 theorem apply_eq_of_apply_eq (hσ : σ.SameCycle x y) (hf : ∀ z, f (σ z) = f z) : f x = f y := by
   obtain ⟨k, rfl⟩ := hσ
-  have hmap := map_zpow_apply (τ := 1) (g := fun z => PLift.up (f z))
+  have hmap := Function.Semiconj.perm_zpow_right (τ := 1) (g := fun z => PLift.up (f z))
     (fun z => congrArg PLift.up (hf z)) k x
   exact congrArg PLift.down (by simpa only [one_zpow, Equiv.Perm.one_apply] using hmap.symm)
 
@@ -61,7 +72,7 @@ the second. -/
 theorem map (hσ : σ.SameCycle x y) (hg : ∀ z, g (σ z) = τ (g z)) :
     τ.SameCycle (g x) (g y) := by
   obtain ⟨k, rfl⟩ := hσ
-  exact ⟨k, (map_zpow_apply hg k x).symm⟩
+  exact ⟨k, (Function.Semiconj.perm_zpow_right hg k x).symm⟩
 
 /-- If a periodic point `x` of `σ` shares its orbit with `y`, some positive natural power of `σ`
 carries `x` to `y`. -/

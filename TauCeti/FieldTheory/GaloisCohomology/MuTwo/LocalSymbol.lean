@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.GaloisCohomology.MuTwo.CupNorm
-public import TauCeti.NumberTheory.ClassFieldTheory.LocalSymbol
+public import TauCeti.NumberTheory.ClassFieldTheory.Local.Symbol
 
 /-!
 # Comparing the two mod-two Kummer cups

@@ -40,6 +40,8 @@ canonical comparison `TauCeti.ExactK0.fromSplit` from split `K₀` is a ring hom
 * `TauCeti.ExactK0.mapRingHom`: the ring homomorphism induced by a conflation-exact monoidal
   additive functor.
 * `TauCeti.ExactK0.fromSplitRingHom`: the comparison from split `K₀` as a ring homomorphism.
+* `TauCeti.ExactK0.fromSplitRingEquiv`: the comparison as a ring equivalence when every
+  conflation splits.
 
 ## Main results
 
@@ -230,6 +232,41 @@ lemma fromSplitRingHom_of (X : C) : fromSplitRingHom E (SplitK0.of X) = of X :=
 lemma fromSplitRingHom_toAddMonoidHom :
     ((fromSplitRingHom E : SplitK0 C →+* ExactK0 E) : SplitK0 C →+ ExactK0 E) = fromSplit E :=
   fromSplit_unique _ fun X => by rw [AddMonoidHom.coe_ofClass, fromSplitRingHom_of]
+
+/-- The comparison from split to exact Grothendieck rings is bijective when every
+conflation splits. -/
+theorem fromSplitRingHom_bijective
+    (hsplit : ∀ {S : ShortComplex C}, E.Conflation S → Nonempty S.Splitting) :
+    Function.Bijective (fromSplitRingHom E : SplitK0 C →+* ExactK0 E) := by
+  have heq : ⇑(fromSplitEquiv hsplit) = ⇑(fromSplitRingHom E) := by
+    funext x
+    rw [fromSplitEquiv_apply]
+    exact (congrArg (fun f : SplitK0 C →+ ExactK0 E ↦ f x)
+      (fromSplitRingHom_toAddMonoidHom (E := E))).symm
+  exact heq ▸ (fromSplitEquiv hsplit).bijective
+
+/-- The split and exact Grothendieck rings are canonically isomorphic when every
+conflation splits. -/
+noncomputable def fromSplitRingEquiv
+    (hsplit : ∀ {S : ShortComplex C}, E.Conflation S → Nonempty S.Splitting) :
+    SplitK0 C ≃+* ExactK0 E :=
+  RingEquiv.ofBijective (fromSplitRingHom E) (fromSplitRingHom_bijective hsplit)
+
+/-- The ring equivalence acts by the canonical split-to-exact comparison. -/
+@[simp]
+lemma fromSplitRingEquiv_apply
+    (hsplit : ∀ {S : ShortComplex C}, E.Conflation S → Nonempty S.Splitting) (x : SplitK0 C) :
+    fromSplitRingEquiv hsplit x = fromSplit E x := by
+  exact congrArg (fun f : SplitK0 C →+ ExactK0 E ↦ f x)
+    (fromSplitRingHom_toAddMonoidHom (E := E))
+
+/-- The inverse ring equivalence sends an exact object class to its split class. -/
+@[simp]
+lemma fromSplitRingEquiv_symm_apply_of
+    (hsplit : ∀ {S : ShortComplex C}, E.Conflation S → Nonempty S.Splitting) (X : C) :
+    (fromSplitRingEquiv hsplit).symm (of X) = SplitK0.of X := by
+  apply (fromSplitRingEquiv hsplit).injective
+  simp
 
 end Ring
 

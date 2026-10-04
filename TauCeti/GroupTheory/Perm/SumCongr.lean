@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Logic.Equiv.Fin.Basic
 public import TauCeti.GroupTheory.Perm.OrbitCount.Basic
+public import TauCeti.GroupTheory.Perm.SwapFactors
 import Mathlib.Tactic.Abel
 
 /-!
@@ -100,6 +101,14 @@ theorem _root_.Equiv.Perm.sameCycle_sumCongr_inr {σ : Perm α} {τ : Perm β} {
   exists_congr fun k => by
     rw [Perm.sumCongr_zpow, Perm.sumCongr_apply, Sum.map_inr, Sum.inr.injEq]
 
+/-- Points in different summands cannot lie in the same cycle of a sum permutation. -/
+@[simp] theorem not_sameCycle_sumCongr_inl_inr
+    (σ : Perm α) (τ : Perm β) (a : α) (b : β) :
+    ¬ (Perm.sumCongr σ τ).SameCycle (.inl a) (.inr b) := by
+  rintro ⟨k, hk⟩
+  simp only [Perm.sumCongr_zpow, Perm.sumCongr_apply, Sum.map_inl,
+    Sum.inl_ne_inr] at hk
+
 /-! ### Additivity of the cycle data -/
 
 section Finite
@@ -150,6 +159,30 @@ theorem _root_.Equiv.Perm.orbitCount_sumCongr [Finite α] [Finite β] (σ : Perm
   cases nonempty_fintype β
   rw [orbitCount_eq_card_parts_partition, orbitCount_eq_card_parts_partition,
     orbitCount_eq_card_parts_partition, parts_partition_sumCongr, Multiset.card_add]
+
+/-- Attach two distinct cycles of the right summand to cycles of the left summand.
+Each attachment removes one orbit, even if the two left endpoints lie in the same cycle. -/
+theorem orbitCount_sumCongr_mul_swap_mul_swap_add_two
+    [DecidableEq α] [DecidableEq β] [Finite α] [Finite β]
+    (σ : Perm α) (τ : Perm β) (a c : α) {b d : β} (hbd : ¬ τ.SameCycle b d) :
+    orbitCount (Perm.sumCongr σ τ * swap (Sum.inl a : α ⊕ β) (.inr b) *
+      swap (.inl c) (.inr d)) + 2 = orbitCount σ + orbitCount τ := by
+  have h₁ := orbitCount_mul_swap_add_one_of_not_sameCycle
+    (not_sameCycle_sumCongr_inl_inr σ τ a b)
+  have h₂ : ¬ (Perm.sumCongr σ τ * swap (Sum.inl a : α ⊕ β) (.inr b)).SameCycle
+      (.inl c) (.inr d) := by
+    rw [Equiv.mul_swap_eq_swap_mul]
+    intro h
+    rcases h.sameCycle_or_of_swap_mul with h | ⟨-, h⟩
+    · exact not_sameCycle_sumCongr_inl_inr σ τ c d h
+    · rcases h with h | h
+      · exact not_sameCycle_sumCongr_inl_inr σ τ (σ a) d h.symm
+      · apply hbd
+        simpa only [Perm.sumCongr_apply, Sum.map_inr, Perm.sameCycle_sumCongr_inr,
+          sameCycle_apply_left] using h.symm
+  have h₃ := orbitCount_mul_swap_add_one_of_not_sameCycle h₂
+  rw [Perm.orbitCount_sumCongr] at h₁
+  omega
 
 /-- **Splicing four adjoined fixed points.** Adjoin four fixed points to `σ` and splice each of
 them into an orbit, `i₀` after `x₀`, then `i₁` after `x₁`, `i₂` after `x₂` and `i₃` after `x₃`:

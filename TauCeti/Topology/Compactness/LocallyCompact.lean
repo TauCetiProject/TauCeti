@@ -8,9 +8,13 @@ module
 public import Mathlib.Topology.Compactness.LocallyCompact
 
 /-!
-# Local compactness from an open cover
+# Local compactness from an open cover, and lifting compact sets along open maps
 
 Local compactness follows from an open cover whose members are locally compact.
+
+Along an open surjection out of a weakly locally compact space, every compact subset of the
+codomain lies in the image of a compact set. This is how a compactness statement about a quotient,
+such as a group modulo a kernel, is pulled back to the group.
 -/
 
 public section
@@ -33,3 +37,16 @@ theorem locallyCompactSpace_of_isOpen_cover {X ι : Type*} [TopologicalSpace X]
   exact image_subset_iff.mpr hKW
 
 end TauCeti
+
+/-- Along an open surjection out of a weakly locally compact space, every compact subset of the
+codomain is contained in the image of a compact set. -/
+theorem IsOpenMap.exists_isCompact_subset_image {X Y : Type*} [TopologicalSpace X]
+    [TopologicalSpace Y] [WeaklyLocallyCompactSpace X] {f : X → Y} (hf : IsOpenMap f)
+    (hsurj : Function.Surjective f) {K : Set Y} (hK : IsCompact K) :
+    ∃ L : Set X, IsCompact L ∧ K ⊆ f '' L := by
+  choose g hg using hsurj
+  choose s hc hmem using fun x : X ↦ exists_compact_mem_nhds x
+  obtain ⟨I, -, hIK⟩ := hK.elim_nhds_subcover (fun y ↦ f '' s (g y)) fun y _ ↦ by
+    simpa only [hg] using hf.image_mem_nhds (hmem (g y))
+  refine ⟨⋃ y ∈ I, s (g y), I.isCompact_biUnion fun _ _ ↦ hc _, ?_⟩
+  rwa [image_iUnion₂]
