@@ -93,13 +93,7 @@ theorem mem_integralSpinSubgroup_spinGroupEquiv
     (e : Q.IsometryEquiv Q') (s : spinGroup Q) :
     e.spinGroupEquiv s ∈ integralSpinSubgroup Q' (b.map e.toLinearEquiv) ↔
       s ∈ integralSpinSubgroup Q b := by
-  have haction : spinToOrthogonal Q' (e.spinGroupEquiv s) =
-      orthogonalGroupCongr e (spinToOrthogonal Q s) := by
-    rw [← specialOrthogonalToOrthogonal_spinToSpecialOrthogonal,
-      ← e.specialOrthogonalGroupCongr_spinToSpecialOrthogonal,
-      e.specialOrthogonalToOrthogonal_specialOrthogonalGroupCongr,
-      specialOrthogonalToOrthogonal_spinToSpecialOrthogonal]
-  rw [mem_integralSpinSubgroup_iff, haction,
+  rw [mem_integralSpinSubgroup_iff, spinToOrthogonal_spinGroupEquiv,
     mem_integralOrthogonalSubgroup_orthogonalGroupCongr, mem_integralSpinSubgroup_iff]
 
 /-- The integral Spin subgroup is open for the canonical topology on the Spin group. -/
