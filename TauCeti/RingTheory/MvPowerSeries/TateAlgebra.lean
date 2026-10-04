@@ -137,6 +137,7 @@ instance : IsUltrametricDist (IsRestricted.subring (R := R) c) :=
       (fun i ↦ (hc i).out.le) norm_nonneg
       IsUltrametricDist.isNonarchimedean_norm f.2.hasGaussNorm g.2.hasGaussNorm
 
+/-- The Gauss norm preserves the norm of `1` from the coefficient ring. -/
 instance [NormOneClass R] : NormOneClass
     (IsRestricted.subring (R := R) c) where
   norm_one := by
@@ -304,8 +305,19 @@ end NormedRing
 
 section NormedCommRing
 
-variable {σ R : Type*} [NormedCommRing R] [IsUltrametricDist R]
-  {c : σ → ℝ} [∀ i, Fact (0 < c i)]
+variable {σ R : Type*} [NormedCommRing R] [IsUltrametricDist R] {c : σ → ℝ}
+
+/-- Restricted series form a coefficient algebra via the constant-series embedding. -/
+noncomputable instance instAlgebraIsRestrictedSubring :
+    Algebra R (IsRestricted.subring (R := R) c) :=
+  (C.codRestrict _ (isRestricted_C c)).toAlgebra
+
+/-- The coefficient algebra map into restricted series is the constant-series embedding. -/
+@[simp]
+theorem coe_algebraMap_isRestrictedSubring (r : R) :
+    (algebraMap R (IsRestricted.subring (R := R) c) r : MvPowerSeries σ R) = C r := (rfl)
+
+variable [∀ i, Fact (0 < c i)]
 
 /-- Over a commutative coefficient ring, the Gauss norm gives a normed commutative ring. -/
 noncomputable instance instNormedCommRingIsRestrictedSubring :

@@ -16,9 +16,9 @@ subring have the same underlying power series. Their topologies also agree: the 
 requires every coefficient to lie in a prescribed open additive subgroup, while the Gauss norm
 measures the supremum of all coefficient norms.
 
-The comparison below is a ring equivalence continuous in both directions. Over a complete base
-it identifies the completed Huber Tate algebra with the Banach ring of restricted series. This
-allows normed-ring results, including Weierstrass division, to be transported to the completed
+The comparison below is an algebra equivalence continuous in both directions. Over a complete
+base it identifies the completed Huber Tate algebra with the Banach algebra of restricted series.
+This allows normed-ring results, including Weierstrass division, to be transported to the completed
 topological algebra without changing its topology.
 
 The normed series are Mathlib's `MvPowerSeries.IsRestricted.subring`, with the Gauss norm
@@ -31,6 +31,9 @@ type or norm is introduced here.
   Huber restricted series and Gauss-normed restricted series, continuous in both directions.
 * `TauCeti.Huber.restrictedMvPowerSeriesCompletionGaussEquiv`: the resulting topological
   ring comparison for the Huber completion over a complete coefficient ring.
+* `TauCeti.Huber.restrictedMvPowerSeriesGaussAlgEquiv` and
+  `TauCeti.Huber.restrictedMvPowerSeriesCompletionGaussAlgEquiv`: the same comparisons as
+  coefficient-algebra equivalences.
 
 ## References
 
@@ -94,6 +97,27 @@ theorem coe_restrictedMvPowerSeriesGaussEquiv_symm
     (restrictedMvPowerSeriesGaussEquiv.symm f : MvPowerSeries (Fin n) R) = f :=
   RingEquiv.coe_subringCongr_apply weightedRestrictedSubring_eq_isRestricted_subring.symm f
 
+/-- The identity Gauss comparison also respects the coefficient-algebra structure. -/
+noncomputable def restrictedMvPowerSeriesGaussAlgEquiv :
+    weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set R)) isWeightFamily_one_weight ≃ₐ[R]
+      MvPowerSeries.IsRestricted.subring (R := R) (fun _ : Fin n ↦ 1) :=
+  AlgEquiv.ofRingEquiv (f := restrictedMvPowerSeriesGaussEquiv) fun r ↦
+    Subtype.ext (by simp only [coe_restrictedMvPowerSeriesGaussEquiv,
+      algebraMap_weightedRestrictedSubring, coe_weightedC,
+      MvPowerSeries.coe_algebraMap_isRestrictedSubring])
+
+/-- The algebra Gauss comparison has the same underlying map as the ring comparison. -/
+@[simp]
+theorem coe_restrictedMvPowerSeriesGaussAlgEquiv :
+    ⇑(restrictedMvPowerSeriesGaussAlgEquiv (n := n) (R := R)) =
+      ⇑(restrictedMvPowerSeriesGaussEquiv (n := n) (R := R)) := (rfl)
+
+/-- The inverse algebra Gauss comparison has the same map as the inverse ring comparison. -/
+@[simp]
+theorem coe_restrictedMvPowerSeriesGaussAlgEquiv_symm :
+    ⇑(restrictedMvPowerSeriesGaussAlgEquiv (n := n) (R := R)).symm =
+      ⇑(restrictedMvPowerSeriesGaussEquiv (n := n) (R := R)).symm := (rfl)
+
 /-- The Huber restricted-series topology makes the comparison to the Gauss topology continuous.
 All coefficients in a sufficiently small open subgroup give a uniformly small Gauss norm. -/
 theorem continuous_restrictedMvPowerSeriesGaussEquiv :
@@ -141,6 +165,30 @@ noncomputable def restrictedMvPowerSeriesCompletionGaussEquiv :
     restrictedMvPowerSeriesCompletion n R ≃+*
       MvPowerSeries.IsRestricted.subring (R := R) (fun _ : Fin n ↦ 1) :=
   (restrictedMvPowerSeriesCompletionEquiv n R).trans restrictedMvPowerSeriesGaussEquiv
+
+/-- Over a complete coefficient ring, the completed Gauss comparison is an algebra equivalence.
+It composes the completion's coefficient-algebra comparison with the identity on series. -/
+noncomputable def restrictedMvPowerSeriesCompletionGaussAlgEquiv :
+    restrictedMvPowerSeriesCompletion n R ≃ₐ[R]
+      MvPowerSeries.IsRestricted.subring (R := R) (fun _ : Fin n ↦ 1) :=
+  (restrictedMvPowerSeriesCompletionAlgEquiv n R).trans restrictedMvPowerSeriesGaussAlgEquiv
+
+/-- The completed algebra Gauss comparison has the same map as the completed ring comparison. -/
+@[simp]
+theorem coe_restrictedMvPowerSeriesCompletionGaussAlgEquiv :
+    ⇑(restrictedMvPowerSeriesCompletionGaussAlgEquiv (n := n) (R := R)) =
+      ⇑(restrictedMvPowerSeriesCompletionGaussEquiv (n := n) (R := R)) := by
+  simp [restrictedMvPowerSeriesCompletionGaussAlgEquiv,
+    restrictedMvPowerSeriesCompletionGaussEquiv, AlgEquiv.coe_trans, RingEquiv.coe_trans]
+
+/-- The inverse completed algebra Gauss comparison agrees with the inverse ring comparison. -/
+@[simp]
+theorem coe_restrictedMvPowerSeriesCompletionGaussAlgEquiv_symm :
+    ⇑(restrictedMvPowerSeriesCompletionGaussAlgEquiv (n := n) (R := R)).symm =
+      ⇑(restrictedMvPowerSeriesCompletionGaussEquiv (n := n) (R := R)).symm := by
+  funext f
+  simp [restrictedMvPowerSeriesCompletionGaussAlgEquiv,
+    restrictedMvPowerSeriesCompletionGaussEquiv]
 
 /-- On a series in the dense subring, the completed comparison is the identity on formal
 power series, regarded as a unit-radius restricted series. -/

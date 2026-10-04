@@ -434,7 +434,10 @@ theorem gaussNorm_mul_of_isRestricted (hc : 0 < c) (hf : f.IsRestricted c)
     (hg : g.IsRestricted c) :
     (f * g).gaussNorm norm c = f.gaussNorm norm c * g.gaussNorm norm c := by
   let : Fact (0 < c) := ⟨hc⟩
-  exact MvPowerSeries.IsRestricted.gaussNorm_mul hf hg
+  -- Mathlib's univariate predicates and norms abbreviate the Unit-indexed multivariate ones.
+  simp only [PowerSeries.IsRestricted] at hf hg
+  simpa only [PowerSeries.gaussNorm] using
+    (MvPowerSeries.IsRestricted.gaussNorm_mul (c := fun _ : Unit ↦ c) hf hg)
 
 /-- The product of series distinguished in degrees `i` and `j` is distinguished in degree
 `i + j` at a positive radius. -/
