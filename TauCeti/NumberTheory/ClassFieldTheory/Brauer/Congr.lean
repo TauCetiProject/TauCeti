@@ -19,6 +19,9 @@ of the real and complex fields without changing the cohomology carrier.
 
 This API supplies an additive identification using a chosen lift to separable closures. It does
 not supply functoriality lemmas comparing the lifts chosen for different field isomorphisms.
+For a supplied identification `a := brCongr e`, use `a.symm` for its inverse and `a.trans b`
+for successive identifications. Their cancellation and application laws are
+`AddEquiv.symm_apply_apply`, `AddEquiv.apply_symm_apply`, and `AddEquiv.trans_apply`.
 The archimedean invariant is independent of this identification, as recorded by
 `TauCeti.ClassFieldTheory.infiniteInvMap_eq_realInv_comp` in the archimedean module.
 -/
