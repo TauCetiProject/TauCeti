@@ -262,8 +262,14 @@ theorem psc_map_eq_zero_iff_of_collinsProjection
   have hc := psc_mem_collinsProjection hp hrT hq hsT (j := j) (by rwa [hr, hs])
   -- Both sides are the images under `φ` and `ψ` of the projection element `hc`: the specialized
   -- degrees agree and equal the degrees of `r` and `s`, which specialize to `p` and `q`.
-  rw [← natDegree_map_eq_of_collinsProjection h hp, ← natDegree_map_eq_of_collinsProjection h hq,
-    ← hr, ← hs, ← hrφ, ← hsφ, ← hrψ, ← hsψ, psc_map_map, psc_map_map]
+  have eφ : φ (psc r s r.natDegree s.natDegree j) =
+      psc (p.map φ) (q.map φ) (p.map φ).natDegree (q.map φ).natDegree j := by
+    rw [hr, hs, ← psc_map_map, hrφ, hsφ]
+  have eψ : ψ (psc r s r.natDegree s.natDegree j) =
+      psc (p.map ψ) (q.map ψ) (p.map ψ).natDegree (q.map ψ).natDegree j := by
+    rw [hr, hs, natDegree_map_eq_of_collinsProjection h hp,
+      natDegree_map_eq_of_collinsProjection h hq, ← psc_map_map, hrψ, hsψ]
+  rw [← eφ, ← eψ]
   exact h _ hc
 
 /-- If the same elements of the Collins projection vanish under `φ` and `ψ`, then for a member of
@@ -283,9 +289,16 @@ theorem psc_map_derivative_eq_zero_iff_of_collinsProjection [IsAddTorsionFree A]
   have hc := psc_derivative_mem_collinsProjection hp hrT (j := j) (by rwa [hr, hr'])
   -- The derivative degrees are the specialized degrees minus one, so they agree under `φ` and
   -- `ψ`; then both sides are the images of the projection element `hc`.
-  rw [natDegree_derivative, natDegree_derivative,
-    ← natDegree_map_eq_of_collinsProjection h hp, ← natDegree_derivative, ← hr', ← hr,
-    ← hrφ, ← hrψ, derivative_map, derivative_map, psc_map_map, psc_map_map]
+  have eφ : φ (psc r r.derivative r.natDegree r.derivative.natDegree j) =
+      psc (p.map φ) (p.map φ).derivative (p.map φ).natDegree
+        (p.map φ).derivative.natDegree j := by
+    rw [hr, hr', ← psc_map_map, ← derivative_map, hrφ]
+  have eψ : ψ (psc r r.derivative r.natDegree r.derivative.natDegree j) =
+      psc (p.map ψ) (p.map ψ).derivative (p.map ψ).natDegree
+        (p.map ψ).derivative.natDegree j := by
+    rw [hr', natDegree_derivative, natDegree_derivative, hr,
+      natDegree_map_eq_of_collinsProjection h hp, ← psc_map_map, ← derivative_map, hrψ]
+  rw [← eφ, ← eψ]
   exact h _ hc
 
 end Invariance
@@ -331,8 +344,9 @@ theorem natDegree_gcd_map_derivative_eq_of_collinsProjection [IsAddTorsionFree K
 
 /-- If the same elements of the Collins projection vanish under specializations `φ` and `ψ` into
 algebraically closed fields of characteristic zero, then every member of the family has the same
-number of distinct roots after either specialization. A nullified member has no roots under
-either. -/
+number of distinct roots after either specialization. A member nullified by one is nullified by
+both, and `Polynomial.roots` of the zero polynomial is empty by convention, so both counts are
+then zero. -/
 theorem card_roots_toFinset_map_eq_of_collinsProjection [CharZero K] [CharZero L]
     [IsAlgClosed K] [IsAlgClosed L]
     (h : ∀ a ∈ F.collinsProjection, φ a = 0 ↔ ψ a = 0) (hp : p ∈ F) :
