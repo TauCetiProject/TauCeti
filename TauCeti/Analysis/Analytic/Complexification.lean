@@ -48,7 +48,8 @@ commutes with complex conjugation near the point, not only the one constructed h
 
 * `ContinuousMultilinearMap.complexifyPi`: the complexification of a real multilinear form on
   `ι → ℝ`, with `complexifyPi_apply_ofReal`, `eq_complexifyPi_of_forall_ofReal`,
-  `complexifyPi_apply_star` and `norm_complexifyPi_le`.
+  `complexifyPi_apply_star` and `norm_complexifyPi_le`; it is `ℝ`-linear (`complexifyPi_zero`,
+  `complexifyPi_add`, `complexifyPi_smul`).
 * `FormalMultilinearSeries.complexifyPi`: the termwise complexification of a power series, with
   `FormalMultilinearSeries.le_radius_complexifyPi`.
 * `AnalyticAt.exists_complexification`: a real analytic function has, on a polydisc around the
@@ -127,6 +128,23 @@ theorem complexifyPi_apply_star (v : ν → ι → ℂ) :
   classical
   simp [complexifyPi_apply, star_sum, star_prod]
 
+/-- The complexification of the zero form is zero. -/
+@[simp]
+theorem complexifyPi_zero :
+    (0 : ContinuousMultilinearMap ℝ (fun _ : ν ↦ ι → ℝ) ℝ).complexifyPi = 0 :=
+  (eq_complexifyPi_of_forall_ofReal _ fun v ↦ by simp).symm
+
+/-- Complexification is additive. -/
+@[simp]
+theorem complexifyPi_add (g : ContinuousMultilinearMap ℝ (fun _ : ν ↦ ι → ℝ) ℝ) :
+    (f + g).complexifyPi = f.complexifyPi + g.complexifyPi :=
+  (eq_complexifyPi_of_forall_ofReal _ fun v ↦ by simp).symm
+
+/-- Complexification commutes with real scalar multiplication. -/
+@[simp]
+theorem complexifyPi_smul (c : ℝ) : (c • f).complexifyPi = (c : ℂ) • f.complexifyPi :=
+  (eq_complexifyPi_of_forall_ofReal _ fun v ↦ by simp).symm
+
 /-- Complexification multiplies the norm of a real multilinear form on `ι → ℝ` by at most
 `(card ι) ^ (card ν)`. -/
 theorem norm_complexifyPi_le :
@@ -195,6 +213,25 @@ variable (p : FormalMultilinearSeries ℝ (ι → ℝ) ℝ)
 /-- The terms of the complexified series are the complexified terms. -/
 @[simp]
 theorem complexifyPi_apply (n : ℕ) : p.complexifyPi n = (p n).complexifyPi := (rfl)
+
+/-- The complexification of the zero series is zero. -/
+@[simp]
+theorem complexifyPi_zero : (0 : FormalMultilinearSeries ℝ (ι → ℝ) ℝ).complexifyPi = 0 := by
+  ext1 n
+  simp
+
+/-- Termwise complexification is additive. -/
+@[simp]
+theorem complexifyPi_add (q : FormalMultilinearSeries ℝ (ι → ℝ) ℝ) :
+    (p + q).complexifyPi = p.complexifyPi + q.complexifyPi := by
+  ext1 n
+  simp
+
+/-- Termwise complexification commutes with real scalar multiplication. -/
+@[simp]
+theorem complexifyPi_smul (c : ℝ) : (c • p).complexifyPi = (c : ℂ) • p.complexifyPi := by
+  ext1 n
+  simp
 
 /-- Complexification divides the radius of convergence by at most `card ι`. -/
 theorem le_radius_complexifyPi {r : ℝ≥0} (hr : ((Fintype.card ι * r : ℝ≥0) : ℝ≥0∞) < p.radius) :
