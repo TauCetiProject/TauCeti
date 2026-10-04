@@ -76,13 +76,14 @@ theorem hypVolumeOfMetric_nonneg (g : HyperbolicMetric (I := I) (M := M)) :
 
 omit [LindelofSpace M] in
 /-- Mostow rigidity identifies the total volumes of any two bundled hyperbolic metrics. -/
-theorem hypVolumeOfMetric_eq_of_mostow
+theorem hypVolumeOfMetric_eq_of_mostow [BoundarylessManifold I M]
     (hConn : ConnectedSpace M)
-    (h : IsMostowRigid (I := I) (M := M))
+    (h : MostowRigidity.{uE, uH, uM})
+    (hdim : 3 ≤ Module.finrank ℝ E)
     (g g' : HyperbolicMetric (I := I) (M := M)) :
     hypVolumeOfMetric (I := I) g = hypVolumeOfMetric (I := I) g' := by
   let _ : ConnectedSpace M := hConn
-  obtain ⟨Φ⟩ := h.isometry g g'
+  obtain ⟨Φ⟩ := h hdim g g'
   let gBundle : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
     ⟨g.metric.toRiemannianMetric⟩
   let gCont : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=

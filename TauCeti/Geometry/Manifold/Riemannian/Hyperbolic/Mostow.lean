@@ -46,18 +46,17 @@ abbrev Isometry (g g' : HyperbolicMetric (I := I) (M := M)) :=
 
 end HyperbolicMetric
 
-/-- Mostow rigidity for a fixed smooth manifold and model with corners.
+/-- The Mostow rigidity theorem, universally over closed connected manifolds.
 
-The statement asserts that any two bundled complete constant-curvature `-1` metrics on this
-manifold are related by a metric-preserving diffeomorphism. -/
-def IsMostowRigid : Prop :=
-  ∀ (g g' : HyperbolicMetric (I := I) (M := M)),
-    Nonempty (HyperbolicMetric.Isometry g g')
-
-/-- A proof of Mostow rigidity supplies an isometry between any two bundled hyperbolic metrics. -/
-theorem IsMostowRigid.isometry (h : IsMostowRigid (I := I) (M := M))
-    (g g' : HyperbolicMetric (I := I) (M := M)) :
-    Nonempty (HyperbolicMetric.Isometry g g') :=
-  h g g'
+From the hyperbolicity and dimension hypotheses it gives a smooth metric-preserving
+diffeomorphism between every pair of bundled complete constant-curvature `-1` metrics. -/
+abbrev MostowRigidity : Prop :=
+  ∀ {E : Type uE} {H : Type uH} {M : Type uM} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [FiniteDimensional ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+    [TopologicalSpace M] [T3Space M] [ChartedSpace H M] [IsManifold I ∞ M]
+    [BoundarylessManifold I M] [CompactSpace M] [ConnectedSpace M],
+    3 ≤ Module.finrank ℝ E →
+      ∀ (g g' : HyperbolicMetric (I := I) (M := M)),
+        Nonempty (HyperbolicMetric.Isometry g g')
 
 end TauCeti

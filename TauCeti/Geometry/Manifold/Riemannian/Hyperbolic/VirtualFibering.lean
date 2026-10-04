@@ -18,7 +18,7 @@ metric (`TauCeti.IsHyperbolic`) is virtually fibered (`TauCeti.IsVirtuallyFibere
 
 A closed 3-manifold is modelled here on `EuclideanSpace ℝ (Fin 3)` with the boundaryless model
 `𝓡 3`, and is compact and connected. The `[MetricSpace M]` hypothesis supplies the ambient
-metric structure used by this statement, while a `HyperbolicMetric` witness carries its own
+metric structure required by this statement, while a `HyperbolicMetric` witness carries its own
 Riemannian metric for the completeness field. Orientability is not assumed; Agol's theorem
 covers non-orientable manifolds by passing to the orientation double cover.
 
