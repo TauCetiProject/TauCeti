@@ -52,6 +52,7 @@ namespace TauCeti
 /-! ## The quadratic space as two-by-two matrices -/
 
 /-- The split four-dimensional real Clifford form in coordinates. -/
+@[simp]
 theorem realCliffordForm_two_two_apply (v : Fin 4 → ℝ) :
     realCliffordForm 2 2 v = v 0 ^ 2 + v 1 ^ 2 - v 2 ^ 2 - v 3 ^ 2 := by
   rw [realCliffordForm_apply, Fin.sum_univ_four]
@@ -106,7 +107,9 @@ theorem realCliffordTwoTwoVectorEquivMatrix_symm_apply
       ![-(A 0 0 + A 1 1) / 2, (A 1 0 - A 0 1) / 2,
         (A 1 1 - A 0 0) / 2, -(A 0 1 + A 1 0) / 2] := (rfl)
 
-/-- The determinant in the matrix model is the split quadratic form. -/
+/-- The determinant in the matrix model is the split quadratic form. This is a named rewrite rather
+than a simp lemma because simplification first expands the matrix coordinates on its left-hand
+side. -/
 theorem realCliffordTwoTwoVectorEquivMatrix_det (v : Fin 4 → ℝ) :
     (realCliffordTwoTwoVectorEquivMatrix v).det = realCliffordForm 2 2 v := by
   rw [Matrix.det_fin_two, realCliffordForm_two_two_apply]

@@ -419,6 +419,7 @@ private theorem realCliffordTwoTwoWeylConjSwap_apply
           (GL2WeylElement ℝ : Matrix (Fin 2) (Fin 2) ℝ),
         (GL2WeylElement ℝ : Matrix (Fin 2) (Fin 2) ℝ) * p.1 *
           (GL2WeylElement ℝ : Matrix (Fin 2) (Fin 2) ℝ)) := by
+  -- Expose the product swap followed by the two componentwise inner automorphisms.
   change
     (Matrix.GeneralLinearGroup.innerAut (GL2WeylElement ℝ) p.2,
       Matrix.GeneralLinearGroup.innerAut (GL2WeylElement ℝ) p.1) = _
