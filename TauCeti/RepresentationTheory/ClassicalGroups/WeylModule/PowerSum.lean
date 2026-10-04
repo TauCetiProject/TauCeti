@@ -46,6 +46,8 @@ symmetrizer and the power-sum expansion of `s_μ`. That identity is not proved h
 * `TauCeti.trace_permTensorAction_mul_tensorPowerRep_diagGL`: **the trace of a permutation of the
   tensor factors composed with a diagonal matrix is the power-sum product over the cycle type of
   the permutation.**
+* `TauCeti.trace_permTensorAction_conj_mul_tensorPowerRep`: for any `g ∈ GL n k`, the trace of a
+  permutation of the tensor factors composed with `g^{⊗d}` is a class function of the permutation.
 * `TauCeti.YoungTableau.char_weylRep_eq_sum`: the character of a Weyl module at any element of
   `GL n k`, as a combination of traces on the tensor power weighted by the coefficients of the
   Young symmetrizer.
@@ -99,6 +101,24 @@ theorem trace_permTensorAction_mul_tensorPowerRep_diagGL (σ : Equiv.Perm (Fin d
   rw [LinearMap.trace_eq_matrix_trace k (tensorPowerBasis k n d), Matrix.trace,
     psumPart_partition_eq_sum_prod_X, map_sum, Finset.sum_filter]
   simp only [Matrix.diag_apply, LinearMap.toMatrix_apply, hdiag, eval_prod, eval_X]
+
+/-- **The trace of a permutation of the tensor factors composed with `g^{⊗d}` is a class function
+of the permutation**, because the two actions commute. -/
+theorem trace_permTensorAction_conj_mul_tensorPowerRep (σ τ : Equiv.Perm (Fin d))
+    (g : GL (Fin n) k) :
+    LinearMap.trace k _ (permTensorAction k n d (τ * σ * τ⁻¹) * tensorPowerRep k n d g) =
+      LinearMap.trace k _ (permTensorAction k n d σ * tensorPowerRep k n d g) := by
+  set P := permTensorAction k n d
+  set G := tensorPowerRep k n d g
+  have hc : P τ⁻¹ * G = G * P τ⁻¹ := (commute_permTensorAction_tensorPowerRep k n d τ⁻¹ g).eq
+  have hinv : P τ⁻¹ * P τ = 1 := by rw [← map_mul P, inv_mul_cancel, map_one]
+  calc LinearMap.trace k _ (P (τ * σ * τ⁻¹) * G)
+      _ = LinearMap.trace k _ (P τ * (P σ * G * P τ⁻¹)) := by
+        rw [map_mul P, map_mul P, mul_assoc, hc]
+        simp only [mul_assoc]
+      _ = LinearMap.trace k _ (P σ * G * (P τ⁻¹ * P τ)) := by
+        rw [LinearMap.trace_mul_comm, mul_assoc]
+      _ = LinearMap.trace k _ (P σ * G) := by rw [hinv, mul_one]
 
 end Trace
 
