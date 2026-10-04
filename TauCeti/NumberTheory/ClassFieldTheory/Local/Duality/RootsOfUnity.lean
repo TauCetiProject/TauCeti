@@ -50,33 +50,10 @@ section ChosenRoot
 
 variable (ζ : F) (hζ : IsPrimitiveRoot ζ n)
 
-/-- The identification of `μₙ` with `ZMod n` determined by `ζ`. -/
-private def muNRepZModEquiv : (muNRep n F).V ≃+ ZMod n :=
-  (muNRepEquivTrivialFp n F hζ).trans (trivialFpEquiv n _).toAddEquiv
-
-/-- The element of `μₙ` corresponding to `1 : ZMod n` under the coordinate selected by `ζ`. -/
-private def muNRepGenerator : (muNRep n F).V :=
-  (muNRepZModEquiv ζ hζ).symm 1
-
-/-- Every element of `μₙ` is its chosen coordinate times the generator. -/
-private theorem eq_nsmul_muNRepGenerator (x : (muNRep n F).V) :
-    x = (muNRepZModEquiv ζ hζ x).val • muNRepGenerator ζ hζ := by
-  apply (muNRepZModEquiv ζ hζ).injective
-  simp [muNRepGenerator]
-
 /-- The chosen-root pairing evaluates to the identity at the generator in the right variable. -/
 private theorem kummerCupPairing_apply_generator (x : (muNRep n F).V) :
     (kummerCupPairing ζ hζ).bil x (muNRepGenerator ζ hζ) = x := by
-  let i := (muNRepZModEquiv ζ hζ x).val
-  have hx : x = (muNRepEquivTrivialFp n F hζ).symm
-      ((trivialFpEquiv n _).symm (i : ZMod n)) := by
-    apply (muNRepZModEquiv ζ hζ).injective
-    simp [muNRepZModEquiv, i]
-  have hpow :=
-    coe_kummerCoeffEquivMuNRep_symm_muNRepEquivTrivialFp_symm_natCast n F hζ i
-  rw [← hx] at hpow
-  rw [kummerCupPairing_bil_apply ζ hζ (i := (i : ℤ)) (by simpa using hpow)]
-  simpa using (eq_nsmul_muNRepGenerator ζ hζ x).symm
+  rw [kummerCupPairing_bil_comm, kummerCupPairing_bil, muNRepEquivZMod_generator, one_smul]
 
 /-- **The chosen-root identification `μₙ → Hom(μₙ, μₙ)`**.  It sends `x` to the character
 `y ↦ kummerCupPairing ζ hζ x y`, viewed as an element of the named Tate dual. -/
@@ -92,15 +69,15 @@ theorem tateDualEquiv_muNRepToTateDual_apply (x y : (muNRep n F).V) :
 
 /-- **The chosen-root identification of `μₙ` with its Tate dual is bijective.** -/
 theorem bijective_muNRepToTateDual : Function.Bijective (muNRepToTateDual ζ hζ).hom := by
-  have : Finite (muNRep n F).V := Finite.of_equiv _ (muNRepZModEquiv ζ hζ).symm.toEquiv
+  have : Finite (muNRep n F).V := Finite.of_equiv _ (muNRepEquivZMod ζ hζ).symm.toEquiv
   refine Function.Injective.bijective_of_nat_card_le (fun x y hxy => ?_) ?_
   · have := congrArg
       (fun ψ => tateDualEquiv (muNRep n F) ψ (muNRepGenerator ζ hζ)) hxy
     simpa [kummerCupPairing_apply_generator ζ hζ] using this
   · have hM (x : (muNRep n F).V) : n • x = 0 :=
-      (muNRepZModEquiv ζ hζ).injective (by simp)
+      (muNRepEquivZMod ζ hζ).injective (by simp)
     rw [Nat.card_congr (tateDualEquiv (muNRep n F)).toEquiv,
-      (muNRepZModEquiv ζ hζ).natCard_addMonoidHom_zmod hM]
+      (muNRepEquivZMod ζ hζ).natCard_addMonoidHom_zmod hM]
 
 /-- The chosen-root identification with the Tate dual, as an isomorphism of coefficient objects. -/
 def muNRepIsoTateDual : muNRep n F ≅ tateDual (muNRep n F) :=
@@ -131,9 +108,7 @@ theorem muNRepIsoTateDual_hom : (muNRepIsoTateDual ζ hζ).hom = muNRepToTateDua
 @[simp]
 theorem muNRepIsoTateDual_inv_apply (φ : (tateDual (muNRep n F)).V) :
     (muNRepIsoTateDual ζ hζ).inv φ = tateDualEquiv (muNRep n F) φ
-      ((muNRepEquivTrivialFp n F hζ).symm ((trivialFpEquiv n _).symm 1)) := by
-  change (muNRepIsoTateDual ζ hζ).inv φ =
-    tateDualEquiv (muNRep n F) φ (muNRepGenerator ζ hζ)
+      (muNRepGenerator ζ hζ) := by
   have h := kummerCupPairing_apply_generator ζ hζ ((muNRepIsoTateDual ζ hζ).inv φ)
   rw [← tateDualEquiv_muNRepToTateDual_apply, ← muNRepIsoTateDual_hom,
     Iso.inv_hom_id_apply] at h
