@@ -6,32 +6,35 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.Ring
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Dual.WeilPairing
+public import TauCeti.Algebra.Module.Torsion.Snake
 import Mathlib.Algebra.Module.ZMod
 
 /-!
 # The action of an elliptic-curve morphism on torsion
 
 A morphism of elliptic curves sends `N`-torsion points to `N`-torsion points. This file packages
-that action as a `ZMod N`-linear map. The construction is functorial in the morphism: it respects
-zero, identities, addition, negation, subtraction, integer multiples and composition.
+that action as a `ZMod N`-linear map, the restriction `TauCeti.torsionByMap` of the morphism's
+point map. The construction is functorial in the morphism: it respects zero, identities, addition,
+negation, subtraction, integer multiples and composition.
 
-The finite-level action is the bridge from the intrinsic endomorphism ring to matrices. After a
-basis of `E[N]` is chosen, `LinearMap.toMatrix` turns each value of
-`Hom.torsionRepresentation` into the matrix representation used in the Weil-pairing proof of the
-Hasse bound. The final theorem records the compatibility needed there: a separable isogeny scales
-the Weil pairing by its degree when both arguments are acted on through its torsion linear map.
+The finite-level action is the bridge from the intrinsic endomorphism ring to matrices. Whenever
+`E[N]` is free over `ZMod N` (for instance of rank two, when `F` is separably closed and `N` is
+invertible in `F`), `LinearMap.toMatrix` turns each value of `Hom.torsionRepresentation` into a
+matrix after a basis is chosen; this is the matrix representation used in the Weil-pairing proof
+of the Hasse bound. There, `Hom.torsionLinearMap_apply` supplies the point-map hypotheses of
+`TauCeti.Isogeny.weilPairing_eq_degree_nsmul_weilPairing`, which says that a separable isogeny
+scales the Weil pairing by its degree.
 
 ## Main definitions
 
+* `TauCeti.Isogeny.pointTorsionModule`: the canonical `ZMod N`-module structure on `N`-torsion
+  points.
 * `TauCeti.Isogeny.Hom.torsionLinearMap`: the `ZMod N`-linear action of a morphism on `N`-torsion.
 * `TauCeti.Isogeny.Hom.torsionRepresentation`: the resulting ring representation of `End(E)`.
 
 ## Main results
 
 * `TauCeti.Isogeny.Hom.torsionLinearMap_comp`: the torsion action is functorial.
-* `TauCeti.Isogeny.weilPairing_torsionLinearMap`: a separable isogeny scales the Weil pairing by
-  its degree.
 
 ## References
 
@@ -40,41 +43,41 @@ the Weil pairing by its degree when both arguments are acted on through its tors
 
 public section
 
-namespace TauCeti.Isogeny.Hom
+namespace TauCeti.Isogeny
 
 open WeierstrassCurve.Affine
 
-/-- Mathlib supplies the `ZMod` module on `N`-torsion as an opt-in definition rather than a global
-instance, so install that intended instance locally while constructing the linear action. -/
-local instance torsionByModule (A : Type*) [AddCommGroup A] (N : ℕ) :
-    Module (ZMod N) (AddSubgroup.torsionBy A (N : ℤ)) :=
+variable {F : Type*} [Field F] [DecidableEq F]
+
+/-- **The canonical `ZMod N`-module structure on the `N`-torsion points** of a Weierstrass curve.
+Mathlib supplies it only as the opt-in definition `AddSubgroup.torsionBy.zmodModule`; it is a
+global instance here, restricted to curve points, so that consumers of `Hom.torsionLinearMap` and
+`Hom.torsionRepresentation` (bases, `LinearMap.toMatrix`, `Module.finrank`) synthesize it. -/
+noncomputable instance pointTorsionModule (W : WeierstrassCurve.Affine F) (N : ℕ) :
+    Module (ZMod N) (AddSubgroup.torsionBy W.Point (N : ℤ)) :=
   AddSubgroup.torsionBy.zmodModule
 
-variable {F : Type*} [Field F] [DecidableEq F]
-  {W₁ W₂ W₃ : WeierstrassCurve.Affine F} [W₁.IsElliptic] [W₂.IsElliptic]
+namespace Hom
+
+variable {W₁ W₂ W₃ : WeierstrassCurve.Affine F} [W₁.IsElliptic] [W₂.IsElliptic]
 
 /-- **The action of a morphism on `N`-torsion**, as a `ZMod N`-linear map.
 
-The underlying additive map is `Hom.pointMapHom`, restricted to the torsion submodules. It lands
-in the target torsion because every morphism commutes with integer multiples of points. -/
+The underlying additive map is `TauCeti.torsionByMap` applied to `Hom.pointMapHom`: the point map
+restricted to the torsion submodules, which lands in the target torsion because it is additive. -/
 noncomputable def torsionLinearMap (f : Hom W₁ W₂) (N : ℕ) :
     AddSubgroup.torsionBy W₁.Point (N : ℤ) →ₗ[ZMod N]
       AddSubgroup.torsionBy W₂.Point (N : ℤ) :=
-  (AddMonoidHom.codRestrict
-    (f.pointMapHom.comp (AddSubgroup.subtype _)) _ fun P ↦ by
-      rw [AddSubgroup.torsionBy.nsmul_iff]
-      simp only [AddMonoidHom.comp_apply, pointMapHom_apply]
-      rw [← pointMap_nsmul]
-      have hP : N • (AddSubgroup.subtype _ P) = 0 := by
-        rw [← map_nsmul, AddSubgroup.torsionBy.nsmul P, map_zero]
-      rw [hP, pointMap_zero]).toZModLinearMap N
+  AddMonoidHom.toZModLinearMap N (M := AddSubgroup.torsionBy W₁.Point (N : ℤ))
+    (M₁ := AddSubgroup.torsionBy W₂.Point (N : ℤ))
+    (torsionByMap (N : ℤ) f.pointMapHom.toIntLinearMap).toAddMonoidHom
 
 /-- The torsion action is the morphism's point map on underlying points. -/
 @[simp]
 theorem torsionLinearMap_apply (f : Hom W₁ W₂) (N : ℕ)
     (P : AddSubgroup.torsionBy W₁.Point (N : ℤ)) :
     (f.torsionLinearMap N P : W₂.Point) = f.pointMap P :=
-  by simp [torsionLinearMap]
+  (coe_torsionByMap_apply (N : ℤ) f.pointMapHom.toIntLinearMap P).trans (f.pointMapHom_apply _)
 
 /-- The zero morphism acts as the zero map on torsion. -/
 @[simp]
@@ -134,7 +137,7 @@ theorem torsionLinearMap_comp [W₃.IsElliptic] (g : Hom W₂ W₃) (f : Hom W�
 
 /-- **The action of the endomorphism ring on `N`-torsion.** This packages additivity and
 functoriality of `torsionLinearMap` as a ring homomorphism, ready to be written as matrices after
-choosing a basis of the rank-two torsion module. -/
+choosing a basis of the torsion module whenever it is free. -/
 noncomputable def torsionRepresentation (W : WeierstrassCurve.Affine F) [W.IsElliptic] (N : ℕ) :
     Hom W W →+* Module.End (ZMod N) (AddSubgroup.torsionBy W.Point (N : ℤ)) where
   toFun f := f.torsionLinearMap N
@@ -149,27 +152,7 @@ theorem torsionRepresentation_apply (W : WeierstrassCurve.Affine F) [W.IsEllipti
     (f : Hom W W) : torsionRepresentation W N f = f.torsionLinearMap N :=
   (rfl)
 
-end TauCeti.Isogeny.Hom
-
-namespace TauCeti.Isogeny
-
-open WeierstrassCurve.Affine
-
-variable {F : Type*} [Field F] [DecidableEq F] [IsSepClosed F]
-  {W₁ W₂ : WeierstrassCurve.Affine F} [W₁.IsElliptic] [W₂.IsElliptic]
-
-/-- **A separable isogeny's action on torsion scales the Weil pairing by its degree.** This is
-`weilPairing_eq_degree_nsmul_weilPairing` with the two image points supplied canonically by
-`Hom.torsionLinearMap`. -/
-theorem weilPairing_torsionLinearMap (φ : Isogeny W₁ W₂)
-    [Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.FunctionField]
-    (N : ℕ) [NeZero N] (hN : (N : F) ≠ 0)
-    (S T : AddSubgroup.torsionBy W₁.Point (N : ℤ)) :
-    weilPairing W₂ N hN ((Hom.ofIsogeny φ).torsionLinearMap N S)
-        ((Hom.ofIsogeny φ).torsionLinearMap N T) =
-      φ.degree • weilPairing W₁ N hN S T :=
-  φ.weilPairing_eq_degree_nsmul_weilPairing N hN
-    (Hom.torsionLinearMap_apply _ N S).symm (Hom.torsionLinearMap_apply _ N T).symm
+end Hom
 
 end TauCeti.Isogeny
 
