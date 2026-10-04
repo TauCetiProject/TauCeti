@@ -178,6 +178,38 @@ theorem diagonalRootDatum_root_apply (p : SplitTorus.CoordinateRootIndex (Fin (r
   simp [diagonalRootDatum_root_eq, characterEquiv_apply, diagonalTorusWeight_apply,
     SlStd.weight_def]
 
+/-- A difference of standard weights is a specified root character exactly at that root's
+ordered pair of matrix indices. This comparison takes place in the integral character lattice,
+independently of the coefficient ring. -/
+@[simp]
+theorem weightCharacter_diagonalTorusWeight_sub_eq_root_iff
+    (p : SplitTorus.CoordinateRootIndex (Fin (r + 1))) (a b : Fin (r + 1)) :
+    SplitTorus.weightCharacter (diagonalTorusWeight.{u} r a - diagonalTorusWeight r b) =
+        Multiplicative.ofAdd ((diagonalRootDatum.{u} r).root p) ↔
+      a = p.1.1 ∧ b = p.1.2 := by
+  constructor
+  · intro h
+    have hfun : diagonalTorusWeight.{u} r a - diagonalTorusWeight r b =
+        fun i => (diagonalRootDatum.{u} r).root p i := by
+      funext i
+      simpa using congrArg
+        (fun α : Multiplicative (ULift.{u} (Fin r) →₀ ℤ) => Multiplicative.toAdd α i) h
+    have hab : a ≠ b := by
+      intro hab
+      subst b
+      apply (diagonalRootDatum.{u} r).ne_zero p
+      ext i
+      simpa using (congrFun hfun i).symm
+    have hroot : (diagonalRootDatum.{u} r).root ⟨(a, b), hab⟩ =
+        (diagonalRootDatum.{u} r).root p := by
+      ext i
+      simpa only [diagonalRootDatum_root_apply, Pi.sub_apply] using congrFun hfun i
+    exact Prod.mk.inj (congrArg Subtype.val ((diagonalRootDatum.{u} r).root.injective hroot))
+  · rintro ⟨rfl, rfl⟩
+    apply Multiplicative.toAdd.injective
+    ext i
+    simp
+
 /-- **The coroots in simple-coroot coordinates.** The coroot indexed by `(a, b)` is `e_a - e_b`,
 whose `i`-th simple-coroot coordinate is `[a ≤ i] - [b ≤ i]`. -/
 @[simp]
