@@ -41,7 +41,10 @@ namespace TauCeti
 /-- **The representation of `Q₈` over `ℂ` induced from the faithful linear character of the
 rotation subgroup sending `a 1` to `i` has Frobenius-Schur indicator `-1`.**  This distinguishes it
 from the two-dimensional irreducible of `D₄`, whose indicator is `1`; the two groups have the same
-complex character table, but their two-dimensional representations have different real types. -/
+complex character table, but their two-dimensional representations have different real types.  The
+comparison of the two character tables, and the resulting separation of the two groups by their
+Frobenius-Schur indicators, is
+`TauCeti/RepresentationTheory/CharacterTable/FrobeniusSchur/DihedralQuaternion.lean`. -/
 @[simp]
 theorem
     frobeniusSchurIndicator_indFDRep_ofLinearCharacter_quaternionGroupTwoRotationChar_eq_neg_one :
