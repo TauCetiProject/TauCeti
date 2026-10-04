@@ -408,8 +408,9 @@ theorem IsGeodesicFromTo.re_toComplex_lt {g : PSL(2, ℝ)} {p q : ℍ ⊕ OnePoi
     rwa [← he₀, ← he₁, toComplex_inr_coe, toComplex_inr_coe, Complex.ofReal_re,
       Complex.ofReal_re]
 
-/-- A geodesic line running from `p` to `q` and to `r` (none of them `∞`), where `p` and `q` have
-distinct real parts, reaches `r` on the same side of `p` as `q`. -/
+/-- For a geodesic line running from `p` to `q` and from `p` to `r`, where `p` and `q` are not `∞`
+and have distinct real parts, the real part of `toComplex r` lies on the same side of `Re p` as
+`Re q`. -/
 theorem IsGeodesicFromTo.re_toComplex_lt_iff {g : PSL(2, ℝ)} {p q r : ℍ ⊕ OnePoint ℝ}
     (hpq : IsGeodesicFromTo g p q) (hpr : IsGeodesicFromTo g p r) (hp : p ≠ .inr ∞)
     (hq : q ≠ .inr ∞) (hre : (toComplex p).re ≠ (toComplex q).re) :
