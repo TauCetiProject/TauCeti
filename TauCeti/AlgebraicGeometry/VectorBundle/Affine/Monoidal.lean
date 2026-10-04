@@ -75,13 +75,13 @@ theorem finiteProjectiveEquiv_functor_μ_hom
     (μ (finiteProjectiveEquiv R).functor M N).hom = μ (tilde.functor R) M.obj N.obj :=
   (rfl)
 
-/-- The inverse unit comparison is that of the associated-sheaf functor. -/
+/-- The underlying oplax unit comparison is that of the associated-sheaf functor. -/
 @[simp]
 theorem finiteProjectiveEquiv_functor_η_hom :
     (η (finiteProjectiveEquiv R).functor).hom = η (tilde.functor R) :=
   (rfl)
 
-/-- The inverse tensor comparison is that of the associated-sheaf functor. -/
+/-- The underlying oplax tensor comparison is that of the associated-sheaf functor. -/
 @[simp]
 theorem finiteProjectiveEquiv_functor_δ_hom
     (M N : (finiteProjectiveModules R).FullSubcategory) :
@@ -94,7 +94,7 @@ instance finiteProjectiveEquivInverseMonoidal : (finiteProjectiveEquiv R).invers
   (finiteProjectiveEquiv R).inverseMonoidal
 
 /-- The affine equivalence, with its canonical unit and counit, is monoidal. -/
-instance finiteProjectiveEquivIsMonoidal : (finiteProjectiveEquiv R).IsMonoidal := by
+instance finiteProjectiveEquiv_isMonoidal : (finiteProjectiveEquiv R).IsMonoidal := by
   infer_instance
 
 end
