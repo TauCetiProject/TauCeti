@@ -18,9 +18,7 @@ including when the coefficients are topological rather than discrete.
 `explicitCor2Transversal_explicitMap2_id` gives the identity for any transversal;
 `explicitCor2_explicitMap2_id` gives it for the canonical corestriction. Together with
 `map_explicitCor0` and `explicitCor1_explicitMap1_id` in `Corestriction.Basic`, this supplies
-coefficient naturality in all three explicit degrees. The identities follow by descending
-`map_cochainsCor2`, which retains the essential action of each coset representative on the
-coefficients.
+coefficient naturality in all three explicit degrees.
 
 ## References
 
