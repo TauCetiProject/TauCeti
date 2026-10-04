@@ -61,7 +61,10 @@ private def sectionMap (U : X.Opens) (hx : x ∈ U) :
     (M := ModuleCat.of Γ(X, U) (T R X x))
     (fun a ↦ KaehlerDifferential.D R (A X x) (X.presheaf.germ U x hx a))
     (by simp) (fun a b ↦ by
-      simp only [map_mul, Derivation.leibniz]; rfl)
+      simp only [map_mul, Derivation.leibniz]
+      exact congrArg₂ (· + ·)
+        (MulAction.compHom_smul_def (X.presheaf.germ U x hx).hom.toMonoidHom a _).symm
+        (MulAction.compHom_smul_def (X.presheaf.germ U x hx).hom.toMonoidHom b _).symm)
     (fun r ↦ by
       have h : X.presheaf.germ U x hx ((X.baseRingToStructurePresheaf R).app (op U) r) =
           algebraMap R (A X x) r := by
@@ -219,14 +222,15 @@ private def stalkDerivation :
       map_smul' r a := by
         rw [Algebra.smul_def, stalkDerivationAdd_mul, stalkDerivationAdd_base,
           smul_zero, add_zero]
-        rfl }
+        exact (MulAction.compHom_smul_def
+          (algebraMap R (A X x)).toMonoidHom r _).symm }
     (stalkDerivationAdd_mul R X x)
 
 private def stalkInv : T R X x →ₗ[A X x] (M R X).presheaf.stalk x :=
   letI : Module R ((M R X).presheaf.stalk x) :=
     Module.compHom _ (algebraMap R (A X x))
   haveI : IsScalarTower R (A X x) ((M R X).presheaf.stalk x) :=
-    .of_algebraMap_smul fun _ _ ↦ rfl
+    IsScalarTower.of_compHom R (A X x) ((M R X).presheaf.stalk x)
   (stalkDerivation R X x).liftKaehlerDifferential
 
 private lemma stalkInv_D (a : A X x) :
@@ -234,7 +238,7 @@ private lemma stalkInv_D (a : A X x) :
   let : Module R ((M R X).presheaf.stalk x) :=
     Module.compHom _ (algebraMap R (A X x))
   have : IsScalarTower R (A X x) ((M R X).presheaf.stalk x) :=
-    .of_algebraMap_smul fun _ _ ↦ rfl
+    IsScalarTower.of_compHom R (A X x) ((M R X).presheaf.stalk x)
   exact Derivation.liftKaehlerDifferential_comp_D (stalkDerivation R X x) a
 
 private lemma stalkMap_stalkInv : (stalkMap R X x).comp (stalkInv R X x) = LinearMap.id := by
