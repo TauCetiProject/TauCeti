@@ -8,6 +8,7 @@ module
 import Mathlib.LinearAlgebra.Matrix.Block
 public import Mathlib.Algebra.Polynomial.OfFn
 public import Mathlib.RingTheory.Polynomial.Resultant.Basic
+public import TauCeti.Algebra.Polynomial.Coeff
 
 /-!
 # Principal subresultant coefficients
@@ -89,27 +90,6 @@ theorem _root_.Polynomial.subresultantMatrix_natAdd [Semiring R]
         p.coeff (i.val + j - k.val) else 0 := by
   simp [subresultantMatrix]
 
-/-- When formal bounds dominate the degrees, a bounded coefficient row consists of the
-coefficients of shifted input polynomials. The two column-block lengths are arbitrary. -/
-theorem coefficientRow_eq_shifted_coeff [Semiring R] {p q : R[X]} {m n : ℕ}
-    (hm : p.natDegree ≤ m) (hn : q.natDegree ≤ n) (a b d : ℕ) (l : Fin (a + b)) :
-    Fin.addCases (motive := fun _ => R)
-      (fun l : Fin a => if (l : ℕ) ≤ d ∧ d ≤ l.val + n then q.coeff (d - l.val) else 0)
-      (fun l : Fin b => if (l : ℕ) ≤ d ∧ d ≤ l.val + m then p.coeff (d - l.val) else 0) l =
-      l.addCases (motive := fun _ => R) (fun l => (X ^ l.val * q).coeff d)
-        (fun l => (X ^ l.val * p).coeff d) := by
-  have hentry {f : R[X]} {c : ℕ} (hf : f.natDegree ≤ c) (l d : ℕ) :
-      (if l ≤ d ∧ d ≤ l + c then f.coeff (d - l) else 0) = (X ^ l * f).coeff d := by
-    rw [coeff_X_pow_mul']
-    by_cases h : l ≤ d
-    · by_cases h' : d ≤ l + c
-      · simp [h, h']
-      · have hz : f.coeff (d - l) = 0 := coeff_eq_zero_of_natDegree_lt (by omega)
-        simp [h, h', hz]
-    · simp [h]
-  induction l using Fin.addCases <;> simp only [Fin.addCases_left, Fin.addCases_right,
-    hentry hn, hentry hm]
-
 /-- When the formal bounds dominate the degrees, subresultant entries are simply
 coefficients of the shifted input polynomials. -/
 theorem _root_.Polynomial.subresultantMatrix_apply_eq_coeff [Semiring R]
@@ -119,7 +99,9 @@ theorem _root_.Polynomial.subresultantMatrix_apply_eq_coeff [Semiring R]
     subresultantMatrix p q m n j i k =
       k.addCases (fun k => (X ^ k.val * q).coeff (i.val + j))
         (fun k => (X ^ k.val * p).coeff (i.val + j)) := by
-  exact coefficientRow_eq_shifted_coeff hm hn (m - j) (n - j) (i.val + j) k
+  induction k using Fin.addCases <;>
+    simp [subresultantMatrix, coeff_X_pow_mul_of_natDegree_le hm,
+      coeff_X_pow_mul_of_natDegree_le hn]
 
 /-- At index zero, the principal subresultant matrix is Mathlib's Sylvester matrix. -/
 @[simp]
@@ -159,7 +141,7 @@ theorem coefficientRow_dotProduct [CommSemiring R] [DecidableEq R]
       ⬝ᵥ v =
       (ofFn a (fun l => v (Fin.castAdd b l)) * q +
         ofFn b (fun l => v (Fin.natAdd a l)) * p).coeff d := by
-  simp_rw [coefficientRow_eq_shifted_coeff hm hn]
+  simp_rw [← coeff_X_pow_mul_of_natDegree_le hn, ← coeff_X_pow_mul_of_natDegree_le hm]
   simp only [dotProduct, Fin.sum_univ_add, Fin.addCases_left, Fin.addCases_right,
     ofFn_eq_sum_monomial, Finset.sum_mul, coeff_add, finsetSum_coeff]
   congr 1 <;> refine Finset.sum_congr rfl fun l _ => ?_ <;>
