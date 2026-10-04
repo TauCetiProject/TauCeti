@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Connected.TotallyDisconnected
 public import TauCeti.Topology.Algebra.Group.Conjugacy
 public import TauCeti.Topology.Algebra.Group.ContinuousAut.Quotient
+import Mathlib.Topology.Separation.Connected
 
 /-!
 # The congruence topology on continuous automorphisms

@@ -183,7 +183,8 @@ theorem isAcyclic_underlyingGraph : (underlyingGraph AffineE6).IsAcyclic :=
 /-- Two vertices of `TauCeti.Quiver.AffineE6` are joined by at most one arrow, counted in both
 directions. -/
 theorem subsingleton_hom_sum (a b : AffineE6) : Subsingleton ((a ⟶ b) ⊕ (b ⟶ a)) :=
-  subsingleton_hom_sum_of_lt height height_lt a b
+  subsingleton_hom_sum_of_lt height a b (height_lt (a := a) (b := b))
+    (height_lt (a := b) (b := a))
 
 end AffineE6
 

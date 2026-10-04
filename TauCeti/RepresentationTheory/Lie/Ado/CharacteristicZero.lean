@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Lie.LeviDecomposition.Solvable
 public import TauCeti.Algebra.Lie.Prod
 public import TauCeti.RepresentationTheory.Lie.Abelian
+import TauCeti.RepresentationTheory.Lie.AdNilpotent
 public import TauCeti.RepresentationTheory.Lie.EnvelopingExtension.Nilrepresentation
 import TauCeti.LinearAlgebra.End.Prod
 
@@ -16,7 +17,8 @@ import TauCeti.LinearAlgebra.End.Prod
 
 Every finite-dimensional Lie algebra `L` over a field of characteristic zero has a faithful
 finite-dimensional representation, and one can be chosen in which every element of the nilradical
-`N` acts nilpotently.
+`N` acts nilpotently. Hochschild's strengthening follows: the same representation sends every
+`ad`-nilpotent element of `L` to a nilpotent endomorphism.
 
 ## The argument
 
@@ -43,10 +45,18 @@ losing any direction of `S` that was detected and keeping the elements of `N` ni
 The resulting representation `ρ₀` of `L` is faithful on `Z`, and the adjoint representation has
 kernel exactly `Z`, so `ρ₀ ⊕ ad` is faithful.
 
+Nilpotence on the nilradical upgrades to nilpotence on every `ad`-nilpotent element by
+Hochschild's argument
+(`LieSubalgebra.isNilpotent_apply_of_isNilpotent_ad_of_isCompl_radical`), which needs nothing of
+the representation beyond its nilpotence on `N` and uses a Levi complement only in its proof.
+
 ## Main results
 
 * `TauCeti.exists_faithful_nilrepresentation_charZero`: a faithful finite-dimensional
   representation in which every element of the nilradical acts nilpotently.
+* `TauCeti.exists_faithful_preserving_ad_nilpotence_charZero`: **Hochschild's strengthening in
+  characteristic zero**, a faithful finite-dimensional representation in which every
+  `ad`-nilpotent element acts nilpotently.
 * `TauCeti.adoCharZero`: **Ado's theorem in characteristic zero.**
 
 ## References
@@ -54,6 +64,7 @@ kernel exactly `Z`, so `ρ₀ ⊕ ad` is faithful.
 * W. Fulton and J. Harris, *Representation Theory: A First Course*, Appendix E, §E.2.
 * S. Asgarli, [*Ado's Theorem*](https://personal.math.ubc.ca/~reichst/Ado%27s-Theorem.pdf).
 * N. Jacobson, *Lie Algebras*, Interscience (1962), Chapter VI.
+* G. Hochschild, *An Addition to Ado's Theorem*, Proc. Amer. Math. Soc. **17** (1966), 531–533.
 -/
 
 public section
@@ -312,6 +323,23 @@ theorem exists_faithful_nilrepresentation_charZero :
       LinearMap.ext fun p ↦ LieHom.prodRepresentation_apply _ _ x p
     rw [hprod, hρ₀]
     exact (hσN _ hx).prodMap (LieAlgebra.isNilpotent_ad_of_mem_nilradical hx)
+
+/-- **Hochschild's strengthening of Ado's theorem in characteristic zero.** A finite-dimensional
+Lie algebra over a field of characteristic zero has a faithful finite-dimensional representation
+that preserves nilpotence of the adjoint action: every `ad`-nilpotent element acts nilpotently.
+
+For semisimple `L` the nilradical is zero, so the nilpotence clause of
+`TauCeti.exists_faithful_nilrepresentation_charZero` is empty there, while this one still
+constrains every `ad`-nilpotent element. -/
+theorem exists_faithful_preserving_ad_nilpotence_charZero :
+    ∃ (V : Type (max u v)) (_ : AddCommGroup V) (_ : Module K V)
+      (_ : FiniteDimensional K V) (ρ : L →ₗ⁅K⁆ Module.End K V),
+      Function.Injective ρ ∧
+        ∀ x : L, IsNilpotent (LieAlgebra.ad K L x) → IsNilpotent (ρ x) := by
+  obtain ⟨V, _, _, _, ρ, hρ, hN⟩ := exists_faithful_nilrepresentation_charZero K L
+  obtain ⟨S, hS⟩ := exists_leviComplement K L
+  exact ⟨V, inferInstance, inferInstance, inferInstance, ρ, hρ,
+    fun x hx ↦ S.isNilpotent_apply_of_isNilpotent_ad_of_isCompl_radical hS hN hx⟩
 
 /-- **Ado's theorem in characteristic zero.** Every finite-dimensional Lie algebra over a field of
 characteristic zero admits a faithful finite-dimensional representation. -/

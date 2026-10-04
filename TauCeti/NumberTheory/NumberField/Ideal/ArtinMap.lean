@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.FieldTheory.Galois.Abelian
+public import TauCeti.FieldTheory.Galois.Abelian.Basic
 public import TauCeti.NumberTheory.NumberField.ArtinSymbol
 public import TauCeti.NumberTheory.NumberField.Ideal.Away
 import Mathlib.Algebra.Group.IsCommutative

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.ExteriorPower
+public import TauCeti.LinearAlgebra.ExteriorPower.Basic
 public import TauCeti.RepresentationTheory.ClassicalGroups.Determinant
 public import TauCeti.RepresentationTheory.ClassicalGroups.Diagonal
 public import TauCeti.RepresentationTheory.ExteriorPower

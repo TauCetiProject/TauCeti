@@ -152,6 +152,12 @@ theorem dirichletLift_apply_eq_zero (f : Newform N k) (n : ℕ) (hn : ¬ n.Copri
   apply MulChar.map_nonunit
   simpa only [ZMod.isUnit_iff_coprime] using hn
 
+/-- At an index coprime to the level, the zero-extended nebentypus takes the value of the
+nebentypus at the corresponding unit. -/
+theorem dirichletLift_apply_of_coprime (f : Newform N k) {n : ℕ} (hn : n.Coprime N) :
+    f.dirichletLift n = f.χ (ZMod.unitOfCoprime n hn) := by
+  rw [← ZMod.coe_unitOfCoprime n hn, dirichletLift_def, MulChar.ofUnitHom_coe]
+
 /-- The normalisation `a₁ = 1`, as a simp lemma. The eigenvector equation `isEigen` has no simp
 form: its right-hand side depends on the coprimality proof, so no rewrite rule can produce it. -/
 @[simp]

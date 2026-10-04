@@ -11,6 +11,7 @@ public import Mathlib.GroupTheory.Abelianization.Defs
 public import TauCeti.GroupTheory.ExponentPrime
 public import TauCeti.Topology.Algebra.Group.ContinuousAut.Characteristic
 public import TauCeti.Topology.Algebra.Group.Profinite.Basic
+import Mathlib.Topology.Separation.Connected
 
 /-!
 # The pro-`p` Frattini subgroup

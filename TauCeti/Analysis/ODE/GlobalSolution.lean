@@ -10,6 +10,7 @@ public import Mathlib.Analysis.ODE.ExistUnique
 public import Mathlib.Analysis.ODE.Transform
 public import Mathlib.Topology.ContinuousMap.Bounded.Normed
 public import TauCeti.MeasureTheory.Integral.Cosh
+import Mathlib.Analysis.ODE.Gronwall
 
 /-!
 # The global solution of a globally Lipschitz autonomous ODE

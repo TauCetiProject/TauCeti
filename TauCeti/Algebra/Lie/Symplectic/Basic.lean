@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Lie.Classical
 public import TauCeti.LinearAlgebra.SymplecticGroup
+import Mathlib.Tactic.NoncommRing
 
 /-!
 # Membership in the symplectic Lie algebra

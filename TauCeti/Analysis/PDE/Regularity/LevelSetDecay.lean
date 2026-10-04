@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Caccioppoli.Truncation
 import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.DeGiorgi
-import TauCeti.MeasureTheory.Measure.AddHaar
+import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
 # Decay of upper level sets of weak subsolutions (De Giorgi)

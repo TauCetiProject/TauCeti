@@ -183,6 +183,22 @@ theorem coe_mem_boundaryLeftHalfPlane_iff (g : PSL(2, ℝ)) (x : ℝ) :
   · simp only [h, ↓reduceIte, Set.mem_image, OnePoint.coe_eq_coe, Set.mem_Iio, exists_eq_right]
     rw [div_neg_iff, mul_neg_iff]
 
+/-- The backward endpoint of a geodesic line is not on its left ideal arc. -/
+@[simp]
+theorem smul_zero_notMem_boundaryLeftHalfPlane (g : PSL(2, ℝ)) :
+    g • ((0 : ℝ) : OnePoint ℝ) ∉ boundaryLeftHalfPlane g := by
+  rw [boundaryLeftHalfPlane, Set.smul_mem_smul_set_iff]
+  rintro ⟨x, hx, hx₀⟩
+  exact (Set.mem_Iio.1 hx).ne (OnePoint.coe_injective hx₀)
+
+/-- The forward endpoint of a geodesic line is not on its left ideal arc. -/
+@[simp]
+theorem smul_infty_notMem_boundaryLeftHalfPlane (g : PSL(2, ℝ)) :
+    g • (∞ : OnePoint ℝ) ∉ boundaryLeftHalfPlane g := by
+  rw [boundaryLeftHalfPlane, Set.smul_mem_smul_set_iff]
+  rintro ⟨x, -, hx⟩
+  exact OnePoint.coe_ne_infty x hx
+
 /-- The backward endpoint of a geodesic line is a zero of its side form. -/
 theorem sideForm_eq_zero_of_smul_zero_eq {g : PSL(2, ℝ)} {e : ℝ}
     (h : g • ((0 : ℝ) : OnePoint ℝ) = e) : sideForm g e = 0 := by

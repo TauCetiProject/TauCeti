@@ -124,6 +124,20 @@ theorem endOfPoint_one_tmul_eq_one_tmul_basePointsRepresentation
   rw [basePointsRepresentation_apply]
   simp
 
+/-- A constant algebra-valued point acts on a pure tensor by the original base-valued action. -/
+theorem endOfPoint_mapValue_algebraOfId_tmul
+    {A : Type*} [CommSemiring A] [Algebra R A]
+    (g : WithConv (H →ₐ[R] R)) (a : A) (m : M) :
+    endOfPoint M (AlgHom.mapValue (Algebra.ofId R A) g).ofConv (a ⊗ₜ[R] m) =
+      a ⊗ₜ[R] basePointsRepresentation (H := H) M g m := by
+  have h := LinearMap.congr_fun
+    (rTensor_comp_endOfPoint M (Algebra.ofId R A) g.ofConv) (1 ⊗ₜ[R] m)
+  simp only [LinearMap.comp_apply, LinearMap.restrictScalars_apply,
+    LinearMap.rTensor_tmul, AlgHom.toLinearMap_apply, map_one, endOfPoint_tmul,
+    one_smul, endOfPoint_one_tmul_eq_one_tmul_basePointsRepresentation] at h
+  rw [AlgHom.mapValue_apply, WithConv.ofConv_toConv, endOfPoint_tmul, ← h]
+  simp [TensorProduct.smul_tmul']
+
 /-- Evaluating a matrix coefficient at a base-valued point pairs the functional with the
 point's action on the vector. -/
 @[simp]

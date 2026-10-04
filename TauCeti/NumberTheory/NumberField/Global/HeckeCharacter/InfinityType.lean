@@ -55,6 +55,10 @@ a `FiniteOrderInfinityType`: signs at the real places and nothing else.
   a finite-order Hecke character comes from a finite-order infinity type.
 * `TauCeti.GlobalNumberFields.HeckeCharacter.isFiniteOrder_normPow_iff`: `‖·‖ ^ s` has finite
   order exactly when `s = 0`.
+* `TauCeti.GlobalNumberFields.HeckeCharacter.re_realExponent_infinityType`,
+  `TauCeti.GlobalNumberFields.HeckeCharacter.re_complexExponent_infinityType`: the real parts of the
+  modulus exponents are the shift `σ` of `χ` at every real place and `2 * σ` at every complex
+  place, since `|χ| = ‖·‖ ^ σ`.
 
 ## References
 
@@ -66,7 +70,7 @@ a `FiniteOrderInfinityType`: signs at the real places and nothing else.
 public section
 noncomputable section
 
-open NumberField NumberField.InfinitePlace.Completion
+open NumberField NumberField.InfinitePlace NumberField.InfinitePlace.Completion
 open scoped NumberField NNReal
 
 namespace TauCeti.GlobalNumberFields
@@ -302,7 +306,7 @@ theorem exists_finiteOrderInfinityType {χ : HeckeCharacter K} (hχ : χ.IsFinit
 `|u|_w ^ s`, for the normalized absolute value `|·|_w` of `K_w`. -/
 theorem coe_infiniteComponent_normPow_apply (s : ℂ) (w : InfinitePlace K) (u : w.Completionˣ) :
     ((normPow K s).infiniteComponent w u : ℂ) =
-      ((infiniteCompletionNormalizedAbsValue w u : ℝ) : ℂ) ^ s := by
+      ((completionNormalizedAbsValue w u : ℝ) : ℂ) ^ s := by
   simp [IdeleClassGroup.ofCompletion_apply]
 
 /-- The component of the norm character `‖·‖ ^ s` at a real place is `x ↦ |x| ^ s`. -/
@@ -310,7 +314,7 @@ theorem coe_infiniteComponent_normPow_apply (s : ℂ) (w : InfinitePlace K) (u :
 theorem realComponent_normPow (s : ℂ) (w : {w : InfinitePlace K // w.IsReal}) :
     (normPow K s).realComponent w = normCpowCharacter ℝ s := by
   ext x
-  simp [infiniteCompletionNormalizedAbsValue_of_isReal _ w.2]
+  simp [completionNormalizedAbsValue_of_isReal _ w.2]
 
 /-- The component of the norm character `‖·‖ ^ s` at a complex place is `z ↦ |z| ^ (2 * s)`,
 since the normalized absolute value of a complex place is the square of the usual one. -/
@@ -318,7 +322,7 @@ since the normalized absolute value of a complex place is the square of the usua
 theorem complexComponent_normPow (s : ℂ) (w : {w : InfinitePlace K // w.IsComplex}) :
     (normPow K s).complexComponent w = normCpowCharacter ℂ (2 * s) := by
   ext z
-  simp [infiniteCompletionNormalizedAbsValue_of_isComplex _ w.2, ofReal_pow_cpow (norm_nonneg _)]
+  simp [completionNormalizedAbsValue_of_isComplex _ w.2, ofReal_pow_cpow (norm_nonneg _)]
 
 /-- **The infinity type of the norm character `‖·‖ ^ s`**: modulus exponent `s` and parity `0` at
 every real place, and modulus exponent `2 * s` and angular frequency `0` at every complex place,
@@ -342,6 +346,62 @@ theorem isFiniteOrder_normPow_iff {s : ℂ} : (normPow K s).IsFiniteOrder ↔ s 
   rcases w.isReal_or_isComplex with hw | hw
   · simpa using congrArg (fun t : ContinuousInfinityType K ↦ t.realExponent ⟨w, hw⟩) ht
   · simpa using congrArg (fun t : ContinuousInfinityType K ↦ t.complexExponent ⟨w, hw⟩) ht
+
+/-! ### Absolute values of the components and the shift -/
+
+/-- **The absolute value of an infinite component is the shift-th power of the normalized
+absolute value.** -/
+theorem norm_infiniteComponent_apply (χ : HeckeCharacter K) (w : InfinitePlace K)
+    (u : w.Completionˣ) :
+    ‖(χ.infiniteComponent w u : ℂ)‖ = completionNormalizedAbsValue w u ^ χ.shift := by
+  rw [infiniteComponent_apply, norm_apply_eq_rpow_shift,
+    IdeleClassGroup.ofCompletion_apply, ideleClassNorm_mk, coe_ideleNorm_ofCompletion]
+
+/-- **The absolute value of a real component is the shift-th power of `|x|`.**  At a real place
+`w`, the component of `χ` satisfies `|χ_w(x)| = |x| ^ σ`, where `σ` is the shift of `χ`. -/
+theorem norm_realComponent_apply (χ : HeckeCharacter K) (w : {w : InfinitePlace K // w.IsReal})
+    (x : ℝˣ) : ‖(χ.realComponent w x : ℂ)‖ = |(x : ℝ)| ^ χ.shift := by
+  rw [realComponent_apply, norm_infiniteComponent_apply,
+    completionNormalizedAbsValue_of_isReal _ w.2]
+  simp
+
+/-- **The absolute value of a complex component is the power of `‖z‖` with exponent twice the
+shift.**  At a complex place `w`, the component of `χ` satisfies
+`|χ_w(z)| = |z| ^ (2 * σ)`, where `σ` is the shift of `χ`, since the normalized absolute value of
+a complex place is the square of the usual one. -/
+theorem norm_complexComponent_apply (χ : HeckeCharacter K)
+    (w : {w : InfinitePlace K // w.IsComplex}) (z : ℂˣ) :
+    ‖(χ.complexComponent w z : ℂ)‖ = ‖(z : ℂ)‖ ^ (2 * χ.shift) := by
+  rw [complexComponent_apply, norm_infiniteComponent_apply,
+    completionNormalizedAbsValue_of_isComplex _ w.2]
+  simp only [Units.symm_mapContinuousMulEquiv, Units.mapContinuousMulEquiv_apply, Units.coe_map,
+    MonoidHom.coe_ofClass, ContinuousMulEquiv.coe_toMulEquiv,
+    norm_continuousMulEquivComplexOfIsComplex_symm]
+  rw [← Real.rpow_natCast, ← Real.rpow_mul (norm_nonneg _)]
+  norm_num
+
+/-- **The real part of a real modulus exponent is the shift.**  The infinity type of `χ` has a
+complex exponent `s_w` at each real place `w`; its real part is the shift of `χ`, independently
+of `w`. -/
+@[simp]
+theorem re_realExponent_infinityType (χ : HeckeCharacter K)
+    (w : {w : InfinitePlace K // w.IsReal}) :
+    (χ.infinityType.realExponent w).re = χ.shift := by
+  have h := χ.norm_realComponent_apply w (Units.mk0 2 two_ne_zero)
+  rw [realComponent_eq, norm_coe_realUnitsCharacter_apply, Units.val_mk0, abs_two] at h
+  exact (Real.rpow_right_inj two_pos (by norm_num)).1 h
+
+/-- **The real part of a complex modulus exponent is twice the shift.**  The infinity type of
+`χ` has a complex exponent `s_w` at each complex place `w`; its real part is `2 * σ` for the shift
+`σ` of `χ`, independently of `w`. -/
+@[simp]
+theorem re_complexExponent_infinityType (χ : HeckeCharacter K)
+    (w : {w : InfinitePlace K // w.IsComplex}) :
+    (χ.infinityType.complexExponent w).re = 2 * χ.shift := by
+  have h := χ.norm_complexComponent_apply w (Units.mk0 2 two_ne_zero)
+  rw [complexComponent_eq, norm_coe_complexUnitsCharacter_apply, Units.val_mk0,
+    Complex.norm_two] at h
+  exact (Real.rpow_right_inj two_pos (by norm_num)).1 h
 
 end HeckeCharacter
 

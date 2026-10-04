@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Primitive
+import Mathlib.Analysis.Complex.Convex
 import TauCeti.Analysis.Complex.Univalence
 
 /-!

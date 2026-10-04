@@ -267,6 +267,18 @@ theorem IsIntegralLattice.prod (h : IsIntegralLattice i) (h' : IsIntegralLattice
   exact ⟨inferInstance, inferInstance,
     IsBaseChange.prodMap i.toIntLinearMap i'.toIntLinearMap h.isBaseChange h'.isBaseChange⟩
 
+/-- Real extension of the sum of characters on the two factors of a product lattice is the
+sum of their real extensions. -/
+@[simp]
+theorem IsIntegralLattice.realCharacter_coprod (h : IsIntegralLattice i)
+    (h' : IsIntegralLattice i') (m : N →+ ℤ) (m' : N' →+ ℤ) :
+    (h.prod h').realCharacter (m.coprod m') =
+      (h.realCharacter m).coprod (h'.realCharacter m') := by
+  apply Eq.symm
+  apply (h.prod h').eq_realCharacter
+  intro n
+  simp
+
 end Naturality
 
 /-! ### Discreteness -/

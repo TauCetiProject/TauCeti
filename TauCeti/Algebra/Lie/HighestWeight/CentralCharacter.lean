@@ -54,12 +54,6 @@ eigenvector of the centre with eigenvalue `chi_lam`. In particular the irreducib
 `L(lam)` has the central character of `lam`, being a highest weight module of that weight
 (`TauCeti.isHighestWeightVector_irreducibleQuotientGenerator`).
 
-The Verma module carries the hypothesis `vermaGenerator b lam ≠ 0`, which is the
-Poincaré--Birkhoff--Witt input isolated in `TauCeti/Algebra/Lie/HighestWeight/Verma.lean`; it is
-available for exactly those `lam` that occur as a highest weight anywhere, by
-`TauCeti.vermaGenerator_ne_zero_of_isHighestWeightVector`, and is therefore never an obstruction
-at a weight the character is wanted at.
-
 ## Main definitions
 
 * `TauCeti.vermaCentralCharacter`: the central character `chi_lam` of the weight `lam`, a
@@ -180,22 +174,18 @@ variable (b lam) in
 /-- **The central character `chi_lam` of a weight**, read off the Verma module `M(lam)`: the
 scalar by which a central element of `U(L)` acts on the canonical generator. By
 `TauCeti.IsHighestWeightVector.representation_eq_vermaCentralCharacter_smul` it is the scalar by
-which the centre acts on *any* highest weight vector of weight `lam`.
-
-The hypothesis is that `M(lam)` is nonzero, the Poincaré--Birkhoff--Witt input isolated by
-`TauCeti.vermaGenerator_eq_zero_iff`; it holds as soon as some module carries a highest weight
-vector of weight `lam`, by `TauCeti.vermaGenerator_ne_zero_of_isHighestWeightVector`. -/
-noncomputable def vermaCentralCharacter (h : vermaGenerator b lam ≠ 0) :
-    Subalgebra.center K U →ₐ[K] K :=
-  centralCharacterAux ((isHighestWeightVector_vermaGenerator_iff b lam).mpr h)
+which the centre acts on *any* highest weight vector of weight `lam`. -/
+noncomputable def vermaCentralCharacter : Subalgebra.center K U →ₐ[K] K :=
+  centralCharacterAux (isHighestWeightVector_vermaGenerator b lam)
     (lieSpan_vermaGenerator_eq_top b lam)
 
+variable (b lam) in
 private theorem representation_vermaGenerator_eq_vermaCentralCharacter_smul
-    (h : vermaGenerator b lam ≠ 0) (u : Subalgebra.center K U) :
+    (u : Subalgebra.center K U) :
     UniversalEnvelopingAlgebra.representation K L (VermaModule b lam) (u : U)
         (vermaGenerator b lam) =
-      vermaCentralCharacter b lam h u • vermaGenerator b lam :=
-  representation_eq_centralScalarAux_smul ((isHighestWeightVector_vermaGenerator_iff b lam).mpr h)
+      vermaCentralCharacter b lam u • vermaGenerator b lam :=
+  representation_eq_centralScalarAux_smul (isHighestWeightVector_vermaGenerator b lam)
     (lieSpan_vermaGenerator_eq_top b lam) u
 
 /-- **The defining property of the central character**: a central element of `U(L)` acts on any
@@ -205,24 +195,22 @@ homomorphism of Lie modules intertwines the two actions of `U(L)`. -/
 theorem IsHighestWeightVector.representation_eq_vermaCentralCharacter_smul
     (hv : IsHighestWeightVector b lam v) (u : Subalgebra.center K U) :
     UniversalEnvelopingAlgebra.representation K L M (u : U) v =
-      vermaCentralCharacter b lam
-        (vermaGenerator_ne_zero_of_isHighestWeightVector b lam hv) u • v := by
-  have h : vermaGenerator b lam ≠ 0 := vermaGenerator_ne_zero_of_isHighestWeightVector b lam hv
+      vermaCentralCharacter b lam u • v := by
   obtain ⟨φ, hφ, -⟩ := existsUnique_lieModuleHom_apply_vermaGenerator b lam v hv.lie_eq_smul
     fun _ hx => hv.lie_eq_zero_of_mem_positiveNilradical hx
   calc UniversalEnvelopingAlgebra.representation K L M (u : U) v
       = φ (UniversalEnvelopingAlgebra.representation K L (VermaModule b lam) (u : U)
             (vermaGenerator b lam)) := by
         rw [UniversalEnvelopingAlgebra.map_representation, hφ]
-    _ = vermaCentralCharacter b lam h u • v := by
-        rw [representation_vermaGenerator_eq_vermaCentralCharacter_smul h, map_smul, hφ]
+    _ = vermaCentralCharacter b lam u • v := by
+        rw [representation_vermaGenerator_eq_vermaCentralCharacter_smul b lam, map_smul, hφ]
 
 /-- **The central character is the only scalar with the defining property**, a highest weight
 vector being nonzero. This is how the values of the character are computed. -/
 theorem IsHighestWeightVector.vermaCentralCharacter_eq_of_representation_eq_smul
     (hv : IsHighestWeightVector b lam v) {u : Subalgebra.center K U} {c : K}
     (h : UniversalEnvelopingAlgebra.representation K L M (u : U) v = c • v) :
-    vermaCentralCharacter b lam (vermaGenerator_ne_zero_of_isHighestWeightVector b lam hv) u = c :=
+    vermaCentralCharacter b lam u = c :=
   smul_left_injective K hv.ne_zero
     ((hv.representation_eq_vermaCentralCharacter_smul u).symm.trans h)
 
@@ -233,8 +221,7 @@ theorem IsHighestWeightVector.representation_eq_vermaCentralCharacter_smul_of_li
     (hv : IsHighestWeightVector b lam v) (hgen : LieSubmodule.lieSpan K L {v} = ⊤)
     (u : Subalgebra.center K U) (m : M) :
     UniversalEnvelopingAlgebra.representation K L M (u : U) m =
-      vermaCentralCharacter b lam
-        (vermaGenerator_ne_zero_of_isHighestWeightVector b lam hv) u • m :=
+      vermaCentralCharacter b lam u • m :=
   UniversalEnvelopingAlgebra.representation_eq_smul_of_mem_center_of_lieSpan_eq_top K L M u.2
     (by simpa only [Set.mem_singleton_iff, forall_eq] using
       hv.representation_eq_vermaCentralCharacter_smul u) hgen m
@@ -246,10 +233,10 @@ variable (b lam) in
 `⟨lam + rho, lam + rho⟩ - ⟨rho, rho⟩`, so the eigenvalue computed in
 `TauCeti/Algebra/Lie/HighestWeight/Casimir.lean` is a value of the central character. -/
 @[simp]
-theorem vermaCentralCharacter_casimirElement (h : vermaGenerator b lam ≠ 0) :
-    vermaCentralCharacter b lam h ⟨casimirElement K L, casimirElement_mem_center K L⟩ =
+theorem vermaCentralCharacter_casimirElement :
+    vermaCentralCharacter b lam ⟨casimirElement K L, casimirElement_mem_center K L⟩ =
       casimirScalar b lam :=
-  have hv := (isHighestWeightVector_vermaGenerator_iff b lam).mpr h
+  have hv := isHighestWeightVector_vermaGenerator b lam
   hv.vermaCentralCharacter_eq_of_representation_eq_smul
     (casimir_smul_of_isHighestWeightVector hv)
 

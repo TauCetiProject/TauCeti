@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Logic.Equiv.Fin.Basic
 public import TauCeti.GroupTheory.Perm.OrbitCount.Basic
+public import TauCeti.GroupTheory.Perm.SwapFactors
 import Mathlib.Tactic.Abel
 
 /-!
@@ -21,6 +22,8 @@ one. Every cycle stays inside one of the two halves, so all the cycle data simpl
   `Equiv.Perm.parts_partition_sumCongr`: the cycle type, the number of moved points and the parts
   of the full, fixed-point-aware partition are additive.
 * `Equiv.Perm.orbitCount_sumCongr`: so is the number of orbits, fixed points included.
+* `Equiv.Perm.orbitCount_sumCongr_one_mul_swap_mul_swap_mul_swap_mul_swap`: splicing four
+  adjoined fixed points into the orbits of a permutation leaves its number of orbits.
 * `Equiv.Perm.sumCongr_zpow`: powers are taken summandwise.
 * `Equiv.Perm.sameCycle_sumCongr_inl`, `Equiv.Perm.sameCycle_sumCongr_inr`: two points of one
   summand share a cycle exactly when they share a cycle of the permutation of that summand.
@@ -98,6 +101,14 @@ theorem _root_.Equiv.Perm.sameCycle_sumCongr_inr {σ : Perm α} {τ : Perm β} {
   exists_congr fun k => by
     rw [Perm.sumCongr_zpow, Perm.sumCongr_apply, Sum.map_inr, Sum.inr.injEq]
 
+/-- Points in different summands cannot lie in the same cycle of a sum permutation. -/
+@[simp] theorem not_sameCycle_sumCongr_inl_inr
+    (σ : Perm α) (τ : Perm β) (a : α) (b : β) :
+    ¬ (Perm.sumCongr σ τ).SameCycle (.inl a) (.inr b) := by
+  rintro ⟨k, hk⟩
+  simp only [Perm.sumCongr_zpow, Perm.sumCongr_apply, Sum.map_inl,
+    Sum.inl_ne_inr] at hk
+
 /-! ### Additivity of the cycle data -/
 
 section Finite
@@ -148,6 +159,58 @@ theorem _root_.Equiv.Perm.orbitCount_sumCongr [Finite α] [Finite β] (σ : Perm
   cases nonempty_fintype β
   rw [orbitCount_eq_card_parts_partition, orbitCount_eq_card_parts_partition,
     orbitCount_eq_card_parts_partition, parts_partition_sumCongr, Multiset.card_add]
+
+/-- Attach two distinct cycles of the right summand to cycles of the left summand.
+Each attachment removes one orbit, even if the two left endpoints lie in the same cycle. -/
+theorem orbitCount_sumCongr_mul_swap_mul_swap_add_two
+    [DecidableEq α] [DecidableEq β] [Finite α] [Finite β]
+    (σ : Perm α) (τ : Perm β) (a c : α) {b d : β} (hbd : ¬ τ.SameCycle b d) :
+    orbitCount (Perm.sumCongr σ τ * swap (Sum.inl a : α ⊕ β) (.inr b) *
+      swap (.inl c) (.inr d)) + 2 = orbitCount σ + orbitCount τ := by
+  have h₁ := orbitCount_mul_swap_add_one_of_not_sameCycle
+    (not_sameCycle_sumCongr_inl_inr σ τ a b)
+  have h₂ : ¬ (Perm.sumCongr σ τ * swap (Sum.inl a : α ⊕ β) (.inr b)).SameCycle
+      (.inl c) (.inr d) := by
+    rw [Equiv.mul_swap_eq_swap_mul]
+    intro h
+    rcases h.sameCycle_or_of_swap_mul with h | ⟨-, h⟩
+    · exact not_sameCycle_sumCongr_inl_inr σ τ c d h
+    · rcases h with h | h
+      · exact not_sameCycle_sumCongr_inl_inr σ τ (σ a) d h.symm
+      · apply hbd
+        simpa only [Perm.sumCongr_apply, Sum.map_inr, Perm.sameCycle_sumCongr_inr,
+          sameCycle_apply_left] using h.symm
+  have h₃ := orbitCount_mul_swap_add_one_of_not_sameCycle h₂
+  rw [Perm.orbitCount_sumCongr] at h₁
+  omega
+
+/-- **Splicing four adjoined fixed points.** Adjoin four fixed points to `σ` and splice each of
+them into an orbit, `i₀` after `x₀`, then `i₁` after `x₁`, `i₂` after `x₂` and `i₃` after `x₃`:
+each splice removes one orbit, so as many orbits as `σ` has are left. -/
+theorem _root_.Equiv.Perm.orbitCount_sumCongr_one_mul_swap_mul_swap_mul_swap_mul_swap
+    [DecidableEq α] [Finite α] (σ : Perm α) (x₀ x₁ x₂ x₃ : α) {i₀ i₁ i₂ i₃ : Fin 4}
+    (h₀₁ : i₀ ≠ i₁) (h₀₂ : i₀ ≠ i₂) (h₀₃ : i₀ ≠ i₃) (h₁₂ : i₁ ≠ i₂) (h₁₃ : i₁ ≠ i₃)
+    (h₂₃ : i₂ ≠ i₃) :
+    orbitCount (Perm.sumCongr σ 1 * swap (.inl x₀) (.inr i₀) * swap (.inl x₁) (.inr i₁) *
+      swap (.inl x₂) (.inr i₂) * swap (.inl x₃) (.inr i₃)) = orbitCount σ := by
+  have k₀ := orbitCount_mul_swap_add_one (τ := Perm.sumCongr σ (1 : Perm (Fin 4)))
+    (p := .inr i₀) (a := .inl x₀) (by simp) (by simp)
+  have k₁ := orbitCount_mul_swap_add_one
+    (τ := Perm.sumCongr σ (1 : Perm (Fin 4)) * swap (.inl x₀) (.inr i₀))
+    (p := .inr i₁) (a := .inl x₁) (by simp [swap_apply_of_ne_of_ne, Ne.symm h₀₁]) (by simp)
+  have k₂ := orbitCount_mul_swap_add_one
+    (τ := Perm.sumCongr σ (1 : Perm (Fin 4)) * swap (.inl x₀) (.inr i₀) *
+      swap (.inl x₁) (.inr i₁))
+    (p := .inr i₂) (a := .inl x₂)
+    (by simp [swap_apply_of_ne_of_ne, Ne.symm h₀₂, Ne.symm h₁₂]) (by simp)
+  have k₃ := orbitCount_mul_swap_add_one
+    (τ := Perm.sumCongr σ (1 : Perm (Fin 4)) * swap (.inl x₀) (.inr i₀) *
+      swap (.inl x₁) (.inr i₁) * swap (.inl x₂) (.inr i₂))
+    (p := .inr i₃) (a := .inl x₃)
+    (by simp [swap_apply_of_ne_of_ne, Ne.symm h₀₃, Ne.symm h₁₃, Ne.symm h₂₃]) (by simp)
+  have k : orbitCount (Perm.sumCongr σ (1 : Perm (Fin 4))) = orbitCount σ + 4 := by
+    rw [Perm.orbitCount_sumCongr, orbitCount_one, Nat.card_eq_fintype_card, Fintype.card_fin]
+  omega
 
 /-! ### The sum of a permutation of `Fin m` and a permutation of `Fin n` -/
 

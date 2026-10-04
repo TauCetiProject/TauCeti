@@ -7,6 +7,7 @@ module
 
 public import TauCeti.FieldTheory.Galois.ConjugateFields
 public import TauCeti.FieldTheory.GaloisGroups.Embeddings
+import Mathlib.FieldTheory.Galois.Infinite
 
 /-!
 # Conjugate fields of a polynomial root

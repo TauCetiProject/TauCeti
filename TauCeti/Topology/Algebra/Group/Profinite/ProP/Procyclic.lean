@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.MaximalSubgroup
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.PadicInt.Basic
+import Mathlib.Topology.Separation.Connected
 
 /-!
 # Topological generators of a procyclic pro-`p` group

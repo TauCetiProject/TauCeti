@@ -15,12 +15,13 @@ public import TauCeti.GroupTheory.Perm.OrbitCount.Basic
 
 A **perfect matching** of a type `α` is a permutation of `α` that is an involution without
 fixed points; equivalently, it partitions `α` into the unordered pairs `{a, f a}`. This file
-defines perfect matchings, transports them along an equivalence of the underlying types, shows
-that a perfect matching restricted to the complement of one of its arcs is again a perfect
-matching, and counts the perfect matchings of a finite type: a type of cardinality `2 * m` has
-`(2 * m - 1)‼` of them, and a type of odd cardinality has none. Finally it records the parity
-consequences of being a product of `m` disjoint transpositions: the sign of a perfect matching,
-and the evenness of the number of orbits of a product of two perfect matchings.
+defines perfect matchings, transports them along an equivalence of the underlying types,
+reconnects two of their arcs, shows that a perfect matching restricted to the complement of one
+of its arcs is again a perfect matching, and counts the perfect matchings of a finite type: a
+type of cardinality `2 * m` has `(2 * m - 1)‼` of them, and a type of odd cardinality has none.
+Finally it records the parity consequences of being a product of `m` disjoint transpositions: the
+sign of a perfect matching, and the evenness of the number of orbits of a product of two perfect
+matchings.
 
 The counting theorem is the combinatorial content behind the dimension of the Brauer algebra;
 see `TauCeti/Combinatorics/Brauer/Diagram.lean`.
@@ -30,6 +31,7 @@ see `TauCeti/Combinatorics/Brauer/Diagram.lean`.
 * `TauCeti.IsPerfectMatching f`: the permutation `f` is an involution with no fixed point.
 * `TauCeti.PerfectMatching α`: the type of perfect matchings of `α`.
 * `TauCeti.PerfectMatching.congr`: transporting a perfect matching along an equivalence.
+* `TauCeti.PerfectMatching.reconnect`: cutting two arcs and joining their ends the other way.
 * `TauCeti.PerfectMatching.restrict`: the perfect matching induced on the complement of an arc.
 * `TauCeti.PerfectMatching.extend`: the perfect matching obtained by adjoining an arc.
 * `TauCeti.PerfectMatching.fiberEquiv`: the two constructions above are mutually inverse.
@@ -304,6 +306,85 @@ theorem congr_symm (e : α ≃ β) : (congr e).symm = congr e.symm :=
     rw [Equiv.symm_apply_eq, congr_trans, Equiv.symm_trans_self, congr_refl]
 
 end Congr
+
+section Reconnect
+
+variable [DecidableEq α]
+
+/-- **Reconnecting two arcs.** Cut the arc of `D` at `a` and the arc at `b`, and join `a` to `b`
+and `D.val a` to `D.val b`; every other arc is kept. It is `D` transported along the
+transposition of `D.val a` with `b`. The arcs at `a` and `b` are distinct when `b ≠ a` and
+`b ≠ D.val a`; when `b = D.val a` the transposition is trivial and the result is `D` itself. -/
+def reconnect (D : PerfectMatching α) (a b : α) : PerfectMatching α :=
+  congr (Equiv.swap (D.val a) b) D
+
+/-- The involution underlying a reconnected matching is the old one conjugated by the
+transposition of `D.val a` with `b`. -/
+theorem reconnect_val (D : PerfectMatching α) (a b : α) :
+    (D.reconnect a b).val = (Equiv.swap (D.val a) b).permCongr D.val :=
+  congr_val _ _
+
+/-- Reconnecting the two ends of one arc leaves the matching unchanged. -/
+@[simp]
+theorem reconnect_partner (D : PerfectMatching α) (a : α) :
+    D.reconnect a (D.val a) = D := by
+  rw [reconnect, Equiv.swap_self, congr_refl]
+
+variable (hba : b ≠ a)
+include hba
+
+/-- After reconnecting, `a` is joined to `b`. -/
+@[simp]
+theorem reconnect_val_self : (D.reconnect a b).val a = b := by
+  rw [reconnect_val, Equiv.permCongr_apply, Equiv.symm_swap,
+    Equiv.swap_apply_of_ne_of_ne (D.apply_ne a).symm hba.symm, Equiv.swap_apply_left]
+
+/-- After reconnecting, `b` is joined to `a`. -/
+@[simp]
+theorem reconnect_val_right : (D.reconnect a b).val b = a := by
+  rw [reconnect_val, Equiv.permCongr_apply, Equiv.symm_swap, Equiv.swap_apply_right,
+    D.apply_apply, Equiv.swap_apply_of_ne_of_ne (D.apply_ne a).symm hba.symm]
+
+/-- After reconnecting, the other end `D.val a` of the first arc is joined to the other end
+`D.val b` of the second. -/
+@[simp]
+theorem reconnect_val_val_self : (D.reconnect a b).val (D.val a) = D.val b := by
+  have h : D.val b ≠ D.val a := fun h => hba (D.val.injective h)
+  rw [reconnect_val, Equiv.permCongr_apply, Equiv.symm_swap, Equiv.swap_apply_left,
+    Equiv.swap_apply_of_ne_of_ne h (D.apply_ne b)]
+
+/-- After reconnecting, the other end `D.val b` of the second arc is joined to the other end
+`D.val a` of the first. -/
+@[simp]
+theorem reconnect_val_val_right : (D.reconnect a b).val (D.val b) = D.val a := by
+  have h : D.val b ≠ D.val a := fun h => hba (D.val.injective h)
+  rw [reconnect_val, Equiv.permCongr_apply, Equiv.symm_swap,
+    Equiv.swap_apply_of_ne_of_ne h (D.apply_ne b), D.apply_apply, Equiv.swap_apply_right]
+
+omit hba in
+/-- Reconnecting keeps every arc that does not end at `a` or `b`. -/
+@[simp]
+theorem reconnect_val_of_ne {x : α} (hxa : x ≠ a) (hxb : x ≠ b) (hxa' : x ≠ D.val a)
+    (hxb' : x ≠ D.val b) : (D.reconnect a b).val x = D.val x := by
+  have h₁ : D.val x ≠ D.val a := fun h => hxa (D.val.injective h)
+  have h₂ : D.val x ≠ b := fun h => hxb' (by rw [← h, D.apply_apply])
+  rw [reconnect_val, Equiv.permCongr_apply, Equiv.symm_swap, Equiv.swap_apply_of_ne_of_ne hxa' hxb,
+    Equiv.swap_apply_of_ne_of_ne h₁ h₂]
+
+omit hba in
+/-- Reconnecting an endpoint with itself leaves the matching unchanged. -/
+@[simp]
+theorem reconnect_self (D : PerfectMatching α) (a : α) : D.reconnect a a = D := by
+  refine Subtype.ext (Equiv.ext fun x => ?_)
+  by_cases hxa : x = a
+  · subst x
+    simp [reconnect_val]
+  by_cases hxa' : x = D.val a
+  · subst x
+    simp [reconnect_val]
+  exact reconnect_val_of_ne hxa hxa hxa' hxa'
+
+end Reconnect
 
 end PerfectMatching
 

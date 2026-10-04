@@ -9,6 +9,7 @@ public import TauCeti.Topology.Algebra.CliffordAlgebra.Lipschitz.OpenMap
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Lipschitz.Norm
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpinorNorm.Basic
 import Mathlib.Analysis.Normed.Field.ProperSpace
+import TauCeti.Topology.Algebra.Group.Subgroup
 
 /-!
 # The spinor kernel is open
@@ -82,8 +83,8 @@ theorem isOpen_ker_spinorNorm (hQ : Q.Nondegenerate)
     ext g
     simp only [MonoidHom.mem_ker, Subgroup.mem_comap, spinorNorm_apply]
   have hcont : Continuous (_root_.QuadraticMap.specialOrthogonalToOrthogonal Q) :=
-    continuous_induced_rng.mpr (continuous_subtype_val.congr fun g =>
-      (_root_.QuadraticMap.coe_specialOrthogonalToOrthogonal g).symm)
+    (Subgroup.continuous_inclusion (QuadraticMap.specialOrthogonalGroup_le_orthogonalGroup Q)).congr
+      fun g => Subtype.ext (_root_.QuadraticMap.coe_specialOrthogonalToOrthogonal g).symm
   rw [hker, Subgroup.coe_comap]
   exact (isOpen_ker_orthogonalSpinorNorm Q hQ hsq).preimage hcont
 

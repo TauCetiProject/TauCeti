@@ -45,18 +45,8 @@ noncomputable def spinGroupEquivQuaternionUnitary (Q : QuadraticForm K V)
     (e : even Q ≃ₐ[K] ℍ[K,a,0,b])
     (he : ∀ x, e (reverseEven Q x) = star (e x)) :
     spinGroup Q ≃* unitary ℍ[K,a,0,b] :=
-  (MulEquiv.ofBijective (spinGroupToEvenUnitary Q)
-    ⟨spinGroupToEvenUnitary_injective Q,
-      fun x => by
-        have : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
-        have hx : (x : (CliffordAlgebra Q)ˣ) ∈
-            (spinGroup.toUnits : spinGroup Q →* (CliffordAlgebra Q)ˣ).range := by
-          rw [range_spinGroup_toUnits_eq_evenUnitaryGroup_of_finrank_le_four Q hQ
-            (by omega) (by omega)]
-          exact x.2
-        obtain ⟨s, hs⟩ := hx
-        refine ⟨s, Subtype.ext ?_⟩
-        simpa only [coe_spinGroupToEvenUnitary_apply] using hs⟩).trans
+  let _ : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
+  (spinGroupEquivEvenUnitaryOfFinrankLeFour Q hQ (by omega) (by omega)).trans
     (evenUnitaryGroupEquivUnitaryOfAlgEquiv Q e he)
 
 /-- The Spin equivalence evaluates the chosen algebra equivalence on the underlying even
@@ -68,6 +58,9 @@ theorem coe_spinGroupEquivQuaternionUnitary_apply (Q : QuadraticForm K V)
     (he : ∀ x, e (reverseEven Q x) = star (e x)) (s : spinGroup Q) :
     (spinGroupEquivQuaternionUnitary Q hQ hV e he s : ℍ[K,a,0,b]) =
       e (evenUnitaryGroupEvenPart Q (spinGroupToEvenUnitary Q s)) := by
+  let _ : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
+  rw [spinGroupEquivQuaternionUnitary, MulEquiv.trans_apply,
+    spinGroupEquivEvenUnitaryOfFinrankLeFour_apply]
   exact coe_evenUnitaryGroupEquivUnitaryOfAlgEquiv_apply Q e he _
 
 /-- The inverse Spin equivalence recovers the Clifford value from the inverse algebra model. -/
