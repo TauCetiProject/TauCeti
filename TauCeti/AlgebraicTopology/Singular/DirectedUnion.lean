@@ -37,11 +37,9 @@ complement of an embedded cube or sphere (`TauCeti/AlgebraicTopology/Singular/Cu
   singular simplicial sets form a colimit cocone.
 * `TauCeti.isColimitMapCoconeSingularHomology`: the same cocone is a colimit cocone after applying
   singular homology, for coefficients in an abelian category whose filtered colimits are exact.
-* `TauCeti.isColimitMapCoconeSingularHomologySubspaceCocone`: singular homology of a subspace
-  covered by an increasing family of relatively open sets is the colimit of the singular homology
-  of its members, using the cocone `TauCeti.subspaceCocone` of subspace inclusions.
 * `TauCeti.exists_singularHomologyMap_inclusion_eq_zero`: with coefficients in a module, a class of
-  one member that vanishes in the subspace already vanishes in some larger member.
+  one member of an increasing cover of a subspace by relatively open sets that vanishes in the
+  subspace already vanishes in some larger member.
 
 ## References
 
@@ -103,24 +101,6 @@ def isColimitMapCoconeSingularHomology (hc : ∀ j, IsEmbedding (c.ι.app j))
 
 end Homology
 
-section Subspace
-
-variable {Y : TopCat.{w}} {J : Type*} [Preorder J] [IsDirected J (· ≤ ·)] [Nonempty J]
-  {U : J → Set Y} (hU : Monotone U) {V : Set Y} (hUV : ∀ j, U j ⊆ V)
-  (hopen : ∀ j, IsOpen (Subtype.val ⁻¹' U j : Set V)) (hcover : V ⊆ ⋃ j, U j)
-
-variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C) (n : ℕ)
-  [HasColimitsOfShape J (Type w)] [HasColimitsOfShape J C] [HasExactColimitsOfShape J C]
-
-/-- Singular homology of a subspace `V` covered by an increasing family of subsets `U j`, open in
-`V`, is the colimit of the singular homology of the `U j`. -/
-def isColimitMapCoconeSingularHomologySubspaceCocone :
-    IsColimit (((singularHomologyFunctor C n).obj R).mapCocone (subspaceCocone hU hUV)) :=
-  isColimitMapCoconeSingularHomology R n _ (fun j ↦ IsEmbedding.inclusion (hUV j))
-    (exists_subset_range_subspaceCocone_ι_app hU hUV hopen hcover)
-
-end Subspace
-
 section Module
 
 variable {A : Type w} [Ring A] (M : ModuleCat.{w} A) (n : ℕ) {Y : TopCat.{w}} {J : Type}
@@ -141,10 +121,20 @@ theorem exists_singularHomologyMap_inclusion_eq_zero {i : J}
         0 := by
   have : PreservesFilteredColimitsOfSize.{0, 0} (forget (ModuleCat.{w} A)) :=
     preservesSmallestFilteredColimits_of_preservesFilteredColimits _
+  -- The subspaces `U j` and their inclusions into `V` form a cocone of embeddings.
+  let c : Cocone ({ obj j := of (U j)
+                    map f := ofHom (ContinuousMap.inclusion (hU f.le)) } : J ⥤ TopCat.{w}) :=
+    { pt := of V, ι := { app j := ofHom (ContinuousMap.inclusion (hUV j)) } }
+  -- A compact subset of `V` is covered by finitely many of the `U j`, hence by one.
+  have hK (K : Set c.pt) (hK : IsCompact K) : ∃ j, K ⊆ Set.range (c.ι.app j) := by
+    obtain ⟨j, hj⟩ := hK.elim_directed_cover (fun j ↦ (Subtype.val ⁻¹' U j : Set V)) hopen
+      (fun x _ ↦ Set.mem_iUnion.2 (Set.mem_iUnion.1 (hcover x.2) : ∃ j, x.1 ∈ U j))
+      (Monotone.directed_le fun _ _ h ↦ Set.preimage_mono (hU h))
+    exact ⟨j, fun x hx ↦ ⟨⟨x.1, hj hx⟩, rfl⟩⟩
   obtain ⟨j, f, g, hfg⟩ := Concrete.isColimit_exists_of_rep_eq (j := i) _
-    (isColimitMapCoconeSingularHomologySubspaceCocone hU hUV hopen hcover M n) x 0
-    (by simp only [Functor.mapCocone_ι_app, subspaceCocone_ι_app, map_zero]; exact hx)
-  simp only [Functor.comp_map, subspaceDiagram_map, map_zero] at hfg
+    (isColimitMapCoconeSingularHomology M n c (fun j ↦ IsEmbedding.inclusion (hUV j)) hK) x 0
+    (by rw [map_zero]; exact hx)
+  rw [map_zero] at hfg
   exact ⟨j, f.le, hfg⟩
 
 end Module
