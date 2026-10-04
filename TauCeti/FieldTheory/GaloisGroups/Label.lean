@@ -11,6 +11,7 @@ public import TauCeti.FieldTheory.GaloisGroups.Orbits
 public import TauCeti.GroupTheory.Perm.TransitiveGroupLabel.Basic
 import TauCeti.GroupTheory.GroupAction.Transitive
 import TauCeti.GroupTheory.Perm.TransitiveGroupLabel.Primitive
+import TauCeti.GroupTheory.Perm.TransitiveGroupLabel.Solvable
 
 /-!
 # The transitive-group label of a polynomial
@@ -62,6 +63,8 @@ by the degree alone, and in degree two by separability and irreducibility.
   `TauCeti.HasGaloisLabel.isPreprimitive_gal_iff_ne_four_or_three_le`: the Galois group acts
   primitively unless the label is `4T1`, `4T2` or `4T3`.
 * `TauCeti.HasGaloisLabel.isSolvable_iff`: solvability of the Galois group.
+* `TauCeti.HasGaloisLabel.isSolvable_iff_ne_five_or_lt_three`: the Galois group of a polynomial
+  with a label is solvable unless the label is `5T4` or `5T5`.
 * `TauCeti.HasGaloisLabel.eq_one_of_smul_eq_self`: a regular label acts freely on the roots.
 * `TauCeti.HasGaloisLabel.irreducible`: a polynomial with a label is irreducible, and
   `TauCeti.exists_hasGaloisLabel_of_irreducible`: conversely, an irreducible separable polynomial
@@ -273,6 +276,13 @@ theorem HasGaloisLabel.isSolvable_iff (h : HasGaloisLabel f j) :
   exact MulEquiv.isSolvable_congr <|
     (MonoidHom.ofInjective (Gal.galActionHom_injective f f.SplittingField)).trans
       (e.permCongrHom.subgroupMap _)
+
+/-- **The solvability of a Galois group with a label.** The Galois group of a polynomial with a
+label is solvable unless the label is `5T4` or `5T5`. This is a statement about the group, not
+about `solvableByRad`. -/
+theorem HasGaloisLabel.isSolvable_iff_ne_five_or_lt_three (h : HasGaloisLabel f j) :
+    Group.IsSolvable f.Gal ↔ n ≠ 5 ∨ (j : ℕ) < 3 := by
+  rw [h.isSolvable_iff, isSolvable_referenceSubgroup_iff]
 
 open scoped Classical in
 /-- The Galois image of a polynomial with a label consists of even permutations of the roots
