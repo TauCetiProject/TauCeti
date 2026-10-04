@@ -84,7 +84,7 @@ def twoCircleClasp (b : Bool) : PDCode 2 where
   rw [Nat.card_prod, Nat.card_fin, Nat.card_fin] at hc
   rw [componentCount_eq, crossingComponentCount_def, componentPerm_def, crossingTurn_def]
   simp only [twoCircleClasp_halfEdge, twoCircleClasp_edgePair_val]
-  simp only [show ∀ p : Perm (Fin 8), (1 : Perm (Fin 8)).permCongr p = p from fun p ↦ by simp,
+  simp only [permCongr_eq_mul, one_mul, inv_one, mul_one,
     ← permCongr_mul, orbitCount_permCongr, twoCircleClasp_crossinglessComponentCount]
   omega
 
@@ -98,7 +98,7 @@ def twoCircleClasp (b : Bool) : PDCode 2 where
   rw [Nat.card_prod, Nat.card_fin, Nat.card_fin] at hc
   rw [faceCount_def, facePerm_def, crossingRotation_def]
   simp only [twoCircleClasp_halfEdge, twoCircleClasp_edgePair_val]
-  simp only [show ∀ p : Perm (Fin 8), (1 : Perm (Fin 8)).permCongr p = p from fun p ↦ by simp,
+  simp only [permCongr_eq_mul, one_mul, inv_one, mul_one,
     ← permCongr_mul, orbitCount_permCongr]
   omega
 
@@ -126,7 +126,7 @@ theorem isConnected_twoCircleClasp (b : Bool) :
   fin_cases i <;> fin_cases j <;> fin_cases s <;> fin_cases t <;>
     simp only [Subgroup.mk_smul, Perm.smul_def, g, k, D, crossingRotation_def,
       twoCircleClasp_halfEdge, twoCircleClasp_edgePair_val,
-      show ∀ p : Perm (Fin 8), (1 : Perm (Fin 8)).permCongr p = p from fun p ↦ by simp,
+      permCongr_eq_mul, one_mul, inv_one,
       Fin.mk.injEq, Nat.zero_ne_one, Nat.one_ne_zero, ↓reduceIte, mul_one, Perm.mul_apply, hpow,
       permCongr_apply, Equiv.symm_apply_apply, Equiv.prodCongr_apply,
       EmbeddingLike.apply_eq_iff_eq] <;> decide
@@ -164,7 +164,7 @@ private theorem smoothingTurn_mul_claspMatching (c₀ c₁ : Bool) :
   rw [stateLoopCount_def, statePerm_def, smoothingTurn_def]
   simp only [twoCircleClasp_halfEdge, twoCircleClasp_edgePair_val,
     twoCircleClasp_crossinglessComponentCount]
-  simp only [show ∀ p : Perm (Fin 8), (1 : Perm (Fin 8)).permCongr p = p from fun p ↦ by simp,
+  simp only [permCongr_eq_mul, one_mul, inv_one, mul_one,
     ← permCongr_mul, orbitCount_permCongr]
   obtain ⟨⟨s₀, s₁⟩, rfl⟩ := (finTwoArrowEquiv Bool).symm.surjective s
   have hchoice : (fun i ↦ slotSmoothing ((twoCircleClasp b).smoothingChoice
