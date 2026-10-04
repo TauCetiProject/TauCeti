@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.Modules.Sheaf
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Quasicoherent.Monoidal
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Closed
+public import TauCeti.Algebra.Category.ModuleCat.Presheaf.Evaluation
 
 /-!
 # The tensor product of `𝒪ₓ`-modules on a scheme
@@ -74,6 +75,26 @@ instance _root_.AlgebraicGeometry.Scheme.Modules.isMonoidal_isQuasicoherent :
     ObjectProperty.IsMonoidal (C := X.Modules)
       (_root_.SheafOfModules.isQuasicoherent X.ringCatSheaf) :=
   SheafOfModules.isMonoidal_isQuasicoherent (R := X.sheaf)
+
+variable {X} in
+/-- The sections over an open `U` of `𝒪ₓ`-modules, as a functor to `Γ(X, U)`-modules. It is the
+evaluation at `U` of the underlying presheaves of modules, and it is lax braided monoidal: its
+tensor map `Γ(M, U) ⊗[Γ(X, U)] Γ(N, U) ⟶ Γ(M ⊗ N, U)` is induced by the unit of sheafification
+(`TauCeti.SheafOfModules.forget_μ`). The image of `M` is definitionally `Γ(M, U)`. -/
+@[expose]
+def _root_.AlgebraicGeometry.Scheme.Modules.sectionsFunctor (U : X.Opens) :
+    X.Modules ⥤ ModuleCat.{v} Γ(X, U) :=
+  (_root_.SheafOfModules.forget _ : X.Modules ⥤ PresheafOfModulesOfCommRing.{v} X.presheaf) ⋙
+    PresheafOfModulesOfCommRing.evaluation (Opposite.op U)
+
+variable {X} in
+/-- Sections over an open are lax braided monoidal, as the composite of the lax braided inclusion
+of sheaves of modules into presheaves of modules with the braided evaluation at the open. -/
+instance _root_.AlgebraicGeometry.Scheme.Modules.sectionsFunctorLaxBraided (U : X.Opens) :
+    (Scheme.Modules.sectionsFunctor U).LaxBraided :=
+  letI F : X.Modules ⥤ PresheafOfModulesOfCommRing.{v} X.presheaf := _root_.SheafOfModules.forget _
+  letI : F.LaxBraided := SheafOfModules.forgetLaxBraided X.sheaf
+  inferInstanceAs (F ⋙ PresheafOfModulesOfCommRing.evaluation (Opposite.op U)).LaxBraided
 
 end
 
