@@ -31,8 +31,6 @@ Manifolds*, 2nd ed., Springer GTM 176 (2018), Chapter 3.
 
 * `TauCeti.UpperHalfPlane.poincareRiemannianMetric`: the Poincaré metric, with tangent-coordinate
   formula `UpperHalfPlane.poincareRiemannianMetric_inner`.
-* `UpperHalfPlane.inner_tangentSpace`: the inner product on the tangent spaces of `ℍ` is the
-  Poincaré tensor.
 * `UpperHalfPlane.riemannianVolume_eq_volume`: the Riemannian volume of the Poincaré metric is
   Mathlib's invariant measure `volume`.
 -/
@@ -156,13 +154,6 @@ instance instIsContinuousRiemannianBundle :
     IsContinuousRiemannianBundle ℂ (fun z : ℍ ↦ TangentSpace 𝓘(ℝ, ℂ) z) :=
   Bundle.instIsContinuousRiemannianBundle poincareRiemannianMetric.toContinuousRiemannianMetric
 
-/-- The inner product on the tangent spaces of the upper half-plane is the Poincaré tensor: the
-Euclidean inner product of the tangent coordinates divided by the square of the imaginary part. -/
-theorem _root_.UpperHalfPlane.inner_tangentSpace (z : ℍ) (v w : TangentSpace 𝓘(ℝ, ℂ) z) :
-    inner ℝ v w = inner ℝ (tangentSpaceCastModel 𝓘(ℝ, ℂ) z v)
-      (tangentSpaceCastModel 𝓘(ℝ, ℂ) z w) / z.im ^ 2 :=
-  _root_.UpperHalfPlane.poincareRiemannianMetric_inner z v w
-
 /-- In the inclusion chart, the Gram matrix of the Poincaré tensor is `im⁻²` times the Euclidean
 Gram matrix of the model basis. -/
 private theorem chartGramMatrix_eq (α z : ℍ) :
@@ -171,7 +162,8 @@ private theorem chartGramMatrix_eq (α z : ℍ) :
   ext i j
   have hz : z ∈ (chartAt ℂ α).source := by simp
   rw [chartGramMatrix_apply, chartLocalFrame_apply_of_mem_chart_source α hz,
-    chartLocalFrame_apply_of_mem_chart_source α hz, _root_.UpperHalfPlane.inner_tangentSpace]
+    chartLocalFrame_apply_of_mem_chart_source α hz]
+  refine (_root_.UpperHalfPlane.poincareRiemannianMetric_inner z _ _).trans ?_
   simp [Trivialization.basisAt, poincare_symm, Matrix.gram_apply, div_eq_inv_mul]
 
 /-- In the inclusion chart, the Riemannian volume density of the Poincaré metric is `im⁻²` times
