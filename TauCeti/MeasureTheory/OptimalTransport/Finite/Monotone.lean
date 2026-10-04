@@ -43,11 +43,16 @@ def IsMonotone (A : TransportMatrix μ ν) : Prop :=
 
 /-- The mass of a lower rectangle in a monotone plan is the smaller of the two marginal
 prefix masses. This characterizes the joint distribution entirely in terms of the marginals. -/
+@[simp]
 theorem IsMonotone.sum_le_le_eq_min {A : TransportMatrix μ ν} (hA : A.IsMonotone)
     (i : ι) (j : κ) :
-    (∑ i' with i' ≤ i, ∑ j' with j' ≤ j, A.toRealFun (i', j')) =
+    (∑ i' with i' ≤ i, ∑ j' with j' ≤ j, (A.matrix i' j').toReal) =
       min (∑ i' with i' ≤ i, (μ i').toReal) (∑ j' with j' ≤ j, (ν j').toReal) := by
   classical
+  have hsum_real : (∑ i' with i' ≤ i, ∑ j' with j' ≤ j, (A.matrix i' j').toReal) =
+      (∑ i' with i' ≤ i, ∑ j' with j' ≤ j, A.toRealFun (i', j')) := by
+    simp only [toRealFun_apply]
+  rw [hsum_real]
   let H := ∑ i' with i' ≤ i, ∑ j' with j' ≤ j, A.toRealFun (i', j')
   let X := ∑ i' with i' ≤ i, ∑ j' with ¬j' ≤ j, A.toRealFun (i', j')
   let Y := ∑ j' with j' ≤ j, ∑ i' with ¬i' ≤ i, A.toRealFun (i', j')
@@ -100,8 +105,9 @@ theorem IsMonotone.eq {A B : TransportMatrix μ ν} (hA : A.IsMonotone)
   classical
   have hprefix (i : ι) (j : κ) :
       (∑ i' with i' ≤ i, ∑ j' with j' ≤ j, A.toRealFun (i', j')) =
-      (∑ i' with i' ≤ i, ∑ j' with j' ≤ j, B.toRealFun (i', j')) :=
-    (hA.sum_le_le_eq_min i j).trans (hB.sum_le_le_eq_min i j).symm
+      (∑ i' with i' ≤ i, ∑ j' with j' ≤ j, B.toRealFun (i', j')) := by
+    simpa only [toRealFun_apply] using
+      (hA.sum_le_le_eq_min i j).trans (hB.sum_le_le_eq_min i j).symm
   -- Induction recovers each entry from its rectangle mass and the earlier entries.
   have hreal : ∀ i j, A.toRealFun (i, j) = B.toRealFun (i, j) := by
     intro i
