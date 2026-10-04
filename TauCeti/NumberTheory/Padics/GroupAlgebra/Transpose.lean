@@ -97,7 +97,7 @@ private def torsionDualAddEquiv :
     AuslanderReitenTranspose f ≃+
       (pPowerTorsion p (MonoidAlgebra ℤ_[p] G) M →ₗ[ℤ_[p]] ℚ_[p] ⧸ (1 : Submodule ℤ_[p] ℚ_[p])) :=
   (groupAlgebraDualEquiv f).toAddEquiv.trans <|
-    (MonoidAlgebra.quotientRangeContragredientDualMapEquiv f).toAddEquiv.trans
+    (LinearMap.quotientRangeContragredientDualMapEquiv f).toAddEquiv.trans
       (torsionDualEquiv p hf hfi hπ).toAddEquiv
 
 private theorem torsionDualAddEquiv_mk (φ : Dual (MonoidAlgebra ℤ_[p] G) P₁) :
