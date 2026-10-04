@@ -9,6 +9,8 @@ public import TauCeti.AlgebraicGeometry.Modules.Tilde.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Presentation
 public import TauCeti.AlgebraicGeometry.Modules.Localization
 public import Mathlib.RingTheory.LocalProperties.FinitePresentation
+public import Mathlib.RingTheory.Finiteness.Finsupp
+public import TauCeti.AlgebraicGeometry.Modules.AffineGlobalSections
 
 /-!
 # Finite presentation of modules and their associated sheaves
@@ -22,8 +24,12 @@ The forward implication uses Mathlib's `presentationTilde`, whose generating and
 families are precisely those of the module presentation. For the converse, finite local sheaf
 presentations can be refined to basic opens. A finite global presentation on an affine scheme
 gives a finite module presentation, and Mathlib's localization descent glues these finite
-presentations of modules. This supplies the affine algebraic description of coherent sheaves
-on locally Noetherian schemes without imposing a Noetherian hypothesis on the affine result.
+presentations of modules. The analogous finite-type comparison supplies ambient cokernel
+closure for maps from quasicoherent sheaves of finite type to finitely presented sheaves.
+Over a Noetherian ring, ambient kernels of maps from quasicoherent sheaves of finite type
+to quasicoherent sheaves are also finitely presented.
+This supplies the affine algebraic description of coherent sheaves on locally Noetherian
+schemes without imposing a Noetherian hypothesis on the affine result.
 
 The module-cokernel construction follows Mathlib's
 `AlgebraicGeometry.isIso_fromTildeΓ_of_presentation`, using the fully faithful tilde functor
@@ -243,6 +249,154 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.exists_isFinite_presentation_of_
     (isFinite_presentationTilde A _ hs _ ht)
   exact ⟨M.presentationOfIsoSpec Q,
     Scheme.Modules.isFinite_presentationOfIsoSpec M Q⟩
+
+/-- Finite global generators of a quasicoherent sheaf on `Spec R` give finite global sections. -/
+theorem _root_.AlgebraicGeometry.Scheme.Modules.finite_moduleSpecΓ_of_generatingSections
+    (M : (Spec R).Modules) [M.IsQuasicoherent] (G : M.GeneratingSections) [G.IsFiniteType] :
+    Module.Finite R (moduleSpecΓFunctor.obj M) := by
+  have : Finite G.I := SheafOfModules.GeneratingSections.IsFiniteType.finite
+  let A : (Spec R).Modules := SheafOfModules.free G.I
+  let e : tilde (ModuleCat.of R (G.I →₀ R)) ≅ A := tildeFinsupp _
+  -- Generating sections use sheaves of modules; the affine exactness API uses scheme modules.
+  have hG : @Epi (Spec R).Modules _ A M G.π := G.epi
+  let f : tilde (ModuleCat.of R (G.I →₀ R)) ⟶ M := e.hom ≫ G.π
+  have : Epi f := @epi_comp (Spec R).Modules _ _ _ _ e.hom
+    (@IsIso.epi_of_iso _ _ _ _ e.hom (Iso.isIso_hom e)) G.π hG
+  have hf := moduleSpecΓFunctor_map_surjective_of_epi_of_isQuasicoherent f
+  let g : (G.I →₀ R) →ₗ[R] moduleSpecΓFunctor.obj M :=
+    ((moduleSpecΓFunctor (R := R)).map f).hom.comp
+      ((tilde.toTildeΓNatIso (R := R)).hom.app (ModuleCat.of R (G.I →₀ R))).hom
+  exact Module.Finite.of_surjective g
+    (hf.comp (ConcreteCategory.bijective_of_isIso
+      ((tilde.toTildeΓNatIso (R := R)).hom.app _)).surjective)
+
+/-- Finite generators over an affine open give a finite module of sections for a quasicoherent
+sheaf. -/
+theorem _root_.AlgebraicGeometry.Scheme.Modules.finite_sections_of_generatingSections
+    {X : Scheme.{u}} (M : X.Modules) [M.IsQuasicoherent] (U : X.Opens) (hU : IsAffineOpen U)
+    (G : (M.over U).GeneratingSections) [G.IsFiniteType] :
+    Module.Finite Γ(X, U) Γ(M, U) := by
+  let F : SheafOfModules (X.ringCatSheaf.over U) ⥤ SheafOfModules U.toScheme.ringCatSheaf :=
+    (Scheme.Modules.overEquiv U).functor
+  have : PreservesColimitsOfSize.{u, u} F :=
+    (Scheme.Modules.overEquiv U).toAdjunction.leftAdjoint_preservesColimits
+  let G₀ := G.mapIso F (U.sheafOfModulesEquivOverUnit X.ringCatSheaf).symm
+    ((Scheme.Modules.overFunctorEquiv U).app M)
+  let H : SheafOfModules U.toScheme.ringCatSheaf ⥤
+      SheafOfModules (Spec Γ(X, U)).ringCatSheaf :=
+    Scheme.Modules.restrictFunctor hU.isoSpec.inv
+  have : PreservesColimitsOfSize.{u, u} H :=
+    (Scheme.Modules.restrictAdjunction hU.isoSpec.inv).leftAdjoint_preservesColimits
+  let e : (M.restrict U.ι).restrict hU.isoSpec.inv ≅ M.restrict hU.fromSpec :=
+    ((Scheme.Modules.restrictFunctorComp hU.isoSpec.inv U.ι).app M).symm ≪≫
+      (Scheme.Modules.restrictFunctorCongr hU.isoSpec_inv_ι).app M
+  let G₁ := G₀.mapIso H (Scheme.Modules.restrictUnitIso hU.isoSpec.inv).symm e
+  have : G₀.IsFiniteType := SheafOfModules.GeneratingSections.isFiniteType_mapIso _ _ _ _
+  have : G₁.IsFiniteType := SheafOfModules.GeneratingSections.isFiniteType_mapIso _ _ _ _
+  have : Module.Finite Γ(X, U) Γ(M.restrict hU.fromSpec, ⊤) :=
+    Scheme.Modules.finite_moduleSpecΓ_of_generatingSections _ G₁
+  exact Module.Finite.equiv (M.fromSpecSectionsEquiv hU).symm
+
+/-- The sections of a quasicoherent sheaf of finite type over an affine open form a finite
+module over the ring of functions on that open. -/
+theorem _root_.AlgebraicGeometry.Scheme.Modules.finite_sections_of_isAffineOpen
+    {X : Scheme.{u}} (M : X.Modules) [M.IsQuasicoherent] [M.IsFiniteType] (U : X.Opens)
+    (hU : IsAffineOpen U) : Module.Finite Γ(X, U) Γ(M, U) := by
+  classical
+  obtain ⟨q, hq⟩ := SheafOfModules.IsFiniteType.exists_localGeneratorsData M
+  let s : Set Γ(X, U) := {f | ∃ i, X.basicOpen f ≤ q.X i}
+  have hcov : iSup q.X = ⊤ := by
+    simpa only [Opens.coversTop_iff, IsOpenCover] using q.coversTop
+  have hs : Ideal.span s = ⊤ := by
+    apply hU.iSup_basicOpen_eq_self_iff.mp
+    refine le_antisymm (iSup_le fun f : s => X.basicOpen_le f.1) ?_
+    intro x hxU
+    have hx : x ∈ iSup q.X := by simp [hcov]
+    obtain ⟨i, hi⟩ := Opens.mem_iSup.mp hx
+    obtain ⟨f, hf, hxf⟩ := hU.exists_basicOpen_le ⟨x, hi⟩ hxU
+    exact Opens.mem_iSup.mpr ⟨⟨f, i, hf⟩, hxf⟩
+  have loc (f : s) : IsLocalization.Away f.1 Γ(X, X.basicOpen f.1) :=
+    hU.isLocalization_basicOpen f.1
+  have modloc (f : s) : IsLocalizedModule.Away f.1 (M.basicOpenRestrict f.1) :=
+    M.isLocalizedModule_basicOpenRestrict hU f.1
+  apply Module.Finite.of_localizationSpan' s hs
+    (Rₚ := fun f => Γ(X, X.basicOpen f.1))
+    (Mₚ := fun f => Γ(M, X.basicOpen f.1)) (fun f => M.basicOpenRestrict f.1)
+  intro f
+  obtain ⟨i, hi⟩ := f.2
+  let D := X.basicOpen f.1
+  let a : D ⟶ q.X i := homOfLE hi
+  let G := (q.generators i).mapIso (SheafOfModules.overMap X.ringCatSheaf a)
+    (SheafOfModules.overMapUnitIso a).symm ((SheafOfModules.overFunctorMap X.ringCatSheaf a).app M)
+  have : (q.generators i).IsFiniteType := hq.isFiniteType i
+  have : G.IsFiniteType := SheafOfModules.GeneratingSections.isFiniteType_mapIso _ _ _ _
+  exact Scheme.Modules.finite_sections_of_generatingSections M D (hU.basicOpen f.1) G
+
+/-- A quasicoherent sheaf of finite type on `Spec R` has finite global sections as an `R`-module. -/
+theorem _root_.AlgebraicGeometry.Scheme.Modules.finite_moduleSpecΓ
+    (M : (Spec R).Modules) [M.IsQuasicoherent] [M.IsFiniteType] :
+    Module.Finite R (moduleSpecΓFunctor.obj M) := by
+  have : Module.Finite Γ(Spec R, ⊤) Γ(M, ⊤) :=
+    M.finite_sections_of_isAffineOpen ⊤ (isAffineOpen_top _)
+  have hbij : Function.Bijective (Algebra.linearMap R Γ(Spec R, ⊤)) := by
+    simpa [Algebra.coe_linearMap, IsAffineOpen.algebraMap_Spec_obj] using
+      (ConcreteCategory.bijective_of_isIso (Scheme.ΓSpecIso R).inv)
+  have : Module.Finite R Γ(Spec R, ⊤) :=
+    Module.Finite.equiv (LinearEquiv.ofBijective _ hbij)
+  exact Module.Finite.trans (R := R) Γ(Spec R, ⊤) Γ(M, ⊤)
+
+open _root_.AlgebraicGeometry.Scheme.Modules
+
+variable {M N : (Spec R).Modules}
+
+/-- The ambient cokernel of a morphism from a quasicoherent sheaf of finite type to a finitely
+presented sheaf on a spectrum is finitely presented, without a Noetherian hypothesis. -/
+instance _root_.AlgebraicGeometry.Scheme.Modules.isFinitePresentation_cokernel_spec
+    (f : M ⟶ N) [M.IsQuasicoherent] [M.IsFiniteType] [N.IsFinitePresentation] :
+    (cokernel f).IsFinitePresentation := by
+  have : N.IsQuasicoherent := SheafOfModules.instIsQuasicoherentOfIsFinitePresentation N
+  let g := (moduleSpecΓFunctor (R := R)).map f
+  have : Module.Finite R (moduleSpecΓFunctor.obj M) :=
+    finite_moduleSpecΓ M
+  have : Module.FinitePresentation R (moduleSpecΓFunctor.obj N) :=
+    finitePresentation_moduleSpecΓ N
+  have : Module.FinitePresentation R
+      ((moduleSpecΓFunctor.obj N) ⧸ LinearMap.range g.hom) :=
+    Module.finitePresentation_of_surjective (LinearMap.range g.hom).mkQ
+      (LinearMap.range g.hom).mkQ_surjective (by simp)
+  have : Module.FinitePresentation R (cokernel g : ModuleCat R) :=
+    Module.FinitePresentation.of_equiv (ModuleCat.cokernelIsoRangeQuotient g).symm.toLinearEquiv
+  let eM := @asIso _ _ _ _ (M.fromTildeΓ)
+    (isIso_fromTildeΓ_of_isQuasicoherent (R := R) M)
+  let eN := @asIso _ _ _ _ (N.fromTildeΓ)
+    (isIso_fromTildeΓ_of_isQuasicoherent (R := R) N)
+  let e : tilde (cokernel g) ≅ cokernel f :=
+    PreservesCokernel.iso (tilde.functor R) g ≪≫
+      cokernel.mapIso _ _ eM eN ((tilde.adjunction (R := R)).counit.naturality f)
+  exact (SheafOfModules.isFinitePresentation (Spec R).ringCatSheaf).prop_of_iso e
+    (isFinitePresentation_tilde (cokernel g))
+
+/-- Over a Noetherian ring, the ambient kernel of a morphism from a quasicoherent sheaf
+of finite type to a quasicoherent sheaf is finitely presented. -/
+instance _root_.AlgebraicGeometry.Scheme.Modules.isFinitePresentation_kernel_spec
+    [IsNoetherianRing R] (f : M ⟶ N) [M.IsQuasicoherent] [M.IsFiniteType]
+    [N.IsQuasicoherent] : (kernel f).IsFinitePresentation := by
+  let g := (moduleSpecΓFunctor (R := R)).map f
+  have : Module.Finite R (moduleSpecΓFunctor.obj M) :=
+    finite_moduleSpecΓ M
+  have : Module.FinitePresentation R (LinearMap.ker g.hom) :=
+    Module.finitePresentation_of_finite R _
+  have : Module.FinitePresentation R (kernel g : ModuleCat R) :=
+    Module.FinitePresentation.of_equiv (ModuleCat.kernelIsoKer g).symm.toLinearEquiv
+  let eM := @asIso _ _ _ _ M.fromTildeΓ
+    (isIso_fromTildeΓ_of_isQuasicoherent (R := R) M)
+  let eN := @asIso _ _ _ _ N.fromTildeΓ
+    (isIso_fromTildeΓ_of_isQuasicoherent (R := R) N)
+  let e : tilde (kernel g) ≅ kernel f :=
+    PreservesKernel.iso (tilde.functor R) g ≪≫
+      kernel.mapIso _ _ eM eN ((tilde.adjunction (R := R)).counit.naturality f)
+  exact (SheafOfModules.isFinitePresentation (Spec R).ringCatSheaf).prop_of_iso e
+    (isFinitePresentation_tilde (kernel g))
 
 end
 

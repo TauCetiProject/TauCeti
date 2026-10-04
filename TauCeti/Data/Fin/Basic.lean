@@ -34,6 +34,8 @@ range, so the value is a `dite` rather than a plain application.
   transposition.
 * `Fin.rev_finRotate_rev` and `Fin.rev_finRotate_symm`: reversal carries forward rotation to
   backward rotation and conversely.
+* `Fin.finRotate_rev_finRotate_rev`: negation modulo `n`, written as `i ↦ finRotate n i.rev`, is
+  an involution.
 * `Fin.coe_finRotate_pow`: a power of the rotation `finRotate n` adds its exponent modulo `n`.
 * `Finset.sum_range_const_sub_succ`: the sum of a reversed initial segment of natural numbers.
 * `Fin.sum_rev_castLE`: the sum of the values of a reversed embedded finite ordinal.
@@ -160,6 +162,17 @@ theorem rev_finRotate_symm {n : ℕ} (i : Fin n) :
   apply Fin.rev_injective
   simp only [Fin.rev_rev]
   simpa only [finRotate_apply, finRotate_symm_apply] using (rev_finRotate_rev i).symm
+
+/-- The map `i ↦ finRotate n i.rev`, which is negation modulo `n`, is an involution. -/
+theorem finRotate_rev_finRotate_rev {n : ℕ} (i : Fin n) :
+    finRotate n (finRotate n i.rev).rev = i := by
+  cases n with
+  | zero => exact Fin.elim0 i
+  | succ n =>
+    have := i.isLt
+    ext
+    simp only [coe_finRotate, Fin.ext_iff, Fin.val_last, Fin.val_rev]
+    split_ifs <;> omega
 
 /-- The value of a power of the cyclic permutation `finRotate n`: it adds `k` modulo `n`. -/
 theorem coe_finRotate_pow {n : ℕ} (k : ℕ) (c : Fin n) :

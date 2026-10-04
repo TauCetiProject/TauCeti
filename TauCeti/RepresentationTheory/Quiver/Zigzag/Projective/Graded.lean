@@ -42,16 +42,20 @@ universe u w
 
 variable (k : Type w) [Field k] {V : Type u} (G : SimpleGraph V) [Finite V]
 
+/-- The vertex idempotent has degree zero. -/
+theorem zigzagVertexIdempotent_mem_zigzagIntegerGrade_zero (i : V) :
+    zigzagVertexIdempotent k G i ∈ zigzagIntegerGrade k G 0 := by
+  -- Normalize the integer zero to the cast required by the extension-by-zero lemma.
+  rw [show (0 : ℤ) = (0 : ℕ) from rfl, zigzagIntegerGrade_ofNat]
+  exact zigzagMk_mem_zigzagGrade k G (PathAlgebra.vertexIdempotent_mem_grade_zero _)
+
 /-- The vertex projective is a homogeneous submodule of the regular module: homogeneous
 projection preserves the fixed-point equation `x * e_i = x`. -/
 theorem isHomogeneous_zigzagProjective
     [DirectSum.Decomposition (zigzagIntegerGrade k G)] (i : V) :
     DirectSum.SetLike.IsHomogeneous (zigzagIntegerGrade k G)
       ((zigzagProjective k G i).restrictScalars k) := by
-  have he : zigzagVertexIdempotent k G i ∈ zigzagIntegerGrade k G 0 := by
-    -- Normalize the integer zero to the cast required by the extension-by-zero lemma.
-    rw [show (0 : ℤ) = (0 : ℕ) from rfl, zigzagIntegerGrade_ofNat]
-    exact zigzagMk_mem_zigzagGrade k G (PathAlgebra.vertexIdempotent_mem_grade_zero _)
+  have he := zigzagVertexIdempotent_mem_zigzagIntegerGrade_zero k G i
   have hm : LinearMap.IsHomogeneous (LinearMap.mulRight k (zigzagVertexIdempotent k G i))
       (zigzagIntegerGrade k G) (zigzagIntegerGrade k G) 0 :=
     LinearMap.isHomogeneous_def.2 fun _ _ hx => mul_mem_zigzagIntegerGrade k G hx he

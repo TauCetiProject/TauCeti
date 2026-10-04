@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup.Basic
 public import TauCeti.Topology.Algebra.QuadraticForm.Continuity
+public import TauCeti.Topology.Algebra.Group.Subgroup
 public import TauCeti.Topology.Algebra.Module.GeneralLinearGroup
 
 /-!
@@ -39,6 +40,8 @@ groups over `ℝ` and `ℚ_p` are studied.
   automorphism group.
 * `TauCeti.QuadraticMap.instLocallyCompactSpaceOrthogonalGroup`: the orthogonal group is locally
   compact over a locally compact field.
+* `QuadraticMap.continuous_specialOrthogonalToOrthogonal`: the inclusion of the special
+  orthogonal group into the orthogonal group is continuous.
 -/
 
 public section
@@ -96,6 +99,21 @@ instance instLocallyCompactSpaceOrthogonalGroup [LocallyCompactSpace K] :
   (isClosed_orthogonalGroup Q).locallyCompactSpace
 
 end Automorphism
+
+section Inclusion
+
+variable {R M N : Type*} [CommRing R] [TopologicalSpace R] [AddCommGroup M] [Module R M]
+  [AddCommMonoid N] [Module R N] (Q : QuadraticMap R M N)
+
+/-- The inclusion `SO(Q) →* O(Q)` is continuous, both groups carrying the subspace topology from
+the linear automorphism group. -/
+@[fun_prop]
+theorem _root_.QuadraticMap.continuous_specialOrthogonalToOrthogonal :
+    Continuous (_root_.QuadraticMap.specialOrthogonalToOrthogonal Q) :=
+  (Subgroup.continuous_inclusion (specialOrthogonalGroup_le_orthogonalGroup Q)).congr
+    fun g ↦ Subtype.ext (_root_.QuadraticMap.coe_specialOrthogonalToOrthogonal g).symm
+
+end Inclusion
 
 end QuadraticMap
 

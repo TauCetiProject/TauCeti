@@ -53,6 +53,8 @@ the cup product along `P` is the transported explicit cup product along `kummerC
   `Gal(Fˢ/F)`.
 * `TauCeti.ClassFieldTheory.cup_muNRepH1Equiv`: the cup product along `P` of transported classes
   is the transported explicit cup product along `kummerCoeffPairing P`.
+* `TauCeti.ClassFieldTheory.kummerCupPairing_bil`: the pairing is scalar multiplication by the
+  chosen-root coordinate.
 * `TauCeti.ClassFieldTheory.kummerCupPairing_bil_apply`: the pairing sends `(ζ ^ i, y)` to `i • y`.
 * `TauCeti.ClassFieldTheory.localSymbol_kummerClass_mul`,
   `TauCeti.ClassFieldTheory.localSymbol_kummerClass_mul_right`: bilinearity on Kummer classes.
@@ -189,6 +191,27 @@ theorem kummerCupPairing_bil_apply {x : (muNRep n F).V} {i : ℤ}
     exact congrArg _ (Additive.toMul.injective (Subtype.ext hu))
   simp only [kummerCupPairing, LinearMap.mk₂_apply]
   rw [hi, Int.cast_smul_eq_zsmul]
+
+/-- The Kummer coefficient pairing is scalar multiplication by the chosen-root coordinate. -/
+@[simp]
+theorem kummerCupPairing_bil (x y : (muNRep n F).V) :
+    (kummerCupPairing ζ hζ).bil x y = muNRepEquivZMod ζ hζ x • y := by
+  obtain ⟨c, rfl⟩ := (muNRepEquivZMod ζ hζ).symm.surjective x
+  obtain ⟨i, rfl⟩ := ZMod.natCast_zmod_surjective c
+  have hx := coe_kummerCoeffEquivMuNRep_symm_muNRepEquivTrivialFp_symm_natCast n F hζ i
+  rw [← muNRepEquivZMod_symm_apply] at hx
+  have h := kummerCupPairing_bil_apply ζ hζ
+    (x := (muNRepEquivZMod ζ hζ).symm (i : ZMod n))
+    (i := (i : ℤ)) (by simpa only [zpow_natCast] using hx) y
+  simpa only [AddEquiv.apply_symm_apply, Int.cast_natCast, Nat.cast_smul_eq_nsmul,
+    natCast_zsmul] using h
+
+/-- The coefficient pairing selected by a primitive root is symmetric. -/
+theorem kummerCupPairing_bil_comm (x y : (muNRep n F).V) :
+    (kummerCupPairing ζ hζ).bil x y = (kummerCupPairing ζ hζ).bil y x := by
+  rw [kummerCupPairing_bil, kummerCupPairing_bil]
+  apply (muNRepEquivZMod ζ hζ).injective
+  simp only [ZMod.map_smul (muNRepEquivZMod ζ hζ), smul_eq_mul, mul_comm]
 
 end Pairing
 

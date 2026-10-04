@@ -6,8 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Weight
-public import TauCeti.Algebra.AlgebraicGroup.Hopf.PointConjugation
-public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction
+public import TauCeti.Algebra.AlgebraicGroup.Representation.PointConjugation
 
 /-!
 # Normalizers transport weight spaces
@@ -49,27 +48,11 @@ theorem basePointsRepresentation_mem_weightSpace
     {x : X} {v : V} (hv : v ∈ weightSpace V π.toCoalgHom x) :
     Comodule.basePointsRepresentation (H := H) V g v ∈ weightSpace V π.toCoalgHom (w x) := by
   rw [mem_weightSpace_iff_endOfPoint]
-  let c := AlgHom.mapValue (H := H) (Algebra.ofId R (MonoidAlgebra R X)) g
-  let t := toConv π.toAlgHom
-  have hconj : toConv (π.toAlgHom.comp (HopfAlgebra.pointConjugationAlgHom g⁻¹)) =
-      c⁻¹ * t * c := by
-    simpa only [c, t, map_inv, inv_inv] using
-      HopfAlgebra.comp_pointConjugationAlgHom g⁻¹ t
-  have he := LinearMap.congr_fun
-    (Comodule.endOfPoint_convMul V t c) (1 ⊗ₜ[R] v)
-  have he' := LinearMap.congr_fun
-    (Comodule.endOfPoint_convMul V c (c⁻¹ * t * c)) (1 ⊗ₜ[R] v)
+  apply Comodule.endOfPoint_one_tmul_basePointsRepresentation_of_conj
   have hw := endOfPoint_tmul_of_mem_weightSpace V π
     (MonoidAlgebra.domCongr R R w).toAlgHom 1 hv
-  have hconj' : π.toAlgHom.comp (HopfAlgebra.pointConjugationAlgHom g⁻¹) =
-      (c⁻¹ * t * c).ofConv := congrArg ofConv hconj
-  rw [← hg, hconj'] at hw
-  simp only [AlgEquiv.coe_toAlgHom,
-    MonoidAlgebra.domCongr_single, one_mul] at hw
-  simp only [LinearMap.comp_apply] at he he'
-  simp only [← mul_assoc, mul_inv_cancel, one_mul] at he'
-  rw [← Comodule.endOfPoint_mapValue_algebraOfId_tmul g 1 v, ← he, he', hw]
-  exact Comodule.endOfPoint_mapValue_algebraOfId_tmul g _ v
+  rw [← hg] at hw
+  simpa only [AlgEquiv.coe_toAlgHom, MonoidAlgebra.domCongr_single, one_mul] using hw
 
 /-- The normalization equation for inverse conjugation also gives its inverse equation. -/
 private theorem inverse_normalization

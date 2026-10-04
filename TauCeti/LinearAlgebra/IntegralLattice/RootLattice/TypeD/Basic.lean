@@ -317,6 +317,7 @@ theorem checkerboardLattice_form_single_sub_single (x : Fin n → ℚ) (i j : Fi
     (checkerboardLattice n).form x (Pi.single i (1 : ℚ) - Pi.single j (1 : ℚ)) = x i - x j := by
   rw [map_sub, checkerboardLattice_form_single, checkerboardLattice_form_single, mul_one, mul_one]
 
+section
 variable [NeZero n]
 
 /-- The final coordinate index `n - 1` of `Fin n`.  The Conway–Sloane vector class of the
@@ -371,26 +372,27 @@ theorem mem_checkerboardLattice_dualCarrier_iff (y : Fin n → ℚ) :
     push_cast
     ring
 
+end
+
 /-! ## The three nontrivial discriminant classes -/
 
 /-- The Conway–Sloane vector representative `v = eₙ` of the checkerboard discriminant group. -/
-def checkerboardVector : Fin n → ℚ := Pi.single (checkerboardLastIndex n) 1
+def checkerboardVector [NeZero n] : Fin n → ℚ := Pi.single (checkerboardLastIndex n) 1
 
 /-- The Conway–Sloane spinor representative `s = (e₁ + ⋯ + eₙ) / 2`. -/
 def checkerboardSpinor : Fin n → ℚ := fun _ ↦ 1 / 2
 
 /-- The Conway–Sloane cospinor representative `c = s - eₙ`. -/
-def checkerboardCospinor : Fin n → ℚ := checkerboardSpinor n - checkerboardVector n
+def checkerboardCospinor [NeZero n] : Fin n → ℚ := checkerboardSpinor n - checkerboardVector n
 
 variable {n}
 
 /-- The coordinates of the vector representative. -/
 @[simp]
-theorem checkerboardVector_apply (i : Fin n) :
+theorem checkerboardVector_apply [NeZero n] (i : Fin n) :
     checkerboardVector n i = if i = checkerboardLastIndex n then 1 else 0 := by
   rw [checkerboardVector, Pi.single_apply]
 
-omit [NeZero n] in
 /-- The coordinates of the spinor representative. -/
 @[simp]
 theorem checkerboardSpinor_apply (i : Fin n) : checkerboardSpinor n i = 1 / 2 := by
@@ -398,19 +400,18 @@ theorem checkerboardSpinor_apply (i : Fin n) : checkerboardSpinor n i = 1 / 2 :=
 
 /-- The coordinates of the cospinor representative. -/
 @[simp]
-theorem checkerboardCospinor_apply (i : Fin n) :
+theorem checkerboardCospinor_apply [NeZero n] (i : Fin n) :
     checkerboardCospinor n i = 1 / 2 - if i = checkerboardLastIndex n then 1 else 0 := by
   rw [checkerboardCospinor, Pi.sub_apply, checkerboardSpinor_apply, checkerboardVector_apply]
 
 /-- The vector representative lies in the dual lattice. -/
-theorem checkerboardVector_mem_dualCarrier :
+theorem checkerboardVector_mem_dualCarrier [NeZero n] :
     checkerboardVector n ∈ (checkerboardLattice n).dualCarrier := by
   rw [mem_checkerboardLattice_dualCarrier_iff]
   refine ⟨fun i ↦ ⟨if i = checkerboardLastIndex n then 0 else -1, ?_⟩, 2, by simp⟩
   simp only [checkerboardVector_apply]
   rcases eq_or_ne i (checkerboardLastIndex n) with h | h <;> simp [h]
 
-omit [NeZero n] in
 /-- The spinor representative lies in the dual lattice. -/
 theorem checkerboardSpinor_mem_dualCarrier :
     checkerboardSpinor n ∈ (checkerboardLattice n).dualCarrier := by
@@ -424,29 +425,28 @@ theorem checkerboardSpinor_mem_dualCarrier :
   rfl
 
 /-- The cospinor representative lies in the dual lattice. -/
-theorem checkerboardCospinor_mem_dualCarrier :
+theorem checkerboardCospinor_mem_dualCarrier [NeZero n] :
     checkerboardCospinor n ∈ (checkerboardLattice n).dualCarrier :=
   Submodule.sub_mem _ checkerboardSpinor_mem_dualCarrier checkerboardVector_mem_dualCarrier
 
 /-! ## Pairings among the representatives -/
 
 /-- The last coordinate of the vector representative is `1`. -/
-theorem checkerboardVector_checkerboardLastIndex :
+theorem checkerboardVector_checkerboardLastIndex [NeZero n] :
     checkerboardVector n (checkerboardLastIndex n) = 1 := by
   simp [checkerboardVector]
 
 /-- The last coordinate of the cospinor representative is `-1 / 2`. -/
-theorem checkerboardCospinor_checkerboardLastIndex :
+theorem checkerboardCospinor_checkerboardLastIndex [NeZero n] :
     checkerboardCospinor n (checkerboardLastIndex n) = -(1 / 2) := by
   rw [checkerboardCospinor, Pi.sub_apply, checkerboardSpinor_apply,
     checkerboardVector_checkerboardLastIndex]
   ring
 
 /-- The coordinate sum of the vector representative is `1`. -/
-theorem sum_checkerboardVector : ∑ i, checkerboardVector n i = 1 := by
+theorem sum_checkerboardVector [NeZero n] : ∑ i, checkerboardVector n i = 1 := by
   simp [checkerboardVector]
 
-omit [NeZero n] in
 /-- The coordinate sum of the spinor representative is `n / 2`. -/
 theorem sum_checkerboardSpinor : ∑ i, checkerboardSpinor n i = (n : ℚ) / 2 := by
   simp only [checkerboardSpinor_apply, Finset.sum_const, Finset.card_univ, Fintype.card_fin,
@@ -454,17 +454,17 @@ theorem sum_checkerboardSpinor : ∑ i, checkerboardSpinor n i = (n : ℚ) / 2 :
   ring
 
 /-- The coordinate sum of the cospinor representative is `n / 2 - 1`. -/
-theorem sum_checkerboardCospinor : ∑ i, checkerboardCospinor n i = (n : ℚ) / 2 - 1 := by
+theorem sum_checkerboardCospinor [NeZero n] :
+    ∑ i, checkerboardCospinor n i = (n : ℚ) / 2 - 1 := by
   simp only [checkerboardCospinor, Pi.sub_apply]
   rw [Finset.sum_sub_distrib, sum_checkerboardSpinor, sum_checkerboardVector]
 
 /-- Pairing an arbitrary vector against the vector representative reads off its last
 coordinate. -/
-theorem checkerboardLattice_form_checkerboardVector (x : Fin n → ℚ) :
+theorem checkerboardLattice_form_checkerboardVector [NeZero n] (x : Fin n → ℚ) :
     (checkerboardLattice n).form x (checkerboardVector n) = x (checkerboardLastIndex n) := by
   rw [checkerboardVector, checkerboardLattice_form_single, mul_one]
 
-omit [NeZero n] in
 /-- Pairing an arbitrary vector against the spinor representative halves its coordinate sum. -/
 theorem checkerboardLattice_form_checkerboardSpinor (x : Fin n → ℚ) :
     (checkerboardLattice n).form x (checkerboardSpinor n) = (∑ i, x i) / 2 := by
@@ -472,18 +472,17 @@ theorem checkerboardLattice_form_checkerboardSpinor (x : Fin n → ℚ) :
   exact Finset.sum_congr rfl fun i _ ↦ by rw [checkerboardSpinor_apply]; ring
 
 /-- Pairing an arbitrary vector against the cospinor representative. -/
-theorem checkerboardLattice_form_checkerboardCospinor (x : Fin n → ℚ) :
+theorem checkerboardLattice_form_checkerboardCospinor [NeZero n] (x : Fin n → ℚ) :
     (checkerboardLattice n).form x (checkerboardCospinor n) =
       (∑ i, x i) / 2 - x (checkerboardLastIndex n) := by
   rw [checkerboardCospinor, map_sub, checkerboardLattice_form_checkerboardSpinor,
     checkerboardLattice_form_checkerboardVector]
 
 /-- **The vector representative has norm one.** -/
-theorem checkerboardLattice_form_checkerboardVector_self :
+theorem checkerboardLattice_form_checkerboardVector_self [NeZero n] :
     (checkerboardLattice n).form (checkerboardVector n) (checkerboardVector n) = 1 := by
   rw [checkerboardLattice_form_checkerboardVector, checkerboardVector_checkerboardLastIndex]
 
-omit [NeZero n] in
 /-- **The spinor representative has norm `n / 4`.** -/
 theorem checkerboardLattice_form_checkerboardSpinor_self :
     (checkerboardLattice n).form (checkerboardSpinor n) (checkerboardSpinor n) = (n : ℚ) / 4 := by
@@ -491,7 +490,7 @@ theorem checkerboardLattice_form_checkerboardSpinor_self :
   ring
 
 /-- **The cospinor representative has norm `n / 4`.** -/
-theorem checkerboardLattice_form_checkerboardCospinor_self :
+theorem checkerboardLattice_form_checkerboardCospinor_self [NeZero n] :
     (checkerboardLattice n).form (checkerboardCospinor n) (checkerboardCospinor n) =
       (n : ℚ) / 4 := by
   rw [checkerboardLattice_form_checkerboardCospinor, sum_checkerboardCospinor,
@@ -499,12 +498,12 @@ theorem checkerboardLattice_form_checkerboardCospinor_self :
   ring
 
 /-- The vector and spinor representatives pair to `1 / 2`. -/
-theorem checkerboardLattice_form_checkerboardVector_checkerboardSpinor :
+theorem checkerboardLattice_form_checkerboardVector_checkerboardSpinor [NeZero n] :
     (checkerboardLattice n).form (checkerboardVector n) (checkerboardSpinor n) = 1 / 2 := by
   rw [checkerboardLattice_form_checkerboardSpinor, sum_checkerboardVector]
 
 /-- **The spinor and cospinor representatives pair to `(n - 2) / 4`.** -/
-theorem checkerboardLattice_form_checkerboardSpinor_checkerboardCospinor :
+theorem checkerboardLattice_form_checkerboardSpinor_checkerboardCospinor [NeZero n] :
     (checkerboardLattice n).form (checkerboardSpinor n) (checkerboardCospinor n) =
       ((n : ℚ) - 2) / 4 := by
   rw [checkerboardLattice_form_checkerboardCospinor, sum_checkerboardSpinor,
@@ -516,14 +515,13 @@ theorem checkerboardLattice_form_checkerboardSpinor_checkerboardCospinor :
 variable (n)
 
 /-- The class of the vector representative `v` in the checkerboard discriminant group. -/
-noncomputable def checkerboardVectorClass : (checkerboardLattice n).DiscriminantGroup :=
+noncomputable def checkerboardVectorClass [NeZero n] : (checkerboardLattice n).DiscriminantGroup :=
   Submodule.Quotient.mk ⟨checkerboardVector n, checkerboardVector_mem_dualCarrier⟩
 
 /-- The class of the spinor representative `s` in the checkerboard discriminant group. -/
 noncomputable def checkerboardSpinorClass : (checkerboardLattice n).DiscriminantGroup :=
   Submodule.Quotient.mk ⟨checkerboardSpinor n, checkerboardSpinor_mem_dualCarrier⟩
 
-omit [NeZero n] in
 /-- The spinor class is represented by the Conway--Sloane spinor vector. -/
 theorem checkerboardSpinorClass_def :
     checkerboardSpinorClass n =
@@ -531,12 +529,12 @@ theorem checkerboardSpinorClass_def :
   (rfl)
 
 /-- The class of the cospinor representative `c` in the checkerboard discriminant group. -/
-noncomputable def checkerboardCospinorClass : (checkerboardLattice n).DiscriminantGroup :=
+noncomputable def checkerboardCospinorClass [NeZero n] :
+    (checkerboardLattice n).DiscriminantGroup :=
   Submodule.Quotient.mk ⟨checkerboardCospinor n, checkerboardCospinor_mem_dualCarrier⟩
 
 variable {n}
 
-omit [NeZero n] in
 /-- A rational vector with integral coordinates of even sum is a checkerboard lattice vector. -/
 theorem mem_checkerboardCarrier_of {u : Fin n → ℚ} (w : Fin n → ℤ) (hw : ∀ i, u i = (w i : ℚ))
     (hsum : Even (∑ i, w i)) : u ∈ checkerboardCarrier n := by
@@ -549,7 +547,6 @@ theorem mem_checkerboardCarrier_of {u : Fin n → ℚ} (w : Fin n → ℤ) (hw :
   push_cast
   ring
 
-omit [NeZero n] in
 /-- Two dual vectors define the same discriminant class as soon as their difference is an
 integer vector with even coordinate sum. -/
 theorem checkerboard_mk_eq_mk_of {u v : Fin n → ℚ} (hu : u ∈ (checkerboardLattice n).dualCarrier)
@@ -562,7 +559,7 @@ theorem checkerboard_mk_eq_mk_of {u v : Fin n → ℚ} (hu : u ∈ (checkerboard
 
 /-- **The four Conway–Sloane classes exhaust the checkerboard discriminant group.** -/
 theorem checkerboardDiscriminantGroup_eq_zero_or_vectorClass_or_spinorClass_or_cospinorClass
-    (g : (checkerboardLattice n).DiscriminantGroup) :
+    [NeZero n] (g : (checkerboardLattice n).DiscriminantGroup) :
     g = 0 ∨ g = checkerboardVectorClass n ∨ g = checkerboardSpinorClass n ∨
       g = checkerboardCospinorClass n := by
   induction g using Submodule.Quotient.induction_on with
@@ -616,7 +613,6 @@ theorem checkerboardDiscriminantGroup_eq_zero_or_vectorClass_or_spinorClass_or_c
 
 /-! ## The four classes are distinct -/
 
-omit [NeZero n] in
 /-- A vector with a half-integral coordinate is not a lattice vector. -/
 private theorem notMem_checkerboardCarrier_of_two_mul_odd {u : Fin n → ℚ} (i : Fin n) (k : ℤ)
     (h : 2 * u i = ((2 * k + 1 : ℤ) : ℚ)) : u ∉ checkerboardCarrier n := by
@@ -626,7 +622,6 @@ private theorem notMem_checkerboardCarrier_of_two_mul_odd {u : Fin n → ℚ} (i
   have hz2 : (2 * z : ℤ) = 2 * k + 1 := by exact_mod_cast h
   omega
 
-omit [NeZero n] in
 /-- A vector with odd coordinate sum is not a lattice vector. -/
 private theorem notMem_checkerboardCarrier_of_sum_odd {u : Fin n → ℚ} (k : ℤ)
     (h : ∑ i, u i = ((2 * k + 1 : ℤ) : ℚ)) : u ∉ checkerboardCarrier n := by
@@ -636,6 +631,9 @@ private theorem notMem_checkerboardCarrier_of_sum_odd {u : Fin n → ℚ} (k : �
   omega
 
 variable (n)
+
+section
+variable [NeZero n]
 
 /-- The vector representative is not a lattice vector: its coordinate sum is odd. -/
 theorem checkerboardVector_notMem_checkerboardCarrier :
@@ -739,17 +737,18 @@ the Gram determinant of any integral basis is `4` itself. -/
 theorem discriminant_checkerboardLattice : (checkerboardLattice n).discriminant = 4 := by
   rw [← natCard_discriminantGroup, natCard_discriminantGroup_checkerboardLattice]
 
+end
+
 /-! ## The discriminant quadratic form on the three classes -/
 
 /-- **The vector class has quadratic value `1 / 2`.** -/
 @[simp]
-theorem discriminantQuadraticMap_checkerboardVectorClass :
+theorem discriminantQuadraticMap_checkerboardVectorClass [NeZero n] :
     (checkerboardLattice n).discriminantQuadraticMap (isEven_checkerboardLattice n)
       (checkerboardVectorClass n) = ((1 / 2 : ℚ) : AddCircle (1 : ℚ)) := by
   rw [checkerboardVectorClass, discriminantQuadraticMap_mk,
     checkerboardLattice_form_checkerboardVector_self]
 
-omit [NeZero n] in
 /-- **The spinor class has quadratic value `n / 8`.** -/
 @[simp]
 theorem discriminantQuadraticMap_checkerboardSpinorClass :
@@ -762,7 +761,7 @@ theorem discriminantQuadraticMap_checkerboardSpinorClass :
 
 /-- **The cospinor class also has quadratic value `n / 8`.** -/
 @[simp]
-theorem discriminantQuadraticMap_checkerboardCospinorClass :
+theorem discriminantQuadraticMap_checkerboardCospinorClass [NeZero n] :
     (checkerboardLattice n).discriminantQuadraticMap (isEven_checkerboardLattice n)
       (checkerboardCospinorClass n) = (((n : ℚ) / 8 : ℚ) : AddCircle (1 : ℚ)) := by
   rw [checkerboardCospinorClass, discriminantQuadraticMap_mk,
@@ -772,7 +771,7 @@ theorem discriminantQuadraticMap_checkerboardCospinorClass :
 
 /-- **The spinor and cospinor classes pair to `(n - 2) / 4`.** -/
 @[simp]
-theorem discriminantPairing_checkerboardSpinorClass_checkerboardCospinorClass :
+theorem discriminantPairing_checkerboardSpinorClass_checkerboardCospinorClass [NeZero n] :
     (checkerboardLattice n).discriminantPairing (checkerboardSpinorClass n)
         (checkerboardCospinorClass n) =
       ((((n : ℚ) - 2) / 4 : ℚ) : AddCircle (1 : ℚ)) := by
@@ -782,14 +781,15 @@ theorem discriminantPairing_checkerboardSpinorClass_checkerboardCospinorClass :
 /-! ## The group structure -/
 
 /-- The cospinor class is the difference of the spinor and vector classes. -/
-theorem checkerboardCospinorClass_eq_sub :
+theorem checkerboardCospinorClass_eq_sub [NeZero n] :
     checkerboardCospinorClass n = checkerboardSpinorClass n - checkerboardVectorClass n := by
   rw [checkerboardCospinorClass, checkerboardSpinorClass, checkerboardVectorClass,
     ← Submodule.Quotient.mk_sub]
   rfl
 
 /-- **The vector class has order two**: `2 eₙ` is a lattice vector for every `n`. -/
-theorem two_zsmul_checkerboardVectorClass : (2 : ℤ) • checkerboardVectorClass n = 0 := by
+theorem two_zsmul_checkerboardVectorClass [NeZero n] :
+    (2 : ℤ) • checkerboardVectorClass n = 0 := by
   rw [checkerboardVectorClass, ← Submodule.Quotient.mk_smul, discriminantGroup_mk_eq_zero_iff,
     checkerboardLattice_carrier]
   refine mem_checkerboardCarrier_of (fun i ↦ if i = checkerboardLastIndex n then 2 else 0)
@@ -799,7 +799,6 @@ theorem two_zsmul_checkerboardVectorClass : (2 : ℤ) • checkerboardVectorClas
     split_ifs <;> ring
   · simp
 
-omit [NeZero n] in
 /-- **For even `n` the spinor class has order two**: the all-ones vector `2 s` has even
 coordinate sum. -/
 theorem two_zsmul_checkerboardSpinorClass_of_even (hn : Even n) :
@@ -813,7 +812,7 @@ theorem two_zsmul_checkerboardSpinorClass_of_even (hn : Even n) :
   · simp [hk]
 
 /-- **For even `n` the spinor class has additive order two.** -/
-theorem addOrderOf_checkerboardSpinorClass_of_even (hn : Even n) :
+theorem addOrderOf_checkerboardSpinorClass_of_even [NeZero n] (hn : Even n) :
     addOrderOf (checkerboardSpinorClass n) = 2 := by
   exact addOrderOf_eq_prime
     (by
@@ -840,7 +839,6 @@ private theorem mem_zmultiples_iff_eq_zero_or_eq_of_two_zsmul_eq_zero
     · exact (AddSubgroup.zmultiples a).zero_mem
     · exact AddSubgroup.mem_zmultiples_iff.mpr ⟨1, by rw [one_zsmul]⟩
 
-omit [NeZero n] in
 /-- For even `n`, the multiples of the spinor class are exactly zero and the spinor class. -/
 theorem mem_zmultiples_checkerboardSpinorClass_iff (hn : Even n)
     (x : (checkerboardLattice n).DiscriminantGroup) :
@@ -849,7 +847,6 @@ theorem mem_zmultiples_checkerboardSpinorClass_iff (hn : Even n)
   exact mem_zmultiples_iff_eq_zero_or_eq_of_two_zsmul_eq_zero
     (checkerboardSpinorClass n) x (two_zsmul_checkerboardSpinorClass_of_even n hn)
 
-omit [NeZero n] in
 /-- **For odd `n` the vector class is twice the spinor class**, so the discriminant group is
 cyclic of order four. -/
 theorem two_zsmul_checkerboardSpinorClass_of_odd (hn : Odd n) :
@@ -873,7 +870,7 @@ theorem two_zsmul_checkerboardSpinorClass_of_odd (hn : Odd n) :
     ring
 
 /-- The sum of the vector and spinor classes is the cospinor class. -/
-theorem checkerboardVectorClass_add_checkerboardSpinorClass :
+theorem checkerboardVectorClass_add_checkerboardSpinorClass [NeZero n] :
     checkerboardVectorClass n + checkerboardSpinorClass n = checkerboardCospinorClass n := by
   rw [checkerboardCospinorClass_eq_sub, ← sub_eq_zero]
   have h : checkerboardVectorClass n + checkerboardSpinorClass n -
@@ -883,7 +880,6 @@ theorem checkerboardVectorClass_add_checkerboardSpinorClass :
     abel
   rw [h, two_zsmul_checkerboardVectorClass]
 
-omit [NeZero n] in
 /-- **For odd `n` the checkerboard discriminant group is cyclic of order four**, generated by the
 spinor class. -/
 noncomputable def zmodFourAddEquivCheckerboardDiscriminantGroup (hn : Odd n) :
@@ -905,7 +901,6 @@ noncomputable def zmodFourAddEquivCheckerboardDiscriminantGroup (hn : Odd n) :
         · exact AddSubgroup.mem_zmultiples_iff.mpr ⟨-1, by rw [h, hc]⟩)
       (natCard_discriminantGroup_checkerboardLattice n)
 
-omit [NeZero n] in
 /-- The odd-rank identification sends the generator `1` of `ℤ/4` to the spinor class. -/
 @[simp]
 theorem zmodFourAddEquivCheckerboardDiscriminantGroup_apply_one (hn : Odd n) :
@@ -921,13 +916,15 @@ private noncomputable def checkerboardZModTwoHom (x : (checkerboardLattice n).Di
     (hx : (2 : ℤ) • x = 0) : ZMod 2 →+ (checkerboardLattice n).DiscriminantGroup :=
   ZMod.lift 2 ⟨zmultiplesHom _ x, by simpa using hx⟩
 
-omit [NeZero n] in
 variable {n} in
 /-- The homomorphism `checkerboardZModTwoHom` sends `1` to the chosen element. -/
 private theorem checkerboardZModTwoHom_one (x : (checkerboardLattice n).DiscriminantGroup)
     (hx : (2 : ℤ) • x = 0) : checkerboardZModTwoHom x hx 1 = x := by
   rw [checkerboardZModTwoHom, ← Int.cast_one, ZMod.lift_coe]
   exact one_zsmul x
+
+section
+variable [NeZero n]
 
 /-- **For even `n` the checkerboard discriminant group is `(ℤ/2)²`**, with the two factors
 generated by the vector class and by the spinor class. -/
@@ -979,12 +976,14 @@ theorem zmodTwoProdAddEquivCheckerboardDiscriminantGroup_apply_one_one (hn : Eve
     zmodTwoProdAddEquivCheckerboardDiscriminantGroup_apply_zero_one,
     checkerboardVectorClass_add_checkerboardSpinorClass]
 
+end
+
 /-! ## The discriminant pairings -/
 
 /-- **The vector class is bilinear-isotropic**: the ambient self-pairing `⟨v, v⟩ = 1` is an
 integer, so `b(v, v) = 0`. -/
 @[simp]
-theorem discriminantPairing_checkerboardVectorClass_self :
+theorem discriminantPairing_checkerboardVectorClass_self [NeZero n] :
     (checkerboardLattice n).discriminantPairing (checkerboardVectorClass n)
       (checkerboardVectorClass n) = 0 := by
   rw [checkerboardVectorClass, discriminantPairing_mk,
@@ -992,7 +991,6 @@ theorem discriminantPairing_checkerboardVectorClass_self :
   rw [AddCircle.coe_eq_zero_iff]
   exact ⟨1, by norm_num⟩
 
-omit [NeZero n] in
 /-- **The spinor class has self-pairing `b(s, s) = n / 4`.** -/
 @[simp]
 theorem discriminantPairing_checkerboardSpinorClass_self :
@@ -1003,7 +1001,7 @@ theorem discriminantPairing_checkerboardSpinorClass_self :
 
 /-- **The vector and spinor classes pair to `1 / 2`.** -/
 @[simp]
-theorem discriminantPairing_checkerboardVectorClass_checkerboardSpinorClass :
+theorem discriminantPairing_checkerboardVectorClass_checkerboardSpinorClass [NeZero n] :
     (checkerboardLattice n).discriminantPairing (checkerboardVectorClass n)
       (checkerboardSpinorClass n) = (((1 : ℚ) / 2 : ℚ) : AddCircle (1 : ℚ)) := by
   rw [checkerboardVectorClass, checkerboardSpinorClass, discriminantPairing_mk,
@@ -1036,7 +1034,6 @@ two spinor classes carry the quarter-integral values `n / 8`. -/
       rw [← AddCircle.coe_zsmul, AddCircle.coe_eq_zero_iff]
       exact ⟨1, by norm_num⟩)
 
-omit [NeZero n] in
 /-- The first standard generator has quadratic value `1 / 2`. -/
 @[simp]
 theorem checkerboardStandardQuadraticModule_quadratic_one_zero (hn : Even n) :
@@ -1046,7 +1043,6 @@ theorem checkerboardStandardQuadraticModule_quadratic_one_zero (hn : Even n) :
   rw [FiniteQuadraticModule.kleinFour_quadratic,
     FiniteQuadraticModule.kleinFourMap_apply_one_zero]
 
-omit [NeZero n] in
 /-- The second standard generator has quadratic value `n / 8`. -/
 @[simp]
 theorem checkerboardStandardQuadraticModule_quadratic_zero_one (hn : Even n) :
@@ -1056,7 +1052,6 @@ theorem checkerboardStandardQuadraticModule_quadratic_zero_one (hn : Even n) :
   rw [FiniteQuadraticModule.kleinFour_quadratic,
     FiniteQuadraticModule.kleinFourMap_apply_zero_one]
 
-omit [NeZero n] in
 /-- The diagonal standard generator has quadratic value `n / 8`. -/
 @[simp]
 theorem checkerboardStandardQuadraticModule_quadratic_one_one (hn : Even n) :
@@ -1070,7 +1065,6 @@ theorem checkerboardStandardQuadraticModule_quadratic_one_one (hn : Even n) :
     (AddCircle.coe_eq_zero_iff (p := (1 : ℚ))).mpr ⟨1, by norm_num⟩
   rw [hhalf, zero_add]
 
-omit [NeZero n] in
 /-- The two standard generators pair to `1 / 2`. -/
 @[simp]
 theorem checkerboardStandardQuadraticModule_pairing_one_zero_zero_one (hn : Even n) :
@@ -1079,6 +1073,9 @@ theorem checkerboardStandardQuadraticModule_pairing_one_zero_zero_one (hn : Even
   unfold checkerboardStandardQuadraticModule
   rw [FiniteQuadraticModule.kleinFour_pairing,
     FiniteQuadraticModule.polar_kleinFourMap_one_zero_zero_one]
+
+section
+variable [NeZero n]
 
 /-- **The standard model is isometric to the discriminant quadratic module of an even-rank
 checkerboard lattice**, by the identification carrying `(1, 0)` to the vector class and `(0, 1)`
@@ -1125,6 +1122,8 @@ theorem isNondegenerate_checkerboardStandardQuadraticModule (hn : Even n) :
   ((checkerboardDiscriminantQuadraticIsometry n hn).isNondegenerate_iff).mpr
     (isNondegenerate_discriminantQuadraticModule _ _)
 
+end
+
 /-! ## The discriminant quadratic module of an odd-rank checkerboard lattice -/
 
 /-- **The cyclic `ℤ/4` model of the odd-rank checkerboard discriminant form**: the generator has
@@ -1139,7 +1138,6 @@ generate. -/
     (AddCircle.zsmul_coe_eq_zero (c := 2 * n) (by push_cast; ring))
     (AddCircle.zsmul_coe_eq_zero (c := n) (by push_cast; ring))
 
-omit [NeZero n] in
 /-- The generator of the cyclic model has quadratic value `n / 8`. -/
 @[simp]
 theorem checkerboardCyclicQuadraticModule_quadratic_one :
@@ -1148,7 +1146,6 @@ theorem checkerboardCyclicQuadraticModule_quadratic_one :
   unfold checkerboardCyclicQuadraticModule
   rw [FiniteQuadraticModule.cyclic_quadratic, FiniteQuadraticModule.cyclicMap_one]
 
-omit [NeZero n] in
 /-- **The double of the generator carries the vector value `1 / 2`**, for odd `n`.  The underlying
 computation is `4 · (n / 8) = n / 2`, which is `1 / 2` in `ℚ/ℤ` exactly when `n` is odd. -/
 @[simp]
@@ -1165,7 +1162,6 @@ theorem checkerboardCyclicQuadraticModule_quadratic_two (hn : Odd n) :
   push_cast
   ring
 
-omit [NeZero n] in
 /-- The generator of the cyclic model has self-pairing `n / 4`. -/
 @[simp]
 theorem checkerboardCyclicQuadraticModule_pairing_one_one :
@@ -1179,7 +1175,6 @@ theorem checkerboardCyclicQuadraticModule_pairing_one_one :
   push_cast
   ring
 
-omit [NeZero n] in
 /-- **The cyclic model is isometric to the discriminant quadratic module of an odd-rank
 checkerboard lattice**, by the identification carrying `1` to the spinor class.
 
@@ -1200,7 +1195,6 @@ noncomputable def checkerboardCyclicQuadraticIsometry (hn : Odd n) :
         discriminantQuadraticMap_checkerboardSpinorClass,
         FiniteQuadraticModule.cyclicMap_one])
 
-omit [NeZero n] in
 /-- The odd-rank quadratic isometry acts through the discriminant-group equivalence. -/
 @[simp]
 theorem checkerboardCyclicQuadraticIsometry_apply (hn : Odd n) (x : ZMod 4) :
@@ -1210,7 +1204,6 @@ theorem checkerboardCyclicQuadraticIsometry_apply (hn : Odd n) (x : ZMod 4) :
   let _ : NeZero n := NeZero.of_pos hn.pos
   exact FiniteQuadraticModule.cyclicIsometryOfGenerator_apply 4 _ _ _ _ x
 
-omit [NeZero n] in
 /-- The odd-rank quadratic isometry carries the generator of `ℤ/4` to the spinor class. -/
 theorem checkerboardCyclicQuadraticIsometry_one (hn : Odd n) :
     letI : NeZero n := NeZero.of_pos hn.pos
@@ -1219,7 +1212,6 @@ theorem checkerboardCyclicQuadraticIsometry_one (hn : Odd n) :
   rw [checkerboardCyclicQuadraticIsometry_apply,
     zmodFourAddEquivCheckerboardDiscriminantGroup_apply_one]
 
-omit [NeZero n] in
 /-- **The odd-rank quadratic isometry carries the element `2` of `ℤ/4` to the vector class.**
 Together with `checkerboardCyclicQuadraticModule_quadratic_two` this reads the vector value
 `q(v) = 1 / 2` of the table row off the model. -/
@@ -1234,7 +1226,6 @@ theorem checkerboardCyclicQuadraticIsometry_two (hn : Odd n) :
     zmodFourAddEquivCheckerboardDiscriminantGroup_apply_one,
     two_zsmul_checkerboardSpinorClass_of_odd n hn]
 
-omit [NeZero n] in
 /-- **The cyclic `ℤ/4` model is nondegenerate**, since the discriminant form of a nondegenerate
 lattice is. -/
 theorem isNondegenerate_checkerboardCyclicQuadraticModule (hn : Odd n) :

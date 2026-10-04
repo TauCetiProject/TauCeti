@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.Setoid.Partition
 public import Mathlib.Topology.Algebra.MvPolynomial
 public import TauCeti.Geometry.RealAlgebraic.Semialgebraic.Basic
+public import TauCeti.Geometry.RealAlgebraic.SignInvariant
 public import TauCeti.Geometry.RealAlgebraic.Stack.Basic
 
 /-!
@@ -27,6 +28,13 @@ cells, and they partition `ℝ ^ n`. The projections of the cells of a CAD of `�
 CAD of `ℝ ^ n`, and the decomposition is cylindrical: two cells have equal or disjoint
 projections, so each cell lies over the whole of the lower cell it meets.
 
+A CAD is *adapted* to a family of polynomials when each of them is sign-invariant on each cell.
+Every set described by a condition on their signs is then a union of cells, so its projection is
+a union of projected cells and is semialgebraic. Every semialgebraic set is described by such a
+condition (`TauCeti.IsSemialgebraic.exists_eq_setOf_sign_eval`); together with the existence of
+adapted CADs this gives the closure of semialgebraic sets under projection. One sample point in
+each cell of an adapted CAD realizes every sign condition that the polynomials realize anywhere.
+
 Stacks of polynomial functions are semialgebraic. In particular finitely many points of `ℝ`,
 together with the open intervals they cut out, form a CAD of `ℝ ^ 1`.
 
@@ -38,6 +46,11 @@ together with the open intervals they cut out, form a CAD of `ℝ ^ 1`.
   `TauCeti.IsCAD.isConnected`: a CAD is a finite partition into connected semialgebraic cells.
 * `TauCeti.IsCAD.image_tail`, `TauCeti.IsCAD.image_tail_eq_or_disjoint`: projecting a CAD gives
   a CAD, and projections of cells are equal or disjoint.
+* `TauCeti.IsCAD.isSemialgebraic_image_tail`,
+  `TauCeti.IsCAD.isSemialgebraic_image_tail_setOf_sign_eval`: projections of unions of cells, in
+  particular of sign-condition sets of polynomials sign-invariant on the cells, are semialgebraic.
+* `TauCeti.IsCAD.exists_finite_image_sign_eval_eq`: sample points of an adapted CAD realize all
+  sign conditions.
 * `TauCeti.isSemialgebraicStack_eval`, `TauCeti.isCAD_stackCells_const`: polynomial stacks, and
   the CAD of `ℝ ^ 1` cut out by finitely many points.
 
@@ -200,6 +213,53 @@ theorem image_tail_eq_or_disjoint {𝒞 : Set (Set (Fin (n + 1) → ℝ))} (h : 
     Fin.tail '' E = Fin.tail '' E' ∨ Disjoint (Fin.tail '' E) (Fin.tail '' E') :=
   h.image_tail.isPartition.pairwiseDisjoint.eq_or_disjoint (mem_image_of_mem _ hE)
     (mem_image_of_mem _ hE')
+
+/-! ### Decompositions adapted to sign conditions -/
+
+/-- **Projections of unions of cells.** If a set `s ⊆ ℝ ^ (n + 1)` contains or misses each cell of
+a cylindrical algebraic decomposition, then its projection forgetting coordinate `0` is
+semialgebraic: it is the union of the projections of the cells contained in `s`, which are cells
+of the projected decomposition. -/
+theorem isSemialgebraic_image_tail {𝒞 : Set (Set (Fin (n + 1) → ℝ))} (h : IsCAD (n + 1) 𝒞)
+    {s : Set (Fin (n + 1) → ℝ)} (hs : ∀ E ∈ 𝒞, E ⊆ s ∨ Disjoint E s) :
+    IsSemialgebraic (Fin.tail '' s) := by
+  have hs' : s = ⋃ E ∈ {E ∈ 𝒞 | E ⊆ s}, E := by
+    refine Subset.antisymm (fun y hy ↦ ?_) (iUnion₂_subset fun E hE ↦ hE.2)
+    obtain ⟨E, hE, hyE⟩ := mem_sUnion.1 (h.isPartition.sUnion_eq_univ ▸ mem_univ y)
+    exact mem_iUnion₂.2 ⟨E, ⟨hE, (hs E hE).resolve_right fun hd ↦ disjoint_left.1 hd hyE hy⟩, hyE⟩
+  rw [hs', image_iUnion₂]
+  exact .biUnion (h.finite.subset (sep_subset _ _)) fun E hE ↦
+    h.image_tail.isSemialgebraic (mem_image_of_mem _ hE.1)
+
+/-- If the polynomials `p i` are sign-invariant on each cell of a cylindrical algebraic
+decomposition of `ℝ ^ (n + 1)`, then the projection forgetting coordinate `0` of any set described
+by a condition on the signs of the `p i` is semialgebraic. -/
+theorem isSemialgebraic_image_tail_setOf_sign_eval {𝒞 : Set (Set (Fin (n + 1) → ℝ))}
+    (h : IsCAD (n + 1) 𝒞) {ι : Type*} {p : ι → MvPolynomial (Fin (n + 1)) ℝ}
+    (hp : ∀ i, ∀ E ∈ 𝒞, SignInvariant (fun x ↦ eval x (p i)) E) (Φ : (ι → SignType) → Prop) :
+    IsSemialgebraic (Fin.tail '' {x | Φ fun i ↦ SignType.sign (eval x (p i))}) :=
+  h.isSemialgebraic_image_tail fun E hE ↦
+    subset_or_disjoint_setOf_sign (f := fun i x ↦ eval x (p i)) (fun i ↦ hp i E hE) Φ
+
+/-- **Sample points.** If the polynomials `p i` are sign-invariant on each cell of a cylindrical
+algebraic decomposition of `ℝ ^ n`, there is a finite set `T` of sample points, exactly one in each
+cell, at which the `p i` take exactly the sign vectors that they take on `ℝ ^ n`. -/
+theorem exists_finite_image_sign_eval_eq (h : IsCAD n 𝒞) {ι : Type*}
+    {p : ι → MvPolynomial (Fin n) ℝ} (hp : ∀ i, ∀ E ∈ 𝒞, SignInvariant (fun x ↦ eval x (p i)) E) :
+    ∃ T : Set (Fin n → ℝ), T.Finite ∧ (∀ E ∈ 𝒞, ∃ x, E ∩ T = {x}) ∧
+      (fun x i ↦ SignType.sign (eval x (p i))) '' T =
+        range fun x i ↦ SignType.sign (eval x (p i)) := by
+  choose x hx using fun E : 𝒞 ↦ (h.isConnected E.2).nonempty
+  have := h.finite.to_subtype
+  refine ⟨range x, finite_range x, fun E hE ↦ ⟨x ⟨E, hE⟩, ?_⟩, ?_⟩
+  · refine Subset.antisymm ?_ (singleton_subset_iff.2 ⟨hx ⟨E, hE⟩, mem_range_self _⟩)
+    rintro _ ⟨hyE, E', rfl⟩
+    -- the sample of `E'` lies in `E`, so the cells `E'` and `E` meet and are equal
+    have hE' : E' = ⟨E, hE⟩ := Subtype.ext <|
+      h.isPartition.pairwiseDisjoint.elim E'.2 hE (not_disjoint_iff.2 ⟨_, hx E', hyE⟩)
+    rw [mem_singleton_iff, hE']
+  · rw [← range_comp]
+    exact range_sign_sample_eq h.isPartition.sUnion_eq_univ hp x hx
 
 end IsCAD
 

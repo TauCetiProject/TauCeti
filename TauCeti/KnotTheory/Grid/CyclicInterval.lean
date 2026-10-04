@@ -53,6 +53,9 @@ directions before taking products.
   cyclic permutation `finRotate n` preserves the open and half-open arcs, as do its powers
   (`TauCeti.Grid.mem_cIoo_finRotate_pow_finRotate_pow`,
   `TauCeti.Grid.mem_cIco_finRotate_pow_finRotate_pow`).
+* `TauCeti.Grid.mem_cIoo_finRotate_rev`, `TauCeti.Grid.rev_mem_cIco_finRotate_rev`: the half-turn
+  `x ↦ finRotate n x.rev` of the grid points reverses the open arcs of points, and acts on the
+  half-open arcs of squares as `Fin.rev`.
 * `TauCeti.Grid.finRotate_ne_self`: on a cycle of length at least two, the cyclic successor has
   no fixed point.
 * `TauCeti.Grid.cIoo_finRotate_eq_empty`, `TauCeti.Grid.cIco_eq_singleton_iff`: the arcs from a
@@ -671,6 +674,28 @@ theorem mem_cIco_finRotate_finRotate (a b x : Fin n) :
   · rw [cIco_of_ne ((finRotate n).injective.ne hab), cIco_of_ne hab,
       Finset.mem_insert, Finset.mem_insert, (finRotate n).injective.eq_iff,
       mem_cIoo_finRotate_finRotate]
+
+/-- The half-turn `x ↦ finRotate n x.rev` of the cycle, which is negation modulo `n`, reverses
+the cyclic order: it carries the clockwise open arc from `a` to `b` onto the clockwise open arc
+between the images of `b` and `a`. -/
+theorem mem_cIoo_finRotate_rev (a b x : Fin n) :
+    finRotate n x.rev ∈ cIoo (finRotate n b.rev) (finRotate n a.rev) ↔ x ∈ cIoo a b := by
+  rw [mem_cIoo_finRotate_finRotate, mem_cIoo_rev_rev]
+
+/-- On squares named by their lower-left grid points, the half-turn `x ↦ finRotate n x.rev` of
+the grid points acts as `Fin.rev`: it carries the clockwise half-open arc of squares from `a` to
+`b` onto the one between the images of `b` and `a` under the half-turn of the grid points. -/
+theorem rev_mem_cIco_finRotate_rev (a b x : Fin n) :
+    x.rev ∈ cIco (finRotate n b.rev) (finRotate n a.rev) ↔ x ∈ cIco a b := by
+  cases n with
+  | zero => exact x.elim0
+  | succ n =>
+    have := a.isLt; have := b.isLt; have := x.isLt
+    simp only [mem_cIco, ne_eq, coe_finRotate, Fin.ext_iff, Fin.val_last, Fin.val_rev,
+      Nat.succ_eq_add_one]
+    split_ifs <;>
+      (try simp only [not_false_eq_true, not_true_eq_false, true_and, false_and, false_iff]) <;>
+      omega
 
 /-- Powers of the cyclic permutation `finRotate n` preserve and reflect membership in open cyclic
 intervals. -/

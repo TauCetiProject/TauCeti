@@ -544,7 +544,7 @@ theorem smul_cover (τ : Perm (Fin n)) (c : ConnectedFiberNumberedCover x n) :
 @[simp]
 theorem smul_ν (τ : Perm (Fin n)) (c : ConnectedFiberNumberedCover x n) :
     (τ • c).ν = c.ν.trans τ :=
-  (rfl)
+  rfl
 
 /-- Relabelling is an action of the symmetric group on fibre-numbered covers. -/
 instance : MulAction (Perm (Fin n)) (ConnectedFiberNumberedCover x n) where

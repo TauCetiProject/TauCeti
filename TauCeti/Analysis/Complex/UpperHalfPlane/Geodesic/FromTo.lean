@@ -40,6 +40,8 @@ is negative at points strictly to the left of a line
   `geodesicLine g`.
 * `TauCeti.UpperHalfPlane.IsGeodesicFromTo.re_toComplex_lt`: on a geodesic with `∞` on its left,
   points occur from left to right.
+* `TauCeti.UpperHalfPlane.IsGeodesicFromTo.re_toComplex_lt_iff`: a geodesic line through two
+  points with distinct real parts passes its points in order.
 
 ## Source
 
@@ -405,5 +407,39 @@ theorem IsGeodesicFromTo.re_toComplex_lt {g : PSL(2, ℝ)} {p q : ℍ ⊕ OnePoi
   · obtain ⟨rfl, rfl⟩ := hg
     rwa [← he₀, ← he₁, toComplex_inr_coe, toComplex_inr_coe, Complex.ofReal_re,
       Complex.ofReal_re]
+
+/-- For a geodesic line running from `p` to `q` and from `p` to `r`, where `p` and `q` are not `∞`
+and have distinct real parts, the real part of `toComplex r` lies on the same side of `Re p` as
+`Re q`. -/
+theorem IsGeodesicFromTo.re_toComplex_lt_iff {g : PSL(2, ℝ)} {p q r : ℍ ⊕ OnePoint ℝ}
+    (hpq : IsGeodesicFromTo g p q) (hpr : IsGeodesicFromTo g p r) (hp : p ≠ .inr ∞)
+    (hq : q ≠ .inr ∞) (hre : (toComplex p).re ≠ (toComplex q).re) :
+    (toComplex p).re < (toComplex r).re ↔ (toComplex p).re < (toComplex q).re := by
+  have hp₀ := hpq.sideForm_toComplex_left hp
+  have hq₀ := hpq.sideForm_toComplex_right hq
+  -- neither endpoint of the line is `∞`: the line would be vertical, with `Re p = Re q`
+  have h₀ : g • ((0 : ℝ) : OnePoint ℝ) ≠ ∞ := fun h₀ ↦ by
+    obtain ⟨e, he⟩ := OnePoint.ne_infty_iff_exists.1 fun h₁ : g • (∞ : OnePoint ℝ) = ∞ ↦
+      OnePoint.coe_ne_infty (0 : ℝ) (MulAction.injective g (h₀.trans h₁.symm))
+    rw [sideForm_eq_of_smul_zero_eq_infty h₀ he.symm] at hp₀ hq₀
+    exact hre (by linarith)
+  have h₁ : g • (∞ : OnePoint ℝ) ≠ ∞ := fun h₁ ↦ by
+    obtain ⟨e, he⟩ := OnePoint.ne_infty_iff_exists.1 fun h₀ : g • ((0 : ℝ) : OnePoint ℝ) = ∞ ↦
+      OnePoint.coe_ne_infty (0 : ℝ) (MulAction.injective g (h₀.trans h₁.symm))
+    rw [sideForm_eq_of_smul_infty_eq_infty he.symm h₁] at hp₀ hq₀
+    exact hre (by linarith)
+  obtain ⟨e₀, he₀⟩ := OnePoint.ne_infty_iff_exists.1 h₀
+  obtain ⟨e₁, he₁⟩ := OnePoint.ne_infty_iff_exists.1 h₁
+  have hne : e₀ ≠ e₁ := fun h ↦ OnePoint.coe_ne_infty (0 : ℝ)
+    (MulAction.injective g (he₀.symm.trans ((congrArg _ h).trans he₁)))
+  -- `∞` lies strictly on one side of the line; orient the line so that it is on the left
+  rcases hne.lt_or_gt with h | h
+  · have hinf := (infty_mem_boundaryLeftHalfPlane_iff he₀.symm he₁.symm).2 h
+    exact iff_of_true (hpr.re_toComplex_lt hinf) (hpq.re_toComplex_lt hinf)
+  · have hinf : (∞ : OnePoint ℝ) ∈ boundaryLeftHalfPlane (g * pslS) :=
+      (infty_mem_boundaryLeftHalfPlane_iff (by rw [mul_smul, pslS_smul_zero, he₁])
+        (by rw [mul_smul, pslS_smul_infty, he₀])).2 h
+    exact iff_of_false (isGeodesicFromTo_mul_pslS_iff.2 hpr |>.re_toComplex_lt hinf).not_gt
+      (isGeodesicFromTo_mul_pslS_iff.2 hpq |>.re_toComplex_lt hinf).not_gt
 
 end TauCeti.UpperHalfPlane

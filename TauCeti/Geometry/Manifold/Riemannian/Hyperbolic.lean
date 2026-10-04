@@ -64,6 +64,11 @@ This is the existence predicate used by later hyperbolic-volume and Mostow-rigid
 the chosen metric remains available through `HyperbolicMetric` when a proof is needed. -/
 def IsHyperbolic : Prop := Nonempty (HyperbolicMetric (I := I) (M := M))
 
+/-- A manifold is hyperbolic exactly when it carries a hyperbolic metric. -/
+theorem isHyperbolic_iff : IsHyperbolic (I := I) (M := M) ↔
+    Nonempty (HyperbolicMetric (I := I) (M := M)) :=
+  Iff.rfl
+
 namespace HyperbolicMetric
 
 /-- The curvature equation carried by a hyperbolic metric, evaluated at one tangent triple. -/

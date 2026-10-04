@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.RootSubgroup
+public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.RootSubgroup.Basic
 public import TauCeti.Algebra.Lie.SpecialLinear.StandardCarrier.Equivalence
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.TypeA.Basic
 

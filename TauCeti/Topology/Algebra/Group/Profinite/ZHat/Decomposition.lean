@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.CharZero.Idempotent
 public import TauCeti.Data.Nat.Prime.Basic
 public import TauCeti.Data.ZMod.Divisibility
 public import TauCeti.Topology.Algebra.Group.Profinite.ZHat.Component
@@ -32,6 +33,7 @@ The decomposition has idempotents: `zHat.idem ℓ`, written `ω_ℓ` in prose, i
 with `ℓ`-adic component `1` and all other components `0`. It is idempotent, orthogonal to the
 idempotents of the other primes, multiplication by it keeps the `ℓ`-adic component and kills the
 others, and it reduces to `1` modulo every power of `ℓ` and to `0` modulo every `n` prime to `ℓ`.
+It is unequal to every integer (`zHat.idem_ne_intCast`).
 In particular `ω_2 * (1 - ω_2) = 0` with both factors nonzero: the profinite integers are not a
 domain (`zHat.not_isDomain`). The finite sums of the prime idempotents tend to `1`
 (`zHat.tendsto_sum_idem`), expressing recovery from the prime factors in the product topology.
@@ -54,6 +56,7 @@ domain (`zHat.not_isDomain`). The finite sums of the prime idempotents tend to `
   and the characterization of `ω_ℓ * a = a`.
 * `TauCeti.zHat.toZMod_idem_of_dvd_pow`, `TauCeti.zHat.toZMod_idem_of_not_dvd`: the reductions of
   `ω_ℓ` at the finite levels.
+* `TauCeti.zHat.idem_ne_intCast`: `ω_ℓ` is not an integer.
 * `TauCeti.zHat.not_isDomain`: the profinite integers are not a domain.
 
 ## References
@@ -294,6 +297,13 @@ theorem idem_ne_one : idem.{u} ℓ ≠ 1 := fun h ↦ by
   obtain ⟨p, hp, hpp⟩ := Nat.exists_infinite_primes (ℓ + 1)
   have := Fact.mk hpp
   exact one_ne_zero <| by rw [← component_idem_of_ne ℓ (Nat.lt_of_succ_le hp).ne', h, map_one]
+
+/-- The prime idempotent `ω_ℓ` is unequal to every integer in the profinite integers. -/
+theorem idem_ne_intCast (n : ℤ) : idem.{u} ℓ ≠ n := by
+  intro h
+  rcases isIdempotentElem_intCast_iff.mp (h ▸ isIdempotentElem_idem ℓ) with rfl | rfl
+  · exact idem_ne_zero ℓ (by simpa using h)
+  · exact idem_ne_one ℓ (by simpa using h)
 
 /-- **The profinite integers are not a domain**: `ω_2 * (1 - ω_2) = 0` with both factors
 nonzero. -/

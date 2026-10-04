@@ -17,7 +17,8 @@ ignored. Two consecutive nonzero entries with `k` intervening zeros contribute
 In particular, interior zeros cannot simply be deleted.
 
 The zero-gap recursion characterizes the statistic, and sign-preserving and
-sign-reversing maps preserve it. For a list without zeros it is the number of
+sign-reversing maps preserve it; in particular, so does scaling every entry by a
+nonzero constant. For a list without zeros it is the number of
 adjacent pairs minus twice Mathlib's `List.signVariations`.
 
 ## References
@@ -188,6 +189,16 @@ theorem _root_.List.permanencesMinusVariations_map_of_sign_eq_neg {f : R → S}
     exact List.map_congr_left fun x _ => hf x
   simp only [List.permanencesMinusVariations, h]
   simpa using pmvAux_neg 0 0 (l.map SignType.sign)
+
+/-- Multiplying every entry by a nonzero constant preserves permanences minus
+variations. -/
+@[simp] theorem _root_.List.permanencesMinusVariations_map_mul_left {K : Type*} [Ring K]
+    [LinearOrder K] [IsStrictOrderedRing K] {c : K} (hc : c ≠ 0) (l : List K) :
+    (l.map (c * ·)).permanencesMinusVariations = l.permanencesMinusVariations := by
+  rcases hc.lt_or_gt with hc | hc
+  · exact List.permanencesMinusVariations_map_of_sign_eq_neg
+      (fun x => by simp [sign_mul, sign_neg hc]) l
+  · exact List.permanencesMinusVariations_map (fun x => by simp [sign_mul, sign_pos hc]) l
 
 /-- On a list with no zeros, permanences minus variations is the number of
 adjacent pairs minus twice the number of sign changes. -/

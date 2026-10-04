@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 public import Mathlib.Algebra.Ring.Action.Submonoid
 public import Mathlib.GroupTheory.GroupAction.FixingSubgroup
 public import Mathlib.GroupTheory.GroupAction.Hom
@@ -21,8 +20,7 @@ latter to a `MulDistribMulAction` on `FixedPoints.subgroup H α`. This file is t
 counterpart of that refinement: for a distributive action on an additive monoid it upgrades both of
 Mathlib's `MulAction`s to `DistribMulAction`s on `FixedPoints.addSubmonoid H M`, records the
 coercion lemmas that characterise the two actions on the `AddSubgroup` carrier, computes the fixed
-points of `⊥` and `⊤`, and supplies the inclusion and map API for additive fixed points. It also
-defines the norm `m ↦ ∑ g, g • m` of a finite group action.
+points of `⊥` and `⊤`, and supplies the inclusion and map API for additive fixed points.
 
 Nothing here is specific to a topology or to cohomology; the continuous-cohomology use is in
 `TauCeti/RepresentationTheory/Homological/ContCohomology/Invariants.lean`.
@@ -45,7 +43,6 @@ Nothing here is specific to a topology or to cohomology; the continuous-cohomolo
   the additive monoid, additively and as a quotient-equivariant map.
 * `TauCeti.fixedPointsPairing`: the pairing induced on the fixed points of an equivariant
   biadditive pairing.
-* `TauCeti.groupNorm`: the norm `m ↦ ∑ g, g • m` of a finite group action.
 -/
 
 public section
@@ -395,22 +392,5 @@ theorem fixedPointsPairing_quotient_smul (H : Subgroup G) [H.Normal] (μ : M →
       simpa using hequiv g (m : M) (n : N)
 
 end Pairing
-
-section Norm
-
-variable (G : Type*) [Group G] [Fintype G] (M : Type*) [AddCommGroup M] [DistribMulAction G M]
-
-/-- The norm of a finite group action, `m ↦ ∑ g, g • m`. -/
-def groupNorm : M →+ M where
-  toFun m := ∑ g : G, g • m
-  map_zero' := by simp
-  map_add' m n := by simp only [smul_add, Finset.sum_add_distrib]
-
-/-- The norm of `m` is the sum of its translates. -/
-@[simp]
-theorem groupNorm_apply (m : M) : groupNorm G M m = ∑ g : G, g • m :=
-  (rfl)
-
-end Norm
 
 end TauCeti
