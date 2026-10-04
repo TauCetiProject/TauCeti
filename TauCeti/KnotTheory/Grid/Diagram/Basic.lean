@@ -344,6 +344,24 @@ theorem mem_pointSet_relabelColumns (κ : Equiv.Perm (Fin n)) (x : GridState n) 
     p ∈ (x.relabelColumns κ).pointSet ↔ (κ.symm p.1, p.2) ∈ x.pointSet := by
   simp
 
+/-- Undoing a column relabeling transports the relabeled state's points to the original
+point set. -/
+theorem pointSet_eq_map_relabelColumns (x : GridState n) (κ : Equiv.Perm (Fin n)) :
+    x.pointSet = (x.relabelColumns κ).pointSet.map
+      (κ.symm.prodCongr (Equiv.refl (Fin n))).toEmbedding := by
+  ext p
+  simp only [Finset.mem_map_equiv, Equiv.prodCongr_symm, Equiv.symm_symm,
+    Equiv.refl_symm, Equiv.prodCongr_apply, Prod.map_apply', Equiv.refl_apply,
+    mem_pointSet_relabelColumns, Equiv.symm_apply_apply]
+
+/-- A set of squares relabeled back avoids a state's points exactly when the set avoids
+the column-relabeled state's points. -/
+theorem disjoint_map_relabelColumns_pointSet_iff (x : GridState n) (κ : Equiv.Perm (Fin n))
+    (S : Finset (Fin n × Fin n)) :
+    Disjoint (S.map (κ.symm.prodCongr (Equiv.refl (Fin n))).toEmbedding) x.pointSet ↔
+      Disjoint S (x.relabelColumns κ).pointSet := by
+  rw [x.pointSet_eq_map_relabelColumns κ, Finset.disjoint_map]
+
 /-- Swapping two rows in a grid state. -/
 def swapRows (a b : Fin n) (x : GridState n) : GridState n :=
   x.relabelRows (Equiv.swap a b)
@@ -563,22 +581,14 @@ theorem mem_pointSet_swapColumns (a b : Fin n) (x : GridState n) (p : Fin n × F
     p ∈ (x.swapColumns a b).pointSet ↔ (Equiv.swap a b p.1, p.2) ∈ x.pointSet := by
   simp [swapColumns]
 
-/-- Swapping columns back transports the swapped state's points to the original point set. -/
-theorem pointSet_eq_map_swapColumns (x : GridState n) (a b : Fin n) :
-    x.pointSet = (x.swapColumns a b).pointSet.map
-      ((Equiv.swap a b).prodCongr (Equiv.refl (Fin n))).toEmbedding := by
-  ext p
-  simp only [Finset.mem_map_equiv, Equiv.prodCongr_symm, Equiv.symm_swap,
-    Equiv.refl_symm, Equiv.prodCongr_apply, Prod.map_apply', Equiv.refl_apply,
-    mem_pointSet_swapColumns, Equiv.swap_apply_self]
-
 /-- A set of squares swapped back avoids a state's points exactly when the set avoids the
 column-swapped state's points. -/
 theorem disjoint_map_swapColumns_pointSet_iff (x : GridState n) (a b : Fin n)
     (S : Finset (Fin n × Fin n)) :
     Disjoint (S.map ((Equiv.swap a b).prodCongr (Equiv.refl (Fin n))).toEmbedding)
         x.pointSet ↔ Disjoint S (x.swapColumns a b).pointSet := by
-  rw [x.pointSet_eq_map_swapColumns a b, Finset.disjoint_map]
+  simpa only [swapColumns, Equiv.symm_swap] using
+    x.disjoint_map_relabelColumns_pointSet_iff (Equiv.swap a b) S
 
 /-- A grid point is shared by a grid state and a column relabeling exactly when it is a
 source-state grid point whose column is fixed by the relabeling permutation. -/
