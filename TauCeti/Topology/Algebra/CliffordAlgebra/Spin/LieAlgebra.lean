@@ -14,21 +14,21 @@ import TauCeti.Geometry.Lie.Adjoint.InvariantSubmodule
 import TauCeti.Geometry.Lie.Exponential.Unitary
 
 /-!
-# The Lie algebra of the compact real Spin group
+# The Lie algebras of the real Spin groups
 
-For the Clifford algebra of a positive-definite real quadratic space, a one-parameter exponential
-family stays in the compact real Spin group exactly when its generator is even, is negated by
-reversal, and preserves the generating-vector subspace under commutators. These are precisely the
-intrinsic conditions that characterize quadratic Clifford elements.
+For a real Clifford algebra of any signature, a one-parameter exponential family stays in the real
+Spin group exactly when its generator is even, is negated by reversal, and preserves the
+generating-vector subspace under commutators. These are precisely the intrinsic conditions that
+characterize quadratic Clifford elements.
 
 Consequently, the canonical coordinates on the Lie algebra of the ambient unit group identify the
 Lie algebra of the closed real Spin subgroup with the quadratic Lie subalgebra.
 
 ## Main results
 
-* `CliffordAlgebra.forall_expUnit_smul_mem_realCliffordSpinGroupZero_iff_mem_quadraticLieSubalgebra`
-  characterizes the exponential lines contained in the compact real Spin subgroup.
-* `CliffordAlgebra.mem_lieAlgebra_realCliffordSpinGroupZero_iff_mem_quadraticLieSubalgebra`
+* `CliffordAlgebra.forall_expUnit_smul_mem_realCliffordSpinGroup_iff_mem_quadraticLieSubalgebra`
+  characterizes the exponential lines contained in a real Spin subgroup.
+* `unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff_mem_quadraticLieSubalgebra`
   identifies its closed-subgroup Lie algebra in Clifford-algebra coordinates.
 -/
 
@@ -45,8 +45,8 @@ open TauCeti TauCeti.CliffordAlgebra
 
 attribute [local instance] TauCeti.normedAlgebraRatOfReal
 
-local instance realCliffordStarModule (n : ℕ) :
-    StarModule ℝ (CliffordAlgebra (realCliffordForm n 0)) where
+local instance realCliffordStarModule (p q : ℕ) :
+    StarModule ℝ (CliffordAlgebra (realCliffordForm p q)) where
   star_smul := CliffordAlgebra.star_smul
 
 private theorem mem_spinGroup_toUnits_range_iff
@@ -61,10 +61,10 @@ private theorem mem_spinGroup_toUnits_range_iff
     rfl
 
 private theorem mem_even_of_forall_exp_smul_mem_even
-    (n : ℕ) (x : CliffordAlgebra (realCliffordForm n 0))
-    (h : ∀ t : ℝ, exp (t • x) ∈ even (realCliffordForm n 0)) :
-    x ∈ even (realCliffordForm n 0) := by
-  let Q := realCliffordForm n 0
+    (p q : ℕ) (x : CliffordAlgebra (realCliffordForm p q))
+    (h : ∀ t : ℝ, exp (t • x) ∈ even (realCliffordForm p q)) :
+    x ∈ even (realCliffordForm p q) := by
+  let Q := realCliffordForm p q
   let S := (even Q).toSubmodule
   have hclosed : IsClosed (S : Set (CliffordAlgebra Q)) :=
     Submodule.isClosed_of_isModuleTopology S
@@ -81,17 +81,17 @@ private theorem mem_even_of_forall_exp_smul_mem_even
       (.of_forall hinc) 1
   exact hx
 
-private theorem forall_expUnit_smul_mem_realCliffordSpinGroupZero_iff_of_neZero
-    (n : ℕ) [NeZero n] (x : CliffordAlgebra (realCliffordForm n 0)) :
+private theorem forall_expUnit_smul_mem_realCliffordSpinGroup_iff_of_neZero
+    (p q : ℕ) [NeZero (p + q)] (x : CliffordAlgebra (realCliffordForm p q)) :
     (∀ t : ℝ, TauCeti.expUnit (t • x) ∈
-        (spinGroup.toUnits (Q := realCliffordForm n 0)).range) ↔
-      x ∈ even (realCliffordForm n 0) ∧
+        (spinGroup.toUnits (Q := realCliffordForm p q)).range) ↔
+      x ∈ even (realCliffordForm p q) ∧
         reverse x = -x ∧
-        ∀ v : Fin n → ℝ, x * ι (realCliffordForm n 0) v -
-          ι (realCliffordForm n 0) v * x ∈
-            LinearMap.range (ι (realCliffordForm n 0)) := by
-  let Q := realCliffordForm n 0
-  have hQ : Q.Nondegenerate := nondegenerate_realCliffordForm n 0
+        ∀ v : Fin (p + q) → ℝ, x * ι (realCliffordForm p q) v -
+          ι (realCliffordForm p q) v * x ∈
+            LinearMap.range (ι (realCliffordForm p q)) := by
+  let Q := realCliffordForm p q
+  have hQ : Q.Nondegenerate := nondegenerate_realCliffordForm p q
   constructor
   · intro hline
     have hspin (t : ℝ) : exp (t • x) ∈ spinGroup Q := by
@@ -106,7 +106,7 @@ private theorem forall_expUnit_smul_mem_realCliffordSpinGroupZero_iff_of_neZero
       (mem_spinGroup_iff_unitary_even_and_involute_act_ι_mem_range_ι Q hQ
         hQ.exists_isUnit).mp (hspin t)
     have heven : x ∈ even Q :=
-      mem_even_of_forall_exp_smul_mem_even n x fun t ↦ (hcarrier t).2.1
+      mem_even_of_forall_exp_smul_mem_even p q x fun t ↦ (hcarrier t).2.1
     have hstar : star x = -x :=
       skewAdjoint.mem_iff.mp <|
         (TauCeti.forall_exp_smul_mem_unitary_iff_mem_skewAdjoint x).mp fun t ↦ (hcarrier t).1
@@ -162,21 +162,22 @@ private theorem forall_expUnit_smul_mem_realCliffordSpinGroupZero_iff_of_neZero
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 
-/-- An exponential line in the Clifford algebra of a positive-definite real quadratic space stays
-in the compact real Spin group exactly when its generator is even, is negated by reversal, and
-brackets every generating vector back into the generating-vector subspace. -/
-theorem forall_expUnit_smul_mem_realCliffordSpinGroupZero_iff
-    (n : ℕ) (x : CliffordAlgebra (realCliffordForm n 0)) :
+/-- An exponential line in a real Clifford algebra stays in its Spin group exactly when its
+generator is even, is negated by reversal, and brackets every generating vector back into the
+generating-vector subspace. -/
+theorem
+forall_expUnit_smul_mem_realCliffordSpinGroup_iff_mem_even_and_reverse_eq_neg_and_lie_ι_mem_range_ι
+    (p q : ℕ) (x : CliffordAlgebra (realCliffordForm p q)) :
     (∀ t : ℝ, TauCeti.expUnit (t • x) ∈
-        (spinGroup.toUnits (Q := realCliffordForm n 0)).range) ↔
-      x ∈ even (realCliffordForm n 0) ∧
+        (spinGroup.toUnits (Q := realCliffordForm p q)).range) ↔
+      x ∈ even (realCliffordForm p q) ∧
         reverse x = -x ∧
-        ∀ v : Fin n → ℝ, x * ι (realCliffordForm n 0) v -
-          ι (realCliffordForm n 0) v * x ∈
-            LinearMap.range (ι (realCliffordForm n 0)) := by
-  cases n with
-  | zero =>
-      let Q := realCliffordForm 0 0
+        ∀ v : Fin (p + q) → ℝ, x * ι (realCliffordForm p q) v -
+          ι (realCliffordForm p q) v * x ∈
+            LinearMap.range (ι (realCliffordForm p q)) := by
+  rcases p with _ | p
+  · rcases q with _ | q
+    · let Q := realCliffordForm 0 0
       constructor
       · intro hline
         have hexp (t : ℝ) : exp (t • x) = 1 := by
@@ -210,37 +211,41 @@ theorem forall_expUnit_smul_mem_realCliffordSpinGroupZero_iff
         subst x
         intro t
         exact ⟨1, by simp⟩
-  | succ n =>
-      let _ : NeZero (n + 1) := ⟨Nat.succ_ne_zero n⟩
-      exact forall_expUnit_smul_mem_realCliffordSpinGroupZero_iff_of_neZero (n + 1) x
+    · let _ : NeZero (0 + (q + 1)) := ⟨by simp⟩
+      exact forall_expUnit_smul_mem_realCliffordSpinGroup_iff_of_neZero 0 (q + 1) x
+  · let _ : NeZero ((p + 1) + q) := ⟨by simp⟩
+    exact forall_expUnit_smul_mem_realCliffordSpinGroup_iff_of_neZero (p + 1) q x
 
-/-- An exponential line lies in the compact real Spin group exactly when its generator is a
+/-- An exponential line lies in a real Spin group exactly when its generator is a
 quadratic Clifford element. -/
-theorem forall_expUnit_smul_mem_realCliffordSpinGroupZero_iff_mem_quadraticLieSubalgebra
-    (n : ℕ) (x : CliffordAlgebra (realCliffordForm n 0)) :
+-- Normalize the whole exponential-line predicate before range membership expands.
+@[simp↓]
+theorem forall_expUnit_smul_mem_realCliffordSpinGroup_iff_mem_quadraticLieSubalgebra
+    (p q : ℕ) (x : CliffordAlgebra (realCliffordForm p q)) :
     (∀ t : ℝ, TauCeti.expUnit (t • x) ∈
-        (spinGroup.toUnits (Q := realCliffordForm n 0)).range) ↔
-      x ∈ quadraticLieSubalgebra (realCliffordForm n 0) := by
-  rw [forall_expUnit_smul_mem_realCliffordSpinGroupZero_iff,
+        (spinGroup.toUnits (Q := realCliffordForm p q)).range) ↔
+      x ∈ quadraticLieSubalgebra (realCliffordForm p q) := by
+  rw [
+forall_expUnit_smul_mem_realCliffordSpinGroup_iff_mem_even_and_reverse_eq_neg_and_lie_ι_mem_range_ι,
     mem_quadraticLieSubalgebra_iff_mem_even_and_reverse_eq_neg_and_lie_ι_mem_range_ι
-      (realCliffordForm n 0) (nondegenerate_realCliffordForm n 0)]
-  simp only [Ring.lie_def, Nat.add_zero]
+      (realCliffordForm p q) (nondegenerate_realCliffordForm p q)]
+  simp only [Ring.lie_def]
 
-/-- In canonical units coordinates, the Lie algebra of the closed compact real Spin subgroup is
-the quadratic Lie subalgebra of its Clifford algebra. -/
+/-- In canonical units coordinates, the Lie algebra of a closed real Spin subgroup is the
+quadratic Lie subalgebra of its Clifford algebra. -/
 @[simp↓]
 theorem
-    mem_lieAlgebra_realCliffordSpinGroupZero_iff_mem_quadraticLieSubalgebra
-    (n : ℕ) (x : CliffordAlgebra (realCliffordForm n 0)) :
+    unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff_mem_quadraticLieSubalgebra
+    (p q : ℕ) (x : CliffordAlgebra (realCliffordForm p q)) :
     (TauCeti.Lie.unitsLieAlgebraLieEquiv
-        (R := CliffordAlgebra (realCliffordForm n 0))).symm x ∈
+        (R := CliffordAlgebra (realCliffordForm p q))).symm x ∈
         TauCeti.Lie.lieSubalgebraOfSubgroup
-          (I := 𝓘(ℝ, CliffordAlgebra (realCliffordForm n 0)))
-          (spinGroup.toUnits (Q := realCliffordForm n 0)).range ↔
-      x ∈ quadraticLieSubalgebra (realCliffordForm n 0) := by
+          (I := 𝓘(ℝ, CliffordAlgebra (realCliffordForm p q)))
+          (spinGroup.toUnits (Q := realCliffordForm p q)).range ↔
+      x ∈ quadraticLieSubalgebra (realCliffordForm p q) := by
   rw [TauCeti.Lie.unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff
     (by simpa only [MonoidHom.coe_range] using
-      isClosed_range_realCliffordSpinGroupZero_toUnits n),
-    forall_expUnit_smul_mem_realCliffordSpinGroupZero_iff_mem_quadraticLieSubalgebra]
+      isClosed_range_realCliffordSpinGroup_toUnits p q),
+    forall_expUnit_smul_mem_realCliffordSpinGroup_iff_mem_quadraticLieSubalgebra]
 
 end CliffordAlgebra
