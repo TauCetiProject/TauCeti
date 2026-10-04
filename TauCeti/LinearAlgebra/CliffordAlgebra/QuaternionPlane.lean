@@ -47,6 +47,10 @@ a quadratic form is computed in terms of quaternion symbols (Lam, Chapter V, §2
 
 * T. Y. Lam, *Introduction to Quadratic Forms over Fields*, Graduate Studies in Mathematics 67,
   American Mathematical Society (2005), Chapter V, §2.
+* The construction adapts the volume-element argument of
+  `TauCeti.LinearAlgebra.CliffordAlgebra.NegativePlane` (`CliffordAlgebra.negativePlaneEquivTensor`)
+  from the real plane `⟨-1, -1⟩` to an arbitrary plane `⟨a, b⟩`: the same generator lift, inclusions
+  of the two factors, commutation argument, tensor-product lift, and check of the two composites.
 -/
 
 public section

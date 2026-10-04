@@ -10,6 +10,7 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Brauer
 public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Hasse
 import Mathlib.LinearAlgebra.CliffordAlgebra.Equivs
 import TauCeti.Algebra.BrauerGroup.Splitting
+import TauCeti.Algebra.Quaternion.Binary
 import TauCeti.LinearAlgebra.CliffordAlgebra.CentralSimple.Even
 import TauCeti.LinearAlgebra.CliffordAlgebra.Even.Quaternion
 import TauCeti.LinearAlgebra.CliffordAlgebra.Even.Scaling
@@ -236,12 +237,12 @@ theorem cliffordInvariant_one : cliffordInvariant (1 : RegularFormClass K) = 1 :
   cliffordInvariant_eq_one_of_rank_le_one rank_one.le
 
 /-- The binary presented form `⟨a, b⟩` is Mathlib's quaternion plane
-`CliffordAlgebraQuaternion.Q a b`, whose Clifford algebra is `ℍ[K, a, b]`. -/
+`CliffordAlgebraQuaternion.Q a b`, whose Clifford algebra is `ℍ[K, a, b]`: the shared isometry
+`QuaternionAlgebra.weightedSumSquaresIsometryEquivQ`, transported along `presentedForm_two`. -/
 private def binaryIsometryEquiv (a b : Kˣ) :
     (presentedForm (⟨2, ![a, b]⟩ : RegularFormPresentation K)).IsometryEquiv
       (CliffordAlgebraQuaternion.Q (a : K) b) :=
-  ⟨LinearEquiv.finTwoArrow K K, fun v => by
-    simp [presentedForm_two, weightedSumSquares_apply, CliffordAlgebraQuaternion.Q_apply]⟩
+  presentedForm_two ![a, b] ▸ QuaternionAlgebra.weightedSumSquaresIsometryEquivQ _
 
 /-- **The Clifford invariant of a binary form `⟨a, b⟩` is the quaternion symbol `[(a, b)]`**: the
 Clifford algebra of `⟨a, b⟩` is the quaternion algebra `ℍ[K, a, b]`. -/
@@ -283,11 +284,15 @@ theorem cliffordInvariant_mk_binary_add (a b : Kˣ) {x : RegularFormClass K} (hx
     cliffordInvariant (Quotient.mk (regularFormSetoid K) ⟨2, ![a, b]⟩ + x) =
       BrauerGroup.quaternionClass a b *
         cliffordInvariant (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => -(a * b)⟩ * x) := by
-  have hsq : -(a * b) = -(a⁻¹ * b⁻¹) * (a * b) * (a * b) := by
-    ext
-    simp only [Units.val_neg, Units.val_mul, Units.val_inv_eq_inv_val]
-    field_simp
-  rw [hsq, mk_rankOne_mul_mul_self]
+  have hsq : (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => -(a * b)⟩ : RegularFormClass K) =
+      Quotient.mk _ ⟨1, fun _ => -(a⁻¹ * b⁻¹)⟩ := by
+    have h : -(a * b) = -(a⁻¹ * b⁻¹) * (a * b) * (a * b) := by
+      ext
+      simp only [Units.val_neg, Units.val_mul, Units.val_inv_eq_inv_val]
+      field_simp
+    rw [h, ← mk_rankOne_mul_mk_rankOne, ← mk_rankOne_mul_mk_rankOne, mul_assoc,
+      mk_rankOne_mul_self, mul_one]
+  rw [hsq]
   induction x using Quotient.inductionOn with
   | h p =>
     have hp : Even p.1 := by simpa using hx
@@ -309,11 +314,15 @@ theorem cliffordInvariant_mk_binary_add (a b : Kˣ) {x : RegularFormClass K} (hx
 theorem cliffordInvariant_add_mk_rankOne (a : Kˣ) {x : RegularFormClass K} (hx : Even x.rank) :
     cliffordInvariant (x + Quotient.mk (regularFormSetoid K) ⟨1, fun _ => a⟩) =
       cliffordInvariant (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => -a⟩ * x) := by
-  have hsq : -a = -a⁻¹ * a * a := by
-    ext
-    simp only [Units.val_neg, Units.val_mul, Units.val_inv_eq_inv_val]
-    field_simp
-  rw [hsq, mk_rankOne_mul_mul_self]
+  have hsq : (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => -a⟩ : RegularFormClass K) =
+      Quotient.mk _ ⟨1, fun _ => -a⁻¹⟩ := by
+    have h : -a = -a⁻¹ * a * a := by
+      ext
+      simp only [Units.val_neg, Units.val_mul, Units.val_inv_eq_inv_val]
+      field_simp
+    rw [h, ← mk_rankOne_mul_mk_rankOne, ← mk_rankOne_mul_mk_rankOne, mul_assoc,
+      mk_rankOne_mul_self, mul_one]
+  rw [hsq]
   induction x using Quotient.inductionOn with
   | h p =>
     have hp : Even p.1 := by simpa using hx
