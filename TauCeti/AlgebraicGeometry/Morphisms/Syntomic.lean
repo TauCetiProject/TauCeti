@@ -27,7 +27,7 @@ complete-intersection input to the singular-locus criterion for nodal families.
 
 public section
 
-open CategoryTheory Limits AlgebraicGeometry TauCeti.RingHom
+open CategoryTheory Limits AlgebraicGeometry
 
 namespace TauCeti.AlgebraicGeometry
 
