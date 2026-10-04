@@ -269,34 +269,10 @@ noncomputable abbrev finiteTypeGeneratedCoordinateHopfAlgebra :
 scalar extension, over every commutative `𝔽₃`-algebra. -/
 theorem baseChangeDefiningIdeal_eq_generatedDefiningIdeal :
     baseChangeDefiningIdeal k = generatedDefiningIdeal k := by
-  let e := GeneralLinear.coordinateHopfAlgebraBaseChangeIso (ZMod 3) k 7
-  refine le_antisymm (baseChangeDefiningIdeal_le_generatedDefiningIdeal k) fun x hx ↦ ?_
-  rw [mem_baseChangeDefiningIdeal_iff, definingIdeal_def,
-    CommHopfAlgCat.baseChangeHopfIdeal_commonKernelHopfIdeal]
-  have hle : (generatedDefiningIdeal k).map e.inv.hom ≤
-      CommHopfAlgCat.commonKernelHopfIdeal
-        fun j ↦ CommHopfAlgCat.baseChangeMap (K := k) (generator j) := by
-    refine (CommHopfAlgCat.le_commonKernelHopfIdeal_iff _ _).2 fun j ↦ ?_
-    rw [HopfIdeal.map_toIdeal, Ideal.map_le_iff_le_comap]
-    intro y hy
-    have hj := RingHom.mem_ker.mp ((le_generatedDefiningIdeal_iff k _).mp le_rfl j hy)
-    rwa [baseChangeGenerator_apply] at hj
-  exact hle (HopfIdeal.mem_map_of_mem e.inv.hom hx)
-
-private theorem map_baseChangeHopfIdeal_definingIdeal :
-    (CommHopfAlgCat.baseChangeHopfIdeal (K := k) definingIdeal).map
-        (GeneralLinear.coordinateHopfAlgebraBaseChangeIso (ZMod 3) k 7).hom.hom =
-      generatedDefiningIdeal k := by
-  let e := GeneralLinear.coordinateHopfAlgebraBaseChangeIso (ZMod 3) k 7
-  rw [← baseChangeDefiningIdeal_eq_generatedDefiningIdeal]
-  refine HopfIdeal.ext fun y ↦ ?_
-  rw [HopfIdeal.mem_map_iff_of_surjective (ConcreteCategory.bijective_of_isIso e.hom).2,
-    mem_baseChangeDefiningIdeal_iff]
-  refine ⟨?_, fun hy ↦ ⟨e.inv.hom y, hy, _root_.CommHopfAlgCat.hom_inv_apply e y⟩⟩
-  rintro ⟨x, hx, rfl⟩
-  -- Transport membership through the inverse equation; rewriting does not match its coercions.
-  exact (congrArg (· ∈ CommHopfAlgCat.baseChangeHopfIdeal (K := k) definingIdeal)
-    (_root_.CommHopfAlgCat.inv_hom_apply e x)).mpr hx
+  simpa only [baseChangeDefiningIdeal_def, definingIdeal_def, generatedDefiningIdeal_def,
+    ← baseChangeGenerator_def] using
+    CommHopfAlgCat.comapOfSurjective_baseChangeHopfIdeal_commonKernelHopfIdeal generator
+      (GeneralLinear.coordinateHopfAlgebraBaseChangeIso (ZMod 3) k 7)
 
 /-- The coordinate Hopf algebra of the scalar-extended carrier is that of the subgroup generated
 after scalar extension. -/
@@ -305,7 +281,11 @@ noncomputable def coordinateHopfAlgebraGeneratedIso :
   CommHopfAlgCat.quotientBaseChangeIsoOfMapEq
       (CommHopfAlgCat.commonKernelHopfIdeal generator) (generatedDefiningIdeal k)
       (GeneralLinear.coordinateHopfAlgebraBaseChangeIso (ZMod 3) k 7)
-      (by simpa only [definingIdeal_def] using map_baseChangeHopfIdeal_definingIdeal k) ≪≫
+      (by
+        simpa only [generatedDefiningIdeal_def,
+          ← baseChangeGenerator_def] using
+          CommHopfAlgCat.map_baseChangeHopfIdeal_commonKernelHopfIdeal generator
+            (GeneralLinear.coordinateHopfAlgebraBaseChangeIso (ZMod 3) k 7)) ≪≫
     eqToIso (generatedCoordinateHopfAlgebra_def k).symm
 
 /-- The coordinate isomorphism identifies the scalar-extended carrier quotient map with the
