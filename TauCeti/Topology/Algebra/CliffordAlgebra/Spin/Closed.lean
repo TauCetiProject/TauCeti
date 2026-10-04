@@ -102,9 +102,8 @@ theorem isClosed_range_spinGroup_toUnits (hQ : Q.Nondegenerate) :
       f ⁻¹' (spinGroup Q : Set (CliffordAlgebra Q)) := by
     rw [← MonoidHom.coe_range]
     ext u
-    change u ∈ (spinGroup.toUnits (Q := Q)).range ↔
-      (u : CliffordAlgebra Q) ∈ spinGroup Q
-    exact mem_spinGroup_toUnits_range_iff u
+    simpa only [SetLike.mem_coe, Set.mem_preimage, f] using
+      mem_spinGroup_toUnits_range_iff u
   rw [hset]
   exact hu
 
