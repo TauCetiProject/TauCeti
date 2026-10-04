@@ -34,6 +34,8 @@ This is exactly the input of Mathlib's relative gluing on the small affine Zaris
   of a commutative `𝒪ₓ`-algebra over an open `U` form a commutative `Γ(X, U)`-algebra;
 * `CategoryTheory.CommMon.sectionsPresheaf A`: the presheaf of commutative rings of sections of
   `A`, with `CategoryTheory.CommMon.toSectionsPresheaf A : X.presheaf ⟶ A.sectionsPresheaf`;
+* `CategoryTheory.CommMon.sectionsAlgHom` and `CategoryTheory.CommMon.sectionsPresheafMap`:
+  algebra morphisms on sections and their compatibility with restriction and structure maps;
 * `CategoryTheory.CommMon.isLocalization_basicOpen`: for quasi-coherent `A`, an affine open `U`
   and `f ∈ Γ(X, U)`, `Γ(A.X, X.basicOpen f)` is the localization of `Γ(A.X, U)` away from `f`;
 * `CategoryTheory.CommMon.relativeSpec A`: the relative spectrum of a quasi-coherent commutative
@@ -170,6 +172,110 @@ def _root_.CategoryTheory.CommMon.toSectionsPresheaf : X.presheaf ⟶ A.sections
 lemma _root_.CategoryTheory.CommMon.toSectionsPresheaf_app (U : X.Opensᵒᵖ) :
     A.toSectionsPresheaf.app U = CommRingCat.ofHom (algebraMap Γ(X, U.unop) Γ(A.X, U.unop)) :=
   (rfl)
+
+/-- The algebra map on sections induced by a morphism of commutative `𝒪ₓ`-algebras.
+It sends each section to its image under the morphism and preserves the structure map
+from `Γ(X, U)`. -/
+def _root_.CategoryTheory.CommMon.sectionsAlgHom {A B : CommMon X.Modules}
+    (f : A ⟶ B) (U : X.Opens) : Γ(A.X, U) →ₐ[Γ(X, U)] Γ(B.X, U) :=
+  (ModuleCat.MonModuleEquivalenceAlgebra.functor.map
+    (((Scheme.Modules.sectionsFunctor U).mapCommMon.map f).hom)).hom
+
+@[simp]
+lemma _root_.CategoryTheory.CommMon.sectionsAlgHom_apply {A B : CommMon X.Modules}
+    (f : A ⟶ B) (U : X.Opens) (x : Γ(A.X, U)) :
+    CommMon.sectionsAlgHom f U x = f.hom.hom.app U x :=
+  (rfl)
+
+@[simp]
+lemma _root_.CategoryTheory.CommMon.sectionsAlgHom_id (A : CommMon X.Modules) (U : X.Opens) :
+    CommMon.sectionsAlgHom (𝟙 A) U = AlgHom.id Γ(X, U) Γ(A.X, U) := by
+  let F := (Scheme.Modules.sectionsFunctor U).mapCommMon ⋙
+    CommMon.forget₂Mon (ModuleCat.{u} Γ(X, U)) ⋙ ModuleCat.MonModuleEquivalenceAlgebra.functor
+  -- `sectionsAlgHom` spells out the three functor maps; `map_id` is stated for
+  -- their composite `F`. `change` identifies these definitionally equal presentations.
+  change (F.map (𝟙 A)).hom = _
+  ext x
+  -- The identities use the algebra instances on `F.obj A` and on `Γ(A.X, U)`.
+  -- Rewriting the bundled maps does not match these instances; evaluation removes them.
+  change (F.map (𝟙 A)).hom x = x
+  simpa only [AlgCat.hom_id, AlgHom.id_apply] using
+    congrArg (fun f ↦ f.hom x) (F.map_id A)
+
+@[simp]
+lemma _root_.CategoryTheory.CommMon.sectionsAlgHom_comp {A B C : CommMon X.Modules}
+    (f : A ⟶ B) (g : B ⟶ C) (U : X.Opens) :
+    CommMon.sectionsAlgHom (f ≫ g) U =
+      (CommMon.sectionsAlgHom g U).comp (CommMon.sectionsAlgHom f U) := by
+  let F := (Scheme.Modules.sectionsFunctor U).mapCommMon ⋙
+    CommMon.forget₂Mon (ModuleCat.{u} Γ(X, U)) ⋙ ModuleCat.MonModuleEquivalenceAlgebra.functor
+  -- `sectionsAlgHom` spells out the three functor maps; rewriting with `map_comp`
+  -- requires first presenting them as the map of the composite functor `F`.
+  change (F.map (f ≫ g)).hom = (F.map g).hom.comp (F.map f).hom
+  simpa only [AlgCat.hom_comp] using congrArg AlgCat.Hom.hom (F.map_comp f g)
+
+/-- A morphism of commutative sheaf algebras induces a morphism of their presheaves of rings. -/
+def _root_.CategoryTheory.CommMon.sectionsPresheafMap {A B : CommMon X.Modules}
+    (f : A ⟶ B) : A.sectionsPresheaf ⟶ B.sectionsPresheaf where
+  app U := CommRingCat.ofHom (CommMon.sectionsAlgHom f U.unop).toRingHom
+  naturality {U V} i := by
+    dsimp only [CommMon.sectionsPresheaf]
+    rw [← CommRingCat.ofHom_comp, ← CommRingCat.ofHom_comp]
+    congr 1
+    ext x
+    -- The section rings have the same carriers as the module sections, but their
+    -- ring instances are obtained through the sections functor.
+    dsimp only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe]
+    erw [CommMon.sectionsAlgHom_apply, CommMon.sectionsAlgHom_apply,
+      CommMon.restrictSections_apply, CommMon.restrictSections_apply]
+    exact PresheafOfModules.naturality_apply f.hom.hom.val i x
+
+@[simp]
+lemma _root_.CategoryTheory.CommMon.sectionsPresheafMap_app {A B : CommMon X.Modules}
+    (f : A ⟶ B) (U : X.Opensᵒᵖ) :
+    (CommMon.sectionsPresheafMap f).app U =
+      CommRingCat.ofHom (CommMon.sectionsAlgHom f U.unop).toRingHom :=
+  (rfl)
+
+@[simp]
+lemma _root_.CategoryTheory.CommMon.sectionsPresheafMap_id (A : CommMon X.Modules) :
+    CommMon.sectionsPresheafMap (𝟙 A) = 𝟙 A.sectionsPresheaf := by
+  apply NatTrans.ext
+  funext U
+  rw [CommMon.sectionsPresheafMap_app, CommMon.sectionsAlgHom_id, NatTrans.id_app]
+  dsimp only [CommMon.sectionsPresheaf]
+  ext x
+  simp only [CommRingCat.hom_ofHom, CommRingCat.hom_id, AlgHom.toRingHom_eq_coe,
+    RingHom.coe_coe, AlgHom.id_apply, RingHom.id_apply]
+
+@[simp]
+lemma _root_.CategoryTheory.CommMon.sectionsPresheafMap_comp {A B C : CommMon X.Modules}
+    (f : A ⟶ B) (g : B ⟶ C) :
+    CommMon.sectionsPresheafMap (f ≫ g) =
+      CommMon.sectionsPresheafMap f ≫ CommMon.sectionsPresheafMap g := by
+  apply NatTrans.ext
+  funext U
+  rw [NatTrans.comp_app, CommMon.sectionsPresheafMap_app,
+    CommMon.sectionsPresheafMap_app, CommMon.sectionsPresheafMap_app,
+    CommMon.sectionsAlgHom_comp]
+  dsimp only [CommMon.sectionsPresheaf]
+  rw [← CommRingCat.ofHom_comp]
+  congr 1
+
+/-- Algebra morphisms commute with the structure map from the structure presheaf. -/
+@[reassoc (attr := simp)]
+lemma _root_.CategoryTheory.CommMon.toSectionsPresheaf_comp_sectionsPresheafMap
+    {A B : CommMon X.Modules} (f : A ⟶ B) :
+    A.toSectionsPresheaf ≫ CommMon.sectionsPresheafMap f = B.toSectionsPresheaf := by
+  ext U : 1
+  rw [NatTrans.comp_app, CommMon.toSectionsPresheaf_app,
+    CommMon.sectionsPresheafMap_app, CommMon.toSectionsPresheaf_app]
+  -- The presheaf components and the explicitly bundled section rings agree
+  -- after unfolding the sections construction.
+  erw [← CommRingCat.ofHom_comp]
+  congr 1
+  ext r
+  exact (CommMon.sectionsAlgHom f U).commutes r
 
 /-- The `Γ(X, U)`-module structure on the sections over a basic open `X.basicOpen f` of an
 `𝒪ₓ`-module (`Scheme.Modules.moduleBasicOpen`) is, for a commutative `𝒪ₓ`-algebra, multiplication

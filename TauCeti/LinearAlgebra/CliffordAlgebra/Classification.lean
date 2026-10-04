@@ -47,6 +47,12 @@ private abbrev C (p q : ℕ) :=
 def realCliffordResidue (p q : ℕ) : ℕ :=
   (q + 8 - p % 8) % 8
 
+/-- The real Clifford residue of signature `(p, q)` is the natural-number representative
+`(q + 8 - p % 8) % 8` of `q - p` modulo eight, which selects the row of the classification table
+for that signature. -/
+theorem realCliffordResidue_def (p q : ℕ) : realCliffordResidue p q = (q + 8 - p % 8) % 8 :=
+  (rfl)
+
 /-- The real Clifford residue is one of the eight table indices. -/
 theorem realCliffordResidue_lt_eight (p q : ℕ) : realCliffordResidue p q < 8 := by
   rw [realCliffordResidue]
