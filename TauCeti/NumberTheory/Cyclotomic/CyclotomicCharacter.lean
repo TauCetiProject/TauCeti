@@ -42,6 +42,7 @@ variable {A B : Type*} [CommRing A] [IsDomain A] [CommRing B] [IsDomain B]
 /-- **The cyclotomic character is trivial without enough roots of unity**: if a domain `A` lacks a
 primitive `pⁱ`-th root of unity for some `i`, its cyclotomic character is the trivial
 character. -/
+@[simp]
 theorem cyclotomicCharacter_eq_one_of_not_forall_isPrimitiveRoot
     (H : ¬ ∀ i : ℕ, ∃ ζ : A, IsPrimitiveRoot ζ (p ^ i)) (g : A ≃+* A) :
     cyclotomicCharacter A p g = 1 := by

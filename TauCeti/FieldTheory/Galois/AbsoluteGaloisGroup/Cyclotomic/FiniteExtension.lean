@@ -83,6 +83,7 @@ theorem localCyclotomicCharacter_absoluteGaloisGroupExtend (τ : Field.absoluteG
 
 /-- **The cyclotomic character of `G_L` is that of `G_K` read through
 `absoluteGaloisGroupExtend K L σ`.** -/
+@[simp]
 theorem localCyclotomicCharacter_comp_absoluteGaloisGroupExtend :
     (localCyclotomicCharacter p K).comp (absoluteGaloisGroupExtend K L σ) =
       localCyclotomicCharacter p L :=
