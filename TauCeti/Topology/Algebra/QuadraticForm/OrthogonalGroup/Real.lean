@@ -19,18 +19,18 @@ underlying vector space needs to be chosen. The criterion includes the zero-dime
 
 public section
 
-namespace QuadraticForm
+namespace TauCeti.QuadraticMap
 
 variable {V : Type*} [AddCommGroup V] [Module ℝ V] [FiniteDimensional ℝ V]
 
 /-- The orthogonal group of a nondegenerate real quadratic form is compact if and only if the
 form is positive or negative definite, with the canonical topology on linear automorphisms. -/
-theorem isCompact_orthogonalGroup_iff_posDef_or_neg_posDef (Q : _root_.QuadraticForm ℝ V)
+theorem isCompact_orthogonalGroup_iff_posDef_or_negDef (Q : _root_.QuadraticForm ℝ V)
     (hQ : Q.Nondegenerate) :
     IsCompact (TauCeti.QuadraticMap.orthogonalGroup Q : Set (V ≃ₗ[ℝ] V)) ↔
       Q.PosDef ∨ (-Q).PosDef := by
   let _ : Invertible (2 : ℝ) := invertibleOfNonzero two_ne_zero
   exact (TauCeti.QuadraticMap.isCompact_orthogonalGroup_iff Q hQ).trans
-    Q.anisotropic_iff_posDef_or_neg_posDef
+    (_root_.QuadraticForm.anisotropic_iff_posDef_or_negDef Q)
 
-end QuadraticForm
+end TauCeti.QuadraticMap

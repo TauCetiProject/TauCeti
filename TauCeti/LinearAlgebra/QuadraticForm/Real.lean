@@ -33,7 +33,7 @@ criteria for real orthogonal groups with the usual order-theoretic notion of def
 
 ## Main results
 
-* `QuadraticForm.anisotropic_iff_posDef_or_neg_posDef`: real anisotropic forms are exactly the
+* `QuadraticForm.anisotropic_iff_posDef_or_negDef`: real anisotropic forms are exactly the
   positive and negative definite forms, including forms on the zero space.
 * `QuadraticMap.map_inv_sqrt_smul_eq_one`: a vector of positive quadratic value can be
   normalized to value one by inverse-square-root scaling. This normalization feeds the
@@ -94,7 +94,7 @@ variable {M : Type*} [AddCommGroup M] [Module ℝ M]
 
 /-- A real quadratic form is anisotropic if and only if it is positive or negative definite.
 No finite-dimensionality assumption is needed; on the zero space both alternatives hold. -/
-theorem anisotropic_iff_posDef_or_neg_posDef (Q : _root_.QuadraticForm ℝ M) :
+theorem anisotropic_iff_posDef_or_negDef (Q : _root_.QuadraticForm ℝ M) :
     Q.Anisotropic ↔ Q.PosDef ∨ (-Q).PosDef := by
   constructor
   · intro hQ
