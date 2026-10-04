@@ -67,6 +67,11 @@ for a nonempty weight (`TauCeti.DominantWeight.detShift_shift`).
   invariant of a weight modulo the constant weights, and
   `TauCeti.DominantWeight.detShiftShape_weightOfShape` shows every diagram with at most `n - 1`
   rows occurs as one.
+* `TauCeti.DominantWeight.rowLen_shape_eq_rowLen_detShiftShape_add`: on a polynomial weight the
+  twist is visible on the diagram, each of whose first `n` rows is `λₙ` cells longer than the
+  corresponding row of the polynomial part, and
+  `TauCeti.DominantWeight.colLen_zero_detShiftShape_le_one_of_le_two` records that for `n ≤ 2` the
+  polynomial part is a single row.
 * `TauCeti.existsUnique_dominantWeight`: each orbit of the symmetric group permuting the
   coordinates of `ℤⁿ` contains exactly one dominant weight.
 
@@ -273,6 +278,18 @@ theorem natCast_rowLen_detShiftShape_add_detShift (l : DominantWeight n) (i : Fi
   rw [rowLen_detShiftShape]
   omega
 
+/-- **The diagram of a polynomial weight carries `λₙ` full columns in front of the diagram of its
+polynomial part**: each of its first `n` rows is exactly `λₙ` cells longer.  This is the
+combinatorial form of the determinant twist, and polynomiality is what makes `λₙ` a number of
+columns rather than a negative shift. -/
+theorem rowLen_shape_eq_rowLen_detShiftShape_add {l : DominantWeight n} (hl : l.IsPolynomial)
+    (i : Fin n) :
+    l.shape.rowLen i = l.detShiftShape.rowLen i + l.detShift.toNat := by
+  have h0 : 0 ≤ l.detShift := l.isPolynomial_iff_zero_le_detShift.mp hl
+  have h := l.detShift_le i
+  rw [rowLen_shape, rowLen_detShiftShape]
+  omega
+
 /-- The weight of the polynomial part of `λ` is `λ` itself, shifted down by `λₙ`. -/
 @[simp]
 theorem weightOfShape_detShiftShape (l : DominantWeight n) :
@@ -306,6 +323,14 @@ theorem colLen_zero_detShiftShape_le_pred (l : DominantWeight n) :
 form consumed by the dictionary between weights and Young diagrams. -/
 theorem colLen_zero_detShiftShape_le (l : DominantWeight n) : l.detShiftShape.colLen 0 ≤ n :=
   (colLen_zero_detShiftShape_le_pred l).trans (Nat.sub_le n 1)
+
+/-- **For `GL n` with `n ≤ 2` the polynomial part of every dominant weight has at most one row**:
+the general bound is `n - 1` rows.  So for `n ≤ 2` the Weyl module of a polynomial part is a
+symmetric power of the standard representation, and `TauCeti.rationalWeylRep` is a determinant
+twist of one. -/
+theorem colLen_zero_detShiftShape_le_one_of_le_two (hn : n ≤ 2) (l : DominantWeight n) :
+    l.detShiftShape.colLen 0 ≤ 1 :=
+  l.colLen_zero_detShiftShape_le_pred.trans (by omega)
 
 /-- **Shifting does not move the polynomial part**: `λ` and `λ + m·(1, …, 1)` have the same Young
 diagram, because the shift moves the last entry by `m` as well and is then subtracted off again.
