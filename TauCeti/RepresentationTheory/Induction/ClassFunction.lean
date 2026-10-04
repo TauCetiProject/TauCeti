@@ -300,18 +300,21 @@ theorem indClassFun_top {f : (⊤ : Subgroup G) → k} (hf : f ∈ ClassFunction
     dite_eq_left (Subgroup.mem_top g)]
 
 open scoped Classical in
-/-- **Transitivity of induction.**  For subgroups `L ≤ T` of finite index, inducing a class
-function of `L` first to `T` and then to `G` is inducing it directly to `G`:
+/-- **Transitivity of induction.**  For subgroups `L ≤ T` with `L` of finite index, inducing a
+class function of `L` first to `T` and then to `G` is inducing it directly to `G`:
 `Ind_T^G (Ind_L^T f) = Ind_L^G f`.  The intermediate step induces from `L` read as the subgroup
-`L.subgroupOf T` of `T`, with `Subgroup.subgroupOfEquivOfLe` identifying the two.
+`L.subgroupOf T` of `T`, with `Subgroup.subgroupOfEquivOfLe` identifying the two.  That `T` has
+finite index too follows from `L ≤ T` (`Subgroup.finiteIndex_of_le`), so it is not assumed.
 
 The proof splits the cosets of `L` in `G` into the cosets of `T` in `G` and the cosets of `L` in
 `T` (`Subgroup.quotientEquivProdOfLE`); being a class function makes each summand independent of
 the representative that splitting produces. -/
 theorem indClassFun_indClassFun_subgroupOf {L T : Subgroup G} (hLT : L ≤ T) [L.FiniteIndex]
-    [T.FiniteIndex] {f : L → k} (hf : f ∈ ClassFunction k L) :
+    {f : L → k} (hf : f ∈ ClassFunction k L) :
+    haveI := Subgroup.finiteIndex_of_le hLT
     indClassFun T (indClassFun (L.subgroupOf T) fun x => f (Subgroup.subgroupOfEquivOfLe hLT x)) =
       indClassFun L f := by
+  have := Subgroup.finiteIndex_of_le hLT
   funext g
   let := Fintype.ofFinite (G ⧸ T)
   let := Fintype.ofFinite (T ⧸ L.subgroupOf T)

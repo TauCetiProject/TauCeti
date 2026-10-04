@@ -32,7 +32,8 @@ Brauer's theorem is sharpened to a statement about fields of definition.
 The proof is by induction on `|G|`.  Let `W` be irreducible.
 
 * If the operators `W.ρ g` commute pairwise, Schur's lemma makes each of them a scalar, `W` is a
-  line, and its character is a linear character of `G = ⊤`.
+  line, and its character is a linear character of `G = ⊤`
+  (`FDRep.exists_character_eq_of_commute`).
 * Otherwise let `K` be the kernel of `W` and `Z = upperCentralSeriesStep K` the elements acting
   centrally.  As `G` is nilpotent and `Z ≠ ⊤`, some `x` lies one step above `Z` but not in `Z`
   (`TauCeti.lt_upperCentralSeriesStep`), and the normal closure `A` of `x` acts through pairwise
@@ -73,41 +74,6 @@ open TauCeti
 
 variable {k G : Type u} [Field k] [Group G]
 
-/-- **A representation whose operators commute is a linear character.**  Over an algebraically
-closed field, if the operators of an irreducible representation `W` commute pairwise, Schur's lemma
-makes each a scalar, so `W` is a line and its character is the linear character of those scalars,
-here read as induced from `⊤`. -/
-private theorem exists_character_eq_indClassFun_top [IsAlgClosed k] (W : FDRep k G) [Simple W]
-    (hcomm : ∀ g h : G, Commute (W.ρ g) (W.ρ h)) :
-    ∃ χ : (⊤ : Subgroup G) →* kˣ, W.character = indClassFun ⊤ fun h => (χ h : k) := by
-  have hW := FDRep.isIrreducible_of_simple W
-  have : Nontrivial W := hW.nontrivial
-  choose c hc using fun g => hW.exists_forall_apply_eq_smul (W.ρ g) fun h v => by
-    rw [← Module.End.mul_apply, (hcomm g h).eq, Module.End.mul_apply]
-  obtain ⟨v, hv⟩ := exists_ne (0 : W)
-  have hmul (g h : G) : c (g * h) = c g * c h := by
-    refine smul_left_injective k hv ?_
-    dsimp only
-    rw [← hc, map_mul, Module.End.mul_apply, hc h, map_smul, hc g, smul_smul, mul_comm]
-  have hone : c 1 = 1 := smul_left_injective k hv (by simp [← hc])
-  -- The line through `v` is stable, hence everything: `W` is one-dimensional.
-  let line : Subrepresentation W.ρ :=
-    ⟨k ∙ v, fun g w hw => by
-      obtain ⟨a, rfl⟩ := Submodule.mem_span_singleton.mp hw
-      rw [map_smul, hc, smul_smul]
-      exact Submodule.smul_mem _ _ (Submodule.mem_span_singleton_self v)⟩
-  have hline : line = ⊤ := (IsSimpleOrder.eq_bot_or_eq_top line).resolve_left fun h => hv <| by
-    have hmem : v ∈ line.toSubmodule := Submodule.mem_span_singleton_self v
-    rw [h] at hmem
-    exact hmem
-  have hfin : Module.finrank k W = 1 :=
-    (finrank_eq_one_iff_of_nonzero v hv).mpr (congrArg Subrepresentation.toSubmodule hline)
-  let χ : G →* k := { toFun := c, map_one' := hone, map_mul' := hmul }
-  refine ⟨χ.toHomUnits.comp (⊤ : Subgroup G).subtype, funext fun g => ?_⟩
-  rw [indClassFun_top (ClassFunction.comp_monoidHom_mem _ Units.val)]
-  have hρ : W.ρ g = c g • LinearMap.id := LinearMap.ext (hc g)
-  simp [χ, character, hρ, hfin]
-
 /-- **The character of an irreducible representation of a finite nilpotent group is monomial.**
 Over an algebraically closed field of characteristic zero, for every irreducible representation
 `W` of a finite nilpotent group `G` there are a subgroup `H` and a linear character `χ` of `H`
@@ -119,8 +85,10 @@ theorem exists_character_eq_indClassFun_of_isNilpotent [IsAlgClosed k] [CharZero
   induction n using Nat.strong_induction_on generalizing G with
   | _ n ih =>
   by_cases hcomm : ∀ g h : G, Commute (W.ρ g) (W.ρ h)
-  · obtain ⟨χ, hχ⟩ := exists_character_eq_indClassFun_top W hcomm
-    exact ⟨⊤, χ, hχ⟩
+  · obtain ⟨χ, hχ⟩ := exists_character_eq_of_commute W hcomm
+    refine ⟨⊤, χ.comp (⊤ : Subgroup G).subtype, hχ.trans (funext fun g => ?_)⟩
+    rw [indClassFun_top (ClassFunction.comp_monoidHom_mem _ Units.val)]
+    rfl
   have hW := FDRep.isIrreducible_of_simple W
   have : Nontrivial W := hW.nontrivial
   -- `Z`, the elements acting centrally, is proper; `x` lies one step above it.
