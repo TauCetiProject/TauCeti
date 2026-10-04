@@ -11,16 +11,19 @@ public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Infinity.Edg
 /-!
 # Separation of logarithmic Schwarz--Christoffel ends
 
-When the total turning exponent is `-1`, the two outer sides of the normalized
-Schwarz--Christoffel boundary are parallel horizontal rays pointing to the right. Their
-heights are exactly `im c` and `im c + π`, where `c` is the logarithmic constant at infinity.
+When the total turning exponent is `-1`, assume the left and right finite endpoints bound
+every prevertex with nonzero exponent from below and above, respectively, and that the
+exponent sum at each endpoint is greater than `-1` (endpoint integrability). Then the two
+outer sides of the normalized Schwarz--Christoffel boundary are parallel horizontal rays
+pointing to the right. Their heights are exactly `im c` and `im c + π`, where `c` is the
+logarithmic constant at infinity.
 Thus their supporting lines are distinct, with separation `π`.
 
 The exact heights identify the two levels of a parallel-sided polygonal end. In particular,
-the outer boundary images are automatically disjoint. The boundary-simplicity criterion
-therefore only needs to check intersections among bounded sides and between bounded sides
-and the outer rays. No simplicity of the bounded chain or interior univalence is inferred
-from the logarithmic asymptotic alone.
+the outer boundary images are automatically disjoint under these hypotheses. The
+boundary-simplicity criterion therefore only needs to check intersections among bounded sides
+and between bounded sides and the outer rays. No simplicity of the bounded chain or interior
+univalence is inferred from the logarithmic asymptotic alone.
 
 ## References
 
