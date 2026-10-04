@@ -6,12 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Lie.Character
-public import Mathlib.Data.Sum.Order
-public import Mathlib.LinearAlgebra.Basis.Prod
 public import Mathlib.LinearAlgebra.Basis.VectorSpace
-public import TauCeti.Algebra.Lie.UniversalEnveloping.Functoriality
-public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Basis
-public import TauCeti.Data.Multiset.Sort
+public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Decomposition
 
 /-!
 # Characters of a Lie subalgebra generate a proper left ideal
@@ -70,83 +66,20 @@ section Adapted
 variable (B : LieSubalgebra R L) {A : Submodule R L} (hA : IsCompl A (B : Submodule R L))
   {ιA : Type w₁} {ιB : Type w₂} (bA : Basis ιA R A) (bB : Basis ιB R B)
 
-/-- The basis of `L` listing the basis `bA` of the complement before the basis `bB` of `B`. -/
-private noncomputable def adaptedBasis : Basis (ιA ⊕ₗ ιB) R L :=
-  ((bA.prod bB).map (Submodule.prodEquivOfIsCompl A (B : Submodule R L) hA)).reindex toLex
-
-private theorem adaptedBasis_inl (i : ιA) :
-    adaptedBasis B hA bA bB (Sum.inlₗ i) = (bA i : L) := by
-  simp only [adaptedBasis, Basis.coe_reindex, toLex_symm_eq, Function.comp_apply, ofLex_toLex,
-    Basis.map_apply, Basis.prod_apply, LinearMap.coe_inl, Sum.elim_inl]
-  rw [Submodule.coe_prodEquivOfIsCompl', ZeroMemClass.coe_zero, add_zero]
-
-private theorem adaptedBasis_inr (j : ιB) :
-    adaptedBasis B hA bA bB (Sum.inrₗ j) = (bB j : L) := by
-  simp only [adaptedBasis, Basis.coe_reindex, toLex_symm_eq, Function.comp_apply, ofLex_toLex,
-    Basis.map_apply, Basis.prod_apply, LinearMap.coe_inr, Sum.elim_inr]
-  rw [Submodule.coe_prodEquivOfIsCompl', ZeroMemClass.coe_zero, zero_add]
-
-/-- Exponent vectors over the ordered sum, split into their two halves. -/
-private noncomputable def sumExponentEquiv : ((ιA →₀ ℕ) × (ιB →₀ ℕ)) ≃ (ιA ⊕ₗ ιB →₀ ℕ) :=
-  Finsupp.sumFinsuppEquivProdFinsupp.symm.trans (Finsupp.domCongr toLex).toEquiv
-
-private theorem sumExponentEquiv_apply (α : ιA →₀ ℕ) (β : ιB →₀ ℕ) :
-    sumExponentEquiv (α, β) = α.mapDomain Sum.inlₗ + β.mapDomain Sum.inrₗ := by
-  ext x
-  obtain ⟨i | j, rfl⟩ := toLex.surjective x
-  · simp only [sumExponentEquiv, Equiv.trans_apply, Finsupp.coe_add, Pi.add_apply]
-    simp [Finsupp.mapDomain_of_notMem_range,
-      Finsupp.mapDomain_apply_of_injective (f := Sum.inlₗ (β := ιB))
-        (toLex.injective.comp Sum.inl_injective) α i]
-  · simp only [sumExponentEquiv, Equiv.trans_apply, Finsupp.coe_add, Pi.add_apply]
-    simp [Finsupp.mapDomain_of_notMem_range,
-      Finsupp.mapDomain_apply_of_injective (f := Sum.inrₗ (α := ιA))
-        (toLex.injective.comp Sum.inr_injective) β j]
-
 variable [LinearOrder ιA] [LinearOrder ιB]
 
 /-- The ordered monomial in the basis of the complement with exponent vector `α`. -/
 private noncomputable def complementMonomial (α : ιA →₀ ℕ) : U :=
   pbwMonomial R L (fun i ↦ (bA i : L)) (α.toMultiset.sort (· ≤ ·))
 
-/-- **The adapted PBW basis factors**: the ordered monomial with exponents `α` on the complement
-and `β` on `B` is the ordered `α`-monomial of the complement times the image of the ordered
-`β`-monomial of `U(B)`. -/
-private theorem pbwBasis_adaptedBasis_sumExponentEquiv (α : ιA →₀ ℕ) (β : ιB →₀ ℕ) :
-    (adaptedBasis B hA bA bB).pbwBasis (sumExponentEquiv (α, β)) =
-      complementMonomial bA α * map R B.incl (bB.pbwBasis β) := by
-  -- The exponent vector of `(α, β)` is the sum of the two halves, pushed into `ιA ⊕ₗ ιB`.
-  have hexp : (sumExponentEquiv (α, β)).toMultiset =
-      α.toMultiset.map Sum.inlₗ + β.toMultiset.map Sum.inrₗ := by
-    rw [sumExponentEquiv_apply, Finsupp.toMultiset_add, Finsupp.toMultiset_map,
-      Finsupp.toMultiset_map]
-  -- Every complement index precedes every index of `B`, so the sorted list splits in two.
-  have hle : ∀ a ∈ α.toMultiset.map Sum.inlₗ, ∀ b ∈ β.toMultiset.map (Sum.inrₗ (α := ιA)),
-      a ≤ b := by
-    simp only [Multiset.mem_map]
-    rintro _ ⟨i, -, rfl⟩ _ ⟨j, -, rfl⟩
-    exact Sum.Lex.inl_le_inr i j
-  have hsort : (sumExponentEquiv (α, β)).toMultiset.sort (· ≤ ·) =
-      (α.toMultiset.sort (· ≤ ·)).map Sum.inlₗ ++ (β.toMultiset.sort (· ≤ ·)).map Sum.inrₗ := by
-    rw [hexp, Multiset.sort_add _ hle,
-      Multiset.map_sort Sum.inlₗ α.toMultiset (fun a b : ιA ↦ a ≤ b)
-        (fun a b : ιA ⊕ₗ ιB ↦ a ≤ b) (fun _ _ _ _ ↦ Sum.Lex.inl_le_inl_iff.symm),
-      Multiset.map_sort Sum.inrₗ β.toMultiset (fun a b : ιB ↦ a ≤ b)
-        (fun a b : ιA ⊕ₗ ιB ↦ a ≤ b) (fun _ _ _ _ ↦ Sum.Lex.inr_le_inr_iff.symm)]
-  -- The monomial of the concatenation is the product of the two monomials.
-  rw [Basis.pbwBasis_apply, Basis.pbwBasis_apply, map_pbwMonomial, hsort, pbwMonomial_append,
-    complementMonomial]
-  simp only [pbwMonomial_def, List.map_map, Function.comp_def, adaptedBasis_inl, adaptedBasis_inr,
-    LieSubalgebra.coe_incl]
-
 variable (χ : LieCharacter R B)
 
 /-- The linear form on `U(L)` reading off the coefficient of the empty complement monomial in the
 free right `U(B)`-module structure, and applying the character `χ` to it. -/
 private noncomputable def characterForm : U →ₗ[R] R :=
-  (adaptedBasis B hA bA bB).pbwBasis.constr R fun n ↦
-    if (sumExponentEquiv.symm n).1 = 0 then
-      _root_.UniversalEnvelopingAlgebra.lift R χ (bB.pbwBasis (sumExponentEquiv.symm n).2)
+  (relativePBWBasis B hA bA bB).constr R fun n ↦
+    if n.1 = 0 then
+      _root_.UniversalEnvelopingAlgebra.lift R χ (bB.pbwBasis n.2)
     else 0
 
 private theorem _root_.UniversalEnvelopingAlgebra.characterForm_complementMonomial_mul
@@ -158,8 +91,7 @@ private theorem _root_.UniversalEnvelopingAlgebra.characterForm_complementMonomi
     (f₂ := if α = 0 then (_root_.UniversalEnvelopingAlgebra.lift R χ).toLinearMap else 0)
     fun β ↦ by
       simp only [LinearMap.comp_apply, AlgHom.toLinearMap_apply, LinearMap.mulLeft_apply]
-      rw [← pbwBasis_adaptedBasis_sumExponentEquiv B hA, characterForm, Basis.constr_basis,
-        Equiv.symm_apply_apply]
+      rw [complementMonomial, ← relativePBWBasis_apply B hA, characterForm, Basis.constr_basis]
       split_ifs <;> simp
   have hy := LinearMap.congr_fun hlin y
   split_ifs at hy ⊢ <;> simpa using hy
@@ -169,13 +101,14 @@ private theorem _root_.UniversalEnvelopingAlgebra.characterForm_mul_map (u : U)
     (r : _root_.UniversalEnvelopingAlgebra R B) :
     characterForm B hA bA bB χ (u * map R B.incl r) =
       characterForm B hA bA bB χ u * _root_.UniversalEnvelopingAlgebra.lift R χ r := by
-  have hlin := (adaptedBasis B hA bA bB).pbwBasis.ext
+  have hlin := (relativePBWBasis B hA bA bB).ext
     (f₁ := characterForm B hA bA bB χ ∘ₗ LinearMap.mulRight R (map R B.incl r))
     (f₂ := _root_.UniversalEnvelopingAlgebra.lift R χ r • characterForm B hA bA bB χ)
     fun n ↦ by
-      obtain ⟨⟨α, β⟩, rfl⟩ := sumExponentEquiv.surjective n
+      rcases n with ⟨α, β⟩
+      rw [relativePBWBasis_apply, ← complementMonomial]
       simp only [LinearMap.comp_apply, LinearMap.mulRight_apply, LinearMap.smul_apply,
-        pbwBasis_adaptedBasis_sumExponentEquiv, mul_assoc, ← map_mul,
+        mul_assoc, ← map_mul,
         _root_.UniversalEnvelopingAlgebra.characterForm_complementMonomial_mul, smul_eq_mul]
       split_ifs <;> simp [mul_comm]
   simpa [mul_comm] using LinearMap.congr_fun hlin u
