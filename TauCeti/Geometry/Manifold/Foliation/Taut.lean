@@ -58,9 +58,33 @@ theorem isClosedTransversal_mk
     F.IsClosedTransversal γ :=
   ⟨hγdiff, hperiod, htrans⟩
 
+/-- A closed transversal is characterized by pointwise periodicity and its defining fields. -/
+@[simp]
+theorem isClosedTransversal_iff (γ : ℝ → M) : F.IsClosedTransversal γ ↔
+    ContMDiff 𝓘(ℝ, ℝ) I 1 γ ∧ (∀ t : ℝ, γ (t + 1) = γ t) ∧
+      ∀ t, curveVelocity I γ t ≠ 0 ∧
+        IsCompl (Submodule.span ℝ {curveVelocity I γ t}) (F.distribution (γ t)) := by
+  constructor
+  · intro h
+    exact ⟨h.1, h.2.1, h.2.2⟩
+  · rintro ⟨hγdiff, hperiod, htrans⟩
+    exact F.isClosedTransversal_mk hγdiff hperiod htrans
+
 /-- A foliation is taut when every leaf meets a C¹ closed transversal. -/
 def Taut : Prop :=
   ∀ x : M, ∃ γ : ℝ → M, F.IsClosedTransversal γ ∧ ∃ t : ℝ, γ t ∈ F.leaf x
+
+/-- Tautness is characterized by a transversal and an explicit meeting parameter per leaf. -/
+@[simp]
+theorem taut_iff : F.Taut ↔
+    ∀ x : M, ∃ γ : ℝ → M, ∃ t : ℝ, F.IsClosedTransversal γ ∧ γ t ∈ F.leaf x := by
+  constructor
+  · intro h x
+    obtain ⟨γ, hγ, t, ht⟩ := h x
+    exact ⟨γ, t, hγ, ht⟩
+  · rintro h x
+    obtain ⟨γ, t, hγ, ht⟩ := h x
+    exact ⟨γ, hγ, t, ht⟩
 
 /-- The C¹ regularity field of a closed transversal. -/
 theorem isClosedTransversal_contMDiff (hγ : F.IsClosedTransversal γ) :
