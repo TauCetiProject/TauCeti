@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.MvPowerSeries.Restricted
 public import Mathlib.RingTheory.MvPowerSeries.GaussNorm
 public import Mathlib.Analysis.Normed.Unbundled.RingSeminorm
+public import Mathlib.Analysis.Normed.Module.Basic
 import Mathlib.Data.Finsupp.MonomialOrder
 import Mathlib.SetTheory.Cardinal.Order
 
@@ -35,6 +36,7 @@ largest summand, so Mathlib's dominant-antidiagonal theorem applies.
 * `MvPowerSeries.norm_le_iff`: a norm bound is equivalent to bounds on every weighted coefficient.
 * The restricted-series subring inherits `CompleteSpace`, `IsUltrametricDist`, and
   `NormMulClass` from its coefficient ring.
+* Over a normed field, the restricted-series subring is a `NormedAlgebra` over its coefficients.
 
 ## References
 
@@ -325,5 +327,25 @@ noncomputable instance instNormedCommRingIsRestrictedSubring :
   { instNormedRingIsRestrictedSubring with mul_comm := mul_comm }
 
 end NormedCommRing
+
+section NormedField
+
+variable {σ R : Type*} [NormedField R] [IsUltrametricDist R] {c : σ → ℝ}
+  [∀ i, Fact (0 < c i)]
+
+/-- At positive polyradii, restricted series form a normed algebra over their ultrametric
+coefficient field. -/
+noncomputable instance instNormedAlgebraIsRestrictedSubring :
+    NormedAlgebra R (IsRestricted.subring (R := R) c) where
+  toAlgebra := instAlgebraIsRestrictedSubring
+  norm_smul_le r f := by
+    rw [Algebra.smul_def]
+    have h : algebraMap R (IsRestricted.subring (R := R) c) r =
+        ⟨C r, isRestricted_C c r⟩ := Subtype.ext (coe_algebraMap_isRestrictedSubring r)
+    rw [h]
+    simpa only [norm_C] using
+      norm_mul_le (⟨C r, isRestricted_C c r⟩ : IsRestricted.subring (R := R) c) f
+
+end NormedField
 
 end MvPowerSeries
