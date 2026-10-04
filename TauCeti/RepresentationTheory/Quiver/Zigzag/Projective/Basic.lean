@@ -68,6 +68,11 @@ variable [CommRing k]
 noncomputable abbrev zigzagVertexIdempotent (i : V) : nonisolatedZigzagQuotient k G :=
   zigzagMk k G (vertexIdempotent k (vertex G i))
 
+/-- The vertex idempotent of the zigzag relation quotient is idempotent. -/
+theorem isIdempotentElem_zigzagVertexIdempotent (i : V) :
+    IsIdempotentElem (zigzagVertexIdempotent k G i) :=
+  zigzagMk_vertexIdempotent_mul_self k G i
+
 /-- The left projective of the zigzag relation quotient at `i`, namely the principal left ideal
 `Z e_i`. -/
 noncomputable def zigzagProjective (i : V) : Ideal (nonisolatedZigzagQuotient k G) :=
