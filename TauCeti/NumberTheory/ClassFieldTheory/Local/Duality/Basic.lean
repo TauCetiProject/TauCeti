@@ -83,7 +83,7 @@ theorem internalHom_continuousSMul (A : GalRep n F) :
 attribute [local instance] internalHom_smulCommClass internalHom_continuousSMul
 
 /-- **The Tate dual** `A' = Hom(A, μₙ)`, with the conjugation action. -/
-@[expose] def tateDual (A : GalRep n F) : GalRep n F :=
+def tateDual (A : GalRep n F) : GalRep n F :=
   ofDiscreteModule (ZMod n) (Field.absoluteGaloisGroup F)
     (InternalHom (Field.absoluteGaloisGroup F) A.V (muNRep n F).V)
 
@@ -109,8 +109,10 @@ def tateDualEquiv (A : GalRep n F) : (tateDual A).V ≃+ (A.V →+ (muNRep n F).
     rw [InternalHom.evalPairing_apply]
   map_add' := map_add (InternalHom.evalPairing (Field.absoluteGaloisGroup F))
 
-/-- The carrier equivalence of the Tate dual forgets only the conjugation action. -/
-theorem tateDualEquiv_apply (A : GalRep n F) (φ : (tateDual A).V) :
+/-- The carrier equivalence of the Tate dual forgets only the conjugation action. This mentions the
+`InternalHom` carrier hidden by `tateDual`, so it is private; consumers use the `tateDualEquiv`
+API below. -/
+private theorem tateDualEquiv_apply (A : GalRep n F) (φ : (tateDual A).V) :
     tateDualEquiv A φ = φ.toAddMonoidHom :=
   InternalHom.evalPairing_apply φ
 
