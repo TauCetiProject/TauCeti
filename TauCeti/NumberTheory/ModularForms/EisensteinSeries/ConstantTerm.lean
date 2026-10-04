@@ -183,8 +183,10 @@ private lemma tsum_charWeight_mul_zpow (huv : u * v ∣ N) (c a : ℤ) :
     rw [Int.mul_ediv_cancel_left _ hv, ← tsum_mul_left]
     refine tsum_congr fun n ↦ ?_
     have hdvd : (v : ℤ) ∣ -(n * (v * c)) := Dvd.intro (-(n * c)) (by ring)
-    rw [show -(n * (v * c)) / (v : ℤ) = n * -c by
-      rw [show -(n * (v * c)) = v * (n * -c) by ring, Int.mul_ediv_cancel_left _ hv]]
+    have hfactor : -(n * (v * c)) = (v : ℤ) * (n * -c) := by ring
+    have hquot : -(n * (v * c)) / (v : ℤ) = n * -c := by
+      rw [hfactor, Int.mul_ediv_cancel_left _ hv]
+    rw [hquot]
     simp only [hdvd, ↓reduceIte, Int.cast_mul, map_mul]
     ring
   · refine (tsum_congr fun n ↦ ?_).trans tsum_zero
