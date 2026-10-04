@@ -71,35 +71,6 @@ private theorem StrictCohomologicalDimensionLE.exists_corestriction_eq {n : ℕ}
   rwa [strictCohomologicalDimensionLE_iff.1 h _ (n + 1) n.lt_succ_self,
     AddSubgroup.mem_bot] at hδ
 
-omit [CompactSpace G] [TotallyDisconnectedSpace G] in
-/-- In degree zero, a class of `H⁰(G, M)` killed by `p ^ k` is the image of a class of
-`H⁰(G, M[p ^ k])`, where `M[p ^ k]` is the `G`-submodule killed by `p ^ k`. -/
-private theorem exists_coeffMap_ker_nsmul_eq (M : Type u) [AddCommGroup M] [TopologicalSpace M]
-    [DiscreteTopology M] [DistribMulAction G M] {k : ℕ}
-    (hK : ∀ g : G, ∀ m ∈ (nsmulAddMonoidHom k : M →+ M).ker, g • m ∈ (nsmulAddMonoidHom k).ker)
-    {x : continuousCohomology 0 (ofDiscreteModule ℤ G M)} (hx : k • x = 0) :
-    letI := (nsmulAddMonoidHom k : M →+ M).ker.restrictDistribMulAction hK
-    ∃ z : continuousCohomology 0 (ofDiscreteModule ℤ G (nsmulAddMonoidHom k : M →+ M).ker),
-      coeffMap (ofDiscreteModuleMap (nsmulAddMonoidHom k : M →+ M).ker.subtype.toIntLinearMap
-        ((nsmulAddMonoidHom k : M →+ M).ker.restrictDistribMulAction_coe_smul hK)) 0 z = x := by
-  set K := (nsmulAddMonoidHom k : M →+ M).ker
-  let := K.restrictDistribMulAction hK
-  set e := explicitH0IsoContinuousCohomology G M
-  -- the invariant element `m` underlying `x` is killed by `k`
-  set m : H0 G M := e.inv x
-  have hm : k • (m : M) = 0 := by
-    rw [← AddSubgroup.coe_nsmul, ← map_nsmul, hx, _root_.map_zero, AddSubgroup.coe_zero]
-  let ι : K →+[G] M :=
-    { K.subtype with map_smul' := K.restrictDistribMulAction_coe_smul hK }
-  let mK : H0 G K := ⟨⟨m, hm⟩, (FixedPoints.mem_addSubgroup G K _).2 fun g ↦ Subtype.ext <|
-    (K.restrictDistribMulAction_coe_smul hK g _).trans
-      ((FixedPoints.mem_addSubgroup G M _).1 m.2 g)⟩
-  refine ⟨(explicitH0IsoContinuousCohomology G K).hom mK, ?_⟩
-  have hmK : explicitCoeff0 G K ι mK = m := Subtype.ext (coe_explicitCoeff0 G K ι mK)
-  have := explicitH0Iso_coeffMap G K M ι mK
-  rw [hmK] at this
-  exact this.trans (Iso.inv_hom_id_apply e x)
-
 /-- **Corestriction in the top degree of strict cohomological dimension** (NSW (3.3.11),
 surjectivity). For a profinite group `G` with `StrictCohomologicalDimensionLE p G n`, a prime `p`
 and an open subgroup `U`, every `p`-primary class of `Hⁿ(G, M)` is the corestriction of a
