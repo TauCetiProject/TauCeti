@@ -19,6 +19,9 @@ denominator, and common factors and multiple roots are allowed.
 
 This connects signed Euclidean remainder sequences to Cauchy indices, so
 coefficient formulas for the sequences can compute indices and Tarski queries.
+In particular, one Euclidean step changes the whole-line index of `q / p` only
+by the contribution of the leading coefficients of `p` and `q`
+(`Polynomial.cauchyIndex_univ_eq_add_cauchyIndex_neg_mod`).
 
 ## References
 
@@ -154,5 +157,39 @@ theorem _root_.Polynomial.cauchyIndex_eq_sub_signVariations_univ (p q : R[X]) :
   rw [hindex, cauchyIndex_Ioo_aux p q hab
     (fun r hr hz => (hRA r hr a hz).not_gt haA)
     (fun r hr hz => (hRB r hr b hz).not_gt hBb), hA a haA, hB b hBb]
+
+/-- The variation step of a Sturm sequence at the two infinities: comparing the signs of
+`s * (-1) ^ m` and `t * (-1) ^ n` instead of `s` and `t` changes the count by `s * t` exactly
+when `m + n` is odd. -/
+private theorem ite_sign_neg_one_pow_sub_ite (m n : ℕ) {s t : SignType} (hs : s ≠ 0)
+    (ht : t ≠ 0) :
+    ((if s * (-1) ^ m = t * (-1) ^ n then 0 else 1 : ℕ) : ℤ) -
+        ((if s = t then 0 else 1 : ℕ) : ℤ) =
+      if Odd (m + n) then (s : ℤ) * t else 0 := by
+  rcases Nat.even_or_odd m with hm | hm <;> rcases Nat.even_or_odd n with hn | hn <;>
+    simp only [hm.neg_one_pow, hn.neg_one_pow, Nat.odd_add, hm, hn, mul_one, mul_neg] <;>
+    cases s <;> cases t <;> simp_all [Nat.not_odd_iff_even.mpr, Nat.not_even_iff_odd.mpr]
+
+/-- The Euclidean recurrence for the whole-line Cauchy index. Passing from `q / p` to
+`-(p % q) / q` changes the index by `sign p.leadingCoeff * sign q.leadingCoeff` when the degrees
+of `p` and `q` have opposite parities, and leaves it unchanged otherwise. -/
+theorem _root_.Polynomial.cauchyIndex_univ_eq_add_cauchyIndex_neg_mod {p q : R[X]} (hp : p ≠ 0)
+    (hq : q ≠ 0) :
+    cauchyIndex p q univ =
+      (if Odd (p.natDegree + q.natDegree) then
+        (sign p.leadingCoeff : ℤ) * sign q.leadingCoeff else 0) +
+        cauchyIndex q (-(p % q)) univ := by
+  classical
+  have hp' : p.leadingCoeff ≠ 0 := leadingCoeff_ne_zero.mpr hp
+  have hq' : q.leadingCoeff ≠ 0 := leadingCoeff_ne_zero.mpr hq
+  rw [cauchyIndex_eq_sub_signVariations_univ, cauchyIndex_eq_sub_signVariations_univ,
+    sturmSeq_cons hp, neg_mod, sturmSeq_cons hq]
+  simp only [signVariationsAtTop_def, signVariationsAtBot_def, List.map_cons]
+  rw [List.signVariations_cons_cons_of_ne_zero _ (by simpa using hp') (by simpa using hq'),
+    List.signVariations_cons_cons_of_ne_zero _ hp' hq']
+  simp only [sign_mul, sign_pow, Left.sign_neg, sign_one]
+  rw [← ite_sign_neg_one_pow_sub_ite _ _ (sign_ne_zero.mpr hp') (sign_ne_zero.mpr hq')]
+  push_cast
+  ring
 
 end TauCeti

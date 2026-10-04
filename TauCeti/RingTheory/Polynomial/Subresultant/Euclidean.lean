@@ -22,7 +22,8 @@ coefficient and the sign introduced by lowering bounds and swapping inputs.
 Reduction invariance holds over any commutative ring and at every index, including the
 terminal principal index. Division with remainder requires a field; the divisor and
 remainder may be zero. The principal-coefficient recurrences require the index to lie
-at or below both the remainder bound and the divisor degree.
+at or below both the remainder bound and the divisor degree. Strictly between the
+degree of the remainder and the degree of the divisor, the principal coefficients vanish.
 
 ## References
 
@@ -210,6 +211,16 @@ theorem _root_.Polynomial.psc_eq_sign_mul_leadingCoeff_pow_mul_psc_neg_mod {p q 
   linear_combination
     -((-1 : K) ^ ((m - j) * (q.natDegree - j)) * q.leadingCoeff ^ (m - r) *
       psc q (p % q) q.natDegree r j) * hsq
+
+/-- Principal coefficients vanish at the indices strictly between the degree of the
+remainder `p % q` and the degree of `q`. The remainder may be zero. -/
+theorem _root_.Polynomial.psc_eq_zero_of_natDegree_mod_lt {p q : K[X]} {m j : ℕ}
+    (hp : p.natDegree ≤ m) (hrj : (p % q).natDegree < j) (hjq : j < q.natDegree)
+    (hjm : j ≤ m) :
+    psc p q m q.natDegree j = 0 := by
+  rw [← psc_mod_left hp,
+    psc_eq_sign_mul_coeff_pow_mul_of_left_degree_drop hrj.le le_rfl hjm le_rfl hjq.le,
+    psc_left_bound, coeff_eq_zero_of_natDegree_lt hrj, zero_pow (by omega), mul_zero]
 
 end Field
 
