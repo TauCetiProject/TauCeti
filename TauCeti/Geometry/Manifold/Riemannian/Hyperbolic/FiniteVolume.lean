@@ -12,10 +12,11 @@ public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Volume
 # Hyperbolic metrics of finite volume
 
 A complete hyperbolic manifold need not be compact: the complement of a hyperbolic knot in `S³`,
-and more generally the interior of every piece of the torus decomposition of a 3-manifold that is
-not Seifert fibred, carries a complete hyperbolic metric of *finite volume*, with cusps at its
-ends. This is the notion of hyperbolicity in the geometrization theorem. This file records it,
-for the Riemannian volume measure `TauCeti.riemannianVolume` of the bundled metric.
+and more generally the interior of every non-Seifert-fibred piece of the geometric (JSJ)
+decomposition of a closed orientable irreducible 3-manifold, carries a complete hyperbolic metric
+of *finite volume*, with cusps at its ends. This is the notion of hyperbolicity in the
+geometrization theorem. This file records it, for the Riemannian volume measure
+`TauCeti.riemannianVolume` of the bundled metric.
 
 On a compact manifold the Riemannian volume is a finite measure, so there the condition is
 automatic, and a compact manifold is hyperbolic of finite volume exactly when it is hyperbolic.
