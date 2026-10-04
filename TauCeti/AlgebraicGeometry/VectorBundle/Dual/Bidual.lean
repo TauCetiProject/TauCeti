@@ -20,8 +20,9 @@ section. Thus dualization loses no information about the sheaf or its morphisms.
 The functor and natural isomorphism follow the finite-projective module formalization in
 `TauCeti.Algebra.Category.ModuleCat.FiniteProjective.Monoidal` as their template.
 
-The construction uses the precomposition maps of Mathlib's `MonoidalClosed.internalHom` and
-`TauCeti.doubleDualMap`; invertibility follows from the exact pairing with the internal-Hom dual.
+The construction lifts Mathlib's `MonoidalClosed.internalHom`, evaluated at the structure sheaf,
+using `ObjectProperty.lift`. Biduality uses `TauCeti.doubleDualMap`; invertibility follows from the
+exact pairing with the internal-Hom dual.
 -/
 
 public section
@@ -43,11 +44,11 @@ variable {X : Scheme.{u}}
 /-- Internal-Hom dualization of finite locally free sheaves, acting on morphisms by
 precomposition. -/
 @[expose]
-def dualFunctor : (FiniteLocallyFreeSheaf X)ᵒᵖ ⥤ FiniteLocallyFreeSheaf X where
-  obj E := dual E.unop
-  map f := ObjectProperty.homMk ((pre f.unop.hom).app (𝟙_ X.Modules))
-  map_id E := ObjectProperty.hom_ext _ (by simp)
-  map_comp f g := ObjectProperty.hom_ext _ (by simp)
+def dualFunctor : (FiniteLocallyFreeSheaf X)ᵒᵖ ⥤ FiniteLocallyFreeSheaf X :=
+  ObjectProperty.lift _
+    ((Scheme.Modules.isFiniteLocallyFree X).ι.op ⋙ internalHom ⋙
+      (CategoryTheory.evaluation X.Modules X.Modules).obj (𝟙_ X.Modules))
+    fun E ↦ (dual E.unop).property
 
 /-- The object assigned by dualization is the internal-Hom dual. -/
 @[simp]
@@ -77,7 +78,8 @@ theorem evalIso_hom_hom (E : FiniteLocallyFreeSheaf X) :
 /-- Double-dual evaluation is natural in maps of finite locally free sheaves. -/
 @[reassoc]
 theorem evalIso_naturality {E F : FiniteLocallyFreeSheaf X} (f : E ⟶ F) :
-    f ≫ (evalIso F).hom = (evalIso E).hom ≫ dualFunctor.map (dualFunctor.map f.op).op := by
+    f ≫ (evalIso F).hom = (evalIso E).hom ≫
+      dualFunctor.map (X := .op (dual E)) (Y := .op (dual F)) (dualFunctor.map f.op).op := by
   apply ObjectProperty.hom_ext
   simp only [ObjectProperty.FullSubcategory.comp_hom, evalIso_hom_hom]
   exact doubleDualMap_naturality f.hom
