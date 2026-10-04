@@ -52,6 +52,7 @@ theorem card_squareRoot_one_dihedralGroupThree :
   decide
 
 /-- The character degrees of `S₃`, realized as `DihedralGroup 3`, sum to `4`. -/
+@[simp]
 theorem sum_characterDegree_dihedralGroupThree :
     ∑ i, characterDegree ℂ (G := DihedralGroup 3) i = 4 := by
   rw [isIntegerCharacterTableSpec_dihedralGroupThree.sum_characterDegree_eq_sum_degree]
@@ -60,6 +61,7 @@ theorem sum_characterDegree_dihedralGroupThree :
 
 /-- **`S₃` is totally orthogonal**: every row of the character table of `DihedralGroup 3` has
 Frobenius-Schur indicator `1`. -/
+@[simp]
 theorem frobeniusSchurIndicatorRow_dihedralGroupThree_eq_one
     (i : Fin (Nat.card (ConjClasses (DihedralGroup 3)))) :
     frobeniusSchurIndicatorRow ℂ i = 1 :=
@@ -74,6 +76,7 @@ theorem card_squareRoot_one_symmetricGroupFour :
   decide
 
 /-- The character degrees of `S₄` sum to `10`. -/
+@[simp]
 theorem sum_characterDegree_symmetricGroupFour :
     ∑ i, characterDegree ℂ (G := Equiv.Perm (Fin 4)) i = 10 := by
   rw [isIntegerCharacterTableSpec_symmetricGroupFour.sum_characterDegree_eq_sum_degree]
@@ -82,6 +85,7 @@ theorem sum_characterDegree_symmetricGroupFour :
 
 /-- **`S₄` is totally orthogonal**: every row of the character table of `Equiv.Perm (Fin 4)` has
 Frobenius-Schur indicator `1`. -/
+@[simp]
 theorem frobeniusSchurIndicatorRow_symmetricGroupFour_eq_one
     (i : Fin (Nat.card (ConjClasses (Equiv.Perm (Fin 4))))) :
     frobeniusSchurIndicatorRow ℂ i = 1 :=
