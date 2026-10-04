@@ -46,6 +46,66 @@ attribute [local instance 10] algebraIntegersExtension isScalarTowerIntegersExte
 
 variable (k F) {P' : Place k' F'}
 
+/-- The order of a coefficient times a power of a uniformizer, with the coefficient order
+rescaled by the ramification index. -/
+private theorem ord_algebraMap_mul_pow_uniformizer {z : F'} (hz : P'.ord z = 1)
+    {c : F} (hc : c ≠ 0) (j : Fin (ramificationIdx F P')) :
+    P'.ord (algebraMap F F' c * z ^ (j : ℕ)) =
+      (ramificationIdx F P' : ℤ) * (P'.restrict k F).ord c + (j : ℕ) := by
+  have hz0 : z ≠ 0 := by
+    intro h
+    rw [h, P'.ord_zero] at hz
+    omega
+  rw [P'.ord_mul ((map_ne_zero (algebraMap F F')).mpr hc) (pow_ne_zero _ hz0),
+    ord_algebraMap_restrict k F P', P'.ord_pow, hz, mul_one]
+
+/-- If a sum of coefficient-weighted powers of a uniformizer is regular, then every coefficient
+is regular downstairs.  Distinct powers have distinct order residues modulo the ramification
+index, so a coefficient with negative order would give the sum negative order. -/
+private theorem coeff_mem_integers_of_ord_sum_nonneg {z : F'} (hz : P'.ord z = 1)
+    (c : Fin (ramificationIdx F P') → F)
+    (hsum : 0 ≤ P'.ord (∑ j, algebraMap F F' (c j) * z ^ (j : ℕ))) :
+    ∀ j, c j ∈ (P'.restrict k F).integers := by
+  classical
+  have hz0 : z ≠ 0 := by
+    intro h
+    rw [h, P'.ord_zero] at hz
+    omega
+  let T : Fin (ramificationIdx F P') → F' :=
+    fun j ↦ algebraMap F F' (c j) * z ^ (j : ℕ)
+  have hTord_eq : ∀ j, T j ≠ 0 →
+      P'.ord (T j) =
+        (ramificationIdx F P' : ℤ) * (P'.restrict k F).ord (c j) + (j : ℕ) := by
+    intro j hj
+    apply ord_algebraMap_mul_pow_uniformizer k F (P' := P') hz
+    intro hc
+    simp [T, hc] at hj
+  have hTord : ∀ j, T j ≠ 0 → ∃ m : ℤ,
+      P'.ord (T j) = (ramificationIdx F P' : ℤ) * m + (j : ℕ) := by
+    intro j hj
+    exact ⟨(P'.restrict k F).ord (c j), hTord_eq j hj⟩
+  intro j
+  rw [(P'.restrict k F).mem_integers_iff_ord_nonneg]
+  by_cases hc0 : c j = 0
+  · simp [hc0]
+  have hT0 : T j ≠ 0 :=
+    mul_ne_zero ((map_ne_zero (algebraMap F F')).mpr hc0) (pow_ne_zero _ hz0)
+  have hle := ord_sum_le_of_ord_eq_mul_add_natCast P' T hTord hT0
+  have hnonneg : 0 ≤
+      (ramificationIdx F P' : ℤ) * (P'.restrict k F).ord (c j) + (j : ℕ) := by
+    rw [← hTord_eq j hT0]
+    exact hsum.trans hle
+  have he : (0 : ℤ) < ramificationIdx F P' := by
+    exact_mod_cast ramificationIdx_pos F P'
+  have hj : (j : ℤ) < ramificationIdx F P' := by
+    exact_mod_cast j.2
+  by_contra hneg
+  have hcneg : (P'.restrict k F).ord (c j) ≤ -1 := by omega
+  have hmul : (ramificationIdx F P' : ℤ) * (P'.restrict k F).ord (c j) ≤
+      (ramificationIdx F P' : ℤ) * -1 :=
+    mul_le_mul_of_nonneg_left hcneg he.le
+  linarith
+
 /-- A uniformizer at a totally ramified place generates the integral closure of the valuation
 ring below it.  Equivalently, its powers are an integral power basis at that place. -/
 theorem algebra_adjoin_integralClosure_eq_top_of_isTotallyRamified
@@ -56,10 +116,6 @@ theorem algebra_adjoin_integralClosure_eq_top_of_isTotallyRamified
   classical
   let z' : F' := z
   have hz' : P'.ord z' = 1 := hz
-  have hz0 : z' ≠ 0 := by
-    intro h
-    rw [h, P'.ord_zero] at hz'
-    omega
   have hind : LinearIndependent F (fun j : Fin (ramificationIdx F P') ↦ z' ^ (j : ℕ)) :=
     linearIndependent_pow_fin_ramificationIdx F P' hz'
   have hcard : Fintype.card (Fin (ramificationIdx F P')) = Module.finrank F F' := by
@@ -76,8 +132,7 @@ theorem algebra_adjoin_integralClosure_eq_top_of_isTotallyRamified
   let y : F' := x
   have hymem : y ∈ P'.integers := by
     have hyint : IsIntegral (P'.restrict k F).integers y := by
-      change IsIntegral (P'.restrict k F).integers (x : F')
-      exact (mem_integralClosure_iff (P'.restrict k F).integers F').mp x.2
+      simpa only [y] using (mem_integralClosure_iff (P'.restrict k F).integers F').mp x.2
     exact P'.mem_integers_of_isIntegral (fun a : (P'.restrict k F).integers ↦ by
       rw [IsScalarTower.algebraMap_apply (P'.restrict k F).integers F F']
       exact (mem_integers_restrict_iff k F P' (a : F)).mp a.2) hyint
@@ -87,44 +142,12 @@ theorem algebra_adjoin_integralClosure_eq_top_of_isTotallyRamified
     fun j ↦ algebraMap F F' (c j) * z' ^ (j : ℕ)
   have hsum : ∑ j, T j = y := by
     simpa only [T, c, Algebra.smul_def, hb] using b.sum_repr y
-  have hTord : ∀ j, T j ≠ 0 → ∃ m : ℤ,
-      P'.ord (T j) = (ramificationIdx F P' : ℤ) * m + (j : ℕ) := by
-    intro j hj
-    have hc0 : c j ≠ 0 := by
-      intro hc
-      simp [T, hc] at hj
-    refine ⟨(P'.restrict k F).ord (c j), ?_⟩
-    dsimp only [T]
-    rw [P'.ord_mul ((map_ne_zero (algebraMap F F')).mpr hc0) (pow_ne_zero _ hz0),
-      ord_algebraMap_restrict k F P', P'.ord_pow, hz', mul_one]
   have hc : ∀ j, c j ∈ (P'.restrict k F).integers := by
-    intro j
-    rw [(P'.restrict k F).mem_integers_iff_ord_nonneg]
-    by_cases hc0 : c j = 0
-    · simp [hc0]
-    have hT0 : T j ≠ 0 :=
-      mul_ne_zero ((map_ne_zero (algebraMap F F')).mpr hc0) (pow_ne_zero _ hz0)
-    have hle := ord_sum_le_of_ord_eq_mul_add_natCast P' T hTord hT0
-    rw [hsum] at hle
-    have hterm : P'.ord (T j) =
-        (ramificationIdx F P' : ℤ) * (P'.restrict k F).ord (c j) + (j : ℕ) := by
-      dsimp only [T]
-      rw [P'.ord_mul ((map_ne_zero (algebraMap F F')).mpr hc0) (pow_ne_zero _ hz0),
-        ord_algebraMap_restrict k F P', P'.ord_pow, hz', mul_one]
-    have hnonneg : 0 ≤
-        (ramificationIdx F P' : ℤ) * (P'.restrict k F).ord (c j) + (j : ℕ) := by
-      rw [← hterm]
-      exact hyord.trans hle
-    have he : (0 : ℤ) < ramificationIdx F P' := by
-      exact_mod_cast ramificationIdx_pos F P'
-    have hj : (j : ℤ) < ramificationIdx F P' := by
-      exact_mod_cast j.2
-    by_contra hneg
-    have hcneg : (P'.restrict k F).ord (c j) ≤ -1 := by omega
-    have hmul : (ramificationIdx F P' : ℤ) * (P'.restrict k F).ord (c j) ≤
-        (ramificationIdx F P' : ℤ) * -1 :=
-      mul_le_mul_of_nonneg_left hcneg he.le
-    linarith
+    apply coeff_mem_integers_of_ord_sum_nonneg k F (P' := P') hz' c
+    have : 0 ≤ P'.ord (∑ j, T j) := by
+      rw [hsum]
+      exact hyord
+    simpa only [T] using this
   have hmem : ∑ j, algebraMap (P'.restrict k F).integers
       (integralClosure (P'.restrict k F).integers F')
         (⟨c j, hc j⟩ : (P'.restrict k F).integers) * z ^ (j : ℕ) ∈
