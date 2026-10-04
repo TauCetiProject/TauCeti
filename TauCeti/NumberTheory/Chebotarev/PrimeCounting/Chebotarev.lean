@@ -8,7 +8,7 @@ module
 public import TauCeti.NumberTheory.Chebotarev.PrimeCounting.VonMangoldt
 import TauCeti.Algebra.Group.Conj
 import TauCeti.Analysis.Asymptotics.Lemmas
-import TauCeti.NumberTheory.ArithmeticDirichletSeries.Prime.DedekindZeta
+import TauCeti.NumberTheory.ArithmeticDirichletSeries.Prime.PrimeIdealTheorem
 import TauCeti.NumberTheory.Chebotarev.AuxiliaryPrime
 import TauCeti.NumberTheory.Chebotarev.Crossing.CrossingConstant
 import TauCeti.NumberTheory.Chebotarev.PrimeCounting.Cyclotomic
