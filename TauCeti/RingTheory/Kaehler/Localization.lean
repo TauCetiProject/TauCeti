@@ -33,21 +33,10 @@ No perfectness, finite type, or Noetherian hypothesis is needed for the local cr
 * `TauCeti.KaehlerDifferential.mem_range_map_iff_forall_isMaximal`: membership in the global
   image can be checked using any family of maximal localizations.
 
-Mathlib's `IsLocalizedModule.injective_iff_isRegular` gives injectivity when `Ω[A⁄R]` is
-torsion-free. For a fraction ring `F`, it applies directly through the existing
-`KaehlerDifferential.isLocalizedModule_map` instance:
-
-```lean
-have hinj : Function.Injective (KaehlerDifferential.map R R A F) :=
-  (IsLocalizedModule.injective_iff_isRegular A⁰
-    (KaehlerDifferential.map R R A F)).2 fun s ↦
-      (isRegular_iff_mem_nonZeroDivisors.mpr s.property).isSMulRegular
-```
-
-Then `hinj.mem_range_iff_existsUnique (b := ω)` characterizes global range membership by
-the existence of a unique preimage. Composing its symmetry with
-`TauCeti.KaehlerDifferential.mem_range_map_iff_forall_isMaximal R A F Aₚ ω` gives the
-unique-preimage criterion using any compatible family `Aₚ` of maximal localizations.
+If `Ω[A⁄R]` is torsion-free and `F` is a fraction ring of `A`, the map
+`Ω[A⁄R] → Ω[F⁄R]` is injective. In this case, a rational differential has a unique
+preimage in `Ω[A⁄R]` exactly when it comes from the differentials of every maximal
+localization, using any compatible family of localization models.
 
 ## References
 
