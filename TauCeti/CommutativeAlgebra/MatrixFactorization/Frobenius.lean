@@ -181,15 +181,14 @@ theorem projectiveStableFunctor_comp_stableToHomotopy :
       (nullHomotopic (S := S) (w := w)).quotientFunctor.obj X := by
   rw [stableToHomotopy, Quotient.lift_obj_functor_obj]
 
-/-- On morphisms the comparison takes the stable class to the homotopy class of the same map. -/
-@[simp] theorem stableToHomotopy_map {X Y : MatrixFactorization S w} (f : X ⟶ Y) :
-    (stableToHomotopy S w).map ((splitExact S w).projectiveStableFunctor.map f) ≫
-        eqToHom (stableToHomotopy_obj S w Y) =
+/-- On morphisms the comparison takes the stable class to the homotopy class of the same map,
+up to the identification of objects `stableToHomotopy_obj`. -/
+theorem stableToHomotopy_map {X Y : MatrixFactorization S w} (f : X ⟶ Y) :
+    (stableToHomotopy S w).map ((splitExact S w).projectiveStableFunctor.map f) =
       eqToHom (stableToHomotopy_obj S w X) ≫
-        (nullHomotopic (S := S) (w := w)).quotientFunctor.map f := by
-  rw [← Functor.comp_map,
-    Functor.congr_hom (projectiveStableFunctor_comp_stableToHomotopy S w) f]
-  simp
+        (nullHomotopic (S := S) (w := w)).quotientFunctor.map f ≫
+          eqToHom (stableToHomotopy_obj S w Y).symm :=
+  Functor.congr_hom (projectiveStableFunctor_comp_stableToHomotopy S w) f
 
 /-- The stable-to-homotopy comparison is additive. -/
 instance : (stableToHomotopy S w).Additive := by

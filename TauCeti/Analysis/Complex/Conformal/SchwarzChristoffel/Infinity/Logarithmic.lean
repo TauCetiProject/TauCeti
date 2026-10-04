@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Boundary
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Infinity.Asymptotic
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Primitive
+import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Infinity.Basic
 import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 import Mathlib.Analysis.Complex.RemovableSingularity
@@ -23,6 +25,12 @@ with first correction `(∑ i, e i * a i) / z`, and the primitive escapes every 
 All limits hold through the whole upper half-plane, including tangential approaches to its
 real boundary. This is the logarithmic endpoint of the growth estimates used to establish
 properness of maps onto unbounded polygonal domains.
+
+The same asymptotic holds for the canonical boundary values on the real axis beyond every
+prevertex: the right end is asymptotic to `log x + c` and the left end to
+`log (-x) + c + pi * I`, where `c` is the logarithmic constant at infinity. The term `pi * I`
+is for the normalized primitive, whose integrand has leading coefficient one at infinity; an
+affine postcomposition rotates and rescales it.
 
 ## References
 
@@ -198,5 +206,171 @@ theorem tendsto_schwarzChristoffelPrimitive_atInfinity_cobounded_of_sum_eq_neg_o
   rw [← tendsto_norm_atTop_iff_cobounded]
   exact tendsto_atTop_mono (fun z => re_le_norm _)
     (tendsto_re_schwarzChristoffelPrimitive_atTop_of_sum_eq_neg_one a e z₀ hsum)
+
+/-! ### Logarithmic asymptotics on the boundary -/
+
+/-- Far from the prevertices, the normalized primitive moves little along the vertical segment
+from height `s` up to height `1` above a real point. -/
+private theorem norm_schwarzChristoffelPrimitive_add_I_sub_add_mul_I_le
+    (a e : ι → ℝ) (z₀ : UpperHalfPlane) {C R : ℝ} (hC : 0 < C)
+    (hbound : ∀ z : ℂ, R ≤ ‖z‖ →
+      ‖schwarzChristoffelIntegrand a e z‖ ≤ C * ‖z‖ ^ (-1 : ℝ))
+    {x : ℝ} (hx : max R 1 ≤ |x|) {s : ℝ} (hs0 : 0 < s) (hs1 : s ≤ 1) :
+    ‖schwarzChristoffelPrimitive a e z₀ ((x : ℂ) + Complex.I) -
+      schwarzChristoffelPrimitive a e z₀ ((x : ℂ) + (s : ℂ) * Complex.I)‖ ≤ C / |x| := by
+  have hxpos : 0 < |x| := zero_lt_one.trans_le ((le_max_right R 1).trans hx)
+  have hxR : R ≤ |x| := (le_max_left R 1).trans hx
+  have hmem : ∀ t ∈ Icc s 1, (x : ℂ) + (t : ℂ) * Complex.I ∈ upperHalfPlaneSet := by
+    intro t ht
+    simpa [upperHalfPlaneSet] using hs0.trans_le ht.1
+  have hnorm (t : ℝ) : |x| ≤ ‖(x : ℂ) + (t : ℂ) * Complex.I‖ := by
+    simpa using abs_re_le_norm ((x : ℂ) + (t : ℂ) * Complex.I)
+  -- The integrand decays like `1 / ‖z‖`, and `|x| ≤ ‖z‖` along the whole segment.
+  have hB : ∀ t ∈ Icc s 1,
+      ‖Complex.I‖ * ‖schwarzChristoffelIntegrand a e ((x : ℂ) + (t : ℂ) * Complex.I)‖ ≤
+        C / |x| := by
+    intro t _
+    rw [norm_I, one_mul]
+    calc
+      ‖schwarzChristoffelIntegrand a e ((x : ℂ) + (t : ℂ) * Complex.I)‖
+          ≤ C * ‖(x : ℂ) + (t : ℂ) * Complex.I‖ ^ (-1 : ℝ) := hbound _ (hxR.trans (hnorm t))
+      _ ≤ C * |x| ^ (-1 : ℝ) :=
+        mul_le_mul_of_nonneg_left
+          (Real.rpow_le_rpow_of_nonpos hxpos (hnorm t) (by norm_num)) hC.le
+      _ = C / |x| := by rw [Real.rpow_neg_one, div_eq_mul_inv]
+  have hmove := norm_schwarzChristoffelPrimitive_sub_le_integral a e z₀ hs1 hmem hB
+    intervalIntegrable_const
+  rw [ofReal_one, one_mul, intervalIntegral.integral_const, smul_eq_mul] at hmove
+  -- The segment has length at most one.
+  exact hmove.trans (mul_le_of_le_one_left (div_nonneg hC.le hxpos.le) (by linarith))
+
+/-- Far from the prevertices, a boundary value differs little from the value one unit directly
+above it. This transfers the logarithmic asymptotic in the open half-plane to the boundary. -/
+private theorem norm_schwarzChristoffelBoundary_sub_primitive_add_I_le
+    (a e : ι → ℝ) (z₀ : UpperHalfPlane) {C R : ℝ} (hC : 0 < C)
+    (hbound : ∀ z : ℂ, R ≤ ‖z‖ →
+      ‖schwarzChristoffelIntegrand a e z‖ ≤ C * ‖z‖ ^ (-1 : ℝ))
+    {x : ℝ} (hx : max R 1 ≤ |x|) (he : -1 < ∑ i with a i = x, e i) :
+    ‖schwarzChristoffelBoundary a e z₀ x -
+      schwarzChristoffelPrimitive a e z₀ ((x : ℂ) + Complex.I)‖ ≤ C / |x| := by
+  let ε : ℕ → ℝ := fun n => ((n + 1 : ℕ) : ℝ)⁻¹
+  have hεpos (n : ℕ) : 0 < ε n := by positivity
+  have hεle (n : ℕ) : ε n ≤ 1 := inv_le_one_of_one_le₀ (by simp)
+  have hε : Tendsto ε atTop (𝓝 0) := by
+    simpa [ε, one_div] using (tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ))
+  -- Approach `x` vertically from inside the upper half-plane.
+  have hpath : Tendsto (fun n => (x : ℂ) + (ε n : ℂ) * Complex.I) atTop
+      (𝓝[upperHalfPlaneSet] (x : ℂ)) := by
+    refine tendsto_nhdsWithin_iff.mpr ⟨?_, Eventually.of_forall fun n => by
+      simpa [upperHalfPlaneSet] using hεpos n⟩
+    simpa using tendsto_const_nhds.add
+      (((Complex.continuous_ofReal.tendsto 0).comp hε).mul_const Complex.I)
+  have hlimit := (((tendsto_schwarzChristoffelPrimitive_boundary a e z₀ x he).comp
+    hpath).const_sub (schwarzChristoffelPrimitive a e z₀ ((x : ℂ) + Complex.I))).norm
+  rw [norm_sub_rev]
+  exact le_of_tendsto hlimit (Eventually.of_forall fun n =>
+    norm_schwarzChristoffelPrimitive_add_I_sub_add_mul_I_le a e z₀ hC hbound hx (hεpos n)
+      (hεle n))
+
+/-- Along any filter on which `|x|` tends to infinity, the normalized boundary value minus the
+principal logarithm one unit above it tends to the logarithmic constant at infinity. -/
+private theorem tendsto_schwarzChristoffelBoundary_sub_log_add_I
+    (a e : ι → ℝ) (z₀ : UpperHalfPlane) (hsum : ∑ i, e i = -1) {l : Filter ℝ}
+    (hl : Tendsto (fun x : ℝ => |x|) l atTop) :
+    Tendsto (fun x : ℝ => schwarzChristoffelBoundary a e z₀ x - log ((x : ℂ) + Complex.I)) l
+      (𝓝 (schwarzChristoffelLogConstantAtInfinity a e z₀)) := by
+  obtain ⟨C, hC, R, _, hbound⟩ := exists_norm_schwarzChristoffelIntegrand_le_of_le_norm a e
+  rw [hsum] at hbound
+  have herror : Tendsto (fun x : ℝ => schwarzChristoffelBoundary a e z₀ x -
+      schwarzChristoffelPrimitive a e z₀ ((x : ℂ) + Complex.I)) l (𝓝 0) := by
+    refine squeeze_zero_norm' ?_ ((tendsto_id.const_div_atTop C).comp hl)
+    filter_upwards [hl.eventually_ge_atTop (max R 1), hl.eventually_gt_atTop (∑ i, |a i|)]
+      with x hxR hxa
+    -- Beyond every prevertex the fibre over `x` is empty.
+    have hfibre : ∑ i with a i = x, e i = 0 := Finset.sum_eq_zero fun i hi => by
+      have hai : |a i| ≤ ∑ j, |a j| :=
+        Finset.single_le_sum (fun j _ => abs_nonneg (a j)) (Finset.mem_univ i)
+      rw [(Finset.mem_filter.mp hi).2] at hai
+      exact absurd hai (not_le.mpr hxa)
+    exact norm_schwarzChristoffelBoundary_sub_primitive_add_I_le a e z₀ hC hbound hxR
+      (hfibre ▸ neg_one_lt_zero)
+  have hpath : Tendsto (fun x : ℝ => (x : ℂ) + Complex.I) l
+      (cobounded ℂ ⊓ 𝓟 upperHalfPlaneSet) := by
+    refine tendsto_inf.mpr ⟨tendsto_norm_atTop_iff_cobounded.mp
+      (tendsto_atTop_mono (fun x => ?_) hl),
+      tendsto_principal.mpr (Eventually.of_forall fun x => by simp [upperHalfPlaneSet])⟩
+    simpa using abs_re_le_norm ((x : ℂ) + Complex.I)
+  simpa only [Function.comp_apply, sub_add_sub_cancel, zero_add] using
+    herror.add ((tendsto_schwarzChristoffelPrimitive_sub_log_atInfinity a e z₀ hsum).comp hpath)
+
+/-- On the right outer edge, the normalized Schwarz--Christoffel boundary has the asymptotic
+`log x + c`, where `c` is its logarithmic constant at infinity. -/
+theorem tendsto_schwarzChristoffelBoundary_sub_log_atTop_of_sum_eq_neg_one
+    (a e : ι → ℝ) (z₀ : UpperHalfPlane) (hsum : ∑ i, e i = -1) :
+    Tendsto (fun x : ℝ => schwarzChristoffelBoundary a e z₀ x - (Real.log x : ℂ))
+      atTop (𝓝 (schwarzChristoffelLogConstantAtInfinity a e z₀)) := by
+  have hsmall : Tendsto (fun x : ℝ => (1 : ℂ) + Complex.I / (x : ℂ)) atTop (𝓝 1) := by
+    simpa [div_eq_mul_inv] using
+      (tendsto_inv_atTop_zero.ofReal.const_mul Complex.I).const_add (1 : ℂ)
+  have hlogSmall : Tendsto (fun x : ℝ => log ((1 : ℂ) + Complex.I / (x : ℂ)))
+      atTop (𝓝 0) := by
+    simpa only [Function.comp_def, Complex.log_one] using
+      (continuousAt_clog Complex.one_mem_slitPlane).tendsto.comp hsmall
+  have hlog : Tendsto (fun x : ℝ => log ((x : ℂ) + Complex.I) - (Real.log x : ℂ))
+      atTop (𝓝 0) := by
+    refine hlogSmall.congr' ?_
+    filter_upwards [eventually_gt_atTop (0 : ℝ)] with x hx
+    have hx0 : (x : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr hx.ne'
+    have hq : (1 : ℂ) + Complex.I / (x : ℂ) ≠ 0 := fun h => by
+      simpa [div_im, hx.ne'] using congrArg Complex.im h
+    -- Factor out the positive real `x` so that `log_ofReal_mul` splits the logarithm.
+    have hfactor : (x : ℂ) + Complex.I = (x : ℂ) * (1 + Complex.I / (x : ℂ)) := by field_simp
+    rw [hfactor, log_ofReal_mul hx hq]
+    ring
+  simpa only [sub_add_sub_cancel, add_zero] using
+    (tendsto_schwarzChristoffelBoundary_sub_log_add_I a e z₀ hsum tendsto_abs_atTop_atTop).add
+      hlog
+
+/-- On the left outer edge, the normalized Schwarz--Christoffel boundary has the asymptotic
+`log (-x) + c + pi * I`. The extra term comes from the argument `pi` of the principal logarithm's
+boundary value from the upper half-plane on the negative real axis. -/
+theorem tendsto_schwarzChristoffelBoundary_sub_log_neg_atBot_of_sum_eq_neg_one
+    (a e : ι → ℝ) (z₀ : UpperHalfPlane) (hsum : ∑ i, e i = -1) :
+    Tendsto (fun x : ℝ => schwarzChristoffelBoundary a e z₀ x - (Real.log (-x) : ℂ))
+      atBot (𝓝 (schwarzChristoffelLogConstantAtInfinity a e z₀ + Real.pi * Complex.I)) := by
+  let q : ℝ → ℂ := fun x => -1 + Complex.I / ((-x : ℝ) : ℂ)
+  have hq : Tendsto q atBot (𝓝[{z : ℂ | 0 ≤ z.im}] (-1 : ℂ)) := by
+    apply tendsto_nhdsWithin_iff.mpr
+    refine ⟨?_, ?_⟩
+    · have hinv := (tendsto_inv_atTop_zero.comp Filter.tendsto_neg_atBot_atTop).ofReal
+      have h := (hinv.const_mul Complex.I).const_add (-1 : ℂ)
+      simpa [q, div_eq_mul_inv, Complex.ofReal_inv] using h
+    · filter_upwards [eventually_lt_atBot (0 : ℝ)] with x hx
+      -- The imaginary part of `I / (-x)` is `-x / x ^ 2`, which is nonnegative for `x < 0`.
+      have him : (q x).im = -x / (x * x) := by simp [q, Complex.div_im]
+      rw [him]
+      exact div_nonneg (neg_nonneg.mpr hx.le) (mul_self_nonneg x)
+  have hlogSmall : Tendsto (fun x => log (q x)) atBot (𝓝 (Real.pi * Complex.I)) := by
+    simpa only [Function.comp_def, norm_neg, norm_one, Real.log_one, ofReal_zero, zero_add] using
+      (tendsto_log_nhdsWithin_im_nonneg_of_re_neg_of_im_zero
+        (z := (-1 : ℂ)) (by norm_num) (by norm_num)).comp hq
+  have hlog : Tendsto (fun x : ℝ => log ((x : ℂ) + Complex.I) -
+      (Real.log (-x) : ℂ)) atBot (𝓝 (Real.pi * Complex.I)) := by
+    refine hlogSmall.congr' ?_
+    filter_upwards [eventually_lt_atBot (0 : ℝ)] with x hx
+    have hq0 : q x ≠ 0 := fun h => by
+      simpa [q, div_im, hx.ne] using congrArg Complex.im h
+    have hx0 : (x : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr hx.ne
+    -- Factor out the positive real `-x` so that `log_ofReal_mul` splits the logarithm.
+    have hfactor : (x : ℂ) + Complex.I = ((-x : ℝ) : ℂ) * q x := by
+      simp only [q]
+      push_cast
+      field_simp
+      ring
+    rw [hfactor, log_ofReal_mul (neg_pos.mpr hx) hq0]
+    ring
+  simpa only [sub_add_sub_cancel] using
+    (tendsto_schwarzChristoffelBoundary_sub_log_add_I a e z₀ hsum tendsto_abs_atBot_atTop).add
+      hlog
 
 end TauCeti

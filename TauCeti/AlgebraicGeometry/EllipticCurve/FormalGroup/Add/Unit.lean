@@ -117,9 +117,9 @@ private theorem X_mul_subst_unitR_formalSlope :
     (PowerSeries.X : PowerSeries R) *
       subst (Sum.elim X (fun _ ↦ 0)) (formalSlope W) = formalW W := by
   have h := congrArg (subst
-    (Sum.elim X (fun _ ↦ 0) : Unit ⊕ Unit → MvPowerSeries Unit R)) (formalSlope_mul_sub W)
+    (Sum.elim X (fun _ ↦ 0) : Unit ⊕ Unit → MvPowerSeries Unit R)) (formalSlope_mul_X_add W)
   rw [← coe_substAlgHom hasSubst_unitR] at h
-  simp only [map_mul, map_sub] at h
+  simp only [map_mul, map_add] at h
   simp only [coe_substAlgHom hasSubst_unitR, subst_unitR_toMvPowerSeries_inl,
     subst_unitR_toMvPowerSeries_inr, subst_X hasSubst_unitR] at h
   have h1 : (Sum.elim X (fun _ ↦ 0) : Unit ⊕ Unit → MvPowerSeries Unit R) (Sum.inr ()) = 0 := rfl
