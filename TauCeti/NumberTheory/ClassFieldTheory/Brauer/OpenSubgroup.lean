@@ -9,6 +9,9 @@ public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.Invariant
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Corestriction.Conjugation
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Corestriction.Transitivity
 
+import TauCeti.FieldTheory.GaloisCohomology.BrauerTorsion
+import TauCeti.RepresentationTheory.Homological.ContCohomology.Corestriction.Naturality
+
 /-!
 # The local invariant of an open subgroup of the absolute Galois group
 
@@ -22,7 +25,10 @@ for the units of `Kˢ` are stated.
 Corestriction `H²(U, (Kˢ)ˣ) → H²(G_K, (Kˢ)ˣ) = Br K` is bijective
 (`explicitCor2_unitsCoeff_bijective`): read through `G_E ≃ U`, it is corestriction of Brauer
 classes along `E/K`, which preserves the local invariant
-(`TauCeti.ClassFieldTheory.brCor_bijective`). The **invariant of `U`** is therefore defined as
+(`TauCeti.ClassFieldTheory.brCor_bijective`). For `n` invertible in `K`, it is therefore bijective
+on the `n`-torsion, which is `H²(-, μₙ)` by Kummer theory and Hilbert 90, so corestriction
+`H²(U, μₙ) → H²(G_K, μₙ)` is bijective too (`explicitCor2_kummerCoeff_bijective`). The
+**invariant of `U`** is defined as
 
 `inv_U = inv_K ∘ cor_U^{G_K} : H²(U, (Kˢ)ˣ) ≃+ ℚ/ℤ`
 
@@ -47,6 +53,8 @@ are required to have:
 
 * `TauCeti.ClassFieldTheory.explicitCor2_unitsCoeff_bijective`: corestriction from an open
   subgroup of `G_K` is bijective on `H²` of `(Kˢ)ˣ`.
+* `TauCeti.ClassFieldTheory.explicitCor2_kummerCoeff_bijective`: corestriction from an open
+  subgroup of `G_K` is bijective on `H²` of `μₙ`, for `n` invertible in `K`.
 * `TauCeti.ClassFieldTheory.subgroupInvMap_explicitMap2`: the invariant of the subgroup cut out by
   a finite extension `L/K` is the local invariant of `L`.
 * `TauCeti.ClassFieldTheory.subgroupInvMap_explicitMap2_subgroupInclusion`: restriction multiplies
@@ -126,6 +134,46 @@ theorem explicitCor2_unitsCoeff_bijective (U : Subgroup (AbsoluteGaloisGroup K))
   refine ⟨fun a b hab => ?_, hbij.2.of_comp⟩
   rw [← hT a, ← hT b] at hab ⊢
   exact congrArg T (hbij.1 hab)
+
+/-- **Corestriction from an open subgroup of `G_K` is bijective on `H²` of `μₙ`**, for `n`
+invertible in `K`: `H²(U, μₙ) → H²(G_K, μₙ)` is a bijection. The inclusion `μₙ ⊆ (Kˢ)ˣ` identifies
+both groups with the `n`-torsion of `H²(-, (Kˢ)ˣ)`, on which corestriction is bijective by
+`explicitCor2_unitsCoeff_bijective`. This is the hypothesis under which perfectness of Tate's
+duality maps with values in `μₙ` ascends from `U` to a module coinduced from `U`
+(`TauCeti.ContCohomology.dualityMap1_bijective_discreteCoind_of_bijective`). -/
+theorem explicitCor2_kummerCoeff_bijective {n : ℕ} (hn : IsUnit (n : K))
+    (U : Subgroup (AbsoluteGaloisGroup K)) [U.FiniteIndex]
+    (hU : IsOpen (U : Set (AbsoluteGaloisGroup K))) :
+    Function.Bijective (explicitCor2 (AbsoluteGaloisGroup K) (KummerCoeff K n) U hU) := by
+  let S := kummerShortExact K n hn
+  have hcor := explicitCor2_unitsCoeff_bijective K U hU
+  -- corestriction commutes with the inclusion `μₙ ⊆ (Kˢ)ˣ`
+  have hcomm (x : H2 U (KummerCoeff K n)) :
+      explicitCor2 _ (UnitsCoeff K) U hU (explicitCoeff2 U _
+        (S.restrict U).inclDistribMulActionHom continuous_of_discreteTopology x) =
+      explicitCoeff2 _ _ S.inclDistribMulActionHom continuous_of_discreteTopology
+        (explicitCor2 _ _ U hU x) := by
+    -- both bundled inclusions forget to the inclusion `S.incl` of the Kummer sequence
+    have hU' : ((S.restrict U).inclDistribMulActionHom : KummerCoeff K n →+ UnitsCoeff K) =
+        S.incl := AddMonoidHom.ext fun a => by simp
+    have hG : (S.inclDistribMulActionHom : KummerCoeff K n →+ UnitsCoeff K) = S.incl :=
+      AddMonoidHom.ext fun a => by simp
+    simp only [explicitCoeff2_eq_explicitMap2, hU', hG]
+    exact explicitCor2_explicitMap2_id _ _ U hU S.incl continuous_of_discreteTopology
+      S.incl_equivariant x
+  have hιU := explicitCoeff2_kummerShortExact_restrict_incl_injective K hn U
+    (U.isClosed_of_isOpen hU)
+  have hιG := explicitCoeff2_kummerShortExact_incl_injective K hn
+  refine ⟨fun x y hxy => hιU (hcor.1 ?_), fun y => ?_⟩
+  · rw [hcomm, hcomm, hxy]
+  -- the image of `y` in `Br K` is `n`-torsion, so it is the corestriction of an `n`-torsion class
+  obtain ⟨z, hz⟩ := hcor.2 (explicitCoeff2 _ _ S.inclDistribMulActionHom
+    continuous_of_discreteTopology y)
+  have hnz : n • z = 0 := hcor.1 <| by
+    rw [map_nsmul, hz, map_zero]
+    exact (mem_range_explicitCoeff2_kummerShortExact_incl_iff K hn _).1 ⟨y, rfl⟩
+  obtain ⟨w, rfl⟩ := (mem_range_explicitCoeff2_kummerShortExact_restrict_incl_iff K hn U z).2 hnz
+  exact ⟨w, hιG (by rw [← hcomm, hz])⟩
 
 /-- **The local invariant of an open subgroup** `U` of `G_K`: the invariant
 `H²(U, (Kˢ)ˣ) ≃+ ℚ/ℤ` obtained by corestriction to `Br K = H²(G_K, (Kˢ)ˣ)`, which is bijective

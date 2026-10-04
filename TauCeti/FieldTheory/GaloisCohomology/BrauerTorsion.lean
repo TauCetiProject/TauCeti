@@ -55,6 +55,9 @@ with the injection here gives `H²(G_K, μₙ) ≃ ℤ/n`.
 * `TauCeti.explicitCoeff2_kummerShortExact_incl_injective` and
   `TauCeti.mem_range_explicitCoeff2_kummerShortExact_incl_iff`: injectivity and the image, on the
   explicit model.
+* `TauCeti.explicitCoeff2_kummerShortExact_restrict_incl_injective` and
+  `TauCeti.mem_range_explicitCoeff2_kummerShortExact_restrict_incl_iff`: the same over a closed
+  subgroup of `G_K`.
 * `TauCeti.h2KummerToUnits_injective`: `H²(G_K, μₙ) → H²(G_K, (Kˢ)ˣ)` is injective.
 * `TauCeti.h2KummerToUnits_range`: its image is the `n`-torsion.
 
@@ -116,6 +119,38 @@ theorem mem_range_explicitCoeff2_kummerShortExact_incl_iff
       continuous_of_discreteTopology).range ↔ n • x = 0 := by
   rw [(kummerShortExact K n hn).explicitLongExact_H2B, AddMonoidHom.mem_ker,
     explicitCoeff2_kummerShortExact_proj]
+
+/-! #### Closed subgroups of `G_K`
+
+The same two facts hold over a closed subgroup `U` of `G_K`, for the Kummer sequence restricted to
+`U`: Hilbert 90 holds for `U` (`TauCeti.subsingleton_H1_unitsCoeff_of_isClosed`), which is all
+that injectivity uses, and the image is computed for every subgroup. -/
+
+variable (U : Subgroup (AbsoluteGaloisGroup K))
+
+/-- **`H²(U, μₙ) → H²(U, (Kˢ)ˣ)` is injective** for a closed subgroup `U` of `G_K`, on the explicit
+model. -/
+theorem explicitCoeff2_kummerShortExact_restrict_incl_injective
+    (hU : IsClosed (U : Set (AbsoluteGaloisGroup K))) :
+    Function.Injective (explicitCoeff2 U _
+      ((kummerShortExact K n hn).restrict U).inclDistribMulActionHom
+      continuous_of_discreteTopology) := by
+  have := subsingleton_H1_unitsCoeff_of_isClosed K U hU
+  refine (injective_iff_map_eq_zero _).2 fun x hx => ?_
+  have hx' : x ∈ ((kummerShortExact K n hn).restrict U).explicitDelta1.range := by
+    rw [((kummerShortExact K n hn).restrict U).explicitLongExact_H2A]
+    exact hx
+  obtain ⟨y, rfl⟩ := hx'
+  rw [Subsingleton.elim y 0, map_zero]
+
+/-- **The image of `H²(U, μₙ)` in `H²(U, (Kˢ)ˣ)` is the `n`-torsion** for every subgroup `U` of
+`G_K`, on the explicit model. -/
+theorem mem_range_explicitCoeff2_kummerShortExact_restrict_incl_iff (x : H2 U (UnitsCoeff K)) :
+    x ∈ (explicitCoeff2 U _ ((kummerShortExact K n hn).restrict U).inclDistribMulActionHom
+      continuous_of_discreteTopology).range ↔ n • x = 0 := by
+  rw [((kummerShortExact K n hn).restrict U).explicitLongExact_H2B, AddMonoidHom.mem_ker,
+    explicitCoeff2_eq_nsmul _ _ _ _ (k := n) fun b => by
+      simp [DiscreteShortExact.projDistribMulActionHom_apply, unitsCoeffPow_eq_nsmul]]
 
 end Explicit
 
