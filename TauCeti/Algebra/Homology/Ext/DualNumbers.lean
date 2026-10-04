@@ -246,7 +246,7 @@ private theorem dualNumberComplex_d (n : ℕ) :
   simp only [dualNumberComplex, HomologicalComplex.alternatingConst_d]
   split_ifs with h1 h2 <;> first | rfl | exact absurd rfl h1
 
-/-- The augmentation of the periodic complex by the residue field. -/
+/-- The augmentation of the periodic complex by the residue module. -/
 private noncomputable def dualNumberComplexπ :
     dualNumberComplex k ⟶ (ChainComplex.single₀ (ModuleCat.{u} (DualNumber k))).obj
       (dualNumberResidue k) :=
@@ -306,7 +306,7 @@ theorem dualNumberProjectiveResolution_π_f_zero :
   -- the isomorphism is an identity, so the left-hand side is the augmentation itself
   dualNumberComplexπ_f_zero k
 
-/-- Every differential of the periodic resolution dies against the residue field. -/
+/-- Every differential of the periodic resolution dies against the residue module. -/
 @[simp]
 theorem dualNumberProjectiveResolution_comp_eq_zero (p q : ℕ)
     (f : (dualNumberProjectiveResolution k).complex.X q ⟶ dualNumberResidue k) :
