@@ -53,12 +53,6 @@ theorem ofConv_eq_ofId (f : WithConv (R →ₐ[R] A)) :
     f.ofConv = Algebra.ofId R A :=
   Subsingleton.elim _ _
 
-/-- Evaluating a convolution point out of the base ring gives the algebra map.
-The value algebra need not be commutative. -/
-theorem convPoint_apply (f : WithConv (R →ₐ[R] A)) (r : R) :
-    f r = algebraMap R A r :=
-  f.ofConv.commutes r
-
 end Semiring
 
 section CommSemiring
@@ -74,25 +68,11 @@ theorem convPoint_eq_one (f : WithConv (R →ₐ[R] A)) : f = 1 :=
 theorem convPoint_eq_one_iff (f : WithConv (R →ₐ[R] A)) : f = 1 ↔ True :=
   ⟨fun _ => trivial, fun _ => convPoint_eq_one f⟩
 
-/-- Evaluating the inverse of a trivial-group point gives the algebra map. -/
-theorem convInv_apply (f : WithConv (R →ₐ[R] A)) (r : R) :
-    f⁻¹ r = algebraMap R A r :=
-  convPoint_apply f⁻¹ r
-
 end CommSemiring
 
 end WithConv
 
 variable [CommSemiring A] [Algebra R A]
-
-namespace AlgHom
-
-/-- Every `R`-algebra map `R →ₐ[R] A` becomes the convolution identity. -/
-@[simp]
-theorem toConv_eq_one (f : R →ₐ[R] A) : toConv f = (1 : WithConv (R →ₐ[R] A)) :=
-  WithConv.convPoint_eq_one (toConv f)
-
-end AlgHom
 
 namespace TauCeti
 
