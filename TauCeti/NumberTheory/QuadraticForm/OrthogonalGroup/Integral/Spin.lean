@@ -83,6 +83,7 @@ theorem coe_integralSpinToOrthogonal_apply (s : integralSpinSubgroup Q b) :
   (rfl)
 
 /-- Transporting the quadratic space and the basis transports integral Spin membership. -/
+@[simp↓]
 theorem mem_integralSpinSubgroup_spinGroupEquiv
     {W : Type*} [AddCommGroup W] [Module ℚ_[p] W] {Q' : QuadraticForm ℚ_[p] W}
     (e : Q.IsometryEquiv Q') (s : spinGroup Q) :

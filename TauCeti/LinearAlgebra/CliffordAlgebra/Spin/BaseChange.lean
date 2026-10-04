@@ -187,21 +187,24 @@ variable {R A M : Type*} [CommRing R] [CommRing A] [Algebra R A]
 
 /-- Extension of scalars commutes with the Spin homomorphism to the orthogonal group. -/
 @[simp]
-theorem spinToOrthogonal_baseChange [Module.Free R M] [Module.Finite R M]
-    (Q : QuadraticForm R M) (x : spinGroup Q) :
+theorem spinToOrthogonal_baseChange (Q : QuadraticForm R M) (x : spinGroup Q) :
     spinToOrthogonal (Q.baseChange A) (spinGroupBaseChange (A := A) Q x) =
       orthogonalGroupBaseChange (A := A) Q (spinToOrthogonal Q x) := by
-  have h := spinToSpecialOrthogonal_baseChange (A := A) Q x
-  -- The special orthogonal theorem installs the scalar-extended inverse of two.
-  -- Identify it with the supplied instance before applying its commuting square.
-  rw [Subsingleton.elim
-    ((Invertible.map (algebraMap R A) 2).copy 2 (map_ofNat _ _).symm)
-    (inferInstance : Invertible (2 : A))] at h
-  rw [← specialOrthogonalToOrthogonal_spinToSpecialOrthogonal,
-    ← h,
-    ← specialOrthogonalToOrthogonal_spinToSpecialOrthogonal Q x]
   apply Subtype.ext
-  simp only [_root_.QuadraticMap.coe_specialOrthogonalToOrthogonal,
-    coe_specialOrthogonalGroupBaseChange, coe_orthogonalGroupBaseChange]
+  rw [coe_orthogonalGroupBaseChange]
+  apply LinearEquiv.ext
+  intro z
+  induction z using TensorProduct.inductionOn with
+  | tmul a m =>
+      rw [coe_spinToOrthogonal_apply, LinearEquiv.baseChange_tmul,
+        coe_spinToOrthogonal_apply]
+      have h := spinVectorAction_baseChange_tmul (A := A) Q x a m
+      -- The vector-action theorem installs the scalar-extended inverse of two.
+      -- Identify it with the supplied instance before applying its formula.
+      rw [Subsingleton.elim
+        ((Invertible.map (algebraMap R A) 2).copy 2 (map_ofNat _ _).symm)
+        (inferInstance : Invertible (2 : A))] at h
+      exact h
+  | add z w hz hw => simp only [map_add, hz, hw]
 
 end TauCeti.CliffordAlgebra
