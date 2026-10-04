@@ -183,13 +183,17 @@ namespace TauCeti.CliffordAlgebra
 open _root_.CliffordAlgebra TauCeti.QuadraticMap
 
 variable {R A M : Type*} [CommRing R] [CommRing A] [Algebra R A]
-  [AddCommGroup M] [Module R M] [Invertible (2 : R)] [Invertible (2 : A)]
+  [AddCommGroup M] [Module R M] [Invertible (2 : R)]
 
 /-- Extension of scalars commutes with the Spin homomorphism to the orthogonal group. -/
 @[simp]
 theorem spinToOrthogonal_baseChange (Q : QuadraticForm R M) (x : spinGroup Q) :
+    letI : Invertible (2 : A) :=
+      (Invertible.map (algebraMap R A) 2).copy 2 (map_ofNat _ _).symm
     spinToOrthogonal (Q.baseChange A) (spinGroupBaseChange (A := A) Q x) =
       orthogonalGroupBaseChange (A := A) Q (spinToOrthogonal Q x) := by
+  let : Invertible (2 : A) :=
+    (Invertible.map (algebraMap R A) 2).copy 2 (map_ofNat _ _).symm
   apply Subtype.ext
   rw [coe_orthogonalGroupBaseChange]
   apply LinearEquiv.ext
@@ -198,13 +202,7 @@ theorem spinToOrthogonal_baseChange (Q : QuadraticForm R M) (x : spinGroup Q) :
   | tmul a m =>
       rw [coe_spinToOrthogonal_apply, LinearEquiv.baseChange_tmul,
         coe_spinToOrthogonal_apply]
-      have h := spinVectorAction_baseChange_tmul (A := A) Q x a m
-      -- The vector-action theorem installs the scalar-extended inverse of two.
-      -- Identify it with the supplied instance before applying its formula.
-      rw [Subsingleton.elim
-        ((Invertible.map (algebraMap R A) 2).copy 2 (map_ofNat _ _).symm)
-        (inferInstance : Invertible (2 : A))] at h
-      exact h
+      exact spinVectorAction_baseChange_tmul (A := A) Q x a m
   | add z w hz hw => simp only [map_add, hz, hw]
 
 end TauCeti.CliffordAlgebra
