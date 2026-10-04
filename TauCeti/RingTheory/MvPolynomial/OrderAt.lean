@@ -80,7 +80,6 @@ theorem taylor_apply (a : σ → R) (p : MvPolynomial σ R) :
 theorem taylor_X (a : σ → R) (i : σ) : taylor a (X i) = X i + C (a i) :=
   aeval_X _ _
 
-@[simp]
 theorem taylor_C (a : σ → R) (r : R) : taylor a (C r) = C r :=
   aeval_C _ _
 
