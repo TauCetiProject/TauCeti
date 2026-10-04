@@ -65,8 +65,7 @@ theorem intCast_add_intCast_conjugate_eq_two_mul_shift {χ : HeckeCharacter K}
     (hn : χ.infinityType.AgreesOnIdentityComponent (AlgebraicInfinityType.toContinuous n))
     (σ : K →+* ℂ) :
     (n σ : ℝ) + n (ComplexEmbedding.conjugate σ) = 2 * χ.shift := by
-  obtain ⟨hr, hc, -⟩ :=
-    ContinuousInfinityType.agreesOnIdentityComponent_def _ _ |>.mp hn
+  obtain ⟨hr, hc, -⟩ := hn
   rcases (InfinitePlace.mk σ).isReal_or_isComplex with hw | hw
   · have hσ : ComplexEmbedding.IsReal σ := InfinitePlace.isReal_mk_iff.mp hw
     have h := χ.re_realExponent_infinityType ⟨_, hw⟩
@@ -119,7 +118,7 @@ theorem intCast_eq_shift_of_isReal {χ : HeckeCharacter K} {n : AlgebraicInfinit
 type. -/
 theorem IsAlgebraic.exists_intCast_eq_two_mul_shift {χ : HeckeCharacter K} (hχ : χ.IsAlgebraic) :
     ∃ m : ℤ, (m : ℝ) = 2 * χ.shift := by
-  obtain ⟨n, hn⟩ := hχ.exists_agreesOnIdentityComponent
+  obtain ⟨n, hn⟩ := hχ
   obtain ⟨m, -, hm⟩ := exists_weight hn
   exact ⟨m, hm⟩
 
@@ -139,7 +138,7 @@ integer.**  For a totally imaginary field the shift can be a half-integer. -/
 theorem IsAlgebraic.exists_intCast_eq_shift_of_isReal {χ : HeckeCharacter K}
     (hχ : χ.IsAlgebraic) {w : InfinitePlace K} (hw : w.IsReal) :
     ∃ m : ℤ, (m : ℝ) = χ.shift := by
-  obtain ⟨n, hn⟩ := hχ.exists_agreesOnIdentityComponent
+  obtain ⟨n, hn⟩ := hχ
   exact ⟨n w.embedding, intCast_eq_shift_of_isReal hn (InfinitePlace.isReal_iff.mp hw)⟩
 
 /-- The unitary part of an algebraic Hecke character is algebraic exactly when the shift is an
