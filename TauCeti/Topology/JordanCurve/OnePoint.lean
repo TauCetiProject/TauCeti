@@ -73,14 +73,9 @@ theorem isJordanCurve_insert_infty_range_of_isProperMap
     {X : Type*} [TopologicalSpace X] [T2Space X] [WeaklyLocallyCompactSpace X]
     {f : ℝ → X} (hf : IsProperMap f) (hinj : Function.Injective f) :
     IsJordanCurve (insert OnePoint.infty (((↑) : X → OnePoint X) '' range f)) := by
-  have hinj' : Function.Injective (OnePoint.map f) := by
-    intro x y h
-    induction x using OnePoint.rec <;> induction y using OnePoint.rec <;>
-      simp only [OnePoint.map_infty, OnePoint.map_some, OnePoint.coe_eq_coe,
-        OnePoint.infty_ne_coe, OnePoint.coe_ne_infty] at h ⊢
-    exact hinj h
   rw [← range_onePoint_map f, ← image_univ]
   exact isJordanCurve_univ_onePoint_real.image
-    (continuous_onePoint_map_of_isProperMap hf).continuousOn hinj'.injOn
+    (continuous_onePoint_map_of_isProperMap hf).continuousOn
+    (injective_onePoint_map_iff.mpr hinj).injOn
 
 end TauCeti

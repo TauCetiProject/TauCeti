@@ -12,7 +12,8 @@ public import Mathlib.Topology.Maps.Proper.CompactlyGenerated
 # Maps on one-point compactifications
 
 The extension `OnePoint.map f` sends infinity to infinity. Its range is the range of `f`,
-embedded in the target compactification, together with infinity. For a proper map from an
+embedded in the target compactification, together with infinity, and it is injective exactly
+when `f` is injective. For a proper map from an
 R₁ space to a compactly coherent Hausdorff space, this extension is continuous, by Mathlib's
 `isProperMap_iff_tendsto_cocompact` and `OnePoint.continuous_map`.
 -/
@@ -23,14 +24,27 @@ open Set
 
 namespace TauCeti
 
+/-- Extension to one-point compactifications preserves and reflects injectivity. -/
+@[simp]
+theorem injective_onePoint_map_iff {X Y : Type*} {f : X → Y} :
+    Function.Injective (OnePoint.map f) ↔ Function.Injective f := by
+  constructor
+  · intro hf x y h
+    apply OnePoint.coe_injective
+    apply hf
+    simpa only [OnePoint.map_some] using congrArg OnePoint.some h
+  · intro hf
+    -- `OnePoint.map` is implemented by `Option.map`, so its injectivity theorem applies.
+    exact Option.map_injective hf
+
 /-- The range of the extension to one-point compactifications is the embedded range together
 with the point at infinity. -/
 @[simp]
 theorem range_onePoint_map {X Y : Type*} (f : X → Y) :
     range (OnePoint.map f) = insert OnePoint.infty (((↑) : Y → OnePoint Y) '' range f) := by
-  ext y
-  induction y using OnePoint.rec <;>
-    simp [OnePoint.exists, mem_range, eq_comm]
+  -- `Option.range_eq` splits the domain into infinity and the finite points.
+  exact (Option.range_eq (OnePoint.map f)).trans
+    (congrArg (insert OnePoint.infty) (range_comp ((↑) : Y → OnePoint Y) f))
 
 /-- A proper map from an R₁ space to a compactly coherent Hausdorff space extends continuously
 to the one-point compactifications, sending infinity to infinity. -/
