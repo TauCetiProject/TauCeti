@@ -12,6 +12,7 @@ public import Mathlib.RingTheory.SimpleModule.Rank
 import TauCeti.RingTheory.KrullSchmidt.Indecomposable
 import TauCeti.RingTheory.Semisimple.DoubleCentralizer
 import TauCeti.RingTheory.Semisimple.Schur
+import TauCeti.LinearAlgebra.TensorProduct.Separation
 
 /-!
 # Criteria for irreducibility
@@ -62,6 +63,9 @@ irreducible by.
   representation whose equivariant endomorphisms are the scalars is irreducible.
 * `Representation.asAlgebraHom_surjective_of_isIrreducible`: over an algebraically closed
   field, every finite-dimensional irreducible representation exhausts the endomorphisms.
+* `Representation.exists_ne_zero_forall_exists_rTensor_asAlgebraHom_eq_tmul`: consequently the
+  monoid algebra, acting on the left factor of a nonzero tensor in `V ⊗ M`, reaches every
+  `v ⊗ m` for one fixed nonzero `m`.
 * `Representation.exists_isAtom_le`: every nonzero finite-dimensional subrepresentation
   contains an atom, so the atom criterion always has something to apply to.
 * `Representation.exists_isAtom`: in particular a nonzero finite-dimensional
@@ -77,6 +81,7 @@ irreducible by.
 public section
 
 open TauCeti
+open scoped TensorProduct
 
 namespace Representation
 
@@ -296,6 +301,31 @@ theorem asAlgebraHom_surjective_of_isIrreducible
   rw [hT_equiv] at hx'
   simpa only [Module.toModuleEnd_apply, DistribSMul.toLinearMap_apply,
     Representation.asModuleEquiv_map_smul, LinearEquiv.apply_symm_apply] using hx'
+
+open scoped MonoidAlgebra in
+/-- **Burnside density on a tensor product.** Let `ρ` be a finite-dimensional irreducible
+representation over an algebraically closed field and `M` any vector space. Acting on the left
+factor of a nonzero `z ∈ V ⊗ M` by the monoid algebra reaches every pure tensor `v ⊗ m` with one
+fixed nonzero `m`: there is `m ≠ 0` such that for each `v` some `r ∈ k[G]` has
+`(ρ r ⊗ 1) z = v ⊗ m`. -/
+theorem exists_ne_zero_forall_exists_rTensor_asAlgebraHom_eq_tmul
+    [IsAlgClosed k] [FiniteDimensional k V] (ρ : Representation k G V) (hρ : ρ.IsIrreducible)
+    {M : Type*} [AddCommGroup M] [Module k M] {z : V ⊗[k] M} (hz : z ≠ 0) :
+    ∃ m : M, m ≠ 0 ∧ ∀ v : V, ∃ r : k[G], (ρ.asAlgebraHom r).rTensor M z = v ⊗ₜ m := by
+  -- Some linear functional on `V` contracts `z` to a nonzero vector of `M`.
+  obtain ⟨f, hf⟩ : ∃ f : Module.Dual k V, _root_.TensorProduct.lid k M (f.rTensor M z) ≠ 0 := by
+    by_contra! H
+    exact hz (tensor_eq_zero_of_forall_lid_rTensor_eq_zero (fun f : Module.Dual k V ↦ f)
+      (fun v hv ↦ (Module.forall_dual_apply_eq_zero_iff k v).1 hv) z H)
+  refine ⟨_, hf, fun v ↦ ?_⟩
+  -- By density the rank-one endomorphism `x ↦ f x • v` is the action of some `r`.
+  obtain ⟨r, hr⟩ := asAlgebraHom_surjective_of_isIrreducible ρ hρ (f.smulRight v)
+  have key (w : V ⊗[k] M) :
+      (f.smulRight v).rTensor M w = v ⊗ₜ _root_.TensorProduct.lid k M (f.rTensor M w) := by
+    induction w using _root_.TensorProduct.inductionOn with
+    | tmul x m => simp [_root_.TensorProduct.smul_tmul]
+    | add w w' hw hw' => simp only [map_add, hw, hw', _root_.TensorProduct.tmul_add]
+  exact ⟨r, by rw [hr, key]⟩
 
 /-! ### Atoms exist in finite dimensions -/
 

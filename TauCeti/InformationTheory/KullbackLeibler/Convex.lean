@@ -40,15 +40,18 @@ open scoped ENNReal NNReal
 
 namespace TauCeti
 
-variable {α : Type*} [MeasurableSpace α] {μ ν ρ : Measure α}
-  [IsFiniteMeasure μ] [IsFiniteMeasure ν] [IsFiniteMeasure ρ] {a b : ℝ≥0}
+variable {α : Type*} [MeasurableSpace α] {μ ν ρ : Measure α} {a b : ℝ≥0}
+
+section Densities
+
+variable [SigmaFinite μ] [SigmaFinite ν] [SigmaFinite ρ]
 
 /-- The entropy integrand of a mixture is the entropy integrand of the mixture of densities. -/
 private theorem klFun_rnDeriv_smul_add_smul :
     (fun x ↦ klFun ((a • μ + b • ν).rnDeriv ρ x).toReal) =ᵐ[ρ]
       fun x ↦ klFun (a * (μ.rnDeriv ρ x).toReal + b * (ν.rnDeriv ρ x).toReal) := by
-  filter_upwards [Measure.rnDeriv_add (a • μ) (b • ν) ρ,
-    Measure.rnDeriv_smul_left μ ρ a, Measure.rnDeriv_smul_left ν ρ b,
+  filter_upwards [Measure.rnDeriv_add' (a • μ) (b • ν) ρ,
+    Measure.rnDeriv_smul_left' μ ρ a, Measure.rnDeriv_smul_left' ν ρ b,
     Measure.rnDeriv_lt_top μ ρ, Measure.rnDeriv_lt_top ν ρ] with x hadd hμ hν hμfin hνfin
   simp only [Pi.add_apply, Pi.smul_apply, ENNReal.smul_def, smul_eq_mul] at hadd hμ hν
   simp only [Measure.coe_nnreal_smul] at hadd hμ hν
@@ -65,6 +68,24 @@ private theorem klFun_rnDeriv_smul_add_smul_le (hab : a + b = 1) :
   rw [hx]
   exact convexOn_klFun.2 ENNReal.toReal_nonneg ENNReal.toReal_nonneg a.coe_nonneg b.coe_nonneg
     (by exact_mod_cast hab)
+
+end Densities
+
+variable [IsFiniteMeasure μ] [IsFiniteMeasure ν] [IsFiniteMeasure ρ]
+
+/-- Integrating the weighted entropy densities gives the weighted endpoint entropies. -/
+private theorem lintegral_weighted_klFun_rnDeriv (hμac : μ ≪ ρ) (hνac : ν ≪ ρ) :
+    (∫⁻ x, ENNReal.ofReal
+      (a * klFun (μ.rnDeriv ρ x).toReal + b * klFun (ν.rnDeriv ρ x).toReal) ∂ρ) =
+        a * klDiv μ ρ + b * klDiv ν ρ := by
+  rw [klDiv_eq_lintegral_klFun_of_ac hμac, klDiv_eq_lintegral_klFun_of_ac hνac]
+  simp_rw [ENNReal.ofReal_add
+    (mul_nonneg a.coe_nonneg (klFun_nonneg ENNReal.toReal_nonneg))
+    (mul_nonneg b.coe_nonneg (klFun_nonneg ENNReal.toReal_nonneg)),
+    ENNReal.ofReal_mul a.coe_nonneg, ENNReal.ofReal_mul b.coe_nonneg,
+    ENNReal.ofReal_coe_nnreal]
+  rw [lintegral_add_left (by fun_prop), lintegral_const_mul _ (by fun_prop),
+    lintegral_const_mul _ (by fun_prop)]
 
 /-- **Convexity of relative entropy.** For finite measures and nonnegative weights summing to
 one, the entropy of their mixture against a fixed finite reference is at most the weighted
@@ -84,22 +105,9 @@ theorem klDiv_smul_add_smul_le (hab : a + b = 1) :
   have hμac := (klDiv_ne_top_iff.1 hμ).1
   have hνac := (klDiv_ne_top_iff.1 hν).1
   rw [klDiv_eq_lintegral_klFun_of_ac ((hμac.smul_left a).add_left (hνac.smul_left b)),
-    klDiv_eq_lintegral_klFun_of_ac hμac, klDiv_eq_lintegral_klFun_of_ac hνac]
-  calc
-    ∫⁻ x, ENNReal.ofReal (klFun ((a • μ + b • ν).rnDeriv ρ x).toReal) ∂ρ ≤
-        ∫⁻ x, ENNReal.ofReal
-          (a * klFun (μ.rnDeriv ρ x).toReal + b * klFun (ν.rnDeriv ρ x).toReal) ∂ρ :=
-      lintegral_mono_ae ((klFun_rnDeriv_smul_add_smul_le hab).mono fun _ hx ↦
-        ENNReal.ofReal_le_ofReal hx)
-    _ = a * (∫⁻ x, ENNReal.ofReal (klFun (μ.rnDeriv ρ x).toReal) ∂ρ) +
-        b * (∫⁻ x, ENNReal.ofReal (klFun (ν.rnDeriv ρ x).toReal) ∂ρ) := by
-      simp_rw [ENNReal.ofReal_add
-        (mul_nonneg a.coe_nonneg (klFun_nonneg ENNReal.toReal_nonneg))
-        (mul_nonneg b.coe_nonneg (klFun_nonneg ENNReal.toReal_nonneg)),
-        ENNReal.ofReal_mul a.coe_nonneg, ENNReal.ofReal_mul b.coe_nonneg,
-        ENNReal.ofReal_coe_nnreal]
-      rw [lintegral_add_left (by fun_prop), lintegral_const_mul _ (by fun_prop),
-        lintegral_const_mul _ (by fun_prop)]
+    ← lintegral_weighted_klFun_rnDeriv hμac hνac]
+  exact lintegral_mono_ae ((klFun_rnDeriv_smul_add_smul_le hab).mono fun _ hx ↦
+    ENNReal.ofReal_le_ofReal hx)
 
 /-- **Strict convexity of relative entropy on its finite-value domain.** Two distinct finite
 measures with finite entropy against a finite reference have a strict convexity inequality
@@ -109,45 +117,31 @@ theorem klDiv_smul_add_smul_lt (ha : 0 < a) (hb : 0 < b) (hab : a + b = 1)
     klDiv (a • μ + b • ν) ρ < a * klDiv μ ρ + b * klDiv ν ρ := by
   have hμac := (klDiv_ne_top_iff.1 hμ).1
   have hνac := (klDiv_ne_top_iff.1 hν).1
-  have hμint : Integrable (fun x ↦ klFun (μ.rnDeriv ρ x).toReal) ρ :=
-    (integrable_klFun_rnDeriv_iff hμac).2 (klDiv_ne_top_iff.1 hμ).2
-  have hνint : Integrable (fun x ↦ klFun (ν.rnDeriv ρ x).toReal) ρ :=
-    (integrable_klFun_rnDeriv_iff hνac).2 (klDiv_ne_top_iff.1 hν).2
-  have hupper := (hμint.const_mul (a : ℝ)).add (hνint.const_mul (b : ℝ))
-  have hle := klFun_rnDeriv_smul_add_smul_le (μ := μ) (ν := ν) (ρ := ρ) hab
-  have hmix : Integrable (fun x ↦ klFun ((a • μ + b • ν).rnDeriv ρ x).toReal) ρ :=
-    integrable_of_le_of_le
-      (continuous_klFun.measurable.comp
-        (Measure.measurable_rnDeriv _ _).ennreal_toReal).aestronglyMeasurable
-      (.of_forall fun _ ↦ klFun_nonneg ENNReal.toReal_nonneg) hle (integrable_zero _ _ _) hupper
-  have hstrict : (∫ x, klFun ((a • μ + b • ν).rnDeriv ρ x).toReal ∂ρ) <
-      ∫ x, (a * klFun (μ.rnDeriv ρ x).toReal + b * klFun (ν.rnDeriv ρ x).toReal) ∂ρ := by
-    refine lt_of_le_of_ne (integral_mono_ae hmix hupper hle) fun heq ↦ hne ?_
-    have heqae := (integral_eq_iff_of_ae_le hmix hupper hle).1 heq
-    have hdens : μ.rnDeriv ρ =ᵐ[ρ] ν.rnDeriv ρ := by
-      filter_upwards [heqae, klFun_rnDeriv_smul_add_smul (μ := μ) (ν := ν) (ρ := ρ)
-        (a := a) (b := b), Measure.rnDeriv_lt_top μ ρ, Measure.rnDeriv_lt_top ν ρ]
-        with x hx hmixeq hμfin hνfin
-      have hreal : (μ.rnDeriv ρ x).toReal = (ν.rnDeriv ρ x).toReal := by
-        by_contra hdiff
-        have hs := strictConvexOn_klFun.2 ENNReal.toReal_nonneg ENNReal.toReal_nonneg hdiff
-          (NNReal.coe_pos.2 ha) (NNReal.coe_pos.2 hb) (by exact_mod_cast hab)
-        simp only [smul_eq_mul] at hs
-        rw [hmixeq] at hx
-        exact hs.ne hx
-      exact (ENNReal.toReal_eq_toReal_iff' hμfin.ne hνfin.ne).1 hreal
-    rw [← Measure.withDensity_rnDeriv_eq μ ρ hμac, ← Measure.withDensity_rnDeriv_eq ν ρ hνac,
-      withDensity_congr_ae hdens]
   have hac := (hμac.smul_left a).add_left (hνac.smul_left b)
-  have hfin : klDiv (a • μ + b • ν) ρ ≠ ∞ :=
-    ne_top_of_le_ne_top (ENNReal.add_ne_top.2 ⟨by finiteness, by finiteness⟩)
-      (klDiv_smul_add_smul_le hab)
-  apply (ENNReal.toReal_lt_toReal hfin (ENNReal.add_ne_top.2 ⟨by finiteness, by finiteness⟩)).1
-  rw [toReal_klDiv_eq_integral_klFun hac, ENNReal.toReal_add (by finiteness) (by finiteness),
-    ENNReal.toReal_mul, ENNReal.toReal_mul, ENNReal.coe_toReal, ENNReal.coe_toReal,
-    toReal_klDiv_eq_integral_klFun hμac, toReal_klDiv_eq_integral_klFun hνac]
-  simpa only [integral_add (hμint.const_mul (a : ℝ)) (hνint.const_mul (b : ℝ)),
-    integral_const_mul] using hstrict
+  have hle := klDiv_smul_add_smul_le (μ := μ) (ν := ν) (ρ := ρ) hab
+  have hfin : (∫⁻ x, ENNReal.ofReal (klFun ((a • μ + b • ν).rnDeriv ρ x).toReal) ∂ρ) ≠ ∞ := by
+    rw [← klDiv_eq_lintegral_klFun_of_ac hac]
+    exact ne_top_of_le_ne_top (ENNReal.add_ne_top.2 ⟨by finiteness, by finiteness⟩) hle
+  refine lt_of_le_of_ne hle fun heq ↦ hne ?_
+  rw [klDiv_eq_lintegral_klFun_of_ac hac, ← lintegral_weighted_klFun_rnDeriv hμac hνac] at heq
+  have heqae := (lintegral_eq_iff_ae_eq_of_ae_le hfin (by fun_prop)
+    ((klFun_rnDeriv_smul_add_smul_le hab).mono fun _ hx ↦ ENNReal.ofReal_le_ofReal hx)).1 heq
+  have hdens : μ.rnDeriv ρ =ᵐ[ρ] ν.rnDeriv ρ := by
+    filter_upwards [heqae, klFun_rnDeriv_smul_add_smul (μ := μ) (ν := ν) (ρ := ρ)
+      (a := a) (b := b), Measure.rnDeriv_lt_top μ ρ, Measure.rnDeriv_lt_top ν ρ]
+      with x hx hmixeq hμfin hνfin
+    have hreal : (μ.rnDeriv ρ x).toReal = (ν.rnDeriv ρ x).toReal := by
+      by_contra hdiff
+      have hs := strictConvexOn_klFun.2 ENNReal.toReal_nonneg ENNReal.toReal_nonneg hdiff
+        (NNReal.coe_pos.2 ha) (NNReal.coe_pos.2 hb) (by exact_mod_cast hab)
+      simp only [smul_eq_mul] at hs
+      rw [hmixeq] at hx
+      exact ((ENNReal.ofReal_lt_ofReal_iff_of_nonneg
+        (klFun_nonneg (add_nonneg (mul_nonneg a.coe_nonneg ENNReal.toReal_nonneg)
+          (mul_nonneg b.coe_nonneg ENNReal.toReal_nonneg)))).2 hs).ne hx
+    exact (ENNReal.toReal_eq_toReal_iff' hμfin.ne hνfin.ne).1 hreal
+  rw [← Measure.withDensity_rnDeriv_eq μ ρ hμac, ← Measure.withDensity_rnDeriv_eq ν ρ hνac,
+    withDensity_congr_ae hdens]
 
 /-- For positive mixture weights and finite endpoint entropies, equality in the entropy
 convexity inequality holds exactly when the measures are equal. -/
@@ -179,11 +173,9 @@ theorem strictConvexOn_toReal_klDiv :
   rintro μ ⟨hμfin, hμ⟩ ν ⟨hνfin, hν⟩ hne a b ha hb hab
   let := hμfin
   let := hνfin
-  have hfin := (convex_setOf_isFiniteMeasure_klDiv_ne_top (ρ := ρ)
-    ⟨hμfin, hμ⟩ ⟨hνfin, hν⟩ ha.le hb.le hab).2
-  have h := (ENNReal.toReal_lt_toReal hfin
-    (ENNReal.add_ne_top.2 ⟨by finiteness, by finiteness⟩)).2
-      (klDiv_smul_add_smul_lt ha hb hab hμ hν hne)
+  have h := ENNReal.toReal_strict_mono
+    (ENNReal.add_ne_top.2 ⟨by finiteness, by finiteness⟩)
+    (klDiv_smul_add_smul_lt ha hb hab hμ hν hne)
   rw [ENNReal.toReal_add (by finiteness) (by finiteness), ENNReal.toReal_mul,
     ENNReal.toReal_mul, ENNReal.coe_toReal, ENNReal.coe_toReal] at h
   simpa only [NNReal.smul_def, smul_eq_mul] using h

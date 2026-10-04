@@ -24,16 +24,17 @@ for an arbitrary semiring `A` and is the unique algebra map with the prescribed 
 Consequently `TauCeti.laurentEvalEquiv` identifies the units of `A` with the `R`-algebra maps out of
 `R[T;T⁻¹]`: the Laurent polynomial ring is the free `R`-algebra on one invertible generator.
 
-The module-theoretic use is `TauCeti.laurentTAut`: on any `R[T;T⁻¹]`-module, multiplication by `T`
--- written `q` in the graded `K`-theory literature -- is an automorphism of the underlying additive
-monoid, and that automorphism is what a shift-compatible invariant is compared against.
+The module-theoretic use is `TauCeti.laurentTAut`: multiplication by `T` -- written `q` in the
+graded `K`-theory literature -- is an automorphism of the underlying additive monoid. This only
+requires a distributive action of the Laurent polynomial monoid, so it applies in particular to
+every `R[T;T⁻¹]`-module. That automorphism is what a shift-compatible invariant is compared against.
 
 ## Main definitions
 
 * `TauCeti.laurentEval`: evaluation of a Laurent polynomial at a unit of an `R`-algebra.
 * `TauCeti.laurentEvalEquiv`: the units of `A` are the `R`-algebra maps `R[T;T⁻¹] →ₐ[R] A`.
-* `TauCeti.laurentTAut`: multiplication by `T` on an `R[T;T⁻¹]`-module, as an additive
-  automorphism.
+* `TauCeti.laurentTAut`: the action of `T` as an additive automorphism under a
+  `DistribMulAction (LaurentPolynomial R) N`; Laurent modules are a specialization.
 
 ## Main results
 
@@ -148,12 +149,11 @@ theorem eval₂_C_injective_of_val_eq_T {u : R[T;T⁻¹]ˣ} {k : ℤ} (hu : (u :
   exact AddMonoidAlgebra.mapDomain_injective (mul_right_injective₀ hk)
 
 /-- The `k`-th power of the inverse of the unit `T n` is the monomial `T (-(n * k))`. -/
-theorem val_isUnit_T_unit_inv_pow (n : ℤ) (k : ℕ) :
+theorem val_isUnit_T_unit_inv_pow {R : Type*} [Semiring R] (n : ℤ) (k : ℕ) :
     (((isUnit_T (R := R) n).unit⁻¹ ^ k : R[T;T⁻¹]ˣ) : R[T;T⁻¹]) = T (-(n * k)) := by
   rw [Units.val_pow_eq_pow_val, Units.inv_eq_of_mul_eq_one_right (a := T (-n))
     (by rw [IsUnit.unit_spec, ← T_add]; simp), T_pow]
-  congr 1
-  ring
+  simp [mul_comm]
 
 /-- **Substituting `T⁻ᵏ` for `T` is injective** for `k ≠ 0`: a Laurent polynomial is determined by
 its evaluation at the `k`-th power of the inverse of the generator. -/
@@ -168,18 +168,19 @@ section ScalarCompatibility
 variable {R : Type*} [CommSemiring R] {N : Type*} [AddCommMonoid N]
   [Module R[T;T⁻¹] N] [Module R N] [IsScalarTower R R[T;T⁻¹] N]
   {A : Type*} [AddCommMonoid A] [Module R A]
+  {S : Type*} [Semiring S] [Algebra R S] [Module S A] [IsScalarTower R S A]
 
 /-- **Scalar compatibility with the specialization at `ε`.**  An `R`-linear map turning
-multiplication by `q` into multiplication by `ε` turns every Laurent scalar into its value at `ε`.
-This holds for modules over any commutative semiring. -/
-theorem map_smul_eq_laurentEval_smul (ε : Rˣ) (f : N →ₗ[R] A)
-    (hf : ∀ x, f ((T 1 : R[T;T⁻¹]) • x) = (ε : R) • f x) (p : R[T;T⁻¹]) (x : N) :
+multiplication by `q` into multiplication by a unit `ε` of an `R`-algebra `S` turns every Laurent
+scalar into its value at `ε`. The target algebra need not be commutative. -/
+theorem map_smul_eq_laurentEval_smul (ε : Sˣ) (f : N →ₗ[R] A)
+    (hf : ∀ x, f ((T 1 : R[T;T⁻¹]) • x) = (ε : S) • f x) (p : R[T;T⁻¹]) (x : N) :
     f (p • x) = laurentEval ε p • f x := by
-  have hinv : ∀ x, f ((T (-1) : R[T;T⁻¹]) • x) = ((ε⁻¹ : Rˣ) : R) • f x := fun x => by
+  have hinv : ∀ x, f ((T (-1) : R[T;T⁻¹]) • x) = ((ε⁻¹ : Sˣ) : S) • f x := fun x => by
     have hx := hf ((T (-1) : R[T;T⁻¹]) • x)
     rw [smul_smul, ← T_add, add_neg_cancel, T_zero, one_smul] at hx
     rw [hx, smul_smul, Units.inv_mul, one_smul]
-  have hT : ∀ (n : ℤ) (x : N), f ((T n : R[T;T⁻¹]) • x) = ((ε ^ n : Rˣ) : R) • f x := by
+  have hT : ∀ (n : ℤ) (x : N), f ((T n : R[T;T⁻¹]) • x) = ((ε ^ n : Sˣ) : S) • f x := by
     intro n
     induction n using Int.induction_on with
     | zero => simp
@@ -194,35 +195,30 @@ theorem map_smul_eq_laurentEval_smul (ε : Rˣ) (f : N →ₗ[R] A)
   | add p q hp hq => simp [add_smul, hp, hq]
   | C_mul_T n a =>
       rw [mul_smul, C_eq_algebraMap, algebraMap_smul]
-      simp [hT, mul_smul]
+      simp [hT, mul_smul, algebraMap_smul]
 
 end ScalarCompatibility
 
 section TAut
 
-variable (R : Type*) [Semiring R] (N : Type*) [AddCommMonoid N]
-  [Module (LaurentPolynomial R) N]
+variable (R : Type*) [Semiring R] (N : Type*) [AddMonoid N]
+  [DistribMulAction (LaurentPolynomial R) N]
 
-/-- **Multiplication by the variable on an `R[T;T⁻¹]`-module**, as an automorphism of the
-underlying additive monoid.  In the graded `K`-theory notation the variable is `q`, so this is the
-operator `x ↦ q • x` against which a shift-compatible invariant is compared. -/
-noncomputable def laurentTAut : AddAut N where
-  toFun x := (T 1 : LaurentPolynomial R) • x
-  invFun x := (T (-1) : LaurentPolynomial R) • x
-  left_inv x := by
-    simp only [smul_smul, ← T_add, neg_add_cancel, T_zero, one_smul]
-  right_inv x := by
-    simp only [smul_smul, ← T_add, add_neg_cancel, T_zero, one_smul]
-  map_add' _ _ := smul_add _ _ _
+/-- **Action of the variable**, as an automorphism of an additive monoid with a distributive
+`R[T;T⁻¹]`-action. In the graded `K`-theory notation the variable is `q`, so this is the operator
+`x ↦ q • x` against which a shift-compatible invariant is compared. -/
+noncomputable def laurentTAut : AddAut N :=
+  DistribMulAction.toAddEquiv N (unitOfInvertible (T 1 : LaurentPolynomial R))
 
 @[simp]
-lemma laurentTAut_apply (x : N) : laurentTAut R N x = (T 1 : LaurentPolynomial R) • x :=
-  (rfl)
+lemma laurentTAut_apply (x : N) : laurentTAut R N x = (T 1 : LaurentPolynomial R) • x := by
+  simp only [laurentTAut, DistribMulAction.toAddEquiv_apply, Units.smul_def, val_unitOfInvertible]
 
 @[simp]
 lemma laurentTAut_symm_apply (x : N) :
-    (laurentTAut R N).symm x = (T (-1) : LaurentPolynomial R) • x :=
-  (rfl)
+    (laurentTAut R N).symm x = (T (-1) : LaurentPolynomial R) • x := by
+  simp only [laurentTAut, DistribMulAction.toAddEquiv_symm_apply, Units.smul_def,
+    val_inv_unitOfInvertible, invOf_T]
 
 end TAut
 

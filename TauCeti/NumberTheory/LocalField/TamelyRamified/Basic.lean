@@ -36,6 +36,8 @@ has even valuation and lies in a different square class from every uniformizer.
 
 ## Main results
 
+* `TauCeti.LocalFieldsRamification.natCard_lowerRamificationGroup_one`: for `L/K` Galois, the
+  order of `G_1` is the residue-characteristic part of the ramification index.
 * `TauCeti.LocalFieldsRamification.lowerRamificationGroup_one_eq_bot_iff_isTamelyRamified`: for
   `L/K` Galois, `G_1 = 1` if and only if `L/K` is tamely ramified.
 * `TauCeti.IsTamelyRamified.ramificationIndex_dvd_card_residueField_sub_one`: for `L/K` Galois and
@@ -64,6 +66,17 @@ variable [Field L] [ValuativeRel L] [TopologicalSpace L] [IsNonarchimedeanLocalF
   [Algebra K L] [ValuativeExtension K L]
 
 namespace LocalFieldsRamification
+
+variable (K L) in
+/-- The order of wild inertia is the residue-characteristic part of the ramification index:
+`#G_1(L/K) = p ^ (v_p e(L/K))`. -/
+theorem natCard_lowerRamificationGroup_one [Module.Finite K L] [IsGalois K L] :
+    Nat.card (lowerRamificationGroup K L 1) =
+      ringChar 𝓀[K] ^ (ramificationIndex K L).factorization (ringChar 𝓀[K]) := by
+  have : CharP 𝓀[L] (ringChar 𝓀[K]) := Algebra.ringChar_eq 𝓀[K] 𝓀[L] ▸ ringChar.charP 𝓀[L]
+  rw [← natCard_lowerRamificationGroup_zero K L, lowerRamificationGroup_def,
+    lowerRamificationGroup_def]
+  exact natCard_ramificationGroup_one _ _
 
 variable (K L) in
 /-- **Wild inertia is trivial exactly in the tame case.** For a finite Galois extension `L/K` of

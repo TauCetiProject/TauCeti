@@ -8,6 +8,13 @@ module
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Tate.ArtinLowDegree
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Tate.Conjugation
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Tate.Naturality
+public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Character
+
+import TauCeti.Algebra.Module.CharacterModule
+import TauCeti.NumberTheory.ClassFieldTheory.Formation.Tate.Inflation
+import TauCeti.RepresentationTheory.Homological.TateCohomology.Cup.Associativity
+import TauCeti.RepresentationTheory.Homological.TateCohomology.Cup.Character
+import TauCeti.RepresentationTheory.Homological.TateCohomology.Cup.GradedComm
 
 /-!
 # The abstract Artin map of a class formation
@@ -53,6 +60,11 @@ inclusion `Gal(K/E) → Gal(K/F)` and corestriction in degree `0` is the ground-
 `N_{E/F}`, the Artin symbol over `F` of the norm of `b ∈ A^{U'}` is the image of its Artin symbol
 over `E` (`ClassFormation.artinMap_groundNorm`).
 
+Refining the top field from `K` to `L` gives a quotient
+`Gal(L/F)^ab → Gal(K/F)^ab`. Compatibility of the character cup pairing with inflation, together
+with separation by rational characters, shows that the Artin symbol for `K/F` is the image of the
+Artin symbol for `L/F` (`ClassFormation.artinMap_quotient`).
+
 ## Main definitions
 
 * `TauCeti.ClassFieldTheory.ClassFormation.nakayamaNegTwo`: the Nakayama map
@@ -75,6 +87,10 @@ over `E` (`ClassFormation.artinMap_groundNorm`).
   corresponds to the transfer of abelianized Galois groups.
 * `TauCeti.ClassFieldTheory.ClassFormation.artinMap_groundNorm`: the norm between ground levels
   corresponds to the map of abelianized Galois groups induced by inclusion.
+* `TauCeti.ClassFieldTheory.ClassFormation.character_artinMap`: the character formula for the
+  Artin map, with the sign imposed by the Tate cup-product convention.
+* `TauCeti.ClassFieldTheory.ClassFormation.artinMap_quotient`: refinement of the top field
+  corresponds to the quotient map of abelianized Galois groups.
 
 ## References
 
@@ -84,6 +100,8 @@ over `E` (`ClassFormation.artinMap_groundNorm`).
 -/
 
 public noncomputable section
+
+open CategoryTheory MonoidalCategory Rep
 
 namespace TauCeti.ClassFieldTheory.ClassFormation
 
@@ -301,5 +319,149 @@ theorem artinMap_groundNorm {small big : NormalLayer G} (T : LayerRestriction sm
         rw [tateIso_apply, cupFundamentalClass_artinMap]
     -- in degree `0`, corestriction is the ground-level norm
     _ = big.zeroTateClass F (T.groundNorm F b) := T.tateCor_zeroTateClass F b
+
+/-! ### Refinement of the top field -/
+
+private theorem inv_cupFundamentalClass_zero (x : L.TrivialTateH 0) :
+    cf.inv L ((L.tateHIsoH F 2).hom (cf.cupFundamentalClass L 0 x)) =
+      ZMod.toRatAddCircle (Nat.card L.Gal)
+        (TateCohomology.H0LinearEquivTrivialIntZModCard L.Gal x) := by
+  obtain ⟨k, hk⟩ := ZMod.intCast_surjective
+    (TateCohomology.H0LinearEquivTrivialIntZModCard L.Gal x)
+  have hx : x = k • TateCohomology.trivialTateHZeroOne L.Gal := by
+    apply (TateCohomology.H0LinearEquivTrivialIntZModCard L.Gal).injective
+    rw [map_zsmul, TateCohomology.H0LinearEquivTrivialIntZModCard_trivialTateHZeroOne,
+      zsmul_one, hk]
+  rw [hx, map_zsmul, map_zsmul, cupFundamentalClass_apply,
+    cupClass_trivialTateHZeroOne, map_zsmul, Iso.inv_hom_id_apply,
+    map_zsmul, inv_fundamentalClass, map_zsmul,
+    TateCohomology.H0LinearEquivTrivialIntZModCard_trivialTateHZeroOne]
+  congr 1
+  rw [← L.degree_eq_natCard_gal]
+  simpa only [Nat.cast_one] using (ZMod.toRatAddCircle_natCast L.degree 1).symm
+
+/-- **The character formula for the Artin map.** With the current Tate cup-product and low-degree
+comparison conventions, the invariant of `a₀ ∪ δχ` is the negative of the character evaluation
+`χ (artinMap a)`. -/
+@[simp]
+theorem character_artinMap (a : F.level L.ground)
+    (chi : Additive (Abelianization L.Gal) →+ AddCircle (1 : ℚ)) :
+    cf.inv L (L.artinCharacterCup F a chi) = -chi (cf.artinMap L a) := by
+  let sigma := L.tateHMinusTwoEquivAbelianization.symm (cf.artinMap L a)
+  let pairing :=
+    (tateCohomologyFunctor 0).map (λ_ (Rep.trivial ℤ L.Gal ℤ)).hom
+      (TateCohomology.cup (Rep.trivial ℤ L.Gal ℤ) (Rep.trivial ℤ L.Gal ℤ)
+        (-2) 2 0 (by omega) sigma (L.characterConnectingClass chi))
+  have hcup :
+      L.artinCharacterCup F a chi =
+        (L.tateHIsoH F 2).hom (cf.cupFundamentalClass L 0 pairing) := by
+    rw [NormalLayer.artinCharacterCup_apply,
+      ← cf.cupFundamentalClass_artinMap L a, cupFundamentalClass_apply, cupClass_apply]
+    congr 1
+    rw [cupFundamentalClass_apply, cupClass_apply]
+    dsimp only [pairing, sigma]
+    have hstruct :
+        ((λ_ (L.rep F)).hom ▷ Rep.trivial ℤ L.Gal ℤ) ≫ (ρ_ (L.rep F)).hom =
+          (α_ (𝟙_ (Rep ℤ L.Gal)) (L.rep F) (Rep.trivial ℤ L.Gal ℤ)).hom ≫
+            ((𝟙_ (Rep ℤ L.Gal)) ◁ (β_ (L.rep F) (Rep.trivial ℤ L.Gal ℤ)).hom) ≫
+            (α_ (𝟙_ (Rep ℤ L.Gal)) (Rep.trivial ℤ L.Gal ℤ) (L.rep F)).inv ≫
+            ((λ_ (Rep.trivial ℤ L.Gal ℤ)).hom ▷ L.rep F) ≫ (λ_ (L.rep F)).hom := by
+      -- `Rep.trivial ℤ L.Gal ℤ` is the tensor unit, but the braided coherence tactic needs
+      -- that unit displayed as `𝟙_ (Rep ℤ L.Gal)` in order to recognize the unit braiding.
+      change ((λ_ (L.rep F)).hom ▷ (𝟙_ (Rep ℤ L.Gal))) ≫ (ρ_ (L.rep F)).hom =
+        (α_ (𝟙_ (Rep ℤ L.Gal)) (L.rep F) (𝟙_ (Rep ℤ L.Gal))).hom ≫
+          ((𝟙_ (Rep ℤ L.Gal)) ◁ (β_ (L.rep F) (𝟙_ (Rep ℤ L.Gal))).hom) ≫
+          (α_ (𝟙_ (Rep ℤ L.Gal)) (𝟙_ (Rep ℤ L.Gal)) (L.rep F)).inv ≫
+          ((λ_ (𝟙_ (Rep ℤ L.Gal))).hom ▷ L.rep F) ≫ (λ_ (L.rep F)).hom
+      rw [braiding_tensorUnit_right]
+      monoidal
+    simp only [Int.reduceAdd]
+    rw [TateCohomology.cup_map_left, ← ModuleCat.comp_apply, ← Functor.map_comp, hstruct,
+      Functor.map_comp, Functor.map_comp, Functor.map_comp, Functor.map_comp,
+      ModuleCat.comp_apply, ModuleCat.comp_apply, ModuleCat.comp_apply, ModuleCat.comp_apply]
+    -- Reassociate so that graded commutativity can exchange the degree-two factors.
+    have hAssoc₁ := TateCohomology.cup_assoc
+      (𝟙_ (Rep ℤ L.Gal)) (L.rep F) (Rep.trivial ℤ L.Gal ℤ)
+      (p := -2) (q := 2) (s := 2) (r₁ := 0) (r₂ := 4) (r := 2)
+      (by omega) (by omega) (by omega) sigma
+      ((L.tateHIsoH F 2).inv (cf.fundamentalClass L)) (L.characterConnectingClass chi)
+    have hAssoc₁' :
+        (tateCohomologyFunctor 2).map
+            (α_ (𝟙_ (Rep ℤ L.Gal)) (L.rep F) (Rep.trivial ℤ L.Gal ℤ)).hom
+          (TateCohomology.cup ((𝟙_ (Rep ℤ L.Gal)) ⊗ L.rep F)
+            (Rep.trivial ℤ L.Gal ℤ) 0 2 2 (by omega)
+            (TateCohomology.cup (Rep.trivial ℤ L.Gal ℤ) (L.rep F) (-2) 2 0 (by omega)
+              sigma ((L.tateHIsoH F 2).inv (cf.fundamentalClass L)))
+            (L.characterConnectingClass chi)) =
+          TateCohomology.cup (𝟙_ (Rep ℤ L.Gal))
+            ((L.rep F) ⊗ Rep.trivial ℤ L.Gal ℤ) (-2) 4 2 (by omega) sigma
+            (TateCohomology.cup (L.rep F) (Rep.trivial ℤ L.Gal ℤ) 2 2 4 (by omega)
+              ((L.tateHIsoH F 2).inv (cf.fundamentalClass L))
+              (L.characterConnectingClass chi)) := by
+      exact hAssoc₁
+    rw [hAssoc₁', ← TateCohomology.cup_map_right, TateCohomology.cup_gradedComm]
+    rw [Int.negOnePow_even (2 * 2) ⟨2, rfl⟩, one_smul]
+    -- Reassociate back; the intervening associator and its inverse then cancel.
+    have hAssoc₂ := TateCohomology.cup_assoc
+      (𝟙_ (Rep ℤ L.Gal)) (Rep.trivial ℤ L.Gal ℤ) (L.rep F)
+      (p := -2) (q := 2) (s := 2) (r₁ := 0) (r₂ := 4) (r := 2)
+      (by omega) (by omega) (by omega) sigma (L.characterConnectingClass chi)
+      ((L.tateHIsoH F 2).inv (cf.fundamentalClass L))
+    have hAssoc₂' :
+        (tateCohomologyFunctor 2).map
+            (α_ (𝟙_ (Rep ℤ L.Gal)) (Rep.trivial ℤ L.Gal ℤ) (L.rep F)).hom
+          (TateCohomology.cup ((𝟙_ (Rep ℤ L.Gal)) ⊗ Rep.trivial ℤ L.Gal ℤ)
+            (L.rep F) 0 2 2 (by omega)
+            (TateCohomology.cup (Rep.trivial ℤ L.Gal ℤ) (Rep.trivial ℤ L.Gal ℤ)
+              (-2) 2 0 (by omega) sigma (L.characterConnectingClass chi))
+            ((L.tateHIsoH F 2).inv (cf.fundamentalClass L))) =
+          TateCohomology.cup (𝟙_ (Rep ℤ L.Gal))
+            (Rep.trivial ℤ L.Gal ℤ ⊗ L.rep F) (-2) 4 2 (by omega) sigma
+            (TateCohomology.cup (Rep.trivial ℤ L.Gal ℤ) (L.rep F) 2 2 4 (by omega)
+              (L.characterConnectingClass chi)
+              ((L.tateHIsoH F 2).inv (cf.fundamentalClass L))) := by
+      exact hAssoc₂
+    have hcancel (z : tateCohomology
+        (((𝟙_ (Rep ℤ L.Gal)) ⊗ Rep.trivial ℤ L.Gal ℤ) ⊗ L.rep F) 2) :
+        (tateCohomologyFunctor 2).map
+            (α_ (𝟙_ (Rep ℤ L.Gal)) (Rep.trivial ℤ L.Gal ℤ) (L.rep F)).inv
+          ((tateCohomologyFunctor 2).map
+            (α_ (𝟙_ (Rep ℤ L.Gal)) (Rep.trivial ℤ L.Gal ℤ) (L.rep F)).hom z) = z := by
+      rw [← ModuleCat.comp_apply, ← Functor.map_comp, Iso.hom_inv_id,
+        (tateCohomologyFunctor 2).map_id]
+      rfl
+    rw [← hAssoc₂', hcancel, ← TateCohomology.cup_map_left]
+  rw [hcup, cf.inv_cupFundamentalClass_zero]
+  have hsigma : sigma = TateCohomology.HNegTwoAddEquivAbelianization.symm
+      (cf.artinMap L a) := by
+    apply L.tateHMinusTwoEquivAbelianization.injective
+    simp only [sigma, AddEquiv.apply_symm_apply,
+      NormalLayer.tateHMinusTwoEquivAbelianization_apply]
+  simp only [pairing, NormalLayer.characterConnectingClass_def, hsigma]
+  exact TateCohomology.toRatAddCircle_map_leftUnitor_cup_characterConnectingClass
+    L.Gal (cf.artinMap L a) chi
+
+/-- **Passage to a quotient extension corresponds to the quotient map on Galois groups**, the
+fourth Artin–Tate functoriality diagram. Under a refinement of the top field from `K` to `L`, the
+Artin symbol for `K/F` is the image of the Artin symbol for `L/F` under
+`Gal(L/F)^ab → Gal(K/F)^ab`. -/
+@[simp]
+theorem artinMap_quotient {old new : NormalLayer G} (T : LayerRefinement old new)
+    (a : F.level old.ground) :
+    cf.artinMap old a = T.quotientHom (cf.artinMap new (T.groundEquiv F a)) := by
+  apply sub_eq_zero.mp
+  apply CharacterModule.eq_zero_of_character_apply
+  intro chi
+  rw [map_sub, sub_eq_zero]
+  apply neg_injective
+  calc
+    -chi (cf.artinMap old a) = cf.inv old (old.artinCharacterCup F a chi) :=
+      (cf.character_artinMap old a chi).symm
+    _ = cf.inv new
+        (new.artinCharacterCup F (T.groundEquiv F a) (chi.comp T.quotientHom)) :=
+      (cf.inv_artinCharacterCup_comp_quotientHom T a chi).symm
+    _ = -(chi.comp T.quotientHom) (cf.artinMap new (T.groundEquiv F a)) :=
+      cf.character_artinMap new (T.groundEquiv F a) (chi.comp T.quotientHom)
+    _ = -chi (T.quotientHom (cf.artinMap new (T.groundEquiv F a))) := rfl
 
 end TauCeti.ClassFieldTheory.ClassFormation

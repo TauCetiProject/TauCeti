@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.MonoidAlgebra.Basic
+public import Mathlib.LinearAlgebra.Quotient.Basic
 public import TauCeti.Algebra.MonoidAlgebra.Basic
 public import TauCeti.LinearAlgebra.Dual.RightAction
 import Mathlib.LinearAlgebra.Finsupp.Pi
@@ -28,9 +29,13 @@ ordinary base-ring dual.
   duals.
 * `TauCeti.MonoidAlgebra.contragredientDualMap`: precomposition on base-ring duals, equipped with
   the contragredient group-algebra action.
+* `TauCeti.MonoidAlgebra.quotientRangeContragredientDualMapEquiv`: the cokernel of contragredient
+  precomposition is, additively, the cokernel of the base-ring dual map.
 
 ## Main results
 
+* `TauCeti.MonoidAlgebra.contragredientDualMap_eq_dualMap`: contragredient precomposition is the
+  base-ring dual map.
 * `TauCeti.MonoidAlgebra.map_range_lcomp_dualLinearEquiv`: the duality carries the range of
   group-algebra precomposition to the range of contragredient base-ring precomposition.
 
@@ -127,7 +132,53 @@ theorem contragredientDualMap_apply (f : M →ₗ[MonoidAlgebra R G] N)
     contragredientDualMap f ψ m = ψ (f m) := by
   simp [contragredientDualMap]
 
+/-- Contragredient dual precomposition is the base-ring dual map of `f`. -/
+theorem contragredientDualMap_eq_dualMap (f : M →ₗ[MonoidAlgebra R G] N)
+    (ψ : Module.Dual R N) :
+    contragredientDualMap f ψ = (f.restrictScalars R).dualMap ψ :=
+  LinearMap.ext fun m ↦ by
+    rw [contragredientDualMap_apply, LinearMap.dualMap_apply, LinearMap.restrictScalars_apply]
+
 end ContragredientMap
+
+section ContragredientQuotient
+
+variable {R G M N : Type*} [CommRing R] [Group G]
+  [AddCommMonoid M] [Module (MonoidAlgebra R G) M] [Module R M]
+  [IsScalarTower R (MonoidAlgebra R G) M]
+  [AddCommMonoid N] [Module (MonoidAlgebra R G) N] [Module R N]
+  [IsScalarTower R (MonoidAlgebra R G) N]
+
+/-- The functionals on `M` that extend along `f`, described as the range of contragredient dual
+precomposition and as the range of the base-ring dual map, agree as additive subgroups. -/
+theorem restrictScalars_range_contragredientDualMap (f : M →ₗ[MonoidAlgebra R G] N) :
+    (LinearMap.range (contragredientDualMap f)).restrictScalars ℤ =
+      (LinearMap.range (f.restrictScalars R).dualMap).restrictScalars ℤ := by
+  ext ψ
+  simp only [Submodule.restrictScalars_mem, LinearMap.mem_range]
+  exact exists_congr fun φ ↦ by rw [contragredientDualMap_eq_dualMap]
+
+/-- The quotients of `Hom_R(M, R)` by the range of contragredient dual precomposition and by the
+range of the base-ring dual map agree, as additive groups. -/
+def quotientRangeContragredientDualMapEquiv (f : M →ₗ[MonoidAlgebra R G] N) :
+    (Module.Dual R M ⧸ LinearMap.range (contragredientDualMap f)) ≃ₗ[ℤ]
+      (Module.Dual R M ⧸ LinearMap.range (f.restrictScalars R).dualMap) :=
+  (Submodule.Quotient.restrictScalarsEquiv ℤ _).symm.trans <|
+    (Submodule.quotEquivOfEq _ _ (restrictScalars_range_contragredientDualMap f)).trans
+      (Submodule.Quotient.restrictScalarsEquiv ℤ _)
+
+/-- `TauCeti.MonoidAlgebra.quotientRangeContragredientDualMapEquiv` sends the class of a
+functional to its class. -/
+@[simp]
+theorem quotientRangeContragredientDualMapEquiv_mk (f : M →ₗ[MonoidAlgebra R G] N)
+    (ψ : Module.Dual R M) :
+    quotientRangeContragredientDualMapEquiv f (Submodule.Quotient.mk ψ) =
+      Submodule.Quotient.mk ψ := by
+  rw [quotientRangeContragredientDualMapEquiv, LinearEquiv.trans_apply, LinearEquiv.trans_apply,
+    Submodule.Quotient.restrictScalarsEquiv_symm_mk, Submodule.quotEquivOfEq_mk,
+    Submodule.Quotient.restrictScalarsEquiv_mk]
+
+end ContragredientQuotient
 
 section FiniteGroup
 
