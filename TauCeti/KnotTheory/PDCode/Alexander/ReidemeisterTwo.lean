@@ -46,6 +46,8 @@ here.
 * `TauCeti.OrientedPDCode.alexanderGenerator_insertClasp_inl_inl_apply_self` and
   `TauCeti.OrientedPDCode.alexanderGenerator_insertClasp_inl_inl_apply_right`: after the
   insertion, the two old ends of each cut arc still give the same generator.
+* `TauCeti.OrientedPDCode.alexanderWeight_insertClasp_castSucc_last` and
+  `TauCeti.OrientedPDCode.alexanderWeight_insertClasp_last`: the weights of the two new crossings.
 
 ## References
 
@@ -94,35 +96,55 @@ theorem alexanderWeight_insertClasp_castSucc_castSucc (i : Fin n) (slot : Fin 4)
       D.alexanderWeight i slot := by
   simp [alexanderWeight_def, PDCode.isOver_def]
 
+/-- The weights of the first new crossing. The over-strand has weight `1`, and the under-strand has
+the weight `t` or `t⁻¹` of the meridian of the over-strand: the strand through `q` when `b` holds,
+and the strand through `p` otherwise. -/
+@[simp]
+theorem alexanderWeight_insertClasp_castSucc_last (slot : Fin 4) :
+    (D.insertClasp p q b hqp hqe).alexanderWeight (Fin.last n).castSucc slot =
+      if b then
+        ![T (if D.orientation q then -1 else 1), 1, T (if D.orientation q then 1 else -1), 1] slot
+      else
+        ![1, T (if D.orientation p then 1 else -1), 1,
+          T (if D.orientation p then -1 else 1)] slot := by
+  rw [alexanderWeight_def]
+  cases b <;> cases hp : D.orientation p <;> cases hq : D.orientation q <;> fin_cases slot <;>
+    simp [PDCode.isOver_def, hp, hq]
+
+/-- The weights of the second new crossing. Its over-strand is that of the first new crossing, and
+its under-strand weights are inverse to the corresponding ones there, since the two new crossings
+have opposite signs. -/
+@[simp]
+theorem alexanderWeight_insertClasp_last (slot : Fin 4) :
+    (D.insertClasp p q b hqp hqe).alexanderWeight (Fin.last (n + 1)) slot =
+      if b then
+        ![1, T (if D.orientation q then 1 else -1), 1, T (if D.orientation q then -1 else 1)] slot
+      else
+        ![T (if D.orientation p then -1 else 1), 1,
+          T (if D.orientation p then 1 else -1), 1] slot := by
+  rw [alexanderWeight_def]
+  cases b <;> cases hp : D.orientation p <;> cases hq : D.orientation q <;> fin_cases slot <;>
+    simp [PDCode.isOver_def, hp, hq]
+
 /-- Along the strand through `q`, the weight of slot `0` of the second new crossing is inverse to
 the weight of slot `1` of the first. -/
 private theorem alexanderWeight_insertClasp_last_zero_mul :
     (D.insertClasp p q b hqp hqe).alexanderWeight (Fin.last (n + 1)) 0 *
       (D.insertClasp p q b hqp hqe).alexanderWeight (Fin.last n).castSucc 1 = 1 := by
-  rw [alexanderWeight_def, alexanderWeight_def, crossingSign_insertClasp_last]
-  simp only [PDCode.isOver_zero, PDCode.isOver_one, toPDCode_insertClasp,
-    insertClasp_overPair_last, insertClasp_overPair_castSucc_last, crossing_insertClasp_last,
-    crossing_insertClasp_castSucc_last, orientation_insertClasp_inr,
-    orientation_insertClasp_inl_inr]
-  generalize (D.insertClasp p q b hqp hqe).crossingSign (Fin.last n).castSucc = e
-  cases b <;> cases D.orientation q <;>
-    simp only [Bool.not_true, Bool.not_false, Bool.false_eq_true, ↓reduceIte, mul_one, ← T_add,
-      neg_add_cancel, add_neg_cancel, T_zero, Matrix.cons_val_zero, Matrix.cons_val_one, neg_neg]
+  rw [alexanderWeight_insertClasp_last, alexanderWeight_insertClasp_castSucc_last]
+  cases b <;> cases D.orientation p <;> cases D.orientation q <;>
+    simp only [Bool.false_eq_true, ↓reduceIte, Matrix.cons_val_zero, Matrix.cons_val_one, mul_one,
+      ← T_add, neg_add_cancel, add_neg_cancel, T_zero]
 
 /-- Along the strand through `p`, the weight of slot `1` of the second new crossing is inverse to
 the weight of slot `0` of the first. -/
 private theorem alexanderWeight_insertClasp_last_one_mul :
     (D.insertClasp p q b hqp hqe).alexanderWeight (Fin.last (n + 1)) 1 *
       (D.insertClasp p q b hqp hqe).alexanderWeight (Fin.last n).castSucc 0 = 1 := by
-  rw [alexanderWeight_def, alexanderWeight_def, crossingSign_insertClasp_last]
-  simp only [PDCode.isOver_zero, PDCode.isOver_one, toPDCode_insertClasp,
-    insertClasp_overPair_last, insertClasp_overPair_castSucc_last, crossing_insertClasp_last,
-    crossing_insertClasp_castSucc_last, orientation_insertClasp_inr,
-    orientation_insertClasp_inl_inr]
-  generalize (D.insertClasp p q b hqp hqe).crossingSign (Fin.last n).castSucc = e
-  cases b <;> cases D.orientation p <;>
-    simp only [Bool.not_true, Bool.not_false, Bool.false_eq_true, ↓reduceIte, mul_one, ← T_add,
-      neg_add_cancel, add_neg_cancel, T_zero, Matrix.cons_val_zero, Matrix.cons_val_one, neg_neg]
+  rw [alexanderWeight_insertClasp_last, alexanderWeight_insertClasp_castSucc_last]
+  cases b <;> cases D.orientation p <;> cases D.orientation q <;>
+    simp only [Bool.false_eq_true, ↓reduceIte, Matrix.cons_val_zero, Matrix.cons_val_one, mul_one,
+      ← T_add, neg_add_cancel, add_neg_cancel, T_zero]
 
 /-- The same strand is over at both new crossings: the strand through `p` (slots `0` of the first
 and `1` of the second) or the strand through `q` (slots `1` of the first and `0` of the second). -/
@@ -131,7 +153,7 @@ private theorem alexanderWeight_insertClasp_over :
         (D.insertClasp p q b hqp hqe).alexanderWeight (Fin.last (n + 1)) 1 = 1) ∨
       ((D.insertClasp p q b hqp hqe).alexanderWeight (Fin.last n).castSucc 1 = 1 ∧
         (D.insertClasp p q b hqp hqe).alexanderWeight (Fin.last (n + 1)) 0 = 1) := by
-  cases b <;> simp [PDCode.isOver_zero, PDCode.isOver_one]
+  cases b <;> simp
 
 /-- The relations of the clasp. Let `x₀` and `x₁` be the arcs entering the first new crossing at
 its slots `0` and `1`, and `x₂`, `x₃` the arcs leaving it at slots `2` and `3`, given by the
@@ -374,7 +396,8 @@ private theorem insertClaspInvHom_claspFirst (s : Fin 4) :
     insertClasp_edgePair_inl_inr_zero, insertClasp_edgePair_inl_inr_one, Fin.isValue,
     Fin.reduceAdd, zero_add] at rA₀ rA₁ arc₀ arc₁
   fin_cases s <;>
-    simp [claspFirst, insertClaspInvHom_alexanderGenerator, D', arc₀, arc₁, rA₀, rA₁]
+    simp [-alexanderWeight_insertClasp_castSucc_last, claspFirst,
+      insertClaspInvHom_alexanderGenerator, D', arc₀, arc₁, rA₀, rA₁]
 
 /-- **The second Reidemeister move keeps the Alexander module**: inserting a clasp into two
 distinct arcs gives a code whose Alexander module is `ℤ[T;T⁻¹]`-linearly equivalent to that of
