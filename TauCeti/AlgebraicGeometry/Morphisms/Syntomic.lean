@@ -145,17 +145,17 @@ theorem syntomicOfRelativeDimension_SpecMap_iff {R S : CommRingCat.{u}} (φ : R 
       RingHom.Locally (@IsStandardSyntomicOfRelativeDimension n) φ.hom :=
   HasRingHomProperty.Spec_iff
 
-set_option backward.isDefEq.respectTransparency.types false in
 /-- Pulling back a syntomic morphism preserves its relative dimension. -/
 instance {S : Scheme.{u}} (g : X ⟶ S) (h : Y ⟶ S) [SyntomicOfRelativeDimension n h] :
     SyntomicOfRelativeDimension n (pullback.fst g h) :=
-  MorphismProperty.pullback_fst g h inferInstance
+  MorphismProperty.of_isPullback (P := @SyntomicOfRelativeDimension n)
+    (IsPullback.of_hasPullback g h).flip inferInstance
 
-set_option backward.isDefEq.respectTransparency.types false in
 /-- Pulling back a syntomic morphism preserves its relative dimension. -/
 instance {S : Scheme.{u}} (g : X ⟶ S) (h : Y ⟶ S) [SyntomicOfRelativeDimension n g] :
     SyntomicOfRelativeDimension n (pullback.snd g h) :=
-  MorphismProperty.pullback_snd g h inferInstance
+  MorphismProperty.of_isPullback (P := @SyntomicOfRelativeDimension n)
+    (IsPullback.of_hasPullback g h) inferInstance
 
 /-- A syntomic morphism of relative dimension `n` has all fibres of dimension at most `n`. -/
 instance (priority := low) SyntomicOfRelativeDimension.relativeDimensionLE

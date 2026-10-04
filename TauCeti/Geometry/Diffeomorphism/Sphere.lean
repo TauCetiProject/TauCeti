@@ -47,7 +47,7 @@ continuity proved here.
 * `LinearIsometryEquiv.contMDiff_unitSphereEquiv`: the restriction to the unit sphere is
   `C^m` for every smoothness exponent, so the linear isometry group acts on the unit sphere by
   `C^m` maps (a `ContMDiffConstSMul` instance).
-* `LinearIsometryEquiv.mvfderiv_coe_sphere_unitSphereEquiv`: the differential of the restriction,
+* `LinearIsometryEquiv.mfderiv_coe_sphere_unitSphereEquiv`: the differential of the restriction,
   read in the ambient spaces through the sphere inclusions, is the linear isometry itself.
 * `LinearIsometryEquiv.isometry_unitSphereEquiv`: it is an isometry for the distance the
   sphere inherits from `E`, so the action is by isometries of the round sphere.
@@ -101,11 +101,14 @@ theorem contMDiff_unitSphereEquiv (e : E ≃ₗᵢ[ℝ] F) :
 ambient space through the inclusion of the target sphere, is the linear isometry applied to the
 tangent vector read in the ambient space. -/
 @[simp]
-theorem mvfderiv_coe_sphere_unitSphereEquiv (e : E ≃ₗᵢ[ℝ] F) (x : sphere (0 : E) 1)
+theorem mfderiv_coe_sphere_unitSphereEquiv (e : E ≃ₗᵢ[ℝ] F) (x : sphere (0 : E) 1)
     (v : TangentSpace (𝓡 n) x) :
-    mvfderiv (𝓡 k) ((↑) : sphere (0 : F) 1 → F) (unitSphereEquiv e x)
+    mfderiv (𝓡 k) 𝓘(ℝ, F) ((↑) : sphere (0 : F) 1 → F) (unitSphereEquiv e x)
         (mfderiv (𝓡 n) (𝓡 k) (unitSphereEquiv e) x v) =
-      e (mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) x v) := by
+      e (mfderiv (𝓡 n) 𝓘(ℝ, E) ((↑) : sphere (0 : E) 1 → E) x v) := by
+  change mvfderiv (𝓡 k) ((↑) : sphere (0 : F) 1 → F) (unitSphereEquiv e x)
+    (mfderiv (𝓡 n) (𝓡 k) (unitSphereEquiv e) x v) =
+      e (mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) x v)
   have hcomp : ((↑) : sphere (0 : F) 1 → F) ∘ unitSphereEquiv e =
       e ∘ ((↑) : sphere (0 : E) 1 → E) :=
     funext fun y ↦ coe_unitSphereEquiv_apply e y

@@ -221,6 +221,12 @@ theorem realCliffordThreeOneEvenEquivComplexMatrix_reverseEven
     realCliffordOneTwoEquivComplexMatrix_star]
   rfl
 
+/-- The even Lorentzian Clifford algebra is directly finite, as its matrix model is. -/
+instance realCliffordThreeOneEvenIsDedekindFiniteMonoid :
+    IsDedekindFiniteMonoid (CliffordAlgebra.even (realCliffordForm 3 1)) :=
+  (MulEquivClass.isDedekindFiniteMonoid_iff
+    realCliffordThreeOneEvenEquivComplexMatrix).mpr inferInstance
+
 /-- In the Lorentzian matrix model of `Cl⁺(3,1)`, the reverse norm-one equation is determinant
 one. -/
 @[simp]

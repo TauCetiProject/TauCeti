@@ -290,6 +290,12 @@ theorem realCliffordTwoTwoEvenEquivMatrixProd_reverseEven
     realCliffordTwoOneEquivMatrixProd_star]
   rfl
 
+/-- The even split Clifford algebra is directly finite, as its product of matrix models is. -/
+instance realCliffordTwoTwoEvenIsDedekindFiniteMonoid :
+    IsDedekindFiniteMonoid (CliffordAlgebra.even (realCliffordForm 2 2)) :=
+  (MulEquivClass.isDedekindFiniteMonoid_iff
+    realCliffordTwoTwoEvenEquivMatrixProd).mpr inferInstance
+
 /-- In the split matrix model of `Cl⁺(2,2)`, the reverse norm-one equation is determinant one in
 both matrix factors. -/
 @[simp]
