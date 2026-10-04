@@ -20,6 +20,11 @@ On algebra-valued points its action is `f ↦ g_N ∘ f ∘ g_M⁻¹`. In partic
 representations with prescribed normal kernels. For a commutative Hopf algebra, the fixed
 vectors are exactly the comodule morphisms.
 
+The order `M* ⊗ N` is part of this construction. Over a noncommutative Hopf algebra,
+swapping it to `N ⊗ M*` need not be colinear, and the identity endomorphism need not be
+fixed in the former. The fixed-morphism characterization below therefore retains
+commutative coefficients.
+
 The construction uses `Comodule.dual`, `Comodule.tensor`, `Comodule.Transport` and Mathlib's
 `dualTensorHomEquiv`; the point formula uses the existing inverse-point evaluation identity.
 
