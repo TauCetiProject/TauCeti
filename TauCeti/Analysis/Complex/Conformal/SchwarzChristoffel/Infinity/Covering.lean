@@ -86,9 +86,7 @@ theorem isCompact_upperHalfPlaneSet_inter_preimage_schwarzChristoffelPrimitive_o
 
 /-- **The closure of the image of the Schwarz--Christoffel primitive** is the image together with
 the boundary values, when every finite prevertex is integrable and the total exponent is at least
-`-1`. Every boundary value is a limit of the primitive from the upper half-plane, and a limit point
-of the image avoiding the closed set of boundary values has a compact neighbourhood whose preimage
-is compact. -/
+`-1`. -/
 theorem closure_image_schwarzChristoffelPrimitive_of_neg_one_le_sum (a e : ι → ℝ)
     (z₀ : UpperHalfPlane) (hfinite : ∀ j, -1 < ∑ i with a i = a j, e i)
     (hsum : -1 ≤ ∑ i, e i) :
@@ -120,6 +118,7 @@ theorem closure_image_schwarzChristoffelPrimitive_of_neg_one_le_sum (a e : ι �
       (isOpen_ball.inter_closure ⟨mem_ball_self (half_pos hr), hw⟩)
     rw [himage.closure_eq] at hw'
     exact image_mono inter_subset_left hw'
+  -- Every boundary value is a limit of the primitive from the upper half-plane.
   · rintro _ ⟨x, rfl⟩
     have := Real.nhdsWithin_upperHalfPlaneSet_neBot x
     exact mem_closure_of_tendsto (tendsto_schwarzChristoffelPrimitive_boundary a e z₀ x

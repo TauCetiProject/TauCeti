@@ -315,8 +315,7 @@ theorem image_schwarzChristoffelPrimitive_eq_of_subset (a e : ι → ℝ) (z₀ 
 
 /-- **The points of the upper half-plane sent into a closed set avoiding the boundary are a closed
 set.**  If every finite prevertex is integrable and `K` is a closed set disjoint from the range of
-the boundary map on `ℝ`, then `upperHalfPlaneSet ∩ F ⁻¹' K` is closed in `ℂ`: at a real limit
-point, the primitive would tend to a boundary value lying in `K`. -/
+the boundary map on `ℝ`, then `upperHalfPlaneSet ∩ F ⁻¹' K` is closed in `ℂ`. -/
 theorem isClosed_upperHalfPlaneSet_inter_preimage_schwarzChristoffelPrimitive (a e : ι → ℝ)
     (z₀ : UpperHalfPlane) (hfinite : ∀ j, -1 < ∑ i with a i = a j, e i) {K : Set ℂ}
     (hK : IsClosed K) (hKB : Disjoint K (range (schwarzChristoffelBoundary a e z₀))) :
