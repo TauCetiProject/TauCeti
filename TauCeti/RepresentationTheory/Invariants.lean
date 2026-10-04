@@ -181,12 +181,12 @@ theorem range_norm_eq_invariants_of_projective (ρ : Representation k G V)
     have hF : τ.IsIntertwiningMap (ρ.comp ((MulEquiv.refl G : G ≃* G) : G →* G))
         F.toLinearMap := ⟨IntertwiningMap.isIntertwining τ ρ F⟩
     have hN : F (τ.norm y) = ρ.norm (F y) := LinearMap.congr_fun hF.comp_norm y
-    -- `S` is a section of `F`, because `s` is a section of `Finsupp.linearCombination`: on
-    -- underlying vectors, `F` is `linearCombination ∘ E` and `S` is `E.symm ∘ s` by definition.
+    -- `S` is a section of `F`, because `s` is a section of `Finsupp.linearCombination`.
     have hFS : F (S x) = x := by
-      change Finsupp.linearCombination k[G] id (E (E.symm (s x))) = x
-      rw [E.apply_symm_apply]
-      exact hs x
+      rw [IntertwiningMap.equivLinearMapAsModule_symm_apply,
+        IntertwiningMap.equivLinearMapAsModule_symm_apply, LinearEquiv.symm_apply_apply,
+        LinearMap.comp_apply, LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.coe_coe,
+        E.apply_symm_apply, hs, LinearEquiv.apply_symm_apply]
     exact ⟨F y, by rw [← hN, hy, hFS]⟩
 
 end Finite
