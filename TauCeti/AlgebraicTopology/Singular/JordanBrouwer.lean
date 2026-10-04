@@ -22,7 +22,7 @@ Hatcher's Proposition 2B.1: the complement of an embedded `k`-sphere in `Sⁿ` h
 homology of an `(n - k - 1)`-sphere.
 
 The sphere of a `d`-dimensional real normed space is homeomorphic to that of a Euclidean space of
-the same dimension (`ContinuousLinearEquiv.unitBallHomeomorph`), so it suffices to treat inner
+the same dimension (`TauCeti.sphereHomeomorphOfFinrankEq`), so it suffices to treat inner
 product spaces. The proof is then by induction on `d`. The unit sphere `Sᵈ⁻¹` is empty when
 `d = 0`. Otherwise it is the union of the two closed hemispheres around a unit vector `p`, which
 meet in the equator, the unit sphere of `(ℝ ∙ p)ᗮ`. The hemispheres are discs
@@ -45,7 +45,7 @@ complement has exactly two path components: the **Jordan–Brouwer separation th
   `TauCeti.reducedSingularHomologySphereComplRangeSphereIso`: for `Y = Sⁿ`, the reduced homology of
   the complement of an embedded `Sᵈ⁻¹` vanishes in degrees `i ≠ n - d` and is one copy of the
   coefficients in degree `n - d`.
-* `TauCeti.card_zerothHomotopy_sphere_compl_range_eq_two`: **the Jordan–Brouwer separation
+* `TauCeti.natCard_zerothHomotopy_sphere_compl_range_eq_two`: **the Jordan–Brouwer separation
   theorem**: the complement of an embedded `Sⁿ⁻¹` in `Sⁿ` has exactly two path components.
 
 ## References
@@ -173,14 +173,6 @@ private def reducedSingularHomologyComplRangeSphereIsoAux :
 
 end InnerProduct
 
-/-- The unit spheres of two finite-dimensional real normed spaces of the same dimension are
-homeomorphic, through `ContinuousLinearEquiv.unitBallHomeomorph`. -/
-private def sphereHomeomorphOfFinrankEq {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [FiniteDimensional ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
-    (hEF : finrank ℝ E = finrank ℝ F) : sphere (0 : E) 1 ≃ₜ sphere (0 : F) 1 :=
-  let L : E ≃L[ℝ] F := ContinuousLinearEquiv.ofFinrankEq hEF
-  (L.unitBallHomeomorph.image _).trans (Homeomorph.setCongr L.image_unitBallHomeomorph_sphere)
-
 variable {E : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
 
 include hY in
@@ -254,7 +246,7 @@ def reducedSingularHomologySphereComplRangeSphereIso {i : ℕ}
 of the unit sphere of a finite-dimensional real normed space `E` into the unit sphere of a real
 normed space of dimension `dim E + 1` has exactly two path components (Hatcher,
 *Algebraic Topology*, Corollary 2B.2). -/
-theorem card_zerothHomotopy_sphere_compl_range_eq_two (hEF : finrank ℝ F = finrank ℝ E + 1)
+theorem natCard_zerothHomotopy_sphere_compl_range_eq_two (hEF : finrank ℝ F = finrank ℝ E + 1)
     (hc : Continuous h) (hi : Function.Injective h) :
     Nat.card (ZerothHomotopy ↥(range h)ᶜ) = 2 := by
   classical

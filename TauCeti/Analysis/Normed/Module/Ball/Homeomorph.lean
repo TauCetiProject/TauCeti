@@ -39,6 +39,8 @@ valued in the closed unit ball.
 * `TauCeti.isOpenEmbedding_inclusion_comp_unitBall`: `E` embeds openly in its closed unit ball.
 * `TauCeti.nonempty_homeomorph_cube_closedBall`: the closed unit ball of a real normed space of
   finite dimension `k` is homeomorphic to the cube `Iᵏ`.
+* `TauCeti.sphereHomeomorphOfFinrankEq`: the unit spheres of two finite-dimensional real normed
+  spaces of the same dimension are homeomorphic.
 -/
 
 public section
@@ -152,5 +154,30 @@ theorem nonempty_homeomorph_cube_closedBall (F : Type*) [NormedAddCommGroup F] [
       ring
   exact ⟨(e.continuous.comp ha).homeoOfEquivCompactToT2
     (f := Equiv.ofBijective _ (e.bijective.comp ⟨hai, has⟩))⟩
+
+section Sphere
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+
+/-- The unit spheres of two finite-dimensional real normed spaces of the same dimension are
+homeomorphic, through `ContinuousLinearEquiv.unitBallHomeomorph` applied to
+`ContinuousLinearEquiv.ofFinrankEq`. -/
+def sphereHomeomorphOfFinrankEq (hEF : Module.finrank ℝ E = Module.finrank ℝ F) :
+    sphere (0 : E) 1 ≃ₜ sphere (0 : F) 1 :=
+  let L : E ≃L[ℝ] F := ContinuousLinearEquiv.ofFinrankEq hEF
+  (L.unitBallHomeomorph.image _).trans (Homeomorph.setCongr L.image_unitBallHomeomorph_sphere)
+
+/-- `TauCeti.sphereHomeomorphOfFinrankEq` is the restriction of
+`ContinuousLinearEquiv.unitBallHomeomorph` to the unit sphere. -/
+@[simp]
+theorem coe_sphereHomeomorphOfFinrankEq_apply (hEF : Module.finrank ℝ E = Module.finrank ℝ F)
+    (x : sphere (0 : E) 1) :
+    (sphereHomeomorphOfFinrankEq hEF x : F) =
+      (ContinuousLinearEquiv.ofFinrankEq hEF).unitBallHomeomorph x := by
+  unfold sphereHomeomorphOfFinrankEq
+  rfl
+
+end Sphere
 
 end TauCeti
