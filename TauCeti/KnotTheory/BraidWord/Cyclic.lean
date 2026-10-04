@@ -7,6 +7,7 @@ module
 
 public import TauCeti.KnotTheory.BraidWord.PDCode
 import TauCeti.Data.Fin.Basic
+import TauCeti.Data.List.Rotate
 -- Transporting crossings and slots along the rotation unfolds their unexposed bodies.
 import all TauCeti.KnotTheory.BraidWord.PDCode
 
@@ -51,34 +52,6 @@ namespace BraidWord
 
 open PDCode
 
-private theorem formPerm_map_equiv {α β : Type*} [DecidableEq α] [DecidableEq β]
-    (e : α ≃ β) (l : List α) (hl : l.Nodup) :
-    (l.map e).formPerm = e.permCongr l.formPerm := by
-  ext x
-  by_cases hx : x ∈ l.map e
-  · obtain ⟨i, hi, rfl⟩ := List.getElem_of_mem hx
-    simp only [List.length_map] at hi
-    rw [List.formPerm_apply_getElem _ (hl.map e.injective), List.getElem_map,
-      Equiv.permCongr_apply]
-    simp only [List.getElem_map, Equiv.symm_apply_apply, List.length_map]
-    rw [List.formPerm_apply_getElem _ hl]
-  · rw [List.formPerm_apply_of_notMem hx, Equiv.permCongr_apply,
-      List.formPerm_apply_of_notMem]
-    · exact (e.apply_symm_apply x).symm
-    · intro hmem
-      apply hx
-      exact List.mem_map.2 ⟨e.symm x, hmem, e.apply_symm_apply x⟩
-
-private theorem isRotated_filter {α : Type*}
-    {l l' : List α} (h : l ~r l') (p : α → Bool) :
-    l.filter p ~r l'.filter p := by
-  obtain ⟨k, rfl⟩ := h
-  rw [List.rotate_eq_drop_append_take_mod, List.filter_append]
-  have hrot := List.isRotated_append
-    (l := (l.take (k % l.length)).filter p)
-    (l' := (l.drop (k % l.length)).filter p)
-  simpa only [← List.filter_append, List.take_append_drop] using hrot
-
 /-- The equivalence which sends the index of a letter in `w.rotate k` to its original index in
 `w`. It is the cast along preservation of length followed by addition of `k` modulo the word
 length. -/
@@ -113,7 +86,7 @@ private theorem crossingsAt_rotate_isRotated (w : BraidWord n) (k : ℕ) (p : Fi
         List.finRange w.length := by
     rw [map_finRange_rotateIndexEquiv]
     exact List.IsRotated.forall _ _
-  have hfilter := isRotated_filter hfin
+  have hfilter := TauCeti.List.IsRotated.filter hfin
     (fun j : Fin w.length => p = BraidGroup.strand w[j.1].1 ∨
       p = BraidGroup.strandSucc w[j.1].1)
   rw [List.filter_map] at hfilter
@@ -128,7 +101,8 @@ private theorem nextCrossing_rotate (w : BraidWord n) (k : ℕ) (p : Fin n) :
     (w.rotateIndexEquiv k).permCongr
         (crossingsAt (w.rotate k) p).formPerm =
         ((crossingsAt (w.rotate k) p).map (w.rotateIndexEquiv k)).formPerm :=
-      (formPerm_map_equiv _ _ ((sortedLT_crossingsAt (w.rotate k) p).nodup)).symm
+      (TauCeti.List.formPerm_map_equiv _ _
+        ((sortedLT_crossingsAt (w.rotate k) p).nodup)).symm
     _ = (w.crossingsAt p).formPerm :=
       List.formPerm_eq_of_isRotated
         (((sortedLT_crossingsAt (w.rotate k) p).nodup).map
