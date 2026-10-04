@@ -89,6 +89,7 @@ theorem isEquiv_comap_valuation_of_continuous (f : K →+* L) (hf : Continuous f
   exact hn.not_gt hlt'
 
 /-- **A continuous ring homomorphism preserves and reflects the valuative relation.** -/
+@[simp]
 theorem map_vle_map_iff_of_continuous (f : K →+* L) (hf : Continuous f) (x y : K) :
     f x ≤ᵥ f y ↔ x ≤ᵥ y := by
   rw [(valuation L).vle_iff_le, (valuation K).vle_iff_le]
