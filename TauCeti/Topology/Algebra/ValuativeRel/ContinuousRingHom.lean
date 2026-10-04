@@ -5,15 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.ArchimedeanDensely
-public import Mathlib.Topology.Algebra.TopologicallyNilpotent
 public import Mathlib.Topology.Algebra.ValuativeRel.ValuativeTopology
 import TauCeti.RingTheory.Valuation.Continuous.TopologicallyNilpotent
 
 /-!
 # Continuous ring homomorphisms preserve valuations
 
-Let `K` and `L` be fields whose topologies are induced by their valuative relations, with
+Let `K` and `L` be division rings whose topologies are induced by their valuative relations, with
 archimedean value groups (that is, of rank at most one), and with the valuation of `K`
 nontrivial. This file proves that every continuous ring homomorphism `f : K →+* L` preserves and
 reflects the valuative relation: `f x ≤ᵥ f y ↔ x ≤ᵥ y`. Nonarchimedean local fields satisfy these
@@ -26,20 +24,17 @@ The bridge between topology and valuation is topological nilpotence. In a valuat
 open unit ball `{x | v x < 1}` is a neighbourhood of `0`, so a topologically nilpotent element has
 valuation `< 1` (`IsTopologicallyNilpotent.valuation_lt_one`); conversely, when the value group is
 archimedean, the powers of an element of valuation `< 1` enter every ball around `0`
-(`isTopologicallyNilpotent_iff_valuation_lt_one`). Since a continuous homomorphism preserves
-topological nilpotence, `v_K x < 1` implies `v_L (f x) < 1`. For the reverse implication, let
-`v_K x ≥ 1` and pick `π` with `0 < v_K π < 1`. Then `v_K (π / xⁿ) < 1` for every `n`, so
-`v_L (f π) < v_L (f x) ^ n` for every `n`, which, the value group of `L` being archimedean, forces
-`v_L (f x) ≥ 1`. Two valuations on a field with the same open unit ball are equivalent
-(`Valuation.isEquiv_iff_val_lt_one`). This is the argument of Neukirch, Chapter II,
-Proposition (3.3), for absolute values.
+(`isTopologicallyNilpotent_iff_valuation_lt_one`, in
+`TauCeti.RingTheory.Valuation.Continuous.TopologicallyNilpotent`). Since a continuous homomorphism
+preserves topological nilpotence, `v_K x < 1` implies `v_L (f x) < 1`. For the reverse
+implication, let `v_K x ≥ 1` and pick `π` with `0 < v_K π < 1`. Then `v_K (π / xⁿ) < 1` for
+every `n`, so `v_L (f π) < v_L (f x) ^ n` for every `n`, which, the value group of `L` being
+archimedean, forces `v_L (f x) ≥ 1`. Two valuations on a division ring with the same open unit
+ball are equivalent (`Valuation.isEquiv_iff_val_lt_one`). This is the argument of Neukirch,
+Chapter II, Proposition (3.3), for absolute values.
 
 ## Main results
 
-* `IsTopologicallyNilpotent.valuation_lt_one`: in a valuative topology, a topologically nilpotent
-  element has valuation `< 1`.
-* `TauCeti.isTopologicallyNilpotent_iff_valuation_lt_one`: with an archimedean value group, an
-  element is topologically nilpotent exactly when its valuation is `< 1`.
 * `RingHom.isEquiv_comap_valuation_of_continuous`: the pullback of the valuation of `L` along a
   continuous `f : K →+* L` is equivalent to the valuation of `K`.
 * `RingHom.map_vle_map_iff_of_continuous`: a continuous `f : K →+* L` satisfies
@@ -54,47 +49,13 @@ Proposition (3.3), for absolute values.
 
 public section
 
-open Filter ValuativeRel
-
-section TopologicallyNilpotent
-
-variable {R : Type*} [CommRing R] [ValuativeRel R] [TopologicalSpace R] [IsValuativeTopology R]
-
-/-- **A topologically nilpotent element has valuation `< 1`** in a valuative topology, since the
-open unit ball is a neighbourhood of `0`. -/
-theorem IsTopologicallyNilpotent.valuation_lt_one {x : R} (hx : IsTopologicallyNilpotent x) :
-    valuation R x < 1 := by
-  obtain ⟨n, hn⟩ := Valuation.exists_pow_lt_of_isTopologicallyNilpotent
-    ((IsValuativeTopology.mem_nhds_zero_iff _).mpr ⟨1, fun _ hz ↦ hz⟩) hx
-  exact not_le.mp fun h ↦ hn.not_ge (one_le_pow₀ h)
-
-namespace TauCeti
-
-/-- **An element of valuation `< 1` is topologically nilpotent** when the value group is
-archimedean: its powers enter every ball `{z | v z < γ}` around `0`. -/
-theorem isTopologicallyNilpotent_of_valuation_lt_one [MulArchimedean (ValueGroupWithZero R)]
-    {x : R} (hx : valuation R x < 1) : IsTopologicallyNilpotent x := by
-  refine (IsValuativeTopology.hasBasis_nhds_zero R).tendsto_right_iff.mpr fun γ _ ↦ ?_
-  obtain ⟨n, hn⟩ := exists_pow_lt₀ hx γ
-  filter_upwards [eventually_ge_atTop n] with m hm
-  rw [map_pow]
-  exact (pow_le_pow_right_of_le_one' hx.le hm).trans_lt hn
-
-/-- **Topological nilpotence is the open unit ball** of a valuative topology with archimedean
-value group. -/
-theorem isTopologicallyNilpotent_iff_valuation_lt_one [MulArchimedean (ValueGroupWithZero R)]
-    {x : R} : IsTopologicallyNilpotent x ↔ valuation R x < 1 :=
-  ⟨IsTopologicallyNilpotent.valuation_lt_one, isTopologicallyNilpotent_of_valuation_lt_one⟩
-
-end TauCeti
-
-end TopologicallyNilpotent
+open ValuativeRel
 
 section RingHom
 
-variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K] [IsValuativeTopology K]
-  [IsNontrivial K] [MulArchimedean (ValueGroupWithZero K)]
-  [Field L] [ValuativeRel L] [TopologicalSpace L] [IsValuativeTopology L]
+variable {K L : Type*} [DivisionRing K] [ValuativeRel K] [TopologicalSpace K]
+  [IsValuativeTopology K] [IsNontrivial K] [MulArchimedean (ValueGroupWithZero K)]
+  [DivisionRing L] [ValuativeRel L] [TopologicalSpace L] [IsValuativeTopology L]
   [MulArchimedean (ValueGroupWithZero L)]
 
 namespace RingHom
@@ -135,10 +96,19 @@ theorem map_vle_map_iff_of_continuous (f : K →+* L) (hf : Continuous f) (x y :
 
 end RingHom
 
+end RingHom
+
+section Algebra
+
+variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K] [IsValuativeTopology K]
+  [IsNontrivial K] [MulArchimedean (ValueGroupWithZero K)]
+  [DivisionRing L] [ValuativeRel L] [TopologicalSpace L] [IsValuativeTopology L]
+  [MulArchimedean (ValueGroupWithZero L)]
+
 /-- **An algebra whose structure map is continuous is a valuative extension**: the valuative
 relation of `L` restricts to that of `K`. -/
 theorem ValuativeExtension.of_continuous_algebraMap [Algebra K L]
     (hf : Continuous (algebraMap K L)) : ValuativeExtension K L :=
   ⟨(algebraMap K L).map_vle_map_iff_of_continuous hf⟩
 
-end RingHom
+end Algebra
