@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Weight
+public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Normalizer
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.Cotangent
 
 /-!
@@ -50,6 +50,8 @@ one, or that `G` is reductive. When `π` does exhibit a split maximal torus `T` 
   tested using the universal point of `D(M)`.
 * `Derivation.lie_mem_adjointWeightSpace_mul`: the adjoint weight decomposition is a Lie
   grading: `[𝔤_α, 𝔤_β] ⊆ 𝔤_{αβ}`.
+* `Derivation.image_nontrivialAdjointWeights`: inverse conjugation by a normalizing rational
+  point permutes the nontrivial adjoint weights, hence the roots of a split reductive pair.
 
 ## Roadmap
 
@@ -200,6 +202,43 @@ def nontrivialAdjointWeights (π : H →ₐc[R] MonoidAlgebra R M) : Set M :=
 theorem mem_nontrivialAdjointWeights {π : H →ₐc[R] MonoidAlgebra R M} {α : M} :
     α ∈ nontrivialAdjointWeights π ↔ α ≠ 1 ∧ adjointWeightSpace π α ≠ ⊥ :=
   Iff.rfl
+
+/-- Adjoint action by a normalizing rational point carries each adjoint weight space onto the
+weight space indexed by pullback along inverse conjugation. -/
+theorem map_adjointWeightSpace_basePointsRepresentation
+    (π : H →ₐc[R] MonoidAlgebra R M) (g : WithConv (H →ₐ[R] R)) (w : M ≃* M)
+    (hg : π.toAlgHom.comp (HopfAlgebra.pointConjugationAlgHom g⁻¹) =
+      (MonoidAlgebra.domCongr R R w).toAlgHom.comp π.toAlgHom) (α : M) :
+    (adjointWeightSpace π α).map
+        (Comodule.basePointsRepresentation (H := H)
+          (Module.Dual R (Bialgebra.CotangentSpace R H)) g) =
+      adjointWeightSpace π (w α) := by
+  unfold adjointWeightSpace
+  exact DiagonalizableGroup.map_weightSpace_basePointsRepresentation π g w hg α
+
+/-- Inverse conjugation by a normalizing rational point preserves membership in the set of
+nontrivial adjoint weights. For a split reductive pair these are the roots. -/
+theorem mem_nontrivialAdjointWeights_apply_iff
+    (π : H →ₐc[R] MonoidAlgebra R M) (g : WithConv (H →ₐ[R] R)) (w : M ≃* M)
+    (hg : π.toAlgHom.comp (HopfAlgebra.pointConjugationAlgHom g⁻¹) =
+      (MonoidAlgebra.domCongr R R w).toAlgHom.comp π.toAlgHom) (α : M) :
+    w α ∈ nontrivialAdjointWeights π ↔ α ∈ nontrivialAdjointWeights π := by
+  rw [mem_nontrivialAdjointWeights, mem_nontrivialAdjointWeights]
+  have hbot : adjointWeightSpace π (w α) ≠ ⊥ ↔ adjointWeightSpace π α ≠ ⊥ := by
+    unfold adjointWeightSpace
+    exact DiagonalizableGroup.weightSpace_apply_ne_bot_iff π g w hg α
+  exact and_congr (not_congr w.map_eq_one_iff) hbot
+
+/-- The character automorphism induced by inverse conjugation by a normalizing rational point
+permutes the nontrivial adjoint weights. This supplies the preservation of roots needed for
+the normalizer action of a split reductive pair. -/
+theorem image_nontrivialAdjointWeights
+    (π : H →ₐc[R] MonoidAlgebra R M) (g : WithConv (H →ₐ[R] R)) (w : M ≃* M)
+    (hg : π.toAlgHom.comp (HopfAlgebra.pointConjugationAlgHom g⁻¹) =
+      (MonoidAlgebra.domCongr R R w).toAlgHom.comp π.toAlgHom) :
+    w '' nontrivialAdjointWeights π = nontrivialAdjointWeights π := by
+  apply (Set.eq_preimage_iff_image_eq w.bijective).mp
+  exact Set.ext fun α ↦ (mem_nontrivialAdjointWeights_apply_iff π g w hg α).symm
 
 /-- Off the nontrivial adjoint weights and the trivial character the weight submodule vanishes. -/
 theorem adjointWeightSpace_eq_bot_of_notMem_nontrivialAdjointWeights

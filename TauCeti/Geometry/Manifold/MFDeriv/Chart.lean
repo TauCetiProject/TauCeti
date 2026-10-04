@@ -34,12 +34,16 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
   differentiable) at the chart image of the point.
 * `MDifferentiableAt.mvfderiv_eq_fderiv_comp_extChartAt_symm`: on a boundaryless manifold, the
   vector-valued manifold derivative is the Fréchet derivative of the coordinate expression.
+* `TauCeti.writtenInExtChartAt_chartAt_comp_eventuallyEq`, `TauCeti.hasMFDerivAt_chartAt_comp` and
+  `TauCeti.contMDiffAt_chartAt_comp`: for a space charted over a charted space `X`, with the
+  composite charts, the preferred `X`-valued chart at `x` reads as the identity near `x`, so it is
+  smooth at `x` with the identity as its derivative there.
 -/
 
 public section
 
 open Set
-open scoped Manifold
+open scoped Manifold Topology
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
@@ -112,3 +116,43 @@ theorem _root_.MDifferentiableAt.mvfderiv_eq_fderiv_comp_extChartAt_symm
     writtenInExtChartAt, extChartAt_model_space_eq_id, PartialEquiv.refl_coe, Function.id_comp]
 
 end Boundaryless
+
+/-! ### Preferred charts of a composite charted space -/
+
+namespace TauCeti
+
+variable {X : Type*} [TopologicalSpace X] [ChartedSpace H X]
+  {N : Type*} [TopologicalSpace N] [ChartedSpace X N]
+
+/-- For the composite charts `ChartedSpace.comp H X N` of a space charted over a charted space `X`,
+the preferred `X`-valued chart at `x`, read in the composite chart at `x` and the chart of `X` at
+its image, is the identity near the image of `x`. -/
+theorem writtenInExtChartAt_chartAt_comp_eventuallyEq (x : N) :
+    letI := ChartedSpace.comp H X N
+    writtenInExtChartAt I I x (chartAt X x) =ᶠ[𝓝[range I] extChartAt I x x] id := by
+  let := ChartedSpace.comp H X N
+  filter_upwards [extChartAt_target_mem_nhdsWithin (I := I) x] with y hy
+  exact writtenInExtChartAt_chartAt_comp x hy
+
+/-- For the composite charts `ChartedSpace.comp H X N`, the preferred `X`-valued chart at `x` has
+the identity as its manifold derivative at `x`. -/
+theorem hasMFDerivAt_chartAt_comp (x : N) :
+    letI := ChartedSpace.comp H X N
+    HasMFDerivAt I I (chartAt X x) x (ContinuousLinearMap.id 𝕜 (TangentSpace I x)) := by
+  let := ChartedSpace.comp H X N
+  exact ⟨(chartAt X x).continuousAt (mem_chart_source X x),
+    (hasFDerivWithinAt_id _ _).congr_of_eventuallyEq
+      (writtenInExtChartAt_chartAt_comp_eventuallyEq x)
+      (writtenInExtChartAt_chartAt_comp x (mem_extChartAt_target x))⟩
+
+/-- For the composite charts `ChartedSpace.comp H X N`, the preferred `X`-valued chart at `x` is
+`C^n` at `x`, for every `n`. -/
+theorem contMDiffAt_chartAt_comp {n : WithTop ℕ∞} (x : N) :
+    letI := ChartedSpace.comp H X N
+    ContMDiffAt I I n (chartAt X x) x := by
+  let := ChartedSpace.comp H X N
+  exact contMDiffAt_iff.2 ⟨(chartAt X x).continuousAt (mem_chart_source X x),
+    contDiffWithinAt_id.congr_of_eventuallyEq (writtenInExtChartAt_chartAt_comp_eventuallyEq x)
+      (writtenInExtChartAt_chartAt_comp x (mem_extChartAt_target x))⟩
+
+end TauCeti

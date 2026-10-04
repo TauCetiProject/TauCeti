@@ -12,7 +12,14 @@ import Mathlib.Algebra.QuadraticDiscriminant
 /-!
 # Separably closed fields
 
-Two small supplements to Mathlib's `IsSepClosed` and `IsSepClosure`.
+Supplements to Mathlib's `IsSepClosed` and `IsSepClosure` for domain algebras, quadratics,
+and towers of field extensions.
+
+## Separable elements in domain algebras
+
+A separable element of an algebra over a separably closed field belongs to the image of that
+field when the ambient algebra is a domain. The algebra can be noncommutative, and no algebraicity
+or separability assumption is needed on its other elements.
 
 ## Quadratics over a separably closed field
 
@@ -41,12 +48,23 @@ its conclusion, so instance search could not find it.
 
 ## Main results
 
+* `IsSeparable.mem_bot_of_isSepClosed`: a separable element of a domain algebra belongs to the
+  bottom subalgebra.
 * `TauCeti.exists_quadratic_eq_zero_of_isSepClosed`
 * `TauCeti.isSepClosure_tower_top`: `IsSepClosure K E` implies `IsSepClosure L E` for every
   intermediate extension `L`.
 -/
 
 public section
+
+/-- A separable element of a domain algebra over a separably closed field belongs to the image
+of the base field. -/
+theorem IsSeparable.mem_bot_of_isSepClosed {K A : Type*} [Field K] [IsSepClosed K]
+    [Ring A] [IsDomain A] [Algebra K A] {x : A} (hx : IsSeparable K x) :
+    x ∈ (⊥ : Subalgebra K A) := by
+  rw [Algebra.mem_bot]
+  exact minpoly.mem_range_of_degree_eq_one K x <|
+    IsSepClosed.degree_eq_one_of_irreducible K (minpoly.irreducible hx.isIntegral) hx
 
 namespace TauCeti
 
