@@ -31,6 +31,8 @@ complex scalars: a rotation of the real plane is normal but has no real eigenvec
 
 ## Main results
 
+* `LinearMap.apply_eq_smul_of_mem_eigenspace_realPart_imaginaryPart`: on a joint eigenspace of
+  `ℜ T` and `ℑ T` with eigenvalues `a` and `b`, the operator `T` acts by `a + i b`.
 * `LinearMap.exists_orthonormalBasis_apply_eq_smul_of_isStarNormal`: **the spectral theorem for
   normal operators**, a normal operator on a finite-dimensional complex inner product space has
   an orthonormal basis of eigenvectors, indexed by any finite type of the right cardinality.
@@ -50,8 +52,10 @@ namespace LinearMap
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E] [FiniteDimensional ℂ E]
 
 /-- On a joint eigenspace of the real and imaginary parts of `T`, where `ℜ T` acts by `a` and
-`ℑ T` by `b`, the operator `T` acts by `a + i b`. -/
-private theorem apply_eq_smul_of_mem_eigenspace_realPart_imaginaryPart (T : E →ₗ[ℂ] E)
+`ℑ T` by `b`, the operator `T` acts by `a + i b`. Normality is not needed here; finite
+dimensionality only enters because the adjoint, hence `ℜ T` and `ℑ T`, is defined on
+finite-dimensional spaces. -/
+theorem apply_eq_smul_of_mem_eigenspace_realPart_imaginaryPart (T : E →ₗ[ℂ] E)
     {a b : ℂ} {v : E} (ha : v ∈ eigenspace (ℜ T : E →ₗ[ℂ] E) a)
     (hb : v ∈ eigenspace (ℑ T : E →ₗ[ℂ] E) b) :
     T v = (a + Complex.I * b) • v := by

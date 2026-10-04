@@ -35,8 +35,6 @@ torus; for `SU(2)` the same statement is `TauCeti.SU2.exists_conj_mem_torus`.
 
 ## Main results
 
-* `Matrix.diagonal_mem_unitaryGroup_iff`: a diagonal matrix is unitary exactly when its diagonal
-  entries are.
 * `TauCeti.mem_unitaryTorus_iff`: the diagonal torus consists of the diagonal unitary matrices.
 * `TauCeti.exists_conj_mem_unitaryTorus`: every element of `U(n)` is conjugate into the diagonal
   torus.
@@ -50,20 +48,6 @@ torus; for `SU(2)` the same statement is `TauCeti.SU2.exists_conj_mem_torus`.
 -/
 
 public section
-
-namespace Matrix
-
-variable {n α : Type*} [Fintype n] [DecidableEq n] [CommRing α] [StarRing α]
-
-/-- A diagonal matrix is unitary exactly when each of its diagonal entries is unitary. -/
-@[simp]
-theorem diagonal_mem_unitaryGroup_iff {d : n → α} :
-    diagonal d ∈ unitaryGroup n α ↔ ∀ i, d i ∈ unitary α := by
-  simp only [mem_unitaryGroup_iff, star_eq_conjTranspose, diagonal_conjTranspose,
-    diagonal_mul_diagonal, ← diagonal_one, diagonal_eq_diagonal_iff, Pi.star_apply,
-    Unitary.mem_iff_self_mul_star]
-
-end Matrix
 
 namespace TauCeti
 
@@ -81,11 +65,15 @@ noncomputable def unitaryTorusHom : (n → Circle) →* unitaryGroup n ℂ where
 
 variable {n}
 
+/-- As a matrix, `TauCeti.unitaryTorusHom n z` is the diagonal matrix with diagonal entries
+`z i`. -/
 @[simp]
 theorem coe_unitaryTorusHom (z : n → Circle) :
     (unitaryTorusHom n z : Matrix n n ℂ) = diagonal fun i => (z i : ℂ) :=
   (rfl)
 
+/-- The parametrization `TauCeti.unitaryTorusHom n` of the diagonal torus by `card n` circles is
+injective: distinct tuples of circle points give distinct diagonal matrices. -/
 theorem unitaryTorusHom_injective : Function.Injective (unitaryTorusHom n) := fun z w h => by
   funext i
   have := congr_fun₂ (congrArg Subtype.val h) i i
@@ -97,10 +85,13 @@ the image of `(n → Circle)` under `TauCeti.unitaryTorusHom n`. -/
 noncomputable def unitaryTorus : Subgroup (unitaryGroup n ℂ) :=
   (unitaryTorusHom n).range
 
+/-- An element of `U(n)` lies in the diagonal torus exactly when it is `TauCeti.unitaryTorusHom n z`
+for some tuple `z` of circle points. -/
 theorem mem_unitaryTorus_iff_exists_unitaryTorusHom {g : unitaryGroup n ℂ} :
     g ∈ unitaryTorus n ↔ ∃ z : n → Circle, unitaryTorusHom n z = g :=
   MonoidHom.mem_range
 
+/-- The diagonal matrix `TauCeti.unitaryTorusHom n z` lies in the diagonal torus. -/
 theorem unitaryTorusHom_mem_unitaryTorus (z : n → Circle) :
     unitaryTorusHom n z ∈ unitaryTorus n :=
   ⟨z, rfl⟩
