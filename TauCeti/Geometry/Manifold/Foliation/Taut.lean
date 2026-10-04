@@ -74,18 +74,6 @@ theorem isClosedTransversal_iff (γ : ℝ → M) : F.IsClosedTransversal γ ↔
 def Taut : Prop :=
   ∀ x : M, ∃ γ : ℝ → M, F.IsClosedTransversal γ ∧ ∃ t : ℝ, γ t ∈ F.leaf x
 
-/-- Tautness is characterized by a transversal and an explicit meeting parameter per leaf. -/
-@[simp]
-theorem taut_iff : F.Taut ↔
-    ∀ x : M, ∃ γ : ℝ → M, ∃ t : ℝ, F.IsClosedTransversal γ ∧ γ t ∈ F.leaf x := by
-  constructor
-  · intro h x
-    obtain ⟨γ, hγ, t, ht⟩ := h x
-    exact ⟨γ, t, hγ, ht⟩
-  · rintro h x
-    obtain ⟨γ, t, hγ, ht⟩ := h x
-    exact ⟨γ, hγ, t, ht⟩
-
 /-- The C¹ regularity field of a closed transversal. -/
 theorem isClosedTransversal_contMDiff (hγ : F.IsClosedTransversal γ) :
     ContMDiff 𝓘(ℝ, ℝ) I 1 γ :=
