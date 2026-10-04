@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.InformationTheory.KullbackLeibler.Basic
+public import TauCeti.Analysis.SpecialFunctions.Log.MulLog
 
 /-!
 # Convexity of relative entropy in its first measure
@@ -190,20 +191,6 @@ theorem strictConvexOn_toReal_klDiv :
 
 /-! ### Quantitative strict convexity -/
 
-/-- One half of the midpoint convexity defect of the entropy integrand dominates a squared
-difference of square roots, written here in terms of `a = √x` and `c = √m`. -/
-private theorem sq_sub_le_mul_log_sub (a : ℝ) {c : ℝ} (ha : 0 ≤ a) (hc : 0 < c) :
-    (a - c) ^ 2 ≤ a ^ 2 * log (a ^ 2) - a ^ 2 * log (c ^ 2) - a ^ 2 + c ^ 2 := by
-  rcases ha.eq_or_lt with rfl | ha
-  · simp
-  have hlog : 1 - c / a ≤ log a - log c := by
-    rw [← log_div ha.ne' hc.ne']
-    simpa [inv_div] using one_sub_inv_le_log_of_pos (div_pos ha hc)
-  have hca : a ^ 2 * (1 - c / a) = a ^ 2 - a * c := by field_simp
-  rw [log_pow, log_pow]
-  push_cast
-  nlinarith [mul_le_mul_of_nonneg_left hlog (sq_nonneg a)]
-
 /-- **Quantitative strict convexity of the entropy integrand.** The midpoint convexity defect
 of `InformationTheory.klFun` at two nonnegative reals bounds the square of their distance,
 relative to their sum. -/
@@ -214,15 +201,15 @@ theorem sq_sub_le_mul_klFun_add_klFun_sub {x y : ℝ} (hx : 0 ≤ x) (hy : 0 ≤
   · obtain rfl : x = 0 := by linarith
     obtain rfl : y = 0 := by linarith
     simp
-  -- The defect is a sum of two terms, each dominating a squared difference of square roots.
+  -- The defect is the sum of the gaps of `u ↦ u * log u` above its supporting line at `m`,
+  -- and each gap dominates a squared difference of square roots.
   have hdef : klFun x + klFun y - 2 * klFun m =
-      (√x ^ 2 * log (√x ^ 2) - √x ^ 2 * log (√m ^ 2) - √x ^ 2 + √m ^ 2) +
-        (√y ^ 2 * log (√y ^ 2) - √y ^ 2 * log (√m ^ 2) - √y ^ 2 + √m ^ 2) := by
-    rw [sq_sqrt hx, sq_sqrt hy, sq_sqrt hm0.le, hm]
-    simp only [klFun]
+      (x * log x - m * log m - (x - m) * (log m + 1)) +
+        (y * log y - m * log m - (y - m) * (log m + 1)) := by
+    simp only [klFun, hm]
     ring
-  have hJ := add_le_add (sq_sub_le_mul_log_sub _ (sqrt_nonneg x) (sqrt_pos.2 hm0))
-    (sq_sub_le_mul_log_sub _ (sqrt_nonneg y) (sqrt_pos.2 hm0))
+  have hJ := add_le_add (sq_sqrt_sub_sqrt_le_mul_log_sub_mul_log_sub hm0 hx)
+    (sq_sqrt_sub_sqrt_le_mul_log_sub_mul_log_sub hm0 hy)
   rw [← hdef] at hJ
   have hxy : (x - y) ^ 2 = (√x - √y) ^ 2 * (√x + √y) ^ 2 := by
     rw [← mul_pow, show (√x - √y) * (√x + √y) = √x ^ 2 - √y ^ 2 by ring, sq_sqrt hx,
@@ -252,6 +239,26 @@ private theorem mul_abs_sub_add_two_mul_klFun_le {x y : ℝ} (hx : 0 ≤ x) (hy 
   rw [mul_pow, sq_abs]
   nlinarith [sq_nonneg (t ^ 2 * (x + y) - J), mul_le_mul_of_nonneg_left h (sq_nonneg t)]
 
+/-- The pointwise `ℝ≥0∞` form of `TauCeti.mul_abs_sub_add_two_mul_klFun_le`, with the
+entropy integrand and the densities read through `ENNReal.ofReal`. -/
+private theorem mul_enorm_sub_add_two_mul_ofReal_klFun_le {x y : ℝ} (hx : 0 ≤ x) (hy : 0 ≤ y)
+    (t : ℝ≥0) :
+    (t : ℝ≥0∞) * ‖x - y‖ₑ + 2 * ENNReal.ofReal (klFun (2⁻¹ * x + 2⁻¹ * y)) ≤
+      t ^ 2 * (ENNReal.ofReal x + ENNReal.ofReal y) + ENNReal.ofReal (klFun x) +
+        ENNReal.ofReal (klFun y) := by
+  have hm : 0 ≤ klFun (2⁻¹ * x + 2⁻¹ * y) := klFun_nonneg (by positivity)
+  calc _ = ENNReal.ofReal (t * |x - y| + 2 * klFun (2⁻¹ * x + 2⁻¹ * y)) := by
+        rw [ENNReal.ofReal_add (by positivity) (by positivity), ENNReal.ofReal_mul t.coe_nonneg,
+          ENNReal.ofReal_mul zero_le_two, Real.enorm_eq_ofReal_abs]
+        simp
+    _ ≤ ENNReal.ofReal (t ^ 2 * (x + y) + klFun x + klFun y) :=
+        ENNReal.ofReal_le_ofReal (mul_abs_sub_add_two_mul_klFun_le hx hy t.coe_nonneg)
+    _ = _ := by
+        rw [ENNReal.ofReal_add (add_nonneg (by positivity) (klFun_nonneg hx)) (klFun_nonneg hy),
+          ENNReal.ofReal_add (by positivity) (klFun_nonneg hx), ENNReal.ofReal_mul (by positivity),
+          ENNReal.ofReal_add hx hy, ENNReal.ofReal_pow t.coe_nonneg]
+        simp
+
 /-- **Quantitative strict convexity of relative entropy.** For finite measures `μ`, `ν` and a
 finite reference `ρ`, the convexity defect of relative entropy at the midpoint of `μ` and `ν`
 controls the `L¹(ρ)` distance of their densities: for every scale `t ≥ 0`,
@@ -269,34 +276,36 @@ theorem mul_lintegral_enorm_sub_add_two_mul_klDiv_le (t : ℝ≥0) :
   have hμac := (klDiv_ne_top_iff.1 hμ).1
   have hνac := (klDiv_ne_top_iff.1 hν).1
   have hac := (hμac.smul_left (2⁻¹ : ℝ≥0)).add_left (hνac.smul_left (2⁻¹ : ℝ≥0))
-  rw [klDiv_eq_lintegral_klFun_of_ac hac, klDiv_eq_lintegral_klFun_of_ac hμac,
-    klDiv_eq_lintegral_klFun_of_ac hνac, ← Measure.lintegral_rnDeriv hμac,
-    ← Measure.lintegral_rnDeriv hνac, ← lintegral_const_mul _ (by fun_prop),
-    ← lintegral_const_mul _ (by fun_prop), ← lintegral_add_left (by fun_prop),
-    ← lintegral_add_left (by fun_prop), ← lintegral_const_mul _ (by fun_prop),
-    ← lintegral_add_left (by fun_prop), ← lintegral_add_left (by fun_prop)]
+  -- Both sides are integrals against `ρ` of expressions in the densities.
+  have hmix : klDiv ((2⁻¹ : ℝ≥0) • μ + (2⁻¹ : ℝ≥0) • ν) ρ =
+      ∫⁻ x, ENNReal.ofReal
+        (klFun (2⁻¹ * (μ.rnDeriv ρ x).toReal + 2⁻¹ * (ν.rnDeriv ρ x).toReal)) ∂ρ := by
+    rw [klDiv_eq_lintegral_klFun_of_ac hac]
+    refine lintegral_congr_ae ?_
+    filter_upwards [klFun_rnDeriv_smul_add_smul (μ := μ) (ν := ν) (ρ := ρ) (a := 2⁻¹)
+      (b := 2⁻¹)] with x hx
+    rw [hx, NNReal.coe_inv, NNReal.coe_ofNat]
+  have hlhs : t * ∫⁻ x, ‖(μ.rnDeriv ρ x).toReal - (ν.rnDeriv ρ x).toReal‖ₑ ∂ρ +
+        2 * klDiv ((2⁻¹ : ℝ≥0) • μ + (2⁻¹ : ℝ≥0) • ν) ρ =
+      ∫⁻ x, (t * ‖(μ.rnDeriv ρ x).toReal - (ν.rnDeriv ρ x).toReal‖ₑ +
+        2 * ENNReal.ofReal
+          (klFun (2⁻¹ * (μ.rnDeriv ρ x).toReal + 2⁻¹ * (ν.rnDeriv ρ x).toReal))) ∂ρ := by
+    rw [hmix, lintegral_add_left (by fun_prop), lintegral_const_mul _ (by fun_prop),
+      lintegral_const_mul _ (by fun_prop)]
+  have hrhs : t ^ 2 * (μ univ + ν univ) + klDiv μ ρ + klDiv ν ρ =
+      ∫⁻ x, (t ^ 2 * (μ.rnDeriv ρ x + ν.rnDeriv ρ x) +
+        ENNReal.ofReal (klFun (μ.rnDeriv ρ x).toReal) +
+          ENNReal.ofReal (klFun (ν.rnDeriv ρ x).toReal)) ∂ρ := by
+    rw [lintegral_add_left (by fun_prop), lintegral_add_left (by fun_prop),
+      lintegral_const_mul _ (by fun_prop), lintegral_add_left (by fun_prop),
+      Measure.lintegral_rnDeriv hμac, Measure.lintegral_rnDeriv hνac,
+      klDiv_eq_lintegral_klFun_of_ac hμac, klDiv_eq_lintegral_klFun_of_ac hνac]
+  rw [hlhs, hrhs]
   refine lintegral_mono_ae ?_
-  filter_upwards [klFun_rnDeriv_smul_add_smul (μ := μ) (ν := ν) (ρ := ρ) (a := 2⁻¹) (b := 2⁻¹),
-    Measure.rnDeriv_lt_top μ ρ, Measure.rnDeriv_lt_top ν ρ] with x hmix hμx hνx
-  rw [hmix]
-  nth_rewrite 3 [← ENNReal.ofReal_toReal hμx.ne]
-  nth_rewrite 3 [← ENNReal.ofReal_toReal hνx.ne]
-  set f := (μ.rnDeriv ρ x).toReal
-  set g := (ν.rnDeriv ρ x).toReal
-  have hf : 0 ≤ f := ENNReal.toReal_nonneg
-  have hg : 0 ≤ g := ENNReal.toReal_nonneg
-  have hm : 0 ≤ klFun (2⁻¹ * f + 2⁻¹ * g) := klFun_nonneg (by positivity)
-  push_cast
-  calc _ = ENNReal.ofReal (t * |f - g| + 2 * klFun (2⁻¹ * f + 2⁻¹ * g)) := by
-        rw [ENNReal.ofReal_add (by positivity) (by positivity), ENNReal.ofReal_mul t.coe_nonneg,
-          ENNReal.ofReal_mul zero_le_two, Real.enorm_eq_ofReal_abs]
-        simp
-    _ ≤ ENNReal.ofReal (t ^ 2 * (f + g) + klFun f + klFun g) :=
-        ENNReal.ofReal_le_ofReal (mul_abs_sub_add_two_mul_klFun_le hf hg t.coe_nonneg)
-    _ = _ := by
-        rw [ENNReal.ofReal_add (add_nonneg (by positivity) (klFun_nonneg hf)) (klFun_nonneg hg),
-          ENNReal.ofReal_add (by positivity) (klFun_nonneg hf), ENNReal.ofReal_mul (by positivity),
-          ENNReal.ofReal_add hf hg, ENNReal.ofReal_pow t.coe_nonneg]
-        simp [mul_add]
+  -- Pointwise, the densities are finite, so they are the `ENNReal.ofReal` of their real parts.
+  filter_upwards [Measure.rnDeriv_lt_top μ ρ, Measure.rnDeriv_lt_top ν ρ] with x hμx hνx
+  simpa only [ENNReal.ofReal_toReal hμx.ne, ENNReal.ofReal_toReal hνx.ne] using
+    mul_enorm_sub_add_two_mul_ofReal_klFun_le (μ.rnDeriv ρ x).toReal_nonneg
+      (ν.rnDeriv ρ x).toReal_nonneg t
 
 end TauCeti

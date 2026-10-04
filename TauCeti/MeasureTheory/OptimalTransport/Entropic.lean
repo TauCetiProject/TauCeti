@@ -74,10 +74,11 @@ degenerate regime. The identity holds for every probability measure `π` on `X �
 couplings, and in `ℝ≥0∞` with no integrability hypothesis: when `π` is not absolutely continuous
 with respect to `μ.prod ν`, or has infinite cost, both sides are `∞`.
 
-The existence proof needs no topology. The densities of a minimizing sequence form a Cauchy
-sequence in `L¹(R)`, by the quantitative strict convexity of relative entropy
-`TauCeti.mul_lintegral_enorm_sub_add_two_mul_klDiv_le` applied to midpoints, which are again
-couplings. Their limit is the density of a coupling, and Fatou's lemma bounds its entropy.
+Existence of the Schrödinger minimizer holds in the same generality as its uniqueness: for a
+finite source measure `μ` and a finite reference measure `R`, a finite Schrödinger value is
+attained on arbitrary measurable spaces `X` and `Y`. No topology, separability, or normalization
+of `R` to a probability measure is assumed. Together with uniqueness, the minimizing coupling is
+then well defined whenever the Schrödinger value is finite.
 
 ## References
 
@@ -230,6 +231,10 @@ minimizer is unique; see `TauCeti.existsUnique_isCoupling_klDiv_eq_schroedingerV
 theorem exists_isCoupling_klDiv_eq_schroedingerValue [IsFiniteMeasure μ] [IsFiniteMeasure R]
     (h : schroedingerValue R μ ν ≠ ∞) :
     ∃ π, IsCoupling π μ ν ∧ klDiv π R = schroedingerValue R μ ν := by
+  -- The densities of a minimizing sequence form a Cauchy sequence in `L¹(R)`, by the
+  -- quantitative strict convexity of relative entropy
+  -- `TauCeti.mul_lintegral_enorm_sub_add_two_mul_klDiv_le` applied to midpoints, which are again
+  -- couplings. Their limit is the density of a coupling, and Fatou's lemma bounds its entropy.
   set S := schroedingerValue R μ ν
   -- A minimizing sequence whose entropy at step `n` exceeds `S` by less than `t n ^ 2`.
   set t : ℕ → ℝ≥0 := fun n ↦ 2⁻¹ ^ n with ht_def
