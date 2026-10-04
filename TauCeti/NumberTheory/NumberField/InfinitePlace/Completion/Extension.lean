@@ -59,6 +59,24 @@ instance (v : InfinitePlace K) (w : InfinitePlace L) [w.LiesOver v] :
   rw [← mult_mul_finrank v w, mul_ne_zero_iff] at h
   exact Nat.pos_of_ne_zero h.2
 
+/-- Canonical maps between archimedean completions compose in a tower of number fields. -/
+@[simp]
+theorem _root_.NumberField.LiesOver.completionMap_comp
+    {M : Type*} [Field M] [Algebra L M] [Algebra K M] [IsScalarTower K L M]
+    {v : InfinitePlace K} {w : InfinitePlace L} {u : InfinitePlace M}
+    [w.LiesOver v] [u.LiesOver w] [u.LiesOver v] :
+    (LiesOver.completionMap (v := w) (w := u)).comp
+        (LiesOver.completionMap (v := v) (w := w)) =
+      LiesOver.completionMap (v := v) (w := u) := by
+  apply DFunLike.coe_injective
+  apply (InfinitePlace.Completion.denseRange_coe v).equalizer
+    (LiesOver.continuous_completionMap.comp LiesOver.continuous_completionMap)
+    LiesOver.continuous_completionMap
+  funext x
+  simp [Function.comp_apply, LiesOver.completionMap_coe,
+    WithAbs.algebraMap_left_apply, WithAbs.algebraMap_right_apply,
+    ← IsScalarTower.algebraMap_apply]
+
 /-- Extension of archimedean completions preserves the ordinary norm. -/
 @[simp]
 theorem Completion.norm_completionMap

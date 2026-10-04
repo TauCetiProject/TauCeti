@@ -12,6 +12,7 @@ public import TauCeti.RingTheory.Ideal.PrimesOver
 
 import TauCeti.NumberTheory.NumberField.Global.Places.Semilocal
 import TauCeti.NumberTheory.NumberField.LocalGlobal.Semilocal.NormTrace
+import Mathlib.RingTheory.Norm.Transitivity
 
 /-!
 # The norm map of adeles
@@ -48,6 +49,7 @@ over a fixed place `v` add up to `[L : K]`. The induced maps on ideles and idele
   principal adele of the global norm.
 * `TauCeti.GlobalNumberFields.adeleNorm_adeleExtension`: the adele norm of an adele extended from
   `K` is its `[L : K]`-th power.
+* `TauCeti.GlobalNumberFields.adeleNorm_comp`: norm maps compose in towers of number fields.
 
 ## References
 
@@ -136,6 +138,61 @@ theorem finiteAdeleNorm_finiteAdeleExtension (a : FiniteAdeleRing (𝓞 K) K) :
     Finset.prod_pow_eq_pow_sum, TauCeti.sum_finrank_adicCompletion_eq_finrank]
   exact (RestrictedProduct.pow_apply (x := a) (i := v) ..).symm
 
+/-- Norm maps of finite adeles compose in a tower `K ⊆ L ⊆ M`. -/
+@[simp]
+theorem finiteAdeleNorm_comp (M : Type*) [Field M] [NumberField M] [Algebra L M]
+    [Algebra K M] [IsScalarTower K L M] :
+    (finiteAdeleNorm K L).comp (finiteAdeleNorm L M) = finiteAdeleNorm K M := by
+  apply MonoidHom.ext
+  intro x
+  apply FiniteAdeleRing.ext K
+  intro v
+  let _ : Fintype {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal} :=
+    Fintype.ofFinite _
+  let _ (w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal}) :
+      Fintype {u : HeightOneSpectrum (𝓞 M) // u.asIdeal.LiesOver w.1.asIdeal} :=
+    Fintype.ofFinite _
+  let _ : Fintype {u : HeightOneSpectrum (𝓞 M) // u.asIdeal.LiesOver v.asIdeal} :=
+    Fintype.ofFinite _
+  simp only [MonoidHom.comp_apply, finiteAdeleNorm_apply]
+  rw [finprod_eq_prod_of_fintype, finprod_eq_prod_of_fintype]
+  simp_rw [finprod_eq_prod_of_fintype, map_prod]
+  rw [← Fintype.prod_sigma']
+  let e :
+      (Σ w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal},
+        {u : HeightOneSpectrum (𝓞 M) // u.asIdeal.LiesOver w.1.asIdeal}) ≃
+        {u : HeightOneSpectrum (𝓞 M) // u.asIdeal.LiesOver v.asIdeal} := {
+    toFun p := by
+      let _ : p.2.1.asIdeal.LiesOver p.1.1.asIdeal := p.2.2
+      let _ : p.1.1.asIdeal.LiesOver v.asIdeal := p.1.2
+      exact ⟨p.2.1, Ideal.LiesOver.trans p.2.1.asIdeal p.1.1.asIdeal v.asIdeal⟩
+    invFun u := by
+      let w := u.1.under (𝓞 L)
+      have hw : w.asIdeal.LiesOver v.asIdeal := ⟨by
+        dsimp [w]
+        rw [HeightOneSpectrum.under_asIdeal (𝓞 L) u.1,
+          Ideal.under_under (A := 𝓞 K) (B := 𝓞 L) u.1.asIdeal]
+        exact u.2.over⟩
+      exact ⟨⟨w, hw⟩, ⟨u.1, inferInstance⟩⟩
+    left_inv p := by
+      rcases p with ⟨⟨w, hw⟩, ⟨u, hu⟩⟩
+      let _ : u.asIdeal.LiesOver w.asIdeal := hu
+      have h : u.under (𝓞 L) = w := HeightOneSpectrum.asIdeal_injective hu.over.symm
+      subst w
+      rfl
+    right_inv u := Subtype.ext (by rfl) }
+  refine Fintype.prod_equiv e _ _ fun p ↦ ?_
+  let _ : p.2.1.asIdeal.LiesOver p.1.1.asIdeal := p.2.2
+  let _ : p.1.1.asIdeal.LiesOver v.asIdeal := p.1.2
+  let _ : p.2.1.asIdeal.LiesOver v.asIdeal := (e p).2
+  let _ : IsScalarTower (v.adicCompletion K) ((p.1.1).adicCompletion L)
+      ((p.2.1).adicCompletion M) := IsScalarTower.of_algebraMap_eq fun y ↦ by
+    rw [HeightOneSpectrum.algebraMap_eq_completionAlgHom (K := K) v p.2.1,
+      HeightOneSpectrum.algebraMap_eq_completionAlgHom (K := L) p.1.1 p.2.1,
+      HeightOneSpectrum.algebraMap_eq_completionAlgHom (K := K) v p.1.1]
+    exact (AlgHom.congr_fun (HeightOneSpectrum.completionAlgHom_comp v p.1.1 p.2.1) y).symm
+  exact Algebra.norm_norm
+
 /-! ### Infinite adeles -/
 
 /-- **The norm map of infinite adeles.** For an extension `L / K` of number fields, the component
@@ -186,6 +243,65 @@ theorem infiniteAdeleNorm_infiniteAdeleExtension (a : InfiniteAdeleRing K) :
     Finset.prod_pow_eq_pow_sum, sum_finrank_infiniteCompletion_eq_finrank]
   exact (Pi.pow_apply a _ v).symm
 
+omit [NumberField K] in
+/-- Norm maps of infinite adeles compose in a tower of number fields. -/
+@[simp]
+theorem infiniteAdeleNorm_comp (M : Type*) [Field M] [NumberField M] [Algebra L M]
+    [Algebra K M] [IsScalarTower K L M] :
+    (infiniteAdeleNorm K L).comp (infiniteAdeleNorm L M) = infiniteAdeleNorm K M := by
+  apply MonoidHom.ext
+  intro x
+  funext v
+  let _ : Fintype {w : InfinitePlace L // w.LiesOver v} := Fintype.ofFinite _
+  let _ (w : {w : InfinitePlace L // w.LiesOver v}) :
+      Fintype {u : InfinitePlace M // u.LiesOver w.1} := Fintype.ofFinite _
+  let _ : Fintype {u : InfinitePlace M // u.LiesOver v} := Fintype.ofFinite _
+  simp only [MonoidHom.comp_apply, infiniteAdeleNorm_apply]
+  rw [finprod_eq_prod_of_fintype, finprod_eq_prod_of_fintype]
+  simp_rw [finprod_eq_prod_of_fintype, map_prod]
+  rw [← Fintype.prod_sigma']
+  let e :
+      (Σ w : {w : InfinitePlace L // w.LiesOver v},
+        {u : InfinitePlace M // u.LiesOver w.1}) ≃
+        {u : InfinitePlace M // u.LiesOver v} := {
+    toFun p := by
+      let _ : p.2.1.LiesOver p.1.1 := p.2.2
+      let _ : p.1.1.LiesOver v := p.1.2
+      refine ⟨p.2.1, ?_⟩
+      have h : p.2.1.comap (algebraMap K M) = v := by
+        rw [IsScalarTower.algebraMap_eq K L M, InfinitePlace.comap_comp,
+          InfinitePlace.LiesOver.comap_eq p.2.1 p.1.1,
+          InfinitePlace.LiesOver.comap_eq p.1.1 v]
+      simpa only [h] using
+        (inferInstance : p.2.1.LiesOver (p.2.1.comap (algebraMap K M)))
+    invFun u := by
+      let _ : u.1.LiesOver v := u.2
+      let w := u.1.comap (algebraMap L M)
+      have hw : w.LiesOver v := by
+        have h : w.comap (algebraMap K L) = v := by
+          rw [← InfinitePlace.comap_comp, ← IsScalarTower.algebraMap_eq K L M,
+            InfinitePlace.LiesOver.comap_eq u.1 v]
+        simpa only [h] using
+          (inferInstance : w.LiesOver (w.comap (algebraMap K L)))
+      exact ⟨⟨w, hw⟩, ⟨u.1, inferInstance⟩⟩
+    left_inv p := by
+      rcases p with ⟨⟨w, hw⟩, ⟨u, hu⟩⟩
+      let _ : u.LiesOver w := hu
+      have h : u.comap (algebraMap L M) = w :=
+        InfinitePlace.LiesOver.comap_eq u w
+      subst w
+      rfl
+    right_inv u := Subtype.ext (by rfl) }
+  refine Fintype.prod_equiv e _ _ fun p ↦ ?_
+  let _ : p.2.1.LiesOver p.1.1 := p.2.2
+  let _ : p.1.1.LiesOver v := p.1.2
+  let _ : p.2.1.LiesOver v := (e p).2
+  let _ : IsScalarTower v.Completion p.1.1.Completion p.2.1.Completion :=
+    IsScalarTower.of_algebraMap_eq fun y ↦
+      (RingHom.congr_fun (LiesOver.completionMap_comp (v := v) (w := p.1.1)
+        (u := p.2.1)) y).symm
+  exact Algebra.norm_norm
+
 /-! ### Adeles -/
 
 /-- **The norm map of adeles** `N_{L/K} : 𝔸_L →* 𝔸_K`: `infiniteAdeleNorm` on the infinite
@@ -223,5 +339,18 @@ theorem adeleNorm_adeleExtension (a : AdeleRing (𝓞 K) K) :
   Prod.ext
     (by rw [adeleNorm_fst, adeleExtension_fst, infiniteAdeleNorm_infiniteAdeleExtension]; rfl)
     (by rw [adeleNorm_snd, adeleExtension_snd, finiteAdeleNorm_finiteAdeleExtension]; rfl)
+
+/-- Norm maps of adeles compose in a tower of number fields. -/
+@[simp]
+theorem adeleNorm_comp (M : Type*) [Field M] [NumberField M] [Algebra L M]
+    [Algebra K M] [IsScalarTower K L M] :
+    (adeleNorm K L).comp (adeleNorm L M) = adeleNorm K M := by
+  apply MonoidHom.ext
+  intro x
+  apply Prod.ext
+  · simpa only [MonoidHom.comp_apply, adeleNorm_fst] using
+      DFunLike.congr_fun (infiniteAdeleNorm_comp K L M) x.1
+  · simpa only [MonoidHom.comp_apply, adeleNorm_snd] using
+      DFunLike.congr_fun (finiteAdeleNorm_comp K L M) x.2
 
 end TauCeti.GlobalNumberFields
