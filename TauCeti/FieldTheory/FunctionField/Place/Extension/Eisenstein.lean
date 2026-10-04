@@ -147,7 +147,8 @@ theorem adjoin_eq_top_of_isTotallyRamified_of_ord_eq_one {P' : Place k' F'} {t :
   let _ : Nonempty (Fin (ramificationIdx F P')) :=
     Fin.pos_iff_nonempty.mp (ramificationIdx_pos F P')
   have hcard : Fintype.card (Fin (ramificationIdx F P')) = Module.finrank F F' := by
-    simpa only [Fintype.card_fin] using (show ramificationIdx F P' = Module.finrank F F' from h)
+    rw [Fintype.card_fin, ← isTotallyRamified_iff]
+    exact h
   have hspan := hind.span_eq_top_of_card_eq_finrank hcard
   apply top_unique
   intro x _
