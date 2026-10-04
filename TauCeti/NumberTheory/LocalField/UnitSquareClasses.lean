@@ -125,7 +125,7 @@ theorem unitSquareClasses_index : (unitSquareClasses K).index = 2 := by
     |>.trans (by simp)
 
 /-- A uniformizer's class does not belong to the unit square classes. -/
-theorem mk_uniformizer_notMem_unitSquareClasses {π : Kˣ} (hπ : IsUniformizer K π) :
+theorem mk_notMem_unitSquareClasses_of_isUniformizer {π : Kˣ} (hπ : IsUniformizer K π) :
     QuotientGroup.mk' (Subgroup.square Kˣ) π ∉ unitSquareClasses K := by
   rw [QuotientGroup.mk'_apply, mk_mem_unitSquareClasses_iff, (isUniformizer_def π).mp hπ]
   norm_num
