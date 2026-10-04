@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Linearization
 public import TauCeti.Analysis.Fredholm.LevelSet.GlobalParametric
+import TauCeti.Geometry.Manifold.MFDeriv.ContinuousLinearMap
 
 /-!
 # Parametric transversality for Fredholm bundle sections
@@ -74,17 +75,6 @@ theorem isRegularSectionParameter_iff {l : Λ} :
             (ContinuousLinearMap.inl ℝ X Λ))) :=
   (Iff.rfl)
 
-/-- On the normed space `X × Λ`, the `X` part of the vector-valued manifold derivative is the
-`X` part of the Fréchet derivative. -/
-private theorem mvfderiv_comp_inl {f : X × Λ → F} {p : X × Λ} :
-    (mvfderiv 𝓘(ℝ, X × Λ) f p).comp
-        ((NormedSpace.fromTangentSpace (𝕜 := ℝ) p).symm.toContinuousLinearMap.comp
-          (ContinuousLinearMap.inl ℝ X Λ)) =
-      (fderiv ℝ f p).comp (ContinuousLinearMap.inl ℝ X Λ) := by
-  rw [mvfderiv_eq_fderiv]
-  ext v
-  simp
-
 /-- In a trivial bundle, section regularity is exactly regularity of the fiber-valued
 level equation. -/
 @[simp]
@@ -92,7 +82,7 @@ theorem isRegularSectionParameter_trivial (b : X × Λ → B) (f : X × Λ → F
     IsRegularSectionParameter (E := Bundle.Trivial B F) (F := F) b f l ↔
       IsRegularParameter f 0 l := by
   simp only [isRegularSectionParameter_iff, isRegularParameter_iff,
-    sectionLinearization_trivial, mvfderiv_comp_inl]
+    sectionLinearization_trivial, mvfderiv_comp_fromTangentSpace_symm_comp]
 
 variable [CompleteSpace X] [CompleteSpace Λ] [CompleteSpace F]
 
@@ -186,7 +176,8 @@ private theorem exists_section_badParameter_neighborhood {n : ℕ∞ω} {z : X �
     intro hcoord
     apply hbad
     rw [sectionLinearization_eq_symmL_comp (hb w w.2) hwe hw.2.mdifferentiableAt w.2,
-      ContinuousLinearMap.comp_assoc, mvfderiv_comp_inl, ← e.symm_continuousLinearEquivAt_eq' hwe]
+      ContinuousLinearMap.comp_assoc, mvfderiv_comp_fromTangentSpace_symm_comp,
+      ← e.symm_continuousLinearEquivAt_eq' hwe]
     exact (e.continuousLinearEquivAt ℝ (b w) hwe).symm.surjective.comp hcoord
   refine ⟨Φ v, ⟨hvQ.2, ?_⟩, ?_⟩
   · simp only [Set.mem_ofPred_eq]

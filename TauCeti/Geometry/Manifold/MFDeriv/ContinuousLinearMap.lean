@@ -19,6 +19,9 @@ The zero-value formula is the manifold counterpart of `HasFDerivAt.clm_apply`, s
 the case used when differentiating changes of fiber coordinates at the zero of a bundle section.
 It is stated for any map agreeing with `y ↦ c y (u y)` near the point, which is how fiber
 coordinates in two trivializations are related.
+
+For maps on a normed space, it also records how `mvfderiv` acts on vectors given in the
+model space through `NormedSpace.fromTangentSpace`: there it is the Fréchet derivative.
 -/
 
 public section
@@ -91,6 +94,18 @@ theorem mvfderiv_eq_comp_of_eventuallyEq_clm_apply {f : M → F'} {c : M → F �
   -- Both sides now read the derivative of `u` in the chart at `x`; Mathlib's
   -- `MDifferentiableAt.mvfderiv` is the identification of that chart derivative with `mvfderiv`.
   exact congrArg (c x).comp hu.mvfderiv.symm
+
+/-- On a normed space, the vector-valued manifold derivative applied to model-space vectors
+`L v`, viewed as tangent vectors via `NormedSpace.fromTangentSpace`, is the Fréchet derivative
+applied to `L v`. -/
+theorem mvfderiv_comp_fromTangentSpace_symm_comp {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace 𝕜 G] {f : E → F} {z : E} (L : G →L[𝕜] E) :
+    (mvfderiv 𝓘(𝕜, E) f z).comp
+        ((NormedSpace.fromTangentSpace (𝕜 := 𝕜) z).symm.toContinuousLinearMap.comp L) =
+      (fderiv 𝕜 f z).comp L := by
+  rw [mvfderiv_eq_fderiv]
+  ext v
+  simp
 
 end TauCeti
 
