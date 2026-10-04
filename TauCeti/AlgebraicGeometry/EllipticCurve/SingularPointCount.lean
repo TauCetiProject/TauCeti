@@ -88,8 +88,11 @@ theorem _root_.WeierstrassCurve.pointCount_eq_card_point_add_card_singular
     W.pointCount = Nat.card W.toAffine.Point +
       Nat.card {p : F × F // W.toAffine.IsSingular p.1 p.2} := by
   let e := equationPointEquiv W
-  have := Finite.of_injective (e.symm ∘ Sum.inl) (e.symm.injective.comp Sum.inl_injective)
-  have := Finite.of_injective (e.symm ∘ Sum.inr) (e.symm.injective.comp Sum.inr_injective)
+  have := Finite.of_equiv _ e
+  have : Finite {p : F × F // W.toAffine.Nonsingular p.1 p.2} :=
+    Finite.sum_left {p : F × F // W.toAffine.IsSingular p.1 p.2}
+  have : Finite {p : F × F // W.toAffine.IsSingular p.1 p.2} :=
+    Finite.sum_right {p : F × F // W.toAffine.Nonsingular p.1 p.2}
   have hN : Nat.card (WithZero {p : F × F // W.toAffine.Nonsingular p.1 p.2}) =
       Nat.card {p : F × F // W.toAffine.Nonsingular p.1 p.2} + 1 :=
     Finite.card_option
