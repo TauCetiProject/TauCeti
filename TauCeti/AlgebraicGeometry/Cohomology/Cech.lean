@@ -33,7 +33,7 @@ noncomputable section
 
 open CategoryTheory TopologicalSpace AlgebraicGeometry
 open TauCeti.AlgebraicGeometry.Scheme.Modules
-open TauCeti.CategoryTheory.GrothendieckTopology.MayerVietorisSquare
+open TauCeti.CategoryTheory
 
 universe u
 

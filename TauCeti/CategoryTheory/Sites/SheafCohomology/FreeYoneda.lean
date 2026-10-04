@@ -31,7 +31,7 @@ naturally both in the object of the site and in the coefficient sheaf.
   morphisms from that sheaf to `F` and sections of `F` over `U`, and
   `TauCeti.CategoryTheory.freeYonedaSheafCorepresentableBy`, the same universal property phrased
   as a corepresentation of the sections functor;
-* `TauCeti.CategoryTheory.Sheaf.cohomologyPresheafZeroIso`, identifying degree-zero cohomology with
+* `TauCeti.CategoryTheory.cohomologyPresheafZeroIso`, identifying degree-zero cohomology with
   sections and their restriction maps;
 * `TauCeti.CategoryTheory.mono_freeYonedaSheafFunctor_map`, saying that a monomorphism of site
   objects induces a monomorphism between the corresponding free abelian sheaves.
@@ -141,7 +141,7 @@ lemma freeYonedaSheafSectionsEquiv_naturality_left {U V : C} (i : U ⟶ V)
   rw [Adjunction.homEquiv_naturality_left, Adjunction.homEquiv_naturality_left]
   exact (yonedaEquiv_naturality _ _).symm
 
-namespace Sheaf
+section
 
 variable {J} [HasExt.{v} (_root_.CategoryTheory.Sheaf J AddCommGrpCat.{v})]
 
@@ -209,7 +209,7 @@ lemma cohomologyPresheafZeroIso_inv_app_apply
     (cohomologyPresheafZeroIso F).inv.app (op U) s = (cohomologyZeroSectionsEquiv F U).symm s :=
   (rfl)
 
-end Sheaf
+end
 
 end
 
