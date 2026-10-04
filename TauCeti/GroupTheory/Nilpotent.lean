@@ -56,22 +56,14 @@ open scoped commutatorElement
 variable {G : Type*} [Group G]
 
 /-- **In a nilpotent group, the upper central series step strictly enlarges every proper normal
-subgroup.**  Otherwise the upper central series of `G` would stay inside `N` forever, while it
-reaches `⊤`. -/
-theorem lt_upperCentralSeriesStep [Group.IsNilpotent G] {N : Subgroup G} [hN : N.Normal]
+subgroup.**  The quotient `G ⧸ N` is a nontrivial nilpotent group, so its centre is nontrivial. -/
+theorem lt_upperCentralSeriesStep [Group.IsNilpotent G] {N : Subgroup G} [N.Normal]
     (hN_ne : N ≠ ⊤) : N < Subgroup.upperCentralSeriesStep N := by
-  refine lt_of_le_of_ne (fun x hx y => ?_) fun h => hN_ne ?_
-  · rw [commutatorElement_def, mul_assoc x y, mul_assoc x]
-    exact N.mul_mem hx (hN.conj_mem _ (N.inv_mem hx) y)
-  · obtain ⟨n, hn⟩ := Group.IsNilpotent.nilpotent G
-    have key (m : ℕ) : Subgroup.upperCentralSeries G m ≤ N := by
-      induction m with
-      | zero => simp [Subgroup.upperCentralSeries_zero]
-      | succ m ih =>
-        intro x hx
-        rw [h]
-        exact fun y => ih (Subgroup.mem_upperCentralSeries_succ_iff.mp hx y)
-    exact top_le_iff.mp (hn ▸ key n)
+  have : Nontrivial (G ⧸ N) := QuotientGroup.nontrivial_iff.mpr hN_ne
+  have h := (Subgroup.comap_lt_comap_of_surjective (QuotientGroup.mk'_surjective N)).mpr
+    (bot_lt_iff_ne_bot.mpr (Group.IsNilpotent.center_ne_bot (G ⧸ N)))
+  simpa only [MonoidHom.comap_bot, QuotientGroup.ker_mk',
+    ← Subgroup.upperCentralSeriesStep_eq_comap_center] using h
 
 /-- **The normal closure of an element two steps above `N` is abelian modulo `N`.**  If `x` is
 central modulo `upperCentralSeriesStep N`, then any two conjugates of `x` commute modulo `N`, so
