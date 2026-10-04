@@ -16,14 +16,14 @@ noduplicate list interacts with mapping by an equivalence.
 
 ## Main results
 
-* `TauCeti.List.formPerm_map_equiv`: mapping a noduplicate list by an equivalence conjugates its
+* `List.formPerm_map_equiv`: mapping a noduplicate list by an equivalence conjugates its
   formed permutation.
-* `TauCeti.List.IsRotated.filter`: filtering preserves cyclic rotation of lists.
+* `List.IsRotated.filter`: filtering preserves cyclic rotation of lists.
 -/
 
 public section
 
-namespace TauCeti.List
+namespace List
 
 /-- Mapping a noduplicate list by an equivalence conjugates the permutation formed by the list. -/
 theorem formPerm_map_equiv {α β : Type*} [DecidableEq α] [DecidableEq β]
@@ -55,4 +55,4 @@ theorem IsRotated.filter {α : Type*} {l l' : List α} (h : l ~r l') (p : α →
     (l' := (l.drop (k % l.length)).filter p)
   simpa only [← List.filter_append, List.take_append_drop] using hrot
 
-end TauCeti.List
+end List

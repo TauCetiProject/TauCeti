@@ -86,7 +86,7 @@ private theorem crossingsAt_rotate_isRotated (w : BraidWord n) (k : ℕ) (p : Fi
         List.finRange w.length := by
     rw [map_finRange_rotateIndexEquiv]
     exact List.IsRotated.forall _ _
-  have hfilter := TauCeti.List.IsRotated.filter hfin
+  have hfilter := hfin.filter
     (fun j : Fin w.length => p = BraidGroup.strand w[j.1].1 ∨
       p = BraidGroup.strandSucc w[j.1].1)
   rw [List.filter_map] at hfilter
@@ -101,7 +101,7 @@ private theorem nextCrossing_rotate (w : BraidWord n) (k : ℕ) (p : Fin n) :
     (w.rotateIndexEquiv k).permCongr
         (crossingsAt (w.rotate k) p).formPerm =
         ((crossingsAt (w.rotate k) p).map (w.rotateIndexEquiv k)).formPerm :=
-      (TauCeti.List.formPerm_map_equiv _ _
+      (List.formPerm_map_equiv _ _
         ((sortedLT_crossingsAt (w.rotate k) p).nodup)).symm
     _ = (w.crossingsAt p).formPerm :=
       List.formPerm_eq_of_isRotated
