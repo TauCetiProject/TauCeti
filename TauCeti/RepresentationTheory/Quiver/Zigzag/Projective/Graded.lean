@@ -77,10 +77,8 @@ theorem zigzagGradedProjective_piece (i : V) (p : ℤ) :
     (zigzagGradedProjective k G i).grading.piece p = zigzagProjectiveGrade k G i p := by
   let _ := zigzagIntegerGradedAlgebra k G
   ext x
-  change x ∈ (GradedModuleCat.ofIdeal (zigzagIntegerGrade k G) (zigzagProjective k G i)
-    (isHomogeneous_zigzagProjective k G i)).grading.piece p ↔
-      x ∈ zigzagProjectiveGrade k G i p
-  rw [GradedModuleCat.mem_ofIdeal_piece_iff, mem_zigzagProjectiveGrade_iff]
+  rw [GradedModuleCat.mem_ofIdeal_piece_iff (isHomogeneous_zigzagProjective k G i),
+    mem_zigzagProjectiveGrade_iff]
 
 -- This is not a simp lemma: `InternalGrading.shift_piece` already gives the unshifted normal form.
 /-- Shifting the categorical projective agrees with the previously defined projective shift. -/

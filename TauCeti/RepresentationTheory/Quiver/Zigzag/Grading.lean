@@ -293,9 +293,7 @@ extension-by-zero grading as a graded algebra over the integers. -/
 noncomputable def zigzagIntegerGradedAlgebra : GradedAlgebra (zigzagIntegerGrade k G) :=
   let _ := zigzagGradedAlgebra k G
   { (isInternal_zigzagIntegerGrade k G).chooseDecomposition with
-    one_mem := by
-      rw [show (0 : ℤ) = (0 : ℕ) from rfl, zigzagIntegerGrade_ofNat]
-      exact SetLike.GradedOne.one_mem
+    one_mem := (zigzagIntegerGrade_ofNat k G 0).ge SetLike.GradedOne.one_mem
     mul_mem := fun _ _ _ _ hx hy ↦
       Graded.mul_mem_extendByZero (fun hx' hy' ↦ SetLike.GradedMul.mul_mem hx' hy') hx hy }
 
