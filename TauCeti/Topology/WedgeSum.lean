@@ -336,6 +336,7 @@ def proj (x : ∀ i, X i) (i : ι) : C(WedgeSum x, X i) :=
 lemma proj_incl_self (i : ι) (z : X i) : proj x i (incl x i z) = z := by
   simp [proj]
 
+@[simp]
 lemma proj_incl_of_ne {i j : ι} (h : j ≠ i) (z : X j) : proj x i (incl x j z) = x i := by
   simp [proj, h]
 
