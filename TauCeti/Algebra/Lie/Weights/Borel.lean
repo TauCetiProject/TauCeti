@@ -64,6 +64,8 @@ function.
   `L = n⁻ + (H + n⁺)`, as an equality of submodules.
 * `TauCeti.exists_mem_negativeNilradical_add_mem_borelSubalgebra`: the corresponding elementwise
   decomposition.
+* `TauCeti.disjoint_negativeNilradical_borelSubalgebra` and
+  `TauCeti.isCompl_negativeNilradical_borelSubalgebra`: `n⁻ ∩ 𝔟 = 0`, so `L = n⁻ ⊕ 𝔟`.
 * `TauCeti.disjoint_cartan_positiveNilradical`: `H ∩ n⁺ = 0`, so `𝔟 = H ⊕ n⁺`.
 * `TauCeti.borelCharacter_apply_of_mem_cartan` and
   `TauCeti.borelCharacter_apply_of_mem_positiveNilradical`: the character of weight `lam` is `lam`
@@ -443,6 +445,41 @@ theorem exists_mem_negativeNilradical_add_mem_borelSubalgebra (x : L) :
   refine Submodule.mem_sup.mp ?_
   rw [negativeNilradical_sup_borelSubalgebra_eq_top]
   trivial
+
+/-- **The negative nilradical meets the Borel subalgebra trivially**: `n⁻` is spanned by the root
+spaces of the negative roots and `𝔟` by the root space of the zero weight together with those of
+the positive roots, and the weight spaces of `L` are independent. -/
+theorem disjoint_negativeNilradical_borelSubalgebra :
+    Disjoint (negativeNilradical H b : Submodule K L) (borelSubalgebra H b : Submodule K L) := by
+  set S := (fun α : H.root ↦ (α : H → K)) '' negRoots (IsKilling.rootSystem H) b
+  set T := insert (0 : H → K)
+    ((fun α : H.root ↦ (α : H → K)) '' posRoots (IsKilling.rootSystem H) b)
+  have hST : Disjoint S T := by
+    rw [Set.disjoint_left]
+    rintro _ ⟨α, hα, rfl⟩ (h0 | ⟨β, hβ, hβα⟩)
+    · exact (Finset.mem_filter.mp α.2).2 h0
+    · obtain rfl : β = α := Subtype.ext (DFunLike.coe_injective hβα)
+      exact (not_mem_posRoots_iff_mem_negRoots _ b β).mpr hα hβ
+  have hS : rootSpaceSpan H (negRoots (IsKilling.rootSystem H) b) ≤
+      ⨆ χ ∈ S, genWeightSpace L χ :=
+    genWeightSpaceSpan_le_iff.mpr fun χ hχ ↦ le_biSup (fun χ ↦ genWeightSpace L χ) hχ
+  have hT : rootSpace H 0 ⊔ rootSpaceSpan H (posRoots (IsKilling.rootSystem H) b) ≤
+      ⨆ χ ∈ T, genWeightSpace L χ :=
+    sup_le (le_biSup (fun χ ↦ genWeightSpace L χ) (Set.mem_insert _ _))
+      (genWeightSpaceSpan_le_iff.mpr fun χ hχ ↦
+        le_biSup (fun χ ↦ genWeightSpace L χ) (Set.mem_insert_of_mem _ hχ))
+  have hdisj := ((iSupIndep_genWeightSpace K H L).disjoint_biSup_biSup hST).mono hS hT
+  rw [← LieSubmodule.disjoint_toSubmodule, LieSubmodule.sup_toSubmodule, rootSpace_zero_eq K L H,
+    H.coe_toLieSubmodule] at hdisj
+  rw [borelSubalgebra_toSubmodule]
+  exact hdisj
+
+/-- **The triangular decomposition, as a direct sum** `L = n⁻ ⊕ 𝔟`: the negative nilradical and the
+Borel subalgebra are complementary submodules of `L`. -/
+theorem isCompl_negativeNilradical_borelSubalgebra :
+    IsCompl (negativeNilradical H b : Submodule K L) (borelSubalgebra H b : Submodule K L) :=
+  ⟨disjoint_negativeNilradical_borelSubalgebra H b,
+    codisjoint_iff.mpr (negativeNilradical_sup_borelSubalgebra_eq_top H b)⟩
 
 /-! ### The characters of the Borel subalgebra -/
 

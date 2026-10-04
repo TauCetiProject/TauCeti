@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.Fuchsian.Covolume
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Bisector
-public import TauCeti.MeasureTheory.Group.DirichletDomain
+public import TauCeti.MeasureTheory.Group.DirichletDomain.Faces
 public import TauCeti.Topology.MetricSpace.IsometricSMul
 
 /-!
@@ -22,7 +22,10 @@ hyperbolic area of any Dirichlet domain centred at a point with trivial stabiliz
 discrete subgroup has such a Dirichlet domain, since points with trivial stabilizer exist.
 
 The Dirichlet domain is the starting point of the Dirichlet polygon: for a cofinite group it is a
-finite-sided convex hyperbolic polygon whose sides are paired by elements of `Γ`.
+finite-sided convex hyperbolic polygon whose sides are paired by elements of `Γ`. The imported
+`TauCeti.dirichletFace` API describes its equality faces: these cover the boundary, form a
+locally finite family, and the face indexed by `g` is paired with that indexed by `g⁻¹` by the
+transformation `g⁻¹`. Identifying which equality faces are sides requires further polygon geometry.
 
 ## Main results
 
