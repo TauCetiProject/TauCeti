@@ -29,6 +29,7 @@ terminal affine group scheme over `R`.
 
 This uses Mathlib's `Algebra.ofId`, its `Subsingleton (R →ₐ[R] A)` instance, and the
 canonical Hopf algebra structure on `R` over itself from `Mathlib.RingTheory.HopfAlgebra.Basic`.
+The equivalence is constructed with Mathlib's `MulEquiv.ofUnique`.
 -/
 
 public section
@@ -83,12 +84,10 @@ namespace TrivialGroup
 The source is the convolution group of `R`-algebra maps out of the Hopf algebra `R`; since
 there is only one such algebra map, the convolution group is multiplicatively equivalent to
 `PUnit`. -/
-noncomputable def pointsMulEquiv : WithConv (R →ₐ[R] A) ≃* PUnit.{1} where
-  toFun _ := PUnit.unit
-  invFun _ := toConv (Algebra.ofId R A)
-  left_inv _ := WithConv.ext (Subsingleton.elim _ _)
-  right_inv _ := rfl
-  map_mul' _ _ := rfl
+noncomputable def pointsMulEquiv : WithConv (R →ₐ[R] A) ≃* PUnit.{1} :=
+  letI : Unique (R →ₐ[R] A) :=
+    { default := Algebra.ofId R A, uniq _ := Subsingleton.elim _ _ }
+  MulEquiv.ofUnique
 
 /-- The equivalence sends every convolution point to the unique element of `PUnit`. -/
 @[simp]
