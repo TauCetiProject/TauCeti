@@ -31,8 +31,8 @@ Atkin–Li pseudo-eigenvalue.
 
 * `ModularForm.conj`, `CuspForm.conj`: the conjugate form `f_ρ`, with the
   antilinear maps `ModularForm.conjₗ` and `CuspForm.conjₗ`.
-* `CuspForm.conjCharSpace`: the conjugate form as an antilinear map
-  `S_k(N, χ) → S_k(N, χ⁻¹)`.
+* `CuspForm.conjCharSpace`: the conjugate form as an antilinear equivalence
+  `S_k(N, χ) ≃ S_k(N, χ⁻¹)`.
 
 ## Main results
 
@@ -120,7 +120,9 @@ theorem qExpansion_slash_J {F : Type*} [FunLike F ℍ ℂ] [ModularFormClass F �
 
 /-! ### The congruence subgroups -/
 
-section Congruence
+end TauCeti
+
+namespace Matrix.SpecialLinearGroup
 
 /-- The `J`-conjugate `!![a, -b; -c, d]` of `!![a, b; c, d] ∈ SL(2, ℤ)`. -/
 def conjJ (γ : SL(2, ℤ)) : SL(2, ℤ) :=
@@ -134,10 +136,19 @@ lemma coe_conjJ (γ : SL(2, ℤ)) :
   rw [conjJ]
 
 /-- Conjugation by `J` realizes `conjJ`. -/
-lemma J_mul_mapGL_mul_J (γ : SL(2, ℤ)) : J * mapGL ℝ γ * J = mapGL ℝ (conjJ γ) := by
+lemma J_mul_mapGL_mul_J (γ : SL(2, ℤ)) :
+    UpperHalfPlane.J * mapGL ℝ γ * UpperHalfPlane.J = mapGL ℝ (conjJ γ) := by
   ext i j
   fin_cases i <;> fin_cases j <;>
-    simp [J, Matrix.mul_apply, Fin.sum_univ_two, Matrix.vecMul, dotProduct]
+    simp [UpperHalfPlane.J, Matrix.mul_apply, Fin.sum_univ_two, Matrix.vecMul, dotProduct]
+
+end Matrix.SpecialLinearGroup
+
+namespace TauCeti
+
+open UpperHalfPlane
+
+section Congruence
 
 lemma conjJ_mem_Gamma0 {N : ℕ} {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 N) : conjJ γ ∈ Gamma0 N := by
   simpa [Gamma0_mem] using hγ
@@ -364,17 +375,36 @@ theorem conj_mem_cuspFormCharSpace
   exact slash_conj_eq hf g
 
 variable (k χ) in
-/-- The conjugate cusp form as an antilinear map `S_k(N, χ) → S_k(N, χ⁻¹)`. -/
-def conjCharSpace : cuspFormCharSpace k χ →ₗ⋆[ℂ] cuspFormCharSpace k χ⁻¹ :=
-  LinearMap.codRestrict _
-    ((CuspForm.conjₗ (Gamma1_map_le_conjAct_inv_J N)).comp (cuspFormCharSpace k χ).subtype)
-    fun f ↦ conj_mem_cuspFormCharSpace f.2
+/-- The conjugate cusp form as an antilinear equivalence `S_k(N, χ) ≃ S_k(N, χ⁻¹)`. Its inverse is
+again `f ↦ f_ρ`, now on `S_k(N, χ⁻¹)`. -/
+def conjCharSpace : cuspFormCharSpace k χ ≃ₗ⋆[ℂ] cuspFormCharSpace k χ⁻¹ where
+  toFun f := ⟨CuspForm.conj (Gamma1_map_le_conjAct_inv_J N) f, conj_mem_cuspFormCharSpace f.2⟩
+  map_add' f g := by ext1; simp
+  map_smul' c f := by ext1; simp
+  invFun f := ⟨CuspForm.conj (Gamma1_map_le_conjAct_inv_J N) f, by
+    simpa using conj_mem_cuspFormCharSpace f.2⟩
+  left_inv f := by ext1; simp
+  right_inv f := by ext1; simp
 
 @[simp]
 lemma coe_conjCharSpace_apply (f : cuspFormCharSpace k χ) :
     (CuspForm.conjCharSpace k χ f : _root_.CuspForm ((Gamma1 N).map (mapGL ℝ)) k) =
       CuspForm.conj (Gamma1_map_le_conjAct_inv_J N) (f : _root_.CuspForm _ k) :=
   (rfl)
+
+@[simp]
+lemma coe_conjCharSpace_symm_apply (f : cuspFormCharSpace k χ⁻¹) :
+    ((CuspForm.conjCharSpace k χ).symm f : _root_.CuspForm ((Gamma1 N).map (mapGL ℝ)) k) =
+      CuspForm.conj (Gamma1_map_le_conjAct_inv_J N) (f : _root_.CuspForm _ k) :=
+  (rfl)
+
+/-- Conjugating twice, first on `S_k(N, χ)` and then on `S_k(N, χ⁻¹)`, gives back the original
+form. -/
+@[simp]
+lemma coe_conjCharSpace_conjCharSpace (f : cuspFormCharSpace k χ) :
+    (CuspForm.conjCharSpace k χ⁻¹ (CuspForm.conjCharSpace k χ f) :
+      _root_.CuspForm ((Gamma1 N).map (mapGL ℝ)) k) = f := by
+  simp
 
 open HeckeRing.GL2 in
 /-- **The conjugate form intertwines the Hecke operators**: for `f ∈ S_k(N, χ)` and `n ≠ 0`,
@@ -402,7 +432,7 @@ theorem heckeRingHomCuspCharSpace_conjCharSpace_eq_smul [NeZero N] {n : ℕ}
     (hf : heckeRingHomCuspCharSpace k χ (heckeTCompositeGamma0 N n) f = c • f) :
     heckeRingHomCuspCharSpace k χ⁻¹ (heckeTCompositeGamma0 N n) (CuspForm.conjCharSpace k χ f) =
       starRingEnd ℂ c • CuspForm.conjCharSpace k χ f := by
-  rw [heckeRingHomCuspCharSpace_conjCharSpace hn, hf, LinearMap.map_smulₛₗ]
+  rw [heckeRingHomCuspCharSpace_conjCharSpace hn, hf, map_smulₛₗ]
 
 end Nebentypus
 
