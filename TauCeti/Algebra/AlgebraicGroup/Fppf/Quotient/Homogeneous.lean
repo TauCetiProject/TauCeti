@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Fppf.Basic
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Naturality
 public import Mathlib.GroupTheory.Coset.Defs
-public import Mathlib.CategoryTheory.Sites.LeftExact
+public import Mathlib.CategoryTheory.Sites.LocallySurjective
 
 /-!
 # Fppf homogeneous quotients
@@ -46,9 +46,8 @@ noncomputable section
 
 variable {R : Type u} [CommRing R] (H : _root_.CommHopfAlgCat.{u} R) (I : HopfIdeal R H)
 
-/-- The presheaf of left cosets by a closed subgroup, without a normality assumption.
-Its body is exposed so that consumers can form coset representatives and use quotient induction. -/
-@[expose] def homogeneousQuotientPresheaf : ((CommAlgCat.{u} R)ᵒᵖ)ᵒᵖ ⥤ Type (u + 1) where
+/-- The presheaf of left cosets by a closed subgroup, without a normality assumption. -/
+def homogeneousQuotientPresheaf : ((CommAlgCat.{u} R)ᵒᵖ)ᵒᵖ ⥤ Type (u + 1) where
   obj A := ULift.{u + 1, u} (HopfAlgebra.points (R := R) (H := H) A.unop.unop ⧸
     quotientPointsSubgroup H I A.unop.unop)
   map {A B} χ := ↾fun q ↦ ULift.up <| Quotient.map'
@@ -67,13 +66,31 @@ Its body is exposed so that consumers can form coset representatives and use quo
     induction q using Quotient.inductionOn' with | _ g =>
       simp [HopfAlgebra.mapPoints_comp]
 
+/-- The left coset represented by a group point. -/
+def homogeneousQuotientPresheafMk
+    (A : ((CommAlgCat.{u} R)ᵒᵖ)ᵒᵖ)
+    (g : HopfAlgebra.points (R := R) (H := H) A.unop.unop) :
+    (homogeneousQuotientPresheaf H I).obj A :=
+  ULift.up (QuotientGroup.mk g)
+
+/-- To prove a property of a coset section, it suffices to prove it for representatives. -/
+@[elab_as_elim]
+theorem homogeneousQuotientPresheaf_induction_on
+    {A : ((CommAlgCat.{u} R)ᵒᵖ)ᵒᵖ}
+    (q : (homogeneousQuotientPresheaf H I).obj A)
+    {P : (homogeneousQuotientPresheaf H I).obj A → Prop}
+    (h : ∀ g, P (homogeneousQuotientPresheafMk H I A g)) : P q := by
+  obtain ⟨q⟩ := q
+  induction q using Quotient.inductionOn' with | _ g => exact h g
+
 /-- Mapping a left coset maps its representative by the functor of points. -/
 @[simp]
 theorem homogeneousQuotientPresheaf_map_mk
     {A B : ((CommAlgCat.{u} R)ᵒᵖ)ᵒᵖ} (χ : A ⟶ B)
     (g : HopfAlgebra.points (R := R) (H := H) A.unop.unop) :
-    (homogeneousQuotientPresheaf H I).map χ (ULift.up (QuotientGroup.mk g)) =
-      ULift.up (QuotientGroup.mk (HopfAlgebra.mapPoints (H := H) χ.unop.unop g)) :=
+    (homogeneousQuotientPresheaf H I).map χ (homogeneousQuotientPresheafMk H I A g) =
+      homogeneousQuotientPresheafMk H I B
+        (HopfAlgebra.mapPoints (H := H) χ.unop.unop g) :=
   (rfl)
 
 /-- The natural projection from affine-group points to left cosets. -/
@@ -89,7 +106,7 @@ theorem homogeneousQuotientPresheafProjection_app_apply
     (A : ((CommAlgCat.{u} R)ᵒᵖ)ᵒᵖ)
     (g : HopfAlgebra.points (R := R) (H := H) A.unop.unop) :
     dsimp% (homogeneousQuotientPresheafProjection H I).app A (ULift.up g) =
-      ULift.up (QuotientGroup.mk g) :=
+      homogeneousQuotientPresheafMk H I A g :=
   (rfl)
 
 /-- Two points have the same coset exactly when their difference lies in the closed subgroup. -/
@@ -133,7 +150,8 @@ theorem homogeneousQuotientPresheafLift_app_mk
       f.app A (ULift.up (g * n.val)) = f.app A (ULift.up g))
     (A : ((CommAlgCat.{u} R)ᵒᵖ)ᵒᵖ)
     (g : HopfAlgebra.points (R := R) (H := H) A.unop.unop) :
-    (homogeneousQuotientPresheafLift H I f hf).app A (ULift.up (QuotientGroup.mk g)) =
+    (homogeneousQuotientPresheafLift H I f hf).app A
+        (homogeneousQuotientPresheafMk H I A g) =
       f.app A (ULift.up g) :=
   (rfl)
 
@@ -205,6 +223,23 @@ def fppfHomogeneousQuotientProjection :
   homogeneousQuotientPresheafProjection H I ≫
     toSheafify (CommAlgCat.fppfTopology R) (homogeneousQuotientPresheaf H I)
 
+/-- Every section of the homogeneous quotient lifts fppf locally to a group point. -/
+instance fppfHomogeneousQuotientProjection_isLocallySurjective :
+    Presheaf.IsLocallySurjective (CommAlgCat.fppfTopology R)
+      (fppfHomogeneousQuotientProjection H I) := by
+  have : Presheaf.IsLocallySurjective (CommAlgCat.fppfTopology R)
+      (homogeneousQuotientPresheafProjection H I) := by
+    apply Presheaf.isLocallySurjective_of_surjective
+    intro A q
+    induction q using homogeneousQuotientPresheaf_induction_on H I with
+    | h g => exact ⟨ULift.up g, homogeneousQuotientPresheafProjection_app_apply H I A g⟩
+  unfold fppfHomogeneousQuotientProjection
+  have := Presheaf.isLocallySurjective_toSheafify'
+    (CommAlgCat.fppfTopology R) (homogeneousQuotientPresheaf H I)
+  exact Presheaf.isLocallySurjective_comp (CommAlgCat.fppfTopology R)
+    (homogeneousQuotientPresheafProjection H I)
+    (toSheafify (CommAlgCat.fppfTopology R) (homogeneousQuotientPresheaf H I))
+
 /-- Maps from `G/N` to any fppf sheaf are exactly natural maps from `G` invariant under
 right multiplication by the closed subgroup `N`, over all value algebras. -/
 def fppfHomogeneousQuotientHomEquiv
@@ -225,8 +260,15 @@ theorem fppfHomogeneousQuotientHomEquiv_apply
     (F : Sheaf (CommAlgCat.fppfTopology R) (Type (u + 1)))
     (f : fppfHomogeneousQuotient H I ⟶ F) :
     (fppfHomogeneousQuotientHomEquiv H I F f).val =
-      fppfHomogeneousQuotientProjection H I ≫ f.hom :=
-  (rfl)
+      fppfHomogeneousQuotientProjection H I ≫ f.hom := by
+  unfold fppfHomogeneousQuotient at f
+  change (homogeneousQuotientPresheafHomEquiv H I F.obj
+    ((sheafificationAdjunction (CommAlgCat.fppfTopology R) (Type (u + 1))).homEquiv
+      (homogeneousQuotientPresheaf H I) F f)).val = _
+  rw [homogeneousQuotientPresheafHomEquiv_apply, Adjunction.homEquiv_unit]
+  change homogeneousQuotientPresheafProjection H I ≫
+    toSheafify (CommAlgCat.fppfTopology R) (homogeneousQuotientPresheaf H I) ≫ f.hom = _
+  exact (Category.assoc _ _ _).symm
 
 /-- Descending a subgroup-invariant natural map and then restricting along the quotient
 projection recovers that map. -/
