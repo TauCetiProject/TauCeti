@@ -65,12 +65,6 @@ noncomputable instance TauCeti.MonoidAlgebra.instModuleDualContragredient :
     Module (MonoidAlgebra R G)ᵐᵒᵖ (Module.Dual R M) :=
   inferInstanceAs (Module (DomMulAct (MonoidAlgebra R G)) (Module.Dual R M))
 
-/-- The contragredient monoid-algebra action on the base-ring dual is precomposition. -/
-@[simp]
-theorem MonoidAlgebra.op_smul_dual_apply (a : MonoidAlgebra R G) (ψ : Module.Dual R M)
-    (m : M) :
-    (MulOpposite.op a • ψ) m = ψ (a • m) := rfl
-
 end ContragredientAction
 
 section ContragredientScalarTower
