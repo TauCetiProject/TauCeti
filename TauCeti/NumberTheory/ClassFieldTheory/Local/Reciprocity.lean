@@ -88,6 +88,7 @@ def localArtinEquiv (ι : L →ₐ[K] SeparableClosure K) :
 /-- **Finite local reciprocity is the abstract Artin map**: the image of the class of `a ∈ Kˣ` is
 the Artin symbol, for the local class formation, of `a` regarded as an element of the ground level
 of the layer of `L`, carried to `Gal(L/K)^ab` by restriction along `ι`. -/
+@[simp]
 theorem localArtinEquiv_mk (ι : L →ₐ[K] SeparableClosure K) (a : Kˣ) :
     localArtinEquiv K L ι (Additive.ofMul (a : Kˣ ⧸ normGroup K L)) =
       MulEquiv.toAdditive (layerGalEquiv ι).abelianizationCongr
@@ -118,7 +119,6 @@ def localArtinMap (ι : L →ₐ[K] SeparableClosure K) :
     (MonoidHom.toAdditive (QuotientGroup.mk' (normGroup K L)))
 
 /-- The local Artin map is finite local reciprocity applied to the class modulo norms. -/
-@[simp]
 theorem localArtinMap_apply (ι : L →ₐ[K] SeparableClosure K) (a : Kˣ) :
     localArtinMap K L ι (Additive.ofMul a) =
       localArtinEquiv K L ι (Additive.ofMul (a : Kˣ ⧸ normGroup K L)) :=
@@ -131,6 +131,7 @@ theorem localArtinMap_eq_of_iota (ι ι' : L →ₐ[K] SeparableClosure K) :
 
 /-- **The kernel of the local Artin map is the norm group**: the Artin symbol of `a ∈ Kˣ` is
 trivial exactly when `a` is a norm from `L`. -/
+@[simp]
 theorem localArtinMap_eq_zero_iff (ι : L →ₐ[K] SeparableClosure K) (a : Kˣ) :
     localArtinMap K L ι (Additive.ofMul a) = 0 ↔ a ∈ normGroup K L := by
   rw [localArtinMap_apply, EmbeddingLike.map_eq_zero_iff, ofMul_eq_zero, QuotientGroup.eq_one_iff]
