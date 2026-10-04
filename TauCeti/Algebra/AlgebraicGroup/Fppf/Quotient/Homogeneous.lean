@@ -223,6 +223,18 @@ def fppfHomogeneousQuotientProjection :
   homogeneousQuotientPresheafProjection H I ≫
     toSheafify (CommAlgCat.fppfTopology R) (homogeneousQuotientPresheaf H I)
 
+/-- The quotient projection sends a point to the sheafification of its left coset. -/
+@[simp]
+theorem fppfHomogeneousQuotientProjection_app_apply
+    (A : ((CommAlgCat.{u} R)ᵒᵖ)ᵒᵖ)
+    (g : HopfAlgebra.points (R := R) (H := H) A.unop.unop) :
+    dsimp% ((fppfHomogeneousQuotientProjection H I).app A ≫
+      eqToHom (congrArg (fun P ↦ P.obj A) (fppfHomogeneousQuotient_obj H I)))
+        (ULift.up g) =
+      (toSheafify (CommAlgCat.fppfTopology R) (homogeneousQuotientPresheaf H I)).app A
+        (homogeneousQuotientPresheafMk H I A g) :=
+  (rfl)
+
 /-- Every section of the homogeneous quotient lifts fppf locally to a group point. -/
 instance fppfHomogeneousQuotientProjection_isLocallySurjective :
     Presheaf.IsLocallySurjective (CommAlgCat.fppfTopology R)
@@ -262,12 +274,14 @@ theorem fppfHomogeneousQuotientHomEquiv_apply
     (fppfHomogeneousQuotientHomEquiv H I F f).val =
       fppfHomogeneousQuotientProjection H I ≫ f.hom := by
   unfold fppfHomogeneousQuotient at f
+  -- Reduce the composite equivalence to its two factors; there is no computation lemma
+  -- for this composite, and unfolding the presheaf equivalence would hide its API lemma.
   change (homogeneousQuotientPresheafHomEquiv H I F.obj
     ((sheafificationAdjunction (CommAlgCat.fppfTopology R) (Type (u + 1))).homEquiv
       (homogeneousQuotientPresheaf H I) F f)).val = _
-  rw [homogeneousQuotientPresheafHomEquiv_apply, Adjunction.homEquiv_unit]
-  change homogeneousQuotientPresheafProjection H I ≫
-    toSheafify (CommAlgCat.fppfTopology R) (homogeneousQuotientPresheaf H I) ≫ f.hom = _
+  rw [homogeneousQuotientPresheafHomEquiv_apply, Adjunction.homEquiv_unit,
+    sheafificationAdjunction_unit_app]
+  dsimp only [fppfHomogeneousQuotientProjection, sheafToPresheaf]
   exact (Category.assoc _ _ _).symm
 
 /-- Descending a subgroup-invariant natural map and then restricting along the quotient
