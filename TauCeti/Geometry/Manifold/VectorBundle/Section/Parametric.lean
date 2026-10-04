@@ -17,7 +17,7 @@ Let `M` be a Banach manifold, `Λ` a Banach space of parameters, and `s` a secti
 `s (·, l)` of the restricted bundle is regular: its intrinsic linearization is surjective at every
 one of its zeros. If the linearization of `s` in the `M` direction is Fredholm and the total
 linearization is surjective at every zero, the regular parameters form a residual set, hence a
-dense set for Banach `Λ`. For such a parameter the zeros of `s (·, l)` then form a smooth manifold
+dense set for Banach `Λ`. For such a parameter the zeros of `s (·, l)` then form a `C^n` manifold
 whose dimension is the Fredholm index. This is the abstract transversality package used to show
 that moduli spaces cut out by a generic perturbation are manifolds.
 
@@ -38,8 +38,8 @@ inverse chart, so non-regular section zeros give non-regular coordinate zeros.
 * `TauCeti.isMeagre_setOf_not_isRegularSectionParameter`: the non-regular parameters are meagre.
 * `TauCeti.dense_setOf_isRegularSectionParameter`: regular parameters are dense.
 * `TauCeti.eventually_residual_exists_isManifold_sectionZero`: for a residual set of parameters,
-  the zeros form a smooth manifold of dimension the index, immersed with tangent spaces the
-  kernels.
+  the zeros form a `C^n` manifold of dimension the index, with a `C^n` immersion whose tangent
+  spaces are the kernels.
 
 ## References
 
@@ -321,8 +321,8 @@ theorem dense_setOf_isRegularSectionParameter :
 
 omit [IsManifold 𝓘(ℝ, X) 1 M] in
 /-- **Generic regular zeros.** For a residual set of parameters `l`, the zeros of `s (·, l)`
-form a smooth manifold of dimension the index `d`, smoothly immersed in `M` with tangent spaces
-the kernels of the linearizations in the `M` direction. -/
+form a `C^n` manifold of dimension the index `d`, with a `C^n` immersion into `M` whose tangent
+spaces are the kernels of the linearizations in the `M` direction. -/
 theorem eventually_residual_exists_isManifold_sectionZero {d : ℕ}
     [IsManifold 𝓘(ℝ, X) n M] [ContMDiffVectorBundle n F E I] (hn0 : n ≠ 0)
     (hindex : ∀ z, s z = 0 → LinearMap.index (sectionLinearization (F := F) 𝓘(ℝ, X)
