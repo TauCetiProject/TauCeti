@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Root.Subgroup
 public import TauCeti.AlgebraicGeometry.GroupScheme.ClosedSubgroup
 import TauCeti.AlgebraicGeometry.AffineGroupScheme.ClosedImmersion
-public import TauCeti.CategoryTheory.Comma.Over
 
 /-!
 # Matrix root subgroups are closed additive groups
@@ -22,15 +21,12 @@ The closed subgroup `rootSubgroupClosedSubgroup` retains the explicit parametriz
 `rootSubgroup`; `rootSubgroupClosedSubgroupIso` identifies it with `𝔾ₐ`. These closed additive
 subgroups are the root subgroups used in pinnings of the general and special linear groups.
 
-The surjectivity argument generalizes the private integral argument formerly in
-`TauCeti.Algebra.Lie.SpecialLinear.StandardCarrier.AllRootSubgroups.Basic`. The passage from
-coordinates to closed subgroups follows
-`TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ClosedImmersion`.
-
 ## References
 
 * J. S. Milne, *Algebraic Groups* (2017), §21.
 * R. W. Carter, *Simple Groups of Lie Type* (1972), §11.3.
+* `TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ClosedImmersion`:
+  the closed-subgroup construction for Kostant root subgroups.
 -/
 
 public section
@@ -43,38 +39,12 @@ universe u
 
 variable {R : Type u} [CommRing R] {N : ℕ} {i j : Fin N}
 
-/-- The root-subgroup coordinate morphism is surjective over every commutative base ring. -/
-theorem rootSubgroupCoordinateMap_surjective (hij : i ≠ j) :
-    Function.Surjective (rootSubgroupCoordinateMap (R := R) hij).hom := by
-  classical
-  let f := (rootSubgroupCoordinateMap (R := R) hij).hom.toAlgHom
-  have hgen : SymmetricAlgebra.ι R R 1 ∈ f.range := by
-    refine (AlgHom.mem_range _).mpr ⟨coordinateHopfAlgebraAlgEquiv R N
-      (coordinateRingMap R N (MvPolynomial.X (i, j))), ?_⟩
-    simpa [f, BialgHom.coe_toAlgHom, Matrix.one_apply, hij] using
-      rootSubgroupCoordinateMap_apply_X (R := R) hij i j
-  intro y
-  have hy : y ∈ f.range := by
-    induction y using SymmetricAlgebra.induction with
-    | algebraMap r => exact f.range.algebraMap_mem r
-    | ι r =>
-        have hr : SymmetricAlgebra.ι R R r = r • SymmetricAlgebra.ι R R 1 := by
-          rw [← map_smul]
-          simp
-        rw [hr]
-        exact Submodule.smul_mem f.range.toSubmodule r hgen
-    | mul y z hy hz => exact mul_mem hy hz
-    | add y z hy hz => exact add_mem hy hz
-  exact (AlgHom.mem_range _).mp hy
-
 /-- Every matrix root map identifies `𝔾ₐ` with a closed subscheme of `GLₙ`. -/
 instance isClosedImmersion_rootSubgroup (hij : i ≠ j) :
     IsClosedImmersion (rootSubgroup (R := R) hij).hom.hom.left := by
   rw [rootSubgroup_def]
-  simp only [Grp.comp', Mon.comp_hom', Over.comp_left]
-  rw [MorphismProperty.cancel_left_of_respectsIso (P := @IsClosedImmersion),
-    MorphismProperty.cancel_right_of_respectsIso (P := @IsClosedImmersion)]
-  exact (CommHopfAlgCat.isClosedImmersion_hopfSpec_map_iff _).mpr
+  exact (CommHopfAlgCat.isClosedImmersion_eqToHom_comp_hopfSpec_map_comp_eqToHom_iff
+    (AdditiveGroup.groupScheme_def R) (groupScheme_def R N) _).mpr
     (rootSubgroupCoordinateMap_surjective hij)
 
 /-- The closed additive root subgroup of `GLₙ` attached to `εᵢ - εⱼ`, parametrized by

@@ -222,6 +222,15 @@ theorem coordinateMap_comp_rootSubgroupCoordinateMap (hij : i ≠ j) :
   rw [coe_transvectionUnit]
   rfl
 
+/-- The special-linear root-subgroup coordinate morphism is surjective over any commutative
+base ring. -/
+theorem rootSubgroupCoordinateMap_surjective (hij : i ≠ j) :
+    Function.Surjective (rootSubgroupCoordinateMap (R := R) hij).hom := by
+  have h := GeneralLinear.rootSubgroupCoordinateMap_surjective (R := R) hij
+  rw [← coordinateMap_comp_rootSubgroupCoordinateMap hij,
+    _root_.CommHopfAlgCat.hom_comp, BialgHom.coe_comp] at h
+  exact h.of_comp
+
 /-- **The root subgroup of `SLₙ` attached to `εᵢ - εⱼ`**, as a morphism of affine group
 schemes over the base ring. -/
 noncomputable def rootSubgroup (hij : i ≠ j) :

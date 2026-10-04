@@ -5,8 +5,9 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Root.ClosedImmersion
 public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.RootSubgroup.Basic
+public import TauCeti.AlgebraicGeometry.GroupScheme.ClosedSubgroup
+import TauCeti.AlgebraicGeometry.AffineGroupScheme.ClosedImmersion
 
 /-!
 # Closed additive root subgroups of the special linear group
@@ -36,28 +37,12 @@ universe u
 
 variable {R : Type u} [CommRing R] {N : ℕ} {i j : Fin N}
 
-/-- The special-linear root-subgroup coordinate morphism is surjective over any commutative
-base ring. -/
-theorem rootSubgroupCoordinateMap_surjective (hij : i ≠ j) :
-    Function.Surjective (rootSubgroupCoordinateMap (R := R) hij).hom := by
-  intro y
-  obtain ⟨x, hx⟩ := GeneralLinear.rootSubgroupCoordinateMap_surjective (R := R) hij y
-  refine ⟨(coordinateMap R N).hom x, ?_⟩
-  calc
-    _ = (coordinateMap R N ≫ rootSubgroupCoordinateMap hij) x :=
-      (_root_.CommHopfAlgCat.comp_apply _ _ _).symm
-    _ = GeneralLinear.rootSubgroupCoordinateMap hij x := by
-      rw [coordinateMap_comp_rootSubgroupCoordinateMap]
-    _ = y := hx
-
 /-- Every elementary root map identifies `𝔾ₐ` with a closed subscheme of `SLₙ`. -/
 instance isClosedImmersion_rootSubgroup (hij : i ≠ j) :
     IsClosedImmersion (rootSubgroup (R := R) hij).hom.hom.left := by
   rw [rootSubgroup_def]
-  simp only [Grp.comp', Mon.comp_hom', Over.comp_left]
-  rw [MorphismProperty.cancel_left_of_respectsIso (P := @IsClosedImmersion),
-    MorphismProperty.cancel_right_of_respectsIso (P := @IsClosedImmersion)]
-  exact (CommHopfAlgCat.isClosedImmersion_hopfSpec_map_iff _).mpr
+  exact (CommHopfAlgCat.isClosedImmersion_eqToHom_comp_hopfSpec_map_comp_eqToHom_iff
+    (AdditiveGroup.groupScheme_def R) (groupScheme_def R N) _).mpr
     (rootSubgroupCoordinateMap_surjective hij)
 
 /-- The closed additive root subgroup of `SLₙ` attached to `εᵢ - εⱼ`, with its elementary
