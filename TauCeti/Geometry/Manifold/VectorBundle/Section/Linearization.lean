@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import Mathlib.Geometry.Manifold.VectorBundle.MDifferentiable
 public import TauCeti.Analysis.Fredholm.Index
 
@@ -108,6 +107,9 @@ theorem mvfderiv_section_coordChange_of_eq_zero
     rw [ContinuousLinearEquiv.coe_coe, Trivialization.coordChangeL_apply e e' hy,
       e.symm_apply_apply_mk hy.1]
   rw [← mvfderiv_clm_apply_of_eq_zero hc hs hz, mvfderiv, mvfderiv, hcoord.mfderiv_eq]
+  -- The remaining `NormedSpace.fromTangentSpace` and `tangentSpaceCast` factors are identity
+  -- maps of `F`: Mathlib's tangent space to a normed space is that space by definition, and it
+  -- offers no rewrite lemmas for these casts, so they are discharged definitionally.
   rfl
 
 /-- At a zero, the linearization can be computed in any bundle trivialization whose fiber
@@ -138,6 +140,8 @@ theorem range_subtypeL_comp_eq_ker_sectionLinearization {T : TangentSpace IM x �
       (sectionLinearization (F := F) IM b s x).ker := by
   have hT : mvfderiv IM (fun y ↦ (e ⟨b y, s y⟩).2) x = T := by
     rw [mvfderiv, hf.mfderiv]
+    -- `NormedSpace.fromTangentSpace` is by definition the identity of `F`, viewed as its own
+    -- tangent space; Mathlib offers no rewrite lemma for this cast, so it is discharged by `rfl`.
     rfl
   rw [sectionLinearization_eq_symmL_comp hb he hf.mdifferentiableAt hz,
     hT, ← e.symm_continuousLinearEquivAt_eq' he]
@@ -228,14 +232,22 @@ theorem index_mvfderiv_section_coordChange_of_eq_zero
 
 /-- Fredholmness of a section's coordinate derivative at a zero is independent of
 the bundle trivialization. -/
-theorem isFredholm_mvfderiv_section_coordChange_iff_of_eq_zero [CompleteSpace 𝕜]
+theorem isFredholm_mvfderiv_section_coordChange_iff_of_eq_zero
     (hb : MDifferentiableAt IM I b x)
     (he : b x ∈ e.baseSet) (he' : b x ∈ e'.baseSet)
     (hs : MDifferentiableAt IM 𝓘(𝕜, F) (fun y ↦ (e ⟨b y, s y⟩).2) x) (hzero : s x = 0) :
     ContinuousLinearMap.IsFredholm (mvfderiv IM (fun y ↦ (e' ⟨b y, s y⟩).2) x) ↔
       ContinuousLinearMap.IsFredholm (mvfderiv IM (fun y ↦ (e ⟨b y, s y⟩).2) x) := by
   rw [mvfderiv_section_coordChange_of_eq_zero hb he he' hs hzero]
-  exact ContinuousLinearMap.isFredholm_equiv_comp
+  let A := e.coordChangeL 𝕜 e' (b x)
+  -- Read the derivative as an operator on the model space, which carries the norm.
+  suffices h : ∀ D : EM →L[𝕜] F, ContinuousLinearMap.IsFredholm ((A : F →L[𝕜] F).comp D) ↔
+      ContinuousLinearMap.IsFredholm D from
+    h (mvfderiv IM (fun y ↦ (e ⟨b y, s y⟩).2) x)
+  intro D
+  refine ⟨fun h ↦ ?_, fun h ↦ h.equiv_comp A⟩
+  simpa only [← ContinuousLinearMap.comp_assoc, ContinuousLinearEquiv.coe_symm_comp_coe,
+    ContinuousLinearMap.id_comp] using h.equiv_comp A.symm
 
 /-- Surjectivity of a section's coordinate derivative at a zero is independent of
 the bundle trivialization, so regular zeros can be tested in any fiber coordinates. -/

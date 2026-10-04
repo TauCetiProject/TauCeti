@@ -58,6 +58,9 @@ theorem mvfderiv_clm_apply_of_eq_zero {c : M → F →L[𝕜] F'} {u : M → F}
     rw [hcval, huval, hu0]
     simp only [map_zero, add_zero]
     rw [hu.mvfderiv]
+    -- `MDifferentiableAt.mvfderiv` states the chart formula with the derivative's domain
+    -- `TangentSpace I x` read as the model space `E`; Mathlib implements this identification
+    -- definitionally (see the TODO before that lemma), so the two sides agree by `rfl`.
     rfl
   · exact I.uniqueDiffWithinAt_image
   · exact hc.differentiableWithinAt_writtenInExtChartAt

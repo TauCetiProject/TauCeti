@@ -80,7 +80,12 @@ theorem isRegularSectionParameter_trivial (b : X × Λ → B) (f : X × Λ → F
   simp only [isRegularSectionParameter_iff, isRegularParameter_iff,
     sectionLinearization_trivial]
   refine forall₂_congr fun x _ ↦ ?_
-  rw [show mvfderiv 𝓘(ℝ, X × Λ) f (x, l) = fderiv ℝ f (x, l) from mvfderiv_eq_fderiv]
+  -- `mvfderiv_eq_fderiv` precomposes with `NormedSpace.fromTangentSpace`, the identity of
+  -- `X × Λ` viewed as its own tangent space, so it identifies the two derivatives. The two
+  -- sides then differ only in whether the domain is written as that tangent space or as
+  -- `X × Λ`, which agree by definition.
+  have hD : mvfderiv 𝓘(ℝ, X × Λ) f (x, l) = fderiv ℝ f (x, l) := mvfderiv_eq_fderiv
+  rw [hD]
   exact Iff.rfl
 
 variable [CompleteSpace X] [CompleteSpace Λ] [CompleteSpace F]
