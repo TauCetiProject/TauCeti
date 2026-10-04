@@ -149,9 +149,15 @@ private def dihedralGroupHom (hs : s * s = 1) (ht : t * t = 1) (hn : (s * t) ^ n
   map_one' := by simp only [DihedralGroup.one_def, dihedralFun_r, ZMod.cast_zero, zpow_zero]
   map_mul' := by
     -- `ZMod.lift` descends the power homomorphism and supplies its addition and negation laws.
-    let f := (ZMod.lift n ⟨zmultiplesHom (Additive G) (Additive.ofMul (s * t)),
-      by simpa using congrArg Additive.ofMul hn⟩).toMultiplicativeLeft
-    have hf (i : ZMod n) : f (Multiplicative.ofAdd i) = (s * t) ^ (ZMod.cast i : ℤ) := rfl
+    let p : {f : ℤ →+ Additive G // f n = 0} :=
+      ⟨zmultiplesHom (Additive G) (Additive.ofMul (s * t)),
+        by simpa using congrArg Additive.ofMul hn⟩
+    let f := (ZMod.lift n p).toMultiplicativeLeft
+    have hf (i : ZMod n) : f (Multiplicative.ofAdd i) = (s * t) ^ (ZMod.cast i : ℤ) := by
+      have h := ZMod.lift_coe n p (ZMod.cast i : ℤ)
+      rw [ZMod.intCast_zmod_cast] at h
+      simpa only [f, p, AddMonoidHom.coe_toMultiplicativeLeft, Function.comp_apply,
+        toAdd_ofAdd, zmultiplesHom_apply, toMul_zsmul, toMul_ofMul] using congrArg Additive.toMul h
     have hadd (i j : ZMod n) :
         (s * t) ^ (ZMod.cast (i + j) : ℤ) =
           (s * t) ^ (ZMod.cast i : ℤ) * (s * t) ^ (ZMod.cast j : ℤ) := by
