@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.IdealSheaf.Affine
+public import TauCeti.AlgebraicGeometry.IdealSheaf.OfIdealTop
 public import Mathlib.AlgebraicGeometry.Morphisms.Flat
 
 /-!
@@ -54,16 +55,8 @@ theorem isEffectiveCartier_iff (I : X.IdealSheafData) :
       ∃ a : Γ(X, U), IsSMulRegular Γ(X, U) a ∧ I.ideal U = Ideal.span {a} :=
   Iff.rfl
 
-/-- Every point has an affine neighbourhood with a nonzerodivisor equation for an effective
-Cartier divisor, including points outside the divisor. -/
-theorem IsEffectiveCartier.exists_eq_span {I : X.IdealSheafData}
-    (hI : I.IsEffectiveCartier) (x : X) :
-    ∃ U : X.affineOpens, x ∈ U.1 ∧
-      ∃ a : Γ(X, U), IsSMulRegular Γ(X, U) a ∧ I.ideal U = Ideal.span {a} :=
-  hI x
-
 /-- A nonzerodivisor equation can be chosen inside any prescribed open neighbourhood. -/
-theorem IsEffectiveCartier.exists_eq_span_le {I : X.IdealSheafData}
+theorem IsEffectiveCartier.exists_eq_span_singleton_le {I : X.IdealSheafData}
     (hI : I.IsEffectiveCartier) (W : X.Opens) {x : X} (hx : x ∈ W) :
     ∃ U : X.affineOpens, U.1 ≤ W ∧ x ∈ U.1 ∧
       ∃ a : Γ(X, U), IsSMulRegular Γ(X, U) a ∧ I.ideal U = Ideal.span {a} := by
@@ -73,20 +66,22 @@ theorem IsEffectiveCartier.exists_eq_span_le {I : X.IdealSheafData}
       (W ⊓ U.1).isOpen
   let V' : X.affineOpens := ⟨V, hV⟩
   have hVU' : V'.1 ≤ U.1 := hVU.trans inf_le_right
-  let φ : Γ(X, U) ⟶ Γ(X, V') := X.presheaf.map (homOfLE hVU').op
-  have hφ : φ.hom.Flat := by
-    have h : V'.1 ≤ (𝟙 X : X ⟶ X) ⁻¹ᵁ U.1 := by simpa using hVU'
-    have hh := Scheme.Hom.flat_appLE (𝟙 X : X ⟶ X) U.2 hV h
-    have he : (𝟙 X : X ⟶ X).appLE U.1 V'.1 h = φ := by
-      ext b
-      rfl
-    exact he ▸ hh
+  have h : V'.1 ≤ (𝟙 X : X ⟶ X) ⁻¹ᵁ U.1 := by simpa using hVU'
+  let φ : Γ(X, U) ⟶ Γ(X, V') := (𝟙 X : X ⟶ X).appLE U.1 V'.1 h
+  have hφ : φ.hom.Flat := Scheme.Hom.flat_appLE (𝟙 X : X ⟶ X) U.2 hV h
   let := φ.hom.toAlgebra
   have : Module.Flat Γ(X, U) Γ(X, V) := hφ
+  -- The identity component identifies appLE with the presheaf restriction map.
+  have hφ_eq : φ = X.presheaf.map (homOfLE hVU').op := by
+    dsimp only [φ, Scheme.Hom.appLE]
+    rw [Scheme.Hom.id_app]
+    change 𝟙 Γ(X, U) ≫ X.presheaf.map (homOfLE hVU').op = _
+    rw [Category.id_comp]
   refine ⟨⟨V, hV⟩, hVU.trans inf_le_left, hxV, φ a, ha.of_flat, ?_⟩
   rw [← I.map_ideal (U := ⟨V, hV⟩) (V := U) (hVU.trans inf_le_right),
     hUa, Ideal.map_span, Set.image_singleton]
-  rfl
+  change Ideal.span {X.presheaf.map (homOfLE hVU').op a} = Ideal.span {φ a}
+  rw [hφ_eq]
 
 /-- The empty closed subscheme is an effective Cartier divisor on every scheme. -/
 @[simp]
@@ -99,7 +94,7 @@ theorem isEffectiveCartier_top (X : Scheme.{u}) :
 
 /-- On an affine scheme, a global nonzerodivisor cuts out an effective Cartier divisor.
 The equation may be a unit, in which case the closed subscheme is empty. -/
-theorem isEffectiveCartier_ofIdealTop [IsAffine X] (a : Γ(X, ⊤))
+theorem isEffectiveCartier_ofIdealTop_span_singleton [IsAffine X] (a : Γ(X, ⊤))
     (ha : IsSMulRegular Γ(X, ⊤) a) : (ofIdealTop (Ideal.span {a})).IsEffectiveCartier := by
   intro x
   exact ⟨⟨⊤, isAffineOpen_top X⟩, Set.mem_univ x, a, ha, by simp⟩
