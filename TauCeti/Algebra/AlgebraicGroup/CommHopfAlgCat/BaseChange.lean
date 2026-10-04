@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import Mathlib.CategoryTheory.ConcreteCategory.EpiMono
 import Mathlib.LinearAlgebra.TensorProduct.RightExactness
 public import Mathlib.RingTheory.Flat.Basic
 
@@ -29,6 +30,7 @@ evaluated on `K`-algebras.
 * `CommHopfAlgCat.baseChange`: the bundled Hopf `K`-algebra `K ⊗[k] H`.
 * `CommHopfAlgCat.baseChangeMap`: scalar extension of a coordinate morphism.
 * `CommHopfAlgCat.baseChangeMap_surjective`: base change preserves surjectivity.
+* `CommHopfAlgCat.baseChangeMap_surjective_of_iso`: surjectivity in isomorphic presentations.
 * `CommHopfAlgCat.baseChangeMap_injective`: flat base change preserves injectivity.
 * `CommHopfAlgCat.baseChangeFunctor`: functorial base change on commutative Hopf algebras.
 * `CommHopfAlgCat.baseChangePointsMulEquiv`: the inherited point equivalence
@@ -330,3 +332,24 @@ lemma baseChangeIsoPointsMulEquiv_mapPoints (e : L ≅ baseChange (K := K) H)
 end CommHopfAlgCat
 
 end TauCeti
+
+namespace CommHopfAlgCat
+
+open CategoryTheory
+
+/-- A surjective coordinate map remains surjective after scalar extension and transport through
+isomorphic presentations of its source and target. -/
+theorem baseChangeMap_surjective_of_iso
+    {k : Type u} {K : Type w} [CommRing k] [CommRing K] [Algebra k K]
+    {H L : CommHopfAlgCat.{v} k} {H' L' : CommHopfAlgCat.{max w v} K}
+    (f : H ⟶ L) (hf : Function.Surjective f.hom)
+    (eH : H' ≅ TauCeti.CommHopfAlgCat.baseChange (K := K) H)
+    (eL : TauCeti.CommHopfAlgCat.baseChange (K := K) L ≅ L') :
+    Function.Surjective
+      (eH.hom ≫ TauCeti.CommHopfAlgCat.baseChangeMap (K := K) f ≫ eL.hom).hom := by
+  rw [hom_comp, hom_comp, BialgHom.coe_comp, BialgHom.coe_comp]
+  exact (ConcreteCategory.bijective_of_isIso _).2.comp
+    ((TauCeti.CommHopfAlgCat.baseChangeMap_surjective f hf).comp
+      (ConcreteCategory.bijective_of_isIso _).2)
+
+end CommHopfAlgCat

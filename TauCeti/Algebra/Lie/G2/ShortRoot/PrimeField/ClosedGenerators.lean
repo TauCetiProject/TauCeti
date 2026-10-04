@@ -22,15 +22,25 @@ calculations and the fact that the seven weights span the full character lattice
 extension preserves that surjectivity, without requiring flatness of ℤ → 𝔽₃. Factoring through
 the separately generated prime-field carrier preserves it as well.
 
+The integral root-coordinate calculation is from
+`TauCeti.Algebra.Lie.G2.ShortRoot.IntegralToralClosure.Basic`, and the weight-span theorem
+is from `TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.G2.ShortRootWeight`.
+The organization follows `TauCeti.Algebra.Lie.E7.Minuscule.ClosedGenerators`, using the general
+generated-subgroup closed-immersion criterion rather than a new presentation of the carrier.
+
+## Main declarations
+
+* `TauCeti.G2ShortRoot.PrimeField.generator_surjective`: each generating coordinate map is
+  surjective.
+* `TauCeti.G2ShortRoot.PrimeField.isClosedImmersion_rootSubgroup`: the numbered root-subgroup
+  maps are closed immersions.
+* `TauCeti.G2ShortRoot.PrimeField.isClosedImmersion_weightTorus`: the weight-torus map is a
+  closed immersion.
+
 ## References
 
 * J. E. Humphreys, *Linear Algebraic Groups*, §26.
 * R. W. Carter, *Simple Groups of Lie Type*, §§4.4 and 7.1.
-
-The integral root-coordinate calculation and weight-span theorem are from
-`TauCeti.Algebra.Lie.G2.ShortRoot.IntegralToralClosure.Basic`. The organization follows
-`TauCeti.Algebra.Lie.E7.Minuscule.ClosedGenerators`, using the general generated-subgroup
-closed-immersion criterion rather than a new presentation of the carrier.
 -/
 
 public section
@@ -45,48 +55,38 @@ parametrize closed copies of `𝔾ₐ`, and the torus generator parametrizes a c
 theorem generator_surjective (j : (Fin 2 ⊕ Fin 2) ⊕ Unit) :
     Function.Surjective (generator j).hom := by
   rcases j with k | ⟨⟩
-  · have hroot : Function.Surjective
-        (kostantRootSubgroupCoordinateMap
-          (TauCeti.serreRootGenerator CartanMatrix.G₂) (TauCeti.serreH ℚ CartanMatrix.G₂)
-          rep lattice.toAddSubgroup rep_kostantForm_mem_lattice k
-          (isNilpotent_rep_serreRootGenerator k) latticeBasis).hom := by
-      rw [← mkQuotient_comp_kostantRootSubgroupToralCoordinateMap
-        (TauCeti.serreRootGenerator CartanMatrix.G₂) (TauCeti.serreH ℚ CartanMatrix.G₂)
-        rep lattice.toAddSubgroup rep_kostantForm_mem_lattice
-        isNilpotent_rep_serreRootGenerator latticeBasis weight k,
-        _root_.CommHopfAlgCat.hom_comp, BialgHom.coe_comp]
-      exact (IntegralToralClosure.rootSubgroupCoordinateMap_surjective k).comp
-        (CommHopfAlgCat.mkQuotient_surjective _ _)
-    rw [generator_inl, kostantRootSubgroupBaseChangePresentationCoordinateMap_def,
-      _root_.CommHopfAlgCat.hom_comp, _root_.CommHopfAlgCat.hom_comp,
-      BialgHom.coe_comp, BialgHom.coe_comp]
-    exact (ConcreteCategory.bijective_of_isIso _).2.comp
-      ((CommHopfAlgCat.baseChangeMap_surjective _ hroot).comp
-        (ConcreteCategory.bijective_of_isIso _).2)
+  · rw [generator_inl, kostantRootSubgroupBaseChangePresentationCoordinateMap_def]
+    exact _root_.CommHopfAlgCat.baseChangeMap_surjective_of_iso _
+      (IntegralToralClosure.representedRootSubgroupCoordinateMap_surjective k)
+      (GeneralLinear.coordinateHopfAlgebraBaseChangeIso ℤ (ZMod 3) 7).symm
+      (AdditiveGroup.coordinateHopfAlgebraBaseChangeIso ℤ (ZMod 3))
   · rw [generator_inr, GeneralLinear.weightTorusBaseChangeCoordinateMap_eq]
     exact GeneralLinear.weightTorusCoordinateMap_surjective weight span_range_weight_eq_top
+
+private theorem isClosedImmersion_eqToHom_comp_generator
+    (j : (Fin 2 ⊕ Fin 2) ⊕ Unit) {G : Grp (Over (Spec (CommRingCat.of (ZMod 3))))}
+    (hG : G = (hopfSpec (CommRingCat.of (ZMod 3))).obj (Opposite.op (generatorCodomain j))) :
+    IsClosedImmersion (eqToHom hG ≫
+      GeneralLinear.generatorToGeneratedGroupScheme 7 generator j ≫
+      eqToHom groupScheme_eq_generatedGroupScheme.symm).hom.hom.left := by
+  rw [← closedSubgroupMorphismProperty_iff (Spec (CommRingCat.of (ZMod 3))),
+    (closedSubgroupMorphismProperty _).cancel_left_of_respectsIso,
+    (closedSubgroupMorphismProperty _).cancel_right_of_respectsIso]
+  apply (closedSubgroupMorphismProperty_iff _ _).2
+  exact GeneralLinear.isClosedImmersion_generatorToGeneratedGroupScheme_of_surjective
+    7 generator j (generator_surjective j)
 
 /-- Every numbered positive or negative simple-root map is a closed immersion into the
 short-root carrier over `𝔽₃`. -/
 instance isClosedImmersion_rootSubgroup (k : Fin 2 ⊕ Fin 2) :
     IsClosedImmersion (rootSubgroup k).hom.hom.left := by
-  rw [← closedSubgroupMorphismProperty_iff (Spec (CommRingCat.of (ZMod 3))),
-    rootSubgroup_def,
-    (closedSubgroupMorphismProperty _).cancel_left_of_respectsIso,
-    (closedSubgroupMorphismProperty _).cancel_right_of_respectsIso]
-  apply (closedSubgroupMorphismProperty_iff _ _).2
-  exact GeneralLinear.isClosedImmersion_generatorToGeneratedGroupScheme_of_surjective
-    7 generator (.inl k) (generator_surjective (.inl k))
+  rw [rootSubgroup_def]
+  exact isClosedImmersion_eqToHom_comp_generator (.inl k) _
 
 /-- The rank-two weight-torus map is a closed immersion into the short-root carrier over
 `𝔽₃`. This asserts that it is a split torus subgroup, without asserting maximality. -/
 instance isClosedImmersion_weightTorus : IsClosedImmersion weightTorus.hom.hom.left := by
-  rw [← closedSubgroupMorphismProperty_iff (Spec (CommRingCat.of (ZMod 3))),
-    weightTorus_def,
-    (closedSubgroupMorphismProperty _).cancel_left_of_respectsIso,
-    (closedSubgroupMorphismProperty _).cancel_right_of_respectsIso]
-  apply (closedSubgroupMorphismProperty_iff _ _).2
-  exact GeneralLinear.isClosedImmersion_generatorToGeneratedGroupScheme_of_surjective
-    7 generator (.inr ()) (generator_surjective (.inr ()))
+  rw [weightTorus_def]
+  exact isClosedImmersion_eqToHom_comp_generator (.inr ()) _
 
 end TauCeti.G2ShortRoot.PrimeField
