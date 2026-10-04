@@ -100,6 +100,7 @@ theorem oddCyclic_pairing_intCast (i j : ℤ) :
 
 /-- The odd cyclic pairing is multiplication of residue classes followed by the rational-circle
 character. -/
+@[simp low]
 theorem oddCyclic_pairing (x y : ZMod m) :
     (oddCyclic m hm θ).toFiniteBilinearModule.pairing x y =
       ZMod.toRatAddCircle m ((θ : ZMod m) * x * y) := by
@@ -110,6 +111,7 @@ theorem oddCyclic_pairing (x y : ZMod m) :
 
 /-- The odd cyclic quadratic form is the rational-circle character of `θx²/2`, with division
 by `2` performed using its integer inverse `(m + 1) / 2` modulo `m`. -/
+@[simp low]
 theorem oddCyclic_quadratic (x : ZMod m) :
     (oddCyclic m hm θ).quadratic x =
       ZMod.toRatAddCircle m ((θ : ZMod m) * (((m + 1) / 2 : ℕ) : ZMod m) * x ^ 2) := by
