@@ -35,9 +35,8 @@ the relevant quotients discrete; the preimage criterion needs it only on the tar
 
 ## Main results
 
-* `OpenNormalSubgroup.toSubgroup_inf`, `OpenNormalSubgroup.toSubgroup_sup`,
-  `OpenNormalSubgroup.mem_inf`: the lattice operations on open normal subgroups are those of the
-  underlying subgroups.
+* `OpenNormalSubgroup.toSubgroup_inf`, `OpenNormalSubgroup.toSubgroup_sup`: the lattice operations
+  on open normal subgroups are those of the underlying subgroups.
 * `OpenNormalSubgroup.continuous_mk_inf`, `OpenNormalSubgroup.continuous_mk_comap`: continuity of
   a map into the quotient by an intersection, and by a preimage, of open normal subgroups.
 * `TauCeti.mem_openNormalSubgroupBot`: the trivial open normal subgroup contains only the
@@ -60,12 +59,6 @@ of the underlying subgroups. -/
 theorem toSubgroup_inf (U V : OpenNormalSubgroup G) :
     (U ⊓ V).toSubgroup = U.toSubgroup ⊓ V.toSubgroup :=
   (rfl)
-
-/-- An element lies in the intersection of two open normal subgroups exactly when it lies in
-both. -/
-@[simp]
-theorem mem_inf {U V : OpenNormalSubgroup G} {g : G} : g ∈ U ⊓ V ↔ g ∈ U ∧ g ∈ V :=
-  Iff.rfl
 
 /-- The underlying subgroup of the join of two open normal subgroups is the join of the underlying
 subgroups. -/

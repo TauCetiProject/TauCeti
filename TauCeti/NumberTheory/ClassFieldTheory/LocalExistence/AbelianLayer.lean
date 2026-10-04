@@ -198,7 +198,10 @@ theorem localNormSubgroup_inf_of_isAbelian (hV : V.IsAbelianClassFieldLayer)
   induction g using QuotientGroup.induction_on with
   | H w =>
     rw [Subgroup.mem_inf, mk_mem_ker_galHom_iff le_rfl, mk_mem_ker_galHom_iff hUV,
-      mk_mem_ker_galHom_iff hUW, OpenNormalSubgroup.mem_inf]
+      mk_mem_ker_galHom_iff hUW]
+    change (w : AbsoluteGaloisGroup K) ∈ (V ⊓ W).toSubgroup ↔
+      (w : AbsoluteGaloisGroup K) ∈ V.toSubgroup ∧ (w : AbsoluteGaloisGroup K) ∈ W.toSubgroup
+    rw [OpenNormalSubgroup.toSubgroup_inf, Subgroup.mem_inf]
 
 /-- **Intersections, for abelian layers.** -/
 private theorem localNormSubgroup_sup_of_isAbelian (hV : V.IsAbelianClassFieldLayer)
