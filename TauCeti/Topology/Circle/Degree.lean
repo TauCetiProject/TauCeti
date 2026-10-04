@@ -205,12 +205,16 @@ theorem degree_mul {x y : Circle} (γ₁ : Path x x) (γ₂ : Path y y) :
 @[simp]
 theorem degree_map_pow {x : Circle} (γ : Path x x) (n : ℕ) :
     degree (γ.map (continuous_pow n)) = n * degree γ := by
-  obtain ⟨θ, hθ', -⟩ := isCoveringMap_exp.exists_path_lifts γ.toContinuousMap (Complex.arg x)
-    (by simp [exp_arg])
-  have hθ (t : I) : exp (θ t) = γ t := congr_fun hθ' t
-  refine degree_eq_of_sub_eq _ (θ := fun t => n * θ t) (by fun_prop) (fun t => by simp [hθ]) ?_
-  rw [← mul_sub, sub_eq_degree_mul γ θ.continuous hθ]
-  push_cast
-  ring
+  -- Loops agreeing pointwise have the same degree, via the constant homotopy.
+  have h {y z : Circle} (γ₀ : Path y y) (γ₁ : Path z z) (hγ : ∀ t, γ₀ t = γ₁ t) :
+      degree γ₀ = degree γ₁ :=
+    degree_eq_of_homotopy γ₀ γ₁ (γ₀.toContinuousMap.comp ⟨Prod.snd, continuous_snd⟩)
+      (fun _ => rfl) hγ (fun _ => by simp)
+  induction n with
+  | zero => simpa using h _ (Path.refl 1) fun t => by simp
+  | succ n ih =>
+    rw [h _ ((γ.map (continuous_pow n)).mul γ) fun t => by simp [pow_succ], degree_mul, ih]
+    push_cast
+    ring
 
 end Circle

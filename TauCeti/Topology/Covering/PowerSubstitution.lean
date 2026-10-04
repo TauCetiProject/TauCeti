@@ -26,10 +26,10 @@ points of the fibre therefore extend to `d` lifts that are distinct at every poi
 The proof applies the lifting criterion
 `IsCoveringMap.existsUnique_continuousMap_lifts_of_range_le`. A loop class of `U × D*` is
 determined by the degree of the direction of its second coordinate
-(`StarConvex.bijective_map_directionFrom_comp_snd`). The substitution multiplies that degree by
-`n` (`Circle.fundamentalGroupMulEquiv_map_pow`), so it sends every loop class of `U × D'*` to an
-`n`-th power. Over a fibre with `d` points, the `n`-th power of every loop class has trivial
-monodromy (`IsCoveringMap.monodromyPerm_pow_eq_one`), so it lifts to a loop.
+(`StarConvex.fundamentalGroup_map_directionFrom_comp_snd_bijective`). The substitution multiplies
+that degree by `n` (`Circle.fundamentalGroupMulEquiv_map_pow`), so it sends every loop class of
+`U × D'*` to an `n`-th power. Over a fibre with `d` points, the `n`-th power of every loop
+class has trivial monodromy (`IsCoveringMap.monodromyPerm_pow_eq_one`), so it lifts to a loop.
 
 This is the topological step of the Puiseux theorem with parameters. Let a monic polynomial in `z`
 have analytic coefficients on `U × D` and a discriminant that vanishes only on `U × {0}`. Over
@@ -134,8 +134,9 @@ theorem _root_.IsCoveringMap.existsUnique_continuousMap_lifts_powerSubstitution
     (ContinuousMap.snd : C(U × ↥(ball (0 : ℂ) R \ {0}), _))
   let W := (Circle.fundamentalGroupMulEquiv _).toMonoidHom.comp (FundamentalGroup.map dX (q a))
   have hW : Bijective W := (Circle.fundamentalGroupMulEquiv _).bijective.comp
-    (((convex_ball (0 : ℂ) R).starConvex (mem_ball_self hR0)).bijective_map_directionFrom_comp_snd
-      (half_pos hR0) (sphere_subset_ball (half_lt_self hR0)) (q a))
+    (((convex_ball (0 : ℂ) R).starConvex
+      (mem_ball_self hR0)).fundamentalGroup_map_directionFrom_comp_snd_bijective (half_pos hR0)
+      (sphere_subset_ball (half_lt_self hR0)) (q a))
   let pow : C(Circle, Circle) := ⟨(· ^ n), continuous_pow n⟩
   have hd : dX.comp q = pow.comp dA := directionFrom_comp_snd_comp_powerSubstitution hn hR
   have hWq : W (FundamentalGroup.map q a g) =
