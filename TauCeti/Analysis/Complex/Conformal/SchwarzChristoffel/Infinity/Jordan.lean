@@ -16,11 +16,21 @@ Schwarz--Christoffel boundary is proper: both ends escape every bounded subset o
 If this boundary is also injective, adding the point at infinity makes it a Jordan curve in
 `OnePoint ℂ`, the Riemann sphere.
 
-This supplies the Jordan-curve hypothesis for plane separation of an unbounded polygonal chain.
-Injectivity can be checked using
-`TauCeti.schwarzChristoffelBoundary_injective_of_edge_intersections`. The conclusion concerns
-only the boundary parametrization; it does not assert that the primitive is univalent or that
-its image avoids the boundary.
+This file covers total exponent at least `-1`, with the curve passing through infinity.
+For total exponent less than `-1`,
+`TauCeti.isJordanCurve_range_schwarzChristoffelCompactifiedBoundary` in
+`SchwarzChristoffel/Compactification.lean` gives a Jordan curve in `ℂ`.
+
+The conclusion has the Jordan-curve hypothesis shape used by
+`TauCeti.exists_continuousOn_bijOn_upperHalfPlaneSet_of_isJordanCurve_insert_infty`.
+To apply that theorem to a domain `U`, one still needs to identify
+`frontier U = range (schwarzChristoffelBoundary a e z₀)` and verify its other domain hypotheses.
+The conclusion concerns only the boundary parametrization; it does not assert that the primitive
+is univalent or that its image avoids the boundary.
+
+For monotone prevertex data indexed by `Fin (n + 2)`, injectivity can be checked using
+`TauCeti.schwarzChristoffelBoundary_injective_of_edge_intersections`.
+For a general index type, injectivity must be supplied directly.
 
 ## References
 
