@@ -13,14 +13,17 @@ public import Mathlib.LinearAlgebra.CliffordAlgebra.SpinGroup
 # Vector generators of the Lipschitz group
 
 This file packages a vector of invertible quadratic norm as a Clifford-algebra unit and records
-the corresponding generator membership and inverse coercion facts.  The twisted-conjugation
-action itself is defined in `Lipschitz.Action`.
+the corresponding generator membership and inverse coercion facts, together with the triviality
+of the Lipschitz group of the zero module.  The twisted-conjugation action itself is defined in
+`Lipschitz.Action`.
 
 ## Main definitions
 
 * `CliffordAlgebra.unitι Q v` is the unit represented by a vector `v` of invertible norm.
 * `CliffordAlgebra.unitι_mem_lipschitzGroup` records that this unit generates the Lipschitz group.
 * `CliffordAlgebra.coe_unitι_inv` computes its inverse as a vector.
+* `CliffordAlgebra.lipschitzGroup_eq_bot` records that the Lipschitz group of the zero module is
+  trivial.
 -/
 
 public section
@@ -56,5 +59,15 @@ theorem coe_unitι_inv (v : M) [Invertible (Q v)] :
 theorem unitι_mem_lipschitzGroup (v : M) [Invertible (Q v)] : unitι Q v ∈ lipschitzGroup Q := by
   unfold lipschitzGroup
   exact Subgroup.subset_closure ⟨v, (coe_unitι v).symm⟩
+
+/-- The Lipschitz group of a quadratic form on the zero module is trivial: its only vector is `0`,
+which is not a unit unless the Clifford algebra is itself trivial. -/
+theorem lipschitzGroup_eq_bot [Subsingleton M] : lipschitzGroup Q = ⊥ := by
+  rw [lipschitzGroup, Subgroup.closure_eq_bot_iff]
+  rintro x ⟨m, hm⟩
+  rw [Subsingleton.elim m 0, map_zero] at hm
+  have : Subsingleton (CliffordAlgebra Q) := subsingleton_of_zero_eq_one (by
+    rw [← x.mul_inv, ← hm, zero_mul])
+  exact Subsingleton.elim x 1
 
 end CliffordAlgebra

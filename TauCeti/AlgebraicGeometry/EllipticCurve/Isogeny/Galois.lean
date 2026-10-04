@@ -34,6 +34,8 @@ isogeny constructed after extending the base field.
 
 * `TauCeti.Isogeny.galoisConj_fieldPullback`: conjugation commutes with extension of a pullback
   to the function fields.
+* `TauCeti.Isogeny.galoisConj_eq_iff_fieldPullback_equivariant`: conjugation fixes an isogeny
+  exactly when its function-field pullback commutes with the coefficient automorphism.
 * `TauCeti.Isogeny.galoisConj_id` and `TauCeti.Isogeny.galoisConj_comp`: conjugation preserves
   identity and composition.
 * `TauCeti.Isogeny.galoisConj_map_algebraMap`: an isogeny defined over the ground field is fixed.
@@ -164,6 +166,30 @@ theorem galoisConj_fieldPullback
       simpa [hσ] using hmap.symm
     exact congrArg (fun y ↦ W₁.functionFieldGaloisAction σ (φ.pullback y)) hx
   exact RingHom.congr_fun h z
+
+/-- Galois conjugation fixes an isogeny exactly when its function-field pullback commutes with
+the corresponding coefficient automorphism. This compares actual field maps, including their
+action on functions with poles. -/
+theorem galoisConj_eq_iff_fieldPullback_equivariant
+    (φ : Isogeny (W₁⁄K).toAffine (W₂⁄K).toAffine) (σ : K ≃ₐ[F] K) :
+    φ.galoisConj W₁ W₂ σ = φ ↔
+      ∀ z, W₁.functionFieldGaloisAction σ (φ.fieldPullback z) =
+        φ.fieldPullback (W₂.functionFieldGaloisAction σ z) := by
+  constructor
+  · intro h z
+    rw [← galoisConj_fieldPullback W₁ W₂ φ σ, h]
+  · intro h
+    have hfield : (φ.galoisConj W₁ W₂ σ).fieldPullback = φ.fieldPullback := by
+      apply AlgHom.ext
+      intro z
+      obtain ⟨z, rfl⟩ := (W₂.functionFieldGaloisAction σ).surjective z
+      rw [galoisConj_fieldPullback, h]
+    apply Isogeny.ext
+    apply AlgHom.ext
+    intro z
+    exact (fieldPullback_algebraMap _ z).symm.trans
+      ((congrArg (fun g ↦ g (algebraMap (W₂⁄K).toAffine.CoordinateRing
+        (W₂⁄K).toAffine.FunctionField z)) hfield).trans (fieldPullback_algebraMap _ z))
 
 /-- Conjugation by the identity fixes an isogeny. -/
 @[simp]

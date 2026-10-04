@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.Fuchsian.Covolume
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Bisector.Basic
 public import TauCeti.Analysis.Complex.UpperHalfPlane.DirichletDomain
+public import TauCeti.MeasureTheory.Group.DirichletDomain.Faces
 public import TauCeti.Topology.MetricSpace.IsometricSMul
 
 /-!
@@ -26,6 +27,11 @@ finite-sided convex hyperbolic polygon whose sides are paired by elements of `Γ
 convexity and closed-half-plane description are supplied by
 `TauCeti.UpperHalfPlane.geodesicSegment_subset_dirichletDomain` and
 `TauCeti.UpperHalfPlane.dirichletDomain_eq_iInter_closure_leftHalfPlane`.
+
+The imported `TauCeti.dirichletFace` API describes its equality faces: these cover the boundary,
+form a locally finite family, and the face indexed by `g` is paired with that indexed by `g⁻¹`
+by the transformation `g⁻¹`. Identifying which equality faces are sides requires further polygon
+geometry.
 
 ## Main results
 

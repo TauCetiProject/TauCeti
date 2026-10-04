@@ -12,6 +12,7 @@ import Mathlib.Analysis.Complex.Polynomial.Basic
 import TauCeti.Algebra.CentralSimple.Quaternion
 import TauCeti.Algebra.CentralSimple.Splitting
 import TauCeti.LinearAlgebra.Matrix.TensorProduct
+import TauCeti.LinearAlgebra.CliffordAlgebra.RealForm.Four
 
 /-!
 # Classification of real Clifford algebras
@@ -238,10 +239,9 @@ private noncomputable def realCliffordPositiveFourEquiv :
 private noncomputable def realCliffordZeroThreeEquiv :
     C 0 3 ≃ₐ[ℝ]
       Matrix (Fin 1) (Fin 1) ℍ[ℝ] × Matrix (Fin 1) (Fin 1) ℍ[ℝ] :=
-  matrixProdModelTensorEquiv (realCliffordQuaternionRecurrenceEquiv 0 1)
-    (realCliffordOneZeroEquivProd.trans <|
-      AlgEquiv.prodCongr (Matrix.finOneAlgEquiv ℝ ℝ) (Matrix.finOneAlgEquiv ℝ ℝ))
-    ((Algebra.TensorProduct.lid ℝ ℍ[ℝ]).trans (Matrix.finOneAlgEquiv ℝ ℍ[ℝ])) (by norm_num)
+  realCliffordZeroThreeEquivQuaternionProd.trans <|
+    AlgEquiv.prodCongr (Matrix.finOneAlgEquiv ℝ ℍ[ℝ])
+      (Matrix.finOneAlgEquiv ℝ ℍ[ℝ])
 
 private noncomputable def realCliffordPositiveFiveEquiv :
     C 5 0 ≃ₐ[ℝ]

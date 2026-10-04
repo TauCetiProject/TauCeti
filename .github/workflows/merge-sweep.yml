@@ -16,6 +16,8 @@ name: Merge sweep
 on:
   schedule:
     - cron: "40 * * * *"   # hourly, offset from housekeeping (:20) and the daily bump
+  repository_dispatch:
+    types: [tauceti-merge-reconcile]
   workflow_dispatch:
     inputs:
       dry-run:
@@ -32,13 +34,12 @@ concurrency:
 
 jobs:
   sweep:
-    if: ${{ vars.MERGE_BACKEND != 'bors' }}
     # Pinned to a TauCetiReview commit; bump deliberately. The reusable workflow receives the App
     # secrets, so a floating @main would be a supply-chain risk.
     # Re-pin together with the other two callers and .github/actions/checkout-merge-policy
     # (scripts/test_workflow_pins.py checks they agree). The called workflow checks out its own
     # commit, so no review_ref is passed.
-    uses: TauCetiProject/TauCetiReview/.github/workflows/merge-sweep.yml@be3717ec5f5b525689e17f7f20e3d8ac48d13256
+    uses: TauCetiProject/TauCetiReview/.github/workflows/merge-sweep.yml@4ca1ddcaee70bb01a6c56daf6520c522e6c2f002
     with:
       dry_run: ${{ inputs.dry-run || false }}
     secrets:

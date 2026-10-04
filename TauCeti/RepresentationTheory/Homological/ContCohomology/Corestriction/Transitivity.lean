@@ -26,6 +26,8 @@ to `G`, and conversely a corestriction from `V` may be recognised as one from an
 
 * `explicitCor0Le`, `explicitCor1Le`, `explicitCor2Le`: corestriction along a subgroup inclusion
   `V ≤ U`, evaluated by `coe_explicitCor0Le`, `explicitCor1Le_mk`, and `explicitCor2Le_mk`.
+* `explicitCor2Le_explicitMap2_subgroupInclusion`: relative corestriction after restriction is
+  multiplication by the relative index `[U : V]` in degree two.
 * `explicitCor0Le_trans`: transitivity of relative degree-zero corestriction in a subgroup tower.
 * `explicitCor0_trans`, `explicitCor1_trans`, `explicitCor2_trans`: transitivity from a subgroup to
   the ambient group in degrees zero, one, and two.
@@ -290,6 +292,33 @@ theorem explicitCor2Le_mk [(V.subgroupOf U).FiniteIndex]
           (AddMonoidHom.id M) continuous_id
           (by exact id_subgroupOfContinuousMulEquivOfLe_smul G M U V hVU) f) : H2 U M) := by
   rw [explicitCor2Le, AddMonoidHom.comp_apply, explicitMap2_mk, explicitCor2_mk]
+
+/-- **`cor²_V^U ∘ res²_U^V = [U : V] • id`** on `H²(U, M)`: restricting along the inclusion
+`V ≤ U` and corestricting back multiplies by the relative index. -/
+theorem explicitCor2Le_explicitMap2_subgroupInclusion [(V.subgroupOf U).FiniteIndex]
+    (hV : IsOpen ((V.subgroupOf U : Subgroup U) : Set U)) (x : H2 U M) :
+    explicitCor2Le G M U V hVU hV
+        (explicitMap2 U M V M (ContinuousMonoidHom.subgroupInclusion hVU) (AddMonoidHom.id M)
+          continuous_id (fun _ _ => rfl) x) =
+      V.relIndex U • x := by
+  -- The transport to `V.subgroupOf U` after the restriction to `V` is the restriction to
+  -- `V.subgroupOf U`, since both pull back along the same inclusion into `U`.
+  have hres : explicitMap2 V M (V.subgroupOf U) M
+      (Subgroup.subgroupOfContinuousMulEquivOfLe hVU : V.subgroupOf U →ₜ* V)
+      (AddMonoidHom.id M) continuous_id (id_subgroupOfContinuousMulEquivOfLe_smul G M U V hVU)
+      (explicitMap2 U M V M (ContinuousMonoidHom.subgroupInclusion hVU) (AddMonoidHom.id M)
+        continuous_id (fun _ _ => rfl) x) =
+      explicitRes2 U M (V.subgroupOf U) x := by
+    rw [explicitRes2_eq_explicitMap2]
+    refine (DFunLike.congr_fun (explicitMap2_comp U M V M
+      (ContinuousMonoidHom.subgroupInclusion hVU) (AddMonoidHom.id M) continuous_id
+      (fun _ _ => rfl) (V.subgroupOf U) M
+      (Subgroup.subgroupOfContinuousMulEquivOfLe hVU : V.subgroupOf U →ₜ* V)
+      (AddMonoidHom.id M) continuous_id
+      (id_subgroupOfContinuousMulEquivOfLe_smul G M U V hVU)) x).symm.trans ?_
+    exact DFunLike.congr_fun (explicitMap2_congr_of_eq _ _ _ _ _ _ _ _
+      (ContinuousMonoidHom.ext fun _ => rfl) (AddMonoidHom.ext fun _ => rfl)) x
+  rw [explicitCor2Le, AddMonoidHom.comp_apply, hres, explicitCor2_comp_res2, Subgroup.relIndex]
 
 end Topological
 

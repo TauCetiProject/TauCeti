@@ -14,22 +14,23 @@ public import TauCeti.RepresentationTheory.Lie.MatrixTarget
 # The Ado–Iwasawa theorem over an arbitrary field
 
 Every finite-dimensional Lie algebra over a field has a faithful finite-dimensional
-representation. The two characteristics are proved separately: characteristic zero by growing a
-representation along a chain of subalgebras
-(`TauCeti.exists_faithful_nilrepresentation_charZero`), prime characteristic by left multiplication
-on a finite-dimensional quotient of the universal enveloping algebra
+representation, and by Hochschild's strengthening one can be chosen in which every `ad`-nilpotent
+element acts nilpotently. The two characteristics are proved separately: characteristic zero by
+growing a representation along a chain of subalgebras and then applying Hochschild's nilpotence
+argument (`TauCeti.exists_faithful_preserving_ad_nilpotence_charZero`), prime characteristic by
+left multiplication on a finite-dimensional quotient of the universal enveloping algebra
 (`TauCeti.exists_faithful_preserving_ad_nilpotence_charP`). This file joins them.
 
 The join is a dispatch on `ringChar K`, which for a field is either `0` or a prime: in the first
 case `CharZero K` holds, in the second `CharP K (ringChar K)` with a prime characteristic. The
-dispatch is instance plumbing only, and it is kept out of the two constructions it combines.
+dispatch is instance plumbing only, and it is kept out of the two constructions it combines. Both
+inputs already have the strengthened form, so the join is made on that form and the weaker
+statements are read off from it.
 
-The two inputs do not have the same strength. In prime characteristic the representation sends
-every `ad`-nilpotent element of `L` to a nilpotent endomorphism; in characteristic zero only the
-elements of the nilradical are known to act nilpotently. Elements of the nilradical are
-`ad`-nilpotent (`TauCeti.LieAlgebra.isNilpotent_ad_of_mem_nilradical`), so the nilradical form is
-what both cases supply, and it is the form stated here. For a nilpotent `L` the nilradical is all
-of `L` (`TauCeti.LieAlgebra.nilradical_eq_top_of_isNilpotent`), so the representation is then by
+Elements of the nilradical are `ad`-nilpotent
+(`TauCeti.LieAlgebra.isNilpotent_ad_of_mem_nilradical`), so the representation lets the nilradical
+act nilpotently. For a nilpotent `L` the nilradical is all of `L`
+(`TauCeti.LieAlgebra.nilradical_eq_top_of_isNilpotent`), so the representation is then by
 nilpotent endomorphisms throughout.
 
 Transporting the representation along a basis turns it into an injective Lie homomorphism into a
@@ -47,6 +48,9 @@ that every element of `U(L)` survives in some finite-dimensional quotient.
 
 ## Main results
 
+* `TauCeti.exists_faithful_preserving_ad_nilpotence`: **Hochschild's strengthening of the
+  Ado–Iwasawa theorem**, over an arbitrary field: a faithful finite-dimensional representation in
+  which every `ad`-nilpotent element acts nilpotently.
 * `TauCeti.exists_faithful_nilrepresentation`: over an arbitrary field, a faithful
   finite-dimensional representation in which every element of the nilradical acts nilpotently.
 * `TauCeti.adoIwasawa`: **the Ado–Iwasawa theorem**, over an arbitrary field.
@@ -80,32 +84,36 @@ section General
 variable (K : Type u) (L : Type v) [Field K] [LieRing L] [LieAlgebra K L]
 variable [FiniteDimensional K L]
 
+/-- **Hochschild's strengthening of the Ado–Iwasawa theorem.** A finite-dimensional Lie algebra
+over an arbitrary field has a faithful finite-dimensional representation that preserves
+nilpotence of the adjoint action: every `ad`-nilpotent element acts nilpotently. -/
+theorem exists_faithful_preserving_ad_nilpotence :
+    ∃ (V : Type (max u v)) (_ : AddCommGroup V) (_ : Module K V) (_ : FiniteDimensional K V)
+      (ρ : L →ₗ⁅K⁆ Module.End K V),
+      Function.Injective ρ ∧ ∀ x : L, IsNilpotent (LieAlgebra.ad K L x) → IsNilpotent (ρ x) := by
+  rcases CharP.char_is_prime_or_zero K (ringChar K) with hprime | hzero
+  · have : Fact (ringChar K).Prime := ⟨hprime⟩
+    exact exists_faithful_preserving_ad_nilpotence_charP K L (ringChar K)
+  · rw [CharP.ringChar_zero_iff_CharZero] at hzero
+    exact exists_faithful_preserving_ad_nilpotence_charZero K L
+
 /-- **The Ado–Iwasawa theorem with nilpotence on the nilradical.** A finite-dimensional Lie
 algebra over an arbitrary field has a faithful finite-dimensional representation in which every
-element of the nilradical acts nilpotently.
-
-The characteristic is dispatched on `ringChar K`, which is `0` or a prime because `K` is a field.
-In prime characteristic the input is Hochschild's stronger statement, which makes every
-`ad`-nilpotent element act nilpotently; elements of the nilradical are `ad`-nilpotent. -/
+element of the nilradical acts nilpotently. -/
 theorem exists_faithful_nilrepresentation :
     ∃ (V : Type (max u v)) (_ : AddCommGroup V) (_ : Module K V) (_ : FiniteDimensional K V)
       (ρ : L →ₗ⁅K⁆ Module.End K V),
       Function.Injective ρ ∧ ∀ x ∈ LieAlgebra.nilradical K L, IsNilpotent (ρ x) := by
-  rcases CharP.char_is_prime_or_zero K (ringChar K) with hprime | hzero
-  · have : Fact (ringChar K).Prime := ⟨hprime⟩
-    obtain ⟨V, _, _, _, ρ, hinj, hnil⟩ :=
-      exists_faithful_preserving_ad_nilpotence_charP K L (ringChar K)
-    exact ⟨V, inferInstance, inferInstance, inferInstance, ρ, hinj,
-      fun x hx ↦ hnil x (LieAlgebra.isNilpotent_ad_of_mem_nilradical hx)⟩
-  · rw [CharP.ringChar_zero_iff_CharZero] at hzero
-    exact exists_faithful_nilrepresentation_charZero K L
+  obtain ⟨V, _, _, _, ρ, hinj, hnil⟩ := exists_faithful_preserving_ad_nilpotence K L
+  exact ⟨V, inferInstance, inferInstance, inferInstance, ρ, hinj,
+    fun x hx ↦ hnil x (LieAlgebra.isNilpotent_ad_of_mem_nilradical hx)⟩
 
 /-- **The Ado–Iwasawa theorem.** Every finite-dimensional Lie algebra over a field admits a
 faithful finite-dimensional representation. -/
 theorem adoIwasawa :
     ∃ (V : Type (max u v)) (_ : AddCommGroup V) (_ : Module K V) (_ : FiniteDimensional K V)
       (ρ : L →ₗ⁅K⁆ Module.End K V), Function.Injective ρ := by
-  obtain ⟨V, _, _, _, ρ, hρ, -⟩ := exists_faithful_nilrepresentation K L
+  obtain ⟨V, _, _, _, ρ, hρ, -⟩ := exists_faithful_preserving_ad_nilpotence K L
   exact ⟨V, inferInstance, inferInstance, inferInstance, ρ, hρ⟩
 
 /-- **A finite-dimensional nilpotent Lie algebra over a field has a faithful finite-dimensional

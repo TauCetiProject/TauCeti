@@ -6,6 +6,7 @@ Authors: Claude
 module
 
 public import TauCeti.RepresentationTheory.Homological.GroupCohomology.LongExactSequence
+public import TauCeti.RepresentationTheory.Homological.TateCohomology.Character
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Connecting.GroupCohomology
 
 /-!
@@ -33,6 +34,11 @@ invariants, so the compatibility is stated on ordinary cohomology classes throug
 be moved across degrees by dimension shifting, as in the compatibility of the Tate cup product
 with inflation.
 
+For integral coefficients, change of group along the identity of `ℤ` carries the connecting class
+`δχ ∈ H²(Q, ℤ)` of a character `χ` of `Q` to the connecting class of its pullback `χ ∘ φ` to `G`
+(`posMap_characterConnectingClass`). For `φ` a quotient map this is the compatibility of `δχ`
+with inflation.
+
 ## Main definitions
 
 * `TauCeti.TateCohomology.posMap`: the change-of-group map in a positive Tate degree.
@@ -47,6 +53,8 @@ with inflation.
   group homomorphism.
 * `TauCeti.TateCohomology.fromGroupCohomology_δ_comp_posMap`,
   `TauCeti.TateCohomology.δ_comp_posMap`: compatibility with connecting maps.
+* `TauCeti.TateCohomology.posMap_characterConnectingClass`: change of group carries the connecting
+  class of a character to the connecting class of its pullback.
 
 ## References
 
@@ -178,5 +186,67 @@ theorem δ_comp_posMap {S : ShortComplex (Rep k Q)} (hS : S.ShortExact)
       posMap φ (M := S.X₃) Φ.τ₃ n ≫ _root_.TateCohomology.δ hS' n := by
   refine (cancel_epi (fromGroupCohomology S.X₃ n)).1 ?_
   rw [fromGroupCohomology_δ_comp_posMap, fromGroupCohomology_comp_posMap_assoc]
+
+/-! ### The connecting class of a character -/
+
+section Character
+
+variable {G Q : Type} [Group G] [Group Q] [Fintype G] [Fintype Q] (φ : G →* Q)
+
+-- The morphism `Res_φ (ℤ → ℚ → ℚ/ℤ) ⟶ (ℤ → ℚ → ℚ/ℤ)` of short complexes which is `f` on the
+-- integers and the identity on `ℚ` and on `ℚ/ℤ`.
+private def ratAddCircleShortComplexResHom
+    (f : Rep.res φ (Rep.trivial ℤ Q ℤ) ⟶ Rep.trivial ℤ G ℤ) (hf : ∀ n : ℤ, f.hom n = n) :
+    (Rep.ratAddCircleShortComplex Q).map (Rep.resFunctor φ) ⟶ Rep.ratAddCircleShortComplex G where
+  τ₁ := f
+  τ₂ := Rep.ofHom { toLinearMap := LinearMap.id, isIntertwining' := fun _ ↦ rfl }
+  τ₃ := Rep.ofHom { toLinearMap := LinearMap.id, isIntertwining' := fun _ ↦ rfl }
+  comm₁₂ := by
+    -- both composites send `n` to the rational number `f n = n`
+    refine Rep.hom_ext (Representation.IntertwiningMap.ext (LinearMap.ext fun n ↦ ?_))
+    exact congrArg (fun m : ℤ ↦ (m : ℚ)) (hf n)
+  comm₂₃ := by
+    ext q
+    rfl
+
+/-- **Change of group of the connecting class of a character.** Let `φ : G →* Q` and let
+`f : Res_φ ℤ ⟶ ℤ` be the identity of the integers. Changing the group along `φ` and `f` carries
+the connecting class `δχ ∈ H²(Q, ℤ)` of a character `χ : Qᵃᵇ → ℚ/ℤ` to the connecting class of
+the pulled-back character `χ ∘ φᵃᵇ : Gᵃᵇ → ℚ/ℤ`. For a quotient map `φ` this says that inflation
+of `δχ` is `δ` of the inflated character. -/
+theorem posMap_characterConnectingClass
+    (f : Rep.res φ (Rep.trivial ℤ Q ℤ) ⟶ Rep.trivial ℤ G ℤ) (hf : ∀ n : ℤ, f.hom n = n)
+    (χ : Additive (Abelianization Q) →+ AddCircle (1 : ℚ)) :
+    posMap φ f 2 (characterConnectingClass Q χ) =
+      characterConnectingClass G (χ.comp (Abelianization.map φ).toAdditive) := by
+  -- In ordinary cohomology, the connecting maps of `ℤ → ℚ → ℚ/ℤ` over `Q` and over `G` are
+  -- intertwined by change of group, and change of group pulls a homomorphism `Q → ℚ/ℤ` back
+  -- along `φ`.
+  have hδ : groupCohomology.map φ f 2
+      (groupCohomology.δ (Rep.ratAddCircleShortComplex_shortExact Q) 1 2 rfl
+        ((groupCohomology.H1IsoOfIsTrivial (Rep.trivial ℤ Q (AddCircle (1 : ℚ)))).inv
+          (χ.comp Abelianization.of.toAdditive))) =
+      groupCohomology.δ (Rep.ratAddCircleShortComplex_shortExact G) 1 2 rfl
+        ((groupCohomology.H1IsoOfIsTrivial (Rep.trivial ℤ G (AddCircle (1 : ℚ)))).inv
+          ((χ.comp (Abelianization.map φ).toAdditive).comp Abelianization.of.toAdditive)) := by
+    have h := congr($(TauCeti.groupCohomology.δ_naturality φ
+      (Rep.ratAddCircleShortComplex_shortExact Q) (Rep.ratAddCircleShortComplex_shortExact G)
+      (ratAddCircleShortComplexResHom φ f hf) 1 2 rfl)
+      ((groupCohomology.H1IsoOfIsTrivial (Rep.trivial ℤ Q (AddCircle (1 : ℚ)))).inv
+          (χ.comp Abelianization.of.toAdditive)))
+    simp only [ModuleCat.comp_apply] at h
+    refine h.trans ?_
+    rw [groupCohomology.H1IsoOfIsTrivial_inv_apply, groupCohomology.H1IsoOfIsTrivial_inv_apply,
+      groupCohomology.H1π_comp_map_apply]
+    -- the pulled-back cocycle is `g ↦ χ (φ g)` on both sides
+    congr 2
+  rw [characterConnectingClass_def, characterConnectingClass_def, ← hδ]
+  -- In positive degrees `fromGroupCohomology` is the inverse comparison `isoGroupCohomology.inv`,
+  -- through which change of group is ordinary change of group.
+  have key (y) := congr($(fromGroupCohomology_comp_posMap φ f 2) y)
+  simp only [Rep.fromGroupCohomology_succ, Iso.app_inv] at key
+  exact key _
+
+end Character
 
 end TauCeti.TateCohomology

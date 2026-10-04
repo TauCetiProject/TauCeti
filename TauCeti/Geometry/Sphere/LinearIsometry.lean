@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
 public import Mathlib.Analysis.Normed.Operator.LinearIsometry
 public import Mathlib.Analysis.Normed.Group.BallSphere
 public import Mathlib.Analysis.Normed.Module.Basic
-public import Mathlib.Topology.MetricSpace.Isometry
+public import Mathlib.Topology.MetricSpace.IsometricSMul
 
 /-!
 # Linear isometries of the unit sphere
@@ -24,6 +25,10 @@ This file develops that restriction independently of the manifold structure on s
   restricting a linear isometry equivalence.
 * `LinearIsometryEquiv.unitSphereIsometryEquiv`: the isometry equivalence of unit spheres
   obtained by restricting a linear isometry equivalence.
+* `LinearIsometryEquiv.instMulActionUnitSphere`: the action of the linear isometry group of `E`
+  on the unit sphere of `E`, which is by isometries.
+* `LinearIsometryEquiv.isPretransitive_unitSphere`: for a real inner product space this action is
+  transitive.
 
 ## Main results
 
@@ -163,7 +168,40 @@ theorem unitSphereIsometryEquiv_trans (e : E ≃ₗᵢ[R] F) (e' : F ≃ₗᵢ[R
       (unitSphereIsometryEquiv e).trans (unitSphereIsometryEquiv e') :=
   IsometryEquiv.ext fun _ => rfl
 
+/-- A linear isometry equivalence of `E` acts on the unit sphere of `E` by restriction. -/
+instance instSMulUnitSphere : SMul (E ≃ₗᵢ[R] E) (sphere (0 : E) 1) :=
+  ⟨fun e => unitSphereEquiv e⟩
+
+@[simp]
+theorem coe_smul_unitSphere (e : E ≃ₗᵢ[R] E) (x : sphere (0 : E) 1) :
+    ((e • x : sphere (0 : E) 1) : E) = e x :=
+  coe_unitSphereEquiv_apply e x
+
+/-- The group of linear isometry equivalences of `E` acts on the unit sphere of `E` by
+restriction. -/
+instance instMulActionUnitSphere : MulAction (E ≃ₗᵢ[R] E) (sphere (0 : E) 1) where
+  one_smul x := Subtype.ext (by simp)
+  mul_smul e e' x := Subtype.ext (by simp)
+
+/-- The linear isometry group of `E` acts on the unit sphere by isometries. -/
+instance : IsIsometricSMul (E ≃ₗᵢ[R] E) (sphere (0 : E) 1) :=
+  ⟨fun e => Isometry.of_dist_eq fun x y => by simp [Subtype.dist_eq]⟩
+
 end Seminormed
+
+section InnerProduct
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+
+/-- The linear isometry group of a real inner product space acts transitively on its unit sphere:
+the reflection in the hyperplane orthogonal to `x - y` exchanges `x` and `y`. -/
+instance isPretransitive_unitSphere :
+    MulAction.IsPretransitive (E ≃ₗᵢ[ℝ] E) (sphere (0 : E) 1) where
+  exists_smul_eq x y := ⟨(ℝ ∙ ((x : E) - y))ᗮ.reflection, Subtype.ext <| by
+    rw [coe_smul_unitSphere]
+    exact Submodule.reflection_sub (by simp)⟩
+
+end InnerProduct
 
 end LinearIsometryEquiv
 

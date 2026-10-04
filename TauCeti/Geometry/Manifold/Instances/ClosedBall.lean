@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
-public import Mathlib.Geometry.Euclidean.Inversion.Calculus
 public import Mathlib.Geometry.Manifold.Instances.Real
 public import Mathlib.Geometry.Manifold.SmoothEmbedding
 public import TauCeti.Analysis.InnerProductSpace.LinearIsometry
@@ -14,6 +13,8 @@ public import TauCeti.Analysis.Normed.Module.Ball.LinearIsometry
 public import TauCeti.Geometry.Euclidean.Inversion
 public import TauCeti.Geometry.Manifold.Boundary.Basic
 public import TauCeti.Geometry.Manifold.Immersion
+public import TauCeti.Geometry.Manifold.Orientation
+import TauCeti.Analysis.InnerProductSpace.Reflection
 
 /-!
 # The closed unit ball as an analytic manifold with boundary
@@ -43,6 +44,8 @@ isometry, hence analytic, so the ball is an analytic manifold.
   `EuclideanHalfSpace n`.
 * `TauCeti.boundary_closedBall`: its manifold boundary is the unit sphere.
 * `TauCeti.isInteriorPoint_closedBall_iff`: its interior points are those of norm less than `1`.
+* `TauCeti.orientable_closedBall`: in dimension at least two it is orientable, the charts attached
+  to the isometries `φ` of one orientation class forming an oriented atlas.
 * `TauCeti.contMDiff_subtypeVal_closedBall`: the inclusion into `E` is analytic.
 * `TauCeti.contMDiff_iff_comp_subtypeVal_closedBall`: a map into the ball is `C^k` exactly when
   it is `C^k` as a map into `E`.
@@ -66,7 +69,7 @@ public section
 noncomputable section
 
 open Set Metric Function Manifold Module EuclideanGeometry
-open scoped Manifold ContDiff InnerProductSpace
+open scoped Manifold ContDiff InnerProductSpace Topology
 
 namespace TauCeti
 
@@ -336,6 +339,112 @@ theorem contMDiff_subtypeVal_closedBall {k : ℕ∞ω} :
     simp [h, modelWithCornersEuclideanHalfSpace_symm_apply_of_le hz]
   · rw [range_modelWithCornersEuclideanHalfSpace]
     exact hmem
+
+/-! ### Orientability -/
+
+omit [Fact (finrank ℝ E = n)] in
+/-- Near a point of its domain, the coordinate change from the chart attached to `φ` to the chart
+attached to `ψ`, read in the model, is `y ↦ inversion (ψ (φ⁻¹ (inversion y)))`. -/
+private theorem closedBallChart_symm_trans_eventuallyEq (φ ψ : E ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin n))
+    {z : EuclideanHalfSpace n} (hz : z ∈ ((closedBallChart φ).symm ≫ₕ closedBallChart ψ).source) :
+    (𝓡∂ n) ∘ ((closedBallChart φ).symm ≫ₕ closedBallChart ψ) ∘ (𝓡∂ n).symm
+      =ᶠ[𝓝[range (𝓡∂ n)] ((𝓡∂ n) z)]
+        fun y ↦ inversion (-e₀) √2 (φ.symm.trans ψ (inversion (-e₀) √2 y)) := by
+  have hopen : IsOpen ((𝓡∂ n).symm ⁻¹' ((closedBallChart φ).symm ≫ₕ closedBallChart ψ).source) :=
+    ((closedBallChart φ).symm ≫ₕ closedBallChart ψ).open_source.preimage (𝓡∂ n).continuous_symm
+  filter_upwards [inter_mem_nhdsWithin (range (𝓡∂ n))
+    (hopen.mem_nhds (by rwa [mem_preimage, ModelWithCorners.left_inv]))] with y ⟨hyr, hy⟩
+  rw [range_modelWithCornersEuclideanHalfSpace] at hyr
+  have hψ : ψ ((closedBallChart φ).symm ⟨y, hyr⟩) ≠ -e₀ := by
+    have := hy.2
+    rwa [modelWithCornersEuclideanHalfSpace_symm_apply_of_le hyr] at this
+  simp only [comp_apply, OpenPartialHomeomorph.coe_trans,
+    modelWithCornersEuclideanHalfSpace_symm_apply_of_le hyr,
+    modelWithCornersEuclideanHalfSpace_apply, closedBallChart_apply_val ψ hψ,
+    closedBallChart_symm_apply_coe, LinearIsometryEquiv.trans_apply]
+
+omit [Fact (finrank ℝ E = n)] in
+/-- The coordinate change from the chart attached to `φ` to the chart attached to `ψ` preserves
+orientation when the linear isometry `ψ ∘ φ⁻¹` of the model space does. In the model it is
+`y ↦ inversion (ψ (φ⁻¹ (inversion y)))`, and each of the two inversions reverses orientation
+(`EuclideanGeometry.det_fderiv_inversion_neg`). -/
+private theorem orientationPreservingOn_closedBallChart_symm_trans
+    (φ ψ : E ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin n))
+    (h : 0 < (LinearEquiv.det (φ.symm.trans ψ).toLinearEquiv : ℝ)) :
+    OrientationPreservingOn (𝓡∂ n) ((closedBallChart φ).symm ≫ₕ closedBallChart ψ)
+      ((closedBallChart φ).symm ≫ₕ closedBallChart ψ).source := by
+  set A := φ.symm.trans ψ
+  set inv := inversion (-e₀) √2 (P := EuclideanSpace ℝ (Fin n))
+  have hR : (√2 : ℝ) ≠ 0 := by positivity
+  rw [orientationPreservingOn_iff]
+  intro z hz
+  have h₁ : (𝓡∂ n) z ≠ -e₀ := ne_neg_single_of_nonneg z.2
+  have h₂ : A (inv ((𝓡∂ n) z)) ≠ -e₀ := hz.2
+  have d₁ : HasFDerivAt inv (fderiv ℝ inv ((𝓡∂ n) z)) ((𝓡∂ n) z) :=
+    (hasFDerivAt_inversion h₁).differentiableAt.hasFDerivAt
+  have d₂ : HasFDerivAt inv (fderiv ℝ inv (A (inv ((𝓡∂ n) z)))) (A (inv ((𝓡∂ n) z))) :=
+    (hasFDerivAt_inversion h₂).differentiableAt.hasFDerivAt
+  have dA : HasFDerivAt (fun y ↦ A y) (A.toContinuousLinearEquiv : _ →L[ℝ] _) (inv ((𝓡∂ n) z)) :=
+    A.toContinuousLinearEquiv.hasFDerivAt
+  have heq := closedBallChart_symm_trans_eventuallyEq φ ψ hz
+  have hFW := (d₂.comp ((𝓡∂ n) z) (dA.comp ((𝓡∂ n) z) d₁)).hasFDerivWithinAt.congr_of_eventuallyEq
+    heq (heq.eq_of_nhdsWithin (mem_range_self z))
+  refine ⟨hFW.differentiableWithinAt, ?_⟩
+  rw [hFW.fderivWithin (𝓡∂ n).uniqueDiffWithinAt_image, ContinuousLinearMap.toLinearMap_comp,
+    ContinuousLinearMap.toLinearMap_comp, LinearMap.det_comp, LinearMap.det_comp]
+  -- The linear map underlying the continuous linear map of `A` is that of its linear equivalence.
+  have hA : LinearMap.det ((A.toContinuousLinearEquiv : EuclideanSpace ℝ (Fin n) →L[ℝ]
+      EuclideanSpace ℝ (Fin n)) : EuclideanSpace ℝ (Fin n) →ₗ[ℝ] EuclideanSpace ℝ (Fin n)) =
+      (LinearEquiv.det A.toLinearEquiv : ℝ) := by
+    rw [LinearEquiv.coe_det]
+    rfl
+  rw [hA]
+  exact mul_pos_of_neg_of_neg (det_fderiv_inversion_neg hR h₂)
+    (mul_neg_of_pos_of_neg h (det_fderiv_inversion_neg hR h₁))
+
+/-- In dimension at least two, the closed unit ball is orientable: the charts
+`closedBallChart φ` with `φ` in a fixed orientation class form an oriented atlas, since the
+coordinate change between two of them is a composite of two inversions, each reversing
+orientation, and a linear isometry of positive determinant.
+
+The hypothesis `2 ≤ n` cannot be dropped: a chart of `D¹ = [-1, 1]` at either endpoint takes values
+in the half-line `[0, ∞)`, so it is increasing at `-1` and decreasing at `1`, and no atlas of `D¹`
+modelled on the half-line has all its coordinate changes orientation preserving. -/
+theorem orientable_closedBall (hn : 2 ≤ n) {k : ℕ∞ω} [NeZero k] :
+    Orientable (𝓡∂ n) k (closedBall (0 : E) 1) := by
+  let φ₀ : E ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin n) := closedBallIsometry
+  let S := {φ : E ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin n) |
+    0 < (LinearEquiv.det (φ₀.symm.trans φ).toLinearEquiv : ℝ)}
+  refine ⟨⟨closedBallChart '' S, ?_, ?_, ?_⟩⟩
+  · rintro _ ⟨φ, -, rfl⟩
+    exact IsManifold.maximalAtlas_subset_of_le le_top
+      (IsManifold.subset_maximalAtlas (atlas_closedBall (E := E) (n := n) ▸ mem_range_self φ))
+  · intro x
+    by_cases hx : φ₀ x = -e₀
+    · obtain ⟨r, hr, hr'⟩ := exists_det_eq_one_apply_eq_neg
+        (finrank_euclideanSpace_fin (𝕜 := ℝ) (n := n) ▸ hn) (v := -e₀) (by simp)
+      refine ⟨closedBallChart (φ₀.trans r), ⟨φ₀.trans r, ?_, rfl⟩, ?_⟩
+      · have : φ₀.symm.trans (φ₀.trans r) = r := by ext; simp
+        simp only [S, mem_ofPred_eq, this, hr, zero_lt_one]
+      · intro h
+        rw [LinearIsometryEquiv.trans_apply, hx, hr', neg_neg] at h
+        have := congrArg (· (0 : Fin n)) h
+        norm_num at this
+    · refine ⟨closedBallChart φ₀, ⟨φ₀, ?_, rfl⟩, hx⟩
+      simp [S]
+  · rintro _ _ ⟨φ, hφ, rfl⟩ ⟨ψ, hψ, rfl⟩
+    have hdet (φ ψ : E ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin n)) (hφ : φ ∈ S) (hψ : ψ ∈ S) :
+        0 < (LinearEquiv.det (φ.symm.trans ψ).toLinearEquiv : ℝ) := by
+      have : φ.symm.trans ψ = (φ₀.symm.trans φ).symm.trans (φ₀.symm.trans ψ) := by ext; simp
+      rw [this, LinearIsometryEquiv.toLinearEquiv_trans, LinearEquiv.det_trans, Units.val_mul,
+        LinearIsometryEquiv.toLinearEquiv_symm, LinearEquiv.det_symm, map_inv,
+        Units.val_inv_eq_inv_val]
+      exact mul_pos hψ (inv_pos.2 hφ)
+    rw [mem_orientationPreservingGroupoid_iff, OpenPartialHomeomorph.trans_symm_eq_symm_trans_symm,
+      OpenPartialHomeomorph.symm_symm, ← OpenPartialHomeomorph.symm_source,
+      OpenPartialHomeomorph.trans_symm_eq_symm_trans_symm, OpenPartialHomeomorph.symm_symm]
+    exact ⟨orientationPreservingOn_closedBallChart_symm_trans φ ψ (hdet φ ψ hφ hψ),
+      orientationPreservingOn_closedBallChart_symm_trans ψ φ (hdet ψ φ hψ hφ)⟩
 
 /-! ### The closed unit ball of `EuclideanSpace ℝ (Fin n)` -/
 

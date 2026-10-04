@@ -118,10 +118,36 @@ theorem continuous_linearEquiv_toLinearMap :
     Continuous (fun e : V ≃ₗ[K] V => (e : Module.End K V)) :=
   (continuous_linearEquiv_iff.mp (continuous_id : Continuous (fun e : V ≃ₗ[K] V => e))).1
 
+section Basis
+
+variable [TopologicalSpace V] [IsModuleTopology K V]
+
+/-- A family of endomorphisms is continuous exactly when its values on the vectors of a finite
+basis vary continuously. -/
+theorem _root_.Module.Basis.continuous_iff_apply {X ι : Type*} [TopologicalSpace X]
+    [Finite ι] (b : Module.Basis ι K V) (f : X → Module.End K V) :
+    Continuous f ↔ ∀ i, Continuous (fun x ↦ f x (b i)) := by
+  let _ : ContinuousAdd V := IsModuleTopology.toContinuousAdd K V
+  let _ : ContinuousAdd (Module.End K V) :=
+    IsModuleTopology.toContinuousAdd K (Module.End K V)
+  constructor
+  · intro hf i
+    exact (IsModuleTopology.continuous_of_linearMap
+      ((LinearMap.applyₗ : V →ₗ[K] Module.End K V →ₗ[K] V) (b i))).comp hf
+  · intro h
+    let : IsModuleTopology K (ι → V) := inferInstance
+    have hvalues : Continuous (fun x i ↦ f x (b i)) := continuous_pi h
+    have hconstr : Continuous ((b.constr K).toLinearMap : (ι → V) → Module.End K V) :=
+      IsModuleTopology.continuous_of_linearMap (b.constr K).toLinearMap
+    exact (hconstr.comp hvalues).congr fun x ↦ b.constr_self K (f x)
+
+end Basis
+
 section FiniteDimensional
 
 variable {K V : Type*} [Field K] [TopologicalSpace K] [IsTopologicalSemiring K]
   [AddCommGroup V] [Module K V] [FiniteDimensional K V]
+  [TopologicalSpace V] [IsModuleTopology K V]
 
 /-- The endomorphism algebra of a finite-dimensional space over a Hausdorff field is Hausdorff. -/
 instance instT2SpaceModuleEnd [T2Space K] : T2Space (Module.End K V) :=

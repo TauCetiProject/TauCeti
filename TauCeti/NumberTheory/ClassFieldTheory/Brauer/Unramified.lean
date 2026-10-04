@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AddCircle
-public import TauCeti.NumberTheory.LocalField.Norm.Unramified
+public import TauCeti.NumberTheory.LocalField.Norm.Unramified.Basic
 public import TauCeti.NumberTheory.LocalField.ResidueCorrespondence
 public import TauCeti.FieldTheory.GaloisCohomology.Cyclic
 import TauCeti.GroupTheory.QuotientGroup.KerEquiv
@@ -57,6 +57,12 @@ residue degree. The map `H²(Gal(L/K), Lˣ) → H²(Gal(L'/K'), L'ˣ)` induced b
 multiplies the invariant by `e(K'/K) f(K'/K) = [K' : K]`: this is the formula
 `inv_{K'} ∘ res = [K' : K] · inv_K` for restriction of classes inflated from unramified layers.
 
+Restriction to an intermediate ground field `E` in `K ⊆ E ⊆ L` is the specialization
+`K' := E`, `L' := L` of `map_unramifiedClass_baseChange` and
+`unramifiedInv_map_baseChange`. Here `unitsBaseChangeHom K L E L` is the identity on units,
+and `f(E/K) · [L : E] / [L : K] = 1` by unramifiedness and the tower degree formula.
+Thus restriction preserves the representing unit and multiplies the invariant by `[E : K]`.
+
 ## Main definitions
 
 * `TauCeti.ClassFieldTheory.unramifiedClass`: the class in `H²(Gal(L/K), Lˣ)` of an element of
@@ -67,6 +73,8 @@ multiplies the invariant by `e(K'/K) f(K'/K) = [K' : K]`: this is the formula
 
 ## Main results
 
+* `TauCeti.ClassFieldTheory.unramifiedClass_apply`: the unramified class is the explicit
+  Frobenius-periodicity class of the embedded ground-field unit.
 * `TauCeti.ClassFieldTheory.unramifiedClass_eq_zero_iff`: the class of `a` vanishes exactly when
   `a` is a norm from `L`.
 * `TauCeti.ClassFieldTheory.unramifiedInv_unramifiedClass`: the normalization
@@ -118,6 +126,35 @@ Frobenius, under two-periodicity of the cohomology of the cyclic group `Gal(L/K)
 generator, arithmetic Frobenius. -/
 def unramifiedClass : Additive Kˣ →+ H2 (Rep.ofMulDistribMulAction (L ≃ₐ[K] L) Lˣ) :=
   cyclicClass (mem_zpowers_frobeniusAlgEquiv K L)
+
+/-- The unramified class of a ground-field unit is its image under Frobenius periodicity. -/
+theorem unramifiedClass_apply (a : Kˣ) :
+    let _ : IsCyclic (L ≃ₐ[K] L) :=
+      ⟨frobeniusAlgEquiv (K := K) (L := L), fun σ ↦
+        Subgroup.mem_zpowers_iff.1 (by
+          rw [zpowers_frobeniusAlgEquiv]
+          exact Subgroup.mem_top σ)⟩
+    let _ : CommGroup (L ≃ₐ[K] L) := IsCyclic.commGroup
+    unramifiedClass K L (Additive.ofMul a) =
+      Rep.FiniteCyclicGroup.groupCohomologyπEven
+        (Rep.ofMulDistribMulAction (L ≃ₐ[K] L) Lˣ)
+        (frobeniusAlgEquiv (K := K) (L := L))
+        (fun σ => by rw [zpowers_frobeniusAlgEquiv]; exact Subgroup.mem_top σ) 2 even_two
+        ⟨Rep.toAdditive.symm
+          (Additive.ofMul (Units.map (algebraMap K L : K →* L) a)), by
+            rw [LinearMap.mem_ker]
+            simp only [Rep.sub_hom, Representation.IntertwiningMap.sub_toLinearMap,
+              LinearMap.sub_apply, sub_eq_zero]
+            apply Rep.toAdditive.injective
+            apply Additive.toMul.injective
+            apply Units.ext
+            exact AlgEquiv.commutes _ _⟩ := by
+  let _ : IsCyclic (L ≃ₐ[K] L) :=
+    ⟨frobeniusAlgEquiv (K := K) (L := L), fun σ ↦
+      Subgroup.mem_zpowers_iff.1 (mem_zpowers_frobeniusAlgEquiv K L σ)⟩
+  let _ : CommGroup (L ≃ₐ[K] L) := IsCyclic.commGroup
+  rw [unramifiedClass]
+  exact cyclicClass_apply (mem_zpowers_frobeniusAlgEquiv K L) a
 
 /-- Every class in `H²(Gal(L/K), Lˣ)` is the class of an element of `Kˣ`. -/
 theorem unramifiedClass_surjective : Function.Surjective (unramifiedClass K L) :=

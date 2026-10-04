@@ -156,6 +156,21 @@ def skeletonBasePairToSkeletonPair (n : ℕ) : skeletonBasePair C n ⟶ skeleton
   TopPair.ofInclusionMap _ _ (ContinuousMap.id _)
     fun _ hx ↦ skeletonLT_zero_subset_skeletonLT C n hx
 
+/-- The ambient component of the map to a skeletal pair is the identity. -/
+@[simp]
+lemma skeletonBasePairToSkeletonPair_fst (n : ℕ) :
+    TopPair.Hom.fst (skeletonBasePairToSkeletonPair C n) = 𝟙 (skeletonObj C (n + 1)) := by
+  ext x
+  exact TopPair.ofInclusionMap_fst_apply _ _ _
+
+/-- The base component of the map to a skeletal pair is inclusion into the lower skeleton. -/
+@[simp]
+lemma skeletonBasePairToSkeletonPair_snd (n : ℕ) :
+    TopPair.Hom.snd (skeletonBasePairToSkeletonPair C n) =
+      TopCat.ofHom (ContinuousMap.inclusion (skeletonLT_zero_subset_skeletonLT C n)) := by
+  ext x
+  exact Subtype.ext (TopPair.ofInclusionMap_snd_apply _ _ _)
+
 /-- On the ambient spaces, `TauCeti.skeletonBasePairToSucc` is the inclusion `Xⁿ ⊆ Xⁿ⁺¹`. -/
 @[simp]
 lemma coe_skeletonBasePairToSucc_fst_apply (n : ℕ) (x : (skeletonBasePair C n).fst) :
@@ -168,23 +183,13 @@ lemma skeletonBasePairToSucc_snd_apply (n : ℕ) (x : (skeletonBasePair C n).snd
     TopPair.Hom.snd (skeletonBasePairToSucc C n) x = x :=
   congrArg (fun f ↦ f x) (TopTriple.innerToTotal_app_snd (T := skeletonBaseTriple C n))
 
-/-- On the ambient spaces, `TauCeti.skeletonBasePairToSkeletonPair` is the identity of `Xⁿ`. -/
-lemma skeletonBasePairToSkeletonPair_fst_apply (n : ℕ) (x : (skeletonBasePair C n).fst) :
-    TopPair.Hom.fst (skeletonBasePairToSkeletonPair C n) x = x :=
-  TopPair.ofInclusionMap_fst_apply _ _ _
-
-/-- On the subspaces, `TauCeti.skeletonBasePairToSkeletonPair` is the inclusion `X⁻¹ ⊆ Xⁿ⁻¹`. -/
-lemma coe_skeletonBasePairToSkeletonPair_snd_apply (n : ℕ) (x : (skeletonBasePair C n).snd) :
-    (TopPair.Hom.snd (skeletonBasePairToSkeletonPair C n) x).1 = x.1 :=
-  TopPair.ofInclusionMap_snd_apply _ _ _
-
 /-- In degree `0` the map `(X⁰, X⁻¹) ⟶ (X⁰, X⁻¹)` is the identity. -/
 @[simp]
 lemma skeletonBasePairToSkeletonPair_zero :
     skeletonBasePairToSkeletonPair C 0 = 𝟙 (skeletonPair C 0) := by
   ext x : 2
-  · exact Subtype.ext (coe_skeletonBasePairToSkeletonPair_snd_apply C 0 x)
-  · exact skeletonBasePairToSkeletonPair_fst_apply C 0 x
+  · exact Subtype.ext (congrArg (fun g ↦ (g x).1) (skeletonBasePairToSkeletonPair_snd C 0))
+  · exact congrArg (fun g ↦ g x) (skeletonBasePairToSkeletonPair_fst C 0)
 
 /-- In positive degree the map `(Xⁿ⁺¹, X⁻¹) ⟶ (Xⁿ⁺¹, Xⁿ)` is the map from the total pair to the
 outer pair of the triple `(Xⁿ⁺¹, Xⁿ, X⁻¹)`. -/
@@ -194,10 +199,10 @@ lemma skeletonBasePairToSkeletonPair_succ (n : ℕ) :
   refine MorphismProperty.Arrow.Hom.ext ?_ ?_
   · refine Eq.trans ?_ (TopTriple.totalToOuter_app_snd (T := skeletonBaseTriple C n)).symm
     ext x
-    exact Subtype.ext (coe_skeletonBasePairToSkeletonPair_snd_apply C (n + 1) x)
+    exact Subtype.ext (congrArg (fun g ↦ (g x).1) (skeletonBasePairToSkeletonPair_snd C (n + 1)))
   · refine Eq.trans ?_ (TopTriple.totalToOuter_app_fst (T := skeletonBaseTriple C n)).symm
     ext x
-    exact skeletonBasePairToSkeletonPair_fst_apply C (n + 1) x
+    exact congrArg (fun g ↦ g x) (skeletonBasePairToSkeletonPair_fst C (n + 1))
 
 /-- Inclusion of base pairs `(Xⁿ, X⁻¹) ⟶ (Xᵐ, X⁻¹)` for `n ≤ m`. -/
 def skeletonBasePairInclusion {n m : ℕ} (h : n ≤ m) :
@@ -263,15 +268,20 @@ def skeletonBasePairToComplex (n : ℕ) : skeletonBasePair C n ⟶ complexBasePa
   TopPair.ofInclusionMap _ _ (ContinuousMap.inclusion (skeletonLT C _).subset_complex)
     (fun _ hx ↦ hx)
 
+/-- The ambient component of the map to the whole pair is inclusion of the skeleton. -/
 @[simp]
-lemma coe_skeletonBasePairToComplex_fst_apply (n : ℕ) (x : (skeletonBasePair C n).fst) :
-    (TopPair.Hom.fst (skeletonBasePairToComplex C n) x).1 = x.1 :=
-  congrArg Subtype.val (TopPair.ofInclusionMap_fst_apply _ _ _)
+lemma skeletonBasePairToComplex_fst (n : ℕ) :
+    TopPair.Hom.fst (skeletonBasePairToComplex C n) =
+      TopCat.ofHom (ContinuousMap.inclusion (skeletonLT C _).subset_complex) := by
+  ext x
+  exact TopPair.ofInclusionMap_fst_apply _ _ _
 
+/-- The base component of the map to the whole pair is the identity. -/
 @[simp]
-lemma skeletonBasePairToComplex_snd_apply (n : ℕ) (x : (skeletonBasePair C n).snd) :
-    TopPair.Hom.snd (skeletonBasePairToComplex C n) x = x :=
-  Subtype.ext (TopPair.ofInclusionMap_snd_apply _ _ _)
+lemma skeletonBasePairToComplex_snd (n : ℕ) :
+    TopPair.Hom.snd (skeletonBasePairToComplex C n) = 𝟙 (skeletonObj C 0) := by
+  ext x
+  exact Subtype.ext (TopPair.ofInclusionMap_snd_apply _ _ _)
 
 /-- Inclusion into the whole pair factors through any larger skeleton. -/
 @[reassoc (attr := simp)]
@@ -287,16 +297,12 @@ lemma skeletonBasePairInclusion_comp_toComplex {n m : ℕ} (h : n ≤ m) :
 lemma isIso_skeletonBasePairToComplex_of_eq (m : ℕ)
     (hm : (skeletonLT C ((m + 1 : ℕ) : ℕ∞) : Set X) = C) :
     IsIso (skeletonBasePairToComplex C m) := by
-  have hf : TopPair.Hom.fst (skeletonBasePairToComplex C m) =
-      TopCat.ofHom (ContinuousMap.inclusion (skeletonLT C _).subset_complex) := by
-    ext x
-    exact Subtype.ext (coe_skeletonBasePairToComplex_fst_apply C m x)
   have : IsIso (TopPair.Hom.fst (skeletonBasePairToComplex C m)) := by
-    rw [hf]
+    rw [skeletonBasePairToComplex_fst]
     exact ⟨TopCat.ofHom (ContinuousMap.inclusion hm.symm.subset),
       by ext x; rfl, by ext x; rfl⟩
   exact TopPair.isIso_of_isIso_fst_of_surjective_snd _
-    (fun x ↦ ⟨x, skeletonBasePairToComplex_snd_apply C m x⟩)
+    (fun x ↦ ⟨x, congrArg (fun g ↦ g x) (skeletonBasePairToComplex_snd C m)⟩)
 
 section
 

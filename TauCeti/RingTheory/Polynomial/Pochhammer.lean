@@ -31,6 +31,11 @@ transporting from the integer case `descPochhammer ℤ n`.
   `x (x² - 1²) ⋯ (x² - k²)` is the falling factorial of degree `2k + 1` at `x + k`.
 * `TauCeti.factorial_dvd_mul_prod_sq_sub_sq`: its values at the integers are divisible by
   `(2k + 1)!`.
+* `TauCeti.two_mul_prod_sq_sub_sq_eq`: twice the even polynomial `(x² - 0²) ⋯ (x² - k²)` is the
+  sum of the falling factorials of degree `2k + 2` at `x + k + 1` and at `x + k`.
+* `TauCeti.mul_factorial_dvd_prod_sq_sub_sq`: its values at the integers are divisible by
+  `(k + 1) (2k + 1)! = (2k + 2)! / 2`, which is its value at `k + 1`
+  (`TauCeti.prod_sq_sub_sq_eq_mul_factorial`).
 * `TauCeti.prod_sub_mul_add_add_one_eq_descPochhammer_eval`: the polynomial
   `∏_{m < k} (x - m) (x + m + 1)` in `x (x + 1)` is the falling factorial of degree `2k` at `x + k`.
 * `TauCeti.two_mul_add_one_mul_prod_sub_mul_add_add_one_eq`: weighted by `2x + 1`, it is the sum
@@ -113,6 +118,67 @@ theorem factorial_dvd_mul_prod_sq_sub_sq (k : ℕ) (x : ℤ) :
     ring
   rw [mul_prod_sq_sub_sq_eq_descPochhammer_eval, hprod]
   exact Nat.factorial_coe_dvd_prod _ _
+
+/-! ### An even polynomial as two falling factorials -/
+
+/-- **An even polynomial as two falling factorials.**  The product
+`(x² - 0²) (x² - 1²) ⋯ (x² - k²)` is `x` times the falling factorial of degree `2k + 1` at
+`x + k`, so doubling it, as `2x = (x + k + 1) + (x - k - 1)`, splits it into the falling factorials
+of degree `2k + 2` at `x + k + 1` and at `x + k`. -/
+theorem two_mul_prod_sq_sub_sq_eq {R : Type*} [CommRing R] (k : ℕ) (x : R) :
+    2 * ∏ m ∈ Finset.range (k + 1), (x ^ 2 - (m : R) ^ 2)
+      = (descPochhammer R (2 * k + 2)).eval (x + k + 1)
+        + (descPochhammer R (2 * k + 2)).eval (x + k) := by
+  have h0 : ∏ m ∈ Finset.range (k + 1), (x ^ 2 - (m : R) ^ 2)
+      = x * (x * ∏ m ∈ Finset.range k, (x ^ 2 - ((m : R) + 1) ^ 2)) := by
+    rw [Finset.prod_range_succ']
+    push_cast
+    ring
+  have h1 : (descPochhammer R (2 * k + 1 + 1)).eval (x + k + 1)
+      = (x + k + 1) * (descPochhammer R (2 * k + 1)).eval (x + k) :=
+    descPochhammer_succ_eval_add_one _ _
+  have h2 : (descPochhammer R (2 * k + 1 + 1)).eval (x + k)
+      = (descPochhammer R (2 * k + 1)).eval (x + k) * (x + k - ((2 * k + 1 : ℕ) : R)) :=
+    descPochhammer_succ_eval _ _
+  rw [h0, mul_prod_sq_sub_sq_eq_descPochhammer_eval, h1, h2]
+  push_cast
+  ring
+
+/-- The product `(x² - 0²) (x² - 1²) ⋯ (x² - k²)` is divisible by
+`(k + 1) (2k + 1)! = (2k + 2)! / 2` at every integer `x`: twice it is a sum of two falling
+factorials of degree `2k + 2` (`TauCeti.two_mul_prod_sq_sub_sq_eq`), each a multiple of
+`(2k + 2)!` (`Ring.descPochhammer_eq_factorial_smul_choose`). -/
+theorem mul_factorial_dvd_prod_sq_sub_sq (k : ℕ) (x : ℤ) :
+    ((k + 1) * (2 * k + 1).factorial : ℤ) ∣ ∏ m ∈ Finset.range (k + 1), (x ^ 2 - (m : ℤ) ^ 2) := by
+  have hdvd : ∀ y : ℤ, ((2 * k + 2).factorial : ℤ) ∣ (descPochhammer ℤ (2 * k + 2)).eval y :=
+    fun y => ⟨Ring.choose y (2 * k + 2), by
+      rw [eval_eq_smeval, Ring.descPochhammer_eq_factorial_smul_choose, nsmul_eq_mul]⟩
+  have hfac : ((2 * k + 2).factorial : ℤ) = 2 * ((k + 1) * (2 * k + 1).factorial) := by
+    rw [Nat.factorial_succ]
+    push_cast
+    ring
+  have h := dvd_add (hdvd (x + k + 1)) (hdvd (x + k))
+  rw [← two_mul_prod_sq_sub_sq_eq, hfac] at h
+  exact (mul_dvd_mul_iff_left two_ne_zero).1 h
+
+/-- The value of `(x² - 0²) (x² - 1²) ⋯ (x² - k²)` at `x = k + 1` is `(k + 1) (2k + 1)!`, which is
+`(2k + 2)! / 2`. -/
+theorem prod_sq_sub_sq_eq_mul_factorial {R : Type*} [CommRing R] (k : ℕ) :
+    ∏ m ∈ Finset.range (k + 1), (((k + 1 : ℕ) : R) ^ 2 - (m : R) ^ 2)
+      = (((k + 1) * (2 * k + 1).factorial : ℕ) : R) := by
+  have hZ : ∏ m ∈ Finset.range (k + 1), (((k + 1 : ℕ) : ℤ) ^ 2 - (m : ℤ) ^ 2)
+      = (((k + 1) * (2 * k + 1).factorial : ℕ) : ℤ) := by
+    have h := two_mul_prod_sq_sub_sq_eq k ((k + 1 : ℕ) : ℤ)
+    have e1 : ((k + 1 : ℕ) : ℤ) + k + 1 = ((2 * k + 2 : ℕ) : ℤ) := by push_cast; ring
+    have e2 : ((k + 1 : ℕ) : ℤ) + k = ((2 * k + 1 : ℕ) : ℤ) := by push_cast; ring
+    rw [e1, e2, descPochhammer_eval_eq_descFactorial, descPochhammer_eval_eq_descFactorial,
+      Nat.descFactorial_self, Nat.descFactorial_of_lt (by omega), Nat.cast_zero, add_zero,
+      Nat.factorial_succ] at h
+    push_cast at h ⊢
+    linarith
+  have := congrArg (Int.cast : ℤ → R) hZ
+  push_cast at this ⊢
+  exact this
 
 /-! ### A polynomial in `x (x + 1)` as a falling factorial -/
 

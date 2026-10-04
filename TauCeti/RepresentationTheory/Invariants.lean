@@ -5,9 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Module.Projective
 public import Mathlib.RepresentationTheory.Invariants
 public import Mathlib.RepresentationTheory.Irreducible
+import Mathlib.Algebra.Category.ModuleCat.Projective
+import Mathlib.RepresentationTheory.Rep.Iso
 import TauCeti.RepresentationTheory.Irreducible
+import TauCeti.RepresentationTheory.AsModule
+import TauCeti.RepresentationTheory.OfModule
+import TauCeti.RepresentationTheory.Rep.ChangeOfGroup
 
 /-!
 # Invariants of group representations
@@ -23,6 +29,12 @@ gets rewritten.
 This file supplies the bridge. Unfolding the group algebra once identifies `averageMap` with
 `norm` scaled by `⅟(#G)`, and since scaling by a unit changes no image, `norm` has the same range
 as the projection: the invariants.
+
+There is a different integral reason for the norm to map onto the invariants. The norm does so on
+the regular representation over any commutative ring, hence on every projective group-algebra
+module by passage to a free module and a direct summand. As a consequence, taking invariants
+preserves a surjection onto a projective representation. This exactness property is the input
+needed to lift modular invariant vectors to an integral projective lattice.
 
 The file also records the companion description of the invariants available when `G` is cyclic.
 Invariance is a condition on every group element, but a vector fixed by a generator is fixed by all
@@ -46,6 +58,13 @@ additive functor from representations of `G` to representations of `G ⧸ S`.
   `Representation.norm` scaled by the inverse of the group order.
 * `Representation.range_norm_eq_invariants`: the group sum `Representation.norm ρ` has the
   invariants as its range.
+* `Representation.range_norm_eq_invariants_of_projective`: the same conclusion without
+  inverting the group order, when the underlying group-algebra module is projective.
+* `Representation.exists_invariant_preimage_of_surjective_of_projective`: a surjective
+  equivariant additive map, possibly between representations over different coefficient rings,
+  lifts invariant vectors when its target is projective over the target group algebra.
+* `Rep.invariantsFunctor_map_surjective_of_surjective_of_projective`: taking invariants preserves
+  a surjective morphism of representations whose target is projective over the group algebra.
 * `Rep.FiniteCyclicGroup.invariants_eq_ker_apply_sub`: for a cyclic group, the invariants are the
   kernel of the action of a generator minus the identity.
 * `Representation.IsIrreducible.invariants_eq_bot`: a nontrivial irreducible representation has no
@@ -84,6 +103,152 @@ theorem range_norm_eq_invariants : LinearMap.range ρ.norm = ρ.invariants := by
   rw [smul_smul, mul_invOf_self, one_smul]
 
 end Representation
+
+namespace Representation
+
+open scoped MonoidAlgebra
+
+variable {k G V : Type*} [CommRing k] [Group G] [AddCommGroup V] [Module k V]
+
+section Finite
+
+variable [Fintype G]
+
+/-- An invariant element of the group algebra is the norm of its coefficient at the identity,
+over an arbitrary commutative ring. -/
+private theorem norm_leftRegular_single_coeff_one {x : MonoidAlgebra k G}
+    (hx : x ∈ (leftRegular k G).invariants) :
+    (leftRegular k G).norm (MonoidAlgebra.single 1 (x.coeff 1)) = x := by
+  ext g
+  have hcoeff : x.coeff g = x.coeff 1 := by
+    have h := congrArg (fun z : MonoidAlgebra k G => z.coeff g) (hx g)
+    simpa using h.symm
+  simp [norm, hcoeff]
+
+/-- The norm maps onto the invariants of a direct sum of left regular representations. -/
+private theorem range_norm_free_eq_invariants (ι : Type*) :
+    LinearMap.range (ofModule' (k := k) (G := G) (ι →₀ MonoidAlgebra k G)).norm =
+      (ofModule' (k := k) (G := G) (ι →₀ MonoidAlgebra k G)).invariants := by
+  apply le_antisymm
+  · rintro _ ⟨x, rfl⟩
+    exact fun g => self_norm_apply _ g x
+  · rintro x hx
+    have hxi (i : ι) : x i ∈ (leftRegular k G).invariants := fun g => by
+      have h := DFunLike.congr_fun (hx g) i
+      rwa [TauCeti.Representation.ofModule'_apply, Finsupp.smul_apply, smul_eq_mul,
+        ← asAlgebraHom_ofMulAction_smul_eq_mul, asAlgebraHom_single_one] at h
+    refine ⟨Finsupp.mapRange (fun a => MonoidAlgebra.single 1 (a.coeff 1)) (by simp) x, ?_⟩
+    ext i : 1
+    rw [← norm_leftRegular_single_coeff_one (hxi i)]
+    simp only [norm, LinearMap.sum_apply, Finsupp.finsetSum_apply,
+      TauCeti.Representation.ofModule'_apply, Finsupp.smul_apply, Finsupp.mapRange_apply,
+      smul_eq_mul, ← asAlgebraHom_ofMulAction_smul_eq_mul, asAlgebraHom_single_one]
+
+/-- **The norm maps onto the invariants of a projective representation.** Let `G` be finite over
+an arbitrary commutative ring `k`. If the `k[G]`-module underlying `ρ` is projective, then every
+invariant vector is the norm of a vector.
+
+This is the integral replacement for `Representation.range_norm_eq_invariants`, which assumes
+that the order of `G` is invertible in `k`. -/
+@[simp]
+theorem range_norm_eq_invariants_of_projective (ρ : Representation k G V)
+    [Module.Projective k[G] ρ.asModule] :
+    LinearMap.range ρ.norm = ρ.invariants := by
+  apply le_antisymm
+  · rintro _ ⟨x, rfl⟩
+    exact fun g => self_norm_apply _ g x
+  · rintro x hx
+    obtain ⟨s, hs⟩ := Module.projective_def.mp ‹Module.Projective k[G] ρ.asModule›
+    let τ := ofModule' (k := k) (G := G) (ρ.asModule →₀ MonoidAlgebra k G)
+    let E : τ.asModule ≃ₗ[k[G]] (ρ.asModule →₀ MonoidAlgebra k G) :=
+      TauCeti.Representation.ofModule'AsModuleEquiv _
+    let F : IntertwiningMap τ ρ := (IntertwiningMap.equivLinearMapAsModule τ ρ).symm
+      (Finsupp.linearCombination k[G] id ∘ₗ E.toLinearMap)
+    let S : IntertwiningMap ρ τ :=
+      (IntertwiningMap.equivLinearMapAsModule ρ τ).symm (E.symm.toLinearMap ∘ₗ s)
+    have hSx : S x ∈ τ.invariants := fun g => by
+      rw [← IntertwiningMap.isIntertwining ρ τ S g x, hx g]
+    obtain ⟨y, hy⟩ : S x ∈ LinearMap.range τ.norm := by
+      rw [range_norm_free_eq_invariants]
+      exact hSx
+    -- `comp_norm` is stated along a group isomorphism (so that the two carriers may live in
+    -- different universes); here it is used along the identity of `G`.
+    have hF : τ.IsIntertwiningMap (ρ.comp ((MulEquiv.refl G : G ≃* G) : G →* G))
+        F.toLinearMap := ⟨IntertwiningMap.isIntertwining τ ρ F⟩
+    have hN : F (τ.norm y) = ρ.norm (F y) := LinearMap.congr_fun hF.comp_norm y
+    have hF_apply (z : ρ.asModule →₀ MonoidAlgebra k G) :
+        F z = ρ.asModuleEquiv
+          (Finsupp.linearCombination k[G] id (E (τ.asModuleEquiv.symm z))) := by
+      simp only [F, IntertwiningMap.equivLinearMapAsModule_symm_apply, LinearMap.comp_apply,
+        LinearEquiv.coe_coe]
+    have hS_apply (z : V) :
+        S z = τ.asModuleEquiv (E.symm (s (ρ.asModuleEquiv.symm z))) := by
+      simp only [S, IntertwiningMap.equivLinearMapAsModule_symm_apply, LinearMap.comp_apply,
+        LinearEquiv.coe_coe]
+    -- `S` is a section of `F`, because `s` is a section of `Finsupp.linearCombination`.
+    have hFS : F (S x) = x := by
+      simpa only [hF_apply, hS_apply, LinearEquiv.symm_apply_apply, E.apply_symm_apply,
+        LinearEquiv.apply_symm_apply] using congrArg ρ.asModuleEquiv (hs (ρ.asModuleEquiv.symm x))
+    exact ⟨F y, by rw [← hN, hy, hFS]⟩
+
+end Finite
+
+section ChangeRings
+
+variable {l : Type*} [CommRing l] [Finite G]
+variable {X : Type*} [AddCommGroup X] [Module l X]
+
+/-- **Equivariant surjections lift invariants when the target is projective.** Let `ρ` and `σ` be
+representations of the same finite group, possibly over different commutative rings. If an
+equivariant additive map `f : V →+ X` is surjective and `σ.asModule` is projective over `l[G]`,
+then every invariant vector of `σ` has an invariant preimage under `f`.
+
+Allowing the coefficient rings to differ is essential for reduction of an integral projective
+lattice modulo a prime. -/
+-- The target invariant is a group norm; lift a preimage before taking the norm, and use
+-- equivariance to commute `f` with the two norms.
+theorem exists_invariant_preimage_of_surjective_of_projective
+    (ρ : Representation k G V) (σ : Representation l G X)
+    (f : V →+ X) (hf : Function.Surjective f)
+    (hfg : ∀ g x, f (ρ g x) = σ g (f x))
+    [Module.Projective l[G] σ.asModule]
+    (y : σ.invariants) : ∃ x : ρ.invariants, f x = y := by
+  let _ := Fintype.ofFinite G
+  have hy : (y : X) ∈ LinearMap.range σ.norm := by
+    rw [range_norm_eq_invariants_of_projective]
+    exact y.2
+  obtain ⟨z, hz⟩ := hy
+  obtain ⟨x, rfl⟩ := hf z
+  refine ⟨⟨ρ.norm x, fun g => self_norm_apply ρ g x⟩, ?_⟩
+  rw [← hz]
+  simp only [norm, LinearMap.sum_apply, map_sum]
+  exact Finset.sum_congr rfl fun g _ => hfg g x
+
+end ChangeRings
+
+end Representation
+
+namespace Rep
+
+open CategoryTheory
+open scoped MonoidAlgebra
+
+variable {k G : Type*} [CommRing k] [Group G]
+
+/-- **Invariants preserve surjections onto projective representations.** If `f : A ⟶ B` is
+surjective and the `k[G]`-module underlying `B` is projective, then every invariant of `B` lifts
+to an invariant of `A`. -/
+theorem invariantsFunctor_map_surjective_of_surjective_of_projective {A B : Rep k G} (f : A ⟶ B)
+    (hf : Function.Surjective f.hom) [Module.Projective k[G] B.ρ.asModule] :
+    Function.Surjective ((invariantsFunctor k G).map f).hom := by
+  have : Projective B := by
+    rw [← equivalenceModuleMonoidAlgebra.map_projective_iff]
+    exact ModuleCat.projective_of_categoryTheory_projective (ModuleCat.of k[G] B.ρ.asModule)
+  have : Epi f := (epi_iff_surjective f).2 hf
+  have : IsSplitEpi f := ⟨⟨Projective.factorThru (𝟙 B) f, Projective.factorThru_comp _ _⟩⟩
+  exact (ModuleCat.epi_iff_surjective _).1 inferInstance
+
+end Rep
 
 namespace Representation.IsIrreducible
 

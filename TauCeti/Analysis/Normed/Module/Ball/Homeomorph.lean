@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Convex.GaugeRescale
-public import Mathlib.Analysis.Normed.Module.RCLike.Real
-public import Mathlib.Analysis.Normed.Operator.NNNorm
+public import Mathlib.Analysis.Normed.Module.Convex
 
 /-!
 # Homeomorphisms between the unit balls of linearly equivalent normed spaces
@@ -42,22 +41,15 @@ namespace ContinuousLinearEquiv
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F]
   [NormedSpace ℝ F] (L : E ≃L[ℝ] F)
 
-private lemma convex_image_closedBall : Convex ℝ (L '' closedBall 0 1) :=
-  (convex_closedBall 0 1).linear_image L.toLinearEquiv.toLinearMap
-
-private lemma image_closedBall_mem_nhds : L '' closedBall 0 1 ∈ 𝓝 0 := by
-  simpa using L.toHomeomorph.isOpenMap.image_mem_nhds (closedBall_mem_nhds (0 : E) one_pos)
-
-private lemma isVonNBounded_image_closedBall : Bornology.IsVonNBounded ℝ (L '' closedBall 0 1) :=
-  NormedSpace.isVonNBounded_of_isBounded ℝ
-    (L.lipschitzWith.isBounded_image isBounded_closedBall)
-
 /-- The homeomorphism `E ≃ₜ F` obtained from a continuous linear equivalence `L : E ≃L[ℝ] F` by
 rescaling each ray through the origin so that the image `L '' closedBall 0 1` of the closed unit
 ball of `E` lands on the closed unit ball of `F` (`gaugeRescaleHomeomorph`). -/
 def unitBallHomeomorph : E ≃ₜ F :=
   L.toHomeomorph.trans <| gaugeRescaleHomeomorph (L '' closedBall 0 1) (closedBall 0 1)
-    (convex_image_closedBall L) (image_closedBall_mem_nhds L) (isVonNBounded_image_closedBall L)
+    ((convex_closedBall 0 1).linear_image L.toLinearMap)
+    (by simpa using
+      L.toHomeomorph.isOpenMap.image_mem_nhds (closedBall_mem_nhds (0 : E) one_pos))
+    ((NormedSpace.isVonNBounded_closedBall ℝ E 1).image L.toContinuousLinearMap)
     (convex_closedBall 0 1) (closedBall_mem_nhds 0 one_pos)
     (NormedSpace.isVonNBounded_closedBall ℝ F 1)
 
@@ -70,12 +62,17 @@ ball. -/
 @[simp]
 theorem image_unitBallHomeomorph_closedBall :
     L.unitBallHomeomorph '' closedBall 0 1 = closedBall 0 1 := by
-  have h := image_gaugeRescaleHomeomorph_closure (convex_image_closedBall L)
-    (image_closedBall_mem_nhds L) (isVonNBounded_image_closedBall L) (convex_closedBall 0 1)
+  have h := image_gaugeRescaleHomeomorph_closure
+    (s := L '' closedBall 0 1) (t := closedBall (0 : F) 1)
+    ((convex_closedBall 0 1).linear_image L.toLinearMap)
+    (by simpa using
+      L.toHomeomorph.isOpenMap.image_mem_nhds (closedBall_mem_nhds (0 : E) one_pos))
+    ((NormedSpace.isVonNBounded_closedBall ℝ E 1).image L.toContinuousLinearMap)
+    (convex_closedBall 0 1)
     (closedBall_mem_nhds (0 : F) one_pos) (NormedSpace.isVonNBounded_closedBall ℝ F 1)
   have hcl : IsClosed (L '' closedBall (0 : E) 1) :=
     L.toHomeomorph.isClosedMap _ isClosed_closedBall
-  rw [hcl.closure_eq, isClosed_closedBall.closure_eq] at h
+  rw [hcl.closure_eq, closure_closedBall] at h
   rw [← h, image_image]
   -- `unitBallHomeomorph L` is by definition `L` followed by the gauge rescaling.
   rfl
@@ -85,22 +82,14 @@ ball. -/
 @[simp]
 theorem image_unitBallHomeomorph_ball :
     L.unitBallHomeomorph '' ball 0 1 = ball 0 1 := by
-  have h := image_gaugeRescaleHomeomorph_interior (convex_image_closedBall L)
-    (image_closedBall_mem_nhds L) (isVonNBounded_image_closedBall L) (convex_closedBall 0 1)
-    (closedBall_mem_nhds (0 : F) one_pos) (NormedSpace.isVonNBounded_closedBall ℝ F 1)
-  have hi : interior (L '' closedBall (0 : E) 1) = L '' ball 0 1 := by
-    rw [← interior_closedBall (0 : E) one_ne_zero]
-    exact (L.toHomeomorph.image_interior _).symm
-  rw [hi, interior_closedBall _ one_ne_zero] at h
-  rw [← h, image_image]
-  -- `unitBallHomeomorph L` is by definition `L` followed by the gauge rescaling.
-  rfl
+  simpa only [interior_closedBall _ one_ne_zero, image_unitBallHomeomorph_closedBall] using
+    L.unitBallHomeomorph.image_interior (closedBall 0 1)
 
 /-- `ContinuousLinearEquiv.unitBallHomeomorph L` carries the unit sphere onto the unit sphere. -/
 @[simp]
 theorem image_unitBallHomeomorph_sphere :
     L.unitBallHomeomorph '' sphere 0 1 = sphere 0 1 := by
-  rw [← closedBall_sdiff_ball, image_sdiff L.unitBallHomeomorph.injective,
-    image_unitBallHomeomorph_closedBall, image_unitBallHomeomorph_ball, closedBall_sdiff_ball]
+  simpa only [frontier_closedBall _ one_ne_zero, image_unitBallHomeomorph_closedBall] using
+    L.unitBallHomeomorph.image_frontier (closedBall 0 1)
 
 end ContinuousLinearEquiv

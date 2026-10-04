@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Young.Diagram
 public import TauCeti.LinearAlgebra.Vandermonde
+public import TauCeti.RepresentationTheory.ClassicalGroups.WeylDimension.Orthogonal
 public import TauCeti.RingTheory.Polynomial.Pochhammer
 
 /-!
@@ -25,7 +25,8 @@ This file builds the right-hand side as a natural number.  As for `Sp 2n`
 and neither the integrality nor the positivity of the product is visible from the formula.
 
 The entries of `λ + ρ` are half-integers, so the file works with the integers
-`xᵢ = λᵢ + n - 1 - i = lᵢ - 1/2`.  In these, `2lᵢ = 2xᵢ + 1` and
+`xᵢ = λᵢ + n - 1 - i = lᵢ - 1/2`, the sequence `TauCeti.orthogonalRhoShift` it shares with
+`SO (2n)`.  In these, `2lᵢ = 2xᵢ + 1` and
 `lᵢ² - lⱼ² = (xᵢ - xⱼ)(xᵢ + xⱼ + 1)`, so the numerator
 `TauCeti.oddOrthogonalWeylDimensionNumerator` is
 `∏ᵢ (2xᵢ + 1) · ∏_{i < j} (xᵢ - xⱼ)(xᵢ + xⱼ + 1)`, the product of the pairings of `λ + ρ` with the
@@ -48,7 +49,6 @@ half-integral entries, are not indexed by Young diagrams and are not covered her
 
 ## Main definitions
 
-* `TauCeti.oddOrthogonalRhoShift`: the integers `μᵢ + n - 1 - i`, the entries of `μ + ρ` less `1/2`.
 * `TauCeti.oddOrthogonalWeylDimensionNumerator`: the product
   `∏ᵢ (2xᵢ + 1) · ∏_{i < j} (xᵢ - xⱼ)(xᵢ + xⱼ + 1)`.
 * `TauCeti.oddOrthogonalWeylDimension`: the dimension predicted by the Weyl dimension formula.
@@ -80,57 +80,32 @@ open Finset
 
 variable (n : ℕ) (μ : YoungDiagram)
 
-/-- The integers `μᵢ + n - 1 - i` for `SO (2n + 1)`: the entries `μᵢ + n - i - 1/2` of `μ + ρ`,
-where `ρ = (n - 1/2, …, 1/2)` is the half-sum of the positive roots of type `Bₙ`, less `1/2`.  Only
-the indices `i < n` are used. -/
-def oddOrthogonalRhoShift (i : ℕ) : ℤ := μ.rowLen i + n - 1 - i
-
-/-- The defining equation of `TauCeti.oddOrthogonalRhoShift`. -/
-@[simp]
-theorem oddOrthogonalRhoShift_apply (i : ℕ) :
-    oddOrthogonalRhoShift n μ i = μ.rowLen i + n - 1 - i := (rfl)
-
-variable {n μ} in
-/-- The shifted entries are nonnegative below `n`. -/
-theorem oddOrthogonalRhoShift_nonneg {i : ℕ} (hi : i < n) : 0 ≤ oddOrthogonalRhoShift n μ i := by
-  rw [oddOrthogonalRhoShift_apply]
-  omega
-
-/-- Adding the strictly decreasing `ρ` to the weakly decreasing row lengths gives a strictly
-decreasing sequence, which makes every factor of `TauCeti.oddOrthogonalWeylDimensionNumerator`
-positive. -/
-theorem oddOrthogonalRhoShift_strictAnti : StrictAnti (oddOrthogonalRhoShift n μ) := by
-  intro i j hij
-  have := μ.rowLen_anti i j hij.le
-  simp only [oddOrthogonalRhoShift_apply]
-  omega
-
 /-- The **numerator of the odd orthogonal Weyl dimension formula**: with `xᵢ = μᵢ + n - 1 - i`,
 the product `∏_{i < n} (2xᵢ + 1) · ∏_{i < j < n} (xᵢ - xⱼ)(xᵢ + xⱼ + 1)` of the pairings of `μ + ρ`
 with the positive roots `eᵢ ± eⱼ` and `eᵢ` of type `Bₙ`, each pairing with a short root `eᵢ`
 doubled to clear the half. -/
 def oddOrthogonalWeylDimensionNumerator : ℤ :=
-  ∏ i ∈ range n, (2 * oddOrthogonalRhoShift n μ i + 1) *
-    ∏ j ∈ Ico (i + 1) n, (oddOrthogonalRhoShift n μ i - oddOrthogonalRhoShift n μ j) *
-      (oddOrthogonalRhoShift n μ i + oddOrthogonalRhoShift n μ j + 1)
+  ∏ i ∈ range n, (2 * orthogonalRhoShift n μ i + 1) *
+    ∏ j ∈ Ico (i + 1) n, (orthogonalRhoShift n μ i - orthogonalRhoShift n μ j) *
+      (orthogonalRhoShift n μ i + orthogonalRhoShift n μ j + 1)
 
 /-- **The numerator as a double product**: the defining equation of
 `TauCeti.oddOrthogonalWeylDimensionNumerator`, the form every computation with it starts from. -/
 theorem oddOrthogonalWeylDimensionNumerator_eq_prod_prod :
     oddOrthogonalWeylDimensionNumerator n μ =
-      ∏ i ∈ range n, (2 * oddOrthogonalRhoShift n μ i + 1) *
-        ∏ j ∈ Ico (i + 1) n, (oddOrthogonalRhoShift n μ i - oddOrthogonalRhoShift n μ j) *
-          (oddOrthogonalRhoShift n μ i + oddOrthogonalRhoShift n μ j + 1) :=
+      ∏ i ∈ range n, (2 * orthogonalRhoShift n μ i + 1) *
+        ∏ j ∈ Ico (i + 1) n, (orthogonalRhoShift n μ i - orthogonalRhoShift n μ j) *
+          (orthogonalRhoShift n μ i + orthogonalRhoShift n μ j + 1) :=
   (rfl)
 
 /-- Every factor of the numerator is positive. -/
 theorem oddOrthogonalWeylDimensionNumerator_pos : 0 < oddOrthogonalWeylDimensionNumerator n μ := by
   rw [oddOrthogonalWeylDimensionNumerator_eq_prod_prod]
   refine prod_pos fun i hi => ?_
-  have hi0 := oddOrthogonalRhoShift_nonneg (μ := μ) (mem_range.1 hi)
+  have hi0 := orthogonalRhoShift_nonneg (μ := μ) (mem_range.1 hi)
   refine mul_pos (by omega) <| prod_pos fun j hj => ?_
-  have hij := oddOrthogonalRhoShift_strictAnti n μ (mem_Ico.1 hj).1
-  have hj0 := oddOrthogonalRhoShift_nonneg (μ := μ) (mem_Ico.1 hj).2
+  have hij := orthogonalRhoShift_strictAnti n μ (mem_Ico.1 hj).1
+  have hj0 := orthogonalRhoShift_nonneg (μ := μ) (mem_Ico.1 hj).2
   exact mul_pos (sub_pos.2 hij) (by omega)
 
 /-- **Integrality of the odd orthogonal Weyl dimension formula**: `1! · 3! ⋯ (2n - 1)!` divides the
@@ -145,20 +120,20 @@ are then those of `ρ - 1/2`, namely `0, 1, …, k - 1` with `k = n - 1 - i`, so
 at `xᵢ + k + 1` and at `xᵢ + k`.  For `i ≥ n` both sides are `2xᵢ + 1`. -/
 private theorem oddOrthogonalWeylDimensionNumerator_row {i : ℕ}
     (h : ∀ j, i < j → μ.rowLen j = 0) :
-    (2 * oddOrthogonalRhoShift n μ i + 1) *
-        ∏ j ∈ Ico (i + 1) n, (oddOrthogonalRhoShift n μ i - oddOrthogonalRhoShift n μ j) *
-          (oddOrthogonalRhoShift n μ i + oddOrthogonalRhoShift n μ j + 1)
+    (2 * orthogonalRhoShift n μ i + 1) *
+        ∏ j ∈ Ico (i + 1) n, (orthogonalRhoShift n μ i - orthogonalRhoShift n μ j) *
+          (orthogonalRhoShift n μ i + orthogonalRhoShift n μ j + 1)
       = (descPochhammer ℤ (2 * (n - 1 - i) + 1)).eval
-          (oddOrthogonalRhoShift n μ i + (n - 1 - i : ℕ) + 1)
+          (orthogonalRhoShift n μ i + (n - 1 - i : ℕ) + 1)
         + (descPochhammer ℤ (2 * (n - 1 - i) + 1)).eval
-          (oddOrthogonalRhoShift n μ i + (n - 1 - i : ℕ)) := by
-  set x := oddOrthogonalRhoShift n μ i
+          (orthogonalRhoShift n μ i + (n - 1 - i : ℕ)) := by
+  set x := orthogonalRhoShift n μ i
   have hrow : ∀ t ∈ range (n - (i + 1)),
-      (x - oddOrthogonalRhoShift n μ (i + 1 + t)) * (x + oddOrthogonalRhoShift n μ (i + 1 + t) + 1)
+      (x - orthogonalRhoShift n μ (i + 1 + t)) * (x + orthogonalRhoShift n μ (i + 1 + t) + 1)
         = (fun c : ℕ => (x - c) * (x + c + 1)) (n - 1 - i - 1 - t) := by
     intro t ht
     have ht := mem_range.1 ht
-    simp only [oddOrthogonalRhoShift_apply, h (i + 1 + t) (by omega), Nat.cast_zero, zero_add,
+    simp only [orthogonalRhoShift_apply, h (i + 1 + t) (by omega), Nat.cast_zero, zero_add,
       Nat.cast_sub (by omega : 1 + i + 1 + t ≤ n), Nat.sub_sub, Nat.cast_add, Nat.cast_one]
     ring_nf
   have hlen : n - (i + 1) = n - 1 - i := by omega
@@ -184,17 +159,17 @@ private theorem oddOrthogonalWeylDimensionNumerator_succ_of_colLen_le_one
   · refine prod_congr rfl fun i hi => ?_
     have hi := mem_range.1 hi
     have hk : n + 1 - 1 - (i + 1) = n - 1 - i := by omega
-    have hx : oddOrthogonalRhoShift (n + 1) μ (i + 1) + ((n - 1 - i : ℕ) : ℤ)
+    have hx : orthogonalRhoShift (n + 1) μ (i + 1) + ((n - 1 - i : ℕ) : ℤ)
         = ((2 * (n - 1 - i) : ℕ) : ℤ) := by
-      rw [oddOrthogonalRhoShift_apply, h' _ (by omega)]
+      rw [orthogonalRhoShift_apply, h' _ (by omega)]
       omega
     rw [oddOrthogonalWeylDimensionNumerator_row (n + 1) μ fun j hj => h' j (by omega), hk, hx,
       ← Nat.cast_succ, descPochhammer_eval_eq_descFactorial, descPochhammer_eval_eq_descFactorial,
       Nat.descFactorial_self, Nat.descFactorial_of_lt (by omega), Nat.cast_zero, add_zero]
   · have hk : n + 1 - 1 - 0 = n := by omega
-    have hx : oddOrthogonalRhoShift (n + 1) μ 0 + ((n : ℕ) : ℤ)
+    have hx : orthogonalRhoShift (n + 1) μ 0 + ((n : ℕ) : ℤ)
         = ((μ.rowLen 0 + 2 * n : ℕ) : ℤ) := by
-      rw [oddOrthogonalRhoShift_apply]
+      rw [orthogonalRhoShift_apply]
       push_cast
       ring
     rw [oddOrthogonalWeylDimensionNumerator_row (n + 1) μ fun j hj => h' j hj, hk, hx,
@@ -248,17 +223,17 @@ theorem oddOrthogonalWeylDimension_pos : 0 < oddOrthogonalWeylDimension n μ := 
 root, times the differences of the squares. -/
 private theorem oddOrthogonalWeylDimensionNumerator_cast (ν : YoungDiagram) :
     ((oddOrthogonalWeylDimensionNumerator n ν : ℤ) : ℚ) =
-      ∏ i ∈ range n, (2 * ((oddOrthogonalRhoShift n ν i : ℚ) + 1 / 2) *
-        ∏ j ∈ Ico (i + 1) n, (((oddOrthogonalRhoShift n ν i : ℚ) + 1 / 2) ^ 2
-          - ((oddOrthogonalRhoShift n ν j : ℚ) + 1 / 2) ^ 2)) := by
+      ∏ i ∈ range n, (2 * ((orthogonalRhoShift n ν i : ℚ) + 1 / 2) *
+        ∏ j ∈ Ico (i + 1) n, (((orthogonalRhoShift n ν i : ℚ) + 1 / 2) ^ 2
+          - ((orthogonalRhoShift n ν j : ℚ) + 1 / 2) ^ 2)) := by
   rw [oddOrthogonalWeylDimensionNumerator_eq_prod_prod]
   push_cast
   refine prod_congr rfl fun i _ => ?_
   rw [prod_congr rfl fun j _ => (by ring :
-    ((oddOrthogonalRhoShift n ν i : ℚ) - oddOrthogonalRhoShift n ν j)
-        * ((oddOrthogonalRhoShift n ν i : ℚ) + oddOrthogonalRhoShift n ν j + 1)
-      = ((oddOrthogonalRhoShift n ν i : ℚ) + 1 / 2) ^ 2
-        - ((oddOrthogonalRhoShift n ν j : ℚ) + 1 / 2) ^ 2)]
+    ((orthogonalRhoShift n ν i : ℚ) - orthogonalRhoShift n ν j)
+        * ((orthogonalRhoShift n ν i : ℚ) + orthogonalRhoShift n ν j + 1)
+      = ((orthogonalRhoShift n ν i : ℚ) + 1 / 2) ^ 2
+        - ((orthogonalRhoShift n ν j : ℚ) + 1 / 2) ^ 2)]
   ring
 
 /-- **The Weyl dimension formula for `SO (2n + 1)` in its product form**: over `ℚ`, with
@@ -272,9 +247,9 @@ theorem oddOrthogonalWeylDimension_eq_prod_prod_div :
             - ((μ.rowLen j : ℚ) + n - j - 1 / 2) ^ 2)
           / (((n : ℚ) - i - 1 / 2) ^ 2 - ((n : ℚ) - j - 1 / 2) ^ 2))) := by
   have hl : ∀ (ν : YoungDiagram) (i : ℕ),
-      (oddOrthogonalRhoShift n ν i : ℚ) + 1 / 2 = (ν.rowLen i : ℚ) + n - i - 1 / 2 := by
+      (orthogonalRhoShift n ν i : ℚ) + 1 / 2 = (ν.rowLen i : ℚ) + n - i - 1 / 2 := by
     intro ν i
-    rw [oddOrthogonalRhoShift_apply]
+    rw [orthogonalRhoShift_apply]
     push_cast
     ring
   have hnum := oddOrthogonalWeylDimensionNumerator_cast n μ
@@ -295,8 +270,8 @@ the same lengths have the same numerator. -/
 theorem oddOrthogonalWeylDimensionNumerator_congr {ν : YoungDiagram}
     (h : ∀ i < n, μ.rowLen i = ν.rowLen i) :
     oddOrthogonalWeylDimensionNumerator n μ = oddOrthogonalWeylDimensionNumerator n ν := by
-  have hx : ∀ i < n, oddOrthogonalRhoShift n μ i = oddOrthogonalRhoShift n ν i := fun i hi => by
-    simp only [oddOrthogonalRhoShift_apply, h i hi]
+  have hx : ∀ i < n, orthogonalRhoShift n μ i = orthogonalRhoShift n ν i := fun i hi => by
+    simp only [orthogonalRhoShift_apply, h i hi]
   rw [oddOrthogonalWeylDimensionNumerator_eq_prod_prod,
     oddOrthogonalWeylDimensionNumerator_eq_prod_prod]
   refine prod_congr rfl fun i hi => ?_
@@ -362,7 +337,7 @@ theorem oddOrthogonalWeylDimension_one_eq_two_mul_rowLen_add_one :
     oddOrthogonalWeylDimension 1 μ = 2 * μ.rowLen 0 + 1 := by
   have h := oddOrthogonalWeylDimension_mul_prod_factorial 1 μ
   simp only [oddOrthogonalWeylDimensionNumerator_eq_prod_prod, prod_range_one, mul_zero, zero_add,
-    Nat.factorial_one, Nat.cast_one, mul_one, Ico_self, prod_empty, oddOrthogonalRhoShift_apply,
+    Nat.factorial_one, Nat.cast_one, mul_one, Ico_self, prod_empty, orthogonalRhoShift_apply,
     CharP.cast_eq_zero, sub_zero, add_sub_cancel_right] at h
   exact_mod_cast h
 

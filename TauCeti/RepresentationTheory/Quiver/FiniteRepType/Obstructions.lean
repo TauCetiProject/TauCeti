@@ -31,6 +31,8 @@ vertices.
 * `TauCeti.IsFiniteRepType.isEmpty_hom_self`: a quiver of finite representation type has no loops.
 * `TauCeti.IsFiniteRepType.subsingleton_hom`: a quiver of finite representation type has no two
   parallel arrows.
+* `TauCeti.IsFiniteRepType.card_hom_add_card_hom_le_one`: with no pair of opposite arrows, there is
+  at most one arrow between two vertices, counting both directions, and no loop.
 * `TauCeti.not_isFiniteRepType_of_forall_nonempty_hom`: a vertex receiving arrows from four distinct
   other vertices refutes finite representation type.
 * `TauCeti.not_isFiniteRepType_subspace`: a subspace quiver with at least four outer vertices has
@@ -107,6 +109,22 @@ theorem IsFiniteRepType.subsingleton_hom (h : IsFiniteRepType.{u, v, w, u} k Q) 
   · subst hij
     exact (h.isEmpty_hom_self i).false α
   · exact not_isFiniteRepType_kronecker k Bool (h.of_quiverEmbedding (kroneckerEmbedding hij hαβ))
+
+/-- Over a quiver of finite representation type with no pair of opposite arrows, two vertices are
+joined by at most one arrow, counting both directions, and there is no loop. -/
+theorem IsFiniteRepType.card_hom_add_card_hom_le_one [∀ a b : Q, Fintype (a ⟶ b)]
+    (h : IsFiniteRepType.{u, v, w, u} k Q)
+    (hopp : ∀ ⦃a b : Q⦄, a ≠ b → (a ⟶ b) → IsEmpty (b ⟶ a)) (a b : Q) :
+    Fintype.card (a ⟶ b) + Fintype.card (b ⟶ a) ≤ 1 := by
+  rcases eq_or_ne a b with rfl | hab
+  · have := h.isEmpty_hom_self a
+    simp
+  have hle (x y : Q) : Fintype.card (x ⟶ y) ≤ 1 :=
+    Fintype.card_le_one_iff_subsingleton.mpr (h.subsingleton_hom x y)
+  rcases isEmpty_or_nonempty (a ⟶ b) with hl | hl
+  · simpa [Fintype.card_eq_zero] using hle b a
+  · have := hopp hab hl.some
+    simpa [Fintype.card_eq_zero] using hle a b
 
 /-- The embedding of the four subspace quiver onto four arrows `α i : x i ⟶ c` into a vertex `c`
 from four pairwise distinct vertices other than `c`. -/

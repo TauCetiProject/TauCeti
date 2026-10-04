@@ -244,11 +244,7 @@ theorem evenSpinAction_surjective : Function.Surjective (evenSpinAction Q P) := 
     (P.nondegenerate ((isUnit_of_invertible (2 : F)).isSMulRegular F)).exists_list_pairwise_isOrtho
   set ω : CliffordAlgebra Q := (l.map (ι Q)).prod
   set c : F := (-1 : F) ^ l.length.choose 2 * (l.map Q).prod
-  have hc : c ≠ 0 := by
-    refine mul_ne_zero (pow_ne_zero _ (neg_ne_zero.mpr one_ne_zero)) (List.prod_ne_zero ?_)
-    rintro hmem
-    obtain ⟨v, hv, hv0⟩ := List.mem_map.mp hmem
-    exact hQl v hv hv0
+  have hc : c ≠ 0 := neg_one_pow_choose_two_mul_prod_map_ne_zero hQl
   have hsq : ω * ω = algebraMap F (CliffordAlgebra Q) c := prod_map_ι_sq_scalar hl
   have hsqEnd : spinAction Q P ω * spinAction Q P ω =
       algebraMap F (Module.End F (ExteriorAlgebra F P.W)) c := by

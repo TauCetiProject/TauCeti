@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Exact.Basic
-public import TauCeti.Algebra.Module.Injective.Envelope
+public import TauCeti.Algebra.Module.Injective.Envelope.Basic
 
 /-!
 # Minimal injective copresentations

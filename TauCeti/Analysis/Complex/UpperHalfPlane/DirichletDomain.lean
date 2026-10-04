@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Bisector.Geometry
-public import TauCeti.MeasureTheory.Group.DirichletDomain
+public import TauCeti.MeasureTheory.Group.DirichletDomain.Basic
 
 /-!
 # Geodesic convexity of Dirichlet domains

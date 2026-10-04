@@ -19,6 +19,8 @@ Mathlib records the commutativity isometries of `QuadraticMap.prod`
 file adds the two remaining structural ones: the associator, and the deletion of a factor whose
 module is trivial. Together with `QuadraticMap.IsometryEquiv.prodComm` they are what makes
 orthogonal sum a commutative monoid operation on isometry classes of quadratic forms.
+For an orthogonal sum `QuadraticMap.pi` indexed by `Fin (n + 1)`, splitting off the first summand
+is likewise isometric, which lets such a sum be assembled one summand at a time.
 
 For a quadratic form over a commutative ring, it also records the isometry associated to a
 direct-sum decomposition of the underlying module that is orthogonal for the polar form.
@@ -35,6 +37,7 @@ so the embedding restricts to the special orthogonal groups.
 
 * `QuadraticMap.IsometryEquiv.prodAssoc`: `LinearEquiv.prodAssoc` is isometric.
 * `QuadraticMap.IsometryEquiv.uniqueProd`: `LinearEquiv.uniqueProd` is isometric.
+* `QuadraticMap.IsometryEquiv.consPi`: `Fin.consLinearEquiv` is isometric.
 * `QuadraticMap.IsometryEquiv.prodRestrictOrthogonal`: an orthogonal direct sum is isometric to
   the original form.
 * `QuadraticMap.orthogonalGroupProd`: the orthogonal sum `O(Q₁) × O(Q₂) →* O(Q₁.prod Q₂)`.
@@ -130,6 +133,21 @@ theorem IsometryEquiv.uniqueProd_symm_apply [Unique M₁] (Q₁ : QuadraticMap R
   -- Expose the underlying linear equivalence so its public inverse application lemma applies.
   change (LinearEquiv.uniqueProd (R := R) (M := M₂) (M₂ := M₁)).symm m = _
   exact LinearEquiv.uniqueProd_symm_apply m
+
+/-- `Fin.consLinearEquiv` is isometric: an orthogonal sum indexed by `Fin (n + 1)` is the orthogonal
+product of its first summand with the orthogonal sum of the remaining ones. -/
+def IsometryEquiv.consPi {n : ℕ} {M : Fin (n + 1) → Type*} [∀ i, AddCommMonoid (M i)]
+    [∀ i, Module R (M i)] (Q : ∀ i, QuadraticMap R (M i) P) :
+    ((Q 0).prod (QuadraticMap.pi fun i : Fin n ↦ Q i.succ)).IsometryEquiv (QuadraticMap.pi Q) where
+  toLinearEquiv := Fin.consLinearEquiv R M
+  map_app' x := by simp [Fin.sum_univ_succ]
+
+/-- The forward map of `QuadraticMap.IsometryEquiv.consPi`. -/
+@[simp]
+theorem IsometryEquiv.consPi_apply {n : ℕ} {M : Fin (n + 1) → Type*} [∀ i, AddCommMonoid (M i)]
+    [∀ i, Module R (M i)] (Q : ∀ i, QuadraticMap R (M i) P) (x : M 0) (y : ∀ i : Fin n, M i.succ) :
+    IsometryEquiv.consPi Q (x, y) = Fin.cons x y :=
+  (rfl)
 
 section OrthogonalDecomposition
 

@@ -303,6 +303,7 @@ theorem map_padicPow {B : Type v} [Group B] [TopologicalSpace B] [IsTopologicalG
   simp
 
 /-- A continuous action by group endomorphisms commutes with `p`-adic powers. -/
+@[simp]
 theorem smul_padicPow {Γ : Type*} [Monoid Γ] [MulDistribMulAction Γ A]
     [ContinuousConstSMul Γ A] (hA : IsProP p A) (γ : Γ) (a : A) (l : ℤ_[p]) :
     γ • hA.padicPow a l = hA.padicPow (γ • a) l :=
