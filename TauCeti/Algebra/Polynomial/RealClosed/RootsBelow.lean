@@ -62,7 +62,8 @@ theorem card_roots_toFinset_comp_C_sub_X_sq {p : R[X]} (hp : p ≠ 0) (t : R) :
     · obtain ⟨s, hs⟩ := IsRealClosed.nonneg_iff_isSquare.mp (sub_nonneg.mpr h.le)
       have hs0 : s ≠ -s := by
         intro hs'
-        have : t - r = 0 := by rw [hs, show s = 0 by linarith, mul_zero]
+        have hs_zero : s = 0 := by linarith
+        have : t - r = 0 := by rw [hs, hs_zero, mul_zero]
         linarith
       have : {y ∈ (p.comp (C t - X ^ 2)).roots.toFinset | t - y ^ 2 = r} = {s, -s} := by
         ext y

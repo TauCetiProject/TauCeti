@@ -64,22 +64,6 @@ section CommRing
 
 variable {σ R : Type*} [CommRing R] [LinearOrder R]
 
-/-- The parameters at which the coefficients of `P` of index in `s` all vanish. -/
-private theorem isSemialgebraic_setOf_forall_coeff_eq_zero (P : (MvPolynomial σ R)[X])
-    (s : Set ℕ) :
-    IsSemialgebraic {x : σ → R | ∀ n ∈ s, MvPolynomial.eval x (P.coeff n) = 0} := by
-  have : {x : σ → R | ∀ n ∈ s, MvPolynomial.eval x (P.coeff n) = 0} =
-      ⋂ n ∈ s ∩ P.support, {x | MvPolynomial.eval x (P.coeff n) = 0} := by
-    ext x
-    simp only [mem_ofPred_eq, mem_iInter, mem_inter_iff, Finset.mem_coe]
-    refine ⟨fun h n hn => h n hn.1, fun h n hn => ?_⟩
-    by_cases hP : n ∈ P.support
-    · exact h n ⟨hn, hP⟩
-    · rw [notMem_support_iff.mp hP, map_zero]
-  rw [this]
-  exact .biInter (P.support.finite_toSet.inter_of_right s) fun n _ =>
-    isSemialgebraic_eval_eq_zero _
-
 /-- The parameters at which a polynomial family specializes to zero form a semialgebraic set. -/
 theorem isSemialgebraic_setOf_map_eval_eq_zero (P : (MvPolynomial σ R)[X]) :
     IsSemialgebraic {x : σ → R | P.map (MvPolynomial.eval x) = 0} := by
@@ -103,21 +87,6 @@ theorem isSemialgebraic_setOf_natDegree_map_eval_eq (P : (MvPolynomial σ R)[X])
     ext x
     simp only [mem_ofPred_eq, mem_sdiff]
     omega
-
-/-- A condition on the permanences minus variations of the values of finitely many polynomials
-defines a semialgebraic set, since the statistic depends only on the signs of the values. -/
-private theorem isSemialgebraic_setOf_permanencesMinusVariations_eval
-    (l : List (MvPolynomial σ R)) (c : ℤ) :
-    IsSemialgebraic
-      {x : σ → R | (l.map (MvPolynomial.eval x)).permanencesMinusVariations = c} := by
-  have h (x : σ → R) : (l.map (MvPolynomial.eval x)).permanencesMinusVariations =
-      (List.ofFn fun i => SignType.sign (MvPolynomial.eval x (l.get i))).permanencesMinusVariations
-      := by
-    rw [← List.permanencesMinusVariations_map_sign, List.map_map]
-    congr 1
-    apply List.ext_get <;> simp
-  simpa only [h] using isSemialgebraic_setOf_sign_eval (fun i => l.get i)
-    fun ε => (List.ofFn ε).permanencesMinusVariations = c
 
 end CommRing
 

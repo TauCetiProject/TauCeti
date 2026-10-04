@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.MvPolynomial.Monad
+public import Mathlib.Algebra.Polynomial.Basic
 public import Mathlib.Basic.Sign.Defs
 public import Mathlib.Logic.Equiv.Fin.Basic
 public import Mathlib.MeasureTheory.SetAlgebra
+public import TauCeti.Data.List.PermanencesMinusVariations
 
 /-!
 # Semialgebraic sets
@@ -238,6 +240,38 @@ theorem isSemialgebraic_setOf_sign_eval {ι : Type*} [Finite ι] (p : ι → MvP
     exact ⟨fun h => ⟨_, h, fun _ => rfl⟩, fun ⟨ε, hε, h⟩ => (funext h).symm ▸ hε⟩
   rw [this]
   exact .biUnion (toFinite _) fun ε _ => .iInter fun i => isSemialgebraic_sign_eval_eq _ _
+
+omit [IsOrderedAddMonoid R] in
+/-- A condition on the permanences minus variations of the values of finitely many polynomials
+defines a semialgebraic set, since the statistic depends only on the signs of the values. -/
+theorem isSemialgebraic_setOf_permanencesMinusVariations_eval
+    (l : List (MvPolynomial σ R)) (c : ℤ) :
+    IsSemialgebraic {x : σ → R | (l.map (eval x)).permanencesMinusVariations = c} := by
+  have h (x : σ → R) : (l.map (eval x)).permanencesMinusVariations =
+      (List.ofFn fun i => SignType.sign (eval x (l.get i))).permanencesMinusVariations := by
+    rw [← List.permanencesMinusVariations_map_sign, List.map_map]
+    congr 1
+    apply List.ext_get <;> simp
+  simpa only [h] using isSemialgebraic_setOf_sign_eval (fun i => l.get i)
+    fun ε => (List.ofFn ε).permanencesMinusVariations = c
+
+omit [IsOrderedAddMonoid R] in
+/-- The parameters at which the coefficients of `P` of index in `s` all vanish form a
+semialgebraic set. -/
+theorem isSemialgebraic_setOf_forall_coeff_eq_zero (P : Polynomial (MvPolynomial σ R))
+    (s : Set ℕ) :
+    IsSemialgebraic {x : σ → R | ∀ n ∈ s, eval x (P.coeff n) = 0} := by
+  have : {x : σ → R | ∀ n ∈ s, eval x (P.coeff n) = 0} =
+      ⋂ n ∈ s ∩ P.support, {x | eval x (P.coeff n) = 0} := by
+    ext x
+    simp only [mem_ofPred_eq, mem_iInter, mem_inter_iff, Finset.mem_coe]
+    refine ⟨fun h n hn => h n hn.1, fun h n hn => ?_⟩
+    by_cases hP : n ∈ P.support
+    · exact h n ⟨hn, hP⟩
+    · rw [Polynomial.notMem_support_iff.mp hP, map_zero]
+  rw [this]
+  exact .biInter (P.support.finite_toSet.inter_of_right s) fun n _ =>
+    isSemialgebraic_eval_eq_zero _
 
 /-! ### Finite sets -/
 
