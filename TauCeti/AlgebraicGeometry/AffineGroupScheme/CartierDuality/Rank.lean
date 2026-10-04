@@ -42,6 +42,7 @@ variable (R : Type u) [CommRing R]
 
 /-- The scheme-theoretic rank of a finite locally free commutative affine group scheme is
 the local rank of its coordinate Hopf algebra. -/
+@[simp↓]
 theorem finrank_eq_rankAtStalk_coordinateHopfAlgebra
     (G : FiniteLocallyFreeCommAffineGroupSchemeCat (CommRingCat.of R))
     (x : PrimeSpectrum R) :

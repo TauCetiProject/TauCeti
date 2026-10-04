@@ -26,6 +26,7 @@ universe u
 
 /-- The scheme-theoretic rank of a finite flat affine group scheme is the local rank of its
 coordinate Hopf algebra. -/
+@[simp]
 theorem finrank_eq_rankAtStalk_coordinateHopfAlgebra (R : Type u) [CommRing R]
     (G : AffineGroupSchemeCat (CommRingCat.of R)) [IsFinite G.obj.X.hom] [Flat G.obj.X.hom]
     (x : PrimeSpectrum R) :

@@ -379,6 +379,7 @@ theorem moduleProjective_iff_flat_and_locallyOfFinitePresentation_hopfSpec
 
 /-- The rank function of a finite flat Hopf spectrum is the local rank of its coordinate
 algebra. -/
+@[simp↓]
 theorem finrank_hopfSpec (R : Type u) [CommRing R] (H : CommHopfAlgCat.{u} R)
     [Module.Finite R H] [Module.Flat R H] (x : PrimeSpectrum R) :
     (((hopfSpec (CommRingCat.of R)).obj (op H)).X.hom).finrank x =
