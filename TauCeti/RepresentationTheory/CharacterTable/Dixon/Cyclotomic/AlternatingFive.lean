@@ -25,7 +25,8 @@ quadratic values have canonical representatives
 These are the roots of `X² - X - 1`. The two degree-three rows exchange `φ` and `φ'` on the
 two classes of five-cycles. The central-character rows satisfy the class-algebra eigenrow equations,
 so together with the central-to-ordinary conversion, degree constraints, and Hermitian row
-orthogonality they certify the displayed table as the character table of `A₅`.
+orthogonality they certify the displayed table as the character table of `A₅` up to row
+permutation.
 
 ## Main definitions
 
@@ -43,7 +44,7 @@ orthogonality they certify the displayed table as the character table of `A₅`.
 * `TauCeti.isCyclotomicCharacterTableSpec_alternatingGroupFive`: the exact tables pass the
   cyclotomic character-table certificate.
 * `TauCeti.isCharacterTableSpec_alternatingGroupFive`: the distinguished complex embedding of the
-  displayed ordinary table is a character table of `A₅`.
+  displayed ordinary table is the character table of `A₅` up to row permutation.
 
 ## References
 
@@ -426,8 +427,8 @@ theorem cyclotomicCharacterTableChecker_alternatingGroupFive :
   (alternatingGroupFiveClassData.cyclotomicCharacterTableChecker_eq_true_iff 5 _ _ _).2
     isCyclotomicCharacterTableSpec_alternatingGroupFive
 
-/-- **The distinguished complex embedding of the displayed exact table is a character table of
-`A₅`.** -/
+/-- **The distinguished complex embedding of the displayed exact table is the character table of
+`A₅` up to row permutation.** -/
 theorem isCharacterTableSpec_alternatingGroupFive :
     IsCharacterTableSpec (alternatingGroup (Fin 5))
       (alternatingGroupFiveClassData.complexTableOfCyclotomic 5
