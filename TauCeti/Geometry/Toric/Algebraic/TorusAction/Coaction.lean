@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Bialgebra.MonoidAlgebra
-public import TauCeti.Geometry.Toric.Algebraic.DenseTorus
 public import TauCeti.Geometry.Toric.Algebraic.FaceLocalization
 
 /-!
@@ -104,6 +103,7 @@ theorem affineCoordinateRingCoaction_coassoc (hi : IsIntegralLattice i)
 
 /-- Restriction to a face is equivariant for the affine torus coactions. In particular, the
 coactions agree on the coordinate rings of chart overlaps. -/
+@[simp]
 theorem affineCoordinateRingCoaction_comp_face (hi : IsIntegralLattice i)
     {σ τ : PointedCone ℝ V} (hτσ : τ.IsFaceOf σ) :
     (affineCoordinateRingCoaction hi τ).comp (faceAffineCoordinateRingMap hi hτσ) =
@@ -132,6 +132,7 @@ theorem affineCoordinateRingCoaction_bot (hi : IsIntegralLattice i) :
 
 /-- A map of lattice cones intertwines their coactions and the induced map of dense tori.
 This is the coordinate-ring equivariance law for affine toric morphisms. -/
+@[simp]
 theorem affineCoordinateRingCoaction_comp_map
     {N' V' : Type*} [AddCommGroup N'] [AddCommGroup V'] [Module ℝ V'] {i' : N' →+ V'}
     (hi : IsIntegralLattice i) (hi' : IsIntegralLattice i')

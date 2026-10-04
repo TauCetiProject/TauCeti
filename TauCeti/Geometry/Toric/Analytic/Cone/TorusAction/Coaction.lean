@@ -34,6 +34,7 @@ variable {N V : Type*} [AddCommGroup N] [AddCommGroup V] [Module ℝ V] {i : N �
 /-- Evaluating the affine toric coaction against the torus point `t` and the chart point `x`
 gives the existing action `t • x` on complex points. The torus point is realized in the
 zero-cone chart as `t • default`. -/
+@[simp]
 theorem affineCoordinateRingCoaction_eval (hi : IsIntegralLattice i)
     (σ : PointedCone ℝ V) (t : ComplexTorus N)
     (x : AffineSemigroupComplexPoint (dualSemigroup hi σ)) :
