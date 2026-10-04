@@ -19,8 +19,9 @@ the bilinear form `(v, w) ↦ b_{f x}(df_x v, df_x w)` on `T_x M`. This file pro
 of these forms is `C^n` at `x₀`, as a section of the bundle of bilinear forms on the tangent bundle
 of `M`.
 
-No injectivity of the differential is assumed: the statement is only about smoothness, and the
-pulled-back forms are positive definite exactly where `df` is injective. This is the regularity
+No injectivity of the differential is assumed: the statement is only about smoothness. When `b` is
+positive definite (for instance a Riemannian metric), the pulled-back forms are positive definite
+exactly where `df` is injective. This is the regularity
 input for Riemannian metrics that are defined by pulling back along local diffeomorphisms, such as
 the metric that a manifold with a geometric structure receives through its charts.
 
