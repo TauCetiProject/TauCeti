@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Polynomial.CommonRoots
 public import TauCeti.Analysis.Polynomial.RealRoots.Ordered
 
+import TauCeti.RingTheory.Polynomial.Roots
 import TauCeti.Topology.Algebra.Polynomial
 import TauCeti.Topology.MetricSpace.SeparatedBalls
 
@@ -79,15 +80,6 @@ theorem eventually_exists_bijOn_biUnion_aroots_toFinset {x₀ : B}
   simpa only [coeff_map, Complex.coe_algebraMap, Function.comp_def] using
     Complex.continuous_ofReal.continuousAt.comp (hF k i hi)
 
-/-- The distinct complex roots of a product of nonzero real polynomials are those of its factors
-together. -/
-private theorem aroots_prod_toFinset {f : ι → ℝ[X]} (hf : ∀ k, f k ≠ 0) :
-    ((∏ k, f k).aroots ℂ).toFinset = Finset.univ.biUnion fun k => ((f k).aroots ℂ).toFinset := by
-  ext z
-  simp only [Multiset.mem_toFinset, Finset.mem_biUnion, Finset.mem_univ, true_and, mem_aroots,
-    Finset.prod_ne_zero_iff.2 fun k _ => hf k, hf, ne_eq, not_false_eq_true, map_prod,
-    Finset.prod_eq_zero_iff]
-
 /-- **Distinct complex roots of the product of a family.** Under the hypotheses of the family
 matching lemma for real polynomials, the product of the members has, near `x₀`, as many distinct
 complex roots as at `x₀`. -/
@@ -100,12 +92,15 @@ theorem eventually_card_aroots_prod_eq {x₀ : B}
       (EuclideanDomain.gcd (F k x₀) (F l x₀)).natDegree) :
     ∀ᶠ x in 𝓝 x₀,
       ((∏ k, F k x).aroots ℂ).toFinset.card = ((∏ k, F k x₀).aroots ℂ).toFinset.card := by
-  have hne {x : B} (hx : ∀ k, (F k x).degree = d k) (k : ι) : F k x ≠ 0 := by
+  have hne {x : B} (hx : ∀ k, (F k x).degree = d k) (k : ι) (_ : k ∈ Finset.univ) :
+      (F k x).map (algebraMap ℝ ℂ) ≠ 0 := by
+    rw [Polynomial.map_ne_zero_iff (algebraMap ℝ ℂ).injective]
     rintro h
     simpa [h] using hx k
   filter_upwards [eventually_exists_bijOn_biUnion_aroots_toFinset hF hdeg hcard hgcd one_pos,
     eventually_all.2 hdeg] with x ⟨e, he, _⟩ hx
-  rw [aroots_prod_toFinset (hne hx), aroots_prod_toFinset (hne fun k => (hdeg k).self_of_nhds)]
+  rw [aroots_prod_toFinset _ _ (hne hx),
+    aroots_prod_toFinset _ _ (hne fun k => (hdeg k).self_of_nhds)]
   exact (Finset.card_nbij e he.mapsTo he.injOn he.surjOn).symm
 
 omit [Fintype ι] in
