@@ -53,7 +53,7 @@ variable {K L M : Type*} [Field K] [Field L] [Field M] [Algebra K L] [Algebra L 
 
 /-- Infinite places over `v` correspond to pairs of successive infinite places through an
 intermediate field. -/
-@[expose] def liesOverTowerEquiv (v : InfinitePlace K) :
+def liesOverTowerEquiv (v : InfinitePlace K) :
     (Σ w : {w : InfinitePlace L // w.LiesOver v},
       {u : InfinitePlace M // u.LiesOver w.1}) ≃
       {u : InfinitePlace M // u.LiesOver v} where
@@ -83,7 +83,21 @@ theorem liesOverTowerEquiv_apply (v : InfinitePlace K)
     (p : Σ w : {w : InfinitePlace L // w.LiesOver v},
       {u : InfinitePlace M // u.LiesOver w.1}) :
     (liesOverTowerEquiv (L := L) (M := M) v p).1 = p.2.1 :=
-  rfl
+  by simp [liesOverTowerEquiv]
+
+/-- The inverse of `liesOverTowerEquiv` passes through the place `u` induces on `L`. -/
+@[simp]
+theorem liesOverTowerEquiv_symm_apply_fst (v : InfinitePlace K)
+    (u : {u : InfinitePlace M // u.LiesOver v}) :
+    ((liesOverTowerEquiv (L := L) v).symm u).1.1 = u.1.comap (algebraMap L M) :=
+  by simp [liesOverTowerEquiv]
+
+/-- The inverse of `liesOverTowerEquiv` keeps `u` as the top place. -/
+@[simp]
+theorem liesOverTowerEquiv_symm_apply_snd (v : InfinitePlace K)
+    (u : {u : InfinitePlace M // u.LiesOver v}) :
+    ((liesOverTowerEquiv (L := L) v).symm u).2.1 = u.1 :=
+  by simp [liesOverTowerEquiv]
 
 end NumberField.InfinitePlace
 

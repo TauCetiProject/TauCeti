@@ -164,7 +164,10 @@ theorem finiteAdeleNorm_comp (M : Type*) [Field M] [NumberField M] [Algebra L M]
   refine Fintype.prod_equiv e _ _ fun p ↦ ?_
   let _ : p.2.1.asIdeal.LiesOver p.1.1.asIdeal := p.2.2
   let _ : p.1.1.asIdeal.LiesOver v.asIdeal := p.1.2
-  let _ : p.2.1.asIdeal.LiesOver v.asIdeal := (e p).2
+  let _ : p.2.1.asIdeal.LiesOver v.asIdeal :=
+    Ideal.LiesOver.trans p.2.1.asIdeal p.1.1.asIdeal v.asIdeal
+  rw [show e p = ⟨p.2.1, inferInstance⟩ from
+    Subtype.ext (HeightOneSpectrum.liesOverTowerEquiv_apply (𝓞 L) v p)]
   refine @Algebra.norm_norm _ _ _ _ _ _ _ _ _ _ ?_ _ _
   exact IsScalarTower.of_algebraMap_eq fun y ↦ by
     rw [HeightOneSpectrum.algebraMap_eq_completionAlgHom (K := K) v p.2.1,
@@ -243,7 +246,9 @@ theorem infiniteAdeleNorm_comp (M : Type*) [Field M] [NumberField M] [Algebra L 
   refine Fintype.prod_equiv e _ _ fun p ↦ ?_
   let _ : p.2.1.LiesOver p.1.1 := p.2.2
   let _ : p.1.1.LiesOver v := p.1.2
-  let _ : p.2.1.LiesOver v := (e p).2
+  let _ : p.2.1.LiesOver v := LiesOver.trans p.2.1 p.1.1 v
+  rw [show e p = ⟨p.2.1, inferInstance⟩ from
+    Subtype.ext (InfinitePlace.liesOverTowerEquiv_apply v p)]
   refine @Algebra.norm_norm _ _ _ _ _ _ _ _ _ _ ?_ _ _
   exact IsScalarTower.of_algebraMap_eq fun y ↦
     (RingHom.congr_fun (LiesOver.completionMap_comp (v := v) (w := p.1.1)
