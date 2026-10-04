@@ -94,6 +94,10 @@ theorem OrthogonalCompactOpens.isOpen_localSpinorNormImage (hQ : Q.Nondegenerate
       Set (Multiplicative (SquareClassGroup ℚ_[p]))) := by
   let : DiscreteTopology (SquareClassGroup ℚ_[p]) :=
     QuotientAddGroup.discreteTopology (by
+      -- `SquareClassGroup` is the additive quotient of `Additive ℚ_[p]ˣ` by
+      -- `(Subgroup.square ℚ_[p]ˣ).toAddSubgroup`. Both `Additive` and `Subgroup.toAddSubgroup`
+      -- are identity wrappers on carriers and topology, so this `change` is definitional
+      -- unfolding to the multiplicative statement about the square subgroup of `ℚ_[p]ˣ`.
       change IsOpen (Subgroup.square ℚ_[p]ˣ : Set ℚ_[p]ˣ)
       rw [square_eq_range_powMonoidHom]
       exact isOpen_range_powMonoidHom (K := ℚ_[p]) (n := 2) two_ne_zero)
