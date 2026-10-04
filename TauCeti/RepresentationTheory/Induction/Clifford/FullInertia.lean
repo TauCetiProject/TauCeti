@@ -7,7 +7,6 @@ module
 
 public import TauCeti.RepresentationTheory.Induction.Inertia
 import TauCeti.RepresentationTheory.Induction.Clifford.Basic
-import TauCeti.RepresentationTheory.Irreducible
 
 /-!
 # Constituents with full inertia
