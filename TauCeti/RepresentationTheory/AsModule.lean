@@ -169,12 +169,28 @@ variable (ρ σ) in
 /-- **The module of a product representation is equivalent to the product of the modules.** -/
 noncomputable def _root_.Representation.prodAsModuleEquiv :
     (ρ.prod σ).asModule ≃ₗ[k[G]] ρ.asModule × σ.asModule :=
-  LinearEquiv.ofBijective
-    ((_root_.Representation.IntertwiningMap.equivLinearMapAsModule _ _
+  let f : (ρ.prod σ).asModule →ₗ[k[G]] ρ.asModule × σ.asModule :=
+    (_root_.Representation.IntertwiningMap.equivLinearMapAsModule _ _
         (_root_.Representation.IntertwiningMap.fst k ρ σ)).prod
       (_root_.Representation.IntertwiningMap.equivLinearMapAsModule _ _
-        (_root_.Representation.IntertwiningMap.snd k ρ σ)))
-    Function.bijective_id
+        (_root_.Representation.IntertwiningMap.snd k ρ σ))
+  LinearEquiv.ofBijective f <| by
+    -- `f` is the identification of the product module with `V × W`, followed by the inverse
+    -- identifications of `V` and `W` with the factor modules.
+    have hf : ⇑f =
+        Prod.map ρ.asModuleEquiv.symm σ.asModuleEquiv.symm ∘ (ρ.prod σ).asModuleEquiv := by
+      funext x
+      rw [Function.comp_apply, Prod.map_apply, LinearMap.prod_apply, Function.prod_apply,
+        _root_.Representation.IntertwiningMap.equivLinearMapAsModule_apply,
+        _root_.Representation.IntertwiningMap.equivLinearMapAsModule_apply,
+        _root_.Representation.asModuleEquiv_symm_apply,
+        _root_.Representation.asModuleEquiv_symm_apply, _root_.Representation.asModuleEquiv_apply]
+      -- What remains is `IntertwiningMap.fst_apply` and `IntertwiningMap.snd_apply` at `x`,
+      -- read through the type synonym `(ρ.prod σ).asModule = V × W`.
+      rfl
+    rw [hf]
+    exact (ρ.asModuleEquiv.symm.bijective.prodMap σ.asModuleEquiv.symm.bijective).comp
+      (ρ.prod σ).asModuleEquiv.bijective
 
 @[simp]
 theorem _root_.Representation.prodAsModuleEquiv_apply (x : (ρ.prod σ).asModule) :
