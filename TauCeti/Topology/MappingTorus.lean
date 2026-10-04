@@ -11,6 +11,7 @@ public import Mathlib.Topology.Instances.AddCircle.Real
 public import Mathlib.Topology.Constructions
 public import Mathlib.GroupTheory.GroupAction.Defs
 public import TauCeti.Topology.Instances.AddCircle.Defs
+import TauCeti.GroupTheory.Perm.Basic
 
 /-!
 # Mapping tori and fibering over the circle
@@ -25,6 +26,14 @@ The quotient projection to `UnitAddCircle` records the circle coordinate of each
 The map `MappingTorus.incl` includes the fibre at height zero.  Moving once around the cylinder
 gives `MappingTorus.monodromyHomotopy`, a homotopy from this inclusion after the monodromy to the
 inclusion itself.
+
+A continuous map `g : F → G` intertwining monodromies `φ` and `ψ` induces
+`MappingTorus.map φ ψ g h : C(MappingTorus φ, MappingTorus ψ)`, acting on cylinder representatives
+by `g` in the fibre coordinate and the identity in the height coordinate. These induced maps lie
+over the circle (`MappingTorus.proj_comp_map`), restrict to `g` on the fibres at height zero
+(`MappingTorus.map_comp_incl`), and are functorial (`MappingTorus.map_id`,
+`MappingTorus.map_comp`). They are the maps needed to state naturality of constructions on mapping
+tori under commuting squares of monodromies.
 
 The construction follows the standard mapping-torus model, e.g. Hatcher,
 *Algebraic Topology*, Section 2.2.
@@ -101,6 +110,11 @@ theorem mk_eq_iff (φ : F ≃ₜ F) {x y : F} {t s : ℝ} :
   · rintro ⟨n, hxy, hts⟩
     exact ⟨n, Prod.ext hxy hts⟩
 
+/-- Every point of a mapping torus is represented by a point of the cylinder. -/
+theorem mk_surjective (φ : F ≃ₜ F) (z : MappingTorus φ) : ∃ x t, mk φ x t = z := by
+  obtain ⟨⟨x, t⟩, rfl⟩ := Quotient.mk''_surjective z
+  exact ⟨x, t, rfl⟩
+
 /-- The quotient map from the cylinder to the mapping torus is continuous. -/
 theorem continuous_mk (φ : F ≃ₜ F) : Continuous fun p : F × ℝ ↦ mk φ p.1 p.2 :=
   continuous_quotient_mk'
@@ -133,26 +147,17 @@ section Map
 
 variable {G : Type*} [TopologicalSpace G]
 
-private lemma semiconj_pow {φ : F ≃ₜ F} {ψ : G ≃ₜ G} {g : F → G}
-    (h : Function.Semiconj g φ ψ) (n : ℕ) (x : F) :
-    g ((φ ^ n) x) = (ψ ^ n) (g x) := by
-  induction n with
-  | zero => rfl
-  | succ n ih =>
-      simp only [pow_succ', Homeomorph.mul_apply]
-      rw [h, ih]
+/-- Forgetting the topology is multiplicative, so powers are computed as permutations. -/
+private lemma coe_zpow_eq_toEquiv_zpow {X : Type*} [TopologicalSpace X] (f : X ≃ₜ X) (n : ℤ) :
+    ⇑(f ^ n) = ⇑(f.toEquiv ^ n) :=
+  congrArg DFunLike.coe
+    (map_zpow (MonoidHom.mk' (Homeomorph.toEquiv (X := X) (Y := X)) fun _ _ ↦ rfl) f n)
 
 private lemma semiconj_zpow {φ : F ≃ₜ F} {ψ : G ≃ₜ G} {g : F → G}
-    (h : Function.Semiconj g φ ψ) (n : ℤ) (x : F) :
-    g ((φ ^ n) x) = (ψ ^ n) (g x) := by
-  cases n with
-  | ofNat n =>
-      exact semiconj_pow h n x
-  | negSucc n =>
-      have hinv : Function.Semiconj g φ.symm ψ.symm :=
-        h.inverses_right φ.right_inv ψ.left_inv
-      rw [zpow_negSucc, zpow_negSucc, ← inv_pow, ← inv_pow]
-      exact semiconj_pow hinv (n + 1) x
+    (h : Function.Semiconj g φ ψ) (n : ℤ) :
+    Function.Semiconj g ⇑(φ ^ n) ⇑(ψ ^ n) := by
+  rw [coe_zpow_eq_toEquiv_zpow, coe_zpow_eq_toEquiv_zpow]
+  exact Function.Semiconj.perm_zpow_right h n
 
 /-- A continuous map intertwining two monodromies induces a map of their mapping tori. -/
 def map (φ : F ≃ₜ F) (ψ : G ≃ₜ G) (g : C(F, G)) (h : Function.Semiconj g φ ψ) :
@@ -160,6 +165,7 @@ def map (φ : F ≃ₜ F) (ψ : G ≃ₜ G) (g : C(F, G)) (h : Function.Semiconj
   letI : AddAction ℤ (F × ℝ) := MappingTorus.action φ
   { toFun := Quotient.lift (fun p : F × ℝ ↦ mk ψ (g p.1) p.2) fun a b hab ↦ by
       obtain ⟨n, rfl⟩ := AddAction.mem_orbit_iff.mp hab
+      -- The action orbit witness must be unfolded to expose its two coordinates.
       change mk ψ (g ((φ ^ n) b.1)) (b.2 + n) = mk ψ (g b.1) b.2
       rw [semiconj_zpow h]
       exact mk_vadd ψ n (g b.1) b.2
@@ -172,6 +178,7 @@ lemma map_mk (φ : F ≃ₜ F) (ψ : G ≃ₜ G) (g : C(F, G)) (h : Function.Sem
     (x : F) (t : ℝ) : map φ ψ g h (mk φ x t) = mk ψ (g x) t := (rfl)
 
 /-- A map of mapping tori restricts on the fibre to the map intertwining the monodromies. -/
+@[simp]
 lemma map_comp_incl (φ : F ≃ₜ F) (ψ : G ≃ₜ G) (g : C(F, G))
     (h : Function.Semiconj g φ ψ) :
     (map φ ψ g h).comp (incl φ) = (incl ψ).comp g := by
@@ -184,21 +191,17 @@ lemma map_id (φ : F ≃ₜ F) :
     map φ φ (ContinuousMap.id F) (by intro x; rfl) =
       ContinuousMap.id (MappingTorus φ) := by
   ext z
-  obtain ⟨p, rfl⟩ := Quotient.mk''_surjective z
-  rcases p with ⟨x, t⟩
-  change map φ φ (ContinuousMap.id F) _ (mk φ x t) = mk φ x t
+  obtain ⟨x, t, rfl⟩ := mk_surjective φ z
   simp
 
 /-- Maps of mapping tori respect composition of maps intertwining the monodromies. -/
+@[simp]
 lemma map_comp {H : Type*} [TopologicalSpace H] (φ : F ≃ₜ F) (ψ : G ≃ₜ G) (χ : H ≃ₜ H)
     (g : C(F, G)) (k : C(G, H)) (hg : Function.Semiconj g φ ψ)
     (hk : Function.Semiconj k ψ χ) :
     (map ψ χ k hk).comp (map φ ψ g hg) = map φ χ (k.comp g) (hg.trans hk) := by
   ext z
-  obtain ⟨p, rfl⟩ := Quotient.mk''_surjective z
-  rcases p with ⟨x, t⟩
-  change map ψ χ k hk (map φ ψ g hg (mk φ x t)) =
-    map φ χ (k.comp g) (hg.trans hk) (mk φ x t)
+  obtain ⟨x, t, rfl⟩ := mk_surjective φ z
   simp
 
 end Map
@@ -239,15 +242,14 @@ section Map
 variable {G : Type*} [TopologicalSpace G]
 
 /-- A map of mapping tori preserves the projection to the circle. -/
+@[simp]
 lemma proj_comp_map (φ : F ≃ₜ F) (ψ : G ≃ₜ G) (g : C(F, G))
     (h : Function.Semiconj g φ ψ) :
     (⟨proj ψ, continuous_proj ψ⟩ : C(MappingTorus ψ, UnitAddCircle)).comp
         (map φ ψ g h) =
       (⟨proj φ, continuous_proj φ⟩ : C(MappingTorus φ, UnitAddCircle)) := by
   ext z
-  obtain ⟨p, rfl⟩ := Quotient.mk''_surjective z
-  rcases p with ⟨x, t⟩
-  change proj ψ (map φ ψ g h (mk φ x t)) = proj φ (mk φ x t)
+  obtain ⟨x, t, rfl⟩ := mk_surjective φ z
   simp
 
 end Map

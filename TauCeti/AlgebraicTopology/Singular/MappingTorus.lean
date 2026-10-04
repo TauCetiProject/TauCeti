@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Singular.Basic
 public import TauCeti.Topology.MappingTorus
 public import Mathlib.AlgebraicTopology.SingularHomology.HomotopyInvariance
 
@@ -59,11 +58,14 @@ def singularChainHomotopy :
     TopCat.ofHom (TauCeti.MappingTorus.incl φ)
   refine (_root_.Homotopy.ofEq
     (((singularChainComplexFunctor C).obj R).map_comp f i).symm).trans ?_
+  -- `TopCat.Homotopy (f ≫ i) i` unfolds to a homotopy between the underlying continuous maps,
+  -- whose composite `(incl φ).comp φ` is exactly the source of `monodromyHomotopy φ`.
   exact (show TopCat.Homotopy (f ≫ i) i from
     TauCeti.MappingTorus.monodromyHomotopy φ).singularChainComplexFunctorObjMap R
 
 /-- On singular homology, the map induced by the fibre inclusion is unchanged after
 precomposition with the monodromy map. -/
+@[simp]
 lemma homologyMap_monodromy_comp_incl [CategoryWithHomology C] (n : ℕ) :
     HomologicalComplex.homologyMap
           (((singularChainComplexFunctor C).obj R).map
