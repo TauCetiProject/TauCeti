@@ -107,6 +107,7 @@ theorem affineToricSchemeAction_bot (hi : IsIntegralLattice i) :
     congrArg AlgHom.toRingHom <| affineCoordinateRingCoaction_bot hi
 
 /-- On the zero cone, the bundled affine toric action is the multiplication morphism. -/
+@[simp]
 theorem affineToricSchemeActionOver_bot (hi : IsIntegralLattice i) :
     affineToricSchemeActionOver hi (⊥ : PointedCone ℝ V) =
       μ[((denseTorusScheme hi).asOver (Spec (.of ℂ)))] := by
