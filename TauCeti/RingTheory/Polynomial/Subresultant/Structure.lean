@@ -79,7 +79,8 @@ theorem _root_.Polynomial.subresultant_eq_C_mul_subresultant_mod {p q : K[X]} {m
     subresultant_eq_C_sign_mul_coeff_pow_mul_of_left_degree_drop hr le_rfl hrm hj,
     subresultant_comm (p % q) q r q.natDegree j, coeff_natDegree, ← mul_assoc, ← C_mul]
   congr 2
-  rw [show m - j = (m - r) + (r - j) by omega, add_mul, pow_add]
+  have hmj : m - j = (m - r) + (r - j) := by omega
+  rw [hmj, add_mul, pow_add]
   ring
 
 /-- The Euclidean step for the signed remainder `-(p % q)`, the next entry of the signed
@@ -117,10 +118,10 @@ theorem _root_.Polynomial.subresultant_natDegree_sub_one {p q : K[X]} {m : ℕ}
     (hp : p.natDegree ≤ m) (hq : 0 < q.natDegree) (hqm : q.natDegree ≤ m) :
     subresultant p q m q.natDegree (q.natDegree - 1) =
       C ((-q.leadingCoeff) ^ (m + 1 - q.natDegree)) * (p % q) := by
+  have hm : m - (q.natDegree - 1) = m + 1 - q.natDegree := by omega
+  have hq1 : q.natDegree - (q.natDegree - 1) = 1 := by omega
   rw [subresultant_eq_C_mul_mod hp (Nat.le_sub_one_of_lt (natDegree_mod_lt p hq.ne')) (by omega)
-    (by omega), show m - (q.natDegree - 1) = m + 1 - q.natDegree by omega,
-    show q.natDegree - (q.natDegree - 1) = 1 by omega, Nat.sub_self, pow_zero, mul_one, mul_one,
-    neg_pow q.leadingCoeff]
+    (by omega), hm, hq1, Nat.sub_self, pow_zero, mul_one, mul_one, neg_pow q.leadingCoeff]
 
 /-- Strictly inside the degree gap, between the degree of the remainder and
 `q.natDegree - 1`, the subresultants of `(p, q)` vanish. This includes every index below
