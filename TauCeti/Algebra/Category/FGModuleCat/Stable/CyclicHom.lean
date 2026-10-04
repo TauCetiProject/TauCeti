@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.Algebra
-public import TauCeti.Algebra.Category.FGModuleCat.Basic
 public import TauCeti.Algebra.Category.FGModuleCat.Stable.Syzygy
 
 /-!
@@ -94,6 +93,7 @@ theorem cyclicModuleLift_mk (a : A) (m : M) (hm : op a • m = 0) (c : Aᵐᵒ�
   (rfl)
 
 /-- Two maps out of the cyclic module `A ⧸ aA` agree when they agree on the generator. -/
+@[ext]
 theorem cyclicModule_hom_ext {a : A} {N : FGModuleCat.{u} Aᵐᵒᵖ} {f g : cyclicModule a ⟶ N}
     (h : f.hom.hom (Submodule.Quotient.mk 1) = g.hom.hom (Submodule.Quotient.mk 1)) : f = g :=
   FGModuleCat.hom_ext <| Submodule.linearMap_qext _ <| LinearMap.ext_ring h
