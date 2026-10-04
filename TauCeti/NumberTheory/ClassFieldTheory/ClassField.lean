@@ -7,7 +7,7 @@ module
 
 public import Mathlib.FieldTheory.Galois.Abelian
 public import Mathlib.FieldTheory.Galois.Infinite
-public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Basic
+public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.FiniteExtension
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.AbelianLayer
 
 /-!
@@ -37,6 +37,8 @@ Finally `V` is an abelian layer exactly when its class field is an abelian exten
 
 * `TauCeti.ClassFieldTheory.fixingSubgroup_classField`: the fixing subgroup of the class field of
   `V` is `V`.
+* `TauCeti.ClassFieldTheory.fixingOpenNormalSubgroup_classField`: the bundled open normal subgroup
+  cut out by the class field of `V` is `V`.
 * `TauCeti.ClassFieldTheory.classField_le_classField_iff`: `classField F W ≤ classField F V` if
   and only if `V ≤ W`.
 * `TauCeti.ClassFieldTheory.exists_classField_eq_iff`: the class fields are exactly the finite
@@ -120,6 +122,17 @@ instance isGalois_classField (V : OpenNormalSubgroup (AbsoluteGaloisGroup F)) :
     IsGalois F (classField F V) :=
   (InfiniteGalois.normal_iff_isGalois (classField F V)).1
     (by simpa only [fixingSubgroup_classField] using V.isNormal')
+
+/-- Cutting out the class field of `V` and then taking the open normal subgroup that fixes it
+recovers `V`. -/
+@[simp]
+theorem fixingOpenNormalSubgroup_classField (V : OpenNormalSubgroup (AbsoluteGaloisGroup F)) :
+    fixingOpenNormalSubgroup F (classField F V) = V := by
+  apply OpenNormalSubgroup.toSubgroup_injective
+  -- Expose the underlying subgroups so the finite-extension fixing-subgroup theorem rewrites.
+  change (fixingOpenNormalSubgroup F (classField F V)).toSubgroup = V.toSubgroup
+  rw [fixingOpenNormalSubgroup_toSubgroup (classField F V).val,
+    IntermediateField.fieldRange_val, fixingSubgroup_classField]
 
 /-- **The class fields are exactly the finite Galois subextensions of `Fˢ`.** -/
 theorem exists_classField_eq_iff (L : IntermediateField F (SeparableClosure F)) :
