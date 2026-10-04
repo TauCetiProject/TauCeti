@@ -46,6 +46,9 @@ here.
 * `TauCeti.OrientedPDCode.alexanderGenerator_insertClasp_inl_inl_apply_self` and
   `TauCeti.OrientedPDCode.alexanderGenerator_insertClasp_inl_inl_apply_right`: after the
   insertion, the two old ends of each cut arc still give the same generator.
+* `TauCeti.OrientedPDCode.clasp_relations`: the computation behind the clasp, for scalars in any
+  commutative ring: when the weights at the second crossing are inverse to those at the first and
+  one strand is over at both, the relations at the second crossing return the incoming arcs.
 
 ## References
 
@@ -137,9 +140,9 @@ private theorem alexanderWeight_insertClasp_over :
 slots `0` and `1`, and `x₂`, `x₃` the arcs leaving it at slots `2` and `3`, given by the relations
 there. If the weights at the second crossing are inverse to those at the first, and one strand is
 over at both, then the relations at slots `0` and `1` of the second crossing return `x₁` and
-`x₀`. -/
-private theorem clasp_relations {M : Type*} [AddCommGroup M] [Module ℤ[T;T⁻¹] M]
-    {wA₀ wA₁ wB₀ wB₁ : ℤ[T;T⁻¹]} (h₀ : wB₀ * wA₁ = 1) (h₁ : wB₁ * wA₀ = 1)
+`x₀`. The scalars may lie in any commutative ring. -/
+theorem clasp_relations {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+    {wA₀ wA₁ wB₀ wB₁ : R} (h₀ : wB₀ * wA₁ = 1) (h₁ : wB₁ * wA₀ = 1)
     (hover : (wA₀ = 1 ∧ wB₁ = 1) ∨ (wA₁ = 1 ∧ wB₀ = 1)) {x₀ x₁ x₂ x₃ : M}
     (hx₂ : x₂ = wA₀ • x₀ + (1 - wA₀) • x₁) (hx₃ : x₃ = wA₁ • x₁ + (1 - wA₁) • x₂) :
     wB₀ • x₃ + (1 - wB₀) • x₂ = x₁ ∧ wB₁ • x₂ + (1 - wB₁) • x₁ = x₀ := by
