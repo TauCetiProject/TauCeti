@@ -252,6 +252,15 @@ theorem residueFieldHom_comp {N : Type*} [Field N] [ValuativeRel N] [Algebra K N
   congr 1
   exact Subtype.ext (by simp)
 
+/-- Passing the identity embedding to residue fields gives the identity embedding. -/
+@[simp]
+theorem residueFieldHom_id : (AlgHom.id K L).residueFieldHom = AlgHom.id 𝓀[K] 𝓀[L] := by
+  ext x
+  obtain ⟨x, rfl⟩ := IsLocalRing.residue_surjective x
+  simp only [residueFieldHom_residue, AlgHom.id_apply]
+  congr 1
+  exact Subtype.ext (by simp)
+
 /-- For an automorphism, the induced embedding of residue fields is the induced automorphism
 `AlgEquiv.residueFieldEquiv`. -/
 @[simp]
