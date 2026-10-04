@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.End
 public import Mathlib.Topology.Homeomorph.Defs
-public import TauCeti.GroupTheory.Perm.Basic
+import TauCeti.GroupTheory.Perm.Basic
 
 /-!
 # Semiconjugacy of homeomorphisms
