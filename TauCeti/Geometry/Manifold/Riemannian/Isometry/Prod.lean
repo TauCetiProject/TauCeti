@@ -80,6 +80,10 @@ def prodCongr (Φ : RiemannianIsometry I I' M M') (Ψ : RiemannianIsometry J J' 
   contMDiff_invFun := (Φ.toDiffeomorph.symm.contMDiff.comp contMDiff_fst).prodMk
     (Ψ.toDiffeomorph.symm.contMDiff.comp contMDiff_snd)
   inner_mfderiv' p v w := by
+    -- The goal mentions the coercion of the `Diffeomorph` structure literal being built here; it
+    -- unfolds through `Diffeomorph.toEquiv` and `Equiv.prodCongr` to `Prod.map Φ Ψ`. Mathlib has
+    -- no `Diffeomorph.coe_mk` rewrite lemma, and `coe_prodCongr` below is not yet available
+    -- inside this definition, so the unfolding is done by `change`.
     change inner ℝ (mfderiv (I.prod J) (I'.prod J') (Prod.map Φ Ψ) p v)
       (mfderiv (I.prod J) (I'.prod J') (Prod.map Φ Ψ) p w) = inner ℝ v w
     rw [Manifold.inner_tangentSpace_prod,
