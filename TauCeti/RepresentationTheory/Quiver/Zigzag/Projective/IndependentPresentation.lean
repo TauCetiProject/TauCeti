@@ -294,36 +294,27 @@ private theorem quadraticRelationMap_mem_range_independent (i : V)
   · exact ⟨DFinsupp.single (.inl r) x, by
       rw [zigzagProjectiveIndependentQuadraticDifferential_single,
         zigzagProjectiveIndependentQuadraticRelationMap_nonreturn]⟩
-  · by_cases hj : j = c i
-    · subst j
-      by_cases hj' : j' = c i
-      · subst j'
-        rw [zigzagProjectiveQuadraticRelationMap_backtrack]
-        simp
-      · let r' : ZigzagIndependentQuadraticRelationIndex G c i := .inr ⟨j', hj'⟩
-        refine ⟨-DFinsupp.single r' x, ?_⟩
-        rw [map_neg, zigzagProjectiveIndependentQuadraticDifferential_single,
-          zigzagProjectiveIndependentQuadraticRelationMap_backtrack,
-          zigzagProjectiveQuadraticRelationMap_backtrack,
-          zigzagProjectiveQuadraticRelationMap_backtrack]
-        abel
-    · by_cases hj' : j' = c i
-      · subst j'
-        let r : ZigzagIndependentQuadraticRelationIndex G c i := .inr ⟨j, hj⟩
-        exact ⟨DFinsupp.single r x, by
+  · dsimp only [ZigzagQuadraticRelationIndex.vertex] at x
+    -- Each backtrack difference factors through the chosen backtrack.
+    have hc : ∀ a : G.neighborSet i,
+        zigzagProjectiveQuadraticRelationMap k G i (.inr (a, c i)) x ∈
+          LinearMap.range (zigzagProjectiveIndependentQuadraticDifferential k G c i) := by
+      intro a
+      by_cases ha : a = c i
+      · subst a
+        rw [zigzagProjectiveQuadraticRelationMap_backtrack, sub_self]
+        exact zero_mem _
+      · exact ⟨DFinsupp.single (.inr ⟨a, ha⟩) x, by
           rw [zigzagProjectiveIndependentQuadraticDifferential_single,
             zigzagProjectiveIndependentQuadraticRelationMap_backtrack]⟩
-      · let r : ZigzagIndependentQuadraticRelationIndex G c i := .inr ⟨j, hj⟩
-        let r' : ZigzagIndependentQuadraticRelationIndex G c i := .inr ⟨j', hj'⟩
-        refine ⟨DFinsupp.single r x - DFinsupp.single r' x, ?_⟩
-        rw [map_sub, zigzagProjectiveIndependentQuadraticDifferential_single,
-          zigzagProjectiveIndependentQuadraticDifferential_single,
-          zigzagProjectiveIndependentQuadraticRelationMap_backtrack,
-          zigzagProjectiveIndependentQuadraticRelationMap_backtrack,
-          zigzagProjectiveQuadraticRelationMap_backtrack,
-          zigzagProjectiveQuadraticRelationMap_backtrack,
-          zigzagProjectiveQuadraticRelationMap_backtrack]
-        abel
+    have hsub : zigzagProjectiveQuadraticRelationMap k G i (.inr (j, j')) x =
+        zigzagProjectiveQuadraticRelationMap k G i (.inr (j, c i)) x -
+          zigzagProjectiveQuadraticRelationMap k G i (.inr (j', c i)) x := by
+      rw [zigzagProjectiveQuadraticRelationMap_backtrack k G i j,
+        zigzagProjectiveQuadraticRelationMap_backtrack k G i j,
+        zigzagProjectiveQuadraticRelationMap_backtrack k G i j', sub_sub_sub_cancel_right]
+    rw [hsub]
+    exact sub_mem (hc j) (hc j')
 
 private theorem range_quadratic_le_range_independent (i : V) :
     LinearMap.range (zigzagProjectiveQuadraticDifferential k G i) ≤
@@ -347,14 +338,14 @@ theorem range_zigzagProjectiveIndependentQuadraticDifferential (i : V) :
 
 /-- **The independent quadratic stage is exact.** Under the local branching hypothesis, its
 image is the kernel of the arrow differential. -/
-theorem range_zigzagProjectiveIndependentQuadraticDifferential_eq_ker
-    (hns : ∀ v : V, ∃ w, G.Adj v w) (i : V)
+theorem range_zigzagProjectiveIndependentQuadraticDifferential_eq_ker (i : V)
     (hbranch : ∀ j : G.neighborSet i,
       (∃ l : G.neighborSet j.1, l.1 ≠ i) ∨ (∃ j' : G.neighborSet i, j' ≠ j)) :
     LinearMap.range (zigzagProjectiveIndependentQuadraticDifferential k G c i) =
       LinearMap.ker (zigzagProjectiveArrowSum k G i) := by
   rw [range_zigzagProjectiveIndependentQuadraticDifferential]
-  exact range_zigzagProjectiveQuadraticDifferential_eq_ker k G hns i hbranch
+  exact range_zigzagProjectiveQuadraticDifferential_eq_ker k G
+    (fun v => ⟨(c v).1, (G.mem_neighborSet v (c v).1).1 (c v).2⟩) i hbranch
 
 /-- The independent quadratic differential raises every coordinate degree by one.  Shifting its
 source by two and the neighbouring-projective term by one makes it degree zero. -/
