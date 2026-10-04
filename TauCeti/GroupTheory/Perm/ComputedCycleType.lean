@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.Perm.Partition
+import Mathlib.Data.ZMod.QuotientGroup
 
 /-!
 # Executable full cycle types
@@ -43,7 +44,11 @@ namespace TauCeti
 
 open Equiv
 
-variable {α : Type*} [Fintype α] [DecidableEq α]
+variable {α : Type*} [Fintype α]
+
+section DecidableEq
+
+variable [DecidableEq α]
 
 /-- The length of the cycle of `σ` containing `i`, computed by filtering the finite carrier. -/
 @[expose] def _root_.Equiv.Perm.cycleLenOf (σ : Perm α) (i : α) : ℕ :=
@@ -67,17 +72,6 @@ theorem _root_.Equiv.Perm.cycleLenOf_eq_of_sameCycle {σ : Perm α} {i j : α}
   simp only [Finset.mem_filter, Finset.mem_univ, true_and]
   exact ⟨fun hik => hij.symm.trans hik, fun hjk => hij.trans hjk⟩
 
-/-- A fixed point has computed cycle length one. -/
-@[simp]
-theorem _root_.Equiv.Perm.cycleLenOf_eq_one_of_apply_eq {σ : Perm α} {i : α}
-    (hi : σ i = i) : σ.cycleLenOf i = 1 := by
-  rw [Equiv.Perm.cycleLenOf, Finset.card_eq_one]
-  refine ⟨i, ?_⟩
-  ext j
-  simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_singleton]
-  exact ⟨fun hij => (hij.eq_of_left hi).symm,
-    fun h => h ▸ Equiv.Perm.SameCycle.refl σ i⟩
-
 /-- The cycle of a point has length one exactly when the point is fixed. -/
 @[simp]
 theorem _root_.Equiv.Perm.cycleLenOf_eq_one_iff {σ : Perm α} {i : α} :
@@ -94,63 +88,35 @@ theorem _root_.Equiv.Perm.cycleLenOf_eq_one_iff {σ : Perm α} {i : α} :
     obtain ⟨a, ha⟩ := Finset.card_eq_one.mp hlen
     rw [ha] at himem hmem
     exact (Finset.mem_singleton.mp hmem).trans (Finset.mem_singleton.mp himem).symm
-  · exact Equiv.Perm.cycleLenOf_eq_one_of_apply_eq
-
-/-- For a moved point, the computed cycle length is the cardinality of the support of its cycle
-factor. -/
-theorem _root_.Equiv.Perm.cycleLenOf_eq_card_support_cycleOf {σ : Perm α} {i : α}
-    (hi : σ i ≠ i) : σ.cycleLenOf i = (σ.cycleOf i).support.card := by
-  rw [Equiv.Perm.cycleLenOf]
-  congr 1
-  ext j
-  simp only [Finset.mem_filter, Finset.mem_univ, true_and,
-    Equiv.Perm.mem_support_cycleOf_iff' hi]
-
-/-- Raising a permutation to the computed length of a point's cycle fixes that point. -/
-@[simp]
-theorem _root_.Equiv.Perm.pow_cycleLenOf_apply (σ : Perm α) (i : α) :
-    (σ ^ σ.cycleLenOf i) i = i := by
-  by_cases hi : σ i = i
-  · rw [Equiv.Perm.cycleLenOf_eq_one_of_apply_eq hi, pow_one, hi]
-  · rw [Equiv.Perm.cycleLenOf_eq_card_support_cycleOf hi]
-    exact (Equiv.Perm.isCycleOn_support_cycleOf σ i).pow_card_apply
-      ((Equiv.Perm.mem_support_cycleOf_iff' hi).mpr (Equiv.Perm.SameCycle.refl σ i))
-
-/-- The computed cycle length is at most every positive exponent that returns the point to itself.
-Together with `Equiv.Perm.pow_cycleLenOf_apply`, this characterizes it as the least positive return
-time. -/
-theorem _root_.Equiv.Perm.cycleLenOf_le_of_pow_apply_eq {σ : Perm α} {i : α} {k : ℕ}
-    (hk : 0 < k) (hki : (σ ^ k) i = i) : σ.cycleLenOf i ≤ k := by
-  by_cases hi : σ i = i
-  · rw [Equiv.Perm.cycleLenOf_eq_one_of_apply_eq hi]
-    exact hk
-  · rw [Equiv.Perm.cycleLenOf_eq_card_support_cycleOf hi]
-    apply Nat.le_of_dvd hk
-    have himem : i ∈ (σ.cycleOf i).support :=
-      (Equiv.Perm.mem_support_cycleOf_iff' hi).mpr (Equiv.Perm.SameCycle.refl σ i)
-    apply ((Equiv.Perm.isCycleOn_support_cycleOf σ i).pow_apply_eq himem).mp
-    exact hki
+  · intro hi
+    rw [Equiv.Perm.cycleLenOf, Finset.card_eq_one]
+    refine ⟨i, ?_⟩
+    ext j
+    simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_singleton]
+    exact ⟨fun hij => (hij.eq_of_left hi).symm,
+      fun h => h ▸ Equiv.Perm.SameCycle.refl σ i⟩
 
 /-- The executable cycle length agrees with the abstract minimal period of the point. -/
 theorem _root_.Equiv.Perm.cycleLenOf_eq_minimalPeriod (σ : Perm α) (i : α) :
     σ.cycleLenOf i = Function.minimalPeriod σ i := by
-  have hperiod : Function.IsPeriodicPt σ (σ.cycleLenOf i) i := by
-    rw [Function.IsPeriodicPt, Function.IsFixedPt, ← Equiv.Perm.coe_pow]
-    exact σ.pow_cycleLenOf_apply i
-  have hminpos : 0 < Function.minimalPeriod σ i :=
-    hperiod.minimalPeriod_pos (σ.cycleLenOf_pos i)
-  apply le_antisymm
-  · apply Equiv.Perm.cycleLenOf_le_of_pow_apply_eq hminpos
-    simpa only [Equiv.Perm.coe_pow] using
-      (Function.iterate_minimalPeriod (f := (σ : α → α)) (x := i))
-  · exact hperiod.minimalPeriod_le (σ.cycleLenOf_pos i)
+  have hmem : ∀ j, j ∈ Finset.univ.filter (σ.SameCycle i) ↔
+      j ∈ MulAction.orbit (Subgroup.zpowers σ) i := by
+    intro j
+    simp only [Finset.mem_filter, Finset.mem_univ, true_and, MulAction.mem_orbit_iff,
+      Subtype.exists, Subgroup.mem_zpowers_iff, Subgroup.mk_smul, Perm.smul_def,
+      exists_prop, exists_exists_eq_and, Equiv.Perm.SameCycle]
+  let _ := Fintype.ofFinset _ hmem
+  rw [Equiv.Perm.cycleLenOf, ← Fintype.card_ofFinset _ hmem]
+  exact (MulAction.minimalPeriod_eq_card (a := σ) (b := i)).symm
+
+end DecidableEq
 
 section LinearOrder
 
 variable [LinearOrder α]
 
 /-- The least point in the cycle of `i`. This is an executable canonical representative. -/
-@[expose] def _root_.Equiv.Perm.cycleMin (σ : Perm α) (i : α) : α :=
+def _root_.Equiv.Perm.cycleMin (σ : Perm α) (i : α) : α :=
   (Finset.univ.filter (σ.SameCycle i)).min'
     ⟨i, by
       simp only [Finset.mem_filter, Finset.mem_univ, true_and]
