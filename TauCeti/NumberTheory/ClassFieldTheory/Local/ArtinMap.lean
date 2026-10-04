@@ -24,14 +24,16 @@ artinMap K : Kˣ →* G_K^ab,
 
 normalized, like the finite local Artin maps, by arithmetic Frobenius. Its target is
 `Field.absoluteGaloisGroupAbelianization K`, the topological abelianization of Mathlib's
-absolute Galois group `Gal(K̄/K)`, taken at the algebraic closure. The comparison between the two
-closures is `TauCeti.absoluteGaloisGroupRestrictEquiv`, restriction to the separable closure.
+absolute Galois group `Gal(AlgebraicClosure K/K)`, taken at the algebraic closure. The comparison
+between the two closures is `TauCeti.absoluteGaloisGroupRestrictEquiv`, restriction to the
+separable closure.
 
 The finite restrictions of `artinMap K` are the finite local Artin maps (`artinMap_restrict`): if
-`σ ∈ Gal(K̄/K)` represents the absolute Artin symbol of `x ∈ Kˣ`, then for every finite Galois
-extension `L/K` embedded in `Kˢ` by `ι`, the Artin symbol of `x` in `Gal(L/K)^ab` is the class of
-the restriction of `σ` to `L`. The image of `artinMap K` is dense (`denseRange_artinMap`), but it
-is not all of `G_K^ab`, so no statement about `G_K^ab` follows from one about the image alone.
+`σ ∈ Gal(AlgebraicClosure K/K)` represents the absolute Artin symbol of `x ∈ Kˣ`, then for every
+finite Galois extension `L/K` embedded in `Kˢ` by `ι`, the Artin symbol of `x` in `Gal(L/K)^ab` is
+the class of the restriction of `σ` to `L`. The image of `artinMap K` is dense
+(`denseRange_artinMap`), but it is not all of `G_K^ab`, so no statement about `G_K^ab` follows from
+one about the image alone.
 
 ## Main definitions
 
@@ -63,9 +65,9 @@ variable (K : Type) [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
 
 /-- The **absolute local Artin map** `Kˣ →* G_K^ab` of a nonarchimedean local field `K`, into the
-topological abelianization of the absolute Galois group `Gal(K̄/K)`. It is the absolute Artin map
-of the local class formation (`artinMap_apply`), the inverse limit of the finite local Artin maps
-(`artinMap_restrict`). It has dense image (`denseRange_artinMap`). -/
+topological abelianization of the absolute Galois group `Gal(AlgebraicClosure K/K)`. It is the
+absolute Artin map of the local class formation (`artinMap_apply`), the inverse limit of the finite
+local Artin maps (`artinMap_restrict`). It has dense image (`denseRange_artinMap`). -/
 def artinMap : Kˣ →* Field.absoluteGaloisGroupAbelianization K :=
   (absoluteGaloisGroupRestrictEquiv K).symm.topologicalAbelianizationCongr.toMonoidHom.comp
     (MonoidHom.toAdditive.symm
@@ -75,7 +77,7 @@ def artinMap : Kˣ →* Field.absoluteGaloisGroupAbelianization K :=
 
 /-- **The absolute local Artin map is the absolute Artin map of the local class formation**: the
 absolute Artin symbol of `x ∈ Kˣ`, regarded as an element of the ground level `((Kˢ)ˣ)^{G_K}`,
-carried from `Gal(Kˢ/K)^ab` to `Gal(K̄/K)^ab`. -/
+carried from `Gal(Kˢ/K)^ab` to `Gal(AlgebraicClosure K/K)^ab`. -/
 theorem artinMap_apply (x : Kˣ) :
     artinMap K x = (absoluteGaloisGroupRestrictEquiv K).symm.topologicalAbelianizationCongr
       ((localClassFormation K).absoluteArtinMap
@@ -85,9 +87,9 @@ theorem artinMap_apply (x : Kˣ) :
   rfl
 
 /-- **The finite restrictions of the absolute local Artin map are the finite local Artin maps.**
-If `σ ∈ Gal(K̄/K)` represents the absolute Artin symbol of `x ∈ Kˣ`, then for every finite Galois
-extension `L/K` embedded in the separable closure by `ι`, the Artin symbol of `x` in
-`Gal(L/K)^ab` is the class of the restriction of `σ` to `L`. -/
+If `σ ∈ Gal(AlgebraicClosure K/K)` represents the absolute Artin symbol of `x ∈ Kˣ`, then for
+every finite Galois extension `L/K` embedded in the separable closure by `ι`, the Artin symbol of
+`x` in `Gal(L/K)^ab` is the class of the restriction of `σ` to `L`. -/
 theorem artinMap_restrict (L : Type*) [Field L] [Algebra K L] [FiniteDimensional K L]
     [IsGalois K L] (ι : L →ₐ[K] SeparableClosure K) (x : Kˣ) (σ : Field.absoluteGaloisGroup K)
     (hσ : (σ : Field.absoluteGaloisGroupAbelianization K) = artinMap K x) :
