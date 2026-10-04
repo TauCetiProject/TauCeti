@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.MapDifferential
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Map.Differential
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.BaseChange.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Differential
 
