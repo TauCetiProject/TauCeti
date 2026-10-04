@@ -135,9 +135,6 @@ instance faceAffineToricSchemeMap_isOver (hi : IsIntegralLattice i)
   rw [faceAffineToricSchemeMap_def]
   infer_instance
 
--- Compare the categorical wrappers using Mathlib's projection lemmas during elaboration.
-set_option backward.defeqAttrib.useBackward true in
-set_option backward.isDefEq.respectTransparency false in
 /-- A map of lattice cones intertwines the affine torus actions, with its induced map on
 dense tori in the first factor. The square is an equality of morphisms over `Spec ℂ`. -/
 @[reassoc]
@@ -175,9 +172,14 @@ theorem affineToricSchemeActionOver_comp_map
   apply Over.OverMorphism.ext
   -- The comparison lemmas identify the monoidal structure map with `pullbackSpecIso`.
   -- The remaining projections forget the `Over` and algebra-to-`Under` packaging.
-  simpa [R, a, b, t, m, affineToricSchemeAction, affineToricSchemeMap_def,
-    Scheme.Hom.asOver, Over.tensorHom_left, AlgHom.toUnder, specOverSpec_over,
-    denseTorusScheme, affineToricScheme] using hl
+  simp only [Over.tensorObj_left, algSpec_obj_hom, algSpec_map_left, unop_tensorObj,
+    Quiver.Hom.unop_op, commAlgCatEquivUnder_functor_map, AlgHom.toUnder,
+    CommAlgCat.coe_tensorObj, ConcreteCategory.hom_ofHom, AlgHom.toRingHom_eq_coe,
+    Under.homMk_right, Over.tensorHom_left, denseTorusScheme, affineToricScheme,
+    Scheme.Hom.asOver, affineToricSchemeMap_def, Over.comp_left,
+    affineToricSchemeActionOver_left, affineToricSchemeAction, OverClass.asOverHom_left,
+    R, a, m, t, b] at hl ⊢
+  convert hl using 1 <;> rfl
 
 /-- Face inclusions are equivariant for the affine torus action over `Spec ℂ`. -/
 @[reassoc]
