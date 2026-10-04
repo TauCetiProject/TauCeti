@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
-public import Mathlib.Analysis.Normed.Module.Ball.Homeomorph
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import Mathlib.Geometry.Manifold.ChartedSpace
+public import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
 
 /-!
 # Seifert fibrations
@@ -80,8 +80,9 @@ namespace SolidTorus
 
 /-- The fibres of the model fibred solid torus `V(p, q)`: two points of `D² × S¹` lie in the same
 fibre when they lie in the same orbit of the circle action `t • (z, w) = (t ^ p * z, t ^ q * w)`.
-For `q ≠ 0` the core `{0} × S¹` is a single fibre, and every other fibre winds `q` times around
-the core direction and `p` times around the meridian of the torus `{|z| = r} × S¹` containing it.
+For `q ≠ 0` the core `{0} × S¹` is a single fibre. When moreover `p` is coprime to `q`, every
+other fibre winds `q` times around the core direction and `p` times around the meridian of the
+torus `{|z| = r} × S¹` containing it.
 -/
 def fiberSetoid (p q : ℤ) : Setoid SolidTorus where
   r a b := ∃ t : Circle, ((t ^ p : Circle) : ℂ) * a.1 = b.1 ∧ t ^ q * a.2 = b.2
@@ -112,10 +113,11 @@ theorem fiberSetoid_zero_one {a b : SolidTorus} : fiberSetoid 0 1 a b ↔ a.1 = 
   · rw [zpow_one, inv_mul_cancel_right]
 
 /-- Every fibre of the model fibred solid torus `V(p, q)`, for `q ≠ 0` and `p` coprime to `q`, is
-homeomorphic to a circle. Off the core the orbit map of the circle action is injective by
-coprimality; the core is the circle `{0} × S¹`. -/
+homeomorphic to a circle. -/
 theorem nonempty_homeomorph_circle {p q : ℤ} (hq : q ≠ 0) (hpq : IsCoprime p q)
     (a : SolidTorus) : Nonempty ({b | fiberSetoid p q a b} ≃ₜ Circle) := by
+  -- The core is the circle `{0} × S¹`; off the core the orbit map of the circle action is
+  -- injective by coprimality.
   suffices ∃ f : Circle → SolidTorus, Continuous f ∧ Function.Injective f ∧
       range f = {b | fiberSetoid p q a b} by
     obtain ⟨f, hf, hinj, hrange⟩ := this
@@ -252,23 +254,16 @@ theorem isSeifertFibered : IsSeifertFibered SolidTorus :=
 
 end SolidTorus
 
-/-- An open embedding of the Euclidean plane into the closed unit disc of `ℂ`, onto its interior. -/
-private noncomputable def planeToDisc : EuclideanSpace ℝ (Fin 2) → closedBall (0 : ℂ) 1 :=
-  inclusion ball_subset_closedBall ∘ Homeomorph.unitBall ∘ Complex.orthonormalBasisOneI.repr.symm
-
-private theorem isOpenEmbedding_planeToDisc : IsOpenEmbedding planeToDisc :=
-  (IsOpenEmbedding.inclusion _ (isOpen_ball.preimage continuous_subtype_val)).comp
-    (Homeomorph.unitBall.isOpenEmbedding.comp
-      Complex.orthonormalBasisOneI.repr.symm.toHomeomorph.isOpenEmbedding)
-
 /-- For a boundaryless surface `F`, the circles `{x} × S¹` form a Seifert fibration of `F × S¹`:
 near each fibre, a chart of `F` identifies it with the product fibration `V(0, 1)`. -/
 theorem isSeifertFibration_ker_fst {F : Type*} [TopologicalSpace F]
     [ChartedSpace (EuclideanSpace ℝ (Fin 2)) F] :
     IsSeifertFibration (Setoid.ker (Prod.fst : F × Circle → F)) := by
   intro x
-  let c := (chartAt (EuclideanSpace ℝ (Fin 2)) x.1).trans
-    (isOpenEmbedding_planeToDisc.toOpenPartialHomeomorph planeToDisc)
+  -- Identify the plane with `ℂ`, then embed `ℂ` openly in the closed unit disc.
+  have hd := isOpenEmbedding_inclusion_comp_unitBall.comp
+    Complex.orthonormalBasisOneI.repr.symm.toHomeomorph.isOpenEmbedding
+  let c := (chartAt (EuclideanSpace ℝ (Fin 2)) x.1).trans (hd.toOpenPartialHomeomorph _)
   have hc : c.source = (chartAt (EuclideanSpace ℝ (Fin 2)) x.1).source := by simp [c]
   refine ⟨0, 1, one_pos, isCoprime_one_right, c.prod (OpenPartialHomeomorph.refl Circle), ?_,
     ⟨fun y hy z hyz ↦ ?_, fun a ha b hab ↦ ?_, fun y hy z hz ↦ ?_⟩⟩
