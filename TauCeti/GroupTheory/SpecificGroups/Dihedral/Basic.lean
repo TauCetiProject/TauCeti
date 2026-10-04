@@ -124,6 +124,13 @@ section Recognition
 
 variable {G : Type*} [Group G] {n : ℕ} {s t : G}
 
+/-- Either of the two involutions inverts their product by conjugation. -/
+private lemma conj_mul_eq_inv {M : Type*} [DivisionMonoid M] {s t : M} (hs : s * s = 1)
+    (ht : t * t = 1) :
+    s * (s * t) * s⁻¹ = (s * t)⁻¹ := by
+  simp only [mul_inv_rev, inv_eq_of_mul_eq_one_right ht, inv_eq_of_mul_eq_one_right hs,
+    ← mul_assoc, hs, one_mul]
+
 /-- The underlying function of `TauCeti.dihedralHom`. -/
 private def dihedralFun (s c : G) : DihedralGroup n → G
   | .r i => c ^ (ZMod.cast i : ℤ)
@@ -154,13 +161,11 @@ private def dihedralGroupHom (hs : s * s = 1) (ht : t * t = 1) (hn : (s * t) ^ n
         (s * t) ^ (ZMod.cast (-i) : ℤ) = ((s * t) ^ (ZMod.cast i : ℤ))⁻¹ := by
       simpa only [← ofAdd_neg, hf] using f.map_inv (Multiplicative.ofAdd i)
     have hsi : s⁻¹ = s := inv_eq_of_mul_eq_one_right hs
-    have hconj : s * (s * t) * s⁻¹ = (s * t)⁻¹ := by
-      simp only [mul_inv_rev, inv_eq_of_mul_eq_one_right ht, hsi, ← mul_assoc, hs, one_mul]
     have hmove (i : ZMod n) :
         (s * t) ^ (ZMod.cast i : ℤ) * s = s * (s * t) ^ (ZMod.cast (-i) : ℤ) := by
       have hkey : s * (s * t) ^ (ZMod.cast i : ℤ) * s⁻¹ =
           ((s * t) ^ (ZMod.cast i : ℤ))⁻¹ := by
-        rw [← conj_zpow, hconj, inv_zpow]
+        rw [← conj_zpow, conj_mul_eq_inv hs ht, inv_zpow]
       rw [hneg, ← hkey, hsi, ← mul_assoc, ← mul_assoc, hs, one_mul]
     rintro (i | i) (j | j)
     · rw [DihedralGroup.r_mul_r, dihedralFun_r, dihedralFun_r, dihedralFun_r, hadd]
@@ -202,10 +207,7 @@ private theorem dihedralGroupHom_injective (hs : s * s = 1) (ht : t * t = 1) (hs
         (Commute.refl (s * t)).zpow_left _
       rwa [← hzpow] at hz
     have hinv : (s * t)⁻¹ = s * t := by
-      have hconj : s * (s * t) * s⁻¹ = (s * t)⁻¹ := by
-        simp only [mul_inv_rev, inv_eq_of_mul_eq_one_right ht,
-          inv_eq_of_mul_eq_one_right hs, ← mul_assoc, hs, one_mul]
-      rw [← hconj, hcomm.eq, mul_inv_cancel_right]
+      rw [← conj_mul_eq_inv hs ht, hcomm.eq, mul_inv_cancel_right]
     have hsq : (s * t) ^ (2 : ℤ) = 1 := by
       rw [zpow_two]
       nth_rewrite 1 [← hinv]
