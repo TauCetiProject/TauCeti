@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Data.Finset.Sort
 public import TauCeti.MeasureTheory.OptimalTransport.Finite.Duality
-public import TauCeti.MeasureTheory.OptimalTransport.Finite.Uncrossing
+public import TauCeti.MeasureTheory.OptimalTransport.Finite.Uncrossing.Basic
 
 /-!
 # Monotone finite transportation matrices
@@ -40,6 +40,11 @@ variable {ι κ : Type*} [Fintype ι] [Fintype κ] [LinearOrder ι] [LinearOrder
 weakly increasing columns. Equivalently, its support contains no crossing pair. -/
 def IsMonotone (A : TransportMatrix μ ν) : Prop :=
   ∀ ⦃i₁ i₂ : ι⦄ ⦃j₁ j₂ : κ⦄, i₁ < i₂ → A i₁ j₁ ≠ 0 → A i₂ j₂ ≠ 0 → j₁ ≤ j₂
+
+/-- The defining no-crossing property of a monotone transportation matrix. -/
+theorem isMonotone_iff (A : TransportMatrix μ ν) :
+    A.IsMonotone ↔ ∀ ⦃i₁ i₂ : ι⦄ ⦃j₁ j₂ : κ⦄,
+      i₁ < i₂ → A i₁ j₁ ≠ 0 → A i₂ j₂ ≠ 0 → j₁ ≤ j₂ := (Iff.rfl)
 
 /-- The mass of a lower rectangle in a monotone plan is the smaller of the two marginal
 prefix masses. This characterizes the joint distribution entirely in terms of the marginals. -/
