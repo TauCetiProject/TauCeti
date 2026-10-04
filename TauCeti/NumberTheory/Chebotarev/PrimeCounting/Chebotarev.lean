@@ -156,9 +156,29 @@ private theorem eventually_lt_frobeniusPsi_div_one_div_card_of_mul_comm
   obtain ⟨r, hr, hδr⟩ := ((eventually_gt_atTop 0).and (hlim.eventually (lt_mem_nhds hδ))).exists
   exact eventually_lt_frobeniusPsi_div_of_mul_comm hab σ hr hδr
 
+-- The scope upgrades the cyclotomic Galois group's `IsMulCommutative` instance to
+-- `CommMonoid`, as required by `ConjClasses.mk_bijective`.
+open scoped IsMulCommutative in
+private theorem _root_.TauCeti.NumberField.Chebotarev.primePsi_univ_asymptotic :
+    (fun x : ℝ ↦ primePsi K Set.univ x - x) =o[atTop] fun x : ℝ ↦ x := by
+  classical
+  let F := CyclotomicField 3 K
+  have := IsCyclotomicExtension.isGalois {3} K F
+  have := IsCyclotomicExtension.isMulCommutative {3} K F
+  have hsum := Asymptotics.IsLittleO.sum (s := Finset.univ)
+    (fun (ρ : F ≃ₐ[K] F) _ ↦ frobeniusPsi_asymptotic_of_isCyclotomicExtension K F 3 ρ)
+  refine (hsum.add ((primePsi_univ_sub_sum_frobeniusPsi_isBigO_log K F).trans_isLittleO
+    Real.isLittleO_log_id_atTop)).congr_left fun x ↦ ?_
+  simp only [Finset.sum_apply, Finset.sum_sub_distrib, Finset.sum_const, Finset.card_univ,
+    nsmul_eq_mul, ← Nat.card_eq_fintype_card]
+  rw [Fintype.sum_bijective _ ConjClasses.mk_bijective
+    (fun ρ ↦ frobeniusPsi K F (ConjClasses.mk ρ) x) (fun C ↦ frobeniusPsi K F C x)
+    (fun _ ↦ rfl), ← mul_assoc,
+    mul_one_div_cancel (Nat.cast_ne_zero.mpr Nat.card_pos.ne')]
+  ring
+
 public section
 
-open scoped IsMulCommutative in
 /-- **Weighted Chebotarev for abelian extensions.** If `Gal(L/K)` is abelian, then for every
 `σ ∈ Gal(L/K)` the Frobenius `ψ` function of `σ` satisfies `ψ_σ(x) = x / #Gal(L/K) + o(x)`. -/
 theorem frobeniusPsi_asymptotic_of_mul_comm (hab : ∀ σ τ : L ≃ₐ[K] L, σ * τ = τ * σ)
@@ -168,40 +188,21 @@ theorem frobeniusPsi_asymptotic_of_mul_comm (hab : ∀ σ τ : L ≃ₐ[K] L, σ
   classical
   rw [isLittleO_sub_mul_iff_tendsto_div (eventually_ne_atTop 0)]
   -- In an abelian group the conjugacy classes are the elements.
-  have hmk : Function.Bijective (ConjClasses.mk : (L ≃ₐ[K] L) → ConjClasses (L ≃ₐ[K] L)) := by
-    refine ⟨fun ρ ρ' h ↦ ?_, ConjClasses.mk_surjective⟩
-    obtain ⟨c, hc⟩ := isConj_iff.mp (ConjClasses.mk_eq_mk_iff_isConj.mp h)
-    rw [← hc, hab c, mul_inv_cancel_right]
-  -- Derive the all-prime asymptotic from one cyclotomic extension, independently of the
-  -- weighted crossing: each element contributes `1 / #Gal(F/K)`, and ramification is finite.
-  let F := CyclotomicField 3 K
-  have := IsCyclotomicExtension.isGalois {3} K F
-  have := IsCyclotomicExtension.isMulCommutative {3} K F
-  have hsum := Asymptotics.IsLittleO.sum (s := Finset.univ)
-    (fun (σ : F ≃ₐ[K] F) _ ↦ frobeniusPsi_asymptotic_of_isCyclotomicExtension K F 3 σ)
-  have hψK : (fun x : ℝ ↦ primePsi K Set.univ x - 1 * x)
-      =o[atTop] fun x : ℝ ↦ x := by
-    refine (hsum.add ((primePsi_univ_sub_sum_frobeniusPsi_isBigO_log K F).trans_isLittleO
-      Real.isLittleO_log_id_atTop)).congr_left fun x ↦ ?_
-    simp only [Finset.sum_apply, Finset.sum_sub_distrib, Finset.sum_const, Finset.card_univ,
-      nsmul_eq_mul, ← Nat.card_eq_fintype_card]
-    rw [Fintype.sum_bijective _ ConjClasses.mk_bijective
-      (fun σ ↦ frobeniusPsi K F (ConjClasses.mk σ) x) (fun C ↦ frobeniusPsi K F C x)
-      (fun _ ↦ rfl), ← mul_assoc,
-      mul_one_div_cancel (Nat.cast_ne_zero.mpr Nat.card_pos.ne')]
-    ring
+  have : IsMulCommutative (L ≃ₐ[K] L) := isMulCommutative_iff.2 hab
   -- The Frobenius `ψ` functions of all classes add up to `ψ_K(x) = x + o(x)`, up to `O(log x)`.
   have htotal : Tendsto (fun x ↦ ∑ ρ : L ≃ₐ[K] L, frobeniusPsi K L (ConjClasses.mk ρ) x / x)
       atTop (𝓝 (∑ _ρ : L ≃ₐ[K] L, 1 / (Nat.card (L ≃ₐ[K] L) : ℝ))) := by
     have h : (fun x ↦ ∑ C : ConjClasses (L ≃ₐ[K] L), frobeniusPsi K L C x - 1 * x)
         =o[atTop] fun x : ℝ ↦ x :=
-      (hψK.sub
+      (primePsi_univ_asymptotic.sub
         ((primePsi_univ_sub_sum_frobeniusPsi_isBigO_log K L).trans_isLittleO
           Real.isLittleO_log_id_atTop)).congr_left fun x ↦ by ring
     rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul, ← Nat.card_eq_fintype_card,
       mul_one_div_cancel (Nat.cast_ne_zero.mpr Nat.card_pos.ne')]
     refine ((isLittleO_sub_mul_iff_tendsto_div (eventually_ne_atTop 0)).mp h).congr fun x ↦ ?_
-    rw [← Finset.sum_div, Fintype.sum_bijective _ hmk
+    -- Enable the `CommMonoid` instance only for the conjugacy-class bijection.
+    rw [← Finset.sum_div, Fintype.sum_bijective _
+      (open scoped IsMulCommutative in ConjClasses.mk_bijective (α := L ≃ₐ[K] L))
       (fun ρ ↦ frobeniusPsi K L (ConjClasses.mk ρ) x) (fun C ↦ frobeniusPsi K L C x) fun _ ↦ rfl]
   -- Every class has lower asymptotic density `1 / #G`, and these bounds saturate the total.
   exact tendsto_of_forall_eventually_lt_of_eventually_sum_lt (s := Finset.univ)

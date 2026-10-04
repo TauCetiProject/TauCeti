@@ -19,8 +19,7 @@ For a finite Galois extension `L/K` of number fields, the primes of `K` in a con
 `(#C / #Gal(L/K)) Li(x)`. The weighted Chebotarev theorem gives the corresponding result for
 `ψ_C`; removing higher prime powers and Abel summation give the count.
 The count for the trivial extension gives the all-prime denominator, and comparison with it
-then gives natural density. Thus the denominator, like the numerator, comes from the weighted
-cyclotomic theorem and the generic transfers from `ψ` to `ϑ` to prime counting.
+then gives natural density.
 
 ## Main results
 
@@ -100,22 +99,16 @@ class `C` have density `#C / #Gal(L/K)`. -/
 theorem hasNaturalDensity_frobeniusPrimeSet (C : ConjClasses (L ≃ₐ[K] L)) :
     NumberField.Set.HasNaturalDensity (frobeniusPrimeSet K L C)
       ((Nat.card C.carrier : ℝ) / Nat.card (L ≃ₐ[K] L)) := by
-  have hself (D : ConjClasses (K ≃ₐ[K] K)) : frobeniusPrimeSet K K D = Set.univ := by
-    ext 𝔭
-    simp
-  -- The trivial extension counts all primes. Its asymptotic uses the same `ψ → ϑ → π`
-  -- transfers as the numerator, not a separately supplied zeta boundary package.
+  -- The trivial extension counts all primes, so `tendsto_frobeniusPrimeCount K K 1`
+  -- is the all-prime asymptotic.
   have hden : Tendsto (fun x : ℝ ↦ primeCount K Set.univ x / (x / Real.log x))
       atTop (𝓝 1) := by
-    simpa only [natCast_frobeniusPrimeCount, hself, ConjClasses.one_eq_mk_one,
+    simpa only [natCast_frobeniusPrimeCount, TauCeti.NumberField.Chebotarev.frobeniusPrimeSet_self,
+      ConjClasses.one_eq_mk_one,
       TauCeti.ConjClasses.card_carrier_mk_one, Nat.card_unique, Nat.cast_one, div_one] using
       tendsto_frobeniusPrimeCount K K 1
   rw [NumberField.Set.hasNaturalDensity_def]
-  have h := (tendsto_frobeniusPrimeCount K L C).div hden one_ne_zero
-  simp only [div_one, natCast_frobeniusPrimeCount] at h
-  refine h.congr' ?_
-  filter_upwards [eventually_gt_atTop (1 : ℝ)] with x hx
-  exact div_div_div_cancel_right₀
-    (div_ne_zero (by linarith) (Real.log_pos hx).ne') _ _
+  apply (IsEquivalent.refl.div (isEquivalent_of_tendsto_one hden)).tendsto_nhds_iff.mpr
+  simpa only [natCast_frobeniusPrimeCount, Pi.div_def] using tendsto_frobeniusPrimeCount K L C
 
 end NumberField.Chebotarev
