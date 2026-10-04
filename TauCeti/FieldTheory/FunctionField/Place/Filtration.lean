@@ -136,14 +136,8 @@ in `P.filtration n`, that is, when `v_P(x) ≤ exp (-n)`. -/
 @[simp]
 theorem mem_maximalIdeal_pow_iff_coe_mem_filtration (n : ℕ) (x : P.integers) :
     x ∈ IsLocalRing.maximalIdeal P.integers ^ n ↔ (x : F) ∈ P.filtration n := by
-  have hint : P.valuation.Integers P.integers := {
-    hom_inj := fun _ _ h ↦ Subtype.ext <| by
-      simpa only [ValuationSubring.algebraMap_apply] using h
-    map_le_one := fun y ↦ by
-      rw [ValuationSubring.algebraMap_apply]
-      exact P.mem_integers_iff.mp y.2
-    exists_of_le_one := fun {r} hr ↦
-      ⟨⟨_, P.mem_integers_iff.mpr hr⟩, by rw [ValuationSubring.algebraMap_apply]⟩ }
+  have hint : P.valuation.Integers P.integers :=
+    P.integers_def ▸ Valuation.valuationSubring.integers P.valuation
   obtain ⟨π, hπirr⟩ := IsDiscreteValuationRing.exists_irreducible P.integers
   let e : P.integers ≃+* P.valuation.valuationSubring :=
     RingEquiv.subringCongr (congrArg ValuationSubring.toSubring P.integers_def)
