@@ -342,6 +342,20 @@ theorem cylinder_injective : Injective (cylinder S) := by
   simp only [cylinder_apply_zero, tail_cylinder] at h₀ h₁
   exact Prod.ext (Subtype.ext h₁) h₀
 
+/-- A point lies in the image of a subset `A` of the cylinder over `S` exactly when its last `n`
+coordinates lie in `S` and, together with its distinguished coordinate, give a point of `A`. -/
+theorem mem_image_cylinder {A : Set (S × α)} {y : Fin (n + 1) → α} :
+    y ∈ cylinder S '' A ↔ ∃ h : Fin.tail y ∈ S, (⟨Fin.tail y, h⟩, y 0) ∈ A := by
+  refine ⟨?_, fun ⟨h, hA⟩ ↦ ⟨_, hA, Fin.cons_self_tail y⟩⟩
+  rintro ⟨z, hz, rfl⟩
+  exact ⟨z.1.2, hz⟩
+
+/-- Forgetting the distinguished coordinate of the image of a subset `A` of the cylinder over `S`
+gives the projection of `A` to `S`, as a subset of `α ^ n`. -/
+theorem image_tail_image_cylinder (A : Set (S × α)) :
+    Fin.tail '' (cylinder S '' A) = Subtype.val '' (Prod.fst '' A) := by
+  simp only [image_image, tail_cylinder]
+
 /-- The cylinder over `S` fills exactly the points whose last `n` coordinates lie in `S`. -/
 theorem range_cylinder : range (cylinder S) = {y : Fin (n + 1) → α | Fin.tail y ∈ S} := by
   ext y
