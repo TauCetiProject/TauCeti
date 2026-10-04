@@ -46,12 +46,7 @@ is the original kernel, by `kernelHopfIdeal_imageι`. -/
 theorem isIso_kernelFppfQuotientHom_imageι [Algebra.IsGeometricallyReduced k K]
     (f : H ⟶ K) : IsIso (kernelFppfQuotientHom (imageι f)) := by
   have : IsNoetherianRing (image f) := Algebra.FiniteType.isNoetherianRing k (image f)
-  have hft : (imageι f).hom.toAlgHom.FiniteType :=
-    RingHom.FiniteType.of_comp_finiteType (f := algebraMap k (image f))
-      (g := (imageι f).hom.toAlgHom.toRingHom)
-      ((imageι f).hom.toAlgHom.comp_algebraMap.symm ▸ RingHom.finiteType_algebraMap.mpr
-        (inferInstance : Algebra.FiniteType k K))
   exact isIso_kernelFppfQuotientHom (imageι f) (faithfullyFlat_imageι f)
-    (RingHom.FinitePresentation.of_finiteType.mp hft)
+    (RingHom.FinitePresentation.of_finiteType.mp (imageι_finiteType f))
 
 end TauCeti.CommHopfAlgCat

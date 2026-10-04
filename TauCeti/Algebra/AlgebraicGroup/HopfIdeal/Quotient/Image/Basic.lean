@@ -114,6 +114,14 @@ theorem imageι_injective (f : H ⟶ K) : Function.Injective (imageι f).hom := 
   apply Ideal.kerLiftAlg_injective f.hom.toAlgHom
   simpa only [← imageι_apply] using hxy
 
+/-- If the source affine group has finite-type coordinate algebra, its canonical morphism
+onto the scheme-theoretic image is of finite type. -/
+theorem imageι_finiteType (f : H ⟶ K) [Algebra.FiniteType k K] :
+    (imageι f).hom.toAlgHom.FiniteType := by
+  apply AlgHom.FiniteType.of_comp_finiteType (f := Algebra.ofId k (image f))
+  rw [Algebra.comp_ofId]
+  exact RingHom.finiteType_algebraMap.mpr inferInstance
+
 /-- Passing from a homomorphism to its scheme-theoretic image does not change its kernel
 closed subgroup, including the possibly nonreduced scheme structure. -/
 @[simp]

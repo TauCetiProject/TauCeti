@@ -23,7 +23,10 @@ without assuming it as part of the input.
 
 The algebraically closed case is `TauCeti.CommHopfAlgCat.faithfullyFlat_of_dominant`.
 Injectivity survives extension to an algebraic closure, where the target is reduced; faithful
-flatness then descends. The common universe is required by the ring-map descent API.
+flatness then descends. This argument is adapted from the prior formalization of
+`TauCeti.CommHopfAlgCat.isIsogeny_iff_finite_and_dominant` in
+`TauCeti.Algebra.AlgebraicGroup.Isogeny.GeometricallyReduced`, whose proof now uses this criterion.
+The common universe is required by the ring-map descent API.
 
 ## References
 
@@ -68,6 +71,7 @@ theorem faithfullyFlat_iff_dominant_of_isGeometricallyReduced (f : H ⟶ K) :
   have : IsReduced H := Algebra.isReduced_of_isGeometricallyReduced k
   rw [faithfullyFlat_iff_injective_of_isGeometricallyReduced,
     RingHom.denseRange_comap_iff_injective]
-  rfl
+  exact iff_of_eq (congrArg Function.Injective
+    ((AlgHom.coe_toRingHom f.hom.toAlgHom).trans (BialgHom.coe_toAlgHom f.hom))).symm
 
 end TauCeti.CommHopfAlgCat
