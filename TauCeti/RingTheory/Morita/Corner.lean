@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.Morita.Basic
 public import Mathlib.RingTheory.TwoSidedIdeal.Operations
 public import TauCeti.RingTheory.Idempotents.Module
+public import TauCeti.RingTheory.TwoSidedIdeal.Span
 
 /-!
 # Morita equivalence with the corner ring of a full idempotent
@@ -282,16 +283,6 @@ theorem coe_smulTopActionHom_apply_apply (m : M) (x : ↥(e • (⊤ : Submodule
 
 variable {M}
 
-/-- If `e` generates `A` as a two-sided ideal, an additive subgroup of `A` containing every
-product `a * e * b` contains `1`. -/
-private theorem one_mem_of_forall_mul_mul_mem (hfull : TwoSidedIdeal.span {e} = ⊤)
-    (H : AddSubgroup A) (hH : ∀ a b, a * e * b ∈ H) : (1 : A) ∈ H := by
-  have h1 : (1 : A) ∈ TwoSidedIdeal.span {e} := hfull ▸ trivial
-  rw [TwoSidedIdeal.mem_span_iff_mem_addSubgroup_closure] at h1
-  refine (AddSubgroup.closure_le H).2 ?_ h1
-  rintro _ ⟨_, ⟨a, -, _, rfl, rfl⟩, b, -, rfl⟩
-  exact hH a b
-
 variable (hfull : TwoSidedIdeal.span {e} = ⊤)
 include hfull
 
@@ -300,13 +291,16 @@ theorem smulTopActionHom_injective : Function.Injective (he.smulTopActionHom M) 
   rw [← LinearMap.ker_eq_bot, LinearMap.ker_eq_bot']
   intro m hm
   -- The elements of `A` killing `m` form an additive subgroup containing every `a * e * b`.
-  simpa only [AddMonoidHom.mem_ker, LinearMap.toAddMonoidHom_coe, LinearMap.toSpanSingleton_apply,
-    one_smul] using one_mem_of_forall_mul_mul_mem hfull
-    (LinearMap.toSpanSingleton A M m).toAddMonoidHom.ker fun a b ↦ by
+  simpa only [SetLike.mem_coe, AddMonoidHom.mem_ker, LinearMap.toAddMonoidHom_coe,
+    LinearMap.toSpanSingleton_apply, one_smul] using
+    (TauCeti.TwoSidedIdeal.coe_span_subset_addSubgroup_iff
+      (H := (LinearMap.toSpanSingleton A M m).toAddMonoidHom.ker)).2 (by
+      intro a x hx b
+      rw [Set.mem_singleton_iff.1 hx]
       have h := congrArg Subtype.val
         (LinearMap.congr_fun hm ⟨e * b, Submodule.smul_mem_pointwise_smul b e ⊤ trivial⟩)
       rw [coe_smulTopActionHom_apply_apply, LinearMap.zero_apply, ZeroMemClass.coe_zero] at h
-      simp [mul_assoc, mul_smul, h]
+      simp [mul_assoc, mul_smul, h]) (hfull ▸ trivial : (1 : A) ∈ TwoSidedIdeal.span {e})
 
 /-- For a full idempotent `e`, every homomorphism `eA → eM` of modules over the corner ring is the
 action of an element of `M`. -/
@@ -323,7 +317,9 @@ theorem smulTopActionHom_surjective : Function.Surjective (he.smulTopActionHom M
       neg_mem' := by
         rintro z ⟨m, hm⟩
         exact ⟨-m, fun x ↦ by simp [hm]⟩ }
-  obtain ⟨m, hm⟩ := one_mem_of_forall_mul_mul_mem hfull H fun a b ↦ by
+  obtain ⟨m, hm⟩ := (TauCeti.TwoSidedIdeal.coe_span_subset_addSubgroup_iff (H := H)).2 (by
+    intro a x hx b
+    rw [Set.mem_singleton_iff.1 hx]
     let y : ↥(e • (⊤ : Submodule ℤ M)) := f ⟨e * b, Submodule.smul_mem_pointwise_smul b e ⊤ trivial⟩
     refine ⟨a • (y : M), fun x ↦ ?_⟩
     -- `x * a • y = (x * a * e) • y`, and `x * a * e` lies in the corner ring.
@@ -333,7 +329,8 @@ theorem smulTopActionHom_surjective : Function.Surjective (he.smulTopActionHom M
       rw [Corner.coe_smul, val_smulTopToCorner_apply, coe_smulTopMulRight_apply]
     rw [hxy, ← f.map_smul]
     exact congrArg (fun z ↦ (f z : M))
-      (Subtype.ext (by simp [val_smulTopToCorner_apply, mul_assoc, ← mul_assoc e e, he.eq]))
+      (Subtype.ext (by simp [val_smulTopToCorner_apply, mul_assoc, ← mul_assoc e e, he.eq])))
+    (hfull ▸ trivial : (1 : A) ∈ TwoSidedIdeal.span {e})
   exact ⟨m, LinearMap.ext fun x ↦ Subtype.ext (by
     simpa only [coe_smulTopActionHom_apply_apply, smulTopMulRight_one, LinearMap.id_coe, id_eq]
       using hm x)⟩
