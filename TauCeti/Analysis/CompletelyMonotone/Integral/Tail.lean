@@ -11,14 +11,14 @@ public import TauCeti.MeasureTheory.Integral.IntegralEqImproper
 /-!
 # Tail integrals of completely monotone functions
 
-If `f` is completely monotone on `(0, ∞)` and its integral over every positive tail is finite,
+If `f` is completely monotone on `(0, ∞)` and its integral over one positive tail is finite,
 then `t ↦ ∫ s in Ioi t, f s` is completely monotone on `(0, ∞)`. Its derivative is `-f`, so
 integration shifts the alternating derivative signs by one order. This gives an integral
 closure operation that complements the closure under negated derivatives.
 
 Integrability over `(0, ∞)` further makes the tail integral continuous on `[0, ∞)`, including
 when `f` itself has a singularity at the origin. The open-ray result only needs integrability
-of positive tails, so it also applies to functions such as `t ↦ t⁻²`.
+of one positive tail, so it also applies to functions such as `t ↦ t⁻²`.
 
 ## Main declarations
 
@@ -46,11 +46,19 @@ namespace TauCeti.IsCompletelyMonotoneOnIoi
 
 variable {f : ℝ → ℝ}
 
-/-- Positive tail integration preserves complete monotonicity on `(0, ∞)` whenever every
+/-- Positive tail integration preserves complete monotonicity on `(0, ∞)` whenever one
 positive tail is integrable. Integrability or continuity at the origin is unnecessary. -/
 theorem integral_Ioi (hf : IsCompletelyMonotoneOnIoi f)
-    (hint : ∀ t > 0, IntegrableOn f (Ioi t)) :
+    (hint : ∃ a > 0, IntegrableOn f (Ioi a)) :
     IsCompletelyMonotoneOnIoi (fun t ↦ ∫ s in Ioi t, f s) := by
+  obtain ⟨a, _, hinta⟩ := hint
+  have hint : ∀ t > 0, IntegrableOn f (Ioi t) := by
+    intro t ht
+    have hcont : ContinuousOn f (Ici t) :=
+      hf.contDiffOn.continuousOn.mono (Ici_subset_Ioi.mpr ht)
+    exact (integrableOn_Ici_iff_integrableAtFilter_atTop.mpr
+      ⟨⟨Ioi a, Ioi_mem_atTop a, hinta⟩,
+        hcont.locallyIntegrableOn measurableSet_Ici⟩).mono_set Ioi_subset_Ici_self
   have hderiv : ∀ t > 0, HasDerivAt (fun u ↦ ∫ s in Ioi u, f s) (-f t) t := by
     intro t ht
     exact (hint (t / 2) (by linarith)).hasDerivAt_integral_Ioi
@@ -79,6 +87,6 @@ theorem isContinuousCompletelyMonotoneOnIoi_integral_Ioi
     IsContinuousCompletelyMonotoneOnIoi (fun t ↦ ∫ s in Ioi t, f s) :=
   isContinuousCompletelyMonotoneOnIoi_iff.mpr
     ⟨hint.continuousOn_Ici_primitive_Ioi,
-      hf.integral_Ioi fun _ ht ↦ hint.mono_set (Ioi_subset_Ioi ht.le)⟩
+      hf.integral_Ioi ⟨1, zero_lt_one, hint.mono_set (Ioi_subset_Ioi zero_le_one)⟩⟩
 
 end TauCeti.IsCompletelyMonotoneOnIoi

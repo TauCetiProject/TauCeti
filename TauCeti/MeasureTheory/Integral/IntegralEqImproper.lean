@@ -17,9 +17,10 @@ the whole ray, the derivative identity also gives a formula for every higher ite
 derivative. These results apply to Banach-space-valued integrands and support differential
 closure arguments for improper integrals.
 
-The proof reduces a tail difference to a finite interval integral using Mathlib's
-`intervalIntegral.integral_Ioi_sub_Ioi'`, then applies the fundamental theorem of calculus
-`intervalIntegral.integral_hasDerivAt_right`.
+## References
+
+* Mathlib's `intervalIntegral.integral_Ioi_sub_Ioi'` and
+  `intervalIntegral.integral_hasDerivAt_right`.
 -/
 
 public section
