@@ -61,6 +61,8 @@ here.
   as it is locally given by the action of `G`; the inverse is then automatically of the same kind.
 * `TauCeti.hasGroupoid_smulGroupoid_iff`: a charted space over `X` is a (G, X)-manifold exactly
   when its transition maps are locally given by the action of `G`.
+* `TauCeti.exists_smul_eventuallyEq_chartAt`: near each point of its source, a chart of a
+  (G, X)-manifold is the preferred chart there followed by the action of an element of `G`.
 * `TauCeti.smulGroupoid_le`: a group whose action is realised by another group's action gives a
   smaller groupoid.
 * `TauCeti.contMDiffOn_of_mem_smulGroupoid`: for an action by `C^n` maps, every member of
@@ -164,6 +166,19 @@ theorem hasGroupoid_smulGroupoid_iff {M : Type*} [TopologicalSpace M] [ChartedSp
       ∀ x ∈ (e.symm ≫ₕ e').source, ∃ g : G, e.symm ≫ₕ e' =ᶠ[𝓝 x] (g • ·) :=
   ⟨fun h _ he _ he' ↦ mem_smulGroupoid_iff.1 (h.compatible he he'),
     fun h ↦ ⟨fun he he' ↦ mem_smulGroupoid_iff.2 (h _ he _ he')⟩⟩
+
+/-- Near a point `y` of its source, every chart of a (G, X)-manifold is the preferred chart at `y`
+followed by the action of an element of `G`. -/
+theorem exists_smul_eventuallyEq_chartAt {M : Type*} [TopologicalSpace M] [ChartedSpace X M]
+    [HasGroupoid M (smulGroupoid G X)] {e : OpenPartialHomeomorph M X} (he : e ∈ atlas X M)
+    {y : M} (hy : y ∈ e.source) : ∃ g : G, e =ᶠ[𝓝 y] fun z ↦ g • chartAt X y z := by
+  have hmem : chartAt X y y ∈ ((chartAt X y).symm ≫ₕ e).source := by
+    simp [mem_chart_source, hy]
+  obtain ⟨g, hg⟩ := hasGroupoid_smulGroupoid_iff.1 ‹_› _ (chart_mem_atlas X y) _ he _ hmem
+  refine ⟨g, ?_⟩
+  filter_upwards [((chartAt X y).continuousAt (mem_chart_source X y)).eventually hg,
+    (chartAt X y).open_source.mem_nhds (mem_chart_source X y)] with z hz hzs
+  simpa [(chartAt X y).left_inv hzs] using hz
 
 /-- The groupoid `smulGroupoid G X` is closed under restriction, so open subsets of a
 (G, X)-manifold inherit the same (G, X)-structure. -/

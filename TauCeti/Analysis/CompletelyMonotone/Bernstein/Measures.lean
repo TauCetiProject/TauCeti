@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.Analysis.CompletelyMonotone.Closure
-public import TauCeti.Analysis.CompletelyMonotone.Integral
+public import TauCeti.Analysis.CompletelyMonotone.Integral.Basic
 -- Non-public: the bundled Laplace kernel and its integrability.
 import TauCeti.Analysis.CompletelyMonotone.Laplace.Kernel
 
@@ -28,7 +28,7 @@ downstream in the Bernstein-theorem file, not here. This file supplies only the 
 infrastructure.
 
 These build on the `IsCompletelyMonotone` API in `CompletelyMonotone/Basic.lean` and
-`CompletelyMonotone/Integral.lean`.
+`CompletelyMonotone/Integral/Basic.lean`.
 
 ## Main declarations
 

@@ -121,7 +121,9 @@ theorem reidemeisterThreePerm_crossing_of_notMem (D : PDCode n) (c : Fin 3 ↪ F
   have h'' := (crossingSlotEquiv n).injective h'
   exact hi ⟨j, congrArg Prod.fst h''⟩
 
-private theorem reidemeisterThreePerm_crossingTurn (D : PDCode n) (c : Fin 3 ↪ Fin n) :
+/-- The local rewire commutes with the crossing turn: it carries each pair of opposite slots of a
+crossing to a pair of opposite slots of a crossing. -/
+theorem reidemeisterThreePerm_crossingTurn (D : PDCode n) (c : Fin 3 ↪ Fin n) :
     (reidemeisterThreePerm D c).permCongr D.crossingTurn = D.crossingTurn := by
   apply Equiv.ext
   intro x

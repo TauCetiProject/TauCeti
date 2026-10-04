@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.Basic
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Units
+import TauCeti.RepresentationTheory.Homological.GroupCohomology.Functoriality
 
 /-!
 # Inflation from the layers of the units formation into the Brauer group
@@ -29,6 +30,8 @@ finite layers.
 ## Main results
 
 * `TauCeti.ClassFieldTheory.brInfl_injective`: inflation from a layer into `Br K` is injective.
+* `TauCeti.ClassFieldTheory.brInfl_H2π`: on the class of a layer cocycle, inflation is the Brauer
+  class of the inflated cocycle on `G_K`.
 * `TauCeti.ClassFieldTheory.exists_brInfl_eq`: every Brauer class is inflated from a layer.
 
 ## References
@@ -43,7 +46,7 @@ noncomputable section
 
 namespace TauCeti.ClassFieldTheory
 
-open groupCohomology ContCohomology
+open _root_.groupCohomology ContCohomology
 
 variable {K : Type} [Field K]
 
@@ -126,6 +129,55 @@ theorem brInfl_apply (x : (NormalLayer.ofOpenNormal V).H (unitsFormation K) 2) :
 (`brLevelInfl_injective`). -/
 theorem brInfl_injective : Function.Injective (brInfl V) :=
   (brLevelInfl_injective V).comp (layerBrLevelEquiv V).injective
+
+/-- Inflation of the explicit class of a layer cocycle pulled back along a compatible pair that
+inverts `galOfOpenNormalEquiv` on Galois groups and is the coefficient dictionary on values. -/
+private theorem explicitInfl2_explicitH2IsoGroupCohomology_symm_H2π
+    (f : AbsoluteGaloisGroup K ⧸ V.toSubgroup →* (NormalLayer.ofOpenNormal V).Gal)
+    (φ : Rep.res f ((NormalLayer.ofOpenNormal V).rep (unitsFormation K)) ⟶
+      Rep.ofDistribMulAction ℤ (AbsoluteGaloisGroup K ⧸ V.toSubgroup)
+        (FixedPoints.addSubgroup V.toSubgroup (UnitsCoeff K)))
+    (hf : ∀ q, f q = (NormalLayer.galOfOpenNormalEquiv V).symm q)
+    (hφ : ∀ x, (φ.hom x : FixedPoints.addSubgroup V.toSubgroup (UnitsCoeff K)) =
+      ofOpenNormalRepEquiv V x)
+    (c : cocycles₂ ((NormalLayer.ofOpenNormal V).rep (unitsFormation K)))
+    (z : Z2 (AbsoluteGaloisGroup K) (UnitsCoeff K))
+    (hz : ∀ g h : AbsoluteGaloisGroup K,
+      (z : AbsoluteGaloisGroup K × AbsoluteGaloisGroup K → UnitsCoeff K) (g, h) =
+        (unitsCoeffEquivUnitsFormation K).symm
+          (c ((NormalLayer.galOfOpenNormalEquiv V).symm (g : AbsoluteGaloisGroup K ⧸ V.toSubgroup),
+            (NormalLayer.galOfOpenNormalEquiv V).symm (h : AbsoluteGaloisGroup K ⧸ V.toSubgroup)) :
+            (unitsFormation K).level (NormalLayer.ofOpenNormal V).top)) :
+    explicitInfl2 _ (UnitsCoeff K) V.toSubgroup ((explicitH2IsoGroupCohomology _ _).symm
+      (H2π _ (mapCocycles₂ f φ c))) = (z : H2 _ _) := by
+  rw [explicitH2IsoGroupCohomology_symm_H2π, explicitInfl2_mk]
+  refine congrArg _ (Subtype.ext (funext fun p =>
+    (cocyclesMap2_apply _ _ _ _ _ _ _ _ _ p.1 p.2).trans ?_))
+  rw [Z2AddEquivCocycles₂_symm_coe, TauCeti.groupCohomology.mapCocycles₂_apply]
+  refine (congrArg Subtype.val (hφ _)).trans ?_
+  rw [ofOpenNormalRepEquiv_apply_coe, hf, hf, ContinuousMonoidHom.quotientMk_apply,
+    ContinuousMonoidHom.quotientMk_apply, hz]
+
+/-- **Inflation into the Brauer group on cocycle classes.** `brInfl V` sends the class of a
+`2`-cocycle `c` of the layer `V ◁ G_K` to the Brauer class of every continuous `2`-cocycle `z` on
+`G_K` whose value at `(g, h)` is the value of `c` at the classes of `g` and `h` in
+`G_K ⧸ V`, read in `(Kˢ)ˣ`. -/
+theorem brInfl_H2π (c : cocycles₂ ((NormalLayer.ofOpenNormal V).rep (unitsFormation K)))
+    (z : Z2 (AbsoluteGaloisGroup K) (UnitsCoeff K))
+    (hz : ∀ g h : AbsoluteGaloisGroup K,
+      (z : AbsoluteGaloisGroup K × AbsoluteGaloisGroup K → UnitsCoeff K) (g, h) =
+        (unitsCoeffEquivUnitsFormation K).symm
+          (c ((NormalLayer.galOfOpenNormalEquiv V).symm (g : AbsoluteGaloisGroup K ⧸ V.toSubgroup),
+            (NormalLayer.galOfOpenNormalEquiv V).symm (h : AbsoluteGaloisGroup K ⧸ V.toSubgroup)) :
+            (unitsFormation K).level (NormalLayer.ofOpenNormal V).top)) :
+    brInfl V (H2π _ c) = unitsRepH2Equiv K (z : H2 _ _) := by
+  rw [brInfl_apply, brLevelInfl_apply]
+  refine congrArg (unitsRepH2Equiv K) (Eq.trans (congrArg (fun y => explicitInfl2 _ (UnitsCoeff K)
+    V.toSubgroup ((explicitH2IsoGroupCohomology _ _).symm y)) (groupCohomology.H2π_comp_map_apply
+      (NormalLayer.galOfOpenNormalEquiv V).symm.toMonoidHom _ c))
+    -- The pair is the one defining `layerBrLevelEquiv`, so both hypotheses hold by definition.
+    (explicitInfl2_explicitH2IsoGroupCohomology_symm_H2π V _ _ (fun _ => rfl) (fun _ => rfl) c z
+      hz))
 
 variable (K) in
 /-- **Every Brauer class is inflated from a layer** `V ◁ G_K` of the formation of units

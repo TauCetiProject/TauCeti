@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Group.InfiniteSum
 public import Mathlib.RingTheory.PowerSeries.GaussNorm
+public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra
 public import Mathlib.RingTheory.PowerSeries.Trunc
 public import Mathlib.RingTheory.Valuation.Basic
 public import TauCeti.RingTheory.PowerSeries.Restricted
@@ -432,21 +433,11 @@ theorem IsDistinguished.norm_coeff_mul_mul_pow_eq_gaussNorm_mul (hf : IsDistingu
 theorem gaussNorm_mul_of_isRestricted (hc : 0 < c) (hf : f.IsRestricted c)
     (hg : g.IsRestricted c) :
     (f * g).gaussNorm norm c = f.gaussNorm norm c * g.gaussNorm norm c := by
-  by_cases hf0 : f = 0
-  · simp [hf0, PowerSeries.gaussNorm_zero norm c (norm_zero : ‖(0 : R)‖ = 0)]
-  by_cases hg0 : g = 0
-  · simp [hg0, PowerSeries.gaussNorm_zero norm c (norm_zero : ‖(0 : R)‖ = 0)]
-  obtain ⟨i, hi⟩ := exists_isDistinguished hc hf hf0
-  obtain ⟨j, hj⟩ := exists_isDistinguished hc hg hg0
-  refine le_antisymm (MvPowerSeries.gaussNorm_mul_le norm (fun _ : Unit ↦ c) f g
-    (fun _ ↦ hc.le) norm_nonneg norm_mul_le IsUltrametricDist.isNonarchimedean_norm
-    norm_zero (hasGaussNorm_of_isRestricted hf).hasMvGaussNorm
-    (hasGaussNorm_of_isRestricted hg).hasMvGaussNorm) ?_
-  calc
-    f.gaussNorm norm c * g.gaussNorm norm c = ‖(f * g).coeff (i + j)‖ * c ^ (i + j) :=
-      (hi.norm_coeff_mul_mul_pow_eq_gaussNorm_mul hj hc).symm
-    _ ≤ (f * g).gaussNorm norm c := PowerSeries.le_gaussNorm norm c (f * g)
-      (hasGaussNorm_of_isRestricted (PowerSeries.isRestricted.mul c hf hg)) _
+  let : Fact (0 < c) := ⟨hc⟩
+  -- Mathlib's univariate predicates and norms abbreviate the Unit-indexed multivariate ones.
+  simp only [PowerSeries.IsRestricted] at hf hg
+  simpa only [PowerSeries.gaussNorm] using
+    (MvPowerSeries.IsRestricted.gaussNorm_mul (c := fun _ : Unit ↦ c) hf hg)
 
 /-- The product of series distinguished in degrees `i` and `j` is distinguished in degree
 `i + j` at a positive radius. -/

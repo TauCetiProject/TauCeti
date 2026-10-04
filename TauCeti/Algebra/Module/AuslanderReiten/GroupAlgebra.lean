@@ -44,9 +44,9 @@ variable {R G P₀ P₁ : Type*} [CommRing R] [Group G] [Finite G]
 base-ring-dual precomposition with its contragredient action. -/
 noncomputable def groupAlgebraDualEquiv (f : P₁ →ₗ[MonoidAlgebra R G] P₀) :
     AuslanderReitenTranspose f ≃ₗ[(MonoidAlgebra R G)ᵐᵒᵖ]
-      Module.Dual R P₁ ⧸ LinearMap.range (MonoidAlgebra.contragredientDualMap f) :=
+      Module.Dual R P₁ ⧸ LinearMap.range (LinearMap.contragredientDualMap f) :=
   quotientEquiv f _ (MonoidAlgebra.dualLinearEquiv (G := G) (M := P₁))
-    (MonoidAlgebra.map_range_lcomp_dualLinearEquiv f)
+    (LinearMap.map_range_lcomp_dualLinearEquiv f)
 
 /-- `groupAlgebraDualEquiv` sends a group-algebra functional to the class of its
 coefficient-at-one functional. -/

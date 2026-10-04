@@ -144,6 +144,11 @@ def IsSmoothlySlice (K : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)) : Pr
 
 variable {K : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)}
 
+/-- A smoothly slice knot bounds a smooth slice disc. -/
+theorem IsSmoothlySlice.elim (h : IsSmoothlySlice K) :
+    ∃ Φ : closedBall (0 : ℂ) 1 → closedBall (0 : E) 1, IsSmoothSliceDisc K Φ :=
+  h
+
 namespace IsSmoothSliceDisc
 
 variable {Φ : closedBall (0 : ℂ) 1 → closedBall (0 : E) 1}

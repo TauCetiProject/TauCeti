@@ -71,12 +71,6 @@ noncomputable instance instModulePadicCharacterContragredient :
     Module (MonoidAlgebra ℤ_[p] G)ᵐᵒᵖ (X →ₗ[ℤ_[p]] ℚ_[p] ⧸ (1 : Submodule ℤ_[p] ℚ_[p])) :=
   inferInstanceAs (Module (DomMulAct (MonoidAlgebra ℤ_[p] G)) _)
 
-/-- The contragredient action on `ℚ_p / ℤ_p`-valued characters is precomposition. -/
-@[simp]
-theorem _root_.MonoidAlgebra.op_smul_padicCharacter_apply (a : MonoidAlgebra ℤ_[p] G)
-    (χ : X →ₗ[ℤ_[p]] ℚ_[p] ⧸ (1 : Submodule ℤ_[p] ℚ_[p])) (x : X) :
-    (MulOpposite.op a • χ) x = χ (a • x) := rfl
-
 end ContragredientCharacter
 
 variable [Finite G]
@@ -97,7 +91,7 @@ private def torsionDualAddEquiv :
     AuslanderReitenTranspose f ≃+
       (pPowerTorsion p (MonoidAlgebra ℤ_[p] G) M →ₗ[ℤ_[p]] ℚ_[p] ⧸ (1 : Submodule ℤ_[p] ℚ_[p])) :=
   (groupAlgebraDualEquiv f).toAddEquiv.trans <|
-    (MonoidAlgebra.quotientRangeContragredientDualMapEquiv f).toAddEquiv.trans
+    (LinearMap.quotientRangeContragredientDualMapEquiv f).toAddEquiv.trans
       (torsionDualEquiv p hf hfi hπ).toAddEquiv
 
 private theorem torsionDualAddEquiv_mk (φ : Dual (MonoidAlgebra ℤ_[p] G) P₁) :
@@ -119,11 +113,12 @@ def torsionDualLinearEquiv :
   map_smul' a x := LinearMap.ext fun t ↦ by
     induction x using induction_on with | h φ => ?_
     rw [AddEquiv.toFun_eq_coe, ← map_smul, torsionDualAddEquiv_mk,
-      torsionDualAddEquiv_mk, RingHom.id_apply, ← MulOpposite.op_unop a,
-      MonoidAlgebra.op_smul_padicCharacter_apply, map_smul, ← torsionDualMap_comp_toLinearMap_apply]
+      torsionDualAddEquiv_mk, RingHom.id_apply, ← MulOpposite.op_unop a]
+    erw [DomMulAct.mk_smul_linearMap_apply (MulOpposite.unop a)]
+    rw [map_smul, ← torsionDualMap_comp_toLinearMap_apply]
     -- The contragredient action of `op a` on a base-ring functional is precomposition with `a`.
     refine congrArg (torsionDualMap p hf hfi hπ · t) (LinearMap.ext fun m ↦ ?_)
-    rw [MonoidAlgebra.op_smul_dual_apply, LinearMap.comp_apply, DistribSMul.toLinearMap_apply]
+    erw [DomMulAct.mk_smul_linearMap_apply (MulOpposite.unop a)]
 
 /-- `TauCeti.AuslanderReitenTranspose.torsionDualLinearEquiv` sends the class of a group-algebra
 functional to the image of its coefficient-at-one functional under the connecting map. -/
@@ -191,8 +186,12 @@ theorem nonempty_linearEquiv_prod_of_pPowerTorsion_linearEquiv
       (pPowerTorsion p (MonoidAlgebra ℤ_[p] G) N →ₗ[ℤ_[p]] ℚ_[p] ⧸ (1 : Submodule ℤ_[p] ℚ_[p])) :=
     { (e.restrictScalars ℤ_[p]).arrowCongrAddEquiv (.refl ℤ_[p] _) with
       map_smul' a χ := LinearMap.ext fun t ↦ by
-        induction a using MulOpposite.rec'
-        simp }
+        simp only [AddEquiv.toFun_eq_coe, RingHom.id_apply,
+          LinearEquiv.arrowCongrAddEquiv_apply, LinearMap.comp_apply,
+          LinearEquiv.coe_coe, LinearEquiv.refl_apply, LinearEquiv.restrictScalars_symm_apply]
+        erw [DomMulAct.mk_smul_linearMap_apply (MulOpposite.unop a),
+          DomMulAct.mk_smul_linearMap_apply (MulOpposite.unop a)]
+        exact congrArg χ (e.symm.map_smul (MulOpposite.unop a) t).symm }
   -- Both transposes are the Pontryagin duals of the `p`-power torsion, compatibly with the
   -- action of `ℤ_p[G]ᵐᵒᵖ`, so `e` induces an isomorphism of transposes.
   exact nonempty_linearEquiv_prod_of_linearEquiv hf hπ hg hρ

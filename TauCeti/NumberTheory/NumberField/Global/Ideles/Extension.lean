@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.NumberField.Global.Adeles.Extension
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.Norm.One
-public import TauCeti.NumberTheory.NumberField.Global.Places.Extension
+public import TauCeti.NumberTheory.NumberField.InfinitePlace.Completion.Extension
 public import TauCeti.NumberTheory.NumberField.LocalGlobal.Norm
 
 /-!
@@ -30,7 +30,7 @@ place contributes degree two. No Galois hypothesis is used.
 public section
 noncomputable section
 
-open IsDedekindDomain NumberField
+open IsDedekindDomain NumberField NumberField.InfinitePlace
 open scoped NumberField.LiesOver AdicCompletionExtension
 
 namespace TauCeti.GlobalNumberFields
@@ -110,21 +110,21 @@ theorem ideleFiniteCoord_ideleExtension (w : HeightOneSpectrum (𝓞 L))
 variable {K L}
 
 private theorem prod_infiniteFactors_ideleExtension (x : IdeleGroup (𝓞 K) K) :
-    (∏ w, infiniteCompletionNormalizedAbsValue w (w.ideleInfiniteCoord (ideleExtension K L x))) =
-      (∏ v, infiniteCompletionNormalizedAbsValue v (v.ideleInfiniteCoord x)) ^
+    (∏ w, completionNormalizedAbsValue w (w.ideleInfiniteCoord (ideleExtension K L x))) =
+      (∏ v, completionNormalizedAbsValue v (v.ideleInfiniteCoord x)) ^
         Module.finrank K L := by
   classical
   rw [← Fintype.prod_fiberwise (fun w : InfinitePlace L ↦ w.comap (algebraMap K L))]
   have h (v : InfinitePlace K) :
       (∏ w : {w : InfinitePlace L // w.comap (algebraMap K L) = v},
-        infiniteCompletionNormalizedAbsValue w.1
+        completionNormalizedAbsValue w.1
           (w.1.ideleInfiniteCoord (ideleExtension K L x))) =
-        infiniteCompletionNormalizedAbsValue v (v.ideleInfiniteCoord x) ^
+        completionNormalizedAbsValue v (v.ideleInfiniteCoord x) ^
           Module.finrank K L := by
     let e : {w : InfinitePlace L // w.comap (algebraMap K L) = v} ≃
         {w : InfinitePlace L // w.LiesOver v} := Equiv.subtypeEquivRight fun w ↦
       ⟨fun hw ↦ hw ▸ inferInstance, fun _ ↦ InfinitePlace.LiesOver.comap_eq w v⟩
-    rw [← prod_infiniteCompletionNormalizedAbsValue_completionMap v (v.ideleInfiniteCoord x)]
+    rw [← prod_completionNormalizedAbsValue_completionMap v (v.ideleInfiniteCoord x)]
     apply Fintype.prod_equiv e
     rintro ⟨w, hw⟩
     simp only [e, Equiv.subtypeEquivRight_apply]

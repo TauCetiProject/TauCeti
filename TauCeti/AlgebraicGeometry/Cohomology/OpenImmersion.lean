@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.Morphisms.Affine
 public import Mathlib.AlgebraicGeometry.Noetherian
 public import TauCeti.AlgebraicGeometry.Cohomology.Affine
+public import TauCeti.CategoryTheory.Sites.ExtensionByZero
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Equivalence
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Over
 public import TauCeti.Topology.Sheaves.Over
@@ -76,12 +77,15 @@ def cohomologyOnOpensRangeNatIso (n : ℕ) :
       Scheme.Modules.restrictFunctor f ⋙ cohomologyFunctor Y n :=
   let J := Opens.grothendieckTopology X
   let e := f.isOpenEmbedding.overEquivalence
+  haveI : (J.overPullback AddCommGrpCat.{u} f.opensRange).IsLeftAdjoint :=
+    ((Over.forget f.opensRange).sheafAdjunctionCocontinuous AddCommGrpCat.{u}
+      (J.over f.opensRange) J).isLeftAdjoint
   haveI : e.inverse.IsDenseSubsite (Opens.grothendieckTopology Y) (J.over f.opensRange) :=
     Topology.IsOpenEmbedding.isDenseSubsite_overEquivalence_inverse f.isOpenEmbedding
   -- Cohomology on `f(Y)` is cohomology on the over category of `f(Y)`, which is equivalent to the
   -- site of open subsets of `Y`; the transported sheaf is the underlying sheaf of `M|_Y`.
   Functor.isoWhiskerLeft (SheafOfModules.toSheaf X.ringCatSheaf)
-      (CategoryTheory.cohomologyPresheafEvaluationIsoFunctorOverH J f.opensRange n) ≪≫
+      (J.cohomologyPresheafEvaluationIsoFunctorOverH f.opensRange n) ≪≫
     Functor.isoWhiskerLeft
       (SheafOfModules.toSheaf X.ringCatSheaf ⋙ J.overPullback AddCommGrpCat.{u} f.opensRange)
       ((CategoryTheory.Sheaf.cohomologyPresheafEvaluationIsoFunctorH (J.over f.opensRange) n

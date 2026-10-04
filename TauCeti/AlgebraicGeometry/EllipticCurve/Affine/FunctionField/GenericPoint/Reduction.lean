@@ -9,6 +9,9 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Gener
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.PointPlace
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.DegreeOneReduction
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Galois
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Map
+-- Proof-only: a nontrivial valuation bounded by `1` on a Dedekind domain is adic up to equivalence.
+import TauCeti.RingTheory.DedekindDomain.AdicValuation.Basic
 
 /-!
 # The reduction of the generic point
@@ -24,6 +27,11 @@ In the language of `Affine/Point/DegreeOneReduction.lean`, this is the statement
 `F(W)` carries the generic point to the tautological point of `τ`, and this identity is what the
 reduction of such points is computed from: an isogeny's action on points in particular.
 
+Transporting a point along a homomorphism of fields `f : F →+* K` is compatible with places: the
+place of the transported point restricts along `FunctionField.map W f` to the place of the point
+(`WeierstrassCurve.Affine.isEquiv_comap_pointPlace_map`), so reduction at the two places can be
+compared.
+
 ## Main results
 
 * `WeierstrassCurve.Affine.valuation_pointPlace_genericX_sub_lt_one` and
@@ -31,6 +39,8 @@ reduction of such points is computed from: an isogeny's action on points in part
   at the place of `(a, b)`.
 * `WeierstrassCurve.Affine.reductionOfDegreeEqOne_genericPoint`: the generic point reduces to `P`
   at the place of `P`.
+* `WeierstrassCurve.Affine.isEquiv_comap_pointPlace_map`: the place of a point transported along
+  a field homomorphism `f` restricts along `FunctionField.map W f` to the place of the point.
 * `WeierstrassCurve.Affine.map_mem_polePoints_smul_iff` and
   `WeierstrassCurve.Affine.reductionOfDegreeEqOne_smul_map`: reduction commutes with field
   automorphisms and their action on places.
@@ -70,6 +80,53 @@ theorem valuation_pointPlace_genericY_sub_lt_one {x y : F} (h : W.Equation x y) 
   rw [← algebraMap_YClass, Place.valuation_ofPrime_algebraMap_lt_one_iff,
     CoordinateRing.pointPlace_asIdeal]
   exact Ideal.subset_span (Set.mem_insert_of_mem _ rfl)
+
+section BaseChange
+
+variable {K : Type*} [Field K] (f : F →+* K)
+
+open IsDedekindDomain in
+/-- **The place of a transported point restricts to the place of the point**: along the embedding
+`FunctionField.map W f : F(W) → K(W)`, the valuation of the place of `(f a, f b)` restricts to one
+equivalent to the valuation of the place of `(a, b)`. The restriction is bounded by `1` on the
+coordinate ring of `W` and vanishes on `x - a` and `y - b`, so its centre is the ideal of
+`(a, b)`. -/
+theorem isEquiv_comap_pointPlace_map {x y : F} (h : W.Equation x y) :
+    (((Place.ofPrime K (W.map f).FunctionField (CoordinateRing.pointPlace
+      ((W.map_equation f.injective x y).mpr h))).valuation).comap
+        (FunctionField.map W f)).IsEquiv
+      (Place.ofPrime F W.FunctionField (CoordinateRing.pointPlace h)).valuation := by
+  set u := ((Place.ofPrime K (W.map f).FunctionField (CoordinateRing.pointPlace
+      ((W.map_equation f.injective x y).mpr h))).valuation).comap (FunctionField.map W f) with hu
+  -- `x - a` and `y - b` vanish at the place of the transported point
+  have hx : u (genericX W - algebraMap F W.FunctionField x) < 1 := by
+    rw [hu, Valuation.comap_apply, map_sub, FunctionField.map_genericX,
+      FunctionField.map_algebraMap]
+    exact valuation_pointPlace_genericX_sub_lt_one _ _
+  have hy : u (genericY W - algebraMap F W.FunctionField y) < 1 := by
+    rw [hu, Valuation.comap_apply, map_sub, FunctionField.map_genericY,
+      FunctionField.map_algebraMap]
+    exact valuation_pointPlace_genericY_sub_lt_one _ _
+  have : u.IsNontrivial := ⟨⟨_, (Valuation.ne_zero_iff u).mpr
+    (sub_ne_zero.mpr (genericX_ne_algebraMap W x)), hx.ne⟩⟩
+  have hR (r : W.CoordinateRing) : u (algebraMap W.CoordinateRing W.FunctionField r) ≤ 1 := by
+    rw [hu, Valuation.comap_apply, FunctionField.map_algebraMap_coordinateRing,
+      Place.valuation_ofPrime]
+    exact HeightOneSpectrum.valuation_le_one _ _
+  obtain ⟨𝔭, he, hmem⟩ :=
+    Valuation.exists_heightOneSpectrum_isEquiv_of_le_one W.CoordinateRing u hR
+  -- the centre of `u` contains, hence is, the maximal ideal of `(a, b)`
+  have h𝔭 : 𝔭 = CoordinateRing.pointPlace h := by
+    refine HeightOneSpectrum.ext (((CoordinateRing.pointPlace h).isMaximal.eq_of_le
+      𝔭.isPrime.ne_top ?_).symm)
+    rw [CoordinateRing.pointPlace_asIdeal, CoordinateRing.XYIdeal, Ideal.span_le]
+    rintro _ (rfl | rfl) <;> rw [SetLike.mem_coe, hmem]
+    · rwa [algebraMap_XClass]
+    · rwa [algebraMap_YClass]
+  rw [Place.valuation_ofPrime, ← h𝔭]
+  exact he.symm
+
+end BaseChange
 
 section Automorphism
 

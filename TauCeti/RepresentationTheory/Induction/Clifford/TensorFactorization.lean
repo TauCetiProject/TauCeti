@@ -26,27 +26,29 @@ because `ρ` restricts to `A` on `N` the elements of `N` act trivially. So the a
 projective representation `TauCeti.IsProjectiveInertiaExtension.homAction` of the inertia quotient
 `T/N` with factor set `β⁻¹` (`TauCeti.IsProjectiveInertiaExtension.isProjectiveRep_homAction`).
 
-Tensoring the two projective representations cancels the factor sets: `t ↦ ρ t ⊗ (t • ·)` is a
-linear representation `TauCeti.IsProjectiveInertiaExtension.tensorRep` of `T` on
-`A ⊗ Hom_N(A, W)`, and evaluation `x ⊗ φ ↦ φ x` intertwines it with `σ`
-(`TauCeti.IsProjectiveInertiaExtension.evalTensor`). Over an algebraically closed field and for
-an irreducible `A`, evaluation is injective by Burnside's density theorem; if moreover `σ` is
-irreducible and lies over `A`, that is, admits a nonzero `N`-intertwiner from `A`, its image is a
-nonzero subrepresentation and hence everything. Thus every irreducible representation of the
-inertia group lying over `A` is `A ⊗ U` for a projective representation `U` of `T/N` whose factor
-set is `β⁻¹` (`TauCeti.IsProjectiveInertiaExtension.tensorRepEquiv`); in this setting the class of
-`β` is the Clifford obstruction `TauCeti.cliffordObstruction A`.
+Tensoring `ρ` with any projective representation `U` of `T/N` with factor set `β⁻¹` cancels the
+factor sets: `t ↦ ρ t ⊗ U t` is a linear representation
+`TauCeti.IsProjectiveInertiaExtension.tensorRep` of `T` on `A ⊗ X`. For `U` the action on
+`Hom_N(A, W)` this is a representation on `A ⊗ Hom_N(A, W)`, and evaluation `x ⊗ φ ↦ φ x`
+intertwines it with `σ` (`TauCeti.IsProjectiveInertiaExtension.evalTensor`). Over an
+algebraically closed field and for an irreducible `A`, evaluation is injective by Burnside's
+density theorem; if moreover `σ` is irreducible and lies over `A`, that is, admits a nonzero
+`N`-intertwiner from `A`, its image is a nonzero subrepresentation and hence everything. Thus every
+irreducible representation of the inertia group lying over `A` is `A ⊗ U` for a projective
+representation `U` of `T/N` whose factor set is `β⁻¹`
+(`TauCeti.IsProjectiveInertiaExtension.tensorRepEquiv`); in this setting the class of `β` is the
+Clifford obstruction `TauCeti.cliffordObstruction A`.
 
-Which projective representations `U` arise, and the resulting bijection between the irreducible
-representations of `T` lying over `A` and the irreducible projective representations of `T/N`
-with factor set `β⁻¹`, are not treated here.
+The converse, that `A ⊗ U` is irreducible exactly when `U` is and that `U` is recovered from
+`A ⊗ U`, is in `TauCeti/RepresentationTheory/Induction/Clifford/ProjectiveCorrespondence.lean`.
 
 ## Main definitions
 
 * `TauCeti.IsProjectiveInertiaExtension.homAction`: the projective action of the inertia quotient
   on `Hom_N(A, W)`.
-* `TauCeti.IsProjectiveInertiaExtension.tensorRep`: the representation `ρ ⊗ homAction` of the
-  inertia group on `A ⊗ Hom_N(A, W)`.
+* `TauCeti.IsProjectiveInertiaExtension.tensorRep`: the representation `ρ ⊗ U` of the inertia
+  group on `A ⊗ X`, for a projective representation `U` of the inertia quotient with factor set
+  `β⁻¹`; in particular `ρ ⊗ homAction` on `A ⊗ Hom_N(A, W)`.
 * `TauCeti.IsProjectiveInertiaExtension.evalTensor`: the evaluation intertwiner
   `A ⊗ Hom_N(A, W) → W`.
 * `TauCeti.IsProjectiveInertiaExtension.tensorRepEquiv`: the equivalence
@@ -78,6 +80,42 @@ open CategoryTheory _root_.Representation TensorProduct
 universe u v w
 
 namespace IsProjectiveInertiaExtension
+
+section Tensor
+
+variable {k : Type u} {G : Type v} [CommRing k] [Group G] {N : Subgroup G} [N.Normal]
+  {A : FDRep k N} {ρ : inertia A → A ≃ₗ[k] A}
+  {β : inertia A ⧸ N.subgroupOf (inertia A) → inertia A ⧸ N.subgroupOf (inertia A) → kˣ}
+  (h : IsProjectiveInertiaExtension A ρ β)
+  {X : Type w} [AddCommMonoid X] [Module k X]
+  {U : inertia A ⧸ N.subgroupOf (inertia A) → X ≃ₗ[k] X}
+
+include h
+
+/-- The factor set of `ρ` and the inverse factor set of `U`, inflated to the inertia group, cancel
+in the tensor product. -/
+private theorem isProjectiveRep_tensor (hU : IsProjectiveRep U fun a b ↦ (β a b)⁻¹) :
+    IsProjectiveRep (fun t : inertia A ↦ TensorProduct.congr (ρ t) (U t)) 1 := by
+  have hβ : ((fun s t : inertia A ↦ β s t) * fun s t : inertia A ↦ (β s t)⁻¹) = 1 := by
+    funext s t
+    simp
+  exact hβ ▸ h.isProjectiveRep.tensorProduct (hU.comp (QuotientGroup.mk' _))
+
+/-- **The representation `ρ ⊗ U` of the inertia group on `A ⊗ X`**, for a projective
+representation `U` of the inertia quotient whose factor set is the inverse of that of `ρ`: the
+element `t` acts by `ρ t ⊗ U t`. Each factor is only a projective representation, but their factor
+sets `β` and `β⁻¹` cancel, so this is a linear representation. -/
+noncomputable def tensorRep (hU : IsProjectiveRep U fun a b ↦ (β a b)⁻¹) :
+    Representation k (inertia A) (A ⊗[k] X) :=
+  LinearEquiv.automorphismGroup.toLinearMapMonoidHom.comp (h.isProjectiveRep_tensor hU).toMonoidHom
+
+/-- `t` acts on a pure tensor `x ⊗ y` by `ρ t x ⊗ U t y`. -/
+@[simp]
+theorem tensorRep_tmul (hU : IsProjectiveRep U fun a b ↦ (β a b)⁻¹) (t : inertia A) (x : A)
+    (y : X) : h.tensorRep hU t (x ⊗ₜ y) = ρ t x ⊗ₜ U t y := by
+  simp [tensorRep]
+
+end Tensor
 
 section Action
 
@@ -204,32 +242,10 @@ theorem isProjectiveRep_homAction :
     induction b using QuotientGroup.induction_on with | H t =>
     exact (h.isProjectiveRep_homActionAux σ).mul_apply s t φ
 
-/-- The factor sets of `ρ` and of the conjugation action cancel in the tensor product. -/
-private theorem isProjectiveRep_tensor :
-    IsProjectiveRep (fun t ↦ TensorProduct.congr (ρ t) (h.homAction σ t)) 1 := by
-  have hβ : ((fun s t : inertia A ↦ β s t) * fun s t : inertia A ↦ (β s t)⁻¹) = 1 := by
-    funext s t
-    simp
-  exact hβ ▸ h.isProjectiveRep.tensorProduct (h.isProjectiveRep_homActionAux σ)
-
-/-- **The representation of the inertia group on `A ⊗ Hom_N(A, W)`**, in which `t` acts by
-`ρ t ⊗ homAction t`. Each factor is only a projective representation, but their factor sets `β`
-and `β⁻¹` cancel, so this is a linear representation. -/
-noncomputable def tensorRep :
-    Representation k (inertia A)
-      (A ⊗[k] Representation.IntertwiningMap A.ρ (σ.comp (Subgroup.inclusion (le_inertia A)))) :=
-  LinearEquiv.automorphismGroup.toLinearMapMonoidHom.comp (h.isProjectiveRep_tensor σ).toMonoidHom
-
-/-- `t` acts on a pure tensor `x ⊗ φ` by `ρ t x ⊗ homAction t φ`. -/
-@[simp]
-theorem tensorRep_tmul (t : inertia A) (x : A)
-    (φ : Representation.IntertwiningMap A.ρ (σ.comp (Subgroup.inclusion (le_inertia A)))) :
-    h.tensorRep σ t (x ⊗ₜ φ) = ρ t x ⊗ₜ h.homAction σ t φ := by
-  simp [tensorRep]
-
-/-- **Evaluation `A ⊗ Hom_N(A, W) → W`**, `x ⊗ φ ↦ φ x`, as an intertwiner from
-`TauCeti.IsProjectiveInertiaExtension.tensorRep` to `σ`. -/
-noncomputable def evalTensor : (h.tensorRep σ).IntertwiningMap σ :=
+/-- **Evaluation `A ⊗ Hom_N(A, W) → W`**, `x ⊗ φ ↦ φ x`, as an intertwiner to `σ` from
+`TauCeti.IsProjectiveInertiaExtension.tensorRep` of the conjugation action on `Hom_N(A, W)`. -/
+noncomputable def evalTensor :
+    (h.tensorRep (h.isProjectiveRep_homAction σ)).IntertwiningMap σ :=
   (TensorProduct.lift (LinearMap.mk₂ k
     (fun (x : A) (φ : Representation.IntertwiningMap A.ρ
       (σ.comp (Subgroup.inclusion (le_inertia A)))) ↦ φ x)
@@ -271,41 +287,27 @@ theorem evalTensor_surjective [σ.IsIrreducible]
 variable [IsAlgClosed k] [Simple A]
 
 /-- **Evaluation `A ⊗ Hom_N(A, W) → W` is injective** for an irreducible `A` over an algebraically
-closed field. By Burnside's density theorem `k[N]` acts on `A` through every endomorphism, in
-particular through `x ↦ f x • v` for a functional `f` and a vector `v`; feeding this through
-evaluation shows that an element of the kernel has zero image under `f ⊗ id` for every `f`. -/
+closed field. -/
 theorem evalTensor_injective : Function.Injective (h.evalTensor σ) := by
-  classical
-  set M := Representation.IntertwiningMap A.ρ (σ.comp (Subgroup.inclusion (le_inertia A)))
-  have hA : Representation.IsIrreducible A.ρ := FDRep.isIrreducible_of_simple A
   -- Evaluation intertwines the action of `k[N]` on the left tensor factor with that on `W`.
-  have hev (r : MonoidAlgebra k N) (z : A ⊗[k] M) :
-      h.evalTensor σ ((Representation.asAlgebraHom A.ρ r).rTensor M z) =
+  have hev (r : MonoidAlgebra k N)
+      (z : A ⊗[k] Representation.IntertwiningMap A.ρ (σ.comp (Subgroup.inclusion (le_inertia A)))) :
+      h.evalTensor σ ((Representation.asAlgebraHom A.ρ r).rTensor _ z) =
         Representation.asAlgebraHom (σ.comp (Subgroup.inclusion (le_inertia A))) r
           (h.evalTensor σ z) := by
     induction z using TensorProduct.inductionOn with
     | tmul x φ =>
       rw [LinearMap.rTensor_tmul, evalTensor_tmul, evalTensor_tmul, φ.apply_asAlgebraHom]
     | add z z' hz hz' => simp only [map_add, hz, hz']
-  -- The endomorphism `x ↦ f x • v` of the left factor moves `f` onto the right factor.
-  have hsmulRight (f : Module.Dual k A) (v : A) (z : A ⊗[k] M) :
-      (f.smulRight v).rTensor M z = v ⊗ₜ TensorProduct.lid k M (f.rTensor M z) := by
-    induction z using TensorProduct.inductionOn with
-    | tmul x φ => simp [TensorProduct.smul_tmul]
-    | add z z' hz hz' => simp only [map_add, hz, hz', tmul_add]
-  refine (injective_iff_map_eq_zero (h.evalTensor σ)).2 fun z hz ↦ ?_
-  have hf (f : Module.Dual k A) : TensorProduct.lid k M (f.rTensor M z) = 0 := by
-    refine IntertwiningMap.ext (LinearMap.ext fun v ↦ ?_)
-    obtain ⟨r, hr⟩ := Representation.asAlgebraHom_surjective_of_isIrreducible A.ρ hA
-      (f.smulRight v)
-    have := hev r z
-    rw [hr, hsmulRight, hz, map_zero, evalTensor_tmul] at this
-    simpa using this
-  -- So every coordinate of `z` in a basis of `A` vanishes.
-  let b := Module.finBasis k A
-  refine (TensorProduct.equivFinsuppOfBasisLeft b).injective ?_
-  ext i
-  rw [TensorProduct.equivFinsuppOfBasisLeft_apply, hf, map_zero, Finsupp.coe_zero, Pi.zero_apply]
+  refine (injective_iff_map_eq_zero (h.evalTensor σ)).2 fun z hz ↦ by_contra fun hz0 ↦ ?_
+  -- By density, `k[N]` moves `z` to `v ⊗ φ` for every `v`, with one fixed `φ ≠ 0`; evaluating,
+  -- `φ v = 0` for every `v`.
+  obtain ⟨φ, hφ, hr⟩ := Representation.exists_ne_zero_forall_exists_rTensor_asAlgebraHom_eq_tmul
+    A.ρ (FDRep.isIrreducible_of_simple A) hz0
+  refine hφ (IntertwiningMap.ext (LinearMap.ext fun v ↦ ?_))
+  obtain ⟨r, hr⟩ := hr v
+  have := hev r z
+  rwa [hr, hz, map_zero, evalTensor_tmul] at this
 
 /-- **An irreducible representation of the inertia group lying over `A` is `A ⊗ Hom_N(A, W)`.**
 Here `A` is irreducible over an algebraically closed field, `σ` is irreducible and admits a nonzero
@@ -314,7 +316,7 @@ where `homAction` is a projective representation of the inertia quotient whose f
 inverse to that of `ρ`. -/
 noncomputable def tensorRepEquiv [σ.IsIrreducible]
     {φ : Representation.IntertwiningMap A.ρ (σ.comp (Subgroup.inclusion (le_inertia A)))}
-    (hφ : φ ≠ 0) : (h.tensorRep σ).Equiv σ :=
+    (hφ : φ ≠ 0) : (h.tensorRep (h.isProjectiveRep_homAction σ)).Equiv σ :=
   (h.evalTensor σ).ofBijective ⟨h.evalTensor_injective σ, h.evalTensor_surjective σ hφ⟩
 
 /-- The equivalence `A ⊗ Hom_N(A, W) ≃ W` is evaluation. -/

@@ -236,6 +236,35 @@ private noncomputable def typeDRawRootEquiv (n : ℕ) : TypeDRawIndex n ≃ Type
 private lemma typeDRawRootEquiv_apply (r : TypeDRawIndex n) :
     typeDRawRootEquiv n r = typeDRawRoot r := rfl
 
+/-- Every classical type-`D` root has one of the three coordinate shapes
+`eᵢ - eⱼ`, `eᵢ + eⱼ`, or `-eᵢ - eⱼ`, for distinct coordinates `i` and `j`.
+
+The fourth apparent sign choice is a difference root with the two coordinates exchanged. -/
+theorem TypeDRoot.exists_eq_single_sub_or_add_or_neg_add (x : TypeDRoot n) :
+    ∃ i j : Fin n, i ≠ j ∧
+      (x.1 = Pi.single i 1 - Pi.single j 1 ∨
+        x.1 = Pi.single i 1 + Pi.single j 1 ∨
+        x.1 = -(Pi.single i 1 + Pi.single j 1)) := by
+  obtain ⟨⟨s, p⟩, hx⟩ := typeDRawRoot_surjective x
+  have hxv : x.1 = typeDRawVector (s, p) := (congrArg Subtype.val hx).symm
+  let i := p.val.1
+  let j := p.val.2
+  have hij : i ≠ j := p.property
+  by_cases hp : i < j
+  · by_cases hs : s = 0
+    · refine ⟨i, j, hij, Or.inl ?_⟩
+      simpa [typeDRawVector, hs, typeDPairVector, hp, i, j] using hxv
+    · refine ⟨j, i, hij.symm, Or.inl ?_⟩
+      calc
+        x.1 = -(Pi.single i 1 - Pi.single j 1) := by
+          simpa [typeDRawVector, hs, typeDPairVector, hp, i, j] using hxv
+        _ = Pi.single j 1 - Pi.single i 1 := by abel
+  · by_cases hs : s = 0
+    · refine ⟨j, i, hij.symm, Or.inr (Or.inl ?_)⟩
+      simpa [typeDRawVector, hs, typeDPairVector, hp, i, j] using hxv
+    · refine ⟨j, i, hij.symm, Or.inr (Or.inr ?_)⟩
+      simpa [typeDRawVector, hs, typeDPairVector, hp, i, j] using hxv
+
 /-! ### The Bourbaki order -/
 
 /-- Enumerate ordered distinct pairs by their nonzero cyclic difference first, then their source
