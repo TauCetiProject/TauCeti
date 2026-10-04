@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.MaximalUnramified
+public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.Restriction
 import TauCeti.NumberTheory.ClassFieldTheory.Brauer.LocalH2Bound
 import TauCeti.NumberTheory.LocalField.FiniteExtension.Tower
 import TauCeti.NumberTheory.LocalField.Unramified.BaseChange
@@ -36,6 +37,18 @@ groups agree. Since every Brauer class is split by some finite Galois extension
 `TauCeti.ClassFieldTheory.unramifiedBr K` is all of `Br K`, and its invariant
 `TauCeti.ClassFieldTheory.unramifiedBrInv K` is defined on the whole Brauer group.
 
+Let `L/K` be a finite extension of nonarchimedean local fields, embedded in `Kˢ`. Restriction
+`TauCeti.ClassFieldTheory.brRes K L σ` multiplies the invariant by `[L : K]`. Indeed, a class
+inflated from the unramified extension `K_f/K` of degree `f` restricts to the class inflated
+along the base change `H²(Gal(K_f/K), K_fˣ) → H²(Gal(L_f/L), L_fˣ)`, where `L_f/L` is the
+unramified extension of degree `f`, which contains the image of `K_f` under the identification
+`Kˢ ≃ Lˢ` (`TauCeti.unramifiedExtension_le_restrictScalars_unramifiedExtension`,
+`TauCeti.ClassFieldTheory.brRes_relBrInfl`), and this base change multiplies the unramified
+invariant by `[L : K]` (`TauCeti.ClassFieldTheory.unramifiedInv_map_baseChange`). Since
+multiplication by `[L : K]` is surjective on `ℚ/ℤ`, restriction is surjective, and corestriction
+`TauCeti.ClassFieldTheory.brCor K L σ` preserves the invariant because
+`brCor ∘ brRes = [L : K]` (`TauCeti.ClassFieldTheory.brCor_brRes`).
+
 ## Main definitions
 
 * `TauCeti.ClassFieldTheory.invMap K`: the local invariant `Br K ≃+ ℚ/ℤ`.
@@ -53,6 +66,11 @@ groups agree. Since every Brauer class is split by some finite Galois extension
   invariant is the invariant `unramifiedInv` of the layer.
 * `TauCeti.ClassFieldTheory.range_invMap_comp_relBrInfl`: the invariants of the classes split by a
   finite Galois extension of degree `n` form the subgroup of `ℚ/ℤ` of order `n`.
+* `TauCeti.ClassFieldTheory.invMap_brRes`: the restriction square
+  `inv_L (brRes x) = [L : K] • inv_K x`.
+* `TauCeti.ClassFieldTheory.brRes_surjective`: restriction of Brauer classes is surjective.
+* `TauCeti.ClassFieldTheory.invMap_brCor`: the corestriction square `inv_K (brCor y) = inv_L y`.
+* `TauCeti.ClassFieldTheory.brCor_bijective`: corestriction of Brauer classes is bijective.
 
 ## References
 
@@ -214,5 +232,84 @@ theorem range_invMap_comp_relBrInfl (E : IntermediateField K (SeparableClosure K
     range_relBrInfl_eq_range_relBrInfl_unramifiedExtension K E, AddMonoidHom.coe_range,
     ← Set.range_comp]
   exact congrArg Set.range (funext fun y => invMap_relBrInfl (𝓤 n) y)
+
+/-! ### Restriction and corestriction -/
+
+section Restriction
+
+variable (L : Type) [Field L] [ValuativeRel L] [TopologicalSpace L] [IsNonarchimedeanLocalField L]
+  [Algebra K L] [ValuativeExtension K L] (σ : L →ₐ[K] SeparableClosure K)
+
+/-- The unramified extension of degree `f` of `L` inside its separable closure. -/
+local notation "𝓥" f:max => unramifiedExtension L (SeparableClosure L) f
+
+/-- **The restriction square of the local invariant**: restriction of Brauer classes along a
+finite extension `L/K` of nonarchimedean local fields multiplies the invariant by the degree,
+`inv_L (res x) = [L : K] · inv_K x`. -/
+@[simp]
+theorem invMap_brRes (x : Br K) :
+    invMap L (brRes K L σ x) = Module.finrank K L • invMap K x := by
+  -- `x` is inflated from the unramified extension `K_f/K` of some degree `f`. Its restriction is
+  -- inflated from the unramified extension `L_f/L` of degree `f`, which contains the image of
+  -- `K_f` under the identification `Kˢ ≃ Lˢ`, and the base change from `K_f/K` to `L_f/L`
+  -- multiplies the unramified invariant by `[L : K]`.
+  obtain ⟨f, y, rfl⟩ := (mem_unramifiedBr_iff K).1 (unramifiedBr_eq_top K ▸ AddSubgroup.mem_top x)
+  let ψ : SeparableClosure K ≃ₐ[K] SeparableClosure L :=
+    AlgEquiv.ofRingEquiv (f := (separableClosureRingEquiv K L σ).symm)
+      (separableClosureRingEquiv_symm_algebraMap_base K L σ)
+  have hψ (e : 𝓤 f) : ψ (e : SeparableClosure K) ∈ 𝓥 f :=
+    unramifiedExtension_le_restrictScalars_unramifiedExtension (K := K) L f
+      (map_unramifiedExtension_le f ψ.toAlgHom ((mem_map _).2 ⟨e, e.2, rfl⟩))
+  -- The embedding `K_f → L_f` induced by `ψ`.
+  let ι : 𝓤 f →ₐ[K] 𝓥 f :=
+    (ψ.toAlgHom.comp (𝓤 f).val).codRestrict ((𝓥 f).restrictScalars K).toSubalgebra hψ
+  let _ : Algebra (𝓤 f) (𝓥 f) := ι.toAlgebra
+  have : IsScalarTower K (𝓤 f) (𝓥 f) := .of_algebraMap_eq fun c => (ι.commutes c).symm
+  -- The canonical structures of nonarchimedean local field on `K_f` and `L_f`.
+  let _ := finiteExtensionValuativeRel K (𝓤 f)
+  let _ := finiteExtensionNormedFieldTopology K (𝓤 f)
+  have := finiteExtension_isNonarchimedeanLocalField K (𝓤 f)
+  have := finiteExtension_valuativeExtension K (𝓤 f)
+  have : IsUnramified K (𝓤 f) := isUnramified_unramifiedExtension f.ne_zero
+  let _ := finiteExtensionValuativeRel L (𝓥 f)
+  let _ := finiteExtensionNormedFieldTopology L (𝓥 f)
+  have := finiteExtension_isNonarchimedeanLocalField L (𝓥 f)
+  have := finiteExtension_valuativeExtension L (𝓥 f)
+  have : IsUnramified L (𝓥 f) := isUnramified_unramifiedExtension f.ne_zero
+  have : ValuativeExtension K (𝓥 f) := ValuativeExtension.trans K L (𝓥 f)
+  have : ValuativeExtension (𝓤 f) (𝓥 f) := ι.valuativeExtension
+  rw [brRes_relBrInfl K L (𝓤 f) (𝓥 f) σ (𝓤 f).val (𝓥 f).val
+    (fun e => (separableClosureRingEquiv K L σ).apply_symm_apply e) y, invMap_relBrInfl,
+    invMap_relBrInfl, unramifiedInv_map_baseChange]
+
+/-- **Restriction of Brauer classes along a finite extension of nonarchimedean local fields is
+surjective**, since multiplication by `[L : K]` is surjective on `ℚ/ℤ`. -/
+theorem brRes_surjective : Function.Surjective (brRes K L σ) := by
+  have := finite_of_valuativeExtension K L
+  have hn : (Module.finrank K L : ℤ) ≠ 0 := Nat.cast_ne_zero.2 Module.finrank_pos.ne'
+  intro y
+  obtain ⟨q, hq⟩ := DivisibleBy.surjective_smul _ ℤ hn (invMap L y)
+  refine ⟨(invMap K).symm q, (invMap L).injective ?_⟩
+  rw [invMap_brRes, AddEquiv.apply_symm_apply, ← natCast_zsmul]
+  exact hq
+
+/-- **The corestriction square of the local invariant**: corestriction of Brauer classes along a
+finite extension `L/K` of nonarchimedean local fields preserves the invariant,
+`inv_K (cor y) = inv_L y`. -/
+@[simp]
+theorem invMap_brCor [FiniteDimensional K L] (y : Br L) :
+    invMap K (brCor K L σ y) = invMap L y := by
+  obtain ⟨x, rfl⟩ := brRes_surjective K L σ y
+  rw [brCor_brRes, map_nsmul, invMap_brRes]
+
+/-- **Corestriction of Brauer classes along a finite extension of nonarchimedean local fields is
+bijective**, since it preserves the invariant. -/
+theorem brCor_bijective [FiniteDimensional K L] : Function.Bijective (brCor K L σ) := by
+  have h : ⇑(brCor K L σ) = (invMap K).symm ∘ invMap L :=
+    funext fun y => (invMap K).eq_symm_apply.2 (invMap_brCor K L σ y)
+  rw [h]
+  exact (invMap K).symm.bijective.comp (invMap L).bijective
+
+end Restriction
 
 end TauCeti.ClassFieldTheory

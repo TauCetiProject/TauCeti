@@ -92,7 +92,8 @@ section Pairing
 
 variable (N : ℕ)
 
-omit [DecidableEq F] in
+omit [DecidableEq F] [IsSepClosed F]
+  [Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.FunctionField] in
 /-- Pulling back along `φ` commutes with pulling back along `[N]`, since `φ ∘ [N] = [N] ∘ φ`. -/
 private theorem divisorPullback_divisorPullback_mulByIntIsogeny {hψ₁ : psiFunctionField W₁ N ≠ 0}
     {hψ₂ : psiFunctionField W₂ N ≠ 0} (hN : (N : F) ≠ 0) (D : Divisor F W₂.FunctionField) :

@@ -49,6 +49,8 @@ the characteristic of `k` divides the order of `G`.
   representation equivalent to its induced representation.
 * `TauCeti.indK0_of_trivial`: the class of the trivial line goes to the class of the permutation
   module on the cosets.
+* `TauCeti.indK0_of_ofMulAction_quotient`: for `D ≤ S`, the class of the permutation module
+  `k[S ⧸ (D ⊓ S)]` goes to the class of the permutation module `k[G ⧸ D]`.
 * `TauCeti.indK0_of_indFDRep`: over a field, the class of a finite-dimensional representation goes
   to the class of `TauCeti.indFDRep` of it.
 
@@ -129,6 +131,20 @@ theorem indK0_of_trivial :
     indK0 k S (ExactK0.of (FGModuleCat.of k[S] (Representation.trivial k S k).asModule)) =
       ExactK0.of (FGModuleCat.of k[G] (Representation.ofMulAction k G (G ⧸ S)).asModule) :=
   indK0_of_asModule_of_equiv k S _ _ (indTrivialEquiv k S)
+
+/-- **Induction of a coset permutation module.** For a subgroup `D ≤ S`, induction from `S` sends
+the class of the permutation module `k[S ⧸ (D ⊓ S)]` to the class of the permutation module
+`k[G ⧸ D]`. -/
+@[simp high]
+theorem indK0_of_ofMulAction_quotient {D : Subgroup G} (h : D ≤ S) :
+    letI : Module.Finite k[S] (Representation.ofMulAction k S (S ⧸ D.subgroupOf S)).asModule :=
+      Module.Finite.of_restrictScalars_finite k k[S] _
+    letI : Module.Finite k[G] (Representation.ofMulAction k G (G ⧸ D)).asModule :=
+      Module.Finite.of_restrictScalars_finite k k[G] _
+    indK0 k S (ExactK0.of (FGModuleCat.of k[S]
+        (Representation.ofMulAction k S (S ⧸ D.subgroupOf S)).asModule)) =
+      ExactK0.of (FGModuleCat.of k[G] (Representation.ofMulAction k G (G ⧸ D)).asModule) :=
+  indK0_of_asModule_of_equiv k S _ _ (indOfMulActionQuotientEquiv k h)
 
 end CommRing
 

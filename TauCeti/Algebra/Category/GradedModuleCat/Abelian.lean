@@ -48,8 +48,9 @@ graded abelian category, whose canonical exact structure is
   `TauCeti.GradedModuleCat.mem_productFan_pt_piece_iff`: the homogeneous elements of kernels,
   cokernels and finite products.
 * The instance `Abelian (TauCeti.GradedModuleCat 𝒜)`.
-* `TauCeti.GradedModuleCat.epi_iff_surjective`: epimorphisms are precisely the maps whose
-  underlying linear maps are surjective.
+* `TauCeti.GradedModuleCat.epi_iff_surjective` and `TauCeti.GradedModuleCat.mono_iff_injective`:
+  epimorphisms and monomorphisms are precisely the maps whose underlying linear maps are surjective
+  and injective, respectively.
 -/
 
 public section
@@ -292,6 +293,17 @@ theorem epi_iff_surjective (f : M ⟶ N) : Epi f ↔ Function.Surjective f.hom :
   · intro hf
     have : Epi (toModuleCat.map f) := (ModuleCat.epi_iff_surjective _).mpr hf
     exact (toModuleCat (𝒜 := 𝒜)).epi_of_epi_map inferInstance
+
+/-- A morphism of graded modules is a monomorphism exactly when its underlying map is
+injective. -/
+theorem mono_iff_injective (f : M ⟶ N) : Mono f ↔ Function.Injective f.hom := by
+  constructor
+  · intro hf
+    have := NormalEpiCategory.preservesMonomorphisms_of_preservesKernels (toModuleCat (𝒜 := 𝒜))
+    exact (ModuleCat.mono_iff_injective (toModuleCat.map f)).1 inferInstance
+  · intro hf
+    have : Mono (toModuleCat.map f) := (ModuleCat.mono_iff_injective _).mpr hf
+    exact (toModuleCat (𝒜 := 𝒜)).mono_of_mono_map inferInstance
 
 /-- The forgetful functor preserves homology because kernels and cokernels are formed on
 underlying modules. -/

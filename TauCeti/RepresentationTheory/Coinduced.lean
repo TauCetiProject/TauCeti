@@ -6,7 +6,6 @@ Authors: Codex
 module
 
 public import Mathlib.RepresentationTheory.Coinduced
-public import Mathlib.CategoryTheory.Abelian.Exact
 public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
 public import Mathlib.Algebra.Homology.ShortComplex.ExactFunctor
 public import Mathlib.Algebra.MonoidAlgebra.MapDomain
@@ -24,8 +23,8 @@ assumption. This allows connecting maps to be compared through Shapiro's isomorp
 On the module side, coinduction along a monoid homomorphism `φ : H →* G` is coextension of
 scalars along `MonoidAlgebra.mapDomainRingHom k φ : k[H] →+* k[G]`: the `k[G]`-module
 `Hom_{k[H]}(k[G], V)` of Mathlib's `ModuleCat.coextendScalars` is isomorphic to the module of
-Mathlib's coinduced representation `Representation.coind φ ρ`, by evaluation at the group
-elements (`Representation.coextendScalarsEquivCoind`). This transports statements about
+Mathlib's coinduced representation `Representation.coind φ ρ`, by evaluation at the
+monoid elements (`Representation.coextendScalarsEquivCoind`). This transports statements about
 coextension of scalars on module categories, such as its action on Grothendieck groups of group
 algebras, to coinduced and induced representations.
 
@@ -40,24 +39,26 @@ open CategoryTheory
 
 namespace Rep
 
-universe u
+universe u v w t
 
-variable {R G : Type u} [CommRing R] [Group G]
+variable {R : Type u} [CommRing R]
 
 /-- Coinduction acts additively on coefficient maps. -/
-instance {H : Type u} [Group H] (φ : H →* G) :
-    (coindFunctor.{u} R φ).Additive where
+instance {G : Type v} {H : Type w} [Monoid G] [Monoid H] (φ : H →* G) :
+    (coindFunctor.{t} R φ).Additive where
   map_add := by intro X Y f g; ext x; rfl
+
+variable {G : Type v} [Group G]
 
 /-- Subgroup coinduction preserves homology of short complexes of representations. -/
 noncomputable instance (H : Subgroup G) :
-    (coindFunctor.{u} R H.subtype).PreservesHomology :=
-  (coindFunctor.{u} R H.subtype).preservesHomology_of_preservesEpis_and_kernels
+    (coindFunctor.{max v t} R H.subtype).PreservesHomology :=
+  (coindFunctor.{max v t} R H.subtype).preservesHomology_of_preservesEpis_and_kernels
 
 /-- Subgroup coinduction is exact, so also preserves finite colimits. -/
 instance (H : Subgroup G) :
-    Limits.PreservesFiniteColimits (coindFunctor.{u} R H.subtype) :=
-  (coindFunctor.{u} R H.subtype).preservesFiniteColimits_of_preservesHomology
+    Limits.PreservesFiniteColimits (coindFunctor.{max v t} R H.subtype) :=
+  (coindFunctor.{max v t} R H.subtype).preservesFiniteColimits_of_preservesHomology
 
 end Rep
 
@@ -72,7 +73,7 @@ universe u v w
 variable {k : Type u} {H : Type w} {G : Type v} [CommRing k] [Monoid H] [Monoid G] (φ : H →* G)
   {V : Type (max u v)} [AddCommGroup V] [Module k V] (ρ : Representation k H V)
 
--- `k[H]` acts on the source `k[G]` through `mapDomainRingHom k φ`, and `x` is `k[H]`-linear.
+-- The explicit source type selects the restricted `k[H]`-action, so `x` is `k[H]`-linear.
 private theorem coextendScalars_apply_mapDomain_mul
     (x : (ModuleCat.coextendScalars (MonoidAlgebra.mapDomainRingHom k φ)).obj
       (ModuleCat.of k[H] ρ.asModule)) (r : k[H]) (a : k[G]) :
@@ -82,32 +83,25 @@ private theorem coextendScalars_apply_mapDomain_mul
     (show ↑((ModuleCat.restrictScalars (MonoidAlgebra.mapDomainRingHom k φ)).obj
       (ModuleCat.of k[G] k[G])) from a))
 
-/-- The endomorphism of the left regular representation `k[G]` corresponding to `single g 1`
-under `Rep.leftRegularHomEquiv` is right multiplication by `single g 1`. -/
-theorem _root_.Rep.leftRegularHomEquiv_symm_single_one_apply (g : G) (a : k[G]) :
-    ((Rep.leftRegularHomEquiv (Rep.leftRegular k G)).symm (.single g 1)).hom a =
-      a * .single g 1 := by
-  induction a using MonoidAlgebra.induction_linear with
-  | zero => simp
-  | add a b ha hb => rw [map_add, ha, hb, add_mul]
-  | single g' c =>
-    rw [← mul_one c, ← smul_eq_mul, ← MonoidAlgebra.smul_single, map_smul,
-      Rep.leftRegularHomEquiv_symm_single]
-    simp [MonoidAlgebra.single_mul_single]
-
 /-- `k[G]` acts on the coinduced representation `Representation.coind' φ A`, whose elements are
 the morphisms `Rep.res φ (Rep.leftRegular k G) ⟶ A`, by right multiplication on the source
 `k[G]`. -/
+@[simp↓]
 theorem coind'_asAlgebraHom_hom_apply (A : Rep k H) (r : k[G])
     (f : Rep.res φ (Rep.leftRegular k G) ⟶ A) (a : k[G]) :
     ((coind' φ A).asAlgebraHom r f).hom a = f.hom (a * r) := by
-  induction r using MonoidAlgebra.induction_linear with
-  | zero => simp
+  induction r using MonoidAlgebra.induction_on with
+  | of g =>
+    rw [MonoidAlgebra.of_apply, asAlgebraHom_single_one, coind'_apply_apply,
+      Rep.hom_comp, IntertwiningMap.comp_apply]
+    apply congrArg f.hom
+    rw [← IntertwiningMap.toLinearMap_apply, Rep.resMap_hom_toLinearMap,
+      IntertwiningMap.toLinearMap_apply, LinearEquiv.coe_coe,
+      Rep.leftRegularHomEquiv_symm_apply]
   | add r r' hr hr' => simp [Rep.add_hom, hr, hr', mul_add]
-  | single g c =>
-    rw [← mul_one c, ← smul_eq_mul, ← MonoidAlgebra.smul_single, map_smul, mul_smul_comm,
-      map_smul, asAlgebraHom_single_one, ← Rep.leftRegularHomEquiv_symm_single_one_apply]
-    rfl
+  | smul c r hr =>
+    simp only [map_smul, LinearMap.smul_apply, Rep.smul_hom, IntertwiningMap.coe_smul,
+      Pi.smul_apply, mul_smul_comm, hr]
 
 /-- A `k[H]`-linear map `k[G] → V` is an `H`-equivariant `k`-linear map from the restriction of
 the left regular representation of `G`. -/
@@ -167,7 +161,7 @@ noncomputable def coextendScalarsEquivCoind :
     (TauCeti.Representation.asModuleLinearEquivOfEquiv
       (equivOfIso (Rep.coindIso φ (Rep.of ρ)).symm))
 
-/-- `Representation.coextendScalarsEquivCoind` evaluates a homomorphism at the group elements. -/
+/-- `Representation.coextendScalarsEquivCoind` evaluates a homomorphism at the monoid elements. -/
 @[simp]
 theorem coextendScalarsEquivCoind_apply
     (x : (ModuleCat.coextendScalars (MonoidAlgebra.mapDomainRingHom k φ)).obj

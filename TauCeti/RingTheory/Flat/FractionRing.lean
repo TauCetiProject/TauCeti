@@ -9,23 +9,26 @@ public import Mathlib.RingTheory.Flat.Localization
 public import Mathlib.RingTheory.Localization.FractionRing
 
 /-!
-# Fraction fields are flat
+# Flatness of localizations at nonzerodivisors
 
-A localization of a commutative ring is flat over it (Mathlib's `IsLocalization.flat`). This
-cannot be an instance, because the submonoid being inverted is not determined by the two rings.
-For a field of fractions it is: `IsFractionRing R K` inverts exactly the nonzerodivisors, so the
-flatness of `K` over `R` can be found by instance search. This is how `ℚ_p` is seen to be flat
-over `ℤ_p`, which is what makes base change to `ℚ_p` preserve injectivity.
+An `IsFractionRing R K` algebra is a localization of the commutative semiring `R` at its
+nonzerodivisors. Mathlib's `IsLocalization.flat` proves that every localization is flat over
+its base, but its submonoid parameter prevents using it as a general instance. For
+`IsFractionRing R K`, the inverted submonoid is determined by `R`, so this specialization
+makes the flatness of `K` over `R` available to instance search.
+
+This applies to `ℚ≥0` over `ℕ`, fraction fields, and total quotient rings of rings with zero
+divisors. In particular, `ℚ_p` is flat over `ℤ_p`, which makes base change to `ℚ_p` preserve
+injectivity.
 
 ## Main results
 
-* `IsFractionRing.flat`: a field of fractions of `R` is a flat `R`-module.
+* `IsFractionRing.flat`: a localization of `R` at its nonzerodivisors is a flat `R`-module.
 -/
 
 public section
 
-/-- A field of fractions is flat over its ring: the case of `IsLocalization.flat` in which the
-submonoid inverted, the nonzerodivisors, is determined by the rings. -/
-instance IsFractionRing.flat (R K : Type*) [CommRing R] [CommRing K] [Algebra R K]
+/-- A localization at the nonzerodivisors of a commutative semiring is flat over that semiring. -/
+instance IsFractionRing.flat (R K : Type*) [CommSemiring R] [CommSemiring K] [Algebra R K]
     [IsFractionRing R K] : Module.Flat R K :=
   IsLocalization.flat K (nonZeroDivisors R)

@@ -416,6 +416,10 @@ when its Taylor map only reads the letter component through the linear part. -/
 def IsStrict (f : AInfinityHom AA BB) : Prop :=
   f.taylor = f.linearPart ∘ₗ ReducedTensorWords.letter R A
 
+/-- Strictness is equivalent to the Taylor map factoring through the letter component. -/
+theorem isStrict_iff (f : AInfinityHom AA BB) :
+    f.IsStrict ↔ f.taylor = f.linearPart ∘ₗ ReducedTensorWords.letter R A := (Iff.rfl)
+
 /-- The identity `A∞` morphism is strict. -/
 @[simp]
 theorem isStrict_id (AA : AInfinityAlgebra R A) : (AInfinityHom.id AA).IsStrict := by

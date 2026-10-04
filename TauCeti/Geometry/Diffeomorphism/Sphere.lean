@@ -45,7 +45,8 @@ continuity proved here.
 ## Main results
 
 * `LinearIsometryEquiv.contMDiff_unitSphereEquiv`: the restriction to the unit sphere is
-  `C^m` for every smoothness exponent.
+  `C^m` for every smoothness exponent, so the linear isometry group acts on the unit sphere by
+  `C^m` maps (a `ContMDiffConstSMul` instance).
 * `LinearIsometryEquiv.isometry_unitSphereEquiv`: it is an isometry for the distance the
   sphere inherits from `E`, so the action is by isometries of the round sphere.
 * `LinearIsometryEquiv.unitSphereDiffeomorph_neg_apply`: the diffeomorphism induced by
@@ -158,6 +159,11 @@ theorem unitSphereDiffHom_injective :
   apply LinearEquiv.toLinearMap_injective
   refine TauCeti.LinearMap.eq_of_eqOn_unitSphere fun x hx => ?_
   simpa using congrArg Subtype.val (DFunLike.congr_fun h ⟨x, hx⟩)
+
+/-- The linear isometry group of `E` acts on the unit sphere by `C^m` maps, for every smoothness
+exponent `m`. -/
+instance : ContMDiffConstSMul (𝓡 n) m (E ≃ₗᵢ[ℝ] E) (sphere (0 : E) 1) :=
+  ⟨contMDiff_unitSphereEquiv⟩
 
 end InnerProduct
 

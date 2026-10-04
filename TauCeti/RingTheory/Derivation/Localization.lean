@@ -16,8 +16,9 @@ Let `T` be a localization of a commutative ring `A` at a submonoid `S`, and let 
 quotient rule `D (a / s) = (s • D a - a • D s) / s ^ 2`.
 
 Uniqueness is elementary: if `t * s = a` in `T` with `s ∈ S`, the Leibniz rule gives
-`s • D t = D a - t • D s`, and `s` acts invertibly on `N`. Existence goes through Kähler
-differentials: `Ω[T⁄R]` is the localization of `Ω[A⁄R]` at `S`
+`s • D t = D a - t • D s`, and `s` acts invertibly on `N`. The uniqueness statement only
+needs commutative semirings, left cancellative addition in `N`, and a multiplicative action of `T`.
+Existence goes through Kähler differentials: `Ω[T⁄R]` is the localization of `Ω[A⁄R]` at `S`
 (`KaehlerDifferential.isLocalizedModule_map`), so the `A`-linear map `Ω[A⁄R] → N` classifying a
 derivation of `A` extends to a `T`-linear map `Ω[T⁄R] → N`.
 
@@ -34,29 +35,29 @@ scheme on its basic open subsets.
 
 public section
 
-variable {R A T N : Type*} [CommRing R] [CommRing A] [CommRing T] [Algebra R T] [Algebra A T]
-  [AddCommGroup N] [Module T N]
-
-/-- Two maps from a localization `T` of `A` to a `T`-module that satisfy the Leibniz rule are equal
-once they agree on the image of `A`. In particular a derivation of `T` is determined by its values
-on `A`. -/
-theorem IsLocalization.eq_of_leibniz (S : Submonoid A) [IsLocalization S T]
+/-- Two maps from a localization `T` of a commutative semiring `A` to a type with left
+cancellative addition and a multiplicative `T`-action that satisfy the Leibniz rule are equal
+once they agree on the image of `A`. In particular a derivation of `T` is determined by its
+values on `A`. -/
+theorem IsLocalization.eq_of_leibniz {A T N : Type*} [CommSemiring A] [CommSemiring T]
+    [Algebra A T] [Add N] [IsLeftCancelAdd N] [MulAction T N]
+    (S : Submonoid A) [IsLocalization S T]
     {δ₁ δ₂ : T → N} (h₁ : ∀ x y, δ₁ (x * y) = x • δ₁ y + y • δ₁ x)
     (h₂ : ∀ x y, δ₂ (x * y) = x • δ₂ y + y • δ₂ x)
     (h : ∀ a : A, δ₁ (algebraMap A T a) = δ₂ (algebraMap A T a)) : δ₁ = δ₂ := by
   funext t
   obtain ⟨⟨a, s⟩, hs⟩ := IsLocalization.surj S t
-  have key {δ : T → N} (hδ : ∀ x y, δ (x * y) = x • δ y + y • δ x) :
-      algebraMap A T s • δ t = δ (algebraMap A T a) - t • δ (algebraMap A T s) := by
-    rw [← hs, hδ, add_sub_cancel_left]
-  have hu := (IsLocalization.map_units T s).map (algebraMap T (Module.End T N))
-  rw [Module.End.isUnit_iff] at hu
-  exact hu.injective (by simp only [Module.algebraMap_end_apply, key h₁, key h₂, h])
+  apply (IsLocalization.map_units T s).smul_left_cancel.mp
+  have hm : t • δ₁ (algebraMap A T s) + algebraMap A T s • δ₁ t =
+      t • δ₂ (algebraMap A T s) + algebraMap A T s • δ₂ t := by
+    rw [← h₁, ← h₂, hs, h]
+  exact add_left_cancel (by simpa only [h] using hm)
 
 namespace Derivation
 
-variable [Module R N] [Algebra R A] [IsScalarTower R A T] [Module A N] [IsScalarTower A T N]
-  [IsScalarTower R A N]
+variable {R A T N : Type*} [CommRing R] [CommRing A] [CommRing T] [Algebra R T] [Algebra A T]
+  [AddCommGroup N] [Module T N] [Module R N] [Algebra R A] [IsScalarTower R A T] [Module A N]
+  [IsScalarTower A T N] [IsScalarTower R A N]
 
 /-- The extension of an `R`-derivation `D : A → N` to an `R`-derivation of the localization `T`
 of `A` at `S`, for `N` a `T`-module. By `IsLocalization.eq_of_leibniz` it is the only derivation
@@ -65,15 +66,10 @@ noncomputable def extendOfIsLocalization (S : Submonoid A) [IsLocalization S T]
     (D : Derivation R A N) : Derivation R T N :=
   haveI : IsScalarTower R T N := .of_algebraMap_smul fun r n ↦ by
     rw [IsScalarTower.algebraMap_apply R A T, algebraMap_smul, algebraMap_smul]
-  ((IsLocalizedModule.lift S (KaehlerDifferential.map R R A T) D.liftKaehlerDifferential
-    fun s ↦ by
-      -- `s` acts on `N` through its image in `T`, where it is a unit.
-      have hu := (IsLocalization.map_units T s).map (algebraMap T (Module.End T N))
-      rw [Module.End.isUnit_iff] at hu ⊢
-      convert hu using 1
-      ext x
-      exact (algebraMap_smul T (s : A) x).symm).extendScalarsOfIsLocalization S T).compDer
-    (KaehlerDifferential.D R T)
+  letI := isLocalizedModule_id S N T
+  let f := IsLocalizedModule.lift S (KaehlerDifferential.map R R A T) D.liftKaehlerDifferential
+    (IsLocalizedModule.map_units (LinearMap.id : N →ₗ[A] N))
+  (f.extendScalarsOfIsLocalization S T).compDer (KaehlerDifferential.D R T)
 
 /-- The extension of `D` to the localization `T` agrees with `D` on the image of `A`. -/
 @[simp]

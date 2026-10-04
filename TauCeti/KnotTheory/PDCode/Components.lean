@@ -90,6 +90,16 @@ theorem componentPerm_def (D : PDCode n) : D.componentPerm = D.crossingTurn * D.
   rw [he, crossingTurn_crossing, crossing_relabel]
   simp
 
+/-- On a code `D'` with one crossing more than `D`, whose first `n` crossings keep the half-edges
+of `D` and whose last crossing takes the four new half-edge positions, the crossing turn is that
+of `D` together with the opposite-slot permutation of the new crossing. -/
+theorem crossingTurn_eq_permCongr_sumCongr {D : PDCode n} {D' : PDCode (n + 1)}
+    (hD : D'.halfEdge = (halfEdgeSuccEquiv n).permCongr (Perm.sumCongr D.halfEdge 1)) :
+    D'.crossingTurn =
+      (halfEdgeSuccEquiv n).permCongr (Perm.sumCongr D.crossingTurn oppositeCrossingSlot) :=
+  eq_permCongr_sumCongr_of_halfEdge_eq hD (fun _ => oppositeCrossingSlot)
+    D.crossingTurn_crossing D'.crossingTurn_crossing
+
 /-- Relabelling conjugates component traversal by the half-edge relabelling. -/
 @[simp] theorem componentPerm_relabel (D : PDCode n) (half : Equiv.Perm (Fin (4 * n)))
     (cross : Equiv.Perm (Fin n)) :
