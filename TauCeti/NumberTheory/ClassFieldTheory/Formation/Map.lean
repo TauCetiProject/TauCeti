@@ -212,6 +212,14 @@ theorem NormalLayer.localFormationMap_ground_toSubgroup (L : NormalLayer (Absolu
       L.ground.toSubgroup.map (localFormationHom K E iota) :=
   L.map_ground_toSubgroup _ _
 
+/-- The top subgroup of a layer over `E`, regarded over `K`, is the image of its top subgroup
+under the embedding `G_E → G_K`. -/
+@[simp]
+theorem NormalLayer.localFormationMap_top_toSubgroup (L : NormalLayer (AbsoluteGaloisGroup E)) :
+    (L.localFormationMap K E iota).top.toSubgroup =
+      L.top.toSubgroup.map (localFormationHom K E iota) :=
+  L.map_top_toSubgroup _ _
+
 /-- **A layer over a finite extension as a layer over the base field.**  Restriction identifies
 the units formation over `E` with the restriction of the units formation over `K`, and hence
 identifies every finite normal layer over `E` with its image layer over `K`. -/

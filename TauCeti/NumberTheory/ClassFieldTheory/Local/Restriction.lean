@@ -21,9 +21,10 @@ formation of `K` (`TauCeti.ClassFieldTheory.localFormationLayerEquiv`).
 
 This file proves that this isomorphism matches the invariant maps of the two local class
 formations (`localClassFormation_inv_localFormationLayerEquiv`): the invariant of a class in the
-formation of `E` is the invariant of its image in the formation of `K`. Consequently the local
-Artin map of a finite Galois extension of `E` is the abstract Artin map of the corresponding layer
-of the formation of `K` (`artinMap_localFormationLayerEquiv`). Combined with the Artin–Tate
+formation of `E` is the invariant of its image in the formation of `K`. Consequently the Artin map
+of a finite normal layer `V ◁ U` of the formation of `E` (the local Artin map of the extension of
+the fixed field of `U` cut out by `V`) is the abstract Artin map of the corresponding layer of the
+formation of `K` (`artinMap_localFormationLayerEquiv`). Combined with the Artin–Tate
 diagram `TauCeti.ClassFieldTheory.ClassFormation.artinMap_groundNorm` inside the formation of `K`,
 this is what relates the local Artin map of `E` to that of `K` through the norm `N_{E/K}`.
 
@@ -34,10 +35,9 @@ from `Br E`, since restriction multiplies invariants by `[G_E : U]` and `ℚ/ℤ
 restricted class both invariants are `[G_E : U] • inv_E`, by the restriction square of
 `subgroupInvMap` inside `G_K` and its normalization `subgroupInvMap_explicitMap2` on `G_E`.
 
-## Main definitions
-
-* `TauCeti.ClassFieldTheory.localFormationHomInv K E iota U`: the inverse of the embedding
-  `G_E → G_K` on the image of a subgroup `U ≤ G_E`.
+The inflation step (`layerInfl_localFormationLayerEquiv`) follows the cocycle computation of the
+conjugation case, the private lemma `layerInfl_conjugateCohomologyIso` of
+`TauCeti.NumberTheory.ClassFieldTheory.Brauer.LayerInvariant`.
 
 ## Main results
 
@@ -77,37 +77,12 @@ private theorem exists_cohomologyIso_hom_H2π {G G' : Type} [Group G] [Topologic
     groupCohomology.H2π_comp_map_apply]
   exact ⟨_, rfl, fun γ δ => rfl⟩
 
-/-! ### The inverse of the embedding on a subgroup -/
+/-! ### Inflation from corresponding layers -/
 
 section Embedding
 
 variable (K : Type) [Field K] (E : Type) [Field E] [Algebra K E] [FiniteDimensional K E]
   (iota : E →ₐ[K] SeparableClosure K)
-
-/-- **The inverse of the embedding `G_E → G_K` on a subgroup of the image of `U ≤ G_E`**: the
-continuous homomorphism `U' → U`, for `U' ≤ U.map (localFormationHom K E iota)`, given by the
-inverse of `TauCeti.galoisSubgroupEquiv` (`localFormationHom_localFormationHomInv`). -/
-def localFormationHomInv {U : Subgroup (AbsoluteGaloisGroup E)}
-    {U' : Subgroup (AbsoluteGaloisGroup K)} (h : U' ≤ U.map (localFormationHom K E iota)) :
-    U' →ₜ* U where
-  toMonoidHom := ((galoisSubgroupEquiv K E iota).symm.toMulEquiv.toMonoidHom.comp
-      (Subgroup.inclusion (h.trans ((Subgroup.map_le_range _ U).trans
-        (range_localFormationHom K E iota).le)))).codRestrict U
-    fun u => by
-      obtain ⟨v, hv, hvu⟩ := h u.2
-      have hu : Subgroup.inclusion (h.trans ((Subgroup.map_le_range _ U).trans
-          (range_localFormationHom K E iota).le)) u = galoisSubgroupEquiv K E iota v :=
-        Subtype.ext (hvu.symm.trans (localFormationHom_apply K E iota v))
-      simpa [hu] using hv
-  continuous_toFun := ((galoisSubgroupEquiv K E iota).symm.continuous.comp
-    (continuous_subtype_val.subtype_mk _)).subtype_mk _
-
-/-- `localFormationHomInv` is a right inverse of the embedding `G_E → G_K`. -/
-@[simp]
-theorem localFormationHom_localFormationHomInv {U : Subgroup (AbsoluteGaloisGroup E)}
-    {U' : Subgroup (AbsoluteGaloisGroup K)} (h : U' ≤ U.map (localFormationHom K E iota))
-    (u : U') : localFormationHom K E iota (localFormationHomInv K E iota h u) = u := by
-  simp [localFormationHomInv, localFormationHom_apply]
 
 /-- **The units of `Eˢ` as units of `Kˢ` form a compatible pair with `localFormationHomInv`.** -/
 theorem unitsCoeffMapSymm_localFormationHomInv_smul {U : Subgroup (AbsoluteGaloisGroup E)}
@@ -116,9 +91,7 @@ theorem unitsCoeffMapSymm_localFormationHomInv_smul {U : Subgroup (AbsoluteGaloi
     unitsCoeffMapSymm K E iota (localFormationHomInv K E iota h u • y) =
       u • unitsCoeffMapSymm K E iota y := by
   refine Additive.toMul.injective (Units.ext ?_)
-  simp [localFormationHomInv, Subgroup.smul_def, AlgEquiv.smul_units_def]
-
-/-! ### Inflation from corresponding layers -/
+  simp [localFormationHomInv_apply_coe, Subgroup.smul_def, AlgEquiv.smul_units_def]
 
 omit [FiniteDimensional K E] in
 /-- The inverse of the coefficient equivalence of `localFormationRestrict` is
@@ -157,7 +130,9 @@ private theorem layerCocycle_of_localFormation (L : NormalLayer (AbsoluteGaloisG
 
 /-- Inflation commutes with a layer isomorphism from a layer `V ◁ U` over `E` to a layer `V' ◁ U'`
 over `K` whose Galois-group map is induced by the embedding `U' → U` inverse to `G_E → G_K` and
-whose coefficient map is induced by `(Eˢ)ˣ ≃ (Kˢ)ˣ`. -/
+whose coefficient map is induced by `(Eˢ)ˣ ≃ (Kˢ)ˣ`. The argument follows the conjugation case
+`layerInfl_conjugateCohomologyIso` in `TauCeti.NumberTheory.ClassFieldTheory.Brauer.LayerInvariant`.
+-/
 private theorem layerInfl_cohomologyIso_of_localFormation (L : NormalLayer (AbsoluteGaloisGroup E))
     {L' : NormalLayer (AbsoluteGaloisGroup K)}
     (h : L'.ground.toSubgroup ≤ L.ground.toSubgroup.map (localFormationHom K E iota))
@@ -248,7 +223,7 @@ theorem subgroupInvMap_explicitMap2_localFormationHomInv {U : Subgroup (Absolute
         ↥iota.fieldRange.fixingSubgroup →ₜ* AbsoluteGaloisGroup E).comp
         (ContinuousMonoidHom.subgroupInclusion hle) := by
     ext u x
-    simp [localFormationHomInv, galoisSubgroupEquiv_symm_apply,
+    simp [localFormationHomInv_apply_coe, galoisSubgroupEquiv_symm_apply,
       absoluteGaloisGroupEquivFixingSubgroup_symm_apply]
   -- Transporting a restricted class is restricting the transported class: both are the pullback
   -- along `U' → G_E` and `(Eˢ)ˣ → (Kˢ)ˣ`.
@@ -298,7 +273,7 @@ theorem localClassFormation_inv_localFormationLayerEquiv (L : NormalLayer (Absol
     (L.localFormationMap K E iota).ground.isOpen
     (L.localFormationMap_ground_toSubgroup K E iota).symm _
 
-/-- **The local Artin map of `E` is the Artin map of the formation of `K` on corresponding layers**:
+/-- **The Artin map of a layer over `E` is the Artin map of the corresponding layer over `K`**:
 for a finite normal layer `V ◁ U` of the units formation of `E`, the Artin symbol of the image of
 `a ∈ ((Eˢ)ˣ)^U` in the corresponding layer of the units formation of `K` is the image of the Artin
 symbol of `a` under the induced isomorphism of abelianized Galois groups. -/

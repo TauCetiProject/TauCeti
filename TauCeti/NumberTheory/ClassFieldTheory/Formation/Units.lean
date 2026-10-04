@@ -44,6 +44,8 @@ The body of `unitsFormation` is not exposed; its coefficient module is read thro
   `TauCeti.UnitsCoeff K`.
 * `TauCeti.ClassFieldTheory.localFormationRestrict K L σ`: restriction from `G_K` to `G_L` as
   an isomorphism of topological representations.
+* `TauCeti.ClassFieldTheory.localFormationHomInv K L σ h`: the inverse `U' → U` of the embedding
+  `G_L → G_K` on a subgroup `U'` of the image of `U ≤ G_L`.
 * `TauCeti.ClassFieldTheory.unitsLevelEquiv ι hU`: the level of an open subgroup `U` whose fixed
   field is the image of `ι : E →ₐ[K] Kˢ` is `Eˣ`.
 * `TauCeti.ClassFieldTheory.layerCoeffEquiv L`: the coefficient module of a finite normal layer
@@ -139,6 +141,41 @@ open map. -/
 theorem isOpenMap_localFormationHom : IsOpenMap (localFormationHom K L σ) :=
   (TauCeti.galoisSubgroup K L σ).isOpen.isOpenMap_subtype_val.comp
     (TauCeti.galoisSubgroupEquiv K L σ).isOpenMap
+
+/-- **The inverse of the embedding `G_L → G_K` on a subgroup of the image of `U ≤ G_L`**: the
+continuous homomorphism `U' → U`, for `U' ≤ U.map (localFormationHom K L σ)`, given by the
+inverse of `TauCeti.galoisSubgroupEquiv` (`localFormationHom_localFormationHomInv`). -/
+def localFormationHomInv {U : Subgroup (AbsoluteGaloisGroup L)}
+    {U' : Subgroup (AbsoluteGaloisGroup K)} (h : U' ≤ U.map (localFormationHom K L σ)) :
+    U' →ₜ* U where
+  toMonoidHom := ((TauCeti.galoisSubgroupEquiv K L σ).symm.toMulEquiv.toMonoidHom.comp
+      (Subgroup.inclusion (h.trans ((Subgroup.map_le_range _ U).trans
+        (range_localFormationHom K L σ).le)))).codRestrict U
+    fun u => by
+      obtain ⟨v, hv, hvu⟩ := h u.2
+      have hu : Subgroup.inclusion (h.trans ((Subgroup.map_le_range _ U).trans
+          (range_localFormationHom K L σ).le)) u = TauCeti.galoisSubgroupEquiv K L σ v :=
+        Subtype.ext (hvu.symm.trans (localFormationHom_apply K L σ v))
+      simpa [hu] using hv
+  continuous_toFun := ((TauCeti.galoisSubgroupEquiv K L σ).symm.continuous.comp
+    (continuous_subtype_val.subtype_mk _)).subtype_mk _
+
+/-- On underlying elements, `localFormationHomInv` is the inverse of
+`TauCeti.galoisSubgroupEquiv`. -/
+theorem localFormationHomInv_apply_coe {U : Subgroup (AbsoluteGaloisGroup L)}
+    {U' : Subgroup (AbsoluteGaloisGroup K)} (h : U' ≤ U.map (localFormationHom K L σ))
+    (u : U') :
+    (localFormationHomInv K L σ h u : AbsoluteGaloisGroup L) =
+      (TauCeti.galoisSubgroupEquiv K L σ).symm
+        ⟨u, (h.trans ((Subgroup.map_le_range _ U).trans (range_localFormationHom K L σ).le)) u.2⟩ :=
+  (rfl)
+
+/-- `localFormationHomInv` is a right inverse of the embedding `G_L → G_K`. -/
+@[simp]
+theorem localFormationHom_localFormationHomInv {U : Subgroup (AbsoluteGaloisGroup L)}
+    {U' : Subgroup (AbsoluteGaloisGroup K)} (h : U' ≤ U.map (localFormationHom K L σ))
+    (u : U') : localFormationHom K L σ (localFormationHomInv K L σ h u) = u := by
+  simp [localFormationHomInv, localFormationHom_apply]
 
 /-- The additive equivalence on the coefficient modules underlying restriction of the units
 formation along `L/K`. It sends a unit of `Kˢ` to its image in `Lˢ` under the inverse of the
