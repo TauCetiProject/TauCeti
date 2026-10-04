@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.BraidWord.PDCode
-import TauCeti.Data.Fin.Basic
-import TauCeti.Data.List.Rotate
+public import TauCeti.Data.List.Rotate
 -- Transporting crossings and slots along the rotation unfolds their unexposed bodies.
 import all TauCeti.KnotTheory.BraidWord.PDCode
 
@@ -18,18 +17,15 @@ Cyclically rotating a braid word cuts its closed braid between two different lev
 diagram therefore does not change: only its crossing and half-edge names do. This file describes
 that renaming explicitly and proves equality of the resulting oriented PD-codes.
 
-For a word `w` and a rotation distance `k`, `rotateIndexEquiv w k` sends an index in `w.rotate k`
-to the index of the same letter in `w`. Its inverse renames the old crossings, and the induced
-crossing-block equivalence renames their four half-edges. The main theorem proves that these
-renamings account for the entire closure construction, including arcs which cross the cut.
+For a word `w` and a rotation distance `k`, `List.rotateIndexEquiv w k` sends an index in
+`w.rotate k` to the index of the same letter in `w`. Its inverse renames the old crossings, and
+the induced crossing-block equivalence renames their four half-edges. The main theorem proves
+that these renamings account for the entire closure construction, including arcs which cross the
+cut.
 
 Taking `w = u ++ v` and `k = u.length` specializes the theorem to the familiar equality of the
 closures of `u ++ v` and `v ++ u`. This is the diagram-level content of cyclic conjugation, the
 word-level generator needed for the conjugation part of Markov equivalence.
-
-## Main definitions
-
-* `TauCeti.BraidWord.rotateIndexEquiv`: identify the letters before and after rotating a word.
 
 ## Main results
 
@@ -52,46 +48,19 @@ namespace BraidWord
 
 open PDCode
 
-/-- The equivalence which sends the index of a letter in `w.rotate k` to its original index in
-`w`. It is the cast along preservation of length followed by addition of `k` modulo the word
-length. -/
-def rotateIndexEquiv (w : BraidWord n) (k : ℕ) :
-    Fin (w.rotate k).length ≃ Fin w.length :=
-  (finCongr (List.length_rotate w k)).trans (finRotate w.length ^ k)
-
-/-- Looking up a letter after rotation and translating its index gives the same letter in the
-original word. -/
-theorem getElem_rotateIndexEquiv (w : BraidWord n) (k : ℕ)
-    (j : Fin (w.rotate k).length) :
-    (w.rotate k)[j.1] = w[(w.rotateIndexEquiv k j).1] := by
-  rw [List.getElem_rotate]
-  congr 1
-  simp [rotateIndexEquiv, Fin.coe_finRotate_pow]
-
-private theorem map_finRange_rotateIndexEquiv (w : BraidWord n) (k : ℕ) :
-    (List.finRange (w.rotate k).length).map (w.rotateIndexEquiv k) =
-      (List.finRange w.length).rotate k := by
-  apply List.ext_getElem
-  · simp
-  · intro i hi hi'
-    simp only [List.length_map, List.length_finRange] at hi
-    simp only [List.getElem_map, List.getElem_finRange, List.getElem_rotate]
-    apply Fin.ext
-    simp [rotateIndexEquiv, Fin.coe_finRotate_pow]
-
 private theorem crossingsAt_rotate_isRotated (w : BraidWord n) (k : ℕ) (p : Fin n) :
     (crossingsAt (w.rotate k) p).map (w.rotateIndexEquiv k) ~r w.crossingsAt p := by
   have hfin :
       (List.finRange (w.rotate k).length).map (w.rotateIndexEquiv k) ~r
         List.finRange w.length := by
-    rw [map_finRange_rotateIndexEquiv]
+    rw [List.map_finRange_rotateIndexEquiv]
     exact List.IsRotated.forall _ _
   have hfilter := hfin.filter
     (fun j : Fin w.length => p = BraidGroup.strand w[j.1].1 ∨
       p = BraidGroup.strandSucc w[j.1].1)
   rw [List.filter_map] at hfilter
   rw [crossingsAt, crossingsAt]
-  simpa only [Function.comp_def, getElem_rotateIndexEquiv] using hfilter
+  simpa only [Function.comp_def, List.getElem_rotateIndexEquiv] using hfilter
 
 private theorem nextCrossing_rotate (w : BraidWord n) (k : ℕ) (p : Fin n) :
     (w.rotateIndexEquiv k).permCongr (nextCrossing (w.rotate k) p) =
@@ -101,8 +70,7 @@ private theorem nextCrossing_rotate (w : BraidWord n) (k : ℕ) (p : Fin n) :
     (w.rotateIndexEquiv k).permCongr
         (crossingsAt (w.rotate k) p).formPerm =
         ((crossingsAt (w.rotate k) p).map (w.rotateIndexEquiv k)).formPerm :=
-      ((crossingsAt (w.rotate k) p).formPerm_map_equiv (w.rotateIndexEquiv k)
-        ((sortedLT_crossingsAt (w.rotate k) p).nodup)).symm
+      ((crossingsAt (w.rotate k) p).formPerm_map_equiv (w.rotateIndexEquiv k)).symm
     _ = (w.crossingsAt p).formPerm :=
       List.formPerm_eq_of_isRotated
         (((sortedLT_crossingsAt (w.rotate k) p).nodup).map
@@ -142,14 +110,14 @@ private theorem nextCrossing_rotate_symm_eq_symm_apply (w : BraidWord n) (k : �
 theorem incomingSlot_rotateIndexEquiv (w : BraidWord n) (k : ℕ)
     (j : Fin (w.rotate k).length) (p : Fin n) :
     incomingSlot (w.rotate k) j p = w.incomingSlot (w.rotateIndexEquiv k j) p := by
-  rw [incomingSlot, incomingSlot, getElem_rotateIndexEquiv]
+  rw [incomingSlot, incomingSlot, List.getElem_rotateIndexEquiv]
 
 /-- The outgoing slot at a rotated crossing is the outgoing slot at its original name. -/
 @[simp]
 theorem outgoingSlot_rotateIndexEquiv (w : BraidWord n) (k : ℕ)
     (j : Fin (w.rotate k).length) (p : Fin n) :
     outgoingSlot (w.rotate k) j p = w.outgoingSlot (w.rotateIndexEquiv k j) p := by
-  rw [outgoingSlot, outgoingSlot, getElem_rotateIndexEquiv]
+  rw [outgoingSlot, outgoingSlot, List.getElem_rotateIndexEquiv]
 
 private theorem crossingsAt_rotate_eq_nil_iff (w : BraidWord n) (k : ℕ) (p : Fin n) :
     crossingsAt (w.rotate k) p = [] ↔ w.crossingsAt p = [] := by
@@ -173,7 +141,7 @@ private theorem edgePair_closure_rotate_crossingSlotEquiv (w : BraidWord n) (k :
   all_goals
     simp only [edgePair_closure_crossingSlotEquiv_zero, edgePair_closure_crossingSlotEquiv_one,
       edgePair_closure_crossingSlotEquiv_two, edgePair_closure_crossingSlotEquiv_three,
-      getElem_rotateIndexEquiv, crossingBlockEquiv_apply_crossingSlotEquiv,
+      List.getElem_rotateIndexEquiv, crossingBlockEquiv_apply_crossingSlotEquiv,
       nextCrossing_rotate_eq_symm_apply, nextCrossing_rotate_symm_eq_symm_apply,
       incomingSlot_rotateIndexEquiv, outgoingSlot_rotateIndexEquiv, Equiv.apply_symm_apply]
 
@@ -207,7 +175,7 @@ theorem closure_rotate (w : BraidWord n) (k : ℕ) :
       simp only [Finset.mem_filter, Finset.mem_univ, true_and]
       exact crossingsAt_rotate_eq_nil_iff w k p
     · funext j
-      rw [overPair_closure, getElem_rotateIndexEquiv]
+      rw [overPair_closure, List.getElem_rotateIndexEquiv]
       simp only [OrientedPDCode.relabel_toPDCode, PDCode.relabel_overPair,
         Equiv.symm_symm]
       exact (overPair_closure w (w.rotateIndexEquiv k j)).symm

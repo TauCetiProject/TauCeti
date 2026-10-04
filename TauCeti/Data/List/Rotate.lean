@@ -8,11 +8,13 @@ module
 public import Mathlib.Data.List.Rotate
 public import Mathlib.GroupTheory.Perm.List
 
+import TauCeti.Data.Fin.Basic
+
 /-!
 # Transporting list rotations
 
-This file records how list rotations interact with filtering and how the permutation formed by a
-noduplicate list interacts with mapping by an equivalence.
+This file records how list rotations act on their finite index types and interact with filtering,
+and how the permutation formed by a list interacts with mapping by an equivalence.
 
 These lemmas transport a cyclic order, and the successor permutation it induces, across a
 renaming of indices. They are needed when comparing a combinatorial construction built from a
@@ -24,8 +26,8 @@ rotated braid words.
 
 ## Main results
 
-* `List.formPerm_map_equiv`: mapping a noduplicate list by an equivalence conjugates its
-  formed permutation.
+* `List.rotateIndexEquiv`: identify the entries before and after rotating a list.
+* `List.formPerm_map_equiv`: mapping a list by an equivalence conjugates its formed permutation.
 * `List.IsRotated.filter`: filtering preserves cyclic rotation of lists.
 -/
 
@@ -33,24 +35,52 @@ public section
 
 namespace List
 
-/-- Mapping a noduplicate list by an equivalence conjugates the permutation formed by the list. -/
+/-- The equivalence which sends the index of an entry in `l.rotate k` to its original index in
+`l`. It is the cast along preservation of length followed by addition of `k` modulo the list
+length. -/
+def rotateIndexEquiv {α : Type*} (l : List α) (k : ℕ) :
+    Fin (l.rotate k).length ≃ Fin l.length :=
+  (finCongr (List.length_rotate l k)).trans (finRotate l.length ^ k)
+
+/-- Looking up an entry after rotation and translating its index gives the same entry in the
+original list. -/
+theorem getElem_rotateIndexEquiv {α : Type*} (l : List α) (k : ℕ)
+    (j : Fin (l.rotate k).length) :
+    (l.rotate k)[j.1] = l[(l.rotateIndexEquiv k j).1] := by
+  rw [List.getElem_rotate]
+  congr 1
+  simp [rotateIndexEquiv, Fin.coe_finRotate_pow]
+
+/-- Translating every index of a rotated list gives the correspondingly rotated list of the
+original indices. -/
+theorem map_finRange_rotateIndexEquiv {α : Type*} (l : List α) (k : ℕ) :
+    (List.finRange (l.rotate k).length).map (l.rotateIndexEquiv k) =
+      (List.finRange l.length).rotate k := by
+  apply List.ext_getElem
+  · simp
+  · intro i hi hi'
+    simp only [List.length_map, List.length_finRange] at hi
+    simp only [List.getElem_map, List.getElem_finRange, List.getElem_rotate]
+    apply Fin.ext
+    simp [rotateIndexEquiv, Fin.coe_finRotate_pow]
+
+/-- Mapping a list by an equivalence conjugates the permutation formed by the list. -/
 theorem formPerm_map_equiv {α β : Type*} [DecidableEq α] [DecidableEq β]
-    (l : List α) (e : α ≃ β) (hl : l.Nodup) :
+    (l : List α) (e : α ≃ β) :
     (l.map e).formPerm = e.permCongr l.formPerm := by
-  ext x
-  by_cases hx : x ∈ l.map e
-  · obtain ⟨i, hi, rfl⟩ := List.getElem_of_mem hx
-    simp only [List.length_map] at hi
-    rw [List.formPerm_apply_getElem _ (hl.map e.injective), List.getElem_map,
-      Equiv.permCongr_apply]
-    simp only [List.getElem_map, Equiv.symm_apply_apply, List.length_map]
-    rw [List.formPerm_apply_getElem _ hl]
-  · rw [List.formPerm_apply_of_notMem hx, Equiv.permCongr_apply,
-      List.formPerm_apply_of_notMem]
-    · exact (e.apply_symm_apply x).symm
-    · intro hmem
-      apply hx
-      exact List.mem_map.2 ⟨e.symm x, hmem, e.apply_symm_apply x⟩
+  induction l with
+  | nil =>
+    change (Equiv.refl β) = e.permCongr (Equiv.refl α)
+    exact (Equiv.permCongr_refl e).symm
+  | cons x l ih =>
+    cases l with
+    | nil =>
+      change (Equiv.refl β) = e.permCongr (Equiv.refl α)
+      exact (Equiv.permCongr_refl e).symm
+    | cons y l =>
+      simp only [List.map_cons, List.formPerm_cons_cons, Equiv.permCongr_mul]
+      rw [Equiv.permCongr_def, Equiv.symm_trans_swap_trans]
+      exact congrArg (Equiv.swap (e x) (e y) * ·) ih
 
 /-- Filtering cyclically rotated lists by the same Boolean predicate preserves their cyclic
 rotation. -/
