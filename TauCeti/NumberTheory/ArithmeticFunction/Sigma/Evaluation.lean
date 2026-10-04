@@ -40,6 +40,12 @@ theorem divisorSumAt_def (k : ℕ) (q : K) :
     divisorSumAt k q = ∑' n : ℕ, (((σ k n : ℕ) : ℤ) : K) * q ^ n := by
   simp only [divisorSumAt]
 
+/-- Evaluating the integral divisor-sum series gives its convergent analytic value. -/
+@[simp] theorem evalIntSeries_divisorSumSeries {K : Type*} [NormedCommRing K] [NormOneClass K]
+    [CompleteSpace K] [IsUltrametricDist K] (k : ℕ) (q : K) (hq : ‖q‖ < 1) :
+    evalIntSeries q hq (divisorSumSeries k) = divisorSumAt k q := by
+  simp only [evalIntSeries_apply, coeff_divisorSumSeries, divisorSumAt_def]
+
 end TauCeti
 
 end
