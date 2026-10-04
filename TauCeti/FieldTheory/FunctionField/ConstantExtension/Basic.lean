@@ -177,10 +177,9 @@ theorem exists_finiteDimensional_lt_card_constantCompositum_eq_top (n : ℕ) :
       rw [← Subtype.val_injective.injOn.encard_image, hT'T,
         Subtype.val_injective.injOn.encard_image, Set.encard_coe_eq_coe_finsetCard, hS]
       norm_cast
-    have hle : T'.encard ≤ ENat.card (IntermediateField.adjoin k T') := by
-      rw [show ENat.card (IntermediateField.adjoin k T') =
-          (IntermediateField.adjoin k T' : Set F').encard from ENat.card_coe_set_eq _]
-      exact Set.encard_le_encard (IntermediateField.subset_adjoin k T')
+    have hle : T'.encard ≤ ENat.card (IntermediateField.adjoin k T') :=
+      (Set.encard_le_encard (IntermediateField.subset_adjoin k T')).trans_eq
+        (ENat.card_coe_set_eq _).symm
     rw [hT'] at hle
     exact lt_of_lt_of_le (by exact_mod_cast Nat.lt_succ_self n) hle
   · have htop : IntermediateField.adjoin F T' = ⊤ := by

@@ -163,9 +163,10 @@ private theorem dim_add_le_one_add_dim_add_of_effective (hF : IsFunctionField k 
   classical
   have hsupport : (B.support.card + 1 : ℕ∞) < ENat.card k := by
     refine lt_of_le_of_lt ?_ hcard
-    have := card_support_le_degree hF hB
+    have hle : B.support.card ≤ (degree B).toNat := by
+      have := card_support_le_degree hF hB
+      omega
     gcongr
-    exact_mod_cast (show B.support.card ≤ (degree B).toNat by omega)
   obtain ⟨D, z, hDA, hspace, hzD, hz0, hzord⟩ := exists_section_exact_on_support hF hA hsupport
   have hAle : riemannRochSpace A ≤ riemannRochSpace (A + B) :=
     riemannRochSpace_mono (le_add_of_nonneg_right hB)
