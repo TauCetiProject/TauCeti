@@ -35,6 +35,10 @@ The base-field obstruction is
 `Valuation.ne_pow_sub_self_of_ord_neg_of_not_dvd`: such a pole also ensures
 `u ≠ w ^ p - w` for every `w ∈ F`.
 
+The Bezout identity between the characteristic and a reduced pole order gives an explicit
+uniformizer generator `z = y ^ β * t ^ α`.  This is the generator whose Galois displacements
+enter the derivative calculation for the Artin--Schreier different.
+
 ## References
 
 * H. Stichtenoth, *Algebraic Function Fields and Codes*, 2nd ed., GTM 254, Springer, 2009,
@@ -143,6 +147,45 @@ theorem ord_eq_of_pow_sub_self_eq_of_gcd_ord_eq_one
   have hkey := natCast_mul_ord_eq_ramificationIdx_mul_ord_of_pow_sub_self_eq k F hn hy hu
   rw [ramificationIdx_eq_of_pow_sub_self_eq_of_gcd_ord_eq_one k F hn hgen hy hu hcop] at hkey
   exact mul_left_cancel₀ (by exact_mod_cast (by omega : n ≠ 0)) hkey
+
+/-- At a reduced Artin--Schreier pole, a Bezout combination of the pole generator and a
+uniformizer from the field below is a uniformizer that still generates the extension.  The
+displayed construction is the one used to evaluate Galois displacements in the different
+formula. -/
+theorem exists_eq_zpow_mul_adjoin_eq_top_ord_eq_one_of_pow_sub_self_eq_of_gcd_ord_eq_one
+    {y : F'} {n : ℕ} {u : F} (hn : 1 < n) (hgen : F⟮y⟯ = ⊤)
+    (hy : y ^ n - y = algebraMap F F' u) (hu : (P'.restrict k F).ord u < 0)
+    (hcop : Int.gcd n ((P'.restrict k F).ord u) = 1) :
+    ∃ (z : F') (t : F) (α β : ℤ),
+      (P'.restrict k F).ord t = 1 ∧
+      (n : ℤ) * α + (P'.restrict k F).ord u * β = 1 ∧
+      z = y ^ β * algebraMap F F' t ^ α ∧ F⟮z⟯ = ⊤ ∧ P'.ord z = 1 := by
+  let _ : FiniteDimensional F F' := FiniteDimensional.of_finrank_pos (by
+    rw [finrank_eq_of_pow_sub_self_eq_of_gcd_ord_eq_one k F hn hgen hy hu hcop]
+    omega)
+  set α := Int.gcdA n ((P'.restrict k F).ord u)
+  set β := Int.gcdB n ((P'.restrict k F).ord u)
+  have hab : (n : ℤ) * α + (P'.restrict k F).ord u * β = 1 := by
+    rw [← Int.gcd_eq_gcd_ab, hcop, Nat.cast_one]
+  obtain ⟨t, ht0, ht⟩ := (P'.restrict k F).exists_ne_zero_ord_eq 1
+  have hmap0 : algebraMap F F' t ≠ 0 := (_root_.map_ne_zero _).mpr ht0
+  have hyord := ord_eq_of_pow_sub_self_eq_of_gcd_ord_eq_one k F hn hgen hy hu hcop
+  have hy0 : y ≠ 0 := by
+    intro hyzero
+    rw [hyzero, P'.ord_zero] at hyord
+    omega
+  set z := y ^ β * algebraMap F F' t ^ α with hz
+  have hzord : P'.ord z = 1 := by
+    rw [hz, P'.ord_mul (zpow_ne_zero _ hy0) (zpow_ne_zero _ hmap0), P'.ord_zpow,
+      P'.ord_zpow, hyord, ord_algebraMap_restrict k F P', ht]
+    have he := ramificationIdx_eq_of_pow_sub_self_eq_of_gcd_ord_eq_one
+      k F hn hgen hy hu hcop
+    rw [he]
+    linarith
+  have htot := isTotallyRamified_of_pow_sub_self_eq_of_gcd_ord_eq_one
+    k F hn hgen hy hu hcop
+  exact ⟨z, t, α, β, ht, hab, rfl,
+    adjoin_eq_top_of_isTotallyRamified_of_ord_eq_one F htot hzord, hzord⟩
 
 /-- Shared setup for reduced Artin–Schreier poles: translating the generator by `-w` turns a
 reduced pole of `u - (w ^ p - w)` into the prime-to-`p` pole case of
