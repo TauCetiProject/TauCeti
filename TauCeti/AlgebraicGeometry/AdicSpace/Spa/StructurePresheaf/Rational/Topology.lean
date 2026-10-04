@@ -166,6 +166,14 @@ theorem isSheafFor_ofArrows_spaRationalOpens_of_iSup_eq_topCommRingCat
         rw [presentationLimitMap_comp_presentationLimitLocIso_hom P Aplus T s _ hden hAplus hT
           hV hV' hVT h]
       simp only [Category.assoc]
+    have σ_nat_hom {V V' : Opens ↥(spa Aplus)} (hV : V ∈ spaRationalOpens Aplus)
+        (hV' : V' ∈ spaRationalOpens Aplus) (hVT : V ≤ spaBasicOpen Aplus T s)
+        (h : V' ≤ V) :
+        (F.map (homOfLE h).op).hom ≫ (σ V' hV' (h.trans hVT)).hom.hom =
+          (σ V hV hVT).hom.hom ≫
+            (FB.map (homOfLE (locOpensComap_mono P Aplus T s _ hden h)).op).hom := by
+      simpa only [ObjectProperty.FullSubcategory.comp_hom] using
+        congrArg (fun f ↦ f.hom) (σ_nat hV hV' hVT h)
     have hUW (i : ι) : U i ≤ spaBasicOpen Aplus T s := (le_iSup U i).trans_eq hcov
     have hUB (i : ι) : locOpensComap P Aplus T s _ hden (U i) ∈ spaRationalOpens Bplus :=
       locOpensComap_mem_spaRationalOpens P Aplus T s _ hden (hU i)
@@ -187,6 +195,13 @@ theorem isSheafFor_ofArrows_spaRationalOpens_of_iSup_eq_topCommRingCat
     let y : ∀ i, (FB ⋙ TopCommRingCat.isCompleteSeparated.ι ⋙ coyoneda.obj (op E)).obj
         (op (locOpensComap P Aplus T s _ hden (U i))) :=
       fun i ↦ x i ≫ τ (U i) (hU i) (hUW i)
+    have hcover (i : ι) :
+        homOfLE ((le_iSup
+          (fun i ↦ locOpensComap P Aplus T s _ hden (U i)) i).trans_eq hcovB) =
+          homOfLE (locOpensComap_mono P Aplus T s _ hden (hUW i)) := by
+      -- The two maps express the same inclusion; morphisms between opens are unique.
+      exact Subsingleton.elim _ _
+    -- Transport the compatible family through the section isomorphisms.
     have hy : Presieve.Arrows.Compatible
         (FB ⋙ TopCommRingCat.isCompleteSeparated.ι ⋙ coyoneda.obj (op E))
         (fun i ↦ homOfLE ((le_iSup
@@ -195,11 +210,10 @@ theorem isSheafFor_ofArrows_spaRationalOpens_of_iSup_eq_topCommRingCat
       intro i j
       have hxij := (Presieve.Arrows.compatible_homOfLE_iff hUW x).mp hx i j
       have hUiUj := inf_mem_spaRationalOpens (hU i) (hU j)
-      have nat_i := congrArg (fun f ↦ f.hom)
-        (σ_nat (hU i) hUiUj (hUW i) (inf_le_left : U i ⊓ U j ≤ U i))
-      have nat_j := congrArg (fun f ↦ f.hom)
-        (σ_nat (hU j) hUiUj (hUW j) (inf_le_right : U i ⊓ U j ≤ U j))
-      simp only [ObjectProperty.FullSubcategory.comp_hom] at nat_i nat_j
+      have nat_i := σ_nat_hom (hU i) hUiUj (hUW i)
+        (inf_le_left : U i ⊓ U j ≤ U i)
+      have nat_j := σ_nat_hom (hU j) hUiUj (hUW j)
+        (inf_le_right : U i ⊓ U j ≤ U j)
       have hyij :
           (FB ⋙ TopCommRingCat.isCompleteSeparated.ι ⋙ coyoneda.obj (op E)).map
               (homOfLE (locOpensComap_mono P Aplus T s _ hden
@@ -220,34 +234,35 @@ theorem isSheafFor_ofArrows_spaRationalOpens_of_iSup_eq_topCommRingCat
         simp only [Category.assoc]
       let hloc := locOpensComap_inf P Aplus T s _ hden (U i) (U j)
       let k := (FB.map (eqToHom hloc).op).hom
+      have hleft : eqToHom hloc ≫ homOfLE inf_le_left =
+          homOfLE (locOpensComap_mono P Aplus T s _ hden
+            (inf_le_left : U i ⊓ U j ≤ U i)) := by
+        -- Both sides are the inclusion of the transported intersection into `U i`.
+        exact Subsingleton.elim _ _
+      have hright : eqToHom hloc ≫ homOfLE inf_le_right =
+          homOfLE (locOpensComap_mono P Aplus T s _ hden
+            (inf_le_right : U i ⊓ U j ≤ U j)) := by
+        -- Both sides are the inclusion of the transported intersection into `U j`.
+        exact Subsingleton.elim _ _
       dsimp [coyoneda, yoneda, y, τ] at hyij ⊢
       apply (cancel_mono k).1
       dsimp only [k]
       slice_lhs 3 4 =>
-        rw [← ObjectProperty.FullSubcategory.comp_hom, ← FB.map_comp, ← op_comp,
-          show eqToHom hloc ≫ homOfLE inf_le_left =
-            homOfLE (locOpensComap_mono P Aplus T s _ hden
-              (inf_le_left : U i ⊓ U j ≤ U i)) from Subsingleton.elim _ _]
+        rw [← ObjectProperty.FullSubcategory.comp_hom, ← FB.map_comp, ← op_comp, hleft]
       slice_rhs 3 4 =>
-        rw [← ObjectProperty.FullSubcategory.comp_hom, ← FB.map_comp, ← op_comp,
-          show eqToHom hloc ≫ homOfLE inf_le_right =
-            homOfLE (locOpensComap_mono P Aplus T s _ hden
-              (inf_le_right : U i ⊓ U j ≤ U j)) from Subsingleton.elim _ _]
+        rw [← ObjectProperty.FullSubcategory.comp_hom, ← FB.map_comp, ← op_comp, hright]
       exact hyij
     obtain ⟨c, hc, hcu⟩ := hB y hy
+    -- Transport the amalgamation of `y` back to the original rational open.
     let a : E ⟶ (F ⋙ TopCommRingCat.isCompleteSeparated.ι).obj
         (op (spaBasicOpen Aplus T s)) :=
       c ≫ TopCommRingCat.isCompleteSeparated.ι.map
         (σ (spaBasicOpen Aplus T s) hW le_rfl).inv
     refine ⟨a, fun i ↦ ?_, fun a' ha' ↦ ?_⟩
-    · have nat_i := congrArg (fun f ↦ f.hom) (σ_nat hW (hU i) le_rfl (hUW i))
-      simp only [ObjectProperty.FullSubcategory.comp_hom] at nat_i
+    · have nat_i := σ_nat_hom hW (hU i) le_rfl (hUW i)
       have hc_i := hc i
       dsimp [coyoneda, yoneda, y, τ] at hc_i
-      rw [show homOfLE ((le_iSup
-        (fun i ↦ locOpensComap P Aplus T s _ hden (U i)) i).trans_eq hcovB) =
-          homOfLE (locOpensComap_mono P Aplus T s _ hden (hUW i)) from
-        Subsingleton.elim _ _] at hc_i
+      rw [hcover i] at hc_i
       dsimp [coyoneda, yoneda, a]
       apply (cancel_mono (σ (U i) (hU i) (hUW i)).hom.hom).1
       slice_lhs 3 4 => rw [nat_i]
@@ -259,20 +274,17 @@ theorem isSheafFor_ofArrows_spaRationalOpens_of_iSup_eq_topCommRingCat
           (op (locOpensComap P Aplus T s _ hden (spaBasicOpen Aplus T s))) :=
         a' ≫ TopCommRingCat.isCompleteSeparated.ι.map
           (σ (spaBasicOpen Aplus T s) hW le_rfl).hom
+      -- Transport a competing amalgamation forward so uniqueness for `y` applies.
       have hc' : ∀ i,
           (FB ⋙ TopCommRingCat.isCompleteSeparated.ι ⋙ coyoneda.obj (op E)).map
               (homOfLE ((le_iSup
                 (fun i ↦ locOpensComap P Aplus T s _ hden (U i)) i).trans_eq hcovB)).op c' =
             y i := by
         intro i
-        have nat_i := congrArg (fun f ↦ f.hom) (σ_nat hW (hU i) le_rfl (hUW i))
-        simp only [ObjectProperty.FullSubcategory.comp_hom] at nat_i
+        have nat_i := σ_nat_hom hW (hU i) le_rfl (hUW i)
         have ha_i := ha' i
         dsimp [coyoneda, yoneda] at ha_i ⊢
-        rw [show homOfLE ((le_iSup
-          (fun i ↦ locOpensComap P Aplus T s _ hden (U i)) i).trans_eq hcovB) =
-            homOfLE (locOpensComap_mono P Aplus T s _ hden (hUW i)) from
-          Subsingleton.elim _ _]
+        rw [hcover i]
         dsimp [c', y, τ]
         slice_lhs 2 3 => rw [← nat_i]
         slice_lhs 1 2 => rw [ha_i]
@@ -280,6 +292,7 @@ theorem isSheafFor_ofArrows_spaRationalOpens_of_iSup_eq_topCommRingCat
       apply (cancel_mono
         (TopCommRingCat.isCompleteSeparated.ι.map
           (σ (spaBasicOpen Aplus T s) hW le_rfl).hom)).1
+      -- After forgetting the full-subcategory wrappers, this is the transported map `c'`.
       change c' = a ≫ (σ (spaBasicOpen Aplus T s) hW le_rfl).hom.hom
       rw [hc'eq]
       dsimp [a]
