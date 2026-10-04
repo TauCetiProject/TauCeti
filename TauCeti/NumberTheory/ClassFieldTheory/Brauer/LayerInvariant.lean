@@ -6,11 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.OpenSubgroup
-public import TauCeti.NumberTheory.ClassFieldTheory.Formation.InflationRestriction
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Refinement
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Restriction
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Units
 public import TauCeti.Topology.Algebra.Group.OpenSubgroup.FiniteIndex
+import TauCeti.NumberTheory.ClassFieldTheory.Formation.InflationRestriction
 import TauCeti.RepresentationTheory.Homological.ContCohomology.FiniteQuotient.Colimit
 import TauCeti.RepresentationTheory.Homological.ContCohomology.FiniteQuotient.DegreeTwoDescent
 
@@ -131,11 +131,6 @@ of `layerCocycle L c` (`layerInfl_H2π`). -/
 def layerInfl : L.H (unitsFormation K) 2 →+ H2 L.ground.toSubgroup (UnitsCoeff K) :=
   (explicitInfl2 L.ground.toSubgroup (UnitsCoeff K)
     (L.top.toSubgroup.subgroupOf L.ground.toSubgroup)).comp (layerH2Equiv L).toAddMonoidHom
-
-private theorem layerInfl_eq_explicitInfl2 (x : L.H (unitsFormation K) 2) :
-    layerInfl L x = explicitInfl2 L.ground.toSubgroup (UnitsCoeff K)
-      (L.top.toSubgroup.subgroupOf L.ground.toSubgroup) (layerH2Equiv L x) :=
-  (rfl)
 
 /-- A layer cocycle, read with values in the fixed points of the top subgroup. -/
 private def levelCocycle (c : cocycles₂ (L.rep (unitsFormation K))) :
@@ -324,8 +319,8 @@ theorem exists_layerInfl_eq (c : H2 L.ground.toSubgroup (UnitsCoeff K)) :
       (explicitFiniteQuotientTransition2 L.ground.toSubgroup (UnitsCoeff K) N N' hN' y), ?_⟩
   -- `layerInfl L'` is inflation along `U → U ⧸ N'` after `layerH2Equiv L'`, and the class read
   -- on the ground subgroup of `L'`, which is `U` itself, is unchanged.
-  refine (layerInfl_eq_explicitInfl2 L' _).trans <|
-    (congrArg (explicitInfl2 L.ground.toSubgroup (UnitsCoeff K) N'.toSubgroup)
+  simp only [layerInfl, AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom]
+  refine (congrArg (explicitInfl2 L.ground.toSubgroup (UnitsCoeff K) N'.toSubgroup)
       (AddEquiv.apply_symm_apply _ _)).trans <|
     (explicitInfl2_explicitFiniteQuotientTransition2 hN' y).trans ?_
   exact ((DFunLike.congr_fun (explicitMap2_congr_of_eq _ _ _ _ _ (ContinuousMonoidHom.id _) _
@@ -390,6 +385,7 @@ theorem layerInv_cohomologyInfl {old new : NormalLayer (AbsoluteGaloisGroup K)}
 /-- **The invariants of a layer are the subgroup of `ℚ/ℤ` of order its degree**: the range of
 `inv_{E'/E}` is the `[E' : E]`-torsion of `ℚ/ℤ`. Together with `layerInv_injective`, this makes
 `H²(Gal(E'/E), E'ˣ)` cyclic of order `[E' : E]`. -/
+@[simp]
 theorem range_layerInv :
     Set.range (layerInv K L) =
       (AddSubgroup.torsionBy (AddCircle (1 : ℚ)) L.degree : Set (AddCircle (1 : ℚ))) := by
