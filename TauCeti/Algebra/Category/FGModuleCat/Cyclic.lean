@@ -41,6 +41,8 @@ For the truncated polynomial algebra `A = K[X]/(X ^ n)` over a field `K`, with `
   generator.
 * `TauCeti.FGModuleCat.smul_cyclicModule_hom_mk_one_eq_zero`: the image of the generator under a
   map out of `A ⧸ aA` is killed by `op a`.
+* `TauCeti.FGModuleCat.finrank_ker_smul_op_root_pow`: over `K[X]/(X ^ n)`, the elements of `M_j`
+  killed by `x ^ i` have dimension `min i j`.
 * `TauCeti.FGModuleCat.finrank_cyclicModule_hom_root_pow`: over the truncated polynomial algebra
   `A = K[X]/(X ^ n)`, with `x` the class of `X` and `M_i = A ⧸ (x ^ i)`, the space of maps
   `M_i ⟶ M_j` has dimension `min i j` for `j ≤ n`.
@@ -171,7 +173,7 @@ private theorem finrank_quotient_map_mkQ_span_op_root_pow {j : ℕ} (hj : j ≤ 
 
 /-- Over `K[X]/(X ^ n)`, the elements of `M_j` killed by `x ^ i` form a space of dimension
 `min i j`: multiplication by `x ^ i` on `M_j` has cokernel `M_(min i j)`. -/
-private theorem finrank_ker_smul_op_root_pow {i j : ℕ} (hj : j ≤ n) :
+theorem finrank_ker_smul_op_root_pow {i j : ℕ} (hj : j ≤ n) :
     finrank K (LinearMap.ker (DistribSMul.toLinearMap K ((AdjoinRoot (X ^ n : K[X]))ᵐᵒᵖ ⧸
       Ideal.span {op (AdjoinRoot.root (X ^ n : K[X]) ^ j)})
         (op (AdjoinRoot.root (X ^ n : K[X]) ^ i)))) = min i j := by
