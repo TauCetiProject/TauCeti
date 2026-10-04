@@ -19,9 +19,8 @@ public import TauCeti.RingTheory.Valuation.ValuativeRel.Extension
 An automorphism of a finite extension of a nonarchimedean local field preserves the unique
 extended valuation. Consequently it restricts to the ring of integers and its maximal ideal,
 and descends to the residue field. This file constructs those three actions and records their
-compatibility with inclusion and reduction. More generally, a `K`-embedding of one finite
-extension into another restricts to a local homomorphism of rings of integers, and so induces an
-embedding of residue fields.
+compatibility with inclusion and reduction, including the comparison with the residue-field
+embedding `AlgHom.residueFieldHom` induced by an arbitrary `K`-embedding.
 
 The induced residue-field automorphism is linear over the residue field of the base. It therefore
 gives the canonical homomorphism between the corresponding automorphism groups. When the field
@@ -32,8 +31,6 @@ extension is Galois, the kernel of this homomorphism is the inertia group in ram
 * `AlgEquiv.integerRingEquiv`: restriction of a field equivalence to the ring of integers.
 * `AlgEquiv.maximalIdealEquiv`: restriction to the maximal ideal.
 * `AlgEquiv.residueFieldEquiv`: the induced automorphism of the residue field.
-* `AlgHom.residueFieldHom`: more generally, the embedding of residue fields induced by a
-  `K`-embedding of finite extensions.
 
 The homomorphism from field automorphisms to residue-field automorphisms is Mathlib's generic
 `MulSemiringAction.toAlgAut` applied to the action constructed here.
@@ -47,6 +44,8 @@ The homomorphism from field automorphisms to residue-field automorphisms is Math
   action is compatible with restricting scalars to a subextension and with restricting an
   automorphism to a normal subextension.
 * `TauCeti.integerRingSMulCommClass`: the action on `𝒪[L]` is by `𝒪[K]`-algebra automorphisms.
+* `AlgEquiv.toAlgHom_residueFieldHom`: for an automorphism, the residue-field embedding
+  `AlgHom.residueFieldHom` is the induced automorphism `AlgEquiv.residueFieldEquiv`.
 
 ## References
 
@@ -200,81 +199,19 @@ theorem residueFieldEquiv_apply (σ : L ≃ₐ[K] L) (x : 𝓀[L]) :
   rw [residueFieldEquiv, IsLocalRing.ResidueField.mapAlgEquiv'_residue, integerRingEquiv_apply,
     IsLocalRing.ResidueField.residue_smul]
 
-end AlgEquiv
-
-namespace AlgHom
-
-open TauCeti
-
-variable {K L M : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
-  [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [Algebra K L] [ValuativeExtension K L]
-  [Module.Finite K L] [Field M] [ValuativeRel M] [Algebra K M] [ValuativeExtension K M]
-  [Module.Finite K M]
-
-/-- A `K`-embedding of finite extensions of a nonarchimedean local field restricts to a local
-homomorphism of their rings of integers. -/
-instance isLocalHom_integerRingHom (ι : L →ₐ[K] M) : IsLocalHom ι.integerRingHom := by
-  -- `𝒪[M]` is integral over `𝒪[K]`, hence over `𝒪[L]`, and an injective integral homomorphism
-  -- is local.
-  have hint : (ι.integerRingHom : 𝒪[L] →+* 𝒪[M]).IsIntegral := by
-    refine RingHom.IsIntegral.tower_top (algebraMap 𝒪[K] 𝒪[L]) _ ?_
-    rw [ι.integerRingHom.comp_algebraMap]
-    intro x
-    have hx := (Valuation.Integers.isIntegral_iff_valuation_le_one
-      (Valuation.integer.integers (valuation K)) (x : M)).2 x.2
-    exact (isIntegral_algHom_iff (IsScalarTower.toAlgHom 𝒪[K] 𝒪[M] M)
-      Subtype.val_injective).1 hx
-  have hinj : Function.Injective (ι.integerRingHom : 𝒪[L] →+* 𝒪[M]) := fun x y h ↦
-    Subtype.ext (ι.injective (by simpa using congrArg Subtype.val h))
-  exact ⟨(hint.isLocalHom hinj).map_nonunit⟩
-
-/-- The embedding of residue fields induced by a `K`-embedding of finite extensions of a
-nonarchimedean local field `K`. It is linear over the residue field of `K`. -/
-noncomputable def residueFieldHom (ι : L →ₐ[K] M) : 𝓀[L] →ₐ[𝓀[K]] 𝓀[M] :=
-  IsLocalRing.ResidueField.mapAlgHom' ι.integerRingHom
-
-/-- The induced embedding of residue fields sends the residue of an integer `x` to the residue of
-its image. -/
-@[simp]
-theorem residueFieldHom_residue (ι : L →ₐ[K] M) (x : 𝒪[L]) :
-    ι.residueFieldHom (IsLocalRing.residue 𝒪[L] x) =
-      IsLocalRing.residue 𝒪[M] (ι.integerRingHom x) :=
-  IsLocalRing.ResidueField.mapAlgHom'_residue _ _
-
-/-- Passing to residue fields is functorial. -/
-@[simp]
-theorem residueFieldHom_comp {N : Type*} [Field N] [ValuativeRel N] [Algebra K N]
-    [ValuativeExtension K N] [Module.Finite K N] (ι₂ : M →ₐ[K] N) (ι₁ : L →ₐ[K] M) :
-    (ι₂.comp ι₁).residueFieldHom = ι₂.residueFieldHom.comp ι₁.residueFieldHom := by
-  ext x
-  obtain ⟨x, rfl⟩ := IsLocalRing.residue_surjective x
-  simp only [residueFieldHom_residue, AlgHom.comp_apply]
-  congr 1
-  exact Subtype.ext (by simp)
-
-/-- Passing the identity embedding to residue fields gives the identity embedding. -/
-@[simp]
-theorem residueFieldHom_id : (AlgHom.id K L).residueFieldHom = AlgHom.id 𝓀[K] 𝓀[L] := by
-  ext x
-  obtain ⟨x, rfl⟩ := IsLocalRing.residue_surjective x
-  simp only [residueFieldHom_residue, AlgHom.id_apply]
-  congr 1
-  exact Subtype.ext (by simp)
-
 /-- For an automorphism, the induced embedding of residue fields is the induced automorphism
 `AlgEquiv.residueFieldEquiv`. -/
 @[simp]
-theorem _root_.AlgEquiv.toAlgHom_residueFieldHom [TopologicalSpace L]
-    [IsNonarchimedeanLocalField L] (σ : L ≃ₐ[K] L) :
+theorem toAlgHom_residueFieldHom (σ : L ≃ₐ[K] L) :
     σ.toAlgHom.residueFieldHom = σ.residueFieldEquiv.toAlgHom := by
   ext x
   obtain ⟨x, rfl⟩ := IsLocalRing.residue_surjective x
-  simp only [residueFieldHom_residue, AlgEquiv.coe_toAlgHom, AlgEquiv.residueFieldEquiv_apply,
+  simp only [AlgHom.residueFieldHom_residue, coe_toAlgHom, residueFieldEquiv_apply,
     ← IsLocalRing.ResidueField.residue_smul]
   congr 1
   exact Subtype.ext (by simp)
 
-end AlgHom
+end AlgEquiv
 
 namespace TauCeti
 

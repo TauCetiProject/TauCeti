@@ -94,13 +94,15 @@ theorem IsUnramified.residueFieldHom_bijective :
   have hz : IsPrimitiveRoot z N := hζ.of_map_of_injective (f := algebraMap 𝒪[L] L)
     Subtype.val_injective
   let pb := PowerBasis.ofAdjoinEqTop (Algebra.IsIntegral.isIntegral ζ) hadj
+  have hpbgen : pb.gen = ζ := PowerBasis.ofAdjoinEqTop_gen _ hadj
   have hιz (ι : L →ₐ[K] M) : ι.integerRingHom z ^ N = 1 := by
     rw [← map_pow, hz.pow_eq_one, map_one]
   refine ⟨fun ι₁ ι₂ h ↦ pb.algHom_ext ?_, fun φ ↦ ?_⟩
   · -- Both embeddings send `ζ` to `N`-th roots of unity with the same residue.
     have h' := eq_of_residue_eq_of_pow_eq_one hNM (hιz ι₁) (hιz ι₂)
       (by rw [← AlgHom.residueFieldHom_residue, ← AlgHom.residueFieldHom_residue, h])
-    simpa [pb, z] using congrArg Subtype.val h'
+    rw [hpbgen]
+    simpa only [AlgHom.coe_integerRingHom_apply] using congrArg Subtype.val h'
   -- Lift the image under `φ` of the residue of `ζ` to an `N`-th root of unity `ξ` of `𝒪[M]`.
   have hφ : φ (residue 𝒪[L] z) ^ N = 1 := by rw [← map_pow, ← map_pow, hz.pow_eq_one, map_one,
     map_one]
@@ -122,7 +124,7 @@ theorem IsUnramified.residueFieldHom_bijective :
   have hroot : aeval ((u : 𝒪[M]ˣ) : M) (minpoly K pb.gen) = 0 := by
     have hgξ := aeval_minpoly_eq_zero_of_aeval_residue_eq_zero hNM hζO hζ.pow_eq_one
       ((mem_rootsOfUnity' N _).1 u.2) hgφ
-    rw [show pb.gen = ζ by simp [pb], minpoly.isIntegrallyClosed_eq_field_fractions' K hζO,
+    rw [hpbgen, minpoly.isIntegrallyClosed_eq_field_fractions' K hζO,
       aeval_map_algebraMap, ← Algebra.algebraMap_ofSubsemiring_apply, aeval_algebraMap_apply,
       hgξ, map_zero]
   refine ⟨pb.lift _ hroot, AlgHom.ext_of_adjoin_eq_top (s := {residue 𝒪[L] z}) ?_ ?_⟩

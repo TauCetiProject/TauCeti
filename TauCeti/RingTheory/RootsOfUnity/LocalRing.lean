@@ -81,11 +81,10 @@ theorem eq_of_residue_eq_of_pow_eq_one {n : ℕ} (hn : IsUnit (n : R)) {x y : R}
     rootsOfUnityResidue_injective hn (Subtype.ext (Units.ext (by simpa using h)))
   simpa using congrArg (fun u : rootsOfUnity n R ↦ ((u : Rˣ) : R)) h'
 
-/-- Let `ζ` be an `n`-th root of unity of a domain `S` that is integral over an integrally closed
-domain `A`, and let `R` be a local domain over `A` in which `n` is invertible. An `n`-th root of
-unity `ξ` of `R` whose residue is a root of the minimal polynomial `g` of `ζ` over `A` is itself a
-root of `g`. Indeed `g` divides `X ^ n - 1 = g h`, which is separable over the residue field of
-`R`, so the residue of `ξ` is not a root of `h`. -/
+/-- Let `A` be an integrally closed domain, let `ζ` be an `n`-th root of unity of a domain `S`
+over `A` such that `ζ` is integral over `A`, and let `R` be a local domain over `A` in which `n` is
+invertible. An `n`-th root of unity `ξ` of `R` whose residue is a root of the minimal polynomial of
+`ζ` over `A` is itself a root of that minimal polynomial. -/
 theorem aeval_minpoly_eq_zero_of_aeval_residue_eq_zero {A S : Type*} [CommRing A] [IsDomain A]
     [IsIntegrallyClosed A] [CommRing S] [IsDomain S] [Algebra A S] [Module.IsTorsionFree A S]
     [IsDomain R] [Algebra A R] {n : ℕ} (hn : IsUnit (n : R)) {ζ : S} (hζA : IsIntegral A ζ)
