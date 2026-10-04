@@ -20,7 +20,9 @@ degree-three symmetric example has one black vertex, two white vertices, and two
 The definitions use the general construction from permutation triples.  The cell counts below
 spell out the resulting graphs without choosing representatives for their quotient vertex and
 face types, and the Euler characteristic and genus computations agree with the corresponding
-triple invariants.
+triple invariants.  The definitions are computable and exposed, so their invariants also evaluate
+directly: for instance, `torusDessin.genus = 1` holds by `decide`, and `#eval torusDessin.eulerChar`
+returns `0`.
 
 ## References
 
@@ -41,7 +43,7 @@ open PermutationTriple
 /-! ### The cyclic star -/
 
 /-- The dessin of the cyclic triple of degree `n`.  In positive degree it is the `n`-star. -/
-noncomputable def cyclicDessin (n : ℕ) : BipartiteRibbonGraph :=
+@[expose] def cyclicDessin (n : ℕ) : BipartiteRibbonGraph :=
   (cyclicTriple n).ribbonGraph
 
 /-- The cyclic dessin is the ribbon graph constructed from the cyclic permutation triple. -/
@@ -82,7 +84,7 @@ theorem cyclicDessin_def : cyclicDessin n = (cyclicTriple n).ribbonGraph := (rfl
 /-! ### The segment dessin -/
 
 /-- The two-edge segment dessin associated to the map `z ↦ 4z(1 - z)`. -/
-noncomputable def segmentDessin : BipartiteRibbonGraph :=
+@[expose] def segmentDessin : BipartiteRibbonGraph :=
   chebyshevTriple.ribbonGraph
 
 /-- The segment dessin is the ribbon graph constructed from the Chebyshev permutation triple. -/
@@ -126,7 +128,7 @@ theorem segmentDessin_def : segmentDessin = chebyshevTriple.ribbonGraph := (rfl)
 /-! ### The torus dessin -/
 
 /-- The four-edge dessin associated to `torusTriple`. -/
-noncomputable def torusDessin : BipartiteRibbonGraph :=
+@[expose] def torusDessin : BipartiteRibbonGraph :=
   torusTriple.ribbonGraph
 
 /-- The torus dessin is the ribbon graph constructed from the Euclidean genus-one triple. -/
@@ -167,7 +169,7 @@ theorem torusDessin_def : torusDessin = torusTriple.ribbonGraph := (rfl)
 /-! ### The symmetric degree-three dessin -/
 
 /-- The three-edge dessin associated to the triple with monodromy group `S₃`. -/
-noncomputable def s3Dessin : BipartiteRibbonGraph :=
+@[expose] def s3Dessin : BipartiteRibbonGraph :=
   s3Triple.ribbonGraph
 
 /-- The symmetric degree-three dessin is the ribbon graph constructed from `s3Triple`. -/
