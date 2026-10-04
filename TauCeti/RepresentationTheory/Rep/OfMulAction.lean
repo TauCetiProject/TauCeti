@@ -11,7 +11,11 @@ public import Mathlib.RepresentationTheory.Rep.Basic
 public import TauCeti.GroupTheory.QuotientGroup.Basic
 
 /-!
-# Permutation representations on the cosets of a subgroup
+# Equivalences of permutation representations
+
+For a monoid `G`, equivariantly equivalent `G`-sets carry equivalent permutation
+representations, and the permutation representation on a disjoint union is the product of
+the representations on its two pieces.
 
 For a group `G` and a subgroup `H`, the permutation representation `k[G ⧸ H]` interpolates
 between the two extremes `H = ⊤` and `H = ⊥`.  This file identifies those extremes: the cosets
@@ -31,8 +35,8 @@ of `G`-sets into an isomorphism of the permutation representations they carry.
 * `TauCeti.quotientTopIsoTrivial`: `k[G ⧸ ⊤] ≅ k` with the trivial action.
 * `TauCeti.quotientBotIsoLeftRegular`: `k[G ⧸ ⊥] ≅ k[G]` with the left regular action.
 
-Each isomorphism comes with the lemmas reading it, and its inverse, on the basis of `k[G ⧸ H]`
-indexed by the cosets.
+The equivalences and isomorphisms come with lemmas reading them and their inverses on basis
+elements. For the coset representations, these bases are indexed by `G ⧸ H`.
 
 -/
 

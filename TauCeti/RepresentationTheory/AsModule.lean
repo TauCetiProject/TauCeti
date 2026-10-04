@@ -166,9 +166,7 @@ theorem nonempty_equiv_iff :
   ⟨fun ⟨φ⟩ ↦ ⟨asModuleLinearEquivOfEquiv φ⟩, fun ⟨f⟩ ↦ ⟨equivOfAsModuleLinearEquiv f⟩⟩
 
 variable (ρ σ) in
-/-- **The module of a product representation is the product of the modules.** The `k[G]`-linear
-map is assembled from the projections `Representation.IntertwiningMap.fst` and
-`Representation.IntertwiningMap.snd`; on the underlying type `V × W` it is the identity. -/
+/-- **The module of a product representation is equivalent to the product of the modules.** -/
 noncomputable def prodAsModuleEquiv : (ρ.prod σ).asModule ≃ₗ[k[G]] ρ.asModule × σ.asModule :=
   LinearEquiv.ofBijective
     ((_root_.Representation.IntertwiningMap.equivLinearMapAsModule _ _
