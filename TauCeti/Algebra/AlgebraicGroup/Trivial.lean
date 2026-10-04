@@ -29,7 +29,6 @@ terminal affine group scheme over `R`.
 
 This uses Mathlib's `Algebra.ofId`, its `Subsingleton (R →ₐ[R] A)` instance, and the
 canonical Hopf algebra structure on `R` over itself from `Mathlib.RingTheory.HopfAlgebra.Basic`.
-The equivalence is constructed with Mathlib's `MulEquiv.ofUnique`.
 -/
 
 public section
@@ -111,7 +110,7 @@ theorem pointsMulEquiv_mapValue (φ : A →ₐ[R] B) (f : WithConv (R →ₐ[R] 
     pointsMulEquiv (R := R) (A := B)
         (AlgHom.mapValue (H := R) φ f) =
       pointsMulEquiv (R := R) (A := A) f :=
-  rfl
+  Subsingleton.elim _ _
 
 /-- Naturality of the inverse trivial-group points equivalence in the value algebra. -/
 theorem mapValue_pointsMulEquiv_symm_apply (φ : A →ₐ[R] B) (u : PUnit.{1}) :
