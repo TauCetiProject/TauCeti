@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Hyperbolic
-public import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Basic
 
 /-!
@@ -14,15 +13,11 @@ public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Basic
 
 This file records the metric-level statement of Mostow rigidity for closed hyperbolic manifolds.
 `HyperbolicMetric.Isometry` specializes the generic `RiemannianIsometry` API to two bundled
-metrics, with each metric supplying its own Riemannian bundle instance.
-`MostowRigidity` states that every pair of such metrics is related by one once the manifold
-is known to be hyperbolic and to have dimension at least three.  The explicit comparison is
-needed because `RiemannianIsometry` stores its metric in a typeclass, whereas a Mostow statement
-compares the two metric fields carried by `HyperbolicMetric`.
+metrics, with each metric supplying its own Riemannian bundle instance.  The resulting relation
+supports comparing the total volumes carried by different hyperbolic metrics.
 
 The formulation follows Ratcliffe, *Foundations of Hyperbolic Manifolds*, 3rd ed., Theorem
-11.8.5.  The rigidity proposition is stated here; its geometric proof will supply the
-metric-independent hyperbolic volume used by the later Weeks-manifold target.
+11.8.5.
 -/
 
 public section
@@ -39,7 +34,7 @@ namespace TauCeti
 variable {E : Type uE} {H : Type uH} {M : Type uM} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   [TopologicalSpace M] [T3Space M] [ChartedSpace H M] [IsManifold I ∞ M]
-  [BoundarylessManifold I M] [CompactSpace M] [ConnectedSpace M]
+  [PreconnectedSpace M]
 
 namespace HyperbolicMetric
 
@@ -60,16 +55,17 @@ def MostowRigidity : Prop :=
     [FiniteDimensional ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
     [TopologicalSpace M] [T3Space M] [ChartedSpace H M] [IsManifold I ∞ M]
     [BoundarylessManifold I M] [CompactSpace M] [ConnectedSpace M],
-    IsHyperbolic (I := I) (M := M) →
-      3 ≤ Module.finrank ℝ E →
-        ∀ (g g' : HyperbolicMetric (I := I) (M := M)),
-          Nonempty (HyperbolicMetric.Isometry g g')
+    3 ≤ Module.finrank ℝ E →
+      ∀ (g g' : HyperbolicMetric (I := I) (M := M)),
+        Nonempty (HyperbolicMetric.Isometry g g')
 
 /-- The Mostow rigidity theorem supplies an isometry from its geometric hypotheses. -/
 theorem MostowRigidity.isometry (h : MostowRigidity.{uE, uH, uM})
-    (hM : IsHyperbolic (I := I) (M := M)) (hdim : 3 ≤ Module.finrank ℝ E)
+    [BoundarylessManifold I M] [CompactSpace M] (hConn : ConnectedSpace M)
+    (hdim : 3 ≤ Module.finrank ℝ E)
     (g g' : HyperbolicMetric (I := I) (M := M)) :
-    Nonempty (HyperbolicMetric.Isometry g g') :=
-  h (E := E) (H := H) (M := M) (I := I) hM hdim g g'
+    Nonempty (HyperbolicMetric.Isometry g g') := by
+  let _ : ConnectedSpace M := hConn
+  exact h (E := E) (H := H) (M := M) (I := I) hdim g g'
 
 end TauCeti

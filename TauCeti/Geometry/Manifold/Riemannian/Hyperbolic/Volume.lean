@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Riemannian.Hyperbolic
 public import TauCeti.Geometry.Manifold.Riemannian.Hyperbolic.Mostow
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Total
 
@@ -80,11 +79,11 @@ omit [LindelofSpace M] in
 theorem hypVolumeOfMetric_eq_of_mostow [BoundarylessManifold I M]
     (hConn : ConnectedSpace M)
     (h : MostowRigidity.{uE, uH, uM})
-    (hM : IsHyperbolic (I := I) (M := M)) (hdim : 3 ≤ Module.finrank ℝ E)
+    (hdim : 3 ≤ Module.finrank ℝ E)
     (g g' : HyperbolicMetric (I := I) (M := M)) :
     hypVolumeOfMetric (I := I) g = hypVolumeOfMetric (I := I) g' := by
   let _ : ConnectedSpace M := hConn
-  obtain ⟨Φ⟩ := h.isometry hM hdim g g'
+  obtain ⟨Φ⟩ := h.isometry hConn hdim g g'
   let gBundle : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
     ⟨g.metric.toRiemannianMetric⟩
   let gCont : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
@@ -95,8 +94,7 @@ theorem hypVolumeOfMetric_eq_of_mostow [BoundarylessManifold I M]
   let g'Cont : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
     IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle
       (IB := I) (n := ∞) (F := E) (V := fun x : M ↦ TangentSpace I x)
-  change @riemannianTotalVolume E _ _ _ H _ I M _ _ _ _ _ _ gBundle gCont =
-    @riemannianTotalVolume E _ _ _ H _ I M _ _ _ _ _ _ g'Bundle g'Cont
+  rw [hypVolumeOfMetric_def g, hypVolumeOfMetric_def g']
   exact @RiemannianIsometry.riemannianTotalVolume_eq E _ _ _ H _ I M _ _ _ _ _ _
     gBundle gCont H _ I M _ _ _ _ _ _ g'Bundle g'Cont Φ
 
