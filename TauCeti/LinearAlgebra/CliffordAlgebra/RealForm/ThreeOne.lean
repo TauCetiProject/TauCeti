@@ -119,19 +119,31 @@ private noncomputable def realCliffordThreeOneAugmentedIsometry :
     ((QuadraticMap.IsometryEquiv.refl (realCliffordForm 2 1)).prod
       realCliffordOneZeroPositiveSqIsometry)
 
+private theorem realCliffordThreeOneAugmentedIsometry_apply_eq
+    (v : Fin (3 + 1) → ℝ) :
+    realCliffordThreeOneAugmentedIsometry v =
+      ((realCliffordSplitIsometry 2 1 1 0 v).1,
+        realCliffordOneZeroPositiveSqIsometry
+          (realCliffordSplitIsometry 2 1 1 0 v).2) := rfl
+
 private theorem realCliffordThreeOneAugmentedIsometry_apply (v : Fin (3 + 1) → ℝ) :
     realCliffordThreeOneAugmentedIsometry v = (![v 0, v 1, v 3], v 2) := by
+  rw [realCliffordThreeOneAugmentedIsometry_apply_eq]
   apply Prod.ext
   · funext i
     fin_cases i
-    · change (realCliffordSplitIsometry 2 1 1 0 v).1 0 = v 0
-      convert realCliffordSplitIsometry_fst_pos 2 1 1 0 v (0 : Fin 2) using 1 <;> simp
-    · change (realCliffordSplitIsometry 2 1 1 0 v).1 1 = v 1
-      convert realCliffordSplitIsometry_fst_pos 2 1 1 0 v (1 : Fin 2) using 1 <;> simp
-    · change (realCliffordSplitIsometry 2 1 1 0 v).1 2 = v 3
-      convert realCliffordSplitIsometry_fst_neg 2 1 1 0 v (0 : Fin 1) using 1 <;> simp
-  · change (realCliffordSplitIsometry 2 1 1 0 v).2 0 = v 2
-    convert realCliffordSplitIsometry_snd_pos 2 1 1 0 v (0 : Fin 1) using 1 <;> simp
+    · simpa using
+        realCliffordSplitIsometry_fst_pos 2 1 1 0 v (0 : Fin 2)
+    · simpa using
+        realCliffordSplitIsometry_fst_pos 2 1 1 0 v (1 : Fin 2)
+    · simpa using
+        realCliffordSplitIsometry_fst_neg 2 1 1 0 v (0 : Fin 1)
+  · rw [show realCliffordOneZeroPositiveSqIsometry
+        (realCliffordSplitIsometry 2 1 1 0 v).2 =
+        (realCliffordSplitIsometry 2 1 1 0 v).2 0 by
+      simp [realCliffordOneZeroPositiveSqIsometry, ← QuadraticMap.IsometryEquiv.coe_toLinearEquiv,
+        LinearEquiv.funUnique_apply]]
+    exact realCliffordSplitIsometry_snd_pos 2 1 1 0 v (0 : Fin 1)
 
 private def realCliffordTwoOneScaleIsometry :
     (-(↑((1 : ℝˣ)⁻¹) : ℝ) • realCliffordForm 2 1).IsometryEquiv
@@ -145,12 +157,12 @@ private theorem realCliffordTwoOneScaleIsometry_apply (v : Fin (2 + 1) → ℝ) 
     realCliffordTwoOneScaleIsometry v = ![v 2, v 0, v 1] := by
   funext i
   fin_cases i
-  · change (realCliffordFormNegIsometry 2 1 v) 0 = v 2
-    simpa using realCliffordFormNegIsometry_pos_of_neg 2 1 v (0 : Fin 1)
-  · change (realCliffordFormNegIsometry 2 1 v) 1 = v 0
-    simpa using realCliffordFormNegIsometry_neg_of_pos 2 1 v (0 : Fin 2)
-  · change (realCliffordFormNegIsometry 2 1 v) 2 = v 1
-    simpa using realCliffordFormNegIsometry_neg_of_pos 2 1 v (1 : Fin 2)
+  · simpa [realCliffordTwoOneScaleIsometry, ← QuadraticMap.IsometryEquiv.coe_toLinearEquiv] using
+      realCliffordFormNegIsometry_pos_of_neg 2 1 v (0 : Fin 1)
+  · simpa [realCliffordTwoOneScaleIsometry, ← QuadraticMap.IsometryEquiv.coe_toLinearEquiv] using
+      realCliffordFormNegIsometry_neg_of_pos 2 1 v (0 : Fin 2)
+  · simpa [realCliffordTwoOneScaleIsometry, ← QuadraticMap.IsometryEquiv.coe_toLinearEquiv] using
+      realCliffordFormNegIsometry_neg_of_pos 2 1 v (1 : Fin 2)
 
 private noncomputable def realCliffordThreeOneEvenEquivOneTwo :
     CliffordAlgebra.even (realCliffordForm 3 1) ≃ₐ[ℝ]

@@ -479,6 +479,9 @@ noncomputable def evenUnitaryGroupEquivOfAlgEquiv
                 rw [val_ofVal, val_ofVal]
           _ = val (ofVal (e (evenUnitaryGroupEvenPart Q x)) _ *
               ofVal (e (evenUnitaryGroupEvenPart Q y)) _) := (map_mul val _ _).symm }
+  have val_f (x : evenUnitaryGroup Q) :
+      val (f x) = e (evenUnitaryGroupEvenPart Q x) := by
+    exact val_ofVal _ _
   apply MulEquiv.ofBijective f
   constructor
   · intro x y hxy
@@ -487,7 +490,7 @@ noncomputable def evenUnitaryGroupEquivOfAlgEquiv
     have he : evenUnitaryGroupEvenPart Q x = evenUnitaryGroupEvenPart Q y := by
       apply e.injective
       have := congrArg val hxy
-      simpa [f, val_ofVal] using this
+      simpa only [val_f] using this
     simpa only [coe_evenUnitaryGroupEvenPart] using congrArg Subtype.val he
   · intro g
     let y : even Q := e.symm (val g)
@@ -511,13 +514,13 @@ noncomputable def evenUnitaryGroupEquivOfAlgEquiv
       simpa only [u, coe_reverseEven_apply, Subalgebra.coe_mul, Subalgebra.coe_one] using
         congrArg Subtype.val hy
     refine ⟨z, hval ?_⟩
-    change val (f z) = val g
-    rw [show val (f z) = e (evenUnitaryGroupEvenPart Q z) by
-      simp [f, val_ofVal]]
-    change e ⟨((u : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q), _⟩ = val g
+    rw [val_f]
+    have evenUnitaryGroupEvenPart_z : evenUnitaryGroupEvenPart Q z = y := rfl
+    rw [evenUnitaryGroupEvenPart_z]
     exact e.apply_symm_apply (val g)
 
 /-- The forward generic transport applies the algebra equivalence to the even Clifford value. -/
+@[simp]
 theorem coe_evenUnitaryGroupEquivOfAlgEquiv_apply
     (e : even Q ≃ₐ[R] A) (P : A → Prop) (val : G →* A)
     (hval : Function.Injective val) (ofVal : ∀ a, P a → G)
@@ -526,10 +529,11 @@ theorem coe_evenUnitaryGroupEquivOfAlgEquiv_apply
     (x : evenUnitaryGroup Q) :
     val (evenUnitaryGroupEquivOfAlgEquiv Q e P val hval ofVal val_ofVal val_mem hP x) =
       e (evenUnitaryGroupEvenPart Q x) := by
-  change val (ofVal (e (evenUnitaryGroupEvenPart Q x)) _) = _
+  rw [evenUnitaryGroupEquivOfAlgEquiv]
   exact val_ofVal _ _
 
 /-- The inverse generic transport is obtained by applying the inverse algebra equivalence. -/
+@[simp]
 theorem evenUnitaryGroupEquivOfAlgEquiv_symm_apply_evenPart
     (e : even Q ≃ₐ[R] A) (P : A → Prop) (val : G →* A)
     (hval : Function.Injective val) (ofVal : ∀ a, P a → G)
