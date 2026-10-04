@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Restriction.Basic
-public import Mathlib.CategoryTheory.Localization.Monoidal.Functor
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Restriction.Sites
 
 /-!
 # Restriction as a symmetric monoidal functor
@@ -18,7 +17,8 @@ The coherent tensor and unit comparisons allow tensor units, evaluation, and coe
 be transported through restriction to slice sites. They are the local compatibility needed when
 studying dualizable and finite locally free sheaves on a cover.
 
-The descent construction uses Mathlib's
+The monoidal structure specializes `TauCeti.SheafOfModules.pushforwardModuleMonoidal`.
+The generic descent construction uses Mathlib's
 [`CategoryTheory.Localization.Monoidal.functorMonoidalOfComp`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Localization/Monoidal/Functor.html#CategoryTheory.Localization.Monoidal.functorMonoidalOfComp).
 
 ## Main declarations
@@ -79,7 +79,8 @@ followed by target sheafification. -/
 local instance overSheafificationLifting : CategoryTheory.Localization.Lifting
     sourceSheafification sourceW restrictionSheafification
       (_root_.SheafOfModules.overFunctor (ringCatSheaf R) X) where
-  iso := overSheafificationNatIso (ringCatSheaf R) X
+  iso := pushforwardSheafificationNatIso (J := J.over X) (K := J)
+    (Over.forget X) (ringCatSheaf R)
 
 private theorem overSheafificationLifting_iso_hom_app
     (P : PresheafOfModules.{u} (ringCatSheaf R).obj) :
@@ -88,10 +89,10 @@ private theorem overSheafificationLifting_iso_hom_app
       (_root_.SheafOfModules.overFunctor (ringCatSheaf R) X)).hom.app P =
         (pushforwardSheafificationIso (J := J.over X) (K := J) (Over.forget X)
           (ringCatSheaf R) P).hom := by
-  -- The localization lifting stores `overSheafificationNatIso` in its `iso` field. Rewriting its
-  -- component lemma cannot expose that field projection, so reduce the projection first.
-  change (overSheafificationNatIso (ringCatSheaf R) X).hom.app P = _
-  exact overSheafificationNatIso_hom_app (ringCatSheaf R) X P
+  -- Expose the comparison stored in the lifting before applying its component lemma.
+  change (pushforwardSheafificationNatIso (J := J.over X) (K := J)
+    (Over.forget X) (ringCatSheaf R)).hom.app P = _
+  exact pushforwardSheafificationNatIso_hom_app (Over.forget X) (ringCatSheaf R) P
 
 private theorem overSheafificationLifting_iso_inv_app
     (P : PresheafOfModules.{u} (ringCatSheaf R).obj) :
@@ -102,8 +103,9 @@ private theorem overSheafificationLifting_iso_inv_app
           (ringCatSheaf R) P).inv := by
   -- As above, expose the natural isomorphism stored in the localization lifting before applying
   -- its public component characterization.
-  change (overSheafificationNatIso (ringCatSheaf R) X).inv.app P = _
-  exact overSheafificationNatIso_inv_app (ringCatSheaf R) X P
+  change (pushforwardSheafificationNatIso (J := J.over X) (K := J)
+    (Over.forget X) (ringCatSheaf R)).inv.app P = _
+  exact pushforwardSheafificationNatIso_inv_app (Over.forget X) (ringCatSheaf R) P
 
 /-- The monoidal structure on sheaves of modules on the slice site. -/
 local instance : MonoidalCategory
@@ -182,10 +184,7 @@ private theorem overCurriedTensorPreIsoPost_hom_app_app
 /-- Restriction of sheaves of modules to a slice is a strong monoidal functor. -/
 instance _root_.SheafOfModules.overFunctorMonoidal :
     (_root_.SheafOfModules.overFunctor (ringCatSheaf R) X).Monoidal :=
-  @CategoryTheory.Localization.Monoidal.functorMonoidalOfComp
-    _ _ _ _ _ _ _ _ _ sourceSheafification sourceW _ _
-    (_root_.SheafOfModules.overFunctor (ringCatSheaf R) X) restrictionSheafification
-    (overSheafificationBraided R X).toMonoidal _ (overSheafificationLifting R X)
+  pushforwardModuleMonoidal (J := J.over X) (K := J) (Over.forget X) R
 
 /-- Restriction of sheaves of modules to a slice preserves the symmetric braiding. -/
 instance _root_.SheafOfModules.overFunctorBraided :
@@ -384,11 +383,9 @@ theorem _root_.SheafOfModules.overUnitIso_inv_eq :
         (Functor.OplaxMonoidal.η
           (PresheafOfModules.sheafification (𝟙 (ringCatSheaf R).obj))) := by
   rw [_root_.SheafOfModules.overUnitIso_inv]
-  -- The unit comparison is defined from the generated monoidal structure, so unfold that
-  -- definitional wrapper before using `functorMonoidalOfComp_ε`.
-  change Functor.LaxMonoidal.ε
-      (_root_.SheafOfModules.overFunctor (ringCatSheaf R) X) = _
-  rw [CategoryTheory.Localization.Monoidal.functorMonoidalOfComp_ε
+  -- Slice restriction and generic pushforward agree definitionally after unfolding their
+  -- coefficient sheaves; the localization comparison uses the generic presentation.
+  erw [CategoryTheory.Localization.Monoidal.functorMonoidalOfComp_ε
     sourceSheafification sourceW
     (_root_.SheafOfModules.overFunctor (ringCatSheaf R) X)
     restrictionSheafification]
