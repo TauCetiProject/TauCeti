@@ -8,6 +8,7 @@ module
 public import TauCeti.GroupTheory.QuotientGroup.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.MaximalProP
 public import TauCeti.Topology.Algebra.Group.TopologicalAbelianization
+public import TauCeti.Topology.Algebra.GroupAction.TypeTags
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.LowDegree
 
 /-!
@@ -22,7 +23,7 @@ action of `G ⧸ V` on this quotient. If `V` is open, the defect
 of the representatives chosen by `Quotient.out` defines a continuous `2`-cocycle with values in
 `V^ab(p)`, and hence a canonical class `u_{G/V}(p) ∈ H²(G ⧸ V, V^ab(p))`.
 
-The openness assumption is used only for continuity of the factor set: the finite quotient
+The openness assumption is used only for continuity of the factor set: the quotient
 `G ⧸ V` is discrete. The cocycle identity itself is the associativity identity for the chosen
 representatives, after passing to the abelianization.
 
@@ -82,25 +83,11 @@ noncomputable instance abelianizationProPQuotientAction (V : Subgroup G) [V.Norm
 
 /-- Conjugation by `G ⧸ V` on `V^ab` descends to `V^ab(p)`. -/
 noncomputable instance abelianizationProPAction (V : Subgroup G) [V.Normal] :
-    MulDistribMulAction (G ⧸ V) (abelianizationProP p G V) where
-  toMulAction := inferInstance
-  smul_mul q x y := by
-    induction x using QuotientGroup.induction_on with
-    | H x =>
-      induction y using QuotientGroup.induction_on with
-      | H y => rw [← QuotientGroup.mk_mul, MulAction.Quotient.smul_mk,
-          MulAction.Quotient.smul_mk, MulAction.Quotient.smul_mk, smul_mul',
-          QuotientGroup.mk_mul]
-  smul_one q := by
-    rw [← QuotientGroup.mk_one, MulAction.Quotient.smul_mk, smul_one]
-
-/-- The quotient map `V^ab → V^ab(p)` is equivariant for conjugation by `G ⧸ V`. -/
-@[simp]
-theorem abelianizationProP_smul_mk (V : Subgroup G) [V.Normal] (q : G ⧸ V)
-    (x : TopologicalAbelianization V) :
-    q • maximalProPQuotient.mk p (TopologicalAbelianization V) x =
-      maximalProPQuotient.mk p (TopologicalAbelianization V) (q • x) :=
-  MulAction.Quotient.smul_mk _ q x
+    MulDistribMulAction (G ⧸ V) (abelianizationProP p G V) :=
+  Function.Surjective.mulDistribMulAction
+    (maximalProPQuotient.mk p (TopologicalAbelianization V))
+    (maximalProPQuotient.mk_surjective p (TopologicalAbelianization V))
+    fun q x => (MulAction.Quotient.smul_mk _ q x).symm
 
 /-- The quotient map `V → V^ab(p)` intertwines conjugation by `g : G` with the action of the
 class of `g` in `G ⧸ V`. -/
@@ -110,48 +97,15 @@ theorem abelianizationProPMk_conj (V : Subgroup G) [V.Normal] (g : G) (v : V) :
       abelianizationProPMk p G V (MulAut.conjNormal g v) := by
   simp [abelianizationProPMk, TopologicalAbelianization.mk_smul_mk]
 
-/-- The conjugation action on `V^ab(p)`, in the additive notation used by group cohomology. -/
-noncomputable instance abelianizationProPAdditiveAction (V : Subgroup G) [V.Normal] :
-    DistribMulAction (G ⧸ V) (Additive (abelianizationProP p G V)) where
-  smul q x := Additive.ofMul (q • Additive.toMul x)
-  one_smul x := by
-    change Additive.ofMul ((1 : G ⧸ V) • Additive.toMul x) = _
-    rw [one_smul]
-    rfl
-  mul_smul q r x := by
-    change Additive.ofMul ((q * r) • Additive.toMul x) = _
-    rw [mul_smul]
-    rfl
-  smul_zero q := by
-    change Additive.ofMul (q • (1 : abelianizationProP p G V)) = _
-    rw [smul_one]
-    rfl
-  smul_add q x y := by
-    change Additive.ofMul (q • (Additive.toMul x * Additive.toMul y)) = _
-    rw [smul_mul']
-    rfl
-
 /-- The action of `G ⧸ V` on `V^ab(p)` is jointly continuous. -/
 instance abelianizationProP_continuousSMul (V : Subgroup G) [V.Normal] :
-    ContinuousSMul (G ⧸ V) (Additive (abelianizationProP p G V)) where
+    ContinuousSMul (G ⧸ V) (abelianizationProP p G V) where
   continuous_smul := by
-    change Continuous fun x : (G ⧸ V) × abelianizationProP p G V => x.1 • x.2
-    have hquot : IsOpenQuotientMap (Prod.map id
-        (QuotientGroup.mk : TopologicalAbelianization V → abelianizationProP p G V)) :=
-      (IsOpenQuotientMap.id : IsOpenQuotientMap (id : (G ⧸ V) → G ⧸ V)).prodMap
-        QuotientGroup.isOpenQuotientMap_mk
-    rw [← hquot.continuous_comp_iff]
-    have h : (fun x : (G ⧸ V) × abelianizationProP p G V => x.1 • x.2) ∘
-        Prod.map id (QuotientGroup.mk : TopologicalAbelianization V →
-          abelianizationProP p G V) =
-          (QuotientGroup.mk : TopologicalAbelianization V →
-            abelianizationProP p G V) ∘
-            fun x : (G ⧸ V) × TopologicalAbelianization V => x.1 • x.2 :=
-      funext fun x => abelianizationProP_smul_mk p G V x.1 x.2
-    rw [h]
-    exact (maximalProPQuotient.continuous_mk
-      (p := p) (G := TopologicalAbelianization V)).comp
-      (ContinuousSMul.continuous_smul (M := G ⧸ V) (X := TopologicalAbelianization V))
+    rw [← (IsOpenQuotientMap.id.prodMap
+      (QuotientGroup.isOpenQuotientMap_mk
+        (N := proPKernel p (TopologicalAbelianization V)))).continuous_comp_iff]
+    exact (QuotientGroup.continuous_mk.comp continuous_smul).congr fun x =>
+      (MulAction.Quotient.smul_mk _ x.1 x.2).symm
 
 /-- The factor set of the extension of `G ⧸ V` by `V^ab(p)`, written additively. It sends
 `(q, r)` to the class of `q.out * r.out * (q * r).out⁻¹`. -/
