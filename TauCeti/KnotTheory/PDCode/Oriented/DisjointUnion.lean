@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.KnotTheory.PDCode.DisjointUnion
+public import TauCeti.KnotTheory.PDCode.DisjointUnion.Basic
 
 /-!
 # Disjoint unions of oriented diagrams

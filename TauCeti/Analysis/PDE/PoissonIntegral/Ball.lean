@@ -7,9 +7,10 @@ module
 
 public import TauCeti.Analysis.PDE.GreenFunction.BoundaryConcentration
 import TauCeti.Analysis.InnerProductSpace.Harmonic.MeanValue
+import TauCeti.Analysis.InnerProductSpace.Laplacian.ParametricIntegral
 
 /-!
-# The Poisson integral of the Euclidean unit ball and its boundary values
+# The Poisson integral of the Euclidean unit ball and the Dirichlet problem
 
 For boundary data `g` on the unit sphere `S` of `ℝⁿ`, the **Poisson integral**
 
@@ -28,9 +29,13 @@ then the sphere integral of the function `K(·, θ)`, harmonic on the closed bal
 With positivity of the kernel and its far-field bound, mass one makes the Poisson kernel an
 approximate identity on the sphere: the Poisson integral of continuous boundary data tends to
 `g z` as its argument tends to a boundary point `z` from inside the ball
-(`TauCeti.tendsto_ballPoissonIntegral`).  This boundary attainment is one of the two halves of the
-solution of the Dirichlet problem on the ball by the Poisson integral; the other is harmonicity of
-`P[g]` in the open ball.
+(`TauCeti.tendsto_ballPoissonIntegral`).
+
+The Poisson integral of integrable data is harmonic off the sphere: the kernel `K(·, y)` is
+harmonic away from `y` and smooth jointly in `(x, y)` off the diagonal, so the Laplacian may be
+taken under the integral sign (`TauCeti.harmonicOnNhd_integral_smul_of_contDiffOn`).  Together with
+boundary attainment this solves the Dirichlet problem `Δu = 0` in the ball, `u = g` on the sphere,
+for continuous data.
 
 ## Main declarations
 
@@ -41,6 +46,9 @@ solution of the Dirichlet problem on the ball by the Poisson integral; the other
   a positive linear operator preserving constants.
 * `TauCeti.tendsto_ballPoissonIntegral`: the Poisson integral of continuous boundary data attains
   the boundary values.
+* `TauCeti.harmonicOnNhd_ballPoissonIntegral`: the Poisson integral is harmonic off the sphere.
+* `TauCeti.exists_harmonicOnNhd_ball_continuousOn_closedBall_eq`: existence of a solution of the
+  Dirichlet problem on the unit ball for continuous boundary data.
 
 ## References
 
@@ -133,6 +141,30 @@ theorem ballPoissonIntegral_def (g : sphere (0 : EuclideanSpace ℝ (Fin n)) 1 �
       ∫ y : sphere (0 : EuclideanSpace ℝ (Fin n)) 1, ballPoissonKernel n x y * g y
         ∂volume.toSphere := by
   rw [ballPoissonIntegral]
+
+/-- **The Poisson integral is harmonic.**  For integrable boundary data `g` on the unit sphere of
+`ℝⁿ`, the Poisson integral `P[g]` is harmonic off the sphere, in particular throughout the open
+unit ball. -/
+theorem harmonicOnNhd_ballPoissonIntegral {g : sphere (0 : EuclideanSpace ℝ (Fin n)) 1 → ℝ}
+    (hg : Integrable g volume.toSphere) :
+    HarmonicOnNhd (ballPoissonIntegral g) (sphere (0 : EuclideanSpace ℝ (Fin n)) 1)ᶜ := by
+  have hU : ∀ x ∈ (sphere (0 : EuclideanSpace ℝ (Fin n)) 1)ᶜ,
+      ∀ y : sphere (0 : EuclideanSpace ℝ (Fin n)) 1, (x, (y : EuclideanSpace ℝ (Fin n))) ∈
+        {p : EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) | p.1 ≠ p.2} :=
+    fun x hx y hxy ↦ hx (by
+      have hxy' : x = (y : EuclideanSpace ℝ (Fin n)) := by simpa only using hxy
+      rw [hxy']
+      exact y.2)
+  have h := harmonicOnNhd_integral_smul_of_contDiffOn hg continuous_subtype_val
+    (isOpen_ne_fun continuous_fst continuous_snd) contDiffOn_ballPoissonKernel
+    isClosed_sphere.isOpen_compl hU fun y ↦
+      (harmonicOnNhd_ballPoissonKernel_left (norm_eq_of_mem_sphere y)).mono
+        fun x hx ↦ hU x hx y
+  have hP : ballPoissonIntegral g = fun x ↦
+      ∫ y : sphere (0 : EuclideanSpace ℝ (Fin n)) 1, ballPoissonKernel n x y * g y
+        ∂volume.toSphere := funext (ballPoissonIntegral_def g)
+  rw [hP]
+  simpa only [smul_eq_mul, mul_comm (g _)] using h
 
 /-- The Poisson integral of zero boundary data is zero. -/
 @[simp] theorem ballPoissonIntegral_zero (x : EuclideanSpace ℝ (Fin n)) :
@@ -273,6 +305,44 @@ theorem tendsto_ballPoissonIntegral {g : sphere (0 : EuclideanSpace ℝ (Fin n))
           integral_ballPoissonKernel hn hx, integral_const, smul_eq_mul]
         ring
     _ < ε := by linarith
+
+/-- **The Dirichlet problem on the unit ball.**  For continuous data `g` on the unit sphere of
+`ℝⁿ` there is a function harmonic in the open unit ball, continuous on the closed ball, and equal
+to `g` on the sphere: the Poisson integral of `g` inside the ball, extended by `g` on the sphere.
+Uniqueness on the closed ball is the maximum principle
+`TauCeti.eqOn_of_harmonicOnNhd_of_eqOn_frontier`. -/
+theorem exists_harmonicOnNhd_ball_continuousOn_closedBall_eq
+    {g : sphere (0 : EuclideanSpace ℝ (Fin n)) 1 → ℝ} (hg : Continuous g) :
+    ∃ u : EuclideanSpace ℝ (Fin n) → ℝ, HarmonicOnNhd u (ball 0 1) ∧
+      ContinuousOn u (closedBall 0 1) ∧
+        ∀ z : sphere (0 : EuclideanSpace ℝ (Fin n)) 1, u z = g z := by
+  classical
+  have hgi : Integrable g volume.toSphere :=
+    hg.integrable_of_hasCompactSupport (.of_compactSpace g)
+  let u : EuclideanSpace ℝ (Fin n) → ℝ := fun x ↦
+    if hx : x ∈ sphere (0 : EuclideanSpace ℝ (Fin n)) 1 then g ⟨x, hx⟩ else ballPoissonIntegral g x
+  have hball : ∀ x ∈ ball (0 : EuclideanSpace ℝ (Fin n)) 1, x ∉ sphere 0 1 := fun x hx hs ↦
+    (mem_ball_zero_iff.mp hx).ne (mem_sphere_zero_iff_norm.mp hs)
+  have hu : EqOn u (ballPoissonIntegral g) (ball 0 1) := fun x hx ↦ dite_eq_right (hball x hx)
+  have hP : HarmonicOnNhd (ballPoissonIntegral g) (ball 0 1) :=
+    (harmonicOnNhd_ballPoissonIntegral hgi).mono hball
+  have huP : ∀ x ∈ ball (0 : EuclideanSpace ℝ (Fin n)) 1, u =ᶠ[𝓝 x] ballPoissonIntegral g :=
+    fun x hx ↦ Filter.eventually_of_mem (isOpen_ball.mem_nhds hx) hu
+  refine ⟨u, fun x hx ↦ (harmonicAt_congr_nhds (huP x hx)).2 (hP x hx), ?_,
+    fun z ↦ dite_eq_left z.2⟩
+  rw [← ball_union_sphere]
+  intro x hx
+  rcases hx with hx | hx
+  · exact ((hP x hx).1.continuousAt.congr (huP x hx).symm).continuousWithinAt
+  · -- At a boundary point, approach from inside the ball and along the sphere separately.
+    have hux : u x = g ⟨x, hx⟩ := dite_eq_left hx
+    refine continuousWithinAt_union.2 ⟨?_, ?_⟩
+    · rw [ContinuousWithinAt, hux]
+      exact (tendsto_ballPoissonIntegral hg ⟨x, hx⟩).congr'
+        (Filter.eventually_of_mem self_mem_nhdsWithin fun y hy ↦ (hu hy).symm)
+    · have hres : (sphere (0 : EuclideanSpace ℝ (Fin n)) 1).domRestrict u = g :=
+        funext fun z ↦ dite_eq_left z.2
+      exact (continuousOn_iff_continuous_domRestrict.2 (hres ▸ hg)) x hx
 
 end TauCeti
 
