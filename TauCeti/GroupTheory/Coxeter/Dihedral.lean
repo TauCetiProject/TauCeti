@@ -67,6 +67,8 @@ with `i'`, needs the rank-two parabolic factor to have length `M i i'` on the no
   standard parabolic subgroup is spelled by an alternating word of its own length.**
 * `CoxeterSystem.wordProd_alternatingWord_eq_comm_iff`: the two alternating words of length `m`
   have the same product exactly when `(s i * s i') ^ m = 1`.
+* `CoxeterSystem.wordProd_alternatingWord_eq_mul_pow`: more precisely, they differ by the factor
+  `(s i * s i') ^ m`.
 * `CoxeterSystem.wordProd_alternatingWord_add_two_mul`: the products of the alternating words
   repeat with period twice the order of `s i * s i'`.
 * `CoxeterSystem.wordProd_alternatingWord_eq_of_isLeftDescent_pair`: **an element of a rank-two
@@ -196,6 +198,20 @@ theorem wordProd_alternatingWord_eq_comm_iff (i i' : B) (m : ℕ) :
     simp only [ite_eq_right hnot, hdiv]
     rw [← inv_mul_eq_iff_eq_mul, cs.inv_simple, ← mul_assoc, ← pow_succ',
       eq_inv_iff_mul_eq_one, ← pow_add, hsum]
+
+/-- **The two alternating words of length `m` differ by the `m`-th power of the rotation.** The
+word alternating between `i` and `i'` and ending with `i'` is the word ending with `i` followed by
+`(s i * s i') ^ m`. -/
+theorem wordProd_alternatingWord_eq_mul_pow (i i' : B) (m : ℕ) :
+    π (alternatingWord i i' m) = π (alternatingWord i' i m) * (s i * s i') ^ m := by
+  induction m generalizing i i' with
+  | zero => simp [alternatingWord]
+  | succ m ih =>
+    have hsemi : SemiconjBy (s i') (s i * s i') (s i' * s i) := by
+      simp only [SemiconjBy, mul_assoc]
+    rw [alternatingWord_succ, alternatingWord_succ, wordProd_concat, wordProd_concat, ih i' i,
+      mul_assoc, mul_assoc, pow_succ', ← mul_assoc (s i), ← mul_assoc (s i),
+      cs.simple_mul_simple_self, one_mul, (hsemi.pow_right m).eq]
 
 /-- **The products of the alternating words repeat with period twice the order of the rotation
 `s i * s i'`.** Only `(s i * s i') ^ n = 1` is used, so the period may be read off any exponent
