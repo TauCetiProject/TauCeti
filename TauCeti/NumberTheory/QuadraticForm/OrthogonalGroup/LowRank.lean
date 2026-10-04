@@ -84,8 +84,9 @@ def topOfFinrankLeOne (Q : QuadraticForm ℚ V) (hQ : Q.Nondegenerate)
     have hVp : Module.finrank ℚ_[p] (ℚ_[p] ⊗[ℚ] V) ≤ 1 := by
       simpa only [Module.finrank_baseChange] using hV
     have hani := QuadraticForm.anisotropic_of_finrank_le_one (Q.baseChange ℚ_[p]) hQp hVp
-    rw [show ((⊤ : Subgroup (orthogonalGroup (Q.baseChange ℚ_[p]))) :
-      Set (orthogonalGroup (Q.baseChange ℚ_[p]))) = Set.univ by rfl,
+    -- The full subgroup is `univ` in the group subtype; its image under subtype inclusion
+    -- is the orthogonal group as a set of ambient linear equivalences.
+    rw [Subgroup.coe_top,
       Topology.IsInducing.subtypeVal.isCompact_iff, Set.image_univ, Subtype.range_coe]
     exact isCompact_orthogonalGroup (Q.baseChange ℚ_[p]) hani
   isOpen_spin _ := isOpen_univ
@@ -96,14 +97,27 @@ def topOfFinrankLeOne (Q : QuadraticForm ℚ V) (hQ : Q.Nondegenerate)
     have hVp : Module.finrank ℚ_[p] (ℚ_[p] ⊗[ℚ] V) ≤ 1 := by
       simpa only [Module.finrank_baseChange] using hV
     have hani := QuadraticForm.anisotropic_of_finrank_le_one (Q.baseChange ℚ_[p]) hQp hVp
-    rw [show ((⊤ : Subgroup (spinGroup (Q.baseChange ℚ_[p]))) :
-      Set (spinGroup (Q.baseChange ℚ_[p]))) = Set.univ by rfl,
+    -- The full subgroup is `univ` in the group subtype; its image under subtype inclusion
+    -- is the Spin group as a set of ambient Clifford units.
+    rw [Subgroup.coe_top,
       Topology.IsInducing.subtypeVal.isCompact_iff, Set.image_univ, Subtype.range_coe,
       CliffordAlgebra.isCompact_spinGroup_iff (Q.baseChange ℚ_[p]) hQp]
     exact hani
   spin_maps _ _ _ := Subgroup.mem_top _
   eventually_orthogonal _ := .of_forall fun _ ↦ Subgroup.mem_top _
   eventually_spin _ := .of_forall fun _ ↦ Subgroup.mem_top _
+
+/-- The low-rank reference family contains the full local orthogonal group. -/
+@[simp]
+theorem topOfFinrankLeOne_orthogonal (Q : QuadraticForm ℚ V) (hQ : Q.Nondegenerate)
+    (hV : Module.finrank ℚ V ≤ 1) (p : Nat.Primes) :
+    (topOfFinrankLeOne Q hQ hV).orthogonal p = ⊤ := (rfl)
+
+/-- The low-rank reference family contains the full local Spin group. -/
+@[simp]
+theorem topOfFinrankLeOne_spin (Q : QuadraticForm ℚ V) (hQ : Q.Nondegenerate)
+    (hV : Module.finrank ℚ V ≤ 1) (p : Nat.Primes) :
+    (topOfFinrankLeOne Q hQ hV).spin p = ⊤ := (rfl)
 
 /-- In dimension at most one, the local spinor-norm image of any compatible compact-open family
 differs from the unit square classes at every prime. -/
