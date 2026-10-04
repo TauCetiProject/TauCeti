@@ -86,6 +86,7 @@ theorem continuousAutToGL_surjective : Function.Surjective (continuousAutToGL p 
 
 /-- The kernel of `continuousAutToGL` is the group of continuous automorphisms acting trivially
 on the Frattini quotient. -/
+@[simp]
 theorem ker_continuousAutToGL :
     (continuousAutToGL p X).ker =
       (ContinuousAut.mapQuotient (isTopCharacteristic_proPFrattini (G := freeProP p X) p)).ker := by

@@ -55,16 +55,14 @@ theorem toLin'_toGL (b : Module.Basis ι k V) (f : V ≃ₗ[k] V) :
 @[simp]
 theorem coe_toGL (b : Module.Basis ι k V) (f : V ≃ₗ[k] V) :
     (b.toGL f : Matrix ι ι k) = LinearMap.toMatrix b b f := by
-  ext i j
+  -- Both matrices are determined by the linear maps they define in the basis `b`.
+  apply (Matrix.toLin b b).injective
+  ext v
   have hf : ((LinearMap.GeneralLinearGroup.generalLinearEquiv k V).symm f).toLinearEquiv = f :=
     (LinearMap.GeneralLinearGroup.generalLinearEquiv k V).apply_symm_apply f
-  -- Read off the `j`-th column of the matrix from the action of `toLin'` on `b j`.
-  have h := Matrix.GeneralLinearGroup.toLin'_apply b (b.toGL f) (b j)
-  rw [toLin'_toGL, hf, b.repr_self, Finsupp.single_eq_pi_single, Matrix.mulVec_single_one,
-    Fintype.linearCombination_apply, ← b.equivFun_symm_apply] at h
-  rw [LinearMap.toMatrix_apply, LinearEquiv.coe_coe, ← b.equivFun_apply, h,
-    LinearEquiv.apply_symm_apply]
-  rfl
+  have h := Matrix.GeneralLinearGroup.toLin'_apply b (b.toGL f) v
+  rw [toLin'_toGL, hf] at h
+  simpa [Matrix.toLin_apply, Fintype.linearCombination_apply] using h.symm
 
 /-- Multiplication by a unit `a` has matrix the scalar matrix `a` in every basis. -/
 @[simp]
