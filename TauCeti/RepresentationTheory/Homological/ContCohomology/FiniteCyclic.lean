@@ -57,10 +57,10 @@ theorem H1pi_eq_zero_iff_exists_smul_sub_eq (f : Z1 G M) :
     exact ⟨m, hm g⟩
   · rintro ⟨m, hm⟩
     refine ⟨m, fun x ↦ ?_⟩
-    have heq := isCocycle₁_ext_of_forall_mem_zpowers
+    have heq := isCocycle₁_ext_of_forall_mem_zpowers g hg
       (mem_Z1_iff.mp f.property).2
       (d1_apply_eq_zero_iff.mp (d1_comp_d0_apply m))
-      g hg (by simpa using hm.symm)
+      (by simpa using hm.symm)
     simpa only [d0_apply] using (congrFun heq x).symm
 
 /-- A finite cyclic group has vanishing first continuous cohomology if the kernel of the group
@@ -74,6 +74,6 @@ theorem subsingleton_H1_of_forall_mem_zpowers [Fintype G]
   induction x using QuotientAddGroup.induction_on with
   | H f =>
     exact (H1pi_eq_zero_iff_exists_smul_sub_eq g hg f).mpr
-      (h (f.val g) (sum_smul_apply_eq_zero_of_isCocycle₁ (mem_Z1_iff.mp f.property).2 g))
+      (h (f.val g) (sum_smul_apply_eq_zero_of_isCocycle₁ g (mem_Z1_iff.mp f.property).2))
 
 end TauCeti.ContCohomology

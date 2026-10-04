@@ -91,9 +91,9 @@ variable {G M : Type*} [Group G] [AddCommGroup M] [DistribMulAction G M]
 
 /-- Two one-cocycles on a cyclic group agree if they agree at a generator. No finiteness or
 continuity hypothesis is needed. -/
-theorem isCocycle₁_ext_of_forall_mem_zpowers {f f' : G → M}
-    (hf : IsCocycle₁ f) (hf' : IsCocycle₁ f') (g : G)
-    (hg : ∀ x : G, x ∈ Subgroup.zpowers g) (h : f g = f' g) : f = f' := by
+theorem isCocycle₁_ext_of_forall_mem_zpowers {f f' : G → M} (g : G)
+    (hg : ∀ x : G, x ∈ Subgroup.zpowers g) (hf : IsCocycle₁ f) (hf' : IsCocycle₁ f')
+    (h : f g = f' g) : f = f' := by
   have hsub : IsCocycle₁ (f - f') := by
     intro x y
     simp only [Pi.sub_apply, hf x y, hf' x y, smul_sub]
@@ -108,7 +108,7 @@ omit [DistribMulAction G M] in
 This holds at every group element, not just at a cyclic generator. Even associativity and
 distributivity of the scalar multiplication are unnecessary for this identity. -/
 theorem sum_smul_apply_eq_zero_of_isCocycle₁ [SMul G M] [Fintype G] {f : G → M}
-    (hf : IsCocycle₁ f) (g : G) : ∑ x : G, x • f g = 0 := by
+    (g : G) (hf : IsCocycle₁ f) : ∑ x : G, x • f g = 0 := by
   have hsum : (∑ x : G, f x) = (∑ x : G, x • f g) + ∑ x : G, f x := by
     calc
       (∑ x : G, f x) = ∑ x : G, f (x * g) :=
