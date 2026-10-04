@@ -6,16 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Compactification.OnePoint.Basic
-public import Mathlib.Topology.Maps.Proper.CompactlyGenerated
+public import Mathlib.Topology.Maps.Proper.Basic
 
 /-!
 # Maps on one-point compactifications
 
 The extension `OnePoint.map f` sends infinity to infinity. Its range is the range of `f`,
 embedded in the target compactification, together with infinity, and it is injective exactly
-when `f` is injective. For a proper map from an
-R₁ space to a compactly coherent Hausdorff space, this extension is continuous, by Mathlib's
-`isProperMap_iff_tendsto_cocompact` and `OnePoint.continuous_map`.
+when `f` is injective. For a proper map between arbitrary topological spaces, this extension
+is continuous: preimages of closed compact sets are closed and compact, so Mathlib's
+`OnePoint.continuous_map` applies.
 -/
 
 public section
@@ -46,14 +46,15 @@ theorem range_onePointMap {X Y : Type*} (f : X → Y) :
   exact (Option.range_eq (OnePoint.map f)).trans
     (congrArg (insert OnePoint.infty) (range_comp ((↑) : Y → OnePoint Y) f))
 
-/-- A proper map from an R₁ space to a compactly coherent Hausdorff space extends continuously
+/-- A proper map between arbitrary topological spaces extends continuously
 to the one-point compactifications, sending infinity to infinity. -/
 theorem continuous_onePointMap_of_isProperMap
-    {X Y : Type*} [TopologicalSpace X] [R1Space X]
-    [TopologicalSpace Y] [T2Space Y] [CompactlyCoherentSpace Y]
+    {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
     {f : X → Y} (hf : IsProperMap f) : Continuous (OnePoint.map f) :=
   OnePoint.continuous_map hf.continuous (by
-    simpa only [Filter.coclosedCompact_eq_cocompact] using
-      (isProperMap_iff_tendsto_cocompact.mp hf).2)
+    refine Filter.hasBasis_coclosedCompact.tendsto_right_iff.mpr ?_
+    intro K hK
+    exact (hf.isCompact_preimage hK.2).compl_mem_coclosedCompact_of_isClosed
+      (hK.1.preimage hf.continuous))
 
 end TauCeti
