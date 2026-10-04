@@ -36,7 +36,7 @@ namespace TauCeti
 
 variable {E : Type uE} {H : Type uH} {M : Type uM} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  [MetricSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
+  [TopologicalSpace M] [T3Space M] [ChartedSpace H M] [IsManifold I ∞ M]
   [PreconnectedSpace M]
   [CompactSpace M] [MeasurableSpace M] [BorelSpace M]
   [LindelofSpace M]
@@ -76,14 +76,13 @@ theorem hypVolumeOfMetric_nonneg (g : HyperbolicMetric (I := I) (M := M)) :
 
 omit [LindelofSpace M] in
 /-- Mostow rigidity identifies the total volumes of any two bundled hyperbolic metrics. -/
-theorem hypVolumeOfMetric_eq_of_mostow [BoundarylessManifold I M]
+theorem hypVolumeOfMetric_eq_of_mostow
     (hConn : ConnectedSpace M)
-    (h : MostowRigidity.{uE, uH, uM})
-    (hdim : 3 ≤ Module.finrank ℝ E)
+    (h : IsMostowRigid (I := I) (M := M))
     (g g' : HyperbolicMetric (I := I) (M := M)) :
     hypVolumeOfMetric (I := I) g = hypVolumeOfMetric (I := I) g' := by
   let _ : ConnectedSpace M := hConn
-  obtain ⟨Φ⟩ := h hdim g g'
+  obtain ⟨Φ⟩ := h.isometry g g'
   let gBundle : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
     ⟨g.metric.toRiemannianMetric⟩
   let gCont : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
