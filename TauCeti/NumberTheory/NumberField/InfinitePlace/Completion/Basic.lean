@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.NumberField.Completion.Ramification
+public import Mathlib.NumberTheory.NumberField.Completion.InfinitePlace
 public import TauCeti.Analysis.Normed.Ring.WithAbs
 
 /-!
@@ -21,10 +21,8 @@ idele norm.
 absolute value on the dense base field. The normalized value is continuous and takes every
 nonnegative real value.
 
-Archimedean completions are nontrivially normed fields. Completed extensions at infinite places
-are finite dimensional, and the diagonal embeddings form scalar towers over any commutative
-semiring base. These instances allow finite-dimensional topological algebra to be used with the
-canonical completion maps.
+Archimedean completions are nontrivially normed fields, and the diagonal embeddings form scalar
+towers over any commutative semiring base.
 
 ## References
 
@@ -37,7 +35,7 @@ noncomputable section
 namespace NumberField.InfinitePlace
 
 open NumberField
-open scoped WithZero NumberField.LiesOver
+open scoped WithZero
 
 variable {K : Type*} [Field K]
 
@@ -50,24 +48,10 @@ instance Completion.instNontriviallyNormedField (v : InfinitePlace K) :
       (map_zero _), map_ofNat]
     norm_num
 
-variable {L : Type*} [Field L] [Algebra K L]
-
-/-- A place indexed by the places above `v` carries its proof of lying over `v` as an instance. -/
-instance instLiesOverSubtype (v : InfinitePlace K)
-    (w : {w : InfinitePlace L // w.LiesOver v}) : w.1.LiesOver v := w.2
-
-/-- A completed extension at an infinite place is finite dimensional: its degree is one or two. -/
-instance (v : InfinitePlace K) (w : InfinitePlace L) [w.LiesOver v] :
-    FiniteDimensional v.Completion w.Completion := by
-  apply Module.finite_of_finrank_pos
-  have h := mult_ne_zero (w := w)
-  rw [← mult_mul_finrank v w, mul_ne_zero_iff] at h
-  exact Nat.pos_of_ne_zero h.2
-
 /-- The diagonal algebra structures on an archimedean completion form a scalar tower. -/
-instance {R : Type*} [CommSemiring R] [Algebra R L] (w : InfinitePlace L) :
-    IsScalarTower R L w.Completion :=
-  (Completion.equiv w).isScalarTower R L
+instance {R : Type*} [CommSemiring R] [Algebra R K] (w : InfinitePlace K) :
+    IsScalarTower R K w.Completion :=
+  (Completion.equiv w).isScalarTower R K
 
 /-- The normalized absolute value on the completion at an infinite place. -/
 def completionNormalizedAbsValue (w : InfinitePlace K) : w.Completion →*₀ ℝ :=

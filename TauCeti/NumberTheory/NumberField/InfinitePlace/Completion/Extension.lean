@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.NumberTheory.NumberField.Completion.Ramification
 public import TauCeti.NumberTheory.NumberField.InfinitePlace.Completion.Basic
 
 /-!
@@ -15,6 +16,9 @@ local degree `[L_w : K_v]`. The underlying ordinary norms agree, but a complex p
 real place doubles the normalization exponent. Multiplying over all places above `v` gives
 the global degree `[L : K]`. These are the archimedean factors in the degree formula for
 extension of ideles.
+
+Completed extensions at infinite places are finite dimensional, with degree one or two. A place
+indexed by the places above `v` carries its proof of lying over `v` as an instance.
 
 The formulas are in `NumberField.InfinitePlace`, alongside
 `completionNormalizedAbsValue`. For the ordinary norm, use
@@ -42,6 +46,18 @@ open scoped NumberField.LiesOver
 namespace NumberField.InfinitePlace
 
 variable {K L : Type*} [Field K] [Field L] [Algebra K L]
+
+/-- A place indexed by the places above `v` carries its proof of lying over `v` as an instance. -/
+instance instLiesOverSubtype (v : InfinitePlace K)
+    (w : {w : InfinitePlace L // w.LiesOver v}) : w.1.LiesOver v := w.2
+
+/-- A completed extension at an infinite place is finite dimensional: its degree is one or two. -/
+instance (v : InfinitePlace K) (w : InfinitePlace L) [w.LiesOver v] :
+    FiniteDimensional v.Completion w.Completion := by
+  apply Module.finite_of_finrank_pos
+  have h := mult_ne_zero (w := w)
+  rw [← mult_mul_finrank v w, mul_ne_zero_iff] at h
+  exact Nat.pos_of_ne_zero h.2
 
 /-- Extension of archimedean completions preserves the ordinary norm. -/
 @[simp]
