@@ -10,6 +10,7 @@ public import Mathlib.RepresentationTheory.Character
 public import Mathlib.RepresentationTheory.Intertwining
 public import Mathlib.Data.Finsupp.SMul
 public import Mathlib.LinearAlgebra.DirectSum.Finsupp
+public import Mathlib.RingTheory.Flat.Basic
 public import TauCeti.LinearAlgebra.TensorProduct.Basis
 public import TauCeti.RepresentationTheory.CharacterTable.ClassFunction
 public import TauCeti.RepresentationTheory.PermutationModule
@@ -43,6 +44,11 @@ one-dimensional, that equality says the endomorphism algebra after the extension
 again, which is the mechanism by which an absolutely irreducible representation stays irreducible
 over any extension.
 
+For a finite group, the whole invariant submodule also commutes with a flat scalar extension.
+Indeed, invariants are the kernel of the finite family of maps `ρ(g) - 1`; flatness preserves that
+kernel, and the finite product comparison identifies the base-changed family with the invariance
+conditions after extending scalars.
+
 **Permutation representations are preserved outright.** A `G`-set `X` gives the free module
 `R[X]` with `G` permuting its basis, and extending the scalars along `R → A` gives `A[X]` with the
 same permutation: both sides are free on the basis `X`, and the identification matches the basis
@@ -56,6 +62,8 @@ of a permutation lattice `ℤ[X]` modulo a prime is `k[X]` and its rationalizati
 ## Main declarations
 
 * `Representation.baseChange`: scalar extension of a representation.
+* `Representation.invariantsBaseChangeEquiv`: flat scalar extension commutes with taking the
+  invariants of a finite group.
 * `Representation.exists_common_fixed_vector_of_baseChange`: descent of a nonzero common
   fixed vector.
 * `Representation.character_baseChange`: the character of a base-changed representation is the
@@ -103,6 +111,93 @@ theorem _root_.Representation.baseChange_apply (ρ : _root_.Representation R G V
     rfl
 
 end BaseChange
+
+section Invariants
+
+variable {G : Type w} [Group G]
+variable {R : Type u} {A : Type v} [CommRing R] [CommRing A] [Algebra R A]
+variable [Module.Flat R A] [AddCommGroup V] [Module R V]
+
+/-- The simultaneous defect of invariance: its `g`-coordinate sends `x` to `ρ(g)x - x`.
+Its kernel is the invariant submodule. -/
+private def invariantDefect (ρ : _root_.Representation R G V) : V →ₗ[R] (G → V) :=
+  LinearMap.pi fun g ↦ ρ g - LinearMap.id
+
+private theorem mem_ker_invariantDefect {ρ : _root_.Representation R G V} {x : V} :
+    x ∈ LinearMap.ker (invariantDefect ρ) ↔ x ∈ ρ.invariants := by
+  rw [LinearMap.mem_ker, funext_iff]
+  simp [invariantDefect, _root_.Representation.mem_invariants, sub_eq_zero]
+
+/-- The invariants of a representation are its simultaneous invariance kernel. -/
+private def invariantsEquivKerInvariantDefect (ρ : _root_.Representation R G V) :
+    ρ.invariants ≃ₗ[R] LinearMap.ker (invariantDefect ρ) where
+  toFun x := ⟨x, mem_ker_invariantDefect.mpr x.property⟩
+  invFun x := ⟨x, mem_ker_invariantDefect.mp x.property⟩
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+  left_inv _ := rfl
+  right_inv _ := rfl
+
+omit [Module.Flat R A] in
+private theorem ker_invariantDefect_baseChange [Finite G]
+    (ρ : _root_.Representation R G V) :
+    LinearMap.ker (invariantDefect (_root_.Representation.baseChange A ρ)) =
+      LinearMap.ker (TensorProduct.AlgebraTensorModule.lTensor A A (invariantDefect ρ)) := by
+  classical
+  let _ := Fintype.ofFinite G
+  ext x
+  rw [LinearMap.mem_ker, LinearMap.mem_ker]
+  have hDefect :
+      invariantDefect (_root_.Representation.baseChange A ρ) x =
+        TensorProduct.piRight R A A (fun _ : G ↦ V)
+          (TensorProduct.AlgebraTensorModule.lTensor A A (invariantDefect ρ) x) := by
+    induction x with
+    | add x y hx hy => simp [hx, hy]
+    | tmul a x =>
+        ext g
+        simp only [invariantDefect, LinearMap.pi_apply, LinearMap.sub_apply,
+          LinearMap.id_apply, LinearMap.add_apply, LinearMap.neg_apply,
+          _root_.Representation.baseChange_apply,
+          LinearMap.baseChange_tmul, TensorProduct.AlgebraTensorModule.lTensor_tmul,
+          TensorProduct.piRight_apply, TensorProduct.piRightHom_tmul, sub_eq_add_neg]
+        rw [TensorProduct.tmul_add, TensorProduct.tmul_neg]
+  rw [hDefect]
+  exact (TensorProduct.piRight R A A (fun _ : G ↦ V)).map_eq_zero_iff
+
+/-- **Flat scalar extension commutes with finite-group invariants.** If `A` is flat over `R` and
+`G` is finite, the scalar extension of the invariant submodule of `ρ` is naturally linearly
+equivalent to the invariants of the scalar-extended representation.
+
+Finiteness of `G` is used only to identify the scalar extension of `G → V` with
+`G → A ⊗[R] V`; flatness then makes scalar extension commute with the resulting kernel. -/
+noncomputable def _root_.Representation.invariantsBaseChangeEquiv [Finite G]
+    (ρ : _root_.Representation R G V) :
+    A ⊗[R] ρ.invariants ≃ₗ[A] (_root_.Representation.baseChange A ρ).invariants := by
+  classical
+  let eKer :
+      LinearMap.ker (TensorProduct.AlgebraTensorModule.lTensor A A (invariantDefect ρ)) ≃ₗ[A]
+        LinearMap.ker (invariantDefect (_root_.Representation.baseChange A ρ)) :=
+    LinearEquiv.ofEq _ _ (ker_invariantDefect_baseChange ρ).symm
+  exact (AlgebraTensorModule.congr (LinearEquiv.refl A A)
+      (invariantsEquivKerInvariantDefect ρ)).trans <|
+    (LinearMap.tensorKerEquiv A A (invariantDefect ρ)).trans <|
+      eKer.trans (invariantsEquivKerInvariantDefect
+        (_root_.Representation.baseChange A ρ)).symm
+
+/-- The base-change equivalence is the canonical scalar extension of the inclusion of the
+invariant submodule into the ambient representation. -/
+@[simp]
+theorem _root_.Representation.coe_invariantsBaseChangeEquiv [Finite G]
+    (ρ : _root_.Representation R G V) (x : A ⊗[R] ρ.invariants) :
+    ((ρ.invariantsBaseChangeEquiv (A := A) x :
+        (_root_.Representation.baseChange A ρ).invariants) : A ⊗[R] V) =
+      ρ.invariants.subtype.lTensor A x := by
+  classical
+  induction x with
+  | add x y hx hy => simpa only [map_add, Submodule.coe_add] using congrArg₂ (· + ·) hx hy
+  | tmul a x => rfl
+
+end Invariants
 
 variable {K : Type u} {L : Type v} [Field K] [Field L] [Algebra K L]
 variable [AddCommGroup V] [Module K V]

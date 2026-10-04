@@ -8,8 +8,10 @@ module
 public import Mathlib.LinearAlgebra.FreeModule.PID
 public import Mathlib.NumberTheory.Padics.RingHoms
 public import TauCeti.NumberTheory.Padics.FreeModuleReduction
+public import TauCeti.RepresentationTheory.BaseChange
 public import TauCeti.RepresentationTheory.Invariants
 import Mathlib.Algebra.Module.Submodule.Pointwise
+import Mathlib.RingTheory.Flat.Localization
 
 /-!
 # Invariants of projective `p`-adic group-algebra modules
@@ -30,6 +32,8 @@ projective integral representations.
 
 ## Main results
 
+* `Representation.finrank_invariants_baseChange_ratPadic`: extending scalars from `ℤ_p` to
+  `ℚ_p` preserves the rank of the invariant submodule.
 * `Representation.natCard_invariants_eq_pow_finrank_of_reduction`: the invariant count
   above, for an arbitrary equivariant semilinear reduction map with the expected kernel. The
   cardinality of the reduction of a finite free `ℤ_p`-module is
@@ -57,6 +61,19 @@ variable (p : ℕ) [Fact p.Prime] {G : Type u} [Group G] [Finite G]
 variable {V : Type v} [AddCommGroup V] [Module ℤ_[p] V] [Module.Finite ℤ_[p] V]
   [Module.IsTorsionFree ℤ_[p] V]
 variable {W : Type w} [AddCommGroup W] [Module (ZMod p) W]
+
+/-- Extending a finite torsion-free `ℤ_p`-representation to `ℚ_p` preserves the rank of its
+invariant submodule. This is the rational counterpart to invariant lifting modulo `p`: it lets
+the integral invariant count be read from the rationalized representation. -/
+theorem finrank_invariants_baseChange_ratPadic (ρ : Representation ℤ_[p] G V) :
+    Module.finrank ℚ_[p] (Representation.baseChange ℚ_[p] ρ).invariants =
+      Module.finrank ℤ_[p] ρ.invariants := by
+  let _ : Module.Flat ℤ_[p] ℚ_[p] :=
+    IsLocalization.flat ℚ_[p] (nonZeroDivisors ℤ_[p])
+  let _ : Module.Free ℤ_[p] ρ.invariants := Module.free_of_finite_type_torsion_free'
+  exact (LinearEquiv.finrank_eq
+    (_root_.Representation.invariantsBaseChangeEquiv (A := ℚ_[p]) ρ)).symm.trans
+      Module.finrank_baseChange
 
 /-- **Invariant vectors commute numerically with projective reduction modulo `p`.** Let `ρ` be
 an integral representation and `σ` a projective modular representation. Suppose that the
