@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Singular
 public import TauCeti.AlgebraicGeometry.EllipticCurve.PointCount
 public import TauCeti.AlgebraicGeometry.EllipticCurve.NodePolynomial
+import Mathlib.SetTheory.Cardinal.Finite
 
 /-!
 # Point counts at a singular Weierstrass model
@@ -104,17 +105,30 @@ theorem _root_.WeierstrassCurve.pointCount_eq_card_point_add_card_singular
 There cannot be another one because a Weierstrass model over a field has at most one singular
 point. -/
 theorem _root_.WeierstrassCurve.pointCount_eq_card_point_add_one_of_isSingular
-    [Finite {p : F × F // W.toAffine.Equation p.1 p.2}]
     {x y : F} (h : W.toAffine.IsSingular x y) :
     W.pointCount = Nat.card W.toAffine.Point + 1 := by
-  rw [W.pointCount_eq_card_point_add_card_singular]
-  congr 1
-  apply Nat.card_eq_one_iff_exists.2
-  refine ⟨⟨(x, y), h⟩, ?_⟩
-  rintro ⟨⟨x', y'⟩, h'⟩
-  obtain ⟨hx, hy⟩ :=
-    WeierstrassCurve.Affine.eq_of_isSingular_of_isSingular h' h
-  exact Subtype.ext (Prod.ext hx hy)
+  have hsing : Nat.card {p : F × F // W.toAffine.IsSingular p.1 p.2} = 1 := by
+    apply Nat.card_eq_one_iff_exists.2
+    refine ⟨⟨(x, y), h⟩, ?_⟩
+    rintro ⟨⟨x', y'⟩, h'⟩
+    obtain ⟨hx, hy⟩ := WeierstrassCurve.Affine.eq_of_isSingular_of_isSingular h' h
+    exact Subtype.ext (Prod.ext hx hy)
+  by_cases hfin : Finite {p : F × F // W.toAffine.Equation p.1 p.2}
+  · rw [W.pointCount_eq_card_point_add_card_singular, hsing]
+  · have hfs : Finite {p : F × F // W.toAffine.IsSingular p.1 p.2} :=
+      Nat.finite_of_card_ne_zero (by rw [hsing]; norm_num)
+    have hfn : ¬ Finite {p : F × F // W.toAffine.Nonsingular p.1 p.2} := fun _ ↦
+      hfin (Finite.of_equiv _ (equationPointEquiv W).symm)
+    have hfp : ¬ Finite W.toAffine.Point := fun _ ↦ by
+      have : Finite (WithZero {p : F × F // W.toAffine.Nonsingular p.1 p.2}) :=
+        Finite.of_equiv _ W.toAffine.nonsingularPointEquiv
+      have : Function.Injective (fun a : {p : F × F // W.toAffine.Nonsingular p.1 p.2} ↦
+          (a : WithZero {p : F × F // W.toAffine.Nonsingular p.1 p.2})) := WithZero.coe_injective
+      exact hfn (Finite.of_injective _ this)
+    have : Infinite {p : F × F // W.toAffine.Equation p.1 p.2} := not_finite_iff_infinite.1 hfin
+    have : Infinite W.toAffine.Point := not_finite_iff_infinite.1 hfp
+    rw [WeierstrassCurve.pointCount_def, Nat.card_eq_zero_of_infinite,
+      Nat.card_eq_zero_of_infinite]
 
 /-- **The projective equation count exceeds the nonsingular point count by one exactly when the
 model has a rational singular affine point.** -/
