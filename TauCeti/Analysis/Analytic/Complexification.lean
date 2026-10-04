@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Complex.Basic
 import Mathlib.Analysis.Analytic.CPolynomial
 import Mathlib.Analysis.Analytic.IsolatedZeros
 import Mathlib.Analysis.Analytic.Uniqueness
+import Mathlib.LinearAlgebra.Multilinear.Basis
 
 /-!
 # Complexification of real analytic functions
@@ -46,8 +47,8 @@ commutes with complex conjugation near the point, not only the one constructed h
 ## Main declarations
 
 * `ContinuousMultilinearMap.complexifyPi`: the complexification of a real multilinear form on
-  `ι → ℝ`, with `complexifyPi_apply_ofReal`, `complexifyPi_apply_star` and
-  `norm_complexifyPi_le`.
+  `ι → ℝ`, with `complexifyPi_apply_ofReal`, `eq_complexifyPi_of_forall_ofReal`,
+  `complexifyPi_apply_star` and `norm_complexifyPi_le`.
 * `FormalMultilinearSeries.complexifyPi`: the termwise complexification of a power series, with
   `FormalMultilinearSeries.le_radius_complexifyPi`.
 * `AnalyticAt.exists_complexification`: a real analytic function has, on a polydisc around the
@@ -71,8 +72,9 @@ open scoped NNReal ENNReal Topology
 
 namespace ContinuousMultilinearMap
 
-variable {ν ι : Type*} [Fintype ν] [DecidableEq ν] [Fintype ι] [DecidableEq ι]
+variable {ν ι : Type*} [Fintype ν] [Fintype ι]
 
+open scoped Classical in
 /-- The complexification of a continuous real multilinear form `f` on `ι → ℝ`, for finite `ι`: the
 complex multilinear form on `ι → ℂ` given by `v ↦ ∑ r, f (e_r) * ∏ k, v k (r k)`, where `r` runs
 over the maps `ν → ι` and `e_r` is the tuple of standard basis vectors `Pi.single (r k) 1`. It
@@ -86,30 +88,50 @@ noncomputable def complexifyPi (f : ContinuousMultilinearMap ℝ (fun _ : ν ↦
 variable (f : ContinuousMultilinearMap ℝ (fun _ : ν ↦ ι → ℝ) ℝ)
 
 /-- The complexification of `f` evaluates to `∑ r, f (e_r) * ∏ k, v k (r k)`. -/
-theorem complexifyPi_apply (v : ν → ι → ℂ) :
+theorem complexifyPi_apply [DecidableEq ν] [DecidableEq ι] (v : ν → ι → ℂ) :
     f.complexifyPi v = ∑ r : ν → ι, ((f fun k ↦ Pi.single (r k) 1 : ℝ) : ℂ) * ∏ k, v k (r k) := by
-  simp [complexifyPi]
+  simp only [complexifyPi, sum_apply, smul_apply, compContinuousLinearMap_apply,
+    ContinuousLinearMap.proj_apply, mkPiAlgebra_apply, smul_eq_mul]
+  congr!
 
 /-- The complexification of a real multilinear form agrees with it on real arguments. -/
 @[simp]
 theorem complexifyPi_apply_ofReal (v : ν → ι → ℝ) :
     f.complexifyPi (fun k i ↦ (v k i : ℂ)) = f v := by
+  classical
   -- expand each argument of `f` in the standard basis
   have hv : f v = ∑ r : ν → ι, (∏ k, v k (r k)) * f fun k ↦ Pi.single (r k) 1 := by
-    conv_lhs => rw [show v = fun k ↦ ∑ i, v k i • Pi.single (M := fun _ ↦ ℝ) i 1 from
-      funext fun k ↦ pi_eq_sum_univ' (v k)]
+    have hbasis : v = fun k ↦ ∑ i, v k i • Pi.single (M := fun _ ↦ ℝ) i 1 :=
+      funext fun k ↦ pi_eq_sum_univ' (v k)
+    conv_lhs => rw [hbasis]
     simp [map_sum, map_smul_univ]
   simp [complexifyPi_apply, hv, mul_comm]
 
+/-- The complexification of a real multilinear form is the only complex multilinear form on
+`ι → ℂ` that agrees with it on real arguments. -/
+theorem eq_complexifyPi_of_forall_ofReal {g : ContinuousMultilinearMap ℂ (fun _ : ν ↦ ι → ℂ) ℂ}
+    (hg : ∀ v : ν → ι → ℝ, g (fun k i ↦ (v k i : ℂ)) = f v) : g = f.complexifyPi := by
+  classical
+  refine toMultilinearMap_injective
+    (Module.Basis.ext_multilinear (fun _ ↦ Pi.basisFun ℂ ι) fun r ↦ ?_)
+  have hr : (fun k ↦ Pi.basisFun ℂ ι (r k)) =
+      fun k i ↦ ((Pi.single (M := fun _ ↦ ℝ) (r k) 1 i : ℝ) : ℂ) := by
+    ext k i
+    simp [Pi.single_apply, apply_ite]
+  simp only [coe_coe, hr, hg, complexifyPi_apply_ofReal]
+
 /-- The complexification of a real multilinear form commutes with complex conjugation. -/
+@[simp]
 theorem complexifyPi_apply_star (v : ν → ι → ℂ) :
     f.complexifyPi (star v) = star (f.complexifyPi v) := by
+  classical
   simp [complexifyPi_apply, star_sum, star_prod]
 
 /-- Complexification multiplies the norm of a real multilinear form on `ι → ℝ` by at most
 `(card ι) ^ (card ν)`. -/
 theorem norm_complexifyPi_le :
     ‖f.complexifyPi‖ ≤ Fintype.card ι ^ Fintype.card ν * ‖f‖ := by
+  classical
   refine opNorm_le_bound (by positivity) fun v ↦ ?_
   rw [complexifyPi_apply]
   refine (norm_sum_le _ _).trans ?_
@@ -161,7 +183,7 @@ end ContinuousMultilinearMap
 
 namespace FormalMultilinearSeries
 
-variable {ι : Type*} [Fintype ι] [DecidableEq ι]
+variable {ι : Type*} [Fintype ι]
 
 /-- The termwise complexification of a real formal power series on `ι → ℝ` with values in `ℝ`. -/
 noncomputable def complexifyPi (p : FormalMultilinearSeries ℝ (ι → ℝ) ℝ) :
@@ -187,12 +209,14 @@ theorem le_radius_complexifyPi {r : ℝ≥0} (hr : ((Fintype.card ι * r : ℝ�
     _ ≤ C := hC n
 
 /-- On real arguments, the sum of the complexified series is the sum of the real series. -/
+@[simp]
 theorem complexifyPi_sum_ofReal (y : ι → ℝ) :
     p.complexifyPi.sum (fun i ↦ (y i : ℂ)) = (p.sum y : ℂ) := by
   simp only [FormalMultilinearSeries.sum, complexifyPi_apply]
   simp [Complex.ofReal_tsum]
 
 /-- The sum of the complexified series commutes with complex conjugation. -/
+@[simp]
 theorem complexifyPi_sum_star (z : ι → ℂ) :
     p.complexifyPi.sum (star z) = star (p.complexifyPi.sum z) := by
   simp only [FormalMultilinearSeries.sum, complexifyPi_apply, tsum_star]
@@ -212,7 +236,6 @@ theorem eventually_eq_zero_of_eventually_real {E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℂ E] {F : (ι → ℂ) → E} {a : ι → ℝ} (hF : AnalyticAt ℂ F (fun i ↦ (a i : ℂ)))
     (h : ∀ᶠ x in 𝓝 a, F (fun i ↦ (x i : ℂ)) = 0) :
     ∀ᶠ z in 𝓝 (fun i ↦ (a i : ℂ)), F z = 0 := by
-  classical
   obtain ⟨Q, r, hQ⟩ := hF
   let u : (ι → ℝ) →L[ℝ] (ι → ℂ) := ContinuousLinearMap.piMap fun _ ↦ Complex.ofRealCLM
   have hu (x : ι → ℝ) : u x = fun i ↦ (x i : ℂ) := by ext i; simp [u]
@@ -248,7 +271,6 @@ commutes with complex conjugation. -/
 theorem exists_complexification {f : (ι → ℝ) → ℝ} {a : ι → ℝ} (hf : AnalyticAt ℝ f a) :
     ∃ r > (0 : ℝ), ∃ F : (ι → ℂ) → ℂ, AnalyticOnNhd ℂ F (ball (fun i ↦ (a i : ℂ)) r) ∧
       (∀ x ∈ ball a r, F (fun i ↦ (x i : ℂ)) = f x) ∧ ∀ z, F (star z) = star (F z) := by
-  classical
   obtain ⟨p, R, hR⟩ := hf
   obtain ⟨s, hs0, hsR⟩ := ENNReal.lt_iff_exists_nnreal_btwn.1 hR.r_pos
   -- shrink the radius by `card ι + 1` so that it lies inside both disks of convergence
@@ -271,12 +293,14 @@ theorem exists_complexification {f : (ι → ℝ) → ℝ} {a : ι → ℝ} (hf 
   · have hxa : x - a ∈ Metric.eball (0 : ι → ℝ) R := by
       refine Metric.eball_subset_eball ((ENNReal.coe_le_coe.2 hrs).trans hsR.le) ?_
       rwa [Metric.eball_coe, mem_ball_zero_iff, ← dist_eq_norm, ← mem_ball]
+    have hsub : ((fun i ↦ (x i : ℂ)) - fun i ↦ (a i : ℂ)) = fun i ↦ ((x - a) i : ℂ) := by
+      ext i; simp
     beta_reduce
-    rw [show ((fun i ↦ (x i : ℂ)) - fun i ↦ (a i : ℂ)) = fun i ↦ ((x - a) i : ℂ) by
-      ext i; simp, p.complexifyPi_sum_ofReal, ← hR.sum hxa, add_sub_cancel]
-  · beta_reduce
-    rw [show star z - (fun i ↦ (a i : ℂ)) = star (z - fun i ↦ (a i : ℂ)) by
-      ext i; simp, p.complexifyPi_sum_star]
+    rw [hsub, p.complexifyPi_sum_ofReal, ← hR.sum hxa, add_sub_cancel]
+  · have hsub : star z - (fun i ↦ (a i : ℂ)) = star (z - fun i ↦ (a i : ℂ)) := by
+      ext i; simp
+    beta_reduce
+    rw [hsub, p.complexifyPi_sum_star]
 
 /-- **Complexification of a real analytic map.** A map from `ι → ℝ` to `κ → ℝ`, with `ι` and `κ`
 finite, that is analytic at `a` extends to a map `F : (ι → ℂ) → (κ → ℂ)` that is complex analytic
@@ -315,8 +339,9 @@ theorem eventually_apply_star {F : (ι → ℂ) → ℂ} {a : ι → ℝ}
     rw [hGf x hxr]
     exact Complex.ext (by simp) (by simp [hx])
   have hstar : Tendsto star (𝓝 fun i ↦ (a i : ℂ)) (𝓝 fun i ↦ (a i : ℂ)) := by
+    have ha : (star fun i ↦ (a i : ℂ)) = fun i ↦ (a i : ℂ) := by ext i; simp
     have h := continuous_star.tendsto (fun i ↦ (a i : ℂ))
-    rwa [show (star fun i ↦ (a i : ℂ)) = fun i ↦ (a i : ℂ) by ext i; simp] at h
+    rwa [ha] at h
   filter_upwards [hFG, hstar.eventually hFG] with z hz hz'
   rw [hz', hz, hGstar]
 
