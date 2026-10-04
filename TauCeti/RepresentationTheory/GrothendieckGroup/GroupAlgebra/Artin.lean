@@ -20,10 +20,7 @@ Expanding the two disjoint unions and recombining the positive and negative part
 
 `|G| [k] = ∑ᶠ C, a_C [k[G/C]]`.
 
-The final theorem rewrites each coset class as the induction of the trivial class from `C`.  This
-is the characteristic-zero half of Artin's identity in modular-representation `G₀`.  The later
-lattice-reduction step is still needed to remove the characteristic-zero hypothesis: it compares
-the reductions of the integral permutation lattices underlying the two Artin sets.
+The final theorem rewrites each coset class as the induction of the trivial class from `C`.
 
 ## Main results
 
@@ -37,9 +34,6 @@ the reductions of the integral permutation lattices underlying the two Artin set
   induction from subgroups.
 
 ## References
-
-This proves the characteristic-zero part of "Artin's identity in `G₀`" in Layer 4 of the
-[modular-induction roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/ModularInduction/README.md).
 
 * J.-P. Serre, *Linear Representations of Finite Groups*, Part II, §9.2.
 * J. Neukirch, A. Schmidt, K. Wingberg, *Cohomology of Number Fields*, second edition, VII.3.

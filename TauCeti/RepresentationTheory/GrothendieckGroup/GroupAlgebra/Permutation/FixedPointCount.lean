@@ -17,8 +17,11 @@ two finite `G`-sets identifies their classes in `G₀(k[G])`.  Over a characteri
 equality of all fixed-point counts supplies such an equivalence, so it also supplies equality of
 permutation classes.
 
-The converse is deliberately not stated: equality in the exact Grothendieck group is weaker than
-equivalence of representations, and therefore need not recover the fixed-point counts.
+The converse is not stated here.  Over a general coefficient ring, equality in the exact
+Grothendieck group is weaker than equivalence of representations, and therefore need not recover
+the fixed-point counts.  For a finite group over a characteristic-zero field the converse does
+hold: representations are then semisimple, so equal classes recover equivalent representations
+and hence equal fixed-point counts.
 
 ## Main results
 
