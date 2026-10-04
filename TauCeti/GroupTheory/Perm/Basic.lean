@@ -144,13 +144,13 @@ theorem factorsThrough_of_forall_isCycleOn {ι β : Type*} {g : α → ι}
   fun _ b hab => ((hσ (g b)).2 hab rfl).apply_eq_of_apply_eq hf
 
 /-- Finitely many pairs `u i`, `v i`, each in a single orbit of `σ`, are joined along the
-orbits: some `c : α → M` has difference `z ↦ c (σ⁻¹ z) - c z` equal to
-`∑ i, Pi.single (v i) a - ∑ i, Pi.single (u i) a`. -/
+orbits with weights `a i`: some `c : α → M` has difference `z ↦ c (σ⁻¹ z) - c z` equal to
+`∑ i, Pi.single (v i) (a i) - ∑ i, Pi.single (u i) (a i)`. -/
 theorem exists_comp_symm_sub_eq_sum [DecidableEq α] {ι M : Type*} [Fintype ι] [AddCommGroup M]
-    {σ : Perm α} {u v : ι → α} (h : ∀ i, σ.SameCycle (u i) (v i)) (a : M) :
+    {σ : Perm α} {u v : ι → α} (h : ∀ i, σ.SameCycle (u i) (v i)) (a : ι → M) :
     ∃ c : α → M, (fun z => c (σ.symm z) - c z) =
-      ∑ i, Pi.single (v i) a - ∑ i, Pi.single (u i) a := by
-  choose c hc using fun i => (h i).exists_comp_symm_sub_eq a
+      ∑ i, Pi.single (v i) (a i) - ∑ i, Pi.single (u i) (a i) := by
+  choose c hc using fun i => (h i).exists_comp_symm_sub_eq (a i)
   refine ⟨∑ i, c i, funext fun z => ?_⟩
   simp only [Finset.sum_apply, Pi.sub_apply, ← Finset.sum_sub_distrib]
   exact Finset.sum_congr rfl fun i _ => congrFun (hc i) z

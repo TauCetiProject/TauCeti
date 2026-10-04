@@ -290,10 +290,10 @@ end IsConnectingChain
 theorem exists_isConnectingChain (x y : H.Generator) : ∃ c, H.IsConnectingChain x y c := by
   classical
   obtain ⟨a, ha⟩ := Equiv.Perm.exists_comp_symm_sub_eq_sum (u := H.point x) (v := H.point y)
-    (fun i => (H.alphaNext_isCycleOn i).2 (by simp) (by simp)) (1 : ℤ)
+    (fun i => (H.alphaNext_isCycleOn i).2 (by simp) (by simp)) fun _ => (1 : ℤ)
   obtain ⟨b, hb⟩ := Equiv.Perm.exists_comp_symm_sub_eq_sum
     (u := fun j => H.point y (y.1.symm j)) (v := fun j => H.point x (x.1.symm j))
-    (fun j => (H.betaNext_isCycleOn j).2 (by simp) (by simp)) (1 : ℤ)
+    (fun j => (H.betaNext_isCycleOn j).2 (by simp) (by simp)) fun _ => (1 : ℤ)
   refine ⟨(a, b), ?_, ?_⟩
   · rw [H.generatorChain_eq_sum_single, H.generatorChain_eq_sum_single, ← ha]
     exact funext fun q => H.alphaArcBoundary_apply a q
