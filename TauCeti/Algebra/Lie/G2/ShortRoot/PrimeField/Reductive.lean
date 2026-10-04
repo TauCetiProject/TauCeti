@@ -31,10 +31,6 @@ connected group of type `G₂` also requires maximal-torus and root-datum recogn
 * J. S. Milne, *Algebraic Groups* (2017), §2.h and Chapter 19.
 * J. E. Humphreys, *Linear Algebraic Groups*, §§19 and 26.
 * J. C. Jantzen, *Representations of Algebraic Groups*, I.2 and II.2.
-
-The scalar-extension and reductivity argument follows the type-`F₄` companion in
-`TauCeti.Algebra.Lie.F4.ShortRoot.PrimeField.Reductive`. Transport uses
-`TauCeti.reductiveCommHopfAlgProperty_of_geometricFiber_iso`.
 -/
 
 public section
@@ -49,6 +45,9 @@ noncomputable section
 abbrev finiteTypeCarrierAlgebra : FiniteTypeCommHopfAlgCat (ZMod 3) :=
   ⟨carrierAlgebra, inferInstanceAs (Algebra.FiniteType (ZMod 3) carrierAlgebra)⟩
 
+-- The scalar-extension and reductivity argument follows the type-`F₄` companion in
+-- `TauCeti.Algebra.Lie.F4.ShortRoot.PrimeField.Reductive`. Transport uses
+-- `TauCeti.reductiveCommHopfAlgProperty_of_geometricFiber_iso`.
 /-- The short-root type-`G₂` carrier over `𝔽₃` is reductive: smooth and geometrically connected,
 with trivial geometric unipotent radical. -/
 theorem reductiveCommHopfAlgProperty_finiteTypeCarrierAlgebra :

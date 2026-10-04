@@ -23,9 +23,6 @@ prime-field carrier, so its scalar extensions are smooth as well.
 
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, §11.4.
 * J. S. Milne, *Algebraic Groups* (2017), Proposition 1.26 and Corollary 1.27.
-
-The argument follows `TauCeti.Algebra.Lie.F4.ShortRoot.PrimeField.Smooth`, using
-`TauCeti.CommHopfAlgCat.smoothCommHopfAlgProperty_quotient_commonKernelHopfIdeal_of_perfectField`.
 -/
 
 public section
@@ -34,6 +31,8 @@ open AlgebraicGeometry CategoryTheory
 
 namespace TauCeti.G2ShortRoot.PrimeField
 
+-- The argument follows `TauCeti.Algebra.Lie.F4.ShortRoot.PrimeField.Smooth`, using
+-- `smoothCommHopfAlgProperty_quotient_commonKernelHopfIdeal_of_perfectField`.
 /-- The coordinate algebra of the short-root type-`G₂` carrier over `𝔽₃` is smooth. -/
 instance algebraSmooth_carrierAlgebra : Algebra.Smooth (ZMod 3) carrierAlgebra := by
   let : ∀ j, IsReduced (generatorCodomain j) := by

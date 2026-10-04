@@ -52,9 +52,7 @@ In the namespace `TauCeti.G2ShortRoot.PrimeField`:
 * J. S. Milne, *Algebraic Groups* (2017), §2.h.
 
 The interface follows the generated-subgroup construction for the type-`E₇` minuscule carrier in
-`TauCeti.Algebra.Lie.E7.Minuscule.Generated.Basic`. The scalar-extension comparison follows
-`TauCeti.Algebra.Lie.F4.ShortRoot.PrimeField.Generated.Basic`, using
-`TauCeti.CommHopfAlgCat.baseChangeHopfIdeal_commonKernelHopfIdeal`.
+`TauCeti.Algebra.Lie.E7.Minuscule.Generated.Basic`.
 -/
 
 public section
@@ -221,6 +219,9 @@ noncomputable abbrev finiteTypeGeneratedCoordinateHopfAlgebra :
   ⟨generatedCoordinateHopfAlgebra k,
     (inferInstance : Algebra.FiniteType k (generatedCoordinateHopfAlgebra k))⟩
 
+-- The scalar-extension comparison follows
+-- `TauCeti.Algebra.Lie.F4.ShortRoot.PrimeField.Generated.Basic`, using
+-- `TauCeti.CommHopfAlgCat.baseChangeHopfIdeal_commonKernelHopfIdeal`.
 /-- The scalar extension of the short-root type-`G₂` carrier is the subgroup generated after
 scalar extension, over every commutative `𝔽₃`-algebra. -/
 theorem baseChangeDefiningIdeal_eq_generatedDefiningIdeal :

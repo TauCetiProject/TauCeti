@@ -27,6 +27,8 @@ short-root carrier with a pinned simply connected type-`G₂` group scheme.
 ## References
 
 * J. S. Milne, *Algebraic Groups* (2017), Propositions 2.37 and 2.48.
+* `TauCeti.Algebra.Lie.F4.ShortRoot.PrimeField.Generated.Connected`: the carrier/base-change
+  connectedness comparison.
 
 The formal argument follows `TauCeti.Algebra.Lie.D4.Tripled.GeneratedConnected`.
 -/

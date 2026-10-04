@@ -44,10 +44,6 @@ torus.
   a family factored through a quotient is the image of its original common kernel.
 * `TauCeti.CommHopfAlgCat.commonKernelHopfIdeal_commonKernelLift_eq_bot`: the quotient carries no
   further common kernel for the lifted family.
-
-The transported common-kernel comparison follows the arguments in
-`TauCeti.Algebra.Lie.F4.ShortRoot.PrimeField.Generated.Basic` and
-`TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.Generated.Basic`.
 -/
 
 public section
@@ -88,6 +84,9 @@ theorem le_commonKernelHopfIdeal_iff (f : ∀ i, H ⟶ K i) (I : HopfIdeal R H) 
   · intro h
     exact le_sSup h
 
+-- The transported common-kernel comparison follows the arguments in
+-- `TauCeti.Algebra.Lie.F4.ShortRoot.PrimeField.Generated.Basic` and
+-- `TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.Generated.Basic`.
 /-- Pulling a common-kernel Hopf ideal back along a surjective ambient morphism gives the
 common kernel of the precomposed family. -/
 theorem comapOfSurjective_commonKernelHopfIdeal {H' : _root_.CommHopfAlgCat.{v} R}
