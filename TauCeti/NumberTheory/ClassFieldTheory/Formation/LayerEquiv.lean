@@ -13,9 +13,11 @@ public import TauCeti.NumberTheory.ClassFieldTheory.Formation.ArtinMap
 Let `F` be a formation on `G` and `F'` a formation on `G'`, with finite normal layers `V ◁ U` of
 `G` and `V' ◁ U'` of `G'`. A **layer isomorphism** `LayerEquiv F L F' L'` is an isomorphism of
 Galois groups `e : U/V ≃* U'/V'` together with an isomorphism of coefficient modules
-`φ : A^V ≃ A'^{V'}` that intertwines the two Galois actions along `e`. In field notation it is an
-isomorphism of a Galois extension `K/E` with a Galois extension `K'/E'` living in a different
-separable closure, or over a different base field; the motivating example is a finite extension
+`φ : A^V ≃ A'^{V'}` that intertwines the two Galois actions along `e`. This is purely
+group- and module-theoretic data, not a field isomorphism; in field notation, an isomorphism of a
+Galois extension `K/E` with a Galois extension `K'/E'` (living in a different separable closure,
+or over a different base field) induces a layer isomorphism once the coefficient modules attached
+to the two extensions are identified compatibly. The motivating example is a finite extension
 `L/K` of local fields, whose absolute Galois group `G_L` is an open subgroup of `G_K`, so that each
 finite Galois extension of `L` is a layer both of the formation of `L` and of that of `K`.
 Conjugation of a layer by an element of `G` is another example
@@ -202,6 +204,23 @@ private def invariantsEquiv : (L.rep F).ρ.invariants ≃ₗ[ℤ] (L'.rep F').ρ
         TateCohomology.mapInvariants_apply_coe]
       exact E.coeffEquiv.symm_apply_apply _)
 
+/-- The isomorphism of invariants is the coefficient isomorphism on underlying elements. -/
+@[simp]
+private theorem invariantsEquiv_apply_coe (x : (L.rep F).ρ.invariants) :
+    ((E.invariantsEquiv x : (L'.rep F').ρ.invariants) : (L'.rep F').V) =
+      E.coeffEquiv (x : (L.rep F).V) := by
+  rw [invariantsEquiv, LinearEquiv.coe_ofLinearMap, TateCohomology.mapInvariants_apply_coe,
+    LinearEquiv.coe_coe]
+
+/-- The inverse isomorphism of invariants is the inverse coefficient isomorphism on underlying
+elements. -/
+@[simp]
+private theorem invariantsEquiv_symm_apply_coe (y : (L'.rep F').ρ.invariants) :
+    ((E.invariantsEquiv.symm y : (L.rep F).ρ.invariants) : (L.rep F).V) =
+      E.coeffEquiv.symm (y : (L'.rep F').V) := by
+  rw [invariantsEquiv, LinearEquiv.symm_ofLinearMap, LinearEquiv.coe_ofLinearMap,
+    TateCohomology.mapInvariants_apply_coe, LinearEquiv.coe_coe]
+
 /-- The isomorphism `A^U ≃ A'^{U'}` of ground levels induced by a layer isomorphism: an element of
 the ground level is an invariant of the coefficient module, and its image is the image of that
 invariant (`groundEquiv_apply_coe`). -/
@@ -216,9 +235,8 @@ as a submodule of the top level. -/
 theorem groundEquiv_apply_coe (a : F.level L.ground) :
     (dsimp% only ((E.groundEquiv a : F'.level L'.ground) : F'.toRep.V)) =
       E.coeffEquiv (Submodule.inclusion (L.level_ground_le_level_top F) a) := by
-  rw [groundEquiv, LinearEquiv.trans_apply, LinearEquiv.trans_apply,
-    NormalLayer.groundLevelEquiv_apply_coe, invariantsEquiv, LinearEquiv.coe_ofLinearMap,
-    TateCohomology.mapInvariants_apply_coe, LinearEquiv.coe_coe]
+  simp only [groundEquiv, LinearEquiv.trans_apply, NormalLayer.groundLevelEquiv_apply_coe]
+  rw [invariantsEquiv_apply_coe]
   exact congrArg (fun y ↦ ((E.coeffEquiv y : F'.level L'.top) : F'.toRep.V))
     (Subtype.ext (L.groundLevelEquiv_symm_apply_coe F a))
 
@@ -228,10 +246,9 @@ the ground level as a submodule of the top level. -/
 theorem groundEquiv_symm_apply_coe (b : F'.level L'.ground) :
     (dsimp% only ((E.groundEquiv.symm b : F.level L.ground) : F.toRep.V)) =
       E.coeffEquiv.symm (Submodule.inclusion (L'.level_ground_le_level_top F') b) := by
-  rw [groundEquiv, LinearEquiv.symm_trans_apply, LinearEquiv.symm_trans_apply,
-    LinearEquiv.symm_symm, NormalLayer.groundLevelEquiv_apply_coe, invariantsEquiv,
-    LinearEquiv.symm_ofLinearMap, LinearEquiv.coe_ofLinearMap,
-    TateCohomology.mapInvariants_apply_coe, LinearEquiv.coe_coe]
+  simp only [groundEquiv, LinearEquiv.symm_trans_apply, LinearEquiv.symm_symm,
+    NormalLayer.groundLevelEquiv_apply_coe]
+  rw [invariantsEquiv_symm_apply_coe]
   exact congrArg (fun y ↦ ((E.coeffEquiv.symm y : F.level L.top) : F.toRep.V))
     (Subtype.ext (L'.groundLevelEquiv_symm_apply_coe F' b))
 
@@ -290,11 +307,8 @@ theorem tateHZeroEquivNormQuotient_tateCohomologyIso_apply (x : L.TateH F 0) :
       E.normQuotientEquiv (L.tateHZeroEquivNormQuotient F x) := by
   induction x using TateCohomology.H0_induction_on with
   | h y =>
-    rw [tateCohomologyIso_hom, TauCeti.TateCohomology.H0π_comp_map_apply,
-      NormalLayer.tateHZeroEquivNormQuotient_H0π, NormalLayer.tateHZeroEquivNormQuotient_H0π,
-      NormalLayer.normQuotientMk_apply, NormalLayer.normQuotientMk_apply, normQuotientEquiv_mk,
-      groundEquiv, LinearEquiv.trans_apply, LinearEquiv.trans_apply, LinearEquiv.symm_apply_apply,
-      invariantsEquiv, LinearEquiv.coe_ofLinearMap]
+    rw [tateCohomologyIso_hom, TauCeti.TateCohomology.H0π_comp_map_apply]
+    simp [groundEquiv, invariantsEquiv]
 
 end LayerEquiv
 
@@ -311,10 +325,9 @@ theorem cupClass_layerEquiv {F : Formation G} {L : NormalLayer G} {F' : Formatio
   -- The pair commutes with the left unitors `ℤ ⊗ A^V ≅ A^V`.
   have hl := TateCohomology.tateCohomologyFunctor_map_comp_map (h₀.tensor hφ) hφ
     (λ_ (L.rep F)).hom (λ_ (L'.rep F')).hom (TensorProduct.ext' fun n c ↦ by simp) (r + 2)
-  rw [cupClass_apply, cupClass_apply, ← E.tateCohomologyIso_hom_tateHIsoH_inv 2,
-    LayerEquiv.trivialTateCohomologyIso_hom, LayerEquiv.tateCohomologyIso_hom,
-    LayerEquiv.tateCohomologyIso_hom,
-    ← ModuleCat.comp_apply, hl, ModuleCat.comp_apply]
+  simp only [cupClass_apply, ← E.tateCohomologyIso_hom_tateHIsoH_inv 2,
+    LayerEquiv.trivialTateCohomologyIso_hom, LayerEquiv.tateCohomologyIso_hom]
+  rw [← ModuleCat.comp_apply, hl, ModuleCat.comp_apply]
   exact congrArg _ (TateCohomology.map_cup h₀ hφ r 2 (r + 2) _ x _)
 
 /-! ### Conjugation -/
@@ -354,8 +367,8 @@ theorem tateIso_layerEquiv
     (x : L.TrivialTateH r) :
     (E.tateCohomologyIso (r + 2)).hom (cf.tateIso L r x) =
       cf'.tateIso L' r ((E.trivialTateCohomologyIso r).hom x) := by
-  rw [tateIso_apply, tateIso_apply, cupFundamentalClass_apply, cupFundamentalClass_apply,
-    cupClass_layerEquiv, fundamentalClass_layerEquiv cf cf' E hinv]
+  simp only [tateIso_apply, cupFundamentalClass_apply, cupClass_layerEquiv,
+    fundamentalClass_layerEquiv cf cf' E hinv]
 
 /-- **The Nakayama map is transported by a layer isomorphism matching the invariant maps.** -/
 theorem nakayamaNegTwo_layerEquiv
@@ -385,9 +398,8 @@ theorem artinMap_layerEquiv
     (hinv : ∀ x, cf'.inv L' ((E.cohomologyIso 2).hom x) = cf.inv L x) (a : F.level L.ground) :
     cf'.artinMap L' (E.groundEquiv a) =
       E.galEquiv.abelianizationCongr.toAdditive (cf.artinMap L a) := by
-  rw [artinMap_apply, artinMap_apply, ← artinEquiv_layerEquiv cf cf' E hinv,
-    NormalLayer.normQuotientMk_apply, NormalLayer.normQuotientMk_apply,
-    LayerEquiv.normQuotientEquiv_mk]
+  rw [artinMap_apply, artinMap_apply, ← artinEquiv_layerEquiv cf cf' E hinv]
+  simp
 
 end ClassFormation
 
