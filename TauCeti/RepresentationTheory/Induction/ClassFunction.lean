@@ -211,6 +211,19 @@ private theorem indTerm_add (f₁ f₂ : S → k) (g x : G) :
   classical
   by_cases h : x⁻¹ * g * x ∈ S <;> simp [indTerm, h]
 
+/-- Induction of functions commutes with every additive map of coefficients. The coset formula
+uses only addition and zero, so no characteristic or invertibility hypothesis is needed. -/
+@[simp]
+theorem indClassFun_comp [S.FiniteIndex] {k' : Type*} [AddCommMonoid k']
+    (φ : k →+ k') (f : S → k) :
+    indClassFun S (φ ∘ f) = φ ∘ indClassFun S f := by
+  classical
+  funext g
+  simp only [indClassFun_apply, Function.comp_apply, map_sum]
+  apply Finset.sum_congr rfl
+  intro t _
+  split <;> simp
+
 /-- Induction of class functions kills the zero function. -/
 @[simp]
 theorem indClassFun_zero [S.FiniteIndex] : indClassFun S (0 : S → k) = 0 := by
