@@ -120,42 +120,45 @@ variable [Module.Flat R A] [AddCommGroup V] [Module R V]
 
 /-- The simultaneous defect of invariance: its `g`-coordinate sends `x` to `ρ(g)x - x`.
 Its kernel is the invariant submodule. -/
-private def invariantDefect (ρ : _root_.Representation R G V) : V →ₗ[R] (G → V) :=
+private def _root_.Representation.invariantDefect (ρ : _root_.Representation R G V) :
+    V →ₗ[R] (G → V) :=
   LinearMap.pi fun g ↦ ρ g - LinearMap.id
 
-private theorem mem_ker_invariantDefect {ρ : _root_.Representation R G V} {x : V} :
-    x ∈ LinearMap.ker (invariantDefect ρ) ↔ x ∈ ρ.invariants := by
+private theorem _root_.Representation.mem_ker_invariantDefect
+    {ρ : _root_.Representation R G V} {x : V} :
+    x ∈ LinearMap.ker ρ.invariantDefect ↔ x ∈ ρ.invariants := by
   rw [LinearMap.mem_ker, funext_iff]
-  simp [invariantDefect, _root_.Representation.mem_invariants, sub_eq_zero]
+  simp [_root_.Representation.invariantDefect, _root_.Representation.mem_invariants, sub_eq_zero]
 
 /-- The invariants of a representation are its simultaneous invariance kernel. -/
-private def invariantsEquivKerInvariantDefect (ρ : _root_.Representation R G V) :
-    ρ.invariants ≃ₗ[R] LinearMap.ker (invariantDefect ρ) where
-  toFun x := ⟨x, mem_ker_invariantDefect.mpr x.property⟩
-  invFun x := ⟨x, mem_ker_invariantDefect.mp x.property⟩
+private def _root_.Representation.invariantsEquivKerInvariantDefect
+    (ρ : _root_.Representation R G V) :
+    ρ.invariants ≃ₗ[R] LinearMap.ker ρ.invariantDefect where
+  toFun x := ⟨x, _root_.Representation.mem_ker_invariantDefect.mpr x.property⟩
+  invFun x := ⟨x, _root_.Representation.mem_ker_invariantDefect.mp x.property⟩
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
   left_inv _ := rfl
   right_inv _ := rfl
 
 omit [Module.Flat R A] in
-private theorem ker_invariantDefect_baseChange [Finite G]
+private theorem _root_.Representation.ker_invariantDefect_baseChange [Finite G]
     (ρ : _root_.Representation R G V) :
-    LinearMap.ker (invariantDefect (_root_.Representation.baseChange A ρ)) =
-      LinearMap.ker (TensorProduct.AlgebraTensorModule.lTensor A A (invariantDefect ρ)) := by
+    LinearMap.ker ((_root_.Representation.baseChange A ρ).invariantDefect) =
+      LinearMap.ker (TensorProduct.AlgebraTensorModule.lTensor A A ρ.invariantDefect) := by
   classical
   let _ := Fintype.ofFinite G
   ext x
   rw [LinearMap.mem_ker, LinearMap.mem_ker]
   have hDefect :
-      invariantDefect (_root_.Representation.baseChange A ρ) x =
+      (_root_.Representation.baseChange A ρ).invariantDefect x =
         TensorProduct.piRight R A A (fun _ : G ↦ V)
-          (TensorProduct.AlgebraTensorModule.lTensor A A (invariantDefect ρ) x) := by
+          (TensorProduct.AlgebraTensorModule.lTensor A A ρ.invariantDefect x) := by
     induction x with
     | add x y hx hy => simp [hx, hy]
     | tmul a x =>
         ext g
-        simp only [invariantDefect, LinearMap.pi_apply, LinearMap.sub_apply,
+        simp only [_root_.Representation.invariantDefect, LinearMap.pi_apply, LinearMap.sub_apply,
           LinearMap.id_apply, LinearMap.add_apply, LinearMap.neg_apply,
           _root_.Representation.baseChange_apply,
           LinearMap.baseChange_tmul, TensorProduct.AlgebraTensorModule.lTensor_tmul,
@@ -175,14 +178,13 @@ noncomputable def _root_.Representation.invariantsBaseChangeEquiv [Finite G]
     A ⊗[R] ρ.invariants ≃ₗ[A] (_root_.Representation.baseChange A ρ).invariants := by
   classical
   let eKer :
-      LinearMap.ker (TensorProduct.AlgebraTensorModule.lTensor A A (invariantDefect ρ)) ≃ₗ[A]
-        LinearMap.ker (invariantDefect (_root_.Representation.baseChange A ρ)) :=
-    LinearEquiv.ofEq _ _ (ker_invariantDefect_baseChange ρ).symm
+      LinearMap.ker (TensorProduct.AlgebraTensorModule.lTensor A A ρ.invariantDefect) ≃ₗ[A]
+        LinearMap.ker ((_root_.Representation.baseChange A ρ).invariantDefect) :=
+    LinearEquiv.ofEq _ _ ρ.ker_invariantDefect_baseChange.symm
   exact (AlgebraTensorModule.congr (LinearEquiv.refl A A)
-      (invariantsEquivKerInvariantDefect ρ)).trans <|
-    (LinearMap.tensorKerEquiv A A (invariantDefect ρ)).trans <|
-      eKer.trans (invariantsEquivKerInvariantDefect
-        (_root_.Representation.baseChange A ρ)).symm
+      ρ.invariantsEquivKerInvariantDefect).trans <|
+    (LinearMap.tensorKerEquiv A A ρ.invariantDefect).trans <|
+      eKer.trans (_root_.Representation.baseChange A ρ).invariantsEquivKerInvariantDefect.symm
 
 /-- The base-change equivalence is the canonical scalar extension of the inclusion of the
 invariant submodule into the ambient representation. -/
