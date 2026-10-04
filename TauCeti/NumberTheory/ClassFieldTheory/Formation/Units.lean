@@ -186,7 +186,7 @@ def localFormationCoeffEquiv : UnitsCoeff K ≃+ UnitsCoeff L :=
 omit [FiniteDimensional K L] in
 /-- The inverse of the coefficient equivalence sends a unit of `Lˢ` to its image in `Kˢ` under the
 chosen identification `Lˢ ≃ Kˢ`. -/
-@[simp]
+@[simp↓ high]
 theorem toMul_localFormationCoeffEquiv_symm_apply (y : UnitsCoeff L) :
     ((localFormationCoeffEquiv K L σ).symm y).toMul =
       Units.map (separableClosureRingEquiv K L σ).toMonoidHom y.toMul :=

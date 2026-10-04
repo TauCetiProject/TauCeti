@@ -63,6 +63,7 @@ variable (K : Type) [Field K] (E : Type) [Field E] [Algebra K E] [FiniteDimensio
   (iota : E →ₐ[K] SeparableClosure K)
 
 /-- **The units of `Eˢ` as units of `Kˢ` form a compatible pair with `localFormationHomInv`.** -/
+@[simp↓]
 theorem unitsCoeffMapSymm_localFormationHomInv_smul {U : Subgroup (AbsoluteGaloisGroup E)}
     {U' : Subgroup (AbsoluteGaloisGroup K)} (h : U' ≤ U.map (localFormationHom K E iota))
     (u : U') (y : UnitsCoeff E) :
@@ -75,6 +76,7 @@ omit [FiniteDimensional K E] in
 /-- The inverse of the coefficient equivalence of `localFormationRestrict` is the coefficient map
 `unitsCoeffMapSymm` of Kummer theory: both send a unit of `Eˢ` to its image in `Kˢ` under the
 identification `Eˢ ≃ Kˢ` extending `iota`. -/
+@[simp]
 theorem localFormationCoeffEquiv_symm_apply (y : UnitsCoeff E) :
     (localFormationCoeffEquiv K E iota).symm y = unitsCoeffMapSymm K E iota y :=
   Additive.toMul.injective (by
