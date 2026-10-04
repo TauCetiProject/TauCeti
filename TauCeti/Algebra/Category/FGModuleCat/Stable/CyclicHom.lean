@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.ModuleCat.Algebra
 public import TauCeti.Algebra.Category.FGModuleCat.Stable.Syzygy
 
 /-!
@@ -33,20 +32,13 @@ autoequivalence sends `M_i` to `M_(n - i)`
 characteristic of `K` is used.
 
 Right `A`-modules are left `Aᵐᵒᵖ`-modules, so the condition `m * a = 0` is written `op a • m = 0`.
-The `k`-vector space structure on morphisms is Mathlib's `ModuleCat.linearOverField`, inherited
-by the stable category as a quotient by a morphism ideal.
-
-## Main definitions
-
-* `TauCeti.FGModuleCat.cyclicModuleLift`: the map `A ⧸ aA ⟶ M` sending the generator to an
-  element `m` with `op a • m = 0`.
-* `TauCeti.FGModuleCat.cyclicModuleHomEquiv`: the `k`-linear equivalence between maps
-  `A ⧸ aA ⟶ M` and elements of `M` killed by `op a`.
+The description of maps out of `A ⧸ aA` by the image of the generator is
+`TauCeti.FGModuleCat.cyclicModuleHomEquiv`. The `k`-vector space structure on morphisms is
+Mathlib's `ModuleCat.linearOverField`, inherited by the stable category as a quotient by a
+morphism ideal.
 
 ## Main results
 
-* `TauCeti.FGModuleCat.cyclicModule_hom_ext`: maps out of `A ⧸ aA` agree when they agree on the
-  generator.
 * `TauCeti.FGModuleCat.stableModuleFunctor_map_cyclicModule_eq_zero_iff`: a map
   `A ⧸ aA ⟶ A ⧸ bA` vanishes in the stable module category exactly when the image of the
   generator is the class of an element `c` with `op a * c = 0`.
@@ -73,72 +65,6 @@ universe w u
 namespace FGModuleCat
 
 variable {A : Type u} [Ring A]
-
-/-! ### Maps out of a cyclic module -/
-
-section Hom
-
-variable {M : Type u} [AddCommGroup M] [Module Aᵐᵒᵖ M] [Module.Finite Aᵐᵒᵖ M]
-
-/-- The map of right `A`-modules `A ⧸ aA ⟶ M` sending the class of `c` to `c • m`, for an element
-`m` with `op a • m = 0`. -/
-noncomputable def cyclicModuleLift (a : A) (m : M) (hm : op a • m = 0) :
-    cyclicModule a ⟶ FGModuleCat.of Aᵐᵒᵖ M :=
-  FGModuleCat.ofHom <| Submodule.liftQSpanSingleton (op a) (LinearMap.toSpanSingleton Aᵐᵒᵖ M m) <|
-    (LinearMap.toSpanSingleton_apply _ _ _ _).trans hm
-
-@[simp]
-theorem cyclicModuleLift_mk (a : A) (m : M) (hm : op a • m = 0) (c : Aᵐᵒᵖ) :
-    (cyclicModuleLift a m hm).hom.hom (Submodule.Quotient.mk c) = c • m :=
-  (rfl)
-
-/-- Two maps out of the cyclic module `A ⧸ aA` agree when they agree on the generator. -/
-@[ext]
-theorem cyclicModule_hom_ext {a : A} {N : FGModuleCat.{u} Aᵐᵒᵖ} {f g : cyclicModule a ⟶ N}
-    (h : f.hom.hom (Submodule.Quotient.mk 1) = g.hom.hom (Submodule.Quotient.mk 1)) : f = g :=
-  FGModuleCat.hom_ext <| Submodule.linearMap_qext _ <| LinearMap.ext_ring h
-
-/-- The image of the generator under a map out of `A ⧸ aA` is killed by `op a`. -/
-theorem smul_cyclicModule_hom_mk_one_eq_zero {a : A} {N : FGModuleCat.{u} Aᵐᵒᵖ}
-    (f : cyclicModule a ⟶ N) : op a • f.hom.hom (Submodule.Quotient.mk 1) = 0 := by
-  rw [← LinearMap.map_smul, ← Submodule.Quotient.mk_smul, smul_eq_mul, mul_one,
-    (Submodule.Quotient.mk_eq_zero _).2 (Ideal.mem_span_singleton_self _), map_zero]
-
-variable (k : Type w) [Field k] [Algebra k A] [Module k M] [IsScalarTower k Aᵐᵒᵖ M]
-
-/-- **Maps out of a cyclic module.** Evaluation at the generator is a `k`-linear equivalence
-between maps of right `A`-modules `A ⧸ aA ⟶ M` and elements of `M` killed by `op a`. -/
-noncomputable def cyclicModuleHomEquiv (a : A) :
-    (cyclicModule a ⟶ FGModuleCat.of Aᵐᵒᵖ M) ≃ₗ[k]
-      LinearMap.ker (DistribSMul.toLinearMap k M (op a)) where
-  toFun f := ⟨f.hom.hom (Submodule.Quotient.mk 1), by
-    rw [LinearMap.mem_ker, DistribSMul.toLinearMap_apply]
-    exact smul_cyclicModule_hom_mk_one_eq_zero f⟩
-  invFun m := cyclicModuleLift a m <| by
-    rw [← DistribSMul.toLinearMap_apply k M (op a), ← LinearMap.mem_ker]
-    exact m.2
-  map_add' _ _ := rfl
-  map_smul' c f := Subtype.ext (algebraMap_smul Aᵐᵒᵖ c _)
-  left_inv f := cyclicModule_hom_ext <| by
-    dsimp only
-    rw [cyclicModuleLift_mk, one_smul]
-  right_inv m := Subtype.ext <| by
-    dsimp only
-    rw [cyclicModuleLift_mk, one_smul]
-
-@[simp]
-theorem cyclicModuleHomEquiv_apply_coe (a : A) (f : cyclicModule a ⟶ FGModuleCat.of Aᵐᵒᵖ M) :
-    (cyclicModuleHomEquiv k a f : M) = f.hom.hom (Submodule.Quotient.mk 1) :=
-  (rfl)
-
-@[simp]
-theorem cyclicModuleHomEquiv_symm_apply (a : A)
-    (m : LinearMap.ker (DistribSMul.toLinearMap k M (op a))) :
-    (cyclicModuleHomEquiv k a).symm m = cyclicModuleLift a (m : M)
-      ((DistribSMul.toLinearMap_apply k M (op a) m).symm.trans (LinearMap.mem_ker.1 m.2)) :=
-  (rfl)
-
-end Hom
 
 /-! ### Stable morphisms between cyclic modules -/
 
@@ -185,6 +111,9 @@ theorem finrank_stableModuleHom_cyclicModule_add_finrank (a b : A) :
     (LinearMap.ker (DistribSMul.toLinearMap k (Aᵐᵒᵖ ⧸ Ideal.span {op b}) (op a))).subtype ∘ₗ
       e.toLinearMap
   have hev : Function.Injective ev := Subtype.val_injective.comp e.injective
+  have hev_apply (f : cyclicModule a ⟶ cyclicModule b) :
+      ev f = f.hom.hom (Submodule.Quotient.mk 1) :=
+    cyclicModuleHomEquiv_apply_coe k a f
   -- It identifies the stably trivial morphisms with the image of the annihilator of `a`.
   have hker : (LinearMap.ker (F.mapLinearMap k)).map ev =
       (LinearMap.ker (DistribSMul.toLinearMap k Aᵐᵒᵖ (op a))).map
@@ -195,6 +124,7 @@ theorem finrank_stableModuleHom_cyclicModule_add_finrank (a b : A) :
       Submodule.mkQ_apply]
     constructor
     · rintro ⟨f, hf, rfl⟩
+      rw [hev_apply]
       exact (stableModuleFunctor_map_cyclicModule_eq_zero_iff f).1 hf
     · rintro ⟨c, hc, rfl⟩
       have hm : Submodule.Quotient.mk c ∈
@@ -203,7 +133,8 @@ theorem finrank_stableModuleHom_cyclicModule_add_finrank (a b : A) :
           smul_eq_mul, hc, Submodule.Quotient.mk_zero]
       refine ⟨e.symm ⟨_, hm⟩,
         (stableModuleFunctor_map_cyclicModule_eq_zero_iff _).2 ⟨c, hc, ?_⟩, ?_⟩
-      · exact congrArg Subtype.val (e.apply_symm_apply ⟨_, hm⟩).symm
+      · rw [← hev_apply]
+        exact congrArg Subtype.val (e.apply_symm_apply ⟨_, hm⟩).symm
       · exact congrArg Subtype.val (e.apply_symm_apply ⟨_, hm⟩)
   -- The quotient functor is full, so rank-nullity for it gives the count.
   have : FiniteDimensional k (cyclicModule a ⟶ cyclicModule b) :=
