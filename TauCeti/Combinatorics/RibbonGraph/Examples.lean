@@ -60,6 +60,10 @@ theorem cyclicDessin_def : cyclicDessin n = (cyclicTriple n).ribbonGraph := (rfl
   rw [cyclicDessin_def, PermutationTriple.card_B_ribbonGraph, ← cycleCounts_σ0,
     cycleCounts_cyclicTriple hn]
 
+/-- The degree-zero cyclic dessin has no black vertices. -/
+@[simp] theorem card_B_cyclicDessin_zero : Fintype.card (cyclicDessin 0).B = 0 := by
+  decide
+
 /-- Every edge of the cyclic dessin has its own white vertex. -/
 @[simp] theorem card_W_cyclicDessin : Fintype.card (cyclicDessin n).W = n := by
   rw [cyclicDessin_def, PermutationTriple.card_W_ribbonGraph, cyclicTriple_σ1, orbitCount_one,
@@ -70,6 +74,10 @@ theorem cyclicDessin_def : cyclicDessin n = (cyclicTriple n).ribbonGraph := (rfl
   rw [cyclicDessin_def, PermutationTriple.faceCount_ribbonGraph, ← cycleCounts_σinf,
     cycleCounts_cyclicTriple hn]
 
+/-- The degree-zero cyclic dessin has no faces. -/
+@[simp] theorem faceCount_cyclicDessin_zero : (cyclicDessin 0).faceCount = 0 := by
+  decide
+
 /-- The cyclic dessin is connected exactly in positive degree. -/
 @[simp] theorem isConnected_cyclicDessin_iff : (cyclicDessin n).IsConnected ↔ n ≠ 0 := by
   simp [cyclicDessin_def]
@@ -78,9 +86,17 @@ theorem cyclicDessin_def : cyclicDessin n = (cyclicTriple n).ribbonGraph := (rfl
 @[simp] theorem eulerChar_cyclicDessin (hn : n ≠ 0) : (cyclicDessin n).eulerChar = 2 := by
   simp [cyclicDessin_def, eulerChar_cyclicTriple hn]
 
+/-- The degree-zero cyclic dessin has Euler characteristic zero. -/
+@[simp] theorem eulerChar_cyclicDessin_zero : (cyclicDessin 0).eulerChar = 0 := by
+  decide
+
 /-- In positive degree, the cyclic dessin has genus zero. -/
 @[simp] theorem genus_cyclicDessin (hn : n ≠ 0) : (cyclicDessin n).genus = 0 := by
   simp [cyclicDessin_def, genus_cyclicTriple hn]
+
+/-- The truncated genus formula assigns genus one to the degree-zero cyclic dessin. -/
+@[simp] theorem genus_cyclicDessin_zero : (cyclicDessin 0).genus = 1 := by
+  decide
 
 /-! ### The segment dessin -/
 
