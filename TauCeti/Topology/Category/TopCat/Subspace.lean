@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Topology.Category.TopCat.EpiMono
 public import Mathlib.CategoryTheory.CommSq
+public import Mathlib.CategoryTheory.Category.Preorder
+public import Mathlib.CategoryTheory.Limits.Cones
 
 /-!
 # Subspace inclusions in `TopCat`
@@ -14,11 +16,16 @@ public import Mathlib.CategoryTheory.CommSq
 The canonical inclusions of subspaces are monomorphisms, and the inclusions of nested subspaces
 compose to an inclusion. These supply the monomorphism hypotheses for the subspace inclusions in
 the Mayer–Vietoris pushout square, and the functoriality of homology along nested subspaces.
+
+The subspaces of a monotone family of subsets form a diagram `TauCeti.subspaceDiagram`, with the
+cocone `TauCeti.subspaceCocone` of inclusions into a subspace containing all of them. When the
+family is directed and covers that subspace by relatively open sets, every compact subset of the
+subspace lies in one member (`TauCeti.exists_subset_range_subspaceCocone_ι_app`).
 -/
 
 public section
 
-open CategoryTheory Topology
+open CategoryTheory Limits Topology
 
 universe u
 
@@ -53,3 +60,42 @@ lemma commSq_ofHom_inter :
   ⟨rfl⟩
 
 end TopCat
+
+namespace TauCeti
+
+open TopCat
+
+section Subspace
+
+variable {Y : TopCat.{u}} {J : Type*} [Preorder J] {U : J → Set Y} (hU : Monotone U)
+  {V : Set Y} (hUV : ∀ j, U j ⊆ V)
+
+/-- The subspaces of a monotone family of subsets of a space, with the inclusions between them. -/
+@[expose, simps]
+def subspaceDiagram : J ⥤ TopCat.{u} where
+  obj j := of (U j)
+  map f := ofHom (ContinuousMap.inclusion (hU f.le))
+
+/-- The inclusions of the subspaces of a monotone family of subsets into a subspace containing all
+of them. -/
+@[expose, simps]
+def subspaceCocone : Cocone (subspaceDiagram hU) where
+  pt := of V
+  ι := { app j := ofHom (ContinuousMap.inclusion (hUV j)) }
+
+variable [IsDirected J (· ≤ ·)] [Nonempty J]
+  (hopen : ∀ j, IsOpen (Subtype.val ⁻¹' U j : Set V)) (hcover : V ⊆ ⋃ j, U j)
+
+include hopen hcover in
+/-- A compact subset of `V` lies in one member of an increasing cover of `V` by subsets open in
+`V`. -/
+lemma exists_subset_range_subspaceCocone_ι_app (K : Set (subspaceCocone hU hUV).pt)
+    (hK : IsCompact K) : ∃ j, K ⊆ Set.range ((subspaceCocone hU hUV).ι.app j) := by
+  obtain ⟨j, hj⟩ := hK.elim_directed_cover (fun j ↦ (Subtype.val ⁻¹' U j : Set V)) hopen
+    (fun x _ ↦ Set.mem_iUnion.2 (Set.mem_iUnion.1 (hcover x.2) : ∃ j, x.1 ∈ U j))
+    (Monotone.directed_le fun _ _ h ↦ Set.preimage_mono (hU h))
+  exact ⟨j, fun x hx ↦ ⟨⟨x.1, hj hx⟩, rfl⟩⟩
+
+end Subspace
+
+end TauCeti

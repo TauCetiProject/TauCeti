@@ -12,6 +12,7 @@ public import Mathlib.AlgebraicTopology.SingularHomology.Basic
 public import Mathlib.Geometry.Convex.ConvexSpace.CompactSpaceStdSimplex
 public import Mathlib.Algebra.Category.ModuleCat.FilteredColimits
 public import Mathlib.CategoryTheory.Limits.ConcreteCategory.WithAlgebraicStructures
+public import TauCeti.Topology.Category.TopCat.Subspace
 
 /-!
 # Singular homology of a directed union
@@ -36,11 +37,9 @@ complement of an embedded cube or sphere (`TauCeti/AlgebraicTopology/Singular/Cu
   singular simplicial sets form a colimit cocone.
 * `TauCeti.isColimitMapCoconeSingularHomology`: the same cocone is a colimit cocone after applying
   singular homology, for coefficients in an abelian category whose filtered colimits are exact.
-* `TauCeti.subspaceDiagram` and `TauCeti.subspaceCocone`: the subspaces of a monotone family of
-  subsets, and their inclusions into a subspace containing all of them.
 * `TauCeti.isColimitMapCoconeSingularHomologySubspaceCocone`: singular homology of a subspace
-  covered by an increasing family of open sets is the colimit of the singular homology of its
-  members.
+  covered by an increasing family of relatively open sets is the colimit of the singular homology
+  of its members, using the cocone `TauCeti.subspaceCocone` of subspace inclusions.
 * `TauCeti.exists_singularHomologyMap_inclusion_eq_zero`: with coefficients in a module, a class of
   one member that vanishes in the subspace already vanishes in some larger member.
 
@@ -106,38 +105,15 @@ end Homology
 
 section Subspace
 
-variable {Y : TopCat.{w}} {J : Type*} [Preorder J] {U : J → Set Y} (hU : Monotone U)
-  {V : Set Y} (hUV : ∀ j, U j ⊆ V)
-
-/-- The subspaces of a monotone family of subsets of a space, with the inclusions between them. -/
-@[expose, simps]
-def subspaceDiagram : J ⥤ TopCat.{w} where
-  obj j := of (U j)
-  map f := ofHom (ContinuousMap.inclusion (hU f.le))
-
-/-- The inclusions of the subspaces of a monotone family of subsets into a subspace containing all
-of them. -/
-@[expose, simps]
-def subspaceCocone : Cocone (subspaceDiagram hU) where
-  pt := of V
-  ι := { app j := ofHom (ContinuousMap.inclusion (hUV j)) }
-
-variable [IsDirected J (· ≤ ·)] [Nonempty J] (hopen : ∀ j, IsOpen (U j)) (hcover : V ⊆ ⋃ j, U j)
-
-include hopen hcover in
-/-- A compact subset of `V` lies in one member of an increasing open cover of `V`. -/
-lemma exists_subset_range_subspaceCocone_ι_app (K : Set (subspaceCocone hU hUV).pt)
-    (hK : IsCompact K) : ∃ j, K ⊆ Set.range ((subspaceCocone hU hUV).ι.app j) := by
-  obtain ⟨j, hj⟩ := (hK.image continuous_subtype_val).elim_directed_cover U hopen
-    ((Set.image_subset_range _ _).trans (Subtype.range_coe.trans_subset hcover))
-    hU.directed_le
-  exact ⟨j, fun x hx ↦ ⟨⟨x.1, hj ⟨x, hx, rfl⟩⟩, rfl⟩⟩
+variable {Y : TopCat.{w}} {J : Type*} [Preorder J] [IsDirected J (· ≤ ·)] [Nonempty J]
+  {U : J → Set Y} (hU : Monotone U) {V : Set Y} (hUV : ∀ j, U j ⊆ V)
+  (hopen : ∀ j, IsOpen (Subtype.val ⁻¹' U j : Set V)) (hcover : V ⊆ ⋃ j, U j)
 
 variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C) (n : ℕ)
   [HasColimitsOfShape J (Type w)] [HasColimitsOfShape J C] [HasExactColimitsOfShape J C]
 
-/-- Singular homology of a subspace `V` covered by an increasing family of open subsets `U j` is
-the colimit of the singular homology of the `U j`. -/
+/-- Singular homology of a subspace `V` covered by an increasing family of subsets `U j`, open in
+`V`, is the colimit of the singular homology of the `U j`. -/
 def isColimitMapCoconeSingularHomologySubspaceCocone :
     IsColimit (((singularHomologyFunctor C n).obj R).mapCocone (subspaceCocone hU hUV)) :=
   isColimitMapCoconeSingularHomology R n _ (fun j ↦ IsEmbedding.inclusion (hUV j))
@@ -149,12 +125,13 @@ section Module
 
 variable {A : Type w} [Ring A] (M : ModuleCat.{w} A) (n : ℕ) {Y : TopCat.{w}} {J : Type}
   [Preorder J] [IsDirected J (· ≤ ·)] [Nonempty J] {U : J → Set Y} (hU : Monotone U)
-  {V : Set Y} (hUV : ∀ j, U j ⊆ V) (hopen : ∀ j, IsOpen (U j)) (hcover : V ⊆ ⋃ j, U j)
+  {V : Set Y} (hUV : ∀ j, U j ⊆ V) (hopen : ∀ j, IsOpen (Subtype.val ⁻¹' U j : Set V))
+  (hcover : V ⊆ ⋃ j, U j)
 
 include hopen hcover in
 /-- **Vanishing of a homology class is detected in a member of an increasing open cover.** With
-coefficients in a module, a singular homology class of one member `U i` of an increasing open cover
-of `V` that vanishes in `V` already vanishes in some larger member `U j`. -/
+coefficients in a module, a singular homology class of one member `U i` of an increasing cover of
+`V` by subsets open in `V` that vanishes in `V` already vanishes in some larger member `U j`. -/
 theorem exists_singularHomologyMap_inclusion_eq_zero {i : J}
     (x : ((singularHomologyFunctor (ModuleCat.{w} A) n).obj M).obj (of (U i)))
     (hx : ((singularHomologyFunctor _ n).obj M).map (ofHom (ContinuousMap.inclusion (hUV i))) x =

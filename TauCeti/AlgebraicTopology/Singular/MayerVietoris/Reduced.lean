@@ -204,10 +204,24 @@ theorem eq_zero_of_comp_reducedSingularHomologyFunctor_map_inclusion {Y : TopCat
   let iUV : of ↥(U ∩ V) ≅ of ↥(A ∩ B) := isoOfHomeo eUV
   have sqU : ofHom (ContinuousMap.inclusion (inter_subset_left (s := U) (t := V))) ≫ iU.hom =
       iUV.hom ≫ ofHom (ContinuousMap.inclusion hDA) := by
-    ext; rfl
+    ext x
+    rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply]
+    dsimp only [iU, iUV]
+    rw [isoOfHomeo_hom, isoOfHomeo_hom]
+    simp only [ConcreteCategory.hom_ofHom, ContinuousMap.coe_coe,
+      IsEmbedding.homeomorphOfSubsetRange_apply_coe, ContinuousMap.inclusion_apply_coe, U, V, eU]
+    -- `U ∩ V` is `Subtype.val ⁻¹' (A ∩ B)` by `Set.preimage_inter`, which holds by definition.
+    exact (IsEmbedding.homeomorphOfSubsetRange_apply_coe (s := A ∩ B) _ _ x).symm
   have sqV : ofHom (ContinuousMap.inclusion (inter_subset_right (s := U) (t := V))) ≫ iV.hom =
       iUV.hom ≫ ofHom (ContinuousMap.inclusion hDB) := by
-    ext; rfl
+    ext x
+    rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply]
+    dsimp only [iV, iUV]
+    rw [isoOfHomeo_hom, isoOfHomeo_hom]
+    simp only [ConcreteCategory.hom_ofHom, ContinuousMap.coe_coe,
+      IsEmbedding.homeomorphOfSubsetRange_apply_coe, ContinuousMap.inclusion_apply_coe, U, V, eV]
+    -- `U ∩ V` is `Subtype.val ⁻¹' (A ∩ B)` by `Set.preimage_inter`, which holds by definition.
+    exact (IsEmbedding.homeomorphOfSubsetRange_apply_coe (s := A ∩ B) _ _ x).symm
   -- Transport the class to `U ∩ V`.
   obtain ⟨x, rfl⟩ : ∃ x' : P ⟶ (reducedSingularHomologyFunctor R k).obj (of ↥(U ∩ V)),
       x = x' ≫ (reducedSingularHomologyFunctor R k).map iUV.hom :=

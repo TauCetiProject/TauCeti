@@ -176,7 +176,8 @@ private lemma exists_slabRestrict_closedBall_eq_zero (hc : Continuous h)
   -- Pass to unreduced homology, where the compactness statement is formulated.
   let ι := reducedSingularHomologyι M n
   obtain ⟨m, hm0, hm⟩ := exists_singularHomologyMap_inclusion_eq_zero M n (Y := of Y)
-    (monotone_slabCompl_closedBall t) hUV (fun m ↦ isOpen_slabCompl hc isClosed_closedBall)
+    (monotone_slabCompl_closedBall t) hUV
+    (fun m ↦ (isOpen_slabCompl hc isClosed_closedBall).preimage continuous_subtype_val)
     (slabCompl_singleton_subset_iUnion hi t) (i := 0) (ι.app _ (slabRestrict M h n _ α)) (by
       rw [← ConcreteCategory.comp_apply, ← ι.naturality, ConcreteCategory.comp_apply,
         (ModuleCat.subsingleton_of_isZero hslice).elim
