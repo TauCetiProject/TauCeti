@@ -79,7 +79,7 @@ theorem reverse_add_smul_volume {l : List M} (hl : l.Pairwise Q.IsOrtho) (a b : 
   simp [reverse_prod_map_ι_of_pairwise_isOrtho hl, smul_smul, mul_comm]
 
 /-- Restricted reversal multiplies an even orthogonal volume element by its reversal sign. -/
-theorem reverseEven_prod_map_ι_of_pairwise_isOrtho {l : List M}
+@[simp] theorem reverseEven_prod_map_ι_of_pairwise_isOrtho {l : List M}
     (hl : l.Pairwise Q.IsOrtho) (hlen : Even l.length) :
     reverseEven Q ⟨(l.map (ι Q)).prod, prod_map_ι_mem_even_of_even_length hlen⟩ =
       ((-1 : R) ^ l.length.choose 2) •
@@ -190,7 +190,7 @@ theorem reverseEven_eq_self_of_mem_center_of_finrank_eq_four (hQ : Q.Nondegenera
 
 /-- In dimension six, the fixed elements of the discriminant algebra under canonical reversal
 are exactly the scalars. -/
-theorem reverseEven_eq_self_iff_of_mem_center_of_finrank_eq_six (hQ : Q.Nondegenerate)
+@[simp] theorem reverseEven_eq_self_iff_of_mem_center_of_finrank_eq_six (hQ : Q.Nondegenerate)
     (hV : finrank K V = 6) {x : even Q} (hx : x ∈ Subalgebra.center K (even Q)) :
     reverseEven Q x = x ↔ ∃ a : K, x = algebraMap K (even Q) a := by
   simpa [hV, Nat.choose_two_right, Nat.even_iff] using
