@@ -24,6 +24,9 @@ When `X` is smooth of relative dimension one over `Spec R`, as a smooth curve ov
 
 ## Main declarations
 
+* `TauCeti.AlgebraicGeometry.exists_isStandardSmoothOfRelativeDimension`: around every point,
+  `X` has an affine open whose ring of functions is standard smooth of relative dimension `n`
+  over `R`;
 * `TauCeti.AlgebraicGeometry.FiniteLocallyFreeSheaf.rank_relativeDifferentials_apply`: the
   finite locally free sheaf `FiniteLocallyFreeSheaf.relativeDifferentials R X` has rank `n`
   everywhere when `X` is smooth of relative dimension `n`;
@@ -52,7 +55,7 @@ variable (R : Type u) [CommRing R] (X : Scheme.{u}) [X.Over (Spec (.of R))]
 variable {X} in
 /-- Around every point of a scheme smooth of relative dimension `n` over `Spec R`, there is an
 affine open whose ring of functions is standard smooth of relative dimension `n` over `R`. -/
-private lemma exists_isStandardSmoothOfRelativeDimension (n : ℕ)
+lemma exists_isStandardSmoothOfRelativeDimension (n : ℕ)
     [SmoothOfRelativeDimension n (X ↘ Spec (.of R))] (x : X) :
     ∃ W : X.affineOpens, x ∈ W.1 ∧
       ((X.baseRingToStructurePresheaf R).app (op W.1)).hom.IsStandardSmoothOfRelativeDimension n
