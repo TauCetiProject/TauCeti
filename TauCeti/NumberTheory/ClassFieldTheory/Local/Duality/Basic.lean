@@ -33,6 +33,8 @@ The definitions follow the coefficient conventions of Neukirch--Schmidt--Wingber
 
 * `TauCeti.ClassFieldTheory.tateDual`: the conjugation module `Hom(A, μₙ)`.
 * `TauCeti.ClassFieldTheory.tateEvaluationPairing`: the named evaluation pairing.
+* `TauCeti.ClassFieldTheory.pairingToTateDual`: the morphism `A → B'` curried from a pairing
+  `A × B → μₙ`.
 * `TauCeti.ClassFieldTheory.tateDualMap`: precomposition on Tate duals.
 * `TauCeti.ClassFieldTheory.tateDualityPairing`: evaluation cup product in complementary degrees,
   followed by a chosen local invariant on `H²(F, μₙ)`.
@@ -190,6 +192,44 @@ theorem tateEvaluationPairing_bil (A : GalRep n F) [DiscreteTopology A.V]
   rw [tateDualEquiv_apply]
   -- `bil` is built from `φ.toAddMonoidHom` via `AddMonoidHom.toZModLinearMap`.
   rfl
+
+/-- The additive currying `a ↦ (b ↦ P a b)` of a pairing into `μₙ`, landing in the Tate dual. -/
+private def pairingToTateDualAddHom {A B : GalRep n F} (P : TopPairing A B (muNRep n F)) :
+    A.V →+ (tateDual B).V :=
+  (tateDualEquiv B).symm.toAddMonoidHom.comp
+    (LinearMap.toAddMonoidHom'.comp P.bil.toAddMonoidHom)
+
+/-- The additive currying evaluates to the pairing. -/
+private theorem tateDualEquiv_pairingToTateDualAddHom_apply {A B : GalRep n F}
+    (P : TopPairing A B (muNRep n F)) (a : A.V) (b : B.V) :
+    tateDualEquiv B (pairingToTateDualAddHom P a) b = P.bil a b := by
+  simp [pairingToTateDualAddHom]
+
+/-- The currying of an equivariant pairing is equivariant:
+`(g · P a)(b) = g · P a (g⁻¹ · b) = P (g · a) b`. -/
+private theorem pairingToTateDualAddHom_ρ {A B : GalRep n F} (P : TopPairing A B (muNRep n F))
+    (g : Field.absoluteGaloisGroup F) (a : A.V) :
+    pairingToTateDualAddHom P (A.ρ g a) = (tateDual B).ρ g (pairingToTateDualAddHom P a) :=
+  (tateDualEquiv B).injective <| AddMonoidHom.ext fun b => by
+    simp only [tateDualEquiv_ρ_apply, tateDualEquiv_pairingToTateDualAddHom_apply,
+      ← P.equivariant]
+    rw [← mul_apply_eq_comp, ← map_mul, mul_inv_cancel, map_one, one_apply_eq_self]
+
+/-- **Currying a pairing into the Tate dual**: a coefficient pairing `A × B → μₙ` on a discrete
+module `A` induces the morphism `A → B'`, `a ↦ (b ↦ P a b)`. -/
+def pairingToTateDual {A B : GalRep n F} [DiscreteTopology A.V]
+    (P : TopPairing A B (muNRep n F)) : A ⟶ tateDual B :=
+  TopRep.ofHom
+    { toContinuousLinearMap :=
+        ⟨AddMonoidHom.toZModLinearMap n (pairingToTateDualAddHom P), continuous_of_discreteTopology⟩
+      isIntertwining' g := ContinuousLinearMap.ext (pairingToTateDualAddHom_ρ P g) }
+
+/-- `pairingToTateDual P` sends `a` to the character `b ↦ P a b`. -/
+@[simp]
+theorem tateDualEquiv_pairingToTateDual_apply {A B : GalRep n F} [DiscreteTopology A.V]
+    (P : TopPairing A B (muNRep n F)) (a : A.V) (b : B.V) :
+    tateDualEquiv B ((pairingToTateDual P).hom a) b = P.bil a b :=
+  tateDualEquiv_pairingToTateDualAddHom_apply P a b
 
 /-- A morphism of Galois representations, regarded as an equivariant additive homomorphism. -/
 private def tateDualSourceMap {A B : GalRep n F} (f : A ⟶ B) :

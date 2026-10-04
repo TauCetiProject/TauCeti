@@ -24,7 +24,7 @@ Hilbert pairing as the `(1, 1)` base case in local Tate duality.
 
 * `TauCeti.ClassFieldTheory.muNRepToTateDual`: the coefficient morphism
   `μₙ → Hom(μₙ, μₙ)` defined by the chosen-root pairing.
-* `TauCeti.ClassFieldTheory.bijective_muNRepToTateDual`: this coefficient morphism is bijective.
+* `TauCeti.ClassFieldTheory.muNRepToTateDual_bijective`: this coefficient morphism is bijective.
 * `TauCeti.ClassFieldTheory.tateDualityPairing_muNRepToTateDual`: after transport along the
   coefficient morphism, the Tate pairing in bidegree `(1, 1)` is the local symbol.
 
@@ -75,58 +75,20 @@ private theorem kummerCupPairing_apply_generator (x : (muNRep n F).V) :
   rw [kummerCupPairing_bil_apply ζ hζ (i := (i : ℤ)) (by simpa using hpow)]
   simpa using (eq_nsmul_muNRepGenerator ζ hζ x).symm
 
-/-- The chosen-root pairing, curried as an additive map into additive maps. -/
-private def kummerCupPairingAddHom :
-    (muNRep n F).V →+ ((muNRep n F).V →+ (muNRep n F).V) where
-  toFun x := ((kummerCupPairing ζ hζ).bil x).toAddMonoidHom
-  map_zero' := by
-    ext y
-    change (kummerCupPairing ζ hζ).bil 0 y = 0
-    rw [map_zero, LinearMap.zero_apply]
-  map_add' x y := by
-    ext z
-    change (kummerCupPairing ζ hζ).bil (x + y) z =
-      (kummerCupPairing ζ hζ).bil x z + (kummerCupPairing ζ hζ).bil y z
-    rw [map_add, LinearMap.add_apply]
-
 /-- **The chosen-root identification `μₙ → Hom(μₙ, μₙ)`**.  It sends `x` to the character
 `y ↦ kummerCupPairing ζ hζ x y`, viewed as an element of the named Tate dual. -/
 def muNRepToTateDual : muNRep n F ⟶ tateDual (muNRep n F) :=
-  TopRep.ofHom
-    { toContinuousLinearMap :=
-        ⟨AddMonoidHom.toZModLinearMap n
-            ((tateDualEquiv (muNRep n F)).symm.toAddMonoidHom.comp
-              (kummerCupPairingAddHom ζ hζ)),
-          continuous_of_discreteTopology⟩
-      isIntertwining' g := by
-        ext x
-        simp only [ContinuousLinearMap.comp_apply]
-        apply (tateDualEquiv (muNRep n F)).injective
-        ext y
-        change tateDualEquiv (muNRep n F)
-            ((tateDualEquiv (muNRep n F)).symm
-              ((kummerCupPairing ζ hζ).bil ((muNRep n F).ρ g x)).toAddMonoidHom) y =
-          tateDualEquiv (muNRep n F)
-            ((tateDual (muNRep n F)).ρ g
-              ((tateDualEquiv (muNRep n F)).symm
-                ((kummerCupPairing ζ hζ).bil x).toAddMonoidHom)) y
-        rw [tateDualEquiv_ρ_apply, AddEquiv.apply_symm_apply, AddEquiv.apply_symm_apply]
-        rw [muNRep_ρ_apply_eq_self hζ, muNRep_ρ_apply_eq_self hζ,
-          muNRep_ρ_apply_eq_self hζ] }
+  pairingToTateDual (kummerCupPairing ζ hζ)
 
 /-- `muNRepToTateDual` is the character furnished by the chosen-root pairing. -/
 @[simp]
 theorem tateDualEquiv_muNRepToTateDual_apply (x y : (muNRep n F).V) :
     tateDualEquiv (muNRep n F) ((muNRepToTateDual ζ hζ).hom x) y =
-      (kummerCupPairing ζ hζ).bil x y := by
-  change tateDualEquiv (muNRep n F)
-      ((tateDualEquiv (muNRep n F)).symm
-        ((kummerCupPairing ζ hζ).bil x).toAddMonoidHom) y = _
-  rw [AddEquiv.apply_symm_apply]
-  rfl
+      (kummerCupPairing ζ hζ).bil x y :=
+  tateDualEquiv_pairingToTateDual_apply (kummerCupPairing ζ hζ) x y
 
 /-- **The chosen-root identification of `μₙ` with its Tate dual is bijective.** -/
-theorem bijective_muNRepToTateDual : Function.Bijective (muNRepToTateDual ζ hζ).hom := by
+theorem muNRepToTateDual_bijective : Function.Bijective (muNRepToTateDual ζ hζ).hom := by
   refine ⟨fun x y hxy => ?_, fun φ => ?_⟩
   · have := congrArg
       (fun ψ => tateDualEquiv (muNRep n F) ψ (muNRepGenerator ζ hζ)) hxy
