@@ -12,7 +12,9 @@ public import TauCeti.Topology.Algebra.InfiniteSum.IntegralCoefficients
 # Evaluating divisor-sum series
 
 The integral divisor-sum series converges at a parameter of norm less than one in a complete
-non-archimedean normed ring. Its value is the sum of its evaluated coefficients.
+non-archimedean normed ring with `‖1‖ = 1`. Its value is the sum of its evaluated coefficients.
+In a commutative target ring, `evalIntSeries_divisorSumSeries` identifies evaluation of the formal
+series `divisorSumSeries k` under `evalIntSeries` with its analytic value `divisorSumAt k q`.
 -/
 
 public section

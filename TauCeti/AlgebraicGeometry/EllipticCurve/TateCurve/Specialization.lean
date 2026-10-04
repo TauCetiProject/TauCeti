@@ -17,9 +17,10 @@ less than one.
 This remains true in residue characteristics `2` and `3`: the sixth coefficient is summed from
 its integral coefficients, with no division in the target ring.
 
-For a unit parameter in the open unit ball of a complete non-archimedean normed commutative ring,
-these sums give a nonsingular Tate equation. Its discriminant has the same norm as the parameter,
-even when the ring norm is only submultiplicative. Point uniformisation requires further arguments.
+For a unit parameter in the open unit ball of a complete non-archimedean normed commutative ring
+with `‖1‖ = 1`, these sums give a nonsingular Tate equation. Its discriminant has the same norm as
+the parameter, even when the ring norm is only submultiplicative. Point uniformisation requires
+further arguments.
 
 ## References
 
@@ -28,9 +29,6 @@ even when the ring norm is only submultiplicative. Point uniformisation requires
 -/
 
 public section
-
-open PowerSeries ArithmeticFunction
-open scoped ArithmeticFunction.sigma
 
 namespace TauCeti
 
@@ -61,7 +59,7 @@ theorem tateCurveA₆_def (q : K) (hq : ‖q‖ < 1) :
     evalIntSeries_divisorSumSeries]
 
 /-- The integral identity `12 a₆(q) = -(5 s₃(q) + 7 s₅(q))` holds in every complete
-non-archimedean normed commutative ring, even when `12 = 0` there. -/
+non-archimedean normed commutative ring with `‖1‖ = 1`, even when `12 = 0` there. -/
 @[simp] theorem twelve_mul_tateCurveA₆ {q : K} (hq : ‖q‖ < 1) :
     12 * tateCurveA₆ q hq = -(5 * divisorSumAt 3 q + 7 * divisorSumAt 5 q) := by
   simpa only [map_mul, map_ofNat, map_neg, map_add, evalIntSeries_divisorSumSeries, tateCurveA₆]
@@ -97,10 +95,9 @@ noncomputable def tateCurveAt (q : Kˣ) (hq : ‖(q : K)‖ < 1) : WeierstrassCu
 /-- The discriminant of the specialized Tate equation is a unit. -/
 theorem isUnit_tateCurveAt_Δ (q : Kˣ) (hq : ‖(q : K)‖ < 1) :
     IsUnit (tateCurveAt q hq).Δ := by
-  obtain ⟨u, hu, hΔ⟩ := exists_tateCurve_Δ_eq_X_mul
+  obtain ⟨u, -, hu, hΔ⟩ := exists_tateCurve_Δ_eq_X_mul
   rw [tateCurveAt, WeierstrassCurve.map_Δ, hΔ, map_mul, evalIntSeries_X]
-  exact q.isUnit.mul
-    (((isUnit_iff_constantCoeff (φ := u)).mpr (by simp [hu])).map _)
+  exact q.isUnit.mul (hu.map _)
 
 /-- A unit parameter of norm below one gives an elliptic curve over the complete normed ring,
 with no discreteness or characteristic assumption. -/
@@ -112,20 +109,9 @@ instance isElliptic_tateCurveAt (q : Kˣ) (hq : ‖(q : K)‖ < 1) :
 submultiplicative ring norm. -/
 @[simp] theorem norm_tateCurveAt_Δ (q : Kˣ) (hq : ‖(q : K)‖ < 1) :
     ‖(tateCurveAt q hq).Δ‖ = ‖(q : K)‖ := by
-  obtain ⟨u, hu, hΔ⟩ := exists_tateCurve_Δ_eq_X_mul
-  obtain ⟨v, huv⟩ := ((isUnit_iff_constantCoeff (φ := u)).mpr (by simp [hu])).exists_right_inv
-  have heval : evalIntSeries (q : K) hq u * evalIntSeries (q : K) hq v = 1 := by
-    rw [← map_mul, huv, map_one]
+  obtain ⟨u, -, hu, hΔ⟩ := exists_tateCurve_Δ_eq_X_mul
   rw [tateCurveAt, WeierstrassCurve.map_Δ, hΔ, map_mul, evalIntSeries_X]
-  apply le_antisymm
-  · simpa using norm_mul_le_of_le (le_refl ‖(q : K)‖)
-      (norm_evalIntSeries_le_one (q : K) hq u)
-  · calc
-      ‖(q : K)‖ = ‖((q : K) * evalIntSeries (q : K) hq u) *
-          evalIntSeries (q : K) hq v‖ := by simp [mul_assoc, heval]
-      _ ≤ ‖(q : K) * evalIntSeries (q : K) hq u‖ := by
-        simpa using norm_mul_le_of_le (le_refl ‖(q : K) * evalIntSeries (q : K) hq u‖)
-          (norm_evalIntSeries_le_one (q : K) hq v)
+  exact norm_mul_evalIntSeries_of_isUnit (q : K) (q : K) hq hu
 
 end
 
