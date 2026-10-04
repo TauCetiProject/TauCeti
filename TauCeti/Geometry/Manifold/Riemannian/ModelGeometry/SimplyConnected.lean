@@ -17,8 +17,8 @@ spheres of dimension at least two; the Euclidean, hyperbolic, Nil, Sol, and `SL�
 contractible. The two product geometries use the product theorem for simple connectedness.
 
 Thus a free, properly discontinuous quotient of any model has that model as its universal
-cover, not merely as a covering space. Local path connectedness is also supplied uniformly for
-using covering-space lifting and uniqueness results.
+cover, not merely as a covering space. Together with local path connectedness from the basic
+model geometry module, this enables covering-space lifting and uniqueness results.
 
 ## References
 
@@ -41,16 +41,5 @@ instance (G : ModelGeometry) : SimplyConnectedSpace G.Space := by
       simplyConnectedSpace_sphere_euclideanSpace (n := 2) (by decide)
     infer_instance
   | euclidean | hyperbolic | hyperbolicProd | sl2Tilde | nil | sol => infer_instance
-
-/-- Each model is locally path connected in its standard manifold topology. -/
-instance (G : ModelGeometry) : LocallyPathConnectedSpace G.Space := by
-  have : LocallyPathConnectedSpace G.ChartSpace := by
-    cases G with
-    | sphereProd =>
-      exact inferInstanceAs (LocallyPathConnectedSpace (EuclideanSpace ℝ (Fin 2) × ℝ))
-    | hyperbolicProd =>
-      exact inferInstanceAs (LocallyPathConnectedSpace (WithLp 2 (ℝ × ℝ) × ℝ))
-    | _ => infer_instance
-  exact ChartedSpace.locallyPathConnectedSpace G.ChartSpace G.Space
 
 end TauCeti.ModelGeometry
