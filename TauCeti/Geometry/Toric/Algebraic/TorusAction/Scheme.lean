@@ -65,6 +65,8 @@ noncomputable def affineToricSchemeActionOver (hi : IsIntegralLattice i)
         (affineToricScheme hi σ).asOver (Spec (.of ℂ)) ⟶
       (affineToricScheme hi σ).asOver (Spec (.of ℂ)) := by
   refine Over.homMk (affineToricSchemeAction hi σ) ?_
+  -- The tensor product in `Over` is the chosen pullback, so unfold its structure maps to state
+  -- compatibility of the underlying action morphism with the maps to `Spec ℂ`.
   change affineToricSchemeAction hi σ ≫
       Spec.map (CommRingCat.ofHom (algebraMap ℂ (affineCoordinateRing hi σ))) =
     pullback.fst
@@ -85,12 +87,30 @@ noncomputable def affineToricSchemeActionOver (hi : IsIntegralLattice i)
   exact pullbackSpecIso_hom_base ℂ
     (affineCoordinateRing hi (⊥ : PointedCone ℝ V)) (affineCoordinateRing hi σ)
 
+/-- The underlying scheme morphism of the bundled affine toric action is
+`affineToricSchemeAction`. -/
+@[simp]
+theorem affineToricSchemeActionOver_left (hi : IsIntegralLattice i)
+    (σ : PointedCone ℝ V) :
+    (affineToricSchemeActionOver hi σ).left = affineToricSchemeAction hi σ := by
+  rw [affineToricSchemeActionOver]
+  exact Over.homMk_left _ _
+
 /-- On the zero cone, the affine toric action is multiplication on the dense torus. -/
+@[simp]
 theorem affineToricSchemeAction_bot (hi : IsIntegralLattice i) :
     affineToricSchemeAction hi (⊥ : PointedCone ℝ V) =
       μ[((denseTorusScheme hi).asOver (Spec (.of ℂ)))].left := by
-  rw [affineToricSchemeAction, mul_spec_asOver_spec_left,
-    affineCoordinateRingCoaction_bot]
-  rfl
+  rw [affineToricSchemeAction, mul_spec_asOver_spec_left]
+  congr 1
+  exact congrArg Spec.map <| congrArg CommRingCat.ofHom <|
+    congrArg AlgHom.toRingHom <| affineCoordinateRingCoaction_bot hi
+
+/-- On the zero cone, the bundled affine toric action is the multiplication morphism. -/
+theorem affineToricSchemeActionOver_bot (hi : IsIntegralLattice i) :
+    affineToricSchemeActionOver hi (⊥ : PointedCone ℝ V) =
+      μ[((denseTorusScheme hi).asOver (Spec (.of ℂ)))] := by
+  ext
+  simp
 
 end TauCeti.Toric
