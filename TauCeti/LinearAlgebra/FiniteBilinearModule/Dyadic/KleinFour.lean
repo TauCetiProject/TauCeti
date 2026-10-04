@@ -42,22 +42,6 @@ open AddSubgroup
 
 namespace TauCeti.FiniteQuadraticModule
 
-private theorem eq_zero_or_eq_one_div_two {a : AddCircle (1 : ℚ)}
-    (ha : (2 : ℤ) • a = 0) :
-    a = 0 ∨ a = ((1 / 2 : ℚ) : AddCircle (1 : ℚ)) := by
-  have ha' : a ∈ (AddCircle (1 : ℚ))[((2 : ℕ) : ℤ)] := by
-    rw [AddSubgroup.torsionBy.nsmul_iff]
-    simpa only [ofNat_zsmul] using ha
-  have ha'' : a ∈ (ZMod.toRatAddCircle 2).range := by
-    rw [ZMod.toRatAddCircle_range]
-    exact ha'
-  obtain ⟨c, rfl⟩ := ha''
-  rcases (by decide : ∀ c : ZMod 2, c = 0 ∨ c = 1) c with rfl | rfl
-  · left
-    simp
-  · right
-    simpa using ZMod.toRatAddCircle_natCast 2 1
-
 private theorem one_div_two_add_self :
     ((1 / 2 : ℚ) : AddCircle (1 : ℚ)) + ((1 / 2 : ℚ) : AddCircle (1 : ℚ)) = 0 := by
   rw [← AddCircle.coe_add, AddCircle.coe_eq_zero_iff]
@@ -197,7 +181,7 @@ theorem nonempty_isometry_dyadicU_or_dyadicV_of_isAddKleinFour
     rw [hy2, map_zero]
   have hpair : A.toFiniteBilinearModule.pairing x y =
       ((1 / 2 : ℚ) : AddCircle (1 : ℚ)) :=
-    (eq_zero_or_eq_one_div_two htwoPair).resolve_left hxy
+    (AddCircle.eq_zero_or_eq_coe_period_div_two (1 : ℚ) two_ne_zero htwoPair).resolve_left hxy
   have htwoQuad (a : A) : (2 : ℤ) • A.quadratic a = 0 := by
     have hpolar : (2 : ℕ) • A.quadratic a = 0 := by
       rw [← QuadraticMap.polar_self, A.polar_eq_pairing, hAlt]
@@ -205,8 +189,10 @@ theorem nonempty_isometry_dyadicU_or_dyadicV_of_isAddKleinFour
   have hqadd : A.quadratic (x + y) =
       A.quadratic x + A.quadratic y + ((1 / 2 : ℚ) : AddCircle (1 : ℚ)) := by
     rw [QuadraticMap.map_add A.quadratic x y, A.polar_eq_pairing, hpair]
-  rcases eq_zero_or_eq_one_div_two (htwoQuad x) with hx | hx <;>
-    rcases eq_zero_or_eq_one_div_two (htwoQuad y) with hy | hy
+  rcases AddCircle.eq_zero_or_eq_coe_period_div_two (1 : ℚ) two_ne_zero (htwoQuad x)
+      with hx | hx <;>
+    rcases AddCircle.eq_zero_or_eq_coe_period_div_two (1 : ℚ) two_ne_zero (htwoQuad y)
+      with hy | hy
   -- The four cases are the two possible quadratic values on each chosen generator.
   · left
     refine ⟨dyadicUOneIsometryOfGenerators A e (by simpa [x] using hx)
