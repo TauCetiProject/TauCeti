@@ -111,27 +111,34 @@ theorem extensionCone.nonneg [CommSemiring K] [PartialOrder K] [IsOrderedRing K]
     (fun _ ha y => mul_nonneg (by simpa only [map_zero] using hf ha) (sq_nonneg y)) hx
 
 /-- The ordering of the base field extends to a linear ordering of the extension field
-whenever its generated cone is proper. -/
-theorem extensionCone.exists_linearOrder [Field K] [PartialOrder K] [IsOrderedRing K] [Field L]
-    (f : K →+* L) (h : -1 ∉ extensionCone f) :
-    ∃ o : LinearOrder L, letI := o
-      IsStrictOrderedRing L ∧ StrictMono f := by
-  let P : RingPreordering L :=
-    { extensionCone f with
-      mem_of_isSquare' := by
-        rintro x ⟨y, rfl⟩
-        exact extensionCone.mul_self_mem f y
-      neg_one_notMem' := h }
-  obtain ⟨o, ho, hP⟩ := RingPreordering.exists_linearOrder P
-  let := o
-  refine ⟨o, ho, ?_⟩
-  exact ((monotone_iff_map_nonneg f).mpr fun x hx =>
-    hP _ (extensionCone.map_mem_of_nonneg f hx)).strictMono_of_injective f.injective
+exactly when its generated cone is proper. -/
+theorem extensionCone.exists_linearOrder_iff [Field K] [PartialOrder K] [IsOrderedRing K]
+    [Field L] (f : K →+* L) :
+    (∃ o : LinearOrder L, letI := o
+      IsStrictOrderedRing L ∧ StrictMono f) ↔ -1 ∉ extensionCone f := by
+  constructor
+  · rintro ⟨o, ho, hf⟩ h
+    let := o
+    let := ho
+    have := extensionCone.nonneg f hf.monotone h
+    norm_num at this
+  · intro h
+    let P : RingPreordering L :=
+      { extensionCone f with
+        mem_of_isSquare' := by
+          rintro x ⟨y, rfl⟩
+          exact extensionCone.mul_self_mem f y
+        neg_one_notMem' := h }
+    obtain ⟨o, ho, hP⟩ := RingPreordering.exists_linearOrder P
+    let := o
+    refine ⟨o, ho, ?_⟩
+    exact ((monotone_iff_map_nonneg f).mpr fun x hx =>
+      hP _ (extensionCone.map_mem_of_nonneg f hx)).strictMono_of_injective f.injective
 
 /-- Adjoining a square root of a nonnegative element does not force a sum of weighted
 squares to equal `-1`. -/
 theorem extensionCone.neg_one_notMem_quadraticAlgebra [CommRing K] [LinearOrder K]
-    [IsStrictOrderedRing K] {a : K} (ha : 0 ≤ a) :
+    [IsOrderedRing K] [Nontrivial K] {a : K} (ha : 0 ≤ a) :
     -1 ∉ extensionCone (algebraMap K (QuadraticAlgebra K a 0)) := by
   intro h
   have := extensionCone.map_nonneg _
@@ -148,6 +155,6 @@ theorem _root_.QuadraticAlgebra.exists_linearOrder [Field K] [LinearOrder K]
     ∃ o : LinearOrder (QuadraticAlgebra K a 0), letI := o
       IsStrictOrderedRing (QuadraticAlgebra K a 0) ∧
         StrictMono (algebraMap K (QuadraticAlgebra K a 0)) :=
-  extensionCone.exists_linearOrder _ (extensionCone.neg_one_notMem_quadraticAlgebra ha)
+  (extensionCone.exists_linearOrder_iff _).mpr (extensionCone.neg_one_notMem_quadraticAlgebra ha)
 
 end TauCeti.RealClosure

@@ -8,6 +8,8 @@ module
 public import Mathlib.NumberTheory.FunctionField
 public import TauCeti.FieldTheory.IntermediateField.FieldRange
 public import TauCeti.RingTheory.AlgebraicIndependent.TranscendenceBasis
+import Mathlib.FieldTheory.RatFunc.IntermediateField
+import Mathlib.RingTheory.Adjoin.Polynomial.Bivariate
 
 /-!
 # Algebraic function fields of one variable

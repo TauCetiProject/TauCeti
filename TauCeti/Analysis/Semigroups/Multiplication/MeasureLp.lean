@@ -89,17 +89,22 @@ private theorem measureMultiplicationOperator_continuousAt_zero (hp : p ≠ ∞)
     funext t
     exact eLpNorm_congr_ae ((measureMultiplicationOperator_coeFn m hm t f).sub .rfl)
   rw [heq]
-  apply tendsto_eLpNorm_sub_of_tendsto_ae (zero_lt_one.trans_le (Fact.out : 1 ≤ p)).ne' hp
+  apply tendsto_eLpNorm_sub_of_ae_tendsto (C := (2 : ℝ).toNNReal)
+    (zero_lt_one.trans_le (Fact.out : 1 ≤ p)).ne' hp
     (.of_forall fun t : ℝ≥0 =>
       (hm.coe_nnreal_real.const_mul (t : ℝ) |>.neg.exp.aestronglyMeasurable).mul
-        (Lp.aestronglyMeasurable f)) (Lp.aestronglyMeasurable f) ((Lp.memLp f).norm.const_mul 2)
+        (Lp.aestronglyMeasurable f)) (Lp.aestronglyMeasurable f) (Lp.memLp f)
   · exact .of_forall fun t => .of_forall fun a => by
-      calc ‖Real.exp (-((t : ℝ) * m a)) * f a - f a‖
-          ≤ ‖Real.exp (-((t : ℝ) * m a)) * f a‖ + ‖f a‖ := norm_sub_le _ _
-        _ ≤ 2 * ‖f a‖ := by
-          rw [norm_mul]
-          have := expMeasureMultiplier_bound m t a
-          nlinarith [norm_nonneg (f a)]
+      have hbound : ‖Real.exp (-((t : ℝ) * m a)) * f a - f a‖ ≤ 2 * ‖f a‖ := by
+        calc ‖Real.exp (-((t : ℝ) * m a)) * f a - f a‖
+            ≤ ‖Real.exp (-((t : ℝ) * m a)) * f a‖ + ‖f a‖ := norm_sub_le _ _
+          _ ≤ 2 * ‖f a‖ := by
+            rw [norm_mul]
+            have := expMeasureMultiplier_bound m t a
+            nlinarith [norm_nonneg (f a)]
+      simpa only [Pi.mul_apply, Pi.neg_apply, Pi.sub_apply, ofReal_norm,
+        ENNReal.ofNNReal_toNNReal,
+        ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 2)] using ENNReal.ofReal_le_ofReal hbound
   · exact .of_forall fun a => by
       have hc : ContinuousAt (fun t : ℝ≥0 => Real.exp (-((t : ℝ) * m a)) * f a) 0 := by
         fun_prop
@@ -222,11 +227,12 @@ theorem ContractionSemigroup.ofMeasureLpMultiplication_mem_domain_iff (hp : p �
       filter_upwards [self_mem_nhdsWithin] with t ht
       exact eLpNorm_congr_ae ((measureMultiplication_quotient_coeFn hp m hm f ht).sub .rfl)
     apply Tendsto.congr' hnorm.symm
-    apply tendsto_eLpNorm_sub_of_tendsto_ae (zero_lt_one.trans_le (Fact.out : 1 ≤ p)).ne' hp
+    apply tendsto_eLpNorm_sub_of_ae_tendsto (C := (2 : ℝ).toNNReal)
+      (zero_lt_one.trans_le (Fact.out : 1 ≤ p)).ne' hp
       (.of_forall fun t : ℝ =>
         (((hm.coe_nnreal_real.const_mul t).neg.exp.sub_const 1).div_const t)
           |>.aestronglyMeasurable.mul (Lp.aestronglyMeasurable f)) hf.neg.aestronglyMeasurable
-      (hf.norm.const_mul 2)
+      hf
     · -- The scalar difference quotient is bounded by `m`; its error by twice `m * f`.
       filter_upwards [self_mem_nhdsWithin] with t ht
       exact .of_forall fun a => by
@@ -237,14 +243,19 @@ theorem ContractionSemigroup.ofMeasureLpMultiplication_mem_domain_iff (hp : p �
           rw [Real.norm_eq_abs, abs_div, abs_of_nonpos (sub_nonpos.mpr hexp),
             abs_of_pos ht, div_le_iff₀ ht]
           linarith
-        calc ‖((Real.exp (-(t * m a)) - 1) / t) * f a - -((m a : ℝ) * f a)‖
-            ≤ ‖((Real.exp (-(t * m a)) - 1) / t) * f a‖ + ‖-((m a : ℝ) * f a)‖ :=
-              norm_sub_le _ _
-          _ ≤ 2 * ‖(m a : ℝ) * f a‖ := by
-            simp only [norm_neg, norm_mul, Real.norm_eq_abs,
-              abs_of_nonneg (m a).coe_nonneg]
-            rw [Real.norm_eq_abs] at hquot
-            nlinarith [abs_nonneg (f a)]
+        have hbound : ‖((Real.exp (-(t * m a)) - 1) / t) * f a - -((m a : ℝ) * f a)‖
+            ≤ 2 * ‖(m a : ℝ) * f a‖ := by
+          calc ‖((Real.exp (-(t * m a)) - 1) / t) * f a - -((m a : ℝ) * f a)‖
+              ≤ ‖((Real.exp (-(t * m a)) - 1) / t) * f a‖ + ‖-((m a : ℝ) * f a)‖ :=
+                norm_sub_le _ _
+            _ ≤ 2 * ‖(m a : ℝ) * f a‖ := by
+              simp only [norm_neg, norm_mul, Real.norm_eq_abs,
+                abs_of_nonneg (m a).coe_nonneg]
+              rw [Real.norm_eq_abs] at hquot
+              nlinarith [abs_nonneg (f a)]
+        simpa only [Pi.mul_apply, Pi.neg_apply, Pi.sub_apply, ofReal_norm,
+          ENNReal.ofNNReal_toNNReal,
+          ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 2)] using ENNReal.ofReal_le_ofReal hbound
     · exact .of_forall fun a => by
         have hd := (((hasDerivAt_id (0 : ℝ)).mul_const (m a : ℝ)).neg.exp).mul_const (f a)
         have h := hd.hasDerivWithinAt (s := Set.Ici 0)

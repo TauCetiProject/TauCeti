@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Data.Nat.Choose
+public import TauCeti.Data.Nat.Choose.Basic
 public import TauCeti.FieldTheory.SquareClassGroup.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.Hyperbolic

@@ -11,7 +11,7 @@ import Mathlib.Algebra.BigOperators.Intervals
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Ring
 import TauCeti.Algebra.BigOperators.Finset.Range
-import TauCeti.Data.Nat.Choose
+import TauCeti.Data.Nat.Choose.Basic
 
 /-!
 # The opposite of an `A∞` algebra

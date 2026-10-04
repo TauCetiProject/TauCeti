@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.ODE.SmoothParameter
 public import TauCeti.Geometry.Lie.Exponential.ParameterDependence
+import Mathlib.Analysis.ODE.ExistUnique
 
 /-!
 # Smoothness of the Lie-group exponential

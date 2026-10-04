@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Dual.WeilPairing
+-- Proof-only: a morphism over a separably closed field commutes with integer multiples of points.
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.Ring
 
 /-!
 # The dual isogeny is additive
@@ -64,7 +66,7 @@ private theorem pointMap_dual_eq_add_of_zsmul_eq_zero
   -- the dual images of `T` are `N`-torsion, so they are points of `W₁[N]`
   have hdual (ρ : Isogeny W₁ W₂) [Algebra.IsSeparable ρ.fieldPullback.fieldRange W₁.FunctionField] :
       (Hom.ofIsogeny ρ.dual).pointMap T ∈ Submodule.torsionBy ℤ W₁.Point (N : ℤ) :=
-    (Submodule.mem_torsionBy_iff _ _).mpr (by rw [← pointMap_dual_zsmul, hT, Hom.pointMap_zero])
+    (Submodule.mem_torsionBy_iff _ _).mpr (by rw [← Hom.pointMap_zsmul, hT, Hom.pointMap_zero])
   let T' : Submodule.torsionBy ℤ W₂.Point (N : ℤ) := ⟨T, (Submodule.mem_torsionBy_iff _ _).mpr hT⟩
   let Tχ : Submodule.torsionBy ℤ W₁.Point (N : ℤ) := ⟨_, hdual χ⟩
   let Tφ : Submodule.torsionBy ℤ W₁.Point (N : ℤ) := ⟨_, hdual φ⟩

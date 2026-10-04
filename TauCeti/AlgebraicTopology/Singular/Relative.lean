@@ -6,12 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.SimplicialSet.Homology.Relative
-public import Mathlib.AlgebraicTopology.SingularHomology.Basic
 public import Mathlib.Topology.Category.TopCat.EpiMono
 public import Mathlib.Topology.Category.TopPair
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Relative
 public import TauCeti.AlgebraicTopology.SimplicialSet.Restrict
 public import TauCeti.AlgebraicTopology.SimplicialSet.TopAdj
+public import TauCeti.AlgebraicTopology.Singular.Basic
 
 /-!
 # Relative singular chains
@@ -147,6 +147,37 @@ lemma singularChainComplexFunctor_obj_map :
 noncomputable abbrev singularChainComplexπ :
     (toSSetPair.obj P).right.chainComplex R ⟶ P.singularChainComplex R :=
   (toSSetPair.obj P).chainComplexπ R
+
+/-- The quotient map from ambient to relative singular chains is natural in maps of pairs. -/
+@[simp, reassoc]
+lemma singularChainComplexπ_pair_naturality
+    {P Q : TopPair.{w}} (f : P ⟶ Q) (M : C) :
+    SSet.chainComplexMap (TopCat.toSSet.map (TopPair.Hom.fst f)) M ≫
+        Q.singularChainComplexπ M =
+      P.singularChainComplexπ M ≫ TopPair.singularChainComplexMap f M := by
+  have h : SSet.chainComplexMap (TopPair.toSSetPair.map f).right M ≫
+      Q.singularChainComplexπ M =
+        P.singularChainComplexπ M ≫ TopPair.singularChainComplexMap f M :=
+    ((SSetPair.chainComplexFunctorπ C).app M).naturality (TopPair.toSSetPair.map f)
+  rwa [TopPair.toSSetPair_map_right] at h
+
+/-- The quotient map from ambient to relative singular chains is natural in the coefficient
+object. -/
+@[reassoc]
+lemma singularChainComplexπ_coefficient_naturality
+    (P : TopPair.{w}) {M N : C} (φ : M ⟶ N) :
+    ((AlgebraicTopology.singularChainComplexFunctor C).map φ).app P.fst ≫
+        P.singularChainComplexπ N =
+      P.singularChainComplexπ M ≫
+        ((SSetPair.chainComplexFunctor C).map φ).app (TopPair.toSSetPair.obj P) := by
+  rw [TauCeti.singularChainComplexFunctor_map_app]
+  have h : ((SSet.chainComplexFunctor C).map φ).app (TopPair.toSSetPair.obj P).right ≫
+      P.singularChainComplexπ N = P.singularChainComplexπ M ≫
+        ((SSetPair.chainComplexFunctor C).map φ).app (TopPair.toSSetPair.obj P) :=
+    congrArg (fun η ↦ η.app (TopPair.toSSetPair.obj P))
+      ((SSetPair.chainComplexFunctorπ C).naturality φ)
+  simp only [TopPair.toSSetPair_obj_right] at h
+  exact h
 
 @[simp]
 lemma chainComplexMap_comp_singularChainComplexπ :

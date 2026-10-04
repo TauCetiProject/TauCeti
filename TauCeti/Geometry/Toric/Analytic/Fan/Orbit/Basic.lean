@@ -77,8 +77,8 @@ theorem coe_orbitFace {τ σ : Φ.cones} (h : τ ≤ σ) :
 the same cone, viewed as a face of the larger cone. -/
 private theorem analyticAffineChartDiagram_map_mem_affineConeOrbit {τ σ : Φ.cones} (f : τ ⟶ σ)
     {F : τ.1.Face} {G : σ.1.Face} (hFG : (F : PointedCone ℝ V) = G)
-    {x : (Φ.analyticAffineChartDiagram hΦ).obj τ} (hx : x ∈ affineConeOrbit Φ.lattice F) :
-    (Φ.analyticAffineChartDiagram hΦ).map f x ∈ affineConeOrbit Φ.lattice G := by
+    {x : (Φ.analyticAffineChartDiagram).obj τ} (hx : x ∈ affineConeOrbit Φ.lattice F) :
+    (Φ.analyticAffineChartDiagram).map f x ∈ affineConeOrbit Φ.lattice G := by
   rw [analyticAffineChartDiagram_map_apply,
     ← faceAffinePointMap_def Φ.lattice (Φ.isFaceOf_of_le σ.2 τ.2 (leOfHom f))]
   exact faceAffinePointMap_mem_affineConeOrbit Φ.lattice _ hFG hx
@@ -87,7 +87,7 @@ private theorem analyticAffineChartDiagram_map_mem_affineConeOrbit {τ σ : Φ.c
 the charts of `σ` and `τ` have the same image, and lie in the strata of a face `F` of `σ` and a
 face `G` of `τ`, then `F` and `G` are the same cone. -/
 theorem coe_eq_coe_of_analyticAffineChartι_eq {σ τ : Φ.cones}
-    {x : (Φ.analyticAffineChartDiagram hΦ).obj σ} {y : (Φ.analyticAffineChartDiagram hΦ).obj τ}
+    {x : (Φ.analyticAffineChartDiagram).obj σ} {y : (Φ.analyticAffineChartDiagram).obj τ}
     (hxy : Φ.analyticAffineChartι hΦ σ x = Φ.analyticAffineChartι hΦ τ y)
     {F : σ.1.Face} {G : τ.1.Face} (hx : x ∈ affineConeOrbit Φ.lattice F)
     (hy : y ∈ affineConeOrbit Φ.lattice G) :
@@ -106,10 +106,10 @@ theorem coe_eq_coe_of_analyticAffineChartι_eq {σ τ : Φ.cones}
     H.isFaceOf.trans (Φ.isFaceOf_of_le τ.2 (σ ⊓ τ).2 inf_le_right)
   -- Restriction preserves strata, so both `F` and `G` are the cone `H`.
   have hF : F = ⟨H, hHσ⟩ := (existsUnique_face_mem_affineConeOrbit Φ.lattice hσ _).unique hx
-    (Φ.analyticAffineChartDiagram_map_mem_affineConeOrbit hΦ (homOfLE inf_le_left)
+    (Φ.analyticAffineChartDiagram_map_mem_affineConeOrbit (homOfLE inf_le_left)
       (G := ⟨H, hHσ⟩) rfl hz)
   have hG : G = ⟨H, hHτ⟩ := (existsUnique_face_mem_affineConeOrbit Φ.lattice hτ _).unique hy
-    (Φ.analyticAffineChartDiagram_map_mem_affineConeOrbit hΦ (homOfLE inf_le_right)
+    (Φ.analyticAffineChartDiagram_map_mem_affineConeOrbit (homOfLE inf_le_right)
       (G := ⟨H, hHτ⟩) rfl hz)
   rw [hF, hG]
 
@@ -132,10 +132,10 @@ theorem analyticAffineChartι_distinguishedPoint {τ σ : Φ.cones} (h : τ ≤ 
     Φ.analyticAffineChartι hΦ σ
         (distinguishedPoint Φ.lattice (Φ.orbitFace h)) =
       Φ.analyticDistinguishedPoint hΦ τ := by
-  have hd : (Φ.analyticAffineChartDiagram hΦ).map (homOfLE h)
+  have hd : (Φ.analyticAffineChartDiagram).map (homOfLE h)
       (distinguishedPoint Φ.lattice (⊤ : τ.1.Face)) =
         distinguishedPoint Φ.lattice (Φ.orbitFace h) := by
-    rw [analyticAffineChartDiagram_map_apply Φ hΦ (homOfLE h)
+    rw [analyticAffineChartDiagram_map_apply Φ (homOfLE h)
         (distinguishedPoint Φ.lattice (⊤ : τ.1.Face)),
       ← faceAffinePointMap_def Φ.lattice (Φ.isFaceOf_of_le σ.2 τ.2 h)]
     exact faceAffinePointMap_distinguishedPoint Φ.lattice _ rfl
@@ -178,7 +178,7 @@ theorem analyticDistinguishedPoint_mem_analyticConeOrbit (σ : Φ.cones) :
 /-- A point of the chart of `σ` in the stratum of a face `F` lies in the orbit of a cone `τ` exactly
 when `F` is the cone `τ`. -/
 theorem analyticAffineChartι_mem_analyticConeOrbit_iff {σ τ : Φ.cones}
-    {x : (Φ.analyticAffineChartDiagram hΦ).obj σ} {F : σ.1.Face}
+    {x : (Φ.analyticAffineChartDiagram).obj σ} {F : σ.1.Face}
     (hx : x ∈ affineConeOrbit Φ.lattice F) :
     Φ.analyticAffineChartι hΦ σ x ∈ Φ.analyticConeOrbit hΦ τ ↔ (F : PointedCone ℝ V) = τ := by
   refine ⟨fun ⟨y, hy, hxy⟩ ↦ Φ.coe_eq_coe_of_analyticAffineChartι_eq hΦ hxy.symm hx hy, ?_⟩
@@ -315,7 +315,7 @@ theorem mem_closure_analyticConeOrbit_iff {σ τ : Φ.cones} {x : Φ.analyticRea
   · rw [Φ.preimage_analyticAffineChartι_analyticConeOrbit hΦ h]
     refine iff_of_true ?_ h
     exact (mem_closure_affineConeOrbit_iff_le Φ.lattice hσ _ ⊤
-      (Φ.analyticChartGenerators σ hσ).2 hy).2 le_top
+      (Φ.analyticChartGenerators σ).2 hy).2 le_top
   · rw [Φ.preimage_analyticAffineChartι_analyticConeOrbit_of_not_le hΦ h, closure_empty]
     exact iff_of_false (notMem_empty y) h
 

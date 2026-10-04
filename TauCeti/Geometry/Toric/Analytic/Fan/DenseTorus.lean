@@ -102,13 +102,13 @@ theorem isOpen_analyticDenseTorus (hPhi0 : Nonempty Phi.cones) :
     · exact bot_le
   obtain ⟨l, b, hb⟩ := hσ.exists_basis_sum
   have hopen : @IsOpen _
-      (affinePointTopology (Phi.analyticChartGenerators sigma hσ).2)
+      (affinePointTopology (Phi.analyticChartGenerators sigma).2)
       (affineConeOrbit Phi.lattice F) := by
     rw [hF, affineConeOrbit_eq_orbit Phi.lattice hσ, distinguishedPoint_bot]
     exact isOpen_orbit_complexTorus_default Phi.lattice hσ.toIsToricCone hb
-      (Phi.analyticChartGenerators sigma hσ).2
-  rw [← Phi.analyticAffineChart_str_eq sigma hσ
-    (Phi.analyticChartGenerators sigma hσ).2] at hopen
+      (Phi.analyticChartGenerators sigma).2
+  rw [← Phi.analyticAffineChart_str_eq sigma
+    (Phi.analyticChartGenerators sigma).2] at hopen
   exact hopen
 
 /-- The canonical inclusion of the coordinate-free complex torus into the realization of a

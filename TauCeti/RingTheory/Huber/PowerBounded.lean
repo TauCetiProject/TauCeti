@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Ring.Submonoid
 public import TauCeti.RingTheory.Huber.Bounded
 public import Mathlib.Algebra.Polynomial.Monic
 public import Mathlib.RingTheory.Ideal.Maps
@@ -216,25 +217,6 @@ theorem IsPowerBounded.isTopologicallyNilpotent_mul {a b : R} (ha : IsPowerBound
 
 end CommMonoidWithZero
 
-section CommRing
-
-variable {A : Type*} [Ring A]
-
-/-- If every binomial term `a ^ k * b ^ (n - k)` lies in an additive subgroup, then so does
-`(a + b) ^ n`. This is the step shared by `IsPowerBounded.add_of_commute` and
-`isTopologicallyNilpotent_add_of_commute`; only the two elements need to commute. -/
-private theorem add_pow_mem_of_mul_pow_mem {G : AddSubgroup A} {a b : A} (hab : Commute a b)
-    {n : ℕ} (h : ∀ k ≤ n, a ^ k * b ^ (n - k) ∈ G) : (a + b) ^ n ∈ G := by
-  rw [hab.add_pow]
-  refine sum_mem fun k hk ↦ ?_
-  have hterm : a ^ k * b ^ (n - k) * (n.choose k : A)
-      = (n.choose k) • (a ^ k * b ^ (n - k)) := by
-    rw [nsmul_eq_mul, (Nat.cast_commute (n.choose k) _).eq]
-  rw [hterm]
-  exact nsmul_mem (h k (Nat.lt_succ_iff.mp (Finset.mem_range.mp hk))) _
-
-end CommRing
-
 section HasDistribNeg
 
 variable {A : Type*} [MonoidWithZero A] [HasDistribNeg A] [TopologicalSpace A]
@@ -327,7 +309,7 @@ theorem IsPowerBounded.add_of_commute {a b : A} (hab : Commute a b) (ha : IsPowe
   -- `rintro … ⟨n, rfl⟩` leaves the goal as a beta-redex `(fun x ↦ _ ^ x) n`, which blocks `rw`
   change (a + b) ^ n ∈ _
   rw [SetLike.mem_coe]
-  refine add_pow_mem_of_mul_pow_mem hab fun k _ ↦ AddSubgroup.subset_closure ?_
+  refine hab.add_pow_mem_of_mul_pow_mem fun k _ ↦ AddSubgroup.subset_closure ?_
   exact Set.mul_mem_mul ⟨k, rfl⟩ ⟨n - k, rfl⟩
 
 /-- A sum of power-bounded elements of a nonarchimedean commutative ring is power-bounded. -/
@@ -361,7 +343,7 @@ theorem isTopologicallyNilpotent_add_of_commute {a b : A} (hab : Commute a b)
   filter_upwards [eventually_ge_atTop (Na + Nb)] with n hn
   refine hGU (?_ : (a + b) ^ n ∈ (G : Set A))
   rw [SetLike.mem_coe]
-  refine add_pow_mem_of_mul_pow_mem hab fun k hkn ↦ ?_
+  refine hab.add_pow_mem_of_mul_pow_mem fun k hkn ↦ ?_
   by_cases hk : Na ≤ k
   · exact hVbG (Set.mul_mem_mul (hNa k hk) ⟨n - k, rfl⟩)
   · rw [(hab.pow_pow k (n - k)).eq]

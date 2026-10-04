@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Probability.Moments.CovarianceBilin
+import Mathlib.Analysis.Matrix.Hermitian
 
 /-!
 # Covariance matrices of Euclidean-valued measures

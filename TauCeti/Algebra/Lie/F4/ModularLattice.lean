@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Lie.Derivation.IntegralExp
 public import Mathlib.Algebra.Lie.BaseChange
 public import TauCeti.Algebra.Lie.F4.ChevalleyAction
 public import TauCeti.Algebra.Lie.Weights.Root.IntegralBasis
+import Mathlib.Algebra.Lie.AdjointAction.Derivation
 
 /-!
 # The integral and modular Chevalley lattice in type F₄

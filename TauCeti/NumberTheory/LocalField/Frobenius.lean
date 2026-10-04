@@ -15,14 +15,17 @@ public import Mathlib.RingTheory.Frobenius
 The arithmetic Frobenius of a finite unramified extension is compatible with restriction through
 a normal intermediate field. This identifies the Frobenius elements at different finite levels
 of an unramified tower, rather than merely identifying arbitrary generators of their cyclic Galois
-groups. The Teichmüller lifts of a residue element's Frobenius image and its power by the
-cardinality of the base residue field agree. Frobenius raises prime-to-residue-characteristic
-roots of unity to that same power.
+groups. Under a change of ground field `K ⊆ K'`, the Frobenius of an unramified extension of `K'`
+restricts to the power of the Frobenius over `K` by the residue degree of `K'/K`. The Teichmüller
+lifts of a residue element's Frobenius image and its power by the cardinality of the base residue
+field agree. Frobenius raises prime-to-residue-characteristic roots of unity to that same power.
 
 ## Main result
 
 * `TauCeti.frobeniusAlgEquiv_restrictNormal`: restricting arithmetic Frobenius to a normal
   intermediate field gives arithmetic Frobenius there.
+* `TauCeti.frobeniusAlgEquiv_restrictScalars_restrictNormal`: the arithmetic Frobenius of `L'/K'`
+  restricts on `L ⊆ L'` to the `f(K'/K)`-th power of the arithmetic Frobenius of `L/K`.
 * `TauCeti.frobeniusAlgEquiv_teichmullerLift`: the Teichmüller lifts of the Frobenius action
   on a residue element and its `q`-th power agree.
 * `TauCeti.frobeniusAlgEquiv_rootsOfUnity`: on prime-to-residue-characteristic roots of
@@ -189,5 +192,52 @@ theorem frobeniusAlgEquiv_restrictNormal :
   have hv := (Valuation.mem_maximalIdeal_iff (v := valuation L)).1 hd
   rw [hdcoe] at hv
   simpa only [σ] using hv
+
+section BaseChange
+
+variable {K L K' L' : Type*}
+  [Field K] [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K]
+  [Field L] [ValuativeRel L] [TopologicalSpace L] [IsNonarchimedeanLocalField L]
+  [Field K'] [ValuativeRel K'] [TopologicalSpace K'] [IsNonarchimedeanLocalField K']
+  [Field L'] [ValuativeRel L'] [TopologicalSpace L'] [IsNonarchimedeanLocalField L']
+  [Algebra K L] [ValuativeExtension K L] [FiniteDimensional K L] [IsGalois K L]
+  [Algebra K K'] [ValuativeExtension K K']
+  [Algebra K' L'] [ValuativeExtension K' L'] [FiniteDimensional K' L'] [IsGalois K' L']
+  [Algebra K L'] [IsScalarTower K K' L'] [Algebra L L'] [IsScalarTower K L L']
+  [ValuativeExtension L L']
+
+/-- **Arithmetic Frobenius under base change.** Let `L/K` and `L'/K'` be finite unramified
+extensions with `K ⊆ K'` and `L ⊆ L'`. The arithmetic Frobenius of `L'/K'`, restricted to `L`, is
+the power of the arithmetic Frobenius of `L/K` by the residue degree `f(K'/K)`. -/
+@[simp]
+theorem frobeniusAlgEquiv_restrictScalars_restrictNormal [IsUnramified K L] [IsUnramified K' L'] :
+    ((frobeniusAlgEquiv (K := K') (L := L')).restrictScalars K).restrictNormal L =
+      frobeniusAlgEquiv (K := K) (L := L) ^ inertiaDegree K K' := by
+  let σ := ((frobeniusAlgEquiv (K := K') (L := L')).restrictScalars K).restrictNormal L
+  let : Fintype 𝓀[K] := Fintype.ofFinite _
+  apply (residueFieldAutEquiv (K := K) (L := L)).injective
+  ext x
+  obtain ⟨y, rfl⟩ := IsLocalRing.residue_surjective x
+  have hφ : residueFieldAutEquiv (frobeniusAlgEquiv (K := K) (L := L)) =
+      FiniteField.frobeniusAlgEquivOfAlgebraic 𝓀[K] 𝓀[L] := by
+    rw [residueFieldAutEquiv_apply, MulSemiringAction.toAlgAut_apply,
+      residueField_toAlgEquiv_frobeniusAlgEquiv]
+  rw [map_pow, hφ, AlgEquiv.coe_pow, FiniteField.coe_frobeniusAlgEquivOfAlgebraic_iterate,
+    Fintype.card_eq_nat_card, ← natCard_residueField K K', residueFieldAutEquiv_apply,
+    MulSemiringAction.toAlgAut_apply, MulSemiringAction.toAlgEquiv_apply,
+    ← IsLocalRing.ResidueField.residue_smul]
+  -- The iterate of the finite-field Frobenius is the `fun x ↦ x ^ q` of Mathlib, applied.
+  beta_reduce
+  rw [← sub_eq_zero, ← map_pow, ← map_sub, IsLocalRing.residue_eq_zero_iff]
+  -- The congruence of the Frobenius of `L'/K'` at `y ∈ 𝒪[L]` descends from `𝒪[L']` to `𝒪[L]`.
+  have hσ := valuation_frobeniusAlgEquiv_sub_pow (K := K') (L := L') (algebraMap 𝒪[L] 𝒪[L'] y)
+  have hd : algebraMap 𝒪[L] 𝒪[L'] (σ • y - y ^ Nat.card 𝓀[K']) ∈ 𝓂[L'] := by
+    refine (Valuation.mem_maximalIdeal_iff (v := valuation L')).2 ?_
+    rwa [coe_algebraMap_integerRing, AddSubgroupClass.coe_sub, SubmonoidClass.coe_pow,
+      AlgEquiv.coe_smul_integerRing, map_sub, map_pow, AlgEquiv.restrictNormal_commutes,
+      AlgEquiv.restrictScalars_apply, ← coe_algebraMap_integerRing]
+  exact (Valuation.HasExtension.algebraMap_mem_maximalIdeal_iff (valuation L) (valuation L')).mp hd
+
+end BaseChange
 
 end TauCeti

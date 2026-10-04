@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
 public import Mathlib.Analysis.InnerProductSpace.NormPow
 public import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
+import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 
 /-!
 # Real powers of the norm away from the origin

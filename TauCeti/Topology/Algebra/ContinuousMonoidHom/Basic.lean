@@ -26,7 +26,9 @@ on the target. The projections of a product of topological monoids onto its fact
 packaged as `ContinuousMonoidHom.proj`, next to Mathlib's `ContinuousMonoidHom.fst` and
 `ContinuousMonoidHom.snd`. Integer powers of continuous homomorphisms into a commutative
 topological group are computed pointwise, and the multiplicative isomorphism underlying a
-continuous multiplicative isomorphism has the same underlying function. It also records the
+continuous multiplicative isomorphism has the same underlying function. A topologically embedded
+continuous group homomorphism is also packaged as a continuous multiplicative equivalence with its
+range, with forward and inverse computation rules. The file also records the
 pointwise characterization of finite-order continuous homomorphisms and the open kernel of a
 finite-order continuous character into complex units.
 Kernels of continuous homomorphisms into a `T1` monoid are closed, so on a compact group the
@@ -148,6 +150,38 @@ isomorphism has the same underlying function. -/]
 theorem _root_.ContinuousMulEquiv.coe_toMulEquiv {A B : Type*} [Mul A] [TopologicalSpace A] [Mul B]
     [TopologicalSpace B] (f : A ≃ₜ* B) : ⇑(f : A ≃* B) = f :=
   rfl
+
+/-- A topologically embedded continuous group homomorphism is continuously multiplicatively
+equivalent to its range. -/
+noncomputable def _root_.ContinuousMonoidHom.equivRangeOfIsEmbedding
+    {A B : Type*} [Group A] [Group B] [TopologicalSpace A] [TopologicalSpace B]
+    (f : A →ₜ* B) (hf : Topology.IsEmbedding f) :
+    A ≃ₜ* MonoidHom.range (f : A →* B) :=
+  ContinuousMulEquiv.mk' hf.toHomeomorph
+    fun x y ↦ Subtype.ext (map_mul f x y)
+
+/-- The equivalence with the range sends an element to its canonical range representative. -/
+@[simp]
+theorem _root_.ContinuousMonoidHom.equivRangeOfIsEmbedding_apply
+    {A B : Type*} [Group A] [Group B] [TopologicalSpace A] [TopologicalSpace B]
+    (f : A →ₜ* B) (hf : Topology.IsEmbedding f) (x : A) :
+    f.equivRangeOfIsEmbedding hf x =
+      (⟨f x, ⟨x, rfl⟩⟩ : MonoidHom.range (f : A →* B)) := by
+  apply Subtype.ext
+  -- `ContinuousMulEquiv.mk'` reuses the homeomorphism's forward map definitionally; expose that
+  -- coercion so the stable application theorem for `IsEmbedding.toHomeomorph` applies.
+  change ((hf.toHomeomorph x : Set.range f) : B) = f x
+  exact Topology.IsEmbedding.toHomeomorph_apply_coe (f := (f : A → B)) hf x
+
+/-- The inverse equivalence sends a canonical range representative back to its source. -/
+@[simp]
+theorem _root_.ContinuousMonoidHom.equivRangeOfIsEmbedding_symm_apply
+    {A B : Type*} [Group A] [Group B] [TopologicalSpace A] [TopologicalSpace B]
+    (f : A →ₜ* B) (hf : Topology.IsEmbedding f) (x : A) :
+    (f.equivRangeOfIsEmbedding hf).symm
+      (⟨f x, ⟨x, rfl⟩⟩ : MonoidHom.range (f : A →* B)) = x := by
+  rw [← f.equivRangeOfIsEmbedding_apply hf]
+  exact (f.equivRangeOfIsEmbedding hf).symm_apply_apply x
 
 /-- Integer powers of continuous homomorphisms into a commutative topological group are computed
 pointwise. -/

@@ -34,8 +34,9 @@ inflated from two layers has the same invariant in both, which defines the invar
 every element of `ℚ/ℤ` has finite order `f`, and the invariant of `K_f` has image the elements of
 order dividing `f`.
 
-The invariant of the full Brauer group `Br K` is this invariant once every Brauer class is known
-to be split by an unramified extension.
+Every Brauer class is in fact split by an unramified extension
+(`TauCeti.ClassFieldTheory.unramifiedBr_eq_top`), so this is the invariant of the full Brauer group
+(`TauCeti.ClassFieldTheory.invMap`).
 
 ## Main definitions
 
@@ -154,7 +155,6 @@ private theorem directed_range_relBrInfl :
 
 /-- `x ∈ Br K` lies in the unramified Brauer group exactly when it is inflated from the unramified
 extension of some degree `f ≥ 1`. -/
-@[simp]
 theorem mem_unramifiedBr_iff {x : Br K} :
     x ∈ unramifiedBr K ↔ ∃ (f : ℕ+) (y : groupCohomology
       (Rep.ofMulDistribMulAction Gal(𝓤 f/K) (𝓤 f)ˣ) 2), relBrInfl K (𝓤 f) (𝓤 f).val y = x := by

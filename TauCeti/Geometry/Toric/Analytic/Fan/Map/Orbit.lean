@@ -44,7 +44,7 @@ variable {N N' V V' : Type u} [AddCommGroup N] [AddCommGroup N']
 that of the least target cone, viewed as a face of the chosen target cone. -/
 theorem analyticChartMap_distinguishedPoint {σ : Φ.cones} {τ : Ψ.cones}
     (h : MapsTo f.realMap (σ.1 : Set V) (τ.1 : Set V')) :
-    f.analyticChartMap hΦ hΨ h (distinguishedPoint Φ.lattice (⊤ : σ.1.Face)) =
+    f.analyticChartMap h (distinguishedPoint Φ.lattice (⊤ : σ.1.Face)) =
       distinguishedPoint Ψ.lattice (Ψ.orbitFace
         (τ := ⟨f.leastCone σ.2, f.leastCone_mem σ.2⟩) (σ := τ)
         (Subtype.coe_le_coe.1

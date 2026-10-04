@@ -33,4 +33,12 @@ lemma singularChainComplexFunctor_obj_map {X Y : TopCat.{w}} (f : X ⟶ Y) :
     ((AlgebraicTopology.singularChainComplexFunctor C).obj R).map f =
       SSet.chainComplexMap (TopCat.toSSet.map f) R := rfl
 
+/-- A coefficient morphism acts on singular chains by its simplicial chain map evaluated
+at the singular simplicial set. -/
+@[simp]
+lemma singularChainComplexFunctor_map_app {R R' : C} (g : R ⟶ R') (X : TopCat.{w}) :
+    ((AlgebraicTopology.singularChainComplexFunctor C).map g).app X =
+      ((SSet.chainComplexFunctor C).map g).app (TopCat.toSSet.obj X) :=
+  (rfl)
+
 end TauCeti

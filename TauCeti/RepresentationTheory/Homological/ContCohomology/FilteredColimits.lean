@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Category.ModuleCat.Topology.FilteredColimits
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CompactDiscrete
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Functoriality
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete.FilteredColimits
 
 /-!
 # Continuous cohomology of a compact group commutes with filtered colimits of coefficients
@@ -43,7 +44,10 @@ colimit statement in `TopModuleCat k` reduces to these two elementwise statement
 
 Compactness of `G` is used for the finiteness of images and orbits, and smoothness of the
 coefficients for the openness of stabilizers. The cocone is only assumed to be a colimit on
-underlying sets, the form in which filtered colimits of discrete modules are computed.
+underlying sets, the form in which filtered colimits of discrete modules are computed. Every
+colimit cocone of a filtered diagram in `SmoothDiscreteTopRep k G` has this form
+(`TauCeti.SmoothDiscreteTopRep.forget_preservesFilteredColimits`), so `Hⁿ(G, -)` preserves
+filtered colimits of smooth discrete representations.
 
 ## Main statements
 
@@ -53,6 +57,8 @@ underlying sets, the form in which filtered colimits of discrete modules are com
   vanishes in the colimit vanishes at a deeper stage.
 * `TauCeti.ContinuousCohomology.isColimitMapCoconeOfIsColimitForget`: the image of the cocone under
   `Hⁿ(G, -)` is a colimit in `TopModuleCat k`.
+* `TauCeti.ContinuousCohomology.continuousCohomology_preservesFilteredColimits`: `Hⁿ(G, -)`
+  preserves filtered colimits of smooth discrete representations.
 
 ## References
 
@@ -355,5 +361,19 @@ noncomputable def isColimitMapCoconeOfIsColimitForget :
     fun i j yi yj h ↦ exists_coeffMap_eq_coeffMap_of_isColimit hc yi yj h
 
 end Cohomology
+
+/-- **Continuous cohomology of a compact group preserves filtered colimits of smooth discrete
+coefficients.** For a compact group `G`, the functor `Hⁿ(G, -)` from smooth discrete
+representations to topological modules preserves filtered colimits, in every degree `n`. -/
+theorem continuousCohomology_preservesFilteredColimits [CompactSpace G] [UnivLE.{w', u}]
+    [UnivLE.{w, u}] (n : ℕ) :
+    PreservesFilteredColimitsOfSize.{w', w}
+      (smoothDiscreteι.{v, u, u} k G ⋙ continuousCohomologyFunctor k G n) where
+  preserves_filtered_colimits J _ _ := by
+    have : PreservesFilteredColimitsOfSize.{w', w}
+        (smoothDiscreteι.{v, u, u} k G ⋙ forget (TopRep.{u} k G)) :=
+      preservesFilteredColimitsOfSize_of_univLE.{u, u, w', w} _
+    exact ⟨fun {X} ↦ ⟨fun {c} hc ↦
+      ⟨isColimitMapCoconeOfIsColimitForget (isColimitOfPreserves _ hc) n⟩⟩⟩
 
 end TauCeti.ContinuousCohomology

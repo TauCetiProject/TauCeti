@@ -71,12 +71,8 @@ theorem image_of_faithfullyFlat (f : H ⟶ K) [Algebra.FiniteType k K]
     (hK : geometricallyUnipotentPointsCommHopfAlgProperty k K)
     (hflat : (CommHopfAlgCat.imageι f).hom.toAlgHom.toRingHom.FaithfullyFlat) :
     geometricallyUnipotentPointsCommHopfAlgProperty k (CommHopfAlgCat.image f) := by
-  have hfinite : (CommHopfAlgCat.imageι f).hom.toAlgHom.FiniteType := by
-    apply AlgHom.FiniteType.of_comp_finiteType
-      (f := Algebra.ofId k (CommHopfAlgCat.image f))
-    rw [Algebra.comp_ofId]
-    exact RingHom.finiteType_algebraMap.mpr inferInstance
-  exact of_faithfullyFlat (CommHopfAlgCat.imageι f) hfinite hflat hK
+  exact of_faithfullyFlat (CommHopfAlgCat.imageι f)
+    (CommHopfAlgCat.imageι_finiteType f) hflat hK
 
 end geometricallyUnipotentPointsCommHopfAlgProperty
 

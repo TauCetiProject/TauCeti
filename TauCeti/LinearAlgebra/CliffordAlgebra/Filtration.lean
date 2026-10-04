@@ -12,7 +12,7 @@ public import Mathlib.RingTheory.Finiteness.Subalgebra
 public import TauCeti.Algebra.WordFiltration.AssociatedGraded
 -- Private: the vanishing of exterior powers above the dimension is used only to show that the
 -- filtration of a finite-dimensional space stabilises at its dimension.
-import TauCeti.LinearAlgebra.ExteriorPower
+import TauCeti.LinearAlgebra.ExteriorPower.Basic
 
 /-!
 # The degree filtration of a Clifford algebra
@@ -285,6 +285,7 @@ private theorem prod_map_ι_mem_filtration_pred_of_not_nodup :
         change ι Q a * (tail.map (ι Q)).prod ∈ filtration Q tail.length
         exact hmul
 
+/-- The multilinear product of `k + 1` Clifford generators. -/
 private noncomputable def filtrationLeadingTermRaw (k : ℕ) :
     MultilinearMap R (fun _ : Fin (k + 1) => M) (CliffordAlgebra Q) :=
   (MultilinearMap.mkPiAlgebraFin R (k + 1) (CliffordAlgebra Q)).compLinearMap fun _ => ι Q
@@ -309,6 +310,8 @@ private theorem filtrationLeadingTermRaw_mem_previous (k : ℕ) (v : Fin (k + 1)
   simpa only [List.length_ofFn, Nat.add_sub_cancel] using
     prod_map_ι_mem_filtration_pred_of_not_nodup Q (List.ofFn v) hnot
 
+/-- The product of `k + 1` generators modulo the preceding filtration piece,
+which is alternating because repeated generators lower the filtration degree. -/
 private noncomputable def filtrationLeadingTermAlternating (k : ℕ) :
     M [⋀^Fin (k + 1)]→ₗ[R] GradedPiece (ι Q) (k + 1) :=
   let P := previousRestricted (ι Q) (k + 1)

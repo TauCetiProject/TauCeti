@@ -130,7 +130,7 @@ theorem map_continuousMulEquiv {H : Type v} [Group H] [TopologicalSpace H]
     exact hV ▸ hP.not_dvd_index V
 
 /-- A conjugate of a Sylow pro-`p` subgroup is a Sylow pro-`p` subgroup. -/
-theorem map_conj [IsTopologicalGroup G] (hP : IsProPSylow p P) (g : G) :
+theorem map_conj [SeparatelyContinuousMul G] (hP : IsProPSylow p P) (g : G) :
     IsProPSylow p (P.map (MulAut.conj g).toMonoidHom) :=
   hP.map_continuousMulEquiv
     { MulAut.conj g with
@@ -154,11 +154,12 @@ theorem IsProP.isProPSylow_top [Fact p.Prime] (hG : IsProP p G) :
 
 section ProfiniteIndex
 
-variable [IsTopologicalGroup G] [CompactSpace G]
+variable [CompactSpace G]
 
 /-- A subgroup of a profinite group is Sylow pro-`p` exactly when it is closed, is pro-`p`,
 and its supernatural index is prime to `p`. -/
-theorem isProPSylow_iff_isClosed_and_isProP_and_not_dvd_profiniteIndex (q : Nat.Primes) :
+theorem isProPSylow_iff_isClosed_and_isProP_and_not_dvd_profiniteIndex [IsTopologicalGroup G]
+    (q : Nat.Primes) :
     IsProPSylow q.val P ↔
       IsClosed (P : Set G) ∧ IsProP q.val P ∧
         ¬ (q : Supernatural) ∣ P.profiniteIndex := by
@@ -169,8 +170,8 @@ theorem isProPSylow_iff_isClosed_and_isProP_and_not_dvd_profiniteIndex (q : Nat.
 `isProPSylow_iff_isClosed_and_isProP_and_not_dvd_profiniteIndex`: every open subgroup `V ≥ P` has
 `[G : V]` prime to `p`. (The converse fails: an open subgroup of index prime to `p` contains some
 Sylow pro-`p` subgroup, but not necessarily the given `P`.) -/
-theorem IsProPSylow.not_dvd_index_of_le (hP : IsProPSylow p P) (V : OpenSubgroup G)
-    (hPV : P ≤ V) : ¬ p ∣ V.toSubgroup.index := by
+theorem IsProPSylow.not_dvd_index_of_le [SeparatelyContinuousMul G] (hP : IsProPSylow p P)
+    (V : OpenSubgroup G) (hPV : P ≤ V) : ¬ p ∣ V.toSubgroup.index := by
   -- the normal core of `V` is an open normal subgroup `N ≤ V`, and `[G : V]` is the index of the
   -- image of `V` in `G ⧸ N`, which divides the index of the image of `P`
   let N : OpenNormalSubgroup G :=

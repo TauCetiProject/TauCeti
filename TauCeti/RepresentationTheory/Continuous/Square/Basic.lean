@@ -23,7 +23,11 @@ makes them continuous representations at all: the carrier of a continuous repres
 carry a topology, and a submodule of the tensor square of an inner product space does, whereas a
 quotient or a subobject of a `PiTensorProduct` carries none. Over `RCLike 𝕜`, which has
 characteristic zero, the two eigenspaces *are* the symmetric and exterior squares, which is what
-the names record; the identification itself is not formalized here.
+the names record: the identifications are
+`TauCeti.symmetricTensorsEquivSymmetricPower` and
+`TauCeti.antisymmetricTensorsEquivExteriorPower` of
+`TauCeti/LinearAlgebra/TensorSquare.lean`, and they turn the restriction of `π g ⊗ π g` into
+`SymmetricPower.map (π g)` and `exteriorPower.map 2 (π g)`.
 
 ## Main definitions
 
@@ -93,7 +97,7 @@ noncomputable def symmetricSquare : ContRepresentation 𝕜 G (symmetricTensors 
 /-- **The exterior square** of a continuous representation: its tensor square restricted to the
 antisymmetric tensors. Over `RCLike 𝕜`, which has characteristic zero, those are the exterior
 square `⋀[𝕜]^2 V` realized inside `V ⊗[𝕜] V`, which is what the name records; the identification
-itself is not formalized here. -/
+is `TauCeti.antisymmetricTensorsEquivExteriorPower` (see the module docstring). -/
 noncomputable def exteriorSquare : ContRepresentation 𝕜 G (antisymmetricTensors 𝕜 V) :=
   subrepresentation (tprod π π) (antisymmetricTensors 𝕜 V)
     fun g _ hx ↦ tprod_self_mem_antisymmetricTensors π g hx

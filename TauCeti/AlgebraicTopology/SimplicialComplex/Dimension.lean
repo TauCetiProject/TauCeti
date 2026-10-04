@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.ENat.Lattice
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Simplex.Basic
+import Mathlib.Data.Nat.Cast.Order.Basic
 
 /-!
 # The dimension of an abstract simplicial complex

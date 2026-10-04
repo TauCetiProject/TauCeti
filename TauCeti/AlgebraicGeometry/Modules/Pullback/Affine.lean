@@ -21,11 +21,11 @@ required. The comparison is the tensor map of the existing oplax monoidal pullba
 associativity and unit compatibilities are retained.
 
 In particular, pullback from quasicoherent sheaves on `Y` to modules on `X` is strong
-monoidal. The tensor comparisons are also exposed as natural isomorphisms with either
-quasicoherent factor fixed. These affine computations let tensor and duality constructions
-on sheaves be compared with their module counterparts. For instance, pullback from `Y`
-carries a quasicoherent sheaf with a left or right dual in `QuasicoherentSheaf Y` to one with
-the corresponding dual in `QuasicoherentSheaf X`.
+symmetric monoidal (`Scheme.Modules.pullbackFromAffineBraided`). The tensor comparisons are also
+exposed as natural isomorphisms with either quasicoherent factor fixed. These affine computations
+let tensor and duality constructions on sheaves be compared with their module counterparts.
+For instance, pullback from `Y` carries a quasicoherent sheaf with a left or right dual in
+`QuasicoherentSheaf Y` to one with the corresponding dual in `QuasicoherentSheaf X`.
 
 ## References
 
@@ -153,6 +153,33 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.pullbackFromAffine_η :
   exact (congrArg (· ≫ Functor.OplaxMonoidal.η (pullback f))
     ((pullback f).map_id (𝟙_ Y.Modules))).trans
       ((Category.id_comp _).trans (pullback_η f))
+
+omit [IsAffine Y] in
+/-- Pullback sends the inherited braiding of quasicoherent sheaves to the pullback of
+the braiding of their underlying sheaves of modules. -/
+@[simp]
+theorem _root_.AlgebraicGeometry.Scheme.Modules.pullbackFromAffine_map_braiding
+    (E F : QuasicoherentSheaf Y) :
+    ((ObjectProperty.ι _ : QuasicoherentSheaf Y ⥤ Y.Modules) ⋙ pullback f).map
+        (β_ E F).hom =
+      (pullback f).map (@BraidedCategory.braiding Y.Modules _ _ _ E.obj F.obj).hom :=
+  (rfl)
+
+/-- Pullback of quasicoherent sheaves from an affine base to modules on the source is
+symmetric monoidal, with the existing canonical tensor comparisons. -/
+instance _root_.AlgebraicGeometry.Scheme.Modules.pullbackFromAffineBraided :
+    ((ObjectProperty.ι _ : QuasicoherentSheaf Y ⥤ Y.Modules) ⋙ pullback f).Braided where
+  toMonoidal := pullbackFromAffineMonoidal f
+  braided E F := by
+    let H := (ObjectProperty.ι _ : QuasicoherentSheaf Y ⥤ Y.Modules) ⋙ pullback f
+    rw [← cancel_epi (Functor.OplaxMonoidal.δ H E F)]
+    erw [Functor.Monoidal.δ_μ_assoc]
+    rw [pullbackFromAffine_δ]
+    rw [pullbackFromAffine_map_braiding]
+    erw [← pullback_map_braiding_hom_comp_δ_assoc, ← pullbackFromAffine_δ]
+    exact ((congrArg ((pullback f).map
+      (@BraidedCategory.braiding Y.Modules _ _ _ E.obj F.obj).hom ≫ ·)
+      (Functor.Monoidal.δ_μ H F E)).trans (Category.comp_id _)).symm
 
 namespace QuasicoherentSheaf
 

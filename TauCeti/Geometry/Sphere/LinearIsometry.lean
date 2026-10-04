@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Operator.LinearIsometry
 public import Mathlib.Analysis.Normed.Group.BallSphere
 public import Mathlib.Analysis.Normed.Module.Basic
-public import Mathlib.Topology.MetricSpace.Isometry
+public import Mathlib.Topology.MetricSpace.IsometricSMul
 
 /-!
 # Linear isometries of the unit sphere
@@ -24,6 +24,8 @@ This file develops that restriction independently of the manifold structure on s
   restricting a linear isometry equivalence.
 * `LinearIsometryEquiv.unitSphereIsometryEquiv`: the isometry equivalence of unit spheres
   obtained by restricting a linear isometry equivalence.
+* `LinearIsometryEquiv.instMulActionUnitSphere`: the action of the linear isometry group of `E`
+  on the unit sphere of `E`, which is by isometries.
 
 ## Main results
 
@@ -162,6 +164,25 @@ theorem unitSphereIsometryEquiv_trans (e : E ≃ₗᵢ[R] F) (e' : F ≃ₗᵢ[R
     unitSphereIsometryEquiv (e.trans e') =
       (unitSphereIsometryEquiv e).trans (unitSphereIsometryEquiv e') :=
   IsometryEquiv.ext fun _ => rfl
+
+/-- A linear isometry equivalence of `E` acts on the unit sphere of `E` by restriction. -/
+instance instSMulUnitSphere : SMul (E ≃ₗᵢ[R] E) (sphere (0 : E) 1) :=
+  ⟨fun e => unitSphereEquiv e⟩
+
+@[simp]
+theorem coe_smul_unitSphere (e : E ≃ₗᵢ[R] E) (x : sphere (0 : E) 1) :
+    ((e • x : sphere (0 : E) 1) : E) = e x :=
+  coe_unitSphereEquiv_apply e x
+
+/-- The group of linear isometry equivalences of `E` acts on the unit sphere of `E` by
+restriction. -/
+instance instMulActionUnitSphere : MulAction (E ≃ₗᵢ[R] E) (sphere (0 : E) 1) where
+  one_smul x := Subtype.ext (by simp)
+  mul_smul e e' x := Subtype.ext (by simp)
+
+/-- The linear isometry group of `E` acts on the unit sphere by isometries. -/
+instance : IsIsometricSMul (E ≃ₗᵢ[R] E) (sphere (0 : E) 1) :=
+  ⟨fun e => Isometry.of_dist_eq fun x y => by simp [Subtype.dist_eq]⟩
 
 end Seminormed
 

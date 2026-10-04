@@ -7,6 +7,7 @@ module
 
 public import Mathlib.FieldTheory.AlgebraicClosure
 public import TauCeti.FieldTheory.FunctionField.Basic
+import Mathlib.FieldTheory.RatFunc.IntermediateField
 
 /-!
 # The constant field of an algebraic function field

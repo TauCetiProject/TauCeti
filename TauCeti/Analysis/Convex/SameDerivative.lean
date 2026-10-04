@@ -7,8 +7,10 @@ module
 
 public import TauCeti.Analysis.Convex.Deriv
 public import TauCeti.Analysis.Convex.Differentiability
+import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Convex.Continuous
 import Mathlib.MeasureTheory.Measure.OpenPos
+import Mathlib.Topology.LocallyConstant.Basic
 
 /-!
 # Convex functions with the same derivative differ by a constant

@@ -9,7 +9,7 @@ public import TauCeti.Algebra.Homology.ShortComplex.PreservesHomology
 public import TauCeti.RepresentationTheory.Continuous.TopRep.EqToHom
 public import TauCeti.RepresentationTheory.Continuous.TopRep.RestrictScalars
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Functoriality
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete.Basic
 
 /-!
 # Continuous cohomology does not see the scalars

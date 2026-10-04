@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.RegularLocalRing.Defs
 public import TauCeti.RingTheory.KrullDimension.Regular
 public import TauCeti.RingTheory.LocalRing.MaximalIdeal.Square
 public import Mathlib.RingTheory.DiscreteValuationRing.TFAE
+import Mathlib.RingTheory.Ideal.Quotient.Noetherian
 
 /-!
 # Regular local rings are domains

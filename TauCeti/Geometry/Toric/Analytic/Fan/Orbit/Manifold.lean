@@ -58,7 +58,7 @@ private theorem analyticAffineChartι_val_mem_analyticConeOrbit {τ σ : Φ.cone
 /-- A point of the chart of `υ` whose image lies in the global orbit of `τ` lies in the affine
 orbit of `τ` as a face of `υ`. -/
 private theorem mem_affineConeOrbit_orbitFace {τ υ : Φ.cones} (hτυ : τ ≤ υ)
-    {y : (Φ.analyticAffineChartDiagram hΦ).obj υ}
+    {y : (Φ.analyticAffineChartDiagram).obj υ}
     (hy : Φ.analyticAffineChartι hΦ υ y ∈ Φ.analyticConeOrbit hΦ τ) :
     y ∈ affineConeOrbit Φ.lattice (Φ.orbitFace hτυ) := by
   obtain ⟨F, hyF, -⟩ := existsUnique_face_mem_affineConeOrbit Φ.lattice

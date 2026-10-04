@@ -111,6 +111,35 @@ theorem padicCompletionUnitsOf_apply (x : Lˣ) (m : ℕ) :
       QuotientGroup.mk' _ x :=
   by simp [padicCompletionUnitsOf]
 
+/-- Compatible homomorphisms on the power-class coordinates induce a homomorphism
+between the completed multiplicative groups. -/
+def padicCompletionUnitsLift (K : Type*) [Field K]
+    (f : ∀ m : ℕ, (Lˣ ⧸ (powMonoidHom (p ^ m) : Lˣ →* Lˣ).range) →*
+      (Kˣ ⧸ (powMonoidHom (p ^ m) : Kˣ →* Kˣ).range))
+    (hf : ∀ m x, padicCompletionTransition p K m (f (m + 1) x) =
+      f m (padicCompletionTransition p L m x)) :
+    ↑(padicCompletionUnits p L) →* ↑(padicCompletionUnits p K) :=
+  MonoidHom.codRestrict
+    (MonoidHom.pi fun m ↦ (f m).comp
+      ((Pi.evalMonoidHom _ m).comp (padicCompletionUnits p L).subtype)) _ (by
+    intro x
+    rw [mem_padicCompletionUnits_iff]
+    intro m
+    exact (hf m (x.1 (m + 1))).trans
+      (congrArg (f m) ((mem_padicCompletionUnits_iff p L x.1).mp x.2 m)))
+
+omit [Fact p.Prime] in
+/-- The induced homomorphism is computed by the given homomorphism at every coordinate. -/
+@[simp]
+theorem padicCompletionUnitsLift_apply (K : Type*) [Field K]
+    (f : ∀ m : ℕ, (Lˣ ⧸ (powMonoidHom (p ^ m) : Lˣ →* Lˣ).range) →*
+      (Kˣ ⧸ (powMonoidHom (p ^ m) : Kˣ →* Kˣ).range))
+    (hf : ∀ m x, padicCompletionTransition p K m (f (m + 1) x) =
+      f m (padicCompletionTransition p L m x))
+    (x : ↑(padicCompletionUnits p L)) (m : ℕ) :
+    (padicCompletionUnitsLift p L K f hf x).1 m = f m (x.1 m) :=
+  by simp [padicCompletionUnitsLift]
+
 /-- A `p`-adic integer acts on `A(L)` by truncated exponentiation: at level `m` it acts through
 its residue modulo `p^m`. -/
 instance padicCompletionUnitsSMul : SMul ℤ_[p] (Additive ↑(padicCompletionUnits p L)) where
@@ -252,14 +281,9 @@ private theorem padicCompletionPowerClassMap_mul (σ τ : L ≃ₐ[K] L) (m : �
 /-- A field automorphism acts coordinatewise on the completed multiplicative group. -/
 private def padicCompletionUnitsMap (σ : L ≃ₐ[K] L) :
     ↑(padicCompletionUnits p L) →* ↑(padicCompletionUnits p L) :=
-  MonoidHom.codRestrict
-    ((MonoidHom.pi fun m ↦ (padicCompletionPowerClassMap p L K σ m).toMonoidHom.comp
-      ((Pi.evalMonoidHom _ m).comp (padicCompletionUnits p L).subtype))) _ (by
-    intro x
-    rw [mem_padicCompletionUnits_iff]
-    intro m
-    have hx := (mem_padicCompletionUnits_iff p L x.1).mp x.2 m
-    simp [padicCompletionPowerClassMap_transition, hx])
+  padicCompletionUnitsLift p L L
+    (fun m ↦ (padicCompletionPowerClassMap p L K σ m).toMonoidHom)
+    (padicCompletionPowerClassMap_transition p L K σ)
 
 omit [Fact p.Prime] in
 @[simp]

@@ -66,7 +66,7 @@ a `FiniteOrderInfinityType`: signs at the real places and nothing else.
 public section
 noncomputable section
 
-open NumberField NumberField.InfinitePlace.Completion
+open NumberField NumberField.InfinitePlace NumberField.InfinitePlace.Completion
 open scoped NumberField NNReal
 
 namespace TauCeti.GlobalNumberFields
@@ -302,7 +302,7 @@ theorem exists_finiteOrderInfinityType {χ : HeckeCharacter K} (hχ : χ.IsFinit
 `|u|_w ^ s`, for the normalized absolute value `|·|_w` of `K_w`. -/
 theorem coe_infiniteComponent_normPow_apply (s : ℂ) (w : InfinitePlace K) (u : w.Completionˣ) :
     ((normPow K s).infiniteComponent w u : ℂ) =
-      ((infiniteCompletionNormalizedAbsValue w u : ℝ) : ℂ) ^ s := by
+      ((completionNormalizedAbsValue w u : ℝ) : ℂ) ^ s := by
   simp [IdeleClassGroup.ofCompletion_apply]
 
 /-- The component of the norm character `‖·‖ ^ s` at a real place is `x ↦ |x| ^ s`. -/
@@ -310,7 +310,7 @@ theorem coe_infiniteComponent_normPow_apply (s : ℂ) (w : InfinitePlace K) (u :
 theorem realComponent_normPow (s : ℂ) (w : {w : InfinitePlace K // w.IsReal}) :
     (normPow K s).realComponent w = normCpowCharacter ℝ s := by
   ext x
-  simp [infiniteCompletionNormalizedAbsValue_of_isReal _ w.2]
+  simp [completionNormalizedAbsValue_of_isReal _ w.2]
 
 /-- The component of the norm character `‖·‖ ^ s` at a complex place is `z ↦ |z| ^ (2 * s)`,
 since the normalized absolute value of a complex place is the square of the usual one. -/
@@ -318,7 +318,7 @@ since the normalized absolute value of a complex place is the square of the usua
 theorem complexComponent_normPow (s : ℂ) (w : {w : InfinitePlace K // w.IsComplex}) :
     (normPow K s).complexComponent w = normCpowCharacter ℂ (2 * s) := by
   ext z
-  simp [infiniteCompletionNormalizedAbsValue_of_isComplex _ w.2, ofReal_pow_cpow (norm_nonneg _)]
+  simp [completionNormalizedAbsValue_of_isComplex _ w.2, ofReal_pow_cpow (norm_nonneg _)]
 
 /-- **The infinity type of the norm character `‖·‖ ^ s`**: modulus exponent `s` and parity `0` at
 every real place, and modulus exponent `2 * s` and angular frequency `0` at every complex place,

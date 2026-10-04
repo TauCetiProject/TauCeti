@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.NumberTheory.Padics.PadicIntegers
 public import TauCeti.NumberTheory.LocalField.NatCastValuation
 public import Mathlib.NumberTheory.Padics.LocalField
 import Mathlib.Algebra.Polynomial.SpecificDegree
 import Mathlib.NumberTheory.LegendreSymbol.Basic
+import Mathlib.NumberTheory.Padics.RingHoms
 import TauCeti.Algebra.Group.Units.Basic
 import TauCeti.NumberTheory.LocalField.PowerSubgroup.Basic
 

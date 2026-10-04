@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.Coxeter.StrongExchange
+import Mathlib.Tactic.Group
 
 /-!
 # Standard parabolic subgroups and minimal coset representatives

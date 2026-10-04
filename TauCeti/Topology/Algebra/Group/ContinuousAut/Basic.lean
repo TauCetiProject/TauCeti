@@ -18,6 +18,9 @@ group under composition, `ContinuousAut G`. Its multiplication is `(φ * ψ) x =
 Mathlib's `MulAut`, and forgetting continuity is an injective homomorphism
 `ContinuousAut.toMulAut : ContinuousAut G →* MulAut G`.
 
+The group `ContinuousAut G` acts faithfully on `G` by evaluation. This is a
+`MulDistribMulAction`, and each individual automorphism acts continuously.
+
 When `G` is a group whose multiplication is separately continuous, every inner automorphism
 `x ↦ g * x * g⁻¹` is continuous, which gives the homomorphism
 `ContinuousAut.conj : G →* ContinuousAut G`, lifting `MulAut.conj`. Its kernel is the centre of `G`
@@ -34,6 +37,7 @@ outer Galois action on a profinite fundamental group.
 
 * `TauCeti.ContinuousAut G`: the group `G ≃ₜ* G` of continuous automorphisms.
 * `TauCeti.ContinuousAut.toMulAut`: the forgetful homomorphism `ContinuousAut G →* MulAut G`.
+* `TauCeti.ContinuousAut.smul_def`: the action of a continuous automorphism is evaluation.
 * `TauCeti.ContinuousAut.conj`: the inner automorphisms, `conj g x = g * x * g⁻¹`.
 * `TauCeti.ContinuousOut G`: the quotient of `ContinuousAut G` by the inner automorphisms, with
   quotient map `TauCeti.ContinuousOut.mk`.
@@ -135,6 +139,29 @@ theorem toMulAut_injective : Function.Injective (toMulAut : ContinuousAut G →*
   fun _ _ h ↦ ContinuousMulEquiv.ext fun x ↦ by simpa using DFunLike.congr_fun h x
 
 end Mul
+
+section Monoid
+
+variable (G : Type*) [Monoid G] [TopologicalSpace G]
+
+/-- Continuous automorphisms act on their underlying monoid by evaluation. -/
+instance : MulDistribMulAction (ContinuousAut G) G :=
+  MulDistribMulAction.compHom G toMulAut
+
+/-- The action of a continuous automorphism is its evaluation. -/
+@[simp]
+theorem smul_def (φ : ContinuousAut G) (x : G) : φ • x = φ x :=
+  (rfl)
+
+/-- The evaluation action of continuous automorphisms is faithful. -/
+instance : FaithfulSMul (ContinuousAut G) G where
+  eq_of_smul_eq_smul h := ContinuousMulEquiv.ext h
+
+/-- Each continuous automorphism acts continuously on its underlying monoid. -/
+instance : ContinuousConstSMul (ContinuousAut G) G where
+  continuous_const_smul φ := φ.continuous
+
+end Monoid
 
 section Group
 

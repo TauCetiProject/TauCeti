@@ -80,6 +80,13 @@ theorem degreeCast_symm {n k : ℕ} (h : n = k) : (degreeCast X h).symm = degree
   subst h
   simp [degreeCast]
 
+/-- Transport along an equality of degrees does not change a class, read as an element of a
+possibly different type. -/
+theorem degreeCast_hom_apply_heq {n k : ℕ} (h : n = k) (x : continuousCohomology n X) :
+    (degreeCast X h).hom x ≍ x := by
+  subst h
+  simp
+
 /-- Two successive transports are the transport along the composite equality. -/
 @[reassoc (attr := simp)]
 theorem degreeCast_hom_comp_degreeCast_hom {n k l : ℕ} (h : n = k) (h' : k = l) :

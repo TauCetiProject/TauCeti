@@ -51,8 +51,7 @@ computation to an arbitrary equivalent target.
 * `TauCeti.nonempty_algEquiv_self_of_isIntegral`: a domain algebra over an algebraically closed
   field that is integral over that field is isomorphic to it as an algebra, with
   `TauCeti.nonempty_algEquiv_self_of_finiteDimensional_divisionRing` the finite-dimensional
-  division algebra special case, also available under the name the roadmap pins,
-  `TauCeti.algEquiv_self_of_finiteDimensional_divisionRing`.
+  division algebra special case.
 * `TauCeti.endAlgEquivSelfOfIsSimpleModule`: the endomorphism ring of a finite-dimensional simple
   module over an algebraically closed field collapses to that field, canonically, as the inverse
   of the structure map; `TauCeti.nonempty_end_algEquiv_self_of_isSimpleModule` is its existence
@@ -150,10 +149,6 @@ uses. -/
 theorem nonempty_algEquiv_self_of_finiteDimensional_divisionRing [DivisionRing D] [Algebra k D]
     [FiniteDimensional k D] : Nonempty (D ≃ₐ[k] k) :=
   nonempty_algEquiv_self_of_isIntegral
-
-/-- The roadmap pins the previous theorem under this name; it is available under both. -/
-alias algEquiv_self_of_finiteDimensional_divisionRing :=
-  nonempty_algEquiv_self_of_finiteDimensional_divisionRing
 
 end IsAlgClosed
 

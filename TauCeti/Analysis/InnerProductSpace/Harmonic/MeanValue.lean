@@ -8,12 +8,13 @@ module
 public import TauCeti.Analysis.InnerProductSpace.Harmonic.Ball
 public import Mathlib.MeasureTheory.Constructions.HaarToSphere
 public import Mathlib.MeasureTheory.Integral.Average
+import Mathlib.Topology.MetricSpace.ProperSpace.Lemmas
 import TauCeti.Analysis.Calculus.ContDiff.Translation
 import TauCeti.Analysis.Distribution.DuBoisReymond
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.Sobolev.WeakDeriv.Laplacian
 import TauCeti.MeasureTheory.Constructions.HaarToSphere
-import TauCeti.MeasureTheory.Measure.AddHaar
+import TauCeti.MeasureTheory.Group.Integral
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 

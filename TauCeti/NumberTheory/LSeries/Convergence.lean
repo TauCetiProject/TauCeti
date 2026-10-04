@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import Mathlib.Analysis.Asymptotics.SpecificAsymptotics
 import Mathlib.NumberTheory.AbelSummation
 public import Mathlib.NumberTheory.LSeries.Convergence
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
