@@ -23,7 +23,9 @@ direct sum of the `S`-submodules `eᵢ • M`,
 
 the component of `x` in position `i` being `eᵢ • x`. This file proves that
 (`TauCeti.isInternal_smul_top`) and records the dimension count `dim M = ∑ᵢ dim (eᵢ M)` that
-follows over a division ring.
+follows over a division ring. For a single idempotent `e` of a ring `A`, it also records that
+the left ideal `Ae` is projective, being the image of the projection of the regular module given
+by right multiplication by `e` (`IsIdempotentElem.projective_span_singleton`).
 
 Mathlib has the family (`CompleteOrthogonalIdempotents`) and the converse direction — a
 decomposition of `R` itself into left ideals produces such a family
@@ -102,9 +104,8 @@ is a projection from the left regular module onto `Ae`. -/
 theorem projective_span_singleton {A : Type*} [Ring A] {e : A} (he : IsIdempotentElem e) :
     Module.Projective A (Ideal.span {e} : Ideal A) := by
   let p : A →ₗ[A] (Ideal.span {e} : Ideal A) :=
-    { toFun x := ⟨x * e, Ideal.mem_span_singleton'.2 ⟨x, rfl⟩⟩
-      map_add' x y := Subtype.ext (add_mul x y e)
-      map_smul' x y := Subtype.ext (mul_assoc x y e) }
+    LinearMap.codRestrict (Ideal.span {e}) (LinearMap.mulRight A e) fun x ↦
+      Ideal.mem_span_singleton'.2 ⟨x, rfl⟩
   refine Module.Projective.of_split (Ideal.span {e} : Ideal A).subtype p ?_
   ext ⟨x, hx⟩
   obtain ⟨a, rfl⟩ := Ideal.mem_span_singleton'.1 hx
