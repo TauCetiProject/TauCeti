@@ -73,6 +73,7 @@ theorem mem_quaternionSubgroup_iff_of_hilbertSymbol_eq_neg_one {a b : Kˣ}
     · exact quaternionClass_mem_quaternionSubgroup K a b
 
 /-- Over a local field every product of quaternion classes is itself a quaternion class. -/
+@[simp]
 theorem mem_quaternionSubgroup_iff (x : BrauerGroup K) :
     x ∈ quaternionSubgroup K ↔ ∃ a b : Kˣ, quaternionClass a b = x := by
   obtain ⟨⟨a, b⟩, hab⟩ := uncurry_hilbertSymbol_surjective (Invertible.ne_zero (2 : K)) (-1)

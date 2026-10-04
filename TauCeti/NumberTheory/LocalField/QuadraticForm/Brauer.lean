@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.Quaternion.Subgroup
-public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Hasse
 
 /-!
 # Comparing the two Hasse invariants over a local field
