@@ -93,12 +93,13 @@ theorem titsForm_posDef_iff_card_hom_add_card_hom_le_one_and_exists_dynkinType_i
         ∃ t : DynkinType, t.Valid ∧ t.IsSimplyLaced ∧
           Nonempty (underlyingGraph Q ≃g diagramGraph t.cartanMatrix) := by
   classical
-  refine ⟨fun hpd ↦ ?_, fun ⟨h, _, _, ht, ⟨φ⟩⟩ ↦ ?_⟩
+  refine ⟨fun hpd ↦ ?_, fun ⟨h, t, _, ht, ⟨φ⟩⟩ ↦ ?_⟩
   · have h := card_hom_add_card_hom_le_one_of_titsForm_posDef Q hpd
     exact ⟨h, (SimpleGraph.posDef_graphCartanMatrix_iff hconn).mp
       ((titsForm_posDef_iff_posDef_graphCartanMatrix Q h).mp hpd)⟩
   · exact (titsForm_posDef_iff_posDef_graphCartanMatrix Q h).mpr
-      (SimpleGraph.posDef_graphCartanMatrix_of_iso ht φ)
+      (SimpleGraph.posDef_graphCartanMatrix_of_iso
+        ((DynkinType.isSimplyLaced_cartanMatrix_iff t).mpr (.inl ht)) φ)
 
 variable {k : Type u} [Field k]
 
