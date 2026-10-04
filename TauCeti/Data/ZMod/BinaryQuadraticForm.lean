@@ -23,14 +23,12 @@ quotient is `2c(s + t) + u`, which is a unit because `2` is nilpotent in `ℤ/2^
 
 ## Main results
 
-* `TauCeti.ZMod.bijective_two_mul_sq_add`: `s ↦ 2cs² + us` is bijective when `u` is a unit.
-* `TauCeti.ZMod.BinaryQuadraticForm.exists_basis`: a binary form with unit middle coefficient
+* `ZMod.bijective_two_mul_sq_add`: `s ↦ 2cs² + us` is bijective when `u` is a unit.
+* `ZMod.BinaryQuadraticForm.exists_basis`: a binary form with unit middle coefficient
   has one of the two standard normal forms.
 -/
 
 public section
-
-namespace TauCeti
 
 namespace ZMod
 
@@ -136,5 +134,3 @@ theorem exists_basis (a b : ZMod (2 ^ (k + 1))) {u : ZMod (2 ^ (k + 1))}
 end BinaryQuadraticForm
 
 end ZMod
-
-end TauCeti

@@ -63,7 +63,7 @@ nondegenerate alternating forms on a Klein four-group in
 
 public section
 
-open AddSubgroup TauCeti.ZMod
+open AddSubgroup ZMod
 
 namespace TauCeti.FiniteQuadraticModule
 
@@ -188,7 +188,7 @@ theorem nonempty_isometry_dyadicU_or_dyadicV_restrict_zmultiples_sup {x y : A}
         htwo_pow, zero_mul, map_zero]
     · simpa using isUnit_two_mul_add (c := c) isUnit_one
   obtain ⟨e₁, e₂, f₁, f₂, h | h⟩ :=
-    TauCeti.ZMod.BinaryQuadraticForm.exists_basis a b hunit
+    ZMod.BinaryQuadraticForm.exists_basis a b hunit
   · refine Or.inl (nonempty_isometry_ofQuadraticMap_restrict_zmultiples_sup _
       (isNondegenerate_dyadicU _) hx hy e₁ e₂ f₁ f₂ fun m n ↦ ?_)
     rw [quadratic_zmodHom_add_zmodHom hx hy ha hb hu, h]
