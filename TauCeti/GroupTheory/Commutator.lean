@@ -37,6 +37,8 @@ which quantifies over both subgroups. Neither reduces a comparison to generators
   of `A` and `B` in `G ⧸ N` commute.
 * `QuotientGroup.commute_mk_iff`: two classes in `G ⧸ N` commute exactly when the commutator of
   representatives lies in `N`.
+* `MonoidHom.commutatorElement_mem_ker_iff`: the images of two elements under a homomorphism
+  into a monoid commute exactly when their commutator lies in the kernel.
 * `TauCeti.commutatorElement_pow_right_mem_iff`: when `⁅a, y⁆` commutes with `y` modulo a normal
   `N`, the commutator `⁅a, y ^ n⁆` lies in `N` exactly when `⁅a, y⁆ ^ n` does.
 * `TauCeti.commutatorElement_mul_mul_eq_mul_of_commute`: the commutator of two paired products
@@ -333,6 +335,15 @@ theorem _root_.QuotientGroup.commute_mk_iff [N.Normal] {a b : G} :
   rw [← commutatorElement_eq_one_iff_commute, ← QuotientGroup.mk'_apply N a,
     ← QuotientGroup.mk'_apply N b, ← map_commutatorElement, QuotientGroup.mk'_apply,
     QuotientGroup.eq_one_iff]
+
+/-- The images of `a` and `b` under a homomorphism `f` into a monoid commute exactly when the
+commutator `⁅a, b⁆` lies in the kernel of `f`.  For `f` the quotient map this is
+`QuotientGroup.commute_mk_iff`; the target need not be a group, since `f` lands in its units. -/
+theorem _root_.MonoidHom.commutatorElement_mem_ker_iff {M : Type*} [Monoid M] (f : G →* M)
+    {a b : G} : ⁅a, b⁆ ∈ f.ker ↔ Commute (f a) (f b) := by
+  rw [← MonoidHom.ker_toHomUnits, MonoidHom.mem_ker, map_commutatorElement,
+    commutatorElement_eq_one_iff_commute, ← Commute.units_val_iff, MonoidHom.coe_toHomUnits,
+    MonoidHom.coe_toHomUnits]
 
 /-- **Homomorphisms into a commutative monoid separate elements only in a commutative group.** If
 for every `g ≠ 1` some homomorphism `φ : G →* A` into a commutative monoid has `φ g ≠ 1`, then `G`

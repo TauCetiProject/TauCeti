@@ -58,11 +58,8 @@ subgroup of finite index, with no hypothesis on the characteristic. -/
 theorem character_indFDRep_ofLinearCharacter_comp_subtype (χ : G →* kˣ) (g : G) :
     (indFDRep (FDRep.ofLinearCharacter (χ.comp N.subtype))).character g =
       (χ g : k) * (indFDRep (FDRep.of (Representation.trivial k N k))).character g := by
-  have hχ : (fun x : G => (χ x : k)) ∈ ClassFunction k G := by
-    refine ClassFunction.mem_iff.mpr fun x y => ?_
-    have hconj : χ (y * x * y⁻¹) = χ x := by
-      rw [map_mul, map_mul, map_inv, mul_comm (χ y) (χ x), mul_assoc, mul_inv_cancel, mul_one]
-    exact congrArg (fun u : kˣ => (u : k)) hconj
+  have hχ : (fun x : G => (χ x : k)) ∈ ClassFunction k G :=
+    χ.comp_mem_classFunction Units.val
   have hproj := congrFun (indClassFun_comp_subtype_mul (S := N) hχ
     (FDRep.of (Representation.trivial k N k)).character) g
   have hchar : (FDRep.ofLinearCharacter (χ.comp N.subtype)).character
