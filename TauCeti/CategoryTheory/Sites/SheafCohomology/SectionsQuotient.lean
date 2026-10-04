@@ -91,6 +91,7 @@ private lemma difference_eq_fromBiprod
 /-- A section on the intersection has zero connecting class exactly when it is a
  difference of restrictions of sections from the two covering objects. No acyclicity
  hypothesis is needed for this characterization. -/
+@[simp↓]
 lemma mayerVietorisSectionClass_eq_zero_iff (s : F.obj.obj (op S.X₁)) :
     mayerVietorisSectionClass S F s = 0 ↔
       ∃ s₂ s₃, F.obj.map S.f₁₂.op s₂ - F.obj.map S.f₁₃.op s₃ = s := by
