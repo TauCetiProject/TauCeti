@@ -333,3 +333,27 @@ theorem coe_adjoinRootEquivCenterEven_root [NeZero (2 : K)] {l : List V}
   simp [adjoinRootEquivCenterEven]
 
 end CliffordAlgebra
+
+namespace TauCeti.CliffordAlgebra
+
+open _root_.CliffordAlgebra Module
+
+variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V] [FiniteDimensional K V]
+  [NeZero (2 : K)] {Q : QuadraticForm K V}
+
+/-- The centre of the even Clifford algebra of a regular quadratic space of even positive
+dimension contains a non-scalar element. -/
+theorem exists_mem_center_even_forall_ne_algebraMap (hQ : Q.Nondegenerate)
+    (heven : Even (finrank K V)) (hpos : 0 < finrank K V) :
+    ∃ x ∈ Subalgebra.center K (even Q), ∀ a : K, x ≠ algebraMap K (even Q) a := by
+  let _ : Invertible (2 : K) := invertibleOfNonzero (NeZero.ne (2 : K))
+  obtain ⟨l, hl, hlen, hspan, hQl⟩ := hQ.exists_list_pairwise_isOrtho
+  have hle : Even l.length := hlen ▸ heven
+  have hne : l ≠ [] := List.length_pos_iff.mp (hlen ▸ hpos)
+  refine ⟨⟨(l.map (ι Q)).prod, prod_map_ι_mem_even_of_even_length hle⟩,
+    prod_map_ι_mem_center_even_of_even_length hl hle hspan, ?_⟩
+  intro a ha
+  exact prod_map_ι_ne_algebraMap_of_even_length hl hle hne hQl a
+    (congrArg (fun y : even Q => (y : CliffordAlgebra Q)) ha)
+
+end TauCeti.CliffordAlgebra

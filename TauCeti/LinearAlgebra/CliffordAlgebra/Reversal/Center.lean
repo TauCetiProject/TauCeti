@@ -37,24 +37,62 @@ The centre and uniqueness of its scalar/volume coordinates are supplied by
 
 public section
 
-namespace TauCeti
+namespace TauCeti.CliffordAlgebra
 
 open _root_.CliffordAlgebra Module
 
 universe u v
+
+section CommRing
+
+variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M]
+  {Q : QuadraticForm R M}
+
+/-- Reversal multiplies the volume coordinate of an orthogonal list by its reversal sign,
+while fixing the scalar coordinate. -/
+theorem reverse_add_smul_volume {l : List M} (hl : l.Pairwise Q.IsOrtho) (a b : R) :
+    reverse (algebraMap R (CliffordAlgebra Q) a + b • (l.map (ι Q)).prod) =
+      algebraMap R (CliffordAlgebra Q) a +
+        (((-1 : R) ^ l.length.choose 2) * b) • (l.map (ι Q)).prod := by
+  simp [reverse_prod_map_ι_of_pairwise_isOrtho hl, smul_smul, mul_comm]
+
+/-- Restricted reversal multiplies an even orthogonal volume element by its reversal sign. -/
+theorem reverseEven_prod_map_ι_of_pairwise_isOrtho {l : List M}
+    (hl : l.Pairwise Q.IsOrtho) (hlen : Even l.length) :
+    reverseEven Q ⟨(l.map (ι Q)).prod, prod_map_ι_mem_even_of_even_length hlen⟩ =
+      ((-1 : R) ^ l.length.choose 2) •
+        (⟨(l.map (ι Q)).prod, prod_map_ι_mem_even_of_even_length hlen⟩ : even Q) := by
+  apply Subtype.ext
+  simpa using reverse_prod_map_ι_of_pairwise_isOrtho hl
+
+/-- When the volume sign is negative, restricted reversal sends `a + b • ω` to `a - b • ω`.
+For a spanning list this computes its action on the centre of the even Clifford algebra. -/
+theorem reverseEven_add_smul_volume_of_odd_choose_two {l : List M}
+    (hl : l.Pairwise Q.IsOrtho) (hlen : Even l.length)
+    (hsign : Odd (l.length.choose 2)) (a b : R) :
+    reverseEven Q (algebraMap R (even Q) a +
+        b • ⟨(l.map (ι Q)).prod, prod_map_ι_mem_even_of_even_length hlen⟩) =
+      algebraMap R (even Q) a -
+        b • ⟨(l.map (ι Q)).prod, prod_map_ι_mem_even_of_even_length hlen⟩ := by
+  simp only [map_add, map_smul, reverseEven_algebraMap,
+    reverseEven_prod_map_ι_of_pairwise_isOrtho hl hlen, hsign.neg_one_pow, neg_one_smul,
+    smul_neg, sub_eq_add_neg]
+
+end CommRing
 
 variable {K : Type u} {V : Type v} [Field K] [AddCommGroup V] [Module K V]
   [NeZero (2 : K)] {Q : QuadraticForm K V}
 
 /-- For an even anisotropic orthogonal volume element whose reversal sign is negative, reversal
 fixes `a + b • ω` exactly when its volume coordinate `b` vanishes. -/
-private theorem reverse_fixed_volume_coordinates {l : List V} (hl : l.Pairwise Q.IsOrtho)
+theorem reverse_add_smul_volume_eq_self_iff_of_odd_choose_two
+    {l : List V} (hl : l.Pairwise Q.IsOrtho)
     (hlen : Even l.length) (hne : l ≠ []) (hQl : ∀ v ∈ l, Q v ≠ 0)
     (hsign : Odd (l.length.choose 2)) (a b : K) :
     reverse (algebraMap K (CliffordAlgebra Q) a + b • (l.map (ι Q)).prod) =
       algebraMap K (CliffordAlgebra Q) a + b • (l.map (ι Q)).prod ↔ b = 0 := by
-  simp only [map_add, map_smul, reverse.commutes, reverse_prod_map_ι_of_pairwise_isOrtho hl,
-    hsign.neg_one_pow, smul_neg, neg_one_smul]
+  rw [reverse_add_smul_volume hl]
+  simp only [hsign.neg_one_pow, neg_one_mul, neg_smul]
   constructor
   · intro h
     have hcoord : (a, -b) = (a, b) :=
@@ -68,8 +106,8 @@ private theorem reverse_fixed_volume_coordinates {l : List V} (hl : l.Pairwise Q
 
 variable [FiniteDimensional K V]
 
-/-- In the centre of a regular even-dimensional Clifford algebra, an element is fixed by
-reversal exactly when the volume sign is positive or the element is a scalar. -/
+/-- In the centre of the even Clifford algebra of a regular quadratic space of even dimension,
+an element is fixed by reversal exactly when the volume sign is positive or it is a scalar. -/
 theorem reverseEven_eq_self_iff_of_mem_center (hQ : Q.Nondegenerate)
     (heven : Even (finrank K V)) (hpos : 0 < finrank K V) {x : even Q}
     (hx : x ∈ Subalgebra.center K (even Q)) :
@@ -94,7 +132,8 @@ theorem reverseEven_eq_self_iff_of_mem_center (hQ : Q.Nondegenerate)
     · intro hfix
       have hrev := congrArg (fun y : even Q => (y : CliffordAlgebra Q)) hfix
       rw [coe_reverseEven_apply, hab] at hrev
-      have hb := (reverse_fixed_volume_coordinates hl hle hne hQl hodd a b).mp hrev
+      have hb :=
+        (reverse_add_smul_volume_eq_self_iff_of_odd_choose_two hl hle hne hQl hodd a b).mp hrev
       refine ⟨a, Subtype.ext ?_⟩
       simpa [hb] using hab
     · rintro ⟨a, rfl⟩
@@ -102,30 +141,22 @@ theorem reverseEven_eq_self_iff_of_mem_center (hQ : Q.Nondegenerate)
 
 /-- Reversal fixes the centre of a regular even-dimensional even Clifford algebra pointwise
 exactly when the sign of reversal on a volume element is positive. -/
-theorem forall_reverseEven_eq_self_on_center_iff (hQ : Q.Nondegenerate)
+theorem forall_mem_center_reverseEven_eq_self_iff (hQ : Q.Nondegenerate)
     (heven : Even (finrank K V)) (hpos : 0 < finrank K V) :
     (∀ x : even Q, x ∈ Subalgebra.center K (even Q) → reverseEven Q x = x) ↔
       Even ((finrank K V).choose 2) := by
   constructor
   · intro hfix
-    let _ : Invertible (2 : K) := invertibleOfNonzero (NeZero.ne (2 : K))
-    obtain ⟨l, hl, hlen, hspan, hQl⟩ := hQ.exists_list_pairwise_isOrtho
-    have hle : Even l.length := hlen ▸ heven
-    have hne : l ≠ [] := List.length_pos_iff.mp (hlen ▸ hpos)
-    let ω : even Q := ⟨(l.map (ι Q)).prod, prod_map_ι_mem_even_of_even_length hle⟩
-    have hω : ω ∈ Subalgebra.center K (even Q) :=
-      prod_map_ι_mem_center_even_of_even_length hl hle hspan
+    obtain ⟨ω, hω, hω_scalar⟩ := exists_mem_center_even_forall_ne_algebraMap hQ heven hpos
     rcases (reverseEven_eq_self_iff_of_mem_center hQ heven hpos hω).mp (hfix ω hω) with
       hsign | ⟨a, ha⟩
     · exact hsign
-    · exact False.elim (prod_map_ι_ne_algebraMap_of_even_length hl hle hne hQl a
-        (congrArg (fun y : even Q => (y : CliffordAlgebra Q)) ha))
+    · exact False.elim (hω_scalar a ha)
   · intro hsign x hx
     exact (reverseEven_eq_self_iff_of_mem_center hQ heven hpos hx).mpr (Or.inl hsign)
 
 /-- In dimension four, the canonical reversal fixes every element of the discriminant algebra,
 the centre of the even Clifford algebra. -/
-@[simp]
 theorem reverseEven_eq_self_of_mem_center_of_finrank_eq_four (hQ : Q.Nondegenerate)
     (hV : finrank K V = 4) {x : even Q} (hx : x ∈ Subalgebra.center K (even Q)) :
     reverseEven Q x = x := by
@@ -142,13 +173,13 @@ theorem reverseEven_eq_self_iff_of_mem_center_of_finrank_eq_six (hQ : Q.Nondegen
 
 /-- In dimension six, reversal acts nontrivially on the centre of the even Clifford algebra.
 This includes both split and nonsplit discriminant algebras. -/
-theorem exists_mem_center_reverseEven_ne_of_finrank_eq_six (hQ : Q.Nondegenerate)
+theorem exists_mem_center_reverseEven_ne_self_of_finrank_eq_six (hQ : Q.Nondegenerate)
     (hV : finrank K V = 6) :
     ∃ x : even Q, x ∈ Subalgebra.center K (even Q) ∧ reverseEven Q x ≠ x := by
   have hnot : ¬ ∀ x : even Q, x ∈ Subalgebra.center K (even Q) → reverseEven Q x = x := by
-    rw [forall_reverseEven_eq_self_on_center_iff hQ (by simp [hV, Nat.even_iff]) (by omega)]
+    rw [forall_mem_center_reverseEven_eq_self_iff hQ (by simp [hV, Nat.even_iff]) (by omega)]
     simp [hV, Nat.choose_two_right, Nat.even_iff]
   push Not at hnot
   exact hnot
 
-end TauCeti
+end TauCeti.CliffordAlgebra
