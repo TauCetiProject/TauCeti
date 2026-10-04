@@ -190,6 +190,31 @@ theorem kummerCupPairing_bil_apply {x : (muNRep n F).V} {i : ℤ}
   simp only [kummerCupPairing, LinearMap.mk₂_apply]
   rw [hi, Int.cast_smul_eq_zsmul]
 
+/-- In the coordinate of the chosen primitive root, the Kummer coefficient pairing is scalar
+multiplication: the root with coordinate `c : ZMod n` pairs with `y` to `c • y`. -/
+theorem kummerCupPairing_bil_apply_zmod (c : ZMod n) (y : (muNRep n F).V) :
+    (kummerCupPairing ζ hζ).bil
+        ((muNRepEquivTrivialFp n F hζ).symm ((trivialFpEquiv n _).symm c)) y = c • y := by
+  obtain ⟨i, rfl⟩ := ZMod.natCast_zmod_surjective c
+  have hx := coe_kummerCoeffEquivMuNRep_symm_muNRepEquivTrivialFp_symm_natCast n F hζ i
+  have h := kummerCupPairing_bil_apply ζ hζ
+    (x := (muNRepEquivTrivialFp n F hζ).symm ((trivialFpEquiv n _).symm (i : ZMod n)))
+    (i := (i : ℤ)) (by simpa only [zpow_natCast] using hx) y
+  simpa only [Int.cast_natCast, Nat.cast_smul_eq_nsmul, natCast_zsmul] using h
+
+/-- The coefficient pairing selected by a primitive root is symmetric. -/
+theorem kummerCupPairing_bil_comm (x y : (muNRep n F).V) :
+    (kummerCupPairing ζ hζ).bil x y = (kummerCupPairing ζ hζ).bil y x := by
+  let e := (muNRepEquivTrivialFp n F hζ).trans (trivialFpEquiv n _).toAddEquiv
+  have hpair (c : ZMod n) (y : (muNRep n F).V) :
+      (kummerCupPairing ζ hζ).bil (e.symm c) y = c • y :=
+    kummerCupPairing_bil_apply_zmod ζ hζ c y
+  obtain ⟨c, rfl⟩ := e.symm.surjective x
+  obtain ⟨d, rfl⟩ := e.symm.surjective y
+  rw [hpair, hpair]
+  apply e.injective
+  simp only [ZMod.map_smul e, e.apply_symm_apply, smul_eq_mul, mul_comm]
+
 end Pairing
 
 /-! ### The local symbol -/
