@@ -19,6 +19,9 @@ residue field. This map is injective when the order is invertible in the ring.
 * `TauCeti.rootsOfUnityResidue`: the reduction homomorphism on roots of unity.
 * `TauCeti.rootsOfUnityResidue_injective`: reduction is injective on roots of unity of invertible
   order.
+* `TauCeti.eq_of_residue_eq_of_pow_eq_one`, `IsPrimitiveRoot.map_residue`: the same statement for
+  elements of the ring, and its consequence that reduction preserves primitive roots of unity of
+  invertible order.
 -/
 
 public section
@@ -65,4 +68,26 @@ theorem rootsOfUnityResidue_injective {n : ℕ} (hn : IsUnit (n : R)) :
   ext
   exact sub_eq_zero.mp (hs.mul_right_eq_zero.mp hgeom)
 
+/-- Two `n`-th roots of unity with the same residue are equal, when `n` is invertible. -/
+theorem eq_of_residue_eq_of_pow_eq_one {n : ℕ} (hn : IsUnit (n : R)) {x y : R} (hx : x ^ n = 1)
+    (hy : y ^ n = 1) (h : residue R x = residue R y) : x = y := by
+  have : NeZero n := ⟨by rintro rfl; simp at hn⟩
+  have h' : rootsOfUnity.mkOfPowEq x hx = rootsOfUnity.mkOfPowEq y hy :=
+    rootsOfUnityResidue_injective hn (Subtype.ext (Units.ext (by simpa using h)))
+  simpa using congrArg (fun u : rootsOfUnity n R ↦ ((u : Rˣ) : R)) h'
+
 end TauCeti
+
+namespace IsPrimitiveRoot
+
+variable {R : Type*} [CommRing R] [IsLocalRing R]
+
+/-- **Reduction preserves primitive roots of unity of invertible order.** -/
+theorem map_residue {n : ℕ} (hn : IsUnit (n : R)) {ζ : R} (hζ : IsPrimitiveRoot ζ n) :
+    IsPrimitiveRoot (residue R ζ) n := by
+  refine ⟨by rw [← map_pow, hζ.pow_eq_one, map_one], fun l hl ↦ hζ.dvd_of_pow_eq_one l ?_⟩
+  refine TauCeti.eq_of_residue_eq_of_pow_eq_one hn
+    (by rw [← pow_mul, mul_comm, pow_mul, hζ.pow_eq_one, one_pow]) (one_pow n) ?_
+  rw [map_pow, hl, map_one]
+
+end IsPrimitiveRoot

@@ -34,6 +34,8 @@ local field on `E` compatible with `K`; `L` is then a valuative extension of `E`
   field of `L/K` lies in `L₀`.
 * `TauCeti.eq_unramifiedExtension_inertiaDegree_iff`: `L₀` is the unique intermediate field
   which is unramified over `K` and over which `L` is totally ramified.
+* `TauCeti.IsUnramified.unramifiedExtension_inertiaDegree_eq_top`: `L₀ = L` when `L/K` is
+  unramified.
 * `TauCeti.isTotallyRamified_unramifiedExtension_inertiaDegree`,
   `TauCeti.ramificationIndex_unramifiedExtension_inertiaDegree` and
   `TauCeti.finrank_unramifiedExtension_inertiaDegree_eq_ramificationIndex`: `L/L₀` is totally
@@ -153,6 +155,15 @@ theorem eq_unramifiedExtension_inertiaDegree_iff (E : IntermediateField K L)
     rw [E.eq_unramifiedExtension_finrank]
     congr 1
     exact (IsUnramified.isTotallyRamified_iff_finrank_eq K E L).1 hLE
+
+/-- **An unramified extension is its own maximal unramified subextension.** If `L/K` is
+unramified, then `L` is generated over `K` by the roots of `X^{q^f} − X`, for `f = f(L/K)`. -/
+theorem IsUnramified.unramifiedExtension_inertiaDegree_eq_top [IsUnramified K L] :
+    unramifiedExtension K L (inertiaDegree K L) = ⊤ := by
+  have := finite_of_valuativeExtension K L
+  refine IntermediateField.eq_of_le_of_finrank_eq le_top ?_
+  rw [finrank_unramifiedExtension_inertiaDegree, IntermediateField.finrank_top',
+    IsUnramified.inertiaDegree_eq_finrank]
 
 section Tower
 
