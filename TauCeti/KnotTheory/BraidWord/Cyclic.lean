@@ -179,17 +179,14 @@ theorem outgoingSlot_rotateIndexEquiv (w : BraidWord n) (k : ℕ)
 
 private theorem crossingsAt_rotate_eq_nil_iff (w : BraidWord n) (k : ℕ) (p : Fin n) :
     crossingsAt (w.rotate k) p = [] ↔ w.crossingsAt p = [] := by
-  have hlen := (crossingsAt_rotate_isRotated w k p).perm.length_eq
-  simp only [List.length_map] at hlen
+  have h := crossingsAt_rotate_isRotated w k p
+  rw [← List.map_eq_nil_iff (f := w.rotateIndexEquiv k)]
   constructor
-  · intro h
-    apply List.length_eq_zero_iff.mp
-    rw [← hlen]
-    simp [h]
-  · intro h
-    apply List.length_eq_zero_iff.mp
-    rw [hlen]
-    simp [h]
+  · intro h0
+    rw [h0, List.isRotated_nil_iff'] at h
+    exact h.symm
+  · intro h0
+    rwa [h0, List.isRotated_nil_iff] at h
 
 /-- The closure arc at a slot of a rotated crossing is the renamed closure arc at the same slot
 of the corresponding original crossing. -/
