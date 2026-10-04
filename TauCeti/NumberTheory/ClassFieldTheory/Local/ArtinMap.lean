@@ -38,6 +38,8 @@ one about the image alone.
 ## Main definitions
 
 * `TauCeti.ClassFieldTheory.artinMap K`: the absolute local Artin map `Kˣ →* G_K^ab`.
+* `TauCeti.ClassFieldTheory.absoluteGaloisGroupExtend K L ι`: the embedding `G_L → G_K`
+  determined by an embedding `ι : L →ₐ[K] Kˢ`.
 
 ## Main results
 
@@ -47,6 +49,9 @@ one about the image alone.
 * `TauCeti.ClassFieldTheory.artinMap_restrict`: the finite restrictions of the absolute local
   Artin map are the finite local Artin maps.
 * `TauCeti.ClassFieldTheory.denseRange_artinMap`: the absolute local Artin map has dense image.
+* `TauCeti.ClassFieldTheory.absoluteGaloisGroupExtend_apply_separableClosureRingEquiv`: the
+  embedding of absolute Galois groups intertwines the actions on the identified separable
+  closures.
 
 ## References
 
@@ -118,6 +123,66 @@ theorem artinMap_restrict (L : Type*) [Field L] [Algebra K L] [FiniteDimensional
     ← (localClassFormation K).abelianizationRestrict_absoluteArtinMap, habs,
     abelianizationRestrict_mk V ⟨_, hmem⟩, MulEquiv.toAdditive_apply_apply, toMul_ofMul,
     abelianizationCongr_of, layerGalEquiv_mk]
+
+/-! ### Extension of absolute Galois groups -/
+
+/-- **The absolute Galois group of a finite extension inside that of `K`**, along a `K`-embedding
+`ι : L →ₐ[K] Kˢ`: identify `G_L` with the open subgroup of `G_K` fixing `ι(L)`, and include that
+subgroup in `G_K`. The two absolute Galois groups use Mathlib's algebraic closures, while the
+subgroup identification uses Tau Ceti's separable closures; `absoluteGaloisGroupRestrictEquiv`
+transports between the two models. -/
+def absoluteGaloisGroupExtend (L : Type*) [Field L] [Algebra K L] [FiniteDimensional K L]
+    (ι : L →ₐ[K] SeparableClosure K) :
+    Field.absoluteGaloisGroup L →* Field.absoluteGaloisGroup K :=
+  (absoluteGaloisGroupRestrictEquiv K).symm.toMulEquiv.toMonoidHom.comp
+    ((galoisSubgroup K L ι).toSubgroup.subtype.comp
+      ((galoisSubgroupEquiv K L ι).toMulEquiv.toMonoidHom.comp
+        (absoluteGaloisGroupRestrictEquiv L).toMulEquiv.toMonoidHom))
+
+omit [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K] in
+/-- Reading `absoluteGaloisGroupExtend` on separable closures gives the inclusion of the open
+subgroup identified with `G_L`. -/
+@[simp]
+theorem absoluteGaloisGroupRestrictEquiv_absoluteGaloisGroupExtend
+    (L : Type*) [Field L] [Algebra K L] [FiniteDimensional K L]
+    (ι : L →ₐ[K] SeparableClosure K) (τ : Field.absoluteGaloisGroup L) :
+    absoluteGaloisGroupRestrictEquiv K (absoluteGaloisGroupExtend K L ι τ) =
+      (galoisSubgroupEquiv K L ι (absoluteGaloisGroupRestrictEquiv L τ) :
+        AbsoluteGaloisGroup K) := by
+  simp [absoluteGaloisGroupExtend]
+
+omit [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K] in
+/-- The embedding of absolute Galois groups intertwines the actions on the identified separable
+closures. -/
+theorem absoluteGaloisGroupExtend_apply_separableClosureRingEquiv
+    (L : Type*) [Field L] [Algebra K L] [FiniteDimensional K L]
+    (ι : L →ₐ[K] SeparableClosure K) (τ : Field.absoluteGaloisGroup L)
+    (x : SeparableClosure L) :
+    absoluteGaloisGroupRestrictEquiv K (absoluteGaloisGroupExtend K L ι τ)
+        (separableClosureRingEquiv K L ι x) =
+      separableClosureRingEquiv K L ι (absoluteGaloisGroupRestrictEquiv L τ x) := by
+  rw [absoluteGaloisGroupRestrictEquiv_absoluteGaloisGroupExtend]
+  exact galoisSubgroupEquiv_apply_separableClosureRingEquiv K L ι _ x
+
+omit [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K] in
+/-- The embedding `G_L → G_K` induced by an embedding of a finite extension is continuous. -/
+theorem continuous_absoluteGaloisGroupExtend
+    (L : Type*) [Field L] [Algebra K L] [FiniteDimensional K L]
+    (ι : L →ₐ[K] SeparableClosure K) : Continuous (absoluteGaloisGroupExtend K L ι) := by
+  exact (absoluteGaloisGroupRestrictEquiv K).symm.continuous_toFun.comp <|
+    continuous_subtype_val.comp <|
+      (galoisSubgroupEquiv K L ι).continuous_toFun.comp
+        (absoluteGaloisGroupRestrictEquiv L).continuous_toFun
+
+omit [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K] in
+/-- The map `G_L → G_K` induced by an embedding of a finite extension is injective. -/
+theorem injective_absoluteGaloisGroupExtend
+    (L : Type*) [Field L] [Algebra K L] [FiniteDimensional K L]
+    (ι : L →ₐ[K] SeparableClosure K) : Function.Injective (absoluteGaloisGroupExtend K L ι) :=
+  (absoluteGaloisGroupRestrictEquiv K).symm.injective.comp <|
+    Subtype.val_injective.comp <|
+      (galoisSubgroupEquiv K L ι).injective.comp
+        (absoluteGaloisGroupRestrictEquiv L).injective
 
 /-- **The absolute local Artin map has dense image**: it reaches every finite quotient of
 `G_K^ab`, because every finite local Artin map is surjective. -/
