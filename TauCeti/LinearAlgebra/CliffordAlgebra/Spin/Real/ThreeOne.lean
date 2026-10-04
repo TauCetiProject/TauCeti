@@ -139,29 +139,13 @@ theorem realCliffordThreeOneEvenUnitaryEquivSpecialLinear_symm_apply_evenPart
       (z : Matrix (Fin 2) (Fin 2) ℂ))
     (realCliffordThreeOneEvenUnitaryEquivSpecialLinear.apply_symm_apply A)
 
-private noncomputable def realSpinThreeOneEquivEvenUnitary :
-    spinGroup (realCliffordForm 3 1) ≃*
-      CliffordAlgebra.evenUnitaryGroup (realCliffordForm 3 1) :=
-  MulEquiv.ofBijective
-    (CliffordAlgebra.spinGroupToEvenUnitary (realCliffordForm 3 1))
-    ⟨CliffordAlgebra.spinGroupToEvenUnitary_injective (realCliffordForm 3 1),
-      fun x => by
-        have hx : (x : (CliffordAlgebra (realCliffordForm 3 1))ˣ) ∈
-            (spinGroup.toUnits : spinGroup (realCliffordForm 3 1) →*
-              (CliffordAlgebra (realCliffordForm 3 1))ˣ).range := by
-          rw [CliffordAlgebra.range_spinGroup_toUnits_eq_evenUnitaryGroup_of_finrank_le_four
-            (realCliffordForm 3 1) (nondegenerate_realCliffordForm 3 1)
-            (by norm_num) (by norm_num)]
-          exact x.2
-        obtain ⟨s, hs⟩ := hx
-        refine ⟨s, Subtype.ext ?_⟩
-        simpa only [CliffordAlgebra.coe_spinGroupToEvenUnitary_apply] using hs⟩
-
 /-- The Lorentzian real Spin group `Spin(3,1)` is `SL₂(ℂ)`. -/
 noncomputable def realSpinThreeOneEquivSpecialLinear :
     spinGroup (realCliffordForm 3 1) ≃*
       Matrix.SpecialLinearGroup (Fin 2) ℂ :=
-  realSpinThreeOneEquivEvenUnitary.trans
+  (CliffordAlgebra.spinGroupEquivEvenUnitaryOfFinrankLeFour
+    (realCliffordForm 3 1) (nondegenerate_realCliffordForm 3 1)
+    (by norm_num) (by norm_num)).trans
     realCliffordThreeOneEvenUnitaryEquivSpecialLinear
 
 /-- The Lorentzian Spin equivalence evaluates the even-Clifford matrix model on the underlying
@@ -174,6 +158,8 @@ theorem coe_realSpinThreeOneEquivSpecialLinear_apply
       realCliffordThreeOneEvenEquivComplexMatrix
         (CliffordAlgebra.evenUnitaryGroupEvenPart (realCliffordForm 3 1)
           (CliffordAlgebra.spinGroupToEvenUnitary (realCliffordForm 3 1) s)) := by
+  rw [realSpinThreeOneEquivSpecialLinear, MulEquiv.trans_apply,
+    CliffordAlgebra.spinGroupEquivEvenUnitaryOfFinrankLeFour_apply]
   exact coe_realCliffordThreeOneEvenUnitaryEquivSpecialLinear_apply _
 
 /-- The inverse Lorentzian Spin equivalence recovers the Clifford value by the inverse complex
