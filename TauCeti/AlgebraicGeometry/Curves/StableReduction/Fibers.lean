@@ -37,6 +37,12 @@ variable {C : Scheme.{u}} {toK : C ⟶ Spec (.of K)}
 noncomputable def genericι (M : Model R K C toK) : C ⟶ M.total :=
   M.genericFiberIso.inv.left ≫ genericFiberι R K M.toBase
 
+/-- The inclusion of a model's chosen generic fibre is the chosen identification followed by the
+canonical inclusion of the generic fibre. -/
+lemma genericι_def (M : Model R K C toK) :
+    M.genericι = M.genericFiberIso.inv.left ≫ genericFiberι R K M.toBase :=
+  (rfl)
+
 /-- The inclusion of a model's chosen generic fibre lies over the fraction-field morphism. -/
 @[reassoc (attr := simp)]
 lemma genericι_toBase (M : Model R K C toK) :
