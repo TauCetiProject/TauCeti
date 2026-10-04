@@ -137,6 +137,13 @@ section Substitution
 
 variable [CommSemiring R]
 
+/-- The constant coefficient of a polynomial viewed as a power series is its constant
+coefficient as a polynomial. -/
+@[simp]
+theorem constantCoeff_coe (p : MvPolynomial σ R) :
+    MvPowerSeries.constantCoeff (p : MvPowerSeries σ R) = constantCoeff p :=
+  (rfl)
+
 /-- Substituting polynomials without constant terms into a polynomial does not decrease its
 order. -/
 theorem order_coe_le_order_coe_aeval {h : σ → MvPolynomial τ R}
@@ -155,7 +162,7 @@ theorem order_coe_le_order_coe_aeval {h : σ → MvPolynomial τ R}
   refine Finset.sum_le_sum fun i _ ↦ ?_
   rw [map_pow, coeToMvPowerSeries.ringHom_apply]
   refine MvPowerSeries.le_order_pow_of_constantCoeff_eq_zero _ ?_
-  rw [← MvPowerSeries.coeff_zero_eq_constantCoeff_apply, coeff_coe, ← constantCoeff_eq, hh i]
+  rw [constantCoeff_coe, hh i]
 
 end Substitution
 
@@ -174,6 +181,8 @@ theorem orderAt_def (p : MvPolynomial σ R) (a : σ → R) :
     p.orderAt a = (taylor a p : MvPowerSeries σ R).order :=
   (rfl)
 
+/-- `p` has order at least `n` at `a` exactly when every Taylor coefficient of `p` at `a` of
+total degree less than `n` vanishes. -/
 theorem le_orderAt_iff {n : ℕ∞} :
     n ≤ p.orderAt a ↔ ∀ d : σ →₀ ℕ, (d.degree : ℕ∞) < n → (taylor a p).coeff d = 0 := by
   refine ⟨fun h d hd ↦ ?_, fun h ↦ MvPowerSeries.le_order fun d hd ↦ by simpa using h d hd⟩
@@ -182,6 +191,9 @@ theorem le_orderAt_iff {n : ℕ∞} :
 theorem orderAt_le {d : σ →₀ ℕ} (h : (taylor a p).coeff d ≠ 0) : p.orderAt a ≤ d.degree :=
   MvPowerSeries.order_le (by simpa using h)
 
+/-- `p` has order exactly `n` at `a` when `n` is the least total degree of a nonzero Taylor
+coefficient of `p` at `a`: some Taylor coefficient of total degree `n` is nonzero, and every
+Taylor coefficient of smaller total degree vanishes. -/
 theorem orderAt_eq_coe_iff {n : ℕ} :
     p.orderAt a = n ↔ (∃ d, (taylor a p).coeff d ≠ 0 ∧ d.degree = n) ∧
       ∀ d : σ →₀ ℕ, d.degree < n → (taylor a p).coeff d = 0 := by
@@ -194,9 +206,7 @@ theorem orderAt_zero (a : σ → R) : (0 : MvPolynomial σ R).orderAt a = ⊤ :=
 /-- The order of `p` at `a` is zero exactly when `p` does not vanish at `a`. -/
 theorem orderAt_eq_zero_iff : p.orderAt a = 0 ↔ eval a p ≠ 0 := by
   rw [← not_iff_not, not_not, ← Ne, orderAt_def,
-    MvPowerSeries.order_ne_zero_iff_constCoeff_eq_zero,
-    ← MvPowerSeries.coeff_zero_eq_constantCoeff_apply, coeff_coe, ← constantCoeff_eq,
-    constantCoeff_taylor]
+    MvPowerSeries.order_ne_zero_iff_constCoeff_eq_zero, constantCoeff_coe, constantCoeff_taylor]
 
 /-- The order of `p` at `a` is positive exactly when `p` vanishes at `a`. -/
 theorem orderAt_pos_iff : 0 < p.orderAt a ↔ eval a p = 0 := by
@@ -242,6 +252,7 @@ theorem orderAt_mul [NoZeroDivisors R] (p q : MvPolynomial σ R) (a : σ → R) 
     (p * q).orderAt a = p.orderAt a + q.orderAt a := by
   simp [orderAt_def, MvPowerSeries.order_mul]
 
+/-- Over a domain, the order of `p ^ n` at `a` is `n` times the order of `p` at `a`. -/
 theorem orderAt_pow [NoZeroDivisors R] [Nontrivial R] (p : MvPolynomial σ R) (a : σ → R)
     (n : ℕ) : (p ^ n).orderAt a = n • p.orderAt a := by
   induction n with
@@ -298,9 +309,7 @@ variable [CommRing R] [IsAddTorsionFree R] {p : MvPolynomial σ R} {a : σ → R
 theorem succ_le_orderAt_iff {n : ℕ} :
     ((n + 1 : ℕ) : ℕ∞) ≤ p.orderAt a ↔
       eval a p = 0 ∧ ∀ i, (n : ℕ∞) ≤ (pderiv i p).orderAt a := by
-  rw [orderAt_def, MvPowerSeries.succ_le_order_iff,
-    ← MvPowerSeries.coeff_zero_eq_constantCoeff_apply, coeff_coe, ← constantCoeff_eq,
-    constantCoeff_taylor]
+  rw [orderAt_def, MvPowerSeries.succ_le_order_iff, constantCoeff_coe, constantCoeff_taylor]
   simp only [orderAt_def, MvPowerSeries.pderiv_coe, pderiv_taylor]
 
 /-- Over a ring without additive torsion, `p` has order at least `n` at `a` if and only if, for
