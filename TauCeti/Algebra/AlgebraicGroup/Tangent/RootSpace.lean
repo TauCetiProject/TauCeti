@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Normalizer
+public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Normalizer.Weight
+public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Normalizer.Character
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.Cotangent
 
 /-!
@@ -52,6 +53,8 @@ one, or that `G` is reductive. When `π` does exhibit a split maximal torus `T` 
   grading: `[𝔤_α, 𝔤_β] ⊆ 𝔤_{αβ}`.
 * `Derivation.image_nontrivialAdjointWeights`: inverse conjugation by a normalizing rational
   point permutes the nontrivial adjoint weights, hence the roots of a split reductive pair.
+* `Derivation.image_nontrivialAdjointWeights_normalizerCharacterHom`: the actual character
+  action of the scheme normalizer preserves the nontrivial adjoint weights.
 
 ## Roadmap
 
@@ -239,6 +242,17 @@ theorem image_nontrivialAdjointWeights
     w '' nontrivialAdjointWeights π = nontrivialAdjointWeights π := by
   apply (Set.eq_preimage_iff_image_eq w.bijective).mp
   exact Set.ext fun α ↦ (mem_nontrivialAdjointWeights_apply_iff π g w hg α).symm
+
+/-- The induced character action of the scheme normalizer permutes the nontrivial adjoint
+weights. For a split reductive pair, this is its action on the roots. -/
+theorem image_nontrivialAdjointWeights_normalizerCharacterHom
+    [ConnectedSpace (PrimeSpectrum R)]
+    (π : H →ₐc[R] MonoidAlgebra R M) (hπ : Function.Surjective π)
+    (g : π.normalizerPoints hπ) :
+    π.normalizerCharacterHom hπ g '' nontrivialAdjointWeights π =
+      nontrivialAdjointWeights π :=
+  image_nontrivialAdjointWeights π g (π.normalizerCharacterHom hπ g)
+    (π.normalizerCharacterHom_comp hπ g)
 
 /-- Off the nontrivial adjoint weights and the trivial character the weight submodule vanishes. -/
 theorem adjointWeightSpace_eq_bot_of_notMem_nontrivialAdjointWeights

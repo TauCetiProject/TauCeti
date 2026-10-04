@@ -350,7 +350,8 @@ theorem toOrientedPDCode_relabel (D : BasedOrientedGaussCode n) (e : Equiv.Perm 
       rcases (PDCode.crossingSlotEquiv n).symm h with ⟨c, slot⟩
       rw [toOrientedPDCode_crossing, OrientedPDCode.relabel_toPDCode, PDCode.relabel_halfEdge]
       simp only [Equiv.equivCongr_apply_apply, Equiv.refl_apply,
-        PDCode.crossingBlockPerm_symm_apply_crossingSlotEquiv, toOrientedPDCode_crossing,
+        PDCode.crossingBlockEquiv_symm,
+        PDCode.crossingBlockEquiv_apply_crossingSlotEquiv, toOrientedPDCode_crossing,
         crossingVisit_relabel, crossingOutgoing_relabel, visitHalfEdgeEquiv]
     · rw [OrientedPDCode.relabel_toPDCode, PDCode.relabel_edgePair]
       simp [toOrientedPDCode, visitHalfEdgeEquiv]

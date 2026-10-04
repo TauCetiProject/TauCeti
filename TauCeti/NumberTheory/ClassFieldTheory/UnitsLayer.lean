@@ -72,15 +72,24 @@ variable {K : Type} [Field K]
 section Level
 
 variable (K) in
+/-- The fixed field of the whole group `G_K` is `K`, the image of the structure map
+`K →ₐ[K] Kˢ`. This is the hypothesis under which `unitsLevelEquiv` identifies the level
+`((Kˢ)ˣ)^{G_K}` with `Kˣ`. -/
+theorem fixedField_toSubgroup_top :
+    fixedField (⊤ : OpenSubgroup (AbsoluteGaloisGroup K)).toSubgroup =
+      (Algebra.ofId K (SeparableClosure K)).fieldRange := by
+  rw [OpenSubgroup.toSubgroup_top, InfiniteGalois.fixedField_bot]
+  ext x
+  simp [mem_bot, Algebra.ofId_apply]
+
+variable (K) in
 /-- The fixed field of the ground subgroup `G_K` of a layer `V ◁ G_K` is `K`, the image of the
 structure map `K →ₐ[K] Kˢ`. This is the hypothesis under which `unitsLevelEquiv` identifies the
 ground level of such a layer with `Kˣ`. -/
 theorem fixedField_ground_ofOpenNormal (V : OpenNormalSubgroup (AbsoluteGaloisGroup K)) :
     fixedField (NormalLayer.ofOpenNormal V).ground.toSubgroup =
       (Algebra.ofId K (SeparableClosure K)).fieldRange := by
-  rw [NormalLayer.ground_ofOpenNormal, OpenSubgroup.toSubgroup_top, InfiniteGalois.fixedField_bot]
-  ext x
-  simp [mem_bot, Algebra.ofId_apply]
+  rw [NormalLayer.ground_ofOpenNormal, fixedField_toSubgroup_top]
 
 variable {L : Type*} [Field L] [Algebra K L] [FiniteDimensional K L] [IsGalois K L]
 

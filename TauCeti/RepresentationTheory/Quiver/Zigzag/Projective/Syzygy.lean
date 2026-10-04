@@ -86,6 +86,18 @@ theorem coe_zigzagProjectiveArrowMul_apply (d : G.Dart) (y : zigzagProjective k 
     (zigzagProjectiveArrowMul k G d y : Z) = y * zigzagMk k G (ofArrow (arrow G d.adj)) :=
   coe_zigzagProjectiveHomEquivCorner_symm_apply k G _ y
 
+/-- Right multiplication by an arrow raises the path degree by one. With the source shifted
+by one, this is a degree-zero map in a linear projective presentation. -/
+theorem zigzagProjectiveArrowMul_mem_grade (d : G.Dart) {p : ℤ}
+    {x : zigzagProjective k G d.snd} (hx : x ∈ zigzagProjectiveGrade k G d.snd p) :
+    zigzagProjectiveArrowMul k G d x ∈ zigzagProjectiveGrade k G d.fst (p + 1) := by
+  rw [mem_zigzagProjectiveGrade_iff, coe_zigzagProjectiveArrowMul_apply]
+  have ha : zigzagMk k G (ofArrow (arrow G d.adj)) ∈ zigzagIntegerGrade k G 1 := by
+    -- Present the integer numeral as a natural-number cast for the extension-by-zero API.
+    rw [show (1 : ℤ) = (1 : ℕ) from rfl, zigzagIntegerGrade_ofNat]
+    exact zigzagMk_mem_zigzagGrade k G (PathAlgebra.ofArrow_mem_grade_one _)
+  exact mul_mem_zigzagIntegerGrade k G ((mem_zigzagProjectiveGrade_iff k G).1 hx) ha
+
 /-- An arrow map after the volume map at its source vanishes: `x_{d.snd} a_d` has path length
 three. -/
 @[simp]

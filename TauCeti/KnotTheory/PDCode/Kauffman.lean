@@ -147,15 +147,15 @@ half-edges; only which of them is the `A`-smoothing changes. -/
 
 /-- Relabelling conjugates smoothing by the half-edge relabelling, after transporting the family
 of local smoothings along the crossing relabelling. -/
-@[simp] theorem smoothingTurn_relabel (D : PDCode n) (b : Fin n → Bool)
-    (half : Equiv.Perm (Fin (4 * n))) (cross : Equiv.Perm (Fin n)) :
+@[simp] theorem smoothingTurn_relabel {m : ℕ} (D : PDCode n) (b : Fin m → Bool)
+    (half : Fin (4 * n) ≃ Fin (4 * m)) (cross : Fin n ≃ Fin m) :
     (D.relabel half cross).smoothingTurn b = half.permCongr (D.smoothingTurn (b ∘ cross)) := by
   ext h
   obtain ⟨x, rfl⟩ := half.surjective h
   obtain ⟨x, rfl⟩ := D.halfEdge.surjective x
   obtain ⟨⟨i, slot⟩, rfl⟩ := (crossingSlotEquiv n).surjective x
   have he : half (D.halfEdge (crossingSlotEquiv n (i, slot))) =
-      (D.relabel half cross).halfEdge (crossingSlotEquiv n (cross i, slot)) := by
+      (D.relabel half cross).halfEdge (crossingSlotEquiv m (cross i, slot)) := by
     rw [← D.crossing_apply, ← (D.relabel half cross).crossing_apply]
     simpa only [Equiv.symm_apply_apply] using (D.crossing_relabel half cross (cross i) slot).symm
   rw [he, smoothingTurn_crossing, crossing_relabel]
@@ -193,8 +193,8 @@ over-pair indicator. -/
   cases hs : s i <;> simp [hs]
 
 /-- Relabelling reads a state's choice at the old crossing name. -/
-@[simp] theorem smoothingChoice_relabel (D : PDCode n) (s : Fin n → Bool)
-    (half : Equiv.Perm (Fin (4 * n))) (cross : Equiv.Perm (Fin n)) :
+@[simp] theorem smoothingChoice_relabel {m : ℕ} (D : PDCode n) (s : Fin m → Bool)
+    (half : Fin (4 * n) ≃ Fin (4 * m)) (cross : Fin n ≃ Fin m) :
     (D.relabel half cross).smoothingChoice s = D.smoothingChoice (s ∘ cross) ∘ cross.symm := by
   funext i
   simp [smoothingChoice]
@@ -220,8 +220,8 @@ theorem statePerm_def (D : PDCode n) (s : Fin n → Bool) :
   simp [statePerm]
 
 /-- Relabelling conjugates smoothed traversal by the half-edge relabelling. -/
-@[simp] theorem statePerm_relabel (D : PDCode n) (s : Fin n → Bool)
-    (half : Equiv.Perm (Fin (4 * n))) (cross : Equiv.Perm (Fin n)) :
+@[simp] theorem statePerm_relabel {m : ℕ} (D : PDCode n) (s : Fin m → Bool)
+    (half : Fin (4 * n) ≃ Fin (4 * m)) (cross : Fin n ≃ Fin m) :
     (D.relabel half cross).statePerm s = half.permCongr (D.statePerm (s ∘ cross)) := by
   have hcomp : (D.smoothingChoice (s ∘ cross) ∘ cross.symm) ∘ cross
       = D.smoothingChoice (s ∘ cross) := by
@@ -334,8 +334,8 @@ theorem one_le_stateLoopCount (D : PDCode n) (hn : n ≠ 0) (s : Fin n → Bool)
   simp [stateLoopCount_def]
 
 /-- Relabelling preserves the circle count of every state. -/
-@[simp] theorem stateLoopCount_relabel (D : PDCode n) (s : Fin n → Bool)
-    (half : Equiv.Perm (Fin (4 * n))) (cross : Equiv.Perm (Fin n)) :
+@[simp] theorem stateLoopCount_relabel {m : ℕ} (D : PDCode n) (s : Fin m → Bool)
+    (half : Fin (4 * n) ≃ Fin (4 * m)) (cross : Fin n ≃ Fin m) :
     (D.relabel half cross).stateLoopCount s = D.stateLoopCount (s ∘ cross) := by
   simp [stateLoopCount_def]
 
@@ -373,7 +373,8 @@ theorem stateWeight_append {m : ℕ} (s : Fin n → Bool) (t : Fin m → Bool) (
   cases hs : s i <;> simp
 
 /-- Transporting a state along a relabelling of the crossings preserves its weight. -/
-@[simp] theorem stateWeight_comp (s : Fin n → Bool) (a : Rˣ) (cross : Equiv.Perm (Fin n)) :
+@[simp] theorem stateWeight_comp {m : ℕ} (s : Fin m → Bool) (a : Rˣ)
+    (cross : Fin n ≃ Fin m) :
     stateWeight (s ∘ cross) a = stateWeight s a :=
   Equiv.prod_comp cross fun i ↦ bif s i then a else a⁻¹
 
@@ -404,14 +405,14 @@ theorem kauffmanBracket_def (D : PDCode n) (a : Rˣ) :
     (rfl)
 
 /-- The Kauffman bracket depends on a PD-code only through its relabelling class. -/
-@[simp] theorem kauffmanBracket_relabel (D : PDCode n) (a : Rˣ)
-    (half : Equiv.Perm (Fin (4 * n))) (cross : Equiv.Perm (Fin n)) :
+@[simp] theorem kauffmanBracket_relabel {m : ℕ} (D : PDCode n) (a : Rˣ)
+    (half : Fin (4 * n) ≃ Fin (4 * m)) (cross : Fin n ≃ Fin m) :
     (D.relabel half cross).kauffmanBracket a = D.kauffmanBracket a := by
   let e := Equiv.piCongrLeft (fun _ : Fin n ↦ Bool) cross.symm
-  have he : (fun s : Fin n → Bool ↦ s ∘ cross) = e := by
+  have he : (fun s : Fin m → Bool ↦ s ∘ cross) = e := by
     funext s i
     simp [e, Equiv.piCongrLeft_apply]
-  have hbij : Function.Bijective (fun s : Fin n → Bool ↦ s ∘ cross) := by
+  have hbij : Function.Bijective (fun s : Fin m → Bool ↦ s ∘ cross) := by
     rw [he]
     exact e.bijective
   refine Fintype.sum_bijective (fun s ↦ s ∘ cross)
