@@ -36,6 +36,8 @@ form on a finite-dimensional space has such a list, by
 
 ## Main results
 
+* `CliffordAlgebra.exists_central_even_add_odd_of_mem_center`: when `2` is invertible, the even
+  and odd components of a central element are central.
 * `CliffordAlgebra.add_smul_volume_injective`: the coordinates in `K ⊕ Kω` are unique.
 * `CliffordAlgebra.mem_center_iff_exists_eq_add_smul_volume`: a central element is of the form
   `a + b • ω`.
@@ -55,6 +57,45 @@ namespace CliffordAlgebra
 open Module
 
 universe u v
+
+section CommRing
+
+variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M]
+  {Q : QuadraticForm R M}
+
+/-- **The homogeneous components of a central element are central.** When `2` is invertible, a
+central element of a Clifford algebra is the sum of a central element of even degree and a central
+element of odd degree. -/
+theorem exists_central_even_add_odd_of_mem_center [Invertible (2 : R)] {x : CliffordAlgebra Q}
+    (hx : x ∈ Subalgebra.center R (CliffordAlgebra Q)) :
+    ∃ e ∈ evenOdd Q 0, ∃ o ∈ evenOdd Q 1,
+      e + o = x ∧ e ∈ Subalgebra.center R (CliffordAlgebra Q) ∧
+        o ∈ Subalgebra.center R (CliffordAlgebra Q) := by
+  obtain ⟨⟨e, he⟩, ⟨o, ho⟩, heo, -⟩ :=
+    Submodule.existsUnique_add_of_isCompl (evenOdd_isCompl Q) x
+  have heo' : e + o = x := by simpa only using heo
+  have hxInv : involute x ∈ Subalgebra.center R (CliffordAlgebra Q) :=
+    MulEquivClass.apply_mem_center involuteEquiv hx
+  have hinv : involute x = e - o := by
+    rw [← heo', map_add, involute_eq_of_mem_even he, involute_eq_of_mem_odd ho]
+    simp only [sub_eq_add_neg]
+  have heq : e = (⅟(2 : R)) • (x + involute x) := by
+    calc
+      e = (⅟(2 : R)) • ((2 : R) • e) := (invOf_smul_smul (2 : R) e).symm
+      _ = (⅟(2 : R)) • ((e + o) + (e - o)) := by rw [two_smul]; congr 1; abel
+      _ = (⅟(2 : R)) • (x + involute x) := by rw [heo', hinv]
+  have hoq : o = (⅟(2 : R)) • (x - involute x) := by
+    calc
+      o = (⅟(2 : R)) • ((2 : R) • o) := (invOf_smul_smul (2 : R) o).symm
+      _ = (⅟(2 : R)) • ((e + o) - (e - o)) := by rw [two_smul]; congr 1; abel
+      _ = (⅟(2 : R)) • (x - involute x) := by rw [heo', hinv]
+  refine ⟨e, he, o, ho, heo', ?_, ?_⟩
+  · rw [heq]
+    exact Subalgebra.smul_mem _ (Subalgebra.add_mem _ hx hxInv) _
+  · rw [hoq]
+    exact Subalgebra.smul_mem _ (Subalgebra.sub_mem _ hx hxInv) _
+
+end CommRing
 
 variable {K : Type u} {V : Type v} [Field K] [AddCommGroup V] [Module K V] {Q : QuadraticForm K V}
 
@@ -76,48 +117,17 @@ private theorem center_even_component_is_scalar [FiniteDimensional K V] [NeZero 
   refine ⟨a, ?_⟩
   exact congrArg Subtype.val ha
 
-private theorem center_homogeneous_components [Invertible (2 : K)] {x : CliffordAlgebra Q}
-    (hx : x ∈ Subalgebra.center K (CliffordAlgebra Q)) :
-    ∃ e ∈ evenOdd Q 0, ∃ o ∈ evenOdd Q 1,
-      e + o = x ∧ e ∈ Subalgebra.center K (CliffordAlgebra Q) ∧
-        o ∈ Subalgebra.center K (CliffordAlgebra Q) := by
-  obtain ⟨⟨e, he⟩, ⟨o, ho⟩, heo, -⟩ :=
-    Submodule.existsUnique_add_of_isCompl (evenOdd_isCompl Q) x
-  have heo' : e + o = x := by simpa only using heo
-  have hxInv : involute x ∈ Subalgebra.center K (CliffordAlgebra Q) :=
-    MulEquivClass.apply_mem_center involuteEquiv hx
-  have hinv : involute x = e - o := by
-    rw [← heo', map_add, involute_eq_of_mem_even he, involute_eq_of_mem_odd ho]
-    simp only [sub_eq_add_neg]
-  have heq : e = (⅟(2 : K)) • (x + involute x) := by
-    calc
-      e = (⅟(2 : K)) • ((2 : K) • e) := (invOf_smul_smul (2 : K) e).symm
-      _ = (⅟(2 : K)) • ((e + o) + (e - o)) := by rw [two_smul]; congr 1; abel
-      _ = (⅟(2 : K)) • (x + involute x) := by rw [heo', hinv]
-  have hoq : o = (⅟(2 : K)) • (x - involute x) := by
-    calc
-      o = (⅟(2 : K)) • ((2 : K) • o) := (invOf_smul_smul (2 : K) o).symm
-      _ = (⅟(2 : K)) • ((e + o) - (e - o)) := by rw [two_smul]; congr 1; abel
-      _ = (⅟(2 : K)) • (x - involute x) := by rw [heo', hinv]
-  refine ⟨e, he, o, ho, heo', ?_, ?_⟩
-  · rw [heq]
-    exact Subalgebra.smul_mem _ (Subalgebra.add_mem _ hx hxInv) _
-  · rw [hoq]
-    exact Subalgebra.smul_mem _ (Subalgebra.sub_mem _ hx hxInv) _
-
-/-- The scalar and volume coordinates `a + b • ω` are unique for an anisotropic list of odd
-length. Thus the notation `K ⊕ Kω` for their span is a genuine direct sum, not merely a sum of
-subspaces. No orthogonality is needed: `ω` is a unit by `CliffordAlgebra.isUnit_prod_map_ι`. -/
+/-- The scalar and volume coordinates `a + b • ω` are unique whenever the volume element `ω` of
+a list of odd length is nonzero. Thus the notation `K ⊕ Kω` for their span is a genuine direct sum,
+not merely a sum of subspaces. Neither orthogonality nor anisotropy is needed; for an anisotropic
+list, `ω` is a unit by `CliffordAlgebra.isUnit_prod_map_ι`. -/
 theorem add_smul_volume_injective [NeZero (2 : K)] {l : List V} (hlen : Odd l.length)
-    (hQl : ∀ v ∈ l, Q v ≠ 0) :
+    (hω : (l.map (ι Q)).prod ≠ 0) :
     Function.Injective fun p : K × K ↦
       algebraMap K (CliffordAlgebra Q) p.1 + p.2 • (l.map (ι Q)).prod := by
   let _ : Invertible (2 : K) := invertibleOfNonzero (NeZero.ne (2 : K))
   let ω : CliffordAlgebra Q := (l.map (ι Q)).prod
   have hωOdd : ω ∈ evenOdd Q 1 := prod_map_ι_mem_evenOdd_one_of_odd_length hlen
-  have hω : ω ≠ 0 := by
-    refine (isUnit_prod_map_ι (isUnit_iff_ne_zero.mpr (List.prod_ne_zero ?_))).ne_zero
-    simpa using hQl
   intro p q hpq
   have even_mem (a : K) : algebraMap K (CliffordAlgebra Q) a ∈ evenOdd Q 0 :=
     SetLike.algebraMap_mem_graded (evenOdd Q) a
@@ -161,7 +171,7 @@ theorem mem_center_iff_exists_eq_add_smul_volume [NeZero (2 : K)] {l : List V}
   have hc : c ≠ 0 := neg_one_pow_choose_two_mul_prod_map_ne_zero hQl
   constructor
   · intro hx
-    obtain ⟨e, he, o, ho, heo, heCenter, hoCenter⟩ := center_homogeneous_components hx
+    obtain ⟨e, he, o, ho, heo, heCenter, hoCenter⟩ := exists_central_even_add_odd_of_mem_center hx
     obtain ⟨a, ha⟩ := center_even_component_is_scalar hQ hV he heCenter
     have hoωEven : o * ω ∈ evenOdd Q 0 := by
       -- Odd times odd is even: the two degrees add up to `0` in `ZMod 2`.
