@@ -100,21 +100,10 @@ theorem continuous_transvectionHom {u : V} (hu : Q u = 0) :
   rw [S.isQuotientMap_mkQ.continuous_iff]
   have hw : ∀ w : LinearMap.ker (Q.polarBilin u), polar Q u (w : V) = 0 := fun w ↦ by
     simpa only [QuadraticMap.polarBilin_apply_apply] using LinearMap.mem_ker.mp w.2
-  have hraw : Continuous (fun w : LinearMap.ker (Q.polarBilin u) ↦
-      Additive.ofMul (⟨transvection Q hu (hw w),
-        transvection_mem_specialOrthogonalGroup hu (hw w)⟩ :
-          TauCeti.QuadraticMap.specialOrthogonalGroup Q)) := by
-    apply Continuous.subtype_mk
-    exact (continuous_transvection (fun _ ↦ u)
-      (fun w : LinearMap.ker (Q.polarBilin u) ↦ (w : V)) (fun _ ↦ hu) hw
-      continuous_const continuous_subtype_val).congr fun _ ↦ by
-        apply LinearEquiv.ext
-        intro x
-        rfl
-  convert hraw using 1
-  funext w
-  apply Additive.toMul.injective
-  apply Subtype.ext
-  exact coe_transvectionHom_mk hu (hw w)
+  apply Continuous.subtype_mk
+  exact (continuous_transvection (fun _ ↦ u)
+    (fun w : LinearMap.ker (Q.polarBilin u) ↦ (w : V)) (fun _ ↦ hu) hw
+    continuous_const continuous_subtype_val).congr fun w ↦
+      (coe_transvectionHom_mk hu (hw w)).symm
 
 end QuadraticMap
