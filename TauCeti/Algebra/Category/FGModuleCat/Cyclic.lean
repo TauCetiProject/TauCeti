@@ -141,36 +141,6 @@ open Module Polynomial
 
 variable {K : Type u} [Field K] {n : ℕ}
 
-/-- Over `K[X]/(X ^ n)`, the quotient of the opposite algebra by `op (x ^ p)` has dimension `p`,
-for `p ≤ n`. -/
-private theorem finrank_quotient_span_op_root_pow {p : ℕ} (hp : p ≤ n) :
-    finrank K ((AdjoinRoot (X ^ n : K[X]))ᵐᵒᵖ ⧸
-      Ideal.span {op (AdjoinRoot.root (X ^ n : K[X]) ^ p)}) = p := by
-  let e := Ideal.quotientEquivAlg (Ideal.span {AdjoinRoot.root (X ^ n : K[X]) ^ p})
-    (Ideal.span {op (AdjoinRoot.root (X ^ n : K[X]) ^ p)}) (AlgEquiv.toOpposite K _)
-    (by simp [Ideal.map_span])
-  rw [← e.toLinearEquiv.finrank_eq, AdjoinRoot.finrank_quotient_span_root_X_pow_pow hp]
-
-private theorem span_op_root_pow_sup (j m : ℕ) :
-    Ideal.span {op (AdjoinRoot.root (X ^ n : K[X]) ^ j)} ⊔
-        Ideal.span {op (AdjoinRoot.root (X ^ n : K[X]) ^ m)} =
-      Ideal.span {op (AdjoinRoot.root (X ^ n : K[X]) ^ min j m)} := by
-  rcases le_total j m with h | h
-  · rw [min_eq_left h, sup_eq_left, Ideal.span_singleton_le_span_singleton, op_pow, op_pow]
-    exact pow_dvd_pow _ h
-  · rw [min_eq_right h, sup_eq_right, Ideal.span_singleton_le_span_singleton, op_pow, op_pow]
-    exact pow_dvd_pow _ h
-
-/-- Over `K[X]/(X ^ n)`, the quotient of `M_j` by the image of `x ^ m` is `M_(min j m)`. -/
-private theorem finrank_quotient_map_mkQ_span_op_root_pow {j : ℕ} (hj : j ≤ n) (m : ℕ) :
-    finrank K (((AdjoinRoot (X ^ n : K[X]))ᵐᵒᵖ ⧸
-        Ideal.span {op (AdjoinRoot.root (X ^ n : K[X]) ^ j)}) ⧸
-      (Submodule.map (Ideal.span {op (AdjoinRoot.root (X ^ n : K[X]) ^ j)}).mkQ
-        (Ideal.span {op (AdjoinRoot.root (X ^ n : K[X]) ^ m)})).restrictScalars K) = min j m := by
-  rw [(Submodule.Quotient.restrictScalarsEquiv K _).finrank_eq,
-    ((Submodule.quotientQuotientEquivQuotientSup _ _).restrictScalars K).finrank_eq,
-    span_op_root_pow_sup, finrank_quotient_span_op_root_pow ((min_le_left j m).trans hj)]
-
 /-- Over `K[X]/(X ^ n)`, the elements of `M_j` killed by `x ^ i` form a space of dimension
 `min i j`: multiplication by `x ^ i` on `M_j` has cokernel `M_(min i j)`. -/
 theorem finrank_ker_smul_op_root_pow {i j : ℕ} (hj : j ≤ n) :
@@ -197,10 +167,10 @@ theorem finrank_ker_smul_op_root_pow {i j : ℕ} (hj : j ≤ n) :
   have := (monic_X_pow n).finite_adjoinRoot (R := K)
   have h₁ := LinearMap.finrank_range_add_finrank_ker φ
   have h₂ := Submodule.finrank_quotient_add_finrank (LinearMap.range φ)
-  rw [finrank_quotient_span_op_root_pow hj] at h₁ h₂
+  rw [AdjoinRoot.finrank_quotient_span_op_root_X_pow_pow hj] at h₁ h₂
   have h₃ : finrank K (_ ⧸ LinearMap.range φ) = min j i := by
     rw [hrange]
-    exact finrank_quotient_map_mkQ_span_op_root_pow hj i
+    exact AdjoinRoot.finrank_quotient_map_mkQ_span_op_root_X_pow_pow hj i
   omega
 
 /-- Over `K[X]/(X ^ n)`, with `x` the class of `X` and `M_j = A ⧸ (x ^ j)`, the image in `M_j` of
@@ -223,7 +193,8 @@ theorem finrank_map_ker_smul_op_root_pow {i j : ℕ} (hi : i ≤ n) (hj : j ≤ 
   have := (monic_X_pow n).finite_adjoinRoot (R := K)
   have h := Submodule.finrank_quotient_add_finrank ((Submodule.map (Ideal.span {op (x ^ j)}).mkQ
     (Ideal.span {op (x ^ (n - i))})).restrictScalars K)
-  rw [finrank_quotient_map_mkQ_span_op_root_pow hj, finrank_quotient_span_op_root_pow hj] at h
+  rw [AdjoinRoot.finrank_quotient_map_mkQ_span_op_root_X_pow_pow hj,
+    AdjoinRoot.finrank_quotient_span_op_root_X_pow_pow hj] at h
   rw [hker, ← Submodule.restrictScalars_map]
   omega
 
