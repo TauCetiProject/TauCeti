@@ -137,7 +137,7 @@ def alexanderModuleRelabelEquiv :
 /-- The equivalence sends each generator of the relabelled code to the generator of its old
 name. -/
 @[simp]
-theorem alexanderModuleRelabelEquiv_alexanderGenerator
+theorem alexanderModuleRelabelEquiv_apply_alexanderGenerator
     (g : Fin (4 * m) ⊕ Fin (D.relabel half cross).crossinglessComponentCount) :
     D.alexanderModuleRelabelEquiv half cross ((D.relabel half cross).alexanderGenerator g) =
       Sum.elim (fun h ↦ D.alexanderGenerator (.inl (half.symm h)))
@@ -146,7 +146,7 @@ theorem alexanderModuleRelabelEquiv_alexanderGenerator
 
 /-- The inverse equivalence sends each generator to the generator of its new name. -/
 @[simp]
-theorem alexanderModuleRelabelEquiv_symm_alexanderGenerator
+theorem alexanderModuleRelabelEquiv_symm_apply_alexanderGenerator
     (g : Fin (4 * n) ⊕ Fin D.crossinglessComponentCount) :
     (D.alexanderModuleRelabelEquiv half cross).symm (D.alexanderGenerator g) =
       Sum.elim (fun h ↦ (D.relabel half cross).alexanderGenerator (.inl (half h)))
@@ -252,7 +252,7 @@ def alexanderModuleRotateCrossingEquiv :
 
 /-- The equivalence fixes every generator. -/
 @[simp]
-theorem alexanderModuleRotateCrossingEquiv_alexanderGenerator
+theorem alexanderModuleRotateCrossingEquiv_apply_alexanderGenerator
     (g : Fin (4 * n) ⊕ Fin (D.rotateCrossing i).crossinglessComponentCount) :
     D.alexanderModuleRotateCrossingEquiv i ((D.rotateCrossing i).alexanderGenerator g) =
       Sum.elim (fun h ↦ D.alexanderGenerator (.inl h))
@@ -261,7 +261,7 @@ theorem alexanderModuleRotateCrossingEquiv_alexanderGenerator
 
 /-- The inverse equivalence fixes every generator. -/
 @[simp]
-theorem alexanderModuleRotateCrossingEquiv_symm_alexanderGenerator
+theorem alexanderModuleRotateCrossingEquiv_symm_apply_alexanderGenerator
     (g : Fin (4 * n) ⊕ Fin D.crossinglessComponentCount) :
     (D.alexanderModuleRotateCrossingEquiv i).symm (D.alexanderGenerator g) =
       Sum.elim (fun h ↦ (D.rotateCrossing i).alexanderGenerator (.inl h))
@@ -324,7 +324,7 @@ theorem alexanderGenerator_reidemeisterOne_inr (s : Fin 4) :
     rw [alexanderWeight_of_isOver _ (by simp [PDCode.isOver_def]), one_smul, sub_self, zero_smul,
       add_zero] at r0
     rw [alexanderWeight_of_not_isOver _ (by simp [PDCode.isOver_def])] at r1
-    have h21 := eq_of_eq_smul_add_one_sub_smul (isUnit_T _) r1
+    have h21 := (isUnit_T _).eq_of_eq_smul_add_one_sub_smul r1
     intro s
     fin_cases s
     · rfl
@@ -335,7 +335,7 @@ theorem alexanderGenerator_reidemeisterOne_inr (s : Fin 4) :
     rw [alexanderWeight_of_isOver _ (by simp [PDCode.isOver_def]), one_smul, sub_self, zero_smul,
       add_zero] at r1
     rw [alexanderWeight_of_not_isOver _ (by simp [PDCode.isOver_def]), ← r1] at r0
-    have h20 := eq_of_eq_smul_add_one_sub_smul (isUnit_T _) r0
+    have h20 := (isUnit_T _).eq_of_eq_smul_add_one_sub_smul r0
     intro s
     fin_cases s
     · rfl
@@ -432,7 +432,7 @@ def alexanderModuleReidemeisterOneEquiv :
 /-- The equivalence sends the old half-edges to themselves and the four half-edges of the kink to
 the half-edge `h` whose arc the kink is cut into. -/
 @[simp]
-theorem alexanderModuleReidemeisterOneEquiv_alexanderGenerator
+theorem alexanderModuleReidemeisterOneEquiv_apply_alexanderGenerator
     (g : Fin (4 * (n + 1)) ⊕ Fin (D.reidemeisterOne h b).crossinglessComponentCount) :
     D.alexanderModuleReidemeisterOneEquiv h b ((D.reidemeisterOne h b).alexanderGenerator g) =
       Sum.elim
@@ -444,7 +444,7 @@ theorem alexanderModuleReidemeisterOneEquiv_alexanderGenerator
 /-- The inverse equivalence sends every generator to the generator of the same half-edge or
 component. -/
 @[simp]
-theorem alexanderModuleReidemeisterOneEquiv_symm_alexanderGenerator
+theorem alexanderModuleReidemeisterOneEquiv_symm_apply_alexanderGenerator
     (g : Fin (4 * n) ⊕ Fin D.crossinglessComponentCount) :
     (D.alexanderModuleReidemeisterOneEquiv h b).symm (D.alexanderGenerator g) =
       Sum.elim (fun y ↦ (D.reidemeisterOne h b).alexanderGenerator
@@ -610,7 +610,7 @@ def alexanderModuleAdjoinKinkEquiv :
 /-- The equivalence sends the old half-edges and the crossing-free components of `D` to
 themselves, and the four half-edges of the kink to the new circle. -/
 @[simp]
-theorem alexanderModuleAdjoinKinkEquiv_alexanderGenerator
+theorem alexanderModuleAdjoinKinkEquiv_apply_alexanderGenerator
     (g : Fin (4 * (n + 1)) ⊕ Fin (D.adjoinKink o b).crossinglessComponentCount) :
     D.alexanderModuleAdjoinKinkEquiv o b ((D.adjoinKink o b).alexanderGenerator g) =
       Sum.elim
@@ -626,7 +626,7 @@ theorem alexanderModuleAdjoinKinkEquiv_alexanderGenerator
 /-- The inverse equivalence sends the new circle to the kink, and the old half-edges and
 crossing-free components to themselves. -/
 @[simp]
-theorem alexanderModuleAdjoinKinkEquiv_symm_alexanderGenerator
+theorem alexanderModuleAdjoinKinkEquiv_symm_apply_alexanderGenerator
     (g : Fin (4 * n) ⊕ Fin (D.adjoinCircle o).crossinglessComponentCount) :
     (D.alexanderModuleAdjoinKinkEquiv o b).symm ((D.adjoinCircle o).alexanderGenerator g) =
       Sum.elim (fun y ↦ (D.adjoinKink o b).alexanderGenerator

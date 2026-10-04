@@ -23,8 +23,8 @@ public section
 namespace TauCeti
 
 /-- If `u` is a unit, then `x = u • y + (1 - u) • x` forces `x = y`. -/
-theorem eq_of_eq_smul_add_one_sub_smul {R M : Type*} [Ring R] [AddCommGroup M] [Module R M]
-    {u : R} (hu : IsUnit u) {x y : M} (h : x = u • y + (1 - u) • x) : x = y := by
+theorem _root_.IsUnit.eq_of_eq_smul_add_one_sub_smul {R M : Type*} [Ring R] [AddCommGroup M]
+    [Module R M] {u : R} (hu : IsUnit u) {x y : M} (h : x = u • y + (1 - u) • x) : x = y := by
   have h' : u • (x - y) = 0 := calc
     u • (x - y) = x - (u • y + (1 - u) • x) := by rw [smul_sub, sub_smul, one_smul]; abel
     _ = 0 := by rw [← h, sub_self]
