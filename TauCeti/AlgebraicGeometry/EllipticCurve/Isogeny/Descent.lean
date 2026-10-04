@@ -17,11 +17,10 @@ An isogeny between curves defined over `F`, after base change to a Galois extens
 descends uniquely to `F` exactly when its function-field pullback is Galois equivariant.
 Equivalently, the isogeny is fixed by every coefficient conjugation.
 
-Function-field descent supplies the underlying algebra homomorphism. Its restriction to the
-target coordinate ring is pointed because pointedness is reflected by change of the coefficient
-field: the pulled-back `x`-coordinate has a pole at infinity before base change exactly when it
-does afterwards. This uses the infinity-place criterion and its uniqueness theorem, rather than
-any point map of the not-yet-constructed descended isogeny.
+Pointedness is preserved and reflected by change of the coefficient field: a coordinate pullback
+satisfies `MapsInfinity` exactly when its base change does. Equivalently, the pulled-back target
+`x`-coordinate has a pole at the source's point at infinity before base change exactly when it
+does afterwards.
 
 The extension need not be finite. In particular the criterion applies to a separable closure of
 an imperfect field, the descent step used in constructing the dual of a separable isogeny over
