@@ -72,30 +72,6 @@ theorem _root_.Equiv.Perm.cycleLenOf_eq_of_sameCycle {σ : Perm α} {i j : α}
   simp only [Finset.mem_filter, Finset.mem_univ, true_and]
   exact ⟨fun hik => hij.symm.trans hik, fun hjk => hij.trans hjk⟩
 
-/-- The cycle of a point has length one exactly when the point is fixed. -/
-@[simp]
-theorem _root_.Equiv.Perm.cycleLenOf_eq_one_iff {σ : Perm α} {i : α} :
-    σ.cycleLenOf i = 1 ↔ σ i = i := by
-  constructor
-  · intro hlen
-    have himem : i ∈ Finset.univ.filter (σ.SameCycle i) := by
-      simp only [Finset.mem_filter, Finset.mem_univ, true_and]
-      exact Equiv.Perm.SameCycle.refl σ i
-    have hmem : σ i ∈ Finset.univ.filter (σ.SameCycle i) := by
-      simp only [Finset.mem_filter, Finset.mem_univ, true_and]
-      exact ⟨1, by simp⟩
-    rw [Equiv.Perm.cycleLenOf] at hlen
-    obtain ⟨a, ha⟩ := Finset.card_eq_one.mp hlen
-    rw [ha] at himem hmem
-    exact (Finset.mem_singleton.mp hmem).trans (Finset.mem_singleton.mp himem).symm
-  · intro hi
-    rw [Equiv.Perm.cycleLenOf, Finset.card_eq_one]
-    refine ⟨i, ?_⟩
-    ext j
-    simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_singleton]
-    exact ⟨fun hij => (hij.eq_of_left hi).symm,
-      fun h => h ▸ Equiv.Perm.SameCycle.refl σ i⟩
-
 /-- The executable cycle length agrees with the abstract minimal period of the point. -/
 theorem _root_.Equiv.Perm.cycleLenOf_eq_minimalPeriod (σ : Perm α) (i : α) :
     σ.cycleLenOf i = Function.minimalPeriod σ i := by
@@ -107,6 +83,14 @@ theorem _root_.Equiv.Perm.cycleLenOf_eq_minimalPeriod (σ : Perm α) (i : α) :
   let _ := Fintype.ofFinset _ hmem
   rw [Equiv.Perm.cycleLenOf, ← Fintype.card_ofFinset _ hmem]
   exact (MulAction.minimalPeriod_eq_card (a := σ) (b := i)).symm
+
+/-- The cycle of a point has length one exactly when the point is fixed. -/
+@[simp]
+theorem _root_.Equiv.Perm.cycleLenOf_eq_one_iff {σ : Perm α} {i : α} :
+    σ.cycleLenOf i = 1 ↔ σ i = i := by
+  rw [Equiv.Perm.cycleLenOf_eq_minimalPeriod,
+    Function.minimalPeriod_eq_one_iff_isFixedPt]
+  rfl
 
 end DecidableEq
 
@@ -218,11 +202,6 @@ theorem _root_.Equiv.Perm.computedCycleType_eq_fullCycleType (σ : Perm α) :
   ext j
   simp only [Finset.mem_filter, Finset.mem_univ, true_and]
   rw [← Equiv.Perm.cycleMin_eq_cycleMin_iff, hmin, eq_comm]
-
-/-- The computed cycle type partitions the cardinality of the carrier. -/
-theorem _root_.Equiv.Perm.sum_computedCycleType (σ : Perm α) :
-    σ.computedCycleType.sum = Fintype.card α := by
-  rw [Equiv.Perm.computedCycleType_eq_fullCycleType, Equiv.Perm.sum_fullCycleType]
 
 end LinearOrder
 
