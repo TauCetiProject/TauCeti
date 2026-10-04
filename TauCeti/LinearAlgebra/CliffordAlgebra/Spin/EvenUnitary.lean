@@ -515,7 +515,9 @@ noncomputable def evenUnitaryGroupEquivOfAlgEquiv
         congrArg Subtype.val hy
     refine ⟨z, hval ?_⟩
     rw [val_f]
-    have evenUnitaryGroupEvenPart_z : evenUnitaryGroupEvenPart Q z = y := rfl
+    have evenUnitaryGroupEvenPart_z : evenUnitaryGroupEvenPart Q z = y := by
+      apply Subtype.ext
+      rw [coe_evenUnitaryGroupEvenPart]
     rw [evenUnitaryGroupEvenPart_z]
     exact e.apply_symm_apply (val g)
 
