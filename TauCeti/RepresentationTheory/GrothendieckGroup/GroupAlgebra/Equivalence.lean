@@ -13,17 +13,17 @@ import TauCeti.RepresentationTheory.OfModule
 /-!
 # Finite-dimensional representations as group-algebra modules
 
-For a finite monoid `G` (typically a finite group) and a field `k`, the usual equivalence between
-representations of `G` and modules over the monoid algebra `k[G]` restricts to an equivalence
+For a finite monoid `G` (typically a finite group) and a commutative ring `k` (typically a
+field), the usual equivalence between representations of `G` and modules over the monoid algebra
+`k[G]` restricts to an equivalence
 
 `FDRep k G ≌ FGModuleCat k[G]`.
 
-The finiteness assertion in one direction uses that `k[G]` is finite-dimensional over `k`; in
-the other, a finite-dimensional representation is generated over `k[G]` by any finite set of
-`k`-module generators.  This restricted equivalence identifies the abelian exact structure on
-finite-dimensional representations with the exact structure of finitely generated
-group-algebra modules, and is the bridge between categorical representation theory and
-`G₀(k[G])`.
+The finiteness assertion in one direction uses that `k[G]` is a finite `k`-module; in the other,
+a finite representation is generated over `k[G]` by any finite set of `k`-module generators.
+When `k` is Noetherian, this restricted equivalence identifies the abelian exact structure on
+finite representations with the exact structure of finitely generated group-algebra modules,
+and is the bridge between categorical representation theory and `G₀(k[G])`.
 
 ## Main definitions
 
@@ -43,9 +43,7 @@ namespace TauCeti
 
 universe u
 
-variable (k G : Type u) [Field k] [Monoid G] [Finite G]
-
-local instance : IsNoetherianRing k[G] := IsNoetherianRing.of_finite k k[G]
+variable (k G : Type u) [CommRing k] [Monoid G] [Finite G]
 
 /-- The group-algebra module underlying a finite-dimensional representation, as a functor to
 finitely generated modules. -/
@@ -119,6 +117,12 @@ theorem fdRepEquivalence_functor_comp_ι :
   rw [fdRepEquivalence, Functor.asEquivalence_functor]
   rfl
 
+section Noetherian
+
+variable [IsNoetherianRing k]
+
+local instance : IsNoetherianRing k[G] := IsNoetherianRing.of_finite k k[G]
+
 /-- The forward direction of `fdRepEquivalence` carries short exact sequences of
 finite-dimensional representations to conflations of finitely generated group-algebra modules. -/
 theorem isConflationExact_fdRepEquivalence_functor :
@@ -134,5 +138,7 @@ theorem isConflationExact_fdRepEquivalence_inverse :
       (ExactStructure.abelian (FDRep k G)) (fdRepEquivalence k G).inverse := by
   rw [finiteModulesExactStructure_eq_abelian]
   exact ExactStructure.isConflationExact_abelian (fdRepEquivalence k G).inverse
+
+end Noetherian
 
 end TauCeti
