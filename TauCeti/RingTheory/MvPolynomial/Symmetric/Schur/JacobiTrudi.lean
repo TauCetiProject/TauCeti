@@ -108,7 +108,7 @@ private theorem coe_dropFactor_mul_mk_hsymm (k : σ) :
     prod_eq_one fun i _ => ?_, mul_one]
   rw [Polynomial.coeToPowerSeries.ringHom_apply, Polynomial.coe_sub, Polynomial.coe_one,
     Polynomial.coe_mul, Polynomial.coe_C, Polynomial.coe_X, mul_comm,
-    PowerSeries.mk_pow_mul_one_sub_C_mul_X_eq_one]
+    powerSeries_mk_pow_mul_one_sub_C_mul_X_eq_one]
 
 /-- `x_kᵐ = ∑_{r < N} e⁽ᵏ⁾_r h_{m - r}`, the coefficient of `tᵐ` in
 `E⁽ᵏ⁾(t) · ∑ₙ hₙ tⁿ = (1 - x_k t)⁻¹`. -/

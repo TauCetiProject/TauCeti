@@ -18,19 +18,23 @@ polynomials, `∏ᵢ (1 - xᵢ X)⁻¹ = ∑ₙ hₙ Xⁿ`.
 
 ## Main results
 
-* `PowerSeries.mk_pow_mul_one_sub_C_mul_X_eq_one`: `(∑ aⁿ Xⁿ) * (1 - a X) = 1`.
+* `TauCeti.powerSeries_mk_pow_mul_one_sub_C_mul_X_eq_one`:
+  `(∑ aⁿ Xⁿ) * (1 - a X) = 1`.
 -/
 
 public section
 
-namespace PowerSeries
+namespace TauCeti
 
 /-- **The geometric series in `a X`**: `∑ aⁿ Xⁿ` is a multiplicative inverse of `1 - a X`, for
 every element `a` of the coefficient ring. -/
-theorem mk_pow_mul_one_sub_C_mul_X_eq_one {R : Type*} [CommRing R] (a : R) :
-    mk (fun n => a ^ n) * (1 - C a * X) = 1 := by
-  have h := congrArg (rescale a) (mk_one_mul_one_sub_eq_one (S := R))
-  rw [map_mul, map_sub, map_one, rescale_mk, rescale_X] at h
-  simpa using h
+theorem powerSeries_mk_pow_mul_one_sub_C_mul_X_eq_one {R : Type*} [Ring R] (a : R) :
+    PowerSeries.mk (fun n => a ^ n) *
+        (1 - PowerSeries.C a * PowerSeries.X) = 1 := by
+  rw [mul_sub, mul_one, ← mul_assoc, PowerSeries.ext_iff]
+  intro n
+  cases n with
+  | zero => simp
+  | succ n => simp [pow_succ]
 
-end PowerSeries
+end TauCeti
