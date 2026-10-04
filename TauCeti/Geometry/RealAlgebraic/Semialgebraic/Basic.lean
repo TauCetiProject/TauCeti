@@ -225,6 +225,20 @@ theorem isSemialgebraic_sign_eval_eq (p : MvPolynomial σ R) (ε : SignType) :
   · simpa only [SignType.neg_eq_neg_one, sign_eq_neg_one_iff] using isSemialgebraic_eval_neg p
   · simpa only [SignType.pos_eq_one, sign_eq_one_iff] using isSemialgebraic_eval_pos p
 
+omit [IsOrderedAddMonoid R] in
+/-- A sign condition on finitely many polynomials defines a semialgebraic set: membership may
+depend in any way on the signs of their values. -/
+theorem isSemialgebraic_setOf_sign_eval {ι : Type*} [Finite ι] (p : ι → MvPolynomial σ R)
+    (Φ : (ι → SignType) → Prop) :
+    IsSemialgebraic {x : σ → R | Φ fun i => SignType.sign (eval x (p i))} := by
+  have : {x : σ → R | Φ fun i => SignType.sign (eval x (p i))} =
+      ⋃ ε ∈ {ε | Φ ε}, ⋂ i, {x | SignType.sign (eval x (p i)) = ε i} := by
+    ext x
+    simp only [mem_ofPred_eq, mem_iUnion, mem_iInter, exists_prop]
+    exact ⟨fun h => ⟨_, h, fun _ => rfl⟩, fun ⟨ε, hε, h⟩ => (funext h).symm ▸ hε⟩
+  rw [this]
+  exact .biUnion (toFinite _) fun ε _ => .iInter fun i => isSemialgebraic_sign_eval_eq _ _
+
 /-! ### Finite sets -/
 
 omit [IsOrderedAddMonoid R] in
