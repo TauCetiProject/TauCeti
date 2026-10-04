@@ -35,10 +35,7 @@ splices, which is the form in which coderivations are expanded.
   prepending to a block of a tuple.
 * `TauCeti.TensorWords.prepend_mem_gradedPiece` and
   `TauCeti.TensorWords.isHomogeneous_lift_prepend`: prepending adds total letter degrees.
-* `TauCeti.TensorWords.subword_tail` and `TauCeti.ReducedTensorWords.subword_tail`: blocks of the
-  tail of a tuple.
-* `TauCeti.ReducedTensorWords.prepend_splice`: prepending the first letter of a tuple commutes with
-  splicing a block of the rest.
+* `TauCeti.TensorWords.subword_tail`: blocks of the tail of a tuple.
 
 ## References
 
@@ -53,36 +50,6 @@ open scoped BigOperators DirectSum TensorProduct
 universe uR uM
 
 namespace TauCeti
-
-namespace ReducedTensorWords
-
-variable {R : Type uR} {M : Type uM} [CommSemiring R] [AddCommMonoid M] [Module R M]
-
-/-- A block of the tail of a tuple is the block one position further along the tuple. -/
-theorem subword_tail {n : ℕ} (z : Fin (n + 1) → M) (a b : ℕ) :
-    subword R (Fin.tail z) a b = subword R z (a + 1) b :=
-  if hab : a + b ≤ n then
-    subword_congr R _ z hab (by omega) fun j _ ↦ congrArg z (Fin.ext (by simp; omega))
-  else by
-    rw [subword_eq_zero_of_lt_add R _ (by omega), subword_eq_zero_of_lt_add R z (by omega)]
-
-/-- Prepending the first letter of a tuple to a splice of the remaining letters is the splice of
-the whole tuple at the next position. -/
-theorem prepend_splice {n : ℕ} (y : Fin (n + 1) → M) (p d : ℕ) (e : M) :
-    prepend R M (y 0) (splice R (Fin.tail y) 0 n p d e) = splice R y 0 (n + 1) (p + 1) d e := by
-  by_cases h : 0 < d ∧ p + d ≤ n
-  · rw [splice_eq_of_tprod R (Fin.tail y) e h.1 h.2 (by omega), prepend_of_tprod,
-      splice_eq_of_tprod R y e h.1 (by omega) (by omega)]
-    refine of_tprod_congr R M _ (by dsimp only; omega) fun i ↦ ?_
-    induction i using Fin.cases with
-    | zero => simp
-    | succ j =>
-      simp only [Fin.cons_succ, Fin.tail, Fin.val_cast, Fin.val_succ, Nat.zero_add]
-      split_ifs <;> first | omega | rfl | exact congrArg y (Fin.ext (by simp; omega))
-  · rw [splice_eq_zero_of_not_fits R _ e h, map_zero,
-      splice_eq_zero_of_not_fits R y e (by omega)]
-
-end ReducedTensorWords
 
 namespace TensorWords
 
