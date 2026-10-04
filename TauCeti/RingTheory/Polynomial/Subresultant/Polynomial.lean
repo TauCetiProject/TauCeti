@@ -258,6 +258,15 @@ theorem _root_.Polynomial.subresultantCoeff_comm [CommRing R]
     sign_finAddFlip_trans_finCongr, mul_comm (n - j)]
   simp
 
+/-- At the smaller left terminal index, a coefficient minor reads a coefficient of the left
+input times a power of its coefficient at the bound. The empty determinant is excluded. -/
+@[simp]
+theorem _root_.Polynomial.subresultantCoeff_left_bound [CommRing R] (p q : R[X]) {m n k : ℕ}
+    (hmn : m < n) (hk : k ≤ m) :
+    subresultantCoeff p q m n m k = p.coeff k * p.coeff m ^ (n - m - 1) := by
+  rw [subresultantCoeff_comm, subresultantCoeff_right_bound q p hmn hk]
+  simp
+
 /-- Scaling the left polynomial by `r` scales every coefficient minor by `r ^ (n - j)`. -/
 theorem _root_.Polynomial.subresultantCoeff_C_mul_left [CommRing R]
     (p q : R[X]) (r : R) (m n j k : ℕ) :
