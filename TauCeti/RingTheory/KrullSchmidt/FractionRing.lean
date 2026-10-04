@@ -10,9 +10,10 @@ public import Mathlib.RingTheory.Localization.FractionRing
 public import Mathlib.RingTheory.TensorProduct.Maps
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 import Mathlib.LinearAlgebra.TensorProduct.Prod
-import Mathlib.RingTheory.Localization.Basic
 import Mathlib.RingTheory.TensorProduct.Finite
 import TauCeti.RingTheory.KrullSchmidt.Cancellation
+import TauCeti.RingTheory.Length
+import TauCeti.RingTheory.Localization.TensorProduct
 
 /-!
 # Cancellation after tensoring with the field of fractions
@@ -96,40 +97,6 @@ private instance : SMulCommClass K A (M ⊗[R] K) :=
 
 end RightAction
 
-section TensorAction
-
-variable {V : Type*} [AddCommGroup V] [Module K V] [Module A V] [Module (K ⊗[R] A) V]
-
-/-- An `A`-linear map between modules on which `q ⊗ a ∈ K ⊗[R] A` acts as `q • a • _` is
-`K ⊗[R] A`-linear: it is `K`-linear because `K` is a localization of `R`. -/
-private theorem map_smul_of_smul_tmul [IsFractionRing R K] [Module R V] [IsScalarTower R K V]
-    [IsScalarTower R A V] {W : Type*} [AddCommGroup W] [Module R W] [Module K W] [Module A W]
-    [Module (K ⊗[R] A) W] [IsScalarTower R K W] [IsScalarTower R A W]
-    (hV : ∀ (q : K) (a : A) (v : V), (q ⊗ₜ[R] a) • v = q • a • v)
-    (hW : ∀ (q : K) (a : A) (w : W), (q ⊗ₜ[R] a) • w = q • a • w) (f : V →ₗ[A] W)
-    (b : K ⊗[R] A) (v : V) : f (b • v) = b • f v := by
-  have := IsLocalization.linearMap_compatibleSMul (nonZeroDivisors R) K V W
-  induction b using TensorProduct.inductionOn with
-  | tmul q a =>
-    rw [hV, hW, ← f.map_smul]
-    exact (f.restrictScalars R).map_smul_of_tower q (a • v)
-  | add b c hb hc => rw [add_smul, map_add, hb, hc, add_smul]
-
-/-- A module on which `q ⊗ a ∈ K ⊗[R] A` acts as `q • a • _` has finite length over `K ⊗[R] A`
-as soon as it is finite-dimensional over `K`. -/
-private theorem isFiniteLength_of_smul_tmul [FiniteDimensional K V]
-    (hV : ∀ (q : K) (a : A) (v : V), (q ⊗ₜ[R] a) • v = q • a • v) :
-    IsFiniteLength (K ⊗[R] A) V := by
-  have : IsScalarTower K (K ⊗[R] A) V := ⟨fun q b v ↦ by
-    induction b using TensorProduct.inductionOn with
-    | tmul q' a => rw [TensorProduct.smul_tmul', hV, hV, smul_eq_mul, mul_smul]
-    | add b c hb hc => rw [smul_add, add_smul, add_smul, hb, hc, smul_add]⟩
-  have : IsNoetherian (K ⊗[R] A) V := isNoetherian_of_tower K inferInstance
-  have : IsArtinian (K ⊗[R] A) V := isArtinian_of_tower K inferInstance
-  exact isFiniteLength_iff_isNoetherian_isArtinian.mpr ⟨inferInstance, inferInstance⟩
-
-end TensorAction
-
 attribute [local instance] rightModule
 
 /-- **Cancellation of rationalizations.** Let `R` have field of fractions `K` and let `A` be an
@@ -155,14 +122,20 @@ theorem nonempty_tensor_linearEquiv_of_prod_tensor_linearEquiv [IsFractionRing R
     TensorProduct.Algebra.smul_def q a v
   -- `P ⊗[R] K` is finite-dimensional over `K`, so it has finite length over `K ⊗[R] A`.
   have : FiniteDimensional K (P ⊗[R] K) := .equiv (commLinearEquiv K P).symm
-  have hP := isFiniteLength_of_smul_tmul K hT
+  have : IsScalarTower K (K ⊗[R] A) (P ⊗[R] K) := ⟨fun q b v ↦ by
+    induction b using TensorProduct.inductionOn with
+    | tmul q' a => rw [TensorProduct.smul_tmul', hT, hT, smul_eq_mul, mul_smul]
+    | add b c hb hc => rw [smul_add, add_smul, add_smul, hb, hc, smul_add]⟩
+  have hP : IsFiniteLength (K ⊗[R] A) (P ⊗[R] K) := isFiniteLength_of_tower K
+    (isFiniteLength_iff_isNoetherian_isArtinian.mpr ⟨inferInstance, inferInstance⟩)
   -- Upgrade the `A`-linear equivalence to a `K ⊗[R] A`-linear one, and cancel `P ⊗[R] K`.
   let e' := (TensorProduct.prodLeft R A M P K).symm.trans
     (e.trans (TensorProduct.prodLeft R A N P K))
   obtain ⟨f⟩ := nonempty_linearEquiv_of_prod_linearEquiv_of_isFiniteLength hP
     ⟨AddEquiv.toLinearEquiv e'.toAddEquiv
-      (map_smul_of_smul_tmul K (fun q a v ↦ Prod.ext (hM q a v.1) (hT q a v.2))
-        (fun q a v ↦ Prod.ext (hN q a v.1) (hT q a v.2)) e'.toLinearMap)⟩
+      ((IsLocalization.linearMap_compatibleSMul_tensorProduct (nonZeroDivisors R) K
+        (fun q a v ↦ Prod.ext (hM q a v.1) (hT q a v.2))
+        (fun q a v ↦ Prod.ext (hN q a v.1) (hT q a v.2))).map_smul e'.toLinearMap)⟩
   -- A `K ⊗[R] A`-linear equivalence is `A`-linear, since `a` acts as `1 ⊗ a`.
   refine ⟨AddEquiv.toLinearEquiv f.toAddEquiv fun a v ↦ ?_⟩
   have h1 := f.map_smul ((1 : K) ⊗ₜ[R] a) v
