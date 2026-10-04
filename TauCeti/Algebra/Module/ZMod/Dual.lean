@@ -32,7 +32,8 @@ algebra of the `𝔽_p`-vector space `M`.
 
 * `TauCeti.natCard_addMonoidHom_zmod`: `Nat.card (M →+ ZMod n) = Nat.card M` for finite `M` killed
   by `n`, and `AddEquiv.natCard_addMonoidHom_zmod`: the same count for the homomorphisms
-  into any additive group `N ≃+ ZMod n`.
+  into any additive group `N ≃+ ZMod n`; `AddEquiv.natCard_linearMap_zmod`: the same count for the
+  `ℤ/n`-linear maps of a finite `ℤ/n`-module.
 * `TauCeti.exists_addMonoidHom_zmod_apply_ne_zero`: for `a ≠ 0` in `M` killed by `n`, some
   `f : M →+ ZMod n` has `f a ≠ 0`.
 -/
@@ -77,3 +78,12 @@ theorem AddEquiv.natCard_addMonoidHom_zmod {N : Type*} [AddCommGroup N] (e : N �
     [Finite M] (hM : ∀ x : M, n • x = 0) : Nat.card (M →+ N) = Nat.card M := by
   rw [Nat.card_congr (AddEquiv.addMonoidHomCongrRight (M := M) e).toEquiv,
     TauCeti.natCard_addMonoidHom_zmod hM]
+
+/-- For `e : N ≃+ ZMod n` with `n ≠ 0`, a finite `ℤ/n`-module has as many `ℤ/n`-linear maps to
+`N` as elements. -/
+theorem AddEquiv.natCard_linearMap_zmod {N : Type*} [AddCommGroup N] [Module (ZMod n) N]
+    (e : N ≃+ ZMod n) [Module (ZMod n) M] [Finite M] :
+    Nat.card (M →ₗ[ZMod n] N) = Nat.card M := by
+  rw [← Nat.card_congr (AddMonoidHom.toZModLinearMapEquiv n).toEquiv,
+    e.natCard_addMonoidHom_zmod fun x => by
+      rw [← Nat.cast_smul_eq_nsmul (ZMod n), ZMod.natCast_self, zero_smul]]
