@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Data.ZMod.IntUnitsPower
 public import TauCeti.FieldTheory.GaloisCohomology.MuTwo.CupNorm
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.Symbol
 
@@ -18,8 +19,9 @@ the supplied comparisons with canonical continuous cohomology then identify the 
 
 Consequently the cohomological local symbol, formed from the roots-of-unity cup and any
 additive identification of its degree-two cohomology with `ZMod 2`, vanishes exactly when the
-norm equation `b = x² - a y²` is solvable. The cup comparison itself requires no local-field
-hypothesis and no choice of a degree-two invariant.
+norm equation `b = x² - a y²` is solvable. Translating `0, 1 : ZMod 2` to `+1, -1`
+upgrades this vanishing criterion to equality with the norm-equation Hilbert symbol. The cup
+comparison itself requires no local-field hypothesis and no choice of a degree-two invariant.
 
 ## References
 
@@ -177,5 +179,59 @@ theorem localSymbol_eq_zero_iff
         (ClassFieldTheory.kummerClass F (isUnit_of_invertible (2 : F)) b) = 0 ↔
       ∃ x y : F, (b : F) = x ^ 2 - (a : F) * y ^ 2 :=
   (localSymbol_eq_zero_iff_hilbertSymbol_eq_one hζ tr a b).trans (hilbertSymbol_eq_one_iff a b)
+
+/-- Translate the additive `ZMod 2` normalization of the cohomological local symbol to the
+classical sign normalization, sending `0` to `+1` and `1` to `-1`. -/
+def hilbertSign (x : ZMod 2) : ℤˣ :=
+  ((AddEquiv.toMultiplicativeRight additiveIntUnitsAddEquiv).symm
+    (Multiplicative.ofAdd x))
+
+/-- The zero cohomology class has positive sign. -/
+@[simp]
+theorem hilbertSign_zero : hilbertSign 0 = 1 := by
+  apply (AddEquiv.toMultiplicativeRight additiveIntUnitsAddEquiv).injective
+  simp [hilbertSign, additiveIntUnitsAddEquiv_apply]
+
+/-- The nonzero class in `ZMod 2` has negative sign. -/
+@[simp]
+theorem hilbertSign_one : hilbertSign 1 = -1 := by
+  apply (AddEquiv.toMultiplicativeRight additiveIntUnitsAddEquiv).injective
+  simp [hilbertSign, additiveIntUnitsAddEquiv_apply]
+
+/-- The cohomological sign is `+1` exactly at the zero class. -/
+@[simp]
+theorem hilbertSign_eq_one_iff (x : ZMod 2) : hilbertSign x = 1 ↔ x = 0 := by
+  rcases (by decide : ∀ y : ZMod 2, y = 0 ∨ y = 1) x with rfl | rfl <;> simp
+
+/-- The sign dictionary turns addition of mod-two invariants into multiplication of signs. -/
+theorem hilbertSign_add (x y : ZMod 2) : hilbertSign (x + y) = hilbertSign x * hilbertSign y :=
+  ((AddEquiv.toMultiplicativeRight additiveIntUnitsAddEquiv).symm.map_mul
+    (Multiplicative.ofAdd x) (Multiplicative.ofAdd y))
+
+/-- The norm-equation Hilbert symbol agrees with the cohomological mod-two local symbol after
+translating its additive invariant to a sign. -/
+theorem hilbertSymbol_eq_cohomological
+    {F : Type} [Field F] [Invertible (2 : F)] {ζ : F} (hζ : IsPrimitiveRoot ζ 2)
+    (tr : continuousCohomology 2 (ClassFieldTheory.muNRep 2 F) ≃+ ZMod 2) (a b : Fˣ) :
+    hilbertSymbol a b =
+      hilbertSign (ClassFieldTheory.localSymbol (ClassFieldTheory.kummerCupPairing ζ hζ) tr
+        (ClassFieldTheory.kummerClass F (isUnit_of_invertible (2 : F)) a)
+        (ClassFieldTheory.kummerClass F (isUnit_of_invertible (2 : F)) b)) := by
+  let s := ClassFieldTheory.localSymbol (ClassFieldTheory.kummerCupPairing ζ hζ) tr
+    (ClassFieldTheory.kummerClass F (isUnit_of_invertible (2 : F)) a)
+    (ClassFieldTheory.kummerClass F (isUnit_of_invertible (2 : F)) b)
+  have hs : s = 0 ↔ hilbertSymbol a b = 1 :=
+    localSymbol_eq_zero_iff_hilbertSymbol_eq_one hζ tr a b
+  have hs_def : ClassFieldTheory.localSymbol (ClassFieldTheory.kummerCupPairing ζ hζ) tr
+      (ClassFieldTheory.kummerClass F (isUnit_of_invertible (2 : F)) a)
+      (ClassFieldTheory.kummerClass F (isUnit_of_invertible (2 : F)) b) = s := rfl
+  rw [hs_def]
+  rcases (by decide : ∀ x : ZMod 2, x = 0 ∨ x = 1) s with hzero | hone
+  · rw [hzero, hilbertSign_zero]
+    exact hs.mp hzero
+  · rw [hone, hilbertSign_one]
+    rcases Int.units_eq_one_or (hilbertSymbol a b) with h | h
+    · exact (one_ne_zero (hone.symm.trans (hs.mpr h))).elim
+    · exact h
 
 end TauCeti
