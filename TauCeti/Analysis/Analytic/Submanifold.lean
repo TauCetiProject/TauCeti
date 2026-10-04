@@ -353,21 +353,22 @@ theorem prod {g : (Fin n → 𝕜) → F} (hf : AnalyticOnSubmanifold d f S)
   obtain ⟨e, hxe, he, hf'⟩ := hf x hx
   exact ⟨e, hxe, he, hf'.prod (hg.analyticAt_chart hx he hxe)⟩
 
-/-- **Composition.** Let `f` map `S` into a `d'`-dimensional analytic submanifold `T`, analytic on
-`S`. Then the composition of `f` with an analytic function on `T` is analytic on `S`. -/
+/-- **Composition.** If `f` is analytic on `S` and maps `S` into a set `T`, and `g` is analytic on
+`T` in dimension `d'`, then `g ∘ f` is analytic on `S`. No hypothesis on `T` is needed: `g` being
+analytic on `T` already provides analytic charts of `T` around the values of `f`. -/
 theorem comp {T : Set (Fin m → 𝕜)} {g : (Fin m → 𝕜) → E} {f : (Fin n → 𝕜) → Fin m → 𝕜}
-    (hg : AnalyticOnSubmanifold d' g T) (hf : AnalyticOnSubmanifold d f S)
-    (hT : IsAnalyticSubmanifold d' T) (h : MapsTo f S T) : AnalyticOnSubmanifold d (g ∘ f) S := by
+    (hg : AnalyticOnSubmanifold d' g T) (hf : AnalyticOnSubmanifold d f S) (h : MapsTo f S T) :
+    AnalyticOnSubmanifold d (g ∘ f) S := by
   intro x hx
   obtain ⟨e, hxe, he, hf'⟩ := hf x hx
-  obtain ⟨e', hxe', he'⟩ := hT.exists_isAnalyticChart (f x) (h hx)
+  obtain ⟨e', hxe', he', hg'⟩ := hg (f x) (h hx)
   have hfx : f (e.symm (firstCoords 𝕜 d n (firstCoords 𝕜 n d (e x)))) = f x := by
     rw [he.symm_firstCoords_firstCoords_apply hxe hx]
   -- the coordinates of `f` in the chart `e'` of `T` are analytic
   have hτ : AnalyticAt 𝕜 (fun u ↦ firstCoords 𝕜 m d' (e' (f (e.symm (firstCoords 𝕜 d n u)))))
       (firstCoords 𝕜 n d (e x)) :=
     ((firstCoords 𝕜 m d').analyticAt _).comp ((he'.analyticOnNhd _ hxe').comp_of_eq hf' hfx)
-  refine ⟨e, hxe, he, ((hg.analyticAt_chart (h hx) he' hxe').comp_of_eq hτ (by rw [hfx])).congr ?_⟩
+  refine ⟨e, hxe, he, (hg'.comp_of_eq hτ (by rw [hfx])).congr ?_⟩
   filter_upwards [he.eventually_symm_firstCoords_mem hxe hx,
     hf'.continuousAt.preimage_mem_nhds (e'.open_source.mem_nhds (by rwa [hfx]))] with u hu hu'
   simp only [Function.comp_apply]
