@@ -109,23 +109,23 @@ noncomputable def hsymmInt (m : ℤ) : MvPolynomial σ R :=
 variable {σ R}
 
 /-- In a nonnegative degree, `TauCeti.hsymmInt` is `MvPolynomial.hsymm`. -/
+@[simp]
 theorem hsymmInt_of_nonneg {m : ℤ} (hm : 0 ≤ m) :
     hsymmInt σ R m = MvPolynomial.hsymm σ R m.toNat := by
   simp [hsymmInt, hm]
 
 /-- In a negative degree, `TauCeti.hsymmInt` vanishes. -/
+@[simp]
 theorem hsymmInt_of_neg {m : ℤ} (hm : m < 0) : hsymmInt σ R m = 0 := by
   simp [hsymmInt, not_le.mpr hm]
 
 /-- In a natural-number degree, `TauCeti.hsymmInt` is `MvPolynomial.hsymm`. -/
-@[simp]
 theorem hsymmInt_natCast (n : ℕ) : hsymmInt σ R n = MvPolynomial.hsymm σ R n := by
   simp [hsymmInt]
 
 /-- `h_0 = 1`. -/
-@[simp]
 theorem hsymmInt_zero : hsymmInt σ R 0 = 1 := by
-  simpa using hsymmInt_natCast (σ := σ) (R := R) 0
+  simp
 
 /-- Changing the coefficients along a ring homomorphism preserves `TauCeti.hsymmInt`. -/
 @[simp]
