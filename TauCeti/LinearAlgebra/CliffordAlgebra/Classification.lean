@@ -141,32 +141,17 @@ private def matrixTensorAlgebraEquiv (R A B : Type*) [CommSemiring R]
   Matrix.reindexAlgEquiv R _ (finCongr (Nat.mul_one m))
 
 private def flattenMatrixEquiv (R A : Type*) [CommSemiring R] [Semiring A] [Algebra R A]
-    (m n : ℕ) :
-    Matrix (Fin m) (Fin m) (Matrix (Fin n) (Fin n) A) ≃ₐ[R]
-      Matrix (Fin (m * n)) (Fin (m * n)) A :=
+    {m n k : ℕ} (h : m * n = k) :
+    Matrix (Fin m) (Fin m) (Matrix (Fin n) (Fin n) A) ≃ₐ[R] Matrix (Fin k) (Fin k) A :=
   (Matrix.compAlgEquiv (Fin m) (Fin n) A R).trans
-    (Matrix.reindexAlgEquiv R A finProdFinEquiv)
-
-private def castMatrixTargetEquiv {R S A : Type*} [CommSemiring R]
-    [Semiring S] [Semiring A] [Algebra R S] [Algebra R A] {m n : ℕ} (h : m = n)
-    (e : S ≃ₐ[R] Matrix (Fin m) (Fin m) A) :
-    S ≃ₐ[R] Matrix (Fin n) (Fin n) A :=
-  h ▸ e
-
-private def castMatrixProdTargetEquiv {R S A : Type*} [CommSemiring R]
-    [Semiring S] [Semiring A] [Algebra R S] [Algebra R A] {m n : ℕ} (h : m = n)
-    (e : S ≃ₐ[R]
-      Matrix (Fin m) (Fin m) A × Matrix (Fin m) (Fin m) A) :
-    S ≃ₐ[R] Matrix (Fin n) (Fin n) A × Matrix (Fin n) (Fin n) A :=
-  h ▸ e
+    (Matrix.reindexAlgEquiv R A (finProdFinEquiv.trans (finCongr h)))
 
 private def matrixTensorByCoefficientEquiv {R A B D : Type*} [CommSemiring R]
     [Semiring A] [Semiring B] [Semiring D] [Algebra R A] [Algebra R B] [Algebra R D]
-    {n : ℕ} (m : ℕ) (coeff : A ⊗[R] B ≃ₐ[R] Matrix (Fin n) (Fin n) D) :
-    Matrix (Fin m) (Fin m) A ⊗[R] B ≃ₐ[R]
-      Matrix (Fin (m * n)) (Fin (m * n)) D :=
+    {n k : ℕ} (m : ℕ) (coeff : A ⊗[R] B ≃ₐ[R] Matrix (Fin n) (Fin n) D) (h : m * n = k) :
+    Matrix (Fin m) (Fin m) A ⊗[R] B ≃ₐ[R] Matrix (Fin k) (Fin k) D :=
   (matrixTensorAlgebraEquiv R A B m).trans <|
-    coeff.mapMatrix.trans <| flattenMatrixEquiv R D m n
+    coeff.mapMatrix.trans <| flattenMatrixEquiv R D h
 
 private def matrixModelTensorEquiv {R S T A B D : Type*} [CommSemiring R]
     [Semiring S] [Semiring T] [Semiring A] [Semiring B] [Semiring D]
@@ -176,7 +161,7 @@ private def matrixModelTensorEquiv {R S T A B D : Type*} [CommSemiring R]
     (coeff : A ⊗[R] B ≃ₐ[R] Matrix (Fin n) (Fin n) D) (h : m * n = k) :
     T ≃ₐ[R] Matrix (Fin k) (Fin k) D :=
   step.trans <| (Algebra.TensorProduct.congr model (AlgEquiv.refl : B ≃ₐ[R] B)).trans <|
-    castMatrixTargetEquiv h (matrixTensorByCoefficientEquiv m coeff)
+    matrixTensorByCoefficientEquiv m coeff h
 
 private def matrixProdModelTensorEquiv {R S T A B D : Type*} [CommSemiring R]
     [Semiring S] [Semiring T] [Semiring A] [Semiring B] [Semiring D]
@@ -188,9 +173,8 @@ private def matrixProdModelTensorEquiv {R S T A B D : Type*} [CommSemiring R]
     T ≃ₐ[R] Matrix (Fin k) (Fin k) D × Matrix (Fin k) (Fin k) D :=
   step.trans <| (Algebra.TensorProduct.congr model (AlgEquiv.refl : B ≃ₐ[R] B)).trans <|
     (prodTensorAlgebraEquiv R (Matrix (Fin m) (Fin m) A) B).trans <|
-      castMatrixProdTargetEquiv h <|
-        AlgEquiv.prodCongr (matrixTensorByCoefficientEquiv m coeff)
-          (matrixTensorByCoefficientEquiv m coeff)
+      AlgEquiv.prodCongr (matrixTensorByCoefficientEquiv m coeff h)
+        (matrixTensorByCoefficientEquiv m coeff h)
 
 private theorem pow_half_sub_mul_pow (n d s t : ℕ)
     (h : (n - d) / 2 + s = t / 2) :

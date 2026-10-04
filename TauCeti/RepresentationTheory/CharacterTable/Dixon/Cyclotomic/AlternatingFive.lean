@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.CharacterTable.Dixon.ClassData.Alternating.Five
-public import TauCeti.RingTheory.Cyclotomic.Conjugation
+public import TauCeti.RepresentationTheory.CharacterTable.Dixon.Cyclotomic.Checker
 
 /-!
 # Exact cyclotomic candidate-table data for the alternating group of degree five
@@ -23,9 +23,10 @@ quadratic values have canonical representatives
 ```
 
 These are the roots of `X² - X - 1`. The two degree-three rows exchange `φ` and `φ'` on the
-two classes of five-cycles. The central-to-ordinary conversion, degree constraints, and Hermitian
-row orthogonality are proved in the computable cyclotomic coefficient ring. These identities do
-not by themselves certify that the rows are the irreducible characters of `A₅`.
+two classes of five-cycles. The central-character rows satisfy the class-algebra eigenrow equations,
+so together with the central-to-ordinary conversion, degree constraints, and Hermitian row
+orthogonality they certify the displayed table as the character table of `A₅` up to row
+permutation.
 
 ## Main definitions
 
@@ -40,6 +41,10 @@ not by themselves certify that the rows are the irreducible characters of `A₅`
   central and ordinary data agree under the division-free conversion formula.
 * `TauCeti.alternatingGroupFive_candidateCharacterTable_orthogonal`: the candidate rows satisfy
   Hermitian orthogonality.
+* `TauCeti.isCyclotomicCharacterTableSpec_alternatingGroupFive`: the exact tables pass the
+  cyclotomic character-table certificate.
+* `TauCeti.isCharacterTableSpec_alternatingGroupFive`: the distinguished complex embedding of the
+  displayed ordinary table is the character table of `A₅` up to row permutation.
 
 ## References
 
@@ -382,5 +387,52 @@ theorem alternatingGroupFive_candidateCharacterTable_orthogonal
     _ = if i = j then (Nat.card (alternatingGroup (Fin 5)) : Cyclotomic 5) else 0 := by
       simpa only [e, Equiv.symm_apply_apply, e.injective.eq_iff] using
         alternatingGroupFive_candidateCharacterTable_orthogonal_reindex (e i) (e j)
+
+/-- Every candidate central-character row satisfies the class-algebra eigenrow equations. -/
+theorem isModularEigenrow_alternatingGroupFiveCandidateCentralCharacterTable
+    (i : AlternatingGroupFiveClassIndex) :
+    alternatingGroupFiveClassData.IsModularEigenrow
+      (alternatingGroupFiveCandidateCentralCharacterTable i) := by
+  rw [alternatingGroupFiveClassData.isModularEigenrow_iff]
+  simp_rw [← alternatingGroupFiveClassData.getD_structureConstantTable]
+  rw [structureConstantTable_alternatingGroupFiveClassData]
+  fin_cases i <;> decide +kernel
+
+/-- **The displayed exact `A₅` tables pass the cyclotomic character-table certificate.** -/
+theorem isCyclotomicCharacterTableSpec_alternatingGroupFive :
+    alternatingGroupFiveClassData.IsCyclotomicCharacterTableSpec 5
+      alternatingGroupFiveCandidateCentralCharacterTable
+      alternatingGroupFiveCandidateCharacterTable
+      alternatingGroupFiveCandidateCharacterDegrees where
+  central_one := alternatingGroupFiveCandidateCentralCharacterTable_index_one
+  central_eigen := isModularEigenrow_alternatingGroupFiveCandidateCentralCharacterTable
+  degree_pos i := (alternatingGroupFive_candidateCharacterDegrees_pos_and_dvd i).1
+  degree_dvd i := by
+    simpa only [Nat.card_eq_fintype_card] using
+      (alternatingGroupFive_candidateCharacterDegrees_pos_and_dvd i).2
+  sum_degree_sq := by
+    simpa only [Nat.card_eq_fintype_card] using
+      alternatingGroupFive_sum_candidateCharacterDegrees_sq
+  degree_mul_central := alternatingGroupFive_candidateDegree_mul_candidateCentralCharacterTable
+  row_orthogonal i j := by
+    simpa only [Nat.card_eq_fintype_card] using
+      alternatingGroupFive_candidateCharacterTable_orthogonal i j
+
+/-- The executable exact cyclotomic checker accepts the displayed `A₅` tables. -/
+theorem cyclotomicCharacterTableChecker_alternatingGroupFive :
+    alternatingGroupFiveClassData.cyclotomicCharacterTableChecker 5
+      alternatingGroupFiveCandidateCentralCharacterTable
+      alternatingGroupFiveCandidateCharacterTable
+      alternatingGroupFiveCandidateCharacterDegrees = true :=
+  (alternatingGroupFiveClassData.cyclotomicCharacterTableChecker_eq_true_iff 5 _ _ _).2
+    isCyclotomicCharacterTableSpec_alternatingGroupFive
+
+/-- **The distinguished complex embedding of the displayed exact table is the character table of
+`A₅` up to row permutation.** -/
+theorem isCharacterTableSpec_alternatingGroupFive :
+    IsCharacterTableSpec (alternatingGroup (Fin 5))
+      (alternatingGroupFiveClassData.complexTableOfCyclotomic 5
+        alternatingGroupFiveCandidateCharacterTable) :=
+  isCyclotomicCharacterTableSpec_alternatingGroupFive.isCharacterTableSpec
 
 end TauCeti

@@ -30,6 +30,7 @@ order exactly.
   normal subgroups.
 * `profiniteOrder_eq_iSup_ofNat`: its description as the supremum of the embedded quotient
   orders.
+* `profiniteOrder_eq_bot_iff`: a profinite group has order `⊥ = 1` exactly when it is trivial.
 * `profiniteOrder_apply_eq_top_iff`: a prime has infinite exponent exactly when its powers divide
   the orders of finite continuous quotients without bound.
 * `Subgroup.profiniteOrder_eq_iSup_image`: a closed subgroup's order as the supremum of its
@@ -149,6 +150,27 @@ theorem ofNat_card_quotient_le_profiniteOrder (U : OpenNormalSubgroup G) :
   exact le_iSup
     (fun V : OpenNormalSubgroup G ↦
       Supernatural.ofNat (⟨Nat.card (G ⧸ V.toSubgroup), Nat.card_pos⟩ : ℕ+)) U
+
+/-- A profinite group has supernatural order `⊥ = 1` exactly when it is trivial. -/
+@[simp]
+theorem profiniteOrder_eq_bot_iff [IsTopologicalGroup G] [TotallyDisconnectedSpace G] :
+    profiniteOrder G = ⊥ ↔ Subsingleton G := by
+  rw [← Supernatural.one_eq_bot]
+  refine ⟨fun h ↦ ⟨fun x y ↦ ?_⟩, fun _ ↦ ?_⟩
+  · have hmem (z : G) (U : OpenNormalSubgroup G) : z ∈ U.toSubgroup := by
+      have hdvd := Supernatural.ofNat_le_ofNat_iff.mp
+        ((ofNat_card_quotient_le_profiniteOrder G U).trans_eq (h.trans Supernatural.ofNat_one.symm))
+      have hcard : Nat.card (G ⧸ U.toSubgroup) = 1 :=
+        congrArg PNat.val ((PNat.dvd_one_iff _).mp hdvd)
+      rw [Subgroup.index_eq_one.mp ((Subgroup.index_eq_card _).trans hcard)]
+      exact Subgroup.mem_top z
+    rw [Subgroup.eq_one_of_mem_iInf_openNormalSubgroup (hmem x),
+      Subgroup.eq_one_of_mem_iInf_openNormalSubgroup (hmem y)]
+  · ext q
+    rw [profiniteOrder_apply, Supernatural.one_apply]
+    refine le_antisymm (iSup_le fun U ↦ ?_) bot_le
+    rw [Nat.card_eq_one_iff_unique.mpr ⟨QuotientGroup.mk_surjective.subsingleton, inferInstance⟩,
+      padicValNat_one_right, Nat.cast_zero]
 
 /-- The exponent of a prime `p` in `profiniteOrder G` is infinite exactly when every power of `p`
 divides the order of some finite continuous quotient. -/
