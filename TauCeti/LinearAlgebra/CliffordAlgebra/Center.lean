@@ -106,21 +106,19 @@ private theorem center_homogeneous_components [Invertible (2 : K)] {x : Clifford
   · rw [hoq]
     exact Subalgebra.smul_mem _ (Subalgebra.sub_mem _ hx hxInv) _
 
-/-- The scalar and volume coordinates `a + b • ω` are unique for an anisotropic orthogonal list
-of odd length. Thus the notation `K ⊕ Kω` for their span is a genuine direct sum, not merely a
-sum of subspaces. -/
-theorem add_smul_volume_injective [NeZero (2 : K)] {l : List V} (hl : l.Pairwise Q.IsOrtho)
-    (hlen : Odd l.length) (hQl : ∀ v ∈ l, Q v ≠ 0) :
+/-- The scalar and volume coordinates `a + b • ω` are unique for an anisotropic list of odd
+length. Thus the notation `K ⊕ Kω` for their span is a genuine direct sum, not merely a sum of
+subspaces. No orthogonality is needed: `ω` is a unit by `CliffordAlgebra.isUnit_prod_map_ι`. -/
+theorem add_smul_volume_injective [NeZero (2 : K)] {l : List V} (hlen : Odd l.length)
+    (hQl : ∀ v ∈ l, Q v ≠ 0) :
     Function.Injective fun p : K × K ↦
       algebraMap K (CliffordAlgebra Q) p.1 + p.2 • (l.map (ι Q)).prod := by
   let _ : Invertible (2 : K) := invertibleOfNonzero (NeZero.ne (2 : K))
   let ω : CliffordAlgebra Q := (l.map (ι Q)).prod
   have hωOdd : ω ∈ evenOdd Q 1 := prod_map_ι_mem_evenOdd_one_of_odd_length hlen
   have hω : ω ≠ 0 := by
-    intro hzero
-    apply neg_one_pow_choose_two_mul_prod_map_ne_zero hQl
-    apply algebraMap_injective Q
-    simpa [ω, hzero] using (prod_map_ι_sq_scalar (Q := Q) hl).symm
+    refine (isUnit_prod_map_ι (isUnit_iff_ne_zero.mpr (List.prod_ne_zero ?_))).ne_zero
+    simpa using hQl
   intro p q hpq
   have even_mem (a : K) : algebraMap K (CliffordAlgebra Q) a ∈ evenOdd Q 0 :=
     SetLike.algebraMap_mem_graded (evenOdd Q) a
