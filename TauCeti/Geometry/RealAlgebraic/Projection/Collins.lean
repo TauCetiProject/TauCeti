@@ -279,15 +279,15 @@ theorem natDegree_map_eq_of_collinsProjection
   exact le_antisymm ((key _).2 le_rfl) ((key _).1 le_rfl)
 
 /-- A single reductum of a member of the family specializes to the member under both `φ` and `ψ`,
-and its own degree is the common specialized degree. -/
+and its own degree is the specialized degree under each of them. -/
 private theorem exists_mem_reducta_map_eq_and_map_eq
     (h : ∀ a ∈ F.collinsProjection, φ a = 0 ↔ ψ a = 0) (hp : p ∈ F) :
-    ∃ r ∈ p.reducta, r.natDegree = (p.map φ).natDegree ∧ r.map φ = p.map φ ∧
-      r.map ψ = p.map ψ :=
-  ⟨_, p.reductum_mem_reducta _, natDegree_reductum_natDegree_map_add_one φ p,
-    map_reductum_natDegree_map_add_one φ p, by
-      rw [natDegree_map_eq_of_collinsProjection h hp]
-      exact map_reductum_natDegree_map_add_one ψ p⟩
+    ∃ r ∈ p.reducta, r.natDegree = (p.map φ).natDegree ∧ r.natDegree = (p.map ψ).natDegree ∧
+      r.map φ = p.map φ ∧ r.map ψ = p.map ψ := by
+  have hdeg := natDegree_map_eq_of_collinsProjection h hp
+  refine ⟨_, p.reductum_mem_reducta _, natDegree_reductum_natDegree_map_add_one φ p, ?_,
+    map_reductum_natDegree_map_add_one φ p, ?_⟩ <;> rw [hdeg]
+  exacts [natDegree_reductum_natDegree_map_add_one ψ p, map_reductum_natDegree_map_add_one ψ p]
 
 /-- If the same elements of the Collins projection vanish under `φ` and `ψ`, then for two members
 of the family the principal subresultant coefficients of their specializations, at the
@@ -297,18 +297,17 @@ theorem psc_map_eq_zero_iff_of_collinsProjection
     (hj : j ≤ min (p.map φ).natDegree (q.map φ).natDegree) :
     psc (p.map φ) (q.map φ) (p.map φ).natDegree (q.map φ).natDegree j = 0 ↔
       psc (p.map ψ) (q.map ψ) (p.map ψ).natDegree (q.map ψ).natDegree j = 0 := by
-  obtain ⟨r, hrT, hr, hrφ, hrψ⟩ := exists_mem_reducta_map_eq_and_map_eq h hp
-  obtain ⟨s, hsT, hs, hsφ, hsψ⟩ := exists_mem_reducta_map_eq_and_map_eq h hq
-  have hc := psc_mem_collinsProjection hp hrT hq hsT (j := j) (by rwa [hr, hs])
-  -- Both sides are the images under `φ` and `ψ` of the projection element `hc`: the specialized
-  -- degrees agree and equal the degrees of `r` and `s`, which specialize to `p` and `q`.
+  obtain ⟨r, hrT, hrφd, hrψd, hrφ, hrψ⟩ := exists_mem_reducta_map_eq_and_map_eq h hp
+  obtain ⟨s, hsT, hsφd, hsψd, hsφ, hsψ⟩ := exists_mem_reducta_map_eq_and_map_eq h hq
+  have hc := psc_mem_collinsProjection hp hrT hq hsT (j := j) (by rwa [hrφd, hsφd])
+  -- Both sides are the images under `φ` and `ψ` of the projection element `hc`, since `r` and
+  -- `s` specialize to `p` and `q` with the same degrees.
   have eφ : φ (psc r s r.natDegree s.natDegree j) =
       psc (p.map φ) (q.map φ) (p.map φ).natDegree (q.map φ).natDegree j := by
-    rw [hr, hs, ← psc_map_map, hrφ, hsφ]
+    simp only [← psc_map_map, hrφ, hsφ, hrφd, hsφd]
   have eψ : ψ (psc r s r.natDegree s.natDegree j) =
       psc (p.map ψ) (q.map ψ) (p.map ψ).natDegree (q.map ψ).natDegree j := by
-    rw [hr, hs, natDegree_map_eq_of_collinsProjection h hp,
-      natDegree_map_eq_of_collinsProjection h hq, ← psc_map_map, hrψ, hsψ]
+    simp only [← psc_map_map, hrψ, hsψ, hrψd, hsψd]
   rw [← eφ, ← eψ]
   exact h _ hc
 
@@ -322,22 +321,22 @@ theorem psc_map_derivative_eq_zero_iff_of_collinsProjection [IsAddTorsionFree A]
     psc (p.map φ) (p.map φ).derivative (p.map φ).natDegree (p.map φ).derivative.natDegree j = 0 ↔
       psc (p.map ψ) (p.map ψ).derivative (p.map ψ).natDegree
         (p.map ψ).derivative.natDegree j = 0 := by
-  obtain ⟨r, hrT, hr, hrφ, hrψ⟩ := exists_mem_reducta_map_eq_and_map_eq h hp
-  have hr' : r.derivative.natDegree = (p.map φ).derivative.natDegree := by
-    rw [← hrφ, derivative_map,
-      natDegree_map_derivative_eq_of_natDegree_map_eq (by rw [hrφ, hr])]
-  have hc := psc_derivative_mem_collinsProjection hp hrT (j := j) (by rwa [hr, hr'])
-  -- The derivative degrees are the specialized degrees minus one, so they agree under `φ` and
-  -- `ψ`; then both sides are the images of the projection element `hc`.
+  obtain ⟨r, hrT, hrφd, hrψd, hrφ, hrψ⟩ := exists_mem_reducta_map_eq_and_map_eq h hp
+  -- Over torsion-free targets, `r` keeps its derivative degree under both specializations.
+  have hrφd' : r.derivative.natDegree = (p.map φ).derivative.natDegree := by
+    rw [← hrφ, derivative_map, natDegree_map_derivative_eq_of_natDegree_map_eq (hrφ ▸ hrφd.symm)]
+  have hrψd' : r.derivative.natDegree = (p.map ψ).derivative.natDegree := by
+    rw [← hrψ, derivative_map, natDegree_map_derivative_eq_of_natDegree_map_eq (hrψ ▸ hrψd.symm)]
+  have hc := psc_derivative_mem_collinsProjection hp hrT (j := j) (by rwa [hrφd, hrφd'])
+  -- Both sides are the images under `φ` and `ψ` of the projection element `hc`.
   have eφ : φ (psc r r.derivative r.natDegree r.derivative.natDegree j) =
       psc (p.map φ) (p.map φ).derivative (p.map φ).natDegree
         (p.map φ).derivative.natDegree j := by
-    rw [hr, hr', ← psc_map_map, ← derivative_map, hrφ]
+    simp only [← psc_map_map, ← derivative_map, hrφ, hrφd, hrφd']
   have eψ : ψ (psc r r.derivative r.natDegree r.derivative.natDegree j) =
       psc (p.map ψ) (p.map ψ).derivative (p.map ψ).natDegree
         (p.map ψ).derivative.natDegree j := by
-    rw [hr', natDegree_derivative, natDegree_derivative, hr,
-      natDegree_map_eq_of_collinsProjection h hp, ← psc_map_map, ← derivative_map, hrψ]
+    simp only [← psc_map_map, ← derivative_map, hrψ, hrψd, hrψd']
   rw [← eφ, ← eψ]
   exact h _ hc
 
