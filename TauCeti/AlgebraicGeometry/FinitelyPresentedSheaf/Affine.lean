@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicGeometry.FinitelyPresentedSheaf.Basic
 public import TauCeti.AlgebraicGeometry.Modules.FinitePresentation
-public import TauCeti.AlgebraicGeometry.Modules.AffineGlobalSections
 public import Mathlib.Algebra.Category.FGModuleCat.Abelian
 public import Mathlib.CategoryTheory.Abelian.Transfer
 
@@ -48,13 +47,16 @@ namespace FinitelyPresentedSheaf
 variable (R : CommRingCat.{u}) [IsNoetherianRing R]
 
 /-- Associate a coherent sheaf on `Spec R` to a finite module over the Noetherian ring `R`. -/
+-- Expose the object maps so unit and counit computation equations have homogeneous types.
+@[expose]
 def tildeFunctor : FGModuleCat.{u} R ⥤ FinitelyPresentedSheaf (Spec R) :=
   ObjectProperty.lift _ ((forget₂ (FGModuleCat R) (ModuleCat R)) ⋙ tilde.functor R)
     (fun M ↦ by
       have : Module.FinitePresentation R M := Module.finitePresentation_of_finite R M
       exact isFinitePresentation_tilde M.obj)
 
-/-- Global sections of a coherent sheaf on `Spec R`, as a finite `R`-module. -/
+/-- Global sections of a finitely presented sheaf on `Spec R`, as a finite `R`-module. -/
+@[expose]
 def globalSectionsFunctor : FinitelyPresentedSheaf (Spec R) ⥤ FGModuleCat.{u} R :=
   ObjectProperty.lift _
     (ObjectProperty.ι _ ⋙ moduleSpecΓFunctor (R := R))
@@ -81,6 +83,7 @@ lemma globalSectionsFunctor_comp_forget :
 
 /-- Coherent sheaves on `Spec R` are equivalent to finite `R`-modules. The functors are tilde
 and global sections, with the unit and counit inherited from the tilde adjunction. -/
+@[expose]
 def tildeEquiv : FGModuleCat.{u} R ≌ FinitelyPresentedSheaf (Spec R) where
   functor := tildeFunctor R
   inverse := globalSectionsFunctor R
@@ -110,6 +113,26 @@ lemma tildeEquiv_functor : (tildeEquiv R).functor = tildeFunctor R :=
 lemma tildeEquiv_inverse : (tildeEquiv R).inverse = globalSectionsFunctor R :=
   (rfl)
 
+/-- The underlying unit component is the unit of the tilde adjunction. -/
+@[simp]
+lemma tildeEquiv_unitIso_hom_app_hom (M : FGModuleCat.{u} R) :
+    ((tildeEquiv R).unitIso.hom.app M).hom =
+      (tilde.toTildeΓNatIso (R := R)).hom.app M.obj :=
+  (rfl)
+
+/-- The underlying inverse unit component is the inverse of the tilde unit. -/
+@[simp]
+lemma tildeEquiv_unitIso_inv_app_hom (M : FGModuleCat.{u} R) :
+    ((tildeEquiv R).unitIso.inv.app M).hom =
+      (tilde.toTildeΓNatIso (R := R)).inv.app M.obj :=
+  (rfl)
+
+/-- The underlying counit component is the canonical map from the tilde of global sections. -/
+@[simp]
+lemma tildeEquiv_counitIso_hom_app_hom (M : FinitelyPresentedSheaf (Spec R)) :
+    ((tildeEquiv R).counitIso.hom.app M).hom = Scheme.Modules.fromTildeΓ M.obj :=
+  (rfl)
+
 /-- Coherent sheaves on the spectrum of a Noetherian ring form an abelian category. -/
 instance : Abelian (FinitelyPresentedSheaf (Spec R)) := by
   let e := (tildeEquiv R).symm
@@ -126,7 +149,7 @@ instance : (tildeFunctor R).Additive := by
   exact Functor.additive_of_comp_faithful _ (ObjectProperty.ι _)
 
 omit [IsNoetherianRing R] in
-/-- Taking global sections of a coherent sheaf is additive. -/
+/-- Taking global sections of a finitely presented sheaf is additive. -/
 instance : (globalSectionsFunctor R).Additive := by
   have : (moduleSpecΓFunctor (R := R)).Additive :=
     (moduleSpecΓFunctor (R := R)).additive_of_preserves_binary_products
@@ -178,44 +201,28 @@ open _root_.AlgebraicGeometry.Scheme.Modules
 
 variable {R : CommRingCat.{u}} {M N : (Spec R).Modules}
 
-/-- The ambient cokernel of a morphism between finitely presented sheaves on a spectrum is
-finitely presented, without a Noetherian hypothesis. -/
-instance _root_.AlgebraicGeometry.Scheme.Modules.isFinitePresentation_cokernel_spec
-    (f : M ⟶ N) [M.IsFinitePresentation] [N.IsFinitePresentation] :
-    (cokernel f).IsFinitePresentation := by
+/-- Over a Noetherian ring, the ambient kernel of a morphism from a finitely presented sheaf
+to a quasicoherent sheaf is finitely presented. -/
+instance _root_.AlgebraicGeometry.Scheme.Modules.isFinitePresentation_kernel_spec
+    [IsNoetherianRing R] (f : M ⟶ N) [M.IsFinitePresentation] [N.IsQuasicoherent] :
+    (kernel f).IsFinitePresentation := by
   have : M.IsQuasicoherent := SheafOfModules.instIsQuasicoherentOfIsFinitePresentation M
-  have : N.IsQuasicoherent := SheafOfModules.instIsQuasicoherentOfIsFinitePresentation N
   let g := (moduleSpecΓFunctor (R := R)).map f
   have : Module.FinitePresentation R (moduleSpecΓFunctor.obj M) :=
     finitePresentation_moduleSpecΓ M
-  have : Module.FinitePresentation R (moduleSpecΓFunctor.obj N) :=
-    finitePresentation_moduleSpecΓ N
-  have : Module.FinitePresentation R
-      ((moduleSpecΓFunctor.obj N) ⧸ LinearMap.range g.hom) :=
-    Module.finitePresentation_of_surjective (LinearMap.range g.hom).mkQ
-      (LinearMap.range g.hom).mkQ_surjective (by simp)
-  have : Module.FinitePresentation R (cokernel g : ModuleCat R) :=
-    Module.FinitePresentation.of_equiv (ModuleCat.cokernelIsoRangeQuotient g).symm.toLinearEquiv
-  let eM := @asIso _ _ _ _ (M.fromTildeΓ)
+  have : Module.FinitePresentation R (LinearMap.ker g.hom) :=
+    Module.finitePresentation_of_finite R _
+  have : Module.FinitePresentation R (kernel g : ModuleCat R) :=
+    Module.FinitePresentation.of_equiv (ModuleCat.kernelIsoKer g).symm.toLinearEquiv
+  let eM := @asIso _ _ _ _ M.fromTildeΓ
     (isIso_fromTildeΓ_of_isQuasicoherent (R := R) M)
-  let eN := @asIso _ _ _ _ (N.fromTildeΓ)
+  let eN := @asIso _ _ _ _ N.fromTildeΓ
     (isIso_fromTildeΓ_of_isQuasicoherent (R := R) N)
-  let e : tilde (cokernel g) ≅ cokernel f :=
-    PreservesCokernel.iso (tilde.functor R) g ≪≫
-      cokernel.mapIso _ _ eM eN ((tilde.adjunction (R := R)).counit.naturality f)
+  let e : tilde (kernel g) ≅ kernel f :=
+    PreservesKernel.iso (tilde.functor R) g ≪≫
+      kernel.mapIso _ _ eM eN ((tilde.adjunction (R := R)).counit.naturality f)
   exact (SheafOfModules.isFinitePresentation (Spec R).ringCatSheaf).prop_of_iso e
-    (isFinitePresentation_tilde (cokernel g))
-
-/-- Over a Noetherian ring the ambient kernel of a morphism of coherent sheaves is coherent.
-It agrees with the kernel in the abelian category of finitely presented sheaves. -/
-instance _root_.AlgebraicGeometry.Scheme.Modules.isFinitePresentation_kernel_spec
-    [IsNoetherianRing R] (f : M ⟶ N) [M.IsFinitePresentation] [N.IsFinitePresentation] :
-    (kernel f).IsFinitePresentation := by
-  let P := SheafOfModules.isFinitePresentation (Spec R).ringCatSheaf
-  let A : FinitelyPresentedSheaf (Spec R) := ⟨M, inferInstance⟩
-  let B : FinitelyPresentedSheaf (Spec R) := ⟨N, inferInstance⟩
-  let g : A ⟶ B := ObjectProperty.homMk f
-  exact P.prop_of_iso (PreservesKernel.iso P.ι g) (kernel g).property
+    (isFinitePresentation_tilde (kernel g))
 
 end
 
