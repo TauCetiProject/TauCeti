@@ -56,6 +56,8 @@ noncomputable instance pullbackMapGrp_preservesLimitsOfShape_walkingParallelPair
     PreservesLimitsOfShape WalkingParallelPair (Over.pullback s).mapGrp := by
   have : PreservesLimitsOfShape WalkingParallelPair
       ((Over.pullback s).mapGrp ⋙ Grp.forget (Over T)) := by
+    -- Forgetting the group structure after the lifted pullback functor is definitionally the
+    -- same functor as first forgetting and then applying pullback in the over category.
     change PreservesLimitsOfShape WalkingParallelPair
       (Grp.forget (Over S) ⋙ Over.pullback s)
     infer_instance
@@ -135,5 +137,35 @@ noncomputable def kernelBaseChangeSchemeIso {S T : Scheme.{u}} (s : T ⟶ S)
     ((Over.pullback s).mapGrp.obj (kernel f)).X.left ≅
       (kernel ((Over.pullback s).mapGrp.map f)).X.left :=
   (Grp.forget (Over T) ⋙ Over.forget T).mapIso (kernelBaseChangeIso s f)
+
+/-- The forward underlying-scheme comparison intertwines the two kernel inclusions. -/
+@[reassoc (attr := simp)]
+lemma kernelBaseChangeSchemeIso_hom_comp_ι {S T : Scheme.{u}} (s : T ⟶ S)
+    {G H : Grp (Over S)} (f : G ⟶ H) :
+    (kernelBaseChangeSchemeIso s f).hom ≫
+        (kernel.ι ((Over.pullback s).mapGrp.map f)).hom.hom.left =
+      ((Over.pullback s).mapGrp.map (kernel.ι f)).hom.hom.left := by
+  exact congrArg (fun k ↦ k.hom.hom.left) (kernelBaseChangeIso_hom_comp_ι s f)
+
+/-- The inverse underlying-scheme comparison intertwines the two kernel inclusions. -/
+@[reassoc (attr := simp)]
+lemma kernelBaseChangeSchemeIso_inv_comp_ι {S T : Scheme.{u}} (s : T ⟶ S)
+    {G H : Grp (Over S)} (f : G ⟶ H) :
+    (kernelBaseChangeSchemeIso s f).inv ≫
+        (pullback.lift
+          (pullback.fst (kernel f).X.hom s ≫ (kernel.ι f).hom.hom.left)
+          (pullback.snd (kernel f).X.hom s)
+          ((Category.assoc _ _ _).trans <|
+            (congrArg (pullback.fst (kernel f).X.hom s ≫ ·)
+              (kernel.ι f).hom.hom.w).trans pullback.condition) :
+          ((Over.pullback s).mapGrp.obj (kernel f)).X.left ⟶
+            ((Over.pullback s).mapGrp.obj G).X.left) =
+      (kernel.ι ((Over.pullback s).mapGrp.map f)).hom.hom.left := by
+  have h := congrArg (fun k ↦ k.hom.hom.left) (kernelBaseChangeIso_inv_comp_ι s f)
+  change (kernelBaseChangeIso s f).inv.hom.hom.left ≫
+    ((Over.pullback s).mapGrp.map (kernel.ι f)).hom.hom.left = _ at h
+  simp only [Functor.mapGrp_map_hom_hom, Over.pullback_map_left] at h
+  change (kernelBaseChangeIso s f).inv.hom.hom.left ≫ _ = _
+  exact h
 
 end TauCeti.GroupScheme
