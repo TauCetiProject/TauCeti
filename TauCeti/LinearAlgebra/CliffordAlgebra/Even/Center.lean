@@ -121,15 +121,17 @@ theorem prod_map_ι_ne_algebraMap_of_even_length [NeZero (2 : K)] {l : List V}
   intro hω
   have hanti := prod_map_ι_mul_ι_of_even_length hl hlen (m := v)
     (Submodule.subset_span (by exact hv))
-  rw [hω, ← Algebra.commutes, ← Algebra.smul_def, eq_neg_iff_add_eq_zero, ← two_smul K,
-    smul_smul, smul_eq_zero] at hanti
+  rw [hω, ← Algebra.commutes, ← Algebra.smul_def] at hanti
+  have h2 : (2 * c) • ι Q v = 0 := by
+    rw [mul_smul, two_smul]
+    exact add_eq_zero_iff_eq_neg.mpr hanti
   have hιv : ι Q v ≠ 0 := by
     intro h0
     apply hQl v hv
     apply algebraMap_injective Q
     rw [← ι_sq_scalar, h0, mul_zero, map_zero]
   have hc : c = 0 := by
-    simpa [NeZero.ne (2 : K), hιv] using hanti
+    simpa [NeZero.ne (2 : K), hιv] using h2
   have hunit : IsUnit (l.map (ι Q)).prod :=
     isUnit_prod_map_ι (List.prod_ne_zero (by simpa using fun v hv h => hQl v hv h)).isUnit
   rw [hω, hc, map_zero] at hunit
@@ -149,10 +151,11 @@ theorem add_smul_volume_injective_of_even_length [NeZero (2 : K)] {l : List V}
   simp only at h
   have hb : b = b' := by
     by_contra hbb
+    have h' : (b - b') • (l.map (ι Q)).prod = (a' - a) • 1 := by
+      simp only [Algebra.algebraMap_eq_smul_one] at h
+      linear_combination (norm := module) h
     apply prod_map_ι_ne_algebraMap_of_even_length hl hlen hne hQl ((b - b')⁻¹ * (a' - a))
-    rw [map_mul, map_sub, ← Algebra.smul_def, eq_inv_smul_iff₀ (sub_ne_zero.mpr hbb), sub_smul,
-      Algebra.smul_def, Algebra.smul_def, sub_eq_sub_iff_add_eq_add, ← Algebra.smul_def,
-      ← Algebra.smul_def, add_comm, h, add_comm]
+    rw [Algebra.algebraMap_eq_smul_one, mul_smul, ← h', inv_smul_smul₀ (sub_ne_zero.mpr hbb)]
   subst hb
   rw [add_left_inj] at h
   rw [algebraMap_injective Q h]
@@ -163,8 +166,10 @@ its Clifford generators. An element of the even Clifford algebra is central in i
 is a scalar plus a scalar multiple of `ω`.
 
 Such a list is a basis, so the form is nondegenerate and the dimension even and positive.
-Conversely, every nondegenerate form on a finite-dimensional space has such a list, by
-`QuadraticMap.Nondegenerate.exists_list_pairwise_isOrtho`. -/
+Conversely, every nondegenerate form on a space of even positive finite dimension (over a field of
+characteristic different from two) has such a list:
+`QuadraticMap.Nondegenerate.exists_list_pairwise_isOrtho` gives an anisotropic orthogonal spanning
+list whose length is the dimension. -/
 theorem mem_center_even_iff_exists_eq_add_smul_volume [NeZero (2 : K)] {l : List V}
     (hl : l.Pairwise Q.IsOrtho) (hlen : Even l.length) (hne : l ≠ [])
     (hspan : Submodule.span K {x : V | x ∈ l} = ⊤) (hQl : ∀ v ∈ l, Q v ≠ 0) {x : even Q} :
@@ -204,9 +209,12 @@ theorem mem_center_even_iff_exists_eq_add_smul_volume [NeZero (2 : K)] {l : List
     refine ⟨a₁ - b₁ * b₀⁻¹ * a₀, b₁ * b₀⁻¹, ?_⟩
     have hx' : x = algebraMap K (even Q) (a₁ - b₁ * b₀⁻¹ * a₀) + (b₁ * b₀⁻¹) • ωE := by
       apply e.injective
-      rw [map_add, map_smul, AlgEquiv.commutes, hx₁, hω₀, smul_add, smul_smul,
-        inv_mul_cancel_right₀ hb₀, Algebra.smul_def (b₁ * b₀⁻¹), ← map_mul, map_sub]
-      abel
+      rw [map_add, map_smul, AlgEquiv.commutes, hx₁, hω₀]
+      simp only [Algebra.algebraMap_eq_smul_one]
+      match_scalars
+      · field_simp
+        ring
+      · field_simp
     rw [hx', Subalgebra.coe_add, Subalgebra.coe_algebraMap, Subalgebra.coe_smul]
   · rintro ⟨a, b, hx⟩
     have hx' : x = algebraMap K (even Q) a + b • ωE := Subtype.ext hx
