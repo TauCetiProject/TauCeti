@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Category.FGModuleCat.Basic
 public import Mathlib.Algebra.Category.ModuleCat.Algebra
 public import Mathlib.LinearAlgebra.Quotient.Basic
 public import Mathlib.RingTheory.Ideal.Span
+public import TauCeti.RingTheory.AdjoinRoot.Basic
 
 /-!
 # Cyclic modules and maps out of them
@@ -21,6 +22,10 @@ A map of right `A`-modules out of `A ⧸ aA` is determined by the image `m` of t
 can be any element with `m * a = 0`, written `op a • m = 0`. When `A` is an algebra over a field
 `k`, evaluation at the generator is a `k`-linear equivalence; the `k`-vector space structure on
 morphisms is Mathlib's `ModuleCat.linearOverField`.
+
+For the truncated polynomial algebra `A = K[X]/(X ^ n)` over a field `K`, with `x` the class of
+`X` and `M_i = A ⧸ (x ^ i)`, the elements of `M_j` killed by `x ^ i` form a space of dimension
+`min i j`, so `dim_K Hom(M_i, M_j) = min i j` for `j ≤ n`.
 
 ## Main definitions
 
@@ -36,6 +41,11 @@ morphisms is Mathlib's `ModuleCat.linearOverField`.
   generator.
 * `TauCeti.FGModuleCat.smul_cyclicModule_hom_mk_one_eq_zero`: the image of the generator under a
   map out of `A ⧸ aA` is killed by `op a`.
+* `TauCeti.FGModuleCat.finrank_cyclicModule_hom_root_pow`: over the truncated polynomial algebra
+  `A = K[X]/(X ^ n)`, with `x` the class of `X` and `M_i = A ⧸ (x ^ i)`, the space of maps
+  `M_i ⟶ M_j` has dimension `min i j` for `j ≤ n`.
+* `TauCeti.FGModuleCat.finrank_map_ker_smul_op_root_pow`: over `K[X]/(X ^ n)`, the image in `M_j`
+  of the annihilator of `x ^ i` has dimension `j - min j (n - i)`.
 -/
 
 public section
@@ -120,6 +130,109 @@ theorem cyclicModuleHomEquiv_symm_apply (a : A)
   (rfl)
 
 end Hom
+
+/-! ### The truncated polynomial algebra `K[X]/(X ^ n)` -/
+
+section TruncatedPolynomial
+
+open Module Polynomial
+
+variable {K : Type u} [Field K] {n : ℕ}
+
+/-- Over `K[X]/(X ^ n)`, the quotient of the opposite algebra by `op (x ^ p)` has dimension `p`,
+for `p ≤ n`. -/
+private theorem finrank_quotient_span_op_root_pow {p : ℕ} (hp : p ≤ n) :
+    finrank K ((AdjoinRoot (X ^ n : K[X]))ᵐᵒᵖ ⧸
+      Ideal.span {op (AdjoinRoot.root (X ^ n : K[X]) ^ p)}) = p := by
+  let e := Ideal.quotientEquivAlg (Ideal.span {AdjoinRoot.root (X ^ n : K[X]) ^ p})
+    (Ideal.span {op (AdjoinRoot.root (X ^ n : K[X]) ^ p)}) (AlgEquiv.toOpposite K _)
+    (by simp [Ideal.map_span])
+  rw [← e.toLinearEquiv.finrank_eq, AdjoinRoot.finrank_quotient_span_root_X_pow_pow hp]
+
+private theorem span_op_root_pow_sup (j m : ℕ) :
+    Ideal.span {op (AdjoinRoot.root (X ^ n : K[X]) ^ j)} ⊔
+        Ideal.span {op (AdjoinRoot.root (X ^ n : K[X]) ^ m)} =
+      Ideal.span {op (AdjoinRoot.root (X ^ n : K[X]) ^ min j m)} := by
+  rcases le_total j m with h | h
+  · rw [min_eq_left h, sup_eq_left, Ideal.span_singleton_le_span_singleton, op_pow, op_pow]
+    exact pow_dvd_pow _ h
+  · rw [min_eq_right h, sup_eq_right, Ideal.span_singleton_le_span_singleton, op_pow, op_pow]
+    exact pow_dvd_pow _ h
+
+/-- Over `K[X]/(X ^ n)`, the quotient of `M_j` by the image of `x ^ m` is `M_(min j m)`. -/
+private theorem finrank_quotient_map_mkQ_span_op_root_pow {j : ℕ} (hj : j ≤ n) (m : ℕ) :
+    finrank K (((AdjoinRoot (X ^ n : K[X]))ᵐᵒᵖ ⧸
+        Ideal.span {op (AdjoinRoot.root (X ^ n : K[X]) ^ j)}) ⧸
+      (Submodule.map (Ideal.span {op (AdjoinRoot.root (X ^ n : K[X]) ^ j)}).mkQ
+        (Ideal.span {op (AdjoinRoot.root (X ^ n : K[X]) ^ m)})).restrictScalars K) = min j m := by
+  rw [(Submodule.Quotient.restrictScalarsEquiv K _).finrank_eq,
+    ((Submodule.quotientQuotientEquivQuotientSup _ _).restrictScalars K).finrank_eq,
+    span_op_root_pow_sup, finrank_quotient_span_op_root_pow ((min_le_left j m).trans hj)]
+
+/-- Over `K[X]/(X ^ n)`, the elements of `M_j` killed by `x ^ i` form a space of dimension
+`min i j`: multiplication by `x ^ i` on `M_j` has cokernel `M_(min i j)`. -/
+private theorem finrank_ker_smul_op_root_pow {i j : ℕ} (hj : j ≤ n) :
+    finrank K (LinearMap.ker (DistribSMul.toLinearMap K ((AdjoinRoot (X ^ n : K[X]))ᵐᵒᵖ ⧸
+      Ideal.span {op (AdjoinRoot.root (X ^ n : K[X]) ^ j)})
+        (op (AdjoinRoot.root (X ^ n : K[X]) ^ i)))) = min i j := by
+  set x := AdjoinRoot.root (X ^ n : K[X])
+  set φ := DistribSMul.toLinearMap K ((AdjoinRoot (X ^ n : K[X]))ᵐᵒᵖ ⧸ Ideal.span {op (x ^ j)})
+    (op (x ^ i))
+  have hrange : LinearMap.range φ =
+      (Submodule.map (Ideal.span {op (x ^ j)}).mkQ
+        (Ideal.span {op (x ^ i)})).restrictScalars K := by
+    ext y
+    obtain ⟨y, rfl⟩ := Submodule.Quotient.mk_surjective _ y
+    simp only [LinearMap.mem_range, Submodule.restrictScalars_mem, Submodule.mem_map,
+      Ideal.mem_span_singleton', Submodule.mkQ_apply]
+    constructor
+    · rintro ⟨z, hz⟩
+      obtain ⟨c, rfl⟩ := Submodule.Quotient.mk_surjective _ z
+      exact ⟨op (x ^ i) * c, ⟨c, mul_comm _ _⟩, hz⟩
+    · rintro ⟨_, ⟨c, rfl⟩, hc⟩
+      refine ⟨Submodule.Quotient.mk c, ?_⟩
+      rw [← hc, DistribSMul.toLinearMap_apply, ← Submodule.Quotient.mk_smul, smul_eq_mul, mul_comm]
+  have := (monic_X_pow n).finite_adjoinRoot (R := K)
+  have h₁ := LinearMap.finrank_range_add_finrank_ker φ
+  have h₂ := Submodule.finrank_quotient_add_finrank (LinearMap.range φ)
+  rw [finrank_quotient_span_op_root_pow hj] at h₁ h₂
+  have h₃ : finrank K (_ ⧸ LinearMap.range φ) = min j i := by
+    rw [hrange]
+    exact finrank_quotient_map_mkQ_span_op_root_pow hj i
+  omega
+
+/-- Over `K[X]/(X ^ n)`, with `x` the class of `X` and `M_j = A ⧸ (x ^ j)`, the image in `M_j` of
+the annihilator `x ^ (n - i) A` of `x ^ i` has dimension `j - min j (n - i)`, for `i, j ≤ n`. -/
+theorem finrank_map_ker_smul_op_root_pow {i j : ℕ} (hi : i ≤ n) (hj : j ≤ n) :
+    finrank K ((LinearMap.ker (DistribSMul.toLinearMap K (AdjoinRoot (X ^ n : K[X]))ᵐᵒᵖ
+        (op (AdjoinRoot.root (X ^ n : K[X]) ^ i)))).map
+      ((Ideal.span {op (AdjoinRoot.root (X ^ n : K[X]) ^ j)}).mkQ.restrictScalars K)) =
+      j - min j (n - i) := by
+  set x := AdjoinRoot.root (X ^ n : K[X])
+  have hker : LinearMap.ker (DistribSMul.toLinearMap K (AdjoinRoot (X ^ n : K[X]))ᵐᵒᵖ
+      (op (x ^ i))) = (Ideal.span {op (x ^ (n - i))}).restrictScalars K := by
+    ext c
+    obtain ⟨d, rfl⟩ := (RingEquiv.toOpposite (AdjoinRoot (X ^ n : K[X]))).surjective c
+    simp only [LinearMap.mem_ker, DistribSMul.toLinearMap_apply, smul_eq_mul,
+      Submodule.restrictScalars_mem, Ideal.mem_span_singleton]
+    rw [← RingEquiv.toOpposite_apply, ← RingEquiv.toOpposite_apply, ← map_mul,
+      map_eq_zero_iff _ (RingEquiv.injective _), map_dvd_iff,
+      AdjoinRoot.root_X_pow_pow_mul_eq_zero_iff hi]
+  have := (monic_X_pow n).finite_adjoinRoot (R := K)
+  have h := Submodule.finrank_quotient_add_finrank ((Submodule.map (Ideal.span {op (x ^ j)}).mkQ
+    (Ideal.span {op (x ^ (n - i))})).restrictScalars K)
+  rw [finrank_quotient_map_mkQ_span_op_root_pow hj, finrank_quotient_span_op_root_pow hj] at h
+  rw [hker, ← Submodule.restrictScalars_map]
+  omega
+
+/-- **Morphisms between the cyclic modules of `K[X]/(X ^ n)`.** With `x` the class of `X` and
+`M_i = A ⧸ (x ^ i)`, the space of maps `M_i ⟶ M_j` has dimension `min i j` for `j ≤ n`. -/
+theorem finrank_cyclicModule_hom_root_pow {i j : ℕ} (hj : j ≤ n) :
+    finrank K (cyclicModule (AdjoinRoot.root (X ^ n : K[X]) ^ i) ⟶
+      cyclicModule (AdjoinRoot.root (X ^ n : K[X]) ^ j)) = min i j :=
+  (cyclicModuleHomEquiv K _).finrank_eq.trans (finrank_ker_smul_op_root_pow hj)
+
+end TruncatedPolynomial
 
 end FGModuleCat
 
