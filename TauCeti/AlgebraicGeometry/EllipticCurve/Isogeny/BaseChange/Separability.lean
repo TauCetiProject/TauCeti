@@ -55,8 +55,6 @@ public section
 
 open WeierstrassCurve.Affine
 
-namespace TauCeti
-
 namespace WeierstrassCurve.Affine.FunctionField
 
 variable {F K : Type*} [Field F] [Field K]
@@ -136,6 +134,8 @@ theorem mapDifferential_eq_zero_iff (W : WeierstrassCurve.Affine F) [W.IsEllipti
     rw [hc₀, map_zero, zero_smul]
 
 end WeierstrassCurve.Affine.FunctionField
+
+namespace TauCeti
 
 namespace Isogeny
 
