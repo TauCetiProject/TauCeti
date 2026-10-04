@@ -136,21 +136,31 @@ in `P.filtration n`, that is, when `v_P(x) ≤ exp (-n)`. -/
 @[simp]
 theorem mem_maximalIdeal_pow_iff_coe_mem_filtration (n : ℕ) (x : P.integers) :
     x ∈ IsLocalRing.maximalIdeal P.integers ^ n ↔ (x : F) ∈ P.filtration n := by
+  have hint : P.valuation.Integers P.integers := {
+    hom_inj := fun _ _ h ↦ Subtype.ext <| by
+      simpa only [ValuationSubring.algebraMap_apply] using h
+    map_le_one := fun y ↦ by
+      rw [ValuationSubring.algebraMap_apply]
+      exact P.mem_integers_iff.mp y.2
+    exists_of_le_one := fun {r} hr ↦
+      ⟨⟨_, P.mem_integers_iff.mpr hr⟩, by rw [ValuationSubring.algebraMap_apply]⟩ }
+  obtain ⟨π, hπirr⟩ := IsDiscreteValuationRing.exists_irreducible P.integers
   let e : P.integers ≃+* P.valuation.valuationSubring :=
     RingEquiv.subringCongr (congrArg ValuationSubring.toSubring P.integers_def)
-  have he : ((e x : P.valuation.valuationSubring) : F) = (x : F) :=
-    RingEquiv.coe_subringCongr_apply _ x
-  rw [← Ideal.apply_mem_of_equiv_iff (I := IsLocalRing.maximalIdeal P.integers ^ n)
-    (f := e) (x := x), Ideal.map_pow, IsLocalRing.map_ringEquiv_maximalIdeal]
-  let π : P.valuation.Uniformizer := Classical.choice inferInstance
-  have hπ : P.valuation (π.1 : F) = WithZero.exp (-1 : ℤ) := by
-    simpa [Valuation.IsUniformizer.iff, P.generator_eq_exp_neg_one] using π.valuation_gt_one
-  -- Membership in a principal ideal of the valuation subring is a valuation inequality.
-  have hspan : e x ∈ Ideal.span {(π.1 ^ n : P.valuation.valuationSubring)} ↔
-      P.valuation (e x : F) ≤ P.valuation ((π.1 ^ n : P.valuation.valuationSubring) : F) :=
-    Set.ext_iff.mp (Valuation.integer.coe_span_singleton_eq_setOfPred_le_v_coe (π.1 ^ n)) (e x)
-  rw [Valuation.pow_Uniformizer_is_pow_generator π n, hspan, P.mem_filtration_iff, he]
-  simp only [Subring.coe_pow, map_pow, hπ, ← WithZero.exp_nsmul]
+  have heπirr : Irreducible (e π) := hπirr.map e
+  have hπuni : P.valuation.IsUniformizer (e π : F) :=
+    Valuation.isUniformizer_of_maximalIdeal_eq_span P.valuation heπirr.maximalIdeal_eq
+  have heπ : ((e π : P.valuation.valuationSubring) : F) = (π : F) :=
+    RingEquiv.coe_subringCongr_apply _ π
+  have hπ : P.valuation (algebraMap P.integers F π) = WithZero.exp (-1 : ℤ) := by
+    rw [ValuationSubring.algebraMap_apply, ← heπ]
+    simpa [Valuation.IsUniformizer.iff, P.generator_eq_exp_neg_one] using hπuni
+  have hpow : x ∈ IsLocalRing.maximalIdeal P.integers ^ n ↔
+      P.valuation (algebraMap P.integers F x) ≤
+        P.valuation (algebraMap P.integers F π) ^ n :=
+    Set.ext_iff.mp (hint.maximalIdeal_pow_eq_setOfPred_le_v_algebraMap_pow hπirr n) x
+  rw [hpow, P.mem_filtration_iff, ValuationSubring.algebraMap_apply]
+  simp only [hπ, ← WithZero.exp_nsmul]
   norm_num
 
 /-- Two functions integral at `P` have the same value at `P` exactly when they differ by a

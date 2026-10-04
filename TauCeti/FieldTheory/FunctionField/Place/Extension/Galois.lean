@@ -86,6 +86,37 @@ open scoped Pointwise
 
 namespace TauCeti
 
+namespace ValuationSubring
+
+universe w w'
+
+variable {K : Type w} {L : Type w'} [Field K] [Field L] [Algebra K L]
+
+/-- The action of a decomposition group on its valuation subring is the restriction of its
+action on the fraction field. -/
+theorem coe_decompositionSubgroup_smul (A : _root_.ValuationSubring L)
+    (g : A.decompositionSubgroup K) (x : A) :
+    ((g • x : A) : L) = (g : L ≃ₐ[K] L) (x : L) := by
+  rw [← AlgEquiv.smul_def, ← Submonoid.smul_def]
+  rfl
+
+/-- Two automorphisms in the decomposition group of a valuation subring that agree on the
+valuation subring are equal, because its ambient field is its field of fractions. -/
+theorem decompositionSubgroup_eq_of_forall_mem (A : _root_.ValuationSubring L)
+    {g h : A.decompositionSubgroup K}
+    (hgh : ∀ x : A, (g : L ≃ₐ[K] L) x = (h : L ≃ₐ[K] L) x) : g = h :=
+  Subtype.ext <| AlgEquiv.ext fun y ↦ DFunLike.congr_fun
+    (IsFractionRing.ringHom_ext (A := A) (f1 := ((g : L ≃ₐ[K] L) : L →+* L))
+      (f2 := ((h : L ≃ₐ[K] L) : L →+* L)) hgh) y
+
+/-- The decomposition group of a valuation subring acts faithfully on that subring. -/
+instance instFaithfulSMulDecompositionSubgroup (A : _root_.ValuationSubring L) :
+    FaithfulSMul (A.decompositionSubgroup K) A where
+  eq_of_smul_eq_smul {g h} heq := decompositionSubgroup_eq_of_forall_mem A fun x ↦ by
+    simpa only [coe_decompositionSubgroup_smul] using congrArg Subtype.val (heq x)
+
+end ValuationSubring
+
 namespace Place
 
 universe u v v'
@@ -208,25 +239,6 @@ theorem ord_decompositionSubgroup_apply (x : F') :
 theorem mem_integers_decompositionSubgroup_apply {x : F'} :
     (g : F' ≃ₐ[F] F') x ∈ P.integers ↔ x ∈ P.integers := by
   simp only [mem_integers_iff, valuation_decompositionSubgroup_apply]
-
-omit [Algebra k F] [IsScalarTower k F F'] in
-/-- Two automorphisms fixing `P` that agree on the valuation ring of `P` are equal, because that
-valuation ring has `F'` for its field of fractions. -/
-theorem decompositionSubgroup_eq_of_forall_mem_integers {g h : P.integers.decompositionSubgroup F}
-    (hgh : ∀ x ∈ P.integers, (g : F' ≃ₐ[F] F') x = (h : F' ≃ₐ[F] F') x) : g = h :=
-  Subtype.ext <| AlgEquiv.ext fun y ↦ DFunLike.congr_fun
-    (IsFractionRing.ringHom_ext (A := P.integers) (f1 := ((g : F' ≃ₐ[F] F') : F' →+* F'))
-      (f2 := ((h : F' ≃ₐ[F] F') : F' →+* F')) fun x ↦ hgh x x.2) y
-
-omit [Algebra k F] [IsScalarTower k F F'] in
-/-- The decomposition group acts faithfully on the valuation ring of a place. Indeed, two field
-automorphisms agreeing on the valuation ring agree on its fraction field. -/
-instance instFaithfulSMulIntegers (P : Place k F') :
-    FaithfulSMul (P.integers.decompositionSubgroup F) P.integers where
-  eq_of_smul_eq_smul {g h} heq := decompositionSubgroup_eq_of_forall_mem_integers F P fun x hx ↦ by
-    have hval := congrArg Subtype.val (heq ⟨x, hx⟩)
-    change (g : F' ≃ₐ[F] F') x = (h : F' ≃ₐ[F] F') x at hval
-    exact hval
 
 end Transport
 
