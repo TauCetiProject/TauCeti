@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Topology.Compactification.OnePoint.Sphere
+public import Mathlib.Topology.Maps.Proper.Basic
 public import TauCeti.Topology.JordanCurve.Basic
 
 /-!
@@ -14,7 +15,10 @@ public import TauCeti.Topology.JordanCurve.Basic
 
 The real projective line, topologically the one-point compactification `OnePoint ℝ`, is a
 circle.  This file records the resulting homeomorphism and the corresponding Jordan-curve fact.
-They let maps on the extended real boundary be treated using the Jordan-curve API.
+They let maps on the extended real boundary be treated using the Jordan-curve API. In particular,
+a proper injective parametrization by the real line extends to a continuous injection of
+`OnePoint ℝ`, so its image together with infinity is a Jordan curve in the one-point
+compactification of the ambient space.
 
 The construction uses Mathlib's stereographic homeomorphism from the one-point compactification
 of a finite-dimensional real vector space to a sphere.  The standard orthonormal basis
@@ -28,6 +32,8 @@ of a finite-dimensional real vector space to a sphere.  The standard orthonormal
 ## Main results
 
 * `TauCeti.isJordanCurve_univ_onePoint_real` -- the whole real projective line is a Jordan curve.
+* `TauCeti.isJordanCurve_insert_infty_range_of_isProperMap` -- a proper simple real curve
+  becomes a Jordan curve after adding the point at infinity.
 -/
 
 public section
@@ -59,5 +65,27 @@ theorem isJordanCurve_univ_onePoint_real :
     IsJordanCurve (Set.univ : Set (OnePoint ℝ)) :=
   isJordanCurve_iff.mpr
     ⟨(Homeomorph.Set.univ (OnePoint ℝ)).trans onePointRealHomeomorphCircle⟩
+
+/-- A proper injective parametrization by the real line becomes a Jordan curve in the one-point
+compactification of its ambient space. Both ends of the curve meet at infinity, and properness
+ensures continuity there. -/
+theorem isJordanCurve_insert_infty_range_of_isProperMap
+    {X : Type*} [TopologicalSpace X] [T2Space X] [WeaklyLocallyCompactSpace X]
+    {f : ℝ → X} (hf : IsProperMap f) (hinj : Function.Injective f) :
+    IsJordanCurve (insert OnePoint.infty (((↑) : X → OnePoint X) '' range f)) := by
+  have hcont : Continuous (OnePoint.map f) := by
+    apply OnePoint.continuous_map hf.continuous
+    refine Filter.hasBasis_coclosedCompact.tendsto_right_iff.mpr ?_
+    rintro K ⟨hKclosed, hKcompact⟩
+    exact (hf.isCompact_preimage hKcompact).compl_mem_coclosedCompact_of_isClosed
+      (hKclosed.preimage hf.continuous)
+  have hinj' : Function.Injective (OnePoint.map f) := Option.map_injective hinj
+  have himage : OnePoint.map f '' univ =
+      insert OnePoint.infty (((↑) : X → OnePoint X) '' range f) := by
+    ext y
+    induction y using OnePoint.rec <;>
+      simp [OnePoint.exists, mem_range, eq_comm]
+  rw [← himage]
+  exact isJordanCurve_univ_onePoint_real.image hcont.continuousOn hinj'.injOn
 
 end TauCeti
