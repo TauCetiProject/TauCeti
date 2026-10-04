@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Complex.Conformal.BoundaryCorrespondence
 public import TauCeti.Topology.ClusterSet
 public import TauCeti.Topology.JordanCurve.Subcontinuum
-import Mathlib.Analysis.LocallyConvex.WithSeminorms
 import TauCeti.Analysis.Complex.Conformal.ImageSimplyConnected
 import TauCeti.Analysis.Convex.ClusterSet
 import TauCeti.Topology.Frontier

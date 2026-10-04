@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Algebra.Module.LocallyConvex
+public import Mathlib.Analysis.LocallyConvex.WithSeminorms
 public import TauCeti.Topology.ClusterSet
 import Mathlib.Analysis.Convex.PathConnected
 
