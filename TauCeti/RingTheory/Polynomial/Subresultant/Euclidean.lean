@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.Polynomial.Subresultant.Polynomial
 public import TauCeti.RingTheory.Polynomial.Subresultant.DegreeDrop
+import TauCeti.Algebra.Polynomial.OfFn
 import Mathlib.Algebra.Polynomial.FieldDivision
 
 /-!
@@ -18,8 +19,10 @@ bounds. In particular, division with remainder preserves the minors before the b
 are lowered. The principal-coefficient recurrence then records the power of the leading
 coefficient and the sign introduced by lowering bounds and swapping inputs.
 
-These identities connect determinant subresultants to Euclidean remainder sequences.
-They do not recompute formal bounds silently, and include the terminal principal index.
+Reduction invariance holds over any commutative ring and at every index, including the
+terminal principal index. Division with remainder requires a field and a nonzero divisor;
+the remainder may be zero. The principal-coefficient recurrences require the index to lie
+at or below both the remainder bound and the divisor degree.
 
 ## References
 
@@ -35,12 +38,28 @@ open Polynomial Matrix
 
 variable {R : Type*} [CommRing R]
 
-/-- The column operation adding shifted multiples of the right input to the left block. -/
+/-- Add shifted multiples of the `q`-columns (first block) to the `p`-columns (second block),
+realising `X ^ l * p ↦ X ^ l * (p + a * q)`. -/
 private noncomputable def reductionShear (a : R[X]) (u v : ℕ) :
     Matrix (Fin (u + v)) (Fin (u + v)) R :=
   (Matrix.fromBlocks (1 : Matrix (Fin u) (Fin u) R)
     (Matrix.of fun i l => (X ^ l.val * a).coeff i.val) 0
     (1 : Matrix (Fin v) (Fin v) R)).reindex finSumFinEquiv finSumFinEquiv
+
+private theorem reductionShear_apply_castAdd (a : R[X]) (u v : ℕ)
+    (i : Fin (u + v)) (l : Fin u) :
+    reductionShear a u v i (Fin.castAdd v l) =
+      i.addCases (fun i => if i = l then 1 else 0) (fun _ => 0) := by
+  classical
+  induction i using Fin.addCases <;> simp [reductionShear, Matrix.one_apply]
+
+private theorem reductionShear_apply_natAdd (a : R[X]) (u v : ℕ)
+    (i : Fin (u + v)) (l : Fin v) :
+    reductionShear a u v i (Fin.natAdd u l) =
+      i.addCases (fun i => (X ^ l.val * a).coeff i.val)
+        (fun i => if i = l then 1 else 0) := by
+  classical
+  induction i using Fin.addCases <;> simp [reductionShear, Matrix.one_apply]
 
 private theorem det_reductionShear (a : R[X]) (u v : ℕ) :
     (reductionShear a u v).det = 1 := by
@@ -49,7 +68,7 @@ private theorem det_reductionShear (a : R[X]) (u v : ℕ) :
 
 private theorem subresultantCoeffMatrix_add_mul {p q a : R[X]} {m n j : ℕ}
     (hp : p.natDegree ≤ m) (hq : q.natDegree ≤ n)
-    (ha : a.natDegree + n ≤ m) (hj : j ≤ n) (k : ℕ) :
+    (ha : a.natDegree + n ≤ m) (k : ℕ) :
     subresultantCoeffMatrix (p + a * q) q m n j k =
       subresultantCoeffMatrix p q m n j k * reductionShear a (m - j) (n - j) := by
   classical
@@ -60,11 +79,14 @@ private theorem subresultantCoeffMatrix_add_mul {p q a : R[X]} {m n j : ℕ}
   have hmul := subresultantCoeffMatrix_mulVec hp hq j k
     (fun i => reductionShear a (m - j) (n - j) i l) i
   -- Matrix multiplication reads each column through the coefficient-map API.
-  rw [Matrix.mul_apply]
+  rw [Matrix.mul_apply']
+  -- Identify the column dot product with mulVec to apply hmul without expanding the sum.
+  change _ = (subresultantCoeffMatrix p q m n j k).mulVec
+    (fun i => reductionShear a (m - j) (n - j) i l) i
+  rw [hmul]
   induction l using Fin.addCases with
   | left l =>
-      simp [Fin.sum_univ_add, reductionShear, Matrix.one_apply,
-        subresultantCoeffMatrix_apply_eq_coeff hp hq]
+      simp [reductionShear_apply_castAdd, ← Pi.zero_def]
   | right l =>
       have hdeg : (X ^ l.val * a).natDegree < m - j := by
         have hbound : (X ^ l.val * a).natDegree ≤ l.val + a.natDegree :=
@@ -72,37 +94,40 @@ private theorem subresultantCoeffMatrix_add_mul {p q a : R[X]} {m n j : ℕ}
         omega
       have hpoly : ofFn (m - j) (fun i => (X ^ l.val * a).coeff i.val) =
           X ^ l.val * a := by
-        simpa [toFn, LinearMap.pi] using ofFn_comp_toFn_eq_id_of_natDegree_lt hdeg
-      have hright : ofFn (n - j) (fun i => if i = l then (1 : R) else 0) =
-          X ^ l.val := by
-        simp [ofFn_eq_sum_monomial, apply_ite (monomial _), monomial_one_right_eq_X_pow]
-      simpa [Matrix.mulVec, dotProduct, reductionShear, Matrix.one_apply, hpoly, hright,
-        mul_add, mul_assoc, add_comm] using hmul.symm
+        have hvec : (fun i : Fin (m - j) => (X ^ l.val * a).coeff i.val) =
+            toFn (m - j) (X ^ l.val * a) := by
+          ext i
+          rw [toFn_apply]
+        rw [hvec]
+        exact ofFn_comp_toFn_eq_id_of_natDegree_lt hdeg
+      simp only [Fin.addCases_right, reductionShear_apply_natAdd,
+        Fin.addCases_left, ofFn_single, hpoly]
+      rw [mul_add, mul_assoc, add_comm]
 
 /-- Adding a multiple of the right input preserves every fixed-bound coefficient minor.
 The multiplier's degree plus the right bound must not exceed the left bound. -/
 theorem _root_.Polynomial.subresultantCoeff_add_mul_left {p q a : R[X]} {m n j : ℕ}
     (hp : p.natDegree ≤ m) (hq : q.natDegree ≤ n)
-    (ha : a.natDegree + n ≤ m) (hj : j ≤ n) (k : ℕ) :
+    (ha : a.natDegree + n ≤ m) (k : ℕ) :
     subresultantCoeff (p + a * q) q m n j k = subresultantCoeff p q m n j k := by
-  simp [subresultantCoeff_def, subresultantCoeffMatrix_add_mul hp hq ha hj,
+  simp [subresultantCoeff_def, subresultantCoeffMatrix_add_mul hp hq ha,
     Matrix.det_mul, det_reductionShear]
 
 /-- Polynomial reduction preserves principal coefficients, including the terminal index. -/
 theorem _root_.Polynomial.psc_add_mul_left {p q a : R[X]} {m n j : ℕ}
     (hp : p.natDegree ≤ m) (hq : q.natDegree ≤ n)
-    (ha : a.natDegree + n ≤ m) (hj : j ≤ n) :
+    (ha : a.natDegree + n ≤ m) :
     psc (p + a * q) q m n j = psc p q m n j := by
   simpa only [subresultantCoeff_index] using
-    subresultantCoeff_add_mul_left hp hq ha hj j
+    subresultantCoeff_add_mul_left (j := j) hp hq ha j
 
 /-- Polynomial reduction preserves the fixed-bound subresultant polynomial. -/
 theorem _root_.Polynomial.subresultant_add_mul_left {p q a : R[X]} {m n j : ℕ}
     (hp : p.natDegree ≤ m) (hq : q.natDegree ≤ n)
-    (ha : a.natDegree + n ≤ m) (hj : j ≤ n) :
+    (ha : a.natDegree + n ≤ m) :
     subresultant (p + a * q) q m n j = subresultant p q m n j := by
   ext k
-  simp only [subresultant_coeff, subresultantCoeff_add_mul_left hp hq ha hj]
+  simp only [subresultant_coeff, subresultantCoeff_add_mul_left hp hq ha]
 
 section Field
 
@@ -112,7 +137,7 @@ variable {K : Type*} [Field K]
 actual right degree. The left bound may be oversized, and the remainder may be zero. -/
 theorem _root_.Polynomial.subresultantCoeff_mod_left {p q : K[X]} {m j : ℕ}
     (hq : q ≠ 0) (hp : p.natDegree ≤ m) (hqm : q.natDegree ≤ m)
-    (hj : j ≤ q.natDegree) (k : ℕ) :
+    (k : ℕ) :
     subresultantCoeff (p % q) q m q.natDegree j k =
       subresultantCoeff p q m q.natDegree j k := by
   have hquot : (p / q).natDegree ≤ p.natDegree - q.natDegree := by
@@ -126,34 +151,33 @@ theorem _root_.Polynomial.subresultantCoeff_mod_left {p q : K[X]} {m j : ℕ}
   have heq : p + -(p / q) * q = p % q := by
     rw [EuclideanDomain.mod_eq_sub_mul_div]
     ring
-  simpa only [heq] using subresultantCoeff_add_mul_left hp le_rfl ha hj k
+  simpa only [heq] using subresultantCoeff_add_mul_left hp le_rfl ha k
 
 /-- Division with remainder preserves principal coefficients before the left bound drops. -/
 theorem _root_.Polynomial.psc_mod_left {p q : K[X]} {m j : ℕ}
-    (hq : q ≠ 0) (hp : p.natDegree ≤ m) (hqm : q.natDegree ≤ m)
-    (hj : j ≤ q.natDegree) :
+    (hq : q ≠ 0) (hp : p.natDegree ≤ m) (hqm : q.natDegree ≤ m) :
     psc (p % q) q m q.natDegree j = psc p q m q.natDegree j := by
-  simpa only [subresultantCoeff_index] using subresultantCoeff_mod_left hq hp hqm hj j
+  simpa only [subresultantCoeff_index] using subresultantCoeff_mod_left (j := j) hq hp hqm j
 
 /-- Division with remainder preserves the subresultant polynomial at fixed bounds. -/
 theorem _root_.Polynomial.subresultant_mod_left {p q : K[X]} {m j : ℕ}
-    (hq : q ≠ 0) (hp : p.natDegree ≤ m) (hqm : q.natDegree ≤ m)
-    (hj : j ≤ q.natDegree) :
+    (hq : q ≠ 0) (hp : p.natDegree ≤ m) (hqm : q.natDegree ≤ m) :
     subresultant (p % q) q m q.natDegree j = subresultant p q m q.natDegree j := by
   ext k
-  simp only [subresultant_coeff, subresultantCoeff_mod_left hq hp hqm hj]
+  simp only [subresultant_coeff, subresultantCoeff_mod_left hq hp hqm]
 
 /-- A Euclidean step for principal subresultant coefficients. Lowering the remainder's
-bound to `r` contributes a leading-coefficient power; swapping the column blocks contributes
-the displayed sign. The smaller terminal index and zero remainders are included. -/
-theorem _root_.Polynomial.psc_eq_sign_mul_pow_mul_psc_mod {p q : K[X]} {m r j : ℕ}
+bound from `m` to `r` contributes `q.leadingCoeff ^ (m - r)`; the displayed sign
+comes from both the bound drop and the input swap. The smaller terminal index and zero
+remainders are included. -/
+theorem _root_.Polynomial.psc_eq_sign_mul_leadingCoeff_pow_mul_psc_mod {p q : K[X]} {m r j : ℕ}
     (hq : q ≠ 0) (hp : p.natDegree ≤ m) (hqm : q.natDegree ≤ m)
     (hr : (p % q).natDegree ≤ r) (hrm : r ≤ m)
     (hjr : j ≤ r) (hjq : j ≤ q.natDegree) :
     psc p q m q.natDegree j =
       (-1) ^ ((m - j) * (q.natDegree - j)) * q.leadingCoeff ^ (m - r) *
         psc q (p % q) q.natDegree r j := by
-  rw [← psc_mod_left hq hp hqm hjq,
+  rw [← psc_mod_left hq hp hqm,
     psc_eq_sign_mul_coeff_pow_mul_of_left_degree_drop hr le_rfl hrm hjr hjq,
     psc_comm (p % q) q r q.natDegree j, coeff_natDegree]
   have hgap : m - j = (m - r) + (r - j) := by omega
@@ -162,7 +186,7 @@ theorem _root_.Polynomial.psc_eq_sign_mul_pow_mul_psc_mod {p q : K[X]} {m r j : 
 
 /-- The principal-coefficient recurrence for the signed remainder `-(p % q)`.
 Negating the remainder adds the sign of its `q.natDegree - j` columns. -/
-theorem _root_.Polynomial.psc_eq_sign_mul_pow_mul_psc_neg_mod {p q : K[X]} {m r j : ℕ}
+theorem _root_.Polynomial.psc_eq_sign_mul_leadingCoeff_pow_mul_psc_neg_mod {p q : K[X]} {m r j : ℕ}
     (hq : q ≠ 0) (hp : p.natDegree ≤ m) (hqm : q.natDegree ≤ m)
     (hr : (p % q).natDegree ≤ r) (hrm : r ≤ m)
     (hjr : j ≤ r) (hjq : j ≤ q.natDegree) :
@@ -171,10 +195,14 @@ theorem _root_.Polynomial.psc_eq_sign_mul_pow_mul_psc_neg_mod {p q : K[X]} {m r 
         psc q (-(p % q)) q.natDegree r j := by
   have hneg := psc_C_mul_right q (p % q) (-1) q.natDegree r j
   simp only [map_neg, map_one, neg_mul, one_mul] at hneg
-  rw [hneg, psc_eq_sign_mul_pow_mul_psc_mod hq hp hqm hr hrm hjr hjq,
+  rw [hneg, psc_eq_sign_mul_leadingCoeff_pow_mul_psc_mod hq hp hqm hr hrm hjr hjq,
     add_mul, one_mul, pow_add]
-  ring_nf
-  simp [mul_comm (q.natDegree - j) 2, pow_mul]
+  have hsq : ((-1 : K) ^ (q.natDegree - j)) ^ 2 = 1 := by
+    rw [← pow_mul, mul_comm, pow_mul]
+    simp
+  linear_combination
+    -((-1 : K) ^ ((m - j) * (q.natDegree - j)) * q.leadingCoeff ^ (m - r) *
+      psc q (p % q) q.natDegree r j) * hsq
 
 end Field
 
