@@ -140,21 +140,18 @@ private theorem W1p.exists_contDiffOn_norm_sub_lt (hp : p ≠ ⊤) (u : W1p mu O
   have hw : ‖w‖ ≤ ε / 2 := tsum_of_norm_bounded hgeom hab
   -- the smooth function: a locally finite sum of test functions
   let f : E → ℝ := fun x => ∑' j, Psi j x
-  have hf_local : ∀ x ∈ Omega, ∃ m, ∀ᶠ y in 𝓝 x,
-      (f y = ∑ j ∈ Finset.range m, Psi j y) ∧ ∀ N, m ≤ N →
-        ∑ j ∈ Finset.range N, Psi j y = f y ∧ ∑ j ∈ Finset.range N, zeta j y = 1 := by
+  have hf : ContDiffOn ℝ ∞ f Omega := fun x hx => by
+    obtain ⟨m, hm⟩ := hfin x hx
+    refine (contDiffAt_tsum_of_eventually_eq_zero (Finset.range m)
+      (fun j _ => (Psi j).contDiff.contDiffAt) (hm.mono fun y hy j hj => ?_)).contDiffWithinAt
+    exact hPsi_zero j y (hy.1 j (by simpa using hj))
+  -- at each point of `Ω`, the partial sums of `Psi` and `zeta` are eventually `f` and `1`
+  have hf_local : ∀ x ∈ Omega, ∃ m, ∀ N, m ≤ N →
+      ∑ j ∈ Finset.range N, Psi j x = f x ∧ ∑ j ∈ Finset.range N, zeta j x = 1 := by
     intro x hx
     obtain ⟨m, hm⟩ := hfin x hx
-    refine ⟨m, hm.mono fun y hy => ?_⟩
-    have hzero : ∀ j, m ≤ j → Psi j y = 0 := fun j hj => hPsi_zero j y (hy.1 j hj)
-    have htsum : ∀ N, m ≤ N → f y = ∑ j ∈ Finset.range N, Psi j y := fun N hN =>
-      tsum_eq_sum fun j hj => hzero j (by simp at hj; omega)
-    exact ⟨htsum m le_rfl, fun N hN => ⟨(htsum N hN).symm, hy.2 N hN⟩⟩
-  have hf : ContDiffOn ℝ ∞ f Omega := by
-    intro x hx
-    obtain ⟨m, hm⟩ := hf_local x hx
-    refine (ContDiffAt.congr_of_eventuallyEq ?_ (hm.mono fun y hy => hy.1)).contDiffWithinAt
-    exact (ContDiff.sum fun j _ => (Psi j).contDiff).contDiffAt
+    refine ⟨m, fun N hN => ⟨(tsum_eq_sum fun j hj => ?_).symm, hm.self_of_nhds.2 N hN⟩⟩
+    exact hPsi_zero j x (hm.self_of_nhds.1 j (by simp at hj; omega))
   -- identify the `Lᵖ` limit of the partial sums with their pointwise limit `f - u`
   let S : ℕ → W1p mu Omega p := fun N => ∑ j ∈ Finset.range N, (a j - b j)
   have hSv : Tendsto (fun N => W1p.value (S N)) atTop (𝓝 (W1p.value w)) := by
@@ -176,11 +173,9 @@ private theorem W1p.exists_contDiffOn_norm_sub_lt (hp : p ≠ ⊤) (u : W1p mu O
       W1p.value (S N) x = ∑ j ∈ Finset.range N, (Psi j x - zeta j x * W1p.value u x) := by
     rw [ae_all_iff]
     intro N
-    have hS : W1p.value (S N) = ∑ j ∈ Finset.range N, W1p.value (a j - b j) := by
-      simp only [S, ← W1p.valueL_apply, map_sum]
-    filter_upwards [Lp.coeFn_fun_finsetSum (Finset.range N) fun j => W1p.value (a j - b j),
-      hterm] with x hx hterm
-    rw [hS, hx]
+    filter_upwards [W1p.value_finsetSum_ae (Finset.range N) fun j => a j - b j, hterm]
+      with x hx hterm
+    rw [hx]
     exact Finset.sum_congr rfl fun j _ => hterm j
   have hw_ae : ∀ᵐ x ∂mu.restrict Omega, W1p.value w x = f x - W1p.value u x := by
     filter_upwards [hlim, hpartial, ae_restrict_mem Omega.isOpen.measurableSet]
@@ -189,7 +184,7 @@ private theorem W1p.exists_contDiffOn_norm_sub_lt (hp : p ≠ ⊤) (u : W1p mu O
     have hconv : Tendsto (fun N => W1p.value (S N) x) atTop (𝓝 (f x - W1p.value u x)) := by
       refine tendsto_const_nhds.congr' (eventually_atTop.2 ⟨m, fun N hN => Eq.symm ?_⟩)
       beta_reduce
-      obtain ⟨hf_eq, hz_eq⟩ := hm.self_of_nhds.2 N hN
+      obtain ⟨hf_eq, hz_eq⟩ := hm N hN
       rw [hpx, Finset.sum_sub_distrib, ← Finset.sum_mul, hf_eq, hz_eq, one_mul]
     exact tendsto_nhds_unique hx (hconv.comp hns.tendsto_atTop)
   refine ⟨u + w, f, hf, ?_, ?_⟩
