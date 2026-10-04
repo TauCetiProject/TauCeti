@@ -212,9 +212,21 @@ theorem mem_ker_finiteAdelicSpinToSpecialOrthogonal_iff [FiniteDimensional ℚ V
     exact Module.finrank_pos
   have hQp : (Q.baseChange ℚ_[p]).Nondegenerate := _root_.QuadraticForm.Nondegenerate.baseChange hQ
   rw [finiteAdelicSpinToSpecialOrthogonal_apply, RestrictedProduct.one_apply,
-    ← MonoidHom.mem_ker, CliffordAlgebra.mem_ker_spinToSpecialOrthogonal_iff _ hQp,
-    Subtype.ext_iff, Subtype.ext_iff, CliffordAlgebra.spinGroup.coe_negOne,
-    OneMemClass.coe_one]
+    ← MonoidHom.mem_ker]
+  refine (CliffordAlgebra.mem_ker_spinToSpecialOrthogonal_iff _ hQp _).trans ?_
+  constructor
+  · rintro (hx | hx)
+    · left
+      simp only [hx, OneMemClass.coe_one]
+    · right
+      simp only [hx, CliffordAlgebra.spinGroup.coe_negOne]
+  · rintro (hx | hx)
+    · left
+      apply Subtype.ext
+      simpa only [OneMemClass.coe_one] using hx
+    · right
+      apply Subtype.ext
+      simpa only [CliffordAlgebra.spinGroup.coe_negOne] using hx
 
 end OrthogonalCompactOpens
 
