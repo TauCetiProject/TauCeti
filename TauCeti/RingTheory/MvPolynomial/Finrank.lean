@@ -75,6 +75,32 @@ theorem homogeneousMonomialBasis_repr_apply {σ R : Type*} [CommSemiring R] (n :
     (homogeneousMonomialBasis n).repr p s = p.1.coeff s.1 := by
   rfl
 
+/-- Exponent vectors of degree `w` in two variables are determined by their value at `0`. -/
+noncomputable def finsuppDegreeFinTwoEquiv (w : ℕ) :
+    {s : Fin 2 →₀ ℕ // s.degree = w} ≃ Fin (w + 1) where
+  toFun s := ⟨s.1 0, by
+    have h := s.2
+    rw [Finsupp.degree_eq_sum, Fin.sum_univ_two] at h
+    omega⟩
+  invFun j := ⟨Finsupp.single (0 : Fin 2) (j : ℕ) + Finsupp.single 1 (w - j), by
+    rw [Finsupp.degree_eq_sum, Fin.sum_univ_two]
+    simp
+    omega⟩
+  left_inv s := by
+    have h := s.2
+    rw [Finsupp.degree_eq_sum, Fin.sum_univ_two] at h
+    ext i
+    fin_cases i
+    · simp
+    · simp; omega
+  right_inv j := by ext; simp
+
+@[simp]
+theorem coe_finsuppDegreeFinTwoEquiv_symm (w : ℕ) (j : Fin (w + 1)) :
+    ((finsuppDegreeFinTwoEquiv w).symm j).1 =
+      Finsupp.single (0 : Fin 2) (j : ℕ) + Finsupp.single 1 (w - j) :=
+  (rfl)
+
 /-- The dimension of a homogeneous component is the number of exponent vectors of its degree. -/
 theorem finrank_homogeneousSubmodule (σ R : Type*) [CommSemiring R]
     [StrongRankCondition R] (n : ℕ) :

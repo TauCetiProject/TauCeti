@@ -20,7 +20,7 @@ Integral `2 × 2` matrices act on it on the right, `(P ∣ M)(X, Y) = P(aX + bY,
 of both period polynomials and modular symbols of weight `w + 2`.
 
 A linear functional `φ` on `V_w` determines the binary form `D φ` whose value at `(x, y)` is
-`φ ((xY - yX)ʷ)`. This identifies functionals with binary forms, compatibly with the actions: the
+`φ ((xY - yX)ʷ)`. This construction is compatible with the actions: the
 action of `M` on `D φ` is the adjugate action on `φ`, transposed. Applied to the period functional
 `P ↦ ∫₀^{i∞} f(τ) P(τ, 1) dτ` of a cusp form `f`, it produces the period polynomial
 `r_f(X, Y) = ∫₀^{i∞} f(τ) (X - τY)ʷ dτ`.
@@ -46,8 +46,7 @@ action of `M` on `D φ` is the adjugate action on `φ`, transposed. Applied to t
 * `TauCeti.binaryFormRep_adjugate_linearFormPow`: `(xY - yX)ʷ ∣ adj M = (x'Y - y'X)ʷ` for
   `(x', y') = M (x, y)`.
 * `TauCeti.eval_binaryFormDual`: `D φ` takes the value `φ ((xY - yX)ʷ)` at `(x, y)`.
-* `TauCeti.binaryFormRep_binaryFormDual`: over an infinite domain,
-  `(D φ) ∣ M = D (φ ∘ (· ∣ adj M))`.
+* `TauCeti.binaryFormRep_binaryFormDual`: `(D φ) ∣ M = D (φ ∘ (· ∣ adj M))`.
 * `TauCeti.binaryFormDual_injective`: `D` is injective over a domain of characteristic zero.
 
 ## References
@@ -154,39 +153,77 @@ theorem binaryFormRep_op_scalar (a : ℤ) :
 
 /-! ### Binary forms attached to linear functionals -/
 
-/-- Exponent vectors of degree `w` in two variables are determined by the exponent of `X`. -/
-private noncomputable def degreeEquivFin (w : ℕ) :
-    {s : Fin 2 →₀ ℕ // s.degree = w} ≃ Fin (w + 1) where
-  toFun s := ⟨s.1 0, by
-    have h := s.2
-    rw [Finsupp.degree_eq_sum, Fin.sum_univ_two] at h
-    omega⟩
-  invFun j := ⟨Finsupp.single (0 : Fin 2) (j : ℕ) + Finsupp.single 1 (w - j), by
-    rw [Finsupp.degree_eq_sum, Fin.sum_univ_two]
-    simp
-    omega⟩
-  left_inv s := by
-    have h := s.2
-    rw [Finsupp.degree_eq_sum, Fin.sum_univ_two] at h
-    ext i
-    fin_cases i
-    · simp
-    · simp; omega
-  right_inv j := by ext; simp
-
 variable (R w) in
 /-- The monomial basis `Xʲ Yʷ⁻ʲ`, `0 ≤ j ≤ w`, of the binary forms of degree `w`, indexed by the
 exponent `j` of `X`. -/
 noncomputable def binaryFormMonomialBasis :
     Module.Basis (Fin (w + 1)) R (homogeneousSubmodule (Fin 2) R w) :=
-  (homogeneousMonomialBasis w).reindex (degreeEquivFin w)
+  (homogeneousMonomialBasis w).reindex (finsuppDegreeFinTwoEquiv w)
 
 @[simp]
 theorem coe_binaryFormMonomialBasis (j : Fin (w + 1)) :
     (binaryFormMonomialBasis R w j : MvPolynomial (Fin 2) R) = X 0 ^ (j : ℕ) * X 1 ^ (w - j) := by
   rw [binaryFormMonomialBasis, Module.Basis.reindex_apply, coe_homogeneousMonomialBasis]
-  simp only [degreeEquivFin, Equiv.coe_fn_symm_mk, X_pow_eq_monomial, monomial_mul_monomial,
+  simp only [coe_finsuppDegreeFinTwoEquiv_symm, X_pow_eq_monomial, monomial_mul_monomial,
     one_mul]
+
+/-- Map the coefficients of a homogeneous binary form along a ring homomorphism. -/
+private noncomputable def mapBinaryForm {S : Type*} [CommRing S] (f : S →+* R)
+    (P : homogeneousSubmodule (Fin 2) S w) : homogeneousSubmodule (Fin 2) R w :=
+  ⟨MvPolynomial.map f P, P.2.map f⟩
+
+@[simp]
+private theorem coe_mapBinaryForm {S : Type*} [CommRing S] (f : S →+* R)
+    (P : homogeneousSubmodule (Fin 2) S w) :
+    (mapBinaryForm f P : MvPolynomial (Fin 2) R) = MvPolynomial.map f P :=
+  rfl
+
+@[simp]
+private theorem mapBinaryForm_add {S : Type*} [CommRing S] (f : S →+* R)
+    (P Q : homogeneousSubmodule (Fin 2) S w) :
+    mapBinaryForm f (P + Q) = mapBinaryForm f P + mapBinaryForm f Q := by
+  ext
+  simp
+
+@[simp]
+private theorem mapBinaryForm_zero {S : Type*} [CommRing S] (f : S →+* R) :
+    mapBinaryForm f (0 : homogeneousSubmodule (Fin 2) S w) = 0 := by
+  ext
+  simp
+
+open scoped Classical in
+@[simp]
+private theorem mapBinaryForm_sum {S ι : Type*} [CommRing S] (f : S →+* R)
+    (s : Finset ι) (P : ι → homogeneousSubmodule (Fin 2) S w) :
+    mapBinaryForm f (∑ i ∈ s, P i) = ∑ i ∈ s, mapBinaryForm f (P i) := by
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert i s hi => simp [*]
+
+@[simp]
+private theorem mapBinaryForm_smul {S : Type*} [CommRing S] (f : S →+* R) (a : S)
+    (P : homogeneousSubmodule (Fin 2) S w) :
+    mapBinaryForm f (a • P) = f a • mapBinaryForm f P := by
+  apply Subtype.ext
+  simp [smul_eq_C_mul]
+
+@[simp]
+private theorem mapBinaryForm_binaryFormMonomialBasis {S : Type*} [CommRing S]
+    (f : S →+* R) (j : Fin (w + 1)) :
+    mapBinaryForm f (binaryFormMonomialBasis S w j) = binaryFormMonomialBasis R w j := by
+  ext
+  simp
+
+private theorem mapBinaryForm_binaryFormRep {S : Type*} [CommRing S] (f : S →+* R)
+    (M : Matrix (Fin 2) (Fin 2) ℤ) (P : homogeneousSubmodule (Fin 2) S w) :
+    mapBinaryForm f (binaryFormRep S w (op M) P) =
+      binaryFormRep R w (op M) (mapBinaryForm f P) := by
+  apply Subtype.ext
+  simp only [coe_mapBinaryForm, coe_binaryFormRep_apply, linearSubst_eq_aeval, aeval_def,
+    algebraMap_eq, map_eval₂]
+  congr 3
+  funext i
+  simp
 
 variable (R w) in
 /-- The binary form `(xY - yX)ʷ` of degree `w`, the `w`th power of a linear form vanishing at
@@ -259,10 +296,8 @@ theorem eval_binaryFormDual (φ : homogeneousSubmodule (Fin 2) R w →ₗ[R] R) 
   rw [h₁, h₂, Nat.choose_symm hj, neg_pow (v 1)]
   ring
 
-/-- **Equivariance of `D`.** Over an infinite domain, `(D φ) ∣ M = D (φ ∘ (· ∣ adj M))` for
-every integral matrix `M`: the action of `M` on the binary form attached to `φ` is the transpose
-of the adjugate action on the functional. -/
-theorem binaryFormRep_binaryFormDual [IsDomain R] [Infinite R] (M : Matrix (Fin 2) (Fin 2) ℤ)
+private theorem binaryFormRep_binaryFormDual_of_infinite_domain [IsDomain R] [Infinite R]
+    (M : Matrix (Fin 2) (Fin 2) ℤ)
     (φ : homogeneousSubmodule (Fin 2) R w →ₗ[R] R) :
     binaryFormRep R w (op M) (binaryFormDual R w φ) =
       binaryFormDual R w (φ ∘ₗ binaryFormAdjugateRep R w M) := by
@@ -270,6 +305,53 @@ theorem binaryFormRep_binaryFormDual [IsDomain R] [Infinite R] (M : Matrix (Fin 
   refine MvPolynomial.funext fun v ↦ ?_
   rw [coe_binaryFormRep_apply, eval_linearSubst, eval_binaryFormDual, eval_binaryFormDual,
     LinearMap.comp_apply, binaryFormAdjugateRep_apply, binaryFormRep_adjugate_linearFormPow]
+
+/-- **Equivariance of `D`.** For every integral matrix `M`, `(D φ) ∣ M =
+`D (φ ∘ (· ∣ adj M))`: the action of `M` on the binary form attached to `φ` is the transpose of
+the adjugate action on the functional. -/
+theorem binaryFormRep_binaryFormDual (M : Matrix (Fin 2) (Fin 2) ℤ)
+    (φ : homogeneousSubmodule (Fin 2) R w →ₗ[R] R) :
+    binaryFormRep R w (op M) (binaryFormDual R w φ) =
+      binaryFormDual R w (φ ∘ₗ binaryFormAdjugateRep R w M) := by
+  classical
+  let A := MvPolynomial R ℤ
+  let f : A →+* R := eval₂Hom (Int.castRingHom R) id
+  let φA : homogeneousSubmodule (Fin 2) A w →ₗ[A] A :=
+    (binaryFormMonomialBasis A w).constr A fun j ↦ X (φ (binaryFormMonomialBasis R w j))
+  have hfX (r : R) : f (X r) = r := by
+    change eval₂Hom (Int.castRingHom R) id (X r) = r
+    exact eval₂Hom_X' (Int.castRingHom R) id r
+  have hφ (P : homogeneousSubmodule (Fin 2) A w) :
+      f (φA P) = φ (mapBinaryForm f P) := by
+    have hmap : mapBinaryForm f P = ∑ j : Fin (w + 1),
+        f ((binaryFormMonomialBasis A w).repr P j) • binaryFormMonomialBasis R w j := by
+      apply (binaryFormMonomialBasis R w).repr.injective
+      ext j
+      rw [show ((binaryFormMonomialBasis R w).repr (mapBinaryForm f P)) j =
+          f ((binaryFormMonomialBasis A w).repr P j) by
+        simp [binaryFormMonomialBasis, mapBinaryForm, homogeneousMonomialBasis_repr_apply,
+          MvPolynomial.coeff_map]]
+      simp [Finsupp.single_apply]
+    rw [hmap, map_sum]
+    simp [φA, hfX]
+  have hdual (ψA : homogeneousSubmodule (Fin 2) A w →ₗ[A] A)
+      (ψ : homogeneousSubmodule (Fin 2) R w →ₗ[R] R)
+      (hψ : ∀ P, f (ψA P) = ψ (mapBinaryForm f P)) :
+      mapBinaryForm f (binaryFormDual A w ψA) = binaryFormDual R w ψ := by
+    rw [binaryFormDual_apply, binaryFormDual_apply]
+    simp only [mapBinaryForm_sum, mapBinaryForm_smul, map_mul, map_neg, map_one,
+      map_pow, map_natCast, mapBinaryForm_binaryFormMonomialBasis, hψ]
+  have hcomp (P : homogeneousSubmodule (Fin 2) A w) :
+      f ((φA ∘ₗ binaryFormAdjugateRep A w M) P) =
+        (φ ∘ₗ binaryFormAdjugateRep R w M) (mapBinaryForm f P) := by
+    rw [LinearMap.comp_apply, LinearMap.comp_apply, hφ, binaryFormAdjugateRep_apply,
+      binaryFormAdjugateRep_apply, mapBinaryForm_binaryFormRep]
+  have h := binaryFormRep_binaryFormDual_of_infinite_domain (R := A) M φA
+  have := congrArg (mapBinaryForm f) h
+  rw [mapBinaryForm_binaryFormRep, hdual φA φ hφ,
+    hdual (φA ∘ₗ binaryFormAdjugateRep A w M)
+      (φ ∘ₗ binaryFormAdjugateRep R w M) hcomp] at this
+  exact this
 
 /-- `D` is injective when the binomial coefficients are not zero divisors. -/
 theorem binaryFormDual_injective [IsDomain R] [CharZero R] :
