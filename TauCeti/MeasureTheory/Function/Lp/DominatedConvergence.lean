@@ -14,8 +14,7 @@ import Mathlib.MeasureTheory.Integral.Lebesgue.DominatedConvergence
 
 For a finite nonzero exponent `q`, if the functions `f n` converge to `g` almost everywhere
 and the errors `‖f n - g‖ₑ` are eventually dominated by a fixed nonnegative multiple of the
-enorm of a `MemLp` function, then `f n → g` in the `Lᵖ` seminorm. In particular, this applies
-when truncating a function by cutoffs that are eventually `1` on every bounded set.
+enorm of a `MemLp` function, then `f n → g` in the `Lᵖ` seminorm.
 The dominating function's codomain only needs a topology and an extended norm.
 
 ## Main declarations

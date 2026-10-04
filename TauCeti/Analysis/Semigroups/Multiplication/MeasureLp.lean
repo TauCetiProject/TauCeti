@@ -8,10 +8,10 @@ module
 public import TauCeti.Analysis.Semigroups.Resolvent.Identity
 public import Mathlib.MeasureTheory.Function.Holder
 public import Mathlib.MeasureTheory.Function.LpSpace.Complete
+import TauCeti.Analysis.Calculus.ExponentialSlope
 import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
 import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 import Mathlib.Analysis.Normed.Operator.Mul
-import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 
 /-!
 # Multiplication semigroups on measure-space Lᵖ
@@ -22,9 +22,10 @@ The measure is arbitrary and the multiplier may be unbounded. Its generator acts
 multiplication by `-m` on exactly the functions whose product with `m` lies in `Lᵖ(μ)`.
 All formulas for representatives hold almost everywhere.
 
-The finite-exponent assumption is essential for strong continuity. The proof uses
-Mathlib's Hölder bilinear map to construct the operators and dominated convergence
-for strong continuity and for the generator difference quotients.
+Strong continuity can fail on L∞ for unbounded multipliers, so the finite-exponent
+assumption is required for this general theorem. The proof uses Mathlib's Hölder bilinear
+map to construct the operators and dominated convergence for strong continuity and for
+the generator difference quotients.
 
 ## References
 
@@ -183,14 +184,10 @@ theorem ContractionSemigroup.ofMeasureLpMultiplication_generator_coeFn (hp : p �
     · exact (measureMultiplication_quotient_coeFn hp m hm f ht).mono fun _ h _ => h
     · exact .of_forall fun _ h => (ht h).elim
   filter_upwards [hae, hformula] with a ha hform
-  have hd := (((hasDerivAt_id (0 : ℝ)).mul_const (m a : ℝ)).neg.exp).mul_const
-    ((f : Lp ℝ p μ) a)
   have hscalar : Tendsto (fun t : ℝ => ((Real.exp (-(t * m a)) - 1) / t) *
       (f : Lp ℝ p μ) a) (𝓝[>] 0) (𝓝 (-(m a : ℝ) * (f : Lp ℝ p μ) a)) := by
-    have h := hd.hasDerivWithinAt (s := Set.Ici 0)
-    rw [hasDerivWithinAt_iff_tendsto_slope, Set.Ici_sdiff_left] at h
-    rw [slope_fun_def_field] at h
-    simpa [div_eq_mul_inv, mul_sub, sub_mul, mul_assoc, mul_left_comm, mul_comm] using h
+    simpa only [neg_mul, mul_neg, mul_comm] using
+      (tendsto_exp_mul_sub_one_div (-(m a : ℝ))).mul_const ((f : Lp ℝ p μ) a)
   -- The same subsequence has the explicit scalar derivative as its pointwise limit.
   have heq : (fun n => ((1 / ts n) •
       (S.realOperator (ts n) (f : Lp ℝ p μ) - (f : Lp ℝ p μ))) a) =ᶠ[atTop]
@@ -257,11 +254,8 @@ theorem ContractionSemigroup.ofMeasureLpMultiplication_mem_domain_iff (hp : p �
           ENNReal.ofNNReal_toNNReal,
           ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 2)] using ENNReal.ofReal_le_ofReal hbound
     · exact .of_forall fun a => by
-        have hd := (((hasDerivAt_id (0 : ℝ)).mul_const (m a : ℝ)).neg.exp).mul_const (f a)
-        have h := hd.hasDerivWithinAt (s := Set.Ici 0)
-        rw [hasDerivWithinAt_iff_tendsto_slope, Set.Ici_sdiff_left] at h
-        rw [slope_fun_def_field] at h
-        simpa [div_eq_mul_inv, mul_sub, sub_mul, mul_assoc, mul_left_comm, mul_comm] using h
+        simpa only [Pi.mul_apply, Pi.neg_apply, neg_mul, mul_neg, mul_comm] using
+          (tendsto_exp_mul_sub_one_div (-(m a : ℝ))).mul_const (f a)
 
 /-- For a positive spectral parameter, the Laplace resolvent of the multiplication
 semigroup is multiplication by `(λ + m)⁻¹`, almost everywhere. -/
