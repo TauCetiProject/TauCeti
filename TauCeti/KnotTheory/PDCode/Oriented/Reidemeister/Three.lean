@@ -92,16 +92,16 @@ theorem toPDCode_reidemeisterThree :
   (rfl)
 
 /-- The oriented third Reidemeister move orients each half-edge as the half-edge moved to it. -/
+@[simp]
 theorem orientation_reidemeisterThree (x : Fin (4 * n)) :
     (D.reidemeisterThree c).orientation x = D.orientation ((D.reidemeisterThreePerm c).symm x) :=
   (rfl)
 
 /-- The oriented third Reidemeister move transports the orientation of every half-edge along the
 local rewire. -/
-@[simp]
 theorem orientation_reidemeisterThree_reidemeisterThreePerm (x : Fin (4 * n)) :
     (D.reidemeisterThree c).orientation (D.reidemeisterThreePerm c x) = D.orientation x := by
-  simp [orientation_reidemeisterThree]
+  simp
 
 /-- The orientation of a slot of one of the three crossings of the new tangle, read off the slot
 of the old tangle that the local rewire moves to it. -/
@@ -166,24 +166,30 @@ private theorem crossingSign_reidemeisterThree_triangle (h : D.HasReidemeisterTh
     rw [← Bool.not_inj_iff, ← hopp 2 1 3 hopp₁, harc _ _ hb]
   have h₂₂ : D.orientation (D.crossing (c 2) 2) = D.orientation (D.crossing (c 0) 1) := by
     rw [hopp 2 0 2 hopp₀, h₂₀, Bool.not_not]
+  -- The sign of a crossing of the new tangle is that of the old crossing whose name it takes,
+  -- as soon as the old slots moved to its slots `0` and `1` have the same orientation parity.
+  have hsign (j j' l₀ l₁ : Fin 3) (t₀ t₁ : Fin 4) (hj : Equiv.swap 0 2 j = j')
+      (h₀ : reidemeisterThreeSlots (l₀, t₀) = (j, 0))
+      (h₁ : reidemeisterThreeSlots (l₁, t₁) = (j, 1))
+      (hxor : Bool.xor (D.orientation (D.crossing (c l₀) t₀))
+          (D.orientation (D.crossing (c l₁) t₁)) =
+        Bool.xor (D.orientation (D.crossing (c j') 0)) (D.orientation (D.crossing (c j') 1))) :
+      (D.reidemeisterThree c).crossingSign (c j) = D.crossingSign (c j') := by
+    rw [crossingSign_def, crossingSign_def, toPDCode_reidemeisterThree, reidemeisterThree_crossing,
+      reidemeisterThree_crossing, reidemeisterThree_overPair, ← c.injective.map_swap, hj,
+      hnew j 0 l₀ t₀ h₀, hnew j 1 l₁ t₁ h₁, hxor]
   obtain rfl | rfl | rfl : j = 0 ∨ j = 1 ∨ j = 2 := by fin_cases j <;> simp
-  · rw [Equiv.swap_apply_left, crossingSign_def, crossingSign_def, toPDCode_reidemeisterThree,
-      reidemeisterThree_crossing, reidemeisterThree_crossing, reidemeisterThree_overPair,
-      Equiv.swap_apply_left, hnew 0 0 0 3 (hslot _ _ _ _ rfl), hnew 0 1 1 1 (hslot _ _ _ _ rfl),
-      h₀₃, h₂₀, h₂₁]
-  · rw [Equiv.swap_apply_of_ne_of_ne (by decide) (by decide), crossingSign_def,
-      crossingSign_def, toPDCode_reidemeisterThree, reidemeisterThree_crossing,
-      reidemeisterThree_crossing, reidemeisterThree_overPair,
-      Equiv.swap_apply_of_ne_of_ne (c.injective.ne (by decide)) (c.injective.ne (by decide)),
-      hnew 1 0 0 0 (hslot _ _ _ _ rfl), hnew 1 1 2 1 (hslot _ _ _ _ rfl), h₁₀, h₂₁]
-  · rw [Equiv.swap_apply_right, crossingSign_def, crossingSign_def, toPDCode_reidemeisterThree,
-      reidemeisterThree_crossing, reidemeisterThree_crossing, reidemeisterThree_overPair,
-      Equiv.swap_apply_right, hnew 2 0 1 0 (hslot _ _ _ _ rfl), hnew 2 1 2 2 (hslot _ _ _ _ rfl),
-      h₁₀, h₂₂]
+  · exact hsign 0 2 0 1 3 1 (by decide) (hslot _ _ _ _ rfl) (hslot _ _ _ _ rfl)
+      (by simp only [h₀₃, h₂₀, h₂₁])
+  · exact hsign 1 1 0 2 0 1 (by decide) (hslot _ _ _ _ rfl) (hslot _ _ _ _ rfl)
+      (by simp only [h₁₀, h₂₁])
+  · exact hsign 2 0 1 2 0 2 (by decide) (hslot _ _ _ _ rfl) (hslot _ _ _ _ rfl)
+      (by simp only [h₁₀, h₂₂])
 
 /-- **The oriented third Reidemeister move permutes the crossing signs**: the first and the third
 crossing of the triangle exchange their signs, and every other crossing keeps its sign. Only the
 three internal arcs of the triangle are needed, not the height order of its strands. -/
+@[simp]
 theorem crossingSign_reidemeisterThree (h : D.HasReidemeisterThreeTriangleArcs c) (i : Fin n) :
     (D.reidemeisterThree c).crossingSign i = D.crossingSign (Equiv.swap (c 0) (c 2) i) := by
   by_cases hi : i ∈ Set.range c
@@ -220,7 +226,7 @@ theorem mirror_reidemeisterThree :
   apply OrientedPDCode.ext
   · simp
   · funext x
-    simp [orientation_reidemeisterThree]
+    simp
   · simp
 
 /-- Reversing the oriented third Reidemeister move performs the move on the reversed code. -/
@@ -230,7 +236,7 @@ theorem reverse_reidemeisterThree :
   apply OrientedPDCode.ext
   · simp
   · funext x
-    simp [orientation_reidemeisterThree]
+    simp
   · simp
 
 end OrientedPDCode

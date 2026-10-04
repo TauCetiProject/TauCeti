@@ -8,8 +8,8 @@ module
 public import TauCeti.Algebra.Polynomial.Laurent.Basic
 public import TauCeti.KnotTheory.PDCode.Circle
 public import TauCeti.KnotTheory.PDCode.Oriented.ClaspInsertion
-public import TauCeti.KnotTheory.PDCode.Oriented.ReidemeisterOne
-public import TauCeti.KnotTheory.PDCode.Oriented.ReidemeisterThree
+public import TauCeti.KnotTheory.PDCode.Oriented.Reidemeister.One
+public import TauCeti.KnotTheory.PDCode.Oriented.Reidemeister.Three
 public import TauCeti.KnotTheory.PDCode.Trefoil
 
 /-!
