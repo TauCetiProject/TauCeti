@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Polynomial.RealRoots.Basic
-public import Mathlib.Data.Finset.Sort
 public import Mathlib.Topology.LocallyConstant.Basic
 
+import Mathlib.Data.Finset.Sort
 import TauCeti.Topology.MetricSpace.SeparatedBalls
 
 /-!
@@ -20,8 +20,8 @@ to vary continuously. The multiplicity at each position is locally constant. On 
 base, both the number of real roots and their ordered multiplicities are constant, so a single
 finite ordered list gives continuous root functions on the whole base.
 
-The local statements apply to any strictly increasing complete enumeration, without assuming
-its continuity. The connected existence theorem constructs the enumeration using Mathlib's
+The local statements require a strictly increasing complete enumeration only near the parameter,
+without assuming its continuity. The connected existence theorem constructs it using Mathlib's
 `Finset.orderEmbOfFin`, and excludes zero fibers by its fixed-degree hypothesis. Constant
 polynomials and empty root lists are included.
 
@@ -41,54 +41,58 @@ variable {B : Type*} [TopologicalSpace B] {F : B → ℝ[X]} {d n : ℕ}
 
 /-- An increasing complete enumeration of the distinct real roots moves arbitrarily little
 near `x₀` and preserves multiplicities, when the coefficients are continuous, the degree is
-locally fixed, and the number of distinct complex roots is locally nonincreasing. No continuity
-of the enumeration is assumed. -/
+locally fixed, and the number of distinct complex roots is locally nonincreasing. The enumeration
+is required to be increasing and complete only near `x₀`; no continuity is assumed. -/
 theorem eventually_ordered_roots_close_of_card_aroots_le {x₀ : B}
     (hF : ∀ i ≤ d, ContinuousAt (fun x => (F x).coeff i) x₀)
     (hdeg : ∀ᶠ x in 𝓝 x₀, (F x).degree = d)
     (hcard : ∀ᶠ x in 𝓝 x₀,
       ((F x).aroots ℂ).toFinset.card ≤ ((F x₀).aroots ℂ).toFinset.card)
-    {r : B → Fin n → ℝ} (hr : ∀ x, StrictMono (r x))
-    (hroots : ∀ x, Set.range (r x) = (F x).roots.toFinset)
+    {r : B → Fin n → ℝ} (hr : ∀ᶠ x in 𝓝 x₀, StrictMono (r x))
+    (hroots : ∀ᶠ x in 𝓝 x₀, Set.range (r x) = (F x).roots.toFinset)
     {ε : ℝ} (hε : 0 < ε) :
     ∀ᶠ x in 𝓝 x₀, ∀ i,
       |r x i - r x₀ i| < ε ∧ (F x).rootMultiplicity (r x i) =
         (F x₀).rootMultiplicity (r x₀ i) := by
   classical
+  have hr₀ := hr.self_of_nhds
+  have hroots₀ := hroots.self_of_nhds
   obtain ⟨δ, hδ, _, hsep⟩ := TauCeti.exists_pos_closedBall_subset_and_lt_dist
     (T := (F x₀).roots.toFinset) (U := fun _ => Set.univ) (fun _ _ => univ_mem)
-  have hmem (x : B) (i : Fin n) : r x i ∈ (F x).roots.toFinset := by
-    rw [← Finset.mem_coe, ← hroots x]
+  have hmem {x : B} (hx : Set.range (r x) = (F x).roots.toFinset) (i : Fin n) :
+      r x i ∈ (F x).roots.toFinset := by
+    rw [← Finset.mem_coe, ← hx]
     exact Set.mem_range_self i
   filter_upwards [eventually_exists_bijOn_roots_toFinset_of_card_aroots_le
-    hF hdeg hcard (lt_min hε hδ)] with x ⟨e, he, hed⟩
-  have hclose (i : Fin n) := hed (r x₀ i) (Multiset.mem_toFinset.1 (hmem x₀ i))
+    hF hdeg hcard (lt_min hε hδ), hr, hroots] with x ⟨e, he, hed⟩ hrx hrootsx
+  have hclose (i : Fin n) := hed (r x₀ i) (Multiset.mem_toFinset.1 (hmem hroots₀ i))
   have hmono : StrictMono (fun i => e (r x₀ i)) := by
     intro i j hij
-    have hij' := hr x₀ hij
-    have hd := hsep _ (hmem x₀ i) _ (hmem x₀ j) (ne_of_lt hij')
+    have hij' := hr₀ hij
+    have hd := hsep _ (hmem hroots₀ i) _ (hmem hroots₀ j) (ne_of_lt hij')
     rw [Real.dist_eq, abs_of_nonpos (sub_nonpos.2 hij'.le)] at hd
     have hi := (abs_lt.1 (hclose i).1).2
     have hj := (abs_lt.1 (hclose j).1).1
     have := min_le_right ε δ
     linarith
   have heq : (fun i => e (r x₀ i)) = r x := by
-    apply (hmono.range_inj_of_wellFoundedLT (hr x)).1
-    rw [← Function.comp_def, Set.range_comp, hroots x₀, he.image_eq, hroots x]
+    apply (hmono.range_inj_of_wellFoundedLT hrx).1
+    rw [← Function.comp_def, Set.range_comp, hroots₀, he.image_eq, hrootsx]
   intro i
   rw [← congrFun heq i]
   exact ⟨(hclose i).1.trans_le (min_le_left ε δ), (hclose i).2⟩
 
 /-- Every position in an increasing complete enumeration of real roots is continuous at a
 parameter where the coefficients are continuous, the degree is locally fixed, and the number
-of distinct complex roots is locally nonincreasing. -/
+of distinct complex roots is locally nonincreasing. The enumeration is required to be
+increasing and complete only near that parameter. -/
 theorem continuousAt_ordered_root_of_card_aroots_le {x₀ : B}
     (hF : ∀ i ≤ d, ContinuousAt (fun x => (F x).coeff i) x₀)
     (hdeg : ∀ᶠ x in 𝓝 x₀, (F x).degree = d)
     (hcard : ∀ᶠ x in 𝓝 x₀,
       ((F x).aroots ℂ).toFinset.card ≤ ((F x₀).aroots ℂ).toFinset.card)
-    {r : B → Fin n → ℝ} (hr : ∀ x, StrictMono (r x))
-    (hroots : ∀ x, Set.range (r x) = (F x).roots.toFinset) (i : Fin n) :
+    {r : B → Fin n → ℝ} (hr : ∀ᶠ x in 𝓝 x₀, StrictMono (r x))
+    (hroots : ∀ᶠ x in 𝓝 x₀, Set.range (r x) = (F x).roots.toFinset) (i : Fin n) :
     ContinuousAt (fun x => r x i) x₀ := by
   refine Metric.continuousAt_iff'.2 fun ε hε => ?_
   filter_upwards [eventually_ordered_roots_close_of_card_aroots_le
@@ -108,7 +112,7 @@ theorem isLocallyConstant_rootMultiplicity_ordered_root_of_card_aroots_le
   refine (IsLocallyConstant.iff_eventually_eq _).2 fun x₀ => ?_
   filter_upwards [eventually_ordered_roots_close_of_card_aroots_le
     (fun i hi => (hF i hi).continuousAt) (Eventually.of_forall hdeg) (hcard x₀)
-    hr hroots one_pos] with x hx
+    (Eventually.of_forall hr) (Eventually.of_forall hroots) one_pos] with x hx
   exact (hx i).2
 
 /-- The number of distinct real roots is constant on a preconnected base if the degree is
@@ -150,7 +154,8 @@ theorem exists_continuous_ordered_roots_of_preconnectedSpace [PreconnectedSpace 
     Finset.range_orderEmbOfFin _ _
   refine ⟨n, r, fun i => continuous_iff_continuousAt.2 (fun x => ?_), hr, ?_, ?_⟩
   · exact continuousAt_ordered_root_of_card_aroots_le
-      (fun i hi => (hF i hi).continuousAt) (Eventually.of_forall hdeg) (hcard x) hr hroots i
+      (fun i hi => (hF i hi).continuousAt) (Eventually.of_forall hdeg) (hcard x)
+      (Eventually.of_forall hr) (Eventually.of_forall hroots) i
   · intro x t
     have hne : F x ≠ 0 := degree_ne_bot.1 (by rw [hdeg x]; exact WithBot.coe_ne_bot)
     rw [← mem_roots hne, ← Multiset.mem_toFinset, ← Finset.mem_coe, ← hroots x]
