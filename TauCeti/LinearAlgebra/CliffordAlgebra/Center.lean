@@ -28,13 +28,11 @@ description: if `v₁, …, vₙ` is an anisotropic orthogonal basis and
   center (CliffordAlgebra Q) = K[ω] = K ⊕ Kω.
 ```
 
-The proof separates a central element into its even and odd homogeneous parts. The even part is a
-scalar because the even Clifford algebra is central in odd dimension. Multiplying the odd part by
-the central odd element `ω` makes it even, so it is scalar too; the nonzero scalar square of `ω`
-then recovers the odd part as a scalar multiple of `ω`.
-
-The result is stated for any anisotropic orthogonal spanning list. Reordering or rescaling that
-list changes `ω` by a nonzero scalar, hence leaves the generated subalgebra unchanged.
+The result is stated for any anisotropic orthogonal spanning list of odd length; such a list is a
+basis, so the form is automatically nondegenerate and the dimension odd. Conversely, every
+nondegenerate quadratic form has such a list, by
+`QuadraticMap.Nondegenerate.exists_list_pairwise_isOrtho`. Reordering or rescaling the list changes
+`ω` by a nonzero scalar, hence leaves the generated subalgebra unchanged.
 
 ## Main results
 
@@ -58,11 +56,47 @@ open Module
 
 universe u v
 
-variable {K : Type u} {V : Type v} [Field K] [AddCommGroup V] [Module K V]
-  [FiniteDimensional K V] [Invertible (2 : K)] {Q : QuadraticForm K V}
+variable {K : Type u} {V : Type v} [Field K] [AddCommGroup V] [Module K V] {Q : QuadraticForm K V}
 
-private theorem center_even_component_is_scalar (hQ : Q.Nondegenerate)
-    (hV : Odd (finrank K V)) {x : CliffordAlgebra Q}
+/-- An anisotropic orthogonal spanning list is a basis: the form is nondegenerate and the list has
+the length of the dimension. -/
+private theorem nondegenerate_and_length_eq_finrank [NeZero (2 : K)] {l : List V}
+    (hl : l.Pairwise Q.IsOrtho) (hspan : Submodule.span K {x : V | x ∈ l} = ⊤)
+    (hQl : ∀ v ∈ l, Q v ≠ 0) :
+    Q.Nondegenerate ∧ l.length = finrank K V := by
+  let _ : Invertible (2 : K) := invertibleOfNonzero (NeZero.ne (2 : K))
+  let v : Fin l.length → V := fun i ↦ l[i]
+  have hortho : LinearMap.BilinForm.iIsOrtho Q.polarBilin v := by
+    intro i j hij
+    refine QuadraticMap.isOrtho_polarBilin.mpr ?_
+    rcases lt_or_gt_of_ne (Fin.val_ne_of_ne hij) with h | h
+    · exact List.pairwise_iff_getElem.mp hl i j i.isLt j.isLt h
+    · exact QuadraticMap.isOrtho_comm.mp (List.pairwise_iff_getElem.mp hl j i j.isLt i.isLt h)
+  have hself : ∀ i, Q.polarBilin (v i) (v i) ≠ 0 := fun i ↦ by
+    rw [QuadraticMap.polarBilin_apply_apply, QuadraticMap.polar_self, two_smul, ← two_mul]
+    exact mul_ne_zero (NeZero.ne 2) (hQl _ (List.getElem_mem _))
+  have hrange : Set.range v = {x : V | x ∈ l} := by
+    ext x
+    simp [v, List.mem_iff_getElem, Fin.exists_iff]
+  let b : Basis (Fin l.length) K V :=
+    Basis.mk (LinearMap.BilinForm.linearIndependent_of_iIsOrtho hortho hself)
+      (by rw [hrange, hspan])
+  have hb : ⇑b = v := Basis.coe_mk _ _
+  refine ⟨QuadraticMap.nondegenerate_polar_iff.mp ?_, by simpa using (finrank_eq_card_basis b).symm⟩
+  exact (LinearMap.BilinForm.iIsOrtho.nondegenerate_iff_not_isOrtho_basis_self _ b
+    (hb ▸ hortho)).mpr (hb ▸ hself)
+
+/-- The scalar square `(-1) ^ (n.choose 2) * Q v₁ ⋯ Q vₙ` of the volume element of an anisotropic
+list is nonzero. -/
+private theorem volume_sq_coeff_ne_zero {l : List V} (hQl : ∀ v ∈ l, Q v ≠ 0) :
+    (-1 : K) ^ l.length.choose 2 * (l.map Q).prod ≠ 0 := by
+  refine mul_ne_zero (pow_ne_zero _ (neg_ne_zero.mpr one_ne_zero)) (List.prod_ne_zero ?_)
+  intro hmem
+  obtain ⟨v, hv, hv0⟩ := List.mem_map.mp hmem
+  exact (hQl v hv) hv0
+
+private theorem center_even_component_is_scalar [FiniteDimensional K V] [NeZero (2 : K)]
+    (hQ : Q.Nondegenerate) (hV : Odd (finrank K V)) {x : CliffordAlgebra Q}
     (hxEven : x ∈ evenOdd Q 0) (hxCenter : x ∈ Subalgebra.center K (CliffordAlgebra Q)) :
     ∃ a : K, x = algebraMap K (CliffordAlgebra Q) a := by
   let _ : Algebra.IsCentral K (even Q) :=
@@ -79,8 +113,7 @@ private theorem center_even_component_is_scalar (hQ : Q.Nondegenerate)
   refine ⟨a, ?_⟩
   exact congrArg Subtype.val ha
 
-omit [FiniteDimensional K V] in
-private theorem center_homogeneous_components {x : CliffordAlgebra Q}
+private theorem center_homogeneous_components [Invertible (2 : K)] {x : CliffordAlgebra Q}
     (hx : x ∈ Subalgebra.center K (CliffordAlgebra Q)) :
     ∃ e ∈ evenOdd Q 0, ∃ o ∈ evenOdd Q 1,
       e + o = x ∧ e ∈ Subalgebra.center K (CliffordAlgebra Q) ∧
@@ -109,28 +142,21 @@ private theorem center_homogeneous_components {x : CliffordAlgebra Q}
   · rw [hoq]
     exact Subalgebra.smul_mem _ (Subalgebra.sub_mem _ hx hxInv) _
 
-omit [FiniteDimensional K V] in
 /-- The scalar and volume coordinates `a + b • ω` are unique for an anisotropic orthogonal list
 of odd length. Thus the notation `K ⊕ Kω` for their span is a genuine direct sum, not merely a
 sum of subspaces. -/
-theorem add_smul_volume_injective {l : List V} (hl : l.Pairwise Q.IsOrtho)
+theorem add_smul_volume_injective [NeZero (2 : K)] {l : List V} (hl : l.Pairwise Q.IsOrtho)
     (hlen : Odd l.length) (hQl : ∀ v ∈ l, Q v ≠ 0) :
     Function.Injective fun p : K × K ↦
       algebraMap K (CliffordAlgebra Q) p.1 + p.2 • (l.map (ι Q)).prod := by
+  let _ : Invertible (2 : K) := invertibleOfNonzero (NeZero.ne (2 : K))
   let ω : CliffordAlgebra Q := (l.map (ι Q)).prod
-  let c : K := (-1 : K) ^ l.length.choose 2 * (l.map Q).prod
   have hωOdd : ω ∈ evenOdd Q 1 := prod_map_ι_mem_evenOdd_one_of_odd_length hlen
-  have hωsq : ω * ω = algebraMap K (CliffordAlgebra Q) c := prod_map_ι_sq_scalar hl
-  have hc : c ≠ 0 := by
-    refine mul_ne_zero (pow_ne_zero _ (neg_ne_zero.mpr one_ne_zero)) (List.prod_ne_zero ?_)
-    intro hmem
-    obtain ⟨v, hv, hv0⟩ := List.mem_map.mp hmem
-    exact (hQl v hv) hv0
   have hω : ω ≠ 0 := by
     intro hzero
-    apply hc
+    apply volume_sq_coeff_ne_zero hQl
     apply algebraMap_injective Q
-    simpa [hzero] using hωsq.symm
+    simpa [ω, hzero] using (prod_map_ι_sq_scalar (Q := Q) hl).symm
   intro p q hpq
   have even_mem (a : K) : algebraMap K (CliffordAlgebra Q) a ∈ evenOdd Q 0 :=
     SetLike.algebraMap_mem_graded (evenOdd Q) a
@@ -148,38 +174,36 @@ theorem add_smul_volume_injective {l : List V} (hl : l.Pairwise Q.IsOrtho)
     exact congrArg Subtype.val (hp.2.trans hq.2.symm)
 
 /-- **The centre in odd dimension is `K ⊕ Kω`.** Let `l` be an anisotropic orthogonal
-spanning list and let `ω` be the ordered product of its Clifford generators. If the ambient
-dimension is odd, an element is central exactly when it is a scalar plus a scalar multiple of
-`ω`.
+spanning list of odd length and let `ω` be the ordered product of its Clifford generators. An
+element is central exactly when it is a scalar plus a scalar multiple of `ω`.
 
-The anisotropy assumption on the list makes the scalar square of `ω` nonzero. It is automatic
-for the orthogonal basis supplied by
-`QuadraticMap.Nondegenerate.exists_list_pairwise_isOrtho`. -/
-theorem mem_center_iff_exists_eq_add_smul_volume (hQ : Q.Nondegenerate)
-    (hV : Odd (finrank K V)) {l : List V} (hl : l.Pairwise Q.IsOrtho)
-    (hlen : l.length = finrank K V) (hspan : Submodule.span K {x : V | x ∈ l} = ⊤)
-    (hQl : ∀ v ∈ l, Q v ≠ 0) {x : CliffordAlgebra Q} :
+Such a list is a basis, so the form is nondegenerate and the dimension odd. Conversely, every
+nondegenerate form has such a list, by `QuadraticMap.Nondegenerate.exists_list_pairwise_isOrtho`. -/
+theorem mem_center_iff_exists_eq_add_smul_volume [NeZero (2 : K)] {l : List V}
+    (hl : l.Pairwise Q.IsOrtho) (hlen : Odd l.length)
+    (hspan : Submodule.span K {x : V | x ∈ l} = ⊤) (hQl : ∀ v ∈ l, Q v ≠ 0)
+    {x : CliffordAlgebra Q} :
     x ∈ Subalgebra.center K (CliffordAlgebra Q) ↔
       ∃ a b : K, x = algebraMap K (CliffordAlgebra Q) a + b • (l.map (ι Q)).prod := by
+  let _ : Invertible (2 : K) := invertibleOfNonzero (NeZero.ne (2 : K))
+  obtain ⟨hQ, hlenV⟩ := nondegenerate_and_length_eq_finrank hl hspan hQl
+  have _ : FiniteDimensional K V := .of_finrank_pos (hlenV ▸ hlen.pos)
+  have hV : Odd (finrank K V) := hlenV ▸ hlen
   let ω : CliffordAlgebra Q := (l.map (ι Q)).prod
   let c : K := (-1 : K) ^ l.length.choose 2 * (l.map Q).prod
-  have hlenOdd : Odd l.length := hlen ▸ hV
-  have hωOdd : ω ∈ evenOdd Q 1 := prod_map_ι_mem_evenOdd_one_of_odd_length hlenOdd
+  have hωOdd : ω ∈ evenOdd Q 1 := prod_map_ι_mem_evenOdd_one_of_odd_length hlen
   have hωCenter : ω ∈ Subalgebra.center K (CliffordAlgebra Q) :=
-    prod_map_ι_mem_center_of_odd_length hl hlenOdd hspan
+    prod_map_ι_mem_center_of_odd_length hl hlen hspan
   have hωsq : ω * ω = algebraMap K (CliffordAlgebra Q) c := prod_map_ι_sq_scalar hl
-  have hc : c ≠ 0 := by
-    refine mul_ne_zero (pow_ne_zero _ (neg_ne_zero.mpr one_ne_zero)) (List.prod_ne_zero ?_)
-    intro hmem
-    obtain ⟨v, hv, hv0⟩ := List.mem_map.mp hmem
-    exact (hQl v hv) hv0
+  have hc : c ≠ 0 := volume_sq_coeff_ne_zero hQl
   constructor
   · intro hx
     obtain ⟨e, he, o, ho, heo, heCenter, hoCenter⟩ := center_homogeneous_components hx
     obtain ⟨a, ha⟩ := center_even_component_is_scalar hQ hV he heCenter
     have hoωEven : o * ω ∈ evenOdd Q 0 := by
-      have h := SetLike.mul_mem_graded ho hωOdd
-      exact (show (1 : ZMod 2) + 1 = 0 by decide) ▸ h
+      -- Odd times odd is even: the two degrees add up to `0` in `ZMod 2`.
+      have hdeg : (1 : ZMod 2) + 1 = 0 := by decide
+      simpa only [hdeg] using SetLike.mul_mem_graded ho hωOdd
     have hoωCenter : o * ω ∈ Subalgebra.center K (CliffordAlgebra Q) :=
       Subalgebra.mul_mem _ hoCenter hωCenter
     obtain ⟨d, hd⟩ := center_even_component_is_scalar hQ hV hoωEven hoωCenter
@@ -202,32 +226,23 @@ theorem mem_center_iff_exists_eq_add_smul_volume (hQ : Q.Nondegenerate)
       (Subalgebra.smul_mem _ hωCenter b)
 
 /-- **The centre of an odd-dimensional Clifford algebra is generated by a volume element.** For
-an anisotropic orthogonal spanning list `l`, its ordered Clifford product `ω` generates the full
-centre as a `K`-subalgebra. Equivalently, this subalgebra is the two-dimensional space
-`K ⊕ Kω` described by `CliffordAlgebra.mem_center_iff_exists_eq_add_smul_volume`. -/
-theorem center_eq_adjoin_volume (hQ : Q.Nondegenerate) (hV : Odd (finrank K V))
-    {l : List V} (hl : l.Pairwise Q.IsOrtho) (hlen : l.length = finrank K V)
-    (hspan : Submodule.span K {x : V | x ∈ l} = ⊤) (hQl : ∀ v ∈ l, Q v ≠ 0) :
+an anisotropic orthogonal spanning list `l` of odd length, its ordered Clifford product `ω`
+generates the full centre as a `K`-subalgebra. Equivalently, this subalgebra is the
+two-dimensional space `K ⊕ Kω` described by
+`CliffordAlgebra.mem_center_iff_exists_eq_add_smul_volume`. -/
+theorem center_eq_adjoin_volume [NeZero (2 : K)] {l : List V} (hl : l.Pairwise Q.IsOrtho)
+    (hlen : Odd l.length) (hspan : Submodule.span K {x : V | x ∈ l} = ⊤)
+    (hQl : ∀ v ∈ l, Q v ≠ 0) :
     Subalgebra.center K (CliffordAlgebra Q) =
       Algebra.adjoin K {(l.map (ι Q)).prod} := by
   apply le_antisymm
   · intro x hx
     obtain ⟨a, b, rfl⟩ :=
-      (mem_center_iff_exists_eq_add_smul_volume hQ hV hl hlen hspan hQl).mp hx
+      (mem_center_iff_exists_eq_add_smul_volume hl hlen hspan hQl).mp hx
     exact Subalgebra.add_mem _ (Subalgebra.algebraMap_mem _ a)
       (Subalgebra.smul_mem _ (Algebra.subset_adjoin (Set.mem_singleton _)) b)
   · apply Algebra.adjoin_le
     rintro _ rfl
-    exact prod_map_ι_mem_center_of_odd_length hl (hlen ▸ hV) hspan
-
-/-- Every nondegenerate odd-dimensional quadratic space admits a volume element which generates
-the centre of its Clifford algebra. -/
-theorem exists_list_center_eq_adjoin_volume (hQ : Q.Nondegenerate)
-    (hV : Odd (finrank K V)) :
-    ∃ l : List V, l.Pairwise Q.IsOrtho ∧ l.length = finrank K V ∧
-      Submodule.span K {x : V | x ∈ l} = ⊤ ∧ (∀ v ∈ l, Q v ≠ 0) ∧
-        Subalgebra.center K (CliffordAlgebra Q) = Algebra.adjoin K {(l.map (ι Q)).prod} := by
-  obtain ⟨l, hl, hlen, hspan, hQl⟩ := hQ.exists_list_pairwise_isOrtho
-  exact ⟨l, hl, hlen, hspan, hQl, center_eq_adjoin_volume hQ hV hl hlen hspan hQl⟩
+    exact prod_map_ι_mem_center_of_odd_length hl hlen hspan
 
 end CliffordAlgebra
