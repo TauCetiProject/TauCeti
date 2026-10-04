@@ -216,6 +216,7 @@ theorem irreducibleFormalCharacter_def
 
 /-- **The character of `L(lam)` is nonzero.** The character records the dimension of `L(lam)`,
 which is nonzero, `L(lam)` being irreducible. -/
+@[simp]
 theorem irreducibleFormalCharacter_ne_zero (lam : {l : Dual K H // IsDominantIntegral b l}) :
     irreducibleFormalCharacter b lam ≠ 0 := by
   have _ := finiteDimensional_irreducibleQuotient_of_isDominantIntegral lam.2

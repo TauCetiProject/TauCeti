@@ -495,12 +495,14 @@ private theorem borelCharacter_eq_borelPMap (x : borelSubalgebra H b) :
   (rfl)
 
 /-- The character of weight `lam` restricts to `lam` on the Cartan subalgebra. -/
+@[simp]
 theorem borelCharacter_apply_of_mem_cartan {x : borelSubalgebra H b} (hx : (x : L) ∈ H) :
     borelCharacter H b lam x = lam ⟨x, hx⟩ := by
   rw [borelCharacter_eq_borelPMap]
   exact borelPMap_apply H b lam _ ⟨x, hx⟩ 0 (add_zero _)
 
 /-- The character of weight `lam` vanishes on the positive nilradical. -/
+@[simp]
 theorem borelCharacter_apply_of_mem_positiveNilradical {x : borelSubalgebra H b}
     (hx : (x : L) ∈ positiveNilradical H b) : borelCharacter H b lam x = 0 := by
   rw [borelCharacter_eq_borelPMap]
