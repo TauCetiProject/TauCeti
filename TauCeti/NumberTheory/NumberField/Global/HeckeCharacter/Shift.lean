@@ -89,7 +89,7 @@ theorem normPow_apply (s : ℂ) (c : IdeleClassGroup (𝓞 K) K) :
 /-- The absolute value of `‖c‖ ^ s` is `‖c‖ ^ Re s`. -/
 theorem norm_normPow_apply (s : ℂ) (c : IdeleClassGroup (𝓞 K) K) :
     ‖((normPow K s c : ℂˣ) : ℂ)‖ = ((ideleClassNorm c : ℝ≥0) : ℝ) ^ s.re := by
-  rw [normPow_apply, Complex.norm_cpow_eq_rpow_re_of_pos (coe_ideleClassNorm_pos c)]
+  exact MonoidHom.norm_coe_cpowCharacter_apply _ _ s c
 
 /-- The zeroth power of the idele class norm is the trivial character. -/
 @[simp]

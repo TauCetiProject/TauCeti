@@ -117,6 +117,14 @@ theorem coe_realUnitsCharacter_apply (s : ℂ) (ε : ZMod 2) (x : ℝˣ) :
       ((|(x : ℝ)| : ℝ) : ℂ) ^ s * (SignType.sign (x : ℝ) : ℂ) ^ ε.val := by
   simp [realUnitsCharacter]
 
+/-- The absolute value of `realUnitsCharacter s ε` at `x` is `|x| ^ re s`; the sign character
+contributes absolute value `1`. -/
+theorem norm_coe_realUnitsCharacter_apply (s : ℂ) (ε : ZMod 2) (x : ℝˣ) :
+    ‖(realUnitsCharacter s ε x : ℂ)‖ = |(x : ℝ)| ^ s.re := by
+  rw [realUnitsCharacter, ContinuousMonoidHom.mul_apply, Units.val_mul, norm_mul,
+    norm_coe_normCpowCharacter_apply]
+  rcases lt_or_gt_of_ne x.ne_zero with h | h <;> simp [h]
+
 /-- With parity `0`, `realUnitsCharacter s 0` is the norm-power character `x ↦ |x| ^ s`. -/
 @[simp]
 theorem realUnitsCharacter_zero_right (s : ℂ) : realUnitsCharacter s 0 = normCpowCharacter ℝ s := by
@@ -242,6 +250,14 @@ def complexUnitsCharacter (s : ℂ) (k : ℤ) : ℂˣ →ₜ* ℂˣ :=
 theorem coe_complexUnitsCharacter_apply (s : ℂ) (k : ℤ) (z : ℂˣ) :
     (complexUnitsCharacter s k z : ℂ) = (‖(z : ℂ)‖ : ℂ) ^ s * ((z : ℂ) / ‖(z : ℂ)‖) ^ k := by
   simp [complexUnitsCharacter]
+
+/-- The absolute value of `complexUnitsCharacter s k` at `z` is `|z| ^ re s`; the angular
+character contributes absolute value `1`. -/
+theorem norm_coe_complexUnitsCharacter_apply (s : ℂ) (k : ℤ) (z : ℂˣ) :
+    ‖(complexUnitsCharacter s k z : ℂ)‖ = ‖(z : ℂ)‖ ^ s.re := by
+  rw [complexUnitsCharacter, ContinuousMonoidHom.mul_apply, Units.val_mul, norm_mul,
+    norm_coe_normCpowCharacter_apply]
+  simp [z.ne_zero]
 
 /-- Integer embedding exponents `a` and `b` give the algebraic character `z ↦ z^a conj(z)^b`.
 Their sum is the modulus exponent and their difference is the angular frequency. -/
