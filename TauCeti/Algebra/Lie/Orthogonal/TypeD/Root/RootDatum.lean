@@ -17,13 +17,14 @@ functionals by the full root enumeration of the pinned simply connected type-`D`
 For a classical root vector `x`, the corresponding Cartan functional has diagonal coordinates
 `x`. Evaluating it on the numbered Cartan generator associated to a simple root `αⱼ` therefore
 gives the dot product `x · αⱼ`. These are exactly the fundamental-weight coordinates used by the
-pinned root datum. The resulting enumeration is injective and exhausts every nonzero concrete
-root.
+pinned root datum. Over a nontrivial coefficient ring, every enumerated functional has a nonzero
+root space. The enumeration is injective when `2 ≠ 0`, and over an integral domain with `2 ≠ 0`
+it exhausts every nonzero concrete root.
 
 ## Main declarations
 
-* `TauCeti.TypeDStd.typeDRootWeight`: the concrete Cartan root indexed by a root of the pinned
-  type-`D` datum.
+* `TauCeti.TypeDStd.typeDRootWeight`: the Cartan functional indexed by a root of the pinned type-`D`
+  datum.
 * `TauCeti.TypeDStd.typeDWeightEquiv_symm_typeDRootWeight`: its diagonal-basis coordinates are
   the corresponding classical root vector.
 * `TauCeti.TypeDStd.typeDRootWeight_apply_cartanGenerator`: its coordinates on the numbered
@@ -52,7 +53,7 @@ noncomputable def typeDRootWeight (n : ℕ) (hn : 4 ≤ n)
     Module.Dual K (typeDDiagonalCartan K (Fin n)) :=
   typeDWeightEquiv (fun i => (DynkinType.typeDRootEquiv n hn k).1 i)
 
-/-- The diagonal-basis coordinates of the concrete root indexed by `k` are the corresponding
+/-- The diagonal-basis coordinates of the Cartan functional indexed by `k` are the corresponding
 classical type-`D` root vector. -/
 @[simp]
 theorem typeDWeightEquiv_symm_typeDRootWeight (n : ℕ) (hn : 4 ≤ n)
@@ -61,8 +62,8 @@ theorem typeDWeightEquiv_symm_typeDRootWeight (n : ℕ) (hn : 4 ≤ n)
       fun i => ((DynkinType.typeDRootEquiv n hn k).1 i : K) := by
   rw [typeDRootWeight, LinearEquiv.symm_apply_apply]
 
-/-- The concrete root indexed by `k`, evaluated on the `j`-th numbered Cartan generator, is the
-`j`-th fundamental-weight coordinate of the `k`-th root of the pinned type-`D` datum. -/
+/-- The Cartan functional indexed by `k`, evaluated on the `j`-th numbered Cartan generator, is
+the `j`-th fundamental-weight coordinate of the `k`-th root of the pinned type-`D` datum. -/
 @[simp]
 theorem typeDRootWeight_apply_cartanGenerator (n : ℕ) (hn : 4 ≤ n)
     (k : Fin (2 * n * (n - 1))) (j : Fin n) :
