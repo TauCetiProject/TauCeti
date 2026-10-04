@@ -32,7 +32,10 @@ The comparison is made on explicit cocycles. If `αⁿ = a` and `κ_a(σ) = σ �
 `χ(σ) ∈ [0, n)` is the exponent of `σ (ⁿ√b) / ⁿ√b` with respect to `ζ`, then the cup cocycle is
 `(σ, τ) ↦ κ_a(σ) ^ χ(τ)`, and the coboundary of the cochain `σ ↦ α ^ χ(σ)` is its product with
 `(σ, τ) ↦ a ^ ⌊(χ(σ) + χ(τ)) / n⌋`. With `χ(g ^ i) = (n / d) i` for `0 ≤ i < d`, the latter is the
-inflation of the carry cocycle representing the cyclic class of `a` at `g`.
+inflation of the carry cocycle representing the cyclic class of `a` at `g`. This generalizes to
+any `n`, and to the continuous-cohomology `Br K` of class field theory, the quadratic (`n = 2`)
+cocycle computation `TauCeti.TwoCocycle.inflateClass_quadratic_eq_h2MuToUnits_cup` in
+`TauCeti.Algebra.CrossedProduct.CupProduct`, which this file follows as its template.
 
 ## Main results
 
@@ -46,6 +49,9 @@ inflation of the carry cocycle representing the cyclic class of `a` at `g`.
 * J.-P. Serre, *Local Fields*, Graduate Texts in Mathematics 67, Springer (1979), Chapter XIV,
   §2.
 * P. Gille and T. Szamuely, *Central Simple Algebras and Galois Cohomology* (2006), §4.7.
+* `TauCeti.TwoCocycle.inflateClass_quadratic_eq_h2MuToUnits_cup`
+  (`TauCeti/Algebra/CrossedProduct/CupProduct.lean`): the `n = 2` cocycle computation that the
+  comparison here generalizes.
 -/
 
 public section
