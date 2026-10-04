@@ -199,7 +199,7 @@ theorem iInf_ramificationGroup_eq_bot : ⨅ i, ramificationGroup F P i = ⊥ := 
     have := (P.mem_filtration_iff_le_ord h0).mp hmem
     omega
   rw [Subgroup.mem_bot]
-  exact TauCeti.ValuationSubring.decompositionSubgroup_eq_of_forall_mem P.integers fun x ↦
+  exact ValuationSubring.decompositionSubgroup_eq_of_forall_mem P.integers fun x ↦
     hfix x x.2
 
 /-- **The ramification groups of a place whose inertia group is finite are trivial from some index
