@@ -20,8 +20,8 @@ preimage of `TauCeti.QuadraticMap.integralOrthogonalSubgroup`, not a condition o
 of the Clifford element itself.
 
 This subgroup is open in the canonical Clifford topology. For a nondegenerate form it is also
-compact: this uses properness of the Spin projection, not merely its finite kernel. Scalar
-extension sends every rational Spin point into this subgroup at almost every prime. Thus these
+compact. Scalar extension sends every rational Spin point into this subgroup at almost every
+prime. Thus these
 subgroups supply a compact-open Spin reference family compatible with the integral orthogonal
 family, without an additional integrality hypothesis on the rational Spin points.
 
@@ -107,8 +107,7 @@ theorem isOpen_integralSpinSubgroup :
   let : FiniteDimensional ℚ_[p] V := Module.Finite.of_basis b
   exact (isOpen_integralOrthogonalSubgroup Q b).preimage (continuous_spinToOrthogonal Q)
 
-/-- The integral Spin subgroup of a nondegenerate quadratic space is compact.
-Properness of the Spin projection is essential for this preimage assertion. -/
+/-- The integral Spin subgroup of a nondegenerate quadratic space is compact. -/
 theorem isCompact_integralSpinSubgroup (hQ : Q.Nondegenerate) :
     IsCompact (integralSpinSubgroup Q b : Set (spinGroup Q)) := by
   let : FiniteDimensional ℚ_[p] V := Module.Finite.of_basis b
@@ -130,7 +129,7 @@ variable {W : Type*} [AddCommGroup W] [Module ℚ W]
   (Q₀ : QuadraticForm ℚ W) (b₀ : Basis ι ℚ W)
 
 /-- Every rational Spin point belongs to the integral Spin subgroups in a fixed rational basis
-at almost every prime. The exceptional primes are those of its orthogonal action and inverse. -/
+at almost every prime. -/
 theorem eventually_mem_integralSpinSubgroup (s : spinGroup Q₀) :
     ∀ᶠ p : Nat.Primes in cofinite,
       let _ : Fact (p : ℕ).Prime := ⟨p.property⟩
