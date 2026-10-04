@@ -61,11 +61,7 @@ theorem barMap_tmul_of_tprod (f : AInfinityRightModuleHom MM NN) (n : ℕ) (x : 
       ∑ k ∈ Finset.range (n + 1),
         f.taylor (x ⊗ₜ[R] TensorWords.subword R a 0 k) ⊗ₜ[R]
           TensorWords.subword R a k (n - k) := by
-  rw [barMap_eq_cofreeLift, Comodule.Hom.cofreeLift_toLinearMap, LinearMap.comp_apply,
-    Comodule.cofree_coact_tmul, TensorWords.comul_eq_deconcatenation,
-    TensorWords.of_tprod_eq_subword, TensorWords.deconcatenation_subword]
-  simp only [TensorProduct.tmul_sum, map_sum,
-    TensorProduct.assoc_symm_tmul, LinearMap.rTensor_tmul, Nat.zero_add]
+  rw [barMap_eq_cofreeLift, AInfinityRightModule.cofreeLift_tmul_of_tprod]
 
 /-- The suspended component equation on a word with `n` algebra inputs.  The target Taylor map
 after the morphism bar map equals the morphism Taylor map after the source bar differential. -/
@@ -137,25 +133,9 @@ theorem componentEquation (f : AInfinityRightModuleHom MM NN) (n : ℕ)
           have := Finset.mem_range.1 hp
           omega) hx d a ha] at h
   simp only [← Finset.smul_sum, ← smul_add] at h
-  have h' : negOnePowCast R (n * e + suspExp n d) •
-        (∑ k ∈ Finset.range (n + 1),
-          negOnePowCast R ((k : ℤ) * ((n : ℤ) - k)) •
-            evalNat (NN.m (n - k + 1) (evalNat (f.component k x) a))
-              (fun j ↦ a (k + j))) =
-      negOnePowCast R (n * e + suspExp n d) •
-        ((∑ k ∈ Finset.range (n + 1),
-            negOnePowCast R (((k : ℤ) + 1) * ((n : ℤ) - k)) •
-              evalNat (f.component (n - k) (evalNat (MM.m (k + 1) x) a))
-                (fun j ↦ a (k + j))) +
-          ∑ p ∈ Finset.range n, ∑ s ∈ Finset.Icc 1 (n - p),
-            negOnePowCast R ((p : ℤ) + 1 + s * ((n : ℤ) - p - s) +
-                (2 - s) * (e + ∑ i ∈ Finset.range p, d i)) •
-              evalNat (f.component (p + 1 + (n - p - s)) x)
-                (replaceBlock a p s (evalNat (AA.m s) fun j ↦ a (p + j)))) := by
-    simpa only [add_zero, Nat.succ_eq_add_one] using h
-  apply sub_eq_zero.mp
-  apply (negOnePowCast_smul_eq_zero_iff (R := R) (n * e + suspExp n d) _).1
-  rw [smul_sub, h', sub_self]
+  -- Both sides carry the global suspension sign, which is an involution.
+  simpa only [add_zero, Nat.succ_eq_add_one, negOnePowCast_smul_negOnePowCast_smul] using
+    congrArg (negOnePowCast R (n * e + suspExp n d) • ·) h
 
 end AInfinityRightModuleHom
 end TauCeti

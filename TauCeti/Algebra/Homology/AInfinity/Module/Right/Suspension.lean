@@ -14,6 +14,7 @@ This file collects the two sign calculations shared by right `A∞` module ident
 module-morphism identities.  The first compares a composite of two suspended Taylor maps with
 the corresponding composite of their unsuspended components.  The second compares a term in
 which the algebra bar differential collapses a block with the corresponding unsuspended term.
+Both rest on the expansions of a cofree lift and of the algebra bar differential over a pure word.
 
 The component index is the number of algebra inputs; the distinguished module input comes first.
 If the inner family in a composite has degree `q - n` on `n` algebra inputs, moving from the
@@ -33,6 +34,8 @@ morphisms (`q = 0`).
   `TauCeti.AInfinityRightModule.unsuspend_mem_piece`: its suspension sign and degree.
 * `TauCeti.AInfinityRightModule.apply_comp_subword_of_mem`: the suspension sign for a composite
   of module-first Taylor maps.
+* `TauCeti.AInfinityRightModule.cofreeLift_tmul_of_tprod`: the cofree lift of a map, expanded
+  over the cuts of a pure word.
 * `TauCeti.AInfinityRightModule.apply_coaugmentedBarDifferential_of_tprod`: the algebra bar
   differential expanded after an arbitrary linear map on a module tensor factor.
 * `TauCeti.AInfinityRightModule.apply_algebra_splice_of_mem`: the suspension sign when an algebra
@@ -61,6 +64,8 @@ variable {R : Type uR} {A : Type uA} [CommRing R] [AddCommGroup A] [Module R A]
   [AddCommGroup P] [Module R P]
 
 open TensorWords
+
+attribute [local instance] Comodule.cofree
 
 /-! ### Module-first unsuspension -/
 
@@ -141,11 +146,12 @@ theorem unsuspend_mem_piece (G : InternalGrading R M) (GA : InternalGrading R A)
   have h := hF hx' _ _ ha'
   rw [Finset.sum_sub_distrib, Finset.sum_const, Finset.card_univ, Fintype.card_fin,
     nsmul_eq_mul, mul_one] at h
+  -- The suspended inputs have total degree `(e - 1) + (∑ i, d i - n)`, which `F` raises by `k`.
   have hdeg : e + ∑ i, d i - n + (k - 1) = e - 1 + (∑ i, d i - n) + k := by ring
   rw [unsuspend_apply, hdeg]
   exact h
 
-/-! ### Composites and algebra insertions -/
+/-! ### Bar-word expansions, composites, and algebra insertions -/
 
 /-- A composite of suspended module-first Taylor maps on homogeneous inputs, expressed through
 their unsuspended components.  The inner components have degree `q - k` on `k` algebra inputs;
@@ -187,6 +193,10 @@ theorem apply_comp_subword_of_mem
   rw [← TensorProduct.smul_tmul', map_smul, hHh,
     apply_koszulTwist_of_mem GN GA (h t) hy (fun j ↦ d (k + j))
       (fun j ↦ a (k + j)) fun j hj ↦ ha _ (by omega)]
+  -- The two collected suspension signs differ from the target sign by an even exponent.  Writing
+  -- `n = k + t`, `suspExp_add` splits `suspExp n d` into the prefix and suffix exponents plus
+  -- `t * ∑ i < k, d i`; the latter is the degree of the intermediate output that the outer twist
+  -- collects, leaving `t * (q - k)` against the target `(k + q) * t`, a difference of `2 * k * t`.
   simp only [smul_smul, ← negOnePowCast_add]
   congr 1
   have hsum : ∑ i ∈ Finset.range k, ((k : ℤ) + t - 1 - i) * d i =
@@ -198,6 +208,18 @@ theorem apply_comp_subword_of_mem
   rw [suspExp_add, hsum, suspExp_def t]
   push_cast
   ring
+
+/-- On a pure word, the cofree lift of `F` applies `F` to every prefix and retains the
+corresponding suffix. -/
+theorem cofreeLift_tmul_of_tprod (F : (M ⊗[R] TensorWords R A) →ₗ[R] N) (n : ℕ) (x : M)
+    (a : Fin n → A) :
+    (Comodule.Hom.cofreeLift (C := TensorWords R A) F).toLinearMap
+        (x ⊗ₜ[R] TensorWords.of R A n (PiTensorProduct.tprod R a)) =
+      ∑ k ∈ Finset.range (n + 1), F (x ⊗ₜ[R] subword R a 0 k) ⊗ₜ[R] subword R a k (n - k) := by
+  rw [Comodule.Hom.cofreeLift_toLinearMap, LinearMap.comp_apply, Comodule.cofree_coact_tmul,
+    comul_eq_deconcatenation, of_tprod_eq_subword, deconcatenation_subword]
+  simp only [TensorProduct.tmul_sum, map_sum, TensorProduct.assoc_symm_tmul,
+    LinearMap.rTensor_tmul, Nat.zero_add]
 
 /-- Applying a linear map after tensoring a module element with the algebra bar differential
 expands as the sum over all nonempty blocks collapsed by the algebra Taylor map. -/
@@ -256,6 +278,7 @@ theorem apply_algebra_splice_of_mem
             (replaceBlock a p s (evalNat (AA.m s) fun j ↦ a (p + j))) := by
   obtain ⟨t, rfl⟩ : ∃ t, n = p + s + t := ⟨n - p - s, by omega⟩
   have ht : p + s + t - p - s = t := by omega
+  -- Pull the Koszul twists of the `p` letters before the block out of the splice as one sign.
   rw [ht, ReducedTensorWords.splice_twistedTuple_smul (AA.grading.shift 1) 1 _
     (fun i ↦ d i - 1) fun i ↦ by
       rw [InternalGrading.shift_piece, sub_add_cancel]
@@ -266,9 +289,11 @@ theorem apply_algebra_splice_of_mem
     rw [ReducedTensorWords.subword_eq_of_tprod R _ hs (by omega), ← AInfinity.evalNat_suspend]
     exact (AInfinity.isSuspension_def _ _ _).1 AA.taylor_isSuspension s hs _ _
       fun i hi ↦ ha (p + i) (by omega)
+  -- The suspended algebra operation on the block is its unsuspended operation up to a sign.
   rw [hinner]
   set v := evalNat (AA.m s) fun j ↦ a (p + j)
   set c := negOnePowCast R (suspExp s fun j ↦ d (p + j))
+  -- The spliced word is the pure word in which the block is replaced by its collapse.
   have hsplice : ReducedTensorWords.splice R (fun i : Fin (p + s + t) ↦ a i) 0
       (p + s + t) p s (c • v) = ReducedTensorWords.of R A ⟨p + 1 + t, by omega⟩
         (PiTensorProduct.tprod R
@@ -287,6 +312,8 @@ theorem apply_algebra_splice_of_mem
   have hx' : x ∈ (G.shift 1).piece (e - 1) := by
     rw [InternalGrading.shift_piece, sub_add_cancel]
     exact hx
+  -- Unsuspend the module-first component on the spliced word, whose block has degree
+  -- `blockDeg d p s`, and collect the scalar of the collapsed block.
   rw [hsplice, map_smul, reducedInclusion_of, TensorProduct.tmul_smul, map_smul,
     InternalGrading.koszulTwist_apply_of_mem _ hx', ← TensorProduct.smul_tmul', map_smul,
     hFf, apply_koszulTwist_of_mem G AA.grading (f (p + 1 + t)) hx
@@ -303,6 +330,8 @@ theorem apply_algebra_splice_of_mem
       omega
     simp only [hjn, dite_true]
   rw [hpre, ← negOnePowCast_eq_intCast, ← negOnePowCast_eq_intCast]
+  -- The collected signs differ from the target sign by an even exponent, by the suspension sign
+  -- identity `AInfinity.suspExp_replaceDeg` for the algebra inputs.
   simp only [c, smul_smul, ← negOnePowCast_add]
   congr 1
   rw [negOnePowCast_eq_intCast, negOnePowCast_eq_intCast,
