@@ -72,8 +72,8 @@ downstream, as `TauCeti.indResProjection` in
 `Coinvariants.mk _ ∘ₗ TensorProduct.mk k _ _ (MonoidAlgebra.single h 1)`, which `simp` unfolds.
 The generator lemmas below are therefore stated with `IndV.mk`, the readable form, but are not
 `simp` lemmas: their left-hand sides are not in `simp`-normal form and they never fire. This
-matches Mathlib's own `Rep.coinvariantsTensorIndHom_mk_tmul_indVMk` and the sibling
-`TauCeti.indTrivialEquiv_apply_mk`. They are applied by explicit `rw`/`Eq.trans` instead, so that
+matches Mathlib's own `Rep.coinvariantsTensorIndHom_mk_tmul_indVMk`. They are applied by
+explicit `rw`/`Eq.trans` instead, so that
 only the two definitions `TauCeti.indProjectionHom` and `TauCeti.indProjectionInv` are ever
 unfolded, and only in their own generator lemmas. For the same reason the proofs below reach the
 generators by an explicit `Representation.IndV.hom_ext`/`TensorProduct.ext'` chain and peel the
