@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.GreenFunction.BoundaryConcentration
-import TauCeti.Analysis.InnerProductSpace.Harmonic.MeanValue
+import TauCeti.Analysis.InnerProductSpace.Harmonic.Ball
+import TauCeti.Analysis.InnerProductSpace.Harmonic.Isometry
+import TauCeti.Analysis.InnerProductSpace.Harmonic.MeanValue.Basic
 import TauCeti.Analysis.InnerProductSpace.Laplacian.ParametricIntegral
 
 /-!
@@ -35,7 +37,8 @@ The Poisson integral of integrable data is harmonic off the sphere: the kernel `
 harmonic away from `y` and smooth jointly in `(x, y)` off the diagonal, so the Laplacian may be
 taken under the integral sign (`TauCeti.harmonicOnNhd_integral_smul_of_contDiffOn`).  Together with
 boundary attainment this solves the Dirichlet problem `Δu = 0` in the ball, `u = g` on the sphere,
-for continuous data.
+for continuous data.  Since harmonicity is invariant under isometries and homotheties, the same
+holds on every ball of a finite-dimensional real inner product space.
 
 ## Main declarations
 
@@ -49,6 +52,8 @@ for continuous data.
 * `TauCeti.harmonicOnNhd_ballPoissonIntegral`: the Poisson integral is harmonic off the sphere.
 * `TauCeti.exists_harmonicOnNhd_ball_continuousOn_closedBall_eq`: existence of a solution of the
   Dirichlet problem on the unit ball for continuous boundary data.
+* `TauCeti.exists_harmonicOnNhd_ball_continuousOn_closedBall_eqOn_sphere`: the same on every ball
+  of a finite-dimensional real inner product space, by an isometry and a homothety.
 
 ## References
 
@@ -343,6 +348,55 @@ theorem exists_harmonicOnNhd_ball_continuousOn_closedBall_eq
     · have hres : (sphere (0 : EuclideanSpace ℝ (Fin n)) 1).domRestrict u = g :=
         funext fun z ↦ dite_eq_left z.2
       exact (continuousOn_iff_continuous_domRestrict.2 (hres ▸ hg)) x hx
+
+section Ball
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+
+/-- **The Dirichlet problem on a ball.**  In a finite-dimensional real inner product space, for
+data `g` continuous on the sphere `sphere c r`, there is a function harmonic in the open ball
+`ball c r`, continuous on the closed ball, and equal to `g` on the sphere.  For `0 < r` it is the
+unit-ball solution `TauCeti.exists_harmonicOnNhd_ball_continuousOn_closedBall_eq`, transported
+along an isometry of `E` with `ℝⁿ` and the homothety `y ↦ c + r • y`; for `r ≤ 0` the open ball
+is empty and the closed ball is contained in the sphere, so `g` itself is a solution. -/
+theorem exists_harmonicOnNhd_ball_continuousOn_closedBall_eqOn_sphere {c : E} {r : ℝ}
+    {g : E → ℝ} (hg : ContinuousOn g (sphere c r)) :
+    ∃ u : E → ℝ, HarmonicOnNhd u (ball c r) ∧ ContinuousOn u (closedBall c r) ∧
+      EqOn u g (sphere c r) := by
+  rcases le_or_gt r 0 with hr | hr
+  · refine ⟨g, fun x hx ↦ absurd hx (by simp [ball_eq_empty.2 hr]), hg.mono fun x hx ↦ ?_,
+      eqOn_refl g _⟩
+    exact mem_sphere.2 (le_antisymm (mem_closedBall.1 hx) (hr.trans dist_nonneg))
+  let e := (stdOrthonormalBasis ℝ E).repr
+  -- `φ` maps the unit sphere of `ℝⁿ` onto `sphere c r`, and `ψ` is its inverse.
+  let φ : EuclideanSpace ℝ (Fin (Module.finrank ℝ E)) → E := fun y ↦ c + r • e.symm y
+  let ψ : E → EuclideanSpace ℝ (Fin (Module.finrank ℝ E)) := fun x ↦ e (r⁻¹ • (x - c))
+  have hφψ : ∀ x, φ (ψ x) = x := fun x ↦ by simp [φ, ψ, smul_smul, hr.ne']
+  have hnorm : ∀ x, ‖ψ x‖ = r⁻¹ * dist x c := fun x ↦ by
+    simp only [ψ, LinearIsometryEquiv.norm_map, norm_smul, norm_inv, Real.norm_eq_abs,
+      abs_of_pos hr, dist_eq_norm]
+  have hφs : ∀ y : sphere (0 : EuclideanSpace ℝ (Fin (Module.finrank ℝ E))) 1,
+      φ y ∈ sphere c r := fun y ↦ by
+    simp [φ, norm_smul, abs_of_pos hr, norm_eq_of_mem_sphere y]
+  have hφc : Continuous φ := continuous_const.add (continuous_const.smul e.symm.continuous)
+  have hgφ : Continuous fun y : sphere (0 : EuclideanSpace ℝ (Fin (Module.finrank ℝ E))) 1 ↦
+      g (φ y) := hg.comp_continuous (hφc.comp continuous_subtype_val) hφs
+  obtain ⟨u₀, hu₀, hu₀c, hu₀g⟩ := exists_harmonicOnNhd_ball_continuousOn_closedBall_eq hgφ
+  have hψc : Continuous ψ :=
+    e.continuous.comp (continuous_const.smul (continuous_id.sub continuous_const))
+  refine ⟨u₀ ∘ ψ, ?_, hu₀c.comp hψc.continuousOn fun x hx ↦ ?_, fun x hx ↦ ?_⟩
+  · rw [← harmonicOnNhd_comp_const_add_smul_ball_iff c hr]
+    have hcomp : (fun y ↦ (u₀ ∘ ψ) (c + r • y)) = u₀ ∘ e := funext fun y ↦ by
+      simp [ψ, smul_smul, hr.ne']
+    have he := (harmonicOnNhd_comp_linearIsometryEquiv_right_iff e).2 hu₀
+    rwa [LinearIsometryEquiv.preimage_ball, map_zero, ← hcomp] at he
+  · rw [mem_closedBall_zero_iff, hnorm]
+    exact inv_mul_le_one_of_le₀ (mem_closedBall.1 hx) hr.le
+  · have hψs : ψ x ∈ sphere (0 : EuclideanSpace ℝ (Fin (Module.finrank ℝ E))) 1 := by
+      rw [mem_sphere_zero_iff_norm, hnorm, mem_sphere.1 hx, inv_mul_cancel₀ hr.ne']
+    simpa [hφψ] using hu₀g ⟨ψ x, hψs⟩
+
+end Ball
 
 end TauCeti
 
