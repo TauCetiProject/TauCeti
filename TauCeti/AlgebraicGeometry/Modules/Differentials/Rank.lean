@@ -24,9 +24,6 @@ When `X` is smooth of relative dimension one over `Spec R`, as a smooth curve ov
 
 ## Main declarations
 
-* `TauCeti.AlgebraicGeometry.exists_isStandardSmoothOfRelativeDimension`: around every point,
-  `X` has an affine open whose ring of functions is standard smooth of relative dimension `n`
-  over `R`;
 * `TauCeti.AlgebraicGeometry.FiniteLocallyFreeSheaf.rank_relativeDifferentials_apply`: the
   finite locally free sheaf `FiniteLocallyFreeSheaf.relativeDifferentials R X` has rank `n`
   everywhere when `X` is smooth of relative dimension `n`;
@@ -51,22 +48,6 @@ universe u
 noncomputable section
 
 variable (R : Type u) [CommRing R] (X : Scheme.{u}) [X.Over (Spec (.of R))]
-
-variable {X} in
-/-- Around every point of a scheme smooth of relative dimension `n` over `Spec R`, there is an
-affine open whose ring of functions is standard smooth of relative dimension `n` over `R`. -/
-lemma exists_isStandardSmoothOfRelativeDimension (n : ℕ)
-    [SmoothOfRelativeDimension n (X ↘ Spec (.of R))] (x : X) :
-    ∃ W : X.affineOpens, x ∈ W.1 ∧
-      ((X.baseRingToStructurePresheaf R).app (op W.1)).hom.IsStandardSmoothOfRelativeDimension n
-        := by
-  obtain ⟨W, hxW, h⟩ :=
-    SmoothOfRelativeDimension.exists_isStandardSmoothOfRelativeDimension_appLE_top
-      (X ↘ Spec (.of R)) n x
-  refine ⟨W, hxW, ?_⟩
-  rw [Scheme.baseRingToStructurePresheaf_app_eq_appLE, CommRingCat.hom_comp]
-  exact (isStandardSmoothOfRelativeDimension_respectsIso (n := n)).right _
-    (Scheme.ΓSpecIso (.of R)).symm.commRingCatIsoToRingEquiv h
 
 /-- On the spectrum of a standard smooth `R`-algebra `A` of relative dimension `n`, the sheaf of
 relative differentials is free of rank `n`. -/

@@ -10,7 +10,7 @@ public import Mathlib.AlgebraicGeometry.Morphisms.Flat
 public import TauCeti.AlgebraicGeometry.Modules.Differentials.Quasicoherent
 public import TauCeti.AlgebraicGeometry.Modules.FittingIdeal
 public import TauCeti.AlgebraicGeometry.Morphisms.PureRelativeDimension
-public import TauCeti.AlgebraicGeometry.Modules.Differentials.Rank
+public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.StandardSmooth
 public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.PureRelativeDimension
 
 /-!
@@ -176,6 +176,7 @@ variable (R : Type u) [CommRing R] (X : Scheme.{u}) [X.Over (Spec (.of R))]
 /-- **A smooth relative curve has empty singular locus.** If `X` is smooth of relative dimension
 one over `Spec R`, then the first Fitting ideal sheaf of `Ω_{X/R}` is the unit ideal sheaf, since
 `Ω_{X/R}` is locally free of rank one. -/
+@[simp]
 theorem _root_.AlgebraicGeometry.Scheme.singularLocus_eq_top
     [SmoothOfRelativeDimension 1 (X ↘ Spec (.of R))] :
     haveI := SmoothOfRelativeDimension.smooth 1 (X ↘ Spec (.of R))
