@@ -66,7 +66,8 @@ def singularChainHomotopy :
 
 /-- On singular homology, the map induced by the fibre inclusion is unchanged after
 precomposition with the monodromy map. -/
-@[simp]
+-- Rewrite the composite before unfolding singular chain maps.
+@[simp↓]
 lemma homologyMap_monodromy_comp_incl [CategoryWithHomology C] (n : ℕ) :
     HomologicalComplex.homologyMap
           (((singularChainComplexFunctor C).obj R).map
