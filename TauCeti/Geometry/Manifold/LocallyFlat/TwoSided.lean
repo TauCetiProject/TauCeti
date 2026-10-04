@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.Boundary.Collar.Brown
 public import TauCeti.Geometry.Manifold.LocallyFlat.Bicollar
-import Mathlib.Analysis.Normed.Module.Ball.Homeomorph
 
 /-!
 # Two-sided locally bicollared maps are bicollared
@@ -26,16 +25,9 @@ compact space into a Hausdorff space has a global bicollar, with the same two si
 the converse, this characterizes bicollared maps out of compact spaces
 (`TauCeti.isBicollared_iff_injective_and_exists_isLocallyBicollaredWithSides`).
 
-The proof is Brown's. On the side `A`, the map `f` is locally collared in `A ∪ f(N)`, so Brown's
-collaring theorem `TauCeti.IsLocallyCollared.isCollared` gives a collar `N × [0, 1) → A ∪ f(N)`;
-likewise on the side `B`. The two collars glue along `f` to an open embedding of
-`N × (-1, 1)` into `M`, which is a bicollar after reparametrizing `(-1, 1)` as `ℝ`.
-
 For a locally flat codimension-one sphere in a sphere, Brown takes for `A` and `B` the two
-complementary regions given by the Jordan–Brouwer separation theorem. Once the local bicollars of
-`TauCeti.IsLocallyFlat.isLocallyBicollared` are shown to choose these two regions consistently,
-which is not done here, the theorem gives the global bicollar asserted by
-`TauCeti.BrownBicollaring`.
+complementary regions given by the Jordan–Brouwer separation theorem. The proof of the
+bicollaring theorem follows Brown.
 
 ## Main definitions
 
@@ -51,6 +43,7 @@ which is not done here, the theorem gives the global bicollar asserted by
 * `TauCeti.isBicollared_iff_injective_and_exists_isLocallyBicollaredWithSides`: a map from a
   compact space into a Hausdorff space is bicollared exactly when it is injective and locally
   bicollared with two disjoint open sides.
+* `TauCeti.IsLocallyBicollaredWithSides.mono`: the sides may be enlarged.
 * `TauCeti.IsLocallyBicollaredWithSides.disjoint_range_left`,
   `TauCeti.IsLocallyBicollaredWithSides.disjoint_range_right` and
   `TauCeti.IsLocallyBicollaredWithSides.isOpen_union_union_range`: open sides are disjoint from
@@ -112,6 +105,12 @@ theorem swap (h : IsLocallyBicollaredWithSides f A B) : IsLocallyBicollaredWithS
   refine ⟨U, hU, hxU, _, hb.comp_prodMap_id_neg, ?_, ?_⟩
   · exact fun p hp => hbB ⟨mem_univ _, neg_neg_of_pos hp.2⟩
   · exact fun p hp => hbA ⟨mem_univ _, neg_pos.2 hp.2⟩
+
+/-- The sides of a locally bicollared map may be enlarged. -/
+theorem mono (h : IsLocallyBicollaredWithSides f A B) {A' B' : Set M} (hA : A ⊆ A')
+    (hB : B ⊆ B') : IsLocallyBicollaredWithSides f A' B' := fun x =>
+  let ⟨U, hU, hxU, b, hb, hbA, hbB⟩ := h x
+  ⟨U, hU, hxU, b, hb, hbA.mono_right hA, hbB.mono_right hB⟩
 
 /-- An open side `A` is disjoint from the image: approaching `f x` from the side `B` within a
 local bicollar, one would meet the neighbourhood `A` of `f x`. -/
