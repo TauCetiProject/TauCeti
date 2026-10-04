@@ -985,6 +985,11 @@ theorem unlinkEquiv_symm_apply (D : OrientedPDCode 0) :
 /-- The empty oriented PD-code. -/
 def empty : OrientedPDCode 0 := unlink 0
 
+/-- The empty diagram has no crossing-free components. -/
+@[simp]
+theorem crossinglessComponents_empty : empty.crossinglessComponents = 0 := by
+  simp [empty]
+
 /-- A crossing-free oriented unknot with the specified choice of orientation. -/
 def unknot (orientation : Bool) : OrientedPDCode 0 :=
   unlink {orientation}
