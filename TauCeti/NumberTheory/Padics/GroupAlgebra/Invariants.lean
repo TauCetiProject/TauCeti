@@ -30,7 +30,7 @@ projective integral representations.
 
 ## Main results
 
-* `TauCeti.Representation.natCard_invariants_eq_pow_finrank_of_reduction`: the invariant count
+* `Representation.natCard_invariants_eq_pow_finrank_of_reduction`: the invariant count
   above, for an arbitrary equivariant semilinear reduction map with the expected kernel. The
   cardinality of the reduction of a finite free `ℤ_p`-module is
   `TauCeti.natCard_quotient_padicInt_smul_top`.
@@ -44,8 +44,6 @@ projective integral representations.
 -/
 
 public section
-
-namespace TauCeti
 
 open scoped MonoidAlgebra Pointwise
 
@@ -101,7 +99,7 @@ theorem natCard_invariants_eq_pow_finrank_of_reduction
       have hxdiv := (hker x).mp hfx
       rw [Submodule.mem_smul_pointwise_iff_exists] at hxdiv ⊢
       obtain ⟨z, -, hz⟩ := hxdiv
-      refine ⟨⟨z, fun g ↦ ?_⟩, trivial, ?_⟩
+      refine ⟨⟨z, fun g ↦ ?_⟩, Submodule.mem_top, ?_⟩
       · apply smul_right_injective V hp
         calc
           (p : ℤ_[p]) • ρ g z = ρ g ((p : ℤ_[p]) • z) := (map_smul (ρ g) _ _).symm
@@ -121,10 +119,8 @@ theorem natCard_invariants_eq_pow_finrank_of_reduction
       simp
   have : Module.Free ℤ_[p] ρ.invariants := Module.free_of_finite_type_torsion_free'
   rw [← Nat.card_congr (F.quotKerEquivOfSurjective hFsurj).toEquiv,
-    hFker, natCard_quotient_padicInt_smul_top p ρ.invariants]
+    hFker, TauCeti.natCard_quotient_padicInt_smul_top p ρ.invariants]
 
 end Reduction
 
 end Representation
-
-end TauCeti
