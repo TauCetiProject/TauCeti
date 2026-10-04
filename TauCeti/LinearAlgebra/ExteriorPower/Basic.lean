@@ -30,6 +30,10 @@ the module. There an exterior product of `n` vectors is the determinant of those
 fixed basis, times the exterior product of that basis; so the top exterior power is free of rank
 one, spanned by the exterior product of a basis, and an endomorphism acts on it by its determinant.
 
+Finally, it describes images of exterior powers under induced maps: inside the exterior algebra,
+the image of `⋀ⁿ M` under `f` is the `n`th power of the degree-one image of `f`, and over a field an
+injective map embeds `⋀ⁿ V` with its binomial dimension.
+
 ## Main definitions
 
 * `exteriorPower.fromTensorPower` is the canonical surjection of the tensor power onto the
@@ -56,6 +60,10 @@ one, spanned by the exterior product of a basis, and an endomorphism acts on it 
   antisymmetrization operator on the tensor power.
 * `exteriorPower.toTensorPower_comp_map` and `exteriorPower.map_comp_fromTensorPower`: the
   antisymmetrization and the canonical surjection are natural in the module.
+* `TauCeti.ExteriorAlgebra.exteriorPower_map_map`: the image of `⋀ⁿ M` in the exterior algebra
+  under the map induced by `f` is the `n`th power of the degree-one image of `f`.
+* `TauCeti.exteriorPower.finrank_range_map`: over a field, the image of `⋀ⁿ V` under the map
+  induced by an injective linear map has dimension `(dim V).choose n`.
 
 ## References
 
@@ -318,3 +326,36 @@ theorem trace_map_top [Nontrivial R] (b : Module.Basis (Fin n) R M) (f : M →�
 end Top
 
 end exteriorPower
+
+namespace TauCeti
+
+namespace ExteriorAlgebra
+
+variable [CommRing R] [AddCommGroup M] [Module R M] {N : Type*} [AddCommGroup N] [Module R N]
+
+/-- Inside the exterior algebra, the image of the `n`th exterior power under the map induced by
+`f` is the `n`th power of the degree-one image of the range of `f`. -/
+theorem exteriorPower_map_map (n : ℕ) (f : M →ₗ[R] N) :
+    (⋀[R]^n M).map (_root_.ExteriorAlgebra.map f).toLinearMap =
+      ((LinearMap.range f).map (_root_.ExteriorAlgebra.ι R)) ^ n := by
+  rw [_root_.ExteriorAlgebra.exteriorPower, Submodule.map_pow,
+    _root_.ExteriorAlgebra.ι_range_map_map]
+
+end ExteriorAlgebra
+
+namespace exteriorPower
+
+variable {K : Type*} [Field K] {V W : Type*} [AddCommGroup V] [Module K V] [Module.Finite K V]
+  [AddCommGroup W] [Module K W]
+
+/-- Over a field, the image of the `n`th exterior power of a finite-dimensional space under the
+map induced by an injective linear map has dimension `(dim V).choose n`. -/
+theorem finrank_range_map {f : V →ₗ[K] W} (hf : Function.Injective f) (n : ℕ) :
+    Module.finrank K (LinearMap.range (_root_.exteriorPower.map n f)) =
+      (Module.finrank K V).choose n := by
+  rw [LinearMap.finrank_range_of_inj (_root_.exteriorPower.map_injective_field hf),
+    _root_.exteriorPower.finrank_eq]
+
+end exteriorPower
+
+end TauCeti

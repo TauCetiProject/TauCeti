@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.GaloisCohomology.Hilbert90
+public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.FiniteExtension
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Basic
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Inflation.Basic
 
@@ -19,6 +20,11 @@ of `U` (`mem_level_unitsFormation_iff`), presented as `Eˣ` when that fixed fiel
 `K`-embedding of `E` (`unitsLevelEquiv`), and its finite normal layers are the finite Galois
 extensions `E/F` inside `Kˢ`. It is the formation on which the local class formation is to be
 built.
+
+For a finite extension `L/K` embedded in `Kˢ`, restriction of this formation from `G_K` to the
+open subgroup identified with `G_L` is canonically isomorphic to `unitsFormation L`
+(`localFormationRestrict`). On coefficients this isomorphism is induced by the identification
+`Lˢ ≃ Kˢ` extending the chosen embedding.
 
 The first input of the class-formation axioms is proved here, for every field `K`: **Hilbert 90 on
 every finite normal layer** (`subsingleton_h1_unitsFormation`), `H¹(U ⧸ V, ((Kˢ)ˣ)^V) = 0` for
@@ -36,6 +42,8 @@ The body of `unitsFormation` is not exposed; its coefficient module is read thro
 * `TauCeti.ClassFieldTheory.unitsFormation K`: the formation of `(Kˢ)ˣ` over `G_K`.
 * `TauCeti.ClassFieldTheory.unitsCoeffEquivUnitsFormation K`: its coefficient module as
   `TauCeti.UnitsCoeff K`.
+* `TauCeti.ClassFieldTheory.localFormationRestrict K L σ`: restriction from `G_K` to `G_L` as
+  an isomorphism of topological representations.
 * `TauCeti.ClassFieldTheory.unitsLevelEquiv ι hU`: the level of an open subgroup `U` whose fixed
   field is the image of `ι : E →ₐ[K] Kˢ` is `Eˣ`.
 * `TauCeti.ClassFieldTheory.layerCoeffEquiv L`: the coefficient module of a finite normal layer
@@ -85,6 +93,91 @@ theorem unitsCoeffEquivUnitsFormation_smul (g : AbsoluteGaloisGroup K) (x : Unit
     unitsCoeffEquivUnitsFormation K (g • x) =
       (unitsFormation K).toRep.ρ g (unitsCoeffEquivUnitsFormation K x) :=
   (rfl)
+
+/-! ### Restriction to a finite extension -/
+
+section Restriction
+
+open CategoryTheory
+
+variable (L : Type) [Field L] [Algebra K L] [FiniteDimensional K L]
+  (σ : L →ₐ[K] SeparableClosure K)
+
+/-- The homomorphism `G_L → G_K` obtained by identifying `G_L` with the subgroup fixing `σ(L)`
+and including that subgroup in `G_K`. -/
+def localFormationHom : AbsoluteGaloisGroup L →* AbsoluteGaloisGroup K :=
+  (TauCeti.galoisSubgroup K L σ).toSubgroup.subtype.comp
+    (TauCeti.galoisSubgroupEquiv K L σ).toMulEquiv.toMonoidHom
+
+/-- The additive equivalence on the coefficient modules underlying restriction of the units
+formation along `L/K`. It sends a unit of `Kˢ` to its image in `Lˢ` under the inverse of the
+chosen identification `Lˢ ≃ Kˢ`. -/
+def localFormationCoeffEquiv : UnitsCoeff K ≃+ UnitsCoeff L :=
+  (Units.mapEquiv (separableClosureRingEquiv K L σ).symm.toMulEquiv).toAdditive
+
+/-- The coefficient equivalence underlying `localFormationRestrict` is equivariant for the
+embedding `G_L → G_K`. -/
+@[simp]
+theorem localFormationCoeffEquiv_smul (g : AbsoluteGaloisGroup L) (x : UnitsCoeff K) :
+    localFormationCoeffEquiv K L σ ((localFormationHom K L σ g) • x) =
+      g • localFormationCoeffEquiv K L σ x := by
+  refine Additive.toMul.injective (Units.ext ?_)
+  simp [localFormationCoeffEquiv, localFormationHom, AlgEquiv.smul_units_def,
+    TauCeti.galoisSubgroupEquiv_apply]
+
+/-- **Restriction of the units formation to a finite extension.** A `K`-embedding
+`σ : L →ₐ[K] Kˢ` identifies `G_L` with the open subgroup of `G_K` fixing `σ(L)`. After restricting
+the `G_K`-representation `(Kˢ)ˣ` along this embedding, the inverse of
+`separableClosureRingEquiv K L σ : Lˢ ≃+* Kˢ` identifies it with the `G_L`-representation
+`(Lˢ)ˣ`. This is the coefficient comparison used to regard a finite layer over `L` as a layer of
+the formation over `K`. -/
+def localFormationRestrict :
+    TopRep.res (localFormationHom K L σ) (unitsFormation K).module ≅
+      (unitsFormation L).module := by
+  let e : UnitsCoeff K ≃ₗ[ℤ] UnitsCoeff L :=
+    (localFormationCoeffEquiv K L σ).toIntLinearEquiv
+  let ec : UnitsCoeff K ≃L[ℤ] UnitsCoeff L :=
+    { e with
+      continuous_toFun := continuous_of_discreteTopology
+      continuous_invFun := continuous_of_discreteTopology }
+  let er :
+      (TopRep.res (localFormationHom K L σ) (unitsFormation K).module).ρ.Equiv
+        (unitsFormation L).module.ρ :=
+    ContRepresentation.Equiv.mk ec fun g => ContinuousLinearMap.ext fun x =>
+      localFormationCoeffEquiv_smul K L σ g x
+  exact
+    { hom := TopRep.ofHom er.toContIntertwiningMap
+      inv := TopRep.ofHom er.symm.toContIntertwiningMap
+      hom_inv_id := by
+        apply TopRep.hom_ext
+        ext x
+        exact er.symm_apply_apply x
+      inv_hom_id := by
+        apply TopRep.hom_ext
+        ext x
+        exact er.apply_symm_apply x }
+
+/-- `localFormationRestrict` sends a coefficient `x ∈ (Kˢ)ˣ` to its image in `(Lˢ)ˣ` under the
+inverse identification of separable closures. -/
+@[simp]
+theorem localFormationRestrict_hom_apply (x : UnitsCoeff K) :
+    (dsimp% only
+      ((localFormationRestrict K L σ).hom (unitsCoeffEquivUnitsFormation K x) :
+        (unitsFormation L).module.V)) =
+      unitsCoeffEquivUnitsFormation L (localFormationCoeffEquiv K L σ x) :=
+  (rfl)
+
+/-- The inverse of `localFormationRestrict` sends a coefficient `y ∈ (Lˢ)ˣ` along the chosen
+identification `Lˢ ≃ Kˢ`. -/
+@[simp]
+theorem localFormationRestrict_inv_apply (y : UnitsCoeff L) :
+    (dsimp% only
+      ((localFormationRestrict K L σ).inv (unitsCoeffEquivUnitsFormation L y) :
+        (unitsFormation K).module.V)) =
+      unitsCoeffEquivUnitsFormation K ((localFormationCoeffEquiv K L σ).symm y) :=
+  (rfl)
+
+end Restriction
 
 variable {K}
 

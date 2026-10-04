@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import Mathlib.NumberTheory.Padics.PadicVal.Basic
 import TauCeti.Topology.Algebra.Group.Profinite.Basic
 public import Mathlib.GroupTheory.Index
 public import TauCeti.NumberTheory.Supernatural
@@ -29,6 +30,8 @@ order exactly.
   normal subgroups.
 * `profiniteOrder_eq_iSup_ofNat`: its description as the supremum of the embedded quotient
   orders.
+* `profiniteOrder_apply_eq_top_iff`: a prime has infinite exponent exactly when its powers divide
+  the orders of finite continuous quotients without bound.
 * `Subgroup.profiniteOrder_eq_iSup_image`: a closed subgroup's order as the supremum of its
   images in the ambient finite quotients.
 * `Subgroup.profiniteOrder_apply_eq_iSup_image`: the primewise form of this description.
@@ -146,6 +149,20 @@ theorem ofNat_card_quotient_le_profiniteOrder (U : OpenNormalSubgroup G) :
   exact le_iSup
     (fun V : OpenNormalSubgroup G ↦
       Supernatural.ofNat (⟨Nat.card (G ⧸ V.toSubgroup), Nat.card_pos⟩ : ℕ+)) U
+
+/-- The exponent of a prime `p` in `profiniteOrder G` is infinite exactly when every power of `p`
+divides the order of some finite continuous quotient. -/
+theorem profiniteOrder_apply_eq_top_iff (p : Nat.Primes) :
+    profiniteOrder G p = ⊤ ↔
+      ∀ n : ℕ, ∃ U : OpenNormalSubgroup G, (p : ℕ) ^ n ∣ Nat.card (G ⧸ U.toSubgroup) := by
+  have : Fact (p : ℕ).Prime := ⟨p.prop⟩
+  have hdvd (n : ℕ) (U : OpenNormalSubgroup G) :
+      (p : ℕ) ^ n ∣ Nat.card (G ⧸ U.toSubgroup) ↔
+        n ≤ padicValNat p (Nat.card (G ⧸ U.toSubgroup)) :=
+    padicValNat_dvd_iff_le Nat.card_pos.ne'
+  simp only [hdvd, profiniteOrder_apply, ENat.iSup_natCast_eq_top, not_bddAbove_iff,
+    Set.mem_range, exists_exists_eq_and]
+  exact ⟨fun h n ↦ (h n).imp fun _ ↦ le_of_lt, fun h n ↦ (h (n + 1)).imp fun _ ↦ id⟩
 
 end Profinite
 

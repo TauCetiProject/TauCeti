@@ -253,7 +253,7 @@ finite abelian group `V` killed by `p`, `|Hom(V, H²(G, 𝔽_p))| = |V|`, since 
 one-dimensional over `𝔽_p`. -/
 theorem natCard_addMonoidHom_H2 (V : Type*) [AddCommGroup V] [Finite V]
     (hV : ∀ v : V, p • v = 0) : Nat.card (V →+ H2 G (ZMod p)) = Nat.card V :=
-  (hG.nonempty_addEquiv_H2_zmod htriv).elim fun e ↦ natCard_addMonoidHom_of_addEquiv_zmod e hV
+  (hG.nonempty_addEquiv_H2_zmod htriv).elim fun e ↦ e.natCard_addMonoidHom_zmod hV
 
 /-- **Tate's duality map `α₂` of an infinite Demushkin group is bijective** on every finite
 discrete `G`-module `M` killed by `p`: `H²(G, M) × H⁰(G, M') → H²(G, 𝔽_p)` is a perfect pairing,

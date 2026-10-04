@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Convex.Contractible
 public import TauCeti.GroupTheory.SpecificGroups.Heisenberg
 public import TauCeti.Geometry.Manifold.Riemannian.Coercive
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Action
@@ -78,6 +79,11 @@ def toProd : Nil ≃ ℝ × ℝ × ℝ := Equiv.refl _
 `RiemannianBundle` instance. Its topology and charts are those of `ℝ × ℝ × ℝ`. -/
 
 instance : TopologicalSpace Nil := inferInstanceAs (TopologicalSpace (ℝ × ℝ × ℝ))
+
+instance : T2Space Nil := inferInstanceAs (T2Space (ℝ × ℝ × ℝ))
+
+/-- Nil is contractible: its underlying topology is that of real three-space. -/
+instance : ContractibleSpace Nil := inferInstanceAs (ContractibleSpace (ℝ × ℝ × ℝ))
 
 instance : ChartedSpace (ℝ × ℝ × ℝ) Nil := inferInstanceAs (ChartedSpace (ℝ × ℝ × ℝ) (ℝ × ℝ × ℝ))
 

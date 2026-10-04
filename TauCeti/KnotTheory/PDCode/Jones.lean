@@ -9,9 +9,11 @@ public import TauCeti.Algebra.Polynomial.Laurent.Basic
 public import TauCeti.KnotTheory.PDCode.Circle
 public import TauCeti.KnotTheory.PDCode.Oriented.ClaspInsertion
 public import TauCeti.KnotTheory.PDCode.Oriented.Reidemeister.Circle
-public import TauCeti.KnotTheory.PDCode.Oriented.Reidemeister.Two
+public import TauCeti.KnotTheory.PDCode.Oriented.Reidemeister.Two.Basic
+public import TauCeti.KnotTheory.PDCode.Oriented.Reidemeister.Two.Circles
 public import TauCeti.KnotTheory.PDCode.Oriented.Reidemeister.One
 public import TauCeti.KnotTheory.PDCode.Oriented.Reidemeister.Three
+public import TauCeti.KnotTheory.PDCode.RotateCrossing
 public import TauCeti.KnotTheory.PDCode.Trefoil
 
 /-!
@@ -35,8 +37,9 @@ bracket (`TauCeti.OrientedPDCode.jonesPolynomial_eq_jonesPolynomial_iff`). Every
 of the normalized bracket is therefore one of the Jones polynomial.
 
 In particular the Jones polynomial is unchanged by the first Reidemeister move, by clasp
-insertion, which along a common face is the second Reidemeister move, and by the third Reidemeister
-move. These are the local moves behind its invariance for oriented links (Lickorish, Theorem 3.5).
+insertion, which along a common face is the second Reidemeister move, by the second-move clasps
+involving crossing-free circles, and by the third Reidemeister move. These are the local moves
+behind its invariance for oriented links (Lickorish, Theorem 3.5).
 Reversing the orientation of every component leaves the Jones polynomial unchanged, and
 mirroring substitutes `t⁻¹` for `t`. The unknot has Jones polynomial `1`, and the right-handed
 trefoil has `t + t³ - t⁴`.
@@ -56,9 +59,10 @@ trefoil has `t + t³ - t⁴`.
   `TauCeti.OrientedPDCode.jonesPolynomial_insertClasp` and
   `TauCeti.OrientedPDCode.jonesPolynomial_reidemeisterThree`: invariance under the first
   Reidemeister move, under clasp insertion and under the third Reidemeister move.
-* `TauCeti.OrientedPDCode.jonesPolynomial_mirror`, `TauCeti.OrientedPDCode.jonesPolynomial_reverse`
-  and `TauCeti.OrientedPDCode.jonesPolynomial_relabel`: behaviour under reflection, reversal and
-  relabelling.
+* `TauCeti.OrientedPDCode.jonesPolynomial_mirror`, `TauCeti.OrientedPDCode.jonesPolynomial_reverse`,
+  `TauCeti.OrientedPDCode.jonesPolynomial_relabel` and
+  `TauCeti.OrientedPDCode.jonesPolynomial_rotateCrossing`: behaviour under reflection, reversal,
+  relabelling and reading a crossing from another slot.
 * `TauCeti.OrientedPDCode.jonesPolynomial_eq_pow`: a code with no crossings and `c` circles has
   Jones polynomial `(-(t^(1/2) + t^(-1/2))) ^ (c - 1)`, and
   `TauCeti.OrientedPDCode.jonesPolynomial_unknot`: the unknot has Jones polynomial `1`.
@@ -201,6 +205,14 @@ theorem jonesPolynomial_insertClasp (D : OrientedPDCode n) (p q : Fin (4 * n)) (
   (jonesPolynomial_eq_jonesPolynomial_iff _ _).2
     (D.normalizedKauffmanBracket_insertCircleClasp p o b _)
 
+/-- The Jones polynomial is unchanged by the two-circle second Reidemeister move. -/
+@[simp] theorem jonesPolynomial_adjoinTwoCircleClasp (D : OrientedPDCode n)
+    (o₁ o₂ b : Bool) :
+    (D.adjoinTwoCircleClasp o₁ o₂ b).jonesPolynomial =
+      ((D.adjoinCircle o₁).adjoinCircle o₂).jonesPolynomial :=
+  (jonesPolynomial_eq_jonesPolynomial_iff _ _).2
+    (D.normalizedKauffmanBracket_adjoinTwoCircleClasp o₁ o₂ b _)
+
 /-- **The third Reidemeister move leaves the Jones polynomial unchanged**, for every surrounding
 diagram and all six height orders of the three strands. -/
 @[simp]
@@ -255,6 +267,12 @@ theorem jonesPolynomial_relabel {m : ℕ} (D : OrientedPDCode n)
   rw [relabel_toPDCode, PDCode.stateLoopCount_relabel, jonesStateWeight_def,
     jonesStateWeight_def, ← Equiv.prod_comp cross]
   simp
+
+/-- Reading a crossing from another slot leaves the Jones polynomial unchanged. -/
+@[simp]
+theorem jonesPolynomial_rotateCrossing (D : OrientedPDCode n) (i : Fin n) :
+    (D.rotateCrossing i).jonesPolynomial = D.jonesPolynomial := by
+  simp [jonesPolynomial_def, jonesStateWeight_def]
 
 /-- A code with no crossings and `c` crossing-free circles has Jones polynomial
 `(-(t^(1/2) + t^(-1/2))) ^ (c - 1)`, the counterpart of

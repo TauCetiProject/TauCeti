@@ -86,6 +86,14 @@ noncomputable def generalLinearContinuousMulEquiv :
     exact (LinearMap.GeneralLinearGroup.generalLinearEquiv K V).symm_apply_apply x
   continuous_invFun := continuous_induced_dom
 
+/-- The topological equivalence has Mathlib's canonical algebraic equivalence as its underlying
+multiplicative equivalence. -/
+@[simp]
+theorem coe_generalLinearContinuousMulEquiv :
+    (generalLinearContinuousMulEquiv (K := K) (V := V) :
+      LinearMap.GeneralLinearGroup K V ≃* V ≃ₗ[K] V) =
+      LinearMap.GeneralLinearGroup.generalLinearEquiv K V := (rfl)
+
 /-- A family of linear automorphisms is continuous exactly when its forward and inverse
 endomorphisms are both continuous. -/
 theorem continuous_linearEquiv_iff {X : Type*} [TopologicalSpace X]

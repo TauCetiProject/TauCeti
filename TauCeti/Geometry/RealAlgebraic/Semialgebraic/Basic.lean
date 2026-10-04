@@ -291,6 +291,12 @@ theorem IsSemialgebraic.image_appendEquiv_prod {m n : ℕ} {s : Set (Fin m → R
   rw [Equiv.image_eq_preimage_symm]
   exact (hs.preimage_comp (Fin.castAdd n)).inter (ht.preimage_comp (Fin.natAdd m))
 
+/-- The cylinder `Fin.tail ⁻¹' s` over a semialgebraic subset `s` of `Fin n → R`, with
+distinguished coordinate `0`, is semialgebraic. -/
+theorem IsSemialgebraic.preimage_tail {n : ℕ} {s : Set (Fin n → R)} (hs : IsSemialgebraic s) :
+    IsSemialgebraic (Fin.tail ⁻¹' s : Set (Fin (n + 1) → R)) :=
+  hs.preimage_comp Fin.succ
+
 /-- The horizontal section at height `t` of a semialgebraic subset of `Fin (n + 1) → R`, whose
 distinguished coordinate is `0`, is semialgebraic. -/
 theorem IsSemialgebraic.preimage_cons_left {n : ℕ} {s : Set (Fin (n + 1) → R)}

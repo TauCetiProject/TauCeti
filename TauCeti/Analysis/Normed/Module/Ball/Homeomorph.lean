@@ -6,10 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Convex.GaugeRescale
+public import Mathlib.Analysis.Normed.Module.Ball.Homeomorph
 public import Mathlib.Analysis.Normed.Module.Convex
 
 /-!
-# Homeomorphisms between the unit balls of linearly equivalent normed spaces
+# Homeomorphisms onto the unit balls of normed spaces
 
 A continuous linear equivalence `L : E ≃L[ℝ] F` of real normed spaces carries the closed unit ball
 of `E` onto a convex body of `F`, which is usually not the closed unit ball of `F`.  Rescaling
@@ -21,6 +22,11 @@ ball, the closed unit ball and the unit sphere of `E` onto those of `F`.
 The typical use compares the closed unit ball of the sup norm on `Fin n → ℝ`, which is the domain
 of the characteristic maps of a CW complex, with the Euclidean unit disk.
 
+Mathlib's radial homeomorphism `Homeomorph.unitBall : E ≃ₜ ball 0 1` of a real normed space onto
+its open unit ball, followed by the inclusion of the open unit ball in the closed unit ball, is an
+open embedding of `E` into the closed unit ball. It lets a chart valued in `E` be read as a chart
+valued in the closed unit ball.
+
 ## Main declarations
 
 * `ContinuousLinearEquiv.unitBallHomeomorph`: the rescaled homeomorphism.
@@ -28,6 +34,7 @@ of the characteristic maps of a CW complex, with the Euclidean unit disk.
   `ContinuousLinearEquiv.image_unitBallHomeomorph_ball` and
   `ContinuousLinearEquiv.image_unitBallHomeomorph_sphere`: it matches the closed unit balls, the
   open unit balls and the unit spheres.
+* `TauCeti.isOpenEmbedding_inclusion_comp_unitBall`: `E` embeds openly in its closed unit ball.
 -/
 
 public section
@@ -93,3 +100,18 @@ theorem image_unitBallHomeomorph_sphere :
     L.unitBallHomeomorph.image_frontier (closedBall 0 1)
 
 end ContinuousLinearEquiv
+
+namespace TauCeti
+
+variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- The radial homeomorphism `Homeomorph.unitBall` of `E` onto its open unit ball, followed by the
+inclusion of the open unit ball in the closed unit ball, is an open embedding of `E` into the
+closed unit ball. -/
+theorem isOpenEmbedding_inclusion_comp_unitBall :
+    IsOpenEmbedding (inclusion (ball_subset_closedBall (x := (0 : E)) (ε := 1)) ∘
+      Homeomorph.unitBall) :=
+  (IsOpenEmbedding.inclusion _ (isOpen_ball.preimage continuous_subtype_val)).comp
+    Homeomorph.unitBall.isOpenEmbedding
+
+end TauCeti

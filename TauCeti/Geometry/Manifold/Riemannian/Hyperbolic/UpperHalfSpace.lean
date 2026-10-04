@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Convex.Contractible
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Action
@@ -161,6 +162,12 @@ theorem ext_fst_height {x y : UpperHalfSpace E}
 section NormedSpace
 
 variable (E) [NormedSpace ℝ E]
+
+/-- The upper half-space is contractible, by straight-line contraction inside the convex
+positive-height half-space. No finite-dimensional or inner-product hypothesis is needed. -/
+instance : ContractibleSpace (UpperHalfSpace E) :=
+  ((convex_Ioi (0 : ℝ)).linear_preimage (WithLp.sndL 2 ℝ E ℝ).toLinearMap).contractibleSpace
+    ⟨WithLp.toLp 2 (0, 1), by simp⟩
 
 instance : IsManifold 𝓘(ℝ, WithLp 2 (E × ℝ)) ω (UpperHalfSpace E) :=
   inferInstanceAs (IsManifold 𝓘(ℝ, WithLp 2 (E × ℝ)) ω (upperHalfSpaceOpens E))

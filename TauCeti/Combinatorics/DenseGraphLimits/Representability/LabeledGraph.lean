@@ -25,6 +25,8 @@ underlying connection matrices and reflection positivity.
 * `TauCeti.DenseGraphLimits.LabeledGraph.glueInl` and
   `TauCeti.DenseGraphLimits.LabeledGraph.glueInr` are the two vertex maps into the gluing;
 * `TauCeti.DenseGraphLimits.LabeledGraph.forgetLabels` is the underlying unlabeled graph;
+* `TauCeti.DenseGraphLimits.LabeledGraph.fullyLabeled` labels every vertex of a graph on `Fin n`
+  by its own index;
 * `TauCeti.DenseGraphLimits.LabeledGraph.labelSumUnlabeledEquiv` and
   `TauCeti.DenseGraphLimits.LabeledGraph.glueEquiv` are the coordinates splitting the vertices of a
   labeled graph, and of a gluing, into labels and unlabeled vertices.
@@ -54,7 +56,9 @@ underlying connection matrices and reflection positivity.
   exactly when they are joined on one side, and
   `TauCeti.DenseGraphLimits.LabeledGraph.glueInl_labelSumUnlabeledEquiv` and
   `TauCeti.DenseGraphLimits.LabeledGraph.glueInr_labelSumUnlabeledEquiv` express the two vertex
-  maps into a gluing in coordinates.
+  maps into a gluing in coordinates;
+* `TauCeti.DenseGraphLimits.LabeledGraph.glueFullyLabeledIso` says gluing two fully labeled graphs
+  overlays them.
 
 ## Implementation
 
@@ -576,6 +580,48 @@ theorem glue_adj_label (G₁ G₂ : LabeledGraph k) (i j : Fin k) :
   rw [congrFun (glueInl_label G₁ G₂) i, congrFun (glueInl_label G₁ G₂) j, Function.comp_apply,
     Function.comp_apply, glue_adj_inl]
   simp [G₁.label_injective.eq_iff]
+
+/-! ### Fully labeled graphs -/
+
+/-- The **fully labeled** graph: a graph `G` on `Fin n` with every vertex labeled, by its own
+index.  Gluing two fully labeled graphs overlays them (`glueFullyLabeledIso`), so the connection
+matrices of the fully labeled graphs on `Fin n` record a parameter on the suprema `G ⊔ G'`. -/
+def fullyLabeled {n : ℕ} (G : SimpleGraph (Fin n)) : LabeledGraph n where
+  n := n
+  graph := G
+  label := id
+  label_injective := Function.injective_id
+
+/-- A fully labeled graph on `Fin n` has `n` vertices. -/
+@[simp]
+theorem fullyLabeled_n {n : ℕ} (G : SimpleGraph (Fin n)) : (fullyLabeled G).n = n := (rfl)
+
+/-- Forgetting the labels of a fully labeled graph returns the graph. -/
+@[simp]
+theorem forgetLabels_fullyLabeled {n : ℕ} (G : SimpleGraph (Fin n)) :
+    (fullyLabeled G).forgetLabels = ⟨n, G⟩ := (rfl)
+
+/-- Every vertex of a fully labeled graph is labeled by its own index. -/
+@[simp]
+theorem val_fullyLabeled_label {n : ℕ} (G : SimpleGraph (Fin n)) (i : Fin n) :
+    ((fullyLabeled G).label i : ℕ) = i := (rfl)
+
+/-- **Gluing two fully labeled graphs overlays them**: the left vertex map is an isomorphism from
+`G ⊔ G'` onto the gluing, since every vertex of the right side is labeled and so is identified with
+a vertex of the left side. -/
+noncomputable def glueFullyLabeledIso {n : ℕ} (G G' : SimpleGraph (Fin n)) :
+    G ⊔ G' ≃g ((fullyLabeled G).glue (fullyLabeled G')).graph where
+  toEquiv := Equiv.ofBijective _ ⟨((fullyLabeled G).glueInl (fullyLabeled G')).injective,
+    fun v => by
+      obtain ⟨a, rfl⟩ | ⟨b, rfl⟩ := (fullyLabeled G).glue_surjective (fullyLabeled G') v
+      · exact ⟨a, rfl⟩
+      · exact ⟨b, ((fullyLabeled G).glueInl_eq_glueInr_iff (fullyLabeled G') b b).2
+          ⟨b, rfl, rfl⟩⟩⟩
+  map_rel_iff' {a b} := by
+    refine (glue_adj_inl (fullyLabeled G) (fullyLabeled G') a b).trans ?_
+    -- Both sides are labeled by the identity, so the right-hand disjunct is `G'.Adj a b`.
+    exact or_congr_right ⟨fun ⟨i, j, hi, hj, h⟩ => by rw [hi, hj]; exact h,
+      fun h => ⟨a, b, rfl, rfl, h⟩⟩
 
 end LabeledGraph
 

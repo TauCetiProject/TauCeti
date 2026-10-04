@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Category.ModuleCat.Presheaf.Stalk
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Defs
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.GeneratingSections
 import Mathlib.Topology.Sheaves.Sheafify
 
 /-!
@@ -22,6 +23,11 @@ Mathlib's presheaf stalk instance applies directly to the underlying presheaf of
 The linear equivalence `PresheafOfModules.sheafificationStalkEquiv` identifies a module
 presheaf stalk with its sheafification stalk, preserving the original commutative-ring
 stalk as coefficient ring. Its forward and inverse maps are characterized on germs.
+
+If finitely many sections generate the restriction of a sheaf of modules to a neighbourhood of
+`x`, their germs span the stalk at `x` over the ring stalk
+(`SheafOfModules.GeneratingSections.span_germ_eq_top`). Thus a linear map out of the stalk of a
+sheaf of finite type is determined by its values on the germs of local generators.
 -/
 
 public section
@@ -154,3 +160,42 @@ theorem sheafificationStalkEquiv_symm_germ_unit
     (P.sheafificationStalkEquiv_germ S x U hx m).symm
 
 end PresheafOfModules
+
+namespace SheafOfModules
+
+variable {X : TopCat.{u}} {R : Sheaf (Opens.grothendieckTopology X) CommRingCat.{u}}
+  {M : SheafOfModules.{u} (TauCeti.SheafOfModules.ringCatSheaf R)}
+
+/-- If finitely many sections generate the restriction of `M` to a neighbourhood `U` of `x`,
+their germs span the stalk of `M` at `x` over the ring stalk. -/
+theorem GeneratingSections.span_germ_eq_top {U : Opens X} (G : (M.over U).GeneratingSections)
+    [Finite G.I] {x : X} (hx : x ∈ U) :
+    Submodule.span ↑(TopCat.Presheaf.stalk R.obj x) (Set.range fun k ↦
+      germ M.val.presheaf U x hx ((G.s k).val (op (Over.mk (𝟙 U))))) = ⊤ := by
+  have : Fintype G.I := Fintype.ofFinite _
+  refine Submodule.eq_top_iff'.mpr fun y ↦ ?_
+  obtain ⟨W, hWU, hxW, m, rfl⟩ := exists_le_germ_eq M.val.presheaf y hx
+  -- Near `x`, the section `m` is a linear combination of the restricted generators.
+  obtain ⟨S, hS, hSm⟩ := G.exists_sieve_sum_smul_eq (Y := Over.mk (homOfLE hWU)) m
+  obtain ⟨V, f, hf, hxV⟩ := hS x hxW
+  obtain ⟨a, ha⟩ := hSm _ ((Sieve.overEquiv_iff S f).mp hf)
+  have hy : germ M.val.presheaf V x hxV
+      (∑ k, a k • (G.s k).eval (op (Over.mk (f ≫ homOfLE hWU)))) =
+        germ M.val.presheaf W x hxW m :=
+    (congrArg (germ M.val.presheaf V x hxV) ha).trans (germ_res_apply M.val.presheaf f x hxV m)
+  rw [← hy]
+  -- The sum lives in the sections of the restriction to the slice, which are only
+  -- definitionally the sections of `M` over `V`.
+  erw [map_sum]
+  refine Submodule.sum_mem _ fun k _ ↦ ?_
+  have he : (G.s k).eval (op (Over.mk (f ≫ homOfLE hWU))) =
+      M.val.map (f ≫ homOfLE hWU).op ((G.s k).val (op (Over.mk (𝟙 U)))) :=
+    ((G.s k).property
+      (Over.homMk (f ≫ homOfLE hWU) : Over.mk (f ≫ homOfLE hWU) ⟶ Over.mk (𝟙 U)).op).symm
+  -- As above, the scalar `a k` is a section of the restricted ring sheaf, which is only
+  -- definitionally a section of `R` over `V`.
+  erw [M.val.germ_smul (R := R.obj) x V hxV (a k), he,
+    germ_res_apply M.val.presheaf (f ≫ homOfLE hWU) x hxV]
+  exact Submodule.smul_mem _ _ (Submodule.subset_span ⟨k, rfl⟩)
+
+end SheafOfModules

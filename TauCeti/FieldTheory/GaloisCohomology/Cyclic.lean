@@ -50,6 +50,8 @@ Herbrand quotient, such as `h(Lˣ) = [L : K]` for local fields, bounds `H²`.
 
 ## Main results
 
+* `TauCeti.cyclicClass_apply`: the cyclic class is the explicit two-periodicity class of the
+  embedded ground-field unit.
 * `TauCeti.cyclicClass_surjective`: every class in `H²(Gal(L/K), Lˣ)` is the class of an element
   of `Kˣ`.
 * `TauCeti.cyclicClass_eq_zero_iff`: the class of `a` vanishes exactly when `a` is a norm from
@@ -157,6 +159,30 @@ def cyclicClass : Additive Kˣ →+ H2 (Rep.ofMulDistribMulAction (L ≃ₐ[K] L
   haveI := isCyclic_of_forall_mem_zpowers hg
   (groupCohomologyπEven (Rep.ofMulDistribMulAction (L ≃ₐ[K] L) Lˣ) g hg 2
     even_two).hom.toAddMonoidHom.comp (unitsToFixedUnits g)
+
+omit [IsGalois K L] in
+/-- The cyclic class of a ground-field unit is its image under two-periodicity. -/
+theorem cyclicClass_apply (a : Kˣ) :
+    let _ : IsCyclic (L ≃ₐ[K] L) :=
+      ⟨g, fun σ ↦ Subgroup.mem_zpowers_iff.1 (hg σ)⟩
+    let _ : CommGroup (L ≃ₐ[K] L) := IsCyclic.commGroup
+    cyclicClass hg (Additive.ofMul a) =
+      groupCohomologyπEven (Rep.ofMulDistribMulAction (L ≃ₐ[K] L) Lˣ) g hg 2 even_two
+        ⟨Rep.toAdditive.symm
+          (Additive.ofMul (Units.map (algebraMap K L : K →* L) a)), by
+            rw [LinearMap.mem_ker]
+            simp only [Rep.sub_hom, Representation.IntertwiningMap.sub_toLinearMap,
+              LinearMap.sub_apply, sub_eq_zero]
+            apply Rep.toAdditive.injective
+            apply Additive.toMul.injective
+            apply Units.ext
+            exact AlgEquiv.commutes _ _⟩ := by
+  let _ : IsCyclic (L ≃ₐ[K] L) := isCyclic_of_forall_mem_zpowers hg
+  let _ : CommGroup (L ≃ₐ[K] L) := IsCyclic.commGroup
+  rw [cyclicClass, AddMonoidHom.comp_apply]
+  apply congrArg (groupCohomologyπEven
+    (Rep.ofMulDistribMulAction (L ≃ₐ[K] L) Lˣ) g hg 2 even_two)
+  exact Subtype.ext rfl
 
 /-- Every class in `H²(Gal(L/K), Lˣ)` is the class of an element of `Kˣ`. -/
 theorem cyclicClass_surjective : Function.Surjective (cyclicClass hg) := by

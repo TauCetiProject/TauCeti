@@ -11,8 +11,10 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.Basic
 # Basic Spin-group carrier facts
 
 This file records the carrier-level criterion that a product of two Clifford vectors with
-unit product of norms belongs to the Spin group, and that the Spin group of the zero module is
-trivial.  The action and its orthogonal comparison are defined in `Spin.Action` and `Pin.Action`.
+unit product of norms belongs to the Spin group, identifies membership in the range of
+`spinGroup.toUnits` with membership of the underlying Clifford value, and proves that the Spin
+group of the zero module is trivial. The action and its orthogonal comparison are defined in
+`Spin.Action` and `Pin.Action`.
 -/
 
 public section
@@ -23,6 +25,19 @@ namespace CliffordAlgebra
 
 variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M]
   {Q : QuadraticForm R M}
+
+/-- A Clifford unit belongs to the range of the canonical map from the Spin group exactly when
+its Clifford value belongs to the Spin group. -/
+@[simp↓]
+theorem mem_spinGroup_toUnits_range_iff (u : (CliffordAlgebra Q)ˣ) :
+    u ∈ (spinGroup.toUnits (Q := Q)).range ↔ (u : CliffordAlgebra Q) ∈ spinGroup Q := by
+  constructor
+  · rintro ⟨s, rfl⟩
+    exact s.2
+  · intro hu
+    refine ⟨⟨(u : CliffordAlgebra Q), hu⟩, ?_⟩
+    apply Units.ext
+    rfl
 
 /-- The product of two Clifford generators belongs to Spin when their norms multiply to one. -/
 theorem ι_mul_ι_mem_spinGroup_of_norm_mul_norm_eq_one (x y : M)
