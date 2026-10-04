@@ -49,6 +49,9 @@ range, so the value is a `dite` rather than a plain application.
 * `Fin.predAbove_succ_succAbove`: `Fin.predAbove p` inverts `p.succ.succAbove`, the
   counterpart of Mathlib's `Fin.predAbove_succAbove` for `p.castSucc.succAbove`.
 * `Fin.val_succAbove`: the value of `p.succAbove i`, read off the comparison of `i` with `p`.
+* `Fin.finRotate_succ_eq_succ_succAbove` and `Fin.finRotate_succ_succAbove_of_ne`: the cyclic
+  successor of `Fin (n + 1)` against the embeddings `Fin.succ` and `i.succ.succAbove` of `Fin n`,
+  as used when a new entry is inserted into a cyclic sequence.
 * `Fin.card_filter_prod_succAbove`: a count of pairs in `Fin (n + 1)` split at a point in each
   coordinate.
 * `Fin.val_orderSucc_of_lt` and `Fin.orderSucc_eq_self_of_not_lt`: the order successor of `Fin n`
@@ -177,6 +180,30 @@ theorem val_succAbove {n : ℕ} (p : Fin (n + 1)) (i : Fin n) :
     (p.succAbove i : ℕ) = if (i : ℕ) < p then (i : ℕ) else (i : ℕ) + 1 := by
   unfold succAbove
   split_ifs <;> simp_all [lt_def]
+
+/-- The cyclic successor of `i.succ` in `Fin (n + 1)` is the cyclic successor of `i` in `Fin n`,
+read through the embedding `i.succ.succAbove` that skips `i.succ`. -/
+theorem finRotate_succ_eq_succ_succAbove {n : ℕ} (i : Fin n) :
+    finRotate (n + 1) i.succ = i.succ.succAbove (finRotate n i) := by
+  obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by have := i.pos; omega⟩
+  have := i.isLt
+  ext
+  simp only [succAbove]
+  split_ifs <;> simp only [lt_def, val_castSucc, val_succ, coe_finRotate, Fin.ext_iff,
+    val_last] at * <;> split_ifs at * <;> omega
+
+/-- Away from `i`, the embedding `i.succ.succAbove : Fin n → Fin (n + 1)`, which skips `i.succ`,
+commutes with the cyclic successors. -/
+theorem finRotate_succ_succAbove_of_ne {n : ℕ} {i k : Fin n} (hk : k ≠ i) :
+    finRotate (n + 1) (i.succ.succAbove k) = i.succ.succAbove (finRotate n k) := by
+  obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by have := i.pos; omega⟩
+  rw [Ne, Fin.ext_iff] at hk
+  have := k.isLt
+  have := i.isLt
+  ext
+  simp only [succAbove]
+  split_ifs <;> simp only [lt_def, val_castSucc, val_succ, coe_finRotate, Fin.ext_iff,
+    val_last] at * <;> split_ifs at * <;> omega
 
 /-- A count of pairs in `Fin (n + 1)`, split at `a` in the first coordinate and at `b` in the
 second: the pair `(a, b)`, the pairs with exactly one coordinate at its split point, and the pairs

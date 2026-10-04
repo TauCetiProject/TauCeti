@@ -259,12 +259,17 @@ private theorem tendsto_truncate (hp : p ≠ ∞) {C : ℝ} (hC : 0 ≤ C)
     (hbound : ∀ n (x : E), ‖∇ (truncCutoff n) x‖ ≤ C) (u : W1p mu ⊤ p) :
     Tendsto (fun n => truncate hC hbound n u) atTop (𝓝 u) := by
   rw [tendsto_subtype_rng, Lp.tendsto_Lp_iff_tendsto_eLpNorm']
-  exact tendsto_eLpNorm_sub_of_eventually_eq (zero_lt_one.trans_le Fact.out).ne' hp
+  exact tendsto_eLpNorm_sub_of_ae_tendsto (C := (2 + C).toNNReal)
+    (zero_lt_one.trans_le Fact.out).ne' hp
     (Eventually.of_forall fun n => Lp.aestronglyMeasurable _) (Lp.aestronglyMeasurable _)
     (Lp.memLp (u : Sobolev1JetLp mu ⊤ p))
-    (by linarith : (0 : ℝ) ≤ 2 + C)
-    (Eventually.of_forall fun n => norm_coe_truncate_sub_le hC hbound n u)
-    (eventually_coe_truncate_eq hC hbound u)
+    (Eventually.of_forall fun n =>
+      (norm_coe_truncate_sub_le hC hbound n u).mono fun _ hx => by
+        simpa only [ofReal_norm, ENNReal.ofNNReal_toNNReal,
+          ENNReal.ofReal_mul (by linarith : (0 : ℝ) ≤ 2 + C)] using
+          ENNReal.ofReal_le_ofReal hx)
+    ((eventually_coe_truncate_eq hC hbound u).mono fun _ hx ↦
+      (tendsto_congr' hx).mpr tendsto_const_nhds)
 
 /-! ### Density -/
 
