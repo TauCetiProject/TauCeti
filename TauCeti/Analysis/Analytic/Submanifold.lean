@@ -208,6 +208,23 @@ theorem eventually_symm_firstCoords_mem :
 
 end IsAnalyticChart
 
+/-- Let `e'` be an analytic chart of `T` in dimension `d'`. If `φ` is analytic at `u₀`, takes
+values in `T` near `u₀`, and `φ u₀` lies in the source of `e'`, and if the coordinate expression of
+`g` in `e'` is analytic at the coordinates of `φ u₀`, then `g ∘ φ` is analytic at `u₀`. -/
+theorem IsAnalyticChart.analyticAt_comp {T : Set (Fin m → 𝕜)}
+    {e' : OpenPartialHomeomorph (Fin m → 𝕜) (Fin m → 𝕜)} {g : (Fin m → 𝕜) → E} {φ : F → Fin m → 𝕜}
+    {u₀ : F} (he' : IsAnalyticChart d' T e') (hφ : AnalyticAt 𝕜 φ u₀) (h₀ : φ u₀ ∈ e'.source)
+    (hT : ∀ᶠ u in 𝓝 u₀, φ u ∈ T) (hg : AnalyticAt 𝕜 (fun v ↦ g (e'.symm (firstCoords 𝕜 d' m v)))
+      (firstCoords 𝕜 m d' (e' (φ u₀)))) :
+    AnalyticAt 𝕜 (g ∘ φ) u₀ := by
+  -- the coordinates of `φ` in the chart `e'` are analytic
+  have hτ : AnalyticAt 𝕜 (fun u ↦ firstCoords 𝕜 m d' (e' (φ u))) u₀ :=
+    ((firstCoords 𝕜 m d').analyticAt _).comp ((he'.analyticOnNhd _ h₀).comp hφ)
+  refine (hg.comp_of_eq hτ rfl).congr ?_
+  filter_upwards [hT, hφ.continuousAt.preimage_mem_nhds (e'.open_source.mem_nhds h₀)] with u hu hu'
+  simp only [Function.comp_apply]
+  rw [he'.symm_firstCoords_firstCoords_apply hu' hu]
+
 /-! ### Analytic submanifolds -/
 
 /-- A set `S ⊆ 𝕜ⁿ` is a `d`-dimensional *analytic submanifold* if it is nonempty, `d ≤ n`, and
@@ -264,12 +281,6 @@ def AnalyticOnSubmanifold (d : ℕ) (f : (Fin n → 𝕜) → E) (S : Set (Fin n
 
 variable {f g : (Fin n → 𝕜) → E}
 
-/-- Unfolding `TauCeti.AnalyticOnSubmanifold`. -/
-theorem analyticOnSubmanifold_def : AnalyticOnSubmanifold d f S ↔ ∀ x ∈ S,
-    ∃ e : OpenPartialHomeomorph (Fin n → 𝕜) (Fin n → 𝕜), x ∈ e.source ∧ IsAnalyticChart d S e ∧
-      AnalyticAt 𝕜 (fun u ↦ f (e.symm (firstCoords 𝕜 d n u))) (firstCoords 𝕜 n d (e x)) :=
-  Iff.rfl
-
 namespace AnalyticOnSubmanifold
 
 /-- **Independence of the chart.** If `f` is analytic on `S`, its coordinate expression in every
@@ -278,18 +289,10 @@ theorem analyticAt_chart (hf : AnalyticOnSubmanifold d f S) (hx : x ∈ S)
     (he : IsAnalyticChart d S e) (hxe : x ∈ e.source) :
     AnalyticAt 𝕜 (fun u ↦ f (e.symm (firstCoords 𝕜 d n u))) (firstCoords 𝕜 n d (e x)) := by
   obtain ⟨e', hxe', he', hf'⟩ := hf x hx
-  have hφ := he.analyticAt_symm_firstCoords hxe hx
-  -- the transition map from the coordinates of `e` to those of `e'` is analytic
-  have hτ : AnalyticAt 𝕜 (fun u ↦ firstCoords 𝕜 n d (e' (e.symm (firstCoords 𝕜 d n u))))
-      (firstCoords 𝕜 n d (e x)) :=
-    ((firstCoords 𝕜 n d).analyticAt _).comp
-      ((he'.analyticOnNhd _ hxe').comp_of_eq hφ (he.symm_firstCoords_firstCoords_apply hxe hx))
-  refine (hf'.comp_of_eq hτ (by rw [he.symm_firstCoords_firstCoords_apply hxe hx])).congr ?_
-  filter_upwards [he.eventually_symm_firstCoords_mem hxe hx,
-    hφ.continuousAt.preimage_mem_nhds (e'.open_source.mem_nhds
-      (by rwa [he.symm_firstCoords_firstCoords_apply hxe hx]))] with u hu hu'
-  simp only [Function.comp_apply]
-  rw [he'.symm_firstCoords_firstCoords_apply hu' hu.2]
+  -- compose the coordinate expression of `f` in `e'` with the parametrization of `S` by `e`
+  have hx' := he.symm_firstCoords_firstCoords_apply hxe hx
+  exact he'.analyticAt_comp (he.analyticAt_symm_firstCoords hxe hx) (by rwa [hx'])
+    ((he.eventually_symm_firstCoords_mem hxe hx).mono fun _ hu ↦ hu.2) (by rwa [hx'])
 
 /-- **Analyticity in coordinates.** If `f` is analytic on a set `S` in dimension `d ≤ n`, its
 coordinate expression `u ↦ f (e.symm (u, 0))` in any analytic chart `e` of `S` is analytic on the
@@ -339,15 +342,8 @@ theorem comp {T : Set (Fin m → 𝕜)} {g : (Fin m → 𝕜) → E} {f : (Fin n
   obtain ⟨e', hxe', he', hg'⟩ := hg (f x) (h hx)
   have hfx : f (e.symm (firstCoords 𝕜 d n (firstCoords 𝕜 n d (e x)))) = f x := by
     rw [he.symm_firstCoords_firstCoords_apply hxe hx]
-  -- the coordinates of `f` in the chart `e'` of `T` are analytic
-  have hτ : AnalyticAt 𝕜 (fun u ↦ firstCoords 𝕜 m d' (e' (f (e.symm (firstCoords 𝕜 d n u)))))
-      (firstCoords 𝕜 n d (e x)) :=
-    ((firstCoords 𝕜 m d').analyticAt _).comp ((he'.analyticOnNhd _ hxe').comp_of_eq hf' hfx)
-  refine ⟨e, hxe, he, (hg'.comp_of_eq hτ (by rw [hfx])).congr ?_⟩
-  filter_upwards [he.eventually_symm_firstCoords_mem hxe hx,
-    hf'.continuousAt.preimage_mem_nhds (e'.open_source.mem_nhds (by rwa [hfx]))] with u hu hu'
-  simp only [Function.comp_apply]
-  rw [he'.symm_firstCoords_firstCoords_apply hu' (h hu.2)]
+  exact ⟨e, hxe, he, he'.analyticAt_comp hf' (by rwa [hfx])
+    ((he.eventually_symm_firstCoords_mem hxe hx).mono fun _ hu ↦ h hu.2) (by rwa [hfx])⟩
 
 end AnalyticOnSubmanifold
 
