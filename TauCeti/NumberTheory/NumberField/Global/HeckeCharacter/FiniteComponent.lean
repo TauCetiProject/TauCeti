@@ -406,7 +406,7 @@ theorem mem_range_ofRayClassCharacter_of_conductorExponent_le {χ : HeckeCharact
     IdeleGroup.prod_ofCompletion_mul_ofFiniteIdele x
   have hycoord (w : InfinitePlace K) : w.ideleInfiniteCoord y = w.ideleInfiniteCoord x := by
     have h := congrArg w.ideleInfiniteCoord hsplit
-    simpa using h
+    simpa only [map_mul, InfinitePlace.ideleInfiniteCoord_ofFiniteIdele, mul_one] using h
   have hy : y ∈ ideleCongruenceSubgroup 𝔪 := by
     refine mem_ideleCongruenceSubgroup_iff.mpr ⟨fun v _ ↦ ?_, fun v _ ↦ ?_, fun w hw ↦ ?_⟩
     · simp [y]
