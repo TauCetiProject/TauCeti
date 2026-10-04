@@ -34,7 +34,9 @@ and `baseChangeComapEquiv` identifies the rationalizations with those representa
 
 The actions use Mathlib's fiberwise actions on sigma types and sums: they leave the subgroup and
 copy index fixed and translate the coset. The fixed points in `ArtinNegativeSet` are represented
-by copies of `G/⊤`, so no extra trivial-action instance is needed.
+by copies of `G/⊤`, so no extra trivial-action instance is needed. The equivariant equivalences
+`TauCeti.artinPositiveSetEquiv` and `TauCeti.artinNegativeSetEquiv` expose these disjoint-union
+decompositions, so that additive invariants of finite `G`-sets can be evaluated on the two sets.
 
 ## References
 
@@ -81,6 +83,34 @@ instance : Finite (ArtinNegativeSet G) := by
 noncomputable instance : MulAction G (ArtinNegativeSet G) := by
   unfold ArtinNegativeSet
   infer_instance
+
+/-- The positive Artin set is the disjoint union it is built from: `a_C⁺` copies of `G/C` for
+each subgroup `C`. The identification is equivariant (`TauCeti.artinPositiveSetEquiv_smul`). -/
+noncomputable def artinPositiveSetEquiv :
+    ArtinPositiveSet G ≃
+      Σ C : Subgroup G, Σ _ : Fin (C.artinCoeff * (Nat.card C : ℤ)).toNat, G ⧸ C :=
+  Equiv.refl _
+
+/-- `TauCeti.artinPositiveSetEquiv` is `G`-equivariant. -/
+@[simp]
+theorem artinPositiveSetEquiv_smul (g : G) (x : ArtinPositiveSet G) :
+    artinPositiveSetEquiv G (g • x) = g • artinPositiveSetEquiv G x :=
+  (rfl)
+
+/-- The negative Artin set is the disjoint union it is built from: `|G|` copies of the point
+`G/⊤`, and `a_C⁻` copies of `G/C` for each subgroup `C`. The identification is equivariant
+(`TauCeti.artinNegativeSetEquiv_smul`). -/
+noncomputable def artinNegativeSetEquiv :
+    ArtinNegativeSet G ≃
+      (Σ _ : Fin (Nat.card G), G ⧸ (⊤ : Subgroup G)) ⊕
+        (Σ C : Subgroup G, Σ _ : Fin (-(C.artinCoeff * (Nat.card C : ℤ))).toNat, G ⧸ C) :=
+  Equiv.refl _
+
+/-- `TauCeti.artinNegativeSetEquiv` is `G`-equivariant. -/
+@[simp]
+theorem artinNegativeSetEquiv_smul (g : G) (x : ArtinNegativeSet G) :
+    artinNegativeSetEquiv G (g • x) = g • artinNegativeSetEquiv G x :=
+  (rfl)
 
 variable {G}
 
