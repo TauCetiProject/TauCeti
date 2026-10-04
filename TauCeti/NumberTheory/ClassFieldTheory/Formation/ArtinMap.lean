@@ -63,7 +63,7 @@ over `E` (`ClassFormation.artinMap_groundNorm`).
 For a character `χ : Γ^ab → ℚ/ℤ` with connecting class `δχ ∈ H^2(Γ, ℤ)`, the Artin map satisfies
 the character formula `χ(artinMap a) = inv(a₀ ∪ δχ)` (`ClassFormation.character_artinMap`), and
 since characters separate the points of `Γ^ab` it is the only homomorphism that does
-(`ClassFormation.eq_artinMap_of_character_formula`). The formula fixes the sign of the degree `-2`
+(`ClassFormation.eq_artinMap_of_character`). The formula fixes the sign of the degree `-2`
 identification: with the opposite sign the same construction would give the inverse of the
 classical reciprocity map.
 
@@ -96,8 +96,8 @@ Artin symbol for `L/F` (`ClassFormation.artinMap_quotient`).
   corresponds to the map of abelianized Galois groups induced by inclusion.
 * `TauCeti.ClassFieldTheory.ClassFormation.character_artinMap`: the character formula
   `χ (artinMap a) = inv (a₀ ∪ δχ)` for the Artin map.
-* `TauCeti.ClassFieldTheory.ClassFormation.eq_artinMap_of_character_formula`: the Artin map is
-  the only homomorphism satisfying the character formula.
+* `TauCeti.ClassFieldTheory.ClassFormation.eq_artinMap_of_character`: the Artin map is the only
+  homomorphism satisfying the character formula.
 * `TauCeti.ClassFieldTheory.ClassFormation.artinMap_quotient`: refinement of the top field
   corresponds to the quotient map of abelianized Galois groups.
 
@@ -456,7 +456,7 @@ theorem character_artinMap (a : F.level L.ground)
 /-- **Uniqueness of the Artin map**: a homomorphism `φ` from the ground level to the abelianized
 Galois group which satisfies the character formula `χ (φ a) = inv (a₀ ∪ δχ)` for every `a` and
 every character `χ` is the Artin map. -/
-theorem eq_artinMap_of_character_formula (φ : F.level L.ground →+ Additive (Abelianization L.Gal))
+theorem eq_artinMap_of_character (φ : F.level L.ground →+ Additive (Abelianization L.Gal))
     (hφ : ∀ (a : F.level L.ground) (chi : Additive (Abelianization L.Gal) →+ AddCircle (1 : ℚ)),
       chi (φ a) = cf.inv L (L.artinCharacterCup F a chi)) :
     φ = cf.artinMap L := by
