@@ -29,12 +29,14 @@ polarization, rather than additivity, is one of its characteristic identities.
 
 ## Main results
 
+* `TauCeti.ContCohomology.homClass_eq_cochainClass`: `homClass` is the canonical class of the
+  corresponding homogeneous cochain.
 * `TauCeti.ContCohomology.homClass_surjective`: every canonical degree-one class has a continuous
   homomorphism representative.
 * `TauCeti.ContCohomology.homClass_eq_iff`: two continuous homomorphisms determine the same class
   exactly when they are equal.
-* `TauCeti.ContCohomology.graphClass_representative_independent`: the graph class depends only on
-  the canonical degree-one class.
+* `TauCeti.ContCohomology.graphClass_eq_of_homClass_eq`: the graph class depends only on the
+  canonical degree-one class.
 * `TauCeti.ContCohomology.evensNormIndexTwo_homClass`: the norm of the class of a homomorphism is
   its graph class.
 
@@ -76,12 +78,34 @@ noncomputable def homClass (H : Type u) [Group H] [TopologicalSpace H] [IsTopolo
     (evensHomCocycle α hα : H1 H (trivialF2 H).V)
 
 /-- `homClass` is the degree-one comparison applied to the explicit class of the homomorphism. -/
-theorem homClass_eq_explicitH1AddEquivContinuousCohomology
+theorem homClass_def
     (α : H →* Multiplicative (ZMod 2)) (hα : Continuous α) :
     homClass H α hα =
       (trivialF2 H).explicitH1AddEquivContinuousCohomologyOfDiscrete
         (evensHomCocycle α hα : H1 H (trivialF2 H).V) :=
   (rfl)
+
+/-- The canonical class of a continuous homomorphism is the class of its homogeneous cochain. -/
+theorem homClass_eq_cochainClass
+    (α : H →* Multiplicative (ZMod 2)) (hα : Continuous α) :
+    homClass H α hα =
+      cochainClass (R := ℤ) (G := H) (trivialF2 H) 1
+        (inhomogeneousCochain1 (fun h => Multiplicative.toAdd (α h))
+          (continuous_toAdd.comp hα))
+        (inhomogeneousCochain1_d_eq_zero _ _ fun g h => by simp [map_mul, toAdd_mul]) := by
+  rw [homClass_def, TopRep.explicitH1AddEquivContinuousCohomologyOfDiscrete_apply,
+    explicitH1AddEquivContinuousCohomology_apply,
+    ofDiscreteModuleRestrictScalarsIntEquiv_π]
+  rw [cochainClass_def]
+  congr 1
+  apply (TopRep.homogeneousCochains (trivialF2 H)).iCycles_injective 1
+  apply Subtype.ext
+  ext g₀ g₁
+  apply (trivialF2Equiv H).injective
+  rw [iCycles_ofDiscreteModuleCocyclesRestrictScalarsIntIso_hom_cocycleEquiv1_apply,
+    cochainEquiv1_apply, homogeneous1_apply,
+    coe_evensHomCocycle, TopRep.distribMulAction_smul, trivialF2_ρ_apply_apply,
+    HomologicalComplex.iCycles_cyclesMkOfEq, inhomogeneousCochain1_apply]
 
 private theorem trivialF2_smul_eq (K : Type u) [Group K]
     (g : K) (m : (trivialF2 K).V) : g • m = m := by
@@ -117,7 +141,7 @@ theorem homClass_surjective
     (x : continuousCohomology 1 (trivialF2 H)) :
     ∃ (α : H →* Multiplicative (ZMod 2)) (hα : Continuous α), homClass H α hα = x := by
   refine ⟨classCharacter x, continuous_classCharacter x, ?_⟩
-  rw [homClass_eq_explicitH1AddEquivContinuousCohomology,
+  rw [homClass_def,
     evensHomCocycle_classCharacter, AddEquiv.apply_symm_apply]
 
 /-- Two continuous homomorphisms to `𝔽₂` determine the same canonical degree-one class exactly
@@ -132,7 +156,7 @@ theorem homClass_eq_iff (α β : H →* Multiplicative (ZMod 2))
         (evensHomCocycle α hα : H1 H (trivialF2 H).V) =
           (evensHomCocycle β hβ : H1 H (trivialF2 H).V) := by
       apply (trivialF2 H).explicitH1AddEquivContinuousCohomologyOfDiscrete.injective
-      exact hcl
+      simpa only [homClass_def] using hcl
     apply MonoidHom.ext
     intro h
     have hchars := congrArg Additive.toMul
@@ -145,7 +169,7 @@ theorem homClass_eq_iff (α β : H →* Multiplicative (ZMod 2))
     rfl
 
 /-- Continuous homomorphisms with the same canonical degree-one class have the same graph class. -/
-theorem graphClass_representative_independent [LocallyCompactSpace G]
+theorem graphClass_eq_of_homClass_eq [LocallyCompactSpace G]
     (U : OpenSubgroup G) (hU : U.toSubgroup.index = 2)
     (α β : U.toSubgroup →* Multiplicative (ZMod 2)) (hα : Continuous α) (hβ : Continuous β)
     (hcl : homClass U.toSubgroup α hα = homClass U.toSubgroup β hβ) :
@@ -163,11 +187,13 @@ noncomputable def evensNormIndexTwo [LocallyCompactSpace G]
   graphClass U hU (homClass_surjective x).choose (homClass_surjective x).choose_spec.choose
 
 /-- On the class of a continuous homomorphism, the index-two Evens norm is its graph class. -/
+@[simp]
 theorem evensNormIndexTwo_homClass [LocallyCompactSpace G]
     (U : OpenSubgroup G) (hU : U.toSubgroup.index = 2)
     (α : U.toSubgroup →* Multiplicative (ZMod 2)) (hα : Continuous α) :
     evensNormIndexTwo U hU (homClass U.toSubgroup α hα) = graphClass U hU α hα := by
-  exact graphClass_representative_independent U hU _ α _ hα
+  rw [evensNormIndexTwo]
+  exact graphClass_eq_of_homClass_eq U hU _ α _ hα
     (homClass_surjective (homClass U.toSubgroup α hα)).choose_spec.choose_spec
 
 end TauCeti.ContCohomology

@@ -40,6 +40,7 @@ is why the discrete synonyms exist.
 
 ## Main definitions
 
+* `TauCeti.ContCohomology.cochainClass`: the canonical cohomology class of a homogeneous cocycle.
 * `TauCeti.ContCohomology.explicitH1AddEquivContinuousCohomology` and
   `explicitH2AddEquivContinuousCohomology`: the comparisons as additive equivalences.
 * `TauCeti.ContCohomology.explicitH1IsoContinuousCohomology` and
@@ -81,7 +82,33 @@ open CategoryTheory
 
 namespace TauCeti.ContCohomology
 
-universe u
+universe u v
+
+section CochainClass
+
+variable {R : Type u} [Ring R] [TopologicalSpace R]
+  {G : Type v} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+
+/-- The canonical continuous-cohomology class of a homogeneous cocycle. -/
+noncomputable def cochainClass (X : TopRep R G) (n : ℕ)
+    (a : (TopRep.homogeneousCochains X).X n)
+    (ha : ((TopRep.homogeneousCochains X).d n (n + 1)).hom a = 0) :
+    continuousCohomology n X :=
+  (TopRep.homogeneousCochains X).homologyπ n
+    ((TopRep.homogeneousCochains X).cyclesMkOfEq a (n + 1)
+      (CochainComplex.next ℕ n) ha)
+
+/-- `cochainClass` is the homology quotient applied to the cycle determined by the cochain. -/
+theorem cochainClass_def (X : TopRep R G) (n : ℕ)
+    (a : (TopRep.homogeneousCochains X).X n)
+    (ha : ((TopRep.homogeneousCochains X).d n (n + 1)).hom a = 0) :
+    cochainClass X n a ha =
+      (TopRep.homogeneousCochains X).homologyπ n
+        ((TopRep.homogeneousCochains X).cyclesMkOfEq a (n + 1)
+          (CochainComplex.next ℕ n) ha) :=
+  (rfl)
+
+end CochainClass
 
 /-- An additive equivalence followed by transport between equal `TopModuleCat` objects preserves
 nonzero elements. This applies to the explicit-to-canonical cohomology comparison. -/
@@ -515,6 +542,17 @@ theorem _root_.TopRep.explicitH1AddEquivContinuousCohomologyOfDiscrete_map
         (ofDiscreteModulePair (φ : H →* G) f.toIntLinearMap fun h m ↦ hf h m) _ f
         hF']
     rfl
+/-- The cocycle underlying the degree-one comparison for a discrete representation is the
+homogeneous form of the original explicit cocycle. -/
+theorem iCycles_ofDiscreteModuleCocyclesRestrictScalarsIntIso_hom_cocycleEquiv1_apply
+    (c : Z1 G X.V) (g₀ g₁ : G) :
+    ((TopRep.homogeneousCochains X).iCycles 1
+        ((ofDiscreteModuleCocyclesRestrictScalarsIntIso X 1).hom
+          (cocycleEquiv1 G X.V c))).val g₀ g₁ =
+      (cochainEquiv1 G X.V ⟨c.val, Z1_le_C1 G X.V c.property⟩).val g₀ g₁ :=
+  (iCycles_ofDiscreteModuleCocyclesRestrictScalarsIntIso_hom_apply
+    X (cocycleEquiv1 G X.V c) g₀ g₁).trans <|
+      congrArg (fun z => z.val g₀ g₁) (iCycles_cocycleEquiv1 G X.V c)
 
 /-- The explicit `H²` of the carrier of a discrete smooth representation `X` over any scalars, with
 the action read off from `X`, is Mathlib's `continuousCohomology 2 X`. -/
