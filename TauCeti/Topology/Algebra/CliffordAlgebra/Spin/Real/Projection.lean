@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Closed
-public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Projection
-public import TauCeti.Topology.Algebra.QuadraticForm.RealSpecialOrthogonal
 
 /-!
 # The real Spin projection on closed unit-group carriers
@@ -81,6 +79,16 @@ theorem realCliffordSpinContinuousMulEquivUnitsRange_apply
   simp only [realCliffordSpinContinuousMulEquivUnitsRange]
   rfl
 
+/-- The inverse topological equivalence sends a canonical range representative back to its Spin
+element. -/
+@[simp]
+theorem realCliffordSpinContinuousMulEquivUnitsRange_symm_apply
+    (n : ℕ) (x : spinGroup (realCliffordForm n 0)) :
+    (realCliffordSpinContinuousMulEquivUnitsRange n).symm
+        ⟨spinGroup.toUnits x, ⟨x, rfl⟩⟩ = x := by
+  rw [← realCliffordSpinContinuousMulEquivUnitsRange_apply]
+  exact (realCliffordSpinContinuousMulEquivUnitsRange n).symm_apply_apply x
+
 /-- The compact real Spin projection as a continuous homomorphism between the two closed range
 carriers in the Clifford and matrix unit groups. -/
 noncomputable def realCliffordSpinToSpecialOrthogonalRange (n : ℕ) :
@@ -123,15 +131,13 @@ theorem realCliffordSpinToSpecialOrthogonalRange_apply_toUnits
           (spinToSpecialOrthogonal (realCliffordForm n 0) x),
         ⟨spinToSpecialOrthogonal (realCliffordForm n 0) x, rfl⟩⟩ := by
   apply Subtype.ext
+  -- Expose the value of the bundled composition after forgetting the target range proof.
   change QuadraticMap.specialOrthogonalToGeneralLinear
       (show QuadraticForm ℝ (Fin n → ℝ) from realCliffordForm n 0)
       (spinToSpecialOrthogonal (realCliffordForm n 0)
         ((realCliffordSpinContinuousMulEquivUnitsRange n).symm
           ⟨spinGroup.toUnits x, ⟨x, rfl⟩⟩)) = _
-  rw [show (⟨spinGroup.toUnits x, ⟨x, rfl⟩⟩ :
-      MonoidHom.range (spinGroup.toUnits (Q := realCliffordForm n 0))) =
-        realCliffordSpinContinuousMulEquivUnitsRange n x by rfl]
-  rw [(realCliffordSpinContinuousMulEquivUnitsRange n).symm_apply_apply]
+  rw [realCliffordSpinContinuousMulEquivUnitsRange_symm_apply]
 
 /-- The continuous homomorphism between the closed real Spin and special-orthogonal carriers is
 surjective. -/
