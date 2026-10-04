@@ -69,6 +69,9 @@ installed locally, as in `letI := finiteExtensionValuativeRel K M`.
   `𝒪[M]` and the integral closure of `𝒪[K]` in `M`.
 * `AlgHom.integerRingHom`: a `K`-algebra map of finite extensions restricts to an
   `𝒪[K]`-algebra map of their rings of integers.
+* `AlgHom.residueFieldHom`: the resulting `𝓀[K]`-embedding of residue fields, which is
+  functorial (`AlgHom.residueFieldHom_comp`, `AlgHom.residueFieldHom_id`); the restriction to
+  rings of integers is local (`AlgHom.isLocalHom_integerRingHom`).
 
 ## Implementation notes
 
@@ -522,3 +525,62 @@ theorem _root_.AlgEquiv.continuous_of_valuativeExtension [ValuativeRel M]
       ⟨γ, trivial, fun x hx ↦ by simpa [σ.valuation_eq] using hx⟩
 
 end TauCeti
+
+namespace AlgHom
+
+open TauCeti
+
+variable {K L M : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
+  [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [Algebra K L] [ValuativeExtension K L]
+  [Module.Finite K L] [Field M] [ValuativeRel M] [Algebra K M] [ValuativeExtension K M]
+  [Module.Finite K M]
+
+/-- A `K`-embedding of finite extensions of a nonarchimedean local field restricts to a local
+homomorphism of their rings of integers. -/
+instance isLocalHom_integerRingHom (ι : L →ₐ[K] M) : IsLocalHom ι.integerRingHom := by
+  -- `𝒪[M]` is integral over `𝒪[K]`, hence over `𝒪[L]`, and an injective integral homomorphism
+  -- is local.
+  have hint : (ι.integerRingHom : 𝒪[L] →+* 𝒪[M]).IsIntegral := by
+    refine RingHom.IsIntegral.tower_top (algebraMap 𝒪[K] 𝒪[L]) _ ?_
+    rw [ι.integerRingHom.comp_algebraMap]
+    intro x
+    have hx := (Valuation.Integers.isIntegral_iff_valuation_le_one
+      (Valuation.integer.integers (valuation K)) (x : M)).2 x.2
+    exact (isIntegral_algHom_iff (IsScalarTower.toAlgHom 𝒪[K] 𝒪[M] M)
+      Subtype.val_injective).1 hx
+  have hinj : Function.Injective (ι.integerRingHom : 𝒪[L] →+* 𝒪[M]) := fun x y h ↦
+    Subtype.ext (ι.injective (by simpa using congrArg Subtype.val h))
+  exact ⟨(hint.isLocalHom hinj).map_nonunit⟩
+
+/-- The embedding of residue fields induced by a `K`-embedding of finite extensions of a
+nonarchimedean local field `K`. It is linear over the residue field of `K`. -/
+noncomputable def residueFieldHom (ι : L →ₐ[K] M) : 𝓀[L] →ₐ[𝓀[K]] 𝓀[M] :=
+  IsLocalRing.ResidueField.mapAlgHom' ι.integerRingHom
+
+/-- The induced embedding of residue fields sends the residue of an integer `x` to the residue of
+its image. -/
+@[simp]
+theorem residueFieldHom_residue (ι : L →ₐ[K] M) (x : 𝒪[L]) :
+    ι.residueFieldHom (IsLocalRing.residue 𝒪[L] x) =
+      IsLocalRing.residue 𝒪[M] (ι.integerRingHom x) :=
+  IsLocalRing.ResidueField.mapAlgHom'_residue _ _
+
+/-- Passing to residue fields is functorial. -/
+@[simp]
+theorem residueFieldHom_comp {N : Type*} [Field N] [ValuativeRel N] [Algebra K N]
+    [ValuativeExtension K N] [Module.Finite K N] (ι₂ : M →ₐ[K] N) (ι₁ : L →ₐ[K] M) :
+    (ι₂.comp ι₁).residueFieldHom = ι₂.residueFieldHom.comp ι₁.residueFieldHom := by
+  ext x
+  obtain ⟨x, rfl⟩ := IsLocalRing.residue_surjective x
+  simp only [residueFieldHom_residue, AlgHom.comp_apply]
+  exact congrArg _ (Subtype.ext (by simp))
+
+/-- Passing the identity embedding to residue fields gives the identity embedding. -/
+@[simp]
+theorem residueFieldHom_id : (AlgHom.id K L).residueFieldHom = AlgHom.id 𝓀[K] 𝓀[L] := by
+  ext x
+  obtain ⟨x, rfl⟩ := IsLocalRing.residue_surjective x
+  simp only [residueFieldHom_residue, AlgHom.id_apply]
+  exact congrArg _ (Subtype.ext (by simp))
+
+end AlgHom

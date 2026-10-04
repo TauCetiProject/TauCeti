@@ -26,6 +26,11 @@ This is how the coefficients of a cochain act on chains in the cap product: capp
 `φ : Cₚ(X; R) ⟶ M` produces an element of `M ⊗ C_q(X; S)`, which the pairing turns into a chain
 with coefficients in `P`.
 
+In the same way, when tensoring on either side preserves `w`-small coproducts, the tensor product
+`Cₚ(K; R) ⊗ C_q(L; S)` of chain groups of two simplicial sets is the coproduct of one copy of
+`R ⊗ S` for each pair of a `p`-simplex of `K` and a `q`-simplex of `L`, which describes morphisms
+out of tensor products of simplicial chains, such as the shuffle map.
+
 ## Main definitions and results
 
 * `SSet.ιChainComplex_chainComplexFunctorObjCompMapIso_inv_app_f`: the inverse of Mathlib's
@@ -36,6 +41,9 @@ with coefficients in `P`.
 * `SSet.chainComplexPairing_comp_chainComplexFunctor_map_app`,
   `SSet.whiskerLeft_chainComplexFunctor_map_app_comp_chainComplexPairing` and
   `SSet.whiskerRight_comp_chainComplexPairing`: it is natural in the coefficient objects.
+* `SSet.tensorChainComplexXDesc` and `SSet.tensorChainComplexX_hom_ext`: morphisms out of the
+  tensor product `Cₚ(K; R) ⊗ C_q(L; S)` of two chain groups are given, and determined, by their
+  values on the summands `R ⊗ S` of pairs of simplices.
 -/
 
 public section
@@ -68,6 +76,53 @@ lemma ιChainComplex_chainComplexFunctorObjCompMapIso_inv_app_f (X : SSet.{w}) (
   exact Category.comp_id _
 
 end FunctorObjCompMapIso
+
+section Tensor
+
+variable {C : Type u} [Category.{v} C] [Preadditive C] [HasCoproducts.{w} C] [MonoidalCategory C]
+  {K L : SSet.{w}} {R S A : C} {p q : ℕ}
+  [∀ J : Type w, PreservesColimitsOfShape (Discrete J) (tensorLeft R)]
+  [∀ (X : C) (J : Type w), PreservesColimitsOfShape (Discrete J) (tensorRight X)]
+
+/-- The morphism out of the tensor product `Cₚ(K; R) ⊗ C_q(L; S)` of two simplicial chain groups
+given by a morphism `φ x y : R ⊗ S ⟶ A` for each `p`-simplex `x` of `K` and `q`-simplex `y` of `L`
+(`SSet.ιChainComplex_tensorHom_ιChainComplex_tensorChainComplexXDesc`).  When tensoring preserves
+coproducts, `Cₚ(K; R) ⊗ C_q(L; S)` is the coproduct of one copy of `R ⊗ S` for each such pair. -/
+def tensorChainComplexXDesc (φ : K _⦋p⦌ → L _⦋q⦌ → (R ⊗ S ⟶ A)) :
+    (K.chainComplex R).X p ⊗ (L.chainComplex S).X q ⟶ A :=
+  Cofan.IsColimit.desc (isColimitCofanMkObjOfIsColimit (tensorRight ((L.chainComplex S).X q)) _ _
+    (K.isColimitChainComplexXCofan R p)) fun x ↦
+      Cofan.IsColimit.desc (isColimitCofanMkObjOfIsColimit (tensorLeft R) _ _
+        (L.isColimitChainComplexXCofan S q)) (φ x)
+
+/-- The morphism `SSet.tensorChainComplexXDesc φ` on the summand of a pair of simplices `(x, y)` is
+`φ x y`. -/
+@[reassoc (attr := simp)]
+lemma ιChainComplex_tensorHom_ιChainComplex_tensorChainComplexXDesc
+    (φ : K _⦋p⦌ → L _⦋q⦌ → (R ⊗ S ⟶ A)) (x : K _⦋p⦌) (y : L _⦋q⦌) :
+    (K.ιChainComplex x ⊗ₘ L.ιChainComplex y) ≫ tensorChainComplexXDesc φ = φ x y := by
+  have h₁ := Cofan.IsColimit.fac (isColimitCofanMkObjOfIsColimit
+    (tensorRight ((L.chainComplex S).X q)) _ _ (K.isColimitChainComplexXCofan R p))
+    (fun x ↦ Cofan.IsColimit.desc (isColimitCofanMkObjOfIsColimit (tensorLeft R) _ _
+      (L.isColimitChainComplexXCofan S q)) (φ x)) x
+  have h₂ := Cofan.IsColimit.fac (isColimitCofanMkObjOfIsColimit (tensorLeft R) _ _
+    (L.isColimitChainComplexXCofan S q)) (φ x) y
+  simp only [cofan_mk_inj, Functor.flip_obj_map, curriedTensor_map_app,
+    curriedTensor_obj_map] at h₁ h₂
+  rw [tensorHom_def', Category.assoc, tensorChainComplexXDesc, h₁, h₂]
+
+/-- Morphisms out of `Cₚ(K; R) ⊗ C_q(L; S)` are determined on the summands of pairs of simplices. -/
+lemma tensorChainComplexX_hom_ext {f g : (K.chainComplex R).X p ⊗ (L.chainComplex S).X q ⟶ A}
+    (h : ∀ (x : K _⦋p⦌) (y : L _⦋q⦌), (K.ιChainComplex x ⊗ₘ L.ιChainComplex y) ≫ f =
+      (K.ιChainComplex x ⊗ₘ L.ιChainComplex y) ≫ g) :
+    f = g := by
+  refine Cofan.IsColimit.hom_ext (isColimitCofanMkObjOfIsColimit
+    (tensorRight ((L.chainComplex S).X q)) _ _ (K.isColimitChainComplexXCofan R p)) _ _
+      fun x ↦ Cofan.IsColimit.hom_ext (isColimitCofanMkObjOfIsColimit (tensorLeft R) _ _
+        (L.isColimitChainComplexXCofan S q)) _ _ fun y ↦ ?_
+  simpa [tensorHom_def'] using h x y
+
+end Tensor
 
 variable {C : Type u} [Category.{v} C] [Preadditive C] [HasCoproducts.{w} C]
   [MonoidalCategory C] [MonoidalPreadditive C] {M S P : C}

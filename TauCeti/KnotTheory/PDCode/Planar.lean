@@ -9,6 +9,7 @@ public import TauCeti.KnotTheory.PDCode.Components
 public import TauCeti.Combinatorics.PermutationTriple.EulerCharacteristic
 public import TauCeti.Combinatorics.PermutationTriple.OrbitDecomposition
 import TauCeti.Algebra.GroupAction.OrbitRelQuotient
+import TauCeti.GroupTheory.Perm.Basic
 import TauCeti.GroupTheory.Perm.OrbitCount.FinRotate
 
 /-!
@@ -121,15 +122,15 @@ theorem crossingRotation_mirror (D : PDCode n) :
 
 /-- Relabelling conjugates the crossing rotation by the half-edge relabelling. -/
 @[simp]
-theorem crossingRotation_relabel (D : PDCode n) (half : Perm (Fin (4 * n)))
-    (cross : Perm (Fin n)) :
+theorem crossingRotation_relabel {m : ℕ} (D : PDCode n) (half : Fin (4 * n) ≃ Fin (4 * m))
+    (cross : Fin n ≃ Fin m) :
     (D.relabel half cross).crossingRotation = half.permCongr D.crossingRotation := by
   ext h
   obtain ⟨x, rfl⟩ := half.surjective h
   obtain ⟨x, rfl⟩ := D.halfEdge.surjective x
   obtain ⟨⟨i, slot⟩, rfl⟩ := (crossingSlotEquiv n).surjective x
   have he : half (D.halfEdge (crossingSlotEquiv n (i, slot))) =
-      (D.relabel half cross).halfEdge (crossingSlotEquiv n (cross i, slot)) := by
+      (D.relabel half cross).halfEdge (crossingSlotEquiv m (cross i, slot)) := by
     rw [← D.crossing_apply, ← (D.relabel half cross).crossing_apply]
     simpa only [Equiv.symm_apply_apply] using (D.crossing_relabel half cross (cross i) slot).symm
   rw [he, crossingRotation_crossing, crossing_relabel]
@@ -201,7 +202,8 @@ theorem facePerm_mirror (D : PDCode n) : D.mirror.facePerm = D.facePerm := by
 
 /-- Relabelling conjugates the face traversal by the half-edge relabelling. -/
 @[simp]
-theorem facePerm_relabel (D : PDCode n) (half : Perm (Fin (4 * n))) (cross : Perm (Fin n)) :
+theorem facePerm_relabel {m : ℕ} (D : PDCode n) (half : Fin (4 * n) ≃ Fin (4 * m))
+    (cross : Fin n ≃ Fin m) :
     (D.relabel half cross).facePerm = half.permCongr D.facePerm := by
   rw [facePerm, facePerm, crossingRotation_relabel, relabel_edgePair, PerfectMatching.congr_val,
     permCongr_mul]
@@ -213,19 +215,20 @@ theorem faceCount_mirror (D : PDCode n) : D.mirror.faceCount = D.faceCount := by
 
 /-- Relabelling preserves the number of faces. -/
 @[simp]
-theorem faceCount_relabel (D : PDCode n) (half : Perm (Fin (4 * n))) (cross : Perm (Fin n)) :
+theorem faceCount_relabel {m : ℕ} (D : PDCode n) (half : Fin (4 * n) ≃ Fin (4 * m))
+    (cross : Fin n ≃ Fin m) :
     (D.relabel half cross).faceCount = D.faceCount := by
   simp [faceCount]
 
 /-- Relabelling preserves face incidence: two relabelled half-edges lie on the same face of the
 relabelled code exactly when the original half-edges lie on the same face of the code. -/
 @[simp]
-theorem face_relabel_eq_face_relabel_iff (D : PDCode n) (half : Perm (Fin (4 * n)))
-    (cross : Perm (Fin n)) {h h' : Fin (4 * n)} :
+theorem face_relabel_eq_face_relabel_iff {m : ℕ} (D : PDCode n)
+    (half : Fin (4 * n) ≃ Fin (4 * m)) (cross : Fin n ≃ Fin m) {h h' : Fin (4 * n)} :
     (D.relabel half cross).face (half h) = (D.relabel half cross).face (half h') ↔
       D.face h = D.face h' := by
-  rw [face_eq_face_iff, face_eq_face_iff, facePerm_relabel, permCongr_eq_mul, sameCycle_conj,
-    Perm.inv_def, symm_apply_apply, symm_apply_apply]
+  rw [face_eq_face_iff, face_eq_face_iff, facePerm_relabel]
+  exact Perm.sameCycle_permCongr D.facePerm half
 
 /-- Two half-edges lie in one orbit of running along an arc and then turning exactly when the far
 ends of their arcs lie on one face: this traversal is conjugate to the face traversal by the arc
@@ -271,10 +274,17 @@ theorem toPermutationTriple_mirror (D : PDCode n) :
 
 /-- Relabelling relabels the sheets of the permutation triple by the half-edge relabelling. -/
 @[simp]
-theorem toPermutationTriple_relabel (D : PDCode n) (half : Perm (Fin (4 * n)))
-    (cross : Perm (Fin n)) :
-    (D.relabel half cross).toPermutationTriple = half • D.toPermutationTriple := by
-  simp [toPermutationTriple, PerfectMatching.congr_val, permCongr_eq_mul]
+theorem toPermutationTriple_relabel {m : ℕ} (D : PDCode n)
+    (half : Fin (4 * n) ≃ Fin (4 * m)) (cross : Fin n ≃ Fin m) :
+    (D.relabel half cross).toPermutationTriple =
+      PermutationTriple.transport half D.toPermutationTriple := by
+  apply PermutationTriple.ext_of_two
+  · rw [toPermutationTriple_σ0, PermutationTriple.transport_apply_σ0,
+      toPermutationTriple_σ0]
+    exact crossingRotation_relabel D half cross
+  · rw [toPermutationTriple_σ1, PermutationTriple.transport_apply_σ1,
+      toPermutationTriple_σ1, relabel_edgePair]
+    exact PerfectMatching.congr_val half D.edgePair
 
 /-- The crossing rotation lies in the monodromy group of the underlying graph. -/
 @[simp]
@@ -377,9 +387,16 @@ theorem isPlanar_mirror (D : PDCode n) : D.mirror.IsPlanar ↔ D.IsPlanar := by
 
 /-- Relabelling preserves planarity. -/
 @[simp]
-theorem isPlanar_relabel (D : PDCode n) (half : Perm (Fin (4 * n))) (cross : Perm (Fin n)) :
+theorem isPlanar_relabel {m : ℕ} (D : PDCode n) (half : Fin (4 * n) ≃ Fin (4 * m))
+    (cross : Fin n ≃ Fin m) :
     (D.relabel half cross).IsPlanar ↔ D.IsPlanar := by
-  simp [IsPlanar]
+  rw [isPlanar_def, isPlanar_def, toPermutationTriple_relabel]
+  obtain rfl : n = m := by simpa using Fintype.card_congr cross
+  have htransport : PermutationTriple.transport half D.toPermutationTriple =
+      half • D.toPermutationTriple := by
+    ext <;> simp [Equiv.permCongrHom_coe, permCongr_eq_mul]
+  rw [htransport]
+  simp
 
 /-! ### One-crossing codes -/
 

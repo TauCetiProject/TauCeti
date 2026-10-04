@@ -108,13 +108,14 @@ theorem tendsto_eLpNorm_iteratedFDeriv_cutoff_sub
     simpa only [iteratedFDeriv_zero, Pi.zero_apply] using
       (heq.iteratedFDeriv ℝ k).eq_of_nhds
   -- Dominated convergence applies to the full derivative error, including order zero.
-  have ht := tendsto_eLpNorm_sub_of_eventually_eq hp0 hp
+  have ht := tendsto_eLpNorm_sub_of_ae_tendsto (C := 1) hp0 hp
     (Eventually.of_forall fun n ↦ (hsmooth n).continuous_iteratedFDeriv le_rfl
       |>.aestronglyMeasurable)
-    aestronglyMeasurable_zero hbmem zero_le_one
+    aestronglyMeasurable_zero hbmem
     (Eventually.of_forall fun n ↦ Eventually.of_forall fun x ↦ by
-      simpa using hb n x)
-    (Eventually.of_forall hlim)
+      simpa only [ofReal_norm, Pi.zero_apply, sub_zero, ENNReal.coe_one, one_mul] using
+        ENNReal.ofReal_le_ofReal (hb n x))
+    (Eventually.of_forall fun x ↦ (tendsto_congr' (hlim x)).mpr tendsto_const_nhds)
   simpa only [sub_zero, herr] using ht
 
 /-- Multiplication by a `Cᵏ` scalar function with bounded derivatives preserves `Lᵖ`

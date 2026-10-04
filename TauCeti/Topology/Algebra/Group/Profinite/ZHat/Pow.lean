@@ -154,6 +154,14 @@ theorem map_zpowHat {F : Type*} [FunLike F G H] [MonoidHomClass F G H] [Continuo
 
 end Map
 
+/-- A continuous action by group endomorphisms commutes with profinite powers. -/
+@[simp]
+theorem smul_zpowHat {Γ : Type*} [Monoid Γ] [MulDistribMulAction Γ G]
+    [ContinuousConstSMul Γ G] (γ : Γ) (x : G) (a : Additive zHat.{u}) :
+    γ • x ^ᶻ a = (γ • x) ^ᶻ a :=
+  map_zpowHat
+    (⟨MulDistribMulAction.toMonoidHom G γ, continuous_const_smul γ⟩ : G →ₜ* G) x a
+
 /-- Profinite powers commute with conjugation. -/
 @[simp]
 theorem conj_zpowHat (g x : G) (a : Additive zHat.{u}) :

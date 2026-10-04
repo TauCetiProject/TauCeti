@@ -39,6 +39,8 @@ the relevant quotients discrete; the preimage criterion needs it only on the tar
   a map into the quotient by an intersection, and by a preimage, of open normal subgroups.
 * `TauCeti.mem_openNormalSubgroupBot`: the trivial open normal subgroup contains only the
   identity.
+* `TauCeti.openNormalSubgroupBot_le`: the trivial open normal subgroup lies below every open
+  normal subgroup.
 -/
 
 public section
@@ -163,6 +165,12 @@ theorem openNormalSubgroupBot_toSubgroup (G : Type*) [Group G] [TopologicalSpace
 theorem mem_openNormalSubgroupBot {G : Type*} [Group G] [TopologicalSpace G] [DiscreteTopology G]
     {x : G} : x ∈ openNormalSubgroupBot G ↔ x = 1 :=
   Subgroup.mem_bot
+
+/-- The trivial open normal subgroup of a discrete group lies below every open normal subgroup. -/
+theorem openNormalSubgroupBot_le {G : Type*} [Group G] [TopologicalSpace G] [DiscreteTopology G]
+    {U : OpenNormalSubgroup G} : openNormalSubgroupBot G ≤ U := by
+  rw [← OpenNormalSubgroup.toSubgroup_le, openNormalSubgroupBot_toSubgroup]
+  exact bot_le
 
 /-- The whole group, as an open normal subgroup. It is the greatest element of
 `OpenNormalSubgroup G`, and in particular witnesses that this type is nonempty. -/

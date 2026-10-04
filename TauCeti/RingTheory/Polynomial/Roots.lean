@@ -23,7 +23,7 @@ without choosing a global order on the root set.
 Second, the root set of a product of polynomials whose base changes to `E` are nonzero is the
 union of the root sets of the factors. This is the lemma that decomposes the roots of a
 polynomial along a factorisation, for instance the roots of a monic integer polynomial along its
-monic irreducible factors.
+monic irreducible factors. The same holds for the distinct roots of a finite product.
 
 Third, dividing a polynomial by the linear factor of a simple root removes exactly that root
 from the root set. Here `a` only has to be a simple root in `E`: `f a` vanishes and `f' a` does
@@ -43,6 +43,8 @@ the number of distinct roots.
   its root set enumerates its full root multiset after base change.
 * `Polynomial.rootSet_mul`: the root set of a product of polynomials whose base changes to `E` are
   nonzero is the union of the root sets of the factors.
+* `Polynomial.aroots_prod_toFinset`: the distinct roots of a finite product of polynomials whose
+  base changes to `E` are nonzero are those of the factors together.
 * `Polynomial.rootSet_divByMonic_X_sub_C`: if `f a = 0` and `f' a ≠ 0` in `E`, then the roots of
   `f /ₘ (X - C a)` are the roots of `f` other than `a`.
 * `Polynomial.rootSet_comp_X_add_C`: the roots of `f(X + t)` are the roots of `f` moved by `-t`.
@@ -85,6 +87,17 @@ theorem _root_.Polynomial.rootSet_mul {g : F[X]} (hf : f.map (algebraMap F E) �
   ext x
   simp only [Set.mem_union, mem_rootSet', Polynomial.map_mul, map_mul, mul_eq_zero, ne_eq, hf, hg,
     or_self, not_false_eq_true, true_and]
+
+/-- The distinct roots in `E` of a finite product of polynomials are those of the factors together,
+provided no factor vanishes after base change to `E`. -/
+theorem _root_.Polynomial.aroots_prod_toFinset [DecidableEq E] {ι : Type*} (s : Finset ι)
+    (f : ι → F[X]) (hf : ∀ k ∈ s, (f k).map (algebraMap F E) ≠ 0) :
+    ((∏ k ∈ s, f k).aroots E).toFinset = s.biUnion fun k ↦ ((f k).aroots E).toFinset := by
+  ext z
+  simp only [Multiset.mem_toFinset, Finset.mem_biUnion, mem_aroots', Polynomial.map_prod,
+    Finset.prod_ne_zero_iff.2 hf, ne_eq, not_false_eq_true, true_and, map_prod,
+    Finset.prod_eq_zero_iff]
+  exact ⟨fun ⟨k, hk, h⟩ ↦ ⟨k, hk, hf k hk, h⟩, fun ⟨k, hk, _, h⟩ ↦ ⟨k, hk, h⟩⟩
 
 /-- Removing the linear factor of a simple root `a` removes exactly that root: if, in `E`, `f a`
 vanishes and `f' a` does not, then the roots of `f /ₘ (X - C a)` in `E` are the roots of `f`

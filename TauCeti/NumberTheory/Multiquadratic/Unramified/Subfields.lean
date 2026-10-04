@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.Multiquadratic.Quadratic.Ramification
 public import TauCeti.NumberTheory.NumberField.Inertia
+import TauCeti.Algebra.Algebra.Equiv
 import TauCeti.FieldTheory.Galois.FixedField
 import TauCeti.FieldTheory.Galois.SquareRoot
 
@@ -170,7 +171,8 @@ theorem notMem_ramifiedPrimes_adjoin_mul {x y : M} {a b : ℚ}
   · rw [Subgroup.disjoint_def.mp hdisj hσ hσF]
     rfl
   by_cases hτF : τ ∈ fixingSubgroup (M ≃ₐ[ℚ] M) ((adjoin ℚ {y} : IntermediateField ℚ M) : Set M)
-  · exact False.elim ((AlgEquiv.ne_one_of_apply_eq_neg τ hx0 hτneg)
+  · exact False.elim ((AlgEquiv.ne_one_of_apply_eq_neg τ
+      (IsRegular.of_ne_zero two_ne_zero).left hx0 hτneg)
       (Subgroup.disjoint_def.mp hdisj hτI hτF))
   have hone : σ * τ = 1 := Subgroup.disjoint_def.mp hdisj (mul_mem hσ hτI)
     ((Subgroup.mul_mem_iff_of_index_two hindex).mpr (by simp only [hσF, hτF]))

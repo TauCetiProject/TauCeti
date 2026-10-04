@@ -49,6 +49,13 @@ range, so the value is a `dite` rather than a plain application.
 * `Fin.predAbove_succ_succAbove`: `Fin.predAbove p` inverts `p.succ.succAbove`, the
   counterpart of Mathlib's `Fin.predAbove_succAbove` for `p.castSucc.succAbove`.
 * `Fin.val_succAbove`: the value of `p.succAbove i`, read off the comparison of `i` with `p`.
+* `Fin.finRotate_succ_eq_succ_succAbove` and `Fin.finRotate_succ_succAbove_of_ne`: the cyclic
+  successor of `Fin (n + 1)` against the embeddings `Fin.succ` and `i.succ.succAbove` of `Fin n`,
+  as used when a new entry is inserted into a cyclic sequence.
+* `Fin.succAbove_adjacent_cases`: the positions `p` of `Fin (n + 1)` cyclically adjacent to
+  `p.succAbove i`.
+* `Fin.swap_castSucc_succ_succAbove`: the transposition of `k.castSucc` and `k.succ` exchanges the
+  embeddings of `Fin n` skipping either of them.
 * `Fin.card_filter_prod_succAbove`: a count of pairs in `Fin (n + 1)` split at a point in each
   coordinate.
 * `Fin.val_orderSucc_of_lt` and `Fin.orderSucc_eq_self_of_not_lt`: the order successor of `Fin n`
@@ -177,6 +184,58 @@ theorem val_succAbove {n : ℕ} (p : Fin (n + 1)) (i : Fin n) :
     (p.succAbove i : ℕ) = if (i : ℕ) < p then (i : ℕ) else (i : ℕ) + 1 := by
   unfold succAbove
   split_ifs <;> simp_all [lt_def]
+
+/-- The cyclic successor of `i.succ` in `Fin (n + 1)` is the cyclic successor of `i` in `Fin n`,
+read through the embedding `i.succ.succAbove` that skips `i.succ`. -/
+theorem finRotate_succ_eq_succ_succAbove {n : ℕ} (i : Fin n) :
+    finRotate (n + 1) i.succ = i.succ.succAbove (finRotate n i) := by
+  obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by have := i.pos; omega⟩
+  have := i.isLt
+  ext
+  simp only [succAbove]
+  split_ifs <;> simp only [lt_def, val_castSucc, val_succ, coe_finRotate, Fin.ext_iff,
+    val_last] at * <;> split_ifs at * <;> omega
+
+/-- Away from `i`, the embedding `i.succ.succAbove : Fin n → Fin (n + 1)`, which skips `i.succ`,
+commutes with the cyclic successors. -/
+theorem finRotate_succ_succAbove_of_ne {n : ℕ} {i k : Fin n} (hk : k ≠ i) :
+    finRotate (n + 1) (i.succ.succAbove k) = i.succ.succAbove (finRotate n k) := by
+  obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by have := i.pos; omega⟩
+  rw [Ne, Fin.ext_iff] at hk
+  have := k.isLt
+  have := i.isLt
+  ext
+  simp only [succAbove]
+  split_ifs <;> simp only [lt_def, val_castSucc, val_succ, coe_finRotate, Fin.ext_iff,
+    val_last] at * <;> split_ifs at * <;> omega
+
+/-- A position `p` of `Fin (n + 1)` cyclically adjacent to `p.succAbove i` is `i.castSucc` or
+`i.succ`, or wraps around: `p` is last and `p.succAbove i` is `0`, or `p` is `0` and
+`p.succAbove i` is last. -/
+theorem succAbove_adjacent_cases {n : ℕ} {p : Fin (n + 1)} {i : Fin n}
+    (h : finRotate (n + 1) p = p.succAbove i ∨ finRotate (n + 1) (p.succAbove i) = p) :
+    p = i.castSucc ∨ p = i.succ ∨ (p = last n ∧ i.castSucc = 0) ∨ (p = 0 ∧ i.succ = last n) := by
+  have hv := val_succAbove p i
+  have := i.isLt
+  simp only [Fin.ext_iff, coe_finRotate, val_last, val_zero, val_castSucc, val_succ] at h hv ⊢
+  split_ifs at h hv <;> omega
+
+/-- The transposition of `k.castSucc` and `k.succ` carries the embedding `k.castSucc.succAbove`,
+which skips `k.castSucc`, to the embedding `k.succ.succAbove`, which skips `k.succ`. -/
+theorem swap_castSucc_succ_succAbove {n : ℕ} (k i : Fin n) :
+    Equiv.swap k.castSucc k.succ (k.castSucc.succAbove i) = k.succ.succAbove i := by
+  rcases eq_or_ne i k with rfl | hik
+  · simp
+  have h : k.castSucc.succAbove i = k.succ.succAbove i := by
+    ext
+    simp only [val_succAbove, val_castSucc, val_succ]
+    rw [Ne, Fin.ext_iff] at hik
+    split_ifs <;> omega
+  rw [h, Equiv.swap_apply_of_ne_of_ne]
+  · rw [← succAbove_succ_self]
+    exact fun h' ↦ hik (succAbove_right_injective h')
+  · rw [← h, ← succAbove_castSucc_self]
+    exact fun h' ↦ hik (succAbove_right_injective h')
 
 /-- A count of pairs in `Fin (n + 1)`, split at `a` in the first coordinate and at `b` in the
 second: the pair `(a, b)`, the pairs with exactly one coordinate at its split point, and the pairs

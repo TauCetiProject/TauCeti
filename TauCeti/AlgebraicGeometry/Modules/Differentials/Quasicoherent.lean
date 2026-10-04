@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Modules.Differentials.Restriction
 public import TauCeti.AlgebraicGeometry.Modules.Differentials.Spec
 public import TauCeti.AlgebraicGeometry.Modules.Localization
-public import TauCeti.AlgebraicGeometry.Modules.Tilde.FinitePresentation
+public import TauCeti.AlgebraicGeometry.Modules.FinitePresentation
 public import Mathlib.AlgebraicGeometry.Morphisms.FinitePresentation
 public import Mathlib.AlgebraicGeometry.Morphisms.FiniteType
 public import Mathlib.RingTheory.Extension.Cotangent.Basic

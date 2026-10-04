@@ -38,6 +38,8 @@ unitary group is strictly larger than the Spin group.
 * `CliffordAlgebra.range_spinGroup_toUnits_eq_evenUnitaryGroup_of_finrank_le_four`: for a
   nondegenerate form in positive dimension at most four, the Spin image and the even unitary
   carrier coincide.
+* `CliffordAlgebra.spinGroupEquivEvenUnitaryOfFinrankLeFour`: the resulting multiplicative
+  equivalence between the Spin group and the even unitary carrier.
 
 ## References
 
@@ -95,5 +97,29 @@ theorem range_spinGroup_toUnits_eq_evenUnitaryGroup_of_finrank_le_four
     (spinGroup.toUnits : spinGroup Q →* (CliffordAlgebra Q)ˣ).range = evenUnitaryGroup Q := by
   rw [range_spinGroup_toUnits]
   exact inf_eq_right.mpr (evenUnitaryGroup_le_lipschitzGroup_of_finrank_le_four Q hQ hV0 hV)
+
+/-- For a nondegenerate quadratic space of positive dimension at most four, the Spin group is
+multiplicatively equivalent to the even unitary carrier. -/
+noncomputable def spinGroupEquivEvenUnitaryOfFinrankLeFour
+    (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) (hV0 : 0 < finrank K V)
+    (hV : finrank K V ≤ 4) : spinGroup Q ≃* evenUnitaryGroup Q :=
+  MulEquiv.ofBijective (spinGroupToEvenUnitary Q)
+    ⟨spinGroupToEvenUnitary_injective Q, fun x ↦ by
+      have hx : (x : (CliffordAlgebra Q)ˣ) ∈
+          (spinGroup.toUnits : spinGroup Q →* (CliffordAlgebra Q)ˣ).range := by
+        rw [range_spinGroup_toUnits_eq_evenUnitaryGroup_of_finrank_le_four Q hQ hV0 hV]
+        exact x.2
+      obtain ⟨s, hs⟩ := hx
+      refine ⟨s, Subtype.ext ?_⟩
+      simpa only [coe_spinGroupToEvenUnitary_apply] using hs⟩
+
+/-- The low-rank Spin/even-unitary equivalence is induced by the canonical inclusion. -/
+@[simp]
+theorem spinGroupEquivEvenUnitaryOfFinrankLeFour_apply
+    (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) (hV0 : 0 < finrank K V)
+    (hV : finrank K V ≤ 4) (s : spinGroup Q) :
+    spinGroupEquivEvenUnitaryOfFinrankLeFour Q hQ hV0 hV s =
+      spinGroupToEvenUnitary Q s :=
+  MulEquiv.ofBijective_apply _ _ s
 
 end CliffordAlgebra

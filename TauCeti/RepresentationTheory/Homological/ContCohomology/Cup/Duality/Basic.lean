@@ -1060,9 +1060,9 @@ theorem dualityMap0_bijective_of_injective_of_addEquiv_zmod (e : N ≃+ ZMod n)
   have : Finite (H2 G (InternalHom G M N) →+ H2 G N) := DFunLike.finite _
   refine h₀.bijective_of_nat_card_le ?_
   -- `|Hom(H²(M'), H²(N))| = |H²(M')| ≤ |Hom(H⁰(M''), H²(N))| = |H⁰(M'')| = |H⁰(M)|`
-  rw [natCard_addMonoidHom_of_addEquiv_zmod e₂ (nsmul_H2_eq_zero (G := G) hM')]
+  rw [e₂.natCard_addMonoidHom_zmod (nsmul_H2_eq_zero (G := G) hM')]
   refine (Nat.card_le_card_of_injective _ h₂).trans_eq ?_
-  rw [natCard_addMonoidHom_of_addEquiv_zmod e₂ fun v ↦ Subtype.ext (by
+  rw [e₂.natCard_addMonoidHom_zmod fun v ↦ Subtype.ext (by
     simpa using InternalHom.nsmul_eq_zero_of_domain hM' v.1)]
   exact Nat.card_congr (Equiv.ofBijective _ (explicitCoeff0_bijective G M
     (InternalHom.eval_bijective_of_addEquiv_zmod e hM))).symm
@@ -1089,9 +1089,9 @@ theorem dualityMap1_bijective_of_injective_of_addEquiv_zmod (e : N ≃+ ZMod n)
   have : Finite (H1 G (InternalHom G (InternalHom G M N) N) →+ H2 G N) := DFunLike.finite _
   refine h₁.bijective_of_nat_card_le ?_
   -- `|Hom(H¹(M'), H²(N))| = |H¹(M')| ≤ |Hom(H¹(M''), H²(N))| = |H¹(M'')| = |H¹(M)|`
-  rw [natCard_addMonoidHom_of_addEquiv_zmod e₂ (nsmul_H1_eq_zero (G := G) hM')]
+  rw [e₂.natCard_addMonoidHom_zmod (nsmul_H1_eq_zero (G := G) hM')]
   refine (Nat.card_le_card_of_injective _ h₁').trans_eq ?_
-  rw [natCard_addMonoidHom_of_addEquiv_zmod e₂
+  rw [e₂.natCard_addMonoidHom_zmod
     (nsmul_H1_eq_zero (InternalHom.nsmul_eq_zero_of_domain hM'))]
   exact (Nat.card_congr (Equiv.ofBijective _ hev)).symm
 
@@ -1117,9 +1117,9 @@ theorem dualityMap2_bijective_of_injective_of_addEquiv_zmod (e : N ≃+ ZMod n)
   have : Finite (H2 G (InternalHom G (InternalHom G M N) N) →+ H2 G N) := DFunLike.finite _
   refine h₂.bijective_of_nat_card_le ?_
   -- `|Hom(H⁰(M'), H²(N))| = |H⁰(M')| ≤ |Hom(H²(M''), H²(N))| = |H²(M'')| = |H²(M)|`
-  rw [natCard_addMonoidHom_of_addEquiv_zmod e₂ fun v ↦ Subtype.ext (by simpa using hM' v)]
+  rw [e₂.natCard_addMonoidHom_zmod fun v ↦ Subtype.ext (by simpa using hM' v)]
   refine (Nat.card_le_card_of_injective _ h₀).trans_eq ?_
-  rw [natCard_addMonoidHom_of_addEquiv_zmod e₂
+  rw [e₂.natCard_addMonoidHom_zmod
     (nsmul_H2_eq_zero (InternalHom.nsmul_eq_zero_of_domain hM'))]
   exact (Nat.card_congr (Equiv.ofBijective _ hev)).symm
 

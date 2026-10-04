@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Algebra.Defs
+public import Mathlib.Algebra.Algebra.NonUnitalHom
 public import Mathlib.Combinatorics.Quiver.Path
 public import Mathlib.LinearAlgebra.Dimension.Finite
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
@@ -38,9 +38,11 @@ idempotents `e`, so left multiplication by `α` carries the `i`-component of a l
   finiteness being what makes the unit `1 = ∑ᵥ eᵥ` exist.
 * `TauCeti.PathAlgebra.vertexIdempotent`: the idempotent `eᵥ` given by the trivial path at `v`.
 * `TauCeti.pathAlgebraBasis`: the paths of `Q` as a `k`-basis of `kQ`.
-* `TauCeti.PathAlgebra.liftAlgHom`: **the universal property of the path algebra**, extending an
-  assignment of elements of a `k`-algebra to the basis paths to an algebra homomorphism out of
-  `kQ`, the only one doing so by `TauCeti.PathAlgebra.liftAlgHom_unique`.
+* `TauCeti.PathAlgebra.liftNonUnitalAlgHom`: extends a multiplicative assignment on paths to a
+  non-unital algebra homomorphism, for any quiver and a possibly non-associative target.
+* `TauCeti.PathAlgebra.liftAlgHom`: **the unital universal property of the path algebra**,
+  extending an assignment of elements of a `k`-algebra to the basis paths to an algebra
+  homomorphism out of `kQ`, the only one doing so by `TauCeti.PathAlgebra.liftAlgHom_unique`.
 
 ## Main results
 
@@ -789,9 +791,10 @@ variable (k : Type w) {Q : Type u} {B : Type*} [Semiring k] [Quiver.{v} Q]
   [AddCommMonoid B] [Module k B] (F : Quiver.TotalPath Q → B)
 
 /-- The `k`-linear map extending an assignment of module elements to the basis paths. Its
-algebra-homomorphism upgrade `TauCeti.PathAlgebra.liftAlgHom` is available when the assignment
-takes values in a `k`-algebra, concatenates composable paths, annihilates products of paths that
-do not meet, and sends the trivial paths to a decomposition of the unit. -/
+multiplicative upgrade `TauCeti.PathAlgebra.liftNonUnitalAlgHom` is available when the assignment
+concatenates composable paths and annihilates products of paths that do not meet. For finite vertex
+types, `TauCeti.PathAlgebra.liftAlgHom` also preserves the unit when the trivial paths map to a
+decomposition of the target unit. -/
 noncomputable def liftLinear : pathAlgebra k Q →ₗ[k] B :=
   (pathAlgebraBasis k Q).constr ℕ F
 
@@ -830,17 +833,39 @@ theorem liftLinear_one : liftLinear k F (1 : pathAlgebra k Q) = 1 := by
 
 end LiftLinearOne
 
-section Lift
+section NonUnitalExt
 
-variable (k : Type w) {Q : Type u} {B : Type*} [CommSemiring k] [Quiver.{v} Q]
-  [Semiring B] [Algebra k B] (F : Quiver.TotalPath Q → B)
+variable (k : Type w) {Q : Type u} {B : Type*} [Semiring k] [Quiver.{v} Q]
+  [NonUnitalNonAssocSemiring B] [DistribMulAction k B]
+
+/-- Non-unital algebra homomorphisms out of a path algebra are determined by their values
+on the basis paths. -/
+@[ext high]
+theorem nonUnitalAlgHom_ext ⦃f g : pathAlgebra k Q →ₙₐ[k] B⦄
+    (h : ∀ x, f (ofPath x) = g (ofPath x)) : f = g := by
+  ext a
+  induction a using induction_linear with
+  | zero => simp
+  | add a b ha hb => simp only [map_add, ha, hb]
+  | single x c => simp only [single_eq_smul_ofPath, map_smul, h]
+
+end NonUnitalExt
+
+section LiftNonUnital
+
+variable (k : Type w) {Q : Type u} {B : Type*} [Semiring k] [Quiver.{v} Q]
+  [NonUnitalNonAssocSemiring B] [Module k B] [IsScalarTower k B B] [SMulCommClass k B B]
+  (F : Quiver.TotalPath Q → B)
 
 variable (hcomp : ∀ {a b c : Q} (p : _root_.Quiver.Path a b) (q : _root_.Quiver.Path c a),
     F ⟨a, b, p⟩ * F ⟨c, a, q⟩ = F ⟨c, b, q.comp p⟩)
   (hzero : ∀ {x y : Quiver.TotalPath Q}, y.2.1 ≠ x.1 → F x * F y = 0)
 
 include hcomp hzero in
-private theorem liftLinear_mul (f g : pathAlgebra k Q) :
+/-- A path assignment respecting concatenation and vanishing on noncomposable products has a
+multiplicative linear extension. No finiteness assumption on the vertex type or unit in the
+target is required. -/
+theorem liftLinear_mul (f g : pathAlgebra k Q) :
     liftLinear k F (f * g) = liftLinear k F f * liftLinear k F g := by
   induction f using PathAlgebra.induction_linear with
   | zero => simp
@@ -859,6 +884,49 @@ private theorem liftLinear_mul (f g : pathAlgebra k Q) :
       · rw [single_mul_single_of_not_composable hy, map_zero, liftLinear_single, liftLinear_single,
           smul_mul_smul_comm, hzero hy, smul_zero]
 
+/-- Extend a path assignment respecting concatenation and vanishing on noncomposable products
+to a non-unital algebra homomorphism. This is the path-algebra analogue of
+`MonoidAlgebra.liftMagma`: the quiver may have infinitely many vertices, and the target need not
+have a unit or associative multiplication. -/
+noncomputable def liftNonUnitalAlgHom : pathAlgebra k Q →ₙₐ[k] B where
+  toAddMonoidHom := (liftLinear k F).toAddMonoidHom
+  map_smul' := map_smul (liftLinear k F)
+  map_mul' := liftLinear_mul k F hcomp hzero
+
+/-- The non-unital lift has the given linear extension as its underlying function. -/
+@[simp]
+theorem coe_liftNonUnitalAlgHom :
+    ⇑(liftNonUnitalAlgHom k F hcomp hzero) = liftLinear k F := (rfl)
+
+/-- The non-unital lift agrees with the assignment on basis paths. -/
+@[simp]
+theorem liftNonUnitalAlgHom_ofPath (x : Quiver.TotalPath Q) :
+    liftNonUnitalAlgHom k F hcomp hzero (ofPath x) = F x :=
+  liftLinear_ofPath k F x
+
+/-- The non-unital lift sends a scaled basis path to the scaled assigned value. -/
+@[simp]
+theorem liftNonUnitalAlgHom_single (x : Quiver.TotalPath Q) (c : k) :
+    liftNonUnitalAlgHom k F hcomp hzero (single x c) = c • F x :=
+  liftLinear_single k F x c
+
+/-- The non-unital lift is the unique non-unital algebra homomorphism extending the assignment. -/
+theorem liftNonUnitalAlgHom_unique (G : pathAlgebra k Q →ₙₐ[k] B)
+    (hG : ∀ x, G (ofPath x) = F x) : G = liftNonUnitalAlgHom k F hcomp hzero :=
+  nonUnitalAlgHom_ext k fun x ↦
+    (hG x).trans (liftNonUnitalAlgHom_ofPath k F hcomp hzero x).symm
+
+end LiftNonUnital
+
+section Lift
+
+variable (k : Type w) {Q : Type u} {B : Type*} [CommSemiring k] [Quiver.{v} Q]
+  [Semiring B] [Algebra k B] (F : Quiver.TotalPath Q → B)
+
+variable (hcomp : ∀ {a b c : Q} (p : _root_.Quiver.Path a b) (q : _root_.Quiver.Path c a),
+    F ⟨a, b, p⟩ * F ⟨c, a, q⟩ = F ⟨c, b, q.comp p⟩)
+  (hzero : ∀ {x y : Quiver.TotalPath Q}, y.2.1 ≠ x.1 → F x * F y = 0)
+
 variable [Finite Q]
   (hone : letI := Fintype.ofFinite Q; ∑ v : Q, F ⟨v, v, _root_.Quiver.Path.nil⟩ = 1)
 
@@ -870,13 +938,23 @@ later factor first, as `TauCeti.PathAlgebra.single_mul_single_of_comp` multiplie
 do not meet annihilate one another (`hzero`), and the trivial paths give a decomposition of the
 unit (`hone`), as `TauCeti.PathAlgebra.one_def` says of the vertex idempotents. -/
 noncomputable def liftAlgHom : pathAlgebra k Q →ₐ[k] B :=
-  AlgHom.ofLinearMap (liftLinear k F) (liftLinear_one k F hone) (liftLinear_mul k F hcomp hzero)
+  AlgHom.ofLinearMap (liftLinear k F) (liftLinear_one k F hone)
+    (map_mul (liftNonUnitalAlgHom k F hcomp hzero))
 
 /-- **The lift extends the assignment**: a basis path goes to the element it was assigned. -/
 @[simp]
 theorem liftAlgHom_ofPath (x : Quiver.TotalPath Q) :
     liftAlgHom k F hcomp hzero hone (ofPath x) = F x :=
   liftLinear_ofPath k F x
+
+/-- Forgetting the unit condition on the unital lift gives the non-unital lift. -/
+@[simp]
+theorem coe_liftAlgHom :
+    (liftAlgHom k F hcomp hzero hone : pathAlgebra k Q →ₙₐ[k] B) =
+      liftNonUnitalAlgHom k F hcomp hzero :=
+  nonUnitalAlgHom_ext k fun x ↦
+    (liftAlgHom_ofPath k F hcomp hzero hone x).trans
+      (liftNonUnitalAlgHom_ofPath k F hcomp hzero x).symm
 
 /-- The lift is `k`-linear, so a scaled basis path scales the element it was assigned. -/
 @[simp]
@@ -890,8 +968,8 @@ compares two given homomorphisms, with no assignment `F` to name. -/
 @[ext high]
 theorem algHom_ext ⦃f g : pathAlgebra k Q →ₐ[k] B⦄ (h : ∀ x, f (ofPath x) = g (ofPath x)) :
     f = g :=
-  AlgHom.toLinearMap_injective <| (pathAlgebraBasis k Q).ext fun x => by
-    simpa only [AlgHom.toLinearMap_apply, coe_pathAlgebraBasis] using h x
+  AlgHom.ext fun x ↦ DFunLike.congr_fun
+    (nonUnitalAlgHom_ext k (f := f.toNonUnitalAlgHom) (g := g.toNonUnitalAlgHom) h) x
 
 /-- **The lift is the only one**: an algebra homomorphism out of `kQ` taking the value `F x` on
 each basis path is `TauCeti.PathAlgebra.liftAlgHom`. -/

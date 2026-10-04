@@ -296,6 +296,12 @@ noncomputable def zigzagProjectiveBasisFun (i : V) :
         (mem_zigzagProjective_iff k G).2
           (zigzagVolume_mul_zigzagMk_vertexIdempotent k G i)⟩
 
+/-- The degree-zero projective basis vector is its distinguished vertex generator. -/
+theorem zigzagProjectiveBasisFun_inl (i : V) (a : Unit) :
+    zigzagProjectiveBasisFun k G i (.inl a) = zigzagProjectiveGenerator k G i := by
+  cases a
+  rfl
+
 @[simp]
 theorem coe_zigzagProjectiveBasisFun_inl (i : V) (a : Unit) :
     (zigzagProjectiveBasisFun k G i (.inl a) : nonisolatedZigzagQuotient k G) =

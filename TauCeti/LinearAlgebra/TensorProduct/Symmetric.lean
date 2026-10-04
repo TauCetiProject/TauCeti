@@ -21,7 +21,10 @@ complementary, so the tensor square is their internal direct sum; the two submod
 concrete models of `Sym²M` and `⋀²M`
 *inside* `M ⊗[R] M`, which is what a construction carrying extra structure on the tensor square —
 a topology, say — needs, the quotient and subobject constructions `Sym[R]^2 M` and `⋀[R]^2 M`
-living outside it.
+living outside it. That they really are those two modules, `f ⊗ f`-equivariantly, is
+`TauCeti.symmetricTensorsEquivSymmetricPower` and
+`TauCeti.antisymmetricTensorsEquivExteriorPower` in
+`TauCeti/LinearAlgebra/TensorSquare.lean`.
 
 The point of the file is the trace identity `TauCeti.trace_map_self_comp_comm`: composing
 `f ⊗ f` with the flip has trace `tr (f ∘ f)`, because on a basis the diagonal entry of the
@@ -41,6 +44,9 @@ the tensor square rather than on the symmetric and exterior powers.
 
 ## Main results
 
+* `TauCeti.add_comm_mem_symmetricTensors` and `TauCeti.sub_comm_mem_antisymmetricTensors`: the
+  symmetrization `z + flip z` and the antisymmetrization `z - flip z` of a tensor lie in the two
+  eigenspaces.
 * `TauCeti.isCompl_symmetricTensors_antisymmetricTensors` and
   `TauCeti.isInternal_symmetricTensors_antisymmetricTensors`: with `2` invertible the two
   submodules are complementary, hence an internal direct sum decomposition of the tensor square.
@@ -88,6 +94,12 @@ theorem mem_symmetricTensors {x : M ⊗[R] M} :
   rw [symmetricTensors, LinearMap.mem_eqLocus]
   exact Iff.rfl
 
+/-- The symmetrization `z + flip z` of a tensor is symmetric. -/
+theorem add_comm_mem_symmetricTensors (z : M ⊗[R] M) :
+    z + TensorProduct.comm R M M z ∈ symmetricTensors R M := by
+  rw [mem_symmetricTensors, map_add, TensorProduct.comm_comm]
+  exact add_comm _ _
+
 /-- `f ⊗ f` preserves the symmetric tensors, because it commutes with the flip. -/
 theorem map_self_mem_symmetricTensors (f : M →ₗ[R] M) {x : M ⊗[R] M}
     (hx : x ∈ symmetricTensors R M) : TensorProduct.map f f x ∈ symmetricTensors R M := by
@@ -122,6 +134,11 @@ theorem mem_antisymmetricTensors {x : M ⊗[R] M} :
     x ∈ antisymmetricTensors R M ↔ TensorProduct.comm R M M x = -x := by
   rw [antisymmetricTensors, Module.End.mem_eigenspace_iff, neg_one_smul]
   exact Iff.rfl
+
+/-- The antisymmetrization `z - flip z` of a tensor is antisymmetric. -/
+theorem sub_comm_mem_antisymmetricTensors (z : M ⊗[R] M) :
+    z - TensorProduct.comm R M M z ∈ antisymmetricTensors R M := by
+  rw [mem_antisymmetricTensors, map_sub, TensorProduct.comm_comm, neg_sub]
 
 /-- `f ⊗ f` preserves the antisymmetric tensors, because it commutes with the flip. -/
 theorem map_self_mem_antisymmetricTensors (f : M →ₗ[R] M) {x : M ⊗[R] M}
@@ -166,10 +183,8 @@ theorem isCompl_symmetricTensors_antisymmetricTensors [Invertible (2 : R)] :
         rw [two_smul]; abel
       rw [this, smul_smul, invOf_mul_self, one_smul]
     rw [hsum]
-    refine Submodule.add_mem_sup (Submodule.smul_mem _ _ ?_) (Submodule.smul_mem _ _ ?_)
-    · rw [mem_symmetricTensors, map_add, TensorProduct.comm_comm]
-      exact add_comm _ _
-    · rw [mem_antisymmetricTensors, map_sub, TensorProduct.comm_comm, neg_sub]
+    exact Submodule.add_mem_sup (Submodule.smul_mem _ _ (add_comm_mem_symmetricTensors x))
+      (Submodule.smul_mem _ _ (sub_comm_mem_antisymmetricTensors x))
 
 variable (R M) in
 /-- The symmetric and antisymmetric tensors decompose the tensor square as an internal direct

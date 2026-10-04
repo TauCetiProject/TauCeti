@@ -88,7 +88,7 @@ of `u^j` may be replaced by the column of the values of `p j` without changing t
 if `d j` divides every weighted value `wᵢ · (p j).eval (uᵢ)` then `∏ⱼ d j` divides
 `∏ᵢ wᵢ · det (vandermonde u)` (`TauCeti.prod_dvd_prod_mul_det_vandermonde`).  With `p j` the falling
 factorial and `w = 1` this is the argument of Mathlib's `Matrix.superFactorial_dvd_vandermonde_det`.
-Two weighted products arise as numerators of Weyl dimension formulas, and both are divisible by
+Three products arise as numerators of Weyl dimension formulas.  The first two are divisible by
 `1! · 3! ⋯ (2n - 1)!`:
 
 * the odd Vandermonde product `∏ᵢ xᵢ · ∏_{i < j} (xᵢ² - xⱼ²)`, the numerator for the symplectic
@@ -98,6 +98,11 @@ Two weighted products arise as numerators of Weyl dimension formulas, and both a
   `x (x + 1)`, the numerator for the odd orthogonal groups, with the polynomials
   `∏_{c < k} (x - c)(x + c + 1)`, whose weighted values are sums of two falling factorials of
   degree `2k + 1` (`TauCeti.two_mul_add_one_mul_prod_sub_mul_add_add_one_eq`).
+
+The third, the unweighted product `∏_{i < j} (xᵢ² - xⱼ²)`, the numerator for the even orthogonal
+groups, is divisible by `2!/2 · 4!/2 ⋯ (2n - 2)!/2`, with the monic even polynomials
+`(x² - 0²) ⋯ (x² - k²)`, twice each of which is a sum of two falling factorials of degree `2k + 2`
+(`TauCeti.two_mul_prod_sq_sub_sq_eq`).
 
 ## Main results
 
@@ -115,6 +120,11 @@ Two weighted products arise as numerators of Weyl dimension formulas, and both a
 * `TauCeti.prod_factorial_dvd_prod_two_mul_add_one_mul_prod_sub_mul_add_add_one`: **integrality
   for the Vandermonde product of the values `x (x + 1)`** weighted by `2x + 1`, which is divisible
   by `1! · 3! ⋯ (2n - 1)!` too.
+* `TauCeti.prod_add_one_mul_factorial_dvd_prod_prod_sq_sub_sq`: **integrality for the even
+  Vandermonde product** `∏_{i < j} (xᵢ² - xⱼ²)`, which is divisible by
+  `2!/2 · 4!/2 ⋯ (2n - 2)!/2`, a positive integer
+  (`TauCeti.prod_add_one_mul_factorial_two_mul_add_one_pos`), the value of the product at the
+  nodes `n - 1, …, 1, 0` (`TauCeti.prod_prod_sq_sub_sq_eq_prod_add_one_mul_factorial`).
 -/
 
 public section
@@ -572,6 +582,50 @@ theorem prod_factorial_dvd_prod_mul_prod_sq_sub_sq (m : ℕ) (b : ℕ → ℤ) :
     (fun j _ => by rw [natDegree_finsetProd_X_sub_C_eq_card, Finset.card_range])
     (fun j _ => monic_prod_X_sub_C _ _)
     fun i _ j _ => by simpa [eval_prod] using factorial_dvd_mul_prod_sq_sub_sq j (b i)
+
+/-- The divisor `2!/2 · 4!/2 ⋯ (2m)!/2` of the even Vandermonde product is positive, so it may
+be cancelled. -/
+theorem prod_add_one_mul_factorial_two_mul_add_one_pos (m : ℕ) :
+    0 < ∏ k ∈ Finset.range m, ((k + 1) * (2 * k + 1).factorial : ℤ) :=
+  Finset.prod_pos fun k _ => by positivity
+
+/-- The products `∏_{c < j} (j² - c²)` for `j < m`, the rows of the even Vandermonde product at the
+nodes `m - 1, …, 1, 0`, multiply to `2!/2 · 4!/2 ⋯ (2m - 2)!/2`: the row `j = k + 1` is
+`(k + 1) (2k + 1)!` (`TauCeti.prod_sq_sub_sq_eq_mul_factorial`) and the row `j = 0` is empty. -/
+theorem prod_prod_sq_sub_sq_eq_prod_add_one_mul_factorial {R : Type*} [CommRing R] (m : ℕ) :
+    ∏ j ∈ Finset.range m, ∏ c ∈ Finset.range j, ((j : R) ^ 2 - (c : R) ^ 2)
+      = ∏ k ∈ Finset.range (m - 1), ((k + 1) * (2 * k + 1).factorial : R) := by
+  cases m with
+  | zero => simp
+  | succ m =>
+    rw [Finset.prod_range_succ', Finset.prod_range_zero, mul_one, Nat.add_sub_cancel]
+    exact Finset.prod_congr rfl fun k _ => by
+      exact_mod_cast prod_sq_sub_sq_eq_mul_factorial (R := R) k
+
+/-- **Integrality for the even Vandermonde product.**  For a sequence of integers, the product
+`∏_{k < l < m} (bₖ² - bₗ²)` is divisible by `∏_{k < m - 1} (k + 1) (2k + 1)!`, that is, by
+`2!/2 · 4!/2 ⋯ (2m - 2)!/2`.  In the Vandermonde determinant of the squares, the column of
+`(x²)^j` may be replaced by the column of `∏_{c < j} (x² - c²)`, whose values at the integers are
+multiples of its value `∏_{c < j} (j² - c²)` at `x = j`
+(`TauCeti.mul_factorial_dvd_prod_sq_sub_sq`). -/
+theorem prod_add_one_mul_factorial_dvd_prod_prod_sq_sub_sq (m : ℕ) (b : ℕ → ℤ) :
+    (∏ k ∈ Finset.range (m - 1), ((k + 1) * (2 * k + 1).factorial : ℤ))
+      ∣ ∏ k ∈ Finset.range m, ∏ l ∈ Finset.Ico (k + 1) m, (b k ^ 2 - b l ^ 2) := by
+  have h := prod_dvd_prod_mul_prod_sub m (fun k => b k ^ 2) (fun _ => 1)
+    (fun j => ∏ c ∈ Finset.range j, ((j : ℤ) ^ 2 - (c : ℤ) ^ 2))
+    (fun j => ∏ c ∈ Finset.range j, (X - C ((c : ℤ) ^ 2)))
+    (fun j _ => by rw [natDegree_finsetProd_X_sub_C_eq_card, Finset.card_range])
+    (fun j _ => monic_prod_X_sub_C _ _)
+    fun i _ j _ => by
+      rw [one_mul, eval_prod]
+      simp only [eval_sub, eval_X, eval_C]
+      cases j with
+      | zero => simp
+      | succ k =>
+        rw [prod_sq_sub_sq_eq_mul_factorial (R := ℤ) k]
+        push_cast
+        exact mul_factorial_dvd_prod_sq_sub_sq k (b i)
+  simpa only [prod_prod_sq_sub_sq_eq_prod_add_one_mul_factorial, one_mul] using h
 
 /-! ### The Vandermonde product of `x (x + 1)`, weighted by `2x + 1` -/
 

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Coalgebra.BaseChange
+public import Mathlib.RingTheory.Bialgebra.TensorProduct
 public import TauCeti.Algebra.TensorProduct.BaseChange
 
 /-!

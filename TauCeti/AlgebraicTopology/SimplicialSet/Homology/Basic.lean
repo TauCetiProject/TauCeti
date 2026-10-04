@@ -11,7 +11,8 @@ public import Mathlib.AlgebraicTopology.SimplicialSet.Homology.Basic
 # Simplicial chains with varying coefficients
 
 This file records how the coproduct inclusion associated to a simplex behaves under a morphism
-of coefficient objects.
+of coefficient objects, and how the degreewise components of the chain maps induced by maps of
+simplicial sets compose with each other and with changes of coefficients.
 -/
 
 public section
@@ -38,5 +39,24 @@ lemma ιChainComplex_chainComplexFunctor_map_app_f (f : R ⟶ R') {n : ℕ} (x :
   dsimp [_root_.SSet.chainComplexFunctor, _root_.SSet.ιChainComplex,
     _root_.SSet.chainComplex]
   simp
+
+/-- The degreewise components of the chain maps induced by maps of simplicial sets compose like
+the maps themselves. -/
+@[reassoc]
+lemma chainComplexMap_f_comp {X Y Z : _root_.SSet.{w}} (f : X ⟶ Y) (g : Y ⟶ Z) (R : C) (n : ℕ) :
+    (_root_.SSet.chainComplexMap f R).f n ≫ (_root_.SSet.chainComplexMap g R).f n =
+      (_root_.SSet.chainComplexMap (f ≫ g) R).f n := by
+  rw [← HomologicalComplex.comp_f, ← Functor.map_comp]
+
+/-- The chain maps induced by maps of simplicial sets commute, degreewise, with changes of
+coefficients. -/
+@[reassoc]
+lemma chainComplexMap_f_chainComplexFunctor_map_app_f {X Y : _root_.SSet.{w}} (f : X ⟶ Y)
+    (u : R ⟶ R') (n : ℕ) :
+    (_root_.SSet.chainComplexMap f R).f n ≫
+        (((_root_.SSet.chainComplexFunctor C).map u).app Y).f n =
+      (((_root_.SSet.chainComplexFunctor C).map u).app X).f n ≫
+        (_root_.SSet.chainComplexMap f R').f n := by
+  rw [← HomologicalComplex.comp_f, ← HomologicalComplex.comp_f, NatTrans.naturality]
 
 end TauCeti.SSet

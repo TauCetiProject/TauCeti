@@ -201,7 +201,8 @@ theorem isAcyclic_underlyingGraph : (underlyingGraph (AffineD m)).IsAcyclic :=
 /-- Two vertices of `TauCeti.Quiver.AffineD m` are joined by at most one arrow, counted in both
 directions. -/
 theorem subsingleton_hom_sum (a b : AffineD m) : Subsingleton ((a ⟶ b) ⊕ (b ⟶ a)) :=
-  subsingleton_hom_sum_of_lt height height_lt a b
+  subsingleton_hom_sum_of_lt height a b (height_lt (a := a) (b := b))
+    (height_lt (a := b) (b := a))
 
 end AffineD
 

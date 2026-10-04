@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.TrivialFp
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Functoriality
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.GradedComm
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Graded.Comm
 import Mathlib.Algebra.Field.ZMod
 
 /-!

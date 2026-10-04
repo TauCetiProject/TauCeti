@@ -86,32 +86,18 @@ theorem _root_.Polynomial.subresultantCoeffMatrix_natAdd [Semiring R]
       if (l : ℕ) ≤ d ∧ d ≤ l.val + m then p.coeff (d - l.val) else 0 := by
   simp [subresultantCoeffMatrix]
 
-/-- When the formal bounds dominate the degrees, a coefficient matrix reads shifted input
-coefficients, at degree `k` in its first row and at degree `i.val + j` elsewhere. -/
+/-- When the formal bounds dominate the input degrees, coefficient-matrix entries are
+coefficients of shifted input polynomials, including the replaced first row. -/
 theorem _root_.Polynomial.subresultantCoeffMatrix_apply_eq_coeff [Semiring R]
     {p q : R[X]} {m n : ℕ} (hm : p.natDegree ≤ m) (hn : q.natDegree ≤ n)
     (j k : ℕ) (i l : Fin ((m - j) + (n - j))) :
     subresultantCoeffMatrix p q m n j k i l =
-      l.addCases (fun l => (X ^ l.val * q).coeff (if i.val = 0 then k else i.val + j))
+      l.addCases
+        (fun l => (X ^ l.val * q).coeff (if i.val = 0 then k else i.val + j))
         (fun l => (X ^ l.val * p).coeff (if i.val = 0 then k else i.val + j)) := by
-  generalize hd : (if i.val = 0 then k else i.val + j) = d
-  induction l using Fin.addCases with
-  | left l =>
-    simp only [subresultantCoeffMatrix_castAdd, Fin.addCases_left, coeff_X_pow_mul', hd]
-    by_cases h : l.val ≤ d
-    · by_cases h' : d ≤ l.val + n
-      · simp only [h, h', and_self, ↓reduceIte]
-      · have hdeg : q.natDegree < d - l.val := by omega
-        simp only [h, h', and_false, ↓reduceIte, coeff_eq_zero_of_natDegree_lt hdeg]
-    · simp only [h, false_and, ↓reduceIte]
-  | right l =>
-    simp only [subresultantCoeffMatrix_natAdd, Fin.addCases_right, coeff_X_pow_mul', hd]
-    by_cases h : l.val ≤ d
-    · by_cases h' : d ≤ l.val + m
-      · simp only [h, h', and_self, ↓reduceIte]
-      · have hdeg : p.natDegree < d - l.val := by omega
-        simp only [h, h', and_false, ↓reduceIte, coeff_eq_zero_of_natDegree_lt hdeg]
-    · simp only [h, false_and, ↓reduceIte]
+  induction l using Fin.addCases <;>
+    simp [subresultantCoeffMatrix, coeff_X_pow_mul_of_natDegree_le hm,
+      coeff_X_pow_mul_of_natDegree_le hn]
 
 /-- A subresultant coefficient matrix replaces the row of degree `j` of the principal
 matrix by the row of degree `k`. -/
