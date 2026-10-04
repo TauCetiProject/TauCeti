@@ -71,21 +71,21 @@ theorem eq_add_of_normSq_eq_of_re_lt {x m ρ : ℝ} {w : ℂ} (hρ : 0 < ρ)
   have h : (x - m + ρ) * (x - m - ρ) = 0 := by linear_combination hx
   linarith [(mul_eq_zero.1 h).resolve_left (by linarith)]
 
-/-- **The radical line of two circles.** Let `a` lie on two circles centred on the real axis,
-of centres `m₁`, `m₂` and radii `ρ₁`, `ρ₂`, and let `w` lie on the first circle, to the left of
-`a` and strictly outside the second. Then every point `z` of the first circle to the left of `a` is
-strictly outside the second: on the first circle, `|z - m₂|² - ρ₂²` is an affine function of
+/-- **The radical line of two circles.** Let `a` lie on two circles centred on the real axis, the
+level sets `|· - m₁|² = r₁` and `|· - m₂|² = r₂`, and let `w` lie on the first, to the left of `a`
+and strictly outside the second. Then every point `z` of the first circle to the left of `a` is
+strictly outside the second: on the first circle, `|z - m₂|² - r₂` is an affine function of
 `Re z`, vanishing at `a`. -/
-theorem lt_normSq_sub_of_normSq_eq {a w z : ℂ} {m₁ ρ₁ m₂ ρ₂ : ℝ}
-    (ha₁ : Complex.normSq (a - m₁) = ρ₁ ^ 2) (ha₂ : Complex.normSq (a - m₂) = ρ₂ ^ 2)
-    (hw₁ : Complex.normSq (w - m₁) = ρ₁ ^ 2) (hw₂ : ρ₂ ^ 2 < Complex.normSq (w - m₂))
-    (hz₁ : Complex.normSq (z - m₁) = ρ₁ ^ 2) (hwa : w.re < a.re) (hza : z.re < a.re) :
-    ρ₂ ^ 2 < Complex.normSq (z - m₂) := by
+theorem lt_normSq_sub_of_normSq_eq {a w z : ℂ} {m₁ r₁ m₂ r₂ : ℝ}
+    (ha₁ : Complex.normSq (a - m₁) = r₁) (ha₂ : Complex.normSq (a - m₂) = r₂)
+    (hw₁ : Complex.normSq (w - m₁) = r₁) (hw₂ : r₂ < Complex.normSq (w - m₂))
+    (hz₁ : Complex.normSq (z - m₁) = r₁) (hwa : w.re < a.re) (hza : z.re < a.re) :
+    r₂ < Complex.normSq (z - m₂) := by
   simp only [Complex.normSq_apply, Complex.sub_re, Complex.sub_im, Complex.ofReal_re,
     Complex.ofReal_im, sub_zero] at ha₁ ha₂ hw₁ hw₂ hz₁ ⊢
-  have hz : (z.re - m₂) * (z.re - m₂) + z.im * z.im - ρ₂ ^ 2 = 2 * (m₁ - m₂) * (z.re - a.re) := by
+  have hz : (z.re - m₂) * (z.re - m₂) + z.im * z.im - r₂ = 2 * (m₁ - m₂) * (z.re - a.re) := by
     linear_combination hz₁ - ha₁ + ha₂
-  have hw : (w.re - m₂) * (w.re - m₂) + w.im * w.im - ρ₂ ^ 2 = 2 * (m₁ - m₂) * (w.re - a.re) := by
+  have hw : (w.re - m₂) * (w.re - m₂) + w.im * w.im - r₂ = 2 * (m₁ - m₂) * (w.re - a.re) := by
     linear_combination hw₁ - ha₁ + ha₂
   have hm : 2 * (m₁ - m₂) < 0 :=
     neg_of_mul_pos_left (hw ▸ sub_pos.2 hw₂) (sub_neg.2 hwa).le

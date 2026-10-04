@@ -18,13 +18,16 @@ import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.Semicircle
 The angle at a vertex `p` of `ℍ ∪ ∂ℍ` between the directions to `q` and `r`
 (`TauCeti.UpperHalfPlane.vertexAngle p q r`) is the angle between the rays
 `UpperHalfPlane.rayToward` towards `q` and `r` when `p ∈ ℍ`, and `0` at an ideal vertex
-(Walkden §7.1: geodesics meet `∂ℍ` at right angles). On three points of `ℍ` it is
-`UpperHalfPlane.interiorAngle` (`TauCeti.UpperHalfPlane.vertexAngle_inl_inl_inl`).
+(Walkden §7.1: geodesics meet `∂ℍ` at right angles). The directional reading needs `q ≠ p` and
+`r ≠ p` for `p ∈ ℍ`: a ray towards `p` itself is an arbitrary geodesic line through `p`, so the
+value is then unspecified. On three points of `ℍ` it is `UpperHalfPlane.interiorAngle`
+(`TauCeti.UpperHalfPlane.vertexAngle_inl_inl_inl`).
 
-When the vertex is a point `w` of the semicircle of centre `m` and radius `ρ` (or one of its two
-ideal endpoints), the angle between the upward vertical through `w` and the semicircle is an
-arccosine of `(Re w - m) / ρ`, and at a vertex where two semicircles meet with the upward vertical
-inside the angle, the angle is the sum of the angles to the vertical. These are the angles of a
+When the vertex is a point `w ∈ ℍ` of the semicircle of centre `m` and radius `ρ`, the angle
+between the upward vertical through `w` and the semicircle is an arccosine of `(Re w - m) / ρ`;
+when the vertex is one of the two ideal endpoints of the semicircle the angle is `0`. At a vertex
+where two semicircles meet with the upward vertical inside the angle, the angle is the sum of the
+angles to the vertical. These are the angles of a
 hyperbolic triangle with an ideal vertex at `∞`, in the normal form of Walkden's and Katok's
 proofs of the Gauss–Bonnet formula.
 
@@ -64,7 +67,9 @@ namespace TauCeti.UpperHalfPlane
 /-! ### The angle at a vertex of `ℍ ∪ ∂ℍ` -/
 
 /-- The angle at the vertex `p` of `ℍ ∪ ∂ℍ` between the directions to `q` and `r`: the angle
-between the rays towards `q` and `r` when `p ∈ ℍ`, and `0` when `p` is an ideal point. -/
+between the rays towards `q` and `r` when `p ∈ ℍ`, and `0` when `p` is an ideal point. For
+`p ∈ ℍ` it is an angle between directions only when `q ≠ p` and `r ≠ p`; otherwise the ray towards
+`p` is an arbitrary geodesic line through `p` and the value is unspecified. -/
 def vertexAngle (p q r : ℍ ⊕ OnePoint ℝ) : ℝ :=
   Sum.elim (fun A ↦ geodesicAngle (rayToward A q) (rayToward A r)) (fun _ ↦ 0) p
 
