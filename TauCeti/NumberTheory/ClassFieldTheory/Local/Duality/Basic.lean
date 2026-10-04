@@ -220,6 +220,23 @@ theorem tateDualEquiv_tateDualMap_apply {A B : GalRep n F} (f : A ⟶ B)
     exact congrArg (fun q : A.V →+ (muNRep n F).V => q a)
       (InternalHom.toAddMonoidHom_precomp _ ψ)
 
+/-- Precomposition with the identity is the identity on the Tate dual. -/
+@[simp]
+theorem tateDualMap_id (A : GalRep n F) : tateDualMap (𝟙 A) = 𝟙 (tateDual A) :=
+  TopRep.hom_ext <| DFunLike.ext _ _ fun ψ => (tateDualEquiv A).injective <|
+    AddMonoidHom.ext fun a => tateDualEquiv_tateDualMap_apply (𝟙 A) ψ a
+
+/-- The Tate dual reverses composition: `(f ≫ g)* = g* ≫ f*`. -/
+@[simp]
+theorem tateDualMap_comp {A B C : GalRep n F} (f : A ⟶ B) (g : B ⟶ C) :
+    tateDualMap (f ≫ g) = tateDualMap g ≫ tateDualMap f :=
+  TopRep.hom_ext <| DFunLike.ext _ _ fun ψ => (tateDualEquiv A).injective <|
+    AddMonoidHom.ext fun a => by
+      rw [tateDualEquiv_tateDualMap_apply]
+      change _ = tateDualEquiv A ((tateDualMap f).hom ((tateDualMap g).hom ψ)) a
+      rw [tateDualEquiv_tateDualMap_apply, tateDualEquiv_tateDualMap_apply]
+      rfl
+
 /-- Evaluation is natural in the coefficient module: `⟨f* ψ, a⟩ = ⟨ψ, f a⟩`. -/
 theorem tateEvaluationPairing_tateDualMap {A B : GalRep n F} [DiscreteTopology A.V]
     [DiscreteTopology B.V] (f : A ⟶ B) (ψ : (tateDual B).V) (a : A.V) :
