@@ -41,6 +41,8 @@ Coefficients are an object `R` of an abelian category with coproducts.
 
 ## Main definitions and results
 
+* `TauCeti.isZero_reducedSingularHomologyFunctor_sphere_compl_singleton`: the unit sphere minus a
+  point is acyclic.
 * `TauCeti.isIso_reducedMayerVietorisδ_sphere`: the reduced Mayer–Vietoris connecting morphism
   `Hₖ₊₁(S) ⟶ H_redₖ(S ∖ {p, -p})` of the cover of `S` by the complements of `p` and `-p` is an
   isomorphism.
@@ -94,6 +96,15 @@ theorem isIso_reducedMayerVietorisδ_sphere (k : ℕ) :
   have := contractibleSpace_sphere_compl_singleton p
   have := contractibleSpace_sphere_compl_singleton (-p)
   inferInstance
+
+/-- **The unit sphere minus a point is acyclic.** For a point `p` of the unit sphere of a real
+normed space, the reduced homology of the complement of `p` vanishes in every degree, since that
+complement is contractible. -/
+theorem isZero_reducedSingularHomologyFunctor_sphere_compl_singleton (k : ℕ) :
+    IsZero ((reducedSingularHomologyFunctor R k).obj
+      (TopCat.of ↥({p}ᶜ : Set (sphere (0 : E) 1)))) :=
+  have := contractibleSpace_sphere_compl_singleton p
+  isZero_reducedSingularHomologyFunctor_of_contractibleSpace R _ k
 
 /-- **Reduced homology of the zero-sphere.**  For a point `p` of the unit sphere of a
 one-dimensional real normed space, the reduced homology of the sphere in degree zero is one copy

@@ -7,8 +7,9 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.DirectedUnion
 public import TauCeti.AlgebraicTopology.Singular.MayerVietoris.Reduced
-public import TauCeti.AlgebraicTopology.Sphere.Puncture
+public import TauCeti.AlgebraicTopology.Singular.Sphere
 public import Mathlib.Topology.LocallyConstant.Basic
+public import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
 
 /-!
 # The complement of an embedded cube is acyclic
@@ -39,6 +40,8 @@ Coefficients are a module over a ring, since the compactness step is an argument
   point complements are acyclic, the complement of an embedded cube is acyclic.
 * `TauCeti.isZero_reducedSingularHomologyFunctor_sphere_compl_range_cube`: the complement of a cube
   embedded in the unit sphere of a real normed space is acyclic.
+* `TauCeti.isZero_reducedSingularHomologyFunctor_compl_range_closedBall`: the same for an embedded
+  closed disc, which is homeomorphic to a cube.
 
 ## References
 
@@ -276,8 +279,23 @@ theorem isZero_reducedSingularHomologyFunctor_sphere_compl_range_cube {E : Type 
     (hc : Continuous h) (hi : Function.Injective h) (n : ℕ) :
     IsZero ((reducedSingularHomologyFunctor M n).obj (of ↥(range h)ᶜ)) :=
   isZero_reducedSingularHomologyFunctor_compl_range_cube M
-    (fun p n ↦ have := contractibleSpace_sphere_compl_singleton p
-      isZero_reducedSingularHomologyFunctor_of_contractibleSpace M _ n) hc hi n
+    (isZero_reducedSingularHomologyFunctor_sphere_compl_singleton M) hc hi n
+
+/-- **The complement of an embedded disc is acyclic.** Let `Y` be a Hausdorff space in which the
+complement of every point has vanishing reduced homology. Then the complement of the image of any
+continuous injection of the closed unit ball of a finite-dimensional real normed space into `Y`
+has vanishing reduced homology, with coefficients in any module. -/
+theorem isZero_reducedSingularHomologyFunctor_compl_range_closedBall {Y : Type w}
+    [TopologicalSpace Y] [T2Space Y]
+    (hY : ∀ (y : Y) (n : ℕ), IsZero ((reducedSingularHomologyFunctor M n).obj (of ↥({y}ᶜ : Set Y))))
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+    {h : closedBall (0 : F) 1 → Y} (hc : Continuous h) (hi : Function.Injective h) (n : ℕ) :
+    IsZero ((reducedSingularHomologyFunctor M n).obj (of ↥(range h)ᶜ)) := by
+  -- The closed ball is homeomorphic to a cube.
+  obtain ⟨g⟩ := nonempty_homeomorph_cube_closedBall F
+  rw [← g.surjective.range_comp h]
+  exact isZero_reducedSingularHomologyFunctor_compl_range_cube M hY (hc.comp g.continuous)
+    (hi.comp g.injective) n
 
 end Main
 

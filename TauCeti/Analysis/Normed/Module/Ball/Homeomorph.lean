@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.Convex.GaugeRescale
 public import Mathlib.Analysis.Normed.Module.Ball.Homeomorph
 public import Mathlib.Analysis.Normed.Module.Convex
+public import Mathlib.Topology.Algebra.Module.FiniteDimension
+public import Mathlib.Topology.UnitInterval
 
 /-!
 # Homeomorphisms onto the unit balls of normed spaces
@@ -35,6 +37,8 @@ valued in the closed unit ball.
   `ContinuousLinearEquiv.image_unitBallHomeomorph_sphere`: it matches the closed unit balls, the
   open unit balls and the unit spheres.
 * `TauCeti.isOpenEmbedding_inclusion_comp_unitBall`: `E` embeds openly in its closed unit ball.
+* `TauCeti.nonempty_homeomorph_cube_closedBall`: the closed unit ball of a real normed space of
+  finite dimension `k` is homeomorphic to the cube `Iᵏ`.
 -/
 
 public section
@@ -113,5 +117,40 @@ theorem isOpenEmbedding_inclusion_comp_unitBall :
       Homeomorph.unitBall) :=
   (IsOpenEmbedding.inclusion _ (isOpen_ball.preimage continuous_subtype_val)).comp
     Homeomorph.unitBall.isOpenEmbedding
+
+open unitInterval in
+/-- **The closed unit ball of a finite-dimensional real normed space is a cube.** The closed unit
+ball of a real normed space of finite dimension `k` is homeomorphic to the cube `Iᵏ`. -/
+theorem nonempty_homeomorph_cube_closedBall (F : Type*) [NormedAddCommGroup F] [NormedSpace ℝ F]
+    [FiniteDimensional ℝ F] :
+    Nonempty ((Fin (Module.finrank ℝ F) → I) ≃ₜ closedBall (0 : F) 1) := by
+  set k := Module.finrank ℝ F
+  let L : (Fin k → ℝ) ≃L[ℝ] F := ContinuousLinearEquiv.ofFinrankEq (by simp [k])
+  let e : closedBall (0 : Fin k → ℝ) 1 ≃ₜ closedBall (0 : F) 1 :=
+    (L.unitBallHomeomorph.image _).trans
+      (Homeomorph.setCongr L.image_unitBallHomeomorph_closedBall)
+  -- The affine change `t ↦ 2t - 1` identifies `Iᵏ` with the closed unit ball of the sup norm.
+  have hmem (c : Fin k → I) : (fun i ↦ 2 * (c i : ℝ) - 1) ∈ closedBall (0 : Fin k → ℝ) 1 :=
+    mem_closedBall_zero_iff.2 <| (pi_norm_le_iff_of_nonneg zero_le_one).2 fun i ↦ by
+      rw [Real.norm_eq_abs, abs_le]
+      constructor <;> linarith [(c i).2.1, (c i).2.2]
+  let a : (Fin k → I) → closedBall (0 : Fin k → ℝ) 1 := fun c ↦ ⟨_, hmem c⟩
+  have ha : Continuous a := (continuous_pi fun i ↦ by fun_prop).subtype_mk hmem
+  have hai : Function.Injective a := fun c c' hcc' ↦ funext fun i ↦ Subtype.ext <| by
+    have := congr_fun (congrArg Subtype.val hcc') i
+    simp only [a] at this
+    linarith
+  have has : Function.Surjective a := by
+    rintro ⟨x, hx⟩
+    have hxi (i : Fin k) : |x i| ≤ 1 := by
+      simpa [Real.norm_eq_abs] using
+        (pi_norm_le_iff_of_nonneg zero_le_one).1 (mem_closedBall_zero_iff.1 hx) i
+    refine ⟨fun i ↦ ⟨(x i + 1) / 2, ?_, ?_⟩, Subtype.ext (funext fun i ↦ ?_)⟩
+    · linarith [(abs_le.1 (hxi i)).1]
+    · linarith [(abs_le.1 (hxi i)).2]
+    · simp only [a]
+      ring
+  exact ⟨(e.continuous.comp ha).homeoOfEquivCompactToT2
+    (f := Equiv.ofBijective _ (e.bijective.comp ⟨hai, has⟩))⟩
 
 end TauCeti
