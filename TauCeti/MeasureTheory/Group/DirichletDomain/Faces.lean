@@ -71,6 +71,7 @@ theorem isClosed_dirichletFace (p : X) (g : G) : IsClosed (dirichletFace p g) :=
     (isClosed_eq (continuous_id.dist continuous_const) (continuous_id.dist continuous_const))
 
 /-- An element fixing the centre gives the whole Dirichlet domain as its equality face. -/
+@[simp]
 theorem dirichletFace_eq_dirichletDomain_of_smul_eq {p : X} {g : G} (hg : g • p = p) :
     dirichletFace p g = dirichletDomain G p := by
   ext x
@@ -80,7 +81,8 @@ variable [ProperSpace X] [ProperlyDiscontinuousSMul G X]
 
 /-- Only finitely many equality faces meet a bounded set. This counts acting elements,
 including the finitely many elements fixing the centre. -/
-theorem finite_dirichletFace_inter (p : X) {K : Set X} (hK : Bornology.IsBounded K) :
+theorem finite_setOf_dirichletFace_inter_nonempty (p : X) {K : Set X}
+    (hK : Bornology.IsBounded K) :
     {g : G | (dirichletFace p g ∩ K).Nonempty}.Finite := by
   refine (finite_dirichletCompetitors (G := G) p hK).subset ?_
   rintro g ⟨x, hx, hxK⟩
@@ -89,7 +91,7 @@ theorem finite_dirichletFace_inter (p : X) {K : Set X} (hK : Bornology.IsBounded
 /-- The equality faces of a Dirichlet domain are locally finite. -/
 theorem locallyFinite_dirichletFace (p : X) : LocallyFinite (dirichletFace (G := G) p) :=
   fun x ↦ ⟨closedBall x 1, closedBall_mem_nhds x zero_lt_one,
-    finite_dirichletFace_inter p isBounded_closedBall⟩
+    finite_setOf_dirichletFace_inter_nonempty p isBounded_closedBall⟩
 
 /-- Every boundary point of the Dirichlet domain belongs to an equality face indexed by an
 element moving the centre. This does not assert that every equality face is a boundary face
