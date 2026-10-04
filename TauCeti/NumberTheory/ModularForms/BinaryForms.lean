@@ -319,19 +319,18 @@ theorem binaryFormRep_binaryFormDual (M : Matrix (Fin 2) (Fin 2) ℤ)
   let f : A →+* R := eval₂Hom (Int.castRingHom R) id
   let φA : homogeneousSubmodule (Fin 2) A w →ₗ[A] A :=
     (binaryFormMonomialBasis A w).constr A fun j ↦ X (φ (binaryFormMonomialBasis R w j))
-  have hfX (r : R) : f (X r) = r := by
-    change eval₂Hom (Int.castRingHom R) id (X r) = r
-    exact eval₂Hom_X' (Int.castRingHom R) id r
+  have hfX (r : R) : f (X r) = r := eval₂Hom_X' (Int.castRingHom R) id r
   have hφ (P : homogeneousSubmodule (Fin 2) A w) :
       f (φA P) = φ (mapBinaryForm f P) := by
     have hmap : mapBinaryForm f P = ∑ j : Fin (w + 1),
         f ((binaryFormMonomialBasis A w).repr P j) • binaryFormMonomialBasis R w j := by
       apply (binaryFormMonomialBasis R w).repr.injective
       ext j
-      rw [show ((binaryFormMonomialBasis R w).repr (mapBinaryForm f P)) j =
-          f ((binaryFormMonomialBasis A w).repr P j) by
+      have hrepr : (binaryFormMonomialBasis R w).repr (mapBinaryForm f P) j =
+          f ((binaryFormMonomialBasis A w).repr P j) := by
         simp [binaryFormMonomialBasis, mapBinaryForm, homogeneousMonomialBasis_repr_apply,
-          MvPolynomial.coeff_map]]
+          MvPolynomial.coeff_map]
+      rw [hrepr]
       simp [Finsupp.single_apply]
     rw [hmap, map_sum]
     simp [φA, hfX]

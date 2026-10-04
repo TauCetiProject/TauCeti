@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ModularForms.LevelOne.PeriodPolynomial.Basic
 public import TauCeti.NumberTheory.ModularForms.ModularSymbols.Period.Map
+import TauCeti.NumberTheory.Modular.Relations
 import TauCeti.NumberTheory.ModularForms.ModularSymbols.Manin
 import TauCeti.NumberTheory.ModularForms.ModularSymbols.Period.Injective
 
@@ -29,7 +30,8 @@ map of `f` sends the symbol `{g∞, g0} ⊗ P` to the period of `P ∣ g`, the t
 Manin relations say that `r_f` is killed by `1 + S` and by `1 + U + U²`: the period polynomial lies
 in the period-polynomial space `W_w`. Since the symbols `{g∞, g0} ⊗ P` span the modular symbols,
 `r_f` determines all the periods of `f`, so the injectivity of the period map makes `f ↦ r_f`
-injective. This is the map `S_k(SL(2, ℤ)) → W_w` of the Eichler–Shimura theory. Its even and odd
+injective. This is the map `S_k(SL(2, ℤ)) → W_w` of the Eichler–Shimura theory, and
+`TauCeti.periodPolynomial` is stated with codomain `W_w`. Its even and odd
 parts, together with the dimension count `dim W_w = dim M_k + dim S_k` of
 `TauCeti.NumberTheory.ModularForms.LevelOne.PeriodPolynomial.Finrank`, are what compare `W_w` with
 the spaces of modular forms in the period-polynomial approach to the Eichler–Selberg trace
@@ -38,12 +40,11 @@ formula.
 ## Main definitions
 
 * `TauCeti.periodPolynomial hk`: the `ℂ`-linear map `f ↦ r_f` from cusp forms of weight
-  `k = w + 2` on `SL(2, ℤ)` to binary forms of degree `w`.
+  `k = w + 2` on `SL(2, ℤ)` to the period-polynomial space `W_w`.
 
 ## Main results
 
 * `TauCeti.eval_periodPolynomial`: `r_f(x, y) = ∫₀^{i∞} f(τ) (x - τy)ʷ dτ`.
-* `TauCeti.periodPolynomial_mem_periodPolynomials`: `r_f` lies in `W_w`.
 * `TauCeti.periodPolynomial_injective`: `f ↦ r_f` is injective.
 
 ## References
@@ -79,26 +80,23 @@ private theorem toTop_apply (f : CuspForm 𝒮ℒ k) (z : UpperHalfPlane) : toTo
 private theorem toTop_injective : Function.Injective (toTop (k := k)) :=
   fun f g h ↦ CuspForm.ext fun z ↦ by rw [← toTop_apply, h, toTop_apply]
 
-/-- **The period polynomial** `r_f(X, Y) = ∫₀^{i∞} f(τ) (X - τY)ʷ dτ` of a cusp form `f` of weight
-`k = w + 2` on `SL(2, ℤ)` (`TauCeti.eval_periodPolynomial`), as a `ℂ`-linear map to the binary
-forms of degree `w`. It is the binary form attached by `TauCeti.binaryFormDual` to the functional
+/-- The period polynomial as a binary form of degree `w`, before restricting the codomain to
+`W_w`: the binary form attached by `TauCeti.binaryFormDual` to the functional
 `P ↦ ∫₀^{i∞} f(τ) P(τ, 1) dτ`, the period map of `f` on the modular symbols `{∞, 0} ⊗ P`. -/
-def periodPolynomial (hk : k = w + 2) :
+private def periodForm (hk : k = w + 2) :
     CuspForm 𝒮ℒ k →ₗ[ℂ] homogeneousSubmodule (Fin 2) ℂ w :=
   binaryFormDual ℂ w ∘ₗ LinearMap.lcomp ℂ ℂ (symbol ⊤ ∞ ((0 : ℚ) : OnePoint ℚ)) ∘ₗ
     periodMap ℂ ⊤ hk ∘ₗ toTop
 
-private theorem periodPolynomial_apply (hk : k = w + 2) (f : CuspForm 𝒮ℒ k) :
-    periodPolynomial hk f = binaryFormDual ℂ w
+private theorem periodForm_apply (hk : k = w + 2) (f : CuspForm 𝒮ℒ k) :
+    periodForm hk f = binaryFormDual ℂ w
       (periodMap ℂ ⊤ hk (toTop f) ∘ₗ symbol ⊤ ∞ ((0 : ℚ) : OnePoint ℚ)) :=
   (rfl)
 
-/-- **The values of the period polynomial**: `r_f(x, y) = ∫₀^{i∞} f(τ) (x - τy)ʷ dτ`. -/
-@[simp]
-theorem eval_periodPolynomial (hk : k = w + 2) (f : CuspForm 𝒮ℒ k) (x y : ℂ) :
-    eval ![x, y] (periodPolynomial hk f : MvPolynomial (Fin 2) ℂ) =
+private theorem eval_periodForm (hk : k = w + 2) (f : CuspForm 𝒮ℒ k) (x y : ℂ) :
+    eval ![x, y] (periodForm hk f : MvPolynomial (Fin 2) ℂ) =
       cuspIntegral (fun τ ↦ f τ * (x - τ * y) ^ w) ((0 : ℚ) : OnePoint ℚ) ∞ := by
-  rw [periodPolynomial_apply, eval_binaryFormDual, LinearMap.comp_apply, periodMap_symbol]
+  rw [periodForm_apply, eval_binaryFormDual, LinearMap.comp_apply, periodMap_symbol]
   congr 1
   ext τ
   simp [periodIntegrand_apply, toTop_apply, mul_comm]
@@ -121,23 +119,20 @@ private theorem S_inv_eq : (S⁻¹ : SL(2, ℤ)) = -1 * S := by
       using S_mul_S_eq
   exact inv_eq_of_mul_eq_one_right (by rw [neg_one_mul, mul_neg, hS, neg_neg])
 
-/-- `U³ = -1`, for `U = T S`. -/
-private theorem U_pow_three : (T * S) ^ 3 = (-1 : SL(2, ℤ)) := by
-  ext i j
-  fin_cases i <;> fin_cases j <;> rfl
-
 /-- `U⁻¹ = -U²`, written so that the three-term Manin relation applies. -/
 private theorem U_inv_eq : ((T * S)⁻¹ : SL(2, ℤ)) = -(1 * (T * S) ^ 2) :=
-  inv_eq_of_mul_eq_one_right (by rw [one_mul, mul_neg, ← pow_succ', U_pow_three, neg_neg])
+  inv_eq_of_mul_eq_one_right <| by
+    rw [one_mul, mul_neg, ← pow_succ', ModularGroup.T_mul_S_pow_three, neg_neg]
 
 /-- `U⁻² = -U`, written so that the three-term Manin relation applies. -/
 private theorem U_inv_mul_U_inv_eq : ((T * S)⁻¹ * (T * S)⁻¹ : SL(2, ℤ)) = -(1 * (T * S)) := by
-  rw [U_inv_eq, neg_mul_neg, one_mul, one_mul, ← pow_add, pow_succ, U_pow_three, neg_one_mul]
+  rw [U_inv_eq, neg_mul_neg, one_mul, one_mul, ← pow_add, pow_succ,
+    ModularGroup.T_mul_S_pow_three, neg_one_mul]
 
 /-- **The period polynomial lies in `W_w`**: `r_f` is killed by `1 + S` and by `1 + U + U²`, the
 two-term and three-term Manin relations. -/
-theorem periodPolynomial_mem_periodPolynomials (hk : k = w + 2) (f : CuspForm 𝒮ℒ k) :
-    periodPolynomial hk f ∈ periodPolynomials ℂ w := by
+private theorem periodForm_mem_periodPolynomials (hk : k = w + 2) (f : CuspForm 𝒮ℒ k) :
+    periodForm hk f ∈ periodPolynomials ℂ w := by
   have hφ (g : SL(2, ℤ)) (P : homogeneousSubmodule (Fin 2) ℂ w) :
       periodMap ℂ ⊤ hk (toTop f) (symbol ⊤ ∞ ((0 : ℚ) : OnePoint ℚ)
           (binaryFormAdjugateRep ℂ w (g : Matrix (Fin 2) (Fin 2) ℤ) P)) =
@@ -148,7 +143,7 @@ theorem periodPolynomial_mem_periodPolynomials (hk : k = w + 2) (f : CuspForm �
       periodMap ℂ ⊤ hk (toTop f) (symbol ⊤ ∞ ((0 : ℚ) : OnePoint ℚ) P) =
         periodMap ℂ ⊤ hk (toTop f) (maninSymbol ⊤ 1 P) := by
     rw [maninSymbol_apply, map_one, one_smul, one_smul]
-  rw [mem_periodPolynomials_iff, periodPolynomial_apply]
+  rw [mem_periodPolynomials_iff, periodForm_apply]
   simp only [binaryFormRep_binaryFormDual, ← map_add]
   constructor
   · -- the two-term relation, through `S⁻¹ = -S`
@@ -171,12 +166,10 @@ theorem periodPolynomial_mem_periodPolynomials (hk : k = w + 2) (f : CuspForm �
       ← LinearMap.add_apply, ← LinearMap.add_apply, add_right_comm,
       maninSymbol_add_mul_T_mul_S_add_mul_T_mul_S_sq, LinearMap.zero_apply, map_zero]
 
-/-- **The period polynomial determines the cusp form**: `f ↦ r_f` is injective. -/
-theorem periodPolynomial_injective (hk : k = w + 2) :
-    Function.Injective (periodPolynomial hk) := by
+private theorem periodForm_injective (hk : k = w + 2) : Function.Injective (periodForm hk) := by
   rw [← LinearMap.ker_eq_bot, LinearMap.ker_eq_bot']
   intro f hf
-  rw [periodPolynomial_apply, ← map_zero (binaryFormDual ℂ w)] at hf
+  rw [periodForm_apply, ← map_zero (binaryFormDual ℂ w)] at hf
   have hφ := binaryFormDual_injective
     (fun j _ ↦ .of_ne_zero (Nat.cast_ne_zero.2 (Nat.choose_pos ‹_›).ne')) hf
   refine toTop_injective (periodMap_injective (R := ℂ) hk ?_)
@@ -186,5 +179,26 @@ theorem periodPolynomial_injective (hk : k = w + 2) :
   dsimp only
   rw [← periodMap_symbol_binaryFormRep, ← LinearMap.comp_apply, hφ, LinearMap.zero_apply,
     LinearMap.zero_apply]
+
+/-- **The period polynomial** `r_f(X, Y) = ∫₀^{i∞} f(τ) (X - τY)ʷ dτ` of a cusp form `f` of weight
+`k = w + 2` on `SL(2, ℤ)` (`TauCeti.eval_periodPolynomial`), as a `ℂ`-linear map to the
+period-polynomial space `W_w`. It is the binary form attached by `TauCeti.binaryFormDual` to the
+functional `P ↦ ∫₀^{i∞} f(τ) P(τ, 1) dτ`, the period map of `f` on the modular symbols
+`{∞, 0} ⊗ P`; it lies in `W_w` because of the two-term and three-term Manin relations. -/
+def periodPolynomial (hk : k = w + 2) : CuspForm 𝒮ℒ k →ₗ[ℂ] periodPolynomials ℂ w :=
+  (periodForm hk).codRestrict _ (periodForm_mem_periodPolynomials hk)
+
+/-- **The values of the period polynomial**: `r_f(x, y) = ∫₀^{i∞} f(τ) (x - τy)ʷ dτ`. -/
+@[simp]
+theorem eval_periodPolynomial (hk : k = w + 2) (f : CuspForm 𝒮ℒ k) (x y : ℂ) :
+    eval ![x, y] ((periodPolynomial hk f : homogeneousSubmodule (Fin 2) ℂ w) :
+        MvPolynomial (Fin 2) ℂ) =
+      cuspIntegral (fun τ ↦ f τ * (x - τ * y) ^ w) ((0 : ℚ) : OnePoint ℚ) ∞ :=
+  eval_periodForm hk f x y
+
+/-- **The period polynomial determines the cusp form**: `f ↦ r_f` is injective. -/
+theorem periodPolynomial_injective (hk : k = w + 2) :
+    Function.Injective (periodPolynomial hk) :=
+  fun _ _ h ↦ periodForm_injective hk (congrArg Subtype.val h)
 
 end TauCeti
