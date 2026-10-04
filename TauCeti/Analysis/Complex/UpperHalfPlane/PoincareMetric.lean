@@ -6,14 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Manifold
-public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
+public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Conformal
 
 /-!
 # The Poincaré Riemannian metric
 
 The canonical tensor on the upper half-plane is the Euclidean inner product divided by the
-square of the imaginary coordinate. We construct it as a smooth real Riemannian metric, so that
-it can be used by the Riemannian volume construction.
+square of the imaginary coordinate. We construct it as a smooth real Riemannian metric, the
+Euclidean metric rescaled by `im⁻²` through `Bundle.ContMDiffRiemannianMetric.rescale`, so that it
+can be used by the Riemannian volume construction.
 
 The convention is the upper half-plane model in J. M. Lee, *Introduction to Riemannian
 Manifolds*, 2nd ed., Springer GTM 176 (2018), Chapter 3.
@@ -47,62 +48,72 @@ private theorem poincare_symm (α z : ℍ) (v : ℂ) :
     (trivializationAt ℂ (TangentSpace 𝓘(ℝ, ℂ) : ℍ → Type) α) (by simp)] using
     poincare_symmL α z v
 
-/-- The smooth Poincaré metric, whose tensor is the Euclidean tensor divided by `im²`. -/
-def poincareRiemannianMetric :
+/-- The flat metric on the upper half-plane: the Euclidean tensor of `ℂ`, read through the
+inclusion chart. -/
+private def euclideanMetric :
     ContMDiffRiemannianMetric 𝓘(ℝ, ℂ) ∞ ℂ
       (fun z : ℍ ↦ TangentSpace 𝓘(ℝ, ℂ) z) where
   inner z := by
     -- Defining a foundational tangent metric uses the explicit identification with its model.
     let e := tangentSpaceCastModel 𝓘(ℝ, ℂ) z
-    exact (z.im ^ 2)⁻¹ •
-      ((e.symm.arrowCongr (e.symm.arrowCongr (ContinuousLinearEquiv.refl ℝ ℝ)))
-        (innerSL ℝ (E := ℂ)))
+    exact (e.symm.arrowCongr (e.symm.arrowCongr (ContinuousLinearEquiv.refl ℝ ℝ)))
+      (innerSL ℝ (E := ℂ))
   symm z v w := by
-    simp only [smul_apply, smul_eq_mul, ContinuousLinearEquiv.arrowCongr_apply,
-      ContinuousLinearEquiv.symm_symm, ContinuousLinearEquiv.refl_apply]
-    congr 1
+    simp only [ContinuousLinearEquiv.arrowCongr_apply, ContinuousLinearEquiv.symm_symm,
+      ContinuousLinearEquiv.refl_apply]
     exact real_inner_comm (tangentSpaceCastModel 𝓘(ℝ, ℂ) z v)
       (tangentSpaceCastModel 𝓘(ℝ, ℂ) z w) |>.symm
   pos z v hv := by
-    simp only [smul_apply, smul_eq_mul, ContinuousLinearEquiv.arrowCongr_apply,
-      ContinuousLinearEquiv.symm_symm, ContinuousLinearEquiv.refl_apply]
-    exact mul_pos (inv_pos.mpr (sq_pos_of_pos z.im_pos))
-      (real_inner_self_pos.mpr ((tangentSpaceCastModel 𝓘(ℝ, ℂ) z).map_ne_zero_iff.mpr hv))
+    simp only [ContinuousLinearEquiv.arrowCongr_apply, ContinuousLinearEquiv.symm_symm,
+      ContinuousLinearEquiv.refl_apply]
+    exact real_inner_self_pos.mpr ((tangentSpaceCastModel 𝓘(ℝ, ℂ) z).map_ne_zero_iff.mpr hv)
   isVonNBounded z := by
     let e := tangentSpaceCastModel 𝓘(ℝ, ℂ) z
-    have hb := (NormedSpace.isVonNBounded_ball ℝ ℂ z.im).image e.symm.toContinuousLinearMap
-    apply Bornology.IsVonNBounded.subset (s₂ := e.symm '' Metric.ball (0 : ℂ) z.im) ?_ hb
+    have hb := (NormedSpace.isVonNBounded_ball ℝ ℂ 1).image e.symm.toContinuousLinearMap
+    apply Bornology.IsVonNBounded.subset (s₂ := e.symm '' Metric.ball (0 : ℂ) 1) ?_ hb
     intro v hv
     refine ⟨e v, ?_, e.symm_apply_apply v⟩
     rw [Metric.mem_ball, dist_zero_right]
     dsimp at hv
-    simp only [smul_apply, smul_eq_mul, ContinuousLinearEquiv.arrowCongr_apply,
-      ContinuousLinearEquiv.symm_symm, ContinuousLinearEquiv.refl_apply] at hv
     erw [innerSL_apply_apply, real_inner_self_eq_norm_sq] at hv
-    have hsq : ‖e v‖ ^ 2 < z.im ^ 2 := by
-      simpa only [mul_one, e] using
-        (inv_mul_lt_iff₀ (sq_pos_of_pos z.im_pos)).mp hv
-    nlinarith [norm_nonneg (e v), z.im_pos]
+    nlinarith [norm_nonneg (e v)]
   contMDiff := by
     intro α
     rw [contMDiffAt_section]
-    have hcoe : ContMDiffAt 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) ∞ _root_.UpperHalfPlane.coe α :=
-      contMDiffAt_extChartAt
-    have him : ContMDiffAt 𝓘(ℝ, ℂ) 𝓘(ℝ) ∞ _root_.UpperHalfPlane.im α :=
-      Complex.imCLM.contMDiff.contMDiffAt.comp α hcoe
     let euclidean : ℂ →L[ℝ] ℂ →L[ℝ] ℝ := innerSL ℝ
     have hconst : ContMDiffAt 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ →L[ℝ] ℂ →L[ℝ] ℝ) ∞
         (fun _ : ℍ ↦ euclidean) α :=
       contMDiffAt_const
-    have h : ContMDiffAt 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ →L[ℝ] ℂ →L[ℝ] ℝ) ∞
-        (fun z : ℍ ↦ (z.im ^ 2)⁻¹ • euclidean) α :=
-      ((him.pow 2).inv₀ (by positivity)).smul hconst
-    convert h using 1
+    convert hconst using 1
     ext z v w
     simp only [hom_trivializationAt_apply]
     rw [inCoordinates_apply_eq₂ (by simp) (by simp) (by simp)]
     simp [Trivial.fiberBundle_trivializationAt', Trivial.linearMapAt_trivialization,
       poincare_symm, euclidean, ContinuousLinearEquiv.arrowCongr_apply]
+
+private theorem euclideanMetric_inner (z : ℍ) (v w : TangentSpace 𝓘(ℝ, ℂ) z) :
+    euclideanMetric.inner z v w =
+      inner ℝ (tangentSpaceCastModel 𝓘(ℝ, ℂ) z v) (tangentSpaceCastModel 𝓘(ℝ, ℂ) z w) := by
+  simp only [euclideanMetric, ContinuousLinearEquiv.arrowCongr_apply,
+    ContinuousLinearEquiv.symm_symm, ContinuousLinearEquiv.refl_apply]
+  erw [innerSL_apply_apply]
+
+/-- The factor `im⁻²` of the Poincaré metric is smooth on the upper half-plane. -/
+private theorem contMDiff_inv_im_sq :
+    ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ) ∞ fun z : ℍ ↦ (z.im ^ 2)⁻¹ := by
+  intro α
+  have hcoe : ContMDiffAt 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) ∞ _root_.UpperHalfPlane.coe α :=
+    contMDiffAt_extChartAt
+  have him : ContMDiffAt 𝓘(ℝ, ℂ) 𝓘(ℝ) ∞ _root_.UpperHalfPlane.im α :=
+    Complex.imCLM.contMDiff.contMDiffAt.comp α hcoe
+  exact (him.pow 2).inv₀ (by positivity)
+
+/-- The smooth Poincaré metric: the Euclidean tensor rescaled by `im⁻²`. -/
+def poincareRiemannianMetric :
+    ContMDiffRiemannianMetric 𝓘(ℝ, ℂ) ∞ ℂ
+      (fun z : ℍ ↦ TangentSpace 𝓘(ℝ, ℂ) z) :=
+  euclideanMetric.rescale (fun z : ℍ ↦ (z.im ^ 2)⁻¹) contMDiff_inv_im_sq
+    fun z ↦ inv_pos.mpr (sq_pos_of_pos z.im_pos)
 
 /-- The Poincaré tensor in the tangent coordinates of the inclusion chart. -/
 @[simp]
@@ -111,11 +122,8 @@ theorem _root_.UpperHalfPlane.poincareRiemannianMetric_inner (z : ℍ)
     poincareRiemannianMetric.inner z v w =
       inner ℝ (tangentSpaceCastModel 𝓘(ℝ, ℂ) z v)
         (tangentSpaceCastModel 𝓘(ℝ, ℂ) z w) / z.im ^ 2 := by
-  simp only [poincareRiemannianMetric, smul_apply, smul_eq_mul,
-    ContinuousLinearEquiv.arrowCongr_apply, ContinuousLinearEquiv.symm_symm,
-    ContinuousLinearEquiv.refl_apply]
-  erw [innerSL_apply_apply]
-  rw [div_eq_mul_inv, mul_comm]
+  rw [poincareRiemannianMetric, Bundle.ContMDiffRiemannianMetric.rescale_inner,
+    euclideanMetric_inner, div_eq_inv_mul]
 
 /-- The tangent bundle of the upper half-plane carries the Poincaré tensor. -/
 instance instRiemannianBundle : RiemannianBundle (fun z : ℍ ↦ TangentSpace 𝓘(ℝ, ℂ) z) :=

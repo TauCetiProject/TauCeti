@@ -38,9 +38,9 @@ fields of `TauCeti.BipartiteRibbonGraph`, so a consumer cannot so much as state 
 `t.ribbonGraph` is a sheet of `t` without reducing those fields; the lemmas below then read off
 the remaining fields.
 
-The black and white vertex types are quotients of `Fin n`, whose `Fintype` and `DecidableEq`
-instances are taken classically. The executable cycle decomposition that would make them
-computable is a separate matter, and no result here needs it.
+The black and white vertex types are quotients of `Fin n`. Their `Fintype` and `DecidableEq`
+instances decide `Equiv.Perm.SameCycle` by iterating the permutation, so the cell counts of the
+graph of a concrete triple evaluate by `decide` and `#eval`.
 
 ## References
 
@@ -67,16 +67,16 @@ variable {n : ℕ} (t : PermutationTriple n)
 black and white vertices are the cycles of `σ0` and of `σ1`, and the cyclic orders around them
 are `σ0` and `σ1` themselves. For a connected triple this is the dessin d'enfants of the
 associated three-point cover. -/
-@[expose] noncomputable def ribbonGraph : BipartiteRibbonGraph where
+@[expose] def ribbonGraph : BipartiteRibbonGraph where
   E := Fin n
   B := Quotient (SameCycle.setoid t.σ0)
   W := Quotient (SameCycle.setoid t.σ1)
   fintypeE := inferInstance
-  fintypeB := Fintype.ofFinite _
-  fintypeW := Fintype.ofFinite _
+  fintypeB := @Quotient.fintype _ _ _ (inferInstanceAs (DecidableRel (SameCycle t.σ0)))
+  fintypeW := @Quotient.fintype _ _ _ (inferInstanceAs (DecidableRel (SameCycle t.σ1)))
   decidableEqE := inferInstance
-  decidableEqB := Classical.decEq _
-  decidableEqW := Classical.decEq _
+  decidableEqB := @Quotient.decidableEq _ _ (inferInstanceAs (DecidableRel (SameCycle t.σ0)))
+  decidableEqW := @Quotient.decidableEq _ _ (inferInstanceAs (DecidableRel (SameCycle t.σ1)))
   blackEnd := Quotient.mk (SameCycle.setoid t.σ0)
   whiteEnd := Quotient.mk (SameCycle.setoid t.σ1)
   rotB := t.σ0

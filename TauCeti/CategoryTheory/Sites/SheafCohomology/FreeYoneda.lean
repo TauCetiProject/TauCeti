@@ -27,7 +27,9 @@ naturally both in the object of the site and in the coefficient sheaf.
 * `TauCeti.CategoryTheory.sheafH'_eq`, identifying Mathlib's `Sheaf.H'` with `Ext` from that
   functor;
 * `TauCeti.CategoryTheory.freeYonedaSheafSectionsEquiv`, the additive equivalence between
-  morphisms from that sheaf to `F` and sections of `F` over `U`;
+  morphisms from that sheaf to `F` and sections of `F` over `U`, and
+  `TauCeti.CategoryTheory.freeYonedaSheafCorepresentableBy`, the same universal property phrased
+  as a corepresentation of the sections functor;
 * `TauCeti.CategoryTheory.cohomologyPresheafZeroIso`, identifying degree-zero cohomology with
   sections and their restriction maps;
 * `TauCeti.CategoryTheory.mono_freeYonedaSheafFunctor_map`, saying that a monomorphism of site
@@ -46,7 +48,7 @@ public section
 
 open CategoryTheory Limits Opposite
 
-universe v u
+universe w v u
 
 namespace TauCeti
 
@@ -67,7 +69,7 @@ noncomputable def freeYonedaSheafFunctor :
 
 /-- Mathlib's cohomology presheaf is the Ext bifunctor from free abelian representable
 sheaves. -/
-lemma cohomologyPresheafFunctor_eq [HasExt.{v} (_root_.CategoryTheory.Sheaf J AddCommGrpCat.{v})]
+lemma cohomologyPresheafFunctor_eq [HasExt.{w} (_root_.CategoryTheory.Sheaf J AddCommGrpCat.{v})]
     (n : ℕ) :
     _root_.CategoryTheory.Sheaf.cohomologyPresheafFunctor J n =
       Functor.flip ((freeYonedaSheafFunctor J).op ⋙ Abelian.extFunctor n) :=
@@ -75,10 +77,10 @@ lemma cohomologyPresheafFunctor_eq [HasExt.{v} (_root_.CategoryTheory.Sheaf J Ad
 
 /-- Mathlib's sheaf cohomology over an object of a site is `Ext` from the corresponding free
 abelian sheaf. -/
-lemma sheafH'_eq [HasExt.{v} (_root_.CategoryTheory.Sheaf J AddCommGrpCat.{v})]
+lemma sheafH'_eq [HasExt.{w} (_root_.CategoryTheory.Sheaf J AddCommGrpCat.{v})]
     (F : _root_.CategoryTheory.Sheaf J AddCommGrpCat.{v}) (n : ℕ) (U : C) :
-    _root_.CategoryTheory.Sheaf.H'.{v} F n U =
-      AddCommGrpCat.of (Abelian.Ext.{v} ((freeYonedaSheafFunctor J).obj U) F n) :=
+    _root_.CategoryTheory.Sheaf.H'.{w} F n U =
+      AddCommGrpCat.of (Abelian.Ext.{w} ((freeYonedaSheafFunctor J).obj U) F n) :=
   (rfl)
 
 /-- Morphisms from the free abelian sheaf on `U` to an abelian sheaf `F` are additively equivalent
@@ -117,6 +119,13 @@ lemma freeYonedaSheafSectionsEquiv_naturality_right {U : C}
   rw [Adjunction.homEquiv_naturality_right, Adjunction.homEquiv_naturality_right,
     yonedaEquiv_comp]
   rfl
+
+/-- The free abelian sheaf on `U` corepresents the functor of sections over `U`. -/
+def freeYonedaSheafCorepresentableBy (U : C) :
+    ((sheafSections J AddCommGrpCat.{v}).obj (op U) ⋙ forget AddCommGrpCat).CorepresentableBy
+      ((freeYonedaSheafFunctor J).obj U) where
+  homEquiv := (freeYonedaSheafSectionsEquiv J U _).toEquiv
+  homEquiv_comp g f := freeYonedaSheafSectionsEquiv_naturality_right J f g
 
 /-- The equivalence `freeYonedaSheafSectionsEquiv` is natural in the object of the site:
 precomposing with the map induced by `i : U ⟶ V` is restricting sections along `i`. -/

@@ -10,6 +10,7 @@ public import Mathlib.Topology.Compactness.Compact
 public import TauCeti.GroupTheory.QuotientGroup.Map
 public import TauCeti.Topology.Algebra.Group.Generation
 public import TauCeti.Topology.Algebra.Group.Profinite.Basic
+import Mathlib.Topology.Separation.Connected
 import TauCeti.Topology.Algebra.Group.Profinite.Section
 
 /-!

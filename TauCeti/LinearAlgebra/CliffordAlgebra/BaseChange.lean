@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.CliffordAlgebra.BaseChange
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Even
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Star
+public import TauCeti.LinearAlgebra.QuadraticForm.BaseChange
 
 /-!
 # Clifford involutions, the even part, and extension of scalars
@@ -23,6 +24,7 @@ Lipschitz, Pin, and Spin subgroups along scalar extensions.
 * `CliffordAlgebra.ofBaseChangeAux_involute` proves naturality of the grade involution.
 * `CliffordAlgebra.ofBaseChangeAux_star` proves naturality of Clifford conjugation.
 * `CliffordAlgebra.ofBaseChangeAux_mem_even` proves preservation of the even subalgebra.
+* `CliffordAlgebra.ofBaseChangeAux_baseChange` identifies direct and successive scalar extension.
 -/
 
 public section
@@ -31,7 +33,7 @@ open scoped TensorProduct
 
 namespace CliffordAlgebra
 
-universe u v w
+universe u v w x
 
 variable {R : Type u} {A : Type v} {M : Type w}
 variable [CommRing R] [CommRing A] [Algebra R A]
@@ -80,5 +82,29 @@ theorem ofBaseChangeAux_mem_even (Q : QuadraticForm R M) {x : CliffordAlgebra Q}
       simpa only [map_mul, ofBaseChangeAux_ι, zero_add] using
         SetLike.mul_mem_graded
           (ι_mul_ι_mem_evenOdd_zero (Q.baseChange A) (1 ⊗ₜ[R] m) (1 ⊗ₜ[R] n)) hx
+
+section ScalarTower
+
+variable {B : Type x} [CommRing B] [Algebra A B] [Algebra R B] [IsScalarTower R A B]
+
+/-- Transporting a direct scalar extension of a Clifford element along the canonical scalar-tower
+isometry agrees with extending the element successively. -/
+@[simp]
+theorem ofBaseChangeAux_baseChange (Q : QuadraticForm R M) (z : CliffordAlgebra Q) :
+    letI : Invertible (2 : A) :=
+      (Invertible.map (algebraMap R A) 2).copy 2 (map_ofNat _ _).symm
+    CliffordAlgebra.map
+        (QuadraticForm.baseChangeBaseChange (A := A) (B := B) Q).toIsometry
+        (ofBaseChangeAux B Q z) =
+      ofBaseChangeAux B (Q.baseChange A) (ofBaseChangeAux A Q z) := by
+  let : Invertible (2 : A) :=
+    (Invertible.map (algebraMap R A) 2).copy 2 (map_ofNat _ _).symm
+  induction z using CliffordAlgebra.induction with
+  | algebraMap r => simp
+  | ι m => simp
+  | add z w hz hw => simp only [map_add, hz, hw]
+  | mul z w hz hw => simp only [map_mul, hz, hw]
+
+end ScalarTower
 
 end CliffordAlgebra

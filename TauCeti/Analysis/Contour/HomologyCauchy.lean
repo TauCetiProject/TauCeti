@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Contour.Dixon.Def
 public import TauCeti.Analysis.Contour.PiecewiseC1On
+import Mathlib.Analysis.Calculus.FDeriv.Mul
 import TauCeti.Analysis.Contour.Cauchy.IntegralFormula
 import TauCeti.Analysis.Contour.Curve.Distance
 import TauCeti.Analysis.Contour.Dixon.FunctionDiff

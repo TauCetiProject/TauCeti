@@ -42,10 +42,12 @@ action drop (`TauCeti.stdComplexLineEnergy_eq_cotangentAction_sub`), the action 
 the strip (`TauCeti.cotangentAction_le_cotangentAction`), and a strip whose actions converge at
 both ends has energy equal to the difference of the limits
 (`TauCeti.stdComplexLineEnergy_eq_of_tendsto_cotangentAction`). The theorem is stated for the
-limits of the actions. When the paths `t ↦ u(s, t)` converge to the constant paths at
-intersection points `x₋` and `x₊` uniformly together with their `t`-derivatives, and `h₀`, `h₁`
-are continuous at `π x₋` and `π x₊`, those limits are the critical values `A(x₋)` and `A(x₊)`.
-This gives the energy identity of Lagrangian Floer theory for exact Lagrangians,
+limits of the actions. When the paths `t ↦ u(s, t)` converge uniformly to constant paths at
+intersection points `x₋` and `x₊`, the base components of their `t`-derivatives converge
+uniformly to zero, and `h₀`, `h₁` are continuous at `π x₋` and `π x₊`,
+`TauCeti.tendsto_cotangentAction_of_tendstoUniformlyOn` computes those limits as the critical
+values `A(x₋)` and `A(x₊)`. Thus `TauCeti.stdComplexLineEnergy_eq_of_tendstoUniformlyOn` gives the
+energy identity of Lagrangian Floer theory for exact Lagrangians,
 `E(u) = A(x₋) - A(x₊)`, which bounds the energy of every such strip connecting two given
 intersection points.
 
@@ -60,6 +62,11 @@ intersection points.
   strips over a rectangle.
 * `TauCeti.stdComplexLineEnergy_eq_of_tendsto_cotangentAction`: the energy identity for a whole
   holomorphic strip.
+* `TauCeti.tendsto_cotangentAction_of_tendstoUniformlyOn`: uniform convergence to a constant
+  path, with the base components of the derivatives tending uniformly to zero, gives convergence
+  of the action to the value at that point.
+* `TauCeti.stdComplexLineEnergy_eq_of_tendstoUniformlyOn`: the whole-strip energy identity with
+  the asymptotic action values computed from the limiting points.
 
 ## References
 
@@ -100,6 +107,58 @@ of the two graphs, this is the action of the corresponding generator of the Floe
 lemma cotangentAction_const (h₀ h₁ : V → ℝ) (x : V × StrongDual ℝ V) :
     cotangentAction h₀ h₁ (fun _ ↦ x) = h₀ x.1 - h₁ x.1 := by
   simp [cotangentAction_def]
+
+/-- **The action converges to its value on a limiting constant path.** Suppose paths in the
+linear cotangent space converge uniformly on `[0, 1]` to the constant path at `x`, and the base
+components of their derivatives converge uniformly to zero on `(0, 1]`. If the endpoint
+potentials are continuous at the base point of `x`, then their actions converge to
+`h₀ x.1 - h₁ x.1`. -/
+theorem tendsto_cotangentAction_of_tendstoUniformlyOn {ι : Type*} {l : Filter ι}
+    {γ : ι → ℝ → V × StrongDual ℝ V} {x : V × StrongDual ℝ V} {h₀ h₁ : V → ℝ}
+    (hγ : TendstoUniformlyOn γ (fun _ ↦ x) l (uIcc 0 1))
+    (hγ' : TendstoUniformlyOn (fun i t ↦ (deriv (γ i) t).1) 0 l (uIoc 0 1))
+    (hh₀ : ContinuousAt h₀ x.1) (hh₁ : ContinuousAt h₁ x.1) :
+    Tendsto (fun i ↦ cotangentAction h₀ h₁ (γ i)) l (𝓝 (h₀ x.1 - h₁ x.1)) := by
+  have hbound : ∀ᶠ i in l, ∀ t ∈ uIcc (0 : ℝ) 1, ‖(γ i t).2‖ < ‖x.2‖ + 1 := by
+    have hnear :=
+      (Metric.uniformity_basis_dist.tendstoUniformlyOn_iff_of_uniformity.mp hγ) 1 zero_lt_one
+    filter_upwards [hnear] with i hi
+    intro t ht
+    have hsnd : dist x.2 (γ i t).2 < 1 := by
+      exact lt_of_le_of_lt (le_max_right _ _) (by simpa only [Prod.dist_eq] using hi t ht)
+    calc
+      ‖(γ i t).2‖ ≤ ‖x.2‖ + ‖(γ i t).2 - x.2‖ := norm_le_norm_add_norm_sub' _ _
+      _ < ‖x.2‖ + 1 := by
+        simpa only [dist_eq_norm, norm_sub_rev, add_comm] using add_lt_add_left hsnd ‖x.2‖
+  have hint : Tendsto
+      (fun i ↦ ∫ t in (0 : ℝ)..1, (γ i t).2 (deriv (γ i) t).1) l (𝓝 0) := by
+    rw [Metric.tendsto_nhds]
+    intro ε hε
+    have hderiv := (SeminormedAddGroup.tendstoUniformlyOn_zero.mp hγ')
+      (ε / (2 * (‖x.2‖ + 1))) (by positivity)
+    filter_upwards [hbound, hderiv] with i hi hi'
+    have hpoint : ∀ t ∈ uIoc (0 : ℝ) 1,
+        ‖(γ i t).2 (deriv (γ i) t).1‖ ≤ ε / 2 := by
+      intro t ht
+      have ht' : t ∈ uIcc (0 : ℝ) 1 := uIoc_subset_uIcc ht
+      calc
+        ‖(γ i t).2 (deriv (γ i) t).1‖ ≤ ‖(γ i t).2‖ * ‖(deriv (γ i) t).1‖ :=
+          ContinuousLinearMap.le_opNorm _ _
+        _ ≤ (‖x.2‖ + 1) * (ε / (2 * (‖x.2‖ + 1))) := by
+          gcongr
+          · exact (hi t ht').le
+          · exact (hi' t ht).le
+        _ = ε / 2 := by field_simp
+    have hnorm := intervalIntegral.norm_integral_le_of_norm_le_const hpoint
+    rw [abs_of_nonneg (by norm_num : (0 : ℝ) ≤ 1 - 0), sub_zero, mul_one] at hnorm
+    simpa only [dist_zero_right] using hnorm.trans_lt (half_lt_self hε)
+  have hzero : (0 : ℝ) ∈ uIcc 0 1 := by simp
+  have hone : (1 : ℝ) ∈ uIcc 0 1 := by simp
+  have hstart : Tendsto (fun i ↦ h₀ (γ i 0).1) l (𝓝 (h₀ x.1)) :=
+    hh₀.tendsto.comp (continuousAt_fst.tendsto.comp (hγ.tendsto_at hzero))
+  have hend : Tendsto (fun i ↦ h₁ (γ i 1).1) l (𝓝 (h₁ x.1)) :=
+    hh₁.tendsto.comp (continuousAt_fst.tendsto.comp (hγ.tendsto_at hone))
+  simpa only [cotangentAction_def, zero_add] using hint.add hstart |>.sub hend
 
 /-- **The Liouville form is exact on the graph of a differential.** Along a `C¹` path `σ` lying
 over `[a, b]` in the graph of `dh`, the integral of the Liouville form is the change of `h` between
@@ -302,5 +361,41 @@ theorem stdComplexLineEnergy_eq_of_tendsto_cotangentAction
   exact (ENNReal.continuous_ofReal.tendsto _).comp
     ((hbot.comp (tendsto_neg_atTop_atBot.comp tendsto_natCast_atTop_atTop)).sub
       (htop.comp tendsto_natCast_atTop_atTop))
+
+/-- **The energy of a holomorphic strip is the difference of its endpoint action values.**
+Suppose a holomorphic strip with boundary on the exact graphs of `dh₀` and `dh₁` converges in the
+path direction, uniformly to constant paths at `x₀` and `x₁` as the strip coordinate tends to
+`-∞` and `+∞`, with the base components of its path derivatives tending uniformly to zero on
+`(0, 1]`. Then its energy is the difference between `h₀ - h₁` at the base points of `x₀` and
+`x₁`.
+
+In Floer applications the boundary conditions and asymptotic convergence make `x₀` and `x₁`
+intersection points of the two exact graphs. The statement needs only continuity of the two
+potentials at their base points to identify the limiting actions. -/
+theorem stdComplexLineEnergy_eq_of_tendstoUniformlyOn
+    (hω : strongDualCotangentSymplecticForm.Tames J)
+    (hu : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, ContDiffAt ℝ 2 u z)
+    (hJ : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1,
+      IsConstStructureJHolomorphicAt (AlmostComplexStructure.product ℝ) J u z)
+    (hh₀ : ∀ s, DifferentiableAt ℝ h₀ (u (s, 0)).1)
+    (hh₁ : ∀ s, DifferentiableAt ℝ h₁ (u (s, 1)).1)
+    (hu₀ : ∀ s, (u (s, 0)).2 = fderiv ℝ h₀ (u (s, 0)).1)
+    (hu₁ : ∀ s, (u (s, 1)).2 = fderiv ℝ h₁ (u (s, 1)).1)
+    {x₀ x₁ : V × StrongDual ℝ V}
+    (hbot : TendstoUniformlyOn (fun s t ↦ u (s, t)) (fun _ ↦ x₀) atBot (uIcc 0 1))
+    (hbot' : TendstoUniformlyOn
+      (fun s t ↦ (deriv (fun t ↦ u (s, t)) t).1) 0 atBot (uIoc 0 1))
+    (htop : TendstoUniformlyOn (fun s t ↦ u (s, t)) (fun _ ↦ x₁) atTop (uIcc 0 1))
+    (htop' : TendstoUniformlyOn
+      (fun s t ↦ (deriv (fun t ↦ u (s, t)) t).1) 0 atTop (uIoc 0 1))
+    (hh₀neg : ContinuousAt h₀ x₀.1) (hh₁neg : ContinuousAt h₁ x₀.1)
+    (hh₀pos : ContinuousAt h₀ x₁.1) (hh₁pos : ContinuousAt h₁ x₁.1) :
+    strongDualCotangentSymplecticForm.stdComplexLineEnergy J
+        (fun z ↦ (fderiv ℝ u z).toLinearMap)
+        (volume.restrict ((univ : Set ℝ) ×ˢ Icc 0 1)) =
+      ENNReal.ofReal ((h₀ x₀.1 - h₁ x₀.1) - (h₀ x₁.1 - h₁ x₁.1)) := by
+  apply stdComplexLineEnergy_eq_of_tendsto_cotangentAction hω hu hJ hh₀ hh₁ hu₀ hu₁
+  · exact tendsto_cotangentAction_of_tendstoUniformlyOn hbot hbot' hh₀neg hh₁neg
+  · exact tendsto_cotangentAction_of_tendstoUniformlyOn htop htop' hh₀pos hh₁pos
 
 end TauCeti

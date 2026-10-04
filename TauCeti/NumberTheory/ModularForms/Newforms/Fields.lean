@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ModularForms.Newforms.Coefficient
 import Mathlib.FieldTheory.IntermediateField.Adjoin.Basic
-import TauCeti.NumberTheory.DirichletCharacter.Basic
+import TauCeti.NumberTheory.MulChar.Basic
 import TauCeti.NumberTheory.ModularForms.Newforms.FullEigenform
 import Mathlib.Data.Nat.Factorization.Induction
 

@@ -57,6 +57,12 @@ residue degree. The map `H²(Gal(L/K), Lˣ) → H²(Gal(L'/K'), L'ˣ)` induced b
 multiplies the invariant by `e(K'/K) f(K'/K) = [K' : K]`: this is the formula
 `inv_{K'} ∘ res = [K' : K] · inv_K` for restriction of classes inflated from unramified layers.
 
+Restriction to an intermediate ground field `E` in `K ⊆ E ⊆ L` is the specialization
+`K' := E`, `L' := L` of `map_unramifiedClass_baseChange` and
+`unramifiedInv_map_baseChange`. Here `unitsBaseChangeHom K L E L` is the identity on units,
+and `f(E/K) · [L : E] / [L : K] = 1` by unramifiedness and the tower degree formula.
+Thus restriction preserves the representing unit and multiplies the invariant by `[E : K]`.
+
 ## Main definitions
 
 * `TauCeti.ClassFieldTheory.unramifiedClass`: the class in `H²(Gal(L/K), Lˣ)` of an element of

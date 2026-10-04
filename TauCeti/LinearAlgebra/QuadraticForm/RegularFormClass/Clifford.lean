@@ -11,6 +11,7 @@ public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Hasse
 import Mathlib.LinearAlgebra.CliffordAlgebra.Equivs
 import TauCeti.Algebra.BrauerGroup.Splitting
 import TauCeti.LinearAlgebra.CliffordAlgebra.CentralSimple.Even
+import TauCeti.LinearAlgebra.CliffordAlgebra.LowRank.Four
 import TauCeti.LinearAlgebra.CliffordAlgebra.Even.Quaternion
 import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality
 
@@ -36,7 +37,8 @@ one lower rank. In ranks at most two the Clifford and Hasse invariants agree: th
 of `⟨a, b⟩` is the quaternion algebra `ℍ[K, a, b]`, while in ranks `0` and `1` the algebra is `K`.
 In rank three the even Clifford algebra is the quaternion algebra `(-a/c,-b/c)`. Expanding that
 symbol gives the first nontrivial case of Lam's comparison with the Hasse invariant, including
-both correction terms.
+both correction terms. In rank four the Clifford algebra is the tensor product
+`(a,b) ⊗ (-c/(ab),-d/(ab))`, giving its invariant as a product of two quaternion symbols.
 
 ## Main definitions
 
@@ -56,6 +58,8 @@ both correction terms.
 * `TauCeti.RegularFormClass.cliffordInvariant_eq_one_of_rank_le_one`: it is trivial in ranks `0`
   and `1`.
 * `TauCeti.RegularFormClass.cliffordInvariant_mk_binary`: `c⟨a, b⟩ = [(a, b)]`.
+* `TauCeti.RegularFormClass.cliffordInvariant_mk_quaternary`: the Clifford invariant of a
+  four-dimensional diagonal form as a product of two quaternion symbols.
 * `TauCeti.RegularFormClass.cliffordInvariant_eq_hasseInvariant_of_rank_le_two`: in ranks at most
   two the Clifford invariant is the Hasse invariant; in particular the hyperbolic plane has trivial
   invariant (`TauCeti.RegularFormClass.cliffordInvariant_hyperbolicClass`).
@@ -248,6 +252,25 @@ theorem cliffordInvariant_mk_ternary (a b c : Kˣ) :
     fin_cases i <;> rfl
   rw [presentedForm_eq_weightedSumSquares_coe, hw]
   exact CliffordAlgebra.evenWeightedSumSquaresThreeQuaternionEquiv (a : K) b c
+
+/-- **The Clifford invariant of a quaternary form** is the product of quaternion symbols
+`[(a,b)] · [(-c/(ab),-d/(ab))]`. This is the explicit rank-four Clifford-algebra computation
+underlying the next case of Lam's Clifford--Hasse comparison. -/
+@[simp]
+theorem cliffordInvariant_mk_quaternary (a b c d : Kˣ) :
+    cliffordInvariant (Quotient.mk (regularFormSetoid K) ⟨4, ![a, b, c, d]⟩) =
+      BrauerGroup.quaternionClass a b *
+        BrauerGroup.quaternionClass (-((a * b)⁻¹ * c)) (-((a * b)⁻¹ * d)) := by
+  rw [BrauerGroup.quaternionClass_def, BrauerGroup.quaternionClass_def,
+    ← BrauerGroup.mk_tensorProduct]
+  refine cliffordInvariant_mk_of_even _ (by exact ⟨2, rfl⟩) _ ?_
+  have hw : (fun i ↦ ((![a, b, c, d] i : Kˣ) : K)) =
+      ![(a : K), (b : K), (c : K), (d : K)] := by
+    funext i
+    fin_cases i <;> rfl
+  rw [presentedForm_eq_weightedSumSquares_coe, hw]
+  simpa only [Units.val_neg, Units.val_mul, Units.val_inv_eq_inv_val] using
+    CliffordAlgebra.weightedSumSquaresFourEquivTensorQuaternion a b (c : K) (d : K)
 
 /-- **In ranks at most two the Clifford invariant is the Hasse invariant.** This is the low-rank
 case of Lam V.3.20, whose correction terms vanish for `n ≤ 2`. -/

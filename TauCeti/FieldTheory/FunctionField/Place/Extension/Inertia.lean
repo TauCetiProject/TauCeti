@@ -88,24 +88,14 @@ section ResidueAction
 
 variable (F) [Algebra.IsIntegral F F'] (P : Place k F')
 
-omit [Algebra k F] [IsScalarTower k F F'] [Algebra.IsIntegral F F'] in
-/-- The decomposition group acts on the valuation ring of `P` through its action on `F'`. -/
-theorem coe_decompositionSubgroup_smul (g : P.integers.decompositionSubgroup F)
-    (x : P.integers) : ((g • x : P.integers) : F') = (g : F' ≃ₐ[F] F') (x : F') := by
-  rw [← AlgEquiv.smul_def, ← Submonoid.smul_def]
-  -- Mathlib builds `ValuationSubring.decompositionSubgroupMulSemiringAction` by restricting the
-  -- action on `F'` along `ValuationSubring.subMulAction`, and states no lemma for the coercion of
-  -- the restricted action, so this last step has to be definitional.
-  rfl
-
 /-- The decomposition group of `P` fixes the valuation ring of the place below `P` pointwise, so
 its action on `𝒪_P` is by `𝒪_{P ∩ F}`-algebra automorphisms. -/
 instance instSMulCommClassIntegers : SMulCommClass (P.integers.decompositionSubgroup F)
     (P.restrict k F).integers P.integers where
   smul_comm g a b := Subtype.ext <| by
-    rw [Algebra.smul_def, Algebra.smul_def, coe_decompositionSubgroup_smul, Submonoid.coe_mul,
-      Submonoid.coe_mul, map_mul, coe_algebraMap_integers, AlgEquiv.commutes,
-      coe_decompositionSubgroup_smul]
+    rw [Algebra.smul_def, Algebra.smul_def, ValuationSubring.coe_decompositionSubgroup_smul,
+      Submonoid.coe_mul, Submonoid.coe_mul, map_mul, coe_algebraMap_integers, AlgEquiv.commutes,
+      ValuationSubring.coe_decompositionSubgroup_smul]
 
 /-- The induced action of the decomposition group on the residue field of `P` is by
 `F_{P ∩ F}`-algebra automorphisms. -/

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Spectral.ConstructibleTopology
 public import Mathlib.Topology.Spectral.Basic
+import Mathlib.Topology.WithTopology
 
 /-!
 # Pro-constructible subsets of a spectral space

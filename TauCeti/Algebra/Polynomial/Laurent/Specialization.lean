@@ -30,6 +30,7 @@ turning multiplication by `q` into multiplication by `ε`.
 * `TauCeti.LaurentSpecialization ε N`: the specialization of an `R[q,q⁻¹]`-module at `q = ε`.
 * `TauCeti.LaurentSpecialization.mk`: the specialization map `N → N_ε`.
 * `TauCeti.LaurentSpecialization.lift`: the universal property for `R`-linear maps.
+* `TauCeti.LaurentSpecialization.map`: specialize a Laurent-linear map.
 
 ## Main results
 
@@ -106,6 +107,22 @@ theorem lift_mk (f : N →ₗ[R] A) (hf : ∀ x, f ((T 1 : R[T;T⁻¹]) • x) =
   rw [lift, LinearMap.comp_apply, LinearEquiv.coe_coe, mk_apply,
     Submodule.Quotient.restrictScalarsEquiv_symm_mk, Submodule.liftQ_apply]
 
+variable {M : Type*} [AddCommGroup M] [Module R[T;T⁻¹] M] [Module R M]
+  [IsScalarTower R R[T;T⁻¹] M]
+
+/-- A Laurent-linear map induces an `R`-linear map between specializations at the same unit. -/
+noncomputable def map (f : N →ₗ[R[T;T⁻¹]] M) :
+    LaurentSpecialization ε N →ₗ[R] LaurentSpecialization ε M :=
+  ((RingHom.ker (laurentEval (R := R) ε) • ⊤ : Submodule R[T;T⁻¹] N).mapQ
+    (RingHom.ker (laurentEval (R := R) ε) • ⊤) f
+    (Submodule.smul_top_le_comap_smul_top _ f)).restrictScalars R
+
+/-- Specializing a Laurent-linear map commutes with taking quotient classes. -/
+@[simp]
+theorem map_mk (f : N →ₗ[R[T;T⁻¹]] M) (x : N) :
+    map ε f (mk ε x) = mk ε (f x) :=
+  (Submodule.mapQ_apply _ _ f (h := Submodule.smul_top_le_comap_smul_top _ f) x)
+
 /-- An `R`-linear map out of the specialization is determined by its values on specialized
 elements. -/
 @[ext]
@@ -114,6 +131,24 @@ theorem hom_ext {f g : LaurentSpecialization ε N →ₗ[R] A} (h : ∀ x, f (mk
   LinearMap.ext fun y => by
     obtain ⟨x, rfl⟩ := mk_surjective ε y
     exact h x
+
+/-- Specializing the identity map gives the identity on the specialization. -/
+@[simp]
+theorem map_id : map ε (LinearMap.id : N →ₗ[R[T;T⁻¹]] N) = LinearMap.id := by
+  apply hom_ext
+  intro x
+  simp
+
+variable {P : Type*} [AddCommGroup P] [Module R[T;T⁻¹] P] [Module R P]
+  [IsScalarTower R R[T;T⁻¹] P]
+
+/-- Specialization preserves composition of Laurent-linear maps. -/
+@[simp]
+theorem map_comp (g : M →ₗ[R[T;T⁻¹]] P) (f : N →ₗ[R[T;T⁻¹]] M) :
+    map ε (g.comp f) = (map ε g).comp (map ε f) := by
+  apply hom_ext
+  intro x
+  simp
 
 end LaurentSpecialization
 

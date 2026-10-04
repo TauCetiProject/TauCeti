@@ -23,10 +23,8 @@ origin and has derivative the inclusion of the kernel. For a surjective Fredholm
 `exists_sectionZeroChartModel` gives a chart modelled on `Fin n → 𝕜`, where `n` is the index,
 and identifies its tangent image with the kernel of the intrinsic section linearization.
 
-`sectionZeroChartAt` restricts these charts to the regular implicit-coordinate neighbourhood
-and identifies their kernels with a common index model. `sectionZeroChartedSpace` assembles
-the resulting topological atlas, following `TauCeti.levelSetChartedSpace`. Smooth compatibility
-is proved in `Section.Manifold`; no transversality theorem for sections is asserted here.
+The atlas on regular zero sets over Banach manifolds is constructed in `Section.Chart`;
+smooth compatibility is proved in `Section.Manifold`.
 
 ## References
 
@@ -274,9 +272,6 @@ theorem contDiffAt_coe_sectionZeroChart_symm_of_mem {m : ℕ∞ω}
 section Fredholm
 
 variable [CompleteSpace 𝕜]
-  {EB HB : Type*} [NormedAddCommGroup EB] [NormedSpace 𝕜 EB]
-  [TopologicalSpace HB] {I : ModelWithCorners 𝕜 EB HB} [ChartedSpace HB B]
-  [ContMDiffVectorBundle 1 F E I]
 
 /-- A regular zero of a Fredholm section has a local parametrization of dimension the index.
 The parametrization is as smooth at its origin as the section's coordinates, and its derivative
@@ -285,10 +280,10 @@ is injective with image exactly the kernel of the intrinsic section linearizatio
 The base map may in particular be a manifold chart inverse, so the statement also applies to
 local parameter expressions of sections over Banach manifolds. -/
 theorem exists_sectionZeroChartModel {m : ℕ∞ω} {n : ℕ}
-    (hb : MDifferentiableAt 𝓘(𝕜, X) I b x) (he : b x ∈ e.baseSet)
+    (hb : ContinuousAt b x) (he : b x ∈ e.baseSet)
     (hf : HasStrictFDerivAt (fun y ↦ (e ⟨b y, s y⟩).2) T x)
     (hFred : ContinuousLinearMap.IsFredholm T)
-    (hsurj : Function.Surjective (sectionLinearization (𝕜 := 𝕜) (F := F) b s x))
+    (hsurj : Function.Surjective (sectionLinearization (F := F) 𝓘(𝕜, X) b s x))
     (hindex : ContinuousLinearMap.index T = n) (hz : s x = 0)
     (hs : ContDiffAt 𝕜 m (fun y ↦ (e ⟨b y, s y⟩).2) x) :
     ∃ χ : OpenPartialHomeomorph ↥{y | s y = 0} (Fin n → 𝕜),
@@ -296,10 +291,12 @@ theorem exists_sectionZeroChartModel {m : ℕ∞ω} {n : ℕ}
       ContDiffAt 𝕜 m (fun k ↦ (χ.symm k : X)) 0 ∧
       Function.Injective (fderiv 𝕜 (fun k ↦ (χ.symm k : X)) 0) ∧
       (fderiv 𝕜 (fun k ↦ (χ.symm k : X)) 0).range =
-        (sectionLinearization (𝕜 := 𝕜) (F := F) b s x).ker := by
-  have hsurjT := (surjective_sectionLinearization_iff hb he
-    hf.hasFDerivAt.differentiableAt hz).1 hsurj
-  rw [hf.hasFDerivAt.fderiv] at hsurjT
+        (sectionLinearization (F := F) 𝓘(𝕜, X) b s x).ker := by
+  have hsurjT : Function.Surjective T := by
+    have h := (surjective_sectionLinearization_iff hb he
+      hf.hasFDerivAt.differentiableAt.mdifferentiableAt hz).1 hsurj
+    rw [mvfderiv_eq_fderiv, hf.hasFDerivAt.fderiv, ContinuousLinearMap.coe_comp] at h
+    exact h.of_comp
   have hT : T.range = ⊤ := LinearMap.range_eq_top.2 hsurjT
   have hn : Module.finrank 𝕜 T.ker = n :=
     (ContinuousLinearMap.finrank_ker_eq_iff_index_eq T hsurjT).2 hindex
@@ -314,7 +311,7 @@ theorem exists_sectionZeroChartModel {m : ℕ∞ω} {n : ℕ}
       (T.ker.subtypeL.comp (K.symm : (Fin n → 𝕜) →L[𝕜] T.ker)) 0 := by
     have hd : HasFDerivAt (fun k ↦ (ψ.symm k : X)) T.ker.subtypeL (K.symm 0) := by
       simpa only [map_zero] using (hasStrictFDerivAt_coe_sectionZeroChart_symm
-        hb.continuousAt he hf hT hFred.closedComplemented_ker hz).hasFDerivAt
+        hb he hf hT hFred.closedComplemented_ker hz).hasFDerivAt
     have hc := hd.comp 0 (K.symm.hasFDerivAt)
     simpa only [map_zero, Function.comp_def, ← hχ] using hc
   have hinj : Function.Injective (T.ker.subtypeL.comp
@@ -322,164 +319,21 @@ theorem exists_sectionZeroChartModel {m : ℕ∞ω} {n : ℕ}
     Subtype.val_injective.comp K.symm.injective
   refine ⟨χ, ?_, ?_, ?_, ?_, ?_⟩
   · rw [OpenPartialHomeomorph.transHomeomorph_source]
-    exact mem_sectionZeroChart_source hb.continuousAt he hf hT hFred.closedComplemented_ker hz
+    exact mem_sectionZeroChart_source hb he hf hT hFred.closedComplemented_ker hz
   · rw [OpenPartialHomeomorph.transHomeomorph_apply, Function.comp_apply,
       ContinuousLinearEquiv.coe_toHomeomorph, sectionZeroChart_apply_self]
     exact map_zero _
   · have hψ : ContDiffAt 𝕜 m (fun k ↦ (ψ.symm k : X)) (K.symm 0) := by
       simpa only [map_zero] using contDiffAt_coe_sectionZeroChart_symm
-        hb.continuousAt he hf hT hFred.closedComplemented_ker hz hs
+        hb he hf hT hFred.closedComplemented_ker hz hs
     have hc := hψ.comp 0 K.symm.contDiff.contDiffAt
     simpa only [map_zero, Function.comp_def, ← hχ] using hc
   · rwa [hderiv.fderiv]
   · rw [hderiv.fderiv]
-    exact range_subtypeL_comp_eq_ker_sectionLinearization hb he hf.hasFDerivAt hz K
+    exact range_subtypeL_comp_eq_ker_sectionLinearization hb he hf.hasFDerivAt.hasMFDerivAt hz K
 
 end Fredholm
 
 end Local
-
-section Atlas
-
-variable [CompleteSpace 𝕜]
-  {e : ↥{y | s y = 0} → Trivialization F (π F E)}
-  [∀ z, MemTrivializationAtlas (e z)]
-  {D : ↥{y | s y = 0} → X →L[𝕜] F} {n : ℕ}
-
-variable
-  (hf : ∀ z, HasStrictFDerivAt (fun y ↦ (e z ⟨b y, s y⟩).2) (D z) z.1)
-  (hFred : ∀ z, ContinuousLinearMap.IsFredholm (D z))
-  (hsurj : ∀ z, Function.Surjective (D z))
-  (hindex : ∀ z, ContinuousLinearMap.index (D z) = n)
-
-/-- The preferred chart at a section zero, in the model space of dimension the Fredholm index.
-Its source is restricted to the region where the implicit coordinate map remains regular. -/
-noncomputable def sectionZeroChartAt (z : ↥{y | s y = 0}) :
-    OpenPartialHomeomorph ↥{y | s y = 0} (Fin n → 𝕜) :=
-  ((sectionZeroChart (hf z) (LinearMap.range_eq_top.2 (hsurj z))
-    (hFred z).closedComplemented_ker z.2).transHomeomorph
-      ((D z).kerModelEquiv (hFred z).finite_ker
-        ((ContinuousLinearMap.finrank_ker_eq_iff_index_eq (D z) (hsurj z)).2
-          (hindex z))).toHomeomorph).restrOpen
-    (Subtype.val ⁻¹' (hf z).implicitCoordSource (LinearMap.range_eq_top.2 (hsurj z))
-      (hFred z).closedComplemented_ker)
-    (((hf z).isOpen_implicitCoordSource _ _).preimage continuous_subtype_val)
-
-/-- The source of the preferred chart is the section-zero chart source intersected with the
-preimage of the neighbourhood on which the implicit coordinate derivative is invertible. -/
-@[simp]
-theorem sectionZeroChartAt_source (z : ↥{y | s y = 0}) :
-    (sectionZeroChartAt hf hFred hsurj hindex z).source =
-      (sectionZeroChart (hf z) (LinearMap.range_eq_top.2 (hsurj z))
-        (hFred z).closedComplemented_ker z.2).source ∩
-      Subtype.val ⁻¹' (hf z).implicitCoordSource (LinearMap.range_eq_top.2 (hsurj z))
-        (hFred z).closedComplemented_ker := by
-  rw [sectionZeroChartAt, OpenPartialHomeomorph.restrOpen_source,
-    OpenPartialHomeomorph.transHomeomorph_source]
-
-/-- The preferred chart reads ambient displacement through a kernel projection and the
-identification of that kernel with the model space. -/
-theorem sectionZeroChartAt_apply (z w : ↥{y | s y = 0}) :
-    sectionZeroChartAt hf hFred hsurj hindex z w =
-      (D z).kerModelEquiv (hFred z).finite_ker
-        ((ContinuousLinearMap.finrank_ker_eq_iff_index_eq (D z) (hsurj z)).2 (hindex z))
-        (Classical.choose (hFred z).closedComplemented_ker (w.1 - z.1)) := by
-  rw [sectionZeroChartAt, OpenPartialHomeomorph.coe_restrOpen,
-    OpenPartialHomeomorph.transHomeomorph_apply, Function.comp_apply,
-    ContinuousLinearEquiv.coe_toHomeomorph, sectionZeroChart_apply]
-
-/-- The inverse preferred chart is the inverse section-zero chart read through the kernel's
-linear identification with the model space. -/
-theorem sectionZeroChartAt_symm_apply (z : ↥{y | s y = 0}) (k : Fin n → 𝕜) :
-    (sectionZeroChartAt hf hFred hsurj hindex z).symm k =
-      (sectionZeroChart (hf z) (LinearMap.range_eq_top.2 (hsurj z))
-        (hFred z).closedComplemented_ker z.2).symm
-      (((D z).kerModelEquiv (hFred z).finite_ker
-        ((ContinuousLinearMap.finrank_ker_eq_iff_index_eq (D z) (hsurj z)).2
-          (hindex z))).symm k) := by
-  rw [sectionZeroChartAt, OpenPartialHomeomorph.coe_restrOpen_symm,
-    OpenPartialHomeomorph.transHomeomorph_symm_apply,
-    ContinuousLinearEquiv.coe_symm_toHomeomorph, Function.comp_apply]
-
-/-- The target consists of model coordinates in the section-zero chart target whose inverse
-belongs to the regular implicit-coordinate neighbourhood. -/
-@[simp]
-theorem sectionZeroChartAt_target (z : ↥{y | s y = 0}) :
-    (sectionZeroChartAt hf hFred hsurj hindex z).target =
-      (((D z).kerModelEquiv (hFred z).finite_ker
-        ((ContinuousLinearMap.finrank_ker_eq_iff_index_eq (D z) (hsurj z)).2
-          (hindex z))).symm) ⁻¹'
-        (sectionZeroChart (hf z) (LinearMap.range_eq_top.2 (hsurj z))
-          (hFred z).closedComplemented_ker z.2).target ∩
-      (sectionZeroChartAt hf hFred hsurj hindex z).symm ⁻¹'
-        (Subtype.val ⁻¹' (hf z).implicitCoordSource (LinearMap.range_eq_top.2 (hsurj z))
-          (hFred z).closedComplemented_ker) := by
-  rw [sectionZeroChartAt, OpenPartialHomeomorph.restrOpen_toPartialEquiv,
-    PartialEquiv.restr_target, OpenPartialHomeomorph.transHomeomorph_target,
-    ContinuousLinearEquiv.coe_symm_toHomeomorph]
-  rfl
-
-/-- The preferred chart is centred at its zero. -/
-@[simp]
-theorem sectionZeroChartAt_apply_self (z : ↥{y | s y = 0}) :
-    sectionZeroChartAt hf hFred hsurj hindex z z = 0 := by
-  rw [sectionZeroChartAt_apply]
-  simp
-
-variable (hb : ∀ z : ↥{y | s y = 0}, ContinuousAt b z.1)
-  (he : ∀ z, b z.1 ∈ (e z).baseSet)
-
-include hb he in
-/-- Every zero lies in the source of its preferred chart. -/
-theorem mem_sectionZeroChartAt_source (z : ↥{y | s y = 0}) :
-    z ∈ (sectionZeroChartAt hf hFred hsurj hindex z).source := by
-  rw [sectionZeroChartAt_source]
-  exact ⟨mem_sectionZeroChart_source (hb z) (he z) (hf z) _ _ z.2,
-    (hf z).mem_implicitCoordSource _ _⟩
-
-include hb he in
-/-- The chart origin belongs to the preferred chart target. -/
-theorem mem_sectionZeroChartAt_target (z : ↥{y | s y = 0}) :
-    (0 : Fin n → 𝕜) ∈ (sectionZeroChartAt hf hFred hsurj hindex z).target :=
-  sectionZeroChartAt_apply_self hf hFred hsurj hindex z ▸
-    (sectionZeroChartAt hf hFred hsurj hindex z).map_source
-      (mem_sectionZeroChartAt_source hf hFred hsurj hindex hb he z)
-
-include hb he in
-/-- The inverse chart sends the origin to its zero. -/
-@[simp]
-theorem sectionZeroChartAt_symm_zero (z : ↥{y | s y = 0}) :
-    (sectionZeroChartAt hf hFred hsurj hindex z).symm 0 = z := by
-  rw [← sectionZeroChartAt_apply_self hf hFred hsurj hindex z]
-  exact (sectionZeroChartAt hf hFred hsurj hindex z).left_inv
-    (mem_sectionZeroChartAt_source hf hFred hsurj hindex hb he z)
-
-/-- The atlas of preferred implicit-function charts on the actual zero set of the section. -/
-@[irreducible]
-noncomputable def sectionZeroChartedSpace : ChartedSpace (Fin n → 𝕜) ↥{y | s y = 0} where
-  atlas := Set.range (sectionZeroChartAt hf hFred hsurj hindex)
-  chartAt := sectionZeroChartAt hf hFred hsurj hindex
-  mem_chart_source z := mem_sectionZeroChartAt_source hf hFred hsurj hindex hb he z
-  chart_mem_atlas z := Set.mem_range_self z
-
-/-- The installed preferred charts are `sectionZeroChartAt`. -/
-@[simp]
-theorem sectionZeroChartedSpace_chartAt (z : ↥{y | s y = 0}) :
-    @chartAt (Fin n → 𝕜) _ ↥{y | s y = 0} _
-      (sectionZeroChartedSpace hf hFred hsurj hindex hb he) z =
-      sectionZeroChartAt hf hFred hsurj hindex z := by
-  unfold sectionZeroChartedSpace
-  rfl
-
-/-- The installed atlas consists exactly of the preferred charts. -/
-@[simp]
-theorem sectionZeroChartedSpace_atlas :
-    @atlas (Fin n → 𝕜) _ ↥{y | s y = 0} _
-      (sectionZeroChartedSpace hf hFred hsurj hindex hb he) =
-      Set.range (sectionZeroChartAt hf hFred hsurj hindex) := by
-  unfold atlas sectionZeroChartedSpace
-  rfl
-
-end Atlas
 
 end TauCeti

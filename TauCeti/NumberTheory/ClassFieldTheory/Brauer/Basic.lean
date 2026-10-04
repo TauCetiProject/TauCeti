@@ -66,6 +66,8 @@ underlying subgroup the fixing subgroup of `σ(L)` by definition, which is what 
 * `TauCeti.ClassFieldTheory.relBrLevelEquiv`: `H²(Gal(L/K), Lˣ)` as the level of the subgroup
   fixing `σ(L)`.
 * `TauCeti.ClassFieldTheory.relBrInfl`: inflation `H²(Gal(L/K), Lˣ) → Br K`.
+* `TauCeti.ClassFieldTheory.relBrCocycle`: the cocycle on `G_K` obtained from a relative
+  Brauer cocycle, with `relBrInfl_H2π` identifying its class with `relBrInfl`.
 
 ## Main results
 
@@ -321,6 +323,39 @@ private theorem relBrLevelCocycle_apply
       UnitsCoeff K)) (Prod.ext (quotientFixingSubgroupFieldRangeEquiv_mk K L σ g)
         (quotientFixingSubgroupFieldRangeEquiv_mk K L σ h)))
 
+/-- **The cocycle on `G_K` attached to a relative Brauer cocycle.** If
+`c : Z²(Gal(L/K), Lˣ)`, then `relBrCocycle K L σ c` is the cocycle
+
+`(g, h) ↦ σ (c (g|_L, h|_L))`
+
+on the absolute Galois group, with multiplicative coefficients written additively. Its class is
+the inflation `relBrInfl K L σ [c]` (`relBrInfl_H2π`). -/
+def relBrCocycle
+    (c : groupCohomology.cocycles₂ (Rep.ofMulDistribMulAction Gal(L/K) Lˣ)) :
+    Z2 (AbsoluteGaloisGroup K) (UnitsCoeff K) :=
+  cocyclesMap2
+    (AbsoluteGaloisGroup K ⧸ (galoisOpenNormalSubgroup K L σ).toSubgroup)
+    (FixedPoints.addSubgroup (galoisOpenNormalSubgroup K L σ).toSubgroup (UnitsCoeff K))
+    (AbsoluteGaloisGroup K) (UnitsCoeff K)
+    (ContinuousMonoidHom.quotientMk (galoisOpenNormalSubgroup K L σ).toSubgroup)
+    (FixedPoints.addSubgroup (galoisOpenNormalSubgroup K L σ).toSubgroup
+      (UnitsCoeff K)).subtype
+    (continuous_fixedPoints_addSubgroup_subtype _ _ _)
+    (subtype_quotientMk_smul _ _ _) (relBrLevelCocycle K L σ c)
+
+/-- The value of the relative Brauer cocycle is the embedded value of the original cocycle at
+the restrictions of the two absolute Galois elements. -/
+@[simp]
+theorem relBrCocycle_apply
+    (c : groupCohomology.cocycles₂ (Rep.ofMulDistribMulAction Gal(L/K) Lˣ))
+    (g h : AbsoluteGaloisGroup K) :
+    ((relBrCocycle K L σ c).1 (g, h) : UnitsCoeff K) =
+      embeddedUnitsEquivInvariants K L σ
+        (Rep.toAdditive (c (σ.restrictNormalHom g, σ.restrictNormalHom h))) := by
+  rw [relBrCocycle, cocyclesMap2_apply]
+  simpa only [ContinuousMonoidHom.quotientMk_apply, AddSubgroup.coe_subtype] using
+    relBrLevelCocycle_apply K L σ c g h
+
 /-- `relBrLevelEquiv K L σ` sends the class of a cocycle `c` to the class of any cocycle on
 `Gal(Kˢ/K) ⧸ Gal(Kˢ/σ(L))` whose value at the classes of `g` and `h` is the image under `σ` of
 `c (σ.restrictNormalHom g, σ.restrictNormalHom h)`, such as `relBrLevelCocycle K L σ c`. -/
@@ -342,6 +377,18 @@ private theorem relBrLevelEquiv_H2π
       (quotientFixingSubgroupFieldRangeEquiv_mk K L σ g)
       (quotientFixingSubgroupFieldRangeEquiv_mk K L σ h))).trans <| (hz g h).symm.trans <|
         congrArg Subtype.val (congrFun (Z2AddEquivCocycles₂_coe _ _ z).symm ((g : _), (h : _))))
+
+/-- **Relative inflation on cocycle classes.** The image under `relBrInfl` of the class of a
+relative cocycle `c` is the Brauer class represented by `relBrCocycle K L σ c`. -/
+@[simp]
+theorem relBrInfl_H2π
+    (c : groupCohomology.cocycles₂ (Rep.ofMulDistribMulAction Gal(L/K) Lˣ)) :
+    relBrInfl K L σ (groupCohomology.H2π _ c) =
+      unitsRepH2Equiv K (relBrCocycle K L σ c : H2 _ _) := by
+  rw [relBrInfl_apply,
+    relBrLevelEquiv_H2π K L σ c _ (relBrLevelCocycle_apply K L σ c),
+    brLevelInfl_apply, explicitInfl2_mk]
+  rfl
 
 section Tower
 

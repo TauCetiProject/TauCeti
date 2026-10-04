@@ -7,7 +7,7 @@ module
 
 public import Mathlib.NumberTheory.NumberField.InfiniteAdeleRing
 public import Mathlib.Topology.Algebra.Algebra.Equiv
-public import TauCeti.NumberTheory.NumberField.Global.Places.Completion
+public import TauCeti.NumberTheory.NumberField.InfinitePlace.Completion.Extension
 
 /-!
 # Semilocal decomposition at infinite places

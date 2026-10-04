@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Algebra.OpenSubgroup
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Extension
 public import TauCeti.FieldTheory.Galois.Quotient
 public import TauCeti.FieldTheory.Galois.Restriction

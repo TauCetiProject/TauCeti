@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Module.Submodule.Union
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.Normed.Module.Connected
+public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import TauCeti.AlgebraicTopology.Sphere.Puncture
 
@@ -46,6 +47,8 @@ Rank two is genuinely the boundary: the circle is not simply connected.
 * `TauCeti.simplyConnectedSpace_sphere`: **the unit sphere of a real normed space of rank
   greater than two is simply connected.**
 * `TauCeti.simplyConnectedSpace_sphere_euclideanSpace`: the case of `Sⁿ` for `2 ≤ n`.
+* `TauCeti.simplyConnectedSpace_sphere_euclideanSpace_complex`: the case of the unit sphere
+  `S²ᵏ⁺¹` of `ℂᵏ⁺¹` for `1 ≤ k`.
 
 ## References
 
@@ -447,6 +450,14 @@ theorem simplyConnectedSpace_sphere_euclideanSpace {n : ℕ} (hn : 2 ≤ n) :
     simp [← Module.finrank_eq_rank]
   rw [hrank]
   exact_mod_cast (by omega : 2 < n + 1)
+
+/-- **The unit sphere `S²ᵏ⁺¹` of `ℂᵏ⁺¹` is simply connected for `1 ≤ k`.** -/
+theorem simplyConnectedSpace_sphere_euclideanSpace_complex {k : ℕ} (hk : 1 ≤ k) :
+    SimplyConnectedSpace (sphere (0 : EuclideanSpace ℂ (Fin (k + 1))) 1) := by
+  refine simplyConnectedSpace_sphere ?_
+  rw [← Module.finrank_eq_rank, finrank_real_of_complex, finrank_euclideanSpace_fin,
+    Nat.ofNat_lt_cast]
+  omega
 
 end TauCeti
 

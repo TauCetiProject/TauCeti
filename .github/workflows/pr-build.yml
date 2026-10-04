@@ -1,4 +1,5 @@
 name: pr-build
+run-name: ${{ github.event_name == 'repository_dispatch' && format('bors branch={0} batch={1} head={2} base={3}', github.event.client_payload.base_ref || 'unknown', github.event.client_payload.batch_id, github.event.client_payload.head_sha, github.event.client_payload.base_sha) || format('pr-build {0}', github.event.pull_request.number || inputs.pr || github.event.merge_group.head_sha || github.run_id) }}
 
 # Builds the exact immutable PR head in a TRUSTED, base-branch-defined workflow. A PR cannot
 # change what runs here (pull_request_target uses the base definition). Before Lake sees the
@@ -1267,6 +1268,11 @@ jobs:
         continue-on-error: true
         timeout-minutes: 2
         env:
+          MERGE_ENGINE: ${{ github.event_name == 'merge_group' && 'queue' || (github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' && (github.event.client_payload.base_ref == 'main' && 'bors' || 'bors_pilot') || 'pr') }}
+          TESTED_HEAD: ${{ steps.pr.outputs.status_sha }}
+          TESTED_BASE: ${{ steps.pr.outputs.base_sha }}
+          BORS_BATCH: ${{ github.event.client_payload.batch_id }}
+          BORS_MEMBERS: ${{ toJSON(github.event.client_payload.members) }}
           PICKED: ${{ needs.pick-runner.outputs.github == 'true' && 'github' || 'namespace' }}
           PICKER_BUSY: ${{ needs.pick-runner.outputs.busy }}
           PICKER_BUDGET: ${{ needs.pick-runner.outputs.budget }}
@@ -1274,7 +1280,9 @@ jobs:
           python3 gate/scripts/ci_telemetry.py --dir pr/.lake/telemetry --out "$RUNNER_TEMP/telemetry.json" \
             --meta "event=${{ github.event_name }}" --meta "runner=$PICKED" \
             --meta "picker_busy=$PICKER_BUSY" --meta "picker_budget=$PICKER_BUDGET" \
-            --meta "head_sha=${{ steps.pr.outputs.status_sha }}"
+            --meta "head_sha=$TESTED_HEAD" --meta "base_sha=$TESTED_BASE" \
+            --meta "merge_engine=$MERGE_ENGINE" --meta "batch_id=$BORS_BATCH" \
+            --meta "batch_members=$BORS_MEMBERS"
 
       - name: Upload CI telemetry
         if: always()

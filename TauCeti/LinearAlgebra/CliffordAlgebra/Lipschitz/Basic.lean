@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.CliffordAlgebra.Inversion
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Vectors
 public import Mathlib.LinearAlgebra.CliffordAlgebra.SpinGroup
 

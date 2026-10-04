@@ -50,9 +50,9 @@ the supremum. Consequently every statement that adds `f x` to `f⋆ y` carries t
 keep `⊥ + ⊤` from arising, and those hypotheses are recorded exactly rather than replaced by a
 blanket properness assumption.
 
-For a self-paired real inner product space, `B` is `innerₗ E`, whose transpose is itself, so the
-two Galois-connection maps coincide, and every conjugate is lower semicontinuous for the norm
-topology, the inner product being continuous in each variable.
+For a self-paired real seminormed inner product space, `B` is `innerₗ E`, whose transpose is itself.
+The two Galois-connection maps therefore coincide, and every conjugate is lower semicontinuous for
+the seminorm topology, since the inner product is continuous in each variable.
 
 ## Main definitions
 
@@ -78,7 +78,7 @@ topology, the inner product being continuous in each variable.
   `TauCeti.lowerSemicontinuous_fenchelConjugate` — a conjugate is lower semicontinuous for any
   topology on `F` making every functional `B x` continuous, such as the weak topology of the
   pairing, and `TauCeti.lowerSemicontinuous_fenchelConjugate_innerₗ` — for the inner product
-  pairing of a real inner product space, every conjugate is lower semicontinuous.
+  pairing of a real seminormed inner product space, every conjugate is lower semicontinuous.
 
 ## Implementation notes
 
@@ -274,28 +274,17 @@ is continuous, since it is a supremum of continuous or constant extended-real fu
 theorem lowerSemicontinuous_fenchelConjugate [TopologicalSpace F] (hB : ∀ x, Continuous (B x))
     (f : E → EReal) : LowerSemicontinuous (fenchelConjugate B f) := by
   refine lowerSemicontinuous_iSup fun x => ?_
-  generalize f x = z
-  induction z with
-  | bot =>
-    simp only [EReal.coe_sub_bot]
-    exact lowerSemicontinuous_const
-  | coe s =>
-    have hfun : (fun y => (B x y : EReal) - (s : EReal)) = fun y => ((B x y - s : ℝ) : EReal) :=
-      funext fun y => (EReal.coe_sub _ _).symm
-    rw [hfun]
-    exact (continuous_coe_real_ereal.comp ((hB x).sub continuous_const)).lowerSemicontinuous
-  | top =>
-    simp only [EReal.sub_top]
-    exact lowerSemicontinuous_const
+  simpa only [sub_eq_add_neg, Function.comp_def] using EReal.lowerSemicontinuous_add.comp
+    ((continuous_coe_real_ereal.comp (hB x)).prodMk (continuous_const (y := -f x)))
 
 /-! ### The inner product pairing -/
 
 section InnerProduct
 
-variable {G : Type*} [NormedAddCommGroup G] [InnerProductSpace ℝ G]
+variable {G : Type*} [SeminormedAddCommGroup G] [InnerProductSpace ℝ G]
 
-/-- The Legendre–Fenchel conjugate for the inner product pairing is lower semicontinuous, the
-inner product being continuous in each variable. -/
+/-- The Legendre–Fenchel conjugate for the pairing of a real seminormed inner product space is
+lower semicontinuous, the inner product being continuous in each variable. -/
 theorem lowerSemicontinuous_fenchelConjugate_innerₗ (f : G → EReal) :
     LowerSemicontinuous (fenchelConjugate (innerₗ G) f) :=
   lowerSemicontinuous_fenchelConjugate (innerₗ G)

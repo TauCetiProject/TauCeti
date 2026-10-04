@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.FundamentalSolution.Planar
 public import Mathlib.Analysis.InnerProductSpace.Calculus
+import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 
 /-!
 # Gradient of the planar Newtonian kernel

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Linearization
 public import TauCeti.Analysis.Fredholm.LevelSet.GlobalParametric
+import TauCeti.Geometry.Manifold.MFDeriv.ContinuousLinearMap
 
 /-!
 # Parametric transversality for Fredholm bundle sections
@@ -52,23 +53,26 @@ variable {X Λ B F EB HB : Type*} {E : B → Type*}
   [TopologicalSpace B] [ChartedSpace HB B]
   [∀ a, TopologicalSpace (E a)] [TopologicalSpace (TotalSpace F E)]
   [∀ a, AddCommGroup (E a)] [∀ a, Module ℝ (E a)]
-  [FiberBundle F E] [VectorBundle ℝ F E] [ContMDiffVectorBundle 1 F E I]
+  [FiberBundle F E] [VectorBundle ℝ F E]
   {b : X × Λ → B} {s : ∀ z, E (b z)}
 
 /-- A parameter is regular for a bundle section when the intrinsic linearization in the
-`X` direction is surjective at every zero with that parameter. Total regularity is a
-separate condition. -/
+`X` direction is surjective at every zero with that parameter. The `X` direction is the image
+of `X` in the tangent space at `(x, l)`, identified with `X × Λ` by
+`NormedSpace.fromTangentSpace`. Total regularity is a separate condition. -/
 def IsRegularSectionParameter (b : X × Λ → B) (s : ∀ z, E (b z)) (l : Λ) : Prop :=
   ∀ x, s (x, l) = 0 → Surjective
-    ((sectionLinearization (𝕜 := ℝ) (F := F) b s (x, l)).comp
-      (ContinuousLinearMap.inl ℝ X Λ))
+    ((sectionLinearization (F := F) 𝓘(ℝ, X × Λ) b s (x, l)).comp
+      ((NormedSpace.fromTangentSpace (𝕜 := ℝ) (x, l)).symm.toContinuousLinearMap.comp
+        (ContinuousLinearMap.inl ℝ X Λ)))
 
 /-- Characterization of a regular parameter by the partial linearizations at its zeros. -/
 theorem isRegularSectionParameter_iff {l : Λ} :
     IsRegularSectionParameter (F := F) b s l ↔
       ∀ x, s (x, l) = 0 → Surjective
-        ((sectionLinearization (𝕜 := ℝ) (F := F) b s (x, l)).comp
-          (ContinuousLinearMap.inl ℝ X Λ)) :=
+        ((sectionLinearization (F := F) 𝓘(ℝ, X × Λ) b s (x, l)).comp
+          ((NormedSpace.fromTangentSpace (𝕜 := ℝ) (x, l)).symm.toContinuousLinearMap.comp
+            (ContinuousLinearMap.inl ℝ X Λ))) :=
   (Iff.rfl)
 
 /-- In a trivial bundle, section regularity is exactly regularity of the fiber-valued
@@ -78,7 +82,7 @@ theorem isRegularSectionParameter_trivial (b : X × Λ → B) (f : X × Λ → F
     IsRegularSectionParameter (E := Bundle.Trivial B F) (F := F) b f l ↔
       IsRegularParameter f 0 l := by
   simp only [isRegularSectionParameter_iff, isRegularParameter_iff,
-    sectionLinearization_trivial]
+    sectionLinearization_trivial, mvfderiv_comp_fromTangentSpace_symm_comp]
 
 variable [CompleteSpace X] [CompleteSpace Λ] [CompleteSpace F]
 
@@ -88,16 +92,17 @@ private theorem exists_section_badParameter_neighborhood {n : ℕ∞ω} {z : X �
     (hFred : ContinuousLinearMap.IsFredholm
       ((fderiv ℝ (fun w ↦ (trivializationAt F E (b z) ⟨b w, s w⟩).2) z).comp
         (ContinuousLinearMap.inl ℝ X Λ)))
-    (htotal : Surjective (sectionLinearization (𝕜 := ℝ) (F := F) b s z))
+    (htotal : Surjective (sectionLinearization (F := F) 𝓘(ℝ, X × Λ) b s z))
     (hn : ((finrank ℝ
       ((fderiv ℝ (fun w ↦ (trivializationAt F E (b z) ⟨b w, s w⟩).2) z).comp
         (ContinuousLinearMap.inl ℝ X Λ)).ker ^ 2 + 1 : ℕ) : ℕ∞ω) ≤ n)
     (hz : s z = 0)
-    (hb : ∀ w, s w = 0 → MDifferentiableAt 𝓘(ℝ, X × Λ) I b w) :
+    (hb : ∀ w, s w = 0 → ContinuousAt b w) :
     ∃ Q ∈ 𝓝 (⟨z, hz⟩ : ↥{w | s w = 0}), ∃ A : Set Λ, IsNowhereDense A ∧
       ∀ w : ↥{w | s w = 0}, w ∈ Q →
-        ¬ Surjective ((sectionLinearization (𝕜 := ℝ) (F := F) b s w).comp
-          (ContinuousLinearMap.inl ℝ X Λ)) → (w : X × Λ).2 ∈ A := by
+        ¬ Surjective ((sectionLinearization (F := F) 𝓘(ℝ, X × Λ) b s w).comp
+          ((NormedSpace.fromTangentSpace (𝕜 := ℝ) (w : X × Λ)).symm.toContinuousLinearMap.comp
+            (ContinuousLinearMap.inl ℝ X Λ))) → (w : X × Λ).2 ∈ A := by
   let e := trivializationAt F E (b z)
   let f : X × Λ → F := fun w ↦ (e ⟨b w, s w⟩).2
   let D₁ := (fderiv ℝ f z).comp (ContinuousLinearMap.inl ℝ X Λ)
@@ -114,8 +119,10 @@ private theorem exists_section_badParameter_neighborhood {n : ℕ∞ω} {z : X �
   have he : b z ∈ e.baseSet := mem_baseSet_trivializationAt F E (b z)
   have hsurj : Surjective (D₁.coprod D₂) := by
     rw [ContinuousLinearMap.coprod_comp_inl_inr]
-    exact (surjective_sectionLinearization_iff (hb z hz) he
-      (hfn.differentiableAt hn0) hz).mp htotal
+    have h := (surjective_sectionLinearization_iff (hb z hz) he
+      (hfn.differentiableAt hn0).mdifferentiableAt hz).mp htotal
+    rw [mvfderiv_eq_fderiv, ContinuousLinearMap.coe_comp] at h
+    exact h.of_comp
   have hfzero : f z = 0 := by
     dsimp only [f]
     rw [hz]
@@ -148,7 +155,7 @@ private theorem exists_section_badParameter_neighborhood {n : ℕ∞ω} {z : X �
     filter_upwards [(hfn.of_le hn').eventually hne] with w hw
     exact hw.differentiableAt hne0
   have hbase : b ⁻¹' e.baseSet ∈ 𝓝 z :=
-    (hb z hz).continuousAt.preimage_mem_nhds (e.open_baseSet.mem_nhds he)
+    (hb z hz).preimage_mem_nhds (e.open_baseSet.mem_nhds he)
   -- Restrict to the trivialization's base set: extended coordinate zeros outside it
   -- need not be section zeros. The intrinsic partial linearization is recovered here.
   refine ⟨Subtype.val ⁻¹' (V ∩ b ⁻¹' e.baseSet ∩ {w | DifferentiableAt ℝ f w}),
@@ -168,8 +175,9 @@ private theorem exists_section_badParameter_neighborhood {n : ℕ∞ω} {z : X �
       (ContinuousLinearMap.inl ℝ X Λ)) := by
     intro hcoord
     apply hbad
-    rw [sectionLinearization_eq_symmL_comp (hb w w.2) hwe hw.2 w.2,
-      ContinuousLinearMap.comp_assoc, ← e.symm_continuousLinearEquivAt_eq' hwe]
+    rw [sectionLinearization_eq_symmL_comp (hb w w.2) hwe hw.2.mdifferentiableAt w.2,
+      ContinuousLinearMap.comp_assoc, mvfderiv_comp_fromTangentSpace_symm_comp,
+      ← e.symm_continuousLinearEquivAt_eq' hwe]
     exact (e.continuousLinearEquivAt ℝ (b w) hwe).symm.surjective.comp hcoord
   refine ⟨Φ v, ⟨hvQ.2, ?_⟩, ?_⟩
   · simp only [Set.mem_ofPred_eq]
@@ -184,7 +192,8 @@ variable [SecondCountableTopology ↥{z | s z = 0}] {n : ℕ∞ω}
     (hFred : ∀ z, s z = 0 → ContinuousLinearMap.IsFredholm
       ((fderiv ℝ (fun w ↦ (trivializationAt F E (b z) ⟨b w, s w⟩).2) z).comp
         (ContinuousLinearMap.inl ℝ X Λ)))
-    (htotal : ∀ z, s z = 0 → Surjective (sectionLinearization (𝕜 := ℝ) (F := F) b s z))
+    (htotal : ∀ z, s z = 0 →
+      Surjective (sectionLinearization (F := F) 𝓘(ℝ, X × Λ) b s z))
     (hn : ∀ z, s z = 0 → ((finrank ℝ
       ((fderiv ℝ (fun w ↦ (trivializationAt F E (b z) ⟨b w, s w⟩).2) z).comp
         (ContinuousLinearMap.inl ℝ X Λ)).ker ^ 2 + 1 : ℕ) : ℕ∞ω) ≤ n)
@@ -197,15 +206,8 @@ The partial Fredholm hypothesis and smoothness threshold are checked in preferre
 coordinates. Second countability is needed only for the actual universal zero set. -/
 theorem isMeagre_setOf_not_isRegularSectionParameter :
     IsMeagre {l | ¬ IsRegularSectionParameter (F := F) b s l} := by
-  have hb : ∀ z, s z = 0 → MDifferentiableAt 𝓘(ℝ, X × Λ) I b z := by
-    intro z hz
-    have hn0 : n ≠ 0 := by
-      intro hzero
-      have hpos : (0 : ℕ∞ω) < ((finrank ℝ
-        ((fderiv ℝ (fun w ↦ (trivializationAt F E (b z) ⟨b w, s w⟩).2) z).comp
-          (ContinuousLinearMap.inl ℝ X Λ)).ker ^ 2 + 1 : ℕ) : ℕ∞ω) := by simp
-      exact not_lt_of_ge ((hn z hz).trans_eq hzero) hpos
-    exact (contMDiffAt_totalSpace.mp (hcont z hz)).1.mdifferentiableAt hn0
+  have hb : ∀ z, s z = 0 → ContinuousAt b z := fun z hz ↦
+    (contMDiffAt_totalSpace.mp (hcont z hz)).1.continuousAt
   have hlocal := fun z : ↥{z | s z = 0} ↦
     exists_section_badParameter_neighborhood (hcont z z.2) (hFred z z.2)
       (htotal z z.2) (hn z z.2) z.2 hb

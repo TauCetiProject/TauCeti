@@ -94,7 +94,7 @@ theorem referenceSubgroupFourTwoMulEquivDihedralGroup_symm_apply_sr_zero :
           (Set.mem_insert_of_mem _ (Set.mem_singleton _))⟩ :
         referenceSubgroup 4 ⟨2, by simp⟩) := by
   simp [referenceSubgroupFourTwoMulEquivDihedralGroup, dihedralGroupMulEquiv_apply,
-    dihedralHom_sr, reflection]
+    reflection]
 
 /-- The inverse standard dihedral rotation gives the four-cycle in the reference action. -/
 @[simp]
