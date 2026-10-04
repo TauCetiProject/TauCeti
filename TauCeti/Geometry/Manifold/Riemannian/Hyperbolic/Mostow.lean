@@ -57,6 +57,24 @@ def IsMostowRigid : Prop :=
       ∀ (g g' : HyperbolicMetric (I := I) (M := M)),
         Nonempty (HyperbolicMetric.Isometry g g')
 
+/-- A fixed-manifold Mostow-rigidity predicate is equivalent to its characteristic statement. -/
+theorem isMostowRigid_iff :
+    IsMostowRigid (I := I) (M := M) ↔
+      ∀ [BoundarylessManifold I M] [CompactSpace M] [ConnectedSpace M],
+        3 ≤ Module.finrank ℝ E →
+          ∀ (g g' : HyperbolicMetric (I := I) (M := M)),
+            Nonempty (HyperbolicMetric.Isometry g g') := by
+  rfl
+
+/-- Introduce fixed-manifold Mostow rigidity from its characteristic statement. -/
+theorem isMostowRigid_of
+    (h : ∀ [BoundarylessManifold I M] [CompactSpace M] [ConnectedSpace M],
+      3 ≤ Module.finrank ℝ E →
+        ∀ (g g' : HyperbolicMetric (I := I) (M := M)),
+          Nonempty (HyperbolicMetric.Isometry g g')) :
+    IsMostowRigid (I := I) (M := M) := by
+  exact h
+
 /-- Extract the isometry conclusion from a fixed-manifold Mostow-rigidity hypothesis. -/
 theorem IsMostowRigid.isometry [BoundarylessManifold I M] [CompactSpace M] [ConnectedSpace M]
     (h : IsMostowRigid (I := I) (M := M)) {hdim : 3 ≤ Module.finrank ℝ E}
@@ -64,14 +82,16 @@ theorem IsMostowRigid.isometry [BoundarylessManifold I M] [CompactSpace M] [Conn
     Nonempty (HyperbolicMetric.Isometry g g') := by
   exact h hdim g g'
 
-/-- The Mostow rigidity theorem, universally over closed connected manifolds.
-
-From the hyperbolicity and dimension hypotheses it gives a smooth metric-preserving
-diffeomorphism between every pair of bundled complete constant-curvature `-1` metrics. -/
+/-- The Mostow rigidity statement, universally over closed connected manifolds. -/
 def MostowRigidity : Prop :=
   ∀ {E : Type uE} {H : Type uH} {M : Type uM} [NormedAddCommGroup E] [NormedSpace ℝ E]
     [FiniteDimensional ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
     [TopologicalSpace M] [T3Space M] [ChartedSpace H M] [IsManifold I ∞ M],
     IsMostowRigid (I := I) (M := M)
+
+/-- Specialize the universal Mostow-rigidity statement to one manifold. -/
+theorem MostowRigidity.isMostowRigid (h : MostowRigidity.{uE, uH, uM}) :
+    IsMostowRigid (I := I) (M := M) := by
+  exact h (E := E) (H := H) (M := M) (I := I)
 
 end TauCeti
