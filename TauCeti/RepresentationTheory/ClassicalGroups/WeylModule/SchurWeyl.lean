@@ -18,7 +18,7 @@ The symmetric group `S_d` and the general linear group `GL n k` act on the tenso
 `(kⁿ)^{⊗d} ≅ ⊕_{μ ⊢ d} S^μ ⊗ 𝕊^μ(kⁿ)`,
 
 with `S^μ` the Specht module and `𝕊^μ(kⁿ)` the Weyl module. This file proves the shadow of that
-decomposition on characters of `GL n k`, over a field `k` that is a `ℚ`-algebra: for every
+decomposition on characters of `GL n k`, over a field `k` of characteristic zero: for every
 `g ∈ GL n k`,
 
 `char (kⁿ)^{⊗d} (g) = ∑_{μ ⊢ d} f^μ · char 𝕊^μ(kⁿ) (g)`,
@@ -54,6 +54,10 @@ That the character of `𝕊^μ(kⁿ)` on the torus is the Schur polynomial `s_μ
   `𝕊^μ(kⁿ)` on the diagonal torus is `(1 / d!) · ∑_σ χ^μ(σ) · p_{ρ(σ)}`**.
 * `TauCeti.sum_finrank_spechtModule_mul_char_weylRepOfShape_diagramOf`: **the character of
   `(kⁿ)^{⊗d}` is `∑_{μ ⊢ d} f^μ · char 𝕊^μ(kⁿ)`**.
+* `TauCeti.char_weylFDRepOfShape_diagramOf_eq_sum_spechtChar`,
+  `TauCeti.char_weylFDRepOfShape_diagramOf_diagonal_eq_sum_spechtChar` and
+  `TauCeti.sum_finrank_spechtModule_mul_char_weylFDRepOfShape_diagramOf`: the bundled forms of the
+  last three, for `TauCeti.weylFDRepOfShape` and `TauCeti.tensorPowerFDRep`.
 * `TauCeti.sum_finrank_spechtModule_mul_finrank_weylModuleOfShape`: **`∑_{μ ⊢ d} f^μ · dim 𝕊^μ(kⁿ)
   = n^d`**.
 
@@ -71,7 +75,7 @@ universe u
 
 namespace TauCeti
 
-variable {k : Type u} [Field k] [Algebra ℚ k] {n : ℕ}
+variable {k : Type u} [Field k] [CharZero k] {n : ℕ}
 
 namespace YoungTableau
 
@@ -128,6 +132,15 @@ theorem char_weylRepOfShape_diagramOf_eq_sum_spechtChar {d : ℕ} (μ : d.Partit
     factorial_inv_mul_sum_permCongr (card_diagramOf μ)]
   simp_rw [← Int.cast_smul_eq_zsmul ℚ, spechtChar_cast, character_spechtModule_apply]
 
+/-- **The character of the bundled Weyl module of a partition through the Specht character**: the
+`FDRep` form of `TauCeti.char_weylRepOfShape_diagramOf_eq_sum_spechtChar`. -/
+theorem char_weylFDRepOfShape_diagramOf_eq_sum_spechtChar {d : ℕ} (μ : d.Partition)
+    (g : GL (Fin n) k) :
+    (weylFDRepOfShape k n (diagramOf μ)).character g =
+      (d.factorial : k)⁻¹ * ∑ σ : Equiv.Perm (Fin d), spechtChar μ σ •
+        LinearMap.trace k _ (permTensorAction k n d σ * tensorPowerRep k n d g) :=
+  char_weylRepOfShape_diagramOf_eq_sum_spechtChar μ g
+
 /-- **The character of the Weyl module of a partition on the diagonal torus** is the
 Frobenius-characteristic expression in the power sums: for a partition `μ` of `d`,
 
@@ -143,6 +156,16 @@ theorem char_weylRepOfShape_diagramOf_diagonal_eq_sum_spechtChar {d : ℕ} (μ :
   simp_rw [char_weylRepOfShape_diagramOf_eq_sum_spechtChar,
     trace_permTensorAction_mul_tensorPowerRep_diagGL, map_sum, map_zsmul]
 
+/-- **The character of the bundled Weyl module of a partition on the diagonal torus** is the
+Frobenius-characteristic expression in the power sums: the `FDRep` form of
+`TauCeti.char_weylRepOfShape_diagramOf_diagonal_eq_sum_spechtChar`. -/
+theorem char_weylFDRepOfShape_diagramOf_diagonal_eq_sum_spechtChar {d : ℕ} (μ : d.Partition)
+    (x : Fin n → kˣ) :
+    (weylFDRepOfShape k n (diagramOf μ)).character (diagGL x) =
+      (d.factorial : k)⁻¹ * eval (fun i => (x i : k))
+        (∑ σ : Equiv.Perm (Fin d), spechtChar μ σ • psumPart (Fin n) k σ.partition) :=
+  char_weylRepOfShape_diagramOf_diagonal_eq_sum_spechtChar μ x
+
 /-- **The Schur-Weyl decomposition of the character of a tensor power.** For every `g ∈ GL n k`,
 the character of `(kⁿ)^{⊗d}` at `g` is the sum over the partitions `μ` of `d` of the characters of
 the Weyl modules `𝕊^μ(kⁿ)` at `g`, each weighted by the dimension `f^μ` of the Specht module
@@ -152,7 +175,6 @@ theorem sum_finrank_spechtModule_mul_char_weylRepOfShape_diagramOf (d : ℕ) (g 
         Representation.character (V := (weylModuleOfShape k n (diagramOf μ)).toSubmodule)
           (weylRepOfShape k n (diagramOf μ)) g =
       (tensorPowerRep k n d).character g := by
-  have : CharZero k := charZero_of_injective_algebraMap (algebraMap ℚ k).injective
   have hd : (d.factorial : k) ≠ 0 := Nat.cast_ne_zero.mpr d.factorial_ne_zero
   set T := fun σ : Equiv.Perm (Fin d) =>
     LinearMap.trace k _ (permTensorAction k n d σ * tensorPowerRep k n d g)
@@ -172,13 +194,20 @@ theorem sum_finrank_spechtModule_mul_char_weylRepOfShape_diagramOf (d : ℕ) (g 
           Finset.sum_ite_eq', Finset.mem_univ, ite_true, T, map_one, one_mul, zsmul_eq_mul,
           Int.cast_natCast, inv_mul_cancel_left₀ hd, Representation.character]
 
+/-- **The Schur-Weyl decomposition of the character of the bundled tensor power**: the `FDRep` form
+of `TauCeti.sum_finrank_spechtModule_mul_char_weylRepOfShape_diagramOf`. -/
+theorem sum_finrank_spechtModule_mul_char_weylFDRepOfShape_diagramOf (d : ℕ) (g : GL (Fin n) k) :
+    ∑ μ : d.Partition, (finrank ℚ (spechtModule μ) : k) *
+        (weylFDRepOfShape k n (diagramOf μ)).character g =
+      (tensorPowerFDRep k n d).character g :=
+  sum_finrank_spechtModule_mul_char_weylRepOfShape_diagramOf d g
+
 variable (k) in
 /-- **The Schur-Weyl dimension count**: `∑_{μ ⊢ d} f^μ · dim 𝕊^μ(kⁿ) = n^d`, where `f^μ` is the
 dimension of the Specht module `S^μ`. -/
 theorem sum_finrank_spechtModule_mul_finrank_weylModuleOfShape (n d : ℕ) :
     ∑ μ : d.Partition, finrank ℚ (spechtModule μ) *
         finrank k (weylModuleOfShape k n (diagramOf μ)).toSubmodule = n ^ d := by
-  have : CharZero k := charZero_of_injective_algebraMap (algebraMap ℚ k).injective
   have h := sum_finrank_spechtModule_mul_char_weylRepOfShape_diagramOf (k := k) (n := n) d 1
   simp only [Representation.char_one, finrank_eq_card_basis (tensorPowerBasis k n d),
     Fintype.card_fun, Fintype.card_fin] at h
