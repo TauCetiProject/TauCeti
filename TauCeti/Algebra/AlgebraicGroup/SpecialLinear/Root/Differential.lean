@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.AdditiveGroup.Tangent
-public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.RootSubgroup
+public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.RootSubgroup.Basic
 public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Tangent
 import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Root.Differential
 
