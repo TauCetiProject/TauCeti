@@ -29,11 +29,15 @@ variable {C D : Type*} [Category* C] [Category* D]
 variable {A : Type*} [AddMonoid A] [HasShift C A] [HasShift D A]
 variable {F G : C ⥤ D} [F.CommShift A] [G.CommShift A] {τ : F ⟶ G}
 
-/-- Compatibility with shifts by `b` and `a + b` implies compatibility with the shift by `a`.
-It suffices that the target shift by `b` is faithful; in particular this holds for group shifts. -/
-lemma natTrans_commShiftCore_of_add_right {a b : A} [(shiftFunctor D b).Faithful]
-    (hb : CommShiftCore τ b) (hab : CommShiftCore τ (a + b)) : CommShiftCore τ a where
-  shift_comm := by
+/-- Compatibility with shifts by `b` and `a + b` is equivalent to compatibility with shifts
+by `b` and `a`. It suffices that the target shift by `b` is faithful; in particular this holds
+for group shifts. -/
+lemma natTrans_commShiftCore_add_right_iff {a b : A} [(shiftFunctor D b).Faithful] :
+    CommShiftCore τ b ∧ CommShiftCore τ (a + b) ↔ CommShiftCore τ b ∧ CommShiftCore τ a := by
+  constructor
+  · rintro ⟨hb, hab⟩
+    refine ⟨hb, ?_⟩
+    constructor
     ext X
     apply (shiftFunctor D b).map_injective
     have h := hab.shift_app_comm τ X
@@ -53,19 +57,26 @@ lemma natTrans_commShiftCore_of_add_right {a b : A} [(shiftFunctor D b).Faithful
     rw [cancel_epi ((F.commShiftIso b).hom.app (X⟦a⟧))] at h
     simpa only [NatTrans.comp_app, Functor.whiskerRight_app, Functor.whiskerLeft_app,
       Functor.map_comp] using h
+  · rintro ⟨hb, ha⟩
+    exact ⟨hb, ha.add hb⟩
 
-/-- To check compatibility of a natural transformation with integral shifts, it suffices to
-check the shift by one. -/
-lemma natTrans_commShift_of_one {F G : C ⥤ D} [HasShift C ℤ] [HasShift D ℤ]
-    [F.CommShift ℤ] [G.CommShift ℤ] {τ : F ⟶ G}
-    (h : CommShiftCore τ (1 : ℤ)) : CommShift τ ℤ := by
-  apply CommShift.of_core
-  intro n
-  have hneg : CommShiftCore τ (-1 : ℤ) :=
-    natTrans_commShiftCore_of_add_right h (by simpa using (CommShiftCore.zero (τ := τ) ℤ))
-  induction n using Int.induction_on with
-  | zero => exact CommShiftCore.zero (τ := τ) ℤ
-  | succ n ih => exact ih.add h
-  | pred n ih => simpa only [sub_eq_add_neg] using ih.add hneg
+/-- A natural transformation is compatible with all integral shifts if and only if it is
+compatible with the shift by one. -/
+lemma natTrans_commShift_iff_one {F G : C ⥤ D} [HasShift C ℤ] [HasShift D ℤ]
+    [F.CommShift ℤ] [G.CommShift ℤ] {τ : F ⟶ G} :
+    CommShift τ ℤ ↔ CommShiftCore τ (1 : ℤ) := by
+  constructor
+  · intro h
+    exact ⟨h.shift_comm 1⟩
+  · intro h
+    apply CommShift.of_core
+    intro n
+    have hneg : CommShiftCore τ (-1 : ℤ) :=
+      (natTrans_commShiftCore_add_right_iff.mp
+        ⟨h, by simpa using (CommShiftCore.zero (τ := τ) ℤ)⟩).2
+    induction n using Int.induction_on with
+    | zero => exact CommShiftCore.zero (τ := τ) ℤ
+    | succ n ih => exact ih.add h
+    | pred n ih => simpa only [sub_eq_add_neg] using ih.add hneg
 
 end TauCeti

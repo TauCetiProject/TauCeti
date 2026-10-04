@@ -146,7 +146,7 @@ theorem stableNatTrans_commShift :
   let _ := hE'.stableHasShift
   let _ := hF.stableFunctorCommShift hE hE'
   let _ := hG.stableFunctorCommShift hE hE'
-  apply natTrans_commShift_of_one
+  apply natTrans_commShift_iff_one.mpr
   constructor
   ext X
   have hs := congr_app (stableNatTrans_suspension hF hG hE hE' α) X
