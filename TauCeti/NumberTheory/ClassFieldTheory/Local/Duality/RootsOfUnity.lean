@@ -24,7 +24,7 @@ Hilbert pairing as the `(1, 1)` base case in local Tate duality.
 
 * `TauCeti.ClassFieldTheory.muNRepToTateDual`: the coefficient morphism
   `μₙ → Hom(μₙ, μₙ)` defined by the chosen-root pairing.
-* `TauCeti.ClassFieldTheory.muNRepToTateDual_bijective`: this coefficient morphism is bijective.
+* `TauCeti.ClassFieldTheory.bijective_muNRepToTateDual`: this coefficient morphism is bijective.
 * `TauCeti.ClassFieldTheory.tateDualityPairing_muNRepToTateDual`: after transport along the
   coefficient morphism, the Tate pairing in bidegree `(1, 1)` is the local symbol.
 
@@ -88,7 +88,7 @@ theorem tateDualEquiv_muNRepToTateDual_apply (x y : (muNRep n F).V) :
   rw [muNRepToTateDual, tateDualEquiv_pairingToTateDual_apply]
 
 /-- **The chosen-root identification of `μₙ` with its Tate dual is bijective.** -/
-theorem muNRepToTateDual_bijective : Function.Bijective (muNRepToTateDual ζ hζ).hom := by
+theorem bijective_muNRepToTateDual : Function.Bijective (muNRepToTateDual ζ hζ).hom := by
   have : Finite (muNRep n F).V := Finite.of_equiv _ (muNRepZModEquiv ζ hζ).symm.toEquiv
   refine Function.Injective.bijective_of_nat_card_le (fun x y hxy => ?_) ?_
   · have := congrArg
@@ -107,18 +107,7 @@ theorem tateDualityPairing_muNRepToTateDual
     tateDualityPairing (muNRep n F) tr 1 1 rfl
         ((ContinuousCohomology.coeffMap (muNRepToTateDual ζ hζ) 1).hom x) y =
       localSymbol (kummerCupPairing ζ hζ) tr x y := by
-  have hcup := (kummerCupPairing ζ hζ).cup_coeffMap
-    (tateEvaluationPairing (muNRep n F)) (muNRepToTateDual ζ hζ) (𝟙 _) (𝟙 _)
-    (fun a b => by
-      rw [TopRep.id_apply, TopRep.id_apply, tateEvaluationPairing_bil,
-        tateDualEquiv_muNRepToTateDual_apply]) 1 1 x y
-  have hcup' :
-      (kummerCupPairing ζ hζ).cup 1 1 x y =
-        (tateEvaluationPairing (muNRep n F)).cup 1 1
-          ((ContinuousCohomology.coeffMap (muNRepToTateDual ζ hζ) 1).hom x) y := by
-    simpa only [ContinuousCohomology.coeffMap_id, CategoryTheory.id_apply] using hcup
-  rw [tateDualityPairing_def, localSymbol_apply]
-  exact congrArg tr hcup'.symm
+  rw [muNRepToTateDual, tateDualityPairing_pairingToTateDual, localSymbol_apply]
 
 end ChosenRoot
 

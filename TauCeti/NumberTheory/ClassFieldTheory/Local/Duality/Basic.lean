@@ -396,4 +396,22 @@ theorem tateDualityPairing_tateDualMap {A B : GalRep n F}
   simp only [tateDualityPairing]
   rw [← h₁, ← h₂]
 
+/-- **The Tate pairing transported along a curried pairing**: for a pairing `P : A × B → μₙ`,
+pairing the image of `x` under `A → B'` with `y` is the chosen invariant of `P.cup x y`. -/
+theorem tateDualityPairing_pairingToTateDual {A B : GalRep n F}
+    [DiscreteTopology A.V] [DiscreteTopology B.V] (P : TopPairing A B (muNRep n F))
+    (tr : _root_.continuousCohomology.{0, u, u} 2 (muNRep n F) ≃+ ZMod n)
+    (i j : ℕ) (hij : i + j = 2)
+    (x : _root_.continuousCohomology.{0, u, u} i A)
+    (y : _root_.continuousCohomology.{0, u, u} j B) :
+    tateDualityPairing B tr i j hij
+        ((ContinuousCohomology.coeffMap (pairingToTateDual P) i).hom x) y =
+      tr (hij ▸ TopPairing.cup.{0, u, u} P i j x y) := by
+  have hcup := P.cup_coeffMap (tateEvaluationPairing B) (pairingToTateDual P) (𝟙 _) (𝟙 _)
+    (fun a b => by
+      rw [TopRep.id_apply, TopRep.id_apply, tateEvaluationPairing_bil,
+        tateDualEquiv_pairingToTateDual_apply]) i j x y
+  simp only [ContinuousCohomology.coeffMap_id, CategoryTheory.id_apply] at hcup
+  rw [tateDualityPairing_def, hcup]
+
 end TauCeti.ClassFieldTheory
