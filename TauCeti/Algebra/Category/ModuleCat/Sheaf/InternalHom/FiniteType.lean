@@ -57,9 +57,9 @@ private theorem ihom_map_eq_of_generators {U W : Opens X} (f : W ⟶ U)
     apply (cancel_epi (F.map G.π)).mp
     apply (isColimitOfPreserves F (isColimitFreeCofan G.I)).hom_ext
     rintro ⟨i⟩
-    -- The mapped coproduct injections are the restrictions of the generating sections.
-    change F.map (ιFree i) ≫ F.map G.π ≫ F.map α =
-      F.map (ιFree i) ≫ F.map G.π ≫ F.map β
+    -- Normalize the cofan's point before rewriting its mapped injections.
+    dsimp only [freeCofan, Cofan.mk_pt, Discrete.functor_obj]
+    simp only [Functor.mapCocone_ι_app, ← Cofan.inj.eq_def, cofan_mk_inj]
     simp only [← Functor.map_comp, ← unitHomEquiv_symm_freeHomEquiv_apply,
       freeHomEquiv_comp_apply, Equiv.apply_symm_apply]
     apply Hom.ext
@@ -68,8 +68,14 @@ private theorem ihom_map_eq_of_generators {U W : Opens X} (f : W ⟶ U)
     apply ModuleCat.hom_ext
     apply LinearMap.ext
     intro r
-    -- Restriction retains the component on the underlying open; the unit-Hom map sends
-    -- a scalar to that scalar times the corresponding section.
+    -- Here `overMap` is pushforward along `Over.map f`, and `Sheaf.pushforwardOverMapIso`
+    -- is componentwise `Iso.refl`, so restriction of scalars and morphism components
+    -- identify definitionally. The inverse of `PresheafOfModules.unitHomEquiv` uses
+    -- `LinearMap.ringLmapEquivSelf.symm`, sending `a` to `a • s`.
+    -- `pushforward_map_app_apply` expects an explicitly restricted-scalar source;
+    -- rewriting it here fails on the module instance of `r`, typed via `F.obj`.
+    -- `unitHomEquiv_apply_coe` only evaluates the forward map at `1`; no sheaf-level
+    -- API lemma combines restriction with inverse-unit-Hom evaluation at a scalar.
     let a : ((TauCeti.SheafOfModules.ringCatSheaf R).over U).obj.obj
         (op ((Over.map f).obj V.unop)) := r
     change a • (α.val.app (op ((Over.map f).obj V.unop))
