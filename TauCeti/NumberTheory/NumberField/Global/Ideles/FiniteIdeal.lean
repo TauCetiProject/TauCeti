@@ -37,6 +37,35 @@ theorem toFractionalIdeal_toFiniteIdele_eq_one_iff {x : IdeleGroup R K} :
 
 end TauCeti.GlobalNumberFields
 
+namespace IsDedekindDomain.HeightOneSpectrum
+
+variable {R : Type*} [CommRing R] [IsDedekindDomain R]
+variable {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K]
+
+/-- The fractional ideal of an idele concentrated at one finite place is the corresponding
+prime power, with exponent the local order of its nonzero coordinate. -/
+@[simp]
+theorem toFractionalIdeal_toFiniteIdele_ofAdicCompletion (v : HeightOneSpectrum R)
+    (u : (v.adicCompletion K)ˣ) :
+    toFractionalIdeal (IdeleGroup.toFiniteIdele R K (IdeleGroup.ofAdicCompletion R K v u)) =
+      v.unitOfPrime K ^ (-WithZero.log (Valued.v (u : v.adicCompletion K))) := by
+  classical
+  have hself : adicOrd (IdeleGroup.toFiniteIdele R K
+      (IdeleGroup.ofAdicCompletion R K v u)) v =
+        -WithZero.log (Valued.v (u : v.adicCompletion K)) := by
+    rw [adicOrd_def, IdeleGroup.coe_toFiniteIdele, ← HeightOneSpectrum.coe_ideleFiniteCoord,
+      HeightOneSpectrum.ideleFiniteCoord_ofAdicCompletion_self]
+  have hother (w : HeightOneSpectrum R) (hw : w ≠ v) :
+      adicOrd (IdeleGroup.toFiniteIdele R K (IdeleGroup.ofAdicCompletion R K v u)) w = 0 := by
+    rw [adicOrd_def, IdeleGroup.coe_toFiniteIdele, ← HeightOneSpectrum.coe_ideleFiniteCoord,
+      HeightOneSpectrum.ideleFiniteCoord_ofAdicCompletion_of_ne w hw,
+      Units.val_one, map_one, WithZero.log_one, neg_zero]
+  rw [toFractionalIdeal_apply, finprod_eq_single _ v, hself]
+  intro w hw
+  simp only [hother w hw, zpow_zero]
+
+end IsDedekindDomain.HeightOneSpectrum
+
 namespace ClassGroup
 
 open TauCeti.GlobalNumberFields
