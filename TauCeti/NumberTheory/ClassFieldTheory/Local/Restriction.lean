@@ -7,7 +7,6 @@ module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Map
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.ClassFormation
-import TauCeti.RepresentationTheory.Homological.GroupCohomology.Functoriality
 
 /-!
 # The local class formation of a finite extension inside that of the base
@@ -61,21 +60,6 @@ noncomputable section
 namespace TauCeti.ClassFieldTheory
 
 open _root_.groupCohomology ContCohomology
-
-/-! ### Second cohomology of isomorphic layers -/
-
-/-- The image of the class of a cocycle `c` under the isomorphism of second cohomology induced by a
-layer isomorphism `e` is the class of the cocycle `(γ, δ) ↦ e.coeffEquiv (c (e⁻¹ γ, e⁻¹ δ))`. -/
-private theorem exists_cohomologyIso_hom_H2π {G G' : Type} [Group G] [TopologicalSpace G]
-    [IsTopologicalGroup G] [CompactSpace G] [TotallyDisconnectedSpace G] [Group G']
-    [TopologicalSpace G'] [IsTopologicalGroup G'] [CompactSpace G'] [TotallyDisconnectedSpace G']
-    {F : Formation G} {L : NormalLayer G} {F' : Formation G'} {L' : NormalLayer G'}
-    (e : LayerEquiv F L F' L') (c : cocycles₂ (L.rep F)) :
-    ∃ c' : cocycles₂ (L'.rep F'), (e.cohomologyIso 2).hom (H2π _ c) = H2π _ c' ∧
-      ∀ γ δ : L'.Gal, c' (γ, δ) = e.coeffEquiv (c (e.galEquiv.symm γ, e.galEquiv.symm δ)) := by
-  rw [LayerEquiv.cohomologyIso_def, groupCohomology.mapIso_hom,
-    groupCohomology.H2π_comp_map_apply]
-  exact ⟨_, rfl, fun γ δ => rfl⟩
 
 /-! ### Inflation from corresponding layers -/
 
@@ -151,7 +135,7 @@ private theorem layerInfl_cohomologyIso_of_localFormation (L : NormalLayer (Abso
         (layerInfl L x) := by
   induction x using H2_induction_on with
   | h c =>
-    obtain ⟨c', hc, hc'⟩ := exists_cohomologyIso_hom_H2π e c
+    obtain ⟨c', hc, hc'⟩ := e.exists_cohomologyIso_hom_H2π c
     rw [hc, layerInfl_H2π]
     refine Eq.trans ?_ (congrArg _ (layerInfl_H2π L c)).symm
     refine Eq.trans ?_ (explicitMap2_mk _ _ _ _ _ _ _ _ _).symm
