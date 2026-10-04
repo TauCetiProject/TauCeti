@@ -82,18 +82,23 @@ private def muNRepTateDualEquiv : (tateDual (muNRep n F)).V ≃+ (muNRep n F).V 
   ((tateDualEquiv (muNRep n F)).trans e.addMonoidHomCongrLeft).trans
     (i.trans (InternalHom.zmodEquiv (Field.absoluteGaloisGroup F)))
 
+/-- The coordinate `1` is the chosen root, so transported evaluation is evaluation there. -/
+private theorem muNRepTateDualEquiv_apply (φ : (tateDual (muNRep n F)).V) :
+    muNRepTateDualEquiv ζ hζ φ = tateDualEquiv (muNRep n F) φ
+      ((muNRepEquivTrivialFp n F hζ).symm ((trivialFpEquiv n _).symm 1)) := by
+  simp only [muNRepTateDualEquiv, AddEquiv.trans_apply, InternalHom.zmodEquiv_apply,
+    AddEquiv.coe_mk, Equiv.coe_fn_mk, AddEquiv.addMonoidHomCongrLeft_apply,
+    AddMonoidHom.coe_comp, Function.comp_apply, AddMonoidHom.coe_ofClass,
+    AddEquiv.symm_trans_apply, LinearEquiv.coe_toAddEquiv,
+    ← LinearEquiv.coe_toAddEquiv_symm,
+    LinearEquiv.coe_addEquiv_apply]
+
 private theorem muNRepTateDualEquiv_symm_apply (x : (muNRep n F).V) :
     (muNRepTateDualEquiv ζ hζ).symm x = (muNRepToTateDual ζ hζ).hom x := by
-  let e := (muNRepEquivTrivialFp n F hζ).trans (trivialFpEquiv n _).toAddEquiv
-  apply (tateDualEquiv (muNRep n F)).injective
-  ext y
-  have h : tateDualEquiv (muNRep n F) ((muNRepTateDualEquiv ζ hζ).symm x) y =
-      e y • x := by
-    simp [muNRepTateDualEquiv, e]
-  rw [h, tateDualEquiv_muNRepToTateDual_apply, kummerCupPairing_bil_comm]
-  have hpair : (kummerCupPairing ζ hζ).bil (e.symm (e y)) x = e y • x :=
-    kummerCupPairing_bil_apply_zmod ζ hζ (e y) x
-  simpa only [e.symm_apply_apply] using hpair.symm
+  apply (muNRepTateDualEquiv ζ hζ).injective
+  rw [AddEquiv.apply_symm_apply, muNRepTateDualEquiv_apply,
+    tateDualEquiv_muNRepToTateDual_apply, kummerCupPairing_bil_comm,
+    kummerCupPairing_bil_apply_zmod, one_smul]
 
 /-- The chosen-root map identifies `μₙ` with its Tate dual. -/
 theorem muNRepToTateDual_bijective : Function.Bijective (muNRepToTateDual ζ hζ).hom := by
@@ -135,7 +140,8 @@ theorem muNRepIsoTateDual_inv_apply (φ : (tateDual (muNRep n F)).V) :
   have h : (muNRepTateDualEquiv ζ hζ).symm ((muNRepIsoTateDual ζ hζ).inv φ) = φ := by
     rw [muNRepTateDualEquiv_symm_apply, ← muNRepIsoTateDual_hom]
     exact Iso.inv_hom_id_apply (muNRepIsoTateDual ζ hζ) φ
-  simpa [muNRepTateDualEquiv] using congrArg (muNRepTateDualEquiv ζ hζ) h
+  simpa only [AddEquiv.apply_symm_apply, muNRepTateDualEquiv_apply] using
+    congrArg (muNRepTateDualEquiv ζ hζ) h
 
 /-- The degree `(1, 1)` Tate-duality pairing, read through the chosen-root coefficient
 isomorphism, is the chosen-root local-symbol pairing for the identification `tr`.
