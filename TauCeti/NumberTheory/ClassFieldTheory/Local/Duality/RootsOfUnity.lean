@@ -24,7 +24,7 @@ Hilbert pairing as the `(1, 1)` base case in local Tate duality.
 
 * `TauCeti.ClassFieldTheory.muNRepToTateDual`: the coefficient morphism
   `μₙ → Hom(μₙ, μₙ)` defined by the chosen-root pairing.
-* `TauCeti.ClassFieldTheory.muNRepToTateDual_bijective`: this coefficient morphism is bijective.
+* `TauCeti.ClassFieldTheory.bijective_muNRepToTateDual`: this coefficient morphism is bijective.
 * `TauCeti.ClassFieldTheory.tateDualityPairing_muNRepToTateDual`: after transport along the
   coefficient morphism, the Tate pairing in bidegree `(1, 1)` is the local symbol.
 
@@ -88,7 +88,7 @@ theorem tateDualEquiv_muNRepToTateDual_apply (x y : (muNRep n F).V) :
   rw [muNRepToTateDual, tateDualEquiv_pairingToTateDual_apply]
 
 /-- **The chosen-root identification of `μₙ` with its Tate dual is bijective.** -/
-theorem muNRepToTateDual_bijective : Function.Bijective (muNRepToTateDual ζ hζ).hom := by
+theorem bijective_muNRepToTateDual : Function.Bijective (muNRepToTateDual ζ hζ).hom := by
   have : Finite (muNRep n F).V := Finite.of_equiv _ (muNRepZModEquiv ζ hζ).symm.toEquiv
   refine Function.Injective.bijective_of_nat_card_le (fun x y hxy => ?_) ?_
   · have := congrArg

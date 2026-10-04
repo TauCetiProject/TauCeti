@@ -224,9 +224,7 @@ def pairingToTateDual {A B : GalRep n F} [DiscreteTopology A.V]
         ⟨AddMonoidHom.toZModLinearMap n (pairingToTateDualAddHom P), continuous_of_discreteTopology⟩
       isIntertwining' g := ContinuousLinearMap.ext (pairingToTateDualAddHom_ρ P g) }
 
-/-- The defining equation of `pairingToTateDual`: its underlying map is the additive currying.
-It holds by `rfl`, since `TopRep.ofHom` and `AddMonoidHom.toZModLinearMap` keep the underlying
-function. -/
+/-- The defining equation of `pairingToTateDual`: its underlying map is the additive currying. -/
 private theorem pairingToTateDual_hom_apply {A B : GalRep n F} [DiscreteTopology A.V]
     (P : TopPairing A B (muNRep n F)) (a : A.V) :
     (pairingToTateDual P).hom a = pairingToTateDualAddHom P a :=
