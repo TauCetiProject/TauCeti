@@ -18,10 +18,10 @@ This module provides smooth, compactly supported cutoffs for compact subsets of 
 finite-dimensional real normed space. The cutoff is equal to one on a neighborhood of the compact
 set and has topological support in a prescribed open set, which is the localization step used for
 compact exhaustions in domain arguments. Taking differences of consecutive cutoffs along a compact
-exhaustion gives a partition of unity of an open set by compactly supported smooth functions,
-together with cutoffs equal to one on their supports which are locally finite in the open set
-(`IsOpen.exists_contDiff_partition_cutoff`); this is the gluing device for global approximation
-on a domain.
+exhaustion gives a decomposition of unity (not necessarily nonnegative) of an open set by
+compactly supported smooth functions, together with cutoffs equal to one on their supports which
+are locally finite in the open set (`IsOpen.exists_contDiff_decomposition_cutoff`); this is the
+gluing device for global approximation on a domain.
 
 It also provides radial cutoffs between two concentric closed balls of radii `r < R` whose
 gradient is at most `c / (R - r)` for a universal constant `c`, the quantitative form needed by
@@ -136,18 +136,18 @@ theorem _root_.CompactExhaustion.exists_contDiff_cutoff [NormedSpace ℝ E]
     hK.exists_contDiff_cutoff hU hKU
   exact ⟨ψ, hψ_smooth, hψ_range, hψ_eq_one_nhds, hψ_compact, hψ_tsupp⟩
 
-/-- **A smooth partition of unity of an open set, with cutoffs.** Every open set `U` of a
+/-- **A smooth decomposition of unity of an open set, with cutoffs.** Every open set `U` of a
 finite-dimensional real normed space carries smooth compactly supported functions `ζ j` and
 `χ j`, `j : ℕ`, with topological supports in `U`, such that `χ j = 1` on the topological support
 of `ζ j`, and every point of `U` has a neighbourhood on which `χ j` vanishes and
 `∑ j ∈ Finset.range N, ζ j = 1` for all large `j` and `N`.
 
-So `(ζ j)` is a partition of unity of `U` by test functions on `U`, and the cutoffs `χ j` form a
-family which is locally finite in `U`. Neither family is locally finite at the frontier of `U`.
+So `(ζ j)` is a decomposition of unity of `U` by test functions on `U`, and the cutoffs `χ j` form
+a family which is locally finite in `U`. Neither family is locally finite at the frontier of `U`.
 The functions `ζ j` are differences of consecutive cutoffs along a compact exhaustion of `U`, and
 need not be nonnegative. -/
-theorem _root_.IsOpen.exists_contDiff_partition_cutoff [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-    {U : Set E} (hU : IsOpen U) :
+theorem _root_.IsOpen.exists_contDiff_decomposition_cutoff [NormedSpace ℝ E]
+    [FiniteDimensional ℝ E] {U : Set E} (hU : IsOpen U) :
     ∃ ζ χ : ℕ → E → ℝ,
       (∀ j, ContDiff ℝ ∞ (ζ j) ∧ HasCompactSupport (ζ j) ∧ tsupport (ζ j) ⊆ U) ∧
       (∀ j, ContDiff ℝ ∞ (χ j) ∧ HasCompactSupport (χ j) ∧ tsupport (χ j) ⊆ U) ∧

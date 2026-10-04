@@ -25,10 +25,10 @@ space, density of globally smooth representatives at every order is
 
 ## The argument
 
-Take a partition of unity `(ζ j)` of `Ω` by test functions, together with cutoffs `χ j` equal to
-one on the support of `ζ j` and locally finite in `Ω`
-(`IsOpen.exists_contDiff_partition_cutoff`). Each piece `ζ j u` is compactly supported in `Ω`, so
-it lies in `W^{1,p}_0(Ω)` (`TauCeti.W1p.contDiffSMul_mem_w1p0Submodule_of_hasCompactSupport`) and
+Take a decomposition of unity `(ζ j)` of `Ω` by test functions, together with cutoffs `χ j` equal
+to one on the support of `ζ j` and locally finite in `Ω`
+(`IsOpen.exists_contDiff_decomposition_cutoff`). Each piece `ζ j u` is compactly supported in `Ω`,
+so it lies in `W^{1,p}_0(Ω)` (`TauCeti.W1p.contDiffSMul_mem_w1p0Submodule_of_hasCompactSupport`) and
 is approximated by a test function `ψ j` to within `ε 2^{-j}`; cutting off, `χ j ψ j` still
 approximates `ζ j u = χ j ζ j u`, and now has support where `χ j` does. The sum `f = ∑ j, χ j ψ j`
 is locally finite in `Ω`, hence smooth there.
@@ -120,7 +120,7 @@ private theorem W1p.exists_contDiffOn_norm_sub_lt (hp : p ≠ ⊤) (u : W1p mu O
     ∃ (v : W1p mu Omega p) (f : E → ℝ), ContDiffOn ℝ ∞ f Omega ∧
       (W1p.value v : E → ℝ) =ᵐ[mu.restrict Omega] f ∧ ‖v - u‖ < ε := by
   obtain ⟨zeta, chi, hzeta, hchi, hchi_one, hfin⟩ :=
-    IsOpen.exists_contDiff_partition_cutoff Omega.isOpen
+    IsOpen.exists_contDiff_decomposition_cutoff Omega.isOpen
   choose Mz hMz0 hMz hMzg using fun j =>
     ((hzeta j).1.of_le (by simp)).exists_abs_le_and_norm_gradient_le (hzeta j).2.1
   -- the localized pieces `b j = ζ_j u`, and test functions `a j` within `ε 2^{-j-2}` of them,
