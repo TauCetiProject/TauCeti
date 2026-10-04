@@ -12,10 +12,11 @@ public import TauCeti.Combinatorics.RibbonGraph.Genus
 # Examples of dessins d'enfants
 
 This file realizes the standard small permutation triples as finite bipartite ribbon graphs and
-computes their cells.  The cyclic dessin is an `n`-star: one black vertex, `n` white vertices,
-`n` edges, and one face.  The dessin of `z ↦ 4z(1 - z)` is a two-edge segment.  The degree-four
-Euclidean example has one vertex of each colour and two faces, so it lies on a torus.  The
-degree-three symmetric example has one black vertex, two white vertices, and two faces.
+computes their cells.  In positive degree `n`, the cyclic dessin is an `n`-star: one black
+vertex, `n` white vertices, `n` edges, and one face; in degree zero it is the formal empty dessin,
+with no edges, vertices, or faces.  The dessin of `z ↦ 4z(1 - z)` is a two-edge segment.  The
+degree-four Euclidean example has one vertex of each colour and two faces, so it lies on a torus.
+The degree-three symmetric example has one black vertex, two white vertices, and two faces.
 
 The definitions use the general construction from permutation triples.  The cell counts below
 spell out the resulting graphs without choosing representatives for their quotient vertex and
@@ -56,30 +57,30 @@ theorem cyclicDessin_def : cyclicDessin n = (cyclicTriple n).ribbonGraph := (rfl
 
 /-- In positive degree, the cyclic dessin has one black vertex. -/
 @[simp] theorem card_B_cyclicDessin (hn : n ≠ 0) : Fintype.card (cyclicDessin n).B = 1 := by
-  rw [cyclicDessin, PermutationTriple.card_B_ribbonGraph, ← cycleCounts_σ0,
+  rw [cyclicDessin_def, PermutationTriple.card_B_ribbonGraph, ← cycleCounts_σ0,
     cycleCounts_cyclicTriple hn]
 
 /-- Every edge of the cyclic dessin has its own white vertex. -/
 @[simp] theorem card_W_cyclicDessin : Fintype.card (cyclicDessin n).W = n := by
-  rw [cyclicDessin, PermutationTriple.card_W_ribbonGraph, cyclicTriple_σ1, orbitCount_one,
+  rw [cyclicDessin_def, PermutationTriple.card_W_ribbonGraph, cyclicTriple_σ1, orbitCount_one,
     Nat.card_eq_fintype_card, Fintype.card_fin]
 
 /-- In positive degree, the cyclic dessin has one face. -/
 @[simp] theorem faceCount_cyclicDessin (hn : n ≠ 0) : (cyclicDessin n).faceCount = 1 := by
-  rw [cyclicDessin, PermutationTriple.faceCount_ribbonGraph, ← cycleCounts_σinf,
+  rw [cyclicDessin_def, PermutationTriple.faceCount_ribbonGraph, ← cycleCounts_σinf,
     cycleCounts_cyclicTriple hn]
 
 /-- The cyclic dessin is connected exactly in positive degree. -/
 @[simp] theorem isConnected_cyclicDessin_iff : (cyclicDessin n).IsConnected ↔ n ≠ 0 := by
-  simp [cyclicDessin]
+  simp [cyclicDessin_def]
 
 /-- In positive degree, the cyclic dessin has Euler characteristic two. -/
 @[simp] theorem eulerChar_cyclicDessin (hn : n ≠ 0) : (cyclicDessin n).eulerChar = 2 := by
-  simp [cyclicDessin, eulerChar_cyclicTriple hn]
+  simp [cyclicDessin_def, eulerChar_cyclicTriple hn]
 
 /-- In positive degree, the cyclic dessin has genus zero. -/
 @[simp] theorem genus_cyclicDessin (hn : n ≠ 0) : (cyclicDessin n).genus = 0 := by
-  simp [cyclicDessin, genus_cyclicTriple hn]
+  simp [cyclicDessin_def, genus_cyclicTriple hn]
 
 /-! ### The segment dessin -/
 
@@ -97,33 +98,33 @@ theorem segmentDessin_def : segmentDessin = chebyshevTriple.ribbonGraph := (rfl)
 
 /-- The segment dessin has two black vertices. -/
 @[simp] theorem card_B_segmentDessin : Fintype.card segmentDessin.B = 2 := by
-  rw [segmentDessin, PermutationTriple.card_B_ribbonGraph, ← cycleCounts_σ0,
+  rw [segmentDessin_def, PermutationTriple.card_B_ribbonGraph, ← cycleCounts_σ0,
     cycleCounts_eq_card_cycleData, cycleData_chebyshevTriple]
   rfl
 
 /-- The segment dessin has one white vertex. -/
 @[simp] theorem card_W_segmentDessin : Fintype.card segmentDessin.W = 1 := by
-  rw [segmentDessin, PermutationTriple.card_W_ribbonGraph, ← cycleCounts_σ1,
+  rw [segmentDessin_def, PermutationTriple.card_W_ribbonGraph, ← cycleCounts_σ1,
     cycleCounts_eq_card_cycleData, cycleData_chebyshevTriple]
   rfl
 
 /-- The segment dessin has one face. -/
 @[simp] theorem faceCount_segmentDessin : segmentDessin.faceCount = 1 := by
-  rw [segmentDessin, PermutationTriple.faceCount_ribbonGraph, ← cycleCounts_σinf,
+  rw [segmentDessin_def, PermutationTriple.faceCount_ribbonGraph, ← cycleCounts_σinf,
     cycleCounts_eq_card_cycleData, cycleData_chebyshevTriple]
   rfl
 
 /-- The segment dessin is connected. -/
 @[simp] theorem isConnected_segmentDessin : segmentDessin.IsConnected := by
-  simpa [segmentDessin] using isConnected_chebyshevTriple
+  simpa [segmentDessin_def] using isConnected_chebyshevTriple
 
 /-- The segment dessin has Euler characteristic two. -/
 @[simp] theorem eulerChar_segmentDessin : segmentDessin.eulerChar = 2 := by
-  simp [segmentDessin, eulerChar_chebyshevTriple]
+  simp [segmentDessin_def, eulerChar_chebyshevTriple]
 
 /-- The segment dessin has genus zero. -/
 @[simp] theorem genus_segmentDessin : segmentDessin.genus = 0 := by
-  simp [segmentDessin, genus_chebyshevTriple]
+  simp [segmentDessin_def, genus_chebyshevTriple]
 
 /-! ### The torus dessin -/
 
@@ -141,30 +142,30 @@ theorem torusDessin_def : torusDessin = torusTriple.ribbonGraph := (rfl)
 
 /-- The torus dessin has one black vertex. -/
 @[simp] theorem card_B_torusDessin : Fintype.card torusDessin.B = 1 := by
-  rw [torusDessin, PermutationTriple.card_B_ribbonGraph, ← cycleCounts_σ0,
+  rw [torusDessin_def, PermutationTriple.card_B_ribbonGraph, ← cycleCounts_σ0,
     cycleCounts_torusTriple]
 
 /-- The torus dessin has one white vertex. -/
 @[simp] theorem card_W_torusDessin : Fintype.card torusDessin.W = 1 := by
-  rw [torusDessin, PermutationTriple.card_W_ribbonGraph, ← cycleCounts_σ1,
+  rw [torusDessin_def, PermutationTriple.card_W_ribbonGraph, ← cycleCounts_σ1,
     cycleCounts_torusTriple]
 
 /-- The torus dessin has two faces. -/
 @[simp] theorem faceCount_torusDessin : torusDessin.faceCount = 2 := by
-  rw [torusDessin, PermutationTriple.faceCount_ribbonGraph, ← cycleCounts_σinf,
+  rw [torusDessin_def, PermutationTriple.faceCount_ribbonGraph, ← cycleCounts_σinf,
     cycleCounts_torusTriple]
 
 /-- The torus dessin is connected. -/
 @[simp] theorem isConnected_torusDessin : torusDessin.IsConnected := by
-  simpa [torusDessin] using isConnected_torusTriple
+  simpa [torusDessin_def] using isConnected_torusTriple
 
 /-- The torus dessin has Euler characteristic zero. -/
 @[simp] theorem eulerChar_torusDessin : torusDessin.eulerChar = 0 := by
-  simp [torusDessin, eulerChar_torusTriple]
+  simp [torusDessin_def, eulerChar_torusTriple]
 
 /-- The torus dessin has genus one. -/
 @[simp] theorem genus_torusDessin : torusDessin.genus = 1 := by
-  simp [torusDessin, genus_torusTriple]
+  simp [torusDessin_def, genus_torusTriple]
 
 /-! ### The symmetric degree-three dessin -/
 
@@ -182,33 +183,33 @@ theorem s3Dessin_def : s3Dessin = s3Triple.ribbonGraph := (rfl)
 
 /-- The symmetric degree-three dessin has one black vertex. -/
 @[simp] theorem card_B_s3Dessin : Fintype.card s3Dessin.B = 1 := by
-  rw [s3Dessin, PermutationTriple.card_B_ribbonGraph, ← cycleCounts_σ0,
+  rw [s3Dessin_def, PermutationTriple.card_B_ribbonGraph, ← cycleCounts_σ0,
     cycleCounts_eq_card_cycleData, cycleData_s3Triple]
   rfl
 
 /-- The symmetric degree-three dessin has two white vertices. -/
 @[simp] theorem card_W_s3Dessin : Fintype.card s3Dessin.W = 2 := by
-  rw [s3Dessin, PermutationTriple.card_W_ribbonGraph, ← cycleCounts_σ1,
+  rw [s3Dessin_def, PermutationTriple.card_W_ribbonGraph, ← cycleCounts_σ1,
     cycleCounts_eq_card_cycleData, cycleData_s3Triple]
   rfl
 
 /-- The symmetric degree-three dessin has two faces. -/
 @[simp] theorem faceCount_s3Dessin : s3Dessin.faceCount = 2 := by
-  rw [s3Dessin, PermutationTriple.faceCount_ribbonGraph, ← cycleCounts_σinf,
+  rw [s3Dessin_def, PermutationTriple.faceCount_ribbonGraph, ← cycleCounts_σinf,
     cycleCounts_eq_card_cycleData, cycleData_s3Triple]
   rfl
 
 /-- The symmetric degree-three dessin is connected. -/
 @[simp] theorem isConnected_s3Dessin : s3Dessin.IsConnected := by
-  simpa [s3Dessin] using isConnected_s3Triple
+  simpa [s3Dessin_def] using isConnected_s3Triple
 
 /-- The symmetric degree-three dessin has Euler characteristic two. -/
 @[simp] theorem eulerChar_s3Dessin : s3Dessin.eulerChar = 2 := by
-  simp [s3Dessin, eulerChar_s3Triple]
+  simp [s3Dessin_def, eulerChar_s3Triple]
 
 /-- The symmetric degree-three dessin has genus zero. -/
 @[simp] theorem genus_s3Dessin : s3Dessin.genus = 0 := by
-  simp [s3Dessin, genus_s3Triple]
+  simp [s3Dessin_def, genus_s3Triple]
 
 end BipartiteRibbonGraph
 
