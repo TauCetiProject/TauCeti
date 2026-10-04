@@ -25,9 +25,7 @@ quasicoherent coordinate algebra `p_* 𝒪_V` of an affine morphism `p : V ⟶ X
 * `AlgebraicGeometry.Scheme.Modules.isQuasicoherent_pushforward_specMap`: pushforward along a
   morphism of spectra preserves quasicoherence;
 * `TauCeti.AlgebraicGeometry.QuasicoherentSheaf.pushforwardSpecMap`: the induced functor on
-  quasicoherent sheaves;
-* `TauCeti.AlgebraicGeometry.QuasicoherentSheaf.pushforwardSpecMapCompιIso`: forgetting the
-  quasicoherence witness recovers ordinary module pushforward.
+  quasicoherent sheaves.
 
 ## References
 
@@ -65,14 +63,6 @@ def pushforwardSpecMap (f : R ⟶ S) :
     ((_root_.SheafOfModules.isQuasicoherent (Spec S).ringCatSheaf).ι ⋙
       Scheme.Modules.pushforward (Spec.map f))
     fun M ↦ Scheme.Modules.isQuasicoherent_pushforward_specMap f M.obj
-
-/-- Forgetting quasicoherence after affine pushforward recovers ordinary module pushforward. -/
-def pushforwardSpecMapCompιIso (f : R ⟶ S) :
-    pushforwardSpecMap f ⋙
-        (_root_.SheafOfModules.isQuasicoherent (Spec R).ringCatSheaf).ι ≅
-      (_root_.SheafOfModules.isQuasicoherent (Spec S).ringCatSheaf).ι ⋙
-        Scheme.Modules.pushforward (Spec.map f) :=
-  (_root_.SheafOfModules.isQuasicoherent (Spec R).ringCatSheaf).liftCompιIso _ _
 
 /-- The underlying module of affine quasicoherent pushforward is ordinary module pushforward. -/
 @[simp]
