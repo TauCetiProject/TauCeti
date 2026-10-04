@@ -8,30 +8,28 @@ module
 public import TauCeti.Algebra.Polynomial.Sturm.CauchyIndex.Sequence
 public import TauCeti.Data.List.PermanencesMinusVariations
 public import TauCeti.RingTheory.Polynomial.Subresultant.Euclidean
-public import TauCeti.RingTheory.Polynomial.Subresultant.Signed
-import TauCeti.Data.Nat.Choose.Basic
+import TauCeti.Data.List.Range
 
 /-! # Cauchy indices from signed subresultant coefficients
 
 Let `p` and `q` be polynomials over an ordered real closed field with
 `q.natDegree < p.natDegree = m`, and let `s_j = signedPsc p q m q.natDegree j` be their signed
 principal subresultant coefficients at the actual degrees. The permanences minus variations of
-the list `[s_m, …, s_0]` is the Cauchy index of `q / p` on the whole line. Since that index
-counts roots and computes Tarski queries, the number of distinct roots of `p` and the Tarski
-query of `q` at the roots of `p` are determined by the signs of principal subresultant
-coefficients alone, which are polynomials in the coefficients of `p` and `q`.
+the list `[s_m, …, s_0]` is the Cauchy index of `q / p` on the whole line. Applied to suitable
+pairs, this computes roots and Tarski queries from signs of principal subresultant
+coefficients, which are polynomials in the coefficients of the pair: the number of distinct
+roots of `p` uses the pair `(p, derivative p)`, and the Tarski query of `q` at the roots of `p`
+uses the pair `(p, derivative p * q % p)`.
 
 The proof follows the signed remainder sequence `p, q, -(p % q), …`. One Euclidean step
 multiplies the signed coefficients of index at most `(p % q).natDegree` by a common nonzero
-constant, and the coefficients of larger index below `q.natDegree` vanish. On the Cauchy-index
-side, the same step changes the whole-line index by the contribution of the leading pair.
+constant (`Polynomial.signedPsc_eq_mul_signedPsc_neg_mod`), and the coefficients of larger
+index below `q.natDegree` vanish (`Polynomial.signedPsc_eq_zero_of_natDegree_mod_lt`). On the
+Cauchy-index side, the same step changes the whole-line index by the contribution of the
+leading pair.
 
 ## Main declarations
 
-* `Polynomial.signedPsc_eq_mul_signedPsc_neg_mod`: the signed coefficients of `(p, q)` and of
-  `(q, -(p % q))` differ by a factor independent of the index.
-* `Polynomial.signedPsc_eq_zero_of_natDegree_mod_lt`: vanishing strictly between the degrees of
-  the remainder and of `q`.
 * `Polynomial.cauchyIndex_univ_eq_permanencesMinusVariations_signedPsc`: the Cauchy index of
   `q / p` is permanences minus variations of the signed principal coefficients.
 * `Polynomial.cauchyIndex_univ_eq_permanencesMinusVariations_signedPsc_mod`: the same for an
@@ -53,62 +51,6 @@ namespace TauCeti
 
 open Polynomial Set SignType
 
-section Field
-
-variable {K : Type*} [Field K]
-
-/-- One step of the signed remainder sequence multiplies the signed principal coefficients by a
-common factor. For indices at most a bound `r` for the remainder, the signed coefficients of
-`(p, q)` are those of `(q, -(p % q))` times `(-1) ^ (m - q.natDegree).choose 2 *
-q.leadingCoeff ^ (m - r)`, which does not depend on the index. -/
-theorem _root_.Polynomial.signedPsc_eq_mul_signedPsc_neg_mod {p q : K[X]} {m r j : ℕ}
-    (hp : p.natDegree ≤ m) (hqm : q.natDegree ≤ m) (hr : (p % q).natDegree ≤ r)
-    (hrm : r ≤ m) (hjr : j ≤ r) (hjq : j ≤ q.natDegree) :
-    signedPsc p q m q.natDegree j =
-      (-1) ^ (m - q.natDegree).choose 2 * q.leadingCoeff ^ (m - r) *
-        signedPsc q (-(p % q)) q.natDegree r j := by
-  rw [signedPsc_of_le p q (le_min (hjq.trans hqm) hjq), signedPsc_of_le _ _ (le_min hjq hjr),
-    psc_eq_sign_mul_leadingCoeff_pow_mul_psc_neg_mod hp hr hrm hjr hjq]
-  obtain ⟨t, ht⟩ := Nat.even_mul_succ_self (q.natDegree - j)
-  have hexp : (m - j).choose 2 + (m - j + 1) * (q.natDegree - j) =
-      (m - q.natDegree).choose 2 + (q.natDegree - j).choose 2 +
-        2 * ((m - q.natDegree) * (q.natDegree - j) + t) := by
-    rw [show m - j = (m - q.natDegree) + (q.natDegree - j) by omega, Nat.add_choose_two]
-    nlinarith [ht]
-  have hsign : (-1 : K) ^ (m - j).choose 2 * (-1) ^ ((m - j + 1) * (q.natDegree - j)) =
-      (-1) ^ (m - q.natDegree).choose 2 * (-1) ^ (q.natDegree - j).choose 2 := by
-    rw [← pow_add, hexp, pow_add, pow_add, pow_mul]
-    simp
-  linear_combination (q.leadingCoeff ^ (m - r) * psc q (-(p % q)) q.natDegree r j) * hsign
-
-/-- The signed principal coefficients vanish at the indices strictly between the degree of the
-remainder `p % q` and the degree of `q`. -/
-theorem _root_.Polynomial.signedPsc_eq_zero_of_natDegree_mod_lt {p q : K[X]} {m j : ℕ}
-    (hp : p.natDegree ≤ m) (hrj : (p % q).natDegree < j) (hjq : j < q.natDegree)
-    (hjm : j ≤ m) :
-    signedPsc p q m q.natDegree j = 0 := by
-  rw [signedPsc_of_le p q (le_min hjm hjq.le), psc_eq_zero_of_natDegree_mod_lt hp hrj hjq hjm,
-    mul_zero]
-
-end Field
-
-/-- Mapping a function along the reversed range `[b - 1, …, 0]`, where it vanishes on
-`[a, b)`. -/
-private theorem map_reverse_range_eq_replicate_append {α : Type*} [Zero α] (f : ℕ → α)
-    {a b : ℕ} (hab : a ≤ b) (h : ∀ j, a ≤ j → j < b → f j = 0) :
-    (List.range b).reverse.map f = List.replicate (b - a) 0 ++ (List.range a).reverse.map f := by
-  induction b, hab using Nat.le_induction with
-  | base => simp
-  | succ b hab ih =>
-    rw [List.range_succ, List.reverse_append, List.reverse_singleton, List.singleton_append,
-      List.map_cons, h b hab (by omega), ih fun j h1 h2 => h j h1 (by omega),
-      show b + 1 - a = (b - a) + 1 by omega, List.replicate_succ, List.cons_append]
-
-/-- The reversed range `[k, …, 0]` begins with `k`. -/
-private theorem map_reverse_range_succ {α : Type*} (f : ℕ → α) (k : ℕ) :
-    (List.range (k + 1)).reverse.map f = f k :: (List.range k).reverse.map f := by
-  simp [List.range_succ]
-
 section Ordered
 
 variable {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
@@ -127,15 +69,17 @@ private theorem permanencesMinusVariations_signedPsc_eq_add {p q : K[X]} (hq : q
   set n := q.natDegree with hn
   set s := signedPsc p q m n
   have hq' : q.leadingCoeff ≠ 0 := leadingCoeff_ne_zero.mpr hq
-  have hsm : s m = p.leadingCoeff := by
-    simp [s, hm, show ¬ p.natDegree ≤ n by omega]
-  have hsn : s n = (-1) ^ (m - n).choose 2 * q.leadingCoeff ^ (m - n) := by
-    simp [s, hn, show q.natDegree ≤ m by omega]
+  have hpn : ¬ p.natDegree ≤ n := by omega
+  have hqm : q.natDegree ≤ m := by omega
+  have hsm : s m = p.leadingCoeff := by simp [s, hm, hpn]
+  have hsn : s n = (-1) ^ (m - n).choose 2 * q.leadingCoeff ^ (m - n) := by simp [s, hn, hqm]
   have hsn0 : s n ≠ 0 := by simp [hsn, hq']
-  rw [map_reverse_range_succ,
-    map_reverse_range_eq_replicate_append s (a := n + 1) (b := m) h fun j hj hjm => by
-      simp [s, signedPsc_of_lt p q (show min m n < j by omega), hjm.ne, show j ≠ n by omega],
-    map_reverse_range_succ, List.permanencesMinusVariations_cons_replicate_zero_append hsn0]
+  rw [List.map_reverse_range_succ,
+    List.map_reverse_range_eq_replicate_append s (a := n + 1) (b := m) h fun j hj hjm => by
+      have hmin : min m n < j := by omega
+      have hjn : j ≠ n := by omega
+      simp [s, signedPsc_of_lt p q hmin, hjm.ne, hjn],
+    List.map_reverse_range_succ, List.permanencesMinusVariations_cons_replicate_zero_append hsn0]
   congr 1
   obtain ⟨k, hk⟩ : ∃ k, m - n = k + 1 := ⟨m - n - 1, by omega⟩
   have hk' : m - (n + 1) = k := by omega
@@ -184,22 +128,26 @@ private theorem permanencesMinusVariations_signedPsc_neg_mod {p q : K[X]}
       rw [List.mem_reverse, List.mem_range] at hj
       omega
     exact signedPsc_eq_mul_signedPsc_neg_mod le_rfl h.le hρr.le (by omega) hj (by omega)
-  have hsn : s n = (-1) ^ (m - n).choose 2 * q.leadingCoeff ^ (m - n) := by
-    simp [s, hn', show q.natDegree ≤ m by omega]
-  have htn : t n = q.leadingCoeff := by simp [t, hn', show ¬ q.natDegree ≤ ρ by omega]
+  have hqm : q.natDegree ≤ m := by omega
+  have hqρ : ¬ q.natDegree ≤ ρ := by omega
+  have hsn : s n = (-1) ^ (m - n).choose 2 * q.leadingCoeff ^ (m - n) := by simp [s, hn', hqm]
+  have htn : t n = q.leadingCoeff := by simp [t, hn', hqρ]
   have htρ : t ρ = (-1) ^ (n - ρ).choose 2 * (-(p % q)).coeff ρ ^ (n - ρ) := by
     simp [t, hρ.le]
-  rw [map_reverse_range_succ s n,
-    map_reverse_range_eq_replicate_append s (a := ρ + 1) (b := n) hρ fun j hj hjn =>
+  rw [List.map_reverse_range_succ s n,
+    List.map_reverse_range_eq_replicate_append s (a := ρ + 1) (b := n) hρ fun j hj hjn =>
       signedPsc_eq_zero_of_natDegree_mod_lt le_rfl (by omega) hjn (by omega), hst,
-    map_reverse_range_succ t n,
-    map_reverse_range_eq_replicate_append t (a := ρ + 1) (b := n) hρ fun j hj hjn => by
-      simp [t, signedPsc_of_lt q _ (show min n ρ < j by omega), hjn.ne, show j ≠ ρ by omega],
-    htn, map_reverse_range_succ t ρ]
+    List.map_reverse_range_succ t n,
+    List.map_reverse_range_eq_replicate_append t (a := ρ + 1) (b := n) hρ fun j hj hjn => by
+      have hmin : min n ρ < j := by omega
+      have hjρ : j ≠ ρ := by omega
+      simp [t, signedPsc_of_lt q _ hmin, hjn.ne, hjρ],
+    htn, List.map_reverse_range_succ t ρ]
   by_cases hr : p % q = 0
   · -- A zero remainder leaves no nonzero entry after the first one.
     have hρ0 : ρ = 0 := by simp [ρ, hr]
-    have ht0 : t ρ = 0 := by simp [htρ, hr, show n - ρ ≠ 0 by omega]
+    have hnρ : n - ρ ≠ 0 := by omega
+    have ht0 : t ρ = 0 := by simp [htρ, hr, hnρ]
     rw [hρ0] at ht0
     simp [ht0, hρ0, ← List.replicate_succ']
   · have hlc : (-(p % q)).coeff ρ ≠ 0 := by
@@ -220,12 +168,12 @@ private theorem permanencesMinusVariations_signedPsc_neg_mod {p q : K[X]}
       have h1 : ((-1 : K) ^ (m - n).choose 2) ^ 2 = 1 := by
         rw [← pow_mul, mul_comm, pow_mul]
         simp
+      have hprod : (-1) ^ (m - n).choose 2 * q.leadingCoeff ^ (m - n) *
+          ((-1) ^ (m - n).choose 2 * q.leadingCoeff ^ (m - ρ)) =
+            q.leadingCoeff ^ ((m - n) + (m - ρ)) := by
+        linear_combination (q.leadingCoeff ^ (m - n) * q.leadingCoeff ^ (m - ρ)) * h1
       have key : (sign (s n) : ℤ) * sign c = sign q.leadingCoeff := by
-        rw [← SignType.coe_mul, ← sign_mul, hsn, hcdef,
-          show (-1) ^ (m - n).choose 2 * q.leadingCoeff ^ (m - n) *
-              ((-1) ^ (m - n).choose 2 * q.leadingCoeff ^ (m - ρ)) =
-            q.leadingCoeff ^ ((m - n) + (m - ρ)) by
-            linear_combination (q.leadingCoeff ^ (m - n) * q.leadingCoeff ^ (m - ρ)) * h1]
+        rw [← SignType.coe_mul, ← sign_mul, hsn, hcdef, hprod]
         simp [sign_pow, SignType.pow_odd _ hodd]
       simp only [sign_mul, SignType.coe_mul]
       linear_combination ((-1) ^ (n - (ρ + 1)).choose 2 * (sign (t ρ) : ℤ)) * key
@@ -250,8 +198,8 @@ theorem _root_.Polynomial.cauchyIndex_univ_eq_permanencesMinusVariations_signedP
   by_cases hq : q = 0
   · -- Only the leading entry `p.leadingCoeff` is nonzero.
     subst hq
-    rw [cauchyIndex_zero_right, map_reverse_range_succ,
-      map_reverse_range_eq_replicate_append _ (Nat.zero_le _) fun j _ hj => ?_]
+    rw [cauchyIndex_zero_right, List.map_reverse_range_succ,
+      List.map_reverse_range_eq_replicate_append _ (Nat.zero_le _) fun j _ hj => ?_]
     · simp
     · rcases eq_or_ne j 0 with rfl | hj0
       · exact signedPsc_zero_right p (by simp) (by simpa using h)
