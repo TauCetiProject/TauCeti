@@ -9,7 +9,6 @@ public import TauCeti.AlgebraicTopology.FundamentalGroup.PuncturedStarConvex
 public import TauCeti.Topology.Homotopy.Monodromy.Basic
 
 import Mathlib.Analysis.LocallyConvex.WithSeminorms
-import Mathlib.Analysis.Normed.Module.Convex
 import TauCeti.AlgebraicTopology.FundamentalGroupoid.Basic
 
 /-!
@@ -26,9 +25,9 @@ points of the fibre therefore extend to `d` lifts that are distinct at every poi
 The proof applies the lifting criterion
 `IsCoveringMap.existsUnique_continuousMap_lifts_of_range_le`. A loop class of `U × D*` is
 determined by the degree of the direction of its second coordinate
-(`StarConvex.fundamentalGroup_map_directionFrom_comp_snd_bijective`). The substitution multiplies
-that degree by `n` (`Circle.fundamentalGroupMulEquiv_map_pow`), so it sends every loop class of
-`U × D'*` to an `n`-th power. Over a fibre with `d` points, the `n`-th power of every loop
+(`TauCeti.fundamentalGroupMulEquiv_comp_map_directionFrom_comp_snd_bijective`). The substitution
+multiplies that degree by `n` (`Circle.fundamentalGroupMulEquiv_map_pow`), so it sends every loop
+class of `U × D'*` to an `n`-th power. Over a fibre with `d` points, the `n`-th power of every loop
 class has trivial monodromy (`IsCoveringMap.monodromyPerm_pow_eq_one`), so it lifts to a loop.
 
 This is the topological step of the Puiseux theorem with parameters. Let a monic polynomial in `z`
@@ -118,10 +117,7 @@ theorem _root_.IsCoveringMap.existsUnique_continuousMap_lifts_powerSubstitution
     ∃! F : C(U × ↥(ball (0 : ℂ) R' \ {0}), E), F a = e ∧ p ∘ F = powerSubstitution U hn hR := by
   set q := powerSubstitution U hn hR
   have hR' : 0 < R' := (norm_nonneg _).trans_lt (mem_ball_zero_iff.1 a.2.2.1)
-  have hR0 : 0 < R := (pow_pos hR' n).trans_le hR
-  have := ((convex_ball (0 : ℂ) R').starConvex
-    (mem_ball_self hR')).pathConnectedSpace_diff_singleton (half_pos hR')
-      (sphere_subset_ball (half_lt_self hR'))
+  have := pathConnectedSpace_ball_diff_singleton 0 hR'
   have : LocallyPathConnectedSpace ↥(ball (0 : ℂ) R' \ {0}) :=
     (isOpen_ball.sdiff isClosed_singleton).locallyPathConnectedSpace
   refine hp.existsUnique_continuousMap_lifts_of_range_le he ?_
@@ -133,10 +129,7 @@ theorem _root_.IsCoveringMap.existsUnique_continuousMap_lifts_powerSubstitution
   let dX := ((0 : ℂ).directionFrom (ball 0 R)).comp
     (ContinuousMap.snd : C(U × ↥(ball (0 : ℂ) R \ {0}), _))
   let W := (Circle.fundamentalGroupMulEquiv _).toMonoidHom.comp (FundamentalGroup.map dX (q a))
-  have hW : Bijective W := (Circle.fundamentalGroupMulEquiv _).bijective.comp
-    (((convex_ball (0 : ℂ) R).starConvex
-      (mem_ball_self hR0)).fundamentalGroup_map_directionFrom_comp_snd_bijective (half_pos hR0)
-      (sphere_subset_ball (half_lt_self hR0)) (q a))
+  have hW : Bijective W := fundamentalGroupMulEquiv_comp_map_directionFrom_comp_snd_bijective (q a)
   let pow : C(Circle, Circle) := ⟨(· ^ n), continuous_pow n⟩
   have hd : dX.comp q = pow.comp dA := directionFrom_comp_snd_comp_powerSubstitution hn hR
   have hWq : W (FundamentalGroup.map q a g) =
@@ -175,9 +168,7 @@ theorem _root_.IsCoveringMap.exists_continuousMap_lifts_powerSubstitution
     (hp.existsUnique_continuousMap_lifts_powerSubstitution hn hR hdvd e.2).exists
   refine ⟨F, hF, fun b e e' h ↦ Subtype.ext ?_⟩
   have hR' : 0 < R' := (norm_nonneg _).trans_lt (mem_ball_zero_iff.1 a.2.2.1)
-  have := ((convex_ball (0 : ℂ) R').starConvex
-    (mem_ball_self hR')).pathConnectedSpace_diff_singleton (half_pos hR')
-      (sphere_subset_ball (half_lt_self hR'))
+  have := pathConnectedSpace_ball_diff_singleton 0 hR'
   -- two lifts agreeing at `b` agree everywhere, in particular at `a`
   rw [← (hF e).1, ← (hF e').1,
     hp.eq_of_comp_eq (F e).continuous (F e').continuous ((hF e).2.trans (hF e').2.symm) b h]
