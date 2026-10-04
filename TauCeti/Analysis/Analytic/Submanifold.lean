@@ -129,54 +129,29 @@ structure IsAnalyticChart (d : ℕ) (S : Set (Fin n → 𝕜))
   analyticOnNhd_symm : AnalyticOnNhd 𝕜 e.symm e.target
   /-- The chart maps the part of `S` in its source onto the points of its target whose
   coordinates of index at least `d` vanish. -/
-  image_source_inter : e '' (e.source ∩ S) = e.target ∩ {y | ∀ i : Fin n, d ≤ i.val → y i = 0}
+  isImage : e.IsImage S {y | ∀ i : Fin n, d ≤ i.val → y i = 0}
 
 namespace IsAnalyticChart
 
 /-- A point of the source of an analytic chart lies in `S` exactly when the coordinates of index
 at least `d` of its image vanish. -/
 theorem mem_iff (he : IsAnalyticChart d S e) (hx : x ∈ e.source) :
-    x ∈ S ↔ ∀ i : Fin n, d ≤ i.val → e x i = 0 := by
-  refine ⟨fun hxS ↦ ?_, fun h ↦ ?_⟩
-  · have hx' : e x ∈ e '' (e.source ∩ S) := mem_image_of_mem e ⟨hx, hxS⟩
-    rw [he.image_source_inter] at hx'
-    exact hx'.2
-  · have hx' : e x ∈ e.target ∩ {y | ∀ i : Fin n, d ≤ i.val → y i = 0} := ⟨e.map_source hx, h⟩
-    rw [← he.image_source_inter] at hx'
-    obtain ⟨x', ⟨hx', hx'S⟩, hxx'⟩ := hx'
-    rwa [← e.injOn hx' hx hxx']
-
-end IsAnalyticChart
-
-/-- Characterization of analytic charts by membership: an analytic open partial homeomorphism
-with analytic inverse is an analytic chart of `S` exactly when a point of its source lies in `S`
-if and only if the coordinates of index at least `d` of its image vanish. -/
-theorem isAnalyticChart_iff : IsAnalyticChart d S e ↔ AnalyticOnNhd 𝕜 e e.source ∧
-    AnalyticOnNhd 𝕜 e.symm e.target ∧
-      ∀ x ∈ e.source, (x ∈ S ↔ ∀ i : Fin n, d ≤ i.val → e x i = 0) := by
-  refine ⟨fun he ↦ ⟨he.analyticOnNhd, he.analyticOnNhd_symm, fun x hx ↦ he.mem_iff hx⟩,
-    fun ⟨h₁, h₂, h₃⟩ ↦ ⟨h₁, h₂, ?_⟩⟩
-  ext y
-  refine ⟨?_, fun ⟨hy, hy0⟩ ↦ ⟨e.symm y, ⟨e.map_target hy, ?_⟩, e.right_inv hy⟩⟩
-  · rintro ⟨x, ⟨hx, hxS⟩, rfl⟩
-    exact ⟨e.map_source hx, (h₃ x hx).1 hxS⟩
-  · rw [h₃ _ (e.map_target hy), e.right_inv hy]
-    exact hy0
-
-namespace IsAnalyticChart
+    x ∈ S ↔ ∀ i : Fin n, d ≤ i.val → e x i = 0 :=
+  (he.isImage.apply_mem_iff hx).symm
 
 /-- An analytic chart of `S` is an analytic chart of every set with the same points in its
 source. -/
 theorem congr_set (he : IsAnalyticChart d S e) (h : e.source ∩ S = e.source ∩ T) :
     IsAnalyticChart d T e :=
-  ⟨he.analyticOnNhd, he.analyticOnNhd_symm, h ▸ he.image_source_inter⟩
+  ⟨he.analyticOnNhd, he.analyticOnNhd_symm,
+    .of_preimage_eq (h ▸ he.isImage.preimage_eq)⟩
 
 /-- The restriction of an analytic chart of `S` to an open set is an analytic chart of `S`. -/
 theorem restrOpen (he : IsAnalyticChart d S e) (hU : IsOpen U) :
     IsAnalyticChart d S (e.restrOpen U hU) := by
-  refine isAnalyticChart_iff.2 ⟨he.analyticOnNhd.mono inter_subset_left,
+  refine ⟨he.analyticOnNhd.mono inter_subset_left,
     he.analyticOnNhd_symm.mono inter_subset_left, fun x hx ↦ ?_⟩
-  simpa using he.mem_iff hx.1
+  simpa using he.isImage hx.1
 
 /-- The restriction of an analytic chart of `S` to an open set `U` is an analytic chart of
 `S ∩ U`. -/
@@ -250,20 +225,20 @@ submanifold. -/
 theorem isAnalyticSubmanifold_coordSubspace (h : d ≤ n) :
     IsAnalyticSubmanifold d {y : Fin n → 𝕜 | ∀ i : Fin n, d ≤ i.val → y i = 0} := by
   refine ⟨⟨0, fun _ _ ↦ rfl⟩, h, fun x _ ↦ ⟨OpenPartialHomeomorph.refl _, mem_univ x, ?_⟩⟩
-  exact isAnalyticChart_iff.2 ⟨analyticOnNhd_id, analyticOnNhd_id, fun x _ ↦ Iff.rfl⟩
+  exact ⟨analyticOnNhd_id, analyticOnNhd_id, fun x _ ↦ Iff.rfl⟩
 
 /-- A nonempty open subset of `𝕜ⁿ` is an `n`-dimensional analytic submanifold. -/
 theorem _root_.IsOpen.isAnalyticSubmanifold (hU : IsOpen U) (hne : U.Nonempty) :
     IsAnalyticSubmanifold n U := by
   refine ⟨hne, le_rfl, fun x hx ↦ ⟨(OpenPartialHomeomorph.refl _).restrOpen U hU, ⟨trivial, hx⟩,
-    isAnalyticChart_iff.2 ⟨analyticOnNhd_id, analyticOnNhd_id, fun y hy ↦ ?_⟩⟩⟩
+    ⟨analyticOnNhd_id, analyticOnNhd_id, fun y hy ↦ ?_⟩⟩⟩
   simpa [fun i : Fin n ↦ i.isLt.not_ge] using hy.2
 
 /-- A point of `𝕜ⁿ` is a `0`-dimensional analytic submanifold. -/
 theorem isAnalyticSubmanifold_singleton (a : Fin n → 𝕜) : IsAnalyticSubmanifold 0 {a} := by
   refine ⟨singleton_nonempty a, n.zero_le, fun x _ ↦
     ⟨(Homeomorph.addRight (-a)).toOpenPartialHomeomorph, mem_univ x, ?_⟩⟩
-  refine isAnalyticChart_iff.2 ⟨fun _ _ ↦ analyticAt_id.add analyticAt_const,
+  refine ⟨fun _ _ ↦ analyticAt_id.add analyticAt_const,
     fun _ _ ↦ analyticAt_id.add analyticAt_const, fun y _ ↦ ?_⟩
   simp [← sub_eq_add_neg, sub_eq_zero, funext_iff]
 
