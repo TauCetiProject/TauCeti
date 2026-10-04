@@ -34,8 +34,8 @@ bundle of a `C²` manifold carrying a `C¹` Riemannian metric; its integrand is 
 `[a, b]`.  It is the tool for studying the critical points of the energy, the `C^n` curves for which
 this derivative vanishes for every `C^n` variation with fixed endpoints
 (`TauCeti.Manifold.IsFixedEndpointVariation`), for a regularity `2 ≤ n`.  On a boundaryless
-manifold, for `2 ≤ n ≤ ∞`, criticality is equivalent to being a geodesic on `uIoo a b`
-(`TauCeti.Geometry.Manifold.Riemannian.Geodesic.FirstVariation`).
+`C^n` manifold, for `2 ≤ n ≤ ∞`, a `C^n` curve is critical exactly when it is a geodesic on
+`uIoo a b` (`TauCeti.Geometry.Manifold.Riemannian.Geodesic.FirstVariation`).
 
 ## Main definitions and results
 
@@ -319,10 +319,13 @@ regularity of `γ` is part of the definition: a curve which is not `C^n` on `[a,
 variation, and is not critical.
 
 The regularity `n` is meant to be at least `2`, where the first variation formula applies; the
-usual notion is `n = ∞`, criticality of a smooth curve among smooth variations.  For `2 ≤ n ≤ ∞`
-criticality is equivalent to being a geodesic, so it does not depend on `n`; this is
-`TauCeti.Manifold.isEnergyCritical_iff_isGeodesicCurveOn` in
-`TauCeti.Geometry.Manifold.Riemannian.Geodesic.FirstVariation`. -/
+usual notion is `n = ∞`, criticality of a smooth curve among smooth variations.  On a
+boundaryless `C^n` manifold, for `2 ≤ n ≤ ∞`, a curve which is `C^n` on `[a, b]` is critical
+exactly when it is a geodesic; this is `TauCeti.Manifold.isEnergyCritical_iff_isGeodesicCurveOn`
+in `TauCeti.Geometry.Manifold.Riemannian.Geodesic.FirstVariation`.  Hence, on a boundaryless
+`C^n` manifold with `n ≤ ∞`, criticality among `C^m` variations is the same for every
+`2 ≤ m ≤ n`, for curves which are `C^n` on `[a, b]`; it is not independent of the regularity in
+general, since it requires `γ` itself to be `C^m`. -/
 structure IsEnergyCritical (n : WithTop ℕ∞) (γ : ℝ → M) (a b : ℝ) : Prop where
   /-- A critical point of the energy among `C^n` variations is `C^n` at every point of
   `[a, b]`. -/
