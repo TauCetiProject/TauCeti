@@ -35,6 +35,8 @@ sets are geodesics, which is how the Dirichlet polygon of a Fuchsian group arise
   move the centre to a point at least as close as the centre.
 * `TauCeti.exists_finset_dirichletDomain_inter_eq`: on a bounded set, the Dirichlet domain is
   cut out by finitely many of its defining inequalities.
+* `TauCeti.mem_interior_dirichletDomain_of_forall_dist_lt`: strict dominance over distinct orbit
+  points implies interior membership.
 * `TauCeti.exists_smul_mem_dirichletDomain`: for a properly discontinuous isometric action on a
   proper space, every orbit meets it.
 * `TauCeti.dirichletDomain_inter_dirichletDomain_smul_subset`: the Dirichlet domains of two
@@ -52,9 +54,9 @@ sets are geodesics, which is how the Dirichlet polygon of a Fuchsian group arise
 
 public section
 
-open MeasureTheory Metric MulAction Set
+open MeasureTheory Metric MulAction Set Filter
 
-open scoped Pointwise
+open scoped Pointwise Topology
 
 namespace TauCeti
 
@@ -151,6 +153,29 @@ theorem exists_finset_dirichletDomain_inter_eq [ProperSpace X] [ProperlyDisconti
     · exact hx g hg
     · exact le_of_not_ge fun h ↦ hg ⟨x, hxK, h⟩
 
+/-- Strict dominance over every distinct orbit point puts a point in the interior of the
+Dirichlet domain. Elements fixing the centre are allowed. -/
+theorem mem_interior_dirichletDomain_of_forall_dist_lt
+    [ProperSpace X] [ProperlyDiscontinuousSMul G X] {p x : X}
+    (hx : ∀ g : G, g • p ≠ p → dist x p < dist x (g • p)) :
+    x ∈ interior (dirichletDomain G p) := by
+  let S := {g ∈ dirichletCompetitors G p (closedBall x 1) | g • p ≠ p}
+  have hS : S.Finite := (finite_dirichletCompetitors (G := G) p isBounded_closedBall).subset
+    fun _ hg ↦ hg.1
+  have hU : (⋂ g ∈ S, {y | dist y p < dist y (g • p)}) ∈ 𝓝 x :=
+    (biInter_mem hS).mpr fun g hg ↦
+      (isOpen_lt (continuous_id.dist continuous_const)
+        (continuous_id.dist continuous_const)).mem_nhds (hx g hg.2)
+  refine mem_interior_iff_mem_nhds.mpr (mem_of_superset
+    (inter_mem (closedBall_mem_nhds x zero_lt_one) hU) ?_)
+  rintro y ⟨hyB, hyU⟩
+  refine mem_dirichletDomain.mpr fun g ↦ ?_
+  by_cases hgp : g • p = p
+  · simp [hgp]
+  by_cases hg : g ∈ dirichletCompetitors G p (closedBall x 1)
+  · exact (mem_iInter₂.mp hyU g ⟨hg, hgp⟩).le
+  · exact le_of_not_ge fun h ↦ hg (mem_dirichletCompetitors.mpr ⟨y, hyB, h⟩)
+
 end SMul
 
 variable {G} [Group G] [MulAction G X]
@@ -160,6 +185,17 @@ them. -/
 theorem dirichletDomain_inter_dirichletDomain_smul_subset (p : X) (g : G) :
     dirichletDomain G p ∩ dirichletDomain G (g • p) ⊆ {x | dist x p = dist x (g • p)} :=
   fun _ ⟨hp, hgp⟩ ↦ le_antisymm (hp g) (by simpa using hgp g⁻¹)
+
+/-- On the Dirichlet domain, equal distance to `p` and `g • p` is equivalent to lying in the
+Dirichlet domain centred at `g • p`. -/
+theorem mem_dirichletDomain_smul_iff {p x : X} (hx : x ∈ dirichletDomain G p) (g : G) :
+    x ∈ dirichletDomain G (g • p) ↔ dist x p = dist x (g • p) := by
+  constructor
+  · exact fun hg ↦ dirichletDomain_inter_dirichletDomain_smul_subset p g ⟨hx, hg⟩
+  · intro he
+    refine mem_dirichletDomain.mpr fun h ↦ ?_
+    rw [← he, ← mul_smul]
+    exact mem_dirichletDomain.mp hx (h * g)
 
 variable [IsIsometricSMul G X]
 
