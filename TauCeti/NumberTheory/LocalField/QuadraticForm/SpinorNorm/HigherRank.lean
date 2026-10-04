@@ -31,6 +31,9 @@ local points.
 The surjectivity theorems are
 `TauCeti.QuadraticMap.spinorNorm_surjective_of_three_le_finrank` and
 `TauCeti.QuadraticMap.orthogonalSpinorNorm_surjective_of_three_le_finrank`.
+After `open TauCeti`, use `Q.spinorNorm_surjective_of_three_le_finrank hQ hV` and
+`Q.orthogonalSpinorNorm_surjective_of_three_le_finrank hQ hV` for a form `Q`, its
+nondegeneracy proof `hQ`, and a dimension bound `hV : 3 ≤ Module.finrank K V`.
 
 ## References
 
