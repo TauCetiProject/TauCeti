@@ -43,18 +43,6 @@ open scoped MatrixGroups Pointwise OnePoint
 
 namespace UpperHalfPlane
 
-open Matrix.ProjectiveSpecialLinearGroup (upperRightHom upperRightHom_smul_infty)
-open Matrix.SpecialLinearGroup (dilation)
-
-/-- The affine map `toPoint A`, `z ↦ Re A + Im A · z`, fixes the ideal point `∞`. -/
-@[simp]
-theorem toPoint_smul_infty (A : ℍ) : toPoint A • (∞ : OnePoint ℝ) = ∞ := by
-  -- `toPoint A` is the translation by `Re A` after the dilation by `Im A`, by faithfulness
-  have h : toPoint A = upperRightHom A.re * ↑(dilation (Real.log A.im)) := by
-    refine FaithfulSMul.eq_of_smul_eq_smul fun z ↦ UpperHalfPlane.coe_injective ?_
-    rw [coe_toPoint_smul, mul_smul, UpperHalfPlane.pslMk_smul, upperRightHom_smul,
-      UpperHalfPlane.coe_vadd, coe_dilation_smul, Real.exp_log A.im_pos, add_comm]
-  rw [h, mul_smul, dilation_smul_infty, upperRightHom_smul_infty]
 
 /-- The geodesic line leaving `A` at parameter `0` towards a point `p ≠ A` of `ℍ ∪ ∂ℍ`:
 `geodesicBetween A B` for `p = B ∈ ℍ`, and for an ideal point `ξ` the geodesic line with `A` at
@@ -88,21 +76,6 @@ theorem rayToward_inr_infty (A : ℍ) : rayToward A (.inr ∞) = toPoint A :=
   eq_of_geodesicLine_zero_eq_of_smul_infty_eq
     (by rw [geodesicLine_rayToward_zero, geodesicLine_zero, toPoint_smul_I])
     (by rw [rayToward_inr_smul_infty, toPoint_smul_infty])
-
-/-- The upward vertical through `A` keeps the real part of `A`. -/
-@[simp]
-theorem re_geodesicLine_toPoint (A : ℍ) (t : ℝ) : (geodesicLine (toPoint A) t).re = A.re := by
-  rw [← coe_re, ← mul_one (toPoint A), ← smul_geodesicLine, coe_toPoint_smul,
-    geodesicLine_one_apply]
-  simp only [Complex.add_re, Complex.re_ofReal_mul, Complex.ofReal_re, mul_zero, zero_add]
-
-/-- The upward vertical through `A` reaches height `Im A · exp t` at parameter `t`. -/
-@[simp]
-theorem im_geodesicLine_toPoint (A : ℍ) (t : ℝ) :
-    (geodesicLine (toPoint A) t).im = A.im * Real.exp t := by
-  rw [← coe_im, ← mul_one (toPoint A), ← smul_geodesicLine, coe_toPoint_smul,
-    geodesicLine_one_apply]
-  simp only [Complex.add_im, Complex.im_ofReal_mul, Complex.ofReal_im, add_zero]
 
 /-- A ray from `A` towards `p ≠ A` runs from `A` to `p`. -/
 theorem isGeodesicFromTo_rayToward {A : ℍ} {p : ℍ ⊕ OnePoint ℝ} (hAp : .inl A ≠ p) :

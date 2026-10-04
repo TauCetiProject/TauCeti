@@ -216,7 +216,7 @@ theorem vertexAngle_infty_of_re_lt {p q : ℍ ⊕ OnePoint ℝ} {m ρ : ℝ} (h�
     obtain ⟨x, rfl⟩ := OnePoint.ne_infty_iff_exists.1 fun h ↦ hp (congrArg _ h)
     rw [toComplex_inr_coe] at hpm hpq ⊢
     rw [Complex.ofReal_re, vertexAngle_inr, eq_comm, sub_eq_zero,
-      Complex.eq_sub_of_normSq_eq_of_lt_re hρ hpm hqm hpq, sub_sub_cancel_left, neg_div,
+      Complex.eq_sub_of_normSq_eq_of_lt_re hρ.le hpm hqm hpq, sub_sub_cancel_left, neg_div,
       div_self hρ.ne', Real.arccos_neg_one]
 
 /-- **The angle at the right vertex of a triangle with an ideal vertex at `∞`.** If `p` and `q`
@@ -239,7 +239,7 @@ theorem vertexAngle_infty_of_lt_re {p q : ℍ ⊕ OnePoint ℝ} {m ρ : ℝ} (h�
   · -- an ideal right vertex is the right endpoint `m + ρ` of the semicircle
     obtain ⟨x, rfl⟩ := OnePoint.ne_infty_iff_exists.1 fun h ↦ hq (congrArg _ h)
     rw [toComplex_inr_coe] at hqm hpq ⊢
-    rw [Complex.ofReal_re, vertexAngle_inr, Complex.eq_add_of_normSq_eq_of_re_lt hρ hqm hpm hpq,
+    rw [Complex.ofReal_re, vertexAngle_inr, Complex.eq_add_of_normSq_eq_of_re_lt hρ.le hqm hpm hpq,
       add_sub_cancel_left, div_self hρ.ne', Real.arccos_one]
 
 /-- **An angle split by the upward vertical.** Let `A ∈ ℍ` lie on two semicircles, of centres
