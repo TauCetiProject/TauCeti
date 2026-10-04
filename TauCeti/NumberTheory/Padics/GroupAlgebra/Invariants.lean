@@ -30,9 +30,9 @@ projective integral representations.
 
 ## Main results
 
-* `TauCeti.natCard_invariants_eq_pow_finrank_of_reduction`: the invariant count above, for an
-  arbitrary equivariant semilinear reduction map with the expected kernel. The cardinality of
-  the reduction of a finite free `ℤ_p`-module is
+* `TauCeti.Representation.natCard_invariants_eq_pow_finrank_of_reduction`: the invariant count
+  above, for an arbitrary equivariant semilinear reduction map with the expected kernel. The
+  cardinality of the reduction of a finite free `ℤ_p`-module is
   `TauCeti.natCard_quotient_padicInt_smul_top`.
 
 ## References
@@ -50,6 +50,8 @@ namespace TauCeti
 open scoped MonoidAlgebra Pointwise
 
 universe u v w
+
+namespace Representation
 
 section Reduction
 
@@ -122,5 +124,7 @@ theorem natCard_invariants_eq_pow_finrank_of_reduction
     hFker, natCard_quotient_padicInt_smul_top p ρ.invariants]
 
 end Reduction
+
+end Representation
 
 end TauCeti
