@@ -19,10 +19,10 @@ any localization of `A` is the localization of the image of `Ω[A⁄R]` in `Ω[F
 This image equality and the maximal-local criterion hold for any commutative target
 algebra `F` receiving the localizations, not necessarily a fraction field.
 
-For a formally smooth algebra `A`, the map `Ω[A⁄R] → Ω[F⁄R]` is injective. Thus regular
-differentials can be treated as rational differentials, and their regularity can be checked
-in the local rings. This is the affine-local input to identifying the differential sheaf
-of a smooth curve with a divisor sheaf in its rational differential space.
+For a formally smooth domain `A` with fraction field `F`, the map `Ω[A⁄R] → Ω[F⁄R]` is
+injective. Thus regular differentials can be treated as rational differentials, and their
+regularity can be checked in the local rings. This is the affine-local input to identifying
+the differential sheaf of a smooth curve with a divisor sheaf in its rational differential space.
 
 No perfectness, finite type, or Noetherian hypothesis is needed for the local criterion.
 
