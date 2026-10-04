@@ -9,7 +9,7 @@ public import TauCeti.RepresentationTheory.Quiver.FiniteRepType.Cycle
 public import TauCeti.RepresentationTheory.Quiver.FiniteRepType.PosDef
 
 /-!
-# Gabriel's theorem
+# Conditional Gabriel equivalences
 
 **Gabriel's theorem** says that a finite connected quiver has only finitely many isomorphism classes
 of finite-dimensional indecomposable representations exactly when its underlying graph is a
@@ -40,9 +40,10 @@ exactly when the graph is a simply-laced Dynkin diagram
 * `TauCeti.titsForm_posDef_iff_card_hom_add_card_hom_le_one_and_exists_dynkinType_iso`: the Tits
   form of a finite connected quiver is positive definite exactly when the quiver is a simply-laced
   Dynkin diagram, oriented.
-* `TauCeti.isFiniteRepType_iff_titsForm_posDef`: **Gabriel's theorem**, Tits form version.
+* `TauCeti.isFiniteRepType_iff_titsForm_posDef`: the Tits form version of **Gabriel's theorem**
+  for quivers with no pair of opposite arrows.
 * `TauCeti.isFiniteRepType_iff_card_hom_add_card_hom_le_one_and_exists_dynkinType_iso`:
-  **Gabriel's theorem**, Dynkin diagram version.
+  the Dynkin diagram version of **Gabriel's theorem** for quivers with no pair of opposite arrows.
 
 ## Implementation notes
 
@@ -52,8 +53,10 @@ Dynkin quivers are built. The finiteness proved from a positive definite Tits fo
 spaces in a larger universe and descends (`TauCeti.IsFiniteRepType.of_ulift`).
 
 A pair of opposite arrows `a ⟶ b`, `b ⟶ a` is excluded by hypothesis. It is the cyclically
-oriented quiver of type `Ã₁`, which the underlying simple graph records as a single edge, so none
-of the obstructions used here sees it; a positive definite Tits form excludes it on its own
+oriented quiver of type `Ã₁`, which the underlying simple graph records as a single edge. The cycle
+obstruction `TauCeti.not_isFiniteRepType_of_injective_of_nonempty_hom_sum` requires `n + 3`
+distinct vertices, so it cannot detect this two-vertex quiver. A positive definite Tits form
+excludes it on its own
 (`TauCeti.card_hom_add_card_hom_le_one_of_titsForm_posDef`).
 The opposite-arrow hypothesis is used only in the implication from finite representation type to
 positive definiteness. Removing it requires the additional obstruction that an oriented two-cycle
