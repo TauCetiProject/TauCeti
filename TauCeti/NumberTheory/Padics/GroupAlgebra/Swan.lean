@@ -51,55 +51,6 @@ public section
 open scoped TensorProduct Pointwise MonoidAlgebra
 namespace TauCeti
 
-/-- Restricting an isomorphism `Q ≃ ρ.asModule` of `k[G]`-modules along `f : H →* G`, for a
-`k[H]`-action on `Q` through `f`, gives an isomorphism `Q ≃ (ρ.comp f).asModule`. -/
-private noncomputable def linearEquivAsModuleComp {k G H V Q : Type*} [CommSemiring k]
-    [Monoid G] [Monoid H] [AddCommMonoid V] [Module k V] (ρ : Representation k G V)
-    (f : H →* G) [AddCommMonoid Q] [Module (MonoidAlgebra k G) Q] [Module (MonoidAlgebra k H) Q]
-    (hQ : ∀ (a : MonoidAlgebra k H) (q : Q), a • q = MonoidAlgebra.mapDomainRingHom k f a • q)
-    (e : Q ≃ₗ[MonoidAlgebra k G] ρ.asModule) :
-    Q ≃ₗ[MonoidAlgebra k H] Representation.asModule (ρ.comp f) where
-  toFun := e
-  invFun := e.symm
-  map_add' := e.map_add
-  map_smul' a x := by
-    have hcomp : ρ.asAlgebraHom.comp (MonoidAlgebra.mapDomainAlgHom k k f) =
-        Representation.asAlgebraHom (ρ.comp f) :=
-      MonoidAlgebra.algHom_ext (fun c ↦ by simp) (Subsingleton.elim _ _)
-    -- Both `asModule`s are `V`, on which `a` acts through the respective `asAlgebraHom`.
-    change e (a • x) = Representation.asAlgebraHom (ρ.comp f) a (e x)
-    rw [hQ, e.map_smul, ← hcomp]
-    rfl
-  left_inv := e.left_inv
-  right_inv := e.right_inv
-
-/-- **Invariant counts of projective lifts.** If a projective `𝔽_p[G]`-representation `η` is the
-reduction of a `ℤ_p[G]`-module `X`, then `#η^G = p ^ rank (X^G)`. -/
-private theorem natCard_invariants_eq_pow_finrank_of_bijective
-    (p : ℕ) [Fact p.Prime] {G : Type*} [Group G] [Finite G] {W : Type*} [AddCommGroup W]
-    [Module (ZMod p) W] (η : Representation (ZMod p) G W)
-    [Module.Projective (MonoidAlgebra (ZMod p) G) η.asModule]
-    (X : Type*) [AddCommGroup X] [Module ℤ_[p] X] [Module (MonoidAlgebra ℤ_[p] G) X]
-    [IsScalarTower ℤ_[p] (MonoidAlgebra ℤ_[p] G) X] [Module.Finite ℤ_[p] X]
-    [Module.IsTorsionFree ℤ_[p] X]
-    (f : (X ⧸ Ideal.span {(p : MonoidAlgebra ℤ_[p] G)} •
-      (⊤ : Submodule (MonoidAlgebra ℤ_[p] G) X)) →ₛₗ[MonoidAlgebra.mapRingHom G
-        (PadicInt.toZMod (p := p))] η.asModule)
-    (hf : Function.Bijective f) :
-    Nat.card η.invariants =
-      p ^ Module.finrank ℤ_[p] (Representation.ofModule' (k := ℤ_[p]) (G := G) X).invariants := by
-  -- Compare `η` with the representation `Representation.ofModule' η.asModule`, which the
-  -- reduction map intertwines with `Representation.ofModule' X`.
-  let e := TauCeti.Representation.ofModule'AsModuleEquiv (k := ZMod p) (G := G) η.asModule
-  let _ : Module.Projective (MonoidAlgebra (ZMod p) G)
-      (Representation.ofModule' (k := ZMod p) (G := G) η.asModule).asModule :=
-    Module.Projective.of_equiv' e.symm
-  rw [← Nat.card_congr
-    (TauCeti.Representation.equivOfAsModuleLinearEquiv e).invariantsLinearEquiv.toEquiv]
-  exact Representation.natCard_invariants_eq_pow_finrank_of_reduction p _ _
-    (compPadicReductionMk p G f) (compPadicReductionMk_surjective p G f hf.2)
-    (compPadicReductionMk_ofModule' p G f) (compPadicReductionMk_eq_zero_iff p G f hf.1)
-
 universe u v w
 
 /-- **Swan's theorem for `ℤ_p[G]`** (NSW (5.6.10)(ii)). Two finitely generated projective
@@ -185,8 +136,8 @@ theorem nonempty_linearEquiv_of_projective_of_tensorRat
     let _ : Module.Projective ℤ_[p] XN := Module.Projective.trans (S := A)
     let ξM := Representation.ofModule' (k := ℤ_[p]) (G := G) XM
     let ξN := Representation.ofModule' (k := ℤ_[p]) (G := G) XN
-    rw [natCard_invariants_eq_pow_finrank_of_bijective p YM XM fM hfM,
-      natCard_invariants_eq_pow_finrank_of_bijective p YN XN fN hfN]
+    rw [Representation.natCard_invariants_eq_pow_finrank_of_bijective p YM XM fM hfM,
+      Representation.natCard_invariants_eq_pow_finrank_of_bijective p YN XN fN hfN]
     -- The invariant ranks are computed rationally by the average of the characters.
     congr 1
     rw [← Representation.finrank_invariants_baseChange_ratPadic p ξM,
@@ -305,9 +256,9 @@ theorem nonempty_linearEquiv_of_projective_of_tensorRat
       padicReductionModule p C XM
     let _ : Module kC (XN ⧸ Ideal.span {(p : AC)} • (⊤ : Submodule AC XN)) :=
       padicReductionModule p C XN
-    let eLiftM : QXM ≃ₗ[kC] YMC.asModule := linearEquivAsModuleComp YM C.subtype
+    let eLiftM : QXM ≃ₗ[kC] YMC.asModule := Representation.linearEquivAsModuleComp YM C.subtype
       (fun _ _ ↦ rfl) (padicReductionLinearEquivOfBijective p G fM hfM)
-    let eLiftN : QXN ≃ₗ[kC] YNC.asModule := linearEquivAsModuleComp YN C.subtype
+    let eLiftN : QXN ≃ₗ[kC] YNC.asModule := Representation.linearEquivAsModuleComp YN C.subtype
       (fun _ _ ↦ rfl) (padicReductionLinearEquivOfBijective p G fN hfN)
     let eRedC := (padicReductionRestrictLinearEquiv p C C.subtype XM (fun _ _ ↦ rfl)
       (fun _ _ ↦ rfl)).trans (eLiftM.trans
