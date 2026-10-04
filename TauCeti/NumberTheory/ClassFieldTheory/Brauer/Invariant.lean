@@ -64,6 +64,8 @@ multiplication by `[L : K]` is surjective on `ℚ/ℤ`, restriction is surjectiv
   the unramified Brauer group.
 * `TauCeti.ClassFieldTheory.invMap_relBrInfl`: on a class inflated from an unramified layer, the
   invariant is the invariant `unramifiedInv` of the layer.
+* `TauCeti.ClassFieldTheory.invMap_relBrInfl_unramified`: the same, for an unramified extension
+  embedded in `Kˢ` by an arbitrary embedding.
 * `TauCeti.ClassFieldTheory.range_invMap_comp_relBrInfl`: the invariants of the classes split by a
   finite Galois extension of degree `n` form the subgroup of `ℚ/ℤ` of order `n`.
 * `TauCeti.ClassFieldTheory.invMap_brRes`: the restriction square
@@ -210,6 +212,31 @@ theorem invMap_relBrInfl (E : IntermediateField K (SeparableClosure K))
     (y : groupCohomology (Rep.ofMulDistribMulAction Gal(E/K) Eˣ) 2) :
     invMap K (relBrInfl K E E.val y) = unramifiedInv K E y :=
   (invMap_eq_unramifiedBrInv K _ _).trans (unramifiedBrInv_relBrInfl E y)
+
+/-- The local invariant of a class inflated from a finite unramified Galois extension `L/K`,
+embedded in `Kˢ` by an arbitrary `ι`, is its invariant `unramifiedInv K L` in the layer
+`H²(Gal(L/K), Lˣ)`. -/
+theorem invMap_relBrInfl_unramified (L : Type) [Field L] [ValuativeRel L] [TopologicalSpace L]
+    [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L] [FiniteDimensional K L]
+    [IsGalois K L] [IsUnramified K L] (ι : L →ₐ[K] SeparableClosure K)
+    (y : groupCohomology (Rep.ofMulDistribMulAction Gal(L/K) Lˣ) 2) :
+    invMap K (relBrInfl K L ι y) = unramifiedInv K L y := by
+  -- Transport `y` to the image `E = ι(L)`, an unramified layer inside `Kˢ`.
+  let E := ι.fieldRange
+  let e : L ≃ₐ[K] E := ι.equivFieldRange
+  let _ : FiniteDimensional K E := e.toLinearEquiv.finiteDimensional
+  let _ := finiteExtensionValuativeRel K E
+  let _ := finiteExtensionNormedFieldTopology K E
+  have := finiteExtension_isNonarchimedeanLocalField K E
+  have := finiteExtension_valuativeExtension K E
+  have : IsGalois K E := IsGalois.of_algEquiv e
+  have : IsUnramified K E := IsUnramified.of_algEquiv e
+  let _ : Algebra L E := e.toAlgHom.toRingHom.toAlgebra
+  have : IsScalarTower K L E := IsScalarTower.of_algHom e.toAlgHom
+  have : ValuativeExtension L E := e.toAlgHom.valuativeExtension
+  have hι : E.val.comp (IsScalarTower.toAlgHom K L E) = ι :=
+    AlgHom.ext fun x => AlgHom.equivFieldRange_apply_coe ι x
+  rw [← unramifiedInv_map K L E y, ← invMap_relBrInfl E, relBrInfl_map, hι]
 
 /-- **The degree-`n` piece of the Brauer group.** The invariants of the classes of `Br K` split by
 a finite Galois extension `E/K` of degree `n` inside `Kˢ` are the elements of `ℚ/ℤ` of order

@@ -7,9 +7,8 @@ module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.Invariant
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.Reciprocity
-public import TauCeti.NumberTheory.LocalField.Unramified.BaseChange
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Cup.Cyclic
-public import TauCeti.RepresentationTheory.Homological.GroupCohomology.Functoriality
+import TauCeti.NumberTheory.ClassFieldTheory.Brauer.UnitsLayer
 
 /-!
 # Finite unramified local reciprocity
@@ -68,19 +67,10 @@ theorem frobeniusCharacter_frobenius :
         (Additive.ofMul (Abelianization.of (frobeniusAlgEquiv (K := K) (L := L)))) =
       ((1 / Module.finrank K L : ℚ) : AddCircle (1 : ℚ)) := by
   let _ : CommGroup Gal(L/K) := IsCyclic.commGroup
-  rw [frobeniusCharacter, AddMonoidHom.comp_apply]
-  change (ZMod.toRatAddCircle (Module.finrank K L))
-    (Multiplicative.toAdd ((zmodMulEquivOfGenerator
-      (fun σ => by rw [zpowers_frobeniusAlgEquiv]; exact Subgroup.mem_top σ)
-      (by rw [IsGalois.card_aut_eq_finrank])).symm
-        (Abelianization.equivOfComm.symm (Abelianization.of
-          (frobeniusAlgEquiv (K := K) (L := L)))))) = _
-  change (ZMod.toRatAddCircle (Module.finrank K L))
-    (Multiplicative.toAdd ((zmodMulEquivOfGenerator
-      (fun σ => by rw [zpowers_frobeniusAlgEquiv]; exact Subgroup.mem_top σ)
-      (by rw [IsGalois.card_aut_eq_finrank])).symm
-        (frobeniusAlgEquiv (K := K) (L := L)))) = _
-  rw [zmodMulEquivOfGenerator_symm_apply_generator]
+  rw [frobeniusCharacter, AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom,
+    AddEquiv.toMultiplicativeRight_symm_apply_apply, toMul_ofMul, MulEquiv.trans_apply,
+    Abelianization.equivOfComm_symm_apply, Abelianization.lift_apply_of, MonoidHom.id_apply,
+    zmodMulEquivOfGenerator_symm_apply_generator]
   simpa using ZMod.toRatAddCircle_natCast (Module.finrank K L) 1
 
 /-- The Frobenius character detects every element of the abelianized Galois group. -/
@@ -130,151 +120,6 @@ private def layerCommGroup (ι : L →ₐ[K] SeparableClosure K) :
     (fixingOpenNormalSubgroup K L)).Gal := (layerGalEquiv ι).isCyclic.mpr inferInstance
   exact IsCyclic.commGroup
 
-/-! ### Comparison with the Brauer invariant -/
-
-omit [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K]
-  [ValuativeRel L] [TopologicalSpace L] [IsNonarchimedeanLocalField L]
-  [ValuativeExtension K L] [IsUnramified K L] in
-/-- The concrete coefficient comparison agrees with the embedding of `Lˣ` into the units of the
-separable closure. -/
-theorem embeddedUnitsEquivInvariants_layerCoefficientEquiv
-    (ι : L →ₐ[K] SeparableClosure K)
-    (x : (NormalLayer.ofOpenNormal (fixingOpenNormalSubgroup K L)).rep (unitsFormation K)) :
-    ((embeddedUnitsEquivInvariants K L ι
-        (Rep.toAdditive (layerCoefficientEquiv ι x)) :
-      FixedPoints.addSubgroup ι.fieldRange.fixingSubgroup (UnitsCoeff K)) : UnitsCoeff K) =
-      (unitsCoeffEquivUnitsFormation K).symm
-        ((x : (unitsFormation K).level
-          (NormalLayer.ofOpenNormal (fixingOpenNormalSubgroup K L)).top) :
-            (unitsFormation K).toRep.V) := by
-  rw [embeddedUnitsEquivInvariants_apply]
-  apply Additive.toMul.injective
-  rw [toMul_coe_embeddedUnitsInvariants]
-  exact congrArg Additive.toMul (layerCoefficientEquiv_apply_coe ι x)
-
-omit [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K]
-  [ValuativeRel L] [TopologicalSpace L] [IsNonarchimedeanLocalField L]
-  [ValuativeExtension K L] [IsUnramified K L] in
-/-- The concrete cohomology identification of a finite Galois layer is compatible with inflation
-into the Brauer group. -/
-theorem relBrInfl_layerCohomologyEquiv (ι : L →ₐ[K] SeparableClosure K)
-    (x : (NormalLayer.ofOpenNormal (fixingOpenNormalSubgroup K L)).H (unitsFormation K) 2) :
-    relBrInfl K L ι (layerCohomologyEquiv ι 2 x) =
-      brInfl (fixingOpenNormalSubgroup K L) x := by
-  induction x using groupCohomology.H2_induction_on with
-  | h c =>
-    rw [layerCohomologyEquiv_apply, groupCohomology.H2π_comp_map_apply, relBrInfl_H2π]
-    symm
-    apply brInfl_H2π
-    intro g h
-    simp only [relBrCocycle_apply]
-    rw [_root_.TauCeti.groupCohomology.mapCocycles₂_apply]
-    let g' : (NormalLayer.ofOpenNormal (fixingOpenNormalSubgroup K L)).ground :=
-      ⟨g, by rw [NormalLayer.ground_ofOpenNormal]; exact OpenSubgroup.mem_top g⟩
-    let h' : (NormalLayer.ofOpenNormal (fixingOpenNormalSubgroup K L)).ground :=
-      ⟨h, by rw [NormalLayer.ground_ofOpenNormal]; exact OpenSubgroup.mem_top h⟩
-    have qg : (NormalLayer.galOfOpenNormalEquiv (fixingOpenNormalSubgroup K L)).symm
-          (g : AbsoluteGaloisGroup K ⧸ (fixingOpenNormalSubgroup K L).toSubgroup) =
-        (g' : (NormalLayer.ofOpenNormal (fixingOpenNormalSubgroup K L)).Gal) := by
-      apply (NormalLayer.galOfOpenNormalEquiv (fixingOpenNormalSubgroup K L)).injective
-      rw [MulEquiv.apply_symm_apply, NormalLayer.galOfOpenNormalEquiv_mk]
-    have qh : (NormalLayer.galOfOpenNormalEquiv (fixingOpenNormalSubgroup K L)).symm
-          (h : AbsoluteGaloisGroup K ⧸ (fixingOpenNormalSubgroup K L).toSubgroup) =
-        (h' : (NormalLayer.ofOpenNormal (fixingOpenNormalSubgroup K L)).Gal) := by
-      apply (NormalLayer.galOfOpenNormalEquiv (fixingOpenNormalSubgroup K L)).injective
-      rw [MulEquiv.apply_symm_apply, NormalLayer.galOfOpenNormalEquiv_mk]
-    have hg : (layerGalEquiv ι).symm (ι.restrictNormalHom g) =
-        (NormalLayer.galOfOpenNormalEquiv (fixingOpenNormalSubgroup K L)).symm
-          (g : AbsoluteGaloisGroup K ⧸ (fixingOpenNormalSubgroup K L).toSubgroup) := by
-      rw [qg]
-      exact (layerGalEquiv ι).symm_apply_eq.2 (layerGalEquiv_mk ι g').symm
-    have hh : (layerGalEquiv ι).symm (ι.restrictNormalHom h) =
-        (NormalLayer.galOfOpenNormalEquiv (fixingOpenNormalSubgroup K L)).symm
-          (h : AbsoluteGaloisGroup K ⧸ (fixingOpenNormalSubgroup K L).toSubgroup) := by
-      rw [qh]
-      exact (layerGalEquiv ι).symm_apply_eq.2 (layerGalEquiv_mk ι h').symm
-    rw [layerCoefficientHom_apply]
-    have hg' : (layerGalEquiv ι).symm.toMonoidHom
-        (ι.restrictNormalHom g, ι.restrictNormalHom h).1 =
-        (NormalLayer.galOfOpenNormalEquiv (fixingOpenNormalSubgroup K L)).symm
-          (g : AbsoluteGaloisGroup K ⧸ (fixingOpenNormalSubgroup K L).toSubgroup) := hg
-    have hh' : (layerGalEquiv ι).symm.toMonoidHom
-        (ι.restrictNormalHom g, ι.restrictNormalHom h).2 =
-        (NormalLayer.galOfOpenNormalEquiv (fixingOpenNormalSubgroup K L)).symm
-          (h : AbsoluteGaloisGroup K ⧸ (fixingOpenNormalSubgroup K L).toSubgroup) := hh
-    have hq :
-        ((layerGalEquiv ι).symm.toMonoidHom
-            (ι.restrictNormalHom g, ι.restrictNormalHom h).1,
-          (layerGalEquiv ι).symm.toMonoidHom
-            (ι.restrictNormalHom g, ι.restrictNormalHom h).2) =
-        ((NormalLayer.galOfOpenNormalEquiv (fixingOpenNormalSubgroup K L)).symm
-            (g : AbsoluteGaloisGroup K ⧸ (fixingOpenNormalSubgroup K L).toSubgroup),
-          (NormalLayer.galOfOpenNormalEquiv (fixingOpenNormalSubgroup K L)).symm
-            (h : AbsoluteGaloisGroup K ⧸ (fixingOpenNormalSubgroup K L).toSubgroup)) :=
-      Prod.ext hg' hh'
-    refine (congrArg (fun z => ((embeddedUnitsEquivInvariants K L ι
-      (Rep.toAdditive (layerCoefficientEquiv ι z)) :
-        FixedPoints.addSubgroup ι.fieldRange.fixingSubgroup (UnitsCoeff K)) : UnitsCoeff K))
-      (congrArg c hq)).trans ?_
-    exact embeddedUnitsEquivInvariants_layerCoefficientEquiv K L ι (c _)
-
-private theorem invMap_relBrInfl_unramified_of_equiv
-    (E : IntermediateField K (SeparableClosure K)) [FiniteDimensional K E]
-    [ValuativeRel E] [TopologicalSpace E] [IsNonarchimedeanLocalField E]
-    [ValuativeExtension K E] [IsGalois K E] [IsUnramified K E]
-    (e : L ≃ₐ[K] E) (ι : L →ₐ[K] SeparableClosure K)
-    (hι : E.val.comp e.toAlgHom = ι)
-    (y : groupCohomology (Rep.ofMulDistribMulAction Gal(L/K) Lˣ) 2) :
-    invMap K (relBrInfl K L ι y) = unramifiedInv K L y := by
-  let _ : Algebra L E := e.toAlgHom.toRingHom.toAlgebra
-  let _ : IsScalarTower K L E := IsScalarTower.of_algHom e.toAlgHom
-  have hLE : ValuativeExtension L E := e.toAlgHom.valuativeExtension
-  let _ : ValuativeExtension L E := hLE
-  rw [← unramifiedInv_map K L E y, ← invMap_relBrInfl E]
-  exact congrArg (invMap K) ((relBrInfl_map K L E E.val y).trans
-    (congrArg (fun σ => relBrInfl K L σ y) hι)).symm
-
-omit [IsGalois K L] in
-private theorem isUnramified_fieldRange (ι : L →ₐ[K] SeparableClosure K)
-    [ValuativeRel ι.fieldRange] [TopologicalSpace ι.fieldRange]
-    [IsNonarchimedeanLocalField ι.fieldRange]
-    [ValuativeExtension K ι.fieldRange] : IsUnramified K ι.fieldRange := by
-  let e : L ≃ₐ[K] ι.fieldRange := ι.equivFieldRange
-  let _ : Algebra L ι.fieldRange := e.toAlgHom.toRingHom.toAlgebra
-  let _ : IsScalarTower K L ι.fieldRange := IsScalarTower.of_algHom e.toAlgHom
-  let _ : ValuativeExtension L ι.fieldRange := e.toAlgHom.valuativeExtension
-  have hLE : IsUnramified L ι.fieldRange := by
-    apply IsUnramified.of_adjoin_range_eq_top (K := K) (L := L) (F := L)
-      (M := ι.fieldRange) e
-    apply top_unique
-    intro x _
-    obtain ⟨z, rfl⟩ := e.surjective x
-    exact IntermediateField.subset_adjoin L (Set.range (e : L → ι.fieldRange)) ⟨z, rfl⟩
-  let _ : IsUnramified L ι.fieldRange := hLE
-  exact IsUnramified.trans K L ι.fieldRange
-
-/-- The local invariant of a class inflated from an arbitrary presented unramified extension is
-its concrete unramified invariant. -/
-theorem invMap_relBrInfl_unramified (ι : L →ₐ[K] SeparableClosure K)
-    (y : groupCohomology (Rep.ofMulDistribMulAction Gal(L/K) Lˣ) 2) :
-    invMap K (relBrInfl K L ι y) = unramifiedInv K L y := by
-  let E := ι.fieldRange
-  let e : L ≃ₐ[K] E := ι.equivFieldRange
-  let _ : FiniteDimensional K E := e.toLinearEquiv.finiteDimensional
-  let _ : ValuativeRel E := finiteExtensionValuativeRel K E
-  let _ : TopologicalSpace E := finiteExtensionNormedFieldTopology K E
-  let _ : IsNonarchimedeanLocalField E := finiteExtension_isNonarchimedeanLocalField K E
-  let _ : ValuativeExtension K E := finiteExtension_valuativeExtension K E
-  let _ : IsGalois K E := IsGalois.of_algEquiv e
-  let _ : IsUnramified K E := isUnramified_fieldRange K L ι
-  have hι : E.val.comp e.toAlgHom = ι := by
-    change ι.fieldRange.val.comp ι.equivFieldRange.toAlgHom = ι
-    apply AlgHom.ext
-    intro x
-    rw [AlgHom.comp_apply]
-    exact AlgHom.equivFieldRange_apply_coe ι x
-  exact invMap_relBrInfl_unramified_of_equiv K L E e ι hι y
-
 /-! ### The normalization -/
 
 /-- The Frobenius character transported to the Galois group of a normal layer. -/
@@ -285,17 +130,21 @@ private def layerFrobeniusCharacter (ι : L →ₐ[K] SeparableClosure K) :
   (frobeniusCharacter K L).comp
     (MulEquiv.toAdditive (layerGalEquiv ι).abelianizationCongr).toAddMonoidHom
 
+/-- The transported character evaluates the Frobenius character on the concrete Galois group. -/
+private theorem layerFrobeniusCharacter_apply (ι : L →ₐ[K] SeparableClosure K)
+    (x : Additive (Abelianization
+      (NormalLayer.ofOpenNormal (fixingOpenNormalSubgroup K L)).Gal)) :
+    layerFrobeniusCharacter K L ι x =
+      frobeniusCharacter K L (MulEquiv.toAdditive (layerGalEquiv ι).abelianizationCongr x) := by
+  rw [layerFrobeniusCharacter, AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom]
+
 /-- The transported character takes layer Frobenius to the reciprocal of its order. -/
 private theorem layerFrobeniusCharacter_frobenius (ι : L →ₐ[K] SeparableClosure K) :
     layerFrobeniusCharacter K L ι
         (Additive.ofMul (Abelianization.of (layerFrobenius K L ι))) =
       ((1 / orderOf (layerFrobenius K L ι) : ℚ) : AddCircle (1 : ℚ)) := by
-  rw [layerFrobeniusCharacter, AddMonoidHom.comp_apply]
-  change frobeniusCharacter K L
-    (MulEquiv.toAdditive (layerGalEquiv ι).abelianizationCongr
-      (Additive.ofMul (Abelianization.of (layerFrobenius K L ι)))) = _
-  rw [MulEquiv.toAdditive_apply_apply, toMul_ofMul, abelianizationCongr_of,
-    orderOf_layerFrobenius, layerFrobenius, MulEquiv.apply_symm_apply,
+  rw [layerFrobeniusCharacter_apply, MulEquiv.toAdditive_apply_apply, toMul_ofMul,
+    abelianizationCongr_of, orderOf_layerFrobenius, layerFrobenius, MulEquiv.apply_symm_apply,
     frobeniusCharacter_frobenius]
 
 /-- A ground-field unit as an invariant coefficient of the normal layer. -/
@@ -305,6 +154,17 @@ private def layerGroundInvariant (a : Kˣ) :=
       (unitsLevelEquiv (Algebra.ofId K (SeparableClosure K))
         (fixedField_ground_ofOpenNormal K (fixingOpenNormalSubgroup K L))
         (Additive.ofMul a))
+
+omit [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K]
+  [ValuativeRel L] [TopologicalSpace L] [IsNonarchimedeanLocalField L]
+  [ValuativeExtension K L] [IsGalois K L] [IsUnramified K L] in
+/-- The ground-level identification recovers the unit from its invariant coefficient. -/
+private theorem groundLevelEquiv_layerGroundInvariant (a : Kˣ) :
+    (NormalLayer.ofOpenNormal (fixingOpenNormalSubgroup K L)).groundLevelEquiv (unitsFormation K)
+        (layerGroundInvariant K L a) =
+      unitsLevelEquiv (Algebra.ofId K (SeparableClosure K))
+        (fixedField_ground_ofOpenNormal K (fixingOpenNormalSubgroup K L)) (Additive.ofMul a) := by
+  rw [layerGroundInvariant, LinearEquiv.apply_symm_apply]
 
 /-- The periodicity class of a ground-field unit in the normal layer. -/
 private def layerPeriodicClass (ι : L →ₐ[K] SeparableClosure K) (a : Kˣ) :
@@ -413,13 +273,9 @@ private theorem layerArtinCharacterCup_eq_layerPeriodicClass
   let X := NormalLayer.ofOpenNormal (fixingOpenNormalSubgroup K L)
   let F := unitsFormation K
   let _ : CommGroup X.Gal := layerCommGroup K L ι
-  let x := layerGroundInvariant K L a
-  rw [show (unitsLevelEquiv (Algebra.ofId K (SeparableClosure K))
-      (fixedField_ground_ofOpenNormal K (fixingOpenNormalSubgroup K L))
-      (Additive.ofMul a)) = X.groundLevelEquiv F x from by
-        exact (X.groundLevelEquiv F).apply_symm_apply _ |>.symm]
-  rw [NormalLayer.artinCharacterCup_apply, NormalLayer.zeroTateClass_groundLevelEquiv]
-  rw [← layerCharacterCupTate, layerCharacterCupTate_eq, Iso.inv_hom_id_apply]
+  rw [← groundLevelEquiv_layerGroundInvariant, NormalLayer.artinCharacterCup_apply,
+    NormalLayer.zeroTateClass_groundLevelEquiv, ← layerCharacterCupTate, layerCharacterCupTate_eq,
+    Iso.inv_hom_id_apply]
 
 /-- The character cup of a ground-field unit maps to its standard unramified class. -/
 private theorem layerArtinCharacterCup_eq_unramifiedClass
@@ -461,14 +317,8 @@ theorem localArtinMap_uniformizer (ι : L →ₐ[K] SeparableClosure K)
     localArtinMap K L ι (Additive.ofMul π) =
       Additive.ofMul (Abelianization.of (frobeniusAlgEquiv (K := K) (L := L))) := by
   apply injective_frobeniusCharacter K L
-  rw [frobeniusCharacter_frobenius, localArtinMap_apply, localArtinEquiv_mk]
-  change layerFrobeniusCharacter K L ι
-      ((localClassFormation K).artinMap
-        (NormalLayer.ofOpenNormal (fixingOpenNormalSubgroup K L))
-        (unitsLevelEquiv (Algebra.ofId K (SeparableClosure K))
-          (fixedField_ground_ofOpenNormal K (fixingOpenNormalSubgroup K L))
-          (Additive.ofMul π))) = _
-  rw [← (localClassFormation K).character_artinMap]
+  rw [frobeniusCharacter_frobenius, localArtinMap_apply, localArtinEquiv_mk,
+    ← layerFrobeniusCharacter_apply, ← (localClassFormation K).character_artinMap]
   exact localClassFormation_inv_artinCharacterCup_of_isUniformizer K L ι hπ
 
 end TauCeti.ClassFieldTheory
