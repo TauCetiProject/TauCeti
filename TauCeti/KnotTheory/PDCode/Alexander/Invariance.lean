@@ -9,19 +9,19 @@ public import TauCeti.KnotTheory.PDCode.Alexander.Basic
 public import TauCeti.KnotTheory.PDCode.Oriented.Reidemeister.Circle
 public import TauCeti.KnotTheory.PDCode.Oriented.Reidemeister.One
 public import TauCeti.KnotTheory.PDCode.RotateCrossing
-import Mathlib.Tactic.LinearCombination
+import TauCeti.Algebra.Module.Basic
 
 /-!
 # The Alexander module under planar isotopy and the first Reidemeister move
 
 The Alexander module of an oriented PD-code (`TauCeti.OrientedPDCode.AlexanderModule`) is
 presented by one generator for each half-edge and each crossing-free component, subject to the
-abelianized Wirtinger relations. This file shows that the generating moves of Reidemeister
-equivalence (`TauCeti.OrientedPDCode.IsReidemeisterMove`) that involve a single crossing keep
-the module up to `ℤ[T;T⁻¹]`-linear equivalence: relabelling half-edges and crossings, reading a
-crossing from another slot, and the first Reidemeister move, both on an arc and on a crossing-free
-circle. The elementary ideals, the Fitting ideals of the module, are therefore unchanged by these
-moves.
+abelianized Fox derivatives of the Wirtinger relations. This file shows that the generating moves
+of Reidemeister equivalence (`TauCeti.OrientedPDCode.IsReidemeisterMove`) that involve a single
+crossing keep the module up to `ℤ[T;T⁻¹]`-linear equivalence: relabelling half-edges and
+crossings, reading a crossing from another slot, and the first Reidemeister move, both on an arc
+and on a crossing-free circle. The elementary ideals, the Fitting ideals of the module, are
+therefore unchanged by these moves.
 
 Relabelling and rotation only rename the generators and the relations. The first move adds four
 half-edges, which the relations of the new crossing identify with the arc that the kink is cut
@@ -32,8 +32,8 @@ kink and its over-strand identify the four half-edges with the single generator 
 
 Classically the elementary ideals are shown to be link invariants through the invariance of the
 link group and the invariance of elementary ideals under Tietze transformations; here each move
-is treated directly on the abelianized presentation. The second and third Reidemeister moves are
-not treated in this file.
+is treated directly on the Alexander-module presentation. The second and third Reidemeister
+moves are not treated in this file.
 
 ## Main definitions
 
@@ -72,17 +72,6 @@ namespace TauCeti
 namespace OrientedPDCode
 
 variable {n m : ℕ}
-
-/-- An under-strand relation `x = t ^ k • y + (1 - t ^ k) • x`, whose outgoing generator equals
-its over-strand generator, forces `x = y`, since `t ^ k` is a unit. -/
-private theorem eq_of_eq_T_smul_add_one_sub_T_smul {M : Type*} [AddCommGroup M]
-    [Module ℤ[T;T⁻¹] M] {x y : M} (k : ℤ)
-    (h : x = (T k : ℤ[T;T⁻¹]) • y + (1 - T k : ℤ[T;T⁻¹]) • x) : x = y := by
-  have h' : (T k : ℤ[T;T⁻¹]) • (x - y) = 0 := by
-    rw [sub_smul, one_smul] at h
-    rw [smul_sub]
-    linear_combination (norm := module) h
-  exact sub_eq_zero.1 ((isUnit_T k).smul_eq_zero.1 h')
 
 /-! ### Relabelling -/
 
@@ -213,7 +202,7 @@ private def rotateCrossingHom :
       by_cases hj : j = i
       · subst hj
         have := D.alexanderGenerator_crossing_add_two j (slot + 1)
-        rw [show slot + 1 + 2 = slot + 2 + 1 by abel] at this
+        rw [add_right_comm slot 1 2] at this
         simpa [crossing_rotateCrossing_self] using this
       · simpa [crossing_rotateCrossing_of_ne _ _ hj, hj] using
           D.alexanderGenerator_crossing_add_two j slot)
@@ -238,7 +227,7 @@ private def rotateCrossingInvHom :
         have := (D.rotateCrossing j).alexanderGenerator_crossing_add_two j slot
         rw [crossing_rotateCrossing_self, crossing_rotateCrossing_self,
           crossing_rotateCrossing_self, alexanderWeight_rotateCrossing_self,
-          show slot + 2 + 1 = slot + 1 + 2 by abel] at this
+          add_right_comm slot 2 1] at this
         simpa using this
       · simpa [crossing_rotateCrossing_of_ne _ _ hj, hj] using
           (D.rotateCrossing i).alexanderGenerator_crossing_add_two j slot)
@@ -312,6 +301,7 @@ theorem alexanderWeight_reidemeisterOne_castSucc (i : Fin n) (slot : Fin 4) :
 
 /-- The four half-edges of the kink give the generator of the arc it is cut into: the loop of the
 kink and the crossing relations identify them, whichever strand is over. -/
+@[simp]
 theorem alexanderGenerator_reidemeisterOne_inr (s : Fin 4) :
     (D.reidemeisterOne h b).alexanderGenerator (.inl (PDCode.halfEdgeSuccEquiv n (.inr s))) =
       (D.reidemeisterOne h b).alexanderGenerator (.inl (PDCode.halfEdgeSuccEquiv n (.inl h))) := by
@@ -334,7 +324,7 @@ theorem alexanderGenerator_reidemeisterOne_inr (s : Fin 4) :
     rw [alexanderWeight_of_isOver _ (by simp [PDCode.isOver_def]), one_smul, sub_self, zero_smul,
       add_zero] at r0
     rw [alexanderWeight_of_not_isOver _ (by simp [PDCode.isOver_def])] at r1
-    have h21 := eq_of_eq_T_smul_add_one_sub_T_smul _ r1
+    have h21 := eq_of_eq_smul_add_one_sub_smul (isUnit_T _) r1
     intro s
     fin_cases s
     · rfl
@@ -345,7 +335,7 @@ theorem alexanderGenerator_reidemeisterOne_inr (s : Fin 4) :
     rw [alexanderWeight_of_isOver _ (by simp [PDCode.isOver_def]), one_smul, sub_self, zero_smul,
       add_zero] at r1
     rw [alexanderWeight_of_not_isOver _ (by simp [PDCode.isOver_def]), ← r1] at r0
-    have h20 := eq_of_eq_T_smul_add_one_sub_T_smul _ r0
+    have h20 := eq_of_eq_smul_add_one_sub_smul (isUnit_T _) r0
     intro s
     fin_cases s
     · rfl
@@ -436,8 +426,7 @@ def alexanderModuleReidemeisterOneEquiv :
       ext (x | j)
       · obtain ⟨y | s, rfl⟩ := (PDCode.halfEdgeSuccEquiv n).surjective x
         · simp [reidemeisterOneHom_alexanderGenerator, reidemeisterOneInvHom_alexanderGenerator]
-        · simp [reidemeisterOneHom_alexanderGenerator, reidemeisterOneInvHom_alexanderGenerator,
-            alexanderGenerator_reidemeisterOne_inr]
+        · simp [reidemeisterOneHom_alexanderGenerator, reidemeisterOneInvHom_alexanderGenerator]
       · simp [reidemeisterOneHom_alexanderGenerator, reidemeisterOneInvHom_alexanderGenerator])
 
 /-- The equivalence sends the old half-edges to themselves and the four half-edges of the kink to
@@ -492,6 +481,7 @@ theorem alexanderWeight_adjoinKink_castSucc (i : Fin n) (slot : Fin 4) :
 
 /-- The four half-edges of an isolated kink give one generator: its two arcs and its over-strand
 identify them, whichever strand is over. -/
+@[simp]
 theorem alexanderGenerator_adjoinKink_inr (s : Fin 4) :
     (D.adjoinKink o b).alexanderGenerator (.inl (PDCode.halfEdgeSuccEquiv n (.inr s))) =
       (D.adjoinKink o b).alexanderGenerator (.inl (PDCode.halfEdgeSuccEquiv n (.inr 0))) := by
@@ -614,8 +604,7 @@ def alexanderModuleAdjoinKinkEquiv :
       ext (x | j)
       · obtain ⟨y | s, rfl⟩ := (PDCode.halfEdgeSuccEquiv n).surjective x
         · simp [adjoinKinkHom_alexanderGenerator, adjoinKinkInvHom_alexanderGenerator]
-        · simp [adjoinKinkHom_alexanderGenerator, adjoinKinkInvHom_alexanderGenerator,
-            alexanderGenerator_adjoinKink_inr]
+        · simp [adjoinKinkHom_alexanderGenerator, adjoinKinkInvHom_alexanderGenerator]
       · simp [adjoinKinkHom_alexanderGenerator, adjoinKinkInvHom_alexanderGenerator])
 
 /-- The equivalence sends the old half-edges and the crossing-free components of `D` to
