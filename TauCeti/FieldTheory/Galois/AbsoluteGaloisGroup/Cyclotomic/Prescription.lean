@@ -114,20 +114,24 @@ theorem zModTwistEquivKummerCoeff_smul [NeZero (p : K)] {j : ℕ} {ζ : (Separab
   rw [ZModTwist.val_smul, ZModTwist.val_nsmul, nsmul_eq_mul, ZMod.natCast_zmod_val,
     charScalar_apply, continuousLocalCyclotomicCharacter_apply]
 
-/-- **The identifications turn reductions into power maps**: if the root `ζ'` used at level
-`j ≤ i` is the `pⁱ / pʲ`-th power of the root `ζ` used at level `i`, the reduction
+/-- **The identifications turn reductions into power maps**: if the root used at level `j ≤ i`
+is the `pⁱ / pʲ`-th power of the root `ζ` used at level `i`, the reduction
 `I(χ_cyc)/pⁱ → I(χ_cyc)/pʲ` corresponds to the power map `μ_{pⁱ} → μ_{pʲ}`. -/
 theorem kummerCoeffPow_zModTwistEquivKummerCoeff {i j : ℕ} (h : j ≤ i)
-    {ζ ζ' : (SeparableClosure K)ˣ} (hζ : IsPrimitiveRoot ζ (p ^ i))
-    (hζ' : IsPrimitiveRoot ζ' (p ^ j)) (hζζ' : ζ ^ (p ^ i / p ^ j) = ζ')
+    {ζ : (SeparableClosure K)ˣ} (hζ : IsPrimitiveRoot ζ (p ^ i))
     (x : ZModTwist (continuousLocalCyclotomicCharacter p K) i) :
     kummerCoeffPow K (pow_dvd_pow p h) (zModTwistEquivKummerCoeff p K hζ x) =
-      zModTwistEquivKummerCoeff p K hζ' (ZModTwist.reduce _ h x) := by
+      zModTwistEquivKummerCoeff p K
+        (hζ.pow (pow_pos (Fact.out : p.Prime).pos i) (Nat.div_mul_cancel (pow_dvd_pow p h)).symm)
+        (ZModTwist.reduce _ h x) := by
+  have hζ' : IsPrimitiveRoot (ζ ^ (p ^ i / p ^ j)) (p ^ j) :=
+    hζ.pow (pow_pos (Fact.out : p.Prime).pos i) (Nat.div_mul_cancel (pow_dvd_pow p h)).symm
   refine Additive.toMul.injective (Subtype.ext ?_)
   rw [coe_toMul_kummerCoeffPow, coe_toMul_zModTwistEquivKummerCoeff,
-    coe_toMul_zModTwistEquivKummerCoeff, ← pow_mul, mul_comm, pow_mul, hζζ', ZModTwist.val_reduce,
-    ← ZMod.natCast_zmod_val x.val, map_natCast, ZMod.val_natCast, ZMod.val_natCast,
-    ← Nat.mod_mod_of_dvd _ (pow_dvd_pow p h), hζ'.eq_orderOf, pow_mod_orderOf]
+    coe_toMul_zModTwistEquivKummerCoeff, ← pow_mul, mul_comm, pow_mul]
+  generalize ζ ^ (p ^ i / p ^ j) = ζ' at hζ' ⊢
+  rw [ZModTwist.val_reduce, ← ZMod.natCast_zmod_val x.val, map_natCast, ZMod.val_natCast,
+    ZMod.val_natCast, ← Nat.mod_mod_of_dvd _ (pow_dvd_pow p h), hζ'.eq_orderOf, pow_mod_orderOf]
 
 variable (p K) in
 /-- **The cyclotomic character has the prescription property**: for a field `K` in
@@ -163,7 +167,7 @@ theorem continuousLocalCyclotomicCharacter_hasPrescriptionProperty [NeZero (p : 
     refine explicitMap1_explicitMap1_of_comp_eq (hφ := ?_) (hqf := ?_) ..
     · exact ContinuousMonoidHom.ext fun _ => rfl
     · exact AddMonoidHom.ext fun x =>
-        (kummerCoeffPow_zModTwistEquivKummerCoeff hi hζ hζ' rfl x).symm
+        (kummerCoeffPow_zModTwistEquivKummerCoeff hi hζ x).symm
   obtain ⟨z, hz⟩ := explicitCoeff1_kummerCoeffPow_surjective hpi (pow_dvd_pow p hi) (E hζ' y)
   obtain ⟨w, rfl⟩ := (E hζ).surjective z
   exact ⟨w, (E hζ').injective ((hsq w).trans hz)⟩

@@ -466,17 +466,13 @@ theorem explicitCoeff1_kummerCoeffPow_kummerMap (hn : IsUnit (n : K)) {m : ℕ} 
         continuous_of_discreteTopology (Multiplicative.toAdd (kummerMap K n hn a)) =
       Multiplicative.toAdd
         (kummerMap K m (isUnit_of_dvd_unit (Nat.cast_dvd_cast h) hn) a) := by
-  have hm : IsUnit (m : K) := isUnit_of_dvd_unit (Nat.cast_dvd_cast h) hn
-  obtain ⟨α, hα⟩ := exists_pow_eq_units_map hn a
-  have hβ : (α ^ (n / m)) ^ m = Units.map (algebraMap K (SeparableClosure K)).toMonoidHom a := by
-    rw [← pow_mul, Nat.div_mul_cancel h, hα]
-  rw [kummerMap_eq_kummerCocycleClass hn hα, kummerMap_eq_kummerCocycleClass hm hβ,
-    kummerCocycleClass_def, kummerCocycleClass_def]
-  refine (explicitCoeff1_mk _ _ _ _ _).trans (congrArg _ (Subtype.ext (funext fun g => ?_)))
-  refine (cocyclesMap1_apply _ _ _ _ (ContinuousMonoidHom.id _) _ _
-    (fun g x => (kummerCoeffPow K h).map_smul g x) _ g).trans ?_
-  refine Additive.toMul.injective (Subtype.ext ?_)
-  simp [mul_pow, inv_pow, smul_pow']
+  rw [kummerMap_apply, kummerMap_apply, toAdd_ofAdd, toAdd_ofAdd, explicitCoeff1_eq_explicitMap1]
+  exact (kummerShortExact K n hn).explicitDelta0_naturality (kummerShortExact K m _)
+    (ContinuousMonoidHom.id _) (kummerCoeffPow K h) (unitsCoeffPow K (n / m)) (AddMonoidHom.id _)
+    _ (fun _ _ => unitsCoeffPow_equivariant K (n / m) _ _)
+    (fun _ => Additive.toMul.injective (by simp))
+    (fun _ => Additive.toMul.injective (by simp [← pow_mul, Nat.div_mul_cancel h]))
+    _ _ rfl
 
 /-- **The power map `μₙ → μₘ` is surjective on `H¹`** for `m ∣ n` and `n` invertible in `K`:
 every class of `H¹(G_K, μₘ)` is the Kummer class of some `a ∈ Kˣ`, which is the image of the
