@@ -72,7 +72,7 @@ abbrev _root_.CategoryTheory.CommMon.sectionsCommMon (U : X.Opens) :
 multiplication is the monoid multiplication of `A` applied to the image of `x ⊗ₜ y` in the sections
 of the tensor product (`CategoryTheory.CommMon.sections_mul_def`). -/
 instance _root_.CategoryTheory.CommMon.commRingSections (U : X.Opens) : CommRing Γ(A.X, U) :=
-  ModuleCat.MonObj.toCommRing (A.sectionsCommMon U).X
+  ModuleCat.MonModuleEquivalenceAlgebra.MonObj.toCommRing (A.sectionsCommMon U).X
 
 /-- The sections of a commutative `𝒪ₓ`-algebra over an open `U` form a `Γ(X, U)`-algebra, whose
 scalar multiplication is that of the sections of the underlying `𝒪ₓ`-module. -/
@@ -153,7 +153,6 @@ lemma _root_.CategoryTheory.CommMon.sectionsPresheaf_map {U V : X.Opensᵒᵖ} (
 
 /-- The structure morphism from the structure presheaf of `X` to the presheaf of sections of a
 commutative `𝒪ₓ`-algebra, given on each open by the algebra map. -/
-@[expose]
 def _root_.CategoryTheory.CommMon.toSectionsPresheaf : X.presheaf ⟶ A.sectionsPresheaf where
   app U := CommRingCat.ofHom (algebraMap Γ(X, U.unop) Γ(A.X, U.unop))
   naturality {U V} i := by

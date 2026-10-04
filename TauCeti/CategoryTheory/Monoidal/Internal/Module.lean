@@ -21,13 +21,13 @@ public section
 
 open CategoryTheory MonoidalCategory
 
-namespace TauCeti.ModuleCat
+namespace TauCeti
 
 universe u
 
 variable {R : Type u} [CommRing R]
 
-open _root_.ModuleCat.MonModuleEquivalenceAlgebra in
+open ModuleCat.MonModuleEquivalenceAlgebra in
 /-- The commutative ring structure on a commutative monoid object in `ModuleCat R`: the ring
 structure `ModuleCat.MonModuleEquivalenceAlgebra.MonObj.toRing`, whose multiplication is
 commutative by commutativity of the monoid object.
@@ -35,9 +35,9 @@ commutative by commutativity of the monoid object.
 Like `MonObj.toRing`, this is not an instance, since it does not round trip from a commutative
 ring to a monoid object and back. -/
 @[expose, instance_reducible]
-noncomputable def MonObj.toCommRing (A : _root_.ModuleCat.{u} R) [MonObj A] [IsCommMonObj A] :
-    CommRing A :=
+noncomputable def _root_.ModuleCat.MonModuleEquivalenceAlgebra.MonObj.toCommRing
+    (A : ModuleCat.{u} R) [MonObj A] [IsCommMonObj A] : CommRing A :=
   { MonObj.toRing A with
-    mul_comm x y := congr($(_root_.ModuleCat.hom_ext_iff.mp (IsCommMonObj.mul_comm A)) (y ⊗ₜ x)) }
+    mul_comm x y := congr($(ModuleCat.hom_ext_iff.mp (IsCommMonObj.mul_comm A)) (y ⊗ₜ x)) }
 
-end TauCeti.ModuleCat
+end TauCeti

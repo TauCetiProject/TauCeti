@@ -96,6 +96,20 @@ instance _root_.AlgebraicGeometry.Scheme.Modules.sectionsFunctorLaxBraided (U : 
   letI : F.LaxBraided := SheafOfModules.forgetLaxBraided X.sheaf
   inferInstanceAs (F ⋙ PresheafOfModulesOfCommRing.evaluation (Opposite.op U)).LaxBraided
 
+variable {X} in
+/-- The image of an `𝒪ₓ`-module under the sections functor is its module of sections over `U`. -/
+@[simp]
+lemma _root_.AlgebraicGeometry.Scheme.Modules.sectionsFunctor_obj (U : X.Opens) (M : X.Modules) :
+    (Scheme.Modules.sectionsFunctor U).obj M = M.val.obj (Opposite.op U) :=
+  rfl
+
+variable {X} in
+/-- The sections functor sends a morphism of `𝒪ₓ`-modules to its component over `U`. -/
+@[simp]
+lemma _root_.AlgebraicGeometry.Scheme.Modules.sectionsFunctor_map (U : X.Opens) {M N : X.Modules}
+    (φ : M ⟶ N) : (Scheme.Modules.sectionsFunctor U).map φ = φ.val.app (Opposite.op U) :=
+  rfl
+
 end
 
 end TauCeti
