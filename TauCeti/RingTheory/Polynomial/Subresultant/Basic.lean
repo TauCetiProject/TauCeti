@@ -91,7 +91,7 @@ theorem _root_.Polynomial.subresultantMatrix_natAdd [Semiring R]
 
 /-- When formal bounds dominate the degrees, a bounded coefficient row consists of the
 coefficients of shifted input polynomials. The two column-block lengths are arbitrary. -/
-theorem coefficientRow_apply [Semiring R] {p q : R[X]} {m n : ℕ}
+theorem coefficientRow_eq_shifted_coeff [Semiring R] {p q : R[X]} {m n : ℕ}
     (hm : p.natDegree ≤ m) (hn : q.natDegree ≤ n) (a b d : ℕ) (l : Fin (a + b)) :
     Fin.addCases (motive := fun _ => R)
       (fun l : Fin a => if (l : ℕ) ≤ d ∧ d ≤ l.val + n then q.coeff (d - l.val) else 0)
@@ -119,7 +119,7 @@ theorem _root_.Polynomial.subresultantMatrix_apply_eq_coeff [Semiring R]
     subresultantMatrix p q m n j i k =
       k.addCases (fun k => (X ^ k.val * q).coeff (i.val + j))
         (fun k => (X ^ k.val * p).coeff (i.val + j)) := by
-  exact coefficientRow_apply hm hn (m - j) (n - j) (i.val + j) k
+  exact coefficientRow_eq_shifted_coeff hm hn (m - j) (n - j) (i.val + j) k
 
 /-- At index zero, the principal subresultant matrix is Mathlib's Sylvester matrix. -/
 @[simp]
@@ -159,7 +159,7 @@ theorem coefficientRow_dotProduct [CommSemiring R] [DecidableEq R]
       ⬝ᵥ v =
       (ofFn a (fun l => v (Fin.castAdd b l)) * q +
         ofFn b (fun l => v (Fin.natAdd a l)) * p).coeff d := by
-  simp_rw [coefficientRow_apply hm hn]
+  simp_rw [coefficientRow_eq_shifted_coeff hm hn]
   simp only [dotProduct, Fin.sum_univ_add, Fin.addCases_left, Fin.addCases_right,
     ofFn_eq_sum_monomial, Finset.sum_mul, coeff_add, finsetSum_coeff]
   congr 1 <;> refine Finset.sum_congr rfl fun l _ => ?_ <;>

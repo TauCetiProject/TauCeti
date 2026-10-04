@@ -136,48 +136,52 @@ variable {K : Type*} [Field K]
 /-- Division with remainder preserves coefficient minors at the original left bound and
 actual right degree. The left bound may be oversized, and the remainder may be zero. -/
 theorem _root_.Polynomial.subresultantCoeff_mod_left {p q : K[X]} {m j : ℕ}
-    (hq : q ≠ 0) (hp : p.natDegree ≤ m) (hqm : q.natDegree ≤ m)
+    (hq : q ≠ 0) (hp : p.natDegree ≤ m)
     (k : ℕ) :
     subresultantCoeff (p % q) q m q.natDegree j k =
       subresultantCoeff p q m q.natDegree j k := by
-  have hquot : (p / q).natDegree ≤ p.natDegree - q.natDegree := by
-    rw [div_def]
-    refine (natDegree_C_mul_le _ _).trans ?_
-    rw [natDegree_divByMonic p (monic_mul_leadingCoeff_inv hq),
-      natDegree_mul_leadingCoeff_inv q hq]
-  have ha : (-(p / q)).natDegree + q.natDegree ≤ m := by
-    rw [natDegree_neg]
-    omega
-  have heq : p + -(p / q) * q = p % q := by
-    rw [EuclideanDomain.mod_eq_sub_mul_div]
-    ring
-  simpa only [heq] using subresultantCoeff_add_mul_left hp le_rfl ha k
+  by_cases hqm : q.natDegree ≤ m
+  · have hquot : (p / q).natDegree ≤ p.natDegree - q.natDegree := by
+      rw [div_def]
+      refine (natDegree_C_mul_le _ _).trans ?_
+      rw [natDegree_divByMonic p (monic_mul_leadingCoeff_inv hq),
+        natDegree_mul_leadingCoeff_inv q hq]
+    have ha : (-(p / q)).natDegree + q.natDegree ≤ m := by
+      rw [natDegree_neg]
+      omega
+    have heq : p + -(p / q) * q = p % q := by
+      rw [EuclideanDomain.mod_eq_sub_mul_div]
+      ring
+    simpa only [heq] using subresultantCoeff_add_mul_left hp le_rfl ha k
+  · have hmod : p % q = p :=
+      (mod_eq_self_iff hq).mpr (degree_lt_degree (by omega))
+    rw [hmod]
 
 /-- Division with remainder preserves principal coefficients before the left bound drops. -/
 theorem _root_.Polynomial.psc_mod_left {p q : K[X]} {m j : ℕ}
-    (hq : q ≠ 0) (hp : p.natDegree ≤ m) (hqm : q.natDegree ≤ m) :
+    (hq : q ≠ 0) (hp : p.natDegree ≤ m) :
     psc (p % q) q m q.natDegree j = psc p q m q.natDegree j := by
-  simpa only [subresultantCoeff_index] using subresultantCoeff_mod_left (j := j) hq hp hqm j
+  simpa only [subresultantCoeff_index] using subresultantCoeff_mod_left (j := j) hq hp j
 
 /-- Division with remainder preserves the subresultant polynomial at fixed bounds. -/
 theorem _root_.Polynomial.subresultant_mod_left {p q : K[X]} {m j : ℕ}
-    (hq : q ≠ 0) (hp : p.natDegree ≤ m) (hqm : q.natDegree ≤ m) :
+    (hq : q ≠ 0) (hp : p.natDegree ≤ m) :
     subresultant (p % q) q m q.natDegree j = subresultant p q m q.natDegree j := by
   ext k
-  simp only [subresultant_coeff, subresultantCoeff_mod_left hq hp hqm]
+  simp only [subresultant_coeff, subresultantCoeff_mod_left hq hp]
 
 /-- A Euclidean step for principal subresultant coefficients. Lowering the remainder's
 bound from `m` to `r` contributes `q.leadingCoeff ^ (m - r)`; the displayed sign
 comes from both the bound drop and the input swap. The smaller terminal index and zero
 remainders are included. -/
 theorem _root_.Polynomial.psc_eq_sign_mul_leadingCoeff_pow_mul_psc_mod {p q : K[X]} {m r j : ℕ}
-    (hq : q ≠ 0) (hp : p.natDegree ≤ m) (hqm : q.natDegree ≤ m)
+    (hq : q ≠ 0) (hp : p.natDegree ≤ m)
     (hr : (p % q).natDegree ≤ r) (hrm : r ≤ m)
     (hjr : j ≤ r) (hjq : j ≤ q.natDegree) :
     psc p q m q.natDegree j =
       (-1) ^ ((m - j) * (q.natDegree - j)) * q.leadingCoeff ^ (m - r) *
         psc q (p % q) q.natDegree r j := by
-  rw [← psc_mod_left hq hp hqm,
+  rw [← psc_mod_left hq hp,
     psc_eq_sign_mul_coeff_pow_mul_of_left_degree_drop hr le_rfl hrm hjr hjq,
     psc_comm (p % q) q r q.natDegree j, coeff_natDegree]
   have hgap : m - j = (m - r) + (r - j) := by omega
@@ -187,7 +191,7 @@ theorem _root_.Polynomial.psc_eq_sign_mul_leadingCoeff_pow_mul_psc_mod {p q : K[
 /-- The principal-coefficient recurrence for the signed remainder `-(p % q)`.
 Negating the remainder adds the sign of its `q.natDegree - j` columns. -/
 theorem _root_.Polynomial.psc_eq_sign_mul_leadingCoeff_pow_mul_psc_neg_mod {p q : K[X]} {m r j : ℕ}
-    (hq : q ≠ 0) (hp : p.natDegree ≤ m) (hqm : q.natDegree ≤ m)
+    (hq : q ≠ 0) (hp : p.natDegree ≤ m)
     (hr : (p % q).natDegree ≤ r) (hrm : r ≤ m)
     (hjr : j ≤ r) (hjq : j ≤ q.natDegree) :
     psc p q m q.natDegree j =
@@ -195,7 +199,7 @@ theorem _root_.Polynomial.psc_eq_sign_mul_leadingCoeff_pow_mul_psc_neg_mod {p q 
         psc q (-(p % q)) q.natDegree r j := by
   have hneg := psc_C_mul_right q (p % q) (-1) q.natDegree r j
   simp only [map_neg, map_one, neg_mul, one_mul] at hneg
-  rw [hneg, psc_eq_sign_mul_leadingCoeff_pow_mul_psc_mod hq hp hqm hr hrm hjr hjq,
+  rw [hneg, psc_eq_sign_mul_leadingCoeff_pow_mul_psc_mod hq hp hr hrm hjr hjq,
     add_mul, one_mul, pow_add]
   have hsq : ((-1 : K) ^ (q.natDegree - j)) ^ 2 = 1 := by
     rw [← pow_mul, mul_comm, pow_mul]

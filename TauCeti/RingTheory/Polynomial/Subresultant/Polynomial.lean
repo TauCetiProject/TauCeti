@@ -95,7 +95,7 @@ theorem _root_.Polynomial.subresultantCoeffMatrix_apply_eq_coeff [Semiring R]
       l.addCases
         (fun l => (X ^ l.val * q).coeff (if i.val = 0 then k else i.val + j))
         (fun l => (X ^ l.val * p).coeff (if i.val = 0 then k else i.val + j)) := by
-  exact coefficientRow_apply hm hn (m - j) (n - j)
+  exact coefficientRow_eq_shifted_coeff hm hn (m - j) (n - j)
     (if i.val = 0 then k else i.val + j) l
 
 /-- A subresultant coefficient matrix replaces the row of degree `j` of the principal
