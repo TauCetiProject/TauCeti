@@ -31,6 +31,7 @@ omit [DecidableEq R] in
 theorem _root_.Polynomial.toFn_apply (n : ℕ) (p : R[X]) (i : Fin n) :
     toFn n p i = p.coeff i := (rfl)
 
+-- Mathlib's `ofFn` takes `[DecidableEq R]`, so this instance occurs in the statement.
 /-- The coordinate vector with value one at `l` reconstructs the monomial `X ^ l.val`. -/
 @[simp]
 theorem _root_.Polynomial.ofFn_single {n : ℕ} (l : Fin n) :
