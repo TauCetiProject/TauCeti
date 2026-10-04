@@ -151,8 +151,7 @@ theorem ofNat_card_quotient_le_profiniteOrder (U : OpenNormalSubgroup G) :
     (fun V : OpenNormalSubgroup G ↦
       Supernatural.ofNat (⟨Nat.card (G ⧸ V.toSubgroup), Nat.card_pos⟩ : ℕ+)) U
 
-/-- A profinite group has supernatural order `1` exactly when it is trivial: every finite
-continuous quotient is then trivial, and the open normal subgroups intersect in `1`. -/
+/-- A profinite group has supernatural order `1` exactly when it is trivial. -/
 theorem profiniteOrder_eq_one_iff [IsTopologicalGroup G] [TotallyDisconnectedSpace G] :
     profiniteOrder G = 1 ↔ Subsingleton G := by
   refine ⟨fun h ↦ ⟨fun x y ↦ ?_⟩, fun _ ↦ ?_⟩

@@ -73,6 +73,7 @@ theorem IsProPSylow.eq_bot_iff {q : Nat.Primes} (hP : IsProPSylow q P) :
 /-- **The trivial subgroup is Sylow pro-`p` exactly when `p` does not divide the order.** The
 trivial subgroup of a profinite group `G` is a Sylow pro-`q` subgroup if and only if the exponent
 of `q` in the supernatural order of `G` is zero. -/
+@[simp]
 theorem isProPSylow_bot_iff (q : Nat.Primes) :
     IsProPSylow q (⊥ : Subgroup G) ↔ profiniteOrder G q = 0 := by
   refine ⟨fun h ↦ h.eq_bot_iff.mp rfl, fun h ↦ ?_⟩
