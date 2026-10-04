@@ -70,13 +70,13 @@ theorem formPerm_map_equiv {α β : Type*} [DecidableEq α] [DecidableEq β]
     (l.map e).formPerm = e.permCongr l.formPerm := by
   induction l with
   | nil =>
-    change (Equiv.refl β) = e.permCongr (Equiv.refl α)
-    exact (Equiv.permCongr_refl e).symm
+    rw [List.map_nil, List.formPerm_nil, List.formPerm_nil, Equiv.Perm.one_def,
+      Equiv.Perm.one_def, Equiv.permCongr_refl]
   | cons x l ih =>
     cases l with
     | nil =>
-      change (Equiv.refl β) = e.permCongr (Equiv.refl α)
-      exact (Equiv.permCongr_refl e).symm
+      rw [List.map_singleton, List.formPerm_singleton, List.formPerm_singleton,
+        Equiv.Perm.one_def, Equiv.Perm.one_def, Equiv.permCongr_refl]
     | cons y l =>
       simp only [List.map_cons, List.formPerm_cons_cons, Equiv.permCongr_mul]
       rw [Equiv.permCongr_def, Equiv.symm_trans_swap_trans]
