@@ -509,6 +509,8 @@ variable {m : ℕ} (D : PDCode n) (half : Fin (4 * n) ≃ Fin (4 * m)) (cross : 
 @[simp] theorem relabel_overPair (i : Fin m) :
     (D.relabel half cross).overPair i = D.overPair (cross.symm i) := by simp [relabel]
 
+-- Not `@[simp]`: `crossing_apply` already rewrites the left-hand side, and `simp` proves this
+-- from `crossing_apply`, `relabel_halfEdge` and `crossingBlockEquiv_apply_crossingSlotEquiv`.
 /-- Relabelling transports every crossing block together with its slot order. -/
 theorem crossing_relabel (i : Fin m) (slot : Fin 4) :
     (D.relabel half cross).crossing i slot = half (D.crossing (cross.symm i) slot) := by
