@@ -14,8 +14,8 @@ public import TauCeti.RepresentationTheory.Quiver.FiniteRepType.PosDef
 **Gabriel's theorem** says that a finite connected quiver has only finitely many isomorphism classes
 of finite-dimensional indecomposable representations exactly when its underlying graph is a
 Dynkin diagram of type `A`, `D` or `E`, equivalently exactly when its Tits form is positive
-definite. This file states both forms of the dichotomy, for a finite connected quiver with no
-pair of opposite arrows `a ⟶ b`, `b ⟶ a`:
+definite. This file states conditional forms of the dichotomy, for a finite connected quiver with
+no pair of opposite arrows `a ⟶ b`, `b ⟶ a`:
 
 * `TauCeti.isFiniteRepType_iff_titsForm_posDef`: finite representation type is equivalent to
   positive definiteness of the Tits form;
@@ -55,6 +55,10 @@ A pair of opposite arrows `a ⟶ b`, `b ⟶ a` is excluded by hypothesis. It is 
 oriented quiver of type `Ã₁`, which the underlying simple graph records as a single edge, so none
 of the obstructions used here sees it; a positive definite Tits form excludes it on its own
 (`TauCeti.card_hom_add_card_hom_le_one_of_titsForm_posDef`).
+The opposite-arrow hypothesis is used only in the implication from finite representation type to
+positive definiteness. Removing it requires the additional obstruction that an oriented two-cycle
+has infinite representation type; the converse and the purely combinatorial equivalence do not
+require this hypothesis.
 
 ## References
 
