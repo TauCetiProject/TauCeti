@@ -14,7 +14,9 @@ Over an ordered real closed field, the roots of `p.comp (C t - X ^ 2)` are the s
 `t - r` for the roots `r ≤ t` of `p`. A root `r < t` contributes the two roots `±√(t - r)`, a root
 at `t` contributes the single root `0`, and roots above `t` contribute nothing. So, for nonzero
 `p`, the number of distinct roots of `p` below `t` is determined by the number of distinct roots
-of `p.comp (C t - X ^ 2)` and whether `t` is a root of `p`.
+of `p.comp (C t - X ^ 2)` and whether `t` is a root of `p`. The underlying count of the square
+roots of a single element `a`, namely two, one or none as `a` is positive, zero or negative, is
+`Polynomial.card_nthRootsFinset_two`.
 
 Since the coefficients of `p.comp (C t - X ^ 2)` are polynomials in `t` and in the coefficients
 of `p`, this reduces counting the roots of `p` in `(-∞, t)` to counting all distinct roots of
@@ -27,6 +29,34 @@ public section
 namespace Polynomial
 
 variable {R : Type*} [Field R] [LinearOrder R] [IsStrictOrderedRing R] [IsRealClosed R]
+
+/-- Over an ordered real closed field, `a` has two square roots `±√a` when `0 < a`, the single
+square root `0` when `a = 0`, and none when `a < 0`. -/
+theorem card_nthRootsFinset_two (a : R) :
+    (nthRootsFinset 2 a).card = if 0 < a then 2 else if a = 0 then 1 else 0 := by
+  have hmem (y : R) : y ∈ nthRootsFinset 2 a ↔ y ^ 2 = a := mem_nthRootsFinset two_pos a
+  rcases lt_trichotomy 0 a with h | rfl | h
+  · obtain ⟨s, hs⟩ := IsRealClosed.nonneg_iff_isSquare.mp h.le
+    have hs0 : s ≠ -s := by
+      intro hs'
+      have hs_zero : s = 0 := by linarith
+      have : a = 0 := by rw [hs, hs_zero, mul_zero]
+      exact h.ne' this
+    have : nthRootsFinset 2 a = {s, -s} := by
+      ext y
+      rw [hmem, hs, sq, mul_self_eq_mul_self_iff, Finset.mem_insert, Finset.mem_singleton]
+    rw [this, Finset.card_pair hs0]
+    simp [h]
+  · have : nthRootsFinset 2 (0 : R) = {0} := by
+      ext y
+      rw [hmem]
+      simp
+    simp [this]
+  · have : nthRootsFinset 2 a = ∅ := by
+      ext y
+      simp only [hmem, Finset.notMem_empty, iff_false]
+      nlinarith [sq_nonneg y]
+    simp [this, h.not_gt, h.ne]
 
 /-- **Roots below a point by a square substitution.** For nonzero `p`, every root of `p` below
 `t` gives two distinct roots `±√(t - r)` of `p.comp (C t - X ^ 2)`, a root at `t` gives the root
@@ -45,43 +75,29 @@ theorem card_roots_toFinset_comp_C_sub_X_sq {p : R[X]} (hp : p ≠ 0) (t : R) :
   -- Group the roots of the substituted polynomial by the root `t - y ^ 2` of `p` they come from.
   rw [Finset.card_eq_sum_card_fiberwise (f := fun y => t - y ^ 2) (t := p.roots.toFinset)
     fun y hy => by simpa [mem_roots hp] using (hmem y).1 hy]
+  -- The fiber over a root `r` consists of the square roots of `t - r`.
   have hfiber (r : R) (hr : r ∈ p.roots.toFinset) :
       {y ∈ (p.comp (C t - X ^ 2)).roots.toFinset | t - y ^ 2 = r}.card =
         (if r < t then 2 else 0) + if t = r then 1 else 0 := by
     have hr' : p.IsRoot r := by simpa [mem_roots hp] using hr
-    have hfib (y : R) : y ∈ {y ∈ (p.comp (C t - X ^ 2)).roots.toFinset | t - y ^ 2 = r} ↔
-        y ^ 2 = t - r := by
-      rw [Finset.mem_filter, hmem]
+    have : {y ∈ (p.comp (C t - X ^ 2)).roots.toFinset | t - y ^ 2 = r} =
+        nthRootsFinset 2 (t - r) := by
+      ext y
+      rw [Finset.mem_filter, hmem, mem_nthRootsFinset two_pos]
       constructor
       · rintro ⟨-, h⟩
         rw [← h, sub_sub_cancel]
       · intro h
         have h' : t - y ^ 2 = r := by rw [h, sub_sub_cancel]
         exact ⟨h' ▸ hr', h'⟩
+    rw [this, card_nthRootsFinset_two]
+    simp only [sub_pos, sub_eq_zero]
     rcases lt_trichotomy r t with h | h | h
-    · obtain ⟨s, hs⟩ := IsRealClosed.nonneg_iff_isSquare.mp (sub_nonneg.mpr h.le)
-      have hs0 : s ≠ -s := by
-        intro hs'
-        have hs_zero : s = 0 := by linarith
-        have : t - r = 0 := by rw [hs, hs_zero, mul_zero]
-        linarith
-      have : {y ∈ (p.comp (C t - X ^ 2)).roots.toFinset | t - y ^ 2 = r} = {s, -s} := by
-        ext y
-        rw [hfib, hs, sq, mul_self_eq_mul_self_iff, Finset.mem_insert, Finset.mem_singleton]
-      simp [this, Finset.card_pair hs0, h, h.ne']
-    · have : {y ∈ (p.comp (C t - X ^ 2)).roots.toFinset | t - y ^ 2 = r} = {0} := by
-        ext y
-        rw [hfib, h, sub_self]
-        simp
-      rw [this, h]
-      simp
-    · have : {y ∈ (p.comp (C t - X ^ 2)).roots.toFinset | t - y ^ 2 = r} = ∅ := by
-        ext y
-        simp only [hfib, Finset.notMem_empty, iff_false]
-        nlinarith [sq_nonneg y]
-      simp [this, h.not_gt, h.ne]
+    · simp [h, h.ne']
+    · simp [h]
+    · simp [h.not_gt, h.ne]
   rw [Finset.sum_congr rfl hfiber, Finset.sum_add_distrib, ← Finset.sum_filter,
-    Finset.sum_const, smul_eq_mul, mul_comm, Finset.sum_ite_eq]
+    Finset.sum_const, smul_eq_mul, mul_comm _ 2, Finset.sum_ite_eq]
   simp [mem_roots hp]
 
 end Polynomial

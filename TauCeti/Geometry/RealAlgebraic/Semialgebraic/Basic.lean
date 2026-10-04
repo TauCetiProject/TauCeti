@@ -27,6 +27,11 @@ Every closure property proved here follows directly from the definition:
 
 * the Boolean operations, including finite unions and intersections;
 * every polynomial sign condition, such as `{x | p(x) ≤ q(x)}` or `{x | sign p(x) = ε}`;
+* any condition on the signs of finitely many polynomials
+  (`TauCeti.isSemialgebraic_setOf_sign_eval`), in particular a prescribed permanences minus
+  variations of their values (`TauCeti.isSemialgebraic_setOf_permanencesMinusVariations_eval`);
+* the vanishing of a prescribed set of coefficients of a polynomial family
+  `P : Polynomial (MvPolynomial σ R)` (`TauCeti.isSemialgebraic_setOf_forall_coeff_eq_zero`);
 * inverse images under polynomial maps (`TauCeti.IsSemialgebraic.preimage_eval`), and hence
   under changes of coordinates, in particular coordinate permutations;
 * products, in the form `σ ⊕ τ → R` and in the form `Fin (m + n) → R`;
@@ -248,11 +253,11 @@ theorem isSemialgebraic_setOf_permanencesMinusVariations_eval
     (l : List (MvPolynomial σ R)) (c : ℤ) :
     IsSemialgebraic {x : σ → R | (l.map (eval x)).permanencesMinusVariations = c} := by
   have h (x : σ → R) : (l.map (eval x)).permanencesMinusVariations =
-      (List.ofFn fun i => SignType.sign (eval x (l.get i))).permanencesMinusVariations := by
+      (List.ofFn fun i : Fin l.length =>
+        SignType.sign (eval x l[i])).permanencesMinusVariations := by
     rw [← List.permanencesMinusVariations_map_sign, List.map_map]
-    congr 1
-    apply List.ext_get <;> simp
-  simpa only [h] using isSemialgebraic_setOf_sign_eval (fun i => l.get i)
+    exact congrArg List.permanencesMinusVariations (List.ofFn_getElem_eq_map l _).symm
+  simpa only [h] using isSemialgebraic_setOf_sign_eval (fun i : Fin l.length => l[i])
     fun ε => (List.ofFn ε).permanencesMinusVariations = c
 
 omit [IsOrderedAddMonoid R] in

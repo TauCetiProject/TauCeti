@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Polynomial.RealClosed.RootsBelow
 public import TauCeti.Geometry.RealAlgebraic.Semialgebraic.Basic
-public import TauCeti.RingTheory.Polynomial.Subresultant.CauchyIndex
-import TauCeti.Algebra.Polynomial.RealClosed.RootsBelow
+import TauCeti.Algebra.MvPolynomial.Rename
 import TauCeti.RingTheory.Polynomial.Reductum
+import TauCeti.RingTheory.Polynomial.Subresultant.CauchyIndex
 
 /-!
 # Root counts of polynomial families are semialgebraic
@@ -90,31 +91,6 @@ theorem isSemialgebraic_setOf_natDegree_map_eval_eq (P : (MvPolynomial σ R)[X])
 
 end CommRing
 
-section Rename
-
-variable {R : Type*} [CommRing R] {n : ℕ}
-
-/-- The family over `R ^ (n + 1)` obtained from `P` by renaming each variable `i` to `i.succ`. -/
-private noncomputable def renameSucc (P : (MvPolynomial (Fin n) R)[X]) :
-    (MvPolynomial (Fin (n + 1)) R)[X] :=
-  P.map (MvPolynomial.rename (R := R) Fin.succ).toRingHom
-
-/-- Specializing `renameSucc P` at `y` is specializing `P` at the base point `Fin.tail y`. -/
-private theorem map_eval_renameSucc (P : (MvPolynomial (Fin n) R)[X]) (y : Fin (n + 1) → R) :
-    (renameSucc P).map (MvPolynomial.eval y) = P.map (MvPolynomial.eval (Fin.tail y)) := by
-  rw [renameSucc, Polynomial.map_map]
-  congr 1
-  ext p <;> simp [Fin.tail]
-
-/-- Evaluating `renameSucc P` at `X 0` and then at `y` is evaluating the specialization of `P` at
-`Fin.tail y` at the coordinate `y 0`. -/
-private theorem eval_eval_renameSucc (P : (MvPolynomial (Fin n) R)[X]) (y : Fin (n + 1) → R) :
-    MvPolynomial.eval y ((renameSucc P).eval (MvPolynomial.X 0)) =
-      (P.map (MvPolynomial.eval (Fin.tail y))).eval (y 0) := by
-  rw [← map_eval_renameSucc, eval_map, ← MvPolynomial.eval_X (f := y) 0, eval₂_at_apply]
-
-end Rename
-
 section RealClosed
 
 variable {σ R : Type*} [Field R] [LinearOrder R] [IsStrictOrderedRing R] [IsRealClosed R]
@@ -172,20 +148,39 @@ theorem isSemialgebraic_setOf_card_roots_map_eval_lt (P : (MvPolynomial σ R)[X]
   have hQ (x : σ → R) : Q.map (MvPolynomial.eval x) =
       (P.map (MvPolynomial.eval x)).comp (C (MvPolynomial.eval x T) - X ^ 2) := by
     simp [Q, Polynomial.map_comp]
-  have hk : IsSemialgebraic {_x : σ → R | k = 0} := by
-    by_cases hk : k = 0 <;> simp [hk]
+  -- Zero specializations count towards `k = 0` only; elsewhere the count is read off from the
+  -- root count of the specialization of `Q` and whether `T(x)` is a root.
+  have : {x : σ → R | {r ∈ (P.map (MvPolynomial.eval x)).roots.toFinset |
+        r < MvPolynomial.eval x T}.card = k} =
+      {x | P.map (MvPolynomial.eval x) = 0 ∧ k = 0} ∪
+        {x | P.map (MvPolynomial.eval x) = 0}ᶜ ∩
+          ({x | MvPolynomial.eval x (P.eval T) = 0} ∩
+              {x | (Q.map (MvPolynomial.eval x)).roots.toFinset.card = 2 * k + 1} ∪
+            {x | MvPolynomial.eval x (P.eval T) ≠ 0} ∩
+              {x | (Q.map (MvPolynomial.eval x)).roots.toFinset.card = 2 * k}) := by
+    ext x
+    simp only [mem_ofPred_eq, mem_union, mem_inter_iff, mem_compl_iff]
+    by_cases h0 : P.map (MvPolynomial.eval x) = 0
+    · simp [h0, eq_comm]
+    have hroot : (P.map (MvPolynomial.eval x)).IsRoot (MvPolynomial.eval x T) ↔
+        MvPolynomial.eval x (P.eval T) = 0 := by
+      rw [IsRoot.def, eval_map_apply]
+    rw [hQ, card_roots_toFinset_comp_C_sub_X_sq h0]
+    by_cases hr : MvPolynomial.eval x (P.eval T) = 0
+    · simp only [h0, hr, hroot.mpr hr, ↓reduceIte, false_and, false_or, not_false_eq_true,
+        true_and, ne_eq, not_true_eq_false, or_false]
+      omega
+    · simp only [h0, hr, mt hroot.mp hr, ↓reduceIte, false_and, false_or, not_false_eq_true,
+        true_and, ne_eq]
+      omega
   have hZ := isSemialgebraic_setOf_map_eval_eq_zero P
-  convert (hZ.inter hk).union (hZ.compl.inter
-    (((isSemialgebraic_eval_eq_zero (P.eval T)).inter
-      (isSemialgebraic_setOf_card_roots_map_eval Q (2 * k + 1))).union
-    ((isSemialgebraic_eval_ne_zero (P.eval T)).inter
-      (isSemialgebraic_setOf_card_roots_map_eval Q (2 * k))))) using 1
-  ext x
-  simp only [mem_ofPred_eq, mem_union, mem_inter_iff, mem_compl_iff]
-  by_cases h0 : P.map (MvPolynomial.eval x) = 0
-  · simp [h0, eq_comm]
-  rw [hQ, card_roots_toFinset_comp_C_sub_X_sq h0]
-  by_cases hr : MvPolynomial.eval x (P.eval T) = 0 <;> simp [h0, hr]
+  rw [this]
+  refine .union ?_ (hZ.compl.inter
+    (((isSemialgebraic_eval_eq_zero _).inter (isSemialgebraic_setOf_card_roots_map_eval Q _)).union
+      ((isSemialgebraic_eval_ne_zero _).inter (isSemialgebraic_setOf_card_roots_map_eval Q _))))
+  rcases eq_or_ne k 0 with rfl | hk
+  · simpa using hZ
+  · simp [hk]
 
 /-! ### Roots and sectors in cylinder coordinates
 
@@ -204,11 +199,13 @@ satisfies this for `i = 0`. -/
 theorem isSemialgebraic_setOf_isRoot_card_roots_lt (P : (MvPolynomial (Fin n) R)[X]) (i : ℕ) :
     IsSemialgebraic {y : Fin (n + 1) → R | (P.map (MvPolynomial.eval (Fin.tail y))).IsRoot (y 0) ∧
       {r ∈ (P.map (MvPolynomial.eval (Fin.tail y))).roots.toFinset | r < y 0}.card = i} := by
-  convert (isSemialgebraic_eval_eq_zero ((renameSucc P).eval (MvPolynomial.X 0))).inter
-    (isSemialgebraic_setOf_card_roots_map_eval_lt (renameSucc P) (MvPolynomial.X 0) i) using 1
+  -- The family over `R ^ (n + 1)` whose specialization at `y` is that of `P` at `Fin.tail y`.
+  set Q := P.map (MvPolynomial.rename (R := R) Fin.succ).toRingHom
+  convert (isSemialgebraic_eval_eq_zero (Q.eval (MvPolynomial.X 0))).inter
+    (isSemialgebraic_setOf_card_roots_map_eval_lt Q (MvPolynomial.X 0) i) using 1
   ext y
-  simp only [mem_ofPred_eq, mem_inter_iff, IsRoot, eval_eval_renameSucc, map_eval_renameSucc,
-    MvPolynomial.eval_X]
+  simp only [mem_ofPred_eq, mem_inter_iff, IsRoot.def, ← eval_map_apply, Q, map_eval_map_rename,
+    MvPolynomial.eval_X, Fin.tail_def, Function.comp_def]
 
 /-- **The sectors between roots.** The points of `R ^ (n + 1)` whose coordinate `0` is not a root of
 the specialization of `P` at the remaining coordinates, with exactly `j` distinct roots below it,
@@ -219,11 +216,13 @@ theorem isSemialgebraic_setOf_not_isRoot_card_roots_lt (P : (MvPolynomial (Fin n
     IsSemialgebraic {y : Fin (n + 1) → R |
       ¬ (P.map (MvPolynomial.eval (Fin.tail y))).IsRoot (y 0) ∧
       {r ∈ (P.map (MvPolynomial.eval (Fin.tail y))).roots.toFinset | r < y 0}.card = j} := by
-  convert (isSemialgebraic_eval_ne_zero ((renameSucc P).eval (MvPolynomial.X 0))).inter
-    (isSemialgebraic_setOf_card_roots_map_eval_lt (renameSucc P) (MvPolynomial.X 0) j) using 1
+  -- The family over `R ^ (n + 1)` whose specialization at `y` is that of `P` at `Fin.tail y`.
+  set Q := P.map (MvPolynomial.rename (R := R) Fin.succ).toRingHom
+  convert (isSemialgebraic_eval_ne_zero (Q.eval (MvPolynomial.X 0))).inter
+    (isSemialgebraic_setOf_card_roots_map_eval_lt Q (MvPolynomial.X 0) j) using 1
   ext y
-  simp only [mem_ofPred_eq, mem_inter_iff, IsRoot, eval_eval_renameSucc, map_eval_renameSucc,
-    MvPolynomial.eval_X]
+  simp only [mem_ofPred_eq, mem_inter_iff, IsRoot.def, ← eval_map_apply, Q, map_eval_map_rename,
+    MvPolynomial.eval_X, Fin.tail_def, Function.comp_def]
 
 end RealClosed
 
