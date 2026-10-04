@@ -97,7 +97,7 @@ theorem bijective_muNRepToTateDual : Function.Bijective (muNRepToTateDual ζ hζ
   · have hM (x : (muNRep n F).V) : n • x = 0 :=
       (muNRepZModEquiv ζ hζ).injective (by simp)
     rw [Nat.card_congr (tateDualEquiv (muNRep n F)).toEquiv,
-      natCard_addMonoidHom_of_addEquiv_zmod (muNRepZModEquiv ζ hζ) hM]
+      (muNRepZModEquiv ζ hζ).natCard_addMonoidHom_zmod hM]
 
 /-- **The `(1, 1)` Tate pairing on `μₙ`, transported through the chosen-root identification, is
 the local symbol.** -/
