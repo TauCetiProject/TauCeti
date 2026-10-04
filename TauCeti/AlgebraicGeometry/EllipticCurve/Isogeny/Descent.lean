@@ -8,7 +8,6 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Galois
 public import Mathlib.FieldTheory.Galois.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Galois.Descent
-import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.InfinityPlace.BaseChange
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.InfinityPlace
 
 /-!
@@ -30,7 +29,6 @@ its field of definition. Neither ellipticity nor separability of the isogeny is 
 
 ## Main results
 
-* `TauCeti.CoordinatePullback.mapsInfinity_map_iff`: base change reflects pointedness.
 * `TauCeti.Isogeny.existsUnique_map_eq_iff_galoisEquivariant`: the function-field criterion.
 * `TauCeti.Isogeny.existsUnique_map_eq_iff_galoisFixed`: the coefficient-conjugation criterion.
 
@@ -47,64 +45,15 @@ open scoped WeierstrassCurve
 
 namespace TauCeti
 
-namespace CoordinatePullback
-
-variable {F K : Type*} [Field F] [Field K] {W₁ W₂ : Affine F}
-
-/-- Changing the coefficient field reflects pointedness. The pole criterion for `MapsInfinity`
-is unchanged because the infinity valuation after base change restricts to the original one. -/
-theorem mapsInfinity_map_iff (p : CoordinatePullback W₁ W₂) (f : F →+* K) :
-    (p.map f).MapsInfinity ↔ p.MapsInfinity := by
-  refine ⟨?_, fun hp ↦ hp.map f⟩
-  intro hp
-  rw [mapsInfinity_iff_one_lt_infinityPlace] at hp ⊢
-  have hequiv := isEquiv_comap_infinityPlace_map W₁ f
-  have hcoord := p.map_of_X f
-  -- The polynomial algebra map sends `X` to its `AdjoinRoot.of` class, the base-change API's
-  -- coordinate spelling.
-  change 1 < infinityPlace (W₁.map f)
-    ((p.map f) (AdjoinRoot.of (W₂.map f).polynomial Polynomial.X)) at hp
-  change 1 < infinityPlace W₁ (p (AdjoinRoot.of W₂.polynomial Polynomial.X))
-  rw [hcoord] at hp
-  exact not_le.1 fun hle ↦ (not_le.2 hp)
-    ((Valuation.isEquiv_iff_val_le_one.1 hequiv).2 hle)
-
-end CoordinatePullback
-
 namespace Isogeny
 
 variable {F K : Type*} [Field F] [Field K] [Algebra F K]
   (W₁ W₂ : WeierstrassCurve F)
 
-/-- Galois conjugation fixes an isogeny exactly when its function-field pullback commutes with
-the corresponding coefficient automorphism. This compares actual field maps, including their
-action on functions with poles. -/
-theorem galoisConj_eq_iff_fieldPullback_equivariant
-    (φ : Isogeny (W₁⁄K).toAffine (W₂⁄K).toAffine) (σ : K ≃ₐ[F] K) :
-    φ.galoisConj W₁ W₂ σ = φ ↔
-      ∀ z, W₁.functionFieldGaloisAction σ (φ.fieldPullback z) =
-        φ.fieldPullback (W₂.functionFieldGaloisAction σ z) := by
-  constructor
-  · intro h z
-    rw [← galoisConj_fieldPullback W₁ W₂ φ σ, h]
-  · intro h
-    have hfield : (φ.galoisConj W₁ W₂ σ).fieldPullback = φ.fieldPullback := by
-      apply AlgHom.ext
-      intro z
-      obtain ⟨z, rfl⟩ := (W₂.functionFieldGaloisAction σ).surjective z
-      rw [galoisConj_fieldPullback, h]
-    apply Isogeny.ext
-    apply AlgHom.ext
-    intro z
-    exact (fieldPullback_algebraMap _ z).symm.trans
-      ((congrArg (fun g ↦ g (algebraMap (W₂⁄K).toAffine.CoordinateRing
-        (W₂⁄K).toAffine.FunctionField z)) hfield).trans (fieldPullback_algebraMap _ z))
-
 variable [IsGalois F K]
 
 /-- An isogeny after a Galois extension descends uniquely precisely when its function-field
-pullback is equivariant. Pointedness is recovered from the base-changed coordinate pullback,
-without using an induced point map before the descended isogeny exists. -/
+pullback is equivariant. -/
 theorem existsUnique_map_eq_iff_galoisEquivariant
     (φ : Isogeny (W₁⁄K).toAffine (W₂⁄K).toAffine) :
     (∃! ψ : Isogeny W₁.toAffine W₂.toAffine, ψ.map (algebraMap F K) = φ) ↔
