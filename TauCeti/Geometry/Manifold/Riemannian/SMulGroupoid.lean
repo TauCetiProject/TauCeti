@@ -87,6 +87,7 @@ def chartRiemannianMetric :
 
 /-- At `x`, the metric read through the charts is the metric of `X` pulled back along the
 derivative of the preferred chart at `x`. -/
+@[simp]
 theorem chartRiemannianMetric_inner (x : M) :
     letI := ChartedSpace.comp H X M
     ∀ v w : TangentSpace I x, (chartRiemannianMetric I X M).inner x v w =
