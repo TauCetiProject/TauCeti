@@ -24,7 +24,9 @@ public section
 
 open scoped TensorProduct
 
-namespace ExteriorAlgebra
+namespace TauCeti.ExteriorAlgebra
+
+open _root_.ExteriorAlgebra
 
 variable {R : Type*} (A : Type*) {M : Type*}
 variable [CommRing R] [CommRing A] [Algebra R A] [AddCommGroup M] [Module R M]
@@ -153,4 +155,4 @@ theorem equivBaseChange_map {N : Type*} [AddCommGroup N] [Module R N]
     simp [equivBaseChange_ι]
   exact AlgHom.congr_fun h x
 
-end ExteriorAlgebra
+end TauCeti.ExteriorAlgebra
