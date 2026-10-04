@@ -10,11 +10,10 @@ public import Mathlib.Algebra.Category.ModuleCat.Ext.HasExt
 public import Mathlib.Algebra.Homology.AlternatingConst
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
-public import Mathlib.RingTheory.Artinian.Module
 public import Mathlib.RingTheory.DualNumber
 public import Mathlib.RingTheory.SimpleModule.Basic
+public import TauCeti.Algebra.DualNumber.Basic
 public import TauCeti.Algebra.Homology.Ext.ProjectiveResolution
-import TauCeti.Algebra.DualNumber.Basic
 
 /-!
 # `Extⁿ` over the dual numbers is free of rank one in every degree
@@ -51,10 +50,6 @@ zero, because `ε` annihilates `S`. Hence `Extⁿ_A(S, S) ≅ k` as a `k`-module
 open CategoryTheory CategoryTheory.Abelian CategoryTheory.Limits TrivSqZeroExt DualNumber
 
 open scoped ModuleCat.Algebra
-
--- Provenance: the periodic resolution `⋯ ⟶ A --ε--> A --ε--> A ⟶ S ⟶ 0` and the computation
--- `Extⁿ_A(S, S) ≅ k` formalised below are written down in the Tau Ceti
--- `GrothendieckEulerForms` roadmap blueprint, `README.md`, section "The dual numbers".
 
 public section
 
@@ -198,14 +193,13 @@ theorem dualNumberProj_surjective : Function.Surjective (dualNumberProj k).hom :
   obtain ⟨y, hy⟩ := TrivSqZeroExt.fst_surjective (R := k) (M := k) (dualNumberResidueEquiv k x)
   exact ⟨y, (dualNumberResidueEquiv k).injective (by rw [dualNumberProj_apply]; exact hy)⟩
 
+/-- The residue module `k[ε]/(ε)` is a finitely generated `k[ε]`-module. -/
+instance : Module.Finite (DualNumber k) (dualNumberResidue k) :=
+  .of_surjective _ (dualNumberProj_surjective k)
+
 section Field
 
 variable (F : Type u) [Field F]
-
-/-- The dual numbers over a field are an Artinian ring, being a two-dimensional algebra. -/
-instance : IsArtinianRing (DualNumber F) :=
-  have : Module.Finite F (DualNumber F) := inferInstanceAs (Module.Finite F (F × F))
-  IsArtinianRing.of_finite F _
 
 /-- The kernel of the quotient map `F[ε] ↠ F[ε]/(ε)` is the maximal ideal of `F[ε]`. -/
 @[simp]
@@ -225,10 +219,6 @@ private noncomputable def quotMaximalIdealEquivDualNumberResidue :
       dualNumberResidue F :=
   (Submodule.quotEquivOfEq _ _ (ker_dualNumberProj F).symm).trans
     ((dualNumberProj F).hom.quotKerEquivOfSurjective (dualNumberProj_surjective F))
-
-/-- The residue module `F[ε]/(ε)` is a finitely generated `F[ε]`-module. -/
-instance : Module.Finite (DualNumber F) (dualNumberResidue F) :=
-  .of_surjective _ (dualNumberProj_surjective F)
 
 /-- The residue module `F[ε]/(ε)` is a simple `F[ε]`-module. -/
 instance : IsSimpleModule (DualNumber F) (dualNumberResidue F) :=
