@@ -98,7 +98,7 @@ noncomputable def borelMulEquiv :
       (LieSubalgebra.equivOfLe (le_borelSubalgebra H b))).toLinearEquiv
     (UniversalEnvelopingAlgebra.mapEquiv K
       (LieSubalgebra.equivOfLe (positiveNilradical_le_borelSubalgebra H b))).toLinearEquiv).trans
-    (UniversalEnvelopingAlgebra.mulEquiv _ _ (isCompl_cartan_positiveNilradical_ofLe H b))
+    (LieSubalgebra.mulEquiv _ _ (isCompl_cartan_positiveNilradical_ofLe H b))
 
 /-- The Borel decomposition sends a pure tensor to the ordered product of its two images. -/
 @[simp]
@@ -114,7 +114,7 @@ theorem borelMulEquiv_tmul (h : U H) (n : U (positiveNilradical H b)) :
     rw [UniversalEnvelopingAlgebra.mapEquiv_toAlgHom, ← UniversalEnvelopingAlgebra.map_comp]
     congr 1
   simp only [borelMulEquiv, LinearEquiv.trans_apply, TensorProduct.congr_tmul,
-    UniversalEnvelopingAlgebra.mulEquiv_tmul, AlgEquiv.toLinearEquiv_apply]
+    LieSubalgebra.mulEquiv_tmul, AlgEquiv.toLinearEquiv_apply]
   exact congrArg₂ (· * ·) (AlgHom.congr_fun (hc H _) h)
     (AlgHom.congr_fun (hc (positiveNilradical H b) _) n)
 

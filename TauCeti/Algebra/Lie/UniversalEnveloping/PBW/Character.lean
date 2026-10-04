@@ -77,7 +77,7 @@ variable (χ : LieCharacter R B)
 /-- The linear form on `U(L)` reading off the coefficient of the empty complement monomial in the
 free right `U(B)`-module structure, and applying the character `χ` to it. -/
 private noncomputable def characterForm : U →ₗ[R] R :=
-  (relativePBWBasis B hA bA bB).constr R fun n ↦
+  (B.relativePBWBasis hA bA bB).constr R fun n ↦
     if n.1 = 0 then
       _root_.UniversalEnvelopingAlgebra.lift R χ (bB.pbwBasis n.2)
     else 0
@@ -91,7 +91,8 @@ private theorem _root_.UniversalEnvelopingAlgebra.characterForm_complementMonomi
     (f₂ := if α = 0 then (_root_.UniversalEnvelopingAlgebra.lift R χ).toLinearMap else 0)
     fun β ↦ by
       simp only [LinearMap.comp_apply, AlgHom.toLinearMap_apply, LinearMap.mulLeft_apply]
-      rw [complementMonomial, ← relativePBWBasis_apply B hA, characterForm, Basis.constr_basis]
+      rw [complementMonomial, ← LieSubalgebra.relativePBWBasis_apply B hA, characterForm,
+        Basis.constr_basis]
       split_ifs <;> simp
   have hy := LinearMap.congr_fun hlin y
   split_ifs at hy ⊢ <;> simpa using hy
@@ -101,12 +102,12 @@ private theorem _root_.UniversalEnvelopingAlgebra.characterForm_mul_map (u : U)
     (r : _root_.UniversalEnvelopingAlgebra R B) :
     characterForm B hA bA bB χ (u * map R B.incl r) =
       characterForm B hA bA bB χ u * _root_.UniversalEnvelopingAlgebra.lift R χ r := by
-  have hlin := (relativePBWBasis B hA bA bB).ext
+  have hlin := (B.relativePBWBasis hA bA bB).ext
     (f₁ := characterForm B hA bA bB χ ∘ₗ LinearMap.mulRight R (map R B.incl r))
     (f₂ := _root_.UniversalEnvelopingAlgebra.lift R χ r • characterForm B hA bA bB χ)
     fun n ↦ by
       rcases n with ⟨α, β⟩
-      rw [relativePBWBasis_apply, ← complementMonomial]
+      rw [LieSubalgebra.relativePBWBasis_apply, ← complementMonomial]
       simp only [LinearMap.comp_apply, LinearMap.mulRight_apply, LinearMap.smul_apply,
         mul_assoc, ← map_mul,
         _root_.UniversalEnvelopingAlgebra.characterForm_complementMonomial_mul, smul_eq_mul]

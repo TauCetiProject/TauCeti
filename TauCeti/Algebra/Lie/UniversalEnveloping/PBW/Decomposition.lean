@@ -33,15 +33,10 @@ public section
 namespace TauCeti.UniversalEnvelopingAlgebra
 
 open LieAlgebra Module
-open scoped TensorProduct
-
-attribute [local instance 100] LieRing.ofAssociativeRing
 
 universe u v w₁ w₂
 
 variable {R : Type u} {L : Type v} [CommRing R] [LieRing L] [LieAlgebra R L]
-
-local notation "U" => _root_.UniversalEnvelopingAlgebra R L
 
 section Adapted
 
@@ -81,7 +76,28 @@ private theorem sumExponentEquiv_apply (α : ιA →₀ ℕ) (β : ιB →₀ �
       Finsupp.mapDomain_apply_of_injective (f := Sum.inrₗ (α := ιA))
         (toLex.injective.comp Sum.inr_injective) β j]
 
-variable [LinearOrder ιA] [LinearOrder ιB]
+end Adapted
+
+end TauCeti.UniversalEnvelopingAlgebra
+
+namespace LieSubalgebra
+
+open LieAlgebra Module TauCeti TauCeti.UniversalEnvelopingAlgebra
+open scoped TensorProduct
+
+attribute [local instance 100] LieRing.ofAssociativeRing
+
+universe u v w₁ w₂
+
+variable {R : Type u} {L : Type v} [CommRing R] [LieRing L] [LieAlgebra R L]
+
+local notation "U" => UniversalEnvelopingAlgebra R L
+
+section Adapted
+
+variable (B : LieSubalgebra R L) {A : Submodule R L} (hA : IsCompl A (B : Submodule R L))
+  {ιA : Type w₁} {ιB : Type w₂} (bA : Basis ιA R A) (bB : Basis ιB R B)
+  [LinearOrder ιA] [LinearOrder ιB]
 
 /-- The PBW basis indexed separately by the exponents on a complement and on the subalgebra.
 Its values are the products described by `relativePBWBasis_apply`. -/
@@ -94,7 +110,7 @@ theorem relativePBWBasis_apply
     (α : ιA →₀ ℕ) (β : ιB →₀ ℕ) :
     relativePBWBasis B hA bA bB (α, β) =
       pbwMonomial R L (fun i ↦ (bA i : L)) (α.toMultiset.sort (· ≤ ·)) *
-        map R B.incl (bB.pbwBasis β) := by
+        UniversalEnvelopingAlgebra.map R B.incl (bB.pbwBasis β) := by
   -- The exponent vector of `(α, β)` is the sum of the two halves, pushed into `ιA ⊕ₗ ιB`.
   have hexp : (sumExponentEquiv (α, β)).toMultiset =
       α.toMultiset.map Sum.inlₗ + β.toMultiset.map Sum.inrₗ := by
@@ -121,21 +137,6 @@ theorem relativePBWBasis_apply
 
 end Adapted
 
-end TauCeti.UniversalEnvelopingAlgebra
-
-namespace UniversalEnvelopingAlgebra
-
-open LieAlgebra Module TauCeti.UniversalEnvelopingAlgebra
-open scoped TensorProduct
-
-attribute [local instance 100] LieRing.ofAssociativeRing
-
-universe u v w₁ w₂
-
-variable {R : Type u} {L : Type v} [CommRing R] [LieRing L] [LieAlgebra R L]
-
-local notation "U" => UniversalEnvelopingAlgebra R L
-
 section Subalgebras
 
 variable (A B : LieSubalgebra R L)
@@ -144,13 +145,15 @@ variable (A B : LieSubalgebra R L)
 noncomputable def mulMap :
     UniversalEnvelopingAlgebra R A ⊗[R] UniversalEnvelopingAlgebra R B →ₗ[R] U :=
   (TensorProduct.lift (LinearMap.mul R U)).comp
-    (TensorProduct.map (map R A.incl).toLinearMap (map R B.incl).toLinearMap)
+    (TensorProduct.map (UniversalEnvelopingAlgebra.map R A.incl).toLinearMap
+      (UniversalEnvelopingAlgebra.map R B.incl).toLinearMap)
 
 /-- On pure tensors the multiplication map is multiplication in the ambient algebra. -/
 @[simp]
 theorem mulMap_tmul (a : UniversalEnvelopingAlgebra R A)
     (b : UniversalEnvelopingAlgebra R B) :
-    mulMap A B (a ⊗ₜ b) = map R A.incl a * map R B.incl b := by
+    mulMap A B (a ⊗ₜ b) =
+      UniversalEnvelopingAlgebra.map R A.incl a * UniversalEnvelopingAlgebra.map R B.incl b := by
   simp [mulMap]
 
 private theorem mulMap_bijective_of_basis
@@ -188,7 +191,8 @@ noncomputable def mulEquiv (h : IsCompl (A : Submodule R L) (B : Submodule R L))
 theorem mulEquiv_tmul (h : IsCompl (A : Submodule R L) (B : Submodule R L))
     [Module.Free R A] [Module.Free R B] (a : UniversalEnvelopingAlgebra R A)
     (b : UniversalEnvelopingAlgebra R B) :
-    mulEquiv A B h (a ⊗ₜ b) = map R A.incl a * map R B.incl b :=
+    mulEquiv A B h (a ⊗ₜ b) =
+      UniversalEnvelopingAlgebra.map R A.incl a * UniversalEnvelopingAlgebra.map R B.incl b :=
   mulMap_tmul A B a b
 
 /-- The inverse relative PBW equivalence recovers the tensor factors of a product. -/
@@ -196,9 +200,11 @@ theorem mulEquiv_tmul (h : IsCompl (A : Submodule R L) (B : Submodule R L))
 theorem mulEquiv_symm_mul (h : IsCompl (A : Submodule R L) (B : Submodule R L))
     [Module.Free R A] [Module.Free R B] (a : UniversalEnvelopingAlgebra R A)
     (b : UniversalEnvelopingAlgebra R B) :
-    (mulEquiv A B h).symm (map R A.incl a * map R B.incl b) = a ⊗ₜ b := by
+    (mulEquiv A B h).symm
+        (UniversalEnvelopingAlgebra.map R A.incl a * UniversalEnvelopingAlgebra.map R B.incl b) =
+      a ⊗ₜ b := by
   rw [← mulEquiv_tmul A B h, LinearEquiv.symm_apply_apply]
 
 end Subalgebras
 
-end UniversalEnvelopingAlgebra
+end LieSubalgebra
