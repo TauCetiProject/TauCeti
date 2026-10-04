@@ -18,13 +18,13 @@ normalized valuation. The valuation modulo two descends to a surjective homomorp
 classes, with this image as its kernel. Consequently the unit square classes have index two,
 including in residue characteristic two.
 
-This subgroup describes the almost-everywhere reference images of integral special orthogonal
-groups in restricted products of local square-class groups. Its index distinguishes it from the
-whole square-class group; a uniformizer never belongs to it. The construction is independent of a
-uniformizer, although a uniformizer gives a splitting of the valuation homomorphism.
+This subgroup is the intended comparison target for the almost-everywhere reference images of
+the standard integral special orthogonal family in dimension at least three. Its index
+distinguishes it from the whole square-class group; a uniformizer never belongs to it. The
+construction is independent of a uniformizer, although a uniformizer gives a splitting of the
+valuation homomorphism.
 
-The local-field valuation, unit decomposition, square-class counts, and openness of the squares
-are consumed from the existing local-field theory. All groups use their canonical topologies.
+All groups use their canonical topologies.
 
 ## References
 
@@ -137,26 +137,32 @@ theorem unitSquareClasses_ne_top : unitSquareClasses K ≠ ⊤ := by
   have := unitSquareClasses_index K
   simp [h] at this
 
-/-- When two is nonzero, the local square-class quotient is discrete, since the squares are open.
-This theorem applies to the literal quotient, with its quotient topology. -/
-theorem discreteTopology_localSquareClasses (h2 : (2 : K) ≠ 0) :
-    DiscreteTopology (Kˣ ⧸ Subgroup.square Kˣ) := by
-  apply QuotientGroup.discreteTopology
-  rw [square_eq_range_powMonoidHom]
-  exact isOpen_range_powMonoidHom h2
-
 /-- The unit square classes are open in the local square-class quotient. -/
 theorem isOpen_unitSquareClasses (h2 : (2 : K) ≠ 0) :
     IsOpen (unitSquareClasses K : Set (Kˣ ⧸ Subgroup.square Kˣ)) := by
   let := discreteTopology_localSquareClasses K h2
   exact isOpen_discrete _
 
+/-- When two is nonzero, the number of unit square classes is twice the residue-field
+cardinality raised to the normalized valuation of two. -/
+theorem card_unitSquareClasses (h2 : (2 : K) ≠ 0) :
+    Nat.card (unitSquareClasses K) = 2 * Nat.card 𝓀[K] ^ natCastValuation K 2 h2 := by
+  have h := (unitSquareClasses K).card_mul_index
+  rw [unitSquareClasses_index, card_squareClass h2] at h
+  omega
+
 /-- Away from residue characteristic two, there are two unit square classes. -/
 theorem card_unitSquareClasses_of_isUnit_two (h2 : IsUnit (2 : 𝒪[K])) :
     Nat.card (unitSquareClasses K) = 2 := by
-  have h := (unitSquareClasses K).card_mul_index
-  rw [unitSquareClasses_index, card_squareClass_of_odd h2] at h
-  omega
+  rw [card_unitSquareClasses K (two_ne_zero_of_isUnit_two h2),
+    natCastValuation_eq_zero_of_isUnit K _ (by exact_mod_cast h2), pow_zero, mul_one]
+
+/-- A finite compatible extension of `ℚ₂` has `2 · #𝓀[K] ^ e(K/ℚ₂)` unit square classes. -/
+theorem card_unitSquareClasses_dyadic [FinitePadicExtension K 2] :
+    Nat.card (unitSquareClasses K) =
+      2 * Nat.card 𝓀[K] ^ absoluteRamificationIndex K 2 := by
+  rw [absoluteRamificationIndex_eq_natCastValuation]
+  exact card_unitSquareClasses K _
 
 section Padic
 
@@ -193,10 +199,8 @@ end Padic
 
 /-- The dyadic field `ℚ₂` has four unit square classes, rather than two. -/
 theorem card_unitSquareClasses_padic_two : Nat.card (unitSquareClasses ℚ_[2]) = 4 := by
-  have h := (unitSquareClasses ℚ_[2]).card_mul_index
-  rw [unitSquareClasses_index, card_squareClass_dyadic, Padic.natCard_residueField,
-    absoluteRamificationIndex_padic] at h
-  norm_num at h ⊢
-  omega
+  rw [card_unitSquareClasses_dyadic, Padic.natCard_residueField,
+    absoluteRamificationIndex_padic]
+  norm_num
 
 end TauCeti
