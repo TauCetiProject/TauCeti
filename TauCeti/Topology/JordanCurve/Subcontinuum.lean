@@ -58,7 +58,7 @@ statements below, `TauCeti.IsJordanCurve.isPathConnected_sdiff` is a strict gene
 
 The path from here to that target is one step, and it is a reduction. A boundary cluster set of a
 conformal map is already known in this repository to be a *continuum contained in the image
-boundary* (`TauCeti.isConnected_clusterSetOn_of_convex_of_isBounded` together with
+boundary* (`Convex.isConnected_clusterSetOn_of_isBounded` together with
 `TauCeti.clusterSetOn_subset_frontier_image`), so for a Jordan domain it is a compact connected
 subset of a Jordan curve — and until this file nothing said what such a set can be. The results
 here say it: a point, an arc, or the whole curve —
