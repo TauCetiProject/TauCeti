@@ -78,6 +78,7 @@ local instance : Module.Flat k H := by
 
 /-- The exterior image of a finite-dimensional subrepresentation has the expected
 binomial dimension. -/
+@[simp]
 theorem finrank_exteriorPowerImage (W : Subcomodule k H M)
     [Module.Finite k W.toSubmodule] (n : ℕ) :
     Module.finrank k (W.exteriorPowerImage n).toSubmodule =
@@ -87,7 +88,6 @@ theorem finrank_exteriorPowerImage (W : Subcomodule k H M)
       W.toSubmodule.injective_subtype), _root_.exteriorPower.finrank_eq]
 
 /-- The top exterior image of a finite-dimensional subrepresentation is a line. -/
-@[simp]
 theorem finrank_exteriorPowerImage_finrank (W : Subcomodule k H M)
     [Module.Finite k W.toSubmodule] :
     Module.finrank k (W.exteriorPowerImage (Module.finrank k W.toSubmodule)).toSubmodule = 1 := by

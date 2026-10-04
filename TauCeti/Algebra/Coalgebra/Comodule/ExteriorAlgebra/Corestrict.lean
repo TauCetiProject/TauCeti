@@ -6,7 +6,6 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.Coalgebra.Comodule.ExteriorAlgebra.Power
-public import TauCeti.Algebra.Coalgebra.Comodule.Corestrict
 
 /-!
 # Exterior comodules and restriction of representations
