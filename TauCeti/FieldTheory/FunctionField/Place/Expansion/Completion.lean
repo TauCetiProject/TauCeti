@@ -58,13 +58,8 @@ private theorem expansionPartialSum_cauchy (f : PowerSeries k) :
     CauchySeq (P.expansionPartialSum (t := t) f) := by
   apply (Valued.hasBasis_uniformity P.Completion ℤᵐ⁰).cauchySeq_iff.mpr
   intro γ _
-  let r : ℤᵐ⁰ := MonoidWithZeroHom.ValueGroup₀.embedding γ.val
-  have hr : r ≠ 0 := by simp [r]
-  let n := (-WithZero.log r).toNat + 1
-  have hn : WithZero.exp (-(n : ℤ)) < r := by
-    rw [← WithZero.exp_log hr, WithZero.exp_lt_exp]
-    dsimp [n]
-    omega
+  obtain ⟨n, hn⟩ := WithZero.exists_exp_neg_natCast_lt
+    (MonoidWithZeroHom.ValueGroup₀.embedding_unit_ne_zero γ)
   refine ⟨n, fun m hm l hl ↦ ?_⟩
   have hdiff : P.expansionPartialSum (t := t) f l -
       P.expansionPartialSum (t := t) f m ∈ P.completionPlace.filtration n := by
@@ -206,13 +201,8 @@ theorem continuous_completionIntegersEquivPowerSeries_symm :
   apply tendsto_iff_forall_eventually_mem.mpr
   intro U hU
   obtain ⟨γ, hγ⟩ := Valued.mem_nhds.mp hU
-  let r : ℤᵐ⁰ := MonoidWithZeroHom.ValueGroup₀.embedding γ.val
-  have hr : r ≠ 0 := by simp [r]
-  let n := (-WithZero.log r).toNat + 1
-  have hn : WithZero.exp (-(n : ℤ)) < r := by
-    rw [← WithZero.exp_log hr, WithZero.exp_lt_exp]
-    dsimp [n]
-    omega
+  obtain ⟨n, hn⟩ := WithZero.exists_exp_neg_natCast_lt
+    (MonoidWithZeroHom.ValueGroup₀.embedding_unit_ne_zero γ)
   have hc : ∀ᶠ g in 𝓝 f, ∀ i : Fin n,
       PowerSeries.coeff i g = PowerSeries.coeff i f := by
     apply Filter.eventually_all.mpr
@@ -231,7 +221,7 @@ theorem continuous_completionIntegersEquivPowerSeries_symm :
     ((P.completionIntegersEquivPowerSeries hP ht).symm f)).mpr (fun i hi ↦ by
       simpa only [← P.completionIntegersEquivPowerSeries_apply hP ht,
         AlgEquiv.apply_symm_apply] using hg ⟨i, hi⟩)
-  simpa only [completionPlace_valuation, Function.comp_apply, r] using
+  simpa only [completionPlace_valuation, Function.comp_apply] using
     (P.completionPlace.mem_filtration_iff.mp hmem).trans_lt hn
 
 /-- The completed valuation ring at a rational place is topologically `k[[T]]`, with `k`

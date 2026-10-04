@@ -376,6 +376,22 @@ theorem truncatedExpansion_castSucc (hP : P.degree = 1) (ht : P.ord t = 1)
     (by convert hlow using 1; ring)
   exact (congrFun heq i).symm
 
+/-- Increasing the truncation length preserves the coefficients at all indices of the
+shorter expansion. -/
+@[simp]
+theorem truncatedExpansion_castLE (hP : P.degree = 1) (ht : P.ord t = 1)
+    {n m : ℕ} (hnm : n ≤ m)
+    (x : P.integers) (i : Fin n) :
+    P.truncatedExpansion hP ht m x (i.castLE hnm) = P.truncatedExpansion hP ht n x i := by
+  induction m, hnm using Nat.le_induction with
+  | base => rfl
+  | succ m hnm ih =>
+    -- Both casts preserve the underlying natural index; expose the successor cast so the
+    -- finite-expansion compatibility lemma applies.
+    rw [show i.castLE (Nat.le_succ_of_le hnm) = (i.castLE hnm).castSucc from rfl,
+      P.truncatedExpansion_castSucc hP ht]
+    exact ih
+
 /-- Two integral functions have the same length-`n` coefficient vector exactly when they
 agree modulo the `n`-th order filtration. Thus coefficient extraction descends to finite
 jets, with no choices of representatives visible in the coefficients. -/

@@ -31,18 +31,6 @@ namespace TauCeti.Place
 variable {k F : Type*} [Field k] [Field F] [Algebra k F]
 variable (P : Place k F) {t : F} (hP : P.degree = 1) (ht : P.ord t = 1)
 
-private theorem truncatedExpansion_castLE {n m : ℕ} (hnm : n ≤ m)
-    (x : P.integers) (i : Fin n) :
-    P.truncatedExpansion hP ht m x (i.castLE hnm) = P.truncatedExpansion hP ht n x i := by
-  induction m, hnm using Nat.le_induction with
-  | base => rfl
-  | succ m hnm ih =>
-    -- Both casts preserve the underlying natural index; expose the successor cast so the
-    -- finite-expansion compatibility lemma applies.
-    rw [show i.castLE (Nat.le_succ_of_le hnm) = (i.castLE hnm).castSucc from rfl,
-      P.truncatedExpansion_castSucc hP ht]
-    exact ih
-
 /-- The uniformizer expansion of an integral function at a rational place, assembled from
 its compatible finite coefficient vectors. -/
 noncomputable def powerSeriesExpansion : P.integers →ₐ[k] PowerSeries k where
