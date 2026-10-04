@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.Prod.Lex
-public import Mathlib.Logic.Relation
+import Mathlib.Data.Prod.Lex
 public import TauCeti.MeasureTheory.OptimalTransport.Finite.Monotone
 
 /-!
@@ -18,9 +17,11 @@ processes corners in row-major order. At a fixed corner, every transfer removes 
 entry from its row to the right or its column below, without creating another such entry.
 Once that corner is settled, subsequent corners preserve it.
 
-This proves termination of this pivot strategy for arbitrary real masses. It makes no
-termination claim for arbitrary choices of crossing pairs. Every transfer decreases any
-Monge cost weakly, so the finite sequence also gives a cost comparison with its endpoint.
+This proves termination of this pivot strategy for arbitrary nonnegative real probability
+masses. It makes no termination claim for arbitrary choices of crossing pairs. Every transfer
+decreases any Monge cost weakly, so the finite sequence also gives a cost comparison with its
+endpoint. The main result is `TransportMatrix.exists_uncrossSteps_isMonotone`; the uncrossing
+relation and its cost comparison lemmas are defined in `Uncrossing.Basic`.
 -/
 
 public section
@@ -30,57 +31,6 @@ noncomputable section
 namespace TauCeti.TransportMatrix
 
 variable {ι κ : Type*} [Fintype ι] [Fintype κ] {μ : PMF ι} {ν : PMF κ}
-
-section Step
-
-variable [LT ι] [LT κ]
-
-/-- One uncrossing step transfers the smaller of two strictly positive crossing masses to
-the two uncrossed cells. -/
-def UncrossStep (A B : TransportMatrix μ ν) : Prop :=
-  (open Classical in ∃ (i₁ i₂ : ι) (j₁ j₂ : κ) (δ : ℝ), i₁ < i₂ ∧ j₁ < j₂ ∧ 0 < δ ∧
-    δ = min (A.toRealFun (i₁, j₂)) (A.toRealFun (i₂, j₁)) ∧
-    (open Classical in ∀ q, B.toRealFun q = A.toRealFun q +
-      δ * (Pi.single (M := fun _ : ι × κ ↦ ℝ) (i₁, j₁) (1 : ℝ) q +
-        Pi.single (M := fun _ : ι × κ ↦ ℝ) (i₂, j₂) (1 : ℝ) q -
-        Pi.single (M := fun _ : ι × κ ↦ ℝ) (i₁, j₂) (1 : ℝ) q -
-        Pi.single (M := fun _ : ι × κ ↦ ℝ) (i₂, j₁) (1 : ℝ) q)))
-
-/-- The crossing witnesses and exact four-cell formula characterizing an uncrossing step. -/
-theorem uncrossStep_iff (A B : TransportMatrix μ ν) :
-    A.UncrossStep B ↔ (open Classical in
-      ∃ (i₁ i₂ : ι) (j₁ j₂ : κ) (δ : ℝ), i₁ < i₂ ∧ j₁ < j₂ ∧ 0 < δ ∧
-    δ = min (A.toRealFun (i₁, j₂)) (A.toRealFun (i₂, j₁)) ∧
-    (open Classical in ∀ q, B.toRealFun q = A.toRealFun q +
-      δ * (Pi.single (M := fun _ : ι × κ ↦ ℝ) (i₁, j₁) (1 : ℝ) q +
-        Pi.single (M := fun _ : ι × κ ↦ ℝ) (i₂, j₂) (1 : ℝ) q -
-        Pi.single (M := fun _ : ι × κ ↦ ℝ) (i₁, j₂) (1 : ℝ) q -
-        Pi.single (M := fun _ : ι × κ ↦ ℝ) (i₂, j₁) (1 : ℝ) q))) := (Iff.rfl)
-
-/-- Each uncrossing step weakly decreases every Monge cost. -/
-theorem UncrossStep.cost_le {A B : TransportMatrix μ ν} (h : A.UncrossStep B)
-    (c : ι × κ → ℝ)
-    (hc : ∀ ⦃i₁ i₂ : ι⦄ ⦃j₁ j₂ : κ⦄, i₁ < i₂ → j₁ < j₂ →
-      c (i₁, j₁) + c (i₂, j₂) ≤ c (i₁, j₂) + c (i₂, j₁)) :
-    B.cost c ≤ A.cost c := by
-  classical
-  obtain ⟨i₁, i₂, j₁, j₂, δ, hi, hj, hδ, -, hB⟩ := h
-  rw [A.cost_eq_of_uncross_update B c δ i₁ i₂ j₁ j₂ hB]
-  have hcross : c (i₁, j₁) + c (i₂, j₂) - c (i₁, j₂) - c (i₂, j₁) ≤ 0 := by
-    linarith [hc hi hj]
-  linarith [mul_nonpos_of_nonneg_of_nonpos hδ.le hcross]
-
-/-- A finite sequence of uncrossing steps weakly decreases every Monge cost. -/
-theorem cost_le_of_uncrossSteps {A B : TransportMatrix μ ν}
-    (h : Relation.ReflTransGen UncrossStep A B) (c : ι × κ → ℝ)
-    (hc : ∀ ⦃i₁ i₂ : ι⦄ ⦃j₁ j₂ : κ⦄, i₁ < i₂ → j₁ < j₂ →
-      c (i₁, j₁) + c (i₂, j₂) ≤ c (i₁, j₂) + c (i₂, j₁)) :
-    B.cost c ≤ A.cost c := by
-  induction h with
-  | refl => exact le_rfl
-  | tail h hstep ih => exact (hstep.cost_le c hc).trans ih
-
-end Step
 
 variable [LinearOrder ι] [LinearOrder κ]
 
@@ -111,7 +61,9 @@ private theorem exists_pivot_step (A : TransportMatrix μ ν) (q : ι × κ)
   obtain ⟨B, δ, hδ0, hδ, hB, -, -, hz, -⟩ :=
     A.exists_uncross_cost_le (fun _ ↦ 0) hi.ne hj.ne (by simp)
   have hδpos : 0 < δ := hδ ▸ lt_min hrow hcol
-  have hstep : A.UncrossStep B := ⟨a, i, b, j, δ, hi, hj, hδpos, hδ, hB⟩
+  have hstep : A.UncrossStep B := by
+    rw [uncrossStep_iff]
+    exact ⟨a, i, b, j, δ, hi, hj, hδpos, hδ, hB⟩
   -- The two arms acquire no new positive entries, and at least one source is emptied.
   have harm (p : ι × κ)
       (hp : p.1 = a ∧ b < p.2 ∨ a < p.1 ∧ p.2 = b) :
