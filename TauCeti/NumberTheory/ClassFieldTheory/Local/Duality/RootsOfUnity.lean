@@ -14,8 +14,9 @@ public import TauCeti.NumberTheory.ClassFieldTheory.Local.Symbol
 A primitive `n`th root of unity in a field `F` identifies `μₙ` with its Tate dual
 `Hom(μₙ, μₙ)`: the root with coordinate `c` acts by multiplication by `c`. This is an
 isomorphism of Galois coefficient objects, and evaluation along it is precisely the named
-Kummer coefficient pairing. Consequently the Hilbert pairing is the degree `(1, 1)`
-Tate-duality pairing under this coefficient isomorphism.
+Kummer coefficient pairing. Consequently the chosen-root local-symbol pairing is the degree
+`(1, 1)` Tate-duality pairing under this coefficient isomorphism. For a local field with its
+local invariant, this specializes to the Hilbert pairing.
 
 This comparison relates the degree `(1, 1)` cyclic-coefficient case of local Tate duality
 to nondegeneracy of the Hilbert pairing. The coefficient isomorphism itself is valid over any
@@ -69,7 +70,7 @@ theorem tateDualEquiv_muNRepToTateDual_apply (x y : (muNRep n F).V) :
   rw [hmap, AddEquiv.apply_symm_apply, LinearMap.toAddMonoidHom_coe]
 
 /-- The chosen-root map identifies `μₙ` with its Tate dual. -/
-theorem bijective_muNRepToTateDual : Function.Bijective (muNRepToTateDual ζ hζ).hom := by
+theorem muNRepToTateDual_bijective : Function.Bijective (muNRepToTateDual ζ hζ).hom := by
   let e := (muNRepEquivTrivialFp n F hζ).trans (trivialFpEquiv n _).toAddEquiv
   have hpair (c : ZMod n) (y : (muNRep n F).V) :
       (kummerCupPairing ζ hζ).bil (e.symm c) y = c • y :=
@@ -94,7 +95,7 @@ theorem bijective_muNRepToTateDual : Function.Bijective (muNRepToTateDual ζ hζ
 def muNRepIsoTateDual : muNRep n F ≅ tateDual (muNRep n F) :=
   let e := LinearEquiv.ofBijective
     (muNRepToTateDual ζ hζ).hom.toContinuousLinearMap.toLinearMap
-    (bijective_muNRepToTateDual ζ hζ)
+    (muNRepToTateDual_bijective ζ hζ)
   { hom := muNRepToTateDual ζ hζ
     inv := ConcreteCategory.ofHom
       ⟨⟨e.symm.toLinearMap, continuous_of_discreteTopology⟩,
@@ -130,7 +131,8 @@ theorem muNRepIsoTateDual_inv_apply (φ : (tateDual (muNRep n F)).V) :
   simpa only [tateDualEquiv_muNRepToTateDual_apply, ha] using h
 
 /-- The degree `(1, 1)` Tate-duality pairing, read through the chosen-root coefficient
-isomorphism, is the cohomological Hilbert pairing. -/
+isomorphism, is the chosen-root local-symbol pairing for the identification `tr`.
+For a local field with `tr` its local invariant, this is the cohomological Hilbert pairing. -/
 theorem tateDualityPairing_muNRepToTateDual
     (tr : _root_.continuousCohomology.{0, u, u} 2 (muNRep n F) ≃+ ZMod n)
     (x y : _root_.continuousCohomology.{0, u, u} 1 (muNRep n F)) :
