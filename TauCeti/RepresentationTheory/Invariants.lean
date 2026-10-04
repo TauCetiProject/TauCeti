@@ -125,12 +125,6 @@ private theorem norm_leftRegular_single_coeff_one {x : MonoidAlgebra k G}
     simpa using h.symm
   simp [norm, hcoeff]
 
-omit [Fintype G] in
-private theorem single_one_smul_eq_leftRegular (g : G) (x : MonoidAlgebra k G) :
-    MonoidAlgebra.single g (1 : k) • x = leftRegular k G g x := by
-  ext h
-  simp [coeff_ofMulAction, MonoidAlgebra.coeff_single_mul_apply]
-
 /-- The norm maps onto the invariants of a direct sum of left regular representations. -/
 private theorem range_norm_free_eq_invariants (ι : Type*) :
     LinearMap.range (ofModule' (k := k) (G := G) (ι →₀ MonoidAlgebra k G)).norm =
@@ -141,14 +135,14 @@ private theorem range_norm_free_eq_invariants (ι : Type*) :
   · rintro x hx
     have hxi (i : ι) : x i ∈ (leftRegular k G).invariants := fun g => by
       have h := DFunLike.congr_fun (hx g) i
-      rwa [TauCeti.Representation.ofModule'_apply, Finsupp.smul_apply,
-        single_one_smul_eq_leftRegular] at h
+      rwa [TauCeti.Representation.ofModule'_apply, Finsupp.smul_apply, smul_eq_mul,
+        ← asAlgebraHom_ofMulAction_smul_eq_mul, asAlgebraHom_single_one] at h
     refine ⟨Finsupp.mapRange (fun a => MonoidAlgebra.single 1 (a.coeff 1)) (by simp) x, ?_⟩
     ext i : 1
     rw [← norm_leftRegular_single_coeff_one (hxi i)]
     simp only [norm, LinearMap.sum_apply, Finsupp.finsetSum_apply,
       TauCeti.Representation.ofModule'_apply, Finsupp.smul_apply, Finsupp.mapRange_apply,
-      single_one_smul_eq_leftRegular]
+      smul_eq_mul, ← asAlgebraHom_ofMulAction_smul_eq_mul, asAlgebraHom_single_one]
 
 /-- **The norm maps onto the invariants of a projective representation.** Let `G` be finite over
 an arbitrary commutative ring `k`. If the `k[G]`-module underlying `ρ` is projective, then every
