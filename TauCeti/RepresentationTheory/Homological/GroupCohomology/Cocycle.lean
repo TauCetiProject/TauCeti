@@ -28,11 +28,13 @@ Facts about a `1`-cocycle `f : G → M` in the sense of Mathlib's unbundled
 
 * `TauCeti.isCocycle₁_ext_of_forall_mem_zpowers`: a one-cocycle on a cyclic group is
   determined by its value at a generator.
+* `TauCeti.groupNorm`: the sum of the scalar actions of a finite group, as an additive
+  homomorphism, with no topology or representation required.
 * `TauCeti.sum_smul_apply_eq_zero_of_isCocycle₁`: on a finite group, the group norm kills
   every value of a one-cocycle.
 
 Continuous cohomology uses the conjugation identity in the five-term sequence and in
-transgression, and the last two facts in the cyclic-group vanishing criterion.
+transgression, and the cyclic-group facts in the vanishing criterion.
 -/
 
 public section
@@ -87,23 +89,41 @@ namespace TauCeti
 
 open groupCohomology
 
-variable {G M : Type*} [Group G] [AddCommGroup M] [DistribMulAction G M]
+/-- The group norm, `m ↦ ∑ x, x • m`, as an additive homomorphism. It needs only a finite
+scalar type and distributive scalar multiplication on an additive commutative monoid. -/
+def groupNorm (G M : Type*) [Fintype G] [AddCommMonoid M] [DistribSMul G M] : M →+ M :=
+  ∑ x : G, DistribSMul.toAddMonoidHom M x
+
+/-- Applying the group norm sums the scalar translates of the argument. -/
+@[simp]
+theorem groupNorm_apply (G M : Type*) [Fintype G] [AddCommMonoid M] [DistribSMul G M]
+    (m : M) : groupNorm G M m = ∑ x : G, x • m := by
+  simp [groupNorm]
+
+variable {G M : Type*} [Group G] [AddCommGroup M] [MulAction G M]
 
 /-- Two one-cocycles on a cyclic group agree if they agree at a generator. No finiteness or
-continuity hypothesis is needed. -/
+continuity hypothesis is needed, and the action need not be distributive. -/
 theorem isCocycle₁_ext_of_forall_mem_zpowers {f f' : G → M} (g : G)
     (hg : ∀ x : G, x ∈ Subgroup.zpowers g) (hf : IsCocycle₁ f) (hf' : IsCocycle₁ f')
     (h : f g = f' g) : f = f' := by
-  have hsub : IsCocycle₁ (f - f') := by
-    intro x y
-    simp only [Pi.sub_apply, hf x y, hf' x y, smul_sub]
-    abel
-  have hle : Subgroup.zpowers g ≤ zeroLocus hsub :=
-    Subgroup.zpowers_le.mpr (by simpa using sub_eq_zero.mpr h)
+  let S : Subgroup G :=
+    { carrier := {x | f x = f' x}
+      one_mem' := (map_one_of_isCocycle₁ hf).trans (map_one_of_isCocycle₁ hf').symm
+      mul_mem' := by
+        intro x y hx hy
+        simp only [Set.mem_ofPred_eq] at hx hy ⊢
+        rw [hf x y, hf' x y, hx, hy]
+      inv_mem' := by
+        intro x hx
+        simp only [Set.mem_ofPred_eq] at hx ⊢
+        rw [← smul_left_cancel_iff x]
+        rw [map_inv_of_isCocycle₁ hf, map_inv_of_isCocycle₁ hf', hx] }
+  have hle : Subgroup.zpowers g ≤ S := Subgroup.zpowers_le.mpr h
   funext x
-  exact sub_eq_zero.mp ((mem_zeroLocus hsub).mp (hle (hg x)))
+  exact hle (hg x)
 
-omit [DistribMulAction G M] in
+omit [MulAction G M] in
 /-- The value of a one-cocycle on a finite group lies in the kernel of the group norm.
 This holds at every group element, not just at a cyclic generator. Even associativity and
 distributivity of the scalar multiplication are unnecessary for this identity. -/
