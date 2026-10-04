@@ -12,9 +12,10 @@ public import TauCeti.Algebra.Coalgebra.Subcomodule.Induced
 # Exterior images of subrepresentations
 
 The image of the exterior power of a subcomodule is a subcomodule of the ambient
-exterior power. Over a field, its top exterior image is a line. When the subcomodule
-is invariant only after restricting to a subgroup, this line still lies in the
-restriction of the ambient exterior representation.
+exterior power. Over a field, the image of the top exterior power of a finite-dimensional
+subcomodule `W` is a line in the ambient `n`th exterior power, where `n = finrank W`.
+When the subcomodule is invariant only after restricting to a subgroup, this line still
+lies in the restriction of the ambient `n`th exterior-power representation.
 
 This constructs the invariant line used in Chevalley's subspace-to-line passage,
 inside a finite-dimensional ambient representation whenever the original representation
@@ -99,8 +100,9 @@ local instance : Module.Flat k K := by
   infer_instance
 
 /-- A finite-dimensional subrepresentation of a restricted representation determines
-an invariant line in the restriction of the ambient top exterior representation.
-The carrier is the exterior-power image of the original subspace, with no basis choices. -/
+an invariant line in the restriction of the ambient `n`th exterior-power representation,
+where `n` is the dimension of the subrepresentation. The carrier is the image of its top
+exterior power, with no basis choices. -/
 theorem exists_line_corestrict_exteriorPower (f : H →ₐc[k] K) :
     letI : Comodule k K M := Comodule.Corestrict f.toCoalgHom
     ∀ W : Subcomodule k K M, Module.Finite k W.toSubmodule →
