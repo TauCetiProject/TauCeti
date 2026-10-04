@@ -17,10 +17,12 @@ import Mathlib.RingTheory.Finiteness.Descent
 For a homomorphism of groups of multiplicative type over a field, the geometric kernel
 has coordinate algebra the group algebra of the geometric character cokernel. In particular,
 the kernel over the original field is finite exactly when this cokernel is finite, and
-its coordinate algebra has dimension equal to the cokernel's cardinality. These statements
-apply to arbitrary homomorphisms, without an isogeny or smoothness hypothesis.
+the `Module.finrank` of its coordinate algebra equals the `Nat.card` of the cokernel.
+For a finite kernel, this is its dimension equal to the cokernel's cardinality; in the
+infinite case both quantities are zero. These statements apply to arbitrary homomorphisms,
+without an isogeny or smoothness hypothesis.
 
-The Hopf-algebra comparison retains the scheme structure of the kernel. Thus its rank
+The Hopf-algebra comparison retains the scheme structure of the kernel. Thus a finite kernel's rank
 counts infinitesimal structure as well as geometric points; for example, it gives rank `p`
 for the kernel `μ_p` of the `p`th power map in characteristic `p`.
 
@@ -47,9 +49,7 @@ variable {k : Type u} [Field k] {H K : FiniteTypeCommHopfAlgCat.{u, u} k}
 variable (hH : multiplicativeTypeCommHopfAlgProperty k H)
 variable (hK : multiplicativeTypeCommHopfAlgProperty k K) (f : H.obj ⟶ K.obj)
 
-/-- The geometric kernel comparison with an explicitly identified character map.
-Equality elimination normalizes the opaque geometric-character bridge without exposing
-its body or casting the entire isomorphism. -/
+/-- The geometric kernel comparison with an explicitly identified character map. -/
 private noncomputable def geometricKernelCoordinateIsoAux
     (p : CommHopfAlgCat.geometricCharacterGroup H.obj →*
       CommHopfAlgCat.geometricCharacterGroup K.obj)
@@ -130,7 +130,7 @@ theorem baseChangeMap_mkQuotient_comp_geometricKernelCoordinateIso_hom :
 include hH hK in
 /-- A homomorphism of multiplicative-type groups has finite scheme-theoretic kernel
 exactly when its geometric character map has finite cokernel. -/
-theorem moduleFinite_kernelCoordinate_iff_finite_geometricCharacterCokernel :
+theorem moduleFinite_kernelCoordinate_iff_finite_quotient :
     Module.Finite k (CommHopfAlgCat.quotient K.obj (CommHopfAlgCat.kernelHopfIdeal f)) ↔
       Finite (CommHopfAlgCat.geometricCharacterGroup K.obj ⧸
         (CommHopfAlgCat.geometricCharacterMap f).range) := by
@@ -153,9 +153,10 @@ theorem moduleFinite_kernelCoordinate_iff_finite_geometricCharacterCokernel :
     exact Module.Finite.of_finite_tensorProduct_of_faithfullyFlat L
 
 include hH hK in
-/-- The dimension of a multiplicative-type kernel's coordinate algebra over the ground
-field equals the cardinality of the geometric character cokernel. For a finite kernel
-this is its scheme-theoretic rank, even when the kernel is nonreduced. -/
+/-- The `Module.finrank` of a multiplicative-type kernel's coordinate algebra over the
+ground field equals the `Nat.card` of the geometric character cokernel. For a finite
+kernel, this is its dimension, or scheme-theoretic rank, even when the kernel is
+nonreduced; in the infinite case both quantities are zero. -/
 theorem finrank_kernelCoordinate :
     Module.finrank k (CommHopfAlgCat.quotient K.obj (CommHopfAlgCat.kernelHopfIdeal f)) =
       Nat.card (CommHopfAlgCat.geometricCharacterGroup K.obj ⧸
