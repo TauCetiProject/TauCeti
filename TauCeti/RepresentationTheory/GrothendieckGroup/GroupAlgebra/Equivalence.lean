@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RepresentationTheory.Rep.Iso
-public import Mathlib.Algebra.Category.FGModuleCat.Abelian
 public import TauCeti.Algebra.Category.ModuleCat.CartanMap.Basic
 public import TauCeti.RepresentationTheory.GrothendieckGroup.FDRep
 import TauCeti.RepresentationTheory.OfModule
@@ -14,8 +13,8 @@ import TauCeti.RepresentationTheory.OfModule
 /-!
 # Finite-dimensional representations as group-algebra modules
 
-For a finite group `G` over a field `k`, the usual equivalence between representations of `G`
-and modules over the group algebra `k[G]` restricts to an equivalence
+For a finite monoid `G` (typically a finite group) and a field `k`, the usual equivalence between
+representations of `G` and modules over the monoid algebra `k[G]` restricts to an equivalence
 
 `FDRep k G ≌ FGModuleCat k[G]`.
 
@@ -40,20 +39,19 @@ group-algebra modules, and is the bridge between categorical representation theo
 public section
 
 open CategoryTheory
-open CategoryTheory.Limits
 open scoped MonoidAlgebra
 
 namespace TauCeti
 
 universe u
 
-variable (k G : Type u) [Field k] [Group G] [Finite G]
+variable (k G : Type u) [Field k] [Monoid G] [Finite G]
 
 local instance : IsNoetherianRing k[G] := IsNoetherianRing.of_finite k k[G]
 
 /-- The group-algebra module underlying a finite-dimensional representation, as a functor to
 finitely generated modules. -/
-@[expose] noncomputable def fdRepToFGModuleFunctor : FDRep k G ⥤ FGModuleCat.{u} k[G] :=
+noncomputable def fdRepToFGModuleFunctor : FDRep k G ⥤ FGModuleCat.{u} k[G] :=
   ObjectProperty.lift (ModuleCat.isFG.{u} k[G])
     ((forget₂ (FDRep k G) (Rep.{u} k G)) ⋙
       Rep.toModuleMonoidAlgebra.{u, u, u})
@@ -86,6 +84,9 @@ instance : (fdRepToFGModuleFunctor k G).EssSurj := by
     Module.Finite.of_restrictScalars_finite k k[G] ρ.asModule
   let V : FDRep k G := FDRep.of ρ
   refine ⟨V, ⟨?_⟩⟩
+  -- Unfolding `fdRepToFGModuleFunctor`, `ObjectProperty.lift` and `Rep.toModuleMonoidAlgebra`,
+  -- the image of `V` is by definition `FGModuleCat.of k[G] ρ.asModule`, and `M` is the
+  -- `FGModuleCat` object built from its own carrier.
   change FGModuleCat.of k[G]
       (_root_.Representation.ofModule' (k := k) (G := G) M.obj).asModule ≅
     FGModuleCat.of k[G] M.obj
@@ -111,29 +112,21 @@ theorem fdRepEquivalence_functor_obj_obj (V : FDRep k G) :
   rw [fdRepEquivalence, Functor.asEquivalence_functor]
   rfl
 
-/-- On finitely generated modules over the group algebra of a finite group, the exact structure
-induced from all modules is the canonical abelian exact structure. -/
-private theorem finiteModulesExactStructure_monoidAlgebra_eq_abelian :
-    finiteModulesExactStructure k[G] = ExactStructure.abelian (FGModuleCat.{u} k[G]) := by
-  apply ExactStructure.ext
-  intro S
-  rw [finiteModulesExactStructure_conflation_iff, ExactStructure.abelian_conflation]
-  have hι : (ModuleCat.isFG.{u} k[G]).ι =
-      forget₂ (FGModuleCat.{u} k[G]) (ModuleCat.{u} k[G]) := rfl
-  let _ : PreservesFiniteColimits (ModuleCat.isFG.{u} k[G]).ι :=
-    hι.symm ▸ (inferInstance : PreservesFiniteColimits
-      (forget₂ (FGModuleCat.{u} k[G]) (ModuleCat.{u} k[G])))
-  let _ : PreservesFiniteLimits (ModuleCat.isFG.{u} k[G]).ι :=
-    hι.symm ▸ (inferInstance : PreservesFiniteLimits
-      (forget₂ (FGModuleCat.{u} k[G]) (ModuleCat.{u} k[G])))
-  exact CategoryTheory.ShortExact.shortExact_map_iff (ModuleCat.isFG.{u} k[G]).ι
+/-- Followed by the inclusion into all modules, the forward functor of `fdRepEquivalence` is
+`Rep.toModuleMonoidAlgebra`; in particular it sends an equivariant map to the same map, viewed as
+a linear map of group-algebra modules. -/
+theorem fdRepEquivalence_functor_comp_ι :
+    (fdRepEquivalence k G).functor ⋙ (ModuleCat.isFG.{u} k[G]).ι =
+      forget₂ (FDRep k G) (Rep.{u} k G) ⋙ Rep.toModuleMonoidAlgebra.{u, u, u} := by
+  rw [fdRepEquivalence, Functor.asEquivalence_functor]
+  rfl
 
 /-- The forward direction of `fdRepEquivalence` carries short exact sequences of
 finite-dimensional representations to conflations of finitely generated group-algebra modules. -/
 theorem isConflationExact_fdRepEquivalence_functor :
     (ExactStructure.abelian (FDRep k G)).IsConflationExact
       (finiteModulesExactStructure k[G]) (fdRepEquivalence k G).functor := by
-  rw [finiteModulesExactStructure_monoidAlgebra_eq_abelian]
+  rw [finiteModulesExactStructure_eq_abelian]
   exact ExactStructure.isConflationExact_abelian (fdRepEquivalence k G).functor
 
 /-- The inverse direction of `fdRepEquivalence` carries conflations of finitely generated
@@ -141,7 +134,7 @@ group-algebra modules to short exact sequences of finite-dimensional representat
 theorem isConflationExact_fdRepEquivalence_inverse :
     (finiteModulesExactStructure k[G]).IsConflationExact
       (ExactStructure.abelian (FDRep k G)) (fdRepEquivalence k G).inverse := by
-  rw [finiteModulesExactStructure_monoidAlgebra_eq_abelian]
+  rw [finiteModulesExactStructure_eq_abelian]
   exact ExactStructure.isConflationExact_abelian (fdRepEquivalence k G).inverse
 
 end TauCeti
