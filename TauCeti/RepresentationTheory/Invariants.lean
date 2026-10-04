@@ -60,11 +60,11 @@ additive functor from representations of `G` to representations of `G ⧸ S`.
   invariants as its range.
 * `Representation.range_norm_eq_invariants_of_projective`: the same conclusion without
   inverting the group order, when the underlying group-algebra module is projective.
-* `Representation.exists_invariant_preimage_of_projective`: a surjective equivariant additive map,
-  possibly between representations over different coefficient rings, lifts invariant vectors
-  when its target is projective over the target group algebra.
-* `Rep.invariantsFunctor_map_surjective_of_projective`: taking invariants preserves a surjective
-  morphism of representations whose target is projective over the group algebra.
+* `Representation.exists_invariant_preimage_of_surjective_of_projective`: a surjective
+  equivariant additive map, possibly between representations over different coefficient rings,
+  lifts invariant vectors when its target is projective over the target group algebra.
+* `Rep.invariantsFunctor_map_surjective_of_surjective_of_projective`: taking invariants preserves
+  a surjective morphism of representations whose target is projective over the group algebra.
 * `Rep.FiniteCyclicGroup.invariants_eq_ker_apply_sub`: for a cyclic group, the invariants are the
   kernel of the action of a generator minus the identity.
 * `Representation.IsIrreducible.invariants_eq_bot`: a nontrivial irreducible representation has no
@@ -156,6 +156,7 @@ invariant vector is the norm of a vector.
 
 This is the integral replacement for `Representation.range_norm_eq_invariants`, which assumes
 that the order of `G` is invertible in `k`. -/
+@[simp]
 theorem range_norm_eq_invariants_of_projective (ρ : Representation k G V)
     [Module.Projective k[G] ρ.asModule] :
     LinearMap.range ρ.norm = ρ.invariants := by
@@ -212,7 +213,7 @@ Allowing the coefficient rings to differ is essential for reduction of an integr
 lattice modulo a prime. -/
 -- The target invariant is a group norm; lift a preimage before taking the norm, and use
 -- equivariance to commute `f` with the two norms.
-theorem exists_invariant_preimage_of_projective
+theorem exists_invariant_preimage_of_surjective_of_projective
     (ρ : Representation k G V) (σ : Representation l G X)
     (f : V →+ X) (hf : Function.Surjective f)
     (hfg : ∀ g x, f (ρ g x) = σ g (f x))
@@ -243,7 +244,7 @@ variable {k G : Type*} [CommRing k] [Group G]
 /-- **Invariants preserve surjections onto projective representations.** If `f : A ⟶ B` is
 surjective and the `k[G]`-module underlying `B` is projective, then every invariant of `B` lifts
 to an invariant of `A`. -/
-theorem invariantsFunctor_map_surjective_of_projective {A B : Rep k G} (f : A ⟶ B)
+theorem invariantsFunctor_map_surjective_of_surjective_of_projective {A B : Rep k G} (f : A ⟶ B)
     (hf : Function.Surjective f.hom) [Module.Projective k[G] B.ρ.asModule] :
     Function.Surjective ((invariantsFunctor k G).map f).hom := by
   have : Projective B := by
