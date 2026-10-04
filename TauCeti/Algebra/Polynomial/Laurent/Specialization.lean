@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Basis.Basic
 public import Mathlib.LinearAlgebra.Quotient.Basic
 public import TauCeti.Algebra.Polynomial.Laurent.Basic
 
@@ -31,6 +32,7 @@ turning multiplication by `q` into multiplication by `ε`.
 * `TauCeti.LaurentSpecialization.mk`: the specialization map `N → N_ε`.
 * `TauCeti.LaurentSpecialization.lift`: the universal property for `R`-linear maps.
 * `TauCeti.LaurentSpecialization.map`: specialize a Laurent-linear map.
+* `TauCeti.LaurentSpecialization.basis`: specialize a Laurent-module basis coefficientwise.
 
 ## Main results
 
@@ -149,6 +151,91 @@ theorem map_comp (g : M →ₗ[R[T;T⁻¹]] P) (f : N →ₗ[R[T;T⁻¹]] M) :
   apply hom_ext
   intro x
   simp
+
+section Basis
+
+variable {ι : Type*}
+
+/-- The coordinate map of a Laurent basis, with every coefficient evaluated at the
+specialization point. -/
+private noncomputable def basisCoordinates (b : Module.Basis ι R[T;T⁻¹] N) : N →ₗ[R] ι →₀ R :=
+  (Finsupp.mapRange.linearMap (laurentEval ε).toLinearMap).comp
+    (b.repr.toLinearMap.restrictScalars R)
+
+private theorem basisCoordinates_T (b : Module.Basis ι R[T;T⁻¹] N) (x : N) :
+    basisCoordinates ε b ((T 1 : R[T;T⁻¹]) • x) = (ε : R) • basisCoordinates ε b x := by
+  ext i
+  simp [basisCoordinates]
+  ac_rfl
+
+/-- The coordinate map on a specialized free Laurent module. Its coefficients lie in the base
+ring because Laurent coefficients are evaluated at the specialization point. -/
+private noncomputable def basisRepr (b : Module.Basis ι R[T;T⁻¹] N) :
+    LaurentSpecialization ε N →ₗ[R] ι →₀ R :=
+  lift ε (basisCoordinates ε b) (basisCoordinates_T ε b)
+
+/-- Coordinates of a specialized element are obtained by evaluating its Laurent coordinates. -/
+@[simp]
+private theorem basisRepr_mk (b : Module.Basis ι R[T;T⁻¹] N) (x : N) :
+    basisRepr ε b (mk ε x) =
+      Finsupp.mapRange.linearMap (laurentEval ε).toLinearMap (b.repr x) := by
+  rw [basisRepr, lift_mk]
+  simp [basisCoordinates]
+
+/-- Reconstruct a specialized element from its evaluated basis coordinates. -/
+private noncomputable def basisLinearCombination (b : Module.Basis ι R[T;T⁻¹] N) :
+    (ι →₀ R) →ₗ[R] LaurentSpecialization ε N :=
+  Finsupp.linearCombination R fun i ↦ mk ε (b i)
+
+private theorem basisLinearCombination_basisRepr (b : Module.Basis ι R[T;T⁻¹] N)
+    (x : LaurentSpecialization ε N) :
+    basisLinearCombination ε b (basisRepr ε b x) = x := by
+  obtain ⟨x, rfl⟩ := mk_surjective ε x
+  rw [basisRepr_mk]
+  have h (z : ι →₀ R[T;T⁻¹]) :
+      basisLinearCombination ε b
+          (Finsupp.mapRange.linearMap (laurentEval ε).toLinearMap z) =
+        mk ε (Finsupp.linearCombination R[T;T⁻¹] b z) := by
+    induction z using Finsupp.induction_linear with
+    | zero => simp
+    | add z w hz hw =>
+      rw [map_add, map_add, hz, hw, map_add]
+      exact (map_add (mk ε) _ _).symm
+    | single i p => simp [basisLinearCombination, mk_smul]
+  rw [h, b.linearCombination_repr]
+
+private theorem basisRepr_basisLinearCombination (b : Module.Basis ι R[T;T⁻¹] N)
+    (x : ι →₀ R) :
+    basisRepr ε b (basisLinearCombination ε b x) = x := by
+  induction x using Finsupp.induction_linear with
+  | zero => simp
+  | add x y hx hy => simp [hx, hy]
+  | single i r => simp [basisLinearCombination]
+
+/-- A Laurent-module basis specializes to a basis over the coefficient ring. Its vectors are the
+classes of the original basis vectors, and its coordinates are obtained by evaluating Laurent
+coordinates at the specialization point. -/
+noncomputable def basis (b : Module.Basis ι R[T;T⁻¹] N) :
+    Module.Basis ι R (LaurentSpecialization ε N) :=
+  Module.Basis.ofRepr
+    { basisRepr ε b with
+      invFun := basisLinearCombination ε b
+      left_inv := basisLinearCombination_basisRepr ε b
+      right_inv := basisRepr_basisLinearCombination ε b }
+
+/-- Specializing a basis specializes each basis vector. -/
+@[simp]
+theorem basis_apply (b : Module.Basis ι R[T;T⁻¹] N) (i : ι) :
+    basis ε b i = mk ε (b i) := by
+  simp [basis, basisLinearCombination]
+
+/-- Coordinates in the specialized basis are evaluated Laurent coordinates. -/
+@[simp]
+theorem basis_repr_mk_apply (b : Module.Basis ι R[T;T⁻¹] N) (x : N) (i : ι) :
+    (basis ε b).repr (mk ε x) i = laurentEval ε (b.repr x i) := by
+  simp [basis, basisRepr_mk]
+
+end Basis
 
 end LaurentSpecialization
 
