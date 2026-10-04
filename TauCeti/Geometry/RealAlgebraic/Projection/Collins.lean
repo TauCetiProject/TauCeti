@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import TauCeti.RingTheory.Polynomial.Reductum
-public import TauCeti.RingTheory.Polynomial.Subresultant.Basic
+public import TauCeti.RingTheory.Polynomial.Subresultant.GCD
 import TauCeti.Algebra.Polynomial.Derivative
+import TauCeti.RingTheory.Polynomial.Roots
 
 /-!
 # The Collins projection set
@@ -35,7 +37,11 @@ subresultant coefficients of the specialized polynomials, at their actual specia
 are also images under `φ` of elements of the projection. Thus the signs of the projection at a
 base point determine the degrees of the specialized polynomials and, through the subresultant
 gcd criterion, the degrees of their pairwise gcds and of their gcds with their derivatives; this
-is how the projection enters Collins' delineability theorem.
+is how the projection enters Collins' delineability theorem. The last section of this file
+proves this: whenever the same elements of the projection vanish under two specializations
+`φ : R →+* K` and `ψ : R →+* L` into fields (for instance evaluation at two points of a base set
+on which the projection is sign-invariant), the specialized family has the same degrees, the same
+nullified members, the same pairwise gcd degrees and the same gcd degrees with derivatives.
 
 ## Main definitions and results
 
@@ -46,6 +52,15 @@ is how the projection enters Collins' delineability theorem.
 * `Finset.psc_map_mem_image_collinsProjection`,
   `Finset.psc_map_derivative_mem_image_collinsProjection`: principal subresultant coefficients
   of specialized polynomials, at the specialized degrees, come from the projection.
+* `Finset.natDegree_map_eq_of_collinsProjection`, `Finset.map_eq_zero_iff_of_collinsProjection`:
+  two specializations under which the same elements of the projection vanish give every member
+  of the family the same degree, and nullify the same members.
+* `Finset.natDegree_gcd_map_eq_of_collinsProjection`,
+  `Finset.natDegree_gcd_map_derivative_eq_of_collinsProjection`: under the same hypothesis, the
+  specialized pairwise gcds, and the specialized gcds of each member with its derivative, have
+  the same degrees.
+* `Finset.card_roots_toFinset_map_eq_of_collinsProjection`: over algebraically closed fields of
+  characteristic zero, each specialized member then has the same number of distinct roots.
 
 ## References
 
@@ -183,5 +198,153 @@ theorem psc_map_derivative_mem_image_collinsProjection [IsAddTorsionFree S] [Dec
   refine mem_image.2 ⟨_, psc_derivative_mem_collinsProjection hp (p.reductum_mem_reducta _)
     (j := j) (by rwa [hr, hr']), ?_⟩
   rw [← psc_map_map, ← derivative_map, hmap, hr, hr']
+
+/-! ### Invariance of the specialized family
+
+Throughout, `φ` and `ψ` are two specializations under which the same elements of the Collins
+projection vanish. The degrees and the zero patterns of principal subresultant coefficients agree
+for specializations into arbitrary commutative rings; the gcd and root-count statements are over
+fields. -/
+
+section Invariance
+
+variable {A B : Type*} [CommRing A] [CommRing B] {φ : R →+* A} {ψ : R →+* B} {F : Finset R[X]}
+  {p q : R[X]}
+
+/-- If the same elements of the Collins projection vanish under `φ` and `ψ`, then the same
+coefficients of each member of the family vanish under `φ` and `ψ`. -/
+theorem map_coeff_eq_zero_iff_of_collinsProjection
+    (h : ∀ a ∈ F.collinsProjection, φ a = 0 ↔ ψ a = 0) (hp : p ∈ F) (i : ℕ) :
+    φ (p.coeff i) = 0 ↔ ψ (p.coeff i) = 0 := by
+  rcases le_or_gt i p.natDegree with hi | hi
+  · exact h _ (coeff_mem_collinsProjection hp p.self_mem_reducta hi)
+  · simp [coeff_eq_zero_of_natDegree_lt hi]
+
+/-- If the same elements of the Collins projection vanish under `φ` and `ψ`, then a member of the
+family is nullified by `φ` exactly when it is nullified by `ψ`. -/
+theorem map_eq_zero_iff_of_collinsProjection
+    (h : ∀ a ∈ F.collinsProjection, φ a = 0 ↔ ψ a = 0) (hp : p ∈ F) :
+    p.map φ = 0 ↔ p.map ψ = 0 := by
+  simp only [Polynomial.ext_iff, coeff_map, coeff_zero,
+    map_coeff_eq_zero_iff_of_collinsProjection h hp]
+
+/-- If the same elements of the Collins projection vanish under `φ` and `ψ`, then every member of
+the family has the same degree after either specialization. -/
+theorem natDegree_map_eq_of_collinsProjection
+    (h : ∀ a ∈ F.collinsProjection, φ a = 0 ↔ ψ a = 0) (hp : p ∈ F) :
+    (p.map φ).natDegree = (p.map ψ).natDegree := by
+  have key (n : ℕ) : (p.map φ).natDegree ≤ n ↔ (p.map ψ).natDegree ≤ n := by
+    simp only [natDegree_le_iff_coeff_eq_zero, coeff_map,
+      map_coeff_eq_zero_iff_of_collinsProjection h hp]
+  exact le_antisymm ((key _).2 le_rfl) ((key _).1 le_rfl)
+
+/-- A single reductum of a member of the family specializes to the member under both `φ` and `ψ`,
+and its own degree is the common specialized degree. -/
+private theorem exists_mem_reducta_map_eq_and_map_eq
+    (h : ∀ a ∈ F.collinsProjection, φ a = 0 ↔ ψ a = 0) (hp : p ∈ F) :
+    ∃ r ∈ p.reducta, r.natDegree = (p.map φ).natDegree ∧ r.map φ = p.map φ ∧
+      r.map ψ = p.map ψ :=
+  ⟨_, p.reductum_mem_reducta _, natDegree_reductum_natDegree_map_add_one φ p,
+    map_reductum_natDegree_map_add_one φ p, by
+      rw [natDegree_map_eq_of_collinsProjection h hp]
+      exact map_reductum_natDegree_map_add_one ψ p⟩
+
+/-- If the same elements of the Collins projection vanish under `φ` and `ψ`, then for two members
+of the family the principal subresultant coefficients of their specializations, at the
+specialized degrees, vanish at the same indices. -/
+theorem psc_map_eq_zero_iff_of_collinsProjection
+    (h : ∀ a ∈ F.collinsProjection, φ a = 0 ↔ ψ a = 0) (hp : p ∈ F) (hq : q ∈ F) {j : ℕ}
+    (hj : j ≤ min (p.map φ).natDegree (q.map φ).natDegree) :
+    psc (p.map φ) (q.map φ) (p.map φ).natDegree (q.map φ).natDegree j = 0 ↔
+      psc (p.map ψ) (q.map ψ) (p.map ψ).natDegree (q.map ψ).natDegree j = 0 := by
+  obtain ⟨r, hrT, hr, hrφ, hrψ⟩ := exists_mem_reducta_map_eq_and_map_eq h hp
+  obtain ⟨s, hsT, hs, hsφ, hsψ⟩ := exists_mem_reducta_map_eq_and_map_eq h hq
+  have hc := psc_mem_collinsProjection hp hrT hq hsT (j := j) (by rwa [hr, hs])
+  -- Both sides are the images under `φ` and `ψ` of the projection element `hc`: the specialized
+  -- degrees agree and equal the degrees of `r` and `s`, which specialize to `p` and `q`.
+  rw [← natDegree_map_eq_of_collinsProjection h hp, ← natDegree_map_eq_of_collinsProjection h hq,
+    ← hr, ← hs, ← hrφ, ← hsφ, ← hrψ, ← hsψ, psc_map_map, psc_map_map]
+  exact h _ hc
+
+/-- If the same elements of the Collins projection vanish under `φ` and `ψ`, then for a member of
+the family the principal subresultant coefficients of its specialization and their derivative,
+at the specialized degrees, vanish at the same indices. The targets are additively torsion-free,
+so that the derivative of a specialization has the expected degree. -/
+theorem psc_map_derivative_eq_zero_iff_of_collinsProjection [IsAddTorsionFree A]
+    [IsAddTorsionFree B] (h : ∀ a ∈ F.collinsProjection, φ a = 0 ↔ ψ a = 0) (hp : p ∈ F)
+    {j : ℕ} (hj : j ≤ min (p.map φ).natDegree (p.map φ).derivative.natDegree) :
+    psc (p.map φ) (p.map φ).derivative (p.map φ).natDegree (p.map φ).derivative.natDegree j = 0 ↔
+      psc (p.map ψ) (p.map ψ).derivative (p.map ψ).natDegree
+        (p.map ψ).derivative.natDegree j = 0 := by
+  obtain ⟨r, hrT, hr, hrφ, hrψ⟩ := exists_mem_reducta_map_eq_and_map_eq h hp
+  have hr' : r.derivative.natDegree = (p.map φ).derivative.natDegree := by
+    rw [← hrφ, derivative_map,
+      natDegree_map_derivative_eq_of_natDegree_map_eq (by rw [hrφ, hr])]
+  have hc := psc_derivative_mem_collinsProjection hp hrT (j := j) (by rwa [hr, hr'])
+  -- The derivative degrees are the specialized degrees minus one, so they agree under `φ` and
+  -- `ψ`; then both sides are the images of the projection element `hc`.
+  rw [natDegree_derivative, natDegree_derivative,
+    ← natDegree_map_eq_of_collinsProjection h hp, ← natDegree_derivative, ← hr', ← hr,
+    ← hrφ, ← hrψ, derivative_map, derivative_map, psc_map_map, psc_map_map]
+  exact h _ hc
+
+end Invariance
+
+section Field
+
+variable {K L : Type*} [Field K] [Field L] [DecidableEq K] [DecidableEq L] {φ : R →+* K}
+  {ψ : R →+* L} {F : Finset R[X]} {p q : R[X]}
+
+/-- If the same elements of the Collins projection vanish under `φ` and `ψ`, then for any two
+members of the family the gcds of their specializations have the same degree. -/
+theorem natDegree_gcd_map_eq_of_collinsProjection
+    (h : ∀ a ∈ F.collinsProjection, φ a = 0 ↔ ψ a = 0) (hp : p ∈ F) (hq : q ∈ F) :
+    (EuclideanDomain.gcd (p.map φ) (q.map φ)).natDegree =
+      (EuclideanDomain.gcd (p.map ψ) (q.map ψ)).natDegree := by
+  rcases eq_or_ne (p.map ψ) 0 with hp0 | hp0
+  · rw [hp0, (map_eq_zero_iff_of_collinsProjection h hp).2 hp0, EuclideanDomain.gcd_zero_left,
+      EuclideanDomain.gcd_zero_left, natDegree_map_eq_of_collinsProjection h hq]
+  rcases eq_or_ne (q.map ψ) 0 with hq0 | hq0
+  · rw [hq0, (map_eq_zero_iff_of_collinsProjection h hq).2 hq0, EuclideanDomain.gcd_zero_right,
+      EuclideanDomain.gcd_zero_right, natDegree_map_eq_of_collinsProjection h hp]
+  refine natDegree_gcd_eq_of_psc_eq_zero_iff hp0 hq0 fun j hj => ?_
+  refine psc_map_eq_zero_iff_of_collinsProjection h hp hq ?_
+  rwa [natDegree_map_eq_of_collinsProjection h hp, natDegree_map_eq_of_collinsProjection h hq]
+
+/-- If the same elements of the Collins projection vanish under `φ` and `ψ`, then for every member
+of the family the gcd of its specialization with its derivative has the same degree under both
+specializations. The targets are additively torsion-free. -/
+theorem natDegree_gcd_map_derivative_eq_of_collinsProjection [IsAddTorsionFree K]
+    [IsAddTorsionFree L]
+    (h : ∀ a ∈ F.collinsProjection, φ a = 0 ↔ ψ a = 0) (hp : p ∈ F) :
+    (EuclideanDomain.gcd (p.map φ) (p.map φ).derivative).natDegree =
+      (EuclideanDomain.gcd (p.map ψ) (p.map ψ).derivative).natDegree := by
+  have hdeg := natDegree_map_eq_of_collinsProjection h hp
+  rcases eq_or_ne (p.map ψ).derivative 0 with h0 | h0
+  · have h0' : (p.map φ).derivative = 0 := by
+      rw [derivative_eq_zero, hdeg, ← derivative_eq_zero, h0]
+    rw [h0, h0', EuclideanDomain.gcd_zero_right, EuclideanDomain.gcd_zero_right, hdeg]
+  have hp0 : p.map ψ ≠ 0 := fun hp0 => h0 (by rw [hp0, derivative_zero])
+  refine natDegree_gcd_eq_of_psc_eq_zero_iff hp0 h0 fun j hj => ?_
+  refine psc_map_derivative_eq_zero_iff_of_collinsProjection h hp ?_
+  rwa [natDegree_derivative, hdeg, ← natDegree_derivative]
+
+/-- If the same elements of the Collins projection vanish under specializations `φ` and `ψ` into
+algebraically closed fields of characteristic zero, then every member of the family has the same
+number of distinct roots after either specialization. A nullified member has no roots under
+either. -/
+theorem card_roots_toFinset_map_eq_of_collinsProjection [CharZero K] [CharZero L]
+    [IsAlgClosed K] [IsAlgClosed L]
+    (h : ∀ a ∈ F.collinsProjection, φ a = 0 ↔ ψ a = 0) (hp : p ∈ F) :
+    (p.map φ).roots.toFinset.card = (p.map ψ).roots.toFinset.card := by
+  rcases eq_or_ne (p.map ψ) 0 with h0 | h0
+  · simp [h0, (map_eq_zero_iff_of_collinsProjection h hp).2 h0]
+  rw [← natDegree_sub_natDegree_gcd_derivative_eq_card_roots_toFinset h0,
+    ← natDegree_sub_natDegree_gcd_derivative_eq_card_roots_toFinset
+      ((map_eq_zero_iff_of_collinsProjection h hp).not.2 h0),
+    natDegree_map_eq_of_collinsProjection h hp,
+    natDegree_gcd_map_derivative_eq_of_collinsProjection h hp]
+
+end Field
 
 end Finset
