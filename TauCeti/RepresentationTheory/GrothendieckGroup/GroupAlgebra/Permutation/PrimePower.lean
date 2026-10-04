@@ -126,7 +126,7 @@ theorem indK0_of_trivial_eq_relIndex_nsmul [Finite G] {C D : Subgroup G} (h : D 
   have hpow' : ∀ c : C, ∃ n : ℕ, c ^ p ^ n ∈ D.subgroupOf C := fun c ↦ hpow c c.property
   rw [← map_nsmul, Subgroup.relIndex,
     ← exactK0_ofMulAction_quotient_eq_index_nsmul p (D.subgroupOf C) hpow',
-    indK0_of_ofMulAction_quotient k C h, indK0_of_trivial]
+    indK0_of_ofMulAction_quotient k C h, indK0_of_trivial, permK0_def]
 
 /-- A finite cyclic subgroup `C` has a subgroup `D` of order prime to `p` such that inducing the
 trivial line from `D` gives the `p`-part of `|C|` times the class induced from `C`. -/

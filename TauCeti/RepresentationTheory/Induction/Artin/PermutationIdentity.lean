@@ -92,6 +92,7 @@ noncomputable def artinPositiveSetEquiv :
   Equiv.refl _
 
 /-- `TauCeti.artinPositiveSetEquiv` is `G`-equivariant. -/
+@[simp]
 theorem artinPositiveSetEquiv_smul (g : G) (x : ArtinPositiveSet G) :
     artinPositiveSetEquiv G (g • x) = g • artinPositiveSetEquiv G x :=
   (rfl)
@@ -106,6 +107,7 @@ noncomputable def artinNegativeSetEquiv :
   Equiv.refl _
 
 /-- `TauCeti.artinNegativeSetEquiv` is `G`-equivariant. -/
+@[simp]
 theorem artinNegativeSetEquiv_smul (g : G) (x : ArtinNegativeSet G) :
     artinNegativeSetEquiv G (g • x) = g • artinNegativeSetEquiv G x :=
   (rfl)

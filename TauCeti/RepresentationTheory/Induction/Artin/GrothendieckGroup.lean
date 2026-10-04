@@ -8,7 +8,6 @@ module
 public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.Induction
 public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.Permutation.Basic
 public import TauCeti.RepresentationTheory.Induction.Artin.PermutationIdentity
-public import TauCeti.RepresentationTheory.CharacterTable.FixedPointCount
 
 /-!
 # Artin's identity in the Grothendieck group of a group algebra
@@ -35,9 +34,11 @@ finite `G`-sets with the same fixed-point counts. Over a field of characteristic
 `G`-sets have equivalent permutation representations, which gives the equality
 (`TauCeti.permK0_eq_of_natCard_fixedBy_eq`) and hence Artin's identity
 (`TauCeti.natCard_nsmul_of_trivial_eq_finsum_artinCoeff`). In characteristic `ℓ` dividing `|G|`
-the two permutation modules need not be isomorphic, and the equality of their classes is instead
-a consequence of the isomorphism of the rationalizations of the integral permutation lattices
-(`TauCeti.nonempty_equiv_rationalized_artinPermutationLattices`).
+the two permutation modules need not be isomorphic, and this file does not prove the equality of
+their classes there. The rationalizations of the integral permutation lattices are isomorphic
+(`TauCeti.nonempty_equiv_rationalized_artinPermutationLattices`), but deducing the equality of the
+classes in characteristic `ℓ` from that isomorphism needs a separate reduction theorem for
+lattices, which is not available yet.
 
 Multiplying the identity by a class and applying the projection formula is the route to Artin's
 induction theorem in `G₀(k[G])` and to its modular form.
@@ -87,7 +88,7 @@ theorem permK0_artinPositiveSet :
   rw [permK0_congr k (artinPositiveSetEquiv G) (artinPositiveSetEquiv_smul G), permK0_sigma,
     finsum_eq_sum_of_fintype]
   refine Finset.sum_congr rfl fun C _ ↦ ?_
-  rw [permK0_sigma_fin, permK0_def, indK0_of_trivial]
+  rw [permK0_sigma_fin, indK0_of_trivial]
 
 /-- **The permutation class of the negative Artin set.** It is `|G|` times the trivial class plus
 the sum over the subgroups `C` of `a_C⁻` times the class induced from the trivial line of `C`. -/
@@ -109,7 +110,7 @@ theorem permK0_artinNegativeSet :
     permK0_sigma_fin, permK0_of_subsingleton, permK0_sigma, finsum_eq_sum_of_fintype]
   congr 1
   refine Finset.sum_congr rfl fun C _ ↦ ?_
-  rw [permK0_sigma_fin, permK0_def, indK0_of_trivial]
+  rw [permK0_sigma_fin, indK0_of_trivial]
 
 /-- **The defect of Artin's identity is a difference of permutation classes.** Over any
 commutative ring `k`, `|G| • [k] - ∑ᶠ C, a_C • Ind_C^G [k]` is the permutation class of the

@@ -37,6 +37,8 @@ theory counts, while the objects being classified are representations.
   `ρ.asModule ≃ₗ σ.asModule` is an equivalence of representations.
 * `TauCeti.Representation.asModuleLinearEquivOfEquiv`: the converse.
 * `TauCeti.Representation.nonempty_equiv_iff`: the two notions of isomorphism agree.
+* `TauCeti.Representation.prodAsModuleEquiv`: the module of a product of representations is the
+  product of their modules.
 * `TauCeti.fdRepIsoOfAsModuleLinearEquiv`: over a commutative ring, and for module-finite carriers,
   such an isomorphism of modules is an isomorphism of the objects of `FDRep k G` that the
   representations name.
@@ -162,6 +164,24 @@ theorem asModuleLinearEquivOfEquiv_equivOfAsModuleLinearEquiv
 theorem nonempty_equiv_iff :
     Nonempty (ρ.Equiv σ) ↔ Nonempty (ρ.asModule ≃ₗ[k[G]] σ.asModule) :=
   ⟨fun ⟨φ⟩ ↦ ⟨asModuleLinearEquivOfEquiv φ⟩, fun ⟨f⟩ ↦ ⟨equivOfAsModuleLinearEquiv f⟩⟩
+
+variable (ρ σ) in
+/-- **The module of a product representation is the product of the modules.** The `k[G]`-linear
+map is assembled from the projections `Representation.IntertwiningMap.fst` and
+`Representation.IntertwiningMap.snd`; on the underlying type `V × W` it is the identity. -/
+noncomputable def prodAsModuleEquiv : (ρ.prod σ).asModule ≃ₗ[k[G]] ρ.asModule × σ.asModule :=
+  LinearEquiv.ofBijective
+    ((_root_.Representation.IntertwiningMap.equivLinearMapAsModule _ _
+        (_root_.Representation.IntertwiningMap.fst k ρ σ)).prod
+      (_root_.Representation.IntertwiningMap.equivLinearMapAsModule _ _
+        (_root_.Representation.IntertwiningMap.snd k ρ σ)))
+    Function.bijective_id
+
+@[simp]
+theorem prodAsModuleEquiv_apply (x : (ρ.prod σ).asModule) :
+    prodAsModuleEquiv ρ σ x =
+      (ρ.asModuleEquiv.symm (x : V × W).1, σ.asModuleEquiv.symm (x : V × W).2) :=
+  (rfl)
 
 end Representation
 

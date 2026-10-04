@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Action.Sigma
-public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.Data.Fintype.Option
+public import TauCeti.Algebra.Category.FGModuleCat.Zero
 public import TauCeti.Algebra.Category.ModuleCat.CartanMap.Basic
 public import TauCeti.RepresentationTheory.AsModule
 public import TauCeti.RepresentationTheory.Rep.OfMulAction
@@ -31,12 +31,13 @@ bijection between two finite `G`-sets assembled as disjoint unions of coset spac
 a linear relation between the classes `[k[G ⧸ S]]`. For a finite group these are the classes
 induced from the trivial lines of the subgroups (`TauCeti.indK0_of_trivial`).
 
-Additivity in disjoint unions comes from the split short exact sequence
-`0 → V → V × W → W → 0` of the product of two representations (`TauCeti.exactK0_asModule_prod`),
-since the permutation representation on `X ⊕ Y` is the product of those on `X` and `Y`
-(`TauCeti.ofMulActionSumEquiv`). No hypothesis on the characteristic of `k` is needed: the
-relations of `G₀(k[G])` come from all short exact sequences, including non-split ones, but the
-relations used here come from split sequences.
+Additivity in disjoint unions comes from the additivity of classes on products of modules
+(`TauCeti.exactK0_fgModuleCat_prod`), since the permutation representation on `X ⊕ Y` is the
+product of those on `X` and `Y` (`TauCeti.ofMulActionSumEquiv`), and the module of a product
+representation is the product of the modules (`TauCeti.Representation.prodAsModuleEquiv`). No
+hypothesis on the characteristic of `k` is needed: the relations of `G₀(k[G])` come from all short
+exact sequences, including non-split ones, but the relations used here come from split
+sequences.
 
 ## Main definitions
 
@@ -44,8 +45,6 @@ relations used here come from split sequences.
 
 ## Main results
 
-* `TauCeti.exactK0_asModule_prod`: the class of a product of representations is the sum of the
-  classes.
 * `TauCeti.permK0_eq_of_equiv`: the permutation class is the class of any equivalent
   representation.
 * `TauCeti.permK0_congr`: equivariantly equivalent `G`-sets have the same class.
@@ -72,42 +71,6 @@ universe u
 section Monoid
 
 variable (k : Type u) [CommRing k] {G : Type u} [Monoid G]
-
-/-- **The class of a product of representations.** In the Grothendieck group of finitely
-generated `k[G]`-modules, the class of the product `ρ × σ` of two representations on finite
-`k`-modules is the sum of their classes: `0 → V → V × W → W → 0` is a short exact sequence of
-representations. -/
-theorem exactK0_asModule_prod {V W : Type u} [AddCommGroup V] [Module k V] [Module.Finite k V]
-    [AddCommGroup W] [Module k W] [Module.Finite k W]
-    (ρ : Representation k G V) (σ : Representation k G W) :
-    letI : Module.Finite k[G] (ρ.prod σ).asModule :=
-      Module.Finite.of_restrictScalars_finite k k[G] _
-    letI : Module.Finite k[G] ρ.asModule := Module.Finite.of_restrictScalars_finite k k[G] _
-    letI : Module.Finite k[G] σ.asModule := Module.Finite.of_restrictScalars_finite k k[G] _
-    (ExactK0.of (FGModuleCat.of k[G] (ρ.prod σ).asModule) :
-      ExactK0 (finiteModulesExactStructure k[G])) =
-        ExactK0.of (FGModuleCat.of k[G] ρ.asModule) +
-          ExactK0.of (FGModuleCat.of k[G] σ.asModule) := by
-  let : Module.Finite k[G] (ρ.prod σ).asModule := Module.Finite.of_restrictScalars_finite k k[G] _
-  let : Module.Finite k[G] ρ.asModule := Module.Finite.of_restrictScalars_finite k k[G] _
-  let : Module.Finite k[G] σ.asModule := Module.Finite.of_restrictScalars_finite k k[G] _
-  let i := Representation.IntertwiningMap.equivLinearMapAsModule ρ (ρ.prod σ)
-    (Representation.IntertwiningMap.inl k ρ σ)
-  let p := Representation.IntertwiningMap.equivLinearMapAsModule (ρ.prod σ) σ
-    (Representation.IntertwiningMap.snd k ρ σ)
-  -- On the underlying types `i` and `p` are `LinearMap.inl` and `LinearMap.snd`
-  -- (`Representation.IntertwiningMap.equivLinearMapAsModule_apply`), so the exactness facts
-  -- about those maps apply to them as functions.
-  let T : ShortComplex (FGModuleCat k[G]) :=
-    ShortComplex.mk (FGModuleCat.ofHom i) (FGModuleCat.ofHom p) (by
-      ext x
-      exact (Function.Exact.inl_snd (R := k) (M := V) (N := W)).apply_apply_eq_zero x)
-  have hconf : (finiteModulesExactStructure k[G]).Conflation T :=
-    (finiteModulesExactStructure_conflation_iff k[G] T).mpr <|
-      ModuleCat.shortComplex_shortExact _ (Function.Exact.inl_snd (R := k) (M := V) (N := W))
-        (LinearMap.inl_injective (R := k) (M := V) (M₂ := W))
-        (LinearMap.snd_surjective (R := k) (M := V) (M₂ := W))
-  exact ExactK0.of_conflation hconf
 
 variable (G) in
 /-- **The permutation class of a finite `G`-set.** The class in `G₀(k[G])` of the `k[G]`-module
@@ -149,17 +112,27 @@ theorem permK0_congr (e : X ≃ Y) (he : ∀ (g : G) (x : X), e (g • x) = g �
 
 /-- **The permutation class is additive in disjoint unions.** -/
 @[simp]
-theorem permK0_sum : permK0 k G (X ⊕ Y) = permK0 k G X + permK0 k G Y :=
-  (permK0_eq_of_equiv k _ _ (ofMulActionSumEquiv k)).trans (exactK0_asModule_prod k _ _)
+theorem permK0_sum : permK0 k G (X ⊕ Y) = permK0 k G X + permK0 k G Y := by
+  let : Module.Finite k[G]
+      ((Representation.ofMulAction k G X).prod (Representation.ofMulAction k G Y)).asModule :=
+    Module.Finite.of_restrictScalars_finite k k[G] _
+  let : Module.Finite k[G] (Representation.ofMulAction k G X).asModule :=
+    Module.Finite.of_restrictScalars_finite k k[G] _
+  let : Module.Finite k[G] (Representation.ofMulAction k G Y).asModule :=
+    Module.Finite.of_restrictScalars_finite k k[G] _
+  rw [permK0_eq_of_equiv k _ _ (ofMulActionSumEquiv k), permK0_def, permK0_def,
+    ← exactK0_fgModuleCat_prod]
+  exact ExactK0.of_congr (Representation.prodAsModuleEquiv _ _).toFGModuleCatIso
 
 /-- The permutation class of the empty `G`-set is `0`. -/
 @[simp]
-theorem permK0_of_isEmpty [IsEmpty X] : permK0 k G X = 0 := by
-  have h := (permK0_congr k (G := G) (Equiv.sumEmpty X X).symm fun _ x ↦ isEmptyElim x).trans
-    (permK0_sum k X X)
-  simpa using h
+theorem permK0_of_isEmpty [IsEmpty X] : permK0 k G X = 0 :=
+  ExactK0.of_eq_zero_of_isZero <| FGModuleCat.isZero_of_subsingleton _
+    ((Representation.ofMulAction k G X).asModuleEquiv.trans
+      (MonoidAlgebra.coeffLinearEquiv k)).toEquiv.subsingleton
 
 /-- **The permutation class of a point.** A one-point `G`-set has the class of the trivial line. -/
+@[simp]
 theorem permK0_of_subsingleton [Subsingleton X] [Nonempty X] :
     letI : Module.Finite k[G] (Representation.trivial k G k).asModule :=
       Module.Finite.of_restrictScalars_finite k k[G] _
