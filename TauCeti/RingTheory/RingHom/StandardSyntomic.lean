@@ -38,7 +38,7 @@ def IsStandardSyntomicOfRelativeDimension (n : ℕ) {R : Type u} {S : Type v}
 variable {n : ℕ} {R : Type u} {S : Type v} [CommRing R] [CommRing S]
 
 /-- Characterize a standard syntomic ring map by its induced algebra structure. -/
-theorem _root_.RingHom.isStandardSyntomicOfRelativeDimension_iff (f : R →+* S) :
+theorem isStandardSyntomicOfRelativeDimension_iff (f : R →+* S) :
     IsStandardSyntomicOfRelativeDimension n f ↔
       @Algebra.IsStandardSyntomicOfRelativeDimension n R S _ _ f.toAlgebra := .rfl
 
@@ -47,7 +47,17 @@ theorem _root_.RingHom.isStandardSyntomicOfRelativeDimension_iff (f : R →+* S)
 theorem isStandardSyntomicOfRelativeDimension_algebraMap [Algebra R S] :
     IsStandardSyntomicOfRelativeDimension n (algebraMap R S) ↔
       Algebra.IsStandardSyntomicOfRelativeDimension n R S := by
-  rw [RingHom.isStandardSyntomicOfRelativeDimension_iff, toAlgebra_algebraMap]
+  rw [isStandardSyntomicOfRelativeDimension_iff, toAlgebra_algebraMap]
+
+variable (R) in
+/-- The identity ring map is standard syntomic of relative dimension zero. -/
+theorem IsStandardSyntomicOfRelativeDimension.id :
+    IsStandardSyntomicOfRelativeDimension 0 (RingHom.id R) := by
+  rw [isStandardSyntomicOfRelativeDimension_iff]
+  have : Algebra.IsStandardSyntomicOfRelativeDimension 0 R (MvPolynomial (Fin 0) R) :=
+    inferInstance
+  exact Algebra.IsStandardSyntomicOfRelativeDimension.of_algEquiv
+    (MvPolynomial.isEmptyAlgEquiv R (Fin 0))
 
 /-- Standard syntomic ring maps are flat. -/
 theorem IsStandardSyntomicOfRelativeDimension.flat {f : R →+* S}

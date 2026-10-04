@@ -82,6 +82,12 @@ instance : MorphismProperty.Respects (@SyntomicOfRelativeDimension.{u} n) @IsOpe
     RingHom.locally_stableUnderCompositionWithLocalizationAwaySource
       (isStandardSyntomicOfRelativeDimension_stableUnderCompositionWithLocalizationAway n).left
 
+/-- Open immersions, including identities, are syntomic of relative dimension zero. -/
+instance (priority := 900) [IsOpenImmersion f] : SyntomicOfRelativeDimension 0 f :=
+  HasRingHomProperty.of_isOpenImmersion fun R _ ↦
+    RingHom.locally_of (isStandardSyntomicOfRelativeDimension_respectsIso 0) _
+      (IsStandardSyntomicOfRelativeDimension.id R)
+
 /-- Syntomic morphisms are flat. -/
 theorem SyntomicOfRelativeDimension.flat [SyntomicOfRelativeDimension n f] : Flat f := by
   rw [HasRingHomProperty.iff_appLE (P := @Flat)]
@@ -132,7 +138,8 @@ instance {S : Scheme.{u}} (g : X ⟶ S) (h : Y ⟶ S) [SyntomicOfRelativeDimensi
     (IsPullback.of_hasPullback g h) inferInstance
 
 /-- A syntomic morphism of relative dimension `n` has all fibres of dimension at most `n`. -/
-theorem SyntomicOfRelativeDimension.relativeDimensionLE [SyntomicOfRelativeDimension n f] :
+instance (priority := low) SyntomicOfRelativeDimension.relativeDimensionLE
+    [SyntomicOfRelativeDimension n f] :
     RelativeDimensionLE n f := by
   have : MorphismProperty.RespectsRight (@RelativeDimensionLE.{u} n) @IsOpenImmersion :=
     ⟨fun g hg f hf ↦ by
@@ -151,7 +158,7 @@ theorem SyntomicOfRelativeDimension.relativeDimensionLE [SyntomicOfRelativeDimen
   let := φ.toAlgebra
   have : Algebra.IsStandardSyntomicOfRelativeDimension n
       Γ(U.1.toScheme, ⊤) Γ(V.1.toScheme, ⊤) :=
-    (RingHom.isStandardSyntomicOfRelativeDimension_iff φ).mp h'
+    (isStandardSyntomicOfRelativeDimension_iff φ).mp h'
   have hdim := Algebra.IsStandardSyntomicOfRelativeDimension.relativeDimensionLE_SpecMap
     n Γ(U.1.toScheme, ⊤) Γ(V.1.toScheme, ⊤)
   have : IsAffine U.1.toScheme := U.2
