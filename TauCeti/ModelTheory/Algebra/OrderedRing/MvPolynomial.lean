@@ -16,11 +16,13 @@ The first-order language of ordered rings is `Language.ring.sum Language.order`:
 operations `+`, `*`, `-`, `0`, `1` together with the single relation symbol `≤`. Its terms use
 only the ring operations, so a term with variables in `α` is an integer polynomial in `α`.
 
-This file defines that polynomial, `FirstOrder.Language.Term.toMvPolynomial`, and proves:
+This file defines that polynomial, `FirstOrder.Language.Term.toMvPolynomial`, with its equations
+for variables and the ring operations, and proves:
 
 * `FirstOrder.Language.Term.realize_eq_aeval_toMvPolynomial`: in a commutative ring whose ring
   symbols have their usual meaning (`FirstOrder.Ring.CompatibleRing`), realizing a term is
-  evaluating its polynomial;
+  evaluating its polynomial, and `FirstOrder.Language.Term.realize_eq_eval_map_toMvPolynomial`
+  states the same with the polynomial mapped to `R`;
 * `FirstOrder.Language.Term.toMvPolynomial_surjective`: every integer polynomial comes from a term;
 * `MvPolynomial.exists_term_realize_eq_eval`: a polynomial with coefficients in `R` is realized by
   a term whose extra variables are assigned the coefficients, that is, by a term with parameters
@@ -60,6 +62,38 @@ theorem toMvPolynomial_var (a : α) :
     (var a : (Language.ring.sum Language.order).Term α).toMvPolynomial = X a := by
   simp [toMvPolynomial]
 
+/-- The polynomial of a sum of terms is the sum of their polynomials. -/
+@[simp]
+theorem toMvPolynomial_func_add (ts : Fin 2 → (Language.ring.sum Language.order).Term α) :
+    (func (Sum.inl Ring.addFunc) ts).toMvPolynomial =
+      (ts 0).toMvPolynomial + (ts 1).toMvPolynomial := by
+  simp [toMvPolynomial]
+
+/-- The polynomial of a product of terms is the product of their polynomials. -/
+@[simp]
+theorem toMvPolynomial_func_mul (ts : Fin 2 → (Language.ring.sum Language.order).Term α) :
+    (func (Sum.inl Ring.mulFunc) ts).toMvPolynomial =
+      (ts 0).toMvPolynomial * (ts 1).toMvPolynomial := by
+  simp [toMvPolynomial]
+
+/-- The polynomial of the negation of a term is the negation of its polynomial. -/
+@[simp]
+theorem toMvPolynomial_func_neg (ts : Fin 1 → (Language.ring.sum Language.order).Term α) :
+    (func (Sum.inl Ring.negFunc) ts).toMvPolynomial = -(ts 0).toMvPolynomial := by
+  simp [toMvPolynomial]
+
+/-- The polynomial of the constant `0` is `0`. -/
+@[simp]
+theorem toMvPolynomial_func_zero (ts : Fin 0 → (Language.ring.sum Language.order).Term α) :
+    (func (Sum.inl Ring.zeroFunc) ts).toMvPolynomial = 0 := by
+  simp [toMvPolynomial]
+
+/-- The polynomial of the constant `1` is `1`. -/
+@[simp]
+theorem toMvPolynomial_func_one (ts : Fin 0 → (Language.ring.sum Language.order).Term α) :
+    (func (Sum.inl Ring.oneFunc) ts).toMvPolynomial = 1 := by
+  simp [toMvPolynomial]
+
 /-- Renaming the variables of a term renames the variables of its polynomial. -/
 theorem toMvPolynomial_relabel (t : (Language.ring.sum Language.order).Term α) (g : α → β) :
     (t.relabel g).toMvPolynomial = rename g t.toMvPolynomial := by
@@ -67,7 +101,7 @@ theorem toMvPolynomial_relabel (t : (Language.ring.sum Language.order).Term α) 
   | var a => simp [Term.relabel]
   | func f ts ih =>
     rcases f with f | f
-    · cases f <;> simp [Term.relabel, toMvPolynomial, ih]
+    · cases f <;> simp [Term.relabel, ih]
     · exact nomatch f
 
 /-- Every integer polynomial is the polynomial of a term of the language of ordered rings. -/
@@ -78,15 +112,15 @@ theorem toMvPolynomial_surjective :
     { carrier := Set.range toMvPolynomial
       add_mem' := by
         rintro _ _ ⟨s, rfl⟩ ⟨t, rfl⟩
-        exact ⟨func (Sum.inl ringFunc.add) ![s, t], by simp [toMvPolynomial]⟩
+        exact ⟨func (Sum.inl Ring.addFunc) ![s, t], by simp⟩
       mul_mem' := by
         rintro _ _ ⟨s, rfl⟩ ⟨t, rfl⟩
-        exact ⟨func (Sum.inl ringFunc.mul) ![s, t], by simp [toMvPolynomial]⟩
+        exact ⟨func (Sum.inl Ring.mulFunc) ![s, t], by simp⟩
       neg_mem' := by
         rintro _ ⟨s, rfl⟩
-        exact ⟨func (Sum.inl ringFunc.neg) ![s], by simp [toMvPolynomial]⟩
-      zero_mem' := ⟨func (Sum.inl ringFunc.zero) ![], by simp [toMvPolynomial]⟩
-      one_mem' := ⟨func (Sum.inl ringFunc.one) ![], by simp [toMvPolynomial]⟩ }
+        exact ⟨func (Sum.inl Ring.negFunc) ![s], by simp⟩
+      zero_mem' := ⟨func (Sum.inl Ring.zeroFunc) ![], by simp⟩
+      one_mem' := ⟨func (Sum.inl Ring.oneFunc) ![], by simp⟩ }
   intro p
   induction p using MvPolynomial.induction_on with
   | C n =>
@@ -107,8 +141,15 @@ theorem realize_eq_aeval_toMvPolynomial (t : (Language.ring.sum Language.order).
     rw [realize_func]
     rcases f with f | f
     · rw [funMap_sumInl]
-      cases f <;> simp [toMvPolynomial, ih]
+      cases f <;> simp [ih]
     · exact nomatch f
+
+/-- In a commutative ring whose ring symbols have their usual meaning, realizing a term of the
+language of ordered rings is evaluating its integer polynomial mapped to `R`. -/
+theorem realize_eq_eval_map_toMvPolynomial (t : (Language.ring.sum Language.order).Term α)
+    (v : α → R) : t.realize v = eval v (t.toMvPolynomial.map (Int.castRingHom R)) := by
+  rw [t.realize_eq_aeval_toMvPolynomial, aeval_eq_eval₂Hom, eval_map, algebraMap_int_eq,
+    coe_eval₂Hom]
 
 end FirstOrder.Language.Term
 

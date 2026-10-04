@@ -51,12 +51,6 @@ open FirstOrder FirstOrder.Language MvPolynomial TauCeti
 
 variable {R : Type*} [CommRing R] [Ring.CompatibleRing R] [Language.order.Structure R]
 
-/-- Realizing a term is evaluating its integer polynomial, mapped to `R`. -/
-private theorem realize_eq_eval_map {α : Type*} (t : (Language.ring.sum Language.order).Term α)
-    (v : α → R) : t.realize v = eval v (t.toMvPolynomial.map (Int.castRingHom R)) := by
-  rw [t.realize_eq_aeval_toMvPolynomial, aeval_eq_eval₂Hom, eval_map, algebraMap_int_eq,
-    coe_eval₂Hom]
-
 variable [LinearOrder R] [IsOrderedAddMonoid R]
   [(Language.ring.sum Language.order).OrderedStructure R]
 
@@ -78,7 +72,8 @@ theorem isSemialgebraic_setOf_realize {φ : (Language.ring.sum Language.order).B
     | equal t₁ t₂ =>
       convert isSemialgebraic_eval_eq (t₁.toMvPolynomial.map (Int.castRingHom R))
         (t₂.toMvPolynomial.map (Int.castRingHom R)) using 3 with x
-      rw [realize_bdEqual, Sum.elim_comp_inl_inr, realize_eq_eval_map, realize_eq_eval_map]
+      rw [realize_bdEqual, Sum.elim_comp_inl_inr, Term.realize_eq_eval_map_toMvPolynomial,
+        Term.realize_eq_eval_map_toMvPolynomial]
     | rel r ts =>
       simp only [realize_rel]
       -- The ring language has no relation symbols; the only one of the order language is `≤`.
@@ -88,7 +83,7 @@ theorem isSemialgebraic_setOf_realize {φ : (Language.ring.sum Language.order).B
         convert isSemialgebraic_eval_le ((ts 0).toMvPolynomial.map (Int.castRingHom R))
           ((ts 1).toMvPolynomial.map (Int.castRingHom R)) using 3 with x
         refine (relMap_leSymb (L := Language.ring.sum Language.order) _).trans ?_
-        simp [Sum.elim_comp_inl_inr, realize_eq_eval_map]
+        simp [Sum.elim_comp_inl_inr, Term.realize_eq_eval_map_toMvPolynomial]
   | imp h₁ h₂ ih₁ ih₂ =>
     simpa [Set.ofPred_or, imp_iff_not_or, Set.compl_ofPred] using ih₁.compl.union ih₂
 
