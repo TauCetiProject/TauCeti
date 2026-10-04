@@ -50,6 +50,7 @@ over its restriction to `k`.
 * `NumberField.InfinitePlace.embedding_of_isReal_comap`: the real embedding of a restricted real
   place.
 * `NumberField.InfinitePlace.liesOver_comap`: a place lies over its restriction.
+* `NumberField.InfinitePlace.LiesOver.trans`: lying over is transitive in a field tower.
 -/
 
 public section
@@ -227,5 +228,15 @@ not the spelling `InfinitePlace.comap` produces, so it is registered here. Const
 instance InfinitePlace.liesOver_comap {k L : Type*} [Field k] [Field L] [Algebra k L]
     (w : InfinitePlace L) : w.LiesOver (w.comap (algebraMap k L)) :=
   ⟨rfl⟩
+
+/-- Lying over is transitive for infinite places in a field tower. -/
+theorem InfinitePlace.LiesOver.trans {k L M : Type*} [Field k] [Field L] [Field M]
+    [Algebra k L] [Algebra L M] [Algebra k M] [IsScalarTower k L M]
+    (u : InfinitePlace M) (w : InfinitePlace L) (v : InfinitePlace k)
+    [u.LiesOver w] [w.LiesOver v] : u.LiesOver v := by
+  have h : u.comap (algebraMap k M) = v := by
+    rw [IsScalarTower.algebraMap_eq k L M, InfinitePlace.comap_comp,
+      InfinitePlace.LiesOver.comap_eq u w, InfinitePlace.LiesOver.comap_eq w v]
+  exact ⟨congrArg Subtype.val h⟩
 
 end NumberField

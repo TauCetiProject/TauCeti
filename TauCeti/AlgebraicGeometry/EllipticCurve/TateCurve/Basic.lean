@@ -185,19 +185,20 @@ theorem order_tateCurve_Δ : tateCurve.Δ.order = 1 := by
 /-- **The discriminant of the Tate curve is `q` times a unit**: `Δ = q · u` with `u ∈ ℤ⟦q⟧` of
 constant coefficient `1`, hence invertible in `ℤ⟦q⟧`. -/
 theorem exists_tateCurve_Δ_eq_X_mul :
-    ∃ u : ℤ⟦X⟧, constantCoeff u = 1 ∧ tateCurve.Δ = X * u := by
+    ∃ u : ℤ⟦X⟧, constantCoeff u = 1 ∧ IsUnit u ∧ tateCurve.Δ = X * u := by
   obtain ⟨u, hu⟩ := X_dvd_iff.mpr constantCoeff_tateCurve_Δ
-  refine ⟨u, ?_, hu⟩
-  have h := coeff_one_tateCurve_Δ
-  rwa [hu, coeff_succ_X_mul, coeff_zero_eq_constantCoeff_apply] at h
+  have hu₀ : constantCoeff u = 1 := by
+    have h := coeff_one_tateCurve_Δ
+    rwa [hu, coeff_succ_X_mul, coeff_zero_eq_constantCoeff_apply] at h
+  exact ⟨u, hu₀, isUnit_iff_constantCoeff.mpr (by simp only [hu₀, isUnit_one]), hu⟩
 
 /-- Over the Laurent series `ℤ⸨q⸩`, where `q` is invertible, the Tate curve is elliptic. -/
 instance isElliptic_baseChange_tateCurve : (tateCurve.baseChange ℤ⸨X⸩).IsElliptic := by
-  obtain ⟨u, hu, hΔ⟩ := exists_tateCurve_Δ_eq_X_mul
+  obtain ⟨u, -, hu, hΔ⟩ := exists_tateCurve_Δ_eq_X_mul
   refine ⟨?_⟩
   rw [WeierstrassCurve.baseChange, WeierstrassCurve.map_Δ, hΔ, map_mul]
   exact (IsLocalization.map_units ℤ⸨X⸩ (⟨X, 1, pow_one X⟩ : Submonoid.powers (X : ℤ⟦X⟧))).mul
-    (((isUnit_iff_constantCoeff (φ := u)).mpr (by simp [hu])).map _)
+    (hu.map _)
 
 private theorem coeff_tateCurve_c₄_pow_three :
     constantCoeff (tateCurve.c₄ ^ 3) = 1 ∧ coeff 1 (tateCurve.c₄ ^ 3) = 720 := by
@@ -210,7 +211,7 @@ for a power series `J ∈ ℤ⟦q⟧` with `J = 1 + 744 q + ⋯`. In particular 
 theorem exists_tateCurve_j_eq :
     ∃ J : ℤ⟦X⟧, constantCoeff J = 1 ∧ coeff 1 J = 744 ∧
       (tateCurve.baseChange ℤ⸨X⸩).j = HahnSeries.single (-1) 1 * (J : ℤ⸨X⸩) := by
-  obtain ⟨u, hu₀, hΔ⟩ := exists_tateCurve_Δ_eq_X_mul
+  obtain ⟨u, hu₀, -, hΔ⟩ := exists_tateCurve_Δ_eq_X_mul
   have hu₁ : coeff 1 u = -24 := by
     have h := coeff_two_tateCurve_Δ
     rwa [hΔ, coeff_succ_X_mul] at h

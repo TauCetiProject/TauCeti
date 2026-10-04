@@ -19,7 +19,9 @@ calculations.
 
 Hamming weight and distance split as sums over the two coordinate blocks. Canonical reindexings
 by the commutativity and associativity equivalences for `Sum` give the corresponding code
-identities, using `TauCeti.AdditiveCode.reindex`.
+identities, using `TauCeti.AdditiveCode.reindex`. Relabelling the two coordinate blocks
+separately relabels the two constituent codes, so permutation equivalence is compatible with
+direct sums, and the direct sum is commutative and associative up to permutation equivalence.
 
 The alphabet is an arbitrary additive group, with no finiteness or field assumption.
 The construction transports Mathlib's `AddSubgroup.prod` along `Equiv.sumArrowEquivProdArrow`,
@@ -163,6 +165,47 @@ theorem AdditiveCode.reindex_directSum_sumAssoc (C : AddSubgroup (ι → A))
   ext x
   simp only [AdditiveCode.mem_reindex, mem_directSum_iff]
   exact and_assoc
+
+/-- Relabelling the two coordinate blocks of an additive direct sum separately relabels the two
+constituent codes. -/
+@[simp]
+theorem AdditiveCode.reindex_directSum_sumCongr {ι' κ' : Type*} (C : AddSubgroup (ι → A))
+    (D : AddSubgroup (κ → A)) (e : ι' ≃ ι) (f : κ' ≃ κ) :
+    AdditiveCode.reindex (C.directSum D) (e.sumCongr f) =
+      (AdditiveCode.reindex C e).directSum (AdditiveCode.reindex D f) := by
+  ext x
+  simp only [AdditiveCode.mem_reindex, mem_directSum_iff]
+  refine and_congr (iff_of_eq (congrArg (· ∈ C) (funext fun i ↦ ?_)))
+    (iff_of_eq (congrArg (· ∈ D) (funext fun j ↦ ?_))) <;> simp
+
+/-- Permutation equivalence of additive codes is compatible with direct sums: relabellings of
+the two summands combine to a relabelling of the direct sum. -/
+theorem AdditiveCode.IsPermutationEquivalent.directSum {ι' κ' : Type*}
+    {C : AddSubgroup (ι → A)} {C' : AddSubgroup (ι' → A)} {D : AddSubgroup (κ → A)}
+    {D' : AddSubgroup (κ' → A)} (hC : AdditiveCode.IsPermutationEquivalent C C')
+    (hD : AdditiveCode.IsPermutationEquivalent D D') :
+    AdditiveCode.IsPermutationEquivalent (C.directSum D) (C'.directSum D') := by
+  obtain ⟨e, rfl⟩ := AdditiveCode.isPermutationEquivalent_iff.mp hC
+  obtain ⟨f, rfl⟩ := AdditiveCode.isPermutationEquivalent_iff.mp hD
+  exact AdditiveCode.isPermutationEquivalent_iff.mpr
+    ⟨e.sumCongr f, AdditiveCode.reindex_directSum_sumCongr C D e f⟩
+
+/-- An additive direct sum is permutation equivalent to the direct sum taken in the other
+order. -/
+theorem AdditiveCode.isPermutationEquivalent_directSum_comm (C : AddSubgroup (ι → A))
+    (D : AddSubgroup (κ → A)) :
+    AdditiveCode.IsPermutationEquivalent (C.directSum D) (D.directSum C) :=
+  AdditiveCode.isPermutationEquivalent_iff.mpr
+    ⟨Equiv.sumComm κ ι, AdditiveCode.reindex_directSum_sumComm C D⟩
+
+/-- An iterated additive direct sum is permutation equivalent to the direct sum associated the
+other way. -/
+theorem AdditiveCode.isPermutationEquivalent_directSum_assoc (C : AddSubgroup (ι → A))
+    (D : AddSubgroup (κ → A)) (E : AddSubgroup (ν → A)) :
+    AdditiveCode.IsPermutationEquivalent ((C.directSum D).directSum E)
+      (C.directSum (D.directSum E)) :=
+  AdditiveCode.isPermutationEquivalent_iff.mpr
+    ⟨(Equiv.sumAssoc ι κ ν).symm, AdditiveCode.reindex_directSum_sumAssoc C D E⟩
 
 /-- The direct sum of two zero codes is zero. -/
 @[simp]

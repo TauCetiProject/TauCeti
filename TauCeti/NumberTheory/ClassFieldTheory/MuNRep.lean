@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Module.ZMod.SMulCommClass
 public import TauCeti.FieldTheory.GaloisCohomology.Kummer
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologyComparison
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.TrivialFp
 public import TauCeti.RingTheory.RootsOfUnity.ZMod
 public import TauCeti.Topology.Instances.ZMod
 
@@ -49,6 +50,16 @@ The name `kummerClass` here is `TauCeti.ClassFieldTheory.kummerClass`; it is not
 Kummer class `TauCeti.kummerClass`, which lives in the trivial `𝔽₂` coefficient object of
 `TauCeti.AbsoluteGaloisGroup`.
 
+When `F` contains a chosen primitive `n`th root of unity `ζ`, the action of `G_F` on `μₙ` is
+trivial. The coordinate `muNRepEquivZMod` sends the chosen generator `muNRepGenerator` to `1`,
+and `muNRepEquivTrivialFp` identifies `μₙ` with the trivial coefficients `ℤ/n`, sending
+`ζ` to `1`. As an isomorphism of coefficient objects, `muNRepIsoTrivialFp`, it induces
+`muNRepCohomologyEquivTrivialFp`, comparing the cohomology of `μₙ` with that of `ℤ/n` in every
+degree; in degrees one and two it is the pullback of explicit cocycles. In degree one,
+`kummerEquivTrivialFp` identifies `n`th-power classes with `H¹(G_F, ℤ/n)` for the trivial action.
+This works for arbitrary nonzero `n`, without a finiteness assumption, and yields the
+corresponding cardinality equality.
+
 ## Main definitions
 
 * `TauCeti.ClassFieldTheory.GalRep n F`: coefficient objects `TopRep (ZMod n) G_F`.
@@ -61,6 +72,16 @@ Kummer class `TauCeti.kummerClass`, which lives in the trivial `𝔽₂` coeffic
   Kummer isomorphism `Fˣ ⧸ (Fˣ)ⁿ ≃+ H¹(G_F, muNRep n F)`, for `n` invertible in `F` and for
   `n ≠ 0` in characteristic zero.
 * `TauCeti.ClassFieldTheory.kummerClass`: the Kummer class of a unit in `H¹(G_F, muNRep n F)`.
+* `TauCeti.ClassFieldTheory.muNRepEquivZMod`: the chosen-root coordinate on `μₙ`.
+* `TauCeti.ClassFieldTheory.muNRepGenerator`: the root with chosen coordinate `1`.
+* `TauCeti.ClassFieldTheory.muNRepEquivTrivialFp`: the identification of `μₙ` with trivial `ℤ/n`
+  coefficients determined by a primitive `n`th root of unity in `F`.
+* `TauCeti.ClassFieldTheory.muNRepIsoTrivialFp`: the same identification as an isomorphism of
+  coefficient objects.
+* `TauCeti.ClassFieldTheory.muNRepCohomologyEquivTrivialFp`: its transport to `Hᵈ` in every
+  degree `d`.
+* `TauCeti.ClassFieldTheory.kummerEquivTrivialFp`: the Kummer isomorphism with trivial `ℤ/n`
+  coefficients, given a primitive `n`th root of unity in `F`.
 
 ## Main results
 
@@ -92,7 +113,7 @@ noncomputable section
 
 namespace TauCeti.ClassFieldTheory
 
-open ContCohomology
+open CategoryTheory ContCohomology
 
 universe u
 
@@ -337,5 +358,199 @@ theorem kummerEquivOfCharZero_ofMul_mk [CharZero F] (hn : n ≠ 0) (a : Fˣ) :
     kummerEquivOfCharZero F hn (Additive.ofMul (a : powerClassQuotient Fˣ n)) =
       kummerClass F (Nat.cast_ne_zero.2 hn).isUnit a :=
   kummerEquiv_ofMul_mk F _ a
+
+/-! ### Kummer theory with trivial coefficients -/
+
+section
+
+variable (n) [NeZero n]
+
+attribute [local instance] continuousSMul_trivialFp
+
+/-- **The coefficient identification `μₙ ≃ ℤ/n` of a primitive root**: a primitive `n`th root of
+unity `ζ ∈ F` identifies `μₙ` with the trivial coefficients `ℤ/n`, sending `ζ ^ i` to the class
+of `i` (`coe_kummerCoeffEquivMuNRep_symm_muNRepEquivTrivialFp_symm_natCast`). It is equivariant
+(`muNRepEquivTrivialFp_smul`) because `G_F` fixes `ζ` and hence acts trivially on `μₙ`. -/
+def muNRepEquivTrivialFp {ζ : F} (hζ : IsPrimitiveRoot ζ n) :
+    (muNRep n F).V ≃+ (trivialFp n (Field.absoluteGaloisGroup F)).V :=
+  have hζu : IsPrimitiveRoot
+      (Units.map (algebraMap F (SeparableClosure F)).toMonoidHom
+        (Units.mk0 ζ (hζ.ne_zero (NeZero.ne n)))) n :=
+    (IsPrimitiveRoot.coe_units_iff.mp hζ).map_of_injective
+      (Units.map_injective (algebraMap F (SeparableClosure F)).injective)
+  (kummerCoeffEquivMuNRep n F).symm.trans <|
+    hζu.zmodEquivRootsOfUnity.symm.trans (trivialFpEquiv n _).symm.toAddEquiv
+
+/-- The coefficient identification of a primitive root `ζ` sends `ζ ^ i` to the class of `i`:
+read back in `μₙ(Fˢ)`, the class of `i` is the image of `ζ ^ i`. -/
+theorem coe_kummerCoeffEquivMuNRep_symm_muNRepEquivTrivialFp_symm_natCast {ζ : F}
+    (hζ : IsPrimitiveRoot ζ n) (i : ℕ) :
+    ((((kummerCoeffEquivMuNRep n F).symm ((muNRepEquivTrivialFp n F hζ).symm
+        ((trivialFpEquiv n _).symm (i : ZMod n)))).toMul : (SeparableClosure F)ˣ) :
+        SeparableClosure F) = algebraMap F (SeparableClosure F) ζ ^ i := by
+  simp [muNRepEquivTrivialFp]
+
+variable {n F} in
+/-- The additive coordinate on `μₙ` selected by the primitive root `ζ`, sending `ζ` to `1`. -/
+def muNRepEquivZMod (ζ : F) (hζ : IsPrimitiveRoot ζ n) : (muNRep n F).V ≃+ ZMod n :=
+  (muNRepEquivTrivialFp n F hζ).trans (trivialFpEquiv n _).toAddEquiv
+
+variable {n F} in
+/-- The inverse chosen-root coordinate is the inverse trivial-coefficient identification. -/
+theorem muNRepEquivZMod_symm_apply (ζ : F) (hζ : IsPrimitiveRoot ζ n) (c : ZMod n) :
+    (muNRepEquivZMod ζ hζ).symm c =
+      (muNRepEquivTrivialFp n F hζ).symm ((trivialFpEquiv n _).symm c) :=
+  (rfl)
+
+variable {n F} in
+/-- The chosen primitive root, as the element of `μₙ` with coordinate `1`. -/
+def muNRepGenerator (ζ : F) (hζ : IsPrimitiveRoot ζ n) : (muNRep n F).V :=
+  (muNRepEquivZMod ζ hζ).symm 1
+
+variable {n F} in
+/-- The chosen primitive root has coordinate `1`. -/
+@[simp]
+theorem muNRepEquivZMod_generator (ζ : F) (hζ : IsPrimitiveRoot ζ n) :
+    muNRepEquivZMod ζ hζ (muNRepGenerator ζ hζ) = 1 := by
+  simp only [muNRepGenerator, AddEquiv.apply_symm_apply]
+
+/-- The coefficient identification of a primitive root intertwines the action of `G_F` on `μₙ`
+with the trivial action on `ℤ/n`. -/
+theorem muNRepEquivTrivialFp_smul {ζ : F} (hζ : IsPrimitiveRoot ζ n)
+    (g : Field.absoluteGaloisGroup F) (x : (muNRep n F).V) :
+    muNRepEquivTrivialFp n F hζ (g • x) = g • muNRepEquivTrivialFp n F hζ x := by
+  rw [TopRep.distribMulAction_smul, muNRep_ρ_apply_eq_self hζ, smul_trivialFp_V]
+
+/-- The coefficient identification of a primitive root is invariant under the action of `G_F` on
+`μₙ`, which is trivial. This is the simp-normal form of `muNRepEquivTrivialFp_smul`. -/
+@[simp]
+theorem muNRepEquivTrivialFp_ρ_apply {ζ : F} (hζ : IsPrimitiveRoot ζ n)
+    (g : Field.absoluteGaloisGroup F) (x : (muNRep n F).V) :
+    muNRepEquivTrivialFp n F hζ ((muNRep n F).ρ g x) = muNRepEquivTrivialFp n F hζ x := by
+  rw [muNRep_ρ_apply_eq_self hζ]
+
+/-- **The coefficient isomorphism `μₙ ≅ ℤ/n` of a primitive root** as coefficient objects: the
+identification `muNRepEquivTrivialFp` packaged as an isomorphism of topological representations,
+continuous because both sides are discrete and equivariant because `G_F` acts trivially on both
+(`muNRep_ρ_apply_eq_self`). -/
+def muNRepIsoTrivialFp {ζ : F} (hζ : IsPrimitiveRoot ζ n) :
+    muNRep n F ≅ trivialFp n (Field.absoluteGaloisGroup F) where
+  hom := ConcreteCategory.ofHom
+    ⟨⟨(muNRepEquivTrivialFp n F hζ).toAddMonoidHom.toZModLinearMap n,
+      continuous_of_discreteTopology⟩, fun g ↦ ContinuousLinearMap.ext fun x ↦ by
+        simp [muNRep_ρ_apply_eq_self hζ, trivialFp_ρ_apply_apply]⟩
+  inv := ConcreteCategory.ofHom
+    ⟨⟨(muNRepEquivTrivialFp n F hζ).symm.toAddMonoidHom.toZModLinearMap n,
+      continuous_of_discreteTopology⟩, fun g ↦ ContinuousLinearMap.ext fun x ↦ by
+        simp [muNRep_ρ_apply_eq_self hζ, trivialFp_ρ_apply_apply]⟩
+  hom_inv_id := by ext x; exact (muNRepEquivTrivialFp n F hζ).symm_apply_apply x
+  inv_hom_id := by ext x; exact (muNRepEquivTrivialFp n F hζ).apply_symm_apply x
+
+/-- The coefficient isomorphism of a primitive root acts on elements as the coefficient
+identification `muNRepEquivTrivialFp`. -/
+@[simp]
+theorem muNRepIsoTrivialFp_hom_apply {ζ : F} (hζ : IsPrimitiveRoot ζ n) (x : (muNRep n F).V) :
+    (muNRepIsoTrivialFp n F hζ).hom x = muNRepEquivTrivialFp n F hζ x :=
+  (rfl)
+
+/-- The inverse coefficient isomorphism of a primitive root acts on elements as the inverse of the
+coefficient identification `muNRepEquivTrivialFp`. -/
+@[simp]
+theorem muNRepIsoTrivialFp_inv_apply {ζ : F} (hζ : IsPrimitiveRoot ζ n)
+    (x : (trivialFp n (Field.absoluteGaloisGroup F)).V) :
+    (muNRepIsoTrivialFp n F hζ).inv x = (muNRepEquivTrivialFp n F hζ).symm x :=
+  (rfl)
+
+/-- **The coefficient transport from `μₙ` to trivial `ℤ/n` coefficients in every degree**: the
+image of the coefficient isomorphism `muNRepIsoTrivialFp` of the chosen primitive root under
+`H^d(G_F, -)`. The chosen root is identified with `1 : ZMod n`. -/
+def muNRepCohomologyEquivTrivialFp {ζ : F} (hζ : IsPrimitiveRoot ζ n) (d : ℕ) :
+    continuousCohomology d (muNRep n F) ≃ₗ[ZMod n] cohomFp n (Field.absoluteGaloisGroup F) d :=
+  ((TauCeti.ContinuousCohomology.continuousCohomologyFunctor (ZMod n) _ d).mapIso
+    (muNRepIsoTrivialFp n F hζ)).toContinuousLinearEquiv.toLinearEquiv
+
+-- Not `@[simp]`: the transport is the intended normal form, and this lemma unfolds it.
+/-- The coefficient transport is the coefficient map `coeffMap` of the coefficient isomorphism
+`muNRepIsoTrivialFp`. -/
+theorem muNRepCohomologyEquivTrivialFp_apply {ζ : F} (hζ : IsPrimitiveRoot ζ n) (d : ℕ)
+    (x : continuousCohomology d (muNRep n F)) :
+    muNRepCohomologyEquivTrivialFp n F hζ d x =
+      TauCeti.ContinuousCohomology.coeffMap (muNRepIsoTrivialFp n F hζ).hom d x :=
+  (rfl)
+
+-- Not `@[simp]`: the transport is the intended normal form, and this lemma unfolds it.
+/-- The inverse coefficient transport is the coefficient map `coeffMap` of the inverse of the
+coefficient isomorphism `muNRepIsoTrivialFp`. -/
+theorem muNRepCohomologyEquivTrivialFp_symm_apply {ζ : F} (hζ : IsPrimitiveRoot ζ n) (d : ℕ)
+    (x : cohomFp n (Field.absoluteGaloisGroup F) d) :
+    (muNRepCohomologyEquivTrivialFp n F hζ d).symm x =
+      TauCeti.ContinuousCohomology.coeffMap (muNRepIsoTrivialFp n F hζ).inv d x :=
+  (rfl)
+
+/-- In degree one, the coefficient transport is the pullback of explicit cocycles along the
+coefficient identification `muNRepEquivTrivialFp` of the chosen primitive root. -/
+theorem muNRepCohomologyEquivTrivialFp_one_apply {ζ : F} (hζ : IsPrimitiveRoot ζ n)
+    (x : continuousCohomology 1 (muNRep n F)) :
+    muNRepCohomologyEquivTrivialFp n F hζ 1 x =
+      (trivialFp n (Field.absoluteGaloisGroup F)).explicitH1AddEquivContinuousCohomologyOfDiscrete
+        (explicitMap1 (Field.absoluteGaloisGroup F) (muNRep n F).V
+          (Field.absoluteGaloisGroup F) (trivialFp n (Field.absoluteGaloisGroup F)).V
+          (ContinuousMulEquiv.refl (Field.absoluteGaloisGroup F) :
+            Field.absoluteGaloisGroup F →ₜ* Field.absoluteGaloisGroup F)
+          (muNRepEquivTrivialFp n F hζ).toAddMonoidHom continuous_of_discreteTopology
+          (muNRepEquivTrivialFp_smul n F hζ)
+          ((muNRep n F).explicitH1AddEquivContinuousCohomologyOfDiscrete.symm x)) := by
+  obtain ⟨y, rfl⟩ := (muNRep n F).explicitH1AddEquivContinuousCohomologyOfDiscrete.surjective x
+  rw [AddEquiv.symm_apply_apply, muNRepCohomologyEquivTrivialFp_apply,
+    TauCeti.ContinuousCohomology.coeffMap_def]
+  exact TopRep.explicitH1AddEquivContinuousCohomologyOfDiscrete_map _ _ _ _ _ (fun _ ↦ rfl) _ y
+
+/-- In degree two, the coefficient transport is the pullback of explicit cocycles along the
+coefficient identification `muNRepEquivTrivialFp` of the chosen primitive root. -/
+theorem muNRepCohomologyEquivTrivialFp_two_apply {ζ : F} (hζ : IsPrimitiveRoot ζ n)
+    (x : continuousCohomology 2 (muNRep n F)) :
+    muNRepCohomologyEquivTrivialFp n F hζ 2 x =
+      (trivialFp n (Field.absoluteGaloisGroup F)).explicitH2AddEquivContinuousCohomologyOfDiscrete
+        (explicitMap2 (Field.absoluteGaloisGroup F) (muNRep n F).V
+          (Field.absoluteGaloisGroup F) (trivialFp n (Field.absoluteGaloisGroup F)).V
+          (ContinuousMulEquiv.refl (Field.absoluteGaloisGroup F) :
+            Field.absoluteGaloisGroup F →ₜ* Field.absoluteGaloisGroup F)
+          (muNRepEquivTrivialFp n F hζ).toAddMonoidHom continuous_of_discreteTopology
+          (muNRepEquivTrivialFp_smul n F hζ)
+          ((muNRep n F).explicitH2AddEquivContinuousCohomologyOfDiscrete.symm x)) := by
+  obtain ⟨y, rfl⟩ := (muNRep n F).explicitH2AddEquivContinuousCohomologyOfDiscrete.surjective x
+  rw [AddEquiv.symm_apply_apply, muNRepCohomologyEquivTrivialFp_apply,
+    TauCeti.ContinuousCohomology.coeffMap_def]
+  exact TopRep.explicitH2AddEquivContinuousCohomologyOfDiscrete_map _ _ _ _ _ (fun _ ↦ rfl) _ y
+
+/-- Given a primitive `n`th root of unity in `F`, the Kummer isomorphism identifies the
+`n`th-power classes with `H¹(G_F, ℤ/n)` for the trivial action. The coefficient identification
+sends the chosen root to `1 : ZMod n`. No finiteness assumption is required. -/
+def kummerEquivTrivialFp {ζ : F} (hζ : IsPrimitiveRoot ζ n) :
+    Additive (powerClassQuotient Fˣ n) ≃+ cohomFp n (Field.absoluteGaloisGroup F) 1 := by
+  have := hζ.neZero'
+  exact (kummerEquiv F (NeZero.ne (n : F)).isUnit).trans
+    (muNRepCohomologyEquivTrivialFp n F hζ 1).toAddEquiv
+
+/-- The trivial-coefficient Kummer equivalence sends the power class of `a` to its `μₙ`
+Kummer class transported by the coefficient identification determined by the chosen root. -/
+@[simp]
+theorem kummerEquivTrivialFp_ofMul_mk {ζ : F} (hζ : IsPrimitiveRoot ζ n) (a : Fˣ) :
+    kummerEquivTrivialFp n F hζ (Additive.ofMul (a : powerClassQuotient Fˣ n)) =
+      muNRepCohomologyEquivTrivialFp n F hζ 1 (kummerClass F hζ.neZero'.out.isUnit a) := by
+  rw [kummerEquivTrivialFp, AddEquiv.trans_apply, kummerEquiv_ofMul_mk,
+    LinearEquiv.coe_toAddEquiv, LinearEquiv.coe_addEquiv_apply]
+
+/-- If `F` contains a primitive `n`th root, the cardinality of `H¹(G_F, ℤ/n)` equals the
+number of `n`th-power classes. This equality of `Nat.card` also holds when both groups are
+infinite; it does not assert finiteness. -/
+theorem natCard_cohomFp_one_absoluteGaloisGroup_of_isPrimitiveRoot
+    {ζ : F} (hζ : IsPrimitiveRoot ζ n) :
+    Nat.card (cohomFp n (Field.absoluteGaloisGroup F) 1) =
+      Nat.card (powerClassQuotient Fˣ n) :=
+  (Nat.card_congr (kummerEquivTrivialFp n F hζ).toEquiv).symm.trans
+    (Nat.card_congr Additive.toMul)
+
+end
 
 end TauCeti.ClassFieldTheory

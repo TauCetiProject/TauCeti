@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.ConstantSpeed
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Exponential
 public import TauCeti.Geometry.Manifold.Riemannian.VariationField
+import Mathlib.Analysis.InnerProductSpace.Calculus
 
 /-!
 # The Gauss lemma for the Riemannian exponential map

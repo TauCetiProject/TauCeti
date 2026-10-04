@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.LowerCentralSeries
 public import TauCeti.Topology.Algebra.Group.Profinite.Rank
+import Mathlib.Topology.Separation.Connected
 
 /-!
 # Normal generation in pro-`p` groups

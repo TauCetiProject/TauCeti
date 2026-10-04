@@ -69,7 +69,7 @@ variable {m n : ℕ}
 /-- The cyclic triple of degree `n`: the sheets are rotated cyclically around `0` and in the
 opposite direction around `∞`, and are not permuted around `1`. For `n ≠ 0` it is the monodromy
 triple of the cover `z ↦ zⁿ` of the sphere; `cyclicTriple 0` is the formal empty triple. -/
-def cyclicTriple (n : ℕ) : PermutationTriple n where
+@[expose] def cyclicTriple (n : ℕ) : PermutationTriple n where
   σ0 := finRotate n
   σ1 := 1
   σinf := (finRotate n)⁻¹
@@ -226,7 +226,7 @@ theorem swap_smul_cyclicTriple_four_ne :
 
 /-- The monodromy triple of `z ↦ 4z(1 - z)`: the two sheets are exchanged around `1` and `∞` and
 not around `0`. -/
-def chebyshevTriple : PermutationTriple 2 where
+@[expose] def chebyshevTriple : PermutationTriple 2 where
   σ0 := 1
   σ1 := swap 0 1
   σinf := swap 0 1
@@ -277,7 +277,7 @@ theorem orderTriple_chebyshevTriple : chebyshevTriple.orderTriple = (1, 2, 2) :=
 
 /-- A degree-four triple of genus one: cyclic rotation around both `0` and `1`, and hence the
 square of the inverse rotation around `∞`. -/
-def torusTriple : PermutationTriple 4 where
+@[expose] def torusTriple : PermutationTriple 4 where
   σ0 := finRotate 4
   σ1 := finRotate 4
   σinf := (finRotate 4 ^ 2)⁻¹
@@ -429,7 +429,7 @@ theorem blockQuotient_torusTriple
 
 /-- A degree-three triple whose monodromy group is all of `S₃`: a three-cycle around `0` and a
 transposition around `1`. -/
-def s3Triple : PermutationTriple 3 where
+@[expose] def s3Triple : PermutationTriple 3 where
   σ0 := finRotate 3
   σ1 := swap 0 1
   σinf := swap 1 2

@@ -25,6 +25,10 @@ unity, and hence the values of a character of a finite group, are integral over 
   root of unity that is congruent to `1` modulo an ideal not containing its order is `1`.
 * `TauCeti.card_rootsOfUnity_two`: in a domain in which `2 ≠ 0`, the group `μ₂ = {±1}` has two
   elements.
+* `IsPrimitiveRoot.neg_one_of_two_ne_zero`: when `2 ≠ 0`, `-1` is a primitive square root of
+  unity.
+* `IsPrimitiveRoot.neg_of_odd`: when `2 ≠ 0`, the negative of a primitive root of unity of odd
+  order `n` is a primitive `2n`-th root of unity.
 -/
 
 public section
@@ -63,11 +67,26 @@ theorem eq_one_of_pow_eq_one_of_sub_one_mem [NoZeroDivisors R] {I : Ideal R} {n 
   rw [map_sum, map_zero] at h
   simpa [map_pow, hres] using h
 
+/-- In a commutative ring in which `2 ≠ 0`, `-1` is a primitive square root of unity. -/
+theorem _root_.IsPrimitiveRoot.neg_one_of_two_ne_zero (h2 : (2 : R) ≠ 0) :
+    IsPrimitiveRoot (-1 : R) 2 :=
+  have : Nontrivial R := ⟨⟨2, 0, h2⟩⟩
+  IsPrimitiveRoot.neg_one (ringChar R) fun h ↦
+    h2 (by simpa [h] using ringChar.Nat.cast_ringChar (R := R))
+
 /-- In a domain in which `2 ≠ 0`, the group `μ₂ = {±1}` of square roots of unity has two
 elements. -/
 theorem card_rootsOfUnity_two [IsDomain R] (h2 : (2 : R) ≠ 0) :
     Nat.card (rootsOfUnity 2 R) = 2 :=
-  (IsPrimitiveRoot.neg_one (ringChar R) fun h ↦
-    h2 (by simpa [h] using ringChar.Nat.cast_ringChar (R := R))).card_rootsOfUnity
+  (IsPrimitiveRoot.neg_one_of_two_ne_zero h2).card_rootsOfUnity
+
+/-- In a commutative ring in which `2 ≠ 0`, the negative of a primitive `n`-th root of unity of
+odd order `n` is a primitive `2n`-th root of unity. -/
+theorem _root_.IsPrimitiveRoot.neg_of_odd {ζ : R} {n : ℕ} (hζ : IsPrimitiveRoot ζ n) (hn : Odd n)
+    (h2 : (2 : R) ≠ 0) : IsPrimitiveRoot (-ζ) (2 * n) := by
+  have hneg := IsPrimitiveRoot.neg_one_of_two_ne_zero h2
+  rw [IsPrimitiveRoot.iff_orderOf, neg_eq_neg_one_mul,
+    (Commute.all _ _).orderOf_mul_eq_mul_orderOf_of_coprime, ← hneg.eq_orderOf, ← hζ.eq_orderOf]
+  rwa [← hneg.eq_orderOf, ← hζ.eq_orderOf, Nat.coprime_two_left]
 
 end TauCeti

@@ -25,6 +25,9 @@ range contains every `n`-th root of unity of `P`, provided every element of `M` 
 sees such an `f` as an isomorphism. This is the form in which an injection of coefficient groups
 whose image is the `n`-torsion induces bijections on duals.
 
+The same transport principle applies to a perfect biadditive pairing: bijective changes of both
+variables and of the target preserve bijectivity of its curried homomorphism.
+
 ## Main results
 
 * `MonoidHom.compHom'_bijective`, `AddMonoidHom.compHom'_bijective`: precomposition with a bijective
@@ -35,6 +38,8 @@ whose image is the `n`-torsion induces bijections on duals.
   by `n`.
 * `MonoidHom.compHom_bijective`, `AddMonoidHom.compHom_bijective`: postcomposition with a bijective
   homomorphism is bijective on homomorphisms out of any monoid.
+* `AddMonoidHom.bijective_of_bijective_pairing`: a perfect biadditive pairing remains perfect
+  after bijective changes of variables and target.
 -/
 
 public section
@@ -56,6 +61,43 @@ theorem _root_.MonoidHom.compHom'_bijective {f : M →* N} (hf : Function.Biject
       exact DFunLike.congr_fun h m,
     fun χ => ⟨χ.comp (MulEquiv.ofBijective f hf).symm.toMonoidHom, MonoidHom.ext fun m =>
       congrArg χ ((MulEquiv.ofBijective f hf).symm_apply_apply m)⟩⟩
+
+/-- A biadditive pairing remains perfect after bijective changes of variables and target. -/
+theorem _root_.AddMonoidHom.bijective_of_bijective_pairing
+    {X X' Y Y' Z Z' : Type*}
+    [AddMonoid X] [AddMonoid X'] [AddMonoid Y] [AddMonoid Y']
+    [AddCommMonoid Z] [AddCommMonoid Z']
+    (P : X →+ Y →+ Z) (P' : X' →+ Y' →+ Z')
+    (eX : X' →+ X) (eY : Y' →+ Y) (eZ : Z →+ Z')
+    (hX : Function.Bijective eX) (hY : Function.Bijective eY)
+    (hZ : Function.Bijective eZ) (hP : Function.Bijective P)
+    (hcomm : ∀ x y, P' x y = eZ (P (eX x) (eY y))) :
+    Function.Bijective P' := by
+  let eX' := AddEquiv.ofBijective eX hX
+  let eY' := AddEquiv.ofBijective eY hY
+  let eZ' := AddEquiv.ofBijective eZ hZ
+  constructor
+  · intro x x' h
+    apply hX.1
+    apply hP.1
+    ext y
+    obtain ⟨y', rfl⟩ := hY.2 y
+    apply hZ.1
+    rw [← hcomm, ← hcomm, h]
+  · intro q
+    let q₀ : Y →+ Z := eZ'.symm.toAddMonoidHom.comp
+      (q.comp eY'.symm.toAddMonoidHom)
+    obtain ⟨x, hx⟩ := hP.2 q₀
+    refine ⟨eX'.symm x, AddMonoidHom.ext fun y => ?_⟩
+    have heX : eX (eX'.symm x) = x := eX'.apply_symm_apply x
+    have heY : eY'.symm.toAddMonoidHom (eY y) = y := by
+      simpa only [eY', AddEquiv.coe_toAddMonoidHom, AddEquiv.ofBijective_apply] using
+        eY'.symm_apply_apply y
+    have heZ : eZ (eZ'.symm.toAddMonoidHom (q y)) = q y := by
+      simpa only [eZ', AddEquiv.coe_toAddMonoidHom, AddEquiv.ofBijective_apply] using
+        eZ'.apply_symm_apply (q y)
+    rw [hcomm, heX, hx]
+    simpa only [q₀, AddMonoidHom.comp_apply, heY] using heZ
 
 /-- Postcomposition with an injective homomorphism `f : N →* P` is bijective on homomorphisms out
 of a monoid `M` all of whose elements satisfy `a ^ n = 1`, provided the range of `f` contains every

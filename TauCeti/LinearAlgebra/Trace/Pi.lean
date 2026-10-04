@@ -72,7 +72,7 @@ theorem _root_.LinearMap.trace_piMap {M : ι → Type*}
       ∑ i, LinearMap.trace k (M i) (f i) := by
   classical
   let b (i : ι) := Module.Free.chooseBasis k (M i)
-  rw [LinearMap.trace_eq_matrix_trace k (Pi.basis b), LinearMap.toMatrix_piMap,
+  rw [LinearMap.trace_eq_matrix_trace k (Pi.basis b), LinearMap.toMatrix_piMap b b,
     Matrix.trace_blockDiagonal']
   simp_rw [LinearMap.trace_eq_matrix_trace k (b _)]
 

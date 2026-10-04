@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.GenusComparison
+public import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.Genus.Comparison
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.MultiplicityBound
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Picard.Contraction
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Picard.Torsion.Bound

@@ -8,7 +8,7 @@ module
 public import TauCeti.NumberTheory.NumberField.Global.HeckeCharacter.Basic
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.Ray.OpenSubgroup
 
-import TauCeti.Topology.Algebra.ContinuousMonoidHom
+import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 
 /-!
 # Finite-order Hecke characters

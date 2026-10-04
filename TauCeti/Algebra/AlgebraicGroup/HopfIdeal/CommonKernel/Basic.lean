@@ -25,6 +25,10 @@ torus.
 * `TauCeti.CommHopfAlgCat.commonKernelHopfIdeal`: the largest Hopf ideal contained in all the
   kernels.
 * `TauCeti.CommHopfAlgCat.le_commonKernelHopfIdeal_iff`: its universal property.
+* `TauCeti.CommHopfAlgCat.comapOfSurjective_commonKernelHopfIdeal`: surjective pullback
+  commutes with taking the common kernel of a family.
+* `TauCeti.CommHopfAlgCat.map_commonKernelHopfIdeal`: an ambient isomorphism transports a
+  common kernel to the common kernel of the transported family.
 * `TauCeti.CommHopfAlgCat.commonKernelHopfIdeal_eq_of_toIdeal_le_ker`: members of the family
   that kill the common kernel of the others may be dropped.
 * `TauCeti.CommHopfAlgCat.comapOfSurjective_commonKernelHopfIdeal_le_of_comp_eq`: an
@@ -79,6 +83,47 @@ theorem le_commonKernelHopfIdeal_iff (f : ∀ i, H ⟶ K i) (I : HopfIdeal R H) 
       (commonKernelHopfIdeal_toIdeal_le_ker f i)
   · intro h
     exact le_sSup h
+
+-- The transported common-kernel comparison follows the arguments in
+-- `TauCeti.Algebra.Lie.F4.ShortRoot.PrimeField.Generated.Basic` and
+-- `TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.Generated.Basic`.
+/-- Pulling a common-kernel Hopf ideal back along a surjective ambient morphism gives the
+common kernel of the precomposed family. -/
+theorem comapOfSurjective_commonKernelHopfIdeal {H' : _root_.CommHopfAlgCat.{v} R}
+    (f : ∀ i, H ⟶ K i) (g : H' ⟶ H) (hg : Function.Surjective g.hom) :
+    (commonKernelHopfIdeal f).comapOfSurjective g.hom hg =
+      commonKernelHopfIdeal (fun i ↦ g ≫ f i) := by
+  apply le_antisymm
+  · refine (le_commonKernelHopfIdeal_iff _ _).2 fun i x hx ↦ ?_
+    -- Expose the composite Hopf morphism application beneath the kernel's ring-hom coercions.
+    change (f i).hom (g.hom x) = 0
+    exact RingHom.mem_ker.mp (commonKernelHopfIdeal_toIdeal_le_ker _ i
+      (HopfIdeal.mem_comapOfSurjective.mp hx))
+  · intro x hx
+    apply HopfIdeal.mem_comapOfSurjective.mpr
+    have hle : (commonKernelHopfIdeal (fun i ↦ g ≫ f i)).map g.hom ≤
+        commonKernelHopfIdeal f := by
+      refine (le_commonKernelHopfIdeal_iff _ _).2 fun i ↦ ?_
+      rw [HopfIdeal.map_toIdeal, Ideal.map_le_iff_le_comap]
+      intro y hy
+      exact commonKernelHopfIdeal_toIdeal_le_ker (fun i ↦ g ≫ f i) i hy
+    exact hle (HopfIdeal.mem_map_of_mem g.hom hx)
+
+/-- An ambient isomorphism carries a common-kernel Hopf ideal to the common kernel of the
+family precomposed with its inverse. -/
+theorem map_commonKernelHopfIdeal {H' : _root_.CommHopfAlgCat.{v} R}
+    (f : ∀ i, H ⟶ K i) (e : H ≅ H') :
+    (commonKernelHopfIdeal f).map e.hom.hom =
+      commonKernelHopfIdeal (fun i ↦ e.inv ≫ f i) := by
+  rw [← comapOfSurjective_commonKernelHopfIdeal f e.inv
+    (ConcreteCategory.bijective_of_isIso e.inv).2]
+  ext y
+  rw [HopfIdeal.mem_map_iff_of_surjective (ConcreteCategory.bijective_of_isIso e.hom).2,
+    HopfIdeal.mem_comapOfSurjective]
+  refine ⟨?_, fun hy ↦ ⟨e.inv.hom y, hy, _root_.CommHopfAlgCat.hom_inv_apply e y⟩⟩
+  rintro ⟨x, hx, rfl⟩
+  exact (congrArg (· ∈ commonKernelHopfIdeal f)
+    (_root_.CommHopfAlgCat.inv_hom_apply e x)).mpr hx
 
 /-- **Dropping redundant members of a family.** If every member indexed by `κ` kills the
 common-kernel ideal of the members indexed by `ι`, then adjoining them does not change the

@@ -414,12 +414,7 @@ theorem nonempty_algEquiv_even_prod_of_isSepClosed {K V : Type*} [Field K] [IsSe
     Nonempty (CliffordAlgebra Q ≃ₐ[K] (↥(even Q) × ↥(even Q))) := by
   have _ : Invertible (2 : K) := invertibleOfNonzero (NeZero.ne (2 : K))
   set c : K := (-1 : K) ^ l.length.choose 2 * (l.map Q).prod
-  have hprod : (l.map Q).prod ≠ 0 := by
-    refine List.prod_ne_zero ?_
-    rintro hmem
-    obtain ⟨v, hv, hv0⟩ := List.mem_map.mp hmem
-    exact hQ v hv hv0
-  have hcne : c ≠ 0 := mul_ne_zero (pow_ne_zero _ (neg_ne_zero.mpr one_ne_zero)) hprod
+  have hcne : c ≠ 0 := neg_one_pow_choose_two_mul_prod_map_ne_zero hQ
   obtain ⟨s, hsz⟩ := IsSepClosed.exists_eq_mul_self (k := K) c⁻¹
   exact ⟨equivEvenProdOfOddLength hl hlen hspan
     (s := s) (by rw [← hsz, inv_mul_cancel₀ hcne])⟩

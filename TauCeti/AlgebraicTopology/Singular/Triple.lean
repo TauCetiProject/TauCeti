@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Homology.HomologySequenceLemmas
 public import TauCeti.AlgebraicTopology.Singular.Relative
 public import TauCeti.CategoryTheory.Abelian.DiagramLemmas.CokernelComp
 public import TauCeti.Topology.Category.TopTriple
+import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 
 /-!
 # The long exact sequence of a triple in relative singular homology

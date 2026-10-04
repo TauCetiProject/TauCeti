@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.Riemannian.Basic
+import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 
 /-!
 # Smooth paths with prescribed Riemannian path length

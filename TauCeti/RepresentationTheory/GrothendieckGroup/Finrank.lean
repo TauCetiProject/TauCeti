@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Algebra
 public import Mathlib.Algebra.Category.ModuleCat.Free
+public import TauCeti.Algebra.Category.ModuleCat.CartanMap.RestrictScalars
 public import TauCeti.RepresentationTheory.GrothendieckGroup.SimpleBasis
 
 /-!
@@ -40,6 +41,8 @@ restriction appears, for the same reason, in `TauCeti.pathAlgebraDimensionVector
 * `TauCeti.finrankK0_unique`: the dimension homomorphism is the only one with that property.
 * `TauCeti.finrankK0_of_eq_zero_iff` and `TauCeti.finrankK0_of_pos`: the dimension of an object
   class vanishes exactly for the zero module, and is positive otherwise.
+* `TauCeti.finrankK0_finiteModulesK0Restrict`: restriction of scalars along a homomorphism of
+  finite-dimensional algebras preserves the dimension of a class.
 * `TauCeti.finrankK0_eq_sum_jordanHolderCoordinate_mul`: the dimension of a class is the sum of its
   Jordan--Hölder multiplicities weighted by the dimensions of the simple modules.
 * `TauCeti.eq_finrankK0_smul_of_finrank_eq_one`: when every simple module is isomorphic to one
@@ -121,6 +124,31 @@ theorem finrankK0_of_pos (M : FGModuleCat.{u} A) (hM : Nontrivial M.obj) :
     0 < finrankK0 k A (ExactK0.of M) :=
   lt_of_le_of_ne (finrankK0_of_nonneg k A M) fun h ↦
     (not_subsingleton_iff_nontrivial.2 hM) ((finrankK0_of_eq_zero_iff k A M).1 h.symm)
+
+/-- **Restriction of scalars preserves dimension.** Restricting scalars along a ring
+homomorphism `f : A →+* B` of finite-dimensional `k`-algebras compatible with the structure maps
+does not change the `k`-dimension of a class. -/
+@[simp]
+theorem finrankK0_finiteModulesK0Restrict {B : Type u} [Ring B] [Algebra k B]
+    [FiniteDimensional k B] (f : A →+* B) (hfk : f.comp (algebraMap k A) = algebraMap k B)
+    (x : ExactK0 (finiteModulesExactStructure B)) :
+    -- `B` is finitely generated over `A` through `f`, since it already is over `k`.
+    finrankK0 k A (f.finiteModulesK0Restrict (by
+      let := f.toModule
+      have : IsScalarTower k A B := ⟨fun c a b ↦ by
+        simp [RingHom.toModule_smul, Algebra.smul_def, ← DFunLike.congr_fun hfk c, mul_assoc]⟩
+      exact Module.Finite.of_restrictScalars_finite k A B) x) = finrankK0 k B x := by
+  refine DFunLike.congr_fun
+    (?_ : (finrankK0 k A).comp (f.finiteModulesK0Restrict _) = finrankK0 k B) x
+  exact ExactK0.hom_ext fun M ↦ by
+    simp only [AddMonoidHom.comp_apply, RingHom.finiteModulesK0Restrict_of, finrankK0_of,
+      Nat.cast_inj]
+    -- The two `k`-module structures on the underlying group of `M` are
+    -- `c • m = f (algebraMap k A c) • m` and `c • m = algebraMap k B c • m`.
+    exact LinearEquiv.finrank_eq
+      ((((f.finiteModulesRestrictScalarsCompιIso _).app M).toLinearEquiv.restrictScalars k).trans
+        (AddEquiv.toLinearEquiv (M := (ModuleCat.restrictScalars f).obj M.obj) (M₂ := M.obj)
+          (by rfl) fun c m ↦ congrArg (· • m) (DFunLike.congr_fun hfk c)))
 
 end Finrank
 

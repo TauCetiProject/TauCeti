@@ -29,6 +29,8 @@ of singular cochains and cap products of singular chains with singular cochains 
 ## Main definitions and results
 
 * `TopCat.alexanderWhitney`: the Alexander–Whitney map on singular chains.
+* `TopCat.alexanderWhitney_def`: its factorization through the product of singular simplicial
+  sets.
 * `TopCat.ιChainComplex_alexanderWhitney_f`: its value on a singular simplex.
 * `TopCat.alexanderWhitney_naturality`: it is natural in both spaces.
 * `TopCat.alexanderWhitney_coefficient_naturality`: it is natural in both coefficient objects.
@@ -68,6 +70,14 @@ def alexanderWhitney (X Y : TopCat.{w}) (R S : C) :
       (toSSet.obj X).chainComplex R ⊗ (toSSet.obj Y).chainComplex S :=
   SSet.chainComplexMap (CartesianMonoidalCategory.prodComparison toSSet X Y) (R ⊗ S) ≫
     SSet.alexanderWhitney _ _ R S
+
+/-- The singular Alexander--Whitney map is the map induced by the two projections, followed by
+the simplicial Alexander--Whitney map on the resulting product of singular simplicial sets. -/
+lemma alexanderWhitney_def (X Y : TopCat.{w}) (R S : C) :
+    alexanderWhitney X Y R S =
+      SSet.chainComplexMap (CartesianMonoidalCategory.prodComparison toSSet X Y) (R ⊗ S) ≫
+        SSet.alexanderWhitney (toSSet.obj X) (toSSet.obj Y) R S :=
+  (rfl)
 
 /-- The Alexander–Whitney map on the summand of a singular simplex `σ` of `X × Y` is the
 simplicial Alexander–Whitney map on the pair of its projections to `X` and `Y`. -/

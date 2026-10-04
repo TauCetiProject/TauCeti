@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Dimension
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Simplex.Link
+import Mathlib.Data.Nat.Cast.Order.Basic
 
 /-!
 # Stellar subdivision at a face

@@ -35,6 +35,8 @@ The Selmer group of the fraction field of `B` relative to these primes is
   to its contraction, which the `under`-indexed results downstream need.
 * `IsDedekindDomain.HeightOneSpectrum.under_under`: contraction through a tower agrees with
   direct contraction.
+* `IsDedekindDomain.HeightOneSpectrum.liesOverTowerEquiv`: primes over a fixed prime correspond
+  to pairs of successive primes through an intermediate integral domain.
 * `IsDedekindDomain.HeightOneSpectrum.mem_primesAbove_iff`: `w` lies above `S` iff
   `HeightOneSpectrum.under R w ∈ S`.
 * `IsDedekindDomain.HeightOneSpectrum.primesAbove_finite`: finitely many primes lie above a
@@ -93,6 +95,55 @@ theorem under_under (w : HeightOneSpectrum C) :
     (w.under R).under A = w.under A := by
   apply asIdeal_injective
   simp only [under_asIdeal, Ideal.under_under]
+
+/-- Height-one primes over `v` correspond to pairs of successive height-one primes through an
+intermediate integral domain. -/
+def liesOverTowerEquiv (v : HeightOneSpectrum A) :
+    (Σ w : {w : HeightOneSpectrum R // w.asIdeal.LiesOver v.asIdeal},
+      {u : HeightOneSpectrum C // u.asIdeal.LiesOver w.1.asIdeal}) ≃
+      {u : HeightOneSpectrum C // u.asIdeal.LiesOver v.asIdeal} where
+  toFun p := by
+    let _ : p.2.1.asIdeal.LiesOver p.1.1.asIdeal := p.2.2
+    let _ : p.1.1.asIdeal.LiesOver v.asIdeal := p.1.2
+    exact ⟨p.2.1, Ideal.LiesOver.trans p.2.1.asIdeal p.1.1.asIdeal v.asIdeal⟩
+  invFun u := by
+    let w := u.1.under R
+    have hw : w.asIdeal.LiesOver v.asIdeal := ⟨by
+      dsimp [w]
+      rw [under_asIdeal, Ideal.under_under]
+      exact u.2.over⟩
+    exact ⟨⟨w, hw⟩, ⟨u.1, inferInstance⟩⟩
+  left_inv p := by
+    rcases p with ⟨⟨w, hw⟩, ⟨u, hu⟩⟩
+    let _ : u.asIdeal.LiesOver w.asIdeal := hu
+    have h : u.under R = w := asIdeal_injective hu.over.symm
+    subst w
+    rfl
+  right_inv u := Subtype.ext (by rfl)
+
+omit [IsDomain A] [Algebra.IsIntegral A R] in
+@[simp]
+theorem liesOverTowerEquiv_apply (v : HeightOneSpectrum A)
+    (p : Σ w : {w : HeightOneSpectrum R // w.asIdeal.LiesOver v.asIdeal},
+      {u : HeightOneSpectrum C // u.asIdeal.LiesOver w.1.asIdeal}) :
+    (liesOverTowerEquiv (R := R) (C := C) v p).1 = p.2.1 :=
+  by simp [liesOverTowerEquiv]
+
+omit [IsDomain A] [Algebra.IsIntegral A R] in
+/-- The inverse of `liesOverTowerEquiv` passes through the contraction of `u` to `R`. -/
+@[simp]
+theorem liesOverTowerEquiv_symm_apply_fst (v : HeightOneSpectrum A)
+    (u : {u : HeightOneSpectrum C // u.asIdeal.LiesOver v.asIdeal}) :
+    ((liesOverTowerEquiv (R := R) v).symm u).1.1 = u.1.under R :=
+  by simp [liesOverTowerEquiv]
+
+omit [IsDomain A] [Algebra.IsIntegral A R] in
+/-- The inverse of `liesOverTowerEquiv` keeps `u` as the top prime. -/
+@[simp]
+theorem liesOverTowerEquiv_symm_apply_snd (v : HeightOneSpectrum A)
+    (u : {u : HeightOneSpectrum C // u.asIdeal.LiesOver v.asIdeal}) :
+    ((liesOverTowerEquiv (R := R) v).symm u).2.1 = u.1 :=
+  by simp [liesOverTowerEquiv]
 
 end UnderTower
 

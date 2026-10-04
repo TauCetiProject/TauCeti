@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import TauCeti.Analysis.InnerProductSpace.Laplacian.LowerOrderMaximumPrinciple
 import TauCeti.Analysis.InnerProductSpace.NormPow
 public import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic

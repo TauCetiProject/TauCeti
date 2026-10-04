@@ -48,6 +48,8 @@ orthogonality relations and the specification `TauCeti.IsCharacterTableSpec` —
 
 ## Main results
 
+* `TauCeti.character_spechtModule_apply`: the character of the partition-indexed `S^μ` is that of
+  the diagram-indexed Specht module of `diagramOf μ`.
 * `TauCeti.spechtChar_cast`: the integer character casts to the rational character of `S^μ`.
 * `TauCeti.spechtChar_eq_of_partition_eq`: it depends only on the cycle type.
 * `TauCeti.spechtChar_one`: the value at the identity is the degree `dim_ℚ S^μ`.
@@ -72,6 +74,15 @@ namespace TauCeti
 open Module
 
 variable {n : ℕ}
+
+/-- **The character of `S^μ` is the character of the diagram-indexed Specht module**
+`TauCeti.spechtSubrepresentation (diagramOf μ)`, read through the identification of `Sₙ` with the
+permutations of the `(diagramOf μ).card = n` cells. -/
+theorem character_spechtModule_apply (μ : n.Partition) (σ : Equiv.Perm (Fin n)) :
+    (spechtModule μ).character σ =
+      (spechtSubrepresentation (diagramOf μ)).toRepresentation.character
+        ((finCongr (card_diagramOf μ).symm).permCongr σ) :=
+  (rfl)
 
 /-! ## The integer character -/
 

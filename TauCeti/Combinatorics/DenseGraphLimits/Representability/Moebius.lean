@@ -24,8 +24,8 @@ theorem make `f†` a probability mass function at each level:
 
 * isomorphism invariance together with reflection positivity makes it nonnegative.  The connection
   matrix of the fully labeled graphs on `Fin n` has entries `f(G ⊔ G')`, which by inversion is
-  `Z · diag(f†) · Zᵀ` for the zeta matrix `Z(G, H) = [G ≤ H]`; pairing it with the row of `Z⁻¹` at
-  `F` returns `f†(F)`;
+  `Z · diag(f†) · Zᵀ` for the zeta matrix `Z(G, H) = [G ≤ H]`.  The zeta matrix is invertible, so
+  this connection matrix is positive semidefinite exactly when every `f†(H)` is nonnegative;
 * multiplicativity and normalization make it sum to one, since the total mass is `f` of the
   edgeless graph;
 * isomorphism invariance, multiplicativity and normalization make the levels consistent: for a
@@ -47,6 +47,11 @@ model whose upper masses `P(F ≤ ·)` are the values of `f`.
   `∑_{G ≥ F} f†(G) = f(F)`;
 * `TauCeti.DenseGraphLimits.eq_graphParamMobius_iff` — `f†` is the unique function with that
   property;
+* `TauCeti.DenseGraphLimits.connectionMatrix_fullyLabeled` — the factorization
+  `C = Z · diag(f†) · Zᵀ` of the connection matrix of the fully labeled graphs on `Fin n`, for an
+  isomorphism-invariant parameter;
+* `TauCeti.DenseGraphLimits.posSemidef_connectionMatrix_fullyLabeled_iff` — that connection matrix
+  is positive semidefinite iff the Möbius masses at level `n` are nonnegative;
 * `TauCeti.DenseGraphLimits.graphParamMobius_nonneg` — `f† ≥ 0` for an isomorphism-invariant,
   reflection-positive parameter;
 * `TauCeti.DenseGraphLimits.graphParamMobius_sum_eq_one` — `∑ f† = 1` at every level for a
@@ -61,9 +66,11 @@ graphons `1` and `0`: point masses at the complete and at the edgeless graph.
 ## Implementation
 
 Edge counts are `Nat.card G.edgeSet`, so the transform needs no decidability of adjacency in the
-summed graphs.  Nonnegativity assumes isomorphism invariance: the gluing of two fully labeled
-graphs is specified only up to the relabeling in `LabeledGraph.glue`, and invariance is what
-identifies its value with `f(G ⊔ G')`.
+summed graphs.  The factorization, and with it nonnegativity, assumes isomorphism invariance: the
+gluing of two fully labeled graphs is `G ⊔ G'` only up to the relabeling in `LabeledGraph.glue`
+(`LabeledGraph.glueFullyLabeledIso`), and invariance is what identifies its value with
+`f(G ⊔ G')`.  The zeta and Möbius matrices are `SimpleGraph.zetaMatrix` and
+`SimpleGraph.mobiusMatrix`.
 
 ## References
 
@@ -78,6 +85,7 @@ public section
 namespace TauCeti.DenseGraphLimits
 
 open Finset
+open scoped Matrix
 
 open Classical in
 /-- The **Möbius transform** `f†` of a graph parameter over supergraphs on the same vertex set:
@@ -163,76 +171,57 @@ theorem graphParamMobius_sum_comap (f : GraphParam) (hiso : IsIsoInvariant f)
   simp_rw [sum_ite_eq, mem_filter, mem_univ, true_and, ← SimpleGraph.map_le_iff_le_comap,
     ← sum_filter, sum_graphParamMobius_filter_le, hmul.apply_map hiso hnorm]
 
-/-- The graph `G` on `Fin n` with every vertex labeled, by its own index. -/
-private def fullyLabeled {n : ℕ} (G : SimpleGraph (Fin n)) : LabeledGraph n where
-  n := n
-  graph := G
-  label := id
-  label_injective := Function.injective_id
+open Classical in
+/-- **The connection-matrix factorization `C = Z · diag(f†) · Zᵀ`.** For an isomorphism-invariant
+parameter, the connection matrix of the fully labeled graphs on `Fin n` has entries `f(G ⊔ G')`,
+and Möbius inversion expands them as `∑_H [G ≤ H] [G' ≤ H] f†(H)`: the connection matrix is the
+congruence of the diagonal matrix of Möbius masses by the zeta matrix of the lattice of graphs. -/
+theorem connectionMatrix_fullyLabeled (f : GraphParam) (hf : IsIsoInvariant f) (n : ℕ) :
+    connectionMatrix f (LabeledGraph.fullyLabeled (n := n)) =
+      SimpleGraph.zetaMatrix (Fin n) ℝ * Matrix.diagonal (graphParamMobius f n) *
+        (SimpleGraph.zetaMatrix (Fin n) ℝ)ᵀ := by
+  ext G G'
+  rw [connectionMatrix_apply, LabeledGraph.forgetLabels_def,
+    ← hf.eq_of_iso (LabeledGraph.glueFullyLabeledIso G G'),
+    ← sum_graphParamMobius_filter_le f (G ⊔ G'), sum_filter, Matrix.mul_apply]
+  refine sum_congr rfl fun H _ ↦ ?_
+  rw [Matrix.mul_diagonal, Matrix.transpose_apply, SimpleGraph.zetaMatrix_apply,
+    SimpleGraph.zetaMatrix_apply, sup_le_iff]
+  by_cases hG : G ≤ H <;> by_cases hG' : G' ≤ H <;> simp [hG, hG']
 
-/-- Gluing two fully labeled graphs along their labels overlays them: for an isomorphism-invariant
-parameter the connection-matrix entry is `f(G ⊔ G')`. -/
-private theorem apply_glue_fullyLabeled {f : GraphParam} (hf : IsIsoInvariant f) {n : ℕ}
-    (G G' : SimpleGraph (Fin n)) :
-    f ((fullyLabeled G).glue (fullyLabeled G')).n ((fullyLabeled G).glue (fullyLabeled G')).graph
-      = f n (G ⊔ G') := by
-  set A := fullyLabeled G
-  set B := fullyLabeled G'
-  -- Every vertex of `B` is labeled, so the right side of the gluing lands inside the left side.
-  have hbij : Function.Bijective (A.glueInl B) := ⟨(A.glueInl B).injective, fun v ↦ by
-    obtain ⟨a, rfl⟩ | ⟨b, rfl⟩ := A.glue_surjective B v
-    · exact ⟨a, rfl⟩
-    · exact ⟨b, (A.glueInl_eq_glueInr_iff B b b).2 ⟨b, rfl, rfl⟩⟩⟩
-  refine (hf.eq_of_iso
-    { toEquiv := Equiv.ofBijective _ hbij
-      map_rel_iff' := fun {a b} ↦ ?_ }).symm
-  rw [Equiv.ofBijective_apply, Equiv.ofBijective_apply, LabeledGraph.glue_adj_inl]
-  -- `A` and `B` are `G` and `G'` on `Fin n` labeled by the identity, so up to unfolding
-  -- `fullyLabeled` the right-hand disjunct is `G'.Adj a b` and the whole is `(G ⊔ G').Adj a b`.
-  exact or_congr_right ⟨fun ⟨i, j, hi, hj, h⟩ ↦ by rw [hi, hj]; exact h,
-    fun h ↦ ⟨a, b, rfl, rfl, h⟩⟩
+/-- **Reflection positivity on the fully labeled graphs is nonnegativity of the Möbius masses.**
+For an isomorphism-invariant parameter, the connection matrix of the fully labeled graphs on
+`Fin n` is positive semidefinite exactly when every Möbius mass `f†(H)` of a graph on `Fin n` is
+nonnegative: by `connectionMatrix_fullyLabeled` it is congruent to the diagonal matrix of Möbius
+masses, and the zeta matrix is invertible. -/
+theorem posSemidef_connectionMatrix_fullyLabeled_iff (f : GraphParam) (hf : IsIsoInvariant f)
+    (n : ℕ) :
+    (connectionMatrix f (LabeledGraph.fullyLabeled (n := n))).PosSemidef ↔
+      ∀ H : SimpleGraph (Fin n), 0 ≤ graphParamMobius f n H := by
+  classical
+  rw [connectionMatrix_fullyLabeled f hf n, ← Matrix.posSemidef_diagonal_iff]
+  constructor
+  · intro h
+    -- Undo the congruence by the Möbius matrix `M`, the inverse of the zeta matrix `Z`.
+    set M := SimpleGraph.mobiusMatrix (Fin n) ℝ
+    set Z := SimpleGraph.zetaMatrix (Fin n) ℝ
+    set D := Matrix.diagonal (graphParamMobius f n)
+    have hcongr : M * (Z * D * Zᵀ) * Mᵀ = (M * Z) * D * (M * Z)ᵀ := by
+      simp only [Matrix.transpose_mul, Matrix.mul_assoc]
+    have hMZ : M * Z = 1 := SimpleGraph.mobiusMatrix_mul_zetaMatrix
+    simpa [Matrix.conjTranspose_eq_transpose_of_trivial, hcongr, hMZ] using
+      h.mul_mul_conjTranspose_same M
+  · intro h
+    simpa only [Matrix.conjTranspose_eq_transpose_of_trivial] using
+      h.mul_mul_conjTranspose_same (SimpleGraph.zetaMatrix (Fin n) ℝ)
 
-/-- **Isomorphism invariance and reflection positivity make the Möbius masses nonnegative.** The
-connection matrix of the fully labeled graphs on `Fin n` has entries
-`f(G ⊔ G') = ∑_H [G ≤ H] [G' ≤ H] f†(H)`, and its quadratic form at the signed indicator
-`G ↦ [F ≤ G] (-1)^{e(G) - e(F)}` is `f†(F)`. -/
+/-- **Isomorphism invariance and reflection positivity make the Möbius masses nonnegative**: the
+connection matrix of the fully labeled graphs on `Fin n` is positive semidefinite, which by
+`posSemidef_connectionMatrix_fullyLabeled_iff` is the nonnegativity of the Möbius masses. -/
 theorem graphParamMobius_nonneg (f : GraphParam) (hiso : IsIsoInvariant f)
     (hrp : IsReflectionPositive f) (n : ℕ) (F : SimpleGraph (Fin n)) :
-    0 ≤ graphParamMobius f n F := by
-  classical
-  let z : SimpleGraph (Fin n) → SimpleGraph (Fin n) → ℝ := fun G H ↦ if G ≤ H then 1 else 0
-  let x : SimpleGraph (Fin n) → ℝ := fun G ↦
-    if F ≤ G then (-1) ^ (Nat.card G.edgeSet - Nat.card F.edgeSet) else 0
-  -- The connection matrix factors through the zeta function of the lattice of graphs.
-  have hM : ∀ G G', connectionMatrix f fullyLabeled G G' =
-      ∑ H, z G H * z G' H * graphParamMobius f n H := fun G G' ↦ by
-    rw [connectionMatrix_apply, LabeledGraph.forgetLabels_def, apply_glue_fullyLabeled hiso,
-      ← sum_graphParamMobius_filter_le f (G ⊔ G'), sum_filter]
-    refine sum_congr rfl fun H _ ↦ ?_
-    by_cases hG : G ≤ H <;> by_cases hG' : G' ≤ H <;> simp [z, hG, hG']
-  -- The signed indicator of `F` is the row of the inverse zeta matrix at `F`.
-  have hx : ∀ H, ∑ G, x G * z G H = if F = H then 1 else 0 := fun H ↦ by
-    have hcancel :
-        ∑ G ∈ univ.filter (fun G : SimpleGraph (Fin n) ↦ F ≤ G ∧ G ≤ H),
-          (-1 : ℝ) ^ (Nat.card G.edgeSet - Nat.card F.edgeSet) = if F = H then 1 else 0 := by
-      simpa only [Nat.card_coe_set_eq] using
-        SimpleGraph.sum_neg_one_pow_ncard_edgeSet_sub_left (R := ℝ) F H
-    rw [← hcancel, sum_filter]
-    refine sum_congr rfl fun G _ ↦ ?_
-    by_cases hF : F ≤ G <;> by_cases hH : G ≤ H <;> simp [x, z, hF, hH]
-  have h := (hrp.posSemidef fullyLabeled).dotProduct_mulVec_nonneg x
-  refine h.trans_eq (Eq.symm ?_)
-  simp only [star_trivial, dotProduct, Matrix.mulVec, hM]
-  calc graphParamMobius f n F
-      = ∑ H, (∑ G, x G * z G H) * (∑ G', x G' * z G' H) * graphParamMobius f n H := by
-        simp_rw [hx]
-        simp
-    _ = _ := by
-        simp_rw [sum_mul_sum, sum_mul, mul_sum]
-        rw [sum_comm]
-        refine sum_congr rfl fun G _ ↦ ?_
-        rw [sum_comm]
-        exact sum_congr rfl fun G' _ ↦ sum_congr rfl fun H _ ↦ by ring
+    0 ≤ graphParamMobius f n F :=
+  (posSemidef_connectionMatrix_fullyLabeled_iff f hiso n).1 (hrp.posSemidef _) F
 
 section Examples
 

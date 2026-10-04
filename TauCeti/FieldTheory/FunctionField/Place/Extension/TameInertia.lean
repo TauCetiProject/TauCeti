@@ -282,7 +282,7 @@ private theorem apply_coe_eval_map (g : P.integers.decompositionSubgroup F)
         q.eval₂ (P.integers.subtype.comp (algebraMap _ _)) (y : F') := fun y ↦ by
     rw [eval_map, ← ValuationSubring.subtype_apply, hom_eval₂]
     rfl
-  rw [hcoe, hcoe, coe_decompositionSubgroup_smul]
+  rw [hcoe, hcoe, ValuationSubring.coe_decompositionSubgroup_smul]
   have h := hom_eval₂ q (P.integers.subtype.comp (algebraMap _ _))
     ((g : F' ≃ₐ[F] F') : F' →+* F') (z : F')
   have hψ : ((g : F' ≃ₐ[F] F') : F' →+* F').comp
@@ -327,7 +327,7 @@ private theorem mem_ramificationGroup_one_of_sub_mem_filtration_two
   rw [add_sub_cancel] at hK
   have hdcoe : (d : F') = σ x - x := by
     rw [hd, show ((g • z - z : P.integers) : F') = ((g • z : P.integers) : F') - (z : F') from rfl,
-      coe_decompositionSubgroup_smul]
+      ValuationSubring.coe_decompositionSubgroup_smul]
   have hd1 : (d : F') ∈ P.filtration 1 := hdcoe ▸ hg0 x hx
   set u : P.integers := (derivative fS).eval z + K * d with hu
   have hunit : IsUnit u := by

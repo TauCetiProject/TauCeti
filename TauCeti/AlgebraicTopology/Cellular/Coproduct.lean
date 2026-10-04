@@ -34,6 +34,9 @@ homology `Hₙ(Dⁿ, Sⁿ⁻¹) ≅ R` of the Euclidean disk pair under the char
 * Relative singular homology is additive (`TopPair.isColimitCofanSingularHomology`), and the
   Euclidean disk pair has `Hₙ(Dⁿ, Sⁿ⁻¹) ≅ R` (`TauCeti.singularHomologyDiskBoundaryPairIso`).
 
+The same ingredients show that the relative homology of `∐ᵢ (Dⁿ, Sⁿ⁻¹)` vanishes outside degree
+`n` (`TauCeti.isZero_singularHomology_sigmaDiskPair_of_ne`).
+
 ## References
 
 * A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
@@ -141,6 +144,17 @@ end DiskPair
 
 variable {X : Type w} [TopologicalSpace X] [T2Space X] {D : Set X} (C : Set X) [RelCWComplex C D]
   {A : Type u} [Category.{v} A] [HasCoproducts.{w} A] [Abelian A] (R : A)
+
+/-- The relative singular homology of the disjoint union `∐ᵢ (Dⁿ, Sⁿ⁻¹)` of disk pairs vanishes
+outside degree `n`, when coproducts indexed by `ι` are exact. -/
+lemma isZero_singularHomology_sigmaDiskPair_of_ne (ι : Type w)
+    [HasExactColimitsOfShape (Discrete ι) A] {n k : ℕ} (hk : k ≠ n) :
+    IsZero ((sigmaDiskPair ι n).singularHomology R k) := by
+  have h : IsZero ((TopPair.sigma fun _ : ι ↦ diskBoundaryPair.{w} n).singularHomology R k) :=
+    (TopPair.isColimitCofanSingularHomology _ A R k).isZero_pt
+      (Functor.isZero _ fun _ ↦ isZero_singularHomology_diskBoundaryPair_of_ne R hk)
+  exact h.of_iso ((SSetPair.homologyFunctor R k).mapIso
+    (TopPair.toSSetPair.mapIso (sigmaDiskBoundaryPairIso ι n))).symm
 
 /-- **The cellular chain group is a coproduct of copies of the coefficients**: if coproducts
 indexed by the `n`-cells are exact in `A`, then `Hₙ(Xⁿ, Xⁿ⁻¹)` is the coproduct of one copy of `R`

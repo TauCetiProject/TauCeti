@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.FGModuleCat.Colimits
 public import Mathlib.Algebra.Category.FGModuleCat.EssentiallySmall
+public import Mathlib.Algebra.Category.ModuleCat.Biproducts
 public import Mathlib.Algebra.Category.ModuleCat.Projective
-public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
+public import Mathlib.RingTheory.Finiteness.Prod
 public import Mathlib.RingTheory.SimpleModule.InjectiveProjective
 public import TauCeti.CategoryTheory.GrothendieckGroup.ProjectiveResolution
 
@@ -76,6 +78,8 @@ Krull--Schmidt hypotheses of a finite-dimensional algebra.
   generated projectives is the split one.
 * `TauCeti.finiteModulesExactK0Equiv`: the explicit comparison between the named finite-module
   exact structure and the structure induced directly from all modules.
+* `TauCeti.exactK0_fgModuleCat_prod`: in `G₀(mod R)`, the class of a product of two finitely
+  generated modules is the sum of their classes.
 * `CategoryTheory.Equivalence.isConflationExact_finiteModules_congrFullSubcategory_functor` and
   its `finiteProjectiveModules` and `_inverse` companions: an exact equivalence of module
   categories respecting the two object properties restricts to exact equivalences of the two
@@ -246,6 +250,22 @@ noncomputable def finiteModulesExactK0Equiv :
 theorem finiteModulesExactK0Equiv_of (X : FGModuleCat.{u} R) :
     finiteModulesExactK0Equiv R (ExactK0.of X) = ExactK0.of X :=
   ExactK0.ofLEEquiv_of _ X
+
+/-- **The class of a product of finitely generated modules** is the sum of the classes: the
+product `M × N` is the biproduct of `M` and `N` in the category of finitely generated modules. -/
+@[simp]
+theorem exactK0_fgModuleCat_prod (M N : Type u) [AddCommGroup M] [Module R M] [Module.Finite R M]
+    [AddCommGroup N] [Module R N] [Module.Finite R N] :
+    (ExactK0.of (FGModuleCat.of R (M × N)) : ExactK0 (finiteModulesExactStructure R)) =
+      ExactK0.of (FGModuleCat.of R M) + ExactK0.of (FGModuleCat.of R N) := by
+  let F := forget₂ (FGModuleCat.{u} R) (ModuleCat.{u} R)
+  let X := FGModuleCat.of R M
+  let Y := FGModuleCat.of R N
+  let _ : PreservesBinaryBiproduct X Y F := preservesBinaryBiproduct_of_preservesBinaryCoproduct F
+  let e : F.obj (X ⊞ Y) ≅ ModuleCat.of R (M × N) :=
+    F.mapBiprod X Y ≪≫ ModuleCat.biprodIsoProd X.obj Y.obj
+  rw [← ExactK0.of_biprod]
+  exact ExactK0.of_congr (F.preimageIso e).symm
 
 /-- The conflations of finitely generated projective modules are the short exact sequences of
 `R`-modules whose three terms are finitely generated projective; by

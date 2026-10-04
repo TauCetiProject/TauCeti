@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Combinatorics.PermutationTriple.Passport.BranchPoints
 public import TauCeti.Combinatorics.PermutationTriple.Passport.Enumeration
+public import TauCeti.Combinatorics.PermutationTriple.Passport.GeneratingCount
 public import TauCeti.Combinatorics.PermutationTriple.Examples
 -- Kernel computation of cycle partitions needs the unexposed cycle-factor implementation.
 import all Mathlib.GroupTheory.Perm.Cycle.Factors
@@ -17,7 +18,9 @@ import all Mathlib.GroupTheory.Perm.Cycle.Factors
 The degree-one cyclic passport has a singleton branch-point orbit. The torus passport changes
 under an exchange of branch points, witnessing that passing to the orbit is strictly coarser
 than equality of ordered passports. The computed passport fibers in degrees one to three
-have size one; the degree-three check uses the nonabelian symmetric monodromy group.
+have size one; the degree-three check uses the nonabelian symmetric monodromy group. For that
+passport, the generating count, centralizer order and normalizer order evaluate the normalizer
+formula as `1 = 6 * 1 / 6`.
 -/
 
 open Equiv MulAction
@@ -55,6 +58,82 @@ theorem passportSize_passportOf_s3Triple :
   simpa only [ConnectedTriple.passportOf_lam0, ConnectedTriple.passportOf_lam1,
     ConnectedTriple.passportOf_laminf, t, cycleData_s3Triple] using
     card_passportClasses_symmetric_three
+
+/-- For the degree-three symmetric passport, the normalizer formula reads
+`1 = 6 * 1 / 6`: there are six generating triples of the prescribed cycle types, the
+centralizer of the monodromy group is trivial, and its normalizer is the full symmetric group. -/
+theorem passportSize_formula_s3Triple :
+    let P := ConnectedTriple.passportOf ⟨s3Triple, isConnected_s3Triple⟩
+    P.G.genCountType P.lam0 P.lam1 P.laminf = 6 ∧
+      Nat.card (Subgroup.centralizer (P.G : Set (Perm (Fin 3)))) = 1 ∧
+      Nat.card (Subgroup.normalizer (P.G : Set (Perm (Fin 3)))) = 6 ∧
+      P.passportSize = 6 * 1 / 6 := by
+  let t : ConnectedTriple 3 := ⟨s3Triple, isConnected_s3Triple⟩
+  let P := t.passportOf
+  have hPG : P.G = t.1.monodromyGroup := by simp [P]
+  have hG : P.G = ⊤ := by simp [P, t]
+  have htrans : MulAction.IsPretransitive P.G (Fin 3) := by
+    rw [hPG]
+    exact t.2.isPretransitive
+  -- The monodromy group is all of `S₃`; its centralizer is the already-computed automorphism
+  -- group of the triple, while its normalizer is all of `S₃` again.
+  have hcentralizer :
+      Nat.card (Subgroup.centralizer (P.G : Set (Perm (Fin 3)))) = 1 := by
+    rw [hG, ← monodromyGroup_s3Triple,
+      ← PermutationTriple.automorphismGroup_eq_centralizer_monodromyGroup,
+      automorphismGroup_s3Triple, Subgroup.card_bot]
+  have hnormalizer :
+      Nat.card (Subgroup.normalizer (P.G : Set (Perm (Fin 3)))) = 6 := by
+    have hnormal : P.G.Normal := hG.symm ▸ (inferInstance : (⊤ : Subgroup (Perm (Fin 3))).Normal)
+    rw [@Subgroup.normalizer_eq_top _ _ P.G hnormal, Subgroup.card_top, Nat.card_perm, Nat.card_fin]
+    norm_num
+  have hpassport : P.passportSize = 1 := by
+    simpa only [P, t] using passportSize_passportOf_s3Triple
+  -- Compute the raw passport fiber independently of the normalizer formula.
+  let F := passportTriples (Finset.univ : Finset (Perm (Fin 3))) P.lam0 P.lam1 P.laminf
+  have hF : F.card = 6 := by
+    simp only [F, P, ConnectedTriple.passportOf_lam0, ConnectedTriple.passportOf_lam1,
+      ConnectedTriple.passportOf_laminf, t, cycleData_s3Triple]
+    decide +kernel
+  have hP : ∃ ρ, ((Finset.univ : Finset (Perm (Fin 3))) : Set (Perm (Fin 3))) =
+      (P.conjugate ρ).G := by
+    refine ⟨1, ?_⟩
+    simp [hG, PassportSpec.conjugate_G]
+  have hmem (s : ConnectedTriple 3) : s ∈ F ↔ P.IsGeneratingTriple s.1 := by
+    rw [mem_passportTriples_iff_hasPassport P _ hP]
+    constructor
+    · intro hs
+      apply PassportSpec.isGeneratingTriple_iff_monodromyGroup_eq_and_hasPassport.mpr
+      refine ⟨?_, hs⟩
+      obtain ⟨⟨τ, hτ⟩, -⟩ := (PassportSpec.hasPassport_iff s P).mp hs
+      apply Subgroup.map_injective (f := (MulAut.conj τ).toMonoidHom)
+        (MulAut.conj τ).injective
+      rw [hτ, hG, Subgroup.map_top_of_surjective _ (MulAut.conj τ).surjective]
+    · exact fun hs =>
+        (PassportSpec.isGeneratingTriple_iff_monodromyGroup_eq_and_hasPassport.mp hs).2
+  -- Since the reference group is `S₃`, passport membership already means equality with the
+  -- reference monodromy group, giving a bijection with the generating triples used in Layer 3.4.
+  let e : P.GeneratingTriple ≃ {s : ConnectedTriple 3 // s ∈ F} :=
+    { toFun := fun g => ⟨g.toConnectedTriple (by decide) htrans,
+        (hmem _).mpr (by
+          simpa only [PassportSpec.GeneratingTriple.coe_toConnectedTriple] using g.2)⟩
+      invFun := fun s => ⟨s.1.1, (hmem s.1).mp s.2⟩
+      left_inv := fun g => by
+        apply Subtype.ext
+        simp only [PassportSpec.GeneratingTriple.coe_toConnectedTriple]
+      right_inv := fun s => by
+        apply Subtype.ext
+        apply Subtype.ext
+        simp only [PassportSpec.GeneratingTriple.coe_toConnectedTriple] }
+  have hgeneratingTriple : Nat.card P.GeneratingTriple = 6 := by
+    rw [Nat.card_congr e, Nat.card_eq_fintype_card, Fintype.card_coe, hF]
+  have hgen : P.G.genCountType P.lam0 P.lam1 P.laminf = 6 := by
+    rw [← P.card_generatingTriples_eq_genCountType, ← P.card_generatingTriples]
+    exact hgeneratingTriple
+  have hformula : P.passportSize = 6 * 1 / 6 := by
+    rw [P.passportSize_eq_genCountType_mul_card_centralizer_div_card_normalizer
+      (by decide) htrans, hgen, hcentralizer, hnormalizer]
+  simpa only [P, t] using ⟨hgen, hcentralizer, hnormalizer, hformula⟩
 
 /-- The degree-one cyclic triple has a singleton branch-point orbit of ordered passports. -/
 theorem orbit_orderedPassportOf_cyclicTriple_one :

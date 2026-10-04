@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.NumberField.Completion.LiesOverInstances
 public import TauCeti.NumberTheory.NumberField.Global.Adeles.Basic
 public import TauCeti.NumberTheory.NumberField.InfinitePlace.Basic
+import TauCeti.NumberTheory.NumberField.InfinitePlace.Completion.Extension
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Extension
 
 /-!
@@ -118,14 +119,7 @@ theorem infiniteAdeleExtension_comp (M : Type*) [Field M] [Algebra L M]
       (LiesOver.completionMap (v := w.comap (algebraMap L M)) (w := w)).comp
         (LiesOver.completionMap (v := v) (w := w.comap (algebraMap L M))) =
         @LiesOver.completionMap K M _ _ _ v w hwo := by
-    apply DFunLike.coe_injective
-    apply (InfinitePlace.Completion.denseRange_coe v).equalizer
-      (LiesOver.continuous_completionMap.comp LiesOver.continuous_completionMap)
-      LiesOver.continuous_completionMap
-    funext y
-    simp [Function.comp_apply, LiesOver.completionMap_coe,
-      WithAbs.algebraMap_left_apply, WithAbs.algebraMap_right_apply,
-      ← IsScalarTower.algebraMap_apply]
+    exact LiesOver.completionMap_comp
   calc
     _ = (@LiesOver.completionMap K M _ _ _ v w hwo) (x v) :=
       RingHom.congr_fun h (x v)

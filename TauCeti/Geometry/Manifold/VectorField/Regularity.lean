@@ -27,6 +27,9 @@ manifold differential of a function to tangent vectors whose base point varies.
 * `ContMDiffOn.contMDiffOn_totalSpaceMk_mfderiv_apply`: the lifted directional derivative
   `z ↦ (f z, df_z ξ)` of a `C^n` map from an open subset of a normed space into a manifold is
   `C^m` into the tangent bundle, when `m + 1 ≤ n`.
+* `TauCeti.mdifferentiableWithinAt_vectorSpace_iff_differentiableWithinAt` and its `At` and `On`
+  forms: a vector field on a normed space is differentiable in the manifold sense exactly when it
+  is differentiable as a map of the space.
 
 ## References
 
@@ -158,3 +161,38 @@ theorem ContMDiffOn.contMDiffOn_totalSpaceMk_mfderiv_apply {f : F → M} {U : Se
     (fun z hz ↦ hz)
   refine hcomp.congr fun z hz ↦ ?_
   simp only [Function.comp_apply, tangentMapWithin, mfderivWithin_of_isOpen hU hz]
+
+namespace TauCeti
+
+/-- A vector field on a normed space is differentiable in the manifold sense iff it is
+differentiable in the vector space sense. This is the differentiable counterpart of Mathlib's
+`contMDiffWithinAt_vectorSpace_iff_contDiffWithinAt`. -/
+theorem mdifferentiableWithinAt_vectorSpace_iff_differentiableWithinAt
+    {V : Π x : E, TangentSpace 𝓘(𝕜, E) x} {s : Set E} {x : E} :
+    MDiffAt[s] (T% V) x ↔ DifferentiableWithinAt 𝕜 V s x := by
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · exact MDifferentiableWithinAt.differentiableWithinAt <|
+      ((contMDiff_snd_tangentBundle_modelSpace E 𝓘(𝕜, E) (n := 1)).mdifferentiable one_ne_zero
+        _).comp_mdifferentiableWithinAt _ h
+  · refine (mdifferentiableWithinAt_totalSpace ..).2 ⟨mdifferentiableWithinAt_id, ?_⟩
+    convert! h.mdifferentiableWithinAt with y
+    simp
+
+/-- A vector field on a normed space is differentiable in the manifold sense iff it is
+differentiable in the vector space sense. -/
+theorem mdifferentiableAt_vectorSpace_iff_differentiableAt
+    {V : Π x : E, TangentSpace 𝓘(𝕜, E) x} {x : E} :
+    MDiffAt (T% V) x ↔ DifferentiableAt 𝕜 V x :=
+  mdifferentiableWithinAt_univ.symm.trans
+    (mdifferentiableWithinAt_vectorSpace_iff_differentiableWithinAt.trans
+      differentiableWithinAt_univ)
+
+/-- A vector field on a normed space is differentiable in the manifold sense iff it is
+differentiable in the vector space sense. -/
+theorem mdifferentiableOn_vectorSpace_iff_differentiableOn
+    {V : Π x : E, TangentSpace 𝓘(𝕜, E) x} {s : Set E} :
+    MDiff[s] (T% V) ↔ DifferentiableOn 𝕜 V s := by
+  simp only [MDifferentiableOn, DifferentiableOn,
+    mdifferentiableWithinAt_vectorSpace_iff_differentiableWithinAt]
+
+end TauCeti

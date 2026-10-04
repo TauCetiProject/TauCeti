@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.Lie.GeneralLinear.CAR.HighestWeight
 import TauCeti.Algebra.Lie.GeneralLinear.DiagonalCartan
 import TauCeti.Algebra.Lie.GeneralLinear.CAR.Occupation
-import TauCeti.Data.Nat.Choose
+import TauCeti.Data.Nat.Choose.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
 import TauCeti.LinearAlgebra.Dimension.FixedSubmodule
 import TauCeti.RingTheory.Idempotents.Eigenvalue

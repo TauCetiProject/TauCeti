@@ -243,7 +243,7 @@ theorem homDensity_finiteGraphGraphon (F : SimpleGraph V) [DecidableRel F.Adj] (
         (G.map Fin.valEmbedding).Adj ((ψ a : ℕ)) ((ψ b : ℕ)) then (1 : ℝ) else 0)
       = (Nat.card (F →g G) : ℝ) := by
     simp_rw [map_valEmbedding_adj_iff G]
-    rw [Finset.sum_boole, card_hom_eq_card_adjPreservingMaps,
+    rw [Finset.sum_boole, SimpleGraph.card_hom_eq_card_adjPreservingMaps,
       Nat.card_eq_fintype_card, Fintype.card_subtype]
   have hpi : (∫ x : V → I,
         (if ∀ a b, F.Adj a b →

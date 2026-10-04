@@ -74,7 +74,7 @@ Derivations are taken in the bundled form `D : TauCeti.derivationLieAlgebra R (A
   the packaging of the invariant subspace is adapted: `TauCeti.Octonion.imaginaryLieSubmodule`,
   `TauCeti.Octonion.isFaithful_imaginaryLieSubmodule` and
   `TauCeti.Octonion.instIsFaithfulImaginaryLieSubmodule` — the imaginary octonions as a Lie
-  submodule over `Der 𝕆`, faithful once multiplication by the scalar `2` is regular — are the
+  submodule over `Der 𝕆`, faithful over every commutative ring — are the
   models for
   `TauCeti.AlbertAlgebra.traceZeroLieSubmodule`,
   `TauCeti.AlbertAlgebra.isFaithful_traceZeroLieSubmodule` and

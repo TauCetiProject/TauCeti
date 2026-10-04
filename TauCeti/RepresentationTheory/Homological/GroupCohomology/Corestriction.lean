@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Claude
+Authors: Claude, Codex
 -/
 module
 
@@ -59,6 +59,11 @@ restrictions.
   by the order of the group.
 * `TauCeti.groupCohomology.corestriction_trans`: corestriction from `A` to `B` followed by
   corestriction from `B` to `C` is corestriction from `A` to `C`.
+
+* `TauCeti.groupCohomology.δ_comp_corestriction`: corestriction commutes with the connecting
+  maps in every ordinary cohomological degree.
+* `Rep.H0Iso_inv_comp_corestriction_comp_H0Iso_hom`: degree-zero corestriction is the relative
+  norm on invariants under the canonical ordinary degree-zero comparison.
 
 ## References
 
@@ -162,6 +167,27 @@ the index of `S`. -/
 theorem index_nsmul_eq_zero_of_map_eq_zero {A : Rep.{u} k G} {n : ℕ} {x : groupCohomology A n}
     (h : map S.subtype (𝟙 (res S.subtype A)) n x = 0) : S.index • x = 0 := by
   rw [← map_subtype_id_comp_corestriction_apply S A n x, h, map_zero]
+
+/-- Corestriction from a finite-index subgroup commutes with the connecting maps of
+any short exact sequence of representations, in every ordinary cohomological degree. -/
+@[reassoc]
+theorem δ_comp_corestriction {X : ShortComplex (Rep k G)} (hX : X.ShortExact)
+    (i j : ℕ) (hij : i + 1 = j) :
+    δ ((Rep.shortExact_res S.subtype).2 hX) i j hij ≫ corestriction S X.X₁ j =
+      corestriction S X.X₃ i ≫ δ hX i j hij := by
+  classical
+  let hRes := (Rep.shortExact_res S.subtype).2 hX
+  have hSh := δ_comp_coindIso_hom S hRes i j hij
+  dsimp only [ShortComplex.map_X₁, ShortComplex.map_X₃] at hSh
+  rw [← cancel_epi (groupCohomology.coindIso (res S.subtype X.X₃) i).hom,
+    ← reassoc_of% hSh, coindIso_hom_comp_corestriction,
+    reassoc_of% (coindIso_hom_comp_corestriction S X.X₃ i)]
+  exact _root_.groupCohomology.δ_naturality (hRes.map_of_exact (coindFunctor k S.subtype)) hX
+    { τ₁ := (coindResAdjunction k S).counit.app X.X₁
+      τ₂ := (coindResAdjunction k S).counit.app X.X₂
+      τ₃ := (coindResAdjunction k S).counit.app X.X₃
+      comm₁₂ := ((coindResAdjunction k S).counit.naturality X.f).symm
+      comm₂₃ := ((coindResAdjunction k S).counit.naturality X.g).symm } i j hij
 
 /-! ### Transitivity -/
 
@@ -417,3 +443,57 @@ theorem natCard_nsmul_eq_zero {A : Rep k G} {n : ℕ} (x : groupCohomology A (n 
       (isZero_groupCohomology_succ_of_subsingleton (res (⊥ : Subgroup G).subtype A) n)).allEq _ _
 
 end groupCohomology
+
+namespace Rep
+
+universe u
+
+variable {k G : Type u} [CommRing k] [Group G]
+
+/-- Under the degree-zero identification with invariants, corestriction is the relative norm.
+The quotient `Fintype` is explicit so that the relative norm uses the caller's coset enumeration. -/
+@[reassoc]
+theorem H0Iso_inv_comp_corestriction_comp_H0Iso_hom (M : Rep.{u} k G)
+    (H : Subgroup G) [H.FiniteIndex] [Fintype (G ⧸ H)] :
+    (groupCohomology.H0Iso (res H.subtype M)).inv ≫
+        TauCeti.groupCohomology.corestriction H M 0 ≫ (groupCohomology.H0Iso M).hom =
+      ModuleCat.ofHom (Representation.relNormInvariants M.ρ H) := by
+  classical
+  rw [Iso.inv_comp_eq, ← cancel_epi (groupCohomology.coindIso (res H.subtype M) 0).hom,
+    reassoc_of% (TauCeti.groupCohomology.coindIso_hom_comp_corestriction H M 0)]
+  rw [groupCohomology.map_id_comp_H0Iso_hom]
+  ext y
+  let f := (groupCohomology.H0Iso (coind H.subtype (res H.subtype M))).hom y
+  let x := (groupCohomology.H0Iso (res H.subtype M)).hom
+    ((groupCohomology.coindIso (res H.subtype M) 0).hom y)
+  have hx : (x : M) = f.1.1 1 := by
+    have h := groupCohomology.map_H0Iso_hom_f_apply H.subtype
+      ((resCoindAdjunction k H.subtype).counit.app (res H.subtype M)) y
+    rw [← TauCeti.groupCohomology.coindIso_hom] at h
+    exact h
+  have hf (g : G) : f.1.1 g = f.1.1 1 := by
+    have h := congrArg (fun a : coind H.subtype (res H.subtype M) => a.1 1)
+      ((Representation.mem_invariants _ _).mp f.2 g)
+    convert h using 1
+    exact congrArg f.1.1 (one_mul g).symm
+  -- Both maps on invariants are restrictions of their underlying linear maps.
+  apply Subtype.ext
+  simp only [ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.hom_ofHom]
+  suffices heq : ((coindResAdjunction.{u, u, u} k H).counit.app M).hom f.1 =
+      Representation.relNorm M.ρ H x by
+    exact heq.trans (Representation.coe_relNormInvariants (ρ := M.ρ) (H := H) x).symm
+  rw [Subgroup.coindResAdjunction_counit_app_hom_apply, Representation.relNorm_apply]
+  -- The trace uses its fixed finite-index enumeration; the norm keeps the caller's instance.
+  let : Fintype (Quotient (QuotientGroup.rightRel H)) :=
+    @QuotientGroup.fintypeQuotientRightRel G _ H
+      (@Subgroup.fintypeQuotientOfFiniteIndex G _ H _)
+  refine Fintype.sum_equiv (QuotientGroup.quotientRightRelEquivQuotientLeftRel H) _ _
+    fun q => ?_
+  rw [hf, ← hx]
+  apply Representation.apply_eq_apply_of_quotientGroup_mk_eq x.2
+  calc ((q.out⁻¹ : G) : G ⧸ H) =
+      QuotientGroup.quotientRightRelEquivQuotientLeftRel H q :=
+        congrArg (QuotientGroup.quotientRightRelEquivQuotientLeftRel H) q.out_eq
+    _ = _ := ((QuotientGroup.quotientRightRelEquivQuotientLeftRel H q).out_eq').symm
+
+end Rep

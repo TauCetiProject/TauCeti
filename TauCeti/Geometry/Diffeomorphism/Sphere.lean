@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Diffeomorphism.Group
 public import TauCeti.Geometry.Diffeomorphism.Topology
 public import TauCeti.Geometry.Sphere.LinearIsometry
 public import TauCeti.LinearAlgebra.OrthogonalGroup
+import Mathlib.Analysis.InnerProductSpace.Calculus
 
 /-!
 # The orthogonal group acts on the sphere by diffeomorphisms
@@ -44,7 +45,10 @@ continuity proved here.
 ## Main results
 
 * `LinearIsometryEquiv.contMDiff_unitSphereEquiv`: the restriction to the unit sphere is
-  `C^m` for every smoothness exponent.
+  `C^m` for every smoothness exponent, so the linear isometry group acts on the unit sphere by
+  `C^m` maps (a `ContMDiffConstSMul` instance).
+* `LinearIsometryEquiv.mvfderiv_coe_sphere_unitSphereEquiv`: the differential of the restriction,
+  read in the ambient spaces through the sphere inclusions, is the linear isometry itself.
 * `LinearIsometryEquiv.isometry_unitSphereEquiv`: it is an isometry for the distance the
   sphere inherits from `E`, so the action is by isometries of the round sphere.
 * `LinearIsometryEquiv.unitSphereDiffeomorph_neg_apply`: the diffeomorphism induced by
@@ -92,6 +96,24 @@ theorem contMDiff_unitSphereEquiv (e : E ≃ₗᵢ[ℝ] F) :
   refine (h.codRestrict_sphere (n := k) fun x =>
     (map_mem_unitSphere_iff e _).2 x.2).congr fun x => ?_
   exact Subtype.ext (coe_unitSphereEquiv_apply e x)
+
+/-- The differential of the restriction of a linear isometry to the unit spheres, read in the
+ambient space through the inclusion of the target sphere, is the linear isometry applied to the
+tangent vector read in the ambient space. -/
+@[simp]
+theorem mvfderiv_coe_sphere_unitSphereEquiv (e : E ≃ₗᵢ[ℝ] F) (x : sphere (0 : E) 1)
+    (v : TangentSpace (𝓡 n) x) :
+    mvfderiv (𝓡 k) ((↑) : sphere (0 : F) 1 → F) (unitSphereEquiv e x)
+        (mfderiv (𝓡 n) (𝓡 k) (unitSphereEquiv e) x v) =
+      e (mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) x v) := by
+  have hcomp : ((↑) : sphere (0 : F) 1 → F) ∘ unitSphereEquiv e =
+      e ∘ ((↑) : sphere (0 : E) 1 → E) :=
+    funext fun y ↦ coe_unitSphereEquiv_apply e y
+  rw [← mvfderiv_comp_apply x (contMDiff_coe_sphere.mdifferentiableAt one_ne_zero)
+    ((contMDiff_unitSphereEquiv (m := 1) e).mdifferentiableAt one_ne_zero), hcomp,
+    mvfderiv_comp_apply x ((e.contDiff (n := 1)).contMDiff.mdifferentiableAt one_ne_zero)
+      (contMDiff_coe_sphere.mdifferentiableAt one_ne_zero), mvfderiv_eq_fderiv, e.fderiv]
+  simp [mvfderiv]
 
 /-- The diffeomorphism between unit spheres induced by a linear isometry equivalence. -/
 def unitSphereDiffeomorph (e : E ≃ₗᵢ[ℝ] F) (m : ℕ∞ω) :
@@ -157,6 +179,11 @@ theorem unitSphereDiffHom_injective :
   apply LinearEquiv.toLinearMap_injective
   refine TauCeti.LinearMap.eq_of_eqOn_unitSphere fun x hx => ?_
   simpa using congrArg Subtype.val (DFunLike.congr_fun h ⟨x, hx⟩)
+
+/-- The linear isometry group of `E` acts on the unit sphere by `C^m` maps, for every smoothness
+exponent `m`. -/
+instance : ContMDiffConstSMul (𝓡 n) m (E ≃ₗᵢ[ℝ] E) (sphere (0 : E) 1) :=
+  ⟨contMDiff_unitSphereEquiv⟩
 
 end InnerProduct
 

@@ -81,11 +81,9 @@ theorem isOpen_ker_spinorNorm (hQ : Q.Nondegenerate)
       (_root_.QuadraticMap.specialOrthogonalToOrthogonal Q) := by
     ext g
     simp only [MonoidHom.mem_ker, Subgroup.mem_comap, spinorNorm_apply]
-  have hcont : Continuous (_root_.QuadraticMap.specialOrthogonalToOrthogonal Q) :=
-    continuous_induced_rng.mpr (continuous_subtype_val.congr fun g =>
-      (_root_.QuadraticMap.coe_specialOrthogonalToOrthogonal g).symm)
   rw [hker, Subgroup.coe_comap]
-  exact (isOpen_ker_orthogonalSpinorNorm Q hQ hsq).preimage hcont
+  exact (isOpen_ker_orthogonalSpinorNorm Q hQ hsq).preimage
+    (_root_.QuadraticMap.continuous_specialOrthogonalToOrthogonal Q)
 
 /-- **The image of Spin is open in `SO(Q)`.** Under the hypotheses of
 `isOpen_ker_orthogonalSpinorNorm`, the image of the Spin group in the special orthogonal group is

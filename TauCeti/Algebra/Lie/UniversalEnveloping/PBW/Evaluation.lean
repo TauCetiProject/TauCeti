@@ -59,7 +59,7 @@ theorem pbwEval_pbwMonomial {word : List ι} (hword : word.Pairwise (· ≤ ·))
   | cons i word ih =>
       obtain ⟨hle, htail⟩ := List.pairwise_cons.1 hword
       rw [pbwMonomial_cons, pbwEval_ι_mul, ih htail,
-        pbwPolynomialRep_basis_monomial_of_le b (fun j hj ↦ hle j (by simpa using hj))]
+        pbwPolynomialRep_basis_monomial_of_le b 1 (fun j hj ↦ hle j (by simpa using hj))]
       simp only [← Multiset.cons_coe, ← Multiset.singleton_add, Multiset.toFinsupp_add,
         Multiset.toFinsupp_singleton, X, monomial_mul_monomial, one_mul]
 

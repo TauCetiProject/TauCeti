@@ -7,8 +7,10 @@ module
 
 public import Mathlib.Data.ZMod.Basic
 public import Mathlib.LinearAlgebra.QuadraticForm.IsometryEquiv
+public import Mathlib.LinearAlgebra.QuadraticForm.Radical
 public import TauCeti.LinearAlgebra.BilinearForm.Basic
 public import TauCeti.LinearAlgebra.IntegralLattice.Isometry.Basic
+import TauCeti.LinearAlgebra.QuadraticForm.Radical
 
 /-!
 # Norms of integral lattices
@@ -31,6 +33,8 @@ the integral norm on the carrier.
 ## Main results
 
 * `TauCeti.IntegralLattice.norm_apply`: evaluating the rational norm yields self-pairing.
+* `TauCeti.IntegralLattice.nondegenerate_norm`: the rational norm of a nondegenerate lattice is
+  nondegenerate.
 * `TauCeti.IntegralLattice.integralNorm_apply`: evaluating the integral norm yields
   integral self-pairing.
 * `TauCeti.IntegralLattice.integralNorm_cast`: the integral norm recovers the rational norm in `ℚ`.
@@ -72,6 +76,12 @@ def norm (L : IntegralLattice V) : QuadraticForm ℚ V := L.form.toQuadraticMap
 theorem norm_def (L : IntegralLattice V) :
     L.norm = L.form.toQuadraticMap :=
   (rfl)
+
+/-- The ambient rational norm form of a nondegenerate integral lattice is nondegenerate. -/
+theorem nondegenerate_norm (L : IntegralLattice V) [L.IsNondegenerate] :
+    L.norm.Nondegenerate := by
+  rw [norm_def]
+  exact L.form_nondegenerate.toQuadraticMap L.form_flip
 
 -- The evaluation and negation identities below remain explicit rewrite lemmas. Registering them
 -- with `simp` makes the specialized cast, zero, and scaling rules fail the `simpNF` linter.

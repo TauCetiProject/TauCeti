@@ -141,16 +141,21 @@ theorem iteratedGradientChain_succ (f : F → ℝ) (j : ℕ) :
     iteratedGradientChain f (j + 1) = fderiv ℝ (iteratedGradientChain f j) :=
   by rw [iteratedGradientChain]
 
-/-- Every field in the iterated-gradient chain of a smooth function is smooth. -/
-theorem contDiff_iteratedGradientChain {f : F → ℝ} (hf : ContDiff ℝ ∞ f) :
-    ∀ j, ContDiff ℝ ∞ (iteratedGradientChain f j)
-  | 0 => by
+/-- The `j`th iterated-gradient field is `C^m` at a point whenever the scalar function
+is `C^n` there with `m + j + 1 ≤ n`. -/
+theorem contDiffAt_iteratedGradientChain {f : F → ℝ} {x : F} {m n : ℕ∞ω}
+    (hf : ContDiffAt ℝ n f x) (j : ℕ) (h : m + j + 1 ≤ n) :
+    ContDiffAt ℝ m (iteratedGradientChain f j) x := by
+  induction j generalizing m with
+  | zero =>
       rw [iteratedGradientChain_zero]
-      exact (InnerProductSpace.toDual ℝ F).symm.contDiff.comp
-        (contDiff_infty_iff_fderiv.mp hf).2
-  | j + 1 => by
+      exact (InnerProductSpace.toDual ℝ F).symm.contDiff.contDiffAt.comp x
+        (hf.fderiv_right (by simpa using h))
+  | succ j ih =>
       rw [iteratedGradientChain_succ]
-      exact (contDiff_infty_iff_fderiv.mp (contDiff_iteratedGradientChain hf j)).2
+      have hs := ih (m := m + 1) (by
+        simpa only [Nat.cast_add, Nat.cast_one, add_assoc, add_comm, add_left_comm] using h)
+      exact hs.fderiv_right le_rfl
 
 /-- Every field in the iterated-gradient chain of a compactly supported function has compact
 support. -/
@@ -504,6 +509,28 @@ theorem norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq (k : ℕ)
         W1p.norm_sq_eq_norm_value_sq_add_norm_gradient_sq u
   | succ k =>
       exact norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_add_two k u
+
+/-- Convergence in a positive-order Sobolev norm is equivalent to convergence of the
+preceding Sobolev component and the highest weak derivative. -/
+theorem tendsto_iff_lowerOrder_iteratedGradient (k : ℕ) {I : Type*} {l : Filter I}
+    {v : I → Wkp mu Omega p (k + 1)} {u : Wkp mu Omega p (k + 1)} :
+    Filter.Tendsto v l (nhds u) ↔
+      Filter.Tendsto (fun i => lowerOrder k (v i)) l (nhds (lowerOrder k u)) ∧
+      Filter.Tendsto (fun i => iteratedGradient k (v i)) l
+        (nhds (iteratedGradient k u)) := by
+  cases k with
+  | zero =>
+      simpa only [lowerOrder_zero, iteratedGradient_zero] using W1p.tendsto_iff_value_gradient
+  | succ k =>
+      -- Each later stage is a subtype of a `WithLp` product; its product equivalence recovers
+      -- exactly the two characteristic projections, without a norm estimate.
+      rw [tendsto_subtype_rng,
+        (WithLp.prodContinuousLinearEquiv 2 ℝ _ _).toHomeomorph.isEmbedding.tendsto_nhds_iff]
+      simp only [Function.comp_def, ContinuousLinearEquiv.coe_toHomeomorph,
+        WithLp.prodContinuousLinearEquiv_apply,
+        lowerOrder_succ, iteratedGradient_succ, WeakDerivStep.prev_coe,
+        WeakDerivStep.weakFDeriv_coe]
+      exact Prod.tendsto_iff _ _
 
 end Wkp
 

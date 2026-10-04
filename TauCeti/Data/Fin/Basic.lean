@@ -34,6 +34,8 @@ range, so the value is a `dite` rather than a plain application.
   transposition.
 * `Fin.rev_finRotate_rev` and `Fin.rev_finRotate_symm`: reversal carries forward rotation to
   backward rotation and conversely.
+* `Fin.finRotate_rev_finRotate_rev`: negation modulo `n`, written as `i ↦ finRotate n i.rev`, is
+  an involution.
 * `Fin.coe_finRotate_pow`: a power of the rotation `finRotate n` adds its exponent modulo `n`.
 * `Finset.sum_range_const_sub_succ`: the sum of a reversed initial segment of natural numbers.
 * `Fin.sum_rev_castLE`: the sum of the values of a reversed embedded finite ordinal.
@@ -49,6 +51,13 @@ range, so the value is a `dite` rather than a plain application.
 * `Fin.predAbove_succ_succAbove`: `Fin.predAbove p` inverts `p.succ.succAbove`, the
   counterpart of Mathlib's `Fin.predAbove_succAbove` for `p.castSucc.succAbove`.
 * `Fin.val_succAbove`: the value of `p.succAbove i`, read off the comparison of `i` with `p`.
+* `Fin.finRotate_succ_eq_succ_succAbove` and `Fin.finRotate_succ_succAbove_of_ne`: the cyclic
+  successor of `Fin (n + 1)` against the embeddings `Fin.succ` and `i.succ.succAbove` of `Fin n`,
+  as used when a new entry is inserted into a cyclic sequence.
+* `Fin.succAbove_adjacent_cases`: the positions `p` of `Fin (n + 1)` cyclically adjacent to
+  `p.succAbove i`.
+* `Fin.swap_castSucc_succ_succAbove`: the transposition of `k.castSucc` and `k.succ` exchanges the
+  embeddings of `Fin n` skipping either of them.
 * `Fin.card_filter_prod_succAbove`: a count of pairs in `Fin (n + 1)` split at a point in each
   coordinate.
 * `Fin.val_orderSucc_of_lt` and `Fin.orderSucc_eq_self_of_not_lt`: the order successor of `Fin n`
@@ -154,6 +163,17 @@ theorem rev_finRotate_symm {n : ℕ} (i : Fin n) :
   simp only [Fin.rev_rev]
   simpa only [finRotate_apply, finRotate_symm_apply] using (rev_finRotate_rev i).symm
 
+/-- The map `i ↦ finRotate n i.rev`, which is negation modulo `n`, is an involution. -/
+theorem finRotate_rev_finRotate_rev {n : ℕ} (i : Fin n) :
+    finRotate n (finRotate n i.rev).rev = i := by
+  cases n with
+  | zero => exact Fin.elim0 i
+  | succ n =>
+    have := i.isLt
+    ext
+    simp only [coe_finRotate, Fin.ext_iff, Fin.val_last, Fin.val_rev]
+    split_ifs <;> omega
+
 /-- The value of a power of the cyclic permutation `finRotate n`: it adds `k` modulo `n`. -/
 theorem coe_finRotate_pow {n : ℕ} (k : ℕ) (c : Fin n) :
     ((finRotate n ^ k) c : ℕ) = (c + k) % n := by
@@ -177,6 +197,58 @@ theorem val_succAbove {n : ℕ} (p : Fin (n + 1)) (i : Fin n) :
     (p.succAbove i : ℕ) = if (i : ℕ) < p then (i : ℕ) else (i : ℕ) + 1 := by
   unfold succAbove
   split_ifs <;> simp_all [lt_def]
+
+/-- The cyclic successor of `i.succ` in `Fin (n + 1)` is the cyclic successor of `i` in `Fin n`,
+read through the embedding `i.succ.succAbove` that skips `i.succ`. -/
+theorem finRotate_succ_eq_succ_succAbove {n : ℕ} (i : Fin n) :
+    finRotate (n + 1) i.succ = i.succ.succAbove (finRotate n i) := by
+  obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by have := i.pos; omega⟩
+  have := i.isLt
+  ext
+  simp only [succAbove]
+  split_ifs <;> simp only [lt_def, val_castSucc, val_succ, coe_finRotate, Fin.ext_iff,
+    val_last] at * <;> split_ifs at * <;> omega
+
+/-- Away from `i`, the embedding `i.succ.succAbove : Fin n → Fin (n + 1)`, which skips `i.succ`,
+commutes with the cyclic successors. -/
+theorem finRotate_succ_succAbove_of_ne {n : ℕ} {i k : Fin n} (hk : k ≠ i) :
+    finRotate (n + 1) (i.succ.succAbove k) = i.succ.succAbove (finRotate n k) := by
+  obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by have := i.pos; omega⟩
+  rw [Ne, Fin.ext_iff] at hk
+  have := k.isLt
+  have := i.isLt
+  ext
+  simp only [succAbove]
+  split_ifs <;> simp only [lt_def, val_castSucc, val_succ, coe_finRotate, Fin.ext_iff,
+    val_last] at * <;> split_ifs at * <;> omega
+
+/-- A position `p` of `Fin (n + 1)` cyclically adjacent to `p.succAbove i` is `i.castSucc` or
+`i.succ`, or wraps around: `p` is last and `p.succAbove i` is `0`, or `p` is `0` and
+`p.succAbove i` is last. -/
+theorem succAbove_adjacent_cases {n : ℕ} {p : Fin (n + 1)} {i : Fin n}
+    (h : finRotate (n + 1) p = p.succAbove i ∨ finRotate (n + 1) (p.succAbove i) = p) :
+    p = i.castSucc ∨ p = i.succ ∨ (p = last n ∧ i.castSucc = 0) ∨ (p = 0 ∧ i.succ = last n) := by
+  have hv := val_succAbove p i
+  have := i.isLt
+  simp only [Fin.ext_iff, coe_finRotate, val_last, val_zero, val_castSucc, val_succ] at h hv ⊢
+  split_ifs at h hv <;> omega
+
+/-- The transposition of `k.castSucc` and `k.succ` carries the embedding `k.castSucc.succAbove`,
+which skips `k.castSucc`, to the embedding `k.succ.succAbove`, which skips `k.succ`. -/
+theorem swap_castSucc_succ_succAbove {n : ℕ} (k i : Fin n) :
+    Equiv.swap k.castSucc k.succ (k.castSucc.succAbove i) = k.succ.succAbove i := by
+  rcases eq_or_ne i k with rfl | hik
+  · simp
+  have h : k.castSucc.succAbove i = k.succ.succAbove i := by
+    ext
+    simp only [val_succAbove, val_castSucc, val_succ]
+    rw [Ne, Fin.ext_iff] at hik
+    split_ifs <;> omega
+  rw [h, Equiv.swap_apply_of_ne_of_ne]
+  · rw [← succAbove_succ_self]
+    exact fun h' ↦ hik (succAbove_right_injective h')
+  · rw [← h, ← succAbove_castSucc_self]
+    exact fun h' ↦ hik (succAbove_right_injective h')
 
 /-- A count of pairs in `Fin (n + 1)`, split at `a` in the first coordinate and at `b` in the
 second: the pair `(a, b)`, the pairs with exactly one coordinate at its split point, and the pairs

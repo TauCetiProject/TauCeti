@@ -34,7 +34,8 @@ weights.
   coordinates and its last one, with `Fin.snoc` as its inverse.
 * `LinearEquiv.piEquivPiSubtypeProd`: `Equiv.piEquivPiSubtypeProd` as a linear equivalence,
   splitting `∀ i, M i` into the factors indexed by `p` and by `¬p`.
-* `LinearMap.toMatrix_piMap`: in a product basis, `LinearMap.piMap f` is block diagonal.
+* `LinearMap.toMatrix_piMap`: in product bases, `LinearMap.piMap f` is block diagonal, including
+  when its component maps have different source and target modules.
 * `LinearMap.det_piMap`: the determinant of a coordinatewise endomorphism `LinearMap.piMap f` of a
   finite dependent product is the product of the determinants of its components.
 * `TauCeti.exists_isRegular_single_sub_single_sub`: an ordered difference of standard coordinate
@@ -115,14 +116,19 @@ end LinearEquiv
 
 namespace LinearMap
 
-/-- In the product basis `Pi.basis b`, the coordinatewise endomorphism `LinearMap.piMap f` has the
-block-diagonal matrix whose blocks are the matrices of the `f i` in the bases `b i`. -/
-public theorem toMatrix_piMap {R ι : Type*} [CommRing R] [Fintype ι] [DecidableEq ι]
-    {M : ι → Type*} [∀ i, AddCommGroup (M i)] [∀ i, Module R (M i)] {κ : ι → Type*}
-    [∀ i, Fintype (κ i)] [∀ i, DecidableEq (κ i)] (b : ∀ i, Module.Basis (κ i) R (M i))
-    (f : ∀ i, M i →ₗ[R] M i) :
-    toMatrix (Pi.basis b) (Pi.basis b) (piMap f) =
-      Matrix.blockDiagonal' fun i ↦ toMatrix (b i) (b i) (f i) := by
+/-- In the product bases `Pi.basis b` and `Pi.basis c`, the coordinatewise linear map
+`LinearMap.piMap f` has the block-diagonal matrix whose blocks are the matrices of the `f i`.
+The source and target modules, and hence the row and column index types of each block, may
+differ. -/
+public theorem toMatrix_piMap {R ι : Type*} [CommSemiring R] [Fintype ι] [DecidableEq ι]
+    {M N : ι → Type*} [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)]
+    [∀ i, AddCommMonoid (N i)] [∀ i, Module R (N i)] {κ κ' : ι → Type*}
+    [∀ i, Fintype (κ i)] [∀ i, DecidableEq (κ i)]
+    [∀ i, Finite (κ' i)]
+    (b : ∀ i, Module.Basis (κ i) R (M i)) (c : ∀ i, Module.Basis (κ' i) R (N i))
+    (f : ∀ i, M i →ₗ[R] N i) :
+    toMatrix (Pi.basis b) (Pi.basis c) (piMap f) =
+      Matrix.blockDiagonal' fun i ↦ toMatrix (b i) (c i) (f i) := by
   ext ⟨i₁, j₁⟩ ⟨i₂, j₂⟩
   simp only [toMatrix_apply', Pi.basis_apply, Matrix.blockDiagonal'_apply]
   split_ifs with h
@@ -140,7 +146,7 @@ public theorem det_piMap {R ι : Type*} [CommRing R] [Fintype ι] {M : ι → Ty
     (piMap f).det = ∏ i, (f i).det := by
   classical
   let b (i : ι) := Module.Free.chooseBasis R (M i)
-  rw [← det_toMatrix (Pi.basis b), toMatrix_piMap, Matrix.det_blockDiagonal']
+  rw [← det_toMatrix (Pi.basis b), toMatrix_piMap b b, Matrix.det_blockDiagonal']
   exact Finset.prod_congr rfl fun i _ ↦ det_toMatrix (b i) (f i)
 
 end LinearMap
