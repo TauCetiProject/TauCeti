@@ -134,7 +134,7 @@ def mapCoeffEquiv (hf : IsOpenMap f)
     rw [Formation.mem_level]
     intro g hg
     rcases hg with ⟨g, hg, rfl⟩
-    change F'.module.ρ (f g) (e.inv.hom x.1) = e.inv.hom x.1
+    rw [F'.toRep_ρ_apply]
     calc
       _ = e.inv.hom (F.module.ρ g x.1) := (TopRep.hom_comm_apply e.inv g x.1).symm
       _ = e.inv.hom x.1 := congrArg e.inv.hom (F.mem_level.1 x.property g hg)⟩
@@ -142,17 +142,13 @@ def mapCoeffEquiv (hf : IsOpenMap f)
     rw [Formation.mem_level]
     intro g hg
     have hx := F'.mem_level.1 x.property (f g) ⟨g, hg, rfl⟩
-    change F.module.ρ g (e.hom.hom x.1) = e.hom.hom x.1
+    rw [F.toRep_ρ_apply]
     calc
       _ = e.hom.hom (F'.module.ρ (f g) x.1) :=
         (TopRep.hom_comm_apply e.hom g x.1).symm
       _ = e.hom.hom x.1 := congrArg e.hom.hom hx⟩
-  left_inv x := Subtype.ext <| by
-    change e.hom.hom (e.inv.hom x.1) = x.1
-    simp
-  right_inv x := Subtype.ext <| by
-    change e.inv.hom (e.hom.hom x.1) = x.1
-    simp
+  left_inv x := Subtype.ext (e.inv_hom_id_apply x.1)
+  right_inv x := Subtype.ext (e.hom_inv_id_apply x.1)
   map_add' x y := Subtype.ext (map_add e.inv.hom x.1 y.1)
   map_smul' c x := Subtype.ext (map_zsmul e.inv.hom c x.1)
 
@@ -187,6 +183,8 @@ def mapLayerEquiv (hf : IsOpenMap f) (hfi : Function.Injective f)
   isIntertwiningMap := ⟨fun γ x ↦ by
     induction γ using QuotientGroup.induction_on with
     | H u =>
+      -- `IsIntertwiningMap` hides the transported action behind `MonoidHom.comp`; expose its
+      -- representative form because `rw` cannot see `mapGalEquiv_mk` through that wrapper.
       change L.mapCoeffEquiv f hf e ((L.rep F).ρ (QuotientGroup.mk u) x) =
         ((L.map f hf).rep F').ρ
           (L.mapGalEquiv f hf hfi (QuotientGroup.mk u)) (L.mapCoeffEquiv f hf e x)
