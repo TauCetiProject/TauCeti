@@ -83,10 +83,19 @@ theorem mem_range_derivationCompLieHom_rootSubgroup_iff (hij : i ≠ j)
   · rintro ⟨c, hc⟩
     refine ⟨(AdditiveGroup.gaTangentLinearEquiv (R := R) (B := B)).symm c, ?_⟩
     apply (tangentLieEquivSl (R := R) (B := B) n).injective
-    rw [LieEquiv.coe_toLieHom, tangentLieEquivSl_apply, tangentLieEquivSl_apply,
-      derivationCompLieHom_apply,
-      tangentMatrix_derivationComp_rootSubgroup, LinearEquiv.apply_symm_apply]
-    exact hc.symm
+    simpa only [LieEquiv.coe_toLieHom, tangentLieEquivSl_apply (R := R) (B := B),
+      derivationCompLieHom_apply, tangentMatrix_derivationComp_rootSubgroup (R := R) (B := B),
+      LinearEquiv.apply_symm_apply] using hc.symm
+
+private theorem tangentMatrix_smul_derivationComp_rootSubgroup_unit (hij : i ≠ j) (c : B) :
+    tangentMatrix n
+        (c • derivationComp (B := B)
+          (rootSubgroupCoordinateMap (R := R) (N := n) hij).hom
+          ((AdditiveGroup.gaTangentLinearEquiv (R := R) (B := B)).symm 1)) =
+      LieAlgebra.SpecialLinear.single i j hij c := by
+  simp only [map_smul, tangentMatrix_derivationComp_rootSubgroup (R := R) (B := B),
+    LinearEquiv.apply_symm_apply]
+  simpa using ((LieAlgebra.SpecialLinear.single i j hij (R := B)).map_smul c 1).symm
 
 /-- The image of the root-subgroup differential is the line spanned by the image of the
 unit tangent vector. This characterizes the normalized root vector inside `Lie(SLₙ)`. -/
@@ -104,13 +113,10 @@ theorem range_derivationCompLieHom_rootSubgroup_eq_span (hij : i ≠ j) :
   constructor
   · intro hc
     apply (tangentLieEquivSl (R := R) (B := B) n).injective
-    rw [LieEquiv.coe_toLieHom, tangentLieEquivSl_apply, tangentLieEquivSl_apply,
-      map_smul, tangentMatrix_derivationComp_rootSubgroup, LinearEquiv.apply_symm_apply,
-      ← map_smul, smul_eq_mul, mul_one]
-    exact hc.symm
+    simpa only [LieEquiv.coe_toLieHom, tangentLieEquivSl_apply (R := R) (B := B),
+      tangentMatrix_smul_derivationComp_rootSubgroup_unit (R := R) (B := B)] using hc.symm
   · intro hc
-    rw [← hc, map_smul, tangentMatrix_derivationComp_rootSubgroup,
-      LinearEquiv.apply_symm_apply, ← map_smul, smul_eq_mul, mul_one]
+    rw [← hc, tangentMatrix_smul_derivationComp_rootSubgroup_unit]
 
 /-- The normalized root vector is nonzero over any nontrivial coefficient algebra. -/
 theorem derivationComp_rootSubgroup_unit_ne_zero [Nontrivial B] (hij : i ≠ j) :
