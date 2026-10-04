@@ -97,10 +97,7 @@ theorem hypVolumeOfMetric_eq_of_mostow [BoundarylessManifold I M]
       (IB := I) (n := ∞) (F := E) (V := fun x : M ↦ TangentSpace I x)
   change @riemannianTotalVolume E _ _ _ H _ I M _ _ _ _ _ _ gBundle gCont =
     @riemannianTotalVolume E _ _ _ H _ I M _ _ _ _ _ _ g'Bundle g'Cont
-  exact @Homeomorph.riemannianTotalVolume_eq E _ _ _ H _ I M _ _ _ _ _ _ gBundle gCont
-    H _ I M _ _ _ _ _ _ g'Bundle g'Cont Φ.toDiffeomorph.toHomeomorph
-    (Φ.toDiffeomorph.mdifferentiable (by simp)) (by
-      intro x v w
-      exact Φ.inner_mfderiv' x v w)
+  exact @RiemannianIsometry.riemannianTotalVolume_eq E _ _ _ H _ I M _ _ _ _ _ _
+    gBundle gCont H _ I M _ _ _ _ _ _ g'Bundle g'Cont Φ
 
 end TauCeti
