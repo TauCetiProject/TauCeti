@@ -68,7 +68,9 @@ right half-plane is `{sideForm g > 0}`.
   `geodesicLine g`, with `sideForm_mk` and `sideForm_mk_ofReal` in the entries of a
   representative; `mem_leftHalfPlane_iff_sideForm_neg`, `mem_rightHalfPlane_iff_sideForm_pos`,
   `mem_range_geodesicLine_iff_sideForm_eq_zero`, `mem_closure_leftHalfPlane_iff_sideForm_nonpos`;
-  `sideForm_mul_dilation`: it too is unchanged by a dilation.
+  `sideForm_mul_dilation`: it too is unchanged by a dilation;
+  `exists_sideForm_eq_mul_normSq_sub`: a side form vanishing at two points of a circle centred on
+  the real axis, with distinct real parts, is a multiple of the circle's equation.
 -/
 
 public section
@@ -392,6 +394,34 @@ theorem sideForm_mul_dilation (g : PSL(2, ℝ)) (s : ℝ) :
     Matrix.cons_val_one, Matrix.empty_val', Matrix.cons_val_fin_one, mul_zero, add_zero, zero_add]
   linear_combination (-(A 1 0 * A 1 1) * Complex.normSq z +
       (A 0 0 * A 1 1 + A 0 1 * A 1 0) * z.re - A 0 0 * A 0 1) * h
+
+/-- A side form vanishing at two points of a circle centred on the real axis, with distinct real
+parts, is a nonzero multiple of the equation of that circle. -/
+theorem exists_sideForm_eq_mul_normSq_sub {g : PSL(2, ℝ)} {z₁ z₂ : ℂ} {m r : ℝ}
+    (h₁ : sideForm g z₁ = 0) (h₂ : sideForm g z₂ = 0) (hz₁ : Complex.normSq (z₁ - m) = r)
+    (hz₂ : Complex.normSq (z₂ - m) = r) (hre : z₁.re ≠ z₂.re) :
+    ∃ α : ℝ, α ≠ 0 ∧ ∀ z : ℂ, sideForm g z = α * (Complex.normSq (z - m) - r) := by
+  induction g using QuotientGroup.induction_on with | H A => ?_
+  have hn (z : ℂ) : Complex.normSq (z - m) = Complex.normSq z - 2 * m * z.re + m ^ 2 := by
+    simp only [Complex.normSq_apply, Complex.sub_re, Complex.sub_im, Complex.ofReal_re,
+      Complex.ofReal_im, sub_zero]
+    ring
+  rw [sideForm_mk] at h₁ h₂
+  rw [hn] at hz₁ hz₂
+  -- the coefficients of `Re z` and `1` are those of the circle's equation
+  have hb : A 0 0 * A 1 1 + A 0 1 * A 1 0 = 2 * m * (A 1 0 * A 1 1) := by
+    have h : (A 0 0 * A 1 1 + A 0 1 * A 1 0 - 2 * m * (A 1 0 * A 1 1)) * (z₁.re - z₂.re) = 0 := by
+      linear_combination h₁ - h₂ + A 1 0 * A 1 1 * (hz₁ - hz₂)
+    exact sub_eq_zero.1 ((mul_eq_zero.1 h).resolve_right (sub_ne_zero.2 hre))
+  have hc : A 0 0 * A 0 1 = -(A 1 0 * A 1 1) * (r - m ^ 2) := by
+    linear_combination -h₁ + z₁.re * hb - A 1 0 * A 1 1 * hz₁
+  refine ⟨-(A 1 0 * A 1 1), fun h0 ↦ ?_, fun z ↦ ?_⟩
+  · -- otherwise the side form vanishes identically, but the left half-plane is nonempty
+    obtain ⟨w, hw⟩ := leftHalfPlane_nonempty (A : PSL(2, ℝ))
+    rw [mem_leftHalfPlane_iff_sideForm_neg, sideForm_mk, hb, hc, neg_eq_zero.1 h0] at hw
+    simp at hw
+  · rw [sideForm_mk, hn, hb, hc]
+    ring
 
 end SideForm
 

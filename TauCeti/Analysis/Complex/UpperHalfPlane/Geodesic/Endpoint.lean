@@ -51,6 +51,7 @@ point at parameter `0` and the forward endpoint
   point of `ℍ` to any ideal point.
 * `TauCeti.UpperHalfPlane.strictMono_re_geodesicLine`: along a semicircle from `e₀` to `e₁ > e₀`,
   the real part increases strictly, between `e₀` and `e₁`.
+* `UpperHalfPlane.toPoint_smul_infty`: the affine map `toPoint A` fixes the ideal point `∞`.
 
 ## Source
 
@@ -431,3 +432,21 @@ theorem eq_of_geodesicLine_zero_eq_of_smul_infty_eq {g g' : PSL(2, ℝ)}
     rw [hrot, Matrix.ProjectiveSpecialLinearGroup.mk_neg, QuotientGroup.mk_one]
 
 end TauCeti.UpperHalfPlane
+
+namespace UpperHalfPlane
+
+open TauCeti.UpperHalfPlane
+open Matrix.ProjectiveSpecialLinearGroup (upperRightHom upperRightHom_smul_infty)
+open Matrix.SpecialLinearGroup (dilation)
+
+/-- The affine map `toPoint A`, `z ↦ Re A + Im A · z`, fixes the ideal point `∞`. -/
+@[simp]
+theorem toPoint_smul_infty (A : ℍ) : toPoint A • (∞ : OnePoint ℝ) = ∞ := by
+  -- `toPoint A` is the translation by `Re A` after the dilation by `Im A`, by faithfulness
+  have h : toPoint A = upperRightHom A.re * ↑(dilation (Real.log A.im)) := by
+    refine FaithfulSMul.eq_of_smul_eq_smul fun z ↦ UpperHalfPlane.coe_injective ?_
+    rw [coe_toPoint_smul, mul_smul, UpperHalfPlane.pslMk_smul, upperRightHom_smul,
+      UpperHalfPlane.coe_vadd, coe_dilation_smul, Real.exp_log A.im_pos, add_comm]
+  rw [h, mul_smul, dilation_smul_infty, upperRightHom_smul_infty]
+
+end UpperHalfPlane

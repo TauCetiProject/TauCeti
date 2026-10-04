@@ -7,7 +7,9 @@ module
 
 public import TauCeti.RingTheory.Polynomial.Subresultant.Polynomial
 public import TauCeti.RingTheory.Polynomial.Subresultant.DegreeDrop.Basic
+public import TauCeti.RingTheory.Polynomial.Subresultant.Signed
 import TauCeti.Algebra.Polynomial.OfFn
+import TauCeti.Data.Nat.Choose.Basic
 import Mathlib.Algebra.Polynomial.FieldDivision
 
 /-!
@@ -22,7 +24,11 @@ coefficient and the sign introduced by lowering bounds and swapping inputs.
 Reduction invariance holds over any commutative ring and at every index, including the
 terminal principal index. Division with remainder requires a field; the divisor and
 remainder may be zero. The principal-coefficient recurrences require the index to lie
-at or below both the remainder bound and the divisor degree.
+at or below both the remainder bound and the divisor degree. Strictly between the
+degree of the remainder and the degree of the divisor, the principal coefficients vanish.
+For the signed principal coefficients, one step of the signed remainder sequence
+`p, q, -(p % q)` multiplies the coefficients at or below the remainder bound by a common
+factor independent of the index.
 
 ## References
 
@@ -210,6 +216,50 @@ theorem _root_.Polynomial.psc_eq_sign_mul_leadingCoeff_pow_mul_psc_neg_mod {p q 
   linear_combination
     -((-1 : K) ^ ((m - j) * (q.natDegree - j)) * q.leadingCoeff ^ (m - r) *
       psc q (p % q) q.natDegree r j) * hsq
+
+/-- Principal coefficients vanish at the indices strictly between the degree of the
+remainder `p % q` and the degree of `q`. The remainder may be zero. -/
+theorem _root_.Polynomial.psc_eq_zero_of_natDegree_mod_lt {p q : K[X]} {m j : ℕ}
+    (hp : p.natDegree ≤ m) (hrj : (p % q).natDegree < j) (hjq : j < q.natDegree)
+    (hjm : j ≤ m) :
+    psc p q m q.natDegree j = 0 := by
+  rw [← psc_mod_left hp,
+    psc_eq_sign_mul_coeff_pow_mul_of_left_degree_drop hrj.le le_rfl hjm le_rfl hjq.le,
+    psc_left_bound, coeff_eq_zero_of_natDegree_lt hrj, zero_pow (by omega), mul_zero]
+
+/-- One step of the signed remainder sequence multiplies the signed principal coefficients by a
+common factor. For indices at most a bound `r` for the remainder, the signed coefficients of
+`(p, q)` are those of `(q, -(p % q))` times `(-1) ^ (m - q.natDegree).choose 2 *
+q.leadingCoeff ^ (m - r)`, which does not depend on the index. -/
+theorem _root_.Polynomial.signedPsc_eq_mul_signedPsc_neg_mod {p q : K[X]} {m r j : ℕ}
+    (hp : p.natDegree ≤ m) (hqm : q.natDegree ≤ m) (hr : (p % q).natDegree ≤ r)
+    (hrm : r ≤ m) (hjr : j ≤ r) (hjq : j ≤ q.natDegree) :
+    signedPsc p q m q.natDegree j =
+      (-1) ^ (m - q.natDegree).choose 2 * q.leadingCoeff ^ (m - r) *
+        signedPsc q (-(p % q)) q.natDegree r j := by
+  rw [signedPsc_of_le p q (le_min (hjq.trans hqm) hjq), signedPsc_of_le _ _ (le_min hjq hjr),
+    psc_eq_sign_mul_leadingCoeff_pow_mul_psc_neg_mod hp hr hrm hjr hjq]
+  obtain ⟨t, ht⟩ := Nat.even_mul_succ_self (q.natDegree - j)
+  have hmj : m - j = (m - q.natDegree) + (q.natDegree - j) := by omega
+  have hexp : (m - j).choose 2 + (m - j + 1) * (q.natDegree - j) =
+      (m - q.natDegree).choose 2 + (q.natDegree - j).choose 2 +
+        2 * ((m - q.natDegree) * (q.natDegree - j) + t) := by
+    rw [hmj, Nat.add_choose_two]
+    nlinarith [ht]
+  have hsign : (-1 : K) ^ (m - j).choose 2 * (-1) ^ ((m - j + 1) * (q.natDegree - j)) =
+      (-1) ^ (m - q.natDegree).choose 2 * (-1) ^ (q.natDegree - j).choose 2 := by
+    rw [← pow_add, hexp, pow_add, pow_add, pow_mul]
+    simp
+  linear_combination (q.leadingCoeff ^ (m - r) * psc q (-(p % q)) q.natDegree r j) * hsign
+
+/-- The signed principal coefficients vanish at the indices strictly between the degree of the
+remainder `p % q` and the degree of `q`. -/
+theorem _root_.Polynomial.signedPsc_eq_zero_of_natDegree_mod_lt {p q : K[X]} {m j : ℕ}
+    (hp : p.natDegree ≤ m) (hrj : (p % q).natDegree < j) (hjq : j < q.natDegree)
+    (hjm : j ≤ m) :
+    signedPsc p q m q.natDegree j = 0 := by
+  rw [signedPsc_of_le p q (le_min hjm hjq.le), psc_eq_zero_of_natDegree_mod_lt hp hrj hjq hjm,
+    mul_zero]
 
 end Field
 

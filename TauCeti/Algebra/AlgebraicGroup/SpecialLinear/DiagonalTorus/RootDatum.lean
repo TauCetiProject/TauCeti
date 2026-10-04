@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.DiagonalTorus.Basic
-public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.RootSubgroup
+public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.RootSubgroup.Basic
 public import TauCeti.Algebra.AlgebraicGroup.SplitTorus.Cocharacter
 public import TauCeti.Algebra.AlgebraicGroup.SplitTorus.RootDatum.Basic
 public import TauCeti.Algebra.AlgebraicGroup.SplitTorus.Weight

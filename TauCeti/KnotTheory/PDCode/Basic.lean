@@ -318,6 +318,11 @@ theorem eq_permCongr_sumCongr_of_halfEdge_eq {D : PDCode n} {D' : PDCode (n + 1)
 def isOver (D : PDCode n) (i : Fin n) (slot : Fin 4) : Bool :=
   D.overPair i == decide (slot = 1 ∨ slot = 3)
 
+/-- The defining equation for the over-strand indicator of a slot: it compares the over-pair
+indicator with the parity of the slot. -/
+theorem isOver_def (D : PDCode n) (i : Fin n) (slot : Fin 4) :
+    D.isOver i slot = (D.overPair i == decide (slot = 1 ∨ slot = 3)) := (rfl)
+
 /-- Slot zero is over exactly when the second opposite-slot pair was not selected. -/
 @[simp]
 theorem isOver_zero (D : PDCode n) (i : Fin n) : D.isOver i 0 = !D.overPair i := by
