@@ -57,6 +57,8 @@ itself becomes the **twisted regular representation**, which realizes every fact
   representations with trivial factor set are exactly the linear representations.
 * `TauCeti.IsProjectiveRep.tensorProduct`: the tensor product of two projective representations is
   projective with the product factor set.
+* `TauCeti.IsProjectiveRep.comp`: a projective representation inflates along a homomorphism, with
+  the pulled-back factor set.
 * `TauCeti.exists_isProjectiveRep`: every normalized factor set is the factor set of a projective
   representation.
 
@@ -193,6 +195,15 @@ theorem tensorProduct {V' : Type*} [AddCommMonoid V'] [Module k V'] {ρ' : G →
       _ = ((α * α') g₁ g₂ : k) • TensorProduct.congr (ρ (g₁ * g₂)) (ρ' (g₁ * g₂)) x := by
           rw [TensorProduct.map_smul_left, TensorProduct.map_smul_right, smul_smul, hc,
             Pi.mul_apply, Pi.mul_apply, Units.val_mul, mul_comm, LinearMap.smul_apply]
+
+/-- **Inflation of a projective representation.** Pulling a projective representation of `G`
+back along a homomorphism `f : H →* G` gives a projective representation of `H` whose factor set
+is the pullback of the factor set. -/
+theorem comp {H : Type*} [Monoid H] (h : IsProjectiveRep ρ α) (f : H →* G) :
+    IsProjectiveRep (fun g ↦ ρ (f g)) fun g₁ g₂ ↦ α (f g₁) (f g₂) where
+  isFactorSet := have := h.isFactorSet; IsFactorSet.comp f α
+  map_one := (congrArg ρ f.map_one).trans h.map_one
+  mul_apply g₁ g₂ x := by rw [h.mul_apply, map_mul]
 
 end IsProjectiveRep
 
