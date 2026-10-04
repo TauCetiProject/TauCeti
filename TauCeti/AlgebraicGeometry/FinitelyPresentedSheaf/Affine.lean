@@ -134,6 +134,14 @@ lemma tildeEquiv_counitIso_hom_app_hom (M : FinitelyPresentedSheaf (Spec R)) :
     ((tildeEquiv R).counitIso.hom.app M).hom = Scheme.Modules.fromTildeΓ M.obj :=
   (rfl)
 
+/-- The underlying inverse counit component is the inverse of the canonical tilde map. -/
+@[simp]
+lemma tildeEquiv_counitIso_inv_app_hom (M : FinitelyPresentedSheaf (Spec R)) :
+    ((tildeEquiv R).counitIso.inv.app M).hom =
+      (@asIso _ _ _ _ (Scheme.Modules.fromTildeΓ M.obj)
+        (Scheme.Modules.isIso_fromTildeΓ_of_isQuasicoherent (R := R) M.obj)).inv :=
+  (rfl)
+
 /-- Coherent sheaves on the spectrum of a Noetherian ring form an abelian category. -/
 instance : Abelian (FinitelyPresentedSheaf (Spec R)) := by
   let e := (tildeEquiv R).symm
