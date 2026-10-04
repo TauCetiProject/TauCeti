@@ -153,7 +153,7 @@ theorem ramificationGroup_zero : ramificationGroup F P 0 = P.integers.inertiaSub
       mem_maximalIdeal_iff_valuation_lt_one, ← mem_filtration_one_iff]
     have hsub : ((g • x - x : P.integers) : F') =
         ((g • x : P.integers) : F') - ((x : P.integers) : F') := rfl
-    rw [hsub, coe_decompositionSubgroup_smul]
+    rw [hsub, ValuationSubring.coe_decompositionSubgroup_smul]
     norm_num
   exact ⟨fun h x ↦ (key x).mpr (h (x : F') x.2), fun h x hx ↦ (key ⟨x, hx⟩).mp (h ⟨x, hx⟩)⟩
 

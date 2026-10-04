@@ -59,12 +59,12 @@ theorem ramificationGroup_eq_isLocalRing_ramificationGroup (P : Place k F') (i :
   constructor
   · intro h x
     rw [P.mem_maximalIdeal_pow_iff_coe_mem_filtration, AddSubgroupClass.coe_sub,
-      coe_decompositionSubgroup_smul, Nat.cast_add, Nat.cast_one]
+      ValuationSubring.coe_decompositionSubgroup_smul, Nat.cast_add, Nat.cast_one]
     exact h x x.2
   · intro h x hx
     have h' := (P.mem_maximalIdeal_pow_iff_coe_mem_filtration (i + 1) _).mp (h ⟨x, hx⟩)
-    rwa [AddSubgroupClass.coe_sub, coe_decompositionSubgroup_smul, Nat.cast_add,
-      Nat.cast_one] at h'
+    rwa [AddSubgroupClass.coe_sub, ValuationSubring.coe_decompositionSubgroup_smul,
+      Nat.cast_add, Nat.cast_one] at h'
 
 end Place
 
