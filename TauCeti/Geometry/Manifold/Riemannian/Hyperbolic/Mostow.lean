@@ -5,16 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Riemannian.Hyperbolic
-public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Basic
+public import TauCeti.Geometry.Manifold.Riemannian.Hyperbolic.Isometry
 
 /-!
 # Mostow rigidity for hyperbolic metrics
 
 This file records the metric-level statement of Mostow rigidity for closed hyperbolic manifolds.
-`HyperbolicMetric.Isometry` specializes the generic `RiemannianIsometry` API to two bundled
-metrics, with each metric supplying its own Riemannian bundle instance.  The resulting relation
-supports comparing the total volumes carried by different hyperbolic metrics.
+The resulting relation supports comparing the total volumes carried by different hyperbolic
+metrics.
 
 The formulation follows Ratcliffe, *Foundations of Hyperbolic Manifolds*, 3rd ed., Theorem
 11.8.5.
@@ -35,22 +33,10 @@ variable {E : Type uE} {H : Type uH} {M : Type uM} [NormedAddCommGroup E] [Norme
   [FiniteDimensional ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   [TopologicalSpace M] [T3Space M] [ChartedSpace H M] [IsManifold I ∞ M]
 
-namespace HyperbolicMetric
-
-variable [PreconnectedSpace M]
-
-/-- A bundled hyperbolic-metric comparison represented by the generic Riemannian isometry API,
-with each metric supplying its own Riemannian bundle instance. -/
-abbrev Isometry (g g' : HyperbolicMetric (I := I) (M := M)) :=
-  @RiemannianIsometry E _ _ H _ E _ _ H _ I I M M _ _
-    ⟨g.metric.toRiemannianMetric⟩ _ _ ⟨g'.metric.toRiemannianMetric⟩
-
-end HyperbolicMetric
-
 /-- The metric-level conclusion of Mostow rigidity for one fixed manifold and dimension.
 
-The geometric hypotheses are carried by the typeclass parameters and `hdim`; a future
-formalization of Mostow's theorem can provide this predicate from those hypotheses. -/
+The predicate asserts that every pair of bundled hyperbolic metrics on a closed, connected,
+boundaryless manifold of real dimension at least three is related by a bundled isometry. -/
 def IsMostowRigid : Prop :=
   ∀ [BoundarylessManifold I M] [CompactSpace M] [ConnectedSpace M],
     3 ≤ Module.finrank ℝ E →
