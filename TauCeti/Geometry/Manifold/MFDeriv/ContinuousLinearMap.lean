@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
+public import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 
 /-!
 # Manifold derivatives of continuous-linear-map applications
@@ -15,7 +16,7 @@ vector-valued map `u`, the derivative of a varying continuous linear map `c` app
 no contribution from the varying operator. Since that contribution is multiplied by `u = 0`, the
 operator `c` need only be continuous, not differentiable.
 
-On a normed space this is `HasFDerivWithinAt.clm_apply_of_eq_zero`, a variant of
+On a normed space, the imported theorem `HasFDerivWithinAt.clm_apply_of_eq_zero` is a variant of
 `HasFDerivWithinAt.clm_apply` needing only continuity of `c`. The manifold formula
 `mvfderiv_eq_comp_of_eventuallyEq_clm_apply` is its counterpart in charts, specialized to
 the case used when differentiating changes of fiber coordinates at the zero of a bundle section.
@@ -40,26 +41,6 @@ variable {𝕜 E H M F F' : Type*} [NontriviallyNormedField 𝕜]
   {x : M}
 
 namespace TauCeti
-
-/-- The normed-space form of the zero-value rule: at a zero of `u`, the variation of `c` is
-multiplied by `u y = O(y - z)`, so it contributes nothing to the derivative. -/
-theorem _root_.HasFDerivWithinAt.clm_apply_of_eq_zero {c : E → F →L[𝕜] F'} {u : E → F}
-    {u' : E →L[𝕜] F} {s : Set E} {z : E}
-    (hc : ContinuousWithinAt c s z) (hu : HasFDerivWithinAt u u' s z) (hu0 : u z = 0) :
-    HasFDerivWithinAt (fun y ↦ c y (u y)) ((c z).comp u') s z := by
-  have hrem : HasFDerivWithinAt (fun y ↦ (c y - c z) (u y)) (0 : E →L[𝕜] F') s z := by
-    refine .of_isLittleO ?_
-    simp only [hu0, map_zero, sub_self, sub_zero, zero_apply]
-    refine (isBoundedBilinearMap_apply (𝕜 := 𝕜) (E := F) (F := F')).isBigO_comp.trans_isLittleO ?_
-    have hc' : (fun y ↦ ‖c y - c z‖) =o[𝓝[s] z] (fun _ ↦ (1 : ℝ)) :=
-      ((isLittleO_one_iff ℝ).2 (tendsto_sub_nhds_zero_iff.2 hc)).norm_left
-    have hu' : (fun y ↦ ‖u y‖) =O[𝓝[s] z] (fun y ↦ ‖y - z‖) := by
-      simpa only [hu0, sub_zero] using hu.isBigO_sub.norm_norm
-    exact isLittleO_norm_right.1 (by simpa only [one_mul] using hc'.mul_isBigO hu')
-  convert ((c z).hasFDerivAt.comp_hasFDerivWithinAt z hu).add hrem using 1
-  · funext y
-    simp
-  · simp
 
 /-- At a zero of `u`, a map agreeing near `x` with `y ↦ c y (u y)` has derivative `c x` composed
 with the derivative of `u`: the variation of `c` is multiplied by `u x = 0`, so `c` need only be
