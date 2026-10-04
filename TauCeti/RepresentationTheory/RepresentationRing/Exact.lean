@@ -45,7 +45,7 @@ theorem fromSplitRingHom_fdRep_bijective :
         repRing k G →+* ExactK0.{max u v} (ExactStructure.abelian (FDRep k G))) := by
   have hsplit : ∀ {S : ShortComplex (FDRep k G)},
       (ExactStructure.abelian (FDRep k G)).Conflation S → Nonempty S.Splitting :=
-    fun hS ↦ nonempty_splitting_fdRep_of_shortExact
+    fun hS ↦ FDRep.nonempty_splitting_of_shortExact
       ((ExactStructure.abelian_conflation _).mp hS)
   have heq : ⇑(ExactK0.fromSplitEquiv hsplit) =
       ⇑(ExactK0.fromSplitRingHom (ExactStructure.abelian (FDRep k G))) := by
@@ -72,7 +72,7 @@ theorem repRingEquivExactK0_apply (x : repRing k G) :
 
 /-- The inverse equivalence sends an exact class to the corresponding split class. -/
 @[simp]
-theorem repRingEquivExactK0_symm_of (V : FDRep k G) :
+theorem repRingEquivExactK0_symm_apply_of (V : FDRep k G) :
     repRingEquivExactK0.symm (ExactK0.of V) = SplitK0.of V := by
   apply repRingEquivExactK0.injective
   simp
