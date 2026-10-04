@@ -253,6 +253,7 @@ theorem finiteModulesExactK0Equiv_of (X : FGModuleCat.{u} R) :
 
 /-- **The class of a product of finitely generated modules** is the sum of the classes: the
 product `M × N` is the biproduct of `M` and `N` in the category of finitely generated modules. -/
+@[simp]
 theorem exactK0_fgModuleCat_prod (M N : Type u) [AddCommGroup M] [Module R M] [Module.Finite R M]
     [AddCommGroup N] [Module R N] [Module.Finite R N] :
     (ExactK0.of (FGModuleCat.of R (M × N)) : ExactK0 (finiteModulesExactStructure R)) =

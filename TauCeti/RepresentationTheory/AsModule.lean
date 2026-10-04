@@ -181,6 +181,14 @@ theorem prodAsModuleEquiv_apply (x : (ρ.prod σ).asModule) :
       (ρ.asModuleEquiv.symm (x : V × W).1, σ.asModuleEquiv.symm (x : V × W).2) :=
   (rfl)
 
+@[simp]
+theorem prodAsModuleEquiv_symm_apply (x : ρ.asModule × σ.asModule) :
+    (prodAsModuleEquiv ρ σ).symm x =
+      (ρ.prod σ).asModuleEquiv.symm (ρ.asModuleEquiv x.1, σ.asModuleEquiv x.2) := by
+  apply (prodAsModuleEquiv ρ σ).injective
+  rw [LinearEquiv.apply_symm_apply, prodAsModuleEquiv_apply]
+  rfl
+
 end Representation
 
 universe u v
