@@ -42,7 +42,7 @@ noncomputable def exteriorPowerImage (W : Subcomodule R H M) (n : ℕ) :
   letI : AddCommGroup W := inferInstanceAs (AddCommGroup W.toSubmodule)
   exact (Comodule.Hom.exteriorPowerMap n (subtype W)).range
 
-/-- The exterior image has the range of the exterior-power inclusion as its carrier. -/
+/-- The exterior image has the range of the induced exterior-power map as its carrier. -/
 @[simp]
 theorem exteriorPowerImage_toSubmodule (W : Subcomodule R H M) (n : ℕ) :
     (W.exteriorPowerImage n).toSubmodule =
@@ -68,8 +68,12 @@ namespace TauCeti.Subcomodule
 attribute [local instance] Comodule.exteriorPower
   Module.Free.of_divisionRing Module.Flat.of_free
 
-variable {k H M : Type*} [Field k] [CommRing H] [Bialgebra k H]
+variable {k H M : Type*} [Field k] [CommSemiring H] [Bialgebra k H]
   [AddCommGroup M] [Module k M] [Comodule k H M]
+
+local instance : Module.Flat k H := by
+  let : AddCommGroup H := Module.addCommMonoidToAddCommGroup k
+  infer_instance
 
 /-- The exterior image of a finite-dimensional subrepresentation has the expected
 binomial dimension. -/
@@ -88,7 +92,11 @@ theorem finrank_exteriorPowerImage_finrank (W : Subcomodule k H M)
     Module.finrank k (W.exteriorPowerImage (Module.finrank k W.toSubmodule)).toSubmodule = 1 := by
   simp [finrank_exteriorPowerImage]
 
-variable {K : Type*} [CommRing K] [Bialgebra k K]
+variable {K : Type*} [CommSemiring K] [Bialgebra k K]
+
+local instance : Module.Flat k K := by
+  let : AddCommGroup K := Module.addCommMonoidToAddCommGroup k
+  infer_instance
 
 /-- A finite-dimensional subrepresentation of a restricted representation determines
 an invariant line in the restriction of the ambient top exterior representation.
