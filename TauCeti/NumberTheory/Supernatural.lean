@@ -265,6 +265,12 @@ theorem primaryPart_apply_of_ne {p q : Nat.Primes} (h : q ≠ p) (n : Supernatur
     primaryPart p n q = 0 :=
   primePower_apply_of_ne h _
 
+/-- The `p`-primary part of a supernatural number is trivial exactly when `p` does not divide
+it. -/
+theorem primaryPart_eq_one_iff {p : Nat.Primes} {n : Supernatural} :
+    primaryPart p n = 1 ↔ n p = 0 := by
+  rw [primaryPart, ← primePower_zero p, (primePower_injective p).eq_iff]
+
 /-- The prime-to-`p` part of a supernatural number, obtained by deleting its `p`-exponent. -/
 def primeToPart (p : Nat.Primes) (n : Supernatural) : Supernatural :=
   Function.update n p 0
