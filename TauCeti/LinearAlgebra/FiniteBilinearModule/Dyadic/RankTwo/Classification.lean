@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Nilpotent.Basic
-public import TauCeti.LinearAlgebra.FiniteBilinearModule.Dyadic.RankTwo
+public import TauCeti.Data.ZMod.BinaryQuadraticForm
+public import TauCeti.LinearAlgebra.FiniteBilinearModule.Dyadic.RankTwo.Basic
 
 /-!
 # Rank-two dyadic blocks are `u^{(2)}(2^k)` or `v^{(2)}(2^k)`
@@ -63,112 +63,11 @@ nondegenerate alternating forms on a Klein four-group in
 
 public section
 
-open AddSubgroup
+open AddSubgroup TauCeti.ZMod
 
 namespace TauCeti.FiniteQuadraticModule
 
 variable {k : ℕ}
-
-/-! ## Binary forms over `ℤ/2^{k+1}` -/
-
-private theorem isNilpotent_two : IsNilpotent (2 : ZMod (2 ^ (k + 1))) :=
-  ⟨k + 1, by exact_mod_cast ZMod.natCast_self (2 ^ (k + 1))⟩
-
-/-- An even element plus a unit is a unit in `ℤ/2^{k+1}`. -/
-private theorem isUnit_two_mul_add {c u : ZMod (2 ^ (k + 1))} (hu : IsUnit u) :
-    IsUnit (2 * c + u) :=
-  ((Commute.all 2 c).isNilpotent_mul_right isNilpotent_two).isUnit_add_right_of_commute hu
-    (Commute.all _ _)
-
-/-- An even element of `ℤ/2^{k+1}` is not a unit. -/
-private theorem not_isUnit_two_mul (c : ZMod (2 ^ (k + 1))) : ¬ IsUnit (2 * c) :=
-  have : Nontrivial (ZMod (2 ^ (k + 1))) :=
-    ZMod.nontrivial_iff.2 (Nat.one_lt_two_pow k.succ_ne_zero).ne'
-  fun h ↦ h.not_isNilpotent ((Commute.all 2 c).isNilpotent_mul_right isNilpotent_two)
-
-/-- Every element of `ℤ/2^{k+1}` is even or odd, according to the parity of an integer lift. -/
-private theorem eq_two_mul_or_eq_two_mul_add_one (x : ZMod (2 ^ (k + 1))) :
-    (∃ c, x = 2 * c) ∨ ∃ c, x = 2 * c + 1 := by
-  obtain ⟨X, rfl⟩ := ZMod.intCast_surjective x
-  rcases Int.even_or_odd' X with ⟨c, rfl | rfl⟩
-  · exact Or.inl ⟨c, by push_cast; ring⟩
-  · exact Or.inr ⟨c, by push_cast; ring⟩
-
-/-- For odd `u`, the map `s ↦ 2cs² + us` is a bijection of `ℤ/2^{k+1}`: its difference quotient
-`2c(s + t) + u` is a unit. -/
-private theorem bijective_two_mul_sq_add {c u : ZMod (2 ^ (k + 1))} (hu : IsUnit u) :
-    Function.Bijective fun s : ZMod (2 ^ (k + 1)) ↦ 2 * c * s ^ 2 + u * s := by
-  refine Finite.injective_iff_bijective.1 fun s t hst ↦ ?_
-  have h : (s - t) * (2 * (c * (s + t)) + u) = 0 := by
-    linear_combination hst
-  exact sub_eq_zero.1 ((isUnit_two_mul_add hu).mul_left_eq_zero.1 h)
-
-/-- **The hyperbolic normal form.** For odd `u`, the binary form `2a'm² + umn + bn²` over
-`ℤ/2^{k+1}` becomes `mn` in the basis `E = (m₀, 1)`, `F = v(1, 0) + tE`. Here `(m₀, 1)` is
-isotropic, `v` inverts the pairing `w` of `E` with `(1, 0)`, and `t = -2a'v²` makes `F`
-isotropic. -/
-private theorem exists_hyperbolic_of_two_mul (a' b : ZMod (2 ^ (k + 1))) {u : ZMod (2 ^ (k + 1))}
-    (hu : IsUnit u) : ∃ e₁ e₂ f₁ f₂ : ZMod (2 ^ (k + 1)), ∀ m n,
-      2 * a' * (m * e₁ + n * f₁) ^ 2 + u * (m * e₁ + n * f₁) * (m * e₂ + n * f₂) +
-        b * (m * e₂ + n * f₂) ^ 2 = m * n := by
-  obtain ⟨m₀, hm₀⟩ := (bijective_two_mul_sq_add (c := a') hu).2 (-b)
-  simp only at hm₀
-  obtain ⟨v, hv⟩ := (isUnit_two_mul_add (c := 2 * a' * m₀) hu).exists_right_inv
-  set t := -(v * (2 * a') * v)
-  refine ⟨m₀, 1, v + t * m₀, t, fun m n ↦ ?_⟩
-  linear_combination (m ^ 2 + n ^ 2 * t ^ 2 + 2 * m * n * t) * hm₀ +
-    (m * n - n ^ 2 * v ^ 2 * (2 * a')) * hv
-
-/-- **The normal form of `v^{(2)}`.** For odd `u`, the binary form
-`(2a' + 1)m² + umn + (2b' + 1)n²` over `ℤ/2^{k+1}` becomes `m² + mn + n²` in a suitable basis.
-
-The first basis vector is `E = (2j, 1)`, where `j` is chosen so that `E` has value `1`. The second
-is `F = s₀(1, 0) + tE` with `s₀ = (1 - 2t)v`, where `v` inverts the pairing of `E` with `(1, 0)`;
-this makes the pairing of `E` and `F` equal to `1` for every `t`, and the value of `F` is `1` once
-`t² - t = (1 - c)/(4c - 1)` for `c = (2a' + 1)v²`. Since `c` is odd the right side is even, and
-`t = 2s` solves it. -/
-private theorem exists_sq_add_mul_add_sq_of_odd (a' b' : ZMod (2 ^ (k + 1)))
-    {u : ZMod (2 ^ (k + 1))} (hu : IsUnit u) : ∃ e₁ e₂ f₁ f₂ : ZMod (2 ^ (k + 1)), ∀ m n,
-      (2 * a' + 1) * (m * e₁ + n * f₁) ^ 2 + u * (m * e₁ + n * f₁) * (m * e₂ + n * f₂) +
-        (2 * b' + 1) * (m * e₂ + n * f₂) ^ 2 = m ^ 2 + m * n + n ^ 2 := by
-  set a := 2 * a' + 1
-  obtain ⟨j, hj⟩ := (bijective_two_mul_sq_add (c := a) hu).2 (-b')
-  simp only at hj
-  obtain ⟨v, hv⟩ := (isUnit_two_mul_add (c := 2 * a * j) hu).exists_right_inv
-  -- `v` is a unit, hence odd.
-  obtain ⟨v', rfl⟩ | ⟨v', rfl⟩ := eq_two_mul_or_eq_two_mul_add_one v
-  · exact absurd (IsUnit.of_mul_eq_one (1 : ZMod (2 ^ (k + 1))) (by linear_combination hv))
-      (not_isUnit_two_mul ((2 * (2 * a * j) + u) * v'))
-  -- `c - 1 = 2r`, and `z` inverts `4c - 1`.
-  set c := a * (2 * v' + 1) ^ 2
-  set r := a' * (2 * v' + 1) ^ 2 + 2 * v' ^ 2 + 2 * v'
-  obtain ⟨z, hz⟩ := (isUnit_two_mul_add (c := 2 * c) isUnit_one.neg).exists_right_inv
-  obtain ⟨s, hs⟩ := (bijective_two_mul_sq_add (c := 1) isUnit_one.neg).2 (-(r * z))
-  simp only at hs
-  set t := 2 * s
-  set s₀ := (1 - 2 * t) * (2 * v' + 1)
-  refine ⟨2 * j, 1, s₀ + 2 * j * t, t, fun m n ↦ ?_⟩
-  linear_combination (2 * m ^ 2 + 2 * n ^ 2 * t ^ 2 + 4 * m * n * t) * hj +
-    (n ^ 2 * (1 - 2 * t) * t + m * n * (1 - 2 * t)) * hv +
-    2 * n ^ 2 * (4 * c - 1) * hs - 2 * n ^ 2 * r * hz
-
-/-- **Normal forms of binary forms with odd middle coefficient over `ℤ/2^{k+1}`.** For odd `u`,
-the form `am² + umn + bn²` becomes `mn` in some basis, or `m² + mn + n²` in some basis. -/
-private theorem exists_basis (a b : ZMod (2 ^ (k + 1))) {u : ZMod (2 ^ (k + 1))} (hu : IsUnit u) :
-    ∃ e₁ e₂ f₁ f₂ : ZMod (2 ^ (k + 1)),
-      (∀ m n, a * (m * e₁ + n * f₁) ^ 2 + u * (m * e₁ + n * f₁) * (m * e₂ + n * f₂) +
-        b * (m * e₂ + n * f₂) ^ 2 = m * n) ∨
-      (∀ m n, a * (m * e₁ + n * f₁) ^ 2 + u * (m * e₁ + n * f₁) * (m * e₂ + n * f₂) +
-        b * (m * e₂ + n * f₂) ^ 2 = m ^ 2 + m * n + n ^ 2) := by
-  obtain ⟨a', rfl⟩ | ⟨a', rfl⟩ := eq_two_mul_or_eq_two_mul_add_one a
-  · obtain ⟨e₁, e₂, f₁, f₂, h⟩ := exists_hyperbolic_of_two_mul a' b hu
-    exact ⟨e₁, e₂, f₁, f₂, Or.inl h⟩
-  obtain ⟨b', rfl⟩ | ⟨b', rfl⟩ := eq_two_mul_or_eq_two_mul_add_one b
-  · -- Even `b`: exchange the two coordinates.
-    obtain ⟨e₁, e₂, f₁, f₂, h⟩ := exists_hyperbolic_of_two_mul b' (2 * a' + 1) hu
-    exact ⟨e₂, e₁, f₂, f₁, Or.inl fun m n ↦ by linear_combination h m n⟩
-  · obtain ⟨e₁, e₂, f₁, f₂, h⟩ := exists_sq_add_mul_add_sq_of_odd a' b' hu
-    exact ⟨e₁, e₂, f₁, f₂, Or.inr h⟩
 
 /-! ## Transport to a finite quadratic module -/
 
@@ -266,8 +165,8 @@ private theorem exists_toRatAddCircle_eq {v : AddCircle (1 : ℚ)} (hv : 2 ^ (k 
 
 /-! ## The classification -/
 
-/-- **Rank-two dyadic blocks.** If `x, y ∈ A` and their quadratic values are killed by `2^{k+1}`,
-and `2^k b(x, y) ≠ 0`, then the subgroup generated by `x` and `y`, with the restricted form, is
+/-- **Rank-two dyadic blocks.** If `x`, `y`, `q(x)`, and `q(y)` are all killed by `2^{k+1}`, and
+`2^k b(x, y) ≠ 0`, then the subgroup generated by `x` and `y`, with the restricted form, is
 isometric to `u^{(2)}(2^{k+1})` or to `v^{(2)}(2^{k+1})`. -/
 theorem nonempty_isometry_dyadicU_or_dyadicV_restrict_zmultiples_sup {x y : A}
     (hx : 2 ^ (k + 1) • x = 0) (hy : 2 ^ (k + 1) • y = 0)
@@ -283,11 +182,13 @@ theorem nonempty_isometry_dyadicU_or_dyadicV_restrict_zmultiples_sup {x y : A}
   have hunit : IsUnit u := by
     obtain ⟨c, rfl⟩ | ⟨c, rfl⟩ := eq_two_mul_or_eq_two_mul_add_one u
     · refine absurd ?_ hxy
+      have htwo_pow : (2 : ZMod (2 ^ (k + 1))) ^ (k + 1) = 0 := by
+        exact_mod_cast ZMod.natCast_self (2 ^ (k + 1))
       rw [hu, ← map_nsmul, nsmul_eq_mul, ← mul_assoc, Nat.cast_pow, Nat.cast_ofNat, ← pow_succ,
-        show (2 : ZMod (2 ^ (k + 1))) ^ (k + 1) = 0 by exact_mod_cast ZMod.natCast_self _,
-        zero_mul, map_zero]
+        htwo_pow, zero_mul, map_zero]
     · simpa using isUnit_two_mul_add (c := c) isUnit_one
-  obtain ⟨e₁, e₂, f₁, f₂, h | h⟩ := exists_basis a b hunit
+  obtain ⟨e₁, e₂, f₁, f₂, h | h⟩ :=
+    TauCeti.ZMod.BinaryQuadraticForm.exists_basis a b hunit
   · refine Or.inl (nonempty_isometry_ofQuadraticMap_restrict_zmultiples_sup _
       (isNondegenerate_dyadicU _) hx hy e₁ e₂ f₁ f₂ fun m n ↦ ?_)
     rw [quadratic_zmodHom_add_zmodHom hx hy ha hb hu, h]
