@@ -193,11 +193,13 @@ theorem CurveHomology.mk_surjective : Function.Surjective (CurveHomology.mk H) :
   QuotientAddGroup.mk'_surjective _
 
 /-- A cycle has class zero exactly when it is a relation. -/
+@[simp]
 theorem CurveHomology.mk_eq_zero_iff {c : H.arcCycles} :
     CurveHomology.mk H c = 0 ↔ (c : (Point → ℤ) × (Point → ℤ)) ∈ H.arcRelations :=
   (QuotientAddGroup.eq_zero_iff c).trans AddSubgroup.mem_addSubgroupOf
 
 /-- Two cycles have the same class exactly when they differ by a relation. -/
+@[simp]
 theorem CurveHomology.mk_eq_mk_iff {c d : H.arcCycles} :
     CurveHomology.mk H c = CurveHomology.mk H d ↔
       (c - d : (Point → ℤ) × (Point → ℤ)) ∈ H.arcRelations := by
@@ -325,6 +327,7 @@ theorem epsilon_self (x : H.Generator) : H.epsilon x x = 0 := by
   exact zero_mem _
 
 /-- The classes `ε` are additive along a chain of generators: `ε(x, y) + ε(y, w) = ε(x, w)`. -/
+@[simp]
 theorem epsilon_add_epsilon (x y w : H.Generator) :
     H.epsilon x y + H.epsilon y w = H.epsilon x w := by
   obtain ⟨c, hc⟩ := H.exists_isConnectingChain x y
@@ -338,6 +341,7 @@ theorem neg_epsilon (x y : H.Generator) : -H.epsilon x y = H.epsilon y x :=
   neg_eq_of_add_eq_zero_right (by rw [epsilon_add_epsilon, epsilon_self])
 
 /-- `ε(x, y)` vanishes exactly when some domain connects `x` to `y`. -/
+@[simp]
 theorem epsilon_eq_zero_iff : H.epsilon x y = 0 ↔ ∃ D, H.IsDomainBetween x y D := by
   obtain ⟨c, hc⟩ := H.exists_isConnectingChain x y
   rw [hc.epsilon_eq, CurveHomology.mk_eq_zero_iff, mem_arcRelations_iff]
