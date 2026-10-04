@@ -23,7 +23,7 @@ horocyclic coordinates, and `z` is an angle coordinate on the fibre, unwound to 
 In the orthonormal frame `e₁ = eʸ ∂ₓ`, `e₂ = ∂_y` of the hyperbolic plane, with dual coframe
 `θ₁ = e^{-y} dx`, `θ₂ = dy`, one has `dθ₁ = θ₁ ∧ θ₂` and `dθ₂ = 0`, so the Levi-Civita
 connection is `∇e₁ = θ₁ ⊗ e₂`, `∇e₂ = -θ₁ ⊗ e₁`. Along a curve `γ`, the covariant derivative of
-the unit vector `cos z e₁ + sin z e₂` is therefore `(ż + θ₁(γ̇))` times the unit vector
+the unit vector `cos z e₁ + sin z e₂` is therefore `(z' + θ₁(γ'))` times the unit vector
 `-sin z e₁ + cos z e₂`. The Sasaki metric of the unit tangent bundle, in which the horizontal
 part projects isometrically and the vertical part is measured by this covariant derivative, is
 thus `θ₁² + θ₂² + (dz + θ₁)²`. So `SL₂ℝ~` is `ℝ³` with the Riemannian metric
