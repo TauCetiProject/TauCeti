@@ -89,7 +89,7 @@ variable {R : Type u} {H : Type v} [CommSemiring R] [CommRing H] [HopfAlgebra R 
 /-- The **coinvariants** of a Hopf ideal `I`: the elements `h` with `(id ⊗ π) (Δ h) = h ⊗ 1`,
 where `π : H → H ⧸ I` is the quotient map. Geometrically these are the functions on the affine
 group that are invariant under right translation by the closed subgroup cut out by `I`. -/
-noncomputable def coinvariants (I : HopfIdeal R H) : Subalgebra R H :=
+@[expose] noncomputable def coinvariants (I : HopfIdeal R H) : Subalgebra R H :=
   AlgHom.equalizer
     ((Algebra.TensorProduct.map (AlgHom.id R H) (Ideal.Quotient.mkₐ R I.toIdeal)).comp
       (Bialgebra.comulAlgHom R H))
