@@ -353,7 +353,7 @@ theorem isFiniteOrder_normPow_iff {s : ℂ} : (normPow K s).IsFiniteOrder ↔ s 
 absolute value.** -/
 theorem norm_infiniteComponent_apply (χ : HeckeCharacter K) (w : InfinitePlace K)
     (u : w.Completionˣ) :
-    ‖(χ.infiniteComponent w u : ℂ)‖ = infiniteCompletionNormalizedAbsValue w u ^ χ.shift := by
+    ‖(χ.infiniteComponent w u : ℂ)‖ = completionNormalizedAbsValue w u ^ χ.shift := by
   rw [infiniteComponent_apply, norm_apply_eq_rpow_shift,
     IdeleClassGroup.ofCompletion_apply, ideleClassNorm_mk, coe_ideleNorm_ofCompletion]
 
@@ -362,7 +362,7 @@ theorem norm_infiniteComponent_apply (χ : HeckeCharacter K) (w : InfinitePlace 
 theorem norm_realComponent_apply (χ : HeckeCharacter K) (w : {w : InfinitePlace K // w.IsReal})
     (x : ℝˣ) : ‖(χ.realComponent w x : ℂ)‖ = |(x : ℝ)| ^ χ.shift := by
   rw [realComponent_apply, norm_infiniteComponent_apply,
-    infiniteCompletionNormalizedAbsValue_of_isReal _ w.2]
+    completionNormalizedAbsValue_of_isReal _ w.2]
   simp
 
 /-- **The absolute value of a complex component is the power of `‖z‖` with exponent twice the
@@ -373,7 +373,7 @@ theorem norm_complexComponent_apply (χ : HeckeCharacter K)
     (w : {w : InfinitePlace K // w.IsComplex}) (z : ℂˣ) :
     ‖(χ.complexComponent w z : ℂ)‖ = ‖(z : ℂ)‖ ^ (2 * χ.shift) := by
   rw [complexComponent_apply, norm_infiniteComponent_apply,
-    infiniteCompletionNormalizedAbsValue_of_isComplex _ w.2]
+    completionNormalizedAbsValue_of_isComplex _ w.2]
   simp only [Units.symm_mapContinuousMulEquiv, Units.mapContinuousMulEquiv_apply, Units.coe_map,
     MonoidHom.coe_ofClass, ContinuousMulEquiv.coe_toMulEquiv,
     norm_continuousMulEquivComplexOfIsComplex_symm]
