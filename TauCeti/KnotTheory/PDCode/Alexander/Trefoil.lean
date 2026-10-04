@@ -182,8 +182,10 @@ private theorem exists_surjective_onto_alexanderModule_rightHandedTrefoilPDCode 
   have hcubic : (T 1 * T 1 - T 1 + 1 : ℤ[T;T⁻¹]) • (gen (1, 0) - gen (0, 0)) = 0 := by
     linear_combination (norm := module) h₁ + (T 1 : ℤ[T;T⁻¹]) • h₂
   have hΔ : (T 1 - 1 + T (-1) : ℤ[T;T⁻¹]) • (gen (1, 0) - gen (0, 0)) = 0 := by
-    rw [show (T 1 - 1 + T (-1) : ℤ[T;T⁻¹]) = T (-1) * (T 1 * T 1 - T 1 + 1) by
-      linear_combination (1 - T 1) * hT, mul_smul, hcubic, smul_zero]
+    -- `Δ` is a unit multiple of the cubic `t² - t + 1` that `hcubic` kills.
+    have hfactor : (T 1 - 1 + T (-1) : ℤ[T;T⁻¹]) = T (-1) * (T 1 * T 1 - T 1 + 1) := by
+      linear_combination (1 - T 1) * hT
+    rw [hfactor, mul_smul, hcubic, smul_zero]
   let f := ((trefoilIdeal).liftQ (LinearMap.toSpanSingleton ℤ[T;T⁻¹] _ (gen (1, 0) - gen (0, 0)))
     ((Ideal.span_singleton_le_iff_mem _).2 (by simpa using hΔ))).coprod
       (LinearMap.toSpanSingleton ℤ[T;T⁻¹] _ (gen (0, 0)))
@@ -219,16 +221,19 @@ Conway-normalised Alexander polynomial `t - 1 + t⁻¹`, the value
 `TauCeti.KnotTheory.alexander_trefoilSeifertMatrix` gives from a Seifert matrix. -/
 theorem elementaryIdeal_rightHandedTrefoilPDCode_one :
     rightHandedTrefoilPDCode.elementaryIdeal 1 = Ideal.span {(T 1 - 1 + T (-1) : ℤ[T;T⁻¹])} := by
-  rw [elementaryIdeal_rightHandedTrefoilPDCode_eq_fittingIdeal,
-    show 1 = 0 + finrank ℤ[T;T⁻¹] ℤ[T;T⁻¹] by simp, fittingIdeal_prod_add_finrank,
-    fittingIdeal_quotient_zero]
+  -- `fittingIdeal_prod_add_finrank` shifts the index by the rank `1` of the free factor.
+  have hidx : 1 = 0 + finrank ℤ[T;T⁻¹] ℤ[T;T⁻¹] := by simp
+  rw [elementaryIdeal_rightHandedTrefoilPDCode_eq_fittingIdeal, hidx,
+    fittingIdeal_prod_add_finrank, fittingIdeal_quotient_zero]
 
 /-- The elementary ideals `E_k` of the right-handed trefoil diagram with `k ≥ 2` are the unit
 ideal. -/
 theorem elementaryIdeal_rightHandedTrefoilPDCode_of_two_le {k : ℕ} (hk : 2 ≤ k) :
     rightHandedTrefoilPDCode.elementaryIdeal k = ⊤ := by
-  rw [elementaryIdeal_rightHandedTrefoilPDCode_eq_fittingIdeal,
-    show k = k - 1 + finrank ℤ[T;T⁻¹] ℤ[T;T⁻¹] by simp; omega, fittingIdeal_prod_add_finrank]
+  -- `fittingIdeal_prod_add_finrank` shifts the index by the rank `1` of the free factor.
+  have hidx : k = k - 1 + finrank ℤ[T;T⁻¹] ℤ[T;T⁻¹] := by simp; omega
+  rw [elementaryIdeal_rightHandedTrefoilPDCode_eq_fittingIdeal, hidx,
+    fittingIdeal_prod_add_finrank]
   exact fittingIdeal_eq_top_of_surjective (trefoilIdeal).mkQ_surjective (by simp; omega)
 
 end OrientedPDCode
