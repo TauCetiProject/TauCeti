@@ -23,14 +23,16 @@ cannot select a crossing-free component.
 The state-circle formula includes the empty surrounding diagram. Consequently the bracket
 formula compares the kink with `D.adjoinCircle`, with no nonemptiness assumption on `D`.
 The kink contributes one graph component and three faces, so adjoining it preserves planarity.
-The state-sum calculation follows `PDCode.kauffmanBracket_reidemeisterOne`, with the extra
-isolated component accounted for by `PDCode.stateLoopCount_adjoinCircle`.
+The Kauffman bracket of `D.adjoinKink b` is the bracket of `D.adjoinCircle` multiplied by
+`-a³` when `b = true` and by `-a⁻³` when `b = false`.
 
 ## References
 
 * W. B. R. Lickorish, *An Introduction to Knot Theory*, Springer GTM 175 (1997),
   Chapters 1 and 3 (Reidemeister moves and the Kauffman bracket).
 * L. H. Kauffman, *State models and the Jones polynomial*, Topology 26 (1987), 395–407.
+* Formalization sources: `PDCode.kauffmanBracket_reidemeisterOne` and
+  `PDCode.stateLoopCount_adjoinCircle`.
 -/
 
 public section
@@ -123,7 +125,8 @@ private theorem orbitCount_smoothing_mul_smoothing (b : Bool) :
       decide
     have hcount := h.two_mul_orbitCount
     simp only [Nat.card_eq_fintype_card, Fintype.card_fin] at hcount
-    simpa using (show orbitCount (slotSmoothing false * slotSmoothing true) = 2 by omega)
+    simp only [Bool.false_eq_true, ↓reduceIte]
+    omega
   · have h : slotSmoothing true * slotSmoothing true = 1 :=
       Equiv.ext (slotSmoothing_apply_apply true)
     rw [h, orbitCount_one]
