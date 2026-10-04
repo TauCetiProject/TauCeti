@@ -43,6 +43,17 @@ noncomputable def adjugateFinTwoLinearMap :
     adjugateFinTwoLinearMap A = Matrix.adjugate A := by
   simp [adjugateFinTwoLinearMap, adjugate_fin_two_eq_trace_smul_one_sub]
 
+/-- For a two-by-two matrix, the left adjugate equation is equivalent to determinant one. -/
+theorem adjugate_mul_self_eq_one_iff_det_eq_one (A : Matrix (Fin 2) (Fin 2) K) :
+    Matrix.adjugate A * A = 1 ↔ A.det = 1 := by
+  constructor
+  · intro h
+    rw [Matrix.adjugate_mul] at h
+    have h00 := congrArg (fun M : Matrix (Fin 2) (Fin 2) K ↦ M 0 0) h
+    simpa using h00
+  · intro h
+    rw [Matrix.adjugate_mul, h, one_smul]
+
 /-- An anti-multiplicative function with scalar translates sends an off-diagonal unit
 to its negative. -/
 private theorem map_single_eq_neg_of_ne {R : Type*} [NonAssocRing R]
