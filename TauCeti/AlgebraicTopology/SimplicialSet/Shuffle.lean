@@ -72,6 +72,9 @@ public section
 noncomputable section
 
 open CategoryTheory Limits MonoidalCategory Simplicial HomologicalComplex
+open TauCeti.SSet (chainComplexMap_f_comp chainComplexMap_f_comp_assoc
+  chainComplexMap_f_chainComplexFunctor_map_app_f
+  chainComplexMap_f_chainComplexFunctor_map_app_f_assoc)
 
 universe w v u
 
@@ -208,11 +211,6 @@ section ShuffleChain
 variable {C : Type u} [Category.{v} C] [Preadditive C] [HasCoproducts.{w} C] (T : C)
 
 open stdSimplex
-
-@[reassoc]
-private lemma chainComplexMap_f_comp {X Y Z : SSet.{w}} (f : X ⟶ Y) (g : Y ⟶ Z) (n : ℕ) :
-    (chainComplexMap f T).f n ≫ (chainComplexMap g T).f n = (chainComplexMap (f ≫ g) T).f n := by
-  rw [← HomologicalComplex.comp_f, ← Functor.map_comp]
 
 private lemma whiskerRight_app_prodCone {p q : ℕ} (k : Fin (p + 1)) {m : ℕ}
     (x : ((Δ[p] : SSet.{w}) ⊗ Δ[q]) _⦋m⦌) :
@@ -386,14 +384,6 @@ def shuffleChain : (p q n : ℕ) → p + q = n →
             prodConeChain (p + 1) (q + 1) T n
   | 0, 0, _ + 1, h | _ + 1, _, 0, h | 0, _ + 1, 0, h => absurd h (by omega)
 
-/-- Chain maps induced by maps of simplicial sets commute with changes of coefficients. -/
-@[reassoc]
-private lemma chainComplexMap_f_chainComplexFunctor_map_app_f {X Y : SSet.{w}} (f : X ⟶ Y)
-    {T' : C} (u : T ⟶ T') (n : ℕ) :
-    (chainComplexMap f T).f n ≫ (((chainComplexFunctor C).map u).app Y).f n =
-      (((chainComplexFunctor C).map u).app X).f n ≫ (chainComplexMap f T').f n := by
-  rw [← HomologicalComplex.comp_f, ← HomologicalComplex.comp_f, NatTrans.naturality]
-
 variable {T} in
 /-- The shuffle chain is natural in the coefficient object. -/
 @[reassoc]
@@ -453,20 +443,6 @@ lemma shuffleChain_succ_succ (p q n : ℕ) (h : p + 1 + (q + 1) = n + 1) :
             prodConeChain (p + 1) (q + 1) T n := by
   rw [shuffleChain]
 
-private lemma shuffleChain_succ_zero' (p n : ℕ) (h : p + 1 + 0 = n + 1) :
-    shuffleChain T (p + 1) 0 (n + 1) h = shuffleChain T p 0 n (by omega) ≫ hStep T p 0 n := by
-  rw [shuffleChain_succ_zero, hStep]
-
-private lemma shuffleChain_zero_succ' (q n : ℕ) (h : 0 + (q + 1) = n + 1) :
-    shuffleChain T 0 (q + 1) (n + 1) h = shuffleChain T 0 q n (by omega) ≫ vStep T 0 q n := by
-  rw [shuffleChain_zero_succ, vStep]
-
-private lemma shuffleChain_succ_succ' (p q n : ℕ) (h : p + 1 + (q + 1) = n + 1) :
-    shuffleChain T (p + 1) (q + 1) (n + 1) h =
-      shuffleChain T p (q + 1) n (by omega) ≫ hStep T p (q + 1) n +
-        (-1 : ℤ) ^ (p + 1) • shuffleChain T (p + 1) q n (by omega) ≫ vStep T (p + 1) q n := by
-  rw [shuffleChain_succ_succ, hStep, vStep]
-
 /-- The faces of the shuffle chain in the first factor. -/
 private def xFace : (p q n : ℕ) → p + q = n + 1 →
     (T ⟶ (((Δ[p] : SSet.{w}) ⊗ Δ[q]).chainComplex T).X n)
@@ -482,7 +458,7 @@ private def yFace : (p q n : ℕ) → p + q = n + 1 →
 private lemma shuffleChain_d_zero_one (h : 0 + 1 = 0 + 1) :
     shuffleChain T 0 1 1 h ≫ (((Δ[0] : SSet.{w}) ⊗ Δ[1]).chainComplex T).d 1 0 =
       xFace T 0 1 0 h + (-1 : ℤ) ^ 0 • yFace T 0 1 0 h := by
-  rw [shuffleChain_zero_succ', xFace, yFace, yFaces, vStep, shuffleChain]
+  rw [shuffleChain_zero_succ, xFace, yFace, yFaces, shuffleChain]
   simp only [Category.assoc, ιChainComplex_prodConeChain_assoc, ι_chainComplexMap_f_assoc,
     ιChainComplex_d, Preadditive.comp_add, Preadditive.comp_zsmul, ι_chainComplexMap_f, zero_add,
     Fin.sum_univ_succ, Fin.sum_univ_zero, add_zero, δ_zero_prodCone, pow_zero, one_smul]
@@ -493,7 +469,7 @@ private lemma shuffleChain_d_zero_one (h : 0 + 1 = 0 + 1) :
 private lemma shuffleChain_d_one_zero (h : 1 + 0 = 0 + 1) :
     shuffleChain T 1 0 1 h ≫ (((Δ[1] : SSet.{w}) ⊗ Δ[0]).chainComplex T).d 1 0 =
       xFace T 1 0 0 h + (-1 : ℤ) ^ 1 • yFace T 1 0 0 h := by
-  rw [shuffleChain_succ_zero', xFace, yFace, xFaces, hStep, shuffleChain]
+  rw [shuffleChain_succ_zero, xFace, yFace, xFaces, shuffleChain]
   simp only [Category.assoc, ιChainComplex_prodConeChain_assoc, ι_chainComplexMap_f_assoc,
     ιChainComplex_d, Preadditive.comp_add, Preadditive.comp_zsmul, ι_chainComplexMap_f,
     Fin.sum_univ_succ, Fin.sum_univ_zero, add_zero, δ_zero_prodCone, Fin.val_zero, pow_zero,
@@ -521,26 +497,28 @@ private lemma shuffleChain_d (n : ℕ) : ∀ (p q : ℕ) (h : p + q = n + 1),
     · omega
     · rcases q with _ | q
       · omega
-      rw [shuffleChain_zero_succ', Category.assoc, vStep_d, Preadditive.comp_sub,
+      rw [shuffleChain_zero_succ, ← vStep, Category.assoc, vStep_d, Preadditive.comp_sub,
         reassoc_of% (ih 0 (q + 1) (by omega))]
-      simp only [xFace, yFace, shuffleChain_zero_succ', Category.assoc, vStep_yFaces,
-        Preadditive.comp_sub, zero_add, pow_zero, one_smul]
+      simp only [xFace, yFace, shuffleChain_zero_succ, ← vStep.eq_1, Category.assoc,
+        vStep_yFaces, Preadditive.comp_sub, zero_add, pow_zero, one_smul]
     · rcases p with _ | p
       · omega
-      rw [shuffleChain_succ_zero', Category.assoc, hStep_d, Preadditive.comp_sub,
+      rw [shuffleChain_succ_zero, ← hStep, Category.assoc, hStep_d, Preadditive.comp_sub,
         reassoc_of% (ih (p + 1) 0 (by omega))]
-      simp only [xFace, yFace, shuffleChain_succ_zero', Category.assoc, hStep_xFaces,
-        Preadditive.comp_sub, smul_zero, add_zero]
-    · rw [shuffleChain_succ_succ', Preadditive.add_comp, Preadditive.zsmul_comp, Category.assoc,
-        Category.assoc, hStep_d, vStep_d, Preadditive.comp_sub, Preadditive.comp_sub,
-        reassoc_of% (ih p (q + 1) (by omega)), reassoc_of% (ih (p + 1) q (by omega))]
+      simp only [xFace, yFace, shuffleChain_succ_zero, ← hStep.eq_1, Category.assoc,
+        hStep_xFaces, Preadditive.comp_sub, smul_zero, add_zero]
+    · rw [shuffleChain_succ_succ, ← hStep, ← vStep, Preadditive.add_comp, Preadditive.zsmul_comp,
+        Category.assoc, Category.assoc, hStep_d, vStep_d, Preadditive.comp_sub,
+        Preadditive.comp_sub, reassoc_of% (ih p (q + 1) (by omega)),
+        reassoc_of% (ih (p + 1) q (by omega))]
       -- unfold the smaller shuffle chains one step, which depends on whether `p` and `q` vanish
       rcases p with _ | p <;> rcases q with _ | q
       all_goals
-        simp only [xFace, yFace, shuffleChain_succ_succ', shuffleChain_succ_zero',
-          shuffleChain_zero_succ', Category.assoc, Preadditive.add_comp, Preadditive.comp_add,
-          Preadditive.comp_sub, Preadditive.zsmul_comp, smul_zero, zero_add, add_zero,
-          hStep_xFaces, hStep_yFaces, vStep_xFaces, vStep_yFaces, whiskerLeft_hStep]
+        simp only [xFace, yFace, shuffleChain_succ_succ, shuffleChain_succ_zero,
+          shuffleChain_zero_succ, ← hStep.eq_1, ← vStep.eq_1, Category.assoc,
+          Preadditive.add_comp, Preadditive.comp_add, Preadditive.comp_sub, Preadditive.zsmul_comp,
+          smul_zero, zero_add, add_zero, hStep_xFaces, hStep_yFaces, vStep_xFaces, vStep_yFaces,
+          whiskerLeft_hStep]
         module
 
 end ShuffleChain
