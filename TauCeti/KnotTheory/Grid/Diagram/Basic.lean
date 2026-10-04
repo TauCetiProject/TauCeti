@@ -211,6 +211,25 @@ theorem not_disjoint_univ_product_pointSet (M : GridState n) {t : Finset (Fin n)
     (Finset.mk_mem_product (Finset.mem_univ (M.toPerm.symm r)) hr)
     ((M.mk_mem_pointSet (M.toPerm.symm r) r).mpr (M.toPerm.apply_symm_apply r))
 
+/-- A row with one column removed avoids a grid state's points exactly when the point in
+that row lies in the removed column. -/
+theorem disjoint_univ_erase_product_singleton_pointSet_iff (M : GridState n) (c r : Fin n) :
+    Disjoint ((Finset.univ.erase c) ×ˢ ({r} : Finset (Fin n))) M.pointSet ↔ M c = r := by
+  classical
+  rw [Finset.disjoint_left]
+  constructor
+  · intro h
+    obtain ⟨d, hd⟩ := M.toPerm.surjective r
+    have hdc : d = c := by
+      by_contra hdc
+      exact h (by simp [hdc]) ((M.mk_mem_pointSet d r).2 hd)
+    simpa [hdc] using hd
+  · intro h p hp hM
+    obtain ⟨hc, hr⟩ := Finset.mem_product.mp hp
+    have hrow : M p.1 = M c := by
+      simpa only [Finset.mem_singleton.mp hr, h] using (M.mem_pointSet p).1 hM
+    exact (Finset.mem_erase.mp hc).1 (M.toPerm.injective hrow)
+
 /-- Point sets of grid states are equal exactly when the underlying permutations are equal. -/
 @[simp]
 theorem pointSet_inj {x y : GridState n} : x.pointSet = y.pointSet ↔ x = y := by
