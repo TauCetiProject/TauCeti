@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Action.Sum
+public import Mathlib.LinearAlgebra.Finsupp.SumProd
 public import Mathlib.RepresentationTheory.Rep.Basic
 public import TauCeti.GroupTheory.QuotientGroup.Basic
 
@@ -23,6 +25,8 @@ of `G`-sets into an isomorphism of the permutation representations they carry.
 
 * `TauCeti.ofMulActionIsoCongr`: an equivariant equivalence of `G`-sets induces an isomorphism
   of permutation representations.
+* `TauCeti.ofMulActionSumEquiv`: the permutation representation on a disjoint union is the
+  product of the permutation representations on the pieces.
 * `TauCeti.quotientIsoCongr`: equal subgroups give isomorphic permutation representations.
 * `TauCeti.quotientTopIsoTrivial`: `k[G ⧸ ⊤] ≅ k` with the trivial action.
 * `TauCeti.quotientBotIsoLeftRegular`: `k[G ⧸ ⊥] ≅ k[G]` with the left regular action.
@@ -66,6 +70,39 @@ theorem ofMulActionEquivCongr_symm_apply_single (e : X ≃ Y)
     (ofMulActionEquivCongr k e he).symm (MonoidAlgebra.single y r) =
       MonoidAlgebra.single (e.symm y) r := by
   simp [ofMulActionEquivCongr]
+
+/-- The permutation representation on a disjoint union of `G`-sets is the product of the
+permutation representations on the two pieces. -/
+noncomputable def ofMulActionSumEquiv :
+    (Representation.ofMulAction k G (X ⊕ Y)).Equiv
+      ((Representation.ofMulAction k G X).prod (Representation.ofMulAction k G Y)) :=
+  .mk ((MonoidAlgebra.coeffLinearEquiv k).trans <| (Finsupp.sumFinsuppLEquivProdFinsupp k).trans <|
+      ((MonoidAlgebra.coeffLinearEquiv k).prodCongr (MonoidAlgebra.coeffLinearEquiv k)).symm)
+    fun _ ↦ by ext (_ | _) <;> simp [Representation.ofMulAction_single]
+
+@[simp]
+theorem ofMulActionSumEquiv_apply_single_inl (x : X) (r : k) :
+    ofMulActionSumEquiv k (Y := Y) (G := G) (MonoidAlgebra.single (.inl x) r) =
+      (MonoidAlgebra.single x r, 0) := by
+  simp [ofMulActionSumEquiv]
+
+@[simp]
+theorem ofMulActionSumEquiv_apply_single_inr (y : Y) (r : k) :
+    ofMulActionSumEquiv k (X := X) (G := G) (MonoidAlgebra.single (.inr y) r) =
+      (0, MonoidAlgebra.single y r) := by
+  simp [ofMulActionSumEquiv]
+
+@[simp]
+theorem ofMulActionSumEquiv_symm_apply_single_inl (x : X) (r : k) :
+    (ofMulActionSumEquiv k (Y := Y) (G := G)).symm (MonoidAlgebra.single x r, 0) =
+      MonoidAlgebra.single (.inl x) r :=
+  (ofMulActionSumEquiv k).symm_apply_eq.mpr (ofMulActionSumEquiv_apply_single_inl k x r).symm
+
+@[simp]
+theorem ofMulActionSumEquiv_symm_apply_single_inr (y : Y) (r : k) :
+    (ofMulActionSumEquiv k (X := X) (G := G)).symm (0, MonoidAlgebra.single y r) =
+      MonoidAlgebra.single (.inr y) r :=
+  (ofMulActionSumEquiv k).symm_apply_eq.mpr (ofMulActionSumEquiv_apply_single_inr k y r).symm
 
 end Semiring
 
