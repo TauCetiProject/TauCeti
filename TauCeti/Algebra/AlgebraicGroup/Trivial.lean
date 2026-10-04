@@ -105,7 +105,6 @@ section Naturality
 variable {B : Type w} [CommSemiring B] [Algebra R B]
 
 /-- The trivial-group points equivalence is natural in the value algebra. -/
-@[simp]
 theorem pointsMulEquiv_mapValue (φ : A →ₐ[R] B) (f : WithConv (R →ₐ[R] A)) :
     pointsMulEquiv (R := R) (A := B)
         (AlgHom.mapValue (H := R) φ f) =
