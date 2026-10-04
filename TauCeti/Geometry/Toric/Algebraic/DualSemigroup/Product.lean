@@ -34,6 +34,8 @@ variable {N N' V V' : Type*} [AddCommGroup N] [AddCommGroup N']
 
 /-- A character is nonnegative on a product cone exactly when its restrictions to both
 factors are nonnegative. -/
+-- Give the product rule precedence over the general `mem_dualSemigroup` expansion.
+@[simp high]
 theorem mem_dualSemigroup_prod (m : N × N' →+ ℤ) :
     m ∈ dualSemigroup (hi.prod hi') (σ.prod τ) ↔
       m.comp (AddMonoidHom.inl N N') ∈ dualSemigroup hi σ ∧
