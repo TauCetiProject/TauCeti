@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.AbsoluteArtinMap
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.Reciprocity
+public import TauCeti.NumberTheory.ClassFieldTheory.Local.Restriction
 public import TauCeti.NumberTheory.ClassFieldTheory.LocalExistence.NormSubgroup
 public import TauCeti.Topology.Algebra.Group.TopologicalAbelianization
 
@@ -43,6 +44,15 @@ local Artin map. Since norm groups of finite separable extensions are open, `art
 continuous (`continuous_artinMap`), and its kernel is the intersection of all norm subgroups
 (`ker_artinMap_eq_iInf`).
 
+The absolute Artin map is functorial for the norm (`artinMap_norm`). For a finite extension `L/K`
+embedded in `Kˢ` by `iota`, `TauCeti.absoluteGaloisGroupExtend K L iota` embeds `G_L` in `G_K` as
+`Gal(Kˢ/iota(L))`, and it carries the Artin symbol of `x ∈ Lˣ` to that of `N_{L/K} x`. The proof
+compares the two local class formations on corresponding layers
+(`TauCeti.ClassFieldTheory.artinMap_localFormationLayerEquiv`) and then uses the Artin–Tate
+diagram for the norm inside the formation of `K`
+(`TauCeti.ClassFieldTheory.ClassFormation.artinMap_groundNorm`). On ground levels, that norm is
+the field norm `N_{L/K}` (`TauCeti.ClassFieldTheory.levelNorm_unitsLevelEquiv`).
+
 ## Main definitions
 
 * `TauCeti.ClassFieldTheory.artinMap K`: the absolute local Artin map `Kˣ →* G_K^ab`.
@@ -60,12 +70,15 @@ continuous (`continuous_artinMap`), and its kernel is the intersection of all no
 * `TauCeti.ClassFieldTheory.continuous_artinMap`: the absolute local Artin map is continuous.
 * `TauCeti.ClassFieldTheory.ker_artinMap_eq_iInf`: its kernel is the intersection of all norm
   subgroups.
+* `TauCeti.ClassFieldTheory.artinMap_norm`: the absolute local Artin map is functorial for the
+  norm of a finite extension.
 
 ## References
 
 * J. Neukirch, *Algebraic Number Theory*, Chapter V, §1.
 * J.-P. Serre, *Local class field theory*, in J. W. S. Cassels and A. Fröhlich (eds.),
   *Algebraic Number Theory*, Chapter VI, §2.
+* J.-P. Serre, *Local Fields*, Chapter XI, §3 (functoriality of the reciprocity map).
 -/
 
 public section
@@ -101,6 +114,20 @@ theorem artinMap_apply (x : Kˣ) :
   rw [artinMap, MonoidHom.comp_apply, MonoidHom.toAdditive_symm_apply_apply]
   rfl
 
+/-- If `σ ∈ Gal(AlgebraicClosure K/K)` represents the absolute local Artin symbol of `x ∈ Kˣ`, then
+the absolute Artin symbol of `x` for the local class formation is the class of the restriction of
+`σ` to the separable closure. -/
+private theorem absoluteArtinMap_eq_of_mk_eq_artinMap (x : Kˣ) (σ : Field.absoluteGaloisGroup K)
+    (hσ : (σ : Field.absoluteGaloisGroupAbelianization K) = artinMap K x) :
+    (localClassFormation K).absoluteArtinMap
+        (unitsLevelEquiv (Algebra.ofId K (SeparableClosure K)) (fixedField_toSubgroup_top K)
+          (Additive.ofMul x)) =
+      Additive.ofMul ((absoluteGaloisGroupRestrictEquiv K σ : AbsoluteGaloisGroup K) :
+        TopologicalAbelianization (AbsoluteGaloisGroup K)) := by
+  rw [← ContinuousMulEquiv.topologicalAbelianizationCongr_mk, hσ, artinMap_apply,
+    ← ContinuousMulEquiv.topologicalAbelianizationCongr_symm,
+    ContinuousMulEquiv.apply_symm_apply, ofMul_toMul]
+
 /-- **The finite restrictions of the absolute local Artin map are the finite local Artin maps.**
 If `σ ∈ Gal(AlgebraicClosure K/K)` represents the absolute Artin symbol of `x ∈ Kˣ`, then for
 every finite Galois extension `L/K` embedded in the separable closure by `ι`, the Artin symbol of
@@ -118,10 +145,8 @@ theorem artinMap_restrict (L : Type*) [Field L] [Algebra K L] [FiniteDimensional
   -- restriction of `σ` to the separable closure.
   have habs : (localClassFormation K).absoluteArtinMap a =
       Additive.ofMul ((absoluteGaloisGroupRestrictEquiv K σ : AbsoluteGaloisGroup K) :
-        TopologicalAbelianization (AbsoluteGaloisGroup K)) := by
-    rw [← ContinuousMulEquiv.topologicalAbelianizationCongr_mk, hσ, artinMap_apply,
-      ← ContinuousMulEquiv.topologicalAbelianizationCongr_symm,
-      ContinuousMulEquiv.apply_symm_apply, ofMul_toMul]
+        TopologicalAbelianization (AbsoluteGaloisGroup K)) :=
+    absoluteArtinMap_eq_of_mk_eq_artinMap K x σ hσ
   have hground : groundEquivOfOpenNormal (unitsFormation K) V a =
       unitsLevelEquiv (Algebra.ofId K (SeparableClosure K)) (fixedField_ground_ofOpenNormal K V)
         (Additive.ofMul x) :=
@@ -197,5 +222,160 @@ theorem ker_artinMap_eq_iInf :
     ClassFormation.absoluteArtinMap_eq_zero_iff]
   refine forall_congr' fun V ↦ ?_
   rw [groundEquivOfOpenNormal_unitsLevelEquiv, localGroundEquiv_mem_normSubgroup_iff]
+
+/-! ### Norm functoriality -/
+
+section Norm
+
+variable {K} (L : Type) [Field L] [Algebra K L] [FiniteDimensional K L]
+  (iota : L →ₐ[K] SeparableClosure K)
+
+section Layer
+
+omit [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K]
+
+/-- The ground subgroup of the layer over `K` corresponding to a layer `V' ◁ G_L` is
+`Gal(Kˢ/iota(L))`. -/
+private theorem localFormationMap_ofOpenNormal_ground_toSubgroup
+    (V' : OpenNormalSubgroup (AbsoluteGaloisGroup L)) :
+    ((ofOpenNormal V').localFormationMap K L iota).ground.toSubgroup =
+      (galoisSubgroup K L iota).toSubgroup := by
+  rw [localFormationMap_ground_toSubgroup, ground_ofOpenNormal, OpenSubgroup.toSubgroup_top,
+    ← MonoidHom.range_eq_map, range_localFormationHom]
+
+/-- The ground subgroup `Gal(Kˢ/iota(L))` of the layer over `K` corresponding to a layer
+`V' ◁ G_L` has fixed field `iota(L)`. -/
+private theorem fixedField_localFormationMap_ofOpenNormal_ground
+    (V' : OpenNormalSubgroup (AbsoluteGaloisGroup L)) :
+    IntermediateField.fixedField ((ofOpenNormal V').localFormationMap K L iota).ground.toSubgroup =
+      iota.fieldRange := by
+  rw [localFormationMap_ofOpenNormal_ground_toSubgroup, galoisSubgroup_toSubgroup,
+    InfiniteGalois.fixedField_fixingSubgroup]
+
+/-- For an open normal subgroup `V ≤ Gal(Kˢ/iota(L))` of `G_K` with preimage `V'` in `G_L`, the
+layer over `K` corresponding to `V' ◁ G_L` is the restriction `V ◁ Gal(Kˢ/iota(L))` of `V ◁ G_K`. -/
+private theorem layerRestriction_localFormationMap (V : OpenNormalSubgroup (AbsoluteGaloisGroup K))
+    (hV : V ≤ (galoisSubgroup K L iota).toSubgroup) :
+    LayerRestriction ((ofOpenNormal (V.comap (localFormationHom K L iota)
+      (continuous_localFormationHom K L iota))).localFormationMap K L iota) (ofOpenNormal V) := by
+  refine ⟨OpenSubgroup.toSubgroup_injective ?_, by rw [ground_ofOpenNormal]; exact le_top⟩
+  rw [localFormationMap_top_toSubgroup, top_ofOpenNormal, top_ofOpenNormal,
+    OpenNormalSubgroup.toSubgroup_comap, Subgroup.map_comap_eq, range_localFormationHom]
+  exact inf_eq_right.mpr hV
+
+/-- The norm from the ground level `Gal(Kˢ/iota(L))` to the ground level `G_K` of the restriction
+`layerRestriction_localFormationMap` sends `iota x` to `N_{L/K} x`. -/
+private theorem groundNorm_layerRestriction_localFormationMap
+    (V : OpenNormalSubgroup (AbsoluteGaloisGroup K))
+    (hV : V ≤ (galoisSubgroup K L iota).toSubgroup) (x : Additive Lˣ) :
+    (layerRestriction_localFormationMap L iota V hV).groundNorm (unitsFormation K)
+        (unitsLevelEquiv iota (fixedField_localFormationMap_ofOpenNormal_ground L iota _) x) =
+      groundEquivOfOpenNormal (unitsFormation K) V
+        (unitsLevelEquiv (Algebra.ofId K (SeparableClosure K)) (fixedField_toSubgroup_top K)
+          (Additive.ofMul (Algebra.normUnits K x.toMul))) := by
+  refine Subtype.ext ?_
+  rw [LayerRestriction.groundNorm_apply_coe, ← Formation.levelNorm_apply_coe _
+    (layerRestriction_localFormationMap L iota V hV).ground_le,
+    levelNorm_unitsLevelEquiv iota _ _ (fixedField_ground_ofOpenNormal K V)]
+  simp
+
+/-- The unit `y ∈ Lˣ`, read in the ground level `((Lˢ)ˣ)^{G_L}` of a layer `V' ◁ G_L` and carried to
+the corresponding layer over `K`, is the unit `iota y` of the level of `Gal(Kˢ/iota(L))`. -/
+private theorem groundEquiv_localFormationLayerEquiv_unitsLevelEquiv
+    (V' : OpenNormalSubgroup (AbsoluteGaloisGroup L)) (y : Additive Lˣ) :
+    (localFormationLayerEquiv K L iota (ofOpenNormal V')).groundEquiv
+        (groundEquivOfOpenNormal (unitsFormation L) V'
+          (unitsLevelEquiv (Algebra.ofId L (SeparableClosure L)) (fixedField_toSubgroup_top L) y)) =
+      unitsLevelEquiv iota (fixedField_localFormationMap_ofOpenNormal_ground L iota V') y := by
+  refine Subtype.ext ?_
+  rw [LayerEquiv.groundEquiv_apply_coe, unitsLevelEquiv_apply_coe]
+  apply (unitsCoeffEquivUnitsFormation K).symm.injective
+  rw [localFormationLayerEquiv_coeffEquiv_apply, AddEquiv.symm_apply_apply]
+  refine Additive.toMul.injective (Units.ext ?_)
+  simp [separableClosureRingEquiv_algebraMap]
+
+end Layer
+
+variable [ValuativeRel L] [TopologicalSpace L] [IsNonarchimedeanLocalField L]
+  [ValuativeExtension K L]
+
+/-- The norm functoriality of the absolute Artin maps of the local class formations of `L` and
+`K`, read in the finite quotient of `G_K^ab` cut out by an open normal subgroup
+`V ≤ Gal(Kˢ/iota(L))`. -/
+private theorem abelianizationRestrict_absoluteArtinMap_normUnits
+    (V : OpenNormalSubgroup (AbsoluteGaloisGroup K))
+    (hV : V ≤ (galoisSubgroup K L iota).toSubgroup) (x : Lˣ) (τ : AbsoluteGaloisGroup L)
+    (hτ : (localClassFormation L).absoluteArtinMap
+        (unitsLevelEquiv (Algebra.ofId L (SeparableClosure L)) (fixedField_toSubgroup_top L)
+          (Additive.ofMul x)) =
+      Additive.ofMul (τ : TopologicalAbelianization (AbsoluteGaloisGroup L))) :
+    abelianizationRestrict V ((localClassFormation K).absoluteArtinMap
+        (unitsLevelEquiv (Algebra.ofId K (SeparableClosure K)) (fixedField_toSubgroup_top K)
+          (Additive.ofMul (Algebra.normUnits K x)))) =
+      abelianizationRestrict V (Additive.ofMul ((localFormationHom K L iota τ :
+        AbsoluteGaloisGroup K) : TopologicalAbelianization (AbsoluteGaloisGroup K))) := by
+  let V' := V.comap (localFormationHom K L iota) (continuous_localFormationHom K L iota)
+  have T := layerRestriction_localFormationMap L iota V hV
+  have hτs :
+      localFormationHom K L iota τ ∈ ((ofOpenNormal V').localFormationMap K L iota).ground := by
+    rw [← OpenSubgroup.mem_toSubgroup, localFormationMap_ofOpenNormal_ground_toSubgroup,
+      ← range_localFormationHom]
+    exact ⟨τ, rfl⟩
+  -- Pass to the layer `V ◁ G_K` and write `N x` as the norm of `iota x` from the restricted layer
+  -- `V ◁ Gal(Kˢ/iota(L))`; that layer corresponds to the layer `V' ◁ G_L` over `L`, so the
+  -- Artin-Tate norm diagram and the comparison of the two local class formations apply. The chain
+  -- is written with `Eq.trans` and `congrArg`: rewriting in these goals is slow.
+  refine ((localClassFormation K).abelianizationRestrict_absoluteArtinMap V _).trans ?_
+  refine (congrArg ((localClassFormation K).artinMap (ofOpenNormal V))
+    ((groundNorm_layerRestriction_localFormationMap L iota V hV _).symm.trans
+      (congrArg (T.groundNorm (unitsFormation K))
+        (groundEquiv_localFormationLayerEquiv_unitsLevelEquiv L iota V' _).symm))).trans ?_
+  refine ((localClassFormation K).artinMap_groundNorm T _).trans ?_
+  refine (congrArg T.inclusionHom ((artinMap_localFormationLayerEquiv K L iota _ _).trans
+    (congrArg _ (((localClassFormation L).abelianizationRestrict_absoluteArtinMap V' _).symm.trans
+      ((congrArg _ hτ).trans (abelianizationRestrict_mk V' ⟨τ, by simp⟩)))))).trans ?_
+  refine Eq.trans ?_ (abelianizationRestrict_mk V ⟨localFormationHom K L iota τ, by simp⟩).symm
+  rw [MulEquiv.toAdditive_apply_apply, toMul_ofMul, abelianizationCongr_of,
+    localFormationLayerEquiv_galEquiv_mk K L iota _ _ ⟨_, hτs⟩ rfl,
+    LayerRestriction.inclusionHom_of, LayerRestriction.galHom_mk]
+  exact congrArg (fun w ↦ Additive.ofMul (Abelianization.of
+    (QuotientGroup.mk w : (ofOpenNormal V).Gal))) (Subtype.ext (Subgroup.coe_inclusion _ _))
+
+/-- **Norm functoriality of the absolute local Artin map.** Let `L/K` be a finite extension of
+nonarchimedean local fields, embedded in `Kˢ` by `iota`. If `τ ∈ Gal(AlgebraicClosure L/L)`
+represents the absolute Artin symbol of `x ∈ Lˣ`, then its image under the embedding
+`absoluteGaloisGroupExtend K L iota : G_L → G_K` represents the absolute Artin symbol of the norm
+`N_{L/K} x`: in `G_K^ab`,
+
+```text
+Art_K (N_{L/K} x) = absoluteGaloisGroupExtend K L iota (Art_L x).
+```
+-/
+theorem artinMap_norm (x : Lˣ) (τ : Field.absoluteGaloisGroup L)
+    (hτ : (τ : Field.absoluteGaloisGroupAbelianization L) = artinMap L x) :
+    (absoluteGaloisGroupExtend K L iota τ : Field.absoluteGaloisGroupAbelianization K) =
+      artinMap K (Algebra.normUnits K x) := by
+  -- On the separable closures the absolute Artin symbol of `x` is the class of the restriction
+  -- `τ'` of `τ`, and `absoluteGaloisGroupExtend` is `localFormationHom`.
+  set τ' := absoluteGaloisGroupRestrictEquiv L τ
+  have habs := absoluteArtinMap_eq_of_mk_eq_artinMap L x τ hτ
+  -- It suffices to compare the two symbols in the quotients cut out by the open normal subgroups
+  -- of `G_K` contained in `Gal(Kˢ/iota(L))`.
+  obtain ⟨N, hN⟩ := ProfiniteGrp.exist_openNormalSubgroup_sub_open_nhds_of_one
+    (galoisSubgroup K L iota).isOpen (one_mem _)
+  have key : (localClassFormation K).absoluteArtinMap
+      (unitsLevelEquiv (Algebra.ofId K (SeparableClosure K)) (fixedField_toSubgroup_top K)
+        (Additive.ofMul (Algebra.normUnits K x))) =
+      Additive.ofMul ((localFormationHom K L iota τ' : AbsoluteGaloisGroup K) :
+        TopologicalAbelianization (AbsoluteGaloisGroup K)) :=
+    eq_of_forall_le_abelianizationRestrict_eq N fun V hV ↦
+      abelianizationRestrict_absoluteArtinMap_normUnits L iota V
+        ((OpenNormalSubgroup.toSubgroup_le.mpr hV).trans hN) x τ' habs
+  rw [artinMap_apply, key, toMul_ofMul, ContinuousMulEquiv.topologicalAbelianizationCongr_mk]
+  congr 1
+  rw [ContinuousMulEquiv.eq_symm_apply, absoluteGaloisGroupRestrictEquiv_absoluteGaloisGroupExtend,
+    localFormationHom_apply]
+
+end Norm
 
 end TauCeti.ClassFieldTheory
