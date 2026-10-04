@@ -290,6 +290,7 @@ theorem indClassFun_mem_classFunction [S.FiniteIndex] (hf : f ∈ ClassFunction 
 
 /-- **Induction from the whole group is the identity**, read along `⊤ ≃ G`: the quotient by `⊤`
 has a single coset. -/
+@[simp]
 theorem indClassFun_top {f : (⊤ : Subgroup G) → k} (hf : f ∈ ClassFunction k (⊤ : Subgroup G))
     (g : G) : indClassFun ⊤ f g = f ⟨g, Subgroup.mem_top g⟩ := by
   let := Fintype.ofFinite (G ⧸ (⊤ : Subgroup G))

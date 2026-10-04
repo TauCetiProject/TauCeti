@@ -10,7 +10,7 @@ public import TauCeti.RepresentationTheory.LinearCharacter
 public import Mathlib.GroupTheory.Nilpotent
 import TauCeti.GroupTheory.Nilpotent
 import TauCeti.RepresentationTheory.CharacterTable.Determined
-import TauCeti.RepresentationTheory.Induction.Clifford.Basic
+import TauCeti.RepresentationTheory.Induction.Clifford.FullInertia
 import TauCeti.RepresentationTheory.Induction.Clifford.Surjectivity
 
 /-!
@@ -40,7 +40,7 @@ The proof is by induction on `|G|`.  Let `W` be irreducible.
 * Choose an irreducible constituent `V` of `Res_A W`.  Schur's lemma makes `A` act on `V` by
   scalars.  If the inertia group of `V` were all of `G`, those scalars would be invariant under
   conjugation and `A` would act on all of `W` by them
-  (`Representation.apply_eq_smul_of_ne_bot`); then `x` would act centrally, that is
+  (`FDRep.commute_of_inertia_eq_top`); then `x` would act centrally, that is
   `x ∈ Z`.  So the inertia group `T` is proper.
 * By the Clifford correspondence (`FDRep.exists_simple_liesOver_inertia_nonempty_iso_indFDRep`)
   `W ≅ Ind_T^G U` for an irreducible `U` of `T`, and `T` is nilpotent and smaller, so
@@ -107,36 +107,6 @@ private theorem exists_character_eq_indClassFun_top [IsAlgClosed k] (W : FDRep k
   rw [indClassFun_top (ClassFunction.comp_monoidHom_mem _ Units.val)]
   have hρ : W.ρ g = c g • LinearMap.id := LinearMap.ext (hc g)
   simp [χ, character, hρ, hfin]
-
-/-- **A constituent with full inertia forces central action.**  Let `A` be a normal subgroup
-acting on an irreducible `W` through commuting operators, and let `σ` be an irreducible constituent
-of the restriction.  Schur's lemma makes `A` act on `σ` through scalars; if the inertia group of `σ`
-is all of `G`, those scalars are invariant under conjugation, so `A` acts on all of `W` through them
-(`Representation.apply_eq_smul_of_ne_bot`), and its operators commute with those of `G`. -/
-private theorem commute_of_inertia_eq_top [IsAlgClosed k] (W : FDRep k G) [Simple W]
-    {A : Subgroup G} [A.Normal] (hA : ∀ a b : A, Commute (W.ρ a) (W.ρ b))
-    {σ : Subrepresentation (W.ρ.comp A.subtype)} (hσ : IsAtom σ)
-    (hT : inertia (FDRep.of σ.toRepresentation) = ⊤) (a : A) (g : G) :
-    Commute (W.ρ a) (W.ρ g) := by
-  have hW := FDRep.isIrreducible_of_simple W
-  let V : FDRep k A := FDRep.of σ.toRepresentation
-  have hV : Representation.IsIrreducible V.ρ :=
-    Representation.isIrreducible_toRepresentation_of_isAtom hσ
-  have : Nontrivial V := hV.nontrivial
-  -- `V.ρ b` acts on `σ` as `W.ρ b`, so `hA` says the operators of `V` commute.
-  choose c hc using fun b : A => hV.exists_forall_apply_eq_smul (V.ρ b) fun b' w =>
-    Subtype.ext (congrArg (fun f : Module.End k W => f w) (hA b b').eq)
-  have hcσ (b : A) (w : W) (hw : w ∈ σ) : W.ρ b w = c b • w :=
-    congrArg Subtype.val (hc b ⟨w, hw⟩)
-  -- An isomorphism `{}^h V ≅ V` carries the scalar of `b` to that of its conjugate.
-  have hconj (h : G) (b : A) : c (MulAut.conjNormal h b) = c b := by
-    obtain ⟨e, he⟩ := mem_inertia_iff_exists_linearEquiv.mp (hT ▸ Subgroup.mem_top h)
-    obtain ⟨w, hw⟩ := exists_ne (0 : V)
-    have heb := he b w
-    rw [hc, hc, map_smul] at heb
-    exact (smul_left_injective k ((map_ne_zero_iff e e.injective).mpr hw) heb).symm
-  have hscalar := Representation.apply_eq_smul_of_ne_bot W.ρ hσ.1 c hcσ hconj a
-  exact LinearMap.ext fun w => by simp [hscalar]
 
 /-- **The character of an irreducible representation of a finite nilpotent group is monomial.**
 Over an algebraically closed field of characteristic zero, for every irreducible representation
