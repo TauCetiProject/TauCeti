@@ -20,6 +20,8 @@ base, giving the affine input for syntomic morphisms of schemes.
 
 Use `TauCeti.IsStandardSyntomicOfRelativeDimension n f` for the ring-map predicate;
 given a proof `hf`, its consequences are available as `hf.flat` and `hf.finitePresentation`.
+The relative dimension is the first explicit argument, as in
+`RingHom.IsStandardSmoothOfRelativeDimension`.
 
 The ring-homomorphism bridge follows Mathlib's `RingHom.IsStandardSmoothOfRelativeDimension`
 in `Mathlib/RingTheory/RingHom/StandardSmooth.lean`, by Christian Merten. The underlying
