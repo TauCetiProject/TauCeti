@@ -138,10 +138,13 @@ theorem unitSquareClasses_ne_top : unitSquareClasses K ≠ ⊤ := by
   simp [h] at this
 
 /-- The unit square classes are open in the local square-class quotient. -/
-theorem isOpen_unitSquareClasses (h2 : (2 : K) ≠ 0) :
+theorem isOpen_unitSquareClasses :
     IsOpen (unitSquareClasses K : Set (Kˣ ⧸ Subgroup.square Kˣ)) := by
-  let := discreteTopology_localSquareClasses K h2
-  exact isOpen_discrete _
+  rw [← (QuotientGroup.isQuotientMap_mk (Subgroup.square Kˣ)).isOpen_preimage]
+  simpa only [Set.preimage, Set.mem_ofPred_eq, SetLike.mem_coe,
+    mk_mem_unitSquareClasses_iff] using
+    (isOpen_discrete {n : Multiplicative ℤ | Even n.toAdd}).preimage
+      (continuous_normalizedValuation K)
 
 /-- When two is nonzero, the number of unit square classes is twice the residue-field
 cardinality raised to the normalized valuation of two. -/
