@@ -25,6 +25,8 @@ sends `1 + ι w * ι u` to the lift determined by the pure tensors `1 ⊗ u` and
 * `CliffordAlgebra.spinVectorAction_baseChange_tmul` computes the extended action on pure tensors.
 * `CliffordAlgebra.spinToSpecialOrthogonal_baseChange` gives the commuting square with extension
   of special orthogonal automorphisms.
+* `TauCeti.CliffordAlgebra.spinToOrthogonal_baseChange` gives the corresponding commuting square
+  for orthogonal automorphisms.
 * `CliffordAlgebra.spinGroupBaseChange_spinTransvection` identifies the scalar extension of a
   canonical transvection lift.
 * `CliffordAlgebra.spinGroupBaseChange_baseChange` identifies direct and successive scalar
@@ -175,3 +177,31 @@ theorem spinGroupBaseChange_baseChange (z : spinGroup Q) :
 end ScalarTower
 
 end CliffordAlgebra
+
+namespace TauCeti.CliffordAlgebra
+
+open _root_.CliffordAlgebra TauCeti.QuadraticMap
+
+variable {R A M : Type*} [CommRing R] [CommRing A] [Algebra R A]
+  [AddCommGroup M] [Module R M] [Invertible (2 : R)] [Invertible (2 : A)]
+
+/-- Extension of scalars commutes with the Spin homomorphism to the orthogonal group. -/
+@[simp]
+theorem spinToOrthogonal_baseChange [Module.Free R M] [Module.Finite R M]
+    (Q : QuadraticForm R M) (x : spinGroup Q) :
+    spinToOrthogonal (Q.baseChange A) (spinGroupBaseChange (A := A) Q x) =
+      orthogonalGroupBaseChange (A := A) Q (spinToOrthogonal Q x) := by
+  have h := spinToSpecialOrthogonal_baseChange (A := A) Q x
+  -- The special orthogonal theorem installs the scalar-extended inverse of two.
+  -- Identify it with the supplied instance before applying its commuting square.
+  rw [Subsingleton.elim
+    ((Invertible.map (algebraMap R A) 2).copy 2 (map_ofNat _ _).symm)
+    (inferInstance : Invertible (2 : A))] at h
+  rw [← specialOrthogonalToOrthogonal_spinToSpecialOrthogonal,
+    ← h,
+    ← specialOrthogonalToOrthogonal_spinToSpecialOrthogonal Q x]
+  apply Subtype.ext
+  simp only [_root_.QuadraticMap.coe_specialOrthogonalToOrthogonal,
+    coe_specialOrthogonalGroupBaseChange, coe_orthogonalGroupBaseChange]
+
+end TauCeti.CliffordAlgebra

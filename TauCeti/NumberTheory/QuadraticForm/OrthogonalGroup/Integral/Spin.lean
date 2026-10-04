@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.QuadraticForm.OrthogonalGroup.Integral
+public import TauCeti.NumberTheory.QuadraticForm.OrthogonalGroup.Integral.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.BaseChange
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Projection
 import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Proper
@@ -132,21 +132,8 @@ theorem mem_integralSpinSubgroup_baseChange_iff (s : spinGroup Q₀) :
         integralSpinSubgroup (Q₀.baseChange ℚ_[p]) (b₀.baseChange ℚ_[p]) ↔
       orthogonalGroupBaseChange (A := ℚ_[p]) Q₀ (spinToOrthogonal Q₀ s) ∈
         integralOrthogonalSubgroup (Q₀.baseChange ℚ_[p]) (b₀.baseChange ℚ_[p]) := by
-  rw [mem_integralSpinSubgroup_iff]
-  have haction : spinToOrthogonal (Q₀.baseChange ℚ_[p])
-      (spinGroupBaseChange (A := ℚ_[p]) Q₀ s) =
-      orthogonalGroupBaseChange (A := ℚ_[p]) Q₀ (spinToOrthogonal Q₀ s) := by
-    ext z
-    induction z using TensorProduct.inductionOn with
-    | tmul a w =>
-      rw [coe_spinToOrthogonal_apply, orthogonalGroupBaseChange_apply_tmul,
-        coe_spinToOrthogonal_apply]
-      -- The scalar-extension theorem installs its own, propositionally equal inverse of two.
-      convert spinVectorAction_baseChange_tmul Q₀ s a w using 1
-      congr 2
-      exact Subsingleton.elim _ _
-    | add z w hz hw => simp only [map_add, hz, hw]
-  rw [haction]
+  let : FiniteDimensional ℚ W := Module.Finite.of_basis b₀
+  rw [mem_integralSpinSubgroup_iff, spinToOrthogonal_baseChange]
 
 /-- Every rational Spin point belongs to the integral Spin subgroups in a fixed rational basis
 at almost every prime. The exceptional primes are those of its orthogonal action and inverse. -/
