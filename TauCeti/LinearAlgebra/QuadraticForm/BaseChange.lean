@@ -401,6 +401,7 @@ theorem coe_orthogonalGroupBaseChange (Q : _root_.QuadraticForm R M)
 
 /-- The matrix of a scalar-extended orthogonal automorphism in a base-changed basis is obtained
 by applying the algebra map to each entry. -/
+@[simp]
 theorem toMatrix_orthogonalGroupBaseChange {ι : Type*} [Fintype ι] [DecidableEq ι]
     (Q : _root_.QuadraticForm R M) (b : Module.Basis ι R M) (g : orthogonalGroup Q) :
     LinearMap.toMatrix (b.baseChange A) (b.baseChange A)

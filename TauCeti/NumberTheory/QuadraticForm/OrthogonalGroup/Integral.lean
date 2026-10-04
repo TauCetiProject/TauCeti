@@ -25,8 +25,6 @@ isometries. For a rational quadratic space and a rational basis, every rational 
 to these subgroups at all but finitely many primes. No integrality of the quadratic form itself
 is required: the exceptional primes come from the denominators of the isometry and its inverse.
 
-The construction uses Mathlib's `Submonoid.units` and its compactness theorem to impose the two
-integrality conditions simultaneously.
 -/
 
 public section
@@ -150,6 +148,8 @@ theorem isCompact_integralOrthogonalSubgroup :
   convert he.isCompact_preimage hcompact using 1
   ext g
   simp only [Set.mem_preimage, Function.comp_apply]
+  -- `toHomeomorph` and the continuous multiplicative equivalence use the same function;
+  -- this coercion is definitional, so rewriting the algebraic equivalence below needs it exposed.
   rw [show e.symm.toHomeomorph (g : V ≃ₗ[ℚ_[p]] V) = e.symm (g : V ≃ₗ[ℚ_[p]] V) from rfl]
   have heq : e.symm (g : V ≃ₗ[ℚ_[p]] V) =
       (LinearMap.GeneralLinearGroup.generalLinearEquiv ℚ_[p] V).symm
@@ -190,7 +190,8 @@ theorem mem_integralOrthogonalSubgroup_baseChange_of_not_dvd_den
     rfl
 
 /-- Every rational isometry is integral in a fixed rational basis at almost every prime, in
-both directions. This discharges the integrality condition for the orthogonal adelic diagonal. -/
+both directions. Thus its local scalar extensions define a point of the restricted product
+relative to the integral orthogonal subgroups. -/
 theorem eventually_mem_integralOrthogonalSubgroup (g : orthogonalGroup Q₀) :
     ∀ᶠ p : Nat.Primes in cofinite,
       let _ : Fact (p : ℕ).Prime := ⟨p.property⟩
