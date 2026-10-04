@@ -11,8 +11,11 @@ public import Mathlib.Algebra.MonoidAlgebra.Module
 public import Mathlib.NumberTheory.Padics.PadicIntegers
 public import Mathlib.NumberTheory.Padics.RingHoms
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
+public import Mathlib.RepresentationTheory.Basic
 import TauCeti.Algebra.Module.Projective.Quotient
 import TauCeti.Algebra.MonoidAlgebra.Basic
+import TauCeti.RepresentationTheory.OfModule
+import TauCeti.RingTheory.Ideal.Operations
 
 /-!
 # Reduction of `p`-adic group-algebra modules
@@ -27,6 +30,11 @@ modular representations in Swan's rational detection theorem.  The quotient map 
 semilinear map, and its scalar action and kernel are recorded explicitly.  Projectivity of the
 reduction is the special case of `Module.Projective.quotient_smul_top` for coefficient reduction.
 
+Reduction is functorial for isomorphisms, and it commutes with restriction along a monoid
+homomorphism `f : G →* H`: the reduction of a `ℤ_p[H]`-module over `G` is its reduction over `H`,
+with `𝔽_p[G]` acting through `f`. Restriction to a cyclic subgroup is how Swan's theorem reaches
+its prime-to-`p` case.
+
 ## Main results
 
 * `TauCeti.padicMonoidAlgebraQuotientEquiv`: `ℤ_p[G] / (p) ≃+* 𝔽_p[G]`.
@@ -34,6 +42,15 @@ reduction is the special case of `Module.Projective.quotient_smul_top` for coeff
 * `TauCeti.padicReductionMk`: the quotient map, semilinear along coefficient reduction.
 * `TauCeti.padicReduction_module_finite`: reduction preserves finite generation.
 * `TauCeti.padicReduction_module_projective`: reduction preserves projectivity.
+* `TauCeti.padicReduction_compatibleSMul_padicInt`, `TauCeti.padicReduction_compatibleSMul_zmod`:
+  on modules where `ℤ_p[G]` acts through `𝔽_p[G]`, the two notions of linearity agree.
+* `TauCeti.padicReductionCongr`: reduction of a `ℤ_p[G]`-linear equivalence.
+* `TauCeti.padicReductionLinearEquivOfBijective`: a bijective semilinear map out of the
+  reduction is an `𝔽_p[G]`-linear equivalence.
+* `TauCeti.padicReductionRestrictLinearEquiv`: reduction commutes with restriction along a
+  monoid homomorphism `G →* H`.
+* `TauCeti.compPadicReductionMk`: a semilinear map out of the reduction, precomposed with the
+  quotient map and read as semilinear along `ℤ_p → 𝔽_p`.
 
 ## References
 
@@ -161,6 +178,178 @@ theorem padicReduction_module_projective [Module.Projective A M] :
     Module.Projective kG (M ⧸ I • (⊤ : Submodule A M)) :=
   .quotient_smul_top π (padicMonoidAlgebraReduction_surjective p G)
     (ker_padicMonoidAlgebraReduction p G).ge (padicReduction_smul p G M)
+
+/-- **`𝔽_p[G]`-linear maps are `ℤ_p[G]`-linear.** If `ℤ_p[G]` acts on `P` and `Q` through
+coefficient reduction, then every `𝔽_p[G]`-linear map `P → Q` is `ℤ_p[G]`-linear. -/
+theorem padicReduction_compatibleSMul_padicInt {P Q : Type*} [AddCommGroup P] [Module A P]
+    [Module kG P] [AddCommGroup Q] [Module A Q] [Module kG Q]
+    (hP : ∀ (a : A) (x : P), π a • x = a • x) (hQ : ∀ (a : A) (y : Q), π a • y = a • y) :
+    LinearMap.CompatibleSMul P Q A kG :=
+  ⟨fun f a x ↦ by rw [← hP, f.map_smul, hQ]⟩
+
+/-- **`ℤ_p[G]`-linear maps are `𝔽_p[G]`-linear.** If `ℤ_p[G]` acts on `P` and `Q` through
+coefficient reduction, then every `ℤ_p[G]`-linear map `P → Q` is `𝔽_p[G]`-linear, because
+coefficient reduction is surjective. -/
+theorem padicReduction_compatibleSMul_zmod {P Q : Type*} [AddCommGroup P] [Module A P]
+    [Module kG P] [AddCommGroup Q] [Module A Q] [Module kG Q]
+    (hP : ∀ (a : A) (x : P), π a • x = a • x) (hQ : ∀ (a : A) (y : Q), π a • y = a • y) :
+    LinearMap.CompatibleSMul P Q kG A :=
+  ⟨fun f b x ↦ by
+    obtain ⟨a, rfl⟩ := padicMonoidAlgebraReduction_surjective p G b
+    rw [hP, f.map_smul, hQ]⟩
+
+variable {M} {N : Type*} [AddCommGroup N] [Module (MonoidAlgebra ℤ_[p] G) N]
+
+/-- **Reduction modulo `p` of an isomorphism.** A `ℤ_p[G]`-linear equivalence `M ≃ N` induces an
+`𝔽_p[G]`-linear equivalence `M / pM ≃ N / pN`. -/
+noncomputable def padicReductionCongr (e : M ≃ₗ[A] N) :
+    (M ⧸ I • (⊤ : Submodule A M)) ≃ₗ[kG] (N ⧸ I • (⊤ : Submodule A N)) :=
+  have := padicReduction_compatibleSMul_zmod p G (padicReduction_smul p G M)
+    (padicReduction_smul p G N)
+  (Submodule.Quotient.equiv _ _ e (by
+    rw [Submodule.map_smul'', Submodule.map_top, LinearEquiv.range])).restrictScalars kG
+
+@[simp]
+theorem padicReductionCongr_mk (e : M ≃ₗ[A] N) (x : M) :
+    padicReductionCongr p G e (Submodule.Quotient.mk x) = Submodule.Quotient.mk (e x) :=
+  (rfl)
+
+/-- A bijective map out of the reduction `M / pM`, semilinear along coefficient reduction, is an
+`𝔽_p[G]`-linear equivalence. -/
+noncomputable def padicReductionLinearEquivOfBijective {Y : Type*} [AddCommGroup Y]
+    [Module kG Y] (f : (M ⧸ I • (⊤ : Submodule A M)) →ₛₗ[π] Y) (hf : Function.Bijective f) :
+    (M ⧸ I • (⊤ : Submodule A M)) ≃ₗ[kG] Y :=
+  LinearEquiv.ofBijective
+    { toFun := f
+      map_add' := f.map_add
+      map_smul' := fun b x ↦ by
+        obtain ⟨a, rfl⟩ := padicMonoidAlgebraReduction_surjective p G b
+        rw [padicReduction_smul, LinearMap.map_smulₛₗ, RingHom.id_apply] }
+    hf
+
+@[simp]
+theorem padicReductionLinearEquivOfBijective_apply {Y : Type*} [AddCommGroup Y] [Module kG Y]
+    (f : (M ⧸ I • (⊤ : Submodule A M)) →ₛₗ[π] Y) (hf : Function.Bijective f)
+    (x : M ⧸ I • (⊤ : Submodule A M)) :
+    padicReductionLinearEquivOfBijective p G f hf x = f x :=
+  (rfl)
+
+section Restriction
+
+variable {H : Type*} [Monoid H] (f : G →* H) (X : Type*) [AddCommGroup X]
+  [Module (MonoidAlgebra ℤ_[p] H) X] [Module (MonoidAlgebra ℤ_[p] G) (MonoidAlgebra ℤ_[p] H)]
+  [Module (MonoidAlgebra ℤ_[p] G) X]
+  [IsScalarTower (MonoidAlgebra ℤ_[p] G) (MonoidAlgebra ℤ_[p] H) X]
+  [Module (MonoidAlgebra (ZMod p) G) (X ⧸ Ideal.span {(p : MonoidAlgebra ℤ_[p] H)} •
+    (⊤ : Submodule (MonoidAlgebra ℤ_[p] H) X))]
+
+/-- Let `X` be a `ℤ_p[H]`-module, viewed as a `ℤ_p[G]`-module along `f : G →* H`, and let
+`𝔽_p[G]` act on the reduction `X / pX` through `f`. Then `ℤ_p[G]` acts on `X / pX` through
+coefficient reduction. -/
+theorem padicReduction_smul_of_mapDomain
+    (hscalar : ∀ (a : A) (b : MonoidAlgebra ℤ_[p] H),
+      a • b = MonoidAlgebra.mapDomainRingHom ℤ_[p] f a * b)
+    (hk : ∀ (b : kG) (q : X ⧸ Ideal.span {(p : MonoidAlgebra ℤ_[p] H)} •
+      (⊤ : Submodule (MonoidAlgebra ℤ_[p] H) X)),
+        b • q = MonoidAlgebra.mapDomainRingHom (ZMod p) f b • q)
+    (a : A) (q : X ⧸ Ideal.span {(p : MonoidAlgebra ℤ_[p] H)} •
+      (⊤ : Submodule (MonoidAlgebra ℤ_[p] H) X)) :
+    π a • q = a • q := by
+  rw [hk, ← RingHom.comp_apply,
+    ← MonoidAlgebra.mapRingHom_comp_mapDomainRingHom (PadicInt.toZMod (p := p)) f,
+    RingHom.comp_apply, padicReduction_smul p H X,
+    ← mul_one (MonoidAlgebra.mapDomainRingHom _ f a), ← hscalar, smul_assoc, one_smul]
+
+/-- **Reduction modulo `p` commutes with restriction along `f : G →* H`.** For a `ℤ_p[H]`-module
+`X`, viewed as a `ℤ_p[G]`-module along `f`, the reduction of `X` over `G` is the reduction of `X`
+over `H`, with `𝔽_p[G]` acting through `f`. -/
+noncomputable def padicReductionRestrictLinearEquiv
+    (hscalar : ∀ (a : A) (b : MonoidAlgebra ℤ_[p] H),
+      a • b = MonoidAlgebra.mapDomainRingHom ℤ_[p] f a * b)
+    (hk : ∀ (b : kG) (q : X ⧸ Ideal.span {(p : MonoidAlgebra ℤ_[p] H)} •
+      (⊤ : Submodule (MonoidAlgebra ℤ_[p] H) X)),
+        b • q = MonoidAlgebra.mapDomainRingHom (ZMod p) f b • q) :
+    (X ⧸ I • (⊤ : Submodule A X)) ≃ₗ[kG]
+      (X ⧸ Ideal.span {(p : MonoidAlgebra ℤ_[p] H)} •
+        (⊤ : Submodule (MonoidAlgebra ℤ_[p] H) X)) :=
+  have hJ : I • (⊤ : Submodule A X) = (Ideal.span {(p : MonoidAlgebra ℤ_[p] H)} •
+      (⊤ : Submodule (MonoidAlgebra ℤ_[p] H) X)).restrictScalars A := by
+    -- Both sides consist of the multiples `p • x`; `p` is the image of `p : ℕ` in each ring.
+    ext x
+    exact (@Submodule.mem_span_algebraMap_smul_top_iff ℕ (MonoidAlgebra ℤ_[p] G) X
+      _ _ _ _ _ _ _ p x).trans (@Submodule.mem_span_algebraMap_smul_top_iff ℕ
+        (MonoidAlgebra ℤ_[p] H) X _ _ _ _ _ _ _ p x).symm
+  have := padicReduction_compatibleSMul_zmod p G (padicReduction_smul p G X)
+    (padicReduction_smul_of_mapDomain p G f X hscalar hk)
+  ((Submodule.quotEquivOfEq _ _ hJ).trans
+    (Submodule.Quotient.restrictScalarsEquiv A _)).restrictScalars kG
+
+@[simp]
+theorem padicReductionRestrictLinearEquiv_mk
+    (hscalar : ∀ (a : A) (b : MonoidAlgebra ℤ_[p] H),
+      a • b = MonoidAlgebra.mapDomainRingHom ℤ_[p] f a * b)
+    (hk : ∀ (b : kG) (q : X ⧸ Ideal.span {(p : MonoidAlgebra ℤ_[p] H)} •
+      (⊤ : Submodule (MonoidAlgebra ℤ_[p] H) X)),
+        b • q = MonoidAlgebra.mapDomainRingHom (ZMod p) f b • q) (x : X) :
+    padicReductionRestrictLinearEquiv p G f X hscalar hk (Submodule.Quotient.mk x) =
+      Submodule.Quotient.mk x :=
+  (rfl)
+
+end Restriction
+
+section Coefficients
+
+variable [Module ℤ_[p] M] [IsScalarTower ℤ_[p] (MonoidAlgebra ℤ_[p] G) M] {Y : Type*}
+  [AddCommGroup Y] [Module (ZMod p) Y] [Module (MonoidAlgebra (ZMod p) G) Y]
+  [IsScalarTower (ZMod p) (MonoidAlgebra (ZMod p) G) Y]
+  (f : (M ⧸ Ideal.span {(p : MonoidAlgebra ℤ_[p] G)} •
+    (⊤ : Submodule (MonoidAlgebra ℤ_[p] G) M)) →ₛₗ[MonoidAlgebra.mapRingHom G
+      (PadicInt.toZMod (p := p))] Y)
+
+/-- A map `f` out of the reduction `M / pM`, semilinear along coefficient reduction
+`ℤ_p[G] → 𝔽_p[G]`, composed with the quotient map `M → M / pM`. Forgetting the group, the
+composite is semilinear along `ℤ_p → 𝔽_p`. -/
+noncomputable def compPadicReductionMk : M →ₛₗ[PadicInt.toZMod (p := p)] Y where
+  toFun x := f (padicReductionMk p G M x)
+  map_add' x y := by rw [map_add, map_add]
+  map_smul' r x := by
+    rw [← algebraMap_smul A, LinearMap.map_smulₛₗ (padicReductionMk p G M),
+      padicReduction_smul, LinearMap.map_smulₛₗ f,
+      show MonoidAlgebra.mapRingHom G (PadicInt.toZMod (p := p))
+          (algebraMap ℤ_[p] (MonoidAlgebra ℤ_[p] G) r) =
+        algebraMap (ZMod p) (MonoidAlgebra (ZMod p) G) (PadicInt.toZMod r) from
+        DFunLike.congr_fun
+          (MonoidAlgebra.mapRingHom_comp_algebraMap (M := G) (PadicInt.toZMod (p := p))) r,
+      algebraMap_smul]
+
+@[simp]
+theorem compPadicReductionMk_apply (x : M) :
+    compPadicReductionMk p G f x = f (padicReductionMk p G M x) :=
+  (rfl)
+
+/-- For surjective `f`, the composite `compPadicReductionMk` is surjective. -/
+theorem compPadicReductionMk_surjective (hf : Function.Surjective f) :
+    Function.Surjective (compPadicReductionMk p G f) :=
+  hf.comp (padicReductionMk_surjective p G M)
+
+/-- For injective `f`, the composite `compPadicReductionMk` vanishes exactly on `pM`. -/
+theorem compPadicReductionMk_eq_zero_iff (hf : Function.Injective f) (x : M) :
+    compPadicReductionMk p G f x = 0 ↔ x ∈ (p : ℤ_[p]) • (⊤ : Submodule ℤ_[p] M) := by
+  rw [compPadicReductionMk_apply, map_eq_zero_iff f hf, padicReductionMk_eq_zero_iff,
+    Submodule.mem_smul_pointwise_iff_exists]
+  refine (@Submodule.mem_span_algebraMap_smul_top_iff ℕ (MonoidAlgebra ℤ_[p] G) M
+    _ _ _ _ _ _ _ p x).trans ?_
+  simp only [Submodule.mem_top, true_and, Nat.cast_smul_eq_nsmul]
+
+/-- The composite `compPadicReductionMk` is equivariant for the group actions. -/
+theorem compPadicReductionMk_ofModule' (g : G) (x : M) :
+    compPadicReductionMk p G f (Representation.ofModule' (k := ℤ_[p]) (G := G) M g x) =
+      Representation.ofModule' (k := ZMod p) (G := G) Y g (compPadicReductionMk p G f x) := by
+  rw [TauCeti.Representation.ofModule'_apply, TauCeti.Representation.ofModule'_apply,
+    compPadicReductionMk_apply, compPadicReductionMk_apply, LinearMap.map_smulₛₗ,
+    padicReduction_smul, LinearMap.map_smulₛₗ, MonoidAlgebra.mapRingHom_single, map_one]
+
+end Coefficients
 
 end
 
