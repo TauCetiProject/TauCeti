@@ -9,7 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Inverse
 public import TauCeti.NumberTheory.ModularForms.LFunction.EulerProduct
 import Mathlib.Analysis.Complex.Polynomial.Basic
 import Mathlib.RingTheory.Polynomial.SmallDegreeVieta
-import TauCeti.NumberTheory.ModularForms.Newforms.OrthogonalBasis
+import TauCeti.NumberTheory.ModularForms.Newforms.PeterssonAdjoint
 
 /-!
 # Satake parameters and Satake angles of a newform
