@@ -109,6 +109,21 @@ def localFormationHom : AbsoluteGaloisGroup L →* AbsoluteGaloisGroup K :=
   (TauCeti.galoisSubgroup K L σ).toSubgroup.subtype.comp
     (TauCeti.galoisSubgroupEquiv K L σ).toMulEquiv.toMonoidHom
 
+/-- The embedding `G_L → G_K` is `TauCeti.galoisSubgroupEquiv` followed by the inclusion of the
+open subgroup fixing `σ(L)`. -/
+theorem localFormationHom_apply (g : AbsoluteGaloisGroup L) :
+    localFormationHom K L σ g = TauCeti.galoisSubgroupEquiv K L σ g :=
+  (rfl)
+
+/-- The image of the embedding `G_L → G_K` is the open subgroup of `G_K` fixing `σ(L)`. -/
+theorem range_localFormationHom :
+    (localFormationHom K L σ).range = (TauCeti.galoisSubgroup K L σ).toSubgroup := by
+  ext g
+  refine ⟨?_, fun hg => ⟨(TauCeti.galoisSubgroupEquiv K L σ).symm ⟨g, hg⟩, ?_⟩⟩
+  · rintro ⟨h, rfl⟩
+    exact (TauCeti.galoisSubgroupEquiv K L σ h).2
+  · rw [localFormationHom_apply, ContinuousMulEquiv.apply_symm_apply]
+
 /-- The embedding of absolute Galois groups underlying restriction of the units formation is
 continuous. -/
 theorem continuous_localFormationHom : Continuous (localFormationHom K L σ) :=
@@ -130,6 +145,15 @@ formation along `L/K`. It sends a unit of `Kˢ` to its image in `Lˢ` under the 
 chosen identification `Lˢ ≃ Kˢ`. -/
 def localFormationCoeffEquiv : UnitsCoeff K ≃+ UnitsCoeff L :=
   (Units.mapEquiv (separableClosureRingEquiv K L σ).symm.toMulEquiv).toAdditive
+
+omit [FiniteDimensional K L] in
+/-- The inverse of the coefficient equivalence sends a unit of `Lˢ` to its image in `Kˢ` under the
+chosen identification `Lˢ ≃ Kˢ`. -/
+@[simp]
+theorem toMul_localFormationCoeffEquiv_symm_apply (y : UnitsCoeff L) :
+    ((localFormationCoeffEquiv K L σ).symm y).toMul =
+      Units.map (separableClosureRingEquiv K L σ).toMonoidHom y.toMul :=
+  (rfl)
 
 /-- The coefficient equivalence underlying `localFormationRestrict` is equivariant for the
 embedding `G_L → G_K`. -/
