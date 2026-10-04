@@ -152,8 +152,7 @@ theorem harmonicOnNhd_ballPoissonIntegral {g : sphere (0 : EuclideanSpace ℝ (F
       ∀ y : sphere (0 : EuclideanSpace ℝ (Fin n)) 1, (x, (y : EuclideanSpace ℝ (Fin n))) ∈
         {p : EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) | p.1 ≠ p.2} :=
     fun x hx y hxy ↦ hx (by
-      change x = (y : EuclideanSpace ℝ (Fin n)) at hxy
-      rw [hxy]
+      rw [show x = (y : EuclideanSpace ℝ (Fin n)) by simpa only using hxy]
       exact y.2)
   have h := harmonicOnNhd_integral_smul_of_contDiffOn hg continuous_subtype_val
     (isOpen_ne_fun continuous_fst continuous_snd) contDiffOn_ballPoissonKernel
