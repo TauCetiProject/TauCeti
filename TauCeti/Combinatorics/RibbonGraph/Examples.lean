@@ -57,10 +57,10 @@ theorem cyclicDessin_def : cyclicDessin n = (cyclicTriple n).ribbonGraph := (rfl
   rw [cyclicDessin, PermutationTriple.card_B_ribbonGraph, ← cycleCounts_σ0,
     cycleCounts_cyclicTriple hn]
 
-/-- In positive degree, every edge of the cyclic dessin has its own white vertex. -/
-@[simp] theorem card_W_cyclicDessin (hn : n ≠ 0) : Fintype.card (cyclicDessin n).W = n := by
-  rw [cyclicDessin, PermutationTriple.card_W_ribbonGraph, ← cycleCounts_σ1,
-    cycleCounts_cyclicTriple hn]
+/-- Every edge of the cyclic dessin has its own white vertex. -/
+@[simp] theorem card_W_cyclicDessin : Fintype.card (cyclicDessin n).W = n := by
+  rw [cyclicDessin, PermutationTriple.card_W_ribbonGraph, cyclicTriple_σ1, orbitCount_one,
+    Nat.card_eq_fintype_card, Fintype.card_fin]
 
 /-- In positive degree, the cyclic dessin has one face. -/
 @[simp] theorem faceCount_cyclicDessin (hn : n ≠ 0) : (cyclicDessin n).faceCount = 1 := by
