@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.ReflectionPair
-import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.Generators
+import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Basic
 import TauCeti.Data.List.Pair
 import TauCeti.LinearAlgebra.QuadraticForm.CartanDieudonne.SpecialOrthogonal
 import Mathlib.Analysis.Normed.Group.BallSphere

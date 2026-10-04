@@ -24,7 +24,6 @@ Lipschitz group as soon as some vector has invertible norm.
 * `CliffordAlgebra.mem_lipschitzGroup_iff_exists_list`: a unit lies in the Lipschitz group exactly
   when it is a product of vectors of invertible norm, if `2` is invertible.
 * `CliffordAlgebra.lipschitzGroup_eq_bot`: the Lipschitz group of the zero module is trivial.
-* `CliffordAlgebra.instSubsingletonSpinGroup`: hence so is its Spin group.
 * `CliffordAlgebra.scalarUnits`: the scalar units, as a homomorphism into the Lipschitz group,
   whenever some vector has invertible norm.
 * `CliffordAlgebra.scalarUnits_injective`: when `2` is invertible, the scalar units embed.
@@ -106,16 +105,6 @@ theorem lipschitzGroup_eq_bot [Subsingleton M] : lipschitzGroup Q = ⊥ := by
   have : Subsingleton (CliffordAlgebra Q) := subsingleton_of_zero_eq_one (by
     rw [← x.mul_inv, ← hm, zero_mul])
   exact Subsingleton.elim x 1
-
-/-- The Spin group of a quadratic form on the zero module is trivial, because the Lipschitz group
-containing it is (`lipschitzGroup_eq_bot`). -/
-instance instSubsingletonSpinGroup [Subsingleton M] : Subsingleton (spinGroup Q) := by
-  refine ⟨fun x y => Subtype.ext ?_⟩
-  have h (z : spinGroup Q) : (z : CliffordAlgebra Q) = 1 := by
-    obtain ⟨w, hw, hwz⟩ := pinGroup.mem_lipschitzGroup (spinGroup.mem_pin z.2)
-    rw [SetLike.mem_coe, Subgroup.mem_toSubmonoid, lipschitzGroup_eq_bot, Subgroup.mem_bot] at hw
-    simp [← hwz, hw]
-  rw [h x, h y]
 
 /-! ### The scalar units -/
 

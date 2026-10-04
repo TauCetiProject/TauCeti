@@ -14,6 +14,7 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpinorNorm.Basic
 public import Mathlib.Topology.Maps.Proper.CompactlyGenerated
 import Mathlib.Analysis.Normed.Field.ProperSpace
 import TauCeti.FieldTheory.SquareClassGroup.Multiplicative
+import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Basic
 import TauCeti.LinearAlgebra.QuadraticForm.Representation
 import TauCeti.Topology.Algebra.Group.Subgroup
 import TauCeti.Topology.Compactness.LocallyCompact
@@ -29,11 +30,11 @@ canonical topologies. Consequently the Spin group is compact exactly when `Q` is
 Properness is not a formal consequence of having a continuous homomorphism with finite kernel,
 so the proof goes through the Lipschitz group. The vector representation of the Lipschitz group is
 an open surjection onto `O(Q)` from a locally compact group, so every compact set of isometries is
-the image of a compact set `L` of Lipschitz elements. A Spin element `x` lying over that compact
-set differs from some `y ∈ L` by a scalar `c`, since the kernel of the vector representation
-consists of the scalars. Comparing Clifford norms gives `1 = c ^ 2 * N y`, and `N y` stays away
-from zero on `L`, so `c` is bounded. Hence `x` lies in the compact set of scalar multiples
-`c • y` with `c` bounded and `y ∈ L`, and the Spin group is closed.
+contained in the image of a compact set `L` of Lipschitz elements. A Spin element `x` lying over
+that compact set differs from some `y ∈ L` by a scalar `c`, since the kernel of the vector
+representation consists of the scalars. Comparing Clifford norms gives `1 = c ^ 2 * N y`, and
+`N y` stays away from zero on `L`, so `c` is bounded. Hence `x` lies in the compact set of scalar
+multiples `c • y` with `c` bounded and `y ∈ L`, and the Spin group is closed.
 
 For the compactness criterion, an anisotropic form has a compact orthogonal group, whose preimage
 is the whole Spin group. An isotropic form has a hyperbolic pair, and the split torus element at
@@ -99,8 +100,8 @@ theorem not_isCompact_spinGroup (hQ : Q.Nondegenerate) (hiso : ¬Q.Anisotropic) 
 
 end Noncompact
 
-variable {K V : Type*} [NontriviallyNormedField K] [LocallyCompactSpace K] [Invertible (2 : K)]
-  [AddCommGroup V] [Module K V] [FiniteDimensional K V] (Q : QuadraticForm K V)
+variable {K V : Type*} [NontriviallyNormedField K] [WeaklyLocallyCompactSpace K]
+  [Invertible (2 : K)] [AddCommGroup V] [Module K V] [FiniteDimensional K V] (Q : QuadraticForm K V)
 
 /-- **Compact sets of isometries have compact preimages in Spin.** For a nondegenerate quadratic
 form on a finite-dimensional space over a locally compact nontrivially normed field in which `2`
@@ -114,7 +115,7 @@ theorem isCompact_preimage_spinToOrthogonal (hQ : Q.Nondegenerate)
   have : LocallyCompactSpace (lipschitzGroup Q) :=
     (isClosed_lipschitzGroup Q hQ).locallyCompactSpace
   have hv : ∃ v, IsUnit (Q v) := hQ.exists_isUnit
-  -- The vector representation is an open surjection, so `C` is the image of a compact set `L`.
+  -- The vector representation is an open surjection, so `C` lies in the image of a compact `L`.
   obtain ⟨L, hL, hCL⟩ := (isOpenMap_lipschitzToOrthogonal Q hQ).exists_isCompact_subset_image
     (lipschitzToOrthogonal_surjective Q hQ) hC
   -- The inverse Clifford norm is bounded on the compact set `L`.
