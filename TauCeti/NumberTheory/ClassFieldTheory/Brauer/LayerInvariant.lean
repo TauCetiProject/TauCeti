@@ -65,6 +65,8 @@ and from the restriction and corestriction squares of the local invariant:
 ## Main results
 
 * `TauCeti.ClassFieldTheory.layerInfl_injective`: inflation from a layer is injective.
+* `TauCeti.ClassFieldTheory.layerInfl_eq_explicitMap2_layerInfl`: inflation is natural along
+  maps of layer cohomology that pull back inflated cocycles along a compatible pair.
 * `TauCeti.ClassFieldTheory.exists_layerInfl_eq`: every class of `H²(U, (Kˢ)ˣ)` is inflated from
   a refinement of a given layer over `U`.
 * `TauCeti.ClassFieldTheory.layerInv_injective`: the invariant of a layer is injective.
@@ -333,6 +335,33 @@ theorem exists_layerInfl_eq (c : H2 L.ground.toSubgroup (UnitsCoeff K)) :
     (AddMonoidHom.id _) (hψ := fun _ _ => rfl) (ContinuousMonoidHom.ext fun _ => rfl) rfl) _).trans
     (DFunLike.congr_fun (explicitMap2_id _ _) _)).symm
 
+/-- **Inflation is natural along maps that pull back inflated cocycles**: let `V ◁ U` be a layer
+over `K`, `V' ◁ U'` a layer over a field `K'`, and `(f, φ)` a compatible pair from
+`(U, (Kˢ)ˣ)` to `(U', (K'ˢ)ˣ)`. If a map `Ψ` of layer cohomologies sends the class of each layer
+cocycle `c` to the class of a layer cocycle whose inflated cocycle is the inflated cocycle of `c`
+pulled back along `(f, φ)`, then inflating `Ψ x` to `U'` is pulling back the inflation of `x`. -/
+theorem layerInfl_eq_explicitMap2_layerInfl {K' : Type} [Field K']
+    {L' : NormalLayer (AbsoluteGaloisGroup K')} (f : L'.ground.toSubgroup →ₜ* L.ground.toSubgroup)
+    (φ : UnitsCoeff K →+ UnitsCoeff K') (hφ : ∀ (u : L'.ground.toSubgroup) (m : UnitsCoeff K),
+      φ (f u • m) = u • φ m)
+    (Ψ : L.H (unitsFormation K) 2 → L'.H (unitsFormation K') 2)
+    (hΨ : ∀ c : cocycles₂ (L.rep (unitsFormation K)),
+      ∃ c' : cocycles₂ (L'.rep (unitsFormation K')), Ψ (H2π _ c) = H2π _ c' ∧
+        layerCocycle L' c' = cocyclesMap2 L.ground.toSubgroup (UnitsCoeff K) L'.ground.toSubgroup
+          (UnitsCoeff K') f φ continuous_of_discreteTopology hφ (layerCocycle L c))
+    (x : L.H (unitsFormation K) 2) :
+    layerInfl L' (Ψ x) =
+      explicitMap2 L.ground.toSubgroup (UnitsCoeff K) L'.ground.toSubgroup (UnitsCoeff K') f φ
+        continuous_of_discreteTopology hφ (layerInfl L x) := by
+  induction x using H2_induction_on with
+  | h c =>
+    obtain ⟨c', hc, hc'⟩ := hΨ c
+    rw [hc, layerInfl_H2π]
+    refine Eq.trans ?_ (congrArg _ (layerInfl_H2π L c)).symm
+    refine Eq.trans ?_ (explicitMap2_mk _ _ _ _ _ _ _ _ _).symm
+    exact congrArg (fun z : Z2 L'.ground.toSubgroup (UnitsCoeff K') =>
+      (z : H2 L'.ground.toSubgroup (UnitsCoeff K'))) hc'
+
 /-! ### Inflation and conjugation -/
 
 section Conjugation
@@ -406,20 +435,19 @@ private theorem layerInfl_conjugateCohomologyIso (x : L.H (unitsFormation K) 2) 
       explicitMap2 L.ground.toSubgroup (UnitsCoeff K) (L.conjugate g).ground.toSubgroup
         (UnitsCoeff K) (conjugateGroundHom L g) (DistribSMul.toAddMonoidHom (UnitsCoeff K) g)
         continuous_of_discreteTopology (conjugateGroundHom_smul L g) (layerInfl L x) := by
-  induction x using H2_induction_on with
-  | h c =>
+  refine layerInfl_eq_explicitMap2_layerInfl L _ _ _
+    (fun y => (L.conjugateCohomologyIso (unitsFormation K) g 2).hom y) (fun c => ?_) x
+  refine ⟨?_, ?hcls, ?hcocycle⟩
+  case hcls =>
     rw [NormalLayer.conjugateCohomologyIso_def, groupCohomology.mapIso_hom]
     -- Rewriting with `H2π_comp_map_apply` times out here; the term is given explicitly.
-    refine (congrArg (layerInfl (L.conjugate g))
-      (groupCohomology.H2π_comp_map_apply (L.conjugateGalEquiv g).symm.toMonoidHom _ c)).trans ?_
-    rw [layerInfl_H2π]
-    refine Eq.trans ?_ (congrArg _ (layerInfl_H2π L c)).symm
-    refine Eq.trans ?_ (explicitMap2_mk _ _ _ _ _ _ _ _ _).symm
-    refine congrArg _ (Subtype.ext (funext fun p => (layerCocycle_mapCocycles₂ L g _ _
+    exact groupCohomology.H2π_comp_map_apply (L.conjugateGalEquiv g).symm.toMonoidHom _ c
+  case hcocycle =>
+    exact Subtype.ext (funext fun p => (layerCocycle_mapCocycles₂ L g _ _
       (fun w => (L.conjugateGalEquiv_symm_mk g w).trans (congrArg QuotientGroup.mk
         (Subtype.ext (L.conjugateGroundEquiv_symm_apply_coe g w))))
       (fun x => L.conjugateCoefficientEquiv_apply_coe (unitsFormation K) g x) c p).trans
-      (cocyclesMap2_apply _ _ _ _ _ _ _ _ _ p.1 p.2).symm))
+      (cocyclesMap2_apply _ _ _ _ _ _ _ _ _ p.1 p.2).symm)
 
 end Conjugation
 

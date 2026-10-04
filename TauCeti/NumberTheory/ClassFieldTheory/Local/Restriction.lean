@@ -29,14 +29,8 @@ this is what relates the local Artin map of `E` to that of `K` through the norm 
 
 The comparison is first made for the local invariant `TauCeti.ClassFieldTheory.subgroupInvMap` of
 an open subgroup `U ≤ G_E` and its image `U' ≤ G_K`
-(`subgroupInvMap_explicitMap2_localFormationHomInv`). Every class of `H²(U, (Eˢ)ˣ)` is restricted
-from `Br E`, since restriction multiplies invariants by `[G_E : U]` and `ℚ/ℤ` is divisible; on a
-restricted class both invariants are `[G_E : U] • inv_E`, by the restriction square of
-`subgroupInvMap` inside `G_K` and its normalization `subgroupInvMap_explicitMap2` on `G_E`.
-
-The inflation step (`layerInfl_localFormationLayerEquiv`) follows the cocycle computation of the
-conjugation case, the private lemma `layerInfl_conjugateCohomologyIso` of
-`TauCeti.NumberTheory.ClassFieldTheory.Brauer.LayerInvariant`.
+(`subgroupInvMap_explicitMap2_localFormationHomInv`), and for inflation from a layer to its ground
+subgroup (`layerInfl_localFormationLayerEquiv`).
 
 ## Main results
 
@@ -86,6 +80,8 @@ theorem localFormationCoeffEquiv_symm_apply (y : UnitsCoeff E) :
   Additive.toMul.injective (by
     rw [toMul_localFormationCoeffEquiv_symm_apply, toMul_unitsCoeffMapSymm])
 
+-- The cocycle computation parallels `layerCocycle_mapCocycles₂` in
+-- `TauCeti.NumberTheory.ClassFieldTheory.Brauer.LayerInvariant`, the conjugation case.
 /-- The inflated cocycle of the image of a layer cocycle under a layer isomorphism from a layer
 `V ◁ U` over `E` to a layer `V' ◁ U'` over `K`, whose Galois-group map is induced by the embedding
 `U' → U` inverse to `G_E → G_K` and whose coefficient map is induced by `(Eˢ)ˣ ≃ (Kˢ)ˣ`, is the
@@ -113,37 +109,6 @@ private theorem layerCocycle_of_localFormation (L : NormalLayer (AbsoluteGaloisG
     (MulEquiv.symm_apply_eq _).2 (hgal u).symm, (MulEquiv.symm_apply_eq _).2 (hgal v).symm]
   exact hcoeff _
 
-/-- Inflation commutes with a layer isomorphism from a layer `V ◁ U` over `E` to a layer `V' ◁ U'`
-over `K` whose Galois-group map is induced by the embedding `U' → U` inverse to `G_E → G_K` and
-whose coefficient map is induced by `(Eˢ)ˣ ≃ (Kˢ)ˣ`. The argument follows the conjugation case
-`layerInfl_conjugateCohomologyIso` in `TauCeti.NumberTheory.ClassFieldTheory.Brauer.LayerInvariant`.
--/
-private theorem layerInfl_cohomologyIso_of_localFormation (L : NormalLayer (AbsoluteGaloisGroup E))
-    {L' : NormalLayer (AbsoluteGaloisGroup K)}
-    (h : L'.ground.toSubgroup ≤ L.ground.toSubgroup.map (localFormationHom K E iota))
-    (e : LayerEquiv (unitsFormation E) L (unitsFormation K) L')
-    (hgal : ∀ u : L'.ground.toSubgroup,
-      e.galEquiv (localFormationHomInv K E iota h u : L.Gal) = (u : L'.Gal))
-    (hcoeff : ∀ x : (L.rep (unitsFormation E)).V,
-      (unitsCoeffEquivUnitsFormation K).symm (e.coeffEquiv x : (unitsFormation K).toRep.V) =
-        unitsCoeffMapSymm K E iota
-          ((unitsCoeffEquivUnitsFormation E).symm (x : (unitsFormation E).toRep.V)))
-    (x : L.H (unitsFormation E) 2) :
-    layerInfl L' ((e.cohomologyIso 2).hom x) =
-      explicitMap2 L.ground.toSubgroup (UnitsCoeff E) L'.ground.toSubgroup (UnitsCoeff K)
-        (localFormationHomInv K E iota h) (unitsCoeffMapSymm K E iota)
-        continuous_of_discreteTopology (unitsCoeffMapSymm_localFormationHomInv_smul K E iota h)
-        (layerInfl L x) := by
-  induction x using H2_induction_on with
-  | h c =>
-    obtain ⟨c', hc, hc'⟩ := e.exists_cohomologyIso_hom_H2π c
-    rw [hc, layerInfl_H2π]
-    refine Eq.trans ?_ (congrArg _ (layerInfl_H2π L c)).symm
-    refine Eq.trans ?_ (explicitMap2_mk _ _ _ _ _ _ _ _ _).symm
-    exact congrArg (fun z : Z2 L'.ground.toSubgroup (UnitsCoeff K) =>
-      (z : H2 L'.ground.toSubgroup (UnitsCoeff K)))
-      (layerCocycle_of_localFormation K E iota L h e hgal hcoeff c c' hc')
-
 /-- **Inflation commutes with the layer isomorphism `localFormationLayerEquiv`**: inflating the
 image of a class of a layer `V ◁ U` over `E` to the ground subgroup `U'` of the corresponding layer
 over `K` is transporting its inflation to `U` along `U' ≃ U` and `(Eˢ)ˣ ≃ (Kˢ)ˣ`. -/
@@ -155,12 +120,15 @@ theorem layerInfl_localFormationLayerEquiv (L : NormalLayer (AbsoluteGaloisGroup
         (L.localFormationMap K E iota).ground.toSubgroup (UnitsCoeff K)
         (localFormationHomInv K E iota (L.localFormationMap_ground_toSubgroup K E iota).le)
         (unitsCoeffMapSymm K E iota) continuous_of_discreteTopology
-        (unitsCoeffMapSymm_localFormationHomInv_smul K E iota _) (layerInfl L x) :=
-  layerInfl_cohomologyIso_of_localFormation K E iota L _ _
+        (unitsCoeffMapSymm_localFormationHomInv_smul K E iota _) (layerInfl L x) := by
+  refine layerInfl_eq_explicitMap2_layerInfl L _ _ _
+    (fun y => ((localFormationLayerEquiv K E iota L).cohomologyIso 2).hom y) (fun c => ?_) x
+  obtain ⟨c', hc, hc'⟩ := (localFormationLayerEquiv K E iota L).exists_cohomologyIso_hom_H2π c
+  exact ⟨c', hc, layerCocycle_of_localFormation K E iota L _ _
     (fun u => localFormationLayerEquiv_galEquiv_mk K E iota L _ u
       (localFormationHom_localFormationHomInv K E iota _ u).symm)
     (fun y => (localFormationLayerEquiv_coeffEquiv_apply K E iota L y).trans
-      (localFormationCoeffEquiv_symm_apply K E iota _)) x
+      (localFormationCoeffEquiv_symm_apply K E iota _)) c c' hc'⟩
 
 end Embedding
 
@@ -198,6 +166,8 @@ theorem subgroupInvMap_explicitMap2_localFormationHomInv {U : Subgroup (Absolute
           (unitsCoeffMapSymm_localFormationHomInv_smul K E iota hUU'.ge) y) =
       subgroupInvMap E U hU y := by
   subst hUU'
+  -- Every class is restricted from `Br E`, and on a restricted class both invariants are
+  -- `[G_E : U] • inv_E`.
   obtain ⟨z, rfl⟩ := exists_explicitRes2_eq E U hU y
   have hle : U.map (localFormationHom K E iota) ≤ iota.fieldRange.fixingSubgroup :=
     galoisSubgroup_toSubgroup K E iota ▸ (Subgroup.map_le_range _ U).trans
