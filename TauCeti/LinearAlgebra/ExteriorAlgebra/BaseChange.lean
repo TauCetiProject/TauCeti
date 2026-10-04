@@ -24,7 +24,9 @@ public section
 
 open scoped TensorProduct
 
-namespace ExteriorAlgebra
+open ExteriorAlgebra
+
+namespace TauCeti
 
 variable {R : Type*} (A : Type*) {M : Type*}
 variable [CommRing R] [CommRing A] [Algebra R A] [AddCommGroup M] [Module R M]
@@ -95,7 +97,7 @@ private theorem toBaseChange_ι (x : A ⊗[R] M) :
   lift_ι_apply _ _ _ _
 
 /-- Scalar extension commutes with exterior algebras, without restrictions on characteristic. -/
-noncomputable def equivBaseChange :
+noncomputable def exteriorAlgebraEquivBaseChange :
     ExteriorAlgebra A (A ⊗[R] M) ≃ₐ[A] A ⊗[R] ExteriorAlgebra R M :=
   AlgEquiv.ofAlgHom (toBaseChange A) (ofBaseChange A)
     (by
@@ -112,45 +114,45 @@ noncomputable def equivBaseChange :
 
 /-- The comparison carries an exterior generator to the scalar extension of that generator. -/
 @[simp]
-theorem equivBaseChange_ι (x : A ⊗[R] M) :
-    equivBaseChange A (ι A x) =
+theorem exteriorAlgebraEquivBaseChange_ι (x : A ⊗[R] M) :
+    exteriorAlgebraEquivBaseChange A (ι A x) =
       (ι R).baseChange A x :=
   toBaseChange_ι A x
 
 /-- The inverse comparison on a scalar multiple of an exterior generator. -/
 @[simp]
-theorem equivBaseChange_symm_tmul_ι (a : A) (m : M) :
-    (equivBaseChange A).symm (a ⊗ₜ[R] ι R m) =
+theorem exteriorAlgebraEquivBaseChange_symm_tmul_ι (a : A) (m : M) :
+    (exteriorAlgebraEquivBaseChange A).symm (a ⊗ₜ[R] ι R m) =
       ι A (a ⊗ₜ[R] m) :=
   ofBaseChange_tmul_ι A a m
 
 /-- On wedges of pure tensors the scalar coefficients multiply. -/
 @[simp]
-theorem equivBaseChange_ιMulti_tmul {n : ℕ} (a : Fin n → A) (m : Fin n → M) :
-    equivBaseChange A (ιMulti A n (fun i ↦ a i ⊗ₜ[R] m i)) =
+theorem exteriorAlgebraEquivBaseChange_ιMulti_tmul {n : ℕ} (a : Fin n → A) (m : Fin n → M) :
+    exteriorAlgebraEquivBaseChange A (ιMulti A n (fun i ↦ a i ⊗ₜ[R] m i)) =
       (∏ i, a i) ⊗ₜ[R] ιMulti R n m := by
   induction n with
   | zero => simp [ιMulti_zero_apply, Algebra.TensorProduct.one_def]
   | succ n ih =>
-      simp only [ιMulti_succ_apply, map_mul, equivBaseChange_ι,
+      simp only [ιMulti_succ_apply, map_mul, exteriorAlgebraEquivBaseChange_ι,
         LinearMap.baseChange_tmul, Matrix.vecTail, Function.comp_def, ih,
         Algebra.TensorProduct.tmul_mul_tmul, Fin.prod_univ_succ]
 
 /-- Scalar extension of exterior algebras is natural in the module. -/
 @[simp]
-theorem equivBaseChange_map {N : Type*} [AddCommGroup N] [Module R N]
+theorem exteriorAlgebraEquivBaseChange_map {N : Type*} [AddCommGroup N] [Module R N]
     (f : M →ₗ[R] N) (x : ExteriorAlgebra A (A ⊗[R] M)) :
-    equivBaseChange A (map (f.baseChange A) x) =
+    exteriorAlgebraEquivBaseChange A (map (f.baseChange A) x) =
       Algebra.TensorProduct.map (AlgHom.id A A) (map f)
-        (equivBaseChange A x) := by
-  have h : (equivBaseChange A).toAlgHom.comp
+        (exteriorAlgebraEquivBaseChange A x) := by
+  have h : (exteriorAlgebraEquivBaseChange A).toAlgHom.comp
       (map (f.baseChange A)) =
       (Algebra.TensorProduct.map (AlgHom.id A A) (map f)).comp
-        (equivBaseChange A).toAlgHom := by
+        (exteriorAlgebraEquivBaseChange A).toAlgHom := by
     apply hom_ext
     apply TensorProduct.AlgebraTensorModule.ext
     intro a m
-    simp [equivBaseChange_ι]
+    simp [exteriorAlgebraEquivBaseChange_ι]
   exact AlgHom.congr_fun h x
 
-end ExteriorAlgebra
+end TauCeti
