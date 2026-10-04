@@ -168,6 +168,8 @@ theorem _root_.ContinuousMonoidHom.equivRangeOfIsEmbedding_apply
     f.equivRangeOfIsEmbedding hf x =
       (⟨f x, ⟨x, rfl⟩⟩ : MonoidHom.range (f : A →* B)) := by
   apply Subtype.ext
+  -- `ContinuousMulEquiv.mk'` reuses the homeomorphism's forward map definitionally; expose that
+  -- coercion so the stable application theorem for `IsEmbedding.toHomeomorph` applies.
   change ((hf.toHomeomorph x : Set.range f) : B) = f x
   exact Topology.IsEmbedding.toHomeomorph_apply_coe (f := (f : A → B)) hf x
 

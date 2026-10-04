@@ -70,6 +70,7 @@ private def realCliffordSpinToUnitsContinuousMonoidHom (n : ℕ) :
 
 private theorem isEmbedding_realCliffordSpinToUnitsContinuousMonoidHom (n : ℕ) :
     Topology.IsEmbedding (realCliffordSpinToUnitsContinuousMonoidHom n) := by
+  -- The bundled homomorphism has `spinGroup.toUnits` as its forward map definitionally.
   change Topology.IsEmbedding (spinGroup.toUnits (Q := realCliffordForm n 0))
   exact isEmbedding_realCliffordSpinToUnits n
 
@@ -86,6 +87,7 @@ theorem realCliffordSpinContinuousMulEquivUnitsRange_apply
     (n : ℕ) (x : spinGroup (realCliffordForm n 0)) :
     realCliffordSpinContinuousMulEquivUnitsRange n x =
       ⟨spinGroup.toUnits x, ⟨x, rfl⟩⟩ := by
+  -- Expose the specialized range equivalence so its generic forward-map theorem applies.
   change (realCliffordSpinToUnitsContinuousMonoidHom n).equivRangeOfIsEmbedding
     (isEmbedding_realCliffordSpinToUnitsContinuousMonoidHom n) x = _
   exact (realCliffordSpinToUnitsContinuousMonoidHom n).equivRangeOfIsEmbedding_apply
@@ -123,6 +125,9 @@ noncomputable def realCliffordSpinToSpecialOrthogonalRange (n : ℕ) :
       have h := (QuadraticMap.isEmbedding_specialOrthogonalToGeneralLinear
           (realCliffordForm n 0)).continuous.comp
         (continuous_spinToSpecialOrthogonal_pi (realCliffordForm n 0))
+      -- The continuity theorem is elaborated with `Classical.decEq`, whereas this concrete
+      -- `Fin`-indexed target uses its canonical decidable-equality instance. The two resulting
+      -- coordinate inclusions are propositionally equal because decidable equality is subsingleton.
       have hdec : Classical.decEq (Fin n) = instDecidableEqFin n := Subsingleton.elim _ _
       change Continuous (fun x ↦
         @QuadraticMap.specialOrthogonalToGeneralLinear ℝ inferInstance (Fin n) inferInstance
@@ -150,10 +155,6 @@ theorem realCliffordSpinToSpecialOrthogonalRange_apply
         ⟨spinToSpecialOrthogonal (realCliffordForm n 0)
             ((realCliffordSpinContinuousMulEquivUnitsRange n).symm x), rfl⟩⟩ := by
   apply Subtype.ext
-  change QuadraticMap.specialOrthogonalToGeneralLinear
-    (show QuadraticForm ℝ (Fin n → ℝ) from realCliffordForm n 0)
-    (spinToSpecialOrthogonal (realCliffordForm n 0)
-      ((realCliffordSpinContinuousMulEquivUnitsRange n).symm x)) = _
   rfl
 
 /-- On the canonical range representative of a Spin element, the carrier homomorphism is the
