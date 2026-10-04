@@ -15,11 +15,12 @@ Rotating a planar grid diagram by a half-turn is an isotopy of the link it draws
 preserves the convention that vertical segments cross over horizontal ones. On the torus the
 half-turn moves the square named by its lower-left corner `(c, r)` to the square named by
 `(c.rev, r.rev)`, which is `GridDiagram.rotate`, and it moves the grid point `(c, r)` to the grid
-point with both coordinates negated modulo `n`, which is `GridState.halfTurn`. A half-turn keeps
-the south-west and north-east corners of a rectangle at the south-west and north-east corners,
-so it carries the rectangles counted by the unblocked differential of `G` to those counted by
-the unblocked differential of `G.rotate` (`GridRectangleBetween.halfTurnEquiv`), together with
-the markings they cover.
+point with both coordinates negated modulo `n`, which is `GridState.halfTurn`. A half-turn
+exchanges the south-west and north-east corners of a rectangle (and likewise the north-west and
+south-east ones), so the pair of corners lying on the source state is again the south-west and
+north-east pair. It therefore carries the rectangles counted by the unblocked differential of
+`G` to those counted by the unblocked differential of `G.rotate`
+(`GridRectangleBetween.halfTurnEquiv`), together with the markings they cover.
 
 The variables `V_c` of `GC⁻` are indexed by the columns of the `O`-markings, and the half-turn
 moves the `O`-marking of column `c` to column `c.rev`. So the map on `GC⁻` that moves each grid
@@ -73,27 +74,24 @@ half-turned state. -/
 @[simp]
 theorem halfTurnRenameEquiv_apply (c : GridChainMinus R n) (y : GridState n) :
     halfTurnRenameEquiv R c y = rename Fin.rev (c y.halfTurn) := by
-  rw [halfTurnRenameEquiv, LinearEquiv.trans_apply, Finsupp.domLCongr_apply,
-    Finsupp.domCongr_apply, Finsupp.equivMapDomain_apply, Function.Involutive.toPerm_symm,
-    Function.Involutive.coe_toPerm, Finsupp.mapRange.linearEquiv_apply, Finsupp.mapRange_apply,
-    RingEquiv.toSemilinearEquiv_apply, AlgEquiv.coe_toRingEquiv, renameEquiv_apply,
-    show (⇑(Fin.revPerm (n := n)) : Fin n → Fin n) = Fin.rev from funext Fin.revPerm_apply]
+  rw [halfTurnRenameEquiv]
+  rfl
 
 /-- The half-turn sends a generator with coefficient `a` to the half-turned generator with the
 renamed coefficient. -/
 @[simp]
 theorem halfTurnRenameEquiv_single (x : GridState n) (a : MvPolynomial (Fin n) R) :
     halfTurnRenameEquiv R (Finsupp.single x a) = Finsupp.single x.halfTurn (rename Fin.rev a) := by
-  rw [halfTurnRenameEquiv, LinearEquiv.trans_apply, Finsupp.mapRange.linearEquiv_apply,
-    Finsupp.mapRange_single, Finsupp.domLCongr_single, Function.Involutive.coe_toPerm,
-    RingEquiv.toSemilinearEquiv_apply, AlgEquiv.coe_toRingEquiv, renameEquiv_apply,
-    show (⇑(Fin.revPerm (n := n)) : Fin n → Fin n) = Fin.rev from funext Fin.revPerm_apply]
+  ext y : 1
+  rw [halfTurnRenameEquiv_apply]
+  simp only [Finsupp.single_apply, GridState.halfTurn_involutive.eq_iff]
+  split_ifs <;> simp
 
 /-- The half-turn of chains is an involution. -/
 @[simp]
 theorem halfTurnRenameEquiv_halfTurnRenameEquiv (c : GridChainMinus R n) :
     halfTurnRenameEquiv R (halfTurnRenameEquiv R c) = c := by
-  ext y
+  ext y : 1
   rw [halfTurnRenameEquiv_apply, halfTurnRenameEquiv_apply, GridState.halfTurn_halfTurn,
     rename_rename, Fin.rev_involutive.comp_self, rename_id_apply]
 

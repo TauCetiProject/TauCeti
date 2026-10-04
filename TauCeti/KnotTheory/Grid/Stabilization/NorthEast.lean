@@ -70,16 +70,6 @@ variable {n : ℕ} (G : GridDiagram n) (s : Fin n) (R : Type*) [CommRing R]
 local notation "A" => MvPolynomial (Fin n) R
 local notation "S" => MvPolynomial (Fin (n + 1)) R
 
-/-- The renamings of the variables along `Fin.rev` on both sides of the south-west stabilization
-of the half-turned diagram combine with its merging of variables along `s.rev.predAbove` into the
-merging along `s.predAbove`. -/
-private theorem rename_revPerm_rename_predAbove_rename_revPerm (p : S) :
-    rename Fin.revPerm (rename s.rev.predAbove (rename Fin.revPerm p)) = rename s.predAbove p := by
-  have h : (Fin.revPerm ∘ s.rev.predAbove) ∘ Fin.revPerm (n := n + 1) = s.predAbove := by
-    ext q : 1
-    simp only [Function.comp_apply, Fin.revPerm_apply, Fin.rev_predAbove, Fin.rev_rev]
-  rw [rename_rename, rename_rename, h]
-
 /-- **The chain map of the north-east `X`-stabilization.** On a chain `c` of
 `GC⁻(G.stabilizeX s.succ (G.X s).succ s)` it is the half-turn of the south-west stabilization
 chain map of `G.rotate` at the column `s.rev`, applied to the half-turn of `c`. It is semilinear
@@ -92,7 +82,7 @@ noncomputable def stabilizeXSuccChainMap :
   map_add' c d := by simp only [map_add]
   map_smul' p c := by
     simp only [map_smulₛₗ, RingHom.coe_coe, AlgEquiv.coe_toRingEquiv, renameEquiv_apply,
-      rename_revPerm_rename_predAbove_rename_revPerm]
+      rename_rename, Function.comp_def, Fin.revPerm_apply, Fin.rev_predAbove, Fin.rev_rev]
 
 /-- `stabilizeXSuccChainMap` conjugates the south-west stabilization chain map of `G.rotate` by
 the half-turns. -/
@@ -157,7 +147,7 @@ noncomputable def stabilizeXSuccHomologyMap :
     congr 1
     simp only [RingHom.coe_coe, AlgEquiv.toRingEquiv_symm, renameEquiv_symm,
       Fin.revPerm_symm, AlgEquiv.coe_toRingEquiv, renameEquiv_apply,
-      rename_revPerm_rename_predAbove_rename_revPerm]
+      rename_rename, Function.comp_def, Fin.revPerm_apply, Fin.rev_predAbove, Fin.rev_rev]
 
 /-- `stabilizeXSuccHomologyMap` sends the class of a cycle `z` to the class of
 `stabilizeXSuccChainMap z`. -/
