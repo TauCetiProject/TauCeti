@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuo
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.DerivIntegrable
 public import TauCeti.MeasureTheory.Function.AbsolutelyContinuous
 public import TauCeti.MeasureTheory.Integral.IntervalIntegral.LebesgueDifferentiationThm
+public import TauCeti.Topology.Order.Interval
 
 /-!
 # The metric derivative of a curve
@@ -43,8 +44,8 @@ derivative, and the supremum `m` of the absolute values of these derivatives bou
 `edist (γ s) (γ u)` by `∫⁻ r in Ι s u, m r`. Every difference quotient of `γ` dominates those of
 the profiles, so `m` is a lower bound for the `liminf`, while the Lebesgue differentiation theorem
 makes `m` an upper bound for the `limsup`. Finiteness of `∫⁻ m` comes from the variation function
-of `γ`, a monotone real function whose derivative is integrable and dominates every difference
-quotient of `γ`.
+of `γ`, a monotone real function whose increments dominate the distances along `γ`, so that its
+integrable derivative bounds the metric derivative almost everywhere.
 
 ## Main definitions
 
@@ -82,15 +83,6 @@ open Filter MeasureTheory Set Topology
 open scoped ENNReal NNReal Interval
 
 namespace TauCeti
-
-/-- A point of `[a, b]` other than its endpoints has `[a, b]` as a neighbourhood. -/
-private lemma uIcc_mem_nhds_of_ne {a b t : ℝ} (ht : t ∈ uIcc a b) (ha : t ≠ a) (hb : t ≠ b) :
-    uIcc a b ∈ 𝓝 t := by
-  rcases le_total a b with hab | hab
-  · rw [uIcc_of_le hab] at ht ⊢
-    exact Icc_mem_nhds (lt_of_le_of_ne ht.1 ha.symm) (lt_of_le_of_ne ht.2 hb)
-  · rw [uIcc_of_ge hab] at ht ⊢
-    exact Icc_mem_nhds (lt_of_le_of_ne ht.1 hb.symm) (lt_of_le_of_ne ht.2 ha)
 
 section PseudoEMetricSpace
 

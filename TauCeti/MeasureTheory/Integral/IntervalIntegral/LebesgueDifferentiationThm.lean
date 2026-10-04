@@ -12,9 +12,10 @@ public import Mathlib.MeasureTheory.Covering.OneDim
 
 Mathlib's `IntervalIntegrable.ae_hasDerivAt_integral` differentiates the primitive of an
 interval-integrable Bochner integrand. This file records the companion statement for an extended
-nonnegative density and the lower Lebesgue integral: if `f : ℝ → ℝ≥0∞` has finite lower integral
-over `Ι a b`, then at almost every point `t` of `[a, b]` the averages
-`(∫⁻ r in Ι t s, f r) / edist s t` tend to `f t` as `s → t` with `s ≠ t`, from either side.
+nonnegative density and the lower Lebesgue integral: if `f : ℝ → ℝ≥0∞` is almost everywhere
+measurable on `Ι a b` with finite lower integral there, then at almost every point `t` of `[a, b]`
+the averages `(∫⁻ r in Ι t s, f r) / edist s t` tend to `f t` as `s → t` with `s ≠ t`, from either
+side.
 
 Stating it for `ℝ≥0∞`-valued densities avoids choosing a real representative of `f` and the
 `ENNReal.toReal` bookkeeping that comes with it, which is the convenient form when the density
@@ -23,7 +24,8 @@ bounds a distance from above, as for the metric derivative of a curve.
 ## Main results
 
 * `TauCeti.ae_tendsto_setLIntegral_uIoc_div`: the one-dimensional Lebesgue differentiation theorem
-  for an extended nonnegative density with finite lower integral on an interval.
+  for an extended nonnegative density which is almost everywhere measurable with finite lower
+  integral on an interval.
 -/
 
 public section
