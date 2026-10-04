@@ -85,7 +85,6 @@ theorem chartAt_chartedSpaceComap_apply (x y : M) :
 
 /-- The pulled-back extended chart at `x` reads `y` as the extended chart of `B` at `p x` reads
 `p y`. -/
-@[simp]
 theorem extChartAt_chartedSpaceComap_apply (x y : M) :
     letI := hp.chartedSpaceComap (H := H)
     extChartAt I x y = extChartAt I (p x) (p y) := by
