@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.ParametricIntegral
 public import Mathlib.Analysis.Calculus.ParametricIntervalIntegral
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
+public import TauCeti.Topology.Compactness.Normed
 
 /-!
 # Compact-parameter integration
@@ -230,28 +231,6 @@ theorem _root_.ContDiffOn.fderiv_partial_of_isOpen {G : Type*} [NormedAddCommGro
   exact (ContDiffAt.fderiv (f := fun (q : E × P) (x : E) ↦ F (x, q.2)) hFp contDiffAt_fst
     le_rfl).contDiffWithinAt
 
-omit [NormedSpace ℝ E] [NormedSpace ℝ P] [SecondCountableTopology α] [MeasurableSpace α]
-  [OpensMeasurableSpace α] in
-/-- A function continuous on an open set `W ⊆ E × P` is bounded on `{x} × ι(α)`, uniformly for
-`x` near a point `x₀` with `{x₀} × ι(α) ⊆ W`. -/
-private theorem exists_eventually_norm_le {H : Type*} [NormedAddCommGroup H] {F : E × P → H}
-    (hι : Continuous ι) (hW : IsOpen W) (hF : ContinuousOn F W) {x₀ : E}
-    (hx₀ : ∀ y, (x₀, ι y) ∈ W) :
-    ∃ C, ∀ᶠ x in 𝓝 x₀, ∀ y, (x, ι y) ∈ W ∧ ‖F (x, ι y)‖ ≤ C := by
-  obtain ⟨C, hC⟩ := isCompact_univ.exists_bound_of_continuousOn
-    (hF.comp_continuous (continuous_const.prodMk hι) hx₀).continuousOn
-  refine ⟨C + 1, ?_⟩
-  have h := isCompact_univ.eventually_forall_of_forall_eventually (x₀ := x₀)
-    (P := fun x y ↦ (x, ι y) ∈ W ∧ ‖F (x, ι y)‖ ≤ C + 1) fun y _ ↦ by
-      have hmem : (x₀, ι y) ∈ W := hx₀ y
-      have hlt : ∀ᶠ z in 𝓝 (x₀, ι y), ‖F z‖ < C + 1 :=
-        (hF.continuousAt (hW.mem_nhds hmem)).norm.eventually_lt_const
-          (lt_of_le_of_lt (hC y (mem_univ y)) (lt_add_one C))
-      have hφ : Continuous fun z : E × α ↦ (z.1, ι z.2) := by fun_prop
-      exact (hφ.tendsto (x₀, y)).eventually ((hW.eventually_mem hmem).and hlt) |>.mono
-        fun z hz ↦ ⟨hz.1, hz.2.le⟩
-  simpa only [mem_univ, true_imp_iff] using h
-
 omit [NormedSpace ℝ E] [NormedSpace ℝ P] in
 /-- An integrable weight on a compact space times a function continuous along `{x} × ι(α)` is
 integrable. -/
@@ -271,7 +250,7 @@ theorem continuousAt_integral_smul_of_continuousOn {G : Type*} [NormedAddCommGro
     [NormedSpace ℝ G] {F : E × P → G} (hg : Integrable g μ) (hι : Continuous ι) (hW : IsOpen W)
     (hF : ContinuousOn F W) {x₀ : E} (hx₀ : ∀ y, (x₀, ι y) ∈ W) :
     ContinuousAt (fun x ↦ ∫ y, g y • F (x, ι y) ∂μ) x₀ := by
-  obtain ⟨C, hC⟩ := exists_eventually_norm_le hι hW hF hx₀
+  obtain ⟨C, hC⟩ := exists_eventually_norm_le_compact_family hι hW hF hx₀
   refine continuousAt_of_dominated (bound := fun y ↦ ‖g y‖ * C) ?_ ?_ (hg.norm.mul_const C)
     (ae_of_all _ fun y ↦ ?_)
   · filter_upwards [hC] with x hx
@@ -298,7 +277,7 @@ theorem hasFDerivAt_integral_smul_of_contDiffOn {G : Type*} [NormedAddCommGroup 
   have hdiff : ∀ p ∈ W, HasFDerivAt (fun x ↦ F (x, p.2)) (D p) p.1 := fun p hp ↦
     (((hF.contDiffAt (hW.mem_nhds hp)).differentiableAt one_ne_zero).comp p.1
       (differentiableAt_id.prodMk (differentiableAt_const p.2))).hasFDerivAt
-  obtain ⟨C, hC⟩ := exists_eventually_norm_le hι hW hD hx₀
+  obtain ⟨C, hC⟩ := exists_eventually_norm_le_compact_family hι hW hD hx₀
   refine hasFDerivAt_integral_of_dominated_of_fderiv_le (F' := fun x y ↦ g y • D (x, ι y))
     (bound := fun y ↦ ‖g y‖ * C) hC ?_
     (integrable_smul_of_continuousOn hg hι hF.continuousOn hx₀)

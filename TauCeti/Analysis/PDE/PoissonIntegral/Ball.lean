@@ -151,13 +151,19 @@ theorem harmonicOnNhd_ballPoissonIntegral {g : sphere (0 : EuclideanSpace ℝ (F
   have hU : ∀ x ∈ (sphere (0 : EuclideanSpace ℝ (Fin n)) 1)ᶜ,
       ∀ y : sphere (0 : EuclideanSpace ℝ (Fin n)) 1, (x, (y : EuclideanSpace ℝ (Fin n))) ∈
         {p : EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) | p.1 ≠ p.2} :=
-    fun x hx y hxy ↦ hx (by rw [show x = y from hxy]; exact y.2)
+    fun x hx y hxy ↦ hx (by
+      change x = (y : EuclideanSpace ℝ (Fin n)) at hxy
+      rw [hxy]
+      exact y.2)
   have h := harmonicOnNhd_integral_smul_of_contDiffOn hg continuous_subtype_val
     (isOpen_ne_fun continuous_fst continuous_snd) contDiffOn_ballPoissonKernel
     isClosed_sphere.isOpen_compl hU fun y ↦
       (harmonicOnNhd_ballPoissonKernel_left (norm_eq_of_mem_sphere y)).mono
         fun x hx ↦ hU x hx y
-  rw [show ballPoissonIntegral g = _ from funext (ballPoissonIntegral_def g)]
+  have hP : ballPoissonIntegral g = fun x ↦
+      ∫ y : sphere (0 : EuclideanSpace ℝ (Fin n)) 1, ballPoissonKernel n x y * g y
+        ∂volume.toSphere := funext (ballPoissonIntegral_def g)
+  rw [hP]
   simpa only [smul_eq_mul, mul_comm (g _)] using h
 
 /-- The Poisson integral of zero boundary data is zero. -/

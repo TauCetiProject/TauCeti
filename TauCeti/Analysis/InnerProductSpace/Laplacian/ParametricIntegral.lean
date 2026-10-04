@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
 public import TauCeti.Analysis.Calculus.ParametricIntegral
+public import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 
 /-!
 # The Laplacian of an integral over a compact parameter space
@@ -44,15 +45,6 @@ variable {E P G α : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [Fi
   [TopologicalSpace α] [CompactSpace α] [SecondCountableTopology α] [MeasurableSpace α]
   [OpensMeasurableSpace α] {μ : Measure α} {ι : α → P} {g : α → ℝ} {W : Set (E × P)}
   {U : Set E}
-
-omit [CompleteSpace G] in
-/-- The Laplacian of a function is the trace of its second Fréchet derivative, read off along an
-orthonormal basis as a continuous linear functional of `fderiv ℝ (fderiv ℝ f) x`. -/
-private theorem laplacian_eq_traceL (f : E → G) (x : E) :
-    Δ f x = (∑ i, (ContinuousLinearMap.apply ℝ G (stdOrthonormalBasis ℝ E i)).comp
-      (ContinuousLinearMap.apply ℝ (E →L[ℝ] G) (stdOrthonormalBasis ℝ E i)))
-        (fderiv ℝ (fderiv ℝ f) x) := by
-  simp [laplacian_eq_iteratedFDeriv_stdOrthonormalBasis, iteratedFDeriv_two_apply]
 
 /-- **The Laplacian commutes with integration over a compact parameter space.** If `F` is `C²`
 on an open set `W ⊆ E × P` and `U × ι(α) ⊆ W` for an open set `U`, then at every point of `U` the
