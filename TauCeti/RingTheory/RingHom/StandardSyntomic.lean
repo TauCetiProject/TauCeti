@@ -18,6 +18,9 @@ Localization on either side and arbitrary base change preserve the relative dime
 Consequently the property of being locally standard syntomic is local on both source and
 base, giving the affine input for syntomic morphisms of schemes.
 
+Use `TauCeti.IsStandardSyntomicOfRelativeDimension n f` for the ring-map predicate;
+given a proof `hf`, its consequences are available as `hf.flat` and `hf.finitePresentation`.
+
 The ring-homomorphism bridge follows Mathlib's `RingHom.IsStandardSmoothOfRelativeDimension`
 in `Mathlib/RingTheory/RingHom/StandardSmooth.lean`, by Christian Merten. The underlying
 complete-intersection definition follows the Stacks Project, *Syntomic morphisms*.
