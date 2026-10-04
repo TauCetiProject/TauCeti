@@ -51,6 +51,8 @@ decomposition follows from the regular one.
   class of rank two is the hyperbolic class.
 * `QuadraticForm.exists_equivalent_hyperbolicPresentation_prod`: the decomposition read as an
   isometry of quadratic forms.
+* `QuadraticForm.mem_unitValueSet_iff_not_anisotropic_mk_rankOne_add`: a regular form represents
+  a unit `c` exactly when adjoining `⟨-c⟩` to its class gives an isotropic class.
 
 ## References
 
@@ -387,6 +389,24 @@ theorem _root_.QuadraticForm.anisotropic_of_finrank_le_one (Q : QuadraticForm K 
     (hQ : Q.Nondegenerate) (hV : Module.finrank K V ≤ 1) : Q.Anisotropic := by
   rw [← QuadraticForm.anisotropic_formClass Q hQ]
   exact RegularFormClass.anisotropic_of_rank_le_one (by rwa [rank_formClass])
+
+/-- A regular form represents a unit `c` exactly when adjoining the line `⟨-c⟩` to its isometry
+class gives an isotropic class. This reduces questions about represented values to the isotropy
+criteria, which are stated in terms of the invariants of a class. -/
+theorem _root_.QuadraticForm.mem_unitValueSet_iff_not_anisotropic_mk_rankOne_add
+    (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) (c : Kˣ) :
+    c ∈ Q.unitValueSet ↔
+      ¬RegularFormClass.Anisotropic
+        (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => -c⟩ + formClass Q hQ) := by
+  obtain ⟨⟨n, w⟩, hw⟩ := exists_presentedForm_equivalent Q hQ
+  -- The tail of `⟨-c, w₀, …⟩` is `w`; the rewrite goes through the dependent rank index of the
+  -- presentation, which `simp` cannot do.
+  have htail : (fun i : Fin n => (Fin.cons (-c) w : Fin (n + 1) → Kˣ) i.succ) = w :=
+    funext fun i => Fin.cons_succ _ _ i
+  have hsplit := RegularFormClass.mk_succ_eq_mk_rankOne_add (Fin.cons (-c) w : Fin (n + 1) → Kˣ)
+  rw [htail, Fin.cons_zero] at hsplit
+  rw [formClass_mk Q hQ ⟨n, w⟩ hw, hw.unitValueSet_eq, ← hsplit, RegularFormClass.anisotropic_mk,
+    not_anisotropic_presentedForm_succ_iff, htail, Fin.cons_zero, neg_neg]
 
 /-- **Witt decomposition** for a regular form: a nondegenerate quadratic form on a
 finite-dimensional space is isometric to the orthogonal sum of `m` hyperbolic planes and an
