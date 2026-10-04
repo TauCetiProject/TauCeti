@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Combinatorics.SimpleGraph.Degree
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.SimpleGraph
-public import TauCeti.LinearAlgebra.RootSystem.FiniteType.SimplyLaced
 public import TauCeti.RepresentationTheory.Quiver.EulerForm
 public import TauCeti.RepresentationTheory.Quiver.FiniteRepType.ExtendedDynkin
 public import TauCeti.RepresentationTheory.Quiver.FiniteRepType.Obstructions
