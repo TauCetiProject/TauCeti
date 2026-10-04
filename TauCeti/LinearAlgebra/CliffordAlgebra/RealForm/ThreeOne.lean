@@ -215,18 +215,14 @@ theorem realCliffordThreeOne_reverseEven_mul_self_eq_one_iff_det_eq_one
     CliffordAlgebra.reverseEven (realCliffordForm 3 1) x * x = 1 ↔
       (realCliffordThreeOneEvenEquivComplexMatrix x).det = 1 := by
   let A := realCliffordThreeOneEvenEquivComplexMatrix x
+  rw [← Matrix.adjugate_mul_self_eq_one_iff_det_eq_one A]
   constructor
   · intro h
     have hm := congrArg realCliffordThreeOneEvenEquivComplexMatrix h
-    rw [map_mul, map_one, realCliffordThreeOneEvenEquivComplexMatrix_reverseEven,
-      Matrix.adjugate_mul] at hm
-    have h00 := congrArg (fun M : Matrix (Fin 2) (Fin 2) ℂ => M 0 0) hm
-    simpa [A] using h00
-  · intro hA
+    simpa [A] using hm
+  · intro h
     apply realCliffordThreeOneEvenEquivComplexMatrix.injective
-    rw [map_mul, map_one, realCliffordThreeOneEvenEquivComplexMatrix_reverseEven]
-    change Matrix.adjugate A * A = 1
-    rw [Matrix.adjugate_mul, hA, one_smul]
+    simpa [A] using h
 
 end TauCeti
 
