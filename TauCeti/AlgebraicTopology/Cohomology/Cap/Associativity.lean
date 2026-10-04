@@ -92,6 +92,11 @@ lemma capChain_alexanderWhitneyDiagonal_assoc
       ((toSSet.obj X).chainComplex (𝟙_ (ModuleCat.{w} k))).X r :=
     (toSSet.obj X).ιChainComplex
       ((toSSet.obj X).map (SimplexCategory.subinterval (p + q) r (by omega)).op σ)
+  -- The goal is now `c' (ψ (b' (φ (a' x)))) = c' (ψ (b' x) * φ (a' 1))`, where `a'`, `b'`, `c'`
+  -- are the three face inclusions `ιChainComplex (X.map (subinterval _ _ _).op σ)`.  This `change`
+  -- only refolds `φ (a' _)` and `ψ (b' _)` into the composites `a = a' ≫ φ`, `b = b' ≫ ψ` (and
+  -- names `c = c'`), i.e. `ModuleCat.hom_comp` read backwards; `rw [← ModuleCat.comp_apply]`
+  -- cannot do this: its reversed pattern `?f (?g ?y)` first matches the outer `c' (ψ _)`.
   change c (b (a x)) = c (b x * a 1)
   have apply_eq {M : ModuleCat.{w} k} (f : 𝟙_ (ModuleCat.{w} k) ⟶ M) (y : k) :
       f y = y • f 1 := by
