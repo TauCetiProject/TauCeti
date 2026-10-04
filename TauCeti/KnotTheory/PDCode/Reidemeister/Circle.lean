@@ -79,13 +79,15 @@ theorem adjoinKink_edgePair_val (D : PDCode n) (b : Bool) :
     (D.adjoinKink b).overPair = Fin.snoc D.overPair b := (rfl)
 
 /-- The old crossings keep their slots. -/
-@[simp] theorem adjoinKink_crossing_castSucc (D : PDCode n) (b : Bool) (i : Fin n)
+-- Prefer the block formula to the generic `crossing_apply` expansion.
+@[simp 1100] theorem adjoinKink_crossing_castSucc (D : PDCode n) (b : Bool) (i : Fin n)
     (s : Fin 4) :
     (D.adjoinKink b).crossing i.castSucc s = halfEdgeSuccEquiv n (.inl (D.crossing i s)) := by
   simp [crossing_apply, Equiv.permCongr_apply]
 
 /-- The slots of the new crossing are the new half-edges. -/
-@[simp] theorem adjoinKink_crossing_last (D : PDCode n) (b : Bool) (s : Fin 4) :
+-- Prefer the block formula to the generic `crossing_apply` expansion.
+@[simp 1100] theorem adjoinKink_crossing_last (D : PDCode n) (b : Bool) (s : Fin 4) :
     (D.adjoinKink b).crossing (Fin.last n) s = halfEdgeSuccEquiv n (.inr s) := by
   simp [crossing_apply, Equiv.permCongr_apply]
 

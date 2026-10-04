@@ -147,7 +147,8 @@ circle, including a circle in an otherwise empty diagram. -/
 
 /-- An isolated kink in an otherwise empty diagram has Jones polynomial one, for either
 orientation and either crossing sign. -/
-@[simp] theorem jonesPolynomial_adjoinKink_empty (o b : Bool) :
+-- Evaluate this special case before the general `jonesPolynomial_adjoinKink` rewrite.
+@[simp 1100] theorem jonesPolynomial_adjoinKink_empty (o b : Bool) :
     (empty.adjoinKink o b).jonesPolynomial = 1 := by
   rw [jonesPolynomial_adjoinKink, jonesPolynomial_eq_pow]
   simp [← crossinglessComponents_card]
