@@ -166,6 +166,9 @@ theorem finiteAdeleNorm_comp (M : Type*) [Field M] [NumberField M] [Algebra L M]
   let _ : p.1.1.asIdeal.LiesOver v.asIdeal := p.1.2
   let _ : p.2.1.asIdeal.LiesOver v.asIdeal :=
     Ideal.LiesOver.trans p.2.1.asIdeal p.1.1.asIdeal v.asIdeal
+  -- The `K`-algebra structure on the completion at `(e p).1` depends on the proof `(e p).2`, so
+  -- rewriting only the projection `(e p).1` fails (the motive is not type correct); rewrite the
+  -- whole subtype element instead.
   rw [show e p = ⟨p.2.1, inferInstance⟩ from
     Subtype.ext (HeightOneSpectrum.liesOverTowerEquiv_apply (𝓞 L) v p)]
   refine @Algebra.norm_norm _ _ _ _ _ _ _ _ _ _ ?_ _ _
@@ -247,6 +250,8 @@ theorem infiniteAdeleNorm_comp (M : Type*) [Field M] [NumberField M] [Algebra L 
   let _ : p.2.1.LiesOver p.1.1 := p.2.2
   let _ : p.1.1.LiesOver v := p.1.2
   let _ : p.2.1.LiesOver v := LiesOver.trans p.2.1 p.1.1 v
+  -- As in `finiteAdeleNorm_comp`, the completion algebra at `(e p).1` depends on `(e p).2`, so
+  -- rewrite the whole subtype element rather than its projection.
   rw [show e p = ⟨p.2.1, inferInstance⟩ from
     Subtype.ext (InfinitePlace.liesOverTowerEquiv_apply v p)]
   refine @Algebra.norm_norm _ _ _ _ _ _ _ _ _ _ ?_ _ _
