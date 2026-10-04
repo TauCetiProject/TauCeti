@@ -25,11 +25,11 @@ determine an `E`-valued weak gradient.
 
 ## Main declarations
 
-* `TauCeti.exists_real_lp_lineDeriv_of_memSobolev_zero`: an order-zero Bessel-potential
+* `MeasureTheory.Lp.exists_real_lp_lineDeriv_of_memSobolev_zero`: an order-zero Bessel-potential
   representative of a derivative of a real `Lᵖ` function may be chosen real.
-* `TauCeti.exists_real_l2_lineDeriv_of_memSobolev_one`: every directional derivative of a real
-  `H^{1,2}` function has a real `L²` representative.
-* `TauCeti.exists_w1p_value_eq_of_memSobolev_one`: a real `L²` function whose associated
+* `MeasureTheory.Lp.exists_real_l2_lineDeriv_of_memSobolev_one`: every directional derivative of a
+  real `H^{1,2}` function has a real `L²` representative.
+* `MeasureTheory.Lp.exists_w1p_value_eq_of_memSobolev_one`: a real `L²` function whose associated
   tempered distribution lies in `H^{1,2}` belongs to weak-derivative `W^{1,2}`.
 
 ## References
@@ -42,9 +42,9 @@ public section
 
 noncomputable section
 
-namespace TauCeti
+namespace MeasureTheory.Lp
 
-open MeasureTheory Module TemperedDistribution TopologicalSpace
+open Module TauCeti TemperedDistribution TopologicalSpace
 open scoped ENNReal LineDeriv SchwartzMap
 
 variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
@@ -179,4 +179,4 @@ theorem exists_w1p_value_eq_of_memSobolev_one
   rw [W1p.value_mk]
   exact .of_forall fun x => coeFn_castLpₗᵢ hvolume u x
 
-end TauCeti
+end MeasureTheory.Lp
