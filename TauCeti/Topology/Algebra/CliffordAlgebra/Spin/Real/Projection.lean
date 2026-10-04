@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Closed
+import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 
 /-!
 # The real Spin projection on closed unit-group carriers
@@ -30,8 +31,9 @@ to the Lie functor without changing either carrier.
   compact real Spin group with the source range carrier as a topological group.
 * `TauCeti.CliffordAlgebra.realCliffordSpinToSpecialOrthogonalRange` is the continuous
   homomorphism between the closed real Spin and special-orthogonal carriers.
-* `TauCeti.CliffordAlgebra.realCliffordSpinToSpecialOrthogonalRange_apply_toUnits` computes it on
-  the canonical representative of every Spin element.
+* `TauCeti.CliffordAlgebra.realCliffordSpinToSpecialOrthogonalRange_apply` computes it on an
+  arbitrary source carrier, and `realCliffordSpinToSpecialOrthogonalRange_apply_toUnits`
+  specializes the formula to the canonical representative of a Spin element.
 * `TauCeti.CliffordAlgebra.realCliffordSpinToSpecialOrthogonalRange_surjective` proves that the
   carrier homomorphism is onto.
 
@@ -62,13 +64,21 @@ theorem isEmbedding_realCliffordSpinToUnits (n : ℕ) :
   exact (hcontinuous.isClosedEmbedding
     (spinGroup.toUnits_injective (Q := realCliffordForm n 0))).isEmbedding
 
+private def realCliffordSpinToUnitsContinuousMonoidHom (n : ℕ) :
+    spinGroup (realCliffordForm n 0) →ₜ* (CliffordAlgebra (realCliffordForm n 0))ˣ :=
+  ⟨spinGroup.toUnits, (isEmbedding_realCliffordSpinToUnits n).continuous⟩
+
+private theorem isEmbedding_realCliffordSpinToUnitsContinuousMonoidHom (n : ℕ) :
+    Topology.IsEmbedding (realCliffordSpinToUnitsContinuousMonoidHom n) := by
+  change Topology.IsEmbedding (spinGroup.toUnits (Q := realCliffordForm n 0))
+  exact isEmbedding_realCliffordSpinToUnits n
+
 /-- The compact real Spin group is topologically isomorphic to its range in the Clifford units. -/
 noncomputable def realCliffordSpinContinuousMulEquivUnitsRange (n : ℕ) :
     spinGroup (realCliffordForm n 0) ≃ₜ*
       MonoidHom.range (spinGroup.toUnits (Q := realCliffordForm n 0)) :=
-  ContinuousMulEquiv.mk'
-    ((isEmbedding_realCliffordSpinToUnits n).toHomeomorph)
-    fun x y ↦ Subtype.ext (map_mul (spinGroup.toUnits (Q := realCliffordForm n 0)) x y)
+  (realCliffordSpinToUnitsContinuousMonoidHom n).equivRangeOfIsEmbedding
+    (isEmbedding_realCliffordSpinToUnitsContinuousMonoidHom n)
 
 /-- The topological equivalence with the range sends a Spin element to its canonical unit. -/
 @[simp]
@@ -76,8 +86,10 @@ theorem realCliffordSpinContinuousMulEquivUnitsRange_apply
     (n : ℕ) (x : spinGroup (realCliffordForm n 0)) :
     realCliffordSpinContinuousMulEquivUnitsRange n x =
       ⟨spinGroup.toUnits x, ⟨x, rfl⟩⟩ := by
-  simp only [realCliffordSpinContinuousMulEquivUnitsRange]
-  rfl
+  change (realCliffordSpinToUnitsContinuousMonoidHom n).equivRangeOfIsEmbedding
+    (isEmbedding_realCliffordSpinToUnitsContinuousMonoidHom n) x = _
+  exact (realCliffordSpinToUnitsContinuousMonoidHom n).equivRangeOfIsEmbedding_apply
+    (isEmbedding_realCliffordSpinToUnitsContinuousMonoidHom n) x
 
 /-- The inverse topological equivalence sends a canonical range representative back to its Spin
 element. -/
@@ -107,21 +119,45 @@ noncomputable def realCliffordSpinToSpecialOrthogonalRange (n : ℕ) :
         ((QuadraticMap.specialOrthogonalToGeneralLinear
           (show QuadraticForm ℝ (Fin n → ℝ) from realCliffordForm n 0)).comp
             (spinToSpecialOrthogonal (realCliffordForm n 0))) := by
-      apply Continuous.of_coeHom_comp
-      apply continuous_matrix
-      intro i j
-      simpa only [MonoidHom.comp_apply, Units.coeHom_apply,
-        QuadraticMap.specialOrthogonalToGeneralLinear_apply,
-        coe_spinToSpecialOrthogonal_apply, Function.comp_def] using
-        (continuous_apply i).comp
-          (continuous_spinVectorAction_apply
-            (realCliffordForm n 0) (Pi.single j 1))
+      classical
+      have h := (QuadraticMap.isEmbedding_specialOrthogonalToGeneralLinear
+          (realCliffordForm n 0)).continuous.comp
+        (continuous_spinToSpecialOrthogonal_pi (realCliffordForm n 0))
+      have hdec : Classical.decEq (Fin n) = instDecidableEqFin n := Subsingleton.elim _ _
+      change Continuous (fun x ↦
+        @QuadraticMap.specialOrthogonalToGeneralLinear ℝ inferInstance (Fin n) inferInstance
+          (Classical.decEq (Fin n)) ℝ inferInstance inferInstance (realCliffordForm n 0)
+          (spinToSpecialOrthogonal (realCliffordForm n 0) x)) at h
+      rw [hdec] at h
+      change Continuous (fun x ↦
+        @QuadraticMap.specialOrthogonalToGeneralLinear ℝ inferInstance (Fin n) inferInstance
+          (instDecidableEqFin n) ℝ inferInstance inferInstance (realCliffordForm n 0)
+          (spinToSpecialOrthogonal (realCliffordForm n 0) x))
+      exact h
     exact hprojection.comp
       (realCliffordSpinContinuousMulEquivUnitsRange n).symm.continuous
 
+/-- The carrier homomorphism applies the usual Spin projection to the source representative
+selected by the inverse range equivalence. -/
+@[simp]
+theorem realCliffordSpinToSpecialOrthogonalRange_apply
+    (n : ℕ) (x : MonoidHom.range (spinGroup.toUnits (Q := realCliffordForm n 0))) :
+    realCliffordSpinToSpecialOrthogonalRange n x =
+      ⟨QuadraticMap.specialOrthogonalToGeneralLinear
+          (show QuadraticForm ℝ (Fin n → ℝ) from realCliffordForm n 0)
+          (spinToSpecialOrthogonal (realCliffordForm n 0)
+            ((realCliffordSpinContinuousMulEquivUnitsRange n).symm x)),
+        ⟨spinToSpecialOrthogonal (realCliffordForm n 0)
+            ((realCliffordSpinContinuousMulEquivUnitsRange n).symm x), rfl⟩⟩ := by
+  apply Subtype.ext
+  change QuadraticMap.specialOrthogonalToGeneralLinear
+    (show QuadraticForm ℝ (Fin n → ℝ) from realCliffordForm n 0)
+    (spinToSpecialOrthogonal (realCliffordForm n 0)
+      ((realCliffordSpinContinuousMulEquivUnitsRange n).symm x)) = _
+  rfl
+
 /-- On the canonical range representative of a Spin element, the carrier homomorphism is the
 usual Spin projection followed by the special-orthogonal matrix inclusion. -/
-@[simp]
 theorem realCliffordSpinToSpecialOrthogonalRange_apply_toUnits
     (n : ℕ) (x : spinGroup (realCliffordForm n 0)) :
     realCliffordSpinToSpecialOrthogonalRange n
@@ -130,14 +166,8 @@ theorem realCliffordSpinToSpecialOrthogonalRange_apply_toUnits
           (show QuadraticForm ℝ (Fin n → ℝ) from realCliffordForm n 0)
           (spinToSpecialOrthogonal (realCliffordForm n 0) x),
         ⟨spinToSpecialOrthogonal (realCliffordForm n 0) x, rfl⟩⟩ := by
-  apply Subtype.ext
-  -- Expose the value of the bundled composition after forgetting the target range proof.
-  change QuadraticMap.specialOrthogonalToGeneralLinear
-      (show QuadraticForm ℝ (Fin n → ℝ) from realCliffordForm n 0)
-      (spinToSpecialOrthogonal (realCliffordForm n 0)
-        ((realCliffordSpinContinuousMulEquivUnitsRange n).symm
-          ⟨spinGroup.toUnits x, ⟨x, rfl⟩⟩)) = _
-  rw [realCliffordSpinContinuousMulEquivUnitsRange_symm_apply]
+  rw [realCliffordSpinToSpecialOrthogonalRange_apply,
+    realCliffordSpinContinuousMulEquivUnitsRange_symm_apply]
 
 /-- The continuous homomorphism between the closed real Spin and special-orthogonal carriers is
 surjective. -/
