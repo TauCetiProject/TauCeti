@@ -31,8 +31,7 @@ are independent (`TauCeti.UniversalEnvelopingAlgebra.iSupIndep_centerEigenspace`
 Mathlib's independence of simultaneous generalized eigenspaces of a commuting family,
 `Module.End.independent_iInf_maxGenEigenspace_of_forall_mapsTo`, restricted to genuine
 eigenspaces. A homomorphism of Lie modules intertwines the actions of the centre, so it carries
-each centre eigenspace into the corresponding one
-(`TauCeti.UniversalEnvelopingAlgebra.map_centerEigenspace_le`).
+each centre eigenspace into the corresponding one (`LieModuleHom.map_centerEigenspace_le`).
 
 ## Main definitions
 
@@ -43,8 +42,7 @@ each centre eigenspace into the corresponding one
 
 * `TauCeti.UniversalEnvelopingAlgebra.mem_centerEigenspace`: membership is the eigenvector
   equation for every central element.
-* `TauCeti.UniversalEnvelopingAlgebra.map_centerEigenspace_le`: Lie module homomorphisms preserve
-  centre eigenspaces.
+* `LieModuleHom.map_centerEigenspace_le`: Lie module homomorphisms preserve centre eigenspaces.
 * `TauCeti.UniversalEnvelopingAlgebra.centerEigenspace_eq_top_iff`: the centre acts on the whole
   module through `χ` exactly when the centre eigenspace is everything.
 * `TauCeti.UniversalEnvelopingAlgebra.iSupIndep_centerEigenspace`: centre eigenspaces for distinct
@@ -111,7 +109,8 @@ theorem centerEigenspace_eq_top_iff {χ : Subalgebra.center R U → R} :
 
 /-- **A homomorphism of Lie modules carries a centre eigenspace into the centre eigenspace of the
 same eigenvalue function**, since it intertwines the actions of `U(L)`. -/
-theorem map_centerEigenspace_le (f : M →ₗ⁅R,L⁆ N) (χ : Subalgebra.center R U → R) :
+theorem _root_.LieModuleHom.map_centerEigenspace_le (f : M →ₗ⁅R,L⁆ N)
+    (χ : Subalgebra.center R U → R) :
     (centerEigenspace R L M χ).map f ≤ centerEigenspace R L N χ := by
   rw [LieSubmodule.map_le_iff_le_comap]
   intro m hm

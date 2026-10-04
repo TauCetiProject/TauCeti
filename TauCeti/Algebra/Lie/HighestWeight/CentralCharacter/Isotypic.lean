@@ -113,7 +113,7 @@ theorem le_centerEigenspace_of_nonempty_lieModuleEquiv {P : LieSubmodule K L M}
       (vermaCentralCharacter b lam) := by
     rw [centerEigenspace_irreducibleQuotient_eq_top]
     exact LieSubmodule.mem_top _
-  simpa using map_centerEigenspace_le (P.incl.comp (e.symm : _ →ₗ⁅K,L⁆ P)) _
+  simpa using (P.incl.comp (e.symm : _ →ₗ⁅K,L⁆ P)).map_centerEigenspace_le _
     (LieSubmodule.mem_map_of_mem hw)
 
 /-- **The centre of `U(L)` acts on the `L(lam)`-isotypic component of any module by the central
