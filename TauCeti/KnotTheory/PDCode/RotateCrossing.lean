@@ -275,7 +275,8 @@ parity of slots `0` and `1` and the over-pair indicator flip. -/
     simp only [crossingSign_def, PDCode.crossing_apply, toPDCode_rotateCrossing,
       PDCode.rotateCrossing_crossing_self, PDCode.rotateCrossing_overPair_self,
       rotateCrossing_orientation, zero_add]
-    rw [show (1 : Fin 4) + 1 = 2 by decide, h]
+    have h₁₂ : (1 : Fin 4) + 1 = 2 := by decide
+    rw [h₁₂, h]
     cases D.orientation (D.halfEdge (PDCode.crossingSlotEquiv n (j, 0))) <;>
       cases D.orientation (D.halfEdge (PDCode.crossingSlotEquiv n (j, 1))) <;>
       cases D.overPair j <;> simp
