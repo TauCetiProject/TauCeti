@@ -25,6 +25,7 @@ refinement. It is adapted from
   transport along an isomorphism;
 * `SheafOfModules.GeneratingSections.mapIso`: generating sections carried along a
   colimit-preserving functor and read through an isomorphism;
+* `SheafOfModules.GeneratingSections.restrict`: generating sections restricted along an arrow;
 * `SheafOfModules.GeneratingSections.ofIteratedSlice`: generating sections on an iterated slice,
   read as generating sections on the slice over the underlying object.
 -/
@@ -121,6 +122,51 @@ instance _root_.SheafOfModules.GeneratingSections.isIso_mapIso_π [IsIso σ.π] 
 instance _root_.SheafOfModules.GeneratingSections.isFiniteType_mapIso [hσ : σ.IsFiniteType] :
     (σ.mapIso F η e).IsFiniteType :=
   (GeneratingSections.isFiniteType_equivOfIso _ _)
+
+section Restriction
+
+variable {C : Type u₁} [Category.{v₁} C] [HasPullbacks C] {J : GrothendieckTopology C}
+  {R : Sheaf J RingCat.{u}}
+  [∀ X, HasSheafify (J.over X) AddCommGrpCat.{u}]
+  [∀ X, (J.over X).WEqualsLocallyBijective AddCommGrpCat.{u}]
+
+/-- Generating sections of `M.over X` restricted along `f : Y ⟶ X` to generating sections of
+`M.over Y`: they are carried by the restriction functor `overMap R f`, which is identified with
+restriction to `Y` by `overFunctorMap`. -/
+def _root_.SheafOfModules.GeneratingSections.restrict {M : SheafOfModules.{u} R} {X Y : C}
+    (G : (M.over X).GeneratingSections) (f : Y ⟶ X) : (M.over Y).GeneratingSections :=
+  G.mapIso (overMap R f) (overMapUnitIso f).symm ((overFunctorMap R f).app M)
+
+/-- Restricting generating sections preserves their index type. -/
+@[simp]
+theorem _root_.SheafOfModules.GeneratingSections.restrict_I {M : SheafOfModules.{u} R} {X Y : C}
+    (G : (M.over X).GeneratingSections) (f : Y ⟶ X) : (G.restrict f).I = G.I :=
+  GeneratingSections.mapIso_I _ _ _ _
+
+/-- The generating morphism of restricted generating sections is obtained by mapping the original
+generating morphism and then applying the comparison with restriction to `Y`, read along the
+identification `restrict_I` of the index types. -/
+@[simp]
+theorem _root_.SheafOfModules.GeneratingSections.restrict_π {M : SheafOfModules.{u} R} {X Y : C}
+    (G : (M.over X).GeneratingSections) (f : Y ⟶ X) :
+    eqToHom (congrArg free (GeneratingSections.restrict_I G f).symm) ≫ (G.restrict f).π =
+      ((mapFreeIso (overMap R f) G.I (overMapUnitIso f).symm).hom ≫
+        (overMap R f).map G.π) ≫ ((overFunctorMap R f).app M).hom :=
+  GeneratingSections.mapIso_π _ _ _ _
+
+/-- Restricting generating sections preserves an invertible generating morphism. -/
+instance _root_.SheafOfModules.GeneratingSections.isIso_restrict_π {M : SheafOfModules.{u} R}
+    {X Y : C} (G : (M.over X).GeneratingSections) (f : Y ⟶ X) [IsIso G.π] :
+    IsIso (G.restrict f).π :=
+  GeneratingSections.isIso_mapIso_π _ _ _ _
+
+/-- Restricting generating sections preserves finiteness. -/
+instance _root_.SheafOfModules.GeneratingSections.isFiniteType_restrict
+    {M : SheafOfModules.{u} R} {X Y : C} (G : (M.over X).GeneratingSections) (f : Y ⟶ X)
+    [hG : G.IsFiniteType] : (G.restrict f).IsFiniteType :=
+  GeneratingSections.isFiniteType_mapIso _ _ _ _
+
+end Restriction
 
 section IteratedSlice
 

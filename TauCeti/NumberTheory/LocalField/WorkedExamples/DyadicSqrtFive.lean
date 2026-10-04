@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.KummerPolynomial
-public import TauCeti.NumberTheory.LocalField.Norm.Unramified
+public import TauCeti.NumberTheory.LocalField.Norm.Unramified.Basic
 public import TauCeti.NumberTheory.LocalField.Padic
 public import TauCeti.NumberTheory.LocalField.ResidueCorrespondence
 public import TauCeti.NumberTheory.LocalField.Unramified.Criterion

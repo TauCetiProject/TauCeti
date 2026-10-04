@@ -213,6 +213,26 @@ theorem projectiveStableFunctor_comp_curvedDuplexSplitStableToHomotopy :
       (nullHomotopic C w).quotientFunctor := by
   rw [curvedDuplexSplitStableToHomotopy, Quotient.lift_spec]
 
+/-- The comparison sends the stable image of a curved duplex to its image in the homotopy
+category. -/
+@[simp]
+theorem curvedDuplexSplitStableToHomotopy_obj_projectiveStableFunctor_obj (X : CurvedDuplex C w) :
+    (curvedDuplexSplitStableToHomotopy C w).obj
+        (((split C).curvedDuplex w).projectiveStableFunctor.obj X) =
+      (nullHomotopic C w).quotientFunctor.obj X :=
+  Functor.congr_obj (projectiveStableFunctor_comp_curvedDuplexSplitStableToHomotopy C w) X
+
+/-- The comparison sends the stable class of a morphism to its homotopy class, up to the
+identification of objects `curvedDuplexSplitStableToHomotopy_obj_projectiveStableFunctor_obj`. -/
+theorem curvedDuplexSplitStableToHomotopy_map_projectiveStableFunctor_map {X Y : CurvedDuplex C w}
+    (f : X ⟶ Y) :
+    (curvedDuplexSplitStableToHomotopy C w).map
+        (((split C).curvedDuplex w).projectiveStableFunctor.map f) =
+      eqToHom (curvedDuplexSplitStableToHomotopy_obj_projectiveStableFunctor_obj C w X) ≫
+        (nullHomotopic C w).quotientFunctor.map f ≫
+          eqToHom (curvedDuplexSplitStableToHomotopy_obj_projectiveStableFunctor_obj C w Y).symm :=
+  Functor.congr_hom (projectiveStableFunctor_comp_curvedDuplexSplitStableToHomotopy C w) f
+
 /-- The stable-to-homotopy comparison preserves addition of morphisms. -/
 instance : (curvedDuplexSplitStableToHomotopy C w).Additive := by
   unfold curvedDuplexSplitStableToHomotopy

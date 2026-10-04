@@ -28,9 +28,9 @@ valuation to the extension degree. The intrinsic formula is
 `v_K(N_{L/K}(x)) = f(L/K) v_L(x)`.
 
 The formula is the valuation input to the norm-group criterion for unramified extensions, which
-`TauCeti.NumberTheory.LocalField.Norm.Unramified` combines with surjectivity of the norm on units
-to identify the entire norm group. Read on ideals rather than on elements, the same formula says
-that the norm image of the maximal ideal of `𝒪[L]` is the residue-degree power of the maximal
+`TauCeti.NumberTheory.LocalField.Norm.Unramified.Basic` combines with surjectivity of the norm on
+units to identify the entire norm group. Read on ideals rather than on elements, the same formula
+says that the norm image of the maximal ideal of `𝒪[L]` is the residue-degree power of the maximal
 ideal of `𝒪[K]`.
 
 Ideal norms are read through Mathlib's: the norm image of a principal ideal is

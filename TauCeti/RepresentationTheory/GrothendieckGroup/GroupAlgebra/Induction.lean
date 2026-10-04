@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Category.ModuleCat.CartanMap.CoextendScalars
 public import TauCeti.Algebra.MonoidAlgebra.CosetBasis
 public import TauCeti.Algebra.MonoidAlgebra.Finite
 public import TauCeti.RepresentationTheory.Coinduced
+public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.Permutation.Basic
 public import TauCeti.RepresentationTheory.Induction.FiniteDimensional.Basic
 public import TauCeti.RepresentationTheory.Induction.Permutation
 
@@ -31,7 +32,8 @@ isomorphic to the induced module. So on the class of a representation `ρ` of `S
 class of the induced representation `Ind_S^G ρ` (`TauCeti.indK0_of_asModule_of_equiv`), in
 particular of Tau Ceti's finite-dimensional induction `TauCeti.indFDRep` over a field
 (`TauCeti.indK0_of_indFDRep`), and the class of the trivial line goes to the class of the
-permutation module `k[G ⧸ S]` (`TauCeti.indK0_of_trivial`).
+permutation module `k[G ⧸ S]`, that is, to the permutation class `TauCeti.permK0 k G (G ⧸ S)`
+(`TauCeti.indK0_of_trivial`).
 
 The exactness of induction is what makes `ind S` well defined on the exact Grothendieck group,
 whose relations come from all short exact sequences, including the non-split ones that occur when
@@ -47,8 +49,8 @@ the characteristic of `k` divides the order of `G`.
 * `TauCeti.indK0_of`: the class of a module goes to the class of its coinduced module.
 * `TauCeti.indK0_of_asModule_of_equiv`: the class of a representation goes to the class of any
   representation equivalent to its induced representation.
-* `TauCeti.indK0_of_trivial`: the class of the trivial line goes to the class of the permutation
-  module on the cosets.
+* `TauCeti.indK0_of_trivial`: the class of the trivial line goes to the permutation class of the
+  cosets.
 * `TauCeti.indK0_of_ofMulAction_quotient`: for `D ≤ S`, the class of the permutation module
   `k[S ⧸ (D ⊓ S)]` goes to the class of the permutation module `k[G ⧸ D]`.
 * `TauCeti.indK0_of_indFDRep`: over a field, the class of a finite-dimensional representation goes
@@ -121,16 +123,15 @@ theorem indK0_of_asModule_of_equiv {V W : Type u} [AddCommGroup V] [Module k V]
             (Representation.asModuleLinearEquivOfEquiv e)))))
 
 /-- **Induction of the trivial line.** Induction from `S` sends the class of the trivial
-one-dimensional representation to the class of the permutation module `k[G ⧸ S]`. -/
+one-dimensional representation to the permutation class of `G ⧸ S`, the class of the permutation
+module `k[G ⧸ S]`. -/
 @[simp high + 1]
 theorem indK0_of_trivial :
     letI : Module.Finite k[S] (Representation.trivial k S k).asModule :=
       Module.Finite.of_restrictScalars_finite k k[S] _
-    letI : Module.Finite k[G] (Representation.ofMulAction k G (G ⧸ S)).asModule :=
-      Module.Finite.of_restrictScalars_finite k k[G] _
     indK0 k S (ExactK0.of (FGModuleCat.of k[S] (Representation.trivial k S k).asModule)) =
-      ExactK0.of (FGModuleCat.of k[G] (Representation.ofMulAction k G (G ⧸ S)).asModule) :=
-  indK0_of_asModule_of_equiv k S _ _ (indTrivialEquiv k S)
+      permK0 k G (G ⧸ S) :=
+  (indK0_of_asModule_of_equiv k S _ _ (indTrivialEquiv k S)).trans (permK0_def k (G ⧸ S)).symm
 
 /-- **Induction of a coset permutation module.** For a subgroup `D ≤ S`, induction from `S` sends
 the class of the permutation module `k[S ⧸ (D ⊓ S)]` to the class of the permutation module

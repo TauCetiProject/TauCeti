@@ -8,7 +8,7 @@ module
 public import TauCeti.FieldTheory.FunctionField.Different.Derivative
 public import TauCeti.FieldTheory.FunctionField.Different.Tame
 public import TauCeti.FieldTheory.FunctionField.Place.ArtinSchreier
-public import TauCeti.FieldTheory.FunctionField.Place.Extension.ArtinSchreier
+public import TauCeti.FieldTheory.FunctionField.Place.Extension.ArtinSchreier.Basic
 
 /-!
 # Ramification from a reduced Artin--Schreier representative
@@ -24,7 +24,7 @@ ramification dichotomy for a representative reduced at a place `P`:
 
 The regular case follows from the derivative `-1` of `X ^ p - X - u`.  The pole case combines
 the total ramification of reduced poles from
-`TauCeti.FieldTheory.FunctionField.Place.Extension.ArtinSchreier` with Dedekind's lower bound
+`TauCeti.FieldTheory.FunctionField.Place.Extension.ArtinSchreier.Basic` with Dedekind's lower bound
 for the different.
 Together these results isolate the remaining local input for the exact wild formula
 `d(P' | P) = (p - 1) * (m + 1)` at a pole of order `m`.

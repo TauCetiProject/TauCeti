@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.LocalField.Herbrand.HasseArf
 public import TauCeti.NumberTheory.LocalField.Norm.Surjectivity
-public import TauCeti.NumberTheory.LocalField.Norm.Unramified
+public import TauCeti.NumberTheory.LocalField.Norm.Unramified.Basic
 
 /-!
 # Unit norm indices and the conductor in prime degree

@@ -99,25 +99,8 @@ theorem ncard_primesOver_eq_finrank_iff_stabilizer_eq_bot (L : Type*) [Field L]
     [NumberField L] [IsGalois ℚ L] {p : ℕ} (Q : Ideal (𝓞 L)) [Q.IsPrime]
     [Q.LiesOver (span {(p : ℤ)})] : (primesOver (span {(p : ℤ)}) (𝓞 L)).ncard = finrank ℚ L ↔
       stabilizer (L ≃ₐ[ℚ] L) Q = ⊥ := by
-  -- The orbit of `Q` under `Gal(L/ℚ)` is all of the primes above `p`, so orbit–stabilizer gives
-  -- `#{primes above p} · |stabilizer Q| = |Gal(L/ℚ)| = [L : ℚ]`.
-  have horbit : orbit (L ≃ₐ[ℚ] L) Q = (span {(p : ℤ)}).primesOver (𝓞 L) :=
-    Algebra.IsInvariant.orbit_eq_primesOver ℤ (𝓞 L) (L ≃ₐ[ℚ] L) (span {(p : ℤ)}) Q
-  have hkey : (primesOver (span {(p : ℤ)}) (𝓞 L)).ncard *
-      Nat.card (stabilizer (L ≃ₐ[ℚ] L) Q) = finrank ℚ L := by
-    rw [← Nat.card_coe_set_eq, ← horbit, ← Nat.card_prod,
-      Nat.card_congr (orbitProdStabilizerEquivGroup (L ≃ₐ[ℚ] L) Q),
-      IsGalois.card_aut_eq_finrank]
-  have hpos : 0 < finrank ℚ L := finrank_pos
-  constructor
-  · intro hn
-    rw [hn] at hkey
-    have hst1 : Nat.card (stabilizer (L ≃ₐ[ℚ] L) Q) = 1 :=
-      Nat.eq_of_mul_eq_mul_left hpos (by rw [mul_one]; exact hkey)
-    exact Subgroup.card_eq_one.mp hst1
-  · intro hst
-    rw [hst] at hkey
-    simpa using hkey
+  rw [← IsGaloisGroup.card_eq_finrank (L ≃ₐ[ℚ] L) ℚ L,
+    ncard_primesOver_eq_natCard_iff_stabilizer_eq_bot _ _ Q]
 
 open TauCeti.RamificationInertia in
 /-- **A full complement of primes forces unramifiedness.** If `𝓞 L` has `[L : K]` primes above a

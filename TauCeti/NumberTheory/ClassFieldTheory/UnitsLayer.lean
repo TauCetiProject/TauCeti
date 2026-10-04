@@ -28,7 +28,9 @@ theory:
 * the ground and top levels of the layer are `Kˣ` and `Lˣ`
   (`TauCeti.ClassFieldTheory.unitsLevelEquiv`), the norm of the
   layer is the field norm `N_{L/K}` (`norm_unitsLevelEquiv`), and so the norm quotient of the layer
-  is `Kˣ / N_{L/K}(Lˣ)` (`layerNormQuotientEquiv`).
+  is `Kˣ / N_{L/K}(Lˣ)` (`layerNormQuotientEquiv`);
+* the layer cohomology is ordinary Galois cohomology of `L/K` with coefficients in `Lˣ`
+  (`layerCohomologyEquiv`).
 
 These are the two identifications through which the abstract Artin map of a class formation on
 `unitsFormation K` becomes the norm-residue map `Kˣ / N_{L/K}(Lˣ) ≃ Gal(L/K)^ab` of finite local
@@ -39,6 +41,8 @@ reciprocity. Nothing here uses that `K` is local.
 * `TauCeti.ClassFieldTheory.layerGalEquiv ι`: the Galois group of the layer is `Gal(L/K)`.
 * `TauCeti.ClassFieldTheory.layerNormQuotientEquiv K L`: the norm quotient of the layer is
   `Kˣ / N_{L/K}(Lˣ)`.
+* `TauCeti.ClassFieldTheory.layerCohomologyEquiv ι`: the cohomology of the layer is the concrete
+  Galois cohomology of `L/K` with coefficients in `Lˣ`.
 
 ## Main results
 
@@ -128,6 +132,17 @@ theorem layerGalEquiv_mk (ι : L →ₐ[K] SeparableClosure K)
     layerGalEquiv ι (σ : (NormalLayer.ofOpenNormal (fixingOpenNormalSubgroup K L)).Gal) =
       ι.restrictNormalHom (σ : AbsoluteGaloisGroup K) := by
   rw [layerGalEquiv, MulEquiv.trans_apply, NormalLayer.galOfOpenNormalEquiv_mk,
+    MulEquiv.trans_apply, QuotientGroup.quotientMulEquivOfEq_mk,
+    quotientFixingSubgroupFieldRangeEquiv_mk]
+
+/-- `(layerGalEquiv ι).symm` sends the restriction of `σ ∈ G_K` along `ι` to the class of `σ` in
+`G_K ⧸ V`, read in the Galois group of the layer. -/
+theorem layerGalEquiv_symm_restrictNormalHom (ι : L →ₐ[K] SeparableClosure K)
+    (σ : AbsoluteGaloisGroup K) :
+    (layerGalEquiv ι).symm (ι.restrictNormalHom σ) =
+      (NormalLayer.galOfOpenNormalEquiv (fixingOpenNormalSubgroup K L)).symm
+        (σ : AbsoluteGaloisGroup K ⧸ (fixingOpenNormalSubgroup K L).toSubgroup) := by
+  rw [MulEquiv.symm_apply_eq, layerGalEquiv, MulEquiv.trans_apply, MulEquiv.apply_symm_apply,
     MulEquiv.trans_apply, QuotientGroup.quotientMulEquivOfEq_mk,
     quotientFixingSubgroupFieldRangeEquiv_mk]
 
@@ -280,5 +295,142 @@ theorem layerNormQuotientEquiv_mk (a : Kˣ) :
   (rfl)
 
 end Norm
+
+/-! ### Cohomology -/
+
+section Cohomology
+
+variable {L : Type} [Field L] [Algebra K L] [FiniteDimensional K L] [IsGalois K L]
+
+/-- The coefficient identification from the representation of the layer of `L` to the standard
+Galois representation on `Lˣ`. -/
+noncomputable def layerCoefficientEquiv (ι : L →ₐ[K] SeparableClosure K) :
+    (NormalLayer.ofOpenNormal (fixingOpenNormalSubgroup K L)).rep (unitsFormation K) ≃ₗ[ℤ]
+      Rep.ofMulDistribMulAction Gal(L/K) Lˣ :=
+  (unitsLevelEquiv ι
+    (fixedField_top_ofOpenNormal_fixingOpenNormalSubgroup (K := K) ι)).symm.toIntLinearEquiv
+
+/-- The coefficient identification inverts `unitsLevelEquiv`. -/
+@[simp]
+theorem layerCoefficientEquiv_unitsLevelEquiv (ι : L →ₐ[K] SeparableClosure K)
+    (y : Additive Lˣ) :
+    layerCoefficientEquiv ι
+        (unitsLevelEquiv ι (fixedField_top_ofOpenNormal_fixingOpenNormalSubgroup ι) y) = y :=
+  AddEquiv.symm_apply_apply _ _
+
+/-- Reading the concrete coefficient of a layer element through `ι` recovers its value in the
+separable closure. -/
+theorem layerCoefficientEquiv_apply_coe (ι : L →ₐ[K] SeparableClosure K)
+    (x : (NormalLayer.ofOpenNormal (fixingOpenNormalSubgroup K L)).rep (unitsFormation K)) :
+    Additive.ofMul (Units.map (ι : L →* SeparableClosure K)
+        (Rep.toAdditive (layerCoefficientEquiv ι x)).toMul) =
+      (unitsCoeffEquivUnitsFormation K).symm
+        ((x : (unitsFormation K).level
+          (NormalLayer.ofOpenNormal (fixingOpenNormalSubgroup K L)).top) :
+            (unitsFormation K).toRep.V) := by
+  apply (unitsCoeffEquivUnitsFormation K).eq_symm_apply.2
+  rw [← unitsLevelEquiv_apply_coe ι
+    (fixedField_top_ofOpenNormal_fixingOpenNormalSubgroup ι)]
+  exact congrArg Subtype.val ((unitsLevelEquiv ι
+    (fixedField_top_ofOpenNormal_fixingOpenNormalSubgroup ι)).apply_symm_apply x)
+
+/-- The coefficient identification intertwines the layer action with the concrete Galois
+action. -/
+theorem layerCoefficientEquiv_ρ (ι : L →ₐ[K] SeparableClosure K)
+    (γ : (NormalLayer.ofOpenNormal (fixingOpenNormalSubgroup K L)).Gal)
+    (x : (NormalLayer.ofOpenNormal (fixingOpenNormalSubgroup K L)).rep (unitsFormation K)) :
+    layerCoefficientEquiv ι
+        (((NormalLayer.ofOpenNormal (fixingOpenNormalSubgroup K L)).rep
+          (unitsFormation K)).ρ γ x) =
+      (Rep.ofMulDistribMulAction Gal(L/K) Lˣ).ρ (layerGalEquiv ι γ)
+        (layerCoefficientEquiv ι x) := by
+  obtain ⟨y, rfl⟩ := (unitsLevelEquiv ι
+    (fixedField_top_ofOpenNormal_fixingOpenNormalSubgroup (K := K) ι)).surjective x
+  rw [rep_ρ_unitsLevelEquiv, layerCoefficientEquiv_unitsLevelEquiv,
+    layerCoefficientEquiv_unitsLevelEquiv, Rep.ofMulDistribMulAction_ρ_apply_apply]
+
+/-- The morphism of representations underlying `layerCohomologyEquiv`. -/
+noncomputable def layerCoefficientHom (ι : L →ₐ[K] SeparableClosure K) :
+    Rep.res (layerGalEquiv ι).symm
+        ((NormalLayer.ofOpenNormal (fixingOpenNormalSubgroup K L)).rep (unitsFormation K)) ⟶
+      Rep.ofMulDistribMulAction Gal(L/K) Lˣ :=
+  Rep.ofHom ⟨(layerCoefficientEquiv ι).toLinearMap, fun h => LinearMap.ext fun x => by
+    -- This is `layerCoefficientEquiv_ρ` at `(layerGalEquiv ι).symm h`, read through the
+    -- `Rep.res`, `Rep.of` and `LinearMap.comp` wrappers. These agree definitionally, but their
+    -- module instances differ syntactically, so `rw` and `simp` cannot unfold them.
+    refine (layerCoefficientEquiv_ρ ι ((layerGalEquiv ι).symm h) x).trans ?_
+    rw [MulEquiv.apply_symm_apply]
+    rfl⟩
+
+/-- The representation morphism underlying the layer comparison is the coefficient
+identification. -/
+@[simp]
+theorem layerCoefficientHom_apply (ι : L →ₐ[K] SeparableClosure K)
+    (x : (NormalLayer.ofOpenNormal (fixingOpenNormalSubgroup K L)).rep (unitsFormation K)) :
+    (layerCoefficientHom ι).hom x = layerCoefficientEquiv ι x :=
+  (rfl)
+
+/-- **The cohomology of the layer of `L` is the ordinary Galois cohomology of `L/K`**:
+restriction along `ι` identifies the layer Galois group with `Gal(L/K)`, while
+`unitsLevelEquiv` identifies the layer coefficients with `Lˣ`. -/
+noncomputable def layerCohomologyEquiv (ι : L →ₐ[K] SeparableClosure K) (n : ℕ) :
+    (NormalLayer.ofOpenNormal (fixingOpenNormalSubgroup K L)).H (unitsFormation K) n ≃+
+      groupCohomology (Rep.ofMulDistribMulAction Gal(L/K) Lˣ) n :=
+  (groupCohomology.mapIso
+    (A := Rep.ofMulDistribMulAction Gal(L/K) Lˣ)
+    (B := (NormalLayer.ofOpenNormal (fixingOpenNormalSubgroup K L)).rep (unitsFormation K))
+    (layerGalEquiv (K := K) (L := L) ι)
+    (layerCoefficientEquiv ι)
+    (fun γ => LinearMap.ext fun x => layerCoefficientEquiv_ρ ι γ x)
+    n).toLinearEquiv.toAddEquiv
+
+/-- `layerCohomologyEquiv` is induced by the concrete group and coefficient identifications. -/
+theorem layerCohomologyEquiv_apply (ι : L →ₐ[K] SeparableClosure K) (n : ℕ)
+    (x : (NormalLayer.ofOpenNormal (fixingOpenNormalSubgroup K L)).H (unitsFormation K) n) :
+    layerCohomologyEquiv ι n x =
+      groupCohomology.map (layerGalEquiv ι).symm (layerCoefficientHom ι) n x := by
+  rfl
+
+/-- A ground-field unit, viewed in the layer and then in `Lˣ`, is its image under the algebra
+map `K → L`. -/
+theorem layerCoefficientEquiv_groundLevel (ι : L →ₐ[K] SeparableClosure K) (a : Kˣ) :
+    Rep.toAdditive (layerCoefficientEquiv ι
+      (((NormalLayer.ofOpenNormal (fixingOpenNormalSubgroup K L)).groundLevelEquiv
+        (unitsFormation K)).symm
+          (unitsLevelEquiv (Algebra.ofId K (SeparableClosure K))
+            (fixedField_ground_ofOpenNormal K (fixingOpenNormalSubgroup K L))
+            (Additive.ofMul a)))) =
+      Additive.ofMul (Units.map (algebraMap K L : K →* L) a) := by
+  apply Additive.toMul.injective
+  apply Units.map_injective (f := (ι : L →* SeparableClosure K)) ι.injective
+  have hx := layerCoefficientEquiv_apply_coe ι
+    (((NormalLayer.ofOpenNormal (fixingOpenNormalSubgroup K L)).groundLevelEquiv
+      (unitsFormation K)).symm
+        (unitsLevelEquiv (Algebra.ofId K (SeparableClosure K))
+          (fixedField_ground_ofOpenNormal K (fixingOpenNormalSubgroup K L))
+          (Additive.ofMul a)))
+  have hx' := congrArg Additive.toMul hx
+  rw [toMul_ofMul] at hx'
+  rw [hx']
+  rw [NormalLayer.groundLevelEquiv_symm_apply_coe]
+  have he :
+      (unitsCoeffEquivUnitsFormation K).symm
+          (((unitsLevelEquiv (Algebra.ofId K (SeparableClosure K))
+            (fixedField_ground_ofOpenNormal K (fixingOpenNormalSubgroup K L))
+            (Additive.ofMul a) :
+              (unitsFormation K).level
+                (NormalLayer.ofOpenNormal (fixingOpenNormalSubgroup K L)).ground) :
+            (unitsFormation K).toRep.V)) =
+        Additive.ofMul (Units.map
+          (Algebra.ofId K (SeparableClosure K) : K →* SeparableClosure K) a) := by
+    apply (unitsCoeffEquivUnitsFormation K).injective
+    rw [AddEquiv.apply_symm_apply, unitsLevelEquiv_apply_coe]
+    simp only [toMul_ofMul]
+  rw [he]
+  apply Units.ext
+  simp only [toMul_ofMul, Units.coe_map, MonoidHom.coe_ofClass, Algebra.ofId_apply,
+    AlgHom.commutes]
+
+end Cohomology
 
 end TauCeti.ClassFieldTheory

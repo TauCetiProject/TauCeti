@@ -6,11 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.SimpleRing.Basic
-public import Mathlib.Algebra.Central.Basic
+public import Mathlib.Algebra.Central.Defs
 public import TauCeti.Algebra.Quaternion.SplittingCriterion
 public import Mathlib.GroupTheory.Subgroup.Center
 import Mathlib.RingTheory.SimpleRing.Congr
 import Mathlib.RingTheory.SimpleRing.Matrix
+import Mathlib.Algebra.Ring.Regular
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -22,6 +23,10 @@ completing the square reduces this case to a symbol with both parameters units, 
 criterion gives either a division algebra or a two-by-two matrix algebra. The two-parameter symbol
 `ℍ[K,a,b]` is the specialization used by the Brauer-valued invariants.
 
+Centrality only requires two to be regular: commuting with `i` and `j` forces the imaginary
+coordinates to vanish when either the `j`-square or the discriminant is regular. In particular,
+this applies over integral domains of characteristic different from two.
+
 ## Main results
 
 * `TauCeti.QuaternionAlgebra.isSimpleRing_of_j_sq_mul_discr_ne_zero`: a quaternion algebra with
@@ -29,8 +34,10 @@ criterion gives either a division algebra or a two-by-two matrix algebra. The tw
 * `TauCeti.QuaternionAlgebra.instIsSimpleRing`: quaternion symbol algebras with both parameters
   units are simple.
 * `TauCeti.QuaternionAlgebra.mem_center_iff` and
-  `TauCeti.QuaternionAlgebra.isCentral_of_isLeftRegular_j_sq_or_isLeftRegular_discr`: centrality for
-  symbols with a regular parameter.
+  `TauCeti.QuaternionAlgebra.isCentral_of_isLeftRegular_j_sq_or_isLeftRegular_discr`: centrality
+  when two is regular and either the `j`-square or the discriminant is regular.
+* `TauCeti.QuaternionAlgebra.isCentral_of_j_sq_ne_zero_or_discr_ne_zero`: centrality over a
+  domain of characteristic different from two, without requiring two to be invertible.
 * `TauCeti.QuaternionAlgebra.center_units_eq_range_unitsMap_algebraMap`: the center of a
   quaternion unit group with unit symbols consists exactly of scalar units, over a base ring
   in which two is left-regular, including the split case.
@@ -81,70 +88,71 @@ theorem isSimpleRing_of_j_sq_mul_discr_ne_zero {a b c : K}
 
 end Field
 
-end QuaternionAlgebra
-
-namespace QuaternionAlgebra
-
-section UnitParameter
+section Centrality
 
 variable [CommRing K]
 
-private theorem center_coordinates_eq_zero (a b : K) (h2 : IsLeftRegular (2 : K))
-    (hb : IsLeftRegular b) {x : ℍ[K,a,b]}
-    (hi : (⟨0, 1, 0, 0⟩ : ℍ[K,a,b]) * x = x * (⟨0, 1, 0, 0⟩ : ℍ[K,a,b]))
-    (hj : (⟨0, 0, 1, 0⟩ : ℍ[K,a,b]) * x = x * (⟨0, 0, 1, 0⟩ : ℍ[K,a,b])) :
+private theorem center_coordinates_eq_zero (a b c : K) (h2 : IsLeftRegular (2 : K))
+    (h : IsLeftRegular c ∨ IsLeftRegular (QuadraticAlgebra.discr a b)) {x : ℍ[K,a,b,c]}
+    (hi : (⟨0, 1, 0, 0⟩ : ℍ[K,a,b,c]) * x = x * (⟨0, 1, 0, 0⟩ : ℍ[K,a,b,c]))
+    (hj : (⟨0, 0, 1, 0⟩ : ℍ[K,a,b,c]) * x = x * (⟨0, 0, 1, 0⟩ : ℍ[K,a,b,c])) :
     x.imI = 0 ∧ x.imJ = 0 ∧ x.imK = 0 := by
+  have hiJ := congrArg _root_.QuaternionAlgebra.imJ hi
   have hiK := congrArg _root_.QuaternionAlgebra.imK hi
   have hjI := congrArg _root_.QuaternionAlgebra.imI hj
   have hjK := congrArg _root_.QuaternionAlgebra.imK hj
-  simp only [_root_.QuaternionAlgebra.imI_mul, _root_.QuaternionAlgebra.imK_mul] at hiK hjI hjK
+  simp only [_root_.QuaternionAlgebra.imI_mul, _root_.QuaternionAlgebra.imJ_mul,
+    _root_.QuaternionAlgebra.imK_mul] at hiJ hiK hjI hjK
   have hI : (2 : K) * x.imI = 0 := by
     linear_combination -hjK
-  have hJ : (2 : K) * b * x.imJ = 0 := by
-    linear_combination b * hiK
-  have hK : (2 : K) * b * x.imK = 0 := by
-    linear_combination -hjI
-  refine ⟨h2 (by simpa using hI), ?_, ?_⟩
-  · apply hb
-    exact h2 (by simpa [mul_assoc] using hJ)
-  · apply hb
-    exact h2 (by simpa [mul_assoc] using hK)
+  have hK : x.imK = 0 := by
+    rcases h with hc | hd
+    · apply hc.mul_left_eq_zero_iff.mp
+      apply h2.mul_left_eq_zero_iff.mp
+      linear_combination -hjI
+    · apply hd.mul_left_eq_zero_iff.mp
+      rw [QuadraticAlgebra.discr_def]
+      -- Eliminate `x.imJ` from the two coordinates of the commutator with `i`.
+      linear_combination 2 * hiJ + b * hiK
+  have hJ : (2 : K) * x.imJ = 0 := by
+    rw [hK] at hiK
+    linear_combination hiK
+  exact ⟨h2.mul_left_eq_zero_iff.mp hI, h2.mul_left_eq_zero_iff.mp hJ, hK⟩
 
-/-- An element of `ℍ[K,a,b]` with regular `b` is central iff its three imaginary
-coordinates vanish. -/
+/-- When two is regular and either the `j`-square or the discriminant is regular,
+an element of `ℍ[K,a,b,c]` is central iff its three imaginary coordinates vanish. -/
 @[simp]
-theorem mem_center_iff (a b : K) (h2 : IsRegular (2 : K)) (hb : IsRegular b)
-    {x : ℍ[K,a,b]} :
-    x ∈ Subalgebra.center K ℍ[K,a,b] ↔
+theorem mem_center_iff (a b c : K) (h2 : IsRegular (2 : K))
+    (h : IsRegular c ∨ IsRegular (QuadraticAlgebra.discr a b)) {x : ℍ[K,a,b,c]} :
+    x ∈ Subalgebra.center K ℍ[K,a,b,c] ↔
       x.imI = 0 ∧ x.imJ = 0 ∧ x.imK = 0 := by
   constructor
   · intro hx
-    exact center_coordinates_eq_zero a b h2.left hb.left
+    exact center_coordinates_eq_zero a b c h2.left (h.imp (·.left) (·.left))
       (Subalgebra.mem_center_iff.mp hx _) (Subalgebra.mem_center_iff.mp hx _)
   · intro hx
-    have hx' : x = algebraMap K ℍ[K,a,b] x.re := by
-      rw [_root_.QuaternionAlgebra.coe_algebraMap]
-      refine _root_.QuaternionAlgebra.ext rfl ?_ ?_ ?_ <;> simp [hx.1, hx.2.1, hx.2.2]
+    have hx' : x = algebraMap K ℍ[K,a,b,c] x.re := by
+      ext <;> simp [hx.1, hx.2.1, hx.2.2]
     rw [hx']
     exact Subalgebra.algebraMap_mem _ _
 
-private theorem isCentral_of_isLeftRegular_secondParameter (a b : K)
-    (h2 : IsLeftRegular (2 : K)) (hb : IsLeftRegular b) : Algebra.IsCentral K ℍ[K,a,b] :=
-  let h2' : IsRegular (2 : K) := isLeftRegular_iff_isRegular.mp h2
-  let hb' : IsRegular b := isLeftRegular_iff_isRegular.mp hb
+/-- A quaternion algebra with left-regular `j`-square or left-regular discriminant is central
+when two is left-regular. -/
+theorem isCentral_of_isLeftRegular_j_sq_or_isLeftRegular_discr {a b c : K}
+    (h2 : IsLeftRegular (2 : K))
+    (h : IsLeftRegular c ∨ IsLeftRegular (QuadraticAlgebra.discr a b)) :
+    Algebra.IsCentral K ℍ[K,a,b,c] :=
   ⟨fun x hx ↦ Algebra.mem_bot.mpr ⟨x.re, by
-    rw [_root_.QuaternionAlgebra.coe_algebraMap]
-    refine _root_.QuaternionAlgebra.ext rfl ?_ ?_ ?_
-    · simpa using ((mem_center_iff a b h2' hb').mp hx |>.1).symm
-    · simpa using ((mem_center_iff a b h2' hb').mp hx |>.2.1).symm
-    · simpa using ((mem_center_iff a b h2' hb').mp hx |>.2.2).symm⟩⟩
+    obtain ⟨hI, hJ, hK⟩ := (mem_center_iff a b c (isLeftRegular_iff_isRegular.mp h2)
+      (h.imp isLeftRegular_iff_isRegular.mp isLeftRegular_iff_isRegular.mp)).mp hx
+    ext <;> simp [hI, hJ, hK]⟩⟩
 
 /-- A quaternion symbol whose second parameter `b` is a unit is central over its base ring. -/
 instance instIsCentral (a : K) (b : Kˣ) [Invertible (2 : K)] :
     Algebra.IsCentral K ℍ[K,a,(b : K)] :=
   let h2 : IsLeftRegular (2 : K) := (isUnit_of_invertible (2 : K)).isRegular.left
   let hb : IsLeftRegular (b : K) := b.isUnit.isRegular.left
-  isCentral_of_isLeftRegular_secondParameter a (b : K) h2 hb
+  isCentral_of_isLeftRegular_j_sq_or_isLeftRegular_discr h2 (Or.inl hb)
 
 /-- Over a base ring in which two is left-regular, the center of the unit group of a quaternion
 symbol with unit parameters is exactly the scalar units. This includes split quaternion algebras. -/
@@ -162,8 +170,8 @@ theorem center_units_eq_range_unitsMap_algebraMap (a b : Kˣ) (h2 : IsLeftRegula
         simp [_root_.QuaternionAlgebra.normForm_apply_coordinates])
     have hxi := congrArg Units.val (Subgroup.mem_center_iff.mp hx hi.unit)
     have hxj := congrArg Units.val (Subgroup.mem_center_iff.mp hx hj.unit)
-    have hc := center_coordinates_eq_zero (a : K) (b : K)
-      h2 b.isUnit.isRegular.left
+    have hc := center_coordinates_eq_zero (a : K) 0 (b : K)
+      h2 (Or.inl b.isUnit.isRegular.left)
       (by simpa only [Units.val_mul, hi.unit_spec] using hxi)
       (by simpa only [Units.val_mul, hj.unit_spec] using hxj)
     have hs : (x : ℍ[K,(a : K),(b : K)]) = algebraMap K _ x.val.re := by
@@ -179,43 +187,23 @@ theorem center_units_eq_range_unitsMap_algebraMap (a b : Kˣ) (h2 : IsLeftRegula
     refine Subgroup.mem_center_iff.mpr fun y => Units.ext ?_
     exact (Algebra.commutes (r : K) (y : ℍ[K,(a : K),(b : K)])).symm
 
-end UnitParameter
-
-section Centrality
-
-variable [CommRing K] [Invertible (2 : K)]
-
-/-- A quaternion algebra with left-regular `j`-square or left-regular discriminant is central. -/
-theorem isCentral_of_isLeftRegular_j_sq_or_isLeftRegular_discr {a b c : K}
-    (h : IsLeftRegular c ∨ IsLeftRegular (QuadraticAlgebra.discr a b)) :
-    Algebra.IsCentral K ℍ[K,a,b,c] := by
-  suffices h' : Algebra.IsCentral K ℍ[K,QuadraticAlgebra.discr a b,0,c] from
-    Algebra.IsCentral.of_algEquiv (K := K) (D := ℍ[K,QuadraticAlgebra.discr a b,0,c])
-      (D' := ℍ[K,a,b,c]) (h := h') (completeSquareEquiv a b c).symm
-  let h2 : IsLeftRegular (2 : K) := (isUnit_of_invertible (2 : K)).isRegular.left
-  rcases h with hc | hd
-  · exact isCentral_of_isLeftRegular_secondParameter _ _ h2 hc
-  · have htarget : Algebra.IsCentral K ℍ[K,c,0,QuadraticAlgebra.discr a b] :=
-      isCentral_of_isLeftRegular_secondParameter _ _ h2 hd
-    exact Algebra.IsCentral.of_algEquiv (K := K) (D := ℍ[K,c,0,QuadraticAlgebra.discr a b])
-      (D' := ℍ[K,QuadraticAlgebra.discr a b,0,c]) (h := htarget)
-      (_root_.QuaternionAlgebra.swapEquiv c (QuadraticAlgebra.discr a b))
-
 end Centrality
 
-section FieldCentrality
+section DomainCentrality
 
-variable [Field K] [Invertible (2 : K)]
+variable [CommRing K] [NoZeroDivisors K] [NeZero (2 : K)]
 
-/-- A quaternion algebra with nonzero `j`-square or discriminant is central. -/
+/-- Over a domain of characteristic different from two, a quaternion algebra with nonzero
+`j`-square or discriminant is central, even when two is not invertible. -/
 theorem isCentral_of_j_sq_ne_zero_or_discr_ne_zero {a b c : K}
     (h : c ≠ 0 ∨ QuadraticAlgebra.discr a b ≠ 0) :
     Algebra.IsCentral K ℍ[K,a,b,c] := by
   apply isCentral_of_isLeftRegular_j_sq_or_isLeftRegular_discr
-  exact h.imp (fun hc ↦ (isRegular_iff_ne_zero.mpr hc).left)
-    (fun hd ↦ (isRegular_iff_ne_zero.mpr hd).left)
+    (IsRegular.of_ne_zero' (NeZero.ne (2 : K))).left
+  exact h.imp (fun hc ↦ (IsRegular.of_ne_zero' hc).left)
+    (fun hd ↦ (IsRegular.of_ne_zero' hd).left)
 
-end FieldCentrality
+end DomainCentrality
 
 end QuaternionAlgebra
 
