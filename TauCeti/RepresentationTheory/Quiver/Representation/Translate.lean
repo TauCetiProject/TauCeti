@@ -44,8 +44,12 @@ attribute [local instance] ModuleCat.moduleOfAlgebraModule
 
 universe u v w t
 
-variable (k : Type u) (Q : Type v) [Field k] [Quiver.{w} Q] [Finite Q]
+variable (k : Type u) (Q : Type v) [Field k] [Quiver.{w} Q]
   [Finite (Quiver.TotalPath Q)]
+
+local instance : Finite Q :=
+  Finite.of_injective (fun q : Q ↦ (⟨q, q, Quiver.Path.nil⟩ : Quiver.TotalPath Q))
+    (fun _ _ h ↦ congrArg Sigma.fst h)
 
 local notation "kQ" => pathAlgebra k Q
 local notation "E" => quiverRepEquivalence k Q
@@ -94,7 +98,7 @@ theorem nonempty_iso_arTranslate (M : QuiverRep.{u, v, w, max u v w t} k Q)
   obtain ⟨e⟩ :=
     (arPresentation_isMinimal.{u, v, w, t} k Q M hM).nonempty_linearEquiv_auslanderReitenTranslate
       (k := k) hP
-  exact ⟨(F).mapIso e.toModuleIso⟩
+  simpa only [arTranslate] using Nonempty.intro ((F).mapIso e.toModuleIso)
 
 /-- Isomorphic representations have isomorphic Auslander–Reiten translates. -/
 theorem nonempty_iso_arTranslate_of_iso {M N : QuiverRep.{u, v, w, max u v w t} k Q}
@@ -105,7 +109,7 @@ theorem nonempty_iso_arTranslate_of_iso {M N : QuiverRep.{u, v, w, max u v w t} 
   have h := (arPresentation_isMinimal.{u, v, w, t} k Q M hM).comp_linearEquiv eM
   obtain ⟨f⟩ := h.nonempty_linearEquiv_auslanderReitenTranslate (k := k)
     (arPresentation_isMinimal.{u, v, w, t} k Q N hN)
-  exact ⟨(F).mapIso f.toModuleIso⟩
+  simpa only [arTranslate] using Nonempty.intro ((F).mapIso f.toModuleIso)
 
 /-- The Auslander–Reiten translate stays within the pointwise finite-dimensional
 representations. -/
@@ -123,7 +127,7 @@ theorem isFinDim_arTranslate (M : QuiverRep.{u, v, w, max u v w t} k Q)
   let : Module k T := ModuleCat.moduleOfAlgebraModule (k := k) T
   let : IsScalarTower k kQ T := ModuleCat.isScalarTower_of_algebra_moduleCat (k := k) T
   have hT : Module.Finite k T := Module.Finite.trans kQ _
-  exact isFinDim_quiverRepFunctor_obj k Q T hT
+  simpa only [arTranslate, P, T] using isFinDim_quiverRepFunctor_obj k Q T hT
 
 /-- The translate vanishes precisely on the projective representations. -/
 @[simp]
@@ -135,7 +139,7 @@ theorem isZero_arTranslate_iff (M : QuiverRep.{u, v, w, max u v w t} k Q)
     ⟨fun h ↦ IsZero.of_full_of_faithful_of_isZero (F) T h, (F).map_isZero⟩
   have h := arPresentation_isMinimal.{u, v, w, t} k Q M hM
   have hproj := h.subsingleton_auslanderReitenTranslate_iff_projective k
-  exact hzero.trans (ModuleCat.isZero_iff_subsingleton.trans
+  simpa only [arTranslate, P, T] using hzero.trans (ModuleCat.isZero_iff_subsingleton.trans
     (hproj.trans ((IsProjective.iff_projective (R := kQ) ((E).functor.obj M)).trans
       ((E).map_projective_iff M))))
 
