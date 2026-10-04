@@ -41,7 +41,7 @@ projective integral representations.
   above, for an arbitrary equivariant semilinear reduction map with the expected kernel. The
   cardinality of the reduction of a finite free `ℤ_p`-module is
   `TauCeti.natCard_quotient_padicInt_smul_top`.
-* `TauCeti.Representation.natCard_invariants_eq_pow_finrank_of_bijective`: the same count when
+* `Representation.natCard_invariants_eq_pow_finrank_of_bijective`: the same count when
   the projective modular representation is identified with the reduction of a `ℤ_p[G]`-module.
 
 ## References
@@ -147,7 +147,9 @@ end Reduction
 
 end Representation
 
-namespace TauCeti.Representation
+open TauCeti TauCeti.Representation
+
+namespace Representation
 
 /-- **Invariant counts of projective lifts.** If a projective `𝔽_p[G]`-representation `η` is the
 reduction of a `ℤ_p[G]`-module `X`, then `#η^G = p ^ rank (X^G)`. -/
@@ -175,4 +177,4 @@ theorem natCard_invariants_eq_pow_finrank_of_bijective
     (compPadicReductionMk p G f) (compPadicReductionMk_surjective p G f hf.2)
     (compPadicReductionMk_ofModule' p G f) (compPadicReductionMk_eq_zero_iff p G f hf.1)
 
-end TauCeti.Representation
+end Representation
