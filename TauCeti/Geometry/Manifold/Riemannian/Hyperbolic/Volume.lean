@@ -83,7 +83,7 @@ theorem hypVolumeOfMetric_eq_of_mostow [BoundarylessManifold I M]
     (g g' : HyperbolicMetric (I := I) (M := M)) :
     hypVolumeOfMetric (I := I) g = hypVolumeOfMetric (I := I) g' := by
   let _ : ConnectedSpace M := hConn
-  obtain ⟨Φ⟩ := h.isometry hConn hdim g g'
+  obtain ⟨Φ⟩ := h hdim g g'
   let gBundle : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
     ⟨g.metric.toRiemannianMetric⟩
   let gCont : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=

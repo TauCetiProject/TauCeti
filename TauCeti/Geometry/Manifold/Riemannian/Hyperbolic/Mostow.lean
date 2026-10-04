@@ -50,7 +50,7 @@ end HyperbolicMetric
 
 From the hyperbolicity and dimension hypotheses it gives a smooth metric-preserving
 diffeomorphism between every pair of bundled complete constant-curvature `-1` metrics. -/
-def MostowRigidity : Prop :=
+abbrev MostowRigidity : Prop :=
   ∀ {E : Type uE} {H : Type uH} {M : Type uM} [NormedAddCommGroup E] [NormedSpace ℝ E]
     [FiniteDimensional ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
     [TopologicalSpace M] [T3Space M] [ChartedSpace H M] [IsManifold I ∞ M]
@@ -58,14 +58,5 @@ def MostowRigidity : Prop :=
     3 ≤ Module.finrank ℝ E →
       ∀ (g g' : HyperbolicMetric (I := I) (M := M)),
         Nonempty (HyperbolicMetric.Isometry g g')
-
-/-- The Mostow rigidity theorem supplies an isometry from its geometric hypotheses. -/
-theorem MostowRigidity.isometry (h : MostowRigidity.{uE, uH, uM})
-    [BoundarylessManifold I M] [CompactSpace M] (hConn : ConnectedSpace M)
-    (hdim : 3 ≤ Module.finrank ℝ E)
-    (g g' : HyperbolicMetric (I := I) (M := M)) :
-    Nonempty (HyperbolicMetric.Isometry g g') := by
-  let _ : ConnectedSpace M := hConn
-  exact h (E := E) (H := H) (M := M) (I := I) hdim g g'
 
 end TauCeti
