@@ -39,7 +39,8 @@ The integral family lives in `TauCeti.CliffordAlgebra`; its ambient group and pr
   when the basis is transported along an isometry.
 * `TauCeti.CliffordAlgebra.eventually_mem_integralSpinSubgroup` gives rational integrality.
 
-The construction uses the existing integral orthogonal family and
+The construction uses the existing integral orthogonal family. Compactness of its full preimage
+follows from properness of the local Spin projection, via
 `CliffordAlgebra.isCompact_preimage_spinToOrthogonal`.
 
 ## References
