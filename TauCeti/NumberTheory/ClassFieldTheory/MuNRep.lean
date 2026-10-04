@@ -51,7 +51,8 @@ Kummer class `TauCeti.kummerClass`, which lives in the trivial `𝔽₂` coeffic
 `TauCeti.AbsoluteGaloisGroup`.
 
 When `F` contains a chosen primitive `n`th root of unity `ζ`, the action of `G_F` on `μₙ` is
-trivial and `muNRepEquivTrivialFp` identifies `μₙ` with the trivial coefficients `ℤ/n`, sending
+trivial. The coordinate `muNRepEquivZMod` sends the chosen generator `muNRepGenerator` to `1`,
+and `muNRepEquivTrivialFp` identifies `μₙ` with the trivial coefficients `ℤ/n`, sending
 `ζ` to `1`. As an isomorphism of coefficient objects, `muNRepIsoTrivialFp`, it induces
 `muNRepCohomologyEquivTrivialFp`, comparing the cohomology of `μₙ` with that of `ℤ/n` in every
 degree; in degrees one and two it is the pullback of explicit cocycles. In degree one,
@@ -71,6 +72,8 @@ corresponding cardinality equality.
   Kummer isomorphism `Fˣ ⧸ (Fˣ)ⁿ ≃+ H¹(G_F, muNRep n F)`, for `n` invertible in `F` and for
   `n ≠ 0` in characteristic zero.
 * `TauCeti.ClassFieldTheory.kummerClass`: the Kummer class of a unit in `H¹(G_F, muNRep n F)`.
+* `TauCeti.ClassFieldTheory.muNRepEquivZMod`: the chosen-root coordinate on `μₙ`.
+* `TauCeti.ClassFieldTheory.muNRepGenerator`: the root with chosen coordinate `1`.
 * `TauCeti.ClassFieldTheory.muNRepEquivTrivialFp`: the identification of `μₙ` with trivial `ℤ/n`
   coefficients determined by a primitive `n`th root of unity in `F`.
 * `TauCeti.ClassFieldTheory.muNRepIsoTrivialFp`: the same identification as an isomorphism of
@@ -386,6 +389,30 @@ theorem coe_kummerCoeffEquivMuNRep_symm_muNRepEquivTrivialFp_symm_natCast {ζ : 
         ((trivialFpEquiv n _).symm (i : ZMod n)))).toMul : (SeparableClosure F)ˣ) :
         SeparableClosure F) = algebraMap F (SeparableClosure F) ζ ^ i := by
   simp [muNRepEquivTrivialFp]
+
+variable {n F} in
+/-- The additive coordinate on `μₙ` selected by the primitive root `ζ`, sending `ζ` to `1`. -/
+def muNRepEquivZMod (ζ : F) (hζ : IsPrimitiveRoot ζ n) : (muNRep n F).V ≃+ ZMod n :=
+  (muNRepEquivTrivialFp n F hζ).trans (trivialFpEquiv n _).toAddEquiv
+
+variable {n F} in
+/-- The inverse chosen-root coordinate is the inverse trivial-coefficient identification. -/
+theorem muNRepEquivZMod_symm_apply (ζ : F) (hζ : IsPrimitiveRoot ζ n) (c : ZMod n) :
+    (muNRepEquivZMod ζ hζ).symm c =
+      (muNRepEquivTrivialFp n F hζ).symm ((trivialFpEquiv n _).symm c) :=
+  (rfl)
+
+variable {n F} in
+/-- The chosen primitive root, as the element of `μₙ` with coordinate `1`. -/
+def muNRepGenerator (ζ : F) (hζ : IsPrimitiveRoot ζ n) : (muNRep n F).V :=
+  (muNRepEquivZMod ζ hζ).symm 1
+
+variable {n F} in
+/-- The chosen primitive root has coordinate `1`. -/
+@[simp]
+theorem muNRepEquivZMod_generator (ζ : F) (hζ : IsPrimitiveRoot ζ n) :
+    muNRepEquivZMod ζ hζ (muNRepGenerator ζ hζ) = 1 := by
+  simp only [muNRepGenerator, AddEquiv.apply_symm_apply]
 
 /-- The coefficient identification of a primitive root intertwines the action of `G_F` on `μₙ`
 with the trivial action on `ℤ/n`. -/

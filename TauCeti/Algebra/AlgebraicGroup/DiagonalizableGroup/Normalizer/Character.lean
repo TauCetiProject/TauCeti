@@ -24,8 +24,9 @@ The coordinate map is assumed surjective, expressing that `D(X) → G` is a clos
 The base has connected prime spectrum, as required to recover characters from group-like
 elements. Neither smoothness nor finite generation is required.
 
-The construction uses `HopfIdeal.kerLiftBialgEquiv` to descend conjugation and
-`TauCeti.MonoidAlgebra.groupLikeEquiv` to recover the character automorphism.
+The construction transports the restricted conjugation `HopfIdeal.quotientPointConjugation`
+along `HopfIdeal.kerLiftBialgEquiv` and uses `TauCeti.MonoidAlgebra.groupLikeEquiv` to recover the
+character automorphism.
 
 ## References
 
@@ -75,29 +76,19 @@ noncomputable def mapDomainToNormalizer :
 theorem coe_mapDomainToNormalizer (t : WithConv (MonoidAlgebra R X →ₐ[R] R)) :
     (mapDomainToNormalizer π hπ t : WithConv (H →ₐ[R] R)) = AlgHom.mapDomain π t := (rfl)
 
-private theorem conjugation_ker_le (g : normalizerPoints π hπ) :
-    (HopfIdeal.kerOfSurjective π hπ).toIdeal ≤
-      RingHom.ker (π.comp (HopfAlgebra.pointConjugationBialgEquiv (g : WithConv
-        (H →ₐ[R] R))⁻¹).toBialgHom).toAlgHom.toRingHom := by
-  intro x hx
+/-- A normalizing point's inverse also normalizes the subgroup. -/
+private theorem le_conjugate_inv (g : normalizerPoints π hπ) :
+    HopfIdeal.kerOfSurjective π hπ ≤
+      (HopfIdeal.kerOfSurjective π hπ).conjugate (g : WithConv (H →ₐ[R] R))⁻¹ := by
   have hg := (mem_normalizerPoints π hπ _).mp (g⁻¹).property
-  simp only [Subgroup.coe_inv] at hg
-  have hx' : x ∈ (HopfIdeal.kerOfSurjective π hπ).conjugate
-      (g : WithConv (H →ₐ[R] R))⁻¹ := by
-    rw [hg]
-    exact hx
-  rw [HopfIdeal.mem_conjugate, HopfIdeal.mem_kerOfSurjective] at hx'
-  simpa only [RingHom.mem_ker, AlgHom.toRingHom_eq_coe,
-    AlgHom.coe_toRingHom, BialgHom.coe_toAlgHom, BialgHom.comp_apply,
-    ← HopfAlgebra.pointConjugationBialgEquiv_toAlgHom, BialgEquiv.toBialgHom_eq_coe,
-    BialgEquiv.coe_toBialgHom] using hx'
+  rw [Subgroup.coe_inv] at hg
+  exact hg.ge
 
 /-- Pullback on the subgroup's coordinate algebra along inverse conjugation. -/
 private noncomputable def normalizerCoordinateMap (g : normalizerPoints π hπ) :
     MonoidAlgebra R X →ₐc[R] MonoidAlgebra R X :=
-  (Bialgebra.Quotient.liftBialgHom (HopfIdeal.kerOfSurjective π hπ).toIdeal
-    (π.comp (HopfAlgebra.pointConjugationBialgEquiv (g : WithConv (H →ₐ[R] R))⁻¹).toBialgHom)
-    (conjugation_ker_le π hπ g)).comp
+  ((HopfIdeal.kerLiftBialgEquiv π hπ).toBialgHom.comp
+    ((HopfIdeal.kerOfSurjective π hπ).quotientPointConjugation _ (le_conjugate_inv π hπ g))).comp
       (HopfIdeal.kerLiftBialgEquiv π hπ).symm.toBialgHom
 
 private theorem normalizerCoordinateMap_apply (g : normalizerPoints π hπ) (x : H) :
@@ -108,11 +99,9 @@ private theorem normalizerCoordinateMap_apply (g : normalizerPoints π hπ) (x :
     apply EquivLike.injective (HopfIdeal.kerLiftBialgEquiv π hπ)
     rw [(HopfIdeal.kerLiftBialgEquiv π hπ).apply_symm_apply,
       HopfIdeal.kerLiftBialgEquiv_apply, HopfIdeal.kerLiftBialgHom_mk]
-  simp only [normalizerCoordinateMap, BialgHom.comp_apply,
-    BialgEquiv.toBialgHom_eq_coe, BialgEquiv.coe_coe, he,
-    Bialgebra.Quotient.liftBialgHom_mk]
-  rw [← HopfAlgebra.pointConjugationBialgEquiv_toAlgHom]
-  rfl
+  simp only [normalizerCoordinateMap, BialgHom.comp_apply, BialgEquiv.toBialgHom_eq_coe,
+    BialgEquiv.coe_toBialgHom, he, HopfIdeal.quotientPointConjugation_mk,
+    HopfIdeal.kerLiftBialgEquiv_apply, HopfIdeal.kerLiftBialgHom_mk]
 
 private theorem normalizerCoordinateMap_one :
     normalizerCoordinateMap π hπ 1 = BialgHom.id R (MonoidAlgebra R X) := by
