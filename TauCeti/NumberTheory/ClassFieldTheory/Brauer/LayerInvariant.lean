@@ -6,10 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.OpenSubgroup
+public import TauCeti.NumberTheory.ClassFieldTheory.Formation.InflationRestriction
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Refinement
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Restriction
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Units
 public import TauCeti.Topology.Algebra.Group.OpenSubgroup.FiniteIndex
+import TauCeti.RepresentationTheory.Homological.ContCohomology.FiniteQuotient.Colimit
+import TauCeti.RepresentationTheory.Homological.ContCohomology.FiniteQuotient.DegreeTwoDescent
 
 /-!
 # The local invariant of a finite normal layer of the units formation
@@ -38,7 +41,12 @@ and from the restriction and corestriction squares of the local invariant:
   (`layerInv_cohomologyRes`), and inflation to a larger top field does not change it
   (`layerInv_cohomologyInfl`), because inflation into the cohomology of the ground subgroup is
   compatible with both operations on layers (`layerInfl_cohomologyRes`,
-  `layerInfl_cohomologyInfl`).
+  `layerInfl_cohomologyInfl`);
+* its range is exactly the subgroup of `ℚ/ℤ` of order `[U : V]` (`range_layerInv`). Every class
+  of `H²(U, (Kˢ)ˣ)` is inflated from a layer `V' ◁ U` with `V' ≤ V` (`exists_layerInfl_eq`), and
+  by the inflation-restriction sequence of the refinement `V' ◁ U` of `V ◁ U`
+  (`LayerRefinement.range_cohomologyInfl_eq_ker_cohomologyRes`) together with Hilbert 90, a class
+  of `V' ◁ U` whose restriction to `V' ◁ V` vanishes comes from `V ◁ U`.
 
 ## Main definitions
 
@@ -52,12 +60,16 @@ and from the restriction and corestriction squares of the local invariant:
 ## Main results
 
 * `TauCeti.ClassFieldTheory.layerInfl_injective`: inflation from a layer is injective.
+* `TauCeti.ClassFieldTheory.exists_layerInfl_eq`: every class of `H²(U, (Kˢ)ˣ)` is inflated from
+  a refinement of a given layer over `U`.
 * `TauCeti.ClassFieldTheory.layerInv_injective`: the invariant of a layer is injective.
 * `TauCeti.ClassFieldTheory.degree_nsmul_layerInv`: the invariant of a layer is killed by its
   degree.
 * `TauCeti.ClassFieldTheory.layerInv_cohomologyRes`: restriction multiplies the invariant by the
   relative degree.
 * `TauCeti.ClassFieldTheory.layerInv_cohomologyInfl`: inflation preserves the invariant.
+* `TauCeti.ClassFieldTheory.range_layerInv`: the invariants of a layer form the subgroup of `ℚ/ℤ`
+  of order its degree.
 
 ## Implementation notes
 
@@ -119,6 +131,11 @@ of `layerCocycle L c` (`layerInfl_H2π`). -/
 def layerInfl : L.H (unitsFormation K) 2 →+ H2 L.ground.toSubgroup (UnitsCoeff K) :=
   (explicitInfl2 L.ground.toSubgroup (UnitsCoeff K)
     (L.top.toSubgroup.subgroupOf L.ground.toSubgroup)).comp (layerH2Equiv L).toAddMonoidHom
+
+private theorem layerInfl_eq_explicitInfl2 (x : L.H (unitsFormation K) 2) :
+    layerInfl L x = explicitInfl2 L.ground.toSubgroup (UnitsCoeff K)
+      (L.top.toSubgroup.subgroupOf L.ground.toSubgroup) (layerH2Equiv L x) :=
+  (rfl)
 
 /-- A layer cocycle, read with values in the fixed points of the top subgroup. -/
 private def levelCocycle (c : cocycles₂ (L.rep (unitsFormation K))) :
@@ -268,6 +285,53 @@ theorem layerInfl_cohomologyInfl {old new : NormalLayer (AbsoluteGaloisGroup K)}
         ((c q : (unitsFormation K).level old.top) : (unitsFormation K).toRep.V))
         (Prod.ext (T.galHom_mk u) (T.galHom_mk v)))
 
+/-- **Every class of `H²(U, (Kˢ)ˣ)` is inflated from a refinement of a given layer over `U`.**
+For a layer `V ◁ U` and a class `c` in the continuous cohomology of its ground subgroup, there is a
+layer `V' ◁ U` with `V' ≤ V` from whose `H²` the class `c` is inflated. The class `c` is read on the
+ground subgroup of the refinement, which is `U` again. -/
+theorem exists_layerInfl_eq (c : H2 L.ground.toSubgroup (UnitsCoeff K)) :
+    ∃ (L' : NormalLayer (AbsoluteGaloisGroup K)) (T : LayerRefinement L L')
+      (y : L'.H (unitsFormation K) 2),
+      layerInfl L' y =
+        explicitMap2 L.ground.toSubgroup (UnitsCoeff K) L'.ground.toSubgroup (UnitsCoeff K)
+          (ContinuousMonoidHom.subgroupInclusion T.same_ground_toSubgroup.ge) (AddMonoidHom.id _)
+          continuous_id (fun _ _ => rfl) c := by
+  -- The class is inflated from a finite quotient `U ⧸ N`; an open normal subgroup `W` of `G_K`
+  -- inside both `N` and `V` gives a layer `W ◁ U` refining `V ◁ U` whose quotient refines `U ⧸ N`.
+  obtain ⟨N, y, rfl⟩ := exists_explicitInfl2_eq c
+  let S : Set (AbsoluteGaloisGroup K) :=
+    Subtype.val '' (N : Set L.ground.toSubgroup) ∩ (L.top : Set (AbsoluteGaloisGroup K))
+  have hS : IsOpen S := (L.ground.isOpen.isOpenMap_subtype_val _ N.isOpen).inter L.top.isOpen
+  have h1 : (1 : AbsoluteGaloisGroup K) ∈ S := ⟨⟨1, N.one_mem, rfl⟩, L.top.one_mem⟩
+  -- Destructuring this existence statement directly in `obtain` times out at `whnf`.
+  have hW := ProfiniteGrp.exist_openNormalSubgroup_sub_open_nhds_of_one hS h1
+  obtain ⟨W, hW⟩ := hW
+  have hWV : W.toOpenSubgroup ≤ L.top := fun w hw => (hW hw).2
+  let L' : NormalLayer (AbsoluteGaloisGroup K) :=
+    { ground := L.ground
+      top := W.toOpenSubgroup
+      top_le_ground := hWV.trans L.top_le_ground
+      normal := Subgroup.normal_subgroupOf }
+  let N' : OpenNormalSubgroup L.ground.toSubgroup :=
+    { toSubgroup := L'.top.toSubgroup.subgroupOf L.ground.toSubgroup
+      isOpen' := L.ground.toSubgroup.subgroupOf_isOpen _ W.isOpen
+      isNormal' := L'.normal }
+  have hN' : N' ≤ N := fun u hu => by
+    obtain ⟨v, hv, hvu⟩ := (hW (Subgroup.mem_subgroupOf.1 hu)).1
+    exact Subtype.val_injective hvu ▸ hv
+  refine ⟨L', ⟨rfl, hWV⟩,
+    (layerH2Equiv L').symm
+      (explicitFiniteQuotientTransition2 L.ground.toSubgroup (UnitsCoeff K) N N' hN' y), ?_⟩
+  -- `layerInfl L'` is inflation along `U → U ⧸ N'` after `layerH2Equiv L'`, and the class read
+  -- on the ground subgroup of `L'`, which is `U` itself, is unchanged.
+  refine (layerInfl_eq_explicitInfl2 L' _).trans <|
+    (congrArg (explicitInfl2 L.ground.toSubgroup (UnitsCoeff K) N'.toSubgroup)
+      (AddEquiv.apply_symm_apply _ _)).trans <|
+    (explicitInfl2_explicitFiniteQuotientTransition2 hN' y).trans ?_
+  exact ((DFunLike.congr_fun (explicitMap2_congr_of_eq _ _ _ _ _ (ContinuousMonoidHom.id _) _
+    (AddMonoidHom.id _) (hψ := fun _ _ => rfl) (ContinuousMonoidHom.ext fun _ => rfl) rfl) _).trans
+    (DFunLike.congr_fun (explicitMap2_id _ _) _)).symm
+
 end Inflation
 
 /-! ### The invariant of a layer of the formation of units of a local field -/
@@ -322,6 +386,36 @@ theorem layerInv_cohomologyInfl {old new : NormalLayer (AbsoluteGaloisGroup K)}
     layerInv K new (T.cohomologyInfl (unitsFormation K) 2 x) = layerInv K old x := by
   rw [layerInv_apply, layerInfl_cohomologyInfl, subgroupInvMap_explicitMap2_subgroupInclusion,
     Subgroup.relIndex_eq_one.2 T.same_ground_toSubgroup.le, one_smul, layerInv_apply]
+
+/-- **The invariants of a layer are the subgroup of `ℚ/ℤ` of order its degree**: the range of
+`inv_{E'/E}` is the `[E' : E]`-torsion of `ℚ/ℤ`. Together with `layerInv_injective`, this makes
+`H²(Gal(E'/E), E'ˣ)` cyclic of order `[E' : E]`. -/
+theorem range_layerInv :
+    Set.range (layerInv K L) =
+      (AddSubgroup.torsionBy (AddCircle (1 : ℚ)) L.degree : Set (AddCircle (1 : ℚ))) := by
+  refine Set.Subset.antisymm ?_ fun x hx => ?_
+  · rintro _ ⟨y, rfl⟩
+    exact AddSubgroup.torsionBy.nsmul_iff.2 (degree_nsmul_layerInv K L y)
+  -- A rational `x` of order dividing `[U : V]` is the invariant of a class of `H²(U, (Kˢ)ˣ)`,
+  -- which is inflated from a refinement `V' ◁ U` of the layer.
+  obtain ⟨L', T, y, hy⟩ := exists_layerInfl_eq L
+    ((subgroupInvMap K L.ground.toSubgroup L.ground.isOpen).symm x)
+  have hinv : layerInv K L' y = x := by
+    rw [layerInv_apply, hy, subgroupInvMap_explicitMap2_subgroupInclusion K _ _ L.ground.isOpen,
+      Subgroup.relIndex_eq_one.2 T.same_ground_toSubgroup.le, one_smul, AddEquiv.apply_symm_apply]
+  -- Restricted to the layer of the kernel `V/V'`, the class has invariant `[U : V] • x = 0`.
+  have hres : (L'.subgroupRestriction T.galHom.ker).cohomologyRes (unitsFormation K) 2 y = 0 := by
+    refine layerInv_injective K _ ?_
+    rw [layerInv_cohomologyRes, map_zero, hinv, L'.relativeDegree_subgroupRestriction,
+      Subgroup.index_ker, MonoidHom.range_eq_top.2 T.galHom_surjective, Subgroup.card_top,
+      ← NormalLayer.degree_eq_natCard_gal]
+    exact AddSubgroup.torsionBy.nsmul_iff.1 hx
+  -- By the inflation-restriction sequence and Hilbert 90, the class is inflated from `V ◁ U`.
+  obtain ⟨z, hz⟩ : y ∈ LinearMap.range (T.cohomologyInfl (unitsFormation K) 2).hom :=
+    (T.range_cohomologyInfl_eq_ker_cohomologyRes (unitsFormation K) 1 fun i hi => by
+      obtain rfl : i = 0 := Nat.lt_one_iff.1 hi
+      exact subsingleton_h1_unitsFormation _).ge hres
+  exact ⟨z, (layerInv_cohomologyInfl K T z).symm.trans (congrArg (layerInv K L') hz |>.trans hinv)⟩
 
 end Invariant
 
