@@ -51,6 +51,8 @@ representation, and its irreducibility is what the Mackey criterion decides.
   one-dimensional representation of the pulled-back character `χ ∘ f`.
 * `FDRep.nonempty_iso_ofLinearCharacter_iff`: two of these are isomorphic exactly when the two
   linear characters are equal.
+* `FDRep.exists_character_eq_of_commute`: over an algebraically closed field, an irreducible
+  representation whose operators commute pairwise has a linear character as its character.
 
 ## Implementation notes
 
@@ -211,5 +213,39 @@ theorem nonempty_iso_ofLinearCharacter_iff [CommRing k] [Monoid G] (χ ψ : G �
     have h := hf 1
     rwa [mul_one, hlin] at h
   exact f.injective (by rw [hlin (χ g : k), hlin (ψ g : k)]; exact hkey)
+
+/-- **An irreducible representation whose operators commute has a linear character.**  Over an
+algebraically closed field, if the operators of an irreducible representation `W` commute
+pairwise, Schur's lemma makes each a scalar, so `W` is a line and its character is the linear
+character of those scalars. -/
+theorem exists_character_eq_of_commute [Field k] [IsAlgClosed k] [Group G] (W : FDRep k G)
+    [Simple W] (hcomm : ∀ g h : G, Commute (W.ρ g) (W.ρ h)) :
+    ∃ χ : G →* kˣ, W.character = fun g => (χ g : k) := by
+  have hW := FDRep.isIrreducible_of_simple W
+  have : Nontrivial W := hW.nontrivial
+  choose c hc using fun g => hW.exists_forall_apply_eq_smul (W.ρ g) fun h v => by
+    rw [← Module.End.mul_apply, (hcomm g h).eq, Module.End.mul_apply]
+  obtain ⟨v, hv⟩ := exists_ne (0 : W)
+  have hmul (g h : G) : c (g * h) = c g * c h := by
+    refine smul_left_injective k hv ?_
+    dsimp only
+    rw [← hc, map_mul, Module.End.mul_apply, hc h, map_smul, hc g, smul_smul, mul_comm]
+  have hone : c 1 = 1 := smul_left_injective k hv (by simp [← hc])
+  -- The line through `v` is stable, hence everything: `W` is one-dimensional.
+  let line : Subrepresentation W.ρ :=
+    ⟨k ∙ v, fun g w hw => by
+      obtain ⟨a, rfl⟩ := Submodule.mem_span_singleton.mp hw
+      rw [map_smul, hc, smul_smul]
+      exact Submodule.smul_mem _ _ (Submodule.mem_span_singleton_self v)⟩
+  have hline : line = ⊤ := (IsSimpleOrder.eq_bot_or_eq_top line).resolve_left fun h => hv <| by
+    have hmem : v ∈ line.toSubmodule := Submodule.mem_span_singleton_self v
+    rw [h] at hmem
+    exact hmem
+  have hfin : Module.finrank k W = 1 :=
+    (finrank_eq_one_iff_of_nonzero v hv).mpr (congrArg Subrepresentation.toSubmodule hline)
+  let χ : G →* k := { toFun := c, map_one' := hone, map_mul' := hmul }
+  refine ⟨χ.toHomUnits, funext fun g => ?_⟩
+  have hρ : W.ρ g = c g • LinearMap.id := LinearMap.ext (hc g)
+  simp [χ, character, hρ, hfin]
 
 end FDRep

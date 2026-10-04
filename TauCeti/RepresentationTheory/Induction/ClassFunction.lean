@@ -54,6 +54,8 @@ and to deduce `TauCeti.character_ind` from `TauCeti.indClassFun_eq_natCard_inv_m
   the inducing function is invariant under conjugation in the subgroup.
 * `TauCeti.indClassFun_mem_classFunction`: the induced function of a class function is a class
   function.
+* `TauCeti.indClassFun_top` and `TauCeti.indClassFun_indClassFun_subgroupOf`: induction from `⊤`
+  is the identity, and induction is transitive along `L ≤ T ≤ G`.
 * `TauCeti.natCard_mul_indClassFun`: the group-sum form, `|S| · (Ind f)(g) = ∑_{x ∈ G} f(x⁻¹gx)`,
   and its averaged corollary `TauCeti.indClassFun_eq_natCard_inv_mul_sum`.
 * `TauCeti.indClassFun_comp_subtype_mul`: the **projection formula**,
@@ -298,6 +300,79 @@ theorem indClassFun_mem_classFunction [S.FiniteIndex] (hf : f ∈ ClassFunction 
     _ = indClassFun S f g :=
         Fintype.sum_equiv (MulAction.toPerm c⁻¹) _ _ fun t =>
           indTerm_eq_of_mk_eq hf _ _ _ (QuotientGroup.mk_out_smul _ t).symm
+
+/-- **Induction from the whole group is the identity**, read along `⊤ ≃ G`: the quotient by `⊤`
+has a single coset. -/
+@[simp]
+theorem indClassFun_top {f : (⊤ : Subgroup G) → k} (hf : f ∈ ClassFunction k (⊤ : Subgroup G))
+    (g : G) : indClassFun ⊤ f g = f ⟨g, Subgroup.mem_top g⟩ := by
+  let := Fintype.ofFinite (G ⧸ (⊤ : Subgroup G))
+  have := QuotientGroup.subsingleton_quotient_top (G := G)
+  rw [indClassFun, Fintype.sum_subsingleton _ (QuotientGroup.mk 1),
+    indTerm_eq_of_mk_eq hf g _ 1 (Subsingleton.elim _ _), indTerm_one,
+    dite_eq_left (Subgroup.mem_top g)]
+
+open scoped Classical in
+/-- **Transitivity of induction.**  For subgroups `L ≤ T` with `L` of finite index, inducing a
+class function of `L` first to `T` and then to `G` is inducing it directly to `G`:
+`Ind_T^G (Ind_L^T f) = Ind_L^G f`.  The intermediate step induces from `L` read as the subgroup
+`L.subgroupOf T` of `T`, with `Subgroup.subgroupOfEquivOfLe` identifying the two.  That `T` has
+finite index too follows from `L ≤ T` (`Subgroup.finiteIndex_of_le`), so it is not assumed.
+
+The proof splits the cosets of `L` in `G` into the cosets of `T` in `G` and the cosets of `L` in
+`T` (`Subgroup.quotientEquivProdOfLE`); being a class function makes each summand independent of
+the representative that splitting produces. -/
+theorem indClassFun_indClassFun_subgroupOf {L T : Subgroup G} (hLT : L ≤ T) [L.FiniteIndex]
+    {f : L → k} (hf : f ∈ ClassFunction k L) :
+    haveI := Subgroup.finiteIndex_of_le hLT
+    indClassFun T (indClassFun (L.subgroupOf T) fun x => f (Subgroup.subgroupOfEquivOfLe hLT x)) =
+      indClassFun L f := by
+  have := Subgroup.finiteIndex_of_le hLT
+  funext g
+  let := Fintype.ofFinite (G ⧸ T)
+  let := Fintype.ofFinite (T ⧸ L.subgroupOf T)
+  let := Fintype.ofFinite (G ⧸ L)
+  set e : G ⧸ L ≃ (G ⧸ T) × (T ⧸ L.subgroupOf T) := Subgroup.quotientEquivProdOfLE hLT with he_def
+  have he (t : G ⧸ T) (s : T ⧸ L.subgroupOf T) :
+      (e.symm (t, s) : G ⧸ L) = QuotientGroup.mk (t.out * (s.out : T)) := by
+    conv_lhs => rw [← QuotientGroup.out_eq' s]
+    rw [he_def, Subgroup.quotientEquivProdOfLE, Subgroup.quotientEquivProdOfLE'_symm_apply,
+      Quotient.map'_mk'']
+  -- At a fixed outer representative `x`, the summand of `Ind_T^G` is the inner coset sum.
+  have hinner (x : G) : indTerm (indClassFun (L.subgroupOf T)
+      fun y => f (Subgroup.subgroupOfEquivOfLe hLT y)) g x =
+      ∑ s : T ⧸ L.subgroupOf T, indTerm f g (x * (s.out : T)) := by
+    by_cases hx : x⁻¹ * g * x ∈ T
+    · rw [indTerm, dite_eq_left hx, indClassFun]
+      refine Finset.sum_congr rfl fun s _ => ?_
+      have hconj : ((s.out⁻¹ * ⟨x⁻¹ * g * x, hx⟩ * s.out : T) : G) =
+          (x * (s.out : T))⁻¹ * g * (x * (s.out : T)) := by
+        simp only [Subgroup.coe_mul, Subgroup.coe_inv]
+        group
+      by_cases hs : (x * (s.out : T))⁻¹ * g * (x * (s.out : T)) ∈ L
+      · have hs' : s.out⁻¹ * ⟨x⁻¹ * g * x, hx⟩ * s.out ∈ L.subgroupOf T := by
+          rwa [Subgroup.mem_subgroupOf, hconj]
+        rw [indTerm, dite_eq_left hs', indTerm, dite_eq_left hs]
+        exact congrArg f (Subtype.ext hconj)
+      · have hs' : s.out⁻¹ * ⟨x⁻¹ * g * x, hx⟩ * s.out ∉ L.subgroupOf T := by
+          rwa [Subgroup.mem_subgroupOf, hconj]
+        rw [indTerm, dite_eq_right hs', indTerm, dite_eq_right hs]
+    · -- If `x⁻¹ g x ∉ T`, no conjugate `(x s)⁻¹ g (x s)` with `s ∈ T` lies in `L ≤ T`.
+      rw [indTerm, dite_eq_right hx]
+      refine (Finset.sum_eq_zero fun s _ => ?_).symm
+      have hs : (x * (s.out : T))⁻¹ * g * (x * (s.out : T)) ∉ L := fun h => hx <| by
+        have := T.mul_mem (T.mul_mem (s.out : T).2 (hLT h)) (T.inv_mem (s.out : T).2)
+        simpa [mul_assoc] using this
+      rw [indTerm, dite_eq_right hs]
+  calc indClassFun T _ g
+      = ∑ t : G ⧸ T, ∑ s : T ⧸ L.subgroupOf T, indTerm f g (t.out * (s.out : T)) :=
+        Finset.sum_congr rfl fun t _ => hinner t.out
+    _ = ∑ p : (G ⧸ T) × (T ⧸ L.subgroupOf T), indTerm f g (e.symm p).out := by
+        rw [Fintype.sum_prod_type]
+        refine Finset.sum_congr rfl fun t _ => Finset.sum_congr rfl fun s _ => ?_
+        refine indTerm_eq_of_mk_eq hf _ _ _ ?_
+        rw [QuotientGroup.out_eq', he]
+    _ = indClassFun L f g := e.symm.sum_comp fun q => indTerm f g q.out
 
 end ClassFun
 

@@ -25,13 +25,16 @@ is compact. No nondegeneracy is needed in this direction.
 
 If `Q` is isotropic and nondegenerate, it contains a hyperbolic pair `u`, `v`, and the split torus
 of that pair is a family of isometries `g_t` with `g_t u = t • u`. The continuous function
-`g ↦ polar Q (g u) v` takes every nonzero value `t` on this family, so it is unbounded on `O(Q)`,
-which is therefore not compact. The torus consists of proper isometries, so in finite dimension
-`SO(Q)` is not compact either. This direction holds over any nontrivially normed field, with no
-local compactness or condition on `2`.
+`g ↦ polar Q (g u) v` takes the value `t` at `g_t`, so it is unbounded on `O(Q)`, which is
+therefore not compact; it stays unbounded on the square parameters `t = s ^ 2` alone, which is
+what the corresponding statement for the Spin group uses. The torus consists of proper
+isometries, so in finite dimension `SO(Q)` is not compact either. This direction holds over any
+nontrivially normed field, with no local compactness or condition on `2`.
 
 ## Main results
 
+* `TauCeti.QuadraticMap.not_isCompact_of_hyperbolicPairTorus_sq_mem`: a set of automorphisms
+  containing the split torus at every square parameter is not compact.
 * `TauCeti.QuadraticMap.isCompact_orthogonalGroup`: the orthogonal group of an anisotropic form
   is compact.
 * `TauCeti.QuadraticMap.not_isCompact_orthogonalGroup`,
@@ -54,11 +57,15 @@ section Noncompact
 variable {K V : Type*} [NontriviallyNormedField K] [AddCommGroup V] [Module K V]
   (Q : QuadraticForm K V)
 
-/-- A set of linear automorphisms containing the whole split torus of a hyperbolic pair is not
-compact: `g ↦ polar Q (g u) v` is continuous and takes the value `t` at the torus element `t`. -/
-private theorem not_isCompact_of_hyperbolicPairTorus_mem {u v : V} (hu : Q u = 0) (hv : Q v = 0)
+/-- A set of linear automorphisms containing the split torus of a hyperbolic pair at every square
+parameter is not compact: `g ↦ polar Q (g u) v` is continuous and takes the value `t ^ 2` at the
+torus element `t ^ 2`, and these values are unbounded. Asking only for the square parameters lets
+the lemma apply to the image of the Spin group, which contains exactly those torus elements whose
+spinor norm is trivial. -/
+theorem not_isCompact_of_hyperbolicPairTorus_sq_mem {u v : V} (hu : Q u = 0) (hv : Q v = 0)
     (huv : polar Q u v = 1) {S : Set (V ≃ₗ[K] V)}
-    (hS : ∀ t : Kˣ, (hyperbolicPairTorus Q hu hv huv t : V ≃ₗ[K] V) ∈ S) : ¬IsCompact S := by
+    (hS : ∀ t : Kˣ, (hyperbolicPairTorus Q hu hv huv (t ^ 2) : V ≃ₗ[K] V) ∈ S) :
+    ¬IsCompact S := by
   intro hcpt
   let φ : Module.End K V →ₗ[K] K := (Q.polarBilin.flip v).comp (LinearMap.applyₗ u)
   have hφ (g : V ≃ₗ[K] V) : φ g = polar Q (g u) v := by simp [φ]
@@ -67,12 +74,11 @@ private theorem not_isCompact_of_hyperbolicPairTorus_mem {u v : V} (hu : Q u = 0
   have htorus (t : Kˣ) : φ (hyperbolicPairTorus Q hu hv huv t : V ≃ₗ[K] V) = t := by
     simp [hφ, polar_smul_left, huv]
   obtain ⟨r, hr⟩ := isBounded_iff_forall_norm_le.mp (hcpt.image hF).isBounded
-  have hr0 : 0 ≤ r := (norm_nonneg _).trans (hr _ ⟨_, hS 1, rfl⟩)
-  obtain ⟨t, ht⟩ := NormedField.exists_lt_norm K r
-  have ht0 : t ≠ 0 := norm_pos_iff.mp (hr0.trans_lt ht)
+  obtain ⟨t, ht⟩ := NormedField.exists_lt_norm K (max r 1)
+  have ht0 : t ≠ 0 := norm_pos_iff.mp (zero_lt_one.trans_le (le_max_right r 1) |>.trans ht)
   have := hr _ ⟨_, hS (Units.mk0 t ht0), rfl⟩
-  simp only [htorus, Units.val_mk0] at this
-  exact this.not_gt ht
+  simp only [htorus, Units.val_pow_eq_pow_val, Units.val_mk0, norm_pow] at this
+  nlinarith [le_max_left r 1, le_max_right r 1]
 
 /-- **The special orthogonal group of an isotropic form is not compact.** For an isotropic
 nondegenerate quadratic form on a finite-dimensional space over a nontrivially normed field, the
@@ -81,8 +87,8 @@ theorem not_isCompact_specialOrthogonalGroup [FiniteDimensional K V] (hQ : Q.Non
     (hiso : ¬Q.Anisotropic) :
     ¬IsCompact (specialOrthogonalGroup Q : Set (V ≃ₗ[K] V)) := by
   obtain ⟨u, v, -, hu, hv, huv⟩ := hQ.exists_isotropic_pair hiso
-  exact not_isCompact_of_hyperbolicPairTorus_mem Q hu hv huv fun t =>
-    hyperbolicPairTorus_mem_specialOrthogonalGroup hu hv huv t
+  exact not_isCompact_of_hyperbolicPairTorus_sq_mem Q hu hv huv fun t =>
+    hyperbolicPairTorus_mem_specialOrthogonalGroup hu hv huv (t ^ 2)
 
 /-- **The orthogonal group of an isotropic form is not compact.** For an isotropic nondegenerate
 quadratic form over a nontrivially normed field, the orthogonal group is not a compact subset of
@@ -90,8 +96,8 @@ the linear automorphism group. -/
 theorem not_isCompact_orthogonalGroup (hQ : Q.Nondegenerate) (hiso : ¬Q.Anisotropic) :
     ¬IsCompact (orthogonalGroup Q : Set (V ≃ₗ[K] V)) := by
   obtain ⟨u, v, -, hu, hv, huv⟩ := hQ.exists_isotropic_pair hiso
-  exact not_isCompact_of_hyperbolicPairTorus_mem Q hu hv huv fun t =>
-    (hyperbolicPairTorus Q hu hv huv t).2
+  exact not_isCompact_of_hyperbolicPairTorus_sq_mem Q hu hv huv fun t =>
+    (hyperbolicPairTorus Q hu hv huv (t ^ 2)).2
 
 end Noncompact
 

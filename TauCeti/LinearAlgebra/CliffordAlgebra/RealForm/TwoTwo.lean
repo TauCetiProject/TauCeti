@@ -34,6 +34,8 @@ reduction identifies `Cl⁺(2,2)` with `Cl(2,1)` and carries reversal to Cliffor
   componentwise adjugation.
 * `TauCeti.realCliffordTwoTwo_reverseEven_mul_self_eq_one_iff_det_eq_one` characterizes the
   reverse-unitary carrier by two determinant-one equations.
+* `TauCeti.realCliffordTwoTwoVectorEquivMatrix` identifies the quadratic space with two-by-two
+  matrices, carrying the quadratic form to the determinant.
 
 ## References
 
@@ -46,6 +48,75 @@ public section
 open scoped Matrix TensorProduct
 
 namespace TauCeti
+
+/-! ## The quadratic space as two-by-two matrices -/
+
+/-- The split four-dimensional real Clifford form in coordinates. -/
+@[simp]
+theorem realCliffordForm_two_two_apply (v : Fin 4 → ℝ) :
+    realCliffordForm 2 2 v = v 0 ^ 2 + v 1 ^ 2 - v 2 ^ 2 - v 3 ^ 2 := by
+  rw [realCliffordForm_apply, Fin.sum_univ_four]
+  rw [realCliffordWeight_of_lt (p := 2) (q := 2) (i := (0 : Fin 4)) (by decide),
+    realCliffordWeight_of_lt (p := 2) (q := 2) (i := (1 : Fin 4)) (by decide),
+    realCliffordWeight_of_le (p := 2) (q := 2) (i := (2 : Fin 4)) (by decide),
+    realCliffordWeight_of_le (p := 2) (q := 2) (i := (3 : Fin 4)) (by decide)]
+  simp only [one_mul, neg_one_mul]
+  ring
+
+/-- The standard determinant model of the split quadratic space of signature `(2,2)`. The
+coordinate convention is chosen compatibly with `realCliffordTwoTwoEvenEquivMatrixProd`, so the
+two factors of the Spin group act by left and inverse-right multiplication. -/
+noncomputable def realCliffordTwoTwoVectorEquivMatrix :
+    (Fin 4 → ℝ) ≃ₗ[ℝ] Matrix (Fin 2) (Fin 2) ℝ where
+  toFun v := !![-v 0 - v 2, -v 1 - v 3; v 1 - v 3, -v 0 + v 2]
+  invFun A := ![-(A 0 0 + A 1 1) / 2, (A 1 0 - A 0 1) / 2,
+    (A 1 1 - A 0 0) / 2, -(A 0 1 + A 1 0) / 2]
+  map_add' v w := by
+    ext i j
+    all_goals fin_cases i
+    all_goals fin_cases j
+    all_goals simp
+    all_goals ring
+  map_smul' r v := by
+    ext i j
+    all_goals fin_cases i
+    all_goals fin_cases j
+    all_goals simp
+    all_goals ring
+  left_inv v := by
+    funext i
+    fin_cases i <;> simp
+  right_inv A := by
+    ext i j
+    all_goals fin_cases i
+    all_goals fin_cases j
+    all_goals simp
+    all_goals ring
+
+/-- The matrix coordinates of a vector in the split four-dimensional real model. -/
+@[simp]
+theorem realCliffordTwoTwoVectorEquivMatrix_apply (v : Fin 4 → ℝ) :
+    realCliffordTwoTwoVectorEquivMatrix v =
+      !![-v 0 - v 2, -v 1 - v 3; v 1 - v 3, -v 0 + v 2] := (rfl)
+
+/-- The vector coordinates recovered from a two-by-two real matrix. -/
+@[simp]
+theorem realCliffordTwoTwoVectorEquivMatrix_symm_apply
+    (A : Matrix (Fin 2) (Fin 2) ℝ) :
+    realCliffordTwoTwoVectorEquivMatrix.symm A =
+      ![-(A 0 0 + A 1 1) / 2, (A 1 0 - A 0 1) / 2,
+        (A 1 1 - A 0 0) / 2, -(A 0 1 + A 1 0) / 2] := (rfl)
+
+/-- The determinant in the matrix model is the split quadratic form. -/
+-- Keep this as a named rewrite: simplification first expands the matrix coordinates on its
+-- left-hand side.
+theorem realCliffordTwoTwoVectorEquivMatrix_det (v : Fin 4 → ℝ) :
+    (realCliffordTwoTwoVectorEquivMatrix v).det = realCliffordForm 2 2 v := by
+  rw [Matrix.det_fin_two, realCliffordForm_two_two_apply]
+  simp
+  ring
+
+/-! ## The even Clifford algebra -/
 
 private def prodTensorMatrixEquiv :
     (ℝ × ℝ) ⊗[ℝ] Matrix (Fin 2) (Fin 2) ℝ ≃ₐ[ℝ]
