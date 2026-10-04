@@ -39,6 +39,8 @@ groups over `ℝ` and `ℚ_p` are studied.
   automorphism group.
 * `TauCeti.QuadraticMap.instLocallyCompactSpaceOrthogonalGroup`: the orthogonal group is locally
   compact over a locally compact field.
+* `QuadraticMap.continuous_specialOrthogonalToOrthogonal`: the inclusion of the special orthogonal
+  group into the orthogonal group is continuous.
 -/
 
 public section
@@ -67,6 +69,22 @@ theorem isClosed_range_orthogonalGroup_toLinearMap
   exact Q.isClosed_setOfPred_forall_map_app hcont
 
 end Endomorphism
+
+section Inclusion
+
+variable {R M N : Type*} [CommRing R] [TopologicalSpace R] [AddCommGroup M] [Module R M]
+  [AddCommGroup N] [Module R N]
+
+/-- The inclusion of the special orthogonal group into the orthogonal group is continuous for
+their subgroup topologies in the linear automorphism group. -/
+@[fun_prop]
+theorem _root_.QuadraticMap.continuous_specialOrthogonalToOrthogonal
+    (Q : _root_.QuadraticMap R M N) :
+    Continuous (_root_.QuadraticMap.specialOrthogonalToOrthogonal Q) :=
+  continuous_induced_rng.mpr (continuous_subtype_val.congr fun g =>
+    (_root_.QuadraticMap.coe_specialOrthogonalToOrthogonal g).symm)
+
+end Inclusion
 
 section Automorphism
 
