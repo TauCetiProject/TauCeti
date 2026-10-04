@@ -352,22 +352,6 @@ section Quiver
 
 variable {k : Type u} [Field k] {Q : Type v} [_root_.Quiver.{w} Q]
 
-/-- Over a quiver of finite representation type with no pair of opposite arrows, two vertices are
-joined by at most one arrow, counting both directions, and there is no loop. -/
-private theorem card_hom_add_card_hom_le_one [∀ a b : Q, Fintype (a ⟶ b)]
-    (h : IsFiniteRepType.{u, v, w, u} k Q)
-    (hopp : ∀ ⦃a b : Q⦄, a ≠ b → (a ⟶ b) → IsEmpty (b ⟶ a)) (a b : Q) :
-    Fintype.card (a ⟶ b) + Fintype.card (b ⟶ a) ≤ 1 := by
-  rcases eq_or_ne a b with rfl | hab
-  · have := h.isEmpty_hom_self a
-    simp
-  have hle (x y : Q) : Fintype.card (x ⟶ y) ≤ 1 :=
-    Fintype.card_le_one_iff_subsingleton.mpr (h.subsingleton_hom x y)
-  rcases isEmpty_or_nonempty (a ⟶ b) with hl | hl
-  · simpa [Fintype.card_eq_zero] using hle b a
-  · have := hopp hab hl.some
-    simpa [Fintype.card_eq_zero] using hle a b
-
 /-- **Finite representation type of a tree quiver forces a positive definite Tits form.** A finite
 quiver of finite representation type whose underlying graph is a tree, and which has no pair of
 opposite arrows `a ⟶ b`, `b ⟶ a`, has a positive definite Tits form.
@@ -382,7 +366,7 @@ theorem IsFiniteRepType.posDef_titsForm_of_isTree [Fintype Q] [∀ a b : Q, Fint
     (hopp : ∀ ⦃a b : Q⦄, a ≠ b → (a ⟶ b) → IsEmpty (b ⟶ a))
     (htree : (underlyingGraph Q).IsTree) : (titsForm Q).PosDef := by
   classical
-  rw [titsForm_posDef_iff_posDef_graphCartanMatrix Q (card_hom_add_card_hom_le_one h hopp)]
+  rw [titsForm_posDef_iff_posDef_graphCartanMatrix Q (h.card_hom_add_card_hom_le_one hopp)]
   exact htree.posDef_graphCartanMatrix
     (fun m ⟨f⟩ ↦ not_isFiniteRepType_of_copy_affineD m f h)
     (fun ⟨f⟩ ↦ not_isFiniteRepType_of_copy_affineE6 f h)

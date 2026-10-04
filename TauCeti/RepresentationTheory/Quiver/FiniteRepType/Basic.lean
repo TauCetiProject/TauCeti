@@ -183,6 +183,7 @@ theorem IsFiniteRepType.of_ulift (h : IsFiniteRepType.{u, v, w, max t t'} k Q) :
     (fun _ _ _ _ _ _ ⟨e⟩ ↦ ⟨hL.preimageIso e⟩) (fun _ _ _ _ h ↦ h.elim) h
   refine isFinDim_iff.mpr fun x ↦ ?_
   have := isFinDim_iff.mp hM x
+  rw [Functor.whiskeringRight_obj_obj, Functor.comp_obj, ModuleCat.uliftFunctor_obj]
   exact ULift.moduleEquiv.symm.finiteDimensional
 
 end TauCeti
