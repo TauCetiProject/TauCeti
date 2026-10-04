@@ -111,9 +111,8 @@ theorem mk_eq_iff (φ : F ≃ₜ F) {x y : F} {t s : ℝ} :
     exact ⟨n, Prod.ext hxy hts⟩
 
 /-- Every point of a mapping torus is represented by a point of the cylinder. -/
-theorem mk_surjective (φ : F ≃ₜ F) (z : MappingTorus φ) : ∃ x t, mk φ x t = z := by
-  obtain ⟨⟨x, t⟩, rfl⟩ := Quotient.mk''_surjective z
-  exact ⟨x, t, rfl⟩
+theorem mk_surjective (φ : F ≃ₜ F) : Function.Surjective fun p : F × ℝ ↦ mk φ p.1 p.2 :=
+  Quotient.mk''_surjective
 
 /-- The quotient map from the cylinder to the mapping torus is continuous. -/
 theorem continuous_mk (φ : F ≃ₜ F) : Continuous fun p : F × ℝ ↦ mk φ p.1 p.2 :=
@@ -179,7 +178,7 @@ lemma map_id (φ : F ≃ₜ F) :
     map φ φ (ContinuousMap.id F) (by intro x; rfl) =
       ContinuousMap.id (MappingTorus φ) := by
   ext z
-  obtain ⟨x, t, rfl⟩ := mk_surjective φ z
+  obtain ⟨⟨x, t⟩, rfl⟩ := mk_surjective φ z
   simp
 
 /-- Maps of mapping tori respect composition of maps intertwining the monodromies. -/
@@ -189,7 +188,7 @@ lemma map_comp {H : Type*} [TopologicalSpace H] (φ : F ≃ₜ F) (ψ : G ≃ₜ
     (hk : Function.Semiconj k ψ χ) :
     (map ψ χ k hk).comp (map φ ψ g hg) = map φ χ (k.comp g) (hg.trans hk) := by
   ext z
-  obtain ⟨x, t, rfl⟩ := mk_surjective φ z
+  obtain ⟨⟨x, t⟩, rfl⟩ := mk_surjective φ z
   simp
 
 end Map
@@ -237,7 +236,7 @@ lemma proj_comp_map (φ : F ≃ₜ F) (ψ : G ≃ₜ G) (g : C(F, G))
         (map φ ψ g h) =
       (⟨proj φ, continuous_proj φ⟩ : C(MappingTorus φ, UnitAddCircle)) := by
   ext z
-  obtain ⟨x, t, rfl⟩ := mk_surjective φ z
+  obtain ⟨⟨x, t⟩, rfl⟩ := mk_surjective φ z
   simp
 
 end Map

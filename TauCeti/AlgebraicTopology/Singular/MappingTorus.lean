@@ -27,7 +27,8 @@ then on homology.  This is the elementary chain-level relation behind the endomo
   homology.
 
 The construction follows the mapping-torus derivation of the Wang sequence; see A. Hatcher,
-*Algebraic Topology*, Section 2.2.
+*Algebraic Topology*, Section 2.2.  The chain homotopy itself is obtained from Mathlib's
+homotopy invariance of singular chains, `TopCat.Homotopy.singularChainComplexFunctorObjMap`.
 -/
 
 public section
