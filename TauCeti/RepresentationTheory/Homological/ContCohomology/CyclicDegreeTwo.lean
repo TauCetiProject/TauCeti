@@ -123,12 +123,8 @@ private def cyclicZ2Map : Z2 G M →+
     H0 G M ⧸ (groupNorm G M).range.addSubgroupOf (H0 G M) :=
   (QuotientAddGroup.mk' _).comp
     { toFun := fun f ↦ sumCocycle f g
-      map_zero' := Subtype.ext (by
-        simp only [sumCocycle_val, AddSubgroup.coe_zero, Pi.zero_apply,
-          Finset.sum_const_zero])
-      map_add' := fun f f' ↦ Subtype.ext (by
-        simp only [sumCocycle_val, AddSubgroup.coe_add, Pi.add_apply,
-          Finset.sum_add_distrib]) }
+      map_zero' := sumCocycle_zero g
+      map_add' := fun f f' ↦ sumCocycle_add f f' g }
 
 omit [DiscreteTopology G] [ContinuousSMul G M] in
 private theorem cyclicZ2Map_apply (f : Z2 G M) :
