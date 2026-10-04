@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Lie.Subgroup.Units
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Quadratic.Lie.Characterization
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Basic
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Normed
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Closed
 import TauCeti.Analysis.Calculus.FDeriv.Submodule
@@ -49,17 +50,6 @@ local instance realCliffordStarModule (p q : ℕ) :
     StarModule ℝ (CliffordAlgebra (realCliffordForm p q)) where
   star_smul := CliffordAlgebra.star_smul
 
-private theorem mem_spinGroup_toUnits_range_iff
-    {Q : QuadraticForm ℝ (Fin n → ℝ)} (u : (CliffordAlgebra Q)ˣ) :
-    u ∈ (spinGroup.toUnits (Q := Q)).range ↔ (u : CliffordAlgebra Q) ∈ spinGroup Q := by
-  constructor
-  · rintro ⟨s, rfl⟩
-    exact s.2
-  · intro hu
-    refine ⟨⟨(u : CliffordAlgebra Q), hu⟩, ?_⟩
-    apply Units.ext
-    rfl
-
 private theorem mem_even_of_forall_exp_smul_mem_even
     (p q : ℕ) (x : CliffordAlgebra (realCliffordForm p q))
     (h : ∀ t : ℝ, exp (t • x) ∈ even (realCliffordForm p q)) :
@@ -75,11 +65,11 @@ private theorem mem_even_of_forall_exp_smul_mem_even
       (Subalgebra.mem_toSubmodule (even Q)).mpr (even Q).one_mem
   have hinc : ∀ t : ℝ, exp (t • x) - exp ((0 : ℝ) • x) ∈ S := by
     intro t
-    exact S.sub_mem (h t) hzero
+    exact S.sub_mem ((Subalgebra.mem_toSubmodule (even Q)).mpr (h t)) hzero
   have hx : x ∈ S := by
     simpa using hderiv.hasFDerivAt.apply_mem_of_eventually_sub_mem hclosed
       (.of_forall hinc) 1
-  exact hx
+  exact (Subalgebra.mem_toSubmodule (even Q)).mp hx
 
 private theorem forall_expUnit_smul_mem_realCliffordSpinGroup_iff_of_neZero
     (p q : ℕ) [NeZero (p + q)] (x : CliffordAlgebra (realCliffordForm p q)) :

@@ -24,6 +24,18 @@ namespace CliffordAlgebra
 variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M]
   {Q : QuadraticForm R M}
 
+/-- A Clifford unit belongs to the range of the canonical map from the Spin group exactly when
+its Clifford value belongs to the Spin group. -/
+theorem mem_spinGroup_toUnits_range_iff (u : (CliffordAlgebra Q)ˣ) :
+    u ∈ (spinGroup.toUnits (Q := Q)).range ↔ (u : CliffordAlgebra Q) ∈ spinGroup Q := by
+  constructor
+  · rintro ⟨s, rfl⟩
+    exact s.2
+  · intro hu
+    refine ⟨⟨(u : CliffordAlgebra Q), hu⟩, ?_⟩
+    apply Units.ext
+    rfl
+
 /-- The product of two Clifford generators belongs to Spin when their norms multiply to one. -/
 theorem ι_mul_ι_mem_spinGroup_of_norm_mul_norm_eq_one (x y : M)
     (hxy : Q x * Q y = 1) :
