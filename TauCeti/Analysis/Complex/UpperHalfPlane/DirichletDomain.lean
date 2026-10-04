@@ -40,16 +40,16 @@ by the bisectors between its centre and the distinct points of the orbit of that
 Translates fixing the centre impose no constraint. -/
 theorem dirichletDomain_eq_iInter_closure_leftHalfPlane (p : ℍ) :
     dirichletDomain G p =
-      ⋂ g : G, ⋂ (_ : p ≠ g • p), closure (leftHalfPlane (bisector p (g • p))) := by
+      ⋂ g : G, ⋂ (_ : p ≠ g • p), closure (leftHalfPlane (perpBisector p (g • p))) := by
   ext z
   simp only [mem_dirichletDomain, mem_iInter]
   constructor
   · intro hz g hg
-    exact (mem_closure_leftHalfPlane_bisector_iff hg z).mpr (hz g)
+    exact (mem_closure_leftHalfPlane_perpBisector_iff hg z).mpr (hz g)
   · intro hz g
     by_cases hg : p = g • p
     · rw [← hg]
-    · exact (mem_closure_leftHalfPlane_bisector_iff hg z).mp (hz g hg)
+    · exact (mem_closure_leftHalfPlane_perpBisector_iff hg z).mp (hz g hg)
 
 /-- **Dirichlet domains in the hyperbolic plane are geodesically convex.** This applies to
 any family of translates, without discreteness, freeness, or isometry assumptions. -/

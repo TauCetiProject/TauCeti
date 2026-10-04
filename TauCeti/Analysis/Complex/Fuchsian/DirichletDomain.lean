@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Fuchsian.Covolume
-public import TauCeti.Analysis.Complex.UpperHalfPlane.Bisector.Basic
 public import TauCeti.Analysis.Complex.UpperHalfPlane.DirichletDomain
 public import TauCeti.MeasureTheory.Group.DirichletDomain.Faces
 public import TauCeti.Topology.MetricSpace.IsometricSMul
