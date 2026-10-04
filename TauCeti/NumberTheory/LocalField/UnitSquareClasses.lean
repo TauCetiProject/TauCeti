@@ -59,11 +59,13 @@ theorem mem_unitSquareClasses_iff (c : Kˣ ⧸ Subgroup.square Kˣ) :
 def squareClassValuation :
     (Kˣ ⧸ Subgroup.square Kˣ) →* Multiplicative (ZMod 2) :=
   QuotientGroup.lift (Subgroup.square Kˣ)
-    ((Int.castAddHom (ZMod 2)).toMultiplicative.comp (normalizedValuation K)) (by
+    (normalizedValuationMod K 2).toMultiplicativeRight (by
       intro a ha
       rw [MonoidHom.mem_ker]
       apply Multiplicative.toAdd.injective
-      exact (even_toAdd_normalizedValuation_of_isSquare
+      simpa only [AddMonoidHom.coe_toMultiplicativeRight, Function.comp_apply,
+        normalizedValuationMod_ofMul, toAdd_ofAdd, toAdd_one] using
+        (even_toAdd_normalizedValuation_of_isSquare
         (Subgroup.mem_square.mp ha)).intCast_zmod_two)
 
 /-- The valuation of a square class is the normalized valuation of a representative modulo two. -/
@@ -71,16 +73,16 @@ def squareClassValuation :
 theorem squareClassValuation_mk (a : Kˣ) :
     squareClassValuation K (a : Kˣ ⧸ Subgroup.square Kˣ) =
       Multiplicative.ofAdd ((normalizedValuation K a).toAdd : ZMod 2) := by
-  rfl
+  exact congrArg Multiplicative.ofAdd (normalizedValuationMod_ofMul (K := K) 2 a)
 
 /-- The valuation map on square classes is surjective. -/
 theorem squareClassValuation_surjective : Function.Surjective (squareClassValuation K) := by
   intro c
-  obtain ⟨n, hn⟩ := ZMod.intCast_surjective c.toAdd
-  obtain ⟨a, ha⟩ := normalizedValuation_surjective (K := K) (Multiplicative.ofAdd n)
-  refine ⟨QuotientGroup.mk' (Subgroup.square Kˣ) a, ?_⟩
-  rw [QuotientGroup.mk'_apply, squareClassValuation_mk, ha]
-  exact Multiplicative.ofAdd.injective.eq_iff.mpr hn
+  obtain ⟨a, ha⟩ := normalizedValuationMod_surjective (K := K) 2 c.toAdd
+  refine ⟨QuotientGroup.mk' (Subgroup.square Kˣ) a.toMul, ?_⟩
+  simpa only [QuotientGroup.mk'_apply, squareClassValuation_mk,
+    ← normalizedValuationMod_ofMul, ofMul_toMul, ofAdd_toAdd] using
+    congrArg Multiplicative.ofAdd ha
 
 /-- A unit of the field has an integer-unit square-class representative exactly when its
 normalized valuation is even. -/
