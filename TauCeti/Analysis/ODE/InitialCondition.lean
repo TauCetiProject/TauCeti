@@ -144,19 +144,13 @@ theorem eventually_contDiffAt_globalSolution (n : ℕ) (v : E → E) {K : ℝ≥
 /-- **The global solution of a globally Lipschitz `C^(n+1)` field is `C^(n+1)` jointly in its
 initial condition and time.**
 
-The local smooth-dependence theorem gives this at time zero. For a fixed initial condition `a`,
-let `S` be the set of times where the joint solution map is smooth at `(a, t)`. The flow law shows
-that smoothness at one time propagates across every sufficiently small further time, so `S` is
-open. The same local argument at the endpoint of an orbit shows that every limit point of `S`
-also lies in `S`, so `S` is closed. Since `ℝ` is connected and `0 ∈ S`, every time belongs to
-`S`.
-
 The order is written as `n + 1` because the parameterized Picard theorem consumes one derivative
-of the vector field. Here `n` is finite so that pointwise `C^(n+1)` regularity persists on a
-neighbourhood, as required by the open-and-closed propagation argument. -/
+of the vector field. The result is stated at finite order. -/
 theorem contDiff_globalSolution (n : ℕ) (v : E → E) {K : ℝ≥0} (hv : LipschitzWith K v)
     (hvs : ContDiff ℝ (n + 1) v) :
     ContDiff ℝ (n + 1) (fun p : E × ℝ ↦ globalSolution v hv p.1 p.2) := by
+  -- For a fixed initial condition, the smooth times form a nonempty clopen subset of `ℝ`:
+  -- the flow law propagates smoothness locally, including at limit points.
   let G : E × ℝ → E := fun p ↦ globalSolution v hv p.1 p.2
   have hlocal (a : E) : ContDiffAt ℝ (n + 1) G (a, 0) := by
     exact_mod_cast contDiffAt_globalSolution (n := (n : ℕ∞)) v hv (by exact_mod_cast hvs) a

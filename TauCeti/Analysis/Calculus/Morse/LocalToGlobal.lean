@@ -36,9 +36,11 @@ manifold structures and intersected to form Morse trajectory spaces.
 * `IsNondegenerateCriticalPoint.exists_stableSet_eq_biUnion_orbit_localStableSet` and
   `IsNondegenerateCriticalPoint.exists_unstableSet_eq_biUnion_orbit_localUnstableSet`: positive
   radii for which the local sets generate the global stable and unstable sets.
+* `isEmbedding_flow_graph`: flowing a graph over the range of an idempotent continuous linear map
+  gives another topological embedding.
 * `IsNondegenerateCriticalPoint.isEmbedding_stableGraph_orbit` and
-  `IsNondegenerateCriticalPoint.isEmbedding_unstableGraph_orbit`: flowing a graph over the stable
-  or unstable spectral subspace gives another topological embedding.
+  `IsNondegenerateCriticalPoint.isEmbedding_unstableGraph_orbit`: the stable and unstable spectral
+  specializations.
 * `contDiffAt_negativeGradientFlow_graph`: when a graph and the function are `C¹` and `C²`
   respectively, its transported parameterization is `C¹`.
 
@@ -253,26 +255,33 @@ theorem contDiffAt_negativeGradientFlow_graph (hf : LipschitzWith K (∇ f))
   (contDiff_negativeGradientFlow_apply f hf hfs t).contDiffAt.comp v
     (contDiffAt_const.add (contDiffAt_id.add hg))
 
+omit [FiniteDimensional ℝ E] [CompleteSpace E] in
+/-- A graph over the range of an idempotent continuous linear map remains embedded after
+translation and transport by any fixed time of a flow. -/
+theorem isEmbedding_flow_graph (φ : Flow ℝ E) (P : E →L[ℝ] E) (hP : IsIdempotentElem P)
+    (g : E → E) (hPg : ∀ v ∈ P.range, P (g v) = 0) (hg : ContinuousOn g P.range)
+    (x : E) (t : ℝ) :
+    IsEmbedding (fun v : P.range ↦ φ t (x + ((v : E) + g (v : E)))) := by
+  have hgraph : IsEmbedding (fun v : P.range ↦ (v : E) + g (v : E)) :=
+    ContinuousLinearMap.isEmbedding_graph P hP g hPg hg
+  have hcomp := φ.toHomeomorph t |>.isEmbedding.comp
+    ((Homeomorph.addLeft x).isEmbedding.comp hgraph)
+  convert hcomp using 1
+  funext v
+  simp [Function.comp_apply, Homeomorph.addLeft]
+
 namespace IsNondegenerateCriticalPoint
 
-/-- Flowing an embedded graph over the stable spectral subspace gives another embedding. The
-projection is a left inverse before flowing, and a fixed-time flow map is a homeomorphism. This is
+/-- Flowing an embedded graph over the stable spectral subspace gives another embedding, providing
 the topological half of transporting a local stable disk along an orbit. -/
 theorem isEmbedding_stableGraph_orbit (h : IsNondegenerateCriticalPoint f x)
     (hf : LipschitzWith K (∇ f)) (g : E → E)
     (hPg : ∀ v ∈ h.stableProjection.range, h.stableProjection (g v) = 0)
     (hg : ContinuousOn g h.stableProjection.range) (t : ℝ) :
     IsEmbedding (fun v : h.stableProjection.range ↦
-      negativeGradientFlow f hf t (x + ((v : E) + g (v : E)))) := by
-  have hgraph : IsEmbedding
-      (fun v : h.stableProjection.range ↦ (v : E) + g (v : E)) :=
-    ContinuousLinearMap.isEmbedding_graph h.stableProjection
-      h.isIdempotentElem_stableProjection g hPg hg
-  have hcomp := (negativeGradientFlow f hf).toHomeomorph t |>.isEmbedding.comp
-    ((Homeomorph.addLeft x).isEmbedding.comp hgraph)
-  convert hcomp using 1
-  funext v
-  simp [Function.comp_apply, Homeomorph.addLeft]
+      negativeGradientFlow f hf t (x + ((v : E) + g (v : E)))) :=
+  isEmbedding_flow_graph (negativeGradientFlow f hf) h.stableProjection
+    h.isIdempotentElem_stableProjection g hPg hg x t
 
 /-- Flowing an embedded graph over the unstable spectral subspace gives another embedding. -/
 theorem isEmbedding_unstableGraph_orbit (h : IsNondegenerateCriticalPoint f x)
@@ -280,16 +289,9 @@ theorem isEmbedding_unstableGraph_orbit (h : IsNondegenerateCriticalPoint f x)
     (hPg : ∀ v ∈ h.unstableProjection.range, h.unstableProjection (g v) = 0)
     (hg : ContinuousOn g h.unstableProjection.range) (t : ℝ) :
     IsEmbedding (fun v : h.unstableProjection.range ↦
-      negativeGradientFlow f hf t (x + ((v : E) + g (v : E)))) := by
-  have hgraph : IsEmbedding
-      (fun v : h.unstableProjection.range ↦ (v : E) + g (v : E)) :=
-    ContinuousLinearMap.isEmbedding_graph h.unstableProjection
-      h.isIdempotentElem_unstableProjection g hPg hg
-  have hcomp := (negativeGradientFlow f hf).toHomeomorph t |>.isEmbedding.comp
-    ((Homeomorph.addLeft x).isEmbedding.comp hgraph)
-  convert hcomp using 1
-  funext v
-  simp [Function.comp_apply, Homeomorph.addLeft]
+      negativeGradientFlow f hf t (x + ((v : E) + g (v : E)))) :=
+  isEmbedding_flow_graph (negativeGradientFlow f hf) h.unstableProjection
+    h.isIdempotentElem_unstableProjection g hPg hg x t
 
 /-- Membership in the local stable set is equivalent to confinement of the global
 negative-gradient orbit together with the stable-projection cutoff. -/
