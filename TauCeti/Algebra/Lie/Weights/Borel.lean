@@ -58,6 +58,8 @@ function.
   inclusions `H ≤ 𝔟` and `n⁺ ≤ 𝔟`.
 * `TauCeti.lie_mem_positiveNilradical_of_mem_borelSubalgebra`: `⁅𝔟, n⁺⁆ ≤ n⁺`, so `n⁺` is a Lie
   ideal of `𝔟`.
+* `TauCeti.lie_mem_positiveNilradical_of_mem_borelSubalgebra_of_mem_borelSubalgebra`:
+  `⁅𝔟, 𝔟⁆ ≤ n⁺`, since the Cartan subalgebra is abelian.
 * `TauCeti.negativeNilradical_sup_borelSubalgebra_eq_top`: the triangular decomposition
   `L = n⁻ + (H + n⁺)`, as an equality of submodules.
 * `TauCeti.exists_mem_negativeNilradical_add_mem_borelSubalgebra`: the corresponding elementwise
@@ -379,6 +381,26 @@ theorem lie_mem_positiveNilradical_of_mem_borelSubalgebra {x y : L}
   exact add_mem (LieSubmodule.lie_mem _ (x := (⟨u, hu⟩ : H)) hy)
     ((positiveNilradical H b).lie_mem hm hy)
 
+/-- The bracket of two elements of the Borel subalgebra lies in the positive nilradical:
+`⁅𝔟, 𝔟⁆ ≤ n⁺`, the Cartan subalgebra being abelian. -/
+theorem lie_mem_positiveNilradical_of_mem_borelSubalgebra_of_mem_borelSubalgebra
+    {x y : L} (hx : x ∈ borelSubalgebra H b) (hy : y ∈ borelSubalgebra H b) :
+    ⁅x, y⁆ ∈ positiveNilradical H b := by
+  rw [← LieSubalgebra.mem_toSubmodule, borelSubalgebra_toSubmodule, Submodule.mem_sup] at hy
+  obtain ⟨h, hh, n, hn, rfl⟩ := hy
+  rw [lie_add, ← lie_skew x h]
+  refine add_mem (neg_mem ?_) (lie_mem_positiveNilradical_of_mem_borelSubalgebra H b hx hn)
+  rw [← LieSubalgebra.mem_toSubmodule, borelSubalgebra_toSubmodule, Submodule.mem_sup] at hx
+  obtain ⟨h', hh', n', hn', rfl⟩ := hx
+  have hab : ⁅(⟨h, hh⟩ : H), (⟨h', hh'⟩ : H)⁆ = 0 := trivial_lie_zero _ _ _ _
+  rw [lie_add]
+  refine add_mem ?_ (lie_mem_positiveNilradical_of_mem_borelSubalgebra H b
+    (le_borelSubalgebra H b hh) hn')
+  have hcoe := congrArg Subtype.val hab
+  simp only [LieSubalgebra.coe_bracket, ZeroMemClass.coe_zero] at hcoe
+  rw [hcoe]
+  exact zero_mem _
+
 /-! ### The triangular decomposition -/
 
 /-- Every root space lies in `n⁻ + 𝔟`: a positive root contributes to the Borel subalgebra and a
@@ -440,27 +462,6 @@ theorem disjoint_cartan_positiveNilradical :
   rw [← LieSubmodule.disjoint_toSubmodule, rootSpace_zero_eq K L H, H.coe_toLieSubmodule] at hdisj
   exact hdisj.mono_right fun x hx ↦ (mem_positiveNilradical H b x).mp hx
 
-variable {H} in
-/-- The bracket of two elements of the Borel subalgebra lies in the positive nilradical, the
-Cartan subalgebra being abelian. -/
-private theorem lie_mem_positiveNilradical_of_mem_borelSubalgebra_of_mem_borelSubalgebra
-    {x y : L} (hx : x ∈ borelSubalgebra H b) (hy : y ∈ borelSubalgebra H b) :
-    ⁅x, y⁆ ∈ positiveNilradical H b := by
-  rw [← LieSubalgebra.mem_toSubmodule, borelSubalgebra_toSubmodule, Submodule.mem_sup] at hy
-  obtain ⟨h, hh, n, hn, rfl⟩ := hy
-  rw [lie_add, ← lie_skew x h]
-  refine add_mem (neg_mem ?_) (lie_mem_positiveNilradical_of_mem_borelSubalgebra H b hx hn)
-  rw [← LieSubalgebra.mem_toSubmodule, borelSubalgebra_toSubmodule, Submodule.mem_sup] at hx
-  obtain ⟨h', hh', n', hn', rfl⟩ := hx
-  have hab : ⁅(⟨h, hh⟩ : H), (⟨h', hh'⟩ : H)⁆ = 0 := trivial_lie_zero _ _ _ _
-  rw [lie_add]
-  refine add_mem ?_ (lie_mem_positiveNilradical_of_mem_borelSubalgebra H b
-    (le_borelSubalgebra H b hh) hn')
-  have hcoe := congrArg Subtype.val hab
-  simp only [LieSubalgebra.coe_bracket, ZeroMemClass.coe_zero] at hcoe
-  rw [hcoe]
-  exact zero_mem _
-
 attribute [local instance 100] LieRing.ofAssociativeRing
 
 variable (lam : Dual K H)
@@ -487,7 +488,7 @@ noncomputable def borelCharacter : LieCharacter K (borelSubalgebra H b) where
   map_lie' {x y} := by
     rw [LieRing.of_associative_ring_bracket, mul_comm, sub_self]
     exact borelPMap_apply H b lam _ 0 ⟨⁅x, y⁆,
-      lie_mem_positiveNilradical_of_mem_borelSubalgebra_of_mem_borelSubalgebra b x.2 y.2⟩
+      lie_mem_positiveNilradical_of_mem_borelSubalgebra_of_mem_borelSubalgebra H b x.2 y.2⟩
       (zero_add _) |>.trans (map_zero lam)
 
 private theorem borelCharacter_eq_borelPMap (x : borelSubalgebra H b) :
