@@ -55,6 +55,9 @@ along `h ↦ 1 ⊗ h`.
   exactly when all its coefficients lie in `J`.
 * `TauCeti.CommHopfAlgCat.baseChangeHopfIdeal_commonKernelHopfIdeal`: when `K` is free over `k`,
   for instance a field extension, the two subgroups agree, so generation commutes with base change.
+* `TauCeti.CommHopfAlgCat.map_baseChangeHopfIdeal_commonKernelHopfIdeal`: an ambient isomorphism
+  transports free scalar extension of a common kernel to the common kernel of the transported
+  family.
 * `TauCeti.CommHopfAlgCat.baseChangeHopfIdeal_baseChangeHopfIdeal`: base change of Hopf ideals
   along a tower `k → E → K` agrees with one-step base change across the tower comparison.
 * `TauCeti.CommHopfAlgCat.quotientBaseChangeIso`: the identification
@@ -80,6 +83,10 @@ This supplies the Hopf-ideal infrastructure for the Layer 9 milestone "base chan
 for any commutative ring `k`" of `TauCetiRoadmap/ReductiveGroups/README.md`, transporting a
 Chevalley--Demazure carrier presented as a Hopf-ideal quotient. See J. S. Milne, *Algebraic Groups*
 (2017), §§1.d, 2.a, and W. C. Waterhouse, *Introduction to Affine Group Schemes*, §16.
+
+The transported common-kernel comparison follows the arguments in
+`TauCeti.Algebra.Lie.F4.ShortRoot.PrimeField.Generated.Basic` and
+`TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.Generated.Basic`.
 -/
 
 public section
@@ -525,6 +532,53 @@ theorem baseChangeHopfIdeal_commonKernelHopfIdeal [Module.Free k K] (f : ∀ i, 
   exact Ideal.subset_span ⟨y, hy, j, rfl⟩
 
 end FreeBaseChange
+
+/-- Free scalar extension of a common-kernel Hopf ideal, pulled back through a surjective
+ambient morphism, is the common kernel of the transported scalar-extended family. -/
+theorem comapOfSurjective_baseChangeHopfIdeal_commonKernelHopfIdeal
+    {ι : Type y} {N : ι → _root_.CommHopfAlgCat.{v} k}
+    {H' : _root_.CommHopfAlgCat.{max w v} K} [Module.Free k K]
+    (f : ∀ i, H ⟶ N i) (g : H' ⟶ baseChange (K := K) H)
+    (hg : Function.Surjective g.hom) :
+    (baseChangeHopfIdeal (K := K) (commonKernelHopfIdeal f)).comapOfSurjective
+        g.hom hg =
+      commonKernelHopfIdeal (fun i ↦ g ≫ baseChangeMap (K := K) (f i)) := by
+  rw [baseChangeHopfIdeal_commonKernelHopfIdeal]
+  apply le_antisymm
+  · refine (le_commonKernelHopfIdeal_iff _ _).2 fun i x hx ↦ ?_
+    -- Expose the composite Hopf morphism application beneath the kernel's ring-hom coercions.
+    change (baseChangeMap (K := K) (f i)).hom (g.hom x) = 0
+    exact RingHom.mem_ker.mp (commonKernelHopfIdeal_toIdeal_le_ker _ i
+      (HopfIdeal.mem_comapOfSurjective.mp hx))
+  · intro x hx
+    apply HopfIdeal.mem_comapOfSurjective.mpr
+    have hle :
+        (commonKernelHopfIdeal
+          (fun i ↦ g ≫ baseChangeMap (K := K) (f i))).map g.hom ≤
+        commonKernelHopfIdeal (fun i ↦ baseChangeMap (K := K) (f i)) := by
+      refine (le_commonKernelHopfIdeal_iff _ _).2 fun i ↦ ?_
+      rw [HopfIdeal.map_toIdeal, Ideal.map_le_iff_le_comap]
+      intro y hy
+      exact commonKernelHopfIdeal_toIdeal_le_ker _ i hy
+    exact hle (HopfIdeal.mem_map_of_mem g.hom hx)
+
+/-- An ambient isomorphism carries the free scalar extension of a common-kernel Hopf ideal
+to the common kernel of the transported scalar-extended family. -/
+theorem map_baseChangeHopfIdeal_commonKernelHopfIdeal
+    {ι : Type y} {N : ι → _root_.CommHopfAlgCat.{v} k}
+    {H' : _root_.CommHopfAlgCat.{max w v} K} [Module.Free k K]
+    (f : ∀ i, H ⟶ N i) (e : baseChange (K := K) H ≅ H') :
+    (baseChangeHopfIdeal (K := K) (commonKernelHopfIdeal f)).map e.hom.hom =
+      commonKernelHopfIdeal (fun i ↦ e.inv ≫ baseChangeMap (K := K) (f i)) := by
+  rw [← comapOfSurjective_baseChangeHopfIdeal_commonKernelHopfIdeal f e.inv
+    (ConcreteCategory.bijective_of_isIso e.inv).2]
+  ext y
+  rw [HopfIdeal.mem_map_iff_of_surjective (ConcreteCategory.bijective_of_isIso e.hom).2,
+    HopfIdeal.mem_comapOfSurjective]
+  refine ⟨?_, fun hy ↦ ⟨e.inv.hom y, hy, _root_.CommHopfAlgCat.hom_inv_apply e y⟩⟩
+  rintro ⟨x, hx, rfl⟩
+  exact (congrArg (· ∈ baseChangeHopfIdeal (K := K) (commonKernelHopfIdeal f))
+    (_root_.CommHopfAlgCat.inv_hom_apply e x)).mpr hx
 
 /-- The quotient of a base change by a base-changed Hopf ideal is the base change of the
 quotient: `(K ⊗[k] H) ⧸ J_K ≅ K ⊗[k] (H ⧸ J)`.
