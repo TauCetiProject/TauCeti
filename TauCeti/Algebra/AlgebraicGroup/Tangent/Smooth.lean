@@ -12,7 +12,7 @@ public import TauCeti.RingTheory.Ideal.Cotangent.Smooth
 # Finite projective cotangent spaces of smooth affine monoids
 
 The cotangent space at the identity of a smooth affine monoid is finite projective over
-any commutative base ring. More precisely, finite presentation supplies finiteness, and
+any commutative base ring. More precisely, finite type supplies finiteness, and
 formal smoothness supplies projectivity; the hypotheses are kept separate. No
 noetherianity or reducedness is assumed.
 
