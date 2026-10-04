@@ -977,24 +977,11 @@ theorem mem_XSet_swapColumns (a b : Fin n) (p : Fin n × Fin n) :
     p ∈ (G.swapColumns a b).XSet ↔ (Equiv.swap a b p.1, p.2) ∈ G.XSet := by
   simp [swapColumns]
 
-/-- Swapping columns back transports the swapped diagram's O-markings to the original set. -/
-theorem OSet_eq_map_swapColumns (a b : Fin n) :
-    G.OSet = (G.swapColumns a b).OSet.map
-      ((Equiv.swap a b).prodCongr (Equiv.refl (Fin n))).toEmbedding := by
-  simpa only [OSet, swapColumns_O] using G.O.pointSet_eq_map_swapColumns a b
-
 /-- Swapping columns back transports the swapped diagram's X-markings to the original set. -/
 theorem XSet_eq_map_swapColumns (a b : Fin n) :
     G.XSet = (G.swapColumns a b).XSet.map
       ((Equiv.swap a b).prodCongr (Equiv.refl (Fin n))).toEmbedding := by
   simpa only [XSet, swapColumns_X] using G.X.pointSet_eq_map_swapColumns a b
-
-/-- A set of squares swapped back avoids the original O-markings exactly when the set
-avoids the swapped diagram's O-markings. -/
-theorem disjoint_map_swapColumns_OSet_iff (a b : Fin n) (S : Finset (Fin n × Fin n)) :
-    Disjoint (S.map ((Equiv.swap a b).prodCongr (Equiv.refl (Fin n))).toEmbedding) G.OSet ↔
-      Disjoint S (G.swapColumns a b).OSet := by
-  simpa only [OSet, swapColumns_O] using G.O.disjoint_map_swapColumns_pointSet_iff a b S
 
 /-- A set of squares swapped back avoids the original X-markings exactly when the set
 avoids the swapped diagram's X-markings. -/
