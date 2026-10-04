@@ -214,6 +214,22 @@ theorem absoluteGaloisGroupRestrictEquiv_absoluteGaloisGroupExtend
         AbsoluteGaloisGroup K) :=
   (absoluteGaloisGroupRestrictEquiv K).apply_symm_apply _
 
+/-- The image of `G_L` in Mathlib's `G_K` is the subgroup fixing `σ(L)`, transported from the
+separable-closure model to the algebraic-closure model. -/
+theorem range_absoluteGaloisGroupExtend :
+    (absoluteGaloisGroupExtend K L σ).range =
+      (galoisSubgroup K L σ).toSubgroup.map
+        (absoluteGaloisGroupRestrictEquiv K).symm.toMulEquiv.toMonoidHom := by
+  simp [absoluteGaloisGroupExtend, MonoidHom.range_comp, Subgroup.map_top,
+    Subgroup.range_subtype]
+
+/-- The image of the embedding `G_L → G_K` has index `[L : K]`. -/
+theorem index_range_absoluteGaloisGroupExtend :
+    (absoluteGaloisGroupExtend K L σ).range.index = Module.finrank K L := by
+  rw [range_absoluteGaloisGroupExtend,
+    Subgroup.index_map_of_bijective (absoluteGaloisGroupRestrictEquiv K).symm.bijective,
+    galoisSubgroup_index]
+
 /-- The embedding of absolute Galois groups intertwines the actions on the identified separable
 closures. -/
 theorem absoluteGaloisGroupExtend_apply_separableClosureRingEquiv
