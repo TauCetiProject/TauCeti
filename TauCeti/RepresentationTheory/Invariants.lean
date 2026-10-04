@@ -181,12 +181,19 @@ theorem range_norm_eq_invariants_of_projective (ρ : Representation k G V)
     have hF : τ.IsIntertwiningMap (ρ.comp ((MulEquiv.refl G : G ≃* G) : G →* G))
         F.toLinearMap := ⟨IntertwiningMap.isIntertwining τ ρ F⟩
     have hN : F (τ.norm y) = ρ.norm (F y) := LinearMap.congr_fun hF.comp_norm y
+    have hF_apply (z : ρ.asModule →₀ MonoidAlgebra k G) :
+        F z = ρ.asModuleEquiv
+          (Finsupp.linearCombination k[G] id (E (τ.asModuleEquiv.symm z))) := by
+      simp only [F, IntertwiningMap.equivLinearMapAsModule_symm_apply, LinearMap.comp_apply,
+        LinearEquiv.coe_coe]
+    have hS_apply (z : V) :
+        S z = τ.asModuleEquiv (E.symm (s (ρ.asModuleEquiv.symm z))) := by
+      simp only [S, IntertwiningMap.equivLinearMapAsModule_symm_apply, LinearMap.comp_apply,
+        LinearEquiv.coe_coe]
     -- `S` is a section of `F`, because `s` is a section of `Finsupp.linearCombination`.
     have hFS : F (S x) = x := by
-      rw [IntertwiningMap.equivLinearMapAsModule_symm_apply,
-        IntertwiningMap.equivLinearMapAsModule_symm_apply, LinearEquiv.symm_apply_apply,
-        LinearMap.comp_apply, LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.coe_coe,
-        E.apply_symm_apply, hs, LinearEquiv.apply_symm_apply]
+      simpa only [hF_apply, hS_apply, LinearEquiv.symm_apply_apply, E.apply_symm_apply,
+        LinearEquiv.apply_symm_apply] using congrArg ρ.asModuleEquiv (hs (ρ.asModuleEquiv.symm x))
     exact ⟨F y, by rw [← hN, hy, hFS]⟩
 
 end Finite
