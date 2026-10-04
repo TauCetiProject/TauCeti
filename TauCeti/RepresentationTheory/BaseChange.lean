@@ -20,6 +20,9 @@ public import TauCeti.RepresentationTheory.PermutationModule
 import Mathlib.RingTheory.Flat.Equalizer
 import Mathlib.RingTheory.TensorProduct.IsBaseChangeHom
 import Mathlib.LinearAlgebra.TensorProduct.Pi
+-- Non-public: the bundling lemmas `FDRep.character_of` and `FDRep.character_ρ` are used only inside
+-- the proof of `FDRep.character_baseChange`.
+import TauCeti.RepresentationTheory.FDRep
 
 /-!
 # Base change of representations
@@ -189,11 +192,14 @@ theorem _root_.Representation.character_baseChange {G : Type*} [Monoid G]
 
 /-- **The character of a scalar extension in `FDRep`** is the character of the original
 representation read in the larger field: `χ_{L ⊗[K] V} = algebraMap K L ∘ χ_V`. -/
+@[simp]
 theorem _root_.FDRep.character_baseChange {K L : Type u} [Field K] [Field L] [Algebra K L]
     {G : Type*} [Monoid G] (V : FDRep K G) :
     (FDRep.of (_root_.Representation.baseChange L V.ρ)).character =
-      algebraMap K L ∘ V.character :=
-  funext (_root_.Representation.character_baseChange V.ρ)
+      algebraMap K L ∘ V.character := by
+  funext g
+  rw [FDRep.character_of, _root_.Representation.character_baseChange, Function.comp_apply,
+    FDRep.character_ρ]
 
 /-- **The class function of a scalar extension in `FDRep`** is the class function of the original
 representation with its coefficients changed along `algebraMap K L`. -/
