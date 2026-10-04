@@ -45,6 +45,8 @@ noncomputable def primeIdealVonMangoldtBoundary (K : Type*) [Field K] [NumberFie
     (exists_continuousOn_eq_neg_deriv_dedekindZeta_div_sub K).choose_spec.1
     (exists_continuousOn_eq_neg_deriv_dedekindZeta_div_sub K).choose_spec.2
 
+/-- The series of `primeIdealVonMangoldtBoundary K` is the negative logarithmic derivative
+`-ζ_K'(s)/ζ_K(s)` of the Dedekind zeta function on `Re s > 1`. -/
 @[simp]
 theorem primeIdealVonMangoldtBoundary_series {K : Type*} [Field K] [NumberField K]
     (s : {s : ℂ // 1 < s.re}) :
