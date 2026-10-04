@@ -18,9 +18,9 @@ This file reads two properties of the field `K` off the image of its `p`-adic cy
 character `χ = localCyclotomicCharacter p K`.
 
 * **Roots of unity of the base field.** The values of `χ` modulo `p ^ n` record the action of
-  `Gal(K̄/K)` on the `p ^ n`-th roots of unity. So when `p` is invertible in `K`, the image of `χ`
-  lies in the principal unit group `U^(n) = 1 + p ^ n ℤ_p` exactly when `K` contains a primitive
-  `p ^ n`-th root of unity.
+  `Gal(K^alg/K)` on the `p ^ n`-th roots of unity. So when `p` is invertible in `K`, the image of
+  `χ` lies in the principal unit group `U^(n) = 1 + p ^ n ℤ_p` exactly when `K` contains a
+  primitive `p ^ n`-th root of unity.
 * **Infinitude over a finite extension of `ℚ_p`.** For `K` finite over `ℚ_p`, the image of `χ` is
   infinite. If it had `m` elements, every `p`-power root of unity would have at most `m`
   conjugates over `K`, hence degree at most `[K : ℚ_p] · m` over `ℚ_p`. This contradicts the
