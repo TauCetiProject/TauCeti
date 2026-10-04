@@ -932,20 +932,19 @@ theorem exists_sinkhorn_scaling {K : Matrix ι κ ℝ} (hK : ∀ i j, 0 < K i j)
   · rw [← hPa.2 j]
     exact Finset.sum_congr rfl fun i _ => (hPuv i j).symm
 
-/-- The Pythagorean identity of the relative entropy at a diagonal scaling: if `P` is a diagonal
-scaling of a strictly positive `K` by strictly positive factors, then for every matrix `Q` with the
-row and column sums of `P`,
+/-- The Pythagorean identity of the relative entropy at a diagonal scaling: if `K` and the scaling
+factors have no zero entries, then for every matrix `Q` with the row and column sums of `P`,
 `relEntropy Q K = relEntropy Q P + relEntropy P K`. -/
 theorem IsDiagonalScaling.relEntropy_eq_relEntropy_add {P K : Matrix ι κ ℝ} {u : ι → ℝ}
-    {v : κ → ℝ} (h : IsDiagonalScaling P K u v) (hK : ∀ i j, 0 < K i j) (hu : ∀ i, 0 < u i)
-    (hv : ∀ j, 0 < v j) {a : ι → ℝ} {b : κ → ℝ} (hP : HasMarginals P a b) {Q : Matrix ι κ ℝ}
+    {v : κ → ℝ} (h : IsDiagonalScaling P K u v) (hK : ∀ i j, K i j ≠ 0) (hu : ∀ i, u i ≠ 0)
+    (hv : ∀ j, v j ≠ 0) {a : ι → ℝ} {b : κ → ℝ} (hP : HasMarginals P a b) {Q : Matrix ι κ ℝ}
     (hQ : HasMarginals Q a b) :
     relEntropy Q K = relEntropy Q P + relEntropy P K := by
   have hlog : ∀ i j,
       Real.log (P i j) = Real.log (K i j) + (Real.log (u i) + Real.log (v j)) := by
     intro i j
-    rw [h i j, Real.log_mul (mul_pos (hu i) (hK i j)).ne' (hv j).ne',
-      Real.log_mul (hu i).ne' (hK i j).ne']
+    rw [h i j, Real.log_mul (mul_ne_zero (hu i) (hK i j)) (hv j),
+      Real.log_mul (hu i) (hK i j)]
     ring
   have hQK : relEntropy Q K
       = relEntropy Q P + ∑ i, ∑ j, Q i j * (Real.log (u i) + Real.log (v j)) := by
@@ -969,7 +968,8 @@ theorem IsDiagonalScaling.relEntropy_le {P K : Matrix ι κ ℝ} {u : ι → ℝ
     relEntropy P K ≤ relEntropy Q K := by
   have hPpos := h.pos hK hu hv
   have hmass : ∑ i, ∑ j, Q i j = ∑ i, ∑ j, P i j := by simp only [hQ.1, hP.1]
-  rw [h.relEntropy_eq_relEntropy_add hK hu hv hP hQ]
+  rw [h.relEntropy_eq_relEntropy_add (fun i j => (hK i j).ne') (fun i => (hu i).ne')
+    (fun j => (hv j).ne') hP hQ]
   linarith [relEntropy_nonneg hQ0 hPpos hmass]
 
 /-- For a strictly positive kernel `K` and strictly positive marginals `a` and `b`, a nonnegative
@@ -996,8 +996,10 @@ theorem IsDiagonalScaling.eq_of_hasMarginals {P P' K : Matrix ι κ ℝ} {u u' :
   have hmass : ∑ i, ∑ j, P' i j = ∑ i, ∑ j, P i j := by simp only [hP.1, hP'.1]
   -- Each scaling is the minimiser, so the two Pythagorean identities force both relative
   -- entropies between them to vanish.
-  have e1 := h.relEntropy_eq_relEntropy_add hK hu hv hP hP'
-  have e2 := h'.relEntropy_eq_relEntropy_add hK hu' hv' hP' hP
+  have e1 := h.relEntropy_eq_relEntropy_add (fun i j => (hK i j).ne')
+    (fun i => (hu i).ne') (fun j => (hv j).ne') hP hP'
+  have e2 := h'.relEntropy_eq_relEntropy_add (fun i j => (hK i j).ne')
+    (fun i => (hu' i).ne') (fun j => (hv' j).ne') hP' hP
   have n1 := relEntropy_nonneg (fun i j => (hP'pos i j).le) hPpos hmass
   have n2 := relEntropy_nonneg (fun i j => (hPpos i j).le) hP'pos hmass.symm
   exact ((relEntropy_eq_zero_iff (fun i j => (hP'pos i j).le) hPpos hmass).mp (by linarith)).symm
