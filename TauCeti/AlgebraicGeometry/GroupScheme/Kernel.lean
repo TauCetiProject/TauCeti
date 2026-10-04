@@ -161,11 +161,8 @@ lemma kernelBaseChangeSchemeIso_inv_comp_ι {S T : Scheme.{u}} (s : T ⟶ S)
           ((Over.pullback s).mapGrp.obj (kernel f)).X.left ⟶
             ((Over.pullback s).mapGrp.obj G).X.left) =
       (kernel.ι ((Over.pullback s).mapGrp.map f)).hom.hom.left := by
-  have h := congrArg (fun k ↦ k.hom.hom.left) (kernelBaseChangeIso_inv_comp_ι s f)
-  change (kernelBaseChangeIso s f).inv.hom.hom.left ≫
-    ((Over.pullback s).mapGrp.map (kernel.ι f)).hom.hom.left = _ at h
-  simp only [Functor.mapGrp_map_hom_hom, Over.pullback_map_left] at h
-  change (kernelBaseChangeIso s f).inv.hom.hom.left ≫ _ = _
-  exact h
+  refine (Iso.inv_comp_eq _).2 ((kernelBaseChangeSchemeIso_hom_comp_ι s f).trans ?_).symm
+  rw [Functor.mapGrp_map_hom_hom]
+  exact Over.pullback_map_left s (kernel f).X
 
 end TauCeti.GroupScheme
