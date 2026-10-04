@@ -74,25 +74,41 @@ theorem isClosedTransversal_iff (γ : ℝ → M) : F.IsClosedTransversal γ ↔
 def Taut : Prop :=
   ∀ x : M, ∃ γ : ℝ → M, F.IsClosedTransversal γ ∧ ∃ t : ℝ, γ t ∈ F.leaf x
 
+/-- Construct a taut foliation from a closed transversal meeting every leaf. -/
+theorem Taut.mk
+    {F : Foliation I n M k}
+    (h : ∀ x : M, ∃ γ : ℝ → M, F.IsClosedTransversal γ ∧ ∃ t : ℝ, γ t ∈ F.leaf x) :
+    F.Taut :=
+  h
+
+/-- A taut foliation has a closed transversal meeting each specified leaf. -/
+theorem Taut.exists_transversal {F : Foliation I n M k} (h : F.Taut) (x : M) :
+    ∃ γ : ℝ → M, F.IsClosedTransversal γ ∧ ∃ t : ℝ, γ t ∈ F.leaf x :=
+  h x
+
+variable {F}
+
 /-- The C¹ regularity field of a closed transversal. -/
-theorem isClosedTransversal_contMDiff (hγ : F.IsClosedTransversal γ) :
+theorem IsClosedTransversal.contMDiff (hγ : F.IsClosedTransversal γ) :
     ContMDiff 𝓘(ℝ, ℝ) I 1 γ :=
   hγ.1
 
 /-- The nonzero velocity field of a closed transversal. -/
-theorem isClosedTransversal_velocity_ne_zero (hγ : F.IsClosedTransversal γ) (t : ℝ) :
+theorem IsClosedTransversal.velocity_ne_zero (hγ : F.IsClosedTransversal γ) (t : ℝ) :
     curveVelocity I γ t ≠ 0 :=
   (hγ.2.2 t).1
 
 /-- The complementary-distribution field of a closed transversal. -/
-theorem isClosedTransversal_isCompl (hγ : F.IsClosedTransversal γ) (t : ℝ) :
+theorem IsClosedTransversal.isCompl (hγ : F.IsClosedTransversal γ) (t : ℝ) :
     IsCompl (Submodule.span ℝ {curveVelocity I γ t}) (F.distribution (γ t)) :=
   (hγ.2.2 t).2
 
-theorem isClosedTransversal_periodic (hγ : F.IsClosedTransversal γ) :
+/-- A closed transversal is 1-periodic. -/
+theorem IsClosedTransversal.periodic (hγ : F.IsClosedTransversal γ) :
     Function.Periodic γ 1 := hγ.2.1
 
-theorem isClosedTransversal_velocity_not_mem (hγ : F.IsClosedTransversal γ) (t : ℝ) :
+/-- The velocity of a closed transversal never belongs to the leaf distribution. -/
+theorem IsClosedTransversal.velocity_not_mem (hγ : F.IsClosedTransversal γ) (t : ℝ) :
     curveVelocity I γ t ∉ F.distribution (γ t) := by
   exact (Submodule.disjoint_span_singleton' (hγ.2.2 t).1).mp
     (hγ.2.2 t).2.disjoint.symm
@@ -121,7 +137,7 @@ theorem not_isClosedTransversal_ofSubmodule_ker
       (ℓ.hasFDerivAt.comp c (hγ'.differentiable one_ne_zero c).hasFDerivAt).hasDerivAt.deriv
   have hvzero : ℓ (curveVelocity 𝓘(ℝ, V) γ c) = 0 := by
     rw [curveVelocity_eq_deriv, ← hderiv, hdc]
-  have hnot := isClosedTransversal_velocity_not_mem
+  have hnot := IsClosedTransversal.velocity_not_mem
     (F := Foliation.ofSubmodule (LinearMap.ker ℓ.toLinearMap) hn)
       ⟨hγdiff, hperiod, htrans⟩ c
   apply hnot
@@ -132,7 +148,7 @@ theorem not_isClosedTransversal_ofSubmodule_ker
 theorem not_taut_ofSubmodule_ker :
     ¬ (Foliation.ofSubmodule (LinearMap.ker ℓ.toLinearMap) hn).Taut := by
   intro htaut
-  obtain ⟨γ, hγ, -⟩ := htaut 0
+  obtain ⟨γ, hγ, -⟩ := htaut.exists_transversal 0
   exact not_isClosedTransversal_ofSubmodule_ker ℓ hn hγ
 
 end FirstIntegral
