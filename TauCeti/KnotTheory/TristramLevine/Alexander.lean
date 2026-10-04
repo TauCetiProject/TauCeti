@@ -114,8 +114,9 @@ theorem det_tristramLevineForm_int_ne_zero_iff (V : Matrix ι ι ℤ) (ω : Circ
     (hω : ω ≠ 1) :
     (tristramLevineForm (V.map (Int.castRingHom ℝ)) ω).det ≠ 0 ↔
       eval₂ (Int.castRingHom ℂ) (Circle.toUnits ω) (alexander V) ≠ 0 := by
-  rw [det_tristramLevineForm_ne_zero_iff _ ω hω, eval₂_alexander_map]
-  rfl
+  have hcast : Complex.ofRealHom.comp (Int.castRingHom ℝ) = Int.castRingHom ℂ :=
+    RingHom.ext_int _ _
+  rw [det_tristramLevineForm_ne_zero_iff _ ω hω, eval₂_alexander_map, hcast]
 
 /-- The figure-eight Alexander polynomial has positive real value everywhere on the
 unit circle: `Δ(ω) = 3 - 2 * re ω ≥ 1`. In particular it has no unit-circle roots. -/
