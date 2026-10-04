@@ -13,9 +13,9 @@ public import TauCeti.Topology.Algebra.Group.Transfer
 
 For trivial coefficients, degree-one corestriction is the character-theoretic transfer.
 `cochainsCor1_eq_transfer` identifies the transversal sum with Mathlib's `MonoidHom.transfer`
-already on cochains, for every transversal. `H1EquivOfSmulEqSelf_explicitCor1` states the
-commuting square between corestriction on continuous `H¹` and transfer on characters, using
-the existing character equivalence `H1EquivOfSmulEqSelf`.
+already on cochains, for every transversal. `H1EquivOfSmulEqSelf_explicitCor1_eq_transfer`
+states the commuting square between corestriction on continuous `H¹` and transfer on characters,
+using the existing character equivalence `H1EquivOfSmulEqSelf`.
 
 In particular, transfer of a character of an abelian quotient of an open subgroup is
 precomposition with the transfer into that quotient, by `MonoidHom.transfer_comp`.
@@ -57,11 +57,14 @@ variable [TopologicalSpace G] [SeparatelyContinuousMul G]
 
 /-- Under the continuous-character description of `H¹` for trivial coefficients,
 corestriction is Mathlib's transfer. This is an equality of homomorphisms, not just classes. -/
-theorem H1EquivOfSmulEqSelf_explicitCor1
+@[simp]
+theorem H1EquivOfSmulEqSelf_explicitCor1_eq_transfer
     (htriv : ∀ (g : G) (m : M), g • m = m) (hU : IsOpen (U : Set G)) (x : H1 U M) :
-    (Additive.toMul (H1EquivOfSmulEqSelf htriv (explicitCor1 G M U hU x))).toMonoidHom =
+    (↑(Additive.toMul (H1EquivOfSmulEqSelf htriv (explicitCor1 G M U hU x))) :
+      G →* Multiplicative M) =
       MonoidHom.transfer
-        (Additive.toMul (H1EquivOfSmulEqSelf (fun (u : U) m => htriv u m) x)).toMonoidHom := by
+        (↑(Additive.toMul (H1EquivOfSmulEqSelf (fun (u : U) m => htriv u m) x)) :
+          U →* Multiplicative M) := by
   induction x using QuotientAddGroup.induction_on with
   | _ f =>
     apply MonoidHom.ext
