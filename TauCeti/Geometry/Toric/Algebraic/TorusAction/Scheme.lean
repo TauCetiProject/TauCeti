@@ -20,6 +20,7 @@ product, then package it as a morphism of schemes over `Spec ℂ`.
 On the zero cone, the action morphism agrees with multiplication on the dense torus. The counit
 and coassociativity identities for the underlying coordinate-ring coaction are proved in
 `TauCeti.Geometry.Toric.Algebraic.TorusAction.Coaction`.
+The action is equivariant under maps of lattice cones, in particular under face inclusions.
 
 ## Main declarations
 
@@ -27,6 +28,8 @@ and coassociativity identities for the underlying coordinate-ring coaction are p
 * `TauCeti.Toric.affineToricSchemeActionOver`: the action as a morphism over `Spec ℂ`.
 * `TauCeti.Toric.affineToricSchemeAction_bot`: on the zero cone, the action is torus
   multiplication.
+* `TauCeti.Toric.affineToricSchemeActionOver_comp_map` and `_comp_face`: equivariance
+  under toric maps and face inclusions over `Spec ℂ`.
 
 ## References
 
@@ -113,5 +116,81 @@ theorem affineToricSchemeActionOver_bot (hi : IsIntegralLattice i) :
       μ[((denseTorusScheme hi).asOver (Spec (.of ℂ)))] := by
   ext
   simp
+
+/-- Affine toric maps respect the complex base of the action. -/
+instance affineToricSchemeMap_isOver
+    {N' : Type} {V' : Type*} [AddCommGroup N'] [AddCommGroup V'] [Module ℝ V']
+    {i' : N' →+ V'} (hi : IsIntegralLattice i) (hi' : IsIntegralLattice i')
+    {σ : PointedCone ℝ V} {τ : PointedCone ℝ V'}
+    (f : N →+ N') (g : V →ₗ[ℝ] V') (hfg : ∀ n, g (i n) = i' (f n))
+    (hστ : Set.MapsTo g σ τ) :
+    (affineToricSchemeMap hi hi' f g hfg hστ).IsOver (Spec (.of ℂ)) := by
+  rw [affineToricSchemeMap_def]
+  infer_instance
+
+/-- Face inclusions respect the complex base of the action. -/
+instance faceAffineToricSchemeMap_isOver (hi : IsIntegralLattice i)
+    {σ τ : PointedCone ℝ V} (hτσ : τ.IsFaceOf σ) :
+    (faceAffineToricSchemeMap hi hτσ).IsOver (Spec (.of ℂ)) := by
+  rw [faceAffineToricSchemeMap_def]
+  infer_instance
+
+-- Compare the categorical wrappers using Mathlib's projection lemmas during elaboration.
+set_option backward.defeqAttrib.useBackward true in
+set_option backward.isDefEq.respectTransparency false in
+/-- A map of lattice cones intertwines the affine torus actions, with its induced map on
+dense tori in the first factor. The square is an equality of morphisms over `Spec ℂ`. -/
+@[reassoc]
+theorem affineToricSchemeActionOver_comp_map
+    {N' : Type} {V' : Type*} [AddCommGroup N'] [AddCommGroup V'] [Module ℝ V']
+    {i' : N' →+ V'} (hi : IsIntegralLattice i) (hi' : IsIntegralLattice i')
+    {σ : PointedCone ℝ V} {τ : PointedCone ℝ V'}
+    (f : N →+ N') (g : V →ₗ[ℝ] V') (hfg : ∀ n, g (i n) = i' (f n))
+    (hστ : Set.MapsTo g σ τ) :
+    affineToricSchemeActionOver hi σ ≫
+        (affineToricSchemeMap hi hi' f g hfg hστ).asOver (Spec (.of ℂ)) =
+      ((affineToricSchemeMap hi hi' f g hfg
+          (σ := ⊥) (τ := ⊥) (by simp [Set.MapsTo])).asOver (Spec (.of ℂ)) ⊗ₘ
+        (affineToricSchemeMap hi hi' f g hfg hστ).asOver (Spec (.of ℂ))) ≫
+          affineToricSchemeActionOver hi' τ := by
+  let R : CommRingCat := .of ℂ
+  let F := algSpec R
+  let : F.LaxMonoidal := (braidedAlgSpec (R := R)).toLaxBraided.toLaxMonoidal
+  let a := (CommAlgCat.ofHom (R := R) (affineCoordinateRingCoaction hi σ)).op
+  let b := (CommAlgCat.ofHom (R := R) (affineCoordinateRingCoaction hi' τ)).op
+  let t := (CommAlgCat.ofHom (R := R) (affineCoordinateRingMap hi hi' f g hfg
+    (σ := ⊥) (τ := ⊥) (by simp [Set.MapsTo]))).op
+  let m := (CommAlgCat.ofHom (R := R) (affineCoordinateRingMap hi hi' f g hfg hστ)).op
+  have h : (Functor.LaxMonoidal.μ F _ _ ≫ F.map a) ≫ F.map m =
+      (F.map t ⊗ₘ F.map m) ≫ Functor.LaxMonoidal.μ F _ _ ≫ F.map b := by
+    rw [Functor.LaxMonoidal.μ_natural_assoc, Category.assoc, ← F.map_comp, ← F.map_comp]
+    congr 2
+    apply Quiver.Hom.unop_inj
+    apply CommAlgCat.hom_ext
+    exact affineCoordinateRingCoaction_comp_map hi hi' f g hfg hστ
+  have hl := congrArg (fun k ↦ k.left) h
+  dsimp only [F] at hl
+  simp only [Over.comp_left] at hl
+  rw [μ_algSpec_left, μ_algSpec_left] at hl
+  apply Over.OverMorphism.ext
+  -- The comparison lemmas identify the monoidal structure map with `pullbackSpecIso`.
+  -- The remaining projections forget the `Over` and algebra-to-`Under` packaging.
+  simpa [R, a, b, t, m, affineToricSchemeAction, affineToricSchemeMap_def,
+    Scheme.Hom.asOver, Over.tensorHom_left, AlgHom.toUnder, specOverSpec_over,
+    denseTorusScheme, affineToricScheme] using hl
+
+/-- Face inclusions are equivariant for the affine torus action over `Spec ℂ`. -/
+@[reassoc]
+theorem affineToricSchemeActionOver_comp_face (hi : IsIntegralLattice i)
+    {σ τ : PointedCone ℝ V} (hτσ : τ.IsFaceOf σ) :
+    affineToricSchemeActionOver hi τ ≫
+        (faceAffineToricSchemeMap hi hτσ).asOver (Spec (.of ℂ)) =
+      (𝟙 ((denseTorusScheme hi).asOver (Spec (.of ℂ))) ⊗ₘ
+        (faceAffineToricSchemeMap hi hτσ).asOver (Spec (.of ℂ))) ≫
+          affineToricSchemeActionOver hi σ := by
+  simpa only [faceAffineToricSchemeMap_eq_affineToricSchemeMap,
+    affineToricSchemeMap_id, Scheme.Hom.asOver, OverClass.asOverHom_id] using
+      affineToricSchemeActionOver_comp_map hi hi (AddMonoidHom.id N) LinearMap.id
+        (fun _ ↦ rfl) (fun _ hx ↦ hτσ.le hx)
 
 end TauCeti.Toric
