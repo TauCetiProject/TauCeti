@@ -8,6 +8,8 @@ module
 public import Mathlib.Algebra.Module.Projective
 public import Mathlib.RepresentationTheory.Invariants
 public import Mathlib.RepresentationTheory.Irreducible
+import Mathlib.Algebra.Category.ModuleCat.Projective
+import Mathlib.RepresentationTheory.Rep.Iso
 import TauCeti.RepresentationTheory.Irreducible
 import TauCeti.RepresentationTheory.AsModule
 import TauCeti.RepresentationTheory.OfModule
@@ -174,14 +176,18 @@ theorem range_norm_eq_invariants_of_projective (ρ : Representation k G V)
     obtain ⟨y, hy⟩ : S x ∈ LinearMap.range τ.norm := by
       rw [range_norm_free_eq_invariants]
       exact hSx
+    -- `comp_norm` is stated along a group isomorphism (so that the two carriers may live in
+    -- different universes); here it is used along the identity of `G`.
     have hF : τ.IsIntertwiningMap (ρ.comp ((MulEquiv.refl G : G ≃* G) : G →* G))
         F.toLinearMap := ⟨IntertwiningMap.isIntertwining τ ρ F⟩
-    refine ⟨F y, ?_⟩
-    rw [← show F (τ.norm y) = ρ.norm (F y) from LinearMap.congr_fun hF.comp_norm y, hy]
-    rw [IntertwiningMap.equivLinearMapAsModule_symm_apply,
-      IntertwiningMap.equivLinearMapAsModule_symm_apply, LinearEquiv.symm_apply_apply,
-      LinearMap.comp_apply, LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.coe_coe,
-      LinearEquiv.apply_symm_apply, hs, LinearEquiv.apply_symm_apply]
+    have hN : F (τ.norm y) = ρ.norm (F y) := LinearMap.congr_fun hF.comp_norm y
+    -- `S` is a section of `F`, because `s` is a section of `Finsupp.linearCombination`.
+    have hFS : F (S x) = x := by
+      rw [IntertwiningMap.equivLinearMapAsModule_symm_apply,
+        IntertwiningMap.equivLinearMapAsModule_symm_apply, LinearEquiv.symm_apply_apply,
+        LinearMap.comp_apply, LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.coe_coe,
+        LinearEquiv.apply_symm_apply, hs, LinearEquiv.apply_symm_apply]
+    exact ⟨F y, by rw [← hN, hy, hFS]⟩
 
 end Finite
 
@@ -233,35 +239,12 @@ to an invariant of `A`. -/
 theorem invariantsFunctor_map_surjective_of_projective {A B : Rep k G} (f : A ⟶ B)
     (hf : Function.Surjective f.hom) [Module.Projective k[G] B.ρ.asModule] :
     Function.Surjective ((invariantsFunctor k G).map f).hom := by
-  let F : A.ρ.asModule →ₗ[k[G]] B.ρ.asModule :=
-    Representation.IntertwiningMap.equivLinearMapAsModule A.ρ B.ρ f.hom
-  have hF : Function.Surjective F := by
-    intro y
-    obtain ⟨x, hx⟩ := hf (B.ρ.asModuleEquiv y)
-    refine ⟨A.ρ.asModuleEquiv.symm x, ?_⟩
-    apply B.ρ.asModuleEquiv.injective
-    calc
-      B.ρ.asModuleEquiv (F (A.ρ.asModuleEquiv.symm x)) = f.hom x := by
-        rw [Representation.asModuleEquiv_apply,
-          Representation.IntertwiningMap.equivLinearMapAsModule_apply,
-          Representation.asModuleEquiv_symm_apply]
-      _ = B.ρ.asModuleEquiv y := hx
-  obtain ⟨s, hFs⟩ := Module.projective_lifting_property F LinearMap.id hF
-  let S : Representation.IntertwiningMap B.ρ A.ρ :=
-    (Representation.IntertwiningMap.equivLinearMapAsModule B.ρ A.ρ).symm s
-  rintro ⟨y, hy⟩
-  have hSy : S y ∈ A.ρ.invariants := fun g => by
-    rw [← Representation.IntertwiningMap.isIntertwining B.ρ A.ρ S g y, hy g]
-  refine ⟨⟨S y, hSy⟩, Subtype.ext ?_⟩
-  calc
-    f.hom (S y) = B.ρ.asModuleEquiv (F (s (B.ρ.asModuleEquiv.symm y))) := by
-      rw [Representation.IntertwiningMap.equivLinearMapAsModule_symm_apply,
-        Representation.asModuleEquiv_apply (ρ := B.ρ),
-        Representation.IntertwiningMap.equivLinearMapAsModule_apply,
-        Representation.asModuleEquiv_apply (ρ := A.ρ)]
-    _ = B.ρ.asModuleEquiv (B.ρ.asModuleEquiv.symm y) := by
-      rw [← LinearMap.comp_apply, hFs, LinearMap.id_apply]
-    _ = y := LinearEquiv.apply_symm_apply _ _
+  have : Projective B := by
+    rw [← equivalenceModuleMonoidAlgebra.map_projective_iff]
+    exact ModuleCat.projective_of_categoryTheory_projective (ModuleCat.of k[G] B.ρ.asModule)
+  have : Epi f := (epi_iff_surjective f).2 hf
+  have : IsSplitEpi f := ⟨⟨Projective.factorThru (𝟙 B) f, Projective.factorThru_comp _ _⟩⟩
+  exact (ModuleCat.epi_iff_surjective _).1 inferInstance
 
 end Rep
 
