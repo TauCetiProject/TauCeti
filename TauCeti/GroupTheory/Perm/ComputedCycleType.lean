@@ -102,9 +102,8 @@ theorem _root_.Equiv.Perm.cycleLenOf_eq_minimalPeriod (σ : Perm α) (i : α) :
   have hmem : ∀ j, j ∈ Finset.univ.filter (σ.SameCycle i) ↔
       j ∈ MulAction.orbit (Subgroup.zpowers σ) i := by
     intro j
-    simp only [Finset.mem_filter, Finset.mem_univ, true_and, MulAction.mem_orbit_iff,
-      Subtype.exists, Subgroup.mem_zpowers_iff, Subgroup.mk_smul, Perm.smul_def,
-      exists_prop, exists_exists_eq_and, Equiv.Perm.SameCycle]
+    rw [Finset.mem_filter, Equiv.Perm.sameCycle_iff_mem_orbit_zpowers]
+    exact and_iff_right (Finset.mem_univ j)
   let _ := Fintype.ofFinset _ hmem
   rw [Equiv.Perm.cycleLenOf, ← Fintype.card_ofFinset _ hmem]
   exact (MulAction.minimalPeriod_eq_card (a := σ) (b := i)).symm
