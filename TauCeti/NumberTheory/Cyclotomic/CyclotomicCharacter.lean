@@ -45,8 +45,11 @@ character. -/
 theorem cyclotomicCharacter_eq_one_of_not_forall_isPrimitiveRoot
     (H : ¬ ∀ i : ℕ, ∃ ζ : A, IsPrimitiveRoot ζ (p ^ i)) (g : A ≃+* A) :
     cyclotomicCharacter A p g = 1 := by
-  classical
-  exact Units.ext (dite_eq_right H)
+  -- `cyclotomicCharacter` is `MonoidHom.toHomUnits` of `cyclotomicCharacter.toFun`, a `dite` on
+  -- the existence of the roots of unity; Mathlib states no lemma for its negative branch.
+  ext1
+  simp only [cyclotomicCharacter, MonoidHom.coe_toHomUnits, MonoidHom.coe_mk, OneHom.coe_mk,
+    cyclotomicCharacter.toFun, dite_eq_right H, Units.val_one]
 
 /-- **Naturality of the cyclotomic character.** Let `f : A →+* B` be an injective homomorphism of
 domains with `h ∘ f = f ∘ g` for automorphisms `g` of `A` and `h` of `B`. If `A` has primitive

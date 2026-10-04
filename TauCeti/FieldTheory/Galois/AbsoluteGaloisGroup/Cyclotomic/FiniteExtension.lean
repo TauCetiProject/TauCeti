@@ -8,7 +8,7 @@ module
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Cyclotomic.Character
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.FiniteExtension
 public import TauCeti.NumberTheory.Cyclotomic.CyclotomicCharacter
-import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
+import TauCeti.RingTheory.RootsOfUnity.AlgebraicallyClosed
 
 /-!
 # The cyclotomic character along a finite extension
@@ -50,19 +50,9 @@ namespace TauCeti
 
 variable (p : ℕ) [Fact p.Prime] (K : Type*) [Field K]
 
-/-- If an algebraic closure of `K` contains primitive `pⁱ`-th roots of unity for all `i`, then
-`p` is invertible in `K`, so the separable closure contains them as well. -/
-private theorem forall_exists_isPrimitiveRoot_separableClosure
-    (H : ∀ i : ℕ, ∃ ζ : AlgebraicClosure K, IsPrimitiveRoot ζ (p ^ i)) (i : ℕ) :
-    ∃ ζ : SeparableClosure K, IsPrimitiveRoot ζ (p ^ i) := by
-  obtain ⟨ζ, hζ⟩ := H 1
-  have hp : NeZero ((p ^ 1 : ℕ) : AlgebraicClosure K) := hζ.neZero'
-  have : NeZero (p : K) := ⟨fun h ↦ hp.out <| by
-    rw [pow_one, ← map_natCast (algebraMap K (AlgebraicClosure K)), h, map_zero]⟩
-  exact HasEnoughRootsOfUnity.exists_primitiveRoot _ _
-
 /-- **The cyclotomic character at the separable closure.** The cyclotomic character of
 `g ∈ Gal(AlgebraicClosure K/K)` is that of its restriction to the separable closure. -/
+@[simp]
 theorem cyclotomicCharacter_absoluteGaloisGroupRestrictEquiv (g : Field.absoluteGaloisGroup K) :
     cyclotomicCharacter (SeparableClosure K) p
         (absoluteGaloisGroupRestrictEquiv K g : AbsoluteGaloisGroup K).toRingEquiv =
@@ -73,7 +63,7 @@ theorem cyclotomicCharacter_absoluteGaloisGroupRestrictEquiv (g : Field.absolute
   exact (cyclotomicCharacter_eq_of_injective p
     (algebraMap (SeparableClosure K) (AlgebraicClosure K)).injective
     (fun x ↦ (coe_absoluteGaloisGroupRestrictEquiv_apply K g x).symm)
-    (forall_exists_isPrimitiveRoot_separableClosure p K)).symm
+    fun H i ↦ let ⟨_, hζ⟩ := H i; hζ.exists_isPrimitiveRoot_of_isSepClosed K).symm
 
 variable (L : Type*) [Field L] [Algebra K L] (σ : L →ₐ[K] SeparableClosure K)
   [FiniteDimensional K L]
