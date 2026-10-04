@@ -15,10 +15,10 @@ both the unit and the tensor comparison. Thus the oplax tensor map for identity 
 exactly the map induced by the identity comparison on each tensor factor, not a separately
 chosen identification.
 
-The proof uses Mathlib's `SheafOfModules.pushforwardId` and
-`SheafOfModules.conjugateEquiv_pullbackId_hom`: identity pushforward is lax monoidally identified
-with the identity, and passage to adjunction mates gives the pullback formulas. These formulas
-supply the identity normalization needed when comparing successive pullbacks of tensor products.
+Mathlib's `SheafOfModules.pushforwardId` and `SheafOfModules.pullbackId` are the canonical
+identity comparisons. Identity pushforward respects the lax monoidal structure, and identity
+pullback respects the oplax monoidal structure. The unit and tensor formulas supply the identity
+normalization needed when comparing successive pullbacks of tensor products.
 -/
 
 public section
@@ -38,6 +38,47 @@ variable {C : Type u} [SmallCategory C] {J : GrothendieckTopology C}
   [HasWeakSheafify J AddCommGrpCat.{u}] [J.WEqualsLocallyBijective AddCommGrpCat.{u}]
   (R : Sheaf J CommRingCat.{u})
 
+omit [HasWeakSheafify J AddCommGrpCat.{u}] [J.WEqualsLocallyBijective AddCommGrpCat.{u}] in
+/-- The canonical comparison for identity pushforward is the identity on each module. -/
+private lemma pushforwardId_hom_app (M : _root_.SheafOfModules.{u} (ringCatSheaf R)) :
+    (_root_.SheafOfModules.pushforwardId (ringCatSheaf R)).hom.app M = 𝟙 M :=
+  rfl
+
+/-- The unit map of identity pushforward acts identically on sections of the structure sheaf. -/
+private lemma pushforward_id_ε :
+    let := pushforwardLaxMonoidal (S := R) (R := R) (F := 𝟭 C) (𝟙 (ringCatSheaf R))
+    Functor.LaxMonoidal.ε (_root_.SheafOfModules.pushforward.{u}
+      (J := J) (K := J) (S := ringCatSheaf R) (R := ringCatSheaf R)
+      (F := 𝟭 C) (𝟙 (ringCatSheaf R))) = 𝟙 (𝟙_ _) := by
+  dsimp only
+  -- The identity sheaf pushforward agrees with `R` after unfolding its wrapper.
+  erw [pushforward_ε]
+  ext U
+  -- Both section maps are induced by the identity ring homomorphism.
+  rfl
+
+/-- On pure tensors of sections, identity presheaf pushforward leaves the tensor inclusion
+of sheaves into presheaves unchanged. -/
+private lemma presheafPushforward_id_μ_comp_app_tmul
+    (M N : _root_.SheafOfModules.{u} (ringCatSheaf R)) (U : Cᵒᵖ)
+    (m : M.val.obj U) (n : N.val.obj U) :
+    let := presheafPushforwardLaxMonoidal (S := R) (R := R) (F := 𝟭 C)
+      (𝟙 (ringCatSheaf R))
+    ((Functor.LaxMonoidal.μ
+        (presheafPushforward (S := R) (R := R) (F := 𝟭 C) (𝟙 (ringCatSheaf R))) M.val N.val ≫
+      (presheafPushforward (S := R) (R := R) (F := 𝟭 C) (𝟙 (ringCatSheaf R))).map
+        (Functor.LaxMonoidal.μ (_root_.SheafOfModules.forget (ringCatSheaf R)) M N)).app U).hom
+      (m ⊗ₜ[R.obj.obj U] n) =
+      ((Functor.LaxMonoidal.μ (_root_.SheafOfModules.forget (ringCatSheaf R)) M N).app U).hom
+        (m ⊗ₜ[R.obj.obj U] n) := by
+  dsimp only
+  -- The source modules are restriction of scalars along the identity ring homomorphism.
+  erw [PresheafOfModules.comp_app, ModuleCat.hom_comp, LinearMap.comp_apply,
+    presheafPushforward_μ_app_tmul (S := R) (R := R) (F := 𝟭 C)
+      (𝟙 (ringCatSheaf R)) M.val N.val U m n]
+  -- Identity pushforward leaves both the section map and its scalar action unchanged.
+  rfl
+
 /-- The canonical identity comparison for pushforward is lax monoidal. -/
 instance isMonoidal_pushforwardId_hom :
     @NatTrans.IsMonoidal _ _ _ _ _ _ _ _
@@ -48,25 +89,21 @@ instance isMonoidal_pushforwardId_hom :
   -- pushforward structure, rather than the identity functor's monoidal structure.
   let := pushforwardLaxMonoidal (S := R) (R := R) (F := 𝟭 C) (𝟙 (ringCatSheaf R))
   refine { unit := ?_, tensor := fun M N ↦ ?_ }
-  · -- The identity sheaf pushforward is only definitionally equal to `R` at full transparency.
-    erw [pushforward_ε (S := R) (R := R) (F := 𝟭 C) (𝟙 (ringCatSheaf R))]
-    ext U
-    rfl
+  · simp only [pushforwardId_hom_app, pushforward_id_ε, Functor.LaxMonoidal.id_ε]
+    exact Category.comp_id _
   · apply tensor_hom_ext
     simp only [Functor.map_comp]
-    -- Unfold the same identity-pushforward wrapper when using the presheaf characterization.
+    -- The characterization uses `M.val` rather than `(forget _).obj M`.
     erw [forget_μ_comp_map_pushforward_μ_assoc (S := R) (R := R) (F := 𝟭 C)
       (𝟙 (ringCatSheaf R)) M N]
-    simp only [_root_.SheafOfModules.pushforwardId, Iso.refl_hom, NatTrans.id_app,
-      Functor.LaxMonoidal.id_μ]
+    simp only [pushforwardId_hom_app, Functor.LaxMonoidal.id_μ]
     ext U : 1
     apply ModuleCat.MonoidalCategory.tensor_ext
     intro m n
-    -- Identity pushforward and its comparison act as identities on the underlying sections.
-    convert congrArg ((Functor.LaxMonoidal.μ (_root_.SheafOfModules.forget (ringCatSheaf R))
-      M N).app U) (presheafPushforward_μ_app_tmul (S := R) (R := R) (F := 𝟭 C)
-        (𝟙 (ringCatSheaf R)) M.val N.val U m n) using 1
-    all_goals first | rfl | (erw [tensorHom_id, id_whiskerRight]; rfl)
+    erw [tensorHom_id, id_whiskerRight]
+    let := presheafPushforwardLaxMonoidal (S := R) (R := R) (F := 𝟭 C)
+      (𝟙 (ringCatSheaf R))
+    exact presheafPushforward_id_μ_comp_app_tmul R M N U m n
 
 /-- The unit comparison for identity pullback is the component of its canonical identity
 isomorphism at the structure sheaf. -/
