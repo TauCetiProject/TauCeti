@@ -32,13 +32,12 @@ to choose and compare the components of `U` cut off by its crosscuts.
 
 ## Main declarations
 
-* `TauCeti.Path.IsCrosscut` — a simple path with endpoints on `frontier U` and interior in `U`.
-* `TauCeti.Path.IsCrosscut.range_subset_closure` — a crosscut lies in the domain's closure.
-* `TauCeti.Path.IsCrosscut.range_inter_frontier` — it meets the frontier exactly at its endpoints.
-* `TauCeti.Path.isCrosscut_symm` — crosscuts are invariant under reversing orientation.
-* `TauCeti.Path.IsCrosscut.map_homeomorph` — ambient homeomorphisms carry crosscuts to
-  crosscuts.
-* `TauCeti.Path.isCrosscut_segment_ball` — every nondegenerate chord of a disc is a crosscut.
+* `Path.IsCrosscut` — a simple path with endpoints on `frontier U` and interior in `U`.
+* `Path.IsCrosscut.range_subset_closure` — a crosscut lies in the domain's closure.
+* `Path.IsCrosscut.range_inter_frontier` — it meets the frontier exactly at its endpoints.
+* `Path.isCrosscut_symm` — crosscuts are invariant under reversing orientation.
+* `Path.IsCrosscut.map_homeomorph` — ambient homeomorphisms carry crosscuts to crosscuts.
+* `Path.isCrosscut_segment_ball` — every nondegenerate chord of a disc is a crosscut.
 
 ## References
 
@@ -48,8 +47,6 @@ to choose and compare the components of `U` cut off by its crosscuts.
 -/
 
 public section
-
-namespace TauCeti
 
 open Metric Set Topology
 open scoped unitInterval
@@ -187,5 +184,3 @@ theorem isCrosscut_segment_ball {c x y : ℂ} {r : ℝ} (hr : 0 < r)
     exact lineMap_mem_openSegment ℝ x y ht
 
 end Path
-
-end TauCeti
