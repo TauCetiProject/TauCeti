@@ -21,8 +21,8 @@ This is the form in which Bessières, Besson, Boileau, Maillot and Porti state i
 original formulation instead asks that the pieces carry geometric structures of finite volume
 modelled on his eight geometries (`TauCeti.HasGeometricStructure`).
 
-A *geometric torus decomposition* of `M`, `TauCeti.IsGeometricTorusDecomposition T`, is a family
-of maps `T i : S¹ × S¹ → M` that are
+A *geometric torus decomposition* of `M`, `TauCeti.IsGeometricTorusDecomposition T`, is a finite
+family of maps `T i : S¹ × S¹ → M` that are
 
 * locally flat embeddings, so that each torus is tame;
 * incompressible, that is injective on fundamental groups;
@@ -99,12 +99,14 @@ variable [T3Space M] [SecondCountableTopology M] [IsManifold (𝓡 3) ∞ M]
   {T : ι → C(Circle × Circle, M)}
 
 /-- A family of maps `T i : S¹ × S¹ → M` is a **geometric torus decomposition** of the 3-manifold
-`M` when the maps are disjoint locally flat incompressible embeddings of the torus, and every
-connected component of the complement of their images is Seifert fibred or hyperbolic of finite
-volume. For finitely many tori the components are open
+`M` when there are finitely many maps, they are disjoint locally flat incompressible embeddings of
+the torus, and every connected component of the complement of their images is Seifert fibred or
+hyperbolic of finite volume. For finitely many tori the components are open
 (`TauCeti.exists_opens_eq_connectedComponentIn_compl_iUnion_range`), so they are 3-manifolds with
 the structure inherited from `M`. -/
 structure IsGeometricTorusDecomposition (T : ι → C(Circle × Circle, M)) : Prop where
+  /-- There are finitely many tori. -/
+  finite : Finite ι
   /-- Each torus is locally flat, flattened by charts of `M` onto `ℝ² × {0} ⊆ ℝ² × ℝ`. -/
   isLocallyFlat (i : ι) : IsLocallyFlat (EuclideanSpace ℝ (Fin 2)) ℝ (T i)
   /-- Each torus is incompressible. -/
@@ -123,6 +125,7 @@ structure IsGeometricTorusDecomposition (T : ι → C(Circle × Circle, M)) : Pr
 its own single piece. -/
 theorem isGeometricTorusDecomposition_of_isEmpty_of_isSeifertFibered [IsEmpty ι]
     [ConnectedSpace M] (h : IsSeifertFibered M) : IsGeometricTorusDecomposition T where
+  finite := inferInstance
   isLocallyFlat i := isEmptyElim i
   isIncompressible i := isEmptyElim i
   pairwise_disjoint i := isEmptyElim i
