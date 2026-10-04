@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Matrix.Adjugate
+public import TauCeti.LinearAlgebra.Matrix.Adjugate
 public import Mathlib.LinearAlgebra.Matrix.Trace
 import Mathlib.Data.Matrix.Basis
 
@@ -42,20 +42,6 @@ noncomputable def adjugateFinTwoLinearMap :
 @[simp] theorem adjugateFinTwoLinearMap_apply (A : Matrix (Fin 2) (Fin 2) K) :
     adjugateFinTwoLinearMap A = Matrix.adjugate A := by
   simp [adjugateFinTwoLinearMap, adjugate_fin_two_eq_trace_smul_one_sub]
-
-/-- For a square matrix with nonempty finite indices, the left adjugate equation is equivalent to
-determinant one. -/
-theorem adjugate_mul_self_eq_one_iff_det_eq_one {n : Type*} [Fintype n] [DecidableEq n]
-    [Nonempty n] (A : Matrix n n K) :
-    Matrix.adjugate A * A = 1 ↔ A.det = 1 := by
-  constructor
-  · intro h
-    rw [Matrix.adjugate_mul] at h
-    let i : n := Classical.choice (inferInstance : Nonempty n)
-    have hii := congrArg (fun M : Matrix n n K ↦ M i i) h
-    simpa using hii
-  · intro h
-    rw [Matrix.adjugate_mul, h, one_smul]
 
 /-- An anti-multiplicative function with scalar translates sends an off-diagonal unit
 to its negative. -/

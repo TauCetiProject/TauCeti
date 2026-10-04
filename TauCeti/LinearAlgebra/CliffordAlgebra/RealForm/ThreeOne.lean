@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.BottPeriodicity
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Even.Scaling
+public import TauCeti.LinearAlgebra.Matrix.Adjugate
 public import TauCeti.LinearAlgebra.Matrix.AdjugateFinTwo
 
 /-!
@@ -111,6 +112,11 @@ private def realCliffordOneZeroPositiveSqIsometry :
   map_app' v := by
     simp [realCliffordForm_one_zero_apply, QuadraticMap.sq_apply]
 
+private theorem realCliffordOneZeroPositiveSqIsometry_apply (v : Fin 1 → ℝ) :
+    realCliffordOneZeroPositiveSqIsometry v = v 0 := by
+  simp [realCliffordOneZeroPositiveSqIsometry,
+    ← QuadraticMap.IsometryEquiv.coe_toLinearEquiv, LinearEquiv.funUnique_apply]
+
 private noncomputable def realCliffordThreeOneAugmentedIsometry :
     (realCliffordForm 3 1).IsometryEquiv
       ((realCliffordForm 2 1).prod
@@ -138,11 +144,7 @@ private theorem realCliffordThreeOneAugmentedIsometry_apply (v : Fin (3 + 1) →
         realCliffordSplitIsometry_fst_pos 2 1 1 0 v (1 : Fin 2)
     · simpa using
         realCliffordSplitIsometry_fst_neg 2 1 1 0 v (0 : Fin 1)
-  · rw [show realCliffordOneZeroPositiveSqIsometry
-        (realCliffordSplitIsometry 2 1 1 0 v).2 =
-        (realCliffordSplitIsometry 2 1 1 0 v).2 0 by
-      simp [realCliffordOneZeroPositiveSqIsometry, ← QuadraticMap.IsometryEquiv.coe_toLinearEquiv,
-        LinearEquiv.funUnique_apply]]
+  · rw [realCliffordOneZeroPositiveSqIsometry_apply]
     exact realCliffordSplitIsometry_snd_pos 2 1 1 0 v (0 : Fin 1)
 
 private def realCliffordTwoOneScaleIsometry :
