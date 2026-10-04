@@ -147,16 +147,15 @@ theorem iSup_centerEigenspace_vermaCentralCharacter_eq_top :
     ⨆ lam : {l : Dual K H // IsDominantIntegral b l},
       centerEigenspace K L M (vermaCentralCharacter b lam.1) = ⊤ := by
   obtain ⟨k, N, hint, hirr⟩ := exists_isInternal_isIrreducible_of_isKilling K L M
-  rw [eq_top_iff, ← LieSubmodule.toSubmodule_le_toSubmodule, LieSubmodule.top_toSubmodule,
-    ← hint.submodule_iSup_eq_top, ← LieSubmodule.iSup_toSubmodule,
-    LieSubmodule.toSubmodule_le_toSubmodule, iSup_le_iff]
-  intro i
-  have := hirr i
-  obtain ⟨lam, hlam, e⟩ :=
-    exists_isDominantIntegral_nonempty_lieModuleEquiv_irreducibleQuotient (M := N i) b
-  exact (le_centerEigenspace_of_nonempty_lieModuleEquiv e).trans
-    (le_iSup (fun lam : {l : Dual K H // IsDominantIntegral b l} ↦
-      centerEigenspace K L M (vermaCentralCharacter b lam.1)) ⟨lam, hlam⟩)
+  -- each irreducible summand is a copy of some `L(lam)`, so it lies in `M_{chi_lam}`
+  have hN (i : Fin k) : N i ≤ ⨆ lam : {l : Dual K H // IsDominantIntegral b l},
+      centerEigenspace K L M (vermaCentralCharacter b lam.1) := by
+    have := hirr i
+    obtain ⟨lam, hlam, e⟩ :=
+      exists_isDominantIntegral_nonempty_lieModuleEquiv_irreducibleQuotient (M := N i) b
+    exact le_iSup_of_le ⟨lam, hlam⟩ (le_centerEigenspace_of_nonempty_lieModuleEquiv e)
+  exact top_unique <| LieSubmodule.iSup_toSubmodule_eq_top.mp hint.submodule_iSup_eq_top ▸
+    iSup_le hN
 
 open Classical in
 variable (M) in
