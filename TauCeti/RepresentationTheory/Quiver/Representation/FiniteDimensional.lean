@@ -7,6 +7,7 @@ module
 
 public import TauCeti.CategoryTheory.Exact.ExtensionClosed
 public import TauCeti.RepresentationTheory.Quiver.Representation.AsModule
+public import TauCeti.RepresentationTheory.Quiver.Representation.Simple
 public import Mathlib.Algebra.Category.FGModuleCat.EssentiallySmall
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
 public import Mathlib.CategoryTheory.Abelian.FunctorCategory
@@ -14,6 +15,7 @@ public import Mathlib.LinearAlgebra.DirectSum.Finite
 -- Non-public: a monomorphism of functors into a category with pullbacks is a monomorphism at every
 -- object.
 import Mathlib.CategoryTheory.Limits.FunctorCategory.EpiMono
+import Mathlib.RingTheory.Artinian.Module
 
 /-!
 # Finite-dimensional quiver representations
@@ -38,6 +40,8 @@ finite-dimensional over the base field gives such a representation.
   gives a finite module over the path algebra when the vertex set is finite.
 * `TauCeti.module_finite_quiverRepEquivalenceFunctorObj_of_isFinDim`: the module it is carried to
   by `TauCeti.quiverRepEquivalence` is finite-dimensional over the base field.
+* `TauCeti.exists_mono_simpleRep_of_not_isZero`: over a finite-vertex acyclic quiver, every
+  nonzero pointwise finite-dimensional representation contains a vertex simple.
 * `TauCeti.isFinDim_quiverRepFunctor_obj`: finite-dimensionality passes from a module to its
   associated representation.
 
@@ -226,5 +230,31 @@ theorem isFinDim_quiverRepFunctor_obj (M : ModuleCat (pathAlgebra k Q))
   change Q at v
   rw [quiverRepFunctor_obj, quiverRepOfModule_obj]
   infer_instance
+
+open CategoryTheory.Limits in
+/-- Every nonzero pointwise finite-dimensional representation of a finite-vertex acyclic quiver
+contains a vertex simple as a subrepresentation. -/
+theorem exists_mono_simpleRep_of_not_isZero {k : Type u} {Q : Type v}
+    [Field k] [Quiver.{w} Q] [Finite Q] (hQ : Quiver.IsAcyclic Q)
+    {M : QuiverRep.{u, v, w, u} k Q} (hfin : IsFinDim k Q M) (hM : ¬ IsZero M) :
+    ∃ i : Q, ∃ f : simpleRep k Q i ⟶ M, Mono f := by
+  let E := quiverRepEquivalence.{u, v, w, u} k Q
+  let N := E.functor.obj M
+  have : Module.Finite k N :=
+    module_finite_quiverRepEquivalenceFunctorObj_of_isFinDim k Q M hfin
+  have : IsArtinian (pathAlgebra k Q) N := isArtinian_of_tower k inferInstance
+  have : Nontrivial N := by
+    rw [← not_subsingleton_iff_nontrivial]
+    intro hs
+    exact hM ((E.inverse.map_isZero (ModuleCat.isZero_iff_subsingleton.mpr hs)).of_iso
+      (E.unitIso.app M))
+  obtain ⟨S, hS⟩ := IsAtomic.exists_atom (Submodule (pathAlgebra k Q) N)
+  have : IsSimpleModule (pathAlgebra k Q) S := isSimpleModule_iff_isAtom.mpr hS
+  let T := ModuleCat.of (pathAlgebra k Q) S
+  have : Simple (E.inverse.obj T) := simple_obj E.inverse T
+  obtain ⟨i, ⟨e⟩⟩ := exists_iso_simpleRep_of_simple hQ (E.inverse.obj T)
+  let f : T ⟶ N := ModuleCat.ofHom S.subtype
+  have : Mono f := (ModuleCat.mono_iff_injective f).mpr S.injective_subtype
+  exact ⟨i, e.inv ≫ E.inverse.map f ≫ (E.unitIso.app M).inv, inferInstance⟩
 
 end TauCeti
