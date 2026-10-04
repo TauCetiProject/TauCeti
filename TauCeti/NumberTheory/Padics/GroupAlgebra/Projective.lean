@@ -13,10 +13,10 @@ public import Mathlib.RingTheory.Jacobson.Radical
 import Mathlib.LinearAlgebra.Matrix.ToLin
 import Mathlib.RepresentationTheory.Maschke
 import Mathlib.RingTheory.Finiteness.Cardinality
-import TauCeti.Algebra.MonoidAlgebra.Basic
 import TauCeti.Algebra.Module.LinearMap.Finite
 import TauCeti.Algebra.Module.Projective.Lift
 import TauCeti.Algebra.Module.Projective.Reduction
+import TauCeti.NumberTheory.Padics.GroupAlgebra.Reduction
 import TauCeti.RingTheory.AdicCompletion.Finite
 import TauCeti.RingTheory.Ideal.Operations
 import TauCeti.RingTheory.Jacobson.MulOpposite
@@ -127,23 +127,13 @@ instance instFiniteQuotientJacobsonPadicIntMonoidAlgebra :
   -- Reduce coefficients modulo `p`: the kernel `p • ℤ_p[G]` lies in the radical, and the
   -- target `𝔽_p[G]` is finite.
   let π := MonoidAlgebra.mapRingHom G (PadicInt.toZMod (p := p))
-  have hπ : Function.Surjective π := by
-    rw [MonoidAlgebra.coe_mapRingHom]
-    exact MonoidAlgebra.map_surjective _ (ZMod.ringHom_surjective _)
-  have hker : RingHom.ker π ≤ Ring.jacobson (MonoidAlgebra ℤ_[p] G) := fun x hx ↦ by
-    rw [RingHom.mem_ker, MonoidAlgebra.mapRingHom_eq_zero_iff, PadicInt.ker_toZMod] at hx
-    have hp : (p : MonoidAlgebra ℤ_[p] G) ∈ Ring.jacobson (MonoidAlgebra ℤ_[p] G) :=
-      span_p_le_jacobson_padicInt_monoidAlgebra p G (Ideal.subset_span rfl)
-    refine (Submodule.smul_le (P := (Ring.jacobson _).restrictScalars ℤ_[p]).mpr
-      (fun r hr n _ ↦ ?_)) hx
-    rw [PadicInt.maximalIdeal_eq_span_p (p := p)] at hr
-    obtain ⟨c, rfl⟩ := Ideal.mem_span_singleton'.mp hr
-    rw [Submodule.restrictScalars_mem, mul_comm, mul_smul, Nat.cast_smul_eq_nsmul, nsmul_eq_mul]
-    exact Ideal.mul_mem_right _ _ hp
+  have hker : RingHom.ker π ≤ Ring.jacobson (MonoidAlgebra ℤ_[p] G) := by
+    rw [ker_padicMonoidAlgebraReduction p G]
+    exact span_p_le_jacobson_padicInt_monoidAlgebra p G
   have : Finite (G →₀ ZMod p) := Finite.of_injective _ DFunLike.coe_injective
   have : Finite (MonoidAlgebra (ZMod p) G) := Finite.of_injective _ MonoidAlgebra.coeff_injective
   have : Finite (MonoidAlgebra ℤ_[p] G ⧸ RingHom.ker π) :=
-    Finite.of_equiv _ (RingHom.quotientKerEquivOfSurjective hπ).symm.toEquiv
+    Finite.of_equiv _ (padicMonoidAlgebraQuotientEquiv p G).symm.toEquiv
   exact Finite.of_surjective _ (Ideal.Quotient.factor_surjective hker)
 
 /-- **The Jacobson radical of `ℤ_p[G]` for `p ∤ |G|`.** When the order of the finite group `G` is
@@ -157,19 +147,12 @@ theorem jacobson_padicInt_monoidAlgebra_eq_span_p {G : Type u} [Group G] [Finite
   -- The radical lies in the kernel of the reduction `π : ℤ_p[G] → 𝔽_p[G]`, whose target is
   -- semisimple, and that kernel consists of the multiples of `p`.
   let π := MonoidAlgebra.mapRingHom G (PadicInt.toZMod (p := p))
-  have : RingHomSurjective π := ⟨by
-    rw [MonoidAlgebra.coe_mapRingHom]
-    exact MonoidAlgebra.map_surjective _ (ZMod.ringHom_surjective _)⟩
+  have : RingHomSurjective π := ⟨padicMonoidAlgebraReduction_surjective p G⟩
   have : NeZero (Nat.card G : ZMod p) := ⟨fun h ↦ hG ((ZMod.natCast_eq_zero_iff _ _).mp h)⟩
   intro x hx
   have hx : π x = 0 := by
     simpa [IsSemisimpleRing.jacobson_eq_bot] using Ring.le_comap_jacobson π hx
-  rw [MonoidAlgebra.mapRingHom_eq_zero_iff, PadicInt.ker_toZMod, PadicInt.maximalIdeal_eq_span_p,
-    Submodule.ideal_span_singleton_smul, Submodule.mem_smul_pointwise_iff_exists] at hx
-  obtain ⟨y, -, rfl⟩ := hx
-  rw [← map_natCast (algebraMap ℤ_[p] (MonoidAlgebra ℤ_[p] G)), Algebra.smul_def,
-    Algebra.commutes]
-  exact Ideal.mul_mem_left _ _ (Ideal.mem_span_singleton_self _)
+  rwa [← RingHom.mem_ker, ker_padicMonoidAlgebraReduction] at hx
 
 end Jacobson
 
@@ -247,17 +230,14 @@ private theorem mem_span_p_smul_top_pi_iff {ι : Type*} {v : ι → MonoidAlgebr
     Submodule.mem_span_algebraMap_smul_top_iff]
   constructor
   · rintro ⟨w, rfl⟩ i
-    rw [Pi.smul_apply, Nat.cast_smul_eq_nsmul, nsmul_eq_mul, map_mul, map_natCast,
-      ← map_natCast (algebraMap (ZMod p) (MonoidAlgebra (ZMod p) G)), ZMod.natCast_self,
-      map_zero, zero_mul]
+    rw [Pi.smul_apply, ← RingHom.mem_ker, ker_padicMonoidAlgebraReduction, Algebra.smul_def,
+      map_natCast, Nat.cast_comm]
+    exact Ideal.mul_mem_left _ _ (Ideal.mem_span_singleton_self _)
   · intro hv
-    have hdvd (i : ι) (m : G) : (p : ℤ_[p]) ∣ (v i).coeff m := by
-      have hvi := hv i
-      rw [MonoidAlgebra.mapRingHom_eq_zero_iff, MonoidAlgebra.mem_ideal_smul_top_iff,
-        PadicInt.ker_toZMod, PadicInt.maximalIdeal_eq_span_p] at hvi
-      exact Ideal.mem_span_singleton.mp (hvi m)
-    choose w hw using fun i ↦ MonoidAlgebra.exists_eq_nsmul_of_dvd_coeff (hdvd i)
-    exact ⟨w, funext fun i ↦ by rw [Pi.smul_apply, hw i, Nat.cast_smul_eq_nsmul]⟩
+    choose w hw using fun i ↦ Ideal.mem_span_singleton'.mp <|
+      (ker_padicMonoidAlgebraReduction p G).le (RingHom.mem_ker.mpr (hv i))
+    exact ⟨w, funext fun i ↦ by
+      rw [Pi.smul_apply, Algebra.smul_def, map_natCast, Nat.cast_comm, hw i]⟩
 
 /-- **Projective `𝔽_p[G]`-modules lift to `ℤ_p[G]`.** Every finitely generated projective module
 `Y` over the monoid algebra `𝔽_p[G]` of a finite monoid (in particular the group algebra of a
@@ -275,9 +255,7 @@ theorem exists_projective_reduction_bijective_of_projective (Y : Type v) [AddCom
             (PadicInt.toZMod (p := p))] Y,
         Function.Bijective f := by
   let π := MonoidAlgebra.mapRingHom G (PadicInt.toZMod (p := p))
-  have hπ : Function.Surjective π := by
-    rw [MonoidAlgebra.coe_mapRingHom]
-    exact MonoidAlgebra.map_surjective _ (ZMod.ringHom_surjective _)
+  have hπ : Function.Surjective π := padicMonoidAlgebraReduction_surjective p G
   -- Present `Y` as a direct summand of `𝔽_p[G]ⁿ`, and view `𝔽_p[G]`-modules as
   -- `ℤ_p[G]`-modules through `π`.
   obtain ⟨n, s, hs⟩ := Module.Finite.exists_fin' (MonoidAlgebra (ZMod p) G) Y
