@@ -34,7 +34,7 @@ induced from the trivial lines of the subgroups (`TauCeti.indK0_of_trivial`).
 Additivity in disjoint unions comes from the additivity of classes on products of modules
 (`TauCeti.exactK0_fgModuleCat_prod`), since the permutation representation on `X ⊕ Y` is the
 product of those on `X` and `Y` (`TauCeti.ofMulActionSumEquiv`), and the module of a product
-representation is the product of the modules (`TauCeti.Representation.prodAsModuleEquiv`). No
+representation is the product of the modules (`Representation.prodAsModuleEquiv`). No
 hypothesis on the characteristic of `k` is needed: the relations of `G₀(k[G])` come from all short
 exact sequences, including non-split ones, but the relations used here come from split
 sequences.

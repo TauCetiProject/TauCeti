@@ -37,7 +37,7 @@ theory counts, while the objects being classified are representations.
   `ρ.asModule ≃ₗ σ.asModule` is an equivalence of representations.
 * `TauCeti.Representation.asModuleLinearEquivOfEquiv`: the converse.
 * `TauCeti.Representation.nonempty_equiv_iff`: the two notions of isomorphism agree.
-* `TauCeti.Representation.prodAsModuleEquiv`: the module of a product of representations is the
+* `Representation.prodAsModuleEquiv`: the module of a product of representations is the
   product of their modules.
 * `TauCeti.fdRepIsoOfAsModuleLinearEquiv`: over a commutative ring, and for module-finite carriers,
   such an isomorphism of modules is an isomorphism of the objects of `FDRep k G` that the
@@ -167,7 +167,8 @@ theorem nonempty_equiv_iff :
 
 variable (ρ σ) in
 /-- **The module of a product representation is equivalent to the product of the modules.** -/
-noncomputable def prodAsModuleEquiv : (ρ.prod σ).asModule ≃ₗ[k[G]] ρ.asModule × σ.asModule :=
+noncomputable def _root_.Representation.prodAsModuleEquiv :
+    (ρ.prod σ).asModule ≃ₗ[k[G]] ρ.asModule × σ.asModule :=
   LinearEquiv.ofBijective
     ((_root_.Representation.IntertwiningMap.equivLinearMapAsModule _ _
         (_root_.Representation.IntertwiningMap.fst k ρ σ)).prod
@@ -176,17 +177,17 @@ noncomputable def prodAsModuleEquiv : (ρ.prod σ).asModule ≃ₗ[k[G]] ρ.asMo
     Function.bijective_id
 
 @[simp]
-theorem prodAsModuleEquiv_apply (x : (ρ.prod σ).asModule) :
-    prodAsModuleEquiv ρ σ x =
+theorem _root_.Representation.prodAsModuleEquiv_apply (x : (ρ.prod σ).asModule) :
+    ρ.prodAsModuleEquiv σ x =
       (ρ.asModuleEquiv.symm (x : V × W).1, σ.asModuleEquiv.symm (x : V × W).2) :=
   (rfl)
 
 @[simp]
-theorem prodAsModuleEquiv_symm_apply (x : ρ.asModule × σ.asModule) :
-    (prodAsModuleEquiv ρ σ).symm x =
+theorem _root_.Representation.prodAsModuleEquiv_symm_apply (x : ρ.asModule × σ.asModule) :
+    (ρ.prodAsModuleEquiv σ).symm x =
       (ρ.prod σ).asModuleEquiv.symm (ρ.asModuleEquiv x.1, σ.asModuleEquiv x.2) := by
-  apply (prodAsModuleEquiv ρ σ).injective
-  rw [LinearEquiv.apply_symm_apply, prodAsModuleEquiv_apply]
+  apply (ρ.prodAsModuleEquiv σ).injective
+  rw [LinearEquiv.apply_symm_apply, _root_.Representation.prodAsModuleEquiv_apply]
   rfl
 
 end Representation
