@@ -18,19 +18,6 @@ class of `Hⁿ(G, M)` is the corestriction of a `p`-primary class of `Hⁿ(U, M)
 `G`-module `M` (the surjectivity half of NSW (3.3.11)). In the class-module theorem for groups of
 strict cohomological dimension two, this is what makes the transfer `G^ab(p) → U^ab(p)` injective.
 
-The proof follows NSW. Corestriction is the inverse of Shapiro's isomorphism followed by the trace
-`Coind_U^G M → M`, so its image is the kernel of the connecting map
-`δ : Hⁿ(G, M) → Hⁿ⁺¹(G, traceKer G U M)` of the trace short exact sequence
-(`TauCeti.ContinuousCohomology.exact_corestriction_delta`). A `p`-primary class has a `p`-primary
-connecting image, and the `p`-primary part of `Hⁿ⁺¹(G, -)` vanishes because `scd_p G ≤ n`, so
-every `p`-primary class is a corestriction. A preimage can then be chosen `p`-primary:
-
-* in positive degree `Hⁿ(U, M)` is torsion, and a `p`-primary image of a torsion element is the
-  image of a `p`-primary element (`TauCeti.exists_mem_primaryComponent_apply_eq`);
-* in degree zero a class killed by `p ^ k` comes from `H⁰(G, M[p ^ k])`, the argument applies to
-  the `G`-submodule `M[p ^ k]`, whose cohomology over `U` is killed by `p ^ k`, and corestriction
-  is natural in the coefficients.
-
 ## Main results
 
 * `TauCeti.StrictCohomologicalDimensionLE.corestriction_surjOn_primaryComponent`: under
@@ -63,6 +50,8 @@ private theorem StrictCohomologicalDimensionLE.exists_corestriction_eq {n : ℕ}
     [ContinuousSMul G M] {x : continuousCohomology n (ofDiscreteModule ℤ G M)}
     (hx : x ∈ AddCommGroup.primaryComponent _ p) :
     ∃ y, corestriction U M hU n y = x := by
+  -- the image of corestriction is the kernel of the trace connecting map
+  -- (`exact_corestriction_delta`), which sends `x` into `Hⁿ⁺¹(G, traceKer G U M)(p) = 0`
   refine ((exact_corestriction_delta U M hU n) x).1 ?_
   obtain ⟨k, hk⟩ := hx
   have hδ : (DiscreteCoind.traceShortExact G U M hU).delta n x ∈
@@ -92,7 +81,7 @@ theorem StrictCohomologicalDimensionLE.corestriction_surjOn_primaryComponent (hp
       (isAddTorsion_continuousCohomology n y) hx
   | zero =>
     -- `x` comes from `H⁰(G, M[p ^ k])`, whose classes are corestrictions of classes killed by
-    -- `p ^ k`
+    -- `p ^ k`; corestriction is natural in the coefficients `M[p ^ k] → M`
     obtain ⟨k, hk⟩ := hx
     set K := (nsmulAddMonoidHom (p ^ k) : M →+ M).ker
     have hK : ∀ g : G, ∀ m ∈ K, g • m ∈ K := fun g m hm ↦ by
