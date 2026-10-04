@@ -46,7 +46,7 @@ together with the open intervals they cut out, form a CAD of `ℝ ^ 1`.
 
 S. Basu, R. Pollack, and M.-F. Roy,
 [Algorithms in Real Algebraic Geometry](https://doi.org/10.1007/3-540-33099-2),
-second edition, Section 5.1 (Definition 5.1 and Theorem 5.6).
+second edition, Section 5.1 (cylindrical algebraic decomposition).
 -/
 
 public section
