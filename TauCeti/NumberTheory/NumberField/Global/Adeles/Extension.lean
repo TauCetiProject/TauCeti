@@ -8,7 +8,7 @@ module
 public import Mathlib.NumberTheory.NumberField.Completion.LiesOverInstances
 public import TauCeti.NumberTheory.NumberField.Global.Adeles.Basic
 public import TauCeti.NumberTheory.NumberField.InfinitePlace.Basic
-public import TauCeti.NumberTheory.NumberField.InfinitePlace.Completion.Extension
+import TauCeti.NumberTheory.NumberField.InfinitePlace.Completion.Extension
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Extension
 
 /-!

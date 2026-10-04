@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.NumberField.Completion.Ramification
 public import TauCeti.NumberTheory.NumberField.InfinitePlace.Completion.Basic
+public import TauCeti.NumberTheory.NumberField.InfinitePlace.Basic
 
 /-!
 # Normalized archimedean absolute values under field extension
@@ -59,15 +60,16 @@ instance (v : InfinitePlace K) (w : InfinitePlace L) [w.LiesOver v] :
   rw [← mult_mul_finrank v w, mul_ne_zero_iff] at h
   exact Nat.pos_of_ne_zero h.2
 
-/-- Canonical maps between archimedean completions compose in a tower of number fields. -/
+/-- Canonical maps between archimedean completions compose in a tower of fields. -/
 @[simp]
 theorem _root_.NumberField.LiesOver.completionMap_comp
     {M : Type*} [Field M] [Algebra L M] [Algebra K M] [IsScalarTower K L M]
     {v : InfinitePlace K} {w : InfinitePlace L} {u : InfinitePlace M}
-    [w.LiesOver v] [u.LiesOver w] [u.LiesOver v] :
+    [w.LiesOver v] [u.LiesOver w] :
     (LiesOver.completionMap (v := w) (w := u)).comp
         (LiesOver.completionMap (v := v) (w := w)) =
-      LiesOver.completionMap (v := v) (w := u) := by
+      @LiesOver.completionMap K M _ _ _ v u (InfinitePlace.LiesOver.trans u w v) := by
+  let _ : u.LiesOver v := InfinitePlace.LiesOver.trans u w v
   apply DFunLike.coe_injective
   apply (InfinitePlace.Completion.denseRange_coe v).equalizer
     (LiesOver.continuous_completionMap.comp LiesOver.continuous_completionMap)
