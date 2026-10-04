@@ -8,6 +8,8 @@ module
 public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
 public import TauCeti.LinearAlgebra.CliffordAlgebra.RealForm.TwoTwo
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.LowRank.Four
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Bruhat
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.InnerAut
 
 /-!
 # The split real Spin group in dimension four
@@ -246,8 +248,6 @@ private abbrev realCliffordFormTwoTwo := realCliffordForm 2 2
 
 private def realCliffordTwoTwoLastVector : Fin 4 → ℝ := Pi.single 3 1
 
-private def realCliffordTwoTwoSwapMatrix : Matrix (Fin 2) (Fin 2) ℝ := !![0, 1; 1, 0]
-
 private def realCliffordTwoTwoVectorEven :
     (Fin 4 → ℝ) →ₗ[ℝ] CliffordAlgebra.even realCliffordFormTwoTwo where
   toFun v := (CliffordAlgebra.even.ι realCliffordFormTwoTwo).bilin v
@@ -262,17 +262,19 @@ private theorem coe_realCliffordTwoTwoVectorEven (v : Fin 4 → ℝ) :
 
 private theorem realCliffordTwoTwoEvenEquivMatrixProd_vectorEven (v : Fin 4 → ℝ) :
     (realCliffordTwoTwoEvenEquivMatrixProd (realCliffordTwoTwoVectorEven v)).1 *
-        realCliffordTwoTwoSwapMatrix = realCliffordTwoTwoVectorEquivMatrix v := by
+        (GL2WeylElement ℝ : Matrix (Fin 2) (Fin 2) ℝ) =
+      realCliffordTwoTwoVectorEquivMatrix v := by
   -- Unfold the private vector embedding so the landed generator formula can rewrite it.
   change (realCliffordTwoTwoEvenEquivMatrixProd
     ((CliffordAlgebra.even.ι realCliffordFormTwoTwo).bilin v
-      realCliffordTwoTwoLastVector)).1 * realCliffordTwoTwoSwapMatrix =
+      realCliffordTwoTwoLastVector)).1 *
+        (GL2WeylElement ℝ : Matrix (Fin 2) (Fin 2) ℝ) =
         realCliffordTwoTwoVectorEquivMatrix v
   rw [realCliffordTwoTwoEvenEquivMatrixProd_ι]
   ext i j
   all_goals fin_cases i
   all_goals fin_cases j
-  all_goals simp [realCliffordTwoTwoLastVector, realCliffordTwoTwoSwapMatrix,
+  all_goals simp [realCliffordTwoTwoLastVector,
     Matrix.mul_apply, Fin.sum_univ_two]
   all_goals ring
 
@@ -358,48 +360,16 @@ private theorem coe_realCliffordTwoTwoConjugateLastEvenHom
         (x : CliffordAlgebra realCliffordFormTwoTwo)) *
           CliffordAlgebra.ι realCliffordFormTwoTwo realCliffordTwoTwoLastVector := rfl
 
-private theorem realCliffordTwoTwoSwapMatrix_mul_self :
-    realCliffordTwoTwoSwapMatrix * realCliffordTwoTwoSwapMatrix = 1 := by
-  ext i j
-  all_goals fin_cases i
-  all_goals fin_cases j
-  all_goals simp [realCliffordTwoTwoSwapMatrix, Matrix.mul_apply, Fin.sum_univ_two]
-
-private noncomputable def realCliffordTwoTwoSwapConjHom :
-    (Matrix (Fin 2) (Fin 2) ℝ × Matrix (Fin 2) (Fin 2) ℝ) →ₐ[ℝ]
-      Matrix (Fin 2) (Fin 2) ℝ × Matrix (Fin 2) (Fin 2) ℝ where
-  toFun p :=
-    (realCliffordTwoTwoSwapMatrix * p.2 * realCliffordTwoTwoSwapMatrix,
-      realCliffordTwoTwoSwapMatrix * p.1 * realCliffordTwoTwoSwapMatrix)
-  map_one' := by simp [realCliffordTwoTwoSwapMatrix_mul_self]
-  map_mul' x y := by
-    apply Prod.ext
-    -- Expose the second component of the private product-valued hom.
-    · change realCliffordTwoTwoSwapMatrix * (x.2 * y.2) * realCliffordTwoTwoSwapMatrix =
-        (realCliffordTwoTwoSwapMatrix * x.2 * realCliffordTwoTwoSwapMatrix) *
-          (realCliffordTwoTwoSwapMatrix * y.2 * realCliffordTwoTwoSwapMatrix)
-      symm
-      calc
-        _ = realCliffordTwoTwoSwapMatrix * x.2 *
-            (realCliffordTwoTwoSwapMatrix * realCliffordTwoTwoSwapMatrix) * y.2 *
-              realCliffordTwoTwoSwapMatrix := by noncomm_ring
-        _ = _ := by rw [realCliffordTwoTwoSwapMatrix_mul_self]; noncomm_ring
-    -- Expose the first component of the private product-valued hom.
-    · change realCliffordTwoTwoSwapMatrix * (x.1 * y.1) * realCliffordTwoTwoSwapMatrix =
-        (realCliffordTwoTwoSwapMatrix * x.1 * realCliffordTwoTwoSwapMatrix) *
-          (realCliffordTwoTwoSwapMatrix * y.1 * realCliffordTwoTwoSwapMatrix)
-      symm
-      calc
-        _ = realCliffordTwoTwoSwapMatrix * x.1 *
-            (realCliffordTwoTwoSwapMatrix * realCliffordTwoTwoSwapMatrix) * y.1 *
-              realCliffordTwoTwoSwapMatrix := by noncomm_ring
-        _ = _ := by rw [realCliffordTwoTwoSwapMatrix_mul_self]; noncomm_ring
-  map_zero' := by simp
-  map_add' x y := by ext <;> simp [mul_add, add_mul]
-  commutes' r := by
-    apply Prod.ext <;> ext i j <;> fin_cases i <;> fin_cases j <;>
-      simp [realCliffordTwoTwoSwapMatrix, Matrix.mul_apply, Fin.sum_univ_two,
-        Algebra.algebraMap_eq_smul_one]
+private noncomputable def realCliffordTwoTwoWeylConjSwap :
+    (Matrix (Fin 2) (Fin 2) ℝ × Matrix (Fin 2) (Fin 2) ℝ) ≃ₐ[ℝ]
+      Matrix (Fin 2) (Fin 2) ℝ × Matrix (Fin 2) (Fin 2) ℝ :=
+  (AlgEquiv.ofRingEquiv
+      (f := (RingEquiv.prodComm :
+        (Matrix (Fin 2) (Fin 2) ℝ × Matrix (Fin 2) (Fin 2) ℝ) ≃+*
+          Matrix (Fin 2) (Fin 2) ℝ × Matrix (Fin 2) (Fin 2) ℝ)) (by simp)).trans <|
+    AlgEquiv.prodCongr
+      (Matrix.GeneralLinearGroup.innerAut (GL2WeylElement ℝ))
+      (Matrix.GeneralLinearGroup.innerAut (GL2WeylElement ℝ))
 
 private theorem realCliffordTwoTwoEvenEquivMatrixProd_conjugate_generator
     (m n : Fin 4 → ℝ) :
@@ -408,19 +378,19 @@ private theorem realCliffordTwoTwoEvenEquivMatrixProd_conjugate_generator
             realCliffordTwoTwoLastVector m) *
           (CliffordAlgebra.even.ι realCliffordFormTwoTwo).bilin n
             realCliffordTwoTwoLastVector) =
-      (realCliffordTwoTwoSwapMatrix *
+      ((GL2WeylElement ℝ : Matrix (Fin 2) (Fin 2) ℝ) *
           (realCliffordTwoTwoEvenEquivMatrixProd
             ((CliffordAlgebra.even.ι realCliffordFormTwoTwo).bilin m n)).2 *
-            realCliffordTwoTwoSwapMatrix,
-        realCliffordTwoTwoSwapMatrix *
+            (GL2WeylElement ℝ : Matrix (Fin 2) (Fin 2) ℝ),
+        (GL2WeylElement ℝ : Matrix (Fin 2) (Fin 2) ℝ) *
           (realCliffordTwoTwoEvenEquivMatrixProd
             ((CliffordAlgebra.even.ι realCliffordFormTwoTwo).bilin m n)).1 *
-            realCliffordTwoTwoSwapMatrix) := by
+            (GL2WeylElement ℝ : Matrix (Fin 2) (Fin 2) ℝ)) := by
   rw [map_mul, map_neg, realCliffordTwoTwoEvenEquivMatrixProd_ι,
     realCliffordTwoTwoEvenEquivMatrixProd_ι,
     realCliffordTwoTwoEvenEquivMatrixProd_ι]
   apply Prod.ext <;> ext i j <;> fin_cases i <;> fin_cases j <;>
-    simp [realCliffordTwoTwoLastVector, realCliffordTwoTwoSwapMatrix,
+    simp [realCliffordTwoTwoLastVector,
       Matrix.mul_apply, Fin.sum_univ_two] <;> ring
 
 private theorem realCliffordTwoTwoConjugateLastEvenHom_ι (m n : Fin 4 → ℝ) :
@@ -442,19 +412,27 @@ private theorem realCliffordTwoTwoConjugateLastEvenHom_ι (m n : Fin 4 → ℝ) 
         CliffordAlgebra.ι realCliffordFormTwoTwo realCliffordTwoTwoLastVector)
   noncomm_ring
 
-private theorem realCliffordTwoTwoSwapConjHom_apply
+private theorem realCliffordTwoTwoWeylConjSwap_apply
     (p : Matrix (Fin 2) (Fin 2) ℝ × Matrix (Fin 2) (Fin 2) ℝ) :
-    realCliffordTwoTwoSwapConjHom p =
-      (realCliffordTwoTwoSwapMatrix * p.2 * realCliffordTwoTwoSwapMatrix,
-        realCliffordTwoTwoSwapMatrix * p.1 * realCliffordTwoTwoSwapMatrix) := rfl
+    realCliffordTwoTwoWeylConjSwap p =
+      ((GL2WeylElement ℝ : Matrix (Fin 2) (Fin 2) ℝ) * p.2 *
+          (GL2WeylElement ℝ : Matrix (Fin 2) (Fin 2) ℝ),
+        (GL2WeylElement ℝ : Matrix (Fin 2) (Fin 2) ℝ) * p.1 *
+          (GL2WeylElement ℝ : Matrix (Fin 2) (Fin 2) ℝ)) := by
+  change
+    (Matrix.GeneralLinearGroup.innerAut (GL2WeylElement ℝ) p.2,
+      Matrix.GeneralLinearGroup.innerAut (GL2WeylElement ℝ) p.1) = _
+  rw [Matrix.GeneralLinearGroup.innerAut_apply,
+    Matrix.GeneralLinearGroup.innerAut_apply, ← Matrix.coe_units_inv,
+    gl2WeylElement_inv]
 
 private theorem realCliffordTwoTwoEvenEquivMatrixProd_conjugate
     (x : CliffordAlgebra.even realCliffordFormTwoTwo) :
     realCliffordTwoTwoEvenEquivMatrixProd (realCliffordTwoTwoConjugateLastEvenHom x) =
-      realCliffordTwoTwoSwapConjHom (realCliffordTwoTwoEvenEquivMatrixProd x) := by
+      realCliffordTwoTwoWeylConjSwap (realCliffordTwoTwoEvenEquivMatrixProd x) := by
   have hhom : realCliffordTwoTwoEvenEquivMatrixProd.toAlgHom.comp
         realCliffordTwoTwoConjugateLastEvenHom =
-      realCliffordTwoTwoSwapConjHom.comp
+      realCliffordTwoTwoWeylConjSwap.toAlgHom.comp
         realCliffordTwoTwoEvenEquivMatrixProd.toAlgHom := by
     apply CliffordAlgebra.even.algHom_ext
     rw [CliffordAlgebra.EvenHom.ext_iff]
@@ -467,11 +445,11 @@ private theorem realCliffordTwoTwoEvenEquivMatrixProd_conjugate
     change realCliffordTwoTwoEvenEquivMatrixProd
         (realCliffordTwoTwoConjugateLastEvenHom
           ((CliffordAlgebra.even.ι realCliffordFormTwoTwo).bilin m n)) =
-      realCliffordTwoTwoSwapConjHom
+      realCliffordTwoTwoWeylConjSwap
         (realCliffordTwoTwoEvenEquivMatrixProd
           ((CliffordAlgebra.even.ι realCliffordFormTwoTwo).bilin m n))
     rw [realCliffordTwoTwoConjugateLastEvenHom_ι,
-      realCliffordTwoTwoSwapConjHom_apply]
+      realCliffordTwoTwoWeylConjSwap_apply]
     exact realCliffordTwoTwoEvenEquivMatrixProd_conjugate_generator m n
   exact DFunLike.congr_fun hhom x
 
@@ -548,11 +526,12 @@ theorem realSpinTwoTwoEquivSpecialLinearProd_action
     (realCliffordTwoTwoVectorEven_spin_action s v)
   have hfst := congrArg Prod.fst haction
   have hmulSwap := congrArg
-    (fun A : Matrix (Fin 2) (Fin 2) ℝ => A * realCliffordTwoTwoSwapMatrix) hfst
+    (fun A : Matrix (Fin 2) (Fin 2) ℝ =>
+      A * (GL2WeylElement ℝ : Matrix (Fin 2) (Fin 2) ℝ)) hfst
   rw [map_mul, map_mul, realCliffordTwoTwoEvenEquivMatrixProd_conjugate,
     realCliffordTwoTwoEvenEquivMatrixProd_reverseEven] at hmulSwap
   rw [realCliffordTwoTwoEvenEquivMatrixProd_vectorEven (s • v)] at hmulSwap
-  simp only [realCliffordTwoTwoSwapConjHom_apply] at hmulSwap
+  simp only [realCliffordTwoTwoWeylConjSwap_apply] at hmulSwap
   have hq := coe_realSpinTwoTwoEquivSpecialLinearProd_apply s
   have hq₁ : ((realSpinTwoTwoEquivSpecialLinearProd s).1 :
       Matrix (Fin 2) (Fin 2) ℝ) = (realCliffordTwoTwoEvenEquivMatrixProd x).1 := by
@@ -571,15 +550,21 @@ theorem realSpinTwoTwoEquivSpecialLinearProd_action
         ((realCliffordTwoTwoEvenEquivMatrixProd x).1 *
             (realCliffordTwoTwoEvenEquivMatrixProd
               (realCliffordTwoTwoVectorEven v)).1 *
-              (realCliffordTwoTwoSwapMatrix *
+              ((GL2WeylElement ℝ : Matrix (Fin 2) (Fin 2) ℝ) *
                 Matrix.adjugate (realCliffordTwoTwoEvenEquivMatrixProd x).2 *
-                  realCliffordTwoTwoSwapMatrix)) *
-            realCliffordTwoTwoSwapMatrix := hmulSwap
+                  (GL2WeylElement ℝ : Matrix (Fin 2) (Fin 2) ℝ))) *
+            (GL2WeylElement ℝ : Matrix (Fin 2) (Fin 2) ℝ) := hmulSwap
     _ = (realCliffordTwoTwoEvenEquivMatrixProd x).1 *
         ((realCliffordTwoTwoEvenEquivMatrixProd
-            (realCliffordTwoTwoVectorEven v)).1 * realCliffordTwoTwoSwapMatrix) *
+            (realCliffordTwoTwoVectorEven v)).1 *
+              (GL2WeylElement ℝ : Matrix (Fin 2) (Fin 2) ℝ)) *
           Matrix.adjugate (realCliffordTwoTwoEvenEquivMatrixProd x).2 := by
-      noncomm_ring [realCliffordTwoTwoSwapMatrix_mul_self]
+      have hW :
+          (GL2WeylElement ℝ : Matrix (Fin 2) (Fin 2) ℝ) *
+              (GL2WeylElement ℝ : Matrix (Fin 2) (Fin 2) ℝ) = 1 := by
+        simpa only [Units.val_mul, Units.val_one] using
+          congrArg Units.val (gl2WeylElement_mul_self ℝ)
+      noncomm_ring [hW]
     _ = (realCliffordTwoTwoEvenEquivMatrixProd x).1 *
         realCliffordTwoTwoVectorEquivMatrix v *
           Matrix.adjugate (realCliffordTwoTwoEvenEquivMatrixProd x).2 := by
