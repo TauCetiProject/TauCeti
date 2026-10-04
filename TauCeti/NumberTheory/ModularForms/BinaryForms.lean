@@ -154,15 +154,14 @@ theorem binaryFormRep_op_scalar (a : ℤ) :
 
 /-! ### Binary forms attached to linear functionals -/
 
-variable (R w) in
 /-- The monomial basis `Xʲ Yʷ⁻ʲ`, `0 ≤ j ≤ w`, of the binary forms of degree `w`, indexed by the
 exponent `j` of `X`. -/
-noncomputable def binaryFormMonomialBasis :
+noncomputable def binaryFormMonomialBasis (R : Type*) [CommSemiring R] (w : ℕ) :
     Module.Basis (Fin (w + 1)) R (homogeneousSubmodule (Fin 2) R w) :=
   (homogeneousMonomialBasis w).reindex (finsuppDegreeFinTwoEquiv w)
 
 @[simp]
-theorem coe_binaryFormMonomialBasis (j : Fin (w + 1)) :
+theorem coe_binaryFormMonomialBasis {R : Type*} [CommSemiring R] {w : ℕ} (j : Fin (w + 1)) :
     (binaryFormMonomialBasis R w j : MvPolynomial (Fin 2) R) = X 0 ^ (j : ℕ) * X 1 ^ (w - j) := by
   rw [binaryFormMonomialBasis, Module.Basis.reindex_apply, coe_homogeneousMonomialBasis]
   simp only [coe_finsuppDegreeFinTwoEquiv_symm, X_pow_eq_monomial, monomial_mul_monomial,
