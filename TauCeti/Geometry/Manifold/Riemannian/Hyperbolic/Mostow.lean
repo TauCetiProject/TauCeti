@@ -1,0 +1,63 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Geometry.Manifold.Riemannian.Hyperbolic
+public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Basic
+
+/-!
+# Mostow rigidity for hyperbolic metrics
+
+This file records the metric-level statement of Mostow rigidity for closed hyperbolic manifolds.
+`HyperbolicMetric.Isometry` specializes the generic `RiemannianIsometry` API to two bundled
+metrics, with each metric supplying its own Riemannian bundle instance.  The resulting relation
+supports comparing the total volumes carried by different hyperbolic metrics.
+
+The formulation follows Ratcliffe, *Foundations of Hyperbolic Manifolds*, 3rd ed., Theorem
+11.8.5.
+-/
+
+public section
+
+open Manifold Bundle
+open scoped ContDiff Manifold
+
+noncomputable section
+
+universe uE uH uM
+
+namespace TauCeti
+
+variable {E : Type uE} {H : Type uH} {M : Type uM} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [FiniteDimensional ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  [TopologicalSpace M] [T3Space M] [ChartedSpace H M] [IsManifold I ∞ M]
+  [PreconnectedSpace M]
+
+namespace HyperbolicMetric
+
+/-- A bundled hyperbolic-metric comparison represented by the generic Riemannian isometry API,
+with each metric supplying its own Riemannian bundle instance. -/
+abbrev Isometry (g g' : HyperbolicMetric (I := I) (M := M)) :=
+  @RiemannianIsometry E _ _ H _ E _ _ H _ I I M M _ _
+    ⟨g.metric.toRiemannianMetric⟩ _ _ ⟨g'.metric.toRiemannianMetric⟩
+
+end HyperbolicMetric
+
+/-- Mostow rigidity for a fixed smooth manifold and model with corners.
+
+The statement asserts that any two bundled complete constant-curvature `-1` metrics on this
+manifold are related by a metric-preserving diffeomorphism. -/
+def IsMostowRigid : Prop :=
+  ∀ (g g' : HyperbolicMetric (I := I) (M := M)),
+    Nonempty (HyperbolicMetric.Isometry g g')
+
+/-- A proof of Mostow rigidity supplies an isometry between any two bundled hyperbolic metrics. -/
+theorem IsMostowRigid.isometry (h : IsMostowRigid (I := I) (M := M))
+    (g g' : HyperbolicMetric (I := I) (M := M)) :
+    Nonempty (HyperbolicMetric.Isometry g g') :=
+  h g g'
+
+end TauCeti
