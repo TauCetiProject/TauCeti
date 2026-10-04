@@ -35,7 +35,7 @@ namespace List
 
 /-- Mapping a noduplicate list by an equivalence conjugates the permutation formed by the list. -/
 theorem formPerm_map_equiv {α β : Type*} [DecidableEq α] [DecidableEq β]
-    (e : α ≃ β) (l : List α) (hl : l.Nodup) :
+    (l : List α) (e : α ≃ β) (hl : l.Nodup) :
     (l.map e).formPerm = e.permCongr l.formPerm := by
   ext x
   by_cases hx : x ∈ l.map e

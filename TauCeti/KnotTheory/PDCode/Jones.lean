@@ -218,11 +218,11 @@ theorem jonesPolynomial_reverse (D : OrientedPDCode n) :
 
 /-- The Jones polynomial depends on an oriented PD-code only through its relabelling class. -/
 @[simp]
-theorem jonesPolynomial_relabel (D : OrientedPDCode n) (half : Equiv.Perm (Fin (4 * n)))
-    (cross : Equiv.Perm (Fin n)) :
+theorem jonesPolynomial_relabel {m : ℕ} (D : OrientedPDCode n)
+    (half : Fin (4 * n) ≃ Fin (4 * m)) (cross : Fin n ≃ Fin m) :
     (D.relabel half cross).jonesPolynomial = D.jonesPolynomial := by
   let e := Equiv.piCongrLeft (fun _ : Fin n ↦ Bool) cross.symm
-  have he : (fun s : Fin n → Bool ↦ s ∘ cross) = e := by
+  have he : (fun s : Fin m → Bool ↦ s ∘ cross) = e := by
     funext s i
     simp [e, Equiv.piCongrLeft_apply]
   refine Fintype.sum_bijective (fun s ↦ s ∘ cross) (he ▸ e.bijective) _ _ fun s ↦ ?_

@@ -101,7 +101,7 @@ private theorem nextCrossing_rotate (w : BraidWord n) (k : ℕ) (p : Fin n) :
     (w.rotateIndexEquiv k).permCongr
         (crossingsAt (w.rotate k) p).formPerm =
         ((crossingsAt (w.rotate k) p).map (w.rotateIndexEquiv k)).formPerm :=
-      (List.formPerm_map_equiv _ _
+      ((crossingsAt (w.rotate k) p).formPerm_map_equiv (w.rotateIndexEquiv k)
         ((sortedLT_crossingsAt (w.rotate k) p).nodup)).symm
     _ = (w.crossingsAt p).formPerm :=
       List.formPerm_eq_of_isRotated
