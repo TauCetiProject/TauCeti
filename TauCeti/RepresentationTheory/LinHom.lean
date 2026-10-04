@@ -11,6 +11,7 @@ public import Mathlib.RepresentationTheory.Intertwining
 import Mathlib.RingTheory.Finiteness.Projective
 import Mathlib.RingTheory.TensorProduct.Finite
 import TauCeti.RepresentationTheory.AsModule
+import TauCeti.RepresentationTheory.Intertwining
 import TauCeti.RepresentationTheory.OfModule
 import TauCeti.RepresentationTheory.Regular
 
@@ -21,8 +22,9 @@ Let `k` be a commutative semiring, `G` a finite group, `ρ` a representation of 
 a representation of `G` on `W`. The `k`-linear maps `V → W` carry the conjugation action
 `g • φ = σ g ∘ φ ∘ ρ g⁻¹` (Mathlib's `Representation.linHom`). This file proves that when
 `ρ.asModule` is a finitely generated projective `k[G]`-module and `W` is projective over `k`, the
-conjugation module `Hom_k(V, W)` is a projective `k[G]`-module, and that it is finitely generated
-when `W` is finitely generated over `k`.
+conjugation module `Hom_k(V, W)` is a projective `k[G]`-module. It also records that `Hom_k(V, W)`
+is a finitely generated `k[G]`-module whenever `V` is finitely generated and projective and `W` is
+finitely generated over `k`.
 
 For the regular representation the conjugation module is induced: `Hom_k(k[G], W)` is identified
 with `k[G]^* ⊗ W` by the contraction map, the dual of `k[G]` with `k[G]` by the coefficient
@@ -42,13 +44,11 @@ lifting to characteristic zero.
 
 * `Representation.Equiv.dualTensorHomOfProjective`: for `V` finitely generated and projective
   over `k`, the contraction `V^* ⊗ W ≃ Hom_k(V, W)` is an equivalence of representations.
-* `Representation.IntertwiningMap.lcomp`: precomposition with an intertwining map, as an
-  intertwining map of the conjugation representations.
 * `Representation.nonempty_linHom_leftRegular_asModule_linearEquiv`: the conjugation module
   `Hom_k(k[G], W)` is isomorphic to `k[G] ⊗[k] W`.
 * `Representation.instProjectiveAsModuleLinHom`: `Hom_k(V, W)` is a projective `k[G]`-module.
 * `Representation.instFiniteAsModuleLinHom`: `Hom_k(V, W)` is a finitely generated
-  `k[G]`-module.
+  `k[G]`-module when `V` is finite projective and `W` is finite over `k`.
 
 ## References
 
@@ -116,27 +116,6 @@ theorem nonempty_linHom_leftRegular_asModule_linearEquiv [Finite G] :
       (leftRegularTensorEquivTrivial σ)).trans e₃)).trans
     (TauCeti.Representation.ofModule'AsModuleEquiv _)⟩
 
-namespace IntertwiningMap
-
-variable {V' : Type*} [AddCommMonoid V'] [Module k V'] {ρ' : Representation k G V'}
-  {ρ : Representation k G V}
-
-/-- **Precomposition with an intertwining map.** An intertwining map `u : ρ' → ρ` induces the
-intertwining map `φ ↦ φ ∘ u` from the conjugation representation `linHom ρ σ` to
-`linHom ρ' σ`. -/
-def lcomp (u : IntertwiningMap ρ' ρ) : IntertwiningMap (linHom ρ σ) (linHom ρ' σ) where
-  toLinearMap := LinearMap.lcomp k W u.toLinearMap
-  isIntertwining' g := by
-    ext φ v
-    simp [linHom_apply, IntertwiningMap.isIntertwining]
-
-@[simp]
-theorem lcomp_apply (u : IntertwiningMap ρ' ρ) (φ : V →ₗ[k] W) :
-    lcomp σ u φ = φ ∘ₗ u.toLinearMap :=
-  (rfl)
-
-end IntertwiningMap
-
 variable (ρ : Representation k G V)
 
 /-- When `ρ.asModule` is a direct summand of `k[G]ⁿ`, precomposition with the inclusion and the
@@ -157,8 +136,8 @@ private theorem exists_comp_eq_id_linHom [Module.Finite k[G] ρ.asModule]
     (IntertwiningMap.equivLinearMapAsModule _ _).symm
       (E.symm.toLinearMap ∘ₗ LinearMap.proj j ∘ₗ g)
   refine ⟨n, LinearMap.pi fun j ↦
-      IntertwiningMap.equivLinearMapAsModule _ _ (IntertwiningMap.lcomp σ (a j)),
-    ∑ j, IntertwiningMap.equivLinearMapAsModule _ _ (IntertwiningMap.lcomp σ (b j)) ∘ₗ
+      IntertwiningMap.equivLinearMapAsModule _ _ ((a j).lcomp σ),
+    ∑ j, IntertwiningMap.equivLinearMapAsModule _ _ ((b j).lcomp σ) ∘ₗ
       LinearMap.proj j, ?_⟩
   -- On the underlying types, `a j = f ∘ single j` and `b j = proj j ∘ g`. The type synonym
   -- `ρ.asModule` keeps `simp` from rewriting with `equivLinearMapAsModule_symm_apply`, so these
@@ -174,11 +153,18 @@ private theorem exists_comp_eq_id_linHom [Module.Finite k[G] ρ.asModule]
     LinearMap.coe_proj, Function.eval, IntertwiningMap.equivLinearMapAsModule_apply,
     LinearMap.id_apply]
   have key (φ : V →ₗ[k] W) :
-      ∑ j, IntertwiningMap.lcomp σ (b j) (IntertwiningMap.lcomp σ (a j) φ) = φ := by
+      ∑ j, (b j).lcomp σ ((a j).lcomp σ φ) = φ := by
     ext v
     simp [← map_sum, hab]
   -- The goal is `key φ`, read in the type synonym `(linHom ρ σ).asModule` of `V →ₗ[k] W`.
   exact key φ
+
+/-- If `V` is finitely generated and projective over `k` and `W` is finitely generated over `k`,
+then the conjugation module `Hom_k(V, W)` is a finitely generated `k[G]`-module. -/
+instance instFiniteAsModuleLinHom [Module.Finite k V] [Module.Projective k V] [Module.Finite k W] :
+    Module.Finite k[G] (linHom ρ σ).asModule :=
+  have : Module.Finite k (V →ₗ[k] W) := .equiv (dualTensorHomEquiv k V W)
+  .of_restrictScalars_finite k k[G] _
 
 variable [Finite G]
 
@@ -194,16 +180,5 @@ instance instProjectiveAsModuleLinHom [Module.Finite k[G] ρ.asModule]
   have : Module.Projective k[G] (Fin n → (linHom (leftRegular k G) σ).asModule) :=
     .of_equiv' DFinsupp.linearEquivFunOnFintype
   exact .of_split i s h
-
-/-- For a finite group `G`, if `ρ.asModule` is a finitely generated projective `k[G]`-module and
-`W` is finitely generated over `k`, then the conjugation module `Hom_k(V, W)` is a finitely
-generated `k[G]`-module. -/
-instance instFiniteAsModuleLinHom [Module.Finite k[G] ρ.asModule]
-    [Module.Projective k[G] ρ.asModule] [Module.Finite k W] :
-    Module.Finite k[G] (linHom ρ σ).asModule := by
-  obtain ⟨n, i, s, h⟩ := exists_comp_eq_id_linHom σ ρ
-  obtain ⟨e⟩ := nonempty_linHom_leftRegular_asModule_linearEquiv (k := k) σ
-  have : Module.Finite k[G] (linHom (leftRegular k G) σ).asModule := .equiv e.symm
-  exact .of_surjective s fun x ↦ ⟨i x, LinearMap.congr_fun h x⟩
 
 end Representation
