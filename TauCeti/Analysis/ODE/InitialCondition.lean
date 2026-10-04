@@ -144,8 +144,8 @@ theorem eventually_contDiffAt_globalSolution (n : ℕ) (v : E → E) {K : ℝ≥
 /-- **The global solution of a globally Lipschitz `C^(n+1)` field is `C^(n+1)` jointly in its
 initial condition and time.**
 
-The order is written as `n + 1` because the parameterized Picard theorem consumes one derivative
-of the vector field. The result is stated at finite order. -/
+For every finite positive regularity order, the global solution has the same joint regularity as
+the vector field. -/
 theorem contDiff_globalSolution (n : ℕ) (v : E → E) {K : ℝ≥0} (hv : LipschitzWith K v)
     (hvs : ContDiff ℝ (n + 1) v) :
     ContDiff ℝ (n + 1) (fun p : E × ℝ ↦ globalSolution v hv p.1 p.2) := by
