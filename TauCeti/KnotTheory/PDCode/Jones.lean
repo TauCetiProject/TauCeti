@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Polynomial.Laurent.Basic
 public import TauCeti.KnotTheory.PDCode.Circle
 public import TauCeti.KnotTheory.PDCode.Oriented.ClaspInsertion
+public import TauCeti.KnotTheory.PDCode.Oriented.Reidemeister.Circle
 public import TauCeti.KnotTheory.PDCode.Oriented.Reidemeister.One
 public import TauCeti.KnotTheory.PDCode.Oriented.Reidemeister.Three
 public import TauCeti.KnotTheory.PDCode.Trefoil
@@ -177,6 +178,12 @@ theorem jonesPolynomial_reidemeisterOne (D : OrientedPDCode n) (h : Fin (4 * n))
   (jonesPolynomial_eq_jonesPolynomial_iff _ _).2 <|
     normalizedKauffmanBracket_reidemeisterOne (R := ℤ[T;T⁻¹]) D h b _
 
+/-- The Jones polynomial is invariant under the first Reidemeister move on an isolated
+circle, including a circle in an otherwise empty diagram. -/
+@[simp] theorem jonesPolynomial_adjoinKink (D : OrientedPDCode n) (o b : Bool) :
+    (D.adjoinKink o b).jonesPolynomial = (D.adjoinCircle o).jonesPolynomial :=
+  (jonesPolynomial_eq_jonesPolynomial_iff _ _).2 (normalizedKauffmanBracket_adjoinKink D o b _)
+
 /-- **Clasp insertion leaves the Jones polynomial unchanged.** Along a common face of the two arcs
 this is the second Reidemeister move. -/
 @[simp]
@@ -254,6 +261,14 @@ theorem jonesPolynomial_eq_pow (D : OrientedPDCode 0) :
 theorem jonesPolynomial_unknot (orientation : Bool) : (unknot orientation).jonesPolynomial = 1 := by
   rw [jonesPolynomial_eq_pow, ← crossinglessComponents_card, crossinglessComponents_unknot]
   simp
+
+/-- An isolated kink in an otherwise empty diagram has Jones polynomial one, for either
+orientation and either crossing sign. -/
+-- Evaluate this special case before the general `jonesPolynomial_adjoinKink` rewrite.
+@[simp 1100] theorem jonesPolynomial_adjoinKink_empty (o b : Bool) :
+    (empty.adjoinKink o b).jonesPolynomial = 1 := by
+  rw [jonesPolynomial_adjoinKink, jonesPolynomial_eq_pow]
+  simp [← crossinglessComponents_card]
 
 end OrientedPDCode
 

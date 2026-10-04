@@ -132,13 +132,20 @@ private theorem orbitCount_smoothing_mul_smoothing (b : Bool) :
     rw [h, orbitCount_one]
     simp
 
+private theorem orbitCount_mul_adjoinKink_edgePair (D : PDCode n) (b : Bool)
+    (σ : Perm (Fin (4 * n))) (τ : Perm (Fin 4)) :
+    orbitCount ((halfEdgeSuccEquiv n).permCongr (Perm.sumCongr σ τ) *
+      (D.adjoinKink b).edgePair.val) =
+      orbitCount (σ * D.edgePair.val) + orbitCount (τ * slotSmoothing true) := by
+  rw [adjoinKink_edgePair_val, ← Equiv.permCongr_mul, Perm.sumCongr_mul,
+    orbitCount_permCongr, orbitCount_sumCongr]
+
 /-- Adjoining an isolated kink adds one crossing-bearing component. -/
 @[simp] theorem crossingComponentCount_adjoinKink (D : PDCode n) (b : Bool) :
     (D.adjoinKink b).crossingComponentCount = D.crossingComponentCount + 1 := by
   rw [crossingComponentCount_def, crossingComponentCount_def, componentPerm_def,
     componentPerm_def, crossingTurn_eq_permCongr_sumCongr (adjoinKink_halfEdge D b),
-    adjoinKink_edgePair_val, ← Equiv.permCongr_mul, Perm.sumCongr_mul,
-    orbitCount_permCongr, orbitCount_sumCongr, orbitCount_opposite_mul_smoothing]
+    orbitCount_mul_adjoinKink_edgePair, orbitCount_opposite_mul_smoothing]
   omega
 
 /-- A kink and a crossing-free circle contribute the same number of components. -/
@@ -156,8 +163,7 @@ and one circle otherwise. -/
     smoothingTurn_eq_permCongr_sumCongr (adjoinKink_halfEdge D b),
     init_smoothingChoice_of_overPair_eq (adjoinKink_overPair D b),
     smoothingChoice_last_of_overPair_eq (adjoinKink_overPair D b),
-    adjoinKink_edgePair_val, ← Equiv.permCongr_mul, Perm.sumCongr_mul,
-    orbitCount_permCongr, orbitCount_sumCongr, orbitCount_smoothing_mul_smoothing,
+    orbitCount_mul_adjoinKink_edgePair, orbitCount_smoothing_mul_smoothing,
     adjoinKink_crossinglessComponentCount]
   by_cases h : s (Fin.last n) = b <;> simp [h] <;> omega
 
@@ -287,8 +293,7 @@ components of the surrounding diagram. -/
     rfl (by decide)
   simp only [one_mul, orbitCount_one, Nat.card_fin] at hc
   rw [faceCount_eq_orbitCount_crossingRotation_mul_edgePair,
-    crossingRotation_adjoinKink, adjoinKink_edgePair_val, ← Equiv.permCongr_mul,
-    Perm.sumCongr_mul, orbitCount_permCongr, orbitCount_sumCongr, hperm,
+    crossingRotation_adjoinKink, orbitCount_mul_adjoinKink_edgePair, hperm,
     ← faceCount_eq_orbitCount_crossingRotation_mul_edgePair]
   omega
 

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.PDCode.Reidemeister.Circle
-public import TauCeti.KnotTheory.PDCode.Jones
 
 /-!
 # An oriented Reidemeister kink on a crossing-free circle
@@ -17,9 +16,9 @@ over-strand. The first Reidemeister move relates this diagram to `D.adjoinCircle
 
 The new crossing has sign `+1` for `b = true` and `-1` for `b = false`, independently of
 `o`. Its writhe correction cancels the Kauffman bracket factor. Thus adjoining an oriented
-kink and adjoining a crossing-free circle give the same normalized bracket and Jones
-polynomial, even when `D` is empty. The construction commutes with reflection and with
-reversing all component orientations.
+kink and adjoining a crossing-free circle give the same normalized bracket, even when `D`
+is empty. The resulting Jones polynomial equality is in `TauCeti.KnotTheory.PDCode.Jones`.
+The construction commutes with reflection and with reversing all component orientations.
 
 ## References
 
@@ -114,12 +113,6 @@ unchanged. No nonemptiness assumption on the surrounding diagram is needed. -/
       (if b then 1 else -1 : ℤ) = -D.writhe := by omega
   rw [hexponent]
 
-/-- The Jones polynomial is invariant under the first Reidemeister move on an isolated
-circle, including a circle in an otherwise empty diagram. -/
-@[simp] theorem jonesPolynomial_adjoinKink (D : OrientedPDCode n) (o b : Bool) :
-    (D.adjoinKink o b).jonesPolynomial = (D.adjoinCircle o).jonesPolynomial :=
-  (jonesPolynomial_eq_jonesPolynomial_iff _ _).2 (normalizedKauffmanBracket_adjoinKink D o b _)
-
 /-- Reflection reverses the crossing sign without changing the component direction. -/
 @[simp] theorem mirror_adjoinKink (D : OrientedPDCode n) (o b : Bool) :
     (D.adjoinKink o b).mirror = D.mirror.adjoinKink o (!b) := by
@@ -144,14 +137,6 @@ circle, including a circle in an otherwise empty diagram. -/
     · simp
     · fin_cases s <;> simp
   · simp
-
-/-- An isolated kink in an otherwise empty diagram has Jones polynomial one, for either
-orientation and either crossing sign. -/
--- Evaluate this special case before the general `jonesPolynomial_adjoinKink` rewrite.
-@[simp 1100] theorem jonesPolynomial_adjoinKink_empty (o b : Bool) :
-    (empty.adjoinKink o b).jonesPolynomial = 1 := by
-  rw [jonesPolynomial_adjoinKink, jonesPolynomial_eq_pow]
-  simp [← crossinglessComponents_card]
 
 end OrientedPDCode
 end TauCeti
