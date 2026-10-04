@@ -8,7 +8,6 @@ module
 public import Mathlib.RingTheory.Norm.Defs
 public import Mathlib.Topology.Algebra.Module.ModuleTopology
 import Mathlib.Topology.Instances.Matrix
-import Mathlib.LinearAlgebra.FreeModule.StrongRankCondition
 
 /-!
 # Continuity of the algebra norm
@@ -17,7 +16,12 @@ The norm of a finite free algebra is continuous when the algebra carries the mod
 over a topological base ring. This applies to finite extensions of completed fields and supplies
 the local continuity input for adelic norm maps.
 
-The construction uses Mathlib's `Algebra.norm_eq_matrix_det`: left multiplication is linear in
+The topology on the algebra is specified by `IsModuleTopology R S`; no nontriviality assumption
+on the base ring is needed.
+
+## Implementation notes
+
+The proof uses Mathlib's `Algebra.norm_eq_matrix_det`: left multiplication is linear in
 the algebra element and the determinant is continuous.
 -/
 
@@ -31,12 +35,9 @@ theorem continuous_algebraNorm (R S : Type*) [CommRing R] [Ring S] [Algebra R S]
     [Module.Free R S] [Module.Finite R S] [TopologicalSpace R] [IsTopologicalRing R]
     [TopologicalSpace S] [IsModuleTopology R S] : Continuous (Algebra.norm R : S → R) := by
   classical
-  rcases subsingleton_or_nontrivial R with h | h
-  · exact continuous_const.congr fun x ↦ @Subsingleton.elim R h 1 (Algebra.norm R x)
-  · let := h
-    let b := Module.finBasis R S
-    exact (IsModuleTopology.continuous_of_linearMap
-      (Algebra.leftMulMatrix b).toLinearMap).matrix_det.congr fun x ↦
-        (Algebra.norm_eq_matrix_det b x).symm
+  let b := Module.Free.chooseBasis R S
+  exact (IsModuleTopology.continuous_of_linearMap
+    (Algebra.leftMulMatrix b).toLinearMap).matrix_det.congr fun x ↦
+      (Algebra.norm_eq_matrix_det b x).symm
 
 end TauCeti

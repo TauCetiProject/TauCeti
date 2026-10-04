@@ -144,7 +144,8 @@ theorem ideleClassNormMap_mk (x : IdeleGroup (𝓞 L) L) :
 @[continuity, fun_prop]
 theorem continuous_ideleClassNormMap : Continuous (ideleClassNormMap K L) :=
   (QuotientGroup.isQuotientMap_mk _).continuous_iff.mpr
-    (continuous_quot_mk.comp (continuous_ideleNormMap K L))
+    ((continuous_quot_mk.comp (continuous_ideleNormMap K L)).congr fun x ↦
+      (ideleClassNormMap_mk x).symm)
 
 /-- The norm of an idele class extended from `K` is its `[L : K]`-th power. -/
 @[simp]
