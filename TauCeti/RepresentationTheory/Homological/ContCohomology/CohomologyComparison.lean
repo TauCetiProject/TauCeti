@@ -40,7 +40,7 @@ is why the discrete synonyms exist.
 
 ## Main definitions
 
-* `TauCeti.ContCohomology.cochainClass`: the canonical cohomology class of a homogeneous cocycle.
+* `TopRep.cochainClass`: the canonical cohomology class of a homogeneous cocycle.
 * `TauCeti.ContCohomology.explicitH1AddEquivContinuousCohomology` and
   `explicitH2AddEquivContinuousCohomology`: the comparisons as additive equivalences.
 * `TauCeti.ContCohomology.explicitH1IsoContinuousCohomology` and
@@ -52,6 +52,7 @@ is why the discrete synonyms exist.
 
 ## Main results
 
+* `TopRep.cochainClass_eq_of_sub_eq_d`: cocycles differing by a coboundary have equal classes.
 * `TauCeti.ContCohomology.explicitH1AddEquivContinuousCohomology_apply` and
   `explicitH2AddEquivContinuousCohomology_apply`: the comparisons send the class of an explicit
   cocycle to the homology class of the cocycle it corresponds to.
@@ -80,7 +81,7 @@ public section
 
 open CategoryTheory
 
-namespace TauCeti.ContCohomology
+namespace TopRep
 
 universe u v
 
@@ -108,7 +109,30 @@ theorem cochainClass_def (X : TopRep R G) (n : ℕ)
           (CochainComplex.next ℕ n) ha) :=
   (rfl)
 
+/-- Homogeneous cocycles differing by a coboundary have the same canonical class. -/
+theorem cochainClass_eq_of_sub_eq_d (X : TopRep R G) (n j : ℕ) (hj : j + 1 = n)
+    (a b : (homogeneousCochains X).X n)
+    (ha : ((homogeneousCochains X).d n (n + 1)).hom a = 0)
+    (hb : ((homogeneousCochains X).d n (n + 1)).hom b = 0)
+    (c : (homogeneousCochains X).X j)
+    (hc : a - b = ((homogeneousCochains X).d j n).hom c) :
+    X.cochainClass n a ha = X.cochainClass n b hb := by
+  subst n
+  rw [cochainClass_def, cochainClass_def, ← sub_eq_zero, ← map_sub]
+  apply ((homogeneousCochains X).homologyπ_eq_zero_iff (j + 1)
+    (CochainComplex.prev_nat_succ j)).2
+  refine ⟨c, ?_⟩
+  apply (homogeneousCochains X).iCycles_injective (j + 1)
+  simpa only [map_sub, HomologicalComplex.iCycles_cyclesMkOfEq,
+    HomologicalComplex.iCycles_toCycles_apply] using hc.symm
+
 end CochainClass
+
+end TopRep
+
+namespace TauCeti.ContCohomology
+
+universe u v
 
 /-- An additive equivalence followed by transport between equal `TopModuleCat` objects preserves
 nonzero elements. This applies to the explicit-to-canonical cohomology comparison. -/

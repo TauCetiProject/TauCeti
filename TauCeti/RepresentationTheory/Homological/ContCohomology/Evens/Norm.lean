@@ -89,14 +89,15 @@ theorem homClass_def
 theorem homClass_eq_cochainClass
     (α : H →* Multiplicative (ZMod 2)) (hα : Continuous α) :
     homClass H α hα =
-      cochainClass (R := ℤ) (G := H) (trivialF2 H) 1
-        (inhomogeneousCochain1 (fun h => Multiplicative.toAdd (α h))
+      (trivialF2 H).cochainClass 1
+        (homogeneousCochain1OfInhomogeneous (fun h => Multiplicative.toAdd (α h))
           (continuous_toAdd.comp hα))
-        (inhomogeneousCochain1_d_eq_zero _ _ fun g h => by simp [map_mul, toAdd_mul]) := by
+        (homogeneousCochain1OfInhomogeneous_d_eq_zero _ _ fun g h => by
+          simp [map_mul, toAdd_mul]) := by
   rw [homClass_def, TopRep.explicitH1AddEquivContinuousCohomologyOfDiscrete_apply,
     explicitH1AddEquivContinuousCohomology_apply,
     ofDiscreteModuleRestrictScalarsIntEquiv_π]
-  rw [cochainClass_def]
+  rw [TopRep.cochainClass_def]
   congr 1
   apply (TopRep.homogeneousCochains (trivialF2 H)).iCycles_injective 1
   apply Subtype.ext
@@ -105,7 +106,7 @@ theorem homClass_eq_cochainClass
   rw [iCycles_ofDiscreteModuleCocyclesRestrictScalarsIntIso_hom_cocycleEquiv1_apply,
     cochainEquiv1_apply, homogeneous1_apply,
     coe_evensHomCocycle, TopRep.distribMulAction_smul, trivialF2_ρ_apply_apply,
-    HomologicalComplex.iCycles_cyclesMkOfEq, inhomogeneousCochain1_apply]
+    HomologicalComplex.iCycles_cyclesMkOfEq, homogeneousCochain1OfInhomogeneous_apply]
 
 private theorem trivialF2_smul_eq (K : Type u) [Group K]
     (g : K) (m : (trivialF2 K).V) : g • m = m := by
