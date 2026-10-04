@@ -60,11 +60,6 @@ of `𝔟`, and the left ideal these generate is proper by the freeness of `U(L)`
 for every `lam` (`TauCeti.isHighestWeightVector_vermaGenerator`) and `L(lam)` is irreducible for
 every `lam`.
 
-Several results below carry the hypothesis `vermaGenerator b lam ≠ 0`, which
-`TauCeti.vermaGenerator_ne_zero` discharges. For `lam = 0` it also follows without
-Poincaré--Birkhoff--Witt: the trivial one-dimensional module is a highest weight module of weight
-`0` (`TauCeti.isHighestWeightVector_vermaGenerator_zero`).
-
 ## Main definitions
 
 * `TauCeti.vermaRelations b lam` and `TauCeti.vermaIdeal b lam`: the defining relations of weight
@@ -91,12 +86,9 @@ Poincaré--Birkhoff--Witt: the trivial one-dimensional module is a highest weigh
 * `TauCeti.exists_surjective_lieModuleHom_of_isHighestWeightVector`: **every highest weight module
   of weight `lam` is a quotient of `M(lam)`**, which is what makes `M(lam)` universal in the sense
   the classification uses.
-* `TauCeti.isHighestWeightVector_vermaGenerator_zero`: **`M(0) ≠ 0`, unconditionally**, its
-  canonical generator being a highest weight vector of weight `0`.
-* `TauCeti.isHighestWeightVector_vermaGenerator_iff`,
-  `TauCeti.vermaGenerator_ne_zero_of_isHighestWeightVector`,
-  `TauCeti.vermaGenerator_eq_zero_iff` and `TauCeti.subsingleton_vermaModule_iff`: the
-  nonvanishing of `M(lam)` is the properness of `TauCeti.vermaIdeal`.
+* `TauCeti.isHighestWeightVector_vermaGenerator_iff`, `TauCeti.vermaGenerator_eq_zero_iff` and
+  `TauCeti.subsingleton_vermaModule_iff`: the nonvanishing of `M(lam)` is the properness of
+  `TauCeti.vermaIdeal`.
 * `TauCeti.vermaIdeal_ne_top`, `TauCeti.vermaGenerator_ne_zero` and
   `TauCeti.isHighestWeightVector_vermaGenerator`: **`M(lam) ≠ 0` for every `lam`**, and its
   canonical generator is a highest weight vector of weight `lam`.
@@ -105,23 +97,7 @@ Poincaré--Birkhoff--Witt: the trivial one-dimensional module is a highest weigh
   one of `M(lam)`, and the canonical generator generates `L(lam)`.
 * `TauCeti.isIrreducible_irreducibleQuotient` and
   `TauCeti.isHighestWeightVector_irreducibleQuotientGenerator`: **`L(lam)` is irreducible and its
-  canonical generator is a highest weight vector of weight `lam`**, given that the Verma module is
-  nonzero; with `TauCeti.vermaGenerator_ne_zero`, `L(lam)` is irreducible for every `lam`.
-* `TauCeti.subsingleton_irreducibleQuotient_iff`: `L(lam)` is the zero module exactly when
-  `M(lam)` is.
-
-## Roadmap
-
-This is the "Verma modules" item of Layer 3 of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`, whose targets `vermaModule`,
-`vermaHighestWeightVector` and `vermaModule_universal` are pinned in the accompanying
-`Suggested.lean`. The carrier is named `TauCeti.VermaModule` rather than `vermaModule` because it
-is a type, and the canonical vector `TauCeti.vermaGenerator` rather than
-`vermaHighestWeightVector` because it is only a highest weight vector once it is known to be
-nonzero, which `TauCeti.vermaGenerator_ne_zero` shows it always is. `TauCeti.irreducibleQuotient`
-is the carrier of the same layer's "irreducible quotient `L(λ)`" item; the two properties
-`Suggested.lean` pins of it are irreducibility, an instance for every `lam`, and the existence of a
-highest weight vector of weight `lam`, `TauCeti.isHighestWeightVector_irreducibleQuotientGenerator`.
+  canonical generator is a highest weight vector of weight `lam`**, for every `lam`.
 
 ## References
 
@@ -292,9 +268,7 @@ variable {N : Type w} [AddCommGroup N] [Module K N] [LieRingModule L N] [LieModu
 `N` through `lam` and the positive nilradical annihilates `v`, then there is a unique homomorphism
 of `L`-modules `M(lam) → N` carrying the canonical generator to `v`.
 
-The vector `v` is *not* assumed nonzero, so this does not presuppose that `M(lam)` is nonzero;
-conversely it forces `M(lam)` to be nonzero as soon as some `v ≠ 0` is available, which is
-`TauCeti.vermaGenerator_ne_zero_of_isHighestWeightVector`. -/
+The vector `v` is *not* assumed nonzero, so this does not presuppose that `M(lam)` is nonzero. -/
 theorem existsUnique_lieModuleHom_apply_vermaGenerator (v : N)
     (hcartan : ∀ x : H, ⁅(x : L), v⁆ = lam x • v)
     (hpos : ∀ x ∈ positiveNilradical H b, ⁅x, v⁆ = 0) :
@@ -343,35 +317,6 @@ theorem isHighestWeightVector_vermaGenerator_iff :
   ⟨fun h => h.ne_zero, fun h => isHighestWeightVector_iff.mpr ⟨h, lie_vermaGenerator_eq_smul b lam,
     fun _ hx => lie_vermaGenerator_eq_zero_of_mem_positiveNilradical b lam hx⟩⟩
 
-/-- **The Verma module is nonzero as soon as some module has a highest weight vector of weight
-`lam`.** The universal property carries the canonical generator to that vector, so the generator
-cannot vanish. -/
-theorem vermaGenerator_ne_zero_of_isHighestWeightVector {v : N}
-    (hv : IsHighestWeightVector b lam v) : vermaGenerator b lam ≠ 0 := by
-  obtain ⟨φ, hφ, -⟩ := existsUnique_lieModuleHom_apply_vermaGenerator b lam v hv.lie_eq_smul
-    fun _ hx => hv.lie_eq_zero_of_mem_positiveNilradical hx
-  intro h
-  exact hv.ne_zero (by rw [← hφ, h, map_zero])
-
-/-- **The Verma module of weight zero is nonzero, and its canonical generator really is a highest
-weight vector.** The trivial one-dimensional module `K` carries the nonzero vector `1`, on which
-the Cartan subalgebra acts through `0` and which the positive nilradical annihilates, so the
-universal property produces a homomorphism `M(0) → K` sending the canonical generator to `1`.
-This is the unconditional witness that the construction is not the zero module: `M(0) ≠ 0` and
-`M(0) ⧸ maximalSubmodule` is the irreducible module `L(0)`, with no appeal to
-Poincaré--Birkhoff--Witt. -/
-theorem isHighestWeightVector_vermaGenerator_zero :
-    IsHighestWeightVector b (0 : Dual K H) (vermaGenerator b (0 : Dual K H)) := by
-  rw [isHighestWeightVector_vermaGenerator_iff]
-  refine vermaGenerator_ne_zero_of_isHighestWeightVector b 0 (N := TrivialLieModule K L K)
-    (v := (TrivialLieModule.equiv K L K).symm 1) (isHighestWeightVector_iff.mpr ⟨?_, ?_, ?_⟩)
-  · simp
-  · intro x
-    rw [trivial_lie_zero]
-    simp
-  · intro x _
-    rw [trivial_lie_zero]
-
 /-- **Every highest weight module of weight `lam` is a quotient of the Verma module.** This is the
 sense in which `M(lam)` is the universal highest weight module of weight `lam`, and the form in
 which the classification of the irreducible highest weight modules consumes it. -/
@@ -403,6 +348,38 @@ theorem subsingleton_vermaModule_iff :
   change Subsingleton (U ⧸ vermaIdeal b lam) ↔ vermaGenerator b lam = 0
   rw [Submodule.Quotient.subsingleton_iff, ← vermaGenerator_eq_zero_iff]
 
+/-! ### The Verma module is nonzero -/
+
+/-- **The Verma ideal is proper.** Its generators `ι x - lam x` for `x` in the Cartan subalgebra
+and `ι x` for `x` in the positive nilradical are all of the form `ι x - χ x` for `x` in the Borel
+subalgebra, where `χ = TauCeti.borelCharacter H b lam` is the character `h + n ↦ lam h`. The left
+ideal generated by those is proper, by the freeness of `U(L)` as a right `U(𝔟)`-module
+(`TauCeti.UniversalEnvelopingAlgebra.span_range_ι_sub_algebraMap_ne_top`). -/
+theorem vermaIdeal_ne_top : vermaIdeal b lam ≠ ⊤ := by
+  refine ne_top_of_le_ne_top (UniversalEnvelopingAlgebra.span_range_ι_sub_algebraMap_ne_top
+    (borelSubalgebra H b) (borelCharacter H b lam)) (Submodule.span_le.mpr ?_)
+  rintro _ (⟨x, rfl⟩ | ⟨x, hx, rfl⟩)
+  · exact Submodule.subset_span ⟨⟨x, le_borelSubalgebra H b x.2⟩, by
+      dsimp only
+      rw [borelCharacter_apply_of_mem_cartan H b lam x.2]⟩
+  · exact Submodule.subset_span ⟨⟨x, positiveNilradical_le_borelSubalgebra H b hx⟩, by
+      dsimp only
+      rw [borelCharacter_apply_of_mem_positiveNilradical H b lam hx, map_zero, sub_zero]⟩
+
+/-- **The Verma module is nonzero**: its canonical generator does not vanish, for every weight
+`lam`. -/
+theorem vermaGenerator_ne_zero : vermaGenerator b lam ≠ 0 :=
+  fun h ↦ vermaIdeal_ne_top b lam ((vermaGenerator_eq_zero_iff b lam).mp h)
+
+/-- **The canonical generator of the Verma module is a highest weight vector of weight `lam`**,
+for every weight `lam`. -/
+theorem isHighestWeightVector_vermaGenerator :
+    IsHighestWeightVector b lam (vermaGenerator b lam) :=
+  (isHighestWeightVector_vermaGenerator_iff b lam).mpr (vermaGenerator_ne_zero b lam)
+
+instance : Nontrivial (VermaModule b lam) :=
+  ⟨⟨vermaGenerator b lam, 0, vermaGenerator_ne_zero b lam⟩⟩
+
 /-- **The irreducible quotient `L(lam)`**: the quotient of the Verma module by the maximal
 submodule of `TauCeti/Algebra/Lie/HighestWeight/Maximal.lean`. As with
 `TauCeti.VermaModule`, the carrier is a definition with its module structures declared
@@ -410,7 +387,7 @@ one by one, so that statements about `L(lam)` are made against this name rather 
 quotient it is built from.
 
 Nothing about it is irreducible by fiat: irreducibility is
-`TauCeti.isIrreducible_irreducibleQuotient`, which needs `M(lam) ≠ 0`. Naming the carrier is what
+`TauCeti.isIrreducible_irreducibleQuotient`, which rests on `M(lam) ≠ 0`. Naming the carrier is what
 lets a statement about `L(lam)` be phrased at one fixed module instead of at an arbitrary
 irreducible module carrying a highest weight vector of weight `lam`. -/
 def irreducibleQuotient : Type max u v :=
@@ -448,7 +425,7 @@ theorem irreducibleQuotientMk_surjective : Function.Surjective (irreducibleQuoti
   fun q => LieSubmodule.Quotient.surjective_mk' _ q
 
 /-- **The canonical generator of `L(lam)`**, the class of the canonical generator of `M(lam)`.
-It is a highest weight vector of weight `lam` as soon as `M(lam)` is nonzero
+It is a highest weight vector of weight `lam`
 (`TauCeti.isHighestWeightVector_irreducibleQuotientGenerator`), and it is the introduction rule
 through which `L(lam)` is populated without unfolding the quotient. The body is not exposed: the
 public equation is `TauCeti.irreducibleQuotientMk_vermaGenerator`. -/
@@ -462,77 +439,29 @@ theorem irreducibleQuotientMk_vermaGenerator :
 
 /-- **The canonical generator generates `L(lam)`**, the canonical generator of `M(lam)` generating
 `M(lam)` and the projection being surjective. So `L(lam)` is a highest weight module of weight
-`lam` as soon as `M(lam)` is nonzero. -/
+`lam`. -/
 theorem lieSpan_irreducibleQuotientGenerator_eq_top :
     LieSubmodule.lieSpan K L {irreducibleQuotientGenerator b lam} = ⊤ :=
   lieSpan_mk_eq_top_of_lieSpan_eq_top (lieSpan_vermaGenerator_eq_top b lam) _
 
-/-- **`L(lam)` is irreducible.** As soon as the Verma module is nonzero, it is a highest weight
-module of weight `lam`, so its quotient by the maximal submodule is irreducible. By
-`TauCeti.quotientMaximalSubmoduleEquivOfSurjectiveOfIsIrreducible` it is then the only irreducible
-highest weight module of weight `lam`, up to isomorphism. -/
-theorem isIrreducible_irreducibleQuotient (h : vermaGenerator b lam ≠ 0) :
+/-- **`L(lam)` is irreducible, for every weight `lam`.** The Verma module is nonzero, so it is a
+highest weight module of weight `lam`, and its quotient by the maximal submodule is irreducible.
+By `TauCeti.quotientMaximalSubmoduleEquivOfSurjectiveOfIsIrreducible` it is then the only
+irreducible highest weight module of weight `lam`, up to isomorphism. -/
+theorem isIrreducible_irreducibleQuotient :
     LieModule.IsIrreducible K L (irreducibleQuotient b lam) :=
   isIrreducible_quotient_maximalSubmodule_of_isHighestWeightVector_of_lieSpan_eq_top
-    ((isHighestWeightVector_vermaGenerator_iff b lam).mpr h)
-    (lieSpan_vermaGenerator_eq_top b lam)
+    (isHighestWeightVector_vermaGenerator b lam) (lieSpan_vermaGenerator_eq_top b lam)
+
+instance : LieModule.IsIrreducible K L (irreducibleQuotient b lam) :=
+  isIrreducible_irreducibleQuotient b lam
 
 /-- **`L(lam)` carries a highest weight vector of weight `lam`**, its canonical generator; the
 anti-vacuity companion of `TauCeti.isIrreducible_irreducibleQuotient`, without which any family of
 pairwise non-isomorphic irreducibles would do. -/
-theorem isHighestWeightVector_irreducibleQuotientGenerator (h : vermaGenerator b lam ≠ 0) :
+theorem isHighestWeightVector_irreducibleQuotientGenerator :
     IsHighestWeightVector b lam (irreducibleQuotientGenerator b lam) :=
   isHighestWeightVector_mk_of_isHighestWeightVector_of_lieSpan_eq_top
-    ((isHighestWeightVector_vermaGenerator_iff b lam).mpr h)
-    (lieSpan_vermaGenerator_eq_top b lam)
-
-/-- **`L(lam)` is the zero module exactly when `M(lam)` is.** It is a quotient of `M(lam)`, and
-conversely it is irreducible, hence nonzero, as soon as `M(lam)` is nonzero. -/
-theorem subsingleton_irreducibleQuotient_iff :
-    Subsingleton (irreducibleQuotient b lam) ↔ vermaGenerator b lam = 0 := by
-  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · by_contra h0
-    have _ := isIrreducible_irreducibleQuotient b lam h0
-    have _ : Nontrivial (irreducibleQuotient b lam) :=
-      LieModule.nontrivial_of_isIrreducible (R := K) (L := L) (M := irreducibleQuotient b lam)
-    exact not_subsingleton _ h
-  · have _ : Subsingleton (VermaModule b lam) := (subsingleton_vermaModule_iff b lam).mpr h
-    exact (irreducibleQuotientMk_surjective b lam).subsingleton
-
-/-! ### The Verma module is nonzero -/
-
-/-- **The Verma ideal is proper.** Its generators `ι x - lam x` for `x` in the Cartan subalgebra
-and `ι x` for `x` in the positive nilradical are all of the form `ι x - χ x` for `x` in the Borel
-subalgebra, where `χ = TauCeti.borelCharacter H b lam` is the character `h + n ↦ lam h`. The left
-ideal generated by those is proper, by the freeness of `U(L)` as a right `U(𝔟)`-module
-(`TauCeti.UniversalEnvelopingAlgebra.span_range_ι_sub_algebraMap_ne_top`). -/
-theorem vermaIdeal_ne_top : vermaIdeal b lam ≠ ⊤ := by
-  refine ne_top_of_le_ne_top (UniversalEnvelopingAlgebra.span_range_ι_sub_algebraMap_ne_top
-    (borelSubalgebra H b) (borelCharacter H b lam)) (Submodule.span_le.mpr ?_)
-  rintro _ (⟨x, rfl⟩ | ⟨x, hx, rfl⟩)
-  · exact Submodule.subset_span ⟨⟨x, le_borelSubalgebra H b x.2⟩, by
-      dsimp only
-      rw [borelCharacter_apply_of_mem_cartan H b lam x.2]⟩
-  · exact Submodule.subset_span ⟨⟨x, positiveNilradical_le_borelSubalgebra H b hx⟩, by
-      dsimp only
-      rw [borelCharacter_apply_of_mem_positiveNilradical H b lam hx, map_zero, sub_zero]⟩
-
-/-- **The Verma module is nonzero**: its canonical generator does not vanish, for every weight
-`lam`. -/
-theorem vermaGenerator_ne_zero : vermaGenerator b lam ≠ 0 :=
-  fun h ↦ vermaIdeal_ne_top b lam ((vermaGenerator_eq_zero_iff b lam).mp h)
-
-/-- **The canonical generator of the Verma module is a highest weight vector of weight `lam`**,
-for every weight `lam`. -/
-theorem isHighestWeightVector_vermaGenerator :
-    IsHighestWeightVector b lam (vermaGenerator b lam) :=
-  (isHighestWeightVector_vermaGenerator_iff b lam).mpr (vermaGenerator_ne_zero b lam)
-
-instance : Nontrivial (VermaModule b lam) :=
-  ⟨⟨vermaGenerator b lam, 0, vermaGenerator_ne_zero b lam⟩⟩
-
-/-- **`L(lam)` is irreducible for every weight `lam`.** -/
-instance : LieModule.IsIrreducible K L (irreducibleQuotient b lam) :=
-  isIrreducible_irreducibleQuotient b lam (vermaGenerator_ne_zero b lam)
+    (isHighestWeightVector_vermaGenerator b lam) (lieSpan_vermaGenerator_eq_top b lam)
 
 end TauCeti

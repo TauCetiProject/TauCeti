@@ -469,10 +469,7 @@ variable (lam : Dual K H)
 `n⁺`. -/
 private noncomputable def borelPMap : L →ₗ.[K] K :=
   LinearPMap.sup ⟨(H : Submodule K L), lam⟩ ⟨(positiveNilradical H b : Submodule K L), 0⟩
-    fun x y hxy ↦ by
-      have hx : x = 0 := Subtype.ext <| Submodule.disjoint_def.mp
-        (disjoint_cartan_positiveNilradical H b) x x.2 (hxy ▸ y.2)
-      simp [hx]
+    (LinearPMap.sup_h_of_disjoint _ _ (disjoint_cartan_positiveNilradical H b))
 
 private theorem borelPMap_apply (x : (borelPMap H b lam).domain) (h : H)
     (n : positiveNilradical H b) (hx : (h : L) + n = x) :

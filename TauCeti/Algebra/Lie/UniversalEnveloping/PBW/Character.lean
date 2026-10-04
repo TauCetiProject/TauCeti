@@ -116,19 +116,27 @@ and `β` on `B` is the ordered `α`-monomial of the complement times the image o
 private theorem pbwBasis_adaptedBasis_sumExponentEquiv (α : ιA →₀ ℕ) (β : ιB →₀ ℕ) :
     (adaptedBasis B hA bA bB).pbwBasis (sumExponentEquiv (α, β)) =
       complementMonomial bA α * map R B.incl (bB.pbwBasis β) := by
+  -- The exponent vector of `(α, β)` is the sum of the two halves, pushed into `ιA ⊕ₗ ιB`.
+  have hexp : (sumExponentEquiv (α, β)).toMultiset =
+      α.toMultiset.map Sum.inlₗ + β.toMultiset.map Sum.inrₗ := by
+    rw [sumExponentEquiv_apply, Finsupp.toMultiset_add, Finsupp.toMultiset_map,
+      Finsupp.toMultiset_map]
+  -- Every complement index precedes every index of `B`, so the sorted list splits in two.
   have hle : ∀ a ∈ α.toMultiset.map Sum.inlₗ, ∀ b ∈ β.toMultiset.map (Sum.inrₗ (α := ιA)),
       a ≤ b := by
     simp only [Multiset.mem_map]
     rintro _ ⟨i, -, rfl⟩ _ ⟨j, -, rfl⟩
     exact Sum.Lex.inl_le_inr i j
-  rw [Basis.pbwBasis_apply, Basis.pbwBasis_apply, map_pbwMonomial, sumExponentEquiv_apply,
-    Finsupp.toMultiset_add, ← Finsupp.toMultiset_map, ← Finsupp.toMultiset_map,
-    Multiset.sort_add _ hle,
-    ← Multiset.map_sort Sum.inlₗ α.toMultiset (fun a b : ιA ↦ a ≤ b)
-      (fun a b : ιA ⊕ₗ ιB ↦ a ≤ b) (fun _ _ _ _ ↦ Sum.Lex.inl_le_inl_iff.symm),
-    ← Multiset.map_sort Sum.inrₗ β.toMultiset (fun a b : ιB ↦ a ≤ b)
-      (fun a b : ιA ⊕ₗ ιB ↦ a ≤ b) (fun _ _ _ _ ↦ Sum.Lex.inr_le_inr_iff.symm),
-    pbwMonomial_append, complementMonomial]
+  have hsort : (sumExponentEquiv (α, β)).toMultiset.sort (· ≤ ·) =
+      (α.toMultiset.sort (· ≤ ·)).map Sum.inlₗ ++ (β.toMultiset.sort (· ≤ ·)).map Sum.inrₗ := by
+    rw [hexp, Multiset.sort_add _ hle,
+      Multiset.map_sort Sum.inlₗ α.toMultiset (fun a b : ιA ↦ a ≤ b)
+        (fun a b : ιA ⊕ₗ ιB ↦ a ≤ b) (fun _ _ _ _ ↦ Sum.Lex.inl_le_inl_iff.symm),
+      Multiset.map_sort Sum.inrₗ β.toMultiset (fun a b : ιB ↦ a ≤ b)
+        (fun a b : ιA ⊕ₗ ιB ↦ a ≤ b) (fun _ _ _ _ ↦ Sum.Lex.inr_le_inr_iff.symm)]
+  -- The monomial of the concatenation is the product of the two monomials.
+  rw [Basis.pbwBasis_apply, Basis.pbwBasis_apply, map_pbwMonomial, hsort, pbwMonomial_append,
+    complementMonomial]
   simp only [pbwMonomial_def, List.map_map, Function.comp_def, adaptedBasis_inl, adaptedBasis_inr,
     LieSubalgebra.coe_incl]
 
