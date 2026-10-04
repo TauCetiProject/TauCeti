@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Borel.Conjugation
+public import TauCeti.Algebra.AlgebraicGroup.Borel.Over
 public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.UpperTriangular.Connected
 import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.UpperTriangular.Borel
@@ -27,7 +28,8 @@ The upper-triangular subgroup is smooth, geometrically connected, and has solvab
 points, so it is a Borel candidate. Combined with the containment above, it is a Borel subgroup,
 the Borel subgroups of `SLₙ` over an algebraically closed field are exactly its conjugates, and
 any two of them are conjugate. Its defining ideal commutes with base change, so it is a Borel
-subgroup over every field.
+subgroup of `SLₙ` over every commutative ring, smooth over the base with Borel geometric fibers,
+and in particular a Borel subgroup over every field.
 
 ## Main declarations
 
@@ -43,6 +45,8 @@ subgroup over every field.
   Borel subgroups of `SLₙ` over an algebraically closed field are conjugate.
 * `TauCeti.SpecialLinear.UpperTriangular.map_baseChangeHopfIdeal_definingHopfIdeal`: the
   upper-triangular ideal commutes with base change.
+* `TauCeti.SpecialLinear.UpperTriangular.isBorelOver_definingHopfIdeal`: the upper-triangular
+  subgroup is a Borel subgroup of `SLₙ` over every commutative ring.
 * `TauCeti.SpecialLinear.UpperTriangular.isBorel_definingHopfIdeal`: the upper-triangular
   subgroup is a Borel subgroup of `SLₙ` over every field.
 
@@ -235,23 +239,28 @@ theorem map_baseChangeHopfIdeal_definingHopfIdeal :
 
 end BaseChange
 
+variable (R : Type u) [CommRing R] (n : ℕ) in
+/-- **The upper-triangular subgroup of `SLₙ` is a Borel subgroup over every commutative ring**:
+it is smooth over the base, and on every geometric fiber it is the upper-triangular Borel
+subgroup of `SLₙ`. -/
+theorem isBorelOver_definingHopfIdeal :
+    HopfIdeal.IsBorelOver R (SpecialLinear.coordinateHopfAlgebra R n) (definingHopfIdeal R n) := by
+  refine HopfIdeal.IsBorelOver.mk inferInstance fun k _ _ _ ↦ ?_
+  let e : FiniteTypeCommHopfAlgCat.baseChange (K := k)
+        (FiniteTypeCommHopfAlgCat.of R (SpecialLinear.coordinateHopfAlgebra R n)) ≅
+      FiniteTypeCommHopfAlgCat.of k (SpecialLinear.coordinateHopfAlgebra k n) :=
+    ObjectProperty.isoMk _ (SpecialLinear.coordinateHopfAlgebraBaseChangeIso R k n)
+  exact HopfIdeal.IsBorelOverAlgClosed.of_map_eq e
+    (map_baseChangeHopfIdeal_definingHopfIdeal R k n)
+    (isBorelOverAlgClosed_definingHopfIdeal k n)
+
 variable (k : Type u) [Field k] (n : ℕ) in
 /-- **The upper-triangular subgroup of `SLₙ` is a Borel subgroup over every field.** Its base
 change to an algebraic closure is smooth, connected, solvable, and maximal among closed
 subgroups with those properties. -/
 theorem isBorel_definingHopfIdeal :
-    HopfIdeal.IsBorel k (SpecialLinear.coordinateHopfAlgebra k n) (definingHopfIdeal k n) := by
-  let K := AlgebraicClosure k
-  let H' := FiniteTypeCommHopfAlgCat.baseChange (K := K)
-    (FiniteTypeCommHopfAlgCat.of k (SpecialLinear.coordinateHopfAlgebra k n))
-  let L := FiniteTypeCommHopfAlgCat.of K (SpecialLinear.coordinateHopfAlgebra K n)
-  let e : H' ≅ L := ObjectProperty.isoMk _
-    (SpecialLinear.coordinateHopfAlgebraBaseChangeIso k K n)
-  have hpull := HopfIdeal.IsBorelOverAlgClosed.of_map_eq e
-    (map_baseChangeHopfIdeal_definingHopfIdeal k K n)
-    (isBorelOverAlgClosed_definingHopfIdeal K n)
-  exact (HopfIdeal.isBorel_iff_isBorelOverAlgClosed_baseChange
-    k (SpecialLinear.coordinateHopfAlgebra k n) (definingHopfIdeal k n)).2 hpull
+    HopfIdeal.IsBorel k (SpecialLinear.coordinateHopfAlgebra k n) (definingHopfIdeal k n) :=
+  (isBorelOver_definingHopfIdeal k n).isBorel
 
 end
 

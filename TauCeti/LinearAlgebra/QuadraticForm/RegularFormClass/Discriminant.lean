@@ -54,6 +54,8 @@ is killed by two.
 * `TauCeti.RegularFormClass.discr_mk_rankOne_mul` and
   `TauCeti.RegularFormClass.signedDiscr_mk_rankOne_mul`: scaling by `a` adds
   `m • squareClass a` to the (signed) discriminant of a class of rank `m`.
+* `TauCeti.RegularFormClass.discr_mk_rankOne_add`: adjoining the line `⟨a⟩` adds
+  `squareClass a` to the discriminant.
 * `TauCeti.RegularFormClass.eq_one_of_rank_eq_one_of_discr_eq_zero`: a rank-one class of trivial
   discriminant is `⟨1⟩`.
 * `TauCeti.RegularFormClass.mk_rankOne_mul_self`: scaling twice by the same unit is the identity,
@@ -171,6 +173,11 @@ theorem discr_mk_rankOne_mul (a : Kˣ) (x : RegularFormClass K) :
     discr (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => a⟩ * x) =
       rank x • squareClass a + discr x := by
   rw [discr_mul, rank_mk, one_nsmul, discr_mk, Fin.prod_univ_one]
+
+/-- **Adjoining a line**: `d(⟨a⟩ ⊥ q) = squareClass a + d(q)`. -/
+theorem discr_mk_rankOne_add (a : Kˣ) (x : RegularFormClass K) :
+    discr (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => a⟩ + x) = squareClass a + discr x := by
+  rw [discr_add, discr_mk, Fin.prod_univ_one]
 
 /-- A class of rank one and trivial discriminant is the class `⟨1⟩`: in rank one the discriminant
 is a complete invariant. -/

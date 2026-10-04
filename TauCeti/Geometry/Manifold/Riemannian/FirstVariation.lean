@@ -31,11 +31,11 @@ curves near `s = 0` share the endpoints of `γ`, the boundary terms vanish.
 
 The formula holds for a family which is `C²` at the points of `{0} × [a, b]`, for the tangent
 bundle of a `C²` manifold carrying a `C¹` Riemannian metric; its integrand is then continuous on
-`[a, b]`.  It is the tool for studying the critical points of the energy, the `C²` curves for which
-this derivative vanishes for every variation with fixed endpoints
-(`TauCeti.Manifold.IsFixedEndpointVariation`).  On a boundaryless manifold,
-for curves with this `C²` regularity, criticality is equivalent to being a geodesic on `uIoo a b`
-(`TauCeti.Geometry.Manifold.Riemannian.Geodesic.FirstVariation`).
+`[a, b]`.  It is the tool for studying the critical points of the energy, the `C^n` curves for which
+this derivative vanishes for every `C^n` variation with fixed endpoints
+(`TauCeti.Manifold.IsFixedEndpointVariation`), for a regularity `2 ≤ n`.  On a boundaryless
+`C^n` manifold, for `2 ≤ n ≤ ∞`, a `C^n` curve is critical exactly when it is a geodesic on
+`uIoo a b` (`TauCeti.Geometry.Manifold.Riemannian.Geodesic.FirstVariation`).
 
 ## Main definitions and results
 
@@ -45,8 +45,8 @@ for curves with this `C²` regularity, criticality is equivalent to being a geod
   `C²` variation with fixed endpoints.
 * `TauCeti.Manifold.continuousAt_inner_variationField_acceleration`: the integrand
   `⟪V(t), D_t γ'(t)⟫` of the first variation formula is continuous where the family is `C²`.
-* `TauCeti.Manifold.IsEnergyCritical`: critical points of the energy among variations with fixed
-  endpoints, which are `C²` curves by definition; for a `C²` curve, criticality is characterized
+* `TauCeti.Manifold.IsEnergyCritical`: critical points of the energy among `C^n` variations with
+  fixed endpoints, which are `C^n` curves by definition; for `2 ≤ n`, criticality is characterized
   through the first variation formula by
   `TauCeti.Manifold.isEnergyCritical_iff_integral_inner_eq_zero`.
 
@@ -310,36 +310,45 @@ end FirstVariation
 section Critical
 
 variable (I) in
-/-- A curve `γ` is a **critical point of the energy** between the parameters `a` and `b` when it
-is `C²` at every point of `[a, b]` and every variation of `γ` with fixed endpoints leaves the
-energy stationary to first order: for every `C²` fixed-endpoint variation `F` between `a` and `b`
-(`TauCeti.Manifold.IsFixedEndpointVariation`) with `F 0 = γ`, the energy of `F s` between `a` and
-`b` has derivative `0` at `s = 0`.  The regularity of `γ` is part
-of the definition: a curve which is not `C²` on `[a, b]` admits no such variation, and is not
-critical.  The criticality of geodesics and its converse are in
-`TauCeti.Geometry.Manifold.Riemannian.Geodesic.FirstVariation`. -/
-structure IsEnergyCritical (γ : ℝ → M) (a b : ℝ) : Prop where
-  /-- A critical point of the energy is `C²` at every point of `[a, b]`. -/
-  contMDiffAt : ∀ t ∈ uIcc a b, ContMDiffAt 𝓘(ℝ, ℝ) I 2 γ t
-  /-- The energy of a fixed-endpoint variation of a critical point has derivative `0` at
+/-- A curve `γ` is a **critical point of the energy among `C^n` variations** between the
+parameters `a` and `b` when it is `C^n` at every point of `[a, b]` and every `C^n` variation of
+`γ` with fixed endpoints leaves the energy stationary to first order: for every `C^n`
+fixed-endpoint variation `F` between `a` and `b` (`TauCeti.Manifold.IsFixedEndpointVariation`)
+with `F 0 = γ`, the energy of `F s` between `a` and `b` has derivative `0` at `s = 0`.  The
+regularity of `γ` is part of the definition: a curve which is not `C^n` on `[a, b]` admits no such
+variation, and is not critical.
+
+The regularity `n` is meant to be at least `2`, where the first variation formula applies; the
+usual notion is `n = ∞`, criticality of a smooth curve among smooth variations.  On a
+boundaryless `C^n` manifold, for `2 ≤ n ≤ ∞`, a curve which is `C^n` on `[a, b]` is critical
+exactly when it is a geodesic; this is `TauCeti.Manifold.isEnergyCritical_iff_isGeodesicCurveOn`
+in `TauCeti.Geometry.Manifold.Riemannian.Geodesic.FirstVariation`.  Hence, on a boundaryless
+`C^n` manifold with `n ≤ ∞`, criticality among `C^m` variations is the same for every
+`2 ≤ m ≤ n`, for curves which are `C^n` on `[a, b]`; it is not independent of the regularity in
+general, since it requires `γ` itself to be `C^m`. -/
+structure IsEnergyCritical (n : WithTop ℕ∞) (γ : ℝ → M) (a b : ℝ) : Prop where
+  /-- A critical point of the energy among `C^n` variations is `C^n` at every point of
+  `[a, b]`. -/
+  contMDiffAt : ∀ t ∈ uIcc a b, ContMDiffAt 𝓘(ℝ, ℝ) I n γ t
+  /-- The energy of a `C^n` fixed-endpoint variation of a critical point has derivative `0` at
   `s = 0`. -/
-  hasDerivAt : ∀ {F : ℝ → ℝ → M}, F 0 = γ → IsFixedEndpointVariation I 2 F a b →
+  hasDerivAt : ∀ {F : ℝ → ℝ → M}, F 0 = γ → IsFixedEndpointVariation I n F a b →
     HasDerivAt (fun s ↦ energy I (F s) a b) 0 0
 
-variable {γ : ℝ → M} {a b : ℝ}
+variable {n : WithTop ℕ∞} {γ : ℝ → M} {a b : ℝ}
 
-/-- **Criticality through the first variation formula.** A curve `γ` which is `C²` at every point
-of `[a, b]` is a critical point of the energy between `a` and `b` exactly when
-`∫_a^b ⟪V(t), D_t γ'(t)⟫ dt = 0` for the variation field `V` of every `C²` variation `F` of
-`γ = F 0` with fixed endpoints between `a` and `b`. -/
-theorem isEnergyCritical_iff_integral_inner_eq_zero
-    (hγ : ∀ t ∈ uIcc a b, ContMDiffAt 𝓘(ℝ, ℝ) I 2 γ t) :
-    IsEnergyCritical I γ a b ↔ ∀ F : ℝ → ℝ → M, F 0 = γ → IsFixedEndpointVariation I 2 F a b →
+/-- **Criticality through the first variation formula.** For `2 ≤ n`, a curve `γ` which is `C^n`
+at every point of `[a, b]` is a critical point of the energy among `C^n` variations between `a`
+and `b` exactly when `∫_a^b ⟪V(t), D_t γ'(t)⟫ dt = 0` for the variation field `V` of every `C^n`
+variation `F` of `γ = F 0` with fixed endpoints between `a` and `b`. -/
+theorem isEnergyCritical_iff_integral_inner_eq_zero (hn : 2 ≤ n)
+    (hγ : ∀ t ∈ uIcc a b, ContMDiffAt 𝓘(ℝ, ℝ) I n γ t) :
+    IsEnergyCritical I n γ a b ↔ ∀ F : ℝ → ℝ → M, F 0 = γ → IsFixedEndpointVariation I n F a b →
       ∫ t in a..b, inner ℝ (variationField I F t)
         (acceleration (leviCivitaConnection I M) (F 0) t) = 0 := by
   refine ⟨fun h F hF0 hF ↦ ?_, fun h ↦ ⟨hγ, fun {F} hF0 hF ↦ ?_⟩⟩
-  · exact neg_eq_zero.mp (hF.hasDerivAt_energy.unique (h.hasDerivAt hF0 hF))
-  · simpa only [h F hF0 hF, neg_zero] using hF.hasDerivAt_energy
+  · exact neg_eq_zero.mp ((hF.of_le hn).hasDerivAt_energy.unique (h.hasDerivAt hF0 hF))
+  · simpa only [h F hF0 hF, neg_zero] using (hF.of_le hn).hasDerivAt_energy
 
 end Critical
 

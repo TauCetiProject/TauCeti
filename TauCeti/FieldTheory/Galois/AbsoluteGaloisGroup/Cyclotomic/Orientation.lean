@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Cyclotomic.Character
+public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Cyclotomic.Range
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.ProP
 public import TauCeti.NumberTheory.Padics.PrincipalUnits
-import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 
@@ -36,8 +35,6 @@ prime to `p`, so it does not factor through any pro-`p` group.
 
 ## Main results
 
-* `TauCeti.localCyclotomicCharacter_mem_unitsPrincipal_one`: if `μ_p ⊆ K`, the cyclotomic
-  character takes values in `1 + pℤ_p`.
 * `TauCeti.isProP_range_localCyclotomicCharacter`: if `μ_p ⊆ K`, the image of the cyclotomic
   character is pro-`p`.
 * `TauCeti.proPKernel_le_ker_localCyclotomicCharacter`: if `μ_p ⊆ K`, the pro-`p` kernel of the
@@ -51,37 +48,7 @@ public section
 
 namespace TauCeti
 
-variable {p : ℕ} [hp : Fact p.Prime] {K : Type*} [Field K]
-
-/-- If `K` contains a primitive `p`-th root of unity, every value of the cyclotomic character of
-`K` is a principal unit `≡ 1 mod p`: an automorphism fixing a primitive `p`-th root of unity acts
-on the `p`-th roots of unity by the exponent `1`. -/
-theorem localCyclotomicCharacter_mem_unitsPrincipal_one (hmu : ∃ ζ : K, IsPrimitiveRoot ζ p)
-    (σ : Field.absoluteGaloisGroup K) : localCyclotomicCharacter p K σ ∈ unitsPrincipal p 1 := by
-  obtain ⟨ζ, hζ⟩ := hmu
-  -- A primitive `p`-th root of unity in `K` forces `p ≠ 0` in `K`, so the algebraic closure has
-  -- all `p`-power roots of unity and Mathlib's defining equation of the character applies.
-  have := hζ.neZero'
-  have hξ : IsPrimitiveRoot (algebraMap K (AlgebraicClosure K) ζ) p :=
-    hζ.map_of_injective (algebraMap K (AlgebraicClosure K)).injective
-  have hspec := cyclotomicCharacter.spec p (n := 1) σ.toRingEquiv
-    (algebraMap K (AlgebraicClosure K) ζ) (by rw [pow_one, hξ.pow_eq_one])
-  have hmod := ((hξ.isOfFinOrder hp.out.ne_zero).pow_eq_pow_iff_modEq).mp
-    (((pow_one _).trans (σ.commutes ζ).symm).trans hspec)
-  rw [← hξ.eq_orderOf] at hmod
-  rw [mem_unitsPrincipal_iff_toZModPow, localCyclotomicCharacter_apply]
-  set c := PadicInt.toZModPow 1 (cyclotomicCharacter (AlgebraicClosure K) p σ.toRingEquiv : ℤ_[p])
-  rw [← ZMod.natCast_zmod_val c, ← Nat.cast_one (R := ZMod (p ^ 1)), ZMod.natCast_eq_natCast_iff]
-  simpa using hmod.symm
-
-variable (p K) in
-/-- If `K` contains a primitive `p`-th root of unity, the image of the cyclotomic character of
-`K` lies in the principal unit group `1 + pℤ_p`. -/
-theorem range_localCyclotomicCharacter_le_unitsPrincipal_one
-    (hmu : ∃ ζ : K, IsPrimitiveRoot ζ p) :
-    (localCyclotomicCharacter p K).range ≤ unitsPrincipal p 1 := by
-  rintro _ ⟨σ, rfl⟩
-  exact localCyclotomicCharacter_mem_unitsPrincipal_one hmu σ
+variable {p : ℕ} [Fact p.Prime] {K : Type*} [Field K]
 
 variable (p K) in
 /-- If `K` contains a primitive `p`-th root of unity, the image of the cyclotomic character of
@@ -89,20 +56,18 @@ variable (p K) in
 theorem isProP_range_localCyclotomicCharacter (hmu : ∃ ζ : K, IsPrimitiveRoot ζ p) :
     IsProP p (localCyclotomicCharacter p K).range :=
   (isProP_iff_le_unitsPrincipal_one _).mpr
-    (range_localCyclotomicCharacter_le_unitsPrincipal_one p K hmu)
+    (range_localCyclotomicCharacter_le_unitsPrincipal (n := 1) (by simpa using hmu))
 
 variable (p K) in
 /-- If `K` contains a primitive `p`-th root of unity, the pro-`p` kernel of the absolute Galois
 group of `K` lies in the kernel of the cyclotomic character. -/
 theorem proPKernel_le_ker_localCyclotomicCharacter (hmu : ∃ ζ : K, IsPrimitiveRoot ζ p) :
     proPKernel p (Field.absoluteGaloisGroup K) ≤ (localCyclotomicCharacter p K).ker := by
+  have hmem := localCyclotomicCharacter_mem_unitsPrincipal (n := 1) (by simpa using hmu)
   -- Corestrict the character to the profinite pro-`p` group `1 + pℤ_p`.
-  let χ₁ := (localCyclotomicCharacter p K).codRestrict (unitsPrincipal p 1)
-    (localCyclotomicCharacter_mem_unitsPrincipal_one hmu)
-  have hχ₁ : Continuous χ₁ :=
-    (localCyclotomicCharacter_continuous p K).subtype_mk
-      (localCyclotomicCharacter_mem_unitsPrincipal_one hmu)
-  rw [← MonoidHom.ker_codRestrict _ _ (localCyclotomicCharacter_mem_unitsPrincipal_one hmu)]
+  let χ₁ := (localCyclotomicCharacter p K).codRestrict (unitsPrincipal p 1) hmem
+  have hχ₁ : Continuous χ₁ := (localCyclotomicCharacter_continuous p K).subtype_mk hmem
+  rw [← MonoidHom.ker_codRestrict _ _ hmem]
   exact proPKernel_le_ker (isProP_unitsPrincipal p one_pos) χ₁ hχ₁
 
 variable (p K) in

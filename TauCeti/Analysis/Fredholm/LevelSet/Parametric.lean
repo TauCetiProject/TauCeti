@@ -53,7 +53,7 @@ smooth compatibility and a countable cover, and is not asserted here.
   local parameter map exactly when the fixed-parameter linearization is surjective.
 * `TauCeti.index_fderiv_levelSetParameterMap`: that derivative has the index of the
   fixed-parameter linearization.
-* `TauCeti.isFredholm_fderiv_levelSetParameterMap`: over a complete `RCLike` field, that
+* `TauCeti.isFredholm_fderiv_levelSetParameterMap`: over a complete normed field, that
   derivative is Fredholm as soon as the fixed-parameter linearization is.
 * `TauCeti.exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints_levelSetParameterMap`:
   local Sard--Smale for the parameter map of a universal level set.
@@ -286,9 +286,9 @@ theorem surjective_fderiv_levelSetParameterMap_iff_of_mem
     fun h ↦ h.comp ((A₁.coprod A₂).kerEquivOfProd (Classical.choose hker) hinv).surjective⟩
 
 
-section RCLike
+section CompleteScalar
 
-variable [IsRCLikeNormedField K] [CompleteSpace K]
+variable [CompleteSpace K]
 
 /-- If the fixed-parameter linearization is Fredholm, then so is the derivative at the origin of
 the local parameter map. -/
@@ -301,7 +301,7 @@ theorem isFredholm_fderiv_levelSetParameterMap
   rw [fderiv_levelSetParameterMap]
   exact isFredholm_parameterProj D₁ D₂ hD₁
 
-end RCLike
+end CompleteScalar
 
 section Real
 

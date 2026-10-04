@@ -5,10 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.FieldTheory.FunctionField.Different.Derivative
+public import TauCeti.FieldTheory.FunctionField.Different.Hilbert
 public import TauCeti.FieldTheory.FunctionField.Different.Tame
 public import TauCeti.FieldTheory.FunctionField.Place.ArtinSchreier
-public import TauCeti.FieldTheory.FunctionField.Place.Extension.ArtinSchreier.Basic
+public import TauCeti.FieldTheory.FunctionField.Place.Extension.ArtinSchreier.Displacement
+public import TauCeti.FieldTheory.FunctionField.Place.Extension.IntegralBasis.TotallyRamified
+
+import TauCeti.FieldTheory.ArtinSchreier.Basic
 
 /-!
 # Ramification from a reduced Artin--Schreier representative
@@ -19,15 +22,14 @@ ramification dichotomy for a representative reduced at a place `P`:
 
 * if the representative is regular at `P`, every place above `P` has different exponent zero
   and ramification index one;
-* if it has a pole of order not divisible by `p`, every place above `P` is totally ramified, and
-  is wild, so its different exponent is at least `p`.
+* if it has a pole of order `m` not divisible by `p`, every place above `P` is totally ramified
+  and its different exponent is `(p - 1) * (m + 1)`.
 
-The regular case follows from the derivative `-1` of `X ^ p - X - u`.  The pole case combines
-the total ramification of reduced poles from
-`TauCeti.FieldTheory.FunctionField.Place.Extension.ArtinSchreier.Basic` with Dedekind's lower bound
-for the different.
-Together these results isolate the remaining local input for the exact wild formula
-`d(P' | P) = (p - 1) * (m + 1)` at a pole of order `m`.
+The regular case follows from the derivative `-1` of `X ^ p - X - u`.  In the pole case, a
+Bezout construction supplies a generating uniformizer `z` such that every nonidentity Galois
+automorphism satisfies `ord (σ z - z) = m + 1`.  Its powers form an integral basis at the totally
+ramified place, so the derivative formula for the different turns these displacements into the
+exact exponent.
 
 ## References
 
@@ -118,6 +120,90 @@ theorem ramificationIdx_eq_one_of_exists_sub_pow_sub_self_mem_integers
   rw [differentExponent_eq_zero_of_exists_sub_pow_sub_self_mem_integers k F p hgen hy hreg]
     at hle
   exact le_antisymm hle (ramificationIdx_pos F P')
+
+/-- At an Artin--Schreier pole of order `m` prime to `p`, the different exponent is
+`(p - 1) * (m + 1)`. No perfection hypothesis on the residue field is needed. -/
+theorem differentExponent_eq_of_pow_sub_self_eq_of_ord_eq_neg
+    (hF : IsFunctionField k F) (hF' : IsFunctionField k' F')
+    (p m : ℕ) [Fact p.Prime] [CharP F p] {y : F'} {u : F}
+    (hgen : F⟮y⟯ = ⊤) (hy : y ^ p - y = algebraMap F F' u)
+    (hu : (P'.restrict k F).ord u = -(m : ℤ))
+    (hprime : ¬ (p : ℤ) ∣ (P'.restrict k F).ord u) :
+    differentExponent k F P' = (p - 1) * (m + 1) := by
+  classical
+  let _ : FiniteDimensional k k' := hF.finiteDimensional_baseExtension hF'
+  let _ : Algebra.IsIntegral k k' := Algebra.IsIntegral.of_finite k k'
+  let _ : Algebra.IsIntegral F F' := Algebra.IsIntegral.of_finite F F'
+  let _ : IsGalois F F' := ArtinSchreier.isGalois hy hgen
+  have hm : 0 < m := by
+    by_contra hm
+    have hm0 : m = 0 := Nat.eq_zero_of_not_pos hm
+    subst m
+    simp only [Nat.cast_zero, neg_zero] at hu
+    apply hprime
+    rw [hu]
+    exact dvd_zero _
+  have huneg : (P'.restrict k F).ord u < 0 := by rw [hu]; omega
+  have hcop : Int.gcd p ((P'.restrict k F).ord u) = 1 :=
+    Int.isCoprime_iff_gcd_eq_one.mp
+      ((Nat.prime_iff_prime_int.mp (Fact.out : p.Prime)).coprime_iff_not_dvd.mpr hprime)
+  obtain ⟨z, hzgen, hzord, hdisp⟩ :=
+    exists_uniformizer_ord_aut_sub_of_artinSchreier_pole k F p hgen hy huneg hcop
+  have htot := isTotallyRamified_of_pow_sub_self_eq_of_gcd_ord_eq_one k F
+    (Fact.out : p.Prime).one_lt hgen hy huneg hcop
+  have hzint : IsIntegral (P'.restrict k F).integers z :=
+    (isIntegral_iff_forall_restrict_eq_mem_integers hF' (P'.restrict k F)).mpr fun Q hQ ↦ by
+      rw [eq_of_isTotallyRamified k F htot hQ]
+      exact P'.mem_integers_iff_ord_nonneg.mpr (by rw [hzord]; omega)
+  let x : integralClosure (P'.restrict k F).integers F' := ⟨z, hzint⟩
+  have hxord : P'.ord
+      (algebraMap (integralClosure (P'.restrict k F).integers F') F' x) = 1 := hzord
+  have hxgen := algebra_adjoin_integralClosure_eq_top_of_isTotallyRamified
+    k F htot hxord
+  have hd := differentExponent_eq_sum_ord_sub_aut_of_algebra_adjoin_eq_top k F hxgen
+  have hxcoe : algebraMap (integralClosure (P'.restrict k F).integers F') F' x = z := rfl
+  rw [hxcoe] at hd
+  have hterm : ∀ σ ∈ (Finset.univ : Finset (F' ≃ₐ[F] F')).erase 1,
+      P'.ord (z - σ z) = 1 - (P'.restrict k F).ord u := by
+    intro σ hσ
+    rw [← P'.ord_neg, neg_sub]
+    exact hdisp σ (Finset.ne_of_mem_erase hσ)
+  have hcard : Fintype.card (F' ≃ₐ[F] F') = p := by
+    rw [Fintype.card_eq_nat_card, IsGalois.card_aut_eq_finrank,
+      finrank_eq_of_pow_sub_self_eq_of_gcd_ord_eq_one k F
+        (Fact.out : p.Prime).one_lt hgen hy huneg hcop]
+  have herase : ((Finset.univ : Finset (F' ≃ₐ[F] F')).erase 1).card = p - 1 := by
+    rw [Finset.card_erase_of_mem (Finset.mem_univ 1), Finset.card_univ, hcard]
+  have hd' : (differentExponent k F P' : ℤ) =
+      (((p - 1) * (m + 1) : ℕ) : ℤ) := by
+    calc
+      (differentExponent k F P' : ℤ) =
+          ∑ σ ∈ (Finset.univ : Finset (F' ≃ₐ[F] F')).erase 1, P'.ord (z - σ z) := by
+            exact hd
+      _ = ∑ _σ ∈ (Finset.univ : Finset (F' ≃ₐ[F] F')).erase 1,
+          (1 - (P'.restrict k F).ord u) := Finset.sum_congr rfl hterm
+      _ = (((p - 1) * (m + 1) : ℕ) : ℤ) := by
+        rw [Finset.sum_const, nsmul_eq_mul, herase, hu]
+        push_cast
+        ring
+  exact_mod_cast hd'
+
+/-- The exact different formula for a supplied reduced representative of an Artin--Schreier
+class. Translating the generator does not change the extension. -/
+theorem differentExponent_eq_of_sub_pow_sub_self_ord_eq_neg
+    (hF : IsFunctionField k F) (hF' : IsFunctionField k' F')
+    (p m : ℕ) [Fact p.Prime] [CharP F p] {y : F'} {u w : F}
+    (hgen : F⟮y⟯ = ⊤) (hy : y ^ p - y = algebraMap F F' u)
+    (hu : (P'.restrict k F).ord (u - (w ^ p - w)) = -(m : ℤ))
+    (hprime : ¬ (p : ℤ) ∣ (P'.restrict k F).ord (u - (w ^ p - w))) :
+    differentExponent k F P' = (p - 1) * (m + 1) := by
+  have hadj : F⟮y - algebraMap F F' w⟯ = ⊤ := by
+    simpa [sub_eq_add_neg] using
+      (IntermediateField.adjoin_simple_add_algebraMap y (-w)).trans hgen
+  let _ : CharP F' p := charP_of_injective_algebraMap (algebraMap F F').injective p
+  apply differentExponent_eq_of_pow_sub_self_eq_of_ord_eq_neg
+    k F hF hF' p m hadj _ hu hprime
+  rw [sub_algebraMap_pow_sub_self_eq, hy, ← map_sub]
 
 /-- A reduced Artin--Schreier pole is wildly ramified.  Indeed, its ramification index is `p`,
 which vanishes in the residue field of the place below. -/

@@ -9,109 +9,104 @@ public import TauCeti.NumberTheory.ClassFieldTheory.Local.Duality.Basic
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.Symbol
 
 /-!
-# The chosen-root comparison with Tate duality
+# The Tate dual of the roots of unity
 
-A primitive `n`th root of unity in a field `F` identifies `μₙ` with its Tate dual
-`Hom(μₙ, μₙ)`: the root with coordinate `c` acts by multiplication by `c`. This is an
-isomorphism of Galois coefficient objects, and evaluation along it is precisely the named
-Kummer coefficient pairing. Consequently the chosen-root local-symbol pairing is the degree
-`(1, 1)` Tate-duality pairing under this coefficient isomorphism. For a local field with its
-local invariant, this specializes to the Hilbert pairing.
+A primitive `n`th root of unity `ζ` identifies `μₙ` with its Tate dual.  The identification sends
+`x : μₙ` to the character `y ↦ (x, y)ζ`, where the coefficient pairing is the one selected by
+`ζ`.  This file packages that identification as a morphism of Galois representations and proves
+that it is bijective. The coefficient isomorphism `muNRepIsoTateDual` packages this
+identification, and its inverse evaluates a character at the chosen primitive root.
 
-This comparison relates the degree `(1, 1)` cyclic-coefficient case of local Tate duality
-to nondegeneracy of the Hilbert pairing. The coefficient isomorphism itself is valid over any
-field containing the chosen primitive root; it needs neither a local-field structure nor an
-invariant map. The cohomological comparison holds for
-every identification of `H²(F, μₙ)` with `ZMod n`.
+The final theorem compares the local Tate-duality pairing transported along this morphism with the
+cohomological local symbol.  It is the coefficient-level bridge needed to use nondegeneracy of the
+Hilbert pairing as the `(1, 1)` base case in local Tate duality.
 
-## References
+## Main results
 
-* J.-P. Serre, *Local Fields*, Chapter XIV, §2.
-* J. Neukirch, A. Schmidt, K. Wingberg, *Cohomology of Number Fields*, 2nd ed., (7.2.6).
+* `TauCeti.ClassFieldTheory.muNRepToTateDual`: the coefficient morphism
+  `μₙ → Hom(μₙ, μₙ)` defined by the chosen-root pairing.
+* `TauCeti.ClassFieldTheory.bijective_muNRepToTateDual`: this coefficient morphism is bijective.
+* `TauCeti.ClassFieldTheory.muNRepIsoTateDual`: the chosen-root coefficient isomorphism.
+* `TauCeti.ClassFieldTheory.muNRepIsoTateDual_inv_apply`: its inverse is evaluation at `ζ`.
+* `TauCeti.ClassFieldTheory.tateDualityPairing_muNRepToTateDual`: after transport along the
+  coefficient morphism, the Tate pairing in bidegree `(1, 1)` is the local symbol.
+
+The constructions follow Serre, *Galois Cohomology*, Chapter II, §5.2.
 -/
 
 public noncomputable section
 
 namespace TauCeti.ClassFieldTheory
 
-open CategoryTheory
+open CategoryTheory ContCohomology
 
 universe u
 
-variable {n : ℕ} [NeZero n] {F : Type u} [Field F]
-  (ζ : F) (hζ : IsPrimitiveRoot ζ n)
-
 attribute [local instance] TopRep.distribMulAction
 
-/-- The chosen-root map `μₙ → Hom(μₙ, μₙ)`: a root with coordinate `c` acts by scalar
-multiplication by `c`. Its evaluation is the Kummer coefficient pairing. -/
-def muNRepToTateDual : muNRep n F ⟶ tateDual (muNRep n F) :=
-  ConcreteCategory.ofHom
-    ⟨⟨((tateDualEquiv (muNRep n F)).symm.toAddMonoidHom.comp
-        (LinearMap.toAddMonoidHom'.comp
-          (kummerCupPairing ζ hζ).bil.toAddMonoidHom)).toZModLinearMap n,
-      continuous_of_discreteTopology⟩,
-      fun g => ContinuousLinearMap.ext fun x => by
-        apply (tateDualEquiv (muNRep n F)).injective
-        ext y
-        simp only [ContinuousLinearMap.comp_apply,
-          muNRep_ρ_apply_eq_self hζ, tateDualEquiv_ρ_apply]⟩
+variable {n : ℕ} {F : Type u} [Field F] [NeZero n]
 
-/-- Evaluation of the chosen-root dual map is the named Kummer coefficient pairing. -/
+section ChosenRoot
+
+variable (ζ : F) (hζ : IsPrimitiveRoot ζ n)
+
+/-- The identification of `μₙ` with `ZMod n` determined by `ζ`. -/
+private def muNRepZModEquiv : (muNRep n F).V ≃+ ZMod n :=
+  (muNRepEquivTrivialFp n F hζ).trans (trivialFpEquiv n _).toAddEquiv
+
+/-- The element of `μₙ` corresponding to `1 : ZMod n` under the coordinate selected by `ζ`. -/
+private def muNRepGenerator : (muNRep n F).V :=
+  (muNRepZModEquiv ζ hζ).symm 1
+
+/-- Every element of `μₙ` is its chosen coordinate times the generator. -/
+private theorem eq_nsmul_muNRepGenerator (x : (muNRep n F).V) :
+    x = (muNRepZModEquiv ζ hζ x).val • muNRepGenerator ζ hζ := by
+  apply (muNRepZModEquiv ζ hζ).injective
+  simp [muNRepGenerator]
+
+/-- The chosen-root pairing evaluates to the identity at the generator in the right variable. -/
+private theorem kummerCupPairing_apply_generator (x : (muNRep n F).V) :
+    (kummerCupPairing ζ hζ).bil x (muNRepGenerator ζ hζ) = x := by
+  let i := (muNRepZModEquiv ζ hζ x).val
+  have hx : x = (muNRepEquivTrivialFp n F hζ).symm
+      ((trivialFpEquiv n _).symm (i : ZMod n)) := by
+    apply (muNRepZModEquiv ζ hζ).injective
+    simp [muNRepZModEquiv, i]
+  have hpow :=
+    coe_kummerCoeffEquivMuNRep_symm_muNRepEquivTrivialFp_symm_natCast n F hζ i
+  rw [← hx] at hpow
+  rw [kummerCupPairing_bil_apply ζ hζ (i := (i : ℤ)) (by simpa using hpow)]
+  simpa using (eq_nsmul_muNRepGenerator ζ hζ x).symm
+
+/-- **The chosen-root identification `μₙ → Hom(μₙ, μₙ)`**.  It sends `x` to the character
+`y ↦ kummerCupPairing ζ hζ x y`, viewed as an element of the named Tate dual. -/
+def muNRepToTateDual : muNRep n F ⟶ tateDual (muNRep n F) :=
+  pairingToTateDual (kummerCupPairing ζ hζ)
+
+/-- `muNRepToTateDual` is the character furnished by the chosen-root pairing. -/
 @[simp]
 theorem tateDualEquiv_muNRepToTateDual_apply (x y : (muNRep n F).V) :
     tateDualEquiv (muNRep n F) ((muNRepToTateDual ζ hζ).hom x) y =
       (kummerCupPairing ζ hζ).bil x y := by
-  have hmap : (muNRepToTateDual ζ hζ).hom x =
-      (tateDualEquiv (muNRep n F)).symm
-        ((kummerCupPairing ζ hζ).bil x).toAddMonoidHom :=
-    -- The bundled continuous linear map was constructed from this additive homomorphism.
-    (rfl)
-  rw [hmap, AddEquiv.apply_symm_apply, LinearMap.toAddMonoidHom_coe]
+  rw [muNRepToTateDual, tateDualEquiv_pairingToTateDual_apply]
 
-/-- Transport evaluation at `1` along the chosen-root coordinate equivalence. -/
-private def muNRepTateDualEquiv : (tateDual (muNRep n F)).V ≃+ (muNRep n F).V :=
-  let e := (muNRepEquivTrivialFp n F hζ).trans (trivialFpEquiv n _).toAddEquiv
-  let i : (ZMod n →+ (muNRep n F).V) ≃+
-      InternalHom (Field.absoluteGaloisGroup F) (ZMod n) (muNRep n F).V :=
-    { toFun := InternalHom.of _
-      invFun := InternalHom.toAddMonoidHom
-      left_inv _ := rfl
-      right_inv _ := rfl
-      map_add' _ _ := rfl }
-  ((tateDualEquiv (muNRep n F)).trans e.addMonoidHomCongrLeft).trans
-    (i.trans (InternalHom.zmodEquiv (Field.absoluteGaloisGroup F)))
-
-/-- The coordinate `1` is the chosen root, so transported evaluation is evaluation there. -/
-private theorem muNRepTateDualEquiv_apply (φ : (tateDual (muNRep n F)).V) :
-    muNRepTateDualEquiv ζ hζ φ = tateDualEquiv (muNRep n F) φ
-      ((muNRepEquivTrivialFp n F hζ).symm ((trivialFpEquiv n _).symm 1)) := by
-  simp only [muNRepTateDualEquiv, AddEquiv.trans_apply, InternalHom.zmodEquiv_apply,
-    AddEquiv.coe_mk, Equiv.coe_fn_mk, AddEquiv.addMonoidHomCongrLeft_apply,
-    AddMonoidHom.coe_comp, Function.comp_apply, AddMonoidHom.coe_ofClass,
-    AddEquiv.symm_trans_apply, LinearEquiv.coe_toAddEquiv,
-    ← LinearEquiv.coe_toAddEquiv_symm,
-    LinearEquiv.coe_addEquiv_apply]
-
-private theorem muNRepTateDualEquiv_symm_apply (x : (muNRep n F).V) :
-    (muNRepTateDualEquiv ζ hζ).symm x = (muNRepToTateDual ζ hζ).hom x := by
-  apply (muNRepTateDualEquiv ζ hζ).injective
-  rw [AddEquiv.apply_symm_apply, muNRepTateDualEquiv_apply,
-    tateDualEquiv_muNRepToTateDual_apply, kummerCupPairing_bil_comm,
-    kummerCupPairing_bil_apply_zmod, one_smul]
-
-/-- The chosen-root map identifies `μₙ` with its Tate dual. -/
-theorem muNRepToTateDual_bijective : Function.Bijective (muNRepToTateDual ζ hζ).hom := by
-  have h : ⇑(muNRepTateDualEquiv ζ hζ).symm = ⇑(muNRepToTateDual ζ hζ).hom :=
-    funext (muNRepTateDualEquiv_symm_apply ζ hζ)
-  rw [← h]
-  exact (muNRepTateDualEquiv ζ hζ).symm.bijective
+/-- **The chosen-root identification of `μₙ` with its Tate dual is bijective.** -/
+theorem bijective_muNRepToTateDual : Function.Bijective (muNRepToTateDual ζ hζ).hom := by
+  have : Finite (muNRep n F).V := Finite.of_equiv _ (muNRepZModEquiv ζ hζ).symm.toEquiv
+  refine Function.Injective.bijective_of_nat_card_le (fun x y hxy => ?_) ?_
+  · have := congrArg
+      (fun ψ => tateDualEquiv (muNRep n F) ψ (muNRepGenerator ζ hζ)) hxy
+    simpa [kummerCupPairing_apply_generator ζ hζ] using this
+  · have hM (x : (muNRep n F).V) : n • x = 0 :=
+      (muNRepZModEquiv ζ hζ).injective (by simp)
+    rw [Nat.card_congr (tateDualEquiv (muNRep n F)).toEquiv,
+      (muNRepZModEquiv ζ hζ).natCard_addMonoidHom_zmod hM]
 
 /-- The chosen-root identification with the Tate dual, as an isomorphism of coefficient objects. -/
 def muNRepIsoTateDual : muNRep n F ≅ tateDual (muNRep n F) :=
   let e := LinearEquiv.ofBijective
     (muNRepToTateDual ζ hζ).hom.toContinuousLinearMap.toLinearMap
-    (muNRepToTateDual_bijective ζ hζ)
+    (bijective_muNRepToTateDual ζ hζ)
   { hom := muNRepToTateDual ζ hζ
     inv := ConcreteCategory.ofHom
       ⟨⟨e.symm.toLinearMap, continuous_of_discreteTopology⟩,
@@ -137,26 +132,23 @@ theorem muNRepIsoTateDual_hom : (muNRepIsoTateDual ζ hζ).hom = muNRepToTateDua
 theorem muNRepIsoTateDual_inv_apply (φ : (tateDual (muNRep n F)).V) :
     (muNRepIsoTateDual ζ hζ).inv φ = tateDualEquiv (muNRep n F) φ
       ((muNRepEquivTrivialFp n F hζ).symm ((trivialFpEquiv n _).symm 1)) := by
-  have h : (muNRepTateDualEquiv ζ hζ).symm ((muNRepIsoTateDual ζ hζ).inv φ) = φ := by
-    rw [muNRepTateDualEquiv_symm_apply, ← muNRepIsoTateDual_hom]
-    exact Iso.inv_hom_id_apply (muNRepIsoTateDual ζ hζ) φ
-  simpa only [AddEquiv.apply_symm_apply, muNRepTateDualEquiv_apply] using
-    congrArg (muNRepTateDualEquiv ζ hζ) h
+  change (muNRepIsoTateDual ζ hζ).inv φ =
+    tateDualEquiv (muNRep n F) φ (muNRepGenerator ζ hζ)
+  have h := kummerCupPairing_apply_generator ζ hζ ((muNRepIsoTateDual ζ hζ).inv φ)
+  rw [← tateDualEquiv_muNRepToTateDual_apply, ← muNRepIsoTateDual_hom,
+    Iso.inv_hom_id_apply] at h
+  exact h.symm
 
-/-- The degree `(1, 1)` Tate-duality pairing, read through the chosen-root coefficient
-isomorphism, is the chosen-root local-symbol pairing for the identification `tr`.
-For a local field with `tr` its local invariant, this is the cohomological Hilbert pairing. -/
+/-- **The `(1, 1)` Tate pairing on `μₙ`, transported through the chosen-root identification, is
+the local symbol.** -/
 theorem tateDualityPairing_muNRepToTateDual
-    (tr : _root_.continuousCohomology.{0, u, u} 2 (muNRep n F) ≃+ ZMod n)
-    (x y : _root_.continuousCohomology.{0, u, u} 1 (muNRep n F)) :
+    (tr : _root_.continuousCohomology 2 (muNRep n F) ≃+ ZMod n)
+    (x y : _root_.continuousCohomology 1 (muNRep n F)) :
     tateDualityPairing (muNRep n F) tr 1 1 rfl
         ((ContinuousCohomology.coeffMap (muNRepToTateDual ζ hζ) 1).hom x) y =
       localSymbol (kummerCupPairing ζ hζ) tr x y := by
-  have h := (kummerCupPairing ζ hζ).cup_coeffMap
-    (tateEvaluationPairing (muNRep n F)) (muNRepToTateDual ζ hζ) (𝟙 _) (𝟙 _)
-    (fun a b => by simp only [tateEvaluationPairing_bil,
-      tateDualEquiv_muNRepToTateDual_apply, CategoryTheory.id_apply]) 1 1 x y
-  simp only [ContinuousCohomology.coeffMap_id, CategoryTheory.id_apply] at h
-  simpa only [tateDualityPairing_def, localSymbol_apply] using congrArg tr h.symm
+  rw [muNRepToTateDual, tateDualityPairing_pairingToTateDual, localSymbol_apply]
+
+end ChosenRoot
 
 end TauCeti.ClassFieldTheory

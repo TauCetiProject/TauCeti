@@ -13,6 +13,7 @@ public import TauCeti.KnotTheory.PDCode.Oriented.Reidemeister.Two.Basic
 public import TauCeti.KnotTheory.PDCode.Oriented.Reidemeister.Two.Circles
 public import TauCeti.KnotTheory.PDCode.Oriented.Reidemeister.One
 public import TauCeti.KnotTheory.PDCode.Oriented.Reidemeister.Three
+public import TauCeti.KnotTheory.PDCode.RotateCrossing
 public import TauCeti.KnotTheory.PDCode.Trefoil
 
 /-!
@@ -58,9 +59,10 @@ trefoil has `t + t³ - t⁴`.
   `TauCeti.OrientedPDCode.jonesPolynomial_insertClasp` and
   `TauCeti.OrientedPDCode.jonesPolynomial_reidemeisterThree`: invariance under the first
   Reidemeister move, under clasp insertion and under the third Reidemeister move.
-* `TauCeti.OrientedPDCode.jonesPolynomial_mirror`, `TauCeti.OrientedPDCode.jonesPolynomial_reverse`
-  and `TauCeti.OrientedPDCode.jonesPolynomial_relabel`: behaviour under reflection, reversal and
-  relabelling.
+* `TauCeti.OrientedPDCode.jonesPolynomial_mirror`, `TauCeti.OrientedPDCode.jonesPolynomial_reverse`,
+  `TauCeti.OrientedPDCode.jonesPolynomial_relabel` and
+  `TauCeti.OrientedPDCode.jonesPolynomial_rotateCrossing`: behaviour under reflection, reversal,
+  relabelling and reading a crossing from another slot.
 * `TauCeti.OrientedPDCode.jonesPolynomial_eq_pow`: a code with no crossings and `c` circles has
   Jones polynomial `(-(t^(1/2) + t^(-1/2))) ^ (c - 1)`, and
   `TauCeti.OrientedPDCode.jonesPolynomial_unknot`: the unknot has Jones polynomial `1`.
@@ -265,6 +267,12 @@ theorem jonesPolynomial_relabel {m : ℕ} (D : OrientedPDCode n)
   rw [relabel_toPDCode, PDCode.stateLoopCount_relabel, jonesStateWeight_def,
     jonesStateWeight_def, ← Equiv.prod_comp cross]
   simp
+
+/-- Reading a crossing from another slot leaves the Jones polynomial unchanged. -/
+@[simp]
+theorem jonesPolynomial_rotateCrossing (D : OrientedPDCode n) (i : Fin n) :
+    (D.rotateCrossing i).jonesPolynomial = D.jonesPolynomial := by
+  simp [jonesPolynomial_def, jonesStateWeight_def]
 
 /-- A code with no crossings and `c` crossing-free circles has Jones polynomial
 `(-(t^(1/2) + t^(-1/2))) ^ (c - 1)`, the counterpart of

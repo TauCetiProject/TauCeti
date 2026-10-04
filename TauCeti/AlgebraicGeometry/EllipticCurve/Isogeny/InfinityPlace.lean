@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Finrank
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.InfinityPlace.Unique
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.FunctionField
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.BaseChange
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.BaseChange.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.InfinityPlace.BaseChange
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MapsInfinity
 import TauCeti.FieldTheory.FunctionField.Place.OfValuationSubring

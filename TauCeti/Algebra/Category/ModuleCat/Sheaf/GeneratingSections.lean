@@ -7,6 +7,13 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Sheaf.LocallyFree
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Restriction
+import Mathlib.Algebra.Category.Grp.Abelian
+import Mathlib.Algebra.Category.Grp.EpiMono
+import Mathlib.CategoryTheory.ConcreteCategory.EpiMono
+import Mathlib.CategoryTheory.Sites.Abelian
+import Mathlib.CategoryTheory.Sites.EpiMono
+import TauCeti.Algebra.Category.ModuleCat.Sheaf.Exactness
+import TauCeti.Algebra.Category.ModuleCat.Sheaf.Free
 
 /-!
 # Transporting generating sections
@@ -14,6 +21,10 @@ public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Restriction
 This file provides a general transport for generating sections: first carry them along a
 colimit-preserving functor, then read them through an isomorphism of the resulting sheaf. The
 transport preserves the indexing type, invertibility of the generating morphism, and finiteness.
+
+It also records what it means, sectionwise, for finitely many sections to generate: every
+section is, locally on a covering sieve, a linear combination of the restricted generators. This
+is the form in which generators are used to compute stalks.
 
 The iterated-slice specialization provides the transport used to combine local bases over a
 refinement. It is adapted from
@@ -27,7 +38,9 @@ refinement. It is adapted from
   colimit-preserving functor and read through an isomorphism;
 * `SheafOfModules.GeneratingSections.restrict`: generating sections restricted along an arrow;
 * `SheafOfModules.GeneratingSections.ofIteratedSlice`: generating sections on an iterated slice,
-  read as generating sections on the slice over the underlying object.
+  read as generating sections on the slice over the underlying object;
+* `SheafOfModules.GeneratingSections.exists_sieve_sum_smul_eq`: finitely many generating sections
+  generate every section locally.
 -/
 
 public section
@@ -248,6 +261,30 @@ instance _root_.SheafOfModules.GeneratingSections.isFiniteType_ofIteratedSlice
     (Sheaf.iteratedSliceEquivalenceInverseObjIso R Y M)
 
 end IteratedSlice
+
+section LocalGeneration
+
+variable {C : Type u} [SmallCategory C] {J : GrothendieckTopology C} {R : Sheaf J RingCat.{u}}
+  [HasSheafify J AddCommGrpCat.{u}] [J.WEqualsLocallyBijective AddCommGrpCat.{u}]
+  {M : SheafOfModules.{u} R}
+
+/-- Finitely many generating sections generate every section locally: a section `m` of `M` over
+`Y` is, on a covering sieve of `Y`, a linear combination of the restricted generators. -/
+theorem _root_.SheafOfModules.GeneratingSections.exists_sieve_sum_smul_eq
+    (G : M.GeneratingSections) [Fintype G.I] {Y : C} (m : M.val.obj (Opposite.op Y)) :
+    ∃ S ∈ J Y, ∀ ⦃Z : C⦄ (f : Z ⟶ Y), S f → ∃ a : G.I → R.obj.obj (Opposite.op Z),
+      ∑ k, a k • (G.s k).eval (Opposite.op Z) = M.val.map f.op m := by
+  -- The generating morphism is an epimorphism, hence locally surjective on underlying sheaves of
+  -- abelian groups; a local preimage in the finite free sheaf is a linear combination of the
+  -- tautological sections.
+  have hS : Sheaf.IsLocallySurjective ((toSheaf R).map G.π) :=
+    (Sheaf.isLocallySurjective_iff_epi' (J := J) (A := AddCommGrpCat.{u})
+      ((toSheaf R).map G.π)).mpr inferInstance
+  refine ⟨_, Presheaf.imageSieve_mem J ((toSheaf R).map G.π).hom m, fun Z f ⟨t, ht⟩ ↦ ?_⟩
+  obtain ⟨a, rfl⟩ := exists_eq_sum_smul_freeSection (R := R) t
+  exact ⟨a, (freeHomEquiv_symm_val_app_sum_smul G.s _ a).symm.trans ht⟩
+
+end LocalGeneration
 
 end SheafOfModules
 

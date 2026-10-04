@@ -45,6 +45,8 @@ inverse of the double-dual isomorphism `cartierDualDualIso`.
   `TauCeti.FiniteLocallyFreeCommAffineGroupSchemeCat.coordinateHopfAlgebra`: the Cartier dual of a
   group scheme and its coordinate Hopf algebra, related by `cartierDual_eq` and
   `coordinateHopfAlgebraCartierDualIso`.
+* `TauCeti.FiniteLocallyFreeCommAffineGroupSchemeCat.hopfSpecCoordinateHopfAlgebraIso`:
+  the comparison with the Hopf spectrum of the coordinate algebra in the ambient affine category.
 * `TauCeti.FiniteLocallyFreeCommAffineGroupSchemeCat.cartierDualDualIso`: the double-dual
   isomorphism `G ≅ D(D(G))`, natural by `cartierDualDualIso_hom_naturality`.
 
@@ -307,6 +309,23 @@ noncomputable abbrev coordinateHopfAlgebra (R : Type u) [CommRing R]
     FiniteLocallyFreeBicommutativeHopfAlgCat.{u} R :=
   (finiteLocallyFreeBicommutativeHopfAlgCatOpEquivFiniteLocallyFreeCommAffineGroupSchemeCat
     R).rightOp.inverse.obj (op G)
+
+open finiteLocallyFreeBicommutativeHopfAlgCatOpEquivFiniteLocallyFreeCommAffineGroupSchemeCat in
+/-- The Hopf spectrum of the coordinate Hopf algebra recovers the original affine group scheme,
+after forgetting finite local freeness and commutativity. -/
+noncomputable def hopfSpecCoordinateHopfAlgebraIso (R : Type u) [CommRing R]
+    (G : FiniteLocallyFreeCommAffineGroupSchemeCat (CommRingCat.of R)) :
+    (commHopfAlgCatOpEquivAffineGroupSchemeCat (CommRingCat.of R)).functor.obj
+        (op (coordinateHopfAlgebra R G).obj) ≅
+      (finiteLocallyFreeCommAffineGroupSchemeProperty (CommRingCat.of R)).ι.obj G := by
+  -- `coordinateHopfAlgebra` uses `rightOp.inverse`; after taking `op` and forgetting the
+  -- property proofs it is the source of `inverseCompιIso.app G`.
+  let e := (inverseCompιIso R).app G
+  exact (affineGroupSchemeProperty (CommRingCat.of R)).ι.preimageIso
+    ((commHopfAlgCatOpEquivAffineGroupSchemeCat.functorCompιIso (CommRingCat.of R)).app
+        (op (coordinateHopfAlgebra R G).obj) ≪≫
+      (hopfSpec (CommRingCat.of R)).mapIso e ≪≫
+      AffineGroupSchemeCat.hopfSpecCoordinateHopfAlgebraIso R G.obj)
 
 /-- The Cartier dual of a finite locally free commutative affine group scheme. -/
 noncomputable abbrev cartierDual (R : Type u) [CommRing R]

@@ -1,0 +1,335 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Algebra.MvPolynomial.PDeriv
+public import Mathlib.RingTheory.MvPowerSeries.NoZeroDivisors
+public import TauCeti.RingTheory.MvPowerSeries.Derivative
+
+/-!
+# The order of vanishing of a multivariate polynomial at a point
+
+`MvPolynomial.taylor a` is the Taylor shift `p ↦ p(X + a)`, which substitutes `Xᵢ + aᵢ` for
+each variable `Xᵢ`; the coefficients of `taylor a p` are the Taylor coefficients of `p` at `a`.
+The order of vanishing `p.orderAt a : ℕ∞` is the least total degree of a nonzero Taylor
+coefficient of `p` at `a`, and `⊤` when `p = 0`. It is the order of `taylor a p` viewed as a
+multivariate power series, so it is positive exactly at the zeros of `p`, and over a domain it
+is additive on products.
+
+This is the ambient order of `p` at `a`, computed in all variables at once. It is the invariant
+of order-invariant cylindrical algebraic decompositions in McCallum's projection theory: there
+each polynomial is required to have constant order on each cell, which is stronger than constant
+sign.
+
+Over a ring without additive torsion, such as `ℝ`, the order is detected by partial derivatives:
+`p` has order at least `n` at `a` exactly when every iterated partial derivative of `p` of order
+less than `n` vanishes at `a`. Substituting polynomials into `p` can only increase the order
+at corresponding points, and renaming the variables along an injective map does not change it.
+
+## Main definitions
+
+* `MvPolynomial.taylor`: the Taylor shift `p ↦ p(X + a)`.
+* `MvPolynomial.orderAt`: the order of vanishing of `p` at `a`.
+
+## Main results
+
+* `MvPolynomial.orderAt_eq_top_iff`: the order is `⊤` exactly for the zero polynomial.
+* `MvPolynomial.orderAt_eq_zero_iff`, `MvPolynomial.orderAt_pos_iff`: the order is positive
+  exactly at the zeros of `p`.
+* `MvPolynomial.orderAt_mul`: over a domain, the order of a product is the sum of the orders.
+* `MvPolynomial.succ_le_orderAt_iff`: `p` has order at least `n + 1` at `a` if and only if
+  `p` vanishes at `a` and every partial derivative of `p` has order at least `n` there.
+* `MvPolynomial.le_orderAt_iff_eval_foldl_pderiv`: the order is at least `n` if and only if
+  every iterated partial derivative of order less than `n` vanishes at `a`.
+* `MvPolynomial.orderAt_le_orderAt_aeval`: substitution does not decrease the order.
+* `MvPolynomial.orderAt_rename`: renaming along an injective map preserves the order.
+
+## References
+
+* S. McCallum, *An improved projection operation for cylindrical algebraic decomposition*,
+  in *Quantifier Elimination and Cylindrical Algebraic Decomposition*, Springer (1998),
+  pp. 242–268, Section 2 (order of a polynomial at a point, order-invariance).
+-/
+
+public section
+
+namespace MvPolynomial
+
+open Finsupp
+
+variable {σ τ R : Type*}
+
+section Taylor
+
+variable [CommSemiring R]
+
+/-- The Taylor shift of a multivariate polynomial at `a`: the substitution `p ↦ p(X + a)` of
+`Xᵢ + aᵢ` for each variable `Xᵢ`. The coefficients of `taylor a p` are the Taylor coefficients
+of `p` at `a`. -/
+noncomputable def taylor (a : σ → R) : MvPolynomial σ R →ₐ[R] MvPolynomial σ R :=
+  aeval fun i ↦ X i + C (a i)
+
+theorem taylor_apply (a : σ → R) (p : MvPolynomial σ R) :
+    taylor a p = aeval (fun i ↦ X i + C (a i)) p :=
+  (rfl)
+
+@[simp]
+theorem taylor_X (a : σ → R) (i : σ) : taylor a (X i) = X i + C (a i) :=
+  aeval_X _ _
+
+theorem taylor_C (a : σ → R) (r : R) : taylor a (C r) = C r :=
+  aeval_C _ _
+
+@[simp]
+theorem eval_taylor (a x : σ → R) (p : MvPolynomial σ R) :
+    eval x (taylor a p) = eval (x + a) p := by
+  induction p using MvPolynomial.induction_on <;> simp_all
+
+/-- The constant Taylor coefficient of `p` at `a` is the value of `p` at `a`. -/
+@[simp]
+theorem constantCoeff_taylor (a : σ → R) (p : MvPolynomial σ R) :
+    constantCoeff (taylor a p) = eval a p := by
+  rw [← eval_zero, eval_taylor, zero_add]
+
+@[simp]
+theorem taylor_zero (p : MvPolynomial σ R) : taylor 0 p = p := by
+  induction p using MvPolynomial.induction_on <;> simp_all
+
+theorem taylor_taylor (a b : σ → R) (p : MvPolynomial σ R) :
+    taylor a (taylor b p) = taylor (a + b) p := by
+  induction p using MvPolynomial.induction_on <;> simp_all [add_assoc]
+
+/-- Partial differentiation commutes with the Taylor shift. -/
+@[simp]
+theorem pderiv_taylor (a : σ → R) (i : σ) (p : MvPolynomial σ R) :
+    pderiv i (taylor a p) = taylor a (pderiv i p) := by
+  induction p using MvPolynomial.induction_on with
+  | C r => simp
+  | add p q hp hq => simp [hp, hq]
+  | mul_X p j hp =>
+    obtain rfl | hj := eq_or_ne j i
+    · simp [hp]
+    · simp [hp, pderiv_X_of_ne hj]
+
+end Taylor
+
+section TaylorRing
+
+variable [CommRing R]
+
+@[simp]
+theorem taylor_neg_taylor (a : σ → R) (p : MvPolynomial σ R) : taylor (-a) (taylor a p) = p := by
+  rw [taylor_taylor, neg_add_cancel, taylor_zero]
+
+theorem taylor_injective (a : σ → R) : Function.Injective (taylor a) :=
+  Function.LeftInverse.injective (taylor_neg_taylor a)
+
+@[simp]
+theorem taylor_eq_zero {a : σ → R} {p : MvPolynomial σ R} : taylor a p = 0 ↔ p = 0 :=
+  map_eq_zero_iff _ (taylor_injective a)
+
+end TaylorRing
+
+section Substitution
+
+variable [CommSemiring R]
+
+/-- The constant coefficient of a polynomial viewed as a power series is its constant
+coefficient as a polynomial. -/
+@[simp]
+theorem constantCoeff_coe (p : MvPolynomial σ R) :
+    MvPowerSeries.constantCoeff (p : MvPowerSeries σ R) = constantCoeff p :=
+  (rfl)
+
+/-- Substituting polynomials without constant terms into a polynomial does not decrease its
+order. -/
+theorem order_coe_le_order_coe_aeval {h : σ → MvPolynomial τ R}
+    (hh : ∀ i, constantCoeff (h i) = 0) (q : MvPolynomial σ R) :
+    (q : MvPowerSeries σ R).order ≤ (aeval h q : MvPowerSeries τ R).order := by
+  conv_rhs => rw [q.as_sum, map_sum, ← coeToMvPowerSeries.ringHom_apply, map_sum]
+  refine Finset.sum_induction _
+    (fun f : MvPowerSeries τ R ↦ (q : MvPowerSeries σ R).order ≤ f.order)
+    (fun f g hf hg ↦ (le_min hf hg).trans (MvPowerSeries.min_order_le_add ..)) (by simp)
+    fun d hd ↦ ?_
+  refine (MvPowerSeries.order_le (d := d) (by simpa using hd)).trans ?_
+  rw [aeval_monomial, map_mul, Finsupp.prod, map_prod, coeToMvPowerSeries.ringHom_apply]
+  refine le_trans ?_ (le_add_self.trans (MvPowerSeries.le_order_mul ..))
+  refine le_trans ?_ (MvPowerSeries.le_order_prod ..)
+  rw [degree_apply, Nat.cast_sum]
+  refine Finset.sum_le_sum fun i _ ↦ ?_
+  rw [map_pow, coeToMvPowerSeries.ringHom_apply]
+  refine MvPowerSeries.le_order_pow_of_constantCoeff_eq_zero _ ?_
+  rw [constantCoeff_coe, hh i]
+
+end Substitution
+
+section OrderAt
+
+section CommSemiring
+
+variable [CommSemiring R] {p q : MvPolynomial σ R} {a : σ → R}
+
+/-- The order of vanishing of `p` at `a`: the least total degree of a nonzero Taylor coefficient
+of `p` at `a`, and `⊤` if there is none. -/
+noncomputable def orderAt (p : MvPolynomial σ R) (a : σ → R) : ℕ∞ :=
+  (taylor a p : MvPowerSeries σ R).order
+
+theorem orderAt_def (p : MvPolynomial σ R) (a : σ → R) :
+    p.orderAt a = (taylor a p : MvPowerSeries σ R).order :=
+  (rfl)
+
+/-- `p` has order at least `n` at `a` exactly when every Taylor coefficient of `p` at `a` of
+total degree less than `n` vanishes. -/
+theorem le_orderAt_iff {n : ℕ∞} :
+    n ≤ p.orderAt a ↔ ∀ d : σ →₀ ℕ, (d.degree : ℕ∞) < n → (taylor a p).coeff d = 0 := by
+  refine ⟨fun h d hd ↦ ?_, fun h ↦ MvPowerSeries.le_order fun d hd ↦ by simpa using h d hd⟩
+  simpa using MvPowerSeries.coeff_of_lt_order (lt_of_lt_of_le hd h)
+
+theorem orderAt_le {d : σ →₀ ℕ} (h : (taylor a p).coeff d ≠ 0) : p.orderAt a ≤ d.degree :=
+  MvPowerSeries.order_le (by simpa using h)
+
+/-- `p` has order exactly `n` at `a` when `n` is the least total degree of a nonzero Taylor
+coefficient of `p` at `a`: some Taylor coefficient of total degree `n` is nonzero, and every
+Taylor coefficient of smaller total degree vanishes. -/
+theorem orderAt_eq_coe_iff {n : ℕ} :
+    p.orderAt a = n ↔ (∃ d, (taylor a p).coeff d ≠ 0 ∧ d.degree = n) ∧
+      ∀ d : σ →₀ ℕ, d.degree < n → (taylor a p).coeff d = 0 := by
+  simp [orderAt_def, MvPowerSeries.order_eq_nat]
+
+@[simp]
+theorem orderAt_zero (a : σ → R) : (0 : MvPolynomial σ R).orderAt a = ⊤ := by
+  simp [orderAt_def]
+
+/-- The order of `p` at `a` is zero exactly when `p` does not vanish at `a`. -/
+theorem orderAt_eq_zero_iff : p.orderAt a = 0 ↔ eval a p ≠ 0 := by
+  rw [← not_iff_not, not_not, ← Ne, orderAt_def,
+    MvPowerSeries.order_ne_zero_iff_constCoeff_eq_zero, constantCoeff_coe, constantCoeff_taylor]
+
+/-- The order of `p` at `a` is positive exactly when `p` vanishes at `a`. -/
+theorem orderAt_pos_iff : 0 < p.orderAt a ↔ eval a p = 0 := by
+  rw [pos_iff_ne_zero, Ne, orderAt_eq_zero_iff, not_not]
+
+theorem orderAt_C_of_ne_zero {r : R} (hr : r ≠ 0) (a : σ → R) : (C r).orderAt a = 0 :=
+  orderAt_eq_zero_iff.mpr (by simpa using hr)
+
+@[simp]
+theorem orderAt_one [Nontrivial R] (a : σ → R) : (1 : MvPolynomial σ R).orderAt a = 0 := by
+  simpa using orderAt_C_of_ne_zero (one_ne_zero (α := R)) a
+
+theorem min_orderAt_le_orderAt_add (p q : MvPolynomial σ R) (a : σ → R) :
+    min (p.orderAt a) (q.orderAt a) ≤ (p + q).orderAt a := by
+  simpa [orderAt_def] using MvPowerSeries.min_order_le_add
+
+theorem le_orderAt_mul (p q : MvPolynomial σ R) (a : σ → R) :
+    p.orderAt a + q.orderAt a ≤ (p * q).orderAt a := by
+  simpa [orderAt_def] using MvPowerSeries.le_order_mul
+
+end CommSemiring
+
+section CommRing
+
+variable [CommRing R] {p q : MvPolynomial σ R} {a : σ → R}
+
+/-- Only the zero polynomial has infinite order at a point. -/
+@[simp]
+theorem orderAt_eq_top_iff : p.orderAt a = ⊤ ↔ p = 0 := by
+  simp [orderAt_def, MvPowerSeries.order_eq_top_iff, coe_eq_zero_iff]
+
+@[simp]
+theorem orderAt_neg (p : MvPolynomial σ R) (a : σ → R) : (-p).orderAt a = p.orderAt a := by
+  simp only [orderAt_def, map_neg, ← coeToMvPowerSeries.ringHom_apply, MvPowerSeries.order_neg]
+
+/-- The coordinate function `Xᵢ - aᵢ` vanishes to order one at `a`. -/
+theorem orderAt_X_sub_C [Nontrivial R] (a : σ → R) (i : σ) : (X i - C (a i)).orderAt a = 1 := by
+  rw [orderAt_def, map_sub, taylor_X, taylor_C, add_sub_cancel_right, coe_X, MvPowerSeries.X_def,
+    MvPowerSeries.order_monomial_of_ne_zero one_ne_zero, degree_single, Nat.cast_one]
+
+/-- Over a domain, the order of a product is the sum of the orders. -/
+theorem orderAt_mul [NoZeroDivisors R] (p q : MvPolynomial σ R) (a : σ → R) :
+    (p * q).orderAt a = p.orderAt a + q.orderAt a := by
+  simp [orderAt_def, MvPowerSeries.order_mul]
+
+/-- Over a domain, the order of `p ^ n` at `a` is `n` times the order of `p` at `a`. -/
+theorem orderAt_pow [NoZeroDivisors R] [Nontrivial R] (p : MvPolynomial σ R) (a : σ → R)
+    (n : ℕ) : (p ^ n).orderAt a = n • p.orderAt a := by
+  induction n with
+  | zero => simp
+  | succ n ih => rw [pow_succ, orderAt_mul, ih, succ_nsmul]
+
+/-- Substitution does not decrease the order: if `g` maps the point `b` to `a`, that is,
+`eval b (g i) = a i` for every `i`, then the order of `aeval g p` at `b` is at least the order
+of `p` at `a`. -/
+theorem orderAt_le_orderAt_aeval (g : σ → MvPolynomial τ R) (b : τ → R)
+    (p : MvPolynomial σ R) : p.orderAt (fun i ↦ eval b (g i)) ≤ (aeval g p).orderAt b := by
+  set a : σ → R := fun i ↦ eval b (g i)
+  -- The Taylor shift of `aeval g p` at `b` is a substitution, without constant terms, into the
+  -- Taylor shift of `p` at `a`.
+  set h : σ → MvPolynomial τ R := fun i ↦ taylor b (g i) - C (a i)
+  have key : taylor b (aeval g p) = aeval h (taylor a p) := by
+    rw [← AlgHom.comp_apply, ← AlgHom.comp_apply]
+    congr 1
+    ext i : 1
+    simp [h, taylor]
+  rw [orderAt_def, orderAt_def, key]
+  exact order_coe_le_order_coe_aeval (fun i ↦ by simp [h, a]) _
+
+/-- Renaming the variables along an injective map does not change the order. -/
+theorem orderAt_rename {f : σ → τ} (hf : Function.Injective f) (p : MvPolynomial σ R)
+    (b : τ → R) : (rename f p).orderAt b = p.orderAt (b ∘ f) := by
+  refine le_antisymm ?_ ?_
+  · -- Undo the renaming by substituting `Xᵢ` for `X_{f i}` and `b j` for the other variables.
+    let g : τ → MvPolynomial σ R := Function.extend f X (fun j ↦ C (b j))
+    have hg : (fun j ↦ eval (b ∘ f) (g j)) = b := by
+      funext j
+      by_cases hj : ∃ i, f i = j
+      · obtain ⟨i, rfl⟩ := hj
+        simp [g, hf.extend_apply]
+      · simp [g, Function.extend_apply' _ _ _ hj]
+    have hgf : aeval g (rename f p) = p := by
+      rw [aeval_rename]
+      convert aeval_X_left_apply p
+      funext i
+      simp [g, hf.extend_apply]
+    simpa [hg, hgf] using orderAt_le_orderAt_aeval g (b ∘ f) (rename f p)
+  · have := orderAt_le_orderAt_aeval (X ∘ f) b p
+    simp only [Function.comp_apply, eval_X] at this
+    rwa [rename_eq_aeval]
+
+end CommRing
+
+section Derivative
+
+variable [CommRing R] [IsAddTorsionFree R] {p : MvPolynomial σ R} {a : σ → R}
+
+/-- Over a ring without additive torsion, `p` has order at least `n + 1` at `a` if and only if
+`p` vanishes at `a` and every partial derivative of `p` has order at least `n` at `a`. -/
+theorem succ_le_orderAt_iff {n : ℕ} :
+    ((n + 1 : ℕ) : ℕ∞) ≤ p.orderAt a ↔
+      eval a p = 0 ∧ ∀ i, (n : ℕ∞) ≤ (pderiv i p).orderAt a := by
+  rw [orderAt_def, MvPowerSeries.succ_le_order_iff, constantCoeff_coe, constantCoeff_taylor]
+  simp only [orderAt_def, MvPowerSeries.pderiv_coe, pderiv_taylor]
+
+/-- Over a ring without additive torsion, `p` has order at least `n` at `a` if and only if, for
+every list `l` of fewer than `n` variables, the iterated partial derivative of `p` along `l`
+vanishes at `a`. -/
+theorem le_orderAt_iff_eval_foldl_pderiv {n : ℕ} :
+    (n : ℕ∞) ≤ p.orderAt a ↔
+      ∀ l : List σ, l.length < n → eval a (l.foldl (fun q i ↦ pderiv i q) p) = 0 := by
+  induction n generalizing p with
+  | zero => simp
+  | succ n ih =>
+    simp only [succ_le_orderAt_iff, ih]
+    refine ⟨fun ⟨h0, h⟩ l hl ↦ ?_, fun h ↦ ⟨h [] (by simp), fun i l hl ↦
+      h (i :: l) (by simpa using hl)⟩⟩
+    cases l with
+    | nil => exact h0
+    | cons i l => exact h i l (by simpa using hl)
+
+end Derivative
+
+end OrderAt
+
+end MvPolynomial

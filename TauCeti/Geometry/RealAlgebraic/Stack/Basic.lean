@@ -26,7 +26,8 @@ ordered functions on a connected base, each sector carries a continuous section,
 projects onto the whole base, and every section and sector of a real stack is connected. Finally
 `TauCeti.cylinder` places the cylinder over a subset `S` of the coordinate space inside the
 coordinate space of one more dimension, with the distinguished coordinate first; it is a
-topological embedding, so connectedness of stack cells transfers to their ambient images.
+topological embedding, so connectedness of stack cells transfers to their ambient images, the
+cells `TauCeti.stackCells` of the stack in the ambient space.
 
 ## Main declarations
 
@@ -41,6 +42,10 @@ topological embedding, so connectedness of stack cells transfers to their ambien
 * `TauCeti.isConnected_sectionSet`, `TauCeti.isConnected_sectorSet`: over a connected base, the
   sections and sectors of a continuous strictly ordered real stack are connected.
 * `TauCeti.cylinder`, `TauCeti.isEmbedding_cylinder`: the ambient cylinder embedding.
+* `TauCeti.stackCells`: the ambient sections and sectors of a stack over a subset of `α ^ n`.
+* `TauCeti.sUnion_stackCells`, `TauCeti.pairwiseDisjoint_stackCells`,
+  `TauCeti.isConnected_of_mem_stackCells`: the ambient cells of a stack partition the cylinder
+  over its base, and over a connected base they are connected.
 
 ## References
 
@@ -342,6 +347,20 @@ theorem cylinder_injective : Injective (cylinder S) := by
   simp only [cylinder_apply_zero, tail_cylinder] at h₀ h₁
   exact Prod.ext (Subtype.ext h₁) h₀
 
+/-- A point lies in the image of a subset `A` of the cylinder over `S` exactly when its last `n`
+coordinates lie in `S` and, together with its distinguished coordinate, give a point of `A`. -/
+theorem mem_image_cylinder {A : Set (S × α)} {y : Fin (n + 1) → α} :
+    y ∈ cylinder S '' A ↔ ∃ h : Fin.tail y ∈ S, (⟨Fin.tail y, h⟩, y 0) ∈ A := by
+  refine ⟨?_, fun ⟨h, hA⟩ ↦ ⟨_, hA, Fin.cons_self_tail y⟩⟩
+  rintro ⟨z, hz, rfl⟩
+  exact ⟨z.1.2, hz⟩
+
+/-- Forgetting the distinguished coordinate of the image of a subset `A` of the cylinder over `S`
+gives the projection of `A` to `S`, as a subset of `α ^ n`. -/
+theorem image_tail_image_cylinder (A : Set (S × α)) :
+    Fin.tail '' (cylinder S '' A) = Subtype.val '' (Prod.fst '' A) := by
+  simp only [image_image, tail_cylinder]
+
 /-- The cylinder over `S` fills exactly the points whose last `n` coordinates lie in `S`. -/
 theorem range_cylinder : range (cylinder S) = {y : Fin (n + 1) → α | Fin.tail y ∈ S} := by
   ext y
@@ -363,5 +382,105 @@ theorem isEmbedding_cylinder : IsEmbedding (cylinder S) := by
   exact IsEmbedding.subtypeVal.prodMap .id
 
 end Cylinder
+
+/-! ### Stacks in the ambient space -/
+
+section Ambient
+
+variable {n : ℕ}
+
+section Order
+
+variable [LinearOrder α] {C : Set (Fin n → α)} {θ : Fin k → C → α}
+
+/-- The cells of the stack over `C ⊆ α ^ n` defined by `θ`, as subsets of `α ^ (n + 1)`: the
+images under `TauCeti.cylinder` of its `k` sections and its `k + 1` sectors. -/
+def stackCells (C : Set (Fin n → α)) (θ : Fin k → C → α) : Set (Set (Fin (n + 1) → α)) :=
+  range (fun i ↦ cylinder C '' sectionSet θ i) ∪ range fun j ↦ cylinder C '' sectorSet θ j
+
+@[simp]
+theorem mem_stackCells {E : Set (Fin (n + 1) → α)} :
+    E ∈ stackCells C θ ↔
+      (∃ i, cylinder C '' sectionSet θ i = E) ∨ ∃ j, cylinder C '' sectorSet θ j = E :=
+  Iff.rfl
+
+theorem image_cylinder_sectionSet_mem_stackCells (i : Fin k) :
+    cylinder C '' sectionSet θ i ∈ stackCells C θ :=
+  Or.inl ⟨i, rfl⟩
+
+theorem image_cylinder_sectorSet_mem_stackCells (j : Fin (k + 1)) :
+    cylinder C '' sectorSet θ j ∈ stackCells C θ :=
+  Or.inr ⟨j, rfl⟩
+
+/-- A stack has finitely many cells. -/
+theorem finite_stackCells (C : Set (Fin n → α)) (θ : Fin k → C → α) :
+    (stackCells C θ).Finite :=
+  (finite_range _).union (finite_range _)
+
+/-- For pointwise strictly monotone `θ` with values in a densely ordered type without endpoints,
+every cell of the stack over `C` lies over the whole of `C`. -/
+theorem image_tail_of_mem_stackCells [Nonempty α] [DenselyOrdered α] [NoMinOrder α]
+    [NoMaxOrder α] (hθ : ∀ x, StrictMono fun i ↦ θ i x) {E : Set (Fin (n + 1) → α)}
+    (hE : E ∈ stackCells C θ) : Fin.tail '' E = C := by
+  rcases hE with ⟨i, rfl⟩ | ⟨j, rfl⟩ <;> rw [image_tail_image_cylinder]
+  · rw [fst_image_sectionSet, Subtype.coe_image_univ]
+  · rw [fst_image_sectorSet hθ, Subtype.coe_image_univ]
+
+/-- If over each set in `𝒟` a pointwise strictly ordered stack is chosen, with values in a
+densely ordered type without endpoints, then the projections of all the cells of these stacks are
+exactly the sets in `𝒟`. -/
+theorem image_image_tail_iUnion_stackCells [Nonempty α] [DenselyOrdered α] [NoMinOrder α]
+    [NoMaxOrder α] {𝒟 : Set (Set (Fin n → α))} {k : Set (Fin n → α) → ℕ}
+    {θ : ∀ C : Set (Fin n → α), Fin (k C) → C → α}
+    (hθ : ∀ C ∈ 𝒟, ∀ x, StrictMono fun i ↦ θ C i x) :
+    image Fin.tail '' ⋃ C ∈ 𝒟, stackCells C (θ C) = 𝒟 := by
+  ext D
+  simp only [mem_image, mem_iUnion₂]
+  constructor
+  · rintro ⟨E, ⟨C, hC, hE⟩, rfl⟩
+    rwa [image_tail_of_mem_stackCells (hθ C hC) hE]
+  · intro hD
+    exact ⟨_, ⟨D, hD, image_cylinder_sectorSet_mem_stackCells 0⟩,
+      image_tail_of_mem_stackCells (hθ D hD) (image_cylinder_sectorSet_mem_stackCells 0)⟩
+
+/-- For pointwise monotone `θ`, the cells of the stack over `C` cover the cylinder over `C`. -/
+theorem sUnion_stackCells (hθ : ∀ x, Monotone fun i ↦ θ i x) :
+    ⋃₀ stackCells C θ = Fin.tail ⁻¹' C := by
+  ext y
+  refine ⟨fun ⟨E, hE, hy⟩ ↦ ?_, fun h ↦ ?_⟩
+  · rcases hE with ⟨i, rfl⟩ | ⟨j, rfl⟩ <;> exact (mem_image_cylinder.1 hy).1
+  · -- The point of the cylinder over `C` above `y` lies in a section or a sector.
+    have hz : ((⟨Fin.tail y, h⟩, y 0) : C × α) ∈ (⋃ i, sectionSet θ i) ∪ ⋃ j, sectorSet θ j := by
+      rw [iUnion_sectionSet_union_iUnion_sectorSet hθ]
+      exact mem_univ _
+    rcases hz with hz | hz
+    · obtain ⟨i, hi⟩ := mem_iUnion.1 hz
+      exact ⟨_, image_cylinder_sectionSet_mem_stackCells i, mem_image_cylinder.2 ⟨h, hi⟩⟩
+    · obtain ⟨j, hj⟩ := mem_iUnion.1 hz
+      exact ⟨_, image_cylinder_sectorSet_mem_stackCells j, mem_image_cylinder.2 ⟨h, hj⟩⟩
+
+/-- For pointwise injective `θ`, distinct cells of the stack over `C` are disjoint. -/
+theorem pairwiseDisjoint_stackCells (hθ : ∀ x, Injective fun i ↦ θ i x) :
+    (stackCells C θ).PairwiseDisjoint id := by
+  rintro _ (⟨i, rfl⟩ | ⟨j, rfl⟩) _ (⟨i', rfl⟩ | ⟨j', rfl⟩) hne <;>
+    rw [onFun, id, id, disjoint_image_iff cylinder_injective]
+  · exact pairwise_disjoint_sectionSet hθ fun h ↦ hne (h ▸ rfl)
+  · exact disjoint_sectionSet_sectorSet θ i j'
+  · exact (disjoint_sectionSet_sectorSet θ i' j).symm
+  · exact pairwise_disjoint_sectorSet θ fun h ↦ hne (h ▸ rfl)
+
+end Order
+
+/-- For continuous, pointwise strictly monotone real `θ` over a connected base, every cell of the
+stack is connected. -/
+theorem isConnected_of_mem_stackCells {C : Set (Fin n → ℝ)} {θ : Fin k → C → ℝ}
+    (hC : IsConnected C) (hc : ∀ i, Continuous (θ i)) (hθ : ∀ x, StrictMono fun i ↦ θ i x)
+    {E : Set (Fin (n + 1) → ℝ)} (hE : E ∈ stackCells C θ) : IsConnected E := by
+  have := isConnected_iff_connectedSpace.1 hC
+  rcases hE with ⟨i, rfl⟩ | ⟨j, rfl⟩
+  · exact (isConnected_sectionSet (hc i)).image _ continuous_cylinder.continuousOn
+  · exact (isConnected_sectorSet hc hθ j).image _ continuous_cylinder.continuousOn
+
+end Ambient
 
 end TauCeti

@@ -136,9 +136,9 @@ theorem subst_pair_formalSlope_mul (h₁ : constantCoeff q₁ = 0) (h₂ : const
     subst (pairSubstitution q₁ q₂)
         (formalSlope W) * (q₂ - q₁) =
       PowerSeries.subst q₂ (formalW W) - PowerSeries.subst q₁ (formalW W) := by
-  have h := congrArg (subst (pairSubstitution q₁ q₂)) (formalSlope_mul_sub W)
+  have h := congrArg (subst (pairSubstitution q₁ q₂)) (formalSlope_mul_X_add W)
   rw [← coe_substAlgHom (hasSubst_pair h₁ h₂)] at h
-  simp only [map_mul, map_sub] at h
+  simp only [map_mul, map_add] at h
   simp only [coe_substAlgHom (hasSubst_pair h₁ h₂), subst_pair_toMvPowerSeries_inl W h₁ h₂,
     subst_pair_toMvPowerSeries_inr W h₁ h₂, subst_X (hasSubst_pair h₁ h₂)] at h
   simp only [pairSubstitution, Sum.elim_inl, Sum.elim_inr] at h
