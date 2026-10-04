@@ -168,7 +168,7 @@ theorem mem_openNormalSubgroupBot {G : Type*} [Group G] [TopologicalSpace G] [Di
 
 /-- The trivial open normal subgroup of a discrete group lies below every open normal subgroup. -/
 theorem openNormalSubgroupBot_le {G : Type*} [Group G] [TopologicalSpace G] [DiscreteTopology G]
-    (U : OpenNormalSubgroup G) : openNormalSubgroupBot G ≤ U := by
+    {U : OpenNormalSubgroup G} : openNormalSubgroupBot G ≤ U := by
   rw [← OpenNormalSubgroup.toSubgroup_le, openNormalSubgroupBot_toSubgroup]
   exact bot_le
 

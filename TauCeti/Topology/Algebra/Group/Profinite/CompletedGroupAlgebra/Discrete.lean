@@ -76,7 +76,7 @@ bijective: that level lies below every other one, so it determines all of them. 
 theorem proj_openNormalSubgroupBot_bijective :
     Function.Bijective (proj R Γ (openNormalSubgroupBot Γ)) := by
   refine ⟨fun x y h ↦ ext fun U ↦ ?_, proj_surjective R Γ _⟩
-  rw [← mapDomain_mapOfLE_proj (openNormalSubgroupBot_le U), h, mapDomain_mapOfLE_proj]
+  rw [← mapDomain_mapOfLE_proj (openNormalSubgroupBot_le (U := U)), h, mapDomain_mapOfLE_proj]
 
 /-- The identification `Γ ⧸ ⊥ ≃* Γ`, for the trivial open normal subgroup of a discrete group. -/
 private noncomputable def quotientBotEquiv :
@@ -86,8 +86,9 @@ private noncomputable def quotientBotEquiv :
 
 /-- `quotientBotEquiv` sends the class of `γ` to `γ`. -/
 private theorem quotientBotEquiv_mk (γ : Γ) :
-    quotientBotEquiv Γ (γ : Γ ⧸ (openNormalSubgroupBot Γ).toSubgroup) = γ :=
-  (rfl)
+    quotientBotEquiv Γ (γ : Γ ⧸ (openNormalSubgroupBot Γ).toSubgroup) = γ := by
+  rw [quotientBotEquiv, MulEquiv.trans_apply, QuotientGroup.quotientMulEquivOfEq_mk,
+    ← MulEquiv.eq_symm_apply, QuotientGroup.quotientBot_symm_apply]
 
 /-- The **completed group algebra of a discrete group is its group algebra**: for `Γ` discrete,
 the projection onto the level at the trivial subgroup, followed by `Γ ⧸ ⊥ ≃* Γ`, is an
@@ -101,6 +102,13 @@ noncomputable def equivMonoidAlgebra : completedGroupAlgebra R Γ ≃ₐ[R] Mono
 
 variable {R Γ}
 
+/-- `equivMonoidAlgebra` is the projection onto the level at the trivial subgroup, transported
+along `quotientBotEquiv`. -/
+private theorem equivMonoidAlgebra_apply (x : completedGroupAlgebra R Γ) :
+    equivMonoidAlgebra R Γ x =
+      MonoidAlgebra.domCongr R R (quotientBotEquiv Γ) (proj R Γ (openNormalSubgroupBot Γ) x) := by
+  rw [equivMonoidAlgebra, AlgEquiv.trans_apply, AlgEquiv.ofBijective_apply]
+
 /-- The level at `U` of an element of the completed group algebra of a discrete group is the
 pushforward of its image in the group algebra along the quotient map `Γ → Γ ⧸ U`. -/
 theorem proj_eq_mapDomain_equivMonoidAlgebra (U : OpenNormalSubgroup Γ)
@@ -108,9 +116,9 @@ theorem proj_eq_mapDomain_equivMonoidAlgebra (U : OpenNormalSubgroup Γ)
     proj R Γ U x =
       MonoidAlgebra.mapDomain (QuotientGroup.mk : Γ → Γ ⧸ U.toSubgroup)
         (equivMonoidAlgebra R Γ x) := by
-  rw [equivMonoidAlgebra, AlgEquiv.trans_apply, AlgEquiv.ofBijective_apply,
-    ← AlgEquiv.coe_toAlgHom, MonoidAlgebra.domCongr_toAlgHom, MonoidAlgebra.mapDomainAlgHom_apply,
-    MonoidAlgebra.mapDomain_mapDomain, ← mapDomain_mapOfLE_proj (openNormalSubgroupBot_le U) x]
+  rw [equivMonoidAlgebra_apply, ← AlgEquiv.coe_toAlgHom, MonoidAlgebra.domCongr_toAlgHom,
+    MonoidAlgebra.mapDomainAlgHom_apply, MonoidAlgebra.mapDomain_mapDomain,
+    ← mapDomain_mapOfLE_proj (openNormalSubgroupBot_le (U := U)) x]
   congr 1
   funext q
   obtain ⟨γ, rfl⟩ := QuotientGroup.mk_surjective q
@@ -129,15 +137,15 @@ sends the group element `γ` to the basis element at `γ`. -/
 @[simp]
 theorem equivMonoidAlgebra_of (γ : Γ) :
     equivMonoidAlgebra R Γ (of R Γ γ) = MonoidAlgebra.single γ 1 := by
-  rw [equivMonoidAlgebra, AlgEquiv.trans_apply, AlgEquiv.ofBijective_apply, proj_of,
-    MonoidAlgebra.domCongr_single, quotientBotEquiv_mk]
+  rw [equivMonoidAlgebra_apply, proj_of, MonoidAlgebra.domCongr_single, quotientBotEquiv_mk]
 
-/-- The preimage of the basis element at `γ` under the identification of the completed group
-algebra of a discrete group with its group algebra is the group element `γ`. -/
+/-- The preimage of the monomial `r` at `γ` under the identification of the completed group
+algebra of a discrete group with its group algebra is `r` times the group element `γ`. -/
 @[simp]
-theorem equivMonoidAlgebra_symm_single (γ : Γ) :
-    (equivMonoidAlgebra R Γ).symm (MonoidAlgebra.single γ 1) = of R Γ γ := by
-  rw [AlgEquiv.symm_apply_eq, equivMonoidAlgebra_of]
+theorem equivMonoidAlgebra_symm_single (γ : Γ) (r : R) :
+    (equivMonoidAlgebra R Γ).symm (MonoidAlgebra.single γ r) = r • of R Γ γ := by
+  rw [AlgEquiv.symm_apply_eq, map_smul, equivMonoidAlgebra_of, MonoidAlgebra.smul_single',
+    mul_one]
 
 end Discrete
 
@@ -162,7 +170,7 @@ theorem isHomeomorph_coeff_equivMonoidAlgebra :
   have hcont : Continuous c := continuous_pi fun δ ↦ by
     have hδ : ∀ x : completedGroupAlgebra R Γ, c x δ =
         (proj R Γ (openNormalSubgroupBot Γ) x).coeff ((quotientBotEquiv Γ).symm δ) := fun x ↦ by
-      simp [c, equivMonoidAlgebra]
+      simp [c, equivMonoidAlgebra_apply, MonoidAlgebra.coeff_domCongr]
     simpa only [hδ] using continuous_coeff_proj R Γ _ _
   exact (Homeomorph.mk ⟨c, fun f ↦ ∑ γ, f γ • of R Γ γ, hright.leftInverse_of_injective hinj,
     hright⟩ hcont (continuous_finsetSum _ fun γ _ ↦
