@@ -33,7 +33,7 @@ other.
 ## The construction
 
 The action of `bₗ` on a monomial `z^σ` is defined by induction on the degree of `σ`. If every
-variable of `σ` is at least `l`, it is multiplication by `zₗ`. Otherwise `σ = τ + eμ` where `μ` is
+variable of `σ` is at least `l`, it is multiplication by `zₗ`. Otherwise `σ = eμ + τ` where `μ` is
 the least variable of `σ` and `μ < l`, and the value is forced by the commutator relation that the
 representation must satisfy:
 
@@ -84,14 +84,12 @@ namespace PBWPolynomialRep
 
 /-! ### Monomial bookkeeping -/
 
-omit [LinearOrder ι] in
-private theorem monomial_add_single_one (i : ι) (σ : ι →₀ ℕ) (r : R) :
-    (monomial (σ + Finsupp.single i 1) r : S) = X i * monomial σ r := by
-  rw [monomial_add_single, pow_one, mul_comm]
+-- Keep the split-off variable first so Mathlib normalizes its monomial directly.
+attribute [local simp] monomial_single_add
 
 /-- A monomial in which some variable is less than `l` splits off its least variable `μ < l`. -/
-private theorem exists_eq_add_single {l : ι} {σ : ι →₀ ℕ} (h : ¬ ∀ i ∈ σ.support, l ≤ i) :
-    ∃ (μ : ι) (τ : ι →₀ ℕ), μ < l ∧ (∀ i ∈ τ.support, μ ≤ i) ∧ σ = τ + Finsupp.single μ 1 := by
+private theorem exists_eq_single_add {l : ι} {σ : ι →₀ ℕ} (h : ¬ ∀ i ∈ σ.support, l ≤ i) :
+    ∃ (μ : ι) (τ : ι →₀ ℕ), μ < l ∧ (∀ i ∈ τ.support, μ ≤ i) ∧ σ = Finsupp.single μ 1 + τ := by
   push Not at h
   obtain ⟨i, hi, hil⟩ := h
   have hne : σ.support.Nonempty := ⟨i, hi⟩
@@ -99,7 +97,8 @@ private theorem exists_eq_add_single {l : ι} {σ : ι →₀ ℕ} (h : ¬ ∀ i
   have hμ : μ ∈ σ.support := σ.support.min'_mem hne
   refine ⟨μ, σ - Finsupp.single μ 1, (σ.support.min'_le i hi).trans_lt hil, fun j hj ↦ ?_, ?_⟩
   · exact σ.support.min'_le j (Finsupp.support_tsub hj)
-  · refine (tsub_add_cancel_of_le ?_).symm
+  · rw [add_comm]
+    refine (tsub_add_cancel_of_le ?_).symm
     rw [Finsupp.single_le_iff]
     exact Nat.one_le_iff_ne_zero.2 (Finsupp.mem_support_iff.1 hμ)
 
@@ -129,9 +128,9 @@ omit [LinearOrder ι] in
 private theorem naive_mem {d : ℕ} (x : L) {p : S} (hp : p ∈ S≤ d) : naive b x p ∈ S≤ (d + 1) :=
   TauCeti.MvPolynomial.apply_mem_of_basis b (naive b) _ d (fun l σ hσ ↦ by
     rw [naive_apply, gen_basis]
-    have hm : (monomial (σ + Finsupp.single l 1) 1 : S) ∈ S≤ (d + 1) :=
-      monomial_mem_restrictTotalDegree (by simpa using hσ) 1
-    rwa [monomial_add_single_one] at hm) x hp
+    have hm : (monomial (Finsupp.single l 1 + σ) 1 : S) ∈ S≤ (d + 1) :=
+      monomial_mem_restrictTotalDegree (by simpa [Nat.one_add] using hσ) 1
+    simpa using hm) x hp
 
 variable [Bracket L L]
 
@@ -156,20 +155,20 @@ private theorem step_of_le (g : L →ₗ[R] S →ₗ[R] S) {l : ι} {σ : ι →
 
 private theorem step_of_lt (g : L →ₗ[R] S →ₗ[R] S) {l μ : ι} {τ : ι →₀ ℕ} (hμl : μ < l)
     (hμτ : ∀ i ∈ τ.support, μ ≤ i) :
-    step b g (b l) (monomial (τ + Finsupp.single μ 1) 1) =
+    step b g (b l) (monomial (Finsupp.single μ 1 + τ) 1) =
       X μ * X l * monomial τ 1 + g (b μ) (g (b l) (monomial τ 1) - X l * monomial τ 1) +
         g ⁅b l, b μ⁆ (monomial τ 1) := by
-  have hμ : μ ∈ (τ + Finsupp.single μ 1).support := by simp
-  have h : ¬ ∀ i ∈ (τ + Finsupp.single μ 1).support, l ≤ i :=
+  have hμ : μ ∈ (Finsupp.single μ 1 + τ).support := by simp
+  have h : ¬ ∀ i ∈ (Finsupp.single μ 1 + τ).support, l ≤ i :=
     fun h ↦ (h μ hμ).not_gt hμl
-  have hσ : (monomial (τ + Finsupp.single μ 1) 1 : S) =
-      basisMonomials ι R (τ + Finsupp.single μ 1) := by simp
+  have hσ : (monomial (Finsupp.single μ 1 + τ) 1 : S) =
+      basisMonomials ι R (Finsupp.single μ 1 + τ) := by simp
   rw [step, Basis.constr_basis, hσ, Basis.constr_basis,
     dite_eq_right_of_eq_false (eq_false h)]
-  have hmin : (τ + Finsupp.single μ 1).support.min' ⟨μ, hμ⟩ = μ :=
+  have hmin : (Finsupp.single μ 1 + τ).support.min' ⟨μ, hμ⟩ = μ :=
     le_antisymm (Finset.min'_le _ _ hμ)
       (Finset.le_min' _ _ _ (by simpa [Finsupp.support_add_eq_union] using hμτ))
-  simp only [hmin, add_tsub_cancel_right]
+  simp only [hmin, add_tsub_cancel_left]
 
 /-- The degree estimate `g x p - zₓ p ∈ S≤ d` for `p ∈ S≤ d`, in every degree. -/
 private def DegreeBound (g : L →ₗ[R] S →ₗ[R] S) : Prop :=
@@ -190,13 +189,15 @@ private theorem degreeBound_step {g : L →ₗ[R] S →ₗ[R] S} (hg : DegreeBou
   by_cases h : ∀ i ∈ σ.support, l ≤ i
   · rw [step_of_le b g h, sub_self]
     exact Submodule.zero_mem _
-  obtain ⟨μ, τ, hμl, hμτ, rfl⟩ := exists_eq_add_single h
-  have hτ : τ.degree + 1 ≤ d := by simpa using hσ
+  obtain ⟨μ, τ, hμl, hμτ, rfl⟩ := exists_eq_single_add h
+  have hτ : τ.degree + 1 ≤ d := by simpa [Nat.one_add] using hσ
   have hX : X μ * X l * monomial τ 1 + g (b μ) (g (b l) (monomial τ 1) - X l * monomial τ 1) +
         g ⁅b l, b μ⁆ (monomial τ 1) - X l * (X μ * monomial τ 1) =
       g (b μ) (g (b l) (monomial τ 1) - X l * monomial τ 1) + g ⁅b l, b μ⁆ (monomial τ 1) := by
     ring
-  rw [step_of_lt b g hμl hμτ, monomial_add_single_one, hX]
+  rw [step_of_lt b g hμl hμτ]
+  simp only [monomial_single_add, pow_one]
+  rw [hX]
   have hτmem : (monomial τ 1 : S) ∈ S≤ τ.degree := monomial_mem_restrictTotalDegree le_rfl 1
   refine restrictTotalDegree_mono ι R hτ
     (Submodule.add_mem _ (DegreeBound.mem b hg _ ?_) (DegreeBound.mem b hg _ hτmem))
@@ -214,9 +215,9 @@ private theorem step_congr {g g' : L →ₗ[R] S →ₗ[R] S} (hg : DegreeBound 
   rw [LinearMap.sub_apply, LinearMap.sub_apply, Submodule.mem_bot, sub_eq_zero]
   by_cases h : ∀ i ∈ σ.support, l ≤ i
   · rw [step_of_le b g h, step_of_le b g' h]
-  obtain ⟨μ, τ, hμl, hμτ, rfl⟩ := exists_eq_add_single h
+  obtain ⟨μ, τ, hμl, hμτ, rfl⟩ := exists_eq_single_add h
   have hτmem : (monomial τ 1 : S) ∈ S≤ d :=
-    monomial_mem_restrictTotalDegree (by simpa using hσ) 1
+    monomial_mem_restrictTotalDegree (by simpa [Nat.one_add] using hσ) 1
   have hq : g (b l) (monomial τ 1) - X l * monomial τ 1 ∈ S≤ d := by
     have := hg d (b l) _ hτmem
     rwa [gen_basis] at this
@@ -287,7 +288,7 @@ private theorem act_of_le {l : ι} {σ : ι →₀ ℕ} (h : ∀ i ∈ σ.suppor
     step_of_le b _ h]
 
 private theorem act_of_lt {l μ : ι} {τ : ι →₀ ℕ} (hμl : μ < l) (hμτ : ∀ i ∈ τ.support, μ ≤ i) :
-    act b (b l) (monomial (τ + Finsupp.single μ 1) 1) =
+    act b (b l) (monomial (Finsupp.single μ 1 + τ) 1) =
       X μ * X l * monomial τ 1 + act b (b μ) (act b (b l) (monomial τ 1) - X l * monomial τ 1) +
         act b ⁅b l, b μ⁆ (monomial τ 1) := by
   have hτmem : (monomial τ 1 : S) ∈ S≤ τ.degree := monomial_mem_restrictTotalDegree le_rfl 1
@@ -295,8 +296,9 @@ private theorem act_of_lt {l μ : ι} {τ : ι →₀ ℕ} (hμl : μ < l) (hμ�
     have := degreeBound_approx b τ.degree τ.degree (b l) _ hτmem
     rwa [gen_basis] at this
   rw [act_eq_approx b le_rfl _
-      (monomial_mem_restrictTotalDegree (s := τ + Finsupp.single μ 1) le_rfl 1), map_add,
-    Finsupp.degree_single, approx, step_of_lt b _ hμl hμτ, act_eq_approx b le_rfl _ hτmem,
+      (monomial_mem_restrictTotalDegree (s := Finsupp.single μ 1 + τ) le_rfl 1), map_add,
+    Finsupp.degree_single, add_comm 1 τ.degree, approx, step_of_lt b _ hμl hμτ,
+    act_eq_approx b le_rfl _ hτmem,
     act_eq_approx b le_rfl _ hτmem, act_eq_approx b le_rfl _ hq]
 
 /-- The defining case of the commutator relation: `μ < l` and `μ` is at most every variable
@@ -306,12 +308,11 @@ private theorem act_comm_of_lt {l μ : ι} {τ : ι →₀ ℕ} (hμl : μ < l)
     act b (b l) (act b (b μ) (monomial τ 1)) =
       act b (b μ) (act b (b l) (monomial τ 1)) + act b ⁅b l, b μ⁆ (monomial τ 1) := by
   have hμ : act b (b μ) (X l * monomial τ 1) = X μ * X l * monomial τ 1 := by
-    have h := act_of_le b (l := μ) (σ := τ + Finsupp.single l 1)
+    have h := act_of_le b (l := μ) (σ := Finsupp.single l 1 + τ)
       (by simpa [Finsupp.support_add_eq_union] using And.intro hμl.le hμτ)
-    rw [monomial_add_single_one, ← mul_assoc] at h
-    exact h
+    simpa [mul_assoc] using h
   have h := act_of_lt b hμl hμτ
-  rw [monomial_add_single_one] at h
+  simp only [monomial_single_add, pow_one] at h
   rw [act_of_le b hμτ, h, map_sub, hμ]
   abel
 
@@ -325,20 +326,20 @@ private def CommRel (d : ℕ) : Prop :=
 assuming the commutator relation one degree down. -/
 private theorem act_act_eq_of_lt {l m ν : ι} {Ψ : ι →₀ ℕ} (hνl : ν < l) (hνm : ν < m)
     (hνΨ : ∀ i ∈ Ψ.support, ν ≤ i) (ih : CommRel b Ψ.degree) :
-    act b (b l) (act b (b m) (monomial (Ψ + Finsupp.single ν 1) 1)) =
+    act b (b l) (act b (b m) (monomial (Finsupp.single ν 1 + Ψ) 1)) =
       act b (b ν) (act b (b l) (act b (b m) (monomial Ψ 1))) +
         act b ⁅b l, b ν⁆ (act b (b m) (monomial Ψ 1)) +
         act b ⁅b m, b ν⁆ (act b (b l) (monomial Ψ 1)) +
         act b ⁅b l, ⁅b m, b ν⁆⁆ (monomial Ψ 1) := by
   have hΨ : (monomial Ψ 1 : S) ∈ S≤ Ψ.degree := monomial_mem_restrictTotalDegree le_rfl 1
   -- `bₘ z^Ψ` is the monomial `zₘ z^Ψ` up to an error `w` of degree at most that of `Ψ`.
-  set w := act b (b m) (monomial Ψ 1) - monomial (Ψ + Finsupp.single m 1) 1 with hw
+  set w := act b (b m) (monomial Ψ 1) - monomial (Finsupp.single m 1 + Ψ) 1 with hw
   have hwmem : w ∈ S≤ Ψ.degree := by
-    rw [hw, monomial_add_single_one]
-    simpa only [gen_basis] using act_sub_mem b (b m) hΨ
-  have hνΨm : ∀ i ∈ (Ψ + Finsupp.single m 1).support, ν ≤ i :=
+    rw [hw]
+    simpa [gen_basis] using act_sub_mem b (b m) hΨ
+  have hνΨm : ∀ i ∈ (Finsupp.single m 1 + Ψ).support, ν ≤ i :=
     by simpa [Finsupp.support_add_eq_union] using And.intro hνm.le hνΨ
-  have hsplit : act b (b m) (monomial Ψ 1) = monomial (Ψ + Finsupp.single m 1) 1 + w := by
+  have hsplit : act b (b m) (monomial Ψ 1) = monomial (Finsupp.single m 1 + Ψ) 1 + w := by
     rw [hw, add_sub_cancel]
   -- The commutator relation for `bₗ` and `bν` on `bₘ z^Ψ`.
   have hlν : act b (b l) (act b (b ν) (act b (b m) (monomial Ψ 1))) =
@@ -348,7 +349,8 @@ private theorem act_act_eq_of_lt {l m ν : ι} {Ψ : ι →₀ ℕ} (hνl : ν <
     simp only [map_add]
     rw [act_comm_of_lt b hνl hνΨm, ih _ _ _ hwmem]
     abel
-  rw [monomial_add_single_one, ← act_of_le b hνΨ,
+  simp only [monomial_single_add, pow_one]
+  rw [← act_of_le b hνΨ,
     ih (b m) (b ν) _ hΨ, map_add, hlν, ih (b l) ⁅b m, b ν⁆ _ hΨ]
   abel
 
@@ -395,7 +397,7 @@ private theorem commRel (d : ℕ) : CommRel b d := by
       act b (b l) (act b (b m) (monomial τ 1)) =
         act b (b m) (act b (b l) (monomial τ 1)) + act b ⁅b l, b m⁆ (monomial τ 1) := by
     intro l m hm hml
-    obtain ⟨ν, Ψ, hνm, hνΨ, rfl⟩ := exists_eq_add_single hm
+    obtain ⟨ν, Ψ, hνm, hνΨ, rfl⟩ := exists_eq_single_add hm
     have hΨ : Ψ.degree < d := by simp at hτ; omega
     have hνl := hνm.trans hml
     have ihΨ := ih _ hΨ
@@ -405,7 +407,7 @@ private theorem commRel (d : ℕ) : CommRel b d := by
     -- turns the right-hand side into `bν ⁅bₗ, bₘ⁆ z^Ψ + ⁅⁅bₗ, bₘ⁆, bν⁆ z^Ψ`, and the Jacobi
     -- identity matches the remaining double brackets.
     rw [act_act_eq_of_lt b hνl hνm hνΨ ihΨ, act_act_eq_of_lt b hνm hνl hνΨ ihΨ,
-      monomial_add_single_one, ← act_of_le b hνΨ,
+      monomial_single_add, pow_one, ← act_of_le b hνΨ,
       ihΨ ⁅b l, b m⁆ (b ν) _ hΨmem,
       ihΨ (b l) (b m) _ hΨmem, map_add, leibniz_lie (b l) (b m) (b ν), map_add,
       LinearMap.add_apply]
