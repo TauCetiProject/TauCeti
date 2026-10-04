@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Convex.Contractible
 public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 public import TauCeti.Geometry.Manifold.Riemannian.Coercive
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Action
@@ -89,6 +90,9 @@ instance. Its topology and charts are those of `ℝ × ℝ × ℝ`. -/
 instance : TopologicalSpace SL2Tilde := inferInstanceAs (TopologicalSpace (ℝ × ℝ × ℝ))
 
 instance : T2Space SL2Tilde := inferInstanceAs (T2Space (ℝ × ℝ × ℝ))
+
+/-- The model `SL₂ℝ~` is contractible, with its global real three-space coordinates. -/
+instance : ContractibleSpace SL2Tilde := inferInstanceAs (ContractibleSpace (ℝ × ℝ × ℝ))
 
 instance : ChartedSpace (ℝ × ℝ × ℝ) SL2Tilde :=
   inferInstanceAs (ChartedSpace (ℝ × ℝ × ℝ) (ℝ × ℝ × ℝ))

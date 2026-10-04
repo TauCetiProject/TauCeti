@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
-public import TauCeti.AlgebraicTopology.FundamentalGroup.Product
+public import TauCeti.AlgebraicTopology.FundamentalGroup.TopologicalMonoid
 public import TauCeti.AlgebraicTopology.UniversalCover.Covering
 
 /-!
@@ -31,12 +31,19 @@ The endpoint projection is then a continuous homomorphism `UniversalCover.projHo
 covering map, and its kernel, a discrete normal subgroup of a connected group, is central. This is
 the topological half of the simply connected covering group of a connected Lie group.
 
+The kernel is the fundamental group `π₁(G, 1)`, for every topological group `G`. Its points are
+the homotopy classes of loops at `1`, and on them the group law of the universal cover is
+pointwise multiplication of loops, which in a topological group agrees with concatenation by
+the Eckmann–Hilton argument (`FundamentalGroup.cast_map_prod_mul`).
+
 ## Main definitions
 
 * `TauCeti.UniversalCover.instGroup`: the group structure on `UniversalCover (1 : G)` given by
   pointwise multiplication of paths.
 * `TauCeti.UniversalCover.projHom`: the endpoint projection as a continuous homomorphism
   `UniversalCover (1 : G) →ₜ* G`.
+* `TauCeti.UniversalCover.kerProjHomEquivFundamentalGroup`: the kernel of `projHom` is
+  isomorphic to the fundamental group `π₁(G, 1)`.
 
 ## Main statements
 
@@ -46,6 +53,7 @@ the topological half of the simply connected covering group of a connected Lie g
   connected `G`, the universal cover is a topological group.
 * `TauCeti.UniversalCover.isCoveringMap_projHom`: the projection is a covering homomorphism.
 * `TauCeti.UniversalCover.ker_projHom_le_center`: its kernel is central.
+* `TauCeti.UniversalCover.discreteTopology_ker_projHom`: its kernel is discrete.
 
 ## References
 
@@ -172,6 +180,44 @@ def projHom : UniversalCover (1 : G) →ₜ* G where
 theorem coe_projHom : ⇑(projHom : UniversalCover (1 : G) →ₜ* G) = proj :=
   (rfl)
 
+/-! ### The kernel of the covering homomorphism -/
+
+/-- A point of the universal cover lies in the kernel of the covering homomorphism exactly when
+it lies over the identity. -/
+theorem mem_ker_projHom {a : UniversalCover (1 : G)} :
+    a ∈ (projHom (G := G) : UniversalCover (1 : G) →* G).ker ↔ a.proj = 1 :=
+  MonoidHom.mem_ker
+
+/-- **The kernel of the covering homomorphism is the fundamental group.** A point of the universal
+cover based at `1` lying over `1` is a homotopy class of loops at `1`, and the group law of the
+universal cover, pointwise multiplication of paths, multiplies loop classes as the fundamental
+group does (`FundamentalGroup.cast_map_prod_mul`). -/
+def kerProjHomEquivFundamentalGroup :
+    (projHom (G := G) : UniversalCover (1 : G) →* G).ker ≃* FundamentalGroup G 1 :=
+  MulEquiv.symm
+    { toFun a := ⟨mk 1 a.toPath, mem_ker_projHom.2 rfl⟩
+      invFun z := z.1.path.cast rfl (mem_ker_projHom.1 z.2).symm
+      left_inv a := Path.Homotopic.Quotient.cast_rfl_rfl a
+      right_inv z := Subtype.ext <| UniversalCover.ext (mem_ker_projHom.1 z.2).symm
+        (Path.Homotopic.Quotient.cast_heq _ _)
+      map_mul' a b := Subtype.ext <| UniversalCover.ext (mul_one 1).symm <| by
+        rw [← FundamentalGroup.cast_map_prod_mul]
+        exact (Path.Homotopic.Quotient.cast_heq _ _).trans
+          (Path.Homotopic.Quotient.cast_heq _ _).symm }
+
+/-- A loop class at the identity corresponds to the point of the universal cover over `1` that it
+defines. -/
+@[simp]
+theorem coe_kerProjHomEquivFundamentalGroup_symm_apply (a : FundamentalGroup G 1) :
+    (kerProjHomEquivFundamentalGroup.symm a : UniversalCover (1 : G)) = mk 1 a.toPath :=
+  (rfl)
+
+/-- A point of the universal cover over `1` corresponds to its homotopy class of loops. -/
+theorem kerProjHomEquivFundamentalGroup_apply
+    (z : (projHom (G := G) : UniversalCover (1 : G) →* G).ker) :
+    (kerProjHomEquivFundamentalGroup z).toPath = z.1.path.cast rfl (mem_ker_projHom.1 z.2).symm :=
+  (rfl)
+
 /-! ### The topological group structure -/
 
 variable [LocallyPathConnectedSpace G] [SemilocallySimplyConnectedSpace G]
@@ -240,7 +286,15 @@ theorem mem_center_of_proj_eq_one {z : UniversalCover (1 : G)} (hz : z.proj = 1)
 
 /-- The kernel of the covering homomorphism is central. -/
 theorem ker_projHom_le_center :
-    (projHom : UniversalCover (1 : G) →ₜ* G).ker ≤ Subgroup.center (UniversalCover (1 : G)) :=
-  fun _ hz ↦ mem_center_of_proj_eq_one hz
+    (projHom (G := G) : UniversalCover (1 : G) →* G).ker ≤
+      Subgroup.center (UniversalCover (1 : G)) :=
+  fun _ hz ↦ mem_center_of_proj_eq_one (mem_ker_projHom.1 hz)
+
+/-- The kernel of the covering homomorphism is discrete: it is the fibre of the covering map over
+the identity. -/
+instance discreteTopology_ker_projHom :
+    DiscreteTopology (projHom (G := G) : UniversalCover (1 : G) →* G).ker :=
+  (Homeomorph.setCongr (t := proj ⁻¹' {(1 : G)})
+    (Set.ext fun _ ↦ by simp)).symm.discreteTopology
 
 end TauCeti.UniversalCover

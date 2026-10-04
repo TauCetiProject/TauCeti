@@ -38,6 +38,8 @@ solution, by the Bézout identity for the gcd.
   nonzero.
 * `Polynomial.natDegree_gcd_eq_iff_psc`: the degree of the gcd is the least index with a nonzero
   principal subresultant coefficient.
+* `Polynomial.natDegree_gcd_eq_of_psc_eq_zero_iff`: two pairs of polynomials whose principal
+  subresultant coefficients vanish at the same indices have gcds of the same degree.
 
 ## References
 
@@ -210,6 +212,23 @@ theorem _root_.Polynomial.natDegree_gcd_eq_iff_psc (p q : K[X]) (j : ℕ) :
     rcases lt_or_gt_of_ne hne' with h | h
     · exact hne (hlt _ h)
     · exact hj (psc_eq_zero_of_lt_natDegree_gcd le_rfl le_rfl h)
+
+/-- The degree of the gcd is determined by which principal subresultant coefficients vanish, at
+the actual degrees and at indices up to the smaller degree. If the coefficients of a pair `p', q'`
+of nonzero polynomials vanish exactly where those of `p, q` do, the two gcds have the same degree;
+the two pairs may live over different fields. -/
+theorem _root_.Polynomial.natDegree_gcd_eq_of_psc_eq_zero_iff {L : Type*} [Field L]
+    [DecidableEq L] {p q : K[X]} {p' q' : L[X]} (hp' : p' ≠ 0) (hq' : q' ≠ 0)
+    (h : ∀ j ≤ min p'.natDegree q'.natDegree,
+      psc p q p.natDegree q.natDegree j = 0 ↔ psc p' q' p'.natDegree q'.natDegree j = 0) :
+    (EuclideanDomain.gcd p q).natDegree = (EuclideanDomain.gcd p' q').natDegree := by
+  set d := (EuclideanDomain.gcd p' q').natDegree
+  have hd : d ≤ min p'.natDegree q'.natDegree :=
+    le_min (natDegree_le_of_dvd (EuclideanDomain.gcd_dvd_left p' q') hp')
+      (natDegree_le_of_dvd (EuclideanDomain.gcd_dvd_right p' q') hq')
+  obtain ⟨hne, hlt⟩ := (natDegree_gcd_eq_iff_psc p' q' d).1 rfl
+  exact (natDegree_gcd_eq_iff_psc p q d).2
+    ⟨fun h0 => hne ((h d hd).1 h0), fun i hi => (h i (hi.le.trans hd)).2 (hlt i hi)⟩
 
 end Field
 

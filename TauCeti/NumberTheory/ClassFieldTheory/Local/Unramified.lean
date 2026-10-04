@@ -6,17 +6,26 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.Invariant
-public import TauCeti.NumberTheory.ClassFieldTheory.Local.Reciprocity
+public import TauCeti.NumberTheory.ClassFieldTheory.Local.ArtinMap
+public import TauCeti.NumberTheory.LocalField.Unramified.Coordinate
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Cup.Cyclic
 import TauCeti.NumberTheory.ClassFieldTheory.Brauer.UnitsLayer
+import TauCeti.NumberTheory.LocalField.UnitsDecomposition
 
 /-!
 # Finite unramified local reciprocity
 
 For a finite unramified Galois extension `L/K`, this file normalizes the finite local Artin map
-by arithmetic Frobenius.  The character which sends arithmetic Frobenius to `1 / [L : K]` detects
-the cyclic Galois group.  The character formula for the Artin map and the explicit cyclic cup
-product then identify the Artin symbol of a uniformizer.
+by arithmetic Frobenius. The character which sends arithmetic Frobenius to `1 / [L : K]` detects
+the cyclic Galois group. The character formula for the Artin map and the explicit cyclic cup
+product then identify the Artin symbol of a uniformizer. The norm criterion for unramified
+extensions extends this calculation to every element: its Artin symbol is the power of Frobenius
+given by its normalized valuation.
+
+Passing through all finite unramified extensions proves that the unramified coordinate of the
+absolute local Artin symbol is the image of the normalized valuation in `zHat`. Consequently,
+lifts of Artin symbols of units lie in inertia, while lifts of uniformizer symbols are arithmetic
+Frobenius lifts.
 
 ## Main definitions
 
@@ -27,11 +36,20 @@ product then identify the Artin symbol of a uniformizer.
 
 * `TauCeti.ClassFieldTheory.localArtinMap_uniformizer`: the finite local Artin map sends every
   uniformizer to arithmetic Frobenius.
+* `TauCeti.ClassFieldTheory.localArtinMap_eq_frobenius_pow_valuation`: the finite local Artin map
+  is the normalized-valuation power of arithmetic Frobenius.
+* `TauCeti.ClassFieldTheory.unramifiedCoordinate_artinMap`: the unramified coordinate of the
+  absolute local Artin map is normalized valuation.
+* `TauCeti.ClassFieldTheory.mem_inertiaSubgroup_of_mk_eq_artinMap`: a lift of the Artin symbol of
+  a unit lies in inertia.
+* `TauCeti.ClassFieldTheory.isArithFrobeniusLift_of_mk_eq_artinMap_uniformizer`: a lift of the
+  Artin symbol of a uniformizer is an arithmetic Frobenius lift.
 
 ## References
 
-* J.-P. Serre, *Local Fields*, Chapter XIII, §3.
+* J.-P. Serre, *Local Fields*, Chapter XIII, §§3–4.
 * E. Artin and J. Tate, *Class Field Theory*, Chapter XIV, §5.
+* J. Neukirch, *Algebraic Number Theory*, Chapter V, §1.
 -/
 
 public section
@@ -320,5 +338,111 @@ theorem localArtinMap_uniformizer (ι : L →ₐ[K] SeparableClosure K)
   rw [frobeniusCharacter_frobenius, localArtinMap_apply, localArtinEquiv_mk,
     ← layerFrobeniusCharacter_apply, ← (localClassFormation K).character_artinMap]
   exact localClassFormation_inv_artinCharacterCup_of_isUniformizer K L ι hπ
+
+/-- **Finite unramified reciprocity is normalized valuation.** For every `x : Kˣ`, its local
+Artin symbol in a finite unramified extension is arithmetic Frobenius raised to `v_K(x)`. -/
+@[simp]
+theorem localArtinMap_eq_frobenius_pow_valuation
+    (ι : L →ₐ[K] SeparableClosure K) (x : Kˣ) :
+    localArtinMap K L ι (Additive.ofMul x) =
+      Additive.ofMul (Abelianization.of
+        (frobeniusAlgEquiv (K := K) (L := L) ^ (normalizedValuation K x).toAdd)) := by
+  obtain ⟨π, hπ⟩ := exists_isUniformizer (K := K)
+  let n := (normalizedValuation K x).toAdd
+  let u := x * π ^ (-n)
+  have huValuation : normalizedValuation K u = 1 :=
+    (normalizedValuation_eq_one_iff u).2 <| (mem_unitFiltration_zero u).1 <|
+      mul_zpow_neg_mem_unitFiltration_zero ((isUniformizer_def π).1 hπ) x
+  let f : Kˣ →* Abelianization Gal(L/K) :=
+    { toFun := fun a ↦ (localArtinMap K L ι (Additive.ofMul a)).toMul
+      map_one' := by simp
+      map_mul' := by simp }
+  have hfπ : f π = Abelianization.of (frobeniusAlgEquiv (K := K) (L := L)) := by
+    simpa [f] using congrArg Additive.toMul (localArtinMap_uniformizer K L ι hπ)
+  have hfu : f u = 1 := by
+    have hu : localArtinMap K L ι (Additive.ofMul u) = 0 := by
+      rw [localArtinMap_eq_zero_iff, mem_normGroup_iff_dvd_normalizedValuation, huValuation,
+        toAdd_one]
+      exact dvd_zero _
+    simpa [f] using congrArg Additive.toMul hu
+  have hx : x = π ^ n * u := by
+    simp [u, n]
+  have hfx : f x = Abelianization.of (frobeniusAlgEquiv (K := K) (L := L) ^ n) := calc
+    f x = f (π ^ n * u) := congrArg f hx
+    _ = f π ^ n * f u := by rw [map_mul, map_zpow]
+    _ = Abelianization.of (frobeniusAlgEquiv (K := K) (L := L)) ^ n := by rw [hfπ, hfu, mul_one]
+    _ = Abelianization.of (frobeniusAlgEquiv (K := K) (L := L) ^ n) := by rw [map_zpow]
+  apply Additive.toMul.injective
+  simpa [f, n] using hfx
+
+/-! ### The absolute unramified coordinate -/
+
+/-- **The unramified coordinate of the absolute local Artin map is normalized valuation.** The
+coordinate of `Art_K(x)` is the image of `v_K(x) ∈ ℤ` in the profinite integers. -/
+@[simp]
+theorem unramifiedCoordinate_artinMap (x : Kˣ) :
+    unramifiedCoordinate K (artinMap K x) = zHat.ofInt (normalizedValuation K x) := by
+  obtain ⟨σ, hσ⟩ := QuotientGroup.mk'_surjective
+    (commutator (Field.absoluteGaloisGroup K)).topologicalClosure (artinMap K x)
+  rw [← hσ]
+  rw [← ofAdd_toAdd (normalizedValuation K x), zHat.ofInt_ofAdd]
+  apply (unramifiedCoordinate_mk_eq_gen_zpow_iff σ
+    (normalizedValuation K x).toAdd).2
+  apply AlgEquiv.ext
+  intro y
+  apply Subtype.ext
+  obtain ⟨f, hf, hy⟩ := mem_maximalUnramifiedExtension_iff.1 y.2
+  let L := unramifiedExtension K (AlgebraicClosure K) f
+  let _ := finiteIntermediateFieldValuativeRel K (AlgebraicClosure K) L
+  let _ := finiteIntermediateFieldTopology K (AlgebraicClosure K) L
+  have := finiteIntermediateField_isNonarchimedeanLocalField K (AlgebraicClosure K) L
+  have := finiteIntermediateField_valuativeExtension K (AlgebraicClosure K) L
+  have : IsUnramified K L := isUnramified_unramifiedExtension hf
+  let hLsep : L ≤ separableClosure K (AlgebraicClosure K) := le_separableClosure K _ L
+  let ι : L →ₐ[K] SeparableClosure K := IntermediateField.inclusion hLsep
+  let _ : CommGroup Gal(L/K) := IsCyclic.commGroup
+  have hfinite := artinMap_restrict K L ι x σ hσ
+  have hformula := localArtinMap_eq_frobenius_pow_valuation K L ι x
+  have hab : Abelianization.of
+      (ι.restrictNormalHom (absoluteGaloisGroupRestrictEquiv K σ)) =
+      Abelianization.of
+        (frobeniusAlgEquiv (K := K) (L := L) ^ (normalizedValuation K x).toAdd) := by
+    apply Additive.ofMul.injective
+    exact hfinite.symm.trans hformula
+  have hres : ι.restrictNormalHom (absoluteGaloisGroupRestrictEquiv K σ) =
+      frobeniusAlgEquiv (K := K) (L := L) ^ (normalizedValuation K x).toAdd :=
+    Abelianization.equivOfComm.injective hab
+  have heval := DFunLike.congr_fun hres (⟨y, hy⟩ : L)
+  have heval' := congrArg (fun z : L ↦ (z : AlgebraicClosure K)) heval
+  rw [restrictMaximalUnramifiedHom_coe_apply,
+    coe_maximalUnramifiedFrobenius_zpow_apply_of_mem _ hy]
+  calc
+    DFunLike.coe (F := Gal(AlgebraicClosure K/K)) σ (y : AlgebraicClosure K) =
+        ((absoluteGaloisGroupRestrictEquiv K σ) (ι ⟨y, hy⟩) : AlgebraicClosure K) := by
+      exact (coe_absoluteGaloisGroupRestrictEquiv_apply (K := K) σ (ι ⟨y, hy⟩)).symm
+    _ = ((ι.restrictNormalHom (absoluteGaloisGroupRestrictEquiv K σ))
+          ⟨y, hy⟩ : L) := by
+      exact congrArg (fun z : SeparableClosure K ↦ (z : AlgebraicClosure K))
+        (ι.restrictNormalHom_commutes (absoluteGaloisGroupRestrictEquiv K σ)
+          (⟨y, hy⟩ : L)).symm
+    _ = ((frobeniusAlgEquiv (K := K) (L := L) ^ (normalizedValuation K x).toAdd)
+          ⟨y, hy⟩ : L) := heval'
+
+/-- Every lift of the absolute Artin symbol of a valuation-zero unit lies in inertia. -/
+theorem mem_inertiaSubgroup_of_mk_eq_artinMap (u : Kˣ)
+    (hu : ValuativeRel.valuation K (u : K) = 1) (σ : Field.absoluteGaloisGroup K)
+    (hσ : (σ : Field.absoluteGaloisGroupAbelianization K) = artinMap K u) :
+    σ ∈ inertiaSubgroup K := by
+  rw [← unramifiedCoordinate_mk_eq_one_iff, hσ, unramifiedCoordinate_artinMap,
+    (normalizedValuation_eq_one_iff u).2 hu, map_one]
+
+/-- Every lift of the absolute Artin symbol of a uniformizer is an arithmetic Frobenius lift. -/
+theorem isArithFrobeniusLift_of_mk_eq_artinMap_uniformizer {π : Kˣ}
+    (hπ : IsUniformizer K π) (σ : Field.absoluteGaloisGroup K)
+    (hσ : (σ : Field.absoluteGaloisGroupAbelianization K) = artinMap K π) :
+    IsArithFrobeniusLift K σ := by
+  rw [← unramifiedCoordinate_mk_eq_gen_iff, hσ, unramifiedCoordinate_artinMap,
+    (isUniformizer_def π).1 hπ, zHat.ofInt_ofAdd]
+  simp
 
 end TauCeti.ClassFieldTheory

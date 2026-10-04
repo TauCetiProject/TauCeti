@@ -72,6 +72,11 @@ directions before taking products.
 * `TauCeti.Grid.Noninterleaving`: two endpoint pairs lie on the same cyclic side of each other.
 * `TauCeti.Grid.noninterleaving_rev`: non-interleaving is preserved by reversing every endpoint
   with `Fin.rev`, exchanging the two endpoints within each pair.
+* `TauCeti.Grid.noninterleaving_of_eq_finRotate`, `TauCeti.Grid.noninterleaving_of_finRotate_eq`:
+  an endpoint pair of two cyclically adjacent points is non-interleaving with every endpoint pair
+  that avoids its endpoints suitably, using `TauCeti.Grid.finRotate_mem_cIoo_iff` (stepping to the
+  cyclic successor stays on the same side of an arc) and `TauCeti.Grid.mem_cIoo_finRotate_left_iff`
+  (the arc from the successor of `a` back to `a` misses only these two points).
 * `TauCeti.Grid.mem_cIoo_succAbove_succAbove`,
   `TauCeti.Grid.mem_cIco_succAbove_succAbove`: inserting a point into the cycle with
   `Fin.succAbove` preserves the arcs between old points, and
@@ -762,6 +767,47 @@ theorem cIoo_finRotate_eq_empty (a : Fin n) : cIoo a (finRotate n a) = ∅ := by
     have := a.isLt; have := x.isLt
     rw [coe_finRotate]
     split_ifs with h₁ h₂ <;> simp only [Fin.ext_iff, Fin.val_last] at h₁ <;> omega
+
+/-- Moving from a point `x` to its cyclic successor does not cross the endpoints of an open
+cyclic interval that starts away from `x` and ends away from its successor. -/
+theorem finRotate_mem_cIoo_iff {a b x : Fin n} (ha : a ≠ x) (hb : b ≠ finRotate n x) :
+    finRotate n x ∈ cIoo a b ↔ x ∈ cIoo a b := by
+  cases n with
+  | zero => exact x.elim0
+  | succ m =>
+    have hx := val_finRotate_cases x
+    simp only [mem_cIoo, ne_eq, Fin.ext_iff] at ha hb ⊢
+    have := a.isLt; have := b.isLt
+    rcases hx with ⟨h1, h2⟩ | ⟨h1, h2⟩ <;> rw [h2] at hb ⊢ <;> split_ifs <;> omega
+
+/-- The open cyclic interval from the cyclic successor of `a` back to `a` contains every point
+except these two, provided they are distinct. -/
+theorem mem_cIoo_finRotate_left_iff {a x : Fin n} (ha : a ≠ finRotate n a) :
+    x ∈ cIoo (finRotate n a) a ↔ x ≠ a ∧ x ≠ finRotate n a := by
+  rw [← mem_cIoo_or_mem_cIoo_swap_iff ha, cIoo_finRotate_eq_empty]
+  simp
+
+/-- An endpoint pair whose second point is the cyclic successor of its first is non-interleaving
+with every endpoint pair whose first point avoids the first and whose second point avoids the
+second. -/
+theorem noninterleaving_of_eq_finRotate {a₀ a₁ b₀ b₁ : Fin n} (ha : a₁ = finRotate n a₀)
+    (hb₀ : b₀ ≠ a₀) (hb₁ : b₁ ≠ a₁) : Noninterleaving a₀ a₁ b₀ b₁ := by
+  subst ha
+  refine ⟨(finRotate_mem_cIoo_iff hb₀ hb₁).symm, ?_⟩
+  rw [cIoo_finRotate_eq_empty]
+  simp
+
+/-- An endpoint pair whose first point is the cyclic successor of its second is non-interleaving
+with every endpoint pair disjoint from it. -/
+theorem noninterleaving_of_finRotate_eq {a₀ a₁ b₀ b₁ : Fin n} (ha : a₀ = finRotate n a₁)
+    (hb₀ : b₀ ≠ a₀) (hb₀' : b₀ ≠ a₁) (hb₁ : b₁ ≠ a₀) (hb₁' : b₁ ≠ a₁) :
+    Noninterleaving a₀ a₁ b₀ b₁ := by
+  subst ha
+  refine ⟨finRotate_mem_cIoo_iff hb₀' hb₁, ?_⟩
+  by_cases h : a₁ = finRotate n a₁
+  · simp [← h]
+  · rw [mem_cIoo_finRotate_left_iff h, mem_cIoo_finRotate_left_iff h]
+    exact ⟨fun _ ↦ ⟨hb₁', hb₁⟩, fun _ ↦ ⟨hb₀', hb₀⟩⟩
 
 /-- A half-open cyclic interval is a single point exactly when that point is its initial endpoint
 and its terminal endpoint is the distinct cyclic successor of that point. -/

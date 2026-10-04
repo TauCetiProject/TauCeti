@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Convex.Contractible
 public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 public import TauCeti.Geometry.Manifold.Riemannian.Coercive
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Action
@@ -72,6 +73,9 @@ def toProd : Sol ≃ ℝ × ℝ × ℝ := Equiv.refl _
 instance : TopologicalSpace Sol := inferInstanceAs (TopologicalSpace (ℝ × ℝ × ℝ))
 
 instance : T2Space Sol := inferInstanceAs (T2Space (ℝ × ℝ × ℝ))
+
+/-- Sol is contractible: its underlying topology is that of real three-space. -/
+instance : ContractibleSpace Sol := inferInstanceAs (ContractibleSpace (ℝ × ℝ × ℝ))
 
 instance : ChartedSpace (ℝ × ℝ × ℝ) Sol := inferInstanceAs (ChartedSpace (ℝ × ℝ × ℝ) (ℝ × ℝ × ℝ))
 
