@@ -207,11 +207,11 @@ theorem wordProd_alternatingWord_eq_mul_pow (i i' : B) (m : ℕ) :
   induction m generalizing i i' with
   | zero => simp [alternatingWord]
   | succ m ih =>
-    have hsemi : SemiconjBy (s i') (s i * s i') (s i' * s i) := by
-      simp only [SemiconjBy, mul_assoc]
-    rw [alternatingWord_succ, alternatingWord_succ, wordProd_concat, wordProd_concat, ih i' i,
-      mul_assoc, mul_assoc, pow_succ', ← mul_assoc (s i), ← mul_assoc (s i),
-      cs.simple_mul_simple_self, one_mul, (hsemi.pow_right m).eq]
+    -- Conjugating by `s i'` carries the rotation `s i * s i'` to its inverse `s i' * s i`.
+    have hsemi : SemiconjBy (s i') ((s i * s i') ^ m) ((s i' * s i) ^ m) :=
+      SemiconjBy.pow_right (by simp only [SemiconjBy, mul_assoc]) m
+    simp only [alternatingWord_succ, wordProd_concat, ih i' i, pow_succ', mul_assoc,
+      simple_mul_simple_cancel_left, hsemi.eq]
 
 /-- **The products of the alternating words repeat with period twice the order of the rotation
 `s i * s i'`.** Only `(s i * s i') ^ n = 1` is used, so the period may be read off any exponent

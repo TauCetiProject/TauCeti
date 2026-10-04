@@ -86,12 +86,10 @@ section Exchange
 
 variable {cs} (φ : W →* G) (ℓ : G → ℕ)
 
-/-- A nonempty list is a list followed by one more letter. -/
-private theorem exists_eq_append_singleton {l : List B} {n : ℕ} (h : l.length = n + 1) :
-    ∃ x a, x.length = n ∧ l = x ++ [a] := by
-  rcases List.eq_nil_or_concat' l with rfl | ⟨x, a, rfl⟩
-  · simp at h
-  · exact ⟨x, a, by simpa using h, rfl⟩
+/-- If `φ` identifies `a` with `b * s i`, it identifies `a * s i` with `b`. -/
+private theorem map_mul_simple_eq {a b : W} {i : B} (h : φ a = φ (b * s i)) :
+    φ (a * s i) = φ b := by
+  rw [map_mul, h, ← map_mul, simple_mul_simple_cancel_right]
 
 /-- A word is at least as long as the length of its image. -/
 private theorem length_le
@@ -182,17 +180,16 @@ private theorem exchange_step
     (heq : φ (π x) = φ (π (y ++ [q]))) :
     π x = π (y ++ [q]) ∨
       φ (π (x.tail ++ [q])) = φ (π x) ∧ π (x.tail ++ [q]) = π (y ++ [q]) := by
-  have hdesc : φ (π x * s q) = φ (π y) := by
-    rw [map_mul, heq, cs.wordProd_append, cs.wordProd_singleton, map_mul, mul_assoc, ← map_mul,
-      cs.simple_mul_simple_self, map_one, mul_one]
+  have hdesc : φ (π x * s q) = φ (π y) :=
+    map_mul_simple_eq φ (by rwa [cs.wordProd_append, cs.wordProd_singleton] at heq)
   have hle : ℓ (φ (π x * s q)) ≤ x.length := by
     rw [hdesc, hx]
     exact (hy ▸ length_le φ ℓ hℓ y).trans (Nat.le_succ r)
   obtain ⟨j, hj, hjeq⟩ := hexch x q (hmin.trans hx.symm) hle
   -- The word `x` with its `j`-th letter deleted and `q` appended has the same image as `x`.
   have hc : φ (π (x.eraseIdx j ++ [q])) = φ (π x) := by
-    rw [cs.wordProd_append, cs.wordProd_singleton, map_mul, hjeq, ← map_mul, mul_assoc,
-      cs.simple_mul_simple_self, mul_one]
+    rw [cs.wordProd_append, cs.wordProd_singleton]
+    exact map_mul_simple_eq φ hjeq
   have hlen : (x.eraseIdx j).length = r := by
     rw [List.length_eraseIdx_of_lt hj, hx, Nat.add_sub_cancel]
   -- It ends with the same letter as `y ++ [q]`, so it has the same product.
@@ -309,8 +306,12 @@ private theorem wordsAgree
     rw [List.length_eq_zero_iff.mp hx, List.length_eq_zero_iff.mp hy]
   | succ r ih =>
     intro x y hx hy hmin heq
-    obtain ⟨x', p, hx', rfl⟩ := exists_eq_append_singleton hx
-    obtain ⟨y', q, hy', rfl⟩ := exists_eq_append_singleton hy
+    rcases List.eq_nil_or_concat' x with rfl | ⟨x', p, rfl⟩
+    · simp at hx
+    rcases List.eq_nil_or_concat' y with rfl | ⟨y', q, rfl⟩
+    · simp at hy
+    have hx' : x'.length = r := by simpa using hx
+    have hy' : y'.length = r := by simpa using hy
     by_cases hpq : p = q
     · subst hpq
       exact wordsAgree_append_singleton φ ℓ hℓ ih hx' hy' hmin heq
@@ -338,16 +339,15 @@ private theorem minimal_of_isReduced
     obtain ⟨j, hj, hjeq⟩ := hexch ω i hmin hlt
     -- The word `ω` with its `j`-th letter deleted and `i` appended has the same image as `ω`.
     have hc : φ (π (ω.eraseIdx j ++ [i])) = φ (π ω) := by
-      rw [cs.wordProd_append, cs.wordProd_singleton, map_mul, hjeq, ← map_mul, mul_assoc,
-        cs.simple_mul_simple_self, mul_one]
+      rw [cs.wordProd_append, cs.wordProd_singleton]
+      exact map_mul_simple_eq φ hjeq
     have hlen : (ω.eraseIdx j ++ [i]).length = ω.length := by
       rw [List.length_append, List.length_eraseIdx_of_lt hj, List.length_singleton]
       omega
     have hπ := wordsAgree φ ℓ horder hℓ hexch ω.length ω _ rfl hlen hmin hc.symm
     -- So `ω ++ [i]` has the same product as the shorter word `ω.eraseIdx j`.
     have hshort : π (ω ++ [i]) = π (ω.eraseIdx j) := by
-      rw [cs.wordProd_append, hπ, cs.wordProd_append, cs.wordProd_singleton, mul_assoc,
-        cs.simple_mul_simple_self, mul_one]
+      simp [cs.wordProd_append, hπ]
     have hred := hω.eq
     have hle := cs.length_wordProd_le (ω.eraseIdx j)
     rw [← hshort, hred, List.length_eraseIdx_of_lt hj, List.length_append,
