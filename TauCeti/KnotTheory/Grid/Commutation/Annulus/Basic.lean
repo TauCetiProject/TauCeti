@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.KnotTheory.Grid.Rectangle.Annulus
+public import TauCeti.KnotTheory.Grid.Rectangle.Annulus.Basic
 public import TauCeti.KnotTheory.Grid.Commutation.Decomposition
 
 /-!
