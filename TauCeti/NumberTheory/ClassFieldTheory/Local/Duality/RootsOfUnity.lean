@@ -69,27 +69,38 @@ theorem tateDualEquiv_muNRepToTateDual_apply (x y : (muNRep n F).V) :
     (rfl)
   rw [hmap, AddEquiv.apply_symm_apply, LinearMap.toAddMonoidHom_coe]
 
+/-- Transport evaluation at `1` along the chosen-root coordinate equivalence. -/
+private def muNRepTateDualEquiv : (tateDual (muNRep n F)).V ≃+ (muNRep n F).V :=
+  let e := (muNRepEquivTrivialFp n F hζ).trans (trivialFpEquiv n _).toAddEquiv
+  let i : (ZMod n →+ (muNRep n F).V) ≃+
+      InternalHom (Field.absoluteGaloisGroup F) (ZMod n) (muNRep n F).V :=
+    { toFun := InternalHom.of _
+      invFun := InternalHom.toAddMonoidHom
+      left_inv _ := rfl
+      right_inv _ := rfl
+      map_add' _ _ := rfl }
+  ((tateDualEquiv (muNRep n F)).trans e.addMonoidHomCongrLeft).trans
+    (i.trans (InternalHom.zmodEquiv (Field.absoluteGaloisGroup F)))
+
+private theorem muNRepTateDualEquiv_symm_apply (x : (muNRep n F).V) :
+    (muNRepTateDualEquiv ζ hζ).symm x = (muNRepToTateDual ζ hζ).hom x := by
+  let e := (muNRepEquivTrivialFp n F hζ).trans (trivialFpEquiv n _).toAddEquiv
+  apply (tateDualEquiv (muNRep n F)).injective
+  ext y
+  have h : tateDualEquiv (muNRep n F) ((muNRepTateDualEquiv ζ hζ).symm x) y =
+      e y • x := by
+    simp [muNRepTateDualEquiv, e]
+  rw [h, tateDualEquiv_muNRepToTateDual_apply, kummerCupPairing_bil_comm]
+  have hpair : (kummerCupPairing ζ hζ).bil (e.symm (e y)) x = e y • x :=
+    kummerCupPairing_bil_apply_zmod ζ hζ (e y) x
+  simpa only [e.symm_apply_apply] using hpair.symm
+
 /-- The chosen-root map identifies `μₙ` with its Tate dual. -/
 theorem muNRepToTateDual_bijective : Function.Bijective (muNRepToTateDual ζ hζ).hom := by
-  let e := (muNRepEquivTrivialFp n F hζ).trans (trivialFpEquiv n _).toAddEquiv
-  have hpair (c : ZMod n) (y : (muNRep n F).V) :
-      (kummerCupPairing ζ hζ).bil (e.symm c) y = c • y :=
-    kummerCupPairing_bil_apply_zmod ζ hζ c y
-  have hright (x : (muNRep n F).V) :
-      (kummerCupPairing ζ hζ).bil x (e.symm 1) = x := by
-    rw [kummerCupPairing_bil_comm, hpair, one_smul]
-  constructor
-  · intro x y h
-    have := congrArg (fun φ => tateDualEquiv (muNRep n F) φ (e.symm 1)) h
-    simpa only [tateDualEquiv_muNRepToTateDual_apply, hright] using this
-  · intro φ
-    refine ⟨tateDualEquiv (muNRep n F) φ (e.symm 1), ?_⟩
-    apply (tateDualEquiv (muNRep n F)).injective
-    ext y
-    obtain ⟨c, rfl⟩ := e.symm.surjective y
-    rw [tateDualEquiv_muNRepToTateDual_apply, kummerCupPairing_bil_comm, hpair,
-      ← ZMod.map_smul (tateDualEquiv (muNRep n F) φ) c (e.symm 1),
-      ← ZMod.map_smul e.symm c 1, smul_eq_mul, mul_one]
+  have h : ⇑(muNRepTateDualEquiv ζ hζ).symm = ⇑(muNRepToTateDual ζ hζ).hom :=
+    funext (muNRepTateDualEquiv_symm_apply ζ hζ)
+  rw [← h]
+  exact (muNRepTateDualEquiv ζ hζ).symm.bijective
 
 /-- The chosen-root identification with the Tate dual, as an isomorphism of coefficient objects. -/
 def muNRepIsoTateDual : muNRep n F ≅ tateDual (muNRep n F) :=
@@ -121,14 +132,10 @@ theorem muNRepIsoTateDual_hom : (muNRepIsoTateDual ζ hζ).hom = muNRepToTateDua
 theorem muNRepIsoTateDual_inv_apply (φ : (tateDual (muNRep n F)).V) :
     (muNRepIsoTateDual ζ hζ).inv φ = tateDualEquiv (muNRep n F) φ
       ((muNRepEquivTrivialFp n F hζ).symm ((trivialFpEquiv n _).symm 1)) := by
-  let E := muNRepIsoTateDual ζ hζ
-  let a := (muNRepEquivTrivialFp n F hζ).symm ((trivialFpEquiv n _).symm 1)
-  have hforward : (muNRepToTateDual ζ hζ).hom (E.inv φ) = φ := by
-    simpa only [E, muNRepIsoTateDual_hom] using Iso.inv_hom_id_apply E φ
-  have ha (x : (muNRep n F).V) : (kummerCupPairing ζ hζ).bil x a = x := by
-    rw [kummerCupPairing_bil_comm, kummerCupPairing_bil_apply_zmod, one_smul]
-  have h := congrArg (fun ψ => tateDualEquiv (muNRep n F) ψ a) hforward
-  simpa only [tateDualEquiv_muNRepToTateDual_apply, ha] using h
+  have h : (muNRepTateDualEquiv ζ hζ).symm ((muNRepIsoTateDual ζ hζ).inv φ) = φ := by
+    rw [muNRepTateDualEquiv_symm_apply, ← muNRepIsoTateDual_hom]
+    exact Iso.inv_hom_id_apply (muNRepIsoTateDual ζ hζ) φ
+  simpa [muNRepTateDualEquiv] using congrArg (muNRepTateDualEquiv ζ hζ) h
 
 /-- The degree `(1, 1)` Tate-duality pairing, read through the chosen-root coefficient
 isomorphism, is the chosen-root local-symbol pairing for the identification `tr`.
