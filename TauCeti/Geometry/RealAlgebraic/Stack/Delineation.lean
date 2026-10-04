@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.MvPolynomial.Equiv
 public import TauCeti.Analysis.Polynomial.RealRoots.Common
 public import TauCeti.Geometry.RealAlgebraic.Stack.Sign
+import TauCeti.Algebra.MvPolynomial.Equiv
 import TauCeti.RingTheory.Polynomial.Roots
 import TauCeti.Topology.Algebra.Polynomial
 
@@ -38,6 +40,10 @@ roots and the degree of the gcd of every pair of distinct members are constant o
 the family has a delineation. Its root functions are the common ordered real roots given by the
 family matching lemma `Polynomial.exists_continuous_ordered_common_roots_of_preconnectedSpace`.
 
+For a family obtained from polynomials `f` in `n + 1` variables by singling out the first one with
+`MvPolynomial.finSuccEquiv`, every `f` is sign-invariant on each cell of the stack in
+`ℝ^(n + 1)`, the cells being the images of the sections and sectors under `TauCeti.cylinder`.
+
 ## Main declarations
 
 * `TauCeti.Delineation`: a common stack of the roots of a family of real polynomials.
@@ -50,6 +56,8 @@ family matching lemma `Polynomial.exists_continuous_ordered_common_roots_of_prec
 * `TauCeti.Delineation.comp`: restriction of a delineation along a continuous map of bases.
 * `TauCeti.nonempty_delineation`: existence of a delineation over a preconnected base from
   constant degrees, numbers of distinct complex roots and pairwise gcd degrees.
+* `TauCeti.Delineation.signInvariant_eval₂_of_mem_stackCells`: the polynomials in `n + 1`
+  variables behind a family are sign-invariant on every ambient cell of a delineation.
 
 ## References
 
@@ -265,5 +273,27 @@ theorem nonempty_delineation [Finite ι] [PreconnectedSpace X]
         (isRoot_iff_of_rootMultiplicity (fun i ↦ hm k i x) (hsub k x hk) hk t).trans <| by
           simp only [mem_ofPred_eq, and_comm]
   · exact signInvariant_eval_sectorSet (hP k) hrc hrm (hnull k) fun x hk ↦ hsub k x hk
+
+section MvPolynomial
+
+variable {A : Type*} [CommRing A] {n : ℕ} {φ : A →+* ℝ}
+  {F : Finset (MvPolynomial (Fin n) A)[X]} {S : Set (Fin n → ℝ)}
+
+/-- For a delineation of the fibers of `MvPolynomial.finSuccEquiv A n f` over `S`, the polynomial
+`f` in `n + 1` variables, evaluated along `φ`, is sign-invariant on every cell of the stack in
+`ℝ^(n + 1)`. -/
+theorem Delineation.signInvariant_eval₂_of_mem_stackCells
+    (D : Delineation fun (p : F) (x : S) ↦ p.1.map (MvPolynomial.eval₂Hom φ x.1))
+    {f : MvPolynomial (Fin (n + 1)) A} (hf : MvPolynomial.finSuccEquiv A n f ∈ F)
+    {E : Set (Fin (n + 1) → ℝ)} (hE : E ∈ stackCells S D.root) :
+    SignInvariant (fun y ↦ MvPolynomial.eval₂ φ y f) E := by
+  have key : (fun y ↦ MvPolynomial.eval₂ φ y f) ∘ cylinder S =
+      fun z ↦ ((MvPolynomial.finSuccEquiv A n f).map (MvPolynomial.eval₂Hom φ z.1.1)).eval z.2 :=
+    funext fun z ↦ by
+      rw [Function.comp_apply, cylinder_def, MvPolynomial.polynomial_eval_map_finSuccEquiv]
+  rcases mem_stackCells.1 hE with ⟨i, rfl⟩ | ⟨j, rfl⟩ <;> rw [signInvariant_image, key]
+  exacts [D.signInvariant_sectionSet ⟨_, hf⟩ i, D.signInvariant_sectorSet ⟨_, hf⟩ j]
+
+end MvPolynomial
 
 end TauCeti

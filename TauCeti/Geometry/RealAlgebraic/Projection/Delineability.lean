@@ -31,18 +31,12 @@ nullified members excluded: the reducta in the projection account for both. No s
 `S` is needed.
 Only the zero pattern of the projection is used, not its signs.
 
-For a family obtained from polynomials `f` in `n + 1` variables by singling out the first one with
-`MvPolynomial.finSuccEquiv`, every `f` is then sign-invariant on each cell of the stack in
-`ℝ^(n + 1)`, the cells being the images of the sections and sectors under `TauCeti.cylinder`.
-
 ## Main results
 
 * `TauCeti.nonempty_delineation_of_collinsProjection`: a family of specializations along which the
   Collins projection is continuous and has a constant zero pattern delineates the family.
 * `TauCeti.nonempty_delineation_of_signInvariant_collinsProjection`: **Collins delineability**
   over a preconnected subset of `ℝⁿ` on which the projection is sign-invariant.
-* `TauCeti.Delineation.signInvariant_eval₂_of_mem_stackCells`: the polynomials in `n + 1`
-  variables behind the family are sign-invariant on every ambient cell of a delineation.
 
 ## References
 
@@ -119,21 +113,6 @@ theorem nonempty_delineation_of_signInvariant_collinsProjection (hS : IsPreconne
     exact (MvPolynomial.continuous_eval _).comp continuous_subtype_val
   · simpa only [MvPolynomial.coe_eval₂Hom, sign_eq_zero_iff] using
       (congrArg (· = 0) (signInvariant_def.1 (h q hq) x x.2 y y.2)).to_iff
-
-/-- For a delineation of the fibers of `MvPolynomial.finSuccEquiv A n f` over `S`, the polynomial
-`f` in `n + 1` variables, evaluated along `φ`, is sign-invariant on every cell of the stack in
-`ℝ^(n + 1)`. -/
-theorem Delineation.signInvariant_eval₂_of_mem_stackCells
-    (D : Delineation fun (p : F) (x : S) ↦ p.1.map (MvPolynomial.eval₂Hom φ x.1))
-    {f : MvPolynomial (Fin (n + 1)) A} (hf : MvPolynomial.finSuccEquiv A n f ∈ F)
-    {E : Set (Fin (n + 1) → ℝ)} (hE : E ∈ stackCells S D.root) :
-    SignInvariant (fun y ↦ MvPolynomial.eval₂ φ y f) E := by
-  have key : (fun y ↦ MvPolynomial.eval₂ φ y f) ∘ cylinder S =
-      fun z ↦ ((MvPolynomial.finSuccEquiv A n f).map (MvPolynomial.eval₂Hom φ z.1.1)).eval z.2 :=
-    funext fun z ↦ by
-      rw [Function.comp_apply, cylinder_def, MvPolynomial.polynomial_eval_map_finSuccEquiv]
-  rcases mem_stackCells.1 hE with ⟨i, rfl⟩ | ⟨j, rfl⟩ <;> rw [signInvariant_image, key]
-  exacts [D.signInvariant_sectionSet ⟨_, hf⟩ i, D.signInvariant_sectorSet ⟨_, hf⟩ j]
 
 end MvPolynomial
 
