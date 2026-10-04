@@ -42,9 +42,9 @@ action drop (`TauCeti.stdComplexLineEnergy_eq_cotangentAction_sub`), the action 
 the strip (`TauCeti.cotangentAction_le_cotangentAction`), and a strip whose actions converge at
 both ends has energy equal to the difference of the limits
 (`TauCeti.stdComplexLineEnergy_eq_of_tendsto_cotangentAction`). The theorem is stated for the
-limits of the actions. When the paths `t ↦ u(s, t)` converge to constant paths at
-intersection points `x₋` and `x₊` uniformly together with their `t`-derivatives, and `h₀`, `h₁`
-are continuous at `π x₋` and `π x₊`,
+limits of the actions. When the paths `t ↦ u(s, t)` converge uniformly to constant paths at
+intersection points `x₋` and `x₊`, the base components of their `t`-derivatives converge
+uniformly to zero, and `h₀`, `h₁` are continuous at `π x₋` and `π x₊`,
 `TauCeti.tendsto_cotangentAction_of_tendstoUniformlyOn` computes those limits as the critical
 values `A(x₋)` and `A(x₊)`. Thus `TauCeti.stdComplexLineEnergy_eq_of_tendstoUniformlyOn` gives the
 energy identity of Lagrangian Floer theory for exact Lagrangians,
@@ -62,8 +62,9 @@ intersection points.
   strips over a rectangle.
 * `TauCeti.stdComplexLineEnergy_eq_of_tendsto_cotangentAction`: the energy identity for a whole
   holomorphic strip.
-* `TauCeti.tendsto_cotangentAction_of_tendstoUniformlyOn`: uniform `C¹` convergence to a constant
-  path gives convergence of the action to the value at that point.
+* `TauCeti.tendsto_cotangentAction_of_tendstoUniformlyOn`: uniform convergence to a constant
+  path, with the base components of the derivatives tending uniformly to zero, gives convergence
+  of the action to the value at that point.
 * `TauCeti.stdComplexLineEnergy_eq_of_tendstoUniformlyOn`: the whole-strip energy identity with
   the asymptotic action values computed from the limiting points.
 
@@ -108,16 +109,13 @@ lemma cotangentAction_const (h₀ h₁ : V → ℝ) (x : V × StrongDual ℝ V) 
   simp [cotangentAction_def]
 
 /-- **The action converges to its value on a limiting constant path.** Suppose paths in the
-linear cotangent space converge uniformly on `[0, 1]` to the constant path at `x`, and their
-derivatives converge uniformly to zero. If the endpoint potentials are continuous at the base
-point of `x`, then their actions converge to `h₀ x.1 - h₁ x.1`.
-
-The uniform convergence of the paths bounds their cotangent components, while the uniform
-convergence of their derivatives makes the Liouville integrals tend to zero. -/
+linear cotangent space converge uniformly on `[0, 1]` to the constant path at `x`, and the base
+components of their derivatives converge uniformly to zero. If the endpoint potentials are
+continuous at the base point of `x`, then their actions converge to `h₀ x.1 - h₁ x.1`. -/
 theorem tendsto_cotangentAction_of_tendstoUniformlyOn {ι : Type*} {l : Filter ι}
     {γ : ι → ℝ → V × StrongDual ℝ V} {x : V × StrongDual ℝ V} {h₀ h₁ : V → ℝ}
     (hγ : TendstoUniformlyOn γ (fun _ ↦ x) l (uIcc 0 1))
-    (hγ' : TendstoUniformlyOn (fun i t ↦ deriv (γ i) t) 0 l (uIcc 0 1))
+    (hγ' : TendstoUniformlyOn (fun i t ↦ (deriv (γ i) t).1) 0 l (uIcc 0 1))
     (hh₀ : ContinuousAt h₀ x.1) (hh₁ : ContinuousAt h₁ x.1) :
     Tendsto (fun i ↦ cotangentAction h₀ h₁ (γ i)) l (𝓝 (h₀ x.1 - h₁ x.1)) := by
   have hbound : ∀ᶠ i in l, ∀ t ∈ uIcc (0 : ℝ) 1, ‖(γ i t).2‖ < ‖x.2‖ + 1 := by
@@ -145,9 +143,6 @@ theorem tendsto_cotangentAction_of_tendstoUniformlyOn {ι : Type*} {l : Filter �
       calc
         ‖(γ i t).2 (deriv (γ i) t).1‖ ≤ ‖(γ i t).2‖ * ‖(deriv (γ i) t).1‖ :=
           ContinuousLinearMap.le_opNorm _ _
-        _ ≤ ‖(γ i t).2‖ * ‖deriv (γ i) t‖ := by
-          gcongr
-          exact norm_fst_le _
         _ ≤ (‖x.2‖ + 1) * (ε / (2 * (‖x.2‖ + 1))) := by
           gcongr
           · exact (hi t ht').le
@@ -368,9 +363,9 @@ theorem stdComplexLineEnergy_eq_of_tendsto_cotangentAction
 
 /-- **The energy of a holomorphic strip is the difference of its endpoint action values.**
 Suppose a holomorphic strip with boundary on the exact graphs of `dh₀` and `dh₁` converges in the
-path direction, uniformly together with its path derivative, to constant paths at `x₀` and `x₁`
-as the strip coordinate tends to `-∞` and `+∞`. Then its energy is the difference between
-`h₀ - h₁` at the base points of `x₀` and `x₁`.
+path direction, uniformly to constant paths at `x₀` and `x₁` as the strip coordinate tends to
+`-∞` and `+∞`, with the base components of its path derivatives tending uniformly to zero. Then
+its energy is the difference between `h₀ - h₁` at the base points of `x₀` and `x₁`.
 
 In Floer applications the boundary conditions and asymptotic convergence make `x₀` and `x₁`
 intersection points of the two exact graphs. The statement needs only continuity of the two
@@ -387,10 +382,10 @@ theorem stdComplexLineEnergy_eq_of_tendstoUniformlyOn
     {x₀ x₁ : V × StrongDual ℝ V}
     (hbot : TendstoUniformlyOn (fun s t ↦ u (s, t)) (fun _ ↦ x₀) atBot (uIcc 0 1))
     (hbot' : TendstoUniformlyOn
-      (fun s t ↦ deriv (fun t ↦ u (s, t)) t) 0 atBot (uIcc 0 1))
+      (fun s t ↦ (deriv (fun t ↦ u (s, t)) t).1) 0 atBot (uIcc 0 1))
     (htop : TendstoUniformlyOn (fun s t ↦ u (s, t)) (fun _ ↦ x₁) atTop (uIcc 0 1))
     (htop' : TendstoUniformlyOn
-      (fun s t ↦ deriv (fun t ↦ u (s, t)) t) 0 atTop (uIcc 0 1))
+      (fun s t ↦ (deriv (fun t ↦ u (s, t)) t).1) 0 atTop (uIcc 0 1))
     (hh₀neg : ContinuousAt h₀ x₀.1) (hh₁neg : ContinuousAt h₁ x₀.1)
     (hh₀pos : ContinuousAt h₀ x₁.1) (hh₁pos : ContinuousAt h₁ x₁.1) :
     strongDualCotangentSymplecticForm.stdComplexLineEnergy J
