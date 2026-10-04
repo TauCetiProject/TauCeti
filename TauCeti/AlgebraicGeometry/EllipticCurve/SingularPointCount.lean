@@ -247,18 +247,19 @@ theorem _root_.WeierstrassCurve.frobeniusTrace_eq_one_of_splits [Finite F] (hΔ 
     natDegree_quadratic one_ne_zero]
   norm_num
 
-/-- **The Frobenius trace at a nonsplit node is `-1`.** A singular model over a finite field with
-`c₄ ≠ 0` whose node polynomial does not split has no rational tangent slope at its node, and `q + 1`
+/-- **The Frobenius trace at a nonsplit node is `-1`.** A singular model over a finite field whose
+node polynomial does not split has no rational tangent slope at its node, and `q + 1`
 nonsingular points, the point at infinity included. -/
 theorem _root_.WeierstrassCurve.frobeniusTrace_eq_neg_one_of_not_splits [Finite F]
-    (hΔ : W.Δ = 0) (hc₄ : W.c₄ ≠ 0) (hs : ¬ W.nodePolynomial.Splits) :
+    (hΔ : W.Δ = 0) (hs : ¬ W.nodePolynomial.Splits) :
     W.frobeniusTrace = -1 := by
-  obtain ⟨V, h, htr, hc, hsV⟩ := exists_isSingular_zero_frobeniusTrace_eq W hΔ
+  obtain ⟨V, h, htr, -, hsV⟩ := exists_isSingular_zero_frobeniusTrace_eq W hΔ
   obtain ⟨-, -, hn⟩ := invariants_of_isSingular_zero V h
-  rw [← hsV, hn, splits_mul_iff_right (C_ne_zero.2 (hc ▸ hc₄)) (Splits.C _),
-    splits_quadratic_iff_exists_root one_ne_zero] at hs
+  rw [← hsV, hn] at hs
+  have ht : ¬ (tangentQuadratic V).Splits := fun ht ↦ hs ((Splits.C _).mul ht)
+  rw [splits_quadratic_iff_exists_root one_ne_zero] at ht
   have : IsEmpty ((tangentQuadratic V).rootSet F) :=
-    ⟨fun t ↦ hs ⟨t.1, by simpa [aeval_def] using (mem_rootSet.1 t.2).2⟩⟩
+    ⟨fun t ↦ ht ⟨t.1, by simpa [aeval_def] using (mem_rootSet.1 t.2).2⟩⟩
   rw [htr, Nat.card_of_isEmpty]
   norm_num
 
