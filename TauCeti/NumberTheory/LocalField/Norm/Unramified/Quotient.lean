@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.LocalField.Norm.Unramified
+public import TauCeti.NumberTheory.LocalField.Norm.Unramified.Basic
 import TauCeti.GroupTheory.QuotientGroup.KerEquiv
 
 /-!
