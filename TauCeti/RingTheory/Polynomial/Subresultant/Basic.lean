@@ -8,7 +8,7 @@ module
 import Mathlib.LinearAlgebra.Matrix.Block
 public import Mathlib.Algebra.Polynomial.OfFn
 public import Mathlib.RingTheory.Polynomial.Resultant.Basic
-public import TauCeti.Algebra.Polynomial.Coeff
+public import TauCeti.Algebra.Polynomial.Coeff.Basic
 
 /-!
 # Principal subresultant coefficients
