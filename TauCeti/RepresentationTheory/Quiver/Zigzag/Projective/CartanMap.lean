@@ -116,15 +116,22 @@ theorem map_subtype_smul_zigzagProjectiveGrade (i j : V) (p : ℤ) :
       zigzagIntegerGradedCorner k G i j p := by
   let _ := zigzagIntegerGradedAlgebra k G
   rw [← zigzagGradedProjective_piece]
-  have hI := isHomogeneous_zigzagProjective k G j
-  rw [zigzagProjective_def] at hI
+  have key : ∀ (I : Ideal (nonisolatedZigzagQuotient k G))
+      (hI : I.IsHomogeneous (zigzagIntegerGrade k G)),
+      I = Ideal.span {zigzagVertexIdempotent k G j} →
+      (zigzagVertexIdempotent k G i • (GradedModuleCat.ofIdeal _ I hI).grading.piece p).map
+          (I.subtype.restrictScalars k) =
+        cornerSubmodule k (zigzagVertexIdempotent k G i)
+          (zigzagVertexIdempotent k G j) ⊓ zigzagIntegerGrade k G p := by
+    rintro _ hI rfl
+    exact GradedModuleCat.map_subtype_smul_ofIdeal_span_singleton_piece
+      (isIdempotentElem_zigzagVertexIdempotent k G i)
+      (zigzagVertexIdempotent_mem_zigzagIntegerGrade_zero k G i)
+      (isIdempotentElem_zigzagVertexIdempotent k G j) hI p
   calc
     _ = cornerSubmodule k (zigzagVertexIdempotent k G i)
         (zigzagVertexIdempotent k G j) ⊓ zigzagIntegerGrade k G p :=
-      GradedModuleCat.map_subtype_smul_ofIdeal_span_singleton_piece
-        (isIdempotentElem_zigzagVertexIdempotent k G i)
-        (zigzagVertexIdempotent_mem_zigzagIntegerGrade_zero k G i)
-        (isIdempotentElem_zigzagVertexIdempotent k G j) hI p
+      key _ (isHomogeneous_zigzagProjective k G j) (zigzagProjective_def k G j)
     _ = zigzagIntegerGradedCorner k G i j p := by
       ext x
       rw [Submodule.mem_inf, mem_cornerSubmodule_iff k

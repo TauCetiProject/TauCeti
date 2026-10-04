@@ -75,7 +75,6 @@ theorem isIdempotentElem_zigzagVertexIdempotent (i : V) :
 
 /-- The left projective of the zigzag relation quotient at `i`, namely the principal left ideal
 `Z e_i`. -/
-@[expose]
 noncomputable def zigzagProjective (i : V) : Ideal (nonisolatedZigzagQuotient k G) :=
   Ideal.span {zigzagVertexIdempotent k G i}
 
@@ -128,8 +127,9 @@ theorem zigzagProjectiveShiftGrade_apply (i : V) (d p : ℤ) :
 
 /-- The vertex ideal `Z e_i` is a projective left module over the zigzag relation quotient. -/
 theorem zigzagProjective_projective (i : V) :
-    Module.Projective (nonisolatedZigzagQuotient k G) (zigzagProjective k G i) :=
-  (isIdempotentElem_zigzagVertexIdempotent k G i).projective_span_singleton
+    Module.Projective (nonisolatedZigzagQuotient k G) (zigzagProjective k G i) := by
+  rw [zigzagProjective_def]
+  exact (isIdempotentElem_zigzagVertexIdempotent k G i).projective_span_singleton
 
 end CommRing
 
