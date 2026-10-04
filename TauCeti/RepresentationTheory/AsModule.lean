@@ -39,7 +39,7 @@ theory counts, while the objects being classified are representations.
 * `TauCeti.Representation.nonempty_equiv_iff`: the two notions of isomorphism agree.
 * `Representation.prodAsModuleEquiv`: the module of a product of representations is the
   product of their modules.
-* `TauCeti.Representation.linearEquivAsModuleComp`: an isomorphism onto `ρ.asModule` restricts
+* `Representation.linearEquivAsModuleComp`: an isomorphism onto `ρ.asModule` restricts
   along `f : H →* G` to an isomorphism onto `(ρ.comp f).asModule`.
 * `TauCeti.fdRepIsoOfAsModuleLinearEquiv`: over a commutative ring, and for module-finite carriers,
   such an isomorphism of modules is an isomorphism of the objects of `FDRep k G` that the
@@ -214,7 +214,7 @@ variable (ρ) in
 /-- **Restricting an isomorphism onto `ρ.asModule` along a monoid homomorphism.** If
 `f : H →* G` and `k[H]` acts on `Q` through `f`, then a `k[G]`-linear isomorphism
 `Q ≃ ρ.asModule` is also a `k[H]`-linear isomorphism `Q ≃ (ρ.comp f).asModule`. -/
-noncomputable def linearEquivAsModuleComp (f : H →* G)
+noncomputable def _root_.Representation.linearEquivAsModuleComp (f : H →* G)
     (hQ : ∀ (a : k[H]) (q : Q), a • q = MonoidAlgebra.mapDomainRingHom k f a • q)
     (e : Q ≃ₗ[k[G]] ρ.asModule) :
     Q ≃ₗ[k[H]] _root_.Representation.asModule (ρ.comp f) where
@@ -233,17 +233,17 @@ noncomputable def linearEquivAsModuleComp (f : H →* G)
   right_inv := e.right_inv
 
 @[simp]
-theorem linearEquivAsModuleComp_apply (f : H →* G)
+theorem _root_.Representation.linearEquivAsModuleComp_apply (f : H →* G)
     (hQ : ∀ (a : k[H]) (q : Q), a • q = MonoidAlgebra.mapDomainRingHom k f a • q)
     (e : Q ≃ₗ[k[G]] ρ.asModule) (q : Q) :
-    (linearEquivAsModuleComp ρ f hQ e q : V) = (e q : V) :=
+    (_root_.Representation.linearEquivAsModuleComp ρ f hQ e q : V) = (e q : V) :=
   (rfl)
 
 @[simp]
-theorem linearEquivAsModuleComp_symm_apply (f : H →* G)
+theorem _root_.Representation.linearEquivAsModuleComp_symm_apply (f : H →* G)
     (hQ : ∀ (a : k[H]) (q : Q), a • q = MonoidAlgebra.mapDomainRingHom k f a • q)
     (e : Q ≃ₗ[k[G]] ρ.asModule) (v : V) :
-    (linearEquivAsModuleComp ρ f hQ e).symm v = e.symm v :=
+    (_root_.Representation.linearEquivAsModuleComp ρ f hQ e).symm v = e.symm v :=
   (rfl)
 
 end Representation

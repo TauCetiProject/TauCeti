@@ -256,9 +256,9 @@ theorem nonempty_linearEquiv_of_projective_of_tensorRat
       padicReductionModule p C XM
     let _ : Module kC (XN ⧸ Ideal.span {(p : AC)} • (⊤ : Submodule AC XN)) :=
       padicReductionModule p C XN
-    let eLiftM : QXM ≃ₗ[kC] YMC.asModule := Representation.linearEquivAsModuleComp YM C.subtype
+    let eLiftM : QXM ≃ₗ[kC] YMC.asModule := YM.linearEquivAsModuleComp C.subtype
       (fun _ _ ↦ rfl) (padicReductionLinearEquivOfBijective p G fM hfM)
-    let eLiftN : QXN ≃ₗ[kC] YNC.asModule := Representation.linearEquivAsModuleComp YN C.subtype
+    let eLiftN : QXN ≃ₗ[kC] YNC.asModule := YN.linearEquivAsModuleComp C.subtype
       (fun _ _ ↦ rfl) (padicReductionLinearEquivOfBijective p G fN hfN)
     let eRedC := (padicReductionRestrictLinearEquiv p C C.subtype XM (fun _ _ ↦ rfl)
       (fun _ _ ↦ rfl)).trans (eLiftM.trans
