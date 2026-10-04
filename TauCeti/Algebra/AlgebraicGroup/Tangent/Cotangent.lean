@@ -376,7 +376,7 @@ private lemma tangentScalarExtensionEquiv_apply
 
 /-- On pure tensors, scalar extension evaluates the cotangent functional and
 multiplies it by the coefficient. The bundled pure-tensor simp rule is
-`tangentScalarExtensionEquiv_tmul`; this pointwise formula is also used to establish it. -/
+`tangentScalarExtensionEquiv_tmul`. -/
 lemma tangentScalarExtensionEquiv_tmul_apply
     [Module.Finite R (Bialgebra.CotangentSpace R A)]
     [Module.Projective R (Bialgebra.CotangentSpace R A)]
