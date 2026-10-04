@@ -252,9 +252,8 @@ theorem localSymbol_apply (x y : continuousCohomology 1 (muNRep n F)) :
 theorem localSymbol_antisymm_of_flip_eq (hP : P.flip = P)
     (x y : continuousCohomology 1 (muNRep n F)) :
     localSymbol P tr x y = -localSymbol P tr y x := by
-  rw [localSymbol_apply, localSymbol_apply, P.cup_gradedComm 1 1 x y,
-    ContinuousCohomology.degreeCast_rfl, Iso.refl_hom, ConcreteCategory.id_apply, mul_one,
-    pow_one, neg_one_smul, hP, map_neg]
+  rw [localSymbol_apply, localSymbol_apply, P.cup_gradedComm 1 1 x y, hP]
+  simp
 
 /-- **The local symbol is multiplicative in the first unit**: `(a a', b) = (a, b) + (a', b)`. -/
 theorem localSymbol_kummerClass_mul (hn : IsUnit (n : F)) (a a' b : Fˣ) :
