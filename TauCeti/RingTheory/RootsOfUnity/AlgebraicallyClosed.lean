@@ -27,14 +27,18 @@ public section
 namespace TauCeti
 
 /-- A separably closed field `E` over a field `K` contains a primitive `n`-th root of unity as soon
-as some domain `M` over `K` does: `n` is then nonzero in `M`, hence in `K` and in `E`. -/
+as some domain `M` over `K` does. For `n = 0` take `0`; otherwise `n` is nonzero in `M`, hence in
+`K` and in `E`. -/
 theorem _root_.IsPrimitiveRoot.exists_isPrimitiveRoot_of_isSepClosed (K : Type*) {E M : Type*}
     [Field K] [Field E] [IsSepClosed E] [Algebra K E] [CommRing M] [IsDomain M] [Algebra K M]
-    {n : ℕ} [NeZero n] {ζ : M} (hζ : IsPrimitiveRoot ζ n) :
-    ∃ ξ : E, IsPrimitiveRoot ξ n :=
+    {n : ℕ} {ζ : M} (hζ : IsPrimitiveRoot ζ n) :
+    ∃ ξ : E, IsPrimitiveRoot ξ n := by
+  obtain rfl | hn := eq_or_ne n 0
+  · exact ⟨0, .zero⟩
+  have := NeZero.mk hn
   have := hζ.neZero'
   have : NeZero (n : K) := .of_map (algebraMap K M) (neZero := by rwa [map_natCast])
   have : NeZero (n : E) := .nat_of_injective (algebraMap K E).injective
-  HasEnoughRootsOfUnity.exists_primitiveRoot E n
+  exact HasEnoughRootsOfUnity.exists_primitiveRoot E n
 
 end TauCeti
