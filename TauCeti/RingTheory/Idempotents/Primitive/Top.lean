@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Module.LinearMap.EndQuotient
 public import TauCeti.Algebra.Module.ProjectiveCover.Basic
-public import TauCeti.RingTheory.Idempotents.PrimitiveDecomposition
+public import TauCeti.RingTheory.Idempotents.Primitive.Decomposition
 public import TauCeti.RingTheory.Jacobson.Semiprimary
 
 /-!
