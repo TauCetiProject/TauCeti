@@ -58,13 +58,6 @@ theorem isClosedTransversal_mk
     F.IsClosedTransversal γ :=
   ⟨hγdiff, hperiod, htrans⟩
 
-@[simp]
-theorem isClosedTransversal_iff (γ : ℝ → M) : F.IsClosedTransversal γ ↔
-    ContMDiff 𝓘(ℝ, ℝ) I 1 γ ∧ Function.Periodic γ 1 ∧
-      ∀ t, curveVelocity I γ t ≠ 0 ∧
-        IsCompl (Submodule.span ℝ {curveVelocity I γ t}) (F.distribution (γ t)) :=
-  Iff.rfl
-
 /-- A foliation is taut when every leaf meets a C¹ closed transversal. -/
 def Taut : Prop :=
   ∀ x : M, ∃ γ : ℝ → M, F.IsClosedTransversal γ ∧ ∃ t : ℝ, γ t ∈ F.leaf x
