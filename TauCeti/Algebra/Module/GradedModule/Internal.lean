@@ -118,6 +118,7 @@ theorem ofDecomposition_piece (ℳ : ℤ → Submodule R M) [DirectSum.Decomposi
 /-- A submodule is homogeneous for the internal grading `ofDecomposition ℳ` exactly when it is
 homogeneous for `ℳ`: the decomposition carried by `ofDecomposition ℳ` is the given one, as
 decompositions are unique. -/
+@[simp]
 theorem isHomogeneous_ofDecomposition_piece_iff (ℳ : ℤ → Submodule R M)
     [DirectSum.Decomposition ℳ] (U : Submodule R M) :
     DirectSum.SetLike.IsHomogeneous (ofDecomposition ℳ).piece U ↔
