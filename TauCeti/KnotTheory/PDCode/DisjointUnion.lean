@@ -269,7 +269,7 @@ theorem kauffmanBracket_disjointUnion {R : Type*} [CommRing R] (a : Rˣ)
       Fin.append_right, stateWeight_append, Units.val_mul]
     rw [hexp, pow_add, pow_add, pow_one]
     ring
-  dsimp only [Fin.appendEquiv, Equiv.coe_fn_mk]
+  simp only [funext (Fin.appendEquiv_apply n m _)]
   simp only [hterm]
   simp only [kauffmanBracket_def, Finset.mul_sum, Finset.sum_mul]
   rw [Finset.sum_comm]
@@ -288,7 +288,7 @@ theorem kauffmanBracket_disjointUnion_of_componentCount_eq_zero_left
     simpa [componentCount_eq] using hD
   rw [kauffmanBracket_def, ← (Fin.appendEquiv 0 m).sum_comp]
   simp only [Fintype.sum_prod_type]
-  dsimp only [Fin.appendEquiv, Equiv.coe_fn_mk]
+  simp only [funext (Fin.appendEquiv_apply 0 m _)]
   simp only [stateLoopCount_disjointUnion, Function.comp_def, Fin.append_left,
     Fin.append_right, stateWeight_append, Units.val_mul]
   simp [hc, stateWeight_def, kauffmanBracket_def]
@@ -307,7 +307,7 @@ theorem kauffmanBracket_disjointUnion_of_componentCount_eq_zero_right
     simpa [componentCount_eq] using hE
   rw [kauffmanBracket_def, ← (Fin.appendEquiv n 0).sum_comp]
   simp only [Fintype.sum_prod_type]
-  dsimp only [Fin.appendEquiv, Equiv.coe_fn_mk]
+  simp only [funext (Fin.appendEquiv_apply n 0 _)]
   simp only [stateLoopCount_disjointUnion, Function.comp_def, Fin.append_left,
     Fin.append_right, stateWeight_append, Units.val_mul]
   simp [hc, stateWeight_def, kauffmanBracket_def]

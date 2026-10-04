@@ -129,4 +129,34 @@ theorem normalizedKauffmanBracket_disjointUnion {R : Type*} [CommRing R] (a : R�
     PDCode.kauffmanBracket_disjointUnion _ _ a hD hE, neg_add, zpow_add, Units.val_mul]
   ring
 
+/-- An empty first summand leaves the other diagram's normalized bracket unchanged. -/
+@[simp]
+theorem normalizedKauffmanBracket_disjointUnion_of_componentCount_eq_zero_left
+    {R : Type*} [CommRing R] (a : Rˣ) (hD : D.toPDCode.componentCount = 0) :
+    (D.disjointUnion E).normalizedKauffmanBracket a = E.normalizedKauffmanBracket a := by
+  have hn : n = 0 := by
+    by_contra hn
+    have := D.toPDCode.componentCount_pos hn
+    omega
+  subst n
+  have hw : D.writhe = 0 := by simp [writhe_def]
+  simp only [normalizedKauffmanBracket_def, writhe_disjointUnion, hw, zero_add,
+    toPDCode_disjointUnion,
+    PDCode.kauffmanBracket_disjointUnion_of_componentCount_eq_zero_left _ _ a hD]
+
+/-- An empty second summand leaves the other diagram's normalized bracket unchanged. -/
+@[simp]
+theorem normalizedKauffmanBracket_disjointUnion_of_componentCount_eq_zero_right
+    {R : Type*} [CommRing R] (a : Rˣ) (hE : E.toPDCode.componentCount = 0) :
+    (D.disjointUnion E).normalizedKauffmanBracket a = D.normalizedKauffmanBracket a := by
+  have hm : m = 0 := by
+    by_contra hm
+    have := E.toPDCode.componentCount_pos hm
+    omega
+  subst m
+  have hw : E.writhe = 0 := by simp [writhe_def]
+  simp only [normalizedKauffmanBracket_def, writhe_disjointUnion, hw, add_zero,
+    toPDCode_disjointUnion,
+    PDCode.kauffmanBracket_disjointUnion_of_componentCount_eq_zero_right _ _ a hE]
+
 end TauCeti.OrientedPDCode
