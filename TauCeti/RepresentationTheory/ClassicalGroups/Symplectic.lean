@@ -20,7 +20,9 @@ preserves it, and packages the resulting equivariant self-duality.
 
 * `TauCeti.symplecticGroupToGL` is the canonical inclusion into the general linear group.
 * `TauCeti.stdSymplecticRep` is the standard representation of `Matrix.symplecticGroup`.
-* `TauCeti.stdSymplecticBilinForm` is the nondegenerate invariant alternating form.
+* `TauCeti.stdSymplecticBilinForm` is the nondegenerate invariant alternating form, with
+  `TauCeti.stdSymplecticBilinForm_eq_sum` its coordinate expansion and
+  `TauCeti.stdSymplecticBilinForm_single_single` its values on the standard basis.
 * `TauCeti.stdSymplecticRepEquivDual` is the induced equivariant self-duality.
 
 ## References
@@ -119,6 +121,25 @@ def stdSymplecticBilinForm :
 theorem stdSymplecticBilinForm_apply (v w : (Fin n ⊕ Fin n) → k) :
     stdSymplecticBilinForm k n v w = v ⬝ᵥ Matrix.J (Fin n) k *ᵥ w :=
   Matrix.toBilin'_apply' _ _ _
+
+/-- **The standard symplectic form, expanded in coordinates**: the double sum `∑ₚ ∑_q vₚ Jₚq w_q`
+over the entries of `Matrix.J`.  `TauCeti.stdSymplecticBilinForm_apply` is the same statement
+with the two sums contracted into a matrix-vector product; this is `Matrix.toBilin'_apply` for the
+form, which a consumer cannot apply directly because `TauCeti.stdSymplecticBilinForm` does not
+unfold outside this file. -/
+theorem stdSymplecticBilinForm_eq_sum (v w : (Fin n ⊕ Fin n) → k) :
+    stdSymplecticBilinForm k n v w =
+      ∑ p : Fin n ⊕ Fin n, ∑ q : Fin n ⊕ Fin n, v p * Matrix.J (Fin n) k p q * w q :=
+  Matrix.toBilin'_apply _ _ _
+
+/-- **The standard symplectic form on a pair of standard basis vectors** reads off the entry of
+`Matrix.J` they index.  This is `Matrix.toBilin'_single` for the form, which a consumer cannot
+apply directly because `TauCeti.stdSymplecticBilinForm` does not unfold outside this file.  It is
+deliberately not a `simp` lemma: `TauCeti.stdSymplecticBilinForm_apply` already rewrites the
+left-hand side into a matrix-vector product. -/
+theorem stdSymplecticBilinForm_single_single (x y : Fin n ⊕ Fin n) :
+    stdSymplecticBilinForm k n (Pi.single x (1 : k)) (Pi.single y 1) = Matrix.J (Fin n) k x y :=
+  Matrix.toBilin'_single _ x y
 
 /-- The standard symplectic form is alternating. -/
 theorem isAlt_stdSymplecticBilinForm : (stdSymplecticBilinForm k n).IsAlt := by
