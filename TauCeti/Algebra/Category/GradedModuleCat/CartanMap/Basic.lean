@@ -122,6 +122,12 @@ theorem gradedFiniteProjectiveModules_le_finiteModules :
 instance (M : (gradedFiniteModules 𝒜).FullSubcategory) : Module.Finite A M.obj :=
   M.property
 
+/-- Over an algebra finite as a module over its base ring, a finite graded module is finite over
+the base ring. -/
+instance [Module.Finite k A] (M : (gradedFiniteModules 𝒜).FullSubcategory) :
+    Module.Finite k M.obj :=
+  Module.Finite.trans A M.obj
+
 instance (M : (gradedFiniteProjectiveModules 𝒜).FullSubcategory) : Module.Finite A M.obj :=
   M.property.1
 
