@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.AbsoluteArtinMap
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.Reciprocity
+public import TauCeti.NumberTheory.ClassFieldTheory.LocalExistence.NormSubgroup
 public import TauCeti.Topology.Algebra.Group.TopologicalAbelianization
 
 /-!
@@ -35,6 +36,13 @@ the class of the restriction of `σ` to `L`. The image of `artinMap K` is dense
 (`denseRange_artinMap`), but it is not all of `G_K^ab`, so no statement about `G_K^ab` follows from
 one about the image alone.
 
+The norm subgroups of `Kˣ` are the preimages of the open subgroups of `G_K^ab`: every open
+subgroup of `G_K^ab` is cut out by some finite Galois extension `L/K`, and its preimage under
+`artinMap K` is the norm group `N_{L/K}(Lˣ)` (`exists_artinMap_mem_iff`), the kernel of the finite
+local Artin map. Since norm groups of finite separable extensions are open, `artinMap K` is
+continuous (`continuous_artinMap`), and its kernel is the intersection of all norm subgroups
+(`ker_artinMap_eq_iInf`).
+
 ## Main definitions
 
 * `TauCeti.ClassFieldTheory.artinMap K`: the absolute local Artin map `Kˣ →* G_K^ab`.
@@ -47,10 +55,17 @@ one about the image alone.
 * `TauCeti.ClassFieldTheory.artinMap_restrict`: the finite restrictions of the absolute local
   Artin map are the finite local Artin maps.
 * `TauCeti.ClassFieldTheory.denseRange_artinMap`: the absolute local Artin map has dense image.
+* `TauCeti.ClassFieldTheory.exists_artinMap_mem_iff`: the preimage of an open subgroup of
+  `G_K^ab` is a norm subgroup.
+* `TauCeti.ClassFieldTheory.continuous_artinMap`: the absolute local Artin map is continuous.
+* `TauCeti.ClassFieldTheory.ker_artinMap_eq_iInf`: its kernel is the intersection of all norm
+  subgroups.
 
 ## References
 
 * J. Neukirch, *Algebraic Number Theory*, Chapter V, §1.
+* J.-P. Serre, *Local class field theory*, in J. W. S. Cassels and A. Fröhlich (eds.),
+  *Algebraic Number Theory*, Chapter VI, §2.
 -/
 
 public section
@@ -132,5 +147,55 @@ theorem denseRange_artinMap : DenseRange (artinMap K) := by
     ((unitsLevelEquiv _ _).surjective.comp Additive.ofMul.surjective).range_comp]
   exact (ContinuousMulEquiv.surjective _).denseRange.comp
     (localClassFormation K).denseRange_absoluteArtinMap (map_continuous _)
+
+omit [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K] in
+/-- The unit `x ∈ Kˣ`, as an element of the ground level of the top layer, read in the ground level
+of the layer `V ◁ G_K`, is `localGroundEquiv K V x`. -/
+private theorem groundEquivOfOpenNormal_unitsLevelEquiv
+    (V : OpenNormalSubgroup (AbsoluteGaloisGroup K)) (x : Kˣ) :
+    groundEquivOfOpenNormal (unitsFormation K) V
+        (unitsLevelEquiv (Algebra.ofId K (SeparableClosure K)) (fixedField_toSubgroup_top K)
+          (Additive.ofMul x)) =
+      localGroundEquiv K V (Additive.ofMul x) :=
+  Subtype.ext (by simp)
+
+/-- **The preimage of an open subgroup under the absolute local Artin map is a norm subgroup.**
+For every open subgroup `U` of `G_K^ab` there is an open normal subgroup `V` of `G_K`, cutting out
+the finite Galois extension `classField K V`, such that the Artin symbol of `x ∈ Kˣ` lies in `U`
+exactly when `x` is a norm from `classField K V`. -/
+theorem exists_artinMap_mem_iff
+    (U : OpenSubgroup (Field.absoluteGaloisGroupAbelianization K)) :
+    ∃ V : OpenNormalSubgroup (AbsoluteGaloisGroup K), ∀ x : Kˣ,
+      artinMap K x ∈ U ↔ x ∈ localNormSubgroup K V := by
+  set e := (absoluteGaloisGroupRestrictEquiv K).symm.topologicalAbelianizationCongr
+  obtain ⟨V, hV⟩ := (localClassFormation K).exists_absoluteArtinMap_mem_iff
+    (U.comap (e : TopologicalAbelianization (AbsoluteGaloisGroup K) →* _) (map_continuous e))
+  refine ⟨V, fun x ↦ ?_⟩
+  rw [← localGroundEquiv_mem_normSubgroup_iff, ← groundEquivOfOpenNormal_unitsLevelEquiv, ← hV,
+    OpenSubgroup.mem_comap, MonoidHom.coe_ofClass, artinMap_apply]
+
+/-- **The absolute local Artin map is continuous.** The preimage of an open subgroup of `G_K^ab`
+is a norm subgroup (`exists_artinMap_mem_iff`), and norm subgroups of finite separable extensions
+are open in `Kˣ`. -/
+theorem continuous_artinMap : Continuous (artinMap K) := by
+  refine continuous_of_continuousAt_one (artinMap K) fun N hN ↦ ?_
+  rw [map_one] at hN
+  obtain ⟨W, hWN, hWo, hW1⟩ := mem_nhds_iff.mp hN
+  obtain ⟨U, hU⟩ := ProfiniteGrp.exist_openNormalSubgroup_sub_open_nhds_of_one hWo hW1
+  obtain ⟨V, hV⟩ := exists_artinMap_mem_iff K U.toOpenSubgroup
+  exact Filter.mem_map.mpr <| Filter.mem_of_superset
+    ((isOpen_localNormSubgroup K V).mem_nhds (one_mem _)) fun x hx ↦ hWN (hU ((hV x).mpr hx))
+
+/-- **The kernel of the absolute local Artin map is the intersection of all norm subgroups**: the
+Artin symbol of `x ∈ Kˣ` is trivial exactly when `x` is a norm from every finite Galois extension
+of `K`. This says nothing about whether that intersection is trivial. -/
+theorem ker_artinMap_eq_iInf :
+    (artinMap K).ker = ⨅ V : OpenNormalSubgroup (AbsoluteGaloisGroup K), localNormSubgroup K V := by
+  ext x
+  rw [MonoidHom.mem_ker, Subgroup.mem_iInf, artinMap_apply,
+    map_eq_one_iff _ (ContinuousMulEquiv.injective _), toMul_eq_one,
+    ClassFormation.absoluteArtinMap_eq_zero_iff]
+  refine forall_congr' fun V ↦ ?_
+  rw [groundEquivOfOpenNormal_unitsLevelEquiv, localGroundEquiv_mem_normSubgroup_iff]
 
 end TauCeti.ClassFieldTheory
