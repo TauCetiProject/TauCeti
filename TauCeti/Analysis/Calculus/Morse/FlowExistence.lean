@@ -35,9 +35,6 @@ Lyapunov descent along any orbit on which `f` is differentiable.
   gradient.
 * `TauCeti.contDiff_negativeGradientFlow` and `TauCeti.contDiff_negativeGradientFlow_apply`: for a
   globally `C²` function, this flow is `C¹` jointly and at each fixed time.
-* `TauCeti.contDiff_negativeGradientFlow_toHomeomorph` and
-  `TauCeti.contDiff_negativeGradientFlow_toHomeomorph_symm`: every fixed-time map and its inverse
-  are `C¹`, so local invariant disks can be transported smoothly along the flow.
 * `TauCeti.isNegativeGradient_negativeGradientFlow`: it is a negative gradient flow of `f`.
 * `TauCeti.eq_negativeGradientFlow`: every global negative gradient trajectory is one of its
   orbits.
@@ -93,21 +90,6 @@ theorem contDiff_negativeGradientFlow_apply (f : E → ℝ) (hf : LipschitzWith 
     (hfs : ContDiff ℝ 2 f) (t : ℝ) :
     ContDiff ℝ 1 (negativeGradientFlow f hf t) := by
   apply contDiff_flowOfLipschitz_apply 0 (fun x ↦ -∇ f x) hf.neg
-  exact (hfs.gradient_right (m := 1) (by norm_num)).neg
-
-/-- Every fixed-time homeomorphism of a globally defined `C¹` negative-gradient flow is `C¹`. -/
-theorem contDiff_negativeGradientFlow_toHomeomorph (f : E → ℝ)
-    (hf : LipschitzWith K (∇ f)) (hfs : ContDiff ℝ 2 f) (t : ℝ) :
-    ContDiff ℝ 1 fun x ↦ (negativeGradientFlow f hf).toHomeomorph t x := by
-  apply contDiff_flowOfLipschitz_toHomeomorph 0 (fun x ↦ -∇ f x) hf.neg
-  exact (hfs.gradient_right (m := 1) (by norm_num)).neg
-
-/-- The inverse of every fixed-time homeomorphism of a globally defined `C¹` negative-gradient
-flow is `C¹`; it is the map at the opposite time. -/
-theorem contDiff_negativeGradientFlow_toHomeomorph_symm (f : E → ℝ)
-    (hf : LipschitzWith K (∇ f)) (hfs : ContDiff ℝ 2 f) (t : ℝ) :
-    ContDiff ℝ 1 fun x ↦ ((negativeGradientFlow f hf).toHomeomorph t).symm x := by
-  apply contDiff_flowOfLipschitz_toHomeomorph_symm 0 (fun x ↦ -∇ f x) hf.neg
   exact (hfs.gradient_right (m := 1) (by norm_num)).neg
 
 /-- **The negative gradient flow is a negative gradient flow**: each of its orbits solves

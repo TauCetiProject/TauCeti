@@ -25,9 +25,6 @@ the initial condition, and the joint continuity required by `Flow` is
 * `TauCeti.flowOfLipschitz`: the flow of a globally Lipschitz vector field on a Banach space.
 * `TauCeti.contDiff_flowOfLipschitz` and `TauCeti.contDiff_flowOfLipschitz_apply`: a globally
   `C^(n+1)` field has a `C^(n+1)` flow, jointly and at each fixed time.
-* `TauCeti.contDiff_flowOfLipschitz_toHomeomorph` and
-  `TauCeti.contDiff_flowOfLipschitz_toHomeomorph_symm`: each fixed-time homeomorphism and its
-  inverse are `C^(n+1)`.
 * `TauCeti.hasDerivAt_flowOfLipschitz` and `TauCeti.isIntegralCurve_flowOfLipschitz`: its
   orbits solve the differential equation.
 * `TauCeti.eq_flowOfLipschitz`: every global solution is an orbit of the flow.
@@ -89,24 +86,6 @@ theorem contDiff_flowOfLipschitz_apply (n : ℕ) (v : E → E) (hv : LipschitzWi
   convert ODE.contDiff_globalSolution_apply n v hv hvs t using 1
   funext x
   rw [flowOfLipschitz_apply]
-
-/-- The homeomorphism given by a fixed time of a globally Lipschitz `C^(n+1)` flow is itself
-`C^(n+1)`. -/
-theorem contDiff_flowOfLipschitz_toHomeomorph (n : ℕ) (v : E → E) (hv : LipschitzWith K v)
-    (hvs : ContDiff ℝ (n + 1) v) (t : ℝ) :
-    ContDiff ℝ (n + 1) fun x ↦ (flowOfLipschitz v hv).toHomeomorph t x := by
-  convert contDiff_flowOfLipschitz_apply n v hv hvs t using 1
-  funext x
-  rw [Flow.toHomeomorph_apply]
-
-/-- The inverse of the homeomorphism given by a fixed time of a globally Lipschitz `C^(n+1)` flow
-is `C^(n+1)`: it is the time-`-t` map. -/
-theorem contDiff_flowOfLipschitz_toHomeomorph_symm (n : ℕ) (v : E → E)
-    (hv : LipschitzWith K v) (hvs : ContDiff ℝ (n + 1) v) (t : ℝ) :
-    ContDiff ℝ (n + 1) fun x ↦ ((flowOfLipschitz v hv).toHomeomorph t).symm x := by
-  convert contDiff_flowOfLipschitz_apply n v hv hvs (-t) using 1
-  funext x
-  rw [Flow.toHomeomorph_symm_apply]
 
 /-- Every orbit of the flow solves the differential equation. -/
 theorem hasDerivAt_flowOfLipschitz (hv : LipschitzWith K v) (x : E) (t : ℝ) :
