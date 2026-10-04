@@ -78,7 +78,7 @@ the seminorm topology, since the inner product is continuous in each variable.
   `TauCeti.lowerSemicontinuous_fenchelConjugate` — a conjugate is lower semicontinuous for any
   topology on `F` making every functional `B x` continuous, such as the weak topology of the
   pairing, and `TauCeti.lowerSemicontinuous_fenchelConjugate_innerₗ` — for the inner product
-  pairing of a real inner product space, every conjugate is lower semicontinuous.
+  pairing of a real seminormed inner product space, every conjugate is lower semicontinuous.
 
 ## Implementation notes
 
