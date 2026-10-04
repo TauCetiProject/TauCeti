@@ -77,8 +77,8 @@ theorem isEquiv_comap_valuation_of_continuous (f : K →+* L) (hf : Continuous f
   have hx0 : x ≠ 0 := by rintro rfl; simp at hx1
   obtain ⟨γ, hγ0, hπ⟩ := IsNontrivial.exists_lt_one (R := K)
   obtain ⟨a, rfl⟩ := valuation_surjective γ
-  have hfa : valuation L (f a) ≠ 0 := by
-    simpa using f.injective.ne (show a ≠ 0 by rintro rfl; simp at hγ0)
+  have ha : a ≠ 0 := by rintro rfl; simp at hγ0
+  have hfa : valuation L (f a) ≠ 0 := by simpa using f.injective.ne ha
   obtain ⟨n, hn⟩ := exists_pow_lt₀ hx (Units.mk0 _ hfa)
   have hlt : valuation K (a / x ^ n) < 1 := by
     rw [map_div₀, map_pow, div_lt_one₀ (pow_pos (zero_lt_iff.mpr (by simpa using hx0)) n)]
