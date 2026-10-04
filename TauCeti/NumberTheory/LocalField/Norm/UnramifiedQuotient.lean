@@ -22,9 +22,9 @@ that identifies the finite local Artin symbol of a uniformizer with arithmetic F
 
 ## Main results
 
-* `TauCeti.ClassFieldTheory.localNormQuotientEquivZModOfUnramified`: the equivalence
+* `TauCeti.localNormQuotientEquivZModOfUnramified`: the equivalence
   `Kˣ / N_{L/K}(Lˣ) ≃ ZMod [L : K]` induced by normalized valuation.
-* `TauCeti.ClassFieldTheory.localNormQuotientEquivZModOfUnramified_uniformizer`: the class of a
+* `TauCeti.localNormQuotientEquivZModOfUnramified_uniformizer`: the class of a
   uniformizer maps to `1`, so it is the distinguished generator of the cyclic norm quotient.
 
 ## References
@@ -38,7 +38,7 @@ noncomputable section
 
 open ValuativeRel
 
-namespace TauCeti.ClassFieldTheory
+namespace TauCeti
 
 variable (K : Type) [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
@@ -115,4 +115,4 @@ theorem localNormQuotientEquivZModOfUnramified_uniformizer (h : ramificationInde
   rw [localNormQuotientEquivZModOfUnramified_mk, normalizedValuationMod_ofMul,
     normalizedValuation_irreducible (K := K) hπ, toAdd_ofAdd, Int.cast_one]
 
-end TauCeti.ClassFieldTheory
+end TauCeti
