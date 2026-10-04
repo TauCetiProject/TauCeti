@@ -55,7 +55,7 @@ variable [CommSemiring R] [Group D] [AddCommMonoid M] [Module R M]
 
 /-- The representation of the permutation wreath product on an indexed tensor power. The base
 group acts coordinatewise and the top symmetric group permutes the tensor factors. -/
-@[expose] noncomputable def wreathTensor (ρ : Representation R D M) (ι : Type x) :
+noncomputable def wreathTensor (ρ : Representation R D M) (ι : Type x) :
     Representation R (TauCeti.WreathProduct D ι) (⨂[R] _ : ι, M) where
   toFun a := PiTensorProduct.map (fun i ↦ ρ (a.left i)) ∘ₗ
     (PiTensorProduct.reindex R (fun _ : ι ↦ M) a.right).toLinearMap
@@ -147,6 +147,13 @@ noncomputable def wreathTensorMap {A B : Rep.{w} R D} (f : A ⟶ B) :
   Rep.ofHom (Representation.IntertwiningMap.wreathTensor
     (ρ := A.ρ) (τ := B.ρ) f.hom ι)
 
+/-- Tensoring a representation morphism applies it in every factor of a pure tensor. -/
+@[simp]
+theorem wreathTensorMap_hom_apply_tprod {A B : Rep.{w} R D} (f : A ⟶ B) (m : ι → A.V) :
+    (wreathTensorMap R D ι f).hom (PiTensorProduct.tprod R m) =
+      PiTensorProduct.tprod R fun i ↦ f.hom (m i) :=
+  Representation.IntertwiningMap.wreathTensor_apply_tprod f.hom ι m
+
 /-- Tensoring an identity morphism gives the identity morphism. -/
 @[simp]
 theorem wreathTensorMap_id (A : Rep.{w} R D) :
@@ -236,7 +243,16 @@ theorem tensorInductionFunctor_obj (U : Subgroup G) (s : U.LeftTransversal)
     (A : Rep.{w} R U) :
     (U.tensorInductionFunctor (R := R) s).obj A =
       Rep.of (U.tensorInducedRepresentation s A.ρ) := by
-  change Rep.of ((A.ρ.wreathTensor (G ⧸ U)).comp (U.monomialHom s)) = _
-  rw [tensorInducedRepresentation]
+  rw [tensorInductionFunctor, Functor.comp_obj, Rep.wreathTensorFunctor_obj,
+    tensorInducedRepresentation]
+
+/-- On morphisms, tensor induction applies the representation morphism in every factor of a pure
+tensor. -/
+@[simp]
+theorem tensorInductionFunctor_map_hom_apply_tprod (U : Subgroup G) (s : U.LeftTransversal)
+    {A B : Rep.{w} R U} (f : A ⟶ B) (m : G ⧸ U → A.V) :
+    ((U.tensorInductionFunctor (R := R) s).map f).hom (PiTensorProduct.tprod R m) =
+      PiTensorProduct.tprod R fun x ↦ f.hom (m x) :=
+  Rep.wreathTensorMap_hom_apply_tprod R U (G ⧸ U) f m
 
 end Subgroup
