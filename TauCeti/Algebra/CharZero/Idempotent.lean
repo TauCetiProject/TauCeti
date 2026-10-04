@@ -17,8 +17,8 @@ idempotent other than `0` and `1` is not an integer.
 
 ## Main results
 
-* `isIdempotentElem_intCast_iff`: the cast of `n : ℤ` is idempotent exactly when `n` is `0`
-  or `1`.
+* `TauCeti.isIdempotentElem_intCast_iff`: the cast of `n : ℤ` is idempotent exactly when `n`
+  is `0` or `1`.
 -/
 
 public section
@@ -27,7 +27,8 @@ namespace TauCeti
 
 /-- In a ring of characteristic zero, the cast of an integer `n` is idempotent exactly when `n` is
 `0` or `1`. -/
-theorem _root_.isIdempotentElem_intCast_iff {R : Type*} [NonAssocRing R] [CharZero R] {n : ℤ} :
+@[simp]
+theorem isIdempotentElem_intCast_iff {R : Type*} [NonAssocRing R] [CharZero R] {n : ℤ} :
     IsIdempotentElem (n : R) ↔ n = 0 ∨ n = 1 := by
   rw [← IsIdempotentElem.iff_eq_zero_or_one, IsIdempotentElem, IsIdempotentElem, ← Int.cast_mul,
     Int.cast_inj]
