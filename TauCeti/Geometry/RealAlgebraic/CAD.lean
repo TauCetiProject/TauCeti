@@ -32,7 +32,6 @@ together with the open intervals they cut out, form a CAD of `ℝ ^ 1`.
 
 ## Main declarations
 
-* `TauCeti.stackCells`: the ambient sections and sectors of a stack over a subset of `ℝ ^ n`.
 * `TauCeti.IsSemialgebraicStack`: a continuous, strictly ordered stack with semialgebraic cells.
 * `TauCeti.IsCAD`: cylindrical algebraic decompositions, defined recursively.
 * `TauCeti.IsCAD.isPartition`, `TauCeti.IsCAD.finite`, `TauCeti.IsCAD.isSemialgebraic`,
@@ -57,77 +56,11 @@ namespace TauCeti
 
 variable {n k : ℕ}
 
-/-! ### Stacks in the ambient space -/
-
-section Order
-
-variable {α : Type*} [LinearOrder α] {C : Set (Fin n → α)} {θ : Fin k → C → α}
-
-/-- The cells of the stack over `C ⊆ α ^ n` defined by `θ`, as subsets of `α ^ (n + 1)`: the
-images under `TauCeti.cylinder` of its `k` sections and its `k + 1` sectors. -/
-def stackCells (C : Set (Fin n → α)) (θ : Fin k → C → α) : Set (Set (Fin (n + 1) → α)) :=
-  range (fun i ↦ cylinder C '' sectionSet θ i) ∪ range fun j ↦ cylinder C '' sectorSet θ j
-
-@[simp]
-theorem mem_stackCells {E : Set (Fin (n + 1) → α)} :
-    E ∈ stackCells C θ ↔
-      (∃ i, cylinder C '' sectionSet θ i = E) ∨ ∃ j, cylinder C '' sectorSet θ j = E :=
-  Iff.rfl
-
-theorem image_cylinder_sectionSet_mem_stackCells (i : Fin k) :
-    cylinder C '' sectionSet θ i ∈ stackCells C θ :=
-  Or.inl ⟨i, rfl⟩
-
-theorem image_cylinder_sectorSet_mem_stackCells (j : Fin (k + 1)) :
-    cylinder C '' sectorSet θ j ∈ stackCells C θ :=
-  Or.inr ⟨j, rfl⟩
-
-/-- A stack has finitely many cells. -/
-theorem finite_stackCells (C : Set (Fin n → α)) (θ : Fin k → C → α) :
-    (stackCells C θ).Finite :=
-  (finite_range _).union (finite_range _)
-
-/-- For pointwise strictly monotone `θ` with values in a densely ordered type without endpoints,
-every cell of the stack over `C` lies over the whole of `C`. -/
-theorem image_tail_of_mem_stackCells [Nonempty α] [DenselyOrdered α] [NoMinOrder α]
-    [NoMaxOrder α] (hθ : ∀ x, StrictMono fun i ↦ θ i x) {E : Set (Fin (n + 1) → α)}
-    (hE : E ∈ stackCells C θ) : Fin.tail '' E = C := by
-  rcases hE with ⟨i, rfl⟩ | ⟨j, rfl⟩ <;> rw [image_tail_image_cylinder]
-  · rw [fst_image_sectionSet, Subtype.coe_image_univ]
-  · rw [fst_image_sectorSet hθ, Subtype.coe_image_univ]
-
-/-- For pointwise monotone `θ`, the cells of the stack over `C` cover the cylinder over `C`. -/
-theorem sUnion_stackCells (hθ : ∀ x, Monotone fun i ↦ θ i x) :
-    ⋃₀ stackCells C θ = Fin.tail ⁻¹' C := by
-  rw [stackCells, sUnion_union, sUnion_range, sUnion_range, ← image_iUnion, ← image_iUnion,
-    ← image_union, iUnion_sectionSet_union_iUnion_sectorSet hθ, image_univ, range_cylinder]
-  rfl
-
-/-- For pointwise injective `θ`, distinct cells of the stack over `C` are disjoint. -/
-theorem pairwiseDisjoint_stackCells (hθ : ∀ x, Injective fun i ↦ θ i x) :
-    (stackCells C θ).PairwiseDisjoint id := by
-  rintro _ (⟨i, rfl⟩ | ⟨j, rfl⟩) _ (⟨i', rfl⟩ | ⟨j', rfl⟩) hne <;>
-    rw [onFun, id, id, disjoint_image_iff cylinder_injective]
-  · exact pairwise_disjoint_sectionSet hθ fun h ↦ hne (h ▸ rfl)
-  · exact disjoint_sectionSet_sectorSet θ i j'
-  · exact (disjoint_sectionSet_sectorSet θ i' j).symm
-  · exact pairwise_disjoint_sectorSet θ fun h ↦ hne (h ▸ rfl)
-
-end Order
+/-! ### Semialgebraic stacks -/
 
 section Real
 
 variable {C : Set (Fin n → ℝ)} {θ : Fin k → C → ℝ}
-
-/-- For continuous, pointwise strictly monotone `θ` over a connected base, every cell of the
-stack is connected. -/
-theorem isConnected_of_mem_stackCells (hC : IsConnected C) (hc : ∀ i, Continuous (θ i))
-    (hθ : ∀ x, StrictMono fun i ↦ θ i x) {E : Set (Fin (n + 1) → ℝ)}
-    (hE : E ∈ stackCells C θ) : IsConnected E := by
-  have := isConnected_iff_connectedSpace.1 hC
-  rcases hE with ⟨i, rfl⟩ | ⟨j, rfl⟩
-  · exact (isConnected_sectionSet (hc i)).image _ continuous_cylinder.continuousOn
-  · exact (isConnected_sectorSet hc hθ j).image _ continuous_cylinder.continuousOn
 
 /-- A *semialgebraic stack* over `C ⊆ ℝ ^ n`: finitely many continuous functions
 `θ₀ < θ₁ < … < θₖ₋₁` on `C` whose sections and sectors, placed in `ℝ ^ (n + 1)` by
@@ -146,7 +79,7 @@ structure IsSemialgebraicStack (C : Set (Fin n → ℝ)) (θ : Fin k → C → �
 /-- Every cell of a semialgebraic stack is semialgebraic. -/
 theorem IsSemialgebraicStack.isSemialgebraic (hθ : IsSemialgebraicStack C θ)
     {E : Set (Fin (n + 1) → ℝ)} (hE : E ∈ stackCells C θ) : IsSemialgebraic E := by
-  rcases hE with ⟨i, rfl⟩ | ⟨j, rfl⟩
+  rcases mem_stackCells.1 hE with ⟨i, rfl⟩ | ⟨j, rfl⟩
   exacts [hθ.isSemialgebraic_sectionSet i, hθ.isSemialgebraic_sectorSet j]
 
 /-- A stack of polynomial functions on a semialgebraic set, strictly ordered at each point, is a
@@ -227,21 +160,6 @@ theorem isConnected (h : IsCAD n 𝒞) {E : Set (Fin n → ℝ)} (hE : E ∈ �
     obtain ⟨C, hC, hE⟩ := mem_iUnion₂.1 hE
     exact isConnected_of_mem_stackCells (ih hC) (hθ C hC).continuous (hθ C hC).strictMono hE
 
-/-- If over each cell of `𝒟` a pointwise strictly ordered stack is chosen, then the projections
-of all the cells of these stacks are exactly the cells of `𝒟`. -/
-theorem image_image_tail_iUnion_stackCells {𝒟 : Set (Set (Fin n → ℝ))}
-    {k : Set (Fin n → ℝ) → ℕ} {θ : ∀ C : Set (Fin n → ℝ), Fin (k C) → C → ℝ}
-    (hθ : ∀ C ∈ 𝒟, ∀ x, StrictMono fun i ↦ θ C i x) :
-    image Fin.tail '' ⋃ C ∈ 𝒟, stackCells C (θ C) = 𝒟 := by
-  ext D
-  simp only [mem_image, mem_iUnion₂]
-  constructor
-  · rintro ⟨E, ⟨C, hC, hE⟩, rfl⟩
-    rwa [image_tail_of_mem_stackCells (hθ C hC) hE]
-  · intro hD
-    exact ⟨_, ⟨D, hD, image_cylinder_sectorSet_mem_stackCells 0⟩,
-      image_tail_of_mem_stackCells (hθ D hD) (image_cylinder_sectorSet_mem_stackCells 0)⟩
-
 /-- The cells of a cylindrical algebraic decomposition of `ℝ ^ n` partition `ℝ ^ n`. -/
 theorem isPartition (h : IsCAD n 𝒞) : Setoid.IsPartition 𝒞 := by
   induction h with
@@ -293,7 +211,7 @@ theorem isCAD_singleton_univ (n : ℕ) : IsCAD n {univ} := by
     convert IsCAD.succ (fun _ ↦ 0)
       (fun C i (x : C) ↦ eval x.1 (Fin.elim0 i : MvPolynomial (Fin n) ℝ)) ih fun C hC ↦ ?_
     · ext E
-      simp [stackCells, range_cylinder]
+      simp [range_cylinder, eq_comm]
     · rw [mem_singleton_iff.1 hC]
       exact isSemialgebraicStack_eval isSemialgebraic_univ _ fun _ _ ↦ Subsingleton.strictMono _
 
