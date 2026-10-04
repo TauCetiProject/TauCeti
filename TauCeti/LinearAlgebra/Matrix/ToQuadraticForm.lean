@@ -7,6 +7,8 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 public import Mathlib.LinearAlgebra.QuadraticForm.Prod
+public import TauCeti.LinearAlgebra.QuadraticForm.Radical
+import Mathlib.LinearAlgebra.Matrix.DotProduct
 
 /-!
 # Basic rules for the quadratic form of a matrix
@@ -29,6 +31,8 @@ the signature theory so that consumers needing only these rules do not import it
 * `Matrix.toQuadraticForm'_transpose`: a matrix and its transpose carry the same form.
 * `Matrix.toQuadraticForm'_add_transpose`: the form of `A + Aᵀ` is twice the form of `A`.
 * `Matrix.toQuadraticForm'_diagonal`: a diagonal matrix gives a weighted sum of squares.
+* `Matrix.polarBilin_toQuadraticForm'_apply`: the polar form is the bilinear form of `A + Aᵀ`.
+* `Matrix.nondegenerate_toQuadraticForm'`: the form is nondegenerate when `A + Aᵀ` is invertible.
 -/
 
 public section
@@ -85,6 +89,24 @@ theorem toQuadraticForm'_diagonal (d : ι → R) :
   refine Finset.sum_congr rfl fun i _ => ?_
   rw [mulVec_diagonal, smul_eq_mul]
   ring
+
+/-- The polar form of the quadratic form of `A` is the bilinear form of `A + Aᵀ`. -/
+theorem polarBilin_toQuadraticForm'_apply (A : Matrix ι ι R) (x y : ι → R) :
+    A.toQuadraticForm'.polarBilin x y = x ⬝ᵥ (A + Aᵀ) *ᵥ y := by
+  rw [polarBilin_apply_apply, Matrix.toQuadraticForm', LinearMap.BilinMap.polar_toQuadraticMap,
+    toLinearMap₂'_apply', toLinearMap₂'_apply', add_mulVec, dotProduct_add]
+  congr 1
+  rw [mulVec_transpose, dotProduct_comm x, dotProduct_mulVec]
+
+/-- The quadratic form of `A` is nondegenerate when the matrix `A + Aᵀ` of its polar form is
+invertible. -/
+theorem nondegenerate_toQuadraticForm' {A : Matrix ι ι R} (hA : IsUnit (A + Aᵀ).det) :
+    A.toQuadraticForm'.Nondegenerate := by
+  refine nondegenerate_of_ker_polarBilin_eq_bot ((Submodule.eq_bot_iff _).2 fun x hx => ?_)
+  have hvec : x ᵥ* (A + Aᵀ) = 0 := dotProduct_eq_zero_iff.1 fun y => by
+    rw [← dotProduct_mulVec, ← polarBilin_toQuadraticForm'_apply, LinearMap.mem_ker.1 hx,
+      LinearMap.zero_apply]
+  exact eq_zero_of_det_mem_nonZeroDivisors_of_vecMul_eq_zero hA.mem_nonZeroDivisors hvec
 
 /-- Congruence by a matrix with unit determinant is an isometry of the attached quadratic
 forms. -/
