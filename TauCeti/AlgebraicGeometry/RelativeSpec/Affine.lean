@@ -78,7 +78,7 @@ lemma relativeSpecIsoSpec_hom_toBase :
 variable {A} {B : CommMon X.Modules} [B.X.IsQuasicoherent]
 
 /-- Affine normalization is contravariantly natural in the quasi-coherent algebra. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 lemma relativeSpecIsoSpec_hom_naturality (f : A ⟶ B) :
     relativeSpecMap f ≫ A.relativeSpecIsoSpec.hom =
       B.relativeSpecIsoSpec.hom ≫
