@@ -34,9 +34,10 @@ namespace TauCeti
 variable {E : Type uE} {H : Type uH} {M : Type uM} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   [TopologicalSpace M] [T3Space M] [ChartedSpace H M] [IsManifold I ∞ M]
-  [PreconnectedSpace M]
 
 namespace HyperbolicMetric
+
+variable [PreconnectedSpace M]
 
 /-- A bundled hyperbolic-metric comparison represented by the generic Riemannian isometry API,
 with each metric supplying its own Riemannian bundle instance. -/
@@ -46,17 +47,31 @@ abbrev Isometry (g g' : HyperbolicMetric (I := I) (M := M)) :=
 
 end HyperbolicMetric
 
+/-- The metric-level conclusion of Mostow rigidity for one fixed manifold and dimension.
+
+The geometric hypotheses are carried by the typeclass parameters and `hdim`; a future
+formalization of Mostow's theorem can provide this predicate from those hypotheses. -/
+def IsMostowRigid : Prop :=
+  ∀ [BoundarylessManifold I M] [CompactSpace M] [ConnectedSpace M],
+    3 ≤ Module.finrank ℝ E →
+      ∀ (g g' : HyperbolicMetric (I := I) (M := M)),
+        Nonempty (HyperbolicMetric.Isometry g g')
+
+/-- Extract the isometry conclusion from a fixed-manifold Mostow-rigidity hypothesis. -/
+theorem IsMostowRigid.isometry [BoundarylessManifold I M] [CompactSpace M] [ConnectedSpace M]
+    (h : IsMostowRigid (I := I) (M := M)) {hdim : 3 ≤ Module.finrank ℝ E}
+    (g g' : HyperbolicMetric (I := I) (M := M)) :
+    Nonempty (HyperbolicMetric.Isometry g g') := by
+  exact h hdim g g'
+
 /-- The Mostow rigidity theorem, universally over closed connected manifolds.
 
 From the hyperbolicity and dimension hypotheses it gives a smooth metric-preserving
 diffeomorphism between every pair of bundled complete constant-curvature `-1` metrics. -/
-abbrev MostowRigidity : Prop :=
+def MostowRigidity : Prop :=
   ∀ {E : Type uE} {H : Type uH} {M : Type uM} [NormedAddCommGroup E] [NormedSpace ℝ E]
     [FiniteDimensional ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-    [TopologicalSpace M] [T3Space M] [ChartedSpace H M] [IsManifold I ∞ M]
-    [BoundarylessManifold I M] [CompactSpace M] [ConnectedSpace M],
-    3 ≤ Module.finrank ℝ E →
-      ∀ (g g' : HyperbolicMetric (I := I) (M := M)),
-        Nonempty (HyperbolicMetric.Isometry g g')
+    [TopologicalSpace M] [T3Space M] [ChartedSpace H M] [IsManifold I ∞ M],
+    IsMostowRigid (I := I) (M := M)
 
 end TauCeti
