@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.NumberField.Global.Adeles.Norm
+public import TauCeti.NumberTheory.NumberField.Global.Adeles.Norm.Continuity
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.Extension
 public import TauCeti.RingTheory.Norm.Units
 
@@ -13,13 +13,13 @@ public import TauCeti.RingTheory.Norm.Units
 # The norm map of ideles and idele classes
 
 Let `L / K` be an extension of number fields. The norm map of adeles `adeleNorm` is
-multiplicative, so it restricts to a homomorphism of idele groups
+multiplicative and continuous, so it restricts to a continuous homomorphism of idele groups
 
 `ideleNormMap K L : 𝕀_L →* 𝕀_K`.
 
 Its coordinate at a place `v` of `K` is the product, over the places `w ∣ v` of `L`, of the local
 norms `N_{L_w/K_v}` of the coordinates at `w`. It sends the principal idele of `x ∈ Lˣ` to the
-principal idele of `N_{L/K}(x)`, so it descends to a homomorphism of idele class groups
+principal idele of `N_{L/K}(x)`, so it descends to a continuous homomorphism of idele class groups
 
 `ideleClassNormMap K L : C_L →* C_K`.
 
@@ -37,6 +37,8 @@ homomorphism to `ℝ≥0ˣ`.
 
 ## Main results
 
+* `TauCeti.GlobalNumberFields.continuous_ideleNormMap`,
+  `TauCeti.GlobalNumberFields.continuous_ideleClassNormMap`: the relative norm maps are continuous.
 * `TauCeti.GlobalNumberFields.ideleFiniteCoord_ideleNormMap`,
   `TauCeti.GlobalNumberFields.ideleInfiniteCoord_ideleNormMap`: the coordinate of the norm of an
   idele at a place `v` of `K` is the product of the local norms of its coordinates at the places
@@ -73,6 +75,12 @@ variable {K L} in
 theorem coe_ideleNormMap (x : IdeleGroup (𝓞 L) L) :
     (ideleNormMap K L x : AdeleRing (𝓞 K) K) = adeleNorm K L x :=
   (rfl)
+
+/-- The relative idele norm is continuous for the units topology, which controls both an
+adele and its inverse. -/
+@[continuity, fun_prop]
+theorem continuous_ideleNormMap : Continuous (ideleNormMap K L) :=
+  (continuous_adeleNorm K L).units_map _
 
 variable {K L} in
 /-- **The finite coordinates of the idele norm.** The coordinate of `N_{L/K}(x)` at a finite place
@@ -131,6 +139,12 @@ theorem ideleClassNormMap_mk (x : IdeleGroup (𝓞 L) L) :
     ideleClassNormMap K L (x : IdeleClassGroup (𝓞 L) L) =
       (ideleNormMap K L x : IdeleClassGroup (𝓞 K) K) :=
   (rfl)
+
+/-- The relative norm on idele classes is continuous for the quotient topology. -/
+@[continuity, fun_prop]
+theorem continuous_ideleClassNormMap : Continuous (ideleClassNormMap K L) :=
+  (QuotientGroup.isQuotientMap_mk _).continuous_iff.mpr
+    (continuous_quot_mk.comp (continuous_ideleNormMap K L))
 
 /-- The norm of an idele class extended from `K` is its `[L : K]`-th power. -/
 @[simp]
