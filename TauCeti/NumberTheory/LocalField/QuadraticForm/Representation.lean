@@ -67,6 +67,9 @@ theorem mem_unitValueSet_iff_squareClass_ne_or_localHasse_eq_of_finrank_eq_three
   have h2 : (2 : K) ≠ 0 := Invertible.ne_zero 2
   obtain ⟨u, hu⟩ : ∃ u : Kˣ, RegularFormClass.discr (formClass Q hQ) = squareClass u :=
     ⟨_, (squareClass_toMul_out _).symm⟩
+  -- Comparing `[c]` with `-d = [-1 * u]` yields `IsSquare (c * (-1 * u))`; normalize it to the
+  -- discriminant `-c * u` of `⟨-c⟩ ⊥ Q`, so that both disjuncts test the same square.
+  have hdiscr : c * (-1 * u) = -c * u := by simp
   -- `Q` represents `c` exactly when the quaternary class `⟨-c⟩ ⊥ Q` is isotropic, which the
   -- quaternary criterion reads off its discriminant `[-c u]` and Hasse invariant `s · (-c, u)_K`.
   rw [mem_unitValueSet_iff_not_anisotropic_mk_rankOne_add Q hQ,
@@ -76,7 +79,7 @@ theorem mem_unitValueSet_iff_squareClass_ne_or_localHasse_eq_of_finrank_eq_three
     RegularFormClass.localHasse_mk_rankOne, RegularFormClass.discr_mk, hu, Fin.prod_univ_one,
     one_mul, ← squareClass_mul, ← squareClass_mul, hilbertSymbolOnSquareClasses_squareClass,
     hilbertSymbolOnSquareClasses_squareClass, ne_eq, ne_eq, squareClass_eq_zero_iff,
-    squareClass_eq_iff_isSquare_mul, show c * (-1 * u) = -c * u by simp]
+    squareClass_eq_iff_isSquare_mul, hdiscr]
   generalize RegularFormClass.localHasse (formClass Q hQ) = s
   by_cases hsq : IsSquare (-c * u)
   · -- Here `-c` lies in the square class of `u`, so `(-c, u)_K = (u, u)_K = (-1, u)_K`.

@@ -398,15 +398,14 @@ theorem _root_.QuadraticForm.mem_unitValueSet_iff_not_anisotropic_mk_rankOne_add
     c ∈ Q.unitValueSet ↔
       ¬RegularFormClass.Anisotropic
         (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => -c⟩ + formClass Q hQ) := by
-  obtain ⟨⟨n, w⟩, hw⟩ := exists_presentedForm_equivalent Q hQ
-  -- The tail of `⟨-c, w₀, …⟩` is `w`; the rewrite goes through the dependent rank index of the
-  -- presentation, which `simp` cannot do.
-  have htail : (fun i : Fin n => (Fin.cons (-c) w : Fin (n + 1) → Kˣ) i.succ) = w :=
-    funext fun i => Fin.cons_succ _ _ i
-  have hsplit := RegularFormClass.mk_succ_eq_mk_rankOne_add (Fin.cons (-c) w : Fin (n + 1) → Kˣ)
-  rw [htail, Fin.cons_zero] at hsplit
-  rw [formClass_mk Q hQ ⟨n, w⟩ hw, hw.unitValueSet_eq, ← hsplit, RegularFormClass.anisotropic_mk,
-    not_anisotropic_presentedForm_succ_iff, htail, Fin.cons_zero, neg_neg]
+  -- The line `⟨-c⟩` is the form `x ↦ -c x²` adjoined by the form-level criterion.
+  have hline : ((-(c : K)) • QuadraticMap.sq : QuadraticForm K K).Equivalent
+      (presentedForm ⟨1, fun _ => -c⟩) :=
+    ⟨⟨(LinearEquiv.funUnique (Fin 1) K K).symm, fun v => by rw [presentedForm_apply]; simp⟩⟩
+  have hsq := QuadraticMap.nondegenerate_smul_sq (neg_ne_zero.mpr c.ne_zero)
+  rw [QuadraticMap.mem_unitValueSet_iff_not_anisotropic_prod Q hQ c,
+    ← anisotropic_formClass _ (hQ.prod hsq), formClass_prod Q hQ _ hsq,
+    formClass_mk _ hsq _ hline, add_comm]
 
 /-- **Witt decomposition** for a regular form: a nondegenerate quadratic form on a
 finite-dimensional space is isometric to the orthogonal sum of `m` hyperbolic planes and an
