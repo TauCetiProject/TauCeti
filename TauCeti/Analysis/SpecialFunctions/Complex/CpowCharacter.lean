@@ -96,9 +96,8 @@ theorem coe_normCpowCharacter_apply (s : ℂ) (x : 𝕜ˣ) :
 
 /-- The absolute value of `normCpowCharacter 𝕜 s` at `x` is `‖x‖ ^ re s`. -/
 theorem norm_coe_normCpowCharacter_apply (s : ℂ) (x : 𝕜ˣ) :
-    ‖(normCpowCharacter 𝕜 s x : ℂ)‖ = ‖(x : 𝕜)‖ ^ s.re := by
-  rw [coe_normCpowCharacter_apply,
-    Complex.norm_cpow_eq_rpow_re_of_pos (norm_pos_iff.mpr x.ne_zero)]
+    ‖(normCpowCharacter 𝕜 s x : ℂ)‖ = ‖(x : 𝕜)‖ ^ s.re :=
+  MonoidHom.norm_coe_cpowCharacter_apply _ _ s x
 
 /-- The exponent `0` gives the trivial character. -/
 @[simp]
