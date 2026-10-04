@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 public import Mathlib.LinearAlgebra.QuadraticForm.Prod
 import Mathlib.LinearAlgebra.Isomorphisms
 public import Mathlib.LinearAlgebra.QuadraticForm.Radical
+import Mathlib.LinearAlgebra.Projection
 
 /-!
 # Radical API for quadratic forms
@@ -44,6 +45,11 @@ its polar form is `2 • B`, and nondegeneracy passes from `B` to it as soon as 
   trivial radical is injective.
 * `QuadraticMap.liftOfSurjective`: descent of a quadratic map along a surjective linear map whose
   kernel lies in the radical.
+* `QuadraticMap.radical_lift_radical`, `QuadraticMap.nondegenerate_lift_radical`: the quotient
+  by the full radical has trivial radical and is regular when `2` is invertible.
+* `QuadraticMap.IsometryEquiv.liftRadical`: the isometry induced on radical quotients.
+* `QuadraticMap.equivalent_zero_prod_lift_radical`: over a field, a quadratic map is the orthogonal
+  sum of the zero map on its radical and its quotient map, up to isometry.
 * `QuadraticMap.exists_isUnit_of_ne_zero`: a nonzero quadratic form over a semifield has a vector of
   unit norm.
 * `QuadraticMap.isUnit_apply_smul`: scaling a vector of unit norm by a unit preserves unit norm.
@@ -60,6 +66,13 @@ its polar form is `2 • B`, and nondegeneracy passes from `B` to it as soon as 
   bilinear form `B` equals the kernel of `B`.
 * `LinearMap.BilinForm.Nondegenerate.toQuadraticMap`: over a ring in which `2` is invertible, the
   quadratic form of a nondegenerate symmetric bilinear form is nondegenerate.
+
+## References
+
+* T. Y. Lam, *Introduction to Quadratic Forms over Fields* (2005), Chapter I, §4, for the
+  decomposition into a radical and a regular summand.
+* Elman–Karpenko–Merkurjev, *The Algebraic and Geometric Theory of Quadratic Forms* (2008),
+  Chapter II, §7, for the radical used by Mathlib's `QuadraticMap.lift`.
 -/
 
 public section
@@ -195,7 +208,131 @@ theorem liftOfSurjective_apply (Q : QuadraticMap R M P) (f : M →ₗ[R] N)
 
 end LiftOfSurjective
 
+/-! ### Quotient by the radical -/
+
+/-- The quotient by the full radical has trivial radical, in every characteristic. -/
+@[simp]
+theorem radical_lift_radical (Q : QuadraticMap R M P) :
+    (Q.lift Q.radical le_rfl).radical = ⊥ := by
+  rw [Submodule.eq_bot_iff]
+  intro x hx
+  induction x using Submodule.Quotient.induction_on with
+  | _ x =>
+    apply (Submodule.Quotient.mk_eq_zero Q.radical).mpr
+    obtain ⟨hx, h⟩ := mem_radical_iff'.mp hx
+    apply mem_radical_iff'.mpr
+    refine ⟨by simpa using hx, fun y => ?_⟩
+    simpa only [← Submodule.Quotient.mk_add, lift_mk] using h (Submodule.Quotient.mk y)
+
+/-- Quotienting by the radical gives a nondegenerate quadratic map when `2` is invertible. -/
+theorem nondegenerate_lift_radical [Invertible (2 : R)] (Q : QuadraticMap R M P) :
+    (Q.lift Q.radical le_rfl).Nondegenerate :=
+  nondegenerate_iff_radical_eq_bot.mpr (radical_lift_radical Q)
+
+/-- An isometry induces an isometry of the quotients by the radicals. -/
+def IsometryEquiv.liftRadical {Q : QuadraticMap R M P} {Q' : QuadraticMap R M' P}
+    (e : Q.IsometryEquiv Q') :
+    (Q.lift Q.radical le_rfl).IsometryEquiv (Q'.lift Q'.radical le_rfl) where
+  toLinearEquiv := Submodule.Quotient.equiv Q.radical Q'.radical e.toLinearEquiv e.map_radical
+  map_app' x := by
+    induction x using Submodule.Quotient.induction_on with
+    | _ x =>
+      simp [Submodule.Quotient.equiv_apply]
+
+/-- The induced isometry sends the class of a vector to the class of its image. -/
+@[simp]
+theorem IsometryEquiv.liftRadical_mk {Q : QuadraticMap R M P} {Q' : QuadraticMap R M' P}
+    (e : Q.IsometryEquiv Q') (x : M) :
+    e.liftRadical (Submodule.Quotient.mk x) = Submodule.Quotient.mk (e x) := (rfl)
+
+/-- Taking the inverse commutes with the induced isometry on radical quotients. -/
+@[simp]
+theorem IsometryEquiv.liftRadical_symm {Q : QuadraticMap R M P} {Q' : QuadraticMap R M' P}
+    (e : Q.IsometryEquiv Q') : e.liftRadical.symm = e.symm.liftRadical := by
+  apply DFunLike.ext
+  intro x
+  induction x using Submodule.Quotient.induction_on with
+  | _ x =>
+    apply e.liftRadical.injective
+    simp
+
+/-- Isometric quadratic maps have isometric quotients by their radicals. -/
+theorem Equivalent.lift_radical {Q : QuadraticMap R M P} {Q' : QuadraticMap R M' P}
+    (h : Q.Equivalent Q') :
+    (Q.lift Q.radical le_rfl).Equivalent (Q'.lift Q'.radical le_rfl) :=
+  h.elim fun e => ⟨e.liftRadical⟩
+
+/-- Adjoining a zero summand does not change the quotient by the radical. -/
+theorem equivalent_lift_radical_zero_prod
+    (Q : QuadraticMap R M' P) :
+    (((0 : QuadraticMap R M P).prod Q).lift
+      ((0 : QuadraticMap R M P).prod Q).radical le_rfl).Equivalent
+        (Q.lift Q.radical le_rfl) := by
+  let f := Q.radical.mkQ.comp (LinearMap.snd R M M')
+  have hf : Function.Surjective f :=
+    Q.radical.mkQ_surjective.comp (fun x => ⟨(0, x), rfl⟩)
+  have hr : ((0 : QuadraticMap R M P).prod Q).radical = f.ker := by
+    ext x
+    simp only [mem_radical_iff', prod_apply, zero_apply, zero_add, Prod.snd_add,
+      LinearMap.mem_ker, f, LinearMap.comp_apply, LinearMap.snd_apply,
+      Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero]
+    exact ⟨fun ⟨hx, h⟩ => ⟨hx, fun y => h (0, y)⟩,
+      fun ⟨hx, h⟩ => ⟨hx, fun y => h y.2⟩⟩
+  refine ⟨{
+    toLinearEquiv := (Submodule.quotEquivOfEq _ _ hr).trans (f.quotKerEquivOfSurjective hf)
+    map_app' := ?_ }⟩
+  intro x
+  induction x using Submodule.Quotient.induction_on with
+  | _ x => simp [f]
+
+/-- A quadratic map over a field splits into the zero map on its radical and its quotient map.
+The splitting requires a complement, but the two forms on the right are canonical. -/
+theorem equivalent_zero_prod_lift_radical {K V N : Type*} [Field K]
+    [AddCommGroup V] [Module K V] [AddCommGroup N] [Module K N] (Q : QuadraticMap K V N) :
+    Q.Equivalent ((0 : QuadraticMap K Q.radical N).prod (Q.lift Q.radical le_rfl)) := by
+  obtain ⟨U, hU⟩ := Submodule.exists_isCompl Q.radical
+  let e := Q.radical.quotientEquivOfIsCompl U hU
+  apply Equivalent.symm
+  refine ⟨{
+    toLinearEquiv := ((LinearEquiv.refl K Q.radical).prodCongr e).trans
+      (Q.radical.prodEquivOfIsCompl U hU)
+    map_app' := ?_ }⟩
+  intro x
+  -- The underlying equivalence adds a radical vector to the chosen quotient representative.
+  change Q ((x.1 : V) + (e x.2 : V)) = 0 + (Q.lift Q.radical le_rfl) x.2
+  rw [(mem_radical_iff'.mp x.1.2).2, zero_add]
+  have he := Submodule.mk_quotientEquivOfIsCompl_apply hU x.2
+  rw [← lift_mk (Q := Q) le_rfl (e x.2 : V), he]
+
 end QuadraticMap
+
+namespace TauCeti
+
+variable {R M M' M'' P : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+  [AddCommGroup M'] [Module R M'] [AddCommGroup M''] [Module R M'']
+  [AddCommGroup P] [Module R P]
+
+/-- The identity induces the identity on the radical quotient. -/
+@[simp]
+theorem liftRadical_refl (Q : QuadraticMap R M P) :
+    (QuadraticMap.IsometryEquiv.refl Q).liftRadical =
+      QuadraticMap.IsometryEquiv.refl (Q.lift Q.radical le_rfl) := by
+  apply DFunLike.ext
+  intro x
+  induction x using Submodule.Quotient.induction_on with
+  | _ x => rfl
+
+/-- Composition commutes with inducing isometries on radical quotients. -/
+@[simp]
+theorem liftRadical_trans {Q : QuadraticMap R M P} {Q' : QuadraticMap R M' P}
+    {Q'' : QuadraticMap R M'' P} (e : Q.IsometryEquiv Q') (e' : Q'.IsometryEquiv Q'') :
+    (e.trans e').liftRadical = e.liftRadical.trans e'.liftRadical := by
+  apply DFunLike.ext
+  intro x
+  induction x using Submodule.Quotient.induction_on with
+  | _ x => rfl
+
+end TauCeti
 
 namespace QuadraticMap.Nondegenerate
 
