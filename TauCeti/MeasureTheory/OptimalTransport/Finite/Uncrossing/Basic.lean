@@ -208,9 +208,9 @@ theorem cost_le_of_uncrossSteps {A B : TransportMatrix μ ν}
     (hc : ∀ ⦃i₁ i₂ : ι⦄ ⦃j₁ j₂ : κ⦄, i₁ < i₂ → j₁ < j₂ →
       c (i₁, j₁) + c (i₂, j₂) ≤ c (i₁, j₂) + c (i₂, j₁)) :
     B.cost c ≤ A.cost c := by
-  induction h with
-  | refl => exact le_rfl
-  | tail h hstep ih => exact (hstep.cost_le c hc).trans ih
+  exact Relation.reflTransGen_le_of_le
+    (r := Function.onFun (· ≥ ·) (fun A : TransportMatrix μ ν ↦ A.cost c))
+    (fun _ _ hstep ↦ hstep.cost_le c hc) A B h
 
 end Step
 
