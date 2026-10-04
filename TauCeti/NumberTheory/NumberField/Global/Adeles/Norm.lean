@@ -24,7 +24,7 @@ complex place lies over a real one.
 
 The finite component is again a finite adele because the local norm carries the completed integer
 ring `𝒪_w` into `𝒪_v` (`IsDedekindDomain.HeightOneSpectrum.norm_mem_adicCompletionIntegers`), and
-only finitely many places of `L` lie over the finitely many places of `K` at which a given finite
+only finitely many places of `K` lie below the finitely many places of `L` at which a given finite
 adele of `L` is not integral.
 
 The norm map is multiplicative but not additive. It extends the global norm along the diagonal
