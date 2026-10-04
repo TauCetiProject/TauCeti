@@ -27,8 +27,6 @@ group-algebra modules, and is the bridge between categorical representation theo
 
 ## Main definitions
 
-* `TauCeti.fdRepToFGModuleFunctor`: the functor taking a representation to its group-algebra
-  module.
 * `TauCeti.fdRepEquivalence`: the equivalence between finite-dimensional representations and
   finitely generated group-algebra modules.
 * `TauCeti.isConflationExact_fdRepEquivalence_functor` and
@@ -51,7 +49,7 @@ local instance : IsNoetherianRing k[G] := IsNoetherianRing.of_finite k k[G]
 
 /-- The group-algebra module underlying a finite-dimensional representation, as a functor to
 finitely generated modules. -/
-noncomputable def fdRepToFGModuleFunctor : FDRep k G ⥤ FGModuleCat.{u} k[G] :=
+private noncomputable def fdRepToFGModuleFunctor : FDRep k G ⥤ FGModuleCat.{u} k[G] :=
   ObjectProperty.lift (ModuleCat.isFG.{u} k[G])
     ((forget₂ (FDRep k G) (Rep.{u} k G)) ⋙
       Rep.toModuleMonoidAlgebra.{u, u, u})
@@ -59,20 +57,20 @@ noncomputable def fdRepToFGModuleFunctor : FDRep k G ⥤ FGModuleCat.{u} k[G] :=
       (Module.Finite.of_restrictScalars_finite k k[G]
         (_root_.Representation.asModule V.ρ))
 
-instance : (fdRepToFGModuleFunctor k G).Faithful := by
+private instance : (fdRepToFGModuleFunctor k G).Faithful := by
   dsimp [fdRepToFGModuleFunctor]
   infer_instance
 
-instance : (fdRepToFGModuleFunctor k G).Full := by
+private instance : (fdRepToFGModuleFunctor k G).Full := by
   dsimp [fdRepToFGModuleFunctor]
   infer_instance
 
-instance : (fdRepToFGModuleFunctor k G).Additive where
+private instance : (fdRepToFGModuleFunctor k G).Additive where
   map_add := by
     intros
     rfl
 
-instance : (fdRepToFGModuleFunctor k G).EssSurj := by
+private instance : (fdRepToFGModuleFunctor k G).EssSurj := by
   constructor
   intro M
   let := Module.restrictScalars k k[G] M.obj
