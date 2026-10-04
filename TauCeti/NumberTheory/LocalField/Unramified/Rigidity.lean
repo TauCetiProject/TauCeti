@@ -71,39 +71,6 @@ variable {K L M : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [Field M] [ValuativeRel M] [TopologicalSpace M] [IsNonarchimedeanLocalField M] [Algebra K M]
   [ValuativeExtension K M] [Module.Finite K M] [IsUnramified K L]
 
-omit [TopologicalSpace L] [IsNonarchimedeanLocalField L] [ValuativeRel L] [Module.Finite K L]
-  [Module.Finite K M] [IsUnramified K L] in
-/-- Let `ζ` be an integral `N`-th root of unity over `𝒪[K]`, with `N` invertible in `𝒪[M]`. An
-`N`-th root of unity `ξ` of `𝒪[M]` whose residue is a root of the minimal polynomial `g` of `ζ`
-over `𝒪[K]` is a root of the minimal polynomial of `ζ` over `K`. Indeed `g` divides
-`X ^ N - 1 = g h`, which is separable over `𝓀[M]`, so the residue of `ξ` is not a root of `h`. -/
-private theorem aeval_minpoly_eq_zero_of_aeval_residue_eq_zero {N : ℕ} (hNM : IsUnit (N : 𝒪[M]))
-    {ζ : L} (hζO : IsIntegral 𝒪[K] ζ) (hζ : ζ ^ N = 1) {ξ : 𝒪[M]} (hξ : ξ ^ N = 1)
-    (hres : aeval (residue 𝒪[M] ξ) (minpoly 𝒪[K] ζ) = 0) :
-    aeval (ξ : M) (minpoly K ζ) = 0 := by
-  obtain ⟨h, hgh⟩ : minpoly 𝒪[K] ζ ∣ X ^ N - 1 :=
-    minpoly.isIntegrallyClosed_dvd hζO (by simp [hζ])
-  have hhξ : aeval ξ h ≠ 0 := by
-    intro H
-    have hhξ₀ : aeval (residue 𝒪[M] ξ) h = 0 := by
-      rw [← ResidueField.algebraMap_eq, aeval_algebraMap_apply, H, map_zero]
-    -- `X ^ N - 1 = g h` is separable over `𝓀[M]`, so `g` and `h` are coprime there.
-    have hN : (N : 𝓀[M]) ≠ 0 := by
-      simpa only [map_natCast] using (residue_ne_zero_iff_isUnit _).2 hNM
-    have hsep : ((minpoly 𝒪[K] ζ).map (algebraMap 𝒪[K] 𝓀[M]) *
-        h.map (algebraMap 𝒪[K] 𝓀[M])).Separable := by
-      rw [← Polynomial.map_mul, ← hgh, Polynomial.map_sub, Polynomial.map_pow, Polynomial.map_X,
-        Polynomial.map_one]
-      exact X_pow_sub_one_separable_iff.2 hN
-    rcases aeval_ne_zero_of_isCoprime hsep.isCoprime (residue 𝒪[M] ξ) with hg | hh
-    · exact hg (by rw [aeval_map_algebraMap, hres])
-    · exact hh (by rw [aeval_map_algebraMap, hhξ₀])
-  have hgξ : aeval ξ (minpoly 𝒪[K] ζ) = 0 := by
-    refine (mul_eq_zero.1 ?_).resolve_right hhξ
-    rw [← map_mul, ← hgh, map_sub, map_pow, aeval_X, map_one, hξ, sub_self]
-  rw [minpoly.isIntegrallyClosed_eq_field_fractions' K hζO, aeval_map_algebraMap,
-    ← Algebra.algebraMap_ofSubsemiring_apply, aeval_algebraMap_apply, hgξ, map_zero]
-
 /-- **Embeddings of an unramified extension are determined by their residue maps, and every
 residue map lifts.** For `L/K` unramified, reduction is a bijection from the `K`-embeddings
 `L → M` to the `𝓀[K]`-embeddings `𝓀[L] → 𝓀[M]`. -/
@@ -152,9 +119,12 @@ theorem IsUnramified.residueFieldHom_bijective :
     rw [AlgHom.restrictScalars_apply, AlgHom.restrictScalars_apply] at h1
     rw [hres, h1, ← ResidueField.algebraMap_eq, aeval_algebraMap_apply, hgz, map_zero, map_zero]
   -- So `ζ ↦ ξ` defines a `K`-embedding, whose residue map agrees with `φ` on the residue of `ζ`.
-  have hroot : aeval ((u : 𝒪[M]ˣ) : M) (minpoly K pb.gen) = 0 :=
-    aeval_minpoly_eq_zero_of_aeval_residue_eq_zero hNM hζO hζ.pow_eq_one
+  have hroot : aeval ((u : 𝒪[M]ˣ) : M) (minpoly K pb.gen) = 0 := by
+    have hgξ := aeval_minpoly_eq_zero_of_aeval_residue_eq_zero hNM hζO hζ.pow_eq_one
       ((mem_rootsOfUnity' N _).1 u.2) hgφ
+    rw [show pb.gen = ζ by simp [pb], minpoly.isIntegrallyClosed_eq_field_fractions' K hζO,
+      aeval_map_algebraMap, ← Algebra.algebraMap_ofSubsemiring_apply, aeval_algebraMap_apply,
+      hgξ, map_zero]
   refine ⟨pb.lift _ hroot, AlgHom.ext_of_adjoin_eq_top (s := {residue 𝒪[L] z}) ?_ ?_⟩
   · refine IsPrimitiveRoot.adjoin_eq_top_of_natCard_sub_one ?_
     rw [natCard_residueField K L]
