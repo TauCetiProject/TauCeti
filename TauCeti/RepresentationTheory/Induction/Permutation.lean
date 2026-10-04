@@ -146,9 +146,9 @@ noncomputable def indTrivialEquiv : ((Representation.trivial k H k).ind H.subtyp
     refine IndV.hom_ext _ _ fun x ↦ LinearMap.ext_ring ?_
     simp [indTrivialToQuotient, indTrivialLift_tmul, ofMulAction_single, mul_inv_rev]
 
--- Not a `simp` lemma: `simp` unfolds the reducible `Representation.IndV.mk`, so the left-hand
--- side is not in `simp`-normal form.
+-- Pre-order simplification evaluates the map before `simp` unfolds `Representation.IndV.mk`.
 /-- The generator computation rule for `TauCeti.indTrivialEquiv`. -/
+@[simp↓]
 theorem indTrivialEquiv_apply_mk (x : G) (a : k) :
     indTrivialEquiv k H (IndV.mk H.subtype (Representation.trivial k H k) x a) =
       MonoidAlgebra.single (QuotientGroup.mk x⁻¹ : G ⧸ H) a :=
@@ -167,10 +167,10 @@ noncomputable def indTrivialIso :
     Rep.ind H.subtype (Rep.trivial k H k) ≅ Rep.ofMulAction k G (G ⧸ H) :=
   Rep.mkIso (indTrivialEquiv k H)
 
--- Not a `simp` lemma: `simp` unfolds the reducible `Representation.IndV.mk`, so the left-hand
--- side is not in `simp`-normal form.
+-- Pre-order simplification evaluates the map before `simp` unfolds `Representation.IndV.mk`.
 /-- The generator computation rule for `TauCeti.indTrivialIso`: it sends `⟦single x 1 ⊗ₜ a⟧` to
 `single ⟦x⁻¹⟧ a`. -/
+@[simp↓]
 theorem indTrivialIso_hom_hom_apply_mk (x : G) (a : k) :
     (indTrivialIso k H).hom.hom (IndV.mk H.subtype (Representation.trivial k H k) x a) =
       MonoidAlgebra.single (QuotientGroup.mk x⁻¹ : G ⧸ H) a := by
@@ -307,10 +307,10 @@ noncomputable def indOfMulActionQuotientEquiv :
       simp [indQuotientToQuotient, indQuotientLift_tmul, Representation.ofMulAction_single,
         mul_assoc]
 
--- Not a `simp` lemma: `simp` unfolds the reducible `Representation.IndV.mk`, so the left-hand
--- side is not in `simp`-normal form.
+-- Pre-order simplification evaluates the map before `simp` unfolds `Representation.IndV.mk`.
 /-- The generator computation rule for `TauCeti.indOfMulActionQuotientEquiv`: it sends
 `⟦single x 1 ⊗ₜ single ⟦c⟧ s⟧` to `single ⟦x⁻¹ * c⟧ s`. -/
+@[simp↓]
 theorem indOfMulActionQuotientEquiv_apply_mk (x : G) (c : C) (s : k) :
     indOfMulActionQuotientEquiv k h
         (IndV.mk C.subtype (Representation.ofMulAction k C (C ⧸ D.subgroupOf C)) x
@@ -344,6 +344,7 @@ noncomputable def indResProjection :
 
 /-- `TauCeti.indResProjection` on generators: the coset orientation is the one inherited from
 `TauCeti.indTrivialIso`, which sends `⟦x ⊗ₜ a⟧` to `single ⟦x⁻¹⟧ a`. -/
+@[simp↓]
 theorem indResProjection_hom_hom_apply (x : G) (y : Y) :
     (indResProjection Y).hom.hom (IndV.mk H.subtype (Rep.res H.subtype Y).ρ x y)
       = MonoidAlgebra.single (QuotientGroup.mk x⁻¹ : G ⧸ H) (1 : k) ⊗ₜ[k] Y.ρ x⁻¹ y := by

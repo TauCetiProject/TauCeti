@@ -111,10 +111,9 @@ noncomputable def indTrivialStabilizerEquiv :
     (ofMulActionEquivCongr k (quotientStabilizerEquiv (Equiv.Perm α) x₀)
       (quotientStabilizerEquiv_smul (Equiv.Perm α) x₀))
 
+-- Post-order simplification unfolds `Representation.IndV.mk` before this rule can match.
 /-- The generator computation rule for `TauCeti.indTrivialStabilizerEquiv`: the generator carried
-by `σ` goes to the basis vector of the point `σ⁻¹ x₀`.  Not a `simp` lemma, for the reason
-`TauCeti.indTrivialEquiv_apply_mk` is not: `simp` unfolds the reducible
-`Representation.IndV.mk`. -/
+by `σ` goes to the basis vector of the point `σ⁻¹ x₀`. -/
 theorem indTrivialStabilizerEquiv_apply_mk (σ : Equiv.Perm α) (a : k) :
     indTrivialStabilizerEquiv k x₀
         (Representation.IndV.mk (stabilizer (Equiv.Perm α) x₀).subtype
