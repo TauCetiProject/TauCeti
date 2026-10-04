@@ -31,11 +31,12 @@ public section
 
 namespace TauCeti
 
-variable {p : ℕ} [Fact p.Prime]
+variable {p : ℕ} [NeZero p]
 
 /-- **Continuous finite `p`-power characters separate points from closed subgroups.** If `I` is a
 closed subgroup of a profinite abelian pro-`p` group and `y ∉ I`, there is a continuous
-character to some `ZMod (p ^ k)` which is trivial on `I` and nontrivial on `y`. -/
+character to some `ZMod (p ^ k)` which is trivial on `I` and nontrivial on `y`. The base `p` need
+only be nonzero. -/
 theorem exists_continuous_zmodChar_of_notMem {Y : Type*} [CommGroup Y] [TopologicalSpace Y]
     [IsTopologicalGroup Y] [CompactSpace Y] [TotallyDisconnectedSpace Y]
     (hY : IsProP p Y) (I : Subgroup Y) (hI : IsClosed (I : Set Y)) (y : Y) (hy : y ∉ I) :
@@ -52,32 +53,22 @@ theorem exists_continuous_zmodChar_of_notMem {Y : Type*} [CommGroup Y] [Topologi
   have : Finite (Y ⧸ W.toSubgroup) :=
     Subgroup.quotient_finite_of_isOpen W.toSubgroup W.toOpenSubgroup.isOpen
   obtain ⟨k, hk⟩ := hY.exists_forall_pow_pow_eq_one W
-  have : NeZero (p ^ k) := ⟨pow_ne_zero k (Fact.out : p.Prime).ne_zero⟩
-  have hQ : ∀ a : Additive (Y ⧸ W.toSubgroup), p ^ k • a = 0 := by
-    intro a
-    change Additive.ofMul (a.toMul ^ p ^ k) = Additive.ofMul 1
-    rw [hk]
+  have : NeZero (p ^ k) := ⟨pow_ne_zero k (NeZero.ne p)⟩
+  have hQ : ∀ a : Additive (Y ⧸ W.toSubgroup), p ^ k • a = 0 := fun a ↦ by
+    rw [← ofMul_toMul a, ← ofMul_pow, hk, ofMul_one]
   have hyW : y ∉ W.toSubgroup := hyU
-  have hmk : QuotientGroup.mk' W.toSubgroup y ≠ 1 := by
-    intro h
-    exact hyW ((QuotientGroup.eq_one_iff y).mp h)
-  have ha : Additive.ofMul (QuotientGroup.mk' W.toSubgroup y) ≠ 0 := by
-    simpa using hmk
-  obtain ⟨f, hf⟩ := exists_addMonoidHom_zmod_apply_ne_zero hQ ha
-  let χ : Y →* Multiplicative (ZMod (p ^ k)) :=
-    (AddMonoidHom.toMultiplicativeRight f).comp (QuotientGroup.mk' W.toSubgroup)
-  refine ⟨k, χ, ?_, ?_, ?_⟩
+  have hmk : QuotientGroup.mk' W.toSubgroup y ≠ 1 := fun h ↦
+    hyW ((QuotientGroup.eq_one_iff y).mp h)
+  obtain ⟨f, hf⟩ := exists_addMonoidHom_zmod_apply_ne_zero hQ (ofMul_eq_zero.not.mpr hmk)
+  refine ⟨k, (AddMonoidHom.toMultiplicativeRight f).comp (QuotientGroup.mk' W.toSubgroup),
+    ?_, fun x hx ↦ ?_, ?_⟩
   · let _ : DiscreteTopology (Y ⧸ W.toSubgroup) :=
       QuotientGroup.discreteTopology W.toOpenSubgroup.isOpen
     exact (continuous_of_discreteTopology :
       Continuous (AddMonoidHom.toMultiplicativeRight f)).comp QuotientGroup.continuous_mk
-  · intro x hx
-    have hxW : x ∈ W.toSubgroup := (show I ≤ W.toSubgroup from le_sup_left) hx
-    have hqx : QuotientGroup.mk' W.toSubgroup x = 1 :=
-      (QuotientGroup.eq_one_iff x).2 hxW
-    change Multiplicative.ofAdd (f (Additive.ofMul (QuotientGroup.mk' W.toSubgroup x))) = 1
-    rw [hqx]
-    simp
-  · simpa [χ] using hf
+  · have hxW : x ∈ W.toSubgroup := Subgroup.mem_sup_left hx
+    rw [MonoidHom.comp_apply, QuotientGroup.mk'_apply, (QuotientGroup.eq_one_iff x).2 hxW, map_one]
+  · rwa [MonoidHom.comp_apply, AddMonoidHom.coe_toMultiplicativeRight, Function.comp_apply,
+      Function.comp_apply, Ne, ofAdd_eq_one]
 
 end TauCeti
