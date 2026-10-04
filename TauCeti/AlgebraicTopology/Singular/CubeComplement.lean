@@ -8,7 +8,6 @@ module
 public import TauCeti.AlgebraicTopology.Singular.DirectedUnion
 public import TauCeti.AlgebraicTopology.Singular.Sphere
 public import Mathlib.Topology.LocallyConstant.Basic
-public import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
 
 /-!
 # The complement of an embedded cube is acyclic

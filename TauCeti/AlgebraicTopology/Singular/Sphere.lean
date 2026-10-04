@@ -11,6 +11,7 @@ public import TauCeti.AlgebraicTopology.Sphere.Puncture
 public import TauCeti.AlgebraicTopology.Sphere.Zero
 public import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
 public import TauCeti.AlgebraicTopology.Disk
+public import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
 
 /-!
 # The homology of spheres
@@ -49,6 +50,9 @@ Coefficients are an object `R` of an abelian category with coproducts.
 * `TauCeti.reducedSingularHomologySphereSuccIso`: the isomorphism
   `H_redₖ₊₁(S) ≅ H_redₖ(S ∩ (ℝ ∙ p)ᗮ)`, given by that connecting morphism followed by the homotopy
   equivalence of `S ∖ {p, -p}` with the equator.
+* `TauCeti.reducedSingularHomologySphereIsoOfFinrankEq`: the unit spheres of two
+  finite-dimensional real normed spaces of the same dimension have isomorphic reduced homology,
+  which transports the computations below from inner product spaces to normed spaces.
 * `TauCeti.reducedSingularHomologySphereZeroIso`: `H_red₀(S) ≅ R` for the zero-sphere, with
   generator `[-p] - [p]`.
 * `TauCeti.singularHomologySphereOneIso` and
@@ -129,6 +133,27 @@ lemma reducedSingularHomologySphereZeroIso_inv_ι (h : finrank ℝ E = 1) (p : s
   simp only [reducedSingularHomologySphereZeroIso, Iso.trans_inv, Category.assoc,
     coproductUniqueIso_inv, zerothHomotopySphereUnique_default]
   exact ι_reducedSingularHomology₀Iso_inv_ι R (X := TopCat.of (sphere (0 : E) 1)) p (-p) _
+
+/-- The unit spheres of two finite-dimensional real normed spaces of the same dimension have
+isomorphic reduced homology, through the homeomorphism `TauCeti.sphereHomeomorphOfFinrankEq`.
+This transports the computations of this file from inner product spaces to normed spaces. -/
+def reducedSingularHomologySphereIsoOfFinrankEq [FiniteDimensional ℝ E] {F : Type w}
+    [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+    (hEF : finrank ℝ E = finrank ℝ F) (k : ℕ) :
+    (reducedSingularHomologyFunctor R k).obj (TopCat.of (sphere (0 : E) 1)) ≅
+      (reducedSingularHomologyFunctor R k).obj (TopCat.of (sphere (0 : F) 1)) :=
+  (reducedSingularHomologyFunctor R k).mapIso (TopCat.isoOfHomeo (sphereHomeomorphOfFinrankEq hEF))
+
+/-- `TauCeti.reducedSingularHomologySphereIsoOfFinrankEq` is the map induced by
+`TauCeti.sphereHomeomorphOfFinrankEq`. -/
+@[simp]
+lemma reducedSingularHomologySphereIsoOfFinrankEq_hom [FiniteDimensional ℝ E] {F : Type w}
+    [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+    (hEF : finrank ℝ E = finrank ℝ F) (k : ℕ) :
+    (reducedSingularHomologySphereIsoOfFinrankEq R hEF k).hom =
+      (reducedSingularHomologyFunctor R k).map
+        (TopCat.ofHom (sphereHomeomorphOfFinrankEq hEF : C(sphere (0 : E) 1, sphere (0 : F) 1))) :=
+  (rfl)
 
 end Normed
 

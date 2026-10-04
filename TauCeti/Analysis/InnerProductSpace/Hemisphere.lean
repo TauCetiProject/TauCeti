@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Orthogonal
+public import Mathlib.Analysis.Normed.Group.BallSphere
 public import Mathlib.Analysis.SpecialFunctions.Sqrt
 
 /-!
@@ -16,18 +17,24 @@ For a unit vector `p` of a real inner product space `E`, the closed hemisphere
 the hyperplane `(ℝ ∙ p)ᗮ`. The homeomorphism removes the component of `x` along `p`; its inverse
 lifts a point `y` of the ball to `y + √(1 - ‖y‖²) • p`.
 
-Closed hemispheres are the discs out of which the sphere is built in the inductive computations
-of the homology of the complement of an embedded sphere.
+The closed hemispheres around `p` and `-p` cover the sphere and meet in the equator, the unit
+sphere of `(ℝ ∙ p)ᗮ`, included in `S` by `TauCeti.equatorInclusion p`. Closed hemispheres are the
+discs out of which the sphere is built in the inductive computations of the homology of the
+complement of an embedded sphere.
 
 ## Main definitions
 
 * `TauCeti.hemisphereHomeomorph p`: the closed hemisphere around `p` is homeomorphic to the closed
   unit ball of `(ℝ ∙ p)ᗮ`.
+* `TauCeti.equatorInclusion p`: the inclusion of the equator, the unit sphere of `(ℝ ∙ p)ᗮ`, into
+  the unit sphere of `E`.
 
 ## Main results
 
 * `TauCeti.coe_hemisphereHomeomorph_apply` and `TauCeti.coe_hemisphereHomeomorph_symm_apply`:
   the formulas for the homeomorphism and its inverse.
+* `TauCeti.range_equatorInclusion`: the equator is the intersection of the closed hemispheres
+  around `p` and `-p`.
 -/
 
 public section
@@ -113,5 +120,42 @@ theorem coe_hemisphereHomeomorph_symm_apply (y : closedBall (0 : (ℝ ∙ (p : E
     (((hemisphereHomeomorph p).symm y : sphere (0 : E) 1) : E) =
       ((y : (ℝ ∙ (p : E))ᗮ) : E) + √(1 - ‖(y : (ℝ ∙ (p : E))ᗮ)‖ ^ 2) • (p : E) :=
   (rfl)
+
+/-- The inclusion of the equator, the unit sphere of `(ℝ ∙ p)ᗮ`, into the unit sphere of `E`. -/
+def equatorInclusion : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 → sphere (0 : E) 1 :=
+  fun y ↦ ⟨((y : (ℝ ∙ (p : E))ᗮ) : E), mem_sphere_zero_iff_norm.2
+    ((Submodule.norm_coe _).trans (norm_eq_of_mem_sphere y))⟩
+
+/-- `TauCeti.equatorInclusion p` is the inclusion of `(ℝ ∙ p)ᗮ` into `E`. -/
+@[simp]
+theorem coe_equatorInclusion_apply (y : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1) :
+    (equatorInclusion p y : E) = ((y : (ℝ ∙ (p : E))ᗮ) : E) :=
+  (rfl)
+
+/-- The inclusion of the equator is continuous. -/
+theorem continuous_equatorInclusion : Continuous (equatorInclusion p) := by
+  unfold equatorInclusion
+  fun_prop
+
+/-- The inclusion of the equator is injective. -/
+theorem injective_equatorInclusion : Function.Injective (equatorInclusion p) := fun _ _ hyy' ↦
+  Subtype.ext (Subtype.ext (congrArg (fun z : sphere (0 : E) 1 ↦ (z : E)) hyy'))
+
+/-- The equator is the set of points of the sphere orthogonal to `p`, the intersection of the two
+closed hemispheres around `p` and `-p`. -/
+theorem range_equatorInclusion :
+    range (equatorInclusion p) = {x : sphere (0 : E) 1 | 0 ≤ ⟪(x : E), (p : E)⟫} ∩
+      {x : sphere (0 : E) 1 | 0 ≤ ⟪(x : E), ((-p : sphere (0 : E) 1) : E)⟫} := by
+  refine Set.ext fun x ↦ ?_
+  simp only [mem_inter_iff, mem_ofPred_eq, coe_neg_sphere, inner_neg_right, neg_nonneg,
+    ← le_antisymm_iff, eq_comm (a := (0 : ℝ))]
+  constructor
+  · rintro ⟨y, rfl⟩
+    rw [real_inner_comm]
+    exact Submodule.mem_orthogonal_singleton_iff_inner_right.1 (y : (ℝ ∙ (p : E))ᗮ).2
+  · intro hx
+    refine ⟨⟨⟨x, Submodule.mem_orthogonal_singleton_iff_inner_right.2 ?_⟩,
+      mem_sphere_zero_iff_norm.2 (norm_eq_of_mem_sphere x)⟩, rfl⟩
+    rwa [real_inner_comm]
 
 end TauCeti

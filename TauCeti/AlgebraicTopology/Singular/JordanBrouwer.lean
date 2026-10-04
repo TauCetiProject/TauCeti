@@ -73,38 +73,6 @@ section InnerProduct
 
 variable {E : Type u} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
-/-- The inclusion of the equator, the unit sphere of `(ℝ ∙ p)ᗮ`, into the unit sphere. -/
-private def equatorInclusion (p : sphere (0 : E) 1) :
-    sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 → sphere (0 : E) 1 :=
-  fun y ↦ ⟨((y : (ℝ ∙ (p : E))ᗮ) : E), mem_sphere_zero_iff_norm.2
-    ((Submodule.norm_coe _).trans (norm_eq_of_mem_sphere y))⟩
-
-private lemma continuous_equatorInclusion (p : sphere (0 : E) 1) :
-    Continuous (equatorInclusion p) := by
-  unfold equatorInclusion
-  fun_prop
-
-private lemma injective_equatorInclusion (p : sphere (0 : E) 1) :
-    Function.Injective (equatorInclusion p) := fun _ _ hyy' ↦
-  Subtype.ext (Subtype.ext (congrArg (fun z : sphere (0 : E) 1 ↦ (z : E)) hyy'))
-
-/-- The equator is the set of points of the sphere orthogonal to `p`, the intersection of the two
-closed hemispheres around `p` and `-p`. -/
-private lemma range_equatorInclusion (p : sphere (0 : E) 1) :
-    range (equatorInclusion p) = {x : sphere (0 : E) 1 | 0 ≤ ⟪(x : E), (p : E)⟫} ∩
-      {x : sphere (0 : E) 1 | 0 ≤ ⟪(x : E), ((-p : sphere (0 : E) 1) : E)⟫} := by
-  refine Set.ext fun x ↦ ?_
-  simp only [mem_inter_iff, mem_ofPred_eq, coe_neg_sphere, inner_neg_right, neg_nonneg,
-    ← le_antisymm_iff, eq_comm (a := (0 : ℝ))]
-  constructor
-  · rintro ⟨y, rfl⟩
-    rw [real_inner_comm]
-    exact Submodule.mem_orthogonal_singleton_iff_inner_right.1 (y : (ℝ ∙ (p : E))ᗮ).2
-  · intro hx
-    refine ⟨⟨⟨x, Submodule.mem_orthogonal_singleton_iff_inner_right.2 ?_⟩,
-      mem_sphere_zero_iff_norm.2 (norm_eq_of_mem_sphere x)⟩, rfl⟩
-    rwa [real_inner_comm]
-
 variable [FiniteDimensional ℝ E]
 
 include hY in
@@ -205,16 +173,6 @@ variable {A : Type w} [Ring A] (M : ModuleCat.{w} A)
   {E : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {h : sphere (0 : E) 1 → sphere (0 : F) 1}
 
-/-- The reduced homology of the unit sphere of an `(n + 1)`-dimensional real normed space is that
-of the unit sphere of a Euclidean space of the same dimension. -/
-private def reducedSingularHomologySphereIsoEuclidean {n : ℕ} (hF : finrank ℝ F = n + 1) (k : ℕ) :
-    (reducedSingularHomologyFunctor M k).obj (of (sphere (0 : F) 1)) ≅
-      (reducedSingularHomologyFunctor M k).obj
-        (of (sphere (0 : EuclideanSpace ℝ (ULift.{w} (Fin (n + 1)))) 1)) :=
-  haveI : FiniteDimensional ℝ F := .of_finrank_pos (by omega)
-  (reducedSingularHomologyFunctor M k).mapIso
-    (isoOfHomeo (sphereHomeomorphOfFinrankEq (by simp [hF])))
-
 /-- **The complement of an embedded sphere in a sphere is acyclic outside one degree.** Let `h` be a
 continuous injection of the unit sphere of a finite-dimensional real normed space `E` into the unit
 sphere of an `(n + 1)`-dimensional one. Then the reduced homology of the complement of its image
@@ -224,8 +182,10 @@ theorem isZero_reducedSingularHomologyFunctor_sphere_compl_range_sphere {n : ℕ
     (hF : finrank ℝ F = n + 1) (hc : Continuous h) (hi : Function.Injective h) {i : ℕ}
     (hin : i + finrank ℝ E ≠ n) :
     IsZero ((reducedSingularHomologyFunctor M i).obj (of ↥(range h)ᶜ)) :=
+  haveI : FiniteDimensional ℝ F := .of_finrank_pos (by omega)
   ((isZero_reducedSingularHomologyFunctor_sphere_of_ne M (by simp) hin).of_iso
-    (reducedSingularHomologySphereIsoEuclidean M hF _)).of_iso
+    (reducedSingularHomologySphereIsoOfFinrankEq M
+      (F := EuclideanSpace ℝ (ULift.{w} (Fin (n + 1)))) (by simp [hF]) _)).of_iso
     (reducedSingularHomologyComplRangeSphereIso M
       (isZero_reducedSingularHomologyFunctor_sphere_compl_singleton M) hc hi i)
 
@@ -238,9 +198,12 @@ depends on chosen points, and is one choice of generator rather than a canonical
 def reducedSingularHomologySphereComplRangeSphereIso {i : ℕ}
     (hF : finrank ℝ F = i + finrank ℝ E + 1) (hc : Continuous h) (hi : Function.Injective h) :
     (reducedSingularHomologyFunctor M i).obj (of ↥(range h)ᶜ) ≅ M :=
+  haveI : FiniteDimensional ℝ F := .of_finrank_pos (by omega)
   reducedSingularHomologyComplRangeSphereIso M
       (isZero_reducedSingularHomologyFunctor_sphere_compl_singleton M) hc hi i ≪≫
-    reducedSingularHomologySphereIsoEuclidean M hF _ ≪≫ reducedSingularHomologySphereIso M (by simp)
+    reducedSingularHomologySphereIsoOfFinrankEq M
+      (F := EuclideanSpace ℝ (ULift.{w} (Fin (i + finrank ℝ E + 1)))) (by simp [hF]) _ ≪≫
+    reducedSingularHomologySphereIso M (by simp)
 
 /-- **The Jordan–Brouwer separation theorem.** The complement of the image of a continuous injection
 of the unit sphere of a finite-dimensional real normed space `E` into the unit sphere of a real
