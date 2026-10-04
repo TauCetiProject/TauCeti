@@ -10,6 +10,8 @@ public import TauCeti.LinearAlgebra.IntegralLattice.Even
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.TypeA.Basic
 public import TauCeti.LinearAlgebra.Matrix.Dual
 
+import TauCeti.Algebra.BigOperators.Finset.PartialSum
+
 /-!
 # The zero-sum coordinate model of the root lattice of type `Aₙ`
 
@@ -128,16 +130,6 @@ private theorem sum_Iic_last_sum_smul (c : Fin n → ℚ) :
   simp only [Finset.sum_apply, Pi.smul_apply, smul_eq_mul]
   rw [sum_comm]
   simp [← mul_sum, sum_Iic_zeroSumSimpleRoot, Fin.le_last]
-
-/-- A vector of `ℚ^{n+1}` all of whose partial sums `x₀ + ⋯ + xₖ` vanish is zero. -/
-private theorem eq_zero_of_forall_sum_Iic_eq_zero {y : Fin (n + 1) → ℚ}
-    (hy : ∀ k, ∑ j ∈ Iic k, y j = 0) : y = 0 := by
-  funext k
-  induction k using WellFoundedLT.induction with
-  | _ k ih =>
-    have h := hy k
-    rw [Iic_eq_cons_Iio, sum_cons, sum_eq_zero fun j hj ↦ ih j (mem_Iio.mp hj), add_zero] at h
-    exact h
 
 /-- **The partial-sum expansion.** A vector of `ℚ^{n+1}` with coordinate sum zero is the
 combination of the simple roots `αₖ = eₖ - eₖ₊₁` whose coefficients are its partial sums
