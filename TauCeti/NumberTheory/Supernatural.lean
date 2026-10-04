@@ -271,6 +271,13 @@ theorem primaryPart_eq_one_iff {p : Nat.Primes} {n : Supernatural} :
     primaryPart p n = 1 ↔ n p = 0 := by
   rw [primaryPart, ← primePower_zero p, (primePower_injective p).eq_iff]
 
+/-- The simp-normal form of `primaryPart_eq_one_iff`: the `p`-primary part is the least supernatural
+number exactly when `p` does not divide `n`. -/
+@[simp]
+theorem primaryPart_eq_bot_iff {p : Nat.Primes} {n : Supernatural} :
+    primaryPart p n = ⊥ ↔ n p = 0 := by
+  rw [← one_eq_bot, primaryPart_eq_one_iff]
+
 /-- The prime-to-`p` part of a supernatural number, obtained by deleting its `p`-exponent. -/
 def primeToPart (p : Nat.Primes) (n : Supernatural) : Supernatural :=
   Function.update n p 0

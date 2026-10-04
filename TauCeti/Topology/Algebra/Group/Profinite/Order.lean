@@ -170,6 +170,13 @@ theorem profiniteOrder_eq_one_iff [IsTopologicalGroup G] [TotallyDisconnectedSpa
     rw [Nat.card_eq_one_iff_unique.mpr ⟨QuotientGroup.mk_surjective.subsingleton, inferInstance⟩,
       padicValNat_one_right, Nat.cast_zero]
 
+/-- The simp-normal form of `profiniteOrder_eq_one_iff`: a profinite group has the least
+supernatural order exactly when it is trivial. -/
+@[simp]
+theorem profiniteOrder_eq_bot_iff [IsTopologicalGroup G] [TotallyDisconnectedSpace G] :
+    profiniteOrder G = ⊥ ↔ Subsingleton G := by
+  rw [← Supernatural.one_eq_bot, profiniteOrder_eq_one_iff]
+
 /-- The exponent of a prime `p` in `profiniteOrder G` is infinite exactly when every power of `p`
 divides the order of some finite continuous quotient. -/
 theorem profiniteOrder_apply_eq_top_iff (p : Nat.Primes) :
