@@ -180,34 +180,6 @@ theorem localSymbol_eq_zero_iff
       ∃ x y : F, (b : F) = x ^ 2 - (a : F) * y ^ 2 :=
   (localSymbol_eq_zero_iff_hilbertSymbol_eq_one hζ tr a b).trans (hilbertSymbol_eq_one_iff a b)
 
-/-- Translate the additive `ZMod 2` normalization of the cohomological local symbol to the
-classical sign normalization, sending `0` to `+1` and `1` to `-1`. -/
-def hilbertSign (x : ZMod 2) : ℤˣ :=
-  ((AddEquiv.toMultiplicativeRight additiveIntUnitsAddEquiv).symm
-    (Multiplicative.ofAdd x))
-
-/-- The zero cohomology class has positive sign. -/
-@[simp]
-theorem hilbertSign_zero : hilbertSign 0 = 1 := by
-  apply (AddEquiv.toMultiplicativeRight additiveIntUnitsAddEquiv).injective
-  simp [hilbertSign, additiveIntUnitsAddEquiv_apply]
-
-/-- The nonzero class in `ZMod 2` has negative sign. -/
-@[simp]
-theorem hilbertSign_one : hilbertSign 1 = -1 := by
-  apply (AddEquiv.toMultiplicativeRight additiveIntUnitsAddEquiv).injective
-  simp [hilbertSign, additiveIntUnitsAddEquiv_apply]
-
-/-- The cohomological sign is `+1` exactly at the zero class. -/
-@[simp]
-theorem hilbertSign_eq_one_iff (x : ZMod 2) : hilbertSign x = 1 ↔ x = 0 := by
-  rcases (by decide : ∀ y : ZMod 2, y = 0 ∨ y = 1) x with rfl | rfl <;> simp
-
-/-- The sign dictionary turns addition of mod-two invariants into multiplication of signs. -/
-theorem hilbertSign_add (x y : ZMod 2) : hilbertSign (x + y) = hilbertSign x * hilbertSign y :=
-  ((AddEquiv.toMultiplicativeRight additiveIntUnitsAddEquiv).symm.map_mul
-    (Multiplicative.ofAdd x) (Multiplicative.ofAdd y))
-
 /-- The norm-equation Hilbert symbol agrees with the cohomological mod-two local symbol after
 translating its additive invariant to a sign. -/
 theorem hilbertSymbol_eq_cohomological
