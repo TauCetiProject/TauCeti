@@ -533,36 +533,9 @@ private theorem suspendedStasheff_eq_smul {G : InternalGrading R M}
                 (2 - s) * (e + ∑ i ∈ Finset.range p, d i)) •
               evalNat (m (p + 1 + (n - p - s) + 1) x)
                 (replaceBlock a p s (evalNat (AA.m s) fun j ↦ a (p + j)))) := by
-  have hbar : F ((G.shift 1).koszulTwist 1 x ⊗ₜ[R]
-        AA.coaugmentedBarDifferential
-          (TensorWords.of R A n (PiTensorProduct.tprod R fun i : Fin n ↦ a i))) =
-      ∑ p ∈ Finset.range n, ∑ s ∈ Finset.Icc 1 (n - p),
-        F ((G.shift 1).koszulTwist 1 x ⊗ₜ[R]
-          reducedInclusion R A (ReducedTensorWords.splice R
-            (InternalGrading.twistedTuple (AA.grading.shift 1) 1 (fun i : Fin n ↦ a i) 0 p)
-              0 n p s (AA.taylor (ReducedTensorWords.subword R (fun i : Fin n ↦ a i) p s)))) := by
-    rcases Nat.eq_zero_or_pos n with rfl | hn
-    · have hone : TensorWords.of R A 0 (PiTensorProduct.tprod R fun i : Fin 0 ↦ a i) = 1 := by
-        rw [one_eq_of_zero]
-        exact of_tprod_congr R A fun j ↦ j.elim0
-      rw [hone, AA.coaugmentedBarDifferential_one, TensorProduct.tmul_zero, map_zero,
-        Finset.sum_range_zero]
-    · rw [← reducedInclusion_of (R := R) (M := A) ⟨n, hn⟩, ← LinearMap.comp_apply,
-        AInfinityAlgebra.coaugmentedBarDifferential_comp_reducedInclusion, LinearMap.comp_apply,
-        AInfinityAlgebra.barDifferential_def, ReducedTensorWords.gradedCoderiv_of_tprod]
-      simp only [map_sum, TensorProduct.tmul_sum]
-      refine Finset.sum_congr rfl fun p hp ↦ (Finset.sum_subset (fun s hs ↦ ?_) ?_).symm
-      · rw [Finset.mem_Icc] at hs
-        rw [Finset.mem_range]
-        omega
-      · intro s _ hs
-        rw [Finset.mem_Icc, not_and_or, not_le, not_le] at hs
-        rcases hs with hs | hs
-        · rw [Nat.lt_one_iff.1 hs, ReducedTensorWords.splice_zero_length, map_zero,
-            TensorProduct.tmul_zero, map_zero]
-        · rw [ReducedTensorWords.splice_eq_zero_of_block_lt_add R _ _ (by omega), map_zero,
-            TensorProduct.tmul_zero, map_zero]
-  rw [hbar, Finset.sum_congr rfl fun k hk ↦
+  rw [apply_coaugmentedBarDifferential_of_tprod F n ((G.shift 1).koszulTwist 1 x)
+      (fun i : Fin n ↦ a i),
+    Finset.sum_congr rfl fun k hk ↦
       apply_comp_subword_of_mem (f := fun r ↦ m (r + 1)) (h := fun r ↦ m (r + 1))
         hFm hm hFm (q := 1) (Nat.lt_succ_iff.1 (Finset.mem_range.1 hk)) hx d a ha,
     Finset.sum_congr rfl fun p hp ↦ Finset.sum_congr rfl fun s hs ↦

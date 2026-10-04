@@ -33,6 +33,8 @@ morphisms (`q = 0`).
   `TauCeti.AInfinityRightModule.unsuspend_mem_piece`: its suspension sign and degree.
 * `TauCeti.AInfinityRightModule.apply_comp_subword_of_mem`: the suspension sign for a composite
   of module-first Taylor maps.
+* `TauCeti.AInfinityRightModule.apply_coaugmentedBarDifferential_of_tprod`: the algebra bar
+  differential expanded after an arbitrary linear map on a module tensor factor.
 * `TauCeti.AInfinityRightModule.apply_algebra_splice_of_mem`: the suspension sign when an algebra
   operation is inserted into the algebra inputs.
 
@@ -149,7 +151,7 @@ theorem unsuspend_mem_piece (G : InternalGrading R M) (GA : InternalGrading R A)
 their unsuspended components.  The inner components have degree `q - k` on `k` algebra inputs;
 the outer degree is irrelevant to the suspension sign. -/
 theorem apply_comp_subword_of_mem
-    {GM : InternalGrading R M} {GN : InternalGrading R N}
+    {GA : InternalGrading R A} {GM : InternalGrading R M} {GN : InternalGrading R N}
     {F : (M ⊗[R] TensorWords R A) →ₗ[R] N}
     {H : (N ⊗[R] TensorWords R A) →ₗ[R] P}
     {f : (n : ℕ) → M →ₗ[R] MultilinearMap R (fun _ : Fin n ↦ A) N}
@@ -158,15 +160,15 @@ theorem apply_comp_subword_of_mem
     (hFf : ∀ (n : ℕ) (x : M) (a : Fin n → A),
       F (x ⊗ₜ[R] TensorWords.of R A n (PiTensorProduct.tprod R a)) =
         f n (GM.koszulTwist n x)
-          fun i : Fin n ↦ AA.grading.koszulTwist ((n : ℤ) - 1 - i) (a i))
+          fun i : Fin n ↦ GA.koszulTwist ((n : ℤ) - 1 - i) (a i))
     (hf : ∀ (n : ℕ) {x : M} {p : ℤ}, x ∈ GM.piece p → ∀ (a : Fin n → A) (d : Fin n → ℤ),
-      (∀ i, a i ∈ AA.grading.piece (d i)) → f n x a ∈ GN.piece (p + ∑ i, d i + (q - n)))
+      (∀ i, a i ∈ GA.piece (d i)) → f n x a ∈ GN.piece (p + ∑ i, d i + (q - n)))
     (hHh : ∀ (n : ℕ) (x : N) (a : Fin n → A),
       H (x ⊗ₜ[R] TensorWords.of R A n (PiTensorProduct.tprod R a)) =
         h n (GN.koszulTwist n x)
-          fun i : Fin n ↦ AA.grading.koszulTwist ((n : ℤ) - 1 - i) (a i))
+          fun i : Fin n ↦ GA.koszulTwist ((n : ℤ) - 1 - i) (a i))
     {n k : ℕ} (hk : k ≤ n) {x : M} {e : ℤ} (hx : x ∈ GM.piece e)
-    (d : ℕ → ℤ) (a : ℕ → A) (ha : ∀ i < n, a i ∈ AA.grading.piece (d i)) :
+    (d : ℕ → ℤ) (a : ℕ → A) (ha : ∀ i < n, a i ∈ GA.piece (d i)) :
     H (F (x ⊗ₜ[R] subword R (fun i : Fin n ↦ a i) 0 k) ⊗ₜ[R]
         subword R (fun i : Fin n ↦ a i) k (n - k)) =
       negOnePowCast R (n * e + suspExp n d) •
@@ -177,13 +179,13 @@ theorem apply_comp_subword_of_mem
     subword_eq_of_tprod R _ le_rfl]
   simp only [Nat.zero_add]
   rw [hFf]
-  rw [apply_koszulTwist_of_mem GM AA.grading (f k) hx d a fun i hi ↦ ha i (by omega)]
+  rw [apply_koszulTwist_of_mem GM GA (f k) hx d a fun i hi ↦ ha i (by omega)]
   have hy : evalNat (f k x) a ∈
       GN.piece (e + ∑ i ∈ Finset.range k, d i + (q - k)) := by
     rw [evalNat_def, ← Fin.sum_univ_eq_sum_range]
     exact hf k hx _ (fun i : Fin k ↦ d i) fun i ↦ ha i (by omega)
   rw [← TensorProduct.smul_tmul', map_smul, hHh,
-    apply_koszulTwist_of_mem GN AA.grading (h t) hy (fun j ↦ d (k + j))
+    apply_koszulTwist_of_mem GN GA (h t) hy (fun j ↦ d (k + j))
       (fun j ↦ a (k + j)) fun j hj ↦ ha _ (by omega)]
   simp only [smul_smul, ← negOnePowCast_add]
   congr 1
@@ -196,6 +198,39 @@ theorem apply_comp_subword_of_mem
   rw [suspExp_add, hsum, suspExp_def t]
   push_cast
   ring
+
+/-- Applying a linear map after tensoring a module element with the algebra bar differential
+expands as the sum over all nonempty blocks collapsed by the algebra Taylor map. -/
+theorem apply_coaugmentedBarDifferential_of_tprod
+    (F : (M ⊗[R] TensorWords R A) →ₗ[R] N) (n : ℕ) (x : M) (a : Fin n → A) :
+    F (x ⊗ₜ[R]
+        AA.coaugmentedBarDifferential (TensorWords.of R A n (PiTensorProduct.tprod R a))) =
+      ∑ p ∈ Finset.range n, ∑ s ∈ Finset.Icc 1 (n - p),
+        F (x ⊗ₜ[R] reducedInclusion R A (ReducedTensorWords.splice R
+          (InternalGrading.twistedTuple (AA.grading.shift 1) 1 a 0 p) 0 n p s
+            (AA.taylor (ReducedTensorWords.subword R a p s)))) := by
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · have hone : TensorWords.of R A 0 (PiTensorProduct.tprod R a) = 1 := by
+      rw [one_eq_of_zero]
+      exact of_tprod_congr R A fun j ↦ j.elim0
+    rw [hone, AA.coaugmentedBarDifferential_one, TensorProduct.tmul_zero, map_zero,
+      Finset.sum_range_zero]
+  · rw [← reducedInclusion_of (R := R) (M := A) ⟨n, hn⟩, ← LinearMap.comp_apply,
+      AInfinityAlgebra.coaugmentedBarDifferential_comp_reducedInclusion,
+      LinearMap.comp_apply, AInfinityAlgebra.barDifferential_def,
+      ReducedTensorWords.gradedCoderiv_of_tprod]
+    simp only [map_sum, TensorProduct.tmul_sum]
+    refine Finset.sum_congr rfl fun p hp ↦ (Finset.sum_subset (fun s hs ↦ ?_) ?_).symm
+    · rw [Finset.mem_Icc] at hs
+      rw [Finset.mem_range]
+      omega
+    · intro s _ hs
+      rw [Finset.mem_Icc, not_and_or, not_le, not_le] at hs
+      rcases hs with hs | hs
+      · rw [Nat.lt_one_iff.1 hs, ReducedTensorWords.splice_zero_length, map_zero,
+          TensorProduct.tmul_zero, map_zero]
+      · rw [ReducedTensorWords.splice_eq_zero_of_block_lt_add R _ _ (by omega), map_zero,
+          TensorProduct.tmul_zero, map_zero]
 
 /-- A suspended term in which the algebra bar differential collapses a block of homogeneous
 algebra inputs, expressed through the unsuspended module-first component and algebra operation. -/
