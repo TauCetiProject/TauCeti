@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.Finiteness.Projective
 import TauCeti.RepresentationTheory.Irreducible
 import TauCeti.RepresentationTheory.AsModule
 import TauCeti.RepresentationTheory.OfModule
+import TauCeti.RepresentationTheory.Rep.ChangeOfGroup
 
 /-!
 # Invariants of group representations
@@ -106,18 +107,11 @@ namespace Representation
 
 open scoped MonoidAlgebra
 
-variable {k G V W : Type*} [CommRing k] [Group G]
-  [AddCommGroup V] [Module k V] [AddCommGroup W] [Module k W]
+variable {k G V : Type*} [CommRing k] [Group G] [AddCommGroup V] [Module k V]
 
 section Finite
 
 variable [Fintype G]
-
-/-- The group norm commutes with an intertwining map. -/
-theorem IntertwiningMap.map_norm {ρ : Representation k G V} {σ : Representation k G W}
-    (f : IntertwiningMap ρ σ) (x : V) : f (ρ.norm x) = σ.norm (f x) := by
-  simp only [norm, LinearMap.sum_apply, map_sum]
-  exact Finset.sum_congr rfl fun g _ => IntertwiningMap.isIntertwining ρ σ f g x
 
 /-- The norm of the left regular representation maps onto its invariant submodule, over an
 arbitrary commutative ring. -/
@@ -196,8 +190,10 @@ theorem range_norm_eq_invariants_of_projective (ρ : Representation k G V)
     obtain ⟨y, hy⟩ : S x ∈ LinearMap.range τ.norm := by
       rw [range_norm_free_eq_invariants]
       exact hSx
+    have hF : τ.IsIntertwiningMap (ρ.comp ((MulEquiv.refl G : G ≃* G) : G →* G))
+        F.toLinearMap := ⟨IntertwiningMap.isIntertwining τ ρ F⟩
     refine ⟨F y, ?_⟩
-    rw [← F.map_norm, hy]
+    rw [← show F (τ.norm y) = ρ.norm (F y) from LinearMap.congr_fun hF.comp_norm y, hy]
     have hFS : F (S x) = x := by
       simp only [F, S, IntertwiningMap.equivLinearMapAsModule_symm_apply,
         LinearMap.comp_apply]
