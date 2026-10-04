@@ -108,25 +108,27 @@ private theorem pmvAux_append_replicate (a : SignType) (k n : ℕ) (l : List Sig
     (a : R) (n : ℕ) : (a :: List.replicate n 0).permanencesMinusVariations = 0 := by
   simpa using List.permanencesMinusVariations_append_replicate_zero [a] n
 
-/-- Recursion across a complete gap between two nonzero entries. This also
-specifies the sign correction for even gaps and the cancellation for odd gaps. -/
+/-- Recursion across a zero gap ending at a nonzero entry. This also specifies
+the sign correction for even gaps and the cancellation for odd gaps. -/
 theorem _root_.List.permanencesMinusVariations_cons_replicate_zero_append
-    {a b : R} (ha : a ≠ 0) (hb : b ≠ 0) (k : ℕ) (l : List R) :
+    {a b : R} (hb : b ≠ 0) (k : ℕ) (l : List R) :
     (a :: (List.replicate k 0 ++ b :: l)).permanencesMinusVariations =
       (if Even k then (-1 : ℤ) ^ (Nat.choose k 2) *
         (SignType.sign a : ℤ) * (SignType.sign b : ℤ) else 0) +
       (b :: l).permanencesMinusVariations := by
-  simp [List.permanencesMinusVariations, pmvAux, ha, hb,
-    pmvAux_replicate_append, gapWeight]
+  by_cases ha : a = 0
+  · simp [ha]
+  · simp [List.permanencesMinusVariations, pmvAux, ha, hb,
+      pmvAux_replicate_append, gapWeight]
 
 /-- Without an intervening zero, an adjacent pair contributes the product of
 its signs. -/
 theorem _root_.List.permanencesMinusVariations_cons_cons {a b : R}
-    (ha : a ≠ 0) (hb : b ≠ 0) (l : List R) :
+    (hb : b ≠ 0) (l : List R) :
     (a :: b :: l).permanencesMinusVariations =
       (SignType.sign a : ℤ) * (SignType.sign b : ℤ) +
         (b :: l).permanencesMinusVariations := by
-  simpa using List.permanencesMinusVariations_cons_replicate_zero_append ha hb 0 l
+  simpa using List.permanencesMinusVariations_cons_replicate_zero_append hb 0 l
 
 private theorem pmvAux_append_cons (s a : SignType) (ha : a ≠ 0) (k : ℕ)
     (l m : List SignType) :
@@ -201,7 +203,7 @@ theorem _root_.List.permanencesMinusVariations_eq_length_sub_two_mul_signVariati
       have ha := h a (by simp)
       have hb := h b (by simp)
       have ht : ∀ x ∈ b :: l, x ≠ 0 := fun x hx => h x (by simp [hx])
-      rw [List.permanencesMinusVariations_cons_cons ha hb,
+      rw [List.permanencesMinusVariations_cons_cons hb,
         List.signVariations_cons_cons_of_ne_zero _ ha hb, ih ht]
       have hs : (SignType.sign a : ℤ) * (SignType.sign b : ℤ) =
           1 - 2 * (if SignType.sign a = SignType.sign b then (0 : ℤ) else 1) := by
