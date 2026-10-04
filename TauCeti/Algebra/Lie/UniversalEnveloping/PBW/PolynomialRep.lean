@@ -84,6 +84,11 @@ namespace PBWPolynomialRep
 
 /-! ### Monomial bookkeeping -/
 
+omit [LinearOrder ι] in
+private theorem monomial_add_single_one (i : ι) (σ : ι →₀ ℕ) (r : R) :
+    (monomial (σ + Finsupp.single i 1) r : S) = X i * monomial σ r := by
+  rw [monomial_add_single, pow_one, mul_comm]
+
 /-- A monomial in which some variable is less than `l` splits off its least variable `μ < l`. -/
 private theorem exists_eq_add_single {l : ι} {σ : ι →₀ ℕ} (h : ¬ ∀ i ∈ σ.support, l ≤ i) :
     ∃ (μ : ι) (τ : ι →₀ ℕ), μ < l ∧ (∀ i ∈ τ.support, μ ≤ i) ∧ σ = τ + Finsupp.single μ 1 := by
@@ -126,7 +131,7 @@ private theorem naive_mem {d : ℕ} (x : L) {p : S} (hp : p ∈ S≤ d) : naive 
     rw [naive_apply, gen_basis]
     have hm : (monomial (σ + Finsupp.single l 1) 1 : S) ∈ S≤ (d + 1) :=
       monomial_mem_restrictTotalDegree (by simpa using hσ) 1
-    rwa [monomial_add_single, pow_one, mul_comm] at hm) x hp
+    rwa [monomial_add_single_one] at hm) x hp
 
 variable [Bracket L L]
 
@@ -191,8 +196,7 @@ private theorem degreeBound_step {g : L →ₗ[R] S →ₗ[R] S} (hg : DegreeBou
         g ⁅b l, b μ⁆ (monomial τ 1) - X l * (X μ * monomial τ 1) =
       g (b μ) (g (b l) (monomial τ 1) - X l * monomial τ 1) + g ⁅b l, b μ⁆ (monomial τ 1) := by
     ring
-  rw [step_of_lt b g hμl hμτ, monomial_add_single, pow_one,
-    mul_comm (monomial τ 1) (X μ), hX]
+  rw [step_of_lt b g hμl hμτ, monomial_add_single_one, hX]
   have hτmem : (monomial τ 1 : S) ∈ S≤ τ.degree := monomial_mem_restrictTotalDegree le_rfl 1
   refine restrictTotalDegree_mono ι R hτ
     (Submodule.add_mem _ (DegreeBound.mem b hg _ ?_) (DegreeBound.mem b hg _ hτmem))
@@ -304,10 +308,10 @@ private theorem act_comm_of_lt {l μ : ι} {τ : ι →₀ ℕ} (hμl : μ < l)
   have hμ : act b (b μ) (X l * monomial τ 1) = X μ * X l * monomial τ 1 := by
     have h := act_of_le b (l := μ) (σ := τ + Finsupp.single l 1)
       (by simpa [Finsupp.support_add_eq_union] using And.intro hμl.le hμτ)
-    rw [monomial_add_single, pow_one, mul_comm (monomial τ 1) (X l), ← mul_assoc] at h
+    rw [monomial_add_single_one, ← mul_assoc] at h
     exact h
   have h := act_of_lt b hμl hμτ
-  rw [monomial_add_single, pow_one, mul_comm (monomial τ 1) (X μ)] at h
+  rw [monomial_add_single_one] at h
   rw [act_of_le b hμτ, h, map_sub, hμ]
   abel
 
@@ -330,7 +334,7 @@ private theorem act_act_eq_of_lt {l m ν : ι} {Ψ : ι →₀ ℕ} (hνl : ν <
   -- `bₘ z^Ψ` is the monomial `zₘ z^Ψ` up to an error `w` of degree at most that of `Ψ`.
   set w := act b (b m) (monomial Ψ 1) - monomial (Ψ + Finsupp.single m 1) 1 with hw
   have hwmem : w ∈ S≤ Ψ.degree := by
-    rw [hw, monomial_add_single, pow_one, mul_comm (monomial Ψ 1) (X m)]
+    rw [hw, monomial_add_single_one]
     simpa only [gen_basis] using act_sub_mem b (b m) hΨ
   have hνΨm : ∀ i ∈ (Ψ + Finsupp.single m 1).support, ν ≤ i :=
     by simpa [Finsupp.support_add_eq_union] using And.intro hνm.le hνΨ
@@ -344,7 +348,7 @@ private theorem act_act_eq_of_lt {l m ν : ι} {Ψ : ι →₀ ℕ} (hνl : ν <
     simp only [map_add]
     rw [act_comm_of_lt b hνl hνΨm, ih _ _ _ hwmem]
     abel
-  rw [monomial_add_single, pow_one, mul_comm (monomial Ψ 1) (X ν), ← act_of_le b hνΨ,
+  rw [monomial_add_single_one, ← act_of_le b hνΨ,
     ih (b m) (b ν) _ hΨ, map_add, hlν, ih (b l) ⁅b m, b ν⁆ _ hΨ]
   abel
 
@@ -401,7 +405,7 @@ private theorem commRel (d : ℕ) : CommRel b d := by
     -- turns the right-hand side into `bν ⁅bₗ, bₘ⁆ z^Ψ + ⁅⁅bₗ, bₘ⁆, bν⁆ z^Ψ`, and the Jacobi
     -- identity matches the remaining double brackets.
     rw [act_act_eq_of_lt b hνl hνm hνΨ ihΨ, act_act_eq_of_lt b hνm hνl hνΨ ihΨ,
-      monomial_add_single, pow_one, mul_comm (monomial Ψ 1) (X ν), ← act_of_le b hνΨ,
+      monomial_add_single_one, ← act_of_le b hνΨ,
       ihΨ ⁅b l, b m⁆ (b ν) _ hΨmem,
       ihΨ (b l) (b m) _ hΨmem, map_add, leibniz_lie (b l) (b m) (b ν), map_add,
       LinearMap.add_apply]
