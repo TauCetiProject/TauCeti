@@ -202,12 +202,15 @@ theorem posSemidef_connectionMatrix_fullyLabeled_iff (f : GraphParam) (hf : IsIs
   rw [connectionMatrix_fullyLabeled f hf n, ← Matrix.posSemidef_diagonal_iff]
   constructor
   · intro h
-    -- Undo the congruence by the Möbius matrix, the inverse of the zeta matrix.
-    have h' := h.mul_mul_conjTranspose_same (SimpleGraph.mobiusMatrix (Fin n) ℝ)
-    rwa [Matrix.conjTranspose_eq_transpose_of_trivial, ← Matrix.mul_assoc, ← Matrix.mul_assoc,
-      SimpleGraph.mobiusMatrix_mul_zetaMatrix, Matrix.one_mul, Matrix.mul_assoc,
-      ← Matrix.transpose_mul, SimpleGraph.mobiusMatrix_mul_zetaMatrix, Matrix.transpose_one,
-      Matrix.mul_one] at h'
+    -- Undo the congruence by the Möbius matrix `M`, the inverse of the zeta matrix `Z`.
+    set M := SimpleGraph.mobiusMatrix (Fin n) ℝ
+    set Z := SimpleGraph.zetaMatrix (Fin n) ℝ
+    set D := Matrix.diagonal (graphParamMobius f n)
+    have hcongr : M * (Z * D * Zᵀ) * Mᵀ = (M * Z) * D * (M * Z)ᵀ := by
+      simp only [Matrix.transpose_mul, Matrix.mul_assoc]
+    have hMZ : M * Z = 1 := SimpleGraph.mobiusMatrix_mul_zetaMatrix
+    simpa [Matrix.conjTranspose_eq_transpose_of_trivial, hcongr, hMZ] using
+      h.mul_mul_conjTranspose_same M
   · intro h
     simpa only [Matrix.conjTranspose_eq_transpose_of_trivial] using
       h.mul_mul_conjTranspose_same (SimpleGraph.zetaMatrix (Fin n) ℝ)

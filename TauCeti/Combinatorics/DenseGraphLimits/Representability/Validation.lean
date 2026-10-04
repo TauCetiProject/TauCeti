@@ -15,8 +15,9 @@ import Mathlib.MeasureTheory.Measure.Dirac.Basic
 The random graph `L_f` attached to a graph parameter `f` rests on three facts about the Möbius
 masses `f†` — nonnegativity, total mass one, and consistency along label injections — and on the
 bridge `isDissociated_iff_upperMass_mul` between dissociation and multiplicativity of upper
-masses.  The examples here test each of these against an explicitly computed case, and each
-hypothesis against a case built to break it.
+masses.  The examples here compute the Möbius masses explicitly for a family of parameters, use
+them to exhibit a parameter that is not reflection positive although it satisfies the other
+structural conditions, and exhibit an exchangeable law that is not dissociated.
 
 **The edge-power parameters.**  For a real `c`, the parameter `F ↦ c ^ e(F)` is isomorphism
 invariant, multiplicative and normalized; for `c ∈ [0, 1]` it is the homomorphism density of the
@@ -111,9 +112,16 @@ private theorem graphParamMobius_edgePow (c : ℝ) (n : ℕ) (F : SimpleGraph (F
     rw [card_sdiff_of_subset hAB, Nat.add_sub_cancel' (card_le_card hAB)]
   rw [Icc_eq_image_powerset hAB, sum_image fun u hu v hv huv ↦ by
     rw [← union_sdiff_cancel_left (hdisj u hu), huv, union_sdiff_cancel_left (hdisj v hv)]]
-  rw [sum_congr rfl fun u hu ↦ by
-    rw [card_union_of_disjoint (hdisj u hu), pow_add, hB, Nat.add_sub_add_left, mul_assoc],
-    ← mul_sum, sum_pow_mul_eq_add_pow, add_sub_cancel, one_pow, mul_one]
+  -- Each summand is `c ^ e(F)` times a binomial term over the missing edges.
+  have hterm : ∀ u ∈ ((⊤ : SimpleGraph (Fin n)).edgeFinset \ F.edgeFinset).powerset,
+      c ^ #(F.edgeFinset ∪ u) * (1 - c) ^ (#(⊤ : SimpleGraph (Fin n)).edgeFinset -
+        #(F.edgeFinset ∪ u)) = c ^ #F.edgeFinset *
+          (c ^ #u * (1 - c) ^ (#((⊤ : SimpleGraph (Fin n)).edgeFinset \ F.edgeFinset) - #u)) :=
+    fun u hu ↦ by
+      rw [card_union_of_disjoint (hdisj u hu), pow_add, hB, Nat.add_sub_add_left, mul_assoc]
+  -- The binomial theorem for `c + (1 - c) = 1` sums the binomial terms to one.
+  rw [sum_congr rfl hterm, ← mul_sum, sum_pow_mul_eq_add_pow]
+  simp
 
 /-- On `Fin 2`, the edge-power parameter with `c = 2` has Möbius mass `-1` at the edgeless
 graph. -/
