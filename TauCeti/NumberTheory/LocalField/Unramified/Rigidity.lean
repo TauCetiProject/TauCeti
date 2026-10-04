@@ -81,23 +81,23 @@ private theorem aeval_minpoly_eq_zero_of_aeval_residue_eq_zero {N : ℕ} (hNM : 
     {ζ : L} (hζO : IsIntegral 𝒪[K] ζ) (hζ : ζ ^ N = 1) {ξ : 𝒪[M]} (hξ : ξ ^ N = 1)
     (hres : aeval (residue 𝒪[M] ξ) (minpoly 𝒪[K] ζ) = 0) :
     aeval (ξ : M) (minpoly K ζ) = 0 := by
-  have : NeZero N := ⟨by rintro rfl; simp at hNM⟩
   obtain ⟨h, hgh⟩ : minpoly 𝒪[K] ζ ∣ X ^ N - 1 :=
     minpoly.isIntegrallyClosed_dvd hζO (by simp [hζ])
   have hhξ : aeval ξ h ≠ 0 := by
     intro H
     have hhξ₀ : aeval (residue 𝒪[M] ξ) h = 0 := by
       rw [← ResidueField.algebraMap_eq, aeval_algebraMap_apply, H, map_zero]
-    -- Otherwise the residue of `ξ` would be a double root of `X ^ N - 1`.
-    have hd := congrArg (fun p ↦ aeval (residue 𝒪[M] ξ) (derivative p)) hgh
-    simp only [derivative_mul, map_add, map_mul, hres, hhξ₀, mul_zero, zero_mul, add_zero,
-      derivative_sub, derivative_X_pow, derivative_one, sub_zero, aeval_X_pow,
-      map_natCast] at hd
+    -- `X ^ N - 1 = g h` is separable over `𝓀[M]`, so `g` and `h` are coprime there.
     have hN : (N : 𝓀[M]) ≠ 0 := by
       simpa only [map_natCast] using (residue_ne_zero_iff_isUnit _).2 hNM
-    have hξ0 : residue 𝒪[M] ξ ≠ 0 := fun h0 ↦ by
-      simpa [h0, zero_pow (NeZero.ne N)] using congrArg (residue 𝒪[M]) hξ
-    exact mul_ne_zero hN (pow_ne_zero _ hξ0) hd
+    have hsep : ((minpoly 𝒪[K] ζ).map (algebraMap 𝒪[K] 𝓀[M]) *
+        h.map (algebraMap 𝒪[K] 𝓀[M])).Separable := by
+      rw [← Polynomial.map_mul, ← hgh, Polynomial.map_sub, Polynomial.map_pow, Polynomial.map_X,
+        Polynomial.map_one]
+      exact X_pow_sub_one_separable_iff.2 hN
+    rcases aeval_ne_zero_of_isCoprime hsep.isCoprime (residue 𝒪[M] ξ) with hg | hh
+    · exact hg (by rw [aeval_map_algebraMap, hres])
+    · exact hh (by rw [aeval_map_algebraMap, hhξ₀])
   have hgξ : aeval ξ (minpoly 𝒪[K] ζ) = 0 := by
     refine (mul_eq_zero.1 ?_).resolve_right hhξ
     rw [← map_mul, ← hgh, map_sub, map_pow, aeval_X, map_one, hξ, sub_self]
@@ -177,6 +177,13 @@ embedding of residue fields. -/
 theorem IsUnramified.residueFieldHomEquiv_apply (ι : L →ₐ[K] M) :
     IsUnramified.residueFieldHomEquiv K L M ι = ι.residueFieldHom :=
   (rfl)
+
+/-- The inverse of `IsUnramified.residueFieldHomEquiv` lifts an embedding of residue fields: the
+lift of `φ` induces `φ` on residue fields. -/
+@[simp]
+theorem IsUnramified.residueFieldHom_residueFieldHomEquiv_symm (φ : 𝓀[L] →ₐ[𝓀[K]] 𝓀[M]) :
+    ((IsUnramified.residueFieldHomEquiv K L M).symm φ).residueFieldHom = φ :=
+  (IsUnramified.residueFieldHomEquiv K L M).apply_symm_apply φ
 
 /-- **Rigidity of unramified extensions.** Let `L/K` and `M/K` be finite unramified extensions.
 Every `𝓀[K]`-isomorphism `𝓀[L] ≃ 𝓀[M]` of residue fields lifts to a unique `K`-isomorphism

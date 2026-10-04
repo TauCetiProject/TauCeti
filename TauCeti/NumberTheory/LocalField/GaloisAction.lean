@@ -242,6 +242,7 @@ theorem residueFieldHom_residue (ι : L →ₐ[K] M) (x : 𝒪[L]) :
   IsLocalRing.ResidueField.mapAlgHom'_residue _ _
 
 /-- Passing to residue fields is functorial. -/
+@[simp]
 theorem residueFieldHom_comp {N : Type*} [Field N] [ValuativeRel N] [Algebra K N]
     [ValuativeExtension K N] [Module.Finite K N] (ι₂ : M →ₐ[K] N) (ι₁ : L →ₐ[K] M) :
     (ι₂.comp ι₁).residueFieldHom = ι₂.residueFieldHom.comp ι₁.residueFieldHom := by
