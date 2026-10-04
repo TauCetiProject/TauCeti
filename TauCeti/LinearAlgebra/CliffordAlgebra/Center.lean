@@ -115,7 +115,7 @@ private theorem center_even_component_is_scalar [FiniteDimensional K V] [NeZero 
     exact Subalgebra.mem_center_iff.mp hxCenter y
   obtain ⟨a, ha⟩ := (Algebra.IsCentral.mem_center_iff K).mp hxEvenCenter
   refine ⟨a, ?_⟩
-  exact congrArg Subtype.val ha
+  simpa only [Subalgebra.coe_algebraMap] using congrArg Subtype.val ha
 
 /-- The scalar and volume coordinates `a + b • ω` are unique whenever the volume element `ω` of
 a list of odd length is nonzero. Thus the notation `K ⊕ Kω` for their span is a genuine direct sum,
