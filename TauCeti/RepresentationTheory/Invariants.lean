@@ -61,8 +61,8 @@ additive functor from representations of `G` to representations of `G ⧸ S`.
 * `Representation.exists_invariant_preimage_of_projective`: a surjective equivariant additive map,
   possibly between representations over different coefficient rings, lifts invariant vectors
   when its target is finitely generated and projective over the target group algebra.
-* `Representation.IntertwiningMap.invariantsMap_surjective_of_projective`: taking invariants
-  preserves a surjective intertwining map whose target is projective over the group algebra.
+* `Rep.invariantsFunctor_map_surjective_of_projective`: taking invariants preserves a surjective
+  morphism of representations whose target is projective over the group algebra.
 * `Rep.FiniteCyclicGroup.invariants_eq_ker_apply_sub`: for a cyclic group, the invariants are the
   kernel of the action of a generator minus the identity.
 * `Representation.IsIrreducible.invariants_eq_bot`: a nontrivial irreducible representation has no
@@ -243,59 +243,47 @@ theorem exists_invariant_preimage_of_projective
 
 end ChangeRings
 
-namespace IntertwiningMap
+end Representation
 
-/-- The map on invariant submodules induced by an intertwining map. -/
-noncomputable def invariantsMap {ρ : Representation k G V} {σ : Representation k G W}
-    (f : IntertwiningMap ρ σ) : ρ.invariants →ₗ[k] σ.invariants :=
-  f.toLinearMap.restrict fun x hx => fun g => by
-    change σ g (f x) = f x
-    rw [← IntertwiningMap.isIntertwining ρ σ f g x, hx g]
+namespace Rep
 
-@[simp]
-theorem coe_invariantsMap {ρ : Representation k G V} {σ : Representation k G W}
-    (f : IntertwiningMap ρ σ) (x : ρ.invariants) :
-    (f.invariantsMap x : W) = f x :=
-  (rfl)
+open CategoryTheory
+open scoped MonoidAlgebra
 
-/-- **Invariants preserve surjections onto projective representations.** If `f : ρ → σ` is
-surjective and the `k[G]`-module underlying `σ` is projective, then every invariant of `σ` lifts
-to an invariant of `ρ`. -/
-theorem invariantsMap_surjective_of_projective
-    {ρ : Representation k G V} {σ : Representation k G W}
-    (f : IntertwiningMap ρ σ) (hf : Function.Surjective f)
-    [Module.Projective k[G] σ.asModule] :
-    Function.Surjective f.invariantsMap := by
-  let F : ρ.asModule →ₗ[k[G]] σ.asModule :=
-    IntertwiningMap.equivLinearMapAsModule ρ σ f
+variable {k G : Type*} [CommRing k] [Group G]
+
+/-- **Invariants preserve surjections onto projective representations.** If `f : A ⟶ B` is
+surjective and the `k[G]`-module underlying `B` is projective, then every invariant of `B` lifts
+to an invariant of `A`. -/
+theorem invariantsFunctor_map_surjective_of_projective {A B : Rep k G} (f : A ⟶ B)
+    (hf : Function.Surjective f.hom) [Module.Projective k[G] B.ρ.asModule] :
+    Function.Surjective ((invariantsFunctor k G).map f).hom := by
+  let F : A.ρ.asModule →ₗ[k[G]] B.ρ.asModule :=
+    Representation.IntertwiningMap.equivLinearMapAsModule A.ρ B.ρ f.hom
   have hF : Function.Surjective F := by
     intro y
-    obtain ⟨x, hx⟩ := hf (σ.asModuleEquiv y)
-    refine ⟨ρ.asModuleEquiv.symm x, ?_⟩
-    apply σ.asModuleEquiv.injective
+    obtain ⟨x, hx⟩ := hf (B.ρ.asModuleEquiv y)
+    refine ⟨A.ρ.asModuleEquiv.symm x, ?_⟩
+    apply B.ρ.asModuleEquiv.injective
     calc
-      σ.asModuleEquiv (F (ρ.asModuleEquiv.symm x)) = f x := by
+      B.ρ.asModuleEquiv (F (A.ρ.asModuleEquiv.symm x)) = f.hom x := by
         rfl
-      _ = σ.asModuleEquiv y := hx
+      _ = B.ρ.asModuleEquiv y := hx
   obtain ⟨s, hFs⟩ := Module.projective_lifting_property F LinearMap.id hF
-  let S : IntertwiningMap σ ρ :=
-    (IntertwiningMap.equivLinearMapAsModule σ ρ).symm s
-  intro y
-  have hSy : S y ∈ ρ.invariants := fun g => by
-    rw [← IntertwiningMap.isIntertwining σ ρ S g y, y.2 g]
+  let S : Representation.IntertwiningMap B.ρ A.ρ :=
+    (Representation.IntertwiningMap.equivLinearMapAsModule B.ρ A.ρ).symm s
+  rintro ⟨y, hy⟩
+  have hSy : S y ∈ A.ρ.invariants := fun g => by
+    rw [← Representation.IntertwiningMap.isIntertwining B.ρ A.ρ S g y, hy g]
   refine ⟨⟨S y, hSy⟩, Subtype.ext ?_⟩
-  have hs : f (S y) = y := by
-    calc
-      f (S y) = σ.asModuleEquiv (F (s (σ.asModuleEquiv.symm y))) := by
-        rfl
-      _ = σ.asModuleEquiv (σ.asModuleEquiv.symm y) := by
-        rw [← LinearMap.comp_apply, hFs, LinearMap.id_apply]
-      _ = y := LinearEquiv.apply_symm_apply _ _
-  simpa only [coe_invariantsMap] using hs
+  calc
+    f.hom (S y) = B.ρ.asModuleEquiv (F (s (B.ρ.asModuleEquiv.symm y))) := by
+      rfl
+    _ = B.ρ.asModuleEquiv (B.ρ.asModuleEquiv.symm y) := by
+      rw [← LinearMap.comp_apply, hFs, LinearMap.id_apply]
+    _ = y := LinearEquiv.apply_symm_apply _ _
 
-end IntertwiningMap
-
-end Representation
+end Rep
 
 namespace Representation.IsIrreducible
 
