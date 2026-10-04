@@ -102,6 +102,7 @@ theorem coe_toMul_zModTwistEquivKummerCoeff {j : ℕ} {ζ : (SeparableClosure K)
 /-- **The identification `I(χ_cyc)/pʲ ≃ μ_{pʲ}` is equivariant**: the action of `σ` on the twisted
 module, multiplication by `χ(σ) mod pʲ`, corresponds to the action of the restriction of `σ` to
 `Kˢ` on the roots of unity. -/
+@[simp]
 theorem zModTwistEquivKummerCoeff_smul [NeZero (p : K)] {j : ℕ} {ζ : (SeparableClosure K)ˣ}
     (hζ : IsPrimitiveRoot ζ (p ^ j)) (τ : AbsoluteGaloisGroup K)
     (x : ZModTwist (continuousLocalCyclotomicCharacter p K) j) :
@@ -158,19 +159,11 @@ theorem continuousLocalCyclotomicCharacter_hasPrescriptionProperty [NeZero (p : 
       E hζ' (explicitCoeff1 _ _ (ZModTwist.reduce _ hi) continuous_of_discreteTopology w) =
         explicitCoeff1 _ _ (kummerCoeffPow K (pow_dvd_pow p hi)) continuous_of_discreteTopology
           (E hζ w) := by
-    induction w using QuotientAddGroup.induction_on with
-    | _ c =>
-      simp only [E, explicitMap1Equiv_apply]
-      rw [explicitCoeff1_mk]
-      refine (explicitMap1_mk _ _ _ _ _ _ _ _ _).trans ?_
-      refine Eq.trans ?_ (congrArg _ (explicitMap1_mk _ _ _ _ _ _ _ _ _)).symm
-      refine Eq.trans ?_ (explicitCoeff1_mk _ _ _ _ _).symm
-      refine congrArg _ (Subtype.ext (funext fun g => ?_))
-      refine (cocyclesMap1_apply _ _ _ _ _ _ _ _ _ g).trans ?_
-      refine Eq.trans ?_ (cocyclesMap1_apply _ _ _ _ _ _ _ _ _ g).symm
-      refine (congrArg _ (cocyclesMap1_apply _ _ _ _ _ _ _ _ _ _)).trans ?_
-      refine Eq.trans ?_ (congrArg _ (cocyclesMap1_apply _ _ _ _ _ _ _ _ _ _)).symm
-      exact (kummerCoeffPow_zModTwistEquivKummerCoeff hi hζ hζ' rfl _).symm
+    simp only [E, explicitMap1Equiv_apply, explicitCoeff1_eq_explicitMap1]
+    refine explicitMap1_explicitMap1_of_comp_eq (hφ := ?_) (hqf := ?_) ..
+    · exact ContinuousMonoidHom.ext fun _ => rfl
+    · exact AddMonoidHom.ext fun x =>
+        (kummerCoeffPow_zModTwistEquivKummerCoeff hi hζ hζ' rfl x).symm
   obtain ⟨z, hz⟩ := explicitCoeff1_kummerCoeffPow_surjective hpi (pow_dvd_pow p hi) (E hζ' y)
   obtain ⟨w, rfl⟩ := (E hζ).surjective z
   exact ⟨w, (E hζ').injective ((hsq w).trans hz)⟩

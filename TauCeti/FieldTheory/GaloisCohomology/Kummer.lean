@@ -460,11 +460,13 @@ theorem coe_toMul_kummerCoeffPow {m : ℕ} (h : m ∣ n) (x : KummerCoeff K n) :
 
 /-- **The power map `μₙ → μₘ` changes the level of Kummer classes**: for `m ∣ n`, it sends the
 Kummer class of `a` in `H¹(G_K, μₙ)` to the Kummer class of `a` in `H¹(G_K, μₘ)`. -/
-theorem explicitCoeff1_kummerCoeffPow_kummerMap (hn : IsUnit (n : K)) {m : ℕ}
-    (hm : IsUnit (m : K)) (h : m ∣ n) (a : Kˣ) :
+theorem explicitCoeff1_kummerCoeffPow_kummerMap (hn : IsUnit (n : K)) {m : ℕ} (h : m ∣ n)
+    (a : Kˣ) :
     explicitCoeff1 (AbsoluteGaloisGroup K) (KummerCoeff K n) (kummerCoeffPow K h)
         continuous_of_discreteTopology (Multiplicative.toAdd (kummerMap K n hn a)) =
-      Multiplicative.toAdd (kummerMap K m hm a) := by
+      Multiplicative.toAdd
+        (kummerMap K m (isUnit_of_dvd_unit (Nat.cast_dvd_cast h) hn) a) := by
+  have hm : IsUnit (m : K) := isUnit_of_dvd_unit (Nat.cast_dvd_cast h) hn
   obtain ⟨α, hα⟩ := exists_pow_eq_units_map hn a
   have hβ : (α ^ (n / m)) ^ m = Units.map (algebraMap K (SeparableClosure K)).toMonoidHom a := by
     rw [← pow_mul, Nat.div_mul_cancel h, hα]
@@ -486,7 +488,7 @@ theorem explicitCoeff1_kummerCoeffPow_surjective (hn : IsUnit (n : K)) {m : ℕ}
   intro y
   obtain ⟨a, ha⟩ := kummerMap_surjective hm (Multiplicative.ofAdd y)
   exact ⟨Multiplicative.toAdd (kummerMap K n hn a), by
-    rw [explicitCoeff1_kummerCoeffPow_kummerMap hn hm, ha, toAdd_ofAdd]⟩
+    rw [explicitCoeff1_kummerCoeffPow_kummerMap hn h, ha, toAdd_ofAdd]⟩
 
 variable (K n)
 
