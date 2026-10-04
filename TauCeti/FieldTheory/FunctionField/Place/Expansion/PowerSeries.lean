@@ -53,23 +53,13 @@ noncomputable def powerSeriesExpansion : P.integers →ₐ[k] PowerSeries k wher
   map_mul' x y := by
     ext n
     simp only [PowerSeries.coeff_mk, P.truncatedExpansion_mul, PowerSeries.coeff_mul]
-    refine Finset.sum_bij (fun l _ ↦ ((l.1 : ℕ), (l.2 : ℕ))) ?_ ?_ ?_ ?_
-    · intro l hl
-      exact Finset.mem_antidiagonal.mpr (Finset.mem_filter.mp hl).2
-    · intro l _ m _ hlm
-      exact Prod.ext (Fin.ext (Prod.mk.inj hlm).1) (Fin.ext (Prod.mk.inj hlm).2)
-    · intro l hl
-      have hl' := Finset.mem_antidiagonal.mp hl
-      refine ⟨(⟨l.1, by omega⟩, ⟨l.2, by omega⟩), ?_, rfl⟩
-      simp only [Finset.mem_filter, Finset.mem_univ, true_and]
-      exact hl'
-    · intro l hl
-      have hl' := (Finset.mem_filter.mp hl).2
-      congr 1
-      · exact P.truncatedExpansion_castLE hP ht
-          (n := (l.1 : ℕ) + 1) (m := n + 1) (by omega) x ⟨l.1, by omega⟩
-      · exact P.truncatedExpansion_castLE hP ht
-          (n := (l.2 : ℕ) + 1) (m := n + 1) (by omega) y ⟨l.2, by omega⟩
+    apply sum_fin_product_eq_sum_antidiagonal (Nat.lt_succ_self n)
+    intro l hl
+    congr 1
+    · exact P.truncatedExpansion_castLE hP ht
+        (n := (l.1 : ℕ) + 1) (m := n + 1) (by omega) x ⟨l.1, by omega⟩
+    · exact P.truncatedExpansion_castLE hP ht
+        (n := (l.2 : ℕ) + 1) (m := n + 1) (by omega) y ⟨l.2, by omega⟩
   commutes' c := by
     ext n
     simp [Algebra.algebraMap_eq_smul_one, PowerSeries.coeff_C]
