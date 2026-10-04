@@ -39,20 +39,6 @@ public section
 
 namespace TauCeti
 
-private def specialLinearProdToMatrixProd :
-    Matrix.SpecialLinearGroup (Fin 2) ℝ × Matrix.SpecialLinearGroup (Fin 2) ℝ →*
-      Matrix (Fin 2) (Fin 2) ℝ × Matrix (Fin 2) (Fin 2) ℝ where
-  toFun q := ((q.1 : Matrix (Fin 2) (Fin 2) ℝ), (q.2 : Matrix (Fin 2) (Fin 2) ℝ))
-  map_one' := rfl
-  map_mul' _ _ := rfl
-
-private theorem specialLinearProdToMatrixProd_injective :
-    Function.Injective specialLinearProdToMatrixProd := by
-  rintro ⟨A, B⟩ ⟨C, D⟩ h
-  apply Prod.ext <;> apply Subtype.ext
-  · exact congrArg Prod.fst h
-  · exact congrArg Prod.snd h
-
 /-- The even reverse-unitary carrier of `Cl⁺(2,2)` is the product of two real special linear
 groups. -/
 noncomputable def realCliffordTwoTwoEvenUnitaryEquivSpecialLinearProd :
@@ -60,7 +46,10 @@ noncomputable def realCliffordTwoTwoEvenUnitaryEquivSpecialLinearProd :
       Matrix.SpecialLinearGroup (Fin 2) ℝ × Matrix.SpecialLinearGroup (Fin 2) ℝ :=
   CliffordAlgebra.evenUnitaryGroupEquivOfAlgEquiv (realCliffordForm 2 2)
     realCliffordTwoTwoEvenEquivMatrixProd (fun y => y.1.det = 1 ∧ y.2.det = 1)
-    specialLinearProdToMatrixProd specialLinearProdToMatrixProd_injective
+    ((Matrix.SpecialLinearGroup.coeMonoidHom (ι := Fin 2) (R := ℝ)).prodMap
+      (Matrix.SpecialLinearGroup.coeMonoidHom (ι := Fin 2) (R := ℝ)))
+    ((Matrix.SpecialLinearGroup.coeMonoidHom_injective (ι := Fin 2) (R := ℝ)).prodMap
+      (Matrix.SpecialLinearGroup.coeMonoidHom_injective (ι := Fin 2) (R := ℝ)))
     (fun y hy => (⟨y.1, hy.1⟩, ⟨y.2, hy.2⟩)) (fun _ _ => rfl)
     (fun q => ⟨q.1.det_coe, q.2.det_coe⟩)
     realCliffordTwoTwo_reverseEven_mul_self_eq_one_iff_det_eq_one
@@ -77,8 +66,12 @@ theorem coe_realCliffordTwoTwoEvenUnitaryEquivSpecialLinearProd_apply
         (CliffordAlgebra.evenUnitaryGroupEvenPart (realCliffordForm 2 2) x) := by
   exact CliffordAlgebra.coe_evenUnitaryGroupEquivOfAlgEquiv_apply
     (realCliffordForm 2 2) realCliffordTwoTwoEvenEquivMatrixProd
-    (fun y => y.1.det = 1 ∧ y.2.det = 1) specialLinearProdToMatrixProd
-    specialLinearProdToMatrixProd_injective (fun y hy => (⟨y.1, hy.1⟩, ⟨y.2, hy.2⟩))
+    (fun y => y.1.det = 1 ∧ y.2.det = 1)
+    ((Matrix.SpecialLinearGroup.coeMonoidHom (ι := Fin 2) (R := ℝ)).prodMap
+      (Matrix.SpecialLinearGroup.coeMonoidHom (ι := Fin 2) (R := ℝ)))
+    ((Matrix.SpecialLinearGroup.coeMonoidHom_injective (ι := Fin 2) (R := ℝ)).prodMap
+      (Matrix.SpecialLinearGroup.coeMonoidHom_injective (ι := Fin 2) (R := ℝ)))
+    (fun y hy => (⟨y.1, hy.1⟩, ⟨y.2, hy.2⟩))
     (fun _ _ => rfl) (fun q => ⟨q.1.det_coe, q.2.det_coe⟩)
     realCliffordTwoTwo_reverseEven_mul_self_eq_one_iff_det_eq_one x
 
@@ -93,8 +86,12 @@ theorem realCliffordTwoTwoEvenUnitaryEquivSpecialLinearProd_symm_apply_evenPart
         ((q.1 : Matrix (Fin 2) (Fin 2) ℝ), (q.2 : Matrix (Fin 2) (Fin 2) ℝ)) := by
   exact CliffordAlgebra.evenUnitaryGroupEquivOfAlgEquiv_symm_apply_evenPart
     (realCliffordForm 2 2) realCliffordTwoTwoEvenEquivMatrixProd
-    (fun y => y.1.det = 1 ∧ y.2.det = 1) specialLinearProdToMatrixProd
-    specialLinearProdToMatrixProd_injective (fun y hy => (⟨y.1, hy.1⟩, ⟨y.2, hy.2⟩))
+    (fun y => y.1.det = 1 ∧ y.2.det = 1)
+    ((Matrix.SpecialLinearGroup.coeMonoidHom (ι := Fin 2) (R := ℝ)).prodMap
+      (Matrix.SpecialLinearGroup.coeMonoidHom (ι := Fin 2) (R := ℝ)))
+    ((Matrix.SpecialLinearGroup.coeMonoidHom_injective (ι := Fin 2) (R := ℝ)).prodMap
+      (Matrix.SpecialLinearGroup.coeMonoidHom_injective (ι := Fin 2) (R := ℝ)))
+    (fun y hy => (⟨y.1, hy.1⟩, ⟨y.2, hy.2⟩))
     (fun _ _ => rfl) (fun p => ⟨p.1.det_coe, p.2.det_coe⟩)
     realCliffordTwoTwo_reverseEven_mul_self_eq_one_iff_det_eq_one q
 

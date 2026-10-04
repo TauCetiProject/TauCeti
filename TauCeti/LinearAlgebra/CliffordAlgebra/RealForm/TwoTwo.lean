@@ -8,8 +8,8 @@ module
 public import Mathlib.RingTheory.TensorProduct.Pi
 public import TauCeti.LinearAlgebra.CliffordAlgebra.BottPeriodicity
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Even.Scaling
-public import TauCeti.LinearAlgebra.Matrix.Adjugate
-public import TauCeti.LinearAlgebra.Matrix.AdjugateFinTwo
+public import TauCeti.LinearAlgebra.Matrix.Adjugate.Basic
+public import TauCeti.LinearAlgebra.Matrix.Adjugate.FinTwo
 
 /-!
 # The split four-dimensional real even Clifford algebra
