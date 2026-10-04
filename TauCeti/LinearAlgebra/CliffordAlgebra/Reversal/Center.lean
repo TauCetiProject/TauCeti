@@ -13,6 +13,9 @@ import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalBasis
 /-!
 # Reversal on the centre of the even Clifford algebra
 
+Over any commutative ring, reversal fixes the scalar coordinate of `a + b • ω` and multiplies
+its orthogonal volume coordinate by `(-1) ^ (n.choose 2)`.
+
 For a regular quadratic space of even positive dimension `n` over a field of characteristic
 different from two, the centre of the even Clifford algebra is `K ⊕ Kω`. Reversal fixes scalars
 and sends the volume element `ω` to `(-1) ^ (n.choose 2) • ω`. Thus it fixes the whole centre
@@ -20,7 +23,7 @@ when `n.choose 2` is even; otherwise its fixed elements in the centre are exactl
 
 The dimension-four and dimension-six specializations distinguish the two kinds of canonical
 involution: in dimension four reversal fixes the discriminant algebra pointwise, while in
-dimension six it acts by its nontrivial conjugation. These statements hold whether the
+dimension six its central fixed elements are exactly the scalars. These statements hold whether the
 discriminant algebra is a quadratic field or a split quadratic algebra. They determine the
 base over which the canonical involution is linear in the low-dimensional unitary groups.
 
@@ -28,6 +31,25 @@ The centre and uniqueness of its scalar/volume coordinates are supplied by
 `CliffordAlgebra.mem_center_even_iff_exists_eq_add_smul_volume` and
 `CliffordAlgebra.add_smul_volume_injective_of_even_length`; the reversal sign is supplied by
 `CliffordAlgebra.reverse_prod_map_ι_of_pairwise_isOrtho`.
+
+## Main results
+
+* `TauCeti.CliffordAlgebra.reverse_add_smul_volume` and
+  `TauCeti.CliffordAlgebra.reverseEven_add_smul_volume`: reversal on scalar/volume coordinates
+  over any commutative ring.
+* `TauCeti.CliffordAlgebra.reverseEven_prod_map_ι_of_pairwise_isOrtho`: reversal on an even
+  orthogonal volume element.
+* `TauCeti.CliffordAlgebra.reverse_add_smul_volume_eq_self_iff_of_odd_choose_two`: the fixed-point
+  criterion for a negative-sign anisotropic orthogonal volume element over a field with `2 ≠ 0`.
+* `TauCeti.CliffordAlgebra.reverseEven_eq_self_iff_of_mem_center`: the central fixed-point criterion
+  for a regular quadratic space of even positive dimension over a field with `2 ≠ 0`.
+* `TauCeti.CliffordAlgebra.forall_mem_center_reverseEven_eq_self_iff`: the criterion for reversal
+  to fix the whole centre pointwise.
+* `TauCeti.CliffordAlgebra.reverseEven_eq_self_of_mem_center_of_finrank_eq_four`: pointwise
+  fixedness in dimension four.
+* `TauCeti.CliffordAlgebra.reverseEven_eq_self_iff_of_mem_center_of_finrank_eq_six` and
+  `TauCeti.CliffordAlgebra.exists_mem_center_reverseEven_ne_self_of_finrank_eq_six`: scalar fixed
+  elements and nontrivial central action in dimension six.
 
 ## References
 
@@ -65,18 +87,17 @@ theorem reverseEven_prod_map_ι_of_pairwise_isOrtho {l : List M}
   apply Subtype.ext
   simpa using reverse_prod_map_ι_of_pairwise_isOrtho hl
 
-/-- When the volume sign is negative, restricted reversal sends `a + b • ω` to `a - b • ω`.
-For a spanning list this computes its action on the centre of the even Clifford algebra. -/
-theorem reverseEven_add_smul_volume_of_odd_choose_two {l : List M}
-    (hl : l.Pairwise Q.IsOrtho) (hlen : Even l.length)
-    (hsign : Odd (l.length.choose 2)) (a b : R) :
+/-- Restricted reversal fixes the scalar coordinate and multiplies an even orthogonal volume
+coordinate by its reversal sign. -/
+theorem reverseEven_add_smul_volume {l : List M}
+    (hl : l.Pairwise Q.IsOrtho) (hlen : Even l.length) (a b : R) :
     reverseEven Q (algebraMap R (even Q) a +
         b • ⟨(l.map (ι Q)).prod, prod_map_ι_mem_even_of_even_length hlen⟩) =
-      algebraMap R (even Q) a -
-        b • ⟨(l.map (ι Q)).prod, prod_map_ι_mem_even_of_even_length hlen⟩ := by
+      algebraMap R (even Q) a +
+        (((-1 : R) ^ l.length.choose 2) * b) •
+          ⟨(l.map (ι Q)).prod, prod_map_ι_mem_even_of_even_length hlen⟩ := by
   simp only [map_add, map_smul, reverseEven_algebraMap,
-    reverseEven_prod_map_ι_of_pairwise_isOrtho hl hlen, hsign.neg_one_pow, neg_one_smul,
-    smul_neg, sub_eq_add_neg]
+    reverseEven_prod_map_ι_of_pairwise_isOrtho hl hlen, smul_smul, mul_comm]
 
 end CommRing
 
@@ -121,8 +142,10 @@ theorem reverseEven_eq_self_iff_of_mem_center (hQ : Q.Nondegenerate)
     (mem_center_even_iff_exists_eq_add_smul_volume hl hle hne hspan hQl).mp hx
   by_cases hsign : Even ((finrank K V).choose 2)
   · have hfix : reverseEven Q x = x := by
-      apply Subtype.ext
-      simp [hab, reverse_prod_map_ι_of_pairwise_isOrtho hl, hlen, hsign.neg_one_pow]
+      have hxcoord : x = algebraMap K (even Q) a +
+          b • ⟨(l.map (ι Q)).prod, prod_map_ι_mem_even_of_even_length hle⟩ :=
+        Subtype.ext (by simpa using hab)
+      rw [hxcoord, reverseEven_add_smul_volume hl hle, hlen, hsign.neg_one_pow, one_mul]
     exact iff_of_true hfix (Or.inl hsign)
   · have hodd : Odd (l.length.choose 2) := by
       rw [hlen, ← Nat.not_even_iff_odd]
@@ -164,7 +187,7 @@ theorem reverseEven_eq_self_of_mem_center_of_finrank_eq_four (hQ : Q.Nondegenera
   exact Or.inl (by simp [hV, Nat.choose_two_right, Nat.even_iff])
 
 /-- In dimension six, the fixed elements of the discriminant algebra under canonical reversal
-are exactly the scalars. Thus reversal is conjugation on that quadratic algebra. -/
+are exactly the scalars. -/
 theorem reverseEven_eq_self_iff_of_mem_center_of_finrank_eq_six (hQ : Q.Nondegenerate)
     (hV : finrank K V = 6) {x : even Q} (hx : x ∈ Subalgebra.center K (even Q)) :
     reverseEven Q x = x ↔ ∃ a : K, x = algebraMap K (even Q) a := by
