@@ -14,17 +14,14 @@ public import TauCeti.Algebra.Coalgebra.Comodule.ExteriorAlgebra.BaseChange
 # Exterior-line detection of closed subgroups
 
 A finite-dimensional regular subcomodule containing generators of a closed subgroup's
-ideal realizes that subgroup as a subspace stabilizer. Applying the top-exterior-line
-criterion identifies its points, over every commutative value algebra `A`, with the
-stabilizer of a line in the exterior algebra of the scalar-extended representation.
-This works for nonreduced value algebras and subgroup schemes.
-
-Compatibility of the exterior point action with scalar extension transports this criterion
-from the exterior algebra over `A` of `A ⊗ V` to the finite-dimensional exterior-power comodule
-`⋀ᵈ V`, where `d` is the dimension of the defining subspace. This gives Chevalley's theorem in
-line form: the closed subgroup is the stabilizer, over every commutative value algebra, of the
-line spanned by the top exterior power of the defining subspace in the rational representation
-`⋀ᵈ V`.
+ideal realizes that subgroup as a subspace stabilizer. Over every commutative value algebra `A`,
+the top-exterior-line criterion in the exterior algebra over `A` of `A ⊗ V`, together with
+compatibility of the exterior point action with scalar extension, turns this into the stabilizer
+of a line in the finite-dimensional exterior-power comodule `⋀ᵈ V`, where `d` is the dimension of
+the defining subspace. This works for nonreduced value algebras and subgroup schemes, and gives
+Chevalley's theorem in line form: the closed subgroup is the stabilizer, over every commutative
+value algebra, of the line spanned by the top exterior power of the defining subspace in the
+rational representation `⋀ᵈ V`.
 
 ## Main statements
 
@@ -72,40 +69,6 @@ namespace TauCeti.HopfIdeal
 
 variable {k : Type u} [Field k] {H : _root_.CommHopfAlgCat.{v} k}
 
-/-- A finite regular subcomodule containing ideal generators detects subgroup membership by
-stabilization of the top exterior line of its defining subspace, over every value algebra. -/
-theorem mem_quotientPointsSubgroup_iff_map_topExteriorLine_eq
-    (I : HopfIdeal k H) (V : Subcomodule k H H) [Module.Finite k V]
-    (hgen : I.toIdeal ≤ Ideal.span ((V : Set H) ∩ (I : Set H)))
-    (A : CommAlgCat.{w} k) (g : HopfAlgebra.points (R := k) (H := H) A) :
-    letI : AddCommGroup V := Module.addCommMonoidToAddCommGroup k
-    g ∈ CommHopfAlgCat.quotientPointsSubgroup H I A ↔
-      ((((I.definingSubspace V).baseChange A).map (ExteriorAlgebra.ι A)) ^
-          Module.finrank k (I.definingSubspace V)).map
-        (ExteriorAlgebra.map (Comodule.pointsAction V g).toLinearMap).toLinearMap =
-      (((I.definingSubspace V).baseChange A).map (ExteriorAlgebra.ι A)) ^
-        Module.finrank k (I.definingSubspace V) := by
-  let : AddCommGroup V := Module.addCommMonoidToAddCommGroup k
-  rw [Submodule.map_topExteriorLine_baseChange_eq_iff,
-    Comodule.pointsAction_toLinearMap]
-  exact I.mem_quotientPointsSubgroup_iff_map_definingSubspace_eq V hgen A g
-
-/-- For every finitely generated subgroup ideal, one finite regular subcomodule gives an
-exterior-line stabilizer criterion simultaneously over all commutative value algebras. -/
-theorem exists_finite_subcomodule_exterior_stabilizer (I : HopfIdeal k H) (hI : I.toIdeal.FG) :
-    ∃ V : Subcomodule k H H, Module.Finite k V.toSubmodule ∧
-      letI : AddCommGroup V := Module.addCommMonoidToAddCommGroup k
-      ∀ (A : CommAlgCat.{w} k) (g : HopfAlgebra.points (R := k) (H := H) A),
-        g ∈ CommHopfAlgCat.quotientPointsSubgroup H I A ↔
-          ((((I.definingSubspace V).baseChange A).map (ExteriorAlgebra.ι A)) ^
-              Module.finrank k (I.definingSubspace V)).map
-            (ExteriorAlgebra.map (Comodule.pointsAction V g).toLinearMap).toLinearMap =
-          (((I.definingSubspace V).baseChange A).map (ExteriorAlgebra.ι A)) ^
-            Module.finrank k (I.definingSubspace V) := by
-  obtain ⟨V, hV, hgen⟩ := I.exists_finite_subcomodule_generating hI
-  let : Module.Finite k V := hV
-  exact ⟨V, hV, fun A g ↦ I.mem_quotientPointsSubgroup_iff_map_topExteriorLine_eq V hgen A g⟩
-
 attribute [local instance] Comodule.exteriorPower
 
 /-- A finite regular subcomodule containing ideal generators realizes the closed subgroup as
@@ -146,7 +109,6 @@ theorem exists_finite_subcomodule_exteriorPower_line_stabilizer (I : HopfIdeal k
   refine ⟨V, Module.finrank k W, hV, LinearMap.range (_root_.exteriorPower.map _ W.subtype),
     ?_, fun A g ↦ I.mem_quotientPointsSubgroup_iff_map_baseChange_range_exteriorPowerMap_eq
       V hgen A g⟩
-  rw [LinearMap.finrank_range_of_inj (_root_.exteriorPower.map_injective_field
-    W.injective_subtype), _root_.exteriorPower.finrank_eq, Nat.choose_self]
+  rw [exteriorPower.finrank_range_map W.injective_subtype, Nat.choose_self]
 
 end TauCeti.HopfIdeal

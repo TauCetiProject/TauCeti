@@ -28,6 +28,7 @@ variable {R A M N : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
   [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
 
 /-- Extension of scalars commutes with taking the image of a submodule under a linear map. -/
+@[simp]
 theorem baseChange_map (f : M →ₗ[R] N) (p : Submodule R M) :
     (p.map f).baseChange A = (p.baseChange A).map (f.baseChange A) := by
   rw [baseChange_eq_span, baseChange_eq_span, map_span, map_coe, map_coe, map_coe,

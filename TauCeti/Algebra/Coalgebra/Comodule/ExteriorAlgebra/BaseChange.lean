@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Coalgebra.Comodule.ExteriorAlgebra.Power
 public import TauCeti.LinearAlgebra.ExteriorPower.BaseChange
+import TauCeti.LinearAlgebra.ExteriorPower.Basic
 
 /-!
 # Point actions on exterior powers and scalar extension
@@ -19,9 +20,10 @@ intertwines the two actions.
 
 As a consequence, for a submodule `W` of `M`, the point stabilizes the scalar extension of the
 exterior image `⋀ⁿ W → ⋀ⁿ M` of `W` in the finite-degree comodule `⋀ⁿ M` exactly when it
-stabilizes the `n`th power of `A ⊗ W` inside the exterior algebra over `A`. For `n = dim W` the
-latter is the top exterior line of `A ⊗ W`, which turns a subspace stabilizer into the stabilizer
-of a line in a rational representation. No flatness or reducedness assumption is needed.
+stabilizes the `n`th power of `A ⊗ W` inside the exterior algebra over `A`. Over a field, for
+`n = dim W` the latter is the top exterior line of `A ⊗ W`, which turns a subspace stabilizer into
+the stabilizer of a line in a rational representation. No flatness or reducedness assumption is
+needed.
 
 ## References
 
@@ -42,7 +44,7 @@ attribute [local instance] exteriorAlgebra exteriorPower
 /-- Scalar extension of exterior algebras intertwines the exterior algebra of a point action with
 the point action on the exterior-algebra comodule. -/
 @[simp]
-theorem exteriorAlgebraEquivBaseChange_map_endOfPoint (g : H →ₐ[R] A)
+theorem _root_.TauCeti.exteriorAlgebraEquivBaseChange_map_endOfPoint (g : H →ₐ[R] A)
     (x : ExteriorAlgebra A (A ⊗[R] M)) :
     exteriorAlgebraEquivBaseChange A (ExteriorAlgebra.map (endOfPoint M g) x) =
       endOfPoint (ExteriorAlgebra R M) g (exteriorAlgebraEquivBaseChange A x) := by
@@ -75,8 +77,8 @@ theorem map_endOfPoint_baseChange_range_exteriorPowerMap_eq_iff (W : Submodule R
   have himage : (LinearMap.range (_root_.exteriorPower.map n W.subtype)).map (⋀[R]^n M).subtype =
       (W.map (ExteriorAlgebra.ι R)) ^ n := by
     rw [← LinearMap.range_comp, _root_.exteriorPower.subtype_comp_map_eq, LinearMap.range_comp,
-      Submodule.range_subtype, ExteriorAlgebra.exteriorPower, Submodule.map_pow,
-      ExteriorAlgebra.ι_range_map_map, Submodule.range_subtype]
+      Submodule.range_subtype, TauCeti.ExteriorAlgebra.exteriorPower_map_map,
+      Submodule.range_subtype]
   have hι : e.toLinearMap ∘ₗ ExteriorAlgebra.ι A = (ExteriorAlgebra.ι R).baseChange A :=
     LinearMap.ext (exteriorAlgebraEquivBaseChange_ι A)
   -- Both submodules land on the scalar extension of `(W.map ι) ^ n` in `A ⊗ ⋀ M`.
