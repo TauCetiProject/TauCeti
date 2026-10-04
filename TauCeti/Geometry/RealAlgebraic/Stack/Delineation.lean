@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Polynomial.RealRoots.Common
 public import TauCeti.Geometry.RealAlgebraic.Stack.Sign
+import TauCeti.RingTheory.Polynomial.Roots
 import TauCeti.Topology.Algebra.Polynomial
 
 /-!
@@ -99,18 +100,6 @@ structure Delineation (P : ι → X → ℝ[X]) where
   /-- Each member is sign-invariant on each sector. -/
   signInvariant_sectorSet (k : ι) (j : Fin (count + 1)) :
     SignInvariant (fun z : X × ℝ ↦ (P k z.1).eval z.2) (sectorSet root j)
-
-/-- If the multiplicity of each `θ i` as a root of a nonzero polynomial `p` is `m i`, and every
-root of `p` is some `θ i`, then the roots of `p` are the `θ i` with `0 < m i`. -/
-private theorem isRoot_iff_of_rootMultiplicity {n : ℕ} {p : ℝ[X]} {θ : Fin n → ℝ}
-    {m : Fin n → ℕ} (hm : ∀ i, p.rootMultiplicity (θ i) = m i)
-    (hθ : ∀ t, p.IsRoot t → ∃ i, θ i = t) (hp : p ≠ 0) (t : ℝ) :
-    p.IsRoot t ↔ ∃ i, θ i = t ∧ 0 < m i := by
-  refine ⟨fun ht ↦ ?_, fun ⟨i, hi, hpos⟩ ↦ ?_⟩
-  · obtain ⟨i, rfl⟩ := hθ t ht
-    exact ⟨i, rfl, hm i ▸ (rootMultiplicity_pos hp).2 ht⟩
-  · rw [← hi, ← rootMultiplicity_pos hp, hm i]
-    exact hpos
 
 namespace Delineation
 
