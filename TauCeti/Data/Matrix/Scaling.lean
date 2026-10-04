@@ -116,6 +116,17 @@ theorem IsDiagonalScaling.rescale_factors {P K : Matrix ι κ ℝ} {u : ι → �
     _ = (u i * K i j * v j) * (r * r⁻¹) := by rw [hrr]; ring
     _ = r * u i * K i j * (r⁻¹ * v j) := by ring
 
+omit [Fintype ι] [Fintype κ] in
+/-- Two diagonal scalings of a matrix `K`, the first by nonzero factors, are diagonal scalings of
+each other: the second is the scaling of the first by the quotients of the factors. -/
+theorem IsDiagonalScaling.div {P P' K : Matrix ι κ ℝ} {u u' : ι → ℝ} {v v' : κ → ℝ}
+    (h : IsDiagonalScaling P K u v) (h' : IsDiagonalScaling P' K u' v') (hu : ∀ i, u i ≠ 0)
+    (hv : ∀ j, v j ≠ 0) : IsDiagonalScaling P' P (fun i => u' i / u i) (fun j => v' j / v j) := by
+  rw [isDiagonalScaling_def] at h h' ⊢
+  intro i j
+  rw [h' i j, h i j]
+  field_simp [hu i, hv j]
+
 /-! ### The relative entropy of a matrix against a kernel -/
 
 /-- `Matrix.relEntropy P K` is the real number

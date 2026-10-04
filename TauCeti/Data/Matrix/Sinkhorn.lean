@@ -67,17 +67,17 @@ variable {ι κ : Type*} [Fintype ι] [Fintype κ]
 /-! ### Uniqueness of positive diagonal scalings -/
 
 /-- If a strictly positive matrix `P` and its diagonal scaling `Q` by strictly positive factors `x`
-and `y` have the same row sums and the same column sums, then `x i * y j = 1` for all `i` and `j`.
-
-Choose `i₀` minimising `x` and `j₀` maximising `y`. Comparing the sums of row `i₀` and of column
-`j₀` of `P` and `Q` forces `x i₀ * y j₀ = 1`, and then every term of these two sums, which all have
-the same sign, has `x i * y j₀ = 1` and `x i₀ * y j = 1`. -/
+and `y` have the same row sums and the same column sums, then `x i * y j = 1` for all `i` and
+`j`. -/
 theorem IsDiagonalScaling.mul_eq_one_of_hasMarginals {P Q : Matrix ι κ ℝ} {x : ι → ℝ}
     {y : κ → ℝ} (hQ : IsDiagonalScaling Q P x y) (hP : ∀ i j, 0 < P i j) (hx : ∀ i, 0 < x i)
     (hy : ∀ j, 0 < y j) {a : ι → ℝ} {b : κ → ℝ} (hPm : HasMarginals P a b)
     (hQm : HasMarginals Q a b) (i : ι) (j : κ) : x i * y j = 1 := by
   rw [isDiagonalScaling_def] at hQ
   rw [hasMarginals_def] at hPm hQm
+  -- Choose `i₀` minimising `x` and `j₀` maximising `y`. Comparing the sums of row `i₀` and of
+  -- column `j₀` of `P` and `Q` forces `x i₀ * y j₀ = 1`, and then every term of these two sums,
+  -- which all have the same sign, has `x i * y j₀ = 1` and `x i₀ * y j = 1`.
   have : Nonempty ι := ⟨i⟩
   have : Nonempty κ := ⟨j⟩
   obtain ⟨i₀, hi₀⟩ := Finite.exists_min x
@@ -123,17 +123,6 @@ theorem IsDiagonalScaling.mul_eq_one_of_hasMarginals {P Q : Matrix ι κ ℝ} {x
     linarith
   have hxi : x i = x i₀ := mul_right_cancel₀ (hy j₀).ne' (hcol₀.trans h₀.symm)
   rw [hxi, hrow₀]
-
-omit [Fintype ι] [Fintype κ] in
-/-- Two diagonal scalings of a matrix `K` with nonzero entries, by nonzero factors, are diagonal
-scalings of each other: the second is the scaling of the first by the quotients of the factors. -/
-private theorem IsDiagonalScaling.div {P P' K : Matrix ι κ ℝ} {u u' : ι → ℝ} {v v' : κ → ℝ}
-    (h : IsDiagonalScaling P K u v) (h' : IsDiagonalScaling P' K u' v') (hu : ∀ i, u i ≠ 0)
-    (hv : ∀ j, v j ≠ 0) : IsDiagonalScaling P' P (fun i => u' i / u i) (fun j => v' j / v j) := by
-  rw [isDiagonalScaling_def] at h h' ⊢
-  intro i j
-  rw [h' i j, h i j]
-  field_simp [hu i, hv j]
 
 /-- Two diagonal scalings of a strictly positive matrix `K` by strictly positive factors, with the
 same row sums and the same column sums, are equal. -/
@@ -237,10 +226,7 @@ private theorem sum_mul_mul_log_sub_log_eq_zero {K P : Matrix ι κ ℝ} {a : ι
 
 /-- A minimiser with strictly positive entries of the relative entropy against a strictly positive
 matrix `K`, among the nonnegative matrices with its row and column sums, is a diagonal scaling of
-`K` by strictly positive factors.
-
-The first-order condition along the rectangle directions makes `log (P i j) - log (K i j)` the sum
-of a function of `i` and a function of `j`; their exponentials are the factors. -/
+`K` by strictly positive factors. -/
 theorem exists_isDiagonalScaling_of_relEntropy_minOn {K P : Matrix ι κ ℝ} {a : ι → ℝ}
     {b : κ → ℝ} (hK : ∀ i j, 0 < K i j) (hP : ∀ i j, 0 < P i j) (hPa : HasMarginals P a b)
     (hmin : ∀ Q : Matrix ι κ ℝ, (∀ i j, 0 ≤ Q i j) → HasMarginals Q a b →
@@ -252,6 +238,8 @@ theorem exists_isDiagonalScaling_of_relEntropy_minOn {K P : Matrix ι κ ℝ} {a
   · exact ⟨fun _ => 1, fun _ => 1, fun _ => one_pos, fun _ => one_pos, fun i => isEmptyElim i⟩
   rcases isEmpty_or_nonempty κ with hκ | ⟨⟨j₀⟩⟩
   · exact ⟨fun _ => 1, fun _ => 1, fun _ => one_pos, fun _ => one_pos, fun _ j => isEmptyElim j⟩
+  -- The first-order condition along the rectangle directions makes `log (P i j) - log (K i j)` the
+  -- sum of a function of `i` and a function of `j`; their exponentials are the factors.
   set g : ι → κ → ℝ := fun x y => Real.log (P x y) - Real.log (K x y) with hg
   -- The double sum of a function against the outer product of two differences of sparse vectors.
   have hsum : ∀ (h : ι → κ → ℝ) (i : ι) (j : κ),
