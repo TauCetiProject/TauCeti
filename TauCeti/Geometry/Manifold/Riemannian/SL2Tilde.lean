@@ -59,6 +59,9 @@ transitively, so `SL₂ℝ~` is a homogeneous Riemannian manifold.
   (the eight model geometries).
 * P. Scott, *The geometries of 3-manifolds*, Bull. London Math. Soc. 15 (1983) 401–487, §4
   (the geometry `SL₂ℝ~` as the unit tangent bundle of the hyperbolic plane).
+* The formal structure of this file (the coordinate type synonym, its charts, the metric built with
+  `TauCeti.coerciveRiemannianMetric`, the explicit isometries and the transitivity instance)
+  follows `TauCeti.Geometry.Manifold.Riemannian.Sol`.
 -/
 
 public section
@@ -365,6 +368,7 @@ theorem translate_inv (a s c : ℝ) :
 
 /-- Distinct parameters give distinct isometries: `translate a s c` sends the point `(0, 0, 0)` to
 `(a, s, c)`. -/
+@[simp]
 theorem translate_inj {a s c a' s' c' : ℝ} :
     translate a s c = translate a' s' c' ↔ a = a' ∧ s = s' ∧ c = c' := by
   refine ⟨fun h ↦ ?_, fun ⟨ha, hs, hc⟩ ↦ ha ▸ hs ▸ hc ▸ rfl⟩
