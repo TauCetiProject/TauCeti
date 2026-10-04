@@ -14,6 +14,14 @@ public import Mathlib.GroupTheory.Perm.List
 This file records how list rotations interact with filtering and how the permutation formed by a
 noduplicate list interacts with mapping by an equivalence.
 
+These lemmas transport a cyclic order, and the successor permutation it induces, across a
+renaming of indices. They are needed when comparing a combinatorial construction built from a
+list with the same construction built from a cyclic rotation of that list: filtering both lists
+by the same predicate gives cyclically rotated sublists, which therefore form the same
+permutation, and renaming the entries by an equivalence conjugates that permutation. For
+example, `TauCeti.KnotTheory.BraidWord.Cyclic` uses them to identify the closures of cyclically
+rotated braid words.
+
 ## Main results
 
 * `List.formPerm_map_equiv`: mapping a noduplicate list by an equivalence conjugates its
