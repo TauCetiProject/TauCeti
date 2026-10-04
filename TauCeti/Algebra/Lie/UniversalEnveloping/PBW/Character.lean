@@ -9,7 +9,6 @@ public import Mathlib.Algebra.Lie.Character
 public import Mathlib.Data.Sum.Order
 public import Mathlib.LinearAlgebra.Basis.Prod
 public import Mathlib.LinearAlgebra.Basis.VectorSpace
-public import Mathlib.LinearAlgebra.Projection
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Functoriality
 public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Basis
 public import TauCeti.Data.Multiset.Sort
