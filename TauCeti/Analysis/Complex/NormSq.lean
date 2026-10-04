@@ -40,13 +40,13 @@ theorem normSq_sub_ofReal_sub_normSq_sub_ofReal {c₁ c₂ : ℝ} (C z : ℂ) :
     Complex.ofReal_im, sub_zero]
   ring
 
-/-- A point at squared distance `ρ ^ 2` from `m`, with `0 < ρ`, is at distance `ρ`. -/
-theorem norm_sub_eq_of_normSq_sub_eq {z : ℂ} {m ρ : ℝ} (hρ : 0 < ρ)
+/-- A point at squared distance `ρ ^ 2` from `m`, with `0 ≤ ρ`, is at distance `ρ`. -/
+theorem norm_sub_eq_of_normSq_sub_eq {z : ℂ} {m ρ : ℝ} (hρ : 0 ≤ ρ)
     (h : Complex.normSq (z - m) = ρ ^ 2) : ‖z - m‖ = ρ := by
-  rwa [Complex.normSq_eq_norm_sq, pow_left_inj₀ (norm_nonneg _) hρ.le two_ne_zero] at h
+  rwa [Complex.normSq_eq_norm_sq, pow_left_inj₀ (norm_nonneg _) hρ two_ne_zero] at h
 
-/-- An ideal point `x` of the circle of centre `m` and radius `ρ`, to the left of a point `w` of
-the closed upper half-plane on that circle, is its left endpoint `m - ρ`. -/
+/-- A real point `x` of the circle of centre `m` and radius `ρ`, to the left of a complex point
+`w` of that circle, is its left endpoint `m - ρ`. -/
 theorem eq_sub_of_normSq_eq_of_lt_re {x m ρ : ℝ} {w : ℂ} (hρ : 0 < ρ)
     (hx : Complex.normSq ((x : ℂ) - m) = ρ ^ 2) (hw : Complex.normSq (w - m) = ρ ^ 2)
     (hxw : (x : ℂ).re < w.re) : x = m - ρ := by
@@ -58,8 +58,8 @@ theorem eq_sub_of_normSq_eq_of_lt_re {x m ρ : ℝ} {w : ℂ} (hρ : 0 < ρ)
   have h : (x - m + ρ) * (x - m - ρ) = 0 := by linear_combination hx
   linarith [(mul_eq_zero.1 h).resolve_right (sub_ne_zero.2 hlt.ne)]
 
-/-- An ideal point `x` of the circle of centre `m` and radius `ρ`, to the right of a point `w` of
-the closed upper half-plane on that circle, is its right endpoint `m + ρ`. -/
+/-- A real point `x` of the circle of centre `m` and radius `ρ`, to the right of a complex point
+`w` of that circle, is its right endpoint `m + ρ`. -/
 theorem eq_add_of_normSq_eq_of_re_lt {x m ρ : ℝ} {w : ℂ} (hρ : 0 < ρ)
     (hx : Complex.normSq ((x : ℂ) - m) = ρ ^ 2) (hw : Complex.normSq (w - m) = ρ ^ 2)
     (hwx : w.re < (x : ℂ).re) : x = m + ρ := by

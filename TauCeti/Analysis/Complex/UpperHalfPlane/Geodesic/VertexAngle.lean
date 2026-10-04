@@ -16,10 +16,10 @@ import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.Semicircle
 # Angles at a vertex of `ℍ ∪ ∂ℍ`
 
 The angle at a vertex `p` of `ℍ ∪ ∂ℍ` between the directions to `q` and `r`
-(`UpperHalfPlane.vertexAngle p q r`) is the angle between the rays `UpperHalfPlane.rayToward`
-towards `q` and `r` when `p ∈ ℍ`, and `0` at an ideal vertex (Walkden §7.1: geodesics meet `∂ℍ`
-at right angles). On three points of `ℍ` it is `UpperHalfPlane.interiorAngle`
-(`UpperHalfPlane.vertexAngle_inl_inl_inl`).
+(`TauCeti.UpperHalfPlane.vertexAngle p q r`) is the angle between the rays
+`UpperHalfPlane.rayToward` towards `q` and `r` when `p ∈ ℍ`, and `0` at an ideal vertex
+(Walkden §7.1: geodesics meet `∂ℍ` at right angles). On three points of `ℍ` it is
+`UpperHalfPlane.interiorAngle` (`TauCeti.UpperHalfPlane.vertexAngle_inl_inl_inl`).
 
 When the vertex is a point `w` of the semicircle of centre `m` and radius `ρ` (or one of its two
 ideal endpoints), the angle between the upward vertical through `w` and the semicircle is an
@@ -30,13 +30,15 @@ proofs of the Gauss–Bonnet formula.
 
 ## Main declarations
 
-* `UpperHalfPlane.vertexAngle p q r`: the angle at a vertex of `ℍ ∪ ∂ℍ`.
-* `UpperHalfPlane.vertexAngle_comm`, `UpperHalfPlane.vertexAngle_self`,
-  `UpperHalfPlane.vertexAngle_nonneg`, `UpperHalfPlane.vertexAngle_le_pi`,
-  `UpperHalfPlane.vertexAngle_smul`: symmetry, vanishing, bounds and invariance.
-* `UpperHalfPlane.vertexAngle_infty_of_re_lt`, `UpperHalfPlane.vertexAngle_infty_of_lt_re`: the
-  angles at the two finite vertices of a triangle with an ideal vertex at `∞`.
-* `UpperHalfPlane.vertexAngle_eq_add_of_mem_circles`: an angle split by the upward vertical.
+* `TauCeti.UpperHalfPlane.vertexAngle p q r`: the angle at a vertex of `ℍ ∪ ∂ℍ`.
+* `TauCeti.UpperHalfPlane.vertexAngle_comm`, `TauCeti.UpperHalfPlane.vertexAngle_self`,
+  `TauCeti.UpperHalfPlane.vertexAngle_nonneg`, `TauCeti.UpperHalfPlane.vertexAngle_le_pi`,
+  `TauCeti.UpperHalfPlane.vertexAngle_smul`: symmetry, vanishing, bounds and invariance.
+* `TauCeti.UpperHalfPlane.vertexAngle_infty_of_re_lt`,
+  `TauCeti.UpperHalfPlane.vertexAngle_infty_of_lt_re`: the angles at the two finite vertices of a
+  triangle with an ideal vertex at `∞`.
+* `TauCeti.UpperHalfPlane.vertexAngle_eq_add_of_mem_circles`: an angle split by the upward
+  vertical.
 
 ## Source
 
@@ -57,7 +59,7 @@ noncomputable section
 open UpperHalfPlane TauCeti.UpperHalfPlane
 open scoped MatrixGroups Pointwise OnePoint Real
 
-namespace UpperHalfPlane
+namespace TauCeti.UpperHalfPlane
 
 /-! ### The angle at a vertex of `ℍ ∪ ∂ℍ` -/
 
@@ -203,7 +205,7 @@ theorem vertexAngle_infty_of_re_lt {p q : ℍ ⊕ OnePoint ℝ} {m ρ : ℝ} (h�
     have hμ' : 0 < -μ := neg_pos.2 (neg_of_mul_neg_left hμ (sub_pos.2 hpq).le)
     rw [h, ← neg_neg ((μ : ℂ) * _), ← neg_mul, ← Complex.ofReal_neg, ← Complex.real_smul,
       InnerProductGeometry.angle_neg_right, InnerProductGeometry.angle_smul_right_of_pos _ _ hμ',
-      Complex.angle_I_I_mul (by simpa using A.im_pos), Complex.norm_sub_eq_of_normSq_sub_eq hρ hpm]
+      Complex.angle_I_I_mul, Complex.norm_sub_eq_of_normSq_sub_eq hρ.le hpm]
     simp
   · -- an ideal left vertex is the left endpoint `m - ρ` of the semicircle
     obtain ⟨x, rfl⟩ := OnePoint.ne_infty_iff_exists.1 fun h ↦ hp (congrArg _ h)
@@ -227,7 +229,7 @@ theorem vertexAngle_infty_of_lt_re {p q : ℍ ⊕ OnePoint ℝ} {m ρ : ℝ} (h�
     obtain ⟨μ, hμ, h⟩ := exists_vertexAngle_inl_infty_eq hp hqm hpm hpq.ne'
     rw [h, ← Complex.real_smul, InnerProductGeometry.angle_smul_right_of_pos _ _
         (pos_of_mul_neg_left hμ (sub_neg.2 hpq).le),
-      Complex.angle_I_I_mul (by simpa using B.im_pos), Complex.norm_sub_eq_of_normSq_sub_eq hρ hqm]
+      Complex.angle_I_I_mul, Complex.norm_sub_eq_of_normSq_sub_eq hρ.le hqm]
     simp
   · -- an ideal right vertex is the right endpoint `m + ρ` of the semicircle
     obtain ⟨x, rfl⟩ := OnePoint.ne_infty_iff_exists.1 fun h ↦ hq (congrArg _ h)
@@ -285,4 +287,4 @@ theorem vertexAngle_eq_add_of_mem_circles {A : ℍ} {p q : ℍ ⊕ OnePoint ℝ}
   · rw [← hgC, mem_leftHalfPlane_iff, re_toPoint_inv_smul]
     exact div_neg_of_neg_of_pos (sub_neg.2 hDA) A.im_pos
 
-end UpperHalfPlane
+end TauCeti.UpperHalfPlane

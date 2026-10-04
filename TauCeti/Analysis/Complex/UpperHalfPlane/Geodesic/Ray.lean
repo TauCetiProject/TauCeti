@@ -13,14 +13,15 @@ import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.Translation
 # Rays to points of `ℍ ∪ ∂ℍ`
 
 `UpperHalfPlane.rayToward A p` is the geodesic line leaving `A ∈ ℍ` at parameter `0` towards a
-point `p` of `ℍ ∪ ∂ℍ`: `geodesicBetween A B` for `p = B ∈ ℍ`, and for an ideal point `ξ` the
-unique geodesic line with `A` at parameter `0` and forward endpoint `ξ`. The ray towards `∞` is
-the upward vertical `UpperHalfPlane.toPoint A` through `A`, a ray runs from its base point to its
-target, and rays are equivariant under `PSL(2, ℝ)`.
+point `p ≠ A` of `ℍ ∪ ∂ℍ`: `geodesicBetween A B` for `p = B ∈ ℍ`, and for an ideal point `ξ` the
+unique geodesic line with `A` at parameter `0` and forward endpoint `ξ`. For `p = A` it is an
+arbitrary geodesic line through `A`, and the ray interpretation needs `.inl A ≠ p`. The ray
+towards `∞` is the upward vertical `UpperHalfPlane.toPoint A` through `A`, a ray runs from its
+base point to its target, and rays are equivariant under `PSL(2, ℝ)`.
 
 ## Main declarations
 
-* `UpperHalfPlane.rayToward A p`: the geodesic ray from `A ∈ ℍ` towards `p ∈ ℍ ∪ ∂ℍ`.
+* `UpperHalfPlane.rayToward A p`: the geodesic ray from `A ∈ ℍ` towards `p ∈ ℍ ∪ ∂ℍ`, `p ≠ A`.
 * `UpperHalfPlane.rayToward_inr_infty`, `UpperHalfPlane.isGeodesicFromTo_rayToward`,
   `TauCeti.UpperHalfPlane.rayToward_smul`: the ray towards `∞` is the upward vertical; a ray runs
   from its base point to its target; rays are equivariant.
@@ -55,9 +56,10 @@ theorem toPoint_smul_infty (A : ℍ) : toPoint A • (∞ : OnePoint ℝ) = ∞ 
       UpperHalfPlane.coe_vadd, coe_dilation_smul, Real.exp_log A.im_pos, add_comm]
   rw [h, mul_smul, dilation_smul_infty, upperRightHom_smul_infty]
 
-/-- The geodesic line leaving `A` at parameter `0` towards the point `p` of `ℍ ∪ ∂ℍ`:
+/-- The geodesic line leaving `A` at parameter `0` towards a point `p ≠ A` of `ℍ ∪ ∂ℍ`:
 `geodesicBetween A B` for `p = B ∈ ℍ`, and for an ideal point `ξ` the geodesic line with `A` at
-parameter `0` and forward endpoint `ξ`. -/
+parameter `0` and forward endpoint `ξ`. For `p = A` it is `geodesicBetween A A`, an arbitrary
+geodesic line through `A`, with no direction towards the target. -/
 def rayToward (A : ℍ) (p : ℍ ⊕ OnePoint ℝ) : PSL(2, ℝ) :=
   Sum.elim (geodesicBetween A) (fun ξ ↦ (exists_geodesicLine_zero_eq_and_smul_infty_eq A ξ).choose)
     p
