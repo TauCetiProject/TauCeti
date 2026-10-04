@@ -59,7 +59,7 @@ theorem character_indFDRep_ofLinearCharacter_comp_subtype (χ : G →* kˣ) (g :
     (indFDRep (FDRep.ofLinearCharacter (χ.comp N.subtype))).character g =
       (χ g : k) * (indFDRep (FDRep.of (Representation.trivial k N k))).character g := by
   have hχ : (fun x : G => (χ x : k)) ∈ ClassFunction k G :=
-    ClassFunction.comp_monoidHom_mem χ Units.val
+    χ.comp_mem_classFunction Units.val
   have hproj := congrFun (indClassFun_comp_subtype_mul (S := N) hχ
     (FDRep.of (Representation.trivial k N k)).character) g
   have hchar : (FDRep.ofLinearCharacter (χ.comp N.subtype)).character

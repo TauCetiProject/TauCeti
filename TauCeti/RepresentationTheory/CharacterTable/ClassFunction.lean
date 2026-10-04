@@ -69,13 +69,6 @@ theorem mem_iff {f : G → k} :
 theorem mem_of_isMulCommutative [IsMulCommutative G] (f : G → k) : f ∈ ClassFunction k G :=
   mem_iff.2 fun g h => by rw [IsMulCommutative.is_comm.comm h g, mul_inv_cancel_right]
 
-/-- A function factoring through a homomorphism into a commutative monoid is a class function,
-conjugation being invisible there; for instance a linear character `χ : G →* kˣ`, read in `k`. -/
-theorem comp_monoidHom_mem {M : Type*} [CommMonoid M] (χ : G →* M) (f : M → k) :
-    (fun g => f (χ g)) ∈ ClassFunction k G :=
-  mem_iff.2 fun g h => by
-    rw [map_mul, map_mul, mul_right_comm, ← map_mul, mul_inv_cancel, map_one, one_mul]
-
 /-- Class functions take the same value on conjugate elements. -/
 theorem eq_of_isConj (f : ClassFunction k G) {g h : G} (hgh : IsConj g h) :
     f.1 g = f.1 h := by
@@ -311,3 +304,16 @@ theorem ofFDRep_eq_ofCharacter (V : FDRep k G) : ofFDRep V = ofCharacter V.ρ :=
 end ClassFunction
 
 end TauCeti
+
+namespace MonoidHom
+
+variable {k : Type*} {G : Type*} [Semiring k] [Group G]
+
+/-- A function factoring through a homomorphism into a commutative monoid is a class function,
+conjugation being invisible there; for instance a linear character `χ : G →* kˣ`, read in `k`. -/
+theorem comp_mem_classFunction {M : Type*} [CommMonoid M] (χ : G →* M) (f : M → k) :
+    (fun g => f (χ g)) ∈ TauCeti.ClassFunction k G :=
+  TauCeti.ClassFunction.mem_iff.2 fun g h => by
+    rw [map_mul, map_mul, mul_right_comm, ← map_mul, mul_inv_cancel, map_one, one_mul]
+
+end MonoidHom

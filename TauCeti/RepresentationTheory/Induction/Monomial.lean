@@ -87,7 +87,7 @@ theorem exists_character_eq_indClassFun_of_isNilpotent [IsAlgClosed k] [CharZero
   by_cases hcomm : ∀ g h : G, Commute (W.ρ g) (W.ρ h)
   · obtain ⟨χ, hχ⟩ := exists_character_eq_of_commute W hcomm
     refine ⟨⊤, χ.comp (⊤ : Subgroup G).subtype, hχ.trans (funext fun g => ?_)⟩
-    rw [indClassFun_top (ClassFunction.comp_monoidHom_mem _ Units.val)]
+    rw [indClassFun_top (MonoidHom.comp_mem_classFunction _ Units.val)]
     rfl
   have hW := FDRep.isIrreducible_of_simple W
   have : Nontrivial W := hW.nontrivial
@@ -120,7 +120,7 @@ theorem exists_character_eq_indClassFun_of_isNilpotent [IsAlgClosed k] [CharZero
       Subgroup.comap_map_eq_self_of_injective (inertia V).subtype_injective L₀⟩
   refine ⟨L, χ.comp (Subgroup.subgroupOfEquivOfLe hLT).symm.toMonoidHom, ?_⟩
   rw [← char_iso e, ← indClassFun_ofFDRep_character, hχ,
-    ← indClassFun_indClassFun_subgroupOf hLT (ClassFunction.comp_monoidHom_mem _ Units.val)]
+    ← indClassFun_indClassFun_subgroupOf hLT (MonoidHom.comp_mem_classFunction _ Units.val)]
   simp
 
 /-- **Finite nilpotent groups are M-groups.**  Over an algebraically closed field of
