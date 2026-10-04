@@ -102,6 +102,12 @@ theorem coe_unitSphereRiemannianIsometry_apply (e : E ≃ₗᵢ[ℝ] F) (x : sph
     ((unitSphereRiemannianIsometry (n := n) (k := k) e x : sphere (0 : F) 1) : F) = e x :=
   coe_unitSphereDiffeomorph_apply e x
 
+/-- For `F = E`, the isometry induced by `e` acts on the sphere as `e` does. -/
+@[simp]
+theorem unitSphereRiemannianIsometry_apply (e : E ≃ₗᵢ[ℝ] E) (x : sphere (0 : E) 1) :
+    unitSphereRiemannianIsometry (n := n) (k := n) e x = e • x :=
+  Subtype.ext (by simp)
+
 /-- The inverse of the isometry induced by `e` is the isometry induced by `e.symm`. -/
 @[simp]
 theorem unitSphereRiemannianIsometry_symm (e : E ≃ₗᵢ[ℝ] F) :
@@ -159,6 +165,6 @@ instance isPretransitive_isom_sphere :
     MulAction.IsPretransitive (Isom (𝓡 n) (sphere (0 : E) 1)) (sphere (0 : E) 1) where
   exists_smul_eq x y := by
     obtain ⟨e, he⟩ := MulAction.exists_smul_eq (E ≃ₗᵢ[ℝ] E) x y
-    exact ⟨e.unitSphereIsomHom, by rw [LinearIsometryEquiv.unitSphereIsomHom_smul, he]⟩
+    exact ⟨e.unitSphereIsomHom, by simpa using he⟩
 
 end TauCeti
