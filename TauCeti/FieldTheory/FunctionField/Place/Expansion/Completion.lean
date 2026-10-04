@@ -96,7 +96,7 @@ private theorem isClosed_expansionCongruence (f : PowerSeries k) (n : ℕ) :
 
 /-- Every power series over the constants is the uniformizer expansion of an element of
 the completed valuation ring at a rational place. -/
-theorem powerSeriesExpansion_completion_surjective :
+theorem completion_powerSeriesExpansion_surjective :
     Function.Surjective (P.completionPlace.powerSeriesExpansion
       (by simpa using hP) (by simpa using ht :
         P.completionPlace.ord (P.completionEmbedding t) = 1)) := by
@@ -127,10 +127,9 @@ noncomputable def completionIntegersEquivPowerSeries :
     (by simpa using hP) (by simpa using ht :
       P.completionPlace.ord (P.completionEmbedding t) = 1))
     ⟨P.completionPlace.powerSeriesExpansion_injective _ _,
-      P.powerSeriesExpansion_completion_surjective hP ht⟩
+      P.completion_powerSeriesExpansion_surjective hP ht⟩
 
-/-- The completed-ring isomorphism is the uniformizer expansion map. This equation is not a
-simp rule, so simplification retains the equivalence for inverse cancellation. -/
+/-- The completed-ring isomorphism is the uniformizer expansion map. -/
 theorem completionIntegersEquivPowerSeries_apply (x : P.completionPlace.integers) :
     P.completionIntegersEquivPowerSeries hP ht x =
       P.completionPlace.powerSeriesExpansion (by simpa using hP)

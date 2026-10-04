@@ -76,6 +76,7 @@ noncomputable def powerSeriesExpansion : P.integers →ₐ[k] PowerSeries k wher
 
 /-- Every coefficient of the infinite expansion agrees with the corresponding coefficient
 of any sufficiently long finite expansion. -/
+@[simp]
 theorem coeff_powerSeriesExpansion (n : ℕ) (x : P.integers) (i : Fin n) :
     PowerSeries.coeff i (P.powerSeriesExpansion hP ht x) =
       P.truncatedExpansion hP ht n x i := by
