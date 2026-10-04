@@ -98,7 +98,8 @@ theorem exists_uniformizer_ord_aut_sub_of_artinSchreier_pole
   -- Translation lowers the pole-generator power by one; the remaining factor is fixed.
   have hval : P'.valuation (σ z - z) = P'.valuation z / P'.valuation y := by
     rw [hσz, ← sub_mul, P'.valuation.map_mul,
-      P'.valuation.map_add_zpow_sub_zpow hygt hcval β hbval, hz, P'.valuation.map_mul,
+      P'.valuation.map_add_zpow_sub_zpow (hcval.trans_lt hygt) β hbval,
+      hcval, mul_one, hz, P'.valuation.map_mul,
       map_zpow₀, map_zpow₀, zpow_sub₀ (P'.valuation.ne_zero_iff.mpr hy0), zpow_one]
     rw [div_mul_eq_mul_div]
   calc
