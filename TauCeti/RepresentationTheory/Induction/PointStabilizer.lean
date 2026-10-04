@@ -111,9 +111,10 @@ noncomputable def indTrivialStabilizerEquiv :
     (ofMulActionEquivCongr k (quotientStabilizerEquiv (Equiv.Perm α) x₀)
       (quotientStabilizerEquiv_smul (Equiv.Perm α) x₀))
 
--- Post-order simplification unfolds `Representation.IndV.mk` before this rule can match.
+-- Pre-order simplification evaluates the map before `simp` unfolds `Representation.IndV.mk`.
 /-- The generator computation rule for `TauCeti.indTrivialStabilizerEquiv`: the generator carried
 by `σ` goes to the basis vector of the point `σ⁻¹ x₀`. -/
+@[simp↓]
 theorem indTrivialStabilizerEquiv_apply_mk (σ : Equiv.Perm α) (a : k) :
     indTrivialStabilizerEquiv k x₀
         (Representation.IndV.mk (stabilizer (Equiv.Perm α) x₀).subtype
@@ -200,6 +201,7 @@ noncomputable def indTrivialStabilizerIso :
 
 /-- The generator computation rule for `TauCeti.indTrivialStabilizerIso`: it is
 `TauCeti.indTrivialStabilizerEquiv_apply_mk` read in `Rep k (Equiv.Perm α)`. -/
+@[simp↓]
 theorem indTrivialStabilizerIso_hom_hom_mk (σ : Equiv.Perm α) (a : k) :
     (indTrivialStabilizerIso k x₀).hom.hom
         (Representation.IndV.mk (stabilizer (Equiv.Perm α) x₀).subtype
