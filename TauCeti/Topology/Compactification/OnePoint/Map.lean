@@ -26,7 +26,7 @@ namespace TauCeti
 
 /-- Extension to one-point compactifications preserves and reflects injectivity. -/
 @[simp]
-theorem injective_onePoint_map_iff {X Y : Type*} {f : X → Y} :
+theorem onePointMap_injective_iff {X Y : Type*} {f : X → Y} :
     Function.Injective (OnePoint.map f) ↔ Function.Injective f := by
   constructor
   · intro hf x y h
@@ -40,7 +40,7 @@ theorem injective_onePoint_map_iff {X Y : Type*} {f : X → Y} :
 /-- The range of the extension to one-point compactifications is the embedded range together
 with the point at infinity. -/
 @[simp]
-theorem range_onePoint_map {X Y : Type*} (f : X → Y) :
+theorem range_onePointMap {X Y : Type*} (f : X → Y) :
     range (OnePoint.map f) = insert OnePoint.infty (((↑) : Y → OnePoint Y) '' range f) := by
   -- `Option.range_eq` splits the domain into infinity and the finite points.
   exact (Option.range_eq (OnePoint.map f)).trans
@@ -48,7 +48,7 @@ theorem range_onePoint_map {X Y : Type*} (f : X → Y) :
 
 /-- A proper map from an R₁ space to a compactly coherent Hausdorff space extends continuously
 to the one-point compactifications, sending infinity to infinity. -/
-theorem continuous_onePoint_map_of_isProperMap
+theorem continuous_onePointMap_of_isProperMap
     {X Y : Type*} [TopologicalSpace X] [R1Space X]
     [TopologicalSpace Y] [T2Space Y] [CompactlyCoherentSpace Y]
     {f : X → Y} (hf : IsProperMap f) : Continuous (OnePoint.map f) :=
