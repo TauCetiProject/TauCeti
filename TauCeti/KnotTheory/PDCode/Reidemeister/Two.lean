@@ -27,9 +27,11 @@ the outside arc of the circle joins slot `1` of the first crossing to slot `2` o
 second. The remaining ports attach to the cut arc. This is the circle-and-arc case;
 clasp insertion between two crossing-free circles is a separate case.
 
-The permutation proof follows the existing `PDCode.insertClasp` construction: local
-traversal cycles are attached to the original arc by two transpositions. The bracket
-calculation uses the four smoothings and the loop relation for the Kauffman bracket.
+The clasp has the same component count and Kauffman bracket as `D.adjoinCircle`, and
+is planar exactly when `D` is planar. These results allow this local second Reidemeister
+move within planar PD codes while preserving component count and the bracket; together
+with the oriented move's writhe preservation, they give Jones polynomial invariance
+for the circle-and-arc case.
 
 ## References
 
@@ -210,6 +212,8 @@ private theorem circleMatching_second (s : Fin 4) :
 
 /-! ### Traversals and the four smoothings -/
 
+-- Following `PDCode.insertClasp`, attach local traversal cycles to the original arc
+-- by two transpositions.
 private theorem circleTraversal (T : Perm (Fin (4 * n))) (r : Perm Slots) :
     Perm.sumCongr T r * (circleMatching D p).val =
       Perm.sumCongr (T * D.edgePair.val) (r * circleArcs.val) *
@@ -354,6 +358,7 @@ both local slot smoothings agree. The statement uses the actual `A`/`B` state ch
 /-- The circle-and-arc second Reidemeister move preserves the Kauffman bracket. -/
 @[simp] theorem kauffmanBracket_insertCircleClasp {R : Type*} [CommRing R] (a : Rˣ) :
     (D.insertCircleClasp p b).kauffmanBracket a = D.adjoinCircle.kauffmanBracket a := by
+  -- Sum the four local smoothings and apply the Kauffman bracket's loop relation.
   have hn : n ≠ 0 := by rintro rfl; exact p.elim0
   rw [kauffmanBracket_def, kauffmanBracket_def,
     ← ((Equiv.prodCongr (Equiv.refl Bool) (Fin.snocEquiv fun _ => Bool)).trans
