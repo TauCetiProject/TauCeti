@@ -152,6 +152,13 @@ def closure : Model R K C toK where
     Over.isoMk (asIso (toGenericFiber i hi)).symm (by
       simp only [Iso.symm_hom, asIso_inv, Over.mk_hom, IsIso.inv_comp_eq, toGenericFiber_hom])
 
+/-- The chosen identification of the closure model's generic fibre with `C` is, in the direction
+`C ⟶ (closure)_K`, the comparison map `toGenericFiber`: `closure` builds it as the inverse of
+`asIso (toGenericFiber i hi)`. -/
+private lemma closure_genericFiberIso_inv_left :
+    (closure i hi).genericFiberIso.inv.left = toGenericFiber i hi := by
+  simp only [closure, Over.isoMk_inv_left, Iso.symm_inv, asIso_hom]
+
 /-- The closed immersion of the closure model into `P`. -/
 def closureι : (closure i hi).total ⟶ P :=
   (i ≫ genericFiberι R K toR).imageι
@@ -174,7 +181,7 @@ lemma ker_closureι : (closureι i hi).ker = (i ≫ genericFiberι R K toR).ker 
 `C` into the generic fibre of `P`. -/
 @[reassoc (attr := simp)]
 lemma genericι_closureι : (closure i hi).genericι ≫ closureι i hi = i ≫ genericFiberι R K toR := by
-  rw [genericι_def]
+  rw [genericι_def, closure_genericFiberIso_inv_left]
   exact (toGenericFiber_genericFiberι_assoc i hi _).trans (Scheme.Hom.toImage_imageι _)
 
 end
