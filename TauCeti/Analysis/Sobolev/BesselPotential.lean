@@ -19,10 +19,9 @@ weak-derivative definitions of first-order Sobolev regularity on the whole space
 distribution associated to a real `L²` function belongs to Mathlib's Bessel-potential space
 `H^{1,2}`, then the function is the value component of an element of `W^{1,2}`.
 
-The proof first uses Mathlib's bounded Fourier multiplier theorem to represent every directional
-distributional derivative by a complex `L²` function. Since the original distribution is real,
-the real part of that representative gives the same derivative. Representatives in the directions
-of a finite basis are then assembled into an `E`-valued weak gradient.
+Real representatives of the directional distributional derivatives connect Mathlib's complex
+Bessel-potential interface to the real weak-gradient interface. Their values along a finite basis
+determine an `E`-valued weak gradient.
 
 ## Main declarations
 
@@ -54,9 +53,7 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
 /-- If the derivative in direction `v` of the tempered distribution associated to a real `Lᵖ`
 function has Bessel-potential order zero, then it is represented by a real `Lᵖ` function.
 
-The order-zero hypothesis initially supplies a complex representative. Testing the derivative
-against real Schwartz functions shows that only its real part contributes, and real test functions
-determine a tempered distribution. -/
+This real representative makes the derivative available to the real weak-gradient interface. -/
 theorem exists_real_lp_lineDeriv_of_memSobolev_zero {p : ENNReal} [Fact (1 ≤ p)]
     (u : Lp ℝ p (volume : Measure E)) (v : E)
     (h : MemSobolev 0 p
@@ -111,6 +108,8 @@ theorem exists_real_lp_lineDeriv_of_memSobolev_zero {p : ENNReal} [Fact (1 ≤ p
         ((phi.postcompCLM Complex.ofRealCLM).memLp (ENNReal.conjExponent p)).integrable_mul
           (Lp.memLp z)
       simp only [smul_eq_mul]
+      -- `Complex.re` is definitionally `RCLike.re` here; expose the latter spelling expected by
+      -- `integral_re` before moving the real-part map through the integral.
       change RCLike.re (∫ x, (phi x : ℂ) * z x) = _
       rw [← integral_re hint]
       apply integral_congr_ae
