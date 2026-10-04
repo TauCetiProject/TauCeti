@@ -17,7 +17,7 @@ space, the elements of `W^{1,p}(Ω)` with a representative which is smooth on `�
 `C^∞(Ω) ∩ W^{1,p}(Ω)` is all of `W^{1,p}(Ω)`. No boundedness and no regularity of the boundary
 of `Ω` is assumed.
 
-The approximants are smooth only on `Ω`, not up to its boundary, and they are not compactly
+The approximants are smooth on `Ω` but need not be smooth up to its boundary, nor compactly
 supported in `Ω`: on standard nontrivial bounded domains (for example, Euclidean balls in positive
 dimension), `W^{1,p}_0(Ω)` is a proper subspace, so test functions are not dense. On the whole
 space, density of globally smooth representatives at every order is
