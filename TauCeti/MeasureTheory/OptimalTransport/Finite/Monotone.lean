@@ -18,11 +18,6 @@ cost-minimizing matrix. Its lower-rectangle masses are the minima of the margina
 masses, so the monotone matrix is unique and minimizes every Monge cost. Negative costs and
 zero marginal masses are allowed.
 
-Compactness selects a cost minimizer that also maximizes the product of strictly increasing
-coordinates. A crossing would admit an uncrossing that improves this auxiliary objective while
-remaining cost-minimizing. This extremal argument establishes existence; it does not assert
-termination of an arbitrary sequence of uncrossing moves.
-
 * `IsMonotone.sum_le_le_eq_min` gives the cumulative rectangle formula.
 * `existsUnique_isMonotone` gives the unique monotone plan with prescribed marginals.
 * `exists_isMonotone_forall_cost_le` produces a monotone Monge-cost minimizer.
@@ -45,12 +40,6 @@ variable {ι κ : Type*} [Fintype ι] [Fintype κ] [LinearOrder ι] [LinearOrder
 weakly increasing columns. Equivalently, its support contains no crossing pair. -/
 def IsMonotone (A : TransportMatrix μ ν) : Prop :=
   ∀ ⦃i₁ i₂ : ι⦄ ⦃j₁ j₂ : κ⦄, i₁ < i₂ → A i₁ j₁ ≠ 0 → A i₂ j₂ ≠ 0 → j₁ ≤ j₂
-
-/-- The support formulation of monotonicity. -/
-theorem isMonotone_iff (A : TransportMatrix μ ν) :
-    A.IsMonotone ↔
-      ∀ ⦃i₁ i₂ : ι⦄ ⦃j₁ j₂ : κ⦄, i₁ < i₂ → A i₁ j₁ ≠ 0 → A i₂ j₂ ≠ 0 → j₁ ≤ j₂ :=
-  (Iff.rfl)
 
 /-- The mass of a lower rectangle in a monotone plan is the smaller of the two marginal
 prefix masses. This characterizes the joint distribution entirely in terms of the marginals. -/
@@ -87,7 +76,7 @@ theorem IsMonotone.sum_le_le_eq_min {A : TransportMatrix μ ν} (hA : A.IsMonoto
       have hj' : j' ≤ j := (Finset.mem_filter.mp hj').2
       have hz : A i' j' = 0 := by
         by_contra hn
-        have := (isMonotone_iff A).mp hA (hi₀.trans_lt hi') h₀ hn
+        have := hA (hi₀.trans_lt hi') h₀ hn
         exact (not_le_of_gt (hj'.trans_lt (lt_of_not_ge hj₀))) this
       simp only [toRealFun_apply, hz, ENNReal.toReal_zero]
     · left
@@ -171,7 +160,7 @@ theorem exists_isMonotone_forall_cost_le (c : ι × κ → ℝ) (μ : PMF ι) (�
   have hA : ∀ B : TransportMatrix μ ν, A.cost c ≤ B.cost c := fun B ↦
     hAc.trans_le (hA₀ B)
   refine ⟨A, ?_, hA⟩
-  rw [isMonotone_iff]
+  unfold IsMonotone
   intro i₁ i₂ j₂ j₁ hi h₁ h₂
   by_contra hj
   have hj : j₁ < j₂ := lt_of_not_ge hj
