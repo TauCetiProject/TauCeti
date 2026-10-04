@@ -141,6 +141,18 @@ private def _root_.Representation.invariantsEquivKerInvariantDefect
   left_inv _ := rfl
   right_inv _ := rfl
 
+@[simp]
+private theorem _root_.Representation.coe_invariantsEquivKerInvariantDefect
+    (ρ : _root_.Representation R G V) (x : ρ.invariants) :
+    (ρ.invariantsEquivKerInvariantDefect x : V) = x :=
+  rfl
+
+@[simp]
+private theorem _root_.Representation.coe_invariantsEquivKerInvariantDefect_symm
+    (ρ : _root_.Representation R G V) (x : LinearMap.ker ρ.invariantDefect) :
+    (ρ.invariantsEquivKerInvariantDefect.symm x : V) = x :=
+  rfl
+
 omit [Module.Flat R A] in
 private theorem _root_.Representation.ker_invariantDefect_baseChange [Finite G]
     (ρ : _root_.Representation R G V) :
@@ -197,7 +209,13 @@ theorem _root_.Representation.coe_invariantsBaseChangeEquiv [Finite G]
   classical
   induction x with
   | add x y hx hy => simpa only [map_add, Submodule.coe_add] using congrArg₂ (· + ·) hx hy
-  | tmul a x => rfl
+  | tmul a x =>
+      simp only [_root_.Representation.invariantsBaseChangeEquiv, LinearEquiv.trans_apply,
+        AlgebraTensorModule.congr_tmul, LinearEquiv.refl_apply,
+        _root_.Representation.coe_invariantsEquivKerInvariantDefect_symm,
+        LinearEquiv.coe_ofEq_apply, LinearMap.tensorKerEquiv_apply, LinearMap.tensorKer_tmul,
+        _root_.Representation.coe_invariantsEquivKerInvariantDefect, LinearMap.lTensor_tmul,
+        Submodule.subtype_apply]
 
 end Invariants
 
