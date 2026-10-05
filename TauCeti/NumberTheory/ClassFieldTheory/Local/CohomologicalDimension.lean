@@ -88,7 +88,7 @@ private theorem subsingleton_continuousCohomology_unitsRep (n : ℕ)
 
 /-- **`H³(G_K, (Kˢ)ˣ) = 0`** for a nonarchimedean local field `K`: the units formation of `K` is a
 class formation, whose continuous third cohomology vanishes by Tate's theorem on every finite layer,
-`Ĥ³(Gal(L/K), Lˣ) ≅ Ĥ¹(Gal(L/K), ℤ) = 0`, and the finite-quotient colimit. -/
+`H-hat^3(Gal(L/K), Lˣ) ≅ H-hat^1(Gal(L/K), ℤ) = 0`, and the finite-quotient colimit. -/
 theorem subsingleton_h3_unitsRep [ValuativeRel K] [TopologicalSpace K]
     [IsNonarchimedeanLocalField K] :
     Subsingleton (continuousCohomology 3 (unitsRep K)) :=

@@ -20,7 +20,7 @@ every finite normal layer `V ◁ U` with the first cohomology of its Galois grou
 coefficients,
 
 ```text
-H³(U ⧸ V, A^V) ≅ Ĥ³(U ⧸ V, A^V) ≅ Ĥ¹(U ⧸ V, ℤ) = Hom(U ⧸ V, ℤ) = 0,
+H³(U ⧸ V, A^V) ≅ H-hat^3(U ⧸ V, A^V) ≅ H-hat^1(U ⧸ V, ℤ) = Hom(U ⧸ V, ℤ) = 0,
 ```
 
 which vanishes because the Galois group is finite (`ClassFormation.subsingleton_H3`). Continuous
@@ -111,8 +111,8 @@ end Level
 namespace ClassFormation
 
 /-- **The third cohomology of every layer of a class formation vanishes.** Tate's isomorphism at
-degree `1` identifies `Ĥ³(U ⧸ V, A^V)`, which is `H³(U ⧸ V, A^V)`, with
-`Ĥ¹(U ⧸ V, ℤ) = Hom(U ⧸ V, ℤ)`, which is zero because `U ⧸ V` is finite. -/
+degree `1` identifies `H-hat^3(U ⧸ V, A^V)`, which is `H³(U ⧸ V, A^V)`, with
+`H-hat^1(U ⧸ V, ℤ) = Hom(U ⧸ V, ℤ)`, which is zero because `U ⧸ V` is finite. -/
 theorem subsingleton_H3 (cf : ClassFormation F) (L : NormalLayer G) : Subsingleton (L.H F 3) := by
   have : Subsingleton (L.TrivialTateH 1) :=
     ModuleCat.subsingleton_of_isZero <|
