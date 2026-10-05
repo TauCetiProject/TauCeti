@@ -9,6 +9,10 @@ public import TauCeti.Geometry.Manifold.Instances.Comap
 public import TauCeti.Geometry.Toric.Analytic.Fan.Comparison.Naturality
 public import TauCeti.Geometry.Toric.Analytic.Fan.Map.Holomorphic
 
+-- Mathlib has no exported computation rule for `diffeomorphOfBijective`; import its body
+-- privately to prove the forward computation rule below without exposing our constructor.
+import all Mathlib.Geometry.Manifold.LocalDiffeomorph
+
 /-!
 # The complex manifold of algebraic toric complex points
 
@@ -63,32 +67,30 @@ noncomputable def algebraicAnalyticDiffeomorph (n : ℕ∞ω) :
       𝓘(ℂ, Fin (Module.finrank ℤ N) → ℂ)⟯ Φ.analyticRealization hΦ := by
   letI := Φ.analyticChartedSpace hΦ
   letI := algebraicComplexPointChartedSpace hΦ
-  -- Package the given equivalence to retain its forward and inverse computation rules.
-  -- Mathlib's `diffeomorphOfBijective` has no exposed body or coercion lemma at this pin.
-  exact
-    { toEquiv := (algebraicAnalyticHomeomorph hΦ).toEquiv
-      contMDiff_toFun :=
-        (algebraicAnalyticHomeomorph hΦ).isLocalHomeomorph.contMDiff_chartedSpaceComap
-      contMDiff_invFun :=
-        (algebraicAnalyticHomeomorph hΦ).isLocalHomeomorph.contMDiff_chartedSpaceComap_iff.2
-          ⟨(algebraicAnalyticHomeomorph hΦ).symm.continuous,
-            contMDiff_id.congr fun x ↦ (algebraicAnalyticHomeomorph hΦ).apply_symm_apply x⟩ }
+  exact ((algebraicAnalyticHomeomorph hΦ).isLocalHomeomorph.isLocalDiffeomorph_chartedSpaceComap
+    (n := n)).diffeomorphOfBijective (algebraicAnalyticHomeomorph hΦ).bijective
 
 /-- The biholomorphism is the existing chartwise algebraic–analytic comparison. -/
 @[simp]
 theorem coe_algebraicAnalyticDiffeomorph (n : ℕ∞ω) :
     letI := algebraicComplexPointChartedSpace hΦ
     letI := Φ.analyticChartedSpace hΦ
-    ⇑(algebraicAnalyticDiffeomorph hΦ n) = algebraicAnalyticEquiv hΦ :=
-  coe_algebraicAnalyticHomeomorph hΦ
+    ⇑(algebraicAnalyticDiffeomorph hΦ n) = algebraicAnalyticEquiv hΦ := by
+  funext x
+  exact congrFun (coe_algebraicAnalyticHomeomorph hΦ) x
 
 /-- The inverse biholomorphism is the inverse chartwise comparison. -/
 @[simp]
 theorem coe_algebraicAnalyticDiffeomorph_symm (n : ℕ∞ω) :
     letI := algebraicComplexPointChartedSpace hΦ
     letI := Φ.analyticChartedSpace hΦ
-    ⇑(algebraicAnalyticDiffeomorph hΦ n).symm = (algebraicAnalyticEquiv hΦ).symm :=
-  coe_algebraicAnalyticHomeomorph_symm hΦ
+    ⇑(algebraicAnalyticDiffeomorph hΦ n).symm = (algebraicAnalyticEquiv hΦ).symm := by
+  let := algebraicComplexPointChartedSpace hΦ
+  let := Φ.analyticChartedSpace hΦ
+  funext x
+  apply (algebraicAnalyticEquiv hΦ).injective
+  rw [← coe_algebraicAnalyticDiffeomorph hΦ n, Diffeomorph.apply_symm_apply,
+    coe_algebraicAnalyticDiffeomorph, Equiv.apply_symm_apply]
 
 /-- Every algebraic affine chart inclusion is a local biholomorphism for the independently
 defined regular-cone structure of any extending basis and finite generating family. In particular,
