@@ -19,8 +19,11 @@ A polynomial `P : (MvPolynomial σ R)[X]` is a family of univariate polynomials
 distinct roots of the specialized polynomial, and the number of its distinct roots below a point
 `t = T(x)` given by a polynomial `T`, are described by finitely many polynomial sign conditions on
 the parameters. So the sets of parameters with a prescribed count are semialgebraic. In the
-cylinder coordinates of `TauCeti.cylinder`, this describes the graph of the `i`-th distinct root of
-a family over `R ^ n`, and the sectors between consecutive roots, without any projection.
+cylinder coordinates of `TauCeti.cylinder`, this describes, without any projection, the loci of a
+family over `R ^ n` where the distinguished coordinate is a root, respectively not a root, with a
+prescribed number of roots below it. Over base points where the family does not specialize to zero,
+these are the graph of the `i`-th distinct root and the `j`-th sector, where the sectors are counted
+from below and include the two unbounded outer sectors.
 
 The specialized degree is described by the vanishing of the coefficients of `P`. Where it equals
 `d`, the specialization is the specialization of the reductum of `P` below `d + 1`, and the formal
@@ -44,8 +47,9 @@ their `Polynomial.roots` is empty, so they lie in the sets with count zero.
 * `TauCeti.isSemialgebraic_setOf_card_roots_map_eval_lt`: the parameters whose specialization has a
   prescribed number of distinct roots below `T(x)`.
 * `TauCeti.isSemialgebraic_setOf_isRoot_card_roots_lt`,
-  `TauCeti.isSemialgebraic_setOf_not_isRoot_card_roots_lt`: the graph of the `i`-th root and the
-  `j`-th sector of a family over `R ^ n`, as subsets of `R ^ (n + 1)`.
+  `TauCeti.isSemialgebraic_setOf_not_isRoot_card_roots_lt`: the root locus with `i` roots below
+  and the non-root locus with `j` roots below of a family over `R ^ n`, as subsets of
+  `R ^ (n + 1)`. Over nonzero fibers these are the graph of the `i`-th root and the `j`-th sector.
 
 ## References
 
@@ -185,17 +189,22 @@ theorem isSemialgebraic_setOf_card_roots_map_eval_lt (P : (MvPolynomial σ R)[X]
 /-! ### Roots and sectors in cylinder coordinates
 
 A family `P : (MvPolynomial (Fin n) R)[X]` over `R ^ n` has its root graphs and sectors in
-`R ^ (n + 1)`, with the distinguished coordinate `0` as for `TauCeti.cylinder`. A point `y` lies on
-the graph of the `i`-th distinct root of `P` (counted from `0`) when `y 0` is a root of the
-specialization at `Fin.tail y` with exactly `i` roots below it, and in the `j`-th sector when
-`y 0` is not a root and has exactly `j` roots below it. -/
+`R ^ (n + 1)`, with the distinguished coordinate `0` as for `TauCeti.cylinder`. Over a base point
+where the specialization at `Fin.tail y` is nonzero, a point `y` lies on the graph of the `i`-th
+distinct root of `P` (counted from `0`) when `y 0` is a root with exactly `i` roots below it, and in
+the `j`-th sector when `y 0` is not a root and has exactly `j` roots below it. The sectors are
+counted from below: sector `0` lies below the smallest root, the last one above the largest root,
+and over a fiber without roots sector `0` is the whole fiber. Over a base point where `P`
+specializes to zero, the root predicate holds on the whole fiber for `i = 0` and nowhere else, and
+the non-root predicate holds nowhere. -/
 
 variable {n : ℕ}
 
-/-- **The graph of the `i`-th root.** The points of `R ^ (n + 1)` whose coordinate `0` is a root of
-the specialization of `P` at the remaining coordinates, with exactly `i` distinct roots below it,
-form a semialgebraic set. Over a base point where `P` specializes to zero, every point of the fiber
-satisfies this for `i = 0`. -/
+/-- **The root locus with `i` roots below.** The points of `R ^ (n + 1)` whose coordinate `0` is a
+root of the specialization of `P` at the remaining coordinates, with exactly `i` distinct roots
+below it, form a semialgebraic set. Over a base point where `P` does not specialize to zero, this is
+the graph of the `i`-th distinct root (counted from `0`). Over a base point where `P` specializes to
+zero, it is the whole fiber for `i = 0` and empty otherwise. -/
 theorem isSemialgebraic_setOf_isRoot_card_roots_lt (P : (MvPolynomial (Fin n) R)[X]) (i : ℕ) :
     IsSemialgebraic {y : Fin (n + 1) → R | (P.map (MvPolynomial.eval (Fin.tail y))).IsRoot (y 0) ∧
       {r ∈ (P.map (MvPolynomial.eval (Fin.tail y))).roots.toFinset | r < y 0}.card = i} := by
@@ -207,9 +216,11 @@ theorem isSemialgebraic_setOf_isRoot_card_roots_lt (P : (MvPolynomial (Fin n) R)
   simp only [mem_ofPred_eq, mem_inter_iff, IsRoot.def, ← eval_map_apply, Q, map_eval_map_rename,
     MvPolynomial.eval_X, Fin.tail_def, Function.comp_def]
 
-/-- **The sectors between roots.** The points of `R ^ (n + 1)` whose coordinate `0` is not a root of
-the specialization of `P` at the remaining coordinates, with exactly `j` distinct roots below it,
-form a semialgebraic set. Over a base point where `P` specializes to zero there are no such
+/-- **The non-root locus with `j` roots below.** The points of `R ^ (n + 1)` whose coordinate `0`
+is not a root of the specialization of `P` at the remaining coordinates, with exactly `j` distinct
+roots below it, form a semialgebraic set. Over a base point where `P` does not specialize to zero,
+this is the `j`-th sector counted from below, including the unbounded sectors below the smallest
+and above the largest root. Over a base point where `P` specializes to zero there are no such
 points. -/
 theorem isSemialgebraic_setOf_not_isRoot_card_roots_lt (P : (MvPolynomial (Fin n) R)[X])
     (j : ℕ) :
