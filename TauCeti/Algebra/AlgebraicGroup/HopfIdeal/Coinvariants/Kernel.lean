@@ -65,6 +65,14 @@ noncomputable def coinvariantsKernelTensorMap (hI : I.IsNormal) :
     (coinvariantsKernelQuotientMap hI).hom.toAlgHom).toRingHom
   commutes' x := by simp
 
+/-- The tensor quotient is the tensor product of the identity with the quotient-to-quotient
+map. -/
+theorem coe_coinvariantsKernelTensorMap (hI : I.IsNormal) :
+    ⇑(coinvariantsKernelTensorMap hI) =
+      Algebra.TensorProduct.map (AlgHom.id k H)
+        (coinvariantsKernelQuotientMap hI).hom.toAlgHom :=
+  (rfl)
+
 /-- The tensor quotient acts as the identity on the ambient factor and by the
 quotient-to-quotient map on the kernel factor. -/
 @[simp]
@@ -72,13 +80,16 @@ theorem coinvariantsKernelTensorMap_tmul (hI : I.IsNormal)
     (x : H) (y : H ⧸ (kernelHopfIdeal (coinvariantsι hI)).toIdeal) :
     coinvariantsKernelTensorMap hI (x ⊗ₜ[k] y) =
       x ⊗ₜ[k] (coinvariantsKernelQuotientMap hI).hom y := by
-  simp [coinvariantsKernelTensorMap]
+  simp [coe_coinvariantsKernelTensorMap]
 
 /-- The kernel-pair equivalence for the coinvariant projection, expressed using the canonical
 subalgebra action of the coinvariants on `H`. -/
 noncomputable def coinvariantsKernelPairTensorEquiv (hI : I.IsNormal) :
     H ⊗[I.coinvariants] H ≃ₐ[H]
       H ⊗[k] (H ⧸ (kernelHopfIdeal (coinvariantsι hI)).toIdeal) := by
+  -- The algebra structure on `H` induced by `coinvariantsι hI` is definitionally the subalgebra
+  -- action of `I.coinvariants`; this is an identification of instances inside the tensor
+  -- product type, so no rewriting lemma can replace it.
   exact kernelPairTensorEquiv (coinvariantsι hI)
 
 /-- On pure tensors, the specialized kernel-pair equivalence multiplies the first factor by
@@ -90,6 +101,8 @@ theorem coinvariantsKernelPairTensorEquiv_tmul (hI : I.IsNormal) (x y : H) :
         Algebra.TensorProduct.map (AlgHom.id k H)
           (Ideal.Quotient.mkₐ k (kernelHopfIdeal (coinvariantsι hI)).toIdeal)
           (Coalgebra.comul (R := k) y) := by
+  -- As for `coinvariantsKernelPairTensorEquiv`, the two pure tensors differ only in the
+  -- definitionally equal algebra instances of the coinvariants on `H`.
   exact kernelPairTensorEquiv_tmul (coinvariantsι hI) x y
 
 /-- The canonical map for `I` factors as the kernel-pair equivalence of the coinvariant
@@ -97,61 +110,28 @@ projection, followed by the quotient from its scheme-theoretic kernel to `I`. -/
 theorem canonicalMap_eq_tensorMap_comp_kernelPairTensorEquiv (hI : I.IsNormal) :
     I.canonicalMap = (coinvariantsKernelTensorMap hI).comp
       (coinvariantsKernelPairTensorEquiv hI).toAlgHom := by
+  have hmap (t : H ⊗[k] H) : coinvariantsKernelTensorMap hI
+      (Algebra.TensorProduct.map (AlgHom.id k H)
+        (Ideal.Quotient.mkₐ k (kernelHopfIdeal (coinvariantsι hI)).toIdeal) t) =
+      Algebra.TensorProduct.map (AlgHom.id k H) (Ideal.Quotient.mkₐ k I.toIdeal) t := by
+    induction t using TensorProduct.inductionOn with
+    | tmul a b =>
+      rw [Algebra.TensorProduct.map_tmul, Algebra.TensorProduct.map_tmul, AlgHom.id_apply,
+        coinvariantsKernelTensorMap_tmul]
+      exact congrArg (a ⊗ₜ[k] ·) (quotientMapOfLe_mk H (kernelHopfIdeal_coinvariantsι_le hI) b)
+    | add a b ha hb => simp only [map_add, ha, hb]
   apply Algebra.TensorProduct.ext'
   intro x y
-  rw [HopfIdeal.canonicalMap_tmul, AlgHom.comp_apply]
-  change _ = coinvariantsKernelTensorMap hI
-    (coinvariantsKernelPairTensorEquiv hI (x ⊗ₜ[I.coinvariants] y))
-  rw [coinvariantsKernelPairTensorEquiv_tmul, map_mul,
-    coinvariantsKernelTensorMap_tmul]
-  simp only [map_one]
-  congr 1
-  change Algebra.TensorProduct.map (AlgHom.id k H) (Ideal.Quotient.mkₐ k I.toIdeal)
-      (Coalgebra.comul (R := k) y) =
-    ((Algebra.TensorProduct.map (AlgHom.id k H)
-        (coinvariantsKernelQuotientMap hI).hom.toAlgHom).comp
-      (Algebra.TensorProduct.map (AlgHom.id k H)
-        (Ideal.Quotient.mkₐ k (kernelHopfIdeal (coinvariantsι hI)).toIdeal)))
-      (Coalgebra.comul (R := k) y)
-  rw [← Algebra.TensorProduct.map_id_comp]
-  congr 2
-  ext z
-  change Ideal.Quotient.mkₐ k I.toIdeal z =
-    (quotientMapOfLe H (kernelHopfIdeal_coinvariantsι_le hI)).hom
-      (Ideal.Quotient.mkₐ k (kernelHopfIdeal (coinvariantsι hI)).toIdeal z)
-  exact (quotientMapOfLe_mk H (kernelHopfIdeal_coinvariantsι_le hI) z).symm
+  rw [HopfIdeal.canonicalMap_tmul, AlgHom.comp_apply, AlgEquiv.toAlgHom_apply,
+    coinvariantsKernelPairTensorEquiv_tmul, map_mul, coinvariantsKernelTensorMap_tmul, map_one,
+    hmap]
 
 /-- The quotient from the scheme-theoretic kernel of the coinvariant projection to `I` is
 injective exactly when that kernel is `I`. -/
 theorem coinvariantsKernelQuotientMap_injective_iff (hI : I.IsNormal) :
     Function.Injective (coinvariantsKernelQuotientMap hI).hom ↔
-      kernelHopfIdeal (coinvariantsι hI) = I := by
-  let J := kernelHopfIdeal (coinvariantsι hI)
-  let hJI : J ≤ I := kernelHopfIdeal_coinvariantsι_le hI
-  constructor
-  · intro hq
-    apply le_antisymm hJI
-    intro x hx
-    change x ∈ J.toIdeal
-    rw [← Ideal.Quotient.eq_zero_iff_mem]
-    apply hq
-    rw [map_zero]
-    change (quotientMapOfLe H hJI).hom ((mkQuotient H J).hom x) = 0
-    rw [← CommHopfAlgCat.comp_apply, mkQuotient_comp_quotientMapOfLe,
-      mkQuotient_eq_zero_iff]
-    exact HopfIdeal.mem_toIdeal.mp hx
-  · intro hJIeq x y hxy
-    obtain ⟨x, rfl⟩ := mkQuotient_surjective H J x
-    obtain ⟨y, rfl⟩ := mkQuotient_surjective H J y
-    apply Ideal.Quotient.eq.mpr
-    change J = I at hJIeq
-    rw [hJIeq]
-    apply Ideal.Quotient.eq.mp
-    change (quotientMapOfLe H hJI).hom ((mkQuotient H J).hom x) =
-      (quotientMapOfLe H hJI).hom ((mkQuotient H J).hom y) at hxy
-    rw [← CommHopfAlgCat.comp_apply, ← CommHopfAlgCat.comp_apply,
-      mkQuotient_comp_quotientMapOfLe] at hxy
-    exact hxy
+      kernelHopfIdeal (coinvariantsι hI) = I :=
+  quotientMapOfLe_injective_iff H (kernelHopfIdeal_coinvariantsι_le hI)
 
 /-- **Kernel criterion for normal coinvariants.** The canonical map
 `H ⊗[H^{co H/I}] H → H ⊗ H/I` is injective exactly when the scheme-theoretic kernel
@@ -184,8 +164,7 @@ theorem canonicalMap_injective_iff_kernelHopfIdeal_coinvariantsι_eq (hI : I.IsN
       (coinvariantsKernelQuotientMap_injective_iff hI).mpr hker
     have htensor : Function.Injective
         (coinvariantsKernelTensorMap hI) := by
-      change Function.Injective
-        (Algebra.TensorProduct.map (AlgHom.id k H) q.hom.toAlgHom)
+      rw [coe_coinvariantsKernelTensorMap]
       exact Algebra.TensorProduct.map_injective_of_flat_flat
         (AlgHom.id k H) q.hom.toAlgHom Function.injective_id hq
     rw [hfactor]
