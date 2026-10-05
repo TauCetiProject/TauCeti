@@ -16,12 +16,12 @@ a residue `a : ZMod n` is multiplicative in `a`. At `n = 2` and `x = -1` this is
 
 ## Main results
 
-* `TauCeti.ZMod.pow_val_add`: `x ^ (a + b).val = x ^ a.val * x ^ b.val` when `x ^ n = 1`.
+* `TauCeti.pow_val_add`: `x ^ (a + b).val = x ^ a.val * x ^ b.val` when `x ^ n = 1`.
 -/
 
 public section
 
-namespace TauCeti.ZMod
+namespace TauCeti
 
 /-- **A power indexed by a residue is multiplicative in the residue:** if `x ^ n = 1`, then
 `x ^ (a + b).val = x ^ a.val * x ^ b.val` for `a b : ZMod n`. -/
@@ -29,4 +29,4 @@ theorem pow_val_add {M : Type*} [Monoid M] {n : ℕ} [NeZero n] {x : M} (hx : x 
     (a b : ZMod n) : x ^ (a + b).val = x ^ a.val * x ^ b.val := by
   rw [ZMod.val_add, ← pow_eq_pow_mod _ hx, pow_add]
 
-end TauCeti.ZMod
+end TauCeti

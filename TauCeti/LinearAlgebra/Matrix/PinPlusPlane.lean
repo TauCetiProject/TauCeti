@@ -122,14 +122,14 @@ def wreathSignedPerm : WreathC2 →* Matrix (Fin 2) (Fin 2) R where
     have hdiag (a b a' b' : ZMod 2) :
         diagonal ![(-1 : R) ^ a.val, (-1) ^ b.val] * diagonal ![(-1) ^ a'.val, (-1) ^ b'.val] =
           diagonal ![(-1) ^ (a + a').val, (-1) ^ (b + b').val] := by
-      rw [diagonal_mul_diagonal, ZMod.pow_val_add neg_one_sq, ZMod.pow_val_add neg_one_sq]
+      rw [diagonal_mul_diagonal, pow_val_add neg_one_sq, pow_val_add neg_one_sq]
       congr 1
       ext i; fin_cases i <;> rfl
     simp only [coordA_mul, coordB_mul, coordC_mul]
     generalize coordA g = a, coordB g = b, coordC g = c, coordA h = a', coordB h = b',
       coordC h = c'
     have hE2 : (pinE2 : Matrix (Fin 2) (Fin 2) R) ^ 2 = 1 := by rw [pow_two, pinE2_mul_self]
-    rw [ZMod.pow_val_add hE2]
+    rw [pow_val_add hE2]
     simp only [← mul_assoc]
     obtain rfl | rfl : c = 0 ∨ c = 1 := by revert c; decide
     · simp only [zero_mul, add_zero, ZMod.val_zero, pow_zero, mul_one, hdiag]
