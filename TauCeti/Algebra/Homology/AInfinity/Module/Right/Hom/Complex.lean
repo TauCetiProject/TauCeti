@@ -40,6 +40,8 @@ module morphisms and homotopies, the differential of a cochain is detected by it
 * `TauCeti.AInfinityRightModule.homDifferential`: the graded commutator with the module bar
   differentials.
 * `TauCeti.AInfinityRightModule.homComplex`: the morphism complex.
+* `TauCeti.AInfinityRightModule.homCochains.id`, `TauCeti.AInfinityRightModule.homCochains.comp`:
+  the identity cochain, and the bilinear composition of cochains, which adds degrees.
 * `TauCeti.AInfinityRightModuleHom.equivZeroCocycles`: module morphisms are the closed
   degree-zero cochains.
 * `TauCeti.AInfinityRightModuleHom.Homotopy.equivCochains`: homotopies are the degree-`-1`
@@ -51,8 +53,15 @@ module morphisms and homotopies, the differential of a cochain is detected by it
   zero.
 * `TauCeti.AInfinityRightModule.homCochains.taylor_homDifferential`: the Taylor map of the
   differential of a cochain.
-* `TauCeti.AInfinityRightModule.coe_homDifferential_comp`: the graded Leibniz rule for
-  composition of cochains.
+* `TauCeti.AInfinityRightModule.homDifferential_comp`: the graded Leibniz rule for composition of
+  cochains.
+
+## Implementation notes
+
+`TauCeti.AInfinityRightModule.homComplex` is exposed so that its terms remain definitionally the
+cochain modules `homCochains MM NN p`: the statement of `homComplex_d` already needs this to
+type-check, and so do downstream constructions which feed `homCochains.comp` and
+`homCochains.id` to the Hom complexes.
 
 ## References
 
@@ -291,26 +300,78 @@ theorem comp_mem_homCochains {p q : ℤ}
   rw [add_comm p q]
   exact hG.2.comp hF.2
 
+namespace homCochains
+
+variable (MM) in
+/-- The identity cochain of degree zero: the identity of the cofree bar comodule. -/
+def id : homCochains MM MM 0 :=
+  ⟨LinearMap.id, id_mem_homCochains⟩
+
+/-- The identity cochain is the identity map. -/
+@[simp]
+theorem coe_id :
+    (id MM : (M ⊗[R] TensorWords R A) →ₗ[R] M ⊗[R] TensorWords R A) = LinearMap.id :=
+  (rfl)
+
+/-- Composition of cochains, in Keller's order: a cochain `G` of degree `p` after a cochain `F` of
+degree `q` is the cochain `G ∘ F` of degree `n = p + q`.  It is bilinear in `G` and `F`. -/
+def comp {p q n : ℤ} (h : p + q = n) :
+    homCochains NN PP p →ₗ[R] homCochains MM NN q →ₗ[R] homCochains MM PP n :=
+  LinearMap.mk₂ R (fun G F ↦ ⟨(G : (N ⊗[R] TensorWords R A) →ₗ[R] P ⊗[R] TensorWords R A) ∘ₗ
+      (F : (M ⊗[R] TensorWords R A) →ₗ[R] N ⊗[R] TensorWords R A),
+      by subst h; exact comp_mem_homCochains G.2 F.2⟩)
+    (fun _ _ _ ↦ Subtype.ext (LinearMap.add_comp _ _ _))
+    (fun _ _ _ ↦ Subtype.ext (LinearMap.smul_comp _ _ _))
+    (fun _ _ _ ↦ Subtype.ext (LinearMap.comp_add _ _ _))
+    (fun _ _ _ ↦ Subtype.ext (LinearMap.comp_smul _ _ _))
+
+/-- The composite of two cochains is the composite of the underlying maps. -/
+@[simp]
+theorem coe_comp {p q n : ℤ} (h : p + q = n) (G : homCochains NN PP p)
+    (F : homCochains MM NN q) :
+    (comp h G F : (M ⊗[R] TensorWords R A) →ₗ[R] P ⊗[R] TensorWords R A) =
+      (G : (N ⊗[R] TensorWords R A) →ₗ[R] P ⊗[R] TensorWords R A) ∘ₗ
+        (F : (M ⊗[R] TensorWords R A) →ₗ[R] N ⊗[R] TensorWords R A) :=
+  (rfl)
+
+/-- Composing with the identity cochain on the right changes nothing. -/
+@[simp]
+theorem comp_id {p : ℤ} (G : homCochains MM NN p) : comp (add_zero p) G (id MM) = G :=
+  (rfl)
+
+/-- Composing with the identity cochain on the left changes nothing. -/
+@[simp]
+theorem id_comp {p : ℤ} (F : homCochains MM NN p) : comp (zero_add p) (id NN) F = F :=
+  (rfl)
+
+/-- Composition of cochains is associative. -/
+theorem comp_assoc {Q : Type*} [AddCommGroup Q] [Module R Q] {QQ : AInfinityRightModule AA Q}
+    {r q p rq qp n : ℤ} (hrq : r + q = rq) (hqp : q + p = qp) (h : rq + p = n) (h' : r + qp = n)
+    (K : homCochains PP QQ r) (G : homCochains NN PP q) (F : homCochains MM NN p) :
+    comp h (comp hrq K G) F = comp h' K (comp hqp G F) :=
+  (rfl)
+
+end homCochains
+
 /-- The identity cochain is closed. -/
 @[simp]
-theorem homDifferential_id :
-    homDifferential MM MM 0 ⟨LinearMap.id, id_mem_homCochains⟩ = 0 := by
+theorem homDifferential_id : homDifferential MM MM 0 (homCochains.id MM) = 0 := by
   ext : 1
-  simp only [coe_homDifferential, LinearMap.id_comp, LinearMap.comp_id, Int.negOnePow_zero,
-    one_smul, sub_self, ZeroMemClass.coe_zero]
+  simp only [coe_homDifferential, homCochains.coe_id, LinearMap.id_comp, LinearMap.comp_id,
+    Int.negOnePow_zero, one_smul, sub_self, ZeroMemClass.coe_zero]
 
 /-- The graded Leibniz rule: for cochains `G` of degree `p` and `F` of degree `q`,
 `δ(G ∘ F) = δG ∘ F + (-1)^p G ∘ δF`.  The sign is carried by the outer factor, as in Keller's
 composition order. -/
-theorem coe_homDifferential_comp {p q : ℤ} (G : homCochains NN PP p) (F : homCochains MM NN q) :
-    (homDifferential MM PP (p + q) ⟨_, comp_mem_homCochains G.2 F.2⟩ :
-        (M ⊗[R] TensorWords R A) →ₗ[R] P ⊗[R] TensorWords R A) =
-      (homDifferential NN PP p G : (N ⊗[R] TensorWords R A) →ₗ[R] P ⊗[R] TensorWords R A) ∘ₗ
-          (F : (M ⊗[R] TensorWords R A) →ₗ[R] N ⊗[R] TensorWords R A) +
-        p.negOnePow • ((G : (N ⊗[R] TensorWords R A) →ₗ[R] P ⊗[R] TensorWords R A) ∘ₗ
-          (homDifferential MM NN q F :
-            (M ⊗[R] TensorWords R A) →ₗ[R] N ⊗[R] TensorWords R A)) := by
-  simp only [coe_homDifferential, LinearMap.sub_comp, LinearMap.smul_comp, LinearMap.comp_sub,
+theorem homDifferential_comp {p q n : ℤ} (h : p + q = n) (G : homCochains NN PP p)
+    (F : homCochains MM NN q) :
+    homDifferential MM PP n (homCochains.comp h G F) =
+      homCochains.comp (by omega) (homDifferential NN PP p G) F +
+        p.negOnePow • homCochains.comp (by omega) G (homDifferential MM NN q F) := by
+  subst h
+  ext : 1
+  simp only [coe_homDifferential, homCochains.coe_comp, Submodule.coe_add,
+    Submodule.coe_smul_of_tower, LinearMap.sub_comp, LinearMap.smul_comp, LinearMap.comp_sub,
     LinearMap.comp_smul, LinearMap.comp_assoc, smul_sub, smul_smul, Int.negOnePow_add]
   abel
 
