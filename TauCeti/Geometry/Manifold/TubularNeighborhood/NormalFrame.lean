@@ -16,10 +16,10 @@ nearby normal fibres gives a local frame, with the prescribed value at the origi
 These ambient-vector-valued frames provide coordinates for constructing the smooth normal
 bundle before any vector-bundle structure on that family has been installed.
 
-The normal bundle is the one used in the Euclidean tubular-neighbourhood theorem. Smoothness
-is proved in a fixed source chart, using `ContDiffAt.starProjection_orthogonal_range`; linear
-independence persists on an open neighbourhood, and the normal dimension is constant for an
-immersion. Neither compactness nor injectivity of the underlying map is required.
+The normal bundle is the one used in the Euclidean tubular-neighbourhood theorem. As in
+`ContDiffAt.starProjection_orthogonal_range`, the pointwise normal-projection result allows a
+complete, possibly infinite-dimensional ambient space. Neither compactness nor injectivity of
+the underlying map is required.
 
 ## References
 
