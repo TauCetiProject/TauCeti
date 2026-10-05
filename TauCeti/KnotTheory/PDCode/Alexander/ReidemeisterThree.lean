@@ -7,8 +7,7 @@ module
 
 public import TauCeti.KnotTheory.PDCode.Alexander.Basic
 public import TauCeti.KnotTheory.PDCode.Oriented.Reidemeister.Three
-import Mathlib.Tactic.LinearCombination
-import Mathlib.Tactic.Module
+import TauCeti.Algebra.Module.Basic
 
 /-!
 # The Alexander module under the third Reidemeister move
@@ -30,7 +29,8 @@ compute the three values leaving the triangle from the three values entering it,
 crossings in opposite orders before and after the move. The move permutes the weights as it
 permutes the crossing signs (`TauCeti.OrientedPDCode.alexanderWeight_reidemeisterThree`), and the
 strand on top acts on the other two by the same weight, up to inversion when it is read from
-opposite sides; the two computations then agree. This is the self-distributivity of the Alexander
+opposite sides; the two computations then agree
+(`TauCeti.smul_add_one_sub_smul_braid_relation`). This is the self-distributivity of the Alexander
 quandle.
 
 The equivalence sends the generator of a half-edge to the generator of the half-edge it is moved
@@ -162,38 +162,6 @@ private theorem alexanderWeight_triangle (h : D.HasReidemeisterThreeTriangle c) 
     cases D.orientation (D.crossing (c 0) 3) <;> simp
 
 end Triangle
-
-/-! ### The braid relation for the Alexander relations -/
-
-/-- The third Reidemeister move on affine combinations. Three strands enter a triangle with values
-`a`, `b`, `c` and cross pairwise; at a crossing of two strands with entering values `x` and `y`,
-they leave with `p • x + (1 - p) • y` and `q • y + (1 - q) • x`, where `p = 1` or `q = 1` according
-to which strand is over. Passing the crossings in the order first–second, first–third,
-second–third (with intermediate values `x₁`, `y₁`, `z₁`) or in the opposite order (with
-intermediate values `x₁'`, `y₁'`, `z₁'`) gives the same three leaving values, as soon as the
-strand on top acts on the other two by the same weight, up to inversion when it is read from
-opposite sides. This is the self-distributivity of the Alexander quandle. -/
-private theorem braid_relation {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
-    {p₀ q₀ p₁ q₁ p₂ q₂ : R}
-    (h : (p₀ = 1 ∧ p₁ = 1 ∧ q₀ = q₁ ∧ (p₂ = 1 ∨ q₂ = 1)) ∨
-      (q₁ = 1 ∧ q₂ = 1 ∧ p₁ = p₂ ∧ (p₀ = 1 ∨ q₀ = 1)) ∨
-      (q₀ = 1 ∧ p₂ = 1 ∧ p₀ * q₂ = 1 ∧ (p₁ = 1 ∨ q₁ = 1)))
-    {a b c x₁ y₁ z₁ x₁' y₁' z₁' : M}
-    (hx₁ : x₁ = p₀ • a + (1 - p₀) • b) (hy₁ : y₁ = q₀ • b + (1 - q₀) • a)
-    (hz₁ : z₁ = q₁ • c + (1 - q₁) • x₁)
-    (hy₁' : y₁' = p₂ • b + (1 - p₂) • c) (hz₁' : z₁' = q₂ • c + (1 - q₂) • b)
-    (hx₁' : x₁' = p₁ • a + (1 - p₁) • z₁') :
-    p₁ • x₁ + (1 - p₁) • c = p₀ • x₁' + (1 - p₀) • y₁' ∧
-    p₂ • y₁ + (1 - p₂) • z₁ = q₀ • y₁' + (1 - q₀) • x₁' ∧
-    q₂ • z₁ + (1 - q₂) • y₁ = q₁ • z₁' + (1 - q₁) • a := by
-  subst hx₁ hy₁ hz₁ hy₁' hz₁' hx₁'
-  rcases h with ⟨rfl, rfl, rfl, rfl | rfl⟩ | ⟨rfl, rfl, rfl, rfl | rfl⟩ |
-    ⟨rfl, rfl, h, rfl | rfl⟩
-  all_goals refine ⟨?_, ?_, ?_⟩
-  all_goals first
-    | module
-    | linear_combination (norm := module) h • ((1 - q₁) • (a - b))
-    | linear_combination (norm := module) h • ((1 - p₁) • (b - c))
 
 /-! ### Values on the arcs of a triangle -/
 
@@ -347,7 +315,7 @@ private theorem fwd_braid (h : D.HasReidemeisterThreeTriangle c) :
   -- The arcs inside the new triangle identify the generators at their two ends.
   rw [← h01, alexanderGenerator_edgePair] at r1₂ r1₁
   rw [← h12, alexanderGenerator_edgePair, ← h02, alexanderGenerator_edgePair] at r2₂ r2₁
-  obtain ⟨k₁, k₂, k₃⟩ := braid_relation (D.alexanderWeight_triangle c h)
+  obtain ⟨k₁, k₂, k₃⟩ := smul_add_one_sub_smul_braid_relation (D.alexanderWeight_triangle c h)
     (a := (D.reidemeisterThree c).alexanderGenerator (.inl (D.crossing (c 1) 0)))
     (b := (D.reidemeisterThree c).alexanderGenerator (.inl (D.crossing (c 0) 0)))
     (c := (D.reidemeisterThree c).alexanderGenerator (.inl (D.crossing (c 0) 3)))
@@ -489,7 +457,7 @@ private theorem bwd_braid (h : D.HasReidemeisterThreeTriangle c) :
   -- The arcs inside the old triangle identify the generators at their two ends.
   rw [← ha, alexanderGenerator_edgePair] at r1₂ r1₁
   rw [← hb, alexanderGenerator_edgePair, ← hc, alexanderGenerator_edgePair] at r2₂ r2₁
-  obtain ⟨k₁, k₂, k₃⟩ := braid_relation (D.alexanderWeight_triangle c h)
+  obtain ⟨k₁, k₂, k₃⟩ := smul_add_one_sub_smul_braid_relation (D.alexanderWeight_triangle c h)
     (x₁' := bwdMid₀ D c) (y₁' := bwdMid₁ D c) (z₁' := bwdMid₂ D c) r0₂ r0₁ r1₁ rfl rfl rfl
   exact ⟨r2₁.trans k₃, r1₂.trans k₁, r2₂.trans k₂⟩
 
