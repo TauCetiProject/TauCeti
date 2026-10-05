@@ -206,6 +206,26 @@ theorem monomialBidegree_snd (x : GridState n) (e : Fin n →₀ ℕ) :
     (G.monomialBidegree x e).2 = G.alexanderℤ x - (e.degree : ℤ) := by
   rw [monomialBidegree, Prod.snd_sub, bidegree_snd]
 
+/-- Renaming the input variables and multiplying by a squarefree weight preserves bidegree
+when the target state's Maslov and Alexander gradings rise by twice and once the weight's size. -/
+theorem monomialBidegree_mapDomain_add_sum (G' : OddComponentGridDiagram n)
+    (σ : Equiv.Perm (Fin n)) (d : Fin n →₀ ℕ) (S : Finset (Fin n))
+    (hM : G'.1.maslovOℤ y = G.1.maslovOℤ x + 2 * (S.card : ℤ))
+    (hA : G'.alexanderℤ y = G.alexanderℤ x + S.card) :
+    G'.monomialBidegree y
+      (Finsupp.mapDomain σ d + ∑ c ∈ S, Finsupp.single (σ c) 1) =
+      G.monomialBidegree x d := by
+  have hdeg : ((Finsupp.mapDomain σ d +
+      ∑ c ∈ S, Finsupp.single (M := ℕ) (σ c) 1).degree : ℤ) =
+      (d.degree : ℤ) + (S.card : ℤ) := by
+    rw [map_add, map_sum, Finsupp.degree_mapDomain]
+    simp
+  refine Prod.ext ?_ ?_
+  · simp only [monomialBidegree_fst, hdeg, hM]
+    ring
+  · simp only [monomialBidegree_snd, hdeg, hA]
+    ring
+
 /-- A grid-state generator carries the bidegree of its state. -/
 @[simp]
 theorem monomialBidegree_zero (x : GridState n) : G.monomialBidegree x 0 = G.bidegree x := by

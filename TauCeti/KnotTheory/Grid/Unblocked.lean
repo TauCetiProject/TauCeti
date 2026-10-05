@@ -204,9 +204,10 @@ theorem renameMatrixMap_apply_apply (σ : Equiv.Perm (Fin n))
       Finset.sum_eq_single y (fun z _ hz => by simp [hz.symm]) (by simp),
       Finsupp.single_eq_same, Finsupp.sum_single_index (by simp)]
 
-/-- A monomial occurring in a renamed matrix map comes from a monomial of an input coefficient
-and a monomial of the corresponding matrix entry. Its exponent is their sum after renaming. -/
-theorem exists_support_of_mem_support_sum_rename_mul (σ : Equiv.Perm (Fin n))
+/-- A monomial of the coefficient at `y` of `GridChain.renameMatrixMap R σ M c` comes from a
+monomial of an input coefficient `c x` and a monomial of the matrix entry `M x y`; its exponent
+is the `σ`-renaming of the former plus the latter. -/
+theorem exists_eq_mapDomain_add_of_mem_support_sum_rename_mul (σ : Equiv.Perm (Fin n))
     (M : GridState n → GridState n → MvPolynomial (Fin n) R)
     {c : GridChainMinus R n} {y : GridState n} {e : Fin n →₀ ℕ}
     (he : e ∈ (c.sum fun x p => rename σ p * M x y).support) :
@@ -250,6 +251,12 @@ theorem OSet_inter_eq_image_OColumnsOfSquares (s : Finset (Fin n × Fin n)) :
   · rintro ⟨c, hc, rfl⟩
     exact ⟨rfl, hc⟩
 
+/-- The number of covered `O`-columns is the number of `O`-markings in a set of squares. -/
+theorem card_OColumnsOfSquares (s : Finset (Fin n × Fin n)) :
+    (G.OColumnsOfSquares s).card = (G.OSet ∩ s).card := by
+  rw [OSet_inter_eq_image_OColumnsOfSquares, Finset.card_image_of_injective _
+    fun a b hab => congrArg Prod.fst hab]
+
 /-- The columns whose `O`-marking lies in the squares a toroidal rectangle covers.
 
 The `O`-markings of a grid diagram are indexed by their columns, so this finite set of columns is
@@ -291,8 +298,7 @@ theorem OSet_inter_coveredSquares (r : GridRectangle n) :
 a grid diagram has exactly one `O`-marking in each column. -/
 theorem card_OColumns (r : GridRectangle n) :
     (G.OColumns r).card = (G.OSet ∩ r.coveredSquares).card := by
-  rw [OSet_inter_coveredSquares, Finset.card_image_of_injective]
-  exact fun a b hab => congrArg Prod.fst hab
+  exact G.card_OColumnsOfSquares r.coveredSquares
 
 /-- A rectangle covers no `O`-column exactly when its covered squares carry no `O`-marking. -/
 theorem OColumns_eq_empty_iff (r : GridRectangle n) :

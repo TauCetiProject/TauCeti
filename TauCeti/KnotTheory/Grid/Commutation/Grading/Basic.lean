@@ -18,12 +18,10 @@ Let `C` be a validated column commutation of a grid diagram `G`, exchanging the 
 `a = C.column` with the next column `b = finRotate n a`, and let `G'` be the commuted diagram
 `G.swapColumns a b`. The pentagon map `Φ : GC⁻(G) → GC⁻(G')` (`GridDiagram.pentagonMap`) sends a
 state `x` to the sum, over the empty pentagons `P` from `x` carrying no `X`-marking and turning on
-their terminal side, of `V^{𝕆 ∩ P} · y` with `y` the target of `P`. This file proves that `Φ` has
-bidegree `(0, 0)` for the (`O`-Maslov, Alexander) bigrading of `Grading/UnblockedChain.lean`. This
-is the grading half of the commutation-invariance argument for the terminal-side part of the
-commutation map `GridDiagram.commutationMap`. The state-grading formulas for pentagons turning on
-their initial side are proved as well; `Grading/Map.lean` uses them to prove homogeneity of the
-initial-side part and of the full commutation map.
+their terminal side, of `V^{𝕆 ∩ P} · y` with `y` the target of `P`. This file proves the
+state-grading formulas for pentagons turning on either side. `Grading/Map.lean` uses them to prove
+that both parts and the full commutation map `GridDiagram.commutationMap` have bidegree `(0, 0)`
+for the (`O`-Maslov, Alexander) bigrading of `Grading/UnblockedChain.lean`.
 
 The grid states of `G` and `G'` are the same permutations, and the comparison rests on two
 grading formulas.
@@ -55,16 +53,13 @@ bidegree `(-2, -1)`, each term `V^{𝕆 ∩ P} · y` of `Φ(x)` has the bidegree
 * `TauCeti.GridDiagram.maslovOℤ_swapColumns_of_isEmpty`,
   `TauCeti.GridDiagram.maslovXℤ_swapColumns_of_isEmpty`: the two Maslov gradings across an empty
   pentagon.
-* `TauCeti.GridDiagram.maslovOℤ_swapColumns_of_isEmpty_initial`,
-  `TauCeti.GridDiagram.maslovXℤ_swapColumns_of_isEmpty_initial`: the Maslov grading changes
+* `TauCeti.GridDiagram.maslovOℤ_swapColumns_initialPentagon_of_isEmpty`,
+  `TauCeti.GridDiagram.maslovXℤ_swapColumns_initialPentagon_of_isEmpty`: the Maslov grading changes
   across an empty initial-side pentagon.
 * `TauCeti.OddComponentGridDiagram.alexanderℤ_swapColumns_of_mem_initialPentagons`: the
   Alexander grading change across a counted initial-side pentagon.
 * `TauCeti.OddComponentGridDiagram.alexanderℤ_swapColumns_of_mem_pentagons`: the Alexander
   grading across a counted pentagon.
-* `TauCeti.OddComponentGridDiagram.pentagonMap_mem_bigradedChainMinusPiece` and
-  `TauCeti.OddComponentGridDiagram.pentagonMap_mem_alexanderChainMinusPiece`: the pentagon map
-  preserves the bigrading and the Alexander grading of `GC⁻`.
 
 ## References
 
@@ -157,9 +152,7 @@ private theorem card_OSet_inter_eq_sum (G : GridDiagram n) (S : Finset (Fin n ×
   have hcols : G.OColumnsOfSquares S = Finset.univ.filter fun c => (c, G.O c) ∈ S := by
     ext c
     simp
-  rw [G.OSet_inter_eq_image_OColumnsOfSquares,
-    Finset.card_image_of_injective _ fun c d h => congrArg Prod.fst h, hcols,
-    Finset.card_filter]
+  rw [← G.card_OColumnsOfSquares, hcols, Finset.card_filter]
   push_cast
   rfl
 
@@ -419,7 +412,7 @@ theorem alexanderTwoℤ_swapColumns_of_mem_pentagons
 
 /-- The `O`-Maslov grading across an empty initial-side pentagon, when the markings lie in
 its two commutation bigons. -/
-private theorem maslovOℤ_swapColumns_of_isEmpty_initial_of_mem (G : GridDiagram n)
+private theorem maslovOℤ_swapColumns_initialPentagon_of_isEmpty_of_mem (G : GridDiagram n)
     {a s t : Fin n} {x y : GridState n} (P : GridInitialPentagonBetween a s x y)
     (hP : P.IsEmpty) (hab : a ≠ finRotate n a)
     (hOa : G.O a ∈ insert s (Grid.cIco t s))
@@ -446,7 +439,9 @@ private theorem maslovOℤ_swapColumns_of_isEmpty_initial_of_mem (G : GridDiagra
       simp only [GridRectangleBetween.mem_toGridRectangle_coveredSquares, P.mem_coveredSquares,
         P.left_eq, ha, hb', ← hb, GridRectangleBetween.bottom_def,
         GridRectangleBetween.top_def]
-      simp [hab, hab.symm]
+      simp only [Grid.mem_cIco, ne_eq, EmbeddingLike.apply_eq_iff_eq, Fin.val_fin_lt,
+        Fin.val_fin_le, false_and, ↓reduceIte, hab, not_false_eq_true, and_false, Grid.mem_cIoo,
+        true_and, or_false, false_or, zero_sub, not_true_eq_false, hab.symm]
       ring
     · rintro c ⟨hca, hcb⟩
       simp [P.mem_coveredSquares_iff_of_ne (p := (c, G.O c)) hca hcb]
@@ -459,25 +454,21 @@ private theorem maslovOℤ_swapColumns_of_isEmpty_initial_of_mem (G : GridDiagra
 
 /-- An empty pentagon turning on its initial side raises the target `O`-Maslov grading by twice
 its number of covered `O`-markings. -/
-theorem maslovOℤ_swapColumns_of_isEmpty_initial
+theorem maslovOℤ_swapColumns_initialPentagon_of_isEmpty
     {P : GridInitialPentagonBetween C.column C.turnRow x y} (hP : P.IsEmpty) :
     (G.swapColumns C.column (finRotate n C.column)).maslovOℤ y =
       G.maslovOℤ x + 2 * ((G.OColumnsOfSquares P.coveredSquares).card : ℤ) := by
-  have hcard : (G.OSet ∩ P.coveredSquares).card =
-      (G.OColumnsOfSquares P.coveredSquares).card := by
-    rw [G.OSet_inter_eq_image_OColumnsOfSquares,
-      Finset.card_image_of_injective _ fun c d h => congrArg Prod.fst h]
-  rw [← hcard]
-  exact G.maslovOℤ_swapColumns_of_isEmpty_initial_of_mem P hP C.column_ne_next
+  rw [G.card_OColumnsOfSquares]
+  exact G.maslovOℤ_swapColumns_initialPentagon_of_isEmpty_of_mem P hP C.column_ne_next
     C.O_column_below C.O_next_above
 
 /-- An empty pentagon turning on its initial side raises the target `X`-Maslov grading by twice
 its number of covered `X`-markings. -/
-theorem maslovXℤ_swapColumns_of_isEmpty_initial
+theorem maslovXℤ_swapColumns_initialPentagon_of_isEmpty
     {P : GridInitialPentagonBetween C.column C.turnRow x y} (hP : P.IsEmpty) :
     (G.swapColumns C.column (finRotate n C.column)).maslovXℤ y =
       G.maslovXℤ x + 2 * ((G.XSet ∩ P.coveredSquares).card : ℤ) := by
-  have h := G.swapMarkings.maslovOℤ_swapColumns_of_isEmpty_initial_of_mem P hP
+  have h := G.swapMarkings.maslovOℤ_swapColumns_initialPentagon_of_isEmpty_of_mem P hP
     C.column_ne_next C.X_column_below C.X_next_above
   rwa [← swapColumns_swapMarkings, maslovOℤ_swapMarkings, maslovOℤ_swapMarkings,
     swapMarkings_OSet] at h
@@ -489,7 +480,7 @@ theorem maslovXℤ_swapColumns_of_mem_initialPentagons
     (hP : P ∈ G.initialPentagons C x y) :
     (G.swapColumns C.column (finRotate n C.column)).maslovXℤ y = G.maslovXℤ x := by
   rw [mem_initialPentagons] at hP
-  rw [G.maslovXℤ_swapColumns_of_isEmpty_initial C hP.1,
+  rw [G.maslovXℤ_swapColumns_initialPentagon_of_isEmpty C hP.1,
     Finset.disjoint_iff_inter_eq_empty.mp hP.2.symm]
   simp
 
@@ -500,7 +491,8 @@ theorem alexanderTwoℤ_swapColumns_of_mem_initialPentagons
     (hP : P ∈ G.initialPentagons C x y) :
     (G.swapColumns C.column (finRotate n C.column)).alexanderTwoℤ y =
       G.alexanderTwoℤ x + 2 * ((G.OColumnsOfSquares P.coveredSquares).card : ℤ) := by
-  have hO := G.maslovOℤ_swapColumns_of_isEmpty_initial C ((G.mem_initialPentagons P).mp hP).1
+  have hO := G.maslovOℤ_swapColumns_initialPentagon_of_isEmpty C
+    ((G.mem_initialPentagons P).mp hP).1
   have hX := G.maslovXℤ_swapColumns_of_mem_initialPentagons C hP
   rw [alexanderTwoℤ_def, alexanderTwoℤ_def, hO, hX]
   ring
@@ -544,71 +536,6 @@ theorem alexanderℤ_swapColumns_of_mem_initialPentagons
   have h := G.1.alexanderTwoℤ_swapColumns_of_mem_initialPentagons C hP
   rw [← val_swapColumns, ← two_mul_alexanderℤ, ← two_mul_alexanderℤ] at h
   omega
-
-variable (R : Type*) [CommSemiring R]
-
-/-- Every monomial `V^e · y` of the image of a chain `c` under the pentagon map has the bidegree
-of some monomial `V^d · x` of `c`. -/
-private theorem exists_monomialBidegree_eq_of_mem_support {c : GridChainMinus R n}
-    {e : Fin n →₀ ℕ} (he : e ∈ (G.1.pentagonMap R C c y).support) :
-    ∃ x : GridState n, ∃ d ∈ (c x).support,
-      (G.swapColumns C).monomialBidegree y e = G.monomialBidegree x d := by
-  classical
-  rw [GridDiagram.pentagonMap_apply_apply] at he
-  obtain ⟨x, d, hd, w, hw, rfl⟩ := GridChain.exists_support_of_mem_support_sum_rename_mul
-    R (Equiv.swap C.column (finRotate n C.column)) _ he
-  rw [GridDiagram.pentagonCoefficient_def] at hw
-  obtain ⟨P, hP, hwP⟩ := Finset.mem_biUnion.mp (MvPolynomial.support_sum hw)
-  have hweight : G.1.pentagonWeight R C P =
-      monomial (∑ c ∈ G.1.pentagonOColumns C P,
-        Finsupp.single (Equiv.swap C.column (finRotate n C.column) c) 1) 1 := by
-    rw [GridDiagram.pentagonWeight_eq_prod_swapColumns]
-    rw [Finset.prod_nbij' (Equiv.swap C.column (finRotate n C.column))
-      (Equiv.swap C.column (finRotate n C.column)) (t := G.1.pentagonOColumns C P)
-      (g := fun c => X (Equiv.swap C.column (finRotate n C.column) c))
-      (by simp [GridDiagram.swapColumns_O, GridState.swapColumns_apply])
-      (by simp [GridDiagram.swapColumns_O, GridState.swapColumns_apply]) (by simp) (by simp)
-      (by simp)]
-    rw [monomial_sum_one]
-    simp only [← X_pow_eq_monomial, pow_one]
-  rw [hweight] at hwP
-  obtain rfl := Finset.mem_singleton.mp (MvPolynomial.support_monomial_subset hwP)
-  refine ⟨x, d, hd, ?_⟩
-  have hM := G.1.maslovOℤ_swapColumns_of_isEmpty C ((G.1.mem_pentagons P).mp hP).1
-  have hA := G.alexanderℤ_swapColumns_of_mem_pentagons C hP
-  have hdeg : ((Finsupp.mapDomain (Equiv.swap C.column (finRotate n C.column)) d +
-      ∑ c ∈ G.1.pentagonOColumns C P,
-        Finsupp.single (M := ℕ) (Equiv.swap C.column (finRotate n C.column) c) 1).degree : ℤ) =
-      (d.degree : ℤ) + ((G.1.pentagonOColumns C P).card : ℤ) := by
-    rw [map_add, map_sum, Finsupp.degree_mapDomain]
-    simp
-  refine Prod.ext ?_ ?_
-  · simp only [monomialBidegree_fst, val_swapColumns, hdeg, hM]
-    ring
-  · simp only [monomialBidegree_snd, hdeg, hA]
-    ring
-
-/-- **The pentagon map preserves the bigrading.** The pentagon map of a validated column
-commutation `C` sends a chain of `GC⁻(G)` that is homogeneous of bidegree `g` to a chain of
-`GC⁻` of the commuted diagram that is homogeneous of the same bidegree. -/
-theorem pentagonMap_mem_bigradedChainMinusPiece {g : ℤ × ℤ} {c : GridChainMinus R n}
-    (hc : c ∈ G.bigradedChainMinusPiece R g) :
-    G.1.pentagonMap R C c ∈ (G.swapColumns C).bigradedChainMinusPiece R g := by
-  rw [mem_bigradedChainMinusPiece] at hc ⊢
-  intro y e he
-  obtain ⟨x, d, hd, h⟩ := G.exists_monomialBidegree_eq_of_mem_support C R he
-  rw [h, hc x d hd]
-
-/-- **The pentagon map preserves the Alexander grading.** The pentagon map of a validated column
-commutation `C` sends a chain of `GC⁻(G)` of Alexander degree `a` to a chain of `GC⁻` of the
-commuted diagram of the same Alexander degree. -/
-theorem pentagonMap_mem_alexanderChainMinusPiece {a : ℤ} {c : GridChainMinus R n}
-    (hc : c ∈ G.alexanderChainMinusPiece R a) :
-    G.1.pentagonMap R C c ∈ (G.swapColumns C).alexanderChainMinusPiece R a := by
-  rw [mem_alexanderChainMinusPiece] at hc ⊢
-  intro y e he
-  obtain ⟨x, d, hd, h⟩ := G.exists_monomialBidegree_eq_of_mem_support C R he
-  rw [← monomialBidegree_snd, h, monomialBidegree_snd, hc x d hd]
 
 end OddComponentGridDiagram
 
