@@ -12,12 +12,14 @@ public import Mathlib.RingTheory.DiscreteValuationRing.Basic
 # Eisenstein polynomials over discrete valuation rings
 
 The Eisenstein condition over a discrete valuation ring makes the constant coefficient a
-uniformizer.
+uniformizer. Conversely, `X ^ n` minus a uniformizer is Eisenstein for positive `n`.
 
 ## Main results
 
 * `Polynomial.IsEisensteinAt.irreducible_coeff_zero` identifies the constant coefficient as an
   irreducible element.
+* `TauCeti.isEisensteinAt_X_pow_sub_C_of_irreducible` gives Eisenstein polynomials from
+  uniformizers.
 -/
 
 public section
@@ -65,3 +67,29 @@ theorem irreducible_coeff_zero {f : R[X]} (hf : f.IsEisensteinAt (maximalIdeal R
   exact Associated.irreducible ⟨u, by simpa [mul_comm] using hu.symm⟩ hϖ
 
 end Polynomial.IsEisensteinAt
+
+namespace TauCeti
+
+open Polynomial
+
+/-- Over a discrete valuation ring, `X ^ n` minus a uniformizer is Eisenstein for positive `n`. -/
+theorem isEisensteinAt_X_pow_sub_C_of_irreducible
+    {R : Type*} [CommRing R] [IsDomain R] [IsDiscreteValuationRing R]
+    {ϖ : R} (hϖ : Irreducible ϖ) {n : ℕ} (hn : 0 < n) :
+    (X ^ n - C ϖ).IsEisensteinAt (maximalIdeal R) := by
+  refine (monic_X_pow_sub_C ϖ hn.ne').isEisensteinAt_of_mem_of_notMem
+    (maximalIdeal.isMaximal R).ne_top ?_ ?_
+  · intro i hi
+    rw [natDegree_X_pow_sub_C] at hi
+    by_cases hi0 : i = 0
+    · subst i
+      simp [Ne.symm hn.ne', hϖ.maximalIdeal_eq]
+    · simp [coeff_sub, coeff_X_pow, coeff_C, hi.ne, hi0]
+  · simp only [coeff_sub, coeff_X_pow, Ne.symm hn.ne', ↓reduceIte,
+      coeff_C_zero, zero_sub]
+    rw [Ideal.neg_mem_iff, hϖ.maximalIdeal_eq, Ideal.span_singleton_pow,
+      Ideal.mem_span_singleton]
+    simpa only [pow_one] using
+      (not_congr (pow_dvd_pow_iff (n := 2) (m := 1) hϖ.ne_zero hϖ.not_isUnit)).mpr (by decide)
+
+end TauCeti
