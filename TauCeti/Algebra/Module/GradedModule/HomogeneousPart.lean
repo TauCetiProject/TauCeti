@@ -25,6 +25,10 @@ homogeneous retraction.
 
 * `InternalGrading.homogeneousPart`: the polynomial-linear component of degree `r`.
 * `InternalGrading.homogeneousPart_apply_of_mem`: its value on homogeneous inputs.
+* `InternalGrading.homogeneousPart_zero` and `InternalGrading.homogeneousPart_add`: components
+  preserve zero and addition of maps.
+* `InternalGrading.homogeneousPart_eq_self`: taking the component of a homogeneous map at its
+  degree recovers the map.
 * `InternalGrading.isHomogeneous_homogeneousPart`: the component has degree `r`.
 -/
 
@@ -116,6 +120,41 @@ theorem homogeneousPart_apply_of_mem (f : M →ₗ[k[X]] N) (r : ℤ)
     G.homogeneousPart H hX hY f r x =
       (DirectSum.decompose H.piece (f x) (p + r) : N) :=
   componentMap_apply_of_mem G H f r hx
+
+/-- Every homogeneous part of the zero map is zero. This case is also simplified by
+`homogeneousPart_eq_self`. -/
+theorem homogeneousPart_zero (r : ℤ) :
+    G.homogeneousPart H hX hY 0 r = 0 := by
+  apply _root_.LinearMap.restrictScalars_injective k
+  apply G.linearMap_ext
+  intro p x hx
+  simp [G.homogeneousPart_apply_of_mem H hX hY 0 r hx]
+
+/-- Taking a homogeneous part preserves addition of polynomial-linear maps. -/
+@[simp]
+theorem homogeneousPart_add (f g : M →ₗ[k[X]] N) (r : ℤ) :
+    G.homogeneousPart H hX hY (f + g) r =
+      G.homogeneousPart H hX hY f r + G.homogeneousPart H hX hY g r := by
+  apply _root_.LinearMap.restrictScalars_injective k
+  apply G.linearMap_ext
+  intro p x hx
+  simp only [_root_.LinearMap.restrictScalars_apply, _root_.LinearMap.add_apply,
+    G.homogeneousPart_apply_of_mem H hX hY (f + g) r hx,
+    G.homogeneousPart_apply_of_mem H hX hY f r hx,
+    G.homogeneousPart_apply_of_mem H hX hY g r hx, DirectSum.decompose_add,
+    DirectSum.add_apply, Submodule.coe_add]
+
+/-- Taking the degree-`r` part of a map already homogeneous of degree `r` recovers the map. -/
+@[simp]
+theorem homogeneousPart_eq_self (f : M →ₗ[k[X]] N) (r : ℤ)
+    (hf : TauCeti.LinearMap.IsHomogeneous f G.piece H.piece r) :
+    G.homogeneousPart H hX hY f r = f := by
+  apply _root_.LinearMap.restrictScalars_injective k
+  apply G.linearMap_ext
+  intro p x hx
+  rw [_root_.LinearMap.restrictScalars_apply, _root_.LinearMap.restrictScalars_apply,
+    G.homogeneousPart_apply_of_mem H hX hY f r hx]
+  exact DirectSum.decompose_of_mem_same H.piece (hf.map_mem hx)
 
 /-- The degree-`r` component of a polynomial-linear map is homogeneous of degree `r`. -/
 theorem isHomogeneous_homogeneousPart (f : M →ₗ[k[X]] N) (r : ℤ) :
