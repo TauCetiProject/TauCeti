@@ -154,7 +154,7 @@ private theorem signlessArrow_eq_zero_of_not_consecutive {i j : ℕ} (h : ¬(i +
 
 /-- **The signless relation at a vertex `v` of a path**: the backtrack through `v + 1` cancels the
 backtrack through `v - 1`. At an end vertex the missing backtrack is zero. -/
-private theorem signlessArrow_relation (v : ℕ) :
+theorem signlessArrow_relation_of_consecutive (v : ℕ) :
     signlessArrow k G (v + 1) v * signlessArrow k G v (v + 1) +
       signlessArrow k G (v - 1) v * signlessArrow k G v (v - 1) = 0 := by
   by_cases hv : v < n
@@ -191,9 +191,10 @@ private theorem signlessPreprojectiveMk_ofPath_eq_zero_of_endpoint_bound
   by_cases hlow : ((vertexEquiv G).symm a : ℕ) + (vertexEquiv G).symm b < p.length
   · refine signlessPreprojectiveMk_ofPath_eq_zero_of_lt k (fun i => i)
       (u := fun w => signlessArrow k G w (w + 1)) (d := fun w => signlessArrow k G (w + 1) w) ?_
-      (fun w => by simpa [add_comm] using signlessArrow_relation k hG (w + 1)) ?_ p hlow
+      (fun w => by
+        simpa [add_comm] using signlessArrow_relation_of_consecutive k hG (w + 1)) ?_ p hlow
     · simpa [signlessArrow_eq_zero_of_not_consecutive k hG (i := 0) (j := 0)] using
-        signlessArrow_relation k hG 0
+        signlessArrow_relation_of_consecutive k hG 0
     · intro i j hij
       rcases (hG i j).1 hij with h | h
       · exact .inl ⟨h.symm, by rw [← h]⟩
@@ -202,11 +203,11 @@ private theorem signlessPreprojectiveMk_ofPath_eq_zero_of_endpoint_bound
   refine signlessPreprojectiveMk_ofPath_eq_zero_of_lt k (fun i => n - 1 - i)
     (u := fun w => signlessArrow k G (n - 1 - w) (n - 1 - (w + 1)))
     (d := fun w => signlessArrow k G (n - 1 - (w + 1)) (n - 1 - w)) ?_ (fun w => ?_) ?_ p (by omega)
-  · have h := signlessArrow_relation k hG (n - 1)
+  · have h := signlessArrow_relation_of_consecutive k hG (n - 1)
     rw [signlessArrow_eq_zero k (i := n - 1 + 1) (fun _ => by omega), zero_mul, zero_add] at h
     simpa using h
   · by_cases hw : w + 1 ≤ n - 1
-    · have h := signlessArrow_relation k hG (n - 1 - (w + 1))
+    · have h := signlessArrow_relation_of_consecutive k hG (n - 1 - (w + 1))
       have hnext : n - 1 - (w + 1) + 1 = n - 1 - w := by omega
       have hprev : n - 1 - (w + 1) - 1 = n - 1 - (w + 1 + 1) := by omega
       rw [hnext, hprev, add_comm] at h
@@ -227,13 +228,6 @@ private theorem signlessPreprojectiveMk_ofPath_eq_zero_of_endpoint_bound
 end PathGraph
 
 /-! ### The `Aₙ` diagram -/
-
-/-- Two nodes of the `Aₙ` diagram are joined exactly when they are consecutive. -/
-private theorem diagramGraph_A_adj (n : ℕ) (i j : Fin n) :
-    (diagramGraph (DynkinType.A n).cartanMatrix : SimpleGraph (Fin n)).Adj i j ↔
-      (i : ℕ) + 1 = j ∨ (j : ℕ) + 1 = i := by
-  rw [DynkinType.cartanMatrix_A, DynkinType.diagramGraph_cartanMatrix_A,
-    SimpleGraph.pathGraph_adj]
 
 /-- The two-colouring of `Aₙ` by the parity of the node, read from the path graph. -/
 private def aColoring (n : ℕ) : (diagramGraph (DynkinType.A n).cartanMatrix).Coloring Bool := by
@@ -276,10 +270,11 @@ theorem signlessPreprojectiveMk_A_ofPath_eq_zero_or_ladderValley
       signlessArrow_eq_zero_of_not_consecutive k (n := (DynkinType.A n).rank)
         (G := AG) (fun i j => diagramGraph_A_adj n i j) (by omega)
     simpa only [Nat.zero_add, Nat.sub_self, hzero, zero_mul, add_zero] using
-      signlessArrow_relation k (n := (DynkinType.A n).rank) (G := AG)
+      signlessArrow_relation_of_consecutive k (n := (DynkinType.A n).rank) (G := AG)
         (fun i j => diagramGraph_A_adj n i j) 0
   · intro w
-    simpa [add_comm] using signlessArrow_relation k (n := (DynkinType.A n).rank) (G := AG)
+    simpa [add_comm] using
+      signlessArrow_relation_of_consecutive k (n := (DynkinType.A n).rank) (G := AG)
       (fun i j => diagramGraph_A_adj n i j) (w + 1)
   · intro i j hij
     rcases (diagramGraph_A_adj n i j).1 hij with h | h
