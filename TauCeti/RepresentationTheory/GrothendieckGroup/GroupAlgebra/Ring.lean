@@ -247,8 +247,10 @@ theorem coe_resK0RingHom (φ : H →* G) : ⇑(resK0RingHom k φ) = resK0 k φ :
 
 /-- The underlying additive map of `TauCeti.resK0RingHom` is `TauCeti.resK0`. -/
 @[simp]
-theorem resK0RingHom_toAddMonoidHom (φ : H →* G) :
-    (resK0RingHom k φ).toAddMonoidHom = resK0 k φ :=
+theorem coe_addMonoidHom_resK0RingHom (φ : H →* G) :
+    (resK0RingHom k φ :
+      ExactK0 (finiteModulesExactStructure k[G]) →+ ExactK0 (finiteModulesExactStructure k[H])) =
+      resK0 k φ :=
   (rfl)
 
 end Restriction
