@@ -168,12 +168,10 @@ theorem ramificationDegree_eq_interior_add_cusps
     simpa only [mem_ofPred_eq, coe_compactifiedQuotientFiniteHolomorphicMap, mem_support, w,
       Nat.sub_ne_zero_iff_lt] using hx
   have hdisj : Disjoint (range (ofQuotient (Γ := Δ))) (range (ofCusp (Γ := Δ))) := by
-    simp only [disjoint_left, mem_range]
-    rintro x ⟨q, rfl⟩ ⟨C, heq⟩
-    cases heq
+    rw [← compl_range_ofQuotient]
+    exact disjoint_compl_right
   have hcover : range (ofQuotient (Γ := Δ)) ∪ range (ofCusp (Γ := Δ)) = univ := by
-    ext x
-    cases x <;> simp
+    rw [← compl_range_ofQuotient, union_compl_self]
   have hsum := finsum_mem_union' (f := w) hdisj
     (hw.inter_of_right _) (hw.inter_of_right _)
   have hinj : Injective (ofCusp (Γ := Δ)) := fun _ _ hC ↦ by cases hC; rfl
