@@ -9,10 +9,10 @@ public import TauCeti.FieldTheory.FunctionField.Different.Divisor
 public import TauCeti.FieldTheory.FunctionField.Divisor.Conorm
 public import TauCeti.FieldTheory.FunctionField.RiemannRoch.Genus
 public import TauCeti.AlgebraicGeometry.WeilDivisor.FiniteSum
+public import TauCeti.FieldTheory.ArtinSchreier.Basic
 
 import TauCeti.FieldTheory.FunctionField.Different.Hurwitz
 import TauCeti.FieldTheory.FunctionField.Different.ArtinSchreier
-import TauCeti.FieldTheory.ArtinSchreier.Basic
 import TauCeti.FieldTheory.FunctionField.Place.Extension.Existence
 import TauCeti.FieldTheory.FunctionField.ConstantExtension.Unramified
 
@@ -58,7 +58,6 @@ variable {k : Type u} {k' : Type u'} {F : Type v} {F' : Type v'}
 variable [Field k] [Field k'] [Field F] [Field F']
 variable [Algebra k k'] [Algebra k F] [Algebra k' F'] [Algebra F F'] [Algebra k F']
 variable [IsScalarTower k k' F'] [IsScalarTower k F F']
-variable [FiniteDimensional F F'] [Algebra.IsSeparable F F']
 variable (hF : IsFunctionField k F) (hF' : IsFunctionField k' F')
 variable (p : ℕ) [Fact p.Prime] [CharP F p]
 variable {y : F'} {u : F} (hgen : F⟮y⟯ = ⊤) (hy : y ^ p - y = algebraMap F F' u)
@@ -73,9 +72,17 @@ include hF hF' hgen hy hpole hreg
 conductor divisor. This is a divisor identity, before taking degrees or imposing exact constants.
 The supplied pole orders are necessarily positive because they are not divisible by `p`. -/
 theorem Divisor.nsmul_different_eq_zsmul_conorm_of_pow_sub_self_eq :
+    letI := ArtinSchreier.isSplittingField hy hgen
+    letI := Polynomial.IsSplittingField.finiteDimensional F'
+      (Polynomial.X ^ p - Polynomial.X - Polynomial.C u)
+    letI := ArtinSchreier.isGalois hy hgen
     p • Divisor.different k' F' hF = (p - 1 : ℤ) • Divisor.conorm k' F'
       (WeilDivisor.ofFinsetWithMultiplicity S fun P ↦ m P + 1) := by
   classical
+  let _ := ArtinSchreier.isSplittingField hy hgen
+  let _ := Polynomial.IsSplittingField.finiteDimensional F'
+    (Polynomial.X ^ p - Polynomial.X - Polynomial.C u)
+  let _ := ArtinSchreier.isGalois hy hgen
   let _ : Algebra.IsIntegral F F' := Algebra.IsIntegral.of_finite F F'
   refine WeilDivisor.ext fun P' ↦ ?_
   rw [WeilDivisor.coeff_nsmul, Divisor.coeff_different, WeilDivisor.coeff_zsmul,
@@ -111,8 +118,16 @@ possible enlargement of the constant field. No exactness or constant-field separ
 needed for this degree identity. -/
 theorem finrank_mul_degree_different_of_pow_sub_self_eq
     (hu : ∀ w : F, w ^ p - w ≠ u) :
+    letI := ArtinSchreier.isSplittingField hy hgen
+    letI := Polynomial.IsSplittingField.finiteDimensional F'
+      (Polynomial.X ^ p - Polynomial.X - Polynomial.C u)
+    letI := ArtinSchreier.isGalois hy hgen
     (Module.finrank k k' : ℤ) * Divisor.degree (Divisor.different k' F' hF) =
       (p - 1 : ℤ) * ∑ P ∈ S, (m P + 1 : ℤ) * P.degree := by
+  let _ := ArtinSchreier.isSplittingField hy hgen
+  let _ := Polynomial.IsSplittingField.finiteDimensional F'
+    (Polynomial.X ^ p - Polynomial.X - Polynomial.C u)
+  let _ := ArtinSchreier.isGalois hy hgen
   let _ : FiniteDimensional k k' := hF.finiteDimensional_baseExtension hF'
   let _ : Algebra.IsIntegral k k' := Algebra.IsIntegral.of_finite k k'
   have h := congrArg Divisor.degree
@@ -138,7 +153,6 @@ theorem finrank_mul_degree_different_of_pow_sub_self_eq
       push_cast at hcon
       linear_combination (p - 1 : ℤ) * hcon
 
-omit [FiniteDimensional F F'] [Algebra.IsSeparable F F'] in
 /-- **The Artin--Schreier genus formula**, cross-multiplied for a possible constant-field
 extension. The representatives may vary with the place. Pole orders are weighted by residue
 field degrees, not by the number of poles. -/
