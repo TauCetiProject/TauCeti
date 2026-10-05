@@ -581,15 +581,6 @@ theorem mem_pointSet_swapColumns (a b : Fin n) (x : GridState n) (p : Fin n × F
     p ∈ (x.swapColumns a b).pointSet ↔ (Equiv.swap a b p.1, p.2) ∈ x.pointSet := by
   simp [swapColumns]
 
-/-- A set of squares swapped back avoids a state's points exactly when the set avoids the
-column-swapped state's points. -/
-theorem disjoint_map_swapColumns_pointSet_iff (x : GridState n) (a b : Fin n)
-    (S : Finset (Fin n × Fin n)) :
-    Disjoint (S.map ((Equiv.swap a b).prodCongr (Equiv.refl (Fin n))).toEmbedding)
-        x.pointSet ↔ Disjoint S (x.swapColumns a b).pointSet := by
-  simpa only [swapColumns, Equiv.symm_swap] using
-    x.disjoint_map_relabelColumns_pointSet_iff (Equiv.swap a b) S
-
 /-- A grid point is shared by a grid state and a column relabeling exactly when it is a
 source-state grid point whose column is fixed by the relabeling permutation. -/
 theorem mem_pointSet_inter_relabelColumns_iff (x : GridState n) (κ : Equiv.Perm (Fin n))
@@ -939,6 +930,15 @@ theorem mem_XSet_relabelColumns (κ : Equiv.Perm (Fin n)) (p : Fin n × Fin n) :
     p ∈ (G.relabelColumns κ).XSet ↔ (κ.symm p.1, p.2) ∈ G.XSet := by
   simp [XSet]
 
+/-- A set of squares relabeled back avoids the original X-markings exactly when the set
+avoids the relabeled diagram's X-markings. -/
+theorem disjoint_map_relabelColumns_XSet_iff (κ : Equiv.Perm (Fin n))
+    (S : Finset (Fin n × Fin n)) :
+    Disjoint (S.map (κ.symm.prodCongr (Equiv.refl (Fin n))).toEmbedding) G.XSet ↔
+      Disjoint S (G.relabelColumns κ).XSet := by
+  simpa only [XSet, relabelColumns_X] using
+    G.X.disjoint_map_relabelColumns_pointSet_iff κ S
+
 /-- Swapping two rows in a grid diagram. -/
 def swapRows (a b : Fin n) (G : GridDiagram n) : GridDiagram n :=
   G.relabelRows (Equiv.swap a b)
@@ -992,7 +992,8 @@ avoids the swapped diagram's X-markings. -/
 theorem disjoint_map_swapColumns_XSet_iff (a b : Fin n) (S : Finset (Fin n × Fin n)) :
     Disjoint (S.map ((Equiv.swap a b).prodCongr (Equiv.refl (Fin n))).toEmbedding) G.XSet ↔
       Disjoint S (G.swapColumns a b).XSet := by
-  simpa only [XSet, swapColumns_X] using G.X.disjoint_map_swapColumns_pointSet_iff a b S
+  simpa only [swapColumns, Equiv.symm_swap] using
+    G.disjoint_map_relabelColumns_XSet_iff (Equiv.swap a b) S
 
 /-- Swapping the same pair of rows twice is the identity on grid diagrams. -/
 @[simp]
