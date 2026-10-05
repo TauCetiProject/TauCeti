@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Point
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Finrank
+import TauCeti.RingTheory.IntegralClosure.IsIntegral.Basic
 
 /-!
 # The coordinate ring of an elliptic curve is a Dedekind domain
@@ -398,23 +399,7 @@ end Field
 
 section IntegrallyClosed
 
-/-- An element of a field extension of `A` that is a quotient of elements of `A` and is integral
-over `A` has its numerator divisible by its denominator, when `A` is integrally closed. -/
-private theorem dvd_of_isIntegral_div
-    {A L : Type*} [CommRing A] [IsDomain A]
-    [IsIntegrallyClosed A] [Field L] [Algebra A L] [FaithfulSMul A L] {a d : A} (hd : d ≠ 0)
-    (h : IsIntegral A (algebraMap A L a / algebraMap A L d)) : d ∣ a := by
-  have hinj : Function.Injective (algebraMap A L) := FaithfulSMul.algebraMap_injective A L
-  let f : FractionRing A →ₐ[A] L := IsFractionRing.liftAlgHom (g := Algebra.ofId A L) hinj
-  have hf : Function.Injective f := (f : FractionRing A →+* L).injective
-  have hdF : algebraMap A (FractionRing A) d ≠ 0 := fun h' =>
-    hd (IsFractionRing.injective A (FractionRing A) (by rw [h', map_zero]))
-  have hw : f (algebraMap A (FractionRing A) a / algebraMap A (FractionRing A) d) =
-      algebraMap A L a / algebraMap A L d := by
-    rw [map_div₀, AlgHom.commutes, AlgHom.commutes]
-  obtain ⟨e, he⟩ := IsIntegrallyClosed.isIntegral_iff.mp ((isIntegral_algHom_iff f hf).mp (hw ▸ h))
-  refine ⟨e, IsFractionRing.injective A (FractionRing A) ?_⟩
-  rw [map_mul, he, mul_div_cancel₀ _ hdF]
+open TauCeti (dvd_of_isIntegral_div)
 
 variable {F : Type*} [Field F] (W : WeierstrassCurve.Affine F)
 
