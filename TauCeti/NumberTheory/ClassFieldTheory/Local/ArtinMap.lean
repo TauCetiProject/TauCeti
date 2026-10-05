@@ -253,21 +253,33 @@ private theorem abelianizationRestrict_absoluteArtinMap_normUnits
     rw [← OpenSubgroup.mem_toSubgroup, localFormationMap_ofOpenNormal_ground_toSubgroup K L iota,
       ← range_localFormationHom]
     exact ⟨τ, rfl⟩
-  -- Pass to the layer `V ◁ G_K` and write `N x` as the norm of `iota x` from the restricted layer
-  -- `V ◁ Gal(Kˢ/iota(L))`; that layer corresponds to the layer `V' ◁ G_L` over `L`, so the
-  -- Artin-Tate norm diagram and the comparison of the two local class formations apply. The chain
-  -- is written with `Eq.trans` and `congrArg`: rewriting in these goals is slow.
+  have hτV' : τ ∈ (ofOpenNormal V').ground := by simp
+  -- The steps below are written with `Eq.trans` and `congrArg`: rewriting in these goals is slow.
+  -- In the layer `V ◁ G_K`, `N x` is the norm of `iota x` from the restricted layer
+  -- `V ◁ Gal(Kˢ/iota(L))`, which corresponds to the layer `V' ◁ G_L` over `L`.
+  have hNx : localGroundEquiv K V (Additive.ofMul (Algebra.normUnits K x)) =
+      T.groundNorm (unitsFormation K)
+        ((localFormationLayerEquiv K L iota (ofOpenNormal V')).groundEquiv
+          (localGroundEquiv L V' (Additive.ofMul x))) :=
+    (groundNorm_layerRestriction_localFormationMap K L iota V hV _).symm.trans
+      (congrArg (T.groundNorm (unitsFormation K))
+        (groundEquiv_localFormationLayerEquiv_localGroundEquiv K L iota V' _).symm)
+  -- In the layer `V' ◁ G_L`, the finite Artin symbol of `x` is the class of `τ`.
+  have hL : (localClassFormation L).artinMap (ofOpenNormal V')
+        (localGroundEquiv L V' (Additive.ofMul x)) =
+      Additive.ofMul (Abelianization.of
+        ((⟨τ, hτV'⟩ : (ofOpenNormal V').ground) : (ofOpenNormal V').Gal)) :=
+    (congrArg _ (groundEquivOfOpenNormal_unitsLevelEquiv L V' x).symm).trans
+      (((localClassFormation L).abelianizationRestrict_absoluteArtinMap V' _).symm.trans
+        ((congrArg _ hτ).trans (abelianizationRestrict_mk V' ⟨τ, hτV'⟩)))
+  -- Pass to the layer `V ◁ G_K`, apply the Artin-Tate norm diagram to `hNx`, and compare the two
+  -- local class formations to reach `hL`.
   refine ((localClassFormation K).abelianizationRestrict_absoluteArtinMap V _).trans ?_
   refine (congrArg ((localClassFormation K).artinMap (ofOpenNormal V))
-    ((groundEquivOfOpenNormal_unitsLevelEquiv K V _).trans
-      ((groundNorm_layerRestriction_localFormationMap K L iota V hV _).symm.trans
-        (congrArg (T.groundNorm (unitsFormation K))
-          (groundEquiv_localFormationLayerEquiv_localGroundEquiv K L iota V' _).symm)))).trans ?_
+    ((groundEquivOfOpenNormal_unitsLevelEquiv K V _).trans hNx)).trans ?_
   refine ((localClassFormation K).artinMap_groundNorm T _).trans ?_
   refine (congrArg T.inclusionHom ((artinMap_localFormationLayerEquiv K L iota _ _).trans
-    (congrArg _ ((congrArg _ (groundEquivOfOpenNormal_unitsLevelEquiv L V' x).symm).trans
-      (((localClassFormation L).abelianizationRestrict_absoluteArtinMap V' _).symm.trans
-        ((congrArg _ hτ).trans (abelianizationRestrict_mk V' ⟨τ, by simp⟩))))))).trans ?_
+    (congrArg _ hL))).trans ?_
   refine Eq.trans ?_ (abelianizationRestrict_mk V ⟨localFormationHom K L iota τ, by simp⟩).symm
   rw [MulEquiv.toAdditive_apply_apply, toMul_ofMul, abelianizationCongr_of,
     localFormationLayerEquiv_galEquiv_mk K L iota _ _ ⟨_, hτs⟩ rfl,
