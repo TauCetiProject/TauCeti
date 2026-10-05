@@ -270,7 +270,7 @@ private lemma harmonicOnNhd_iSup_ballLift (hΩ : IsOpen Ω) (hb : Bornology.IsBo
     (hw n).2.1.mono (sphere_subset_closedBall.trans (hrΩ.trans subset_closure))
   exact ⟨harmonicOnNhd_iSup_of_monotone isOpen_ball (convex_ball c r).isPreconnected
     (fun n ↦ harmonicOnNhd_ballLift (hsph n))
-    (fun m n hmn ↦ ballLift_mono (hsph m) (hsph n) (hmono hmn)) (mem_ball_self hr)
+    (fun x _ m n hmn ↦ ballLift_mono (hsph m) (hsph n) (hmono hmn) x) (mem_ball_self hr)
     (hbdd c (mem_ball_self hr)), hbdd⟩
 
 /-- On a ball whose closure lies in `Ω`, the Perron solution agrees with a harmonic function. -/

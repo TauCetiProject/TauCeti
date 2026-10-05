@@ -48,11 +48,12 @@ open InnerProductSpace Metric Set Filter Topology
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   {ι : Type*} [SemilatticeSup ι] [Nonempty ι] {F : ι → E → ℝ} {U : Set E}
 
-/-- **Harnack's convergence theorem.** Let `F` be a monotone family of functions harmonic on a
-preconnected open set `U`, bounded above at some point `x₀ ∈ U`. Then `F` converges locally
-uniformly on `U` to its pointwise supremum. -/
+/-- **Harnack's convergence theorem.** Let `F` be a family of functions harmonic on a
+preconnected open set `U`, monotone at each point of `U` and bounded above at some point `x₀ ∈ U`.
+Then `F` converges locally uniformly on `U` to its pointwise supremum. -/
 theorem tendstoLocallyUniformlyOn_iSup_of_monotone (hU : IsOpen U) (hUc : IsPreconnected U)
-    (hF : ∀ i, HarmonicOnNhd (F i) U) (hmono : Monotone F) {x₀ : E} (hx₀ : x₀ ∈ U)
+    (hF : ∀ i, HarmonicOnNhd (F i) U) (hmono : ∀ x ∈ U, Monotone fun i ↦ F i x) {x₀ : E}
+    (hx₀ : x₀ ∈ U)
     (hbdd : BddAbove (range fun i ↦ F i x₀)) :
     TendstoLocallyUniformlyOn F (fun x ↦ ⨆ i, F i x) atTop U := by
   refine (tendstoLocallyUniformlyOn_iff_forall_isCompact hU).2 fun K hKU hK ↦ ?_
@@ -61,16 +62,16 @@ theorem tendstoLocallyUniformlyOn_iSup_of_monotone (hU : IsOpen U) (hUc : IsPrec
   -- For `m ≤ n`, Harnack's inequality for `F n - F m ≥ 0` compares its values on `K` with its
   -- value at `x₀`.
   have hcomp : ∀ m n, m ≤ n → ∀ x ∈ K, F n x - F m x ≤ C * (F n x₀ - F m x₀) := fun m n hmn x hx ↦
-    hharnack (F n - F m) ((hF n).sub (hF m)) (fun z _ ↦ sub_nonneg.2 (hmono hmn z)) x
+    hharnack (F n - F m) ((hF n).sub (hF m)) (fun z hz ↦ sub_nonneg.2 (hmono z hz hmn)) x
       (mem_insert_of_mem _ hx) x₀ (mem_insert _ _)
   have hlim₀ : Tendsto (fun i ↦ F i x₀) atTop (𝓝 (⨆ i, F i x₀)) :=
-    tendsto_atTop_ciSup (fun _ _ h ↦ hmono h x₀) hbdd
+    tendsto_atTop_ciSup (hmono x₀ hx₀) hbdd
   -- Every `F n x` with `x ∈ K` lies below `F m x + C * (⨆ i, F i x₀ - F m x₀)`.
   have hupper : ∀ m n, ∀ x ∈ K, F n x ≤ F m x + C * ((⨆ i, F i x₀) - F m x₀) := by
     intro m n x hx
     have h := hcomp m (n ⊔ m) le_sup_right x hx
     have hx₀le : F (n ⊔ m) x₀ ≤ ⨆ i, F i x₀ := le_ciSup hbdd _
-    nlinarith [hmono (le_sup_left : n ≤ n ⊔ m) x]
+    nlinarith [hmono x (hKU hx) (le_sup_left : n ≤ n ⊔ m)]
   have hbddK : ∀ x ∈ K, BddAbove (range fun i ↦ F i x) := fun x hx ↦
     ⟨_, forall_mem_range.2 fun n ↦ hupper (Classical.arbitrary ι) n x hx⟩
   refine Metric.tendstoUniformlyOn_iff.2 fun ε hε ↦ ?_
@@ -83,11 +84,12 @@ theorem tendstoLocallyUniformlyOn_iSup_of_monotone (hU : IsOpen U) (hUc : IsPrec
   rw [Real.dist_eq, abs_of_nonneg (sub_nonneg.2 (le_ciSup (hbddK x hx) m))]
   linarith [ciSup_le fun n ↦ hupper m n x hx]
 
-/-- **The limit in Harnack's convergence theorem is harmonic.** Let `F` be a monotone family of
-functions harmonic on a preconnected open set `U`, bounded above at some point `x₀ ∈ U`. Then its
-pointwise supremum is harmonic on `U`. -/
+/-- **The limit in Harnack's convergence theorem is harmonic.** Let `F` be a family of functions
+harmonic on a preconnected open set `U`, monotone at each point of `U` and bounded above at some
+point `x₀ ∈ U`. Then its pointwise supremum is harmonic on `U`. -/
 theorem harmonicOnNhd_iSup_of_monotone (hU : IsOpen U) (hUc : IsPreconnected U)
-    (hF : ∀ i, HarmonicOnNhd (F i) U) (hmono : Monotone F) {x₀ : E} (hx₀ : x₀ ∈ U)
+    (hF : ∀ i, HarmonicOnNhd (F i) U) (hmono : ∀ x ∈ U, Monotone fun i ↦ F i x) {x₀ : E}
+    (hx₀ : x₀ ∈ U)
     (hbdd : BddAbove (range fun i ↦ F i x₀)) :
     HarmonicOnNhd (fun x ↦ ⨆ i, F i x) U :=
   harmonicOnNhd_of_tendstoLocallyUniformlyOn hU (.of_forall hF)
