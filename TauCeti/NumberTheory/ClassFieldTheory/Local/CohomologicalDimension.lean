@@ -28,9 +28,11 @@ on which it acts through the restriction isomorphism
 `TauCeti.absoluteGaloisGroupRestrictEquiv : G_K ≃ₜ* Gal(Kˢ/K)`; the two continuous cohomologies are
 compared along that isomorphism.
 
-This vanishing is the input of the cohomological dimension `cd_ℓ G_K = 2` of a finite extension of
-`ℚ_p`: through the Kummer sequence it kills `H³(G_L, μ_ℓ)` for every finite `L/K` containing the
-`ℓ`-th roots of unity.
+This vanishing is one input of the cohomological dimension `cd_ℓ G_K = 2` of a finite extension of
+`ℚ_p`. For a finite extension `L/K`, the Kummer sequence `1 → μ_ℓ → (Lˢ)ˣ → (Lˢ)ˣ → 1` and the
+vanishing of `H³(G_L, (Lˢ)ˣ)` identify `H³(G_L, μ_ℓ)` with the cokernel of the `ℓ`-th power map on
+`H²(G_L, (Lˢ)ˣ)`; that cokernel vanishes by the second input, the invariant isomorphism
+`Br(L) ≅ ℚ/ℤ`, which makes `H²(G_L, (Lˢ)ˣ)` divisible.
 
 ## Main results
 
@@ -59,16 +61,22 @@ attribute [local instance] TopRep.distribMulAction
 private def unitsFormationToUnitsRep : (unitsFormation K).module.V ≃ₗ[ℤ] (unitsRep K).V :=
   ((unitsCoeffEquivUnitsFormation K).symm.trans (unitsCoeffEquivUnitsRep K)).toIntLinearEquiv
 
+/-- The dictionary sends the image of `y : UnitsCoeff K` in the units formation to its image in
+`unitsRep K`. -/
+private theorem unitsFormationToUnitsRep_unitsCoeffEquivUnitsFormation (y : UnitsCoeff K) :
+    unitsFormationToUnitsRep K (unitsCoeffEquivUnitsFormation K y) =
+      unitsCoeffEquivUnitsRep K y := by
+  simp [unitsFormationToUnitsRep]
+
 /-- The dictionary is equivariant along the restriction isomorphism `G_K ≃ Gal(Kˢ/K)`. -/
 private theorem unitsFormationToUnitsRep_smul (g : Field.absoluteGaloisGroup K)
     (x : (unitsFormation K).module.V) :
     unitsFormationToUnitsRep K (absoluteGaloisGroupRestrictEquiv K g • x) =
       g • unitsFormationToUnitsRep K x := by
   obtain ⟨y, rfl⟩ := (unitsCoeffEquivUnitsFormation K).surjective x
-  rw [TopRep.distribMulAction_smul, TopRep.distribMulAction_smul, unitsFormationToUnitsRep,
-    AddEquiv.coe_toIntLinearEquiv, AddEquiv.trans_apply, AddEquiv.trans_apply,
-    AddEquiv.symm_apply_apply, ← Formation.toRep_ρ_apply, ← unitsCoeffEquivUnitsFormation_smul,
-    AddEquiv.symm_apply_apply, unitsCoeffEquivUnitsRep_smul]
+  rw [TopRep.distribMulAction_smul, TopRep.distribMulAction_smul, ← Formation.toRep_ρ_apply,
+    ← unitsCoeffEquivUnitsFormation_smul, unitsFormationToUnitsRep_unitsCoeffEquivUnitsFormation,
+    unitsFormationToUnitsRep_unitsCoeffEquivUnitsFormation, unitsCoeffEquivUnitsRep_smul]
 
 /-- **Vanishing transfers from the units formation to `unitsRep K`**, along the restriction
 isomorphism `G_K ≃ₜ* Gal(Kˢ/K)` and the coefficient dictionary. -/
