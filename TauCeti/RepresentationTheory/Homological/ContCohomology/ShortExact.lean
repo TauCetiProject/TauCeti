@@ -538,16 +538,8 @@ variable {G : Type u} [Monoid G]
   {A : Type vA} [AddCommGroup A] [TopologicalSpace A] [DiscreteTopology A] [DistribMulAction G A]
   {B : Type vB} [AddCommGroup B] [TopologicalSpace B] [DiscreteTopology B] [DistribMulAction G B]
   {C : Type vC} [AddCommGroup C] [TopologicalSpace C] [DiscreteTopology C] [DistribMulAction G C]
-  (S : DiscreteShortExact G A B C) {X : Type w} [TopologicalSpace X]
+  (S : DiscreteShortExact G A B C) {X : Type w}
 
-/-- A continuous cochain into `B` killed by the projection comes from a continuous cochain into
-`A`, obtained by retracting the cochain pointwise. -/
-theorem exists_continuous_incl_comp_eq {φ : X → B} (hφ : Continuous φ)
-    (hzero : ∀ x, S.proj (φ x) = 0) : ∃ a : X → A, Continuous a ∧ ∀ x, S.incl (a x) = φ x :=
-  ⟨fun x => S.retract (φ x), S.continuous_retract_comp hφ hzero,
-    fun x => S.incl_retract (hzero x)⟩
-
-omit [TopologicalSpace X] in
 variable (X) in
 /-- Exactness of `0 → C¹(X, A) → C¹(X, B)` at the left node: postcomposition with the inclusion is
 injective on all cochains, hence in particular on the continuous ones `C¹(X, A)`. The statement
@@ -555,6 +547,15 @@ does not mention the cochain subgroups, so the degree-`2` node is this theorem a
 needs no separate `C²` form. -/
 theorem compLeft_incl_injective : Function.Injective (S.incl.compLeft X) :=
   S.incl_injective.comp_left
+
+variable [TopologicalSpace X]
+
+/-- A continuous cochain into `B` killed by the projection comes from a continuous cochain into
+`A`, obtained by retracting the cochain pointwise. -/
+theorem exists_continuous_incl_comp_eq {φ : X → B} (hφ : Continuous φ)
+    (hzero : ∀ x, S.proj (φ x) = 0) : ∃ a : X → A, Continuous a ∧ ∀ x, S.incl (a x) = φ x :=
+  ⟨fun x => S.retract (φ x), S.continuous_retract_comp hφ hzero,
+    fun x => S.incl_retract (hzero x)⟩
 
 variable (X) in
 /-- Exactness of `0 → C¹(X, A) → C¹(X, B) → C¹(X, C) → 0` at the middle node: a continuous cochain
@@ -682,6 +683,13 @@ private theorem delta0Cochain_add {b b' : B} (hb : S.proj b ∈ H0 G C)
     incl_delta0Cochain hb, incl_delta0Cochain hb', smul_add]
   abel
 
+variable (S) in
+/-- The chosen preimage of an invariant of `C` has invariant image, tautologically. -/
+private theorem proj_surjInv_mem_H0 (c : H0 G C) :
+    S.proj (Function.surjInv S.proj_surjective (c : C)) ∈ H0 G C := by
+  rw [Function.surjInv_eq S.proj_surjective]
+  exact c.2
+
 end Delta0Cochain
 
 section Delta0
@@ -689,7 +697,6 @@ section Delta0
 variable {G : Type u} [Monoid G] [TopologicalSpace G]
   {A : Type vA} [AddCommGroup A] [TopologicalSpace A] [DiscreteTopology A]
     [DistribMulAction G A]
-    [ContinuousSMul G A]
   {B : Type vB} [AddCommGroup B] [TopologicalSpace B] [DiscreteTopology B]
     [DistribMulAction G B]
     [ContinuousSMul G B]
@@ -697,7 +704,6 @@ variable {G : Type u} [Monoid G] [TopologicalSpace G]
     [DistribMulAction G C]
   {S : DiscreteShortExact G A B C}
 
-omit [ContinuousSMul G A] in
 variable (S) in
 /-- **A cochain on `A` lying over a coboundary of `B` is a continuous `1`-cocycle.** No cocycle
 hypothesis is needed, a coboundary being a continuous cocycle already; this is the case
@@ -709,11 +715,12 @@ theorem mem_Z1_of_incl_comp_eq_d0 {b : B} {a : G → A}
   mem_Z1_of_incl_comp_mem_Z1 (e := d0 G B b) (fun g => (hab g).trans (d0_apply b g).symm)
     (B1_le_Z1 G B (mem_B1_iff.2 ⟨b, fun g => (d0_apply b g).symm⟩))
 
-omit [ContinuousSMul G A] in
 /-- The cochain attached to a preimage of an invariant is a continuous `1`-cocycle. -/
 private theorem delta0Cochain_mem_Z1 {b : B} (hb : S.proj b ∈ H0 G C) :
     S.delta0Cochain b ∈ Z1 G A :=
   S.mem_Z1_of_incl_comp_eq_d0 (incl_delta0Cochain hb)
+
+variable [ContinuousSMul G A]
 
 variable (S) in
 /-- The class in `H¹(G, A)` of the cochain attached to a chosen preimage. The public connecting
@@ -749,13 +756,6 @@ private theorem delta0Class_add {b b' : B} (hb : S.proj b ∈ H0 G C)
   exact congrArg (H1pi G A) (Subtype.ext (delta0Cochain_add hb hb'))
 
 variable (S)
-
-omit [TopologicalSpace G] [ContinuousSMul G A] [ContinuousSMul G B] in
-/-- The chosen preimage of an invariant of `C` has invariant image, tautologically. -/
-private theorem proj_surjInv_mem_H0 (c : H0 G C) :
-    S.proj (Function.surjInv S.proj_surjective (c : C)) ∈ H0 G C := by
-  rw [Function.surjInv_eq S.proj_surjective]
-  exact c.2
 
 /-- **The connecting homomorphism `δ⁰ : H⁰(G, C) → H¹(G, A)`.** Choose a preimage in `B` of an
 invariant of `C` and take the class of the retraction of its coboundary. -/
@@ -820,14 +820,46 @@ private theorem incl_delta1Cochain {e : G → B} {f : G → C} (he : ∀ g, S.pr
     S.incl (S.delta1Cochain e p) = d1 G B e p := by
   rw [S.delta1Cochain_apply, S.incl_retract (proj_d1_eq_zero he hf p)]
 
+/-- The sum of two lifts of `1`-cocycles again lies over a `1`-cocycle. -/
+private theorem isCocycle₁_proj_add {e e' : G → B}
+    (hf : groupCohomology.IsCocycle₁ fun g => S.proj (e g))
+    (hf' : groupCohomology.IsCocycle₁ fun g => S.proj (e' g)) :
+    groupCohomology.IsCocycle₁ fun g => S.proj ((e + e') g) := by
+  intro g h
+  simp only [Pi.add_apply, map_add, hf g h, hf' g h, smul_add]
+  abel
+
 end Delta1Cochain
+
+section Delta1Lift
+
+variable {G : Type u} [Monoid G] [TopologicalSpace G]
+  {A : Type vA} [AddCommGroup A] [TopologicalSpace A] [DiscreteTopology A]
+    [DistribMulAction G A]
+  {B : Type vB} [AddCommGroup B] [TopologicalSpace B] [DiscreteTopology B]
+    [DistribMulAction G B]
+  {C : Type vC} [AddCommGroup C] [TopologicalSpace C] [DiscreteTopology C]
+    [DistribMulAction G C]
+  {S : DiscreteShortExact G A B C}
+
+/-- The canonical lift of a continuous `1`-cocycle on `C` is continuous. -/
+private theorem continuous_liftCochain_coe (f : Z1 G C) :
+    Continuous (liftCochain S.proj_surjective (f : G → C)) :=
+  continuous_liftCochain S.proj_surjective (mem_Z1_iff.1 f.2).1
+
+/-- The canonical lift of a continuous `1`-cocycle on `C` lies over that cocycle. -/
+private theorem isCocycle₁_liftCochain (f : Z1 G C) :
+    groupCohomology.IsCocycle₁ fun g =>
+      S.proj (liftCochain S.proj_surjective (f : G → C) g) := by
+  simpa only [apply_liftCochain S.proj_surjective] using (mem_Z1_iff.1 f.2).2
+
+end Delta1Lift
 
 section Delta1
 
 variable {G : Type u} [Monoid G] [TopologicalSpace G] [ContinuousMul G]
   {A : Type vA} [AddCommGroup A] [TopologicalSpace A] [DiscreteTopology A]
     [DistribMulAction G A]
-    [ContinuousSMul G A]
   {B : Type vB} [AddCommGroup B] [TopologicalSpace B] [DiscreteTopology B]
     [DistribMulAction G B]
     [ContinuousSMul G B]
@@ -835,7 +867,6 @@ variable {G : Type u} [Monoid G] [TopologicalSpace G] [ContinuousMul G]
     [DistribMulAction G C]
   {S : DiscreteShortExact G A B C}
 
-omit [ContinuousSMul G A] in
 variable (S) in
 /-- **A cochain on `A` lying over a coboundary of `B` is a continuous `2`-cocycle.** No cocycle
 hypothesis on `e` is needed, a continuous coboundary being a continuous cocycle already; this is
@@ -849,13 +880,14 @@ theorem mem_Z2_of_incl_comp_eq_d1 {e : G → B} (hc : Continuous e) {a : G × G 
     (fun p => (hae p.1 p.2).trans (d1_apply e p.1 p.2).symm)
     (B2_le_Z2 G B (mem_B2_iff.2 ⟨e, hc, rfl⟩))
 
-omit [ContinuousSMul G A] in
 /-- The cochain attached to a lift of a continuous `1`-cocycle is a continuous `2`-cocycle. -/
 private theorem delta1Cochain_mem_Z2 {e : G → B} (hc : Continuous e) {f : G → C}
     (he : ∀ g, S.proj (e g) = f g) (hf : groupCohomology.IsCocycle₁ f) :
     S.delta1Cochain e ∈ Z2 G A :=
   S.mem_Z2_of_incl_comp_eq_d1 hc fun g h => by
     rw [incl_delta1Cochain he hf, d1_apply]
+
+variable [ContinuousSMul G A]
 
 variable (S) in
 /-- The class in `H²(G, A)` of the cochain attached to a chosen continuous lift of a continuous
@@ -895,16 +927,6 @@ private theorem delta1Class_congr {e e' : G → B} (hc : Continuous e) (hc' : Co
     incl_delta1Cochain (fun _ => rfl) hf', map_d1_apply S.incl S.incl_equivariant, hne,
     map_sub (d1 G B), Pi.sub_apply]
 
-omit [TopologicalSpace G] [ContinuousMul G] [ContinuousSMul G A] [ContinuousSMul G B] in
-/-- The sum of two lifts of `1`-cocycles again lies over a `1`-cocycle. -/
-private theorem isCocycle₁_proj_add {e e' : G → B}
-    (hf : groupCohomology.IsCocycle₁ fun g => S.proj (e g))
-    (hf' : groupCohomology.IsCocycle₁ fun g => S.proj (e' g)) :
-    groupCohomology.IsCocycle₁ fun g => S.proj ((e + e') g) := by
-  intro g h
-  simp only [Pi.add_apply, map_add, hf g h, hf' g h, smul_add]
-  abel
-
 /-- The class attached to a sum of lifts is the sum of the classes. -/
 private theorem delta1Class_add {e e' : G → B} (hc : Continuous e) (hc' : Continuous e')
     (hf : groupCohomology.IsCocycle₁ fun g => S.proj (e g))
@@ -919,22 +941,6 @@ private theorem delta1Class_add {e e' : G → B} (hc : Continuous e) (hc' : Cont
     incl_delta1Cochain (fun _ => rfl) hf']
   exact congrFun (map_add (d1 G B) e e') p
 
-variable [ContinuousSMul G C]
-
-omit [ContinuousMul G] [ContinuousSMul G A] [ContinuousSMul G B] [ContinuousSMul G C] in
-/-- The canonical lift of a continuous `1`-cocycle on `C` is continuous. -/
-private theorem continuous_liftCochain_coe (f : Z1 G C) :
-    Continuous (liftCochain S.proj_surjective (f : G → C)) :=
-  continuous_liftCochain S.proj_surjective (mem_Z1_iff.1 f.2).1
-
-omit [ContinuousMul G] [ContinuousSMul G A] [ContinuousSMul G B] [ContinuousSMul G C] in
-/-- The canonical lift of a continuous `1`-cocycle on `C` lies over that cocycle. -/
-private theorem isCocycle₁_liftCochain (f : Z1 G C) :
-    groupCohomology.IsCocycle₁ fun g =>
-      S.proj (liftCochain S.proj_surjective (f : G → C) g) := by
-  simpa only [apply_liftCochain S.proj_surjective] using (mem_Z1_iff.1 f.2).2
-
-omit [ContinuousSMul G C] in
 variable (S) in
 /-- `δ¹` before descending to cohomology: the class in `H²(G, A)` attached to a continuous
 `1`-cocycle on `C`, through its canonical lift. -/
@@ -951,14 +957,12 @@ private noncomputable def delta1Hom : Z1 G C →+ H2 G A :=
             AddSubgroup.coe_add, Pi.add_apply])).trans ?_
       exact delta1Class_add _ _ (S.isCocycle₁_liftCochain f) (S.isCocycle₁_liftCochain f')
 
-omit [ContinuousSMul G C] in
 /-- Before descent to `H¹`, `δ¹` is the class of the cochain obtained from the canonical lift. -/
 @[simp]
 private theorem delta1Hom_apply (f : Z1 G C) :
     S.delta1Hom f =
       S.delta1Class (S.continuous_liftCochain_coe f) (S.isCocycle₁_liftCochain f) := (rfl)
 
-omit [ContinuousSMul G C] in
 /-- `δ¹` before descent to cohomology kills the `1`-coboundaries. -/
 private theorem delta1Hom_eq_zero_of_mem_B1 (f : Z1 G C) (hf : (f : G → C) ∈ B1 G C) :
     S.delta1Hom f = 0 := by
@@ -983,6 +987,8 @@ private theorem delta1Hom_eq_zero_of_mem_B1 (f : Z1 G C) (hf : (f : G → C) ∈
   rw [delta1Hom_apply, delta1Class_congr _ (continuous_d0_apply (G := G) b)
       (S.isCocycle₁_liftCochain f) hd0 hproj, delta1Class_def, hsubtype]
   exact map_zero _
+
+variable [ContinuousSMul G C]
 
 variable (S) in
 /-- **The connecting homomorphism `δ¹ : H¹(G, C) → H²(G, A)`.** Lift a continuous `1`-cocycle on
