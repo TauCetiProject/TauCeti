@@ -60,7 +60,7 @@ instance _root_.AlgebraicGeometry.Scheme.Modules.isQuasicoherent_pushforward_spe
   (_root_.AlgebraicGeometry.isQuasicoherent_iff_isIso_fromTildeΓ _).2
     (_root_.AlgebraicGeometry.isIso_fromTildeΓ_pushforward f M)
 
-namespace AlgebraicGeometry.Scheme.Modules
+namespace AlgebraicGeometry
 
 open _root_.AlgebraicGeometry.Scheme.Modules
 
@@ -73,7 +73,7 @@ theorem isQuasicoherent_pushforward_of_iso (e : X ≅ Y) (M : X.Modules)
     ((pushforwardIsoRestrictFunctor e).app M).symm
       (_root_.AlgebraicGeometry.Scheme.Modules.isQuasicoherent_restrictFunctor e.inv M)
 
-end AlgebraicGeometry.Scheme.Modules
+end AlgebraicGeometry
 
 namespace AlgebraicGeometry.QuasicoherentSheaf
 

@@ -80,7 +80,7 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.nonempty_presentation_of_isAffin
     (Scheme.Modules.isIso_fromTildeΓ_of_isQuasicoherent N) P
   exact ⟨M.presentationOfIsoSpec Q⟩
 
-namespace AlgebraicGeometry.Scheme.Modules
+namespace AlgebraicGeometry
 
 /-- A presentation on the open subscheme gives a presentation on the slice site over the open. -/
 def presentationOver {X : Scheme.{u}} (M : X.Modules) (U : X.Opens)
@@ -121,7 +121,7 @@ theorem isQuasicoherent_of_isQuasicoherent_restrict_affineOpens {X : Scheme.{u}}
   exact SheafOfModules.IsQuasicoherent.of_coversTop M (fun U : X.affineOpens ↦ U.1)
     (by rw [Opens.coversTop_iff]; exact iSup_affineOpens_eq_top X)
 
-end AlgebraicGeometry.Scheme.Modules
+end AlgebraicGeometry
 
 end
 

@@ -83,7 +83,7 @@ private def affinePresentation (U : X.affineOpens)
         (X.relativeDifferentials R)
   let Q'' := @SheafOfModules.Presentation.ofIsIso.{u, u, u}
     _ _ _ _ _ _ _ _ e'.hom e'.isIso_hom Q'
-  exact Scheme.Modules.presentationOver (X.relativeDifferentials R) U.val Q''
+  exact presentationOver (X.relativeDifferentials R) U.val Q''
 
 /-- The sheaf of relative differentials of a scheme over `Spec R` is quasi-coherent. -/
 instance isQuasicoherent_relativeDifferentials : (X.relativeDifferentials R).IsQuasicoherent :=
@@ -104,7 +104,7 @@ private theorem isFinite_affinePresentation (U : X.affineOpens)
       (tilde (ModuleCat.of Γ(X, U) Ω[Γ(X, U)⁄R])).Presentation) [P.IsFinite] :
     (affinePresentation R X U P).IsFinite := by
   dsimp only [affinePresentation]
-  apply +allowSynthFailures Scheme.Modules.isFinite_presentationOver
+  apply +allowSynthFailures isFinite_presentationOver
   apply +allowSynthFailures SheafOfModules.instIsFiniteOfIsIso
   unfold Scheme.Modules.presentationRestrict
   apply +allowSynthFailures SheafOfModules.Presentation.isFinite_map

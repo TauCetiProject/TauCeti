@@ -28,13 +28,13 @@ public section
 
 open CategoryTheory AlgebraicGeometry
 
-namespace TauCeti.AlgebraicGeometry.Scheme.Modules
+namespace TauCeti.AlgebraicGeometry
 
 universe u
 
 noncomputable section
 
-open Scheme.Modules
+open _root_.AlgebraicGeometry.Scheme.Modules
 
 variable {X Y : Scheme.{u}}
 
@@ -72,4 +72,4 @@ instance isQuasicoherent_pushforward_of_isAffineHom (f : X ⟶ Y) [IsAffineHom f
 
 end
 
-end TauCeti.AlgebraicGeometry.Scheme.Modules
+end TauCeti.AlgebraicGeometry

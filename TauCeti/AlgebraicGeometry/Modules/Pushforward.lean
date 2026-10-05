@@ -22,13 +22,13 @@ public section
 
 open CategoryTheory AlgebraicGeometry
 
-namespace TauCeti.AlgebraicGeometry.Scheme.Modules
+namespace TauCeti.AlgebraicGeometry
 
 universe u
 
 noncomputable section
 
-open Scheme.Modules
+open _root_.AlgebraicGeometry.Scheme.Modules
 
 variable {X Y : Scheme.{u}}
 
@@ -123,4 +123,4 @@ theorem restrictPushforwardIso_inv_app_val_app_apply (f : X ⟶ Y) (U : Y.Opens)
 
 end
 
-end TauCeti.AlgebraicGeometry.Scheme.Modules
+end TauCeti.AlgebraicGeometry
