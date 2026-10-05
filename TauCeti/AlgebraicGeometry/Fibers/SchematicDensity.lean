@@ -12,8 +12,9 @@ public import TauCeti.AlgebraicGeometry.Morphisms.SchemeTheoreticallyDominant
 /-!
 # Schematic density of the generic fibre
 
-For a flat scheme over a commutative ring, scalar extension to its total fraction ring is
-scheme-theoretically dominant. Over a domain this is the canonical generic-fibre inclusion.
+For a flat scheme over a commutative ring, scalar extension along an injective algebra map is
+scheme-theoretically dominant. For a domain and its fraction field, this is the canonical
+generic-fibre inclusion.
 Consequently, two morphisms into a separated target agree whenever their restrictions to this
 fibre agree. Neither reducedness nor finite presentation of the source is needed.
 
@@ -33,18 +34,19 @@ namespace TauCeti
 universe u
 
 variable (R K : Type u) [CommRing R]
-variable [CommRing K] [Algebra R K] [IsFractionRing R K]
+variable [CommRing K] [Algebra R K]
 variable {X Y : Scheme.{u}}
 
-/-- Scalar extension of a flat scheme to the total fraction ring is schematically dominant.
-Over a domain, this says that the generic fibre is schematically dense in the total space. -/
-theorem isSchemeTheoreticallyDominant_genericFiberι (toBase : X ⟶ Spec (.of R)) [Flat toBase] :
+/-- Scalar extension of a flat scheme along an injective algebra map is schematically dominant.
+For a domain and its fraction field, the generic fibre is schematically dense in the total space. -/
+theorem isSchemeTheoreticallyDominant_genericFiberι
+    (hRK : Function.Injective (algebraMap R K)) (toBase : X ⟶ Spec (.of R)) [Flat toBase] :
     IsSchemeTheoreticallyDominant (genericFiberι R K toBase) := by
   have : IsSchemeTheoreticallyDominant
       (Spec.map (CommRingCat.ofHom (algebraMap R K))) := by
     constructor
     rw [Scheme.Hom.ker_Spec_map, CommRingCat.hom_ofHom,
-      (RingHom.injective_iff_ker_eq_bot (algebraMap R K)).mp (IsFractionRing.injective R K),
+      (RingHom.injective_iff_ker_eq_bot (algebraMap R K)).mp hRK,
       Ideal.map_bot]
     apply Scheme.IdealSheafData.ext
     funext U
@@ -53,12 +55,13 @@ theorem isSchemeTheoreticallyDominant_genericFiberι (toBase : X ⟶ Spec (.of R
     (isPullback_genericFiber R K toBase).flip
 
 /-- Morphisms over a ring from a flat source to a separated target are determined by their
-restriction to the total-fraction-ring fibre. In particular the source need not be reduced. -/
-theorem ext_of_genericFiberι_eq (toBase : X ⟶ Spec (.of R)) [Flat toBase]
+restriction after an injective scalar extension. In particular the source need not be reduced. -/
+theorem ext_of_genericFiberι_eq (hRK : Function.Injective (algebraMap R K))
+    (toBase : X ⟶ Spec (.of R)) [Flat toBase]
     (s : Y ⟶ Spec (.of R)) [IsSeparated s] {f g : X ⟶ Y}
     (h : f ≫ s = g ≫ s) (hK : genericFiberι R K toBase ≫ f = genericFiberι R K toBase ≫ g) :
     f = g := by
-  have := isSchemeTheoreticallyDominant_genericFiberι R K toBase
+  have := isSchemeTheoreticallyDominant_genericFiberι R K hRK toBase
   exact (genericFiberι R K toBase).ext_of_isSchemeTheoreticallyDominant s h hK
 
 end TauCeti

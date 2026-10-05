@@ -43,7 +43,7 @@ target is separated over the DVR. No properness or reducedness assumption on the
 instance subsingleton_hom [IsSeparated N.toBase] : Subsingleton (M ⟶ N) where
   allEq f g := by
     apply Hom.ext
-    apply ext_of_genericFiberι_eq R K M.toBase N.toBase
+    apply ext_of_genericFiberι_eq R K (IsFractionRing.injective R K) M.toBase N.toBase
     · simp
     · rw [← cancel_epi M.genericFiberIso.inv.left]
       simpa only [genericι_def, Category.assoc] using (genericι_hom f).trans (genericι_hom g).symm
