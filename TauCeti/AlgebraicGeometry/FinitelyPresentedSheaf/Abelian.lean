@@ -8,7 +8,6 @@ module
 public import TauCeti.AlgebraicGeometry.FinitelyPresentedSheaf.Basic
 public import TauCeti.AlgebraicGeometry.Modules.FinitePresentation
 public import TauCeti.AlgebraicGeometry.Modules.Biprod
-public import TauCeti.CategoryTheory.ObjectProperty
 public import Mathlib.CategoryTheory.Abelian.Subcategory
 public import Mathlib.CategoryTheory.Preadditive.LeftExact
 
@@ -43,27 +42,11 @@ noncomputable section
 
 variable (X : Scheme.{u})
 
-/-- The zero sheaf is finitely presented: it is free on the empty type. -/
-instance containsZero :
-    (SheafOfModules.isFinitePresentation X.ringCatSheaf).ContainsZero where
-  exists_zero := ⟨_, TauCeti.SheafOfModules.isZero_free PEmpty, inferInstance⟩
-
-/-- Finite presentation is closed under binary products of module sheaves. -/
-instance isClosedUnderBinaryProducts :
-    (SheafOfModules.isFinitePresentation X.ringCatSheaf).IsClosedUnderBinaryProducts :=
-  ObjectProperty.isClosedUnderBinaryProducts_of_prop_biprod _ fun M N hM hN ↦ by
-    let := hM
-    let := hN
-    exact TauCeti.SheafOfModules.isFinitePresentation_biprod (M := M) (N := N)
-
-/-- Finite products of finitely presented sheaves are finitely presented. -/
-instance isClosedUnderFiniteProducts :
-    (SheafOfModules.isFinitePresentation X.ringCatSheaf).IsClosedUnderFiniteProducts :=
-  ObjectProperty.IsClosedUnderFiniteProducts.mk'
-
 /-- Finitely presented sheaves admit finite direct sums on any scheme. -/
-instance : HasFiniteBiproducts (FinitelyPresentedSheaf X) :=
-  HasFiniteBiproducts.of_hasFiniteProducts
+instance : HasFiniteBiproducts (FinitelyPresentedSheaf X) := by
+  have := TauCeti.SheafOfModules.isClosedUnderFiniteProducts_isFinitePresentation
+    (R := X.ringCatSheaf)
+  exact HasFiniteBiproducts.of_hasFiniteProducts
 
 /-- Cokernels of morphisms of finitely presented sheaves are finitely presented. -/
 instance isClosedUnderCokernels :
@@ -100,7 +83,11 @@ instance isClosedUnderKernels :
       (Scheme.Modules.isFinitePresentation_kernel f)
 
 /-- Coherent sheaves on a locally Noetherian scheme form an abelian category. -/
-instance : Abelian (FinitelyPresentedSheaf X) := inferInstance
+instance : Abelian (FinitelyPresentedSheaf X) := by
+  have := TauCeti.SheafOfModules.containsZero_isFinitePresentation (R := X.ringCatSheaf)
+  have := TauCeti.SheafOfModules.isClosedUnderFiniteProducts_isFinitePresentation
+    (R := X.ringCatSheaf)
+  infer_instance
 
 /-- The inclusion of coherent sheaves into module sheaves preserves finite limits. -/
 instance preservesFiniteLimits_inclusion :

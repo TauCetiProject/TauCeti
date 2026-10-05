@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.LocallyFree
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Pushforward
 public import Mathlib.Algebra.Category.ModuleCat.Sheaf.PullbackFree
 public import Mathlib.AlgebraicGeometry.Modules.Sheaf
@@ -548,11 +549,10 @@ instance _root_.TauCeti.AlgebraicGeometry.Scheme.Modules.isFinitePresentation_re
 instance _root_.TauCeti.AlgebraicGeometry.Scheme.Modules.isFiniteType_restrict
     (M : Y.Modules) [M.IsFiniteType] (f : X ⟶ Y) [IsOpenImmersion f] :
     (M.restrict f).IsFiniteType :=
-  ObjectProperty.prop_of_iso (fun A : SheafOfModules X.ringCatSheaf ↦ A.IsFiniteType)
+  (TauCeti.SheafOfModules.isFiniteType X.ringCatSheaf).prop_of_iso
     ((Scheme.Modules.restrictFunctorIsoPullback f).app M).symm inferInstance
 
 /-- Restricting along an isomorphism and then its inverse recovers the original module. -/
-@[expose]
 def _root_.TauCeti.AlgebraicGeometry.Scheme.Modules.restrictRestrictInvIso
     (M : Y.Modules) (f : X ⟶ Y) [IsIso f] : (M.restrict f).restrict (inv f) ≅ M :=
   ((Scheme.Modules.restrictFunctorComp (inv f) f).app M).symm ≪≫
@@ -581,8 +581,7 @@ theorem _root_.TauCeti.AlgebraicGeometry.Scheme.Modules.isFiniteType_restrict_if
   constructor
   · intro h
     let := h
-    exact ObjectProperty.prop_of_iso
-      (fun A : SheafOfModules Y.ringCatSheaf ↦ A.IsFiniteType)
+    exact (TauCeti.SheafOfModules.isFiniteType Y.ringCatSheaf).prop_of_iso
       (TauCeti.AlgebraicGeometry.Scheme.Modules.restrictRestrictInvIso M f) inferInstance
   · intro h
     let := h

@@ -290,24 +290,13 @@ section FiniteType
 
 variable {C : Type u₁} [Category.{v₁} C] {J : GrothendieckTopology C}
   {R : Sheaf J RingCat.{u}}
-  [∀ X, HasSheafify (J.over X) AddCommGrpCat.{u}]
+  [∀ X, HasWeakSheafify (J.over X) AddCommGrpCat.{u}]
   [∀ X, (J.over X).WEqualsLocallyBijective AddCommGrpCat.{u}]
 
-/-- Finite type of module sheaves is invariant under isomorphism. -/
-instance _root_.SheafOfModules.isClosedUnderIsomorphisms_isFiniteType :
-    ObjectProperty.IsClosedUnderIsomorphisms
-      (fun M : _root_.SheafOfModules.{u} R ↦ M.IsFiniteType) where
-  of_iso {M N} e hM := by
-    obtain ⟨q, hq⟩ := hM.exists_localGeneratorsData
-    let q' : N.LocalGeneratorsData :=
-      { I := q.I
-        X := q.X
-        coversTop := q.coversTop
-        generators i := (q.generators i).ofEpi (e.hom.over (q.X i)) }
-    have : q'.IsFiniteType := ⟨fun i ↦ by
-      have := hq.isFiniteType i
-      exact inferInstanceAs ((q.generators i).ofEpi (e.hom.over (q.X i))).IsFiniteType⟩
-    exact ⟨q', this⟩
+variable (R) in
+/-- Finite type of sheaves of modules, as a property of objects. -/
+abbrev isFiniteType : ObjectProperty (SheafOfModules.{u} R) :=
+  IsFiniteType
 
 end FiniteType
 

@@ -350,7 +350,7 @@ variable {M N : (Spec R).Modules}
 
 /-- The ambient cokernel of a morphism from a quasicoherent sheaf of finite type to a finitely
 presented sheaf on a spectrum is finitely presented, without a Noetherian hypothesis. -/
-instance _root_.AlgebraicGeometry.Scheme.Modules.isFinitePresentation_cokernel_spec
+theorem _root_.AlgebraicGeometry.Scheme.Modules.isFinitePresentation_cokernel_spec
     (f : M ⟶ N) [M.IsQuasicoherent] [M.IsFiniteType] [N.IsFinitePresentation] :
     (cokernel f).IsFinitePresentation := by
   have : N.IsQuasicoherent := SheafOfModules.instIsQuasicoherentOfIsFinitePresentation N
@@ -377,7 +377,7 @@ instance _root_.AlgebraicGeometry.Scheme.Modules.isFinitePresentation_cokernel_s
 
 /-- Over a Noetherian ring, the ambient kernel of a morphism from a quasicoherent sheaf
 of finite type to a quasicoherent sheaf is finitely presented. -/
-instance _root_.AlgebraicGeometry.Scheme.Modules.isFinitePresentation_kernel_spec
+theorem _root_.AlgebraicGeometry.Scheme.Modules.isFinitePresentation_kernel_spec
     [IsNoetherianRing R] (f : M ⟶ N) [M.IsQuasicoherent] [M.IsFiniteType]
     [N.IsQuasicoherent] : (kernel f).IsFinitePresentation := by
   let g := (moduleSpecΓFunctor (R := R)).map f

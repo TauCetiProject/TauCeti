@@ -31,7 +31,6 @@ universe u
 noncomputable section
 
 /-- A presentation on an open subscheme gives a presentation on the corresponding slice site. -/
-@[expose]
 def AlgebraicGeometry.Scheme.Modules.presentationOver
     {X : Scheme.{u}} {M : X.Modules} (U : X.Opens)
     (P : (M.restrict U.ι).Presentation) : (M.over U).Presentation := by
