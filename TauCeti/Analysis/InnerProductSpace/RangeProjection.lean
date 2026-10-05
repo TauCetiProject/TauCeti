@@ -28,8 +28,13 @@ hence the normal spaces, of an immersed submanifold vary smoothly.
   of a finite-dimensional space is invertible.
 * `ContinuousLinearMap.starProjection_range_eq`: the formula `B (B† B)⁻¹ B†` for the orthogonal
   projection onto the range of `B`.
-* `ContDiffAt.starProjection_range`: the orthogonal projection onto the range of a `C^n` family of
-  injective operators is `C^n`.
+* `ContinuousLinearMap.finrank_orthogonal_range_of_injective`: the dimension of the orthogonal
+  complement of the range of an injective operator.
+* `Submodule.starProjection_inverse_apply`: if the compression to `W` of the orthogonal projection
+  onto `K` is invertible, it inverts the projection from `W` onto `K`.
+* `ContDiffAt.starProjection_range`, `ContDiffAt.starProjection_orthogonal_range`: the orthogonal
+  projections onto the range of a `C^n` family of injective operators, and onto its orthogonal
+  complement, are `C^n`.
 -/
 
 public section
@@ -67,6 +72,46 @@ theorem starProjection_range_eq {B : F →L[𝕜] V} [B.range.HasOrthogonalProje
   rw [coe_coe, inner_sub_left, ← adjoint_inner_left, ← adjoint_inner_left, h, sub_self]
 
 end ContinuousLinearMap
+
+section FiniteDimensional
+
+variable {𝕜 E V : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup V] [InnerProductSpace 𝕜 V] [FiniteDimensional 𝕜 V]
+
+/-- The orthogonal complement of the range of an injective operator into a finite-dimensional
+inner product space has the expected dimension. -/
+theorem ContinuousLinearMap.finrank_orthogonal_range_of_injective {A : E →L[𝕜] V}
+    (hA : Injective A) :
+    Module.finrank 𝕜 A.rangeᗮ = Module.finrank 𝕜 V - Module.finrank 𝕜 E := by
+  have h := Submodule.finrank_add_finrank_orthogonal A.range
+  rw [LinearMap.finrank_range_of_inj hA] at h
+  omega
+
+/-- Let `K` and `W` be subspaces of the same dimension. If the compression
+`R = π_W ∘ P_K ∘ ι_W` of the orthogonal projection onto `K` is invertible, then `P_K` maps `W` onto
+`K`, and the preimage of `v ∈ K` is `R⁻¹ (π_W v)`. -/
+theorem Submodule.starProjection_inverse_apply {K W : Submodule 𝕜 V}
+    (hrank : Module.finrank 𝕜 W = Module.finrank 𝕜 K)
+    (hR : IsUnit (W.orthogonalProjectionOnto ∘L K.starProjection ∘L W.subtypeL)) {v : V}
+    (hv : v ∈ K) :
+    K.starProjection (Ring.inverse (W.orthogonalProjectionOnto ∘L K.starProjection ∘L W.subtypeL)
+      (W.orthogonalProjectionOnto v)) = v := by
+  set R := W.orthogonalProjectionOnto ∘L K.starProjection ∘L W.subtypeL
+  have hRinj : Injective R := (ContinuousLinearMap.isUnit_iff_bijective.mp hR).1
+  -- `P_K` restricted to `W` is injective because its compression `R` is, hence onto `K`.
+  let κ : W →ₗ[𝕜] K := LinearMap.codRestrict K ((K.starProjection : V →ₗ[𝕜] V) ∘ₗ W.subtype)
+    fun w => K.starProjection_apply_mem w
+  have hκ : Injective κ := fun w w' h => hRinj <| by
+    simp only [R, ContinuousLinearMap.comp_apply]
+    exact congrArg (fun z : K => W.orthogonalProjectionOnto (z : V)) h
+  obtain ⟨w, hw⟩ := (LinearMap.injective_iff_surjective_of_finrank_eq_finrank hrank).mp hκ ⟨v, hv⟩
+  have hw' : K.starProjection w = v := congrArg Subtype.val hw
+  have hRw : R w = W.orthogonalProjectionOnto v := by simp [R, hw']
+  have hinv : Ring.inverse R (R w) = w := by
+    rw [← mul_apply_eq_comp, Ring.inverse_mul_cancel _ hR, one_apply_eq_self]
+  rw [← hRw, hinv, hw']
+
+end FiniteDimensional
 
 variable {X E V : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
   [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
@@ -107,3 +152,13 @@ theorem ContDiffAt.starProjection_range {A : X → E →L[ℝ] V} {u₀ : X} {n 
   simp only [← hrange u]
   exact ContinuousLinearMap.starProjection_range_eq
     (ContinuousLinearMap.isUnit_adjoint_comp_self hu)
+
+/-- The orthogonal projection onto the orthogonal complement of the range of a `C^n` family of
+operators out of a finite-dimensional space is `C^n` at every point where the operator is
+injective. -/
+theorem ContDiffAt.starProjection_orthogonal_range {A : X → E →L[ℝ] V} {u₀ : X} {n : WithTop ℕ∞}
+    (hA : ContDiffAt ℝ n A u₀) (hinj : Injective (A u₀)) :
+    ContDiffAt ℝ n (fun u => (A u).rangeᗮ.starProjection) u₀ := by
+  refine (contDiffAt_const (c := (1 : V →L[ℝ] V))).sub (hA.starProjection_range hinj)
+    |>.congr_of_eventuallyEq ?_
+  exact Eventually.of_forall fun u => Submodule.starProjection_orthogonal' _

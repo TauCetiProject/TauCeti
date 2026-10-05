@@ -69,49 +69,6 @@ section Local
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
 
-omit [FiniteDimensional ℝ E] in
-/-- The orthogonal complement of the range of an injective operator has the expected
-dimension. -/
-private theorem finrank_orthogonal_range {A : E →L[ℝ] V} (hA : Injective A) :
-    Module.finrank ℝ A.rangeᗮ = Module.finrank ℝ V - Module.finrank ℝ E := by
-  have h := Submodule.finrank_add_finrank_orthogonal A.range
-  rw [LinearMap.finrank_range_of_inj hA] at h
-  omega
-
-omit [FiniteDimensional ℝ E] in
-/-- Let `K` and `W` be subspaces of the same dimension. If the compression
-`R = π_W ∘ P_K ∘ ι_W` of the orthogonal projection onto `K` is invertible, then `P_K` maps `W` onto
-`K`, and the preimage of `v ∈ K` is `R⁻¹ (π_W v)`. -/
-private theorem starProjection_inverse_apply {K W : Submodule ℝ V}
-    (hrank : Module.finrank ℝ W = Module.finrank ℝ K)
-    (hR : IsUnit (W.orthogonalProjectionOnto ∘L K.starProjection ∘L W.subtypeL)) {v : V}
-    (hv : v ∈ K) :
-    K.starProjection (Ring.inverse (W.orthogonalProjectionOnto ∘L K.starProjection ∘L W.subtypeL)
-      (W.orthogonalProjectionOnto v)) = v := by
-  set R := W.orthogonalProjectionOnto ∘L K.starProjection ∘L W.subtypeL
-  have hRinj : Injective R := (ContinuousLinearMap.isUnit_iff_bijective.mp hR).1
-  -- `P_K` restricted to `W` is injective because its compression `R` is, hence onto `K`.
-  let κ : W →ₗ[ℝ] K := LinearMap.codRestrict K ((K.starProjection : V →ₗ[ℝ] V) ∘ₗ W.subtype)
-    fun w => K.starProjection_apply_mem w
-  have hκ : Injective κ := fun w w' h => hRinj <| by
-    simp only [R, ContinuousLinearMap.comp_apply]
-    exact congrArg (fun z : K => W.orthogonalProjectionOnto (z : V)) h
-  obtain ⟨w, hw⟩ := (LinearMap.injective_iff_surjective_of_finrank_eq_finrank hrank).mp hκ ⟨v, hv⟩
-  have hw' : K.starProjection w = v := congrArg Subtype.val hw
-  have hRw : R w = W.orthogonalProjectionOnto v := by simp [R, hw']
-  have hinv : Ring.inverse R (R w) = w := by
-    rw [← mul_apply_eq_comp, Ring.inverse_mul_cancel _ hR, one_apply_eq_self]
-  rw [← hRw, hinv, hw']
-
-/-- The orthogonal projection onto the normal space of `g` at `u` is `C¹` in `u` near a point
-where `g` is `C²` with injective derivative. -/
-private theorem contDiffAt_starProjection_orthogonal_range_fderiv {g : E → V} {u : E}
-    (hg : ContDiffAt ℝ 2 g u) (hinj : Injective (fderiv ℝ g u)) :
-    ContDiffAt ℝ 1 (fun u => (fderiv ℝ g u).rangeᗮ.starProjection) u := by
-  have hP := (hg.fderiv_right (m := 1) (by norm_num)).starProjection_range hinj
-  refine (contDiffAt_const (c := (1 : V →L[ℝ] V))).sub hP |>.congr_of_eventuallyEq ?_
-  exact Eventually.of_forall fun u => Submodule.starProjection_orthogonal' _
-
 /-- With `W₀` the normal space of `g` at `u₀` and `Q u` the orthogonal projection onto the normal
 space at `u`, the map `(u, w) ↦ g u + Q u w` on `E × W₀` is a local homeomorphism at `(u₀, 0)`. Its
 derivative there is the isomorphism `(du, dw) ↦ Dg du + dw` from `E × W₀` to `V`. -/
@@ -122,7 +79,8 @@ private theorem exists_openPartialHomeomorph_normal {g : E → V} {u₀ : E}
   let A : E → E →L[ℝ] V := fderiv ℝ g
   set W₀ := (A u₀).rangeᗮ
   let Q : E → V →L[ℝ] V := fun u => (A u).rangeᗮ.starProjection
-  have hQ₀ : ContDiffAt ℝ 1 Q u₀ := contDiffAt_starProjection_orthogonal_range_fderiv hg hinj
+  have hQ₀ : ContDiffAt ℝ 1 Q u₀ :=
+    (hg.fderiv_right (m := 1) (by norm_num)).starProjection_orthogonal_range hinj
   have hQW : ∀ w : W₀, Q u₀ w = w := fun w => Submodule.starProjection_eq_self_iff.mpr w.2
   let Ψ : E × W₀ → V := fun q => g q.1 + Q q.1 q.2
   have hΨ : ContDiffAt ℝ 1 Ψ (u₀, 0) :=
@@ -148,7 +106,7 @@ private theorem exists_openPartialHomeomorph_normal {g : E → V} {u₀ : E}
     simp [h]
   have hDsurj : Surjective D := by
     refine (LinearMap.injective_iff_surjective_of_finrank_eq_finrank ?_).mp hDinj
-    rw [Module.finrank_prod, finrank_orthogonal_range hinj]
+    rw [Module.finrank_prod, ContinuousLinearMap.finrank_orthogonal_range_of_injective hinj]
     have := Submodule.finrank_le (A u₀).range
     rw [LinearMap.finrank_range_of_inj hinj] at this
     omega
@@ -191,9 +149,10 @@ private theorem exists_injOn_isOpen_image_normal {g : E → V} {u₀ : E}
   have hR₀ : R u₀ = 1 := by
     ext w
     simp [R, hQW]
-  have hRc : ContinuousAt R u₀ := continuousAt_const.clm_comp
-    ((contDiffAt_starProjection_orthogonal_range_fderiv hg hinj).continuousAt.clm_comp
-      continuousAt_const)
+  have hQ₀ : ContDiffAt ℝ 1 Q u₀ :=
+    (hg.fderiv_right (m := 1) (by norm_num)).starProjection_orthogonal_range hinj
+  have hRc : ContinuousAt R u₀ :=
+    continuousAt_const.clm_comp (hQ₀.continuousAt.clm_comp continuousAt_const)
   have hev : ∀ᶠ u in 𝓝 u₀, ContDiffAt ℝ 2 g u ∧ Injective (A u) ∧ IsUnit (R u) := by
     have h2 : ∀ᶠ u in 𝓝 u₀, Injective (A u) :=
       (hg.fderiv_right (m := 1) (by norm_num)).continuousAt.preimage_mem_nhds
@@ -229,8 +188,9 @@ private theorem exists_injOn_isOpen_image_normal {g : E → V} {u₀ : E}
     rintro ⟨u, v⟩ hu hv hvδ
     obtain ⟨hu₁, -, hAu, hRu⟩ := hss hu
     refine ⟨hst ⟨hu₁, hδt (mem_ball_zero_iff.mpr hvδ)⟩, ?_⟩
-    refine starProjection_inverse_apply ?_ hRu hv
-    rw [finrank_orthogonal_range hinj, finrank_orthogonal_range hAu]
+    refine Submodule.starProjection_inverse_apply ?_ hRu hv
+    rw [ContinuousLinearMap.finrank_orthogonal_range_of_injective hinj,
+      ContinuousLinearMap.finrank_orthogonal_range_of_injective hAu]
   have hΨρ : ∀ p : E × V, Q p.1 (ρ p).2 = p.2 → h (ρ p) = g p.1 + p.2 := by
     intro p hp
     rw [hΨh]
@@ -250,8 +210,10 @@ private theorem exists_injOn_isOpen_image_normal {g : E → V} {u₀ : E}
       rintro ⟨u, w⟩ ⟨-, hu, -⟩
       obtain ⟨-, hgu, hAu, -⟩ := hss hu
       refine (continuousAt_fst.prodMk ?_).continuousWithinAt
+      have hQu : ContDiffAt ℝ 1 Q u :=
+        (hgu.fderiv_right (m := 1) (by norm_num)).starProjection_orthogonal_range hAu
       exact ContinuousAt.clm_apply (ContinuousAt.comp (g := Q) (f := Prod.fst) (x := (u, w))
-        (contDiffAt_starProjection_orthogonal_range_fderiv hgu hAu).continuousAt continuousAt_fst)
+        hQu.continuousAt continuousAt_fst)
         (W₀.subtypeL.continuous.comp continuous_snd).continuousAt
     have himage : (fun p : E × V => g p.1 + p.2) ''
         (O ∩ {p | p.1 ∈ s ∧ p.2 ∈ (fderiv ℝ g p.1).rangeᗮ ∧ ‖p.2‖ < δ}) =
