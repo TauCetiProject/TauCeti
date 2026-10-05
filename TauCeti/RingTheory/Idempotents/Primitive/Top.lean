@@ -20,10 +20,10 @@ projective left ideal `Ae`, and its **top** is the semisimple quotient
 `Ae / J(Ae)`.
 
 This quotient is simple exactly when `e` is primitive, and its quotient map is the projective cover
-of that simple module (`TauCeti.isProjectiveCover_mkQ_smul_top_of_isNilpotent`, applied to the
-projective module `Ae`).  Conversely, every simple module over a left Artinian ring is isomorphic
-to the top of `Ae` for some primitive idempotent `e`: choose a primitive orthogonal decomposition
-of `1`, map one of its summands onto the simple module, and compare the two maximal kernels.
+of that simple module (`TauCeti.isProjectiveCover_mkQ_smul_top_span_singleton`).  Conversely, every
+simple module over a left Artinian ring is isomorphic to the top of `Ae` for some primitive
+idempotent `e`: choose a primitive orthogonal decomposition of `1`, map one of its summands onto the
+simple module, and compare the two maximal kernels.
 
 Nothing in the argument uses more about `Ae` than that it is projective
 (`IsIdempotentElem.projective_span_singleton`), so the file first proves the module-level
@@ -43,13 +43,17 @@ primitivity of `e` is indecomposability of `Ae`
 ## Main results
 
 * `TauCeti.isIndecomposableModule_quotient_smul_top_iff`: for a nilpotent ideal `I`, a projective
-  module `P` is indecomposable exactly when `P / IP` is.
+  module `P` is indecomposable exactly when `P / IP` is; the reflecting direction
+  `TauCeti.IsIndecomposableModule.of_quotient_smul_top` holds for every module.
 * `TauCeti.isIndecomposableModule_iff_isSimpleModule_quotient_jacobson_smul_top`: over a
   semiprimary ring, a projective module is indecomposable exactly when its top is simple.
 * `TauCeti.IsIndecomposableModule.isCoatom_jacobson_smul_top` and
   `TauCeti.IsIndecomposableModule.ker_eq_jacobson_smul_top_of_surjective`: the radical of an
   indecomposable projective module is its unique maximal submodule, and is the kernel of every
   surjection onto a simple module.
+* `TauCeti.IsIndecomposableModule.isProjectiveCover_of_surjective`: such a surjection is a
+  projective cover; `TauCeti.isProjectiveCover_mkQ_smul_top_span_singleton` covers the top of `Ae`
+  by `Ae`.
 * `TauCeti.isPrimitiveIdempotent_iff_isSimpleModule_quotient_jacobson_smul_top`: `e` is primitive
   exactly when `Ae / J(Ae)` is simple.
 * `TauCeti.isSimpleModule_iff_exists_isPrimitiveIdempotent_quotient_jacobson_smul_top`: over a
@@ -77,30 +81,40 @@ section Projective
 variable {R : Type u} [Ring R] {P : Type v} [AddCommGroup P] [Module R P] [Module.Projective R P]
   {I : Ideal R}
 
+omit [Module.Projective R P] in
+/-- **Indecomposability reflects from the top.**  If `I` is nilpotent and `P / IP` is
+indecomposable, then so is `P`: an idempotent endomorphism of `P` reducing to `0` or `1` differs
+from it by a nilpotent idempotent, hence equals it.  No projectivity is needed. -/
+theorem IsIndecomposableModule.of_quotient_smul_top (hI : IsNilpotent I)
+    (h : IsIndecomposableModule R (P ⧸ I • (⊤ : Submodule R P))) : IsIndecomposableModule R P := by
+  let q := Ideal.endMapQ I P
+  have hker : ∀ f ∈ RingHom.ker q, IsNilpotent f :=
+    fun _ hf ↦ Ideal.isNilpotent_of_mem_ker_endMapQ I P hI hf
+  rw [isIndecomposableModule_iff_nontrivial_and_forall_isIdempotentElem] at h ⊢
+  obtain ⟨_, h⟩ := h
+  refine ⟨(Submodule.mkQ_surjective (I • (⊤ : Submodule R P))).nontrivial, fun f hf ↦ ?_⟩
+  rcases h (q f) (hf.map q) with hq0 | hq1
+  · exact Or.inl <| hf.eq_zero_of_isNilpotent <| hker f (by simpa [RingHom.mem_ker] using hq0)
+  · refine Or.inr (sub_eq_zero.mp ?_).symm
+    exact hf.one_sub.eq_zero_of_isNilpotent <| hker _ <| by
+      rw [RingHom.mem_ker, map_sub, map_one, hq1, sub_self]
+
 /-- **Indecomposability of a projective module is read off its top.**  If `I` is nilpotent, a
 projective module `P` is indecomposable exactly when `P / IP` is: idempotent endomorphisms lift
 along the surjective reduction `Ideal.endMapQ I P`, whose kernel is nil. -/
 theorem isIndecomposableModule_quotient_smul_top_iff (hI : IsNilpotent I) :
     IsIndecomposableModule R (P ⧸ I • (⊤ : Submodule R P)) ↔ IsIndecomposableModule R P := by
+  refine ⟨IsIndecomposableModule.of_quotient_smul_top hI, fun hP ↦ ?_⟩
   let q := Ideal.endMapQ I P
   have hker : ∀ f ∈ RingHom.ker q, IsNilpotent f :=
     fun _ hf ↦ Ideal.isNilpotent_of_mem_ker_endMapQ I P hI hf
-  rw [isIndecomposableModule_iff_nontrivial_and_forall_isIdempotentElem,
-    isIndecomposableModule_iff_nontrivial_and_forall_isIdempotentElem]
-  constructor
-  · rintro ⟨_, h⟩
-    refine ⟨(Submodule.mkQ_surjective (I • (⊤ : Submodule R P))).nontrivial, fun f hf ↦ ?_⟩
-    rcases h (q f) (hf.map q) with hq0 | hq1
-    · exact Or.inl <| hf.eq_zero_of_isNilpotent <| hker f (by simpa [RingHom.mem_ker] using hq0)
-    · refine Or.inr (sub_eq_zero.mp ?_).symm
-      exact hf.one_sub.eq_zero_of_isNilpotent <| hker _ <| by
-        rw [RingHom.mem_ker, map_sub, map_one, hq1, sub_self]
-  · rintro ⟨_, h⟩
-    refine ⟨Submodule.Quotient.nontrivial_iff.mpr
-      (isSuperfluous_smul_top_of_isNilpotent hI).ne_top, fun g hg ↦ ?_⟩
-    obtain ⟨f, hf, rfl⟩ := exists_isIdempotentElem_eq_of_ker_isNilpotent q hker g
-      (RingHom.mem_range.mpr (Ideal.endMapQ_surjective I P g)) hg
-    exact (h f hf).imp (fun hf0 ↦ by simp [hf0]) (fun hf1 ↦ by simp [hf1])
+  rw [isIndecomposableModule_iff_nontrivial_and_forall_isIdempotentElem] at hP ⊢
+  obtain ⟨_, h⟩ := hP
+  refine ⟨Submodule.Quotient.nontrivial_iff.mpr
+    (isSuperfluous_smul_top_of_isNilpotent hI).ne_top, fun g hg ↦ ?_⟩
+  obtain ⟨f, hf, rfl⟩ := exists_isIdempotentElem_eq_of_ker_isNilpotent q hker g
+    (RingHom.mem_range.mpr (Ideal.endMapQ_surjective I P g)) hg
+  exact (h f hf).imp (fun hf0 ↦ by simp [hf0]) (fun hf1 ↦ by simp [hf1])
 
 /-- **A projective module is indecomposable exactly when its top is simple.**  Over a semiprimary
 ring the top `P / JP` is semisimple, and a semisimple module is indecomposable exactly when it is
@@ -129,11 +143,19 @@ theorem IsIndecomposableModule.ker_eq_jacobson_smul_top_of_surjective [IsSemipri
     LinearMap.ker f = Ring.jacobson R • (⊤ : Submodule R P) := by
   have hle : Ring.jacobson R • (⊤ : Submodule R P) ≤ LinearMap.ker f :=
     (Ring.jacobson_smul_top_le R P).trans <| IsSemisimpleModule.jacobson_le_ker R R P M f
-  apply le_antisymm _ hle
-  by_contra hnle
-  have hlt : Ring.jacobson R • (⊤ : Submodule R P) < LinearMap.ker f :=
-    lt_of_le_of_ne hle fun heq ↦ hnle heq.ge
-  exact (LinearMap.isCoatom_ker_of_surjective hf).ne_top (h.isCoatom_jacobson_smul_top.2 _ hlt)
+  exact (h.isCoatom_jacobson_smul_top.le_iff_eq (LinearMap.isCoatom_ker_of_surjective hf).ne_top).mp
+    hle
+
+/-- **An indecomposable projective module is the projective cover of each of its simple
+quotients.**  Over a semiprimary ring, any surjection from an indecomposable projective module onto
+a simple module has kernel `JP`, which is superfluous since `J` is nilpotent. -/
+theorem IsIndecomposableModule.isProjectiveCover_of_surjective [IsSemiprimaryRing R]
+    (h : IsIndecomposableModule R P) (M : Type w) [AddCommGroup M] [Module R M]
+    [IsSimpleModule R M] (f : P →ₗ[R] M) (hf : Function.Surjective f) : IsProjectiveCover f where
+  projective := ‹_›
+  surjective := hf
+  isSuperfluous_ker := h.ker_eq_jacobson_smul_top_of_surjective M f hf ▸
+    isSuperfluous_smul_top_of_isNilpotent IsSemiprimaryRing.isNilpotent
 
 /-- A surjection from an indecomposable projective module `P` onto a simple module induces the
 canonical equivalence from the simple top of `P` to that module. -/
@@ -156,6 +178,15 @@ end Projective
 /-! ### Primitive idempotents -/
 
 variable {A : Type u} [Ring A] {e : A}
+
+/-- **The top of `Ae` is covered by `Ae`.**  For an idempotent `e` and a nilpotent ideal `I`, the
+quotient map `Ae →ₗ[A] Ae / I(Ae)` is a projective cover; for `I = J` in a semiprimary ring this is
+the cover of the top. -/
+theorem isProjectiveCover_mkQ_smul_top_span_singleton (he : IsIdempotentElem e) {I : Ideal A}
+    (hI : IsNilpotent I) :
+    IsProjectiveCover (I • (⊤ : Submodule A (Ideal.span {e} : Ideal A))).mkQ :=
+  have := he.projective_span_singleton
+  isProjectiveCover_mkQ_smul_top_of_isNilpotent hI
 
 /-- **A primitive idempotent is characterized by its simple top.**  In a semiprimary ring, an
 idempotent `e` is primitive exactly when the radical quotient `Ae / J(Ae)` is a simple module. -/
