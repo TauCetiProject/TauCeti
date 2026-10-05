@@ -31,10 +31,11 @@ kernel; this is how the cohomological dimension of `G` is bounded by that of an 
 For a normal subgroup `V`, conjugation by `g : G` is a `G`-equivariant endomorphism
 `TauCeti.DiscreteCoind.conj V V M g` of `Coind_V^G M`, `f ↦ (x ↦ g • f (g⁻¹ x))`: under
 `Coind_V^G M ≅ ℤ[G ⧸ V] ⊗ M` it is right multiplication by `g`. It commutes with the trace, and
-the differences `conj σ - 1` cover the kernel of the trace: the `G`-equivariant map
-`∏_{x ∈ G ⧸ V} Coind_V^G M → traceKer G V M`, `(φ_x)_x ↦ ∑_x (conj x.out⁻¹ - 1) φ_x`, is
-surjective. This is the cover `⊕_σ ℤ[G ⧸ V] ⊗ M → I ⊗ M`, `e_σ ⊗ m ↦ (σ - 1) ⊗ m`, of NSW's proof
-of (3.3.11), `I` being the augmentation ideal of `ℤ[G ⧸ V]`. A preimage is computed from the
+the differences `conj σ - 1` cover the kernel of the trace: the image of the `G`-equivariant
+map `∏_{x ∈ G ⧸ V} Coind_V^G M → Coind_V^G M`, `(φ_x)_x ↦ ∑_x (conj x.out⁻¹ - 1) φ_x`, is
+exactly `traceKer G V M`. This is the cover `⊕_σ ℤ[G ⧸ V] ⊗ M → I ⊗ M`,
+`e_σ ⊗ m ↦ (σ - 1) ⊗ m`, of NSW's proof of (3.3.11), `I` being the augmentation ideal of
+`ℤ[G ⧸ V]`. A preimage is computed from the
 decomposition into singles (`TauCeti.DiscreteCoind.sum_single`): conjugation by `g` moves the
 single at `1` to the single at `g`, and the singles at `1` add up to the single of the trace.
 
@@ -45,9 +46,11 @@ single at `1` to the single at `g`, and the singles at `1` add up to the single 
 * `TauCeti.DiscreteCoind.traceShortExact`: the short exact sequence
   `0 → traceKer G U M → Coind_U^G M → M → 0` for an open subgroup `U`.
 * `TauCeti.DiscreteCoind.traceKerCover`: for a normal subgroup `V`, the cover
-  `∏_{G ⧸ V} Coind_V^G M → traceKer G V M` by the conjugation differences `conj σ - 1`.
+  `∏_{G ⧸ V} Coind_V^G M →+[G] Coind_V^G M` by the conjugation differences `conj σ - 1`, whose
+  image is `traceKer G V M`.
 * `TauCeti.DiscreteCoind.traceKerCoverShortExact`: the short exact sequence
-  `0 → traceKerCoverKer V M → ∏_{G ⧸ V} Coind_V^G M → traceKer G V M → 0` of the cover.
+  `0 → traceKerCoverKer V M → ∏_{G ⧸ V} Coind_V^G M → traceKer G V M → 0` of the cover, whose
+  second map is the codrestriction of `traceKerCover` to `traceKer G V M`.
 
 ## Main results
 
@@ -163,12 +166,19 @@ universe u v
 
 attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex
 
+-- `conj V V M g` and `trace_conj` take the normality of `V` as
+-- `V.map (MulAut.conj g).toMonoidHom = V`; below, Mathlib's `Subgroup.Normal.map_conj_eq` is
+-- ascribed to that form with `show`. Passed unascribed, it is stated with the coercion
+-- `↑(MulAut.conj g)`, the resulting term is not type-correct at instance transparency, and
+-- `conj_apply` no longer rewrites it.
+
 variable {G : Type u} [Group G] [TopologicalSpace G] [ContinuousMul G] (V : Subgroup G) [V.Normal]
   (M : Type v) [AddCommGroup M] [DistribMulAction G M]
 
 /-- **Conjugation moves singles**: conjugation by `g` sends the single at `1` with value `a` to
 the single at `g` with value `g • a`. -/
-theorem conj_single_one [TopologicalSpace M] [DiscreteTopology M] [ContinuousSMul G M]
+@[simp]
+theorem conj_single_one [TopologicalSpace M] [DiscreteTopology M] [ContinuousSMul V M]
     (hV : IsOpen (V : Set G)) (g : G) (a : M) :
     conj V V M g (show V.map (MulAut.conj g).toMonoidHom = V from
         Subgroup.Normal.map_conj_eq V g).ge (single G V M hV 1 a) =
@@ -223,7 +233,7 @@ theorem traceKerCover_mem_traceKer (φ : G ⧸ V → DiscreteCoind G V M) :
 /-- **The image of the cover is the kernel of the trace.** For `f` in the kernel of the trace,
 the family of singles at `1` with values `x.out • f x.out⁻¹` is a preimage: conjugation moves them
 to the singles decomposing `f`, and they add up to the single of the trace of `f`, which is `0`. -/
-theorem range_traceKerCover [TopologicalSpace M] [DiscreteTopology M] [ContinuousSMul G M]
+theorem range_traceKerCover [TopologicalSpace M] [DiscreteTopology M] [ContinuousSMul V M]
     (hV : IsOpen (V : Set G)) : (traceKerCover V M).toAddMonoidHom.range = traceKer G V M := by
   refine le_antisymm (fun _ ⟨φ, hφ⟩ ↦ hφ ▸ traceKerCover_mem_traceKer V M φ) fun f hf ↦ ?_
   refine ⟨fun x => single G V M hV 1 (x.out • f x.out⁻¹), (traceKerCover_apply V M _).trans ?_⟩
@@ -251,6 +261,13 @@ theorem smul_mem_traceKerCoverKer (g : G) {φ : G ⧸ V → DiscreteCoind G V M}
 /-- The action of `G` on the kernel of the cover, by restriction. -/
 noncomputable instance : DistribMulAction G (traceKerCoverKer V M) :=
   (traceKerCoverKer V M).restrictDistribMulAction fun g _ hφ ↦ smul_mem_traceKerCoverKer V M g hφ
+
+/-- The inclusion of the kernel of the cover in `∏_{G ⧸ V} Coind_V^G M` is equivariant. -/
+@[simp]
+theorem coe_smul_traceKerCoverKer (g : G) (φ : traceKerCoverKer V M) :
+    ((g • φ : traceKerCoverKer V M) : G ⧸ V → DiscreteCoind G V M) =
+      g • (φ : G ⧸ V → DiscreteCoind G V M) :=
+  rfl
 
 section Compact
 
