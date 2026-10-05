@@ -7,6 +7,8 @@ module
 
 public import Mathlib.NumberTheory.NumberField.Cyclotomic.Ideal
 public import TauCeti.NumberTheory.Cyclotomic.OddLevel
+import TauCeti.Data.Nat.Totient
+import TauCeti.NumberTheory.NumberField.PrimeIdeal
 
 /-!
 # The splitting law in cyclotomic fields
@@ -136,49 +138,6 @@ theorem span_natCast_eq_prod_primesOverFinset_pow (hn : n = p ^ k * m) (hm : ¬ 
     rw [← ramificationIdxIn_eq_ramificationIdx (span {(p : ℤ)}) P Gal(K/ℚ),
       ramificationIdxIn_eq_totient hn hm]
 
-/-- If `p 𝓞 K` is the product of the primes above `p` raised to a common power `e`, then `p 𝓞 K`
-is prime iff a single prime lies above `p` and `e = 1`. -/
-private theorem isPrime_span_natCast_iff_of_eq_pow {e : ℕ}
-    (hfac : span {(p : 𝓞 K)} =
-      (∏ P ∈ IsDedekindDomain.primesOverFinset (span {(p : ℤ)}) (𝓞 K), P) ^ e) :
-    (span {(p : 𝓞 K)}).IsPrime ↔ (primesOver (span {(p : ℤ)}) (𝓞 K)).ncard = 1 ∧ e = 1 := by
-  classical
-  have hp0 : (span {(p : ℤ)} : Ideal ℤ) ≠ ⊥ := by
-    simpa [Ideal.span_singleton_eq_bot] using hp.out.ne_zero
-  have hmap : Ideal.map (algebraMap ℤ (𝓞 K)) (span {(p : ℤ)}) = span {(p : 𝓞 K)} := by
-    simp [Ideal.map_span]
-  have hI0 : span {(p : 𝓞 K)} ≠ ⊥ := hmap ▸ Ideal.map_ne_bot_of_ne_bot hp0
-  have hcoe := IsDedekindDomain.coe_primesOverFinset hp0 (𝓞 K)
-  constructor
-  · intro hI
-    have hmax := hI.isMaximal hI0
-    -- Every prime above `p` contains `p 𝓞 K`, which is maximal, so equals it.
-    have hall : ∀ Q ∈ IsDedekindDomain.primesOverFinset (span {(p : ℤ)}) (𝓞 K),
-        Q = span {(p : 𝓞 K)} := by
-      intro Q hQ
-      rw [← Finset.mem_coe, hcoe] at hQ
-      obtain ⟨hQp, hQo⟩ := hQ
-      refine (hmax.eq_of_le hQp.ne_top ?_).symm
-      rw [← hmap, Ideal.map_le_iff_le_comap, (liesOver_iff Q _).mp hQo]
-    obtain ⟨Q, hQ⟩ : (IsDedekindDomain.primesOverFinset (span {(p : ℤ)}) (𝓞 K)).Nonempty := by
-      rw [← Finset.coe_nonempty, hcoe, ← Set.nonempty_coe_sort]
-      infer_instance
-    have hS : IsDedekindDomain.primesOverFinset (span {(p : ℤ)}) (𝓞 K) =
-        {span {(p : 𝓞 K)}} :=
-      Finset.eq_singleton_iff_unique_mem.2 ⟨hall Q hQ ▸ hQ, hall⟩
-    refine ⟨?_, ?_⟩
-    · rw [← hcoe, hS, Finset.coe_singleton, Set.ncard_singleton]
-    · rw [hS, Finset.prod_singleton] at hfac
-      exact ((span {(p : 𝓞 K)}).pow_right_strictAnti hI0 hI.ne_top).injective
-        (hfac.symm.trans (pow_one _).symm)
-  · rintro ⟨hg, rfl⟩
-    obtain ⟨Q, hQ⟩ := Set.ncard_eq_one.mp hg
-    have hS : IsDedekindDomain.primesOverFinset (span {(p : ℤ)}) (𝓞 K) = {Q} :=
-      Finset.coe_injective (by rw [hcoe, hQ, Finset.coe_singleton])
-    have hQmem : Q ∈ primesOver (span {(p : ℤ)}) (𝓞 K) := hQ ▸ Set.mem_singleton Q
-    rw [hfac, hS, Finset.prod_singleton, pow_one]
-    exact hQmem.1
-
 /-- **The inert primes in terms of the level decomposition.** If `n = p ^ k * m` with `p ∤ m`,
 then `p` is inert in an `n`-th cyclotomic field over `ℚ` iff `φ(p ^ k) = 1` and `p` has order
 `φ(m)` modulo `m`. -/
@@ -186,21 +145,12 @@ private theorem isPrime_span_natCast_iff_of_eq_pow_mul (hn : n = p ^ k * m) (hm 
     (span {(p : 𝓞 K)}).IsPrime ↔ (p ^ k).totient = 1 ∧ orderOf (p : ZMod m) = m.totient := by
   have : NeZero m := ⟨by rintro rfl; exact hm (dvd_zero p)⟩
   have hg := ncard_primesOver_mul_orderOf_eq_totient_of_eq_pow_mul (K := K) hn hm
-  rw [isPrime_span_natCast_iff_of_eq_pow (span_natCast_eq_prod_primesOverFinset_pow hn hm),
+  rw [isPrime_span_natCast_iff_of_eq_prod_primesOverFinset_pow
+      (span_natCast_eq_prod_primesOverFinset_pow hn hm),
     and_comm]
   refine and_congr_right fun _ ↦ ⟨fun h ↦ by rw [← hg, h, one_mul], fun h ↦ ?_⟩
   rw [h] at hg
   exact (Nat.mul_eq_right (Nat.totient_pos.2 (NeZero.pos m)).ne').1 hg
-
-/-- At a level `n ≢ 2 mod 4`, the exponent of `p` in `n` is zero exactly when `φ(p ^ k) = 1`. -/
-private theorem eq_zero_iff_totient_pow_eq_one (hn4 : n % 4 ≠ 2) (hn : n = p ^ k * m)
-    (hm : ¬ p ∣ m) : k = 0 ↔ (p ^ k).totient = 1 := by
-  refine ⟨fun hk ↦ by simp [hk], fun h ↦ ?_⟩
-  rcases Nat.totient_eq_one_iff.1 h with h | h
-  · exact (Nat.pow_eq_one.1 h).resolve_left hp.out.ne_one
-  · obtain ⟨rfl, rfl⟩ := (Nat.Prime.pow_eq_iff Nat.prime_two).1 h
-    obtain ⟨j, rfl⟩ : Odd m := Nat.odd_iff.2 (Nat.two_dvd_ne_zero.1 hm)
-    omega
 
 /-- **Complete splitting in a cyclotomic field.** If `n ≢ 2 mod 4`, a prime `p` splits completely
 in an `n`-th cyclotomic field over `ℚ` (there are `φ(n) = [K : ℚ]` primes above it) iff
@@ -220,8 +170,12 @@ theorem ncard_primesOver_eq_totient_iff [NeZero n] (hn4 : n % 4 ≠ 2) :
       calc m.totient * ((p ^ k).totient * orderOf (p : ZMod m))
           = (p ^ k).totient * (m.totient * orderOf (p : ZMod m)) := by ring
         _ = m.totient * 1 := by rw [hg, mul_one]
-    obtain ⟨rfl⟩ : k = 0 :=
-      (eq_zero_iff_totient_pow_eq_one hn4 hn hm).2 (Nat.eq_one_of_mul_eq_one_right h1)
+    obtain rfl : k = 0 := by
+      refine ((Nat.totient_prime_pow_eq_one_iff hp.out).1
+        (Nat.eq_one_of_mul_eq_one_right h1)).resolve_right ?_
+      rintro ⟨rfl, rfl⟩
+      obtain ⟨j, rfl⟩ : Odd m := Nat.odd_iff.2 (Nat.two_dvd_ne_zero.1 hm)
+      omega
     rw [pow_zero, one_mul] at hn
     subst hn
     exact orderOf_eq_one_iff.1 (Nat.eq_one_of_mul_eq_one_left h1)
@@ -243,18 +197,19 @@ in the form that the order of `p` modulo `n` is `φ(n)`. -/
 theorem isPrime_span_natCast_iff_orderOf_eq_totient [NeZero n] (hn4 : n % 4 ≠ 2) :
     (span {(p : 𝓞 K)}).IsPrime ↔ ¬ p ∣ n ∧ orderOf (p : ZMod n) = n.totient := by
   obtain ⟨k, m, hm, hn⟩ := Nat.exists_eq_pow_mul_and_not_dvd (NeZero.ne n) p hp.out.ne_one
-  rw [isPrime_span_natCast_iff_of_eq_pow_mul hn hm,
-    ← eq_zero_iff_totient_pow_eq_one hn4 hn hm]
+  rw [isPrime_span_natCast_iff_of_eq_pow_mul hn hm, Nat.totient_prime_pow_eq_one_iff hp.out]
   constructor
-  · rintro ⟨rfl, h⟩
-    rw [pow_zero, one_mul] at hn
-    exact hn ▸ ⟨hm, h⟩
+  · rintro ⟨rfl | ⟨rfl, rfl⟩, h⟩
+    · rw [pow_zero, one_mul] at hn
+      exact hn ▸ ⟨hm, h⟩
+    · obtain ⟨j, rfl⟩ : Odd m := Nat.odd_iff.2 (Nat.two_dvd_ne_zero.1 hm)
+      omega
   · rintro ⟨hpn, h⟩
     obtain rfl : k = 0 := by
       by_contra hk
       exact hpn (hn ▸ Dvd.dvd.mul_right (dvd_pow_self p hk) m)
     rw [pow_zero, one_mul] at hn
-    exact ⟨rfl, hn ▸ h⟩
+    exact ⟨Or.inl rfl, hn ▸ h⟩
 
 end Level
 
