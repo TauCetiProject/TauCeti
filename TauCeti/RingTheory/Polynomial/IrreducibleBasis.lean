@@ -45,8 +45,8 @@ irreducible member can be inseparable.
   product of its irreducible factors of positive degree.
 * `Finset.IsIrreducibleBasis.isPrimitive`, `Finset.IsIrreducibleBasis.isPrimitive_prod`: the
   members of the basis, and all products of their powers, are primitive.
-* `Finset.IsIrreducibleBasis.exists_eq_C_content_mul_prod`: every member of the family is its
-  content times a unit times a product of powers of the basis.
+* `Finset.IsIrreducibleBasis.exists_eq_C_content_mul_unit_mul_prod`: every member of the family
+  is its content times a unit times a product of powers of the basis.
 * `Finset.IsIrreducibleBasis.exists_associated_iff`: an irreducible polynomial of positive
   degree is associated to a member of the basis exactly when it divides a nonzero member of
   the family. Consequently any two irreducible bases agree up to associates
@@ -136,8 +136,8 @@ theorem isPrimitive_prod (hB : F.IsIrreducibleBasis B) (e : D[X] → ℕ) :
 
 /-- Every member of the family is its content, times a unit, times a product of powers of the
 members of an irreducible basis. -/
-theorem exists_eq_C_content_mul_prod [NormalizedGCDMonoid D] (hB : F.IsIrreducibleBasis B)
-    {f : D[X]} (hf : f ∈ F) :
+theorem exists_eq_C_content_mul_unit_mul_prod [NormalizedGCDMonoid D]
+    (hB : F.IsIrreducibleBasis B) {f : D[X]} (hf : f ∈ F) :
     ∃ (u : Dˣ) (e : D[X] → ℕ), f = C (f.content * u) * ∏ b ∈ B, b ^ e b := by
   obtain ⟨c, e, rfl⟩ := hB.exists_eq_C_mul_prod f hf
   have hc := associated_content_C_mul c (∏ b ∈ B, b ^ e b)

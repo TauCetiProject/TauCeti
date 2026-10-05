@@ -252,28 +252,21 @@ section Invariance
 variable {A B : Type*} [CommRing A] [CommRing B] {φ : R →+* A} {ψ : R →+* B} {F : Finset R[X]}
   {p q : R[X]}
 
-/-- If the same elements of the Collins projection vanish under `φ` and `ψ`, then the same
-coefficients of each member of the family vanish under `φ` and `ψ`. -/
-theorem map_coeff_eq_zero_iff_of_collinsProjection
-    (h : ∀ a ∈ F.collinsProjection, φ a = 0 ↔ ψ a = 0) (hp : p ∈ F) (i : ℕ) :
-    φ (p.coeff i) = 0 ↔ ψ (p.coeff i) = 0 := by
-  rcases le_or_gt i p.natDegree with hi | hi
-  · exact h _ (coeff_mem_collinsProjection hp p.self_mem_reducta hi)
-  · simp [coeff_eq_zero_of_natDegree_lt hi]
-
 /-- If the same elements of the Collins projection vanish under `φ` and `ψ`, then a member of the
 family is nullified by `φ` exactly when it is nullified by `ψ`. -/
 theorem map_eq_zero_iff_of_collinsProjection
     (h : ∀ a ∈ F.collinsProjection, φ a = 0 ↔ ψ a = 0) (hp : p ∈ F) :
     p.map φ = 0 ↔ p.map ψ = 0 :=
-  map_eq_zero_iff_of_map_coeff_eq_zero_iff (map_coeff_eq_zero_iff_of_collinsProjection h hp)
+  map_eq_zero_iff_of_map_coeff_eq_zero_iff fun _ hi ↦
+    h _ (coeff_mem_collinsProjection hp p.self_mem_reducta hi)
 
 /-- If the same elements of the Collins projection vanish under `φ` and `ψ`, then every member of
 the family has the same degree after either specialization. -/
 theorem natDegree_map_eq_of_collinsProjection
     (h : ∀ a ∈ F.collinsProjection, φ a = 0 ↔ ψ a = 0) (hp : p ∈ F) :
     (p.map φ).natDegree = (p.map ψ).natDegree :=
-  natDegree_map_eq_of_map_coeff_eq_zero_iff (map_coeff_eq_zero_iff_of_collinsProjection h hp)
+  natDegree_map_eq_of_map_coeff_eq_zero_iff fun _ hi ↦
+    h _ (coeff_mem_collinsProjection hp p.self_mem_reducta hi)
 
 /-- A single reductum of a member of the family specializes to the member under both `φ` and `ψ`,
 and its own degree is the specialized degree under each of them. -/

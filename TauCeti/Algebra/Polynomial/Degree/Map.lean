@@ -24,19 +24,31 @@ namespace Polynomial
 variable {R S T : Type*} [Semiring R] [Semiring S] [Semiring T] {φ : R →+* S} {ψ : R →+* T}
   {p : R[X]}
 
+/-- If `φ` and `ψ` send the same coefficients of `p` to zero, then `p.map φ` and `p.map ψ` have
+the same degree. Only the coefficients up to `p.natDegree` need to be checked. -/
+theorem degree_map_eq_of_map_coeff_eq_zero_iff
+    (h : ∀ i ≤ p.natDegree, φ (p.coeff i) = 0 ↔ ψ (p.coeff i) = 0) :
+    (p.map φ).degree = (p.map ψ).degree := by
+  have h' (i : ℕ) : φ (p.coeff i) = 0 ↔ ψ (p.coeff i) = 0 := by
+    rcases le_or_gt i p.natDegree with hi | hi
+    · exact h i hi
+    · simp [coeff_eq_zero_of_natDegree_lt hi]
+  have key (n : WithBot ℕ) : (p.map φ).degree ≤ n ↔ (p.map ψ).degree ≤ n := by
+    simp only [degree_le_iff_coeff_zero, coeff_map, h']
+  exact le_antisymm ((key _).2 le_rfl) ((key _).1 le_rfl)
+
 /-- If `φ` and `ψ` send the same coefficients of `p` to zero, then `p.map φ` vanishes exactly
-when `p.map ψ` does. -/
+when `p.map ψ` does. Only the coefficients up to `p.natDegree` need to be checked. -/
 theorem map_eq_zero_iff_of_map_coeff_eq_zero_iff
-    (h : ∀ i, φ (p.coeff i) = 0 ↔ ψ (p.coeff i) = 0) : p.map φ = 0 ↔ p.map ψ = 0 := by
-  simp only [Polynomial.ext_iff, coeff_map, coeff_zero, h]
+    (h : ∀ i ≤ p.natDegree, φ (p.coeff i) = 0 ↔ ψ (p.coeff i) = 0) :
+    p.map φ = 0 ↔ p.map ψ = 0 := by
+  rw [← degree_eq_bot, ← degree_eq_bot, degree_map_eq_of_map_coeff_eq_zero_iff h]
 
 /-- If `φ` and `ψ` send the same coefficients of `p` to zero, then `p.map φ` and `p.map ψ` have
-the same degree. -/
+the same `natDegree`. Only the coefficients up to `p.natDegree` need to be checked. -/
 theorem natDegree_map_eq_of_map_coeff_eq_zero_iff
-    (h : ∀ i, φ (p.coeff i) = 0 ↔ ψ (p.coeff i) = 0) :
-    (p.map φ).natDegree = (p.map ψ).natDegree := by
-  have key (n : ℕ) : (p.map φ).natDegree ≤ n ↔ (p.map ψ).natDegree ≤ n := by
-    simp only [natDegree_le_iff_coeff_eq_zero, coeff_map, h]
-  exact le_antisymm ((key _).2 le_rfl) ((key _).1 le_rfl)
+    (h : ∀ i ≤ p.natDegree, φ (p.coeff i) = 0 ↔ ψ (p.coeff i) = 0) :
+    (p.map φ).natDegree = (p.map ψ).natDegree :=
+  natDegree_eq_of_degree_eq (degree_map_eq_of_map_coeff_eq_zero_iff h)
 
 end Polynomial

@@ -187,28 +187,19 @@ section Specialization
 
 variable {A A' : Type*} [CommRing A] [CommRing A'] {φ : R →+* A} {ψ : R →+* A'}
 
-/-- If the same elements of the McCallum projection vanish under `φ` and `ψ`, then the same
-coefficients of each member of the basis vanish under `φ` and `ψ`. -/
-theorem map_coeff_eq_zero_iff_of_mcCallumProjection
-    (h : ∀ a ∈ F.mcCallumProjection B, φ a = 0 ↔ ψ a = 0) (hb : b ∈ B) (i : ℕ) :
-    φ (b.coeff i) = 0 ↔ ψ (b.coeff i) = 0 := by
-  rcases le_or_gt i b.natDegree with hi | hi
-  · exact h _ (coeff_mem_mcCallumProjection hb hi)
-  · simp [coeff_eq_zero_of_natDegree_lt hi]
-
 /-- If the same elements of the McCallum projection vanish under `φ` and `ψ`, then a member of the
 basis is nullified by `φ` exactly when it is nullified by `ψ`. -/
 theorem map_eq_zero_iff_of_mcCallumProjection
     (h : ∀ a ∈ F.mcCallumProjection B, φ a = 0 ↔ ψ a = 0) (hb : b ∈ B) :
     b.map φ = 0 ↔ b.map ψ = 0 :=
-  map_eq_zero_iff_of_map_coeff_eq_zero_iff (map_coeff_eq_zero_iff_of_mcCallumProjection h hb)
+  map_eq_zero_iff_of_map_coeff_eq_zero_iff fun _ hi ↦ h _ (coeff_mem_mcCallumProjection hb hi)
 
 /-- If the same elements of the McCallum projection vanish under `φ` and `ψ`, then every member of
 the basis has the same degree after either specialization. -/
 theorem natDegree_map_eq_of_mcCallumProjection
     (h : ∀ a ∈ F.mcCallumProjection B, φ a = 0 ↔ ψ a = 0) (hb : b ∈ B) :
     (b.map φ).natDegree = (b.map ψ).natDegree :=
-  natDegree_map_eq_of_map_coeff_eq_zero_iff (map_coeff_eq_zero_iff_of_mcCallumProjection h hb)
+  natDegree_map_eq_of_map_coeff_eq_zero_iff fun _ hi ↦ h _ (coeff_mem_mcCallumProjection hb hi)
 
 namespace IsIrreducibleBasis
 
@@ -219,7 +210,7 @@ domains, then a member of the family is nullified by `φ` exactly when it is nul
 theorem map_eq_zero_iff_of_mcCallumProjection (hB : F.IsIrreducibleBasis B)
     (h : ∀ a ∈ F.mcCallumProjection B, φ a = 0 ↔ ψ a = 0) (hf : f ∈ F) :
     f.map φ = 0 ↔ f.map ψ = 0 := by
-  obtain ⟨u, e, hfe⟩ := hB.exists_eq_C_content_mul_prod hf
+  obtain ⟨u, e, hfe⟩ := hB.exists_eq_C_content_mul_unit_mul_prod hf
   have hc : φ (f.content * u) = 0 ↔ ψ (f.content * u) = 0 := by
     simpa [(u.isUnit.map φ).ne_zero, (u.isUnit.map ψ).ne_zero] using
       h _ (content_mem_mcCallumProjection hf)
@@ -238,7 +229,7 @@ theorem natDegree_map_eq_of_mcCallumProjection (hB : F.IsIrreducibleBasis B)
   rcases eq_or_ne (f.map ψ) 0 with h0 | h0
   · simp [h0, (hB.map_eq_zero_iff_of_mcCallumProjection h hf).2 h0]
   have h0' := (hB.map_eq_zero_iff_of_mcCallumProjection h hf).not.2 h0
-  obtain ⟨u, e, hfe⟩ := hB.exists_eq_C_content_mul_prod hf
+  obtain ⟨u, e, hfe⟩ := hB.exists_eq_C_content_mul_unit_mul_prod hf
   generalize f.content * u = c at hfe
   subst hfe
   simp only [Polynomial.map_mul, map_C, Polynomial.map_prod, Polynomial.map_pow] at h0 h0' ⊢
