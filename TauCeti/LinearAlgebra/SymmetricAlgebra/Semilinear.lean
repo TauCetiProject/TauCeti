@@ -24,8 +24,6 @@ presheaf of modules into presheaves.
 ## Main declarations
 
 * `SymmetricAlgebra.mapₛₗ`: the ring homomorphism induced by a semilinear map;
-* `SymmetricAlgebra.ringHom_ext`: a ring homomorphism out of a symmetric algebra is determined by
-  its values on scalars and on generators;
 * `SymmetricAlgebra.mapₛₗ_comp_mapₛₗ` and `SymmetricAlgebra.mapₛₗ_eq_id`: functoriality, with the
   ring homomorphisms and semilinear maps related by pointwise equations, so that they apply to
   maps that only agree propositionally (as for the restriction maps of a presheaf);
@@ -47,18 +45,6 @@ variable {M : Type v₁} {N : Type v₂} {P : Type v₃}
 variable [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module S N] [AddCommMonoid P]
   [Module T P]
 variable {φ : R →+* S} {ψ : S →+* T} {χ : R →+* T}
-
-/-- A ring homomorphism out of a symmetric algebra is determined by its values on scalars and on
-generators. -/
-theorem ringHom_ext {A : Type*} [Semiring A] {F G : SymmetricAlgebra R M →+* A}
-    (h₁ : ∀ r, F (algebraMap R _ r) = G (algebraMap R _ r))
-    (h₂ : ∀ m, F (ι R M m) = G (ι R M m)) : F = G := by
-  refine RingHom.ext fun x ↦ ?_
-  induction x using SymmetricAlgebra.induction with
-  | algebraMap r => exact h₁ r
-  | ι m => exact h₂ m
-  | mul a b ha hb => rw [map_mul, map_mul, ha, hb]
-  | add a b ha hb => rw [map_add, map_add, ha, hb]
 
 /-- The ring homomorphism between symmetric algebras induced by a semilinear map `f : M →ₛₗ[φ] N`:
 it is `φ` on scalars and sends the generator of `m` to the generator of `f m`. -/

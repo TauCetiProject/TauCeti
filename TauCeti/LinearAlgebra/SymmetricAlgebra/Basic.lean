@@ -18,6 +18,9 @@ embeds in its universal enveloping algebra, which is its symmetric algebra
 For the symmetric algebra of the base semiring itself, the degree-one element `ι R R 1`
 generates the whole algebra. An algebra morphism whose range contains this element is therefore
 surjective, a criterion used for coordinate morphisms of additive root subgroups.
+
+A ring homomorphism out of a symmetric algebra is determined by its values on scalars and on
+generators (`SymmetricAlgebra.ringHom_ext`).
 -/
 
 public section
@@ -36,6 +39,24 @@ theorem ι_injective : Function.Injective (_root_.SymmetricAlgebra.ι R M) := by
     (_root_.SymmetricAlgebra.lift (TrivSqZeroExt.inrHom R M)).toLinearMap) fun x ↦ by simp
 
 end TauCeti.SymmetricAlgebra
+
+namespace SymmetricAlgebra
+
+variable {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
+
+/-- A ring homomorphism out of a symmetric algebra is determined by its values on scalars and on
+generators. -/
+theorem ringHom_ext {A : Type*} [Semiring A] {F G : SymmetricAlgebra R M →+* A}
+    (h₁ : ∀ r, F (algebraMap R _ r) = G (algebraMap R _ r))
+    (h₂ : ∀ m, F (ι R M m) = G (ι R M m)) : F = G := by
+  refine RingHom.ext fun x ↦ ?_
+  induction x using SymmetricAlgebra.induction with
+  | algebraMap r => exact h₁ r
+  | ι m => exact h₂ m
+  | mul a b ha hb => rw [map_mul, map_mul, ha, hb]
+  | add a b ha hb => rw [map_add, map_add, ha, hb]
+
+end SymmetricAlgebra
 
 namespace AlgHom
 

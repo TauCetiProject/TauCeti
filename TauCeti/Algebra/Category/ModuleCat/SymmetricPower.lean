@@ -26,7 +26,7 @@ This is the analogue of Mathlib's `ModuleCat.exteriorPower`, and it is the secti
 the symmetric powers of presheaves and sheaves of modules.
 -/
 
-@[expose] public section
+public section
 
 universe v u
 
@@ -54,11 +54,12 @@ noncomputable def map {M N : ModuleCat.{v} R} (f : M ⟶ N) (n : ℕ) :
 @[simp]
 lemma coe_map_apply {M N : ModuleCat.{v} R} (f : M ⟶ N) (n : ℕ) (x : M.symmetricPower n) :
     Subtype.val (map f n x) = SymmetricAlgebra.map R f.hom x.1 :=
-  rfl
+  (rfl)
 
 variable (R) in
 /-- The functor `ModuleCat R ⥤ ModuleCat R` which sends a module to its `n`-th symmetric
 power. -/
+@[expose]
 noncomputable def functor (n : ℕ) : ModuleCat.{v} R ⥤ ModuleCat.{max u v} R where
   obj M := M.symmetricPower n
   map f := map f n
