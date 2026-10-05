@@ -65,6 +65,16 @@ theorem algebraicComplexPointMap_comp (g : FanHom Ψ Ω) (p : Φ.AlgebraicComple
   ext1
   simp [algebraicMap_comp, Category.assoc]
 
+private theorem spec_map_comp_affineToricChartMap (σ : Φ.cones)
+    (x : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.1)) :
+    Spec.map (CommRingCat.ofHom x.toRingHom) ≫ f.affineToricChartMap σ =
+      Spec.map (CommRingCat.ofHom (x.comp
+        (affineCoordinateRingMap Φ.lattice Ψ.lattice f.latticeMap f.realMap
+          f.map_lattice (f.mapsTo_leastCone σ.2))).toRingHom) := by
+  rw [affineToricChartMap_def, affineToricSchemeMap_def, ← Spec.map_comp,
+    ← CommRingCat.ofHom_comp]
+  exact congrArg (Spec.map ∘ CommRingCat.ofHom) (AlgHom.comp_toRingHom x _).symm
+
 /-- On an affine chart, the algebraic map on complex points pulls back along the map of dual
 semigroups into the least target cone. This holds without regularity of either fan. -/
 @[simp]
@@ -80,8 +90,7 @@ theorem algebraicComplexPointMap_ofAffinePoint (σ : Φ.cones)
   -- with the affine complex-point carrier used by `ofAffinePoint`.
   erw [coe_algebraicComplexPointMap, Fan.AlgebraicComplexPoint.coe_ofAffinePoint,
     Fan.AlgebraicComplexPoint.coe_ofAffinePoint, Category.assoc,
-    affineToricChartι_comp_algebraicMap, affineToricChartMap_def,
-    affineToricSchemeMap_def, ← Category.assoc, ← Spec.map_comp, ← CommRingCat.ofHom_comp]
+    affineToricChartι_comp_algebraicMap, ← Category.assoc, spec_map_comp_affineToricChartMap]
   congr 2
   erw [analyticChartMap_apply]
   have hp : x.comp (affineCoordinateRingMap Φ.lattice Ψ.lattice f.latticeMap f.realMap
@@ -91,8 +100,7 @@ theorem algebraicComplexPointMap_ofAffinePoint (σ : Φ.cones)
     apply AffineSemigroupComplexPoint.ext
     intro m
     simp
-  exact congrArg CommRingCat.ofHom ((AlgHom.comp_toRingHom x _).symm.trans
-    (congrArg AlgHom.toRingHom hp))
+  exact congrArg CommRingCat.ofHom (congrArg AlgHom.toRingHom hp)
 
 /-- The scheme-theoretic map on complex points is continuous for the glued monomial topologies,
 including for nonregular fans. -/
@@ -122,6 +130,7 @@ theorem algebraicAnalyticEquiv_naturality (hΦ : Φ.IsRegular) (hΨ : Ψ.IsRegul
     Fan.algebraicAnalyticEquiv_ofAffinePoint, analyticMap_analyticAffineChartι]
 
 /-- The inverse algebraic–analytic comparison also commutes with toric maps. -/
+@[simp]
 theorem algebraicAnalyticEquiv_symm_naturality (hΦ : Φ.IsRegular) (hΨ : Ψ.IsRegular)
     (p : Φ.analyticRealization hΦ) :
     (Fan.algebraicAnalyticEquiv hΨ).symm (f.analyticMap hΦ hΨ p) =

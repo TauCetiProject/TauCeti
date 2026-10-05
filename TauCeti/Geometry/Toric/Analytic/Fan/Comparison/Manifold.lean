@@ -16,19 +16,14 @@ The complex points of the scheme of a regular fan carry the affine-chart topolog
 Zariski topology. Pulling the atlas of the analytic realization back along the chartwise
 comparison makes this carrier a complex manifold. Every algebraic affine chart inclusion is a
 local biholomorphism for the independently defined structure of any extending basis and finite
-generating family, by `Fan.isLocalDiffeomorph_ofAffinePoint`. Its local inverse is holomorphic,
-not just the inclusion: the proof uses the two-sided affine compatibility already established by
-`Fan.analyticAffineChartPartialDiffeomorph`. Together with
+generating family, by `Fan.isLocalDiffeomorph_ofAffinePoint`. Its local inverse is holomorphic.
+Together with
 `Fan.AlgebraicComplexPoint.exists_ofAffinePoint_eq`, these local biholomorphisms cover all
 algebraic complex points. Thus the pulled-back structure agrees locally in both directions with
 the regular coordinate structures on the algebraic affine charts.
 
 The comparison is a biholomorphism, and the scheme-theoretic map on complex points induced by
-a fan morphism is holomorphic. The latter follows from naturality of the comparison and the
-holomorphy of the analytic toric map, not from an independently defined map on complex points.
-
-The atlas transport uses `IsLocalHomeomorph.chartedSpaceComap` and its manifold and
-holomorphy theorems.
+a fan morphism is holomorphic. The comparison intertwines this map with the analytic toric map.
 
 ## References
 
@@ -125,22 +120,6 @@ theorem isLocalDiffeomorph_ofAffinePoint (σ : Φ.cones) {k l s : ℕ}
   simpa only [Function.comp_apply, e, d, analyticAffineChartPartialDiffeomorph_apply,
     coe_algebraicAnalyticDiffeomorph_symm] using
       (algebraicAnalyticEquiv_symm_analyticAffineChartι hΦ σ y).symm
-
-/-- Every affine chart inclusion on algebraic complex points is holomorphic for the complex
-structure of any extending basis and any finite semigroup generating family. -/
-theorem contMDiff_ofAffinePoint (σ : Φ.cones) {k l s : ℕ}
-    {B : Module.Basis (ToricRay σ.1 ⊕ Fin l) ℤ N}
-    (hB : ∀ ρ, IsPrimitiveGenerator i ρ (B (Sum.inl ρ))) (κ : ToricRay σ.1 ≃ Fin k)
-    (g : AddGeneratingFamily (dualSemigroup Φ.lattice σ.1) s) (n : ℕ∞ω) :
-    letI := affinePointTopology g
-    letI := coneChartedSpace Φ.lattice ((isRegular_iff.mp hΦ) σ.1 σ.2).toIsToricCone hB κ g
-    letI := algebraicComplexPointChartedSpace hΦ
-    ContMDiff 𝓘(ℂ, (Fin k → ℂ) × (Fin l → ℂ))
-      𝓘(ℂ, Fin (Module.finrank ℤ N) → ℂ) n (AlgebraicComplexPoint.ofAffinePoint σ) := by
-  let := affinePointTopology g
-  let := coneChartedSpace Φ.lattice ((isRegular_iff.mp hΦ) σ.1 σ.2).toIsToricCone hB κ g
-  let := algebraicComplexPointChartedSpace hΦ
-  exact (isLocalDiffeomorph_ofAffinePoint hΦ σ hB κ g n).contMDiff
 
 end Fan
 
