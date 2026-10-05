@@ -113,7 +113,7 @@ noncomputable def coneSequenceSplitting (f : X ⟶ Y) (i : ZMod n) :
       homotopyCofiber.inlX f (i + ((1 : ℤ) : ZMod n)) i (by simp) := (rfl)
 
 /-- The first cone projection is natural under commutative squares of periodic chain maps. -/
-@[reassoc]
+@[reassoc (attr := simp), simp]
 theorem mapArrowHom_comp_coneProjection {X' Y' : CochainComplex C (ZMod n)}
     (f : X ⟶ Y) (g : X' ⟶ Y') (α : Arrow.mk f ⟶ Arrow.mk g) :
     homotopyCofiber.mapArrowHom f g (fun j => ⟨j - 1, by simp⟩) α ≫ coneProjection g =
@@ -167,7 +167,7 @@ variable [HasZeroObject C]
 
 /-- The mapping-cone sequence is a conflation for the degreewise extension of any exact structure
 on the base category. -/
-theorem coneSequence_conflation (E : ExactStructure C) (f : X ⟶ Y) :
+theorem conflation_coneSequence (E : ExactStructure C) (f : X ⟶ Y) :
     (E.homologicalComplex (ComplexShape.up (ZMod n))).Conflation (coneSequence f) := by
   rw [ExactStructure.homologicalComplex_conflation_iff]
   exact fun i => E.conflation_of_splitting (coneSequenceSplitting f i)
