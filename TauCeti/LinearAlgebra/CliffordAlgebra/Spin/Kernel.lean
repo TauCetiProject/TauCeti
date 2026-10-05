@@ -9,13 +9,15 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpecialOrthogonal
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Map
 public import TauCeti.LinearAlgebra.QuadraticForm.Radical
 import TauCeti.LinearAlgebra.CliffordAlgebra.Basic
+import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Basic
 
 /-!
 # The kernel of the Spin action
 
-For a positive-dimensional finite nondegenerate quadratic space over a field where `2` is
-invertible, the kernel of the Spin action consists of the two scalar elements. The proof first
-shows that an even Clifford element commuting with every generating vector is scalar, using
+On the zero-dimensional quadratic space, the Spin action is a bijection between trivial groups,
+so its kernel is trivial. For a positive-dimensional finite nondegenerate quadratic space over a
+field where `2` is invertible, the kernel instead consists of the two scalar elements. The proof
+first shows that an even Clifford element commuting with every generating vector is scalar, using
 contraction and the exterior-algebra basis. Unitarity then restricts the scalar to `1` or `-1`.
 
 ## Main results
@@ -26,8 +28,12 @@ exactly when it is `1` or the canonical scalar `-1`.
   canonical scalar `-1`.
 * `CliffordAlgebra.eq_or_eq_negOne_mul_of_spinToSpecialOrthogonal_eq`: two Spin elements with the
   same projection differ by at most the canonical scalar `-1`.
+* `CliffordAlgebra.ker_spinToSpecialOrthogonal_eq_bot_of_finrank_eq_zero`: in dimension zero,
+  the kernel of the Spin action is trivial.
+* `CliffordAlgebra.spinToSpecialOrthogonal_bijective_of_finrank_eq_zero`: in dimension zero, the
+  Spin action is bijective.
 * `CliffordAlgebra.card_ker_spinToSpecialOrthogonal`: the kernel of the Spin action on
-the special orthogonal group has cardinality two.
+  the special orthogonal group has cardinality two in positive dimension.
 * `CliffordAlgebra.zmodTwoMulEquivKerSpinToSpecialOrthogonal`: the kernel is canonically
   equivalent to `Multiplicative (ZMod 2)`.
 * `CliffordAlgebra.zmodTwoMulEquivKerSpinToSpecialOrthogonal_apply_ofAdd_one`: the chosen
@@ -37,9 +43,7 @@ the special orthogonal group has cardinality two.
 
 ## References
 
-This completes Layer 2's kernel target, `card_ker_spinToSpecialOrthogonal`, in
-`TauCetiRoadmap/RepresentationTheory/SpinRepresentations/Suggested.lean`. See H. B. Lawson and
-M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I §2.
+See H. B. Lawson and M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I §2.
 -/
 
 public section
@@ -299,6 +303,23 @@ theorem mem_ker_spinToOrthogonal_iff
       x = 1 ∨ x = spinGroup.negOne Q hQ.ne_zero := by
   rw [← ker_spinToSpecialOrthogonal]
   exact mem_ker_spinToSpecialOrthogonal_iff Q hQ x
+
+/-- The Spin action on a zero-dimensional quadratic space has trivial kernel. -/
+theorem ker_spinToSpecialOrthogonal_eq_bot_of_finrank_eq_zero
+    (hM : Module.finrank K M = 0) (Q : QuadraticForm K M) [Invertible (2 : K)] :
+    MonoidHom.ker (spinToSpecialOrthogonal Q) = ⊥ := by
+  let _ : Subsingleton M := Module.finrank_zero_iff.mp hM
+  exact (MonoidHom.ker_eq_bot_iff _).mpr fun _ _ _ ↦ Subsingleton.elim _ _
+
+/-- The Spin action on a zero-dimensional quadratic space is a bijection between trivial
+groups. -/
+theorem spinToSpecialOrthogonal_bijective_of_finrank_eq_zero
+    (hM : Module.finrank K M = 0) (Q : QuadraticForm K M) [Invertible (2 : K)] :
+    Function.Bijective (spinToSpecialOrthogonal Q) := by
+  refine ⟨(MonoidHom.ker_eq_bot_iff _).mp
+    (ker_spinToSpecialOrthogonal_eq_bot_of_finrank_eq_zero hM Q), ?_⟩
+  let _ : Subsingleton M := Module.finrank_zero_iff.mp hM
+  exact fun y ↦ ⟨1, Subsingleton.elim _ y⟩
 
 /-- The kernel of the Spin action on a positive-dimensional finite nondegenerate quadratic space
 over a field where `2` is invertible has cardinality two. -/
