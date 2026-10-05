@@ -80,19 +80,11 @@ noncomputable abbrev preimageSubfan (S : Set (PointedCone ℝ V'))
   Phi.subfan (f.preimageCones S) (f.preimageCones_subset S)
     (f.preimageCones_closedUnderFaces S hface)
 
-/-- The cones of the preimage subfan are the cones whose least target cones lie in the chosen
-target subfan. -/
-@[simp]
-theorem preimageSubfan_cones (S : Set (PointedCone ℝ V'))
-    (hface : ∀ ⦃sigma tau⦄, sigma ∈ S → tau.IsFaceOf sigma → tau ∈ S) :
-    (f.preimageSubfan S hface).cones = f.preimageCones S := by
-  rw [preimageSubfan, Fan.subfan_cones]
-
 /-- Every cone of the preimage subfan is a cone of the source fan. -/
 theorem preimageSubfan_cones_subset (S : Set (PointedCone ℝ V'))
     (hface : ∀ ⦃sigma tau⦄, sigma ∈ S → tau.IsFaceOf sigma → tau ∈ S)
     : (f.preimageSubfan S hface).cones ⊆ Phi.cones := by
-  rw [preimageSubfan_cones]
+  rw [Fan.subfan_cones]
   exact f.preimageCones_subset S
 
 /-- The preimage subfan uses the source fan's integral lattice. -/
@@ -109,7 +101,7 @@ noncomputable def restrictToPreimage (S : Set (PointedCone ℝ V')) (hS : S ⊆ 
   realMap := f.realMap
   map_lattice := f.map_lattice
   map_cone sigma h_sigma := by
-    rw [preimageSubfan_cones] at h_sigma
+    rw [Fan.subfan_cones] at h_sigma
     obtain ⟨h_sigma_Phi, hleast⟩ := h_sigma
     exact ⟨f.leastCone h_sigma_Phi, by simpa only [Fan.subfan_cones] using hleast,
       f.map_le_leastCone h_sigma_Phi⟩
@@ -134,7 +126,7 @@ theorem restrictToPreimage_leastCone (S : Set (PointedCone ℝ V')) (hS : S ⊆ 
     (f.restrictToPreimage S hS hface).leastCone sigma.2 =
       f.leastCone (f.preimageSubfan_cones_subset S hface sigma.2) := by
   have h_sigma_preimage : sigma.1 ∈ f.preimageCones S := by
-    simpa only [preimageSubfan_cones] using sigma.2
+    simpa only [Fan.subfan_cones] using sigma.2
   obtain ⟨h_sigma, hleast⟩ := h_sigma_preimage
   apply le_antisymm
   · apply (f.restrictToPreimage S hS hface).leastCone_le sigma.2
