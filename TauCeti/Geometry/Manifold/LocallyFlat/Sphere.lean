@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.Instances.Sphere
 public import TauCeti.Geometry.Manifold.LocallyFlat.Separation
-import Mathlib.Analysis.Normed.Module.Connected
+public import TauCeti.Geometry.Sphere.Connected
 
 /-!
 # Brown's bicollaring theorem for locally flat spheres
@@ -106,13 +106,6 @@ theorem BrownBicollaring.exists_isOpen_sdiff_range_eq_union {n : ℕ} (h : Brown
     (NormedSpace.sphere_nonempty.2 zero_le_one).to_subtype
   (h f hf).exists_isOpen_sdiff_range_eq_union
 
-/-- The unit sphere of `ℝᵐ` is connected for `m ≥ 2`. -/
-private theorem connectedSpace_sphere {m : ℕ} (hm : 1 < m) :
-    ConnectedSpace (sphere (0 : EuclideanSpace ℝ (Fin m)) 1) :=
-  isConnected_iff_connectedSpace.1 <| isConnected_sphere (by
-    rw [← Module.finrank_eq_rank, finrank_euclideanSpace_fin]
-    exact_mod_cast hm) 0 zero_le_one
-
 /-- **Brown's bicollaring theorem for separating spheres.** For `n ≥ 1`, a locally flat embedding
 of the `n`-sphere in the `(n + 1)`-sphere whose image has disconnected complement is bicollared.
 
@@ -126,8 +119,8 @@ theorem IsLocallyFlat.isBicollared_of_not_isPreconnected_compl_range {n : ℕ} (
     IsBicollared f :=
   haveI := ChartedSpace.locallyConnectedSpace (EuclideanSpace ℝ (Fin n))
     (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)
-  haveI := connectedSpace_sphere (m := n + 1) (by omega)
-  haveI := connectedSpace_sphere (m := n + 2) (by omega)
+  haveI := connectedSpace_euclideanSphere (m := n + 1) (by omega)
+  haveI := connectedSpace_euclideanSphere (m := n + 2) (by omega)
   hf.isLocallyBicollared.isBicollared_of_not_isPreconnected_compl_range hf.injective hsep
 
 end TauCeti
