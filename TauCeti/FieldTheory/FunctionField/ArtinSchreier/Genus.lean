@@ -38,9 +38,9 @@ need not exist. The genus formula uses exact constants and the finite separable 
 extension required by the Hurwitz theorem.
 
 For a finite nonempty set of reduced poles,
-`two_mul_genus_sub_two_eq_of_artinSchreier_poles` derives nontriviality and exactness of
-the constants over any function field with exact constants. For an extension of `k(x)`,
-`two_mul_genus_eq_of_artinSchreier_poles` specialises this to
+`two_mul_genus_sub_two_eq_of_exists_reduced_artinSchreier_poles` derives nontriviality and
+exactness of the constants over any function field with exact constants. For an extension of `k(x)`,
+`two_mul_genus_ratFunc_eq_of_exists_reduced_artinSchreier_poles` specialises this to
 `2g = (p - 1) (∑ P ∈ S, (m P + 1) deg P - 2)`. Finiteness, separability,
 nontriviality, and exactness of the constants are derived from the equation and a pole.
 For a single pole, the sum is just `(m + 1) deg P`.
@@ -208,7 +208,7 @@ nonempty set of supplied reduced poles has no new constants. Its genus is determ
 `2g' - 2 = p (2g - 2) + (p - 1) ∑ P ∈ S, (m P + 1) deg P`.
 Finiteness, separability, nontriviality, and exactness of the extension's constants follow
 from the equation and a pole. The representatives may vary with the place. -/
-theorem two_mul_genus_sub_two_eq_of_artinSchreier_poles
+theorem two_mul_genus_sub_two_eq_of_exists_reduced_artinSchreier_poles
     (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F)
     (p : ℕ) [Fact p.Prime] [CharP F p]
     {y : F'} {u : F} (hgen : F⟮y⟯ = ⊤)
@@ -273,7 +273,7 @@ nonempty set of poles of orders prime to `p` has genus determined by
 `2g = (p - 1) (∑ P ∈ S, (m P + 1) deg P - 2)`. The representatives may vary with the place.
 For one rational pole of order `m`, this is `2g = (p - 1) (m - 1)`. Finiteness, separability,
 nontriviality, and exactness of the constants follow from the equation and a pole. -/
-theorem two_mul_genus_eq_of_artinSchreier_poles
+theorem two_mul_genus_ratFunc_eq_of_exists_reduced_artinSchreier_poles
     (p : ℕ) [Fact p.Prime] [CharP (RatFunc k) p]
     {y : F} {u : RatFunc k} (hgen : (RatFunc k)⟮y⟯ = ⊤)
     (hy : y ^ p - y = algebraMap (RatFunc k) F u)
@@ -284,7 +284,7 @@ theorem two_mul_genus_eq_of_artinSchreier_poles
       u - (w ^ p - w) ∈ Q.integers) :
     2 * (genus k F : ℤ) =
       (p - 1 : ℤ) * (∑ P ∈ S, (m P + 1 : ℤ) * P.degree - 2) := by
-  have hg := two_mul_genus_sub_two_eq_of_artinSchreier_poles
+  have hg := two_mul_genus_sub_two_eq_of_exists_reduced_artinSchreier_poles
     (IsFunctionField.ratFunc k) inferInstance p hgen hy S m hS hord hprime hreg
   simp only [genus_ratFunc, Nat.cast_zero, mul_zero, zero_sub] at hg
   linear_combination hg
