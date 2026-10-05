@@ -20,9 +20,12 @@ of the characters and the raising parameter. Finite linear combinations conseque
 coefficients `O(n^(k-1))`, and their coefficient L-series have abscissa of absolute
 convergence at most `k`.
 
-The estimate applies to the entire fixed-nebentypus Eisenstein subspace. Extending the bound
-to arbitrary modular forms requires a cusp–Eisenstein decomposition. We do not assert this
-power bound in weight two, where the untwisted divisor sum is not `O(n)`.
+The estimate applies to the entire fixed-nebentypus Eisenstein subspace, defined as the span
+of the normalized raised character series. Membership means being a finite linear combination
+of these generators and does not require a decomposition of the ambient modular-form space.
+Extending the abscissa bound to arbitrary modular forms requires a cusp–Eisenstein decomposition
+and the cusp-form coefficient bound. We do not assert this power bound in weight two, where
+the untwisted divisor sum is not `O(n)`.
 
 ## Main results
 
