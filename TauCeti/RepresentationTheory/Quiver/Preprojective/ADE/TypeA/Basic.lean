@@ -40,6 +40,10 @@ Coxeter number `h = n + 1` of `Aₙ`; that paths of length `n - 1` survive is no
 
 ## Main results
 
+* `TauCeti.signlessPreprojectiveMk_A_ofPath_eq_zero_of_endpoint_bound`: the finer vanishing
+  bound depending on the two endpoints.
+* `TauCeti.signlessPreprojectiveMk_A_ofPath_eq_zero_or_ladderValley`: length-preserving
+  reduction to a valley word.
 * `TauCeti.signlessPreprojectiveMk_A_ofPath_eq_zero_of_le`: paths of length at least `n` vanish in
   the signless algebra of `Aₙ`.
 * `TauCeti.preprojectiveMk_A_ofPath_eq_zero_of_le`: the same in the preprojective algebra of every
@@ -171,10 +175,13 @@ private theorem signlessArrow_relation (v : ℕ) :
   rw [signlessArrow_eq_zero k (i := v + 1) (j := v) fun hi _ => absurd (Finset.mem_range.2 hi) h,
     zero_mul]
 
-/-- **Every path of length at least `n` vanishes** in the signless algebra of a graph on `Fin n`
-whose edges join consecutive vertices. The heights are read from both ends of the path graph. -/
-private theorem signlessPreprojectiveMk_ofPath_eq_zero_of_le
-    (x : Quiver.TotalPath (DoubledQuiver G)) (hx : n ≤ x.2.2.length) :
+/-- Paths longer than either endpoint-height bound vanish. The heights are read from both
+ends of the path graph. -/
+private theorem signlessPreprojectiveMk_ofPath_eq_zero_of_endpoint_bound
+    (x : Quiver.TotalPath (DoubledQuiver G))
+    (hx : min (((vertexEquiv G).symm x.1 : ℕ) + (vertexEquiv G).symm x.2.1)
+      (2 * (n - 1) - ((vertexEquiv G).symm x.1 : ℕ) - (vertexEquiv G).symm x.2.1) <
+        x.2.2.length) :
     signlessPreprojectiveMk k _ (ofPath x) = 0 := by
   obtain ⟨a, b, p⟩ := x
   dsimp only at hx
@@ -238,13 +245,60 @@ section CommRing
 
 variable (k : Type*) [CommRing k] {n : ℕ}
 
+local notation "AG" => diagramGraph (DynkinType.cartanMatrix (DynkinType.A n))
+
+/-- A path from `a` to `b` in the signless algebra of `Aₙ` vanishes when its length exceeds
+`min (a + b) (2(n - 1) - a - b)`. -/
+theorem signlessPreprojectiveMk_A_ofPath_eq_zero_of_endpoint_bound
+    {a b : Fin (DynkinType.A n).rank} (p : Path (vertex AG a) (vertex AG b))
+    (hp : min (a.val + b.val) (2 * ((DynkinType.A n).rank - 1) - a.val - b.val) < p.length) :
+    signlessPreprojectiveMk k _ (ofPath ⟨_, _, p⟩) = 0 := by
+  apply signlessPreprojectiveMk_ofPath_eq_zero_of_endpoint_bound k
+    (n := (DynkinType.A n).rank) (G := AG) (fun i j => diagramGraph_A_adj n i j)
+  simpa only [vertexEquiv_symm_vertex] using hp
+
+/-- Every path in the signless algebra of `Aₙ` reduces to an integer multiple of a valley word,
+or to zero. The word descends from `a` to `m` and climbs to `b`, and its length is preserved. -/
+theorem signlessPreprojectiveMk_A_ofPath_eq_zero_or_ladderValley
+    {a b : Fin (DynkinType.A n).rank} (p : Path (vertex AG a) (vertex AG b)) :
+    signlessPreprojectiveMk k _ (ofPath ⟨_, _, p⟩) = 0 ∨
+      ∃ m s r : ℕ, ∃ ε : ℤ, s + r = p.length ∧ m + s = a.val ∧ m + r = b.val ∧
+        signlessPreprojectiveMk k _ (ofPath ⟨_, _, p⟩) =
+          ε • (ladderValley (fun w => signlessArrow k AG w (w + 1))
+            (fun w => signlessArrow k AG (w + 1) w) m s r *
+              signlessPreprojectiveMk k _ (vertexIdempotent k (vertex AG a))) := by
+  have h := signlessPreprojectiveMk_ofPath_eq_ladderValley k
+    (n := (DynkinType.A n).rank) (G := AG) (fun i => i.val)
+    (u := fun w => signlessArrow k AG w (w + 1))
+    (d := fun w => signlessArrow k AG (w + 1) w) ?_ ?_ ?_ p
+  · simpa only [vertexEquiv_symm_vertex, vertexIdempotent_eq_ofPath] using h
+  · have hzero : signlessArrow k AG 0 0 = 0 :=
+      signlessArrow_eq_zero_of_not_consecutive k (n := (DynkinType.A n).rank)
+        (G := AG) (fun i j => diagramGraph_A_adj n i j) (by omega)
+    simpa only [Nat.zero_add, Nat.sub_self, hzero, zero_mul, add_zero] using
+      signlessArrow_relation k (n := (DynkinType.A n).rank) (G := AG)
+        (fun i j => diagramGraph_A_adj n i j) 0
+  · intro w
+    simpa [add_comm] using signlessArrow_relation k (n := (DynkinType.A n).rank) (G := AG)
+      (fun i j => diagramGraph_A_adj n i j) (w + 1)
+  · intro i j hij
+    rcases (diagramGraph_A_adj n i j).1 hij with h | h
+    · exact .inl ⟨h.symm, by rw [← h]⟩
+    · exact .inr ⟨h.symm, by rw [← h]⟩
+
 /-- **Every path of length at least `n` vanishes in the signless algebra of `Aₙ`.** -/
 @[simp]
 theorem signlessPreprojectiveMk_A_ofPath_eq_zero_of_le
     (x : Quiver.TotalPath (DoubledQuiver (diagramGraph (DynkinType.A n).cartanMatrix)))
     (hx : n ≤ x.2.2.length) :
     signlessPreprojectiveMk k _ (ofPath x) = 0 :=
-  signlessPreprojectiveMk_ofPath_eq_zero_of_le k (diagramGraph_A_adj n) x hx
+  signlessPreprojectiveMk_ofPath_eq_zero_of_endpoint_bound k
+    (n := (DynkinType.A n).rank) (G := diagramGraph (DynkinType.A n).cartanMatrix)
+    (fun i j => diagramGraph_A_adj n i j) x (by
+      have ha := ((vertexEquiv (diagramGraph (DynkinType.A n).cartanMatrix)).symm x.1).isLt
+      have hb := ((vertexEquiv (diagramGraph (DynkinType.A n).cartanMatrix)).symm x.2.1).isLt
+      have hn := DynkinType.rank_A n
+      omega)
 
 variable (o : Orientation (diagramGraph (DynkinType.A n).cartanMatrix))
 
