@@ -187,6 +187,7 @@ variable [Fintype G]
 
 /-- The coefficient of the norm `∑ g, g • v` of `v : k[X]` at `x` is the sum of the coefficients of
 `v` at the points `g • x`. -/
+@[simp]
 theorem coeff_norm_ofMulAction (v : k[X]) (x : X) :
     ((ofMulAction k G X).norm v).coeff x = ∑ g : G, v.coeff (g • x) := by
   simp only [Representation.norm, LinearMap.sum_apply, coeff_sum, Finsupp.finsetSum_apply,
