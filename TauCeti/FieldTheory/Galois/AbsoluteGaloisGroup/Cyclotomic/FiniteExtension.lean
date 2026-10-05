@@ -119,7 +119,7 @@ divides the extension degree. This also applies when the base character is not s
 theorem relIndex_range_localCyclotomicCharacter_dvd_finrank :
     (localCyclotomicCharacter p L).range.relIndex (localCyclotomicCharacter p K).range ∣
       Module.finrank K L := by
-  rw [range_localCyclotomicCharacter_eq_map p K L σ, TauCeti.Subgroup.relIndex_map_range,
+  rw [range_localCyclotomicCharacter_eq_map p K L σ, TauCeti.subgroup_relIndex_map_range,
     ← index_range_absoluteGaloisGroupExtend K L σ]
   exact Subgroup.index_dvd_of_le le_sup_left
 

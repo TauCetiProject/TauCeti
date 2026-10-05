@@ -63,12 +63,15 @@ def OrthogonalCompactOpens.localSpinorNorm (hQ : Q.Nondegenerate) (p : Nat.Prime
   (CliffordAlgebra.spinorNorm (Q.baseChange ℚ_[p])
     (QuadraticForm.Nondegenerate.baseChange hQ)).comp (U.specialOrthogonal p).subtype
 
-/-- The restricted local spinor norm agrees with the ambient spinor norm. -/
-@[simp 1100]
+/-- The restricted local spinor norm agrees with the ambient orthogonal spinor norm. -/
+@[simp]
 theorem OrthogonalCompactOpens.localSpinorNorm_apply (hQ : Q.Nondegenerate)
     (p : Nat.Primes) (g : U.specialOrthogonal p) :
-    U.localSpinorNorm hQ p g = CliffordAlgebra.spinorNorm (Q.baseChange ℚ_[p])
-      (QuadraticForm.Nondegenerate.baseChange hQ) g := (rfl)
+    U.localSpinorNorm hQ p g = CliffordAlgebra.orthogonalSpinorNorm (Q.baseChange ℚ_[p])
+      (QuadraticForm.Nondegenerate.baseChange hQ)
+      (_root_.QuadraticMap.specialOrthogonalToOrthogonal (Q.baseChange ℚ_[p]) g) := by
+  rw [localSpinorNorm, MonoidHom.comp_apply, Subgroup.subtype_apply,
+    CliffordAlgebra.spinorNorm_apply]
 
 /-- The reference subgroup in the local square-class group is the image of the derived special
 orthogonal reference subgroup under the spinor norm. -/
@@ -84,7 +87,8 @@ theorem OrthogonalCompactOpens.mem_localSpinorNormImage_iff (hQ : Q.Nondegenerat
       ∃ g : U.specialOrthogonal p,
         CliffordAlgebra.spinorNorm (Q.baseChange ℚ_[p])
           (QuadraticForm.Nondegenerate.baseChange hQ) g = x := by
-  simp only [localSpinorNormImage, MonoidHom.mem_range, localSpinorNorm_apply]
+  simp only [localSpinorNormImage, MonoidHom.mem_range, localSpinorNorm_apply,
+    CliffordAlgebra.spinorNorm_apply]
 
 /-- The local spinor-norm reference image is open in the square-class group. -/
 theorem OrthogonalCompactOpens.isOpen_localSpinorNormImage (hQ : Q.Nondegenerate)

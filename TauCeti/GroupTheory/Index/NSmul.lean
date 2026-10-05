@@ -92,14 +92,14 @@ variable {G : Type*} [CommGroup G]
 A step of `index_range_pow_mul_card_ker`. -/
 -- Statement adapted from the private `relIndex_range_comp_subtype` in Michael Stoll's
 -- `EllipticCurves` (`EllipticCurves/Mathlib/SelmerGroup.lean`, pin `66889eada51a`); the proof
--- here uses `TauCeti.Subgroup.relIndex_map_range` rather than the source's own surjection
+-- here uses `TauCeti.subgroup_relIndex_map_range` rather than the source's own surjection
 -- `G → nG ⧸ nU` and quotient-isomorphism argument.
 @[to_additive]
 private lemma relIndex_range_comp_subtype (U : Subgroup G) (n : ℕ) :
     (((powMonoidHom (α := G) n).comp U.subtype).range).relIndex
         (powMonoidHom (α := G) n).range =
       ((powMonoidHom (α := G) n).ker ⊔ U).index := by
-  rw [MonoidHom.range_comp, Subgroup.range_subtype, TauCeti.Subgroup.relIndex_map_range,
+  rw [MonoidHom.range_comp, Subgroup.range_subtype, TauCeti.subgroup_relIndex_map_range,
     sup_comm]
 
 /-- The second isomorphism theorem applied to `G[n]` and `U`: `(U : G[n] ⊔ U) * #U[n] = #G[n]`.
