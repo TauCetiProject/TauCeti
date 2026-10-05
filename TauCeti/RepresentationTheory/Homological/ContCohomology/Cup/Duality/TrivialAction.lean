@@ -84,30 +84,7 @@ section Separation
 variable {A : Type uA} [AddCommGroup A] [DistribMulAction G A] (hA : ∀ a : A, n • a = 0)
   (hAtriv : ∀ (g : G) (a : A), g • a = a)
 
-omit [NeZero n] in
-include hN in
-/-- `G` acts trivially on `Nᵏ`. -/
-private theorem smul_pi_eq_self {ι : Type*} (g : G) (f : ι → N) : g • f = f :=
-  funext fun i ↦ hN g (f i)
-
-omit [NeZero n] in
-include e in
-/-- `Nᵏ` is killed by `n`, as `N ≃+ ZMod n` is. -/
-private theorem nsmul_pi_eq_zero {ι : Type*} (f : ι → N) : n • f = 0 :=
-  funext fun i ↦ e.injective (by
-    rw [Pi.smul_apply, map_nsmul, nsmul_eq_mul, ZMod.natCast_self, zero_mul, Pi.zero_apply,
-      map_zero])
-
 include hN e hA hAtriv
-
-/-- The equivariant maps `A → N` separate the points of a module `A` with trivial action killed
-by `n`: these are all the additive maps, and those to `ℤ/n` separate points. -/
-private theorem exists_distribMulActionHom_apply_ne_zero {a : A} (ha : a ≠ 0) :
-    ∃ f : A →+[G] N, f a ≠ 0 := by
-  obtain ⟨f, hf⟩ := exists_addMonoidHom_zmod_apply_ne_zero hA ha
-  exact ⟨{ e.symm.toAddMonoidHom.comp f with
-      map_smul' g a := by rw [MonoidHom.id_apply, hAtriv, hN] },
-    fun h ↦ hf (e.symm.map_eq_zero_iff.1 h)⟩
 
 variable [TopologicalSpace G] [IsTopologicalGroup G] [TopologicalSpace N] [DiscreteTopology N]
   [ContinuousSMul G N] [TopologicalSpace A] [DiscreteTopology A] [ContinuousSMul G A]
@@ -165,8 +142,8 @@ private def piSuccShortExact (k : ℕ) : DiscreteShortExact G N (Fin (k + 1) →
   incl := AddMonoidHom.single (fun _ : Fin (k + 1) ↦ N) 0
   proj := AddMonoidHom.pi fun i ↦ Pi.evalAddMonoidHom _ i.succ
   incl_equivariant g y := by
-    simp only [hN, smul_pi_eq_self hN]
-  proj_equivariant g f := by rw [smul_pi_eq_self hN, smul_pi_eq_self hN]
+    simp only [hN, Pi.smul_def]
+  proj_equivariant g f := by simp only [hN, Pi.smul_def]
   incl_injective _ _ h := Pi.single_injective (M := fun _ : Fin (k + 1) ↦ N) 0 h
   proj_surjective f := ⟨Fin.cons 0 f, funext fun i ↦ by simp⟩
   exact f := by
@@ -197,7 +174,7 @@ private theorem dualityMap_pi [Finite N] (h₀ : Function.Surjective (dualityMap
     obtain ⟨_, hNB⟩ := Module.Baer.exists_module_of_addEquiv_zmod e
     obtain ⟨_, hH2⟩ := Module.Baer.exists_module_of_addEquiv_zmod e₂
     let S := piSuccShortExact hN k
-    have hB (f : Fin (k + 1) → N) : n • f = 0 := nsmul_pi_eq_zero e f
+    have hB (f : Fin (k + 1) → N) : n • f = 0 := funext fun i ↦ e.injective (by simp)
     have hsurj := S.precomp_inclDistribMulActionHom_surjective_of_baer N hNB hB
     exact ⟨S.dualityMap0_surjective hsurj hB hH2 h₀ ih.1 h₁.1,
       ⟨S.dualityMap1_injective hsurj hB hH2 ih.1 h₁.1 ih.2.1.1,
@@ -244,13 +221,14 @@ private theorem exists_discreteShortExact : ∃ (k : ℕ) (C : Type uN) (_ : Add
     Finite.of_surjective _ (QuotientAddGroup.mk'_surjective _), hCtriv, fun c ↦ ?_,
     ⟨{ incl := ι
        proj := QuotientAddGroup.mk' _
-       incl_equivariant g a := by rw [hAtriv, smul_pi_eq_self hN]
-       proj_equivariant g f := by rw [smul_pi_eq_self hN, hCtriv]
+       incl_equivariant g a := by simp only [hAtriv, hN, Pi.smul_def]
+       proj_equivariant g f := by simp only [hN, hCtriv, Pi.smul_def]
        incl_injective := hι
        proj_surjective := QuotientAddGroup.mk'_surjective _
        exact f := (QuotientAddGroup.eq_zero_iff f).trans AddMonoidHom.mem_range }⟩⟩
   induction c using QuotientAddGroup.induction_on with | H f => ?_
-  rw [← QuotientAddGroup.mk_nsmul, nsmul_pi_eq_zero e f, QuotientAddGroup.mk_zero]
+  have hf : n • f = 0 := funext fun i ↦ e.injective (by simp)
+  rw [← QuotientAddGroup.mk_nsmul, hf, QuotientAddGroup.mk_zero]
 
 end Embedding
 
@@ -277,7 +255,7 @@ private theorem dualityMap1_injective_of_smul_eq_self :
   obtain ⟨k, C, _, _, _, _, _, _, hCtriv, hC, ⟨S⟩⟩ := exists_discreteShortExact hN e hA hAtriv
   obtain ⟨_, hNB⟩ := Module.Baer.exists_module_of_addEquiv_zmod e
   obtain ⟨_, hH2⟩ := Module.Baer.exists_module_of_addEquiv_zmod e₂
-  have hB (f : Fin k → N) : n • f = 0 := nsmul_pi_eq_zero e f
+  have hB (f : Fin k → N) : n • f = 0 := funext fun i ↦ e.injective (by simp)
   have hF := dualityMap_pi hN e e₂ h₀.2 h₁ h₂ k
   exact S.dualityMap1_injective_left (S.precomp_inclDistribMulActionHom_surjective_of_baer N hNB hB)
     hB hH2 hF.1 (dualityMap0_injective_of_smul_eq_self hN e hC hCtriv h₀.1) hF.2.1.1
@@ -290,7 +268,7 @@ private theorem dualityMap2_injective_of_smul_eq_self :
   obtain ⟨k, C, _, _, _, _, _, _, hCtriv, hC, ⟨S⟩⟩ := exists_discreteShortExact hN e hA hAtriv
   obtain ⟨_, hNB⟩ := Module.Baer.exists_module_of_addEquiv_zmod e
   obtain ⟨_, hH2⟩ := Module.Baer.exists_module_of_addEquiv_zmod e₂
-  have hB (f : Fin k → N) : n • f = 0 := nsmul_pi_eq_zero e f
+  have hB (f : Fin k → N) : n • f = 0 := funext fun i ↦ e.injective (by simp)
   have hF := dualityMap_pi hN e e₂ h₀.2 h₁ h₂ k
   exact S.dualityMap2_injective_left (S.precomp_inclDistribMulActionHom_surjective_of_baer N hNB hB)
     hB hH2 hF.2.1.2 (dualityMap1_injective_of_smul_eq_self hN e e₂ h₀ h₁ h₂ hC hCtriv) hF.2.2
