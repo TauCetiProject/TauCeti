@@ -22,11 +22,6 @@ The continuous and analytic splitting theorems give the single-valued root funct
 Puiseux factorization with parameters. These functions are defined on the punctured domain only;
 extension across the missing hyperplane requires a separate removable-singularity argument.
 
-The underlying root-covering, lifting, and implicit-root results are
-`TauCeti.Polynomial.isCoveringMap_fst_isRoot`,
-`IsCoveringMap.exists_continuousMap_lifts_powerSubstitution`, and
-`TauCeti.Polynomial.analyticAt_of_eventually_isRoot`.
-
 ## References
 
 * S. McCallum, A. Parusiński, L. Paunescu, *Validity proof of Lazard's method for CAD
