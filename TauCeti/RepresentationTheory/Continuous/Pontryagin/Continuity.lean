@@ -170,6 +170,9 @@ theorem continuous_integratedCharacterToPontryaginDual :
     hnum.continuousAt.div hden.continuousAt (by simpa only [a] using hf)
   have hden_ne : ∀ᶠ p in 𝓝 (ω, g), p.1.1 a ≠ 0 :=
     hden.continuousAt.eventually_ne (by simpa only [a] using hf)
+  -- `Circle` is a non-reducible type synonym for the unit-sphere subtype of `ℂ`, so
+  -- `continuous_induced_rng` leaves the goal in terms of `Subtype.val`, which `simp` cannot
+  -- match against the `Circle` coercion used by the quotient formula; restate it by unfolding.
   change ContinuousAt (fun p : D × Multiplicative G => (θ p.1 p.2 : ℂ)) (ω, g)
   apply hquot.congr_of_eventuallyEq
   filter_upwards [hden_ne] with p hp
