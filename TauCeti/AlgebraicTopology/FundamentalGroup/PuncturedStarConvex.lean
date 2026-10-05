@@ -227,6 +227,7 @@ loop around the puncture.** For simply connected `U`, the class of
 `t ↦ (u, p + (z - p) e^{2πit})` generates `π₁(U × (ball p R \ {p}), (u, z))`. Its direction has
 degree one, and the degree of the direction identifies the group with `ℤ`
 (`TauCeti.fundamentalGroupMulEquiv_comp_map_directionFrom_comp_snd_bijective`). -/
+@[simp]
 theorem zpowers_loopAround_eq_top (u : U) (z : ↥(ball p R \ {p})) :
     Subgroup.zpowers (FundamentalGroup.fromPath
       (Path.Homotopic.Quotient.mk ((Path.refl u).prod (p.loopAround z)))) = ⊤ := by
