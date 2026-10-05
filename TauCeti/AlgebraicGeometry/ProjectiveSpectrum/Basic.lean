@@ -7,7 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.ProjectiveSpectrum.Functor
 public import TauCeti.RingTheory.GradedAlgebra.Homogeneous.Maps
-public import TauCeti.RingTheory.GradedAlgebra.HomogeneousLocalization
+public import TauCeti.RingTheory.GradedAlgebra.HomogeneousLocalization.Basic
 
 /-!
 # Points of `Proj` through standard charts, and compatibilities of `Proj.map`

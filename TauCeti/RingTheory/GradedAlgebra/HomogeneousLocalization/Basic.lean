@@ -8,7 +8,7 @@ module
 public import Mathlib.RingTheory.GradedAlgebra.HomogeneousLocalization
 
 /-!
-# Lifting homogeneous localizations away from an element
+# Coefficients and lifts for homogeneous localizations
 
 For a graded ring `A`, an element `f : A` and a ring homomorphism `φ : A →+* R` with `φ f` a unit,
 `HomogeneousLocalization.Away.lift 𝒜 φ hf` is the ring homomorphism `A_{(f)} →+* R` sending
@@ -17,8 +17,13 @@ For a graded ring `A`, an element `f : A` and a ring homomorphism `φ : A →+* 
 degree, `Spec A_{(f)}` is the standard affine chart `D₊(f)` of `Proj A`, and `Spec` of `lift` is
 the morphism `Spec R ⟶ D₊(f) ⊆ Proj A` given by the "homogeneous coordinates" `φ`.
 
+For a graded algebra over a coefficient ring, homogeneous localization inherits the
+coefficient algebra structure, and fractions with a fixed homogeneous denominator depend
+linearly on their numerator. This permits scalar extension of the homogeneous affine charts.
+
 ## Main definitions
 
+* `HomogeneousLocalization.Away.mkLinearMap`: the linear numerator map for a fixed denominator.
 * `HomogeneousLocalization.Away.lift`: the ring homomorphism `A_{(f)} →+* R` induced by `φ`.
 
 ## Main results
@@ -125,5 +130,84 @@ particular, it is reduced whenever the graded ring is. -/
 instance isReduced (x : Submonoid A) [IsReduced (Localization x)] :
     IsReduced (HomogeneousLocalization 𝒜 x) :=
   isReduced_of_injective (algebraMap _ (Localization x)) (val_injective x)
+
+/-- The homogeneous localization map is the restriction of the ordinary localization map. -/
+@[simp]
+theorem val_map {ι A B σ τ : Type*} [AddCommMonoid ι] [DecidableEq ι]
+    [CommRing A] [CommRing B] [SetLike σ A] [AddSubgroupClass σ A]
+    [SetLike τ B] [AddSubgroupClass τ B] {𝒜 : ι → σ} {ℬ : ι → τ}
+    [GradedRing 𝒜] [GradedRing ℬ] (g : 𝒜 →+*ᵍ ℬ)
+    {P : Submonoid A} {Q : Submonoid B} (h : P ≤ Q.comap g)
+    (z : HomogeneousLocalization 𝒜 P) :
+    (map g h z).val = IsLocalization.map (Localization Q) g.toRingHom h z.val := by
+  obtain ⟨c, rfl⟩ := mk_surjective z
+  simp only [HomogeneousLocalization.map_mk, HomogeneousLocalization.val_mk,
+    Localization.mk_eq_mk']
+  exact (IsLocalization.map_mk' (S := Localization P) (Q := Localization Q) (g := g.toRingHom)
+    (M := P) (T := Q) h (c.num : A) ⟨c.den, c.den_mem⟩).symm
+
+/-- The degree-zero coefficient map sends `a` to the ordinary fraction `a/1`. -/
+@[simp]
+theorem val_fromZeroRingHom {ι A σ : Type*} [AddCommMonoid ι] [DecidableEq ι]
+    [CommRing A] [SetLike σ A] [AddSubgroupClass σ A] (𝒜 : ι → σ)
+    [GradedRing 𝒜] (P : Submonoid A) (a : 𝒜 0) :
+    (fromZeroRingHom 𝒜 P a).val = algebraMap A (Localization P) a :=
+  Localization.mk_one_eq_algebraMap _
+
+variable {ι R A : Type*} [AddCommMonoid ι] [DecidableEq ι]
+  [CommRing R] [CommRing A] [Algebra R A]
+  (𝒜 : ι → Submodule R A) [GradedAlgebra 𝒜] (P : Submonoid A)
+
+/-- Homogeneous localization of a graded algebra is an algebra over its coefficient ring. -/
+instance algebra : Algebra R (HomogeneousLocalization 𝒜 P) where
+  algebraMap := (fromZeroRingHom 𝒜 P).comp (algebraMap R (𝒜 0))
+  commutes' _ _ := mul_comm _ _
+  smul_def' r z := by
+    apply val_injective P
+    simp only [val_smul, Algebra.smul_def, val_mul, RingHom.comp_apply,
+      val_fromZeroRingHom, SetLike.GradeZero.coe_algebraMap]
+    rw [← IsScalarTower.algebraMap_apply R A (Localization P)]
+
+/-- The coefficient map is the composite through the degree-zero part. -/
+theorem algebraMap_eq_comp :
+    algebraMap R (HomogeneousLocalization 𝒜 P) =
+      (fromZeroRingHom 𝒜 P).comp (algebraMap R (𝒜 0)) := (rfl)
+
+/-- Forgetting homogeneity respects coefficients. -/
+@[simp]
+theorem val_algebraMap (r : R) :
+    (algebraMap R (HomogeneousLocalization 𝒜 P) r).val =
+      algebraMap R (Localization P) r := by
+  rw [algebraMap_eq_comp, RingHom.comp_apply, val_fromZeroRingHom]
+  simp only [SetLike.GradeZero.coe_algebraMap,
+    ← IsScalarTower.algebraMap_apply R A (Localization P)]
+
+/-- The coefficient action factors through homogeneous localization into ordinary localization. -/
+instance isScalarTower :
+    IsScalarTower R (HomogeneousLocalization 𝒜 P) (Localization P) :=
+  IsScalarTower.of_algebraMap_eq' (R := R) (S := HomogeneousLocalization 𝒜 P)
+    (A := Localization P) (by
+    ext r
+    exact (val_algebraMap 𝒜 P r).symm)
+
+variable {𝒜}
+
+/-- Fractions with a fixed homogeneous denominator depend linearly on the numerator. -/
+noncomputable def Away.mkLinearMap {f : A} {d : ι} (hf : f ∈ 𝒜 d) (n : ℕ) :
+    𝒜 (n • d) →ₗ[R] Away 𝒜 f where
+  toFun a := Away.mk 𝒜 hf n a a.2
+  map_add' a b := by
+    apply val_injective
+    simp only [Away.val_mk, val_add, Submodule.coe_add]
+    exact (Localization.add_mk_self _ _ _).symm
+  map_smul' r a := by
+    apply val_injective
+    simp only [Away.val_mk, val_smul, Submodule.coe_smul]
+    exact (Localization.smul_mk (S := Submonoid.powers f) r (a : A) _).symm
+
+/-- The linear numerator map forms the homogeneous fraction with the chosen denominator. -/
+@[simp]
+theorem Away.mkLinearMap_apply {f : A} {d : ι} (hf : f ∈ 𝒜 d) (n : ℕ)
+    (a : 𝒜 (n • d)) : Away.mkLinearMap (𝒜 := 𝒜) hf n a = Away.mk 𝒜 hf n a a.2 := (rfl)
 
 end HomogeneousLocalization

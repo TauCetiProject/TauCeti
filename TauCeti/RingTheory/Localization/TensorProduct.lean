@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Localization.Defs
+public import Mathlib.RingTheory.Localization.BaseChange
 public import Mathlib.RingTheory.TensorProduct.Basic
 import Mathlib.RingTheory.Localization.Basic
 
@@ -16,6 +16,9 @@ Let `K` be a localization of `R` and let `A` be an `R`-algebra. Mathlib's
 `IsLocalization.linearMap_compatibleSMul` says that an `R`-linear map between `K`-modules is
 automatically `K`-linear. This file records the analogue for the ring `K ⊗[R] A`: on modules where
 `q ⊗ₜ a` acts as `q • a • _`, every `A`-linear map is `K ⊗[R] A`-linear.
+
+The ordinary-localization base-change isomorphism also agrees with the localized
+coefficient inclusion on every localized element.
 
 ## Main results
 
@@ -52,3 +55,46 @@ theorem linearMap_compatibleSMul_tensorProduct {V W : Type*} [AddCommMonoid V] [
     | add b c hb hc => rw [add_smul, map_add, hb, hc, add_smul]
 
 end TauCeti.IsLocalization
+
+namespace IsLocalization.Away
+
+open scoped TensorProduct
+
+variable {R A : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A]
+  (S : Type*) [CommSemiring S] [Algebra R S]
+  (f : A) (B : Type*) [CommSemiring B] [Algebra R B] [Algebra A B]
+  [IsScalarTower R A B] [IsLocalization.Away f B]
+
+/-- Ordinary-localization base change extends an arbitrary localized element by the
+localized coefficient inclusion. -/
+@[simp]
+theorem tensorProductEquivTMulRight_one_tmul (z : B) :
+    tensorProductEquivTMulRight R S f B (1 ⊗ₜ[R] z) =
+      IsLocalization.Away.map B (Localization.Away
+        ((Algebra.TensorProduct.includeRight : A →ₐ[R] S ⊗[R] A).toRingHom f))
+        (P := S ⊗[R] A)
+        (Algebra.TensorProduct.includeRight : A →ₐ[R] S ⊗[R] A).toRingHom f z := by
+  let e := tensorProductEquivTMulRight R S f B
+  have h : e.toRingHom.comp
+      (Algebra.TensorProduct.includeRight : B →ₐ[R] S ⊗[R] B).toRingHom =
+      IsLocalization.Away.map B (Localization.Away
+        ((Algebra.TensorProduct.includeRight : A →ₐ[R] S ⊗[R] A).toRingHom f))
+        (P := S ⊗[R] A)
+        (Algebra.TensorProduct.includeRight : A →ₐ[R] S ⊗[R] A).toRingHom f := by
+    apply IsLocalization.ringHom_ext (Submonoid.powers f)
+    ext a
+    -- Normalize the stored ring-hom composition to its pure-tensor formula.
+    change e (1 ⊗ₜ[R] algebraMap A B a) =
+      IsLocalization.Away.map B (Localization.Away
+        ((Algebra.TensorProduct.includeRight : A →ₐ[R] S ⊗[R] A).toRingHom f))
+        (P := S ⊗[R] A)
+        (Algebra.TensorProduct.includeRight : A →ₐ[R] S ⊗[R] A).toRingHom f
+        (algebraMap A B a)
+    dsimp only [e]
+    erw [tensorProductEquivTMulRight_tmul]
+    simp only [IsLocalization.Away.map]
+    erw [IsLocalization.map_eq]
+    rfl
+  exact RingHom.congr_fun h z
+
+end IsLocalization.Away

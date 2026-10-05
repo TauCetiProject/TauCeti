@@ -7,7 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.ProjectiveSpectrum.Basic
 public import Mathlib.AlgebraicGeometry.Properties
-import TauCeti.RingTheory.GradedAlgebra.HomogeneousLocalization
+import TauCeti.RingTheory.GradedAlgebra.HomogeneousLocalization.Basic
 
 /-!
 # Reducedness and integrality of `Proj`
