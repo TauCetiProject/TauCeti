@@ -152,9 +152,12 @@ private theorem signlessArrow_eq_zero_of_not_consecutive {i j : ℕ} (h : ¬(i +
     signlessArrow k G i j = 0 :=
   signlessArrow_eq_zero k fun _ _ hij => h ((hG _ _).1 hij)
 
-/-- **The signless relation at a vertex `v` of a path**: the backtrack through `v + 1` cancels the
-backtrack through `v - 1`. At an end vertex the missing backtrack is zero. -/
-theorem signlessArrow_relation_of_consecutive (v : ℕ) :
+omit hG in
+/-- **The signless relation at a vertex `v` of a graph whose edges join consecutive vertices**:
+the backtrack through `v + 1` cancels the backtrack through `v - 1`.
+At an end vertex the missing backtrack is zero. -/
+theorem signlessArrow_relation_of_consecutive
+    (hconsecutive : ∀ i j : Fin n, G.Adj i j → (i : ℕ) + 1 = j ∨ (j : ℕ) + 1 = i) (v : ℕ) :
     signlessArrow k G (v + 1) v * signlessArrow k G v (v + 1) +
       signlessArrow k G (v - 1) v * signlessArrow k G v (v - 1) = 0 := by
   by_cases hv : v < n
@@ -164,7 +167,7 @@ theorem signlessArrow_relation_of_consecutive (v : ℕ) :
   let F : ℕ → signlessPreprojectiveAlgebra k (DoubledQuiver G) :=
     fun w => signlessArrow k G w v * signlessArrow k G v w
   have hF (w : ℕ) (hw : ¬(w + 1 = v ∨ v + 1 = w)) : F w = 0 := by
-    simp only [F, signlessArrow_eq_zero_of_not_consecutive k hG hw, zero_mul]
+    simp only [F, signlessArrow_eq_zero k (fun _ _ hij => hw (hconsecutive _ _ hij)), zero_mul]
   -- Only the neighbours `v - 1` and `v + 1` contribute to the relation at `v`.
   have hrel := sum_signlessArrow_mul_signlessArrow k G (⟨v, hv⟩ : Fin n)
   rw [Fin.sum_univ_eq_sum_range F n] at hrel
@@ -192,9 +195,11 @@ private theorem signlessPreprojectiveMk_ofPath_eq_zero_of_endpoint_bound
   · refine signlessPreprojectiveMk_ofPath_eq_zero_of_lt k (fun i => i)
       (u := fun w => signlessArrow k G w (w + 1)) (d := fun w => signlessArrow k G (w + 1) w) ?_
       (fun w => by
-        simpa [add_comm] using signlessArrow_relation_of_consecutive k hG (w + 1)) ?_ p hlow
+        simpa [add_comm] using
+          signlessArrow_relation_of_consecutive k
+            (fun i j hij => (hG i j).mp hij) (w + 1)) ?_ p hlow
     · simpa [signlessArrow_eq_zero_of_not_consecutive k hG (i := 0) (j := 0)] using
-        signlessArrow_relation_of_consecutive k hG 0
+        signlessArrow_relation_of_consecutive k (fun i j hij => (hG i j).mp hij) 0
     · intro i j hij
       rcases (hG i j).1 hij with h | h
       · exact .inl ⟨h.symm, by rw [← h]⟩
@@ -203,11 +208,12 @@ private theorem signlessPreprojectiveMk_ofPath_eq_zero_of_endpoint_bound
   refine signlessPreprojectiveMk_ofPath_eq_zero_of_lt k (fun i => n - 1 - i)
     (u := fun w => signlessArrow k G (n - 1 - w) (n - 1 - (w + 1)))
     (d := fun w => signlessArrow k G (n - 1 - (w + 1)) (n - 1 - w)) ?_ (fun w => ?_) ?_ p (by omega)
-  · have h := signlessArrow_relation_of_consecutive k hG (n - 1)
+  · have h := signlessArrow_relation_of_consecutive k (fun i j hij => (hG i j).mp hij) (n - 1)
     rw [signlessArrow_eq_zero k (i := n - 1 + 1) (fun _ => by omega), zero_mul, zero_add] at h
     simpa using h
   · by_cases hw : w + 1 ≤ n - 1
-    · have h := signlessArrow_relation_of_consecutive k hG (n - 1 - (w + 1))
+    · have h := signlessArrow_relation_of_consecutive k (fun i j hij => (hG i j).mp hij)
+        (n - 1 - (w + 1))
       have hnext : n - 1 - (w + 1) + 1 = n - 1 - w := by omega
       have hprev : n - 1 - (w + 1) - 1 = n - 1 - (w + 1 + 1) := by omega
       rw [hnext, hprev, add_comm] at h
@@ -271,11 +277,11 @@ theorem signlessPreprojectiveMk_A_ofPath_eq_zero_or_ladderValley
         (G := AG) (fun i j => diagramGraph_A_adj n i j) (by omega)
     simpa only [Nat.zero_add, Nat.sub_self, hzero, zero_mul, add_zero] using
       signlessArrow_relation_of_consecutive k (n := (DynkinType.A n).rank) (G := AG)
-        (fun i j => diagramGraph_A_adj n i j) 0
+        (fun i j hij => (diagramGraph_A_adj n i j).mp hij) 0
   · intro w
     simpa [add_comm] using
       signlessArrow_relation_of_consecutive k (n := (DynkinType.A n).rank) (G := AG)
-      (fun i j => diagramGraph_A_adj n i j) (w + 1)
+      (fun i j hij => (diagramGraph_A_adj n i j).mp hij) (w + 1)
   · intro i j hij
     rcases (diagramGraph_A_adj n i j).1 hij with h | h
     · exact .inl ⟨h.symm, by rw [← h]⟩
