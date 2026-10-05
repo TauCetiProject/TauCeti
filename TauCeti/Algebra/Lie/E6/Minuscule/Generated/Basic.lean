@@ -211,4 +211,11 @@ noncomputable abbrev finiteTypeGeneratedCoordinateHopfAlgebra : FiniteTypeCommHo
   ⟨generatedCoordinateHopfAlgebra A,
     inferInstanceAs (Algebra.FiniteType A (generatedCoordinateHopfAlgebra A))⟩
 
+/-- The finite-type package has the generated coordinate Hopf algebra as its underlying object. -/
+-- Simplify the projection before unfolding the generated coordinate Hopf algebra.
+@[simp↓]
+theorem finiteTypeGeneratedCoordinateHopfAlgebra_obj :
+    (finiteTypeGeneratedCoordinateHopfAlgebra A).obj = generatedCoordinateHopfAlgebra A :=
+  (rfl)
+
 end TauCeti.E6Minuscule
