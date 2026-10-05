@@ -184,6 +184,7 @@ theorem exists_associated_mem_lazardProjection (hB : F.IsIrreducibleBasis B)
 an irreducible basis contains `0` exactly when the family contains the zero polynomial. Thus for
 a family of nonzero polynomials, the contents of its members and the leading coefficients,
 trailing coefficients, discriminants and pairwise resultants of the basis are all nonzero. -/
+@[simp]
 theorem zero_mem_lazardProjection_iff [CharZero R] (hB : F.IsIrreducibleBasis B) :
     0 ∈ F.lazardProjection B ↔ 0 ∈ F := by
   refine ⟨fun h ↦ ?_, fun h ↦ by simpa using content_mem_lazardProjection (B := B) h⟩
