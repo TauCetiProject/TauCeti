@@ -30,6 +30,10 @@ the total energy is `f p - f q`; in particular it depends only on the endpoints.
 formulas apply to the trajectories themselves, without manifold structures on their stable
 and unstable sets.
 
+Apply the trajectory lemmas by their qualified names in `TauCeti.IsIntegralCurveOn` and
+`TauCeti.IsIntegralCurve`, following the organization of `Morse.GradientFlow`. The
+connecting-orbit lemmas are in `TauCeti.Flow.IsNegativeGradient`.
+
 ## References
 
 * M. Audin and M. Damian, *Morse Theory and Floer Homology*, Springer Universitext, 2014,
