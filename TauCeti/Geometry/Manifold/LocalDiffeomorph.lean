@@ -74,7 +74,7 @@ This computation rule lets callers use the constructor without unfolding its cho
 @[simp]
 theorem coe_diffeomorphOfBijective
     {I : ModelWithCorners 𝕂 E H} {J : ModelWithCorners 𝕂 F G} {n : WithTop ℕ∞}
-    {f : M → N} (hf : _root_.IsLocalDiffeomorph I J n f) (hf' : Function.Bijective f) :
+    {f : M → N} {hf : _root_.IsLocalDiffeomorph I J n f} {hf' : Function.Bijective f} :
     ⇑(hf.diffeomorphOfBijective hf') = f := by
   rfl
 
