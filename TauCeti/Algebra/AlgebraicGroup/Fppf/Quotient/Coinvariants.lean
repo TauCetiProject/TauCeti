@@ -6,9 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Fppf.Quotient.Kernel
-public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Coinvariants.Exactness
-public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Coinvariants.FiniteType
-public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Kernel.Exact
+public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Coinvariants.ShortExact
 
 /-!
 # Representing normal fppf quotients by coinvariants
@@ -45,15 +43,6 @@ variable {k : Type u} [Field k] {H : _root_.CommHopfAlgCat.{u} k}
   [Algebra.FiniteType k H] [Algebra.IsGeometricallyReduced k H]
   {I : HopfIdeal k H}
 
-/-- The inclusion of normal coinvariants and restriction to the normal subgroup form
-a short exact sequence of affine groups. The subgroup need not be reduced. -/
-theorem isShortExact_coinvariantsι_mkQuotient (hI : I.IsNormal) :
-    IsShortExact (coinvariantsι hI) (mkQuotient H I) := by
-  have h := isShortExact_mkQuotient_kernelHopfIdeal
-    (coinvariantsι hI) (faithfullyFlat_coinvariantsι hI)
-  rw [kernelHopfIdeal_coinvariantsι_eq hI] at h
-  exact h
-
 /-- The fppf quotient by a normal closed subgroup of a geometrically reduced finite-type
 affine group is represented by its coinvariant Hopf algebra. -/
 def coinvariantsFppfQuotientIso (hI : I.IsNormal) :
@@ -64,7 +53,7 @@ def coinvariantsFppfQuotientIso (hI : I.IsNormal) :
 
 /-- The representing isomorphism carries the fppf quotient projection to the affine
 group morphism defined by the inclusion of coinvariants. -/
-@[reassoc (attr := simp)]
+@[reassoc (attr := simp), simp]
 theorem fppfQuotientProjection_comp_coinvariantsFppfQuotientIso_hom
     (hI : I.IsNormal) :
     fppfQuotientProjection H I hI ≫ (coinvariantsFppfQuotientIso hI).hom =
