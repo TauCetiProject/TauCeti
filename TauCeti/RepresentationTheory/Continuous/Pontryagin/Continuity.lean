@@ -41,6 +41,10 @@ spectral measure to the Pontryagin dual.
 ## References
 
 * G. B. Folland, *A Course in Abstract Harmonic Analysis*, second edition, §§3.2 and 4.4.
+* The local-quotient continuity proof generalizes Tau Ceti's earlier formalization in
+  `TauCeti.StronglyContinuousSpectral.continuousOn_dual`
+  (`TauCeti.Analysis.Fourier.Pontryagin.StronglyContinuous`), which was stated for the
+  integrated algebra of a unitary representation with respect to a Haar measure.
 -/
 
 public section
