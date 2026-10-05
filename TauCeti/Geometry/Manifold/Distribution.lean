@@ -144,6 +144,12 @@ def IsContMDiffDistribution (D : Π x : M, Submodule 𝕜 (TangentSpace I x)) : 
 
 variable {D : Π x : M, Submodule 𝕜 (TangentSpace I x)}
 
+/-- The defining property of a `C^n` distribution of rank `k`. -/
+theorem isContMDiffDistribution_iff : IsContMDiffDistribution I n k D ↔
+    ∀ x : M, ∃ U : Set M, IsOpen U ∧ x ∈ U ∧
+      ∃ X : Fin k → Π y : M, TangentSpace I y, IsDistributionFrameOn I n D X U :=
+  Iff.rfl
+
 /-- A distribution has rank `k` and class `C^n` as soon as every point has a neighbourhood, not
 necessarily open, on which it has a `C^n` local frame of `k` vector fields. -/
 theorem IsContMDiffDistribution.of_mem_nhds
