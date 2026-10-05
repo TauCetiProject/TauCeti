@@ -20,9 +20,10 @@ even when the leading coefficient vanishes on an exceptional parameter set.
 We first establish the root-scaling law over any commutative ring. Both formulas use
 Mathlib's convention that constant polynomials, including zero, have discriminant `1`.
 
-The proofs use Mathlib's `scaleRoots`, `integralNormalization`, and its reduction of polynomial
-identities to split polynomials over fields, together with the existing root-product formula
-for the discriminant. No external formalization is copied.
+Mathlib's `scaleRoots` and `integralNormalization` satisfy
+`f.scaleRoots f.leadingCoeff = f.integralNormalization * C f.leadingCoeff`.
+The root-scaling identity controls the discriminant before monic normalization; for nonzero
+`f`, the integral-normalization identity gives the discriminant of the resulting monic polynomial.
 
 ## References
 
