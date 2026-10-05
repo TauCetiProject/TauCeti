@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Grid.JFunction.Center
-public import TauCeti.KnotTheory.Grid.Rotation
 
 /-!
 # Pairing the diagonal state against markings
