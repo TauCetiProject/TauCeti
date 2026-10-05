@@ -51,9 +51,7 @@ omit [Invertible (2 : R)] in
 /-- The ambient Clifford value of `rightIotaEven`. -/
 theorem coe_rightIotaEven (e m : M) :
     (rightIotaEven Q e m : CliffordAlgebra Q) = ι Q m * ι Q e :=
-  by
-    change (((even.ι Q).bilin m e : even Q) : CliffordAlgebra Q) = ι Q m * ι Q e
-    rfl
+  by rfl
 
 omit [Invertible (2 : R)] in
 /-- Coercing a canonical bilinear generator of the even algebra gives the product of its two

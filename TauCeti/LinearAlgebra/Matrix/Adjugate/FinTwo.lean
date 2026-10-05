@@ -67,9 +67,7 @@ noncomputable def starAdjugateFinTwoAlgHom :
 
 /-- Applying `starAdjugateFinTwoAlgHom` computes the conjugate transpose of the adjugate. -/
 theorem starAdjugateFinTwoAlgHom_apply (A : Matrix (Fin 2) (Fin 2) ℂ) :
-    starAdjugateFinTwoAlgHom A = star (Matrix.adjugate A) := by
-  change star (Matrix.adjugate A) = star (Matrix.adjugate A)
-  rfl
+    starAdjugateFinTwoAlgHom A = star (Matrix.adjugate A) := by rfl
 
 /-- An anti-multiplicative function with scalar translates sends an off-diagonal unit
 to its negative. -/
