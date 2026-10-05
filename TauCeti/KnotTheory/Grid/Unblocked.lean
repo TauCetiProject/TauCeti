@@ -204,6 +204,22 @@ theorem renameMatrixMap_apply_apply (σ : Equiv.Perm (Fin n))
       Finset.sum_eq_single y (fun z _ hz => by simp [hz.symm]) (by simp),
       Finsupp.single_eq_same, Finsupp.sum_single_index (by simp)]
 
+/-- A monomial occurring in a renamed matrix map comes from a monomial of an input coefficient
+and a monomial of the corresponding matrix entry. Its exponent is their sum after renaming. -/
+theorem exists_support_of_mem_support_sum_rename_mul (σ : Equiv.Perm (Fin n))
+    (M : GridState n → GridState n → MvPolynomial (Fin n) R)
+    {c : GridChainMinus R n} {y : GridState n} {e : Fin n →₀ ℕ}
+    (he : e ∈ (c.sum fun x p => rename σ p * M x y).support) :
+    ∃ x, ∃ d ∈ (c x).support, ∃ w ∈ (M x y).support,
+      e = Finsupp.mapDomain σ d + w := by
+  classical
+  rw [Finsupp.sum] at he
+  obtain ⟨x, -, hx⟩ := Finset.mem_biUnion.mp (MvPolynomial.support_sum he)
+  obtain ⟨d', hd', w, hw, rfl⟩ := Finset.mem_add.mp (MvPolynomial.support_mul _ _ hx)
+  rw [support_rename_of_injective σ.injective, Finset.mem_image] at hd'
+  obtain ⟨d, hd, rfl⟩ := hd'
+  exact ⟨x, d, hd, w, hw, rfl⟩
+
 end GridChain
 
 namespace GridDiagram
