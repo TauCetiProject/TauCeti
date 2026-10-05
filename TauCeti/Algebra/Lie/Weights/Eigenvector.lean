@@ -18,9 +18,10 @@ it an eigenvector `f` of the adjoint action shifts its eigenvalue by that of `f`
 application; this second fact is stated both for the whole subalgebra `H`, as a statement about
 weight spaces, and for one element of `L` at a time, where it needs no subalgebra at all.
 
-Both are stated over a commutative ring; the weight-space result assumes the subalgebra is
-nilpotent. The Cartan subalgebra of a Lie algebra with non-degenerate Killing form, where the
-eigenvalue of `f` is a root, is the case the weight theory uses, and
+Both are stated over a commutative ring; only the generalized-weight-space result,
+`TauCeti.mem_genWeightSpace_of_forall_lie_eq_smul`, assumes the subalgebra is nilpotent. The
+Cartan subalgebra of a Lie algebra with non-degenerate Killing form, where the eigenvalue of `f`
+is a root, is the case the weight theory uses, and
 `TauCeti.lie_pow_toEnd_eq_smul_of_mem_rootSpace` records it.
 
 ## Main results

@@ -567,7 +567,8 @@ private theorem span_range_negRootVectorNilradical :
       (Submodule.span_mono (Set.singleton_subset_iff.mpr ⟨⟨_, hα⟩, rfl⟩)))
     simp
   obtain ⟨y, hy, hyx⟩ := hle hx'
-  rwa [show y = ⟨x, hx⟩ from Subtype.ext hyx] at hy
+  obtain rfl : y = ⟨x, hx⟩ := Subtype.ext hyx
+  exact hy
 
 variable (H) in
 /-- **A basis of the negative nilradical made of root vectors**: it is indexed by the positive
