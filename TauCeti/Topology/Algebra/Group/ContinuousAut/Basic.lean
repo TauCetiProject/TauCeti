@@ -9,6 +9,7 @@ public import Mathlib.GroupTheory.QuotientGroup.Basic
 public import Mathlib.GroupTheory.Subgroup.Center
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.Algebra.Group.Basic
+public import TauCeti.Topology.Algebra.Group.Basic
 
 /-!
 # Continuous automorphisms and continuous outer automorphisms
@@ -55,6 +56,8 @@ outer Galois action on a profinite fundamental group.
   is commutative (`range_conj_eq_bot_iff`).
 * `TauCeti.ContinuousAut.ker_conjNormal`: the kernel of conjugation on a normal subgroup `N` is
   the centralizer of `N`.
+* `TauCeti.ContinuousAut.conjNormal_coe`: conjugation by an element of `N` is the inner
+  automorphism of `N` by that element.
 * `TauCeti.ContinuousAut.mul_conj_mul_inv`: `φ * conj g * φ⁻¹ = conj (φ g)`, so the range of
   `conj` is normal.
 * `TauCeti.ContinuousAut.eq_conj_of_toMulAut_eq_conj`: an automorphism that is inner as an abstract
@@ -249,6 +252,11 @@ theorem conjNormal_inv_apply (g : G) (n : N) : ((conjNormal g)⁻¹ n : G) = g�
 theorem toMulAut_conjNormal (g : G) :
     toMulAut (conjNormal g : ContinuousAut N) = MulAut.conjNormal g :=
   (rfl)
+
+/-- Conjugation by an element of `N` is the inner automorphism of `N` by that element. -/
+@[simp]
+theorem conjNormal_coe (n : N) : conjNormal (n : G) = conj n :=
+  ContinuousMulEquiv.ext fun m ↦ Subtype.ext (by simp)
 
 /-- The kernel of conjugation on a normal subgroup `N` is the centralizer of `N`. -/
 theorem ker_conjNormal :

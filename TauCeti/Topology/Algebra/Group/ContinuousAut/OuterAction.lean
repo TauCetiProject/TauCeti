@@ -36,7 +36,6 @@ Galois action. The construction does not use closedness, so no closedness hypoth
 
 ## Main results
 
-* `TauCeti.ContinuousAut.conjNormal_coe`: conjugation by an element of `N` is inner.
 * `TauCeti.outerAction_mk`: the outer action of `e N` is the class of conjugation by `e`.
 * `TauCeti.ker_outerAction`: the kernel of the outer action is the image of `N ⊔ C_E(N)`.
 * `TauCeti.outerAction_smul_conjClasses_mk`: the outer action on conjugacy classes of `N` is
@@ -53,17 +52,11 @@ public section
 
 namespace TauCeti
 
-variable {E : Type*} [Group E] [TopologicalSpace E] [IsTopologicalGroup E] {N : Subgroup E}
-  [N.Normal]
+variable {E : Type*} [Group E] [TopologicalSpace E] {N : Subgroup E} [N.Normal]
 
-namespace ContinuousAut
+section Algebraic
 
-/-- Conjugation by an element of `N` is the inner automorphism of `N` by that element. -/
-@[simp]
-theorem conjNormal_coe (n : N) : conjNormal (n : E) = conj n :=
-  ContinuousMulEquiv.ext fun m ↦ Subtype.ext (by simp)
-
-end ContinuousAut
+variable [SeparatelyContinuousMul E]
 
 variable (N) in
 /-- The **outer action** of `E ⧸ N` on a normal subgroup `N`: the class of `e` acts by the outer
@@ -111,9 +104,11 @@ theorem outerAction_smul_conjClasses_mk (e : E) (n : N) :
       ConjClasses.mk (ContinuousAut.conjNormal e n) := by
   rw [outerAction_mk, ContinuousOut.mk_smul_mk]
 
+end Algebraic
+
 section Continuity
 
-variable [CompactSpace N]
+variable [IsTopologicalGroup E] [CompactSpace N]
 
 /-- For compact `N`, conjugation `E → ContinuousAut N` is continuous for the congruence topology:
 on each characteristic open quotient `N ⧸ U`, which is finite, the induced automorphism is
