@@ -51,7 +51,7 @@ compares the two local class formations on corresponding layers
 (`TauCeti.ClassFieldTheory.artinMap_localFormationLayerEquiv`) and then uses the Artin–Tate
 diagram for the norm inside the formation of `K`
 (`TauCeti.ClassFieldTheory.ClassFormation.artinMap_groundNorm`). On ground levels, that norm is
-the field norm `N_{L/K}` (`TauCeti.ClassFieldTheory.levelNorm_unitsLevelEquiv`).
+the field norm `N_{L/K}` (`TauCeti.ClassFieldTheory.groundNorm_layerRestriction_localFormationMap`).
 
 ## Main definitions
 
@@ -72,9 +72,6 @@ the field norm `N_{L/K}` (`TauCeti.ClassFieldTheory.levelNorm_unitsLevelEquiv`).
   subgroups.
 * `TauCeti.ClassFieldTheory.artinMap_norm`: the absolute local Artin map is functorial for the
   norm of a finite extension.
-* `TauCeti.ClassFieldTheory.groundEquiv_localFormationLayerEquiv_unitsLevelEquiv`: on ground
-  levels, the comparison `localFormationLayerEquiv` of a layer over `L` with its image over `K`
-  sends `y ∈ Lˣ` to `iota y`.
 
 ## References
 
@@ -231,47 +228,8 @@ theorem ker_artinMap_eq_iInf :
 section Norm
 
 variable {K} (L : Type) [Field L] [Algebra K L] [FiniteDimensional K L]
-  (iota : L →ₐ[K] SeparableClosure K)
-
-section Layer
-
-omit [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K]
-
-/-- The norm from the ground level `Gal(Kˢ/iota(L))` to the ground level `G_K` of the restriction
-`layerRestriction_localFormationMap` sends `iota x` to `N_{L/K} x`. -/
-private theorem groundNorm_layerRestriction_localFormationMap
-    (V : OpenNormalSubgroup (AbsoluteGaloisGroup K))
-    (hV : V ≤ (galoisSubgroup K L iota).toSubgroup) (x : Additive Lˣ) :
-    (layerRestriction_localFormationMap K L iota V hV).groundNorm (unitsFormation K)
-        (unitsLevelEquiv iota (fixedField_localFormationMap_ofOpenNormal_ground K L iota _) x) =
-      groundEquivOfOpenNormal (unitsFormation K) V
-        (unitsLevelEquiv (Algebra.ofId K (SeparableClosure K)) (fixedField_toSubgroup_top K)
-          (Additive.ofMul (Algebra.normUnits K x.toMul))) := by
-  refine Subtype.ext ?_
-  rw [LayerRestriction.groundNorm_apply_coe, ← Formation.levelNorm_apply_coe _
-    (layerRestriction_localFormationMap K L iota V hV).ground_le,
-    levelNorm_unitsLevelEquiv iota _ _ (fixedField_ground_ofOpenNormal K V)]
-  simp
-
-/-- The unit `y ∈ Lˣ`, read in the ground level `((Lˢ)ˣ)^{G_L}` of a layer `V' ◁ G_L` and carried to
-the corresponding layer over `K`, is the unit `iota y` of the level of `Gal(Kˢ/iota(L))`. -/
-theorem groundEquiv_localFormationLayerEquiv_unitsLevelEquiv
-    (V' : OpenNormalSubgroup (AbsoluteGaloisGroup L)) (y : Additive Lˣ) :
-    (localFormationLayerEquiv K L iota (ofOpenNormal V')).groundEquiv
-        (groundEquivOfOpenNormal (unitsFormation L) V'
-          (unitsLevelEquiv (Algebra.ofId L (SeparableClosure L)) (fixedField_toSubgroup_top L) y)) =
-      unitsLevelEquiv iota (fixedField_localFormationMap_ofOpenNormal_ground K L iota V') y := by
-  refine Subtype.ext ?_
-  rw [LayerEquiv.groundEquiv_apply_coe, unitsLevelEquiv_apply_coe]
-  apply (unitsCoeffEquivUnitsFormation K).symm.injective
-  rw [localFormationLayerEquiv_coeffEquiv_apply, AddEquiv.symm_apply_apply]
-  refine Additive.toMul.injective (Units.ext ?_)
-  simp [separableClosureRingEquiv_algebraMap]
-
-end Layer
-
-variable [ValuativeRel L] [TopologicalSpace L] [IsNonarchimedeanLocalField L]
-  [ValuativeExtension K L]
+  (iota : L →ₐ[K] SeparableClosure K) [ValuativeRel L] [TopologicalSpace L]
+  [IsNonarchimedeanLocalField L] [ValuativeExtension K L]
 
 /-- The norm functoriality of the absolute Artin maps of the local class formations of `L` and
 `K`, read in the finite quotient of `G_K^ab` cut out by an open normal subgroup
@@ -301,13 +259,15 @@ private theorem abelianizationRestrict_absoluteArtinMap_normUnits
   -- is written with `Eq.trans` and `congrArg`: rewriting in these goals is slow.
   refine ((localClassFormation K).abelianizationRestrict_absoluteArtinMap V _).trans ?_
   refine (congrArg ((localClassFormation K).artinMap (ofOpenNormal V))
-    ((groundNorm_layerRestriction_localFormationMap L iota V hV _).symm.trans
-      (congrArg (T.groundNorm (unitsFormation K))
-        (groundEquiv_localFormationLayerEquiv_unitsLevelEquiv L iota V' _).symm))).trans ?_
+    ((groundEquivOfOpenNormal_unitsLevelEquiv K V _).trans
+      ((groundNorm_layerRestriction_localFormationMap K L iota V hV _).symm.trans
+        (congrArg (T.groundNorm (unitsFormation K))
+          (groundEquiv_localFormationLayerEquiv_localGroundEquiv K L iota V' _).symm)))).trans ?_
   refine ((localClassFormation K).artinMap_groundNorm T _).trans ?_
   refine (congrArg T.inclusionHom ((artinMap_localFormationLayerEquiv K L iota _ _).trans
-    (congrArg _ (((localClassFormation L).abelianizationRestrict_absoluteArtinMap V' _).symm.trans
-      ((congrArg _ hτ).trans (abelianizationRestrict_mk V' ⟨τ, by simp⟩)))))).trans ?_
+    (congrArg _ ((congrArg _ (groundEquivOfOpenNormal_unitsLevelEquiv L V' x).symm).trans
+      (((localClassFormation L).abelianizationRestrict_absoluteArtinMap V' _).symm.trans
+        ((congrArg _ hτ).trans (abelianizationRestrict_mk V' ⟨τ, by simp⟩))))))).trans ?_
   refine Eq.trans ?_ (abelianizationRestrict_mk V ⟨localFormationHom K L iota τ, by simp⟩).symm
   rw [MulEquiv.toAdditive_apply_apply, toMul_ofMul, abelianizationCongr_of,
     localFormationLayerEquiv_galEquiv_mk K L iota _ _ ⟨_, hτs⟩ rfl,

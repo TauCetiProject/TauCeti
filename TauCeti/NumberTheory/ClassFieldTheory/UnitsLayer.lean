@@ -42,9 +42,11 @@ reciprocity. Nothing here uses that `K` is local.
 The norm computation is done more generally, for the level of an arbitrary finite subextension
 `ι : E →ₐ[K] Kˢ`, with no normality assumption: the norm `Formation.levelNorm` from that level to
 the level of `G_K` is the field norm `N_{E/K}` (`levelNorm_unitsLevelEquiv`). The norm of the layer
-of `L` is the case `E = L` (`TauCeti.ClassFieldTheory.NormalLayer.toAddMonoidHom_norm`); the
-non-normal case is needed for the norm functoriality of the absolute local Artin map, where the
-ground level of a restricted layer is cut out by a subextension that need not be normal.
+of `L` is the field norm `N_{L/K}` (`norm_unitsLevelEquiv`), the case `E = L`, because the norm of
+a layer is `Formation.levelNorm` between its top and ground levels
+(`TauCeti.ClassFieldTheory.NormalLayer.toAddMonoidHom_norm`). The non-normal case is needed for
+the norm functoriality of the absolute local Artin map, where the ground level of a restricted
+layer is cut out by a subextension that need not be normal.
 
 ## Main definitions
 
@@ -59,6 +61,8 @@ ground level of a restricted layer is cut out by a subextension that need not be
 * `TauCeti.ClassFieldTheory.fixedField_top_ofOpenNormal_fixingOpenNormalSubgroup`: the top
   level of the layer is cut out by the image of any embedding of `L`, so that
   `TauCeti.ClassFieldTheory.unitsLevelEquiv` identifies it with `Lˣ`.
+* `TauCeti.ClassFieldTheory.eq_top_of_fixedField_toSubgroup_eq`: the only open subgroup of `G_K`
+  with fixed field `K` is `G_K`.
 * `TauCeti.ClassFieldTheory.abelianizationCongr_layerGalEquiv`: the identification of the
   abelianized Galois group does not depend on the embedding.
 * `TauCeti.ClassFieldTheory.levelNorm_unitsLevelEquiv`: for a finite extension `E/K` embedded in
@@ -99,6 +103,16 @@ theorem fixedField_toSubgroup_top :
   rw [OpenSubgroup.toSubgroup_top, InfiniteGalois.fixedField_bot]
   ext x
   simp [mem_bot, Algebra.ofId_apply]
+
+/-- The only open subgroup of `G_K` whose fixed field is `K` is `G_K` itself. -/
+theorem eq_top_of_fixedField_toSubgroup_eq {W : OpenSubgroup (AbsoluteGaloisGroup K)}
+    (h : fixedField W.toSubgroup = (Algebra.ofId K (SeparableClosure K)).fieldRange) : W = ⊤ :=
+  OpenSubgroup.toSubgroup_injective <|
+    calc W.toSubgroup = (fixedField W.toSubgroup).fixingSubgroup :=
+          (InfiniteGalois.fixingSubgroup_fixedField ⟨_, W.isClosed⟩).symm
+      _ = (fixedField (⊤ : OpenSubgroup (AbsoluteGaloisGroup K)).toSubgroup).fixingSubgroup := by
+          rw [h, fixedField_toSubgroup_top]
+      _ = _ := InfiniteGalois.fixingSubgroup_fixedField ⟨_, (⊤ : OpenSubgroup _).isClosed⟩
 
 variable (K) in
 /-- The fixed field of the ground subgroup `G_K` of a layer `V ◁ G_K` is `K`, the image of the
@@ -202,31 +216,17 @@ theorem levelNorm_unitsLevelEquiv (ι : E →ₐ[K] SeparableClosure K)
     (unitsFormation K).levelNorm h (unitsLevelEquiv ι hW y) =
       unitsLevelEquiv (Algebra.ofId K (SeparableClosure K)) hW₀
         (Additive.ofMul (Algebra.normUnits K y.toMul)) := by
-  -- The only open subgroup with fixed field `K` is `G_K` itself.
-  obtain rfl : W₀ = ⊤ := OpenSubgroup.toSubgroup_injective <|
-    calc W₀.toSubgroup = (fixedField W₀.toSubgroup).fixingSubgroup :=
-          (InfiniteGalois.fixingSubgroup_fixedField ⟨_, W₀.isClosed⟩).symm
-      _ = (fixedField (⊤ : OpenSubgroup (AbsoluteGaloisGroup K)).toSubgroup).fixingSubgroup := by
-          rw [hW₀, fixedField_toSubgroup_top]
-      _ = _ := InfiniteGalois.fixingSubgroup_fixedField ⟨_, (⊤ : OpenSubgroup _).isClosed⟩
+  obtain rfl : W₀ = ⊤ := eq_top_of_fixedField_toSubgroup_eq hW₀
+  -- The representatives of the cosets of `W` in `G_K` are a transversal of `Gal(Kˢ/ι(E))`, so the
+  -- norm is the product of the conjugates of `ι y` (`TauCeti.algebraMap_norm_eq_prod_transversal`).
   have hfix : W.toSubgroup = ι.fieldRange.fixingSubgroup := by
     rw [← hW, InfiniteGalois.fixingSubgroup_fixedField ⟨W.toSubgroup, W.isClosed⟩]
-  -- The coset representatives of `W` in `⊤` are a transversal of `Gal(Kˢ/ι(E))` in `G_K`, so the
-  -- norm is the product of the conjugates of `ι y` (`TauCeti.algebraMap_norm_eq_prod_transversal`).
-  let e : (⊤ : Subgroup (AbsoluteGaloisGroup K)) ⧸ W.toSubgroup.subgroupOf ⊤ ≃
-      AbsoluteGaloisGroup K ⧸ ι.fieldRange.fixingSubgroup :=
-    (Quotient.congr Subgroup.topEquiv.toEquiv fun _ _ => by
-      simp [QuotientGroup.leftRel_apply, Subgroup.mem_subgroupOf]).trans
-      (Subgroup.quotientEquivOfEq hfix)
-  have he (q) : e q = QuotientGroup.mk ((q.out : (⊤ : Subgroup _)) : AbsoluteGaloisGroup K) := by
-    conv_lhs => rw [← q.out_eq']
-    rw [Quotient.mk''_eq_mk, Equiv.trans_apply, Quotient.congr_mk, Subgroup.quotientEquivOfEq_mk,
-      MulEquiv.toEquiv_eq_coe, EquivLike.coe_coe, Subgroup.topEquiv_apply]
+  let e := Subgroup.quotientEquivOfEq hfix
   refine Subtype.ext ?_
-  rw [Formation.levelNorm_apply_coe, unitsLevelEquiv_apply_coe, unitsLevelEquiv_apply_coe,
+  rw [Formation.levelNorm_top_apply_coe, unitsLevelEquiv_apply_coe, unitsLevelEquiv_apply_coe,
     finsum_eq_sum_of_fintype]
-  calc _ = ∑ q : (⊤ : Subgroup (AbsoluteGaloisGroup K)) ⧸ W.toSubgroup.subgroupOf ⊤,
-        unitsCoeffEquivUnitsFormation K (((q.out : (⊤ : Subgroup _)) : AbsoluteGaloisGroup K) •
+  calc _ = ∑ q : AbsoluteGaloisGroup K ⧸ W.toSubgroup,
+        unitsCoeffEquivUnitsFormation K ((q.out : AbsoluteGaloisGroup K) •
           Additive.ofMul (Units.map (ι : E →* SeparableClosure K) y.toMul)) :=
       Finset.sum_congr rfl fun q _ => (unitsCoeffEquivUnitsFormation_smul K _ _).symm
     _ = _ := by
@@ -236,9 +236,9 @@ theorem levelNorm_unitsLevelEquiv (ι : E →ₐ[K] SeparableClosure K)
       simp only [toMul_sum, Units.coe_prod, Additive.toMul_smul, toMul_ofMul,
         AlgEquiv.smul_units_def, Units.coe_map, MonoidHom.coe_ofClass, Algebra.coe_normUnits,
         Algebra.ofId_apply]
-      rw [algebraMap_norm_eq_prod_transversal K E ι
-        (fun u => ((e.symm u).out : AbsoluteGaloisGroup K))
-        (fun u => by rw [← he, Equiv.apply_symm_apply]), ← e.symm.prod_comp]
+      rw [algebraMap_norm_eq_prod_transversal K E ι (fun u => (e.symm u).out) (fun u => by
+        rw [← Subgroup.quotientEquivOfEq_mk hfix, QuotientGroup.out_eq', Equiv.apply_symm_apply]),
+        ← e.symm.prod_comp]
 
 end LevelNorm
 

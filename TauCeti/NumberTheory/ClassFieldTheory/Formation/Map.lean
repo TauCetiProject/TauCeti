@@ -37,9 +37,10 @@ the norm compatibility of the local Artin map.
 
 ## Main results
 
-* `TauCeti.ClassFieldTheory.fixedField_localFormationMap_ofOpenNormal_ground`: the ground
-  subgroup of the image over `K` of a layer `V ◁ G_E` is `Gal(Kˢ/iota(E))`, with fixed field
-  `iota(E)`.
+* `TauCeti.ClassFieldTheory.localFormationMap_ofOpenNormal_ground_toSubgroup`: the ground
+  subgroup of the image over `K` of a layer `V ◁ G_E` is `Gal(Kˢ/iota(E))`.
+* `TauCeti.ClassFieldTheory.fixedField_localFormationMap_ofOpenNormal_ground`: the fixed field of
+  that ground subgroup is `iota(E)`.
 * `TauCeti.ClassFieldTheory.layerRestriction_localFormationMap`: for `V ≤ Gal(Kˢ/iota(E))` open
   normal in `G_K`, the image over `K` of the layer cut out by the preimage of `V` in `G_E` is the
   restriction of the layer `V ◁ G_K` to `Gal(Kˢ/iota(E))`.
