@@ -13,8 +13,8 @@ public import TauCeti.KnotTheory.PDCode.Oriented.Reidemeister.Two.Basic
 
 The old crossing coefficients are unchanged by pushing a crossing-free circle across an arc. The
 two new crossings have explicit coefficients determined by the directions of the cut arc, the
-new circle, and the chosen over-strand. These formulas are the coefficient part of the local
-Alexander-module calculation; eliminating the four new generators is the remaining step.
+new circle, and the chosen over-strand. These formulas give the coefficient part of the local
+Alexander-module calculation for the clasp.
 
 ## References
 
@@ -25,8 +25,7 @@ Alexander-module calculation; eliminating the four new generators is the remaini
 
 The formal construction extended here is `TauCeti.OrientedPDCode.insertCircleClasp`, and its
 Alexander convention follows `TauCeti.OrientedPDCode.alexanderWeight` and
-`TauCeti.OrientedPDCode.alexanderWeight_def` in `Alexander.Basic`. The corresponding two-arc
-Alexander clasp-invariance development is PR #11830.
+`TauCeti.OrientedPDCode.alexanderWeight_def` in `Alexander.Basic`.
 -/
 
 public section
