@@ -693,29 +693,59 @@ theorem W1p.gradient_ofExponentLE_ae (hpq : p ≤ q) (u : W1p mu Omega q) :
     Sobolev1JetLp.gradient_apply_ae (u : Sobolev1JetLp mu Omega q)] with x hp hq
   rw [hp, hq]
 
+/-- Coercion of `W1p.ofExponentLE` to the ambient jet space preserves zero. -/
+theorem W1p.coe_ofExponentLE_zero (hpq : p ≤ q) :
+    (W1p.ofExponentLE hpq (0 : W1p mu Omega q) : Sobolev1JetLp mu Omega p) = 0 :=
+  Subtype.ext rfl
+
 /-- Lowering the exponent sends zero to zero. -/
 @[simp]
 theorem W1p.ofExponentLE_zero (hpq : p ≤ q) :
     W1p.ofExponentLE hpq (0 : W1p mu Omega q) = 0 :=
-  Subtype.ext (Subtype.ext rfl)
+  Subtype.ext (W1p.coe_ofExponentLE_zero hpq)
+
+/-- Coercion of `W1p.ofExponentLE` to the ambient jet space preserves addition. -/
+theorem W1p.coe_ofExponentLE_add (hpq : p ≤ q) (u v : W1p mu Omega q) :
+    (W1p.ofExponentLE hpq (u + v) : Sobolev1JetLp mu Omega p) =
+      (W1p.ofExponentLE hpq u : Sobolev1JetLp mu Omega p) +
+        (W1p.ofExponentLE hpq v : Sobolev1JetLp mu Omega p) :=
+  Subtype.ext rfl
 
 /-- Lowering the exponent preserves addition. -/
 @[simp]
 theorem W1p.ofExponentLE_add (hpq : p ≤ q) (u v : W1p mu Omega q) :
     W1p.ofExponentLE hpq (u + v) = W1p.ofExponentLE hpq u + W1p.ofExponentLE hpq v :=
-  Subtype.ext (Subtype.ext rfl)
+  Subtype.ext (W1p.coe_ofExponentLE_add hpq u v)
+
+/-- Coercion of `W1p.ofExponentLE` to the ambient jet space preserves real scalar multiplication. -/
+theorem W1p.coe_ofExponentLE_smul (hpq : p ≤ q) (c : ℝ) (u : W1p mu Omega q) :
+    (W1p.ofExponentLE hpq (c • u) : Sobolev1JetLp mu Omega p) =
+      c • (W1p.ofExponentLE hpq u : Sobolev1JetLp mu Omega p) :=
+  Subtype.ext rfl
 
 /-- Lowering the exponent preserves real scalar multiplication. -/
 @[simp]
 theorem W1p.ofExponentLE_smul (hpq : p ≤ q) (c : ℝ) (u : W1p mu Omega q) :
     W1p.ofExponentLE hpq (c • u) = c • W1p.ofExponentLE hpq u :=
-  Subtype.ext (Subtype.ext rfl)
+  Subtype.ext (W1p.coe_ofExponentLE_smul hpq c u)
+
+/-- Coercion of `W1p.ofExponentLE` to the ambient jet space at equal exponents is the identity. -/
+theorem W1p.coe_ofExponentLE_self (u : W1p mu Omega p) :
+    (W1p.ofExponentLE (le_refl p) u : Sobolev1JetLp mu Omega p) = u :=
+  Subtype.ext rfl
 
 /-- Lowering the exponent from `p` to itself is the identity. -/
 @[simp]
 theorem W1p.ofExponentLE_self (u : W1p mu Omega p) :
     W1p.ofExponentLE (le_refl p) u = u :=
-  Subtype.ext (Subtype.ext rfl)
+  Subtype.ext (W1p.coe_ofExponentLE_self u)
+
+/-- Coercions of composed ambient exponent inclusions compose transitively. -/
+theorem W1p.coe_ofExponentLE_ofExponentLE {r : ENNReal} [Fact (1 ≤ r)]
+    (hpq : p ≤ q) (hqr : q ≤ r) (u : W1p mu Omega r) :
+    (W1p.ofExponentLE hpq (W1p.ofExponentLE hqr u) : Sobolev1JetLp mu Omega p) =
+      (W1p.ofExponentLE (hpq.trans hqr) u : Sobolev1JetLp mu Omega p) :=
+  Subtype.ext rfl
 
 /-- Exponent inclusions compose transitively. -/
 @[simp]
@@ -723,7 +753,7 @@ theorem W1p.ofExponentLE_ofExponentLE {r : ENNReal} [Fact (1 ≤ r)]
     (hpq : p ≤ q) (hqr : q ≤ r) (u : W1p mu Omega r) :
     W1p.ofExponentLE hpq (W1p.ofExponentLE hqr u) =
       W1p.ofExponentLE (hpq.trans hqr) u :=
-  Subtype.ext (Subtype.ext rfl)
+  Subtype.ext (W1p.coe_ofExponentLE_ofExponentLE hpq hqr u)
 
 end Exponent
 
