@@ -6,14 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Continuous.Pontryagin.Basic
-import Mathlib.Analysis.CStarAlgebra.GelfandDuality
 
 /-!
 # Continuity of the integrated-character parameter
 
 Let `π` be a strongly continuous unitary representation of an abelian topological group equipped
-with a regular invariant measure, and let `A` be a complete commutative star subalgebra containing
-all integrated operators.
+with a regular invariant measure, and let `A` be a complete star subalgebra containing all
+integrated operators.
 A character of `A` that is nonzero on some integrated operator determines a continuous group
 character by `ContRepresentation.existsUnique_pontryaginDual_of_integratedOperatorL1`.
 
@@ -24,10 +23,10 @@ operator `π(f)` on which `ω` is nonzero.  The detected group character then ha
 `χ(g) = ω(π(g)π(f)) / ω(π(f))`.
 
 The numerator is jointly continuous in `ω` and `g`: norm continuity of translated integrated
-operators combines with the isometric Gelfand transform and continuous evaluation.  The
-denominator remains nonzero in a neighbourhood of `ω`, so the displayed quotient proves the
-required local continuity.  This continuity is the input needed to push a character-space
-spectral measure to the Pontryagin dual.
+operators combines with weak-* continuity of evaluation and the uniform norm bound on characters
+of a Banach algebra.  The denominator remains nonzero in a neighbourhood of `ω`, so the displayed
+quotient proves the required local continuity.  This continuity is the input needed to push a
+character-space spectral measure to the Pontryagin dual.
 
 ## Main declarations
 
@@ -52,7 +51,7 @@ public section
 noncomputable section
 
 open Filter MeasureTheory WeakDual
-open scoped IsMulCommutative Topology
+open scoped Topology
 
 variable {G H : Type*} [AddCommGroup G] [TopologicalSpace G] [IsTopologicalAddGroup G]
   [MeasurableSpace G] [BorelSpace G]
@@ -65,7 +64,7 @@ namespace ContRepresentation
 variable (π : ContRepresentation ℂ (Multiplicative G) H)
   (hcont : ∀ v, Continuous fun g : G => π (.ofAdd g) v)
   (hbdd : ∃ C, ∀ g, ‖π g‖ ≤ C)
-  (A : StarSubalgebra ℂ (H →L[ℂ] H)) [CompleteSpace A] [IsMulCommutative A]
+  (A : StarSubalgebra ℂ (H →L[ℂ] H)) [CompleteSpace A]
   (hA : ∀ f : G →₁[μ] ℂ, π.integratedOperatorL1 hcont hbdd μ f ∈ A)
 
 /-- The characters of an algebra containing the integrated form which do not annihilate every
@@ -82,17 +81,15 @@ theorem mem_integratedCharacterSet_iff (ω : characterSpace ℂ A) :
       ∃ f : G →₁[μ] ℂ, ω ⟨π.integratedOperatorL1 hcont hbdd μ f, hA f⟩ ≠ 0 :=
   Iff.rfl
 
-omit [μ.IsAddLeftInvariant] [IsLocallyFiniteMeasure μ] in
+omit [μ.IsAddLeftInvariant] [IsLocallyFiniteMeasure μ] [CompleteSpace A] in
 /-- The integrated-character set is open in the character space. -/
 theorem isOpen_integratedCharacterSet :
     IsOpen (π.integratedCharacterSet hcont hbdd A hA) := by
-  let _ : CStarAlgebra A := {}
-  let _ : CommCStarAlgebra A := {}
   rw [isOpen_iff_mem_nhds]
   intro ω hω
   obtain ⟨f, hf⟩ := (π.mem_integratedCharacterSet_iff hcont hbdd A hA ω).mp hω
-  apply mem_of_superset
-    ((isOpen_ne_fun (gelfandTransform ℂ A _).continuous continuous_const).mem_nhds hf)
+  apply mem_of_superset ((isOpen_ne_fun ((eval_continuous _).comp continuous_subtype_val)
+    continuous_const).mem_nhds hf)
   intro ψ hψ
   exact (π.mem_integratedCharacterSet_iff hcont hbdd A hA ψ).mpr ⟨f, hψ⟩
 
@@ -136,8 +133,6 @@ theorem coe_integratedCharacterToPontryaginDual_apply_eq_div
 the algebra character. -/
 theorem continuous_integratedCharacterToPontryaginDual :
     Continuous (π.integratedCharacterToPontryaginDual hcont hbdd A hA hπ) := by
-  let _ : CStarAlgebra A := {}
-  let _ : CommCStarAlgebra A := {}
   let D := π.integratedCharacterSet hcont hbdd A hA
   let θ : D → PontryaginDual (Multiplicative G) :=
     π.integratedCharacterToPontryaginDual hcont hbdd A hA hπ
@@ -156,18 +151,24 @@ theorem continuous_integratedCharacterToPontryaginDual :
     refine ((π.continuous_comp_integratedOperatorL1 (hcont := hcont) (hbdd := hbdd) f).comp
       continuous_toAdd).congr fun g => ?_
     exact π.comp_integratedOperatorL1 (hcont := hcont) (hbdd := hbdd) g.toAdd f
-  have hgv : Continuous fun g => gelfandTransform ℂ A (v g) :=
-    (gelfandTransform_isometry A).continuous.comp hv
-  have hnum : Continuous fun p : D × Multiplicative G =>
-      (p.1.1 (v p.2) : ℂ) := by
-    exact continuous_eval.comp
-      ((hgv.comp continuous_snd).prodMk (continuous_subtype_val.comp continuous_fst))
-  have hden : Continuous fun p : D × Multiplicative G =>
-      (p.1.1 a : ℂ) :=
-    (gelfandTransform ℂ A a).continuous.comp (continuous_subtype_val.comp continuous_fst)
+  have heval (b : A) : Continuous fun p : D × Multiplicative G => (p.1.1 b : ℂ) :=
+    (eval_continuous b).comp (continuous_subtype_val.comp (continuous_subtype_val.comp
+      continuous_fst))
+  -- Characters are uniformly bounded, so `ω(v g') - ω(v g)` is small uniformly in `ω`.
+  have hnum : ContinuousAt (fun p : D × Multiplicative G => (p.1.1 (v p.2) : ℂ)) (ω, g) := by
+    have hsmall : Tendsto (fun p : D × Multiplicative G => p.1.1 (v p.2 - v g)) (𝓝 (ω, g))
+        (𝓝 0) := by
+      refine squeeze_zero_norm (fun p => AlgHom.norm_apply_le_self_mul_norm_one p.1.1 _) ?_
+      simpa using ((hv.comp continuous_snd).sub (continuous_const (y := v g))).norm.mul_const
+        ‖(1 : A)‖ |>.tendsto (ω, g)
+    have h : Tendsto (fun p : D × Multiplicative G => (p.1.1 (v p.2) : ℂ)) (𝓝 (ω, g))
+        (𝓝 (ω.1 (v g) + 0)) :=
+      ((heval (v g)).continuousAt.tendsto.add hsmall).congr fun p => by simp
+    rwa [add_zero] at h
+  have hden : Continuous fun p : D × Multiplicative G => (p.1.1 a : ℂ) := heval a
   have hquot : ContinuousAt (fun p : D × Multiplicative G =>
       p.1.1 (v p.2) / p.1.1 a) (ω, g) :=
-    hnum.continuousAt.div hden.continuousAt (by simpa only [a] using hf)
+    hnum.div hden.continuousAt (by simpa only [a] using hf)
   have hden_ne : ∀ᶠ p in 𝓝 (ω, g), p.1.1 a ≠ 0 :=
     hden.continuousAt.eventually_ne (by simpa only [a] using hf)
   -- `Circle` is a non-reducible type synonym for the unit-sphere subtype of `ℂ`, so
