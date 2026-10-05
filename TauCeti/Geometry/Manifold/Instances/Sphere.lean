@@ -11,6 +11,9 @@ public import TauCeti.Analysis.InnerProductSpace.LinearIsometry
 public import TauCeti.Geometry.Manifold.Immersion
 public import TauCeti.Geometry.Sphere.LinearIsometry
 
+import Mathlib.Analysis.Calculus.Deriv.Linear
+import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+
 /-!
 # The stereographic charts of the sphere, and the smooth embeddings of spheres induced by
 linear isometries
@@ -32,6 +35,9 @@ isometry is the inclusion of a factor in a product decomposition
 makes the restriction a smooth embedding. Great circles, the geometric presentation of the unknot,
 are the case of a linear isometry `ℂ →ₗᵢ[ℝ] E`.
 
+Finally, the covering map `Circle.exp : ℝ → S¹` has injective derivative everywhere, so that a
+loop and its lift to `ℝ` have the same tangent lines.
+
 ## Main results
 
 * `TauCeti.chartAt_sphere`: the preferred chart at `v` is `stereographic' n (-v)`.
@@ -40,6 +46,7 @@ are the case of a linear isometry `ℂ →ₗᵢ[ℝ] E`.
   of unit spheres as a linear isometry of the model spaces.
 * `LinearIsometry.isSmoothEmbedding_unitSphereMap`: the restriction of a linear isometry to the
   unit spheres is a smooth embedding, at every differentiability order.
+* `TauCeti.injective_mfderiv_circleExp`: the derivative of `Circle.exp : ℝ → S¹` is injective.
 -/
 
 public section
@@ -141,3 +148,38 @@ theorem isSmoothEmbedding_unitSphereMap : IsSmoothEmbedding (𝓡 m) (𝓡 n) k 
   ⟨ι.isImmersion_unitSphereMap, ι.isEmbedding_unitSphereMap⟩
 
 end LinearIsometry
+
+/-! ### The derivative of the circle exponential -/
+
+namespace TauCeti
+
+attribute [local instance] finrank_real_complex_fact'
+
+/-- The derivative of `Circle.exp : ℝ → S¹` is injective at every point. -/
+theorem injective_mfderiv_circleExp (t : ℝ) :
+    Injective (mfderiv 𝓘(ℝ, ℝ) (𝓡 1) Circle.exp t : ℝ →L[ℝ] EuclideanSpace ℝ (Fin 1)) := by
+  -- Composed with the inclusion `S¹ → ℂ`, it is the derivative `i exp (t i) ≠ 0` of `exp (t i)`.
+  have he0 : mfderiv 𝓘(ℝ, ℝ) (𝓡 1) Circle.exp t ≠ 0 := by
+    intro h0
+    have hcoe : MDifferentiableAt (𝓡 1) 𝓘(ℝ, ℂ) (fun z : Circle => (z : ℂ)) (Circle.exp t) :=
+      (contMDiff_coe_sphere (m := 1)).mdifferentiableAt one_ne_zero
+    have hcomp := mfderiv_comp t hcoe
+      ((contMDiff_circleExp (m := 1)).mdifferentiableAt one_ne_zero)
+    rw [h0, ContinuousLinearMap.comp_zero, mfderiv_eq_fderiv] at hcomp
+    have hd : HasDerivAt (fun s : ℝ => ((Circle.exp s : Circle) : ℂ))
+        (Complex.exp (t * Complex.I) * Complex.I) t := by
+      simp only [Circle.coe_exp]
+      simpa using ((Complex.ofRealCLM.hasDerivAt (x := t)).mul_const Complex.I).cexp
+    have h1 := congrArg (fun L => L (1 : ℝ)) hcomp
+    -- `fromTangentSpace` identifies the tangent spaces of `ℝ` and `ℂ` with `ℝ` and `ℂ` by the
+    -- identity map, and has no simp lemmas, so `change` unfolds it.
+    change fderiv ℝ (fun s : ℝ => ((Circle.exp s : Circle) : ℂ)) t 1 = 0 at h1
+    rw [hd.hasFDerivAt.fderiv] at h1
+    simp [Complex.exp_ne_zero] at h1
+  set e : ℝ →L[ℝ] EuclideanSpace ℝ (Fin 1) := mfderiv 𝓘(ℝ, ℝ) (𝓡 1) Circle.exp t
+  have hne : e 1 ≠ 0 := fun h0 => he0 (ContinuousLinearMap.ext_ring (by rw [h0]; rfl))
+  refine (injective_iff_map_eq_zero e).mpr fun s hs => ?_
+  have hs' : s • e 1 = 0 := by rw [← map_smul, smul_eq_mul, mul_one]; exact hs
+  exact (smul_eq_zero.mp hs').resolve_right hne
+
+end TauCeti
