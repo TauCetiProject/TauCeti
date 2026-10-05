@@ -62,7 +62,10 @@ basic corner ring. That such an idempotent exists is not proved in this file.
 The inverse functor is built from homomorphisms out of `eA` rather than from the tensor product
 `Ae ⊗_{eAe} N`, which would need tensor products over the noncommutative ring `eAe`. The two
 functors are given `@[expose]` so that their objects can be read as the pieces `eM` and the spaces
-of homomorphisms `Hom_{eAe}(eA, N)`, on which the action lemmas of this file are stated.
+of homomorphisms `Hom_{eAe}(eA, N)`, on which the action lemmas of this file are stated. The
+equivalence is built with `CategoryTheory.Equivalence.mk'`, so that its unit and counit are exactly
+`IsIdempotentElem.cornerUnitIso` and `IsIdempotentElem.cornerCounitIso`, and is given `@[expose]`
+so that this identification can be stated.
 
 ## References
 
@@ -345,6 +348,19 @@ def cornerCounitIso :
     ModuleCat.hom_ext (LinearMap.ext fun f ↦ LinearMap.congr_fun
       (he.coe_cornerFunctor_map_hom_apply (he.cornerCoindFunctor.map g) f) he.smulTopGen)
 
+@[simp]
+theorem cornerCounitIso_hom_app_hom_apply (N : ModuleCat.{max u v} he.Corner)
+    (f : ↥(e • (⊤ : Submodule ℤ (↥(e • (⊤ : Submodule ℤ A)) →ₗ[he.Corner] N)))) :
+    (ModuleCat.Hom.hom (A := he.cornerFunctor.obj (he.cornerCoindFunctor.obj N)) (B := N)
+      (he.cornerCounitIso.hom.app N)) f = f.1 he.smulTopGen :=
+  (rfl)
+
+@[simp]
+theorem cornerCounitIso_inv_app_hom_apply (N : ModuleCat.{max u v} he.Corner) (n : N) :
+    (ModuleCat.Hom.hom (A := N) (B := he.cornerFunctor.obj (he.cornerCoindFunctor.obj N))
+      (he.cornerCounitIso.inv.app N)) n = (he.smulTopCoindEquiv N).symm n :=
+  (rfl)
+
 /-- The unit of the corner equivalence, `M ≅ Hom_{eAe}(eA, eM)`, natural in `M`, for a full
 idempotent `e`. -/
 noncomputable def cornerUnitIso (hfull : TwoSidedIdeal.span {e} = ⊤) :
@@ -354,12 +370,32 @@ noncomputable def cornerUnitIso (hfull : TwoSidedIdeal.span {e} = ⊤) :
     fun f ↦ ModuleCat.hom_ext (LinearMap.ext fun m ↦ LinearMap.ext fun x ↦ Subtype.ext
       ((he.coe_cornerFunctor_map_hom_apply f _).trans (f.hom.map_smul x.1 m)).symm)
 
+@[simp]
+theorem cornerUnitIso_hom_app_hom_apply (hfull : TwoSidedIdeal.span {e} = ⊤)
+    (M : ModuleCat.{max u v} A) (m : M) :
+    (ModuleCat.Hom.hom (A := M) (B := he.cornerCoindFunctor.obj (he.cornerFunctor.obj M))
+      ((he.cornerUnitIso hfull).hom.app M)) m = he.smulTopActionHom M m :=
+  (rfl)
+
 /-- **A full idempotent `e` makes the module categories of `A` and of its corner ring `eAe`
 equivalent**: the corner functor `M ↦ eM` is an equivalence, with inverse
-`N ↦ Hom_{eAe}(eA, N)`. -/
-noncomputable def cornerEquivalence (hfull : TwoSidedIdeal.span {e} = ⊤) :
+`N ↦ Hom_{eAe}(eA, N)`, unit `IsIdempotentElem.cornerUnitIso` and counit
+`IsIdempotentElem.cornerCounitIso`. -/
+@[expose] noncomputable def cornerEquivalence (hfull : TwoSidedIdeal.span {e} = ⊤) :
     ModuleCat.{max u v} A ≌ ModuleCat.{max u v} he.Corner :=
-  .mk he.cornerFunctor he.cornerCoindFunctor (he.cornerUnitIso hfull) he.cornerCounitIso
+  .mk' he.cornerFunctor he.cornerCoindFunctor (he.cornerUnitIso hfull) he.cornerCounitIso
+    fun M ↦ ModuleCat.hom_ext (LinearMap.ext fun m ↦ Subtype.ext <|
+      -- Both sides send `m ∈ eM` to `e • m = m`.
+      (congrArg Subtype.val (he.cornerCounitIso_hom_app_hom_apply (he.cornerFunctor.obj M)
+        ((he.cornerFunctor.map ((he.cornerUnitIso hfull).hom.app M)).hom m))).trans <|
+      (congrArg (fun f : ↥(e • (⊤ : Submodule ℤ A)) →ₗ[he.Corner] ↥(e • (⊤ : Submodule ℤ M)) ↦
+        (f he.smulTopGen : M))
+        ((he.coe_cornerFunctor_map_hom_apply ((he.cornerUnitIso hfull).hom.app M) m).trans
+          (he.cornerUnitIso_hom_app_hom_apply hfull M m.1))).trans <|
+      (he.coe_smulTopActionHom_apply_apply M m.1 he.smulTopGen).trans <|
+      (congrArg (· • m.1) he.coe_smulTopGen).trans <|
+      (he.smul_eq_self_of_mem_smul_top m.2).trans
+      (congrArg Subtype.val (ModuleCat.id_apply _ m)).symm)
 
 @[simp]
 theorem cornerEquivalence_functor (hfull : TwoSidedIdeal.span {e} = ⊤) :
@@ -369,6 +405,16 @@ theorem cornerEquivalence_functor (hfull : TwoSidedIdeal.span {e} = ⊤) :
 @[simp]
 theorem cornerEquivalence_inverse (hfull : TwoSidedIdeal.span {e} = ⊤) :
     (he.cornerEquivalence hfull).inverse = he.cornerCoindFunctor :=
+  (rfl)
+
+@[simp]
+theorem cornerEquivalence_unitIso (hfull : TwoSidedIdeal.span {e} = ⊤) :
+    (he.cornerEquivalence hfull).unitIso = he.cornerUnitIso hfull :=
+  (rfl)
+
+@[simp]
+theorem cornerEquivalence_counitIso (hfull : TwoSidedIdeal.span {e} = ⊤) :
+    (he.cornerEquivalence hfull).counitIso = he.cornerCounitIso :=
   (rfl)
 
 section Linear
