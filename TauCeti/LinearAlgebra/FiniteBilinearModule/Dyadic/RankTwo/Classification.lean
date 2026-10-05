@@ -156,15 +156,6 @@ private theorem nonempty_isometry_ofQuadraticMap_restrict_zmultiples_sup
   exact ⟨Hom.toIsometry (A := ofQuadraticMap P) g ((Nat.bijective_iff_injective_and_card g).2
     ⟨hinj, le_antisymm (Nat.card_le_card_of_injective g hinj) hcard⟩)⟩
 
-/-- An element of `ℚ/ℤ` killed by `2^{k+1}` is `a / 2^{k+1}` for some `a ∈ ℤ/2^{k+1}`. -/
-private theorem exists_toRatAddCircle_eq {v : AddCircle (1 : ℚ)} (hv : 2 ^ (k + 1) • v = 0) :
-    ∃ a : ZMod (2 ^ (k + 1)), v = ZMod.toRatAddCircle _ a := by
-  have hmem : v ∈ (ZMod.toRatAddCircle (2 ^ (k + 1))).range := by
-    rw [ZMod.toRatAddCircle_range, torsionBy.nsmul_iff]
-    exact_mod_cast hv
-  obtain ⟨a, ha⟩ := hmem
-  exact ⟨a, ha.symm⟩
-
 /-! ## The classification -/
 
 /-- **Rank-two dyadic blocks.** If `x`, `y`, `q(x)`, and `q(y)` are all killed by `2^{k+1}`, and
@@ -176,28 +167,29 @@ theorem nonempty_isometry_dyadicU_or_dyadicV_restrict_zmultiples_sup {x y : A}
     (hxy : 2 ^ k • A.toFiniteBilinearModule.pairing x y ≠ 0) :
     Nonempty (Isometry (dyadicU (k + 1)) (A.restrict (zmultiples x ⊔ zmultiples y))) ∨
       Nonempty (Isometry (dyadicV (k + 1)) (A.restrict (zmultiples x ⊔ zmultiples y))) := by
-  obtain ⟨a, ha⟩ := exists_toRatAddCircle_eq hqx
-  obtain ⟨b, hb⟩ := exists_toRatAddCircle_eq hqy
-  obtain ⟨u, hu⟩ := exists_toRatAddCircle_eq (v := A.toFiniteBilinearModule.pairing x y) (by
-    rw [A.toFiniteBilinearModule.pairing_comm, ← map_nsmul, hx, map_zero])
+  obtain ⟨a, ha⟩ := exists_toRatAddCircle_eq_of_nsmul_eq_zero _ hqx
+  obtain ⟨b, hb⟩ := exists_toRatAddCircle_eq_of_nsmul_eq_zero _ hqy
+  obtain ⟨u, hu⟩ := exists_toRatAddCircle_eq_of_nsmul_eq_zero _
+    (v := A.toFiniteBilinearModule.pairing x y) (by
+      rw [A.toFiniteBilinearModule.pairing_comm, ← map_nsmul, hx, map_zero])
   -- The pairing `u / 2^{k+1}` has exact order `2^{k+1}`, so `u` is odd.
   have hunit : IsUnit u := by
     obtain ⟨c, rfl⟩ | ⟨c, rfl⟩ := eq_two_mul_or_eq_two_mul_add_one u
     · refine absurd ?_ hxy
       have htwo_pow : (2 : ZMod (2 ^ (k + 1))) ^ (k + 1) = 0 := by
         exact_mod_cast ZMod.natCast_self (2 ^ (k + 1))
-      rw [hu, ← map_nsmul, nsmul_eq_mul, ← mul_assoc, Nat.cast_pow, Nat.cast_ofNat, ← pow_succ,
+      rw [← hu, ← map_nsmul, nsmul_eq_mul, ← mul_assoc, Nat.cast_pow, Nat.cast_ofNat, ← pow_succ,
         htwo_pow, zero_mul, map_zero]
     · simpa using isUnit_two_mul_add (c := c) isUnit_one
   obtain ⟨e₁, e₂, f₁, f₂, -, h | h⟩ :=
     ZMod.BinaryQuadraticForm.exists_basis a b hunit
   · refine Or.inl (nonempty_isometry_ofQuadraticMap_restrict_zmultiples_sup _
       (isNondegenerate_dyadicU _) hx hy e₁ e₂ f₁ f₂ fun m n ↦ ?_)
-    rw [quadratic_zmodHom_add_zmodHom hx hy ha hb hu, h]
+    rw [quadratic_zmodHom_add_zmodHom hx hy ha.symm hb.symm hu.symm, h]
     exact (dyadicU_quadratic _ (m, n)).symm
   · refine Or.inr (nonempty_isometry_ofQuadraticMap_restrict_zmultiples_sup _
       (isNondegenerate_dyadicV _) hx hy e₁ e₂ f₁ f₂ fun m n ↦ ?_)
-    rw [quadratic_zmodHom_add_zmodHom hx hy ha hb hu, h]
+    rw [quadratic_zmodHom_add_zmodHom hx hy ha.symm hb.symm hu.symm, h]
     exact (dyadicV_quadratic _ (m, n)).symm
 
 /-- Under the hypotheses of
