@@ -38,9 +38,8 @@ H⁰(G, M) = M^G,   H¹(G, M) = Z¹/B¹,   H²(G, M) = Z²/B².
 * `TauCeti.ContCohomology.H0`, `H1`, `H2`, their class maps `H1pi`, `H2pi`, and the discrete
   carriers `DiscreteH1`, `DiscreteH2` used by the comparison with canonical cohomology, together
   with their identifications `discreteH1Equiv`, `discreteH2Equiv` with `H1` and `H2`.
-* `TauCeti.ContCohomology.sumCocycle`: the invariant obtained by summing a finite-group
-  `2`-cocycle over its first argument, additive in the cocycle (`sumCocycle_zero`,
-  `sumCocycle_add`).
+* `TauCeti.ContCohomology.sumCocycle`: the additive map sending a finite-group `2`-cocycle to
+  the invariant obtained by summing it over its first argument.
 * `TauCeti.ContCohomology.explicitMap0`: the compatible-pair pullback on the explicit degree-zero
   carrier, with `TauCeti.ContCohomology.explicitRes0` and `explicitCoeff0` its two named
   instances.
@@ -532,9 +531,10 @@ variable {G : Type u} [Group G] [TopologicalSpace G] [Fintype G]
   {M : Type v} [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
   [DistribMulAction G M]
 
-/-- The invariant obtained by summing a finite-group `2`-cocycle over its first argument. -/
-def sumCocycle (f : Z2 G M) (g : G) : H0 G M :=
-  ⟨∑ x : G, (f : G × G → M) (x, g), by
+/-- The additive map sending a finite-group `2`-cocycle `f` to the invariant
+`∑ x, f (x, g)` obtained by summing it over its first argument. -/
+def sumCocycle (g : G) : Z2 G M →+ H0 G M where
+  toFun f := ⟨∑ x : G, (f : G × G → M) (x, g), by
     rw [FixedPoints.mem_addSubgroup]
     intro y
     have hf := (mem_Z2_iff.mp f.property).2
@@ -560,30 +560,21 @@ def sumCocycle (f : Z2 G M) (g : G) : H0 G M :=
             ∑ x : G, (f : G × G → M) (y, x) :=
           Fintype.sum_bijective _ (Group.mulRight_bijective g) _ _ (fun _ ↦ rfl)
         rw [hleft, hright, add_sub_cancel_right]⟩
+  map_zero' := Subtype.ext (by simp)
+  map_add' f f' := Subtype.ext (by simp [Finset.sum_add_distrib])
 
 /-- The value of `sumCocycle` is the sum of the cocycle over its first argument. -/
 @[simp]
-theorem sumCocycle_val (f : Z2 G M) (g : G) :
-    (sumCocycle f g : M) = ∑ x : G, (f : G × G → M) (x, g) :=
+theorem sumCocycle_val (g : G) (f : Z2 G M) :
+    (sumCocycle g f : M) = ∑ x : G, (f : G × G → M) (x, g) :=
   (rfl)
-
-/-- Summing the zero cocycle gives zero. -/
-@[simp]
-theorem sumCocycle_zero (g : G) : sumCocycle (0 : Z2 G M) g = 0 :=
-  Subtype.ext (by simp)
-
-/-- Summing a cocycle over its first argument is additive in the cocycle. -/
-@[simp]
-theorem sumCocycle_add (f f' : Z2 G M) (g : G) :
-    sumCocycle (f + f') g = sumCocycle f g + sumCocycle f' g :=
-  Subtype.ext (by simp [Finset.sum_add_distrib])
 
 /-- The sum `∑ x, f (x, g)` of a two-cocycle is invariant. -/
 theorem sum_cocycle_mem_H0 (G' : Type u) [Group G'] [TopologicalSpace G'] [Fintype G']
     (M' : Type v) [AddCommGroup M'] [TopologicalSpace M'] [IsTopologicalAddGroup M']
     [DistribMulAction G' M'] (f : Z2 G' M') (g' : G') :
     ∑ x : G', (f : G' × G' → M') (x, g') ∈ H0 G' M' :=
-  (sumCocycle f g').property
+  (sumCocycle g' f).property
 
 end FiniteGroup
 

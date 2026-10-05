@@ -97,7 +97,7 @@ include hg in
 omit [DiscreteTopology G] [ContinuousSMul G M] in
 private theorem sum_range_cocycle (f : Z2 G M) :
     ∑ i ∈ Finset.range (orderOf g), (f : G × G → M) (g ^ i, g) =
-      (sumCocycle f g : M) := by
+      (sumCocycle g f : M) := by
   rw [← Fin.sum_univ_eq_sum_range, sumCocycle_val]
   exact (finEquivCyclic g hg).sum_comp (fun x ↦ (f : G × G → M) (x, g))
 
@@ -121,14 +121,11 @@ private theorem carryCocycle_apply (a : H0 G M) (x y : G) :
 
 private def cyclicZ2Map : Z2 G M →+
     H0 G M ⧸ (groupNorm G M).range.addSubgroupOf (H0 G M) :=
-  (QuotientAddGroup.mk' _).comp
-    { toFun := fun f ↦ sumCocycle f g
-      map_zero' := sumCocycle_zero g
-      map_add' := fun f f' ↦ sumCocycle_add f f' g }
+  (QuotientAddGroup.mk' _).comp (sumCocycle g)
 
 omit [DiscreteTopology G] [ContinuousSMul G M] in
 private theorem cyclicZ2Map_apply (f : Z2 G M) :
-    cyclicZ2Map g f = QuotientAddGroup.mk (sumCocycle f g) :=
+    cyclicZ2Map g f = QuotientAddGroup.mk (sumCocycle g f) :=
   rfl
 
 omit [DiscreteTopology G] [ContinuousSMul G M] in
@@ -155,7 +152,7 @@ private def cyclicH2Map : H2 G M →+
 private theorem cyclicH2Map_mk (f : Z2 G M) :
     cyclicH2Map g (H2pi G M f) =
       QuotientAddGroup.mk (s := (groupNorm G M).range.addSubgroupOf (H0 G M))
-        (sumCocycle f g) :=
+        (sumCocycle g f) :=
   QuotientAddGroup.lift_mk _ _ _
 
 private noncomputable def cyclicPrimitive (f : Z2 G M) (b : M) (x : G) : M :=
@@ -165,7 +162,7 @@ private noncomputable def cyclicPrimitive (f : Z2 G M) (b : M) (x : G) : M :=
 
 omit [DiscreteTopology G] [ContinuousSMul G M] in
 private theorem cyclicPrimitive_mul (f : Z2 G M) (b : M)
-    (hb : groupNorm G M b = (sumCocycle f g : M)) (x : G) :
+    (hb : groupNorm G M b = (sumCocycle g f : M)) (x : G) :
     cyclicPrimitive g hg f b (x * g) =
       x • b + cyclicPrimitive g hg f b x - (f : G × G → M) (x, g) := by
   let k := cyclicLog g hg x
@@ -230,7 +227,7 @@ include hg in
 omit [ContinuousSMul G M] in
 private theorem mem_B2_of_cyclicZ2Map_eq_zero (f : Z2 G M)
     (hfzero : cyclicZ2Map g f = 0) : (f : G × G → M) ∈ B2 G M := by
-  have hsum : sumCocycle f g ∈ (groupNorm G M).range.addSubgroupOf (H0 G M) := by
+  have hsum : sumCocycle g f ∈ (groupNorm G M).range.addSubgroupOf (H0 G M) := by
     rw [← QuotientAddGroup.eq_zero_iff]
     exact hfzero
   rw [AddSubgroup.mem_addSubgroupOf] at hsum
@@ -283,7 +280,7 @@ private theorem mem_B2_of_cyclicZ2Map_eq_zero (f : Z2 G M)
 
 omit [ContinuousSMul G M] in
 private theorem sumCocycle_carryCocycle (a : H0 G M) (hn : 1 < orderOf g) :
-    sumCocycle (carryCocycle g hg a) g = a := by
+    sumCocycle g (carryCocycle g hg a) = a := by
   apply Subtype.ext
   rw [sumCocycle_val, Fintype.sum_eq_single (g ^ (orderOf g - 1))]
   · rw [carryCocycle_apply, cyclicLog_pow]
@@ -365,10 +362,10 @@ theorem explicitH2CyclicEquiv_mk (G' : Type u) [Group G'] [TopologicalSpace G']
         ⟨∑ x : G', (f : G' × G' → M') (x, g'), sum_cocycle_mem_H0 G' M' f g'⟩ := by
   calc
     explicitH2CyclicEquiv G' M' g' hg' (f : H2 G' M') =
-        QuotientAddGroup.mk (sumCocycle f g') := cyclicH2Map_mk g' f
+        QuotientAddGroup.mk (sumCocycle g' f) := cyclicH2Map_mk g' f
     _ = QuotientAddGroup.mk
         ⟨∑ x : G', (f : G' × G' → M') (x, g'), sum_cocycle_mem_H0 G' M' f g'⟩ :=
-      congrArg QuotientAddGroup.mk (Subtype.ext (sumCocycle_val f g'))
+      congrArg QuotientAddGroup.mk (Subtype.ext (sumCocycle_val g' f))
 
 end Cyclic
 
