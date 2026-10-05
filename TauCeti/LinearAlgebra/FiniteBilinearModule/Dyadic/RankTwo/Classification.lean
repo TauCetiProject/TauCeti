@@ -8,6 +8,8 @@ module
 public import TauCeti.Data.ZMod.BinaryQuadraticForm
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Dyadic.RankTwo.Basic
 
+import TauCeti.Data.ZMod.Two
+
 /-!
 # Rank-two dyadic blocks are `u^{(2)}(2^k)` or `v^{(2)}(2^k)`
 

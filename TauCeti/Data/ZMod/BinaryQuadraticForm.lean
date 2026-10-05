@@ -6,10 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.ZMod.Basic
-import Mathlib.RingTheory.Nilpotent.Basic
+
 import Mathlib.Tactic.Algebra.Basic
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Ring
+import TauCeti.Data.ZMod.Two
 
 /-!
 # Binary quadratic forms over rings of integers modulo a power of two
@@ -33,29 +34,6 @@ public section
 namespace ZMod
 
 variable {k : ℕ}
-
-private theorem isNilpotent_two : IsNilpotent (2 : ZMod (2 ^ (k + 1))) :=
-  ⟨k + 1, by exact_mod_cast ZMod.natCast_self (2 ^ (k + 1))⟩
-
-/-- An even element plus a unit is a unit in `ℤ/2^{k+1}`. -/
-theorem isUnit_two_mul_add {c u : ZMod (2 ^ (k + 1))} (hu : IsUnit u) :
-    IsUnit (2 * c + u) :=
-  ((Commute.all 2 c).isNilpotent_mul_right isNilpotent_two).isUnit_add_right_of_commute hu
-    (Commute.all _ _)
-
-/-- An even element of `ℤ/2^{k+1}` is not a unit. -/
-private theorem not_isUnit_two_mul (c : ZMod (2 ^ (k + 1))) : ¬ IsUnit (2 * c) :=
-  have : Nontrivial (ZMod (2 ^ (k + 1))) :=
-    ZMod.nontrivial_iff.2 (Nat.one_lt_two_pow k.succ_ne_zero).ne'
-  fun h ↦ h.not_isNilpotent ((Commute.all 2 c).isNilpotent_mul_right isNilpotent_two)
-
-/-- Every element of `ℤ/2^{k+1}` is even or odd, according to the parity of an integer lift. -/
-theorem eq_two_mul_or_eq_two_mul_add_one (x : ZMod (2 ^ (k + 1))) :
-    (∃ c, x = 2 * c) ∨ ∃ c, x = 2 * c + 1 := by
-  obtain ⟨X, rfl⟩ := ZMod.intCast_surjective x
-  rcases Int.even_or_odd' X with ⟨c, rfl | rfl⟩
-  · exact Or.inl ⟨c, by push_cast; ring⟩
-  · exact Or.inr ⟨c, by push_cast; ring⟩
 
 /-- For a unit `u`, the map `s ↦ 2cs² + us` is a bijection of `ℤ/2^{k+1}`. -/
 theorem bijective_two_mul_sq_add {c u : ZMod (2 ^ (k + 1))} (hu : IsUnit u) :
