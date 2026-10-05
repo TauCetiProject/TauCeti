@@ -123,6 +123,7 @@ theorem IsMinimal.augmentation_comp_linearEquiv₀_extLinearEquiv (f : r.termObj
 
 /-- The minimal-resolution Hom computation is natural in targets annihilated by `A₊`:
 postcomposition of graded maps computes the covariant map on Ext. -/
+@[simp]
 theorem IsMinimal.extLinearEquiv_comp_mk₀ {N' : GradedModuleCat.{v} 𝒜}
     (hN' : (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k N') = ⊥)
     (n : ℕ) (f : r.termObj n ⟶ N) (g : N ⟶ N') :
