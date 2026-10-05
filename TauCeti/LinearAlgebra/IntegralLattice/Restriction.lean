@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.FreeModule.PID
 public import TauCeti.LinearAlgebra.IntegralLattice.Even
 public import TauCeti.LinearAlgebra.IntegralLattice.Rationalization
+public import TauCeti.RingTheory.TensorProduct.IsBaseChange
 
 /-!
 # Restricting an integral lattice to a submodule
@@ -36,7 +37,8 @@ The rationalization uses `IntegralLattice.ofIntegralForm` and Mathlib's
 * `TauCeti.IntegralLattice.restrictCarrierEquiv`: the canonical integral carrier equivalence.
 * `TauCeti.IntegralLattice.isEven_restrict_iff`: evenness characterized on the chosen submodule.
 * `TauCeti.IntegralLattice.restrictMap`: the rational extension of the inclusion, characterized by
-  `restrictMap_injective`, `range_restrictMap`, `form_restrictMap`, and `map_restrict_carrier`.
+  `restrictMap_injective`, `range_restrictMap`, `form_restrictMap`, and
+  `map_restrictMap_restrict_carrier`.
 * `TauCeti.IntegralLattice.restrictFull`: restriction to a full ambient submodule contained in the
   original carrier, retaining the original rational ambient space.
 * `TauCeti.IntegralLattice.restrictFullIsometry`: the canonical comparison of the two restrictions
@@ -129,7 +131,7 @@ theorem restrictMap_tmul (L : IntegralLattice V) (S : Submodule ℤ L) (q : ℚ)
 form is needed. -/
 theorem restrictMap_injective (L : IntegralLattice V) (S : Submodule ℤ L) :
     Function.Injective (L.restrictMap S) :=
-  liftBaseChange_injective_of_injective ℚ _
+  (L.carrier.subtype.comp S.subtype).liftBaseChange_injective (K := ℚ)
     (L.carrier.injective_subtype.comp S.injective_subtype)
 
 /-- The range of the rational inclusion is exactly the rational span of the embedded submodule. -/
@@ -148,7 +150,7 @@ theorem form_restrictMap (L : IntegralLattice V) (S : Submodule ℤ L) (x y : �
 
 /-- The restricted integral carrier maps onto the embedded submodule, not merely onto its
 rational span. -/
-theorem map_restrict_carrier (L : IntegralLattice V) (S : Submodule ℤ L) :
+theorem map_restrictMap_restrict_carrier (L : IntegralLattice V) (S : Submodule ℤ L) :
     (L.restrict S).carrier.map ((L.restrictMap S).restrictScalars ℤ) = S.map L.carrier.subtype := by
   have hcomp : (L.restrictMap S).restrictScalars ℤ ∘ₗ TensorProduct.mk ℤ ℚ S 1 =
       L.carrier.subtype ∘ₗ S.subtype := by
@@ -205,7 +207,7 @@ noncomputable def restrictFullIsometry (L : IntegralLattice V) (S : Submodule �
         exact L.form_restrictMap S x y }
   map_carrier := by
     rw [restrictFull_carrier]
-    exact L.map_restrict_carrier S
+    exact L.map_restrictMap_restrict_carrier S
 
 /-- The canonical comparison applies the rational extension of the inclusion. -/
 -- The `Isometry` wrapper uses `LinearEquiv.ofBijective`, whose underlying map is unchanged.
