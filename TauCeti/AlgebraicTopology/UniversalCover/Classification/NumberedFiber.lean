@@ -408,7 +408,8 @@ def ConnectedFiberNumberedCover.forgetNumbering (c : ConnectedFiberNumberedCover
 
 /-- Keeping only the point labelled `i`. -/
 -- The type of `e` depends on the projected cover, so this definition must expose that projection.
-@[expose] def ConnectedFiberNumberedCover.markLabel (c : ConnectedFiberNumberedCover x n)
+@[expose, simps cover e]
+def ConnectedFiberNumberedCover.markLabel (c : ConnectedFiberNumberedCover x n)
     (i : Fin n) :
     ConnectedPointedCover x n where
   cover := c.cover
@@ -425,18 +426,6 @@ def ConnectedPointedCover.forgetPoint (c : ConnectedPointedCover x n) :
 @[simp]
 theorem ConnectedFiberNumberedCover.forgetNumbering_cover (c : ConnectedFiberNumberedCover x n) :
     c.forgetNumbering.cover = c.cover :=
-  (rfl)
-
-/-- Marking a label keeps the underlying cover. -/
-@[simp]
-theorem ConnectedFiberNumberedCover.markLabel_cover (c : ConnectedFiberNumberedCover x n)
-    (i : Fin n) : (c.markLabel i).cover = c.cover :=
-  (rfl)
-
-/-- The point chosen by marking the label `i` is the point labelled `i`. -/
-@[simp]
-theorem ConnectedFiberNumberedCover.markLabel_e (c : ConnectedFiberNumberedCover x n)
-    (i : Fin n) : (c.markLabel i).e = c.ν.symm i :=
   (rfl)
 
 /-- Forgetting the chosen point keeps the underlying cover. -/

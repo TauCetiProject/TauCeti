@@ -679,37 +679,45 @@ lower-left grid point is `(c, r)`. -/
 def XSet : Finset (Fin n × Fin n) :=
   G.X.pointSet
 
+/-- The `O`-marking set is the grid-point set of the `O` permutation. -/
+theorem OSet_def : G.OSet = G.O.pointSet :=
+  rfl
+
+/-- The `X`-marking set is the grid-point set of the `X` permutation. -/
+theorem XSet_def : G.XSet = G.X.pointSet :=
+  rfl
+
 /-- Membership in the `O`-marking set is the graph condition for the `O` permutation. -/
 @[simp]
 theorem mem_OSet (p : Fin n × Fin n) : p ∈ G.OSet ↔ G.O p.1 = p.2 := by
-  simp [OSet]
+  simp [OSet_def]
 
 /-- Membership in the `X`-marking set is the graph condition for the `X` permutation. -/
 @[simp]
 theorem mem_XSet (p : Fin n × Fin n) : p ∈ G.XSet ↔ G.X p.1 = p.2 := by
-  simp [XSet]
+  simp [XSet_def]
 
 /-- The square `(c, r)` contains an `O` marking exactly when `G.O c = r`. -/
 theorem mk_mem_OSet (c r : Fin n) : (c, r) ∈ G.OSet ↔ G.O c = r := by
-  simp [OSet]
+  simp [OSet_def]
 
 /-- The square `(c, r)` contains an `X` marking exactly when `G.X c = r`. -/
 theorem mk_mem_XSet (c r : Fin n) : (c, r) ∈ G.XSet ↔ G.X c = r := by
-  simp [XSet]
+  simp [XSet_def]
 
 /-- A grid diagram has exactly `n` `O` markings. -/
 @[simp]
 theorem card_OSet : G.OSet.card = n := by
-  simp [OSet]
+  simp [OSet_def]
 
 /-- A grid diagram has exactly `n` `X` markings. -/
 @[simp]
 theorem card_XSet : G.XSet.card = n := by
-  simp [XSet]
+  simp [XSet_def]
 
 /-- The `O` and `X` marking sets of a grid diagram are disjoint. -/
 theorem disjoint_OSet_XSet : Disjoint G.OSet G.XSet := by
-  rw [OSet, XSet, GridState.disjoint_pointSet_iff]
+  rw [OSet_def, XSet_def, GridState.disjoint_pointSet_iff]
   exact G.disjoint
 
 /-- Relabel the rows of a grid diagram by relabeling both marking states. -/
@@ -775,24 +783,24 @@ theorem relabelColumns_X_apply (κ : Equiv.Perm (Fin n)) (c : Fin n) :
 /-- Row relabeling transports the `O` marking set by the row permutation. -/
 theorem mem_OSet_relabelRows (ρ : Equiv.Perm (Fin n)) (p : Fin n × Fin n) :
     p ∈ (G.relabelRows ρ).OSet ↔ (p.1, ρ.symm p.2) ∈ G.OSet := by
-  rw [OSet, OSet]
+  rw [OSet_def, OSet_def]
   exact GridState.mem_pointSet_relabelRows ρ G.O p
 
 /-- Row relabeling transports the `X` marking set by the row permutation. -/
 theorem mem_XSet_relabelRows (ρ : Equiv.Perm (Fin n)) (p : Fin n × Fin n) :
     p ∈ (G.relabelRows ρ).XSet ↔ (p.1, ρ.symm p.2) ∈ G.XSet := by
-  rw [XSet, XSet]
+  rw [XSet_def, XSet_def]
   exact GridState.mem_pointSet_relabelRows ρ G.X p
 
 /-- Column relabeling transports the `O` marking set by the column permutation. -/
 theorem mem_OSet_relabelColumns (κ : Equiv.Perm (Fin n)) (p : Fin n × Fin n) :
     p ∈ (G.relabelColumns κ).OSet ↔ (κ.symm p.1, p.2) ∈ G.OSet := by
-  simp [OSet]
+  simp [OSet_def]
 
 /-- Column relabeling transports the `X` marking set by the column permutation. -/
 theorem mem_XSet_relabelColumns (κ : Equiv.Perm (Fin n)) (p : Fin n × Fin n) :
     p ∈ (G.relabelColumns κ).XSet ↔ (κ.symm p.1, p.2) ∈ G.XSet := by
-  simp [XSet]
+  simp [XSet_def]
 
 /-- Swapping two rows in a grid diagram. -/
 def swapRows (a b : Fin n) (G : GridDiagram n) : GridDiagram n :=
@@ -928,12 +936,12 @@ theorem swapColumns_transpose (a b : Fin n) :
 /-- The `O`-marking set of the reflected diagram is the diagonal reflection of the original
 `O`-marking set. -/
 theorem transpose_OSet : G.transpose.OSet = G.OSet.image Prod.swap := by
-  rw [OSet, OSet, transpose_O, GridState.transpose_pointSet]
+  rw [OSet_def, OSet_def, transpose_O, GridState.transpose_pointSet]
 
 /-- The `X`-marking set of the reflected diagram is the diagonal reflection of the original
 `X`-marking set. -/
 theorem transpose_XSet : G.transpose.XSet = G.XSet.image Prod.swap := by
-  rw [XSet, XSet, transpose_X, GridState.transpose_pointSet]
+  rw [XSet_def, XSet_def, transpose_X, GridState.transpose_pointSet]
 
 /-- The marking swap of a grid diagram, obtained by exchanging the `O`- and `X`-marking states.
 
