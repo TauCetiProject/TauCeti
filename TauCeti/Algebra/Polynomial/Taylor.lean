@@ -12,16 +12,17 @@ public import Mathlib.Algebra.Polynomial.Taylor
 # The lowest Taylor coefficient at a root
 
 The Taylor expansion `taylor r p = p(X + r)` of a polynomial `p` at `r` starts in degree
-`p.rootMultiplicity r`, and its first coefficient is the value at `r` of `p` divided by the
+`p.rootMultiplicity r`, and its trailing coefficient is the value at `r` of `p` divided by the
 largest power of `X - r` dividing it. This is the coefficient that survives when `X - r` is
-divided out of `p` as often as possible before evaluating at `r`; it is nonzero whenever `p` is
-(`Polynomial.eval_divByMonic_pow_rootMultiplicity_ne_zero`).
+divided out of `p` as often as possible before evaluating at `r`; for `p ≠ 0` it is nonzero
+(`Polynomial.eval_divByMonic_pow_rootMultiplicity_ne_zero`), so it is the lowest nonzero
+coefficient of the Taylor expansion.
 
 ## Main results
 
 * `Polynomial.natTrailingDegree_taylor`: the Taylor expansion at `r` starts in degree
   `p.rootMultiplicity r`.
-* `Polynomial.coeff_taylor_rootMultiplicity`, `Polynomial.trailingCoeff_taylor`: its lowest
+* `Polynomial.coeff_taylor_rootMultiplicity`, `Polynomial.trailingCoeff_taylor`: its trailing
   coefficient is `(p /ₘ (X - C r) ^ p.rootMultiplicity r).eval r`.
 -/
 
@@ -46,8 +47,9 @@ theorem coeff_taylor_rootMultiplicity (p : R[X]) (r : R) :
   simpa [taylor_mul, taylor_pow, taylor_coeff_zero] using
     coeff_X_pow_mul (taylor r (p /ₘ (X - C r) ^ m)) m 0
 
-/-- The lowest nonzero coefficient of the Taylor expansion of `p` at `r` is the value at `r` of
-`p` divided by the largest power of `X - r` dividing it. -/
+/-- The trailing coefficient of the Taylor expansion of `p` at `r` is the value at `r` of `p`
+divided by the largest power of `X - r` dividing it. For `p ≠ 0` this is the lowest nonzero
+coefficient. -/
 theorem trailingCoeff_taylor (p : R[X]) (r : R) :
     (taylor r p).trailingCoeff = (p /ₘ (X - C r) ^ p.rootMultiplicity r).eval r := by
   rw [trailingCoeff, natTrailingDegree_taylor, coeff_taylor_rootMultiplicity]

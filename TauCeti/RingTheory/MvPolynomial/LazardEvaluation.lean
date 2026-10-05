@@ -29,7 +29,8 @@ cylindrical algebraic decomposition, which needs no well-orientedness hypothesis
 
 Each step of the elimination is described by the univariate identity
 `Polynomial.trailingCoeff_taylor`: dividing `q` by the largest power of `X - r` and evaluating
-at `r` gives the lowest nonzero coefficient of the Taylor expansion `q(X + r)`. Iterating it, the
+at `r` gives the trailing coefficient of the Taylor expansion `q(X + r)`, which is its lowest
+nonzero coefficient when `q ≠ 0`. Iterating it, the
 removed exponents are the lexicographically least exponent `u` of a nonzero Taylor coefficient
 of `p` at `a`, and the Lazard evaluation is that coefficient (`lazardExponent_eq_iff`,
 `coeff_taylor_lazardExponent`). Here the lexicographic order on `Fin n →₀ ℕ` makes coordinate
@@ -240,8 +241,9 @@ theorem lazardExponent_X_sub_C [Nontrivial S] (a : Fin n → S) (i : Fin n) :
   exact absurd hw (lt_irrefl _)
 
 @[simp]
-theorem lazardEval_X_sub_C [Nontrivial S] (a : Fin n → S) (i : Fin n) :
+theorem lazardEval_X_sub_C (a : Fin n → S) (i : Fin n) :
     (X i - C (a i)).lazardEval a = 1 := by
+  nontriviality S
   rw [← coeff_taylor_lazardExponent, lazardExponent_X_sub_C]
   simp
 
