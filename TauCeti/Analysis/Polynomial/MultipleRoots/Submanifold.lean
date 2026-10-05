@@ -12,9 +12,9 @@ public import TauCeti.Analysis.Analytic.Submanifold.Basic
 # Analytic roots on analytic submanifolds
 
 Continuous root functions of polynomial families with intrinsically analytic coefficients and
-constant positive multiplicity are intrinsically analytic on an analytic submanifold. Degree
-bounds are needed only on the submanifold, locally at each point; the ambient fibers can behave
-differently. Apply the constant-multiplicity root theorem in the free coordinates of a chart.
+locally constant positive multiplicity are intrinsically analytic on an analytic submanifold.
+Degree bounds are needed only on the submanifold, locally at each point; the ambient fibers can
+behave differently. Apply the constant-multiplicity root theorem in the free coordinates of a chart.
 
 This is the regularity step turning continuous delineations into analytic delineations.
 
@@ -31,18 +31,19 @@ open Filter Polynomial Set Topology
 namespace TauCeti
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CharZero 𝕜] [CompleteSpace 𝕜]
-  {n d m : ℕ} {S : Set (Fin n → 𝕜)} {F : (Fin n → 𝕜) → 𝕜[X]}
+  {n d : ℕ} {S : Set (Fin n → 𝕜)} {F : (Fin n → 𝕜) → 𝕜[X]}
   {r : (Fin n → 𝕜) → 𝕜}
 
 /-- A continuous root function on an analytic submanifold is intrinsically analytic if the
-coefficients are intrinsically analytic and its positive multiplicity is constant. Only local
-bounds on the degrees of fibers over the submanifold are required. -/
+coefficients are intrinsically analytic and its positive multiplicity is locally constant. Only
+local bounds on the degrees of fibers over the submanifold are required. -/
 theorem IsAnalyticSubmanifold.analyticOnSubmanifold_of_rootMultiplicity_eq
     (hS : IsAnalyticSubmanifold d S)
     (hF : ∀ i, AnalyticOnSubmanifold d (fun x ↦ (F x).coeff i) S)
     (hdeg : ∀ x ∈ S, ∃ b : ℕ, ∀ᶠ y in 𝓝[S] x, (F y).natDegree ≤ b)
-    (hr : ContinuousOn r S) (hm : 0 < m)
-    (hmult : ∀ x ∈ S, (F x).rootMultiplicity (r x) = m) :
+    (hr : ContinuousOn r S)
+    (hmult : ∀ x ∈ S, ∃ m : ℕ, 0 < m ∧
+      ∀ᶠ y in 𝓝[S] x, (F y).rootMultiplicity (r y) = m) :
     AnalyticOnSubmanifold d r S := by
   rw [hS.analyticOnSubmanifold_iff]
   intro x hx e he hxe
@@ -58,8 +59,9 @@ theorem IsAnalyticSubmanifold.analyticOnSubmanifold_of_rootMultiplicity_eq
   have hrc : ContinuousAt (r ∘ φ) a := by
     simpa only [ContinuousAt, Function.comp_apply, hφx] using (hr x hx).tendsto.comp ht
   obtain ⟨b, hb⟩ := hdeg x hx
+  obtain ⟨m, hm, hmult⟩ := hmult x hx
   exact Polynomial.analyticAt_of_eventually_rootMultiplicity_eq
     (fun i _ ↦ (hF i).analyticAt_chart hx he hxe) (ht.eventually hb)
-    hrc hm (hmem.mono fun u hu ↦ hmult _ hu)
+    hrc hm (ht.eventually hmult)
 
 end TauCeti

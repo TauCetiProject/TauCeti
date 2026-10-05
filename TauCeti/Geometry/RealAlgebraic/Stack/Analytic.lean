@@ -45,7 +45,7 @@ theorem analyticOnSubmanifold_root (hS : IsAnalyticSubmanifold d S)
     (i : Fin D.count) {r : (Fin n → ℝ) → ℝ} (hr : ∀ x : S, r x = D.root i x) :
     AnalyticOnSubmanifold d r S := by
   obtain ⟨k, hk⟩ := D.exists_multiplicity_pos i
-  apply hS.analyticOnSubmanifold_of_rootMultiplicity_eq (hcoeff k) ?_ ?_ hk ?_
+  apply hS.analyticOnSubmanifold_of_rootMultiplicity_eq (hcoeff k) ?_ ?_ ?_
   · intro x hx
     refine ⟨(P k x).natDegree, ?_⟩
     filter_upwards [self_mem_nhdsWithin] with y hy
@@ -53,8 +53,10 @@ theorem analyticOnSubmanifold_root (hS : IsAnalyticSubmanifold d S)
   · rw [continuousOn_iff_continuous_domRestrict]
     exact (D.continuous_root i).congr fun x ↦ (hr x).symm
   · intro x hx
-    rw [hr ⟨x, hx⟩]
-    exact D.rootMultiplicity_root k i ⟨x, hx⟩
+    refine ⟨D.multiplicity k i, hk, ?_⟩
+    filter_upwards [self_mem_nhdsWithin] with y hy
+    rw [hr ⟨y, hy⟩]
+    exact D.rootMultiplicity_root k i ⟨y, hy⟩
 
 /-- Every ambient section of a delineation with intrinsically analytic coefficients is an
 analytic submanifold with the dimension of its base. -/
