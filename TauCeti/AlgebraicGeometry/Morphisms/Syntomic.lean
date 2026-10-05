@@ -19,6 +19,12 @@ on both source and target, and are stable under arbitrary base change. They have
 dimension at most `n`. The affine criterion connects the scheme property to the existing
 algebraic complete-intersection presentations.
 
+The consequences `SyntomicOfRelativeDimension.flat n f` and
+`SyntomicOfRelativeDimension.locallyOfFinitePresentation n f` take the dimension explicitly,
+since it is absent from their conclusions. For downstream typeclass-based APIs, install them
+locally with `have := SyntomicOfRelativeDimension.flat n f` and
+`have := SyntomicOfRelativeDimension.locallyOfFinitePresentation n f`.
+
 This construction follows the local-chart API of Mathlib's `SmoothOfRelativeDimension` in
 `Mathlib/AlgebraicGeometry/Morphisms/Smooth.lean`, by Christian Merten. The mathematical
 reference is the Stacks Project, *Syntomic morphisms*. Syntomic relative curves provide the
