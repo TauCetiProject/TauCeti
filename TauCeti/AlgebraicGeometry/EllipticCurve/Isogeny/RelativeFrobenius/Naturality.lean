@@ -91,6 +91,7 @@ theorem relativeFrobeniusIsogeny_map {K : Type*} [Field K]
 
 /-- Iterated relative Frobenius is natural in the isogeny: its square commutes with
 the isogeny obtained by applying the iterated Frobenius to the coefficients. -/
+@[simp]
 theorem iterateRelativeFrobeniusIsogeny_comp (φ : Isogeny W₁ W₂) (n : ℕ) :
     (iterateRelativeFrobeniusIsogeny p W₂ n).comp φ =
       (φ.map (iterateFrobenius F p n)).comp (iterateRelativeFrobeniusIsogeny p W₁ n) := by
@@ -102,6 +103,7 @@ theorem iterateRelativeFrobeniusIsogeny_comp (φ : Isogeny W₁ W₂) (n : ℕ) 
 
 /-- Relative Frobenius is natural in the isogeny. Over an imperfect field the
 isogeny on the right is Frobenius-twisted, rather than the original isogeny. -/
+@[simp]
 theorem relativeFrobeniusIsogeny_comp (φ : Isogeny W₁ W₂) :
     (relativeFrobeniusIsogeny p W₂).comp φ =
       (φ.map (frobenius F p)).comp (relativeFrobeniusIsogeny p W₁) := by
