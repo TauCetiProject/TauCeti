@@ -7,6 +7,8 @@ module
 
 public import Mathlib.RepresentationTheory.Homological.GroupCohomology.FiniteCyclic
 public import Mathlib.RepresentationTheory.Homological.GroupCohomology.Functoriality
+import TauCeti.Data.Nat.Carry
+import TauCeti.GroupTheory.SpecificGroups.Cyclic.Log
 import TauCeti.RepresentationTheory.Homological.GroupCohomology.Resolution
 import TauCeti.RepresentationTheory.Homological.Resolution
 
@@ -73,6 +75,8 @@ universe u
 
 open CategoryTheory
 
+open TauCeti (cyclicLog pow_cyclicLog cyclicLog_lt cyclicLog_pow cyclicLog_mul cyclicLog_map)
+
 namespace Rep.FiniteCyclicGroup
 
 variable {k G : Type u} [CommRing k] [CommGroup G] [Fintype G] (A : Rep k G) (g : G)
@@ -86,36 +90,6 @@ theorem groupCohomologyπEven_surjective (i : ℕ) [NeZero i] (hi : Even i) :
   have h₁ : Epi (normHomCompSub A g).moduleCatCyclesIso.inv := inferInstance
   have h₂ : Epi (normHomCompSub A g).homologyπ := inferInstance
   exact epi_comp' h₁ (epi_comp' h₂ inferInstance)
-
-/-! ### Exponents with respect to the generator -/
-
-section Log
-
-variable {G : Type u} [Group G] [Finite G] (g : G) (hg : ∀ x, x ∈ Subgroup.zpowers g)
-
-/-- The exponent of `x` with respect to the generator `g`: the unique `i < orderOf g` with
-`g ^ i = x`. -/
-private noncomputable def log (x : G) : ℕ :=
-  ((finEquivZPowers (isOfFinOrder_of_finite g)).symm ⟨x, hg x⟩ : ℕ)
-
-private theorem pow_log (x : G) : g ^ log g hg x = x :=
-  pow_finEquivZPowers_symm_apply (isOfFinOrder_of_finite g) ⟨x, hg x⟩
-
-private theorem log_lt (x : G) : log g hg x < orderOf g :=
-  ((finEquivZPowers (isOfFinOrder_of_finite g)).symm ⟨x, hg x⟩).2
-
-private theorem log_pow (i : ℕ) : log g hg (g ^ i) = i % orderOf g :=
-  congrArg Fin.val (finEquivZPowers_symm_apply (isOfFinOrder_of_finite g) i)
-
-private theorem log_mul (x y : G) : log g hg (x * y) = (log g hg x + log g hg y) % orderOf g := by
-  rw [← log_pow, pow_add, pow_log, pow_log]
-
-private theorem log_map {G' : Type u} [Group G'] [Finite G'] (f : G →* G') {g' : G'}
-    (hg' : ∀ x, x ∈ Subgroup.zpowers g') {d : ℕ} (hfg : f g = g' ^ d) (x : G) :
-    log g' hg' (f x) = d * log g hg x % orderOf g' := by
-  rw [← log_pow, pow_mul, ← hfg, ← map_pow, pow_log]
-
-end Log
 
 /-! ### The comparison map from the bar resolution to the periodic resolution -/
 
@@ -135,12 +109,12 @@ private noncomputable def barToPeriodic₀ : free k G (Fin 0 → G) ⟶ leftRegu
 
 /-- The comparison map in degree `1`, sending `[gⁱ]` to `1 + g + ⋯ + gⁱ⁻¹`. -/
 private noncomputable def barToPeriodic₁ : free k G (Fin 1 → G) ⟶ leftRegular k G :=
-  freeLift k G (leftRegular k G) fun x => geomSum k g (log g hg (x 0))
+  freeLift k G (leftRegular k G) fun x => geomSum k g (cyclicLog g hg (x 0))
 
 /-- The comparison map in degree `2`, sending `[gⁱ | gʲ]` to the carry of `i + j`. -/
 private noncomputable def barToPeriodic₂ : free k G (Fin 2 → G) ⟶ leftRegular k G :=
   freeLift k G (leftRegular k G) fun x =>
-    if orderOf g ≤ log g hg (x 0) + log g hg (x 1) then MonoidAlgebra.single 1 1 else 0
+    if orderOf g ≤ cyclicLog g hg (x 0) + cyclicLog g hg (x 1) then MonoidAlgebra.single 1 1 else 0
 
 omit [Fintype G] in
 private theorem leftRegular_ρ_single (h x : G) (r : k) :
@@ -168,7 +142,7 @@ private theorem barToPeriodic₁_comm :
     Representation.ofMulAction_single, smul_eq_mul, mul_one]
   rw [Finset.sum_congr rfl fun l _ => by rw [applyAsHom_leftRegular_single]]
   simp only [← pow_succ']
-  rw [Finset.sum_range_sub (fun l => MonoidAlgebra.single (g ^ l) (1 : k)), pow_log, pow_zero,
+  rw [Finset.sum_range_sub (fun l => MonoidAlgebra.single (g ^ l) (1 : k)), pow_cyclicLog, pow_zero,
     Fin.sum_univ_one]
   simp [sub_eq_add_neg]
 
@@ -181,10 +155,11 @@ private theorem geomSum_add_sub_geomSum_mod (i j : ℕ) (hi : i < orderOf g) (hj
   · obtain ⟨r, hr⟩ := Nat.exists_eq_add_of_le h
     rw [hr, Nat.add_mod_left, Nat.mod_eq_of_lt (by omega), geomSum, Finset.sum_range_add]
     simp only [pow_add, pow_orderOf_eq_one, one_mul, add_sub_cancel_right]
-    refine Finset.sum_nbij' (fun l => g ^ l) (log g hg) (fun _ _ => Finset.mem_univ _)
-      (fun x _ => Finset.mem_range.2 (log_lt g hg x)) (fun l hl => ?_) (fun x _ => pow_log g hg x)
+    refine Finset.sum_nbij' (fun l => g ^ l) (cyclicLog g hg) (fun _ _ => Finset.mem_univ _)
+      (fun x _ => Finset.mem_range.2 (cyclicLog_lt g hg x)) (fun l hl => ?_)
+      (fun x _ => pow_cyclicLog g hg x)
       (fun _ _ => rfl)
-    rw [log_pow, Nat.mod_eq_of_lt (Finset.mem_range.1 hl)]
+    rw [cyclicLog_pow, Nat.mod_eq_of_lt (Finset.mem_range.1 hl)]
   · rw [Nat.mod_eq_of_lt (not_le.1 h), sub_self]
 
 private theorem barToPeriodic₂_comm :
@@ -199,12 +174,13 @@ private theorem barToPeriodic₂_comm :
   -- The two faces of `[x₀ | x₁]` other than `x₀ • [x₁]` are `[x₀ x₁]` and `[x₀]`.
   have h₀ : Fin.contractNth 0 (· * ·) x 0 = x 0 * x 1 := rfl
   have h₁ : Fin.contractNth 1 (· * ·) x 0 = x 0 := rfl
-  set i := log g hg (x 0) with hi
-  set j := log g hg (x 1) with hj
-  have hmul : log g hg (x 0 * x 1) = (i + j) % orderOf g := log_mul g hg _ _
+  set i := cyclicLog g hg (x 0) with hi
+  set j := cyclicLog g hg (x 1) with hj
+  have hmul : cyclicLog g hg (x 0 * x 1) = (i + j) % orderOf g := cyclicLog_mul g hg _ _
   -- As in `barToPeriodic₁_comm`, left multiplication is matched up to the instance path.
   simp only [Representation.ofMulAction_single, smul_eq_mul]
-  rw [h₀, h₁, hmul, ← hi, (pow_log g hg (x 0)).symm.trans (congrArg (g ^ ·) hi.symm), map_zero]
+  rw [h₀, h₁, hmul, ← hi, (pow_cyclicLog g hg (x 0)).symm.trans (congrArg (g ^ ·) hi.symm),
+    map_zero]
   simp only [← pow_add]
   have hS : geomSum k g (i + j) =
       geomSum k g i + ∑ l ∈ Finset.range j, MonoidAlgebra.single (g ^ (i + l)) 1 :=
@@ -218,7 +194,7 @@ private theorem barToPeriodic₂_comm :
       simp only [Representation.norm, LinearMap.sum_apply, Representation.ofMulAction_single,
         smul_eq_mul, mul_one]
     · exact map_zero _
-  rw [hN, ← geomSum_add_sub_geomSum_mod k g hg i j (log_lt g hg _) (log_lt g hg _), hS]
+  rw [hN, ← geomSum_add_sub_geomSum_mod k g hg i j (cyclicLog_lt g hg _) (cyclicLog_lt g hg _), hS]
   norm_num
   abel
 
@@ -254,7 +230,8 @@ private theorem barToPeriodic₀_single (x : Fin 0 → G) :
 
 private theorem barToPeriodic₂_single (v : Fin 2 → G) :
     (barToPeriodic₂ k g hg).hom (single v (MonoidAlgebra.single 1 1)) =
-      if orderOf g ≤ log g hg (v 0) + log g hg (v 1) then MonoidAlgebra.single (1 : G) (1 : k)
+      if orderOf g ≤ cyclicLog g hg (v 0) + cyclicLog g hg (v 1) then
+        MonoidAlgebra.single (1 : G) (1 : k)
       else 0 := by
   simp only [barToPeriodic₂, Rep.hom_ofHom, Representation.freeLift_single_single, one_smul,
     map_one, Module.End.one_apply]
@@ -296,25 +273,14 @@ private theorem ρ_apply_of_mem_ker (x : LinearMap.ker (applyAsHom A g - 𝟙 A)
 
 /-- The carry cochain `(x, y) ↦ a` if the exponents of `x` and `y` carry, and `0` otherwise. -/
 private noncomputable def carryCochain : A →ₗ[k] G × G → A :=
-  LinearMap.pi fun p => if orderOf g ≤ log g hg p.1 + log g hg p.2 then LinearMap.id else 0
+  LinearMap.pi fun p =>
+    if orderOf g ≤ cyclicLog g hg p.1 + cyclicLog g hg p.2 then LinearMap.id else 0
 
 private theorem carryCochain_apply (a : A) (p : G × G) :
-    carryCochain A g hg a p = if orderOf g ≤ log g hg p.1 + log g hg p.2 then a else 0 := by
+    carryCochain A g hg a p =
+      if orderOf g ≤ cyclicLog g hg p.1 + cyclicLog g hg p.2 then a else 0 := by
   simp only [carryCochain, LinearMap.pi_apply]
   split_ifs <;> rfl
-
-/-- The carries of `(i + j) + l` and of `i + (j + l)` modulo `n` agree: both count the multiples
-of `n` in `i + j + l`. -/
-private theorem carry_add_carry {n i j l : ℕ} (hi : i < n) (hj : j < n) (hl : l < n) :
-    (if n ≤ (i + j) % n + l then 1 else 0) + (if n ≤ i + j then 1 else 0) =
-      (if n ≤ j + l then 1 else 0) + (if n ≤ i + (j + l) % n then 1 else 0) := by
-  have key : ∀ m, m < 2 * n → m % n = if n ≤ m then m - n else m := by
-    intro m hm
-    split_ifs with h
-    · rw [Nat.mod_eq_sub_mod h, Nat.mod_eq_of_lt (by omega)]
-    · exact Nat.mod_eq_of_lt (by omega)
-  rw [key (i + j) (by omega), key (j + l) (by omega)]
-  split_ifs <;> omega
 
 private theorem carryCochain_mem_cocycles₂ (a : A) (ha : A.ρ g a = a) :
     carryCochain A g hg a ∈ cocycles₂ A := by
@@ -322,8 +288,9 @@ private theorem carryCochain_mem_cocycles₂ (a : A) (ha : A.ρ g a = a) :
     (Representation.mem_invariants_iff_of_forall_mem_zpowers A.ρ g hg a).2 ha x
   rw [mem_cocycles₂_iff]
   intro x y z
-  have h := carry_add_carry (log_lt g hg x) (log_lt g hg y) (log_lt g hg z)
-  simp only [carryCochain_apply, log_mul]
+  have h := TauCeti.Nat.carry_add_carry (cyclicLog_lt g hg x) (cyclicLog_lt g hg y)
+    (cyclicLog_lt g hg z)
+  simp only [carryCochain_apply, cyclicLog_mul]
   split_ifs at h ⊢ <;> simp_all
 
 /-- **The carry cocycle** of an element `a` fixed by the generator `g` of a finite cyclic group of
@@ -345,7 +312,7 @@ private theorem coe_carryCocycle (x : LinearMap.ker (applyAsHom A g - 𝟙 A).ho
 theorem carryCocycle_apply_pow (x : LinearMap.ker (applyAsHom A g - 𝟙 A).hom.toLinearMap)
     {i j : ℕ} (hi : i < orderOf g) (hj : j < orderOf g) :
     (carryCocycle A g hg x : G × G → A) (g ^ i, g ^ j) = if orderOf g ≤ i + j then x.1 else 0 := by
-  rw [coe_carryCocycle, carryCochain_apply, log_pow, log_pow, Nat.mod_eq_of_lt hi,
+  rw [coe_carryCocycle, carryCochain_apply, cyclicLog_pow, cyclicLog_pow, Nat.mod_eq_of_lt hi,
     Nat.mod_eq_of_lt hj]
 
 /-- The comparison map on cochains in degree `2` sends `k[G] ⟶ A, 1 ↦ a` to the carry cochain of
@@ -439,11 +406,12 @@ private theorem mapCocycles₂_carryCocycle_apply [Finite G] {g' : G'}
     (hg' : ∀ x, x ∈ Subgroup.zpowers g') {d : ℕ} (hfg : f g = g' ^ d) (φ : res f B ⟶ A)
     (y : LinearMap.ker (applyAsHom B g' - 𝟙 B).hom.toLinearMap) (p : G × G) :
     ((mapCocycles₂ f φ).hom (carryCocycle B g' hg' y) : G × G → A) p =
-      if orderOf g' ≤ d * log g hg p.1 % orderOf g' + d * log g hg p.2 % orderOf g' then
+      if orderOf g' ≤ d * cyclicLog g hg p.1 % orderOf g' + d * cyclicLog g hg p.2 % orderOf g' then
         φ.hom y.1 else 0 := by
   rw [coe_mapCocycles₂, cochainsMap₂, ModuleCat.ofHom_apply, LinearMap.comp_apply,
     LinearMap.compLeft_apply, Function.comp_apply, LinearMap.funLeft_apply, Prod.map_apply,
-    coe_carryCocycle, carryCochain_apply, log_map g hg f hg' hfg, log_map g hg f hg' hfg]
+    coe_carryCocycle, carryCochain_apply, cyclicLog_map g hg f hg' hfg,
+    cyclicLog_map g hg f hg' hfg]
   split_ifs
   · rfl
   · exact map_zero _
@@ -472,15 +440,15 @@ theorem map_groupCohomologyπEven_two {g' : G'} (hg' : ∀ x, x ∈ Subgroup.zpo
     exact fun x => (Representation.mem_invariants_iff_of_forall_mem_zpowers A.ρ g hg _).2 hfixg x
   -- The difference of the two cocycles is the coboundary of `x ↦ -⌊d i(x)/n⌋ • φ y`, where `i(x)`
   -- is the exponent of `x` and `n` is the order of `G'`.
-  refine ⟨fun x => -((d * log g hg x / orderOf g') • φ.hom y.1), funext fun p => ?_⟩
+  refine ⟨fun x => -((d * cyclicLog g hg x / orderOf g') • φ.hom y.1), funext fun p => ?_⟩
   rw [Pi.sub_apply, mapCocycles₂_carryCocycle_apply A g hg f hg' hfg φ y, coe_carryCocycle,
     carryCochain_apply, hz]
   simp only [d₁₂, ModuleCat.hom_ofHom, LinearMap.coe_mk, AddHom.coe_mk, map_neg, map_nsmul, hfix,
-    log_mul]
+    cyclicLog_mul]
   have hn : d * orderOf g = m * orderOf g' := by
     rw [orderOf_eq_card_of_forall_mem_zpowers hg, orderOf_eq_card_of_forall_mem_zpowers hg', hm]
-  have hk := mul_div_add_mul_div_add_carry (orderOf_pos g') hn (log_lt g hg p.1)
-    (log_lt g hg p.2)
+  have hk := mul_div_add_mul_div_add_carry (orderOf_pos g') hn (cyclicLog_lt g hg p.1)
+    (cyclicLog_lt g hg p.2)
   have key := congrArg (· • φ.hom y.1) hk
   simp only [add_smul, mul_smul] at key
   generalize φ.hom y.1 = b at key ⊢

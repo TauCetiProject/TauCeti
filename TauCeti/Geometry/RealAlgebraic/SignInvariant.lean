@@ -21,12 +21,20 @@ The basic source of sign-invariance is connectedness: a function that is continu
 zero on a preconnected set is sign-invariant there, since its sign is a continuous map to the
 discrete space `SignType`.
 
+A set on which each function of a family is sign-invariant lies inside or outside each set
+described by a condition on their signs. If the sets of a cover each have this property, one sample
+point from each of them realizes every sign vector that the functions take.
+
 ## Main declarations
 
 * `TauCeti.SignInvariant`: sign-invariance of a function on a set.
 * `TauCeti.signInvariant_iff_exists`: a sign-invariant function has a single sign on the set.
 * `TauCeti.signInvariant_image`: sign-invariance on an image is sign-invariance of the
   composite.
+* `TauCeti.subset_or_disjoint_setOf_sign`: a set on which the functions are sign-invariant lies
+  inside or outside each sign-condition set.
+* `TauCeti.range_sign_sample_eq`: sample points of a cover by sets on which the functions are
+  sign-invariant realize all their sign vectors.
 * `IsPreconnected.signInvariant`: a continuous, nowhere-zero function on a preconnected set is
   sign-invariant.
 
@@ -96,6 +104,37 @@ theorem signInvariant_singleton (a : α) : SignInvariant f {a} :=
 @[simp]
 theorem signInvariant_const (c : R) : SignInvariant (fun _ : α ↦ c) s :=
   fun _ _ _ _ ↦ rfl
+
+/-! ### Sign conditions -/
+
+section SignCondition
+
+variable {ι : Type*} {f : ι → α → R}
+
+/-- If each function `f i` is sign-invariant on `t`, then `t` lies inside or outside every set
+described by a condition on the signs of the `f i`. -/
+theorem subset_or_disjoint_setOf_sign (hf : ∀ i, SignInvariant (f i) t)
+    (Φ : (ι → SignType) → Prop) :
+    t ⊆ {x | Φ fun i ↦ SignType.sign (f i x)} ∨
+      Disjoint t {x | Φ fun i ↦ SignType.sign (f i x)} := by
+  by_cases h : ∃ x ∈ t, Φ fun i ↦ SignType.sign (f i x)
+  · obtain ⟨x, hx, hΦ⟩ := h
+    refine .inl fun y hy ↦ ?_
+    rwa [mem_ofPred_eq, funext fun i ↦ hf i y hy x hx]
+  · exact .inr <| disjoint_left.2 fun x hx hΦ ↦ h ⟨x, hx, hΦ⟩
+
+/-- **Sample points realize all sign conditions.** Let the functions `f i` be sign-invariant on
+each set of a family `𝒞` covering `α`, and pick a sample point `x E` in each `E ∈ 𝒞`. Then the
+sign vectors of the `f i` at the sample points are exactly the sign vectors they take on `α`. -/
+theorem range_sign_sample_eq {𝒞 : Set (Set α)} (h𝒞 : ⋃₀ 𝒞 = univ)
+    (hf : ∀ i, ∀ E ∈ 𝒞, SignInvariant (f i) E) (x : 𝒞 → α) (hx : ∀ E : 𝒞, x E ∈ (E : Set α)) :
+    (range fun E i ↦ SignType.sign (f i (x E))) = range fun y i ↦ SignType.sign (f i y) := by
+  refine (range_comp_subset_range x fun y i ↦ SignType.sign (f i y)).antisymm ?_
+  rintro _ ⟨y, rfl⟩
+  obtain ⟨E, hE, hy⟩ := mem_sUnion.1 (h𝒞 ▸ mem_univ y)
+  exact ⟨⟨E, hE⟩, funext fun i ↦ hf i E hE _ (hx ⟨E, hE⟩) y hy⟩
+
+end SignCondition
 
 end Preorder
 

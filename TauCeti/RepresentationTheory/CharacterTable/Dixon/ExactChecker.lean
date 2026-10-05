@@ -31,6 +31,8 @@ same proof serves both the integer-valued stage and the exact cyclotomic stage.
 
 * `TauCeti.ClassData.IsExactCharacterTableSpec.isCharacterTableSpec`: a certified exact table
   maps to the complex character-table specification under any star-preserving ring homomorphism.
+* `TauCeti.ClassData.IsExactCharacterTableSpec.sum_characterDegree_eq_sum_degree`: its supplied
+  degree vector sums to the character degrees of the group.
 
 This is the checker bridge required by Layer 6, “The assembled solver”, of the
 [character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md).
@@ -253,6 +255,21 @@ theorem isCharacterTableSpec (f : R →+* ℂ) (hf : ∀ x, f (conj x) = star (f
     rw [h.centralCharacterRow_reindexTableOfMap f i]
     exact (d.isModularEigenrow_iff_isClassEigenrow _).mp
       (h.central_eigen_map f ((finCongr d.numClasses_eq_card_conjClasses).symm i))
+
+/-- **The supplied degree vector of a certified exact table sums to the sum of the character
+degrees of `G`.** -/
+theorem sum_characterDegree_eq_sum_degree (f : R →+* ℂ)
+    (hf : ∀ x, f (conj x) = star (f x)) :
+    ∑ i, characterDegree ℂ (G := G) i = ∑ j, degree j := by
+  have hcol : ∑ i, d.reindexTableOfMap f table i (ConjClasses.mk 1) =
+      ∑ j, (degree j : ℂ) := by
+    rw [← (finCongr d.numClasses_eq_card_conjClasses).sum_comp]
+    refine Finset.sum_congr rfl fun j _ ↦ ?_
+    rw [← d.classOf_index 1, d.reindexTableOfMap_apply_classOf, h.table_index_one,
+      map_natCast]
+  have key := (h.isCharacterTableSpec f hf).sum_apply_mk_one_eq_sum_characterDegree
+  rw [hcol] at key
+  exact_mod_cast key.symm
 
 end IsExactCharacterTableSpec
 

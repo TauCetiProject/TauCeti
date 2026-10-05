@@ -58,6 +58,7 @@ Herbrand quotient, such as `h(Lˣ) = [L : K]` for local fields, bounds `H²`.
   `L`.
 * `TauCeti.H2π_eq_cyclicClass`: a `2`-cocycle with the values of the carry cocycle of `a`
   represents the class of `a`.
+* `TauCeti.exists_H2π_eq_cyclicClass`: such a carry representative exists.
 * `TauCeti.map_cyclicClass`: inflation along a tower of cyclic Galois extensions sends the class of
   `a` to the class of `a ^ [M : L]`.
 * `TauCeti.map_cyclicClass_baseChange`: base change of cyclic Galois extensions with
@@ -314,6 +315,26 @@ theorem H2π_eq_cyclicClass (z : cocycles₂ (Rep.ofMulDistribMulAction (L ≃�
   -- Both values are read in `Additive Lˣ`, where `0` is `1` and the fixed element `a` is the
   -- image of `a` under `Rep.toAdditive.symm`, the identity.
   split_ifs <;> rfl
+
+omit [IsGalois K L] in
+/-- **The class of `a` has a carry representative**: some `2`-cocycle of `Gal(L/K)` with values in
+`Lˣ` represents `cyclicClass hg a` and takes the value `a` at `(gⁱ, gʲ)` if `i + j ≥ n` and `1`
+otherwise, for `0 ≤ i, j < n` with `n` the order of `g`. -/
+theorem exists_H2π_eq_cyclicClass (a : Kˣ) :
+    ∃ z : cocycles₂ (Rep.ofMulDistribMulAction (L ≃ₐ[K] L) Lˣ),
+      H2π _ z = cyclicClass hg (Additive.ofMul a) ∧ ∀ i j, i < orderOf g → j < orderOf g →
+        Additive.toMul (z (g ^ i, g ^ j)) =
+          if orderOf g ≤ i + j then Units.map (algebraMap K L : K →* L) a else 1 := by
+  classical
+  have := isCyclic_of_forall_mem_zpowers hg
+  let := IsCyclic.commGroup (α := L ≃ₐ[K] L)
+  have hz : ∀ i j, i < orderOf g → j < orderOf g →
+      Additive.toMul (carryCocycle _ g hg (unitsToFixedUnits g (Additive.ofMul a)) (g ^ i, g ^ j)) =
+        if orderOf g ≤ i + j then Units.map (algebraMap K L : K →* L) a else 1 := fun i j hi hj ↦ by
+    rw [carryCocycle_apply_pow _ g hg _ hi hj]
+    -- As in `H2π_eq_cyclicClass`, both values are read in `Additive Lˣ`.
+    split_ifs <;> rfl
+  exact ⟨_, H2π_eq_cyclicClass hg _ a hz, hz⟩
 
 /-- **`H²` of a cyclic Galois extension is the norm quotient**:
 `Kˣ / N_{L/K}(Lˣ) ≃ H²(Gal(L/K), Lˣ)`, sending the class of `a` to `cyclicClass hg a`

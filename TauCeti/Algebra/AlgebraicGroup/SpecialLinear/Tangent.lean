@@ -123,6 +123,20 @@ theorem tangentMatrix_mapValue_coe {C : Type*} [CommRing C] [Algebra R C]
     Bialgebra.CounitAlgebra.algEquivSelf_apply, Bialgebra.CounitAlgebra.algEquivSelf_apply,
     Bialgebra.CounitAlgebra.algEquivSelf_apply]
 
+/-- An entry of the special-linear tangent matrix is the derivation evaluated on the image of
+the corresponding generic matrix coordinate in the determinant-one quotient. -/
+@[simp]
+theorem tangentMatrix_apply
+    (d : Derivation R (coordinateHopfAlgebra R n)
+      (Bialgebra.CounitAlgebra R (coordinateHopfAlgebra R n) B)) (i j : Fin n) :
+    (tangentMatrix n d : Matrix (Fin n) (Fin n) B) i j =
+      Bialgebra.CounitAlgebra.algEquivSelf R (coordinateHopfAlgebra R n) B
+        (d ((coordinateMap R n).hom (GeneralLinear.coordinateHopfAlgebraAlgEquiv R n
+          (GeneralLinear.coordinateRingMap R n (MvPolynomial.X (i, j)))))) := by
+  rw [tangentMatrix_apply_coe, GeneralLinear.tangentMatrix_apply,
+    HopfIdeal.quotientLieHom_apply_apply, coordinateMap_apply]
+  exact Bialgebra.CounitAlgebra.algEquivSelf_apply R _ B _
+
 private theorem tangentMatrix_injective :
     Function.Injective (tangentMatrix (R := R) (B := B) n) := by
   intro d e hde

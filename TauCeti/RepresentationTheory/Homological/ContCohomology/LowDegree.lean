@@ -38,6 +38,8 @@ H⁰(G, M) = M^G,   H¹(G, M) = Z¹/B¹,   H²(G, M) = Z²/B².
 * `TauCeti.ContCohomology.H0`, `H1`, `H2`, their class maps `H1pi`, `H2pi`, and the discrete
   carriers `DiscreteH1`, `DiscreteH2` used by the comparison with canonical cohomology, together
   with their identifications `discreteH1Equiv`, `discreteH2Equiv` with `H1` and `H2`.
+* `TauCeti.ContCohomology.sumCocycle`: the additive map sending a finite-group `2`-cocycle to
+  the invariant obtained by summing it over its first argument.
 * `TauCeti.ContCohomology.explicitMap0`: the compatible-pair pullback on the explicit degree-zero
   carrier, with `TauCeti.ContCohomology.explicitRes0` and `explicitCoeff0` its two named
   instances.
@@ -522,6 +524,52 @@ theorem Z1_le_C1 : Z1 G M ≤ C1 G M := inf_le_left
 theorem Z2_le_C2 : Z2 G M ≤ C2 G M := inf_le_left
 
 end Cocycles
+
+section FiniteGroup
+
+variable {G : Type u} [Group G] [TopologicalSpace G] [Fintype G]
+  {M : Type v} [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
+  [DistribMulAction G M]
+
+/-- The additive map sending a finite-group `2`-cocycle `f` to the invariant
+`∑ x, f (x, g)` obtained by summing it over its first argument. -/
+def sumCocycle (g : G) : Z2 G M →+ H0 G M where
+  toFun f := ⟨∑ x : G, (f : G × G → M) (x, g), by
+    rw [FixedPoints.mem_addSubgroup]
+    intro y
+    have hf := (mem_Z2_iff.mp f.property).2
+    calc
+      y • ∑ x : G, (f : G × G → M) (x, g) =
+          ∑ x : G, y • (f : G × G → M) (x, g) := by rw [Finset.smul_sum]
+      _ = ∑ x : G, ((f : G × G → M) (y * x, g) +
+          (f : G × G → M) (y, x) - (f : G × G → M) (y, x * g)) := by
+        apply Finset.sum_congr rfl
+        intro x _
+        have h := hf y x g
+        rw [eq_sub_iff_add_eq]
+        exact h.symm
+      _ = (∑ x : G, (f : G × G → M) (y * x, g)) +
+          ∑ x : G, (f : G × G → M) (y, x) -
+            ∑ x : G, (f : G × G → M) (y, x * g) := by
+        simp only [Finset.sum_add_distrib, Finset.sum_sub_distrib]
+      _ = ∑ x : G, (f : G × G → M) (x, g) := by
+        have hleft : (∑ x : G, (f : G × G → M) (y * x, g)) =
+            ∑ x : G, (f : G × G → M) (x, g) :=
+          Fintype.sum_bijective _ (Group.mulLeft_bijective y) _ _ (fun _ ↦ rfl)
+        have hright : (∑ x : G, (f : G × G → M) (y, x * g)) =
+            ∑ x : G, (f : G × G → M) (y, x) :=
+          Fintype.sum_bijective _ (Group.mulRight_bijective g) _ _ (fun _ ↦ rfl)
+        rw [hleft, hright, add_sub_cancel_right]⟩
+  map_zero' := Subtype.ext (by simp)
+  map_add' f f' := Subtype.ext (by simp [Finset.sum_add_distrib])
+
+/-- The value of `sumCocycle` is the sum of the cocycle over its first argument. -/
+@[simp]
+theorem sumCocycle_val (g : G) (f : Z2 G M) :
+    (sumCocycle g f : M) = ∑ x : G, (f : G × G → M) (x, g) :=
+  (rfl)
+
+end FiniteGroup
 
 section Normalizations
 
