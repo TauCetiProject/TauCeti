@@ -51,6 +51,8 @@ principle `W' = W` on `B`, contradicting `W' z ≥ v z > W z`. Hence `u = W` is 
 * `TauCeti.perronSolution`: the Perron solution, the pointwise supremum of the Perron family.
 * `TauCeti.le_perronSolution`, `TauCeti.perronSolution_le`: the Perron solution lies above every
   member of the Perron family and below every upper bound of the boundary data.
+* `TauCeti.perronSolution_le_of_forall_le`: the Perron solution at `x` is at most every common
+  upper bound of the values at `x` of the members of a nonempty Perron family.
 * `TauCeti.harmonicOnNhd_perronSolution`: **Perron's theorem**, the Perron solution of a
   nonempty Perron family is harmonic in `Ω`.
 
@@ -164,6 +166,12 @@ theorem sup_mem_perronFamily (hΩ : IsOpen Ω) (hv : v ∈ perronFamily Ω g)
     (hw : w ∈ perronFamily Ω g) : v ⊔ w ∈ perronFamily Ω g :=
   ⟨hv.1.sup hw.1 hΩ, hv.2.1.sup hw.2.1, fun x hx ↦ sup_le (hv.2.2 x hx) (hw.2.2 x hx)⟩
 
+/-- If the Perron family is nonempty, the Perron solution at `x` is at most any common upper bound
+of the values at `x` of the members of the family. -/
+theorem perronSolution_le_of_forall_le (hne : (perronFamily Ω g).Nonempty)
+    (h : ∀ v ∈ perronFamily Ω g, v x ≤ M) : perronSolution Ω g x ≤ M :=
+  csSup_le (hne.image _) (forall_mem_image.2 h)
+
 section Nontrivial
 
 variable [Nontrivial E]
@@ -190,7 +198,7 @@ upper bound of the boundary data. -/
 theorem perronSolution_le (hΩ : IsOpen Ω) (hb : Bornology.IsBounded Ω)
     (hne : (perronFamily Ω g).Nonempty) (hM : ∀ x ∈ frontier Ω, g x ≤ M) (hx : x ∈ closure Ω) :
     perronSolution Ω g x ≤ M :=
-  csSup_le (hne.image _) (forall_mem_image.2 fun _ hv ↦ le_of_mem_perronFamily hΩ hb hM hv hx)
+  perronSolution_le_of_forall_le hne fun _ hv ↦ le_of_mem_perronFamily hΩ hb hM hv hx
 
 end Nontrivial
 
