@@ -26,15 +26,16 @@ places does not imply global isotropy. The obstruction is visible at the finite 
 
 ## Main results
 
-* `TauCeti.NumberField.QuadraticForm.not_anisotropic_sumTwoSquaresSubThreeSq_atRealPlace`:
-  `⟨1, 1, -3⟩` is isotropic at every real place of `ℚ`.
-* `TauCeti.NumberField.QuadraticForm.anisotropic_sumTwoSquaresSubThreeSq_atFinitePlace`:
-  `⟨1, 1, -3⟩` is anisotropic at the finite place `3`.
-* `TauCeti.NumberField.QuadraticForm.anisotropic_sumTwoSquaresSubThreeSq`: `⟨1, 1, -3⟩` is
-  anisotropic over `ℚ`.
-* `TauCeti.NumberField.QuadraticForm.equivalent_sumTwoSquaresSubThreeSq_atRealPlace`,
-  `TauCeti.NumberField.QuadraticForm.not_equivalent_sumTwoSquaresSubThreeSq`: `⟨1, 1, -3⟩` and
-  `⟨1, 1, -1⟩` are isometric at every real place but not over `ℚ`.
+All in the namespace `TauCeti.NumberField.QuadraticForm`:
+
+* `not_anisotropic_sumTwoSquaresSubThreeSq_atRealPlace`: `⟨1, 1, -3⟩` is isotropic at every real
+  place of `ℚ`.
+* `anisotropic_sumTwoSquaresSubThreeSq_atFinitePlace`: `⟨1, 1, -3⟩` is anisotropic at the finite
+  place `3`.
+* `anisotropic_sumTwoSquaresSubThreeSq`: `⟨1, 1, -3⟩` is anisotropic over `ℚ`.
+* `equivalent_sumTwoSquaresSubThreeSq_sumTwoSquaresSubSq_atRealPlace`,
+  `not_equivalent_sumTwoSquaresSubThreeSq_sumTwoSquaresSubSq`: `⟨1, 1, -3⟩` and `⟨1, 1, -1⟩` are
+  isometric at every real place but not over `ℚ`.
 
 ## References
 
@@ -58,6 +59,18 @@ def sumTwoSquaresSubThreeSq : _root_.QuadraticForm ℚ (Fin 3 → ℚ) :=
 theorem sumTwoSquaresSubThreeSq_apply (x : Fin 3 → ℚ) :
     sumTwoSquaresSubThreeSq x = x 0 ^ 2 + x 1 ^ 2 - 3 * x 2 ^ 2 := by
   simp [sumTwoSquaresSubThreeSq, weightedSumSquares_apply, Fin.sum_univ_three, pow_two]
+  ring
+
+/-- The ternary form `⟨1, 1, -1⟩` over `ℚ`, isotropic over `ℚ` and isometric to `⟨1, 1, -3⟩` at
+every real place. -/
+def sumTwoSquaresSubSq : _root_.QuadraticForm ℚ (Fin 3 → ℚ) :=
+  weightedSumSquares ℚ ![1, 1, -1]
+
+/-- The value of `⟨1, 1, -1⟩` at `(x, y, z)` is `x² + y² - z²`. -/
+@[simp]
+theorem sumTwoSquaresSubSq_apply (x : Fin 3 → ℚ) :
+    sumTwoSquaresSubSq x = x 0 ^ 2 + x 1 ^ 2 - x 2 ^ 2 := by
+  simp [sumTwoSquaresSubSq, weightedSumSquares_apply, Fin.sum_univ_three, pow_two]
   ring
 
 /-- The form `⟨1, 1, -3⟩` is isotropic at every real place of `ℚ`: `(√3, 0, 1)` is a zero. -/
@@ -130,10 +143,10 @@ theorem anisotropic_sumTwoSquaresSubThreeSq : sumTwoSquaresSubThreeSq.Anisotropi
     (anisotropic_sumTwoSquaresSubThreeSq_atFinitePlace v (by rw [hv]))
 
 /-- At every real place, `⟨1, 1, -3⟩` is isometric to `⟨1, 1, -1⟩`. -/
-theorem equivalent_sumTwoSquaresSubThreeSq_atRealPlace (w : {w : InfinitePlace ℚ // w.IsReal}) :
+theorem equivalent_sumTwoSquaresSubThreeSq_sumTwoSquaresSubSq_atRealPlace
+    (w : {w : InfinitePlace ℚ // w.IsReal}) :
     let : Algebra ℚ ℝ := (InfinitePlace.embedding_of_isReal w.2).toAlgebra
-    (sumTwoSquaresSubThreeSq.atRealPlace w).Equivalent
-      (_root_.QuadraticForm.atRealPlace (weightedSumSquares ℚ ![(1 : ℚ), 1, -1]) w) := by
+    (sumTwoSquaresSubThreeSq.atRealPlace w).Equivalent (sumTwoSquaresSubSq.atRealPlace w) := by
   intro _
   have he₁ : (sumTwoSquaresSubThreeSq.atRealPlace w).IsometryEquiv
       (weightedSumSquares ℝ fun i =>
@@ -164,11 +177,11 @@ theorem equivalent_sumTwoSquaresSubThreeSq_atRealPlace (w : {w : InfinitePlace �
 
 /-- `⟨1, 1, -3⟩` and `⟨1, 1, -1⟩` are not isometric over `ℚ`, although they are isometric at every
 real place: the second is isotropic and the first is not. -/
-theorem not_equivalent_sumTwoSquaresSubThreeSq :
-    ¬ sumTwoSquaresSubThreeSq.Equivalent (weightedSumSquares ℚ ![(1 : ℚ), 1, -1]) := by
+theorem not_equivalent_sumTwoSquaresSubThreeSq_sumTwoSquaresSubSq :
+    ¬ sumTwoSquaresSubThreeSq.Equivalent sumTwoSquaresSubSq := by
   intro h
   have hani := h.anisotropic_iff.mp anisotropic_sumTwoSquaresSubThreeSq
-  have h0 := hani ![1, 0, 1] (by simp [weightedSumSquares_apply, Fin.sum_univ_three])
+  have h0 := hani ![1, 0, 1] (by simp)
   simpa using congrFun h0 0
 
 end TauCeti.NumberField.QuadraticForm
