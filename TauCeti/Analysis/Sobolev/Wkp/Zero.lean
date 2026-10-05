@@ -248,7 +248,7 @@ private noncomputable def testFunctionWkpPackage (phi : 𝓓(Omega, ℝ)) :
       { element := Wkp.mk k previous.element
           (iteratedGradientTestFunctionLp (mu := mu) p (k + 1) phi) hweak
         value_eq := by
-          rw [Wkp.value_succ, Wkp.lowerOrder_mk]
+          rw [Wkp.value_mk]
           exact previous.value_eq
         iteratedGradient_eq := Wkp.iteratedGradient_mk k previous.element _ hweak }
 

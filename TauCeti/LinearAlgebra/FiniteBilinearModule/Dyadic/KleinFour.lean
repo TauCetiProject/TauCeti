@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.SpecificGroups.KleinFour
-public import TauCeti.LinearAlgebra.FiniteBilinearModule.Dyadic.RankTwo
+public import TauCeti.LinearAlgebra.FiniteBilinearModule.Dyadic.RankTwo.Basic
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.KleinFour
 
 /-!

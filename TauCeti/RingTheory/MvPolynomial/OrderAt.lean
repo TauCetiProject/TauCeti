@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.MvPolynomial.Equiv
 public import Mathlib.Algebra.MvPolynomial.PDeriv
+public import Mathlib.Algebra.Polynomial.Taylor
 public import Mathlib.RingTheory.MvPowerSeries.NoZeroDivisors
 public import TauCeti.RingTheory.MvPowerSeries.Derivative
 
@@ -30,6 +32,7 @@ less than `n` vanishes at `a`; since a nonzero polynomial vanishes to order at m
 degree, finitely many derivatives suffice. Substituting polynomials into `p` can only increase
 the order at corresponding points, and renaming the variables along an injective map does not
 change it.
+The Taylor shift itself preserves the degree in each variable (`MvPolynomial.degreeOf_taylor`).
 
 ## Main definitions
 
@@ -52,6 +55,9 @@ change it.
   determined by which iterated partial derivatives, up to the total degree, vanish there.
 * `MvPolynomial.orderAt_le_orderAt_aeval`: substitution does not decrease the order.
 * `MvPolynomial.orderAt_rename`: renaming along an injective map preserves the order.
+* `MvPolynomial.finSuccEquiv_taylor`, `MvPolynomial.coeff_taylor_cons`: singling out the
+  variable `X₀` turns the Taylor shift at `a` into the univariate Taylor shift at `a₀` followed by
+  the Taylor shift at the remaining coordinates.
 
 ## References
 
@@ -135,6 +141,53 @@ theorem pderiv_taylor (a : σ → R) (i : σ) (p : MvPolynomial σ R) :
     · simp [hp]
     · simp [hp, pderiv_X_of_ne hj]
 
+/-- The Taylor shift does not increase the degree in any variable. -/
+theorem degreeOf_taylor_le (a : σ → R) (i : σ) (p : MvPolynomial σ R) :
+    (taylor a p).degreeOf i ≤ p.degreeOf i := by
+  classical
+  cases subsingleton_or_nontrivial R
+  · simp [Subsingleton.elim (taylor a p) 0]
+  conv_lhs => rw [p.as_sum, map_sum]
+  refine (degreeOf_sum_le i _ _).trans (Finset.sup_le fun m hm ↦ ?_)
+  rw [taylor_apply, aeval_monomial, algebraMap_eq]
+  refine (degreeOf_C_mul_le _ i _).trans ((degreeOf_prod_le i _ _).trans ?_)
+  calc ∑ j ∈ m.support, ((X j + C (a j)) ^ m j).degreeOf i
+      ≤ ∑ j ∈ m.support, if i = j then m j else 0 := by
+        refine Finset.sum_le_sum fun j _ ↦ (degreeOf_pow_le i _ _).trans ?_
+        have : (X j + C (a j) : MvPolynomial σ R).degreeOf i ≤ if i = j then 1 else 0 :=
+          (degreeOf_add_le i _ _).trans (by simp [degreeOf_X, degreeOf_C])
+        split_ifs at this ⊢ <;> simpa using Nat.mul_le_mul_left (m j) this
+    _ ≤ m i := by rw [Finset.sum_ite_eq]; split_ifs <;> simp
+    _ ≤ p.degreeOf i := monomial_le_degreeOf i hm
+
+/-- Singling out the variable `X₀` commutes with the Taylor shift: shifting `X₀` by `a₀` is the
+Taylor shift of the resulting univariate polynomial at `a₀`, and the remaining variables are
+shifted coefficientwise. -/
+theorem finSuccEquiv_taylor {n : ℕ} (a : Fin (n + 1) → R) (p : MvPolynomial (Fin (n + 1)) R) :
+    finSuccEquiv R n (taylor a p) =
+      (Polynomial.taylor (C (a 0)) (finSuccEquiv R n p)).map
+        (taylor (Fin.tail a) : MvPolynomial (Fin n) R →+* MvPolynomial (Fin n) R) := by
+  have hC (r : R) : finSuccEquiv R n (C r) = Polynomial.C (C r) := by simp [finSuccEquiv_apply]
+  induction p using MvPolynomial.induction_on with
+  | C r => simp [hC]
+  | add p q hp hq => simp [hp, hq]
+  | mul_X p i hp =>
+    cases i using Fin.cases with
+    | zero => simp [hp, hC, finSuccEquiv_X_zero, Polynomial.taylor_mul, Polynomial.map_mul]
+    | succ j =>
+      simp [hp, hC, finSuccEquiv_X_succ, Polynomial.taylor_mul, Polynomial.map_mul, Fin.tail]
+
+/-- The Taylor coefficients of `p` at `a`, read off after singling out the variable `X₀`: the
+coefficient of `X₀ ^ i * Xᵘ` is the coefficient of `Xᵘ` in the Taylor shift at `Fin.tail a` of
+the `i`-th coefficient of the univariate Taylor expansion at `a₀`. -/
+theorem coeff_taylor_cons {n : ℕ} (a : Fin (n + 1) → R) (p : MvPolynomial (Fin (n + 1)) R)
+    (i : ℕ) (u : Fin n →₀ ℕ) :
+    (taylor a p).coeff (u.cons i) =
+      (taylor (Fin.tail a)
+        ((Polynomial.taylor (C (a 0)) (finSuccEquiv R n p)).coeff i)).coeff u := by
+  rw [← finSuccEquiv_coeff_coeff, finSuccEquiv_taylor, Polynomial.coeff_map]
+  rfl
+
 end Taylor
 
 section TaylorRing
@@ -157,6 +210,13 @@ theorem taylor_injective (a : σ → R) : Function.Injective (taylor a) :=
 @[simp]
 theorem taylor_eq_zero {a : σ → R} {p : MvPolynomial σ R} : taylor a p = 0 ↔ p = 0 :=
   map_eq_zero_iff _ (taylor_injective a)
+
+/-- The Taylor shift preserves the degree in each variable. -/
+@[simp]
+theorem degreeOf_taylor (a : σ → R) (i : σ) (p : MvPolynomial σ R) :
+    (taylor a p).degreeOf i = p.degreeOf i :=
+  (degreeOf_taylor_le a i p).antisymm <| by
+    simpa using degreeOf_taylor_le (-a) i (taylor a p)
 
 end TaylorRing
 

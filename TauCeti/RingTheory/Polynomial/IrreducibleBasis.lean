@@ -6,12 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Polynomial.GaussLemma
+public import Mathlib.RingTheory.Polynomial.Resultant.Basic
 public import Mathlib.RingTheory.Polynomial.UniqueFactorization
 public import Mathlib.RingTheory.UniqueFactorizationDomain.GCDMonoid
 
 import Mathlib.Algebra.BigOperators.Associated
 import Mathlib.Algebra.Squarefree.Basic
 import Mathlib.RingTheory.PrincipalIdealDomain
+import TauCeti.RingTheory.Polynomial.Resultant.Discriminant
 
 /-!
 # Irreducible bases of finite families of polynomials
@@ -56,6 +58,12 @@ irreducible member can be inseparable.
 * `Finset.IsIrreducibleBasis.irreducible_map`, `Finset.IsIrreducibleBasis.isCoprime_map`,
   `Finset.IsIrreducibleBasis.squarefree_prod_map`: over the fraction field of `D`, the members
   of the basis are irreducible and pairwise coprime, and their product is squarefree.
+* `Finset.IsIrreducibleBasis.resultant_ne_zero`, `Finset.IsIrreducibleBasis.discr_ne_zero`: the
+  resultants of distinct members of the basis are nonzero, and in characteristic zero so are the
+  discriminants of its members.
+* `Finset.IsIrreducibleBasis.exists_associated_discr`,
+  `Finset.IsIrreducibleBasis.exists_associated_resultant`: the discriminants and pairwise
+  resultants of one irreducible basis are associated to those of any other.
 * `Finset.IsIrreducibleBasis.isRoot_map_iff`: after a specialization `φ : D →+* A` into a
   domain under which a member `f` of the family does not vanish, the roots of the specialized
   `f` are exactly the roots of the specialized basis members dividing `f`.
@@ -203,6 +211,34 @@ theorem card_eq (hB : F.IsIrreducibleBasis B) (hB' : F.IsIrreducibleBasis B') :
       exact ⟨b, hb, (Associates.mk_eq_mk_iff_associated.2 h).symm⟩
   rw [← card_image_of_injOn (hinj hB), ← card_image_of_injOn (hinj hB'), himage]
 
+/-- The discriminant of a member of an irreducible basis is associated to the discriminant of a
+member of any other irreducible basis of the same family. -/
+theorem exists_associated_discr (hB : F.IsIrreducibleBasis B) (hB' : F.IsIrreducibleBasis B')
+    (hb : b ∈ B) : ∃ c ∈ B', Associated b.discr c.discr := by
+  obtain ⟨c, hc, r, hr, rfl⟩ := hB.exists_eq_C_mul hB' hb
+  refine ⟨c, hc, ?_⟩
+  rw [TauCeti.discr_C_mul _ hr.ne_zero]
+  exact associated_unit_mul_left _ _ (hr.pow _)
+
+/-- The resultant of two distinct members of an irreducible basis is associated to the resultant
+of two distinct members of any other irreducible basis of the same family. -/
+theorem exists_associated_resultant (hB : F.IsIrreducibleBasis B)
+    (hB' : F.IsIrreducibleBasis B') (hb : b ∈ B) (hb' : b' ∈ B) (hne : b ≠ b') :
+    ∃ c ∈ B', ∃ c' ∈ B', c ≠ c' ∧ Associated (resultant b b') (resultant c c') := by
+  obtain ⟨c, hc, r, hr, rfl⟩ := hB.exists_eq_C_mul hB' hb
+  obtain ⟨c', hc', r', hr', rfl⟩ := hB.exists_eq_C_mul hB' hb'
+  -- distinct members of `B` are not associated, so neither are the members of `B'` they are
+  -- unit multiples of
+  have hne' : c ≠ c' := by
+    rintro rfl
+    exact hne <| hB.eq_of_associated _ hb _ hb' <|
+      (associated_unit_mul_left _ _ (isUnit_C.2 hr)).trans
+        (associated_unit_mul_right _ _ (isUnit_C.2 hr'))
+  refine ⟨c, hc, c', hc', hne', ?_⟩
+  rw [natDegree_C_mul_of_isUnit hr, natDegree_C_mul_of_isUnit hr', resultant_C_mul_left,
+    resultant_C_mul_right, ← mul_assoc]
+  exact associated_unit_mul_left _ _ ((hr.pow _).mul (hr'.pow _))
+
 section FractionField
 
 variable (K : Type*) [Field K] [Algebra D K] [IsFractionRing D K]
@@ -228,6 +264,24 @@ theorem squarefree_prod_map (hB : F.IsIrreducibleBasis B) :
     fun _ hb ↦ (hB.irreducible_map K hb).squarefree
 
 end FractionField
+
+/-- The resultant of two distinct members of an irreducible basis is nonzero. -/
+theorem resultant_ne_zero (hB : F.IsIrreducibleBasis B) (hb : b ∈ B) (hb' : b' ∈ B)
+    (hne : b ≠ b') : resultant b b' ≠ 0 := by
+  have hinj := IsFractionRing.injective D (FractionRing D)
+  have h := Polynomial.resultant_ne_zero _ _ (hB.isCoprime_map (FractionRing D) hb hb' hne)
+  rwa [natDegree_map_eq_of_injective hinj, natDegree_map_eq_of_injective hinj, resultant_map_map,
+    map_ne_zero_iff _ hinj] at h
+
+/-- In characteristic zero, the discriminant of a member of an irreducible basis is nonzero. In
+positive characteristic an irreducible member can be inseparable, with zero discriminant. -/
+theorem discr_ne_zero [CharZero D] (hB : F.IsIrreducibleBasis B) (hb : b ∈ B) : b.discr ≠ 0 := by
+  have hinj := IsFractionRing.injective D (FractionRing D)
+  have : CharZero (FractionRing D) := charZero_of_injective_algebraMap hinj
+  have hb0 := (Polynomial.map_ne_zero_iff hinj).2 (hB.irreducible b hb).ne_zero
+  have h := (discr_ne_zero_iff hb0).2 (hB.irreducible_map (FractionRing D) hb).separable
+  rwa [discr_map_of_natDegree_eq _ (natDegree_map_eq_of_injective hinj _),
+    map_ne_zero_iff _ hinj] at h
 
 end IsIrreducibleBasis
 

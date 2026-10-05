@@ -8,7 +8,6 @@ module
 public import Mathlib.RingTheory.Polynomial.Resultant.Basic
 public import TauCeti.RingTheory.Polynomial.IrreducibleBasis
 import TauCeti.Algebra.Polynomial.Degree.Map
-import TauCeti.RingTheory.Polynomial.Resultant.Discriminant
 
 /-!
 # The McCallum projection set
@@ -158,22 +157,10 @@ theorem exists_associated_mem_mcCallumProjection (hB : F.IsIrreducibleBasis B)
     rw [natDegree_C_mul_of_isUnit hr] at hi
     exact ⟨_, coeff_mem_mcCallumProjection hb hi, by
       rw [coeff_C_mul]; exact associated_unit_mul_left _ _ hr⟩
-  · obtain ⟨b, hb, r, hr, rfl⟩ := hB'.exists_eq_C_mul hB hb'
-    exact ⟨_, discr_mem_mcCallumProjection hb, by
-      rw [TauCeti.discr_C_mul _ hr.ne_zero]; exact associated_unit_mul_left _ _ (hr.pow _)⟩
-  · obtain ⟨b₁, hb₁, r₁, hr₁, rfl⟩ := hB'.exists_eq_C_mul hB hb₁'
-    obtain ⟨b₂, hb₂, r₂, hr₂, rfl⟩ := hB'.exists_eq_C_mul hB hb₂'
-    -- distinct members of `B'` are not associated, so neither are the members of `B` they
-    -- are unit multiples of
-    have hne' : b₁ ≠ b₂ := by
-      rintro rfl
-      exact hne <| hB'.eq_of_associated _ hb₁' _ hb₂' <|
-        (associated_unit_mul_left _ _ (isUnit_C.2 hr₁)).trans
-          (associated_unit_mul_right _ _ (isUnit_C.2 hr₂))
-    refine ⟨_, resultant_mem_mcCallumProjection hb₁ hb₂ hne', ?_⟩
-    rw [natDegree_C_mul_of_isUnit hr₁, natDegree_C_mul_of_isUnit hr₂, resultant_C_mul_left,
-      resultant_C_mul_right, ← mul_assoc]
-    exact associated_unit_mul_left _ _ ((hr₁.pow _).mul (hr₂.pow _))
+  · obtain ⟨b, hb, h⟩ := hB'.exists_associated_discr hB hb'
+    exact ⟨_, discr_mem_mcCallumProjection hb, h⟩
+  · obtain ⟨b₁, hb₁, b₂, hb₂, hne', h⟩ := hB'.exists_associated_resultant hB hb₁' hb₂' hne
+    exact ⟨_, resultant_mem_mcCallumProjection hb₁ hb₂ hne', h⟩
 
 end IsIrreducibleBasis
 

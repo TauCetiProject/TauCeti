@@ -29,19 +29,15 @@ complex, quaternionic, or split matrix models.
 ## References
 
 * C. Chevalley, *The Algebraic Theory of Spinors*.
-* H. B. Lawson and M.-L. Michelsohn, *Spin Geometry*, Chapter I.
-* [TauCeti SpinRepresentations roadmap, Layer 7](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SpinRepresentations/README.md#layer-7-real-clifford-algebras-bott-periodicity-and-spinp-q),
-  the `(q - p) mod 8` classification-table target.
+* H. B. Lawson and M.-L. Michelsohn, *Spin Geometry*, Chapter I, §4, Theorem 4.3 and Tables I and
+  II. Their `Cl(r, s)` is `CliffordAlgebra (realCliffordForm s r)` here.
 -/
 
 public section
 
-open scoped Matrix Quaternion TensorProduct
+open scoped Quaternion TensorProduct
 
 namespace TauCeti
-
-private abbrev C (p q : ℕ) :=
-  _root_.CliffordAlgebra (realCliffordForm p q)
 
 /-- The residue `q - p` modulo eight, represented as a natural number in `[0, 8)`. -/
 def realCliffordResidue (p q : ℕ) : ℕ :=
@@ -166,78 +162,79 @@ private theorem pow_half_sub_mul_pow (n d s t : ℕ)
   rw [← pow_add, h]
 
 private noncomputable def realCliffordPositiveZeroEquiv :
-    C 0 0 ≃ₐ[ℝ] Matrix (Fin 1) (Fin 1) ℝ :=
+    _root_.CliffordAlgebra (realCliffordForm 0 0) ≃ₐ[ℝ] Matrix (Fin 1) (Fin 1) ℝ :=
   realCliffordZeroZeroEquiv.trans
     (Matrix.finOneAlgEquiv ℝ ℝ)
 
 private noncomputable def realCliffordPositiveOneEquiv :
-    C 1 0 ≃ₐ[ℝ]
+    _root_.CliffordAlgebra (realCliffordForm 1 0) ≃ₐ[ℝ]
       Matrix (Fin 1) (Fin 1) ℝ × Matrix (Fin 1) (Fin 1) ℝ :=
   realCliffordOneZeroEquivProd.trans <|
     AlgEquiv.prodCongr (Matrix.finOneAlgEquiv ℝ ℝ) (Matrix.finOneAlgEquiv ℝ ℝ)
 
 private noncomputable def realCliffordPositiveTwoEquiv :
-    C 2 0 ≃ₐ[ℝ] Matrix (Fin 2) (Fin 2) ℝ :=
+    _root_.CliffordAlgebra (realCliffordForm 2 0) ≃ₐ[ℝ] Matrix (Fin 2) (Fin 2) ℝ :=
   (realCliffordSignatureSwitchRecurrenceEquiv 0 0).trans <|
     (Algebra.TensorProduct.congr realCliffordZeroZeroEquiv
       (AlgEquiv.refl : Matrix (Fin 2) (Fin 2) ℝ ≃ₐ[ℝ] _)).trans <|
     Algebra.TensorProduct.lid ℝ _
 
 private noncomputable def realCliffordPositiveThreeEquiv :
-    C 3 0 ≃ₐ[ℝ] Matrix (Fin 2) (Fin 2) ℂ :=
+    _root_.CliffordAlgebra (realCliffordForm 3 0) ≃ₐ[ℝ] Matrix (Fin 2) (Fin 2) ℂ :=
   (realCliffordSignatureSwitchRecurrenceEquiv 1 0).trans <|
     (Algebra.TensorProduct.congr realCliffordZeroOneEquivComplex
       (AlgEquiv.refl : Matrix (Fin 2) (Fin 2) ℝ ≃ₐ[ℝ] _)).trans <|
     (matrixEquivTensor (Fin 2) ℝ ℂ).symm
 
 private noncomputable def realCliffordPositiveFourEquiv :
-    C 4 0 ≃ₐ[ℝ] Matrix (Fin 2) (Fin 2) ℍ[ℝ] :=
+    _root_.CliffordAlgebra (realCliffordForm 4 0) ≃ₐ[ℝ] Matrix (Fin 2) (Fin 2) ℍ[ℝ] :=
   (realCliffordSignatureSwitchRecurrenceEquiv 2 0).trans <|
     (Algebra.TensorProduct.congr realCliffordZeroTwoEquivQuaternion
       (AlgEquiv.refl : Matrix (Fin 2) (Fin 2) ℝ ≃ₐ[ℝ] _)).trans <|
     (matrixEquivTensor (Fin 2) ℝ ℍ[ℝ]).symm
 
 private noncomputable def realCliffordZeroThreeEquiv :
-    C 0 3 ≃ₐ[ℝ]
+    _root_.CliffordAlgebra (realCliffordForm 0 3) ≃ₐ[ℝ]
       Matrix (Fin 1) (Fin 1) ℍ[ℝ] × Matrix (Fin 1) (Fin 1) ℍ[ℝ] :=
   realCliffordZeroThreeEquivQuaternionProd.trans <|
     AlgEquiv.prodCongr (Matrix.finOneAlgEquiv ℝ ℍ[ℝ])
       (Matrix.finOneAlgEquiv ℝ ℍ[ℝ])
 
 private noncomputable def realCliffordPositiveFiveEquiv :
-    C 5 0 ≃ₐ[ℝ]
+    _root_.CliffordAlgebra (realCliffordForm 5 0) ≃ₐ[ℝ]
       Matrix (Fin 2) (Fin 2) ℍ[ℝ] × Matrix (Fin 2) (Fin 2) ℍ[ℝ] :=
   matrixProdModelTensorEquiv (realCliffordSignatureSwitchRecurrenceEquiv 3 0)
     realCliffordZeroThreeEquiv (matrixEquivTensor (Fin 2) ℝ ℍ[ℝ]).symm (by norm_num)
 
 private noncomputable def realCliffordZeroFourEquiv :
-    C 0 4 ≃ₐ[ℝ] Matrix (Fin 2) (Fin 2) ℍ[ℝ] :=
+    _root_.CliffordAlgebra (realCliffordForm 0 4) ≃ₐ[ℝ] Matrix (Fin 2) (Fin 2) ℍ[ℝ] :=
   matrixModelTensorEquiv (realCliffordQuaternionRecurrenceEquiv 0 2)
     realCliffordPositiveTwoEquiv
     ((Algebra.TensorProduct.lid ℝ ℍ[ℝ]).trans (Matrix.finOneAlgEquiv ℝ ℍ[ℝ])) (by norm_num)
 
 private noncomputable def realCliffordPositiveSixEquiv :
-    C 6 0 ≃ₐ[ℝ] Matrix (Fin 4) (Fin 4) ℍ[ℝ] :=
+    _root_.CliffordAlgebra (realCliffordForm 6 0) ≃ₐ[ℝ] Matrix (Fin 4) (Fin 4) ℍ[ℝ] :=
   matrixModelTensorEquiv (realCliffordSignatureSwitchRecurrenceEquiv 4 0)
     realCliffordZeroFourEquiv (matrixEquivTensor (Fin 2) ℝ ℍ[ℝ]).symm (by norm_num)
 
 private noncomputable def realCliffordZeroFiveEquiv :
-    C 0 5 ≃ₐ[ℝ] Matrix (Fin 4) (Fin 4) ℂ :=
+    _root_.CliffordAlgebra (realCliffordForm 0 5) ≃ₐ[ℝ] Matrix (Fin 4) (Fin 4) ℂ :=
   matrixModelTensorEquiv (realCliffordQuaternionRecurrenceEquiv 0 3)
     realCliffordPositiveThreeEquiv (Quaternion.complexTensorAlgEquivMatrix.restrictScalars ℝ)
     (by norm_num)
 
 private noncomputable def realCliffordPositiveSevenEquiv :
-    C 7 0 ≃ₐ[ℝ] Matrix (Fin 8) (Fin 8) ℂ :=
+    _root_.CliffordAlgebra (realCliffordForm 7 0) ≃ₐ[ℝ] Matrix (Fin 8) (Fin 8) ℂ :=
   matrixModelTensorEquiv (realCliffordSignatureSwitchRecurrenceEquiv 5 0)
     realCliffordZeroFiveEquiv (matrixEquivTensor (Fin 2) ℝ ℂ).symm (by norm_num)
 
 /-- Tensoring every model of the table with a real matrix algebra `M_{2^k}(ℝ)`: if `(p, q)` is
-classified and `C p' q' ≃ C p q ⊗ M_{2^k}(ℝ)` with the same residue and `2k` more generators, then
-`(p', q')` is classified. -/
+classified and `Cliff(p', q') ≃ Cliff(p, q) ⊗ M_{2^k}(ℝ)` with the same residue and `2k` more
+generators, then `(p', q')` is classified. -/
 private theorem IsRealCliffordClassified.of_tensor_matrix {p q p' q' : ℕ} (k : ℕ)
     (h : IsRealCliffordClassified p q)
-    (step : C p' q' ≃ₐ[ℝ] C p q ⊗[ℝ] Matrix (Fin (2 ^ k)) (Fin (2 ^ k)) ℝ)
+    (step : _root_.CliffordAlgebra (realCliffordForm p' q') ≃ₐ[ℝ]
+      _root_.CliffordAlgebra (realCliffordForm p q) ⊗[ℝ] Matrix (Fin (2 ^ k)) (Fin (2 ^ k)) ℝ)
     (hres : realCliffordResidue p' q' = realCliffordResidue p q)
     (hdim : p' + q' = p + q + 2 * k) :
     IsRealCliffordClassified p' q' := by

@@ -73,6 +73,7 @@ of a permutation lattice `ℤ[X]` modulo a prime is `k[X]` and its rationalizati
   along `algebraMap K L`.
 * `Representation.finrank_intertwiningMap_baseChange`: base change preserves the dimension of an
   intertwiner space.
+* `Representation.IntertwiningMap.baseChange`: base change transports an intertwining map.
 * `Representation.Equiv.baseChange`: base change transports an equivalence of representations.
 * `TauCeti.baseChangeOfMulActionEquiv`: the base change of `R[X]` is `A[X]`.
 * `TauCeti.baseChangeComapEquiv`: the base change of the permutation module `X →₀ R` is `A[X]`.
@@ -517,6 +518,33 @@ section Transport
 variable {R : Type*} [CommSemiring R] {G : Type*} [Monoid G]
   {V W : Type*} [AddCommMonoid V] [Module R V] [AddCommMonoid W] [Module R W]
   {ρ : _root_.Representation R G V} {σ : _root_.Representation R G W}
+
+/-- **Base change transports an intertwining map**: `A ⊗ f : A ⊗[R] V → A ⊗[R] W` intertwines the
+base-changed representations, because the extension acts on the second factor, where `f` already
+intertwines the two actions. -/
+def _root_.Representation.IntertwiningMap.baseChange
+    (f : _root_.Representation.IntertwiningMap ρ σ) (A : Type*) [CommSemiring A] [Algebra R A] :
+    _root_.Representation.IntertwiningMap (_root_.Representation.baseChange A ρ)
+      (_root_.Representation.baseChange A σ) where
+  toLinearMap := f.toLinearMap.baseChange A
+  isIntertwining' g := by
+    ext a
+    simp [f.isIntertwining]
+
+/-- A base-changed intertwining map acts on the second factor of a pure tensor. -/
+@[simp]
+theorem _root_.Representation.IntertwiningMap.baseChange_tmul
+    (f : _root_.Representation.IntertwiningMap ρ σ) (A : Type*) [CommSemiring A] [Algebra R A]
+    (a : A) (v : V) : f.baseChange A (a ⊗ₜ[R] v) = a ⊗ₜ[R] f v :=
+  (rfl)
+
+/-- The linear map underlying a base-changed intertwining map is the base change of the
+underlying linear map. -/
+@[simp]
+theorem _root_.Representation.IntertwiningMap.toLinearMap_baseChange
+    (f : _root_.Representation.IntertwiningMap ρ σ) (A : Type*) [CommSemiring A] [Algebra R A] :
+    (f.baseChange A).toLinearMap = f.toLinearMap.baseChange A :=
+  (rfl)
 
 /-- **Base change transports an equivalence of representations**: an equivariant isomorphism
 `ρ ≃ σ` becomes an equivariant isomorphism `A ⊗[R] V ≃ A ⊗[R] W` after extending the scalars,

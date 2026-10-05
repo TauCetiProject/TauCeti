@@ -10,6 +10,7 @@ public import Mathlib.RepresentationTheory.FiniteIndex
 public import TauCeti.GroupTheory.Coset.Basic
 public import TauCeti.RepresentationTheory.Induction.Permutation
 public import TauCeti.RepresentationTheory.Rep.OfMulAction
+import TauCeti.Algebra.MonoidAlgebra.TensorProduct
 
 /-!
 # Induction and coinduction from the trivial subgroup
@@ -224,15 +225,10 @@ variable (k G) in
 /-- The underlying module of the representation coinduced from the trivial subgroup is the module
 of all functions `G → X`. -/
 def coindBotEquivPi (X : Type u) [AddCommGroup X] [Module k X] :
-    (coindBot k G X : Type u) ≃ₗ[k] (G → X) where
-  toFun f := f.1
-  map_add' _ _ := rfl
-  map_smul' _ _ := rfl
-  invFun f := ⟨f, fun g h ↦ by
+    (coindBot k G X : Type u) ≃ₗ[k] (G → X) :=
+  LinearEquiv.ofTop _ <| eq_top_iff.2 fun f _ g h ↦ by
     obtain rfl : g = 1 := Subsingleton.elim g 1
-    simp⟩
-  left_inv _ := rfl
-  right_inv _ := rfl
+    simp
 
 /-- The identification of the coinduced module with functions is the underlying function. -/
 @[simp]
@@ -362,20 +358,19 @@ instance indBotCounit_epi (A : Rep k G) : Epi (indBotCounit A) :=
 /-- The map of induced representations associated to a morphism of representations. -/
 def indBotMap {A B : Rep k G} (f : A ⟶ B) :
     indBot k G A.V ⟶ indBot k G B.V :=
-  eqToHom (indBotFunctor_obj (ModuleCat.of k A.V)).symm ≫
-    (indBotFunctor k G).map ((forget₂ (Rep k G) (ModuleCat k)).map f) ≫
-      eqToHom (indBotFunctor_obj (ModuleCat.of k B.V))
+  indMap (⊥ : Subgroup G).subtype
+    ((trivialFunctor k (⊥ : Subgroup G)).map (ModuleCat.ofHom f.hom.toLinearMap))
 
 /-- The map induced by an identity morphism is the identity. -/
 @[simp]
-theorem indBotMap_id (A : Rep k G) : indBotMap (𝟙 A) = 𝟙 _ := by
-  simp [indBotMap]
+theorem indBotMap_id (A : Rep k G) : indBotMap (𝟙 A) = 𝟙 _ :=
+  indBot_hom_ext fun _ _ ↦ rfl
 
 /-- The map induced by a composite is the composite of the induced maps. -/
 @[simp]
 theorem indBotMap_comp {A B C : Rep k G} (f : A ⟶ B) (g : B ⟶ C) :
-    indBotMap (f ≫ g) = indBotMap f ≫ indBotMap g := by
-  simp [indBotMap]
+    indBotMap (f ≫ g) = indBotMap f ≫ indBotMap g :=
+  indBot_hom_ext fun _ _ ↦ rfl
 
 /-- The induced map applies the underlying map to every generator. -/
 theorem indBotMap_hom_mk {A B : Rep k G} (f : A ⟶ B) (g : G) (a : A) :
@@ -400,13 +395,12 @@ theorem indBotCounit_naturality {A B : Rep k G} (f : A ⟶ B) :
 the trivial subgroup, attached to a `k`-linear map `s`. -/
 def fromIndBot (B : Rep k G) {X : Type u} [AddCommGroup X] [Module k X]
     (s : X →ₗ[k] B.V) : indBot k G X ⟶ B :=
-  eqToHom (indBotFunctor_obj (ModuleCat.of k X)).symm ≫
-    (indBotFunctor k G).map (ModuleCat.ofHom s) ≫
-      eqToHom (indBotFunctor_obj (ModuleCat.of k B.V)) ≫ indBotCounit B
+  indMap (⊥ : Subgroup G).subtype ((trivialFunctor k (⊥ : Subgroup G)).map (ModuleCat.ofHom s)) ≫
+    indBotCounit B
 
 /-- The morphism attached to `s` on generators: `⟦g ⊗ₜ x⟧ ↦ g⁻¹ • s x`. -/
--- The two `eqToHom`s are identities and `indBotFunctor` sends the generator `⟦g ⊗ₜ x⟧` to
--- `⟦g ⊗ₜ s x⟧` (`indBotFunctor_map_hom_mk`), both by definition, so this is `indBotCounit_hom_mk`.
+-- `indMap` sends the generator `⟦g ⊗ₜ x⟧` to `⟦g ⊗ₜ s x⟧` by definition, so this is
+-- `indBotCounit_hom_mk`.
 theorem fromIndBot_hom_mk (B : Rep k G) {X : Type u} [AddCommGroup X] [Module k X]
     (s : X →ₗ[k] B.V) (g : G) (x : X) :
     (fromIndBot B s).hom (IndV.mk (⊥ : Subgroup G).subtype
@@ -434,12 +428,7 @@ theorem fromIndBot_comp_of_rightInverse {A B : Rep k G} (f : B ⟶ A)
 
 /-- The induction endofunctor acts on morphisms by `indBotMap`. -/
 @[simp] theorem indBotRepFunctor_map (f : A ⟶ B) :
-    (indBotRepFunctor (k := k) (G := G)).map f = indBotMap f :=
-  -- The functor composition and `indBotMap` have the same underlying induction map;
-  -- `indBotMap` only inserts identity `eqToHom` transports for the public `indBot` presentation.
-  indBot_hom_ext fun g a ↦
-    (indBotFunctor_map_hom_mk ((forget₂ (Rep k G) (ModuleCat k)).map f) g a).trans
-      (indBotMap_hom_mk f g a).symm
+    (indBotRepFunctor (k := k) (G := G)).map f = indBotMap f := (rfl)
 
 /-- The canonical projection from induction, as a natural transformation. -/
 @[expose] def indBotCounitNatTrans : indBotRepFunctor (k := k) (G := G) ⟶ 𝟭 (Rep k G) where
@@ -460,23 +449,20 @@ of finitely supported functions `G →₀ X`, `⟦g ⊗ₜ x⟧ ↦ single g x`:
 group are the whole module `k[G] ⊗ X`. -/
 def indBotEquivFinsupp (X : Type u) [AddCommGroup X] [Module k X] :
     (indBot k G X : Type u) ≃ₗ[k] (G →₀ X) :=
-  LinearEquiv.ofLinearMap
-    (Coinvariants.lift _ (TensorProduct.finsuppScalarLeft k X G ∘ₗ
-        (MonoidAlgebra.coeffLinearEquiv k).toLinearMap.rTensor X) fun g ↦ by
-      obtain rfl : g = 1 := Subsingleton.elim g 1
-      rw [map_one, Module.End.one_eq_id, LinearMap.comp_id])
-    (Coinvariants.mk _ ∘ₗ (MonoidAlgebra.coeffLinearEquiv k).symm.toLinearMap.rTensor X ∘ₗ
-      (TensorProduct.finsuppScalarLeft k X G).symm.toLinearMap)
-    (Finsupp.lhom_ext fun g x ↦ by simp [TensorProduct.finsuppScalarLeft_apply_tmul])
-    (IndV.hom_ext _ _ fun g ↦ LinearMap.ext fun x ↦ by
-      simp [TensorProduct.finsuppScalarLeft_apply_tmul])
+  (Submodule.quotEquivOfEqBot _ <| Submodule.span_eq_bot.2 fun _ hx ↦ by
+    obtain ⟨⟨g, v⟩, rfl⟩ := hx
+    obtain rfl : g = 1 := Subsingleton.elim g 1
+    simp).trans TauCeti.MonoidAlgebra.tensorEquivFinsupp
 
 /-- The underlying module of the induced representation on generators: `⟦g ⊗ₜ x⟧ ↦ single g x`. -/
 theorem indBotEquivFinsupp_mk (X : Type u) [AddCommGroup X] [Module k X] (g : G) (x : X) :
     indBotEquivFinsupp k G X
         (IndV.mk (⊥ : Subgroup G).subtype (Representation.trivial k (⊥ : Subgroup G) X) g x) =
       Finsupp.single g x := by
-  simp [indBotEquivFinsupp, TensorProduct.finsuppScalarLeft_apply_tmul]
+  -- `quotEquivOfEqBot` is the identity on classes, so on a generator only `tensorEquivFinsupp`
+  -- acts.
+  change TauCeti.MonoidAlgebra.tensorEquivFinsupp (MonoidAlgebra.single g (1 : k) ⊗ₜ[k] x) = _
+  simp
 
 /-- `G` acts on the finitely supported functions underlying the representation induced from the
 trivial subgroup by right translation: `(g • v) h = v (h * g)`. -/

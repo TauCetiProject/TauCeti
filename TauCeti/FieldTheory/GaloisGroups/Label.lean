@@ -10,6 +10,7 @@ public import TauCeti.FieldTheory.GaloisGroups.Discriminant.Field
 public import TauCeti.FieldTheory.GaloisGroups.Orbits
 public import TauCeti.GroupTheory.Perm.TransitiveGroupLabel.Basic
 import TauCeti.GroupTheory.GroupAction.Transitive
+import TauCeti.GroupTheory.Perm.TransitiveGroupLabel.Parity
 import TauCeti.GroupTheory.Perm.TransitiveGroupLabel.Primitive
 import TauCeti.GroupTheory.Perm.TransitiveGroupLabel.Solvable
 
@@ -56,6 +57,9 @@ by the degree alone, and in degree two by separability and irreducibility.
   degree where it determines the label of a transitive subgroup.
 * `TauCeti.HasGaloisLabel.range_le_alternatingGroup_iff` and
   `TauCeti.HasGaloisLabel.isSquare_discr_iff`: the parity of the Galois image.
+* `TauCeti.HasGaloisLabel.range_le_alternatingGroup_iff_label` and
+  `TauCeti.HasGaloisLabel.isSquare_discr_iff_label`: the complete parity column, read as
+  explicit conditions on the degree and label index.
 * `TauCeti.HasGaloisLabel.irreducible_map_discrField_iff`: irreducibility over the discriminant
   field, read on the even part of the reference subgroup.
 * `TauCeti.HasGaloisLabel.isPreprimitive_iff`, `TauCeti.HasGaloisLabel.isPreprimitive_gal_iff`:
@@ -303,6 +307,27 @@ theorem HasGaloisLabel.isSquare_discr_iff (h : HasGaloisLabel f j) (hf : f.Monic
   have : IsGalois F f.SplittingField := IsGalois.of_separable_splitting_field h.separable
   rw [← h.range_le_alternatingGroup_iff,
     hf.isSquare_discr_iff_range_le_alternatingGroup (E := f.SplittingField) h.separable hchar]
+
+open scoped Classical in
+/-- The Galois image of a labelled polynomial consists of even permutations exactly for
+the labels `1T1`, `3T1`, `4T2`, `4T4`, `5T1`, `5T2`, and `5T4`. -/
+theorem HasGaloisLabel.range_le_alternatingGroup_iff_label (h : HasGaloisLabel f j) :
+    (Gal.galActionHom f f.SplittingField).range ≤
+        alternatingGroup (f.rootSet f.SplittingField) ↔
+      n = 1 ∨ (n = 3 ∧ (j : ℕ) = 0) ∨
+        (n = 4 ∧ ((j : ℕ) = 1 ∨ (j : ℕ) = 3)) ∨
+        (n = 5 ∧ ((j : ℕ) = 0 ∨ (j : ℕ) = 1 ∨ (j : ℕ) = 3)) := by
+  rw [h.range_le_alternatingGroup_iff, referenceSubgroup_le_alternatingGroup_iff]
+
+/-- Away from characteristic two, a monic labelled polynomial has square discriminant
+exactly for the labels `1T1`, `3T1`, `4T2`, `4T4`, `5T1`, `5T2`, and `5T4`. -/
+theorem HasGaloisLabel.isSquare_discr_iff_label (h : HasGaloisLabel f j) (hf : f.Monic)
+    (hchar : ringChar F ≠ 2) :
+    IsSquare f.discr ↔
+      n = 1 ∨ (n = 3 ∧ (j : ℕ) = 0) ∨
+        (n = 4 ∧ ((j : ℕ) = 1 ∨ (j : ℕ) = 3)) ∨
+        (n = 5 ∧ ((j : ℕ) = 0 ∨ (j : ℕ) = 1 ∨ (j : ℕ) = 3)) := by
+  rw [h.isSquare_discr_iff hf hchar, referenceSubgroup_le_alternatingGroup_iff]
 
 /-- **Irreducibility over the discriminant field reads the even part of the label.** Away from
 characteristic `2`, a monic polynomial with a label stays irreducible over its discriminant field

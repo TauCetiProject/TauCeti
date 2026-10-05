@@ -95,7 +95,7 @@ private theorem right_eq_left_or_right_eq_right : S.right = R.left ∨ S.right =
 
 /-- If a returning rectangle starts on the same side column as the outgoing one, then it also
 ends on the same side column. -/
-private theorem right_eq_right_of_left_eq_left (h : S.left = R.left) : S.right = R.right := by
+theorem right_eq_right_of_left_eq_left (h : S.left = R.left) : S.right = R.right := by
   rcases R.right_eq_left_or_right_eq_right S with h' | h'
   · exact absurd (h.trans h'.symm) S.left_ne_right
   · exact h'
@@ -125,20 +125,20 @@ theorem sideColumns_eq_sideColumns : S.sideColumns = R.sideColumns := by
 
 /-- A returning rectangle starting on the initial side column starts on the terminal side row:
 its two rows are those of the outgoing rectangle, in the opposite order. -/
-private theorem bottom_eq_top_of_left_eq_left (h : S.left = R.left) : S.bottom = R.top := by
+theorem bottom_eq_top_of_left_eq_left (h : S.left = R.left) : S.bottom = R.top := by
   rw [bottom_def, h, R.map_left, top_def]
 
 /-- A returning rectangle starting on the initial side column ends on the initial side row. -/
-private theorem top_eq_bottom_of_left_eq_left (h : S.left = R.left) : S.top = R.bottom := by
+theorem top_eq_bottom_of_left_eq_left (h : S.left = R.left) : S.top = R.bottom := by
   rw [top_def, R.right_eq_right_of_left_eq_left S h, R.map_right, bottom_def]
 
 /-- A returning rectangle starting on the terminal side column has the same two side rows, in the
 same order, as the outgoing one. -/
-private theorem bottom_eq_bottom_of_left_eq_right (h : S.left = R.right) : S.bottom = R.bottom := by
+theorem bottom_eq_bottom_of_left_eq_right (h : S.left = R.right) : S.bottom = R.bottom := by
   rw [bottom_def, h, R.map_right, bottom_def]
 
 /-- A returning rectangle starting on the terminal side column ends on the terminal side row. -/
-private theorem top_eq_top_of_left_eq_right (h : S.left = R.right) : S.top = R.top := by
+theorem top_eq_top_of_left_eq_right (h : S.left = R.right) : S.top = R.top := by
   rw [top_def, R.right_eq_left_of_left_eq_right S h, R.map_left, top_def]
 
 /-- A returning pair whose two rectangles start on the same side column covers a full vertical

@@ -60,6 +60,8 @@ assignment, a later stage of the roadmap.
 * `TauCeti.GridChainMinus`: the free `R[V₀, …, V_{n-1}]`-module on grid states.
 * `TauCeti.GridChain.relabelColumnsRenameEquiv`: the semilinear equivalence on `GC⁻` that
   relabels columns and renames the coefficient variables.
+* `TauCeti.GridChain.renameMatrixMap`: the semilinear map on `GC⁻` over a renaming of the
+  variables with prescribed matrix coefficients.
 * `TauCeti.GridDiagram.unblockedDifferential`: the unblocked differential, as a linear map over
   the polynomial ring.
 
@@ -162,6 +164,45 @@ theorem relabelColumnsRenameEquiv_symm_apply (κ : Equiv.Perm (Fin n))
     Finsupp.mapRange.linearEquiv_apply, Finsupp.mapRange_apply, relabelColumnsEquiv_symm_apply,
     LinearEquiv.symm_apply_eq, RingEquiv.toSemilinearEquiv_apply, AlgEquiv.coe_toRingEquiv,
     renameEquiv_apply, rename_rename, Equiv.self_comp_symm, rename_id_apply]
+
+/-- The map on `GC⁻` with matrix coefficients `M`, semilinear over the renaming of the variables
+by `σ`: it sends the generator `x` with coefficient `p` to `∑ y, rename σ p * M x y • y`. -/
+noncomputable def renameMatrixMap (σ : Equiv.Perm (Fin n))
+    (M : GridState n → GridState n → MvPolynomial (Fin n) R) :
+    GridChainMinus R n →ₛₗ[((MvPolynomial.renameEquiv R σ).toRingEquiv :
+      MvPolynomial (Fin n) R →+* MvPolynomial (Fin n) R)] GridChainMinus R n :=
+  Finsupp.lsum (MvPolynomial (Fin n) R) fun x : GridState n =>
+    ((LinearMap.id :
+        MvPolynomial (Fin n) R →ₗ[MvPolynomial (Fin n) R] MvPolynomial (Fin n) R).smulRight
+      (∑ y : GridState n, Finsupp.single y (M x y))).comp
+        (renameEquiv R σ).toRingEquiv.toSemilinearEquiv.toLinearMap
+
+/-- The map with matrix coefficients `M` sends a generator with coefficient `p` to the renamed
+coefficient times the row of `M` at that generator. -/
+@[simp]
+theorem renameMatrixMap_single (σ : Equiv.Perm (Fin n))
+    (M : GridState n → GridState n → MvPolynomial (Fin n) R) (x : GridState n)
+    (p : MvPolynomial (Fin n) R) :
+    renameMatrixMap R σ M (Finsupp.single x p) =
+      rename σ p • ∑ y : GridState n, Finsupp.single y (M x y) := by
+  rw [renameMatrixMap, Finsupp.lsum_single, LinearMap.comp_apply, LinearMap.smulRight_apply,
+    LinearMap.id_apply, LinearEquiv.coe_coe, RingEquiv.toSemilinearEquiv_apply,
+    AlgEquiv.coe_toRingEquiv, renameEquiv_apply]
+
+/-- The coefficient formula for the map with matrix coefficients `M` on an arbitrary chain. -/
+@[simp]
+theorem renameMatrixMap_apply_apply (σ : Equiv.Perm (Fin n))
+    (M : GridState n → GridState n → MvPolynomial (Fin n) R) (c : GridChainMinus R n)
+    (y : GridState n) :
+    renameMatrixMap R σ M c y = c.sum fun x p => rename σ p * M x y := by
+  induction c using Finsupp.induction_linear with
+  | zero => rw [map_zero, Finsupp.zero_apply, Finsupp.sum_zero_index]
+  | add c d hc hd =>
+    rw [map_add, Finsupp.add_apply, hc, hd, Finsupp.sum_add_index'] <;> simp [add_mul]
+  | single x p =>
+    rw [renameMatrixMap_single, Finsupp.smul_apply, smul_eq_mul, Finsupp.finsetSum_apply,
+      Finset.sum_eq_single y (fun z _ hz => by simp [hz.symm]) (by simp),
+      Finsupp.single_eq_same, Finsupp.sum_single_index (by simp)]
 
 end GridChain
 

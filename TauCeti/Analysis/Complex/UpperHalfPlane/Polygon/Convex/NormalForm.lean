@@ -47,6 +47,9 @@ two triangles of the fan meeting there.
 * `ConvexPolygon.interiorAngle_eq_add_of_vertex_zero`: the upward vertical splits the interior
   angle at a vertex other than `∞`, `vertex 1` and `vertex (-1)` into the angles of the two
   adjacent triangles.
+* `ConvexPolygon.exists_vertex_zero_eq_infty`,
+  `ConvexPolygon.exists_vertex_zero_eq_infty_of_not_forall_eq_inl`: a convex polygon with an
+  ideal vertex has the area and angle sum of a convex polygon whose `vertex 0` is `∞`.
 
 ## Source
 
@@ -319,6 +322,32 @@ theorem interiorAngle_eq_add_of_vertex_zero (h₀ : P.vertex 0 = .inr ∞) {i : 
     exact vertexAngle_eq_add_of_mem_circles (P.vertex_ne_inr_infty_of_vertex_zero h₀ hi₁)
       (P.vertex_ne_inr_infty_of_vertex_zero h₀ hi') hA₁ hp₁ hA₂ hq₂ hpA hAq
       (sub_neg.1 (neg_of_mul_neg_right hp₂ hκ₂.le))
+
+/-! ### Moving an ideal vertex to `∞` -/
+
+/-- A convex polygon whose vertex `i` is an ideal point `ξ` has the area and angle sum of some
+convex polygon with `vertex 0 = ∞`. -/
+theorem exists_vertex_zero_eq_infty {i : Fin n} {ξ : OnePoint ℝ} (hi : P.vertex i = .inr ξ) :
+    ∃ Q : ConvexPolygon n, Q.vertex 0 = .inr ∞ ∧ volume Q.carrier = volume P.carrier ∧
+      ∑ j, Q.interiorAngle j = ∑ j, P.interiorAngle j := by
+  obtain ⟨h, hh⟩ := MulAction.exists_smul_eq PSL(2, ℝ) ξ ∞
+  refine ⟨h • P.rotate i, ?_, ?_, ?_⟩
+  · simp only [vertex_smul, vertex_rotate, zero_add, hi, Sum.smul_inr, hh]
+  · rw [carrier_smul, measure_smul, carrier_rotate]
+  · simp_rw [interiorAngle_smul]
+    exact P.sum_interiorAngle_rotate i
+
+/-- A convex polygon some vertex of which does not lie in `ℍ` has the area and angle sum of some
+convex polygon with `vertex 0 = ∞`. -/
+theorem exists_vertex_zero_eq_infty_of_not_forall_eq_inl
+    (h : ¬∀ i, ∃ z : ℍ, P.vertex i = .inl z) :
+    ∃ Q : ConvexPolygon n, Q.vertex 0 = .inr ∞ ∧ volume Q.carrier = volume P.carrier ∧
+      ∑ j, Q.interiorAngle j = ∑ j, P.interiorAngle j := by
+  push Not at h
+  obtain ⟨i, hi⟩ := h
+  cases hv : P.vertex i with
+  | inl z => exact absurd hv (hi z)
+  | inr ξ => exact P.exists_vertex_zero_eq_infty hv
 
 end ConvexPolygon
 

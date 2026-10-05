@@ -195,6 +195,26 @@ theorem outgoingSlot_strandSucc (j : Fin w.length) :
     w.outgoingSlot j (strandSucc w[j.1].1) = 1 := by
   simp [outgoingSlot, (strand_ne_strandSucc _).symm]
 
+/-- A strand enters a crossing at slot `0` or slot `3`. -/
+theorem incomingSlot_eq_zero_or_three (j : Fin w.length) (p : Fin n) :
+    w.incomingSlot j p = 0 ∨ w.incomingSlot j p = 3 := by
+  unfold incomingSlot
+  split_ifs <;> simp
+
+/-- A strand leaves a crossing at slot `1` or slot `2`. -/
+theorem outgoingSlot_eq_one_or_two (j : Fin w.length) (p : Fin n) :
+    w.outgoingSlot j p = 1 ∨ w.outgoingSlot j p = 2 := by
+  unfold outgoingSlot
+  split_ifs <;> simp
+
+/-- A crossing is left upwards along the two positions of its letter at different slots. -/
+theorem eq_of_outgoingSlot_eq {j : Fin w.length} {p q : Fin n} (hp : j ∈ w.crossingsAt p)
+    (hq : j ∈ w.crossingsAt q) (h : w.outgoingSlot j p = w.outgoingSlot j q) : p = q := by
+  rw [mem_crossingsAt] at hp hq
+  have hne := strand_ne_strandSucc w[j.1].1
+  unfold outgoingSlot at h
+  rcases hp with rfl | rfl <;> rcases hq with hq | hq <;> simp_all
+
 /-- The incoming slot at a crossing depends only on the letter of that crossing. -/
 theorem incomingSlot_congr {w w' : BraidWord n} {j : Fin w'.length} {i : Fin w.length}
     (h : w'[j.1] = w[i.1]) (p : Fin n) : w'.incomingSlot j p = w.incomingSlot i p := by

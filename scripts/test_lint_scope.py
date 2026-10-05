@@ -106,24 +106,51 @@ class LintScopeTest(unittest.TestCase):
                 self.assertIsNone(self.run_scope(
                     self.PR_ENV, dict(files, **{"repos/o/r/pulls/12": info})))
 
-    def test_merge_group_reads_prs_from_squash_titles(self):
-        compare = {"commits": [{"commit": {"message": "feat: x (#7)\n\nbody"}},
+    BATCH_EVENTS = ("merge_group", "repository_dispatch", "push")
+
+    def test_batches_read_prs_from_squash_titles(self):
+        compare = {"total_commits": 2, "commits": [{"commit": {"message": "feat: x (#7)\n\nbody"}},
                                {"commit": {"message": "fix: y (#8)"}}],
                    "files": [f("modified", "TauCeti/X.lean")]}
-        responses = {f"repos/o/r/compare/{SHA_A}...{SHA_B}": compare,
-                     "repos/o/r/pulls/7": pr(), "repos/o/r/pulls/8": pr()}
-        env = {"EVENT": "merge_group", "BASE": SHA_A, "HEAD": SHA_B}
-        self.assertEqual(self.run_scope(env, responses), ["TauCeti.X"])
-        responses["repos/o/r/pulls/8"] = pr(labels=["full-lint"])
-        self.assertIsNone(self.run_scope(env, responses))
+        for event in self.BATCH_EVENTS:
+            for info in (pr(), pr(labels=["full-lint"]), pr(head_ref="lint-repair/main")):
+                with self.subTest(event=event, info=info):
+                    responses = {f"repos/o/r/compare/{SHA_A}...{SHA_B}": compare,
+                                 "repos/o/r/pulls/7": pr(), "repos/o/r/pulls/8": info}
+                    modules = self.run_scope({"EVENT": event, "BASE": SHA_A, "HEAD": SHA_B},
+                                             responses)
+                    self.assertEqual(modules, ["TauCeti.X"] if info == pr() else None)
 
-    def test_unattributable_commits_lint_everything(self):
-        compare = {"commits": [{"commit": {"message": "feat: x (#7)"}},
-                               {"commit": {"message": "Merge branch main"}}],
-                   "files": [f("modified", "TauCeti/X.lean")]}
-        self.assertIsNone(self.run_scope(
-            {"EVENT": "push", "BASE": SHA_A, "HEAD": SHA_B},
-            {f"repos/o/r/compare/{SHA_A}...{SHA_B}": compare, "repos/o/r/pulls/7": pr()}))
+    def test_unattributable_or_duplicate_batch_commits_lint_everything(self):
+        for event in self.BATCH_EVENTS:
+            for message in ("Merge branch main", "another commit (#7)"):
+                with self.subTest(event=event, message=message):
+                    compare = {"total_commits": 2, "commits": [{"commit": {"message": "feat: x (#7)"}},
+                                           {"commit": {"message": message}}],
+                               "files": [f("modified", "TauCeti/X.lean")]}
+                    self.assertIsNone(self.run_scope(
+                        {"EVENT": event, "BASE": SHA_A, "HEAD": SHA_B},
+                        {f"repos/o/r/compare/{SHA_A}...{SHA_B}": compare}))
+
+    def test_truncated_or_missing_batch_commit_count_lints_everything(self):
+        for event in self.BATCH_EVENTS:
+            for count in (None, 251):
+                with self.subTest(event=event, count=count):
+                    compare = {"total_commits": count,
+                               "commits": [{"commit": {"message": "feat: x (#7)"}}],
+                               "files": [f("modified", "TauCeti/X.lean")]}
+                    self.assertIsNone(self.run_scope(
+                        {"EVENT": event, "BASE": SHA_A, "HEAD": SHA_B},
+                        {f"repos/o/r/compare/{SHA_A}...{SHA_B}": compare}))
+
+    def test_batch_compare_cap_lints_everything(self):
+        compare = {"total_commits": 1, "commits": [{"commit": {"message": "feat: x (#7)"}}],
+                   "files": [f("modified", f"TauCeti/M{i}.lean") for i in range(300)]}
+        for event in self.BATCH_EVENTS:
+            with self.subTest(event=event):
+                self.assertIsNone(self.run_scope(
+                    {"EVENT": event, "BASE": SHA_A, "HEAD": SHA_B},
+                    {f"repos/o/r/compare/{SHA_A}...{SHA_B}": compare}))
 
     def test_missing_base_lints_everything(self):
         self.assertIsNone(self.run_scope({"EVENT": "push", "BASE": "0" * 40, "HEAD": SHA_B}, {}))
@@ -142,6 +169,25 @@ class PrBuildWiringTest(unittest.TestCase):
         run = job["steps"][sandbox]["run"]
         self.assertIn('--ro-bind "$LINT_SCOPE_DIR" "$LINT_SCOPE_DIR"', run)
         self.assertIn('--setenv LINT_ONLY_MODULES "${LINT_ONLY_MODULES:-}"', run)
+
+    def test_batch_audits_stay_whole_library_with_scoped_environment_lint(self):
+        wf = yaml.safe_load((ROOT / ".github" / "workflows" / "pr-build.yml").read_text())
+        self.assertIn("github.event_name == 'repository_dispatch'", wf["env"]["IS_BATCH"])
+        self.assertIn("github.event_name == 'merge_group'", wf["env"]["IS_BATCH"])
+        job = wf["jobs"]["sandboxed-build"]
+        run = next(s["run"] for s in job["steps"] if s.get("name") == "Decide the audit scope")
+        with tempfile.TemporaryDirectory() as d:
+            d = pathlib.Path(d)
+            (d / "modules.txt").write_text("TauCeti.X\n")
+            (d / "unmatched.txt").write_text("")
+            github_env = d / "env"
+            out = subprocess.run(
+                ["bash", "-c", run.replace("${{ env.IS_BATCH }}", "true")],
+                env={**os.environ, "GITHUB_ENV": str(github_env), "LINT_SCOPE_DIR": str(d),
+                     "LINT_ONLY_MODULES": str(d / "modules.txt"), "BUMP": "0"},
+                capture_output=True, text=True)
+            self.assertEqual(out.returncode, 0, out.stderr)
+            self.assertEqual(github_env.read_text(), "AXIOMS_ONLY_MODULES=\nDOT_ONLY_MODULES=\n")
 
     def repair_exemption(self, event, files, env=None, api=None):
         """Run pr-build's empty-repair-PR exemption, extracted from the Scope guard step, with a fake
