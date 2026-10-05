@@ -33,6 +33,8 @@ odd prime every cup square `a ⌣ a` vanishes, since `2` is then invertible in `
 
 * `TauCeti.cupFp_res`: restriction to a subgroup preserves `cupFp`.
 * `TauCeti.cupFp_map`: a continuous group homomorphism preserves `cupFp`.
+* `TauCeti.cupFp_bijective_iff_of_bijective`: perfectness of `cupFp` transfers along a continuous
+  homomorphism inducing isomorphisms on `H¹` and `H²`.
 * `TauCeti.cupFp_bijective_congr`: perfectness of `cupFp` is invariant under topological group
   isomorphism.
 * `TauCeti.fpPairing_flip`: the opposite of the multiplication pairing is itself.
@@ -147,19 +149,32 @@ theorem cupFp_map {H : Type u} [Group H] [TopologicalSpace H] [IsTopologicalGrou
       (eqToHom (res_trivialFp_hom p φ))
       (eqToHom (res_trivialFp_hom p φ)) hpair 1 1 a b
 
+/-- **Perfectness of the cup square transfers along a continuous homomorphism** `φ : H →ₜ* G`
+inducing isomorphisms on `H¹(-, ZMod p)` and `H²(-, ZMod p)`: `cupFp p G` is a bijection onto the
+linear maps `H¹(G, ZMod p) →ₗ H²(G, ZMod p)` exactly when `cupFp p H` is. -/
+theorem cupFp_bijective_iff_of_bijective {H : Type u} [Group H] [TopologicalSpace H]
+    [IsTopologicalGroup H] (φ : H →ₜ* G) (h₁ : Function.Bijective (cohomFpMap p φ 1))
+    (h₂ : Function.Bijective (cohomFpMap p φ 2)) :
+    Function.Bijective (cupFp p G) ↔ Function.Bijective (cupFp p H) := by
+  let e₁ := LinearEquiv.ofBijective (cohomFpMap p φ 1).hom.toLinearMap h₁
+  let e₂ := LinearEquiv.ofBijective (cohomFpMap p φ 2).hom.toLinearMap h₂
+  -- `cupFp p H` is `cupFp p G` conjugated by the cohomology equivalences along `φ`
+  have h : ⇑(cupFp p H) = (e₁.arrowCongr e₂) ∘ cupFp p G ∘ e₁.symm :=
+    funext fun a => LinearMap.ext fun b => by
+      rw [Function.comp_apply, Function.comp_apply, LinearEquiv.arrowCongr_apply]
+      conv_lhs => rw [← e₁.apply_symm_apply a, ← e₁.apply_symm_apply b]
+      exact (cupFp_map p G φ _ _).symm
+  rw [h, EquivLike.comp_bijective, EquivLike.bijective_comp]
+
 /-- **Perfectness of the cup square is invariant under topological group isomorphism**: `cupFp p G`
 is a bijection onto the linear maps `H¹(G, ZMod p) →ₗ H²(G, ZMod p)` exactly when `cupFp p H` is,
 for `G ≃ₜ* H`. -/
 theorem cupFp_bijective_congr {H : Type u} [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
-    (e : G ≃ₜ* H) : Function.Bijective (cupFp p G) ↔ Function.Bijective (cupFp p H) := by
-  -- `cupFp p H` is `cupFp p G` conjugated by the cohomology equivalences of `e`
-  have h : ⇑(cupFp p H) = ((cohomFpLinearEquiv p e 1).arrowCongr (cohomFpLinearEquiv p e 2)) ∘
-      cupFp p G ∘ (cohomFpLinearEquiv p e 1).symm :=
-    funext fun a => LinearMap.ext fun b => by
-      rw [Function.comp_apply, Function.comp_apply, LinearEquiv.arrowCongr_apply,
-        cohomFpLinearEquiv_apply, cupFp_map, ← cohomFpLinearEquiv_apply,
-        ← cohomFpLinearEquiv_apply, LinearEquiv.apply_symm_apply, LinearEquiv.apply_symm_apply]
-  rw [h, EquivLike.comp_bijective, EquivLike.bijective_comp]
+    (e : G ≃ₜ* H) : Function.Bijective (cupFp p G) ↔ Function.Bijective (cupFp p H) :=
+  have h (n : ℕ) :
+      Function.Bijective (cohomFpMap p (ContinuousMonoidHom.toContinuousMonoidHom e.symm) n) :=
+    funext (cohomFpLinearEquiv_apply p e n) ▸ (cohomFpLinearEquiv p e n).bijective
+  cupFp_bijective_iff_of_bijective p G _ (h 1) (h 2)
 
 /-- **Restriction preserves the cup product with trivial `ZMod p` coefficients**:
 `res (a ⌣ b) = res a ⌣ res b` for the named restriction `trivialFpResMap`. -/
