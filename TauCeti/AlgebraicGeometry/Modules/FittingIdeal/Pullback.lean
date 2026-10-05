@@ -15,8 +15,9 @@ public import TauCeti.AlgebraicGeometry.IdealSheaf.Locality
 
 Fitting ideal sheaves of quasicoherent modules of finite type commute with pullback.
 Their affine computation is the algebraic identity `Fitt_k(S ⊗_R M) = Fitt_k(M) S`.
-This compatibility gives the base-change identity for closed subschemes defined by
-Fitting ideals, including relative singular subschemes.
+This compatibility is an ingredient for base change of relative singular subschemes.
+That application also requires a pullback comparison for relative differentials,
+which is not established here.
 
 ## References
 

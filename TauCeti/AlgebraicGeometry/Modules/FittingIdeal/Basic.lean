@@ -137,10 +137,20 @@ ideal computed over the original ring under the canonical global-sections isomor
 theorem _root_.AlgebraicGeometry.Scheme.Modules.fittingIdeal_ideal_top_Spec
     {R : CommRingCat.{u}} (M : (Spec R).Modules) [M.IsQuasicoherent]
     (hM : ∀ U : (Spec R).affineOpens, Module.Finite Γ(Spec R, U) Γ(M, U))
-    [Module.Finite R Γ(M, ⊤)] (k : ℕ) :
+    (k : ℕ) :
+    letI : Module.Finite R Γ(M, ⊤) := ⟨by
+      simpa only [Submodule.restrictScalars_top] using
+        (hM ⟨⊤, isAffineOpen_top _⟩).fg_top.restrictScalars_of_surjective (R := R) (by
+          simpa [IsAffineOpen.algebraMap_Spec_obj] using
+            (ConcreteCategory.bijective_of_isIso (Scheme.ΓSpecIso R).inv).surjective)⟩
     (M.fittingIdeal hM k).ideal ⟨⊤, isAffineOpen_top _⟩ =
       (TauCeti.fittingIdeal R Γ(M, ⊤) k).map (Scheme.ΓSpecIso R).inv.hom := by
   have := hM ⟨⊤, isAffineOpen_top _⟩
+  have : Module.Finite R Γ(M, ⊤) := ⟨by
+    simpa only [Submodule.restrictScalars_top] using
+      (hM ⟨⊤, isAffineOpen_top _⟩).fg_top.restrictScalars_of_surjective (R := R) (by
+        simpa [IsAffineOpen.algebraMap_Spec_obj] using
+          (ConcreteCategory.bijective_of_isIso (Scheme.ΓSpecIso R).inv).surjective)⟩
   have hmap : algebraMap R Γ(Spec R, ⊤) = (Scheme.ΓSpecIso R).inv.hom := by
     rw [IsAffineOpen.algebraMap_Spec_obj]
     simp
@@ -158,7 +168,12 @@ the Fitting ideal of its module of global sections. -/
 theorem _root_.AlgebraicGeometry.Scheme.Modules.fittingIdeal_Spec
     {R : CommRingCat.{u}} (M : (Spec R).Modules) [M.IsQuasicoherent]
     (hM : ∀ U : (Spec R).affineOpens, Module.Finite Γ(Spec R, U) Γ(M, U))
-    [Module.Finite R Γ(M, ⊤)] (k : ℕ) :
+    (k : ℕ) :
+    letI : Module.Finite R Γ(M, ⊤) := ⟨by
+      simpa only [Submodule.restrictScalars_top] using
+        (hM ⟨⊤, isAffineOpen_top _⟩).fg_top.restrictScalars_of_surjective (R := R) (by
+          simpa [IsAffineOpen.algebraMap_Spec_obj] using
+            (ConcreteCategory.bijective_of_isIso (Scheme.ΓSpecIso R).inv).surjective)⟩
     M.fittingIdeal hM k = Scheme.IdealSheafData.ofIdealTop
       ((TauCeti.fittingIdeal R Γ(M, ⊤) k).map (Scheme.ΓSpecIso R).inv.hom) := by
   apply Scheme.IdealSheafData.ext_of_isAffine
