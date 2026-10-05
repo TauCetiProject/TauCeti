@@ -49,49 +49,6 @@ namespace OddComponentGridDiagram
 
 variable {n : ℕ} (G : OddComponentGridDiagram n) (R : Type*) [CommSemiring R]
 
-section RenameMatrixMap
-
-variable (G' : OddComponentGridDiagram n) (σ : Equiv.Perm (Fin n))
-  (M : GridState n → GridState n → MvPolynomial (Fin n) R)
-  (f : GridChainMinus R n → GridChainMinus R n)
-  (hf : ∀ c y, f c y = c.sum fun x p => rename σ p * M x y)
-  (hgrade : ∀ x y, ∀ w ∈ (M x y).support, ∀ d : Fin n →₀ ℕ,
-    G'.monomialBidegree y (Finsupp.mapDomain σ d + w) = G.monomialBidegree x d)
-
-include hf hgrade
-
-/-- A matrix whose weighted transitions preserve bidegree preserves the bidegree of each
-monomial occurring in an arbitrary input chain. -/
-private theorem exists_monomialBidegree_eq_of_mem_support_matrixMap
-    {c : GridChainMinus R n} {y : GridState n} {e : Fin n →₀ ℕ}
-    (he : e ∈ (f c y).support) :
-    ∃ x : GridState n, ∃ d ∈ (c x).support,
-      G'.monomialBidegree y e = G.monomialBidegree x d := by
-  rw [hf] at he
-  obtain ⟨x, d, hd, w, hw, rfl⟩ :=
-    GridChain.exists_eq_mapDomain_add_of_mem_support_sum_rename_mul R σ M he
-  exact ⟨x, d, hd, hgrade x y w hw d⟩
-
-private theorem matrixMap_mem_bigradedChainMinusPiece
-    {g : ℤ × ℤ} {c : GridChainMinus R n} (hc : c ∈ G.bigradedChainMinusPiece R g) :
-    f c ∈ G'.bigradedChainMinusPiece R g := by
-  rw [mem_bigradedChainMinusPiece] at hc ⊢
-  intro y e he
-  obtain ⟨x, d, hd, h⟩ :=
-    G.exists_monomialBidegree_eq_of_mem_support_matrixMap R G' σ M f hf hgrade he
-  rw [h, hc x d hd]
-
-private theorem matrixMap_mem_alexanderChainMinusPiece
-    {a : ℤ} {c : GridChainMinus R n} (hc : c ∈ G.alexanderChainMinusPiece R a) :
-    f c ∈ G'.alexanderChainMinusPiece R a := by
-  rw [mem_alexanderChainMinusPiece] at hc ⊢
-  intro y e he
-  obtain ⟨x, d, hd, h⟩ :=
-    G.exists_monomialBidegree_eq_of_mem_support_matrixMap R G' σ M f hf hgrade he
-  rw [← monomialBidegree_snd, h, monomialBidegree_snd, hc x d hd]
-
-end RenameMatrixMap
-
 variable (C : GridDiagram.ColumnCommutationData G.1)
 
 /-- Each terminal-side coefficient monomial compensates for the grading change of its target. -/

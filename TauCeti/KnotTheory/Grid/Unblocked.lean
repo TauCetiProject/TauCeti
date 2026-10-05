@@ -207,9 +207,9 @@ theorem renameMatrixMap_apply_apply (σ : Equiv.Perm (Fin n))
 /-- A monomial of the coefficient at `y` of `GridChain.renameMatrixMap R σ M c` comes from a
 monomial of an input coefficient `c x` and a monomial of the matrix entry `M x y`; its exponent
 is the `σ`-renaming of the former plus the latter. -/
-theorem exists_eq_mapDomain_add_of_mem_support_sum_rename_mul (σ : Equiv.Perm (Fin n))
-    (M : GridState n → GridState n → MvPolynomial (Fin n) R)
-    {c : GridChainMinus R n} {y : GridState n} {e : Fin n →₀ ℕ}
+theorem exists_eq_mapDomain_add_of_mem_support_sum_rename_mul (c : GridChainMinus R n)
+    (σ : Equiv.Perm (Fin n)) (M : GridState n → GridState n → MvPolynomial (Fin n) R)
+    {y : GridState n} {e : Fin n →₀ ℕ}
     (he : e ∈ (c.sum fun x p => rename σ p * M x y).support) :
     ∃ x, ∃ d ∈ (c x).support, ∃ w ∈ (M x y).support,
       e = Finsupp.mapDomain σ d + w := by
