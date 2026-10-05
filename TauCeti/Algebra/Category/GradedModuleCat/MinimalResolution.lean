@@ -144,15 +144,23 @@ theorem IsMinimal.subsingleton_ext_iff (n : ℕ) :
   (hr.extLinearEquiv hN n).toEquiv.subsingleton_congr.symm
 
 omit hN in
+/-- For a target concentrated in one internal degree, Ext vanishes exactly when graded
+maps from the corresponding term of a minimal resolution vanish. -/
+theorem IsMinimal.subsingleton_ext_iff_of_piece_eq_bot (j : ℤ)
+    (hN₀ : ∀ p, p ≠ j → N.grading.piece p = ⊥) (n : ℕ) :
+    Subsingleton (Ext.{w} M N n) ↔ Subsingleton (r.termObj n ⟶ N) := by
+  apply hr.subsingleton_ext_iff
+  let := N.gradedSMul
+  exact InternalGrading.smul_top_eq_bot_of_piece_eq_bot 𝒜 N.grading j hN₀
+
+omit hN in
 /-- For a degree-zero target, Ext into any internal shift vanishes exactly when graded
 maps from the corresponding term of a minimal resolution vanish. -/
 theorem IsMinimal.subsingleton_ext_shiftObj_iff
     (hN₀ : ∀ p, p ≠ 0 → N.grading.piece p = ⊥) (n : ℕ) (j : ℤ) :
     Subsingleton (Ext.{w} M (N.shiftObj j) n) ↔
       Subsingleton (r.termObj n ⟶ N.shiftObj j) := by
-  apply hr.subsingleton_ext_iff
-  let := (N.shiftObj j).gradedSMul
-  apply InternalGrading.smul_top_eq_bot_of_piece_eq_bot 𝒜 (N.shiftObj j).grading j
+  apply hr.subsingleton_ext_iff_of_piece_eq_bot j _ n
   intro p hp
   rw [GradedModuleCat.shiftObj_piece]
   exact hN₀ (p - j) (sub_ne_zero.mpr hp)

@@ -35,6 +35,8 @@ Degree `0` is deliberately excluded: there `Ext⁰(X, Y)` is `Hom(X, Y)`, which 
 
 * `CategoryTheory.ProjectiveResolution.extLinearEquiv`: the linear equivalence
   `Hom(Rₙ₊₁, Y) ≃ₗ Extⁿ⁺¹(X, Y)`, sending `f` to its class.
+* `TauCeti.ProjectiveResolution.extLinearEquivOfIso`: the same computation using an object
+  isomorphic to the resolution term.
 
 ## Main results
 
@@ -134,3 +136,34 @@ theorem extLinearEquiv_apply (R : ProjectiveResolution X) (n : ℕ)
   (rfl)
 
 end CategoryTheory.ProjectiveResolution
+
+namespace TauCeti.ProjectiveResolution
+
+open CategoryTheory CategoryTheory.Abelian
+
+variable {C : Type u} [Category.{v} C] [Abelian C] {k : Type t} [Ring k] [Linear k C]
+  [HasExt.{w} C] {X Y Z : C}
+
+/-- Compute positive-degree Ext from an object isomorphic to a resolution term when both
+adjacent differentials vanish against the target. -/
+noncomputable def extLinearEquivOfIso (R : CategoryTheory.ProjectiveResolution X) (n : ℕ)
+    (e : R.complex.X (n + 1) ≅ Z)
+    (h₁ : ∀ f : R.complex.X (n + 1) ⟶ Y, R.complex.d (n + 2) (n + 1) ≫ f = 0)
+    (h₂ : ∀ g : R.complex.X n ⟶ Y, R.complex.d (n + 1) n ≫ g = 0) :
+    (Z ⟶ Y) ≃ₗ[k] Ext.{w} X Y (n + 1) :=
+  (Linear.homCongr k e.symm (Iso.refl Y)).trans (R.extLinearEquiv n h₁ h₂)
+
+/-- The transported Ext computation sends a map to the class of its precomposition with
+the term isomorphism. -/
+@[simp]
+theorem extLinearEquivOfIso_apply (R : CategoryTheory.ProjectiveResolution X) (n : ℕ)
+    (e : R.complex.X (n + 1) ≅ Z)
+    (h₁ : ∀ f : R.complex.X (n + 1) ⟶ Y, R.complex.d (n + 2) (n + 1) ≫ f = 0)
+    (h₂ : ∀ g : R.complex.X n ⟶ Y, R.complex.d (n + 1) n ≫ g = 0) (f : Z ⟶ Y) :
+    extLinearEquivOfIso (k := k) R n e h₁ h₂ f =
+      R.extMk (e.hom ≫ f) (n + 2) rfl (h₁ _) := by
+  simp only [extLinearEquivOfIso, LinearEquiv.trans_apply,
+    CategoryTheory.ProjectiveResolution.extLinearEquiv_apply, Linear.homCongr_apply,
+    Iso.symm_inv, Iso.refl_hom, Category.comp_id]
+
+end TauCeti.ProjectiveResolution

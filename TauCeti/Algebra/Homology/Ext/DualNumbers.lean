@@ -378,11 +378,10 @@ theorem homDualNumberResidueEquiv_apply (f : dualNumberResidue k ⟶ dualNumberR
 noncomputable def extDualNumberResidueSuccEquiv (n : ℕ) :
     (dualNumberFree k ⟶ dualNumberResidue k) ≃ₗ[k]
       Ext.{u} (dualNumberResidue k) (dualNumberResidue k) (n + 1) :=
-  (Linear.homCongr k (dualNumberProjectiveResolutionXIso k (n + 1))
-        (Iso.refl (dualNumberResidue k))).symm.trans
-    ((dualNumberProjectiveResolution k).extLinearEquiv n
-      (dualNumberProjectiveResolution_comp_eq_zero k _ _)
-      (dualNumberProjectiveResolution_comp_eq_zero k _ _))
+  ProjectiveResolution.extLinearEquivOfIso (dualNumberProjectiveResolution k) n
+    (dualNumberProjectiveResolutionXIso k (n + 1))
+    (dualNumberProjectiveResolution_comp_eq_zero k _ _)
+    (dualNumberProjectiveResolution_comp_eq_zero k _ _)
 
 /-- The class attached to `f : A ⟶ S` is the one `CategoryTheory.ProjectiveResolution.extMk`
 builds out of `f`, transported to the degree `n + 1` term of the resolution. -/
@@ -392,10 +391,8 @@ theorem extDualNumberResidueSuccEquiv_apply (n : ℕ)
     extDualNumberResidueSuccEquiv k n f =
       (dualNumberProjectiveResolution k).extMk
         ((dualNumberProjectiveResolutionXIso k (n + 1)).hom ≫ f) (n + 2) rfl
-        (dualNumberProjectiveResolution_comp_eq_zero k _ _ _) := by
-  simp only [extDualNumberResidueSuccEquiv, LinearEquiv.trans_apply,
-    Linear.homCongr_symm_apply, Iso.refl_inv, Category.comp_id,
-    ProjectiveResolution.extLinearEquiv_apply]
+        (dualNumberProjectiveResolution_comp_eq_zero k _ _ _) :=
+  ProjectiveResolution.extLinearEquivOfIso_apply _ n _ _ _ f
 
 /-- **`Extⁿ_A(S, S) ≅ k` for every `n`**, where `A = k[ε]` is the ring of dual numbers and
 `S = A/(ε)`: the periodic resolution of `S` has zero `Hom(-, S)`-differentials. -/
