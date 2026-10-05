@@ -31,7 +31,7 @@ manifold. With `E = EuclideanSpace ℝ (Fin 4)` this is the spherical model geom
 
 ## Main statements
 
-* `LinearIsometryEquiv.mvfderiv_coe_sphere_unitSphereEquiv`: the differential of the restriction
+* `LinearIsometryEquiv.mfderiv_coe_sphere_unitSphereEquiv`: the differential of the restriction
   to the spheres, read in the ambient space, is the linear isometry itself. Use
   `LinearIsometryEquiv.coe_unitSphereRiemannianIsometry` to apply it to the Riemannian isometry.
 * `LinearIsometryEquiv.unitSphereIsomHom_injective`: the homomorphism `O(E) →* Isom(S(E))` is
@@ -70,8 +70,8 @@ def unitSphereRiemannianIsometry (e : E ≃ₗᵢ[ℝ] F) :
       rw [← Diffeomorph.coe_toEquiv, unitSphereDiffeomorph_toEquiv]
     rw [TauCeti.inner_tangentSpace_sphere, TauCeti.inner_tangentSpace_sphere, hcoe]
     exact (congrArg₂ (inner ℝ : F → F → ℝ)
-      (mvfderiv_coe_sphere_unitSphereEquiv (k := k) e x v)
-      (mvfderiv_coe_sphere_unitSphereEquiv (k := k) e x w)).trans (e.inner_map_map _ _)
+      (mfderiv_coe_sphere_unitSphereEquiv (k := k) e x v)
+      (mfderiv_coe_sphere_unitSphereEquiv (k := k) e x w)).trans (e.inner_map_map _ _)
 
 /-- The underlying diffeomorphism is the restriction `unitSphereDiffeomorph e ∞`. -/
 @[simp]

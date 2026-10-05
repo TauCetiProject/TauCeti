@@ -32,29 +32,30 @@ open _root_.AlgebraicGeometry.Scheme.Modules
 
 variable {X Y : Scheme.{u}}
 
-/-- The image under the inverse scheme isomorphism is the preimage under its forward map. -/
-theorem image_inv_eq_preimage (e : X ≅ Y) (V : Y.Opens) :
-    e.inv ''ᵁ V = e.hom ⁻¹ᵁ V := by
-  have h : e.hom ''ᵁ (e.inv ''ᵁ V) = V := by
-    simp only [← Scheme.Hom.comp_image, Iso.inv_hom_id, Scheme.Hom.id_image]
-  exact (e.hom.preimage_image_eq _).symm.trans (congrArg (e.hom ⁻¹ᵁ ·) h)
-
 /-- Pushforward along an isomorphism agrees with restriction along its inverse. -/
 def pushforwardIsoRestrictFunctor (e : X ≅ Y) : pushforward e.hom ≅ restrictFunctor e.inv := by
   refine SheafOfModules.pushforwardCongr₂ _
-    (NatIso.ofComponents (fun V ↦ eqToIso (image_inv_eq_preimage e V)) (fun _ ↦ rfl)) ?_
+    (NatIso.ofComponents (fun V ↦ eqToIso (Scheme.Hom.inv_image e V)) (fun _ ↦ rfl)) ?_
   ext V x
-  change (e.hom.app V.unop ≫ X.presheaf.map (eqToHom (image_inv_eq_preimage e V.unop)).op) x =
+  -- `pushforwardCongr₂` states coherence using ring-sheaf components; express these
+  -- as scheme section maps so the open-immersion API applies.
+  change (e.hom.app V.unop ≫ X.presheaf.map (eqToHom (Scheme.Hom.inv_image e V.unop)).op) x =
     (e.inv.appIso V.unop).inv x
-  rw [IsOpenImmersion.app_eq_appIso_inv_app_of_comp_eq e.hom e.inv (𝟙 X)
-    e.hom_inv_id.symm V.unop]
-  -- Normalize the identity scheme's section map before composing the two restrictions.
-  change ((e.inv.appIso V.unop).inv ≫ X.presheaf.map _ ≫ X.presheaf.map _) x = _
-  -- `erw` identifies the section types written as ring-sheaf objects with `Γ(X, _)`.
-  erw [← Functor.map_comp]
-  -- In the thin category of opens, the composite equality maps are the identity.
-  change ((e.inv.appIso V.unop).inv ≫ X.presheaf.map (𝟙 (Opposite.op (e.inv ''ᵁ V.unop)))) x = _
-  erw [CategoryTheory.Functor.map_id, Category.comp_id]
+  have h : e.hom.app V.unop = (e.inv.appIso V.unop).inv ≫
+      X.presheaf.map (eqToHom (Scheme.Hom.inv_image e V.unop).symm).op := by
+    refine (IsOpenImmersion.app_eq_appIso_inv_app_of_comp_eq e.hom e.inv (𝟙 X)
+      e.hom_inv_id.symm V.unop).trans ?_
+    -- The identity scheme's section map is definitionally the identity. Write the
+    -- restriction with `inv_image` so its dependent source no longer contains `𝟙 X`.
+    change (e.inv.appIso V.unop).inv ≫ (𝟙 _ ≫
+      X.presheaf.map (eqToHom (Scheme.Hom.inv_image e V.unop).symm).op) = _
+    rw [Category.id_comp]
+  have hh : e.hom.app V.unop ≫
+      X.presheaf.map (eqToHom (Scheme.Hom.inv_image e V.unop)).op =
+      (e.inv.appIso V.unop).inv := by
+    rw [h, Category.assoc, ← Functor.map_comp,
+      Subsingleton.elim (_ ≫ _) (𝟙 _), CategoryTheory.Functor.map_id, Category.comp_id]
+  exact congrArg (fun g : Γ(Y, V.unop) ⟶ Γ(X, e.inv ''ᵁ V.unop) ↦ g x) hh
 
 /-- On sections, pushforward along an isomorphism is restriction along the equality
 between the image under its inverse and the preimage under the forward map. -/
@@ -62,7 +63,7 @@ between the image under its inverse and the preimage under the forward map. -/
 theorem pushforwardIsoRestrictFunctor_hom_app_val_app_apply (e : X ≅ Y) (M : X.Modules)
     (V : Y.Opens) (x : Γ((pushforward e.hom).obj M, V)) :
     (((pushforwardIsoRestrictFunctor e).hom.app M).val.app (.op V)) x =
-      M.val.map (eqToHom (image_inv_eq_preimage e V)).op x := by
+      M.val.map (eqToHom (Scheme.Hom.inv_image e V)).op x := by
   -- `pushforwardCongr₂` restricts sections along the components of `eqToIso`,
   -- whose underlying maps are `eqToHom`.
   rfl
@@ -72,7 +73,7 @@ theorem pushforwardIsoRestrictFunctor_hom_app_val_app_apply (e : X ≅ Y) (M : X
 theorem pushforwardIsoRestrictFunctor_inv_app_val_app_apply (e : X ≅ Y) (M : X.Modules)
     (V : Y.Opens) (x : Γ(M.restrict e.inv, V)) :
     (((pushforwardIsoRestrictFunctor e).inv.app M).val.app (.op V)) x =
-      M.val.map (eqToHom (image_inv_eq_preimage e V).symm).op x := by
+      M.val.map (eqToHom (Scheme.Hom.inv_image e V).symm).op x := by
   -- The inverse components of `eqToIso` use the symmetric equality.
   rfl
 

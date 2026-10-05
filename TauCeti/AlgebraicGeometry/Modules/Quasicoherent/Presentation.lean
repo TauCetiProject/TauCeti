@@ -110,16 +110,22 @@ theorem isQuasicoherent_over_of_isQuasicoherent_restrict {X : Scheme.{u}}
   obtain ⟨P⟩ := (M.restrict U.ι).nonempty_presentation_of_isAffine
   exact (presentationOver M U P).isQuasicoherent
 
+/-- Quasicoherence can be checked on restrictions to an affine open cover. -/
+theorem isQuasicoherent_of_isQuasicoherent_restrict {X : Scheme.{u}} {ι : Type u}
+    (M : X.Modules) (U : ι → X.affineOpens) (hU : ⨆ i, (U i).1 = ⊤)
+    (h : ∀ i, (M.restrict (U i).1.ι).IsQuasicoherent) : M.IsQuasicoherent := by
+  have (i : ι) : (M.over (U i).1).IsQuasicoherent := by
+    have : IsAffine (U i).1.toScheme := (U i).2
+    have := h i
+    exact isQuasicoherent_over_of_isQuasicoherent_restrict M (U i).1
+  exact SheafOfModules.IsQuasicoherent.of_coversTop M (fun i ↦ (U i).1)
+    (by rwa [Opens.coversTop_iff])
+
 /-- Quasicoherence can be checked on restrictions to all affine open subschemes. -/
 theorem isQuasicoherent_of_isQuasicoherent_restrict_affineOpens {X : Scheme.{u}}
     (M : X.Modules) (h : ∀ U : X.affineOpens, (M.restrict U.1.ι).IsQuasicoherent) :
-    M.IsQuasicoherent := by
-  have (U : X.affineOpens) : (M.over U.1).IsQuasicoherent := by
-    have : IsAffine U.1.toScheme := U.2
-    have := h U
-    exact isQuasicoherent_over_of_isQuasicoherent_restrict M U.1
-  exact SheafOfModules.IsQuasicoherent.of_coversTop M (fun U : X.affineOpens ↦ U.1)
-    (by rw [Opens.coversTop_iff]; exact iSup_affineOpens_eq_top X)
+    M.IsQuasicoherent :=
+  isQuasicoherent_of_isQuasicoherent_restrict M id (iSup_affineOpens_eq_top X) h
 
 end AlgebraicGeometry
 
