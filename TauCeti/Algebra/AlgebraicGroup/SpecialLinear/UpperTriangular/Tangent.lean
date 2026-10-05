@@ -132,29 +132,39 @@ theorem tangentMatrix_quotientLieHom_tangentLieEquiv_symm
       ((tangentLieEquiv (R := R) (B := B) n).symm X)) = X := by
   rw [← tangentLieEquiv_apply_coe, LieEquiv.apply_symm_apply]
 
+/-- An off-diagonal matrix unit lies in the upper-triangular special linear Lie algebra when
+its row precedes its column, for every coefficient, including over the zero ring. -/
+theorem single_mem_matrixLieSubalgebra (i j : Fin n) (hij : i < j) (c : B) :
+    LieAlgebra.SpecialLinear.single i j hij.ne c ∈ matrixLieSubalgebra n B := by
+  rw [matrixLieSubalgebra, LieSubalgebra.mem_comap]
+  -- The inclusion of `slₙ` forgets trace zero; use the public matrix-unit computation rule.
+  change (LieAlgebra.SpecialLinear.single i j hij.ne c : Matrix (Fin n) (Fin n) B) ∈
+    TauCeti.upperTriangular B (Fin n)
+  rw [LieAlgebra.SpecialLinear.val_single]
+  exact TauCeti.single_mem_upperTriangular hij.le c
+
 /-- A nonzero off-diagonal matrix unit lies in the upper-triangular special linear Lie algebra
 exactly when its row precedes its column. -/
 theorem single_mem_matrixLieSubalgebra_iff (i j : Fin n) (hij : i ≠ j)
     {c : B} (hc : c ≠ 0) :
     LieAlgebra.SpecialLinear.single i j hij c ∈ matrixLieSubalgebra n B ↔ i < j := by
-  rw [matrixLieSubalgebra, LieSubalgebra.mem_comap]
-  -- The inclusion of `slₙ` forgets trace zero; use the public matrix-unit computation rule.
-  change (LieAlgebra.SpecialLinear.single i j hij c : Matrix (Fin n) (Fin n) B) ∈
-    TauCeti.upperTriangular B (Fin n) ↔ i < j
-  rw [LieAlgebra.SpecialLinear.val_single, TauCeti.single_mem_upperTriangular_iff hc]
-  exact ⟨fun h => lt_of_le_of_ne h hij, le_of_lt⟩
+  constructor
+  · intro h
+    rw [matrixLieSubalgebra, LieSubalgebra.mem_comap] at h
+    -- The inclusion of `slₙ` forgets trace zero; use the public matrix-unit computation rule.
+    change (LieAlgebra.SpecialLinear.single i j hij c : Matrix (Fin n) (Fin n) B) ∈
+      TauCeti.upperTriangular B (Fin n) at h
+    rw [LieAlgebra.SpecialLinear.val_single] at h
+    exact lt_of_le_of_ne ((TauCeti.single_mem_upperTriangular_iff hc).mp h) hij
+  · intro h
+    exact single_mem_matrixLieSubalgebra n i j h c
 
 /-- The normalized simple-root vectors lie in the Lie algebra of the chosen upper-triangular
 Borel. This containment holds even over the zero ring. -/
 theorem single_castSucc_succ_mem_matrixLieSubalgebra (r : ℕ) (i : Fin r) :
     LieAlgebra.SpecialLinear.single i.castSucc i.succ Fin.castSucc_lt_succ.ne (1 : B) ∈
       matrixLieSubalgebra (r + 1) B := by
-  rw [matrixLieSubalgebra, LieSubalgebra.mem_comap]
-  -- The subtype inclusion is the underlying matrix of this trace-zero matrix unit.
-  change (LieAlgebra.SpecialLinear.single i.castSucc i.succ Fin.castSucc_lt_succ.ne (1 : B) :
-    Matrix (Fin (r + 1)) (Fin (r + 1)) B) ∈ TauCeti.upperTriangular B (Fin (r + 1))
-  rw [LieAlgebra.SpecialLinear.val_single]
-  exact TauCeti.single_mem_upperTriangular Fin.castSucc_lt_succ.le 1
+  exact single_mem_matrixLieSubalgebra (r + 1) i.castSucc i.succ Fin.castSucc_lt_succ 1
 
 /-- The normalized root tangent vector to `SL_{r+1}` lies in the Lie algebra of its chosen
 upper-triangular Borel exactly when the root is positive.
