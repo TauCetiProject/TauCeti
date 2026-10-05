@@ -192,25 +192,6 @@ theorem sum_ite_mem_rows {R : Type*} [AddCommMonoidWithOne R] (x : GridState n)
   rw [sum_pointSet, Equiv.sum_comp x.toPerm fun r => if r ∈ D then (1 : R) else 0]
   simp
 
-/-- A grid state occupies a grid point in every column, so its point set meets `s ×ˢ univ` for every
-nonempty set `s` of columns. -/
-theorem not_disjoint_product_univ_pointSet (M : GridState n) {s : Finset (Fin n)}
-    (hs : s.Nonempty) : ¬Disjoint (s ×ˢ (Finset.univ : Finset (Fin n))) M.pointSet := by
-  obtain ⟨c, hc⟩ := hs
-  intro h
-  exact Finset.disjoint_left.mp h (Finset.mk_mem_product hc (Finset.mem_univ (M c)))
-    ((M.mk_mem_pointSet c (M c)).mpr rfl)
-
-/-- A grid state occupies a grid point in every row, so its point set meets `univ ×ˢ t` for every
-nonempty set `t` of rows. -/
-theorem not_disjoint_univ_product_pointSet (M : GridState n) {t : Finset (Fin n)}
-    (ht : t.Nonempty) : ¬Disjoint ((Finset.univ : Finset (Fin n)) ×ˢ t) M.pointSet := by
-  obtain ⟨r, hr⟩ := ht
-  intro h
-  exact Finset.disjoint_left.mp h
-    (Finset.mk_mem_product (Finset.mem_univ (M.toPerm.symm r)) hr)
-    ((M.mk_mem_pointSet (M.toPerm.symm r) r).mpr (M.toPerm.apply_symm_apply r))
-
 /-- A product of column and row sets avoids a grid state's points exactly when every
 column in the first set has its occupied row outside the second set. -/
 theorem disjoint_product_pointSet_iff (M : GridState n) (s t : Finset (Fin n)) :
@@ -222,6 +203,24 @@ theorem disjoint_product_pointSet_iff (M : GridState n) (s t : Finset (Fin n)) :
   · intro h p hp hM
     obtain ⟨hc, hr⟩ := Finset.mem_product.mp hp
     exact h p.1 hc ((M.mem_pointSet p).1 hM ▸ hr)
+
+/-- A grid state occupies a grid point in every column, so its point set meets `s ×ˢ univ` for every
+nonempty set `s` of columns. -/
+theorem not_disjoint_product_univ_pointSet (M : GridState n) {s : Finset (Fin n)}
+    (hs : s.Nonempty) : ¬Disjoint (s ×ˢ (Finset.univ : Finset (Fin n))) M.pointSet := by
+  rw [M.disjoint_product_pointSet_iff]
+  obtain ⟨c, hc⟩ := hs
+  exact fun h => h c hc (Finset.mem_univ (M c))
+
+/-- A grid state occupies a grid point in every row, so its point set meets `univ ×ˢ t` for every
+nonempty set `t` of rows. -/
+theorem not_disjoint_univ_product_pointSet (M : GridState n) {t : Finset (Fin n)}
+    (ht : t.Nonempty) : ¬Disjoint ((Finset.univ : Finset (Fin n)) ×ˢ t) M.pointSet := by
+  rw [M.disjoint_product_pointSet_iff]
+  obtain ⟨r, hr⟩ := ht
+  intro h
+  exact h (M.toPerm.symm r) (Finset.mem_univ _)
+    ((M.toPerm.apply_symm_apply r).symm ▸ hr)
 
 /-- A row with one column removed avoids a grid state's points exactly when the point in
 that row lies in the removed column. -/
