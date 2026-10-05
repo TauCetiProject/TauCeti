@@ -58,7 +58,7 @@ local instance lowRankInvertibleTwoPadic (p : Nat.Primes) : Invertible (2 : ℚ_
 
 /-- A direct witness keeps the base-change dimension calculation within the deterministic
 instance-search budget. -/
-private theorem lowRankStrongRankConditionPadic (p : Nat.Primes) : StrongRankCondition ℚ_[p] := by
+private instance lowRankStrongRankConditionPadic (p : Nat.Primes) : StrongRankCondition ℚ_[p] := by
   let hfield : Field ℚ_[p] := @NormedField.toField _ (Padic.normedField (p : ℕ))
   exact @commRing_strongRankCondition _ hfield.toCommRing (@Field.toNontrivial _ hfield)
 

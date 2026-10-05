@@ -72,7 +72,7 @@ instance isFinitePresentation_tilde [Module.FinitePresentation R M] :
   have : P.IsFinite := isFinite_presentationTilde M _ hs _ ht
   exact SheafOfModules.IsFinitePresentation.mk (M := tilde M)
     ⟨P.quasicoherentData,
-      TauCeti.SheafOfModules.Presentation.isFinitePresentation_quasicoherentData P⟩
+      TauCeti.SheafOfModules.isFinitePresentation_quasicoherentData P⟩
 
 /-- A finite global presentation on `Spec R` gives a finitely presented module of global
 sections over `R`. -/
