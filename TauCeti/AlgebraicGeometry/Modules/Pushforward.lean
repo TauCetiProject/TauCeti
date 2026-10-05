@@ -79,7 +79,7 @@ of the two inverse-image opens. -/
 theorem restrictPushforwardIso_hom_app_val_app (f : X ⟶ Y) (U : Y.Opens)
     (M : X.Modules) (V : U.toScheme.Opens)
     (x : Γ(((pushforward f).obj M).restrict U.ι, V)) :
-    (((restrictPushforwardIso f U).hom.app M).val.app (.op V)) x =
+    dsimp% only [Functor.comp_obj] (((restrictPushforwardIso f U).hom.app M).val.app (.op V)) x =
       M.val.map (eqToHom (image_morphismRestrict_preimage f U V)).op x :=
   (rfl)
 
@@ -88,7 +88,7 @@ theorem restrictPushforwardIso_hom_app_val_app (f : X ⟶ Y) (U : Y.Opens)
 theorem restrictPushforwardIso_inv_app_val_app (f : X ⟶ Y) (U : Y.Opens)
     (M : X.Modules) (V : U.toScheme.Opens)
     (x : Γ((pushforward (f ∣_ U)).obj (M.restrict (f ⁻¹ᵁ U).ι), V)) :
-    (((restrictPushforwardIso f U).inv.app M).val.app (.op V)) x =
+    dsimp% only [Functor.comp_obj] (((restrictPushforwardIso f U).inv.app M).val.app (.op V)) x =
       M.val.map (eqToHom (image_morphismRestrict_preimage f U V).symm).op x :=
   (rfl)
 
