@@ -110,7 +110,7 @@ theorem _root_.SheafOfModules.LocalGeneratorsData.ofIsIso_generators
           (f.over (q.X ((LocalGeneratorsData.ofIsIso_I f q).mp i)))) := (rfl)
 
 /-- Transporting local generators along an isomorphism preserves finite type. -/
-instance LocalGeneratorsData.isFiniteType_ofIsIso {M N : SheafOfModules.{u} R}
+instance {M N : SheafOfModules.{u} R}
     (f : M ⟶ N) [IsIso f] (q : M.LocalGeneratorsData) [hq : q.IsFiniteType] :
     (q.ofIsIso f).IsFiniteType where
   isFiniteType i := ⟨by
