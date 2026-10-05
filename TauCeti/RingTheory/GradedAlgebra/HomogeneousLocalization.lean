@@ -87,14 +87,14 @@ homomorphism `F`. -/
 theorem Away.lift_comp_map (φ : B →+* R) (F : 𝒜 →+*ᵍ ℬ) {s : A} (hs : IsUnit (φ (F s))) :
     (Away.lift ℬ φ hs).comp (Away.map F s) = Away.lift 𝒜 (φ.comp F.toRingHom) (f := s) hs := by
   ext z
-  obtain ⟨⟨i, ⟨a, ha⟩, ⟨b, hb⟩, n, rfl : s ^ n = b⟩, rfl⟩ := mk_surjective z
-  simp only [RingHom.comp_apply, Away.lift_apply, Away.map]
-  rw [HomogeneousLocalization.map_mk, HomogeneousLocalization.val_mk,
-    HomogeneousLocalization.val_mk, Localization.mk_eq_mk', Localization.mk_eq_mk',
-    IsLocalization.Away.lift, IsLocalization.Away.lift, IsLocalization.lift_mk',
-    IsLocalization.lift_mk']
-  -- the two units both have value `φ (F (s ^ n))`
-  congr 2
+  have hval : (Away.map F s z).val = Localization.awayMap F.toRingHom s z.val := by
+    obtain ⟨c, rfl⟩ := mk_surjective z
+    simp [Away.map, HomogeneousLocalization.map_mk, Localization.mk_eq_mk',
+      IsLocalization.Away.map, IsLocalization.map_mk']
+  rw [RingHom.comp_apply, Away.lift_apply, Away.lift_apply, hval, ← RingHom.comp_apply]
+  congr 1
+  refine IsLocalization.ringHom_ext (Submonoid.powers s) (RingHom.ext fun a ↦ ?_)
+  simp [IsLocalization.Away.lift_eq, IsLocalization.Away.map]
 
 /-- Rescaling homogeneous coordinates does not change `Away.lift`: if `ψ a = cⁿ φ a` for every
 `a` of degree `n`, then `φ` and `ψ` induce the same homomorphism `A_{(f)} →+* R`. -/
