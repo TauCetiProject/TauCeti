@@ -8,6 +8,7 @@ module
 public import Mathlib.CategoryTheory.Abelian.Projective.Resolution
 public import TauCeti.Algebra.Category.GradedModuleCat.Projective
 public import TauCeti.Algebra.Module.GradedModule.Resolution
+public import TauCeti.Algebra.Homology.Ext.ProjectiveResolution
 
 /-!
 # Concrete graded resolutions as categorical projective resolutions
@@ -22,6 +23,17 @@ chain homotopy, and computation of Ext from projective resolutions. No enough-pr
 hypothesis is needed to bundle a given resolution. The construction imposes neither linearity,
 minimality, finite generation, nor boundedness.
 
+## Main definitions
+
+* `TauCeti.GradedProjectiveResolution.toProjectiveResolution`: the categorical projective
+  resolution associated to a concrete graded resolution.
+* `TauCeti.GradedProjectiveResolution.augmentationHomLinearEquiv`: precomposition with the
+  augmentation identifies Hom from the resolved module with Hom from its zeroth term when
+  the first differential vanishes against the target; no `HasExt` assumption is needed.
+* `TauCeti.GradedProjectiveResolution.extLinearEquivOfCompEqZero`: positive-degree Ext is
+  graded Hom from a resolution term when both adjacent differentials vanish against the target.
+  Its class map is Mathlib's `CategoryTheory.ProjectiveResolution.extMk`.
+
 ## References
 
 * C. Năstăsescu and F. Van Oystaeyen, *Methods of Graded Rings*, Section 2.3.
@@ -32,13 +44,13 @@ public section
 
 namespace TauCeti
 
-open CategoryTheory CategoryTheory.Limits
+open CategoryTheory CategoryTheory.Abelian CategoryTheory.Limits
 
-universe v uk uA
+universe w v uk uA
 
 variable {k : Type uk} [CommRing k] {A : Type uA} [Ring A] [Algebra k A]
   {𝒜 : ℤ → Submodule k A}
-  {M : GradedModuleCat.{v} 𝒜}
+  {M N : GradedModuleCat.{v} 𝒜}
 
 namespace GradedProjectiveResolution
 
@@ -65,6 +77,35 @@ theorem differential_comp_differential (n : ℕ) :
 @[reassoc (attr := simp)]
 theorem differential_zero_comp_augmentation : r.differential 0 ≫ r.augmentation = 0 :=
   GradedModuleCat.hom_ext r.exact_d_π.linearMap_comp_eq_zero
+
+/-- Precomposition with the augmentation identifies Hom from the resolved module with Hom
+from its zeroth term whenever the first differential vanishes against the target. -/
+noncomputable def augmentationHomLinearEquiv
+    (h : ∀ f : r.termObj 0 ⟶ N, r.differential 0 ≫ f = 0) :
+    (M ⟶ N) ≃ₗ[k] (r.termObj 0 ⟶ N) :=
+  haveI : Epi r.augmentation :=
+    (GradedModuleCat.epi_iff_surjective _).mpr r.surjective_π
+  LinearEquiv.ofBijective (Linear.leftComp k N r.augmentation)
+    ⟨fun f g hfg ↦ (cancel_epi r.augmentation).mp hfg, by
+      let S := ShortComplex.mk (r.differential 0) r.augmentation
+        r.differential_zero_comp_augmentation
+      have hS : S.Exact := GradedModuleCat.exact_iff.mpr r.exact_d_π
+      exact fun f ↦ ⟨hS.desc f (h f), hS.g_desc _ _⟩⟩
+
+/-- The augmentation Hom equivalence is precomposition with the augmentation. -/
+-- `ofBijective` preserves the underlying map; `Linear.leftComp` is precomposition.
+@[simp]
+theorem augmentationHomLinearEquiv_apply
+    (h : ∀ f : r.termObj 0 ⟶ N, r.differential 0 ≫ f = 0) (f : M ⟶ N) :
+    r.augmentationHomLinearEquiv h f = r.augmentation ≫ f := (rfl)
+
+/-- The inverse augmentation Hom equivalence lifts a map from the zeroth resolution term. -/
+@[simp]
+theorem augmentation_comp_augmentationHomLinearEquiv_symm
+    (h : ∀ f : r.termObj 0 ⟶ N, r.differential 0 ≫ f = 0)
+    (f : r.termObj 0 ⟶ N) :
+    r.augmentation ≫ (r.augmentationHomLinearEquiv h).symm f = f :=
+  (r.augmentationHomLinearEquiv h).apply_symm_apply f
 
 private noncomputable def complex : ChainComplex (GradedModuleCat.{v} 𝒜) ℕ :=
   ChainComplex.of r.termObj r.differential r.differential_comp_differential
@@ -141,6 +182,42 @@ theorem toProjectiveResolution_π_f_zero :
   change r.complexπ.f 0 = 𝟙 (r.termObj 0) ≫ r.augmentation
   rw [Category.id_comp]
   exact r.complexπ_f_zero
+
+/-- Vanishing of a concrete differential against a target transports to the categorical
+projective resolution. -/
+theorem toProjectiveResolution_d_comp_eq_zero (n : ℕ)
+    (h : ∀ f : r.termObj n ⟶ N, r.differential n ≫ f = 0)
+    (f : r.toProjectiveResolution.complex.X n ⟶ N) :
+    r.toProjectiveResolution.complex.d (n + 1) n ≫ f = 0 := by
+  rw [r.toProjectiveResolution_complex_d]
+  simp only [Category.assoc, h, comp_zero]
+
+variable [HasExt.{w} (GradedModuleCat.{v} 𝒜)]
+
+/-- If both adjacent differentials vanish against a target, positive-degree Ext is the
+graded Hom module from the corresponding resolution term. -/
+noncomputable def extLinearEquivOfCompEqZero (n : ℕ)
+    (h₁ : ∀ f : r.termObj (n + 1) ⟶ N, r.differential (n + 1) ≫ f = 0)
+    (h₂ : ∀ g : r.termObj n ⟶ N, r.differential n ≫ g = 0) :
+    (r.termObj (n + 1) ⟶ N) ≃ₗ[k] Ext.{w} M N (n + 1) :=
+  (Linear.homCongr k (r.toProjectiveResolutionXIso (n + 1)).symm (Iso.refl N)).trans
+    (r.toProjectiveResolution.extLinearEquiv n
+      (r.toProjectiveResolution_d_comp_eq_zero (n + 1) h₁)
+      (r.toProjectiveResolution_d_comp_eq_zero n h₂))
+
+/-- The identification with positive-degree Ext sends a graded map to its
+projective-resolution class. -/
+@[simp]
+theorem extLinearEquivOfCompEqZero_apply (n : ℕ)
+    (h₁ : ∀ f : r.termObj (n + 1) ⟶ N, r.differential (n + 1) ≫ f = 0)
+    (h₂ : ∀ g : r.termObj n ⟶ N, r.differential n ≫ g = 0)
+    (f : r.termObj (n + 1) ⟶ N) :
+    r.extLinearEquivOfCompEqZero n h₁ h₂ f =
+      r.toProjectiveResolution.extMk ((r.toProjectiveResolutionXIso (n + 1)).hom ≫ f)
+        (n + 2) rfl (r.toProjectiveResolution_d_comp_eq_zero (n + 1) h₁ _) := by
+  simp only [extLinearEquivOfCompEqZero, LinearEquiv.trans_apply,
+    ProjectiveResolution.extLinearEquiv_apply, Linear.homCongr_apply,
+    Iso.symm_inv, Iso.refl_hom, Category.comp_id]
 
 end GradedProjectiveResolution
 

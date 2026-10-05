@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.GradedModuleCat.Resolution
-public import TauCeti.Algebra.Homology.Ext.ProjectiveResolution
 
 /-!
 # Diagonal Ext from linear graded resolutions
@@ -88,17 +87,9 @@ Ext as the graded Hom module from its corresponding term. -/
 noncomputable def IsLinear.extLinearEquiv (hr : r.IsLinear) (n : ℕ)
     (hprev : N.grading.piece n = ⊥) (hnext : N.grading.piece (n + 2) = ⊥) :
     (r.termObj (n + 1) ⟶ N) ≃ₗ[k] Ext.{w} M N (n + 1) :=
-  (Linear.homCongr k (r.toProjectiveResolutionXIso (n + 1)).symm (Iso.refl N)).trans
-    (r.toProjectiveResolution.extLinearEquiv n
-      (fun f ↦ by
-        rw [r.toProjectiveResolution_complex_d]
-        have hz := hr.hom_eq_zero (n + 2) hnext
-          (r.differential (n + 1) ≫ (r.toProjectiveResolutionXIso (n + 1)).inv ≫ f)
-        simp only [Category.assoc, hz, Limits.comp_zero])
-      (fun g ↦ by
-        have hz := hr.hom_eq_zero n hprev ((r.toProjectiveResolutionXIso n).inv ≫ g)
-        rw [r.toProjectiveResolution_complex_d]
-        simp only [Category.assoc, hz, Limits.comp_zero]))
+  r.extLinearEquivOfCompEqZero n
+    (fun f ↦ hr.hom_eq_zero (n + 2) hnext (r.differential (n + 1) ≫ f))
+    (fun g ↦ by rw [hr.hom_eq_zero n hprev g, Limits.comp_zero])
 
 /-- The diagonal Ext identification sends a graded map to its projective-resolution class. -/
 @[simp]
@@ -107,11 +98,9 @@ theorem IsLinear.extLinearEquiv_apply (hr : r.IsLinear) (n : ℕ)
     (f : r.termObj (n + 1) ⟶ N) :
     hr.extLinearEquiv n hprev hnext f =
       r.toProjectiveResolution.extMk ((r.toProjectiveResolutionXIso (n + 1)).hom ≫ f)
-        (n + 2) rfl (by
-          rw [r.toProjectiveResolution_complex_d]
-          have hz := hr.hom_eq_zero (n + 2) hnext (r.differential (n + 1) ≫ f)
-          simp only [Category.assoc, Iso.inv_hom_id_assoc, hz, Limits.comp_zero]) := by
-  simp [IsLinear.extLinearEquiv, Linear.homCongr_apply]
+        (n + 2) rfl (r.toProjectiveResolution_d_comp_eq_zero (n + 1)
+          (fun g ↦ hr.hom_eq_zero (n + 2) hnext (r.differential (n + 1) ≫ g)) _) :=
+  r.extLinearEquivOfCompEqZero_apply n _ _ f
 
 /-- Against a degree-zero target, positive diagonal Ext is the graded Hom module from the
 resolution term to the target shifted by its homological degree. -/
@@ -130,13 +119,11 @@ theorem IsLinear.extLinearEquivShiftObj_apply (hr : r.IsLinear)
     (f : r.termObj (n + 1) ⟶ N.shiftObj (n + 1)) :
     hr.extLinearEquivShiftObj hN n f =
       r.toProjectiveResolution.extMk ((r.toProjectiveResolutionXIso (n + 1)).hom ≫ f)
-        (n + 2) rfl (by
-          rw [r.toProjectiveResolution_complex_d]
-          have hnext : (N.shiftObj (n + 1)).grading.piece (n + 2) = ⊥ := by
-            simpa [sub_eq_add_neg] using hN ((n : ℤ) + 2 - (n + 1)) (by omega)
-          have hz := hr.hom_eq_zero (n + 2) hnext (r.differential (n + 1) ≫ f)
-          simp only [Category.assoc, Iso.inv_hom_id_assoc, hz, Limits.comp_zero]) := by
-  simp [IsLinear.extLinearEquivShiftObj]
+        (n + 2) rfl (r.toProjectiveResolution_d_comp_eq_zero (n + 1)
+          (fun g ↦ hr.hom_eq_zero (n + 2)
+            (by simpa [sub_eq_add_neg] using hN ((n : ℤ) + 2 - (n + 1)) (by omega))
+            (r.differential (n + 1) ≫ g)) _) := by
+  simp only [IsLinear.extLinearEquivShiftObj, IsLinear.extLinearEquiv_apply]
 
 end GradedProjectiveResolution
 

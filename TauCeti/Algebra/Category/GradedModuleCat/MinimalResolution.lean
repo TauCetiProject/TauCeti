@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.GradedModuleCat.Resolution
-public import TauCeti.Algebra.Homology.Ext.ProjectiveResolution
 
 /-!
 # Ext computed from minimal graded resolutions
@@ -31,6 +30,8 @@ boundedness assumption is needed for this computation: minimality and `A₊ N = 
 
 * `TauCeti.GradedProjectiveResolution.IsMinimal.differential_comp_eq_zero`: the differentials
   vanish after applying graded Hom into a target annihilated by `A₊`.
+* `TauCeti.GradedProjectiveResolution.IsMinimal.extLinearEquiv_comp_mk₀`: the identification
+  is natural in targets annihilated by `A₊`, with postcomposition giving the covariant Ext map.
 * `TauCeti.GradedProjectiveResolution.IsMinimal.subsingleton_ext_iff`: Ext vanishes exactly
   when the corresponding graded Hom module vanishes.
 
@@ -40,9 +41,6 @@ boundedness assumption is needed for this computation: minimality and `A₊ N = 
   Section 1.2, for minimal resolutions and the diagonal Ext criterion.
 * Charles A. Weibel, *An Introduction to Homological Algebra*, Section 2.4, for computation
   of Ext by projective resolutions.
-
-The positive-degree computation uses `CategoryTheory.ProjectiveResolution.extLinearEquiv`;
-its class map is Mathlib's `CategoryTheory.ProjectiveResolution.extMk`.
 -/
 
 public section
@@ -80,24 +78,6 @@ theorem IsMinimal.differential_comp_eq_zero (n : ℕ) (f : r.termObj n ⟶ N) :
 
 variable [DirectSum.Decomposition 𝒜]
 
-/-- The augmentation of a minimal resolution induces an isomorphism on Hom into a target
-annihilated by the positive part of the algebra. -/
-private noncomputable def augmentationHomLinearEquiv (hr : r.IsMinimal)
-    (hN : (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k N) = ⊥) :
-    (M ⟶ N) ≃ₗ[k] (r.termObj 0 ⟶ N) := by
-  let S := ShortComplex.mk (r.differential 0) r.augmentation
-    r.differential_zero_comp_augmentation
-  have hS : S.Exact := GradedModuleCat.exact_iff.mpr r.exact_d_π
-  letI : Epi r.augmentation :=
-    (GradedModuleCat.epi_iff_surjective _).mpr r.surjective_π
-  exact LinearEquiv.ofBijective (Linear.leftComp k N r.augmentation)
-    ⟨fun f g h ↦ (cancel_epi r.augmentation).mp h,
-      fun f ↦ ⟨hS.desc f (hr.differential_comp_eq_zero hN 0 f), hS.g_desc _ _⟩⟩
-
-omit [DirectSum.Decomposition 𝒜] in
-private theorem augmentationHomLinearEquiv_apply (f : M ⟶ N) :
-    augmentationHomLinearEquiv hr hN f = r.augmentation ≫ f := (rfl)
-
 variable [HasExt.{w} (GradedModuleCat.{v} 𝒜)]
 
 /-- A minimal graded resolution computes Ext into a module annihilated by `A₊` as graded
@@ -107,16 +87,10 @@ noncomputable def IsMinimal.extLinearEquiv (hr : r.IsMinimal)
     (hN : (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k N) = ⊥) (n : ℕ) :
     (r.termObj n ⟶ N) ≃ₗ[k] Ext.{w} M N n :=
   match n with
-  | 0 => (augmentationHomLinearEquiv hr hN).symm.trans (Ext.linearEquiv₀ (R := k)).symm
-  | n + 1 =>
-    (Linear.homCongr k (r.toProjectiveResolutionXIso (n + 1)).symm (Iso.refl N)).trans
-      (r.toProjectiveResolution.extLinearEquiv n
-        (fun f ↦ by
-          rw [r.toProjectiveResolution_complex_d]
-          simp only [Category.assoc, hr.differential_comp_eq_zero hN, comp_zero])
-        (fun g ↦ by
-          rw [r.toProjectiveResolution_complex_d]
-          simp only [Category.assoc, hr.differential_comp_eq_zero hN, comp_zero]))
+  | 0 => (r.augmentationHomLinearEquiv (hr.differential_comp_eq_zero hN 0)).symm.trans
+      (Ext.linearEquiv₀ (R := k)).symm
+  | n + 1 => r.extLinearEquivOfCompEqZero n
+      (hr.differential_comp_eq_zero hN (n + 1)) (hr.differential_comp_eq_zero hN n)
 
 /-- In degree zero, the class of a map precomposed with the augmentation is its ordinary
 Hom class in Ext. -/
@@ -124,7 +98,8 @@ Hom class in Ext. -/
 theorem IsMinimal.extLinearEquiv_zero_augmentation_comp (f : M ⟶ N) :
     hr.extLinearEquiv hN 0 (r.augmentation ≫ f) = Ext.mk₀ f := by
   rw [IsMinimal.extLinearEquiv, LinearEquiv.trans_apply,
-    ← augmentationHomLinearEquiv_apply hr hN, LinearEquiv.symm_apply_apply]
+    ← r.augmentationHomLinearEquiv_apply (hr.differential_comp_eq_zero hN 0),
+    LinearEquiv.symm_apply_apply]
   exact Ext.linearEquiv₀_symm_apply f
 
 /-- In positive degree, the minimal-resolution identification sends a graded map to its
@@ -133,18 +108,16 @@ projective-resolution class. -/
 theorem IsMinimal.extLinearEquiv_succ_apply (n : ℕ) (f : r.termObj (n + 1) ⟶ N) :
     hr.extLinearEquiv hN (n + 1) f =
       r.toProjectiveResolution.extMk ((r.toProjectiveResolutionXIso (n + 1)).hom ≫ f)
-        (n + 2) rfl (by
-          rw [r.toProjectiveResolution_complex_d]
-          simp only [Category.assoc, Iso.inv_hom_id_assoc,
-            hr.differential_comp_eq_zero hN, comp_zero]) := by
-  simp [IsMinimal.extLinearEquiv, Linear.homCongr_apply]
+        (n + 2) rfl (r.toProjectiveResolution_d_comp_eq_zero (n + 1)
+          (hr.differential_comp_eq_zero hN (n + 1)) _) :=
+  r.extLinearEquivOfCompEqZero_apply n _ _ f
 
 /-- The degree-zero identification recovers a map by precomposing its ordinary Hom
 representative with the augmentation. -/
 @[simp]
 theorem IsMinimal.augmentation_comp_linearEquiv₀_extLinearEquiv (f : r.termObj 0 ⟶ N) :
     r.augmentation ≫ Ext.linearEquiv₀ (R := k) (hr.extLinearEquiv hN 0 f) = f := by
-  obtain ⟨g, rfl⟩ := (augmentationHomLinearEquiv hr hN).surjective f
+  obtain ⟨g, rfl⟩ := (r.augmentationHomLinearEquiv (hr.differential_comp_eq_zero hN 0)).surjective f
   rw [augmentationHomLinearEquiv_apply, hr.extLinearEquiv_zero_augmentation_comp,
     ← Ext.linearEquiv₀_symm_apply (R := k), LinearEquiv.apply_symm_apply]
 
@@ -157,7 +130,8 @@ theorem IsMinimal.extLinearEquiv_comp_mk₀ {N' : GradedModuleCat.{v} 𝒜}
       hr.extLinearEquiv hN' n (f ≫ g) := by
   cases n with
   | zero =>
-      obtain ⟨f, rfl⟩ := (augmentationHomLinearEquiv hr hN).surjective f
+      obtain ⟨f, rfl⟩ :=
+        (r.augmentationHomLinearEquiv (hr.differential_comp_eq_zero hN 0)).surjective f
       simp only [augmentationHomLinearEquiv_apply, Category.assoc,
         hr.extLinearEquiv_zero_augmentation_comp, Ext.mk₀_comp_mk₀]
   | succ n =>
@@ -169,6 +143,18 @@ exactly when all graded maps from the corresponding resolution term vanish. -/
 theorem IsMinimal.subsingleton_ext_iff (n : ℕ) :
     Subsingleton (Ext.{w} M N n) ↔ Subsingleton (r.termObj n ⟶ N) :=
   (hr.extLinearEquiv hN n).toEquiv.subsingleton_congr.symm
+
+omit hN in
+/-- For a degree-zero target, Ext into any internal shift vanishes exactly when graded
+maps from the corresponding term of a minimal resolution vanish. -/
+theorem IsMinimal.subsingleton_ext_shiftObj_iff
+    (hN₀ : ∀ p, p ≠ 0 → N.grading.piece p = ⊥) (n : ℕ) (j : ℤ) :
+    Subsingleton (Ext.{w} M (N.shiftObj j) n) ↔
+      Subsingleton (r.termObj n ⟶ N.shiftObj j) := by
+  apply hr.subsingleton_ext_iff
+  apply GradedModuleCat.smul_top_eq_bot_of_piece_eq_bot _ j
+  intro p hp
+  simpa [sub_eq_add_neg] using hN₀ (p - j) (sub_ne_zero.mpr hp)
 
 end GradedProjectiveResolution
 
