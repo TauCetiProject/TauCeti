@@ -17,12 +17,13 @@ of being nonzero. This is the identity behind the counting arguments that read a
 weight off a `ZMod 2`-valued vector: summing the representatives of the coordinates counts the
 nonzero ones.
 
-In `ℤ/2^{k+1}` the element `2` is nilpotent, so the units are exactly the odd elements: an even
-element plus a unit is a unit, and an even element is never a unit.
+In `ℤ/2^n` the element `2` is nilpotent, so in `ℤ/2^{k+1}` the units are exactly the odd
+elements: an even element plus a unit is a unit, and an even element is never a unit.
 
 ## Main results
 
 * `ZMod.val_eq_ite_mod_two`: `a.val = if a ≠ 0 then 1 else 0` for `a : ZMod 2`.
+* `ZMod.isNilpotent_two`: `2` is nilpotent in `ℤ/2^n`.
 * `ZMod.isUnit_two_mul_add`: `2c + u` is a unit in `ℤ/2^{k+1}` when `u` is.
 * `ZMod.not_isUnit_two_mul`: `2c` is not a unit in `ℤ/2^{k+1}`.
 * `ZMod.eq_two_mul_or_eq_two_mul_add_one`: every element of `ℤ/2^{k+1}` is even or odd.
@@ -37,10 +38,11 @@ theorem val_eq_ite_mod_two (a : ZMod 2) : a.val = if a ≠ 0 then 1 else 0 := by
   revert a
   decide
 
-variable {k : ℕ}
+/-- **`2` is nilpotent modulo a power of two**: `2 ^ n = 0` in `ℤ/2^n`. -/
+theorem isNilpotent_two {n : ℕ} : IsNilpotent (2 : ZMod (2 ^ n)) :=
+  ⟨n, by exact_mod_cast ZMod.natCast_self (2 ^ n)⟩
 
-private theorem isNilpotent_two : IsNilpotent (2 : ZMod (2 ^ (k + 1))) :=
-  ⟨k + 1, by exact_mod_cast ZMod.natCast_self (2 ^ (k + 1))⟩
+variable {k : ℕ}
 
 /-- An even element plus a unit is a unit in `ℤ/2^{k+1}`. -/
 theorem isUnit_two_mul_add {c u : ZMod (2 ^ (k + 1))} (hu : IsUnit u) :
