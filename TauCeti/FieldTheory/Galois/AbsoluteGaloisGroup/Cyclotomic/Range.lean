@@ -9,12 +9,14 @@ public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Cyclotomic.Characte
 public import TauCeti.NumberTheory.Padics.PrincipalUnits
 import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Basic
+import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Cyclotomic.FiniteExtension
+import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Cyclotomic.Surjectivity
 import TauCeti.NumberTheory.Cyclotomic.Irreducible
 
 /-!
 # The image of the cyclotomic character
 
-This file reads two properties of the field `K` off the image of its `p`-adic cyclotomic
+This file reads properties of the field `K` off the image of its `p`-adic cyclotomic
 character `χ = localCyclotomicCharacter p K`.
 
 * **Roots of unity of the base field.** The values of `χ` modulo `p ^ n` record the action of
@@ -25,8 +27,10 @@ character `χ = localCyclotomicCharacter p K`.
   infinite. If it had `m` elements, every `p`-power root of unity would have at most `m`
   conjugates over `K`, hence degree at most `[K : ℚ_p] · m` over `ℚ_p`. This contradicts the
   irreducibility of the cyclotomic polynomials `Φ_{p ^ n}` over `ℚ_p`.
+* **Index over a finite extension of `ℚ_p`.** For `K` finite over `ℚ_p`, the image of `χ` has
+  index dividing `[K : ℚ_p]` in `ℤ_pˣ`, by comparison with the full image over `ℚ_p`.
 
-In the dyadic case these are the two inputs that, together with the classification of the closed
+In the dyadic case the first two properties, together with the classification of the closed
 subgroups of `ℤ₂ˣ`, determine the image of `χ` in each branch of the marked classification.
 
 ## Main results
@@ -39,6 +43,8 @@ subgroups of `ℤ₂ˣ`, determine the image of `χ` in each branch of the marke
   Galois group is compact.
 * `TauCeti.infinite_range_localCyclotomicCharacter`: the image is infinite when `K` is a finite
   extension of `ℚ_p`.
+* `TauCeti.index_range_localCyclotomicCharacter_dvd_finrank`: the index of the cyclotomic image
+  divides the extension degree.
 
 ## References
 
@@ -184,5 +190,12 @@ theorem infinite_range_localCyclotomicCharacter [Algebra ℚ_[p] K] [FiniteDimen
     exact h1.trans_le (Nat.le_mul_of_pos_right _ h2)
   have := hQ ▸ hle.trans (Nat.mul_le_mul_left N hK)
   omega
+
+/-- The index of the cyclotomic image of a finite extension of `ℚ_p` divides its degree. -/
+theorem index_range_localCyclotomicCharacter_dvd_finrank (p : ℕ) [Fact p.Prime]
+    (K : Type*) [Field K] [Algebra ℚ_[p] K] [FiniteDimensional ℚ_[p] K] :
+    (localCyclotomicCharacter p K).range.index ∣ Module.finrank ℚ_[p] K := by
+  have h := relIndex_range_localCyclotomicCharacter_dvd_finrank p ℚ_[p] K IsSepClosed.lift
+  simpa only [range_localCyclotomicCharacter_ratPadic_eq_top, Subgroup.relIndex_top_right] using h
 
 end TauCeti
