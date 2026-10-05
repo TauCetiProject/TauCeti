@@ -138,13 +138,21 @@ theorem rightIotaEven_apply (e m : M) :
 
 omit [Invertible (2 : R)] in
 /-- The ambient Clifford value of `rightIotaEven`. -/
-@[simp]
 theorem coe_rightIotaEven (e m : M) :
     (rightIotaEven Q e m : CliffordAlgebra Q) = ι Q m * ι Q e :=
   by
     -- Expose the bilinear even embedding before coercing its value to the ambient algebra.
     change (((even.ι Q).bilin m e : even Q) : CliffordAlgebra Q) = ι Q m * ι Q e
     rfl
+
+omit [Invertible (2 : R)] in
+/-- Coercing a canonical bilinear generator of the even algebra gives the product of its two
+Clifford generators. -/
+@[simp]
+theorem coe_even_ι_bilin (m e : M) :
+    (((even.ι Q).bilin m e : even Q) : CliffordAlgebra Q) = ι Q m * ι Q e := by
+  rw [← rightIotaEven_apply Q e m]
+  exact coe_rightIotaEven Q e m
 
 omit [Invertible (2 : R)] in
 private theorem iota_sq_neg_one (e : M) (he : Q e = -1) :
