@@ -17,16 +17,23 @@ Let `W` be an elliptic curve over a finite field `F`, and let `π` be its Froben
 extension `K`. The endomorphism `r • π - s • id` pulls the invariant differential back to
 `-s • ω`. Consequently it is nonzero and separable whenever `s` is nonzero in `K`.
 
-Over a separably closed algebraic extension, the Weil pairing identifies the determinant of
-this pencil on prime-to-characteristic torsion with its degree. Comparing these determinants
-at every prime other than the characteristic gives the integral quadratic degree formula,
-with middle coefficient `#F + 1 - deg (id - π)`. This is the algebraic input to the Hasse bound;
-the identification of `deg (id - π)` with the rational point count is a separate step.
+Over a separably closed extension, the determinant of this pencil on `N`-torsion is its degree
+modulo `N` whenever `N` is invertible and `s` is nonzero in the field. If the extension is also
+algebraic, the degree is the integral quadratic form
+`#F * r² - (#F + 1 - deg (id - π)) * r * s + s²`. This is the degree-form input to the Hasse bound.
 
-The proof combines `Hom.det_torsionLinearMap_ofIsogeny` with the Frobenius determinant theorem
-`Hom.det_torsionLinearMap_ofIsogeny_baseChangeFrobenius`, then applies
-`TauCeti.Matrix.eq_quadratic_form_of_det_det_one_sub`. The matrices and their bases remain local
-to the proof; the result is stated entirely in terms of the intrinsic endomorphisms and degrees.
+## Main results
+
+* `TauCeti.Isogeny.Hom.pullbackDifferential_zsmul_baseChangeFrobenius_sub_zsmul_id`:
+  `(r π - s)^*ω = -s • ω`.
+* `TauCeti.Isogeny.Hom.zsmul_baseChangeFrobenius_sub_zsmul_id_ne_zero`:
+  the pencil is nonzero when `s` is nonzero in the field.
+* `TauCeti.Isogeny.Hom.isSeparable_toIsogeny_zsmul_baseChangeFrobenius_sub_zsmul_id_iff`:
+  a nonzero pencil is separable exactly when `s` is nonzero in the field.
+* `TauCeti.Isogeny.Hom.det_torsionLinearMap_zsmul_baseChangeFrobenius_sub_zsmul_id`:
+  the determinant on invertible torsion is the degree modulo `N` for a separable pencil.
+* `TauCeti.Isogeny.Hom.degree_zsmul_baseChangeFrobenius_sub_zsmul_id`:
+  the integral quadratic degree formula for a separable pencil over an algebraic extension.
 
 ## References
 
@@ -50,19 +57,16 @@ variable [W.IsElliptic]
 theorem pullbackDifferential_zsmul_baseChangeFrobenius_sub_zsmul_id (r s : ℤ) :
     (r • ofIsogeny (baseChangeFrobenius K W) - s • id (W⁄K).toAffine).pullbackDifferential
       (invariantDifferential (W⁄K).toAffine) = -s • invariantDifferential (W⁄K).toAffine := by
-  simp only [pullbackDifferential_sub_invariantDifferential,
-    pullbackDifferential_zsmul_invariantDifferential, pullbackDifferential_ofIsogeny,
-    pullbackDifferential_baseChangeFrobenius_invariantDifferential,
-    pullbackDifferential_id, LinearMap.id_apply, smul_zero, zero_sub, neg_smul]
+  apply pullbackDifferential_zsmul_sub_zsmul_id_of_pullback_eq_zero
+  rw [pullbackDifferential_ofIsogeny,
+    pullbackDifferential_baseChangeFrobenius_invariantDifferential]
 
 /-- If `s` is nonzero in the field, the Frobenius pencil `r π - s` is nonzero. -/
 theorem zsmul_baseChangeFrobenius_sub_zsmul_id_ne_zero (r s : ℤ) (hs : (s : K) ≠ 0) :
     r • ofIsogeny (baseChangeFrobenius K W) - s • id (W⁄K).toAffine ≠ 0 := by
-  intro h
-  have hω := pullbackDifferential_zsmul_baseChangeFrobenius_sub_zsmul_id (K := K) W r s
-  rw [h, pullbackDifferential_zero, LinearMap.zero_apply] at hω
-  exact hs ((zsmul_invariantDifferential_eq_zero_iff (W⁄K).toAffine s).mp (by
-    simpa using hω.symm))
+  apply zsmul_sub_zsmul_id_ne_zero_of_pullback_eq_zero _ r s hs
+  rw [pullbackDifferential_ofIsogeny,
+    pullbackDifferential_baseChangeFrobenius_invariantDifferential]
 
 /-- A nonzero Frobenius pencil `r π - s` is separable exactly when `s` is nonzero in the field. -/
 @[simp]
@@ -70,17 +74,16 @@ theorem isSeparable_toIsogeny_zsmul_baseChangeFrobenius_sub_zsmul_id_iff (r s : 
     (h : r • ofIsogeny (baseChangeFrobenius K W) - s • id (W⁄K).toAffine ≠ 0) :
     Algebra.IsSeparable (toIsogeny h).fieldPullback.fieldRange (W⁄K).toAffine.FunctionField ↔
       (s : K) ≠ 0 := by
-  rw [isSeparable_iff_pullbackDifferential_ne_zero,
-    ← pullbackDifferential_ofIsogeny, ofIsogeny_toIsogeny,
-    pullbackDifferential_zsmul_baseChangeFrobenius_sub_zsmul_id]
-  simp [zsmul_invariantDifferential_eq_zero_iff]
+  apply isSeparable_toIsogeny_zsmul_sub_zsmul_id_iff_of_pullback_eq_zero _ r s h
+  rw [pullbackDifferential_ofIsogeny,
+    pullbackDifferential_baseChangeFrobenius_invariantDifferential]
 
 section Torsion
 
 variable [DecidableEq K] [IsSepClosed K]
 
-/-- The determinant of a Frobenius pencil on invertible torsion is its degree,
-when the pencil's identity coefficient is nonzero in the field. -/
+/-- Over a separably closed field in which `N` is invertible, the determinant of a Frobenius
+pencil on `N`-torsion is its degree modulo `N`, when `s` is nonzero in the field. -/
 theorem det_torsionLinearMap_zsmul_baseChangeFrobenius_sub_zsmul_id
     {N : ℕ} [NeZero N] (hN : (N : K) ≠ 0) (r s : ℤ) (hs : (s : K) ≠ 0) :
     LinearMap.det
@@ -88,8 +91,7 @@ theorem det_torsionLinearMap_zsmul_baseChangeFrobenius_sub_zsmul_id
         (r • ofIsogeny (baseChangeFrobenius K W) - s • id (W⁄K).toAffine).degree := by
   let h := zsmul_baseChangeFrobenius_sub_zsmul_id_ne_zero W r s hs
   have := (isSeparable_toIsogeny_zsmul_baseChangeFrobenius_sub_zsmul_id_iff W r s h).2 hs
-  simpa only [ofIsogeny_toIsogeny, ← degree_ofIsogeny] using
-    det_torsionLinearMap_ofIsogeny hN (toIsogeny h)
+  exact det_torsionLinearMap hN h
 
 end Torsion
 
@@ -97,7 +99,7 @@ variable [IsSepClosed K] [Algebra.IsAlgebraic F K]
 
 /-- Over a separably closed algebraic extension of the finite base, the degree of `r π - s`
 is the integral quadratic form with middle coefficient `#F + 1 - deg (id - π)`, provided
-`s` is nonzero in the field. No preservation-of-degree hypothesis is assumed. -/
+`s` is nonzero in the field. -/
 theorem degree_zsmul_baseChangeFrobenius_sub_zsmul_id (r s : ℤ) (hs : (s : K) ≠ 0) :
     ((r • ofIsogeny (baseChangeFrobenius K W) - s • id (W⁄K).toAffine).degree : ℤ) =
       (Nat.card F : ℤ) * r ^ 2 -

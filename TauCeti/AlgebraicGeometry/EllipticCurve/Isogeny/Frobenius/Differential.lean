@@ -7,13 +7,15 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Differential
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Frobenius.BaseChange
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.BaseChange.Separability
 
 /-!
 # The Frobenius isogeny kills the differentials
 
 Over a finite field, the Frobenius isogeny of a Weierstrass curve pulls every differential of the
 function field back to zero. This is the differential-level form of its inseparability: the
-invariant differential in particular is pulled back to `0`.
+invariant differential in particular is pulled back to `0`. The base-changed Frobenius over any
+field extension also kills the invariant differential.
 
 ## Main results
 
@@ -70,13 +72,13 @@ variable {K : Type*} [Field K] [Algebra F K]
 theorem pullbackDifferential_baseChangeFrobenius_invariantDifferential :
     (baseChangeFrobenius K W).pullbackDifferential
       (invariantDifferential (W⁄K).toAffine) = 0 := by
-  have hq : (Nat.card F : K) = 0 := by
-    cases nonempty_fintype F
-    rw [Nat.card_eq_fintype_card, ← map_natCast (algebraMap F K),
-      FiniteField.cast_card_eq_zero, map_zero]
-  rw [invariantDifferential_def, pullbackDifferential_smul, pullbackDifferential_D,
-    fieldPullback_baseChangeFrobenius_genericX, Derivation.leibniz_pow,
-    ← Nat.cast_smul_eq_nsmul K, hq, zero_smul, smul_zero]
+  rw [baseChangeFrobenius_eq_map]
+  -- The transfer lemma uses `W.map`; rewriting does not unfold the semireducible base change
+  -- in the differential's type, so present that type explicitly.
+  change ((frobeniusIsogeny W).map (algebraMap F K)).pullbackDifferential
+    (invariantDifferential (W.map (algebraMap F K))) = 0
+  simpa only [pullbackDifferential_frobeniusIsogeny, LinearMap.zero_apply, map_zero] using
+    (mapDifferential_pullback_invariantDifferential (frobeniusIsogeny W) (algebraMap F K)).symm
 
 end TauCeti.Isogeny
 

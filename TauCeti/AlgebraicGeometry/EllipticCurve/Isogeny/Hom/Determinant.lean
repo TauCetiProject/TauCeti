@@ -32,6 +32,7 @@ pencil `r π - s` of the Frobenius `π`, for `s` not divisible by the characteri
   pairing by `d` has determinant `d`.
 * `TauCeti.Isogeny.Hom.det_torsionLinearMap_ofIsogeny`: the determinant of the action of a
   separable isogeny on `E[N]` is its degree.
+* `TauCeti.Isogeny.Hom.det_torsionLinearMap`: the same for a nonzero separable morphism.
 
 ## References
 
@@ -78,6 +79,15 @@ theorem det_torsionLinearMap_ofIsogeny (φ : Isogeny W W)
   det_eq_of_weilPairing_eq_smul hN fun _ _ ↦ (φ.weilPairing_eq_degree_nsmul_weilPairing N hN
     (torsionLinearMap_apply _ N _).symm (torsionLinearMap_apply _ N _).symm).trans
       (Nat.cast_smul_eq_nsmul _ _ _).symm
+
+include hN in
+/-- The determinant of a nonzero separable morphism on `E[N]` is its degree modulo `N`,
+over a separably closed field in which `N` is invertible. -/
+theorem det_torsionLinearMap {f : Hom W W} (h : f ≠ 0)
+    [Algebra.IsSeparable (toIsogeny h).fieldPullback.fieldRange W.FunctionField] :
+    LinearMap.det (f.torsionLinearMap N) = f.degree := by
+  simpa only [ofIsogeny_toIsogeny, ← degree_ofIsogeny] using
+    det_torsionLinearMap_ofIsogeny hN (toIsogeny h)
 
 end Hom
 
