@@ -75,9 +75,9 @@ universe u v
 namespace TauCeti
 
 /-- A unit-valued linear character on a commutative ring takes the value `1` or `-1` at `-1`
-when its coefficient ring is an integral domain. -/
+when its coefficient ring is an integral domain. The character is inferred from the goal. -/
 theorem val_apply_neg_one_eq_one_or_eq_neg_one {R k : Type*} [CommRing R] [CommRing k]
-    [IsDomain k] (α : Rˣ →* kˣ) :
+    [IsDomain k] {α : Rˣ →* kˣ} :
     (α (-1) : k) = 1 ∨ (α (-1) : k) = -1 :=
   mul_self_eq_one_iff.mp (by rw [← Units.val_mul, ← map_mul]; simp)
 
