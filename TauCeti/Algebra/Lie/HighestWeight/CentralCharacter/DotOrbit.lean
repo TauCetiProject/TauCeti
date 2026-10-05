@@ -176,6 +176,7 @@ private theorem vermaCentralCharacter_sub_smul_root {i : H.root} (hi : i ∈ b.s
 variable (b) in
 /-- **Central characters are constant on dot orbits**: `χ_{w · lam} = χ_lam` for every element `w`
 of the Weyl group, where `w · lam = w (lam + ρ) - ρ` is the dot action. -/
+@[simp]
 theorem vermaCentralCharacter_dotAction (w : (IsKilling.rootSystem H).weylGroup)
     (lam : Dual K H) :
     vermaCentralCharacter b (dotAction (IsKilling.rootSystem H) b w lam) =
@@ -209,6 +210,7 @@ noncomputable def dotInvariants : Subalgebra K (SymmetricAlgebra K H) where
 
 /-- Membership in the dot-invariants: `p(w · lam) = p(lam)` for every Weyl group element `w` and
 every weight `lam`. -/
+@[simp]
 theorem mem_dotInvariants_iff {p : SymmetricAlgebra K H} :
     p ∈ dotInvariants b ↔ ∀ (w : (IsKilling.rootSystem H).weylGroup) (lam : Dual K H),
       SymmetricAlgebra.lift (dotAction (IsKilling.rootSystem H) b w lam) p =
@@ -217,7 +219,6 @@ theorem mem_dotInvariants_iff {p : SymmetricAlgebra K H} :
 
 /-- **The Harish-Chandra projection takes values in the dot-invariants**: its value at a weight is
 the central character, which is constant on dot orbits. -/
-@[simp]
 theorem hcProjection_mem_dotInvariants (z : Subalgebra.center K (U L)) :
     hcProjection b z ∈ dotInvariants b := fun w lam ↦ by
   rw [lift_hcProjection, lift_hcProjection, vermaCentralCharacter_dotAction]
