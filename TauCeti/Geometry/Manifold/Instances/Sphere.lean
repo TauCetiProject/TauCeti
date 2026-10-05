@@ -47,6 +47,8 @@ loop and its lift to `ℝ` have the same tangent lines.
 * `LinearIsometry.isSmoothEmbedding_unitSphereMap`: the restriction of a linear isometry to the
   unit spheres is a smooth embedding, at every differentiability order.
 * `TauCeti.injective_mfderiv_circleExp`: the derivative of `Circle.exp : ℝ → S¹` is injective.
+* `TauCeti.deriv_comp_circleExp_ne_zero_and_range_mfderiv`: lifting a `C²` immersed circle
+  along `Circle.exp` gives a nonzero derivative spanning its tangent line.
 -/
 
 public section
@@ -181,5 +183,40 @@ theorem injective_mfderiv_circleExp (t : ℝ) :
   refine (injective_iff_map_eq_zero e).mpr fun s hs => ?_
   have hs' : s • e 1 = 0 := by rw [← map_smul, smul_eq_mul, mul_one]; exact hs
   exact (smul_eq_zero.mp hs').resolve_right hne
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+
+/-- For a `C²` immersion `f` of the circle, the derivative of `t ↦ f (exp (t i))` is nonzero and
+spans the range of the derivative of `f`. -/
+theorem deriv_comp_circleExp_ne_zero_and_range_mfderiv {f : Circle → V}
+    (hf : ContMDiff (𝓡 1) 𝓘(ℝ, V) 2 f) (himm : ∀ z, Injective (mfderiv (𝓡 1) 𝓘(ℝ, V) f z))
+    (t : ℝ) :
+    deriv (f ∘ Circle.exp) t ≠ 0 ∧
+      (mfderiv (𝓡 1) 𝓘(ℝ, V) f (Circle.exp t) : EuclideanSpace ℝ (Fin 1) →L[ℝ] V).range =
+        ℝ ∙ deriv (f ∘ Circle.exp) t := by
+  set D : EuclideanSpace ℝ (Fin 1) →L[ℝ] V := mfderiv (𝓡 1) 𝓘(ℝ, V) f (Circle.exp t)
+  set e : ℝ →L[ℝ] EuclideanSpace ℝ (Fin 1) := mfderiv 𝓘(ℝ, ℝ) (𝓡 1) Circle.exp t
+  have he_inj : Injective e := injective_mfderiv_circleExp t
+  have he_surj : Surjective e :=
+    (LinearMap.injective_iff_surjective_of_finrank_eq_finrank (K := ℝ) (V := ℝ)
+      (V₂ := EuclideanSpace ℝ (Fin 1)) (by simp)).mp he_inj
+  have hD_inj : Injective D := himm _
+  have hγ : ContDiff ℝ 2 (f ∘ Circle.exp) :=
+    contMDiff_iff_contDiff.mp (hf.comp contMDiff_circleExp)
+  -- The chain rule, with the derivative of the curve `f ∘ exp` written as a span map.
+  have hD : ContinuousLinearMap.toSpanSingleton ℝ (deriv (f ∘ Circle.exp) t) = D.comp e := by
+    have hcomp := mfderiv_comp t (hf.mdifferentiableAt two_ne_zero)
+      ((contMDiff_circleExp (m := 1)).mdifferentiableAt one_ne_zero)
+    rw [mfderiv_eq_fderiv, ((hγ.differentiable two_ne_zero) t).hasDerivAt.hasFDerivAt.fderiv]
+      at hcomp
+    exact hcomp
+  have hDe : D (e 1) = deriv (f ∘ Circle.exp) t := by
+    simpa using (congrArg (fun L => L 1) hD).symm
+  refine ⟨fun h0 => one_ne_zero (he_inj (hD_inj (by rw [hDe, h0, map_zero, map_zero]))), ?_⟩
+  rw [← LinearMap.range_toSpanSingleton]
+  have := congrArg (fun L : ℝ →L[ℝ] V => (L : ℝ →ₗ[ℝ] V).range) hD
+  simp only [ContinuousLinearMap.toLinearMap_comp,
+    LinearMap.range_comp_of_range_eq_top _ (LinearMap.range_eq_top.mpr he_surj)] at this
+  exact this.symm
 
 end TauCeti

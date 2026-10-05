@@ -11,8 +11,8 @@ public import TauCeti.LowDimTopology.SeifertFibration
 
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.Analysis.Calculus.Deriv.Shift
-import Mathlib.Geometry.Euclidean.Angle.Unoriented.CrossProduct
 import Mathlib.Topology.MetricSpace.HausdorffDimension
+import TauCeti.Geometry.Euclidean.Angle.Unoriented.CrossProduct
 import TauCeti.Geometry.Manifold.Instances.Sphere
 import TauCeti.Geometry.Manifold.TubularNeighborhood.Euclidean
 
@@ -24,8 +24,9 @@ A *solid torus neighbourhood* of a loop `f : S¹ → X` is an embedding `Φ` of 
 open subset of `X`. In Rolfsen's terminology `Φ` is a framing of the solid torus it parametrizes,
 with meridians `w ↦ Φ (w, z)` and longitude `z ↦ Φ (1, z)`; it need not be the preferred framing.
 Removing the image of the open solid torus from `X` leaves the *exterior* of the knot, a closed
-set whose frontier is the torus `Φ (S¹ × S¹)`. This is the input to Dehn surgery, which glues a
-solid torus back onto this boundary torus along a homeomorphism specified by a slope on it.
+set whose frontier is the torus `Φ (S¹ × S¹)` when `X` is Hausdorff. This is the input to Dehn
+surgery, which glues a solid torus back onto this boundary torus along a homeomorphism specified
+by a slope on it.
 
 The main theorem is that every `C²` embedded circle in `ℝ³` has solid torus neighbourhoods, inside
 any prescribed neighbourhood of the circle. By the tubular neighbourhood theorem
@@ -47,7 +48,8 @@ onto the normal plane, and `n₂ z` is the cross product of the unit tangent wit
 ## Main results
 
 * `TauCeti.IsSolidTorusNeighborhood.frontier_image`: the frontier of the image of the open solid
-  torus, which is also the frontier of the knot exterior, is the image of the boundary torus.
+  torus, which is also the frontier of the knot exterior, is the image of the boundary torus
+  when the ambient space is Hausdorff.
 * `TauCeti.IsSolidTorusNeighborhood.isEmbedding_comp_boundaryInclusion`: the boundary torus
   `S¹ × S¹` embeds.
 * `TauCeti.IsSolidTorusNeighborhood.comp`: solid torus neighbourhoods are carried along open
@@ -122,7 +124,7 @@ variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
 /-- `Φ : D² × S¹ → X` is a **solid torus neighbourhood** of the loop `f : S¹ → X` when it is an
 embedding whose core `{0} × S¹` traces `f`, and which maps the open solid torus
 `{w | ‖w‖ < 1} × S¹` onto an open subset of `X`. The complement of that open subset is the
-exterior of the knot `f`, and its frontier is the boundary torus
+exterior of the knot `f`, and when `X` is Hausdorff its frontier is the boundary torus
 (`TauCeti.IsSolidTorusNeighborhood.frontier_image`). -/
 structure IsSolidTorusNeighborhood (f : Circle → X) (Φ : SolidTorus → X) : Prop where
   /-- The solid torus is embedded. -/
@@ -162,9 +164,9 @@ theorem comp {e : X → Y} (he : IsOpenEmbedding e) (h : IsSolidTorusNeighborhoo
     rw [image_comp]
     exact he.isOpenMap _ h.isOpen_image
 
-/-- The frontier of the image of the open solid torus is the image of the boundary torus
-`{w | ‖w‖ = 1} × S¹`. This set is also the frontier of the exterior of the knot, the complement
-of the image of the open solid torus. -/
+/-- In a Hausdorff ambient space, the frontier of the image of the open solid torus is the image
+of the boundary torus `{w | ‖w‖ = 1} × S¹`. This set is also the frontier of the exterior of the
+knot, the complement of the image of the open solid torus. -/
 theorem frontier_image [T2Space X] (h : IsSolidTorusNeighborhood f Φ) :
     frontier (Φ '' {p | ‖(p.1 : ℂ)‖ < 1}) = range (Φ ∘ SolidTorus.boundaryInclusion) := by
   rw [h.isOpen_image.frontier_eq, h.isClosedEmbedding.closure_image_eq,
@@ -178,7 +180,7 @@ theorem frontier_image [T2Space X] (h : IsSolidTorusNeighborhood f Φ) :
 
 /-- The boundary torus of a solid torus neighbourhood is embedded: by
 `TauCeti.IsSolidTorusNeighborhood.frontier_image`, the frontier of the knot exterior is a
-torus. -/
+torus when the ambient space is Hausdorff. -/
 theorem isEmbedding_comp_boundaryInclusion (h : IsSolidTorusNeighborhood f Φ) :
     IsEmbedding (Φ ∘ SolidTorus.boundaryInclusion) :=
   h.isEmbedding.comp SolidTorus.isEmbedding_boundaryInclusion
@@ -192,39 +194,6 @@ end General
 section Euclidean
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
-
-/-- For a `C²` immersion `f` of the circle, the derivative of `t ↦ f (exp (t i))` is nonzero and
-spans the range of the derivative of `f`. -/
-private theorem deriv_comp_circleExp_ne_zero_and_range_mfderiv {f : Circle → V}
-    (hf : ContMDiff (𝓡 1) 𝓘(ℝ, V) 2 f) (himm : ∀ z, Injective (mfderiv (𝓡 1) 𝓘(ℝ, V) f z))
-    (t : ℝ) :
-    deriv (f ∘ Circle.exp) t ≠ 0 ∧
-      (mfderiv (𝓡 1) 𝓘(ℝ, V) f (Circle.exp t) : EuclideanSpace ℝ (Fin 1) →L[ℝ] V).range =
-        ℝ ∙ deriv (f ∘ Circle.exp) t := by
-  set D : EuclideanSpace ℝ (Fin 1) →L[ℝ] V := mfderiv (𝓡 1) 𝓘(ℝ, V) f (Circle.exp t)
-  set e : ℝ →L[ℝ] EuclideanSpace ℝ (Fin 1) := mfderiv 𝓘(ℝ, ℝ) (𝓡 1) Circle.exp t
-  have he_inj : Injective e := injective_mfderiv_circleExp t
-  have he_surj : Surjective e :=
-    (LinearMap.injective_iff_surjective_of_finrank_eq_finrank (K := ℝ) (V := ℝ)
-      (V₂ := EuclideanSpace ℝ (Fin 1)) (by simp)).mp he_inj
-  have hD_inj : Injective D := himm _
-  have hγ : ContDiff ℝ 2 (f ∘ Circle.exp) :=
-    contMDiff_iff_contDiff.mp (hf.comp contMDiff_circleExp)
-  -- The chain rule, with the derivative of the curve `f ∘ exp` written as a span map.
-  have hD : ContinuousLinearMap.toSpanSingleton ℝ (deriv (f ∘ Circle.exp) t) = D.comp e := by
-    have hcomp := mfderiv_comp t (hf.mdifferentiableAt two_ne_zero)
-      ((contMDiff_circleExp (m := 1)).mdifferentiableAt one_ne_zero)
-    rw [mfderiv_eq_fderiv, ((hγ.differentiable two_ne_zero) t).hasDerivAt.hasFDerivAt.fderiv]
-      at hcomp
-    exact hcomp
-  have hDe : D (e 1) = deriv (f ∘ Circle.exp) t := by
-    simpa using (congrArg (fun L => L 1) hD).symm
-  refine ⟨fun h0 => one_ne_zero (he_inj (hD_inj (by rw [hDe, h0, map_zero, map_zero]))), ?_⟩
-  rw [← LinearMap.range_toSpanSingleton]
-  have := congrArg (fun L : ℝ →L[ℝ] V => (L : ℝ →ₗ[ℝ] V).range) hD
-  simp only [ContinuousLinearMap.toLinearMap_comp,
-    LinearMap.range_comp_of_range_eq_top _ (LinearMap.range_eq_top.mpr he_surj)] at this
-  exact this.symm
 
 /-- The velocity of a loop `f` at `z`, for the counterclockwise unit-speed parametrization of the
 circle. -/
@@ -290,40 +259,6 @@ private theorem exists_forall_notMem_span_tangentVector
   exact ha ⟨(s, t), hs⟩
 
 local notation "ℝ³" => EuclideanSpace ℝ (Fin 3)
-
-/-- The real inner product on `ℝ³` is the dot product of coordinates. -/
-private theorem inner_eq_dotProduct (u v : ℝ³) : ⟪u, v⟫ = ofLp u ⬝ᵥ ofLp v := by
-  rw [EuclideanSpace.inner_eq_star_dotProduct, star_trivial, dotProduct_comm]
-
-/-- Completing an orthonormal pair `u, n` of `ℝ³` by the cross product `u × n` gives an
-orthonormal basis; in particular every vector orthogonal to `u` is a combination of `n` and
-`u × n`. -/
-private theorem cross_orthonormal {u n : ℝ³} (hu : ‖u‖ = 1) (hn : ‖n‖ = 1) (hun : ⟪u, n⟫ = 0) :
-    ‖toLp 2 (ofLp u ⨯₃ ofLp n)‖ = 1 ∧ ⟪u, toLp 2 (ofLp u ⨯₃ ofLp n)⟫ = 0 ∧
-      ⟪n, toLp 2 (ofLp u ⨯₃ ofLp n)⟫ = 0 ∧
-      ∀ v : ℝ³, ⟪u, v⟫ = 0 →
-        v = ⟪n, v⟫ • n + ⟪toLp 2 (ofLp u ⨯₃ ofLp n), v⟫ • toLp 2 (ofLp u ⨯₃ ofLp n) := by
-  set c : ℝ³ := toLp 2 (ofLp u ⨯₃ ofLp n)
-  have hc : ‖c‖ = 1 := by
-    rw [InnerProductGeometry.norm_ofLp_crossProduct, hu, hn,
-      (InnerProductGeometry.inner_eq_zero_iff_angle_eq_pi_div_two u n).mp hun, Real.sin_pi_div_two,
-      one_mul, one_mul]
-  have huc : ⟪u, c⟫ = 0 := by rw [inner_eq_dotProduct, ofLp_toLp, dot_self_cross]
-  have hnc : ⟪n, c⟫ = 0 := by rw [inner_eq_dotProduct, ofLp_toLp, dot_cross_self]
-  refine ⟨hc, huc, hnc, fun v hv => ?_⟩
-  -- `u, n, c` is an orthonormal family of three vectors, hence an orthonormal basis of `ℝ³`.
-  have hon : Orthonormal ℝ ![u, n, c] := by
-    rw [orthonormal_iff_ite]
-    intro i j
-    fin_cases i <;> fin_cases j <;>
-      simp [hu, hn, hc, hun, huc, hnc, real_inner_comm u, real_inner_comm n]
-  let b := (basisOfOrthonormalOfCardEqFinrank hon (by simp)).toOrthonormalBasis
-    (by rwa [coe_basisOfOrthonormalOfCardEqFinrank])
-  have hb : ∀ i, b i = ![u, n, c] i := fun i => by
-    simp [b, coe_basisOfOrthonormalOfCardEqFinrank]
-  have := b.sum_repr' v
-  simp only [Fin.sum_univ_three, hb] at this
-  simpa [hv] using this.symm
 
 /-- A `C²` immersed circle in `ℝ³` has a continuous orthonormal frame `n₁, n₂` of its normal
 planes. The first vector is the normalized normal component of a vector `a` that is nowhere
