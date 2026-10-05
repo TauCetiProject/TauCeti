@@ -50,6 +50,7 @@ variable {F M : Type*} [Field F] [Invertible (2 : F)] [CommRing M] [Algebra F M]
 /-- **Norms from an algebra containing `√b` are norms from `F(√b)`.** If the image of `b ∈ Fˣ` in
 the commutative `F`-algebra `M` is a square, then the Hilbert symbol `(b, N_{M/F}(c))` is `1` for
 every unit `c` of `M`. -/
+@[simp]
 theorem hilbertSymbol_normUnits_eq_one {b : Fˣ} (hb : IsSquare (algebraMap F M b)) (c : Mˣ) :
     hilbertSymbol b (Algebra.normUnits F c) = 1 := by
   by_cases hbF : IsSquare b

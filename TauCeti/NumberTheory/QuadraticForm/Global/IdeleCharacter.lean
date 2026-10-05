@@ -226,6 +226,7 @@ open scoped AdicCompletionExtension NumberField.LiesOver in
 number field `L` over `K`, then `φ_b` is trivial on the idele norms `N_{L/K}(𝕀_L)`. At every place
 `v` of `K` the coordinate of an idele norm is a product of norms from completions `L_w` in which
 `b` is a square, so it is a norm from `K_v(√b)`. -/
+@[simp]
 theorem ideleHilbertCharacter_ideleNormMap {L : Type*} [Field L] [NumberField L] [Algebra K L]
     {b : Kˣ} (hb : IsSquare (algebraMap K L b)) (x : IdeleGroup (𝓞 L) L) :
     ideleHilbertCharacter b (GlobalNumberFields.ideleNormMap K L x) = 1 := by
