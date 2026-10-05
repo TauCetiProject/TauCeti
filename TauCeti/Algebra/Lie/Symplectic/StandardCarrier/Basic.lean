@@ -106,7 +106,7 @@ valid Lie-type family.
 public section
 
 open Matrix
-open scoped Matrix TensorProduct
+open scoped TensorProduct
 
 universe v
 
