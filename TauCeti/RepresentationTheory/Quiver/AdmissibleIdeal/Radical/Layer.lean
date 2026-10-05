@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Quiver.AdmissibleIdeal.Radical
+public import TauCeti.RepresentationTheory.Quiver.AdmissibleIdeal.Radical.Basic
 public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.Grading
 
 /-!
