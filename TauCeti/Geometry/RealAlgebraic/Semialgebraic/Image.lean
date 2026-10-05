@@ -22,12 +22,15 @@ the coordinates `τ` is semialgebraic whenever `σ` is finite. Since the graph o
 `f : (σ → R) → (τ → R)` is encoded as a subset of `σ ⊕ τ → R` (`TauCeti.IsSemialgebraicOn`), this
 gives the following consequences.
 
-* The image of a semialgebraic set under a semialgebraic function is semialgebraic, and so is the
-  inverse image of a semialgebraic set.
-* The domain of a function with semialgebraic graph is the projection of that graph, so it is
-  semialgebraic: the domain hypothesis in `TauCeti.IsSemialgebraicOn` becomes redundant.
-* Semialgebraic functions compose: the graph of `g ∘ f` is obtained from the graphs of `f` and `g`
-  by eliminating the intermediate coordinates.
+* The image of a semialgebraic set under a semialgebraic function with finitely many input
+  coordinates is semialgebraic, and so is the inverse image of a semialgebraic set under a
+  semialgebraic function with finitely many output coordinates.
+* The domain of a function with finitely many output coordinates and semialgebraic graph is the
+  projection of that graph, so it is semialgebraic: the domain hypothesis in
+  `TauCeti.IsSemialgebraicOn` becomes redundant.
+* Semialgebraic functions compose when the intermediate space has finitely many coordinates: the
+  graph of `g ∘ f` is obtained from the graphs of `f` and `g` by eliminating the intermediate
+  coordinates.
 
 ## Main results
 
@@ -36,12 +39,16 @@ All results assume projection closure as the hypothesis `hproj`.
 * `TauCeti.IsSemialgebraic.image_comp_inr`, `TauCeti.IsSemialgebraic.image_comp_inl`: projections
   of semialgebraic sets that forget finitely many coordinates are semialgebraic.
 * `TauCeti.IsSemialgebraicOn.isSemialgebraic_image`,
-  `TauCeti.IsSemialgebraicMap.isSemialgebraic_image`: images under semialgebraic functions.
+  `TauCeti.IsSemialgebraicMap.isSemialgebraic_image`: images under semialgebraic functions with
+  finitely many input coordinates; `TauCeti.IsSemialgebraic.image_eval`: images under polynomial
+  maps with finitely many input and output coordinates.
 * `TauCeti.IsSemialgebraicOn.isSemialgebraic_inter_preimage`,
-  `TauCeti.IsSemialgebraicMap.isSemialgebraic_preimage`: inverse images.
-* `TauCeti.isSemialgebraicOn_iff_graph`: a function is semialgebraic on `s` exactly when its graph
-  over `s` is semialgebraic.
-* `TauCeti.IsSemialgebraicOn.comp`, `TauCeti.IsSemialgebraicMap.comp`: composition.
+  `TauCeti.IsSemialgebraicMap.isSemialgebraic_preimage`: inverse images under semialgebraic
+  functions with finitely many output coordinates.
+* `TauCeti.isSemialgebraicOn_iff_graph`: a function with finitely many output coordinates is
+  semialgebraic on `s` exactly when its graph over `s` is semialgebraic.
+* `TauCeti.IsSemialgebraicOn.comp`, `TauCeti.IsSemialgebraicMap.comp`: composition, when the
+  intermediate space has finitely many coordinates.
 
 ## References
 
@@ -148,7 +155,7 @@ theorem IsSemialgebraicMap.isSemialgebraic_image [Finite σ] {f : (σ → R) →
   (hf.isSemialgebraicOn hs).isSemialgebraic_image hproj
 
 /-- Given projection closure, the image of a semialgebraic set under a polynomial map with finitely
-many input coordinates is semialgebraic. -/
+many input coordinates and finitely many output coordinates is semialgebraic. -/
 theorem IsSemialgebraic.image_eval [Finite σ] [Finite τ] {s : Set (σ → R)}
     (hs : IsSemialgebraic s) (p : τ → MvPolynomial σ R) :
     IsSemialgebraic ((fun x i => eval x (p i)) '' s) :=
