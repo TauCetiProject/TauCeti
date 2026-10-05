@@ -62,7 +62,7 @@ private theorem ladder_bottom : d 0 * u 0 = 0 := by
 
 /-- An upward arrow extends the climb of a valley normal form. -/
 @[simp]
-theorem signlessArrow_mul_AValley_of_succ (a b b' : Fin (DynkinType.A n).rank)
+theorem signlessArrow_mul_signlessPreprojectiveAValley_of_succ (a b b' : Fin (DynkinType.A n).rank)
     (m : ℕ) (hb : b.val + 1 = b'.val) (hm : m ≤ b.val) :
     signlessArrow k AG b.val b'.val * signlessPreprojectiveAValley k a b m =
       signlessPreprojectiveAValley k a b' m := by
@@ -76,7 +76,7 @@ theorem signlessArrow_mul_AValley_of_succ (a b b' : Fin (DynkinType.A n).rank)
 /-- A downward arrow moves a positive valley bottom down one rung. Each climb crossed
 contributes one minus sign. -/
 @[simp]
-theorem signlessArrow_mul_AValley_of_pred (a b b' : Fin (DynkinType.A n).rank)
+theorem signlessArrow_mul_signlessPreprojectiveAValley_of_pred (a b b' : Fin (DynkinType.A n).rank)
     (m : ℕ) (hb : b'.val + 1 = b.val) (hm : m + 1 ≤ min a.val b.val) :
     signlessArrow k AG b.val b'.val * signlessPreprojectiveAValley k a b (m + 1) =
       ((-1 : ℤ) ^ (b.val - (m + 1))) • signlessPreprojectiveAValley k a b' m := by
@@ -101,7 +101,7 @@ theorem signlessArrow_mul_AValley_of_pred (a b b' : Fin (DynkinType.A n).rank)
 
 /-- A downward arrow annihilates a valley whose bottom is zero. -/
 @[simp]
-theorem signlessArrow_mul_AValley_zero (a b b' : Fin (DynkinType.A n).rank)
+theorem signlessArrow_mul_signlessPreprojectiveAValley_zero (a b b' : Fin (DynkinType.A n).rank)
     (hb : b'.val + 1 = b.val) :
     signlessArrow k AG b.val b'.val * signlessPreprojectiveAValley k a b 0 = 0 := by
   rw [signlessPreprojectiveAValley_def, ← mul_assoc, ← mul_assoc,
@@ -111,7 +111,7 @@ theorem signlessArrow_mul_AValley_zero (a b b' : Fin (DynkinType.A n).rank)
 
 /-- An arrow whose source differs from the terminal vertex of a valley annihilates it. -/
 @[simp]
-theorem signlessArrow_mul_AValley_of_ne (a b : Fin (DynkinType.A n).rank)
+theorem signlessArrow_mul_signlessPreprojectiveAValley_of_ne (a b : Fin (DynkinType.A n).rank)
     (m i j : ℕ) (hi : i ≠ b.val) :
     signlessArrow k AG i j * signlessPreprojectiveAValley k a b m = 0 := by
   rw [signlessPreprojectiveAValley_def, ← mul_assoc, ← mul_assoc,
