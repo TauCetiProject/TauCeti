@@ -578,7 +578,14 @@ namespace OrientedPDCode
 
 variable {n : ℕ}
 
-/-- The sign of crossing `i`: `1` if the crossing is right-handed and `-1` if it is left-handed,
+/-- The orientation reverses between two opposite slots `s` and `t = s + 2` of a crossing. -/
+theorem orientation_crossing_of_add_two_eq (D : OrientedPDCode n) (i : Fin n) {s t : Fin 4}
+    (hst : s + 2 = t) :
+    D.orientation (D.crossing i t) = !D.orientation (D.crossing i s) := by
+  rw [← hst, ← PDCode.oppositeCrossingSlot_apply, PDCode.crossing_apply, PDCode.crossing_apply,
+    D.orientation_oppositeCrossingSlot]
+
+/-- The sign of crossing `i`:`1` if the crossing is right-handed and `-1` if it is left-handed,
 as in Lickorish, Chapter 1. The slots are read counterclockwise in the oriented plane and
 `orientation` is `true` at the half-edges where the strands leave the crossing. The crossing is
 right-handed when a counterclockwise quarter turn takes the direction of the over-strand to that

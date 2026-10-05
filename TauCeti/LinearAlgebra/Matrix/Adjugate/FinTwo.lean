@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Complex.Module
+public import Mathlib.LinearAlgebra.Matrix.Hermitian
 public import TauCeti.LinearAlgebra.Matrix.Adjugate.Basic
 public import Mathlib.LinearAlgebra.Matrix.Trace
 import Mathlib.Data.Matrix.Basis
@@ -16,6 +18,9 @@ The adjugate of a two-by-two matrix is linear over any commutative ring, includi
 characteristic two. It is the unique function reversing products for which every matrix plus its
 image is scalar; linearity is not needed for this characterization. These facts identify Clifford
 reversal with adjugation in the two-by-two matrix model of Spin(3).
+
+For complex matrices, composing adjugation with conjugate transpose gives a real-algebra
+endomorphism. This packages the multiplicative map used by real low-rank matrix models.
 -/
 
 public section
@@ -42,6 +47,27 @@ noncomputable def adjugateFinTwoLinearMap :
 @[simp] theorem adjugateFinTwoLinearMap_apply (A : Matrix (Fin 2) (Fin 2) K) :
     adjugateFinTwoLinearMap A = Matrix.adjugate A := by
   simp [adjugateFinTwoLinearMap, adjugate_fin_two_eq_trace_smul_one_sub]
+
+/-- Adjugation followed by conjugate transpose, as a real-algebra endomorphism of complex
+`2 × 2` matrices. -/
+noncomputable def starAdjugateFinTwoAlgHom :
+    Matrix (Fin 2) (Fin 2) ℂ →ₐ[ℝ] Matrix (Fin 2) (Fin 2) ℂ where
+  toFun A := star (Matrix.adjugate A)
+  map_zero' := by
+    rw [← Matrix.adjugateFinTwoLinearMap_apply, map_zero, star_zero]
+  map_add' A B := by
+    rw [← Matrix.adjugateFinTwoLinearMap_apply, map_add,
+      Matrix.adjugateFinTwoLinearMap_apply, Matrix.adjugateFinTwoLinearMap_apply, star_add]
+  map_one' := by simp
+  map_mul' A B := by simp [Matrix.adjugate_mul_distrib, star_mul]
+  commutes' r := by
+    ext i j
+    fin_cases i <;> fin_cases j <;>
+      simp [Algebra.algebraMap_eq_smul_one] <;> ring
+
+/-- Applying `starAdjugateFinTwoAlgHom` computes the conjugate transpose of the adjugate. -/
+theorem starAdjugateFinTwoAlgHom_apply (A : Matrix (Fin 2) (Fin 2) ℂ) :
+    starAdjugateFinTwoAlgHom A = star (Matrix.adjugate A) := by rfl
 
 /-- An anti-multiplicative function with scalar translates sends an off-diagonal unit
 to its negative. -/

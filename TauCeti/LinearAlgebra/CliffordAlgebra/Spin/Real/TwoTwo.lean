@@ -152,27 +152,21 @@ private abbrev realCliffordFormTwoTwo := realCliffordForm 2 2
 private def realCliffordTwoTwoLastVector : Fin 4 → ℝ := Pi.single 3 1
 
 private def realCliffordTwoTwoVectorEven :
-    (Fin 4 → ℝ) →ₗ[ℝ] CliffordAlgebra.even realCliffordFormTwoTwo where
-  toFun v := (CliffordAlgebra.even.ι realCliffordFormTwoTwo).bilin v
-    realCliffordTwoTwoLastVector
-  map_add' v w := by simp
-  map_smul' r v := by simp
+    (Fin 4 → ℝ) →ₗ[ℝ] CliffordAlgebra.even realCliffordFormTwoTwo :=
+  CliffordAlgebra.rightIotaEven realCliffordFormTwoTwo realCliffordTwoTwoLastVector
 
 private theorem coe_realCliffordTwoTwoVectorEven (v : Fin 4 → ℝ) :
     (realCliffordTwoTwoVectorEven v : CliffordAlgebra realCliffordFormTwoTwo) =
       CliffordAlgebra.ι realCliffordFormTwoTwo v *
-        CliffordAlgebra.ι realCliffordFormTwoTwo realCliffordTwoTwoLastVector := rfl
+        CliffordAlgebra.ι realCliffordFormTwoTwo realCliffordTwoTwoLastVector :=
+  CliffordAlgebra.coe_rightIotaEven realCliffordFormTwoTwo realCliffordTwoTwoLastVector v
 
 private theorem realCliffordTwoTwoEvenEquivMatrixProd_vectorEven (v : Fin 4 → ℝ) :
     (realCliffordTwoTwoEvenEquivMatrixProd (realCliffordTwoTwoVectorEven v)).1 *
         (GL2WeylElement ℝ : Matrix (Fin 2) (Fin 2) ℝ) =
       realCliffordTwoTwoVectorEquivMatrix v := by
   -- Unfold the private vector embedding so the landed generator formula can rewrite it.
-  change (realCliffordTwoTwoEvenEquivMatrixProd
-    ((CliffordAlgebra.even.ι realCliffordFormTwoTwo).bilin v
-      realCliffordTwoTwoLastVector)).1 *
-        (GL2WeylElement ℝ : Matrix (Fin 2) (Fin 2) ℝ) =
-        realCliffordTwoTwoVectorEquivMatrix v
+  rw [realCliffordTwoTwoVectorEven, CliffordAlgebra.rightIotaEven_apply]
   rw [realCliffordTwoTwoEvenEquivMatrixProd_ι]
   ext i j
   all_goals fin_cases i
@@ -181,87 +175,27 @@ private theorem realCliffordTwoTwoEvenEquivMatrixProd_vectorEven (v : Fin 4 → 
     Matrix.mul_apply, Fin.sum_univ_two]
   all_goals ring
 
-private theorem realCliffordTwoTwoLastVector_sq :
-    CliffordAlgebra.ι realCliffordFormTwoTwo realCliffordTwoTwoLastVector *
-        CliffordAlgebra.ι realCliffordFormTwoTwo realCliffordTwoTwoLastVector = -1 := by
-  have he : realCliffordFormTwoTwo realCliffordTwoTwoLastVector = -1 := by
-    -- Expose both local abbreviations before applying the explicit coordinate formula.
-    change realCliffordForm 2 2 (Pi.single 3 1) = -1
-    rw [realCliffordForm_two_two_apply]
-    norm_num
-  rw [CliffordAlgebra.ι_sq_scalar, he, map_neg, map_one]
-
-private theorem realCliffordTwoTwoConjugate_mul
-    (x y : CliffordAlgebra realCliffordFormTwoTwo) :
-    (-CliffordAlgebra.ι realCliffordFormTwoTwo realCliffordTwoTwoLastVector * (x * y)) *
-        CliffordAlgebra.ι realCliffordFormTwoTwo realCliffordTwoTwoLastVector =
-      ((-CliffordAlgebra.ι realCliffordFormTwoTwo realCliffordTwoTwoLastVector * x) *
-          CliffordAlgebra.ι realCliffordFormTwoTwo realCliffordTwoTwoLastVector) *
-        ((-CliffordAlgebra.ι realCliffordFormTwoTwo realCliffordTwoTwoLastVector * y) *
-          CliffordAlgebra.ι realCliffordFormTwoTwo realCliffordTwoTwoLastVector) := by
-  symm
-  calc
-    ((-CliffordAlgebra.ι realCliffordFormTwoTwo realCliffordTwoTwoLastVector * x) *
-          CliffordAlgebra.ι realCliffordFormTwoTwo realCliffordTwoTwoLastVector) *
-        ((-CliffordAlgebra.ι realCliffordFormTwoTwo realCliffordTwoTwoLastVector * y) *
-          CliffordAlgebra.ι realCliffordFormTwoTwo realCliffordTwoTwoLastVector) =
-      (-CliffordAlgebra.ι realCliffordFormTwoTwo realCliffordTwoTwoLastVector * x) *
-        (CliffordAlgebra.ι realCliffordFormTwoTwo realCliffordTwoTwoLastVector *
-          -CliffordAlgebra.ι realCliffordFormTwoTwo realCliffordTwoTwoLastVector) * y *
-        CliffordAlgebra.ι realCliffordFormTwoTwo realCliffordTwoTwoLastVector := by
-      noncomm_ring
-    _ = (-CliffordAlgebra.ι realCliffordFormTwoTwo realCliffordTwoTwoLastVector * (x * y)) *
-        CliffordAlgebra.ι realCliffordFormTwoTwo realCliffordTwoTwoLastVector := by
-      simp only [mul_neg, realCliffordTwoTwoLastVector_sq, neg_neg, mul_one]
-      noncomm_ring
+private theorem realCliffordTwoTwoLastVector_negOne :
+    realCliffordFormTwoTwo realCliffordTwoTwoLastVector = -1 := by
+  -- Expose the signature and basis vector so the coordinate formula applies.
+  change realCliffordForm 2 2 (Pi.single 3 1) = -1
+  rw [realCliffordForm_two_two_apply]
+  norm_num
 
 private noncomputable def realCliffordTwoTwoConjugateLastEvenHom :
     CliffordAlgebra.even realCliffordFormTwoTwo →ₐ[ℝ]
-      CliffordAlgebra.even realCliffordFormTwoTwo where
-  toFun x :=
-    ⟨(-CliffordAlgebra.ι realCliffordFormTwoTwo realCliffordTwoTwoLastVector *
-          (x : CliffordAlgebra realCliffordFormTwoTwo)) *
-        CliffordAlgebra.ι realCliffordFormTwoTwo realCliffordTwoTwoLastVector, by
-      rw [← Subalgebra.mem_toSubmodule, CliffordAlgebra.even_toSubmodule]
-      have hleft :
-          -CliffordAlgebra.ι realCliffordFormTwoTwo realCliffordTwoTwoLastVector ∈
-            CliffordAlgebra.evenOdd realCliffordFormTwoTwo 1 :=
-        Submodule.neg_mem _ (CliffordAlgebra.ι_mem_evenOdd_one _ _)
-      have h := SetLike.mul_mem_graded
-        (SetLike.mul_mem_graded hleft x.2)
-        (CliffordAlgebra.ι_mem_evenOdd_one realCliffordFormTwoTwo
-          realCliffordTwoTwoLastVector)
-      -- The two odd factors add to even parity, expressed here in the `ZMod 2` grading.
-      exact (show (1 + 1 : ZMod 2) = 0 by decide) ▸ (by simpa only [add_zero] using h)⟩
-  map_one' := by
-    apply Subtype.ext
-    -- Expose the private hom's value at one so the last-vector square can rewrite it.
-    change (-CliffordAlgebra.ι realCliffordFormTwoTwo realCliffordTwoTwoLastVector * 1) *
-      CliffordAlgebra.ι realCliffordFormTwoTwo realCliffordTwoTwoLastVector = 1
-    rw [mul_one, neg_mul, realCliffordTwoTwoLastVector_sq, neg_neg]
-  map_mul' x y := by
-    apply Subtype.ext
-    exact realCliffordTwoTwoConjugate_mul (x : CliffordAlgebra realCliffordFormTwoTwo) y
-  map_zero' := by apply Subtype.ext; simp
-  map_add' x y := by apply Subtype.ext; simp [mul_add, add_mul]
-  commutes' r := by
-    apply Subtype.ext
-    -- Expose the scalar in the ambient Clifford algebra to commute it past the last vector.
-    change (-CliffordAlgebra.ι realCliffordFormTwoTwo realCliffordTwoTwoLastVector *
-        algebraMap ℝ (CliffordAlgebra realCliffordFormTwoTwo) r) *
-      CliffordAlgebra.ι realCliffordFormTwoTwo realCliffordTwoTwoLastVector =
-        algebraMap ℝ (CliffordAlgebra realCliffordFormTwoTwo) r
-    rw [← Algebra.commutes r
-      (-CliffordAlgebra.ι realCliffordFormTwoTwo realCliffordTwoTwoLastVector), mul_assoc,
-      neg_mul, realCliffordTwoTwoLastVector_sq, neg_neg]
-    simp
+      CliffordAlgebra.even realCliffordFormTwoTwo :=
+  CliffordAlgebra.conjugateNegativeIotaEven realCliffordFormTwoTwo
+    realCliffordTwoTwoLastVector realCliffordTwoTwoLastVector_negOne
 
 private theorem coe_realCliffordTwoTwoConjugateLastEvenHom
     (x : CliffordAlgebra.even realCliffordFormTwoTwo) :
     (realCliffordTwoTwoConjugateLastEvenHom x : CliffordAlgebra realCliffordFormTwoTwo) =
       (-CliffordAlgebra.ι realCliffordFormTwoTwo realCliffordTwoTwoLastVector *
         (x : CliffordAlgebra realCliffordFormTwoTwo)) *
-          CliffordAlgebra.ι realCliffordFormTwoTwo realCliffordTwoTwoLastVector := rfl
+          CliffordAlgebra.ι realCliffordFormTwoTwo realCliffordTwoTwoLastVector :=
+  CliffordAlgebra.coe_conjugateNegativeIotaEven realCliffordFormTwoTwo
+    realCliffordTwoTwoLastVector realCliffordTwoTwoLastVector_negOne x
 
 private noncomputable def realCliffordTwoTwoWeylConjSwap :
     (Matrix (Fin 2) (Fin 2) ℝ × Matrix (Fin 2) (Fin 2) ℝ) ≃ₐ[ℝ]
@@ -304,6 +238,7 @@ private theorem realCliffordTwoTwoConjugateLastEvenHom_ι (m n : Fin 4 → ℝ) 
         (CliffordAlgebra.even.ι realCliffordFormTwoTwo).bilin n
           realCliffordTwoTwoLastVector := by
   apply Subtype.ext
+  rw [coe_realCliffordTwoTwoConjugateLastEvenHom]
   -- Expose both even bilinear products in the ambient Clifford algebra.
   change (-CliffordAlgebra.ι realCliffordFormTwoTwo realCliffordTwoTwoLastVector *
       (CliffordAlgebra.ι realCliffordFormTwoTwo m *
@@ -367,53 +302,10 @@ private theorem realCliffordTwoTwoVectorEven_spin_action
             (CliffordAlgebra.reverseEven realCliffordFormTwoTwo
               (CliffordAlgebra.evenUnitaryGroupEvenPart realCliffordFormTwoTwo
                 (CliffordAlgebra.spinGroupToEvenUnitary realCliffordFormTwoTwo s))) := by
-  apply Subtype.ext
-  rw [coe_realCliffordTwoTwoVectorEven, CliffordAlgebra.spinGroup_smul_apply,
-    CliffordAlgebra.ι_spinVectorAction_apply]
-  simp only [Subalgebra.coe_mul, coe_realCliffordTwoTwoVectorEven,
-    coe_realCliffordTwoTwoConjugateLastEvenHom]
-  rw [CliffordAlgebra.coe_evenUnitaryGroupEvenPart,
-    CliffordAlgebra.coe_reverseEven_apply,
-    CliffordAlgebra.coe_evenUnitaryGroupEvenPart]
-  rw [CliffordAlgebra.coe_spinGroupToEvenUnitary_apply]
-  -- Expose every private even-part coercion in the ambient Clifford algebra.
-  change ((s : CliffordAlgebra realCliffordFormTwoTwo) *
-      CliffordAlgebra.ι realCliffordFormTwoTwo v *
-        star (s : CliffordAlgebra realCliffordFormTwoTwo)) *
-          CliffordAlgebra.ι realCliffordFormTwoTwo realCliffordTwoTwoLastVector =
-    (s : CliffordAlgebra realCliffordFormTwoTwo) *
-      (CliffordAlgebra.ι realCliffordFormTwoTwo v *
-        CliffordAlgebra.ι realCliffordFormTwoTwo realCliffordTwoTwoLastVector) *
-          ((-CliffordAlgebra.ι realCliffordFormTwoTwo realCliffordTwoTwoLastVector *
-              CliffordAlgebra.reverse (s : CliffordAlgebra realCliffordFormTwoTwo)) *
-            CliffordAlgebra.ι realCliffordFormTwoTwo realCliffordTwoTwoLastVector)
-  rw [CliffordAlgebra.reverse_eq_star_of_mem_even
-    ⟨(s : CliffordAlgebra realCliffordFormTwoTwo), spinGroup.mem_even s.2⟩]
-  symm
-  calc
-    (s : CliffordAlgebra realCliffordFormTwoTwo) *
-          (CliffordAlgebra.ι realCliffordFormTwoTwo v *
-            CliffordAlgebra.ι realCliffordFormTwoTwo realCliffordTwoTwoLastVector) *
-            ((-CliffordAlgebra.ι realCliffordFormTwoTwo realCliffordTwoTwoLastVector *
-                star (s : CliffordAlgebra realCliffordFormTwoTwo)) *
-              CliffordAlgebra.ι realCliffordFormTwoTwo realCliffordTwoTwoLastVector) =
-        (s : CliffordAlgebra realCliffordFormTwoTwo) *
-          CliffordAlgebra.ι realCliffordFormTwoTwo v *
-          (CliffordAlgebra.ι realCliffordFormTwoTwo realCliffordTwoTwoLastVector *
-            -CliffordAlgebra.ι realCliffordFormTwoTwo realCliffordTwoTwoLastVector) *
-          star (s : CliffordAlgebra realCliffordFormTwoTwo) *
-          CliffordAlgebra.ι realCliffordFormTwoTwo realCliffordTwoTwoLastVector := by
-      noncomm_ring
-    _ = (s : CliffordAlgebra realCliffordFormTwoTwo) *
-        CliffordAlgebra.ι realCliffordFormTwoTwo v *
-        star (s : CliffordAlgebra realCliffordFormTwoTwo) *
-        CliffordAlgebra.ι realCliffordFormTwoTwo realCliffordTwoTwoLastVector := by
-      simp only [mul_neg, realCliffordTwoTwoLastVector_sq, neg_neg, mul_one]
-    _ = ((s : CliffordAlgebra realCliffordFormTwoTwo) *
-        CliffordAlgebra.ι realCliffordFormTwoTwo v *
-        star (s : CliffordAlgebra realCliffordFormTwoTwo)) *
-        CliffordAlgebra.ι realCliffordFormTwoTwo realCliffordTwoTwoLastVector := by
-      noncomm_ring
+  simpa [realCliffordTwoTwoVectorEven,
+    realCliffordTwoTwoConjugateLastEvenHom] using
+    (CliffordAlgebra.rightIotaEven_spinGroup_smul realCliffordFormTwoTwo
+      realCliffordTwoTwoLastVector realCliffordTwoTwoLastVector_negOne s v)
 
 /-- Under `Spin(2,2) ≃ SL₂(ℝ) × SL₂(ℝ)` and the determinant model of the
 quadratic space, the Spin vector action is left multiplication by the first factor and inverse-right

@@ -388,6 +388,17 @@ theorem mem_coveredSquares_halfTurnEquiv (R : GridRectangleBetween x y) (p : Fin
   rw [← Grid.rev_mem_cIco_finRotate_rev R.left R.right c.rev,
     ← Grid.rev_mem_cIco_finRotate_rev R.bottom R.top r.rev, Fin.rev_rev, Fin.rev_rev]
 
+/-- The half-turn preserves the number of marking squares covered by a rectangle. Marking
+square coordinates use `rotate`, whereas rectangle corners use `halfTurn`. -/
+theorem card_pointSet_inter_halfTurnEquiv (R : GridRectangleBetween x y) (m : GridState n) :
+    (m.rotate.pointSet ∩ (halfTurnEquiv x y R).toGridRectangle.coveredSquares).card =
+      (m.pointSet ∩ R.toGridRectangle.coveredSquares).card := by
+  refine (Finset.card_equiv (Fin.revPerm.prodCongr Fin.revPerm) fun p => ?_).symm
+  obtain ⟨c, r⟩ := p
+  simp only [Finset.mem_inter, GridState.mem_pointSet_rotate,
+    mem_coveredSquares_halfTurnEquiv, Equiv.prodCongr_apply, Fin.revPerm_apply,
+    Prod.map_apply, Fin.rev_rev]
+
 end GridRectangleBetween
 
 end TauCeti
