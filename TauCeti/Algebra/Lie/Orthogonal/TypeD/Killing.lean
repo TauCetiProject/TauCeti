@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Lie.CartanCriterion
+public import Mathlib.Algebra.Lie.Killing
 public import TauCeti.Algebra.Lie.Orthogonal.TypeD.Basis
-import TauCeti.Algebra.Lie.Basis.Cartan
+import TauCeti.Algebra.Lie.Basis.Root
 import TauCeti.Algebra.Lie.Orthogonal.TypeD.Root.Classification
 import TauCeti.LinearAlgebra.RootSystem.FiniteType.Irreducible
 
@@ -57,6 +57,7 @@ private theorem lie_difference_opposite (i j : ι) :
   apply Subtype.ext
   rw [LieSubalgebra.coe_bracket, val_differenceRootGenerator,
     val_differenceRootGenerator, coe_typeDDiagonalEquiv_apply]
+  -- All terms now lie in the matrix subtype, so expose the underlying block-matrix identity.
   change ⁅differenceRootMatrix (K := K) i j, differenceRootMatrix j i⁆ =
     typeDDiagonalMatrix (Pi.single i 1 - Pi.single j 1)
   rw [LieRing.of_associative_ring_bracket, differenceRootMatrix_def,
@@ -77,6 +78,7 @@ private theorem lie_sum_negSum (i j : ι) (hij : i ≠ j) :
   apply Subtype.ext
   rw [LieSubalgebra.coe_bracket, val_sumRootGenerator,
     val_negSumRootGenerator, coe_typeDDiagonalEquiv_apply]
+  -- All terms now lie in the matrix subtype, so expose the underlying block-matrix identity.
   change ⁅sumRootMatrix (K := K) i j, negSumRootMatrix i j⁆ =
     typeDDiagonalMatrix (Pi.single i (-1) + Pi.single j (-1))
   rw [LieRing.of_associative_ring_bracket, sumRootMatrix_def,
@@ -169,6 +171,7 @@ private theorem exists_lieBasis_e_mem_of_root_inf_ne_bot
     (rootSpace_typeDDiagonalCartan_ne_bot_iff (K := K) two_ne_zero chi hchi).mp
       (fun hbot => hcomp (by simp [hbot]))
   · subst chi
+    -- The root-space classification is stated for the underlying submodule membership.
     change x ∈ (LieAlgebra.rootSpace H (typeDWeightSub i j)).toSubmodule at hxroot
     rw [rootSpace_typeDWeightSub_eq_span (IsRegular.of_ne_zero two_ne_zero) hij] at hxroot
     have hgenI : differenceRootGenerator (K := K) i j ∈ I :=
@@ -180,6 +183,7 @@ private theorem exists_lieBasis_e_mem_of_root_inf_ne_bot
     exact exists_lieBasis_e_mem_of_cartan_mem n hn I hdiagI hdiag.property
       (fun hzero => typeDDiagonalEquiv_sub_ne_zero (K := K) i j hij (Subtype.ext hzero))
   · subst chi
+    -- The root-space classification is stated for the underlying submodule membership.
     change x ∈ (LieAlgebra.rootSpace H (typeDWeightAdd i j)).toSubmodule at hxroot
     rw [rootSpace_typeDWeightAdd_eq_span (IsRegular.of_ne_zero two_ne_zero) hij] at hxroot
     have hgenI : sumRootGenerator (K := K) i j ∈ I :=
@@ -193,9 +197,10 @@ private theorem exists_lieBasis_e_mem_of_root_inf_ne_bot
   · subst chi
     have hxroot' : x ∈ LieAlgebra.rootSpace H (-⇑(typeDWeightAdd i j)) := by
       simpa using hxroot
+    -- The root-space classification is stated for the underlying submodule membership.
     change x ∈ (LieAlgebra.rootSpace H (-⇑(typeDWeightAdd i j))).toSubmodule at hxroot'
     rw [rootSpace_neg_typeDWeightAdd_eq_span
-        (IsRegular.of_ne_zero (show (2 : K) ≠ 0 from two_ne_zero)) hij] at hxroot'
+        (IsRegular.of_ne_zero two_ne_zero) hij] at hxroot'
     have hgenI : negSumRootGenerator (K := K) i j ∈ I :=
       generator_mem_of_mem_span_singleton I hxI hx0 hxroot'
     let hdiag : H := typeDDiagonalEquiv (Pi.single i (-1) + Pi.single j (-1))
@@ -267,6 +272,7 @@ private theorem lieBasis_e_mem_of_diagramGraph_adj
   have hbracket : ⁅b.h i, b.e j⁆ ∈ I := lie_mem_left K _ I _ _ hhi
   rw [b.lie_h_e j i] at hbracket
   have hentry : (b.A j i : K) ≠ 0 := by
+    -- Expose the integer Cartan entry detected by adjacency before casting it to the field.
     change ((lieBasis (K := K) n hn).A j i : K) ≠ 0
     rw [lieBasis_A_eq]
     exact Int.cast_ne_zero.mpr ((diagramGraph_adj.mp hij).2.2)
@@ -313,7 +319,8 @@ theorem isSimple_typeD (n : ℕ) (hn : 4 ≤ n) :
         rw [(b.sl2 i).lie_lie_smul_f (R := K)] at hbracket
         have hbracket' : (-(2 : K)) • b.f i ∈ I := by
           simpa [neg_smul, two_smul] using hbracket
-        apply I.toSubmodule.smul_mem_iff (neg_ne_zero.mpr (show (2 : K) ≠ 0 by norm_num)) |>.mp
+        have htwo : (2 : K) ≠ 0 := by norm_num
+        apply I.toSubmodule.smul_mem_iff (neg_ne_zero.mpr htwo) |>.mp
         exact hbracket'
       apply eq_top_iff.mpr
       intro x _
