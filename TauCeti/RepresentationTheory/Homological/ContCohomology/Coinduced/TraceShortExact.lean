@@ -170,7 +170,8 @@ variable {G : Type u} [Group G] [TopologicalSpace G] [ContinuousMul G] (V : Subg
 the single at `g` with value `g • a`. -/
 theorem conj_single_one [TopologicalSpace M] [DiscreteTopology M] [ContinuousSMul G M]
     (hV : IsOpen (V : Set G)) (g : G) (a : M) :
-    conj V V M g (Subgroup.Normal.map_conj_toMonoidHom_eq V g).ge (single G V M hV 1 a) =
+    conj V V M g (show V.map (MulAut.conj g).toMonoidHom = V from
+        Subgroup.Normal.map_conj_eq V g).ge (single G V M hV 1 a) =
       single G V M hV g (g • a) := by
   ext x
   rw [conj_apply]
@@ -194,7 +195,8 @@ variable [V.FiniteIndex]
 image is the kernel of the trace (`range_traceKerCover`). -/
 noncomputable def traceKerCover : (G ⧸ V → DiscreteCoind G V M) →+[G] DiscreteCoind G V M where
   toFun φ := ∑ x : G ⧸ V,
-    (conj V V M x.out⁻¹ (Subgroup.Normal.map_conj_toMonoidHom_eq V _).ge (φ x) - φ x)
+    (conj V V M x.out⁻¹ (show V.map (MulAut.conj x.out⁻¹).toMonoidHom = V from
+      Subgroup.Normal.map_conj_eq V _).ge (φ x) - φ x)
   map_zero' := by simp
   map_add' φ ψ := by
     simp only [Pi.add_apply, _root_.map_add, ← Finset.sum_add_distrib]
@@ -206,7 +208,8 @@ noncomputable def traceKerCover : (G ⧸ V → DiscreteCoind G V M) →+[G] Disc
 theorem traceKerCover_apply (φ : G ⧸ V → DiscreteCoind G V M) :
     traceKerCover V M φ =
       ∑ x : G ⧸ V,
-        (conj V V M x.out⁻¹ (Subgroup.Normal.map_conj_toMonoidHom_eq V _).ge (φ x) - φ x) :=
+        (conj V V M x.out⁻¹ (show V.map (MulAut.conj x.out⁻¹).toMonoidHom = V from
+          Subgroup.Normal.map_conj_eq V _).ge (φ x) - φ x) :=
   (rfl)
 
 /-- The cover lands in the kernel of the trace, conjugation commuting with the trace. -/
@@ -214,7 +217,8 @@ theorem traceKerCover_mem_traceKer (φ : G ⧸ V → DiscreteCoind G V M) :
     traceKerCover V M φ ∈ traceKer G V M := by
   rw [mem_traceKer_iff, traceKerCover_apply, _root_.map_sum]
   refine Finset.sum_eq_zero fun x _ => ?_
-  rw [_root_.map_sub, trace_conj _ (Subgroup.Normal.map_conj_toMonoidHom_eq V _).symm, sub_self]
+  rw [_root_.map_sub, trace_conj _ (show V.map (MulAut.conj x.out⁻¹).toMonoidHom = V from
+    Subgroup.Normal.map_conj_eq V _).symm, sub_self]
 
 /-- **The image of the cover is the kernel of the trace.** For `f` in the kernel of the trace,
 the family of singles at `1` with values `x.out • f x.out⁻¹` is a preimage: conjugation moves them
