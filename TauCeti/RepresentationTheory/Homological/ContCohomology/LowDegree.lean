@@ -570,7 +570,7 @@ theorem sumCocycle_val (g : G) (f : Z2 G M) :
   (rfl)
 
 /-- The sum `∑ x, f (x, g)` of a two-cocycle is invariant. -/
-theorem sum_cocycle_mem_H0 (G' : Type u) [Group G'] [TopologicalSpace G'] [Fintype G']
+theorem sumCocycle_mem_H0 (G' : Type u) [Group G'] [TopologicalSpace G'] [Fintype G']
     (M' : Type v) [AddCommGroup M'] [TopologicalSpace M'] [IsTopologicalAddGroup M']
     [DistribMulAction G' M'] (f : Z2 G' M') (g' : G') :
     ∑ x : G', (f : G' × G' → M') (x, g') ∈ H0 G' M' :=
