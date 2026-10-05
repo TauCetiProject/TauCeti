@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Convex
+import TauCeti.Algebra.BigOperators.Intervals
 import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Convex.NormalForm
 import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.GaussBonnet
 import TauCeti.Data.Fin.Basic
@@ -64,20 +65,6 @@ variable {n : ℕ} [NeZero n] (P : ConvexPolygon n)
 
 /-! ### A polygon with an ideal vertex at `∞` -/
 
-/-- The bookkeeping of the angle sum: if the summands `f k` of a sum over `range (N + 3)` are
-`0`, `β 1`, `γ k + β k` for `2 ≤ k ≤ N + 1` and `γ (N + 2)`, the sum regroups as the sum of
-`β k + γ (k + 1)` over `1 ≤ k ≤ N + 1`. -/
-private theorem sum_range_eq_sum_Ico_add {f β γ : ℕ → ℝ} {N : ℕ} (h₀ : f 0 = 0)
-    (h₁ : f 1 = β 1) (hmid : ∀ k ∈ Finset.Ico 2 (N + 2), f k = γ k + β k)
-    (hlast : f (N + 2) = γ (N + 2)) :
-    ∑ k ∈ Finset.range (N + 3), f k = ∑ k ∈ Finset.Ico 1 (N + 2), (β k + γ (k + 1)) := by
-  rw [Finset.range_eq_Ico, Finset.sum_eq_sum_Ico_succ_bot (by omega),
-    Finset.sum_eq_sum_Ico_succ_bot (by omega), Finset.sum_Ico_succ_top (by omega : 2 ≤ N + 2),
-    Finset.sum_congr rfl hmid, Finset.sum_add_distrib, Finset.sum_add_distrib,
-    Finset.sum_eq_sum_Ico_succ_bot (by omega : 1 < N + 2) β, Finset.sum_Ico_add' γ,
-    Finset.sum_Ico_succ_top (by omega : 2 ≤ N + 2) γ, h₀, h₁, hlast]
-  ring
-
 /-- If `vertex 0` is `∞`, the angle sum is the sum of the finite angles of the triangles of the
 fan from `∞`, indexed by the casts to `Fin n` of the natural numbers `1 ≤ k < n - 1`. -/
 theorem sum_interiorAngle_eq_of_vertex_zero (h₀ : P.vertex 0 = .inr ∞) :
@@ -87,14 +74,15 @@ theorem sum_interiorAngle_eq_of_vertex_zero (h₀ : P.vertex 0 = .inr ∞) :
   obtain ⟨N, rfl⟩ : ∃ N, n = N + 3 := ⟨n - 3, by have := P.three_le; omega⟩
   have hsub {k : ℕ} (hk : k ≠ 0) : (k : Fin (N + 3)) - 1 = ((k - 1 : ℕ) : Fin (N + 3)) := by
     rw [sub_eq_iff_eq_add, ← Nat.cast_add_one, Nat.sub_add_cancel (Nat.one_le_iff_ne_zero.2 hk)]
+  have hN : N + 3 - 1 = N + 2 := by omega
   have hsum : ∑ i, P.interiorAngle i =
       ∑ k ∈ Finset.range (N + 3), P.interiorAngle (k : Fin (N + 3)) := by
     rw [← Fin.sum_univ_eq_sum_range]
     simp only [Fin.cast_val_eq_self]
-  rw [hsum, sum_range_eq_sum_Ico_add
+  rw [hsum, Finset.sum_range_eq_sum_Ico_add
     (β := fun k : ℕ ↦ vertexAngle (P.vertex k) (.inr ∞) (P.vertex (k + 1)))
     (γ := fun k : ℕ ↦ vertexAngle (P.vertex k) (P.vertex (k - 1)) (.inr ∞))]
-  · rw [show N + 3 - 1 = N + 2 by omega]
+  · rw [hN]
     refine Finset.sum_congr rfl fun k _ ↦ ?_
     rw [Nat.cast_add_one, add_sub_cancel_right]
   · rw [Nat.cast_zero]
@@ -190,6 +178,14 @@ theorem volume_carrier_inter_re_le_of_vertex_zero (h₀ : P.vertex 0 = .inr ∞)
         (by linarith [P.vertexAngle_add_vertexAngle_le_pi_natCast h₀ hk₀ hkn]),
       Finset.sum_Ico_succ_top hk₁]
 
+omit [NeZero n] in
+/-- Summing `π` over the `n - 2` indices `1 ≤ k < n - 1` gives `(n - 2) π`. -/
+private theorem sum_Ico_one_sub_one_pi (hn : 2 ≤ n) :
+    ∑ _k ∈ Finset.Ico 1 (n - 1), π = (n - 2) * π := by
+  have hcard : ((Finset.Ico 1 (n - 1)).card : ℝ) = n - 2 := by
+    rw [Nat.card_Ico, Nat.sub_sub, Nat.cast_sub hn, Nat.cast_ofNat]
+  rw [Finset.sum_const, nsmul_eq_mul, hcard]
+
 /-- The Gauss–Bonnet formula for a convex polygon whose `vertex 0` is `∞`. -/
 theorem volume_carrier_of_vertex_zero (h₀ : P.vertex 0 = .inr ∞) :
     volume P.carrier = ENNReal.ofReal ((n - 2) * π - ∑ i, P.interiorAngle i) := by
@@ -205,9 +201,7 @@ theorem volume_carrier_of_vertex_zero (h₀ : P.vertex 0 = .inr ∞) :
   rw [hcarrier, P.volume_carrier_inter_re_le_of_vertex_zero h₀ (by omega) (by omega),
     P.sum_interiorAngle_eq_of_vertex_zero h₀]
   simp_rw [sub_sub]
-  rw [Finset.sum_sub_distrib, Finset.sum_const, Nat.card_Ico, nsmul_eq_mul, Nat.sub_sub,
-    Nat.cast_sub (by omega : 2 ≤ n)]
-  norm_num
+  rw [Finset.sum_sub_distrib, sum_Ico_one_sub_one_pi (by omega)]
 
 /-- The angular defect of a convex polygon whose `vertex 0` is `∞` is nonnegative. -/
 theorem sum_interiorAngle_le_of_vertex_zero (h₀ : P.vertex 0 = .inr ∞) :
@@ -218,35 +212,9 @@ theorem sum_interiorAngle_le_of_vertex_zero (h₀ : P.vertex 0 = .inr ∞) :
       (Nat.one_le_iff_ne_zero.1 (Finset.mem_Ico.1 hk).1)
       (by have := (Finset.mem_Ico.1 hk).2; omega)
   rw [P.sum_interiorAngle_eq_of_vertex_zero h₀]
-  refine hle.trans_eq ?_
-  rw [Finset.sum_const, Nat.card_Ico, nsmul_eq_mul, Nat.sub_sub, Nat.cast_sub (by omega : 2 ≤ n)]
-  norm_num
+  exact hle.trans_eq (sum_Ico_one_sub_one_pi (by omega))
 
 /-! ### Gauss–Bonnet -/
-
-/-- A convex polygon with an ideal vertex has the area and angle sum of some convex polygon with
-`vertex 0 = ∞`. -/
-theorem exists_vertex_zero_eq_infty {i : Fin n} {ξ : OnePoint ℝ} (hi : P.vertex i = .inr ξ) :
-    ∃ Q : ConvexPolygon n, Q.vertex 0 = .inr ∞ ∧ volume Q.carrier = volume P.carrier ∧
-      ∑ j, Q.interiorAngle j = ∑ j, P.interiorAngle j := by
-  obtain ⟨h, hh⟩ := MulAction.exists_smul_eq PSL(2, ℝ) ξ ∞
-  refine ⟨h • P.rotate i, ?_, ?_, ?_⟩
-  · rw [vertex_smul, vertex_rotate, zero_add, hi, Sum.smul_inr, hh]
-  · rw [carrier_smul, measure_smul, carrier_rotate]
-  · simp_rw [interiorAngle_smul]
-    exact P.sum_interiorAngle_rotate i
-
-/-- A convex polygon with an ideal vertex has the area and angle sum of one with
-`vertex 0 = ∞`. -/
-private theorem exists_vertex_zero_eq_infty_of_not_forall
-    (h : ¬∀ i, ∃ z : ℍ, P.vertex i = .inl z) :
-    ∃ Q : ConvexPolygon n, Q.vertex 0 = .inr ∞ ∧ volume Q.carrier = volume P.carrier ∧
-      ∑ j, Q.interiorAngle j = ∑ j, P.interiorAngle j := by
-  push Not at h
-  obtain ⟨i, hi⟩ := h
-  cases hv : P.vertex i with
-  | inl z => exact absurd hv (hi z)
-  | inr ξ => exact P.exists_vertex_zero_eq_infty hv
 
 /-- **The Gauss–Bonnet formula for convex hyperbolic polygons with ideal vertices**: the area of
 a convex polygon with `n` vertices in `ℍ ∪ ∂ℍ` is `(n - 2) π` minus the sum of its interior
@@ -259,7 +227,7 @@ theorem volume_carrier :
     simp_rw [CompactConvexPolygon.carrier_toConvexPolygon,
       CompactConvexPolygon.interiorAngle_toConvexPolygon]
     exact Q.volume_carrier
-  · obtain ⟨Q, hQ₀, hvol, hsum⟩ := P.exists_vertex_zero_eq_infty_of_not_forall h
+  · obtain ⟨Q, hQ₀, hvol, hsum⟩ := P.exists_vertex_zero_eq_infty_of_not_forall_eq_inl h
     rw [← hvol, ← hsum]
     exact Q.volume_carrier_of_vertex_zero hQ₀
 
@@ -270,7 +238,7 @@ theorem sum_interiorAngle_le : ∑ i, P.interiorAngle i ≤ (n - 2) * π := by
   · obtain ⟨Q, rfl⟩ := P.exists_eq_toConvexPolygon h
     simp_rw [CompactConvexPolygon.interiorAngle_toConvexPolygon]
     exact Q.sum_interiorAngle_le
-  · obtain ⟨Q, hQ₀, -, hsum⟩ := P.exists_vertex_zero_eq_infty_of_not_forall h
+  · obtain ⟨Q, hQ₀, -, hsum⟩ := P.exists_vertex_zero_eq_infty_of_not_forall_eq_inl h
     rw [← hsum]
     exact Q.sum_interiorAngle_le_of_vertex_zero hQ₀
 
