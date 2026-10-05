@@ -50,11 +50,6 @@ subgroup is relatively compact.
 * `TauCeti.DiscreteCoind.transIsoBot`: its case `V = W = ⊥`,
   `Coind_U^G (Coind_1^U A) ≅ Coind_1^G A`, the identification dimension shifting uses.
 
-## Main results
-
-* `Subgroup.subgroupOf_smul_eq`: the actions of `V` and of `V.subgroupOf U` on a `G`-set agree,
-  the compatibility `TauCeti.DiscreteCoind.transIso` takes as input for `W = V`.
-
 ## References
 
 * J. Neukirch, A. Schmidt, K. Wingberg, *Cohomology of Number Fields*, 2nd ed., Springer (2008),
@@ -63,21 +58,6 @@ subgroup is relatively compact.
 -/
 
 public section
-
-namespace TauCeti
-
-/-- The actions of a subgroup `V` of `G` and of its copy `V.subgroupOf U` inside a subgroup `U`
-on a `G`-set agree on elements with the same image in `G`: both are restrictions of the action of
-`G`. This is the compatibility of actions under which `TauCeti.DiscreteCoind.transIso` identifies
-`Coind_U^G (Coind_{V ⊓ U}^U M)` with `Coind_V^G M`. -/
-theorem _root_.Subgroup.subgroupOf_smul_eq {G : Type*} [Group G] (U V : Subgroup G)
-    (M : Type*) [MulAction G M] (v : V.subgroupOf U) (w : V) (a : M)
-    (h : ((v : U) : G) = (w : G)) : w • a = v • a := by
-  -- The two subgroup actions are restrictions of the ambient `G`-action; expose their values.
-  change (w : G) • a = ((v : U) : G) • a
-  exact congrArg (· • a) h.symm
-
-end TauCeti
 
 namespace TauCeti.DiscreteCoind
 

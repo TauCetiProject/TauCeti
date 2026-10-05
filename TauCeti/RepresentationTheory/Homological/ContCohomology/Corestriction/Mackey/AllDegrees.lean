@@ -8,6 +8,7 @@ module
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Corestriction.AllDegreeTransitivity
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Corestriction.Conjugation
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Corestriction.Mackey.Basic
+import TauCeti.Algebra.Group.Subgroup.Map
 
 /-!
 # The Mackey double-coset formula in every degree
