@@ -48,9 +48,11 @@ theorem isRight_vertex_pair_add_one (j : Fin n) :
 /-- Following any number of side pairings preserves whether the vertex is ideal. -/
 theorem isRight_vertex_iterate_next (j : Fin n) (m : ℕ) :
     (P.vertex (σ.next^[m] j)).isRight = (P.vertex j).isRight := by
-  induction m with
-  | zero => rfl
-  | succ m ih => simpa [Function.iterate_succ_apply'] using ih
+  exact congrFun (Function.iterate_invariant (f := σ.next)
+    (g := fun i ↦ (P.vertex i).isRight) (by
+      funext i
+      simpa only [Function.comp_apply, σ.next_apply] using
+        σ.isRight_vertex_pair_add_one i) m) j
 
 /-- Every vertex on a cycle has the same type, finite or ideal, as its starting vertex. -/
 theorem isRight_vertex_of_mem_cycle {j i : Fin n} (hi : i ∈ σ.cycle j) :
@@ -63,7 +65,8 @@ theorem isRight_vertex_of_mem_cycle {j i : Fin n} (hi : i ∈ σ.cycle j) :
 theorem cycleMap_smul_eq_self_of_vertex_eq_inr {j : Fin n} {c : OnePoint ℝ}
     (hj : P.vertex j = .inr c) : σ.cycleMap j • c = c := by
   have h := σ.cycleMap_smul_vertex j
-  simpa [hj] using h
+  rw [hj, Sum.smul_inr, Sum.inr.injEq] at h
+  exact h
 
 /-- All angles on the cycle of an ideal vertex vanish, since that cycle consists of ideal
 vertices. -/
