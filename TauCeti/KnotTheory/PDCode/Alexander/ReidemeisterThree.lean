@@ -44,8 +44,6 @@ relations of the triangle.
 
 ## Main results
 
-* `TauCeti.OrientedPDCode.alexanderGenerator_crossing_two`: the relation of a crossing read from
-  its slots `0` and `3`.
 * `TauCeti.OrientedPDCode.alexanderWeight_reidemeisterThree`: the move exchanges the weights of the
   first and third crossing of the triangle.
 * `TauCeti.OrientedPDCode.elementaryIdeal_reidemeisterThree`: the move keeps every elementary ideal.
@@ -73,129 +71,6 @@ open PDCode
 namespace OrientedPDCode
 
 variable {n : ℕ}
-
-/-! ### The relations of a crossing read from its slots `0` and `3` -/
-
-section Downward
-
-variable (D : OrientedPDCode n) (i : Fin n)
-
-private theorem orientation_crossing_add_two (slot : Fin 4) :
-    D.orientation (D.crossing i (slot + 2)) = !D.orientation (D.crossing i slot) := by
-  rw [← oppositeCrossingSlot_apply, crossing_apply, crossing_apply,
-    D.orientation_oppositeCrossingSlot]
-
-private theorem orientation_crossing_of_add_two_eq {s t : Fin 4} (hst : s + 2 = t) :
-    D.orientation (D.crossing i t) = !D.orientation (D.crossing i s) := by
-  rw [← hst, orientation_crossing_add_two]
-
-private theorem alexanderWeight_add_two_mul_self (slot : Fin 4) :
-    D.alexanderWeight i (slot + 2) * D.alexanderWeight i slot = 1 := by
-  have hover : D.isOver i (slot + 2) = D.isOver i slot := by
-    rw [← oppositeCrossingSlot_apply, isOver_oppositeCrossingSlot]
-  rw [alexanderWeight_def, alexanderWeight_def, hover, orientation_crossing_add_two]
-  generalize D.crossingSign i = e
-  cases D.isOver i slot <;> cases D.orientation (D.crossing i slot) <;>
-    simp only [Bool.not_true, Bool.not_false, Bool.false_eq_true, ↓reduceIte, mul_one, ← T_add,
-      neg_add_cancel, add_neg_cancel, T_zero]
-
-private theorem alexanderWeight_zero_of_overPair_false (h : D.overPair i = false) :
-    D.alexanderWeight i 0 = 1 :=
-  D.alexanderWeight_of_isOver (by simp [h])
-
-private theorem alexanderWeight_three_of_overPair_true (h : D.overPair i = true) :
-    D.alexanderWeight i 3 = 1 :=
-  D.alexanderWeight_of_isOver (by simp [h])
-
-private theorem alexanderWeight_three_of_overPair_false (h : D.overPair i = false) :
-    D.alexanderWeight i 3 = T (if D.orientation (D.crossing i 0) then 1 else -1) := by
-  rw [D.alexanderWeight_of_not_isOver (by simp [h]), crossingSign_def,
-    D.orientation_crossing_of_add_two_eq i (s := 1) (t := 3) rfl, h]
-  cases D.orientation (D.crossing i 0) <;> cases D.orientation (D.crossing i 1) <;> simp
-
-private theorem alexanderWeight_zero_of_overPair_true (h : D.overPair i = true) :
-    D.alexanderWeight i 0 = T (if D.orientation (D.crossing i 3) then -1 else 1) := by
-  rw [D.alexanderWeight_of_not_isOver (by simp [h]), crossingSign_def,
-    D.orientation_crossing_of_add_two_eq i (s := 1) (t := 3) rfl, h]
-  cases D.orientation (D.crossing i 0) <;> cases D.orientation (D.crossing i 1) <;> simp
-
-private theorem alexanderWeight_zero_eq_one_or_three_eq_one :
-    D.alexanderWeight i 0 = 1 ∨ D.alexanderWeight i 3 = 1 := by
-  cases h : D.overPair i
-  · exact .inl (D.alexanderWeight_zero_of_overPair_false i h)
-  · exact .inr (D.alexanderWeight_three_of_overPair_true i h)
-
-/-- The relation of a crossing at its slot `0`, read from the two slots `0` and `3`: the generator
-of slot `2` is `w • x(0) + (1 - w) • x(3)`, with `w` the weight of slot `0`. One of the two strands
-is over, so this agrees with `TauCeti.OrientedPDCode.alexanderGenerator_crossing_add_two`, which
-reads it from slots `0` and `1`. -/
-theorem alexanderGenerator_crossing_two :
-    D.alexanderGenerator (.inl (D.crossing i 2)) =
-      D.alexanderWeight i 0 • D.alexanderGenerator (.inl (D.crossing i 0)) +
-        (1 - D.alexanderWeight i 0) • D.alexanderGenerator (.inl (D.crossing i 3)) := by
-  have h₂ := D.alexanderGenerator_crossing_add_two i 0
-  have h₁ := D.alexanderGenerator_crossing_add_two i 3
-  simp only [zero_add, Fin.reduceAdd] at h₂ h₁
-  rw [h₂, h₁]
-  rcases D.alexanderWeight_zero_eq_one_or_three_eq_one i with h | h <;> rw [h] <;> module
-
-/-- A family of elements satisfying the relation of a crossing at its slot `3` and the relation
-of `TauCeti.OrientedPDCode.alexanderGenerator_crossing_two` satisfies the relations at all four of
-its slots. -/
-private theorem apply_crossing_add_two_of_two_of_one {M : Type*} [AddCommGroup M]
-    [Module ℤ[T;T⁻¹] M] (v : Fin (4 * n) → M)
-    (h₂ : v (D.crossing i 2) = D.alexanderWeight i 0 • v (D.crossing i 0) +
-      (1 - D.alexanderWeight i 0) • v (D.crossing i 3))
-    (h₁ : v (D.crossing i 1) = D.alexanderWeight i 3 • v (D.crossing i 3) +
-      (1 - D.alexanderWeight i 3) • v (D.crossing i 0)) (slot : Fin 4) :
-    v (D.crossing i (slot + 2)) = D.alexanderWeight i slot • v (D.crossing i slot) +
-      (1 - D.alexanderWeight i slot) • v (D.crossing i (slot + 1)) := by
-  have w₂ := D.alexanderWeight_add_two_mul_self i 0
-  have w₃ := D.alexanderWeight_add_two_mul_self i 1
-  simp only [zero_add, Fin.reduceAdd] at w₂ w₃
-  fin_cases slot <;> simp only [Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk, Fin.reduceAdd,
-    Fin.isValue, zero_add]
-  · rw [h₂, h₁]
-    rcases D.alexanderWeight_zero_eq_one_or_three_eq_one i with h | h <;> rw [h] <;> module
-  · rcases D.alexanderWeight_zero_eq_one_or_three_eq_one i with h | h
-    · rw [h, one_smul, sub_self, zero_smul, add_zero] at h₂
-      rw [h₂, h₁]
-      linear_combination (norm := module) w₃ • (v (D.crossing i 0) - v (D.crossing i 3))
-    · rw [h, one_mul] at w₃
-      rw [h, one_smul, sub_self, zero_smul, add_zero] at h₁
-      rw [w₃, h₁]
-      module
-  · rcases D.alexanderWeight_zero_eq_one_or_three_eq_one i with h | h
-    · rw [h, mul_one] at w₂
-      rw [h, one_smul, sub_self, zero_smul, add_zero] at h₂
-      rw [w₂, h₂]
-      module
-    · rw [h₂]
-      linear_combination (norm := module) w₂ • (v (D.crossing i 3) - v (D.crossing i 0))
-  · exact h₁
-
-/-- The weights of a crossing are determined by its over-pair indicator and the orientations of
-its slots `0` and `3`. -/
-private theorem alexanderWeight_eq_of_orientation_eq {m : ℕ} {E : OrientedPDCode m} {j : Fin m}
-    (hb : D.overPair i = E.overPair j)
-    (h₀ : D.orientation (D.crossing i 0) = E.orientation (E.crossing j 0))
-    (h₃ : D.orientation (D.crossing i 3) = E.orientation (E.crossing j 3)) (slot : Fin 4) :
-    D.alexanderWeight i slot = E.alexanderWeight j slot := by
-  have h₁ : D.orientation (D.crossing i 1) = E.orientation (E.crossing j 1) := by
-    rw [← Bool.not_inj_iff, ← D.orientation_crossing_of_add_two_eq i (s := 1) (t := 3) rfl,
-      ← E.orientation_crossing_of_add_two_eq j (s := 1) (t := 3) rfl, h₃]
-  have h₂ : D.orientation (D.crossing i 2) = E.orientation (E.crossing j 2) := by
-    rw [D.orientation_crossing_of_add_two_eq i (s := 0) (t := 2) rfl,
-      E.orientation_crossing_of_add_two_eq j (s := 0) (t := 2) rfl, h₀]
-  have hsign : D.crossingSign i = E.crossingSign j := by
-    rw [crossingSign_def, crossingSign_def, h₀, h₁, hb]
-  have hover : D.isOver i slot = E.isOver j slot := by
-    rw [isOver_def, isOver_def, hb]
-  rw [alexanderWeight_def, alexanderWeight_def, hover, hsign]
-  fin_cases slot <;> simp only [Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk, Fin.isValue, h₀, h₁, h₂,
-    h₃]
-
-end Downward
 
 /-! ### The weights of the three crossings of a Reidemeister triangle -/
 
@@ -560,7 +435,7 @@ private def fwdHom (h : D.HasReidemeisterThreeTriangle c) :
       simp only [Sum.elim_inl]
       by_cases hi : i ∈ Set.range c
       · obtain ⟨j, rfl⟩ := hi
-        exact apply_crossing_add_two_of_two_of_one D (c j) (fwdValue D c)
+        exact apply_crossing_add_two_of_two_of_one D (fwdValue D c) (c j)
           (fwdValue_downward D c h j).1 (fwdValue_downward D c h j).2 slot
       · have := (D.reidemeisterThree c).alexanderGenerator_crossing_add_two i slot
         rwa [crossing_reidemeisterThree, crossing_reidemeisterThree, crossing_reidemeisterThree,
@@ -699,7 +574,7 @@ private def bwdHom (h : D.HasReidemeisterThreeTriangle c) :
       simp only [Sum.elim_inl]
       by_cases hi : i ∈ Set.range c
       · obtain ⟨j, rfl⟩ := hi
-        have := apply_crossing_add_two_of_two_of_one (D.reidemeisterThree c) (c j) (bwdValue D c)
+        have := apply_crossing_add_two_of_two_of_one (D.reidemeisterThree c) (bwdValue D c) (c j)
           (by simpa only [crossing_reidemeisterThree] using (bwdValue_downward D c h j).1)
           (by simpa only [crossing_reidemeisterThree] using (bwdValue_downward D c h j).2) slot
         simpa only [crossing_reidemeisterThree] using this
