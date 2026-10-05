@@ -30,6 +30,9 @@ list, as happens to the coefficient ring of a grid complex when a grid diagram i
 * `MvPolynomial.polynomial_eval_finSuccEquiv'`: evaluating the polynomial variable at `a`
   substitutes `a` for `X p`.
 * `MvPolynomial.finSuccEquiv'_zero`: for `p = 0` this is Mathlib's `MvPolynomial.finSuccEquiv`.
+* `MvPolynomial.eval_polynomial_eval_C_finSuccEquiv`: evaluating the polynomial variable of
+  `finSuccEquiv R n f` at a constant `y`, and then the other variables at `s`, evaluates `f` at
+  `Fin.cons y s`.
 * `MvPolynomial.finSuccEquiv'_map`, `MvPolynomial.finSuccEquiv_map`: singling out a variable
   commutes with mapping the coefficients along a ring homomorphism.
 * `MvPolynomial.polynomial_eval_map_finSuccEquiv'`, `MvPolynomial.polynomial_eval_map_finSuccEquiv`:
@@ -113,6 +116,13 @@ theorem polynomial_eval_finSuccEquiv' (p : Fin (n + 1)) (a : MvPolynomial (Fin n
 /-- Singling out the variable `X 0` is `MvPolynomial.finSuccEquiv`. -/
 theorem finSuccEquiv'_zero : finSuccEquiv' R (0 : Fin (n + 1)) = finSuccEquiv R n := by
   rw [finSuccEquiv', finSuccEquiv, _root_.finSuccEquiv'_zero]
+
+/-- Evaluating the polynomial variable at the constant `y`, and then the variables `X 1, …, X n`
+at the point `s`, is evaluating at the point `Fin.cons y s`. -/
+theorem eval_polynomial_eval_C_finSuccEquiv (s : Fin n → R) (y : R)
+    (f : MvPolynomial (Fin (n + 1)) R) :
+    eval s ((finSuccEquiv R n f).eval (C y)) = eval (Fin.cons y s) f := by
+  rw [← Polynomial.eval₂_at_apply, eval_C, ← Polynomial.eval_map, ← eval_eq_eval_mv_eval']
 
 section Map
 
