@@ -1,0 +1,157 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Analysis.Calculus.Morse.GradientFlow
+public import TauCeti.Dynamics.Flow.Stable
+import Mathlib.MeasureTheory.Integral.IntegralEqImproper
+
+/-!
+# Finite energy of negative gradient trajectories
+
+For a negative gradient trajectory whose function values converge at both ends, the squared
+norm of the gradient is integrable on the whole real line, and its integral is the difference
+of the limiting values. Integrability is a conclusion, not an assumption. No continuity of the
+gradient or nondegeneracy of the limiting points is required: the nonnegative derivative of
+`-f ∘ γ` is automatically integrable on compact intervals, and convergence of its primitive
+controls the improper integrals.
+
+The half-line formulas identify the energy remaining before or after any time. Mathlib's
+`MeasureTheory.tendsto_integral_Iic_zero` and `MeasureTheory.tendsto_integral_Ioi_zero` give the
+vanishing of these tails. For a connecting orbit from `p` to `q`, the total energy is therefore
+`f p - f q`. This is the uniform energy bound used when extracting broken trajectories between
+fixed critical points.
+
+## References
+
+* M. Audin and M. Damian, *Morse Theory and Floer Homology*, Springer Universitext, 2014,
+  Chapter 2.
+
+The improper-integral arguments use Mathlib's nonnegative-derivative FTC and
+`MeasureTheory.integrableOn_Iic_of_intervalIntegral_norm_tendsto`.
+-/
+
+public section
+
+open Filter Function InnerProductSpace MeasureTheory Set
+open scoped Gradient Interval Topology
+
+namespace TauCeti
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
+  {f : E → ℝ} {γ : ℝ → E} {cMinus cPlus : ℝ}
+
+namespace IsIntegralCurve
+
+/-- The squared gradient along a negative gradient trajectory is integrable on every compact
+time interval, assuming only differentiability of the defining function along the trajectory. -/
+theorem intervalIntegrable_norm_gradient_sq
+    (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x)) (hf : ∀ t, DifferentiableAt ℝ f (γ t))
+    (a b : ℝ) : IntervalIntegrable (fun t ↦ ‖∇ f (γ t)‖ ^ 2) volume a b := by
+  have hd : ∀ t, HasDerivAt (fun t ↦ -f (γ t)) (‖∇ f (γ t)‖ ^ 2) t := by
+    intro t
+    simpa only [neg_neg, Function.comp_def] using
+      (hasDerivAt_comp_neg_gradient hγ (hf t)).fun_neg
+  exact intervalIntegral.intervalIntegrable_deriv_of_nonneg
+    (fun t _ ↦ (hd t).continuousAt.continuousWithinAt) (fun t _ ↦ hd t)
+    (fun t _ ↦ sq_nonneg _)
+
+/-- A finite forward limiting value implies finite energy on every forward half-line. -/
+theorem integrableOn_Ioi_norm_gradient_sq
+    (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x)) (hf : ∀ t, DifferentiableAt ℝ f (γ t))
+    (hplus : Tendsto (f ∘ γ) atTop (𝓝 cPlus)) (a : ℝ) :
+    IntegrableOn (fun t ↦ ‖∇ f (γ t)‖ ^ 2) (Ioi a) := by
+  apply integrableOn_Ioi_deriv_of_nonneg'
+    (g := fun t ↦ -f (γ t)) (l := -cPlus)
+  · intro t _
+    simpa only [neg_neg, Function.comp_def] using
+      (hasDerivAt_comp_neg_gradient hγ (hf t)).fun_neg
+  · exact fun t _ ↦ sq_nonneg _
+  · exact hplus.neg
+
+/-- The energy after time `a` is the drop from the value at `a` to the forward limiting value. -/
+theorem integral_Ioi_norm_gradient_sq_eq_sub
+    (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x)) (hf : ∀ t, DifferentiableAt ℝ f (γ t))
+    (hplus : Tendsto (f ∘ γ) atTop (𝓝 cPlus)) (a : ℝ) :
+    ∫ t in Ioi a, ‖∇ f (γ t)‖ ^ 2 = f (γ a) - cPlus := by
+  have h := integral_Ioi_of_hasDerivAt_of_nonneg'
+    (g := fun t ↦ -f (γ t)) (g' := fun t ↦ ‖∇ f (γ t)‖ ^ 2)
+    (a := a) (l := -cPlus)
+    (fun t _ ↦ by simpa only [neg_neg, Function.comp_def] using
+      (hasDerivAt_comp_neg_gradient hγ (hf t)).fun_neg)
+    (fun t _ ↦ sq_nonneg _) hplus.neg
+  simpa only [neg_sub_neg] using h
+
+/-- A finite backward limiting value implies finite energy on every backward half-line. -/
+theorem integrableOn_Iic_norm_gradient_sq
+    (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x)) (hf : ∀ t, DifferentiableAt ℝ f (γ t))
+    (hminus : Tendsto (f ∘ γ) atBot (𝓝 cMinus)) (a : ℝ) :
+    IntegrableOn (fun t ↦ ‖∇ f (γ t)‖ ^ 2) (Iic a) := by
+  refine integrableOn_Iic_of_intervalIntegral_norm_tendsto (cMinus - f (γ a)) a
+    (fun t ↦ (intervalIntegrable_norm_gradient_sq hγ hf t a).1) tendsto_id ?_
+  simp only [Real.norm_of_nonneg (sq_nonneg _)]
+  simp_rw [integral_norm_gradient_sq_eq_sub hγ hf
+    (intervalIntegrable_norm_gradient_sq hγ hf _ a)]
+  exact hminus.sub_const _
+
+/-- The energy before time `a` is the drop from the backward limiting value to the value at `a`. -/
+theorem integral_Iic_norm_gradient_sq_eq_sub
+    (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x)) (hf : ∀ t, DifferentiableAt ℝ f (γ t))
+    (hminus : Tendsto (f ∘ γ) atBot (𝓝 cMinus)) (a : ℝ) :
+    ∫ t in Iic a, ‖∇ f (γ t)‖ ^ 2 = cMinus - f (γ a) := by
+  have h := integral_Iic_of_hasDerivAt_of_tendsto'
+    (f := fun t ↦ -f (γ t)) (f' := fun t ↦ ‖∇ f (γ t)‖ ^ 2)
+    (a := a) (m := -cMinus)
+    (fun t _ ↦ by simpa only [neg_neg, Function.comp_def] using
+      (hasDerivAt_comp_neg_gradient hγ (hf t)).fun_neg)
+    (integrableOn_Iic_norm_gradient_sq hγ hf hminus a) hminus.neg
+  simpa only [neg_sub_neg] using h
+
+/-- A negative gradient trajectory with finite limiting values at both ends has finite total
+energy. Neither continuity of the gradient nor nondegeneracy of the endpoints is needed. -/
+theorem integrable_norm_gradient_sq
+    (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x)) (hf : ∀ t, DifferentiableAt ℝ f (γ t))
+    (hminus : Tendsto (f ∘ γ) atBot (𝓝 cMinus))
+    (hplus : Tendsto (f ∘ γ) atTop (𝓝 cPlus)) :
+    Integrable (fun t ↦ ‖∇ f (γ t)‖ ^ 2) := by
+  rw [← integrableOn_univ, ← Iic_union_Ioi (a := (0 : ℝ)), integrableOn_union]
+  exact ⟨integrableOn_Iic_norm_gradient_sq hγ hf hminus 0,
+    integrableOn_Ioi_norm_gradient_sq hγ hf hplus 0⟩
+
+/-- **Total energy identity.** The energy of a negative gradient trajectory with finite limiting
+values at both ends equals their difference. Integrability is proved from these limits. -/
+theorem integral_norm_gradient_sq_eq_sub_of_tendsto
+    (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x)) (hf : ∀ t, DifferentiableAt ℝ f (γ t))
+    (hminus : Tendsto (f ∘ γ) atBot (𝓝 cMinus))
+    (hplus : Tendsto (f ∘ γ) atTop (𝓝 cPlus)) :
+    ∫ t, ‖∇ f (γ t)‖ ^ 2 = cMinus - cPlus := by
+  have h := integral_of_hasDerivAt_of_tendsto
+    (f := fun t ↦ -f (γ t)) (f' := fun t ↦ ‖∇ f (γ t)‖ ^ 2)
+    (fun t ↦ by simpa only [neg_neg, Function.comp_def] using
+      (hasDerivAt_comp_neg_gradient hγ (hf t)).fun_neg)
+    (integrable_norm_gradient_sq hγ hf hminus hplus) hminus.neg hplus.neg
+  simpa only [neg_sub_neg] using h
+
+end IsIntegralCurve
+
+end TauCeti
+
+namespace Flow
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
+  {φ : _root_.Flow ℝ E} {f : E → ℝ} {p q x : E}
+
+/-- Every orbit connecting `p` to `q` has total energy `f p - f q`. -/
+theorem IsNegativeGradient.integral_norm_gradient_sq_eq_sub
+    (hφ : IsNegativeGradient φ f) (hf : ∀ t, DifferentiableAt ℝ f (φ t x))
+    (hfp : ContinuousAt f p) (hfq : ContinuousAt f q)
+    (hx : x ∈ unstableSet φ p ∩ stableSet φ q) :
+    ∫ t, ‖∇ f (φ t x)‖ ^ 2 = f p - f q :=
+  TauCeti.IsIntegralCurve.integral_norm_gradient_sq_eq_sub_of_tendsto (hφ.isIntegralCurve x) hf
+    (hfp.tendsto.comp (mem_unstableSet.mp hx.1))
+    (hfq.tendsto.comp (mem_stableSet.mp hx.2))
+
+end Flow
