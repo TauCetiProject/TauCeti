@@ -20,8 +20,8 @@ every coefficient algebra, including in characteristics dividing `n`.
 Over a nontrivial coefficient ring, the normalized matrix unit at a root of the diagonal root
 datum of `SL_{r+1}` lies in this Lie algebra exactly when the root is positive for the
 consecutive-root base. Thus the chosen upper-triangular Borel selects the existing positive
-system, and contains the matrix units at its simple roots. These are the normalized tangent
-vectors used in the standard pinning.
+system, and contains the matrix units at its simple roots. This containment supplies the
+Lie-algebra condition on the normalized simple-root vectors in a standard pinning.
 
 The matrix Lie algebra reuses `TauCeti.upperTriangular`; the tangent equivalence restricts
 `SpecialLinear.tangentLieEquivSl` along `HopfIdeal.quotientLieEquiv`.
