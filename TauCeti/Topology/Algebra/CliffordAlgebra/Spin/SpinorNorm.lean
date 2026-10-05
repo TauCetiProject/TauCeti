@@ -98,15 +98,17 @@ theorem isOpen_range_spinToSpecialOrthogonal (hQ : Q.Nondegenerate)
   rw [range_spinToSpecialOrthogonal_eq_ker_spinorNorm Q hQ]
   exact isOpen_ker_spinorNorm Q hQ hsq
 
-/-- **The spinor norm on `O(Q)` is continuous.** If the squares are open in `Kˣ`, the kernel of
-the spinor norm is open, and a homomorphism with open kernel is continuous. -/
+/-- **The spinor norm on `O(Q)` is continuous.** If `Q` is nondegenerate and the squares are open
+in `Kˣ`, then the spinor norm `O(Q) → Kˣ ⧸ (Kˣ)²` is continuous, where the square-class group
+carries its quotient topology from `Kˣ`. -/
 theorem continuous_orthogonalSpinorNorm (hQ : Q.Nondegenerate)
     (hsq : IsOpen (Subgroup.square Kˣ : Set Kˣ)) :
     Continuous (orthogonalSpinorNorm Q hQ) :=
   (orthogonalSpinorNorm Q hQ).continuous_of_isOpen_ker (isOpen_ker_orthogonalSpinorNorm Q hQ hsq)
 
-/-- **The spinor norm on `SO(Q)` is continuous.** If the squares are open in `Kˣ`, the kernel of
-the spinor norm is open, and a homomorphism with open kernel is continuous. -/
+/-- **The spinor norm on `SO(Q)` is continuous.** If `Q` is nondegenerate and the squares are
+open in `Kˣ`, then the spinor norm `SO(Q) → Kˣ ⧸ (Kˣ)²` is continuous, where the square-class group
+carries its quotient topology from `Kˣ`. -/
 theorem continuous_spinorNorm (hQ : Q.Nondegenerate)
     (hsq : IsOpen (Subgroup.square Kˣ : Set Kˣ)) :
     Continuous (spinorNorm Q hQ) :=
