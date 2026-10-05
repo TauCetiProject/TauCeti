@@ -58,9 +58,8 @@ the field norm `N_{L/K}` (`TauCeti.ClassFieldTheory.groundNorm_layerRestriction_
 The absolute Artin map is natural in the local field (`artinMap_congr`). A continuous isomorphism
 `e : K ≃+* K'`, extended to the algebraic closures by `e'`, carries `Art_K(x)` to `Art_{K'}(e x)`.
 Conjugation by `e'` is determined only up to an inner automorphism of `G_{K'}`, which is
-invisible in `G_{K'}^ab`. The proof regards `K` as an extension of degree one of `K'` and applies
-`artinMap_norm`: the norm of that extension is `e`, and `absoluteGaloisGroupExtend` is conjugation
-by `e'` up to an inner automorphism (`TauCeti.exists_absoluteGaloisGroupExtend_eq_conj`).
+invisible in `G_{K'}^ab`. This transports Artin symbols across identifications of local fields,
+for instance from a completion of a number field to a concrete model such as `ℚ_[p]`.
 
 ## Main definitions
 
@@ -371,6 +370,8 @@ theorem artinMap_congr (e : K ≃+* K') (he : Continuous e)
     rw [RingHom.algebraMap_toAlgebra, ← e.toRingHom.map_vle_map_iff_of_continuous he]
     simp⟩
   let iota : K →ₐ[K'] SeparableClosure K' := (Algebra.ofId K' (SeparableClosure K')).comp eA.symm
+  -- Along `iota`, `absoluteGaloisGroupExtend` is conjugation by `e'` up to an inner automorphism,
+  -- and the norm of `K/K'` is `e`, so `artinMap_norm` gives the claim.
   obtain ⟨γ, hγ⟩ := exists_absoluteGaloisGroupExtend_eq_conj K' K iota e' he'
   have hnorm : Algebra.normUnits K' x = Units.map e.toMonoidHom x := by
     ext
