@@ -86,17 +86,18 @@ namespace TauCeti
 variable {F : Type*} [Field F] {v : _root_.Valuation F ℤᵐ⁰}
 
 /-- A supplied reduced Artin–Schreier pole makes the class of `u` nontrivial.
-No perfection or function-field hypothesis is needed. -/
+Only exponential characteristic `p > 1` is needed; no perfection or function-field
+hypothesis is needed. -/
 theorem ne_pow_sub_self_of_exists_reduced_artinSchreier_pole
-    (p : ℕ) [Fact p.Prime] [CharP F p] {u : F}
+    (p : ℕ) (hp : 1 < p) [ExpChar F p] {u : F}
     (hpole : ∃ w₀ : F, v.ord (u - (w₀ ^ p - w₀)) < 0 ∧
       ¬ (p : ℤ) ∣ v.ord (u - (w₀ ^ p - w₀))) :
     ∀ w : F, w ^ p - w ≠ u := by
   obtain ⟨w₀, hneg, hdiv⟩ := hpole
   intro w hw
   apply v.ne_pow_sub_self_of_ord_neg_of_not_dvd
-    (Fact.out : p.Prime).one_lt hneg hdiv (w - w₀)
-  rw [← hw, sub_pow_char]
+    hp hneg hdiv (w - w₀)
+  rw [← hw, sub_pow_expChar]
   ring
 
 /-- A negative order not divisible by `n > 1` is maximal among all representatives

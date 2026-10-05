@@ -45,7 +45,8 @@ exactness of the constants over any function field with exact constants. For an 
 `two_mul_genus_eq_of_exists_reduced_artinSchreier_poles_ratFunc` specialises this to
 `2g = (p - 1) (∑ P ∈ S, (m P + 1) deg P - 2)`. Finiteness, separability,
 nontriviality, and exactness of the constants are derived from the equation and a pole.
-For a single pole, the sum is just `(m + 1) deg P`.
+For a single pole, `two_mul_genus_eq_of_exists_reduced_artinSchreier_pole_ratFunc`
+gives `2g = (p - 1) ((m + 1) deg P - 2)` directly.
 
 ## References
 
@@ -259,6 +260,7 @@ theorem two_mul_genus_sub_two_eq_of_exists_reduced_artinSchreier_poles
   obtain ⟨w₀, hw₀, hdiv⟩ := hpole P hP
   have hneg := ord_neg_of_ord_eq_neg_of_not_dvd hw₀ hdiv
   have hu := ne_pow_sub_self_of_exists_reduced_artinSchreier_pole (v := P.valuation) p
+    (Fact.out : p.Prime).one_lt
     ⟨w₀, by simpa only [Valuation.ord_def, ← P.ord_def] using hneg,
       by simpa only [Valuation.ord_def, ← P.ord_def] using hdiv⟩
   let _ := ArtinSchreier.isSplittingField hy hgen
@@ -298,6 +300,28 @@ theorem two_mul_genus_eq_of_exists_reduced_artinSchreier_poles_ratFunc
     (IsFunctionField.ratFunc k) inferInstance p hgen hy S m hS hord hprime hreg
   simp only [genus_ratFunc, Nat.cast_zero, mul_zero, zero_sub] at hg
   linear_combination hg
+
+/-- An Artin--Schreier extension of `k(x)` with a single supplied reduced pole of order
+`m` prime to `p` has genus determined by `2g = (p - 1) ((m + 1) deg P - 2)`.
+Representatives may vary with the place; finiteness, separability, nontriviality, and
+exactness of the constants follow from the equation and the pole. -/
+theorem two_mul_genus_eq_of_exists_reduced_artinSchreier_pole_ratFunc
+    (p : ℕ) [Fact p.Prime] [CharP (RatFunc k) p]
+    {y : F} {u : RatFunc k} (hgen : (RatFunc k)⟮y⟯ = ⊤)
+    (hy : y ^ p - y = algebraMap (RatFunc k) F u)
+    (P : Place k (RatFunc k)) (m : ℕ)
+    (hord : ∃ w : RatFunc k, P.ord (u - (w ^ p - w)) = -(m : ℤ))
+    (hprime : ¬ p ∣ m)
+    (hreg : ∀ Q : Place k (RatFunc k), Q ≠ P → ∃ w : RatFunc k,
+      u - (w ^ p - w) ∈ Q.integers) :
+    2 * (genus k F : ℤ) = (p - 1 : ℤ) * ((m + 1 : ℤ) * P.degree - 2) := by
+  classical
+  simpa only [Finset.sum_singleton] using
+    two_mul_genus_eq_of_exists_reduced_artinSchreier_poles_ratFunc p hgen hy {P}
+      (fun _ ↦ m) (Finset.singleton_nonempty P)
+      (by simpa only [Finset.mem_singleton, forall_eq] using hord)
+      (by simpa only [Finset.mem_singleton, forall_eq] using hprime)
+      (by simpa only [Finset.mem_singleton] using hreg)
 
 end RatFunc
 
