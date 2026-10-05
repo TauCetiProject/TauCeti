@@ -14,10 +14,14 @@ public import TauCeti.Geometry.Toric.Analytic.Fan.Map.Holomorphic
 
 The complex points of the scheme of a regular fan carry the affine-chart topology, not the
 Zariski topology. Pulling the atlas of the analytic realization back along the chartwise
-comparison makes this carrier a complex manifold. Every algebraic affine chart inclusion is
-holomorphic for the structure of any extending basis: the comparison identifies it with the
-corresponding analytic inclusion. Thus the pulled-back structure agrees with the regular
-coordinate structures on the algebraic affine charts.
+comparison makes this carrier a complex manifold. Every algebraic affine chart inclusion is a
+local biholomorphism for the independently defined structure of any extending basis and finite
+generating family, by `Fan.isLocalDiffeomorph_ofAffinePoint`. Its local inverse is holomorphic,
+not just the inclusion: the proof uses the two-sided affine compatibility already established by
+`Fan.analyticAffineChartPartialDiffeomorph`. Together with
+`Fan.AlgebraicComplexPoint.exists_ofAffinePoint_eq`, these local biholomorphisms cover all
+algebraic complex points. Thus the pulled-back structure agrees locally in both directions with
+the regular coordinate structures on the algebraic affine charts.
 
 The comparison is a biholomorphism, and the scheme-theoretic map on complex points induced by
 a fan morphism is holomorphic. The latter follows from naturality of the comparison and the
@@ -93,6 +97,35 @@ theorem coe_algebraicAnalyticDiffeomorph_symm (n : ℕ∞ω) :
     ⇑(algebraicAnalyticDiffeomorph hΦ n).symm = (algebraicAnalyticEquiv hΦ).symm :=
   coe_algebraicAnalyticHomeomorph_symm hΦ
 
+/-- Every algebraic affine chart inclusion is a local biholomorphism for the independently
+defined regular-cone structure of any extending basis and finite generating family. In particular,
+its local inverse is holomorphic, so these chart inclusions, which cover all algebraic complex
+points, characterize the pulled-back complex structure in both directions. -/
+theorem isLocalDiffeomorph_ofAffinePoint (σ : Φ.cones) {k l s : ℕ}
+    {B : Module.Basis (ToricRay σ.1 ⊕ Fin l) ℤ N}
+    (hB : ∀ ρ, IsPrimitiveGenerator i ρ (B (Sum.inl ρ))) (κ : ToricRay σ.1 ≃ Fin k)
+    (g : AddGeneratingFamily (dualSemigroup Φ.lattice σ.1) s) (n : ℕ∞ω) :
+    letI := affinePointTopology g
+    letI := coneChartedSpace Φ.lattice ((isRegular_iff.mp hΦ) σ.1 σ.2).toIsToricCone hB κ g
+    letI := algebraicComplexPointChartedSpace hΦ
+    IsLocalDiffeomorph 𝓘(ℂ, (Fin k → ℂ) × (Fin l → ℂ))
+      𝓘(ℂ, Fin (Module.finrank ℤ N) → ℂ) n (AlgebraicComplexPoint.ofAffinePoint σ) := by
+  let := affinePointTopology g
+  let := coneChartedSpace Φ.lattice ((isRegular_iff.mp hΦ) σ.1 σ.2).toIsToricCone hB κ g
+  let := Φ.analyticChartedSpace hΦ
+  let := algebraicComplexPointChartedSpace hΦ
+  let e := Φ.analyticAffineChartPartialDiffeomorph hΦ σ hB κ g n
+  let d := (algebraicAnalyticDiffeomorph hΦ n).symm
+  intro x
+  have hx : x ∈ e.source := by simp [e]
+  have hc := (e.isLocalDiffeomorphAt _ _ _ hx).comp _ _ (d.isLocalDiffeomorph (e x))
+  convert hc using 1
+  apply funext
+  intro y
+  simpa only [Function.comp_apply, e, d, analyticAffineChartPartialDiffeomorph_apply,
+    coe_algebraicAnalyticDiffeomorph_symm] using
+      (algebraicAnalyticEquiv_symm_analyticAffineChartι hΦ σ y).symm
+
 /-- Every affine chart inclusion on algebraic complex points is holomorphic for the complex
 structure of any extending basis and any finite semigroup generating family. -/
 theorem contMDiff_ofAffinePoint (σ : Φ.cones) {k l s : ℕ}
@@ -106,13 +139,8 @@ theorem contMDiff_ofAffinePoint (σ : Φ.cones) {k l s : ℕ}
       𝓘(ℂ, Fin (Module.finrank ℤ N) → ℂ) n (AlgebraicComplexPoint.ofAffinePoint σ) := by
   let := affinePointTopology g
   let := coneChartedSpace Φ.lattice ((isRegular_iff.mp hΦ) σ.1 σ.2).toIsToricCone hB κ g
-  let := Φ.analyticChartedSpace hΦ
   let := algebraicComplexPointChartedSpace hΦ
-  exact ((algebraicAnalyticDiffeomorph hΦ n).symm.contMDiff.comp
-    (Φ.contMDiff_analyticAffineChartι hΦ σ hB κ g n)).congr fun x ↦ by
-      -- The chart inclusion uses the underlying affine-point carrier here.
-      simpa only [Function.comp_apply, coe_algebraicAnalyticDiffeomorph_symm] using
-        (algebraicAnalyticEquiv_symm_analyticAffineChartι hΦ σ x).symm
+  exact (isLocalDiffeomorph_ofAffinePoint hΦ σ hB κ g n).contMDiff
 
 end Fan
 
