@@ -24,8 +24,6 @@ which is not established here.
 * The Stacks Project, Tag 0C3C (Fitting ideals of quasicoherent modules).
 * The Stacks Project, Tag 07ZA (base change of Fitting ideals).
 
-The affine computation uses `tildeFunctorCompPullbackIso`, the canonical comparison
-between pullback of an associated sheaf and extension of scalars.
 -/
 
 public section
@@ -58,6 +56,8 @@ private theorem fittingIdeal_pullback_SpecMap
     @asIso (Spec R).Modules _ _ _ M.fromTildeΓ
       (Scheme.Modules.isIso_fromTildeΓ_of_isQuasicoherent M)
   let := φ.hom.toAlgebra
+  -- `tildeFunctorCompPullbackIso` is the canonical comparison between pullback
+  -- of an associated sheaf and extension of scalars.
   let e : (ModuleCat.extendScalars φ.hom).obj (moduleSpecΓFunctor.obj M) ≅
       moduleSpecΓFunctor.obj N :=
     (tilde.toTildeΓNatIso (R := S)).app _ ≪≫
@@ -143,7 +143,7 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.fittingIdeal_pullback
         ((Scheme.Modules.pullbackComp ψ (hV x).fromSpec).app M).symm
   have he := Scheme.Modules.fittingIdeal_congr
     (fun W ↦ Scheme.Modules.finite_sections_of_isAffineOpen _ W.1 W.2)
-    (fun W ↦ Scheme.Modules.finite_sections_of_isAffineOpen _ W.1 W.2) e k
+    e k
   -- The cover maps are the chosen affine charts. The pullback-composition isomorphism
   -- compares the two actual sheaves, rather than identifying chosen pullbacks by equality.
   -- `rw` cannot reduce the cover's dependent index and object projections together.

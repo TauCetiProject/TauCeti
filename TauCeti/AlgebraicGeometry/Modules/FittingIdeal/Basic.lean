@@ -118,17 +118,25 @@ end
 
 /-- Isomorphic quasicoherent modules have the same Fitting ideal sheaves. -/
 theorem _root_.AlgebraicGeometry.Scheme.Modules.fittingIdeal_congr
-    {X : Scheme.{u}} {M N : X.Modules} [M.IsQuasicoherent] [N.IsQuasicoherent]
+    {X : Scheme.{u}} {M N : X.Modules} [M.IsQuasicoherent]
     (hM : ∀ U : X.affineOpens, Module.Finite Γ(X, U) Γ(M, U))
-    (hN : ∀ U : X.affineOpens, Module.Finite Γ(X, U) Γ(N, U))
-    (e : M ≅ N) (k : ℕ) : M.fittingIdeal hM k = N.fittingIdeal hN k := by
+    (e : M ≅ N) (k : ℕ) :
+    letI : N.IsQuasicoherent :=
+      (SheafOfModules.isQuasicoherent X.ringCatSheaf).prop_of_iso e inferInstance
+    let hN : ∀ U : X.affineOpens, Module.Finite Γ(X, U) Γ(N, U) := fun U ↦ by
+      have := hM U
+      apply Module.Finite.equiv (M := Γ(M, U))
+      -- The sections functor uses ModuleCat wrappers for the same underlying sections.
+      convert! ((Scheme.Modules.sectionsFunctor U).mapIso e).toLinearEquiv
+    M.fittingIdeal hM k = N.fittingIdeal hN k := by
+  dsimp only
   apply Scheme.IdealSheafData.ext
   funext U
   have := hM U
-  have := hN U
   let l : Γ(M, U) ≃ₗ[Γ(X, U)] Γ(N, U) := by
     -- The sections functor uses ModuleCat wrappers for the same underlying sections.
     convert! ((Scheme.Modules.sectionsFunctor U).mapIso e).toLinearEquiv
+  have := Module.Finite.equiv l
   rw [Scheme.Modules.fittingIdeal_ideal, Scheme.Modules.fittingIdeal_ideal]
   exact TauCeti.fittingIdeal_congr l k
 

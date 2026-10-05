@@ -13,9 +13,6 @@ public import Mathlib.AlgebraicGeometry.IdealSheaf.Functorial
 An ideal sheaf is determined by its pullbacks to an open cover. This lets affine
 computations of ideal sheaves, such as Fitting ideals, be glued on an arbitrary scheme.
 
-The proof uses Mathlib's `Scheme.Hom.iInf_ker_openCover_map_comp`: the kernel of a
-morphism is computed on an open cover of its source. Apply it to the closed immersion
-of the subscheme defined by the ideal sheaf.
 -/
 
 public section
@@ -35,6 +32,8 @@ an open cover. -/
 theorem _root_.AlgebraicGeometry.Scheme.IdealSheafData.iInf_map_comap_openCover
     (I : X.IdealSheafData) (𝒰 : X.OpenCover) :
     (⨅ i, (I.comap (𝒰.f i)).map (𝒰.f i)) = I := by
+  -- Mathlib's `Scheme.Hom.iInf_ker_openCover_map_comp` computes the kernel on an
+  -- open cover of its source; apply it to the ideal sheaf's closed immersion.
   calc
     _ = ⨅ i, ((𝒰.pullback₁ I.subschemeι).f i ≫ I.subschemeι).ker := by
       congr 1
