@@ -8,7 +8,9 @@ module
 public import TauCeti.NumberTheory.HilbertSymbol.Basic
 public import TauCeti.NumberTheory.QuadraticForm.Global.Localization
 import TauCeti.NumberTheory.HilbertSymbol.Henselian
+import TauCeti.NumberTheory.LocalField.QuadraticForm.Bimultiplicativity
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.Completion
+import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
 import TauCeti.RingTheory.DedekindDomain.SelmerGroup
 
 /-!
@@ -28,6 +30,8 @@ invariant of a global form.
 
 ## Main results
 
+* `TauCeti.hilbertSymbol_mul_left_adicCompletion`: over the completion at a finite place, the
+  symbol is multiplicative in its first argument.
 * `TauCeti.hilbertSymbol_eq_one_of_valued_eq_one`: over the completion at a finite place not
   above `2`, the symbol of two elements of valuation `1` is `1`.
 * `TauCeti.hilbertSymbol_unitAtFinitePlace_eq_one`: the localized symbol is `1` at a finite
@@ -51,6 +55,15 @@ open IsDedekindDomain IsDedekindDomain.HeightOneSpectrum NumberField
 namespace TauCeti
 
 variable {K : Type*} [Field K] [NumberField K]
+
+/-- **Multiplicativity of the Hilbert symbol at a finite place.** Over the completion `K_v` at a
+finite place `v`, the Hilbert symbol is multiplicative in its first argument:
+`(a a', c)_v = (a, c)_v (a', c)_v`. -/
+theorem hilbertSymbol_mul_left_adicCompletion (v : HeightOneSpectrum (𝓞 K))
+    (a a' c : (v.adicCompletion K)ˣ) :
+    hilbertSymbol (a * a') c = hilbertSymbol a c * hilbertSymbol a' c := by
+  let : Finite (𝓞 K ⧸ v.asIdeal) := Ring.HasFiniteQuotients.finiteQuotient v.ne_bot
+  exact hilbertSymbol_mul_left two_ne_zero c a a'
 
 /-- **The Hilbert symbol of two local units at a nondyadic place.** If `2` is a unit at the
 finite place `v`, then the Hilbert symbol over the completion `K_v` of two elements of valuation

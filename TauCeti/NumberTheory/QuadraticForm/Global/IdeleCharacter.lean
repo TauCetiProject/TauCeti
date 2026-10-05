@@ -74,14 +74,6 @@ variable {K : Type*} [Field K] [NumberField K]
 
 /-! ### The local symbols -/
 
-/-- Over the completion at a finite place, the Hilbert symbol is multiplicative in its first
-argument. -/
-private theorem hilbertSymbol_mul_left_adicCompletion (v : HeightOneSpectrum (𝓞 K))
-    (a a' c : (v.adicCompletion K)ˣ) :
-    hilbertSymbol (a * a') c = hilbertSymbol a c * hilbertSymbol a' c := by
-  let : Finite (𝓞 K ⧸ v.asIdeal) := Ring.HasFiniteQuotients.finiteQuotient v.ne_bot
-  exact hilbertSymbol_mul_left two_ne_zero c a a'
-
 /-- **Finite support of the local symbols of an idele.** For an idele `x` and `b ∈ Kˣ`, the
 Hilbert symbol `(x_v, b)_v` over the completion `K_v` is `1` at all but finitely many finite
 places `v`. -/
