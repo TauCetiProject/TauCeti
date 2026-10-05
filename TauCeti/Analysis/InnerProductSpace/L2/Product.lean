@@ -26,18 +26,10 @@ and its basis vectors are the concrete pointwise products of the factor vectors.
 The underlying normed-ring construction and its additive and scalar laws are provided by
 `TauCeti.MeasureTheory.Function.Lp.Product`.
 
-The completeness half avoids any slicing argument, and with it any countability assumption on the
-index types. It runs in three moves:
-
-1. `HilbertBasis.inner_prodMul_eq_zero_of_forall_basis` — orthogonality to the *basis* tensors
-   upgrades to orthogonality to *every* elementary tensor. The continuous linear maps obtained by
-   composing `innerSL` with `MeasureTheory.Lp.prodMulL` vanish on the dense spans of the bases.
-2. `TauCeti.setIntegral_prod_eq_zero_of_forall_inner` — testing against indicators, since
-   `1ₐ ⊗ 1_b` is the indicator of the rectangle `a ×ˢ b`.
-3. `TauCeti.setIntegral_eq_zero_of_forall_prod` — the Dynkin (π-λ) step, upgrading rectangles to
-   arbitrary measurable sets. It is applied inside a finite box; the monotone exhaustion of the
-   space by the boxes `spanningSets μ n ×ˢ spanningSets ν n` is then done in
-   `TauCeti.setIntegral_eq_zero_of_forall_inner`.
+The tensor family has dense linear span in `L²(μ ⊗ ν)` for arbitrary factor index types. Thus
+expansions in the product Hilbert basis are available without countability assumptions on either
+basis. The vanishing-integral lemmas relate orthogonality to all elementary tensors to the
+integrals of representatives over finite-measure rectangles and measurable sets.
 
 The scalars are generic over `[RCLike 𝕜]`, so a single construction serves both the real and
 complex `L²` spaces.
@@ -58,6 +50,10 @@ complex `L²` spaces.
 * `Orthonormal.prodMul` — products of orthonormal families are orthonormal.
 * `HilbertBasis.orthogonal_span_range_prodMul_eq_bot` — the basis tensors have trivial orthogonal
   complement.
+* `TauCeti.setIntegral_prod_eq_zero_of_forall_inner` — orthogonality to every elementary tensor
+  implies vanishing integrals over finite-measure rectangles.
+* `TauCeti.setIntegral_eq_zero_of_forall_inner` — orthogonality to every elementary tensor implies
+  vanishing integrals over all measurable sets of finite measure.
 * `HilbertBasis.prod_apply` — the `(i, j)` basis vector is the tensor `b₁ i ⊗ b₂ j`;
   `HilbertBasis.coeFn_prod` gives its a.e. representative.
 -/
@@ -120,7 +116,7 @@ theorem norm_prodMul [SFinite μ] [SFinite ν] (F : Lp 𝕜 2 μ) (G : Lp 𝕜 2
 
 /-- **The tensor as a bounded bilinear map.** `prodMulL F G = prodMul F G`, packaged so that
 either operand can be fixed: `prodMulL F` fixes the left factor, `prodMulL.flip G` the right.
-The operator norm bound is `1`, since `norm_prodMul` is an equality. -/
+Its operator norm is at most `1`. -/
 noncomputable def prodMulL [SFinite μ] [SFinite ν] :
     Lp 𝕜 2 μ →L[𝕜] Lp 𝕜 2 ν →L[𝕜] Lp 𝕜 2 (μ.prod ν) :=
   LinearMap.mkContinuous₂
@@ -141,16 +137,18 @@ end MeasureTheory.Lp
 namespace HilbertBasis
 
 /-- **Basis tensors detect all tensors.** A vector orthogonal to every tensor built from two Hilbert
-bases is orthogonal to *every* elementary tensor. This is the countability-free half of the
-completeness argument: it is pure Hilbert-space geometry, with no null-set bookkeeping. -/
+bases is orthogonal to every elementary tensor. Thus the basis tensors suffice for testing
+orthogonality to the family of elementary tensors. -/
 theorem inner_prodMul_eq_zero_of_forall_basis [SFinite μ] [SFinite ν] {ι₁ ι₂ : Type*}
     (b₁ : HilbertBasis ι₁ 𝕜 (Lp 𝕜 2 μ)) (b₂ : HilbertBasis ι₂ 𝕜 (Lp 𝕜 2 ν))
     {h : Lp 𝕜 2 (μ.prod ν)} (hz : ∀ i j, inner 𝕜 h (prodMul (b₁ i) (b₂ j)) = 0)
     (F : Lp 𝕜 2 μ) (G : Lp 𝕜 2 ν) : inner 𝕜 h (prodMul F G) = 0 := by
+  -- With a left basis vector fixed, the induced functional vanishes on the dense span of b₂.
   have step (i : ι₁) : (innerSL 𝕜 h).comp (prodMulL (b₁ i)) = 0 := by
     apply ContinuousLinearMap.ext_on (Submodule.dense_iff_topologicalClosure_eq_top.2 b₂.dense_span)
     rintro _ ⟨j, rfl⟩
     simpa using hz i j
+  -- For any right vector, the left functional then vanishes on the dense span of b₁.
   have hzero : (innerSL 𝕜 h).comp (prodMulL.flip G) = 0 := by
     apply ContinuousLinearMap.ext_on (Submodule.dense_iff_topologicalClosure_eq_top.2 b₁.dense_span)
     rintro _ ⟨i, rfl⟩
@@ -161,13 +159,14 @@ end HilbertBasis
 
 namespace TauCeti
 
-/-- The tensor of two indicators is the indicator of the rectangle, so orthogonality to every
-elementary tensor makes the integral over every finite-measure rectangle vanish. -/
+/-- A vector orthogonal to every elementary tensor has vanishing integral over every measurable
+rectangle whose sides have finite measure. This determines its averages on such rectangles. -/
 theorem setIntegral_prod_eq_zero_of_forall_inner [SFinite ν] {h : Lp 𝕜 2 (μ.prod ν)}
     (hz : ∀ (F : Lp 𝕜 2 μ) (G : Lp 𝕜 2 ν), inner 𝕜 (prodMul F G) h = 0)
     {A : Set α} (hA : MeasurableSet A) (hμA : μ A ≠ ⊤)
     {B : Set β} (hB : MeasurableSet B) (hνB : ν B ≠ ⊤) :
     ∫ p in A ×ˢ B, h p ∂(μ.prod ν) = 0 := by
+  -- The product of the two indicator vectors is the indicator of the rectangle.
   set F : Lp 𝕜 2 μ := indicatorConstLp 2 hA hμA (1 : 𝕜)
   set G : Lp 𝕜 2 ν := indicatorConstLp 2 hB hνB (1 : 𝕜)
   have hFc : ⇑F =ᵐ[μ] A.indicator fun _ => (1 : 𝕜) := indicatorConstLp_coeFn
@@ -205,6 +204,7 @@ private theorem setIntegral_inter_prod_eq_zero [SFinite ν] {h : Lp 𝕜 2 (μ.p
       (lt_of_le_of_lt (measure_mono Set.inter_subset_right) hμA.lt_top).ne
       (ht.inter hB)
       (lt_of_le_of_lt (measure_mono Set.inter_subset_right) hνB.lt_top).ne
+  -- Apply the Dynkin (π-λ) theorem for the finite-box restriction.
   have hdyn := setIntegral_eq_zero_of_forall_prod
     (integrableOn_Lp_of_measure_ne_top h one_le_two hboxfin) hrect u hu
   rwa [Measure.restrict_restrict hu] at hdyn
@@ -215,6 +215,7 @@ theorem setIntegral_eq_zero_of_forall_inner [SigmaFinite μ] [SigmaFinite ν] {h
     (hz : ∀ (F : Lp 𝕜 2 μ) (G : Lp 𝕜 2 ν), inner 𝕜 (prodMul F G) h = 0)
     (u : Set (α × β)) (hu : MeasurableSet u) (hfin : (μ.prod ν) u < ⊤) :
     ∫ p in u, h p ∂(μ.prod ν) = 0 := by
+  -- Exhaust the product space by finite-measure boxes and pass to the monotone limit.
   have hmono : Monotone fun n => u ∩ (spanningSets μ n ×ˢ spanningSets ν n) := fun m n hmn =>
     Set.inter_subset_inter_right _
       (Set.prod_mono (monotone_spanningSets μ hmn) (monotone_spanningSets ν hmn))
@@ -238,21 +239,22 @@ namespace HilbertBasis
 
 open TauCeti
 
-/-- **Completeness of the tensor family.** The elementary tensors built from two Hilbert bases have
-trivial orthogonal complement in `L²(μ ⊗ ν)`: a vector orthogonal to all of them is orthogonal to
-every elementary tensor, hence integrates to zero on every rectangle, hence on every finite-measure
-set, hence vanishes. -/
+/-- **Completeness of the tensor family.** The tensors built from two Hilbert bases have trivial
+orthogonal complement in `L²(μ ⊗ ν)`. Together with orthonormality, this supplies the completeness
+condition for the product Hilbert basis. -/
 theorem orthogonal_span_range_prodMul_eq_bot [SigmaFinite μ] [SigmaFinite ν] {ι₁ ι₂ : Type*}
     (b₁ : HilbertBasis ι₁ 𝕜 (Lp 𝕜 2 μ)) (b₂ : HilbertBasis ι₂ 𝕜 (Lp 𝕜 2 ν)) : (Submodule.span 𝕜
       (Set.range (fun ij : ι₁ × ι₂ => prodMul (b₁ ij.1) (b₂ ij.2))))ᗮ = ⊥ := by
   refine (Submodule.eq_bot_iff _).2 fun h hh => ?_
   rw [Submodule.mem_orthogonal] at hh
+  -- Upgrade orthogonality to basis tensors to orthogonality to all elementary tensors.
   have hz : ∀ (F : Lp 𝕜 2 μ) (G : Lp 𝕜 2 ν), inner 𝕜 (prodMul F G) h = 0 := by
     intro F G
     rw [inner_eq_zero_symm]
     refine inner_prodMul_eq_zero_of_forall_basis b₁ b₂ (fun i j => ?_) F G
     rw [inner_eq_zero_symm]
     exact hh _ (Submodule.subset_span ⟨(i, j), rfl⟩)
+  -- Vanishing integrals over finite-measure sets force the representative to vanish a.e.
   have hae := Lp.ae_eq_zero_of_forall_setIntegral_eq_zero h (by norm_num) (by norm_num)
     (fun s _ hs' => integrableOn_Lp_of_measure_ne_top h one_le_two hs'.ne)
     (fun s hs hs' => setIntegral_eq_zero_of_forall_inner hz s hs hs')
