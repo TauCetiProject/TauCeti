@@ -61,7 +61,7 @@ theorem det_eq_of_weilPairing_eq_smul
       (fun c S T ↦ (AddMonoidHom.flip_apply _ _ _).symm.trans <|
         (ZMod.map_smul _ c S).trans (congrArg _ (AddMonoidHom.flip_apply _ _ _)))
       (fun _ _ _ ↦ map_add _ _ _) (fun c S T ↦ ZMod.map_smul (weilPairing W N hN S) c T)
-  obtain ⟨b⟩ := nonempty_basis_torsionBy W N hN
+  obtain ⟨b⟩ := WeierstrassCurve.nonempty_basis_torsionBy W N hN
   refine LinearMap.det_eq_of_compl₁₂_self_eq_smul_of_separatingLeft b
     (ω := ω) (fun S ↦ weilPairing_self W N hN S) (fun S hS ↦ weilPairing_nondegenerate W N hN hS)
     (LinearMap.ext₂ fun S T ↦ ?_)
