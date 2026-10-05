@@ -361,7 +361,7 @@ theorem pinDihedral_sr (hr2 : r2 ^ 2 = 2) (i : ZMod 8) :
 theorem pinDihedral_r_four (hr2 : r2 ^ 2 = 2) : pinDihedral hr2 (r 4) = -1 := by
   rw [pinDihedral_r, show (4 : ZMod 8).val = 4 from rfl, pinE1_mul_pinT_pow_four hr2]
 
-/-- **`D̃₁₆` lies over `C₂ ≀ C₂`:** `pinDihedral z` is a `Pin⁺` lift of the signed permutation of
+/-- **`D₁₆` lies over `C₂ ≀ C₂`:** `pinDihedral z` is a `Pin⁺` lift of the signed permutation of
 the image of `z` under `TauCeti.dihedralToWreath`. -/
 theorem isPinLift_pinDihedral (hr2 : r2 ^ 2 = 2) (z : DihedralGroup 8) :
     IsPinLift (pinDihedral hr2 z) (wreathSignedPerm (dihedralToWreath z)) := by
@@ -383,7 +383,7 @@ theorem isPinLift_pinDihedral (hr2 : r2 ^ 2 = 2) (z : DihedralGroup 8) :
   · rw [← zero_add i, ← sr_mul_r, map_mul, map_mul, map_mul]
     exact hs.mul (by simpa using hpow i.val)
 
-/-- **The lift of `C₂ ≀ C₂` into `D̃₁₆`** through the section `TauCeti.wreathSection`,
+/-- **The lift of `C₂ ≀ C₂` into `D₁₆`** through the section `TauCeti.wreathSection`,
 `(u s)ⁱ sʲ ↦ (e₁ t)ⁱ tʲ`. It lifts the signed permutations (`TauCeti.isPinLift_pinLift`), and its
 factor set is `(−1)^{c_{D₁₆}}` (`TauCeti.pinLift_mul_mul_inv`). -/
 noncomputable def pinLift (hr2 : r2 ^ 2 = 2) (g : WreathC2) : Matrix (Fin 2) (Fin 2) F :=
