@@ -42,14 +42,12 @@ local notation "d" => fun w => signlessArrow k AG (w + 1) w
 
 private theorem ladder_relation (w : ℕ) : d (w + 1) * u (w + 1) + u w * d w = 0 := by
   simpa only [Nat.add_sub_cancel] using
-    signlessArrow_relation_of_consecutive k (G := AG)
-      (fun i j hij => (diagramGraph_A_adj n i j).mp hij) (w + 1)
+    signlessArrow_A_relation k (n := n) (w + 1)
 
 private theorem ladder_bottom_relation : d 0 * u 0 = 0 := by
   simpa only [Nat.zero_sub, signlessArrow_eq_zero k (i := 0) (j := 0)
     (fun _ _ => SimpleGraph.irrefl _), zero_mul, add_zero] using
-    signlessArrow_relation_of_consecutive k (G := AG)
-      (fun i j hij => (diagramGraph_A_adj n i j).mp hij) 0
+    signlessArrow_A_relation k (n := n) 0
 
 /-- Removing the target projection from a composable ladder word with its source projection. -/
 private theorem target_ladderValley (a b : Fin (DynkinType.A n).rank) {m s r : ℕ}

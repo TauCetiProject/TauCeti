@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.NumberField.Global.Ideles.Norm.Basic
+public import TauCeti.NumberTheory.NumberField.Global.Ideles.Norm.Relative
 public import TauCeti.NumberTheory.QuadraticForm.Global.ArchimedeanSymbol
+import TauCeti.NumberTheory.HilbertSymbol.ExtensionNorm
 import TauCeti.NumberTheory.LocalField.QuadraticForm.Bimultiplicativity
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
 
@@ -28,13 +29,16 @@ By the norm-equation definition of the symbol, `(x_v, b)_v = 1` says that `x_v` 
 `K_v(√b)`, so an idele lies in the kernel of `φ_b` exactly when it is a local non-norm at an even
 number of places. This is the character used in the proof of Hilbert sign prescription
 (O'Meara 71:19a) to describe the subgroup `Kˣ · N_{K(√b)/K}(𝕀_{K(√b)})` of `𝕀_K` as the kernel of
-`φ_b`. That description also needs the product formula for the Hilbert symbol, the fact that the
-coordinates of an idele norm are local norms, and the norm index theorem, none of which is proved
-here.
+`φ_b`. That description also needs the product formula for the Hilbert symbol and the norm index
+theorem, neither of which is proved here.
 
 This file constructs `φ_b`, computes it on the ideles concentrated at one place, and proves that it
 is onto `{±1}` exactly when `b` is a nonsquare at some finite or real place, in which case its
 kernel has index two. A complex place contributes nothing, since every element of `ℂ` is a square.
+It also proves that the idele norms from any number field `L ⊇ K` in which `b` is a square, for
+instance `L = K(√b)`, lie in the kernel of `φ_b`: at a place `v` of `K` the coordinate of such a
+norm is a product of norms from completions `L_w` containing a square root of `b`, hence a norm
+from `K_v(√b)`.
 
 ## Main definitions
 
@@ -56,6 +60,9 @@ kernel has index two. A complex place contributes nothing, since every element o
 * `TauCeti.NumberField.QuadraticForm.ideleHilbertCharacter_surjective_iff`,
   `TauCeti.NumberField.QuadraticForm.index_ker_ideleHilbertCharacter`: otherwise `φ_b` is onto
   `{±1}`, and its kernel has index two.
+* `TauCeti.NumberField.QuadraticForm.ideleHilbertCharacter_ideleNormMap`,
+  `TauCeti.NumberField.QuadraticForm.range_ideleNormMap_le_ker_ideleHilbertCharacter`: if `b` is a
+  square in `L`, then `φ_b` is trivial on `N_{L/K}(𝕀_L)`.
 
 ## References
 
@@ -211,5 +218,51 @@ theorem index_ker_ideleHilbertCharacter {b : Kˣ}
   rw [Subgroup.index_ker, MonoidHom.range_eq_top.mpr
     ((ideleHilbertCharacter_surjective_iff b).mpr hb), Subgroup.card_top, Nat.card_eq_fintype_card,
     Fintype.card_units_int]
+
+/-! ### Idele norms -/
+
+open scoped AdicCompletionExtension NumberField.LiesOver in
+/-- **Idele norms lie in the kernel of the idele Hilbert character.** If `b ∈ Kˣ` is a square in a
+number field `L` over `K`, then `φ_b` is trivial on the idele norms `N_{L/K}(𝕀_L)`. At every place
+`v` of `K` the coordinate of an idele norm is a product of norms from completions `L_w` in which
+`b` is a square, so it is a norm from `K_v(√b)`. -/
+@[simp]
+theorem ideleHilbertCharacter_ideleNormMap {L : Type*} [Field L] [NumberField L] [Algebra K L]
+    {b : Kˣ} (hb : IsSquare (algebraMap K L b)) (x : IdeleGroup (𝓞 L) L) :
+    ideleHilbertCharacter b (GlobalNumberFields.ideleNormMap K L x) = 1 := by
+  rw [ideleHilbertCharacter_apply, finprod_eq_one_of_forall_eq_one fun v ↦ ?_, mul_one]
+  · refine Finset.prod_eq_one fun v _ ↦ ?_
+    rw [GlobalNumberFields.ideleInfiniteCoord_ideleNormMap]
+    refine finprod_induction (fun a ↦ hilbertSymbol a _ = 1)
+      (hilbertSymbol_completion_one_left v _)
+      (fun a a' ha ha' ↦ by rw [hilbertSymbol_completion_mul_left, ha, ha', mul_one]) fun w ↦ ?_
+    -- `L_w` is a `K_v`-algebra through `w ∣ v`, and `b` is a square in it because it is in `L`.
+    have := w.2
+    have : CharZero v.Completion := charZero_of_injective_algebraMap (algebraMap K _).injective
+    let : Invertible (2 : v.Completion) := invertibleOfNonzero two_ne_zero
+    rw [hilbertSymbol_comm]
+    refine hilbertSymbol_normUnits_eq_one ?_ _
+    rw [Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass,
+      ← IsScalarTower.algebraMap_apply, IsScalarTower.algebraMap_apply K L]
+    exact hb.map _
+  · rw [GlobalNumberFields.ideleFiniteCoord_ideleNormMap]
+    refine finprod_induction (fun a ↦ hilbertSymbol a _ = 1) (hilbertSymbol_one_left _)
+      (fun a a' ha ha' ↦ by rw [hilbertSymbol_mul_left_adicCompletion, ha, ha', mul_one])
+      fun w ↦ ?_
+    -- As at the infinite places, `b` is a square in `L_w ⊇ K_v`.
+    have := w.2
+    rw [hilbertSymbol_comm]
+    refine hilbertSymbol_normUnits_eq_one ?_ _
+    rw [unitAtFinitePlace_apply, ← IsScalarTower.algebraMap_apply,
+      IsScalarTower.algebraMap_apply K L]
+    exact hb.map _
+
+/-- **The idele norm group lies in the kernel of the idele Hilbert character.** If `b ∈ Kˣ` is a
+square in a number field `L` over `K`, then `N_{L/K}(𝕀_L) ≤ ker φ_b`. -/
+theorem range_ideleNormMap_le_ker_ideleHilbertCharacter {L : Type*} [Field L] [NumberField L]
+    [Algebra K L] {b : Kˣ} (hb : IsSquare (algebraMap K L b)) :
+    (GlobalNumberFields.ideleNormMap K L).range ≤ (ideleHilbertCharacter b).ker := by
+  rintro _ ⟨x, rfl⟩
+  exact ideleHilbertCharacter_ideleNormMap hb x
 
 end TauCeti.NumberField.QuadraticForm

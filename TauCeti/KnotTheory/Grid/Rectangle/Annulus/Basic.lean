@@ -95,7 +95,7 @@ private theorem right_eq_left_or_right_eq_right : S.right = R.left ∨ S.right =
 
 /-- If a returning rectangle starts on the same side column as the outgoing one, then it also
 ends on the same side column. -/
-private theorem right_eq_right_of_left_eq_left (h : S.left = R.left) : S.right = R.right := by
+theorem right_eq_right_of_left_eq_left (h : S.left = R.left) : S.right = R.right := by
   rcases R.right_eq_left_or_right_eq_right S with h' | h'
   · exact absurd (h.trans h'.symm) S.left_ne_right
   · exact h'

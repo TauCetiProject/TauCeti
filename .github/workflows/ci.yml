@@ -105,10 +105,10 @@ jobs:
           # Mathlib's own server, scripts/lake-cache-get.sh does anonymous GETs, and
           # `lake cache get` reads the local revision from .git without authenticating.
           persist-credentials: false
-          # Enough history for `lake cache get` to backtrack to a recently-published
-          # ancestor commit (its `--max-revs`) when the tip itself has no mapping yet.
-          # Harmless (just a slightly deeper fetch) when the cache is off.
-          fetch-depth: 100
+          # The immutable push base must be present for the complete local scope diff.
+          # Bors batches can contain 128 commits, already exceeding the old depth of
+          # 100. Full history also supports cache ancestor lookup without another fetch.
+          fetch-depth: 0
 
       - name: Infrastructure policy unit tests
         run: |
@@ -343,6 +343,7 @@ jobs:
           EVENT: push
           BASE: ${{ github.event.before }}
           HEAD: ${{ github.sha }}
+          SCOPE_REPO: .
         run: bash scripts/lint-scope.sh "$RUNNER_TEMP/lint-scope"
 
       - name: Environment lint (default linters + docstring scan vs grandfathered baseline)

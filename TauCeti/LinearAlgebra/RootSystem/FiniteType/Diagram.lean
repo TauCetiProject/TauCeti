@@ -114,20 +114,12 @@ theorem diagramGraph_cartanMatrix_A (n : ℕ) :
 
 end DynkinType
 
-/-- Two nodes of the `Aₙ` diagram are joined exactly when they are consecutive.
-The vertex type is indexed by `DynkinType.rank`, as in graph-indexed algebra constructions. -/
-theorem diagramGraph_A_adj (n : ℕ) (i j : Fin (DynkinType.A n).rank) :
-    (diagramGraph (DynkinType.A n).cartanMatrix).Adj i j ↔
+/-- Two nodes of the `Aₙ` diagram are joined exactly when they are consecutive. -/
+theorem diagramGraph_A_adj (n : ℕ) (i j : Fin n) :
+    (diagramGraph (DynkinType.A n).cartanMatrix : SimpleGraph (Fin n)).Adj i j ↔
       (i : ℕ) + 1 = j ∨ (j : ℕ) + 1 = i := by
-  have h : ∀ i j : Fin n, (diagramGraph (CartanMatrix.A n)).Adj i j ↔
-      i.val + 1 = j.val ∨ j.val + 1 = i.val := by
-    intro i j
-    rw [DynkinType.diagramGraph_cartanMatrix_A, SimpleGraph.pathGraph_adj]
-  have h' : ∀ i j : Fin (DynkinType.A n).rank,
-      (diagramGraph (DynkinType.A n).cartanMatrix).Adj i j ↔
-        i.val + 1 = j.val ∨ j.val + 1 = i.val := by
-    simpa only [DynkinType.rank_A, DynkinType.cartanMatrix_A] using h
-  exact h' i j
+  rw [DynkinType.cartanMatrix_A, DynkinType.diagramGraph_cartanMatrix_A,
+    SimpleGraph.pathGraph_adj]
 
 namespace IsFiniteType
 

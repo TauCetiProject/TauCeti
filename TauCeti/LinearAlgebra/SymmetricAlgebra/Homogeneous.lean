@@ -9,6 +9,7 @@ public import Mathlib.Algebra.DirectSum.Internal
 public import Mathlib.LinearAlgebra.SymmetricAlgebra.Basic
 public import Mathlib.RingTheory.Derivation.Basic
 public import TauCeti.Algebra.WordFiltration.Basic
+public import TauCeti.LinearAlgebra.SymmetricAlgebra.Basic
 
 /-!
 # Homogeneous submodules of a symmetric algebra
@@ -28,6 +29,9 @@ degree one preserves every homogeneous submodule.
 * `TauCeti.SymmetricAlgebra.iSup_homogeneousSubmodule_eq_top`: the homogeneous pieces span the
   whole symmetric algebra.
 * `TauCeti.SymmetricAlgebra.instGradedMonoid`: the homogeneous submodules form a graded monoid.
+* `TauCeti.SymmetricAlgebra.homogeneousSubmoduleZeroEquiv`,
+  `TauCeti.SymmetricAlgebra.homogeneousSubmoduleOneEquiv`: the homogeneous pieces of degree zero
+  and one are the scalars and the module itself.
 * `TauCeti.SymmetricAlgebra.derivation_mem_homogeneousSubmodule`: a derivation sending generators
   to degree one preserves every homogeneous submodule.
 
@@ -104,6 +108,51 @@ theorem iSup_homogeneousSubmodule_eq_top :
         (Set.range (SymmetricAlgebra.ι R M))).toSubmodule :=
       TauCeti.Algebra.iSup_wordFiltration_eq_adjoin (SymmetricAlgebra.ι R M)
     _ = ⊤ := by rw [hadjoin]; rfl
+
+/-- The degree-zero homogeneous submodule of a symmetric algebra is the image of the scalars,
+which embed injectively. -/
+noncomputable def homogeneousSubmoduleZeroEquiv : homogeneousSubmodule R M 0 ≃ₗ[R] R :=
+  ((LinearEquiv.ofInjective (Algebra.linearMap R (SymmetricAlgebra R M))
+    (SymmetricAlgebra.algebraMap_leftInverse M).injective).trans
+    (LinearEquiv.ofEq _ _ (by rw [homogeneousSubmodule, pow_zero, Submodule.one_eq_range]))).symm
+
+/-- The inverse of `homogeneousSubmoduleZeroEquiv` sends a scalar to its image in the symmetric
+algebra. -/
+@[simp]
+theorem coe_homogeneousSubmoduleZeroEquiv_symm_apply (r : R) :
+    ((homogeneousSubmoduleZeroEquiv R M).symm r : SymmetricAlgebra R M) =
+      algebraMap R (SymmetricAlgebra R M) r :=
+  (rfl)
+
+/-- A degree-zero element of a symmetric algebra is the image of the scalar
+`homogeneousSubmoduleZeroEquiv` assigns to it. -/
+@[simp]
+theorem algebraMap_homogeneousSubmoduleZeroEquiv_apply (x : homogeneousSubmodule R M 0) :
+    algebraMap R (SymmetricAlgebra R M) (homogeneousSubmoduleZeroEquiv R M x) = x := by
+  conv_rhs => rw [← (homogeneousSubmoduleZeroEquiv R M).symm_apply_apply x]
+  exact (coe_homogeneousSubmoduleZeroEquiv_symm_apply R M _).symm
+
+/-- The degree-one homogeneous submodule of a symmetric algebra is the image of the module, which
+embeds injectively. -/
+noncomputable def homogeneousSubmoduleOneEquiv : homogeneousSubmodule R M 1 ≃ₗ[R] M :=
+  ((LinearEquiv.ofInjective (SymmetricAlgebra.ι R M) (ι_injective R M)).trans
+    (LinearEquiv.ofEq _ _ (pow_one _).symm)).symm
+
+/-- The inverse of `homogeneousSubmoduleOneEquiv` sends an element of the module to its
+generator. -/
+@[simp]
+theorem coe_homogeneousSubmoduleOneEquiv_symm_apply (m : M) :
+    ((homogeneousSubmoduleOneEquiv R M).symm m : SymmetricAlgebra R M) =
+      SymmetricAlgebra.ι R M m :=
+  (rfl)
+
+/-- A degree-one element of a symmetric algebra is the generator of the element of the module
+`homogeneousSubmoduleOneEquiv` assigns to it. -/
+@[simp]
+theorem ι_homogeneousSubmoduleOneEquiv_apply (x : homogeneousSubmodule R M 1) :
+    SymmetricAlgebra.ι R M (homogeneousSubmoduleOneEquiv R M x) = x := by
+  conv_rhs => rw [← (homogeneousSubmoduleOneEquiv R M).symm_apply_apply x]
+  exact (coe_homogeneousSubmoduleOneEquiv_symm_apply R M _).symm
 
 /-- The homogeneous submodules form a graded monoid: the unit is homogeneous of degree zero, and
 multiplication adds degrees. -/

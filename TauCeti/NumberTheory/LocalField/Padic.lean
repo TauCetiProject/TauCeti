@@ -31,6 +31,8 @@ concrete p-adic norm and valuation APIs.
 * `Padic.natCastValuation_eq_padicValNat` identifies the normalized valuation of a natural
   number with `padicValNat`, and `Padic.natCastValuation_self` and
   `Padic.natCastValuation_two` are the two values it takes on the residue prime and on `2`.
+* `TauCeti.Padic.irreducible_natCast_self` shows that the residue prime is a uniformizer of
+  the integer ring.
 * `Padic.not_isSquare_neg_one_of_mod_four_eq_three`: `-1` is nonsquare in `ℚ_[p]` when
   `p ≡ 3 (mod 4)`.
 * `Padic.not_isSquare_intCast_of_not_isSquare_zmod`: an integer that is not a square modulo a
@@ -202,3 +204,12 @@ theorem irreducible_X_sq_add_X_add_one : Irreducible (X ^ 2 + X + 1 : ℚ_[5][X]
   exact not_isSquare_neg_three ⟨2 * r + 1, by linear_combination (-4 : ℚ_[5]) * hr⟩
 
 end Padic
+
+namespace TauCeti.Padic
+
+/-- The residue prime `p` is a uniformizer of the integer ring of `ℚ_[p]`. -/
+theorem irreducible_natCast_self : Irreducible (p : 𝒪[ℚ_[p]]) := by
+  simpa only [map_natCast] using
+    (PadicInt.irreducible_p (p := p)).map (_root_.Padic.integerRingEquiv p).symm
+
+end TauCeti.Padic

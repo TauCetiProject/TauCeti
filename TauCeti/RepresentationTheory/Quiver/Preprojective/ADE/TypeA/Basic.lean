@@ -221,6 +221,14 @@ variable (k : Type*) [CommRing k] {n : ℕ}
 
 local notation "AG" => diagramGraph (DynkinType.cartanMatrix (DynkinType.A n))
 
+/-- The signless relation at a type-`A` vertex: the backtracks through its two neighbours
+cancel. A missing neighbour contributes zero, including at the endpoints. -/
+theorem signlessArrow_A_relation (v : ℕ) :
+    signlessArrow k AG (v + 1) v * signlessArrow k AG v (v + 1) +
+      signlessArrow k AG (v - 1) v * signlessArrow k AG v (v - 1) = 0 :=
+  signlessArrow_relation_of_consecutive k
+    (fun i j hij => (diagramGraph_A_adj n i j).mp hij) v
+
 /-- A path from `a` to `b` in the signless algebra of `Aₙ` vanishes when its length exceeds
 `min (a + b) (2(n - 1) - a - b)`. -/
 theorem signlessPreprojectiveMk_A_ofPath_eq_zero_of_endpoint_bound
@@ -250,12 +258,9 @@ theorem signlessPreprojectiveMk_A_ofPath_eq_zero_or_ladderValley
       signlessArrow_eq_zero_of_not_consecutive k (n := (DynkinType.A n).rank)
         (G := AG) (fun i j => diagramGraph_A_adj n i j) (by omega)
     simpa only [Nat.zero_add, Nat.sub_self, hzero, zero_mul, add_zero] using
-      signlessArrow_relation_of_consecutive k (n := (DynkinType.A n).rank) (G := AG)
-        (fun i j hij => (diagramGraph_A_adj n i j).mp hij) 0
+      signlessArrow_A_relation k (n := n) 0
   · intro w
-    simpa [add_comm] using
-      signlessArrow_relation_of_consecutive k (n := (DynkinType.A n).rank) (G := AG)
-      (fun i j hij => (diagramGraph_A_adj n i j).mp hij) (w + 1)
+    simpa [add_comm] using signlessArrow_A_relation k (n := n) (w + 1)
   · intro i j hij
     rcases (diagramGraph_A_adj n i j).1 hij with h | h
     · exact .inl ⟨h.symm, by rw [← h]⟩

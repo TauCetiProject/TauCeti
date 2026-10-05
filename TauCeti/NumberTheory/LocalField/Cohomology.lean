@@ -13,7 +13,8 @@ public import TauCeti.NumberTheory.LocalField.Padic
 # Degree-one local Galois cohomology with trivial coefficients
 
 For a nonarchimedean local field `K` and a prime `p` invertible in `K`, the continuous
-cohomology `H¹(G_K, 𝔽_p)` is finite and hence finite-dimensional. If `K` is a finite compatible
+cohomology `H¹(G_K, 𝔽_p)` is finite and hence finite-dimensional. If `K` contains a primitive
+`p`th root of unity, Kummer theory shows that it is nontrivial. If `K` is a finite compatible
 extension of `ℚ_[p]` containing a primitive `p`th root of unity, its dimension is
 `[K : ℚ_[p]] + 2`.
 
@@ -47,6 +48,21 @@ instance finite_cohomFp_one_absoluteGaloisGroup [NeZero (p : K)] :
   exact finite_continuousCohomology_of_le_one (NeZero.ne (p : K))
     (trivialFp p (Field.absoluteGaloisGroup K))
     (isSmoothDiscrete_trivialFp p (Field.absoluteGaloisGroup K)) (by omega)
+
+omit [Fact p.Prime] in
+/-- If the local field contains a primitive `p`th root of unity with `1 < p`, then
+`H¹(G_K, ℤ/p)` with trivial coefficients is nontrivial: by Kummer theory it has as many elements
+as `Kˣ/(Kˣ)^p`, a nonzero multiple of `p`. -/
+theorem nontrivial_cohomFp_one_absoluteGaloisGroup_of_isPrimitiveRoot [Fact (1 < p)] {ζ : K}
+    (hζ : IsPrimitiveRoot ζ p) : Nontrivial (cohomFp p (Field.absoluteGaloisGroup K) 1) := by
+  have hp : 1 < p := Fact.out
+  have : NeZero p := ⟨by omega⟩
+  have : NeZero (p : K) := hζ.neZero'
+  have hcard := natCard_cohomFp_one_absoluteGaloisGroup_of_isPrimitiveRoot p K hζ
+  rw [powerClassQuotient, powerSubgroup_eq_range_powMonoidHom,
+    card_powerClasses (NeZero.ne (p : K)), mul_assoc] at hcard
+  rw [← Finite.one_lt_card_iff_nontrivial]
+  exact hp.trans_le (Nat.le_of_dvd Nat.card_pos (Dvd.intro _ hcard.symm))
 
 /-- If a finite compatible extension of `ℚ_[p]` contains `μ_p`, then
 `dim H¹(G_K, 𝔽_p) = [K : ℚ_[p]] + 2`. -/

@@ -83,16 +83,6 @@ open ContCohomology
 variable {K : Type} [Field K] [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K]
   {n : ℕ}
 
-/-- The roots of unity `μₙ` of `Kˢ` form a cyclic group of order `n`, for `n` invertible in `K`. -/
-private noncomputable def kummerCoeffAddEquivZMod (hn : IsUnit (n : K)) :
-    KummerCoeff K n ≃+ ZMod n :=
-  have : NeZero (n : K) := ⟨hn.ne_zero⟩
-  have : NeZero n := NeZero.of_neZero_natCast K
-  addEquivOfAddCyclicCardEq <| by
-    obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_primitiveRoot (SeparableClosure K) n
-    rw [Nat.card_zmod]
-    exact (Nat.card_congr Additive.toMul).trans hζ.card_rootsOfUnity
-
 /-- An open subgroup `V` of `G_K` acting trivially on `μₙ` is the absolute Galois group of a local
 field containing a primitive `n`th root of unity: a statement about such a field and a topological
 copy of its absolute Galois group holds for `V`. The field is the fixed field of `V`. -/
