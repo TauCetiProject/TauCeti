@@ -111,7 +111,6 @@ theorem map_comp {R S T : Type*} [CommRing R] [CommRing S] [CommRing T] {n : Typ
     (map (n := n) g).comp (map f) = map (g.comp f) := rfl
 
 /-- The inclusion into the general linear group commutes with entrywise ring maps. -/
-@[simp]
 theorem toGL_map {R S : Type*} [CommRing R] [CommRing S] {n : Type*}
     [Fintype n] [DecidableEq n] (f : R →+* S) (g : SpecialLinearGroup n R) :
     toGL (map f g) = GeneralLinearGroup.map f (toGL g) := by
