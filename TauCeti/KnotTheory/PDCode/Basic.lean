@@ -578,7 +578,14 @@ namespace OrientedPDCode
 
 variable {n : ℕ}
 
-/-- The sign of crossing `i`: `1` if the crossing is right-handed and `-1` if it is left-handed,
+/-- The orientation reverses between two opposite slots `s` and `t = s + 2` of a crossing. -/
+theorem orientation_crossing_of_add_two_eq (D : OrientedPDCode n) (i : Fin n) {s t : Fin 4}
+    (hst : s + 2 = t) :
+    D.orientation (D.crossing i t) = !D.orientation (D.crossing i s) := by
+  rw [← hst, ← PDCode.oppositeCrossingSlot_apply, PDCode.crossing_apply, PDCode.crossing_apply,
+    D.orientation_oppositeCrossingSlot]
+
+/-- The sign of crossing `i`:`1` if the crossing is right-handed and `-1` if it is left-handed,
 as in Lickorish, Chapter 1. The slots are read counterclockwise in the oriented plane and
 `orientation` is `true` at the half-edges where the strands leave the crossing. The crossing is
 right-handed when a counterclockwise quarter turn takes the direction of the over-strand to that
@@ -953,10 +960,9 @@ theorem unknot_ne_empty (orientation : Bool) :
     unknot orientation ≠ empty :=
   unlinkEquiv.injective.ne (Multiset.singleton_ne_zero orientation)
 
-/-- The two explicit orientation choices give distinct crossing-free circle presentations. -/
-theorem unknot_true_ne_false :
-    unknot true ≠ unknot false :=
-  unlinkEquiv.injective.ne (by simp)
+/-- Distinct orientation choices give distinct crossing-free circle presentations. -/
+theorem unknot_injective : Function.Injective unknot := fun _ _ h =>
+  Multiset.singleton_inj.1 (congrArg crossinglessComponents h)
 
 /-- Reflection fixes every zero-crossing oriented PD-code. -/
 @[simp]
@@ -997,10 +1003,11 @@ theorem orientation_positiveKink (h : Fin (4 * 1)) :
 theorem crossinglessComponents_positiveKink : positiveKink.crossinglessComponents = 0 :=
   (rfl)
 
-/-- The distinguished crossing of `positiveKink` has positive sign. -/
+/-- The crossing of `positiveKink` has positive sign. -/
 @[simp]
-theorem crossingSign_positiveKink :
-    positiveKink.crossingSign 0 = 1 := by
+theorem crossingSign_positiveKink (i : Fin 1) :
+    positiveKink.crossingSign i = 1 := by
+  fin_cases i
   decide
 
 end OrientedPDCode

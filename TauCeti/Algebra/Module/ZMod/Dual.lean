@@ -36,7 +36,8 @@ algebra of the `𝔽_p`-vector space `M`.
   into any additive group `N ≃+ ZMod n`; `AddEquiv.natCard_linearMap_zmod`: the same count for the
   `ℤ/n`-linear maps of a finite `ℤ/n`-module.
 * `TauCeti.exists_addMonoidHom_zmod_apply_ne_zero`: for `a ≠ 0` in `M` killed by `n`, some
-  `f : M →+ ZMod n` has `f a ≠ 0`.
+  `f : M →+ ZMod n` has `f a ≠ 0`; `TauCeti.exists_distribMulActionHom_apply_ne_zero`: the same
+  for equivariant maps to any `N ≃+ ZMod n` when a monoid acts trivially on `M` and `N`.
 -/
 
 public section
@@ -70,6 +71,19 @@ theorem exists_addMonoidHom_zmod_apply_ne_zero (hM : ∀ x : M, n • x = 0) {a 
   refine ⟨f, fun h => hφ ?_⟩
   have := DFunLike.congr_fun hf ⟨a, AddSubgroup.mem_zmultiples a⟩
   simpa [h, ← Units.val_eq_one, ← toAdd_eq_zero] using this.symm
+
+/-- For `e : N ≃+ ZMod n` with `n ≠ 0` and a monoid `G` acting trivially on `N` and on an
+additive commutative group `M` killed by `n`, the equivariant maps `M → N` detect every nonzero
+element of `M`: they are all the additive maps, and those to `ZMod n` separate points. -/
+theorem exists_distribMulActionHom_apply_ne_zero {G : Type*} [Monoid G] {N : Type*}
+    [AddCommGroup N] [DistribMulAction G N] (hN : ∀ (g : G) (y : N), g • y = y)
+    (e : N ≃+ ZMod n) [DistribMulAction G M] (hM : ∀ x : M, n • x = 0)
+    (hMtriv : ∀ (g : G) (x : M), g • x = x) {a : M} (ha : a ≠ 0) :
+    ∃ f : M →+[G] N, f a ≠ 0 := by
+  obtain ⟨f, hf⟩ := exists_addMonoidHom_zmod_apply_ne_zero hM ha
+  exact ⟨{ e.symm.toAddMonoidHom.comp f with
+      map_smul' g x := by rw [MonoidHom.id_apply, hMtriv, hN] },
+    fun h ↦ hf (e.symm.map_eq_zero_iff.1 h)⟩
 
 end TauCeti
 

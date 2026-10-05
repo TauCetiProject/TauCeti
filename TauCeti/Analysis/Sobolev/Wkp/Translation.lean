@@ -90,7 +90,7 @@ private def translated (h : E) : (k : ℕ) → (u : Wkp mu ⊤ p (k + 1)) →
         value_eq := by
           calc
             value (k + 2) (mk k previous.element _ hweak) =
-                value (k + 1) previous.element := by rw [value_succ, lowerOrder_mk]
+                value (k + 1) previous.element := value_mk ..
             _ = (mu.restrict ((⊤ : Opens E) : Set E)).translateLp p h
                 (value (k + 1) (lowerOrder (k + 1) u)) := previous.value_eq
             _ = (mu.restrict ((⊤ : Opens E) : Set E)).translateLp p h
@@ -233,9 +233,9 @@ theorem norm_translate (h : E) : ∀ (k : ℕ) (u : Wkp mu ⊤ p k),
       rw [translate_one_eq_jet]
       exact (mu.restrict ((⊤ : Opens E) : Set E)).translateLp p h |>.norm_map u.1
   | k + 2, u => by
-      have hv := norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_add_two k
+      have hv := norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_succ k
         (translate h (k + 2) u)
-      have hu := norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_add_two k u
+      have hu := norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_succ k u
       rw [lowerOrder_translate, iteratedGradient_translate,
         norm_translate h (k + 1) (lowerOrder (k + 1) u),
         LinearIsometryEquiv.norm_map] at hv

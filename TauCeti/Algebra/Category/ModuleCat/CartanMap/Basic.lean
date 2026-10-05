@@ -83,6 +83,10 @@ Krull--Schmidt hypotheses of a finite-dimensional algebra.
   exact structure and the structure induced directly from all modules.
 * `TauCeti.exactK0_fgModuleCat_prod`: in `G₀(mod R)`, the class of a product of two finitely
   generated modules is the sum of their classes.
+* `TauCeti.exactK0_of_eq_range_add_range`: in `G₀(mod R)`, the class of the middle term of an
+  exact pair is the sum of the classes of the two images.
+* `TauCeti.exactK0_add_add_eq_add_add_of_exact`: along a six-term exact sequence of finitely
+  generated modules, the odd-indexed and even-indexed classes have the same sum.
 * `CategoryTheory.Equivalence.isConflationExact_finiteModules_congrFullSubcategory_functor` and
   its `finiteProjectiveModules` and `_inverse` companions: an exact equivalence of module
   categories respecting the two object properties restricts to exact equivalences of the two
@@ -286,6 +290,76 @@ theorem exactK0_fgModuleCat_prod (M N : Type u) [AddCommGroup M] [Module R M] [M
     F.mapBiprod X Y ≪≫ ModuleCat.biprodIsoProd X.obj Y.obj
   rw [← ExactK0.of_biprod]
   exact ExactK0.of_congr (F.preimageIso e).symm
+
+/-- **The class of the middle term of an exact pair.** If `M → N → P` is exact at `N`, with `M`
+and `N` finitely generated, then `[N]` is the sum of the classes of the images of the two maps in
+`G₀(mod R)`: `0 → range f → N → range g → 0` is a short exact sequence of finitely generated
+modules. Telescoping this along a longer exact sequence makes its alternating sum of classes
+vanish. -/
+theorem exactK0_of_eq_range_add_range {M N P : Type u} [AddCommGroup M] [Module R M]
+    [Module.Finite R M] [AddCommGroup N] [Module R N] [Module.Finite R N] [AddCommGroup P]
+    [Module R P] {f : M →ₗ[R] N} {g : N →ₗ[R] P} (hfg : Function.Exact f g) :
+    (ExactK0.of (FGModuleCat.of R N) : ExactK0 (finiteModulesExactStructure R)) =
+      ExactK0.of (FGModuleCat.of R (LinearMap.range f)) +
+        ExactK0.of (FGModuleCat.of R (LinearMap.range g)) := by
+  have hex : Function.Exact (LinearMap.range f).subtype g.rangeRestrict := by
+    rw [LinearMap.exact_iff, LinearMap.ker_rangeRestrict, Submodule.range_subtype,
+      hfg.linearMap_ker_eq]
+  let T : ShortComplex (FGModuleCat.{u} R) :=
+    ShortComplex.mk (FGModuleCat.ofHom (LinearMap.range f).subtype)
+      (FGModuleCat.ofHom g.rangeRestrict) (by
+        ext x
+        exact congrArg Subtype.val (hex.apply_apply_eq_zero x))
+  have hT : (finiteModulesExactStructure R).Conflation T :=
+    (finiteModulesExactStructure_conflation_iff R T).mpr <|
+      ModuleCat.shortComplex_shortExact _ hex (LinearMap.range f).injective_subtype
+        g.surjective_rangeRestrict
+  exact ExactK0.of_conflation hT
+
+/-- The image of an injective linear map out of a finitely generated module has the class of its
+source in `G₀(mod R)`. -/
+theorem exactK0_of_range_of_injective {M N : Type u} [AddCommGroup M] [Module R M]
+    [Module.Finite R M] [AddCommGroup N] [Module R N] {f : M →ₗ[R] N}
+    (hf : Function.Injective f) :
+    (ExactK0.of (FGModuleCat.of R (LinearMap.range f)) :
+        ExactK0 (finiteModulesExactStructure R)) =
+      ExactK0.of (FGModuleCat.of R M) :=
+  ExactK0.of_congr (LinearEquiv.ofInjective f hf).symm.toFGModuleCatIso
+
+/-- The image of a surjective linear map onto a finitely generated module has the class of its
+target in `G₀(mod R)`. -/
+theorem exactK0_of_range_of_surjective {M N : Type u} [AddCommGroup M] [Module R M]
+    [AddCommGroup N] [Module R N] [Module.Finite R N] {f : M →ₗ[R] N}
+    (hf : Function.Surjective f) :
+    letI := Module.Finite.equiv (LinearEquiv.ofTop _ (LinearMap.range_eq_top.mpr hf)).symm
+    (ExactK0.of (FGModuleCat.of R (LinearMap.range f)) :
+        ExactK0 (finiteModulesExactStructure R)) =
+      ExactK0.of (FGModuleCat.of R N) := by
+  let := Module.Finite.equiv (LinearEquiv.ofTop _ (LinearMap.range_eq_top.mpr hf)).symm
+  exact ExactK0.of_congr (LinearEquiv.ofTop _ (LinearMap.range_eq_top.mpr hf)).toFGModuleCatIso
+
+/-- **The Euler relation of a six-term exact sequence.** For an exact sequence
+`0 → M₁ → M₂ → M₃ → M₄ → M₅ → M₆ → 0` of finitely generated modules, the classes of the odd-indexed
+terms and of the even-indexed terms have the same sum in `G₀(mod R)`. This is the six-term case of
+Euler–Poincaré (`TauCeti.ExactK0.sum_negOnePow_of_X_eq_sum_negOnePow_of_homology`), stated for
+linear maps between modules rather than for a cochain complex in `FGModuleCat R`. -/
+theorem exactK0_add_add_eq_add_add_of_exact {M₁ M₂ M₃ M₄ M₅ M₆ : Type u}
+    [AddCommGroup M₁] [Module R M₁] [Module.Finite R M₁] [AddCommGroup M₂] [Module R M₂]
+    [Module.Finite R M₂] [AddCommGroup M₃] [Module R M₃] [Module.Finite R M₃]
+    [AddCommGroup M₄] [Module R M₄] [Module.Finite R M₄] [AddCommGroup M₅] [Module R M₅]
+    [Module.Finite R M₅] [AddCommGroup M₆] [Module R M₆] [Module.Finite R M₆]
+    {f₁ : M₁ →ₗ[R] M₂} {f₂ : M₂ →ₗ[R] M₃} {f₃ : M₃ →ₗ[R] M₄} {f₄ : M₄ →ₗ[R] M₅}
+    {f₅ : M₅ →ₗ[R] M₆} (h₁ : Function.Injective f₁) (h₁₂ : Function.Exact f₁ f₂)
+    (h₂₃ : Function.Exact f₂ f₃) (h₃₄ : Function.Exact f₃ f₄) (h₄₅ : Function.Exact f₄ f₅)
+    (h₅ : Function.Surjective f₅) :
+    (ExactK0.of (FGModuleCat.of R M₁) + ExactK0.of (FGModuleCat.of R M₃) +
+        ExactK0.of (FGModuleCat.of R M₅) : ExactK0 (finiteModulesExactStructure R)) =
+      ExactK0.of (FGModuleCat.of R M₂) + ExactK0.of (FGModuleCat.of R M₄) +
+        ExactK0.of (FGModuleCat.of R M₆) := by
+  rw [exactK0_of_eq_range_add_range R h₁₂, exactK0_of_eq_range_add_range R h₂₃,
+    exactK0_of_eq_range_add_range R h₃₄, exactK0_of_eq_range_add_range R h₄₅,
+    exactK0_of_range_of_injective R h₁, exactK0_of_range_of_surjective R h₅]
+  abel
 
 /-- The conflations of finitely generated projective modules are the short exact sequences of
 `R`-modules whose three terms are finitely generated projective; by

@@ -353,6 +353,20 @@ theorem val_relabelColumns (κ : Equiv.Perm (Fin n)) :
     (G.relabelColumns κ).1 = G.1.relabelColumns κ :=
   (rfl)
 
+/-- The half-turn of the marking squares of a diagram with an odd number of components. -/
+abbrev rotate : OddComponentGridDiagram n :=
+  ⟨G.1.rotate, by rw [GridDiagram.componentCount_rotate]; exact G.2⟩
+
+/-- The underlying diagram of the half-turn is the half-turned underlying diagram. -/
+@[simp]
+theorem val_rotate : G.rotate.1 = G.1.rotate :=
+  (rfl)
+
+/-- The half-turn is an involution on diagrams with an odd number of components. -/
+@[simp]
+theorem rotate_rotate : G.rotate.rotate = G :=
+  Subtype.ext G.1.rotate_rotate
+
 /-- The integer Alexander grading of a grid state. -/
 def alexanderℤ (x : GridState n) : ℤ :=
   G.1.alexanderTwoℤ x / 2

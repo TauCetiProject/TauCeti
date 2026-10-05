@@ -6,9 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.Global.Orders.Discriminant
-public import TauCeti.NumberTheory.NumberField.Global.Orders.ProperIdeal
+public import TauCeti.NumberTheory.NumberField.Global.Orders.Picard
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Modulus
 public import TauCeti.RingTheory.Ideal.Conductor
+import Mathlib.LinearAlgebra.FreeModule.IdealQuotient
+import TauCeti.RingTheory.ClassGroup.CoprimeRepresentative
+import TauCeti.RingTheory.Ideal.Quotient.Artinian
 
 /-!
 # Ideals of an order away from its conductor
@@ -22,7 +25,13 @@ modulus, `NumberFieldOrder.conductorModulus`, the same monoid the ray class grou
 Every nonzero ideal of `O` coprime to `𝔣` is invertible, even though `O` need not be a Dedekind
 domain. These ideals therefore map injectively to the group of invertible fractional ideals of
 `O`, whose classes modulo principal ideals form the Picard group `Pic O` (via `mkPic`); they are
-the order-side ideals used to describe `Pic O` by ideals prime to the conductor.
+the order-side ideals used to describe `Pic O` by ideals prime to the conductor. Here `O` is
+represented by its copy `O.toRingOfIntegers` inside `𝓞 K`, and an ideal of `O` is coprime to `𝔣`
+when it is coprime to the contraction
+`O.conductor.comap (O.toRingOfIntegers.val : O.toRingOfIntegers →+* 𝓞 K)` of `𝔣` to `O`. Every
+class of `Pic O` is the class of such an ideal, because that contraction is a nonzero ideal of `O`,
+so it has finite quotient and lies in only finitely many maximal ideals of `O`
+(`ClassGroup.exists_mk_eq_and_sup_eq_top`).
 
 ## Main definitions
 
@@ -39,6 +48,8 @@ the order-side ideals used to describe `Pic O` by ideals prime to the conductor.
 
 * `TauCeti.GlobalNumberFields.NumberFieldOrder.isUnit_coeIdeal_of_mem_integralIdealsAwayConductor`:
   a nonzero ideal of an order coprime to the conductor is an invertible fractional ideal.
+* `NumberFieldOrder.mkPic_comp_integralIdealsAwayConductorToInvertible_surjective`:
+  every class of `Pic O` is the class of a nonzero ideal of `O` coprime to the conductor.
 
 ## References
 
@@ -270,6 +281,39 @@ theorem integralIdealsAwayConductorToInvertible_injective :
   have h'' := congrArg (Ideal.comap O.toRingOfIntegersEquiv) (FractionalIdeal.coeIdeal_injective h')
   rwa [Ideal.comap_map_of_bijective _ O.toRingOfIntegersEquiv.bijective,
     Ideal.comap_map_of_bijective _ O.toRingOfIntegersEquiv.bijective, SetLike.coe_eq_coe] at h''
+
+/-! ### Picard classes away from the conductor -/
+
+/-- The contraction of the conductor to the order is a nonzero ideal. -/
+private theorem comap_conductor_ne_bot :
+    O.conductor.comap (O.toRingOfIntegers.val : O.toRingOfIntegers →+* 𝓞 K) ≠ ⊥ := by
+  obtain ⟨x, hx, hx0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot O.conductor_ne_bot
+  refine (Submodule.ne_bot_iff _).mpr ⟨⟨x, O.conductor_le_toRingOfIntegers hx⟩, hx, ?_⟩
+  exact fun h => hx0 (congrArg Subtype.val h)
+
+/-- **Every Picard class has a representative coprime to the conductor.** Every class in the
+wide Picard group `Pic O` is the class of a nonzero ideal of `O` coprime to its conductor. -/
+theorem mkPic_comp_integralIdealsAwayConductorToInvertible_surjective :
+    Function.Surjective (O.mkPic.comp O.integralIdealsAwayConductorToInvertible) := by
+  intro c
+  set e := O.toRingOfIntegersEquiv
+  set 𝔣 := O.conductor.comap (O.toRingOfIntegers.val : O.toRingOfIntegers →+* 𝓞 K)
+  have h𝔣 : 𝔣.map e ≠ ⊥ :=
+    (Ideal.map_eq_bot_iff_of_injective e.injective).not.mpr O.comap_conductor_ne_bot
+  have : Finite (O.toSubalgebra ⧸ 𝔣.map e) := Ideal.finiteQuotientOfFreeOfNeBot _ h𝔣
+  obtain ⟨I, hI, hc, hI𝔣⟩ := ClassGroup.exists_mk_eq_and_sup_eq_top (K := K)
+    (Ideal.finite_setOfPred_isMaximal_and_le (𝔣.map e)) c
+  have hIe : (I.comap e).map e = I := Ideal.map_comap_of_surjective _ e.surjective I
+  have hmem : I.comap e ∈ O.integralIdealsAwayConductor := by
+    refine ⟨fun h => hI.ne_zero ?_, ?_⟩
+    · rw [← hIe, h, Ideal.map_bot, FractionalIdeal.coeIdeal_bot]
+    · have h := congrArg (Ideal.map e.symm) hI𝔣
+      rwa [Ideal.map_sup, Ideal.map_top, Ideal.map_symm, Ideal.map_symm,
+        Ideal.comap_map_of_bijective _ e.bijective] at h
+  refine ⟨⟨_, hmem⟩, ?_⟩
+  rw [MonoidHom.comp_apply, ← hc]
+  congr 1
+  exact Units.ext (by rw [coe_integralIdealsAwayConductorToInvertible_apply, hIe, IsUnit.unit_spec])
 
 end NumberFieldOrder
 

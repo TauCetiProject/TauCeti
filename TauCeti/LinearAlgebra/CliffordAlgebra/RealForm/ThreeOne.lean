@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Matrix.Hermitian
 public import TauCeti.LinearAlgebra.CliffordAlgebra.BottPeriodicity
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Even.Scaling
 public import TauCeti.LinearAlgebra.Matrix.Adjugate.Basic
@@ -31,6 +32,8 @@ The construction first uses hyperbolic Bott periodicity to identify `Cl(1,2)` wi
   matrix adjugation.
 * `TauCeti.realCliffordThreeOne_reverseEven_mul_self_eq_one_iff_det_eq_one` characterizes the
   reverse-unitary carrier by determinant one.
+* `TauCeti.realCliffordThreeOneVectorEquivHermitian` identifies the quadratic space with the
+  Hermitian two-by-two complex matrices, carrying the negative quadratic form to the determinant.
 
 ## References
 
@@ -43,6 +46,118 @@ public section
 open scoped Matrix TensorProduct
 
 namespace TauCeti
+
+/-! ## The quadratic space as Hermitian matrices -/
+
+/-- The real Clifford form of signature `(3,1)` in coordinates. -/
+@[simp]
+theorem realCliffordForm_three_one_apply (v : Fin 4 → ℝ) :
+    realCliffordForm 3 1 v = v 0 ^ 2 + v 1 ^ 2 + v 2 ^ 2 - v 3 ^ 2 := by
+  rw [realCliffordForm_apply, Fin.sum_univ_four]
+  rw [realCliffordWeight_of_lt (p := 3) (q := 1) (i := (0 : Fin 4)) (by decide),
+    realCliffordWeight_of_lt (p := 3) (q := 1) (i := (1 : Fin 4)) (by decide),
+    realCliffordWeight_of_lt (p := 3) (q := 1) (i := (2 : Fin 4)) (by decide),
+    realCliffordWeight_of_le (p := 3) (q := 1) (i := (3 : Fin 4)) (by decide)]
+  simp only [one_mul, neg_one_mul]
+  ring
+
+private def realCliffordThreeOneVectorMatrix (v : Fin 4 → ℝ) :
+    Matrix (Fin 2) (Fin 2) ℂ :=
+  !![(v 3 : ℂ) + v 2, -(v 1 : ℂ) - (v 0 : ℂ) * Complex.I;
+     -(v 1 : ℂ) + (v 0 : ℂ) * Complex.I, (v 3 : ℂ) - v 2]
+
+private theorem realCliffordThreeOneVectorMatrix_isHermitian (v : Fin 4 → ℝ) :
+    (realCliffordThreeOneVectorMatrix v).IsHermitian := by
+  apply Matrix.IsHermitian.ext
+  intro i j
+  fin_cases i <;> fin_cases j <;>
+    simp [realCliffordThreeOneVectorMatrix, sub_eq_add_neg]
+
+/-- Lorentz four-space as the real vector space of Hermitian two-by-two complex matrices. The
+coordinate convention is compatible with `realCliffordThreeOneEvenEquivComplexMatrix`; the Spin
+action becomes Hermitian congruence in `realSpinThreeOneEquivSpecialLinear_action`. -/
+noncomputable def realCliffordThreeOneVectorEquivHermitian :
+    (Fin 4 → ℝ) ≃ₗ[ℝ]
+      selfAdjoint.submodule ℝ (Matrix (Fin 2) (Fin 2) ℂ) where
+  toFun v := ⟨realCliffordThreeOneVectorMatrix v, by
+    -- Restate subtype membership through the Hermitian predicate proved above.
+    change IsSelfAdjoint (realCliffordThreeOneVectorMatrix v)
+    exact (realCliffordThreeOneVectorMatrix_isHermitian v).isSelfAdjoint⟩
+  invFun A := ![-(A.1 0 1).im, -(A.1 0 1).re,
+    ((A.1 0 0).re - (A.1 1 1).re) / 2,
+    ((A.1 0 0).re + (A.1 1 1).re) / 2]
+  map_add' v w := by
+    apply Subtype.ext
+    ext i j
+    fin_cases i <;> fin_cases j <;>
+      simp [realCliffordThreeOneVectorMatrix] <;> ring
+  map_smul' r v := by
+    apply Subtype.ext
+    ext i j
+    fin_cases i <;> fin_cases j <;>
+      simp [realCliffordThreeOneVectorMatrix] <;> ring
+  left_inv v := by
+    funext i
+    fin_cases i <;> simp [realCliffordThreeOneVectorMatrix]
+  right_inv A := by
+    have h00 := Matrix.IsHermitian.apply A.2 0 0
+    have h01 := Matrix.IsHermitian.apply A.2 1 0
+    have h11 := Matrix.IsHermitian.apply A.2 1 1
+    have h00im : (A.1 0 0).im = 0 := by
+      have h := congrArg Complex.im h00
+      simp at h
+      linarith
+    have h11im : (A.1 1 1).im = 0 := by
+      have h := congrArg Complex.im h11
+      simp at h
+      linarith
+    apply Subtype.ext
+    ext i j
+    fin_cases i <;> fin_cases j
+    · apply Complex.ext
+      · simp [realCliffordThreeOneVectorMatrix]
+        ring
+      · simp [realCliffordThreeOneVectorMatrix, h00im]
+    · apply Complex.ext <;> simp [realCliffordThreeOneVectorMatrix]
+    · -- Expose the matrix entry before using Hermitian symmetry across the diagonal.
+      change realCliffordThreeOneVectorMatrix _ 1 0 = A.1 1 0
+      rw [← h01]
+      apply Complex.ext <;> simp [realCliffordThreeOneVectorMatrix]
+    · apply Complex.ext
+      · simp [realCliffordThreeOneVectorMatrix]
+        ring
+      · simp [realCliffordThreeOneVectorMatrix, h11im]
+
+/-- The Hermitian matrix coordinates of a Lorentz vector. -/
+@[simp]
+theorem coe_realCliffordThreeOneVectorEquivHermitian_apply (v : Fin 4 → ℝ) :
+    (realCliffordThreeOneVectorEquivHermitian v : Matrix (Fin 2) (Fin 2) ℂ) =
+      !![(v 3 : ℂ) + v 2, -(v 1 : ℂ) - (v 0 : ℂ) * Complex.I;
+         -(v 1 : ℂ) + (v 0 : ℂ) * Complex.I, (v 3 : ℂ) - v 2] := by
+  ext i j
+  fin_cases i <;> fin_cases j <;> rfl
+
+/-- The Lorentz-vector coordinates recovered from a Hermitian two-by-two matrix. -/
+theorem realCliffordThreeOneVectorEquivHermitian_symm_apply
+    (A : selfAdjoint.submodule ℝ (Matrix (Fin 2) (Fin 2) ℂ)) :
+    realCliffordThreeOneVectorEquivHermitian.symm A =
+      ![-(A.1 0 1).im, -(A.1 0 1).re,
+        ((A.1 0 0).re - (A.1 1 1).re) / 2,
+        ((A.1 0 0).re + (A.1 1 1).re) / 2] := by
+  funext i
+  fin_cases i <;> rfl
+
+/-- The determinant of the Hermitian matrix model is the negative Lorentzian quadratic form. -/
+theorem realCliffordThreeOneVectorEquivHermitian_det (v : Fin 4 → ℝ) :
+    ((realCliffordThreeOneVectorEquivHermitian v :
+      selfAdjoint.submodule ℝ (Matrix (Fin 2) (Fin 2) ℂ)) :
+        Matrix (Fin 2) (Fin 2) ℂ).det = -(realCliffordForm 3 1 v) := by
+  rw [coe_realCliffordThreeOneVectorEquivHermitian_apply,
+    realCliffordForm_three_one_apply]
+  apply Complex.ext <;>
+    norm_num [Matrix.det_fin_two, pow_two] <;> ring
+
+/-! ## The even Clifford algebra -/
 
 /-- The Lorentzian algebra model `Cl(1,2) ≃ M₂(ℂ)`. -/
 noncomputable def realCliffordOneTwoEquivComplexMatrix :

@@ -11,7 +11,7 @@ public import TauCeti.Algebra.CentralSimple.Bimodule
 public import TauCeti.Algebra.DirectSum.Internal
 public import TauCeti.Algebra.Module.GradedModule.Opposite
 public import TauCeti.Algebra.Module.GradedModule.TensorProduct
-public import TauCeti.RingTheory.PrimitiveIdempotent
+public import TauCeti.RingTheory.Idempotents.Primitive.Basic
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.Casimir
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.Grading
 

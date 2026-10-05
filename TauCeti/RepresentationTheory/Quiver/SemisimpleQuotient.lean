@@ -271,6 +271,41 @@ theorem quotientArrowIdealAlgEquiv_mk (f : pathAlgebra k Q) :
 
 end Quotient
 
+/-! ### Trivial coefficients modulo relations -/
+
+section Relations
+
+variable {k : Type w} {Q : Type u} [CommRing k] [Quiver.{v} Q] [Finite Q]
+variable {I : Ideal (pathAlgebra k Q)} [I.IsTwoSided]
+
+/-- The trivial-coefficient map descends through any ideal of relations contained
+in the arrow ideal. -/
+noncomputable def quotientTrivialCoeff (hI : I ≤ arrowIdeal k Q) :
+    (pathAlgebra k Q ⧸ I) →ₐ[k] (Q → k) :=
+  Ideal.Quotient.liftₐ I (trivialCoeff k Q) fun _ ha =>
+    RingHom.mem_ker.1 ((ker_trivialCoeff k Q).symm ▸ hI ha)
+
+/-- Trivial coefficients are unchanged by passage to the quotient by relations. -/
+@[simp]
+theorem quotientTrivialCoeff_mk (hI : I ≤ arrowIdeal k Q) (a : pathAlgebra k Q) :
+    quotientTrivialCoeff hI (Ideal.Quotient.mk I a) = trivialCoeff k Q a :=
+  (rfl)
+
+/-- Every family of vertex coordinates occurs in the quotient by relations. -/
+theorem quotientTrivialCoeff_surjective (hI : I ≤ arrowIdeal k Q) :
+    Function.Surjective (quotientTrivialCoeff hI) := by
+  exact Ideal.Quotient.lift_surjective_of_surjective _ _ (trivialCoeff_surjective k Q)
+
+/-- The kernel of the descended trivial-coefficient map is the image of the arrow ideal. -/
+theorem ker_quotientTrivialCoeff (hI : I ≤ arrowIdeal k Q) :
+    RingHom.ker (quotientTrivialCoeff hI) = (arrowIdeal k Q).map (Ideal.Quotient.mk I) := by
+  -- `liftₐ` and `lift` have the same underlying ring homomorphism.
+  exact (Ideal.ker_quotient_lift (trivialCoeff k Q).toRingHom
+    (hI.trans_eq (ker_trivialCoeff k Q).symm)).trans
+      (congrArg (Ideal.map (Ideal.Quotient.mk I)) (ker_trivialCoeff k Q))
+
+end Relations
+
 /-! ### The semisimple quotient -/
 
 section Jacobson

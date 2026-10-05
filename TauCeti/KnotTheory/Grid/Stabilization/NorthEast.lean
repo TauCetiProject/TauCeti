@@ -31,8 +31,9 @@ corner. The induced map `GH⁻(G') → GH⁻(G)` (`GridDiagram.stabilizeXSuccHom
 composite of two half-turn equivalences and the south-west stabilization map of `G.rotate`, so
 it is bijective.
 
-The Alexander grading, and hence the invariant `τ`, is not treated here: that needs the
-invariance of the gradings under the half-turn.
+The half-turn preserves the Alexander grading and `τ` (`Homology/HalfTurn.lean`).
+Consequently `τ` is also invariant under this north-east stabilization, by conjugating the
+south-west stabilization with the two half-turns.
 
 ## Main definitions
 
@@ -173,5 +174,25 @@ theorem stabilizeXSuccHomologyMap_bijective :
       (G.stabilizeXSuccSourceEquiv s R).bijective)
 
 end GridDiagram
+
+namespace GridDiagram.IsKnot
+
+variable {n : ℕ} {G : GridDiagram n} (hG : G.IsKnot) (s : Fin n)
+  (K : Type*) [CommRing K] [CharP K 2]
+
+/-- The north-east corner `X`-stabilization of a knot grid preserves `τ`. -/
+theorem tau_stabilizeX_succ :
+    ((G.isKnot_stabilizeX s.succ (G.X s).succ s).mpr hG).tau K = hG.tau K := by
+  have hrot := (G.isKnot_rotate).mpr hG
+  have hstab := (G.isKnot_stabilizeX s.succ (G.X s).succ s).mpr hG
+  have hturn := hstab.tau_rotate K
+  have hsw := hrot.tau_stabilizeX s.rev K
+  have hturn' :
+      ((G.rotate.isKnot_stabilizeX s.rev.castSucc (G.rotate.X s.rev).castSucc s.rev).mpr
+        hrot).tau K = hstab.tau K := by
+    simpa only [G.rotate_stabilizeX_succ s] using hturn
+  exact hturn'.symm.trans (hsw.trans (hG.tau_rotate K))
+
+end GridDiagram.IsKnot
 
 end TauCeti

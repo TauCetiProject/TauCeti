@@ -230,31 +230,52 @@ private theorem negativeRoot_mulVec_single_sub (i : Fin 6) (a : Fin 27)
 /-- Invariance under the two simple-root points makes membership of coordinate basis vectors
 stable under every simple reflection. -/
 private theorem single_reflection_mem
-    (N : Subcomodule k (coordinateHopfAlgebra k) (Fin 27 → k))
+    (N : Submodule k (Fin 27 → k))
+    (hroot : ∀ (i : Fin 6 ⊕ Fin 6) (w : Fin 27 → k), w ∈ N →
+      ((rootSubgroupPoints i k (Multiplicative.ofAdd 1) :
+        Matrix.GeneralLinearGroup (Fin 27) k) : Matrix (Fin 27) (Fin 27) k) *ᵥ w ∈ N)
     (a : Fin 27) (i : Fin 6) (ha : Pi.single a 1 ∈ N) :
     Pi.single (DynkinType.e6MinusculeReflection i a) 1 ∈ N := by
   rcases DynkinType.e6MinusculeWeight_apply_eq_neg_one_or_eq_zero_or_eq_one a i with
     hneg | hzero | hpos
-  · have hact := rootSubgroupPoints_mulVec_mem k N (.inl i) ha
-    have hsub := N.toSubmodule.sub_mem hact ha
+  · have hact := hroot (.inl i) _ ha
+    have hsub := N.sub_mem hact ha
     rwa [positiveRoot_mulVec_single_sub k i a hneg] at hsub
   · rw [(DynkinType.e6MinusculeReflection_eq_self_iff i a).2 hzero]
     exact ha
-  · have hact := rootSubgroupPoints_mulVec_mem k N (.inr i) ha
-    have hsub := N.toSubmodule.sub_mem hact ha
+  · have hact := hroot (.inr i) _ ha
+    have hsub := N.sub_mem hact ha
     rwa [negativeRoot_mulVec_single_sub k i a hpos] at hsub
+
+/-- A comodule with the type-`E₆` minuscule weight decomposition is simple if its subcomodules
+are stable under the numbered positive and negative minuscule root matrices at parameter one.
+This applies both to the integral carrier's specialization and to the subgroup generated directly
+over the field. -/
+theorem isSimpleOrder_of_minusculeWeights_of_rootSubgroupPoints
+    {H : Type*} [AddCommGroup H] [Module k H] [Coalgebra k H]
+    [Comodule k H (Fin 27 → k)]
+    (f : H →ₗc[k] MonoidAlgebra k (Multiplicative (Fin 6 →₀ ℤ)))
+    (hweights : Comodule.Corestrict f =
+      Comodule.ofWeights (Pi.basisFun k (Fin 27)) minusculeCharacter)
+    (hroot : ∀ (N : Subcomodule k H (Fin 27 → k)) (i : Fin 6 ⊕ Fin 6)
+      (w : Fin 27 → k), w ∈ N →
+      ((rootSubgroupPoints i k (Multiplicative.ofAdd 1) :
+        Matrix.GeneralLinearGroup (Fin 27) k) : Matrix (Fin 27) (Fin 27) k) *ᵥ w ∈ N) :
+    IsSimpleOrder (Subcomodule k H (Fin 27 → k)) :=
+  Subcomodule.isSimpleOrder_of_corestrict_eq_ofWeights f minusculeCharacter
+    minusculeCharacter_injective hweights
+    (fun i a ↦ DynkinType.e6MinusculeReflection i a)
+    (fun i ↦ DynkinType.e6MinusculeReflection_apply_apply i)
+    (fun N a i ↦ single_reflection_mem k N.toSubmodule (hroot N) a i) 0
+    DynkinType.exists_e6MinusculeReflections_eq
 
 /-- **The standard comodule of the specialized type-`E₆` minuscule carrier is simple over
 every field.** -/
 instance instIsSimpleOrderSubcomodule :
-    IsSimpleOrder (Subcomodule k (coordinateHopfAlgebra k) (Fin 27 → k)) := by
-  exact Subcomodule.isSimpleOrder_of_corestrict_eq_ofWeights
-    (weightTorusToBaseChangeCoordinateMap k).hom.toCoalgHom minusculeCharacter
-    minusculeCharacter_injective (torusCorestrict_eq_ofWeights k)
-    (fun i a ↦ DynkinType.e6MinusculeReflection i a)
-    (fun i ↦ DynkinType.e6MinusculeReflection_apply_apply i)
-    (fun N a i ↦ single_reflection_mem k N a i) 0
-    DynkinType.exists_e6MinusculeReflections_eq
+    IsSimpleOrder (Subcomodule k (coordinateHopfAlgebra k) (Fin 27 → k)) :=
+  isSimpleOrder_of_minusculeWeights_of_rootSubgroupPoints k
+    (weightTorusToBaseChangeCoordinateMap k).hom.toCoalgHom (torusCorestrict_eq_ofWeights k)
+    (fun N i _ hw ↦ rootSubgroupPoints_mulVec_mem k N i hw)
 
 end Simple
 

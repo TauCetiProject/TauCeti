@@ -84,9 +84,13 @@ variable (k : Type w) [Field k] {V : Type u} (G : SimpleGraph V) [Finite V]
 /-- A graded vertex projective is a finite graded module with projective underlying module, so it
 has a class in `K₀^gr(proj Z)`. -/
 theorem gradedFiniteProjectiveModules_zigzagGradedProjective (j : V) :
-    gradedFiniteProjectiveModules (zigzagIntegerGrade k G) (zigzagGradedProjective k G j) :=
-  gradedFiniteProjectiveModules_iff.2
-    ⟨Module.Finite.of_restrictScalars_finite k _ _, zigzagProjective_projective k G j⟩
+    gradedFiniteProjectiveModules (zigzagIntegerGrade k G) (zigzagGradedProjective k G j) := by
+  let _ := zigzagIntegerGradedAlgebra k G
+  have hI := isHomogeneous_zigzagProjective k G j
+  rw [zigzagProjective_def] at hI
+  simpa only [zigzagGradedProjective, zigzagProjective_def] using
+    gradedFiniteProjectiveModules_ofIdeal_span_singleton
+      (isIdempotentElem_zigzagVertexIdempotent k G j) hI
 
 /-- The class `[P_j]` of the graded vertex projective `P_j = Z e_j` in the graded Grothendieck
 group `K₀^gr(proj Z)` of finite graded projective modules. -/
@@ -110,28 +114,30 @@ theorem map_subtype_smul_zigzagProjectiveGrade (i j : V) (p : ℤ) :
     (zigzagVertexIdempotent k G i • zigzagProjectiveGrade k G j p).map
         ((zigzagProjective k G j).subtype.restrictScalars k) =
       zigzagIntegerGradedCorner k G i j p := by
-  have he := zigzagMk_vertexIdempotent_mul_self k G i
-  ext y
-  rw [Submodule.mem_map, mem_zigzagIntegerGradedCorner_iff, mem_zigzagCorner_iff]
-  simp only [Submodule.mem_smul_pointwise_iff_exists]
-  constructor
-  · rintro ⟨_, ⟨x, hx, rfl⟩, rfl⟩
-    have hxj := (mem_zigzagProjective_iff k G).1 x.2
-    rw [LinearMap.restrictScalars_apply, Submodule.subtype_apply, Submodule.coe_smul,
-      smul_eq_mul]
-    refine ⟨by rw [mul_assoc, mul_assoc, hxj, ← mul_assoc, he], ?_⟩
-    simpa only [zero_add] using mul_mem_zigzagIntegerGrade k G
+  let _ := zigzagIntegerGradedAlgebra k G
+  rw [← zigzagGradedProjective_piece]
+  have key : ∀ (I : Ideal (nonisolatedZigzagQuotient k G))
+      (hI : I.IsHomogeneous (zigzagIntegerGrade k G)),
+      I = Ideal.span {zigzagVertexIdempotent k G j} →
+      (zigzagVertexIdempotent k G i • (GradedModuleCat.ofIdeal _ I hI).grading.piece p).map
+          (I.subtype.restrictScalars k) =
+        cornerSubmodule k (zigzagVertexIdempotent k G i)
+          (zigzagVertexIdempotent k G j) ⊓ zigzagIntegerGrade k G p := by
+    rintro _ hI rfl
+    exact GradedModuleCat.map_subtype_smul_ofIdeal_span_singleton_piece
+      (isIdempotentElem_zigzagVertexIdempotent k G i)
       (zigzagVertexIdempotent_mem_zigzagIntegerGrade_zero k G i)
-      ((mem_zigzagProjectiveGrade_iff k G).1 hx)
-  · rintro ⟨hc, hg⟩
-    have hyj : y * zigzagVertexIdempotent k G j = y := by
-      rw [← hc, mul_assoc, zigzagMk_vertexIdempotent_mul_self k G j]
-    have hiy : zigzagVertexIdempotent k G i * y = y := by
-      conv_lhs => rw [← hc]
-      rw [← mul_assoc, ← mul_assoc, he, hc]
-    have hy : y ∈ zigzagProjective k G j := (mem_zigzagProjective_iff k G).2 hyj
-    refine ⟨⟨y, hy⟩, ⟨⟨y, hy⟩, (mem_zigzagProjectiveGrade_iff k G).2 hg, Subtype.ext ?_⟩, rfl⟩
-    rw [Submodule.coe_smul, smul_eq_mul, Submodule.coe_mk, hiy]
+      (isIdempotentElem_zigzagVertexIdempotent k G j) hI p
+  calc
+    _ = cornerSubmodule k (zigzagVertexIdempotent k G i)
+        (zigzagVertexIdempotent k G j) ⊓ zigzagIntegerGrade k G p :=
+      key _ (isHomogeneous_zigzagProjective k G j) (zigzagProjective_def k G j)
+    _ = zigzagIntegerGradedCorner k G i j p := by
+      ext x
+      rw [Submodule.mem_inf, mem_cornerSubmodule_iff k
+        (isIdempotentElem_zigzagVertexIdempotent k G i)
+        (isIdempotentElem_zigzagVertexIdempotent k G j),
+        mem_zigzagIntegerGradedCorner_iff, mem_zigzagCorner_iff]
 
 /-- The dimension of `e_i • (P_j)ₚ` is the dimension of the degree-`p` corner of `e_i Z e_j`. -/
 theorem finrank_smul_zigzagProjectiveGrade (i j : V) (p : ℤ) :

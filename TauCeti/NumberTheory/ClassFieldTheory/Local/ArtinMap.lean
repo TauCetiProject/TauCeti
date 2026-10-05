@@ -10,6 +10,8 @@ public import TauCeti.NumberTheory.ClassFieldTheory.Local.Reciprocity
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.Restriction
 public import TauCeti.NumberTheory.ClassFieldTheory.LocalExistence.NormSubgroup
 public import TauCeti.Topology.Algebra.Group.TopologicalAbelianization
+import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.ConjugateSubgroups
+import TauCeti.Topology.Algebra.ValuativeRel.ContinuousRingHom
 
 /-!
 # The absolute local Artin map
@@ -53,6 +55,12 @@ diagram for the norm inside the formation of `K`
 (`TauCeti.ClassFieldTheory.ClassFormation.artinMap_groundNorm`). On ground levels, that norm is
 the field norm `N_{L/K}` (`TauCeti.ClassFieldTheory.groundNorm_layerRestriction_localFormationMap`).
 
+The absolute Artin map is natural in the local field (`artinMap_congr`). A continuous isomorphism
+`e : K ≃+* K'`, extended to the algebraic closures by `e'`, carries `Art_K(x)` to `Art_{K'}(e x)`.
+Conjugation by `e'` is determined only up to an inner automorphism of `G_{K'}`, which is
+invisible in `G_{K'}^ab`. This transports Artin symbols across identifications of local fields,
+for instance from a completion of a number field to a concrete model such as `ℚ_[p]`.
+
 ## Main definitions
 
 * `TauCeti.ClassFieldTheory.artinMap K`: the absolute local Artin map `Kˣ →* G_K^ab`.
@@ -72,6 +80,8 @@ the field norm `N_{L/K}` (`TauCeti.ClassFieldTheory.groundNorm_layerRestriction_
   subgroups.
 * `TauCeti.ClassFieldTheory.artinMap_norm`: the absolute local Artin map is functorial for the
   norm of a finite extension.
+* `TauCeti.ClassFieldTheory.artinMap_congr`: the absolute local Artin map is natural for
+  continuous isomorphisms of local fields.
 
 ## References
 
@@ -323,5 +333,55 @@ theorem artinMap_norm (x : Lˣ) (τ : Field.absoluteGaloisGroup L)
     localFormationHom_apply]
 
 end Norm
+
+/-! ### Naturality in the local field -/
+
+section Congr
+
+variable {K} {K' : Type} [Field K'] [ValuativeRel K'] [TopologicalSpace K']
+  [IsNonarchimedeanLocalField K']
+
+/-- **The absolute local Artin map is natural in the local field.** Let `e : K ≃+* K'` be a
+continuous isomorphism of nonarchimedean local fields and `e'` an extension of `e` to the algebraic
+closures. If `σ ∈ G_K` represents the absolute Artin symbol of `x ∈ Kˣ`, then its conjugate
+`σ' = e' ∘ σ ∘ e'⁻¹ ∈ G_{K'}` represents the absolute Artin symbol of `e x`:
+
+```text
+Art_{K'} (e x) = e' ∘ Art_K (x) ∘ e'⁻¹.
+```
+
+Two extensions of `e` differ by an element of `G_{K'}`, and conjugation by it is invisible in
+`G_{K'}^ab`, so every extension `e'` is allowed. Continuity of `e` is what makes it compatible
+with the valuations of `K` and `K'`. -/
+theorem artinMap_congr (e : K ≃+* K') (he : Continuous e)
+    (e' : AlgebraicClosure K ≃+* AlgebraicClosure K')
+    (he' : ∀ c : K, e' (algebraMap K (AlgebraicClosure K) c) =
+      algebraMap K' (AlgebraicClosure K') (e c))
+    (x : Kˣ) (σ : Field.absoluteGaloisGroup K) (σ' : Field.absoluteGaloisGroup K')
+    (hσσ' : ∀ y : AlgebraicClosure K, e' (σ.toRingEquiv y) = σ'.toRingEquiv (e' y))
+    (hσ : (σ : Field.absoluteGaloisGroupAbelianization K) = artinMap K x) :
+    (σ' : Field.absoluteGaloisGroupAbelianization K') =
+      artinMap K' (Units.map e.toMonoidHom x) := by
+  -- Regard `K` as an extension of degree one of `K'` along `e⁻¹`.
+  let _ : Algebra K' K := e.symm.toRingHom.toAlgebra
+  let eA : K' ≃ₐ[K'] K := AlgEquiv.ofRingEquiv (f := e.symm) fun _ ↦ rfl
+  have : FiniteDimensional K' K := eA.toLinearEquiv.finiteDimensional
+  have : ValuativeExtension K' K := ⟨fun a b ↦ by
+    rw [RingHom.algebraMap_toAlgebra, ← e.toRingHom.map_vle_map_iff_of_continuous he]
+    simp⟩
+  let iota : K →ₐ[K'] SeparableClosure K' := (Algebra.ofId K' (SeparableClosure K')).comp eA.symm
+  -- Along `iota`, `absoluteGaloisGroupExtend` is conjugation by `e'` up to an inner automorphism,
+  -- and the norm of `K/K'` is `e`, so `artinMap_norm` gives the claim.
+  obtain ⟨γ, hγ⟩ := exists_absoluteGaloisGroupExtend_eq_conj K' K iota e' he'
+  have hnorm : Algebra.normUnits K' x = Units.map e.toMonoidHom x := by
+    ext
+    rw [Algebra.coe_normUnits, ← eA.apply_symm_apply (x : K), Algebra.norm_eq_of_algEquiv,
+      Algebra.norm_self, MonoidHom.id_apply, Units.coe_map]
+    -- `eA⁻¹` is `e` as a function.
+    rfl
+  rw [← hnorm, ← artinMap_norm K iota x σ hσ, hγ σ σ' hσσ', QuotientGroup.mk_mul,
+    QuotientGroup.mk_mul, QuotientGroup.mk_inv, mul_inv_cancel_comm]
+
+end Congr
 
 end TauCeti.ClassFieldTheory

@@ -11,6 +11,11 @@ public import TauCeti.Analysis.InnerProductSpace.LinearIsometry
 public import TauCeti.Geometry.Manifold.Immersion
 public import TauCeti.Geometry.Sphere.LinearIsometry
 
+import Mathlib.Analysis.Calculus.Deriv.Linear
+import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+import Mathlib.Analysis.SpecialFunctions.Complex.Circle
+import Mathlib.Topology.MetricSpace.HausdorffDimension
+
 /-!
 # The stereographic charts of the sphere, and the smooth embeddings of spheres induced by
 linear isometries
@@ -32,6 +37,10 @@ isometry is the inclusion of a factor in a product decomposition
 makes the restriction a smooth embedding. Great circles, the geometric presentation of the unknot,
 are the case of a linear isometry `ℂ →ₗᵢ[ℝ] E`.
 
+Finally, the covering map `Circle.exp : ℝ → S¹` has injective derivative everywhere, so that a
+loop and its lift to `ℝ` have the same tangent lines. A differentiable loop in a sphere of dimension
+at least two omits a point, allowing the entire loop to be read in one stereographic chart.
+
 ## Main results
 
 * `TauCeti.chartAt_sphere`: the preferred chart at `v` is `stereographic' n (-v)`.
@@ -40,6 +49,11 @@ are the case of a linear isometry `ℂ →ₗᵢ[ℝ] E`.
   of unit spheres as a linear isometry of the model spaces.
 * `LinearIsometry.isSmoothEmbedding_unitSphereMap`: the restriction of a linear isometry to the
   unit spheres is a smooth embedding, at every differentiability order.
+* `TauCeti.injective_mfderiv_circleExp`: the derivative of `Circle.exp : ℝ → S¹` is injective.
+* `TauCeti.deriv_comp_circleExp_ne_zero_and_range_mfderiv`: lifting a `C¹` immersed circle
+  along `Circle.exp` gives a nonzero derivative spanning its tangent line.
+* `TauCeti.exists_notMem_range_circle_sphere`: a differentiable loop in a sphere of dimension
+  at least two omits a point.
 -/
 
 public section
@@ -141,3 +155,103 @@ theorem isSmoothEmbedding_unitSphereMap : IsSmoothEmbedding (𝓡 m) (𝓡 n) k 
   ⟨ι.isImmersion_unitSphereMap, ι.isEmbedding_unitSphereMap⟩
 
 end LinearIsometry
+
+/-! ### The derivative of the circle exponential -/
+
+namespace TauCeti
+
+attribute [local instance] finrank_real_complex_fact'
+
+/-- The derivative of `Circle.exp : ℝ → S¹` is injective at every point. -/
+theorem injective_mfderiv_circleExp (t : ℝ) :
+    Injective (mfderiv 𝓘(ℝ, ℝ) (𝓡 1) Circle.exp t : ℝ →L[ℝ] EuclideanSpace ℝ (Fin 1)) := by
+  -- Composed with the inclusion `S¹ → ℂ`, it is the derivative `i exp (t i) ≠ 0` of `exp (t i)`.
+  have he0 : mfderiv 𝓘(ℝ, ℝ) (𝓡 1) Circle.exp t ≠ 0 := by
+    intro h0
+    have hcoe : MDifferentiableAt (𝓡 1) 𝓘(ℝ, ℂ) (fun z : Circle => (z : ℂ)) (Circle.exp t) :=
+      (contMDiff_coe_sphere (m := 1)).mdifferentiableAt one_ne_zero
+    have hcomp := mfderiv_comp t hcoe
+      ((contMDiff_circleExp (m := 1)).mdifferentiableAt one_ne_zero)
+    rw [h0, ContinuousLinearMap.comp_zero, mfderiv_eq_fderiv] at hcomp
+    have hd : HasDerivAt (fun s : ℝ => ((Circle.exp s : Circle) : ℂ))
+        (Complex.exp (t * Complex.I) * Complex.I) t := by
+      simp only [Circle.coe_exp]
+      simpa using ((Complex.ofRealCLM.hasDerivAt (x := t)).mul_const Complex.I).cexp
+    have h1 := congrArg (fun L => L (1 : ℝ)) hcomp
+    -- `fromTangentSpace` identifies the tangent spaces of `ℝ` and `ℂ` with `ℝ` and `ℂ` by the
+    -- identity map, and has no simp lemmas, so `change` unfolds it.
+    change fderiv ℝ (fun s : ℝ => ((Circle.exp s : Circle) : ℂ)) t 1 = 0 at h1
+    rw [hd.hasFDerivAt.fderiv] at h1
+    simp [Complex.exp_ne_zero] at h1
+  set e : ℝ →L[ℝ] EuclideanSpace ℝ (Fin 1) := mfderiv 𝓘(ℝ, ℝ) (𝓡 1) Circle.exp t
+  have hne : e 1 ≠ 0 := fun h0 => he0 (ContinuousLinearMap.ext_ring (by rw [h0]; rfl))
+  refine (injective_iff_map_eq_zero e).mpr fun s hs => ?_
+  have hs' : s • e 1 = 0 := by rw [← map_smul, smul_eq_mul, mul_one]; exact hs
+  exact (smul_eq_zero.mp hs').resolve_right hne
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+
+/-- For a `C¹` immersion `f` of the circle, the derivative of `t ↦ f (exp (t i))` is nonzero and
+spans the range of the derivative of `f`. -/
+theorem deriv_comp_circleExp_ne_zero_and_range_mfderiv {f : Circle → V}
+    (hf : ContMDiff (𝓡 1) 𝓘(ℝ, V) 1 f) (himm : ∀ z, Injective (mfderiv (𝓡 1) 𝓘(ℝ, V) f z))
+    (t : ℝ) :
+    deriv (f ∘ Circle.exp) t ≠ 0 ∧
+      (mfderiv (𝓡 1) 𝓘(ℝ, V) f (Circle.exp t) : EuclideanSpace ℝ (Fin 1) →L[ℝ] V).range =
+        ℝ ∙ deriv (f ∘ Circle.exp) t := by
+  set D : EuclideanSpace ℝ (Fin 1) →L[ℝ] V := mfderiv (𝓡 1) 𝓘(ℝ, V) f (Circle.exp t)
+  set e : ℝ →L[ℝ] EuclideanSpace ℝ (Fin 1) := mfderiv 𝓘(ℝ, ℝ) (𝓡 1) Circle.exp t
+  have he_inj : Injective e := injective_mfderiv_circleExp t
+  have he_surj : Surjective e :=
+    (LinearMap.injective_iff_surjective_of_finrank_eq_finrank (K := ℝ) (V := ℝ)
+      (V₂ := EuclideanSpace ℝ (Fin 1)) (by simp)).mp he_inj
+  have hD_inj : Injective D := himm _
+  have hγ : ContDiff ℝ 1 (f ∘ Circle.exp) :=
+    contMDiff_iff_contDiff.mp (hf.comp contMDiff_circleExp)
+  -- The chain rule, with the derivative of the curve `f ∘ exp` written as a span map.
+  have hD : ContinuousLinearMap.toSpanSingleton ℝ (deriv (f ∘ Circle.exp) t) = D.comp e := by
+    have hcomp := mfderiv_comp t (hf.mdifferentiableAt one_ne_zero)
+      ((contMDiff_circleExp (m := 1)).mdifferentiableAt one_ne_zero)
+    rw [mfderiv_eq_fderiv, ((hγ.differentiable one_ne_zero) t).hasDerivAt.hasFDerivAt.fderiv]
+      at hcomp
+    exact hcomp
+  have hDe : D (e 1) = deriv (f ∘ Circle.exp) t := by
+    simpa using (congrArg (fun L => L 1) hD).symm
+  refine ⟨fun h0 => one_ne_zero (he_inj (hD_inj (by rw [hDe, h0, map_zero, map_zero]))), ?_⟩
+  rw [← LinearMap.range_toSpanSingleton]
+  have := congrArg (fun L : ℝ →L[ℝ] V => (L : ℝ →ₗ[ℝ] V).range) hD
+  simp only [ContinuousLinearMap.toLinearMap_comp,
+    LinearMap.range_comp_of_range_eq_top _ (LinearMap.range_eq_top.mpr he_surj)] at this
+  exact this.symm
+
+/-! ### Points omitted by differentiable loops -/
+
+/-- A differentiable loop in a sphere of dimension at least two omits a point.
+No immersion or injectivity assumption is needed. -/
+theorem exists_notMem_range_circle_sphere
+    {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+    {n : ℕ} [Fact (finrank ℝ E = n + 1)] (hn : 2 ≤ n)
+    {f : Circle → sphere (0 : E) 1} (hf : MDifferentiable (𝓡 1) (𝓡 n) f) :
+    ∃ p : sphere (0 : E) 1, p ∉ range f := by
+  -- The cone over the loop is the image of a differentiable map from a plane.
+  have hγ : Differentiable ℝ (fun t => (f (Circle.exp t) : E)) :=
+    mdifferentiable_iff_differentiable.mp <|
+      ((contMDiff_coe_sphere (m := 1)).mdifferentiable one_ne_zero).comp
+        (hf.comp ((contMDiff_circleExp (m := 1)).mdifferentiable one_ne_zero))
+  let F : ℝ × ℝ → E := fun q => q.1 • (f (Circle.exp q.2) : E)
+  have hF : Differentiable ℝ F := differentiable_fst.smul (hγ.comp differentiable_snd)
+  obtain ⟨a, ha⟩ := (hF.dense_compl_range_of_finrank_lt_finrank (by
+    rw [Module.finrank_prod, Module.finrank_self, (Fact.out : finrank ℝ E = n + 1)]
+    omega)).nonempty
+  have ha0 : a ≠ 0 := by
+    rintro rfl
+    exact ha ⟨(0, 0), by simp [F]⟩
+  have hnorm : ‖‖a‖⁻¹ • a‖ = 1 := norm_smul_inv_norm ha0
+  refine ⟨⟨‖a‖⁻¹ • a, mem_sphere_zero_iff_norm.mpr hnorm⟩, ?_⟩
+  rintro ⟨z, hz⟩
+  obtain ⟨t, rfl⟩ := Circle.exp_surjective z
+  have hz' := congrArg Subtype.val hz
+  refine ha ⟨(‖a‖, t), ?_⟩
+  simp only [F, hz', smul_smul, mul_inv_cancel₀ (norm_ne_zero_iff.mpr ha0), one_smul]
+
+end TauCeti

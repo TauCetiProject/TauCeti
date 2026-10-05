@@ -850,7 +850,7 @@ jobs:
           REPO: ${{ github.repository }}
           EVENT: ${{ github.event_name }}
           NUM: ${{ steps.pr.outputs.num }}
-          # The immutable commits being built: the merge group's base, or the PR's base commit
+          # The immutable commits being built: the batch's base, or the PR's base commit
           # (a three-dot compare diffs from the merge base), and the exact head.
           BASE: ${{ env.IS_BATCH == 'true' && steps.pr.outputs.base_ref || steps.pr.outputs.base_sha }}
           HEAD: ${{ steps.pr.outputs.sha }}
@@ -863,9 +863,9 @@ jobs:
 
       # The axiom audit and the dot-notation lint need see only what an ordinary PR changes: the
       # library on main already passed both in full (every push to main runs them unscoped, as does
-      # every merge-queue build here), and neither result for an unchanged file can change unless
+      # every GitHub merge-queue or bors staging build here), and neither result for an unchanged file can change unless
       # its dependencies or the Mathlib pin do. So they are scoped to the changed modules exactly
-      # when the environment lint is, and additionally only for a PR build (not the merge queue,
+      # when the environment lint is, and additionally only for a PR build (not a batch,
       # which re-checks the whole library before anything lands), only when the Lake pins are
       # unchanged, and only when every changed `.lean` file is a module the list can name.
       - name: Decide the audit scope

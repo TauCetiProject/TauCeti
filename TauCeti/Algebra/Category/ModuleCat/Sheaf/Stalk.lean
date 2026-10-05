@@ -73,30 +73,13 @@ private def sheafificationStalkMap :
       TopCat.Presheaf.stalk (C := CommRingCat.{u}) (X := X) S.obj x]
       (TopCat.Presheaf.stalk (C := AddCommGrpCat.{u}) (X := X)
         (sheafified S P).val.presheaf x) :=
-  P.stalkLiftCommRing (S := S.obj) x
-    (fun U hx ↦ (TopCat.Presheaf.germ (sheafified S P).val.presheaf U x hx).hom.comp
-      ((sheafificationUnit S P).app (op U)).hom.toAddMonoidHom)
-    (fun i hx m ↦
-      (congrArg (fun t ↦ TopCat.Presheaf.germ (sheafified S P).val.presheaf _ x hx t)
-        (naturality_apply (sheafificationUnit S P) i.op m)).trans
-          (TopCat.Presheaf.germ_res_apply (sheafified S P).val.presheaf i x hx _))
-    (fun U hx r m ↦
-      (congrArg (fun t ↦ TopCat.Presheaf.germ (sheafified S P).val.presheaf U x hx t)
-        (((sheafificationUnit S P).app (op U)).hom.map_smul r m)).trans
-          ((sheafified S P).val.germ_smul (R := S.obj) x U hx r _))
+  stalkMapCommRing (S := S.obj) x (sheafificationUnit S P)
 
 private lemma sheafificationStalkMap_germ (U : Opens X) (hx : x ∈ U) (m : P.obj (op U)) :
     sheafificationStalkMap S P x (TopCat.Presheaf.germ P.presheaf U x hx m) =
       TopCat.Presheaf.germ (sheafified S P).val.presheaf U x hx
         ((sheafificationUnit S P).app (op U) m) :=
-  by
-    unfold sheafificationStalkMap
-    erw [stalkLiftCommRing_germ]
-    · rfl
-    · intro U V i hx m
-      exact (congrArg (fun t ↦ TopCat.Presheaf.germ (sheafified S P).val.presheaf _ x hx t)
-        (naturality_apply (sheafificationUnit S P) i.op m)).trans
-          (TopCat.Presheaf.germ_res_apply (sheafified S P).val.presheaf i x hx _)
+  stalkMapCommRing_germ (S := S.obj) x (sheafificationUnit S P) U hx m
 
 private lemma sheafificationStalkMap_bijective :
     Function.Bijective (sheafificationStalkMap S P x) := by
