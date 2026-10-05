@@ -50,6 +50,8 @@ For a finite group, a sum can also be split over the left or right cosets of a s
   along the left or right cosets of a subgroup.
 * `QuotientGroup.eq_subgroupOf`: two elements of a subgroup `H` lie in the same left coset of
   `N.subgroupOf H` exactly when they lie in the same left coset of `N`.
+* `QuotientGroup.out_mul_out_mul_inv_mem`: the defect of the representatives chosen by
+  `Quotient.out` from preserving multiplication lies in the subgroup.
 -/
 
 public section
@@ -153,6 +155,13 @@ theorem _root_.QuotientGroup.eq_subgroupOf {H N : Subgroup G} {x y : H} :
       ((x : G) : G ⧸ N) = ((y : G) : G ⧸ N) := by
   rw [QuotientGroup.eq, QuotientGroup.eq, Subgroup.mem_subgroupOf, Subgroup.coe_mul,
     Subgroup.coe_inv]
+
+/-- The representatives chosen by `Quotient.out` preserve multiplication up to an element of the
+normal subgroup: `q.out * r.out * (q * r).out⁻¹ ∈ N`. -/
+theorem _root_.QuotientGroup.out_mul_out_mul_inv_mem (N : Subgroup G) [N.Normal]
+    (q r : G ⧸ N) : q.out * r.out * (q * r).out⁻¹ ∈ N := by
+  rw [← div_eq_mul_inv, ← QuotientGroup.eq_iff_div_mem, QuotientGroup.mk_mul,
+    QuotientGroup.out_eq', QuotientGroup.out_eq', QuotientGroup.out_eq']
 
 section Finite
 

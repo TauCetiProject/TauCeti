@@ -243,9 +243,8 @@ theorem exists_lipschitzOnWith_negativeGradientRemainder (hf : ContDiffAt ℝ 2 
       LipschitzOnWith epsilon (negativeGradientRemainder f x) (Metric.closedBall x r) := by
   obtain ⟨s, hs, hlip⟩ := hf.hasStrictFDerivAt_negativeGradientRemainder
     |>.exists_lipschitzOnWith_of_nnnorm_lt epsilon (by simpa using hepsilon)
-  obtain ⟨r, hr, hrs⟩ := Metric.mem_nhds_iff.1 hs
-  refine ⟨r / 2, half_pos hr, hlip.mono fun y hy ↦ hrs ?_⟩
-  exact (Metric.mem_closedBall.1 hy).trans_lt (half_lt_self hr)
+  obtain ⟨r, hr, hrs⟩ := Metric.nhds_basis_closedBall.mem_iff.mp hs
+  exact ⟨r, hr, hlip.mono hrs⟩
 
 /-- At a critical point of a twice continuously differentiable function, the negative-gradient
 field differs from its linearization by a term of order `o(‖y - x‖)`. This is the nonlinear
@@ -262,18 +261,8 @@ above by a multiple of the distance to that point: it vanishes at the point and 
 there. -/
 theorem exists_norm_gradient_le_mul_norm_sub (hf : ContDiffAt ℝ 2 f x) (hgrad : ∇ f x = 0) :
     ∃ C > 0, ∀ᶠ y in 𝓝 x, ‖∇ f y‖ ≤ C * ‖y - x‖ := by
-  refine ⟨‖hessianOperator f x‖ + 1, by positivity, ?_⟩
-  filter_upwards [(hf.neg_gradient_sub_linearization_isLittleO hgrad).def one_pos] with y hy
-  rw [one_mul] at hy
-  have h2 : ‖hessianOperator f x (y - x)‖ ≤ ‖hessianOperator f x‖ * ‖y - x‖ :=
-    (hessianOperator f x).le_opNorm _
-  have h1 : ‖∇ f y‖ ≤ ‖(-∇ f) y + hessianOperator f x (y - x)‖
-      + ‖hessianOperator f x (y - x)‖ := by
-    calc ‖∇ f y‖ = ‖(-∇ f) y‖ := by simp
-      _ = ‖((-∇ f) y + hessianOperator f x (y - x)) - hessianOperator f x (y - x)‖ := by
-          rw [add_sub_cancel_right]
-      _ ≤ _ := norm_sub_le _ _
-  nlinarith
+  simpa only [hgrad, sub_zero] using
+    Asymptotics.isBigO_iff'.1 hf.hasFDerivAt_gradient.isBigO_sub
 
 /-- Near a critical point of a twice continuously differentiable function the absolute energy
 difference `|f y - f x|` is bounded by a multiple of the squared distance to that point. This is
@@ -362,35 +351,14 @@ theorem IsNondegenerateCriticalPoint.exists_mul_norm_sub_le_norm_gradient
     (h : IsNondegenerateCriticalPoint f x) :
     ∃ c > 0, ∀ᶠ y in 𝓝 x, c * ‖y - x‖ ≤ ‖∇ f y‖ := by
   obtain ⟨A, hA⟩ := h.isInvertible_hessianOperator
-  set M : ℝ := ‖(A.symm : E →L[ℝ] E)‖ + 1 with hMdef
-  have hMpos : 0 < M := by positivity
-  have hlow : ∀ v : E, ‖v‖ ≤ M * ‖hessianOperator f x v‖ := by
-    intro v
-    have h1 : ‖v‖ ≤ ‖(A.symm : E →L[ℝ] E)‖ * ‖(A : E →L[ℝ] E) v‖ := by
-      conv_lhs => rw [← A.symm_apply_apply v]
-      exact (A.symm : E →L[ℝ] E).le_opNorm _
-    rw [← hA]
-    nlinarith [norm_nonneg ((A : E →L[ℝ] E) v)]
-  have h2M : (0 : ℝ) < 2 * M := by positivity
-  have hinv : (0 : ℝ) < (2 * M)⁻¹ := by positivity
-  refine ⟨(2 * M)⁻¹, hinv, ?_⟩
-  filter_upwards [h.neg_gradient_sub_linearization_isLittleO.def hinv] with y hy
-  set R : ℝ := ‖(-∇ f) y + hessianOperator f x (y - x)‖ with hRdef
-  have hR : 2 * M * R ≤ ‖y - x‖ := by
-    calc 2 * M * R ≤ 2 * M * ((2 * M)⁻¹ * ‖y - x‖) :=
-          mul_le_mul_of_nonneg_left hy h2M.le
-      _ = ‖y - x‖ := by field_simp
-  have h1 : ‖y - x‖ ≤ M * ‖hessianOperator f x (y - x)‖ := hlow _
-  have h2 : ‖hessianOperator f x (y - x)‖ ≤ R + ‖∇ f y‖ := by
-    calc ‖hessianOperator f x (y - x)‖
-        = ‖((-∇ f) y + hessianOperator f x (y - x)) - (-∇ f) y‖ := by
-            rw [add_sub_cancel_left]
-      _ ≤ ‖(-∇ f) y + hessianOperator f x (y - x)‖ + ‖(-∇ f) y‖ := norm_sub_le _ _
-      _ = R + ‖∇ f y‖ := by simp [hRdef]
-  have h3 : M * ‖hessianOperator f x (y - x)‖ ≤ M * (R + ‖∇ f y‖) :=
-    mul_le_mul_of_nonneg_left h2 hMpos.le
-  rw [inv_mul_le_iff₀ h2M]
-  nlinarith
+  have hd : HasFDerivAt (∇ f) (A : E →L[ℝ] E) x := by
+    rw [hA]
+    exact h.contDiffAt.hasFDerivAt_gradient
+  have hb := A.isBigO_sub_rev (𝓝 x) x
+  have he : Asymptotics.IsEquivalent (𝓝 x) (fun y ↦ ∇ f y - ∇ f x) (fun y ↦ A (y - x)) :=
+    hd.isLittleO.trans_isBigO hb
+  simpa only [h.gradient_eq_zero, sub_zero] using
+    Asymptotics.isBigO_iff''.1 (hb.trans he.isBigO_symm)
 
 /-- **The Morse form of Łojasiewicz's gradient inequality.** Near a nondegenerate critical point
 the absolute energy difference is bounded by a multiple of the squared norm of the gradient;

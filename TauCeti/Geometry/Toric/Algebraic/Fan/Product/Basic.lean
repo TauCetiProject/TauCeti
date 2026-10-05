@@ -21,6 +21,7 @@ combinatorial product operation used by products of toric realizations.
 ## Main declarations
 
 * `TauCeti.Toric.Fan.prod`: the product of two finite toric fans.
+* `TauCeti.Toric.Fan.prodCone`: the cone of a product fan indexed by a pair of cones.
 * `TauCeti.Toric.Fan.support_prod`: the support of a product is the product of the supports.
 * `TauCeti.Toric.Fan.isComplete_prod_iff`: a product fan is complete exactly when both factors
   are complete.
@@ -94,6 +95,21 @@ theorem mem_prod_cones {ξ : PointedCone ℝ (V × V')} :
     exact ⟨σ, hσ, τ, hτ, rfl⟩
   · rintro ⟨σ, hσ, τ, hτ, rfl⟩
     exact ⟨⟨σ, τ⟩, ⟨hσ, hτ⟩, rfl⟩
+
+/-- A pair of cones determines a cone of the product fan. -/
+abbrev prodCone (σ : Φ.cones) (τ : Ψ.cones) : (Φ.prod Ψ).cones :=
+  ⟨σ.1.prod τ.1, (Φ.mem_prod_cones Ψ).2 ⟨σ.1, σ.2, τ.1, τ.2, rfl⟩⟩
+
+@[simp]
+theorem coe_prodCone (σ : Φ.cones) (τ : Ψ.cones) :
+    (Φ.prodCone Ψ σ τ : PointedCone ℝ (V × V')) = σ.1.prod τ.1 :=
+  rfl
+
+/-- Every cone of a product fan is the product cone of a pair of factor cones. -/
+theorem exists_prodCone_eq (ξ : (Φ.prod Ψ).cones) :
+    ∃ (σ : Φ.cones) (τ : Ψ.cones), Φ.prodCone Ψ σ τ = ξ := by
+  obtain ⟨σ, hσ, τ, hτ, hξ⟩ := (Φ.mem_prod_cones Ψ).1 ξ.2
+  exact ⟨⟨σ, hσ⟩, ⟨τ, hτ⟩, Subtype.ext hξ.symm⟩
 
 /-- The support of a product fan is the product of the supports of its factors. -/
 @[simp]
@@ -203,6 +219,32 @@ theorem snd_latticeMap (Φ₁ : Fan i₁) (Φ₂ : Fan i₂) :
 theorem snd_realMap (Φ₁ : Fan i₁) (Φ₂ : Fan i₂) :
     (snd Φ₁ Φ₂).realMap = LinearMap.snd ℝ V₁ V₂ := by
   rw [snd]
+
+/-- The least cone containing the first projection of a product cone is its first factor. -/
+@[simp]
+theorem fst_leastCone_prodCone (σ : Φ₁.cones) (τ : Φ₂.cones) :
+    (FanHom.fst Φ₁ Φ₂).leastCone (Φ₁.prodCone Φ₂ σ τ).2 = σ.1 := by
+  apply le_antisymm
+  · apply (FanHom.fst Φ₁ Φ₂).leastCone_le _ σ.2
+    rintro x ⟨y, hy, rfl⟩
+    simpa [FanHom.fst_realMap] using hy.1
+  · intro x hx
+    apply (FanHom.fst Φ₁ Φ₂).map_le_leastCone (Φ₁.prodCone Φ₂ σ τ).2
+    refine ⟨(x, 0), ⟨hx, τ.1.zero_mem⟩, ?_⟩
+    simp [FanHom.fst_realMap]
+
+/-- The least cone containing the second projection of a product cone is its second factor. -/
+@[simp]
+theorem snd_leastCone_prodCone (σ : Φ₁.cones) (τ : Φ₂.cones) :
+    (FanHom.snd Φ₁ Φ₂).leastCone (Φ₁.prodCone Φ₂ σ τ).2 = τ.1 := by
+  apply le_antisymm
+  · apply (FanHom.snd Φ₁ Φ₂).leastCone_le _ τ.2
+    rintro x ⟨y, hy, rfl⟩
+    simpa [FanHom.snd_realMap] using hy.2
+  · intro x hx
+    apply (FanHom.snd Φ₁ Φ₂).map_le_leastCone (Φ₁.prodCone Φ₂ σ τ).2
+    refine ⟨(0, x), ⟨σ.1.zero_mem, hx⟩, ?_⟩
+    simp [FanHom.snd_realMap]
 
 section Prod
 

@@ -8,6 +8,10 @@ module
 public import Mathlib.RingTheory.Unramified.LocalStructure
 public import TauCeti.RingTheory.KrullDimension.Fiber
 public import TauCeti.RingTheory.KrullDimension.FiniteType
+public import TauCeti.RingTheory.KrullDimension.Equidimensional
+public import TauCeti.RingTheory.Ideal.MinimalPrime.Localization
+public import TauCeti.RingTheory.RegularLocalRing.Basic
+public import TauCeti.RingTheory.Smooth.Regular
 
 /-!
 # Krull dimension of standard smooth algebras over a field
@@ -23,12 +27,20 @@ of primes are preserved along `P → S` (`Ideal.height_eq_height_under_of_quasiF
 ideal `q` of `S` contracts to a maximal ideal of `P` (`Ideal.isMaximal_under_of_finiteType`),
 and every maximal ideal of `P` has height `n` (`MvPolynomial.height_eq_natCard_of_isMaximal`).
 
+Moreover `Spec S` is pure-dimensional of dimension `n`: for every minimal prime `P` of `S`, the
+quotient `S ⧸ P` has dimension `n`. Choose a maximal ideal `m ⊇ P`. The local ring `S_m` is
+regular, hence a domain, so every prime contained in `m` contains `P`; thus a chain of primes
+below `m` realizing its height `n` is a chain in `V(P)`.
+
 ## Main declarations
 
 * `TauCeti.height_eq_of_isStandardSmoothOfRelativeDimension`: every maximal ideal of a standard
   smooth algebra of relative dimension `n` over a field has height `n`;
 * `TauCeti.ringKrullDim_eq_of_isStandardSmoothOfRelativeDimension`: a nonzero standard smooth
-  algebra of relative dimension `n` over a field has Krull dimension `n`.
+  algebra of relative dimension `n` over a field has Krull dimension `n`;
+* `TauCeti.ringKrullDim_quotient_of_isStandardSmoothOfRelativeDimension` and
+  `TauCeti.isPureDimensional_primeSpectrum_of_isStandardSmoothOfRelativeDimension`: every
+  irreducible component of its spectrum has dimension `n`.
 
 ## References
 
@@ -74,5 +86,38 @@ theorem ringKrullDim_eq_of_isStandardSmoothOfRelativeDimension [Nontrivial S] :
   · obtain ⟨m, hm⟩ := Ideal.exists_maximal S
     have := height_eq_of_isStandardSmoothOfRelativeDimension k n m
     exact_mod_cast this ▸ Ideal.height_le_ringKrullDim_of_ne_top hm.ne_top
+
+/-- For every minimal prime `P` of a standard smooth algebra `S` of relative dimension `n` over a
+field, the quotient `S ⧸ P` has Krull dimension `n`. -/
+theorem ringKrullDim_quotient_of_isStandardSmoothOfRelativeDimension {P : Ideal S}
+    (hP : P ∈ minimalPrimes S) : ringKrullDim (S ⧸ P) = n := by
+  have hPp : P.IsPrime := hP.1.1
+  have : Nontrivial (S ⧸ P) := Ideal.Quotient.nontrivial_iff.mpr hPp.ne_top
+  have : Nontrivial S := (Ideal.Quotient.mk P).domain_nontrivial
+  have : Algebra.IsStandardSmooth k S :=
+    Algebra.IsStandardSmoothOfRelativeDimension.isStandardSmooth n
+  have : IsRegularRing S := IsRegularRing.of_smooth (R := k)
+  refine le_antisymm ?_ ?_
+  · rw [← ringKrullDim_eq_of_isStandardSmoothOfRelativeDimension k (S := S) n]
+    exact ringKrullDim_le_of_surjective (Ideal.Quotient.mk P) Ideal.Quotient.mk_surjective
+  · -- A maximal ideal `m ⊇ P` has height `n`, and every prime below `m` contains `P`, since
+    -- the regular local ring `S_m` is a domain.
+    obtain ⟨m, hm, hPm⟩ := P.exists_le_maximal hPp.ne_top
+    let M : PrimeSpectrum S := ⟨m, hm.isPrime⟩
+    have hM : (Order.height M : WithBot ℕ∞) = n := by
+      rw [← M.height_eq_orderHeight]
+      exact_mod_cast height_eq_of_isStandardSmoothOfRelativeDimension k n m
+    rw [ringKrullDim_quotient, ← hM, Order.height_eq_krullDim_Iic]
+    exact Order.krullDim_le_of_strictMono
+      (fun q ↦ ⟨q.1, (PrimeSpectrum.mem_zeroLocus _ _).mpr
+        (le_of_mem_minimalPrimes_of_isDomain_localization hP hPm q.2)⟩)
+      fun _ _ h ↦ h
+
+/-- The spectrum of a standard smooth algebra of relative dimension `n` over a field is
+pure-dimensional of dimension `n`: each of its irreducible components has dimension `n`. -/
+theorem isPureDimensional_primeSpectrum_of_isStandardSmoothOfRelativeDimension :
+    IsPureDimensional n (PrimeSpectrum S) :=
+  isPureDimensional_primeSpectrum_iff.mpr fun _ hP ↦
+    ringKrullDim_quotient_of_isStandardSmoothOfRelativeDimension k n hP
 
 end TauCeti

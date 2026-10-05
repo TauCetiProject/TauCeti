@@ -45,11 +45,13 @@ irreducible member can be inseparable.
   product of its irreducible factors of positive degree.
 * `Finset.IsIrreducibleBasis.isPrimitive`, `Finset.IsIrreducibleBasis.isPrimitive_prod`: the
   members of the basis, and all products of their powers, are primitive.
+* `Finset.IsIrreducibleBasis.exists_eq_C_content_mul_unit_mul_prod`: every member of the family
+  is its content times a unit times a product of powers of the basis.
 * `Finset.IsIrreducibleBasis.exists_associated_iff`: an irreducible polynomial of positive
   degree is associated to a member of the basis exactly when it divides a nonzero member of
   the family. Consequently any two irreducible bases agree up to associates
-  (`Finset.IsIrreducibleBasis.exists_associated`) and have the same cardinality
-  (`Finset.IsIrreducibleBasis.card_eq`).
+  (`Finset.IsIrreducibleBasis.exists_associated`, `Finset.IsIrreducibleBasis.exists_eq_C_mul`)
+  and have the same cardinality (`Finset.IsIrreducibleBasis.card_eq`).
 * `Finset.IsIrreducibleBasis.squarefree_prod`: the product of the basis is squarefree.
 * `Finset.IsIrreducibleBasis.irreducible_map`, `Finset.IsIrreducibleBasis.isCoprime_map`,
   `Finset.IsIrreducibleBasis.squarefree_prod_map`: over the fraction field of `D`, the members
@@ -132,6 +134,17 @@ theorem isPrimitive_prod (hB : F.IsIrreducibleBasis B) (e : D[X] → ℕ) :
   | zero => simp
   | succ n ih => simpa [pow_succ] using ih.mul (hB.isPrimitive hb)
 
+/-- Every member of the family is its content, times a unit, times a product of powers of the
+members of an irreducible basis. -/
+theorem exists_eq_C_content_mul_unit_mul_prod [NormalizedGCDMonoid D]
+    (hB : F.IsIrreducibleBasis B) {f : D[X]} (hf : f ∈ F) :
+    ∃ (u : Dˣ) (e : D[X] → ℕ), f = C (f.content * u) * ∏ b ∈ B, b ^ e b := by
+  obtain ⟨c, e, rfl⟩ := hB.exists_eq_C_mul_prod f hf
+  have hc := associated_content_C_mul c (∏ b ∈ B, b ^ e b)
+  rw [(hB.isPrimitive_prod e).content_eq_one, mul_one] at hc
+  obtain ⟨u, hu⟩ := hc.symm
+  exact ⟨u⁻¹, e, by rw [← hu, Units.mul_inv_cancel_right]⟩
+
 /-- The product of the members of an irreducible basis is squarefree. -/
 theorem squarefree_prod (hB : F.IsIrreducibleBasis B) : Squarefree (∏ b ∈ B, b) :=
   Finset.squarefree_prod_of_pairwise_isCoprime
@@ -162,6 +175,15 @@ theorem exists_associated (hB : F.IsIrreducibleBasis B) (hB' : F.IsIrreducibleBa
     (hb : b ∈ B) : ∃ b' ∈ B', Associated b b' :=
   (hB'.exists_associated_iff (hB.irreducible b hb) (hB.natDegree_pos b hb)).2
     (hB.exists_dvd b hb)
+
+/-- Each member of an irreducible basis is a unit multiple of a member of any other irreducible
+basis of the same family. -/
+theorem exists_eq_C_mul (hB : F.IsIrreducibleBasis B) (hB' : F.IsIrreducibleBasis B')
+    (hb : b ∈ B) : ∃ b' ∈ B', ∃ r : D, IsUnit r ∧ b = C r * b' := by
+  obtain ⟨b', hb', hbb'⟩ := hB.exists_associated hB' hb
+  obtain ⟨u, hu⟩ := hbb'.symm
+  obtain ⟨r, hr, hru⟩ := Polynomial.isUnit_iff.1 u.isUnit
+  exact ⟨b', hb', r, hr, by rw [← hu, ← hru, mul_comm]⟩
 
 /-- Irreducible bases of the same family have the same number of members. -/
 theorem card_eq (hB : F.IsIrreducibleBasis B) (hB' : F.IsIrreducibleBasis B') :

@@ -39,9 +39,9 @@ by integration against test functions and `F ∘ u` has no reason to be smooth. 
 by approximation, and the *order* of the two limits matters.
 
 * First, `u` is approximated. On a subdomain `V` relatively compact in `Ω`, test functions on `Ω`
-  are dense in `W^{1,p}(V)` (`TauCeti.Wkp.restrictL_mem_closure_range_ofTestFunctionₗ`
-  at order one), the chain rule is classical for them, and it passes to the limit because `V`
-  has finite measure and weak derivatives are stable under `L¹` limits
+  are dense in `W^{1,p}(V)` (`TauCeti.W1p.restrictL_mem_closure_range_ofTestFunctionₗ`), the
+  chain rule is classical for them, and it passes to the limit because `V` has finite measure
+  and weak derivatives are stable under `L¹` limits
   (`TauCeti.hasWeakFDerivOn_of_tendsto_lintegral_enorm_sub`).  Here `F'` must be *continuous*: the
   convergence `F'(uₖ) → F'(u)` is what carries the derivative.  Locality of the weak derivative
   then returns the statement to `Ω`.
@@ -207,8 +207,7 @@ private theorem hasWeakFDerivOn_comp_aux (hp : p ≠ ∞) (hF : ContDiff ℝ 1 F
     exact h1.ne
   -- approximation by test functions on `Ω`
   obtain ⟨a, ha_mem, ha_tendsto⟩ := mem_closure_iff_seq_limit.mp
-    (by simpa only [Wkp.restrictL_one, Wkp.ofTestFunctionₗ_one] using
-      Wkp.restrictL_mem_closure_range_ofTestFunctionₗ hp hVc hVO 1 u)
+    (W1p.restrictL_mem_closure_range_ofTestFunctionₗ hp hVc hVO u)
   choose phi hphi using ha_mem
   have hval : Tendsto (fun n => W1p.value (a n)) atTop (𝓝 (W1p.value (W1p.restrictL hVΩ u))) := by
     simpa only [Function.comp_def, W1p.valueL_apply] using

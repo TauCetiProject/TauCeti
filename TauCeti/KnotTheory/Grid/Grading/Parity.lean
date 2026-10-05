@@ -209,10 +209,10 @@ theorem negOnePow_maslovOℤ (x : GridState n) :
       + ((Finset.univ.filter fun p : Fin n × Fin n ↦
         p.1 < p.2 ∧ G.O p.2 < G.O p.1).card : ℤ) =
       ((Finset.univ.filter fun p : Fin n × Fin n ↦ p.1 < p.2).card : ℤ) := by
-    rw [OSet, GridState.I_self_pointSet_eq_card]
+    rw [OSet_def, GridState.I_self_pointSet_eq_card]
     exact_mod_cast GridState.card_filter_noninversion_add_card_filter_inversion G.O
   obtain ⟨k, hk⟩ : Even ((GridPoint.JNumCenter x.pointSet G.OSet : ℤ) + n) := by
-    rw [OSet]
+    rw [OSet_def]
     exact GridState.even_JNumCenter_pointSet_add x G.O
   have heq : (G.maslovOℤ x).negOnePow =
       (((Finset.univ.filter fun p : Fin n × Fin n ↦ p.1 < p.2 ∧ x p.2 < x p.1).card : ℤ)
