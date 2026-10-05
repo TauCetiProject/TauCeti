@@ -47,7 +47,12 @@ local notation "π" => signlessPreprojectiveMk k (DoubledQuiver DG)
 local notation "c" => n - 3
 local notation "e" => fun a : Fin (DynkinType.D n).rank => π (vertexIdempotent k (vertex DG a))
 
-variable [∀ i, Fintype ((diagramGraph (DynkinType.D n).cartanMatrix).neighborSet i)]
+/-- The neighbours of a vertex in a finite graph form a finite type; this is the finiteness
+structure of the orientation comparisons of
+`TauCeti.RepresentationTheory.Quiver.Zigzag.Preprojective`. -/
+noncomputable local instance forkNeighborSetFintype {V : Type*} [Finite V] (G : SimpleGraph V)
+    (i : V) : Fintype (G.neighborSet i) :=
+  Fintype.ofFinite _
 
 /-- The corner word which stays on the long arm, with valley bottom `m` counted from the fork.
 Its path interpretation requires `a, b ≤ n - 3` and `m ≤ min (n - 3 - a) (n - 3 - b)`. -/
