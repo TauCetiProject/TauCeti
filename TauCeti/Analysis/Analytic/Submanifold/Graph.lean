@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Analytic.Submanifold.Basic
+import TauCeti.Data.Fin.Basic
 import Mathlib.Topology.Algebra.Module.Equiv.Pi
 import Mathlib.Topology.OpenPartialHomeomorph.Constructions
 import Mathlib.Topology.Order.OrderClosed
@@ -82,38 +83,6 @@ theorem IsAnalyticSubmanifold.cylinder (hS : IsAnalyticSubmanifold d S) :
       · intro h i hi
         obtain ⟨j, rfl⟩ := Fin.eq_succ_of_ne_zero (i := i) (by intro hz; simp [hz] at hi)
         exact h j (by simpa using hi)
-
--- Swapping the first coordinate with coordinate `d` puts the graph's free coordinates first.
-private theorem graph_coord_iff (hd : d ≤ n) (a : 𝕜) (y : Fin n → 𝕜) :
-    (∀ i : Fin (n + 1), d ≤ i.val →
-      (Fin.cons a y : Fin (n + 1) → 𝕜) (Equiv.swap 0 ⟨d, by omega⟩ i) = 0) ↔
-      a = 0 ∧ ∀ j : Fin n, d ≤ j.val → y j = 0 := by
-  constructor
-  · intro h
-    refine ⟨?_, fun j hj ↦ ?_⟩
-    · simpa using h ⟨d, by omega⟩ (by simp)
-    · have h0 : j.succ ≠ (0 : Fin (n + 1)) := Fin.succ_ne_zero j
-      have hd' : j.succ ≠ (⟨d, by omega⟩ : Fin (n + 1)) := by
-        intro heq
-        have := congrArg Fin.val heq
-        simp only [Fin.val_succ] at this
-        omega
-      simpa [Equiv.swap_apply_of_ne_of_ne h0 hd'] using h j.succ (by simp; omega)
-  · rintro ⟨ha, hy⟩ i hi
-    by_cases hid : i = ⟨d, by omega⟩
-    · rw [hid, Equiv.swap_apply_right, Fin.cons_zero]
-      exact ha
-    have hi0 : i ≠ 0 := by
-      intro h0
-      subst i
-      have : d = 0 := by simpa using hi
-      apply hid
-      ext
-      simp [this]
-    rw [Equiv.swap_apply_of_ne_of_ne hi0 hid]
-    obtain ⟨j, rfl⟩ := Fin.eq_succ_of_ne_zero (i := i) hi0
-    have hne : j.val + 1 ≠ d := fun h ↦ hid (Fin.ext h)
-    exact hy j (by simp only [Fin.val_succ] at hi; omega)
 
 -- The triangular change of coordinates used to straighten a graph over a base chart.
 private theorem exists_graph_straightening
@@ -198,7 +167,7 @@ theorem IsAnalyticSubmanifold.graph (hS : IsAnalyticSubmanifold d S)
     -- The permutation's inverse acts by precomposition; unfold it to read the coordinates.
     change (∀ i : Fin (n + 1), d ≤ i.val →
       q w (Equiv.swap 0 ⟨d, by omega⟩ i) = 0) ↔ _
-    rw [hformula, graph_coord_iff hS.le, sub_eq_zero, ← he.mem_iff hw']
+    rw [hformula, forall_cons_swap_eq_zero_iff hS.le, sub_eq_zero, ← he.mem_iff hw']
     have hfg' (hx : Fin.tail w ∈ S) : f (Fin.tail w) = g (Fin.tail w) :=
       hfg ⟨hx, hw'.2⟩
     constructor
