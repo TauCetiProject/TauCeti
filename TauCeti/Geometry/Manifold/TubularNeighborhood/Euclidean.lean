@@ -243,6 +243,23 @@ noncomputable def normalSubspace (f : M → V) (x : M) : Submodule ℝ V :=
   (mfderiv I 𝓘(ℝ, V) f x : E →L[ℝ] V).rangeᗮ
 
 omit [FiniteDimensional ℝ V] [FiniteDimensional ℝ E] in
+/-- A normal space is complete when the ambient inner product space is complete. -/
+instance instCompleteSpaceNormalSubspace [CompleteSpace V] (f : M → V) (x : M) :
+    CompleteSpace (normalSubspace I f x) := by
+  unfold normalSubspace
+  exact (Submodule.isClosed_orthogonal (𝕜 := ℝ) (E := V)
+    (mfderiv I 𝓘(ℝ, V) f x : E →L[ℝ] V).range).completeSpace_coe
+
+omit [FiniteDimensional ℝ E] in
+/-- At an immersion point, the dimension of the normal space is the codimension. -/
+theorem finrank_normalSubspace {f : M → V} {x : M}
+    (himm : Injective (mfderiv I 𝓘(ℝ, V) f x)) :
+    Module.finrank ℝ (normalSubspace I f x) = Module.finrank ℝ V - Module.finrank ℝ E := by
+  unfold normalSubspace
+  exact ContinuousLinearMap.finrank_orthogonal_range_of_injective (E := E) (V := V)
+    (A := (mfderiv I 𝓘(ℝ, V) f x : E →L[ℝ] V)) himm
+
+omit [FiniteDimensional ℝ V] [FiniteDimensional ℝ E] in
 /-- A vector is normal to `f` at `x` exactly when it is orthogonal to every value of the
 differential of `f` at `x`. -/
 @[simp]
