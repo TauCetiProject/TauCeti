@@ -176,26 +176,6 @@ private theorem coe_realCliffordThreeOneConjugateLastEvenHom
   CliffordAlgebra.coe_conjugateNegativeIotaEven realCliffordFormThreeOne
     realCliffordThreeOneLastVector realCliffordThreeOneLastVector_negOne x
 
-private noncomputable def realCliffordThreeOneStarAdjugateHom :
-    Matrix (Fin 2) (Fin 2) ℂ →ₐ[ℝ] Matrix (Fin 2) (Fin 2) ℂ where
-  toFun A := star (Matrix.adjugate A)
-  map_zero' := by
-    rw [← Matrix.adjugateFinTwoLinearMap_apply, map_zero, star_zero]
-  map_add' A B := by
-    rw [← Matrix.adjugateFinTwoLinearMap_apply, map_add,
-      Matrix.adjugateFinTwoLinearMap_apply, Matrix.adjugateFinTwoLinearMap_apply, star_add]
-  map_one' := by simp
-  map_mul' A B := by simp [Matrix.adjugate_mul_distrib, star_mul]
-  commutes' r := by
-    ext i j
-    fin_cases i <;> fin_cases j <;>
-      simp [Algebra.algebraMap_eq_smul_one] <;> ring
-
-private theorem realCliffordThreeOneStarAdjugateHom_apply
-    (A : Matrix (Fin 2) (Fin 2) ℂ) :
-    realCliffordThreeOneStarAdjugateHom A = star (Matrix.adjugate A) :=
-  rfl
-
 private theorem realCliffordThreeOneConjugateLastEvenHom_ι (m n : Fin 4 → ℝ) :
     realCliffordThreeOneConjugateLastEvenHom
         ((CliffordAlgebra.even.ι realCliffordFormThreeOne).bilin m n) =
@@ -241,7 +221,7 @@ private theorem realCliffordThreeOneEvenEquivComplexMatrix_conjugate
       star (Matrix.adjugate (realCliffordThreeOneEvenEquivComplexMatrix x)) := by
   have hhom : realCliffordThreeOneEvenEquivComplexMatrix.toAlgHom.comp
         realCliffordThreeOneConjugateLastEvenHom =
-      realCliffordThreeOneStarAdjugateHom.comp
+      Matrix.starAdjugateFinTwoAlgHom.comp
         realCliffordThreeOneEvenEquivComplexMatrix.toAlgHom := by
     apply CliffordAlgebra.even.algHom_ext
     rw [CliffordAlgebra.EvenHom.ext_iff]
@@ -254,13 +234,15 @@ private theorem realCliffordThreeOneEvenEquivComplexMatrix_conjugate
     change realCliffordThreeOneEvenEquivComplexMatrix
         (realCliffordThreeOneConjugateLastEvenHom
           ((CliffordAlgebra.even.ι realCliffordFormThreeOne).bilin m n)) =
-      realCliffordThreeOneStarAdjugateHom
+      Matrix.starAdjugateFinTwoAlgHom
         (realCliffordThreeOneEvenEquivComplexMatrix
           ((CliffordAlgebra.even.ι realCliffordFormThreeOne).bilin m n))
     rw [realCliffordThreeOneConjugateLastEvenHom_ι,
-      realCliffordThreeOneStarAdjugateHom_apply]
+      Matrix.starAdjugateFinTwoAlgHom_apply]
     exact realCliffordThreeOneEvenEquivComplexMatrix_conjugate_generator m n
-  exact DFunLike.congr_fun hhom x
+  have h := DFunLike.congr_fun hhom x
+  rw [AlgHom.comp_apply, AlgHom.comp_apply, Matrix.starAdjugateFinTwoAlgHom_apply] at h
+  exact h
 
 private theorem realCliffordThreeOneVectorEven_spin_action
     (s : spinGroup realCliffordFormThreeOne) (v : Fin 4 → ℝ) :
