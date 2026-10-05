@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Simple
 public import Mathlib.RingTheory.Length
 public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.IdempotentCoordinate
+public import TauCeti.CategoryTheory.Simple
 
 /-!
 # Simple classes in the graded Grothendieck group of finite graded modules
@@ -94,19 +94,6 @@ section Span
 variable {k : Type uk} [Field k] {A : Type uA} [Ring A] [Algebra k A] [Module.Finite k A]
   {𝒜 : ℤ → Submodule k A} {I : Type uI} (S : I → (gradedFiniteModules 𝒜).FullSubcategory)
 
-omit [Module.Finite k A] in
-/-- A graded module which is not zero and not simple has a nonzero proper graded submodule. -/
-private theorem exists_mono_ne_zero_not_isIso {M : GradedModuleCat.{uA} 𝒜} [Nontrivial M]
-    (hM : ¬Simple M) :
-    ∃ (Y : GradedModuleCat.{uA} 𝒜) (f : Y ⟶ M), Mono f ∧ f ≠ 0 ∧ ¬IsIso f := by
-  by_contra! h
-  refine hM ⟨fun {Y} f _ => ⟨fun _ hf => ?_, h Y f inferInstance⟩⟩
-  -- An isomorphism `0 : Y ⟶ M` would make the identity of `M` zero.
-  subst hf
-  have hid : 𝟙 M = 0 := by rw [← IsIso.inv_hom_id (0 : Y ⟶ M), comp_zero]
-  obtain ⟨x, hx⟩ := exists_ne (0 : M)
-  exact hx (by simpa using LinearMap.congr_fun (congrArg GradedModuleCat.Hom.hom hid) x)
-
 /-- A finite graded module which is neither zero nor simple has a nonzero proper graded submodule
 `Y` with quotient `C`, so `[M] = [Y] + [C]` with both `Y` and `C` of smaller dimension. -/
 private theorem exists_laurentK0_of_eq_add (M : (gradedFiniteModules 𝒜).FullSubcategory)
@@ -117,7 +104,12 @@ private theorem exists_laurentK0_of_eq_add (M : (gradedFiniteModules 𝒜).FullS
           LaurentK0.of.{uA} (gradedFiniteModulesExactStructure 𝒜) M =
             LaurentK0.of.{uA} (gradedFiniteModulesExactStructure 𝒜) Y +
               LaurentK0.of.{uA} (gradedFiniteModulesExactStructure 𝒜) C := by
-  obtain ⟨Y, f, hf, hf₀, hfiso⟩ := exists_mono_ne_zero_not_isIso hs
+  -- A nonzero module is a nonzero object, so it has a nonzero proper graded submodule.
+  have hM : ¬IsZero M.obj := fun hM => by
+    obtain ⟨x, hx⟩ := exists_ne (0 : M.obj)
+    have hid : 𝟙 M.obj = 0 := hM.eq_of_src _ _
+    exact hx (by simpa using LinearMap.congr_fun (congrArg GradedModuleCat.Hom.hom hid) x)
+  obtain ⟨Y, f, hf, hf₀, hfiso⟩ := exists_mono_ne_zero_not_isIso_of_not_simple hM hs
   have hinj : Function.Injective f.hom := (GradedModuleCat.mono_iff_injective f).1 hf
   have hnsurj : ¬Function.Surjective f.hom := fun hsurj => hfiso <| by
     have := (GradedModuleCat.epi_iff_surjective f).2 hsurj
