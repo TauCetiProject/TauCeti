@@ -123,6 +123,28 @@ theorem finrank_eq [Fintype ι] (hX : IsDistributionFrameOn I n D X U) {x : M} (
   rw [← hX.span_eq hx]
   exact finrank_span_eq_card (hX.linearIndependent hx)
 
+/-- A `C^n` local frame `X` of a distribution on a normed space `V`, on a set `U`, gives a
+`C^n` family of continuous linear maps `Φ p : (ι → 𝕜) →L[𝕜] V`, namely `c ↦ ∑ i, c i • X i p`,
+which on `U` is injective with range `D p`. -/
+theorem exists_contDiffOn_clm {V : Type*} [NormedAddCommGroup V]
+    [NormedSpace 𝕜 V] {ι : Type*} [Fintype ι] {n : ℕ∞ω} {D : V → Submodule 𝕜 V}
+    {X : ι → V → V} {U : Set V} (hX : IsDistributionFrameOn 𝓘(𝕜, V) n D X U) :
+    ∃ Φ : V → (ι → 𝕜) →L[𝕜] V, ContDiffOn 𝕜 n Φ U ∧
+      ∀ p ∈ U, Injective (Φ p) ∧ LinearMap.range (Φ p : (ι → 𝕜) →ₗ[𝕜] V) = D p := by
+  classical
+  refine ⟨fun p ↦ ∑ i, (ContinuousLinearMap.proj i).smulRight (X i p), ?_, fun p hp ↦ ?_⟩
+  · exact ContDiffOn.sum fun i _ ↦ contDiffOn_const.smulRight
+      (contMDiffOn_vectorSpace_iff_contDiffOn.1 (hX.contMDiffOn i))
+  · -- As a linear map, `Φ p` is the linear combination map of the frame at `p`.
+    have hΦ : ((∑ i, (ContinuousLinearMap.proj i).smulRight (X i p) : (ι → 𝕜) →L[𝕜] V) :
+        (ι → 𝕜) →ₗ[𝕜] V) = Fintype.linearCombination 𝕜 (X · p) := by
+      ext c
+      simp [Fintype.linearCombination_apply]
+    beta_reduce
+    rw [← ContinuousLinearMap.coe_coe, hΦ, Fintype.range_linearCombination]
+    exact ⟨linearIndependent_iff_injective_fintypeLinearCombination.1 (hX.linearIndependent hp),
+      hX.span_eq hp⟩
+
 end IsDistributionFrameOn
 
 /-- The local frames of the distribution `⊤` are exactly the local frames of the tangent bundle. -/
