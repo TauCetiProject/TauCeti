@@ -197,7 +197,6 @@ noncomputable def realCliffordSpinLieEquivQuadratic (n : ℕ) :
 
 /-- In ambient Clifford coordinates, the source Lie equivalence is the units Lie equivalence
 applied after differentiating the subgroup inclusion. -/
-@[simp]
 theorem coe_realCliffordSpinLieEquivQuadratic_apply
     (n : ℕ) (X : LeftInvariantDerivation 𝓘(ℝ, SpinLieModel(n)) (SpinUnitsRange(n))) :
     ((realCliffordSpinLieEquivQuadratic n X :
@@ -216,6 +215,18 @@ theorem coe_realCliffordSpinLieEquivQuadratic_apply
     coe_spinAmbientCoordinateLieEquiv_apply]
   exact h
 
+/-- The units coordinates of the differentiated Spin-carrier inclusion normalize to the concrete
+quadratic coordinates. -/
+@[simp↓ high]
+theorem unitsLieAlgebraLieEquiv_lieMapSubtypeVal_eq_coe_realCliffordSpinLieEquivQuadratic
+    (n : ℕ) (X : LeftInvariantDerivation 𝓘(ℝ, SpinLieModel(n)) (SpinUnitsRange(n))) :
+    TauCeti.Lie.unitsLieAlgebraLieEquiv
+        ((realCliffordSpinEmbeddedLieSubgroupData n).lieMapSubtypeVal X) =
+      ((realCliffordSpinLieEquivQuadratic n X :
+          quadraticLieSubalgebra (realCliffordForm n 0)) :
+        CliffordAlgebra (realCliffordForm n 0)) :=
+  (coe_realCliffordSpinLieEquivQuadratic_apply n X).symm
+
 /-- The Lie algebra of the positive-definite real special-orthogonal carrier, in
 skew-symmetric-matrix coordinates. -/
 noncomputable def realCliffordSpecialOrthogonalLieEquivSo (n : ℕ) :
@@ -227,7 +238,6 @@ noncomputable def realCliffordSpecialOrthogonalLieEquivSo (n : ℕ) :
 
 /-- In ambient matrix coordinates, the target Lie equivalence is the units Lie equivalence
 applied after differentiating the subgroup inclusion. -/
-@[simp]
 theorem coe_realCliffordSpecialOrthogonalLieEquivSo_apply
     (n : ℕ) (X : LeftInvariantDerivation 𝓘(ℝ, SpecialOrthogonalLieModel(n))
       (SpecialOrthogonalUnitsRange(n))) :
@@ -243,6 +253,19 @@ theorem coe_realCliffordSpecialOrthogonalLieEquivSo_apply
   simp only [realCliffordSpecialOrthogonalLieEquivSo, LieEquiv.trans_apply,
     coe_specialOrthogonalAmbientCoordinateLieEquiv_apply]
   exact h
+
+/-- The units coordinates of the differentiated special-orthogonal-carrier inclusion normalize to
+the concrete skew-matrix coordinates. -/
+@[simp↓ high]
+theorem
+    unitsLieAlgebraLieEquiv_lieMapSubtypeVal_eq_coe_realCliffordSpecialOrthogonalLieEquivSo
+    (n : ℕ) (X : LeftInvariantDerivation 𝓘(ℝ, SpecialOrthogonalLieModel(n))
+      (SpecialOrthogonalUnitsRange(n))) :
+    TauCeti.Lie.unitsLieAlgebraLieEquiv
+        ((realCliffordSpecialOrthogonalEmbeddedLieSubgroupData n).lieMapSubtypeVal X) =
+      ((realCliffordSpecialOrthogonalLieEquivSo n X :
+          LieAlgebra.Orthogonal.so (Fin n) ℝ) : Matrix (Fin n) (Fin n) ℝ) :=
+  (coe_realCliffordSpecialOrthogonalLieEquivSo_apply n X).symm
 
 /-- The continuous projection between the closed real Spin and special-orthogonal carriers,
 regarded as a smooth homomorphism by automatic smoothness. -/
