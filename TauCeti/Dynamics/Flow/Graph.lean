@@ -19,7 +19,7 @@ orbits.
 
 ## Main declarations
 
-* `isEmbedding_flow_graph`: flowing a graph over the range of an idempotent continuous linear map
+* `Flow.isEmbedding_graph`: flowing a graph over the range of an idempotent continuous linear map
   gives another topological embedding.
 -/
 
@@ -27,13 +27,13 @@ public section
 
 open Topology
 
-namespace TauCeti
+namespace Flow
 
 variable {E : Type*} [TopologicalSpace E] [AddCommGroup E] [IsTopologicalAddGroup E] [Module ℝ E]
 
 /-- A graph over the range of an idempotent continuous linear map remains embedded after
 translation and transport by any fixed time of a flow. -/
-theorem isEmbedding_flow_graph (φ : Flow ℝ E) (P : E →L[ℝ] E) (hP : IsIdempotentElem P)
+theorem isEmbedding_graph (φ : _root_.Flow ℝ E) (P : E →L[ℝ] E) (hP : IsIdempotentElem P)
     (g : E → E) (hPg : ∀ v ∈ P.range, P (g v) = 0) (hg : ContinuousOn g P.range)
     (x : E) (t : ℝ) :
     IsEmbedding (fun v : P.range ↦ φ t (x + ((v : E) + g (v : E)))) := by
@@ -45,4 +45,4 @@ theorem isEmbedding_flow_graph (φ : Flow ℝ E) (P : E →L[ℝ] E) (hP : IsIde
   funext v
   simp [Function.comp_apply, Homeomorph.addLeft]
 
-end TauCeti
+end Flow

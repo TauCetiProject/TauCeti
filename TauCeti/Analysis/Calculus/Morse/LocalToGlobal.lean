@@ -264,7 +264,7 @@ theorem isEmbedding_stableGraph_orbit (h : IsNondegenerateCriticalPoint f x)
     (hg : ContinuousOn g h.stableProjection.range) (t : ℝ) :
     IsEmbedding (fun v : h.stableProjection.range ↦
       negativeGradientFlow f hf t (x + ((v : E) + g (v : E)))) :=
-  isEmbedding_flow_graph (negativeGradientFlow f hf) h.stableProjection
+  (negativeGradientFlow f hf).isEmbedding_graph h.stableProjection
     h.isIdempotentElem_stableProjection g hPg hg x t
 
 /-- Flowing an embedded graph over the unstable spectral subspace gives another embedding. -/
@@ -274,7 +274,7 @@ theorem isEmbedding_unstableGraph_orbit (h : IsNondegenerateCriticalPoint f x)
     (hg : ContinuousOn g h.unstableProjection.range) (t : ℝ) :
     IsEmbedding (fun v : h.unstableProjection.range ↦
       negativeGradientFlow f hf t (x + ((v : E) + g (v : E)))) :=
-  isEmbedding_flow_graph (negativeGradientFlow f hf) h.unstableProjection
+  (negativeGradientFlow f hf).isEmbedding_graph h.unstableProjection
     h.isIdempotentElem_unstableProjection g hPg hg x t
 
 /-- Membership in the local stable set is equivalent to confinement of the global
