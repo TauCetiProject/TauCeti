@@ -36,13 +36,14 @@ the product of the local degrees.
 ## Main definitions
 
 * `TauCeti.TateCohomology.H0LinearEquivPiQuotientStabilizer`: for `X` finite,
-  `Ĥ⁰(G, R[X]) ≃ ∏_ω R ⧸ (|G_ω|)`.
+  `H-hat^0(G, R[X]) ≃ ∏_ω R ⧸ (|G_ω|)`.
 
 ## Main results
 
-* `TauCeti.TateCohomology.subsingleton_tateCohomology_negOne_ofMulAction`: `Ĥ⁻¹(G, R[X]) = 0`
+* `TauCeti.TateCohomology.subsingleton_tateCohomology_negOne_ofMulAction`: `H-hat^(-1)(G, R[X]) = 0`
   when `R` has no additive torsion.
-* `TauCeti.TateCohomology.natCard_tateCohomology_zero_ofMulAction`: `|Ĥ⁰(G, ℤ[X])| = ∏_ω |G_ω|`.
+* `TauCeti.TateCohomology.natCard_tateCohomology_zero_ofMulAction`:
+  `|H-hat^0(G, ℤ[X])| = ∏_ω |G_ω|`.
 * `TauCeti.TateCohomology.herbrandQuotient_ofMulAction`: `h(ℤ[X]) = ∏_ω |G_ω|`.
 * `TauCeti.TateCohomology.herbrandQuotient_ofMulAction_of_isPretransitive`: `h(ℤ[X]) = |G_x|`
   for a transitive action.
@@ -159,9 +160,9 @@ private theorem ker_evalOut [Finite X] :
 
 variable (R G X) in
 /-- **Degree-zero Tate cohomology of a permutation module.** For a finite `G`-set `X`,
-`Ĥ⁰(G, R[X])` is the product over the orbits `ω` of `R ⧸ (|G_ω|)`, where `G_ω` is the stabilizer
-of the chosen representative of `ω`. A class is sent to the residues of the coefficients of an
-invariant representative at the orbit representatives
+`H-hat^0(G, R[X])` is the product over the orbits `ω` of `R ⧸ (|G_ω|)`, where `G_ω` is the
+stabilizer of the chosen representative of `ω`. A class is sent to the residues of the
+coefficients of an invariant representative at the orbit representatives
 (`H0LinearEquivPiQuotientStabilizer_H0π`). -/
 def H0LinearEquivPiQuotientStabilizer [Finite X] :
     tateCohomology (Rep.ofMulAction R G X) 0 ≃ₗ[R]
@@ -189,7 +190,8 @@ section Int
 -- with integral coefficients the group is confined to `Type`.
 variable {G X : Type} [Group G] [Fintype G] [MulAction G X] [Fintype (orbitRel.Quotient G X)]
 
-/-- The order of `Ĥ⁰(G, ℤ[X])` is the product over the orbits of the orders of the stabilizers. -/
+/-- The order of `H-hat^0(G, ℤ[X])` is the product over the orbits of the orders of the
+stabilizers. -/
 theorem natCard_tateCohomology_zero_ofMulAction :
     Nat.card (tateCohomology (Rep.ofMulAction ℤ G X) 0) =
       ∏ ω : orbitRel.Quotient G X, Nat.card (stabilizer G ω.out) := by
