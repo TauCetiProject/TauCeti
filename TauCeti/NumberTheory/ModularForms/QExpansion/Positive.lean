@@ -10,8 +10,9 @@ public import TauCeti.NumberTheory.ModularForms.Basic
 /-!
 # Uniqueness from positive Fourier coefficients
 
-At nonzero weight, a modular form on an arithmetic subgroup is determined by its positive
-Fourier coefficients. The omitted constant term cannot hide a nonzero constant modular form:
+At nonzero weight, a modular form whose group has finite-index intersection with the modular
+group is determined by its positive Fourier coefficients. The omitted constant term cannot hide
+a nonzero constant modular form:
 a finite-index intersection with the modular group contains a lower unipotent matrix, whose
 automorphy factor is nonconstant.
 
@@ -33,9 +34,8 @@ namespace TauCeti.ModularForm
 variable {Γ : Subgroup (GL (Fin 2) ℝ)} {k : ℤ}
 
 /-- At nonzero weight, vanishing of all positive Fourier coefficients forces a modular form
-on an arithmetic subgroup to vanish. -/
-theorem eq_zero_of_forall_pos_qExpansion_coeff_eq_zero [Γ.HasDetOne]
-    [Subgroup.IsFiniteRelIndex Γ 𝒮ℒ]
+whose group has finite-index intersection with the modular group to vanish. -/
+theorem eq_zero_of_forall_pos_qExpansion_coeff_eq_zero [Subgroup.IsFiniteRelIndex Γ 𝒮ℒ]
     {h : ℝ} (hh : 0 < h) (hΓ : h ∈ Γ.strictPeriods) (hk : k ≠ 0)
     {f : ModularForm Γ k} (hf : ∀ n : ℕ, 0 < n → (qExpansion h f).coeff n = 0) : f = 0 := by
   have : Fact (IsCusp OnePoint.infty Γ) := ⟨Γ.isCusp_of_mem_strictPeriods hh hΓ⟩
@@ -57,8 +57,7 @@ theorem eq_zero_of_forall_pos_qExpansion_coeff_eq_zero [Γ.HasDetOne]
 
 /-- At nonzero weight, equality of the positive Fourier coefficients determines a modular form.
 The constant coefficient need not be supplied. -/
-theorem eq_of_forall_pos_qExpansion_coeff_eq [Γ.HasDetOne]
-    [Subgroup.IsFiniteRelIndex Γ 𝒮ℒ]
+theorem eq_of_forall_pos_qExpansion_coeff_eq [Subgroup.IsFiniteRelIndex Γ 𝒮ℒ]
     {h : ℝ} (hh : 0 < h) (hΓ : h ∈ Γ.strictPeriods) (hk : k ≠ 0)
     {f g : ModularForm Γ k}
     (hfg : ∀ n : ℕ, 0 < n → (qExpansion h f).coeff n = (qExpansion h g).coeff n) : f = g := by
@@ -67,12 +66,18 @@ theorem eq_of_forall_pos_qExpansion_coeff_eq [Γ.HasDetOne]
   intro n hn
   rw [FunLike.coe_sub, ModularForm.qExpansion_sub hh hΓ f g, map_sub, hfg n hn, sub_self]
 
-/-- A nonzero positive Fourier coefficient excludes weight zero on an arithmetic subgroup. -/
-theorem weight_ne_zero_of_pos_qExpansion_coeff_ne_zero [Γ.IsArithmetic]
+/-- A nonzero positive Fourier coefficient excludes weight zero when the group has
+finite-index intersection with the modular group. -/
+theorem weight_ne_zero_of_pos_qExpansion_coeff_ne_zero [Subgroup.IsFiniteRelIndex Γ 𝒮ℒ]
     {h : ℝ} (hh : 0 < h) (hΓ : h ∈ Γ.strictPeriods) {f : ModularForm Γ k}
     {n : ℕ} (hn : 0 < n) (hc : (qExpansion h f).coeff n ≠ 0) : k ≠ 0 := by
   rintro rfl
-  obtain ⟨c, hconst⟩ := _root_.ModularForm.eq_const_of_weight_zero f
+  let : (Γ ⊓ 𝒮ℒ).IsArithmetic := ⟨⟨⟨by
+    simpa only [Subgroup.inf_relIndex_right] using Γ.relIndex_ne_zero⟩,
+    Subgroup.isFiniteRelIndex_of_le_right 𝒮ℒ inf_le_right⟩⟩
+  obtain ⟨c, hconst⟩ := _root_.ModularForm.eq_const_of_weight_zero
+    (_root_.ModularForm.ofLe (Γ' := Γ ⊓ 𝒮ℒ) inf_le_left f)
+  rw [_root_.ModularForm.coe_ofLe] at hconst
   have hs (z : ℍ) :
       HasSum (fun m ↦ (if m = 0 then c else 0) • Function.Periodic.qParam h z ^ m) (f z) := by
     rw [hconst, Function.const_apply]

@@ -442,21 +442,25 @@ open ModularGroup
 
 variable {Γ : Subgroup (GL (Fin 2) ℝ)} {k : ℤ}
 
-/-- A constant slash-invariant form of nonzero weight vanishes if its group contains a matrix
-with nonzero lower-left entry. No holomorphy or cusp condition is needed.
+/-- A constant slash-invariant form of nonzero weight vanishes if its group contains a
+determinant-one matrix with nonzero lower-left entry. No holomorphy or cusp condition is needed.
 
 This extends Mathlib's level-one `SlashInvariantForm.wt_eq_zero_of_eq_const`: the nonconstant
 automorphy factor, rather than invariance under `S` itself, excludes a nonzero constant. -/
-theorem eq_zero_of_eq_const_of_weight_ne_zero [Γ.HasDetOne]
+theorem eq_zero_of_eq_const_of_weight_ne_zero
     {F : Type*} [FunLike F ℍ ℂ] [SlashInvariantFormClass F Γ k] {f : F} {c : ℂ}
     (hf : ⇑f = Function.const ℍ c)
-    (hk : k ≠ 0) {γ : GL (Fin 2) ℝ} (hγ : γ ∈ Γ) (hc : γ 1 0 ≠ 0) : c = 0 := by
+    (hk : k ≠ 0) {γ : GL (Fin 2) ℝ} (hγ : γ ∈ Γ) (hdet : γ.det = 1)
+    (hc : γ 1 0 ≠ 0) : c = 0 := by
   by_contra hc0
   let z : ℍ := ⟨Complex.I * (2 / |γ 1 0| : ℝ), by
     simp only [Complex.mul_im, Complex.I_re, Complex.ofReal_im, mul_zero,
       Complex.I_im, Complex.ofReal_re, one_mul, zero_add]
     positivity⟩
-  have h := SlashInvariantForm.slash_action_eqn'' f hγ z
+  have hdetpos : 0 < γ.val.det := by
+    simp [← GeneralLinearGroup.val_det_apply, hdet]
+  have h := SlashInvariantForm.slash_action_eqn_of_det_pos f hγ hdetpos z
+  simp only [hdet, Units.val_one, abs_one, Complex.ofReal_one, one_zpow, one_mul] at h
   rw [hf, Function.const_apply, Function.const_apply] at h
   have hd : denom γ z ^ k = 1 := mul_right_cancel₀ hc0 (by simpa using h.symm)
   have hnorm : ‖denom γ z‖ = 1 := by
@@ -469,14 +473,14 @@ theorem eq_zero_of_eq_const_of_weight_ne_zero [Γ.HasDetOne]
   rw [him, hnorm] at hle
   norm_num at hle
 
-/-- A group with finite-index intersection with the modular group contains a matrix with
-nonzero lower-left entry. -/
+/-- A group with finite-index intersection with the modular group contains a matrix in that
+intersection with nonzero lower-left entry. -/
 theorem exists_mem_lowerLeft_ne_zero [Subgroup.IsFiniteRelIndex Γ 𝒮ℒ] :
-    ∃ γ ∈ Γ, γ 1 0 ≠ 0 := by
+    ∃ γ ∈ Γ ⊓ 𝒮ℒ, γ 1 0 ≠ 0 := by
   let u : SL(2, ℤ) := S * T * S⁻¹
   have hu : mapGL ℝ u ∈ (𝒮ℒ : Subgroup (GL (Fin 2) ℝ)) := ⟨u, rfl⟩
   obtain ⟨n, hn, _, hmem⟩ := Γ.exists_pow_mem_of_relIndex_ne_zero Γ.relIndex_ne_zero hu
-  refine ⟨mapGL ℝ u ^ n, hmem.1, ?_⟩
+  refine ⟨mapGL ℝ u ^ n, hmem, ?_⟩
   have hp : u ^ n = S * T ^ n * S⁻¹ := by simp [u, conj_pow]
   have he : (u ^ n : SL(2, ℤ)) 1 0 = -(n : ℤ) := by
     rw [hp, ← zpow_natCast]
@@ -488,10 +492,11 @@ theorem exists_mem_lowerLeft_ne_zero [Subgroup.IsFiniteRelIndex Γ 𝒮ℒ] :
 
 /-- A slash-invariant form of nonzero weight whose group has finite-index intersection with the
 modular group cannot be a nonzero constant. -/
-theorem eq_zero_of_eq_const [Γ.HasDetOne] [Subgroup.IsFiniteRelIndex Γ 𝒮ℒ]
+theorem eq_zero_of_eq_const [Subgroup.IsFiniteRelIndex Γ 𝒮ℒ]
     {F : Type*} [FunLike F ℍ ℂ] [SlashInvariantFormClass F Γ k] {f : F} {c : ℂ}
     (hf : ⇑f = Function.const ℍ c) (hk : k ≠ 0) : c = 0 := by
   obtain ⟨γ, hγ, hc⟩ := exists_mem_lowerLeft_ne_zero (Γ := Γ)
-  exact eq_zero_of_eq_const_of_weight_ne_zero hf hk hγ hc
+  exact eq_zero_of_eq_const_of_weight_ne_zero hf hk hγ.1
+    (Subgroup.HasDetOne.det_eq hγ.2) hc
 
 end TauCeti.ModularForm
