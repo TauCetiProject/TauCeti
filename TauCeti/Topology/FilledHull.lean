@@ -22,7 +22,7 @@ and unbounded, changes nothing.
 
 This file is the topological layer: the definition and the structural facts, which ask only for a
 topology and a bornology, being about components and boundedness and nothing else. That filling
-does not make a set wider needs a real normed space and lives in
+does not make a set wider needs a real seminormed space and lives in
 `TauCeti/Analysis/Normed/Module/FilledHull.lean`.
 
 The shape in which the structural side is spent is `IsPreconnected.subset_filledHull`: a
