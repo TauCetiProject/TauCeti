@@ -183,47 +183,6 @@ theorem tendsto_zero_cobounded_of_eqOn_logDeriv_deriv {f φ : ℂ → ℂ} {q b 
     (tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_eqOn_neg_inv
       hr hb hgf hcont hholo hreal hupper hinj) hφcont hφconj hφf
 
-/-- The pre-Schwarzian chain rule at infinity, as a limit.  Read the map `f` of the upper
-half-plane in the coordinate `w ↦ -1 / w` and normalize the target by `w ↦ (w - c) / b`.  If the
-pre-Schwarzian of the result has the residue asymptotic `w * F''(w) / F'(w) → L` as `w` tends to
-`0` in the upper half of a ball, then `z * f''(z) / f'(z) → -L - 2` at infinity. -/
-private theorem tendsto_mul_logDeriv_deriv_of_tendsto_mul_logDeriv_deriv_neg_inv
-    {f : ℂ → ℂ} {c b L : ℂ} {r : ℝ} (hr : 0 < r) (hb : b ≠ 0)
-    (hf : DifferentiableOn ℂ f upperHalfPlaneSet)
-    (hfn : ∀ z ∈ upperHalfPlaneSet, deriv f z ≠ 0)
-    (hL : Tendsto (fun w => w * logDeriv (deriv fun w => (f (-w⁻¹) - c) / b) w)
-      (𝓝[Metric.ball 0 r ∩ upperHalfPlaneSet] 0) (𝓝 L)) :
-    Tendsto (fun z : ℂ => z * logDeriv (deriv f) z)
-      (cobounded ℂ ⊓ 𝓟 upperHalfPlaneSet) (𝓝 (-L - 2)) := by
-  set s := Metric.ball (0 : ℂ) r ∩ upperHalfPlaneSet
-  have hchain : ∀ w ∈ s, logDeriv (deriv fun w => (f (-w⁻¹) - c) / b) w =
-      logDeriv (deriv f) (-w⁻¹) / w ^ 2 - 2 / w := by
-    intro w hw
-    have hw0 : w ≠ 0 := fun h0 => by simpa [h0] using hw.2
-    have hz : -w⁻¹ ∈ upperHalfPlaneSet := im_neg_inv_pos.mpr hw.2
-    have hderiv : (deriv fun w : ℂ => (f (-w⁻¹) - c) / b) =
-        fun w => deriv (fun w : ℂ => f (-w⁻¹)) w / b := by
-      ext w
-      simp only [deriv_div_const, deriv_sub_const]
-    rw [hderiv]
-    simp only [div_eq_mul_inv (deriv _ _), logDeriv_mul_const w b⁻¹ (inv_ne_zero hb)]
-    exact logDeriv_deriv_comp_neg_inv (hf.analyticAt (isOpen_upperHalfPlaneSet.mem_nhds hz))
-      (hfn _ hz) hw0
-  have h0 : Tendsto (fun z : ℂ => -z⁻¹) (cobounded ℂ ⊓ 𝓟 upperHalfPlaneSet) (𝓝 0) := by
-    simpa using ((tendsto_inv₀_cobounded (α := ℂ)).neg).mono_left inf_le_left
-  have hT : Tendsto (fun z : ℂ => -z⁻¹) (cobounded ℂ ⊓ 𝓟 upperHalfPlaneSet) (𝓝[s] 0) := by
-    refine tendsto_nhdsWithin_iff.mpr ⟨h0, ?_⟩
-    filter_upwards [h0.eventually (Metric.ball_mem_nhds 0 hr),
-      mem_inf_of_right (mem_principal_self upperHalfPlaneSet)] with z hz hzH
-    exact ⟨hz, im_neg_inv_pos.mpr hzH⟩
-  refine (((hL.comp hT).neg).sub_const 2).congr' ?_
-  filter_upwards [hT.eventually self_mem_nhdsWithin,
-    mem_inf_of_right (mem_principal_self upperHalfPlaneSet)] with z hz hzH
-  have hz0 : z ≠ 0 := fun h0 => by simp [h0] at hzH
-  simp only [Function.comp_apply, hchain _ hz, inv_neg, inv_inv, neg_neg]
-  field_simp
-  ring
-
 /-- **The pre-Schwarzian of a map with a vertex at infinity.**  Read the map `f` of the upper
 half-plane in the coordinate `w ↦ -1 / w` at infinity and invert the target about `c` by
 `w ↦ b / (w - c)`.  Suppose the result extends to a function `g` with `g 0 = 0` which is continuous
@@ -298,10 +257,14 @@ which is continuous and injective up to a real segment through `0`, upper half-p
 above it, and real on it, then `z * f''(z) / f'(z) → -1` as `z` tends to infinity in the upper
 half-plane.
 
-In terms of `f`, the hypotheses say that `f` tends to infinity at infinity and that far out it
-fills a half-strip between two parallel rays, onto which the far parts of the real axis are
-carried: the exponential maps such a half-strip, of width `π`, onto a half-disc.  This is the
-opening `β = 0` counterpart of
+The hypotheses are local at `w = 0`, that is near infinity in the source: they constrain `f` only
+through `g` on the upper half of the ball of radius `r`, and say nothing about the rest of the
+image of `f`.  The typical source of such a `g` is a map `f` which far out fills a half-strip
+between two parallel rays, with the far parts of the real axis carried to those rays, where `c`
+and `b` are chosen so that `w ↦ (w - c) / b` carries that half-strip to
+`{w | w.re < 0 ∧ 0 < w.im ∧ w.im < π}`, which the exponential maps onto the upper half of the unit
+disc; the polygonal-domain theorems derive the hypotheses on `g` from such geometry.  This is
+the opening `β = 0` counterpart of
 `TauCeti.tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_eqOn_div_neg_inv`. -/
 theorem tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_eqOn_exp_neg_inv
     {f : ℂ → ℂ} {c b : ℂ} {r : ℝ} (hr : 0 < r) (hb : b ≠ 0)

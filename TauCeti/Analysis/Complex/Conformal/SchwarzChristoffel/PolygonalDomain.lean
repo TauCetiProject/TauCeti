@@ -207,16 +207,6 @@ private theorem tendsto_mul_logDeriv_deriv_of_tendsto_of_side {ι : Type*} {a : 
   exact tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_eqOn_neg_inv hr hb hgf hgcont
     (differentiableOn_of_eqOn_neg_inv hf hgf) hgreal hgupper hginj
 
-/-- `w ↦ -w⁻¹` carries the closed upper half-plane near `0` to the closed upper half-plane near
-infinity, so a map tending to infinity at infinity tends to infinity there in this coordinate. -/
-private theorem tendsto_comp_neg_inv_cobounded
-    (hp : Tendsto f (cobounded ℂ ⊓ 𝓟 {z : ℂ | 0 ≤ z.im}) (cobounded ℂ)) :
-    Tendsto (fun w => f (-w⁻¹)) (𝓝[{w : ℂ | 0 ≤ w.im} \ {0}] 0) (cobounded ℂ) := by
-  refine hp.comp (tendsto_inf.mpr ⟨?_, tendsto_principal.mpr ?_⟩)
-  · exact (tendsto_neg_cobounded.comp tendsto_inv₀_nhdsNE_zero).mono_left
-      (nhdsWithin_mono _ fun w hw => hw.2)
-  · exact eventually_nhdsWithin_of_forall fun w hw => im_neg_inv_nonneg.mpr hw.1
-
 /-- **Condition at a vertex at infinity.**  If `f` tends to infinity at infinity, and far from `c`
 the domain `U` coincides with the open sector `{|arg ((z - c) / b)| < β * π / 2}` of opening
 `β * π`, where `0 < β < 2`, then `z * f''(z) / f'(z) → β - 1` as `z` tends to infinity in the

@@ -7,12 +7,14 @@ module
 
 public import Mathlib.Analysis.Calculus.LogDeriv
 public import Mathlib.Analysis.Complex.Basic
+public import Mathlib.Analysis.Complex.UpperHalfPlane.Basic
 public import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.Analysis.Calculus.FDeriv.Analytic
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Complex.CauchyIntegral
 import TauCeti.Analysis.SpecialFunctions.Pow.LogDeriv
 import TauCeti.Analysis.Complex.AtInfinity
+import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
 
 /-!
 # The pre-Schwarzian derivative: composition, rigidity, and asymptotics
@@ -52,6 +54,8 @@ needed to identify a meromorphic pre-Schwarzian by its finite poles and residues
 * `TauCeti.logDeriv_deriv_comp` -- the pre-Schwarzian chain rule.
 * `TauCeti.tendsto_logDeriv_deriv_comp_neg_inv` -- decay at infinity for a map regular in the
   inverse coordinate.
+* `TauCeti.tendsto_mul_logDeriv_deriv_of_tendsto_mul_logDeriv_deriv_neg_inv` -- a residue
+  asymptotic `L` at `0` in the normalized inverse coordinate gives `-L - 2` at infinity.
 
 ## References
 
@@ -124,6 +128,48 @@ theorem tendsto_logDeriv_deriv_comp_neg_inv {g : ℂ → ℂ}
       (Bornology.cobounded ℂ) (𝓝 0) := by
   exact tendsto_zero_of_tendsto_mul_cobounded le_rfl
     (tendsto_mul_logDeriv_deriv_comp_neg_inv hg hgn)
+
+open Bornology _root_.UpperHalfPlane in
+/-- The pre-Schwarzian chain rule at infinity, as a limit.  Read the map `f` of the upper
+half-plane in the coordinate `w ↦ -1 / w` and normalize the target by `w ↦ (w - c) / b`.  If the
+pre-Schwarzian of the result has the residue asymptotic `w * F''(w) / F'(w) → L` as `w` tends to
+`0` in the upper half of a ball, then `z * f''(z) / f'(z) → -L - 2` at infinity. -/
+theorem tendsto_mul_logDeriv_deriv_of_tendsto_mul_logDeriv_deriv_neg_inv
+    {f : ℂ → ℂ} {c b L : ℂ} {r : ℝ} (hr : 0 < r) (hb : b ≠ 0)
+    (hf : DifferentiableOn ℂ f upperHalfPlaneSet)
+    (hfn : ∀ z ∈ upperHalfPlaneSet, deriv f z ≠ 0)
+    (hL : Tendsto (fun w => w * logDeriv (deriv fun w => (f (-w⁻¹) - c) / b) w)
+      (𝓝[Metric.ball 0 r ∩ upperHalfPlaneSet] 0) (𝓝 L)) :
+    Tendsto (fun z : ℂ => z * logDeriv (deriv f) z)
+      (cobounded ℂ ⊓ 𝓟 upperHalfPlaneSet) (𝓝 (-L - 2)) := by
+  set s := Metric.ball (0 : ℂ) r ∩ upperHalfPlaneSet
+  have hchain : ∀ w ∈ s, logDeriv (deriv fun w => (f (-w⁻¹) - c) / b) w =
+      logDeriv (deriv f) (-w⁻¹) / w ^ 2 - 2 / w := by
+    intro w hw
+    have hw0 : w ≠ 0 := fun h0 => by simpa [h0] using hw.2
+    have hz : -w⁻¹ ∈ upperHalfPlaneSet := im_neg_inv_pos.mpr hw.2
+    have hderiv : (deriv fun w : ℂ => (f (-w⁻¹) - c) / b) =
+        fun w => deriv (fun w : ℂ => f (-w⁻¹)) w / b := by
+      ext w
+      simp only [deriv_div_const, deriv_sub_const]
+    rw [hderiv]
+    simp only [div_eq_mul_inv (deriv _ _), logDeriv_mul_const w b⁻¹ (inv_ne_zero hb)]
+    exact logDeriv_deriv_comp_neg_inv (hf.analyticAt (isOpen_upperHalfPlaneSet.mem_nhds hz))
+      (hfn _ hz) hw0
+  have h0 : Tendsto (fun z : ℂ => -z⁻¹) (cobounded ℂ ⊓ 𝓟 upperHalfPlaneSet) (𝓝 0) := by
+    simpa using ((tendsto_inv₀_cobounded (α := ℂ)).neg).mono_left inf_le_left
+  have hT : Tendsto (fun z : ℂ => -z⁻¹) (cobounded ℂ ⊓ 𝓟 upperHalfPlaneSet) (𝓝[s] 0) := by
+    refine tendsto_nhdsWithin_iff.mpr ⟨h0, ?_⟩
+    filter_upwards [h0.eventually (Metric.ball_mem_nhds 0 hr),
+      mem_inf_of_right (mem_principal_self upperHalfPlaneSet)] with z hz hzH
+    exact ⟨hz, im_neg_inv_pos.mpr hzH⟩
+  refine (((hL.comp hT).neg).sub_const 2).congr' ?_
+  filter_upwards [hT.eventually self_mem_nhdsWithin,
+    mem_inf_of_right (mem_principal_self upperHalfPlaneSet)] with z hz hzH
+  have hz0 : z ≠ 0 := fun h0 => by simp [h0] at hzH
+  simp only [Function.comp_apply, hchain _ hz, inv_neg, inv_inv, neg_neg]
+  field_simp
+  ring
 
 /-- **Rigidity of the pre-Schwarzian derivative.** Two holomorphic functions with nonvanishing
 derivatives on a domain have equal pre-Schwarzian derivatives exactly when one is obtained from
