@@ -89,12 +89,13 @@ private theorem differentiableOn_update_limUnder_slice (hs : IsOpen s)
 variable [FiniteDimensional ℂ V]
 
 /-- **The Riemann extension theorem across a coordinate hyperplane.** Let `U ⊆ V` and `s ⊆ ℂ` be
-open. If `f` is analytic on `U × (s \ {c})` and each slice `z ↦ f (w, z)`, for `w ∈ U`, is bounded
-on a punctured neighbourhood of `c`, then some `g` analytic on `U × s` agrees with `f` on
-`U × (s \ {c})`. Such a `g` is unique on `U × s` by `eqOn_prod_of_eqOn_prod_diff_singleton`. -/
+open. If `f` is analytic on `U × (s \ {c})` and, when `c ∈ s`, each slice `z ↦ f (w, z)`, for
+`w ∈ U`, is bounded on a punctured neighbourhood of `c`, then some `g` analytic on `U × s` agrees
+with `f` on `U × (s \ {c})`. Such a `g` is unique on `U × s` by
+`eqOn_prod_of_eqOn_prod_diff_singleton`. -/
 theorem exists_analyticOnNhd_prod_eqOn (hU : IsOpen U) (hs : IsOpen s)
     (hf : AnalyticOnNhd ℂ f (U ×ˢ (s \ {c})))
-    (hb : ∀ w ∈ U, ∃ t ∈ 𝓝 c, BddAbove (norm ∘ (fun z => f (w, z)) '' (t \ {c}))) :
+    (hb : c ∈ s → ∀ w ∈ U, ∃ t ∈ 𝓝 c, BddAbove (norm ∘ (fun z => f (w, z)) '' (t \ {c}))) :
     ∃ g : V × ℂ → E, AnalyticOnNhd ℂ g (U ×ˢ s) ∧ EqOn g f (U ×ˢ (s \ {c})) := by
   -- Extend each slice across `c` by its limit there.
   set g : V × ℂ → E := fun x =>
@@ -122,7 +123,7 @@ theorem exists_analyticOnNhd_prod_eqOn (hU : IsOpen U) (hs : IsOpen s)
       ((analyticAt_fst.comp analyticAt_fst).prod analyticAt_snd) rfl
   refine hH.congr ?_
   filter_upwards [prod_mem_nhds (hU.mem_nhds hw₀) (ball_mem_nhds z₀ hρ)] with ⟨w, z⟩ ⟨hw, hz⟩
-  have hd := (differentiableOn_update_limUnder_slice hs hf hw (hb w hw)).mono hρs
+  have hd := (differentiableOn_update_limUnder_slice hs hf hw (hb hz₀ w hw)).mono hρs
   dsimp only
   rw [circleIntegral.integral_congr hρ.le fun ζ hζ => by
       rw [← update_of_ne (hne ζ hζ) (limUnder (𝓝[≠] z₀) fun z => f (w, z)) fun z => f (w, z)],
