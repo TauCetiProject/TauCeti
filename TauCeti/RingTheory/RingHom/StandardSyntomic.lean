@@ -21,9 +21,14 @@ base, giving the affine input for syntomic morphisms of schemes.
 Use `TauCeti.IsStandardSyntomicOfRelativeDimension n f` for the ring-map predicate;
 given a proof `hf`, its consequences are available as `hf.flat` and `hf.finitePresentation`.
 The theorem `TauCeti.isStandardSyntomicOfRelativeDimension_iff n f` relates an arbitrary
-ring map to its induced algebra structure. Use
-`(TauCeti.isStandardSyntomicOfRelativeDimension_iff n f).mp hf` to pass a proof of the
-ring-map predicate to the algebra API, and `.mpr` to construct the ring-map predicate.
+ring map to its induced algebra structure. With `hf` as above, both conversions use the
+public bridge:
+
+```lean
+have hAlg := (TauCeti.isStandardSyntomicOfRelativeDimension_iff n f).mp hf
+have hRing := (TauCeti.isStandardSyntomicOfRelativeDimension_iff n f).mpr hAlg
+```
+
 The relative dimension is the first explicit argument, as in
 `RingHom.IsStandardSmoothOfRelativeDimension`.
 
