@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Differential
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Frobenius.Basic
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Frobenius.BaseChange
 
 /-!
 # The Frobenius isogeny kills the differentials
@@ -18,14 +18,16 @@ invariant differential in particular is pulled back to `0`.
 ## Main results
 
 * `TauCeti.Isogeny.pullbackDifferential_frobeniusIsogeny`: `π^*` is the zero map on differentials.
+* `TauCeti.Isogeny.pullbackDifferential_baseChangeFrobenius_invariantDifferential`: the
+  base-changed Frobenius kills the invariant differential over any field extension.
 
 ## Provenance
 
 The AINTLIB `HasseWeil` project (Chris Birkbeck, Apache 2.0, commit
 `513e83879e2f8cbc626eb9e04d660e92be16ccba`) has the corresponding statements for the invariant
 differential only, `omegaPullbackCoeff_frobenius` and
-`frobenius_pullbackKaehler_invariantDifferential` in `BridgeFrobenius.lean`; the statement here is
-for every differential of the function field.
+`frobenius_pullbackKaehler_invariantDifferential` in `BridgeFrobenius.lean`; the first statement
+here is for every differential of the function field.
 
 ## References
 
@@ -60,6 +62,21 @@ theorem pullbackDifferential_frobeniusIsogeny : (frobeniusIsogeny W).pullbackDif
   | zero => rw [map_zero, map_zero]
   | add _ _ _ _ ha hb => rw [map_add, map_add, ha, hb]
   | smul c _ _ h => simp only [pullbackDifferential_smul, h, LinearMap.zero_apply, smul_zero]
+
+variable {K : Type*} [Field K] [Algebra F K]
+
+/-- The base-changed Frobenius kills the invariant differential, over any field extension. -/
+@[simp]
+theorem pullbackDifferential_baseChangeFrobenius_invariantDifferential :
+    (baseChangeFrobenius K W).pullbackDifferential
+      (invariantDifferential (W⁄K).toAffine) = 0 := by
+  have hq : (Nat.card F : K) = 0 := by
+    cases nonempty_fintype F
+    rw [Nat.card_eq_fintype_card, ← map_natCast (algebraMap F K),
+      FiniteField.cast_card_eq_zero, map_zero]
+  rw [invariantDifferential_def, pullbackDifferential_smul, pullbackDifferential_D,
+    fieldPullback_baseChangeFrobenius_genericX, Derivation.leibniz_pow,
+    ← Nat.cast_smul_eq_nsmul K, hq, zero_smul, smul_zero]
 
 end TauCeti.Isogeny
 
