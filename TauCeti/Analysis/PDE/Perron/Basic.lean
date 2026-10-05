@@ -44,6 +44,8 @@ principle `W' = W` on `B`, contradicting `W' z ≥ v z > W z`. Hence `u = W` is 
 ## Main declarations
 
 * `TauCeti.perronFamily`: the Perron family of subharmonic functions below the boundary data.
+* `TauCeti.perronFamily_nonempty`: the Perron family is nonempty when the boundary data is
+  bounded below.
 * `TauCeti.perronSolution`: the Perron solution, the pointwise supremum of the Perron family.
 * `TauCeti.le_perronSolution`, `TauCeti.perronSolution_le`: the Perron solution lies above every
   member of the Perron family and below every upper bound of the boundary data.
@@ -131,10 +133,23 @@ theorem mem_perronFamily : v ∈ perronFamily Ω g ↔
     SubharmonicOn v Ω ∧ ContinuousOn v (closure Ω) ∧ ∀ x ∈ frontier Ω, v x ≤ g x :=
   Iff.rfl
 
+/-- If the boundary data is bounded below on `frontier Ω`, the Perron family is nonempty: it
+contains the constant function at any lower bound of `g` on `frontier Ω`. -/
+theorem perronFamily_nonempty (hg : BddBelow (g '' frontier Ω)) :
+    (perronFamily Ω g).Nonempty := by
+  obtain ⟨m, hm⟩ := hg
+  exact ⟨fun _ ↦ m, (harmonicOnNhd_const m).subharmonicOn, continuousOn_const,
+    fun x hx ↦ hm (mem_image_of_mem g hx)⟩
+
 /-- The **Perron solution** of the Dirichlet problem on `Ω` with boundary data `g`: the pointwise
 supremum of the Perron family `TauCeti.perronFamily Ω g`. It is harmonic in `Ω` when `Ω` is
 bounded and open and `g` is bounded above on `frontier Ω`
-(`TauCeti.harmonicOnNhd_perronSolution`). -/
+(`TauCeti.harmonicOnNhd_perronSolution`).
+
+The family is nonempty when `g` is also bounded below on `frontier Ω`
+(`TauCeti.perronFamily_nonempty`), so it is empty only when `g` is unbounded below on
+`frontier Ω`; classically the Perron solution is then `-∞`, and here it is the constant `0`,
+by the convention `sSup ∅ = 0` in `ℝ`. -/
 def perronSolution (Ω : Set E) (g : E → ℝ) (x : E) : ℝ :=
   sSup ((fun v ↦ v x) '' perronFamily Ω g)
 
@@ -315,7 +330,12 @@ private lemma exists_harmonicOnNhd_eqOn_perronSolution (hΩ : IsOpen Ω)
 end Perron
 
 /-- **Perron's theorem.** Let `Ω` be a bounded open set and let `g` be bounded above on
-`frontier Ω`. Then the Perron solution `TauCeti.perronSolution Ω g` is harmonic in `Ω`. -/
+`frontier Ω`. Then the Perron solution `TauCeti.perronSolution Ω g` is harmonic in `Ω`.
+
+When `g` is also bounded below on `frontier Ω`, as in Perron's setting of bounded boundary data,
+the Perron family is nonempty (`TauCeti.perronFamily_nonempty`) and this is the classical
+statement. Otherwise the family may be empty, the Perron solution is the constant `0` (see
+`TauCeti.perronSolution`), and the statement holds trivially. -/
 theorem harmonicOnNhd_perronSolution (hΩ : IsOpen Ω) (hb : Bornology.IsBounded Ω)
     (hg : BddAbove (g '' frontier Ω)) : HarmonicOnNhd (perronSolution Ω g) Ω := by
   intro y hy
