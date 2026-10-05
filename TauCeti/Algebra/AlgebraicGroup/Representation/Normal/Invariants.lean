@@ -29,7 +29,7 @@ hypothesis, base-valued points need not detect scheme-theoretic invariants. The 
 stability results require no reducedness, finite-type, or field hypotheses.
 
 For a reduced ambient group of finite type over an algebraically closed field,
-`HopfIdeal.IsNormal.fixedSubcomodule` instead constructs the scheme-theoretic invariant
+`HopfIdeal.IsNormal.weightSpaceOneSubcomodule` instead constructs the scheme-theoretic invariant
 representation. It is the subgroup's trivial-character weight space, which normality makes
 ambient-stable. The subgroup itself need not be reduced. Its points over every commutative
 value algebra act trivially on these invariant vectors.
@@ -51,8 +51,8 @@ argument.
 * `TauCeti.HopfIdeal.IsNormal.endOfPoint_one_tmul_mem_basePointFixedSubmodule_baseChange`:
   pointwise
   stability in the scalar-extension form used to detect subcomodules.
-* `TauCeti.HopfIdeal.IsNormal.fixedSubcomodule`: the scheme-theoretic invariant representation,
-  admitting nonreduced normal subgroups.
+* `TauCeti.HopfIdeal.IsNormal.weightSpaceOneSubcomodule`: the scheme-theoretic invariant
+  representation, admitting nonreduced normal subgroups.
 
 ## References
 
@@ -192,7 +192,7 @@ variable {I : HopfIdeal k A}
 variable (V) in
 /-- Scheme-theoretic invariants of a normal closed subgroup form an ambient subrepresentation.
 Only the ambient group is required to be reduced; the subgroup can be nonreduced. -/
-noncomputable def IsNormal.fixedSubcomodule (hI : I.IsNormal) : Subcomodule k A V :=
+noncomputable def IsNormal.weightSpaceOneSubcomodule (hI : I.IsNormal) : Subcomodule k A V :=
   Subcomodule.ofEndOfPointStable (K := k) (I.weightSpace V 1) fun g v hv ↦ by
     have h := basePointsRepresentation_mem_weightSpace (WithConv.toConv g)
       (hI.le_conjugate _) hv
@@ -203,30 +203,31 @@ noncomputable def IsNormal.fixedSubcomodule (hI : I.IsNormal) : Subcomodule k A 
 
 /-- Normal-subgroup invariants are the weight space of the trivial character. -/
 @[simp]
-theorem IsNormal.fixedSubcomodule_toSubmodule (hI : I.IsNormal) :
-    (hI.fixedSubcomodule V).toSubmodule = I.weightSpace V 1 :=
+theorem IsNormal.weightSpaceOneSubcomodule_toSubmodule (hI : I.IsNormal) :
+    (hI.weightSpaceOneSubcomodule V).toSubmodule = I.weightSpace V 1 :=
   Subcomodule.ofEndOfPointStable_toSubmodule _ _
 
 /-- An ambient vector belongs to the normal-subgroup invariant representation precisely when
 its coaction restricts to the trivial coaction on the subgroup. -/
 @[simp]
-theorem IsNormal.mem_fixedSubcomodule (hI : I.IsNormal) {v : V} :
-    v ∈ hI.fixedSubcomodule V ↔
+theorem IsNormal.mem_weightSpaceOneSubcomodule (hI : I.IsNormal) {v : V} :
+    v ∈ hI.weightSpaceOneSubcomodule V ↔
       TensorProduct.map LinearMap.id (Ideal.Quotient.mkₐ k I.toIdeal).toLinearMap
           (Comodule.coact (R := k) (C := A) v) = v ⊗ₜ[k] (1 : A ⧸ I.toIdeal) := by
-  rw [← Subcomodule.mem_toSubmodule, hI.fixedSubcomodule_toSubmodule, mem_weightSpace]
-  rfl
+  rw [← Subcomodule.mem_toSubmodule, hI.weightSpaceOneSubcomodule_toSubmodule,
+    mem_weightSpace, GroupLike.val_one]
 
 /-- Every algebra-valued subgroup point fixes the scalar extension of an invariant vector. -/
-theorem IsNormal.endOfPoint_comp_mkₐ_tmul_of_mem_fixedSubcomodule
+theorem IsNormal.endOfPoint_comp_mkₐ_tmul_of_mem_weightSpaceOneSubcomodule
     (hI : I.IsNormal) {B : Type*} [CommSemiring B] [Algebra k B]
     (g : A ⧸ I.toIdeal →ₐ[k] B) (b : B) {v : V}
-    (hv : v ∈ hI.fixedSubcomodule V) :
+    (hv : v ∈ hI.weightSpaceOneSubcomodule V) :
     Comodule.endOfPoint V (g.comp (Ideal.Quotient.mkₐ k I.toIdeal)) (b ⊗ₜ[k] v) =
       b ⊗ₜ[k] v := by
   have hv' : v ∈ I.weightSpace V 1 := by
-    simpa only [← Subcomodule.mem_toSubmodule, hI.fixedSubcomodule_toSubmodule] using hv
-  simpa using endOfPoint_comp_mkₐ_tmul_of_mem_weightSpace g b hv'
+    simpa only [← Subcomodule.mem_toSubmodule, hI.weightSpaceOneSubcomodule_toSubmodule] using hv
+  simpa only [GroupLike.val_one, map_one, mul_one] using
+    endOfPoint_comp_mkₐ_tmul_of_mem_weightSpace g b hv'
 
 end SchemeTheoretic
 

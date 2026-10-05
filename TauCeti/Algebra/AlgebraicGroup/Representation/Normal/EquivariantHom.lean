@@ -11,20 +11,22 @@ public import TauCeti.Algebra.Coalgebra.Comodule.LinearHom
 /-!
 # Normal-subgroup equivariant linear maps
 
-For a normal closed subgroup `N` of a reduced affine group `G` of finite type over an
-algebraically closed field, the `N`-invariant vectors in the linear Hom comodule form a
-`G`-subcomodule. Its elements are exactly the maps intertwining the subgroup's actions over
+For the normal closed subgroup cut out by a Hopf ideal `I` in a reduced finite-type
+Hopf algebra `H` over an algebraically closed field, the subgroup-invariant vectors in the
+linear Hom comodule form an ambient subcomodule. The source is finite-dimensional and the
+target is arbitrary; the Hom criteria work over any commutative base ring with a finite
+projective source. Its elements are exactly the maps intertwining the subgroup's actions over
 its coordinate algebra, equivalently over every commutative coefficient algebra. No reducedness
-is assumed for `N` or for the coefficient algebra.
+is assumed for the subgroup or for the coefficient algebra.
 
 Applied to endomorphisms of a representation spanned by subgroup character spaces, this is the
 conjugation representation on subgroup-equivariant endomorphisms. Such endomorphisms preserve
 every character space. This representation is used to realize normal closed subgroups as
 kernels of representations.
 
-The construction uses `HopfIdeal.IsNormal.fixedSubcomodule`, the existing `Comodule.linearHom`
-and its scalar-extension conjugation formula; subgroup invariance is detected at the universal
-subgroup point rather than at rational points of the subgroup.
+The construction uses `HopfIdeal.IsNormal.weightSpaceOneSubcomodule`, the existing
+`Comodule.linearHom` and its scalar-extension conjugation formula; subgroup invariance is detected
+at the universal subgroup point rather than at rational points of the subgroup.
 
 ## References
 
@@ -54,35 +56,16 @@ attribute [local instance] Comodule.linearHom
 
 /-- A linear map is subgroup-invariant in the Hom comodule precisely when its scalar extension
 intertwines the actions of the universal subgroup point. -/
+@[simp↓]
 theorem mem_weightSpace_linearHom_one_iff (f : M →ₗ[R] N) :
     f ∈ I.weightSpace (M →ₗ[R] N) 1 ↔
       f.baseChange (H ⧸ I.toIdeal) ∘ₗ
           Comodule.endOfPoint M (Ideal.Quotient.mkₐ R I.toIdeal) =
         Comodule.endOfPoint N (Ideal.Quotient.mkₐ R I.toIdeal) ∘ₗ
           f.baseChange (H ⧸ I.toIdeal) := by
-  let g := toConv (Ideal.Quotient.mkₐ R I.toIdeal)
-  have hcancel : Comodule.endOfPoint M (g⁻¹).ofConv ∘ₗ
-      Comodule.endOfPoint M g.ofConv = LinearMap.id := by
-    simpa using (Comodule.endOfPoint_convMul M g⁻¹ g).symm
-  have hcancel' : Comodule.endOfPoint M g.ofConv ∘ₗ
-      Comodule.endOfPoint M (g⁻¹).ofConv = LinearMap.id := by
-    simpa using (Comodule.endOfPoint_convMul M g g⁻¹).symm
-  rw [mem_weightSpace_iff_endOfPoint]
-  simp only [GroupLike.val_one]
-  have hpoint := Comodule.baseChangeTensorHom_endOfPoint_linearHom g (1 ⊗ₜ[R] f)
-  simp only [LinearMap.baseChangeTensorHom_tmul, one_smul] at hpoint
-  constructor
-  · intro hf
-    rw [hf, LinearMap.baseChangeTensorHom_tmul, one_smul] at hpoint
-    have h := congrArg (fun q ↦ q ∘ₗ Comodule.endOfPoint M g.ofConv) hpoint
-    simpa only [LinearMap.comp_assoc, hcancel, LinearMap.comp_id] using h
-  · intro hf
-    apply (LinearMap.baseChangeTensorHomEquiv
-      (R := R) (A := H ⧸ I.toIdeal) (M := M) (N := N)).injective
-    simp only [LinearMap.baseChangeTensorHomEquiv_apply,
-      LinearMap.baseChangeTensorHom_tmul, one_smul]
-    rw [hpoint, ← LinearMap.comp_assoc, ← hf, LinearMap.comp_assoc,
-      hcancel', LinearMap.comp_id]
+  rw [mem_weightSpace_iff_endOfPoint, GroupLike.val_one]
+  exact Comodule.endOfPoint_linearHom_one_tmul_eq_iff
+    (toConv (Ideal.Quotient.mkₐ R I.toIdeal)) f
 
 /-- A subgroup-invariant linear map intertwines subgroup actions over every commutative value
 algebra, including nonreduced algebras. -/
@@ -92,16 +75,34 @@ theorem baseChange_comp_endOfPoint_of_mem_weightSpace_linearHom_one
     (hf : f ∈ I.weightSpace (M →ₗ[R] N) 1) :
     f.baseChange B ∘ₗ Comodule.endOfPoint M (g.comp (Ideal.Quotient.mkₐ R I.toIdeal)) =
       Comodule.endOfPoint N (g.comp (Ideal.Quotient.mkₐ R I.toIdeal)) ∘ₗ f.baseChange B := by
-  let p := toConv (g.comp (Ideal.Quotient.mkₐ R I.toIdeal))
   have hfixed := endOfPoint_comp_mkₐ_tmul_of_mem_weightSpace g 1 hf
   simp only [GroupLike.val_one, map_one, mul_one] at hfixed
-  have hpoint := Comodule.baseChangeTensorHom_endOfPoint_linearHom p (1 ⊗ₜ[R] f)
-  rw [hfixed, LinearMap.baseChangeTensorHom_tmul, one_smul] at hpoint
-  have h := congrArg (fun q ↦ q ∘ₗ Comodule.endOfPoint M p.ofConv) hpoint
-  have hcancel : Comodule.endOfPoint M (p⁻¹).ofConv ∘ₗ
-      Comodule.endOfPoint M p.ofConv = LinearMap.id := by
-    simpa using (Comodule.endOfPoint_convMul M p⁻¹ p).symm
-  simpa only [LinearMap.comp_assoc, hcancel, LinearMap.comp_id] using h
+  exact (Comodule.endOfPoint_linearHom_one_tmul_eq_iff
+    (toConv (g.comp (Ideal.Quotient.mkₐ R I.toIdeal))) f).mp hfixed
+
+/-- Subgroup invariance is equivalent to intertwining every algebra-valued subgroup point. -/
+theorem mem_weightSpace_linearHom_one_iff_forall_baseChange_comp_endOfPoint
+    (f : M →ₗ[R] N) :
+    f ∈ I.weightSpace (M →ₗ[R] N) 1 ↔
+      ∀ (B : Type v) [CommSemiring B] [Algebra R B] (g : H ⧸ I.toIdeal →ₐ[R] B),
+        f.baseChange B ∘ₗ Comodule.endOfPoint M (g.comp (Ideal.Quotient.mkₐ R I.toIdeal)) =
+          Comodule.endOfPoint N (g.comp (Ideal.Quotient.mkₐ R I.toIdeal)) ∘ₗ
+            f.baseChange B := by
+  refine ⟨fun hf _ _ _ g ↦ I.baseChange_comp_endOfPoint_of_mem_weightSpace_linearHom_one g hf,
+    fun hf ↦ (I.mem_weightSpace_linearHom_one_iff f).mpr ?_⟩
+  simpa only [AlgHom.id_comp] using hf (H ⧸ I.toIdeal) (AlgHom.id R _)
+
+/-- Composites of subgroup-equivariant linear maps are subgroup-equivariant. -/
+theorem comp_mem_weightSpace_linearHom_one
+    {P : Type y} [AddCommGroup P] [Module R P] [Comodule R H P]
+    [Module.Finite R N] [Module.Projective R N]
+    {f : N →ₗ[R] P} {g : M →ₗ[R] N}
+    (hf : f ∈ I.weightSpace (N →ₗ[R] P) 1)
+    (hg : g ∈ I.weightSpace (M →ₗ[R] N) 1) :
+    f ∘ₗ g ∈ I.weightSpace (M →ₗ[R] P) 1 := by
+  rw [I.mem_weightSpace_linearHom_one_iff] at hf hg ⊢
+  rw [LinearMap.baseChange_comp, LinearMap.comp_assoc, hg, ← LinearMap.comp_assoc, hf,
+    LinearMap.comp_assoc]
 
 /-- Subgroup-equivariant linear maps preserve every scheme-theoretic character space. -/
 theorem map_mem_weightSpace_of_mem_weightSpace_linearHom_one
@@ -116,8 +117,7 @@ theorem map_mem_weightSpace_of_mem_weightSpace_linearHom_one
   simpa only [LinearMap.comp_apply, LinearMap.baseChange_tmul] using h.symm
 
 /-- When subgroup character spaces span the source, equivariance is equivalent to preserving
-each character space. In particular, invariant endomorphisms are precisely block-diagonal
-endomorphisms for the character-space decomposition. -/
+each character space. -/
 theorem mem_weightSpace_linearHom_one_iff_forall_mapsTo_weightSpace
     (hspan : ⨆ χ, I.weightSpace M χ = ⊤) (f : M →ₗ[R] N) :
     f ∈ I.weightSpace (M →ₗ[R] N) 1 ↔
@@ -160,29 +160,38 @@ variable [FiniteDimensional k V] {J : HopfIdeal k H}
 /-- The normal-subgroup invariant linear Hom representation consists exactly of maps that
 intertwine the universal subgroup action. -/
 @[simp↓]
-theorem IsNormal.mem_fixedSubcomodule_linearHom (hJ : J.IsNormal) (f : V →ₗ[k] W) :
-    f ∈ hJ.fixedSubcomodule (V →ₗ[k] W) ↔
+theorem IsNormal.mem_weightSpaceOneSubcomodule_linearHom_iff (hJ : J.IsNormal) (f : V →ₗ[k] W) :
+    f ∈ hJ.weightSpaceOneSubcomodule (V →ₗ[k] W) ↔
       f.baseChange (H ⧸ J.toIdeal) ∘ₗ
           Comodule.endOfPoint V (Ideal.Quotient.mkₐ k J.toIdeal) =
         Comodule.endOfPoint W (Ideal.Quotient.mkₐ k J.toIdeal) ∘ₗ
           f.baseChange (H ⧸ J.toIdeal) := by
-  rw [← Subcomodule.mem_toSubmodule, hJ.fixedSubcomodule_toSubmodule]
+  rw [← Subcomodule.mem_toSubmodule, hJ.weightSpaceOneSubcomodule_toSubmodule]
   exact J.mem_weightSpace_linearHom_one_iff f
 
 /-- If subgroup characters span the source, the normal-subgroup invariant Hom subcomodule
 consists exactly of the maps preserving each character space. -/
-theorem IsNormal.mem_fixedSubcomodule_linearHom_iff_forall_mapsTo_weightSpace
+theorem IsNormal.mem_weightSpaceOneSubcomodule_linearHom_iff_forall_mapsTo_weightSpace
     (hJ : J.IsNormal) (hspan : ⨆ χ, J.weightSpace V χ = ⊤) (f : V →ₗ[k] W) :
-    f ∈ hJ.fixedSubcomodule (V →ₗ[k] W) ↔
+    f ∈ hJ.weightSpaceOneSubcomodule (V →ₗ[k] W) ↔
       ∀ χ, Set.MapsTo f (J.weightSpace V χ) (J.weightSpace W χ) := by
-  rw [← Subcomodule.mem_toSubmodule, hJ.fixedSubcomodule_toSubmodule]
+  rw [← Subcomodule.mem_toSubmodule, hJ.weightSpaceOneSubcomodule_toSubmodule]
   exact J.mem_weightSpace_linearHom_one_iff_forall_mapsTo_weightSpace hspan f
 
 /-- The identity belongs to the subgroup-equivariant endomorphism representation. -/
-theorem IsNormal.id_mem_fixedSubcomodule_linearHom (hJ : J.IsNormal) :
-    LinearMap.id ∈ hJ.fixedSubcomodule (V →ₗ[k] V) := by
-  rw [hJ.mem_fixedSubcomodule_linearHom]
+theorem IsNormal.id_mem_weightSpaceOneSubcomodule_linearHom (hJ : J.IsNormal) :
+    LinearMap.id ∈ hJ.weightSpaceOneSubcomodule (V →ₗ[k] V) := by
+  rw [hJ.mem_weightSpaceOneSubcomodule_linearHom_iff]
   simp
+
+/-- The normal-subgroup invariant endomorphism representation is closed under composition. -/
+theorem IsNormal.comp_mem_weightSpaceOneSubcomodule_linearHom (hJ : J.IsNormal)
+    {f g : V →ₗ[k] V}
+    (hf : f ∈ hJ.weightSpaceOneSubcomodule (V →ₗ[k] V))
+    (hg : g ∈ hJ.weightSpaceOneSubcomodule (V →ₗ[k] V)) :
+    f ∘ₗ g ∈ hJ.weightSpaceOneSubcomodule (V →ₗ[k] V) := by
+  rw [← Subcomodule.mem_toSubmodule, hJ.weightSpaceOneSubcomodule_toSubmodule] at hf hg ⊢
+  exact J.comp_mem_weightSpace_linearHom_one hf hg
 
 end Normal
 
