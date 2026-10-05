@@ -87,7 +87,15 @@ theorem discrFieldRingEquiv_apply
       (algebraMap F' E').comp (e : F →+* F'))
     (x : discrField f E) :
     (discrFieldRingEquiv hcomm x : E') = τ (x : E) := by
-  rfl
+  -- Equality transport between subfields preserves the underlying ambient element.
+  have coe_subfieldCongr {S T : Subfield E'} (h : S = T) (y : S) :
+      (RingEquiv.subfieldCongr h y : E') = (y : E') := by
+    subst T
+    rfl
+  unfold discrFieldRingEquiv
+  -- Use full transparency to identify the intermediate-field, subfield, and subring carriers.
+  erw [RingEquiv.trans_apply, coe_subfieldCongr, Subring.coe_equivMapOfInjective_apply]
+  simp only [RingEquiv.coe_toRingHom]
 
 /-- The inverse induced isomorphism is the inverse ambient isomorphism. -/
 @[simp]
@@ -113,5 +121,17 @@ theorem discrFieldRingEquiv_algebraMap
     IntermediateField.coe_algebraMap_apply]
   simpa only [RingHom.coe_comp, Function.comp_apply, RingEquiv.coe_toRingHom] using
     DFunLike.congr_fun hcomm x
+
+/-- The inverse discriminant-field isomorphism commutes with the inverse base isomorphism. -/
+@[simp]
+theorem discrFieldRingEquiv_symm_algebraMap
+    (hcomm : (τ : E →+* E').comp (algebraMap F E) =
+      (algebraMap F' E').comp (e : F →+* F'))
+    (x : F') :
+    (discrFieldRingEquiv hcomm).symm
+        (algebraMap F' (discrField (f.map (e : F →+* F')) E') x) =
+      algebraMap F (discrField f E) (e.symm x) := by
+  apply (discrFieldRingEquiv hcomm).injective
+  simp only [RingEquiv.apply_symm_apply, discrFieldRingEquiv_algebraMap]
 
 end TauCeti
