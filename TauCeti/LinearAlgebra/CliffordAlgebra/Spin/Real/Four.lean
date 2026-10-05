@@ -332,7 +332,7 @@ private theorem vectorEven4_spin_action (s : spinGroup Q4) (v : Fin 4 → ℝ) :
           noncomm_ring, e4_three_sq]
       simp only [mul_one]]
 
-/-- Under the compact real four-dimensional Spin equivalence and the oriented quaternion
+/-- Under the compact real four-dimensional Spin equivalence and the quaternion
 isometry, the vector action is left multiplication by the first unit quaternion and inverse right
 multiplication by the second. -/
 theorem realSpinFourEquivQuaternionUnitaryProd_action

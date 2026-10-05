@@ -217,7 +217,7 @@ theorem realCliffordFourZeroEvenEquivQuaternionProd_map_reverseEven_mul_self_eq_
   rw [map_mul, realCliffordFourZeroEvenEquivQuaternionProd_reverseEven]
   ext <;> simp [Quaternion.star_mul_self]
 
-/-- The oriented Hamilton-quaternion model of the vector space underlying `Cl(4,0)`. The
+/-- A Hamilton-quaternion model of the vector space underlying `Cl(4,0)`. The
 coordinate order is chosen so that the two unit-quaternion factors act by left and inverse right
 multiplication. -/
 noncomputable def realCliffordFourZeroQuaternionEquiv :
