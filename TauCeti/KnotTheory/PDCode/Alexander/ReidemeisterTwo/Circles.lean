@@ -57,7 +57,9 @@ open PDCode LaurentPolynomial
 variable (o₁ o₂ b : Bool)
 
 /-- The explicit weights of the closed clasp. The second crossing reverses the slot order
-and the crossing sign, so its under-strand weights invert those of the first. -/
+and the crossing sign, so its under-strand weights invert those of the first.
+The over-strand has weight `1`; the under-strand weight is the meridian `t^{±1}` of the
+over-component, oriented by `o₂` when `b` holds and by `o₁` otherwise. -/
 @[simp]
 theorem alexanderWeight_twoCircleClasp (i : Fin 2) (s : Fin 4) :
     (twoCircleClasp o₁ o₂ b).alexanderWeight i s =
@@ -68,12 +70,12 @@ theorem alexanderWeight_twoCircleClasp (i : Fin 2) (s : Fin 4) :
         if b then ![1, T (if o₂ then 1 else -1), 1, T (if o₂ then -1 else 1)]
         else ![T (if o₁ then -1 else 1), 1, T (if o₁ then 1 else -1), 1]) s := by
   fin_cases i
-  · change (twoCircleClasp o₁ o₂ b).alexanderWeight 0 s = _
+  · simp only [Fin.zero_eta]
     simp only [alexanderWeight_def, PDCode.isOver_def, crossingSign_def, crossing_apply,
       toPDCode_twoCircleClasp, PDCode.twoCircleClasp_halfEdge, Equiv.Perm.one_apply,
       PDCode.twoCircleClasp_overPair, orientation_twoCircleClasp]
     cases o₁ <;> cases o₂ <;> cases b <;> fin_cases s <;> simp
-  · change (twoCircleClasp o₁ o₂ b).alexanderWeight 1 s = _
+  · simp only [Fin.mk_one]
     rw [alexanderWeight_def, crossingSign_twoCircleClasp_one]
     simp only [PDCode.isOver_def, crossingSign_def, crossing_apply,
       toPDCode_twoCircleClasp, PDCode.twoCircleClasp_halfEdge, Equiv.Perm.one_apply,
@@ -110,30 +112,27 @@ private theorem alexanderWeight_twoCircleClasp_over :
 
 private theorem claspValue_crossing_add_two {M : Type*} [AddCommGroup M] [Module ℤ[T;T⁻¹] M]
     (x y : M) (i : Fin 2) (s : Fin 4) :
-    claspValue ((twoCircleClasp o₁ o₂ b).alexanderWeight 0) x y i (s + 2) =
+    claspValue ((twoCircleClasp o₁ o₂ b).alexanderWeight 0 0)
+      ((twoCircleClasp o₁ o₂ b).alexanderWeight 0 1) x y i (s + 2) =
       (twoCircleClasp o₁ o₂ b).alexanderWeight i s •
-        claspValue ((twoCircleClasp o₁ o₂ b).alexanderWeight 0) x y i s +
+        claspValue ((twoCircleClasp o₁ o₂ b).alexanderWeight 0 0)
+          ((twoCircleClasp o₁ o₂ b).alexanderWeight 0 1) x y i s +
       (1 - (twoCircleClasp o₁ o₂ b).alexanderWeight i s) •
-        claspValue ((twoCircleClasp o₁ o₂ b).alexanderWeight 0) x y i (s + 1) := by
+        claspValue ((twoCircleClasp o₁ o₂ b).alexanderWeight 0 0)
+          ((twoCircleClasp o₁ o₂ b).alexanderWeight 0 1) x y i (s + 1) := by
   have h := (twoCircleClasp o₁ o₂ b).apply_crossing_add_two_of_zero_of_one
     (fun z ↦ let p := (crossingSlotEquiv 2).symm z
-      claspValue ((twoCircleClasp o₁ o₂ b).alexanderWeight 0) x y p.1 p.2) i
+      claspValue ((twoCircleClasp o₁ o₂ b).alexanderWeight 0 0)
+        ((twoCircleClasp o₁ o₂ b).alexanderWeight 0 1) x y p.1 p.2) i
   simp only [crossing_apply, toPDCode_twoCircleClasp, PDCode.twoCircleClasp_halfEdge,
     Equiv.Perm.one_apply, Equiv.symm_apply_apply] at h
   fin_cases i
-  · apply h <;> simp [claspValue_def]
-  · obtain ⟨h₀, h₁⟩ := clasp_relations
+  · apply h <;> simp
+  · obtain ⟨h₀, h₁⟩ := claspValue_relations
       (alexanderWeight_twoCircleClasp_one_zero_mul o₁ o₂ b)
       (alexanderWeight_twoCircleClasp_one_one_mul o₁ o₂ b)
-      (alexanderWeight_twoCircleClasp_over o₁ o₂ b)
-      (x₀ := x) (x₁ := y) (by rfl) (by rfl)
-    apply h
-    · simpa only [claspValue_def, Fin.isValue, Fin.mk_one, Fin.reduceEq, ↓reduceIte,
-        Matrix.cons_val]
-        using h₀.symm
-    · simpa only [claspValue_def, Fin.isValue, Fin.mk_one, Fin.reduceEq, ↓reduceIte,
-        Matrix.cons_val]
-        using h₁.symm
+      (alexanderWeight_twoCircleClasp_over o₁ o₂ b) x y
+    exact h h₀ h₁ s
 
 variable {n : ℕ} (D : OrientedPDCode n)
 
@@ -151,11 +150,14 @@ theorem alexanderWeight_adjoinTwoCircleClasp_natAdd (i : Fin 2) (s : Fin 4) :
       (twoCircleClasp o₁ o₂ b).alexanderWeight i s := by
   simp [adjoinTwoCircleClasp_def]
 
+/-- The generator of the `j`-th newly adjoined circle:
+`0` has orientation `o₁`, `1` has `o₂`. -/
 private def circleGenerator (j : Fin 2) :
     ((D.adjoinCircle o₁).adjoinCircle o₂).AlexanderModule :=
   ((D.adjoinCircle o₁).adjoinCircle o₂).alexanderGenerator
     (.inr (Fin.cast (by simp) (Fin.natAdd D.crossinglessComponentCount j)))
 
+/-- The images of old generators and clasp slots in the module with the two new circles. -/
 private def adjoinTwoCircleClaspValue :
     Fin (4 * (n + 2)) ⊕ Fin (D.adjoinTwoCircleClasp o₁ o₂ b).crossinglessComponentCount →
       ((D.adjoinCircle o₁).adjoinCircle o₂).AlexanderModule :=
@@ -163,13 +165,15 @@ private def adjoinTwoCircleClaspValue :
     (fun z ↦ Sum.elim
       (fun h ↦ ((D.adjoinCircle o₁).adjoinCircle o₂).alexanderGenerator (.inl h))
       (fun h ↦ let p := (crossingSlotEquiv 2).symm h
-        claspValue ((twoCircleClasp o₁ o₂ b).alexanderWeight 0) (circleGenerator o₁ o₂ D 0)
+        claspValue ((twoCircleClasp o₁ o₂ b).alexanderWeight 0 0)
+          ((twoCircleClasp o₁ o₂ b).alexanderWeight 0 1) (circleGenerator o₁ o₂ D 0)
           (circleGenerator o₁ o₂ D 1) p.1 p.2)
       ((disjointUnionHalfEdgeEquiv n 2).symm z))
     (fun j ↦ ((D.adjoinCircle o₁).adjoinCircle o₂).alexanderGenerator
       (.inr (Fin.cast (by simp)
         (Fin.castAdd 2 (Fin.cast (m := D.crossinglessComponentCount) (by simp) j)))))
 
+/-- The map from the clasp module to the circle module induced by the prescribed slot values. -/
 private def adjoinTwoCircleClaspHom :
     (D.adjoinTwoCircleClasp o₁ o₂ b).AlexanderModule →ₗ[ℤ[T;T⁻¹]]
       ((D.adjoinCircle o₁).adjoinCircle o₂).AlexanderModule :=
@@ -182,19 +186,22 @@ private def adjoinTwoCircleClaspHom :
       · obtain ⟨⟨i, s⟩, rfl⟩ := (crossingSlotEquiv 2).surjective h
         simpa [adjoinTwoCircleClaspValue, adjoinTwoCircleClasp_def, disjointUnion_edgePair_val,
           Equiv.permCongr_apply] using
-          claspValue_arc ((twoCircleClasp o₁ o₂ b).alexanderWeight 0)
+          claspValue_rev_rev ((twoCircleClasp o₁ o₂ b).alexanderWeight 0 0)
+            ((twoCircleClasp o₁ o₂ b).alexanderWeight 0 1)
             (circleGenerator o₁ o₂ D 0) (circleGenerator o₁ o₂ D 1) i s)
     (fun i s ↦ by
       induction i using Fin.addCases with
       | left i =>
+        rw [alexanderWeight_adjoinTwoCircleClasp_castAdd]
         simp only [adjoinTwoCircleClasp_def, toPDCode_disjointUnion,
-          crossing_disjointUnion_castAdd, alexanderWeight_disjointUnion_castAdd,
+          crossing_disjointUnion_castAdd,
           adjoinTwoCircleClaspValue, Sum.elim_inl, Equiv.symm_apply_apply]
         simpa using
           ((D.adjoinCircle o₁).adjoinCircle o₂).alexanderGenerator_crossing_add_two i s
       | right i =>
+        rw [alexanderWeight_adjoinTwoCircleClasp_natAdd]
         simp only [adjoinTwoCircleClasp_def, toPDCode_disjointUnion,
-          crossing_disjointUnion_natAdd, alexanderWeight_disjointUnion_natAdd,
+          crossing_disjointUnion_natAdd,
           adjoinTwoCircleClaspValue, Sum.elim_inl, Equiv.symm_apply_apply, Sum.elim_inr]
         simpa only [crossing_apply, toPDCode_twoCircleClasp,
           PDCode.twoCircleClasp_halfEdge, Equiv.Perm.one_apply, Equiv.symm_apply_apply] using
@@ -206,11 +213,13 @@ private theorem adjoinTwoCircleClaspHom_alexanderGenerator (g) :
       adjoinTwoCircleClaspValue o₁ o₂ b D g :=
   alexanderLift_alexanderGenerator _ _ _ _ _
 
+/-- The generator of slot `s` of new crossing `i`, with `0` the first clasp crossing. -/
 private def claspGenerator (i : Fin 2) (s : Fin 4) :
     (D.adjoinTwoCircleClasp o₁ o₂ b).AlexanderModule :=
   (D.adjoinTwoCircleClasp o₁ o₂ b).alexanderGenerator
     (.inl (disjointUnionHalfEdgeEquiv n 2 (.inr (crossingSlotEquiv 2 (i, s)))))
 
+/-- The inverse images of old generators and the two newly adjoined circle generators. -/
 private def adjoinTwoCircleClaspInvValue :
     Fin (4 * n) ⊕ Fin ((D.adjoinCircle o₁).adjoinCircle o₂).crossinglessComponentCount →
       (D.adjoinTwoCircleClasp o₁ o₂ b).AlexanderModule :=
@@ -222,6 +231,8 @@ private def adjoinTwoCircleClaspInvValue :
       (fun k ↦ claspGenerator o₁ o₂ b D 0 (Fin.castAdd 2 k))
       (Fin.cast (m := D.crossinglessComponentCount + 2) (by simp) j))
 
+/-- The map from the circle module sending the new circles
+to slots `0`, `1` of crossing `0`. -/
 private def adjoinTwoCircleClaspInvHom :
     ((D.adjoinCircle o₁).adjoinCircle o₂).AlexanderModule →ₗ[ℤ[T;T⁻¹]]
       (D.adjoinTwoCircleClasp o₁ o₂ b).AlexanderModule :=
@@ -234,8 +245,9 @@ private def adjoinTwoCircleClaspInvHom :
     (fun i s ↦ by
       have h := (D.adjoinTwoCircleClasp o₁ o₂ b).alexanderGenerator_crossing_add_two
         (Fin.castAdd 2 i) s
+      rw [alexanderWeight_adjoinTwoCircleClasp_castAdd] at h
       simp only [adjoinTwoCircleClasp_def, toPDCode_disjointUnion,
-        crossing_disjointUnion_castAdd, alexanderWeight_disjointUnion_castAdd] at h
+        crossing_disjointUnion_castAdd] at h
       simpa [adjoinTwoCircleClaspInvValue] using h)
 
 private theorem adjoinTwoCircleClaspInvHom_alexanderGenerator (g) :
@@ -258,8 +270,9 @@ private theorem claspGenerator_crossing_add_two (i : Fin 2) (s : Fin 4) :
         claspGenerator o₁ o₂ b D i (s + 1) := by
   have h := (D.adjoinTwoCircleClasp o₁ o₂ b).alexanderGenerator_crossing_add_two
     (Fin.natAdd n i) s
+  rw [alexanderWeight_adjoinTwoCircleClasp_natAdd] at h
   simp only [adjoinTwoCircleClasp_def, toPDCode_disjointUnion,
-    crossing_disjointUnion_natAdd, alexanderWeight_disjointUnion_natAdd] at h
+    crossing_disjointUnion_natAdd] at h
   simpa only [claspGenerator, crossing_apply, toPDCode_twoCircleClasp,
     PDCode.twoCircleClasp_halfEdge, Equiv.Perm.one_apply] using h
 
@@ -267,24 +280,26 @@ private theorem claspGenerator_crossing_add_two (i : Fin 2) (s : Fin 4) :
 then determines all four slots of the second crossing. -/
 private theorem claspGenerator_eq_claspValue (i : Fin 2) (s : Fin 4) :
     claspGenerator o₁ o₂ b D i s =
-      claspValue ((twoCircleClasp o₁ o₂ b).alexanderWeight 0) (claspGenerator o₁ o₂ b D 0 0)
+      claspValue ((twoCircleClasp o₁ o₂ b).alexanderWeight 0 0)
+        ((twoCircleClasp o₁ o₂ b).alexanderWeight 0 1) (claspGenerator o₁ o₂ b D 0 0)
         (claspGenerator o₁ o₂ b D 0 1) i s := by
   have h₂ := claspGenerator_crossing_add_two o₁ o₂ b D 0 0
   have h₃ := claspGenerator_crossing_add_two o₁ o₂ b D 0 1
   simp only [Fin.reduceAdd, zero_add] at h₂ h₃
   fin_cases i
-  · fin_cases s <;> simp [claspValue_def, h₂, h₃]
+  · fin_cases s <;> simp [h₂, h₃]
   · have h := (claspGenerator_arc o₁ o₂ b D 1 s).symm
-    fin_cases s <;> simpa [claspValue_def, h₂, h₃] using h
+    fin_cases s <;> simpa [h₂, h₃] using h
 
 private theorem adjoinTwoCircleClaspInvHom_claspValue (i : Fin 2) (s : Fin 4) :
     adjoinTwoCircleClaspInvHom o₁ o₂ b D
-      (claspValue ((twoCircleClasp o₁ o₂ b).alexanderWeight 0) (circleGenerator o₁ o₂ D 0)
+      (claspValue ((twoCircleClasp o₁ o₂ b).alexanderWeight 0 0)
+        ((twoCircleClasp o₁ o₂ b).alexanderWeight 0 1) (circleGenerator o₁ o₂ D 0)
         (circleGenerator o₁ o₂ D 1) i s) =
         claspGenerator o₁ o₂ b D i s := by
   rw [claspGenerator_eq_claspValue o₁ o₂ b D i s]
   fin_cases i <;> fin_cases s <;>
-    simp [claspValue_def, circleGenerator, adjoinTwoCircleClaspInvHom_alexanderGenerator,
+    simp [circleGenerator, adjoinTwoCircleClaspInvHom_alexanderGenerator,
       adjoinTwoCircleClaspInvValue]
 
 /-- The second Reidemeister move between two crossing-free circles preserves the Alexander
@@ -310,7 +325,7 @@ def alexanderModuleAdjoinTwoCircleClaspEquiv (D : OrientedPDCode n) (o₁ o₂ b
             simp [adjoinTwoCircleClaspHom_alexanderGenerator,
               adjoinTwoCircleClaspInvHom_alexanderGenerator, adjoinTwoCircleClaspInvValue,
               adjoinTwoCircleClaspValue,
-              claspGenerator, claspValue_def, circleGenerator])
+              claspGenerator, circleGenerator])
     (by
       ext (h | j)
       · obtain ⟨h | h, rfl⟩ := (disjointUnionHalfEdgeEquiv n 2).surjective h
@@ -318,8 +333,8 @@ def alexanderModuleAdjoinTwoCircleClaspEquiv (D : OrientedPDCode n) (o₁ o₂ b
           adjoinTwoCircleClaspInvHom_alexanderGenerator, adjoinTwoCircleClaspValue,
           adjoinTwoCircleClaspInvValue]
         · obtain ⟨⟨i, s⟩, rfl⟩ := (crossingSlotEquiv 2).surjective h
-          simp [adjoinTwoCircleClaspHom_alexanderGenerator, adjoinTwoCircleClaspValue,
-            adjoinTwoCircleClaspInvHom_claspValue, claspGenerator]
+          simp [-alexanderWeight_twoCircleClasp, adjoinTwoCircleClaspHom_alexanderGenerator,
+            adjoinTwoCircleClaspValue, adjoinTwoCircleClaspInvHom_claspValue, claspGenerator]
       · simp [adjoinTwoCircleClaspHom_alexanderGenerator,
         adjoinTwoCircleClaspInvHom_alexanderGenerator, adjoinTwoCircleClaspValue,
         adjoinTwoCircleClaspInvValue])
@@ -344,19 +359,16 @@ theorem alexanderModuleAdjoinTwoCircleClaspEquiv_apply_alexanderGenerator_inl_in
     (i : Fin 2) (s : Fin 4) :
     D.alexanderModuleAdjoinTwoCircleClaspEquiv o₁ o₂ b
       ((D.adjoinTwoCircleClasp o₁ o₂ b).alexanderGenerator
-        (.inl (crossingSlotEquiv (n + 2) (Fin.natAdd n i, s)))) =
-      let x := ((D.adjoinCircle o₁).adjoinCircle o₂).alexanderGenerator
-        (.inr (Fin.cast (by simp) (Fin.natAdd D.crossinglessComponentCount (0 : Fin 2))))
-      let y := ((D.adjoinCircle o₁).adjoinCircle o₂).alexanderGenerator
-        (.inr (Fin.cast (by simp) (Fin.natAdd D.crossinglessComponentCount (1 : Fin 2))))
-      let w := (twoCircleClasp o₁ o₂ b).alexanderWeight 0
-      let u := w 0 • x + (1 - w 0) • y
-      let v := w 1 • y + (1 - w 1) • u
-      (if i = 0 then ![x, y, u, v] else ![v, u, y, x]) s := by
-  rw [← disjointUnionHalfEdgeEquiv_inr_crossingSlot]
-  simp [alexanderModuleAdjoinTwoCircleClaspEquiv, adjoinTwoCircleClaspHom_alexanderGenerator,
-    adjoinTwoCircleClaspValue,
-    claspValue_def, circleGenerator]
+        (.inl (disjointUnionHalfEdgeEquiv n 2 (.inr (crossingSlotEquiv 2 (i, s)))))) =
+      claspValue ((twoCircleClasp o₁ o₂ b).alexanderWeight 0 0)
+        ((twoCircleClasp o₁ o₂ b).alexanderWeight 0 1)
+        (((D.adjoinCircle o₁).adjoinCircle o₂).alexanderGenerator
+          (.inr (Fin.cast (by simp) (Fin.natAdd D.crossinglessComponentCount (0 : Fin 2)))))
+        (((D.adjoinCircle o₁).adjoinCircle o₂).alexanderGenerator
+          (.inr (Fin.cast (by simp) (Fin.natAdd D.crossinglessComponentCount (1 : Fin 2)))))
+        i s := by
+  simp [alexanderModuleAdjoinTwoCircleClaspEquiv,
+    adjoinTwoCircleClaspHom_alexanderGenerator, adjoinTwoCircleClaspValue, circleGenerator]
 
 /-- Old crossing-free components map to the same components before the two new circles. -/
 @[simp]
