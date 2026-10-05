@@ -178,6 +178,29 @@ def adjoinCircle (D : OrientedPDCode n) (orientation : Bool) : OrientedPDCode n 
     (OrientedPDCode.adjoinCircle D orientation).writhe = D.writhe := by
   simp [writhe_def]
 
+/-- A code with a crossing-free circle of orientation `o` is obtained by adjoining that circle to
+the code without it. -/
+theorem exists_eq_adjoinCircle_of_mem {D : OrientedPDCode n} {o : Bool}
+    (h : o ∈ D.crossinglessComponents) :
+    ∃ D₀ : OrientedPDCode n, D = OrientedPDCode.adjoinCircle D₀ o := by
+  have hcard : D.crossinglessComponentCount = D.crossinglessComponentCount - 1 + 1 := by
+    rw [← D.crossinglessComponents_card]
+    exact (Nat.succ_pred_eq_of_pos (Multiset.card_pos_iff_exists_mem.2 ⟨o, h⟩)).symm
+  refine ⟨{ toPDCode := { D.toPDCode with
+              crossinglessComponentCount := D.crossinglessComponentCount - 1 }
+            orientation := D.orientation
+            orientation_edgePair := D.orientation_edgePair
+            orientation_oppositeCrossingSlot := D.orientation_oppositeCrossingSlot
+            crossinglessComponents := D.crossinglessComponents.erase o
+            crossinglessComponents_card := by
+              rw [Multiset.card_erase_of_mem h, D.crossinglessComponents_card,
+                Nat.pred_eq_sub_one] },
+    ?_⟩
+  apply OrientedPDCode.ext
+  · apply PDCode.ext <;> simp [← hcard]
+  · simp
+  · simp [Multiset.cons_erase h]
+
 /-- Mirroring commutes with adjoining an oriented crossing-free circle. -/
 @[simp] theorem mirror_adjoinCircle (D : OrientedPDCode n) (orientation : Bool) :
     (OrientedPDCode.adjoinCircle D orientation).mirror =

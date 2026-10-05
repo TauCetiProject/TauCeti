@@ -43,6 +43,9 @@ closes up to a crossing-free circle.
   enter.
 * `TauCeti.BraidWord.edgePair_closure_crossingSlotEquiv_zero` and its siblings for the slots `1`,
   `2` and `3`: the arc at each slot of a crossing of the closure.
+* `TauCeti.BraidWord.edgePair_closure_eq_of_outgoingSlot`: a perfect matching of the half-edges
+  agreeing with the arcs of the closure at the slots where strands leave their crossings is the arc
+  matching of the closure.
 * `TauCeti.BraidWord.crossingSign_closure`: the sign of each crossing is the sign of its letter.
 * `TauCeti.BraidWord.writhe_closure`: the writhe of the closure is the exponent sum of the braid.
 * `TauCeti.BraidWord.closure_nil`: the closure of the empty word on `n` strands is the
@@ -161,6 +164,26 @@ theorem outgoingSlot_strand (j : Fin w.length) : w.outgoingSlot j (strand w[j.1]
 theorem outgoingSlot_strandSucc (j : Fin w.length) :
     w.outgoingSlot j (strandSucc w[j.1].1) = 1 := by
   simp [outgoingSlot, (strand_ne_strandSucc _).symm]
+
+/-- A strand enters a crossing at slot `0` or slot `3`. -/
+theorem incomingSlot_eq_zero_or_three (j : Fin w.length) (p : Fin n) :
+    w.incomingSlot j p = 0 ∨ w.incomingSlot j p = 3 := by
+  unfold incomingSlot
+  split_ifs <;> simp
+
+/-- A strand leaves a crossing at slot `1` or slot `2`. -/
+theorem outgoingSlot_eq_one_or_two (j : Fin w.length) (p : Fin n) :
+    w.outgoingSlot j p = 1 ∨ w.outgoingSlot j p = 2 := by
+  unfold outgoingSlot
+  split_ifs <;> simp
+
+/-- A crossing is left upwards along the two positions of its letter at different slots. -/
+theorem eq_of_outgoingSlot_eq {j : Fin w.length} {p q : Fin n} (hp : j ∈ w.crossingsAt p)
+    (hq : j ∈ w.crossingsAt q) (h : w.outgoingSlot j p = w.outgoingSlot j q) : p = q := by
+  rw [mem_crossingsAt] at hp hq
+  have hne := strand_ne_strandSucc w[j.1].1
+  unfold outgoingSlot at h
+  rcases hp with rfl | rfl <;> rcases hq with hq | hq <;> simp_all
 
 /-! ### The arcs of the closure -/
 
@@ -376,6 +399,21 @@ theorem orientation_closure (j : Fin w.length) (slot : Fin 4) :
     w.closure.orientation (crossingSlotEquiv w.length (j, slot)) =
       decide (slot = 1 ∨ slot = 2) := by
   simp [closure, IsOutgoing]
+
+/-- The arcs of the closure are determined by the arcs leaving the crossings upwards: a perfect
+matching of the half-edges agreeing with them is the arc matching of the closure. -/
+theorem edgePair_closure_eq_of_outgoingSlot {M : PerfectMatching (Fin (4 * w.length))}
+    (h : ∀ j p, j ∈ w.crossingsAt p →
+      w.closure.edgePair.val (crossingSlotEquiv _ (j, w.outgoingSlot j p)) =
+        M.val (crossingSlotEquiv _ (j, w.outgoingSlot j p))) :
+    w.closure.edgePair = M := by
+  refine PerfectMatching.ext_of_eqOn (s := {x | w.closure.orientation x = true})
+    (fun x hx ↦ by simpa using hx) fun x hx ↦ ?_
+  obtain ⟨⟨j, slot⟩, rfl⟩ := (crossingSlotEquiv _).surjective x
+  simp only [Set.mem_ofPred_eq, orientation_closure, decide_eq_true_eq] at hx
+  rcases hx with rfl | rfl
+  · simpa using h j _ (w.mem_crossingsAt_strandSucc j)
+  · simpa using h j _ (w.mem_crossingsAt_strand j)
 
 /-- The crossing-free circles of the closure are the strand positions involved in no crossing. -/
 @[simp]
