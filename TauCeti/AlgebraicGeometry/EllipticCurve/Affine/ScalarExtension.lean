@@ -12,20 +12,12 @@ public import Mathlib.RingTheory.TensorProduct.IsBaseChangeFree
 # Scalar extension of an affine Weierstrass coordinate ring
 
 For a homomorphism `f : R →+* S`, the coordinate ring of `W.map f` is the scalar extension of
-the coordinate ring of `W`.  More precisely, the underlying module square
-
-```text
-                 Polynomial.map f
-          R[X] --------------------> S[X]
-           |                          |
-           |                          |
-           v                          v
-          R[W] -------------------> S[W.map f]
-                  CoordinateRing.map
-```
-
-is a pushout.  This coordinate-ring comparison is an input to a later comparison of the function
-fields of `W` and `W.map f`, used to compare degrees of isogenies under base change.
+the coordinate ring of `W` along the coefficientwise map `Polynomial.map f : R[X] → S[X]`.  More
+precisely, `CoordinateRing.map` induces an `S[X]`-linear isomorphism
+`S[X] ⊗[R[X]] W.CoordinateRing ≃ₗ[S[X]] (W.map f).CoordinateRing` sending `p ⊗ₜ z` to
+`p • CoordinateRing.map W f z`.  This coordinate-ring comparison is an input to a later
+comparison of the function fields of `W` and `W.map f`, used to compare degrees of isogenies
+under base change.
 
 ## Main definitions
 
