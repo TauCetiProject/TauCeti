@@ -165,17 +165,19 @@ theorem IsCrosscut.map_homeomorph (hγ : IsCrosscut γ U) (e : ℂ ≃ₜ ℂ) :
 /-- **A nondegenerate chord of a disc is a crosscut.** If `x` and `y` are distinct points of
 `sphere c r`, then the straight path from `x` to `y` is injective, its endpoints lie on the
 frontier of `ball c r`, and strict convexity puts every interior point of the chord in the open
-disc.
-
-The positivity of `r` is needed only to identify the frontier of the open ball with its sphere;
-the chord-interior statement itself follows from strict convexity. -/
-theorem isCrosscut_segment_ball {c x y : ℂ} {r : ℝ} (hr : 0 < r)
+disc. No positivity hypothesis on `r` is needed: the sphere of radius `0` is a single point,
+so two distinct points on it force `r ≠ 0`. -/
+theorem isCrosscut_segment_ball {c x y : ℂ} {r : ℝ}
     (hx : x ∈ sphere c r) (hy : y ∈ sphere c r) (hxy : x ≠ y) :
     IsCrosscut (Path.segment x y) (ball c r) := by
+  have hr : r ≠ 0 := by
+    rintro rfl
+    rw [sphere_zero, Set.mem_singleton_iff] at hx hy
+    exact hxy (hx.trans hy.symm)
   rw [isCrosscut_def]
   refine ⟨Path.segment_injective_of_ne hxy, ?_, ?_, ?_⟩
-  · rwa [frontier_ball c hr.ne']
-  · rwa [frontier_ball c hr.ne']
+  · rwa [frontier_ball c hr]
+  · rwa [frontier_ball c hr]
   · intro t ht
     apply openSegment_subset_ball_of_ne (sphere_subset_closedBall hx)
       (sphere_subset_closedBall hy) hxy
