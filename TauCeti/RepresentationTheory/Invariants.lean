@@ -63,6 +63,8 @@ additive functor from representations of `G` to representations of `G ⧸ S`.
 * `Representation.exists_invariant_preimage_of_surjective_of_projective`: a surjective
   equivariant additive map, possibly between representations over different coefficient rings,
   lifts invariant vectors when its target is projective over the target group algebra.
+* `Representation.Equiv.invariantsLinearEquiv`: equivalent representations have isomorphic
+  invariants.
 * `Rep.invariantsFunctor_map_surjective_of_surjective_of_projective`: taking invariants preserves
   a surjective morphism of representations whose target is projective over the group algebra.
 * `Rep.FiniteCyclicGroup.invariants_eq_ker_apply_sub`: for a cyclic group, the invariants are the
@@ -227,6 +229,32 @@ theorem exists_invariant_preimage_of_surjective_of_projective
 end ChangeRings
 
 end Representation
+
+namespace Representation.Equiv
+
+variable {k G V W : Type*} [CommRing k] [Group G] [AddCommGroup V] [Module k V]
+  [AddCommGroup W] [Module k W] {ρ : Representation k G V} {σ : Representation k G W}
+
+/-- **Equivalent representations have isomorphic invariants.** An equivalence of
+representations maps invariant vectors to invariant vectors, and so does its inverse. -/
+def invariantsLinearEquiv (φ : ρ.Equiv σ) : ρ.invariants ≃ₗ[k] σ.invariants where
+  toFun x := ⟨φ x, fun g ↦
+    (IntertwiningMap.isIntertwining ρ σ φ.toIntertwiningMap g x).symm.trans
+      (congrArg φ (x.property g))⟩
+  invFun x := ⟨φ.symm x, fun g ↦
+    (IntertwiningMap.isIntertwining σ ρ φ.symm.toIntertwiningMap g x).symm.trans
+      (congrArg φ.symm (x.property g))⟩
+  map_add' x y := Subtype.ext (map_add φ (x : V) y)
+  map_smul' r x := Subtype.ext (map_smul φ r (x : V))
+  left_inv x := Subtype.ext (φ.symm_apply_apply (x : V))
+  right_inv x := Subtype.ext (φ.apply_symm_apply (x : W))
+
+@[simp]
+theorem coe_invariantsLinearEquiv_apply (φ : ρ.Equiv σ) (x : ρ.invariants) :
+    (φ.invariantsLinearEquiv x : W) = φ (x : V) :=
+  (rfl)
+
+end Representation.Equiv
 
 namespace Rep
 

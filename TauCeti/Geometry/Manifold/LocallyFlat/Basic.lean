@@ -90,6 +90,9 @@ discs (topological sliceness) and for stating the annulus conjecture.
   the origin of the complementary model is closed.
 * `TauCeti.isLocallyFlat_prodMkLeft`: over a domain charted on `F`, the standard model
   `x ↦ (x, 0)` is locally flat.
+* `TauCeti.exists_isSliceChart_of_inter_eq_inter_range`: a set which, near a point, is the graph of
+  a continuous map over the first coordinate of a homeomorphism `M ≃ₜ F × F'` is flattened by a
+  chart around that point.
 * `TauCeti.IsLocallyFlat.exists_isOpenEmbedding_prod`: a locally flat embedding with seminormed
   complementary model has local product neighbourhoods.
 
@@ -787,6 +790,47 @@ theorem isLocallyFlat_prodMkLeft [ChartedSpace F N] :
   simp [Prod.ext_iff, eq_comm]
 
 end StandardSlice
+
+/-! ### Graphs -/
+
+section Graph
+
+variable [AddGroup F'] [IsTopologicalAddGroup F']
+
+/-- **A graph is flat.** Let `Φ` identify `M` with `F × F'`, and let `g : F → M` be a continuous
+section of the first coordinate of `Φ`, so that `Φ ∘ g` is the graph of the continuous map
+`s ↦ (Φ (g s)).2`. If on an open set `U` the set `A` agrees with the range of `g`, then shearing
+`Φ` by that map, and restricting to `U`, gives a chart with source `U` flattening `A` onto the
+standard slice `F × {0}`. -/
+theorem exists_isSliceChart_of_inter_eq_inter_range (Φ : M ≃ₜ F × F') {g : F → M}
+    (hg : Continuous g) (hΦg : ∀ s, (Φ (g s)).1 = s) {U A : Set M} (hU : IsOpen U)
+    (hA : U ∩ A = U ∩ range g) :
+    ∃ φ : OpenPartialHomeomorph M (F × F'), φ.source = U ∧
+      IsSliceChart φ ((univ : Set F) ×ˢ ({0} : Set F')) A := by
+  set k : F → F' := fun s => (Φ (g s)).2
+  have hk : Continuous k := continuous_snd.comp (Φ.continuous.comp hg)
+  let shear : F × F' ≃ₜ F × F' :=
+    { toFun := fun q => (q.1, q.2 - k q.1)
+      invFun := fun q => (q.1, q.2 + k q.1)
+      left_inv := fun q => by simp
+      right_inv := fun q => by simp
+      continuous_toFun := by fun_prop
+      continuous_invFun := by fun_prop }
+  refine ⟨(Φ.trans shear).toOpenPartialHomeomorph.restrOpen U hU, by simp, ?_⟩
+  refine isSliceChart_iff.2 fun y hy => ?_
+  replace hy : y ∈ U := by simpa using hy
+  have hyA : y ∈ A ↔ y ∈ range g := by
+    simpa [hy] using congrArg (y ∈ ·) hA
+  -- `y` lies on the graph exactly when it is the point of the graph over its first coordinate.
+  have hgraph : y ∈ range g ↔ (Φ y).2 = k (Φ y).1 := by
+    constructor
+    · rintro ⟨s, rfl⟩
+      simp [k, hΦg]
+    · intro he
+      refine ⟨(Φ y).1, Φ.injective (Prod.ext (hΦg _) he.symm)⟩
+  simp [hyA, hgraph, shear, sub_eq_zero]
+
+end Graph
 
 /-!
 ### Local product neighbourhoods

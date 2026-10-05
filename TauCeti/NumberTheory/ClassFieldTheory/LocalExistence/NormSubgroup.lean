@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.ClassField
+public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Refinement
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Units
 public import TauCeti.NumberTheory.LocalField.Norm.Open
 
@@ -131,11 +132,13 @@ theorem localGroundEquiv_mem_normSubgroup_iff
     fixingOpenNormalSubgroup_classField]
   rfl
 
-private theorem groundEquiv_localGroundEquiv {V W : OpenNormalSubgroup (AbsoluteGaloisGroup K)}
-    (h : V ≤ W) (x : Kˣ) :
-    (LayerRefinement.ofOpenNormal h).groundEquiv (unitsFormation K)
-        (localGroundEquiv K W (Additive.ofMul x)) =
-      localGroundEquiv K V (Additive.ofMul x) := by
+/-- The ground-level identification of the refinement `V ≤ W` is compatible with the two
+identifications of `Kˣ` with the ground levels of the layers of `W` and `V`. -/
+@[simp]
+theorem groundEquiv_localGroundEquiv {V W : OpenNormalSubgroup (AbsoluteGaloisGroup K)}
+    (h : V ≤ W) (x : Additive Kˣ) :
+    (LayerRefinement.ofOpenNormal h).groundEquiv (unitsFormation K) (localGroundEquiv K W x) =
+      localGroundEquiv K V x := by
   apply Subtype.ext
   rw [LayerRefinement.groundEquiv_apply_coe, localGroundEquiv_apply_coe,
     localGroundEquiv_apply_coe]
@@ -154,7 +157,7 @@ theorem localNormSubgroup_mono : Monotone (localNormSubgroup K) := by
   obtain ⟨y, hy, hyx⟩ := T.normSubgroup_le_map (unitsFormation K) hx'
   have hy' : y = localGroundEquiv K W (Additive.ofMul x) :=
     (T.groundEquiv (unitsFormation K)).injective <|
-      hyx.trans (groundEquiv_localGroundEquiv K h x).symm
+      hyx.trans (groundEquiv_localGroundEquiv K h (Additive.ofMul x)).symm
   exact (localGroundEquiv_mem_normSubgroup_iff K W x).1 (hy' ▸ hy)
 
 /-- **The top layer has the whole unit group as its norm subgroup.** It cuts out the ground field
@@ -185,7 +188,7 @@ theorem localNormSubgroup_maximalAbelianLayer
   rw [← localGroundEquiv_mem_normSubgroup_iff K V.maximalAbelianLayer x,
     ← localGroundEquiv_mem_normSubgroup_iff K V x]
   let T := LayerRefinement.ofOpenNormal V.le_maximalAbelianLayer
-  have hground := groundEquiv_localGroundEquiv K V.le_maximalAbelianLayer x
+  have hground := groundEquiv_localGroundEquiv K V.le_maximalAbelianLayer (Additive.ofMul x)
   have hlim := (localClassFormation K).normSubgroup_maximalAbelianLayer V
   constructor
   · intro hx

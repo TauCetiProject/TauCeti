@@ -253,14 +253,14 @@ theorem rotate_XSet : G.rotate.XSet = G.XSet.image (Prod.map Fin.rev Fin.rev) :=
 lies in the original `O`-marking set. -/
 theorem mem_OSet_rotate (p : Fin n × Fin n) :
     p ∈ G.rotate.OSet ↔ Prod.map Fin.rev Fin.rev p ∈ G.OSet := by
-  rw [OSet, OSet, rotate_O]
+  rw [OSet_def, OSet_def, rotate_O]
   exact GridState.mem_pointSet_rotate G.O p
 
 /-- A square lies in the rotated diagram's `X`-marking set exactly when its coordinate reversal
 lies in the original `X`-marking set. -/
 theorem mem_XSet_rotate (p : Fin n × Fin n) :
     p ∈ G.rotate.XSet ↔ Prod.map Fin.rev Fin.rev p ∈ G.XSet := by
-  rw [XSet, XSet, rotate_X]
+  rw [XSet_def, XSet_def, rotate_X]
   exact GridState.mem_pointSet_rotate G.X p
 
 /-- Coordinate reversal is an involution on grid diagrams. -/

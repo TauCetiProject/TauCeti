@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Adjunction.CompositionIso
+public import Mathlib.CategoryTheory.Adjunction.Unique
 public import Mathlib.RepresentationTheory.Coinduced
 public import Mathlib.RepresentationTheory.Induced
 public import TauCeti.RepresentationTheory.Induction.Restriction
@@ -48,6 +49,10 @@ there it is the forward isomorphism that the counits compute, and the inverse th
 * `TauCeti.Rep.resFunctorCompIso`, `TauCeti.Rep.indFunctorCompIso`,
   `TauCeti.Rep.coindFunctorCompIso`: restriction, induction and coinduction in stages, as natural
   isomorphisms of functors.
+* `TauCeti.Rep.indFunctorMulEquivIso`: induction along a group isomorphism is restriction along
+  its inverse.
+* `TauCeti.Rep.indFunctorSubgroupOfIso`: induction in stages through an intermediate subgroup
+  `S ≤ T ≤ G`, with `S` identified with the subgroup `S.subgroupOf T` of `T`.
 
 ## Main statements
 
@@ -339,6 +344,33 @@ lemma eq_indFunctorCompIso_hom_app (φ : G →* H) (ψ : H →* K) (A : _root_.R
     f = (indFunctorCompIso φ ψ).hom.app A := by
   refine ind_ind_hom_ext φ ψ A fun a => ?_
   rw [hf, indFunctorCompIso_hom_app_hom_apply_mk_mk φ ψ A 1 1 a, map_one, one_mul]
+
+/-- **Induction along an isomorphism is restriction along its inverse.** For `e : G ≃* H`,
+`Ind_e ≅ Res_{e⁻¹}` as functors `Rep k G ⥤ Rep k H`: both are left adjoint to `Res_e`, which is an
+equivalence (`TauCeti.resFunctorEquiv`). -/
+noncomputable def indFunctorMulEquivIso (e : G ≃* H) :
+    _root_.Rep.indFunctor.{max u v w} k e.toMonoidHom ≅
+      _root_.Rep.resFunctor.{max u v w} e.symm.toMonoidHom :=
+  (_root_.Rep.indResAdjunction.{max u v w} k e.toMonoidHom).leftAdjointUniq
+      ((resFunctorEquiv e).symm.toAdjunction.ofNatIsoRight
+        (eqToIso (resFunctorEquiv_functor e))) ≪≫
+    eqToIso (resFunctorEquiv_inverse e)
+
+/-- **Induction in stages through an intermediate subgroup.** For subgroups `S ≤ T` of `G`,
+inducing a representation of `S`, viewed as the subgroup `S.subgroupOf T` of `T`, first to `T`
+and then to `G` is inducing it from `S` to `G` directly. The identification of `S.subgroupOf T`
+with `S` is `Subgroup.subgroupOfEquivOfLe`. -/
+noncomputable def indFunctorSubgroupOfIso {S T : Subgroup G} (h : S ≤ T) :
+    _root_.Rep.indFunctor.{max u v} k (S.subgroupOf T).subtype ⋙
+        _root_.Rep.indFunctor.{max u v} k T.subtype ≅
+      _root_.Rep.resFunctor.{max u v} (Subgroup.subgroupOfEquivOfLe h).symm.toMonoidHom ⋙
+        _root_.Rep.indFunctor.{max u v} k S.subtype :=
+  have hφ : T.subtype.comp (S.subgroupOf T).subtype =
+      S.subtype.comp (Subgroup.subgroupOfEquivOfLe h).toMonoidHom := by
+    ext
+    rfl
+  indFunctorCompIso _ _ ≪≫ eqToIso (by rw [hφ]) ≪≫ (indFunctorCompIso _ _).symm ≪≫
+    Functor.isoWhiskerRight (indFunctorMulEquivIso _) _
 
 end Induction
 

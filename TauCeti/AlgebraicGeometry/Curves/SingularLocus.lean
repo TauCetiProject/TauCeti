@@ -10,6 +10,8 @@ public import Mathlib.AlgebraicGeometry.Morphisms.Flat
 public import TauCeti.AlgebraicGeometry.Modules.Differentials.Quasicoherent
 public import TauCeti.AlgebraicGeometry.Modules.FittingIdeal
 public import TauCeti.AlgebraicGeometry.Morphisms.PureRelativeDimension
+public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.StandardSmooth
+public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.PureRelativeDimension
 
 /-!
 # The relative singular locus
@@ -39,6 +41,9 @@ families of nodal curves.
   in the singular locus exactly when `1 < dim_{κ(x)} κ(x) ⊗ Ω[Γ(X, U)⁄R]`.
 * `AlgebraicGeometry.Scheme.singularLocus_ideal_top_Spec`: on `Spec A`, the ideal of global
   sections is the image of the first Fitting ideal of `Ω[A⁄R]`.
+* `AlgebraicGeometry.Scheme.singularLocus_eq_top`: a smooth relative curve, smooth of relative
+  dimension one over `Spec R`, has empty singular locus: there `Ω_{X/R}` is locally free of rank
+  one, so its first Fitting ideal sheaf is the unit ideal sheaf.
 
 ## References
 
@@ -140,6 +145,47 @@ theorem _root_.AlgebraicGeometry.Scheme.singularLocus_ideal_top_Spec (A : CommRi
   rw [Scheme.singularLocus_ideal, ← hmap]
   exact (KaehlerDifferential.isBaseChange_of_formallyEtale R A Γ(Spec A, ⊤)).fittingIdeal_eq_map 1
 
+variable {R X} in
+/-- At a point `x` of an affine open `W` whose ring of functions is standard smooth of relative
+dimension one over `R`, the fibre of `Ω_{X/R}` is one-dimensional, so `x` does not lie in the
+singular locus. -/
+private theorem notMem_support_singularLocus_of_isStandardSmooth {x : X} {W : X.affineOpens}
+    (hxW : x ∈ W.1)
+    (hW : ((X.baseRingToStructurePresheaf R).app (op W.1)).hom.IsStandardSmoothOfRelativeDimension
+      1) :
+    x ∉ (X.singularLocus R).support := by
+  let := (X.evaluation W x hxW).hom.toAlgebra
+  let : Algebra R Γ(X, W) := ((X.baseRingToStructurePresheaf R).app (op W.1)).hom.toAlgebra
+  have : Algebra.IsStandardSmoothOfRelativeDimension 1 R Γ(X, W) := hW.toAlgebra
+  have : Algebra.IsStandardSmooth R Γ(X, W) :=
+    Algebra.IsStandardSmoothOfRelativeDimension.isStandardSmooth 1
+  have : Nonempty W.1 := ⟨⟨x, hxW⟩⟩
+  -- `Ω[Γ(X, W)⁄R]` is free of rank one, hence so is its fibre at `x`.
+  have hrank : Module.finrank Γ(X, W) Ω[Γ(X, W)⁄R] = 1 :=
+    Module.finrank_eq_of_rank_eq
+      (Algebra.IsStandardSmoothOfRelativeDimension.rank_kaehlerDifferential 1)
+  rw [Scheme.mem_support_singularLocus_iff R X hxW, Module.finrank_baseChange, hrank]
+  exact lt_irrefl 1
+
 end
+
+section Smooth
+
+variable (R : Type u) [CommRing R] (X : Scheme.{u}) [X.Over (Spec (.of R))]
+
+/-- **A smooth relative curve has empty singular locus.** If `X` is smooth of relative dimension
+one over `Spec R`, then the first Fitting ideal sheaf of `Ω_{X/R}` is the unit ideal sheaf, since
+`Ω_{X/R}` is locally free of rank one. -/
+@[simp]
+theorem _root_.AlgebraicGeometry.Scheme.singularLocus_eq_top
+    [SmoothOfRelativeDimension 1 (X ↘ Spec (.of R))] :
+    haveI := SmoothOfRelativeDimension.smooth 1 (X ↘ Spec (.of R))
+    X.singularLocus R = ⊤ := by
+  have := SmoothOfRelativeDimension.smooth 1 (X ↘ Spec (.of R))
+  refine (Scheme.IdealSheafData.support_eq_bot_iff _).mp (eq_bot_iff.mpr fun x hx ↦ ?_)
+  obtain ⟨W, hxW, hW⟩ := exists_isStandardSmoothOfRelativeDimension R 1 x
+  exact notMem_support_singularLocus_of_isStandardSmooth hxW hW hx
+
+end Smooth
 
 end TauCeti

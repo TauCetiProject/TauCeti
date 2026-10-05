@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Symplectic.DiagonalTorus.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Torus.Basic
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Scheme.Classification
-import TauCeti.CategoryTheory.Comma.Over
 
 /-!
 # The diagonal torus as a closed subgroup of the symplectic group
@@ -35,10 +34,9 @@ instance isClosedImmersion_diagonalTorus :
     IsClosedImmersion (diagonalTorus (R := R) (m := m)).hom.hom.left := by
   -- Scheme packaging follows `GeneralLinear.DiagonalTorus.ClosedImmersion`.
   rw [diagonalTorus_def]
-  simp only [Grp.comp', Mon.comp_hom', Over.comp_left]
-  rw [MorphismProperty.cancel_left_of_respectsIso (P := @IsClosedImmersion),
-    MorphismProperty.cancel_right_of_respectsIso (P := @IsClosedImmersion)]
-  exact (CommHopfAlgCat.isClosedImmersion_hopfSpec_map_iff _).2
+  exact (CommHopfAlgCat.isClosedImmersion_eqToHom_comp_hopfSpec_map_comp_eqToHom_iff
+    (DiagonalizableGroup.groupScheme_def R
+      (SplitTorus.characterGroup (ULift.{u} (Fin m)))) (groupScheme_def R m) _).2
     diagonalTorusCoordinateMap_surjective
 
 /-- The diagonal split torus, bundled as a closed subgroup scheme of `Sp₂ₘ`. -/

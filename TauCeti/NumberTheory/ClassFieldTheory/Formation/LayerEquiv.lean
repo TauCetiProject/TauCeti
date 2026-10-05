@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.ArtinMap
+import TauCeti.RepresentationTheory.Homological.GroupCohomology.Functoriality
 
 /-!
 # Isomorphisms of finite normal layers between formations
@@ -73,6 +74,7 @@ formation of the base, once the two invariant maps are compared.
 public noncomputable section
 
 open CategoryTheory MonoidalCategory Rep
+open _root_.groupCohomology
 
 namespace TauCeti.ClassFieldTheory
 
@@ -126,6 +128,16 @@ theorem cohomologyIso_def (n : ℕ) :
     E.cohomologyIso n = groupCohomology.mapIso E.galEquiv E.coeffEquiv
       (fun γ ↦ LinearMap.ext fun x ↦ E.coeffEquiv_rep_apply γ x) n :=
   (rfl)
+
+/-- The image of the class of a cocycle `c` under the isomorphism of second cohomology induced by a
+layer isomorphism `E` is the class of the cocycle
+`(γ, δ) ↦ E.coeffEquiv (c (E.galEquiv.symm γ, E.galEquiv.symm δ))`. -/
+theorem exists_cohomologyIso_hom_H2π (c : cocycles₂ (L.rep F)) :
+    ∃ c' : cocycles₂ (L'.rep F'), (E.cohomologyIso 2).hom (H2π _ c) = H2π _ c' ∧
+      ∀ γ δ : L'.Gal, c' (γ, δ) = E.coeffEquiv (c (E.galEquiv.symm γ, E.galEquiv.symm δ)) := by
+  rw [cohomologyIso_def, groupCohomology.mapIso_hom,
+    groupCohomology.H2π_comp_map_apply]
+  exact ⟨_, rfl, fun γ δ => rfl⟩
 
 /-- The isomorphism `H^r(U/V, A^V) ≅ H^r(U'/V', A'^{V'})` of Tate cohomology induced by a layer
 isomorphism, in every integer degree. -/

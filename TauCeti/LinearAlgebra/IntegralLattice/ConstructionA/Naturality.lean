@@ -7,8 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.ConstructionA.Basic
 public import TauCeti.LinearAlgebra.IntegralLattice.Isometry.Basic
-public import TauCeti.InformationTheory.Coding.Equivalence
-public import TauCeti.InformationTheory.Coding.Basic
+public import TauCeti.InformationTheory.Coding.Additive.Equivalence
 
 /-!
 # Coordinate changes in Construction A
@@ -77,6 +76,17 @@ theorem lattice_map_signedEquiv (C : AdditiveCode (ZMod m) ι) (u : ι → ℤˣ
     rw [signedEquiv_apply] at h
     exact_mod_cast h
 
+/-- Construction A commutes with relabelling the coordinates of an additive code. -/
+@[simp]
+theorem lattice_reindex (C : AdditiveCode (ZMod m) ι) (e : κ ≃ ι) :
+    (lattice m C).map
+        (((LinearEquiv.funCongrLeft ℚ ℚ e).toLinearMap).restrictScalars ℤ :
+          (ι → ℚ) →ₗ[ℤ] (κ → ℚ)) =
+      lattice m (AdditiveCode.reindex C e) := by
+  rw [AdditiveCode.reindex_eq_map_funCongrLeft]
+  simpa only [signedEquiv_one, Equiv.symm_symm] using
+    lattice_map_signedEquiv C (1 : ι → ℤˣ) e.symm
+
 section
 
 variable [Fintype ι] [Fintype κ]
@@ -98,6 +108,16 @@ theorem map_signedEquiv_le_euclideanDual (C : AdditiveCode (ZMod m) ι)
   obtain ⟨a, ha, rfl⟩ := hx
   obtain ⟨b, hb, rfl⟩ := hy
   simpa only [signedEquiv_toAddMonoidHom_apply, dotProduct_signedEquiv] using hC a ha b hb
+
+/-- Relabelling coordinates preserves self-orthogonality of an additive code over `ZMod m`. -/
+theorem reindex_le_euclideanDual (C : AdditiveCode (ZMod m) ι)
+    (hC : AddSubgroup.toZModSubmodule m C ≤ (AddSubgroup.toZModSubmodule m C).euclideanDual)
+    (e : κ ≃ ι) :
+    AddSubgroup.toZModSubmodule m (AdditiveCode.reindex C e) ≤
+      (AddSubgroup.toZModSubmodule m (AdditiveCode.reindex C e)).euclideanDual := by
+  rw [AdditiveCode.reindex_eq_map_funCongrLeft]
+  simpa only [signedEquiv_one, Equiv.symm_symm] using
+    map_signedEquiv_le_euclideanDual C hC (1 : ι → ℤˣ) e.symm
 
 /-- The signed coordinate change is an isometry from the Construction A lattice of a code to the
 lattice of the signed, reindexed code. -/
@@ -132,6 +152,35 @@ theorem integralLatticeSignedEquiv_apply (C : AdditiveCode (ZMod m) ι)
     (hC : AddSubgroup.toZModSubmodule m C ≤ (AddSubgroup.toZModSubmodule m C).euclideanDual)
     (u : ι → ℤˣ) (e : ι ≃ κ) (x : ι → ℚ) :
     integralLatticeSignedEquiv C hC u e x = signedEquiv u e x := by
+  rfl
+
+/-- Relabelling coordinates induces an isometry between the corresponding Construction A
+lattices. -/
+noncomputable def integralLatticeReindexEquiv (C : AdditiveCode (ZMod m) ι)
+    (hC : AddSubgroup.toZModSubmodule m C ≤ (AddSubgroup.toZModSubmodule m C).euclideanDual)
+    (e : κ ≃ ι) :
+    IntegralLattice.Isometry (integralLattice m C hC)
+      (integralLattice m (AdditiveCode.reindex C e) (reindex_le_euclideanDual C hC e)) where
+  toIsometryEquiv :=
+    { toLinearEquiv := LinearEquiv.funCongrLeft ℚ ℚ e
+      map_app' := by
+        intro x y
+        rw [integralLattice_form, integralLattice_form, form_apply, form_apply]
+        -- The isometry field displays the relabelling through its linear map; expose its
+        -- pointwise precomposition action to apply dot-product invariance.
+        change ((x ∘ e) ⬝ᵥ (y ∘ e)) / (m : ℚ) = (x ⬝ᵥ y) / (m : ℚ)
+        rw [comp_equiv_dotProduct_comp_equiv] }
+  map_carrier := by
+    rw [integralLattice_carrier, integralLattice_carrier]
+    exact lattice_reindex C e
+
+/-- The Construction A reindexing isometry acts by precomposition with the coordinate
+equivalence. -/
+@[simp]
+theorem integralLatticeReindexEquiv_apply (C : AdditiveCode (ZMod m) ι)
+    (hC : AddSubgroup.toZModSubmodule m C ≤ (AddSubgroup.toZModSubmodule m C).euclideanDual)
+    (e : κ ≃ ι) (x : ι → ℚ) :
+    integralLatticeReindexEquiv C hC e x = x ∘ e := by
   rfl
 
 end
