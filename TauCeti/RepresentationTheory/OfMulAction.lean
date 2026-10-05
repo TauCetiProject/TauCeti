@@ -27,8 +27,9 @@ sums of `v` are invariant under `g`. The orbit sums of `v` are the finitely supp
 
 For a finite group `G`, the coefficient of the norm `∑ g, g • v` at `x` is `∑ g, v(g • x)`. In
 particular the norm of the basis vector at `x` has coefficient `|G_x|` at `x` and vanishes off the
-orbit of `x`, while a vector fixed by `G` has constant coefficients along each orbit. These are the
-inputs of the computation of the low-degree Tate cohomology of `k[X]`.
+orbit of `x`, while a vector fixed by `G` has constant coefficients along each orbit, so it is
+determined by its coefficients at a set of orbit representatives. These are the inputs of the
+computation of the low-degree Tate cohomology of `k[X]`.
 
 ## Main results
 
@@ -46,6 +47,8 @@ inputs of the computation of the low-degree Tate cohomology of `k[X]`.
   `∑ i ∈ s, h i • v` and `#s` is cancellable, the `H`-orbit sums of `v` are `g`-invariant.
 * `TauCeti.coeff_smul_of_forall_ofMulAction_eq`: a fixed vector of `k[X]` has the same coefficient
   at every point of an orbit.
+* `TauCeti.eq_of_coeff_out_eq_of_forall_ofMulAction_eq`: two fixed vectors of `k[X]` agreeing at
+  the chosen representative of every orbit are equal.
 * `TauCeti.coeff_norm_ofMulAction`: the coefficients of the norm of a vector of `k[X]`.
 * `TauCeti.coeff_norm_ofMulAction_single_self`,
   `TauCeti.coeff_norm_ofMulAction_single_of_notMem_orbit`: the norm of the basis vector at `x` has
@@ -168,6 +171,17 @@ theorem coeff_smul_of_forall_ofMulAction_eq {v : k[X]} (hv : ∀ g, ofMulAction 
     (g : G) (x : X) : v.coeff (g • x) = v.coeff x := by
   conv_rhs => rw [← hv g⁻¹]
   rw [coeff_ofMulAction, inv_inv]
+
+/-- Two vectors of `k[X]` fixed by the permutation representation are equal as soon as they agree
+at the chosen representative of every orbit. -/
+theorem eq_of_coeff_out_eq_of_forall_ofMulAction_eq {v w : k[X]}
+    (hv : ∀ g, ofMulAction k G X g v = v) (hw : ∀ g, ofMulAction k G X g w = w)
+    (h : ∀ ω : MulAction.orbitRel.Quotient G X, v.coeff ω.out = w.coeff ω.out) : v = w := by
+  ext x
+  obtain ⟨g, hg⟩ : ∃ g : G, g • x = (Quotient.mk (MulAction.orbitRel G X) x).out :=
+    Quotient.mk_out (s := MulAction.orbitRel G X) x
+  rw [← coeff_smul_of_forall_ofMulAction_eq hv g, ← coeff_smul_of_forall_ofMulAction_eq hw g, hg,
+    h]
 
 variable [Fintype G]
 

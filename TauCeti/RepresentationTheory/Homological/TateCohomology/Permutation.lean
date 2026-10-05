@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.HerbrandQuotient
-import Mathlib.Data.ZMod.QuotientRing
 import TauCeti.RepresentationTheory.Coinvariants
 import TauCeti.RepresentationTheory.OfMulAction
 
@@ -16,8 +15,9 @@ import TauCeti.RepresentationTheory.OfMulAction
 Let a finite group `G` act on a type `X`, and let `R[X]` be the permutation representation
 `Rep.ofMulAction R G X`. This file computes its Tate cohomology in degrees `0` and `-1`.
 
-* In degree `-1` it vanishes as soon as `R` has no additive torsion: an element of norm zero has
-  orbit sums killed by `|G|`, hence zero orbit sums, and so lies in the augmentation submodule.
+* In degree `-1` it vanishes as soon as multiplication by `|G|` is injective on `R` (for instance
+  when `R` has no additive torsion): an element of norm zero has orbit sums killed by `|G|`, hence
+  zero orbit sums, and so lies in the augmentation submodule.
 * In degree `0`, for `X` finite, it is `∏_ω R ⧸ (|G_ω|)`, the product over the orbits `ω` of the
   quotient of `R` by the order of the stabilizer of a point of `ω`. An invariant vector is
   constant on every orbit, and the norm of the basis vector at a point `x` is `|G_x|` times the
@@ -40,8 +40,10 @@ the product of the local degrees.
 
 ## Main results
 
-* `TauCeti.TateCohomology.subsingleton_tateCohomology_negOne_ofMulAction`: `H-hat^(-1)(G, R[X]) = 0`
-  when `R` has no additive torsion.
+* `TauCeti.TateCohomology.subsingleton_tateCohomology_negOne_ofMulAction_of_isSMulRegular`:
+  `H-hat^(-1)(G, R[X]) = 0` when multiplication by `|G|` is injective on `R`.
+* `TauCeti.TateCohomology.subsingleton_tateCohomology_negOne_ofMulAction`: the instance
+  `H-hat^(-1)(G, R[X]) = 0` when `R` has no additive torsion.
 * `TauCeti.TateCohomology.natCard_tateCohomology_zero_ofMulAction`:
   `|H-hat^0(G, ℤ[X])| = ∏_ω |G_ω|`.
 * `TauCeti.TateCohomology.herbrandQuotient_ofMulAction`: `h(ℤ[X]) = ∏_ω |G_ω|`.
@@ -67,17 +69,6 @@ namespace TauCeti.TateCohomology
 section General
 
 variable {R G X : Type u} [CommRing R] [Group G] [MulAction G X]
-
-/-- Two invariant vectors of `R[X]` agreeing at the chosen representative of every orbit are
-equal. -/
-private theorem eq_of_coeff_out_eq {v w : R[X]} (hv : ∀ g, ofMulAction R G X g v = v)
-    (hw : ∀ g, ofMulAction R G X g w = w)
-    (h : ∀ ω : orbitRel.Quotient G X, v.coeff ω.out = w.coeff ω.out) : v = w := by
-  ext x
-  obtain ⟨g, hg⟩ : ∃ g : G, g • x = (Quotient.mk (orbitRel G X) x).out :=
-    Quotient.mk_out (s := orbitRel G X) x
-  rw [← coeff_smul_of_forall_ofMulAction_eq hv g, ← coeff_smul_of_forall_ofMulAction_eq hw g, hg,
-    h]
 
 variable (R G X) in
 /-- The coefficients of an invariant vector at the chosen orbit representatives, each modulo the
@@ -107,12 +98,20 @@ private theorem evalOut_surjective [Finite X] : Function.Surjective (evalOut R G
 
 variable [Fintype G]
 
-/-- **Degree `-1` Tate cohomology of a permutation module vanishes** over a coefficient ring
-without additive torsion. -/
-instance subsingleton_tateCohomology_negOne_ofMulAction [IsAddTorsionFree R] :
+/-- **Degree `-1` Tate cohomology of a permutation module vanishes** as soon as multiplication by
+`|G|` is injective on the coefficient ring. -/
+theorem subsingleton_tateCohomology_negOne_ofMulAction_of_isSMulRegular
+    (hR : IsSMulRegular R (Fintype.card G)) :
     Subsingleton (tateCohomology (Rep.ofMulAction R G X) (-1)) :=
   subsingleton_of_forall_eq 0 fun x ↦ HNegOne_induction_on x fun y ↦
-    (HNegOneπ_eq_zero_iff y).2 (ker_norm_ofMulAction_le_coinvariantsKer y.2)
+    (HNegOneπ_eq_zero_iff y).2 (ker_norm_ofMulAction_le_coinvariantsKer hR y.2)
+
+/-- Degree `-1` Tate cohomology of a permutation module vanishes over a coefficient ring without
+additive torsion. -/
+instance subsingleton_tateCohomology_negOne_ofMulAction [IsAddTorsionFree R] :
+    Subsingleton (tateCohomology (Rep.ofMulAction R G X) (-1)) :=
+  subsingleton_tateCohomology_negOne_ofMulAction_of_isSMulRegular
+    (.nat_of_isAddTorsionFree Fintype.card_ne_zero)
 
 /-- The coefficient of a norm at an orbit representative is divisible by the order of its
 stabilizer. -/
@@ -145,7 +144,7 @@ private theorem ker_evalOut [Finite X] :
   · -- an invariant vector with coefficient `|G_ω| s_ω` at each representative is the norm of
     -- `∑_ω s_ω • ω.out`
     choose s hs using h
-    refine ⟨∑ ω, single ω.out (s ω), eq_of_coeff_out_eq
+    refine ⟨∑ ω, single ω.out (s ω), eq_of_coeff_out_eq_of_forall_ofMulAction_eq
       (fun g ↦ self_norm_apply (ofMulAction R G X) g _) hv fun ω ↦ ?_⟩
     rw [map_sum, coeff_sum, Finsupp.finsetSum_apply, Finset.sum_eq_single ω,
       coeff_norm_ofMulAction_single_self, nsmul_eq_mul, Submodule.subtype_apply, hs]
@@ -180,7 +179,7 @@ theorem H0LinearEquivPiQuotientStabilizer_H0π [Finite X]
       Ideal.Quotient.mk _ ((v : R[X]).coeff ω.out) := by
   simp only [H0LinearEquivPiQuotientStabilizer, LinearEquiv.trans_apply]
   rw [Iso.toLinearEquiv_apply, H0π_comp_H0IsoNormQuotient_hom_apply]
-  rfl
+  exact evalOut_apply v ω
 
 end General
 
