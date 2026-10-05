@@ -15,8 +15,8 @@ Picard iteration produces a solution of `γ' = v ∘ γ` continuously, indeed Li
 initial condition. It says nothing about differentiability: the contraction argument is metric.
 This file upgrades continuity to smoothness of the same order as the field, jointly in the initial
 condition and in time. The local argument first gives this near time `0`. The flow law then
-propagates the result to every time: for a fixed initial condition, the set of times where the
-solution is smooth is both open and closed.
+propagates the result to every time, at every finite order: for a fixed initial condition, the set
+of times where the solution is smooth is both open and closed.
 
 The mechanism is a change of variables that turns the initial condition into a *parameter* of a
 new equation, so that `ODE.exists_contDiffAt_picard_solution_of_contDiff` applies. Writing a
@@ -36,8 +36,6 @@ therefore smooth directions.
 
 * `ODE.contDiffAt_globalSolution`: the global solution of a globally Lipschitz `C^(n+1)` field is
   `C^(n+1)` in time and initial condition near time `0`, for `n` finite or infinite.
-* `ODE.eventually_contDiffAt_globalSolution`: at every small time, the time-`t` map of such a
-  field is `C^(n+1)` in the initial condition.
 * `ODE.contDiff_globalSolution`: the global solution is `C^(n+1)` jointly in its initial condition
   and time, for every finite `n`.
 * `ODE.contDiff_globalSolution_apply`: every time-`t` map is `C^(n+1)`.
@@ -128,18 +126,6 @@ theorem contDiffAt_globalSolution {n : ℕ∞} (v : E → E) {K : ℝ≥0} (hv :
     (u := fun s : ℝ ↦ p.1 + γ p (projIcc 0 1 zero_le_one s))
     (by simpa [projIcc_left] using congrArg (fun w : E ↦ p.1 + w) hbase) hcont hderiv
   simpa [projIcc_right] using this.symm
-
-/-- **`C^(n+1)` dependence on the initial condition.** For every small time the time-`t` map of a
-globally Lipschitz `C^(n+1)` field is `C^(n+1)` at the base point. The order is finite here
-because smoothness of infinite order at one point does not propagate to a neighbourhood. -/
-theorem eventually_contDiffAt_globalSolution (n : ℕ) (v : E → E) {K : ℝ≥0} (hv : LipschitzWith K v)
-    (hvs : ContDiff ℝ (n + 1) v) (a : E) :
-    ∀ᶠ t in nhds (0 : ℝ), ContDiffAt ℝ (n + 1) (fun x ↦ globalSolution v hv x t) a := by
-  have hev := (contDiffAt_globalSolution (n := (n : ℕ∞)) v hv
-    (by exact_mod_cast hvs) a).eventually (by simp)
-  have hslice := (continuousAt_const.prodMk continuousAt_id).eventually hev
-  filter_upwards [hslice] with t ht
-  exact ht.comp a (contDiffAt_id.prodMk contDiffAt_const)
 
 /-- **The global solution of a globally Lipschitz `C^(n+1)` field is `C^(n+1)` jointly in its
 initial condition and time.**
