@@ -232,9 +232,11 @@ lemma conj_conj (hJ : 𝒢 ≤ ConjAct.toConjAct J⁻¹ • 𝒢) (f : ModularFo
   ext τ
   simp [smul_smul, ← sq]
 
-lemma conj_injective (hJ : 𝒢 ≤ ConjAct.toConjAct J⁻¹ • 𝒢) :
-    Function.Injective (conj (k := k) hJ) :=
-  Function.LeftInverse.injective (conj_conj hJ)
+lemma conj_injective (hJ : 𝒢' ≤ ConjAct.toConjAct J⁻¹ • 𝒢) :
+    Function.Injective (conj (k := k) hJ) := by
+  intro f g hfg
+  ext τ
+  simpa [smul_smul, ← sq] using congrArg (starRingEnd ℂ) (DFunLike.congr_fun hfg (J • τ))
 
 @[simp]
 lemma conj_zero (hJ : 𝒢' ≤ ConjAct.toConjAct J⁻¹ • 𝒢) : conj hJ (0 : ModularForm 𝒢 k) = 0 := by
@@ -319,9 +321,11 @@ lemma conj_conj (hJ : 𝒢 ≤ ConjAct.toConjAct J⁻¹ • 𝒢) (f : CuspForm 
   ext τ
   simp [smul_smul, ← sq]
 
-lemma conj_injective (hJ : 𝒢 ≤ ConjAct.toConjAct J⁻¹ • 𝒢) :
-    Function.Injective (conj (k := k) hJ) :=
-  Function.LeftInverse.injective (conj_conj hJ)
+lemma conj_injective (hJ : 𝒢' ≤ ConjAct.toConjAct J⁻¹ • 𝒢) :
+    Function.Injective (conj (k := k) hJ) := by
+  intro f g hfg
+  ext τ
+  simpa [smul_smul, ← sq] using congrArg (starRingEnd ℂ) (DFunLike.congr_fun hfg (J • τ))
 
 @[simp]
 lemma conj_zero (hJ : 𝒢' ≤ ConjAct.toConjAct J⁻¹ • 𝒢) : conj hJ (0 : CuspForm 𝒢 k) = 0 := by
