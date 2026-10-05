@@ -96,12 +96,35 @@ lemma rationalDifferential_map {U V : X.Opens} [Nonempty U] [Nonempty V] (i : U 
   simp only [rationalDifferential_apply, TopCat.Presheaf.germ_res_apply]
 
 /-- The map from a differential stalk to rational differentials, induced by specialization to
-the generic stalk. -/
+the generic stalk, linear for the local-ring action through its map to the function field. -/
 def rationalDifferentialStalk (x : X) :
-    (X.relativeDifferentials R).presheaf.stalk x →+ Ω[X.functionField⁄R] :=
-  (relativeDifferentialsGenericStalkEquiv R).toAddEquiv.toAddMonoidHom.comp
+    (X.relativeDifferentials R).presheaf.stalk x →ₗ[X.presheaf.stalk x]
+      Ω[X.functionField⁄R] where
+  toFun s := relativeDifferentialsGenericStalkEquiv R
     ((X.relativeDifferentials R).presheaf.stalkSpecializes
-      ((genericPoint_spec X).specializes (Set.mem_univ x))).hom
+      ((genericPoint_spec X).specializes (Set.mem_univ x)) s)
+  map_add' s t := by simp
+  map_smul' a s := by
+    -- Represent both germs on a common neighborhood to use the section-level scalar rule.
+    obtain ⟨U, hxU, a, rfl⟩ := X.presheaf.exists_germ_eq a
+    obtain ⟨V, hVU, hxV, s, rfl⟩ :=
+      (X.relativeDifferentials R).presheaf.exists_le_germ_eq s hxU
+    let _ : Nonempty V := ⟨⟨x, hxV⟩⟩
+    rw [← X.presheaf.germ_res_apply (homOfLE hVU) x hxV a,
+      ← Scheme.Modules.germ_smul]
+    have hg (m : Γ(X.relativeDifferentials R, V)) :
+        (X.relativeDifferentials R).presheaf.stalkSpecializes
+            ((genericPoint_spec X).specializes (Set.mem_univ x))
+            ((X.relativeDifferentials R).presheaf.germ V x hxV m) =
+          (X.relativeDifferentials R).presheaf.germ V (genericPoint X)
+            (Scheme.genericPoint_mem V) m :=
+      ConcreteCategory.congr_hom
+        ((X.relativeDifferentials R).presheaf.germ_stalkSpecializes hxV _) m
+    rw [hg, Scheme.Modules.germ_smul, map_smul, hg]
+    rw [RingHom.id_apply,
+      ← IsScalarTower.algebraMap_smul X.functionField
+        (X.presheaf.germ V x hxV (X.presheaf.map (homOfLE hVU).op a)),
+      X.algebraMap_germ_eq_germToFunctionField]
 
 /-- Passing from a differential section through any stalk gives its rational value. -/
 @[simp]
