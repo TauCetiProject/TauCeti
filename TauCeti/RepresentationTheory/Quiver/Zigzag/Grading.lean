@@ -287,8 +287,8 @@ in nonnegative degrees are those of `TauCeti.zigzagGrade`, and those in negative
 theorem isInternal_zigzagIntegerGrade : DirectSum.IsInternal (zigzagIntegerGrade k G) :=
   Graded.isInternal_extendByZero (isInternal_zigzagGrade k G)
 
-/-- **The zigzag relation quotient is graded by signed path length.** This packages the
-extension-by-zero grading as a graded algebra over the integers. -/
+/-- **The zigzag relation quotient is an integer-graded algebra** for the path-length grading
+indexed by `ℤ`, extended by zero in negative degrees. -/
 @[instance_reducible]
 noncomputable def zigzagIntegerGradedAlgebra : GradedAlgebra (zigzagIntegerGrade k G) :=
   let _ := zigzagGradedAlgebra k G
