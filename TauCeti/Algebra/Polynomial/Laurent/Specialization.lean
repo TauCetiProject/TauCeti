@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Basis.Basic
 public import Mathlib.LinearAlgebra.Quotient.Basic
 public import Mathlib.RingTheory.TensorProduct.IsBaseChangeFree
 public import TauCeti.Algebra.Polynomial.Laurent.Basic
@@ -184,7 +183,7 @@ theorem isBaseChange [Algebra R[T;T⁻¹] R] (h : ∀ p, algebraMap R[T;T⁻¹] 
         rw [RingHom.id_apply, ← algebraMap_smul R[T;T⁻¹] r x, ← TensorProduct.smul_tmul, hC,
           TensorProduct.smul_tmul', smul_eq_mul, mul_one] }
   have hg (x : N) : g ((T 1 : R[T;T⁻¹]) • x) = (ε : R) • g x := by
-    change 1 ⊗ₜ ((T 1 : R[T;T⁻¹]) • x) = (ε : R) • (1 ⊗ₜ[R[T;T⁻¹]] x)
+    dsimp only [g, LinearMap.coe_mk, AddHom.coe_mk]
     rw [← TensorProduct.smul_tmul, Algebra.smul_def, h, laurentEval_T_one, mul_one,
       TensorProduct.smul_tmul', smul_eq_mul, mul_one]
   refine ⟨Function.LeftInverse.injective (g := lift ε g hg) fun z => ?_, fun y => ?_⟩

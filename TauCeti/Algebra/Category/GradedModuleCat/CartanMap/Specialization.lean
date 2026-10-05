@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.ForgetGrading
 public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Matrix
 -- Unfold the specialized basis locally to apply Mathlib's base-change matrix theorem.
 import all TauCeti.Algebra.Polynomial.Laurent.Specialization
+import TauCeti.LinearAlgebra.Basis.Basic
 
 /-!
 # Specializing the graded Cartan matrix
@@ -82,19 +83,6 @@ theorem toMatrix_gradedCartanMapSpecialized (ε : ℤˣ)
   rw [Matrix.map_apply, Matrix.map_apply, LinearMap.toMatrix_apply, gradedCartanMatrix_apply]
   rfl
 
-/-- If a linear map carries one basis to another, it preserves their coordinate vectors. -/
-private theorem basis_repr_map_eq {R : Type*} [Semiring R]
-    {M : Type*} [AddCommMonoid M] [Module R M]
-    {N : Type*} [AddCommMonoid N] [Module R N]
-    {K : Type*} (bM : Module.Basis K R M) (bN : Module.Basis K R N)
-    (f : M →ₗ[R] N) (h : ∀ i, f (bM i) = bN i) (x : M) :
-    bN.repr (f x) = bM.repr x := by
-  let lhs : M →ₗ[R] K →₀ R := bN.repr.toLinearMap.comp f
-  let rhs : M →ₗ[R] K →₀ R := bM.repr.toLinearMap
-  have heq : lhs = rhs := bM.ext fun i ↦ by
-    simp [lhs, rhs, h]
-  exact LinearMap.congr_fun heq x
-
 /-- **At `q = 1`, forgetting grading recovers the ordinary Cartan matrix.** Suppose the
 coefficientwise specializations of graded projective and module bases become chosen bases of
 ordinary projective `K₀` and module `G₀` after forgetting grading. Then evaluating the graded
@@ -118,7 +106,7 @@ theorem toMatrix_cartanMap_eq_map_gradedCartanMatrix
   have hrepr (x : LaurentSpecialization (1 : ℤˣ)
       (LaurentK0.{uA} (gradedFiniteModulesExactStructure 𝒜))) :
       cM.repr (gradedFiniteModulesForgetK0 𝒜 x) = bM₁.repr x :=
-    basis_repr_map_eq bM₁ cM (gradedFiniteModulesForgetK0 𝒜) hM x
+    Module.Basis.repr_map_eq_of_map_basis bM₁ cM (gradedFiniteModulesForgetK0 𝒜) hM x
   have hcomm := gradedFiniteModulesForgetK0_comp_gradedCartanMapSpecialized 𝒜
   ext i j
   rw [LinearMap.toMatrix_apply, Matrix.map_apply, gradedCartanMatrix_apply]
