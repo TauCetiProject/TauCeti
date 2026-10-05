@@ -162,6 +162,16 @@ theorem outgoingSlot_strandSucc (j : Fin w.length) :
     w.outgoingSlot j (strandSucc w[j.1].1) = 1 := by
   simp [outgoingSlot, (strand_ne_strandSucc _).symm]
 
+/-- The incoming slot at a crossing depends only on the letter of that crossing. -/
+theorem incomingSlot_congr {w w' : BraidWord n} {j : Fin w'.length} {i : Fin w.length}
+    (h : w'[j.1] = w[i.1]) (p : Fin n) : w'.incomingSlot j p = w.incomingSlot i p := by
+  rw [incomingSlot, incomingSlot, h]
+
+/-- The outgoing slot at a crossing depends only on the letter of that crossing. -/
+theorem outgoingSlot_congr {w w' : BraidWord n} {j : Fin w'.length} {i : Fin w.length}
+    (h : w'[j.1] = w[i.1]) (p : Fin n) : w'.outgoingSlot j p = w.outgoingSlot i p := by
+  rw [outgoingSlot, outgoingSlot, h]
+
 /-! ### The arcs of the closure -/
 
 /-- The strand position of a slot of the crossing `j`. -/
