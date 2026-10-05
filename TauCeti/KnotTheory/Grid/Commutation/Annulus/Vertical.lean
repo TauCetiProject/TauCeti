@@ -74,6 +74,32 @@ theorem coveredSquares_union_of_same_side_order
   have := hrows p.2
   grind
 
+/-- The constituent domains of a thin vertical rectangle--pentagon annulus cover disjoint
+squares, so no O-marking contributes twice to its weight. -/
+theorem disjoint_coveredSquares_of_same_side_order
+    (D : GridRectanglePentagonDecomposition a s x x)
+    (hleft : D.rectangle.left = D.pentagon.left) (hthin : D.pentagon.left = a) :
+    Disjoint D.rectangle.toGridRectangle.coveredSquares D.pentagon.coveredSquares := by
+  have hright := D.pentagon.toGridRectangleBetween.right_eq_right_of_left_eq_left
+    D.rectangle hleft
+  have hbottom := D.pentagon.toGridRectangleBetween.bottom_eq_top_of_left_eq_left
+    D.rectangle hleft
+  have htop := D.pentagon.toGridRectangleBetween.top_eq_bottom_of_left_eq_left
+    D.rectangle hleft
+  have hcols : Grid.cIco a (finRotate n a) = {a} :=
+    Grid.cIco_eq_singleton_iff.2 ⟨rfl, rfl, D.pentagon.ne_finRotate⟩
+  refine Finset.disjoint_left.2 fun p hr hp => ?_
+  have hsplit := Grid.ite_mem_cIco_eq_add_add D.pentagon.turn_mem_cIco_bottom_top p.2
+  have hdisjoint := Finset.disjoint_left.mp
+    (Grid.disjoint_cIco_swap D.pentagon.bottom D.pentagon.top)
+  simp only [GridRectangle.mem_coveredSquares, GridRectangle.mem_coveredColumns,
+    GridRectangle.mem_coveredRows, GridRectangleBetween.toGridRectangle_left,
+    GridRectangleBetween.toGridRectangle_right, GridRectangleBetween.toGridRectangle_bottom,
+    GridRectangleBetween.toGridRectangle_top,
+    hleft, hright, hbottom, htop, hthin, D.pentagon.right_eq, hcols,
+    Finset.mem_singleton, D.pentagon.mem_coveredSquares] at hr hp
+  split_ifs at hsplit <;> grind [D.pentagon.ne_finRotate]
+
 /-- Avoiding any marking state in a thin vertical rectangle--pentagon annulus amounts to
 placing the first column's marking in the omitted closed arc and the second column's
 marking outside its covered half-open arc. -/
@@ -137,6 +163,36 @@ theorem coveredSquares_union_map_of_same_side_order
     Equiv.swap_apply_left]
   have := hrows p.2
   grind
+
+/-- Reading the rectangle back in the original columns gives disjoint constituent domains
+for a thin vertical pentagon--rectangle annulus. -/
+theorem disjoint_coveredSquares_map_of_same_side_order
+    (D : GridPentagonRectangleDecomposition a s x x)
+    (hleft : D.rectangle.left = D.pentagon.left) (hthin : D.pentagon.left = a) :
+    Disjoint D.pentagon.coveredSquares (D.rectangle.toGridRectangle.coveredSquares.map
+      ((Equiv.swap a (finRotate n a)).prodCongr (Equiv.refl (Fin n))).toEmbedding) := by
+  classical
+  have hright := D.pentagon.toGridRectangleBetween.right_eq_right_of_left_eq_left
+    D.rectangle hleft
+  have hbottom := D.pentagon.toGridRectangleBetween.bottom_eq_top_of_left_eq_left
+    D.rectangle hleft
+  have htop := D.pentagon.toGridRectangleBetween.top_eq_bottom_of_left_eq_left
+    D.rectangle hleft
+  have hcols : Grid.cIco a (finRotate n a) = {a} :=
+    Grid.cIco_eq_singleton_iff.2 ⟨rfl, rfl, D.pentagon.ne_finRotate⟩
+  refine Finset.disjoint_left.2 fun p hp hr => ?_
+  have hsplit := Grid.ite_mem_cIco_eq_add_add D.pentagon.turn_mem_cIco_bottom_top p.2
+  have hdisjoint := Finset.disjoint_left.mp
+    (Grid.disjoint_cIco_swap D.pentagon.bottom D.pentagon.top)
+  simp only [Finset.mem_map_equiv, Equiv.prodCongr_symm, Equiv.symm_swap,
+    Equiv.refl_symm, Equiv.prodCongr_apply, Prod.map_apply', Equiv.refl_apply,
+    GridRectangle.mem_coveredSquares, GridRectangle.mem_coveredColumns,
+    GridRectangle.mem_coveredRows, GridRectangleBetween.toGridRectangle_left,
+    GridRectangleBetween.toGridRectangle_right, GridRectangleBetween.toGridRectangle_bottom,
+    GridRectangleBetween.toGridRectangle_top, hleft, hright, hbottom,
+    htop, hthin, D.pentagon.right_eq, hcols, Finset.mem_singleton,
+    Equiv.swap_apply_eq_iff, Equiv.swap_apply_left, D.pentagon.mem_coveredSquares] at hr hp
+  split_ifs at hsplit <;> grind [D.pentagon.ne_finRotate]
 
 /-- The marking test for a thin vertical pentagon--rectangle annulus, testing the rectangle
 in the commuted marking state and the pentagon in the original marking state. -/

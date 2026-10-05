@@ -102,7 +102,7 @@ theorem right_eq_right_of_left_eq_left (h : S.left = R.left) : S.right = R.right
 
 /-- If a returning rectangle starts on the terminal side column of the outgoing one, then it ends
 on the initial one. -/
-private theorem right_eq_left_of_left_eq_right (h : S.left = R.right) : S.right = R.left := by
+theorem right_eq_left_of_left_eq_right (h : S.left = R.right) : S.right = R.left := by
   rcases R.right_eq_left_or_right_eq_right S with h' | h'
   · exact h'
   · exact absurd (h.trans h'.symm) S.left_ne_right
