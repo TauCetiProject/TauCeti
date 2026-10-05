@@ -65,7 +65,11 @@ functors are given `@[expose]` so that their objects can be read as the pieces `
 of homomorphisms `Hom_{eAe}(eA, N)`, on which the action lemmas of this file are stated. The
 equivalence is built with `CategoryTheory.Equivalence.mk'`, so that its unit and counit are exactly
 `IsIdempotentElem.cornerUnitIso` and `IsIdempotentElem.cornerCounitIso`, and is given `@[expose]`
-so that this identification can be stated.
+so that this identification can be stated. The types of the unit and counit depend on the
+equivalence's functor and inverse: without exposure, the public statements of
+`IsIdempotentElem.cornerEquivalence_unitIso` and `IsIdempotentElem.cornerEquivalence_counitIso`
+cannot identify those types with the ones of the supplied natural isomorphisms. The functor and
+inverse projection equalities alone do not supply this definitional equality during elaboration.
 
 ## References
 
