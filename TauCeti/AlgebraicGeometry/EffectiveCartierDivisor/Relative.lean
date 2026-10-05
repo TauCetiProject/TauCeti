@@ -194,6 +194,7 @@ theorem isRelativeEffectiveCartier_top (f : X ⟶ S) :
 
 /-- Over the spectrum of a field, flatness over the base is automatic, so the relative effective
 Cartier divisors are exactly the effective Cartier divisors. -/
+@[simp]
 theorem isRelativeEffectiveCartier_iff_isEffectiveCartier [Subsingleton S] [IsIntegral S]
     (I : X.IdealSheafData) (f : X ⟶ S) :
     I.IsRelativeEffectiveCartier f ↔ I.IsEffectiveCartier := by

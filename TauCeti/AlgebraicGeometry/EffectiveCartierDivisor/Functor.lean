@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Relative
-public import Mathlib.CategoryTheory.Comma.Over.Pullback
+public import TauCeti.AlgebraicGeometry.IdealSheaf.Functor
 public import Mathlib.CategoryTheory.Subfunctor.Basic
 
 /-!
@@ -33,10 +33,11 @@ those used by `TauCeti.AlgebraicGeometry.rigidifiedPicardFunctor`.
 
 ## Main declarations
 
-* `TauCeti.AlgebraicGeometry.baseChangeIdealSheafFunctor`: the functor `T ↦ IdealSheafData X_T`
-  of closed subschemes of the base changes of `X`, acting by pullback of ideal sheaves;
-* `TauCeti.AlgebraicGeometry.relativeEffectiveCartierSubfunctor`: its subfunctor of relative
-  effective Cartier divisors on `X_T` over `T`, whose `Subfunctor.toFunctor` is `Div_{X/S}`;
+* `TauCeti.AlgebraicGeometry.relativeEffectiveCartierSubfunctor`: the subfunctor of relative
+  effective Cartier divisors on `X_T` over `T` of the functor
+  `TauCeti.AlgebraicGeometry.baseChangeIdealSheafFunctor` of ideal sheaves on base changes
+  (from `TauCeti.AlgebraicGeometry.IdealSheaf.Functor`), whose `Subfunctor.toFunctor` is
+  `Div_{X/S}`;
 * `TauCeti.AlgebraicGeometry.top_mem_relativeEffectiveCartierSubfunctor_obj`: the empty divisor.
 
 ## References
@@ -62,37 +63,6 @@ universe u
 noncomputable section
 
 variable {S X : Scheme.{u}} (f : X ⟶ S)
-
-/-- The functor of closed subschemes of the base changes of `f : X ⟶ S`: it sends a scheme `T`
-over `S` to the ideal sheaves on `X_T = T ×_S X`, and a morphism `T' ⟶ T` over `S` to pullback
-of ideal sheaves along the induced morphism `X_{T'} ⟶ X_T`. -/
--- Expose the object type so that the values of the functor, and of its subfunctor of relative
--- effective Cartier divisors, can be used directly as ideal sheaves on the base change.
-@[expose]
-def baseChangeIdealSheafFunctor : (Over S)ᵒᵖ ⥤ Type u where
-  obj T := (pullback T.unop.hom f).IdealSheafData
-  map φ := TypeCat.ofHom fun I ↦ I.comap ((Over.pullback f).map φ.unop).left
-  map_id T := by
-    ext I
-    simp
-  map_comp φ ψ := by
-    ext I
-    simp
-
-/-- The value of `baseChangeIdealSheafFunctor f` at `T` is the type of ideal sheaves on
-`T ×_S X`. -/
-lemma baseChangeIdealSheafFunctor_obj (T : (Over S)ᵒᵖ) :
-    (baseChangeIdealSheafFunctor f).obj T = (pullback T.unop.hom f).IdealSheafData :=
-  rfl
-
-/-- `baseChangeIdealSheafFunctor f` acts by pullback of ideal sheaves along the induced morphism
-of base changes. -/
-@[simp]
-lemma baseChangeIdealSheafFunctor_map_apply {T T' : (Over S)ᵒᵖ} (φ : T ⟶ T')
-    (I : (baseChangeIdealSheafFunctor f).obj T) :
-    (baseChangeIdealSheafFunctor f).map φ I =
-      Scheme.IdealSheafData.comap I ((Over.pullback f).map φ.unop).left :=
-  rfl
 
 /-- **The functor of relative effective Cartier divisors** of `f : X ⟶ S`, as a subfunctor of
 `baseChangeIdealSheafFunctor f`: at a scheme `T` over `S` it consists of the relative effective
@@ -122,13 +92,6 @@ lemma top_mem_relativeEffectiveCartierSubfunctor_obj (T : (Over S)ᵒᵖ) :
     (⊤ : (pullback T.unop.hom f).IdealSheafData) ∈
       (relativeEffectiveCartierSubfunctor f).obj T :=
   Scheme.IdealSheafData.isRelativeEffectiveCartier_top _
-
-/-- Base change preserves the empty divisor. -/
-@[simp]
-lemma baseChangeIdealSheafFunctor_map_top {T T' : (Over S)ᵒᵖ} (φ : T ⟶ T') :
-    (baseChangeIdealSheafFunctor f).map φ (⊤ : (pullback T.unop.hom f).IdealSheafData) =
-      (⊤ : (pullback T'.unop.hom f).IdealSheafData) :=
-  Scheme.IdealSheafData.comap_top _
 
 end
 
