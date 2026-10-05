@@ -160,7 +160,7 @@ noncomputable def abelianizationProPClass (V : Subgroup G) [V.Normal]
     ⟨abelianizationProPFactorSet p G V, abelianizationProPFactorSet_mem_Z2 p G V hV⟩
 
 /-- The class `u_{G/V}(p)` is the image of the factor-set cocycle under the class map. -/
-theorem abelianizationProPClass_eq (V : Subgroup G) [V.Normal]
+theorem abelianizationProPClass_def (V : Subgroup G) [V.Normal]
     (hV : IsOpen (V : Set G)) :
     abelianizationProPClass p G V hV =
       H2pi (G ⧸ V) (Additive (abelianizationProP p G V))
