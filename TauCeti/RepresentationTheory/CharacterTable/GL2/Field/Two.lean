@@ -23,10 +23,6 @@ identity, the nonidentity unipotent class, and the elliptic class, labelled resp
 The rows are the trivial, cuspidal, and Steinberg characters, with degrees `1, 1, 2`.
 Thus the matrix is the familiar table of `S₃`, with columns of sizes `1, 3, 2`.
 
-The cuspidal computation uses a root `u` of `X² + X + 1` in the supplied quadratic
-extension. It generates the three-element unit group, so a general-position character
-has value `ζ ≠ 1` at `u`, with `ζ³ = 1` and `ζ + ζ² = -1`.
-
 ## Main results
 
 * `TauCeti.bijective_gl2FieldTwoClassIndex`: the three columns exhaust the conjugacy classes.
@@ -36,8 +32,6 @@ has value `ζ ≠ 1` at `u`, with `ζ³ = 1` and `ζ + ζ² = -1`.
 ## References
 
 * W. Fulton and J. Harris, *Representation Theory: A First Course*, GTM 129, §5.2.
-* `TauCeti.RepresentationTheory.CharacterTable.GL2.Field.Three`, for the common
-  table-enumeration argument.
 -/
 
 public section
