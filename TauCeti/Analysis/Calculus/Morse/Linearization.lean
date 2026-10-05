@@ -102,6 +102,11 @@ theorem inner_hessianOperator_left (f : E → ℝ) (x v w : E) :
     ContinuousLinearEquiv.coe_coe, LinearIsometryEquiv.coe_toContinuousLinearEquiv]
   exact InnerProductSpace.toDual_symm_apply
 
+/-- The Fréchet derivative of the gradient is the Hessian operator, with no regularity assumption:
+both sides use Mathlib's totalized derivatives. -/
+theorem fderiv_gradient (f : E → ℝ) (x : E) : fderiv ℝ (∇ f) x = hessianOperator f x :=
+  (InnerProductSpace.toDual ℝ E).symm.toContinuousLinearEquiv.comp_fderiv (f := fderiv ℝ f) (x := x)
+
 /-- The Hessian operator depends only on the germ of the function at the point. -/
 theorem hessianOperator_congr_of_eventuallyEq (hfg : f =ᶠ[𝓝 x] g) :
     hessianOperator f x = hessianOperator g x := by
@@ -402,10 +407,10 @@ theorem isNondegenerateCriticalPoint_iff_neg_gradient_linearization :
   constructor
   · intro h
     refine ⟨h.contDiffAt, by simp [h.gradient_eq_zero], ?_⟩
-    rw [(ContDiffAt.hasFDerivAt_neg_gradient h.contDiffAt).fderiv]
+    rw [fderiv_neg, fderiv_gradient]
     exact h.isInvertible_neg_hessianOperator
   · rintro ⟨hf, hzero, hinv⟩
-    rw [(ContDiffAt.hasFDerivAt_neg_gradient hf).fderiv,
+    rw [fderiv_neg, fderiv_gradient,
       isInvertible_neg_hessianOperator_iff] at hinv
     rw [isNondegenerateCriticalPoint_iff_gradient]
     refine ⟨hf, ?_, hinv⟩
