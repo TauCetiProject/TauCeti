@@ -32,7 +32,7 @@ time.
 
 ## Main results
 
-* `TauCeti.SymmetricAlgebra.exists_polynomial_eval_eq_lift_add_smul`: along an affine line of
+* `SymmetricAlgebra.exists_polynomial_eval_eq_lift_add_smul`: along an affine line of
   linear forms, the evaluations of an element of `S(M)` are the values of a polynomial.
 * `TauCeti.SymmetricAlgebra.eq_of_forall_lift_apply_eq`: two elements of `S(M)` on which every
   evaluation `SymmetricAlgebra.lift f` agrees are equal.
@@ -40,9 +40,7 @@ time.
 
 public section
 
-namespace TauCeti.SymmetricAlgebra
-
-section Line
+namespace SymmetricAlgebra
 
 variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
 
@@ -64,7 +62,9 @@ theorem exists_polynomial_eval_eq_lift_add_smul (p : SymmetricAlgebra R M) (f g 
     ring
   rw [← Polynomial.coe_aeval_eq_eval, ← hcomp, AlgHom.comp_apply]
 
-end Line
+end SymmetricAlgebra
+
+namespace TauCeti.SymmetricAlgebra
 
 variable {R M : Type*} [CommRing R] [IsDomain R] [Infinite R] [AddCommGroup M] [Module R M]
   [Module.Free R M]

@@ -49,7 +49,7 @@ reflection `sᵢ`, which acts by `sᵢ · λ = λ - (⟨λ, αᵢ^∨⟩ + 1) α
   `χ_λ`; so the two characters agree.
 * **All weights: density.** For a central `z`, both `λ ↦ χ_λ(z)` and `λ ↦ χ_{sᵢ · λ}(z)` are
   polynomial functions of `λ` (`TauCeti.lift_hcProjection`), so along the line `λ + t αᵢ` they are
-  polynomials in `t` (`TauCeti.SymmetricAlgebra.exists_polynomial_eval_eq_lift_add_smul`), using
+  polynomials in `t` (`SymmetricAlgebra.exists_polynomial_eval_eq_lift_add_smul`), using
   `sᵢ · (λ + t αᵢ) = sᵢ · λ - t αᵢ`. Since `⟨λ + t αᵢ, αᵢ^∨⟩ = ⟨λ, αᵢ^∨⟩ + 2t`, the integral case
   makes the two polynomials agree at the infinitely many `t` for which this is a natural number,
   hence everywhere, and in particular at `t = 0`.
