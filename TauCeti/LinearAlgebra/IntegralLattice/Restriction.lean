@@ -27,11 +27,24 @@ isotropic submodules and to the zero submodule are allowed.
 These constructions let orthogonal summands be treated as lattices without imposing an
 incorrect full-span hypothesis on each summand.
 
+The rationalization uses `IntegralLattice.ofIntegralForm` and Mathlib's
+`LinearMap.liftBaseChange`.
+
+## Main declarations
+
+* `TauCeti.IntegralLattice.restrict`: restriction in the submodule's own rational ambient space.
+* `TauCeti.IntegralLattice.restrictCarrierEquiv`: the canonical integral carrier equivalence.
+* `TauCeti.IntegralLattice.isEven_restrict_iff`: evenness characterized on the chosen submodule.
+* `TauCeti.IntegralLattice.restrictMap`: the rational extension of the inclusion, characterized by
+  `restrictMap_injective`, `range_restrictMap`, `form_restrictMap`, and `map_restrict_carrier`.
+* `TauCeti.IntegralLattice.restrictFull`: restriction to a full ambient submodule contained in the
+  original carrier, retaining the original rational ambient space.
+* `TauCeti.IntegralLattice.restrictFullIsometry`: the canonical comparison of the two restrictions
+  when the embedded submodule is full.
+
 ## References
 
 * W. Ebeling, *Lattices and Codes*, Chapter 1.
-* The rationalization uses `IntegralLattice.ofIntegralForm` and Mathlib's
-  `LinearMap.liftBaseChange`.
 -/
 
 public section
@@ -57,6 +70,12 @@ theorem restrict_form (L : IntegralLattice V) (S : Submodule ℤ L) :
     (L.restrict S).form = (L.integralForm.restrict S).baseChange ℚ :=
   ofIntegralForm_form _ _
 
+/-- The carrier of a restricted lattice is the range of the unit pure tensor map. -/
+-- Leave membership normalization to the simp lemma `mem_restrict_carrier_iff`.
+theorem restrict_carrier (L : IntegralLattice V) (S : Submodule ℤ L) :
+    (L.restrict S).carrier = LinearMap.range (TensorProduct.mk ℤ ℚ S 1) :=
+  ofIntegralForm_carrier _ _
+
 /-- The carrier of a restricted lattice consists of the unit pure tensors of the submodule. -/
 @[simp]
 theorem mem_restrict_carrier_iff (L : IntegralLattice V) (S : Submodule ℤ L)
@@ -68,6 +87,7 @@ noncomputable def restrictCarrierEquiv (L : IntegralLattice V) (S : Submodule �
     S ≃ₗ[ℤ] L.restrict S :=
   ofIntegralForm.carrierEquiv _ _
 
+/-- The carrier equivalence sends a submodule vector to its unit pure tensor. -/
 @[simp]
 theorem coe_restrictCarrierEquiv_apply (L : IntegralLattice V) (S : Submodule ℤ L) (s : S) :
     (L.restrictCarrierEquiv S s : ℚ ⊗[ℤ] S) = 1 ⊗ₜ[ℤ] s :=
@@ -99,6 +119,7 @@ theorem isEven_restrict_iff (L : IntegralLattice V) (S : Submodule ℤ L) :
 def restrictMap (L : IntegralLattice V) (S : Submodule ℤ L) : ℚ ⊗[ℤ] S →ₗ[ℚ] V :=
   (L.carrier.subtype.comp S.subtype).liftBaseChange ℚ
 
+/-- The rational inclusion sends a pure tensor to the scalar multiple of the embedded vector. -/
 @[simp]
 theorem restrictMap_tmul (L : IntegralLattice V) (S : Submodule ℤ L) (q : ℚ) (s : S) :
     L.restrictMap S (q ⊗ₜ[ℤ] s) = q • ((s : L) : V) :=
@@ -132,41 +153,35 @@ theorem map_restrict_carrier (L : IntegralLattice V) (S : Submodule ℤ L) :
   have hcomp : (L.restrictMap S).restrictScalars ℤ ∘ₗ TensorProduct.mk ℤ ℚ S 1 =
       L.carrier.subtype ∘ₗ S.subtype := by
     ext s
+    -- `ext` leaves the composite behind linear-map coercions. Expose the applications of
+    -- `restrictScalars` and `TensorProduct.mk` definitionally to use `restrictMap_tmul`.
     change L.restrictMap S (1 ⊗ₜ[ℤ] s) = ((s : L) : V)
     simp only [restrictMap_tmul, one_smul]
+  rw [restrict_carrier]
   calc
-    _ = (LinearMap.range (TensorProduct.mk ℤ ℚ S 1)).map
-        ((L.restrictMap S).restrictScalars ℤ) :=
-      congrArg (Submodule.map ((L.restrictMap S).restrictScalars ℤ))
-        (ofIntegralForm_carrier _ _)
     _ = LinearMap.range ((L.restrictMap S).restrictScalars ℤ ∘ₗ
         TensorProduct.mk ℤ ℚ S 1) := (LinearMap.range_comp _ _).symm
     _ = LinearMap.range (L.carrier.subtype ∘ₗ S.subtype) := congrArg LinearMap.range hcomp
     _ = S.map L.carrier.subtype := by
       rw [LinearMap.range_comp, Submodule.range_subtype]
 
-/-- Restriction to a full submodule, retaining the original rational ambient space. Fullness of
-the embedded submodule is supplied as an `IsLattice ℚ` instance. The constructor `restrict`
-needs no span condition because it builds its own rational ambient space `ℚ ⊗[ℤ] S`. -/
-def restrictFull (L : IntegralLattice V) (S : Submodule ℤ L)
-    [(S.map L.carrier.subtype).IsLattice ℚ] : IntegralLattice V :=
-  ofSubmodule (S.map L.carrier.subtype) L.form L.isSymm (by
-    intro x hx
-    rw [LinearMap.BilinForm.mem_dualSubmodule]
-    intro y hy
-    obtain ⟨s, _, rfl⟩ := Submodule.mem_map.mp hx
-    obtain ⟨t, _, rfl⟩ := Submodule.mem_map.mp hy
-    exact L.form_mem_one s t)
+/-- Restriction to a full ambient submodule contained in the carrier, retaining the original
+rational ambient space. Fullness is supplied as an `IsLattice ℚ` instance. The constructor
+`restrict` needs no span condition because it builds its own rational ambient space. -/
+def restrictFull (L : IntegralLattice V) (N : Submodule ℤ V) (hN : N ≤ L.carrier)
+    [N.IsLattice ℚ] : IntegralLattice V :=
+  ofSubmodule N L.form L.isSymm (L.le_dualSubmodule_of_le_carrier hN)
 
+/-- The carrier of the full restriction is the chosen ambient submodule. -/
 @[simp]
-theorem restrictFull_carrier (L : IntegralLattice V) (S : Submodule ℤ L)
-    [(S.map L.carrier.subtype).IsLattice ℚ] :
-    (L.restrictFull S).carrier = S.map L.carrier.subtype :=
+theorem restrictFull_carrier (L : IntegralLattice V) (N : Submodule ℤ V) (hN : N ≤ L.carrier)
+    [N.IsLattice ℚ] : (L.restrictFull N hN).carrier = N :=
   ofSubmodule_carrier _ _ _ _
 
+/-- Full restriction retains the original rational form. -/
 @[simp]
-theorem restrictFull_form (L : IntegralLattice V) (S : Submodule ℤ L)
-    [(S.map L.carrier.subtype).IsLattice ℚ] : (L.restrictFull S).form = L.form :=
+theorem restrictFull_form (L : IntegralLattice V) (N : Submodule ℤ V) (hN : N ≤ L.carrier)
+    [N.IsLattice ℚ] : (L.restrictFull N hN).form = L.form :=
   ofSubmodule_form _ _ _ _
 
 /-- Fullness supplies the surjectivity needed to bundle the comparison as an isometry. -/
@@ -180,7 +195,8 @@ private theorem restrictMap_bijective (L : IntegralLattice V) (S : Submodule ℤ
 restriction in the original ambient space. The underlying map is the rational extension of the
 inclusion, so this identifies both the carriers and the forms. -/
 noncomputable def restrictFullIsometry (L : IntegralLattice V) (S : Submodule ℤ L)
-    [(S.map L.carrier.subtype).IsLattice ℚ] : Isometry (L.restrict S) (L.restrictFull S) where
+    [(S.map L.carrier.subtype).IsLattice ℚ] : Isometry (L.restrict S)
+      (L.restrictFull (S.map L.carrier.subtype) (L.carrier.map_subtype_le S)) where
   toIsometryEquiv :=
     { toLinearEquiv := LinearEquiv.ofBijective (L.restrictMap S) (L.restrictMap_bijective S)
       map_app' x y := by
@@ -191,6 +207,8 @@ noncomputable def restrictFullIsometry (L : IntegralLattice V) (S : Submodule �
     rw [restrictFull_carrier]
     exact L.map_restrict_carrier S
 
+/-- The canonical comparison applies the rational extension of the inclusion. -/
+-- The `Isometry` wrapper uses `LinearEquiv.ofBijective`, whose underlying map is unchanged.
 @[simp]
 theorem restrictFullIsometry_apply (L : IntegralLattice V) (S : Submodule ℤ L)
     [(S.map L.carrier.subtype).IsLattice ℚ] (x : ℚ ⊗[ℤ] S) :

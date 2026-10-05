@@ -145,7 +145,7 @@ theorem isEven_ofGramMatrix_iff {ι : Type*} [Fintype ι] (b : Basis ι ℚ V)
   rw [integralNorm_apply, integralForm_ofGramMatrix_apply]
 
 /-- An integral-form equivalence identifies lattice evenness with even self-pairings in an
-arbitrary integral module, including a submodule that need not span its original ambient space. -/
+arbitrary integral module. -/
 theorem isEven_iff_of_integralForm_equiv (L : IntegralLattice V) {M : Type*}
     [AddCommGroup M] [Module ℤ M] (B : LinearMap.BilinForm ℤ M) (e : M ≃ₗ[ℤ] L)
     (hB : ∀ x y, L.integralForm (e x) (e y) = B x y) :

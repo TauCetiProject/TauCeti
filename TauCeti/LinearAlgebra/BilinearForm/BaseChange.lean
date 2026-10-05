@@ -60,8 +60,8 @@ variable [AddCommMonoid M] [Module R M]
 variable [AddCommMonoid N] [Module A N] [Module R N] [IsScalarTower R A N]
 variable {f : M →ₗ[R] N}
 
-/-- If `B` restricts along `f` to `B'`, evaluating `B` on base-changed vectors agrees with the
-canonical base change of `B'`. -/
+/-- If `B` restricts along `f` to `B'`, evaluating `B` on the images of `f.liftBaseChange A`
+agrees with the canonical base change of `B'`. The map `f` need not exhibit a base change. -/
 theorem bilinForm_liftBaseChange (B' : LinearMap.BilinForm R M)
     (B : LinearMap.BilinForm A N)
     (hB : ∀ x y : M, B (f x) (f y) = algebraMap R A (B' x y)) (x y : A ⊗[R] M) :
