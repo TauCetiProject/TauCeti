@@ -105,7 +105,7 @@ theorem jimbo_strandIncl_single_snoc (q : Rˣ) (b : BraidGroup (n + 1))
 
 /-- Inclusion preserves coefficients on each fixed-last-colour block and has zero
 coefficients between blocks with different last colours. -/
-@[simp]
+@[simp↓]
 theorem jimbo_strandIncl_single_snoc_apply_snoc (q : Rˣ) (b : BraidGroup (n + 1))
     (w u : Fin (n + 1) → ι) (a d : ι) (c : R) :
     (jimbo ι q (BraidGroup.strandIncl b) : Module.End R ((Fin (n + 2) → ι) →₀ R))
