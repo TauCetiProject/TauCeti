@@ -53,6 +53,8 @@ defects. Neither the characteristic of `k` nor finiteness of `G` is used.
 ## Main results
 
 * `TauCeti.reductionK0_congr`: equivalent representations have equal reduction classes.
+* `TauCeti.reductionK0_quotSMulTop`: quotienting by an integer that vanishes in `k` preserves
+  the reduction class.
 * `TauCeti.latticeDefect_add_of_exact`: additivity of the lattice defect.
 
 ## References
@@ -67,7 +69,7 @@ namespace TauCeti
 
 open Function TensorProduct
 open _root_.Representation (IntertwiningMap)
-open scoped MonoidAlgebra
+open scoped MonoidAlgebra Pointwise
 
 -- The `ℤ`-module structures on submodules, quotients and tensor products agree with the canonical
 -- one of an abelian group, but not definitionally; prefer the structural ones, as the torsion and
@@ -120,6 +122,42 @@ theorem reductionK0_eq_zero_of_subsingleton [Subsingleton W] (ρ : Representatio
         (ModuleCat.of k[G] (Representation.baseChange k ρ).asModule))
 
 end Reduction
+
+section QuotientReduction
+
+variable {W : Type u} [AddCommGroup W] [Module.Finite ℤ W]
+
+/-- If `r` vanishes in the coefficient ring, quotienting an integral representation by `r`
+before extending scalars does not change its reduction class. -/
+@[simp]
+theorem reductionK0_quotSMulTop (ρ : Representation ℤ G W) (r : ℤ)
+    (hr : (r : k) = 0) :
+    reductionK0 k (ρ.quotSMulTop r) = reductionK0 k ρ := by
+  let q : IntertwiningMap ρ (ρ.quotSMulTop r) :=
+    { toLinearMap := (r • (⊤ : Submodule ℤ W)).mkQ
+      isIntertwining' g := by
+        ext x
+        simp [LinearMap.comp_apply, Submodule.mkQ_apply] }
+  have hzero : (DistribSMul.toLinearMap ℤ W r).lTensor k = 0 := by
+    ext a x
+    simp only [AlgebraTensorModule.curry_apply, TensorProduct.curry_apply,
+      LinearMap.restrictScalars_apply, LinearMap.zero_apply,
+      LinearMap.lTensor_tmul, DistribSMul.toLinearMap_apply]
+    rw [← TensorProduct.smul_tmul, ← IsScalarTower.algebraMap_smul k r a]
+    simp [hr]
+  have hq : Function.Bijective (q.baseChange k) := by
+    -- Intertwining-map coercions retain the underlying linear function.
+    have hfun : ⇑(q.baseChange k) = ⇑(q.baseChange k).toLinearMap := rfl
+    rw [hfun, IntertwiningMap.toLinearMap_baseChange, LinearMap.baseChange_eq_ltensor]
+    refine ⟨?_, LinearMap.lTensor_surjective k (Submodule.mkQ_surjective _)⟩
+    have hex := lTensor_exact k (exact_toLinearMap_mkQ r W)
+      (Submodule.mkQ_surjective (r • (⊤ : Submodule ℤ W)))
+    rw [hzero] at hex
+    exact (LinearMap.exact_zero_iff_injective _ _).mp hex
+  exact (ExactK0.of_congr (Representation.asModuleLinearEquivOfEquiv
+    ((q.baseChange k).ofBijective hq)).toFGModuleCatIso).symm
+
+end QuotientReduction
 
 /-! ### The six-term sequence of reductions -/
 
