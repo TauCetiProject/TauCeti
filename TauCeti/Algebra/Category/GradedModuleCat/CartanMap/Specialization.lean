@@ -5,12 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.TensorProduct.IsBaseChangeHom
 public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.ForgetGrading
 public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Matrix
-public import TauCeti.Algebra.Polynomial.Laurent.MatrixSpecialization
--- Unfold the two matrix definitions locally to apply the generic specialization theorem.
-import all TauCeti.Algebra.Category.GradedModuleCat.CartanMap.ForgetGrading
-import all TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Matrix
+-- Unfold the specialized basis locally to apply Mathlib's base-change matrix theorem.
+import all TauCeti.Algebra.Polynomial.Laurent.Specialization
 
 /-!
 # Specializing the graded Cartan matrix
@@ -64,8 +63,24 @@ theorem toMatrix_gradedCartanMapSpecialized (ε : ℤˣ)
         (LaurentSpecialization.basis ε bM) (gradedCartanMapSpecialized 𝒜 ε) =
       (gradedCartanMatrix 𝒜 bP bM).map (laurentEval ε) := by
   classical
-  unfold gradedCartanMapSpecialized gradedCartanMatrix
-  convert LaurentSpecialization.toMatrix_map ε bP bM (gradedCartanMap 𝒜)
+  let _ : Algebra (LaurentPolynomial ℤ) ℤ := (laurentEval ε).toAlgebra
+  have := LaurentSpecialization.isScalarTower ε
+    (N := LaurentK0.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜)) fun _ ↦ rfl
+  have := LaurentSpecialization.isScalarTower ε
+    (N := LaurentK0.{uA} (gradedFiniteModulesExactStructure 𝒜)) fun _ ↦ rfl
+  have hP := LaurentSpecialization.isBaseChange ε
+    (N := LaurentK0.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜)) fun _ ↦ rfl
+  have hspec : gradedCartanMapSpecialized 𝒜 ε =
+      hP.linearMapLeftRightHom (LaurentSpecialization.mk ε) (gradedCartanMap 𝒜) :=
+    LaurentSpecialization.hom_ext ε fun x ↦ by
+      rw [gradedCartanMapSpecialized_mk, IsBaseChange.linearMapLeftRightHom_comp_apply]
+  rw [hspec]
+  refine (IsBaseChange.linearMapLeftRightHom_toMatrix (ibcM := hP)
+    (ibcN := LaurentSpecialization.isBaseChange ε fun _ ↦ rfl) (b := bP) (c := bM)
+    (f := gradedCartanMap 𝒜)).trans ?_
+  ext i j
+  rw [Matrix.map_apply, Matrix.map_apply, LinearMap.toMatrix_apply, gradedCartanMatrix_apply]
+  rfl
 
 /-- If a linear map carries one basis to another, it preserves their coordinate vectors. -/
 private theorem basis_repr_map_eq {R : Type*} [Semiring R]
