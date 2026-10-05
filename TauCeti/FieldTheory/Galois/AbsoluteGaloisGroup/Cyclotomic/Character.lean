@@ -8,6 +8,7 @@ module
 public import Mathlib.FieldTheory.AbsoluteGaloisGroup
 public import Mathlib.NumberTheory.Cyclotomic.CyclotomicCharacter
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
+import TauCeti.Topology.Algebra.Group.TopologicalAbelianization.Lift
 
 /-!
 # The cyclotomic character of an absolute Galois group
@@ -18,7 +19,9 @@ It is Mathlib's cyclotomic character restricted from ring automorphisms to the G
 The pointwise equation fixes this choice of character for later arithmetic comparisons.
 Its bundled form `continuousLocalCyclotomicCharacter p K` is the continuous homomorphism that the
 twisted coefficients `TauCeti.ZModTwist` and the prescription property
-`TauCeti.HasPrescriptionProperty` take.
+`TauCeti.HasPrescriptionProperty` take. Its values only depend on the class of an element in the
+topological abelianization (`localCyclotomicCharacter_eq_of_mk_eq`), which is how it is evaluated
+on Artin symbols.
 -/
 
 public section
@@ -58,5 +61,14 @@ noncomputable def continuousLocalCyclotomicCharacter :
 theorem continuousLocalCyclotomicCharacter_apply (σ : Field.absoluteGaloisGroup K) :
     continuousLocalCyclotomicCharacter p K σ = localCyclotomicCharacter p K σ :=
   (rfl)
+
+variable {p K} in
+/-- The cyclotomic character factors through the topological abelianization: two elements of
+`Gal(AlgebraicClosure K/K)` with the same class in `Field.absoluteGaloisGroupAbelianization K`
+have the same cyclotomic character. -/
+theorem localCyclotomicCharacter_eq_of_mk_eq {σ τ : Field.absoluteGaloisGroup K}
+    (h : (σ : Field.absoluteGaloisGroupAbelianization K) = τ) :
+    localCyclotomicCharacter p K σ = localCyclotomicCharacter p K τ := by
+  simpa using congrArg (TopologicalAbelianization.lift (continuousLocalCyclotomicCharacter p K)) h
 
 end TauCeti

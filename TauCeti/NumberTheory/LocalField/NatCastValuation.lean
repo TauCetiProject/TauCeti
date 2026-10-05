@@ -34,6 +34,8 @@ characteristic is the absolute ramification index of `K`.
 
 ## Main results
 
+* `TauCeti.natCast_ne_zero_of_coprime_ringChar`: a natural number prime to the residue
+  characteristic is nonzero in `K`.
 * `TauCeti.normalizedValuation_natCast`: the characteristic equation, which also records that
   the value is nonnegative.
 * `TauCeti.toAdd_normalizedValuation_natCast` and `TauCeti.valuation_natCast_eq_pow`: the
@@ -73,6 +75,12 @@ omit [TopologicalSpace K] [IsNonarchimedeanLocalField K] in
 /-- A natural number that is a unit in the integer ring is nonzero in the field. -/
 theorem natCast_ne_zero_of_isUnit {n : ℕ} (hn : IsUnit (n : 𝒪[K])) : (n : K) ≠ 0 := by
   simpa only [map_natCast] using (hn.map (Subring.subtype 𝒪[K])).ne_zero
+
+/-- A natural number prime to the residue characteristic is nonzero in the field. -/
+theorem natCast_ne_zero_of_coprime_ringChar {n : ℕ} (hn : n.Coprime (ringChar 𝓀[K])) :
+    (n : K) ≠ 0 :=
+  natCast_ne_zero_of_isUnit <| IsLocalRing.isUnit_natCast_iff_not_dvd.2 fun h ↦
+    CharP.ringChar_ne_one (hn.symm.eq_one_of_dvd h)
 
 omit [TopologicalSpace K] [IsNonarchimedeanLocalField K] in
 /-- If `2` is a unit in the integer ring, it is nonzero in the field. -/
