@@ -33,10 +33,6 @@ equality and is then carried through `hopfSpec`.
 
 * J. S. Milne, *Algebraic Groups* (2017), §1.k and §2.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Chapter 2.
-
-This supplies the isomorphism invariance of the center `Z(G)` required by Layer 6, "Reductive and
-semisimple groups", of `TauCetiRoadmap/ReductiveGroups/README.md`. It makes the center canonical
-for the subsequent central-isogeny and adjoint-form constructions.
 -/
 
 public section

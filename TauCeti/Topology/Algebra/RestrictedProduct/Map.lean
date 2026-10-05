@@ -97,6 +97,17 @@ theorem restrictedProductMapOfForall_apply {H : ι → Type w} [∀ i, Group (H 
     restrictedProductMapOfForall U U' φ hφ x i = φ i (x i) := by
   exact restrictedProductMap_apply U U' φ (.of_forall hφ) x i
 
+/-- An everywhere-preserving componentwise restricted-product homomorphism is continuous when all
+its coordinate maps are continuous. -/
+@[to_additive continuous_addRestrictedProductMapOfForall]
+theorem continuous_restrictedProductMapOfForall {H : ι → Type w} [∀ i, Group (H i)]
+    [∀ i, TopologicalSpace (G i)] [∀ i, TopologicalSpace (H i)]
+    (U : ∀ i, Subgroup (G i)) (U' : ∀ i, Subgroup (H i))
+    (φ : ∀ i, G i →* H i) (hφ : ∀ i, Set.MapsTo (φ i) (U i) (U' i))
+    (hφcont : ∀ i, Continuous (φ i)) :
+    Continuous (restrictedProductMapOfForall U U' φ hφ) :=
+  continuous_restrictedProductMap U U' φ (.of_forall hφ) hφcont
+
 /-- The componentwise restricted-product homomorphism induced by identity maps is the identity. -/
 @[to_additive (attr := simp) addRestrictedProductMap_id]
 theorem restrictedProductMap_id (U : ∀ i, Subgroup (G i)) :

@@ -26,7 +26,7 @@ The remaining results are the two bridges between `v` and `Oᵥ`. Downwards: an 
 comes from `Oᵥ` has `v`-adic valuation at most one; hence, by Mathlib's
 `IsDedekindDomain.HeightOneSpectrum.mem_integers_of_valuation_le_one`, an element that comes from
 every `Oᵥ` comes from `O`. The latter is `O = ⋂ᵥ Oᵥ` inside `K`, and is what lets a property that
-holds over every localisation descend to `O`. The valuation bound is stated for any
+holds over every localisation descend to `O`. The ring-of-integers identification is stated for any
 `IsLocalization.AtPrime` model of `Oᵥ` mapping to `K` over `O`, not only for
 `Localization.AtPrime v.asIdeal` itself.
 
@@ -40,14 +40,12 @@ valuation ring — is the `v`-adic valuation itself. Without that identification
 
 * `IsDedekindDomain.HeightOneSpectrum.isDiscreteValuationRing_localizationAtPrime`:
   `IsDiscreteValuationRing (Localization.AtPrime v.asIdeal)`, as an instance;
-* `IsDedekindDomain.HeightOneSpectrum.valuation_algebraMap_le_one_of_isLocalizationAtPrime`:
-  `v (x) ≤ 1` for `x` in the image of the localisation at `v`;
 * `IsDedekindDomain.HeightOneSpectrum.isInteger_of_forall_isInteger_localizationAtPrime`:
   an element of `K` lying in every `Localization.AtPrime v.asIdeal` lies in `O`;
 * `IsDedekindDomain.HeightOneSpectrum.isUnit_of_forall_isUnit_localizationAtPrime`:
   a nonzero element of `K` that is a unit in every such localisation is a unit of `O`;
-* `IsDedekindDomain.HeightOneSpectrum.integers_valuation_localizationAtPrime`:
-  `Oᵥ` is the ring of integers of the `v`-adic valuation on `K`;
+* `IsDedekindDomain.HeightOneSpectrum.integers_valuation_of_isLocalizationAtPrime`:
+  any model of `Oᵥ` is the ring of integers of the `v`-adic valuation on `K`;
 * `IsDedekindDomain.HeightOneSpectrum.irreducible_algebraMap_localizationAtPrime`:
   a `v`-adic uniformiser of `O` is irreducible in `Oᵥ`;
 * `IsDedekindDomain.HeightOneSpectrum.valuation_maximalIdeal_localizationAtPrime`:
@@ -69,21 +67,30 @@ instance isDiscreteValuationRing_localizationAtPrime :
     IsDiscreteValuationRing (Localization.AtPrime v.asIdeal) :=
   IsLocalization.AtPrime.isDiscreteValuationRing_of_dedekind_domain O v.ne_bot _
 
-/-- **Elements of the localisation at `v` have `v`-adic valuation at most one**, for any
-`IsLocalization.AtPrime` model `S` of the localisation mapping to `K` over `O`, such as
-`Localization.AtPrime v.asIdeal` with the instances above. Together with
-`IsDedekindDomain.HeightOneSpectrum.mem_integers_of_valuation_le_one` this descends membership in
-every localisation to membership in `O`. -/
-theorem valuation_algebraMap_le_one_of_isLocalizationAtPrime {S : Type*} [CommRing S]
-    [Algebra O S] [IsLocalization.AtPrime S v.asIdeal] [Algebra S K] [IsScalarTower O S K]
-    (x : S) : v.valuation K (algebraMap S K x) ≤ 1 := by
-  -- Write `x = r / s` with `s ∉ v`: the valuation of `s` is one and that of `r` at most one.
-  obtain ⟨⟨r, s⟩, rfl⟩ := IsLocalization.mk'_surjective v.asIdeal.primeCompl x
-  dsimp only
-  rw [← IsLocalization.mk'_eq_algebraMap_mk'_of_submonoid_le (S := S) (T := K)
-    v.asIdeal.primeCompl_le_nonZeroDivisors, valuation_of_mk',
-    (v.intValuation_eq_one_iff_mem_primeCompl s).mpr s.2, div_one]
-  exact v.intValuation_le_one r
+/-- Any model of the localisation at `v` mapping to `K` over `O` is the ring of integers
+of the `v`-adic valuation. This gives the valuation bound on its elements as `map_le_one`,
+and makes the unit and divisibility API of `Valuation.Integers` available. -/
+theorem integers_valuation_of_isLocalizationAtPrime (S : Type*) [CommRing S]
+    [Algebra O S] [IsLocalization.AtPrime S v.asIdeal] [Algebra S K] [IsScalarTower O S K] :
+    (v.valuation K).Integers S where
+  hom_inj := by
+    let := IsFractionRing.isFractionRing_of_isDomain_of_isLocalization v.asIdeal.primeCompl S K
+    exact IsFractionRing.injective S K
+  map_le_one x := by
+    -- Write `x = r / s` with `s ∉ v`: the valuation of `s` is one and that of `r` at most one.
+    obtain ⟨⟨r, s⟩, rfl⟩ := IsLocalization.mk'_surjective v.asIdeal.primeCompl x
+    dsimp only
+    rw [← IsLocalization.mk'_eq_algebraMap_mk'_of_submonoid_le (S := S) (T := K)
+      v.asIdeal.primeCompl_le_nonZeroDivisors, valuation_of_mk',
+      (v.intValuation_eq_one_iff_mem_primeCompl s).mpr s.2, div_one]
+    exact v.intValuation_le_one r
+  exists_of_le_one {x} hx := by
+    obtain ⟨a, s, hs⟩ := v.exists_primeCompl_mul_eq_of_integer x hx
+    refine ⟨IsLocalization.mk' S a s, ?_⟩
+    rw [← IsLocalization.mk'_eq_algebraMap_mk'_of_submonoid_le
+      (S := S) (T := K) v.asIdeal.primeCompl_le_nonZeroDivisors,
+      IsLocalization.mk'_eq_iff_eq_mul]
+    exact hs.symm
 
 /-- **`O` is the intersection of its localisations at height-one primes**, inside `K`: an element
 of `K` that comes from `Localization.AtPrime v.asIdeal` for every `v` comes from `O`. This is the
@@ -98,7 +105,8 @@ theorem isInteger_of_forall_isInteger_localizationAtPrime (x : K)
   refine RingHom.mem_rangeS.mpr
     (RingHom.mem_range.mp (mem_integers_of_valuation_le_one K x fun v => ?_))
   obtain ⟨r, rfl⟩ := RingHom.mem_rangeS.mp (h v)
-  exact v.valuation_algebraMap_le_one_of_isLocalizationAtPrime r
+  exact (v.integers_valuation_of_isLocalizationAtPrime
+    (Localization.AtPrime v.asIdeal)).map_le_one r
 
 /-- A nonzero element of the fraction field which is the image of a unit in every height-one
 localisation is the image of a unit of the Dedekind domain. The nonzero assumption also covers
@@ -117,34 +125,14 @@ theorem isUnit_of_forall_isUnit_localizationAtPrime (x : K)
     rw [map_mul, ha, hb, map_one, mul_inv_cancel₀ hx])
   exact ⟨⟨a, b, hab, by rw [mul_comm, hab]⟩, ha⟩
 
-/-- **The localisation at `v` is the ring of integers of the `v`-adic valuation on `K`.** The
-result packages this identification as `Valuation.Integers`, making its unit and divisibility API
-available for the localisation. -/
-theorem integers_valuation_localizationAtPrime :
-    (v.valuation K).Integers (Localization.AtPrime v.asIdeal) where
-  hom_inj := IsFractionRing.injective _ K
-  map_le_one := v.valuation_algebraMap_le_one_of_isLocalizationAtPrime
-  exists_of_le_one := by
-    intro x hx
-    obtain ⟨a, s, hs, rfl⟩ : x ∈ valuationSubringAtPrime K v := by
-      rw [valuationSubringAtPrime_eq_valuationSubring]; exact hx
-    refine ⟨IsLocalization.mk' (Localization.AtPrime v.asIdeal) a ⟨s, hs⟩, ?_⟩
-    have hs₀ : algebraMap O K s ≠ 0 :=
-      IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors
-        (v.asIdeal.primeCompl_le_nonZeroDivisors hs)
-    rw [← IsLocalization.mk'_eq_algebraMap_mk'_of_submonoid_le
-        (S := Localization.AtPrime v.asIdeal) (T := K)
-        (h := v.asIdeal.primeCompl_le_nonZeroDivisors),
-      IsLocalization.mk'_eq_iff_eq_mul]
-    field_simp
-
 /-- **A `v`-adic uniformiser of `O` is irreducible in the localisation at `v`.** This is what
 identifies the discrete valuation of `Oᵥ` with the `v`-adic valuation in
 `valuation_maximalIdeal_localizationAtPrime`. -/
 theorem irreducible_algebraMap_localizationAtPrime {ϖ : O}
     (hϖ : v.intValuation ϖ = WithZero.exp (-1 : ℤ)) :
     Irreducible (algebraMap O (Localization.AtPrime v.asIdeal) ϖ) := by
-  have hv := v.integers_valuation_localizationAtPrime (K := FractionRing O)
+  have hv := v.integers_valuation_of_isLocalizationAtPrime
+    (Localization.AtPrime v.asIdeal) (K := FractionRing O)
   have hϖL : v.valuation (FractionRing O)
       (algebraMap (Localization.AtPrime v.asIdeal) (FractionRing O)
         (algebraMap O (Localization.AtPrime v.asIdeal) ϖ)) = WithZero.exp (-1 : ℤ) := by
@@ -171,35 +159,25 @@ assembled into a single object over `O`. -/
 theorem valuation_maximalIdeal_localizationAtPrime (x : K) :
     (IsDiscreteValuationRing.maximalIdeal (Localization.AtPrime v.asIdeal)).valuation K x =
       v.valuation K x := by
-  -- Both sides are valuations, so it suffices to compare them on `Oᵥ`.
-  suffices h : ∀ y : Localization.AtPrime v.asIdeal,
-      (IsDiscreteValuationRing.maximalIdeal (Localization.AtPrime v.asIdeal)).valuation K
-        (algebraMap _ K y) = v.valuation K (algebraMap _ K y) by
-    obtain ⟨a, b, _, rfl⟩ := IsFractionRing.div_surjective (A := Localization.AtPrime v.asIdeal) x
-    rw [map_div₀, map_div₀, h, h]
-  intro y
-  obtain ⟨ϖ, hϖ⟩ := v.intValuation_exists_uniformizer
-  have hirr : Irreducible (algebraMap O (Localization.AtPrime v.asIdeal) ϖ) :=
-    v.irreducible_algebraMap_localizationAtPrime hϖ
-  have htower : algebraMap (Localization.AtPrime v.asIdeal) K
-      (algebraMap O (Localization.AtPrime v.asIdeal) ϖ) = algebraMap O K ϖ :=
-    (IsScalarTower.algebraMap_apply O (Localization.AtPrime v.asIdeal) K ϖ).symm
-  rcases eq_or_ne y 0 with rfl | hy
+  rcases eq_or_ne x 0 with rfl | hx
   · simp
-  -- Write `y` as a unit times a power of the uniformiser and compute both valuations.
-  obtain ⟨n, u, rfl⟩ := IsDiscreteValuationRing.eq_unit_mul_pow_irreducible hy hirr
-  have hleft : (IsDiscreteValuationRing.maximalIdeal (Localization.AtPrime v.asIdeal)).intValuation
-      (algebraMap O (Localization.AtPrime v.asIdeal) ϖ) = WithZero.exp (-1 : ℤ) :=
-    (IsDiscreteValuationRing.maximalIdeal _).intValuation_singleton hirr.ne_zero
-      hirr.maximalIdeal_eq
+  obtain ⟨ϖ, hϖ⟩ := v.intValuation_exists_uniformizer
+  have hirr := v.irreducible_algebraMap_localizationAtPrime hϖ
+  -- In the fraction field, every nonzero element is a unit times an integer power of `ϖ`.
+  obtain ⟨n, u, rfl⟩ :=
+    IsDiscreteValuationRing.exists_units_eq_smul_zpow_of_irreducible hirr hx
+  have hleft := (IsDiscreteValuationRing.maximalIdeal _).intValuation_singleton
+    hirr.ne_zero hirr.maximalIdeal_eq
   have hu : (IsDiscreteValuationRing.maximalIdeal (Localization.AtPrime v.asIdeal)).intValuation
       (u : Localization.AtPrime v.asIdeal) = 1 := by
     simp [IsDiscreteValuationRing.maximalIdeal]
-  have hϖK : v.valuation K (algebraMap O K ϖ) = WithZero.exp (-1 : ℤ) := by
-    rw [valuation_of_algebraMap, hϖ]
-  rw [valuation_of_algebraMap]
-  simp only [map_mul, map_pow, hleft, hu, htower, hϖK,
-    (v.integers_valuation_localizationAtPrime (K := K)).valuation_unit u]
+  have hright : v.valuation K (algebraMap (Localization.AtPrime v.asIdeal) K
+      (algebraMap O (Localization.AtPrime v.asIdeal) ϖ)) = WithZero.exp (-1 : ℤ) := by
+    rw [← IsScalarTower.algebraMap_apply, valuation_of_algebraMap, hϖ]
+  simp only [Units.smul_def, Algebra.smul_def, map_mul, map_zpow₀, valuation_of_algebraMap,
+    hleft, hu, one_mul, hright,
+    (v.integers_valuation_of_isLocalizationAtPrime
+      (Localization.AtPrime v.asIdeal) (K := K)).valuation_unit u]
 
 end IsDedekindDomain.HeightOneSpectrum
 

@@ -46,7 +46,8 @@ the presented group has topological generator rank exactly `n`.
   `TauCeti.demushkinWordTwoRankTwo`: the even word of rank two, `x₁^{2+α} (x₁, x₂)`, with no
   level; `TauCeti.demushkinWordTwoOdd_eq_demushkinWordTwoOddTop` reads the odd word as the odd word
   at `f = ∞` when `x₂^{2^f} = 1`, `TauCeti.demushkinWordTwoEven_two` reads the even word at rank
-  two as the rank-two word, and `TauCeti.demushkinWordTwoOdd_one` and
+  two as the rank-two word, `TauCeti.demushkinWordTwoRankTwo_eq_demushkinWordNeTwo` reads the
+  rank-two word as the `q ≠ 2` word at `q = 2 + α`, and `TauCeti.demushkinWordTwoOdd_one` and
   `TauCeti.demushkinWordTwoOddTop_one` read the two odd words at rank one as `x₁²`.
 
 ## Main results
@@ -301,6 +302,13 @@ generator is out of range, and the commutator product beyond `(x₁, x₂)` is e
 theorem demushkinWordTwoEven_two (a f : ℕ) (x : ℕ → H) (hx : x 2 = 1) :
     demushkinWordTwoEven a f 2 x = demushkinWordTwoRankTwo a x := by
   simp [demushkinWordTwoEven_def, demushkinWordTwoRankTwo_def, hx]
+
+/-- The rank-two word `x₁^{2+a} (x₁, x₂)` is the `q ≠ 2` word at `q = 2 + a` on two generators,
+where that word has the single commutator factor `(x₁, x₂)`: Labute's level `f = ∞` of the even
+family at rank two is the `q ≠ 2` form with `q = 2 + α`. -/
+theorem demushkinWordTwoRankTwo_eq_demushkinWordNeTwo (a : ℕ) (x : ℕ → H) :
+    demushkinWordTwoRankTwo a x = demushkinWordNeTwo (2 + a) 2 x := by
+  simp [demushkinWordTwoRankTwo_def, demushkinWordNeTwo_def]
 
 /-- The `q ≠ 2` word lies in a normal subgroup `N` as soon as its power factor `x₁^q` and the left
 entries `x₁, x₃, …, x_{2m-1}` of its `m = n / 2` commutator factors do: a commutator with left

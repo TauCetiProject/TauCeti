@@ -12,6 +12,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.Deriv
 public import Mathlib.Analysis.Calculus.InverseFunctionTheorem.Deriv
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 public import Mathlib.Topology.Order.IntermediateValue
+import Mathlib.Analysis.Calculus.ContDiff.RCLike
 
 /-!
 # Arc-length reparametrization of regular Riemannian curves

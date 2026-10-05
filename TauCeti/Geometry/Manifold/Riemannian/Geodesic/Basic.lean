@@ -6,32 +6,27 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.MFDeriv.Curve
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Pullback
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Acceleration
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Riesz
 
 /-!
 # Geodesics of a Riemannian manifold
 
-A curve in a Riemannian manifold is a geodesic when its velocity is parallel along it: the
-derivative of the velocity field along the curve, taken for the Levi-Civita connection of the
-manifold's Riemannian bundle instance, vanishes.  This file introduces that predicate, carrying
-the parameter set on which it is asserted, and identifies it with the classical second-order
-geodesic ODE in a chart.
+A curve in a Riemannian manifold is a geodesic when its velocity is parallel along it: its
+covariant acceleration `D_t γ'`, taken for the Levi-Civita connection of the manifold's Riemannian
+bundle instance, vanishes.  This file introduces that predicate, carrying the parameter set on
+which it is asserted, and identifies it with the classical second-order geodesic ODE in a chart.
 
-The derivative along the curve is the moving-chart candidate
-`CovariantDerivative.alongCurveWithin`.  That candidate is identified with the ambient covariant
-derivative for fields pulled back from an ambient vector field, by
-`CovariantDerivative.alongCurveWithin_pullback`; the velocity field of a curve is not such a
-pullback, so for it the identification — and with it the chart independence of the predicate —
-remains open, exactly as the definition of the operator records.
+The covariant acceleration is `CovariantDerivative.accelerationWithin`, the along-curve derivative
+`CovariantDerivative.alongCurveWithin` of the velocity field.
 
 The predicate is stated *within* a parameter set `s`, so that a geodesic segment on a closed
 interval and an all-time geodesic are the same notion at two values of `s`; the all-time
 predicate is the `s = Set.univ` case.  Both the velocity `TauCeti.Manifold.curveVelocityWithin`
-and the along-curve derivative `CovariantDerivative.alongCurveWithin` are then read within `s`,
-and the predicate carries `UniqueDiffOn ℝ s` — satisfied by the nondegenerate intervals and by
-`Set.univ` which the theory uses — because that is the hypothesis under which a derivative within
+and its derivative along the curve are then read within `s`, and the predicate carries
+`UniqueDiffOn ℝ s` — satisfied by the nondegenerate intervals and by `Set.univ` which the theory
+uses — because that is the hypothesis under which a derivative within
 `s` is determined by the curve.  Together with the `C²` regularity it is the hypothesis under
 which the equation is intended to be read as one between honest derivatives; that the two of them
 do make the chart reading of the curve twice differentiable within `s` is not yet formalized, so
@@ -45,11 +40,10 @@ the second-order equation
 where `u = extChartAt I (γ t) ∘ γ` and `Γ` is the model-space Christoffel map of the Levi-Civita
 connection.  That is `TauCeti.Manifold.isGeodesicCurveOn_iff_chart`.  Chart-reading the curve at
 its *current* point, rather than in one fixed chart, is what makes this a statement about the
-whole parameter set at once.  The bridge lemmas doing the work,
-`TauCeti.Manifold.sectionCoord_curveVelocityWithin_eventuallyEq` and
-`CovariantDerivative.alongCurveWithin_curveVelocityWithin_eq_zero_iff`, hold for an arbitrary
-connection and live with the rest of the along-curve API in
-`TauCeti/Geometry/Manifold/VectorBundle/CovariantDerivative/AlongCurve/Pullback.lean`.
+whole parameter set at once.  The bridge lemma doing the work,
+`CovariantDerivative.accelerationWithin_eq_zero_iff`, holds for an arbitrary connection and lives
+with the rest of the acceleration API in
+`TauCeti/Geometry/Manifold/VectorBundle/CovariantDerivative/AlongCurve/Acceleration.lean`.
 
 ## Main definitions and results
 
@@ -96,14 +90,11 @@ variable
 /-! ### The geodesic equation -/
 
 variable (I γ s) in
-/-- **A geodesic on a parameter set**: a `C²` curve whose velocity within `s` is annihilated by
-the moving-chart candidate for the derivative along the curve, taken for the Levi-Civita
-connection of the ambient Riemannian bundle instance.
+/-- **A geodesic on a parameter set**: a `C²` curve whose covariant acceleration within `s`, taken
+for the Levi-Civita connection of the ambient Riemannian bundle instance, vanishes.
 
-The velocity is `TauCeti.Manifold.curveVelocityWithin` and the candidate for its derivative along
-the curve is `CovariantDerivative.alongCurveWithin`, both taken within `s`.  The candidate is
-identified with the ambient covariant derivative only for pulled-back fields, which the velocity
-field is not. -/
+The covariant acceleration is `CovariantDerivative.accelerationWithin`, the derivative along the
+curve of the velocity `TauCeti.Manifold.curveVelocityWithin`, both taken within `s`. -/
 structure IsGeodesicCurveOn : Prop where
   /-- The parameter set has unique derivatives.  Without this the derivatives within `s` are not
   determined by the curve, and the geodesic equation below does not say what it should. -/
@@ -113,10 +104,8 @@ structure IsGeodesicCurveOn : Prop where
   reading of the curve twice differentiable within `s` is not yet formalized, so the equation may
   still read the junk values of `CovariantDerivative.alongCurveInChartWithin`. -/
   contMDiffOn : ContMDiffOn 𝓘(ℝ, ℝ) I 2 γ s
-  /-- **The geodesic equation**: the along-curve candidate annihilates the velocity field at every
-  parameter of `s`. -/
-  alongCurveWithin_curveVelocityWithin_eq_zero : ∀ r ∈ s,
-    alongCurveWithin (leviCivitaConnection I M) γ (curveVelocityWithin I γ s) s r = 0
+  /-- **The geodesic equation**: the covariant acceleration vanishes at every parameter of `s`. -/
+  accelerationWithin_eq_zero : ∀ r ∈ s, accelerationWithin (leviCivitaConnection I M) γ s r = 0
 
 variable (I γ) in
 /-- **A geodesic**, defined at every real parameter.  This is the `s = Set.univ` case of
@@ -203,11 +192,11 @@ theorem isGeodesicCurveOn_iff_chart (hs : UniqueDiffOn ℝ s) :
           (derivWithin (extChartAt I (γ r) ∘ γ) s r) = 0 := by
   constructor
   · intro h
-    exact ⟨h.contMDiffOn, fun r hr ↦ (alongCurveWithin_curveVelocityWithin_eq_zero_iff
+    exact ⟨h.contMDiffOn, fun r hr ↦ (accelerationWithin_eq_zero_iff
       (leviCivitaConnection I M) γ h.uniqueDiffOn h.mdifferentiableOn hr).mp
-      (h.alongCurveWithin_curveVelocityWithin_eq_zero r hr)⟩
+      (h.accelerationWithin_eq_zero r hr)⟩
   · rintro ⟨hc, hchart⟩
-    exact ⟨hs, hc, fun r hr ↦ (alongCurveWithin_curveVelocityWithin_eq_zero_iff
+    exact ⟨hs, hc, fun r hr ↦ (accelerationWithin_eq_zero_iff
       (leviCivitaConnection I M) γ hs (hc.mdifferentiableOn (by norm_num)) hr).mpr (hchart r hr)⟩
 
 /-- Being a geodesic on a parameter set depends only on the values of the curve on that set. -/
@@ -227,37 +216,32 @@ theorem IsGeodesicCurveOn.congr {γ' : ℝ → M} (h : IsGeodesicCurveOn I γ s)
 /-- On an open parameter set, the geodesic equation is the unrestricted one. -/
 theorem isGeodesicCurveOn_iff_of_isOpen (hs : IsOpen s) :
     IsGeodesicCurveOn I γ s ↔ ContMDiffOn 𝓘(ℝ, ℝ) I 2 γ s ∧
-      ∀ r ∈ s, alongCurve (leviCivitaConnection I M) γ (curveVelocity I γ) r = 0 := by
+      ∀ r ∈ s, acceleration (leviCivitaConnection I M) γ r = 0 := by
   constructor
   · intro h
     exact ⟨h.contMDiffOn, fun r hr ↦ by
-      rw [← alongCurveWithin_curveVelocityWithin_of_isOpen (leviCivitaConnection I M) γ hs hr]
-      exact h.alongCurveWithin_curveVelocityWithin_eq_zero r hr⟩
+      rw [← accelerationWithin_of_mem_nhds (leviCivitaConnection I M) γ (hs.mem_nhds hr)]
+      exact h.accelerationWithin_eq_zero r hr⟩
   · rintro ⟨hc, hzero⟩
     exact ⟨hs.uniqueDiffOn, hc, fun r hr ↦ by
-      rw [alongCurveWithin_curveVelocityWithin_of_isOpen (leviCivitaConnection I M) γ hs hr]
+      rw [accelerationWithin_of_mem_nhds (leviCivitaConnection I M) γ (hs.mem_nhds hr)]
       exact hzero r hr⟩
 
 /-- The all-time geodesic equation, spelled out. -/
 theorem isGeodesicCurve_iff :
     IsGeodesicCurve I γ ↔ ContMDiff 𝓘(ℝ, ℝ) I 2 γ ∧
-      ∀ t : ℝ, alongCurve (leviCivitaConnection I M) γ (curveVelocity I γ) t = 0 := by
+      ∀ t : ℝ, acceleration (leviCivitaConnection I M) γ t = 0 := by
   rw [← isGeodesicCurveOn_univ, isGeodesicCurveOn_iff_of_isOpen isOpen_univ, contMDiffOn_univ]
   simp
 
 /-! ### Constant curves -/
 
-/-- **A constant curve is a geodesic.**  Its velocity field is the zero section, which the
-along-curve candidate annihilates. -/
+/-- **A constant curve is a geodesic.**  Its covariant acceleration vanishes. -/
 theorem isGeodesicCurveOn_const (hs : UniqueDiffOn ℝ s) (x : M) :
     IsGeodesicCurveOn I (fun _ : ℝ ↦ x) s where
   uniqueDiffOn := hs
   contMDiffOn := contMDiffOn_const
-  alongCurveWithin_curveVelocityWithin_eq_zero r _ := by
-    have hzero : curveVelocityWithin I (fun _ : ℝ ↦ x) s =
-        fun r : ℝ ↦ (0 : TangentSpace I ((fun _ : ℝ ↦ x) r)) :=
-      funext fun _ ↦ curveVelocityWithin_const x
-    rw [hzero, alongCurveWithin_zero]
+  accelerationWithin_eq_zero r _ := accelerationWithin_const _ x s r
 
 /-- A constant curve is an all-time geodesic. -/
 theorem isGeodesicCurve_const (x : M) : IsGeodesicCurve I (fun _ : ℝ ↦ x) :=

@@ -34,9 +34,6 @@ change.
 
 * J. S. Milne, *Algebraic Groups* (2017), §§1.d, 1.k, and 2.a.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Chapters 2 and 16.
-
-This is the pointwise base-change input for the center `Z(G)` in Layer 6 of the
-ReductiveGroups roadmap.
 -/
 
 public section

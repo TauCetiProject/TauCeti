@@ -106,38 +106,6 @@ variable {B : Type*} [CommRing B] [Algebra R B]
 variable [Module.Finite R (Bialgebra.CotangentSpace R H)]
 variable [Module.Projective R (Bialgebra.CotangentSpace R H)]
 
-private theorem tangentScalarExtensionEquiv_tmul_eq
-    (b : B) (f : Module.Dual R (Bialgebra.CotangentSpace R H)) :
-    tangentScalarExtensionEquiv (R := R) (A := H) (B := B) (b ⊗ₜ[R] f) =
-      b • mapValue (A := H) (Algebra.ofId R B)
-        (cotangentLinearEquiv (R := R) (A := H) (B := R) f) := by
-  ext h
-  apply (Bialgebra.CounitAlgebra.algEquivSelf R H B).injective
-  calc
-    Bialgebra.CounitAlgebra.algEquivSelf R H B
-          (tangentScalarExtensionEquiv (R := R) (A := H) (B := B) (b ⊗ₜ[R] f) h) =
-        b * algebraMap R B (f (Bialgebra.cotangentMap R H h)) := by
-      rw [tangentScalarExtensionEquiv_tmul_apply]
-      exact Bialgebra.CounitAlgebra.algEquivSelf_apply
-        (R := R) (A := H) (B := B) _
-    _ = b * Bialgebra.CounitAlgebra.algEquivSelf R H B
-          (mapValue (A := H) (Algebra.ofId R B)
-            (cotangentLinearEquiv (R := R) (A := H) (B := R) f) h) := by
-      rw [mapValue_apply, cotangentLinearEquiv_apply_apply]
-      simp only [Algebra.ofId_apply]
-      exact congrArg (b * ·)
-        (Bialgebra.CounitAlgebra.algEquivSelf_apply
-          (R := R) (A := H) (B := B)
-          (algebraMap R B (f (Bialgebra.cotangentMap R H h)) :
-            Bialgebra.CounitAlgebra R H B)).symm
-    _ = Bialgebra.CounitAlgebra.algEquivSelf R H B
-          ((b • mapValue (A := H) (Algebra.ofId R B)
-            (cotangentLinearEquiv (R := R) (A := H) (B := R) f)) h) :=
-      by
-        rw [Derivation.smul_apply, Bialgebra.CounitAlgebra.algEquivSelf_apply,
-          Bialgebra.CounitAlgebra.algEquivSelf_apply]
-        rfl
-
 private theorem tangentScalarExtensionEquiv_bracket_tmul
     (b c : B) (f g : Module.Dual R (Bialgebra.CotangentSpace R H)) :
     tangentScalarExtensionEquiv (R := R) (A := H) (B := B)
@@ -145,8 +113,7 @@ private theorem tangentScalarExtensionEquiv_bracket_tmul
       ⁅tangentScalarExtensionEquiv (R := R) (A := H) (B := B) (b ⊗ₜ[R] f),
         tangentScalarExtensionEquiv (R := R) (A := H) (B := B) (c ⊗ₜ[R] g)⁆ := by
   simp only [LieAlgebra.ExtendScalars.bracket_tmul,
-    tangentScalarExtensionEquiv_tmul_eq, tangentScalarExtensionEquiv_tmul_eq,
-    tangentScalarExtensionEquiv_tmul_eq, smul_lie, lie_smul, smul_smul]
+    tangentScalarExtensionEquiv_tmul, smul_lie, lie_smul, smul_smul]
   rw [mul_comm c b, cotangentLinearEquiv_bracket, mapValue_lie]
 
 /-- The established scalar-extension equivalence preserves the Lie bracket. -/

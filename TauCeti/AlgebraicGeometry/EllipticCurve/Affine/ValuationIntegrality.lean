@@ -65,22 +65,8 @@ That is how the main theorem discharges its `y`-half. Only the `x`-half — the 
 rules out `v(x) = exp 1` — is genuinely about the valuation, and it is the only half that needs
 the estimates below.
 
-## Placement
-
-Every declaration here lives in `WeierstrassCurve.Affine`, and the file's content is the
-integrality of an affine point; `exp_one_pow` is a local `WithZero.exp` helper with no curve
-content. The file sits in `EllipticCurve/Affine/` with the rest of the affine-point API.
-
-It is not under `FormalGroup/`, although the formal group is what makes these estimates wanted:
-they are what identifies the kernel of reduction, on which the formal group converges, as the
-locus `exp 2 ≤ v(x)`. But nothing here mentions a power series. No `FormalGroup/` file imports
-this module today — the milestones below are the future consumers.
-
-This supplies the valuation substrate for the formal-group milestones of
-`TauCetiRoadmap/EllipticCurves/README.md`, Layer 1, item "The formal group — four milestones
-with four different hypothesis sets, not one" (README:572): milestone (iii), convergence over a
-complete valued field, and milestone (iv), the identification with the kernel of reduction for an
-integral model.
+The estimates distinguish integral points from points reducing to infinity. Over a complete
+discretely valued field, they connect the formal group at infinity to the kernel of reduction.
 
 ## References
 
@@ -90,14 +76,14 @@ integral model.
 ## Provenance
 
 Adapted from the Stoll `EllipticCurves` development
-(`github.com/MichaelStollBayreuth/EllipticCurves`, Apache-2.0, pinned by
-`TauCetiRoadmap/EllipticCurves/README.md` at `66889eada51a`),
+(`github.com/MichaelStollBayreuth/EllipticCurves`, Apache-2.0, at `66889eada51a`),
 `EllipticCurves/WeierstrassFormalGroup/Foundations.lean`: `valued_a₁`–`valued_a₄` (:125–:128),
 `valued_a₆` (:129), `valued_lhs_eq_rhs` (:72), `valued_rhs_eq` (:132), `valued_lhs_eq` (:164),
 `valued_lhs_le` (:185), `valued_ne_exp_one` (:202) and `integral_of_not_mem` (:264), which is
 `valuation_x_le_one_and_valuation_y_le_one_of_valuation_x_lt_exp_two` here.
 
-Five departures. The source's private `coe_a₁`–`coe_a₆` (:110–:122) are not ported: they restate
+The main departures are as follows. The source's private `coe_a₁`–`coe_a₆` (:110–:122) are not
+ported: they restate
 the structure map for a model carried in the signature, whereas the model here is Mathlib's
 `integralModel`, so the five coefficient bounds are `integralModel_aᵢ_eq` plus membership in `O`.
 The setting is more general: the source works over `v.adicCompletion K` and
@@ -127,11 +113,12 @@ Nothing in this section looks at the value group: an integral model bounds the c
 the two sides of the Weierstrass equation are estimated, for any `Γ₀`. Only the dichotomy below
 needs `Γ₀ = ℤᵐ⁰`.
 
-`Field F` cannot be weakened here: `Valuation.valuationSubring` is defined only for a field
-(`Mathlib/RingTheory/Valuation/ValuationSubring.lean:33`). -/
+`Field F` remains necessary for the coefficient bounds because `Valuation.valuationSubring` is
+defined only for a field. -/
 
 section TrivialBase
 
+variable {F : Type*} [CommRing F]
 variable {K Γ₀ : Type*} [Field K] [LinearOrderedCommGroupWithZero Γ₀] [Algebra F K]
   (v : Valuation K Γ₀) [v.IsTrivialOn F]
 
@@ -154,15 +141,22 @@ instance isIntegral_baseChange (W : _root_.WeierstrassCurve F) :
 
 end TrivialBase
 
-section Coefficients
+section Equation
 
-variable {Γ₀ : Type*} [LinearOrderedCommGroupWithZero Γ₀] (v : Valuation F Γ₀) {W : Affine F}
+variable {F Γ₀ : Type*} [CommRing F] [LinearOrderedCommMonoidWithZero Γ₀]
+  (v : Valuation F Γ₀) {W : Affine F}
 
 /-- The two sides of the Weierstrass equation have the same valuation, for any point on the
 curve. -/
 private lemma valuation_lhs_eq_rhs {x y : F} (hxy : W.Equation x y) :
     v (y ^ 2 + (W.a₁ * x * y + W.a₃ * y)) = v (x ^ 3 + (W.a₂ * x ^ 2 + (W.a₄ * x + W.a₆))) :=
-  congrArg v (by linear_combination (W.equation_iff x y).mp hxy)
+  congrArg v (by simpa only [add_assoc] using (W.equation_iff x y).mp hxy)
+
+end Equation
+
+section Coefficients
+
+variable {Γ₀ : Type*} [LinearOrderedCommGroupWithZero Γ₀] (v : Valuation F Γ₀) {W : Affine F}
 
 section Integral
 
@@ -277,42 +271,18 @@ section Discrete
 
 variable (v : Valuation F ℤᵐ⁰) {W : Affine F}
 
--- Named rather than inlined because `exp` is not a `simp`-normal form here: the bounds produced
--- by `valuation_lhs_le` and `valuation_rhs_eq` are powers of `exp 1`, while the right-hand sides
--- are compared as `exp _`, and no ordinary rewrite bridges the two.
-/-- A power of `exp 1` is `exp` of the exponent. -/
-private lemma exp_one_pow (n : ℕ) : (exp (1 : ℤ) : ℤᵐ⁰) ^ n = exp (n : ℤ) := by
-  rw [← exp_nsmul, nsmul_eq_mul, mul_one]
-
 section Integral
 
 variable [WeierstrassCurve.IsIntegral v.valuationSubring W]
 
 /-- **No affine point has `v(x) = exp 1`**: the `x`-coordinate has no pole of order one.
 
-If `v(x) = exp 1` then the right-hand side of the Weierstrass equation has valuation `exp 3`. The
-left-hand side cannot match it: for `v(y) ≤ exp 1` it is bounded by `exp 2`, and for `v(y) > exp 1`
-it equals `v(y)²`, which is an even power of `exp` and so is never `exp 3`. -/
+The pole relation `v(y)² = v(x)³` would give `2 log(v(y)) = 3`, which is impossible over `ℤ`. -/
 private lemma valuation_ne_exp_one {x y : F} (hxy : W.Equation x y) : v x ≠ exp (1 : ℤ) := by
-  intro hA1
-  have hval := valuation_lhs_eq_rhs v hxy
-  have hRHS : v (x ^ 3 + (W.a₂ * x ^ 2 + (W.a₄ * x + W.a₆))) = exp (3 : ℤ) := by
-    rw [valuation_rhs_eq v (by simp [hA1]), hA1, exp_one_pow]
-    norm_num
-  rcases le_or_gt (v y) (exp 1) with hB1 | hB1
-  · -- `v(y) ≤ exp 1` bounds the left-hand side by `exp 2 < exp 3`
-    have hle := valuation_lhs_le (W := W) v hA1.le hB1 (by simp)
-    rw [hval, hRHS, exp_one_pow, exp_le_exp] at hle
-    lia
-  · -- `v(y) > exp 1` gives `v(y)² = exp 3`, impossible by parity
-    have hB3 : v y ^ 2 = exp (3 : ℤ) := by
-      rw [← valuation_lhs_eq (W := W) v (hA1 ▸ hB1) ((by simp : (1 : ℤᵐ⁰) < exp (1 : ℤ)).trans hB1),
-        hval,
-        hRHS]
-    obtain ⟨b, hb⟩ : ∃ b : ℤ, v y = exp b := ⟨_, (exp_log (exp_pos.trans hB1).ne').symm⟩
-    rw [hb, ← exp_nsmul, exp_inj, nsmul_eq_mul] at hB3
-    push_cast at hB3
-    lia
+  intro hx
+  have h := congrArg log (valuation_y_sq_eq_valuation_x_cube v hxy (by simp [hx]))
+  simp only [hx, log_pow, log_exp, nsmul_eq_mul] at h
+  omega
 
 /-- The `x`-half of the dichotomy: an `x`-coordinate whose pole has order less than two is
 integral. Its valuation is a power of `exp`, the exponent is at most `1` by hypothesis, and

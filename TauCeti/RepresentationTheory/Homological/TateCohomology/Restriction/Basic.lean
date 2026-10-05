@@ -362,7 +362,7 @@ theorem isIntertwiningMap_trivial_res (S : Subgroup G) :
     (Rep.trivial ℤ S ℤ).ρ.IsIntertwiningMap
       ((Rep.res S.subtype (Rep.trivial ℤ G ℤ)).ρ.comp ((MulEquiv.refl S : S ≃* S) : S →* S))
       (LinearEquiv.refl ℤ ℤ) :=
-  ⟨fun _ _ ↦ rfl⟩
+  Rep.isIntertwiningMap_trivial ℤ _
 
 /-- Tate cohomology of the trivial integral representation of a subgroup `S` of `G`, identified
 with Tate cohomology of the restriction to `S` of the trivial integral representation of `G`. -/

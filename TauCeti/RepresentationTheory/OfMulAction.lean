@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RepresentationTheory.Basic
+public import Mathlib.RepresentationTheory.Rep.Basic
 
 /-!
 # Commuting permutation representations
@@ -14,6 +14,9 @@ If monoids `G` and `H` act on a type `X` and the two actions commute, then the p
 representations `Representation.ofMulAction k G X` and `Representation.ofMulAction k H X` on the
 free `k`-module `k[X]` commute with each other. For the left and right multiplication actions of
 a group `G`, that is, commuting actions of `G` and `Gᵐᵒᵖ`, this makes `k[X]` a `k[G]`-bimodule.
+On `k[G]` itself, the left regular representation `Representation.ofMulAction k G G` is left
+multiplication by the monomials `single g 1`. Its equivariant endomorphism corresponding to
+`x : k[G]` under `Rep.leftRegularHomEquiv` is right multiplication by `x`.
 
 When `G` and `H` are groups, `G` permutes the `H`-orbits, and the orbit sums of `k[X]` along the
 `H`-orbits are equivariant: the sum of the coefficients of `g • v` along the `H`-orbit of `g • x`
@@ -26,6 +29,10 @@ sums of `v` are invariant under `g`. The orbit sums of `v` are the finitely supp
 
 * `TauCeti.commute_ofMulAction`: commuting actions on `X` give commuting permutation
   representations on `k[X]`.
+* `TauCeti.single_mul_eq_smul_ofMulAction`: on `k[G]`, left multiplication by a monomial
+  `single g c` is `c` times the left regular action of `g`.
+* `Rep.leftRegularHomEquiv_symm_apply`: equivariant endomorphisms of the left regular
+  representation are right multiplications.
 * `TauCeti.mapDomain_orbitRel_mk_coeff_ofMulAction`: the orbit sums of `k[X]` are invariant
   under the permutation representation.
 * `TauCeti.mapDomain_orbitRel_mk_coeff_ofMulAction_smul`: for commuting actions of `G` and `H`,
@@ -55,6 +62,35 @@ theorem commute_ofMulAction [SMulCommClass G H X] (g : G) (h : H) :
     Commute (ofMulAction k G X g) (ofMulAction k H X h) := by
   ext
   simp [smul_comm g h]
+
+/-- On the monoid algebra `k[G]`, left multiplication by the monomial `single g c` is `c` times
+the left regular representation of `g`. -/
+theorem single_mul_eq_smul_ofMulAction (g : G) (c : k) (a : MonoidAlgebra k G) :
+    MonoidAlgebra.single g c * a = c • ofMulAction k G G g a := by
+  induction a using MonoidAlgebra.induction_linear with
+  | zero => simp
+  | add a b ha hb => rw [mul_add, ha, hb, map_add, smul_add]
+  | single g' c' => simp [MonoidAlgebra.single_mul_single, MonoidAlgebra.smul_single]
+
+section LeftRegular
+
+open scoped MonoidAlgebra
+
+variable {k G : Type*} [CommRing k] [Monoid G]
+
+/-- The endomorphism of the left regular representation `k[G]` corresponding to `x`
+under `Rep.leftRegularHomEquiv` is right multiplication by `x`. -/
+@[simp↓]
+theorem _root_.Rep.leftRegularHomEquiv_symm_apply (x a : k[G]) :
+    ((Rep.leftRegularHomEquiv (Rep.leftRegular k G)).symm x).hom a = a * x := by
+  induction a using MonoidAlgebra.induction_on with
+  | of g =>
+    rw [MonoidAlgebra.of_apply, Rep.leftRegularHomEquiv_symm_single,
+      TauCeti.single_mul_eq_smul_ofMulAction, one_smul]
+  | add a b ha hb => rw [map_add, ha, hb, add_mul]
+  | smul c a ha => rw [map_smul, ha, smul_mul_assoc]
+
+end LeftRegular
 
 /-! ### Orbit sums -/
 

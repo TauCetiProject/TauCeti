@@ -206,6 +206,12 @@ variable {G}
 noncomputable def irreducibleCharacter (i : Fin (Nat.card (ConjClasses G))) : G → k :=
   finEquivIrreducibleCharacters k G i
 
+/-- The `i`-th member of the chosen enumeration is the `i`-th irreducible character. -/
+@[simp]
+theorem coe_finEquivIrreducibleCharacters_apply (i : Fin (Nat.card (ConjClasses G))) :
+    (finEquivIrreducibleCharacters k G i : G → k) = irreducibleCharacter k i :=
+  (rfl)
+
 /-- Every enumerated character is an irreducible character. -/
 @[simp]
 theorem irreducibleCharacter_mem (i : Fin (Nat.card (ConjClasses G))) :

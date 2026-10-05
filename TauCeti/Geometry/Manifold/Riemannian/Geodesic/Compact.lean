@@ -68,7 +68,7 @@ variable
 variable [FiniteDimensional ℝ E] [I.Boundaryless]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [IsManifold I ∞ M]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
-  [T2Space M] [T2Space (TangentBundle I M)] [CompactSpace M]
+  [T2Space M] [CompactSpace M]
 
 /-- **A compact Riemannian manifold is geodesically complete**: every maximal geodesic leaving a
 point `p` is defined for all time. This is do Carmo's corollary to the Hopf–Rinow theorem. -/

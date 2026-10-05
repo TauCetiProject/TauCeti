@@ -32,6 +32,9 @@ This advances Layer 3 of the Lie-groups roadmap.
 * `lieMap`: the Lie-algebra homomorphism induced by a smooth monoid morphism.
 * `lieMap_id`, `lieMap_comp`: the identity and composition laws.
 * `map_lieExp`: naturality with respect to the Lie-group exponential.
+* `continuous_lieMap`: the Lie map is continuous.
+* `TauCeti.Lie.lieMap_bijective_of_isLocalDiffeomorphAt`: the Lie map of a homomorphism that is a
+  local diffeomorphism at the identity is bijective.
 -/
 
 public section
@@ -320,3 +323,31 @@ theorem map_lieExp [FiniteDimensional ℝ E] [FiniteDimensional ℝ E']
     ← leftInvariantDerivationLieEquivGroupLieAlgebra_apply]
   exact (leftInvariantDerivationLieEquivGroupLieAlgebra_lieMap
     (I := I) (I' := I') φ X).symm
+
+/-- The Lie map of a smooth homomorphism is continuous, being a linear map between
+finite-dimensional real normed spaces. -/
+theorem continuous_lieMap [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] [T2Space G]
+    [T2Space G'] (φ : ContMDiffMonoidMorphism I I' ∞ G G') : Continuous (lieMap φ) := by
+  let _ : FiniteDimensional ℝ (LeftInvariantDerivation I G) :=
+    finiteDimensional_leftInvariantDerivation BoundarylessManifold.isInteriorPoint
+  exact (lieMap φ).toLinearMap.continuous_of_finiteDimensional
+
+namespace TauCeti.Lie
+
+/-- The Lie map of a smooth homomorphism that is a local diffeomorphism at the identity is
+bijective: under evaluation at the identity it is the differential there, a linear equivalence. -/
+theorem lieMap_bijective_of_isLocalDiffeomorphAt [FiniteDimensional ℝ E] [FiniteDimensional ℝ E']
+    (φ : ContMDiffMonoidMorphism I I' ∞ G G') (hφ : IsLocalDiffeomorphAt I I' ∞ φ 1) :
+    Bijective (lieMap φ) := by
+  let e := leftInvariantDerivationLieEquivGroupLieAlgebra
+    (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G))
+  let e' := leftInvariantDerivationLieEquivGroupLieAlgebra
+    (ContMDiffMul.isInteriorPoint (I := I') (n := ∞) (by simp) (1 : G'))
+  let L := hφ.mfderivToContinuousLinearEquiv (by simp)
+  have h (D : LeftInvariantDerivation I G) : e' (lieMap φ D) = L (e D) :=
+    leftInvariantDerivationLieEquivGroupLieAlgebra_lieMap φ D
+  refine ⟨fun D₁ D₂ hD ↦ e.injective (L.injective ((h D₁).symm.trans ((congrArg e' hD).trans
+    (h D₂)))), fun D' ↦ ⟨e.symm (L.symm (e' D')), e'.injective ((h _).trans
+      (by simp only [LieEquiv.apply_symm_apply]; exact L.apply_symm_apply _))⟩⟩
+
+end TauCeti.Lie

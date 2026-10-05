@@ -9,7 +9,7 @@ public import Mathlib.LinearAlgebra.QuadraticForm.TensorProduct
 public import Mathlib.LinearAlgebra.Charpoly.BaseChange
 public import Mathlib.LinearAlgebra.TensorProduct.Pi
 public import Mathlib.LinearAlgebra.TensorProduct.Tower
-public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup
+public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.Representation
 import Mathlib.LinearAlgebra.TensorProduct.Prod
 public import Mathlib.RingTheory.Flat.Basic
@@ -398,6 +398,17 @@ theorem coe_orthogonalGroupBaseChange (Q : _root_.QuadraticForm R M)
     (orthogonalGroupBaseChange (A := A) Q g :
       A ⊗[R] M ≃ₗ[A] A ⊗[R] M) = LinearEquiv.baseChange R A M M (g : M ≃ₗ[R] M) := by
   rfl
+
+/-- The matrix of a scalar-extended orthogonal automorphism in a base-changed basis is obtained
+by applying the algebra map to each entry. -/
+@[simp]
+theorem toMatrix_orthogonalGroupBaseChange {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (Q : _root_.QuadraticForm R M) (b : Module.Basis ι R M) (g : orthogonalGroup Q) :
+    LinearMap.toMatrix (b.baseChange A) (b.baseChange A)
+      (orthogonalGroupBaseChange (A := A) Q g : A ⊗[R] M ≃ₗ[A] A ⊗[R] M).toLinearMap =
+      (LinearMap.toMatrix b b (g : M ≃ₗ[R] M).toLinearMap).map (algebraMap R A) := by
+  rw [coe_orthogonalGroupBaseChange, LinearEquiv.coe_baseChange]
+  exact b.toMatrix_baseChange_baseChange _
 
 /-- On a pure tensor, base change of an orthogonal automorphism applies the automorphism to the
 second tensor factor. -/

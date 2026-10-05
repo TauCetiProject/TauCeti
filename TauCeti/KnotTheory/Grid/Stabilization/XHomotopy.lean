@@ -45,7 +45,7 @@ multiplication by this difference on `I`; the latter is the cone that
 `HomologicalComplex.polynomialExtensionMulXSubCHomotopyEquiv` compares with `GC⁻(G)`, once `I` is
 identified with the polynomial extension of `GC⁻(G)` in the new variable. The map of cones is a
 quasi-isomorphism when `H_I^N` is; both steps are carried out in
-`TauCeti.KnotTheory.Grid.Stabilization.Map`.
+`TauCeti.KnotTheory.Grid.Stabilization.Map.Basic`.
 
 ## Main definitions
 
@@ -152,6 +152,19 @@ theorem stabilizeXOffCenterToCenter_single_apply (y : G.StabilizeXOffCenterState
       (G.stabilizeX s.castSucc (G.X s).castSucc s).XHomotopyCoefficient R s.succ y
         (x.insertPoint s.succ (G.X s).succ) := by
   simp [stabilizeXOffCenterToCenter]
+
+/-- The coefficient of a center state `x` in `H_I^N g` sums, over the off-center states `y`,
+the coefficient of `y` in `g` times the matrix coefficient of the `X₂`-homotopy from `y` to the
+state with the center inserted into `x`. -/
+theorem stabilizeXOffCenterToCenter_apply (g : G.StabilizeXOffCenterState s →₀ S)
+    (x : GridState n) :
+    G.stabilizeXOffCenterToCenter s R g x =
+      g.sum fun y a => a * (G.stabilizeX s.castSucc (G.X s).castSucc s).XHomotopyCoefficient R
+        s.succ y (x.insertPoint s.succ (G.X s).succ) := by
+  conv_lhs => rw [← Finsupp.sum_single g, map_finsuppSum, Finsupp.sum_apply]
+  refine Finsupp.sum_congr fun y _ => ?_
+  rw [← Finsupp.smul_single_one, map_smul, Finsupp.smul_apply, smul_eq_mul,
+    stabilizeXOffCenterToCenter_single_apply]
 
 /-- The `X₂`-homotopy of an off-center chain has center part `H_I^N`. -/
 private theorem XHomotopy_offCenterInclusion (f : G.StabilizeXOffCenterState s →₀ S) :

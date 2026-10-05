@@ -69,6 +69,13 @@ noncomputable def iteratedGradientTestFunction (phi : 𝓓(Omega, ℝ)) (k : ℕ
     E → IteratedGradient E k :=
   iteratedGradientChain (phi : E → ℝ) k
 
+/-- The derivative fields of a test function are its classical iterated-gradient chain.
+This bridge is intentionally not a simp lemma: test-function fields are the normal form used
+by the zero, successor, and `Lᵖ` representative simp lemmas below. -/
+theorem iteratedGradientTestFunction_def (phi : 𝓓(Omega, ℝ)) (k : ℕ) :
+    iteratedGradientTestFunction phi k = iteratedGradientChain (phi : E → ℝ) k :=
+  (rfl)
+
 @[simp]
 theorem iteratedGradientTestFunction_zero (phi : 𝓓(Omega, ℝ)) :
     iteratedGradientTestFunction phi 0 = fun x => gradient (phi : E → ℝ) x :=
@@ -83,7 +90,8 @@ theorem iteratedGradientTestFunction_succ (phi : 𝓓(Omega, ℝ)) (k : ℕ) :
 /-- Every iterated gradient of a test function is smooth. -/
 theorem contDiff_iteratedGradientTestFunction (phi : 𝓓(Omega, ℝ)) (k : ℕ) :
     ContDiff ℝ ∞ (iteratedGradientTestFunction phi k) :=
-  contDiff_iteratedGradientChain phi.contDiff k
+  contDiff_iff_contDiffAt.mpr fun _ =>
+    contDiffAt_iteratedGradientChain phi.contDiff.contDiffAt k (by simp)
 
 /-- Every iterated gradient of a test function has compact support. -/
 theorem hasCompactSupport_iteratedGradientTestFunction (phi : 𝓓(Omega, ℝ)) (k : ℕ) :
@@ -223,14 +231,14 @@ private structure TestFunctionWkpPackage (phi : 𝓓(Omega, ℝ)) (k : ℕ) wher
 private noncomputable def testFunctionWkpPackage (phi : 𝓓(Omega, ℝ)) :
     (k : ℕ) → TestFunctionWkpPackage (mu := mu) (p := p) phi k
   | 0 =>
-      -- `Wkp mu Omega p 1` reduces to `W1p mu Omega p` through the reducible stage definitions.
+      -- `Wkp mu Omega p 1` unfolds to `W1p mu Omega p` through the stage definitions.
       { element := W1p.ofTestFunctionₗ mu Omega p phi
         value_eq := by
           exact (Wkp.value_one (W1p.ofTestFunctionₗ mu Omega p phi)).trans
             (W1p.value_ofTestFunctionₗ (mu := mu) (p := p) phi)
         iteratedGradient_eq := by
-          simp only [Wkp.iteratedGradient_zero, W1p.gradient_ofTestFunctionₗ,
-            iteratedGradientTestFunctionLp_zero] }
+          rw [Wkp.iteratedGradient_zero (W1p.ofTestFunctionₗ mu Omega p phi),
+            W1p.gradient_ofTestFunctionₗ, iteratedGradientTestFunctionLp_zero] }
   | k + 1 =>
       let previous := testFunctionWkpPackage phi k
       let hweak : HasWeakFDerivOn mu Omega (Wkp.iteratedGradient k previous.element)
@@ -240,7 +248,7 @@ private noncomputable def testFunctionWkpPackage (phi : 𝓓(Omega, ℝ)) :
       { element := Wkp.mk k previous.element
           (iteratedGradientTestFunctionLp (mu := mu) p (k + 1) phi) hweak
         value_eq := by
-          rw [Wkp.value_succ, Wkp.lowerOrder_mk]
+          rw [Wkp.value_mk]
           exact previous.value_eq
         iteratedGradient_eq := Wkp.iteratedGradient_mk k previous.element _ hweak }
 
@@ -349,7 +357,8 @@ theorem wkp0Submodule_subset_of_isClosed (k : ℕ) {s : Set (Wkp mu Omega p k)}
 theorem wkp0Submodule_one : wkp0Submodule mu Omega p 1 = w1p0Submodule mu Omega p := by
   -- Both closed submodules have the definitionally equal order-one ambient space noted above.
   apply SetLike.coe_injective
-  rw [coe_wkp0Submodule, coe_w1p0Submodule, Wkp.ofTestFunctionₗ_one]
+  rw [coe_wkp0Submodule, Wkp.ofTestFunctionₗ_one]
+  exact (coe_w1p0Submodule (mu := mu) (Omega := Omega) (p := p)).symm
 
 /-- The Sobolev space `W^{k,p}_0(Ω)`, the closure of `C_c^∞(Ω)` in `W^{k,p}(Ω)`. -/
 noncomputable abbrev Wkp0 (mu : Measure E) [mu.IsAddHaarMeasure] (Omega : Opens E)

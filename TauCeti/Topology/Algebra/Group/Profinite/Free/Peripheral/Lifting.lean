@@ -10,6 +10,7 @@ public import TauCeti.Topology.Algebra.Group.LowerCentralSeries.Graded.PadicModu
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.Peripheral.Basic
 import TauCeti.Algebra.BigOperators.Group.List
 import TauCeti.Topology.Algebra.Group.Profinite.Free.Empty
+import TauCeti.Topology.Algebra.Group.Profinite.Free.ResiduallyP
 
 /-!
 # Lifting peripheral product identities
@@ -25,6 +26,11 @@ multiplying its conjugators by elements one step lower in the central series.  T
 the first basis element is kept trivial.  Iterating this result gives compatible approximate
 solutions to the peripheral product identity.
 
+In rank at least two no term of the closed lower central series of a free pro-`p` group is
+trivial, so no single level reduces to the exact peripheral product identity merely because its
+term `γ_n` vanishes. Passing from these approximate solutions to an exact one uses all the levels
+at once, through compactness.
+
 ## Main definitions
 
 * `TauCeti.Peripheral.defect`: the ordered peripheral product for chosen conjugators.
@@ -36,6 +42,8 @@ solutions to the peripheral product identity.
 * `TauCeti.Peripheral.level_one_eq_univ`: every choice of conjugators has defect in `γ₁`.
 * `TauCeti.Peripheral.exists_mem_level_succ`: a positive-level solution can be corrected to the
   next level while keeping the correction at the first basis element trivial.
+* `TauCeti.Peripheral.closedLowerCentralSeries_ne_bot`: in rank at least two, no term of the
+  closed lower central series is trivial.
 -/
 
 public section
@@ -302,6 +310,20 @@ theorem exists_mem_level_succ (hF : IsProP p F)
         have hqone := hquot.trans ((QuotientGroup.eq_one_iff _).mpr hdefB)
         have hmem := (QuotientGroup.eq_one_iff _).mp hqone
         simpa only [Nat.zero_add] using hmem
+
+omit [CompactSpace F] [TotallyDisconnectedSpace F] in
+/-- **The closed lower central series of a free pro-`p` group of rank at least two never
+vanishes.** For a group `F` presented as free pro-`p` on `r ≥ 2` generators, no term `γ_n` of its
+closed lower central series is trivial. So no level `TauCeti.Peripheral.level` reduces to the
+exact peripheral product identity merely because its term `γ_n` vanishes: the corrections of
+`TauCeti.Peripheral.exists_mem_level_succ` control the defect at each finite stage only modulo a
+nontrivial subgroup. -/
+theorem closedLowerCentralSeries_ne_bot (e : F ≃ₜ* freeProP p (Fin r)) (hr : 2 ≤ r) (n : ℕ) :
+    closedLowerCentralSeries F n ≠ ⊥ := by
+  have : Nontrivial (Fin r) := Fin.nontrivial_iff_two_le.2 hr
+  rw [← e.symm.map_closedLowerCentralSeries_eq, Ne,
+    map_eq_bot_iff_of_injective _ e.symm.injective]
+  exact freeProP.closedLowerCentralSeries_ne_bot n
 
 end Peripheral
 

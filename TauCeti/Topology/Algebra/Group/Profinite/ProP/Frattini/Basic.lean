@@ -11,6 +11,7 @@ public import Mathlib.GroupTheory.Abelianization.Defs
 public import TauCeti.GroupTheory.ExponentPrime
 public import TauCeti.Topology.Algebra.Group.ContinuousAut.Characteristic
 public import TauCeti.Topology.Algebra.Group.Profinite.Basic
+import Mathlib.Topology.Separation.Connected
 
 /-!
 # The pro-`p` Frattini subgroup
@@ -62,18 +63,20 @@ and total disconnectedness are assumed exactly where they are used.
 * `TauCeti.proPFrattini_le_ker_of_exponent_dvd`: for a profinite `G`, the pro-`p` Frattini
   subgroup lies in the kernel of every homomorphism with closed kernel to a commutative group of
   exponent dividing `p`.
+* `MonoidHom.map_proPFrattini_le_of_prime`: a continuous homomorphism from a profinite group
+  preserves the pro-`p` Frattini subgroup, without a surjectivity hypothesis.
 * `TauCeti.map_proPFrattini_eq_of_surjective` and `TauCeti.comap_proPFrattini_eq_of_surjective`:
   a continuous surjection of profinite groups carries the pro-`p` Frattini subgroup onto the
   pro-`p` Frattini subgroup, and the preimage of the latter is the former joined with the kernel.
 * `TauCeti.proPFrattini_eq_bot_iff`: for a profinite `G`, the pro-`p` Frattini subgroup is trivial
   exactly when `G` is commutative of exponent dividing `p`.
+* `TauCeti.proPFrattini_eq_range_powMonoidHom` and `TauCeti.mem_proPFrattini_iff_exists_pow`: for
+  a commutative profinite group the pro-`p` Frattini subgroup is the subgroup of `p`-th powers,
+  with no closure.
 * `ContinuousMulEquiv.map_proPFrattini_eq`: the pro-`p` Frattini subgroup is characteristic under
   continuous automorphisms.
 * `TauCeti.isTopCharacteristic_proPFrattini`: the pro-`p` Frattini subgroup is topologically
   characteristic.
-* `TauCeti.map_proPFrattini_eq_of_surjective`: a continuous surjection of profinite groups carries
-  the pro-`p` Frattini subgroup onto the pro-`p` Frattini subgroup.
-
 ## References
 
 * L. Ribes and P. Zalesskii, *Profinite Groups*, Section 2.8.
@@ -316,6 +319,32 @@ theorem proPFrattini_le_ker_of_exponent_dvd (hp : p.Prime) {A : Type*} [CommGrou
   rw [SetLike.mem_coe, MonoidHom.mem_ker, map_pow]
   exact Monoid.exponent_dvd_iff_forall_pow_eq_one.mp hA _
 
+/-- A continuous homomorphism from a profinite group carries its pro-`p` Frattini subgroup into
+the pro-`p` Frattini subgroup of the target. Surjectivity is not required: the verbal description
+shows that the image of every `p`-th power and every commutator has the same form in the target. -/
+theorem _root_.MonoidHom.proPFrattini_le_comap_of_prime [IsTopologicalGroup H]
+    (hp : p.Prime) (f : G →* H) (hf : Continuous f) :
+    proPFrattini p G ≤ (proPFrattini p H).comap f := by
+  rw [proPFrattini_eq_topologicalClosure hp]
+  refine Subgroup.topologicalClosure_minimal _ (sup_le ?_ ?_)
+    (isClosed_proPFrattini.preimage hf)
+  · refine (Subgroup.closure_le _).mpr ?_
+    rintro _ ⟨g, rfl⟩
+    simpa only [SetLike.mem_coe, Subgroup.mem_comap, map_pow] using
+      pow_mem_proPFrattini (p := p) (f g)
+  · rw [commutator_def, Subgroup.commutator_le]
+    intro a _ b _
+    simpa only [SetLike.mem_coe, Subgroup.mem_comap, map_commutatorElement] using
+      commutator_le_proPFrattini (G := H) hp
+        (Subgroup.commutator_mem_commutator (Subgroup.mem_top (f a)) (Subgroup.mem_top (f b)))
+
+/-- A continuous homomorphism from a profinite group carries its pro-`p` Frattini subgroup into
+the pro-`p` Frattini subgroup of the target. -/
+theorem _root_.MonoidHom.map_proPFrattini_le_of_prime [IsTopologicalGroup H]
+    (hp : p.Prime) (f : G →* H) (hf : Continuous f) :
+    (proPFrattini p G).map f ≤ proPFrattini p H :=
+  Subgroup.map_le_iff_le_comap.mpr (f.proPFrattini_le_comap_of_prime hp hf)
+
 /-- The pro-`p` Frattini subgroup of a profinite group is trivial exactly when the group is
 already commutative of exponent dividing `p`, that is an `𝔽_p`-vector space. -/
 theorem proPFrattini_eq_bot_iff (hp : p.Prime) :
@@ -333,6 +362,38 @@ theorem proPFrattini_eq_bot_iff (hp : p.Prime) :
         rintro _ ⟨g, rfl⟩
         simpa using Monoid.exponent_dvd_iff_forall_pow_eq_one.mp hexp g
     · exact ((commutator_eq_bot_iff G).mpr hcomm).le
+
+/-! ### The commutative case -/
+
+section Commutative
+
+variable {A : Type*} [CommGroup A] [TopologicalSpace A] [IsTopologicalGroup A] [CompactSpace A]
+  [TotallyDisconnectedSpace A]
+
+/-- **The pro-`p` Frattini subgroup of a commutative profinite group is the subgroup of `p`-th
+powers.** In the commutative case the verbal description `closure (Gᵖ [G, G])` needs no closure:
+the `p`-th powers form a subgroup, which is compact, hence closed. -/
+theorem proPFrattini_eq_range_powMonoidHom (hp : p.Prime) :
+    proPFrattini p A = (powMonoidHom p : A →* A).range := by
+  have hclosed : IsClosed ((powMonoidHom p : A →* A).range : Set A) := by
+    rw [MonoidHom.coe_range]
+    exact (isCompact_range (continuous_pow p)).isClosed
+  refine le_antisymm ((proPFrattini_le_iff hp _ hclosed).mpr ⟨⟨⟨mul_comm⟩⟩, ?_⟩) ?_
+  · refine Monoid.exponent_dvd_iff_forall_pow_eq_one.mpr fun x ↦ ?_
+    obtain ⟨g, rfl⟩ := QuotientGroup.mk'_surjective _ x
+    rw [QuotientGroup.mk'_apply, ← QuotientGroup.mk_pow, QuotientGroup.eq_one_iff]
+    exact MonoidHom.mem_range.mpr ⟨g, powMonoidHom_apply p g⟩
+  · rintro _ ⟨g, rfl⟩
+    rw [powMonoidHom_apply]
+    exact pow_mem_proPFrattini g
+
+/-- In a commutative profinite group, an element lies in the pro-`p` Frattini subgroup exactly
+when it is a `p`-th power. -/
+theorem mem_proPFrattini_iff_exists_pow (hp : p.Prime) {a : A} :
+    a ∈ proPFrattini p A ↔ ∃ b, b ^ p = a := by
+  simp only [proPFrattini_eq_range_powMonoidHom hp, MonoidHom.mem_range, powMonoidHom_apply]
+
+end Commutative
 
 /-! ### Surjective images -/
 

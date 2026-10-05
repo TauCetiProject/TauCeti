@@ -46,41 +46,10 @@ private theorem componentBasis_mul_nontrivial (C : G.ConnectedComponent) [Nontri
       (C.connected_toSimpleGraph.preconnected.not_isIsolated i)
   apply (zigzagComponentAlgebraEquivNonisolated k G C).injective
   rw [map_mul]
-  simp only [zigzagComponentAlgebraEquivNonisolated_zigzagComponentBasis k G C hns]
-  rcases b with i | d | i <;> rcases c with j | e | j
-  all_goals simp only [zigzagBasisMul_vertex_vertex, zigzagBasisMul_vertex_dart,
-    zigzagBasisMul_vertex_volume, zigzagBasisMul_dart_vertex, zigzagBasisMul_dart_dart,
-    zigzagBasisMul_dart_volume, zigzagBasisMul_volume_vertex, zigzagBasisMul_volume_dart,
-    zigzagBasisMul_volume_volume]
-  all_goals try split_ifs
-  all_goals simp only [Option.elim_some, Option.elim_none, map_zero,
-    zigzagComponentAlgebraEquivNonisolated_zigzagComponentBasis k G C hns,
-    zigzagBasis_apply, zigzagBasisFun_inl, zigzagBasisFun_inr_inl,
-    zigzagBasisFun_inr_inr]
-  all_goals try subst_vars
-  all_goals first
-    | exact zigzagMk_vertexIdempotent_mul_self k C.toSimpleGraph _
-    | exact zigzagMk_vertexIdempotent_mul_vertexIdempotent_of_ne k C.toSimpleGraph
-        (by assumption)
-    | exact zigzagMk_vertexIdempotent_mul_ofArrow k C.toSimpleGraph _
-    | exact zigzagMk_vertexIdempotent_mul_ofArrow_of_ne k C.toSimpleGraph _
-        (by assumption)
-    | exact zigzagMk_ofArrow_mul_vertexIdempotent k C.toSimpleGraph _
-    | exact zigzagMk_ofArrow_mul_vertexIdempotent_of_ne k C.toSimpleGraph _
-        (by assumption)
-    | exact zigzagMk_vertexIdempotent_mul_zigzagVolume k C.toSimpleGraph _
-    | exact zigzagMk_vertexIdempotent_mul_zigzagVolume_of_ne k C.toSimpleGraph
-        (by assumption)
-    | exact zigzagVolume_mul_zigzagMk_vertexIdempotent k C.toSimpleGraph _
-    | exact zigzagVolume_mul_zigzagMk_vertexIdempotent_of_ne k C.toSimpleGraph
-        (by assumption)
-    | exact zigzagVolume_mul_zigzagMk_vertexIdempotent_of_ne k C.toSimpleGraph
-        (Ne.symm (by assumption))
-    | exact zigzagMk_ofArrow_mul_ofArrow_symm k C.toSimpleGraph _
-    | exact zigzagMk_ofArrow_mul_ofArrow_of_ne k C.toSimpleGraph (by assumption)
-    | exact zigzagMk_ofArrow_mul_zigzagVolume k C.toSimpleGraph _ _
-    | exact zigzagVolume_mul_zigzagMk_ofArrow k C.toSimpleGraph _ _
-    | exact zigzagVolume_mul_zigzagVolume k C.toSimpleGraph _ _
+  simp only [zigzagComponentAlgebraEquivNonisolated_zigzagComponentBasis k G C hns,
+    zigzagBasis_mul]
+  cases zigzagBasisMul C.toSimpleGraph b c <;>
+    simp [zigzagComponentAlgebraEquivNonisolated_zigzagComponentBasis k G C hns]
 
 /-- The multiplication table on a singleton component is the dual-number
 table, with the volume vector identified with the infinitesimal generator. -/

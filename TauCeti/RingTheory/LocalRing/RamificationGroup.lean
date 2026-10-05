@@ -54,11 +54,14 @@ integer indexing that Herbrand theory uses.
 * `TauCeti.IsLocalRing.ramificationGroup_zero_eq_inertia`: `G_0` is the inertia subgroup of the
   maximal ideal, `TauCeti.IsLocalRing.ramificationGroup_zero_eq_ker_toRingAut` identifies it with
   the kernel of the action on the residue field, and
+  `TauCeti.IsLocalRing.residue_smul_eq_of_mem_ramificationGroup_zero` is its pointwise form, while
   `TauCeti.IsLocalRing.ramificationGroup_zero_eq_inertiaSubgroup` reads that off as Mathlib's
   `ValuationSubring.inertiaSubgroup` for a valuation subring of a field.
 * `TauCeti.IsLocalRing.instNormalRamificationGroup`: each `G_i` is normal in `G`.
 * `TauCeti.IsLocalRing.ramificationGroupGradedSubgroupHom`: subgroup inclusion induces an
   injective homomorphism `H_i / H_{i+1} → G_i / G_{i+1}` on successive quotients.
+* `TauCeti.IsLocalRing.ramificationGroupGradedConj`: conjugation by an element of the ambient
+  group induces an automorphism of each successive quotient.
 * `TauCeti.IsLocalRing.iInf_ramificationGroup_eq_ker` and
   `TauCeti.IsLocalRing.exists_forall_ramificationGroup_eq_ker`: over a Noetherian local ring the
   filtration cuts out the kernel of the action, and reaches it at a finite index once `G_0` is
@@ -239,6 +242,14 @@ theorem ramificationGroup_zero_eq_ker_toRingAut :
       rw [map_sub, ResidueField.residue_smul, sub_eq_zero]
       exact h (residue S x)
     rwa [residue_eq_zero_iff] at hx
+
+/-- An element of the zeroth ramification group acts trivially on every residue class. -/
+theorem residue_smul_eq_of_mem_ramificationGroup_zero {g : G}
+    (hg : g ∈ ramificationGroup G S 0) (x : S) :
+    residue S (g • x) = residue S x := by
+  have hx := mem_ramificationGroup_zero_iff.mp hg x
+  rw [← residue_eq_zero_iff, map_sub, sub_eq_zero] at hx
+  exact hx
 
 /-- For a valuation subring of a field, the zeroth ramification group of the decomposition
 subgroup is Mathlib's `ValuationSubring.inertiaSubgroup`, which is defined as that same kernel. -/
@@ -609,6 +620,54 @@ theorem ramificationGroupGradedSubgroupHom_injective (H : Subgroup G) (i : ℤ) 
           Subgroup.coe_mul] using hxy
       rw [subgroupOf_ramificationGroup] at hmem
       exact hmem
+
+/-! ### Conjugation on the graded pieces -/
+
+/-- Conjugation by an element of the ambient group induces an automorphism on every successive
+quotient `G_i/G_{i+1}` of the ramification filtration. -/
+noncomputable def ramificationGroupGradedConj (g : G) (i : ℤ) :
+    RamificationGroupGraded G S i ≃* RamificationGroupGraded G S i :=
+  QuotientGroup.congr
+    ((ramificationGroup G S (i + 1)).subgroupOf (ramificationGroup G S i))
+    ((ramificationGroup G S (i + 1)).subgroupOf (ramificationGroup G S i))
+    (MulAut.conjNormal g) <| by
+      ext x
+      constructor
+      · rintro ⟨y, hy, rfl⟩
+        exact Subgroup.mem_subgroupOf.mpr
+          ((inferInstance : (ramificationGroup G S (i + 1)).Normal).conj_mem y
+            (Subgroup.mem_subgroupOf.mp hy) g)
+      · intro hx
+        refine ⟨(MulAut.conjNormal g).symm x, ?_, (MulAut.conjNormal g).apply_symm_apply x⟩
+        exact Subgroup.mem_subgroupOf.mpr
+          ((inferInstance : (ramificationGroup G S (i + 1)).Normal).conj_mem x
+            (Subgroup.mem_subgroupOf.mp hx) g⁻¹)
+
+/-- On a class represented by `x ∈ G_i`, the induced conjugation is represented by
+`g * x * g⁻¹`. -/
+@[simp]
+theorem ramificationGroupGradedConj_mk (g : G) (i : ℤ)
+    (x : ramificationGroup G S i) :
+    ramificationGroupGradedConj G S g i (QuotientGroup.mk x) =
+      QuotientGroup.mk (MulAut.conjNormal g x) := by
+  exact QuotientGroup.congr_mk _ _ _ _ x
+
+/-- Conjugation by the identity acts trivially on each ramification quotient. -/
+@[simp]
+theorem ramificationGroupGradedConj_one (i : ℤ)
+    (x : RamificationGroupGraded G S i) :
+    ramificationGroupGradedConj G S 1 i x = x := by
+  induction x using QuotientGroup.induction_on with
+  | _ x => simp
+
+/-- Conjugation by a product is the composite of the corresponding conjugation automorphisms. -/
+@[simp]
+theorem ramificationGroupGradedConj_mul (g h : G) (i : ℤ)
+    (x : RamificationGroupGraded G S i) :
+    ramificationGroupGradedConj G S (g * h) i x =
+      ramificationGroupGradedConj G S g i (ramificationGroupGradedConj G S h i x) := by
+  induction x using QuotientGroup.induction_on with
+  | _ x => simp
 
 end Subgroup
 

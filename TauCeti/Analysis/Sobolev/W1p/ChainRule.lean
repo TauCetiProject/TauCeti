@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Sobolev.W1p.LocalApproximation
+public import TauCeti.Analysis.Sobolev.Wkp.LocalApproximation
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Limit
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Local
 public import TauCeti.MeasureTheory.Function.Lp.L1Convergence
@@ -40,8 +40,8 @@ by approximation, and the *order* of the two limits matters.
 
 * First, `u` is approximated. On a subdomain `V` relatively compact in `Ω`, test functions on `Ω`
   are dense in `W^{1,p}(V)` (`TauCeti.W1p.restrictL_mem_closure_range_ofTestFunctionₗ`), the
-  chain rule is classical for them, and it passes to the limit because `V` has finite measure and
-  weak derivatives are stable under `L¹` limits
+  chain rule is classical for them, and it passes to the limit because `V` has finite measure
+  and weak derivatives are stable under `L¹` limits
   (`TauCeti.hasWeakFDerivOn_of_tendsto_lintegral_enorm_sub`).  Here `F'` must be *continuous*: the
   convergence `F'(uₖ) → F'(u)` is what carries the derivative.  Locality of the weak derivative
   then returns the statement to `Ω`.
@@ -566,6 +566,18 @@ theorem W1p.memLp_posPartAbove {k : ℝ} (hk : 0 ≤ k) (u : W1p mu Omega p) :
     simpa only [NNReal.coe_one, one_mul, dist_sub_right] using
       MeasureTheory.Lp.lipschitzWith_pos_part.dist_le_mul (x - k) (y - k)
   exact hlip.comp_memLp (by simp [hk]) (Lp.memLp (W1p.value u))
+
+omit [FiniteDimensional ℝ E] in
+/-- Raising the level of an `Lᵖ` positive truncation preserves its `Lᵖ` membership. -/
+theorem W1p.memLp_posPartAbove_of_le (u : W1p mu Omega p) {k l : ℝ} (hkl : k ≤ l)
+    (hk : MemLp (fun x => max (W1p.value u x - k) 0) p (mu.restrict Omega)) :
+    MemLp (fun x => max (W1p.value u x - l) 0) p (mu.restrict Omega) :=
+  hk.of_le
+    (((continuous_id.sub continuous_const).max continuous_const).comp_aestronglyMeasurable
+      (Lp.aestronglyMeasurable _))
+    (Filter.Eventually.of_forall fun x => by
+      rw [Real.norm_of_nonneg (le_max_right _ _), Real.norm_of_nonneg (le_max_right _ _)]
+      exact max_le_max (sub_le_sub_left hkl _) le_rfl)
 
 /-- **For `1 ≤ p < ∞`, truncation above any real level is weakly differentiable**, with
 weak gradient `1_{u > k} ∇u`. -/

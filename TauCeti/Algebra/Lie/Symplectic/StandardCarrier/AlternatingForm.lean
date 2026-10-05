@@ -92,9 +92,9 @@ standard lattice. Its columns are the coefficients of the images of the basis ve
 integral because the generator preserves the lattice. -/
 noncomputable def rootIntMatrix (k : Fin (n + 1) ⊕ Fin (n + 1)) :
     Matrix (Fin ((n + 1) + (n + 1))) (Fin ((n + 1) + (n + 1))) ℤ :=
-  (latticeBasis n).toMatrix fun s =>
-    ⟨rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ (rootGenerator n k)) (latticeBasis n s),
-      rep_rootGenerator_mem_lattice n k (latticeBasis n s).2⟩
+  TauCeti.UniversalEnvelopingAlgebra.kostantRootGeneratorIntMatrix
+    (rootGenerator n) (cartanGenerator n) (rep n) (lattice n).toAddSubgroup
+    (fun _ hu _ hv ↦ rep_kostantForm_mem_lattice n hu hv) k (latticeBasis n)
 
 /-- A numbered root generator acts on a coordinate basis vector by the corresponding column of
 `TauCeti.SpStd.rootIntMatrix`. -/
@@ -105,15 +105,7 @@ theorem rep_rootGenerator_latticeBasis_eq_sum (k : Fin (n + 1) ⊕ Fin (n + 1))
       ∑ r, rootIntMatrix n k r s •
         ((latticeBasis n r : (lattice n).toAddSubgroup) :
           (Fin (n + 1) ⊕ Fin (n + 1)) → ℚ) := by
-  have h := ((latticeBasis n).sum_toMatrix_smul_self
-    (fun s => (⟨rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ (rootGenerator n k))
-        (latticeBasis n s),
-      rep_rootGenerator_mem_lattice n k (latticeBasis n s).2⟩ :
-        (lattice n).toAddSubgroup)) s).symm
-  have h' := congrArg
-    (fun w : (lattice n).toAddSubgroup => (w : (Fin (n + 1) ⊕ Fin (n + 1)) → ℚ)) h
-  simp only [AddSubmonoidClass.coe_finsetSum] at h'
-  exact h'
+  exact TauCeti.UniversalEnvelopingAlgebra.rep_rootGenerator_basis_eq_sum _ _ _ _ _ _ _ _
 
 /-- Extending an entry of `TauCeti.SpStd.rootIntMatrix` to `ℚ` recovers the corresponding entry of
 the rational matrix of the root generator, at the standard indices enumerated by the coordinate
@@ -124,7 +116,8 @@ theorem intCast_rootIntMatrix (k : Fin (n + 1) ⊕ Fin (n + 1))
       (rootGenerator n k :
         Matrix (Fin (n + 1) ⊕ Fin (n + 1)) (Fin (n + 1) ⊕ Fin (n + 1)) ℚ)
         (finSumFinEquiv.symm r) (finSumFinEquiv.symm s) := by
-  rw [rootIntMatrix, Module.Basis.toMatrix_apply, intCast_latticeBasis_repr]
+  rw [rootIntMatrix, TauCeti.UniversalEnvelopingAlgebra.kostantRootGeneratorIntMatrix,
+    Module.Basis.toMatrix_apply, intCast_latticeBasis_repr]
   -- Reduce the coercion of the anonymous constructor before rewriting under it.
   dsimp only
   rw [rep_ι_apply, coe_latticeBasis]

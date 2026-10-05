@@ -51,8 +51,6 @@ the vanishing of the endomorphism-valued one-form `CovariantDerivative.differenc
   Koszul expression is tensorial in its last argument and in its first.
 * `TauCeti.Manifold.koszul_add_second` and `TauCeti.Manifold.koszul_smul_second`: additivity and
   the Leibniz rule in the middle argument, the slot which the connection differentiates.
-* `TauCeti.eq_of_forall_inner_section_eq`: a vector in a fibre of a Riemannian bundle is
-  determined by its inner products against the differentiable sections.
 
 ## References
 
@@ -87,15 +85,6 @@ variable {F F' : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
   [∀ x, NormedAddCommGroup (V x)] [∀ x, InnerProductSpace ℝ (V x)] [FiberBundle F V]
 
-variable (F) in
-/-- A vector in a fibre of a Riemannian vector bundle is determined by its inner products against
-the sections that are differentiable at the base point: every vector of the fibre is the value at
-that point of such a section, by `FiberBundle.extend`. -/
-theorem eq_of_forall_inner_section_eq {x : M} {u v : V x}
-    (h : ∀ τ : Π y : M, V y, MDiffAt (T% τ) x → inner ℝ u (τ x) = inner ℝ v (τ x)) : u = v := by
-  refine ext_inner_right ℝ fun w ↦ ?_
-  simpa using h (extend F w) (mdifferentiableAt_extend I F w)
-
 variable {V' : M → Type*} [TopologicalSpace (TotalSpace F' V')]
   [∀ x, NormedAddCommGroup (V' x)] [∀ x, NormedSpace ℝ (V' x)] [FiberBundle F' V']
 
@@ -107,7 +96,9 @@ theorem continuousLinearMap_ext_of_forall_inner_section_eq {x : M} {A B : V' x �
       MDiffAt (T% τ) x → inner ℝ (A (σ x)) (τ x) = inner ℝ (B (σ x)) (τ x)) : A = B := by
   refine VectorBundle.injective_eval_mdifferentiableAt_sec I F' V' (V x) x ?_
   ext σ hσ
-  exact eq_of_forall_inner_section_eq (I := I) (V := V) F fun τ hτ ↦ h σ hσ τ hτ
+  refine injective_inner_mdifferentiableAt_section I F V x ?_
+  ext τ hτ
+  exact h σ hσ τ hτ
 
 end Nondegenerate
 
@@ -326,36 +317,19 @@ variable
   {cov cov' : CovariantDerivative I E (fun x : M ↦ TangentSpace I x)}
   {X Y Z : Π x : M, TangentSpace I x} {x : M}
 
-/-- Freedom from torsion of a Levi-Civita connection, in the usable form
-`∇_X Y - ∇_Y X = [X, Y]`: this is `CovariantDerivative.torsion_eq_zero_iff` read off the defining
-property `IsLeviCivitaConnection.torsion`. -/
-theorem IsLeviCivitaConnection.sub_eq_mlieBracket (h : cov.IsLeviCivitaConnection)
-    (hX : MDiffAt (T% X) x) (hY : MDiffAt (T% Y) x) :
-    cov Y x (X x) - cov X x (Y x) = mlieBracket I X Y x :=
-  cov.torsion_eq_zero_iff.mp h.torsion hX hY
-
-/-- Metric compatibility of a Levi-Civita connection, in the usable form
-`X ⟪Y, Z⟫ = ⟪∇_X Y, Z⟫ + ⟪Y, ∇_X Z⟫`: this is
-`CovariantDerivative.IsMetricCompatible.mvfderiv_inner_eq` read off the defining property
-`IsLeviCivitaConnection.isMetricCompatible`. -/
-theorem IsLeviCivitaConnection.mvfderiv_inner_eq (h : cov.IsLeviCivitaConnection)
-    (X : Π x : M, TangentSpace I x) (hY : MDiffAt (T% Y) x) (hZ : MDiffAt (T% Z) x) :
-    mvfderiv I (fun y ↦ inner ℝ (Y y) (Z y)) x (X x) =
-      inner ℝ (cov Y x (X x)) (Z x) + inner ℝ (Y x) (cov Z x (X x)) :=
-  h.isMetricCompatible.mvfderiv_inner_eq X hY hZ
-
 /-- **The Koszul formula**: for a Levi-Civita connection, `2 ⟪∇_X Y, Z⟫` is the Koszul expression
 of the metric. Mathlib's `CovariantDerivative.IsLeviCivitaConnection.apply_eq` is the same identity
 with the expression written out; this form is the one `TauCeti.Manifold.koszul` controls. -/
 theorem IsLeviCivitaConnection.two_inner_eq_koszul (h : cov.IsLeviCivitaConnection)
     (hX : MDiffAt (T% X) x) (hY : MDiffAt (T% Y) x) (hZ : MDiffAt (T% Z) x) :
     2 * inner ℝ (cov Y x (X x)) (Z x) = TauCeti.Manifold.koszul I X Y Z x := by
-  rw [TauCeti.Manifold.koszul, ← h.sub_eq_mlieBracket hX hY, ← h.sub_eq_mlieBracket hX hZ,
-    ← h.sub_eq_mlieBracket hY hZ, h.mvfderiv_inner_eq X hY hZ, h.mvfderiv_inner_eq Y hZ hX,
-    h.mvfderiv_inner_eq Z hX hY]
-  simp only [inner_sub_left]
-  rw [real_inner_comm (Y x) (cov Z x (X x)), real_inner_comm (Z x) (cov X x (Y x)),
-    real_inner_comm (X x) (cov Y x (Z x))]
+  have hk := h.apply_eq I hX hY hZ
+  -- Reduce the beta-redexes introduced by the local notations in `apply_eq`.
+  simp only at hk
+  rw [hk, TauCeti.Manifold.koszul, mlieBracket_swap_apply (V := Y),
+    mlieBracket_swap_apply (V := Z) (W := Y), real_inner_comm (Y x) (mlieBracket I X Z x),
+    real_inner_comm (Z x) (mlieBracket I X Y x), real_inner_comm (X x) (mlieBracket I Y Z x)]
+  simp only [inner_neg_right]
   ring
 
 /-- A covariant derivative on the tangent bundle is a Levi-Civita connection exactly when it
@@ -376,13 +350,13 @@ theorem isLeviCivitaConnection_iff :
     rw [real_inner_comm (cov Z x (X x)) (Y x)]
     linarith
   · refine cov.torsion_eq_zero_iff.mpr fun {X Y x} hX hY ↦ ?_
-    refine TauCeti.eq_of_forall_inner_section_eq (I := I) (V := fun x : M ↦ TangentSpace I x) E
-      fun Z hZ ↦ ?_
+    refine injective_inner_mdifferentiableAt_section I E (TangentSpace I) x ?_
+    ext Z hZ
     have hXY := h hX hY hZ
     have hYX := h hY hX hZ
     have key := TauCeti.Manifold.koszul_sub_koszul_swap_first_two
       (I := I) (X := X) (Y := Y) (Z := Z) (x := x)
-    rw [inner_sub_left]
+    simp only [inner_sub_left]
     linarith
 
 /-- **Uniqueness of the Levi-Civita connection**, as the vanishing of the endomorphism-valued

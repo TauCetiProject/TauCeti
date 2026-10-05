@@ -48,6 +48,8 @@ subgroup `Gal(L/K') ≤ Gal(L/K)` of a tower `L/K'/K`.
 * `TauCeti.LocalFieldsRamification.lowerRamificationGroup_zero_eq_map_inertiaSubgroup`: `G_0` is
   Mathlib's `ValuationSubring.inertiaSubgroup` of the valuation subring of `L`.
 * `TauCeti.LocalFieldsRamification.natCard_lowerRamificationGroup_zero`: `#G_0 = e(L/K)`.
+* `TauCeti.LocalFieldsRamification.lowerRamificationGroup_zero_eq_top_iff`: `G_0` is the whole
+  Galois group exactly when `L/K` is totally ramified.
 * `TauCeti.LocalFieldsRamification.instNormalLowerRamificationGroup`: each `G_i` is normal.
 * `TauCeti.LocalFieldsRamification.exists_forall_lowerRamificationGroup_eq_bot` and
   `TauCeti.LocalFieldsRamification.lowerRamificationGroup_eq_bot_iff`: `G_i = 1` for large `i`,
@@ -153,6 +155,13 @@ theorem natCard_lowerRamificationGroup_zero [IsGalois K L] :
   let _ : PerfectField (𝓂[L].under 𝒪[K]).ResidueField := inferInstance
   rw [lowerRamificationGroup_zero, Ideal.card_inertia_eq_ramificationIdx 𝒪[K] (L ≃ₐ[K] L) 𝓂[L],
     ramificationIndex_eq_ramificationIdx]
+
+/-- **The inertia group is the whole Galois group exactly in the totally ramified case**:
+`G_0 = Gal(L/K)` if and only if `e(L/K) = [L : K]`. -/
+theorem lowerRamificationGroup_zero_eq_top_iff [IsGalois K L] :
+    lowerRamificationGroup K L 0 = ⊤ ↔ IsTotallyRamified K L := by
+  rw [← Subgroup.card_eq_iff_eq_top, natCard_lowerRamificationGroup_zero,
+    IsGalois.card_aut_eq_finrank, isTotallyRamified_iff_ramificationIndex_eq_finrank]
 
 /-! ### Comparison with Mathlib's inertia subgroup of a valuation subring -/
 

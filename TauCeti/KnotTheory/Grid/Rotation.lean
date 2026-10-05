@@ -8,6 +8,8 @@ module
 public import Mathlib.Data.Fin.Rev
 public import TauCeti.KnotTheory.Grid.Diagram.Basic
 
+import TauCeti.Data.Fin.Basic
+
 /-!
 # Coordinate reversal of grid states and diagrams
 
@@ -23,7 +25,10 @@ In the coordinate convention used here, `GridState.rotate` reverses grid-point c
 whereas `GridDiagram.rotate` reverses the lower-left-coordinate names of marking squares. These
 are half-turns about different centres on the torus. Thus the paired operations preserve the
 grading results below but not marking avoidance, and do not give a symmetry of the fully blocked
-complex.
+complex. The operation on grid states that does match `GridDiagram.rotate` is the half-turn
+`GridState.halfTurn`, which negates both coordinates of a grid point modulo `n`; together with
+`GridDiagram.rotate` it is a symmetry of the grid complexes
+(`TauCeti.KnotTheory.Grid.Differential.HalfTurn`).
 
 Only the basic state/diagram operation and its point-set lemmas live here, parallel to where
 `transpose` is developed; the invariance of the `J`-pairing of two grid states under coordinate
@@ -38,11 +43,14 @@ This distinction and its grading consequence follow the analysis in
 
 * `TauCeti.GridState.rotate`: coordinate reversal of a grid state.
 * `TauCeti.GridDiagram.rotate`: coordinate reversal of a grid diagram's marking-square names.
+* `TauCeti.GridState.halfTurn`: the half-turn of a grid state that matches `GridDiagram.rotate`,
+  negating both coordinates of its points modulo `n`.
 
 ## Main results
 
-* `TauCeti.GridState.rotate_rotate`, `TauCeti.GridDiagram.rotate_rotate`: rotation is an
-  involution on grid states and grid diagrams.
+* `TauCeti.GridState.rotate_rotate`, `TauCeti.GridDiagram.rotate_rotate`,
+  `TauCeti.GridState.halfTurn_halfTurn`: rotation and the half-turn are involutions on grid
+  states and grid diagrams.
 * `TauCeti.GridState.rotate_pointSet`, `TauCeti.GridDiagram.rotate_OSet`,
   `TauCeti.GridDiagram.rotate_XSet`: the state point set and the diagram's marking-square sets
   are the coordinate reversals of the original sets.
@@ -166,6 +174,45 @@ theorem swapColumns_rotate (a b : Fin n) (x : GridState n) :
   rw [swapColumns, relabelColumns_rotate, revPerm_trans_swap_trans_revPerm]
   rfl
 
+/-- The half-turn of a grid state that matches the half-turn `GridDiagram.rotate` of a grid
+diagram.
+
+It moves the grid point `(c, r)` to `(finRotate n c.rev, finRotate n r.rev)`, negating both
+coordinates modulo `n`. This is the half-turn of the torus that moves the square named by its
+lower-left corner `(c, r)` to the square named by `(c.rev, r.rev)`, which is how
+`GridDiagram.rotate` moves the markings. So, unlike `GridState.rotate`, it carries the rectangles
+of a grid diagram to the rectangles of the rotated diagram together with the markings they
+cover. -/
+def halfTurn (x : GridState n) : GridState n :=
+  (x.relabelColumns (Fin.revPerm.trans (finRotate n))).relabelRows
+    (Fin.revPerm.trans (finRotate n))
+
+/-- The half-turn of a grid state sends the point in column `c` to the point in column
+`finRotate n c.rev`, negating both coordinates. -/
+theorem halfTurn_apply_finRotate_rev (x : GridState n) (c : Fin n) :
+    x.halfTurn (finRotate n c.rev) = finRotate n (x c).rev := by
+  rw [halfTurn, relabelRows_apply, relabelColumns_apply, Equiv.trans_apply, Fin.revPerm_apply]
+  congr
+  rw [Equiv.symm_apply_eq, Equiv.trans_apply, Fin.revPerm_apply]
+
+/-- The half-turn of a grid state, read off a column: the column and the row are both negated
+modulo `n`. -/
+theorem halfTurn_apply (x : GridState n) (c : Fin n) :
+    x.halfTurn c = finRotate n (x (finRotate n c.rev)).rev := by
+  conv_lhs => rw [← Fin.finRotate_rev_finRotate_rev c]
+  rw [halfTurn_apply_finRotate_rev]
+
+/-- The half-turn is an involution on grid states. -/
+@[simp]
+theorem halfTurn_halfTurn (x : GridState n) : x.halfTurn.halfTurn = x := by
+  ext c
+  rw [halfTurn_apply, halfTurn_apply, Fin.finRotate_rev_finRotate_rev,
+    Fin.finRotate_rev_finRotate_rev]
+
+/-- The half-turn of grid states is involutive. -/
+theorem halfTurn_involutive : Function.Involutive (halfTurn (n := n)) :=
+  halfTurn_halfTurn
+
 end GridState
 
 namespace GridDiagram
@@ -206,14 +253,14 @@ theorem rotate_XSet : G.rotate.XSet = G.XSet.image (Prod.map Fin.rev Fin.rev) :=
 lies in the original `O`-marking set. -/
 theorem mem_OSet_rotate (p : Fin n × Fin n) :
     p ∈ G.rotate.OSet ↔ Prod.map Fin.rev Fin.rev p ∈ G.OSet := by
-  rw [OSet, OSet, rotate_O]
+  rw [OSet_def, OSet_def, rotate_O]
   exact GridState.mem_pointSet_rotate G.O p
 
 /-- A square lies in the rotated diagram's `X`-marking set exactly when its coordinate reversal
 lies in the original `X`-marking set. -/
 theorem mem_XSet_rotate (p : Fin n × Fin n) :
     p ∈ G.rotate.XSet ↔ Prod.map Fin.rev Fin.rev p ∈ G.XSet := by
-  rw [XSet, XSet, rotate_X]
+  rw [XSet_def, XSet_def, rotate_X]
   exact GridState.mem_pointSet_rotate G.X p
 
 /-- Coordinate reversal is an involution on grid diagrams. -/

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Localization.LaurentCover.Basic
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.RationalSubset.Basis
-public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Rational
+public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Rational.Basic
 
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.GlobalSections
 
@@ -107,14 +107,6 @@ variable (P) in
 private theorem isOpen_span_laurentPresentation (f : A) (b : Bool) :
     IsOpen (Ideal.span ((laurentPresentation P f b).num : Set A) : Set A) :=
   isOpen_span_of_one_mem <| by cases b <;> simp
-
--- Restrictions of the presentation limit compose, elementwise: `presentationLimitMap_comp`
--- restated with `.hom.1`, so that `simp` matches the `.hom.1` terms here.
-private theorem presentationLimitMap_apply_presentationLimitMap_apply {U V W : Opens ↥(spa Aplus)}
-    (h₁ : W ≤ V) (h₂ : U ≤ W) (z : presentationLimit (P := P) Aplus V) :
-    (presentationLimitMap h₂).hom.1 ((presentationLimitMap h₁).hom.1 z) =
-      (presentationLimitMap (h₂.trans h₁)).hom.1 z :=
-  ConcreteCategory.congr_hom (presentationLimitMap_comp h₁ h₂) z
 
 -- Under `presentationLimitRationalIso`, restriction from `R(p)` to `R(q)` along a refinement with
 -- cofactor `r` is `restrictionRingHom`.

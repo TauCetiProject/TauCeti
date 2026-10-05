@@ -26,6 +26,9 @@ unfolded by hand.
 * `UpperHalfPlane.σ_eq_refl_of_det_pos`: `σ g = ContinuousAlgEquiv.refl ℝ ℂ` for `0 < det g`.
 * `UpperHalfPlane.ofReal_mul_add_eq_zero_iff`: `m z + n = 0` for real `m`, `n` and `z ∈ ℍ` only
   when `m = n = 0`, the `iff` form of Mathlib's `UpperHalfPlane.linear_ne_zero`.
+* `UpperHalfPlane.num_sub_smul_mul_denom`: the difference formula
+  `g • z - g • τ = det g · (z - τ) / ((cz + d)(cτ + d))` for `det g > 0`, with the denominator of
+  `g • z` cleared.
 * `ModularGroup.sl_smul_set`: the `SL(2, ℤ)`-action on subsets of `ℍ` is the `GL(2, ℝ)`-action
   along the coercion, the pointwise-image counterpart of Mathlib's `ModularGroup.sl_moeb`.
 * `ModularGroup.smul_eq_smul_of_eq_or_eq_neg`: elements of `SL(2, ℤ)` that agree up to sign act
@@ -84,6 +87,20 @@ theorem ofReal_mul_add_eq_zero_iff (z : ℍ) {m n : ℝ} : (m : ℂ) * z + n = 0
   -- the imaginary part `m (im z)` of `m z + n` vanishes only for `m = 0`
   obtain rfl : m = 0 := by simpa [z.im_ne_zero] using congrArg Complex.im h
   simpa using h
+
+/-- For `g = !![a, b; c, d]` of positive determinant,
+`(az + b) - (g • τ)(cz + d) = det g · (z - τ) / (cτ + d)`: dividing by `cz + d` gives the
+difference formula `g • z - g • τ = det g · (z - τ) / ((cz + d)(cτ + d))`, in the form that
+clears the denominator of `g • z`. -/
+theorem num_sub_smul_mul_denom {g : GL (Fin 2) ℝ} (hg : 0 < (g : Matrix (Fin 2) (Fin 2) ℝ).det)
+    (τ z : ℍ) :
+    num g z - (g • τ : ℍ) * denom g z =
+      ((g : Matrix (Fin 2) (Fin 2) ℝ).det : ℂ) * ((z : ℂ) - τ) / denom g τ := by
+  rw [coe_smul_of_det_pos (by rwa [Matrix.GeneralLinearGroup.val_det_apply]),
+    eq_div_iff (denom_ne_zero g τ)]
+  field_simp [denom_ne_zero g τ]
+  simp only [num, denom, Matrix.det_fin_two, Complex.ofReal_sub, Complex.ofReal_mul]
+  ring
 
 end UpperHalfPlane
 

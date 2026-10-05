@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.Weyl.Basic
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Torus.Coroot
+import TauCeti.LinearAlgebra.Matrix.Cartan.TypeF4
 import TauCeti.LinearAlgebra.Matrix.Cartan.TypeG2
 
 /-!
@@ -20,8 +21,9 @@ subgroups, over every commutative ring, as soon as every row of the Cartan matri
 integer vector: some integer combination of its entries is `1`.
 
 That hypothesis is checked here for the three types whose Geck carrier is full-weight, `E₈`, `F₄`
-and `G₂`. Every row of the `E₈` and `F₄` Cartan matrices contains an entry `-1`, at a neighbouring
-node of the diagram. For `G₂` the shared certificate
+and `G₂`. Every row of the `E₈` Cartan matrix contains an entry `-1`, at a neighbouring node of
+the diagram, and so does every row of the `F₄` one, by the shared certificate
+`TauCeti.sum_cartanMatrixF4_mul_typeF4CartanBezout`. For `G₂` the shared certificate
 `TauCeti.sum_transpose_cartanMatrixG2_mul_typeG2CartanBezout` supplies the coefficients: the long
 row `(-3, 2)` has no entry `-1`, and pairs to `1` with `(-1, -1)` instead.
 
@@ -111,13 +113,13 @@ private theorem exists_sum_cartanMatrix_mul_eq_one_E8 (i : Fin E8.rank) :
     rw [cartanMatrix_E8]
     fin_cases i <;> decide⟩
 
-/-- Every row of the `F₄` Cartan matrix is primitive: node `i` has a neighbour, listed here, at
-which its Cartan entry is `-1`. -/
+/-- Every row of the `F₄` Cartan matrix is primitive: node `i` has a neighbour at which its
+Cartan entry is `-1`. -/
 private theorem exists_sum_cartanMatrix_mul_eq_one_F4 (i : Fin F4.rank) :
     ∃ c : Fin F4.rank → ℤ, ∑ j, F4.cartanMatrix i j * c j = 1 :=
-  ⟨fun j : Fin 4 => if j = ![1, 0, 1, 2] i then -1 else 0, by
+  ⟨typeF4CartanBezout i, by
     rw [cartanMatrix_F4]
-    fin_cases i <;> decide⟩
+    exact sum_cartanMatrixF4_mul_typeF4CartanBezout i⟩
 
 /-- Every row of the `G₂` Cartan matrix is primitive. The short row `(2, -1)` has the entry `-1`,
 and the long row `(-3, 2)` pairs to `1` with the coefficients `(-1, -1)`. -/

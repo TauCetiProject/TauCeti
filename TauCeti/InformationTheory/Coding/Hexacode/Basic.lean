@@ -130,17 +130,15 @@ theorem finrank_code (ω : F) : Module.finrank F (code ω) = 3 := by
 
 /-- Encoding identifies the three-dimensional message space with the hexacode. -/
 noncomputable def encodingEquiv (ω : F) : (Fin 3 → F) ≃ₗ[F] code ω :=
-  (LinearEquiv.ofInjective (generatorMatrix ω).vecMulLinear
-    (vecMul_generatorMatrix_injective ω)).trans
-    (LinearEquiv.ofEq _ _ ((code_def ω).trans (generatorMatrix ω).generatedBy_def).symm)
+  LinearCode.IsGeneratorMatrix.encodingEquiv
+    ((LinearCode.isGeneratorMatrix_def _ _).mpr (code_def ω).symm)
+    (Matrix.vecMul_injective_iff.mp (vecMul_generatorMatrix_injective ω))
 
 /-- The encoding equivalence multiplies a message by the generator. -/
 @[simp]
 theorem coe_encodingEquiv_apply (ω : F) (a : Fin 3 → F) :
     (encodingEquiv ω a : Fin 6 → F) = a ᵥ* generatorMatrix ω := by
-  simp only [encodingEquiv, LinearEquiv.trans_apply, LinearEquiv.coe_ofEq_apply]
-  exact (LinearEquiv.ofInjective_apply (σ₂₁ := RingHom.id F)
-    (generatorMatrix ω).vecMulLinear a).trans (Matrix.vecMulLinear_apply _ _)
+  rw [encodingEquiv, LinearCode.IsGeneratorMatrix.coe_encodingEquiv_apply]
 
 /-- Decoding recovers the first three coordinates. -/
 @[simp]

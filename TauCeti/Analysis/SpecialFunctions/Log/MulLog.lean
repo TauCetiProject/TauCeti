@@ -22,6 +22,8 @@ up a small amount of its value is bounded by that same tangent line.
   `u * log u - a * log a ≥ (u - a) * (log a + 1)`.
 * `Real.sub_mul_log_le`: for `0 ≤ t` and `t ≤ x / 2`,
   `(x - t) * log (x - t) - x * log x ≤ -t * (log x - log 2 + 1)`.
+* `TauCeti.sq_sqrt_sub_sqrt_le_mul_log_sub_mul_log_sub`: for `0 < a` and `0 ≤ u`, the gap
+  between the graph and the supporting line at `a` is at least `(√u - √a) ^ 2`.
 
 The first estimate is the tangent line at `a`, whose slope `log a + 1` is the derivative
 `Real.deriv_mul_log` of the function. It is stated for `u = 0` as well, where the convention
@@ -33,6 +35,11 @@ tangent line at `x - t` bounds the loss by `-t * (log (x - t) + 1)`, and the hyp
 `t ≤ x / 2`, which bounds `log (x - t)` from below by `log x - log 2`, is where the constant
 `log 2` of the statement comes from. It is stated for `t = 0`, and for the `x = 0` that the
 hypotheses then force, so that a caller whose amount `t` may vanish needs no separate case.
+
+The third estimate quantifies the first. The gap `u * log u - a * log a - (u - a) * (log a + 1)`
+equals `u * log (u / a) - u + a`, the integrand of a relative entropy, and `(√u - √a) ^ 2` is the
+integrand of a squared Hellinger distance, so it is the pointwise comparison of these two
+divergences. It is what makes relative entropy quantitatively strictly convex.
 -/
 public section
 
@@ -86,3 +93,28 @@ theorem sub_mul_log_le {x t : ℝ} (ht0 : 0 ≤ t) (htx : t ≤ x / 2) :
     simp
 
 end Real
+
+namespace TauCeti
+
+open Real
+
+/-- The gap between the convex function `u ↦ u * log u` and its supporting line at a positive
+point `a` dominates the squared difference of square roots: for every nonnegative `u`,
+`(√u - √a) ^ 2 ≤ u * log u - a * log a - (u - a) * (log a + 1)`. This strengthens
+`Real.mul_log_sub_mul_log_ge`; the right side is `u * log (u / a) - u + a`. -/
+theorem sq_sqrt_sub_sqrt_le_mul_log_sub_mul_log_sub {a u : ℝ} (ha : 0 < a) (hu : 0 ≤ u) :
+    (√u - √a) ^ 2 ≤ u * log u - a * log a - (u - a) * (log a + 1) := by
+  rcases hu.eq_or_lt with rfl | hu
+  · simp [sq_sqrt ha.le, mul_add]
+  -- Write `u = s ^ 2` and `a = c ^ 2`, and scale `log s - log c ≥ 1 - c / s` by `s ^ 2`.
+  obtain ⟨s, hs, rfl⟩ : ∃ s, 0 < s ∧ u = s ^ 2 := ⟨√u, sqrt_pos.2 hu, (sq_sqrt hu.le).symm⟩
+  obtain ⟨c, hc, rfl⟩ : ∃ c, 0 < c ∧ a = c ^ 2 := ⟨√a, sqrt_pos.2 ha, (sq_sqrt ha.le).symm⟩
+  have hlog : 1 - c / s ≤ log s - log c := by
+    rw [← log_div hs.ne' hc.ne']
+    simpa [inv_div] using one_sub_inv_le_log_of_pos (div_pos hs hc)
+  have hcs : s ^ 2 * (1 - c / s) = s ^ 2 - s * c := by field_simp
+  rw [sqrt_sq hs.le, sqrt_sq hc.le, log_pow, log_pow]
+  push_cast
+  nlinarith [mul_le_mul_of_nonneg_left hlog (sq_nonneg s)]
+
+end TauCeti

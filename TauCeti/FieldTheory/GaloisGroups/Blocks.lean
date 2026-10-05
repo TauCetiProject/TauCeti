@@ -62,7 +62,7 @@ noncomputable def rootBlockIntermediateFieldOrderIso
     BlockMem p.Gal x ≃o (Set.Iic F⟮(x : p.SplittingField)⟯)ᵒᵈ :=
   letI : IsGalois F p.SplittingField := IsGalois.of_separable_splitting_field hsep
   letI : IsPretransitive p.Gal (p.rootSet p.SplittingField) :=
-    isPretransitive_of_irreducible hp
+    Gal.galActionAux_isPretransitive hp
   let e := IsGaloisGroup.intermediateFieldEquivSubgroup p.Gal F p.SplittingField
   -- Identify the stabilizer interval with the dual of the image interval of `F⟮x⟯`.
   let dualIci : Set.Ici (stabilizer p.Gal x) ≃o (Set.Iic (e F⟮(x : p.SplittingField)⟯))ᵒᵈ :=
@@ -128,7 +128,7 @@ theorem coe_rootBlockIntermediateFieldOrderIso_symm_apply
       orbit (fixingSubgroup p.Gal (E.1 : Set p.SplittingField)) x := by
   let _ : IsGalois F p.SplittingField := IsGalois.of_separable_splitting_field hsep
   let _ : IsPretransitive p.Gal (p.rootSet p.SplittingField) :=
-    isPretransitive_of_irreducible hp
+    Gal.galActionAux_isPretransitive hp
   -- Any block sent to `E` has `E` as the fixed field of its stabilizer, hence is the orbit of `x`
   -- under the fixing subgroup of `E`; the block at hand is sent to `E` by `apply_symm_apply`.
   suffices h : ∀ B : BlockMem p.Gal x,
@@ -201,7 +201,7 @@ theorem isPreprimitive_iff_isAtom_adjoin_simple
     IsPreprimitive p.Gal (p.rootSet p.SplittingField) ↔
       IsAtom F⟮(x : p.SplittingField)⟯ := by
   let _ : IsPretransitive p.Gal (p.rootSet p.SplittingField) :=
-    isPretransitive_of_irreducible hp
+    Gal.galActionAux_isPretransitive hp
   have hcard : Fintype.card (p.rootSet p.SplittingField) = p.natDegree :=
     card_rootSet_eq_natDegree hsep (SplittingField.splits p)
   let _ : Nontrivial (p.rootSet p.SplittingField) :=
@@ -216,7 +216,7 @@ theorem isPreprimitive_of_irreducible_of_separable_of_prime_natDegree
     (hp : Irreducible p) (hsep : p.Separable) (hprime : p.natDegree.Prime) :
     IsPreprimitive p.Gal (p.rootSet p.SplittingField) := by
   let _ : IsPretransitive p.Gal (p.rootSet p.SplittingField) :=
-    isPretransitive_of_irreducible hp
+    Gal.galActionAux_isPretransitive hp
   apply IsPreprimitive.of_prime_card
   rw [Nat.card_eq_fintype_card,
     card_rootSet_eq_natDegree hsep (SplittingField.splits p)]

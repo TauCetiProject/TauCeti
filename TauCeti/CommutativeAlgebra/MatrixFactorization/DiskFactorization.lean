@@ -17,6 +17,10 @@ and every map factoring through it is null-homotopic. A contractible factorizati
 therefore a retract of such a sum. These facts are the factorization input for comparing
 the homotopy category with the stable category of the componentwise split exact structure.
 
+The disk sum is functorial (`diskSumMap`), and the projection `diskSumToParityShift` onto the
+parity shift completes the inclusion `toDiskSum` to a componentwise split short complex
+`X ⟶ diskSum X ⟶ X[1]`, which presents the stable suspension of `X`.
+
 The disk construction follows Frenkel, Khovanov and Schiffmann,
 *Homological realization of Nakajima varieties and Weyl group actions*, Sections 2–3.
 -/
@@ -70,13 +74,8 @@ noncomputable def fromDiskSum (h₀ : X.obj.X₀ ⟶ Y.obj.X₁)
     (h₁ : X.obj.X₁ ⟶ Y.obj.X₀) : diskSum X ⟶ Y :=
   ⟨CurvedDuplex.fromDiskSum h₀ h₁⟩
 
-@[simp] theorem toDiskSum_hom_f₀ (X : MatrixFactorization S w) :
-    (toDiskSum X).hom.f₀ = CategoryTheory.Limits.biprod.lift X.obj.d₀ (𝟙 X.obj.X₀) := by
-  simp [toDiskSum]
-
-@[simp] theorem toDiskSum_hom_f₁ (X : MatrixFactorization S w) :
-    (toDiskSum X).hom.f₁ = CategoryTheory.Limits.biprod.lift (𝟙 X.obj.X₁) (-X.obj.d₁) := by
-  simp [toDiskSum]
+@[simp] theorem toDiskSum_hom (X : MatrixFactorization S w) :
+    (toDiskSum X).hom = CurvedDuplex.toDiskSum X.obj := (rfl)
 
 @[simp] theorem fromDiskSum_hom_f₀ (h₀ : X.obj.X₀ ⟶ Y.obj.X₁)
     (h₁ : X.obj.X₁ ⟶ Y.obj.X₀) :
@@ -98,6 +97,42 @@ noncomputable def fromDiskSum (h₀ : X.obj.X₀ ⟶ Y.obj.X₁)
   by
     apply ObjectProperty.hom_ext
     exact CurvedDuplex.toDiskSum_comp_fromDiskSum h₀ h₁
+
+/-- The projection from the disk sum of a factorization onto its parity shift. Together with
+`toDiskSum X` it forms a short complex `X ⟶ diskSum X ⟶ X[1]` which splits in both
+components. -/
+noncomputable def diskSumToParityShift (X : MatrixFactorization S w) :
+    diskSum X ⟶ parityShift.obj X :=
+  ⟨CurvedDuplex.diskSumToParityShift X.obj⟩
+
+@[simp] theorem diskSumToParityShift_hom (X : MatrixFactorization S w) :
+    (diskSumToParityShift X).hom = CurvedDuplex.diskSumToParityShift X.obj := (rfl)
+
+/-- The inclusion into the disk sum, followed by the projection onto the parity shift,
+vanishes. -/
+@[reassoc (attr := simp)]
+theorem toDiskSum_comp_diskSumToParityShift (X : MatrixFactorization S w) :
+    toDiskSum X ≫ diskSumToParityShift X = 0 :=
+  ObjectProperty.hom_ext _ (CurvedDuplex.toDiskSum_comp_diskSumToParityShift X.obj)
+
+/-- The map induced on disk sums by a morphism of matrix factorizations. -/
+noncomputable def diskSumMap (f : X ⟶ Y) : diskSum X ⟶ diskSum Y :=
+  ⟨CurvedDuplex.diskSumMap f.hom⟩
+
+@[simp] theorem diskSumMap_hom (f : X ⟶ Y) :
+    (diskSumMap f).hom = CurvedDuplex.diskSumMap f.hom := (rfl)
+
+/-- The inclusion into the disk sum is natural. -/
+@[reassoc (attr := simp)]
+theorem toDiskSum_comp_diskSumMap (f : X ⟶ Y) :
+    toDiskSum X ≫ diskSumMap f = f ≫ toDiskSum Y :=
+  ObjectProperty.hom_ext _ (CurvedDuplex.toDiskSum_comp_diskSumMap f.hom)
+
+/-- The projection from the disk sum onto the parity shift is natural. -/
+@[reassoc (attr := simp)]
+theorem diskSumToParityShift_comp_parityShift_map (f : X ⟶ Y) :
+    diskSumToParityShift X ≫ parityShift.map f = diskSumMap f ≫ diskSumToParityShift Y :=
+  ObjectProperty.hom_ext _ (CurvedDuplex.diskSumToParityShift_comp_parityShift_map f.hom)
 
 /-- The disk sum is contractible in the matrix-factorization homotopy category. -/
 theorem id_diskSum_mem_nullHomotopic (X : MatrixFactorization S w) :

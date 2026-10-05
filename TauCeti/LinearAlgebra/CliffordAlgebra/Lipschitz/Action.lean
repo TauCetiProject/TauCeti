@@ -7,7 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Vectors
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.Basic
-public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup
+public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup.Basic
 public import Mathlib.LinearAlgebra.CliffordAlgebra.SpinGroup
 -- Private: injectivity of the scalars is used only inside the form-preservation proof.
 import TauCeti.LinearAlgebra.CliffordAlgebra.Basic

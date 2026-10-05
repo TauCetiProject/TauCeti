@@ -25,6 +25,9 @@ independent of the chosen presentation.
 
 * `TauCeti.ZModTwist.compEquiv`: the coefficient equivalence
   `I(χ)/pⁱ ≃ I(χ ∘ f)/pⁱ` for a continuous homomorphism `f : H →ₜ* G`.
+* `TauCeti.ZModTwist.subgroupSubtypeHom`: for a subgroup `U ≤ G`, the same equivalence along the
+  inclusion of `U`, as a bijective `U`-equivariant homomorphism `I(χ)/pⁱ →+[U] I(χ|_U)/pⁱ`, where
+  `U` acts on `I(χ)/pⁱ` through the inclusion.
 * `TauCeti.ZModTwist.explicitH1CompEquiv`: the induced equivalence on explicit continuous `H¹`.
 * `TauCeti.HasPrescriptionProperty.comp_equiv`: pullback along a topological group isomorphism
   preserves the prescription property.
@@ -108,6 +111,30 @@ theorem compEquiv_reduce (f : H →ₜ* G) (χ : G →ₜ* ℤ_[p]ˣ) {i j : ℕ
     compEquiv f χ j (reduce χ h x) = reduce (χ.comp f) h (compEquiv f χ i x) := by
   apply ZModTwist.ext
   simp only [compEquiv_apply, val_reduce]
+
+/-- Pullback along the inclusion of a subgroup `U ≤ G`, as a `U`-equivariant homomorphism
+`I(χ)/pⁱ →+[U] I(χ|_U)/pⁱ`, where `U` acts on `I(χ)/pⁱ` through the inclusion. The underlying map is
+`compEquiv (ContinuousMonoidHom.subgroupSubtype U) χ i`, the identity on residue classes
+(`val_subgroupSubtypeHom`), so it is bijective (`subgroupSubtypeHom_bijective`). It is recorded as
+an equivariant homomorphism because that is the form in which the coefficient maps of continuous
+cohomology consume it. -/
+noncomputable def subgroupSubtypeHom (U : Subgroup G) (χ : G →ₜ* ℤ_[p]ˣ) (i : ℕ) :
+    ZModTwist χ i →+[U] ZModTwist (χ.comp (ContinuousMonoidHom.subgroupSubtype U)) i where
+  toFun := compEquiv (ContinuousMonoidHom.subgroupSubtype U) χ i
+  map_smul' u x := compEquiv_smul (ContinuousMonoidHom.subgroupSubtype U) χ i u x
+  map_zero' := map_zero _
+  map_add' := map_add _
+
+theorem subgroupSubtypeHom_apply (U : Subgroup G) (χ : G →ₜ* ℤ_[p]ˣ) (i : ℕ) (x : ZModTwist χ i) :
+    subgroupSubtypeHom U χ i x = compEquiv (ContinuousMonoidHom.subgroupSubtype U) χ i x := (rfl)
+
+@[simp]
+theorem val_subgroupSubtypeHom (U : Subgroup G) (χ : G →ₜ* ℤ_[p]ˣ) (i : ℕ) (x : ZModTwist χ i) :
+    (subgroupSubtypeHom U χ i x).val = x.val := (rfl)
+
+theorem subgroupSubtypeHom_bijective (U : Subgroup G) (χ : G →ₜ* ℤ_[p]ˣ) (i : ℕ) :
+    Function.Bijective (subgroupSubtypeHom U χ i) :=
+  (compEquiv (ContinuousMonoidHom.subgroupSubtype U) χ i).bijective
 
 private theorem compEquiv_toAddMonoidHom_smul (f : H →ₜ* G) (χ : G →ₜ* ℤ_[p]ˣ) (i : ℕ)
     (h : H) (x : ZModTwist χ i) :

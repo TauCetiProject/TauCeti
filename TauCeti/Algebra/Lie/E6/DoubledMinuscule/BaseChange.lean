@@ -342,6 +342,56 @@ theorem baseChangeCoordinateIso_hom_comp_weightTorusBaseChangeMap :
     rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator matrixBasis
     matrixWeight A definingIdeal_def
 
+/-- The coordinate Hopf algebra of the doubled minuscule carrier after base change to `A`. -/
+noncomputable abbrev coordinateHopfAlgebra :=
+  CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra A 54)
+    (baseChangeDefiningIdeal A)
+
+/-- The quotient coordinate morphism representing the carrier's closed immersion into `GL₅₄`. -/
+noncomputable def coordinateMap :
+    GeneralLinear.coordinateHopfAlgebra A 54 ⟶ coordinateHopfAlgebra A :=
+  CommHopfAlgCat.mkQuotient _ (baseChangeDefiningIdeal A)
+
+/-- The quotient coordinate morphism followed by the weight-torus restriction recovers the
+ambient weight-torus morphism. -/
+@[simp]
+theorem coordinateMap_comp_weightTorusToBaseChangeCoordinateMap :
+    coordinateMap A ≫ weightTorusToBaseChangeCoordinateMap A =
+      GeneralLinear.weightTorusBaseChangeCoordinateMap ℤ A matrixWeight := by
+  rw [coordinateMap, mkQuotient_comp_weightTorusToBaseChangeCoordinateMap]
+
+/-- The carrier coordinate morphism is surjective. -/
+theorem coordinateMap_surjective : Function.Surjective (coordinateMap A).hom :=
+  CommHopfAlgCat.mkQuotient_surjective _ _
+
+/-- The kernel of the carrier coordinate morphism is its transported defining ideal. -/
+@[simp]
+theorem coordinateMap_ker :
+    RingHom.ker (coordinateMap A).hom = (baseChangeDefiningIdeal A).toIdeal :=
+  CommHopfAlgCat.mkQuotient_ker _ _
+
+/-- The specialized doubled minuscule carrier as a finite-type commutative Hopf algebra. -/
+noncomputable abbrev finiteTypeCoordinateHopfAlgebra : FiniteTypeCommHopfAlgCat.{v, v} A :=
+  FiniteTypeCommHopfAlgCat.of A (coordinateHopfAlgebra A)
+
+/-- The finite-type package has the specialized coordinate Hopf algebra as its underlying object. -/
+@[simp]
+theorem finiteTypeCoordinateHopfAlgebra_obj :
+    (finiteTypeCoordinateHopfAlgebra A).obj = coordinateHopfAlgebra A := (rfl)
+
+/-- Mapping a carrier point along its coordinate morphism gives the ambient quotient point. -/
+@[simp]
+theorem mapPointsFunctor_coordinateMap_app
+    {B : Type*} [CommRing B] [Algebra A B]
+    (g : HopfAlgebra.points (R := A) (H := coordinateHopfAlgebra A) (CommAlgCat.of A B)) :
+    (CommHopfAlgCat.mapPointsFunctor (coordinateMap A)).app (CommAlgCat.of A B) g =
+      CommHopfAlgCat.quotientPointsHom
+        (GeneralLinear.coordinateHopfAlgebra A 54) (baseChangeDefiningIdeal A)
+        (CommAlgCat.of A B) g := by
+  rw [coordinateMap, CommHopfAlgCat.quotientPointsHom]
+  apply WithConv.ext
+  rfl
+
 /-- The coordinate algebras of the numbered root subgroups and weight torus. -/
 noncomputable abbrev generatorCoordinateAlgebra :
     Sum (Fin 6 ⊕ Fin 6) Unit → CommHopfAlgCat A

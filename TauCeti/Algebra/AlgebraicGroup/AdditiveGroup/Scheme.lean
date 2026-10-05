@@ -74,8 +74,7 @@ the spectrum-transport pattern in `TauCetiProject/TauCeti`, revision
 `90f7e09cf472553c4d268db39fcae6b84bd91e04`,
 `TauCeti/Algebra/AlgebraicGroup/GeneralLinear/Scheme.lean` (Apache 2.0), specialized to Mathlib's
 rank-one symmetric-algebra and affine-space equivalences. The scheme-valued-points interface follows
-the “Functor of points is the notion of points” design note in
-`TauCetiRoadmap/ReductiveGroups/README.md` and its cited Lean Zulip discussion
+the Lean Zulip discussion
 [#Is there code for X? > Algebraic groups](https://leanprover.zulipchat.com/#narrow/channel/217875-Is%20there%20code%20for%20X%3F/topic/Algebraic%20groups).
 -/
 

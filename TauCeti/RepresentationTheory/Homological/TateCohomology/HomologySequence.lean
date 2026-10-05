@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.HomologySequenceLemmas
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Linear
 
 /-!
@@ -22,6 +23,10 @@ conversely surjectivity in degree `n` together with injectivity in degree `n + 1
 representations inducing isomorphisms in three consecutive degrees on every subgroup induces
 isomorphisms in every degree.
 
+Finally, for a `3 × 3` diagram of representations with short exact rows and columns, the two
+composites of connecting maps between opposite corners differ by a sign. This is the sign rule
+relating the compatibility of the cup product with connecting maps in its two variables.
+
 ## Main statements
 
 * `TateCohomology.exact₂`: exactness of `Ĥⁿ(G, X₁) ⟶ Ĥⁿ(G, X₂) ⟶ Ĥⁿ(G, X₃)`.
@@ -30,6 +35,8 @@ isomorphisms in every degree.
   makes the map induced by `X₁ ⟶ X₂` surjective in that degree and injective in the next.
 * `TauCeti.TateCohomology.isZero_X₃_of_surjective_of_injective`: the converse, from two
   consecutive degrees.
+* `TauCeti.TateCohomology.δ_comp_δ_eq_neg`: the connecting maps of a `3 × 3` diagram of
+  representations with short exact rows and columns anticommute.
 -/
 
 public section
@@ -79,5 +86,31 @@ theorem isZero_X₃_of_surjective_of_injective (m n : ℤ) (hmn : m + 1 = n)
   -- `hj : (ComplexShape.up ℤ).Rel m j`, which is `m + 1 = j`.
   obtain rfl : m + 1 = j := hj
   exact (ModuleCat.mono_iff_injective _).2 hinj
+
+omit hS
+
+/-- **The connecting maps of a `3 × 3` diagram anticommute in Tate cohomology.** Let `D` be a
+`3 × 3` diagram of representations, presented as a short complex `D.X₁ ⟶ D.X₂ ⟶ D.X₃` of short
+complexes, all of whose rows `D.Xᵢ` and columns `D.map π_j` are short exact. Then the two composites
+of connecting maps `Ĥⁿ(G, X₃₃) ⟶ Ĥⁿ⁺²(G, X₁₁)`, through the third row and the first column, and
+through the third column and the first row, differ by a sign. -/
+theorem δ_comp_δ_eq_neg (D : ShortComplex (ShortComplex (Rep k G)))
+    (h₁ : D.X₁.ShortExact) (h₂ : D.X₂.ShortExact) (h₃ : D.X₃.ShortExact)
+    (h₁' : (D.map ShortComplex.π₁).ShortExact) (h₂' : (D.map ShortComplex.π₂).ShortExact)
+    (h₃' : (D.map ShortComplex.π₃).ShortExact) (n : ℤ) :
+    _root_.TateCohomology.δ h₃ n ≫ _root_.TateCohomology.δ h₁' (n + 1) =
+      -(_root_.TateCohomology.δ h₃' n ≫ _root_.TateCohomology.δ h₁ (n + 1)) := by
+  -- The image of `D` under the Tate complex functor, a `3 × 3` diagram of cochain complexes.
+  let F := (tateComplexFunctor k G).mapShortComplex
+  let D' := ShortComplex.mk (F.map D.f) (F.map D.g) (by
+    rw [← F.map_comp, D.zero]
+    apply ShortComplex.hom_ext <;> exact (tateComplexFunctor k G).map_zero _ _)
+  exact HomologicalComplex.HomologySequence.δ_comp_δ_eq_neg D'
+    (_root_.TateCohomology.map_tateComplexFunctor_shortExact h₁)
+    (_root_.TateCohomology.map_tateComplexFunctor_shortExact h₂)
+    (_root_.TateCohomology.map_tateComplexFunctor_shortExact h₃)
+    (_root_.TateCohomology.map_tateComplexFunctor_shortExact h₁')
+    (_root_.TateCohomology.map_tateComplexFunctor_shortExact h₂')
+    (_root_.TateCohomology.map_tateComplexFunctor_shortExact h₃') n (n + 1) (n + 1 + 1) rfl rfl
 
 end TauCeti.TateCohomology

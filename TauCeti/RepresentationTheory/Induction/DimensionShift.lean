@@ -140,7 +140,7 @@ any representation `M`: the embedding into the coinduced module has the `k`-line
 theorem dimensionShiftUpSES_tensorLeft_shortExact (A M : Rep k G) :
     ((dimensionShiftUpSES A).map (tensorLeft M)).ShortExact := by
   have : Epi (dimensionShiftUpSES A).g := (dimensionShiftUpSES_shortExact A).epi_g
-  exact shortExact_map_tensorLeft_of_leftInverse (dimensionShiftUpSES_shortExact A).exact M _
+  exact shortExact_map_tensorLeft_of_leftInverse (dimensionShiftUpSES_shortExact A).exact M
     (leftInverse_coindBotUnit A)
 
 /-! ### The downward dimension shift -/
@@ -214,7 +214,7 @@ with any representation `M`: the projection from the induced module has the `k`-
 theorem dimensionShiftDownSES_tensorLeft_shortExact (A M : Rep k G) :
     ((dimensionShiftDownSES A).map (tensorLeft M)).ShortExact := by
   have : Mono (dimensionShiftDownSES A).f := (dimensionShiftDownSES_shortExact A).mono_f
-  exact shortExact_map_tensorLeft_of_rightInverse (dimensionShiftDownSES_shortExact A).exact M _
+  exact shortExact_map_tensorLeft_of_rightInverse (dimensionShiftDownSES_shortExact A).exact M
     (rightInverse_indBotCounit A)
 
 /-! ### Functoriality of the dimension-shifting sequences -/

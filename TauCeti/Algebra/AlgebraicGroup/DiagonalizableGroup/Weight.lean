@@ -35,6 +35,8 @@ value of the character therefore takes a `BialgHom`.
   direct sum of its weight submodules.**
 * `TauCeti.DiagonalizableGroup.finite_setOf_weightSpace_ne_bot`: a comodule that is finitely
   generated as a module has finitely many nonzero weight submodules after corestriction.
+* `TauCeti.DiagonalizableGroup.mem_weightSpace_iff_endOfPoint`: the universal point detects
+  membership in a weight space.
 * `TauCeti.DiagonalizableGroup.endOfPoint_tmul_of_mem_weightSpace`: a monoid-algebra point acts on
   the `x`-weight submodule by multiplication by its value on `x`; for a commutative group `X`,
   this is the corresponding action of a point of `D(X)`.
@@ -138,6 +140,25 @@ theorem endOfPoint_tmul_comp (π : C →ₐc[R] MonoidAlgebra R X)
   rw [Comodule.endOfPoint_tmul]
   congr 2
   rw [LinearMap.lTensor_map, AlgHom.comp_toLinearMap, hπ, LinearMap.lTensor_def]
+
+/-- A monoid-algebra weight is detected by the universal point, even over a nonreduced
+base ring. -/
+theorem mem_weightSpace_iff_endOfPoint {X' : Type*} [CommMonoid X']
+    (π : C →ₐc[R] MonoidAlgebra R X') (x : X') (v : V) :
+    v ∈ weightSpace V π.toCoalgHom x ↔
+      Comodule.endOfPoint V π.toAlgHom (1 ⊗ₜ[R] v) =
+        MonoidAlgebra.single x 1 ⊗ₜ[R] v := by
+  rw [mem_weightSpace, Comodule.endOfPoint_tmul, one_smul]
+  have hπ : π.toAlgHom.toLinearMap = π.toCoalgHom.toLinearMap := by
+    rw [CoalgHom.toLinearMap_eq_ofClass]
+    exact BialgHom.toAlgHom_toLinearMap π
+  rw [hπ, LinearMap.lTensor_def]
+  constructor
+  · intro h
+    rw [h, TensorProduct.comm_tmul]
+  · intro h
+    apply (TensorProduct.comm R V (MonoidAlgebra R X')).injective
+    simpa only [TensorProduct.comm_tmul] using h
 
 /-- **A monoid-algebra point acts on the `x`-weight submodule by its value on `x`.**
 

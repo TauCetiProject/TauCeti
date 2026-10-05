@@ -193,6 +193,14 @@ theorem offDiagonalPairSquareContext_snd (e : ℕ → ℕ) (i j : ℕ) (x : ℕ 
     (offDiagonalPairSquareContext e i j x).2 = (x (i, i), x (j, j)) :=
   (rfl)
 
+omit [MeasurableSpace α] in
+/-- Reversing the visible vertices swaps both the two directed contexts and the two diagonal
+entries of the square context. -/
+theorem offDiagonalPairSquareContext_swap (e : ℕ → ℕ) (i j : ℕ) (x : ℕ × ℕ → α) :
+    offDiagonalPairSquareContext e j i x =
+      Prod.map Prod.swap Prod.swap (offDiagonalPairSquareContext e i j x) := by
+  simp only [offDiagonalPairSquareContext, offDiagonalPairContext_swap e i j, Prod.map, Prod.swap]
+
 /-- Reading the square context of an off-diagonal pair is measurable. -/
 theorem measurable_offDiagonalPairSquareContext (e : ℕ → ℕ) (i j : ℕ) :
     Measurable (offDiagonalPairSquareContext (α := α) e i j) :=

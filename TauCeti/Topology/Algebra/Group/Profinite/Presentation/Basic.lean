@@ -763,6 +763,14 @@ theorem congrSingleton_mk (e : freeProP p X ≃ₜ* freeProP p Y) {r : freeProP 
     congrSingleton e h (mk p {r} x) = mk p {r'} (e x) :=
   congr_mk _ _ _ x
 
+/-- The inverse of the isomorphism of one-relator presented groups induced by `e` computes on
+classes as `e⁻¹`. -/
+@[simp]
+theorem congrSingleton_symm_mk (e : freeProP p X ≃ₜ* freeProP p Y) {r : freeProP p X}
+    {r' : freeProP p Y} (h : e r = r') (y : freeProP p Y) :
+    (congrSingleton e h).symm (mk p {r'} y) = mk p {r} (e.symm y) :=
+  congr_symm_mk _ _ _ y
+
 end Map
 
 /-- **Two sets of relators with the same closed normal closure present the same pro-`p` group**,

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.Conformal.Moebius
 public import TauCeti.Analysis.Complex.UnitDisc.Basic
+import Mathlib.Analysis.Calculus.FDeriv.Mul
 
 /-!
 # Standard automorphisms of the complex unit disc

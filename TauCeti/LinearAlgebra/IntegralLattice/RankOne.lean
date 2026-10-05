@@ -9,6 +9,7 @@ public import Mathlib.Data.ZMod.QuotientRing
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Cardinality
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Quadratic
 public import TauCeti.LinearAlgebra.IntegralLattice.Examples
+public import TauCeti.LinearAlgebra.IntegralLattice.Level
 
 import Mathlib.Tactic.LinearCombination
 
@@ -18,8 +19,8 @@ import Mathlib.Tactic.LinearCombination
 For a nonzero integer `m`, let `⟨2m⟩` be the lattice `ℤe` inside `ℚ` carrying the form
 `B(e, e) = 2m`.  This file constructs it as `TauCeti.IntegralLattice.rankOne` and computes every
 invariant the integral-lattices roadmap asks a rank-one example to produce: the dual lattice, the
-discriminant group with its generator, the two discriminant forms on that generator, and the
-signature.
+discriminant group with its generator, the two discriminant forms on that generator, the level,
+and the signature.
 
 The whole family is treated at once, for every `m`, rather than one sign at a time: the
 positive-definite and negative-definite cases differ only in the sign of `m`, and the degenerate
@@ -44,6 +45,8 @@ fixed by `TauCeti.IntegralLattice.discriminantQuadraticMap`, so it is half of Ni
 identifies the finite quadratic module rather than merely its order.  The two displayed forms are
 compatible: the polar of `q_L` on those elements is the displayed pairing,
 `q_L((k + l) • g) - q_L(k • g) - q_L(l • g) = b_L(k • g, l • g) = kl / (2m)`.
+Since `N · q_L(g) = N / (4m)` vanishes modulo `ℤ` exactly when `4m ∣ N`, the level of `⟨2m⟩` is
+`4|m|`.
 
 Nonvanishing of `m` is carried as a `NeZero` instance, so that the nondegeneracy of `⟨2m⟩` — which
 the discriminant group needs in order to be finite — is available to instance synthesis.
@@ -70,6 +73,7 @@ the discriminant group needs in order to be finite — is available to instance 
   on every element.
 * `TauCeti.IntegralLattice.polar_discriminantQuadraticMap_zsmul_rankOneClass`: the polar of the
   displayed quadratic form is the displayed pairing.
+* `TauCeti.IntegralLattice.rankOne_level`: the level of `⟨2m⟩` is `4|m|`.
 * `TauCeti.IntegralLattice.rankOne_signature_of_pos`,
   `TauCeti.IntegralLattice.rankOne_signature_of_neg` and
   `TauCeti.IntegralLattice.rankOne_zero_signature`: the signature is `(1, 0, 0)` for `0 < m`,
@@ -382,6 +386,34 @@ theorem polar_discriminantQuadraticMap_zsmul_rankOneClass (k l : ℤ) :
         (k • rankOneClass m) (l • rankOneClass m) =
       ((k * l / (2 * m) : ℚ) : AddCircle (1 : ℚ)) := by
   rw [polar_discriminantQuadraticMap, discriminantPairing_zsmul_rankOneClass]
+
+/-! ## The level -/
+
+/-- **The level of `⟨2m⟩` is `4|m|`.** The dual vector `e / (2m)` has norm `1 / (2m)`, and `N`
+times it is an even integer exactly when `4m ∣ N`. -/
+@[simp]
+theorem rankOne_level : (rankOne m).level = 4 * m.natAbs := by
+  have hm := rankOne_cast_ne_zero m
+  have key (N : ℤ) : ((rankOne m).level : ℤ) ∣ N ↔ 4 * m ∣ N := by
+    rw [level_dvd_iff]
+    constructor
+    · intro h
+      obtain ⟨k, hk⟩ := h _ (rankOneDualGen m).2
+      rw [coe_rankOneDualGen, rankOne_norm_apply] at hk
+      refine ⟨k, Int.cast_injective (α := ℚ) ?_⟩
+      field_simp at hk
+      push_cast
+      linear_combination hk
+    · rintro ⟨c, rfl⟩ x hx
+      obtain ⟨k, rfl⟩ := (mem_rankOne_dualCarrier_iff m x).mp hx
+      refine ⟨c * k ^ 2, ?_⟩
+      rw [rankOne_norm_apply]
+      push_cast
+      field_simp
+      ring
+  rw [← Int.natAbs_natCast (rankOne m).level,
+    Int.natAbs_eq_of_dvd_dvd ((key _).mpr dvd_rfl) ((key _).mp dvd_rfl), Int.natAbs_mul]
+  simp
 
 end NeZero
 

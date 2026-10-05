@@ -186,6 +186,38 @@ theorem corestrict_standardComodule_weightTorusCoordinateBialgHom_eq_ofWeights
         simp [hia]
       · simp
 
+/-- If a weight-torus morphism factors through another coordinate Hopf algebra, restricting the
+corestricted standard comodule along that factor gives the same prescribed weight comodule. -/
+theorem corestrict_corestrict_standardComodule_eq_ofWeights [Fintype sigma]
+    {H : Type*} [CommRing H] [HopfAlgebra S H]
+    (f : coordinateHopfAlgebra S N →ₐc[S] H)
+    (g : H →ₐc[S] MonoidAlgebra S (Multiplicative (sigma →₀ ℤ)))
+    (wt : Fin N → sigma → ℤ) (hcomp : g.comp f = weightTorusCoordinateBialgHom wt) :
+    let _ := standardComodule S N
+    let _ : Comodule S H (Fin N → S) := Comodule.Corestrict f.toCoalgHom
+    Comodule.Corestrict g.toCoalgHom =
+      Comodule.ofWeights (Pi.basisFun S (Fin N))
+        (fun a ↦ SplitTorus.weightCharacter (wt a)) := by
+  let _ := standardComodule S N
+  let _ : Comodule S H (Fin N → S) := Comodule.Corestrict f.toCoalgHom
+  have hcharacters : (fun a ↦ SplitTorus.weightCharacter (wt a)) =
+      (fun a ↦ Multiplicative.ofAdd (Finsupp.equivFunOnFinite.symm (wt a))) := by
+    funext a
+    apply Multiplicative.toAdd.injective
+    ext j
+    simp
+  rw [hcharacters]
+  apply Comodule.ext
+  rw [Comodule.corestrict_coact, ← Comodule.corestrictCoact_comp f.toCoalgHom g.toCoalgHom]
+  have hc : g.toCoalgHom.comp f.toCoalgHom = (weightTorusCoordinateBialgHom wt).toCoalgHom := by
+    apply DFunLike.ext _ _
+    intro x
+    exact DFunLike.congr_fun hcomp x
+  rw [hc]
+  simpa only [Comodule.corestrict_coact] using
+    congrArg (fun c : Comodule S _ (Fin N → S) ↦ c.coact)
+      (corestrict_standardComodule_weightTorusCoordinateBialgHom_eq_ofWeights wt)
+
 end DirectCoordinateMap
 
 section Construction

@@ -90,7 +90,7 @@ private def translated (h : E) : (k : ℕ) → (u : Wkp mu ⊤ p (k + 1)) →
         value_eq := by
           calc
             value (k + 2) (mk k previous.element _ hweak) =
-                value (k + 1) previous.element := by rw [value_succ, lowerOrder_mk]
+                value (k + 1) previous.element := value_mk ..
             _ = (mu.restrict ((⊤ : Opens E) : Set E)).translateLp p h
                 (value (k + 1) (lowerOrder (k + 1) u)) := previous.value_eq
             _ = (mu.restrict ((⊤ : Opens E) : Set E)).translateLp p h
@@ -116,8 +116,10 @@ theorem value_translate (h : E) : ∀ (k : ℕ) (u : Wkp mu ⊤ p k),
 /-- At order one, whole-space translation agrees with the existing local translation when
 the source and target domains are both the whole space. -/
 theorem translate_one_eq_W1p_translate (h : E) (u : Wkp mu ⊤ p 1) :
-    translate h 1 u = W1p.translate (h := h) (fun _ _ => by simp) u := by
-  simp only [translate, translated, translateOne]
+    translate h 1 u = W1p.translate (h := h) (fun _ _ => by simp) u :=
+  -- `translate h 1 u` is `translateOne h u`, which is this `W1p.translate` once `Wkp … 1` is
+  -- unfolded to `W1p`.
+  (rfl)
 
 private theorem translate_one_eq_translateOne (h : E) (u : Wkp mu ⊤ p 1) :
     translate h 1 u = translateOne h u := rfl
@@ -172,7 +174,7 @@ private theorem translate_one_eq_jet (h : E) (u : Wkp mu ⊤ p 1) :
   rw [translate_one_eq_translateOne]
   apply W1p.ext_value
   rw [← value_one (translateOne h u), value_translateOne, value_one u]
-  simp only [W1p.value_coe]
+  simp only [W1p.value_coe, W1p.value_coe u]
   exact (Sobolev1JetLp.value_translateLp h u.1).symm
 
 /-- For finite `p`, translation of a fixed whole-space Sobolev function varies continuously
@@ -180,45 +182,11 @@ with the translation vector. -/
 theorem continuous_translate (hp : p ≠ ∞) :
     ∀ (k : ℕ) (u : Wkp mu ⊤ p k), Continuous (fun h : E => translate h k u)
   | 0, u => Measure.continuous_translateLp hp u
-  | 1, u => by
-      have hcont : Continuous (fun h : E =>
-          (⟨(mu.restrict ((⊤ : Opens E) : Set E)).translateLp p h u.1,
-            Sobolev1JetLp.translateLp_mem_w1pSubmodule h u.2⟩ : Wkp mu ⊤ p 1)) :=
-        (Measure.continuous_translateLp hp u.1).subtype_mk _
-      simpa only [← translate_one_eq_jet] using hcont
-  | k + 2, u => by
-      have hprev : Continuous (fun h : E => lowerOrder (k + 1) (translate h (k + 2) u)) := by
-        simpa only [lowerOrder_translate] using
-          continuous_translate hp (k + 1) (lowerOrder (k + 1) u)
-      have hgrad : Continuous (fun h : E => iteratedGradient (k + 1)
-          (translate h (k + 2) u)) := by
-        simpa only [iteratedGradient_translate] using
-          Measure.continuous_translateLp hp (iteratedGradient (k + 1) u)
-      have hpair : Continuous (fun h : E =>
-          (lowerOrder (k + 1) (translate h (k + 2) u),
-            iteratedGradient (k + 1) (translate h (k + 2) u))) :=
-        hprev.prodMk hgrad
-      have hambient : Continuous (fun h : E =>
-          ((translate h (k + 2) u : Wkp mu ⊤ p (k + 2)).1)) := by
-        have heq : (fun h : E => ((translate h (k + 2) u : Wkp mu ⊤ p (k + 2)).1)) =
-            (fun h : E => (WithLp.prodContinuousLinearEquiv 2 ℝ _ _).symm
-              (lowerOrder (k + 1) (translate h (k + 2) u),
-                iteratedGradient (k + 1) (translate h (k + 2) u))) := by
-          funext h
-          calc
-            ((translate h (k + 2) u : Wkp mu ⊤ p (k + 2)).1) =
-                (WithLp.prodContinuousLinearEquiv 2 ℝ _ _).symm
-                  ((WithLp.prodContinuousLinearEquiv 2 ℝ _ _)
-                    ((translate h (k + 2) u : Wkp mu ⊤ p (k + 2)).1)) :=
-              ((WithLp.prodContinuousLinearEquiv 2 ℝ _ _).symm_apply_apply _).symm
-            _ = _ := by
-              congr 1
-              simp only [WithLp.prodContinuousLinearEquiv_apply, lowerOrder_succ,
-                iteratedGradient_succ, WeakDerivStep.prev_coe, WeakDerivStep.weakFDeriv_coe]
-              exact Prod.ext (WithLp.ofLp_fst _) (WithLp.ofLp_snd _)
-        rw [heq]
-        exact (WithLp.prodContinuousLinearEquiv 2 ℝ _ _).symm.continuous.comp hpair
-      exact hambient.subtype_mk _
+  | k + 1, u => by
+      rw [continuous_iff_lowerOrder_iteratedGradient]
+      exact ⟨by simpa only [lowerOrder_translate] using continuous_translate hp k (lowerOrder k u),
+        by simpa only [iteratedGradient_translate] using
+          Measure.continuous_translateLp hp (iteratedGradient k u)⟩
 
 /-- Translation preserves the iterated graph norm at every Sobolev order. -/
 @[simp]
@@ -230,9 +198,9 @@ theorem norm_translate (h : E) : ∀ (k : ℕ) (u : Wkp mu ⊤ p k),
       rw [translate_one_eq_jet]
       exact (mu.restrict ((⊤ : Opens E) : Set E)).translateLp p h |>.norm_map u.1
   | k + 2, u => by
-      have hv := norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_add_two k
+      have hv := norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_succ k
         (translate h (k + 2) u)
-      have hu := norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_add_two k u
+      have hu := norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_succ k u
       rw [lowerOrder_translate, iteratedGradient_translate,
         norm_translate h (k + 1) (lowerOrder (k + 1) u),
         LinearIsometryEquiv.norm_map] at hv

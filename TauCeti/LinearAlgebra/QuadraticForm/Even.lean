@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Int.Even
-public import Mathlib.LinearAlgebra.BilinearForm.Properties
+public import TauCeti.LinearAlgebra.BilinearForm.Basic
 public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 
 /-!
@@ -52,9 +52,7 @@ def _root_.LinearMap.BilinForm.halfNormQuadratic
     have hx := Int.two_mul_ediv_two_of_even (heven x)
     have hy := Int.two_mul_ediv_two_of_even (heven y)
     have hxy := Int.two_mul_ediv_two_of_even (heven (x + y))
-    have hsum : B (x + y) (x + y) = B x x + B y y + 2 * B x y := by
-      simp only [map_add, LinearMap.add_apply]
-      nlinarith [hB.eq x y]
+    have hsum := hB.apply_add_self x y
     rw [hsum] at hxy
     omega⟩
 
@@ -87,8 +85,8 @@ theorem _root_.LinearMap.BilinForm.polarBilin_halfNormQuadratic
   have hx := B.two_mul_halfNormQuadratic hB heven x
   have hy := B.two_mul_halfNormQuadratic hB heven y
   simp only [QuadraticMap.polarBilin_apply_apply, QuadraticMap.polar]
-  simp only [map_add, LinearMap.add_apply] at hxy
-  nlinarith [hB.eq x y]
+  rw [hB.apply_add_self x y] at hxy
+  omega
 
 /-- The diagonal of the polar form of an integer quadratic form is twice its value. -/
 -- `simpNF` proves this using `QuadraticMap.polarBilin_apply_apply` and `polar_self`.

@@ -1,0 +1,97 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Analysis.Complex.Basic
+public import Mathlib.Algebra.Polynomial.Eval.Defs
+public import TauCeti.Topology.Connected.FiniteFamily
+
+/-!
+# Conjugation of continuous polynomial root branches
+
+Suppose a polynomial family on a connected parameter space has a continuous labelling of all
+its roots, pointwise distinct, and its coefficients intertwine a continuous involution of the
+parameters with complex conjugation. Conjugation then acts on the labels by one unique
+involutive permutation, independent of the parameter. At any parameter fixed by the involution,
+a branch is real precisely when its label is fixed by this permutation. In particular a branch
+which is real at one fixed parameter is real at every fixed parameter.
+
+For Puiseux branches, the parameter involution conjugates the complex base coordinates and the
+power-substitution variable. The punctured product is connected and the roots are distinct
+there. The conclusions concern the given branches; their construction and their extension
+across the missing hyperplane are separate results.
+
+## References
+
+* S. McCallum, A. Parusiński, L. Paunescu, *Validity proof of Lazard's method for CAD
+  construction*, Journal of Symbolic Computation 92 (2019), 52–69, Section 4.
+-/
+
+public section
+
+open Polynomial Set ComplexConjugate
+
+namespace TauCeti
+
+variable {B ι : Type*} [TopologicalSpace B] [PreconnectedSpace B] [Finite ι]
+  {F : B → ℂ[X]} {r : ι → B → ℂ} {τ : B → B}
+
+/-- Conjugation acts on a continuous, pointwise distinct complete labelling of the roots by a
+unique permutation, and that permutation is an involution. The coefficient symmetry is expressed
+by mapping the polynomial by complex conjugation; no analyticity or monicity is required. -/
+theorem existsUnique_root_conj_perm
+    (hr : ∀ i, Continuous (r i)) (hinj : ∀ b, Function.Injective (fun i => r i b))
+    (hroot : ∀ b z, (F b).IsRoot z ↔ ∃ i, r i b = z)
+    (hτ : Continuous τ) (hττ : Function.Involutive τ)
+    (hF : ∀ b, F (τ b) = (F b).map (starRingEnd ℂ)) (b₀ : B) :
+    ∃! σ : Equiv.Perm ι, Function.Involutive σ ∧
+      ∀ i b, r (σ i) b = conj (r i (τ b)) := by
+  classical
+  have hmem (i : ι) (b : B) : conj (r i (τ b)) ∈ range (fun j => r j b) := by
+    have hz := (hroot (τ b) _).2 ⟨i, rfl⟩
+    have hmap := congrArg (fun p : ℂ[X] => p.eval (conj (r i (τ b)))) (hF (τ b))
+    simp only [hττ b, eval_map_apply, hz.eq_zero, map_zero] at hmap
+    exact (hroot b _).1 hmap
+  choose p hp using fun i => hmem i b₀
+  have hall (i : ι) (b : B) : r (p i) b = conj (r i (τ b)) :=
+    congrFun (eq_of_continuous_mem_range hr ((Complex.continuous_conj.comp (hr i)).comp hτ)
+      hinj (hmem i) b₀ (hp i)) b
+  have hpp : Function.Involutive p := by
+    intro i
+    apply hinj b₀
+    simp only [hall, hττ b₀, Complex.conj_conj]
+  let σ : Equiv.Perm ι := Equiv.ofBijective p hpp.bijective
+  refine ⟨σ, ⟨hpp, hall⟩, ?_⟩
+  intro σ' hσ'
+  ext i
+  exact hinj b₀ ((hσ'.2 i b₀).trans (hall i b₀).symm)
+
+omit [TopologicalSpace B] [PreconnectedSpace B] [Finite ι] in
+/-- For a distinct root labelling on which conjugation acts by a permutation, a root is real
+exactly when its label is fixed by that permutation. This is a pointwise criterion. -/
+theorem root_conj_perm_apply_eq_self_iff_im_eq_zero {b : B}
+    (hinj : Function.Injective (fun i => r i b)) {σ : Equiv.Perm ι}
+    (hσ : ∀ i, r (σ i) b = conj (r i b)) (i : ι) :
+    σ i = i ↔ (r i b).im = 0 := by
+  rw [← hinj.eq_iff, hσ, Complex.conj_eq_iff_im]
+
+/-- A branch real at one conjugation-fixed parameter is real at every conjugation-fixed
+parameter, even when the fixed locus itself is disconnected. -/
+theorem root_im_eq_zero_iff_of_fixed
+    (hr : ∀ i, Continuous (r i)) (hinj : ∀ b, Function.Injective (fun i => r i b))
+    (hroot : ∀ b z, (F b).IsRoot z ↔ ∃ i, r i b = z)
+    (hτ : Continuous τ) (hττ : Function.Involutive τ)
+    (hF : ∀ b, F (τ b) = (F b).map (starRingEnd ℂ))
+    {b₀ b₁ : B} (hb₀ : τ b₀ = b₀) (hb₁ : τ b₁ = b₁) (i : ι) :
+    (r i b₀).im = 0 ↔ (r i b₁).im = 0 := by
+  obtain ⟨σ, ⟨-, hσ⟩, -⟩ := existsUnique_root_conj_perm hr hinj hroot hτ hττ hF b₀
+  have h₀ := root_conj_perm_apply_eq_self_iff_im_eq_zero (hinj b₀)
+    (fun j => by simpa [hb₀] using hσ j b₀) i
+  have h₁ := root_conj_perm_apply_eq_self_iff_im_eq_zero (hinj b₁)
+    (fun j => by simpa [hb₁] using hσ j b₁) i
+  exact h₀.symm.trans h₁
+
+end TauCeti

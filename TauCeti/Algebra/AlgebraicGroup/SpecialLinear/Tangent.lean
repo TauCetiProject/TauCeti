@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Lie.Classical
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Tangent
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Tangent
+public import TauCeti.Algebra.AlgebraicGroup.Tangent.Naturality
 public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Basic
 
 /-!
@@ -102,6 +103,39 @@ theorem tangentMatrix_apply_coe
   change GeneralLinear.tangentMatrix n
     (HopfIdeal.quotientLieHom (B := B) (definingHopfIdeal R n) d) = _
   rfl
+
+/-- Changing the coefficient algebra of a tangent vector applies the coefficient map to
+each entry of its trace-zero matrix. -/
+@[simp]
+theorem tangentMatrix_mapValue_coe {C : Type*} [CommRing C] [Algebra R C]
+    (φ : B →ₐ[R] C)
+    (d : Derivation R (coordinateHopfAlgebra R n)
+      (Bialgebra.CounitAlgebra R (coordinateHopfAlgebra R n) B)) :
+    (tangentMatrix n (Derivation.mapValue φ d) : Matrix (Fin n) (Fin n) C) =
+      (tangentMatrix n d : Matrix (Fin n) (Fin n) B).map φ := by
+  rw [tangentMatrix_apply_coe, tangentMatrix_apply_coe]
+  ext i j
+  simp only [GeneralLinear.tangentMatrix_apply,
+    HopfIdeal.quotientLieHom_apply_apply, Derivation.mapValue_apply, Matrix.map_apply]
+  -- The quotient and ambient counit-algebra indices must be identified to apply their
+  -- identity-on-coefficients computation rules.
+  erw [Bialgebra.CounitAlgebra.algEquivSelf_apply,
+    Bialgebra.CounitAlgebra.algEquivSelf_apply, Bialgebra.CounitAlgebra.algEquivSelf_apply,
+    Bialgebra.CounitAlgebra.algEquivSelf_apply]
+
+/-- An entry of the special-linear tangent matrix is the derivation evaluated on the image of
+the corresponding generic matrix coordinate in the determinant-one quotient. -/
+@[simp]
+theorem tangentMatrix_apply
+    (d : Derivation R (coordinateHopfAlgebra R n)
+      (Bialgebra.CounitAlgebra R (coordinateHopfAlgebra R n) B)) (i j : Fin n) :
+    (tangentMatrix n d : Matrix (Fin n) (Fin n) B) i j =
+      Bialgebra.CounitAlgebra.algEquivSelf R (coordinateHopfAlgebra R n) B
+        (d ((coordinateMap R n).hom (GeneralLinear.coordinateHopfAlgebraAlgEquiv R n
+          (GeneralLinear.coordinateRingMap R n (MvPolynomial.X (i, j)))))) := by
+  rw [tangentMatrix_apply_coe, GeneralLinear.tangentMatrix_apply,
+    HopfIdeal.quotientLieHom_apply_apply, coordinateMap_apply]
+  exact Bialgebra.CounitAlgebra.algEquivSelf_apply R _ B _
 
 private theorem tangentMatrix_injective :
     Function.Injective (tangentMatrix (R := R) (B := B) n) := by

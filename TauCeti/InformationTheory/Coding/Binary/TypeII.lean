@@ -39,11 +39,10 @@ variable {ι : Type*} [Fintype ι] {C : LinearCode (ZMod 2) ι}
 
 /-- A Type II binary code is doubly even and Euclidean self-dual. -/
 def IsTypeII (C : LinearCode (ZMod 2) ι) : Prop :=
-  IsDoublyEven C ∧ C = C.euclideanDual
+  IsDoublyEven C ∧ C.IsSelfDual
 
 /-- A doubly-even Euclidean self-dual binary code is Type II. -/
-theorem IsDoublyEven.isTypeII (hC : IsDoublyEven C) (hdual : C = C.euclideanDual) :
-    IsTypeII C :=
+theorem IsDoublyEven.isTypeII (hC : IsDoublyEven C) (hdual : C.IsSelfDual) : IsTypeII C :=
   ⟨hC, hdual⟩
 
 /-- Every Type II code is doubly even. -/
@@ -51,14 +50,14 @@ theorem IsTypeII.isDoublyEven (hC : IsTypeII C) : IsDoublyEven C :=
   hC.1
 
 /-- Every Type II code is Euclidean self-dual. -/
-theorem IsTypeII.eq_euclideanDual (hC : IsTypeII C) : C = C.euclideanDual :=
+theorem IsTypeII.isSelfDual (hC : IsTypeII C) : C.IsSelfDual :=
   hC.2
 
 /-- Over `ℤ/2 = ℤ/2^1`, the Type II condition for codes over `ℤ/2^r` is the binary Type II
 condition: binary Euclidean weights are Hamming weights. -/
 theorem _root_.TauCeti.TwoPowCode.isTypeII_one_iff :
     TwoPowCode.IsTypeII 1 C.toAddSubgroup ↔ IsTypeII C := by
-  rw [TwoPowCode.isTypeII_iff, IsTypeII, isDoublyEven_iff, and_comm]
+  rw [TwoPowCode.isTypeII_iff, IsTypeII, isDoublyEven_iff, Submodule.isSelfDual_iff, and_comm]
   simp
 
 /-! ### Direct sums and equivalences -/
@@ -70,8 +69,7 @@ variable {κ : Type*} [Fintype κ] {D : LinearCode (ZMod 2) κ}
 /-- A direct sum of binary codes is Type II exactly when both summands are Type II. -/
 @[simp]
 theorem isTypeII_directSum_iff : IsTypeII (C.directSum D) ↔ IsTypeII C ∧ IsTypeII D := by
-  simp only [IsTypeII, isDoublyEven_directSum_iff, Submodule.euclideanDual_directSum,
-    Submodule.directSum_inj]
+  simp only [IsTypeII, isDoublyEven_directSum_iff, Submodule.isSelfDual_directSum_iff]
   tauto
 
 /-- The direct sum of two Type II binary codes is Type II. -/
@@ -81,7 +79,7 @@ theorem IsTypeII.directSum (hC : IsTypeII C) (hD : IsTypeII D) : IsTypeII (C.dir
 /-- The Type II property of binary codes is invariant under permutation equivalence. -/
 theorem isTypeII_iff_of_isPermutationEquivalent (h : IsPermutationEquivalent C D) :
     IsTypeII C ↔ IsTypeII D :=
-  and_congr (isDoublyEven_iff_of_isPermutationEquivalent h) h.eq_euclideanDual_iff
+  and_congr (isDoublyEven_iff_of_isPermutationEquivalent h) h.isSelfDual_iff
 
 /-- Permutation equivalence preserves the Type II property of binary codes. -/
 theorem IsTypeII.of_isPermutationEquivalent (hC : IsTypeII C) (h : IsPermutationEquivalent C D) :
@@ -113,10 +111,10 @@ end Operations
 /-- A Type II binary code has length divisible by eight. -/
 theorem IsTypeII.eight_dvd_card (hC : IsTypeII C) : 8 ∣ Fintype.card ι := by
   classical
-  have hdim := Submodule.two_mul_finrank_eq_card_of_eq_euclideanDual hC.eq_euclideanDual
+  have hdim := hC.isSelfDual.two_mul_finrank_eq_card
   have hn : Fintype.card ι = 2 * (Fintype.card ι / 2) := by omega
   have hcard : (Nat.card C : ℂ) = 2 ^ (Fintype.card ι / 2) := by
-    rw [Submodule.natCard_of_eq_euclideanDual hC.eq_euclideanDual, Nat.card_zmod, Nat.cast_pow,
+    rw [hC.isSelfDual.natCard_eq, Nat.card_zmod, Nat.cast_pow,
       Nat.cast_ofNat]
   have hI : aeval ![1, I] (C : Set (ι → ZMod 2)).weightEnumerator = (Nat.card C : ℂ) := by
     have h := hC.isDoublyEven.aeval_weightEnumerator_mul_second I_pow_four (1 : ℂ) 1
@@ -130,7 +128,7 @@ theorem IsTypeII.eight_dvd_card (hC : IsTypeII C) : 8 ∣ Fintype.card ι := by
       SetLike.coe_sort_coe] using h
   -- Evaluate MacWilliams at (1, I), then cancel the nonzero cardinality.
   have hmac := congrArg (aeval ![1, I] : MvPolynomial (Fin 2) ℤ →ₐ[ℤ] ℂ)
-    (aeval_weightEnumerator_add_sub_of_eq_euclideanDual hC.eq_euclideanDual)
+    (aeval_weightEnumerator_add_sub_of_isSelfDual hC.isSelfDual)
   rw [comp_aeval_apply] at hmac
   have heval : (fun i ↦ (aeval ![1, I] : MvPolynomial (Fin 2) ℤ →ₐ[ℤ] ℂ)
       (![X 0 + X 1, X 0 - X 1] i)) = ![1 + I, 1 - I] := by

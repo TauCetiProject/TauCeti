@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.CharacterTable.GeneratingCount
+public import TauCeti.RepresentationTheory.CharacterTable.GeneratingCount.Basic
 public import TauCeti.GroupTheory.Perm.ConjClass
 
 /-!

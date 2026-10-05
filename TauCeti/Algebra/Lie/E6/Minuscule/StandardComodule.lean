@@ -62,34 +62,16 @@ variable (R : Type u) [CommRing R]
 @[instance_reducible]
 noncomputable def standardComodule :
     Comodule R (coordinateHopfAlgebra R) (Fin 27 → R) :=
-  let _ := GeneralLinear.standardComodule R 27
-  Comodule.Corestrict (coordinateMap R).hom.toCoalgHom
+  GeneralLinear.corestrictStandardComodule R 27 (coordinateMap R).hom
 
 attribute [local instance] GeneralLinear.standardComodule standardComodule
 
-/-- The standard carrier coaction is the standard general-linear coaction followed by the
-quotient coordinate morphism. -/
-@[simp]
-theorem standardComodule_coact :
-    let _ := GeneralLinear.standardComodule R 27
-    Comodule.corestrictCoact
-        (R := R) (C := GeneralLinear.coordinateHopfAlgebra R 27)
-        (D := coordinateHopfAlgebra R) (M := Fin 27 → R)
-        (coordinateMap R).hom.toCoalgHom =
-      TensorProduct.map LinearMap.id
-          (coordinateMap R).hom.toCoalgHom.toLinearMap ∘ₗ
-        GeneralLinear.standardCoact R 27 := by
-  apply LinearMap.ext
-  intro v
-  rw [Comodule.corestrictCoact_apply, LinearMap.comp_apply,
-    GeneralLinear.standardComodule_coact]
-
 /-- **The standard comodule of the specialized type-`E₆` minuscule carrier is faithful.** -/
 theorem isFaithful_standardComodule :
-    Comodule.IsFaithful (k := R) (H := coordinateHopfAlgebra R) (V := Fin 27 → R) := by
-  exact Comodule.isFaithful_corestrict_of_surjective (coordinateMap R).hom
-    (coordinateMap_surjective R)
-    (GeneralLinear.isFaithful_standardComodule R 27)
+    Comodule.IsFaithful (k := R) (H := coordinateHopfAlgebra R)
+      (V := Fin 27 → R) :=
+  GeneralLinear.isFaithful_corestrictStandardComodule R 27
+    (coordinateMap R).hom (coordinateMap_surjective R)
 
 section PointAction
 
@@ -130,17 +112,11 @@ theorem mulVec_mem
         (CommHopfAlgCat.quotientPointsHom
           (GeneralLinear.coordinateHopfAlgebra R 27) (baseChangeDefiningIdeal R)
           (CommAlgCat.of R R) g) : Matrix (Fin 27) (Fin 27) R) *ᵥ w ∈ N := by
-  have h := Comodule.basePointsRepresentation_mem N g hw
-  rw [Comodule.basePointsRepresentation_corestrict (coordinateMap R).hom g,
-    GeneralLinear.basePointsRepresentation_eq_mulVec] at h
-  have hpoint :
-      AlgHom.mapDomain (coordinateMap R).hom g =
-        CommHopfAlgCat.quotientPointsHom
-          (GeneralLinear.coordinateHopfAlgebra R 27) (baseChangeDefiningIdeal R)
-          (CommAlgCat.of R R) g := by
-    exact mapPointsFunctor_coordinateMap_app R g
-  rw [hpoint] at h
-  exact h
+  have h := GeneralLinear.corestrictStandardComodule_mulVec_mem R 27
+    (coordinateMap R).hom N g hw
+  have hpoint : AlgHom.mapDomain (coordinateMap R).hom g = _ :=
+    mapPointsFunctor_coordinateMap_app R g
+  rwa [hpoint] at h
 
 /-- Base-valued points of the specialized coordinate algebra, identified with points of the
 integral minuscule carrier after base change. -/
@@ -202,7 +178,7 @@ private theorem rootSubgroupPoints_mulVec_mem
 /-- The character of the weight torus corresponding to a minuscule-basis index. -/
 noncomputable abbrev minusculeCharacter (a : Fin 27) :
     Multiplicative (Fin 6 →₀ ℤ) :=
-  Multiplicative.ofAdd (Finsupp.equivFunOnFinite.symm (DynkinType.e6MinusculeWeight a))
+  SplitTorus.weightCharacter (DynkinType.e6MinusculeWeight a)
 
 /-- **Restricting the standard carrier comodule to the rank-six weight torus gives the direct
 sum of the 27 distinct minuscule weight comodules.** Corestricting along
@@ -213,38 +189,19 @@ theorem torusCorestrict_eq_ofWeights :
     let _ := standardComodule k
     Comodule.Corestrict (weightTorusToBaseChangeCoordinateMap k).hom.toCoalgHom =
       Comodule.ofWeights (Pi.basisFun k (Fin 27)) minusculeCharacter := by
-  let _ := GeneralLinear.standardComodule k 27
-  let _ := standardComodule k
-  apply Comodule.ext
-  rw [Comodule.corestrict_coact,
-    ← Comodule.corestrictCoact_comp (coordinateMap k).hom.toCoalgHom
-      (weightTorusToBaseChangeCoordinateMap k).hom.toCoalgHom]
-  have hcomp :
-      _root_.CoalgHom.comp ((weightTorusToBaseChangeCoordinateMap k).hom.toCoalgHom)
-          ((coordinateMap k).hom.toCoalgHom) =
-        (GeneralLinear.weightTorusCoordinateBialgHom (S := k)
-          DynkinType.e6MinusculeWeight).toCoalgHom := by
-    have hb :
-        (weightTorusToBaseChangeCoordinateMap k).hom.comp (coordinateMap k).hom =
-          GeneralLinear.weightTorusCoordinateBialgHom (S := k)
-            DynkinType.e6MinusculeWeight := by
-      rw [← _root_.CommHopfAlgCat.hom_comp,
-        coordinateMap_comp_weightTorusToBaseChangeCoordinateMap,
-        GeneralLinear.hom_weightTorusBaseChangeCoordinateMap, weightTable_weight]
-    apply DFunLike.ext _ _
-    intro x
-    exact DFunLike.congr_fun hb x
-  rw [hcomp]
-  simpa only [Comodule.corestrict_coact] using
-    congrArg (fun c : Comodule k _ (Fin 27 → k) ↦ c.coact)
-      (GeneralLinear.corestrict_standardComodule_weightTorusCoordinateBialgHom_eq_ofWeights
-        DynkinType.e6MinusculeWeight)
+  apply GeneralLinear.corestrict_corestrict_standardComodule_eq_ofWeights
+    (coordinateMap k).hom (weightTorusToBaseChangeCoordinateMap k).hom
+    (DynkinType.e6MinusculeWeight)
+  rw [← _root_.CommHopfAlgCat.hom_comp,
+    coordinateMap_comp_weightTorusToBaseChangeCoordinateMap,
+    GeneralLinear.hom_weightTorusBaseChangeCoordinateMap, weightTable_weight]
 
 private theorem minusculeCharacter_injective : Function.Injective minusculeCharacter := by
   intro a b h
   apply DynkinType.e6MinusculeWeight_injective
-  apply Finsupp.equivFunOnFinite.symm.injective
-  exact Multiplicative.ofAdd.injective h
+  funext i
+  simpa only [minusculeCharacter, SplitTorus.toAdd_weightCharacter] using
+    congrArg (fun χ : Multiplicative (Fin 6 →₀ ℤ) ↦ Multiplicative.toAdd χ i) h
 
 private theorem positiveRoot_mulVec_single_sub (i : Fin 6) (a : Fin 27)
     (ha : DynkinType.e6MinusculeWeight a i = -1) :
@@ -273,31 +230,52 @@ private theorem negativeRoot_mulVec_single_sub (i : Fin 6) (a : Fin 27)
 /-- Invariance under the two simple-root points makes membership of coordinate basis vectors
 stable under every simple reflection. -/
 private theorem single_reflection_mem
-    (N : Subcomodule k (coordinateHopfAlgebra k) (Fin 27 → k))
+    (N : Submodule k (Fin 27 → k))
+    (hroot : ∀ (i : Fin 6 ⊕ Fin 6) (w : Fin 27 → k), w ∈ N →
+      ((rootSubgroupPoints i k (Multiplicative.ofAdd 1) :
+        Matrix.GeneralLinearGroup (Fin 27) k) : Matrix (Fin 27) (Fin 27) k) *ᵥ w ∈ N)
     (a : Fin 27) (i : Fin 6) (ha : Pi.single a 1 ∈ N) :
     Pi.single (DynkinType.e6MinusculeReflection i a) 1 ∈ N := by
   rcases DynkinType.e6MinusculeWeight_apply_eq_neg_one_or_eq_zero_or_eq_one a i with
     hneg | hzero | hpos
-  · have hact := rootSubgroupPoints_mulVec_mem k N (.inl i) ha
-    have hsub := N.toSubmodule.sub_mem hact ha
+  · have hact := hroot (.inl i) _ ha
+    have hsub := N.sub_mem hact ha
     rwa [positiveRoot_mulVec_single_sub k i a hneg] at hsub
   · rw [(DynkinType.e6MinusculeReflection_eq_self_iff i a).2 hzero]
     exact ha
-  · have hact := rootSubgroupPoints_mulVec_mem k N (.inr i) ha
-    have hsub := N.toSubmodule.sub_mem hact ha
+  · have hact := hroot (.inr i) _ ha
+    have hsub := N.sub_mem hact ha
     rwa [negativeRoot_mulVec_single_sub k i a hpos] at hsub
+
+/-- A comodule with the type-`E₆` minuscule weight decomposition is simple if its subcomodules
+are stable under the numbered positive and negative minuscule root matrices at parameter one.
+This applies both to the integral carrier's specialization and to the subgroup generated directly
+over the field. -/
+theorem isSimpleOrder_of_minusculeWeights_of_rootSubgroupPoints
+    {H : Type*} [AddCommGroup H] [Module k H] [Coalgebra k H]
+    [Comodule k H (Fin 27 → k)]
+    (f : H →ₗc[k] MonoidAlgebra k (Multiplicative (Fin 6 →₀ ℤ)))
+    (hweights : Comodule.Corestrict f =
+      Comodule.ofWeights (Pi.basisFun k (Fin 27)) minusculeCharacter)
+    (hroot : ∀ (N : Subcomodule k H (Fin 27 → k)) (i : Fin 6 ⊕ Fin 6)
+      (w : Fin 27 → k), w ∈ N →
+      ((rootSubgroupPoints i k (Multiplicative.ofAdd 1) :
+        Matrix.GeneralLinearGroup (Fin 27) k) : Matrix (Fin 27) (Fin 27) k) *ᵥ w ∈ N) :
+    IsSimpleOrder (Subcomodule k H (Fin 27 → k)) :=
+  Subcomodule.isSimpleOrder_of_corestrict_eq_ofWeights f minusculeCharacter
+    minusculeCharacter_injective hweights
+    (fun i a ↦ DynkinType.e6MinusculeReflection i a)
+    (fun i ↦ DynkinType.e6MinusculeReflection_apply_apply i)
+    (fun N a i ↦ single_reflection_mem k N.toSubmodule (hroot N) a i) 0
+    DynkinType.exists_e6MinusculeReflections_eq
 
 /-- **The standard comodule of the specialized type-`E₆` minuscule carrier is simple over
 every field.** -/
 instance instIsSimpleOrderSubcomodule :
-    IsSimpleOrder (Subcomodule k (coordinateHopfAlgebra k) (Fin 27 → k)) := by
-  exact Subcomodule.isSimpleOrder_of_corestrict_eq_ofWeights
-    (weightTorusToBaseChangeCoordinateMap k).hom.toCoalgHom minusculeCharacter
-    minusculeCharacter_injective (torusCorestrict_eq_ofWeights k)
-    (fun i a ↦ DynkinType.e6MinusculeReflection i a)
-    (fun i ↦ DynkinType.e6MinusculeReflection_apply_apply i)
-    (fun N a i ↦ single_reflection_mem k N a i) 0
-    DynkinType.exists_e6MinusculeReflections_eq
+    IsSimpleOrder (Subcomodule k (coordinateHopfAlgebra k) (Fin 27 → k)) :=
+  isSimpleOrder_of_minusculeWeights_of_rootSubgroupPoints k
+    (weightTorusToBaseChangeCoordinateMap k).hom.toCoalgHom (torusCorestrict_eq_ofWeights k)
+    (fun N i _ hw ↦ rootSubgroupPoints_mulVec_mem k N i hw)
 
 end Simple
 

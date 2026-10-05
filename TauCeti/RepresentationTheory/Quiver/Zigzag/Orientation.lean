@@ -8,6 +8,7 @@ module
 public import Mathlib.Combinatorics.SimpleGraph.Coloring.Vertex
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Basic
 public import TauCeti.RepresentationTheory.Quiver.Acyclic.Basic
+import Mathlib.Combinatorics.Quiver.Cast
 
 /-!
 # Orienting a simple graph and recovering its doubled quiver

@@ -249,6 +249,14 @@ lemma algEquivSelf_derivation_smul_apply
   -- coefficient-synonym reduction.
   rfl
 
+/-- The Leibniz rule of a counit-valued derivation, read in the coefficient algebra. -/
+lemma Bialgebra.CounitAlgebra.algEquivSelf_apply_mul
+    (d : Derivation R A (Bialgebra.CounitAlgebra R A B)) (a b : A) :
+    Bialgebra.CounitAlgebra.algEquivSelf R A B (d (a * b)) =
+      algebraMap R B (Coalgebra.counit a) * Bialgebra.CounitAlgebra.algEquivSelf R A B (d b) +
+        algebraMap R B (Coalgebra.counit b) * Bialgebra.CounitAlgebra.algEquivSelf R A B (d a) := by
+  simp only [d.leibniz, map_add, Bialgebra.CounitAlgebra.algEquivSelf_smul]
+
 end DerivationCoefficients
 
 end TauCeti

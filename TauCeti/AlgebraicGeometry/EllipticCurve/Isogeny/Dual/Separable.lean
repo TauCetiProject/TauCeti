@@ -19,18 +19,18 @@ Over a separably closed field the kernel of a separable isogeny `φ : W₁ → W
 points (`TauCeti.Isogeny.card_ker_eq_degree`). So `[deg φ]` factors through `φ` by a unique
 isogeny (`TauCeti.Isogeny.existsUnique_comp_eq_mulByIntIsogenyOfNeZero_degree`). This factor is
 the **dual isogeny** `φ̂ : W₂ → W₁` (Silverman III.6.1), and this file names it and proves its
-basic properties (Silverman III.6.2(a), (d), (e), (f)):
+basic properties (Silverman III.6.2(a), (c), (d), (e), (f)):
 
 * `φ̂ ∘ φ = [deg φ]` on `W₁`, and `φ̂` is the only isogeny with this property;
 * `φ ∘ φ̂ = [deg φ]` on `W₂`;
 * `deg φ̂ = deg φ`;
+* `(ψ ∘ φ)^ = φ̂ ∘ ψ̂` for separable `φ`, `ψ`;
 * `φ̂̂ = φ` whenever `φ̂` is itself separable;
 * `[n]̂ = [n]` whenever `n` is nonzero in the base field.
 
-The identity `φ ∘ φ̂ = [deg φ]` needs `φ ∘ [n] = [n] ∘ φ`. This holds because composition with a
-separable isogeny over a separably closed field is additive in the inner morphism
-(`TauCeti.Isogeny.Hom.ofIsogeny_comp_add`). Precomposing with `φ` is injective, so it cancels from
-`φ ∘ φ̂ ∘ φ = φ ∘ [deg φ] = [deg φ] ∘ φ`.
+The identity `φ ∘ φ̂ = [deg φ]` needs `φ ∘ [n] = [n] ∘ φ`
+(`TauCeti.Isogeny.comp_mulByIntIsogenyOfNeZero`). Precomposing with `φ` is injective, so it cancels
+from `φ ∘ φ̂ ∘ φ = φ ∘ [deg φ] = [deg φ] ∘ φ`.
 
 ## Main definitions
 
@@ -47,6 +47,7 @@ separable isogeny over a separably closed field is additive in the inner morphis
   additive groups of morphisms.
 * `TauCeti.Isogeny.pointMap_dual_pointMap` and `TauCeti.Isogeny.pointMap_pointMap_dual`: on points,
   `φ̂ (φ P) = deg φ • P` and `φ (φ̂ Q) = deg φ • Q`.
+* `TauCeti.Isogeny.dual_comp_dual`: `(ψ ∘ φ)^ = φ̂ ∘ ψ̂`.
 * `TauCeti.Isogeny.dual_dual`: `φ̂̂ = φ` when `φ̂` is separable.
 * `TauCeti.Isogeny.dual_mulByIntIsogeny`: `[n]` is self-dual when it is separable.
 
@@ -127,6 +128,31 @@ theorem dual_dual [Algebra.IsSeparable φ.dual.fieldPullback.fieldRange W₂.Fun
     φ.dual.dual = φ :=
   ((eq_dual_iff_comp_eq φ.dual).mpr <| by
     rw [comp_dual, mulByIntIsogeny_inj, degree_dual]).symm
+
+variable {W₃ : WeierstrassCurve.Affine F} [W₃.IsElliptic] (ψ : Isogeny W₂ W₃)
+  [Algebra.IsSeparable ψ.fieldPullback.fieldRange W₂.FunctionField]
+
+-- `(ψ.comp φ).dual` needs the composite to be separable; `isSeparable_comp` is not a global
+-- instance (see the comment at its definition), so it is activated locally for the statement
+-- below.
+attribute [local instance] isSeparable_comp
+
+/-- **The dual of a composite is the composite of the duals in the opposite order**:
+`(ψ ∘ φ)^ = φ̂ ∘ ψ̂` (Silverman III.6.2(c)). -/
+theorem dual_comp_dual : φ.dual.comp ψ.dual = (ψ.comp φ).dual := by
+  have hφ : (φ.degree : ℤ) ≠ 0 := mod_cast φ.degree_ne_zero
+  have hψ : (ψ.degree : ℤ) ≠ 0 := mod_cast ψ.degree_ne_zero
+  -- `φ̂ ∘ ψ̂` composed with `ψ ∘ φ` cancels `ψ̂ ∘ ψ` to `[deg ψ]`, then `φ̂ ∘ φ` to `[deg φ]`
+  refine (eq_dual_iff_comp_eq (ψ.comp φ)).mpr ?_
+  calc (φ.dual.comp ψ.dual).comp (ψ.comp φ)
+      = φ.dual.comp ((ψ.dual.comp ψ).comp φ) := by rw [comp_assoc, comp_assoc]
+    _ = (φ.dual.comp φ).comp (mulByIntIsogenyOfNeZero W₁ hψ) := by
+        rw [dual_comp ψ, ← comp_mulByIntIsogenyOfNeZero φ, comp_assoc]
+    _ = mulByIntIsogenyOfNeZero W₁ (mul_ne_zero hφ hψ) := by
+        rw [dual_comp φ, mulByIntIsogenyOfNeZero_comp_mulByIntIsogenyOfNeZero]
+    _ = mulByIntIsogenyOfNeZero W₁ (n := (ψ.comp φ).degree)
+          (mod_cast (ψ.comp φ).degree_ne_zero) := by
+        rw [mulByIntIsogeny_inj, degree_comp, Nat.cast_mul, mul_comm]
 
 variable (W : WeierstrassCurve.Affine F) [W.IsElliptic]
 

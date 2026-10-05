@@ -12,21 +12,29 @@ import Mathlib.Algebra.Group.Subgroup.Finite
 import Mathlib.Data.Finset.NoncommProd
 
 /-!
-# The primitive product action of a wreath product
+# Primitivity of the two actions of a wreath product
 
-Let a group `D` act faithfully and primitively, but not regularly, on a nontrivial type `Λ`.
-When `ι` is finite, the full permutation wreath product
-`D ≀ Sym(ι)` acts primitively on the function space `ι → Λ` through its product action.
+The permutation wreath product `D ≀ Sym(ι)` has two natural actions, with opposite behaviour.
 
-The nonregularity hypothesis is essential.  It provides a nontrivial stabilizer of a base point;
-primitivity and faithfulness then say that this stabilizer moves every other point.  Applied in a
-single coordinate, such an element turns any nonsingleton block containing a constant function
-into a block containing a pair that differs in only one coordinate.  Primitivity of the `D`-action
-then fills that coordinate, symmetry fills every coordinate, and the base group fills the whole
-function space.
+The imprimitive action on `ι × Λ` is never primitive once `ι` and `Λ` each have at least two
+points: every fibre `{i} × Λ` is a block, and such a fibre is neither a single point nor the whole
+space.  This is the block structure that gives the action its name.
 
-## Main result
+For the product action on `ι → Λ`, let the group `D` act faithfully and primitively, but not
+regularly, on a nontrivial type `Λ`.  When `ι` is finite, `D ≀ Sym(ι)` acts primitively on the
+function space `ι → Λ`.  The nonregularity hypothesis is essential.  It provides a nontrivial
+stabilizer of a base point; primitivity and faithfulness then say that this stabilizer moves every
+other point.  Applied in a single coordinate, such an element turns any nonsingleton block
+containing a constant function into a block containing a pair that differs in only one coordinate.
+Primitivity of the `D`-action then fills that coordinate, symmetry fills every coordinate, and the
+base group fills the whole function space.
 
+## Main results
+
+* `TauCeti.WreathProduct.isBlock_fst_preimage_singleton`: each fibre `{i} × Λ` is a block for the
+  imprimitive action.
+* `TauCeti.WreathProduct.not_isPreprimitive_imprimitive`: the imprimitive action of `D ≀ Sym(ι)`
+  on `ι × Λ` is not primitive when `ι` and `Λ` are nontrivial.
 * `TauCeti.WreathProduct.isPreprimitive_product`: the product action of `D ≀ Sym(ι)` is
   primitive when the action of `D` is faithful, primitive, and nonregular.
 
@@ -46,6 +54,42 @@ open _root_.MulAction _root_.TauCeti.MulAction
 universe u v w
 
 variable {D : Type u} {ι : Type v} {Λ : Type w} [Group D] [MulAction D Λ]
+
+/-! ### The imprimitive action -/
+
+/-- The first projection `ι × Λ → ι`, equivariant from the imprimitive action of `D ≀ Sym(ι)` to
+the action of the top group `Sym(ι)` along the projection `SemidirectProduct.rightHom`. -/
+private def fstMulActionHom :
+    ι × Λ →ₑ[(SemidirectProduct.rightHom : WreathProduct D ι →* Equiv.Perm ι)] ι where
+  toFun := Prod.fst
+  map_smul' _ _ := rfl
+
+/-- Each fibre `{i} × Λ` is a block for the imprimitive action of `D ≀ Sym(ι)` on `ι × Λ`. -/
+theorem isBlock_fst_preimage_singleton (i : ι) :
+    IsBlock (WreathProduct D ι) (Prod.fst ⁻¹' {i} : Set (ι × Λ)) :=
+  (IsTrivialBlock.isBlock (G := Equiv.Perm ι) (Or.inl Set.subsingleton_singleton)).preimage
+    (fstMulActionHom (D := D) (Λ := Λ))
+
+/-- **The imprimitive action is not primitive.** When there are at least two fibres with at least
+two points each, a fibre `{i} × Λ` is a block that is neither a subsingleton nor the whole
+space. -/
+theorem not_isPreprimitive_imprimitive [Nontrivial ι] [Nontrivial Λ] :
+    ¬ IsPreprimitive (WreathProduct D ι) (ι × Λ) := by
+  intro h
+  obtain ⟨i, j, hij⟩ := exists_pair_ne ι
+  obtain ⟨a, b, hab⟩ := exists_pair_ne Λ
+  rcases (isBlock_fst_preimage_singleton (D := D) (Λ := Λ) i).subsingleton_or_eq_univ with
+    hs | hu
+  · have ha : (i, a) ∈ (Prod.fst ⁻¹' {i} : Set (ι × Λ)) :=
+      Set.mem_preimage.mpr (Set.mem_singleton i)
+    have hb : (i, b) ∈ (Prod.fst ⁻¹' {i} : Set (ι × Λ)) :=
+      Set.mem_preimage.mpr (Set.mem_singleton i)
+    exact hab (congrArg Prod.snd (hs ha hb))
+  · have hmem : (j, a) ∈ (Prod.fst ⁻¹' {i} : Set (ι × Λ)) := hu ▸ Set.mem_univ _
+    rw [Set.mem_preimage, Set.mem_singleton_iff] at hmem
+    exact hij hmem.symm
+
+/-! ### The product action -/
 
 /-- The product action of a full permutation wreath product is primitive when its base action is
 faithful and primitive but not regular.

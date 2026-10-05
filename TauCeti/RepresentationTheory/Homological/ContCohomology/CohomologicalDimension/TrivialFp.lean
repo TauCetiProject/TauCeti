@@ -28,15 +28,21 @@ torsion, and its `ℤ`-cohomology vanishes exactly when `cohomFp p G n` does
 These are the two implications valid for every topological group. For a pro-`p` group the first
 one is an equivalence, by dévissage; that is the pro-`p` reduction of `cd_p` in
 `TauCeti.Topology.Algebra.Group.Profinite.ProP.CohomologicalDimension`. The dévissage runs on the
-trivial discrete `G`-modules of prime order `p`, and the last result here shows that their
-cohomology vanishes exactly when `cohomFp p G n` does: such a module is cyclic of order `p`, hence
-`G`-equivariantly isomorphic to the carrier of `trivialFp p G`.
+trivial discrete `G`-modules of prime order `p`, and the results here identify their cohomology
+with `cohomFp p G n`: such a module is cyclic of order `p`, hence `G`-equivariantly isomorphic to
+the carrier of `trivialFp p G`, so its cohomology is additively equivalent to `cohomFp p G n`
+(`TauCeti.nonempty_cohomFp_addEquiv_of_natCard_eq`), and in particular vanishes, or is finite,
+exactly when `cohomFp p G n` does. The equivalence depends on a choice of generator of the module,
+and only its existence is recorded.
 
 ## Main results
 
 * `TauCeti.isPPrimaryTorsion_trivialFp_V`: the carrier of `trivialFp p G` is `p`-primary torsion.
-* `TauCeti.subsingleton_continuousCohomology_iff_subsingleton_cohomFp_of_natCard_eq`: the
-  cohomology of a trivial discrete `G`-module of prime order `p` vanishes exactly when that of
+* `TauCeti.nonempty_cohomFp_addEquiv_of_natCard_eq`: the cohomology of `𝔽_p` is additively
+  equivalent to the cohomology of any trivial discrete `G`-module of prime order `p`.
+* `TauCeti.subsingleton_continuousCohomology_iff_subsingleton_cohomFp_of_natCard_eq`,
+  `TauCeti.finite_continuousCohomology_iff_finite_cohomFp_of_natCard_eq`: the cohomology of a
+  trivial discrete `G`-module of prime order `p` vanishes, resp. is finite, exactly when that of
   `𝔽_p` does.
 * `TauCeti.CohomologicalDimensionLE.subsingleton_cohomFp`,
   `TauCeti.subsingleton_cohomFp_of_cohomologicalDimensionAt_le`: `cd_p G ≤ n` gives
@@ -74,22 +80,45 @@ variable {p G} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 
 attribute [local instance] TopRep.distribMulAction continuousSMul_trivialFp
 
-/-- **The cohomology of a trivial discrete `G`-module of prime order `p` vanishes exactly when that
-of `𝔽_p` does.** Such a module is cyclic of order `p`, hence `G`-equivariantly isomorphic to the
-carrier of `trivialFp p G`. -/
-theorem subsingleton_continuousCohomology_iff_subsingleton_cohomFp_of_natCard_eq [Fact p.Prime]
-    (A : Type u) [AddCommGroup A] [TopologicalSpace A] [DiscreteTopology A] [DistribMulAction G A]
-    (hA : Nat.card A = p) (htriv : ∀ (g : G) (a : A), g • a = a) (n : ℕ) :
-    Subsingleton (continuousCohomology n (ofDiscreteModule ℤ G A)) ↔
-      Subsingleton (cohomFp p G n) := by
+section PrimeOrder
+
+variable [Fact p.Prime] (A : Type u) [AddCommGroup A] [TopologicalSpace A] [DiscreteTopology A]
+  [DistribMulAction G A] (hA : Nat.card A = p) (htriv : ∀ (g : G) (a : A), g • a = a) (n : ℕ)
+
+include hA htriv
+
+/-- **The cohomology of `𝔽_p` is that of any trivial discrete `G`-module of prime order `p`.** Such
+a module `A` is cyclic of order `p`, hence `G`-equivariantly isomorphic to the carrier of
+`trivialFp p G` once a generator is chosen, and the cohomology of that carrier as a discrete
+`ℤ`-module is `cohomFp p G n`. The equivalence depends on the choice of generator, so only its
+existence is recorded. -/
+theorem nonempty_cohomFp_addEquiv_of_natCard_eq :
+    Nonempty (cohomFp p G n ≃+ continuousCohomology n (ofDiscreteModule ℤ G A)) := by
   obtain ⟨a, ha⟩ := (isAddCyclic_of_prime_card hA).exists_generator
   let e : (trivialFp p G).V ≃ₗ[ℤ] A :=
     ((trivialFpEquiv p G).toAddEquiv.trans (zmodAddEquivOfGenerator ha hA)).toIntLinearEquiv
   have he : ∀ (g : G) (m : (trivialFp p G).V), e (g • m) = g • e m := fun g m ↦ by
     rw [smul_trivialFp_V, htriv]
-  rw [← subsingleton_continuousCohomology_ofDiscreteModule_iff (trivialFp p G) n]
-  exact ((ContinuousCohomology.continuousCohomologyFunctor ℤ G n).mapIso
-    (ofDiscreteModuleIso e he)).toContinuousLinearEquiv.toEquiv.subsingleton_congr.symm
+  exact ⟨(ofDiscreteModuleRestrictScalarsIntEquiv (trivialFp p G) n).symm.trans
+    ((ContinuousCohomology.continuousCohomologyFunctor ℤ G n).mapIso
+      (ofDiscreteModuleIso e he)).toContinuousLinearEquiv.toAddEquiv⟩
+
+/-- **The cohomology of a trivial discrete `G`-module of prime order `p` vanishes exactly when that
+of `𝔽_p` does.** -/
+theorem subsingleton_continuousCohomology_iff_subsingleton_cohomFp_of_natCard_eq :
+    Subsingleton (continuousCohomology n (ofDiscreteModule ℤ G A)) ↔
+      Subsingleton (cohomFp p G n) :=
+  let ⟨e⟩ := nonempty_cohomFp_addEquiv_of_natCard_eq A hA htriv n
+  e.toEquiv.subsingleton_congr.symm
+
+/-- **The cohomology of a trivial discrete `G`-module of prime order `p` is finite exactly when that
+of `𝔽_p` is.** -/
+theorem finite_continuousCohomology_iff_finite_cohomFp_of_natCard_eq :
+    Finite (continuousCohomology n (ofDiscreteModule ℤ G A)) ↔ Finite (cohomFp p G n) :=
+  let ⟨e⟩ := nonempty_cohomFp_addEquiv_of_natCard_eq A hA htriv n
+  e.toEquiv.finite_iff.symm
+
+end PrimeOrder
 
 /-- If `Hⁱ(G, M)` vanishes for every `i > n` and every discrete `p`-primary torsion `G`-module `M`,
 then `Hᵐ(G, 𝔽_p)` vanishes for every `m > n`. -/

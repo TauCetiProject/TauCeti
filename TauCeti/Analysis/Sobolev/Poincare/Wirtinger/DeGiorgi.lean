@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.W1p
 public import TauCeti.Analysis.Sobolev.W1p.LevelSet
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
 /-!
 # De Giorgi's isoperimetric inequality
@@ -34,6 +35,10 @@ why the inequality is stated for every exponent `p` and proved at `p = 1`.
   convex domain.
 * `TauCeti.W1p.sub_mul_measureReal_mul_measureReal_le_of_eq_ball`: the inequality on a ball of
   radius `R`, with constant `μ(B(0, 1)) (2R) ^ (n + 1)`.
+* `TauCeti.W1p.sub_mul_measureReal_mul_measureReal_le_of_ball_subset`: the same inequality for
+  a ball contained in a larger Sobolev domain.
+* `TauCeti.W1p.sq_sub_mul_measureReal_mul_measureReal_le_of_ball_subset`: its squared form for
+  `u ∈ W^{1,2}(Ω)`, with the `L²` energy of the truncation `(u - k)⁺` on the ball.
 
 ## References
 
@@ -48,10 +53,10 @@ public section
 
 noncomputable section
 
-namespace TauCeti
-
 open MeasureTheory Metric Module Set TopologicalSpace
 open scoped ENNReal
+
+namespace TauCeti
 
 variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
@@ -211,5 +216,97 @@ theorem W1p.sub_mul_measureReal_mul_measureReal_le_of_eq_ball {c : E} {R : ℝ} 
   gcongr
   rw [hOmega]
   exact diam_ball hR
+
+/-- **De Giorgi's isoperimetric inequality on a ball contained in the Sobolev domain.**
+For `u ∈ W^{1,p}(Ω)`, a ball `B(c, R) ⊆ Ω`, and levels `k < l`, all level sets and the gradient
+integral being restricted to the ball,
+
+`(l - k) · |{u ≥ l}| · |{u ≤ k}| ≤ μ(B(0, 1)) · (2R) ^ (n + 1) · ∫_{k < u < l} |∇u|`.
+
+This is the ball inequality applied to the Sobolev restriction of `u`. -/
+theorem W1p.sub_mul_measureReal_mul_measureReal_le_of_ball_subset {c : E} {R : ℝ}
+    (hR : 0 ≤ R) (hball : ball c R ⊆ (Omega : Set E)) (u : W1p mu Omega p)
+    {k l : ℝ} (hkl : k < l) :
+    (l - k) * (mu.restrict (ball c R)).real {x | l ≤ W1p.value u x} *
+        (mu.restrict (ball c R)).real {x | W1p.value u x ≤ k} ≤
+      mu.real (ball 0 1) * (2 * R) ^ (finrank ℝ E + 1) *
+        ∫ x in {x | k < W1p.value u x ∧ W1p.value u x < l}, ‖W1p.gradient u x‖
+          ∂mu.restrict (ball c R) := by
+  let B : Opens E := ⟨ball c R, isOpen_ball⟩
+  have hBO : B ≤ Omega := hball
+  let v := W1p.restrictL hBO u
+  let nu := mu.restrict (ball c R)
+  have hv : ⇑(W1p.value v) =ᵐ[nu] W1p.value u := W1p.value_restrictL_ae hBO u
+  have hgv : ⇑(W1p.gradient v) =ᵐ[nu] W1p.gradient u := W1p.gradient_restrictL_ae hBO u
+  have hiso := W1p.sub_mul_measureReal_mul_measureReal_le_of_eq_ball hR rfl v hkl
+  have hA : nu.real {x | l ≤ W1p.value v x} = nu.real {x | l ≤ W1p.value u x} :=
+    measureReal_congr (by filter_upwards [hv] with x hx; simp [hx])
+  have hB : nu.real {x | W1p.value v x ≤ k} = nu.real {x | W1p.value u x ≤ k} :=
+    measureReal_congr (by filter_upwards [hv] with x hx; simp [hx])
+  have hS : {x | k < W1p.value v x ∧ W1p.value v x < l} =ᵐ[nu]
+      {x | k < W1p.value u x ∧ W1p.value u x < l} := by
+    filter_upwards [hv] with x hx
+    simp [hx]
+  have hI : ∫ x in {x | k < W1p.value v x ∧ W1p.value v x < l}, ‖W1p.gradient v x‖ ∂nu =
+      ∫ x in {x | k < W1p.value u x ∧ W1p.value u x < l}, ‖W1p.gradient u x‖ ∂nu := by
+    rw [setIntegral_congr_set hS]
+    exact integral_congr_ae (ae_restrict_of_ae (by filter_upwards [hgv] with x hx; rw [hx]))
+  rw [← hA, ← hB, ← hI]
+  exact hiso
+
+
+/-- **De Giorgi's isoperimetric inequality, squared form.** For `u ∈ W^{1,2}(Ω)`, a ball
+`B(c, R) ⊆ Ω`, and levels `k < l` with `w = (u - k)⁺ ∈ L²(Ω)`, all level sets being restricted
+to the ball,
+
+`((l - k) · |{u ≥ l}| · |{u ≤ k}|)² ≤ (μ(B(0, 1)) · (2R) ^ (n + 1))² · |{k < u < l}| · ∫_B |∇w|²`,
+
+where `B = B(c, R)`.
+
+This is the isoperimetric inequality on the ball followed by the Cauchy–Schwarz inequality on the
+strip `{k < u < l}`, where `∇u = ∇w`. -/
+theorem W1p.sq_sub_mul_measureReal_mul_measureReal_le_of_ball_subset {c : E} {R : ℝ}
+    (hR : 0 ≤ R) (hball : ball c R ⊆ (Omega : Set E)) (u : W1p mu Omega 2) {k l : ℝ}
+    (hkl : k < l) (hwLp : MemLp (fun x => max (W1p.value u x - k) 0) 2 (mu.restrict Omega)) :
+    ((l - k) * (mu.restrict (ball c R)).real {x | l ≤ W1p.value u x} *
+        (mu.restrict (ball c R)).real {x | W1p.value u x ≤ k}) ^ 2 ≤
+      (mu.real (ball 0 1) * (2 * R) ^ (finrank ℝ E + 1)) ^ 2 *
+        (mu.restrict (ball c R)).real {x | k < W1p.value u x ∧ W1p.value u x < l} *
+        ∫ x in ball c R,
+          ‖W1p.gradient (W1p.posPartAboveOfMemLp (by norm_num) k u hwLp) x‖ ^ 2 ∂mu := by
+  set nu := mu.restrict (ball c R)
+  have : IsFiniteMeasure nu := isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
+  set w := W1p.posPartAboveOfMemLp (by norm_num) k u hwLp
+  set S := {x | k < W1p.value u x ∧ W1p.value u x < l}
+  have hm : Measurable (W1p.value u : E → ℝ) := (Lp.stronglyMeasurable _).measurable
+  have hS : MeasurableSet S :=
+    (measurableSet_lt measurable_const hm).inter (measurableSet_lt hm measurable_const)
+  have hiso := W1p.sub_mul_measureReal_mul_measureReal_le_of_ball_subset hR hball u hkl
+  -- Cauchy–Schwarz on the strip `S`, where `∇u = ∇w`.
+  have hmem : MemLp (fun x => ‖W1p.gradient u x‖) 2 nu :=
+    ((Lp.memLp (W1p.gradient u)).mono_measure (Measure.restrict_mono_set mu hball)).norm
+  have hCS := MeasureTheory.sq_setIntegral_le_measureReal_mul_setIntegral_sq
+    (μ := nu) (fun x => ‖W1p.gradient u x‖) S (measure_ne_top _ _)
+    (hmem.integrable one_le_two).integrableOn hmem.integrable_sq.integrableOn
+  have hstrip : ∫ x in S, ‖W1p.gradient u x‖ ^ 2 ∂nu ≤
+      ∫ x in ball c R, ‖W1p.gradient w x‖ ^ 2 ∂mu := by
+    have hgw : ∀ᵐ x ∂nu, x ∈ S → ‖W1p.gradient u x‖ ^ 2 = ‖W1p.gradient w x‖ ^ 2 := by
+      filter_upwards [ae_restrict_of_ae_restrict_of_subset hball
+        (W1p.gradient_posPartAboveOfMemLp_ae (by norm_num) k u hwLp)] with x hx hxS
+      rw [hx, indicator_of_mem (s := {x | k < W1p.value u x}) hxS.1]
+    rw [setIntegral_congr_ae hS hgw]
+    exact setIntegral_le_integral
+      (IntegrableOn.mono_set (W1p.integrable_norm_gradient_sq w) hball)
+      (Filter.Eventually.of_forall fun x => by positivity)
+  calc ((l - k) * nu.real {x | l ≤ W1p.value u x} * nu.real {x | W1p.value u x ≤ k}) ^ 2
+      ≤ (mu.real (ball 0 1) * (2 * R) ^ (finrank ℝ E + 1) * ∫ x in S, ‖W1p.gradient u x‖ ∂nu) ^ 2 :=
+        pow_le_pow_left₀ (mul_nonneg (mul_nonneg (sub_nonneg.2 hkl.le) measureReal_nonneg)
+          measureReal_nonneg) hiso 2
+    _ = (mu.real (ball 0 1) * (2 * R) ^ (finrank ℝ E + 1)) ^ 2 *
+          (∫ x in S, ‖W1p.gradient u x‖ ∂nu) ^ 2 := by ring
+    _ ≤ _ := by
+        rw [mul_assoc _ (nu.real S)]
+        gcongr
+        exact hCS.trans (mul_le_mul_of_nonneg_left hstrip measureReal_nonneg)
 
 end TauCeti

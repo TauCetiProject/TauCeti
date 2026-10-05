@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Ring.LadderValley
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Diagram
-public import TauCeti.RepresentationTheory.Quiver.AdmissibleIdeal
+public import TauCeti.RepresentationTheory.Quiver.AdmissibleIdeal.Basic
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Admissible
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Preprojective
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Signless
@@ -40,6 +40,10 @@ Coxeter number `h = n + 1` of `Aₙ`; that paths of length `n - 1` survive is no
 
 ## Main results
 
+* `TauCeti.signlessPreprojectiveMk_A_ofPath_eq_zero_of_endpoint_bound`: the finer vanishing
+  bound depending on the two endpoints.
+* `TauCeti.signlessPreprojectiveMk_A_ofPath_eq_zero_or_ladderValley`: length-preserving
+  reduction to a valley word.
 * `TauCeti.signlessPreprojectiveMk_A_ofPath_eq_zero_of_le`: paths of length at least `n` vanish in
   the signless algebra of `Aₙ`.
 * `TauCeti.preprojectiveMk_A_ofPath_eq_zero_of_le`: the same in the preprojective algebra of every
@@ -75,41 +79,7 @@ noncomputable local instance finiteNeighborSetFintype {V : Type*} [Finite V] (G 
 
 section PathGraph
 
-variable (k : Type*) [CommRing k] {n : ℕ} (G : SimpleGraph (Fin n))
-
-open scoped Classical in
-/-- The class of the doubled arrow from `i` to `j` in the signless algebra of `G`, or zero if `i`
-and `j` are not adjacent vertices of `G`. -/
-private noncomputable def finArrow (i j : ℕ) : signlessPreprojectiveAlgebra k (DoubledQuiver G) :=
-  if h : i < n ∧ j < n then
-    if hij : G.Adj ⟨i, h.1⟩ ⟨j, h.2⟩ then signlessPreprojectiveMk k _ (ofArrow (arrow G hij))
-    else 0
-  else 0
-
-/-- Between adjacent vertices, `finArrow` is the class of the doubled arrow. -/
-private theorem finArrow_of_adj {i j : Fin n} (h : G.Adj i j) :
-    finArrow k G i j = signlessPreprojectiveMk k _ (ofArrow (arrow G h)) := by
-  simp [finArrow, h]
-
-/-- Between non-adjacent vertices, `finArrow` vanishes. -/
-private theorem finArrow_eq_zero {i j : ℕ}
-    (h : ∀ (hi : i < n) (hj : j < n), ¬G.Adj ⟨i, hi⟩ ⟨j, hj⟩) :
-    finArrow k G i j = 0 := by
-  by_cases hn : i < n ∧ j < n
-  · simp [finArrow, hn, h hn.1 hn.2]
-  · simp [finArrow, hn]
-
-/-- The class of an arbitrary doubled arrow of `G`. -/
-private theorem signlessPreprojectiveMk_ofArrow {i j : DoubledQuiver G} (e : i ⟶ j) :
-    signlessPreprojectiveMk k _ (ofArrow e) =
-      finArrow k G ((vertexEquiv G).symm i) ((vertexEquiv G).symm j) := by
-  obtain ⟨i, rfl⟩ := exists_eq_vertex G i
-  obtain ⟨j, rfl⟩ := exists_eq_vertex G j
-  rw [vertexEquiv_symm_vertex, vertexEquiv_symm_vertex,
-    finArrow_of_adj k G ((nonempty_hom_iff G).1 ⟨e⟩)]
-  exact congrArg (fun e => signlessPreprojectiveMk k _ (ofArrow e)) (Subsingleton.elim _ _)
-
-variable {G}
+variable (k : Type*) [CommRing k] {n : ℕ} {G : SimpleGraph (Fin n)}
 
 /-! ### Paths as valley words -/
 
@@ -122,7 +92,8 @@ private theorem signlessPreprojectiveMk_ofPath_eq_ladderValley (φ : Fin n → �
     {u d : ℕ → signlessPreprojectiveAlgebra k (DoubledQuiver G)}
     (hud₀ : d 0 * u 0 = 0) (hud : ∀ w, d (w + 1) * u (w + 1) + u w * d w = 0)
     (harr : ∀ i j : Fin n, G.Adj i j →
-      (φ j = φ i + 1 ∧ finArrow k G i j = u (φ i)) ∨ (φ i = φ j + 1 ∧ finArrow k G i j = d (φ j)))
+      (φ j = φ i + 1 ∧ signlessArrow k G i j = u (φ i)) ∨
+        (φ i = φ j + 1 ∧ signlessArrow k G i j = d (φ j)))
     {a b : DoubledQuiver G} (p : Path a b) :
     signlessPreprojectiveMk k _ (ofPath ⟨a, b, p⟩) = 0 ∨
       ∃ m s r : ℕ, ∃ ε : ℤ, s + r = p.length ∧ m + s = φ ((vertexEquiv G).symm a) ∧
@@ -133,7 +104,7 @@ private theorem signlessPreprojectiveMk_ofPath_eq_ladderValley (φ : Fin n → �
   | nil => exact .inr ⟨_, 0, 0, 1, rfl, add_zero _, add_zero _, by
     rw [ladderValley_zero_zero, one_mul, one_smul]⟩
   | @cons c b q e ih =>
-    rw [← ofArrow_mul_ofPath, map_mul, signlessPreprojectiveMk_ofArrow]
+    rw [← ofArrow_mul_ofPath, map_mul, signlessPreprojectiveMk_ofArrow_eq_signlessArrow]
     rcases ih with ih | ⟨m, s, r, ε, hlen, hs, hr, ih⟩
     · exact .inl (by rw [ih, mul_zero])
     rw [ih, mul_smul_comm, ← mul_assoc]
@@ -163,7 +134,8 @@ private theorem signlessPreprojectiveMk_ofPath_eq_zero_of_lt (φ : Fin n → ℕ
     {u d : ℕ → signlessPreprojectiveAlgebra k (DoubledQuiver G)}
     (hud₀ : d 0 * u 0 = 0) (hud : ∀ w, d (w + 1) * u (w + 1) + u w * d w = 0)
     (harr : ∀ i j : Fin n, G.Adj i j →
-      (φ j = φ i + 1 ∧ finArrow k G i j = u (φ i)) ∨ (φ i = φ j + 1 ∧ finArrow k G i j = d (φ j)))
+      (φ j = φ i + 1 ∧ signlessArrow k G i j = u (φ i)) ∨
+        (φ i = φ j + 1 ∧ signlessArrow k G i j = d (φ j)))
     {a b : DoubledQuiver G} (p : Path a b)
     (hp : φ ((vertexEquiv G).symm a) + φ ((vertexEquiv G).symm b) < p.length) :
     signlessPreprojectiveMk k _ (ofPath ⟨a, b, p⟩) = 0 := by
@@ -175,51 +147,41 @@ private theorem signlessPreprojectiveMk_ofPath_eq_zero_of_lt (φ : Fin n → ℕ
 variable (hG : ∀ i j : Fin n, G.Adj i j ↔ (i : ℕ) + 1 = j ∨ (j : ℕ) + 1 = i)
 include hG
 
-/-- `finArrow` vanishes between vertices which are not consecutive. -/
-private theorem finArrow_eq_zero_of_not_consecutive {i j : ℕ} (h : ¬(i + 1 = j ∨ j + 1 = i)) :
-    finArrow k G i j = 0 :=
-  finArrow_eq_zero k G fun _ _ hij => h ((hG _ _).1 hij)
+/-- `signlessArrow` vanishes between vertices which are not consecutive. -/
+private theorem signlessArrow_eq_zero_of_not_consecutive {i j : ℕ} (h : ¬(i + 1 = j ∨ j + 1 = i)) :
+    signlessArrow k G i j = 0 :=
+  signlessArrow_eq_zero k fun _ _ hij => h ((hG _ _).1 hij)
 
 /-- **The signless relation at a vertex `v` of a path**: the backtrack through `v + 1` cancels the
 backtrack through `v - 1`. At an end vertex the missing backtrack is zero. -/
-private theorem finArrow_relation (v : ℕ) :
-    finArrow k G (v + 1) v * finArrow k G v (v + 1) +
-      finArrow k G (v - 1) v * finArrow k G v (v - 1) = 0 := by
+private theorem signlessArrow_relation (v : ℕ) :
+    signlessArrow k G (v + 1) v * signlessArrow k G v (v + 1) +
+      signlessArrow k G (v - 1) v * signlessArrow k G v (v - 1) = 0 := by
   by_cases hv : v < n
   swap
-  · rw [finArrow_eq_zero k G (i := v + 1) (fun _ => by omega),
-      finArrow_eq_zero k G (i := v - 1) (fun _ _ => by omega), zero_mul, zero_mul, add_zero]
-  -- The relator at `v` is the sum of the backtracks along the edges at `v`.
-  have hrel := signlessPreprojectiveMk_signlessPreprojectiveRelator k (vertex G (⟨v, hv⟩ : Fin n))
-  rw [signlessPreprojectiveRelator_congr k (vertex G (⟨v, hv⟩ : Fin n)) _ inferInstance,
-    signlessPreprojectiveRelator_vertex, map_sum] at hrel
+  · rw [signlessArrow_eq_zero k (i := v + 1) (fun _ => by omega),
+      signlessArrow_eq_zero k (i := v - 1) (fun _ _ => by omega), zero_mul, zero_mul, add_zero]
   let F : ℕ → signlessPreprojectiveAlgebra k (DoubledQuiver G) :=
-    fun w => finArrow k G w v * finArrow k G v w
+    fun w => signlessArrow k G w v * signlessArrow k G v w
   have hF (w : ℕ) (hw : ¬(w + 1 = v ∨ v + 1 = w)) : F w = 0 := by
-    simp only [F, finArrow_eq_zero_of_not_consecutive k hG hw, zero_mul]
-  -- Only the neighbours `v - 1` and `v + 1` contribute to the sum over all vertices.
-  have hsum : ∑ w : G.neighborSet ⟨v, hv⟩, F w = F (v + 1) + F (v - 1) := by
-    classical
-    rw [← Finset.sum_subtype (Finset.univ.filter fun w : Fin n => G.Adj ⟨v, hv⟩ w)
-        (fun w => by simp) (fun w : Fin n => F w),
-      Finset.sum_filter_of_ne (fun w _ hw => by
-        by_contra h
-        exact hw (hF w (by rw [hG, Fin.val_mk] at h; omega))),
-      Fin.sum_univ_eq_sum_range F n]
-    refine Finset.sum_eq_add (v + 1) (v - 1) (by omega) (fun w _ hw => hF w (by omega))
-      (fun h => ?_) (fun h => absurd (Finset.mem_range.2 (by omega)) h)
-    simp only [F]
-    rw [finArrow_eq_zero k G (i := v + 1) (j := v) fun hi _ => absurd (Finset.mem_range.2 hi) h,
-      zero_mul]
-  rw [← hsum, ← hrel]
-  refine Finset.sum_congr rfl fun w _ => ?_
-  rw [← ofArrow_symm_mul_ofArrow _ k w.2, map_mul, ← finArrow_of_adj k G w.2,
-    ← finArrow_of_adj k G (G.adj_symm w.2)]
+    simp only [F, signlessArrow_eq_zero_of_not_consecutive k hG hw, zero_mul]
+  -- Only the neighbours `v - 1` and `v + 1` contribute to the relation at `v`.
+  have hrel := sum_signlessArrow_mul_signlessArrow k G (⟨v, hv⟩ : Fin n)
+  rw [Fin.sum_univ_eq_sum_range F n] at hrel
+  rw [← hrel]
+  refine (Finset.sum_eq_add (v + 1) (v - 1) (by omega) (fun w _ hw => hF w (by omega))
+    (fun h => ?_) (fun h => absurd (Finset.mem_range.2 (by omega)) h)).symm
+  simp only [F]
+  rw [signlessArrow_eq_zero k (i := v + 1) (j := v) fun hi _ => absurd (Finset.mem_range.2 hi) h,
+    zero_mul]
 
-/-- **Every path of length at least `n` vanishes** in the signless algebra of a graph on `Fin n`
-whose edges join consecutive vertices. The heights are read from both ends of the path graph. -/
-private theorem signlessPreprojectiveMk_ofPath_eq_zero_of_le
-    (x : Quiver.TotalPath (DoubledQuiver G)) (hx : n ≤ x.2.2.length) :
+/-- Paths longer than either endpoint-height bound vanish. The heights are read from both
+ends of the path graph. -/
+private theorem signlessPreprojectiveMk_ofPath_eq_zero_of_endpoint_bound
+    (x : Quiver.TotalPath (DoubledQuiver G))
+    (hx : min (((vertexEquiv G).symm x.1 : ℕ) + (vertexEquiv G).symm x.2.1)
+      (2 * (n - 1) - ((vertexEquiv G).symm x.1 : ℕ) - (vertexEquiv G).symm x.2.1) <
+        x.2.2.length) :
     signlessPreprojectiveMk k _ (ofPath x) = 0 := by
   obtain ⟨a, b, p⟩ := x
   dsimp only at hx
@@ -228,23 +190,23 @@ private theorem signlessPreprojectiveMk_ofPath_eq_zero_of_le
   -- Heights increasing from the vertex `0`.
   by_cases hlow : ((vertexEquiv G).symm a : ℕ) + (vertexEquiv G).symm b < p.length
   · refine signlessPreprojectiveMk_ofPath_eq_zero_of_lt k (fun i => i)
-      (u := fun w => finArrow k G w (w + 1)) (d := fun w => finArrow k G (w + 1) w) ?_
-      (fun w => by simpa [add_comm] using finArrow_relation k hG (w + 1)) ?_ p hlow
-    · simpa [finArrow_eq_zero_of_not_consecutive k hG (i := 0) (j := 0)] using
-        finArrow_relation k hG 0
+      (u := fun w => signlessArrow k G w (w + 1)) (d := fun w => signlessArrow k G (w + 1) w) ?_
+      (fun w => by simpa [add_comm] using signlessArrow_relation k hG (w + 1)) ?_ p hlow
+    · simpa [signlessArrow_eq_zero_of_not_consecutive k hG (i := 0) (j := 0)] using
+        signlessArrow_relation k hG 0
     · intro i j hij
       rcases (hG i j).1 hij with h | h
       · exact .inl ⟨h.symm, by rw [← h]⟩
       · exact .inr ⟨h.symm, by rw [← h]⟩
   -- Heights increasing from the vertex `n - 1`.
   refine signlessPreprojectiveMk_ofPath_eq_zero_of_lt k (fun i => n - 1 - i)
-    (u := fun w => finArrow k G (n - 1 - w) (n - 1 - (w + 1)))
-    (d := fun w => finArrow k G (n - 1 - (w + 1)) (n - 1 - w)) ?_ (fun w => ?_) ?_ p (by omega)
-  · have h := finArrow_relation k hG (n - 1)
-    rw [finArrow_eq_zero k G (i := n - 1 + 1) (fun _ => by omega), zero_mul, zero_add] at h
+    (u := fun w => signlessArrow k G (n - 1 - w) (n - 1 - (w + 1)))
+    (d := fun w => signlessArrow k G (n - 1 - (w + 1)) (n - 1 - w)) ?_ (fun w => ?_) ?_ p (by omega)
+  · have h := signlessArrow_relation k hG (n - 1)
+    rw [signlessArrow_eq_zero k (i := n - 1 + 1) (fun _ => by omega), zero_mul, zero_add] at h
     simpa using h
   · by_cases hw : w + 1 ≤ n - 1
-    · have h := finArrow_relation k hG (n - 1 - (w + 1))
+    · have h := signlessArrow_relation k hG (n - 1 - (w + 1))
       have hnext : n - 1 - (w + 1) + 1 = n - 1 - w := by omega
       have hprev : n - 1 - (w + 1) - 1 = n - 1 - (w + 1 + 1) := by omega
       rw [hnext, hprev, add_comm] at h
@@ -253,7 +215,7 @@ private theorem signlessPreprojectiveMk_ofPath_eq_zero_of_le
       have hnext : n - 1 - w = 0 := by omega
       have hprev : n - 1 - (w + 1 + 1) = 0 := by omega
       rw [hzero, hnext, hprev,
-        finArrow_eq_zero_of_not_consecutive k hG (i := 0) (j := 0) (by omega)]
+        signlessArrow_eq_zero_of_not_consecutive k hG (i := 0) (j := 0) (by omega)]
       simp
   · intro i j hij
     have hi := i.2
@@ -283,13 +245,60 @@ section CommRing
 
 variable (k : Type*) [CommRing k] {n : ℕ}
 
+local notation "AG" => diagramGraph (DynkinType.cartanMatrix (DynkinType.A n))
+
+/-- A path from `a` to `b` in the signless algebra of `Aₙ` vanishes when its length exceeds
+`min (a + b) (2(n - 1) - a - b)`. -/
+theorem signlessPreprojectiveMk_A_ofPath_eq_zero_of_endpoint_bound
+    {a b : Fin (DynkinType.A n).rank} (p : Path (vertex AG a) (vertex AG b))
+    (hp : min (a.val + b.val) (2 * ((DynkinType.A n).rank - 1) - a.val - b.val) < p.length) :
+    signlessPreprojectiveMk k _ (ofPath ⟨_, _, p⟩) = 0 := by
+  apply signlessPreprojectiveMk_ofPath_eq_zero_of_endpoint_bound k
+    (n := (DynkinType.A n).rank) (G := AG) (fun i j => diagramGraph_A_adj n i j)
+  simpa only [vertexEquiv_symm_vertex] using hp
+
+/-- Every path in the signless algebra of `Aₙ` reduces to an integer multiple of a valley word,
+or to zero. The word descends from `a` to `m` and climbs to `b`, and its length is preserved. -/
+theorem signlessPreprojectiveMk_A_ofPath_eq_zero_or_ladderValley
+    {a b : Fin (DynkinType.A n).rank} (p : Path (vertex AG a) (vertex AG b)) :
+    signlessPreprojectiveMk k _ (ofPath ⟨_, _, p⟩) = 0 ∨
+      ∃ m s r : ℕ, ∃ ε : ℤ, s + r = p.length ∧ m + s = a.val ∧ m + r = b.val ∧
+        signlessPreprojectiveMk k _ (ofPath ⟨_, _, p⟩) =
+          ε • (ladderValley (fun w => signlessArrow k AG w (w + 1))
+            (fun w => signlessArrow k AG (w + 1) w) m s r *
+              signlessPreprojectiveMk k _ (vertexIdempotent k (vertex AG a))) := by
+  have h := signlessPreprojectiveMk_ofPath_eq_ladderValley k
+    (n := (DynkinType.A n).rank) (G := AG) (fun i => i.val)
+    (u := fun w => signlessArrow k AG w (w + 1))
+    (d := fun w => signlessArrow k AG (w + 1) w) ?_ ?_ ?_ p
+  · simpa only [vertexEquiv_symm_vertex, vertexIdempotent_eq_ofPath] using h
+  · have hzero : signlessArrow k AG 0 0 = 0 :=
+      signlessArrow_eq_zero_of_not_consecutive k (n := (DynkinType.A n).rank)
+        (G := AG) (fun i j => diagramGraph_A_adj n i j) (by omega)
+    simpa only [Nat.zero_add, Nat.sub_self, hzero, zero_mul, add_zero] using
+      signlessArrow_relation k (n := (DynkinType.A n).rank) (G := AG)
+        (fun i j => diagramGraph_A_adj n i j) 0
+  · intro w
+    simpa [add_comm] using signlessArrow_relation k (n := (DynkinType.A n).rank) (G := AG)
+      (fun i j => diagramGraph_A_adj n i j) (w + 1)
+  · intro i j hij
+    rcases (diagramGraph_A_adj n i j).1 hij with h | h
+    · exact .inl ⟨h.symm, by rw [← h]⟩
+    · exact .inr ⟨h.symm, by rw [← h]⟩
+
 /-- **Every path of length at least `n` vanishes in the signless algebra of `Aₙ`.** -/
 @[simp]
 theorem signlessPreprojectiveMk_A_ofPath_eq_zero_of_le
     (x : Quiver.TotalPath (DoubledQuiver (diagramGraph (DynkinType.A n).cartanMatrix)))
     (hx : n ≤ x.2.2.length) :
     signlessPreprojectiveMk k _ (ofPath x) = 0 :=
-  signlessPreprojectiveMk_ofPath_eq_zero_of_le k (diagramGraph_A_adj n) x hx
+  signlessPreprojectiveMk_ofPath_eq_zero_of_endpoint_bound k
+    (n := (DynkinType.A n).rank) (G := diagramGraph (DynkinType.A n).cartanMatrix)
+    (fun i j => diagramGraph_A_adj n i j) x (by
+      have ha := ((vertexEquiv (diagramGraph (DynkinType.A n).cartanMatrix)).symm x.1).isLt
+      have hb := ((vertexEquiv (diagramGraph (DynkinType.A n).cartanMatrix)).symm x.2.1).isLt
+      have hn := DynkinType.rank_A n
+      omega)
 
 variable (o : Orientation (diagramGraph (DynkinType.A n).cartanMatrix))
 

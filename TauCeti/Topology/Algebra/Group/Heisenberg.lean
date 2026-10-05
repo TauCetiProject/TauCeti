@@ -10,6 +10,7 @@ public import Mathlib.Topology.Connected.TotallyDisconnected
 public import Mathlib.Topology.Homeomorph.Lemmas
 public import Mathlib.Topology.Homeomorph.TransferInstance
 public import TauCeti.GroupTheory.SpecificGroups.Heisenberg
+public import TauCeti.Topology.Algebra.Group.LowerCentralSeries.Closed
 
 /-!
 # The topology of the Heisenberg group
@@ -23,7 +24,8 @@ Heisenberg group through the coordinate homeomorphism.
 
 Over the `p`-adic integers this is a compact, totally disconnected group of nilpotency class two;
 it is pro-`p` by `TauCeti.HeisenbergGroup.isProP_padicInt`, and it detects the commutators of two
-generators of a free pro-`p` group.
+generators of a free pro-`p` group. What makes the detection work is that, over any Hausdorff
+topological ring, the closed lower central series of the Heisenberg group stops at `γ_2 = 1`.
 
 ## Main definitions
 
@@ -39,6 +41,10 @@ generators of a free pro-`p` group.
   when its three coordinates are.
 * The instances `IsTopologicalGroup`, `CompactSpace`, `T2Space`, `DiscreteTopology` and
   `TotallyDisconnectedSpace` on `HeisenbergGroup R`, inherited from `R`.
+* `TauCeti.HeisenbergGroup.isClosed_zAxis`: over a Hausdorff ring the `z`-axis is closed.
+* `TauCeti.HeisenbergGroup.closedLowerCentralSeries_one_le_zAxis`,
+  `TauCeti.HeisenbergGroup.closedLowerCentralSeries_two_eq_bot`: over a Hausdorff topological
+  ring, `γ_1` of the closed lower central series lies in the `z`-axis and `γ_2` is trivial.
 -/
 
 public section
@@ -116,6 +122,42 @@ instance [Ring R] [IsTopologicalRing R] : IsTopologicalGroup (HeisenbergGroup R)
     by simp only [mul_y]; fun_prop, by simp only [mul_z]; fun_prop⟩
   continuous_inv := continuous_iff.mpr ⟨by simp only [inv_x]; fun_prop,
     by simp only [inv_y]; fun_prop, by simp only [inv_z]; fun_prop⟩
+
+section ClosedLowerCentralSeries
+
+variable [Ring R] [IsTopologicalRing R] [T2Space R]
+
+omit [IsTopologicalRing R] in
+/-- The `z`-axis of the Heisenberg group over a ring with a Hausdorff topology is closed. -/
+theorem isClosed_zAxis :
+    IsClosed ((zAxis : Subgroup (HeisenbergGroup R)) : Set (HeisenbergGroup R)) := by
+  have h : ((zAxis : Subgroup (HeisenbergGroup R)) : Set (HeisenbergGroup R)) =
+      {a | a.x = 0} ∩ {a | a.y = 0} := by
+    ext a
+    simp
+  rw [h]
+  exact (isClosed_eq continuous_x continuous_const).inter
+    (isClosed_eq continuous_y continuous_const)
+
+/-- The first term `γ_1` of the closed lower central series of the Heisenberg group over a
+Hausdorff topological ring lies in the `z`-axis. -/
+theorem closedLowerCentralSeries_one_le_zAxis :
+    closedLowerCentralSeries (HeisenbergGroup R) 1 ≤ zAxis := by
+  rw [closedLowerCentralSeries_one]
+  exact Subgroup.topologicalClosure_minimal _
+    (Subgroup.commutator_le.mpr fun a _ b _ ↦ commutatorElement_mem_zAxis a b) isClosed_zAxis
+
+/-- The closed lower central series of the Heisenberg group over a Hausdorff topological ring
+stops at `γ_2 = 1`. -/
+theorem closedLowerCentralSeries_two_eq_bot :
+    closedLowerCentralSeries (HeisenbergGroup R) 2 = ⊥ := by
+  rw [closedLowerCentralSeries_succ, eq_bot_iff]
+  refine Subgroup.topologicalClosure_minimal _ (Subgroup.commutator_le.mpr fun a ha b _ ↦ ?_)
+    (by simp)
+  rw [commutatorElement_eq_one_of_mem_zAxis (closedLowerCentralSeries_one_le_zAxis ha)]
+  exact one_mem _
+
+end ClosedLowerCentralSeries
 
 end HeisenbergGroup
 

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 import Mathlib.RingTheory.MvPolynomial.Basic
+import Mathlib.Tactic.Linarith
 public import TauCeti.KnotTheory.Grid.Differential.Square.Zero
 
 /-!
@@ -46,6 +47,10 @@ two rectangles form a thin annulus through `X_k`, are computed in
   off-diagonal entries of `∂⁻ ∘ H_k + H_k ∘ ∂⁻` vanish.
 * `TauCeti.GridDiagram.constantCoeff_XHomotopyCoefficient`: setting every variable to zero, a
   matrix coefficient of `H_k` counts the empty rectangles whose only marking is `X_k`.
+* `TauCeti.GridDiagram.alexander_sub_card_OColumns_eq_alexander_sub_one`: `H_k` lowers the
+  Alexander grading by one.
+* `TauCeti.GridDiagram.exists_mem_XHomotopyRectangles_of_mem_support_XHomotopyCoefficient`: every
+  monomial of a matrix coefficient of `H_k` is the weight of a contributing rectangle.
 
 ## References
 
@@ -98,6 +103,20 @@ theorem disjoint_unblockedRectangles_XHomotopyRectangles (k : Fin n) (x y : Grid
   rw [Finset.disjoint_iff_inter_eq_empty, h₂] at h₁
   exact Finset.singleton_ne_empty _ h₁
 
+/-- A rectangle counted by `H_k` lowers the Alexander grading by one, once its weight `V^{O(r)}`
+is charged `-1` per variable, since it covers the single `X`-marking `X_k`: the term
+`V^{O(r)} · y` of `H_k x` has Alexander grading `A(x) - 1`. -/
+theorem alexander_sub_card_OColumns_eq_alexander_sub_one {k : Fin n} {x y : GridState n}
+    {r : GridRectangleBetween x y} (hr : r ∈ G.XHomotopyRectangles k x y) :
+    G.alexander y - ((G.OColumns r.toGridRectangle).card : ℚ) = G.alexander x - 1 := by
+  have hX : G.XSet ∩ r.toGridRectangle.coveredSquares = {(k, G.X k)} := by
+    rw [Finset.inter_comm]
+    exact ((G.mem_XHomotopyRectangles k r).mp hr).2
+  have h := G.alexander_sub_alexander_eq_card_sub_card r
+  rw [hX, Finset.card_singleton, Nat.cast_one] at h
+  rw [G.card_OColumns r.toGridRectangle]
+  linarith
+
 variable (R : Type*) [CommSemiring R]
 
 /-- The matrix coefficient of `H_k` from `x` to `y`: the sum of the weights `V^{O(r)}` of the
@@ -111,6 +130,15 @@ theorem XHomotopyCoefficient_def (k : Fin n) (x y : GridState n) :
     G.XHomotopyCoefficient R k x y =
       ∑ r ∈ G.XHomotopyRectangles k x y, G.OMonomial R r.toGridRectangle := by
   rw [XHomotopyCoefficient]
+
+/-- Every monomial of a matrix coefficient of `H_k` is the weight `V^{O(r)}` of a contributing
+rectangle. -/
+theorem exists_mem_XHomotopyRectangles_of_mem_support_XHomotopyCoefficient {k : Fin n}
+    {x y : GridState n} {d : Fin n →₀ ℕ} (hd : d ∈ (G.XHomotopyCoefficient R k x y).support) :
+    ∃ r ∈ G.XHomotopyRectangles k x y,
+      d = ∑ c ∈ G.OColumns r.toGridRectangle, Finsupp.single c 1 := by
+  rw [XHomotopyCoefficient_def] at hd
+  exact G.exists_mem_of_mem_support_sum_OMonomial R hd
 
 /-- The constant term of a matrix coefficient of `H_k` counts the contributing rectangles that
 carry no `O`-marking either: setting every variable to zero leaves the count of the empty
