@@ -117,9 +117,8 @@ representative with the augmentation. -/
 @[simp]
 theorem IsMinimal.augmentation_comp_linearEquiv₀_extLinearEquiv (f : r.termObj 0 ⟶ N) :
     r.augmentation ≫ Ext.linearEquiv₀ (R := k) (hr.extLinearEquiv hN 0 f) = f := by
-  obtain ⟨g, rfl⟩ := (r.augmentationHomLinearEquiv (hr.differential_comp_eq_zero hN 0)).surjective f
-  rw [augmentationHomLinearEquiv_apply, hr.extLinearEquiv_zero_augmentation_comp,
-    ← Ext.linearEquiv₀_symm_apply (R := k), LinearEquiv.apply_symm_apply]
+  rw [IsMinimal.extLinearEquiv, LinearEquiv.trans_apply, LinearEquiv.apply_symm_apply]
+  exact r.augmentation_comp_augmentationHomLinearEquiv_symm _ f
 
 /-- The minimal-resolution Hom computation is natural in targets annihilated by `A₊`:
 postcomposition of graded maps computes the covariant map on Ext. -/
@@ -152,9 +151,11 @@ theorem IsMinimal.subsingleton_ext_shiftObj_iff
     Subsingleton (Ext.{w} M (N.shiftObj j) n) ↔
       Subsingleton (r.termObj n ⟶ N.shiftObj j) := by
   apply hr.subsingleton_ext_iff
-  apply GradedModuleCat.smul_top_eq_bot_of_piece_eq_bot _ j
+  let := (N.shiftObj j).gradedSMul
+  apply InternalGrading.smul_top_eq_bot_of_piece_eq_bot 𝒜 (N.shiftObj j).grading j
   intro p hp
-  simpa [sub_eq_add_neg] using hN₀ (p - j) (sub_ne_zero.mpr hp)
+  rw [GradedModuleCat.shiftObj_piece]
+  exact hN₀ (p - j) (sub_ne_zero.mpr hp)
 
 end GradedProjectiveResolution
 

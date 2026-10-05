@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Algebra.Operations
 public import Mathlib.Algebra.Category.ModuleCat.Basic
 public import Mathlib.Algebra.GradedMulAction
 public import Mathlib.CategoryTheory.Linear.LinearFunctor
@@ -77,25 +76,6 @@ variable {𝒜}
 
 instance : CoeSort (GradedModuleCat.{v} 𝒜) (Type v) :=
   ⟨GradedModuleCat.carrier⟩
-
-/-- A graded module concentrated in one internal degree is annihilated by the strictly
-positive part of the algebra. -/
-theorem smul_top_eq_bot_of_piece_eq_bot (N : GradedModuleCat.{v} 𝒜) (j : ℤ)
-    (hN : ∀ p, p ≠ j → N.grading.piece p = ⊥) :
-    (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k N) = ⊥ := by
-  rw [← N.grading.isInternal.submodule_iSup_eq_top]
-  simp only [Submodule.iSup_smul, Submodule.smul_iSup]
-  apply le_bot_iff.mp
-  refine iSup_le fun p ↦ iSup_le fun i ↦ iSup_le fun hi ↦ ?_
-  refine Submodule.smul_le.mpr fun a ha x hx ↦ ?_
-  by_cases hp : p = j
-  · subst p
-    have hax : a • x ∈ N.grading.piece (i + j) :=
-      SetLike.GradedSMul.smul_mem (B := N.grading.piece) ha hx
-    rw [hN (i + j) (by omega)] at hax
-    exact hax
-  · rw [hN p hp, Submodule.mem_bot] at hx
-    simp only [hx, smul_zero, Submodule.zero_mem]
 
 /-- A morphism of graded `𝒜`-modules: an `A`-linear map of degree zero. -/
 structure Hom (M N : GradedModuleCat.{v} 𝒜) where
@@ -267,9 +247,14 @@ module is. -/
 instance [Module.Finite k M] (n : ℤ) : Module.Finite k (M.shiftObj n) :=
   inferInstanceAs (Module.Finite k M)
 
+/-- The degree-`p` piece of `M{n}` is the degree-`p - n` piece of `M`. -/
+theorem shiftObj_piece (n p : ℤ) :
+    (M.shiftObj n).grading.piece p = M.grading.piece (p - n) := by
+  simp [sub_eq_add_neg]
+
 theorem mem_shiftObj_piece_iff (n p : ℤ) (x : M) :
     x ∈ (M.shiftObj n).grading.piece p ↔ x ∈ M.grading.piece (p - n) := by
-  simp [sub_eq_add_neg]
+  rw [shiftObj_piece]
 
 /-- The shift `M ↦ M{n}` of graded modules, the identity on underlying linear maps. -/
 @[expose]

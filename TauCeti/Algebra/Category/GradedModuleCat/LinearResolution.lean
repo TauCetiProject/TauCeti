@@ -80,7 +80,8 @@ theorem IsLinear.subsingleton_ext_shiftObj_of_ne (hr : r.IsLinear)
     (hN : ∀ p, p ≠ 0 → N.grading.piece p = ⊥) (n : ℕ) (j : ℤ)
     (hn : (n : ℤ) ≠ j) : Subsingleton (Ext.{w} M (N.shiftObj j) n) := by
   apply hr.subsingleton_ext_of_piece_eq_bot
-  simpa [sub_eq_add_neg] using hN ((n : ℤ) - j) (sub_ne_zero.mpr hn)
+  rw [GradedModuleCat.shiftObj_piece]
+  exact hN ((n : ℤ) - j) (sub_ne_zero.mpr hn)
 
 /-- In positive degree, if the two adjacent target pieces vanish, a linear resolution computes
 Ext as the graded Hom module from its corresponding term. -/
@@ -109,8 +110,8 @@ noncomputable def IsLinear.extLinearEquivShiftObj (hr : r.IsLinear)
     (r.termObj (n + 1) ⟶ N.shiftObj (n + 1)) ≃ₗ[k]
       Ext.{w} M (N.shiftObj (n + 1)) (n + 1) :=
   hr.extLinearEquiv n
-    (by simpa [sub_eq_add_neg] using hN ((n : ℤ) - (n + 1)) (by omega))
-    (by simpa [sub_eq_add_neg] using hN ((n : ℤ) + 2 - (n + 1)) (by omega))
+    (by rw [GradedModuleCat.shiftObj_piece]; exact hN _ (by omega))
+    (by rw [GradedModuleCat.shiftObj_piece]; exact hN _ (by omega))
 
 /-- The shift-diagonal identification sends a graded map to its projective-resolution class. -/
 @[simp]
@@ -121,7 +122,7 @@ theorem IsLinear.extLinearEquivShiftObj_apply (hr : r.IsLinear)
       r.toProjectiveResolution.extMk ((r.toProjectiveResolutionXIso (n + 1)).hom ≫ f)
         (n + 2) rfl (r.toProjectiveResolution_d_comp_eq_zero (n + 1)
           (fun g ↦ hr.hom_eq_zero (n + 2)
-            (by simpa [sub_eq_add_neg] using hN ((n : ℤ) + 2 - (n + 1)) (by omega))
+            (by rw [GradedModuleCat.shiftObj_piece]; exact hN _ (by omega))
             (r.differential (n + 1) ≫ g)) _) := by
   simp only [IsLinear.extLinearEquivShiftObj, IsLinear.extLinearEquiv_apply]
 
