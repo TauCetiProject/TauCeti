@@ -166,22 +166,6 @@ theorem baseChange_apply (n : AlgebraicInfinityType K) (τ : L →+* ℂ) :
     baseChange L n τ = n (τ.comp (algebraMap K L)) :=
   (rfl)
 
-/-- The embedding of a place `w` of `L` and its conjugate restrict to the embedding of the place
-below and its conjugate, in one order or the other. -/
-private theorem comp_eq_or_comp_eq (w : InfinitePlace L) :
-    (w.embedding.comp (algebraMap K L) = (w.comap (algebraMap K L)).embedding ∧
-      (conjugate w.embedding).comp (algebraMap K L) =
-        conjugate (w.comap (algebraMap K L)).embedding) ∨
-    (w.embedding.comp (algebraMap K L) = conjugate (w.comap (algebraMap K L)).embedding ∧
-      (conjugate w.embedding).comp (algebraMap K L) =
-        (w.comap (algebraMap K L)).embedding) := by
-  rcases LiesOver.embedding_comp_eq_or_conjugate_embedding_comp_eq w
-    (w.comap (algebraMap K L)) with h | h
-  · exact .inl ⟨h, by rw [conjugate_comp, h]⟩
-  · refine .inr ⟨?_, h⟩
-    rw [← h, conjugate_comp]
-    exact (involutive_conjugate K _).symm
-
 /-- **Base change commutes with the passage to continuous parameters** for algebraic infinity
 types. -/
 theorem toContinuous_baseChange (n : AlgebraicInfinityType K) :
@@ -202,7 +186,8 @@ theorem toContinuous_baseChange (n : AlgebraicInfinityType K) :
     · have hv' := not_isReal_iff_isComplex.mp hv
       rw [ContinuousInfinityType.baseChange_complexExponent_of_isComplex _ _ hv',
         toContinuous_complexExponent]
-      rcases comp_eq_or_comp_eq (K := K) w.1 with ⟨h₁, h₂⟩ | ⟨h₁, h₂⟩
+      rcases InfinitePlace.LiesOver.embedding_comp_eq_and_conjugate_embedding_comp_eq_or w.1
+        (w.1.comap (algebraMap K L)) with ⟨h₁, h₂⟩ | ⟨h₁, h₂⟩
       · rw [h₁, h₂]
       · rw [h₁, h₂, add_comm]
   · rw [toContinuous_complexAngularFrequency, baseChange_apply, baseChange_apply]
@@ -211,7 +196,8 @@ theorem toContinuous_baseChange (n : AlgebraicInfinityType K) :
       rw [ContinuousInfinityType.baseChange_complexAngularFrequency_of_isReal _ _ hv,
         conjugate_comp, ← he, ComplexEmbedding.isReal_iff.mp (isReal_iff.mp hv), sub_self]
     · have hv' := not_isReal_iff_isComplex.mp hv
-      rcases comp_eq_or_comp_eq (K := K) w.1 with ⟨h₁, h₂⟩ | ⟨h₁, h₂⟩
+      rcases InfinitePlace.LiesOver.embedding_comp_eq_and_conjugate_embedding_comp_eq_or w.1
+        (w.1.comap (algebraMap K L)) with ⟨h₁, h₂⟩ | ⟨h₁, h₂⟩
       · rw [ContinuousInfinityType.baseChange_complexAngularFrequency_of_comp_eq _ _ hv' h₁,
           toContinuous_complexAngularFrequency, h₁, h₂]
       · rw [ContinuousInfinityType.baseChange_complexAngularFrequency_of_conjugate_comp_eq _ _ hv'
