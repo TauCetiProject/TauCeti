@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.Lie.Killing
 public import TauCeti.Algebra.Lie.Orthogonal.TypeD.Basis
-import TauCeti.Algebra.Lie.Basis.Root
 import TauCeti.Algebra.Lie.Orthogonal.TypeD.Root.Classification
 import TauCeti.LinearAlgebra.RootSystem.FiniteType.Irreducible
 
