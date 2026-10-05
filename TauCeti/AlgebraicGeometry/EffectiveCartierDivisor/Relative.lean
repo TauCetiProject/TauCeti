@@ -16,7 +16,9 @@ An effective Cartier divisor on `X` relative to `S` is an effective Cartier divi
 closed subscheme is flat over `S`. This file shows that relative effective Cartier divisors are
 stable under arbitrary base change `T ⟶ S`, with no flatness assumption on `T ⟶ S` or on `X`
 over `S`, so pullback along any `T ⟶ S` carries relative effective Cartier divisors on `X` over
-`S` to relative effective Cartier divisors on `X ×_S T` over `T`.
+`S` to relative effective Cartier divisors on `X ×_S T` over `T`. The base change may be taken
+along any pullback square, which is what makes `T ↦ {relative effective Cartier divisors on
+X ×_S T}` functorial in `T`.
 
 Over affine opens `W ⊆ S` and `U ⊆ X` lying over it, a local equation `a` of the divisor is a
 nonzerodivisor of `Γ(X, U)` with `Γ(X, U) ⧸ (a)` flat over `Γ(S, W)`. For an affine open `V` of
@@ -32,6 +34,14 @@ the pulled-back divisor on the open subscheme `Spec (Γ(X, U) ⊗[Γ(S, W)] Γ(T
   relativity reduces to the effective Cartier condition on the pulled-back ideal.
 * `Scheme.IdealSheafData.IsRelativeEffectiveCartier.comap`: a relative effective Cartier
   divisor remains one after an arbitrary base change.
+* `Scheme.IdealSheafData.IsRelativeEffectiveCartier.comap_of_flat`: it also remains one after
+  pullback along a flat morphism `X' ⟶ X`, relative to the composite `X' ⟶ S`.
+* `Scheme.IdealSheafData.IsRelativeEffectiveCartier.comap_of_isPullback`: base change along any
+  pullback square, not only along the chosen fibre product `X ×_S T`.
+* `Scheme.IdealSheafData.isRelativeEffectiveCartier_top`: the empty divisor is relative
+  effective Cartier over every base.
+* `Scheme.IdealSheafData.isRelativeEffectiveCartier_iff_isEffectiveCartier`: over the spectrum of
+  a field, every effective Cartier divisor is relative effective Cartier.
 
 ## References
 
@@ -152,5 +162,42 @@ theorem IsRelativeEffectiveCartier.comap {I : X.IdealSheafData}
     simp only [CommRingCat.hom_comp, RingHom.comp_apply, CommRingCat.hom_ofHom,
       Algebra.TensorProduct.includeLeftRingHom_apply] at h
     exact congrArg (fun r ↦ ofIdealTop (Ideal.span {r})) h.symm
+
+/-- **Flat pullback of relative effective Cartier divisors.** If `I` is a relative effective
+Cartier divisor on `X` over `S` and `g : X' ⟶ X` is flat, then the pullback of `I` to `X'` is a
+relative effective Cartier divisor over `S` through `g ≫ f`. -/
+theorem IsRelativeEffectiveCartier.comap_of_flat {X' : Scheme.{u}} {I : X.IdealSheafData}
+    {f : X ⟶ S} (hI : I.IsRelativeEffectiveCartier f) (g : X' ⟶ X) [Flat g] :
+    (I.comap g).IsRelativeEffectiveCartier (g ≫ f) := by
+  refine (isRelativeEffectiveCartier_iff _ _).mpr ⟨hI.isEffectiveCartier.comap g, ?_⟩
+  -- The closed subscheme of the pullback is the base change of `I.subschemeι` along `g`, so its
+  -- morphism to `S` factors through the flat base change of `g` and the flat `I.subschemeι ≫ f`.
+  have := hI.flat
+  rw [← comapIso_hom_fst, Category.assoc, pullback.condition_assoc]
+  infer_instance
+
+/-- **Relative effective Cartier divisors are stable under base change along a pullback
+square.** Given a pullback square with `g' : X' ⟶ X` over `g : T ⟶ S`, the pullback along `g'` of
+a relative effective Cartier divisor on `X` over `S` is a relative effective Cartier divisor on
+`X'` over `T`. -/
+theorem IsRelativeEffectiveCartier.comap_of_isPullback {X' : Scheme.{u}} {I : X.IdealSheafData}
+    {f : X ⟶ S} (hI : I.IsRelativeEffectiveCartier f) {g : T ⟶ S} {g' : X' ⟶ X} {f' : X' ⟶ T}
+    (h : IsPullback g' f' f g) : (I.comap g').IsRelativeEffectiveCartier f' := by
+  have := (hI.comap g).comap_of_flat h.isoPullback.hom
+  rwa [← comap_comp, IsPullback.isoPullback_hom_fst, IsPullback.isoPullback_hom_snd] at this
+
+/-- The empty closed subscheme is a relative effective Cartier divisor over every base. -/
+@[simp]
+theorem isRelativeEffectiveCartier_top (f : X ⟶ S) :
+    (⊤ : X.IdealSheafData).IsRelativeEffectiveCartier f :=
+  (isRelativeEffectiveCartier_iff _ _).mpr ⟨isEffectiveCartier_top X, inferInstance⟩
+
+/-- Over the spectrum of a field, flatness over the base is automatic, so the relative effective
+Cartier divisors are exactly the effective Cartier divisors. -/
+theorem isRelativeEffectiveCartier_iff_isEffectiveCartier [Subsingleton S] [IsIntegral S]
+    (I : X.IdealSheafData) (f : X ⟶ S) :
+    I.IsRelativeEffectiveCartier f ↔ I.IsEffectiveCartier := by
+  rw [isRelativeEffectiveCartier_iff]
+  exact ⟨And.left, fun h ↦ ⟨h, inferInstance⟩⟩
 
 end AlgebraicGeometry.Scheme.IdealSheafData
