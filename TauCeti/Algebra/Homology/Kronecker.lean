@@ -18,12 +18,10 @@ morphism `Hᵢ(X) ⟶ Y`; the restriction of a coboundary to the cycles is zero.
 `k`-linear **Kronecker map** `Hⁱ(Hom(X, Y)) →ₗ[k] (Hᵢ(X) ⟶ Y)`, which evaluates cohomology classes
 on homology classes. It is natural in `X`.
 
-When `Y` is an injective object the Kronecker map is bijective. A morphism `Hᵢ(X) ⟶ Y`, viewed on
-the cycles, extends to all of `Xᵢ`, which gives surjectivity. A cocycle vanishing on the cycles
-factors through the coimage of the differential `Xᵢ ⟶ Xᵢ₋₁`, which is a subobject of `Xᵢ₋₁`, so
-it extends to a cochain of degree `i - 1` of which it is the coboundary; this gives injectivity.
-This is the universal coefficient theorem in the case where its `Ext¹`-term vanishes, as it does
-for an injective coefficient object, such as a vector space over a field.
+When `Y` is an injective object the Kronecker map is a `k`-linear equivalence
+`Hⁱ(Hom(X, Y)) ≃ₗ[k] (Hᵢ(X) ⟶ Y)`. This is the universal coefficient theorem in the case where
+its `Ext¹`-term vanishes, as it does for an injective coefficient object, such as a vector space
+over a field.
 
 ## Main definitions and results
 
