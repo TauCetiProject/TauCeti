@@ -50,14 +50,12 @@ noncomputable abbrev normalizerEquivMap (H : Subgroup G) (e : G ≃* K) :
     (MulEquiv.subgroupCongr (map_equiv_normalizer_eq H e))
 
 /-- On underlying group elements, `normalizerEquivMap` is the given group isomorphism. -/
-@[simp]
 lemma normalizerEquivMap_apply_coe (H : Subgroup G) (e : G ≃* K)
     (g : normalizer (H : Set G)) : (H.normalizerEquivMap e g : K) = e (g : G) :=
   rfl
 
 /-- On underlying group elements, the inverse of `normalizerEquivMap` is the inverse group
 isomorphism. -/
-@[simp]
 lemma normalizerEquivMap_symm_apply_coe (H : Subgroup G) (e : G ≃* K)
     (k : normalizer ((H.map (e : G →* K)) : Set K)) :
     ((H.normalizerEquivMap e).symm k : G) = e.symm (k : K) :=
@@ -65,7 +63,6 @@ lemma normalizerEquivMap_symm_apply_coe (H : Subgroup G) (e : G ≃* K)
 
 /-- Transporting normalizer representatives along the identity group isomorphism is the identity
 on underlying representatives. -/
-@[simp]
 lemma normalizerEquivMap_refl (H : Subgroup G) (g : normalizer (H : Set G)) :
     H.normalizerEquivMap (MulEquiv.refl G) g =
       ⟨(g : G), by simp [g.2]⟩ := by
@@ -74,7 +71,6 @@ lemma normalizerEquivMap_refl (H : Subgroup G) (g : normalizer (H : Set G)) :
 
 /-- Transporting a normalizer representative through two group isomorphisms has underlying value
 `f (e g)`. -/
-@[simp]
 lemma normalizerEquivMap_trans_apply_coe (H : Subgroup G) (e : G ≃* K) (f : K ≃* L)
     (g : normalizer (H : Set G)) :
     ((H.map (e : G →* K)).normalizerEquivMap f (H.normalizerEquivMap e g) : L) =
@@ -83,7 +79,6 @@ lemma normalizerEquivMap_trans_apply_coe (H : Subgroup G) (e : G ≃* K) (f : K 
 
 /-- Rephrasing the inverse of `normalizerEquivMap` as transport along the inverse group
 isomorphism sends a representative to its inverse image. -/
-@[simp]
 lemma normalizerEquivMap_symm_apply_coe' (H : Subgroup G) (e : G ≃* K)
     (k : normalizer ((H.map (e : G →* K)) : Set K)) :
     ((H.map (e : G →* K)).normalizerEquivMap e.symm k : G) = e.symm (k : K) :=
@@ -185,7 +180,6 @@ lemma normalizerQuotientEquivMap_trans_mk_congr (H : Subgroup G) (e : G ≃* K) 
 
 /-- Transporting a representative of `H.map e` along `e.symm` gives the stated inverse-image
 representative in `(H.map e).map e.symm`. -/
-@[simp]
 lemma normalizerQuotientEquivMap_symm_mk' (H : Subgroup G) (e : G ≃* K)
     (k : normalizer ((H.map (e : G →* K)) : Set K)) :
     (H.map (e : G →* K)).normalizerQuotientEquivMap e.symm
