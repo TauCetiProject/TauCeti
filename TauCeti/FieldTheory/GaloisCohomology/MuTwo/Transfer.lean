@@ -35,7 +35,7 @@ agreement of the two dictionaries; corestriction also uses its naturality in the
 `TauCeti.ContCohomology.explicitCor1_explicitMap1_id`.
 
 Finally, the map `TauCeti.h2MuToUnits : H²(G_K, 𝔽₂) → H²(G_K, (Kˢ)ˣ)` induced by `μ₂ ⊆ (Kˢ)ˣ`
-commutes with restriction, `TauCeti.galoisRes` on the source and `TauCeti.resHUnits` on the
+commutes with restriction, `TauCeti.galoisRes` on the source and `TauCeti.galoisResUnits` on the
 target. Both composites are compatible-pair maps along `G_L → G_K`
 (`TauCeti.ContinuousCohomology.map_comp_coeffMap`), and their coefficient maps agree because both
 send the nontrivial element of `𝔽₂` to `-1`.
@@ -279,27 +279,37 @@ theorem galoisCor_kummerClass (b : Lˣ) :
 
 /-! ### Restriction and the map to the cohomological Brauer group -/
 
+omit [Invertible (2 : K)] [Invertible (2 : L)] in
+/-- The composite `G_L ≃ galoisSubgroup K L σ ≤ G_K` used by `TauCeti.galoisRes_eq_map` is the
+composite `G_L ≃ Gal(Kˢ/σ(L)) ≤ G_K` used by `TauCeti.galoisResUnits`. -/
+private theorem galoisSubgroup_comp_eq_fixingSubgroup_comp :
+    (ContinuousMonoidHom.subgroupSubtype (galoisSubgroup K L σ).toSubgroup).comp
+        (ContinuousMonoidHom.toContinuousMonoidHom (galoisSubgroupEquiv K L σ)) =
+      (ContinuousMonoidHom.subgroupSubtype σ.fieldRange.fixingSubgroup).comp
+        (absoluteGaloisGroupEquivFixingSubgroup K L σ :
+          AbsoluteGaloisGroup L →ₜ* ↥σ.fieldRange.fixingSubgroup) :=
+  ContinuousMonoidHom.ext fun g => AlgEquiv.ext fun y =>
+    (galoisSubgroupEquiv_apply K L σ g y).trans
+      (absoluteGaloisGroupEquivFixingSubgroup_apply K L σ g y).symm
+
+omit [FiniteDimensional K L] in
 /-- **The coefficient square of `μ₂ ⊆ (Kˢ)ˣ` along `L/K`**: reading a value of `𝔽₂` in `μ₂(Kˢ)`,
 including it into `(Kˢ)ˣ` and carrying it to `(Lˢ)ˣ` by `TauCeti.unitsCoeffMap` is reading it in
 `μ₂(Lˢ)` and including it into `(Lˢ)ˣ`. Both composites send `0` to `1` and `1` to `-1`. -/
 private theorem resFunctor_map_comp_ofDiscreteModulePair :
-    (TopRep.resFunctor ((ContinuousMonoidHom.subgroupSubtype
-        (galoisSubgroup K L σ).toSubgroup).comp
-          (ContinuousMonoidHom.toContinuousMonoidHom (galoisSubgroupEquiv K L σ)) :
+    (TopRep.resFunctor ((ContinuousMonoidHom.subgroupSubtype σ.fieldRange.fixingSubgroup).comp
+        (absoluteGaloisGroupEquivFixingSubgroup K L σ :
+          AbsoluteGaloisGroup L →ₜ* ↥σ.fieldRange.fixingSubgroup) :
           AbsoluteGaloisGroup L →* AbsoluteGaloisGroup K)).map
         ((kummerCoeffIsoTrivialF2 K).inv ≫ kummerCoeffToUnits K 2) ≫
-      ofDiscreteModulePair _ (unitsCoeffMap K L σ).toIntLinearMap
-        (unitsCoeffMap_galoisSubgroupEquiv_smul K L σ) =
+      ofDiscreteModulePair _ (unitsCoeffMap K L σ).toIntLinearMap (unitsCoeffMap_smul K L σ) =
     eqToHom (res_trivialF2_hom _) ≫ (kummerCoeffIsoTrivialF2 L).inv ≫ kummerCoeffToUnits L 2 := by
   refine TopRep.hom_ext (DFunLike.ext _ _ fun x => ?_)
   rw [TopRep.comp_apply, TopRep.comp_apply, TopRep.comp_apply]
-  refine (ofDiscreteModulePair_hom_apply _ (unitsCoeffMap K L σ).toIntLinearMap
-    (unitsCoeffMap_galoisSubgroupEquiv_smul K L σ) _).trans ?_
-  -- `TopRep.resFunctor` keeps the underlying function of a morphism. The rules saying so,
-  -- `TopRep.resFunctor_map_hom` and `ContIntertwiningMap.restrict_apply`, are stated through
-  -- `TopRep.Hom.hom`, while the goal applies morphisms through `ConcreteCategory.hom`, so they do
-  -- not rewrite here; both hold by `rfl`, and `change` uses that.
-  change unitsCoeffMap K L σ (((kummerCoeffIsoTrivialF2 K).inv ≫ kummerCoeffToUnits K 2) x) = _
+  refine (ofDiscreteModulePair_hom_apply _ (unitsCoeffMap K L σ).toIntLinearMap _ _).trans ?_
+  -- `TopRep.resFunctor` keeps the underlying function of a morphism: its `map` is
+  -- `TopRep.ofHom` of `ContIntertwiningMap.restrict`, which `simp` reads off.
+  simp only [TopRep.hom_ofHom, ContIntertwiningMap.restrict_apply]
   rw [TopRep.comp_apply, kummerCoeffIsoTrivialF2_inv_apply, kummerCoeffIsoTrivialF2_inv_apply,
     kummerCoeffToUnits_hom_apply, kummerCoeffToUnits_hom_apply, TopRep.eqToHom_hom_apply,
     kummerCoeffEquiv_symm_apply, kummerCoeffEquiv_symm_apply,
@@ -315,10 +325,11 @@ of `H²(G_K, 𝔽₂)` to `G_L` and then carrying it to `H²(G_L, (Lˢ)ˣ)` is c
 `H²(G_K, (Kˢ)ˣ)` and then restricting with multiplicative coefficients. -/
 @[reassoc]
 theorem galoisRes_comp_h2MuToUnits :
-    galoisRes K L σ 2 ≫ h2MuToUnits L = h2MuToUnits K ≫ resHUnits K L σ 2 := by
-  rw [galoisRes_eq_map, h2MuToUnits_def, h2MuToUnits_def, h2KummerToUnits_def,
-    h2KummerToUnits_def, ← ContinuousCohomology.coeffMap_comp,
-    ← ContinuousCohomology.coeffMap_comp, resHUnits_def, trivialF2Map_def]
+    galoisRes K L σ 2 ≫ h2MuToUnits L = h2MuToUnits K ≫ galoisResUnits K L σ 2 := by
+  rw [galoisRes_eq_map, galoisSubgroup_comp_eq_fixingSubgroup_comp, h2MuToUnits_def,
+    h2MuToUnits_def, h2KummerToUnits_def, h2KummerToUnits_def,
+    ← ContinuousCohomology.coeffMap_comp, ← ContinuousCohomology.coeffMap_comp,
+    galoisResUnits_def, trivialF2Map_def]
   exact ContinuousCohomology.map_comp_coeffMap _ _ _ _ _
     (resFunctor_map_comp_ofDiscreteModulePair K L σ) 2
 
@@ -328,7 +339,7 @@ in `H²(G_L, (Lˢ)ˣ)` of the restriction of `x` is the restriction of the image
 theorem h2MuToUnits_galoisRes
     (x : continuousCohomology 2 (trivialF2 (AbsoluteGaloisGroup K))) :
     (h2MuToUnits L).hom ((galoisRes K L σ 2).hom x) =
-      (resHUnits K L σ 2).hom ((h2MuToUnits K).hom x) :=
+      (galoisResUnits K L σ 2).hom ((h2MuToUnits K).hom x) :=
   ConcreteCategory.congr_hom (galoisRes_comp_h2MuToUnits K L σ) x
 
 end TauCeti

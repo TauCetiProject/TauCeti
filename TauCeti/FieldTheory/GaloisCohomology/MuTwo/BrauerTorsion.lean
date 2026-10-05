@@ -71,8 +71,13 @@ coefficient identification `TauCeti.kummerCoeffIsoTrivialF2`, followed by the Ku
 `TauCeti.h2KummerToUnits` at `n = 2`. -/
 theorem h2MuToUnits_def :
     h2MuToUnits K =
-      ContinuousCohomology.coeffMap (kummerCoeffIsoTrivialF2 K).inv 2 ≫ h2KummerToUnits K 2 :=
-  (rfl)
+      ContinuousCohomology.coeffMap (kummerCoeffIsoTrivialF2 K).inv 2 ≫ h2KummerToUnits K 2 := by
+  rw [h2MuToUnits, Functor.mapIso_inv, ContinuousCohomology.continuousCohomologyFunctor_map]
+  -- The two sides now differ only in the spelling of the middle object of the composite,
+  -- `(continuousCohomologyFunctor ℤ _ 2).obj _` against `continuousCohomology 2 _`, which agree by
+  -- `ContinuousCohomology.continuousCohomologyFunctor_obj`; `rw` cannot rewrite inside the object
+  -- argument of `≫` (the motive is not type correct), so `rfl` closes it.
+  rfl
 
 /-- Transporting a `μ₂`-class to trivial `𝔽₂` coefficients before applying
 `TauCeti.h2MuToUnits` recovers the Kummer-sequence map at `n = 2`. This equation characterizes
