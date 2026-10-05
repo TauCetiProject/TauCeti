@@ -134,13 +134,13 @@ section Subgroup
 variable (K : Type u) [Field K] {n : ℕ} (hn : IsUnit (n : K))
   (U : Subgroup (AbsoluteGaloisGroup K))
 
-/-- The Kummer coefficient inclusion is injective on `H²` of every closed subgroup of `G_K`.
-Hilbert 90 for that subgroup kills the preceding connecting map. -/
+/-- The Kummer coefficient inclusion is injective on `H²` of every closed subgroup of `G_K`. -/
 theorem explicitCoeff2_kummerShortExact_restrict_incl_injective
     (hU : IsClosed (U : Set (AbsoluteGaloisGroup K))) :
     Function.Injective (explicitCoeff2 U (KummerCoeff K n)
       ((kummerShortExact K n hn).restrict U).inclDistribMulActionHom
       continuous_of_discreteTopology) := by
+  -- Hilbert 90 for this subgroup kills the preceding connecting map.
   have := subsingleton_H1_unitsCoeff_of_isClosed K U hU
   refine (injective_iff_map_eq_zero _).2 fun x hx => ?_
   have hx' : x ∈ ((kummerShortExact K n hn).restrict U).explicitDelta1.range := by
