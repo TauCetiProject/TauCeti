@@ -132,12 +132,36 @@ theorem normalBundleHomeomorphTube_symm_apply_proj (f : M → V) {ε : ℝ} (hε
     ((normalBundleHomeomorphTube f hε).symm q).proj = q.1.1 := (rfl)
 
 /-- The fibre coordinate of radial compression, read in the ambient Euclidean space. -/
+@[simp]
 theorem normalBundleHomeomorphTube_apply_snd (f : M → V) {ε : ℝ} (hε : 0 < ε)
     (p : TotalSpace V (fun x : M => normalSubspace I f x)) :
     (normalBundleHomeomorphTube f hε p).1.2 =
       ε • (Real.sqrt (1 + ‖(p.2 : V)‖ ^ 2))⁻¹ • (p.2 : V) := by
   simp [normalBundleHomeomorphTube, Homeomorph.unitBall_apply_coe,
     OpenPartialHomeomorph.univUnitBall_apply]
+
+/-- The fibre coordinate of inverse radial compression, read in the ambient Euclidean space. -/
+@[simp]
+theorem normalBundleHomeomorphTube_symm_apply_snd (f : M → V) {ε : ℝ} (hε : 0 < ε)
+    (q : normalTube I f ε) :
+    (((normalBundleHomeomorphTube f hε).symm q).2 : V) =
+      (Real.sqrt (1 - ‖ε⁻¹ • q.1.2‖ ^ 2))⁻¹ • (ε⁻¹ • q.1.2) := by
+  let y : ball (0 : normalSubspace I f q.1.1) 1 :=
+    ⟨ε⁻¹ • ⟨q.1.2, (mem_normalTube.mp q.2).1⟩, by
+      rw [mem_ball_zero_iff, norm_smul, Real.norm_of_nonneg (inv_pos.mpr hε).le]
+      exact (inv_mul_lt_iff₀ hε).mpr (by simpa using (mem_normalTube.mp q.2).2)⟩
+  -- Compose the inverse formulas before coercing: the partial homeomorphism uses
+  -- its source subtype, whereas `unitBall.symm` returns a vector in the normal subspace.
+  have hy : Homeomorph.unitBall.symm y = (Real.sqrt (1 - ‖y.1‖ ^ 2))⁻¹ • y.1 :=
+    (Homeomorph.unitBall_symm_apply y).trans
+      ((OpenPartialHomeomorph.toHomeomorphSourceTarget_symm_apply_coe
+        (OpenPartialHomeomorph.univUnitBall (E := normalSubspace I f q.1.1)) y).trans
+        (OpenPartialHomeomorph.univUnitBall_symm_apply y.1))
+  -- The inverse fibre is definitionally `unitBall.symm y`; naming its subtype input
+  -- lets the explicit Mathlib formula apply without unfolding the partial homeomorphism.
+  change ((Homeomorph.unitBall.symm y : normalSubspace I f q.1.1) : V) = _
+  simpa only [y, ← Submodule.norm_coe, Submodule.coe_smul, Subtype.coe_mk]
+    using congrArg ((↑) : normalSubspace I f q.1.1 → V) hy
 
 /-- The zero section is carried to the zero vectors of the bounded normal tube. -/
 @[simp]
