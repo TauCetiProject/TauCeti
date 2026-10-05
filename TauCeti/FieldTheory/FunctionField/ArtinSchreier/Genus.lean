@@ -37,6 +37,8 @@ constants or residue fields is assumed. Over imperfect residue fields such repre
 need not exist. The genus formula uses exact constants and the finite separable constant-field
 extension required by the Hurwitz theorem.
 
+`isIntegrallyClosedIn_of_exists_reduced_artinSchreier_pole` proves exactness of the
+extension's constants from a single supplied reduced pole.
 For a finite nonempty set of reduced poles,
 `two_mul_genus_sub_two_eq_of_exists_reduced_artinSchreier_poles` derives nontriviality and
 exactness of the constants over any function field with exact constants. For an extension of `k(x)`,
@@ -203,6 +205,34 @@ section Poles
 variable {k : Type u} {F : Type v} {F' : Type v'} [Field k] [Field F] [Field F']
 variable [Algebra k F] [Algebra k F'] [Algebra F F'] [IsScalarTower k F F']
 
+/-- An Artin--Schreier extension of a function field with exact constants acquires no new
+constants if one supplied representative has a pole of order prime to `p`.
+Finiteness and separability follow from the equation and the generator hypothesis. -/
+theorem isIntegrallyClosedIn_of_exists_reduced_artinSchreier_pole
+    (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F)
+    (p : ℕ) [Fact p.Prime] [CharP F p]
+    {y : F'} {u : F} (hgen : F⟮y⟯ = ⊤)
+    (hy : y ^ p - y = algebraMap F F' u) (P : Place k F)
+    (hpole : ∃ w : F, P.ord (u - (w ^ p - w)) < 0 ∧
+      ¬ (p : ℤ) ∣ P.ord (u - (w ^ p - w))) :
+    IsIntegrallyClosedIn k F' := by
+  let _ := ArtinSchreier.isSplittingField hy hgen
+  let _ := Polynomial.IsSplittingField.finiteDimensional F'
+    (Polynomial.X ^ p - Polynomial.X - Polynomial.C u)
+  let _ := ArtinSchreier.isGalois hy hgen
+  have hF' : IsFunctionField k F' := hF.finite_extension
+  obtain ⟨P', hP'⟩ := Place.restrict_surjective_of_finiteDimensional
+    (k' := k) hF hF' P
+  have hpole' : ∃ w : F, (P'.restrict k F).ord (u - (w ^ p - w)) < 0 ∧
+      ¬ (p : ℤ) ∣ (P'.restrict k F).ord (u - (w ^ p - w)) := by
+    simpa only [hP'] using hpole
+  have he := Place.ramificationIdx_eq_of_exists_reduced_artinSchreier_pole
+    k F p hgen hy hpole'
+  refine isIntegrallyClosedIn_of_finrank_prime_of_ramificationIdx_ne_one hex ?_
+    (P' := P') (he.trans_ne (Fact.out : p.Prime).ne_one)
+  rw [Place.finrank_eq_of_exists_reduced_artinSchreier_pole k F p hgen hy hpole']
+  exact Fact.out
+
 /-- An Artin--Schreier extension of a function field with exact constants and a finite
 nonempty set of supplied reduced poles has no new constants. Its genus is determined by
 `2g' - 2 = p (2g - 2) + (p - 1) ∑ P ∈ S, (m P + 1) deg P`.
@@ -234,30 +264,14 @@ theorem two_mul_genus_sub_two_eq_of_exists_reduced_artinSchreier_poles
     have hm0 : m P = 0 := by omega
     exact hprime P hP (hm0 ▸ dvd_zero _)
   have hneg : P.ord (u - (w₀ ^ p - w₀)) < 0 := by rw [hw₀]; omega
-  have hu : ∀ w : F, w ^ p - w ≠ u := by
-    intro w hw
-    -- The valuation order and the place order use the same multiplicative-to-additive convention.
-    apply P.valuation.ne_pow_sub_self_of_ord_neg_of_not_dvd
-      (Fact.out : p.Prime).one_lt
-      (by simpa only [Valuation.ord_def, ← P.ord_def] using hneg)
-      (by simpa only [Valuation.ord_def, ← P.ord_def] using hdiv) (w - w₀)
-    rw [← hw, sub_pow_char]
-    ring
+  have hu := P.ne_pow_sub_self_of_exists_reduced_artinSchreier_pole p ⟨w₀, hneg, hdiv⟩
   let _ := ArtinSchreier.isSplittingField hy hgen
   let _ := Polynomial.IsSplittingField.finiteDimensional F'
     (Polynomial.X ^ p - Polynomial.X - Polynomial.C u)
   let _ := ArtinSchreier.isGalois hy hgen
   have hF' : IsFunctionField k F' := hF.finite_extension
-  obtain ⟨P', hP'⟩ := Place.restrict_surjective_of_finiteDimensional
-    (k' := k) hF hF' P
-  have he : Place.ramificationIdx F P' = p := by
-    apply Place.ramificationIdx_eq_of_exists_reduced_artinSchreier_pole
-      k F p hgen hy
-    exact ⟨w₀, by simpa only [hP'] using hneg, by simpa only [hP'] using hdiv⟩
-  have hex' : IsIntegrallyClosedIn k F' :=
-    isIntegrallyClosedIn_of_finrank_prime_of_ramificationIdx_ne_one hex
-      (by rw [ArtinSchreier.finrank_eq hy hgen hu]; exact Fact.out)
-      (P' := P') (he.trans_ne (Fact.out : p.Prime).ne_one)
+  have hex' := isIntegrallyClosedIn_of_exists_reduced_artinSchreier_pole
+    hF hex p hgen hy P ⟨w₀, hneg, hdiv⟩
   simpa only [Module.finrank_self, Nat.cast_one, one_mul] using
     artinSchreier_genus_formula hF hF' p hgen hy S m hpole hreg hex hex' hu
 
