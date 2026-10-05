@@ -485,10 +485,10 @@ end Torus
 
 section Matrix
 
-variable {κ : Type*} [Fintype κ]
+variable {κ : Type*}
 variable {V : Type v} [AddCommGroup V]
 variable (M : AddSubgroup V)
-variable {n : ℕ} (b : Module.Basis (Fin n) ℤ M) (wt : Fin n → κ → ℤ)
+variable [Fintype κ] {n : ℕ} (b : Module.Basis (Fin n) ℤ M) (wt : Fin n → κ → ℤ)
 variable {A : Type*} [CommRing A] [Algebra ℤ A]
 
 /-- The torus attached to a weight basis, in the matrix coordinates of that basis. -/
