@@ -136,6 +136,7 @@ theorem jimboWeightedTrace_sigma_two_inv (q : Rˣ) :
   linear_combination -h - (∑ a : Fin N, jimboWeight q a) * hs
 
 /-- At `q = 1`, the trace counts colourings fixed by the underlying strand permutation. -/
+@[simp]
 theorem jimboWeightedTrace_one_parameter (b : BraidGroup n) :
     jimboWeightedTrace (N := N) (1 : Rˣ) b =
       ((Finset.univ.filter fun w : Fin n → Fin N =>
