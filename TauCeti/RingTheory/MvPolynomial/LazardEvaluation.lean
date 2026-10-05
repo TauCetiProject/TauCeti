@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.MvPolynomial.Polynomial
 public import Mathlib.Algebra.Polynomial.Reverse
 public import TauCeti.Algebra.MvPolynomial.Equiv
 public import TauCeti.Algebra.Polynomial.Taylor
@@ -204,7 +205,9 @@ theorem lazardExponent_eq_zero_of_eval_ne_zero {p : MvPolynomial (Fin n) S} {a :
   induction n with
   | zero => rfl
   | succ n ih =>
-    rw [← Fin.cons_self_tail a, ← eval_polynomial_eval_C_finSuccEquiv] at h
+    replace h : eval (Fin.tail a) ((finSuccEquiv S n p).eval (C (a 0))) ≠ 0 := by
+      rw [← Fin.cons_self_tail a] at h
+      rwa [eval_polynomial_eval_finSuccEquiv, eval_C]
     have h0 : (finSuccEquiv S n p).rootMultiplicity (C (a 0)) = 0 :=
       Polynomial.rootMultiplicity_eq_zero fun hr ↦ h (by rw [hr.eq_zero, map_zero])
     rw [lazardExponent_fin_succ, h0, pow_zero, Polynomial.divByMonic_one, ih h,
