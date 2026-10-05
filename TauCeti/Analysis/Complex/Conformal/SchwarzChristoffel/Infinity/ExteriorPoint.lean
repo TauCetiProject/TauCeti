@@ -10,9 +10,9 @@ import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Image
 import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Infinity.Power
 
 /-!
-# Exterior points of unbounded Schwarz--Christoffel images
+# Exterior points of Schwarz--Christoffel images
 
-If all finite prevertices are integrable and the total turning exponent lies in `[-1, 1)`,
+If all finite prevertices are integrable and the total turning exponent is less than `1`,
 the closure of the Schwarz--Christoffel image is a proper subset of the plane. This provides
 an exterior point about which to invert an unbounded polygonal image, reducing boundary
 separation questions to bounded images. Boundary simplicity is not required.
@@ -21,6 +21,7 @@ For total exponent greater than `-1`, the leading power has opening strictly les
 The uniform power asymptotic confines the image at infinity to a slightly wider cone, while
 continuity up to the real axis bounds the remaining compact part. At total exponent `-1`,
 the real part tends to positive infinity, so the image has a global lower bound on its real part.
+For total exponent less than `-1`, the image is bounded and its closure is compact.
 
 ## References
 
@@ -45,16 +46,16 @@ private theorem exists_norm_bound_schwarzChristoffelPrimitive_on_bounded_part
       ‖schwarzChristoffelPrimitive a e z₀ z‖ ≤ M := by
   let K := closedBall (0 : ℂ) R ∩ closure upperHalfPlaneSet
   have hK : IsCompact K := (isCompact_closedBall 0 R).inter_right isClosed_closure
-  obtain ⟨M, hM⟩ := isBounded_iff_forall_norm_le.mp <|
+  obtain ⟨M, hMpos, hM⟩ :=
     (hK.image_of_continuousOn
       ((continuousOn_extendFrom_schwarzChristoffelPrimitive a e z₀ hfinite).mono
-        inter_subset_right)).isBounded
-  refine ⟨max M 0, le_max_right _ _, fun z hz hzR => ?_⟩
+        inter_subset_right)).isBounded.exists_pos_norm_le
+  refine ⟨M, hMpos.le, fun z hz hzR => ?_⟩
   have hzK : z ∈ K := ⟨by simpa using hzR, subset_closure hz⟩
   have h := hM _ (mem_image_of_mem _ hzK)
   rw [extendFrom_extends
     (differentiableOn_schwarzChristoffelPrimitive a e z₀).continuousOn z hz] at h
-  exact h.trans (le_max_left _ _)
+  exact h
 
 /-- In the power regime with opening less than `2π`, a rotation of the primitive eventually
 lies in a closed cone strictly smaller than the full plane. -/
@@ -144,15 +145,20 @@ private theorem exists_eventually_cone_schwarzChristoffelPrimitive
     nlinarith [sq_nonneg (1 + c)]
   nlinarith
 
-/-- **An unbounded Schwarz--Christoffel image has an exterior point** if the finite prevertices
-are integrable and the total exponent belongs to `[-1, 1)`. The point lies outside the closure
+/-- **A Schwarz--Christoffel image has an exterior point** if the finite prevertices
+are integrable and the total exponent is less than `1`. The point lies outside the closure
 of the image, not merely outside the image. No simplicity or sign assumptions are imposed on
 the finite turning data. -/
 theorem exists_notMem_closure_image_schwarzChristoffelPrimitive_of_sum_lt_one
     (a e : ι → ℝ) (z₀ : UpperHalfPlane)
     (hfinite : ∀ j, -1 < ∑ i with a i = a j, e i)
-    (hlow : -1 ≤ ∑ i, e i) (hhigh : ∑ i, e i < 1) :
+    (hhigh : ∑ i, e i < 1) :
     ∃ q : ℂ, q ∉ closure (schwarzChristoffelPrimitive a e z₀ '' upperHalfPlaneSet) := by
+  by_cases hbounded : ∑ i, e i < -1
+  · have hcompact :=
+      (isBounded_image_schwarzChristoffelPrimitive a e z₀ hfinite hbounded).isCompact_closure
+    exact (ne_univ_iff_exists_notMem _).mp hcompact.ne_univ
+  have hlow : -1 ≤ ∑ i, e i := le_of_not_gt hbounded
   -- Both asymptotic regimes yield an eventual cone inequality; the logarithmic case is
   -- the half-plane `re ≥ 0` and needs no rotation.
   have hcone : ∃ (u : ℂ) (k : ℝ), ‖u‖ = 1 ∧ 0 ≤ k ∧ k < 1 ∧
