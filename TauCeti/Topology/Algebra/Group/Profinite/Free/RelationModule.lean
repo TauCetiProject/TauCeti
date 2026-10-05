@@ -56,6 +56,9 @@ homomorphism `f ↦ (x ↦ [s x⁻¹ * f * s (x⁻¹ * π f)⁻¹])` with values
   the relation module.
 * `TauCeti.freeProfiniteGroup.coe_abelianizationProPEquivRelationModule_ofMul`: Lyndon's
   isomorphism sends the class of `r ∈ R` to the Fox derivative of `r`.
+* `TauCeti.freeProfiniteGroup.abelianizationProPEquivRelationModule_padicPow`: Lyndon's
+  isomorphism is compatible with `p`-adic powers on `R^ab(p)` and `ℤ_p`-scalars on the relation
+  module.
 * `TauCeti.freeProfiniteGroup.abelianizationProPEquivRelationModule_smul`: Lyndon's isomorphism is
   equivariant for conjugation by `F ⧸ R` on `R^ab(p)` and multiplication by `π f` on the relation
   module.
@@ -192,6 +195,12 @@ theorem foxDerivative_inv (f : freeProfiniteGroup ι) :
   rw [inv_mul_cancel, foxDerivative_one, map_inv] at h
   exact eq_neg_of_add_eq_zero_left h.symm
 
+/-- The Fox derivative of a quotient: `D (f * f'⁻¹) = D f - lift g (f * f'⁻¹) • D f'`. -/
+theorem foxDerivative_mul_inv (f f' : freeProfiniteGroup ι) :
+    foxDerivative p g (f * f'⁻¹) =
+      foxDerivative p g f - single (lift g (f * f'⁻¹)) (1 : ℤ_[p]) • foxDerivative p g f' := by
+  rw [eq_sub_iff_add_eq, ← foxDerivative_mul, inv_mul_cancel_right]
+
 /-- On the kernel of `lift g` the Fox derivative is additive. -/
 theorem foxDerivative_mul_of_mem_ker {r : freeProfiniteGroup ι}
     (hr : r ∈ (lift g : freeProfiniteGroup ι →* G).ker) (f : freeProfiniteGroup ι) :
@@ -205,9 +214,8 @@ theorem foxDerivative_conj {r : freeProfiniteGroup ι}
     (hr : r ∈ (lift g : freeProfiniteGroup ι →* G).ker) (f : freeProfiniteGroup ι) :
     foxDerivative p g (f * r * f⁻¹) = single (lift g f) (1 : ℤ_[p]) • foxDerivative p g r := by
   have hr : lift g r = 1 := MonoidHom.mem_ker.1 hr
-  rw [foxDerivative_mul, foxDerivative_mul, foxDerivative_inv, map_mul, hr, mul_one, smul_neg,
-    smul_smul, single_mul_single, mul_inv_cancel, mul_one, ← one_def, one_smul]
-  abel
+  rw [foxDerivative_mul_inv, foxDerivative_mul]
+  simp [hr, ← one_def]
 
 /-- **The Fox derivative is unique**: a continuous map `D : F → ℤ_p[G]^ι` with
 `D (f * f') = D f + lift g f • D f'` and `D (of i) = e_i` is `foxDerivative p g`. -/
@@ -335,8 +343,7 @@ variable [DecidableEq ι]
 private theorem foxDerivative_toKer (a : freeProfiniteGroup ι) :
     foxDerivative p g (toKer hg a) =
       foxDerivative p g a - foxDerivative p g (sec hg (lift g a)) := by
-  rw [toKer, foxDerivative_mul, foxDerivative_inv, lift_sec, smul_neg, smul_smul,
-    single_mul_single, mul_inv_cancel, mul_one, ← one_def, one_smul, sub_eq_add_neg]
+  simp [toKer, foxDerivative_mul_inv, lift_sec, ← one_def]
 
 /-! ### The Fox derivative on `R^ab(p)` -/
 
@@ -446,9 +453,8 @@ private theorem schreierSum_single_smul (y : G) (m : ι → MonoidAlgebra ℤ_[p
 
 private theorem schreierSum_single (i : ι) (x : G) :
     schreierSum p hg (Pi.single i 1) x = schreierCocycle p hg (of i) x := by
-  rw [schreierSum, Finset.sum_eq_single i (fun j _ hj ↦ by simp [Pi.single_eq_of_ne hj])
-    (by simp), Pi.single_eq_same, one_def, coeff_single, Finsupp.sum_single_index (by simp),
-    IsProP.padicPow_one, mul_one, schreierCocycle]
+  rw [schreierSum, Fintype.sum_eq_single i fun j hj ↦ by simp [hj]]
+  simp [one_def, Finsupp.sum_single_index, IsProP.padicPow_one, schreierCocycle]
 
 private theorem continuous_schreierSum_foxDerivative :
     Continuous fun f x ↦ schreierSum p hg (foxDerivative p g f) x := by
@@ -529,7 +535,8 @@ private theorem foxAddHom_schreierSum {m : ι → MonoidAlgebra ℤ_[p] G}
 the family `g : ι → G`, the maximal abelian pro-`p` quotient `R^ab(p)` of the kernel `R` of
 `lift g : F → G` is isomorphic to the relation module `relationModule ℤ_[p] G g`. The isomorphism
 sends the class of `r ∈ R` to its Fox derivative
-(`coe_abelianizationProPEquivRelationModule_ofMul`), and it is equivariant
+(`coe_abelianizationProPEquivRelationModule_ofMul`), it is `ℤ_p`-linear
+(`abelianizationProPEquivRelationModule_padicPow`), and it is equivariant
 (`abelianizationProPEquivRelationModule_smul`). -/
 noncomputable def abelianizationProPEquivRelationModule :
     Additive (abelianizationProP p _ (lift g : freeProfiniteGroup ι →* G).ker) ≃+
@@ -551,6 +558,17 @@ theorem coe_abelianizationProPEquivRelationModule_ofMul
     (abelianizationProPEquivRelationModule p hg (ofMul (abelianizationProPMk p _ _ r)) :
       ι → MonoidAlgebra ℤ_[p] G) = foxDerivative p g r :=
   foxAddHom_ofMul_mk p r
+
+/-- Lyndon's isomorphism is `ℤ_p`-linear: it sends the `p`-adic power `a ^ c` in `R^ab(p)` to
+`c` times the image of `a`. -/
+@[simp]
+theorem abelianizationProPEquivRelationModule_padicPow
+    (a : abelianizationProP p _ (lift g : freeProfiniteGroup ι →* G).ker) (c : ℤ_[p]) :
+    haveI : CompactSpace (lift g : freeProfiniteGroup ι →* G).ker :=
+      isCompact_iff_compactSpace.mp (isClosed_singleton.preimage (lift g).continuous).isCompact
+    abelianizationProPEquivRelationModule p hg (ofMul (isProP_maximalProPQuotient.padicPow a c)) =
+      c • abelianizationProPEquivRelationModule p hg (ofMul a) :=
+  Subtype.ext (foxAddHom_padicPow p a c)
 
 /-- **Lyndon's isomorphism is equivariant**: conjugation by `f ∈ F` on `R^ab(p)`, through
 `F ⧸ R`, corresponds to multiplication by `lift g f` on the relation module. -/
