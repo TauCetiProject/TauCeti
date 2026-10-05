@@ -6,12 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Instances.Comap
+public import TauCeti.Geometry.Manifold.LocalDiffeomorph
 public import TauCeti.Geometry.Toric.Analytic.Fan.Comparison.Naturality
 public import TauCeti.Geometry.Toric.Analytic.Fan.Map.Holomorphic
-
--- Mathlib has no exported computation rule for `diffeomorphOfBijective`; import its body
--- privately to prove the forward computation rule below without exposing our constructor.
-import all Mathlib.Geometry.Manifold.LocalDiffeomorph
 
 /-!
 # The complex manifold of algebraic toric complex points
@@ -76,8 +73,8 @@ theorem coe_algebraicAnalyticDiffeomorph (n : ℕ∞ω) :
     letI := algebraicComplexPointChartedSpace hΦ
     letI := Φ.analyticChartedSpace hΦ
     ⇑(algebraicAnalyticDiffeomorph hΦ n) = algebraicAnalyticEquiv hΦ := by
-  funext x
-  exact congrFun (coe_algebraicAnalyticHomeomorph hΦ) x
+  simp only [algebraicAnalyticDiffeomorph, coe_diffeomorphOfBijective,
+    coe_algebraicAnalyticHomeomorph]
 
 /-- The inverse biholomorphism is the inverse chartwise comparison. -/
 @[simp]
