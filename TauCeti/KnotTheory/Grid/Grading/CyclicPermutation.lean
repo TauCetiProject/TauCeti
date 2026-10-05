@@ -73,7 +73,7 @@ private theorem card_pointSet_inter_relabelRowsEquiv_finRotate {x y : GridState 
 /-- The `O`-Maslov grading is invariant under a cyclic permutation of the rows. -/
 theorem maslovO_relabelRows_finRotate (x : GridState n) :
     (G.relabelRows (finRotate n)).maslovO (x.relabelRows (finRotate n)) = G.maslovO x := by
-  refine eq_of_forall_sub_eq (f := fun x ↦ (G.relabelRows (finRotate n)).maslovO
+  refine GridState.eq_of_forall_sub_eq (f := fun x ↦ (G.relabelRows (finRotate n)).maslovO
     (x.relabelRows (finRotate n))) G.O ?_ (fun x y R ↦ ?_) x
   · simp only [← relabelRows_O, maslovO_eq_intCast, maslovOℤ_O]
   · simp only [maslovO_sub_maslovO_eq_two_mul_card_sub_one_sub_two_mul_card _
@@ -84,7 +84,7 @@ theorem maslovO_relabelRows_finRotate (x : GridState n) :
 /-- The `X`-Maslov grading is invariant under a cyclic permutation of the rows. -/
 theorem maslovX_relabelRows_finRotate (x : GridState n) :
     (G.relabelRows (finRotate n)).maslovX (x.relabelRows (finRotate n)) = G.maslovX x := by
-  refine eq_of_forall_sub_eq (f := fun x ↦ (G.relabelRows (finRotate n)).maslovX
+  refine GridState.eq_of_forall_sub_eq (f := fun x ↦ (G.relabelRows (finRotate n)).maslovX
     (x.relabelRows (finRotate n))) G.X ?_ (fun x y R ↦ ?_) x
   · simp only [← relabelRows_X, maslovX_eq_intCast, maslovXℤ_X]
   · simp only [maslovX_sub_maslovX_eq_two_mul_card_sub_one_sub_two_mul_card _
@@ -114,7 +114,7 @@ private theorem card_pointSet_inter_relabelColumnsEquiv_finRotate {x y : GridSta
 /-- The `O`-Maslov grading is invariant under a cyclic permutation of the columns. -/
 theorem maslovO_relabelColumns_finRotate (x : GridState n) :
     (G.relabelColumns (finRotate n)).maslovO (x.relabelColumns (finRotate n)) = G.maslovO x := by
-  refine eq_of_forall_sub_eq (f := fun x ↦ (G.relabelColumns (finRotate n)).maslovO
+  refine GridState.eq_of_forall_sub_eq (f := fun x ↦ (G.relabelColumns (finRotate n)).maslovO
     (x.relabelColumns (finRotate n))) G.O ?_ (fun x y R ↦ ?_) x
   · simp only [← relabelColumns_O, maslovO_eq_intCast, maslovOℤ_O]
   · simp only [maslovO_sub_maslovO_eq_two_mul_card_sub_one_sub_two_mul_card _
@@ -125,7 +125,7 @@ theorem maslovO_relabelColumns_finRotate (x : GridState n) :
 /-- The `X`-Maslov grading is invariant under a cyclic permutation of the columns. -/
 theorem maslovX_relabelColumns_finRotate (x : GridState n) :
     (G.relabelColumns (finRotate n)).maslovX (x.relabelColumns (finRotate n)) = G.maslovX x := by
-  refine eq_of_forall_sub_eq (f := fun x ↦ (G.relabelColumns (finRotate n)).maslovX
+  refine GridState.eq_of_forall_sub_eq (f := fun x ↦ (G.relabelColumns (finRotate n)).maslovX
     (x.relabelColumns (finRotate n))) G.X ?_ (fun x y R ↦ ?_) x
   · simp only [← relabelColumns_X, maslovX_eq_intCast, maslovXℤ_X]
   · simp only [maslovX_sub_maslovX_eq_two_mul_card_sub_one_sub_two_mul_card _

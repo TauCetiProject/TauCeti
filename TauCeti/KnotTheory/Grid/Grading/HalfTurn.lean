@@ -48,7 +48,7 @@ theorem alexander_rotate_halfTurn (x : GridState n) :
     rw [hhalf, alexander_eq, alexander_eq]
     simp only [JO_def, JX_def, OSet_def, XSet_def, rotate_O, rotate_X,
       GridState.JCenter_diagonal_rotate, GridState.J_rotate]
-  refine eq_of_forall_sub_eq (f := fun x => G.rotate.alexander x.halfTurn)
+  refine GridState.eq_of_forall_sub_eq (f := fun x => G.rotate.alexander x.halfTurn)
     (GridState.mk 1) hbase (fun u v R => ?_) x
   have hchange := G.rotate.alexander_sub_alexander_eq_card_sub_card
     (GridRectangleBetween.halfTurnEquiv u v R)

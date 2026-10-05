@@ -173,9 +173,9 @@ theorem JCenter_pointSet_sub_eq (P : Finset (Fin n × Fin n)) :
 
 end GridRectangleBetween
 
-namespace GridDiagram
+namespace GridState
 
-variable {n : ℕ} (G : GridDiagram n)
+variable {n : ℕ}
 
 /-- Two grading functions that change in the same way across every rectangle, and agree at one
 grid state, agree everywhere. -/
@@ -184,6 +184,12 @@ theorem eq_of_forall_sub_eq {f g : GridState n → ℚ} (x₀ : GridState n) (h�
     f x = g x :=
   GridState.rectangle_induction_on (P := fun x ↦ f x = g x) x₀ h₀
     (fun x y R hx ↦ by linarith [h x y R]) x
+
+end GridState
+
+namespace GridDiagram
+
+variable {n : ℕ} (G : GridDiagram n)
 
 /-- The difference of the `O`-Maslov grading at two grid states splits into the change in the
 state self-pairing and twice the change in the `O`-marking pairing. The two states need not be

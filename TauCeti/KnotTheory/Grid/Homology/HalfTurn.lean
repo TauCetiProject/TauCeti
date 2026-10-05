@@ -127,14 +127,9 @@ theorem tau_rotate : ((G.isKnot_rotate).mpr hG).tau K = hG.tau K := by
     (G.unblockedHomologyRotateEquiv K).toLinearMap
     (G.unblockedHomologyRotateEquiv K).bijective fun a y hy => ?_).symm
   · simp [aeval_rename, Function.comp_def]
-  · have hG' : hG.toOddComponentGridDiagram.rotate =
-        ((G.isKnot_rotate).mpr hG).toOddComponentGridDiagram :=
-      Subtype.ext hG.toOddComponentGridDiagram.val_rotate
-    rw [mem_alexanderUnblockedHomologyGrading_piece_iff,
+  · rw [mem_alexanderUnblockedHomologyGrading_piece_iff,
       ← OddComponentGridDiagram.mem_alexanderUnblockedHomologyGrading_piece_iff] at hy ⊢
-    exact hG.toOddComponentGridDiagram.unblockedHomologyEquivOfIntertwining_mem_piece K _ _ _
-      (fun _ _ hc => hG' ▸
-        hG.toOddComponentGridDiagram.halfTurnRenameEquiv_mem_alexanderChainMinusPiece K hc) hy
+    exact hG.toOddComponentGridDiagram.unblockedHomologyRotateEquiv_mem_piece K hy
 
 end GridDiagram.IsKnot
 
