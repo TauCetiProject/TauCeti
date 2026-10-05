@@ -34,7 +34,7 @@ namespace TauCeti
 open MulOpposite
 open scoped TensorProduct
 
-variable (k A M N : Type*) [CommRing k] [Ring A]
+variable (k A M N : Type*) [CommRing k] [Semiring A]
   [AddCommGroup M] [Module k M] [Module Aᵐᵒᵖ M]
   [AddCommGroup N] [Module k N] [Module A N]
 
@@ -45,9 +45,15 @@ def balancedTensorRelations : Submodule k (M ⊗[k] N) :=
 
 /-- The tensor product of a right `A`-module and a left `A`-module, balanced over `A`
 and linear over `k`. Compatible scalar actions give the usual algebra-relative tensor product. -/
-abbrev BalancedTensorProduct := (M ⊗[k] N) ⧸ balancedTensorRelations k A M N
+def BalancedTensorProduct := (M ⊗[k] N) ⧸ balancedTensorRelations k A M N
 
 namespace BalancedTensorProduct
+
+instance : AddCommGroup (BalancedTensorProduct k A M N) :=
+  inferInstanceAs (AddCommGroup ((M ⊗[k] N) ⧸ balancedTensorRelations k A M N))
+
+instance : Module k (BalancedTensorProduct k A M N) :=
+  inferInstanceAs (Module k ((M ⊗[k] N) ⧸ balancedTensorRelations k A M N))
 
 variable {M N}
 

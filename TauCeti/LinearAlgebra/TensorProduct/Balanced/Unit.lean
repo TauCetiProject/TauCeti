@@ -15,7 +15,8 @@ public import Mathlib.Algebra.Algebra.Tower
 Tensoring a module with the regular bimodule over a noncommutative algebra returns
 the original module. The identifications send `a ⊗ n` to `a • n` and `m ⊗ a` to
 `m a`. Their inverses insert `1`. These are the unit identifications for composition
-of bimodules, before introducing gradings or differentials.
+of bimodules, before introducing gradings or differentials. A semiring algebra over
+`k` can use these identifications by installing `Algebra.semiringToRing k` locally.
 
 The construction follows the ordinary tensor product underlying Keller,
 *Deriving DG categories*, Section 6.1. Scalar actions use Mathlib's `Algebra.lsmul`.
