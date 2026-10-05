@@ -177,30 +177,16 @@ theorem heckeRingHomCuspCharSpace_heckeTCompositeGamma0_mem_of_forall_prime
       neg_mem' := fun ha F hF ↦ by
         rw [map_neg, LinearMap.neg_apply]
         exact V.neg_mem (ha F hF) }
-  -- it contains the scalar cosets, which act by scalars, and hence every prime-power block
-  have hrec {p : ℕ} (hp : p.Prime) (v : ℕ) : heckeTGeneratorRecGamma0 N p v ∈ S := by
-    have hs : heckeTScalarGamma0 N p ∈ S := by
-      by_cases hpN : Nat.Coprime p N
-      · intro F hF
-        rw [heckeRingHomCuspCharSpace_heckeTScalarGamma0 k χ p hp.pos hpN, LinearMap.smul_apply,
-          Module.End.one_apply]
-        exact V.smul_mem _ hF
-      · rw [heckeTScalarGamma0_of_not_coprime N hpN]
-        exact S.zero_mem
-    induction v using Nat.twoStepInduction with
-    | zero => rw [heckeTGeneratorRecGamma0_zero]; exact S.one_mem
-    | one => rw [heckeTGeneratorRecGamma0_one]; exact hV p hp
-    | more r h0 h1 =>
-      rw [heckeTGeneratorRecGamma0_succ_succ]
-      exact S.sub_mem (S.mul_mem (hV p hp) h1) (S.mul_mem (S.zsmul_mem hs _) h0)
-  -- and every composite, as the product of its prime-power blocks
-  refine (?_ : heckeTCompositeGamma0 N n ∈ S) F hF
-  induction n using Nat.recOnPosPrimePosCoprime with
-  | prime_pow p v hp _ => rw [heckeTCompositeGamma0_prime_pow N hp]; exact hrec hp v
-  | zero => rw [heckeTCompositeGamma0_zero]; exact S.one_mem
-  | one => rw [heckeTCompositeGamma0_one]; exact S.one_mem
-  | coprime a b _ _ hab ha hb =>
-    rw [heckeTCompositeGamma0_mul_of_coprime N hab]
-    exact S.mul_mem ha hb
+  -- it contains every prime generator, and the scalar cosets, which act by scalars; hence every
+  -- composite
+  refine (heckeTCompositeGamma0_mem_of_forall_prime_dvd N (S := S) (fun p hp _ ↦ hV p hp)
+    fun p hp _ ↦ ?_) F hF
+  by_cases hpN : Nat.Coprime p N
+  · intro F hF
+    rw [heckeRingHomCuspCharSpace_heckeTScalarGamma0 k χ p hp.pos hpN, LinearMap.smul_apply,
+      Module.End.one_apply]
+    exact V.smul_mem _ hF
+  · rw [heckeTScalarGamma0_of_not_coprime N hpN]
+    exact S.zero_mem
 
 end HeckeRing.GL2

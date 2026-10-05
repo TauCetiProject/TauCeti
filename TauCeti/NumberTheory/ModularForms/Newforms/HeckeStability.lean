@@ -55,9 +55,10 @@ level included.
 * `TauCeti.heckeTCuspNat_mem_cuspFormsOld`: `Tₚ` maps the old subspace into itself, for every
   prime `p`.
 * `TauCeti.cuspFormsOld_map_heckeTCuspNat_le`: the same in `Submodule.map` form.
-* `TauCeti.heckeTCuspNat_mem_cuspFormsNew`: `Tₚ` maps the new subspace into itself, for `p`
-  prime and coprime to `N`, with `TauCeti.cuspFormsNew_map_heckeTCuspNat_le` as its
-  `Submodule.map` form.
+* `TauCeti.heckeTCuspNat_mem_cuspFormsNew_of_coprime`: `Tₚ` maps the new subspace into itself,
+  for `p` prime and coprime to `N`, with `TauCeti.cuspFormsNew_map_heckeTCuspNat_le_of_coprime`
+  as its `Submodule.map` form. Every prime is `TauCeti.heckeTCuspNat_mem_cuspFormsNew`, in
+  `TauCeti.NumberTheory.ModularForms.Newforms.BadPrime.Stability`.
 * `TauCeti.coe_heckeRingHomCuspCharSpace_heckeTGeneratorGamma0_mem_cuspFormsOld`: the same
   old-space stability, for the Hecke-ring generator at a prime acting on `S_k(N, χ)`, and
   `TauCeti.cuspFormsOld_comap_map_heckeRingHomCuspCharSpace_heckeTGeneratorGamma0_le` in
@@ -189,7 +190,7 @@ theorem cuspFormsOld_map_heckeTCuspNat_le [NeZero N] (hp : p.Prime) (k : ℤ) :
 
 /-- **The new subspace is Hecke-stable** at a prime `p` coprime to the level: `Tₚ` maps
 `S_k(Γ₁(N))ⁿᵉᵂ` into itself. -/
-theorem heckeTCuspNat_mem_cuspFormsNew [NeZero N] (hp : p.Prime)
+theorem heckeTCuspNat_mem_cuspFormsNew_of_coprime [NeZero N] (hp : p.Prime)
     (hpN : Nat.Coprime p N) {f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k}
     (hf : f ∈ cuspFormsNew N k) :
     haveI : NeZero p := ⟨hp.ne_zero⟩
@@ -211,7 +212,7 @@ theorem coe_heckeRingHomCuspCharSpace_heckeTGeneratorGamma0_mem_cuspFormsNew [Ne
     (HeckeRing.GL2.heckeRingHomCuspCharSpace k χ (HeckeRing.GL2.heckeTGeneratorGamma0 N p) F :
         CuspForm ((Gamma1 N).map (mapGL ℝ)) k) ∈ cuspFormsNew N k := by
   rw [HeckeRing.GL2.coe_heckeRingHomCuspCharSpace_heckeTGeneratorGamma0 k χ hp]
-  exact heckeTCuspNat_mem_cuspFormsNew hp hpN hF
+  exact heckeTCuspNat_mem_cuspFormsNew_of_coprime hp hpN hF
 
 /-- **The fixed-nebentypus newspace is stable under a good prime Hecke generator**, in
 `Submodule.map` form. The newspace is pulled back along the inclusion because the Hecke-ring
@@ -226,13 +227,14 @@ theorem cuspFormsNew_comap_map_heckeRingHomCuspCharSpace_heckeTGeneratorGamma0_l
   exact fun F hF ↦
     coe_heckeRingHomCuspCharSpace_heckeTGeneratorGamma0_mem_cuspFormsNew hp hpN hF
 
-/-- The new subspace is Hecke-stable, in the `Submodule.map` form. -/
-theorem cuspFormsNew_map_heckeTCuspNat_le [NeZero N] (hp : p.Prime)
+/-- The new subspace is Hecke-stable at a prime coprime to the level, in the `Submodule.map`
+form. -/
+theorem cuspFormsNew_map_heckeTCuspNat_le_of_coprime [NeZero N] (hp : p.Prime)
     (hpN : Nat.Coprime p N) (k : ℤ) :
     haveI : NeZero p := ⟨hp.ne_zero⟩
     (cuspFormsNew N k).map (HeckeRing.GL2.heckeTCuspNat k p) ≤ cuspFormsNew N k := by
   have : NeZero p := ⟨hp.ne_zero⟩
   rw [Submodule.map_le_iff_le_comap]
-  exact fun _ hf ↦ heckeTCuspNat_mem_cuspFormsNew hp hpN hf
+  exact fun _ hf ↦ heckeTCuspNat_mem_cuspFormsNew_of_coprime hp hpN hf
 
 end TauCeti

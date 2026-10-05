@@ -11,10 +11,10 @@ public import TauCeti.NumberTheory.ModularForms.Newforms.FullEigenform
 # Stability of the new subspace under the bad-prime operators
 
 For a prime `p` dividing the level `N`, the operator `U_p = T_p` maps the new subspace
-`S_k(Γ₁(N))ⁿᵉʷ` into itself. Together with the stability of the new subspace under the good `T_p`
-and the diamond operators, and of the old subspace under every `T_p` and every diamond operator,
-this is Diamond–Shurman's Proposition 5.6.2: both subspaces are stable under the whole Hecke
-algebra.
+`S_k(Γ₁(N))ⁿᵉʷ` into itself. With the good primes, the new subspace is stable under `T_p` at
+every prime. Together with its stability under the diamond operators, and that of the old
+subspace under every `T_p` and every diamond operator, this is Diamond–Shurman's
+Proposition 5.6.2: both subspaces are stable under the whole Hecke algebra.
 
 At a good prime the stability of the new subspace comes from that of the old subspace, since the
 Petersson adjoint of `T_p` is `⟨p⟩⁻¹ T_p`. At `p ∣ N` that argument is not available: the
@@ -30,8 +30,10 @@ stable under every prime generator, hence under every `T_n`
 
 ## Main results
 
-* `TauCeti.heckeUCuspNat_mem_cuspFormsNew`: `U_p` maps the new subspace into itself, for every
-  prime `p ∣ N`, with `TauCeti.cuspFormsNew_map_heckeUCuspNat_le` its `Submodule.map` form.
+* `TauCeti.heckeTCuspNat_mem_cuspFormsNew`: `T_p` maps the new subspace into itself, for every
+  prime `p`, with `TauCeti.cuspFormsNew_map_heckeTCuspNat_le` its `Submodule.map` form.
+* `TauCeti.heckeUCuspNat_mem_cuspFormsNew`: its specialization to `U_p`, for a prime `p ∣ N`, with
+  `TauCeti.cuspFormsNew_map_heckeUCuspNat_le` its `Submodule.map` form.
 * `TauCeti.coe_heckeRingHomCuspCharSpace_heckeTCompositeGamma0_mem_cuspFormsNew`: the new part of
   `S_k(N, χ)` is stable under every `T_n`, with
   `TauCeti.cuspFormsNew_comap_map_heckeRingHomCuspCharSpace_heckeTCompositeGamma0_le` its
@@ -54,14 +56,19 @@ namespace TauCeti
 
 variable {k : ℤ} {N p : ℕ} [NeZero N]
 
-/-- **The new subspace is stable under the bad-prime operator `U_p`**: for a prime `p` dividing
-the level, `U_p = T_p` maps `S_k(Γ₁(N))ⁿᵉʷ` into itself. This is the new-space half of
-Diamond–Shurman's Proposition 5.6.2 at the primes dividing the level; the good primes are
-`heckeTCuspNat_mem_cuspFormsNew`. -/
-theorem heckeUCuspNat_mem_cuspFormsNew (hp : p.Prime) (hpN : p ∣ N)
+/-- **The new subspace is stable under every `T_p`**: for every prime `p`, whether or not it
+divides the level, `T_p` maps `S_k(Γ₁(N))ⁿᵉʷ` into itself. This is the new-space half of
+Diamond–Shurman's Proposition 5.6.2 for the operators `T_p`. At a good prime it is
+`heckeTCuspNat_mem_cuspFormsNew_of_coprime`; at `p ∣ N` the newforms span the new subspace and
+`T_p = U_p` scales each of them. -/
+theorem heckeTCuspNat_mem_cuspFormsNew (hp : p.Prime)
     {f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k} (hf : f ∈ cuspFormsNew N k) :
-    HeckeRing.GL2.heckeUCuspNat k p hp hpN f ∈ cuspFormsNew N k := by
-  -- the newforms span the new subspace, and `U_p` scales each of them
+    haveI : NeZero p := ⟨hp.ne_zero⟩
+    HeckeRing.GL2.heckeTCuspNat k p f ∈ cuspFormsNew N k := by
+  by_cases hpN : Nat.Coprime p N
+  · exact heckeTCuspNat_mem_cuspFormsNew_of_coprime hp hpN hf
+  have hpN : p ∣ N := (Nat.Prime.dvd_iff_not_coprime hp).2 hpN
+  -- the newforms span the new subspace, and `T_p = U_p` scales each of them
   refine (Submodule.span_le
     (p := (cuspFormsNew N k).comap (HeckeRing.GL2.heckeUCuspNat k p hp hpN))).mpr ?_
     (HeckeRing.GL2.Newform.span_range_toCuspForm_eq_cuspFormsNew.ge hf)
@@ -69,11 +76,25 @@ theorem heckeUCuspNat_mem_cuspFormsNew (hp : p.Prime) (hpN : p ∣ N)
   rw [SetLike.mem_coe, Submodule.mem_comap, g.heckeUCuspNat_eq_qExpansion_coeff_smul hp hpN]
   exact Submodule.smul_mem _ _ g.isNew
 
+/-- The new subspace is stable under every `T_p`, in the `Submodule.map` form. -/
+theorem cuspFormsNew_map_heckeTCuspNat_le (hp : p.Prime) (k : ℤ) :
+    haveI : NeZero p := ⟨hp.ne_zero⟩
+    (cuspFormsNew N k).map (HeckeRing.GL2.heckeTCuspNat k p) ≤ cuspFormsNew N k := by
+  rw [Submodule.map_le_iff_le_comap]
+  exact fun _ hf ↦ heckeTCuspNat_mem_cuspFormsNew hp hf
+
+/-- **The new subspace is stable under the bad-prime operator `U_p`**: for a prime `p` dividing
+the level, `U_p = T_p` maps `S_k(Γ₁(N))ⁿᵉʷ` into itself. This is the specialization of
+`heckeTCuspNat_mem_cuspFormsNew` to the primes dividing the level. -/
+theorem heckeUCuspNat_mem_cuspFormsNew (hp : p.Prime) (hpN : p ∣ N)
+    {f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k} (hf : f ∈ cuspFormsNew N k) :
+    HeckeRing.GL2.heckeUCuspNat k p hp hpN f ∈ cuspFormsNew N k :=
+  heckeTCuspNat_mem_cuspFormsNew hp hf
+
 /-- The new subspace is stable under `U_p` for `p ∣ N`, in the `Submodule.map` form. -/
 theorem cuspFormsNew_map_heckeUCuspNat_le (hp : p.Prime) (hpN : p ∣ N) (k : ℤ) :
-    (cuspFormsNew N k).map (HeckeRing.GL2.heckeUCuspNat k p hp hpN) ≤ cuspFormsNew N k := by
-  rw [Submodule.map_le_iff_le_comap]
-  exact fun _ hf ↦ heckeUCuspNat_mem_cuspFormsNew hp hpN hf
+    (cuspFormsNew N k).map (HeckeRing.GL2.heckeUCuspNat k p hp hpN) ≤ cuspFormsNew N k :=
+  cuspFormsNew_map_heckeTCuspNat_le hp k
 
 /-- **The new part of `S_k(N, χ)` is stable under every Hecke operator `T_n`**, the composite
 element `heckeTCompositeGamma0 N n` of the `Γ₀(N)` Hecke ring acting on `S_k(N, χ)`, whether or
@@ -87,12 +108,10 @@ theorem coe_heckeRingHomCuspCharSpace_heckeTCompositeGamma0_mem_cuspFormsNew
         CuspForm ((Gamma1 N).map (mapGL ℝ)) k) ∈ cuspFormsNew N k := by
   refine HeckeRing.GL2.heckeRingHomCuspCharSpace_heckeTCompositeGamma0_mem_of_forall_prime
     (V := (cuspFormsNew N k).comap (cuspFormCharSpace k χ).subtype) (fun p hp G hG ↦ ?_) n hF
-  -- at a prime the generator acts as `T_p`, which is `U_p` when `p ∣ N`
+  -- at a prime the generator acts as `T_p`
   rw [Submodule.mem_comap, Submodule.subtype_apply,
     HeckeRing.GL2.coe_heckeRingHomCuspCharSpace_heckeTGeneratorGamma0 k χ hp]
-  by_cases hpN : Nat.Coprime p N
-  · exact heckeTCuspNat_mem_cuspFormsNew hp hpN hG
-  · exact heckeUCuspNat_mem_cuspFormsNew hp ((Nat.Prime.dvd_iff_not_coprime hp).2 hpN) hG
+  exact heckeTCuspNat_mem_cuspFormsNew hp hG
 
 /-- **The new part of `S_k(N, χ)` is stable under every `T_n`**, in `Submodule.map` form. -/
 theorem cuspFormsNew_comap_map_heckeRingHomCuspCharSpace_heckeTCompositeGamma0_le
