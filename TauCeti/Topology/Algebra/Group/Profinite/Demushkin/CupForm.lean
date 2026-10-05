@@ -165,11 +165,11 @@ theorem IsDemushkin.of_nondegenerate_cupForm (hP : IsProP p G)
     obtain ⟨a, ha⟩ := (e.toLinearMap.nondegenerate_cupForm_iff_of_injective e.injective).1 hnd b hb
     exact ⟨a, fun h => ha ((cupFp_eq_zero_comm p G a b).1 h)⟩
 
-/-- **A perfect cup square makes a Demushkin group**: a pro-`p` group `G` with finite-dimensional
-`H¹(G, 𝔽_p)` and one-dimensional `H²(G, 𝔽_p)` on which `a ↦ (a ⌣ ·)` is injective is Demushkin.
-Injectivity is the left-separating clause, and the right-separating clause follows by graded
-commutativity. With `IsDemushkin.cupFp_bijective`, this characterizes Demushkin groups among the
-pro-`p` groups with finite `H¹(G, 𝔽_p)` and one-dimensional `H²(G, 𝔽_p)`. -/
+/-- **A perfect cup-product pairing makes a Demushkin group**: a pro-`p` group `G` with
+finite-dimensional `H¹(G, 𝔽_p)` and one-dimensional `H²(G, 𝔽_p)` on which `a ↦ (a ⌣ ·)` is
+injective is Demushkin. Injectivity is the left-separating clause, and the right-separating clause
+follows by graded commutativity. With `IsDemushkin.cupFp_bijective`, this characterizes Demushkin
+groups among the pro-`p` groups with finite `H¹(G, 𝔽_p)` and one-dimensional `H²(G, 𝔽_p)`. -/
 theorem IsDemushkin.of_cupFp_injective (hP : IsProP p G)
     (hfin : Module.Finite (ZMod p) (cohomFp p G 1))
     (h2 : Module.finrank (ZMod p) (cohomFp p G 2) = 1) (hcup : Function.Injective (cupFp p G)) :

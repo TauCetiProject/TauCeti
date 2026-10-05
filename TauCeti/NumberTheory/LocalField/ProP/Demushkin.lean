@@ -14,9 +14,9 @@ public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.CupForm
 
 Let `K` be a nonarchimedean local field containing a primitive `p`th root of unity, for a prime
 `p`. Then the maximal pro-`p` quotient `G_K(p)` of its absolute Galois group is a Demushkin group:
-it is pro-`p`, `H¹(G_K(p), 𝔽_p)` is finite, `H²(G_K(p), 𝔽_p)` is one-dimensional, and the cup
-square on `H¹(G_K(p), 𝔽_p)` is a perfect pairing. All four clauses are read off from `G_K` through
-inflation, which is an isomorphism in degrees one and two.
+it is pro-`p`, `H¹(G_K(p), 𝔽_p)` is finite, `H²(G_K(p), 𝔽_p)` is one-dimensional, and the
+cup-product pairing on `H¹(G_K(p), 𝔽_p)` is perfect. All four clauses are read off from `G_K`
+through inflation, which is an isomorphism in degrees one and two.
 
 When moreover `K` is a finite extension of `ℚ_[p]`, the rank of this Demushkin group, its number
 of topological generators, is `[K : ℚ_[p]] + 2`; this is the rank at which Labute's classification
