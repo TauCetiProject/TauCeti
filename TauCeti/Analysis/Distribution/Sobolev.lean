@@ -21,9 +21,8 @@ it is `1 - (2π)⁻² Δ`.
 ## References
 
 * M. Taylor, *Partial Differential Equations I*, Chapter 4.
-
-The proof uses Mathlib's `TemperedDistribution.MemSobolev.lineDerivOp`, monotonicity,
-and `TemperedDistribution.memSobolev_besselPotential_iff`.
+* Mathlib's `TemperedDistribution.MemSobolev.lineDerivOp` (directional-derivative regularity)
+  and `TemperedDistribution.memSobolev_besselPotential_iff` (Bessel-potential regularity shift).
 -/
 
 public section
@@ -63,7 +62,7 @@ variable [InnerProductSpace ℂ F] [CompleteSpace F]
 /-- A tempered distribution has one more Bessel derivative exactly when it and its
 directional derivatives along an orthonormal basis have the original regularity. -/
 theorem memSobolev_add_one_iff {ι : Type*} [Fintype ι]
-    (b : OrthonormalBasis ι ℝ E) (s : ℝ) (f : TemperedDistribution E F) :
+    (f : TemperedDistribution E F) (b : OrthonormalBasis ι ℝ E) (s : ℝ) :
     MemSobolev (s + 1) 2 f ↔
       MemSobolev s 2 f ∧ ∀ i, MemSobolev s 2 (∂_{b i} f) := by
   classical

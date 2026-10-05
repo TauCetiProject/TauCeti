@@ -18,14 +18,16 @@ Sobolev function in `W^{1,2}`. The comparison complexifies the real function, si
 Mathlib's Bessel-potential interface uses the complex Fourier transform. Equality of values
 is almost everywhere, as appropriate for these spaces.
 
-The converse to `MeasureTheory.Lp.exists_w1p_value_eq_of_memSobolev_one` uses the
-directional-derivative characterization of Bessel regularity and
-`TauCeti.hasWeakLineDerivOn_iff_lineDerivOp_toTemperedDistribution_ofReal_eq`.
+Weak directional derivatives agree with the distributional derivatives of the associated
+tempered distribution, connecting the weak-gradient and Bessel-potential descriptions.
 
 ## References
 
 * L. C. Evans, *Partial Differential Equations*, Chapter 5, §5.8.
 * M. Taylor, *Partial Differential Equations I*, Chapter 4.
+* `MeasureTheory.Lp.exists_w1p_value_eq_of_memSobolev_one` (Bessel-to-weak inclusion).
+* `TauCeti.hasWeakLineDerivOn_iff_lineDerivOp_toTemperedDistribution_ofReal_eq`
+  (agreement of weak and distributional directional derivatives).
 -/
 
 public section
@@ -46,7 +48,7 @@ theorem memSobolev_one_of_hasWeakFDerivOn
     (h : HasWeakFDerivOn volume ⊤ u (fun x => innerSL ℝ (g x))) :
     MemSobolev 1 2 (Lp.toTemperedDistribution (Complex.ofRealCLM.compLp u)) := by
   rw [← zero_add (1 : ℝ),
-    memSobolev_add_one_iff (stdOrthonormalBasis ℝ E)]
+    memSobolev_add_one_iff _ (stdOrthonormalBasis ℝ E)]
   refine ⟨memSobolev_zero_iff.mpr ⟨_, rfl⟩, fun i => ?_⟩
   let v := stdOrthonormalBasis ℝ E i
   let d : Lp ℝ 2 (volume : Measure E) := (innerSL ℝ v).compLp g
