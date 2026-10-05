@@ -142,8 +142,7 @@ variable {G X : Type*} [Group G] [TopologicalSpace G] [SeparatelyContinuousMul G
 
 /-- **Discreteness from a disjoint open translate.** If a topological group acts with continuous
 orbit maps and some nonempty open set is disjoint from all of its translates by nonidentity
-elements, then the group is discrete. Indeed, the elements carrying one chosen point back into
-that open set form an open neighbourhood consisting only of the identity. -/
+elements, then the group is discrete. -/
 @[to_additive
 /-- **Discreteness from a disjoint open translate.** If a topological additive group acts with
 continuous orbit maps and some nonempty open set is disjoint from all of its translates by nonzero
@@ -152,6 +151,7 @@ theorem discreteTopology_of_disjoint_smul (hcont : ∀ x : X, Continuous fun g :
     (hU_open : IsOpen U) (hU_nonempty : U.Nonempty) (hU : ∀ g : G, g ≠ 1 → Disjoint (g • U) U) :
     DiscreteTopology G := by
   apply discreteTopology_of_isOpen_singleton_one
+  -- The elements carrying a chosen point of `U` back into `U` form an open set equal to `{1}`.
   obtain ⟨x, hx⟩ := hU_nonempty
   have hopen : IsOpen ((fun g : G ↦ g • x) ⁻¹' U) := hU_open.preimage (hcont x)
   have heq : (fun g : G ↦ g • x) ⁻¹' U = {1} := by
