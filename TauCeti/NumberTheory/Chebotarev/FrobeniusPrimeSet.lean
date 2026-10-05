@@ -114,7 +114,8 @@ theorem mem_frobeniusPrimeSet_self (𝔭 : HeightOneSpectrum (𝓞 K))
   -- Specify the localization algebra to avoid the ring-of-integers self-algebra diamond.
   exact inferInstanceAs (Algebra.FormallyUnramified (𝓞 K) (Localization Q.primeCompl))
 
-/-- The unique Frobenius fibre of the trivial extension contains all primes. -/
+/-- The unique Frobenius fibre of the trivial extension is the whole spectrum:
+`frobeniusPrimeSet K K C = Set.univ`. -/
 @[simp] theorem _root_.TauCeti.NumberField.Chebotarev.frobeniusPrimeSet_self
     (C : ConjClasses (K ≃ₐ[K] K)) : frobeniusPrimeSet K K C = Set.univ :=
   Set.eq_univ_of_forall fun 𝔭 ↦ mem_frobeniusPrimeSet_self 𝔭 C

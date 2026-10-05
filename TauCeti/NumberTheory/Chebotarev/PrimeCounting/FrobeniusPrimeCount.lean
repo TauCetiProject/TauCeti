@@ -94,21 +94,23 @@ theorem tendsto_frobeniusPrimeCount (C : ConjClasses (L ≃ₐ[K] L)) :
   Real.tendsto_div_div_log_of_isLittleO_logIntegral
     (frobeniusPrimeCount_sub_mul_logIntegral_isLittleO K L C)
 
+/-- The trivial-extension counting theorem gives the all-prime denominator
+`π_K(x) / (x / log x) → 1`. -/
+private theorem _root_.TauCeti.NumberField.Chebotarev.tendsto_primeCount_univ :
+    Tendsto (fun x : ℝ ↦ primeCount K Set.univ x / (x / Real.log x)) atTop (𝓝 1) := by
+  simpa only [natCast_frobeniusPrimeCount, TauCeti.NumberField.Chebotarev.frobeniusPrimeSet_self,
+    ConjClasses.one_eq_mk_one,
+    TauCeti.ConjClasses.card_carrier_mk_one, Nat.card_unique, Nat.cast_one, div_one] using
+    tendsto_frobeniusPrimeCount K K 1
+
 /-- Natural-density Chebotarev: among the primes of `K`, the primes with arithmetic Frobenius
 class `C` have density `#C / #Gal(L/K)`. -/
 theorem hasNaturalDensity_frobeniusPrimeSet (C : ConjClasses (L ≃ₐ[K] L)) :
     NumberField.Set.HasNaturalDensity (frobeniusPrimeSet K L C)
       ((Nat.card C.carrier : ℝ) / Nat.card (L ≃ₐ[K] L)) := by
-  -- The trivial extension counts all primes, so `tendsto_frobeniusPrimeCount K K 1`
-  -- is the all-prime asymptotic.
-  have hden : Tendsto (fun x : ℝ ↦ primeCount K Set.univ x / (x / Real.log x))
-      atTop (𝓝 1) := by
-    simpa only [natCast_frobeniusPrimeCount, TauCeti.NumberField.Chebotarev.frobeniusPrimeSet_self,
-      ConjClasses.one_eq_mk_one,
-      TauCeti.ConjClasses.card_carrier_mk_one, Nat.card_unique, Nat.cast_one, div_one] using
-      tendsto_frobeniusPrimeCount K K 1
   rw [NumberField.Set.hasNaturalDensity_def]
-  apply (IsEquivalent.refl.div (isEquivalent_of_tendsto_one hden)).tendsto_nhds_iff.mpr
+  apply (IsEquivalent.refl.div (isEquivalent_of_tendsto_one
+    (TauCeti.NumberField.Chebotarev.tendsto_primeCount_univ K))).tendsto_nhds_iff.mpr
   simpa only [natCast_frobeniusPrimeCount, Pi.div_def] using tendsto_frobeniusPrimeCount K L C
 
 end NumberField.Chebotarev

@@ -156,9 +156,22 @@ private theorem eventually_lt_frobeniusPsi_div_one_div_card_of_mul_comm
   obtain ⟨r, hr, hδr⟩ := ((eventually_gt_atTop 0).and (hlim.eventually (lt_mem_nhds hδ))).exists
   exact eventually_lt_frobeniusPsi_div_of_mul_comm hab σ hr hδr
 
--- The scope upgrades the cyclotomic Galois group's `IsMulCommutative` instance to
--- `CommMonoid`, as required by `ConjClasses.mk_bijective`.
-open scoped IsMulCommutative in
+open scoped Classical in
+/-- In an abelian Galois group, summing over elements is summing over conjugacy classes. -/
+private theorem _root_.TauCeti.NumberField.Chebotarev.sum_frobeniusPsi_mk
+    [IsMulCommutative (L ≃ₐ[K] L)] (x : ℝ) :
+    ∑ ρ : L ≃ₐ[K] L, frobeniusPsi K L (ConjClasses.mk ρ) x =
+      ∑ C : ConjClasses (L ≃ₐ[K] L), frobeniusPsi K L C x := by
+  classical
+  -- The scoped `CommMonoid` and the ambient automorphism monoid have definitionally equal
+  -- monoid projections; this ascription checks the bijection against the ambient instance.
+  have hmk : Function.Bijective
+      (ConjClasses.mk : (L ≃ₐ[K] L) → ConjClasses (L ≃ₐ[K] L)) :=
+    open scoped IsMulCommutative in ConjClasses.mk_bijective
+  exact Fintype.sum_bijective _ hmk _ _ fun _ ↦ rfl
+
+/-- The prime ideal theorem for `ψ`: summing the cyclotomic weighted theorem over
+`Gal(K(μ₃)/K)` and restoring the finitely many ramified primes gives `ψ_K(x) = x + o(x)`. -/
 private theorem _root_.TauCeti.NumberField.Chebotarev.primePsi_univ_asymptotic :
     (fun x : ℝ ↦ primePsi K Set.univ x - x) =o[atTop] fun x : ℝ ↦ x := by
   classical
@@ -171,9 +184,7 @@ private theorem _root_.TauCeti.NumberField.Chebotarev.primePsi_univ_asymptotic :
     Real.isLittleO_log_id_atTop)).congr_left fun x ↦ ?_
   simp only [Finset.sum_apply, Finset.sum_sub_distrib, Finset.sum_const, Finset.card_univ,
     nsmul_eq_mul, ← Nat.card_eq_fintype_card]
-  rw [Fintype.sum_bijective _ ConjClasses.mk_bijective
-    (fun ρ ↦ frobeniusPsi K F (ConjClasses.mk ρ) x) (fun C ↦ frobeniusPsi K F C x)
-    (fun _ ↦ rfl), ← mul_assoc,
+  rw [sum_frobeniusPsi_mk, ← mul_assoc,
     mul_one_div_cancel (Nat.cast_ne_zero.mpr Nat.card_pos.ne')]
   ring
 
@@ -200,10 +211,7 @@ theorem frobeniusPsi_asymptotic_of_mul_comm (hab : ∀ σ τ : L ≃ₐ[K] L, σ
     rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul, ← Nat.card_eq_fintype_card,
       mul_one_div_cancel (Nat.cast_ne_zero.mpr Nat.card_pos.ne')]
     refine ((isLittleO_sub_mul_iff_tendsto_div (eventually_ne_atTop 0)).mp h).congr fun x ↦ ?_
-    -- Enable the `CommMonoid` instance only for the conjugacy-class bijection.
-    rw [← Finset.sum_div, Fintype.sum_bijective _
-      (open scoped IsMulCommutative in ConjClasses.mk_bijective (α := L ≃ₐ[K] L))
-      (fun ρ ↦ frobeniusPsi K L (ConjClasses.mk ρ) x) (fun C ↦ frobeniusPsi K L C x) fun _ ↦ rfl]
+    rw [← Finset.sum_div, sum_frobeniusPsi_mk]
   -- Every class has lower asymptotic density `1 / #G`, and these bounds saturate the total.
   exact tendsto_of_forall_eventually_lt_of_eventually_sum_lt (s := Finset.univ)
     (f := fun ρ x ↦ frobeniusPsi K L (ConjClasses.mk ρ) x / x)
