@@ -37,11 +37,12 @@ variable {C : Scheme.{u}} {toK : C ⟶ Spec (.of K)}
 noncomputable def genericι (M : Model R K C toK) : C ⟶ M.total :=
   M.genericFiberIso.inv.left ≫ genericFiberι R K M.toBase
 
-/-- The inclusion of a model's chosen generic fibre is the chosen identification followed by the
-canonical inclusion of the generic fibre. -/
-lemma genericι_def (M : Model R K C toK) :
-    M.genericι = M.genericFiberIso.inv.left ≫ genericFiberι R K M.toBase :=
-  (rfl)
+/-- Precomposed with the chosen identification of the generic fibre with `C`, the inclusion of a
+model's chosen generic fibre is the canonical inclusion of the generic fibre. -/
+@[reassoc (attr := simp)]
+lemma genericFiberIso_hom_left_genericι (M : Model R K C toK) :
+    M.genericFiberIso.hom.left ≫ M.genericι = genericFiberι R K M.toBase := by
+  rw [genericι, Over.hom_left_inv_left_assoc]
 
 /-- The inclusion of a model's chosen generic fibre lies over the fraction-field morphism. -/
 @[reassoc (attr := simp)]
@@ -59,7 +60,7 @@ lemma isPullback_genericι (M : Model R K C toK) :
     (Iso.refl _) (Iso.refl _) (Iso.refl _) ?_ ?_ ?_ ?_
   · have hleft :
         (Comma.leftIso M.genericFiberIso).hom = M.genericFiberIso.hom.left := rfl
-    rw [hleft, genericι, ← Category.assoc, Over.hom_left_inv_left, Category.id_comp]
+    rw [hleft, genericFiberIso_hom_left_genericι]
     simp
   · exact M.genericFiberIso.hom.w.symm
   · simp

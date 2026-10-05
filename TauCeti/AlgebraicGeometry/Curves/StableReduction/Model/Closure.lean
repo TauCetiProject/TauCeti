@@ -181,7 +181,9 @@ lemma ker_closureι : (closureι i hi).ker = (i ≫ genericFiberι R K toR).ker 
 `C` into the generic fibre of `P`. -/
 @[reassoc (attr := simp)]
 lemma genericι_closureι : (closure i hi).genericι ≫ closureι i hi = i ≫ genericFiberι R K toR := by
-  rw [genericι_def, closure_genericFiberIso_inv_left]
+  rw [← Over.inv_left_hom_left_assoc (closure i hi).genericFiberIso
+    ((closure i hi).genericι ≫ closureι i hi), genericFiberIso_hom_left_genericι_assoc,
+    closure_genericFiberIso_inv_left]
   exact (toGenericFiber_genericFiberι_assoc i hi _).trans (Scheme.Hom.toImage_imageι _)
 
 end
