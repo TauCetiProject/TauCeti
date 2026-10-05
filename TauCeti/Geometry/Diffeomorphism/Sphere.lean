@@ -116,6 +116,7 @@ theorem mvfderiv_coe_sphere_unitSphereEquiv (e : E ≃ₗᵢ[ℝ] F) (x : sphere
     mvfderiv_comp_apply x ((e.contDiff (n := 1)).contMDiff.mdifferentiableAt one_ne_zero)
       (contMDiff_coe_sphere.mdifferentiableAt one_ne_zero), mvfderiv_eq_fderiv, e.fderiv]
   simp [mvfderiv]
+  -- The continuous linear map underlying the isometry acts by the same function as `e`.
   rfl
 
 /-- The diffeomorphism between unit spheres induced by a linear isometry equivalence. -/

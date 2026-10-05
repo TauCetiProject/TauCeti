@@ -69,6 +69,13 @@ local instance isMonoidalIsQuasicoherent : ObjectProperty.IsMonoidal
     (_root_.SheafOfModules.isQuasicoherent X.ringCatSheaf) :=
   _root_.AlgebraicGeometry.Scheme.Modules.isMonoidal_isQuasicoherent X
 
+/-- The structure sheaf, viewed as a module over itself, is quasicoherent. -/
+instance Scheme.Modules.isQuasicoherent_unit :
+    (_root_.SheafOfModules.unit X.ringCatSheaf).IsQuasicoherent :=
+  @ObjectProperty.prop_unit X.Modules _ (Scheme.Modules.instMonoidalCategory X)
+    (_root_.SheafOfModules.isQuasicoherent X.ringCatSheaf)
+    (Scheme.Modules.isMonoidal_isQuasicoherent X).toContainsUnit
+
 /-- The full category of quasicoherent sheaves of modules on a scheme. -/
 abbrev QuasicoherentSheaf : Type _ :=
   (_root_.SheafOfModules.isQuasicoherent X.ringCatSheaf).FullSubcategory

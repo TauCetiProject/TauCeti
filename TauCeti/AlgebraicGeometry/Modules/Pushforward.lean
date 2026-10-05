@@ -12,14 +12,17 @@ public import Mathlib.AlgebraicGeometry.Modules.Sheaf
 
 Pushforward along a scheme isomorphism agrees with restriction along its inverse. This
 identification transports local properties of module sheaves through affine normalizations.
-The construction uses Mathlib's pushforward composition comparisons and restriction adjunction.
+Restriction of a pushforward to an open of the base agrees with pushforward of the restriction
+to its preimage. Both comparisons have formulas on sections.
+
+These comparisons use Mathlib's module pushforward and restriction API.
 -/
 
 public section
 
 open CategoryTheory AlgebraicGeometry
 
-namespace TauCeti.AlgebraicGeometry
+namespace TauCeti.AlgebraicGeometry.Scheme.Modules
 
 universe u
 
@@ -29,35 +32,57 @@ open Scheme.Modules
 
 variable {X Y : Scheme.{u}}
 
-/-- Pushforward along an isomorphism agrees with restriction along its inverse.
+/-- The image under the inverse scheme isomorphism is the preimage under its forward map. -/
+theorem image_inv_eq_preimage (e : X ≅ Y) (V : Y.Opens) :
+    e.inv ''ᵁ V = e.hom ⁻¹ᵁ V := by
+  have h : e.hom ''ᵁ (e.inv ''ᵁ V) = V := by
+    simp only [← Scheme.Hom.comp_image, Iso.inv_hom_id, Scheme.Hom.id_image]
+  exact (e.hom.preimage_image_eq _).symm.trans (congrArg (e.hom ⁻¹ᵁ ·) h)
 
-This is the comparison obtained by cancelling inverse pushforwards and applying the
-restriction adjunction's counit. -/
-def pushforwardIsoRestrict (e : X ≅ Y) : pushforward e.hom ≅ restrictFunctor e.inv :=
-  (Functor.rightUnitor _).symm ≪≫
-    Functor.isoWhiskerLeft _ (restrictFunctorAdjCounitIso e.inv).symm ≪≫
-    (Functor.associator _ _ _).symm ≪≫
-    Functor.isoWhiskerRight
-      (pushforwardComp e.hom e.inv ≪≫ pushforwardCongr e.hom_inv_id ≪≫ pushforwardId X) _ ≪≫
-    Functor.leftUnitor _
+/-- Pushforward along an isomorphism agrees with restriction along its inverse. -/
+def pushforwardIsoRestrictFunctor (e : X ≅ Y) : pushforward e.hom ≅ restrictFunctor e.inv := by
+  refine SheafOfModules.pushforwardCongr₂ _
+    (NatIso.ofComponents (fun V ↦ eqToIso (image_inv_eq_preimage e V)) (fun _ ↦ rfl)) ?_
+  ext V x
+  change (e.hom.app V.unop ≫ X.presheaf.map (eqToHom (image_inv_eq_preimage e V.unop)).op) x =
+    (e.inv.appIso V.unop).inv x
+  rw [IsOpenImmersion.app_eq_appIso_inv_app_of_comp_eq e.hom e.inv (𝟙 X)
+    e.hom_inv_id.symm V.unop]
+  -- Normalize the identity scheme's section map before composing the two restrictions.
+  change ((e.inv.appIso V.unop).inv ≫ X.presheaf.map _ ≫ X.presheaf.map _) x = _
+  -- `erw` identifies the section types written as ring-sheaf objects with `Γ(X, _)`.
+  erw [← Functor.map_comp]
+  -- In the thin category of opens, the composite equality maps are the identity.
+  change ((e.inv.appIso V.unop).inv ≫ X.presheaf.map (𝟙 (Opposite.op (e.inv ''ᵁ V.unop)))) x = _
+  erw [CategoryTheory.Functor.map_id, Category.comp_id]
 
-/-- The pushforward--restriction comparison is the composite of the canonical counit
-and cancellation comparisons. -/
-theorem pushforwardIsoRestrict_def (e : X ≅ Y) :
-    pushforwardIsoRestrict e =
-      (Functor.rightUnitor _).symm ≪≫
-        Functor.isoWhiskerLeft _ (restrictFunctorAdjCounitIso e.inv).symm ≪≫
-        (Functor.associator _ _ _).symm ≪≫
-        Functor.isoWhiskerRight
-          (pushforwardComp e.hom e.inv ≪≫ pushforwardCongr e.hom_inv_id ≪≫ pushforwardId X) _ ≪≫
-        Functor.leftUnitor _ :=
-  (rfl)
+/-- On sections, pushforward along an isomorphism is restriction along the equality
+between the image under its inverse and the preimage under the forward map. -/
+@[simp]
+theorem pushforwardIsoRestrictFunctor_hom_app_val_app_apply (e : X ≅ Y) (M : X.Modules)
+    (V : Y.Opens) (x : Γ((pushforward e.hom).obj M, V)) :
+    (((pushforwardIsoRestrictFunctor e).hom.app M).val.app (.op V)) x =
+      M.val.map (eqToHom (image_inv_eq_preimage e V)).op x := by
+  -- `pushforwardCongr₂` restricts sections along the components of `eqToIso`,
+  -- whose underlying maps are `eqToHom`.
+  rfl
+
+/-- The inverse pushforward--restriction comparison uses the inverse equality of opens. -/
+@[simp]
+theorem pushforwardIsoRestrictFunctor_inv_app_val_app_apply (e : X ≅ Y) (M : X.Modules)
+    (V : Y.Opens) (x : Γ(M.restrict e.inv, V)) :
+    (((pushforwardIsoRestrictFunctor e).inv.app M).val.app (.op V)) x =
+      M.val.map (eqToHom (image_inv_eq_preimage e V).symm).op x := by
+  -- The inverse components of `eqToIso` use the symmetric equality.
+  rfl
 
 /-- Restricting a pushforward to an open of the base agrees with pushing forward the
 restriction to its preimage, naturally in the module sheaf. -/
 def restrictPushforwardIso (f : X ⟶ Y) (U : Y.Opens) :
     pushforward f ⋙ restrictFunctor U.ι ≅
       restrictFunctor (f ⁻¹ᵁ U).ι ⋙ pushforward (f ∣_ U) := by
+  -- Each composite is continuous via its intermediate open-scheme site; supplying these
+  -- instances lets `SheafOfModules.pushforwardComp` elaborate the two composites.
   letI : (U.ι.opensFunctor ⋙ TopologicalSpace.Opens.map f.base).IsContinuous
       (Opens.grothendieckTopology U.toScheme) (Opens.grothendieckTopology X) :=
     Functor.isContinuous_comp _ _ _ (Opens.grothendieckTopology Y) _
@@ -73,10 +98,14 @@ def restrictPushforwardIso (f : X ⟶ Y) (U : Y.Opens) :
   simp only [Scheme.Opens.ι_appIso]
   exact congrArg (fun g ↦ g x) (morphismRestrict_app f U V.unop).symm
 
+-- Unfold `Functor.comp_obj` in the term: otherwise Lean cannot identify the section type
+-- of the composite functor with that of the object-level restriction.
+-- The components of `pushforwardComp` are identities on sections, and
+-- `pushforwardCongr₂` with `eqToIso` is restriction along `eqToHom`, definitionally.
 /-- On sections, open restriction of pushforward is the restriction along the equality
 of the two inverse-image opens. -/
 @[simp]
-theorem restrictPushforwardIso_hom_app_val_app (f : X ⟶ Y) (U : Y.Opens)
+theorem restrictPushforwardIso_hom_app_val_app_apply (f : X ⟶ Y) (U : Y.Opens)
     (M : X.Modules) (V : U.toScheme.Opens)
     (x : Γ(((pushforward f).obj M).restrict U.ι, V)) :
     dsimp% only [Functor.comp_obj] (((restrictPushforwardIso f U).hom.app M).val.app (.op V)) x =
@@ -85,7 +114,7 @@ theorem restrictPushforwardIso_hom_app_val_app (f : X ⟶ Y) (U : Y.Opens)
 
 /-- The inverse comparison restricts along the inverse equality of inverse-image opens. -/
 @[simp]
-theorem restrictPushforwardIso_inv_app_val_app (f : X ⟶ Y) (U : Y.Opens)
+theorem restrictPushforwardIso_inv_app_val_app_apply (f : X ⟶ Y) (U : Y.Opens)
     (M : X.Modules) (V : U.toScheme.Opens)
     (x : Γ((pushforward (f ∣_ U)).obj (M.restrict (f ⁻¹ᵁ U).ι), V)) :
     dsimp% only [Functor.comp_obj] (((restrictPushforwardIso f U).inv.app M).val.app (.op V)) x =
@@ -94,4 +123,4 @@ theorem restrictPushforwardIso_inv_app_val_app (f : X ⟶ Y) (U : Y.Opens)
 
 end
 
-end TauCeti.AlgebraicGeometry
+end TauCeti.AlgebraicGeometry.Scheme.Modules
