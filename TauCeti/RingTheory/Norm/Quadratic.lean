@@ -188,9 +188,9 @@ variable {K L : Type*} [Field K] [Field L] [Algebra K L] [Algebra.IsQuadraticExt
 
 namespace Algebra.IsQuadraticExtension
 
-/-- In a quadratic field extension, `Tr (a⁻¹) = Tr a / N a`: dividing the characteristic
-equation `a² - Tr a · a + N a = 0` by `a` gives `N a · a⁻¹ = Tr a - a`. Both sides vanish at
-`a = 0`, so no hypothesis is needed. -/
+/-- In a quadratic field extension, `Tr (a⁻¹) = Tr a / N a`. Both sides vanish at `a = 0`, so
+no hypothesis is needed. This computes the values of twisted trace forms `y ↦ Tr (a y²)` at
+elements such as `a⁻¹` or `x / a`, as in Kahn's diagonalization of `Tr_*⟨a⟩`. -/
 theorem trace_inv (a : L) :
     Algebra.trace K L a⁻¹ = Algebra.trace K L a / Algebra.norm K a := by
   rcases eq_or_ne a 0 with rfl | ha

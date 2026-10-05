@@ -147,8 +147,8 @@ variable {K L : Type*} [Field K] [Field L] [Algebra K L]
 `Tr_*⟨a⟩ : y ↦ Tr (a y²)`, with values `Tr a` and `Tr (d / a) = d · Tr a / N a`, so
 `Tr_*⟨a⟩ ≅ ⟨Tr a, d · Tr a / N a⟩`.
 
-The hypothesis `Tr a ≠ 0` cannot be dropped: at `Tr a = 0` both entries vanish, while the form
-is the hyperbolic plane (`equivalent_traceTransfer_smul_sq_hyperbolicPlane`). -/
+The hypothesis `Tr a ≠ 0` cannot be dropped: at `Tr a = 0` both entries vanish, while for
+`a ≠ 0` the form is the hyperbolic plane (`equivalent_traceTransfer_smul_sq_hyperbolicPlane`). -/
 theorem equivalent_traceTransfer_smul_sq_weightedSumSquares_of_sq [Invertible (2 : K)]
     {x : L} {d : K} (hfin : Module.finrank K L = 2)
     (hx : x ∉ Set.range (algebraMap K L)) (hx2 : x ^ 2 = algebraMap K L d) {a : L}
@@ -217,8 +217,8 @@ theorem equivalent_traceTransfer_smul_sq_hyperbolicPlane [Invertible (2 : K)]
   have : Algebra.IsQuadraticExtension K L := ⟨hfin⟩
   have : FiniteDimensional K L := Module.finite_of_finrank_eq_succ hfin
   have h4 : (4 : K) ≠ 0 := by
-    rw [show (4 : K) = 2 * 2 by norm_num]
-    exact mul_self_ne_zero.mpr (two_ne_zero' K)
+    convert mul_self_ne_zero.mpr (two_ne_zero' K) using 1
+    norm_num
   set Q := (a • QuadraticMap.sq (R := L) (A := L)).traceTransfer K
   have hQ (z : L) : Q z = Algebra.trace K L (a * (z * z)) := by
     simp [Q]
