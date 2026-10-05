@@ -67,6 +67,42 @@ theorem mk_mem_jacobson_iff (h : IsAdmissibleIdeal I) (a : pathAlgebra k Q) :
   rw [h.jacobson_eq_map_arrowIdeal, ← ker_quotientTrivialCoeff h.le_arrowIdeal,
     RingHom.mem_ker, quotientTrivialCoeff_mk, ← RingHom.mem_ker, ker_trivialCoeff]
 
+/-- The radical square is the image of the square of the arrow ideal. -/
+theorem jacobson_sq_eq_map_arrowIdeal_sq (h : IsAdmissibleIdeal I) :
+    Ring.jacobson (pathAlgebra k Q ⧸ I) ^ 2 =
+      (arrowIdeal k Q ^ 2).map (Ideal.Quotient.mk I) := by
+  rw [h.jacobson_eq_map_arrowIdeal]
+  -- Ideal powers over a noncommutative ring use the submodule power recursion.
+  rw [show (2 : ℕ) = 1 + 1 by omega,
+    Ideal.IsTwoSided.pow_succ (I := (arrowIdeal k Q).map (Ideal.Quotient.mk I)) 1,
+    Submodule.pow_one, Ideal.IsTwoSided.pow_succ (I := arrowIdeal k Q) 1, Submodule.pow_one]
+  refine le_antisymm ?_ ?_
+  · intro x hx
+    refine Submodule.mul_induction_on hx ?_ (fun _ _ => Submodule.add_mem _)
+    intro a ha b hb
+    obtain ⟨a, ha', rfl⟩ := Ideal.mem_image_of_mem_map_of_surjective
+      (Ideal.Quotient.mk I) Ideal.Quotient.mk_surjective ha
+    obtain ⟨b, hb', rfl⟩ := Ideal.mem_image_of_mem_map_of_surjective
+      (Ideal.Quotient.mk I) Ideal.Quotient.mk_surjective hb
+    rw [← map_mul]
+    exact Ideal.mem_map_of_mem _ (Ideal.mul_mem_mul ha' hb')
+  · refine Ideal.map_le_iff_le_comap.2 ?_
+    intro x hx
+    refine Submodule.mul_induction_on hx ?_ (fun _ _ ha hb => ?_)
+    · intro a ha b hb
+      rw [Ideal.mem_comap, map_mul]
+      exact Ideal.mul_mem_mul (Ideal.mem_map_of_mem _ ha) (Ideal.mem_map_of_mem _ hb)
+    · simpa only [Ideal.mem_comap, map_add] using Submodule.add_mem _ ha hb
+
+/-- A representative maps into the radical square precisely when it is supported on
+paths of length at least two. -/
+@[simp]
+theorem mk_mem_jacobson_sq_iff (h : IsAdmissibleIdeal I) (x : pathAlgebra k Q) :
+    Ideal.Quotient.mk I x ∈ Ring.jacobson (pathAlgebra k Q ⧸ I) ^ 2 ↔
+      x ∈ arrowIdeal k Q ^ 2 := by
+  rw [h.jacobson_sq_eq_map_arrowIdeal_sq,
+    Ideal.mem_quotient_iff_mem h.le_arrowIdeal_sq]
+
 /-- The semisimple quotient of a bound quiver algebra is one copy of the base field
 for each vertex. -/
 noncomputable def quotientJacobsonAlgEquiv (h : IsAdmissibleIdeal I) :

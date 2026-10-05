@@ -570,6 +570,38 @@ theorem grade_one_eq_span_range_ofArrow : grade k Q 1 = Submodule.span k
   · rintro ⟨⟨a, b, e⟩, rfl⟩
     exact ⟨⟨a, b, e.toPath⟩, rfl, (ofArrow_eq_ofPath e).symm⟩
 
+variable (k Q)
+
+/-- The arrows form a basis of the degree-one part of the path algebra. -/
+noncomputable def arrowBasis :
+    Module.Basis (Σ a b : Q, a ⟶ b) k (grade k Q 1) := by
+  have hli : LinearIndependent k fun e : Σ a b : Q, a ⟶ b =>
+      (ofArrow e.2.2 : pathAlgebra k Q) := by
+    have hinj : Function.Injective (fun e : Σ a b : Q, a ⟶ b =>
+        (⟨e.1, e.2.1, e.2.2.toPath⟩ : Quiver.TotalPath Q)) := by
+      rintro ⟨a, b, e⟩ ⟨c, d, f⟩ h
+      grind [_root_.Quiver.Hom.toPath]
+    simpa only [Function.comp_def, ← ofArrow_eq_ofPath] using
+      (linearIndependent_ofPath k Q).comp _ hinj
+  exact (Module.Basis.span hli).map
+    (LinearEquiv.ofEq _ _ grade_one_eq_span_range_ofArrow.symm)
+
+/-- A degree-one basis vector is the corresponding arrow in the path algebra. -/
+@[simp]
+theorem coe_arrowBasis_apply (e : Σ a b : Q, a ⟶ b) :
+    (arrowBasis k Q e : pathAlgebra k Q) = ofArrow e.2.2 := by
+  simp [arrowBasis, Module.Basis.map_apply, LinearEquiv.coe_ofEq_apply]
+
+/-- Each step of the length filtration splits into its lowest degree and the next step. -/
+theorem pathSpan_eq_grade_sup_pathSpan_succ (n : ℕ) :
+    pathSpan k Q n = grade k Q n ⊔ pathSpan k Q (n + 1) := by
+  rw [pathSpan_eq_span_image_basis, grade_eq_span_image_basis,
+    pathSpan_eq_span_image_basis, ← Submodule.span_union, ← Set.image_union]
+  congr 2
+  ext x
+  simp only [Set.mem_ofPred_eq, Set.mem_union]
+  omega
+
 end Grade
 
 section GradeComm
