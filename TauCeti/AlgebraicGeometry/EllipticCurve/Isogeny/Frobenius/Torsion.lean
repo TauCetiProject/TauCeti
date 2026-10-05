@@ -22,8 +22,9 @@ When moreover `K` is separably closed and `N` is invertible in `K`, the Weil pai
 Galois-equivariant, and `σ` raises roots of unity to the `q`-th power, so `π` scales the Weil
 pairing by `q`. Hence the determinant of the action of `π` on `E[N]` is `q = deg π` modulo `N`,
 although `π` is inseparable (the Frobenius case of Silverman III.8.6). This is the determinant of
-the Frobenius matrix in the Weil-pairing proof of the Hasse bound; the separable isogenies `1 - π`
-and `r π - s` are covered by `TauCeti.Isogeny.Hom.det_torsionLinearMap_ofIsogeny`.
+the Frobenius matrix in the Weil-pairing proof of the Hasse bound. The isogeny `1 - π`, and
+`r π - s` when the characteristic does not divide `s`, are separable, so they are covered by
+`TauCeti.Isogeny.Hom.det_torsionLinearMap_ofIsogeny`.
 
 ## Main results
 
@@ -66,6 +67,7 @@ variable [Algebra.IsAlgebraic F K]
 
 /-- **Over an algebraic extension, the Frobenius acts on `N`-torsion as the Frobenius
 automorphism** `FiniteField.frobeniusAlgEquivOfAlgebraic F K`. -/
+@[simp]
 theorem torsionLinearMap_ofIsogeny_baseChangeFrobenius_apply (N : ℕ)
     (P : AddSubgroup.torsionBy (W⁄K).toAffine.Point (N : ℤ)) :
     (ofIsogeny (baseChangeFrobenius K W)).torsionLinearMap N P =
@@ -86,11 +88,11 @@ theorem det_torsionLinearMap_ofIsogeny_baseChangeFrobenius (hN : (N : K) ≠ 0) 
     LinearMap.det ((ofIsogeny (baseChangeFrobenius K W)).torsionLinearMap N) = Nat.card F := by
   cases nonempty_fintype F
   rw [Nat.card_eq_fintype_card]
-  refine det_eq_of_weilPairing_eq_nsmul hN fun S T ↦ ?_
+  refine det_eq_of_weilPairing_eq_smul hN fun S T ↦ ?_
   rw [torsionLinearMap_ofIsogeny_baseChangeFrobenius_apply,
     torsionLinearMap_ofIsogeny_baseChangeFrobenius_apply, weilPairing_torsionGaloisAction]
   refine Additive.toMul.injective <| Subtype.ext <| Units.ext ?_
-  simp [restrictRootsOfUnity_coe_apply]
+  simp [restrictRootsOfUnity_coe_apply, Nat.cast_smul_eq_nsmul]
 
 end TauCeti.Isogeny.Hom
 

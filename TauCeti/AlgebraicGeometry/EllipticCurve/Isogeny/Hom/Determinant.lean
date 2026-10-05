@@ -7,9 +7,8 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Dual.WeilPairing
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.Torsion
-import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.Torsion.Structure
+public import TauCeti.RingTheory.RootsOfUnity.ZMod
 import TauCeti.LinearAlgebra.Determinant
-import TauCeti.RingTheory.RootsOfUnity.ZMod
 
 /-!
 # The determinant of an endomorphism on torsion
@@ -23,12 +22,13 @@ Silverman III.8.6, for separable `φ`.
 
 This is how degrees become determinants of matrices over `ZMod N` in the Weil-pairing proof of the
 Hasse bound: once a basis of `E[ℓ]` is chosen, `LinearMap.toMatrix` turns the action of the
-pencil `r π - s` of the Frobenius `π` into a `2 × 2` matrix whose determinant is the degree of
-`r π - s`, as `TauCeti.Matrix.eq_quadratic_form_of_det_det_one_sub` requires.
+pencil `r π - s` of the Frobenius `π`, for `s` not divisible by the characteristic (so that
+`r π - s` is separable), into a `2 × 2` matrix whose determinant is the degree of `r π - s`, as
+`TauCeti.Matrix.eq_quadratic_form_of_det_det_one_sub` requires.
 
 ## Main results
 
-* `TauCeti.Isogeny.det_eq_of_weilPairing_eq_nsmul`: an endomorphism of `E[N]` scaling the Weil
+* `TauCeti.Isogeny.det_eq_of_weilPairing_eq_smul`: an endomorphism of `E[N]` scaling the Weil
   pairing by `d` has determinant `d`.
 * `TauCeti.Isogeny.Hom.det_torsionLinearMap_ofIsogeny`: the determinant of the action of a
   separable isogeny on `E[N]` is its degree.
@@ -48,22 +48,10 @@ variable {F : Type*} [Field F] [DecidableEq F] [IsSepClosed F]
   {W : WeierstrassCurve.Affine F} [W.IsElliptic] {N : ℕ} [NeZero N] (hN : (N : F) ≠ 0)
 
 include hN in
-/-- `E[N]` has a basis of two points over `ZMod N`, from `WeierstrassCurve.torsion_addEquiv_prod`,
-an additive equivalence being `ZMod N`-linear. -/
-private theorem nonempty_basis_torsionBy :
-    Nonempty (Module.Basis (Fin 2) (ZMod N) (AddSubgroup.torsionBy W.Point (N : ℤ))) := by
-  -- `torsion_addEquiv_prod` is stated for the classical decidable-equality instance
-  obtain ⟨e⟩ : Nonempty (AddSubgroup.torsionBy W.Point (N : ℤ) ≃+ ZMod N × ZMod N) := by
-    convert WeierstrassCurve.torsion_addEquiv_prod W N hN
-  exact ⟨(Module.Basis.finTwoProd (ZMod N)).map
-    ({ e with map_smul' := ZMod.map_smul e } :
-      AddSubgroup.torsionBy W.Point (N : ℤ) ≃ₗ[ZMod N] ZMod N × ZMod N).symm⟩
-
-include hN in
 /-- **An endomorphism of `E[N]` scaling the Weil pairing by `d` has determinant `d`**, over a
 separably closed field in which `N` is invertible. -/
-theorem det_eq_of_weilPairing_eq_nsmul
-    {f : Module.End (ZMod N) (AddSubgroup.torsionBy W.Point (N : ℤ))} {d : ℕ}
+theorem det_eq_of_weilPairing_eq_smul
+    {f : Module.End (ZMod N) (AddSubgroup.torsionBy W.Point (N : ℤ))} {d : ZMod N}
     (hf : ∀ S T, weilPairing W N hN (f S) (f T) = d • weilPairing W N hN S T) :
     LinearMap.det f = d := by
   -- the Weil pairing, read as a `ZMod N`-bilinear form
@@ -73,11 +61,11 @@ theorem det_eq_of_weilPairing_eq_nsmul
       (fun c S T ↦ (AddMonoidHom.flip_apply _ _ _).symm.trans <|
         (ZMod.map_smul _ c S).trans (congrArg _ (AddMonoidHom.flip_apply _ _ _)))
       (fun _ _ _ ↦ map_add _ _ _) (fun c S T ↦ ZMod.map_smul (weilPairing W N hN S) c T)
-  obtain ⟨b⟩ := nonempty_basis_torsionBy (W := W) hN
+  obtain ⟨b⟩ := nonempty_basis_torsionBy W N hN
   refine LinearMap.det_eq_of_compl₁₂_self_eq_smul_of_separatingLeft b
     (ω := ω) (fun S ↦ weilPairing_self W N hN S) (fun S hS ↦ weilPairing_nondegenerate W N hN hS)
     (LinearMap.ext₂ fun S T ↦ ?_)
-  simp [ω, hf, Nat.cast_smul_eq_nsmul]
+  simp [ω, hf]
 
 namespace Hom
 
@@ -87,8 +75,9 @@ over a separably closed field in which `N` is invertible (Silverman III.8.6). -/
 theorem det_torsionLinearMap_ofIsogeny (φ : Isogeny W W)
     [Algebra.IsSeparable φ.fieldPullback.fieldRange W.FunctionField] :
     LinearMap.det ((ofIsogeny φ).torsionLinearMap N) = φ.degree :=
-  det_eq_of_weilPairing_eq_nsmul hN fun _ _ ↦ φ.weilPairing_eq_degree_nsmul_weilPairing N hN
-    (torsionLinearMap_apply _ N _).symm (torsionLinearMap_apply _ N _).symm
+  det_eq_of_weilPairing_eq_smul hN fun _ _ ↦ (φ.weilPairing_eq_degree_nsmul_weilPairing N hN
+    (torsionLinearMap_apply _ N _).symm (torsionLinearMap_apply _ N _).symm).trans
+      (Nat.cast_smul_eq_nsmul _ _ _).symm
 
 end Hom
 

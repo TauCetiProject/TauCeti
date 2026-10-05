@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.Ring
 public import TauCeti.Algebra.Module.Torsion.Snake
 import Mathlib.Algebra.Module.ZMod
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.Torsion.Structure
 
 /-!
 # The action of an elliptic-curve morphism on torsion
@@ -34,6 +35,8 @@ scales the Weil pairing by its degree.
 
 ## Main results
 
+* `TauCeti.Isogeny.nonempty_basis_torsionBy`: over a separably closed field in which `N` is
+  invertible, `E[N]` has a basis of two points over `ZMod N`.
 * `TauCeti.Isogeny.Hom.torsionLinearMap_comp`: the torsion action is functorial.
 
 ## References
@@ -56,6 +59,19 @@ global instance here, restricted to curve points, so that consumers of `Hom.tors
 noncomputable instance pointTorsionModule (W : WeierstrassCurve.Affine F) (N : ℕ) :
     Module (ZMod N) (AddSubgroup.torsionBy W.Point (N : ℤ)) :=
   AddSubgroup.torsionBy.zmodModule
+
+/-- **`E[N]` has a basis of two points over `ZMod N`**, over a separably closed field in which `N`
+is invertible: `WeierstrassCurve.torsion_addEquiv_prod`, an additive equivalence being
+`ZMod N`-linear. The basis is noncanonical, so the result asserts its existence. -/
+theorem nonempty_basis_torsionBy [IsSepClosed F] (W : WeierstrassCurve.Affine F) [W.IsElliptic]
+    (N : ℕ) [NeZero N] (hN : (N : F) ≠ 0) :
+    Nonempty (Module.Basis (Fin 2) (ZMod N) (AddSubgroup.torsionBy W.Point (N : ℤ))) := by
+  -- `torsion_addEquiv_prod` is stated for the classical decidable-equality instance
+  obtain ⟨e⟩ : Nonempty (AddSubgroup.torsionBy W.Point (N : ℤ) ≃+ ZMod N × ZMod N) := by
+    convert WeierstrassCurve.torsion_addEquiv_prod W N hN
+  exact ⟨(Module.Basis.finTwoProd (ZMod N)).map
+    ({ e with map_smul' := ZMod.map_smul e } :
+      AddSubgroup.torsionBy W.Point (N : ℤ) ≃ₗ[ZMod N] ZMod N × ZMod N).symm⟩
 
 namespace Hom
 
