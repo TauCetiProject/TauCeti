@@ -181,7 +181,7 @@ instance (priority := low) SyntomicOfRelativeDimension.relativeDimensionLE
   let := φ.toAlgebra
   have : Algebra.IsStandardSyntomicOfRelativeDimension n
       Γ(U.1.toScheme, ⊤) Γ(V.1.toScheme, ⊤) :=
-    by simpa only [IsStandardSyntomicOfRelativeDimension] using h'
+    (isStandardSyntomicOfRelativeDimension_iff n φ).mp h'
   have hdim := Algebra.IsStandardSyntomicOfRelativeDimension.relativeDimensionLE_SpecMap
     n Γ(U.1.toScheme, ⊤) Γ(V.1.toScheme, ⊤)
   have : IsAffine U.1.toScheme := U.2

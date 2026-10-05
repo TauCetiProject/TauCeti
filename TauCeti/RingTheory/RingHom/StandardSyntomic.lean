@@ -20,6 +20,8 @@ base, giving the affine input for syntomic morphisms of schemes.
 
 Use `TauCeti.IsStandardSyntomicOfRelativeDimension n f` for the ring-map predicate;
 given a proof `hf`, its consequences are available as `hf.flat` and `hf.finitePresentation`.
+The theorem `isStandardSyntomicOfRelativeDimension_iff` relates an arbitrary ring map to
+its induced algebra structure.
 The relative dimension is the first explicit argument, as in
 `RingHom.IsStandardSmoothOfRelativeDimension`.
 
@@ -36,25 +38,30 @@ universe u v
 
 /-- A ring homomorphism is standard syntomic of relative dimension `n` if its target,
 with the algebra structure induced by the homomorphism, is such an algebra. -/
-@[expose]
 def IsStandardSyntomicOfRelativeDimension (n : ℕ) {R : Type u} {S : Type v}
     [CommRing R] [CommRing S] (f : R →+* S) : Prop :=
   @Algebra.IsStandardSyntomicOfRelativeDimension n R S _ _ f.toAlgebra
 
 variable {n : ℕ} {R : Type u} {S : Type v} [CommRing R] [CommRing S]
 
+/-- A ring map is standard syntomic of relative dimension `n` exactly when its target
+is standard syntomic for the induced algebra structure. -/
+theorem isStandardSyntomicOfRelativeDimension_iff (n : ℕ) (f : R →+* S) :
+    IsStandardSyntomicOfRelativeDimension n f ↔
+      @Algebra.IsStandardSyntomicOfRelativeDimension n R S _ _ f.toAlgebra := (Iff.rfl)
+
 /-- The ring-homomorphism and algebra formulations agree on an algebra map. -/
 @[simp]
 theorem isStandardSyntomicOfRelativeDimension_algebraMap [Algebra R S] :
     IsStandardSyntomicOfRelativeDimension n (algebraMap R S) ↔
       Algebra.IsStandardSyntomicOfRelativeDimension n R S := by
-  rw [IsStandardSyntomicOfRelativeDimension, toAlgebra_algebraMap]
+  rw [isStandardSyntomicOfRelativeDimension_iff n, toAlgebra_algebraMap]
 
 variable (R) in
 /-- The identity ring map is standard syntomic of relative dimension zero. -/
 theorem IsStandardSyntomicOfRelativeDimension.id :
     IsStandardSyntomicOfRelativeDimension 0 (RingHom.id R) := by
-  unfold IsStandardSyntomicOfRelativeDimension
+  rw [isStandardSyntomicOfRelativeDimension_iff 0]
   have : Algebra.IsStandardSyntomicOfRelativeDimension 0 R (MvPolynomial (Fin 0) R) :=
     inferInstance
   exact Algebra.IsStandardSyntomicOfRelativeDimension.of_algEquiv
