@@ -7,6 +7,8 @@ module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Map
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.ClassFormation
+public import TauCeti.NumberTheory.ClassFieldTheory.LocalExistence.NormSubgroup
+public import TauCeti.NumberTheory.ClassFieldTheory.UnitsLayer
 
 /-!
 # The local class formation of a finite extension inside that of the base
@@ -25,7 +27,11 @@ of a finite normal layer `V ◁ U` of the formation of `E` (the local Artin map 
 the fixed field of `U` cut out by `V`) is the abstract Artin map of the corresponding layer of the
 formation of `K` (`artinMap_localFormationLayerEquiv`). Combined with the Artin–Tate
 diagram `TauCeti.ClassFieldTheory.ClassFormation.artinMap_groundNorm` inside the formation of `K`,
-this is what relates the local Artin map of `E` to that of `K` through the norm `N_{E/K}`.
+this is what relates the local Artin map of `E` to that of `K` through the norm `N_{E/K}`. The two
+ground-level facts this needs are also here: the isomorphism sends `y ∈ Eˣ` to `iota y`
+(`groundEquiv_localFormationLayerEquiv_localGroundEquiv`), and the ground-level norm of the
+corresponding restriction inside the formation of `K` is `N_{E/K}`
+(`groundNorm_layerRestriction_localFormationMap`).
 
 The comparison is first made for the local invariant `TauCeti.ClassFieldTheory.subgroupInvMap` of
 an open subgroup `U ≤ G_E` and its image `U' ≤ G_K`
@@ -40,6 +46,12 @@ subgroup (`layerInfl_localFormationLayerEquiv`).
   isomorphism `localFormationLayerEquiv` matches the invariant maps of the local class formations.
 * `TauCeti.ClassFieldTheory.artinMap_localFormationLayerEquiv`: it carries the Artin map of a layer
   of the formation of `E` to the Artin map of the corresponding layer of the formation of `K`.
+* `TauCeti.ClassFieldTheory.groundEquiv_localFormationLayerEquiv_localGroundEquiv`: on ground
+  levels, `localFormationLayerEquiv` sends `y ∈ Eˣ` to the unit `iota y` of the level of
+  `Gal(Kˢ/iota(E))`.
+* `TauCeti.ClassFieldTheory.groundNorm_layerRestriction_localFormationMap`: for an open normal
+  subgroup `V ≤ Gal(Kˢ/iota(E))` of `G_K`, the ground-level norm of the restriction of `V ◁ G_K` to
+  `Gal(Kˢ/iota(E))` is the field norm `N_{E/K}`.
 
 ## References
 
@@ -131,6 +143,35 @@ theorem layerInfl_localFormationLayerEquiv (L : NormalLayer (AbsoluteGaloisGroup
       (localFormationHom_localFormationHomInv K E iota _ u).symm)
     (fun y => (localFormationLayerEquiv_coeffEquiv_apply K E iota L y).trans
       (localFormationCoeffEquiv_symm_apply K E iota _)) c c' hc'⟩
+
+/-- The unit `y ∈ Eˣ`, read in the ground level `((Eˢ)ˣ)^{G_E}` of a layer `V ◁ G_E` and carried to
+the corresponding layer over `K`, is the unit `iota y` of the level of `Gal(Kˢ/iota(E))`. -/
+theorem groundEquiv_localFormationLayerEquiv_localGroundEquiv
+    (V : OpenNormalSubgroup (AbsoluteGaloisGroup E)) (y : Additive Eˣ) :
+    (localFormationLayerEquiv K E iota (NormalLayer.ofOpenNormal V)).groundEquiv
+        (localGroundEquiv E V y) =
+      unitsLevelEquiv iota (fixedField_localFormationMap_ofOpenNormal_ground K E iota V) y := by
+  refine Subtype.ext ?_
+  rw [LayerEquiv.groundEquiv_apply_coe, unitsLevelEquiv_apply_coe]
+  apply (unitsCoeffEquivUnitsFormation K).symm.injective
+  rw [localFormationLayerEquiv_coeffEquiv_apply, AddEquiv.symm_apply_apply]
+  refine Additive.toMul.injective (Units.ext ?_)
+  simp [separableClosureRingEquiv_algebraMap]
+
+/-- For an open normal subgroup `V ≤ Gal(Kˢ/iota(E))` of `G_K`, the norm from the ground level
+`Gal(Kˢ/iota(E))` to the ground level `G_K` of the restriction `layerRestriction_localFormationMap`
+sends `iota x` to `N_{E/K} x`. -/
+theorem groundNorm_layerRestriction_localFormationMap
+    (V : OpenNormalSubgroup (AbsoluteGaloisGroup K))
+    (hV : V ≤ (galoisSubgroup K E iota).toSubgroup) (x : Additive Eˣ) :
+    (layerRestriction_localFormationMap K E iota V hV).groundNorm (unitsFormation K)
+        (unitsLevelEquiv iota (fixedField_localFormationMap_ofOpenNormal_ground K E iota _) x) =
+      localGroundEquiv K V (Additive.ofMul (Algebra.normUnits K x.toMul)) := by
+  refine Subtype.ext ?_
+  rw [LayerRestriction.groundNorm_apply_coe, ← Formation.levelNorm_apply_coe _
+    (layerRestriction_localFormationMap K E iota V hV).ground_le,
+    levelNorm_unitsLevelEquiv iota _ _ (fixedField_ground_ofOpenNormal K V),
+    unitsLevelEquiv_apply_coe, localGroundEquiv_apply_coe]
 
 end Embedding
 

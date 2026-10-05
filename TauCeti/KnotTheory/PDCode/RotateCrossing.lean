@@ -256,37 +256,6 @@ variable (D : OrientedPDCode n) (i : Fin n)
 @[simp] theorem toPDCode_rotateCrossing :
     (D.rotateCrossing i).toPDCode = D.toPDCode.rotateCrossing i := (rfl)
 
-/-- Slot `k` of the rotated crossing is slot `k + 1` of the old one. -/
-@[simp] theorem rotateCrossing_crossing_self (slot : Fin 4) :
-    (D.rotateCrossing i).halfEdge (PDCode.crossingSlotEquiv n (i, slot)) =
-      D.halfEdge (PDCode.crossingSlotEquiv n (i, slot + 1)) := by
-  simp only [toPDCode_rotateCrossing, PDCode.rotateCrossing_crossing_self]
-
-/-- The other crossings keep their slots. -/
-@[simp] theorem rotateCrossing_crossing_of_ne {j : Fin n} (hj : j ≠ i) (slot : Fin 4) :
-    (D.rotateCrossing i).halfEdge (PDCode.crossingSlotEquiv n (j, slot)) =
-      D.halfEdge (PDCode.crossingSlotEquiv n (j, slot)) := by
-  simp only [toPDCode_rotateCrossing, PDCode.rotateCrossing_crossing_of_ne _ _ hj]
-
-/-- The rotation keeps the arcs. -/
-@[simp] theorem rotateCrossing_edgePair : (D.rotateCrossing i).edgePair = D.edgePair := by
-  simp only [toPDCode_rotateCrossing, PDCode.rotateCrossing_edgePair]
-
-/-- The rotation keeps the crossing-free circle count. -/
-@[simp] theorem rotateCrossing_crossinglessComponentCount :
-    (D.rotateCrossing i).crossinglessComponentCount = D.crossinglessComponentCount := by
-  simp only [toPDCode_rotateCrossing, PDCode.rotateCrossing_crossinglessComponentCount]
-
-/-- The over-pair indicator of the rotated crossing flips. -/
-@[simp] theorem rotateCrossing_overPair_self :
-    (D.rotateCrossing i).overPair i = !D.overPair i := by
-  simp only [toPDCode_rotateCrossing, PDCode.rotateCrossing_overPair_self]
-
-/-- The other crossings keep their over-pair indicators. -/
-@[simp] theorem rotateCrossing_overPair_of_ne {j : Fin n} (hj : j ≠ i) :
-    (D.rotateCrossing i).overPair j = D.overPair j := by
-  simp only [toPDCode_rotateCrossing, PDCode.rotateCrossing_overPair_of_ne _ _ hj]
-
 /-- The rotation keeps the orientation of every half-edge. -/
 @[simp] theorem rotateCrossing_orientation :
     (D.rotateCrossing i).orientation = D.orientation := (rfl)

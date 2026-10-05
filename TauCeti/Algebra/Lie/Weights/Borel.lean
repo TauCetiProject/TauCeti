@@ -39,6 +39,8 @@ function.
 * `TauCeti.positiveNilradical H b`, `TauCeti.negativeNilradical H b`: the nilradicals `n⁺` and `n⁻`
   of the positive system determined by a base `b`.
 * `TauCeti.borelSubalgebra H b`: the Borel subalgebra `𝔟 = H + n⁺`.
+* `TauCeti.negativeNilradicalBasis H b`: a basis of `n⁻` indexed by the positive roots, whose
+  vector of index `α` is a root vector of weight `-α`.
 * `TauCeti.borelCharacter H b lam`: the character `h + n ↦ lam h` of `𝔟`, for a linear form `lam`
   on `H`.
 
@@ -67,6 +69,8 @@ function.
 * `TauCeti.disjoint_negativeNilradical_borelSubalgebra` and
   `TauCeti.isCompl_negativeNilradical_borelSubalgebra`: `n⁻ ∩ 𝔟 = 0`, so `L = n⁻ ⊕ 𝔟`.
 * `TauCeti.disjoint_cartan_positiveNilradical`: `H ∩ n⁺ = 0`, so `𝔟 = H ⊕ n⁺`.
+* `TauCeti.negativeNilradicalBasis_mem_rootSpace` and `TauCeti.lie_negativeNilradicalBasis`: the
+  basis vector of index `α` lies in `L_{-α}`, so the Cartan subalgebra acts on it through `-α`.
 * `TauCeti.borelCharacter_apply_of_mem_cartan` and
   `TauCeti.borelCharacter_apply_of_mem_positiveNilradical`: the character of weight `lam` is `lam`
   on `H` and vanishes on `n⁺`.
@@ -480,6 +484,117 @@ theorem isCompl_negativeNilradical_borelSubalgebra :
     IsCompl (negativeNilradical H b : Submodule K L) (borelSubalgebra H b : Submodule K L) :=
   ⟨disjoint_negativeNilradical_borelSubalgebra H b,
     codisjoint_iff.mpr (negativeNilradical_sup_borelSubalgebra_eq_top H b)⟩
+
+/-! ### A basis of root vectors of the negative nilradical -/
+
+section NegativeNilradicalBasis
+
+variable {H}
+
+omit [CharZero K] in
+/-- A nonzero vector of the root space `L_{-α}`, for a root `α`. -/
+private theorem exists_ne_zero_mem_rootSpace_neg (i : H.root) :
+    ∃ x ∈ rootSpace H (-((i : Weight K H L) : H → K)), x ≠ 0 :=
+  Weight.exists_ne_zero (R := K) (L := H) (M := L) (-i).1
+
+/-- The chosen root vector of weight `-α`, for a root `α`. -/
+private noncomputable def negRootVector (i : H.root) : L :=
+  (exists_ne_zero_mem_rootSpace_neg i).choose
+
+omit [CharZero K] in
+private theorem negRootVector_mem_rootSpace (i : H.root) :
+    negRootVector i ∈ rootSpace H (-((i : Weight K H L) : H → K)) :=
+  (exists_ne_zero_mem_rootSpace_neg i).choose_spec.1
+
+omit [CharZero K] in
+private theorem negRootVector_ne_zero (i : H.root) : negRootVector i ≠ 0 :=
+  (exists_ne_zero_mem_rootSpace_neg i).choose_spec.2
+
+/-- The root vector of weight `-α`, for a positive root `α`, as an element of the negative
+nilradical. -/
+private noncomputable def negRootVectorNilradical (i : posRoots (IsKilling.rootSystem H) b) :
+    negativeNilradical H b :=
+  ⟨negRootVector (i : H.root), mem_negativeNilradical_of_mem_rootSpace H b
+    (neg_mem_negRoots_of_mem_posRoots b i.2) (negRootVector_mem_rootSpace (i : H.root))⟩
+
+/-- The root vectors of weights `-α`, for `α` ranging over the positive roots, are linearly
+independent: they are nonzero vectors of independent root spaces. -/
+private theorem linearIndependent_negRootVectorNilradical :
+    LinearIndependent K (negRootVectorNilradical b) := by
+  refine LinearIndependent.of_comp (negativeNilradical H b).toSubmodule.subtype ?_
+  have hind : iSupIndep fun i : posRoots (IsKilling.rootSystem H) b ↦
+      (rootSpace H (-(((i : H.root) : Weight K H L) : H → K)) : Submodule K L) := by
+    refine (LieSubmodule.iSupIndep_toSubmodule.mpr (iSupIndep_genWeightSpace K H L)).comp
+      (f := fun i : posRoots (IsKilling.rootSystem H) b ↦
+        -(((i : H.root) : Weight K H L) : H → K)) fun i j hij ↦ ?_
+    have : ((i : H.root) : Weight K H L) = ((j : H.root) : Weight K H L) :=
+      Weight.ext fun h ↦ by simpa using congrFun hij h
+    exact Subtype.ext (Subtype.ext this)
+  exact hind.linearIndependent _ (fun i ↦ negRootVector_mem_rootSpace (i : H.root))
+    fun i ↦ negRootVector_ne_zero (i : H.root)
+
+/-- The root space of a negative root is the line through the chosen root vector. -/
+private theorem rootSpace_le_span_negRootVector (i : H.root) :
+    (rootSpace H (-((i : Weight K H L) : H → K)) : Submodule K L) ≤
+      Submodule.span K {negRootVector i} := by
+  intro x hx
+  have hone : finrank K (rootSpace H (-((i : Weight K H L) : H → K))) = 1 :=
+    IsKilling.finrank_rootSpace_eq_one (-(i : Weight K H L))
+      (Weight.IsNonZero.neg (Finset.mem_filter.mp i.2).2)
+  obtain ⟨c, hc⟩ := (finrank_eq_one_iff_of_nonzero'
+    (⟨negRootVector i, negRootVector_mem_rootSpace i⟩ :
+      rootSpace H (-((i : Weight K H L) : H → K)))
+    (by simpa using negRootVector_ne_zero i)).mp hone ⟨x, hx⟩
+  rw [Submodule.mem_span_singleton]
+  exact ⟨c, by simpa using congrArg Subtype.val hc⟩
+
+/-- The root vectors of weights `-α`, for `α` ranging over the positive roots, span the negative
+nilradical: it is the sum of the root spaces of the negative roots, and each is a line. -/
+private theorem span_range_negRootVectorNilradical :
+    ⊤ ≤ Submodule.span K (Set.range (negRootVectorNilradical b)) := by
+  rintro ⟨x, hx⟩ -
+  have hx' := hx
+  rw [mem_negativeNilradical, rootSpaceSpan_eq_iSup, ← LieSubmodule.mem_toSubmodule,
+    LieSubmodule.iSup_toSubmodule] at hx'
+  have hle : (⨆ α : negRoots (IsKilling.rootSystem H) b,
+      (rootSpace H ((α : H.root) : H → K)).toSubmodule) ≤
+      (Submodule.span K (Set.range (negRootVectorNilradical b))).map
+        (negativeNilradical H b).toSubmodule.subtype := by
+    rw [Submodule.map_span, ← Set.range_comp]
+    refine iSup_le fun α ↦ ?_
+    have hα := neg_mem_posRoots_of_mem_negRoots b α.2
+    refine (le_of_eq ?_).trans ((rootSpace_le_span_negRootVector (-(α : H.root))).trans
+      (Submodule.span_mono (Set.singleton_subset_iff.mpr ⟨⟨_, hα⟩, rfl⟩)))
+    simp
+  obtain ⟨y, hy, hyx⟩ := hle hx'
+  obtain rfl : y = ⟨x, hx⟩ := Subtype.ext hyx
+  exact hy
+
+variable (H) in
+/-- **A basis of the negative nilradical made of root vectors**: it is indexed by the positive
+roots, and the vector of index `α` lies in the root space `L_{-α}`
+(`TauCeti.negativeNilradicalBasis_mem_rootSpace`). Root spaces are lines, so this property
+determines the basis up to rescaling each of its vectors. -/
+noncomputable def negativeNilradicalBasis :
+    Basis (posRoots (IsKilling.rootSystem H) b) K (negativeNilradical H b) :=
+  Basis.mk (linearIndependent_negRootVectorNilradical b) (span_range_negRootVectorNilradical b)
+
+/-- The basis vector of index `α` lies in the root space `L_{-α}`. -/
+theorem negativeNilradicalBasis_mem_rootSpace (i : posRoots (IsKilling.rootSystem H) b) :
+    (negativeNilradicalBasis H b i : L) ∈
+      rootSpace H (-(((i : H.root) : Weight K H L) : H → K)) := by
+  rw [negativeNilradicalBasis, Basis.mk_apply]
+  exact negRootVector_mem_rootSpace (i : H.root)
+
+/-- The Cartan subalgebra acts on the basis vector of index `α` through `-α`. -/
+theorem lie_negativeNilradicalBasis (i : posRoots (IsKilling.rootSystem H) b) (h : H) :
+    ⁅(h : L), (negativeNilradicalBasis H b i : L)⁆ =
+      -(IsKilling.rootSystem H).root i h • (negativeNilradicalBasis H b i : L) := by
+  rw [← LieSubalgebra.coe_bracket_of_module,
+    IsKilling.lie_eq_smul_of_mem_rootSpace (negativeNilradicalBasis_mem_rootSpace b i) h]
+  simp
+
+end NegativeNilradicalBasis
 
 /-! ### The characters of the Borel subalgebra -/
 

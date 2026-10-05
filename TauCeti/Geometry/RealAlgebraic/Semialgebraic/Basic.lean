@@ -34,7 +34,8 @@ Every closure property proved here follows directly from the definition:
   `Fin 1 → R`, the one-coordinate space of the definition.
 
 Conversely, every semialgebraic set is described by a condition on the signs of finitely many
-polynomials (`TauCeti.IsSemialgebraic.exists_eq_setOf_sign_eval`).
+polynomials (`TauCeti.IsSemialgebraic.exists_eq_setOf_sign_eval`), and so membership in it depends
+on only finitely many coordinates (`TauCeti.IsSemialgebraic.exists_finset_mem_iff_of_eqOn`).
 
 ## References
 
@@ -343,5 +344,16 @@ theorem IsSemialgebraic.exists_eq_setOf_sign_eval {s : Set (σ → R)} (hs : IsS
       fun ε => Φ (fun i => ε (Fin.castAdd m' i)) ∨ Φ' (fun i => ε (Fin.natAdd m i)), ?_⟩) hs
   ext x
   simp [hs, ht]
+
+/-- **Finitely many coordinates.** Membership in a semialgebraic set depends on only finitely
+many coordinates: those of the variables of the polynomials describing it. -/
+theorem IsSemialgebraic.exists_finset_mem_iff_of_eqOn {s : Set (σ → R)} (hs : IsSemialgebraic s) :
+    ∃ F : Finset σ, ∀ x y : σ → R, EqOn x y F → (x ∈ s ↔ y ∈ s) := by
+  classical
+  obtain ⟨m, p, Φ, rfl⟩ := hs.exists_eq_setOf_sign_eval
+  refine ⟨Finset.univ.biUnion fun i => (p i).vars, fun x y hxy => ?_⟩
+  have h (i : Fin m) : eval x (p i) = eval y (p i) :=
+    eval₂Hom_congr' rfl (fun j hj _ => hxy (by simpa using ⟨i, hj⟩)) rfl
+  simp [h]
 
 end TauCeti

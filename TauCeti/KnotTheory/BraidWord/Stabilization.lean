@@ -291,14 +291,16 @@ private theorem kinkCode_halfEdge_castSucc (j : Fin w.length) (slot : Fin 4) :
     (w.kinkCode ε t).halfEdge (crossingSlotEquiv _ (j.castSucc, slot)) =
       halfEdgeSuccEquiv _ (.inl (crossingSlotEquiv _ (j, slot))) := by
   have hne : j.castSucc ≠ Fin.last w.length := Fin.castSucc_ne_last j
-  simp only [kinkCode, OrientedPDCode.rotateCrossing_crossing_of_ne _ _ hne]
+  simp only [kinkCode, OrientedPDCode.toPDCode_rotateCrossing,
+    PDCode.rotateCrossing_crossing_of_ne _ _ hne]
   rw [crossingSlotEquiv_succ_castSucc, OrientedPDCode.toPDCode_reidemeisterOne,
     reidemeisterOne_crossing_castSucc, crossing_closure]
 
 private theorem kinkCode_halfEdge_last (slot : Fin 4) :
     (w.kinkCode ε t).halfEdge (crossingSlotEquiv _ (Fin.last _, slot)) =
       halfEdgeSuccEquiv _ (.inr (slot + 2)) := by
-  simp only [kinkCode, OrientedPDCode.rotateCrossing_crossing_self]
+  simp only [kinkCode, OrientedPDCode.toPDCode_rotateCrossing,
+    PDCode.rotateCrossing_crossing_self]
   simp only [crossingSlotEquiv_succ_last, OrientedPDCode.toPDCode_reidemeisterOne,
     reidemeisterOne_crossing_last, add_assoc, Fin.reduceAdd]
 
@@ -330,7 +332,7 @@ private theorem kinkHalf_symm_new (slot : Fin 4) :
 private theorem kinkCode_edgePair :
     (w.kinkCode ε t).edgePair =
       (w.closure.toPDCode.reidemeisterOne (w.kinkHalfEdge t) (decide (ε = 1))).edgePair := by
-  simp only [kinkCode, OrientedPDCode.rotateCrossing_edgePair,
+  simp only [kinkCode, OrientedPDCode.toPDCode_rotateCrossing, PDCode.rotateCrossing_edgePair,
     OrientedPDCode.toPDCode_reidemeisterOne]
 
 variable {ε t} {l : List (Fin w.length)}
@@ -444,12 +446,13 @@ private theorem kinkCode_orientation :
 private theorem kinkCode_overPair_castSucc (j : Fin w.length) :
     (w.kinkCode ε t).overPair j.castSucc = decide (w[j.1].2 = 1) := by
   have hne : j.castSucc ≠ Fin.last w.length := Fin.castSucc_ne_last j
-  simp only [kinkCode, OrientedPDCode.rotateCrossing_overPair_of_ne _ _ hne,
+  simp only [kinkCode, OrientedPDCode.toPDCode_rotateCrossing,
+    PDCode.rotateCrossing_overPair_of_ne _ _ hne,
     OrientedPDCode.toPDCode_reidemeisterOne, reidemeisterOne_overPair_castSucc, overPair_closure]
 
 private theorem kinkCode_overPair_last :
     (w.kinkCode ε t).overPair (Fin.last _) = decide (ε = 1) := by
-  simp only [kinkCode, OrientedPDCode.rotateCrossing_overPair_self,
+  simp only [kinkCode, OrientedPDCode.toPDCode_rotateCrossing, PDCode.rotateCrossing_overPair_self,
     OrientedPDCode.toPDCode_reidemeisterOne, reidemeisterOne_overPair_last, Bool.not_not]
 
 /-- **The closure of a stabilized word is a kink added to the closure of `w`**, when an old crossing
@@ -470,7 +473,7 @@ private theorem closure_stabilize_eq_relabel_kinkCode
         relabel_edgePair, PerfectMatching.congr_val_apply]
     · simp only [crossinglessComponentCount_closure, OrientedPDCode.relabel_toPDCode,
         relabel_crossinglessComponentCount, kinkCode,
-        OrientedPDCode.rotateCrossing_crossinglessComponentCount,
+        OrientedPDCode.toPDCode_rotateCrossing, PDCode.rotateCrossing_crossinglessComponentCount,
         OrientedPDCode.toPDCode_reidemeisterOne,
         reidemeisterOne_crossinglessComponentCount, hcount]
     · funext i

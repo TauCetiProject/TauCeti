@@ -24,6 +24,10 @@ real points of such a circle and on which side of a second circle its points lie
   the circle of centre `m` and radius `ρ` is `m - ρ` or `m + ρ`, according to its side.
 * `Complex.lt_normSq_sub_of_normSq_eq`: points of one circle on one side of an intersection point
   with a second circle lie strictly outside the second circle.
+* `Complex.re_mem_Icc_of_normSq_sub_eq`: the points of the circle of centre `m` and radius `ρ`
+  have real part in `[m - ρ, m + ρ]`.
+* `Complex.le_normSq_sub_of_le_normSq_sub`: points on or outside one circle, between two of its
+  points that lie on or outside a second circle, lie on or outside the second circle.
 -/
 
 public section
@@ -88,5 +92,27 @@ theorem lt_normSq_sub_of_normSq_eq {a w z : ℂ} {m₁ r₁ m₂ r₂ : ℝ}
   rw [hw₁, ha₁, ha₂] at hw
   have hm : m₁ - m₂ < 0 := by nlinarith
   nlinarith
+
+/-- A point at squared distance `ρ ^ 2` from the real point `m`, with `0 ≤ ρ`, has real part in
+`[m - ρ, m + ρ]`. -/
+theorem re_mem_Icc_of_normSq_sub_eq {w : ℂ} {m ρ : ℝ} (hρ : 0 ≤ ρ)
+    (h : Complex.normSq (w - m) = ρ ^ 2) : w.re ∈ Set.Icc (m - ρ) (m + ρ) := by
+  have hre := Complex.abs_re_le_norm (w - m)
+  rw [norm_sub_eq_of_normSq_sub_eq hρ h, Complex.sub_re, Complex.ofReal_re, abs_le] at hre
+  constructor <;> linarith [hre.1, hre.2]
+
+/-- Let `w₁`, `w₂` lie on the circle `|· - m|² = r` and on or outside the circle
+`|· - m'|² = r'`, for real centres `m` and `m'`. Then every point `z` on or outside the first
+circle with real part between those of `w₁` and `w₂` lies on or outside the second. -/
+theorem le_normSq_sub_of_le_normSq_sub {w₁ w₂ z : ℂ} {m r m' r' : ℝ}
+    (h₁ : Complex.normSq (w₁ - m) = r) (h₂ : Complex.normSq (w₂ - m) = r)
+    (h₁' : r' ≤ Complex.normSq (w₁ - m')) (h₂' : r' ≤ Complex.normSq (w₂ - m'))
+    (hz : r ≤ Complex.normSq (z - m)) (h₁z : w₁.re ≤ z.re) (hz₂ : z.re ≤ w₂.re) :
+    r' ≤ Complex.normSq (z - m') := by
+  have e₁ := normSq_sub_ofReal_sub_normSq_sub_ofReal (c₁ := m') (c₂ := m) w₁ z
+  have e₂ := normSq_sub_ofReal_sub_normSq_sub_ofReal (c₁ := m') (c₂ := m) w₂ z
+  rcases le_total 0 (m - m') with h | h
+  · nlinarith [mul_nonneg h (sub_nonneg.2 h₁z)]
+  · nlinarith [mul_nonneg_of_nonpos_of_nonpos h (sub_nonpos.2 hz₂)]
 
 end Complex

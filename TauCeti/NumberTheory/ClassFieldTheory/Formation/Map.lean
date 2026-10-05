@@ -6,7 +6,9 @@ Authors: Codex
 module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.LayerEquiv
+public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Restriction
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Units
+public import TauCeti.Topology.Algebra.Group.OpenNormalSubgroup
 
 /-!
 # Transporting finite normal layers along open embeddings
@@ -32,6 +34,16 @@ the norm compatibility of the local Artin map.
   coefficient formations agree after restriction.
 * `TauCeti.ClassFieldTheory.localFormationLayerEquiv`: the specialization to the units
   formations of a finite extension of fields.
+
+## Main results
+
+* `TauCeti.ClassFieldTheory.localFormationMap_ofOpenNormal_ground_toSubgroup`: the ground
+  subgroup of the image over `K` of a layer `V ◁ G_E` is `Gal(Kˢ/iota(E))`.
+* `TauCeti.ClassFieldTheory.fixedField_localFormationMap_ofOpenNormal_ground`: the fixed field of
+  that ground subgroup is `iota(E)`.
+* `TauCeti.ClassFieldTheory.layerRestriction_localFormationMap`: for `V ≤ Gal(Kˢ/iota(E))` open
+  normal in `G_K`, the image over `K` of the layer cut out by the preimage of `V` in `G_E` is the
+  restriction of the layer `V ◁ G_K` to `Gal(Kˢ/iota(E))`.
 -/
 
 public noncomputable section
@@ -219,6 +231,40 @@ theorem NormalLayer.localFormationMap_top_toSubgroup (L : NormalLayer (AbsoluteG
     (L.localFormationMap K E iota).top.toSubgroup =
       L.top.toSubgroup.map (localFormationHom K E iota) :=
   L.map_top_toSubgroup _ _
+
+/-- The ground subgroup of the layer over `K` corresponding to a layer `V ◁ G_E` is
+`Gal(Kˢ/iota(E))`. -/
+theorem localFormationMap_ofOpenNormal_ground_toSubgroup
+    (V : OpenNormalSubgroup (AbsoluteGaloisGroup E)) :
+    ((NormalLayer.ofOpenNormal V).localFormationMap K E iota).ground.toSubgroup =
+      (galoisSubgroup K E iota).toSubgroup := by
+  rw [NormalLayer.localFormationMap_ground_toSubgroup, NormalLayer.ground_ofOpenNormal,
+    OpenSubgroup.toSubgroup_top, ← MonoidHom.range_eq_map, range_localFormationHom]
+
+/-- The ground subgroup `Gal(Kˢ/iota(E))` of the layer over `K` corresponding to a layer
+`V ◁ G_E` has fixed field `iota(E)`. This is the hypothesis under which `unitsLevelEquiv`
+identifies the ground level of that layer with `Eˣ`. -/
+theorem fixedField_localFormationMap_ofOpenNormal_ground
+    (V : OpenNormalSubgroup (AbsoluteGaloisGroup E)) :
+    IntermediateField.fixedField
+        ((NormalLayer.ofOpenNormal V).localFormationMap K E iota).ground.toSubgroup =
+      iota.fieldRange := by
+  rw [localFormationMap_ofOpenNormal_ground_toSubgroup, galoisSubgroup_toSubgroup,
+    InfiniteGalois.fixedField_fixingSubgroup]
+
+/-- For an open normal subgroup `V ≤ Gal(Kˢ/iota(E))` of `G_K` with preimage `V'` in `G_E`, the
+layer over `K` corresponding to `V' ◁ G_E` is the restriction `V ◁ Gal(Kˢ/iota(E))` of `V ◁ G_K`. -/
+theorem layerRestriction_localFormationMap (V : OpenNormalSubgroup (AbsoluteGaloisGroup K))
+    (hV : V ≤ (galoisSubgroup K E iota).toSubgroup) :
+    LayerRestriction ((NormalLayer.ofOpenNormal (V.comap (localFormationHom K E iota)
+      (continuous_localFormationHom K E iota))).localFormationMap K E iota)
+      (NormalLayer.ofOpenNormal V) := by
+  refine ⟨OpenSubgroup.toSubgroup_injective ?_,
+    by rw [NormalLayer.ground_ofOpenNormal]; exact le_top⟩
+  rw [NormalLayer.localFormationMap_top_toSubgroup, NormalLayer.top_ofOpenNormal,
+    NormalLayer.top_ofOpenNormal, OpenNormalSubgroup.toSubgroup_comap, Subgroup.map_comap_eq,
+    range_localFormationHom]
+  exact inf_eq_right.mpr hV
 
 /-- **A layer over a finite extension as a layer over the base field.**  Restriction identifies
 the units formation over `E` with the restriction of the units formation over `K`, and hence
