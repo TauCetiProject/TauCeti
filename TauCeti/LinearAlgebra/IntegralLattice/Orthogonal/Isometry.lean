@@ -23,8 +23,6 @@ A submodule whose restricted pairing is bijective is complementary to its orthog
 complement. Combining this with the isometry construction gives the unimodular splitting
 theorem without assuming nondegeneracy of the whole lattice.
 
-The construction uses `Submodule.prodEquivOfIsCompl`, the carrier equivalence of
-`IntegralLattice.ofIntegralForm`, and `IntegralLattice.Isometry.ofCarrierEquiv`.
 The mathematical source is O. T. O'Meara, *Introduction to Quadratic Forms*, §82.
 -/
 
@@ -39,6 +37,8 @@ universe u
 variable {V : Type u} [AddCommGroup V] [Module ℚ V]
 variable (L : IntegralLattice V) (S T : Submodule ℤ L)
 
+-- The construction uses `Submodule.prodEquivOfIsCompl`, the carrier equivalence of
+-- `IntegralLattice.ofIntegralForm`, and `IntegralLattice.Isometry.ofCarrierEquiv`.
 /-- Orthogonally complementary integral submodules give an isometry from the orthogonal sum
 of their rationalized restricted forms onto the original lattice. -/
 noncomputable def orthogonalSumIsometryOfIsCompl (h : IsCompl S T)
@@ -78,7 +78,6 @@ noncomputable def orthogonalSumIsometryOfIsCompl (h : IsCompl S T)
   exact congrArg₂ (· + ·) (hs _ _) (ht _ _)
 
 /-- On unit pure tensors the splitting isometry is addition of the original integral vectors. -/
-@[simp]
 theorem orthogonalSumIsometryOfIsCompl_apply_one_tmul (h : IsCompl S T)
     (horth : T ≤ L.integralForm.orthogonal S) (s : S) (t : T) :
     L.orthogonalSumIsometryOfIsCompl S T h horth (1 ⊗ₜ[ℤ] s, 1 ⊗ₜ[ℤ] t) =
@@ -100,6 +99,7 @@ theorem orthogonalSumIsometryOfIsCompl_apply_one_tmul (h : IsCompl S T)
 
 /-- On arbitrary pure tensors the splitting isometry is the sum of the scalar multiples of
 the original vectors. -/
+@[simp]
 theorem orthogonalSumIsometryOfIsCompl_apply_tmul (h : IsCompl S T)
     (horth : T ≤ L.integralForm.orthogonal S) (q r : ℚ) (s : S) (t : T) :
     L.orthogonalSumIsometryOfIsCompl S T h horth (q ⊗ₜ[ℤ] s, r ⊗ₜ[ℤ] t) =
@@ -125,6 +125,16 @@ theorem orthogonalSumIsometryOfIsCompl_symm_apply_add (h : IsCompl S T)
   apply (L.orthogonalSumIsometryOfIsCompl S T h horth).injective
   simp
 
+/-- The inverse splitting isometry recovers arbitrary pure tensors from the corresponding
+rational scalar multiples of vectors in the two summands. -/
+@[simp]
+theorem orthogonalSumIsometryOfIsCompl_symm_apply_smul_add_smul (h : IsCompl S T)
+    (horth : T ≤ L.integralForm.orthogonal S) (q r : ℚ) (s : S) (t : T) :
+    (L.orthogonalSumIsometryOfIsCompl S T h horth).symm
+        (q • ((s : L) : V) + r • ((t : L) : V)) = (q ⊗ₜ[ℤ] s, r ⊗ₜ[ℤ] t) := by
+  apply (L.orthogonalSumIsometryOfIsCompl S T h horth).injective
+  simp
+
 /-- A submodule with perfect restricted integral pairing splits off isometrically, with its
 orthogonal complement rationalized in its own ambient space. -/
 noncomputable def orthogonalSplittingIsometry (S : Submodule ℤ L)
@@ -137,13 +147,22 @@ noncomputable def orthogonalSplittingIsometry (S : Submodule ℤ L)
     (L.isCompl_orthogonal_of_restrict_bijective S h) le_rfl
 
 /-- The unimodular splitting isometry sends unit pure tensors to the sum of their vectors. -/
-@[simp]
 theorem orthogonalSplittingIsometry_apply_one_tmul (S : Submodule ℤ L)
     (h : Function.Bijective (L.integralForm.restrict S))
     (s : S) (t : L.integralForm.orthogonal S) :
     L.orthogonalSplittingIsometry S h (1 ⊗ₜ[ℤ] s, 1 ⊗ₜ[ℤ] t) =
       ((s : L) : V) + ((t : L) : V) :=
   L.orthogonalSumIsometryOfIsCompl_apply_one_tmul S _ _ _ s t
+
+/-- The unimodular splitting isometry sends arbitrary pure tensors to the sum of the
+corresponding rational scalar multiples of their vectors. -/
+@[simp]
+theorem orthogonalSplittingIsometry_apply_tmul (S : Submodule ℤ L)
+    (h : Function.Bijective (L.integralForm.restrict S)) (q r : ℚ)
+    (s : S) (t : L.integralForm.orthogonal S) :
+    L.orthogonalSplittingIsometry S h (q ⊗ₜ[ℤ] s, r ⊗ₜ[ℤ] t) =
+      q • ((s : L) : V) + r • ((t : L) : V) :=
+  L.orthogonalSumIsometryOfIsCompl_apply_tmul S _ _ _ q r s t
 
 /-- The inverse unimodular splitting sends a sum of integral vectors in the summand and its
 orthogonal complement to their unit pure tensors. -/
@@ -152,8 +171,17 @@ theorem orthogonalSplittingIsometry_symm_apply_add (S : Submodule ℤ L)
     (h : Function.Bijective (L.integralForm.restrict S))
     (s : S) (t : L.integralForm.orthogonal S) :
     (L.orthogonalSplittingIsometry S h).symm
-        (((s : L) : V) + ((t : L) : V)) = (1 ⊗ₜ[ℤ] s, 1 ⊗ₜ[ℤ] t) := by
-  apply (L.orthogonalSplittingIsometry S h).injective
-  simp
+        (((s : L) : V) + ((t : L) : V)) = (1 ⊗ₜ[ℤ] s, 1 ⊗ₜ[ℤ] t) :=
+  L.orthogonalSumIsometryOfIsCompl_symm_apply_add S _ _ _ s t
+
+/-- The inverse unimodular splitting recovers arbitrary pure tensors from rational scalar
+multiples of vectors in the summand and its orthogonal complement. -/
+@[simp]
+theorem orthogonalSplittingIsometry_symm_apply_smul_add_smul (S : Submodule ℤ L)
+    (h : Function.Bijective (L.integralForm.restrict S)) (q r : ℚ)
+    (s : S) (t : L.integralForm.orthogonal S) :
+    (L.orthogonalSplittingIsometry S h).symm
+        (q • ((s : L) : V) + r • ((t : L) : V)) = (q ⊗ₜ[ℤ] s, r ⊗ₜ[ℤ] t) :=
+  L.orthogonalSumIsometryOfIsCompl_symm_apply_smul_add_smul S _ _ _ q r s t
 
 end TauCeti.IntegralLattice
