@@ -11,9 +11,6 @@ public import Mathlib.LinearAlgebra.CliffordAlgebra.Prod
 public import Mathlib.RingTheory.MatrixAlgebra
 
 import TauCeti.LinearAlgebra.Matrix.TensorProduct
--- Private: `CliffordAlgebra.prod_map_ι_mul_ι_of_even_length` is used only inside the proof of
--- `CliffordAlgebra.hyperbolicVolume_anticomm_rightGenerator`.
-import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement
 
 /-!
 # Hyperbolic Bott periodicity for real Clifford algebras
@@ -207,37 +204,26 @@ private theorem hyperbolicBaseInclusion_ι (m : M) :
   rw [hyperbolicBaseInclusion, _root_.CliffordAlgebra.lift_ι_apply]
   simp [hyperbolicBaseGenerator]
 
+private theorem hyperbolicMatrixInclusion_hyperbolic (v : Fin (1 + 1) → ℝ) :
+    hyperbolicMatrixInclusion Q !![v 0, v 1; -v 1, -v 0] =
+      _root_.CliffordAlgebra.ι _ (0, v) := by
+  rw [← TauCeti.realCliffordOneOneEquivMatrix_ι v,
+    hyperbolicMatrixInclusion_apply]
+  simp [hyperbolicRightInclusion]
+
 /-- The hyperbolic volume element anticommutes with every generator coming from the hyperbolic
 factor. -/
 private theorem hyperbolicVolume_anticomm_rightGenerator (v : Fin (1 + 1) → ℝ) :
     hyperbolicVolume Q * _root_.CliffordAlgebra.ι _ (0, v) =
       -(_root_.CliffordAlgebra.ι _ (0, v) * hyperbolicVolume Q) := by
-  -- The hyperbolic volume element is the ordered product of the two orthogonal vectors `(0, e₀)`
-  -- and `(0, e₁)`, so the even half of the volume-element dichotomy applies to it.
-  have hpair : ([((0 : M), Pi.single 0 (1 : ℝ)), ((0 : M), Pi.single 1 (1 : ℝ))] :
-      List (M × (Fin (1 + 1) → ℝ))).Pairwise
-        (Q.prod (TauCeti.realCliffordForm 1 1)).IsOrtho := by
-    simp [QuadraticMap.isOrtho_def]
-  have hmem : ((0 : M), v) ∈ Submodule.span ℝ
-      {x : M × (Fin (1 + 1) → ℝ) |
-        x ∈ ([((0 : M), Pi.single 0 (1 : ℝ)), ((0 : M), Pi.single 1 (1 : ℝ))] :
-          List (M × (Fin (1 + 1) → ℝ)))} := by
-    have hv : v 0 • ((0 : M), Pi.single 0 (1 : ℝ)) + v 1 • ((0 : M), Pi.single 1 (1 : ℝ))
-        = ((0 : M), v) := by
-      refine Prod.ext (by simp) ?_
-      funext i
-      fin_cases i <;> simp
-    -- The membership set of a two-element list is the pair itself.
-    have hset : {x : M × (Fin (1 + 1) → ℝ) |
-        x ∈ ([((0 : M), Pi.single 0 (1 : ℝ)), ((0 : M), Pi.single 1 (1 : ℝ))] :
-          List (M × (Fin (1 + 1) → ℝ)))}
-        = {((0 : M), Pi.single 0 (1 : ℝ)), ((0 : M), Pi.single 1 (1 : ℝ))} := by
-      ext x
-      simp
-    rw [hset]
-    exact Submodule.mem_span_pair.mpr ⟨v 0, v 1, hv⟩
-  have h := _root_.CliffordAlgebra.prod_map_ι_mul_ι_of_even_length hpair ⟨1, rfl⟩ hmem
-  simpa [hyperbolicVolume, hyperbolicE₀, hyperbolicE₁] using h
+  -- Both factors come from the `(1, 1)` factor, so the identity is the matrix identity
+  -- `σₓ A = -(A σₓ)` transported through `hyperbolicMatrixInclusion`.
+  have h : (!![(0 : ℝ), 1; 1, 0] : Matrix (Fin 2) (Fin 2) ℝ) * !![v 0, v 1; -v 1, -v 0] =
+      -(!![v 0, v 1; -v 1, -v 0] * !![0, 1; 1, 0]) := by
+    ext i j
+    fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, Fin.sum_univ_two]
+  rw [← hyperbolicMatrixInclusion_sigmaX, ← hyperbolicMatrixInclusion_hyperbolic, ← map_mul, h,
+    map_neg, map_mul]
 
 private theorem hyperbolicBaseInclusion_comm_rightInclusion
     (x : _root_.CliffordAlgebra Q)
@@ -256,21 +242,13 @@ private theorem hyperbolicBaseInclusion_comm_rightInclusion
         simp only [hyperbolicBaseGenerator, LinearMap.comp_apply, LinearMap.mulRight_apply,
           LinearMap.inl_apply, hyperbolicRightInclusion,
           _root_.CliffordAlgebra.map_apply_ι, QuadraticMap.Isometry.inr_apply]
-        rw [Commute]
+        -- `ι (0, v)` anticommutes with both `ι (m, 0)` (orthogonal summands) and the volume
+        -- element, so it commutes with their product.
         have hic := _root_.CliffordAlgebra.ι_mul_ι_comm_of_isOrtho
           (QuadraticMap.IsOrtho.inl_inr (Q₁ := Q)
             (Q₂ := TauCeti.realCliffordForm 1 1) m v)
-        have hoc := hyperbolicVolume_anticomm_rightGenerator Q v
-        calc
-          _ = _root_.CliffordAlgebra.ι _ (m, 0) *
-              (hyperbolicVolume Q * _root_.CliffordAlgebra.ι _ (0, v)) := by simp [mul_assoc]
-          _ = _root_.CliffordAlgebra.ι _ (m, 0) *
-              (-(_root_.CliffordAlgebra.ι _ (0, v) * hyperbolicVolume Q)) := by rw [hoc]
-          _ = -(_root_.CliffordAlgebra.ι _ (m, 0) *
-              _root_.CliffordAlgebra.ι _ (0, v)) * hyperbolicVolume Q := by simp [mul_assoc]
-          _ = -(-(_root_.CliffordAlgebra.ι _ (0, v) *
-              _root_.CliffordAlgebra.ι _ (m, 0))) * hyperbolicVolume Q := by rw [hic]
-          _ = _ := by simp [mul_assoc]
+        rw [Commute, SemiconjBy, mul_assoc, hyperbolicVolume_anticomm_rightGenerator, mul_neg,
+          ← mul_assoc, hic, neg_mul, neg_neg, mul_assoc]
     | mul a b ha hb => simpa only [map_mul] using ha.mul_right hb
     | add a b ha hb => simpa only [map_add] using ha.add_right hb
   induction x using _root_.CliffordAlgebra.induction with
@@ -289,13 +267,6 @@ private noncomputable def tensorToHyperbolic :
     simpa only [hyperbolicMatrixInclusion, AlgHom.comp_apply] using
       hyperbolicBaseInclusion_comm_rightInclusion Q x
         (TauCeti.realCliffordOneOneEquivMatrix.symm.toAlgHom y))
-
-private theorem hyperbolicMatrixInclusion_hyperbolic (v : Fin (1 + 1) → ℝ) :
-    hyperbolicMatrixInclusion Q !![v 0, v 1; -v 1, -v 0] =
-      _root_.CliffordAlgebra.ι _ (0, v) := by
-  rw [← TauCeti.realCliffordOneOneEquivMatrix_ι v,
-    hyperbolicMatrixInclusion_apply]
-  simp [hyperbolicRightInclusion]
 
 private theorem tensorToHyperbolic_ι_base (m : M) :
     tensorToHyperbolic Q
@@ -389,15 +360,6 @@ noncomputable def hyperbolicEquivTensor :
     (hyperbolicToTensor_comp_tensorToHyperbolic Q)
     (tensorToHyperbolic_comp_hyperbolicToTensor Q)
 
-@[simp]
-private theorem one_tmul_zeroMatrix :
-    (1 : _root_.CliffordAlgebra Q) ⊗ₜ[ℝ]
-      !![(0 : ℝ), 0; 0, 0] = 0 := by
-  rw [← TensorProduct.tmul_zero (Matrix (Fin 2) (Fin 2) ℝ) 1]
-  congr 1
-  ext i j
-  fin_cases i <;> fin_cases j <;> rfl
-
 /-- The image of a generator under `hyperbolicEquivTensor`, split into its original-module and
 hyperbolic-plane components. -/
 @[simp]
@@ -417,20 +379,16 @@ theorem hyperbolicEquivTensor_ι
 theorem hyperbolicEquivTensor_symm_apply_ι_base (m : M) :
     (hyperbolicEquivTensor Q).symm
         (_root_.CliffordAlgebra.ι Q m ⊗ₜ[ℝ] !![0, 1; 1, 0]) =
-      _root_.CliffordAlgebra.ι _ (m, 0) := by
-  apply (hyperbolicEquivTensor Q).injective
-  rw [AlgEquiv.apply_symm_apply, hyperbolicEquivTensor_ι]
-  simp only [Pi.zero_apply, neg_zero, one_tmul_zeroMatrix, add_zero]
+      _root_.CliffordAlgebra.ι _ (m, 0) :=
+  tensorToHyperbolic_ι_base Q m
 
 /-- The inverse of `hyperbolicEquivTensor` on a tensor representing a hyperbolic generator. -/
 @[simp]
 theorem hyperbolicEquivTensor_symm_apply_ι_hyperbolic
     (v : Fin (1 + 1) → ℝ) :
     (hyperbolicEquivTensor Q).symm (1 ⊗ₜ[ℝ] !![v 0, v 1; -v 1, -v 0]) =
-      _root_.CliffordAlgebra.ι _ (0, v) := by
-  apply (hyperbolicEquivTensor Q).injective
-  rw [AlgEquiv.apply_symm_apply, hyperbolicEquivTensor_ι]
-  simp
+      _root_.CliffordAlgebra.ι _ (0, v) :=
+  tensorToHyperbolic_ι_hyperbolic Q v
 
 end CliffordAlgebra
 

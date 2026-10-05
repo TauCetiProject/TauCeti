@@ -47,14 +47,19 @@ terminal side runs along `γ` to the right of `β`. A column-`a` marking in the 
 point lies below it and a column-`b` marking lies above it, since they lie in the bigons below
 and above the turn point respectively.
 
-The pentagon map `Φ : GC⁻(G) → GC⁻(G')` (`GridDiagram.pentagonMap`) counts the empty pentagons
+The pentagon map `GC⁻(G) → GC⁻(G')` (`GridDiagram.pentagonMap`) counts the empty pentagons
 carrying no `X`-marking, each weighted by the product of the variables of the `O`-markings it
 carries. The variable of an `O`-marking is the one attached to its column in `G'`, so the weight
-of a covered column-`c` marking of `G` is `V_{swap a b c}`, and `Φ` is semilinear over the
+of a covered column-`c` marking of `G` is `V_{swap a b c}`, and the map is semilinear over the
 renaming of the variables by `Equiv.swap a b`. The reverse comparison `GC⁻(G') → GC⁻(G)` counts
 pentagons turning at the other intersection point; seen from `G'`, where `γ` is the grid line and
 `β` the replacement curve, that is the same construction for `G'` with the square row of the
 other intersection point as its turn row.
+
+The pentagons here lie to the left of `β ∪ γ`. The commutation map `Φ` also counts the pentagons
+lying to its right, whose initial side turns at the same point; those, and `Φ` itself
+(`GridDiagram.commutationMap`), are in `Commutation/InitialPentagon.lean`. The map defined here
+is only one part of `Φ` and is not a chain map on its own.
 
 This file sets up the pentagons and the map. That `Φ` is a chain map, and that together with the
 reverse map it is a chain homotopy equivalence via the hexagon-counting homotopies, is not proved
@@ -69,7 +74,8 @@ here.
 * `TauCeti.GridDiagram.pentagons`: the empty pentagons carrying no `X`-marking.
 * `TauCeti.GridDiagram.pentagonWeight`: the monomial weighting a pentagon.
 * `TauCeti.GridDiagram.pentagonCoefficient`: the matrix coefficients of the pentagon map.
-* `TauCeti.GridDiagram.pentagonMap`: the pentagon map `Φ : GC⁻(G) → GC⁻(G.swapColumns a b)`.
+* `TauCeti.GridDiagram.pentagonMap`: the map `GC⁻(G) → GC⁻(G.swapColumns a b)` counting these
+  pentagons, the terminal-side part of the commutation map `Φ`.
 
 ## Main results
 
@@ -96,11 +102,12 @@ here.
 
 ## References
 
-The pentagon map is the chain map `Φ_{βγ}` of Manolescu--Ozsváth--Szabó--Thurston, *On
+The pentagons are those of the chain map `Φ_{βγ}` of Manolescu--Ozsváth--Szabó--Thurston, *On
 combinatorial link Floer homology*, Section 3.1 (arXiv:math/0610559), and of
-Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Section 5.1. The orientation
-convention matches the rectangles of `TauCeti.GridRectangleBetween`: the source state occupies
-the lower-left and upper-right corners.
+Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Section 5.1, that lie to the left
+of `β ∪ γ`. The orientation convention matches the rectangles of
+`TauCeti.GridRectangleBetween`: the source state occupies the lower-left and upper-right
+corners.
 -/
 
 public section
@@ -557,37 +564,21 @@ theorem pentagonMapOnGenerator_support_subset (C : ColumnCommutationData G) (x :
   obtain ⟨P, -, -⟩ := Finset.exists_ne_zero_of_sum_ne_zero hy
   exact Finset.mem_image.mpr ⟨P.left, Finset.mem_univ _, P.target_eq_swapColumns.symm⟩
 
-private noncomputable def pentagonMapRow (C : ColumnCommutationData G) (x : GridState n) :
-    MvPolynomial (Fin n) R →ₛₗ[((renameEquiv R
-      (Equiv.swap C.column (finRotate n C.column))).toRingEquiv :
-      MvPolynomial (Fin n) R →+* MvPolynomial (Fin n) R)] GridChainMinus R n :=
-  ((LinearMap.id :
-      MvPolynomial (Fin n) R →ₗ[MvPolynomial (Fin n) R] MvPolynomial (Fin n) R).smulRight
-    (G.pentagonMapOnGenerator R C x)).comp
-      (renameEquiv R
-        (Equiv.swap C.column (finRotate n C.column))).toRingEquiv.toSemilinearEquiv.toLinearMap
-
-@[simp]
-private theorem pentagonMapRow_apply (C : ColumnCommutationData G) (x : GridState n)
-    (p : MvPolynomial (Fin n) R) :
-    G.pentagonMapRow R C x p =
-      rename (Equiv.swap C.column (finRotate n C.column)) p •
-        G.pentagonMapOnGenerator R C x := by
-  rw [pentagonMapRow, LinearMap.comp_apply, LinearMap.smulRight_apply, LinearMap.id_apply]
-  rfl
-
-/-- The pentagon map `Φ : GC⁻(G) → GC⁻(G.swapColumns C.column (finRotate n C.column))`
-of the validated column commutation `C`.
+/-- The pentagon map `GC⁻(G) → GC⁻(G.swapColumns C.column (finRotate n C.column))` of the
+validated column commutation `C`, counting the pentagons whose turn lies on their terminal side.
 
 A generator `x` goes to the sum over the counted pentagons from `x` of their weights times their
 targets. The map is semilinear over the renaming of the variables by
 `Equiv.swap C.column (finRotate n C.column)`, which carries the variable of each `O`-marking in
-`G` to its variable in the commuted diagram. -/
+`G` to its variable in the commuted diagram. It is only one of the two parts of the commutation
+map `Φ`; the other counts the pentagons turning on their initial side
+(`TauCeti.GridDiagram.initialPentagonMap`). -/
 noncomputable def pentagonMap (C : ColumnCommutationData G) :
     GridChainMinus R n →ₛₗ[((renameEquiv R
       (Equiv.swap C.column (finRotate n C.column))).toRingEquiv :
       MvPolynomial (Fin n) R →+* MvPolynomial (Fin n) R)] GridChainMinus R n :=
-  Finsupp.lsum (MvPolynomial (Fin n) R) fun x : GridState n => G.pentagonMapRow R C x
+  GridChain.renameMatrixMap R (Equiv.swap C.column (finRotate n C.column))
+    (G.pentagonCoefficient R C)
 
 /-- The pentagon map sends a generator with coefficient `p` to the renamed coefficient times the
 row of pentagon weights of the generator. -/
@@ -597,7 +588,7 @@ theorem pentagonMap_single (C : ColumnCommutationData G) (x : GridState n)
     G.pentagonMap R C (Finsupp.single x p) =
       rename (Equiv.swap C.column (finRotate n C.column)) p •
         G.pentagonMapOnGenerator R C x := by
-  rw [pentagonMap, Finsupp.lsum_single, pentagonMapRow_apply]
+  rw [pentagonMap, GridChain.renameMatrixMap_single, pentagonMapOnGenerator]
 
 /-- The coefficient formula for the pentagon map on an arbitrary chain. -/
 @[simp]
@@ -607,13 +598,7 @@ theorem pentagonMap_apply_apply (C : ColumnCommutationData G) (c : GridChainMinu
       c.sum fun x p =>
         rename (Equiv.swap C.column (finRotate n C.column)) p *
           G.pentagonCoefficient R C x y := by
-  induction c using Finsupp.induction_linear with
-  | zero => rw [map_zero, Finsupp.zero_apply, Finsupp.sum_zero_index]
-  | add c d hc hd =>
-    rw [map_add, Finsupp.add_apply, hc, hd, Finsupp.sum_add_index'] <;> simp [add_mul]
-  | single x p =>
-    rw [pentagonMap_single, Finsupp.smul_apply, smul_eq_mul, pentagonMapOnGenerator_apply,
-      Finsupp.sum_single_index (by simp)]
+  rw [pentagonMap, GridChain.renameMatrixMap_apply_apply]
 
 end GridDiagram
 

@@ -17,10 +17,12 @@ public import TauCeti.KnotTheory.Grid.Rectangle.Swap
 Let `C` be a validated column commutation of a grid diagram `G`, exchanging the column
 `a = C.column` with the next column `b = finRotate n a`, and let `G'` be the commuted diagram
 `G.swapColumns a b`. The pentagon map `Φ : GC⁻(G) → GC⁻(G')` (`GridDiagram.pentagonMap`) sends a
-state `x` to the sum, over the empty pentagons `P` from `x` carrying no `X`-marking, of
-`V^{𝕆 ∩ P} · y` with `y` the target of `P`. This file proves that `Φ` has bidegree `(0, 0)` for
-the (`O`-Maslov, Alexander) bigrading of `Grading/UnblockedChain.lean`; this is the grading half of
-the commutation-invariance argument, independent of the chain-map identity for `Φ`.
+state `x` to the sum, over the empty pentagons `P` from `x` carrying no `X`-marking and turning on
+their terminal side, of `V^{𝕆 ∩ P} · y` with `y` the target of `P`. This file proves that `Φ` has
+bidegree `(0, 0)` for the (`O`-Maslov, Alexander) bigrading of `Grading/UnblockedChain.lean`. This
+is the grading half of the commutation-invariance argument for the terminal-side part of the
+commutation map `GridDiagram.commutationMap`; the part counting pentagons turning on their initial
+side is not treated here.
 
 The grid states of `G` and `G'` are the same permutations, and the comparison rests on two
 grading formulas.

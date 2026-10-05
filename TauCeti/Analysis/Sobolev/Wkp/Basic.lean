@@ -54,9 +54,7 @@ lemma stated for `TauCeti.W1p` or `TauCeti.WeakDerivStep` applied to a `Wkp … 
 `TauCeti.WeakDerivStep`, must both be given their argument explicitly.
 The projections below are sealed instead, and are used through their characteristic equations
 `TauCeti.Wkp.lowerOrder_zero`, `TauCeti.Wkp.lowerOrder_succ`, `TauCeti.Wkp.iteratedGradient_zero`,
-`TauCeti.Wkp.iteratedGradient_succ`, `TauCeti.Wkp.value_zero`, and `TauCeti.Wkp.value_succ`, and
-through `TauCeti.Wkp.lowerOrder_succ_coe` and `TauCeti.Wkp.iteratedGradient_succ_coe`, which give
-the two projections above first order as the components of the underlying graph element.
+`TauCeti.Wkp.iteratedGradient_succ`, `TauCeti.Wkp.value_zero`, and `TauCeti.Wkp.value_succ`.
 
 ## Main declarations
 
@@ -326,18 +324,6 @@ theorem iteratedGradient_succ (k : ℕ) (u : Wkp mu Omega p (k + 2)) :
   exact WeakDerivStep.weakFDerivL_apply
     (sobolevStage (mu := mu) (Omega := Omega) (p := p) k).iteratedGradientL u
 
-/-- Above first order, the lower-order projection is the first component of the underlying
-weak-derivative graph element. -/
-theorem lowerOrder_succ_coe (k : ℕ) (u : Wkp mu Omega p (k + 2)) :
-    lowerOrder (k + 1) u = WithLp.fst u.1 :=
-  (lowerOrder_succ k u).trans (WeakDerivStep.prev_coe _ u)
-
-/-- Above first order, the highest derivative is the second component of the underlying
-weak-derivative graph element. -/
-theorem iteratedGradient_succ_coe (k : ℕ) (u : Wkp mu Omega p (k + 2)) :
-    iteratedGradient (k + 1) u = WithLp.snd u.1 :=
-  (iteratedGradient_succ k u).trans (WeakDerivStep.weakFDeriv_coe _ u)
-
 /-- The first weak derivative identity, with the gradient identified with a linear functional
 through the real inner product. -/
 theorem hasWeakFDerivOn_value (u : Wkp mu Omega p 1) :
@@ -478,14 +464,21 @@ theorem tendsto_iff_lowerOrder_iteratedGradient (k : ℕ) {I : Type*} {l : Filte
       simp only [lowerOrder_zero, iteratedGradient_zero]
       exact W1p.tendsto_iff_value_gradient
   | succ k =>
-      -- Each later stage is a subtype of a `WithLp` product; its product equivalence recovers
-      -- exactly the two characteristic projections, without a norm estimate.
-      simp only [lowerOrder_succ_coe, iteratedGradient_succ_coe]
-      refine (tendsto_subtype_rng (f := v) (x := u)).trans ?_
-      rw [(WithLp.prodContinuousLinearEquiv 2 ℝ _ _).toHomeomorph.isEmbedding.tendsto_nhds_iff]
-      simp only [Function.comp_def, ContinuousLinearEquiv.coe_toHomeomorph,
-        WithLp.prodContinuousLinearEquiv_apply]
-      exact Prod.tendsto_iff _ _
+      simp only [lowerOrder_succ, iteratedGradient_succ]
+      exact WeakDerivStep.tendsto_iff_prev_weakFDeriv
+        (base := (sobolevStage (mu := mu) (Omega := Omega) (p := p) k).iteratedGradientL)
+
+/-- A map into a positive-order Sobolev space is continuous if and only if its preceding Sobolev
+component and its highest weak derivative are continuous. -/
+theorem continuous_iff_lowerOrder_iteratedGradient (k : ℕ) {Y : Type*} [TopologicalSpace Y]
+    {f : Y → Wkp mu Omega p (k + 1)} :
+    Continuous f ↔
+      Continuous (fun y => lowerOrder k (f y)) ∧
+        Continuous (fun y => iteratedGradient k (f y)) := by
+  simp only [continuous_iff_continuousAt]
+  exact ⟨fun h => ⟨fun y => ((tendsto_iff_lowerOrder_iteratedGradient k).1 (h y)).1,
+      fun y => ((tendsto_iff_lowerOrder_iteratedGradient k).1 (h y)).2⟩,
+    fun h y => (tendsto_iff_lowerOrder_iteratedGradient k).2 ⟨h.1 y, h.2 y⟩⟩
 
 end Wkp
 
