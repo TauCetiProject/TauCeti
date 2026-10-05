@@ -31,13 +31,13 @@ exponents is a weight vector `c : σ → ℕ`, positive everywhere, such that fo
 every variable `i`, the `c`-weight of the coordinates of `v` less significant than `i` is less
 than `c i` (`TauCeti.IsLazardEvaluator`). Such weights turn the lexicographic comparison of an
 exponent in `V` with any other exponent into a comparison of `c`-weights
-(`TauCeti.IsLazardEvaluator.weight_lt_weight`). Every finite set of exponents in finitely many
-variables has an evaluator (`TauCeti.exists_isLazardEvaluator`). Consequently, if the Lazard
-valuation `v` of `p` at `a` lies in `V`, then along the curve `y ↦ a + y ^ c` with coordinates
-`aᵢ + y ^ cᵢ` the polynomial `p` restricts to a nonzero polynomial in `y` whose order of
-vanishing at `y = 0` is the `c`-weight `∑ i, cᵢ vᵢ` of `v`, with lowest coefficient the Taylor
-coefficient of `p` at `a` of exponent `v`
-(`MvPolynomial.natTrailingDegree_aeval_C_add_X_pow`). This is how Lazard's method for
+(`TauCeti.IsLazardEvaluator.weight_lt_weight`). Every finite set of exponents has an evaluator
+(`TauCeti.exists_isLazardEvaluator`). Consequently, if the Lazard valuation `v` of `p` at `a`
+lies in `V`, then along the monomial curve `y ↦ a + y ^ c` with coordinates `aᵢ + y ^ cᵢ`
+(`MvPolynomial.monomialCurve`) the polynomial `p` restricts to a nonzero polynomial in `y`
+whose order of vanishing at `y = 0` is the `c`-weight `∑ i, cᵢ vᵢ` of `v`, with lowest
+coefficient the Taylor coefficient of `p` at `a` of exponent `v`
+(`MvPolynomial.natTrailingDegree_aeval_monomialCurve`). This is how Lazard's method for
 cylindrical algebraic decomposition converts constancy of Lazard valuations into constancy of
 orders of vanishing of one-variable restrictions.
 
@@ -45,6 +45,7 @@ orders of vanishing of one-variable restrictions.
 
 * `MvPolynomial.lazardValuation`: the Lazard valuation of `p` at `a`.
 * `TauCeti.IsLazardEvaluator`: `c` is an evaluator for the set of exponents `V`.
+* `MvPolynomial.monomialCurve`: the monomial curve `y ↦ a + y ^ c`.
 
 ## Main results
 
@@ -54,10 +55,10 @@ orders of vanishing of one-variable restrictions.
   products.
 * `MvPolynomial.lazardValuation_eq_zero_iff`: the valuation is zero exactly where `p` does not
   vanish.
-* `MvPolynomial.finite_range_lazardValuation`: a polynomial in finitely many variables has
-  only finitely many Lazard valuations.
+* `MvPolynomial.finite_range_lazardValuation`, `MvPolynomial.finite_setOf_lazardValuation_eq`:
+  a polynomial has only finitely many Lazard valuations.
 * `TauCeti.exists_isLazardEvaluator`: every finite set of exponents has an evaluator.
-* `MvPolynomial.natTrailingDegree_aeval_C_add_X_pow`: the order of `y ↦ p (a + y ^ c)` at `0`
+* `MvPolynomial.natTrailingDegree_aeval_monomialCurve`: the order of `y ↦ p (a + y ^ c)` at `0`
   is the `c`-weight of the Lazard valuation of `p` at `a`.
 
 ## References
@@ -131,36 +132,42 @@ theorem weight_lt_weight (hc : IsLazardEvaluator V c) {v u : σ →₀ ℕ} (hv 
 
 end IsLazardEvaluator
 
-/-- Every finite set of exponents in finitely many variables has an evaluator. -/
-theorem exists_isLazardEvaluator [Finite σ] (hV : V.Finite) :
+/-- Every finite set of exponents has an evaluator. -/
+theorem exists_isLazardEvaluator (hV : V.Finite) :
     ∃ c : σ → ℕ, IsLazardEvaluator V c := by
   classical
-  have := Fintype.ofFinite σ
-  obtain ⟨K, hK⟩ := (hV.biUnion fun v _ ↦ Set.finite_range v).bddAbove
+  -- The variables occurring in some exponent of `V`.
+  set S : Finset σ := hV.toFinset.biUnion Finsupp.support
+  have hS {v : σ →₀ ℕ} (hv : v ∈ V) : v.support ⊆ S := fun j hj ↦
+    Finset.mem_biUnion.2 ⟨v, hV.mem_toFinset.2 hv, hj⟩
+  obtain ⟨K, hK⟩ := (hV.biUnion fun v _ ↦ v.finite_range).bddAbove
   replace hK (v) (hv : v ∈ V) (i : σ) : v i ≤ K :=
     hK (Set.mem_biUnion hv (Set.mem_range_self i))
-  set M := Fintype.card σ * K + 1
-  set rk : σ → ℕ := fun i ↦ (Finset.univ.filter (i < ·)).card
-  have hrk {i j : σ} (h : i < j) : rk j + 1 ≤ rk i := by
+  set M := S.card * K + 1
+  set rk : σ → ℕ := fun i ↦ (S.filter (i < ·)).card
+  have hrk {i j : σ} (hjS : j ∈ S) (h : i < j) : rk j + 1 ≤ rk i := by
     refine Finset.card_lt_card ((Finset.ssubset_iff_of_subset fun k hk ↦ ?_).2 ⟨j, ?_, ?_⟩)
-    · simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hk ⊢
-      exact h.trans hk
-    · simpa using h
+    · simp only [Finset.mem_filter] at hk ⊢
+      exact ⟨hk.1, h.trans hk.2⟩
+    · simpa [hjS] using h
     · simp
   refine ⟨fun i ↦ M ^ rk i, ⟨fun i ↦ by positivity, fun v hv i ↦ ?_⟩⟩
-  rw [weight_eq_sum]
+  rw [weight_apply, sum_of_support_subset _ ((Finset.filter_subset _ _).trans (hS hv))
+    (fun j n ↦ n • M ^ rk j) fun _ _ ↦ zero_smul _ _]
   refine Nat.lt_of_mul_lt_mul_left (a := M) ?_
-  calc M * ∑ j, (v.filter (i < ·)) j • M ^ rk j
-      = ∑ j, if i < j then v j * M ^ (rk j + 1) else 0 := by
+  calc M * ∑ j ∈ S, (v.filter (i < ·)) j • M ^ rk j
+      = ∑ j ∈ S, if i < j then v j * M ^ (rk j + 1) else 0 := by
         rw [Finset.mul_sum]
         refine Finset.sum_congr rfl fun j _ ↦ ?_
-        split_ifs with hj <;> simp [hj, pow_succ]
-        ring
-    _ ≤ ∑ _j : σ, K * M ^ rk i := Finset.sum_le_sum fun j _ ↦ by
         split_ifs with hj
-        · exact Nat.mul_le_mul (hK v hv j) (Nat.pow_le_pow_right (by omega) (hrk hj))
+        · simp [hj, pow_succ]
+          ring
+        · simp [hj]
+    _ ≤ ∑ _j ∈ S, K * M ^ rk i := Finset.sum_le_sum fun j hjS ↦ by
+        split_ifs with hj
+        · exact Nat.mul_le_mul (hK v hv j) (Nat.pow_le_pow_right (by omega) (hrk hjS hj))
         · exact Nat.zero_le _
-    _ = Fintype.card σ * K * M ^ rk i := by simp [mul_assoc]
+    _ = S.card * K * M ^ rk i := by simp [mul_assoc]
     _ < M * M ^ rk i := Nat.mul_lt_mul_of_pos_right (by omega) (by positivity)
 
 end TauCeti
@@ -173,9 +180,20 @@ section Substitution
 
 variable {σ R : Type*} [CommSemiring R]
 
+/-- The monomial curve `y ↦ a + y ^ c`, given by its coordinates `aᵢ + y ^ cᵢ` as polynomials in
+`y`. Substituting it into a multivariate polynomial `p` with `aeval` restricts `p` to the
+curve. -/
+noncomputable def monomialCurve (a : σ → R) (c : σ → ℕ) : σ → Polynomial R :=
+  fun i ↦ Polynomial.C (a i) + Polynomial.X ^ c i
+
+@[simp]
+theorem monomialCurve_apply (a : σ → R) (c : σ → ℕ) (i : σ) :
+    monomialCurve a c i = Polynomial.C (a i) + Polynomial.X ^ c i :=
+  (rfl)
+
 /-- Substituting `y ^ cᵢ` for each variable `Xᵢ` sends the monomial `X ^ m` to `y` to the power
 of the `c`-weight of `m`. -/
-theorem aeval_X_pow_monomial (c : σ → ℕ) (m : σ →₀ ℕ) (r : R) :
+theorem aeval_X_pow_left_monomial (c : σ → ℕ) (m : σ →₀ ℕ) (r : R) :
     aeval (fun i ↦ (Polynomial.X : Polynomial R) ^ c i) (monomial m r) =
       Polynomial.monomial (weight c m) r := by
   rw [aeval_monomial, Polynomial.algebraMap_eq, ← Polynomial.C_mul_X_pow_eq_monomial]
@@ -185,8 +203,8 @@ theorem aeval_X_pow_monomial (c : σ → ℕ) (m : σ →₀ ℕ) (r : R) :
 
 /-- Restricting `p` to the curve `y ↦ a + y ^ c`, with coordinates `aᵢ + y ^ cᵢ`, amounts to
 substituting `y ^ cᵢ` for each variable in the Taylor shift of `p` at `a`. -/
-theorem aeval_C_add_X_pow (a : σ → R) (c : σ → ℕ) (p : MvPolynomial σ R) :
-    aeval (fun i ↦ Polynomial.C (a i) + Polynomial.X ^ c i) p =
+theorem aeval_monomialCurve (a : σ → R) (c : σ → ℕ) (p : MvPolynomial σ R) :
+    aeval (monomialCurve a c) p =
       aeval (fun i ↦ (Polynomial.X : Polynomial R) ^ c i) (taylor a p) := by
   rw [taylor_apply, ← AlgHom.comp_apply, comp_aeval]
   congr 1
@@ -196,11 +214,11 @@ theorem aeval_C_add_X_pow (a : σ → R) (c : σ → ℕ) (p : MvPolynomial σ R
 /-- The coefficients of the restriction of `p` to the curve `y ↦ a + y ^ c`: the coefficient
 of `y ^ k` is the sum of the Taylor coefficients of `p` at `a` with exponents of `c`-weight
 `k`. -/
-theorem coeff_aeval_C_add_X_pow (a : σ → R) (c : σ → ℕ) (p : MvPolynomial σ R) (k : ℕ) :
-    (aeval (fun i ↦ Polynomial.C (a i) + Polynomial.X ^ c i) p).coeff k =
+theorem coeff_aeval_monomialCurve (a : σ → R) (c : σ → ℕ) (p : MvPolynomial σ R) (k : ℕ) :
+    (aeval (monomialCurve a c) p).coeff k =
       ∑ m ∈ (taylor a p).support with weight c m = k, (taylor a p).coeff m := by
-  conv_lhs => rw [aeval_C_add_X_pow, (taylor a p).as_sum, map_sum]
-  simp only [aeval_X_pow_monomial, Polynomial.finsetSum_coeff, Polynomial.coeff_monomial,
+  conv_lhs => rw [aeval_monomialCurve, (taylor a p).as_sum, map_sum]
+  simp only [aeval_X_pow_left_monomial, Polynomial.finsetSum_coeff, Polynomial.coeff_monomial,
     Finset.sum_ite, Finset.sum_const_zero, add_zero]
 
 end Substitution
@@ -317,20 +335,24 @@ theorem lazardValuation_apply_le_degreeOf (h : p.lazardValuation a = toLex v) (i
   (monomial_le_degreeOf i (mem_support_iff.2 (coeff_taylor_ne_zero_of_lazardValuation_eq h))).trans
     (degreeOf_taylor_le a i p)
 
-/-- A polynomial in finitely many variables has only finitely many Lazard valuations. -/
-theorem finite_range_lazardValuation [Finite σ] (p : MvPolynomial σ R) :
+/-- A polynomial has only finitely many Lazard valuations. -/
+theorem finite_range_lazardValuation (p : MvPolynomial σ R) :
     (Set.range p.lazardValuation).Finite := by
   classical
-  have := Fintype.ofFinite σ
-  let D : σ →₀ ℕ := Finsupp.equivFunOnFinite.symm fun i ↦ p.degreeOf i
-  refine (((Set.finite_Iic D).image fun v ↦ ((toLex v : Lex (σ →₀ ℕ)) : WithTop _)).insert
-    ⊤).subset ?_
+  refine (((Set.finite_Iic p.degrees.toFinsupp).image
+    fun v ↦ ((toLex v : Lex (σ →₀ ℕ)) : WithTop _)).insert ⊤).subset ?_
   rintro _ ⟨a, rfl⟩
   induction h : p.lazardValuation a with
   | top => exact Set.mem_insert _ _
   | coe w =>
     refine Set.mem_insert_of_mem _ ⟨ofLex w, fun i ↦ ?_, by simp⟩
-    simpa [D] using lazardValuation_apply_le_degreeOf (v := ofLex w) h i
+    simpa [degreeOf_def] using lazardValuation_apply_le_degreeOf (v := ofLex w) h i
+
+/-- The exponents occurring as Lazard valuations of a fixed polynomial form a finite set. -/
+theorem finite_setOf_lazardValuation_eq (p : MvPolynomial σ R) :
+    {v : σ →₀ ℕ | ∃ a, p.lazardValuation a = toLex v}.Finite :=
+  ((finite_range_lazardValuation p).preimage
+    (WithTop.coe_injective.comp toLex.injective).injOn).subset fun _ ⟨a, ha⟩ ↦ ⟨a, ha⟩
 
 end CommSemiring
 
@@ -376,10 +398,10 @@ variable {V : Set (σ →₀ ℕ)} {c : σ → ℕ} {p : MvPolynomial σ R} {a :
 /-- If the Lazard valuation `v` of `p` at `a` lies in `V` and `c` is an evaluator for `V`, then
 the restriction of `p` to the curve `y ↦ a + y ^ c` has no terms of degree below the `c`-weight
 of `v`. -/
-theorem coeff_aeval_C_add_X_pow_of_lt (h : p.lazardValuation a = toLex v) (hv : v ∈ V)
-    (hc : TauCeti.IsLazardEvaluator V c) {k : ℕ} (hk : k < weight c v) :
-    (aeval (fun i ↦ Polynomial.C (a i) + Polynomial.X ^ c i) p).coeff k = 0 := by
-  rw [coeff_aeval_C_add_X_pow]
+theorem coeff_aeval_monomialCurve_eq_zero_of_lt_weight (h : p.lazardValuation a = toLex v)
+    (hv : v ∈ V) (hc : TauCeti.IsLazardEvaluator V c) {k : ℕ} (hk : k < weight c v) :
+    (aeval (monomialCurve a c) p).coeff k = 0 := by
+  rw [coeff_aeval_monomialCurve]
   refine Finset.sum_eq_zero fun m hm ↦ ?_
   rw [Finset.mem_filter, mem_support_iff] at hm
   obtain rfl | hmv := eq_or_ne m v
@@ -390,11 +412,11 @@ theorem coeff_aeval_C_add_X_pow_of_lt (h : p.lazardValuation a = toLex v) (hv : 
 /-- If the Lazard valuation `v` of `p` at `a` lies in `V` and `c` is an evaluator for `V`, then
 the coefficient of `y` to the `c`-weight of `v` in the restriction of `p` to the curve
 `y ↦ a + y ^ c` is the Taylor coefficient of `p` at `a` with exponent `v`. -/
-theorem coeff_aeval_C_add_X_pow_weight (h : p.lazardValuation a = toLex v) (hv : v ∈ V)
+theorem coeff_aeval_monomialCurve_weight (h : p.lazardValuation a = toLex v) (hv : v ∈ V)
     (hc : TauCeti.IsLazardEvaluator V c) :
-    (aeval (fun i ↦ Polynomial.C (a i) + Polynomial.X ^ c i) p).coeff (weight c v) =
+    (aeval (monomialCurve a c) p).coeff (weight c v) =
       (taylor a p).coeff v := by
-  rw [coeff_aeval_C_add_X_pow]
+  rw [coeff_aeval_monomialCurve]
   refine Finset.sum_eq_single_of_mem v (Finset.mem_filter.2
     ⟨mem_support_iff.2 (coeff_taylor_ne_zero_of_lazardValuation_eq h), rfl⟩) fun m hm hmv ↦ ?_
   rw [Finset.mem_filter, mem_support_iff] at hm
@@ -403,35 +425,35 @@ theorem coeff_aeval_C_add_X_pow_weight (h : p.lazardValuation a = toLex v) (hv :
 
 /-- If the Lazard valuation of `p` at `a` lies in a set with evaluator `c`, then `p` does not
 vanish identically on the curve `y ↦ a + y ^ c`. -/
-theorem aeval_C_add_X_pow_ne_zero (h : p.lazardValuation a = toLex v) (hv : v ∈ V)
+theorem aeval_monomialCurve_ne_zero (h : p.lazardValuation a = toLex v) (hv : v ∈ V)
     (hc : TauCeti.IsLazardEvaluator V c) :
-    aeval (fun i ↦ Polynomial.C (a i) + Polynomial.X ^ c i) p ≠ 0 := fun h₀ ↦
+    aeval (monomialCurve a c) p ≠ 0 := fun h₀ ↦
   coeff_taylor_ne_zero_of_lazardValuation_eq h <| by
-    rw [← coeff_aeval_C_add_X_pow_weight h hv hc, h₀, Polynomial.coeff_zero]
+    rw [← coeff_aeval_monomialCurve_weight h hv hc, h₀, Polynomial.coeff_zero]
 
 /-- **Lazard valuations along monomial curves.** If the Lazard valuation `v` of `p` at `a` lies
 in `V` and `c` is an evaluator for `V`, then the restriction `y ↦ p (a + y ^ c)` of `p` to the
 curve with coordinates `aᵢ + y ^ cᵢ` vanishes at `y = 0` to order exactly the `c`-weight
 `∑ i, cᵢ vᵢ` of `v`. -/
-theorem natTrailingDegree_aeval_C_add_X_pow (h : p.lazardValuation a = toLex v) (hv : v ∈ V)
+theorem natTrailingDegree_aeval_monomialCurve (h : p.lazardValuation a = toLex v) (hv : v ∈ V)
     (hc : TauCeti.IsLazardEvaluator V c) :
-    (aeval (fun i ↦ Polynomial.C (a i) + Polynomial.X ^ c i) p).natTrailingDegree =
+    (aeval (monomialCurve a c) p).natTrailingDegree =
       weight c v := by
   refine le_antisymm (Polynomial.natTrailingDegree_le_of_ne_zero ?_)
-    (Polynomial.le_natTrailingDegree (aeval_C_add_X_pow_ne_zero h hv hc)
-      fun k hk ↦ coeff_aeval_C_add_X_pow_of_lt h hv hc hk)
-  rw [coeff_aeval_C_add_X_pow_weight h hv hc]
+    (Polynomial.le_natTrailingDegree (aeval_monomialCurve_ne_zero h hv hc)
+      fun k hk ↦ coeff_aeval_monomialCurve_eq_zero_of_lt_weight h hv hc hk)
+  rw [coeff_aeval_monomialCurve_weight h hv hc]
   exact coeff_taylor_ne_zero_of_lazardValuation_eq h
 
 /-- If the Lazard valuation `v` of `p` at `a` lies in `V` and `c` is an evaluator for `V`, then
 the lowest coefficient of `y ↦ p (a + y ^ c)` is the Taylor coefficient of `p` at `a` with
 exponent `v`. -/
-theorem trailingCoeff_aeval_C_add_X_pow (h : p.lazardValuation a = toLex v) (hv : v ∈ V)
+theorem trailingCoeff_aeval_monomialCurve (h : p.lazardValuation a = toLex v) (hv : v ∈ V)
     (hc : TauCeti.IsLazardEvaluator V c) :
-    (aeval (fun i ↦ Polynomial.C (a i) + Polynomial.X ^ c i) p).trailingCoeff =
+    (aeval (monomialCurve a c) p).trailingCoeff =
       (taylor a p).coeff v := by
-  rw [Polynomial.trailingCoeff, natTrailingDegree_aeval_C_add_X_pow h hv hc,
-    coeff_aeval_C_add_X_pow_weight h hv hc]
+  rw [Polynomial.trailingCoeff, natTrailingDegree_aeval_monomialCurve h hv hc,
+    coeff_aeval_monomialCurve_weight h hv hc]
 
 end MonomialCurve
 
