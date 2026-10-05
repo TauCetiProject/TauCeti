@@ -34,6 +34,10 @@ public section
 
 namespace TauCeti
 
+-- Try direct nontriviality instances before searching for a local-ring structure, which can
+-- otherwise explore Henselian and valuation-ring instances even over a field.
+attribute [instance 50] _root_.IsLocalRing.toNontrivial
+
 /-- An idempotent of a local ring is `0` or `1`. Mathlib's
 `IsLocalRing.isUnit_or_isUnit_one_sub_self` is stated over a commutative ring, so the splitting of
 `1 = a + (1 - a)` is taken here from `IsLocalRing.isUnit_or_isUnit_of_isUnit_add`, which holds over
