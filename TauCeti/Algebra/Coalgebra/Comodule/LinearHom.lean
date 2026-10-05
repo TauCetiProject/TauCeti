@@ -124,6 +124,28 @@ theorem baseChangeTensorHom_endOfPoint_linearHom
             LinearMap.smul_apply] at heval
           rw [heval, map_smul]
 
+/-- A scalar-extended linear map is fixed by a point in the Hom comodule exactly when it
+intertwines the point actions on its source and target. -/
+theorem endOfPoint_linearHom_one_tmul_eq_iff
+    (g : WithConv (H →ₐ[R] A)) (f : M →ₗ[R] N) :
+    endOfPoint (M →ₗ[R] N) g.ofConv (1 ⊗ₜ[R] f) = 1 ⊗ₜ[R] f ↔
+      f.baseChange A ∘ₗ endOfPoint M g.ofConv =
+        endOfPoint N g.ofConv ∘ₗ f.baseChange A := by
+  have hpoint := baseChangeTensorHom_endOfPoint_linearHom g (1 ⊗ₜ[R] f)
+  simp only [LinearMap.baseChangeTensorHom_tmul, one_smul] at hpoint
+  constructor
+  · intro hf
+    rw [hf, LinearMap.baseChangeTensorHom_tmul, one_smul] at hpoint
+    have h := congrArg (fun q ↦ q ∘ₗ endOfPoint M g.ofConv) hpoint
+    simpa only [LinearMap.comp_assoc, endOfPoint_inv_comp, LinearMap.comp_id] using h
+  · intro hf
+    apply (LinearMap.baseChangeTensorHomEquiv
+      (R := R) (A := A) (M := M) (N := N)).injective
+    simp only [LinearMap.baseChangeTensorHomEquiv_apply,
+      LinearMap.baseChangeTensorHom_tmul, one_smul]
+    rw [hpoint, ← LinearMap.comp_assoc, ← hf, LinearMap.comp_assoc,
+      endOfPoint_comp_inv, LinearMap.comp_id]
+
 end Hom
 
 section Fixed
@@ -141,24 +163,13 @@ theorem mem_fixedSubcomodule_linearHom_iff (f : M →ₗ[R] N) :
         coact (R := R) (C := H) ∘ₗ f := by
   -- The universal point detects coaction identities without reducedness assumptions.
   let g : WithConv (H →ₐ[R] H) := toConv (AlgHom.id R H)
-  have hcancel : endOfPoint M (g⁻¹).ofConv ∘ₗ endOfPoint M g.ofConv = LinearMap.id := by
-    simpa only [inv_mul_cancel, endOfPoint_convOne] using
-      (endOfPoint_convMul M g⁻¹ g).symm
-  have hcancel' : endOfPoint M g.ofConv ∘ₗ endOfPoint M (g⁻¹).ofConv = LinearMap.id := by
-    simpa only [mul_inv_cancel, endOfPoint_convOne] using
-      (endOfPoint_convMul M g g⁻¹).symm
-  have hpoint := baseChangeTensorHom_endOfPoint_linearHom g (1 ⊗ₜ[R] f)
-  simp only [LinearMap.baseChangeTensorHom_tmul, one_smul] at hpoint
   constructor
   · intro hf
     rw [mem_fixedSubcomodule] at hf
     have hfixed : endOfPoint (M →ₗ[R] N) g.ofConv (1 ⊗ₜ[R] f) = 1 ⊗ₜ[R] f := by
       simp only [endOfPoint_tmul, hf, one_smul, LinearMap.lTensor_tmul,
         AlgHom.toLinearMap_apply, g, AlgHom.id_apply, TensorProduct.comm_tmul]
-    rw [hfixed, LinearMap.baseChangeTensorHom_tmul, one_smul] at hpoint
-    -- Cancel the inverse source action, then recover the colinearity square.
-    have hintertwine := congrArg (fun q ↦ q ∘ₗ endOfPoint M g.ofConv) hpoint
-    simp only [LinearMap.comp_assoc, hcancel, LinearMap.comp_id] at hintertwine
+    have hintertwine := (endOfPoint_linearHom_one_tmul_eq_iff g f).mp hfixed
     apply LinearMap.ext
     intro m
     apply (TensorProduct.comm R N H).injective
@@ -173,15 +184,7 @@ theorem mem_fixedSubcomodule_linearHom_iff (f : M →ₗ[R] N) :
     let q : Hom R H M N := ⟨f, hf⟩
     have hintertwine : f.baseChange H ∘ₗ endOfPoint M g.ofConv =
         endOfPoint N g.ofConv ∘ₗ f.baseChange H := baseChange_comp_endOfPoint q g.ofConv
-    have hconj : endOfPoint N g.ofConv ∘ₗ f.baseChange H ∘ₗ
-        endOfPoint M (g⁻¹).ofConv = f.baseChange H := by
-      rw [← LinearMap.comp_assoc, ← hintertwine, LinearMap.comp_assoc,
-        hcancel', LinearMap.comp_id]
-    rw [hconj] at hpoint
-    have hfixed : endOfPoint (M →ₗ[R] N) g.ofConv (1 ⊗ₜ[R] f) = 1 ⊗ₜ[R] f :=
-      (LinearMap.baseChangeTensorHomEquiv (R := R) (A := H) (M := M) (N := N)).injective
-        (by simpa only [LinearMap.baseChangeTensorHomEquiv_apply,
-          LinearMap.baseChangeTensorHom_tmul, one_smul] using hpoint)
+    have hfixed := (endOfPoint_linearHom_one_tmul_eq_iff g f).mpr hintertwine
     rw [mem_fixedSubcomodule]
     apply (TensorProduct.comm R (M →ₗ[R] N) H).injective
     simpa only [endOfPoint_tmul, one_smul, g, AlgHom.toLinearMap_id,

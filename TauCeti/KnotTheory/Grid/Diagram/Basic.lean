@@ -71,6 +71,7 @@ namespace GridState
 variable {n : ℕ}
 
 /-- Grid states on an `n × n` grid are equivalent to permutations of the columns. -/
+@[simps]
 def equivPerm (n : ℕ) : GridState n ≃ Equiv.Perm (Fin n) where
   toFun x := x.toPerm
   invFun σ := ⟨σ⟩
@@ -89,16 +90,6 @@ instance : DecidableEq (GridState n) :=
 /-- Apply a grid state to a column to get its occupied row. -/
 instance : CoeFun (GridState n) fun _ => Fin n → Fin n where
   coe x := x.toPerm
-
-/-- The permutation associated to a grid state by `GridState.equivPerm`. -/
-@[simp] theorem equivPerm_apply (x : GridState n) : equivPerm n x = x.toPerm := rfl
-
-/-- The grid state associated to a permutation by the inverse of `GridState.equivPerm`. -/
-theorem equivPerm_symm_apply (σ : Equiv.Perm (Fin n)) : (equivPerm n).symm σ = ⟨σ⟩ := rfl
-
-/-- Evaluating a grid state obtained from a permutation gives the permutation value. -/
-@[simp] theorem equivPerm_symm_apply_apply (σ : Equiv.Perm (Fin n)) (c : Fin n) :
-    ((equivPerm n).symm σ : GridState n) c = σ c := rfl
 
 /-- Grid states are extensional in their column-to-row functions. -/
 @[ext]
@@ -721,6 +712,7 @@ theorem disjoint_OSet_XSet : Disjoint G.OSet G.XSet := by
   exact G.disjoint
 
 /-- Relabel the rows of a grid diagram by relabeling both marking states. -/
+@[simps O X]
 def relabelRows (ρ : Equiv.Perm (Fin n)) (G : GridDiagram n) : GridDiagram n where
   O := G.O.relabelRows ρ
   X := G.X.relabelRows ρ
@@ -729,32 +721,13 @@ def relabelRows (ρ : Equiv.Perm (Fin n)) (G : GridDiagram n) : GridDiagram n wh
     exact G.disjoint c (ρ.injective h)
 
 /-- Relabel the columns of a grid diagram by relabeling both marking states. -/
+@[simps O X]
 def relabelColumns (κ : Equiv.Perm (Fin n)) (G : GridDiagram n) : GridDiagram n where
   O := G.O.relabelColumns κ
   X := G.X.relabelColumns κ
   disjoint := by
     intro c h
     exact G.disjoint (κ.symm c) h
-
-/-- The `O` marking state of a row-relabeled grid diagram. -/
-@[simp]
-theorem relabelRows_O (ρ : Equiv.Perm (Fin n)) : (G.relabelRows ρ).O = G.O.relabelRows ρ :=
-  rfl
-
-/-- The `X` marking state of a row-relabelled grid diagram. -/
-@[simp]
-theorem relabelRows_X (ρ : Equiv.Perm (Fin n)) : (G.relabelRows ρ).X = G.X.relabelRows ρ :=
-  rfl
-
-/-- The `O` marking state of a column-relabelled grid diagram. -/
-@[simp]
-theorem relabelColumns_O (κ : Equiv.Perm (Fin n)) : (G.relabelColumns κ).O = G.O.relabelColumns κ :=
-  rfl
-
-/-- The `X` marking state of a column-relabelled grid diagram. -/
-@[simp]
-theorem relabelColumns_X (κ : Equiv.Perm (Fin n)) : (G.relabelColumns κ).X = G.X.relabelColumns κ :=
-  rfl
 
 /-- Row relabeling evaluates on the `O` marking by applying the row permutation. -/
 @[simp]
@@ -891,6 +864,7 @@ theorem relabelRows_relabelColumns (ρ κ : Equiv.Perm (Fin n)) :
 
 Reflection across the main diagonal is a bijection of squares, so it preserves the condition
 that no square carries both markings. -/
+@[simps O X]
 def transpose (G : GridDiagram n) : GridDiagram n where
   O := G.O.transpose
   X := G.X.transpose
@@ -900,12 +874,6 @@ def transpose (G : GridDiagram n) : GridDiagram n where
     refine G.disjoint (G.O.toPerm.symm c) ?_
     rw [Equiv.apply_symm_apply, h, Equiv.apply_symm_apply]
 
-/-- The `O` marking state of the reflected diagram is the reflected `O` marking state. -/
-@[simp]
-theorem transpose_O : G.transpose.O = G.O.transpose := rfl
-/-- The `X` marking state of the reflected diagram is the reflected `X` marking state. -/
-@[simp]
-theorem transpose_X : G.transpose.X = G.X.transpose := rfl
 /-- The diagonal reflection is an involution on grid diagrams. -/
 @[simp]
 theorem transpose_transpose : G.transpose.transpose = G := by ext c <;> simp
@@ -947,18 +915,11 @@ theorem transpose_XSet : G.transpose.XSet = G.XSet.image Prod.swap := by
 
 The defining no-double-marking condition is symmetric in the two marking states, so the swap is
 again a grid diagram. -/
+@[simps O X]
 def swapMarkings (G : GridDiagram n) : GridDiagram n where
   O := G.X
   X := G.O
   disjoint c := (G.disjoint c).symm
-
-/-- The `O`-marking state of the marking swap is the original `X`-marking state. -/
-@[simp]
-theorem swapMarkings_O : G.swapMarkings.O = G.X := rfl
-
-/-- The `X`-marking state of the marking swap is the original `O`-marking state. -/
-@[simp]
-theorem swapMarkings_X : G.swapMarkings.X = G.O := rfl
 
 /-- The `O`-marking set of the marking swap is the original `X`-marking set. -/
 @[simp]

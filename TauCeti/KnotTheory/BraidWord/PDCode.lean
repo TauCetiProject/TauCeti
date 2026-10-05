@@ -37,6 +37,8 @@ closes up to a crossing-free circle.
 
 ## Main results
 
+* `TauCeti.BraidWord.crossingsAt_cons`: a letter added at the bottom of a word comes first along
+  its two strand positions.
 * `TauCeti.BraidWord.edgePair_closure_outgoingSlot`: the arcs of the closure join each crossing
   to the next crossing along the same strand position.
 * `TauCeti.BraidWord.edgePair_closure_incomingSlot`: the same arcs, read from the crossing they
@@ -109,6 +111,27 @@ theorem crossingsAt_eq_nil_iff {p : Fin n} :
 theorem sortedLT_crossingsAt (p : Fin n) : (w.crossingsAt p).SortedLT := by
   rw [List.sortedLT_iff_pairwise] at ⊢
   exact (List.sortedLT_iff_pairwise.1 (List.sortedLT_finRange w.length)).filter _
+
+/-- Adding a letter at the bottom of a braid word: along a strand position, its crossing comes
+first when the letter involves that position, followed by the crossings of the old word. -/
+theorem crossingsAt_cons (x : Fin (n - 1) × ℤˣ) (v : BraidWord n) (p : Fin n) :
+    crossingsAt (x :: v) p =
+      (if p = strand x.1 ∨ p = strandSucc x.1 then [0] else []) ++
+        (v.crossingsAt p).map Fin.succ := by
+  refine List.SortedLT.eq_of_mem_iff (sortedLT_crossingsAt _ p) ?_ fun k ↦ ?_
+  · rw [List.sortedLT_append, Fin.strictMono_succ.sortedLT_listMap]
+    refine ⟨?_, sortedLT_crossingsAt v p, ?_⟩
+    · split_ifs <;> simp [List.sortedLT_iff_pairwise]
+    · intro a ha b hb
+      split_ifs at ha <;> simp only [List.mem_singleton, List.not_mem_nil] at ha
+      subst ha
+      obtain ⟨b, -, rfl⟩ := List.mem_map.1 hb
+      exact Fin.succ_pos b
+  · refine Fin.cases ?_ (fun k ↦ ?_) k
+    · rw [mem_crossingsAt (w := x :: v) (j := 0)]
+      simp
+    · rw [mem_crossingsAt (w := x :: v) (j := k.succ)]
+      simp [Fin.succ_ne_zero]
 
 /-- The crossing met next along the strand position `p` after the crossing `j`: the next
 crossing above `j` involving `p`, or, through the closure, the lowest one. Crossings not
