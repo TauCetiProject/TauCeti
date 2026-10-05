@@ -359,7 +359,7 @@ theorem alexanderModuleAdjoinTwoCircleClaspEquiv_apply_alexanderGenerator_inl_in
     (i : Fin 2) (s : Fin 4) :
     D.alexanderModuleAdjoinTwoCircleClaspEquiv o₁ o₂ b
       ((D.adjoinTwoCircleClasp o₁ o₂ b).alexanderGenerator
-        (.inl (disjointUnionHalfEdgeEquiv n 2 (.inr (crossingSlotEquiv 2 (i, s)))))) =
+        (.inl (crossingSlotEquiv (n + 2) (Fin.natAdd n i, s)))) =
       claspValue ((twoCircleClasp o₁ o₂ b).alexanderWeight 0 0)
         ((twoCircleClasp o₁ o₂ b).alexanderWeight 0 1)
         (((D.adjoinCircle o₁).adjoinCircle o₂).alexanderGenerator
@@ -367,6 +367,7 @@ theorem alexanderModuleAdjoinTwoCircleClaspEquiv_apply_alexanderGenerator_inl_in
         (((D.adjoinCircle o₁).adjoinCircle o₂).alexanderGenerator
           (.inr (Fin.cast (by simp) (Fin.natAdd D.crossinglessComponentCount (1 : Fin 2)))))
         i s := by
+  rw [← disjointUnionHalfEdgeEquiv_inr_crossingSlot]
   simp [alexanderModuleAdjoinTwoCircleClaspEquiv,
     adjoinTwoCircleClaspHom_alexanderGenerator, adjoinTwoCircleClaspValue, circleGenerator]
 
