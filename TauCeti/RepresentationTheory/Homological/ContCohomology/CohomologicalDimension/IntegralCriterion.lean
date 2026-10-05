@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.Torsion
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologicalDimension.ClosedSubgroup
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologicalDimension.Strict
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.FiniteCoefficients
@@ -110,24 +109,8 @@ private theorem primaryComponent_eq_bot_of_cyclic_aux (U : OpenSubgroup G)
     exact _root_.map_smul (DiscreteCoind.trace G U Q) g _
   -- `θ` sends the coinduced function supported on `U` with value `e⁻¹ 1` to `q`
   have hθq : θ (DiscreteCoind.single G U Z.V U.isOpen 1 (e.symm 1)) = q := by
-    simp only [θ, AddMonoidHom.comp_apply, LinearMap.toAddMonoidHom_coe, AddMonoidHom.coe_mk,
-      ZeroHom.coe_mk, DistribMulActionHom.toFun_eq_coe, DiscreteCoind.trace_apply,
-      DiscreteCoind.map_apply]
-    rw [Finset.sum_eq_single_of_mem ((1 : G) : G ⧸ (U : Subgroup G)) (Finset.mem_univ _)]
-    · have h1 : ((1 : G) : G ⧸ (U : Subgroup G)).out⁻¹ ∈ (U : Subgroup G) := by
-        simpa using QuotientGroup.eq.1 (QuotientGroup.out_eq' ((1 : G) : G ⧸ (U : Subgroup G)))
-      have := DiscreteCoind.single_apply_mul U.isOpen 1 (e.symm 1) ⟨_, h1⟩
-      rw [mul_one] at this
-      have hψe : ψ (e.symm 1) = q := by simp [ψ]
-      rw [this, TopRep.distribMulAction_smul, hZtriv, hψe]
-      exact hqU ⟨_, inv_mem_iff.1 h1⟩
-    · intro x _ hx
-      rw [DiscreteCoind.single_apply_of_notMem, _root_.map_zero, smul_zero]
-      intro hmem
-      apply hx
-      rw [inv_one, mul_one] at hmem
-      rw [← QuotientGroup.out_eq' x]
-      exact QuotientGroup.eq.2 (by simpa using hmem)
+    refine (DiscreteCoind.trace_map_single U.isOpen ψ hψ 1 (e.symm 1)).trans ?_
+    simp [ψ]
   have hθsurj : Function.Surjective θ := fun x ↦ by
     have hle : AddSubgroup.closure (Set.range fun g : G ↦ g • q) ≤ θ.range := by
       rw [AddSubgroup.closure_le]

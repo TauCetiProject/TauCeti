@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.Torsion
 public import TauCeti.GroupTheory.Torsion
 public import TauCeti.RepresentationTheory.Continuous.Coinduced
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Additive
