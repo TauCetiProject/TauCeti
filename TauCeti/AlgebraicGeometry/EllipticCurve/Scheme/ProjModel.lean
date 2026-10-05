@@ -166,6 +166,7 @@ private theorem map_eq_eqToHom_comp_map {W₁ W₂ : WeierstrassCurve R} (h : W�
 
 /-- The identity change of variables induces the identity of the projective Weierstrass model, up
 to `1 • W = W`. -/
+@[simp]
 theorem projModelVariableChangeIso_one :
     W.projModelVariableChangeIso 1 = eqToIso (congrArg projModel (one_smul _ W)) := by
   refine Iso.ext ?_
@@ -176,6 +177,7 @@ theorem projModelVariableChangeIso_one :
 
 /-- The isomorphism induced by a product `C * C'` is the isomorphism induced by `C` followed by
 the one induced by `C'`, up to `(C * C') • W = C • C' • W`. -/
+@[simp]
 theorem projModelVariableChangeIso_mul (C' : VariableChange R) :
     W.projModelVariableChangeIso (C * C') = eqToIso (congrArg projModel (mul_smul C C' W)) ≪≫
       (C' • W).projModelVariableChangeIso C ≪≫ W.projModelVariableChangeIso C' := by
@@ -184,9 +186,8 @@ theorem projModelVariableChangeIso_mul (C' : VariableChange R) :
     projModelVariableChangeIso, projModelVariableChangeIso, Proj.mapIso_hom, Proj.mapIso_hom,
     Proj.mapIso_hom, ← Proj.map_comp]
   exact map_eq_eqToHom_comp_map W (mul_smul C C' W) _ _ (linearSubst (C * C').toMatrix)
-    (fun p ↦ by simp [variableChangeGradedHom_apply])
-    (fun p ↦ by simp [variableChangeGradedHom_apply, VariableChange.toMatrix_mul,
-      linearSubst_mul_apply]) _ _
+    (fun p ↦ by simp [variableChangeGradedHom_apply, linearSubst_mul_apply])
+    (fun p ↦ by simp [variableChangeGradedHom_apply, linearSubst_mul_apply]) _ _
 
 /-- The isomorphism induced by a change of variables lies over the base. -/
 @[reassoc (attr := simp)]

@@ -67,7 +67,7 @@ theorem SpecMap_awayLift_awayι_eq {R : Type u} [CommRing R] (φ : A →+* R) {f
 
 /-- `Proj.map f` lies over `Spec` of the ring homomorphism `𝒜 0 →+* ℬ 0` induced by `f` on the
 degree-zero parts. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 theorem map_toSpecZero (f : 𝒜 →+*ᵍ ℬ) (hf : HomogeneousIdeal.irrelevant ℬ ≤
     (HomogeneousIdeal.irrelevant 𝒜).map f) :
     map f hf ≫ toSpecZero 𝒜 =

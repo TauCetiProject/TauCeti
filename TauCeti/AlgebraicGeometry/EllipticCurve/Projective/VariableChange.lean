@@ -71,6 +71,7 @@ theorem toMatrix_one : toMatrix (1 : VariableChange R) = 1 := by
 
 /-- `toMatrix` reverses products: a point of `(C * C') • W = C • C' • W` is first carried to
 `C' • W` by `C`, and then to `W` by `C'`. -/
+@[simp]
 theorem toMatrix_mul (C C' : VariableChange R) : toMatrix (C * C') = toMatrix C' * toMatrix C := by
   ext i j
   fin_cases i <;> fin_cases j <;> simp [toMatrix, mul_def, Matrix.mul_apply, Fin.sum_univ_three] <;>
@@ -153,6 +154,7 @@ theorem variableChangeEquiv_symm_mk (p : MvPolynomial (Fin 3) R) :
 
 /-- The identity change of variables induces the canonical isomorphism
 `R[X, Y, Z] ⧸ (W) ≃ₐ[R] R[X, Y, Z] ⧸ (1 • W)` coming from `1 • W = W`. -/
+@[simp]
 theorem variableChangeEquiv_one :
     variableChangeEquiv W 1 = Ideal.quotientEquivAlgOfEq R (by rw [one_smul]) := by
   ext x
@@ -161,13 +163,14 @@ theorem variableChangeEquiv_one :
 
 /-- The isomorphism induced by a product `C * C'` is the isomorphism induced by `C'` followed by
 the one induced by `C`, up to the canonical isomorphism coming from `C • C' • W = (C * C') • W`. -/
+@[simp]
 theorem variableChangeEquiv_mul (C' : VariableChange R) :
     variableChangeEquiv W (C * C') =
       ((variableChangeEquiv W C').trans (variableChangeEquiv (C' • W) C)).trans
         (Ideal.quotientEquivAlgOfEq R (by rw [mul_smul])) := by
   ext x
   obtain ⟨p, rfl⟩ := Ideal.Quotient.mk_surjective x
-  simp [VariableChange.toMatrix_mul, linearSubst_mul_apply]
+  simp [linearSubst_mul_apply]
 
 /-- The isomorphism of homogeneous coordinate rings preserves the grading by total degree. -/
 theorem variableChangeEquiv_mem_grading {n : ℕ} {x : W.toProjective.CoordinateRing}

@@ -49,16 +49,9 @@ degree-zero part `A_{(f)}` of the localization. -/
 noncomputable def Away.lift (φ : A →+* R) {f : A} (hf : IsUnit (φ f)) : Away 𝒜 f →+* R :=
   (IsLocalization.Away.lift f hf).comp (algebraMap (Away 𝒜 f) (Localization.Away f))
 
-theorem Away.lift_apply (φ : A →+* R) {f : A} (hf : IsUnit (φ f)) (z : Away 𝒜 f) :
+private theorem Away.lift_apply (φ : A →+* R) {f : A} (hf : IsUnit (φ f)) (z : Away 𝒜 f) :
     Away.lift 𝒜 φ hf z = IsLocalization.Away.lift f hf z.val :=
   (rfl)
-
-/-- The value of `IsLocalization.Away.lift` on a fraction `a / y`, written as the unique solution
-`v` of `φ a = φ y * v`. -/
-private theorem awayLift_mk_eq_iff (φ : A →+* R) {f : A} (hf : IsUnit (φ f)) (a y : A)
-    (hy : y ∈ Submonoid.powers f) (v : R) :
-    IsLocalization.Away.lift f hf (Localization.mk a ⟨y, hy⟩) = v ↔ φ a = φ y * v := by
-  rw [Localization.mk_eq_mk', IsLocalization.Away.lift, IsLocalization.lift_mk'_spec]
 
 /-- `Away.lift` sends `a / fⁿ` to `φ a / (φ f)ⁿ`. -/
 @[simp]
@@ -67,13 +60,16 @@ theorem Away.lift_mk (φ : A →+* R) {f : A} (hf : IsUnit (φ f)) {d : ι} (hfd
     Away.lift 𝒜 φ hf (Away.mk 𝒜 hfd n a ha) = φ a * ↑(hf.unit ^ n)⁻¹ := by
   have hfn : φ (f ^ n) = ↑(hf.unit ^ n) := by
     rw [map_pow, Units.val_pow_eq_pow_val, IsUnit.unit_spec]
-  rw [Away.lift_apply, Away.val_mk, awayLift_mk_eq_iff, mul_left_comm, hfn, Units.mul_inv, mul_one]
+  rw [Away.lift_apply, Away.val_mk, Localization.mk_eq_mk', IsLocalization.Away.lift,
+    IsLocalization.lift_mk'_spec, mul_left_comm, hfn, Units.mul_inv, mul_one]
 
 /-- `Away.lift` restricts to `φ` on the degree-zero part `𝒜 0`. -/
 @[simp]
 theorem Away.lift_algebraMap (φ : A →+* R) {f : A} (hf : IsUnit (φ f)) (a : 𝒜 0) :
-    Away.lift 𝒜 φ hf (algebraMap (𝒜 0) (Away 𝒜 f) a) = φ a :=
-  (awayLift_mk_eq_iff φ hf a 1 (one_mem _) (φ a)).mpr (by simp)
+    Away.lift 𝒜 φ hf (algebraMap (𝒜 0) (Away 𝒜 f) a) = φ a := by
+  rw [Away.lift_apply, ← algebraMap_apply, ← IsScalarTower.algebraMap_apply,
+    IsScalarTower.algebraMap_apply (𝒜 0) A, IsLocalization.Away.lift_eq,
+    SetLike.GradeZero.algebraMap_apply]
 
 /-- `Away.lift` is compatible with the restriction `awayMap : A_{(f)} →+* A_{(fg)}`. -/
 theorem Away.lift_comp_awayMap (φ : A →+* R) {e : ι} {f g x : A} (hg : g ∈ 𝒜 e)
@@ -92,12 +88,13 @@ theorem Away.lift_comp_map (φ : B →+* R) (F : 𝒜 →+*ᵍ ℬ) {s : A} (hs 
     (Away.lift ℬ φ hs).comp (Away.map F s) = Away.lift 𝒜 (φ.comp F.toRingHom) (f := s) hs := by
   ext z
   obtain ⟨⟨i, ⟨a, ha⟩, ⟨b, hb⟩, n, rfl : s ^ n = b⟩, rfl⟩ := mk_surjective z
-  have hu : IsUnit (φ (F (s ^ n))) := by rw [map_pow, map_pow]; exact hs.pow n
   simp only [RingHom.comp_apply, Away.lift_apply, Away.map]
   rw [HomogeneousLocalization.map_mk, HomogeneousLocalization.val_mk,
-    HomogeneousLocalization.val_mk]
-  refine hu.mul_right_inj.mp (((awayLift_mk_eq_iff φ hs _ _ _ _).mp rfl).symm.trans ?_)
-  exact (awayLift_mk_eq_iff (φ.comp F.toRingHom) hs _ _ _ _).mp rfl
+    HomogeneousLocalization.val_mk, Localization.mk_eq_mk', Localization.mk_eq_mk',
+    IsLocalization.Away.lift, IsLocalization.Away.lift, IsLocalization.lift_mk',
+    IsLocalization.lift_mk']
+  -- the two units both have value `φ (F (s ^ n))`
+  congr 2
 
 /-- Rescaling homogeneous coordinates does not change `Away.lift`: if `ψ a = cⁿ φ a` for every
 `a` of degree `n`, then `φ` and `ψ` induce the same homomorphism `A_{(f)} →+* R`. -/
