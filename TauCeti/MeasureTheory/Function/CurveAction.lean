@@ -28,13 +28,13 @@ The main results concern an absolutely continuous curve `γ` on `[a, b]` and `1 
   action, by the Hölder estimate on the windows `[t, t + h]` and Tonelli's theorem, and the action
   is at most their lower limit by Fatou's lemma, since the quotients tend to `|γ'|(t)` at almost
   every `t`.
-* **Lower semicontinuity**: if absolutely continuous curves `γᵢ` converge pointwise on `[a, b]`,
-  along a countably generated filter, to an absolutely continuous curve `γ`, then
-  `A_p(γ) ≤ liminf A_p(γᵢ)`. For each step `h`, Fatou's lemma passes the integrated difference
+* **Lower semicontinuity**: if curves `γᵢ`, eventually absolutely continuous on `[a, b]`, converge
+  pointwise on `[a, b]`, along a countably generated filter, to an absolutely continuous curve `γ`,
+  then `A_p(γ) ≤ liminf A_p(γᵢ)`. For each step `h`, Fatou's lemma passes the integrated difference
   quotients to the limit, and the difference-quotient formula recovers the action.
-* For `1 < p`, a pointwise limit of absolutely continuous curves whose actions have finite lower
-  limit is itself absolutely continuous, by the Hölder estimate on finite unions of intervals.
-  Lower semicontinuity therefore holds with no hypothesis on the limit curve.
+* For `1 < p`, a pointwise limit of eventually absolutely continuous curves whose actions have
+  finite lower limit is itself absolutely continuous, by the Hölder estimate on finite unions of
+  intervals. Lower semicontinuity therefore holds with no hypothesis on the limit curve.
 
 The difference-quotient formula is the metric counterpart of the characterisation of the Sobolev
 space `W^{1,p}` on an interval by difference quotients.
@@ -76,10 +76,13 @@ section PseudoEMetricSpace
 variable {X : Type*} [PseudoEMetricSpace X] {p : ℝ} {γ : ℝ → X}
 
 /-- The *`p`-action* `∫ |γ'|(t) ^ p dt` of a curve `γ : ℝ → X` over the interval between `a` and
-`b`: the integral of the `p`-th power of its metric derivative, with no factor `1 / p`. For an
-absolutely continuous curve the integrated difference quotients converge to it
-(`AbsolutelyContinuousOnInterval.tendsto_lintegral_edist_div_rpow`), and it is lower semicontinuous
-under pointwise convergence (`TauCeti.curveAction_le_liminf`). -/
+`b`: the integral of the `p`-th power of its metric derivative, with no factor `1 / p`. When `X`
+is a pseudometric space and `1 ≤ p`: for a curve absolutely continuous on `[a, b]` with `a ≤ b`,
+the integrated difference quotients converge to it as the step tends to `0⁺`
+(`AbsolutelyContinuousOnInterval.tendsto_lintegral_edist_div_rpow`); and it is lower
+semicontinuous under pointwise convergence on `[a, b]`, along a countably generated filter, of
+eventually absolutely continuous curves to an absolutely continuous one
+(`TauCeti.curveAction_le_liminf`). -/
 def curveAction (p : ℝ) (γ : ℝ → X) (a b : ℝ) : ℝ≥0∞ :=
   ∫⁻ t in Ι a b, metricDerivative γ t ^ p
 
@@ -97,6 +100,22 @@ theorem curveAction_comm (p : ℝ) (γ : ℝ → X) (a b : ℝ) :
 @[simp]
 theorem curveAction_self (p : ℝ) (γ : ℝ → X) (a : ℝ) : curveAction p γ a a = 0 := by
   simp [curveAction_def]
+
+/-- The `p`-action is monotone in the interval. -/
+theorem curveAction_mono (p : ℝ) (γ : ℝ → X) {a b s u : ℝ} (h : Ι s u ⊆ Ι a b) :
+    curveAction p γ s u ≤ curveAction p γ a b :=
+  lintegral_mono_set h
+
+/-- The `p`-action is additive over adjacent intervals. -/
+theorem curveAction_add (p : ℝ) (γ : ℝ → X) {a b c : ℝ} (hb : b ∈ uIcc a c) :
+    curveAction p γ a b + curveAction p γ b c = curveAction p γ a c := by
+  rw [curveAction_def, curveAction_def, curveAction_def, ← uIoc_union_uIoc hb,
+    lintegral_union measurableSet_uIoc]
+  rcases mem_uIcc.1 hb with ⟨hab, hbc⟩ | ⟨hcb, hba⟩
+  · rw [uIoc_of_le hab, uIoc_of_le hbc]
+    exact Ioc_disjoint_Ioc_of_le le_rfl
+  · rw [uIoc_of_ge hba, uIoc_of_ge hcb]
+    exact (Ioc_disjoint_Ioc_of_le le_rfl).symm
 
 /-- The `p`-action of a `K`-Lipschitz curve over the interval between `a` and `b` is at most
 `K ^ p` times the length of the interval. -/
@@ -276,10 +295,10 @@ section LowerSemicontinuous
 variable {X : Type*} [PseudoMetricSpace X] {p : ℝ} {γ : ℝ → X} {a b : ℝ} {ι : Type*}
   {l : Filter ι} {γs : ι → ℝ → X}
 
-/-- For `1 < p`, a pointwise limit on `[a, b]` of absolutely continuous curves `γs i` whose
-`p`-actions have finite lower limit is absolutely continuous on `[a, b]`. -/
+/-- For `1 < p`, a pointwise limit on `[a, b]` of curves `γs i`, eventually absolutely continuous
+on `[a, b]`, whose `p`-actions have finite lower limit is absolutely continuous on `[a, b]`. -/
 theorem absolutelyContinuousOnInterval_of_tendsto_of_liminf_ne_top (hp : 1 < p)
-    (hγs : ∀ i, AbsolutelyContinuousOnInterval (γs i) a b)
+    (hγs : ∀ᶠ i in l, AbsolutelyContinuousOnInterval (γs i) a b)
     (hlim : ∀ t ∈ uIcc a b, Tendsto (fun i ↦ γs i t) l (𝓝 (γ t)))
     (hA : liminf (fun i ↦ curveAction p (γs i) a b) l ≠ ∞) :
     AbsolutelyContinuousOnInterval γ a b := by
@@ -301,8 +320,8 @@ theorem absolutelyContinuousOnInterval_of_tendsto_of_liminf_ne_top (hp : 1 < p)
       (ENNReal.continuous_rpow_const.tendsto _).comp (tendsto_finsetSum _ fun j hj ↦
         (hlim _ (hE.1 j hj).1).edist (hlim _ (hE.1 j hj).2))
     have hle : _ ≤ volume U ^ (p - 1) * C := le_of_tendsto_of_frequently hsum
-      (hfreq.mono fun i hi ↦ ((hγs i).sum_edist_rpow_le_mul_curveAction hp.le hE).trans
-        (by gcongr))
+      ((hfreq.and_eventually hγs).mono fun i hi ↦
+        (hi.2.sum_edist_rpow_le_mul_curveAction hp.le hE).trans (by gcongr; exact hi.1.le))
     rw [hVU]
     exact (ENNReal.le_rpow_inv_iff (by positivity)).2 hle
   -- The bound tends to zero with the total length of the family.
@@ -330,42 +349,58 @@ theorem absolutelyContinuousOnInterval_of_tendsto_of_liminf_ne_top (hp : 1 < p)
     ENNReal.ofReal_sum_of_nonneg fun _ _ ↦ dist_nonneg]
   simpa only [← edist_dist] using key E hE
 
-/-- **Lower semicontinuity of the action.** If absolutely continuous curves `γs i` converge
-pointwise on `[a, b]` along a countably generated filter to an absolutely continuous curve `γ`,
-then the `p`-action of `γ` is at most the lower limit of their `p`-actions, for `1 ≤ p`. -/
+/-- **Lower semicontinuity of the action.** If curves `γs i`, eventually absolutely continuous on
+`[a, b]`, converge pointwise on `[a, b]` along a countably generated filter to a curve `γ`
+absolutely continuous on `[a, b]`, then the `p`-action of `γ` is at most the lower limit of their
+`p`-actions, for `1 ≤ p`. -/
 theorem curveAction_le_liminf [l.IsCountablyGenerated] (hp : 1 ≤ p)
-    (hγs : ∀ i, AbsolutelyContinuousOnInterval (γs i) a b)
+    (hγs : ∀ᶠ i in l, AbsolutelyContinuousOnInterval (γs i) a b)
     (hγ : AbsolutelyContinuousOnInterval γ a b)
     (hlim : ∀ t ∈ uIcc a b, Tendsto (fun i ↦ γs i t) l (𝓝 (γ t))) :
     curveAction p γ a b ≤ liminf (fun i ↦ curveAction p (γs i) a b) l := by
   wlog hab : a ≤ b generalizing a b
   · simp_rw [curveAction_comm p _ a b]
-    exact this (fun i ↦ (hγs i).symm) hγ.symm (by rwa [uIcc_comm]) (le_of_not_ge hab)
+    exact this (hγs.mono fun _ hi ↦ hi.symm) hγ.symm (by rwa [uIcc_comm]) (le_of_not_ge hab)
   rcases l.eq_or_neBot with rfl | hl
   · simp
+  -- Replacing the curves that are not absolutely continuous by `γ` changes neither the pointwise
+  -- limit nor the lower limit of the actions, and makes every curve absolutely continuous.
+  classical
+  set γs' : ι → ℝ → X := fun i ↦ if AbsolutelyContinuousOnInterval (γs i) a b then γs i else γ
+  have heq : ∀ᶠ i in l, γs' i = γs i := hγs.mono fun i hi ↦ by simp [γs', hi]
+  have hγs' (i : ι) : AbsolutelyContinuousOnInterval (γs' i) a b := by
+    by_cases hi : AbsolutelyContinuousOnInterval (γs i) a b
+    · simp [γs', hi]
+    · simpa [γs', hi] using hγ
+  have hlim' (t : ℝ) (ht : t ∈ uIcc a b) : Tendsto (fun i ↦ γs' i t) l (𝓝 (γ t)) :=
+    (hlim t ht).congr' (heq.mono fun i hi ↦ by simp only [hi])
+  rw [← liminf_congr (f := l) (u := fun i ↦ curveAction p (γs' i) a b)
+    (heq.mono fun i hi ↦ by rw [hi])]
   refine le_of_tendsto (hγ.tendsto_lintegral_edist_div_rpow hp hab) ?_
   filter_upwards [self_mem_nhdsWithin] with h (hh : 0 < h)
   -- For a fixed step `h`, Fatou's lemma passes the integrated difference quotients to the limit.
   calc ∫⁻ t in Ioc a (b - h), (edist (γ t) (γ (t + h)) / ENNReal.ofReal h) ^ p
       = ∫⁻ t in Ioc a (b - h),
-          liminf (fun i ↦ (edist (γs i t) (γs i (t + h)) / ENNReal.ofReal h) ^ p) l := by
+          liminf (fun i ↦ (edist (γs' i t) (γs' i (t + h)) / ENNReal.ofReal h) ^ p) l := by
         refine setLIntegral_congr_fun measurableSet_Ioc fun t ht ↦ ?_
         obtain ⟨hta, htb⟩ := mem_uIcc_of_mem_Ioc_sub hh.le ht
         exact ((ENNReal.continuous_rpow_const.tendsto _).comp (ENNReal.Tendsto.div_const
-          ((hlim t hta).edist (hlim _ htb)) (Or.inr (ENNReal.ofReal_pos.2 hh).ne'))).liminf_eq.symm
+          ((hlim' t hta).edist (hlim' _ htb))
+          (Or.inr (ENNReal.ofReal_pos.2 hh).ne'))).liminf_eq.symm
     _ ≤ liminf (fun i ↦ ∫⁻ t in Ioc a (b - h),
-          (edist (γs i t) (γs i (t + h)) / ENNReal.ofReal h) ^ p) l :=
-        lintegral_liminf_le' fun i ↦ aemeasurable_edist_div_rpow (hγs i) hh.le
-    _ ≤ liminf (fun i ↦ curveAction p (γs i) a b) l :=
+          (edist (γs' i t) (γs' i (t + h)) / ENNReal.ofReal h) ^ p) l :=
+        lintegral_liminf_le' fun i ↦ aemeasurable_edist_div_rpow (hγs' i) hh.le
+    _ ≤ liminf (fun i ↦ curveAction p (γs' i) a b) l :=
         liminf_le_liminf (Eventually.of_forall fun i ↦
-          (hγs i).lintegral_edist_div_rpow_le_curveAction hp hh)
+          (hγs' i).lintegral_edist_div_rpow_le_curveAction hp hh)
 
-/-- **Lower semicontinuity of the action** for `1 < p`: if absolutely continuous curves `γs i`
-converge pointwise on `[a, b]` along a countably generated filter to `γ`, then the `p`-action of
-`γ` is at most the lower limit of their `p`-actions. When that lower limit is finite, `γ` is
-absolutely continuous by `TauCeti.absolutelyContinuousOnInterval_of_tendsto_of_liminf_ne_top`. -/
+/-- **Lower semicontinuity of the action** for `1 < p`: if curves `γs i`, eventually absolutely
+continuous on `[a, b]`, converge pointwise on `[a, b]` along a countably generated filter to `γ`,
+then the `p`-action of `γ` is at most the lower limit of their `p`-actions. When that lower limit
+is finite, `γ` is absolutely continuous by
+`TauCeti.absolutelyContinuousOnInterval_of_tendsto_of_liminf_ne_top`. -/
 theorem curveAction_le_liminf_of_one_lt [l.IsCountablyGenerated] (hp : 1 < p)
-    (hγs : ∀ i, AbsolutelyContinuousOnInterval (γs i) a b)
+    (hγs : ∀ᶠ i in l, AbsolutelyContinuousOnInterval (γs i) a b)
     (hlim : ∀ t ∈ uIcc a b, Tendsto (fun i ↦ γs i t) l (𝓝 (γ t))) :
     curveAction p γ a b ≤ liminf (fun i ↦ curveAction p (γs i) a b) l := by
   by_cases hA : liminf (fun i ↦ curveAction p (γs i) a b) l = ∞

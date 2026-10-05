@@ -11,20 +11,22 @@ import Mathlib.MeasureTheory.Measure.Prod
 /-!
 # Integrating sliding-window integrals on the line
 
-For `f : ℝ → ℝ≥0∞` and a window length `h`, the windows `Ioc t (t + h)` cover each point of the
-line for a set of `t` of length `h`, so by Tonelli's theorem integrating the window integrals
-`∫⁻ r in Ioc t (t + h), f r` over all `t` gives `h * ∫⁻ r, f r`. Restricted to the starting points
-`t ∈ Ioc a (b - h)` whose windows lie in `Ioc a b`, this bounds the integrated window integrals by
-`h * ∫⁻ r in Ioc a b, f r`.
+For `f : ℝ → ℝ≥0∞` and `h : ℝ`, integrating the window integrals `∫⁻ r in Ioc t (t + h), f r`
+over all `t` gives `ENNReal.ofReal h * ∫⁻ r, f r`. For `0 ≤ h` this is Tonelli's theorem: the
+windows `Ioc t (t + h)` of length `h` cover each point of the line for a set of `t` of length `h`;
+for `h < 0` the windows are empty and both sides vanish. Restricted to the starting points
+`t ∈ Ioc a (b - h)`, whose windows lie in `Ioc a b`, this bounds the integrated window integrals by
+`ENNReal.ofReal h * ∫⁻ r in Ioc a b, f r`.
 
 This is the averaging step that turns pointwise bounds of a difference quotient over a window of
-length `h` by `h⁻¹ * ∫⁻ r in Ioc t (t + h), f r` into a bound of its integral by `∫⁻ f`.
+length `h > 0` by `h⁻¹ * ∫⁻ r in Ioc t (t + h), f r` into a bound of its integral by `∫⁻ f`.
 
 ## Main results
 
-* `TauCeti.lintegral_setLIntegral_Ioc_add`: `∫⁻ t, ∫⁻ r in Ioc t (t + h), f r = h * ∫⁻ r, f r`.
+* `TauCeti.lintegral_setLIntegral_Ioc_add`:
+  `∫⁻ t, ∫⁻ r in Ioc t (t + h), f r = ENNReal.ofReal h * ∫⁻ r, f r`.
 * `TauCeti.setLIntegral_setLIntegral_Ioc_add_le`: the windows starting in `Ioc a (b - h)` give at
-  most `h * ∫⁻ r in Ioc a b, f r`.
+  most `ENNReal.ofReal h * ∫⁻ r in Ioc a b, f r`.
 -/
 
 public section
@@ -35,7 +37,8 @@ open scoped ENNReal
 namespace TauCeti
 
 /-- Integrating the integrals of `f` over the sliding windows `Ioc t (t + h)` over all starting
-points `t` gives `h` times the integral of `f`. -/
+points `t` gives `ENNReal.ofReal h` times the integral of `f`: for `0 ≤ h` this is `h` times the
+integral, and for `h < 0` the windows are empty and both sides vanish. -/
 theorem lintegral_setLIntegral_Ioc_add {f : ℝ → ℝ≥0∞} (hf : AEMeasurable f) (h : ℝ) :
     ∫⁻ t, ∫⁻ r in Ioc t (t + h), f r = ENNReal.ofReal h * ∫⁻ r, f r := by
   set g := hf.mk f
@@ -61,8 +64,8 @@ theorem lintegral_setLIntegral_Ioc_add {f : ℝ → ℝ≥0∞} (hf : AEMeasurab
   rw [lintegral_mul_const _ hg, mul_comm, lintegral_congr_ae hf.ae_eq_mk]
 
 /-- Integrating the integrals of `f` over the sliding windows `Ioc t (t + h)` that lie in
-`Ioc a b`, that is over the starting points `t ∈ Ioc a (b - h)`, gives at most `h` times the
-integral of `f` over `Ioc a b`. -/
+`Ioc a b`, that is over the starting points `t ∈ Ioc a (b - h)`, gives at most `ENNReal.ofReal h`
+times the integral of `f` over `Ioc a b`. -/
 theorem setLIntegral_setLIntegral_Ioc_add_le {f : ℝ → ℝ≥0∞} {a b : ℝ}
     (hf : AEMeasurable f (volume.restrict (Ioc a b))) (h : ℝ) :
     ∫⁻ t in Ioc a (b - h), ∫⁻ r in Ioc t (t + h), f r ≤
