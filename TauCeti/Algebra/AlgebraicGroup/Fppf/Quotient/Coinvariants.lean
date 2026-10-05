@@ -49,8 +49,10 @@ variable {k : Type u} [Field k] {H : _root_.CommHopfAlgCat.{u} k}
 a short exact sequence of affine groups. The subgroup need not be reduced. -/
 theorem isShortExact_coinvariantsι_mkQuotient (hI : I.IsNormal) :
     IsShortExact (coinvariantsι hI) (mkQuotient H I) := by
-  refine ⟨faithfullyFlat_coinvariantsι hI, mkQuotient_surjective H I, ?_⟩
-  rw [mkQuotient_ker, kernelHopfIdeal_coinvariantsι_eq]
+  have h := isShortExact_mkQuotient_kernelHopfIdeal
+    (coinvariantsι hI) (faithfullyFlat_coinvariantsι hI)
+  rw [kernelHopfIdeal_coinvariantsι_eq hI] at h
+  exact h
 
 /-- The fppf quotient by a normal closed subgroup of a geometrically reduced finite-type
 affine group is represented by its coinvariant Hopf algebra. -/
