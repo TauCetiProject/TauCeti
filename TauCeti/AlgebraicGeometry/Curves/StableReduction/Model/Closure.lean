@@ -168,7 +168,7 @@ instance : IsClosedImmersion (closureι i hi) :=
 
 /-- The structure morphism of the closure model is the restriction of that of `P`. -/
 @[reassoc (attr := simp)]
-lemma closureι_comp_eq_toBase : closureι i hi ≫ toR = (closure i hi).toBase :=
+lemma closureι_toBase : closureι i hi ≫ toR = (closure i hi).toBase :=
   (rfl)
 
 /-- The closure model is the scheme-theoretic image of `C` in `P`: its ideal sheaf in `P` is the
@@ -188,7 +188,7 @@ end
 
 /-- The closure of `C` in a proper scheme over `R` is a proper model of `C`. -/
 lemma isProper_closure [AlgebraicGeometry.IsProper toR] : (closure i hi).IsProper := by
-  rw [Model.IsProper, ← closureι_comp_eq_toBase]
+  rw [Model.IsProper, ← closureι_toBase]
   infer_instance
 
 end Model
