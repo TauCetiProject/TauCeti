@@ -66,6 +66,12 @@ noncomputable def abelianizationProPMk (V : Subgroup G) : V →* abelianizationP
   (maximalProPQuotient.mk p (TopologicalAbelianization V)).comp
     (QuotientGroup.mk' (commutator V).topologicalClosure)
 
+/-- Every element of `V^ab(p)` is represented by an element of `V`. -/
+theorem abelianizationProPMk_surjective (V : Subgroup G) :
+    Function.Surjective (abelianizationProPMk p G V) :=
+  (maximalProPQuotient.mk_surjective p (TopologicalAbelianization V)).comp
+    (QuotientGroup.mk'_surjective (commutator V).topologicalClosure)
+
 /-- The quotient map `V → V^ab(p)` is continuous. -/
 theorem continuous_abelianizationProPMk (V : Subgroup G) :
     Continuous (abelianizationProPMk p G V) :=
@@ -115,6 +121,15 @@ noncomputable def abelianizationProPFactorSet (V : Subgroup G) [V.Normal] :
     ⟨q.1.out * q.2.out * (q.1 * q.2).out⁻¹,
       QuotientGroup.out_mul_out_mul_inv_mem V q.1 q.2⟩)
 
+/-- The factor set evaluates to the class of the defect of the chosen representatives. -/
+@[simp]
+theorem abelianizationProPFactorSet_apply (V : Subgroup G) [V.Normal]
+    (q r : G ⧸ V) :
+    abelianizationProPFactorSet p G V (q, r) =
+      Additive.ofMul (abelianizationProPMk p G V
+        ⟨q.out * r.out * (q * r).out⁻¹, QuotientGroup.out_mul_out_mul_inv_mem V q r⟩) := by
+  rfl
+
 /-- For open normal `V`, the factor set is a continuous `2`-cocycle of `G ⧸ V` with values in
 `V^ab(p)`. -/
 theorem abelianizationProPFactorSet_mem_Z2 (V : Subgroup G) [V.Normal]
@@ -127,6 +142,9 @@ theorem abelianizationProPFactorSet_mem_Z2 (V : Subgroup G) [V.Normal]
   let c : (G ⧸ V) → (G ⧸ V) → V := fun a b =>
     ⟨a.out * b.out * (a * b).out⁻¹, QuotientGroup.out_mul_out_mul_inv_mem V a b⟩
   apply Additive.toMul.injective
+  -- Addition in `Additive` and its canonical scalar action are definitionally multiplication
+  -- and the multiplicative action. After applying `toMul`, `change` exposes those operations
+  -- and the local factor `c` together, so the multiplicative homomorphism lemmas apply directly.
   change abelianizationProPMk p G V (c (q * r) s) * abelianizationProPMk p G V (c q r) =
     q • abelianizationProPMk p G V (c r s) * abelianizationProPMk p G V (c q (r * s))
   rw [mul_comm (abelianizationProPMk p G V (c (q * r) s)), ← map_mul]
@@ -140,5 +158,13 @@ noncomputable def abelianizationProPClass (V : Subgroup G) [V.Normal]
     (hV : IsOpen (V : Set G)) : H2 (G ⧸ V) (Additive (abelianizationProP p G V)) :=
   H2pi (G ⧸ V) (Additive (abelianizationProP p G V))
     ⟨abelianizationProPFactorSet p G V, abelianizationProPFactorSet_mem_Z2 p G V hV⟩
+
+/-- The class `u_{G/V}(p)` is the image of the factor-set cocycle under the class map. -/
+theorem abelianizationProPClass_eq (V : Subgroup G) [V.Normal]
+    (hV : IsOpen (V : Set G)) :
+    abelianizationProPClass p G V hV =
+      H2pi (G ⧸ V) (Additive (abelianizationProP p G V))
+        ⟨abelianizationProPFactorSet p G V, abelianizationProPFactorSet_mem_Z2 p G V hV⟩ := by
+  rfl
 
 end TauCeti
