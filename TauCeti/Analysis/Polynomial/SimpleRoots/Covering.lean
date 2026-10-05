@@ -48,6 +48,8 @@ continuous root functions, and the analyticity statement here makes them analyti
 * `TauCeti.Polynomial.isCoveringMapOn_fst_isRoot`,
   `TauCeti.Polynomial.isCoveringMap_fst_isRoot`: **the root space is a covering space** over the
   separable members, and over the whole parameter space when every member is separable.
+* `TauCeti.Polynomial.preimageFstIsRootEquiv`: the fibre of the root space over `b` is the set of
+  roots of `F b`.
 * `TauCeti.Polynomial.finite_preimage_fst_isRoot`,
   `TauCeti.Polynomial.natCard_preimage_fst_isRoot`: the fibre over a separable member of degree
   `d` has exactly `d` points.
@@ -266,8 +268,10 @@ section Fibre
 
 variable {K : Type*} [CommRing K] [IsDomain K] {B : Type*} {F : B → K[X]}
 
-/-- The fibre of the root space over `b` is the set of roots of `F b`. -/
-private def preimageFstIsRootEquiv (F : B → K[X]) (b : B) :
+/-- The fibre of the root space over `b` is the set of roots of `F b`: a point `(b, z)` of the
+fibre corresponds to the root `z`. -/
+@[expose, simps]
+def preimageFstIsRootEquiv (F : B → K[X]) (b : B) :
     (fun q : {q : B × K // (F q.1).IsRoot q.2} => q.1.1) ⁻¹' {b} ≃ {z // (F b).IsRoot z} where
   toFun q := ⟨q.1.1.2, (mem_singleton_iff.1 q.2).subst (motive := fun b' => (F b').IsRoot q.1.1.2)
     q.1.2⟩
