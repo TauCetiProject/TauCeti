@@ -65,6 +65,7 @@ private theorem typeAGraphAutomorphism_det_eq_one
   simpa only [Matrix.GeneralLinearGroup.val_det_apply, Units.val_one] using
     congrArg Units.val h
 
+/-- Restrict the signed general-linear graph involution to determinant-one matrices. -/
 private noncomputable def typeAGraphAutomorphismToSL
     (g : Matrix.SpecialLinearGroup (Fin (r + 1)) A) :
     Matrix.SpecialLinearGroup (Fin (r + 1)) A :=
@@ -163,5 +164,21 @@ theorem typeAGraphAutomorphism_mul_self :
   apply DFunLike.ext _ _
   intro g
   exact typeAGraphAutomorphism_typeAGraphAutomorphism r A g
+
+variable {A} in
+/-- The signed type-A graph automorphism commutes with entrywise ring maps. -/
+@[simp]
+theorem map_typeAGraphAutomorphism {B : Type*} [CommRing B] (f : A →+* B)
+    (g : Matrix.SpecialLinearGroup (Fin (r + 1)) A) :
+    map f (typeAGraphAutomorphism r A g) = typeAGraphAutomorphism r B (map f g) := by
+  apply toGL_injective
+  rw [toGL_typeAGraphAutomorphism]
+  convert TauCeti.map_typeAGraphAutomorphism f r (toGL g) using 1
+  · rw [← toGL_typeAGraphAutomorphism]
+    ext i j
+    rfl
+  · congr 1
+    ext i j
+    rfl
 
 end Matrix.SpecialLinearGroup
