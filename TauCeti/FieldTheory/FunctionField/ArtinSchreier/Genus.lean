@@ -40,7 +40,7 @@ extension required by the Hurwitz theorem.
 For a finite nonempty set of reduced poles,
 `two_mul_genus_sub_two_eq_of_exists_reduced_artinSchreier_poles` derives nontriviality and
 exactness of the constants over any function field with exact constants. For an extension of `k(x)`,
-`two_mul_genus_ratFunc_eq_of_exists_reduced_artinSchreier_poles` specialises this to
+`two_mul_genus_eq_of_exists_reduced_artinSchreier_poles_ratFunc` specialises this to
 `2g = (p - 1) (∑ P ∈ S, (m P + 1) deg P - 2)`. Finiteness, separability,
 nontriviality, and exactness of the constants are derived from the equation and a pole.
 For a single pole, the sum is just `(m + 1) deg P`.
@@ -273,7 +273,7 @@ nonempty set of poles of orders prime to `p` has genus determined by
 `2g = (p - 1) (∑ P ∈ S, (m P + 1) deg P - 2)`. The representatives may vary with the place.
 For one rational pole of order `m`, this is `2g = (p - 1) (m - 1)`. Finiteness, separability,
 nontriviality, and exactness of the constants follow from the equation and a pole. -/
-theorem two_mul_genus_ratFunc_eq_of_exists_reduced_artinSchreier_poles
+theorem two_mul_genus_eq_of_exists_reduced_artinSchreier_poles_ratFunc
     (p : ℕ) [Fact p.Prime] [CharP (RatFunc k) p]
     {y : F} {u : RatFunc k} (hgen : (RatFunc k)⟮y⟯ = ⊤)
     (hy : y ^ p - y = algebraMap (RatFunc k) F u)
