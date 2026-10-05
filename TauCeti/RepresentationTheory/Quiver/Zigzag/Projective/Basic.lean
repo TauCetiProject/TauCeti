@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Module.Projective
 public import TauCeti.LinearAlgebra.Graded.Shift
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Grading
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Radical
-public import TauCeti.RingTheory.PrimitiveIdempotent
+public import TauCeti.RingTheory.Idempotents.Projective
 
 /-!
 # Vertex projectives of a zigzag algebra

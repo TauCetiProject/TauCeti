@@ -10,7 +10,7 @@ public import TauCeti.Algebra.Category.GradedModuleCat.IdempotentGradedDimension
 public import TauCeti.Algebra.Category.GradedModuleCat.Projective
 public import TauCeti.Algebra.Module.GradedModule.Quotient
 public import TauCeti.RingTheory.Idempotents.Corner
-public import TauCeti.RingTheory.PrimitiveIdempotent
+public import TauCeti.RingTheory.Idempotents.Projective
 
 /-!
 # Homogeneous left ideals as graded modules
