@@ -7,7 +7,6 @@ module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.OpenSubgroup
 public import TauCeti.FieldTheory.GaloisCohomology.BrauerTorsion
-import TauCeti.RepresentationTheory.Homological.ContCohomology.Corestriction.Naturality
 
 /-!
 # Corestriction on local roots-of-unity cohomology
@@ -54,40 +53,7 @@ subgroup, for any exponent invertible in the field. This includes all nonzero ex
 characteristic zero, even when they divide the subgroup index or the residue characteristic. -/
 theorem explicitCor2_kummerCoeff_bijective :
     Function.Bijective (explicitCor2 (AbsoluteGaloisGroup K) (KummerCoeff K n) U hU) := by
-  let S := kummerShortExact K n hn
-  let i := explicitCoeff2 (AbsoluteGaloisGroup K) (KummerCoeff K n)
-    S.inclDistribMulActionHom continuous_of_discreteTopology
-  let j := explicitCoeff2 U (KummerCoeff K n)
-    (S.restrict U).inclDistribMulActionHom continuous_of_discreteTopology
-  let c := explicitCor2 (AbsoluteGaloisGroup K) (UnitsCoeff K) U hU
-  let d := explicitCor2 (AbsoluteGaloisGroup K) (KummerCoeff K n) U hU
-  have hi : Function.Injective i := explicitCoeff2_kummerShortExact_incl_injective K hn
-  have hj : Function.Injective j :=
-    explicitCoeff2_kummerShortExact_restrict_incl_injective K hn U (U.isClosed_of_isOpen hU)
-  have hc : Function.Bijective c := explicitCor2_unitsCoeff_bijective K U hU
-  have hcomm (x : H2 U (KummerCoeff K n)) : c (j x) = i (d x) := by
-    have hi' : (S.inclDistribMulActionHom : KummerCoeff K n →+ UnitsCoeff K) = S.incl := by
-      apply AddMonoidHom.ext
-      intro m
-      exact DiscreteShortExact.inclDistribMulActionHom_apply S m
-    have hj' : ((S.restrict U).inclDistribMulActionHom :
-        KummerCoeff K n →+ UnitsCoeff K) = S.incl := by
-      apply AddMonoidHom.ext
-      intro m
-      -- Retype evaluation through the additive-hom coercion so the public restriction lemmas
-      -- apply; the short exact sequence itself remains opaque.
-      change (S.restrict U).inclDistribMulActionHom m = S.incl m
-      rw [DiscreteShortExact.inclDistribMulActionHom_apply, DiscreteShortExact.restrict_incl]
-    simp only [c, j, i, d, explicitCoeff2_eq_explicitMap2, hi', hj']
-    exact explicitCor2_explicitMap2_id (AbsoluteGaloisGroup K) (KummerCoeff K n) U hU
-      S.incl continuous_of_discreteTopology S.incl_equivariant x
-  refine ⟨fun x y h => hj (hc.1 (by rw [hcomm, hcomm, h])), fun y => ?_⟩
-  obtain ⟨z, hz⟩ := hc.2 (i y)
-  have hny : n • i y = 0 :=
-    (mem_range_explicitCoeff2_kummerShortExact_incl_iff K hn (i y)).1 ⟨y, rfl⟩
-  have hnz : n • z = 0 := hc.1 (by rw [map_nsmul, hz, hny, map_zero])
-  obtain ⟨x, hx⟩ :=
-    (mem_range_explicitCoeff2_kummerShortExact_restrict_incl_iff K hn U z).2 hnz
-  exact ⟨x, hi (by rw [← hcomm, hx, hz])⟩
+  exact explicitCor2_kummerCoeff_bijective_of_unitsCoeff_bijective K hn U hU
+    (explicitCor2_unitsCoeff_bijective K U hU)
 
 end TauCeti.ClassFieldTheory
