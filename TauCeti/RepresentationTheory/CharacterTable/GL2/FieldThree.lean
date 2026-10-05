@@ -275,12 +275,6 @@ private theorem character_conjRepGLFinTwo_gl2FieldThreeClassIndex (hF : Fintype.
   obtain ⟨c, hc⟩ := isConj_iff.mp (isConj_gl2FieldThreeNormalForm hF hu j)
   rw [← hc, FDRep.char_conj]
 
-omit [Fintype F] in
-/-- Every character of `Fˣ` takes the value `1` or `-1` at `-1`. -/
-private theorem val_apply_neg_one_eq_one_or (α : Fˣ →* ℂˣ) :
-    (α (-1) : ℂ) = 1 ∨ (α (-1) : ℂ) = -1 :=
-  mul_self_eq_one_iff.mp (by rw [← Units.val_mul, ← map_mul]; simp)
-
 /-- The Steinberg character at the eight normal forms. -/
 private theorem character_GL2Steinberg_gl2FieldThreeNormalForm (hF : Fintype.card F = 3)
     {u : Eˣ} (hu : (u : E) * u = u + 1) (j : Fin 8) :
@@ -305,7 +299,7 @@ private theorem exists_linear_row (α : Fˣ →* ℂˣ) :
     ∃ k, ∀ j, ((GL2CharacterParam.linear (E := E) α).classFunction : GL (Fin 2) F → ℂ)
       (conjRepGLFinTwo (gl2FieldThreeClassIndex F j)) = gl2FieldThreeCharacterTable k j := by
   simp only [GL2CharacterParam.coe_classFunction_linear, character_GL2Linear]
-  rcases val_apply_neg_one_eq_one_or α with hα | hα
+  rcases val_apply_neg_one_eq_one_or_eq_neg_one α with hα | hα
   · refine ⟨0, fun j => ?_⟩
     fin_cases j <;> simp [det_companionGL, hα]
   · refine ⟨1, fun j => ?_⟩
@@ -319,7 +313,7 @@ private theorem exists_steinbergTwist_row (hF : Fintype.card F = 3) {u : Eˣ}
   simp only [GL2CharacterParam.coe_classFunction_steinbergTwist, character_GL2SteinbergTwist]
   simp only [character_conjRepGLFinTwo_gl2FieldThreeClassIndex hF hu (GL2Steinberg F),
     character_GL2Steinberg_gl2FieldThreeNormalForm hF hu]
-  rcases val_apply_neg_one_eq_one_or α with hα | hα
+  rcases val_apply_neg_one_eq_one_or_eq_neg_one α with hα | hα
   · refine ⟨5, fun j => ?_⟩
     fin_cases j <;> simp [det_companionGL, hα]
   · refine ⟨6, fun j => ?_⟩
@@ -343,8 +337,8 @@ private theorem exists_principalSeries_row (hF : Fintype.card F = 3) {u : Eˣ}
       · simp
       · exact Units.ext h
   have hprod : (α (-1) : ℂ) * β (-1) = -1 ∧ (β (-1) : ℂ) + α (-1) = 0 := by
-    rcases val_apply_neg_one_eq_one_or α with ha | ha <;>
-      rcases val_apply_neg_one_eq_one_or β with hb | hb <;>
+    rcases val_apply_neg_one_eq_one_or_eq_neg_one α with ha | ha <;>
+      rcases val_apply_neg_one_eq_one_or_eq_neg_one β with hb | hb <;>
       simp_all
   have hab : (1 : Fˣ) ≠ -1 := fun h => h1 (by simpa using congrArg Units.val h)
   refine ⟨7, fun j => ?_⟩
@@ -387,12 +381,12 @@ private theorem cuspidal_apply_gl2FieldThreeNormalForm (hF : Fintype.card F = 3)
     norm_num
   · rw [GL2CuspidalVirtualCharacter_apply_scalar, hF, hneg, map_pow, Units.val_pow_eq_pow_val]
     norm_num
-  · rw [GL2CuspidalVirtualCharacter_apply_gl2NonSplitTorusHom _ _ hu2, hF, ← pow_mul, map_pow,
-      map_pow, Units.val_pow_eq_pow_val, Units.val_pow_eq_pow_val]
+  · rw [GL2CuspidalVirtualCharacter_apply_gl2NonSplitTorusHom _ _ hu2]
+    simp [hF, ← pow_mul]
   · rw [GL2CuspidalVirtualCharacter_apply_gl2NonSplitTorusHom _ _ hu1, hF, map_pow,
       Units.val_pow_eq_pow_val]
-  · rw [GL2CuspidalVirtualCharacter_apply_gl2NonSplitTorusHom _ _ hu3, hF, hu5, ← pow_mul,
-      map_pow, map_pow, Units.val_pow_eq_pow_val, Units.val_pow_eq_pow_val]
+  · rw [GL2CuspidalVirtualCharacter_apply_gl2NonSplitTorusHom _ _ hu3]
+    simp [hF, hu5, ← pow_mul]
   · rw [GL2CuspidalVirtualCharacter_apply_jordanGL _ hψ 1 one_ne_zero, map_one, map_one,
       Units.val_one]
   · rw [GL2CuspidalVirtualCharacter_apply_jordanGL _ hψ (-1) one_ne_zero, hneg, map_pow,
@@ -445,8 +439,7 @@ private theorem exists_cuspidal_row (hF : Fintype.card F = 3) {u : Eˣ}
   have h2 : ζ ^ 2 ≠ 1 := fun hζ => hθ <| MonoidHom.ext fun v => by
     have hw : θ u * θ u = 1 := Units.ext (by rw [Units.val_mul, ← pow_two]; exact hζ)
     obtain ⟨n, rfl⟩ := exists_zpow_eq hF hu v
-    rw [MonoidHom.comp_apply, powMonoidHom_apply, hF, map_pow, map_zpow, pow_three, ← mul_zpow,
-      hw, one_zpow, mul_one]
+    simp [hF, pow_three, ← mul_zpow, hw]
   have hI : (Complex.I * √2) ^ 2 = -2 := by
     rw [mul_pow, Complex.I_sq, ← Complex.ofReal_pow, Real.sq_sqrt (by norm_num)]
     norm_num
