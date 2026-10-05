@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.FGModuleCat.Abelian
 public import Mathlib.Algebra.Category.FGModuleCat.Colimits
 public import Mathlib.Algebra.Category.FGModuleCat.EssentiallySmall
 public import Mathlib.Algebra.Category.ModuleCat.Biproducts
@@ -76,6 +77,8 @@ Krull--Schmidt hypotheses of a finite-dimensional algebra.
   structures are the short exact sequences of modules with terms in the subcategory.
 * `TauCeti.finiteProjectiveModulesExactStructure_eq_split`: the exact structure of the finitely
   generated projectives is the split one.
+* `TauCeti.finiteModulesExactStructure_eq_abelian`: over a noetherian ring, the exact structure of
+  the finitely generated modules is the canonical one of the abelian category `FGModuleCat R`.
 * `TauCeti.finiteModulesExactK0Equiv`: the explicit comparison between the named finite-module
   exact structure and the structure induced directly from all modules.
 * `TauCeti.exactK0_fgModuleCat_prod`: in `G₀(mod R)`, the class of a product of two finitely
@@ -234,6 +237,23 @@ whose three terms are finitely generated. -/
   (ExactStructure.fullSubcategory_conflation_iff (E := ExactStructure.abelian (ModuleCat.{u} R))
     (P := ModuleCat.isFG R) (isExtensionClosed_finiteModules R) S).trans
     (ExactStructure.abelian_conflation _)
+
+/-- **Over a noetherian ring, the finitely generated modules carry their abelian exact
+structure**: the exact structure induced from all modules is the canonical exact structure of the
+abelian category `FGModuleCat R`, because the inclusion into `ModuleCat R` is exact and faithful. -/
+theorem finiteModulesExactStructure_eq_abelian [IsNoetherianRing R] :
+    finiteModulesExactStructure R = ExactStructure.abelian (FGModuleCat.{u} R) := by
+  apply ExactStructure.ext
+  intro S
+  rw [finiteModulesExactStructure_conflation_iff, ExactStructure.abelian_conflation]
+  have hι : (ModuleCat.isFG.{u} R).ι = forget₂ (FGModuleCat.{u} R) (ModuleCat.{u} R) := rfl
+  let _ : PreservesFiniteColimits (ModuleCat.isFG.{u} R).ι :=
+    hι.symm ▸ (inferInstance :
+      PreservesFiniteColimits (forget₂ (FGModuleCat.{u} R) (ModuleCat.{u} R)))
+  let _ : PreservesFiniteLimits (ModuleCat.isFG.{u} R).ι :=
+    hι.symm ▸ (inferInstance :
+      PreservesFiniteLimits (forget₂ (FGModuleCat.{u} R) (ModuleCat.{u} R)))
+  exact CategoryTheory.ShortExact.shortExact_map_iff (ModuleCat.isFG.{u} R).ι
 
 /-- The exact Grothendieck group defined using `finiteModulesExactStructure` agrees with the one
 defined directly from the exact structure induced from all modules. This explicit bridge keeps

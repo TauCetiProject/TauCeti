@@ -118,14 +118,8 @@ theorem isCharacterTableSpec :
 degrees up to order. -/
 theorem sum_characterDegree_eq_sum_degree :
     ∑ i, characterDegree ℂ (G := G) i = ∑ j, degree j := by
-  have hcol : ∑ i, d.complexTableOfInteger table i (ConjClasses.mk 1) = ∑ j, (degree j : ℂ) := by
-    rw [← (finCongr d.numClasses_eq_card_conjClasses).sum_comp]
-    refine Finset.sum_congr rfl fun j _ => ?_
-    rw [← d.classOf_index 1, complexTableOfInteger_apply_classOf, h.table_index_one,
-      Int.cast_natCast]
-  have key := h.isCharacterTableSpec.sum_apply_mk_one_eq_sum_characterDegree
-  rw [hcol] at key
-  exact_mod_cast key.symm
+  exact IsExactCharacterTableSpec.sum_characterDegree_eq_sum_degree h (Int.castRingHom ℂ)
+    fun x ↦ by simp
 
 end IsIntegerCharacterTableSpec
 

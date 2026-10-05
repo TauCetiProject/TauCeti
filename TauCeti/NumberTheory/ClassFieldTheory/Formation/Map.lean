@@ -204,6 +204,22 @@ def NormalLayer.localFormationMap
     (L : NormalLayer (AbsoluteGaloisGroup E)) : NormalLayer (AbsoluteGaloisGroup K) :=
   L.map (localFormationHom K E iota) (isOpenMap_localFormationHom K E iota)
 
+/-- The ground subgroup of a layer over `E`, regarded over `K`, is the image of its ground subgroup
+under the embedding `G_E → G_K`. -/
+@[simp]
+theorem NormalLayer.localFormationMap_ground_toSubgroup (L : NormalLayer (AbsoluteGaloisGroup E)) :
+    (L.localFormationMap K E iota).ground.toSubgroup =
+      L.ground.toSubgroup.map (localFormationHom K E iota) :=
+  L.map_ground_toSubgroup _ _
+
+/-- The top subgroup of a layer over `E`, regarded over `K`, is the image of its top subgroup
+under the embedding `G_E → G_K`. -/
+@[simp]
+theorem NormalLayer.localFormationMap_top_toSubgroup (L : NormalLayer (AbsoluteGaloisGroup E)) :
+    (L.localFormationMap K E iota).top.toSubgroup =
+      L.top.toSubgroup.map (localFormationHom K E iota) :=
+  L.map_top_toSubgroup _ _
+
 /-- **A layer over a finite extension as a layer over the base field.**  Restriction identifies
 the units formation over `E` with the restriction of the units formation over `K`, and hence
 identifies every finite normal layer over `E` with its image layer over `K`. -/
@@ -211,5 +227,30 @@ def localFormationLayerEquiv (L : NormalLayer (AbsoluteGaloisGroup E)) :
     LayerEquiv (unitsFormation E) L (unitsFormation K) (L.localFormationMap K E iota) :=
   L.mapLayerEquiv (localFormationHom K E iota) (isOpenMap_localFormationHom K E iota)
     (injective_localFormationHom K E iota) (localFormationRestrict K E iota)
+
+/-- The Galois-group isomorphism of `localFormationLayerEquiv` sends the class of `u` to the class
+of any representative of its image in `G_K`. -/
+theorem localFormationLayerEquiv_galEquiv_mk (L : NormalLayer (AbsoluteGaloisGroup E))
+    (u : L.ground) (u' : (L.localFormationMap K E iota).ground)
+    (h : (u' : AbsoluteGaloisGroup K) = localFormationHom K E iota u) :
+    (localFormationLayerEquiv K E iota L).galEquiv (QuotientGroup.mk u) = QuotientGroup.mk u' := by
+  refine (L.mapGalEquiv_mk _ _ _ u).trans (congrArg QuotientGroup.mk (Subtype.ext ?_))
+  exact (L.mapGroundEquiv_apply_coe _ _ _ u).trans h.symm
+
+/-- The coefficient isomorphism of `localFormationLayerEquiv`, read on `(Eˢ)ˣ` and `(Kˢ)ˣ`, is the
+inverse of the coefficient equivalence `localFormationCoeffEquiv` of the restriction. -/
+theorem localFormationLayerEquiv_coeffEquiv_apply (L : NormalLayer (AbsoluteGaloisGroup E))
+    (x : (unitsFormation E).level L.top) :
+    (unitsCoeffEquivUnitsFormation K).symm
+        (((localFormationLayerEquiv K E iota L).coeffEquiv x :
+          (unitsFormation K).level (L.localFormationMap K E iota).top) :
+          (unitsFormation K).toRep.V) =
+      (localFormationCoeffEquiv K E iota).symm
+        ((unitsCoeffEquivUnitsFormation E).symm (x : (unitsFormation E).toRep.V)) := by
+  obtain ⟨w, hw⟩ := (unitsCoeffEquivUnitsFormation E).surjective (x : (unitsFormation E).toRep.V)
+  refine (congrArg (unitsCoeffEquivUnitsFormation K).symm
+    ((L.mapCoeffEquiv_apply_coe _ _ _ x).trans (congrArg (localFormationRestrict K E iota).inv.hom
+      hw.symm))).trans ?_
+  rw [localFormationRestrict_inv_apply, AddEquiv.symm_apply_apply, ← hw, AddEquiv.symm_apply_apply]
 
 end TauCeti.ClassFieldTheory

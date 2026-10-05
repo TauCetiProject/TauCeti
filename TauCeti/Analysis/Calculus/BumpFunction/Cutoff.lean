@@ -17,7 +17,12 @@ import Mathlib.Geometry.Manifold.PartitionOfUnity
 This module provides smooth, compactly supported cutoffs for compact subsets of a
 finite-dimensional real normed space. The cutoff is equal to one on a neighborhood of the compact
 set and has topological support in a prescribed open set, which is the localization step used for
-compact exhaustions in domain arguments.
+compact exhaustions in domain arguments. Taking differences of consecutive cutoffs along a compact
+exhaustion gives a decomposition of unity (not necessarily nonnegative) of an open set by
+compactly supported smooth functions, together with cutoffs equal to one on their supports which
+are locally finite in the open set (`IsOpen.exists_contDiff_decomposition_cutoff`); this is the
+gluing device for global approximation on a domain. Locally finite sums of smooth functions are
+smooth (`contDiffAt_tsum_of_eventually_eq_zero`).
 
 It also provides radial cutoffs between two concentric closed balls of radii `r < R` whose
 gradient is at most `c / (R - r)` for a universal constant `c`, the quantitative form needed by
@@ -131,6 +136,112 @@ theorem _root_.CompactExhaustion.exists_contDiff_cutoff [NormedSpace ℝ E]
   obtain ⟨ψ, hψ_smooth, hψ_range, hψ_eq_one_nhds, hψ_compact, hψ_tsupp⟩ :=
     hK.exists_contDiff_cutoff hU hKU
   exact ⟨ψ, hψ_smooth, hψ_range, hψ_eq_one_nhds, hψ_compact, hψ_tsupp⟩
+
+/-- **A smooth decomposition of unity of an open set, with cutoffs.** Every open set `U` of a
+finite-dimensional real normed space carries smooth compactly supported functions `ζ j` and
+`χ j`, `j : ℕ`, with topological supports in `U`, such that `χ j = 1` on the topological support
+of `ζ j`, and every point of `U` has a neighbourhood on which `χ j` vanishes and
+`∑ j ∈ Finset.range N, ζ j = 1` for all large `j` and `N`.
+
+So `(ζ j)` is a decomposition of unity of `U` by test functions on `U`, and the cutoffs `χ j` form
+a family which is locally finite in `U`. Neither family is locally finite at the frontier of `U`.
+The functions `ζ j` are differences of consecutive cutoffs along a compact exhaustion of `U`, and
+need not be nonnegative. -/
+theorem _root_.IsOpen.exists_contDiff_decomposition_cutoff [NormedSpace ℝ E]
+    [FiniteDimensional ℝ E] {U : Set E} (hU : IsOpen U) :
+    ∃ ζ χ : ℕ → E → ℝ,
+      (∀ j, ContDiff ℝ ∞ (ζ j) ∧ HasCompactSupport (ζ j) ∧ tsupport (ζ j) ⊆ U) ∧
+      (∀ j, ContDiff ℝ ∞ (χ j) ∧ HasCompactSupport (χ j) ∧ tsupport (χ j) ⊆ U) ∧
+      (∀ j, EqOn (χ j) 1 (tsupport (ζ j))) ∧
+      ∀ x ∈ U, ∃ m, ∀ᶠ y in 𝓝 x, (∀ j, m ≤ j → χ j y = 0) ∧
+        ∀ N, m ≤ N → ∑ j ∈ Finset.range N, ζ j y = 1 := by
+  let Omega : Opens E := ⟨U, hU⟩
+  have : LocallyCompactSpace Omega := hU.locallyCompactSpace
+  let K : CompactExhaustion Omega := (CompactExhaustion.choice Omega).shiftr
+  -- `L n` is the `n`-th compact set of the exhaustion, `V n` the image of its interior
+  let L : ℕ → Set E := fun n => (Subtype.val : Omega → E) '' K n
+  let V : ℕ → Set E := fun n => (Subtype.val : Omega → E) '' interior (K n)
+  have hK0 : K 0 = ∅ := rfl
+  have hL0 : L 0 = ∅ := by simp only [L, hK0, image_empty]
+  have hLcpt : ∀ n, IsCompact (L n) := fun n => (K.isCompact n).image continuous_subtype_val
+  have hVopen : ∀ n, IsOpen (V n) := fun n => hU.isOpenMap_subtype_val _ isOpen_interior
+  have hVL : ∀ n, V n ⊆ L n := fun n => image_mono interior_subset
+  have hLmono : Monotone L := fun m n hmn => image_mono (K.subset hmn)
+  have hVmono : Monotone V := fun m n hmn => image_mono (interior_mono (K.subset hmn))
+  have hVsub : ∀ n, V n ⊆ U := fun n => by
+    rintro _ ⟨y, -, rfl⟩
+    exact y.2
+  have hcover : ∀ x ∈ U, ∃ n, x ∈ V n := fun x hx => by
+    obtain ⟨n, hn⟩ := K.exists_mem ⟨x, hx⟩
+    exact ⟨n + 1, ⟨x, hx⟩, K.subset_interior_succ n hn, rfl⟩
+  have one_of_mem : ∀ {f : E → ℝ} {y : E}, y ∈ interior (f ⁻¹' {1}) → f y = 1 := fun h => by
+    simpa only [mem_preimage, mem_singleton_iff] using interior_subset h
+  choose eta heta _ heta_one heta_cpt heta_ts using K.exists_contDiff_cutoff
+  -- `eta' (n + 1) = eta n` is a cutoff for `L n`; prepending `eta' 0 = 0` makes the
+  -- differences `zeta j = eta' (j + 1) - eta' j` telescope to `eta' N`.
+  let eta' : ℕ → E → ℝ := fun n => Nat.casesOn n 0 eta
+  have heta'_smooth : ∀ n, ContDiff ℝ ∞ (eta' n) := fun n => by
+    cases n
+    exacts [contDiff_const, heta _]
+  have heta'_cpt : ∀ n, HasCompactSupport (eta' n) := fun n => by
+    cases n
+    exacts [HasCompactSupport.zero, heta_cpt _]
+  have heta'_ts : ∀ n, tsupport (eta' n) ⊆ V n := fun n => by
+    cases n
+    · simp [eta']
+    · exact heta_ts _
+  have heta'_one : ∀ m n, m < n → L m ⊆ interior (eta' n ⁻¹' {1}) := fun m n hmn => by
+    obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_lt hmn
+    exact (hLmono (by omega)).trans (heta_one (m + k))
+  let zeta : ℕ → E → ℝ := fun j x => eta' (j + 1) x - eta' j x
+  have hzeta_smooth : ∀ j, ContDiff ℝ ∞ (zeta j) := fun j =>
+    (heta'_smooth (j + 1)).sub (heta'_smooth j)
+  have hzeta_cpt : ∀ j, HasCompactSupport (zeta j) := fun j =>
+    (heta'_cpt (j + 1)).sub (heta'_cpt j)
+  have hzeta_ts : ∀ j, tsupport (zeta j) ⊆ V (j + 1) := fun j =>
+    (tsupport_sub _ _).trans
+      (union_subset (heta'_ts (j + 1)) ((heta'_ts j).trans (hVmono j.le_succ)))
+  -- `zeta j` vanishes near `L (j - 1)`, where both cutoffs equal one
+  have hzeta_L : ∀ j, ∀ x ∈ L (j - 1), x ∉ tsupport (zeta j) := fun j x hx => by
+    cases j with
+    | zero => simp [hL0] at hx
+    | succ k =>
+      rw [notMem_tsupport_iff_eventuallyEq]
+      filter_upwards [interior_mem_nhds.2 (mem_interior_iff_mem_nhds.1
+          (heta'_one k (k + 1) k.lt_succ_self hx)),
+        interior_mem_nhds.2 (mem_interior_iff_mem_nhds.1
+          (heta'_one k (k + 2) (by omega) hx))] with y hy₁ hy₂
+      have h₁ : eta' (k + 1) y = 1 := one_of_mem hy₁
+      have h₂ : eta' (k + 1 + 1) y = 1 := one_of_mem hy₂
+      simp only [zeta, Pi.zero_apply, h₁, h₂, sub_self]
+  have hsum : ∀ N y, ∑ j ∈ Finset.range N, zeta j y = eta' N y := fun N y => by
+    simpa [zeta, eta'] using Finset.sum_range_sub (fun n => eta' n y) N
+  -- cutoffs equal to one on `tsupport (zeta j)` and supported away from `L (j - 1)`
+  have hU : ∀ j, tsupport (zeta j) ⊆ V (j + 1) \ L (j - 1) := fun j x hx =>
+    ⟨hzeta_ts j hx, fun hxL => hzeta_L j x hxL hx⟩
+  choose chi hchi_smooth _ hchi_one hchi_cpt hchi_ts using fun j =>
+    (hzeta_cpt j).exists_contDiff_cutoff ((hVopen (j + 1)).sdiff (hLcpt (j - 1)).isClosed) (hU j)
+  refine ⟨zeta, chi, fun j => ⟨hzeta_smooth j, hzeta_cpt j, (hzeta_ts j).trans (hVsub _)⟩,
+    fun j => ⟨hchi_smooth j, hchi_cpt j, (hchi_ts j).trans (sdiff_subset.trans (hVsub _))⟩,
+    fun j x hx => one_of_mem (hchi_one j hx), fun x hx => ?_⟩
+  obtain ⟨n, hn⟩ := hcover x hx
+  refine ⟨n + 1, ?_⟩
+  filter_upwards [(hVopen n).mem_nhds hn] with y hy
+  refine ⟨fun j hj => image_eq_zero_of_notMem_tsupport fun hyj => (hchi_ts j hyj).2 ?_,
+    fun N hN => ?_⟩
+  · exact hLmono (by omega) (hVL n hy)
+  · rw [hsum]
+    exact one_of_mem (heta'_one n N (by omega) (hVL n hy))
+
+/-- A sum of functions which are smooth at `x` is smooth at `x` if, on a neighbourhood of `x`,
+all but finitely many of them vanish. This makes the locally finite sums built from
+`IsOpen.exists_contDiff_decomposition_cutoff` smooth on the open set. -/
+theorem contDiffAt_tsum_of_eventually_eq_zero {𝕜 ι F : Type*} [NontriviallyNormedField 𝕜]
+    [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F] {n : WithTop ℕ∞}
+    {g : ι → E → F} {x : E} (s : Finset ι) (hg : ∀ j ∈ s, ContDiffAt 𝕜 n (g j) x)
+    (hs : ∀ᶠ y in 𝓝 x, ∀ j ∉ s, g j y = 0) :
+    ContDiffAt 𝕜 n (fun y => ∑' j, g j y) x :=
+  (ContDiffAt.sum hg).congr_of_eventuallyEq (hs.mono fun _ hy => tsum_eq_sum hy)
 
 /-- **Radial cutoffs with a quantitative gradient bound.** There is a universal constant `c` such
 that for every centre `x₀` and radii `0 < r < R`, some smooth `ψ` with values in `[0, 1]` equals
