@@ -396,6 +396,12 @@ def muNRepEquivZMod (ζ : F) (hζ : IsPrimitiveRoot ζ n) : (muNRep n F).V ≃+ 
   (muNRepEquivTrivialFp n F hζ).trans (trivialFpEquiv n _).toAddEquiv
 
 variable {n F} in
+/-- The chosen-root coordinate is the trivial-coefficient identification, read in `ZMod n`. -/
+theorem muNRepEquivZMod_apply (ζ : F) (hζ : IsPrimitiveRoot ζ n) (x : (muNRep n F).V) :
+    muNRepEquivZMod ζ hζ x = trivialFpEquiv n _ (muNRepEquivTrivialFp n F hζ x) :=
+  (rfl)
+
+variable {n F} in
 /-- The inverse chosen-root coordinate is the inverse trivial-coefficient identification. -/
 theorem muNRepEquivZMod_symm_apply (ζ : F) (hζ : IsPrimitiveRoot ζ n) (c : ZMod n) :
     (muNRepEquivZMod ζ hζ).symm c =

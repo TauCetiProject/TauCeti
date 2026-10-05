@@ -12,6 +12,7 @@ import Mathlib.Analysis.Calculus.FDeriv.Prod
 import Mathlib.Topology.Algebra.Module.FiniteDimension
 import Mathlib.Topology.ContinuousMap.Compact
 import Mathlib.Topology.ContinuousMap.Units
+import TauCeti.Topology.Compactness.Normed
 
 /-!
 # The Cauchy integral formula on polydiscs and analyticity in several variables
@@ -21,7 +22,9 @@ of finitely many complex variables which is complex differentiable on an open se
 there. Mathlib proves both facts for functions of one complex variable
 (`DifferentiableOn.circleIntegral_sub_inv_smul`, `DifferentiableOn.analyticOnNhd`); the
 several-variable statements are the basic tools for proving joint analyticity of functions defined
-by parameter-dependent contour integrals.
+by parameter-dependent contour integrals. The file ends with the first such statement: a contour
+integral whose integrand is jointly analytic in a parameter and the integration variable is
+analytic in the parameter.
 
 A polydisc in `ℂⁿ` is the product `Set.univ.pi fun i => ball (c i) (R i)` of open discs, and its
 distinguished boundary is the torus `T(c, R)` of Mathlib's `torusIntegral`.
@@ -37,6 +40,12 @@ distinguished boundary is the torus `T(c, R)` of Mathlib's `torusIntegral`.
   normed space which is complex differentiable on a neighbourhood of a point is analytic there.
 * `TauCeti.analyticOnNhd_iff_differentiableOn_of_finiteDimensional`: on an open subset of a
   finite-dimensional complex normed space, analyticity and complex differentiability agree.
+* `TauCeti.hasFDerivAt_circleIntegral`: a contour integral `p ↦ ∮ ζ in C(c, R), f (p, ζ)` whose
+  integrand is jointly analytic along `{p} × sphere c |R|` may be differentiated under the
+  integral sign at `p`.
+* `TauCeti.analyticAt_circleIntegral`, `TauCeti.analyticOnNhd_circleIntegral`: **analytic
+  dependence on parameters.** For a parameter in a finite-dimensional complex normed space, such a
+  contour integral is analytic in the parameter.
 
 ## The argument
 
@@ -50,6 +59,11 @@ is analytic in `w` near `z` (`analyticAt_inverse`). Integrating against `f` over
 continuous linear functional on `C(X, ℂ)`, so by the Cauchy formula `f` is a continuous linear
 image of an analytic function near `z`. This is the several-variable form of the argument in
 `TauCeti.Analysis.Polynomial.RootSum`.
+
+For a contour integral depending on a parameter, the partial derivative of the integrand in the
+parameter is continuous, hence bounded uniformly near the compact circle, so Mathlib's theorem on
+differentiation under the integral sign applies. Analyticity in a parameter from a
+finite-dimensional space then follows from complex differentiability on a neighbourhood.
 
 ## References
 
@@ -270,5 +284,71 @@ theorem analyticOnNhd_iff_differentiableOn_of_finiteDimensional (hs : IsOpen s) 
   ⟨AnalyticOnNhd.differentiableOn, fun hd => hd.analyticOnNhd_of_finiteDimensional hs⟩
 
 end Analytic
+
+section Parametric
+
+variable [CompleteSpace E] {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] {f : V × ℂ → E}
+  {c : ℂ} {R : ℝ}
+
+/-- **Differentiation of a contour integral under the integral sign.** If `f` is jointly analytic
+at every point of `{p} × sphere c |R|`, then `q ↦ ∮ ζ in C(c, R), f (q, ζ)` has derivative at `p`
+the contour integral of the partial derivative of `f` in the parameter. -/
+theorem hasFDerivAt_circleIntegral {p : V} (hf : ∀ ζ ∈ sphere c |R|, AnalyticAt ℂ f (p, ζ)) :
+    HasFDerivAt (fun q => ∮ ζ in C(c, R), f (q, ζ))
+      (∮ ζ in C(c, R), (fderiv ℂ f (p, ζ)).comp (ContinuousLinearMap.inl ℂ V ℂ)) p := by
+  -- The partial derivative of `f` in the parameter, continuous where `f` is analytic.
+  set G : V × ℂ → V →L[ℂ] E := fun x => (fderiv ℂ f x).comp (ContinuousLinearMap.inl ℂ V ℂ)
+  have hG : ContinuousOn G {x | AnalyticAt ℂ f x} := fun x hx =>
+    (hx.fderiv.continuousAt.clm_comp continuousAt_const).continuousWithinAt
+  -- Near `p`, `f` is analytic on `{q} × sphere c |R|` and `G` is bounded there uniformly in `q`.
+  obtain ⟨C, hC⟩ := exists_eventually_norm_le_compact_family (ι := ((↑) : sphere c |R| → ℂ))
+    continuous_subtype_val (isOpen_analyticAt ℂ f) hG fun ζ => hf ζ ζ.2
+  set s := {q : V | ∀ θ, AnalyticAt ℂ f (q, circleMap c R θ) ∧ ‖G (q, circleMap c R θ)‖ ≤ C}
+  have hs : s ∈ 𝓝 p := hC.mono fun q hq θ => hq ⟨_, circleMap_mem_sphere' c R θ⟩
+  have hcont : ∀ q ∈ s, Continuous fun θ => f (q, circleMap c R θ) := fun q hq =>
+    continuous_iff_continuousAt.2 fun θ => (hq θ).1.continuousAt.comp_of_eq
+      (f := fun θ => (q, circleMap c R θ)) (by fun_prop) rfl
+  have hderiv : Continuous (deriv (circleMap c R)) := by
+    rw [funext (deriv_circleMap c R)]
+    fun_prop
+  unfold circleIntegral
+  refine intervalIntegral.hasFDerivAt_integral_of_dominated_of_fderiv_le
+    (F := fun q θ => deriv (circleMap c R) θ • f (q, circleMap c R θ))
+    (F' := fun q θ => deriv (circleMap c R) θ • G (q, circleMap c R θ))
+    (bound := fun _ => |R| * C) hs (eventually_of_mem hs fun q hq =>
+      (hderiv.smul (hcont q hq)).aestronglyMeasurable) ?_ ?_ ?_ intervalIntegrable_const ?_
+  · exact (hderiv.smul (hcont p (mem_of_mem_nhds hs))).intervalIntegrable _ _
+  · refine (hderiv.smul (continuous_iff_continuousAt.2 fun θ => ?_)).aestronglyMeasurable
+    exact (hG.continuousAt ((isOpen_analyticAt ℂ f).mem_nhds (mem_of_mem_nhds hs θ).1)).comp_of_eq
+      (f := fun θ => (p, circleMap c R θ)) (by fun_prop) rfl
+  · refine ae_of_all _ fun θ _ q hq => ?_
+    rw [norm_smul, deriv_circleMap, norm_mul, norm_circleMap_zero, norm_I, mul_one]
+    exact mul_le_mul_of_nonneg_left (hq θ).2 (abs_nonneg R)
+  · refine ae_of_all _ fun θ _ q hq => ?_
+    exact (((hq θ).1.differentiableAt.hasFDerivAt).comp q
+      (hasFDerivAt_prodMk_left q (circleMap c R θ))).const_smul _
+
+variable [FiniteDimensional ℂ V]
+
+/-- **Analytic dependence of a contour integral on a parameter.** If `f` is jointly analytic at
+every point of `{p₀} × sphere c |R|`, then `p ↦ ∮ ζ in C(c, R), f (p, ζ)` is analytic at `p₀`. -/
+theorem analyticAt_circleIntegral {p₀ : V} (hf : ∀ ζ ∈ sphere c |R|, AnalyticAt ℂ f (p₀, ζ)) :
+    AnalyticAt ℂ (fun p => ∮ ζ in C(c, R), f (p, ζ)) p₀ := by
+  -- Analyticity of `f` on `{p₀} × sphere c |R|` persists on `{p} × sphere c |R|` for `p` near `p₀`,
+  -- and the integral is differentiable at each such `p`.
+  have h : ∀ᶠ p in 𝓝 p₀, ∀ ζ ∈ sphere c |R|, AnalyticAt ℂ f (p, ζ) :=
+    (isCompact_sphere c |R|).eventually_forall_of_forall_eventually fun ζ hζ =>
+      (hf ζ hζ).eventually_analyticAt
+  exact DifferentiableOn.analyticAt_of_finiteDimensional (fun p hp =>
+    (hasFDerivAt_circleIntegral hp).differentiableAt.differentiableWithinAt) h
+
+/-- **Analytic dependence of a contour integral on a parameter.** If `f` is jointly analytic on a
+neighbourhood of `s × sphere c |R|`, then `p ↦ ∮ ζ in C(c, R), f (p, ζ)` is analytic on a
+neighbourhood of `s`. -/
+theorem analyticOnNhd_circleIntegral {s : Set V} (hf : AnalyticOnNhd ℂ f (s ×ˢ sphere c |R|)) :
+    AnalyticOnNhd ℂ (fun p => ∮ ζ in C(c, R), f (p, ζ)) s :=
+  fun _p hp => analyticAt_circleIntegral fun _ζ hζ => hf _ ⟨hp, hζ⟩
+
+end Parametric
 
 end TauCeti

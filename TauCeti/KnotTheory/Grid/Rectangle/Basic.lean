@@ -334,31 +334,12 @@ two horizontal sides.
 
 Reflecting across the main diagonal turns columns into rows and rows into columns, so the
 interior is reflected by `Prod.swap`. -/
+@[simps]
 def transpose : GridRectangle n where
   left := R.bottom
   right := R.top
   bottom := R.left
   top := R.right
-
-/-- The reflected rectangle's left side is the original bottom side. -/
-@[simp]
-theorem transpose_left : R.transpose.left = R.bottom :=
-  rfl
-
-/-- The reflected rectangle's right side is the original top side. -/
-@[simp]
-theorem transpose_right : R.transpose.right = R.top :=
-  rfl
-
-/-- The reflected rectangle's bottom side is the original left side. -/
-@[simp]
-theorem transpose_bottom : R.transpose.bottom = R.left :=
-  rfl
-
-/-- The reflected rectangle's top side is the original right side. -/
-@[simp]
-theorem transpose_top : R.transpose.top = R.right :=
-  rfl
 
 /-- Reflecting a toroidal rectangle twice gives the original rectangle. -/
 @[simp]
@@ -482,31 +463,12 @@ theorem top_def : R.top = x R.right :=
 /-- The toroidal rectangle of an oriented rectangle: it has the same two side columns, and its
 bottom and top sides are the rows the source state occupies in the initial and terminal side
 columns. -/
+@[simps]
 def toGridRectangle : GridRectangle n where
   left := R.left
   right := R.right
   bottom := R.bottom
   top := R.top
-
-/-- The associated toroidal rectangle has the same initial vertical side. -/
-@[simp]
-theorem toGridRectangle_left : R.toGridRectangle.left = R.left :=
-  rfl
-
-/-- The associated toroidal rectangle has the same terminal vertical side. -/
-@[simp]
-theorem toGridRectangle_right : R.toGridRectangle.right = R.right :=
-  rfl
-
-/-- The associated toroidal rectangle has the same initial horizontal side. -/
-@[simp]
-theorem toGridRectangle_bottom : R.toGridRectangle.bottom = R.bottom :=
-  rfl
-
-/-- The associated toroidal rectangle has the same terminal horizontal side. -/
-@[simp]
-theorem toGridRectangle_top : R.toGridRectangle.top = R.top :=
-  rfl
 
 /-- The associated toroidal rectangle in terms of the two side columns: its two horizontal
 sides are the rows the source state assigns to them. -/
@@ -700,6 +662,7 @@ theorem disjoint_coveredSquares_XSet_of_avoidsMarkings {G : GridDiagram n}
 
 Reflecting across the main diagonal exchanges the side columns with the side rows: the new side
 columns are the two rows `x R.left` and `x R.right` that `R` connects. -/
+@[simps left right]
 def transpose (R : GridRectangleBetween x y) :
     GridRectangleBetween x.transpose y.transpose where
   left := R.bottom
@@ -724,16 +687,6 @@ def transpose (R : GridRectangleBetween x y) :
     rw [GridState.transpose_apply, GridState.transpose_apply, Equiv.symm_apply_eq,
       R.map_of_ne _ hd_left hd_right]
     exact hsymm.symm
-
-/-- The reflected rectangle's initial side column is the original initial side row. -/
-@[simp]
-theorem transpose_left (R : GridRectangleBetween x y) : R.transpose.left = R.bottom :=
-  rfl
-
-/-- The reflected rectangle's terminal side column is the original terminal side row. -/
-@[simp]
-theorem transpose_right (R : GridRectangleBetween x y) : R.transpose.right = R.top :=
-  rfl
 
 /-- The reflected rectangle's initial side row is the original initial side column. -/
 @[simp]

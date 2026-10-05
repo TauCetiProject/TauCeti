@@ -69,10 +69,7 @@ namespace SheafOfModules
 open _root_.SheafOfModules
 
 variable {C : Type u₁} [Category.{v₁} C] {J : GrothendieckTopology C}
-variable [HasWeakSheafify J AddCommGrpCat.{v}] [J.WEqualsLocallyBijective AddCommGrpCat.{v}]
 
-omit [HasWeakSheafify J AddCommGrpCat.{v}]
-  [J.WEqualsLocallyBijective AddCommGrpCat.{v}] in
 variable (R : Sheaf J RingCat.{u}) in
 /-- Restriction along `Over.iteratedSliceEquiv Y`, as an equivalence between sheaves of modules on
 the slice over `Y.left` and sheaves of modules on the iterated slice over `Y`. -/
@@ -82,8 +79,6 @@ noncomputable def _root_.Sheaf.iteratedSliceEquivalence {Z : C} (Y : Over Z) :
     (S := (R.over Z).over Y) (R := R.over Y.left) (𝟙 _) (𝟙 _)
     (by ext : 2; exact R.1.map_id _) (by ext : 2; exact R.1.map_id _)
 
-omit [HasWeakSheafify J AddCommGrpCat.{v}]
-  [J.WEqualsLocallyBijective AddCommGrpCat.{v}] in
 /-- The forward direction of `iteratedSliceEquivalence` is restriction along
 `(Over.iteratedSliceEquiv Y).functor`. -/
 @[simp]
@@ -93,8 +88,6 @@ theorem _root_.Sheaf.iteratedSliceEquivalence_functor
       _root_.SheafOfModules.pushforward.{v} (F := (Over.iteratedSliceEquiv Y).functor) (𝟙 _) :=
   (rfl)
 
-omit [HasWeakSheafify J AddCommGrpCat.{v}]
-  [J.WEqualsLocallyBijective AddCommGrpCat.{v}] in
 /-- The backward direction of `iteratedSliceEquivalence` is restriction along
 `(Over.iteratedSliceEquiv Y).inverse`. -/
 @[simp]
@@ -104,8 +97,6 @@ theorem _root_.Sheaf.iteratedSliceEquivalence_inverse
       _root_.SheafOfModules.pushforward.{v} (F := (Over.iteratedSliceEquiv Y).inverse) (𝟙 _) :=
   (rfl)
 
-omit [HasWeakSheafify J AddCommGrpCat.{v}]
-  [J.WEqualsLocallyBijective AddCommGrpCat.{v}] in
 /-- The comparison of *unit sheaves* (each structure sheaf as a module over itself) used when
 transporting generating sections off an iterated slice: the unit sheaf on the slice over `Y.left`
 and the restriction along `(Sheaf.iteratedSliceEquivalence R Y).inverse` of the unit sheaf on the
@@ -122,8 +113,6 @@ noncomputable def _root_.Sheaf.iteratedSliceEquivalenceUnitSheafIso
     rw [Sheaf.iteratedSliceEquivalence_inverse R Y]
     rfl)
 
-omit [HasWeakSheafify J AddCommGrpCat.{v}]
-  [J.WEqualsLocallyBijective AddCommGrpCat.{v}] in
 /-- The unit-sheaf comparison is the identity. -/
 @[simp]
 theorem _root_.Sheaf.iteratedSliceEquivalenceUnitSheafIso_hom
@@ -132,8 +121,6 @@ theorem _root_.Sheaf.iteratedSliceEquivalenceUnitSheafIso_hom
       eqToHom (by rw [Sheaf.iteratedSliceEquivalence_inverse R Y]; rfl) :=
   (rfl)
 
-omit [HasWeakSheafify J AddCommGrpCat.{v}]
-  [J.WEqualsLocallyBijective AddCommGrpCat.{v}] in
 /-- The inverse of the unit-sheaf comparison is the reverse equality morphism. -/
 @[simp]
 theorem _root_.Sheaf.iteratedSliceEquivalenceUnitSheafIso_inv
@@ -142,8 +129,6 @@ theorem _root_.Sheaf.iteratedSliceEquivalenceUnitSheafIso_inv
       eqToHom (by rw [Sheaf.iteratedSliceEquivalence_inverse R Y]; rfl) :=
   (rfl)
 
-omit [HasWeakSheafify J AddCommGrpCat.{v}]
-  [J.WEqualsLocallyBijective AddCommGrpCat.{v}] in
 /-- The inverse of the unit isomorphism of `Sheaf.iteratedSliceEquivalence` at `M.over Y.left`,
 composed with the equality isomorphism that identifies
 `(Sheaf.iteratedSliceEquivalence R Y).functor.obj (M.over Y.left)` with
@@ -161,8 +146,6 @@ noncomputable def _root_.Sheaf.iteratedSliceEquivalenceInverseObjIso
           rfl)) ≪≫
     (Sheaf.iteratedSliceEquivalence R Y).unitIso.symm.app (M.over Y.left)
 
-omit [HasWeakSheafify J AddCommGrpCat.{v}]
-  [J.WEqualsLocallyBijective AddCommGrpCat.{v}] in
 /-- `Sheaf.iteratedSliceEquivalenceInverseObjIso` is the inverse unit isomorphism composed with the
 equality isomorphism supplied by `Sheaf.iteratedSliceEquivalence_functor`. -/
 theorem _root_.Sheaf.iteratedSliceEquivalenceInverseObjIso_def
@@ -197,44 +180,31 @@ end Additive
 section General
 
 variable {D : Type u₂} [Category.{v₂} D] {K : GrothendieckTopology D}
-variable (F : C ⥤ D) [F.IsContinuous J K] [F.IsCocontinuous J K]
+variable (F : C ⥤ D) [F.IsContinuous J K]
 variable (R : Sheaf K RingCat.{u})
-variable [HasWeakSheafify K AddCommGrpCat.{v}] [K.WEqualsLocallyBijective AddCommGrpCat.{v}]
 
-omit [F.IsCocontinuous J K] [HasWeakSheafify J AddCommGrpCat.{v}]
-  [J.WEqualsLocallyBijective AddCommGrpCat.{v}]
-  [HasWeakSheafify K AddCommGrpCat.{v}] [K.WEqualsLocallyBijective AddCommGrpCat.{v}] in
 private abbrev pushedRing : Sheaf J RingCat.{u} :=
   (F.sheafPushforwardContinuous RingCat.{u} J K).obj R
 
-omit [F.IsCocontinuous J K] [HasWeakSheafify J AddCommGrpCat.{v}]
-  [J.WEqualsLocallyBijective AddCommGrpCat.{v}]
-  [HasWeakSheafify K AddCommGrpCat.{v}] [K.WEqualsLocallyBijective AddCommGrpCat.{v}] in
 /-- The underlying presheaf of the continuous pushforward is precomposition by the functor
 between sites. -/
 abbrev pushforwardRingIso : F.op ⋙ R.obj ≅
     ((F.sheafPushforwardContinuous RingCat.{u} J K).obj R).obj :=
   Iso.refl _
 
-omit [F.IsCocontinuous J K] [HasWeakSheafify J AddCommGrpCat.{v}]
-  [J.WEqualsLocallyBijective AddCommGrpCat.{v}]
-  [HasWeakSheafify K AddCommGrpCat.{v}] [K.WEqualsLocallyBijective AddCommGrpCat.{v}] in
 private abbrev presheafPushforward :
     PresheafOfModules.{v} R.obj ⥤
       PresheafOfModules.{v} (pushedRing (J := J) (K := K) F R).obj :=
   PresheafOfModules.pushforward (F := F)
     (pushforwardRingIso (J := J) (K := K) F R).inv
 
-omit [F.IsCocontinuous J K] [HasWeakSheafify J AddCommGrpCat.{v}]
-  [J.WEqualsLocallyBijective AddCommGrpCat.{v}]
-  [HasWeakSheafify K AddCommGrpCat.{v}] [K.WEqualsLocallyBijective AddCommGrpCat.{v}] in
 private abbrev sheafPushforward :
     SheafOfModules.{v} R ⥤
       SheafOfModules.{v} (pushedRing (J := J) (K := K) F R) :=
   SheafOfModules.pushforward (J := J) (K := K) (F := F) (𝟙 _)
 
-omit [HasWeakSheafify J AddCommGrpCat.{v}]
-  [J.WEqualsLocallyBijective AddCommGrpCat.{v}] [F.IsCocontinuous J K] in
+variable [HasWeakSheafify K AddCommGrpCat.{v}] [K.WEqualsLocallyBijective AddCommGrpCat.{v}]
+
 /-- The pushforward of a sheafification unit, as a map of presheaves of modules. This is the
 canonical comparison whose sheafification is inverted by `pushforwardSheafificationIso`. -/
 def pushforwardToSheafify (P : PresheafOfModules.{v} R.obj) :
@@ -245,8 +215,6 @@ def pushforwardToSheafify (P : PresheafOfModules.{v} R.obj) :
   (presheafPushforward F R).map
     ((PresheafOfModules.sheafificationAdjunction (𝟙 R.obj)).unit.app P)
 
-omit [HasWeakSheafify J AddCommGrpCat.{v}]
-  [J.WEqualsLocallyBijective AddCommGrpCat.{v}] [F.IsCocontinuous J K] in
 /-- The comparison from pushforward to the underlying presheaf of the pushed-forward
 sheafification is natural in the presheaf. -/
 @[reassoc]
@@ -273,8 +241,6 @@ theorem pushforwardToSheafify_naturality {P Q : PresheafOfModules.{v} R.obj} (f 
   exact congrArg (presheafPushforward F R).map
     ((PresheafOfModules.sheafificationAdjunction (𝟙 R.obj)).unit.naturality f)
 
-omit [HasWeakSheafify J AddCommGrpCat.{v}]
-  [J.WEqualsLocallyBijective AddCommGrpCat.{v}] [F.IsCocontinuous J K] in
 /-- Pushforward of the sheafification unit becomes whiskering on underlying presheaves. -/
 private theorem toPresheaf_map_pushforwardToSheafify_def
     (P : PresheafOfModules.{v} R.obj) :
@@ -286,8 +252,6 @@ private theorem toPresheaf_map_pushforwardToSheafify_def
             (𝟙 R.obj)).unit.app P)) := by
   rfl
 
-omit [HasWeakSheafify J AddCommGrpCat.{v}]
-  [J.WEqualsLocallyBijective AddCommGrpCat.{v}] [F.IsCocontinuous J K] in
 /-- On underlying presheaves of abelian groups, `pushforwardToSheafify` is the canonical
 sheafification map whiskered by the functor between sites. -/
 theorem toPresheaf_map_pushforwardToSheafify
@@ -299,7 +263,8 @@ theorem toPresheaf_map_pushforwardToSheafify
     PresheafOfModules.toPresheaf_map_sheafificationAdjunction_unit_app]
   rfl
 
-omit [HasWeakSheafify J AddCommGrpCat.{v}] in
+variable [F.IsCocontinuous J K] [J.WEqualsLocallyBijective AddCommGrpCat.{v}]
+
 private theorem W_toPresheaf_map_pushforwardToSheafify
     (P : PresheafOfModules.{v} R.obj) :
     J.W ((PresheafOfModules.toPresheaf _).map
@@ -308,6 +273,8 @@ private theorem W_toPresheaf_map_pushforwardToSheafify
   exact (J.W_iff_isLocallyBijective _).mpr
     ⟨Presheaf.isLocallyInjective_whisker J K F _,
       Presheaf.isLocallySurjective_whisker J K F _⟩
+
+variable [HasWeakSheafify J AddCommGrpCat.{v}]
 
 private instance isIso_sheafification_map_pushforwardToSheafify
     (P : PresheafOfModules.{v} R.obj) :
@@ -442,6 +409,10 @@ theorem sheafification_map_pushforward_map_comp_counit
 
 end General
 
+section Slice
+
+variable [HasWeakSheafify J AddCommGrpCat.{v}] [J.WEqualsLocallyBijective AddCommGrpCat.{v}]
+
 /-- For each presheaf of modules and object of the site, restriction of its sheafification is
 isomorphic to the sheafification of its restriction. -/
 def overSheafificationIso (R : Sheaf J RingCat.{u})
@@ -520,6 +491,8 @@ theorem overSheafificationNatIso_inv_app (R : Sheaf J RingCat.{u}) (X : C)
     (overSheafificationNatIso R X).inv.app P =
       (pushforwardSheafificationIso (J := J.over X) (K := J) (Over.forget X) R P).inv :=
   (rfl)
+
+end Slice
 
 end SheafOfModules
 

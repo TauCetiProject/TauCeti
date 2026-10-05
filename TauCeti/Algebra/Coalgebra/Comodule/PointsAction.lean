@@ -11,6 +11,7 @@ public import TauCeti.Algebra.Coalgebra.Comodule.Trivial
 import TauCeti.LinearAlgebra.End.ScalarExtension
 public import Mathlib.RingTheory.Bialgebra.Convolution
 public import Mathlib.RepresentationTheory.Basic
+import TauCeti.LinearAlgebra.TensorProduct.Submodule
 
 /-!
 # The points action of a comodule
@@ -42,6 +43,8 @@ the functor of points on scalar extensions of `V`.
   convolution monoid of points on the scalar extension.
 * `TauCeti.Comodule.baseChange_comp_endOfPoint`: the action is functorial in the
   comodule.
+* `TauCeti.Comodule.Hom.map_endOfPoint_baseChange_eq_iff`: injective comodule morphisms
+  preserve and reflect subspace stabilizers after flat scalar extension.
 * `BialgHom.baseChange_comp_endOfPoint_regular`: bialgebra morphisms intertwine regular actions.
 * `TauCeti.Comodule.map_endOfPoint_eq_of_mapsTo`: inverse points preserving a submodule
   carry it onto itself.
@@ -133,6 +136,21 @@ lemma baseChange_comp_endOfPoint (f : Hom R H V W) (g : H →ₐ[R] A) :
   simp only [LinearMap.coe_comp, Function.comp_apply, LinearMap.restrictScalars_apply,
     endOfPoint_tmul, map_smul, LinearMap.baseChange_tmul, hc, Hom.map_coact_apply,
     Hom.coe_toLinearMap]
+
+/-- An injective comodule morphism preserves and reflects the stabilizer of a subspace
+after flat scalar extension. Thus a subspace has the same stabilizer in a subrepresentation
+and in the ambient representation. -/
+theorem Hom.map_endOfPoint_baseChange_eq_iff [Module.Flat R A]
+    (f : Hom R H V W) (hf : Function.Injective f) (L : Submodule R V)
+    (g : H →ₐ[R] A) :
+    ((L.map f.toLinearMap).baseChange A).map (endOfPoint W g) =
+        (L.map f.toLinearMap).baseChange A ↔
+      (L.baseChange A).map (endOfPoint V g) = L.baseChange A := by
+  have hinj : Function.Injective (f.toLinearMap.baseChange A) :=
+    Module.Flat.lTensor_preserves_injective_linearMap f.toLinearMap hf
+  rw [Submodule.baseChange_map, ← Submodule.map_comp,
+    ← baseChange_comp_endOfPoint, Submodule.map_comp]
+  exact (Submodule.map_injective_of_injective hinj).eq_iff
 
 end Functorial
 
