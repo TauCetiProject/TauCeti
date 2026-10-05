@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Lie.Killing
 public import TauCeti.Algebra.Lie.Orthogonal.TypeD.Basis
 import TauCeti.Algebra.Lie.Orthogonal.TypeD.Root.Classification
 import TauCeti.LinearAlgebra.RootSystem.FiniteType.Irreducible
+import TauCeti.LinearAlgebra.Span.Basic
 
 /-!
 # Simplicity of the split even orthogonal Lie algebra
@@ -135,20 +136,6 @@ private theorem exists_lieBasis_e_mem_of_cartan_mem
   rw [b.baseSupp_apply_smul_e]
   exact lie_mem_left K _ I x (b.e i) hxI
 
-omit [CharZero K] in
-private theorem generator_mem_of_mem_span_singleton
-    (I : LieIdeal K (LieAlgebra.Orthogonal.typeD (Fin n) K))
-    {x g : LieAlgebra.Orthogonal.typeD (Fin n) K}
-    (hxI : x ∈ I) (hx0 : x ≠ 0) (hxspan : x ∈ K ∙ g) : g ∈ I := by
-  rw [Submodule.mem_span_singleton] at hxspan
-  obtain ⟨c, hcx⟩ := hxspan
-  have hc : c ≠ 0 := by
-    rintro rfl
-    simp only [zero_smul] at hcx
-    exact hx0 hcx.symm
-  rw [← hcx] at hxI
-  exact I.toSubmodule.smul_mem_iff hc |>.mp hxI
-
 private theorem exists_lieBasis_e_mem_of_root_inf_ne_bot
     (n : ℕ) (hn : 4 ≤ n)
     (I : LieIdeal K (LieAlgebra.Orthogonal.typeD (Fin n) K))
@@ -174,7 +161,7 @@ private theorem exists_lieBasis_e_mem_of_root_inf_ne_bot
     change x ∈ (LieAlgebra.rootSpace H (typeDWeightSub i j)).toSubmodule at hxroot
     rw [rootSpace_typeDWeightSub_eq_span (IsRegular.of_ne_zero two_ne_zero) hij] at hxroot
     have hgenI : differenceRootGenerator (K := K) i j ∈ I :=
-      generator_mem_of_mem_span_singleton I hxI hx0 hxroot
+      Submodule.mem_of_mem_span_singleton_of_ne_zero I.toSubmodule hxI hx0 hxroot
     let hdiag : H := typeDDiagonalEquiv (Pi.single i 1 - Pi.single j 1)
     have hdiagI : (hdiag : L) ∈ I := by
       rw [← lie_differenceRootGenerator_opposite]
@@ -186,7 +173,7 @@ private theorem exists_lieBasis_e_mem_of_root_inf_ne_bot
     change x ∈ (LieAlgebra.rootSpace H (typeDWeightAdd i j)).toSubmodule at hxroot
     rw [rootSpace_typeDWeightAdd_eq_span (IsRegular.of_ne_zero two_ne_zero) hij] at hxroot
     have hgenI : sumRootGenerator (K := K) i j ∈ I :=
-      generator_mem_of_mem_span_singleton I hxI hx0 hxroot
+      Submodule.mem_of_mem_span_singleton_of_ne_zero I.toSubmodule hxI hx0 hxroot
     let hdiag : H := typeDDiagonalEquiv (Pi.single i (-1) + Pi.single j (-1))
     have hdiagI : (hdiag : L) ∈ I := by
       rw [← lie_sumRootGenerator_negSumRootGenerator _ _ hij]
@@ -201,7 +188,7 @@ private theorem exists_lieBasis_e_mem_of_root_inf_ne_bot
     rw [rootSpace_neg_typeDWeightAdd_eq_span
         (IsRegular.of_ne_zero two_ne_zero) hij] at hxroot'
     have hgenI : negSumRootGenerator (K := K) i j ∈ I :=
-      generator_mem_of_mem_span_singleton I hxI hx0 hxroot'
+      Submodule.mem_of_mem_span_singleton_of_ne_zero I.toSubmodule hxI hx0 hxroot'
     let hdiag : H := typeDDiagonalEquiv (Pi.single i (-1) + Pi.single j (-1))
     have hdiagI : (hdiag : L) ∈ I := by
       rw [← lie_sumRootGenerator_negSumRootGenerator _ _ hij]
