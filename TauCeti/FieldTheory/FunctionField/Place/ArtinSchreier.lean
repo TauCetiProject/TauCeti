@@ -25,7 +25,7 @@ Neither result requires completeness, an exact constant field, or a function-fie
 
 A prime-to-`p` pole cannot be improved by any Artin–Schreier substitution, even with an
 imperfect residue field.
-`ne_pow_sub_self_of_exists_reduced_artinSchreier_pole` proves that a class with such a
+`TauCeti.ne_pow_sub_self_of_exists_reduced_artinSchreier_pole` proves that a class with such a
 representative is nontrivial.
 `TauCeti.ord_sub_pow_sub_self_le_of_ord_neg_of_not_dvd` records this maximality,
 and `TauCeti.ord_reduced_artinSchreier_representative_eq` gives uniqueness.
@@ -43,23 +43,6 @@ public section
 namespace TauCeti.Place
 
 variable {k F : Type*} [Field k] [Field F] [Algebra k F] (P : Place k F)
-
-/-- A supplied reduced Artin–Schreier pole makes the class of `u` nontrivial.
-No perfection or function-field hypothesis is needed. -/
-theorem ne_pow_sub_self_of_exists_reduced_artinSchreier_pole
-    (p : ℕ) [Fact p.Prime] [CharP F p] {u : F}
-    (hpole : ∃ w₀ : F, P.ord (u - (w₀ ^ p - w₀)) < 0 ∧
-      ¬ (p : ℤ) ∣ P.ord (u - (w₀ ^ p - w₀))) :
-    ∀ w : F, w ^ p - w ≠ u := by
-  obtain ⟨w₀, hneg, hdiv⟩ := hpole
-  intro w hw
-  -- The valuation order and the place order use the same multiplicative-to-additive convention.
-  apply P.valuation.ne_pow_sub_self_of_ord_neg_of_not_dvd
-    (Fact.out : p.Prime).one_lt
-    (by simpa only [Valuation.ord_def, ← P.ord_def] using hneg)
-    (by simpa only [Valuation.ord_def, ← P.ord_def] using hdiv) (w - w₀)
-  rw [← hw, sub_pow_char]
-  ring
 
 /-- A pole of order divisible by `n > 1` can be improved by a substitution
 `u ↦ u - (w ^ n - w)` if the `n`-th power map of the residue field is surjective.

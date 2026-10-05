@@ -63,6 +63,18 @@ open AlgebraicGeometry
 
 universe u u' v v'
 
+private theorem ord_neg_of_ord_eq_neg_of_not_dvd
+    {k F : Type*} [Field k] [Field F] [Algebra k F]
+    {P : Place k F} {a : F} {m p : ℕ}
+    (hw : P.ord a = -(m : ℤ)) (hprime : ¬ (p : ℤ) ∣ P.ord a) :
+    P.ord a < 0 := by
+  have hm : m ≠ 0 := by
+    intro hm
+    apply hprime
+    simp [hw, hm]
+  rw [hw]
+  omega
+
 section Extension
 
 variable {k : Type u} {k' : Type u'} {F : Type v} {F' : Type v'}
@@ -100,15 +112,7 @@ theorem Divisor.nsmul_different_eq_zsmul_conorm_of_pow_sub_self_eq :
     Divisor.coeff_conorm, WeilDivisor.coeff_ofFinsetWithMultiplicity]
   by_cases hP : P'.restrict k F ∈ S
   · obtain ⟨w, hw, hprime⟩ := hpole _ hP
-    have hm : 0 < m (P'.restrict k F) := by
-      by_contra h
-      have hm0 : m (P'.restrict k F) = 0 := by omega
-      apply hprime
-      rw [hw, hm0]
-      simp
-    have hneg : (P'.restrict k F).ord (u - (w ^ p - w)) < 0 := by
-      rw [hw]
-      exact neg_neg_of_pos (by exact_mod_cast hm)
+    have hneg := ord_neg_of_ord_eq_neg_of_not_dvd hw hprime
     rw [ite_eq_left hP,
       Place.differentExponent_eq_of_sub_pow_sub_self_ord_eq_neg k F hF hF' p _ hgen hy
         hw hprime,
@@ -127,7 +131,7 @@ theorem Divisor.nsmul_different_eq_zsmul_conorm_of_pow_sub_self_eq :
 A reduced pole forces the extension degree to be `p`; when there are no reduced poles, the
 different is zero. The factor `[k' : k]` accounts for a possible enlargement of the constant
 field. No exactness or constant-field separability is needed for this degree identity. -/
-theorem finrank_mul_degree_different_of_pow_sub_self_eq :
+theorem Divisor.finrank_mul_degree_different_of_pow_sub_self_eq :
     letI := ArtinSchreier.isSplittingField hy hgen
     letI := Polynomial.IsSplittingField.finiteDimensional F'
       (Polynomial.X ^ p - Polynomial.X - Polynomial.C u)
@@ -154,13 +158,7 @@ theorem finrank_mul_degree_different_of_pow_sub_self_eq :
   obtain ⟨P, hP⟩ := hS
   obtain ⟨P', hP'⟩ := Place.restrict_surjective (k := k) (F := F) hF' P
   obtain ⟨w, hw, hprime⟩ := hpole P hP
-  have hneg : P.ord (u - (w ^ p - w)) < 0 := by
-    rw [hw]
-    have hm : m P ≠ 0 := by
-      intro hm
-      apply hprime
-      simp [hw, hm]
-    omega
+  have hneg := ord_neg_of_ord_eq_neg_of_not_dvd hw hprime
   have hfin := Place.finrank_eq_of_exists_reduced_artinSchreier_pole k F (P' := P')
     p hgen hy ⟨w, by simpa [hP'] using hneg, by simpa [hP'] using hprime⟩
   have hcon := Divisor.finrank_mul_degree_conorm_of_isSeparable (k' := k') (F' := F')
@@ -196,7 +194,7 @@ theorem artinSchreier_genus_formula [Algebra.IsSeparable k k']
   let _ := ArtinSchreier.isGalois hy hgen
   let _ : FiniteDimensional k k' := hF.finiteDimensional_baseExtension hF'
   rw [hurwitz_genus_formula hF hF' hex hex', ArtinSchreier.finrank_eq hy hgen hu,
-    finrank_mul_degree_different_of_pow_sub_self_eq hF hF' p hgen hy S m hpole hreg]
+    Divisor.finrank_mul_degree_different_of_pow_sub_self_eq hF hF' p hgen hy S m hpole hreg]
 
 end Extension
 
@@ -259,12 +257,10 @@ theorem two_mul_genus_sub_two_eq_of_exists_reduced_artinSchreier_poles
     exact ⟨w, hw, by simpa [hw] using hprime'⟩
   obtain ⟨P, hP⟩ := hS
   obtain ⟨w₀, hw₀, hdiv⟩ := hpole P hP
-  have hm : 0 < m P := by
-    by_contra h
-    have hm0 : m P = 0 := by omega
-    exact hprime P hP (hm0 ▸ dvd_zero _)
-  have hneg : P.ord (u - (w₀ ^ p - w₀)) < 0 := by rw [hw₀]; omega
-  have hu := P.ne_pow_sub_self_of_exists_reduced_artinSchreier_pole p ⟨w₀, hneg, hdiv⟩
+  have hneg := ord_neg_of_ord_eq_neg_of_not_dvd hw₀ hdiv
+  have hu := ne_pow_sub_self_of_exists_reduced_artinSchreier_pole (v := P.valuation) p
+    ⟨w₀, by simpa only [Valuation.ord_def, ← P.ord_def] using hneg,
+      by simpa only [Valuation.ord_def, ← P.ord_def] using hdiv⟩
   let _ := ArtinSchreier.isSplittingField hy hgen
   let _ := Polynomial.IsSplittingField.finiteDimensional F'
     (Polynomial.X ^ p - Polynomial.X - Polynomial.C u)
