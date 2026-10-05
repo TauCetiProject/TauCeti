@@ -7,14 +7,14 @@ module
 
 public import TauCeti.Analysis.Complex.Fuchsian.Compactification.Degree
 public import TauCeti.Analysis.Complex.RiemannSurface.Ramification
-import TauCeti.Analysis.Complex.Fuchsian.Compactification.Fiber
+public import TauCeti.Analysis.Complex.Fuchsian.Compactification.FiniteHolomorphicMap
 
 /-!
 # Divisors of finite-index maps of Fuchsian quotients
 
 A finite-index inclusion of discrete projective subgroups induces a finite holomorphic map of
-compactified quotients. This file bundles that map so that the generic divisor pullback and
-ramification-divisor constructions apply to it. Pullback weights at interior points are the
+compactified quotients. This file applies the generic divisor pullback and
+ramification-divisor constructions to that bundled map. Pullback weights at interior points are the
 indices of elliptic stabilizers; at cusps they are the indices of boundary stabilizers, or,
 equivalently, the ratios of widths in compatible normalized cusp data.
 
@@ -38,53 +38,18 @@ namespace TauCeti.Fuchsian
 
 variable {Δ Γ : Subgroup PSL(2, ℝ)} [DiscreteTopology Γ]
 
-/-- The finite holomorphic map of compactified quotients induced by a finite-index inclusion.
-Its forward function is the ordinary map on interior orbits and cusp orbits. No compactness
-hypothesis is needed to construct it. -/
-def finiteHolomorphicMap (h : Δ ≤ Γ) [Δ.IsFiniteRelIndex Γ] :
-    letI : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
-    FiniteHolomorphicMap Δ.CompactifiedQuotient Γ.CompactifiedQuotient := by
-  let : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
-  refine
-    { toFun := compactifiedQuotientMap h
-      holomorphic := mdifferentiable_compactifiedQuotientMap h
-      finite_fiber := fun y ↦ by
-        have hs : {x | compactifiedQuotientMap h x = y}.Finite :=
-          Set.finite_coe_iff.mp (finite_fiber_compactifiedQuotientMap h y)
-        simpa only [preimage, mem_singleton_iff] using hs
-      nonconstant := ?_ }
-  classical
-  have : Nonempty Γ.CompactifiedQuotient := ⟨ofQuotient (Quotient.mk'' UpperHalfPlane.I)⟩
-  let x : Δ.CompactifiedQuotient := ofQuotient (Quotient.mk'' UpperHalfPlane.I)
-  have hpos : 0 < localMultiplicity (compactifiedQuotientMap h) x := by
-    rw [localMultiplicity_compactifiedQuotientMap_ofQuotient_eq_ellipticRamificationIndex]
-    exact ellipticRamificationIndex_pos h _
-  have hne := (localMultiplicity_pos_iff
-    (.of_forall (mdifferentiable_compactifiedQuotientMap h))).mp hpos
-  by_contra hn
-  push Not at hn
-  exact hne (eventuallyConst_iff_exists_eventuallyEq.mpr
-    ⟨compactifiedQuotientMap h x, .of_forall fun y ↦ hn y x⟩)
-
-/-- The bundled map has exactly the canonical compactified quotient map as its forward function. -/
-@[simp]
-theorem coe_finiteHolomorphicMap (h : Δ ≤ Γ) [Δ.IsFiniteRelIndex Γ] :
-    letI : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
-    ⇑(finiteHolomorphicMap h) = compactifiedQuotientMap h :=
-  (rfl)
-
 variable (h : Δ ≤ Γ) [Δ.IsFiniteRelIndex Γ]
 
 /-- Pullback at an interior orbit multiplies the coefficient by the relative index of the
 elliptic stabilizers. -/
 theorem coeff_divisorPullback_ofQuotient (D : WeilDivisor Γ.CompactifiedQuotient) (z : ℍ) :
     letI : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
-    WeilDivisor.coeff (divisorPullback (finiteHolomorphicMap h) D)
+    WeilDivisor.coeff (divisorPullback (compactifiedQuotientFiniteHolomorphicMap h) D)
         (ofQuotient (Quotient.mk'' z)) =
       (ellipticRamificationIndex h z : ℤ) *
         WeilDivisor.coeff D (ofQuotient (Quotient.mk'' z)) := by
   let : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
-  rw [coeff_divisorPullback, coe_finiteHolomorphicMap,
+  rw [coeff_divisorPullback, coe_compactifiedQuotientFiniteHolomorphicMap,
     localMultiplicity_compactifiedQuotientMap_ofQuotient_eq_ellipticRamificationIndex]
   simp
 
@@ -93,63 +58,64 @@ stabilizers. This formula requires no choice of scaling or generator. -/
 theorem coeff_divisorPullback_ofCusp (D : WeilDivisor Γ.CompactifiedQuotient)
     (c : Δ.cuspPoints) :
     letI : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
-    WeilDivisor.coeff (divisorPullback (finiteHolomorphicMap h) D)
+    WeilDivisor.coeff (divisorPullback (compactifiedQuotientFiniteHolomorphicMap h) D)
         (ofCusp (Δ.cuspOrbitMk c)) =
       ((Δ.subgroupOf Γ).relIndex (stabilizer Γ (c : OnePoint ℝ)) : ℤ) *
         WeilDivisor.coeff D (ofCusp (cuspOrbitMap h (Δ.cuspOrbitMk c))) := by
   let : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
-  rw [coeff_divisorPullback, coe_finiteHolomorphicMap,
+  rw [coeff_divisorPullback, coe_compactifiedQuotientFiniteHolomorphicMap,
     localMultiplicity_compactifiedQuotientMap_ofCusp_cuspOrbitMk]
   simp
+
+/-- With compatible normalized cusp data, pullback multiplies the coefficient by the positive
+cusp-width index. -/
+theorem coeff_divisorPullback_ofCusp_eq_widthIndex (A : WeilDivisor Γ.CompactifiedQuotient)
+    (D : Δ.CuspDatum) (E : Γ.CuspDatum) (hσ : D.scaling = E.scaling) :
+    letI : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
+    WeilDivisor.coeff (divisorPullback (compactifiedQuotientFiniteHolomorphicMap h) A)
+        (ofCusp D.cuspOrbit) =
+      (Subgroup.CuspDatum.widthIndex h D E (D.cusp_eq_of_scaling_eq E hσ) hσ : ℤ) *
+        WeilDivisor.coeff A (ofCusp E.cuspOrbit) := by
+  let : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
+  rw [coeff_divisorPullback, coe_compactifiedQuotientFiniteHolomorphicMap,
+    localMultiplicity_compactifiedQuotientMap_ofCusp_eq_widthIndex h D E hσ]
+  simp [cuspOrbitMap_cuspOrbit_eq_of_cusp_eq h (D.cusp_eq_of_scaling_eq E hσ).symm]
 
 section Compact
 
 variable [hcompact : letI : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
   CompactSpace Δ.CompactifiedQuotient]
 
-/-- Bundled finite holomorphic maps compose along subgroup towers, so generic divisor
-functoriality and ramification chain rules apply to the canonical quotient maps. -/
-@[simp]
-theorem finiteHolomorphicMap_comp {Θ : Subgroup PSL(2, ℝ)} [DiscreteTopology Θ]
-    (k : Γ ≤ Θ) [Γ.IsFiniteRelIndex Θ] :
-    letI : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
-    letI : Δ.IsFiniteRelIndex Θ := (inferInstance : Δ.IsFiniteRelIndex Γ).trans inferInstance
-    (finiteHolomorphicMap k).comp (finiteHolomorphicMap h) = finiteHolomorphicMap (h.trans k) := by
-  let : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
-  let : Δ.IsFiniteRelIndex Θ := (inferInstance : Δ.IsFiniteRelIndex Γ).trans inferInstance
-  apply FiniteHolomorphicMap.ext
-  intro x
-  simp
-
 /-- The ramification coefficient at an interior orbit is the elliptic stabilizer index minus one.
 In particular it vanishes at an unramified interior orbit. -/
 theorem coeff_ramificationDivisor_ofQuotient (z : ℍ) :
     letI : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
-    WeilDivisor.coeff (ramificationDivisor (finiteHolomorphicMap h))
+    WeilDivisor.coeff (ramificationDivisor (compactifiedQuotientFiniteHolomorphicMap h))
         (ofQuotient (Quotient.mk'' z)) = (ellipticRamificationIndex h z : ℤ) - 1 := by
   let : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
-  rw [coeff_ramificationDivisor, coe_finiteHolomorphicMap,
+  rw [coeff_ramificationDivisor, coe_compactifiedQuotientFiniteHolomorphicMap,
     localMultiplicity_compactifiedQuotientMap_ofQuotient_eq_ellipticRamificationIndex]
 
 /-- The ramification coefficient at a cusp is its boundary stabilizer index minus one. -/
 theorem coeff_ramificationDivisor_ofCusp (c : Δ.cuspPoints) :
     letI : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
-    WeilDivisor.coeff (ramificationDivisor (finiteHolomorphicMap h))
+    WeilDivisor.coeff (ramificationDivisor (compactifiedQuotientFiniteHolomorphicMap h))
         (ofCusp (Δ.cuspOrbitMk c)) =
       ((Δ.subgroupOf Γ).relIndex (stabilizer Γ (c : OnePoint ℝ)) : ℤ) - 1 := by
   let : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
-  rw [coeff_ramificationDivisor, coe_finiteHolomorphicMap,
+  rw [coeff_ramificationDivisor, coe_compactifiedQuotientFiniteHolomorphicMap,
     localMultiplicity_compactifiedQuotientMap_ofCusp_cuspOrbitMk]
 
 /-- With compatible normalized cusp data, the ramification coefficient is the positive
 cusp-width index minus one. -/
-theorem coeff_ramificationDivisor_ofCusp_eq_widthIndex (D : Δ.CuspDatum) (E : Γ.CuspDatum)
+theorem coeff_ramificationDivisor_ofCusp_eq_widthIndex_sub_one (D : Δ.CuspDatum) (E : Γ.CuspDatum)
     (hσ : D.scaling = E.scaling) :
     letI : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
-    WeilDivisor.coeff (ramificationDivisor (finiteHolomorphicMap h)) (ofCusp D.cuspOrbit) =
+    WeilDivisor.coeff (ramificationDivisor (compactifiedQuotientFiniteHolomorphicMap h))
+        (ofCusp D.cuspOrbit) =
       (Subgroup.CuspDatum.widthIndex h D E (D.cusp_eq_of_scaling_eq E hσ) hσ : ℤ) - 1 := by
   let : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
-  rw [coeff_ramificationDivisor, coe_finiteHolomorphicMap,
+  rw [coeff_ramificationDivisor, coe_compactifiedQuotientFiniteHolomorphicMap,
     localMultiplicity_compactifiedQuotientMap_ofCusp_eq_widthIndex h D E hσ]
 
 /-- The ramification coefficient at an interior point is nonzero exactly when the elliptic
@@ -157,11 +123,12 @@ stabilizer index is greater than one. -/
 @[simp]
 theorem ramificationDivisor_apply_ofQuotient_ne_zero_iff (z : ℍ) :
     letI : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
-    (ramificationDivisor (finiteHolomorphicMap h)) (ofQuotient (Quotient.mk'' z)) ≠ 0 ↔
+    (ramificationDivisor (compactifiedQuotientFiniteHolomorphicMap h))
+        (ofQuotient (Quotient.mk'' z)) ≠ 0 ↔
       1 < ellipticRamificationIndex h z := by
   let : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
   rw [← Finsupp.mem_support_iff, ← Finset.mem_coe, support_ramificationDivisor]
-  simp only [mem_ofPred_eq, coe_finiteHolomorphicMap,
+  simp only [mem_ofPred_eq, coe_compactifiedQuotientFiniteHolomorphicMap,
     localMultiplicity_compactifiedQuotientMap_ofQuotient_eq_ellipticRamificationIndex]
 
 /-- The ramification coefficient at a cusp is nonzero exactly when its boundary stabilizer index is
@@ -169,28 +136,33 @@ greater than one. -/
 @[simp]
 theorem ramificationDivisor_apply_ofCusp_ne_zero_iff (c : Δ.cuspPoints) :
     letI : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
-    (ramificationDivisor (finiteHolomorphicMap h)) (ofCusp (Δ.cuspOrbitMk c)) ≠ 0 ↔
+    (ramificationDivisor (compactifiedQuotientFiniteHolomorphicMap h))
+        (ofCusp (Δ.cuspOrbitMk c)) ≠ 0 ↔
       1 < (Δ.subgroupOf Γ).relIndex (stabilizer Γ (c : OnePoint ℝ)) := by
   let : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
   rw [← Finsupp.mem_support_iff, ← Finset.mem_coe, support_ramificationDivisor]
-  simp only [mem_ofPred_eq, coe_finiteHolomorphicMap,
+  simp only [mem_ofPred_eq, coe_compactifiedQuotientFiniteHolomorphicMap,
     localMultiplicity_compactifiedQuotientMap_ofCusp_cuspOrbitMk]
 
 /-- Total ramification splits into the interior contribution and the contribution from adjoined
-cusps. Both sums have finite support; the pointwise weights are the stabilizer indices minus one. -/
-theorem ramificationDegree_eq_interior_add_cusps :
+cusps, with weights equal to stabilizer indices minus one. The formula holds for any choice
+of interior and cusp representatives, and both sums have finite support. -/
+theorem ramificationDegree_eq_interior_add_cusps
+    (z : orbitRel.Quotient Δ ℍ → ℍ) (hz : ∀ q, Quotient.mk'' (z q) = q)
+    (c : Δ.CuspOrbit → Δ.cuspPoints) (hc : ∀ C, Δ.cuspOrbitMk (c C) = C) :
     letI : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
     ramificationDegree (compactifiedQuotientMap h) =
       (∑ᶠ q : orbitRel.Quotient Δ ℍ,
-        (localMultiplicity (compactifiedQuotientMap h) (ofQuotient q) - 1)) +
+        (ellipticRamificationIndex h (z q) - 1)) +
       ∑ᶠ C : Δ.CuspOrbit,
-        (localMultiplicity (compactifiedQuotientMap h) (ofCusp C) - 1) := by
+        ((Δ.subgroupOf Γ).relIndex (stabilizer Γ (c C : OnePoint ℝ)) - 1) := by
   let : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
   let w : Δ.CompactifiedQuotient → ℕ := fun x ↦ localMultiplicity (compactifiedQuotientMap h) x - 1
   have hw : (support w).Finite := by
-    refine ((finiteHolomorphicMap h).finite_setOf_one_lt_localMultiplicity).subset ?_
+    refine
+      ((compactifiedQuotientFiniteHolomorphicMap h).finite_setOf_one_lt_localMultiplicity).subset ?_
     intro x hx
-    simpa only [mem_ofPred_eq, coe_finiteHolomorphicMap, mem_support, w,
+    simpa only [mem_ofPred_eq, coe_compactifiedQuotientFiniteHolomorphicMap, mem_support, w,
       Nat.sub_ne_zero_iff_lt] using hx
   have hdisj : Disjoint (range (ofQuotient (Γ := Δ))) (range (ofCusp (Γ := Δ))) := by
     simp only [disjoint_left, mem_range]
@@ -204,6 +176,17 @@ theorem ramificationDegree_eq_interior_add_cusps :
   have hinj : Injective (ofCusp (Γ := Δ)) := fun _ _ hC ↦ by cases hC; rfl
   rw [hcover, finsum_mem_univ, finsum_mem_range ofQuotient_injective,
     finsum_mem_range hinj] at hsum
+  have hinterior (q : orbitRel.Quotient Δ ℍ) :
+      w (ofQuotient q) = ellipticRamificationIndex h (z q) - 1 := by
+    conv_lhs => rw [← hz q]
+    exact congrArg (fun n : ℕ ↦ n - 1)
+      (localMultiplicity_compactifiedQuotientMap_ofQuotient_eq_ellipticRamificationIndex h (z q))
+  have hcusps (C : Δ.CuspOrbit) :
+      w (ofCusp C) = (Δ.subgroupOf Γ).relIndex (stabilizer Γ (c C : OnePoint ℝ)) - 1 := by
+    conv_lhs => rw [← hc C]
+    exact congrArg (fun n : ℕ ↦ n - 1)
+      (localMultiplicity_compactifiedQuotientMap_ofCusp_cuspOrbitMk h (c C))
+  simp_rw [hinterior, hcusps] at hsum
   simpa only [ramificationDegree_def, w] using hsum
 
 end Compact
