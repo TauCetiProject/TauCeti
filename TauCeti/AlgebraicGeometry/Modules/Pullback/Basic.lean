@@ -529,12 +529,13 @@ instance isLocallyFree_pullback (f : X ⟶ Y) (M : Y.Modules) [M.IsLocallyFree] 
   obtain ⟨q, _⟩ := SheafOfModules.IsLocallyFree.exists_isLocallyFreeData (M := M)
   exact (q.pullback f).isLocallyFree
 
-/-- Restriction of module sheaves along an open immersion preserves finite limits. -/
-instance preservesFiniteLimits_restrictFunctor
-    (f : X ⟶ Y) [IsOpenImmersion f] : PreservesFiniteLimits (Scheme.Modules.restrictFunctor f) := by
+/-- Restriction of module sheaves along an open immersion preserves small limits. -/
+instance _root_.TauCeti.AlgebraicGeometry.Scheme.Modules.preservesLimitsOfSize_restrictFunctor
+    (f : X ⟶ Y) [IsOpenImmersion f] :
+    PreservesLimitsOfSize.{u, u} (Scheme.Modules.restrictFunctor f) := by
   -- Restriction is the continuous-site pushforward with the inverse structure-ring map.
   unfold Scheme.Modules.restrictFunctor
-  apply SheafOfModules.preservesFiniteLimits_pushforward
+  apply TauCeti.SheafOfModules.preservesLimitsOfSize_pushforward
 
 /-- Restriction to an open subscheme preserves finite presentation. -/
 instance isFinitePresentation_restrict
@@ -563,6 +564,24 @@ theorem isFinitePresentation_restrict_iff_of_isIso
         (Scheme.Modules.restrictFunctorCongr (IsIso.inv_hom_id f)).app M ≪≫
         Scheme.Modules.restrictFunctorId.app M
     exact (SheafOfModules.isFinitePresentation Y.ringCatSheaf).prop_of_iso e inferInstance
+  · intro h
+    let := h
+    infer_instance
+
+/-- Restriction along an isomorphism detects finite type. -/
+@[simp]
+theorem _root_.TauCeti.AlgebraicGeometry.Scheme.Modules.isFiniteType_restrict_iff_of_isIso
+    (M : Y.Modules) (f : X ⟶ Y) [IsIso f] :
+    (M.restrict f).IsFiniteType ↔ M.IsFiniteType := by
+  constructor
+  · intro h
+    let := h
+    let e : (M.restrict f).restrict (inv f) ≅ M :=
+      ((Scheme.Modules.restrictFunctorComp (inv f) f).app M).symm ≪≫
+        (Scheme.Modules.restrictFunctorCongr (IsIso.inv_hom_id f)).app M ≪≫
+        Scheme.Modules.restrictFunctorId.app M
+    exact ObjectProperty.prop_of_iso
+      (fun A : SheafOfModules Y.ringCatSheaf ↦ A.IsFiniteType) e inferInstance
   · intro h
     let := h
     infer_instance

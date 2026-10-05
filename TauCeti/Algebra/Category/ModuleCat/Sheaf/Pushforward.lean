@@ -7,17 +7,18 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Sheaf.PushforwardContinuous
 public import Mathlib.Algebra.Category.ModuleCat.Sheaf.Limits
-public import Mathlib.Algebra.Category.ModuleCat.Presheaf.Sheafification
+public import Mathlib.Algebra.Category.ModuleCat.Presheaf.Abelian
+import Mathlib.CategoryTheory.Functor.ReflectsIso.Balanced
 
 /-!
-# Left exactness of pushforward of module sheaves
+# Limits of pushforward of module sheaves
 
-Pushforward along a continuous functor of sites preserves finite limits of sheaves of modules.
+Pushforward along a continuous functor of sites preserves small limits of sheaves of modules.
 In particular, restriction to an open subscheme preserves kernels. No cocontinuity or flatness
 assumption is needed for this assertion.
 
 The construction uses Mathlib's forgetful functors to presheaves of modules and abelian groups:
-they preserve and reflect finite limits, and pushforward on underlying abelian presheaves is
+they preserve and reflect small limits, and pushforward on underlying abelian presheaves is
 precomposition.
 -/
 
@@ -33,26 +34,35 @@ variable {C : Type u₁} [Category.{v₁} C] {D : Type u₂} [Category.{v₂} D]
   {J : GrothendieckTopology C} {K : GrothendieckTopology D} {F : C ⥤ D}
   {S : Sheaf J RingCat.{u}} {R : Sheaf K RingCat.{u}}
   [Functor.IsContinuous F J K]
-  [HasSheafify J AddCommGrpCat.{v}] [J.WEqualsLocallyBijective AddCommGrpCat.{v}]
-  [HasSheafify K AddCommGrpCat.{v}] [K.WEqualsLocallyBijective AddCommGrpCat.{v}]
 
-/-- Pushforward of module sheaves along a continuous functor is left exact. -/
-noncomputable instance _root_.SheafOfModules.preservesFiniteLimits_pushforward
+/-- Forgetting the module and sheaf structures after pushforward gives precomposition of
+the underlying presheaf of abelian groups. The comparison is the identity on every section. -/
+noncomputable def SheafOfModules.pushforwardCompToPresheaf
     (φ : S ⟶ (F.sheafPushforwardContinuous RingCat.{u} J K).obj R) :
-    PreservesFiniteLimits (SheafOfModules.pushforward.{v} φ) := by
-  -- Both composites below forget the module structure and precompose the same presheaf.
-  have e : SheafOfModules.pushforward.{v} φ ⋙
+    SheafOfModules.pushforward.{v} φ ⋙
       SheafOfModules.forget S ⋙ PresheafOfModules.toPresheaf S.obj ≅
       (SheafOfModules.forget R ⋙ PresheafOfModules.toPresheaf R.obj) ⋙
-        (Functor.whiskeringLeft _ _ _).obj F.op := Iso.refl _
-  have : PreservesFiniteLimits (SheafOfModules.pushforward.{v} φ ⋙
+        (Functor.whiskeringLeft _ _ _).obj F.op :=
+  NatIso.ofComponents (fun _ ↦ NatIso.ofComponents (fun _ ↦ Iso.refl _))
+
+/-- Pushforward of module sheaves along a continuous functor preserves limits indexed by
+categories whose objects and morphisms lie in the universe of the underlying modules. -/
+noncomputable instance SheafOfModules.preservesLimitsOfSize_pushforward
+    (φ : S ⟶ (F.sheafPushforwardContinuous RingCat.{u} J K).obj R) :
+    PreservesLimitsOfSize.{v, v} (SheafOfModules.pushforward.{v} φ) := by
+  have : PreservesLimitsOfSize.{v, v} (SheafOfModules.pushforward.{v} φ ⋙
       SheafOfModules.forget S ⋙ PresheafOfModules.toPresheaf S.obj) :=
-    preservesFiniteLimits_of_natIso e.symm
-  have : ReflectsFiniteLimits
+    preservesLimits_of_natIso (SheafOfModules.pushforwardCompToPresheaf φ).symm
+  have : ReflectsLimitsOfSize.{v, v}
       (SheafOfModules.forget S ⋙ PresheafOfModules.toPresheaf S.obj) :=
-    inferInstanceAs (ReflectsFiniteLimits
-      (SheafOfModules.toSheaf.{v} S ⋙ sheafToPresheaf J AddCommGrpCat.{v}))
-  exact preservesFiniteLimits_of_reflects_of_preserves _
+    reflectsLimits_of_reflectsIsomorphisms
+  exact preservesLimits_of_reflects_of_preserves _
     (SheafOfModules.forget S ⋙ PresheafOfModules.toPresheaf S.obj)
+
+/-- Pushforward of module sheaves along a continuous functor is left exact. -/
+noncomputable instance SheafOfModules.preservesFiniteLimits_pushforward
+    (φ : S ⟶ (F.sheafPushforwardContinuous RingCat.{u} J K).obj R) :
+    PreservesFiniteLimits (SheafOfModules.pushforward.{v} φ) :=
+  PreservesLimitsOfSize.preservesFiniteLimits.{v, v} _
 
 end TauCeti
