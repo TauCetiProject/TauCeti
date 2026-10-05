@@ -80,6 +80,7 @@ noncomputable def realCliffordThreeOneVectorEquivHermitian :
     (Fin 4 → ℝ) ≃ₗ[ℝ]
       selfAdjoint.submodule ℝ (Matrix (Fin 2) (Fin 2) ℂ) where
   toFun v := ⟨realCliffordThreeOneVectorMatrix v, by
+    -- Restate subtype membership through the Hermitian predicate proved above.
     change IsSelfAdjoint (realCliffordThreeOneVectorMatrix v)
     exact (realCliffordThreeOneVectorMatrix_isHermitian v).isSelfAdjoint⟩
   invFun A := ![-(A.1 0 1).im, -(A.1 0 1).re,
@@ -118,7 +119,8 @@ noncomputable def realCliffordThreeOneVectorEquivHermitian :
         ring
       · simp [realCliffordThreeOneVectorMatrix, h00im]
     · apply Complex.ext <;> simp [realCliffordThreeOneVectorMatrix]
-    · change realCliffordThreeOneVectorMatrix _ 1 0 = A.1 1 0
+    · -- Expose the matrix entry before using Hermitian symmetry across the diagonal.
+      change realCliffordThreeOneVectorMatrix _ 1 0 = A.1 1 0
       rw [← h01]
       apply Complex.ext <;> simp [realCliffordThreeOneVectorMatrix]
     · apply Complex.ext
@@ -136,7 +138,6 @@ theorem coe_realCliffordThreeOneVectorEquivHermitian_apply (v : Fin 4 → ℝ) :
   fin_cases i <;> fin_cases j <;> rfl
 
 /-- The Lorentz-vector coordinates recovered from a Hermitian two-by-two matrix. -/
-@[simp]
 theorem realCliffordThreeOneVectorEquivHermitian_symm_apply
     (A : selfAdjoint.submodule ℝ (Matrix (Fin 2) (Fin 2) ℂ)) :
     realCliffordThreeOneVectorEquivHermitian.symm A =

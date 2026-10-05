@@ -129,84 +129,42 @@ private abbrev realCliffordFormThreeOne := realCliffordForm 3 1
 private def realCliffordThreeOneLastVector : Fin 4 → ℝ := Pi.single 3 1
 
 private def realCliffordThreeOneVectorEven :
-    (Fin 4 → ℝ) →ₗ[ℝ] CliffordAlgebra.even realCliffordFormThreeOne where
-  toFun v := -((CliffordAlgebra.even.ι realCliffordFormThreeOne).bilin v
+    (Fin 4 → ℝ) →ₗ[ℝ] CliffordAlgebra.even realCliffordFormThreeOne :=
+  -(CliffordAlgebra.rightIotaEven realCliffordFormThreeOne
     realCliffordThreeOneLastVector)
-  map_add' v w := by simp [add_comm]
-  map_smul' r v := by simp
 
 private theorem coe_realCliffordThreeOneVectorEven (v : Fin 4 → ℝ) :
     (realCliffordThreeOneVectorEven v : CliffordAlgebra realCliffordFormThreeOne) =
       -(CliffordAlgebra.ι realCliffordFormThreeOne v *
         CliffordAlgebra.ι realCliffordFormThreeOne realCliffordThreeOneLastVector) :=
-  rfl
+  by
+    rw [realCliffordThreeOneVectorEven, LinearMap.neg_apply]
+    exact congrArg Neg.neg (CliffordAlgebra.coe_rightIotaEven realCliffordFormThreeOne
+      realCliffordThreeOneLastVector v)
 
 private theorem realCliffordThreeOneEvenEquivComplexMatrix_vectorEven (v : Fin 4 → ℝ) :
     realCliffordThreeOneEvenEquivComplexMatrix (realCliffordThreeOneVectorEven v) =
       (realCliffordThreeOneVectorEquivHermitian v : Matrix (Fin 2) (Fin 2) ℂ) := by
-  rw [show realCliffordThreeOneVectorEven v =
-      -((CliffordAlgebra.even.ι realCliffordFormThreeOne).bilin v
-        realCliffordThreeOneLastVector) from rfl,
-    map_neg, realCliffordThreeOneEvenEquivComplexMatrix_ι,
+  -- Expose the negated even bilinear embedding so the landed generator formula can rewrite it.
+  rw [realCliffordThreeOneVectorEven, LinearMap.neg_apply,
+    CliffordAlgebra.rightIotaEven_apply, map_neg,
+    realCliffordThreeOneEvenEquivComplexMatrix_ι,
     coe_realCliffordThreeOneVectorEquivHermitian_apply]
   ext i j
   fin_cases i <;> fin_cases j <;>
     simp [realCliffordThreeOneLastVector] <;> ring
 
-private theorem realCliffordThreeOneLastVector_sq :
-    CliffordAlgebra.ι realCliffordFormThreeOne realCliffordThreeOneLastVector *
-        CliffordAlgebra.ι realCliffordFormThreeOne realCliffordThreeOneLastVector = -1 := by
-  have he : realCliffordFormThreeOne realCliffordThreeOneLastVector = -1 := by
-    change realCliffordForm 3 1 (Pi.single 3 1) = -1
-    simp [realCliffordForm_three_one_apply]
-  rw [CliffordAlgebra.ι_sq_scalar, he, map_neg, map_one]
-
-private def realCliffordThreeOneLastVectorUnit :
-    (CliffordAlgebra realCliffordFormThreeOne)ˣ where
-  val := -CliffordAlgebra.ι realCliffordFormThreeOne realCliffordThreeOneLastVector
-  inv := CliffordAlgebra.ι realCliffordFormThreeOne realCliffordThreeOneLastVector
-  val_inv := by
-    rw [neg_mul, realCliffordThreeOneLastVector_sq, neg_neg]
-  inv_val := by
-    rw [mul_neg, realCliffordThreeOneLastVector_sq, neg_neg]
-
-private noncomputable def realCliffordThreeOneConjugateLast :
-    CliffordAlgebra realCliffordFormThreeOne ≃ₐ[ℝ]
-      CliffordAlgebra realCliffordFormThreeOne :=
-  MulSemiringAction.toAlgEquiv ℝ _
-    (ConjAct.toConjAct realCliffordThreeOneLastVectorUnit)
-
-private theorem realCliffordThreeOneConjugateLast_apply
-    (x : CliffordAlgebra realCliffordFormThreeOne) :
-    realCliffordThreeOneConjugateLast x =
-      (-CliffordAlgebra.ι realCliffordFormThreeOne realCliffordThreeOneLastVector * x) *
-        CliffordAlgebra.ι realCliffordFormThreeOne realCliffordThreeOneLastVector := by
-  simp [realCliffordThreeOneConjugateLast,
-    realCliffordThreeOneLastVectorUnit, ConjAct.units_smul_def]
+private theorem realCliffordThreeOneLastVector_negOne :
+    realCliffordFormThreeOne realCliffordThreeOneLastVector = -1 := by
+  -- Expose the signature and basis vector so the coordinate formula applies.
+  change realCliffordForm 3 1 (Pi.single 3 1) = -1
+  simp [realCliffordForm_three_one_apply]
 
 private noncomputable def realCliffordThreeOneConjugateLastEvenHom :
     CliffordAlgebra.even realCliffordFormThreeOne →ₐ[ℝ]
-      CliffordAlgebra.even realCliffordFormThreeOne where
-  toFun x :=
-    ⟨realCliffordThreeOneConjugateLast
-        (x : CliffordAlgebra realCliffordFormThreeOne), by
-      rw [realCliffordThreeOneConjugateLast_apply]
-      rw [← Subalgebra.mem_toSubmodule, CliffordAlgebra.even_toSubmodule]
-      have hleft :
-          -CliffordAlgebra.ι realCliffordFormThreeOne realCliffordThreeOneLastVector ∈
-            CliffordAlgebra.evenOdd realCliffordFormThreeOne 1 :=
-        Submodule.neg_mem _ (CliffordAlgebra.ι_mem_evenOdd_one _ _)
-      have h := SetLike.mul_mem_graded (SetLike.mul_mem_graded hleft x.2)
-        (CliffordAlgebra.ι_mem_evenOdd_one realCliffordFormThreeOne
-          realCliffordThreeOneLastVector)
-      exact (show (1 + 1 : ZMod 2) = 0 by decide) ▸ (by simpa only [add_zero] using h)⟩
-  map_one' := Subtype.ext (map_one realCliffordThreeOneConjugateLast)
-  map_mul' x y := Subtype.ext (map_mul realCliffordThreeOneConjugateLast
-    (x : CliffordAlgebra realCliffordFormThreeOne) y)
-  map_zero' := Subtype.ext (map_zero realCliffordThreeOneConjugateLast)
-  map_add' x y := Subtype.ext (map_add realCliffordThreeOneConjugateLast
-    (x : CliffordAlgebra realCliffordFormThreeOne) y)
-  commutes' r := Subtype.ext (AlgEquiv.commutes realCliffordThreeOneConjugateLast r)
+      CliffordAlgebra.even realCliffordFormThreeOne :=
+  CliffordAlgebra.conjugateNegativeIotaEven realCliffordFormThreeOne
+    realCliffordThreeOneLastVector realCliffordThreeOneLastVector_negOne
 
 private theorem coe_realCliffordThreeOneConjugateLastEvenHom
     (x : CliffordAlgebra.even realCliffordFormThreeOne) :
@@ -215,7 +173,8 @@ private theorem coe_realCliffordThreeOneConjugateLastEvenHom
       (-CliffordAlgebra.ι realCliffordFormThreeOne realCliffordThreeOneLastVector *
         (x : CliffordAlgebra realCliffordFormThreeOne)) *
           CliffordAlgebra.ι realCliffordFormThreeOne realCliffordThreeOneLastVector :=
-  realCliffordThreeOneConjugateLast_apply x
+  CliffordAlgebra.coe_conjugateNegativeIotaEven realCliffordFormThreeOne
+    realCliffordThreeOneLastVector realCliffordThreeOneLastVector_negOne x
 
 private noncomputable def realCliffordThreeOneStarAdjugateHom :
     Matrix (Fin 2) (Fin 2) ℂ →ₐ[ℝ] Matrix (Fin 2) (Fin 2) ℂ where
@@ -245,6 +204,9 @@ private theorem realCliffordThreeOneConjugateLastEvenHom_ι (m n : Fin 4 → ℝ
         (CliffordAlgebra.even.ι realCliffordFormThreeOne).bilin n
           realCliffordThreeOneLastVector := by
   apply Subtype.ext
+  rw [coe_realCliffordThreeOneConjugateLastEvenHom]
+  -- Compare the two even elements after coercing their bilinear generators to the ambient
+  -- Clifford algebra, where associativity is available to `noncomm_ring`.
   change (-CliffordAlgebra.ι realCliffordFormThreeOne realCliffordThreeOneLastVector *
       (CliffordAlgebra.ι realCliffordFormThreeOne m *
         CliffordAlgebra.ι realCliffordFormThreeOne n)) *
@@ -288,6 +250,7 @@ private theorem realCliffordThreeOneEvenEquivComplexMatrix_conjugate
     apply LinearMap.ext
     intro n
     simp only [CliffordAlgebra.EvenHom.compr₂_bilin, LinearMap.compr₂_apply]
+    -- Expose evaluation of the two composed algebra homomorphisms on a bilinear generator.
     change realCliffordThreeOneEvenEquivComplexMatrix
         (realCliffordThreeOneConjugateLastEvenHom
           ((CliffordAlgebra.even.ι realCliffordFormThreeOne).bilin m n)) =
@@ -309,48 +272,10 @@ private theorem realCliffordThreeOneVectorEven_spin_action
             (CliffordAlgebra.reverseEven realCliffordFormThreeOne
               (CliffordAlgebra.evenUnitaryGroupEvenPart realCliffordFormThreeOne
                 (CliffordAlgebra.spinGroupToEvenUnitary realCliffordFormThreeOne s))) := by
-  apply Subtype.ext
-  rw [coe_realCliffordThreeOneVectorEven, CliffordAlgebra.spinGroup_smul_apply,
-    CliffordAlgebra.ι_spinVectorAction_apply]
-  simp only [Subalgebra.coe_mul, coe_realCliffordThreeOneVectorEven,
-    coe_realCliffordThreeOneConjugateLastEvenHom]
-  rw [CliffordAlgebra.coe_evenUnitaryGroupEvenPart,
-    CliffordAlgebra.coe_reverseEven_apply,
-    CliffordAlgebra.coe_evenUnitaryGroupEvenPart,
-    CliffordAlgebra.coe_spinGroupToEvenUnitary_apply]
-  change -((s : CliffordAlgebra realCliffordFormThreeOne) *
-      CliffordAlgebra.ι realCliffordFormThreeOne v *
-      star (s : CliffordAlgebra realCliffordFormThreeOne) *
-      CliffordAlgebra.ι realCliffordFormThreeOne realCliffordThreeOneLastVector) =
-    (s : CliffordAlgebra realCliffordFormThreeOne) *
-      -(CliffordAlgebra.ι realCliffordFormThreeOne v *
-        CliffordAlgebra.ι realCliffordFormThreeOne realCliffordThreeOneLastVector) *
-        ((-CliffordAlgebra.ι realCliffordFormThreeOne realCliffordThreeOneLastVector *
-            CliffordAlgebra.reverse (s : CliffordAlgebra realCliffordFormThreeOne)) *
-          CliffordAlgebra.ι realCliffordFormThreeOne realCliffordThreeOneLastVector)
-  rw [CliffordAlgebra.reverse_eq_star_of_mem_even
-    ⟨(s : CliffordAlgebra realCliffordFormThreeOne), spinGroup.mem_even s.2⟩]
-  symm
-  calc
-    (s : CliffordAlgebra realCliffordFormThreeOne) *
-        -(CliffordAlgebra.ι realCliffordFormThreeOne v *
-          CliffordAlgebra.ι realCliffordFormThreeOne realCliffordThreeOneLastVector) *
-          ((-CliffordAlgebra.ι realCliffordFormThreeOne realCliffordThreeOneLastVector *
-              star (s : CliffordAlgebra realCliffordFormThreeOne)) *
-            CliffordAlgebra.ι realCliffordFormThreeOne realCliffordThreeOneLastVector) =
-      (s : CliffordAlgebra realCliffordFormThreeOne) *
-        CliffordAlgebra.ι realCliffordFormThreeOne v *
-        (CliffordAlgebra.ι realCliffordFormThreeOne realCliffordThreeOneLastVector *
-          CliffordAlgebra.ι realCliffordFormThreeOne realCliffordThreeOneLastVector) *
-        star (s : CliffordAlgebra realCliffordFormThreeOne) *
-        CliffordAlgebra.ι realCliffordFormThreeOne realCliffordThreeOneLastVector := by
-      noncomm_ring
-    _ = -((s : CliffordAlgebra realCliffordFormThreeOne) *
-        CliffordAlgebra.ι realCliffordFormThreeOne v *
-        star (s : CliffordAlgebra realCliffordFormThreeOne) *
-        CliffordAlgebra.ι realCliffordFormThreeOne realCliffordThreeOneLastVector) := by
-      rw [realCliffordThreeOneLastVector_sq]
-      simp
+  simpa [realCliffordThreeOneVectorEven,
+    realCliffordThreeOneConjugateLastEvenHom] using
+    (CliffordAlgebra.neg_rightIotaEven_spinGroup_smul realCliffordFormThreeOne
+      realCliffordThreeOneLastVector realCliffordThreeOneLastVector_negOne s v)
 
 /-- Under `Spin(3,1) ≃ SL₂(ℂ)` and the Hermitian-matrix model of Lorentz four-space, the
 Spin vector action is Hermitian congruence `X ↦ A X Aᴴ`. -/
@@ -375,6 +300,7 @@ theorem realSpinThreeOneEquivSpecialLinear_action
     simpa using Matrix.adjugate_adjugate A (by norm_num)
   rw [hdouble] at haction
   have hq := coe_realSpinThreeOneEquivSpecialLinear_apply s
+  -- Name the common even-unitary element so the coercion theorem rewrites the matrix factor.
   change ((realSpinThreeOneEquivSpecialLinear s : Matrix.SpecialLinearGroup (Fin 2) ℂ) :
       Matrix (Fin 2) (Fin 2) ℂ) = realCliffordThreeOneEvenEquivComplexMatrix x at hq
   rw [hq]
