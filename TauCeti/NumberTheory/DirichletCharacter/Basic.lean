@@ -33,8 +33,7 @@ case the descent uses is `d = L N / p` with `p ∣ N` coprime to `L`, where the 
   and `DirichletCharacter.factorsThrough_div_of_changeLevel_factorsThrough`: its arithmetic
   specialisation, from `L N / p` to `N / p`.
 * `DirichletCharacter.exists_eq_comp_unitsMap_of_factorsThrough`: a factorisation of
-  `MulChar.ofUnitHom χ` through `d`, read back on unit homomorphisms as `χ = χ₀ ∘ unitsMap`, and
-  its converse `DirichletCharacter.factorsThrough_ofUnitHom_comp_unitsMap`.
+  `MulChar.ofUnitHom χ` through `d`, read back on unit homomorphisms as `χ = χ₀ ∘ unitsMap`.
 * `DirichletCharacter.even_changeLevel_iff`: changing the level preserves parity.
 * `DirichletCharacter.conductor_eq_prime_pow_of_emod_eq_of_apply_ne_apply`: a primitivity
   criterion at a prime-power level, obtained by comparing values on congruent units, and its
@@ -167,17 +166,6 @@ theorem exists_eq_comp_unitsMap_of_factorsThrough {R : Type*} [CommMonoidWithZer
   have h := congrArg MulChar.toUnitHom hfac.eq_changeLevel
   rw [changeLevel_toUnitHom] at h
   simpa using h
-
-/-- **A unit homomorphism pulled back from a divisor factors through it.** The converse of
-`DirichletCharacter.exists_eq_comp_unitsMap_of_factorsThrough`: for `d ∣ N`, the Dirichlet
-character of `χ₀ ∘ ZMod.unitsMap` is the level change of the character of `χ₀`, so it factors
-through `d`. -/
-theorem factorsThrough_ofUnitHom_comp_unitsMap {R : Type*} [CommMonoidWithZero R] {N d : ℕ}
-    (hd : d ∣ N) (χ₀ : (ZMod d)ˣ →* Rˣ) :
-    FactorsThrough (MulChar.ofUnitHom (χ₀.comp (ZMod.unitsMap hd)) : DirichletCharacter R N)
-      d :=
-  ⟨hd, MulChar.ofUnitHom χ₀, by
-    simp only [changeLevel_def, MulChar.toUnitHom_eq, MulChar.ofUnitHom_eq, Equiv.apply_symm_apply]⟩
 
 /-- **Changing the level preserves parity**: the value at `-1` of a Dirichlet character is the
 value at `-1` of its lift to any multiple level. -/

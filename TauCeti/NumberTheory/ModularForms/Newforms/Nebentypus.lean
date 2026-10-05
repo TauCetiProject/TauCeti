@@ -256,7 +256,7 @@ the span of the level-raises `V_d S_k(M, ψ)` over the proper divisor levels `M`
 exists, since `(ZMod N)ˣ → (ZMod M)ˣ` is onto, and it exists exactly when the Dirichlet character
 of `χ` factors through `M`, that is, when its conductor divides `M`
 (`DirichletCharacter.exists_eq_comp_unitsMap_of_factorsThrough`,
-`DirichletCharacter.factorsThrough_ofUnitHom_comp_unitsMap` and
+`DirichletCharacter.changeLevel_factorsThrough` and
 `DirichletCharacter.mem_conductorSet_iff_conductor_dvd`). So this is the description
 `S_k(N, χ)ᵒˡᵈ = Σ_{M ∣ N, M ≠ N, cond χ ∣ M} Σ_{d ∣ N / M} V_d S_k(M, χ_M)` of the old forms of
 nebentypus `χ` by generators, as in Miyake, §4.6. -/
@@ -289,8 +289,10 @@ theorem cuspFormsOld_inf_cuspFormCharSpace_eq_bot_of_isPrimitive
   have hMN : M ∣ N := (Dvd.intro_left d rfl).trans h
   -- the conductor `N` of `χ` divides the level `M` it is pulled back from
   have hcond : DirichletCharacter.conductor (MulChar.ofUnitHom χ : DirichletCharacter ℂ N) ∣ M :=
-    DirichletCharacter.conductor_dvd_of_mem_conductorSet _
-      (hψ ▸ DirichletCharacter.factorsThrough_ofUnitHom_comp_unitsMap hMN ψ)
+    DirichletCharacter.conductor_dvd_of_mem_conductorSet _ <| by
+      simpa only [DirichletCharacter.mem_conductorSet_iff, DirichletCharacter.changeLevel_def,
+        MulChar.toUnitHom_eq, MulChar.ofUnitHom_eq, Equiv.apply_symm_apply, ← hψ] using
+        DirichletCharacter.changeLevel_factorsThrough (MulChar.ofUnitHom ψ) hMN
   rw [hχ] at hcond
   exact absurd (Nat.dvd_antisymm hMN hcond) hM
 
