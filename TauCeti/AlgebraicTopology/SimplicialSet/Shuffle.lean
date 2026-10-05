@@ -116,7 +116,7 @@ lemma δ_succ_cone {a m : ℕ} (x : (Δ[a] : SSet.{w}) _⦋m + 1⦌) (i : Fin (m
   | zero => simp [δ_apply]
   | succ j => simp [δ_apply, Fin.succ_succAbove_succ]
 
-/-- The first face of the cone on a vertex `x` is the vertex `0`. -/
+/-- The second face (index `1`) of the cone on a vertex `x` is the vertex `0`. -/
 lemma δ_one_cone {a : ℕ} (x : (Δ[a] : SSet.{w}) _⦋0⦌) : Δ[a].δ 1 (cone x) = const a 0 _ := by
   ext j
   fin_cases j

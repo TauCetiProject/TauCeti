@@ -380,6 +380,38 @@ private lemma d_whiskerRight_ι_tensorConeChain (r s n : ℕ) (h : r + s = n) :
       d_constZeroChain, MonoidalPreadditive.zero_tensor, zero_comp, add_zero]
   · rw [ι_tensorConeChain_succ]
 
+/-- The cone on the first factor, whiskered by the second, is a contracting homotopy in positive
+degrees (`SSet.stdSimplex.coneChain_d`). -/
+@[reassoc]
+private lemma coneChain_whiskerRight_d (m : ℕ) (Z : C) :
+    (coneChain a R (m + 1) ▷ Z) ≫ (((Δ[a] : SSet.{w}).chainComplex R).d (m + 1 + 1) (m + 1) ▷ Z) =
+      𝟙 _ - (((Δ[a] : SSet.{w}).chainComplex R).d (m + 1) m ▷ Z) ≫ (coneChain a R m ▷ Z) := by
+  rw [← comp_whiskerRight, coneChain_d, ← comp_whiskerRight, ← id_whiskerRight]
+  exact (tensorRight Z).map_sub
+
+/-- The cone on the vertices of the first factor, whiskered by the second, contracts onto the
+vertex `0` (`SSet.stdSimplex.coneChain_zero_d`).  The degree `0 + 1` is the form in which the
+boundary arises from `ChainComplex.ιTensorObj_D₁_succ`. -/
+@[reassoc]
+private lemma coneChain_zero_whiskerRight_d (Z : C) :
+    (coneChain a R 0 ▷ Z) ≫ (((Δ[a] : SSet.{w}).chainComplex R).d (0 + 1) 0 ▷ Z) =
+      𝟙 _ - (constZeroChain a R ▷ Z) := by
+  rw [← comp_whiskerRight, coneChain_zero_d, ← id_whiskerRight]
+  exact (tensorRight Z).map_sub
+
+/-- The boundary in the second factor of the summand `e ⊗ c` of the cone on
+`C(Δ[a]; R) ⊗ C(Δ[b]; S)` in positive degrees (`SSet.stdSimplex.coneChain_d`). -/
+@[reassoc]
+private lemma constZeroChain_tensorHom_coneChain_d (s : ℕ) :
+    (constZeroChain a R ⊗ₘ coneChain b S (s + 1)) ≫
+        (_ ◁ ((Δ[b] : SSet.{w}).chainComplex S).d (s + 1 + 1) (s + 1)) =
+      (constZeroChain a R ▷ _) - (constZeroChain a R ⊗ₘ
+        (((Δ[b] : SSet.{w}).chainComplex S).d (s + 1) s ≫ coneChain b S s)) := by
+  have hL : ∀ (Z : C) {X Y : C} (f g : X ⟶ Y), Z ◁ (f - g) = Z ◁ f - Z ◁ g :=
+    fun Z _ _ _ _ ↦ (tensorLeft Z).map_sub
+  rw [tensorHom_comp_whiskerLeft, coneChain_d, tensorHom_def, tensorHom_def, hL, whiskerLeft_id,
+    Preadditive.comp_sub, Category.comp_id]
+
 /-- The cone on `C(Δ[a]; R) ⊗ C(Δ[b]; S)` is a contracting homotopy in positive degrees:
 `∂ (c ∘ σ) = σ - c ∘ ∂ σ` for a chain `σ` of positive degree.  On a summand `u ⊗ v` this combines
 the boundary formulas of the cones on the two factors with the Koszul sign rule. -/
@@ -394,10 +426,6 @@ lemma tensorConeChain_d (n : ℕ) :
         mapBifunctor.D₁ _ _ (curriedTensor C) (ComplexShape.down ℕ) (m + 1) m +
           mapBifunctor.D₂ _ _ (curriedTensor C) (ComplexShape.down ℕ) (m + 1) m :=
     fun m ↦ mapBifunctor.d_eq _ _ _ _ _ _
-  have hR : ∀ {X Y : C} (f g : X ⟶ Y) (Z : C), (f - g) ▷ Z = f ▷ Z - g ▷ Z :=
-    fun _ _ Z ↦ (tensorRight Z).map_sub
-  have hL : ∀ (Z : C) {X Y : C} (f g : X ⟶ Y), Z ◁ (f - g) = Z ◁ f - Z ◁ g :=
-    fun Z _ _ _ _ ↦ (tensorLeft Z).map_sub
   refine mapBifunctor.hom_ext fun r s h ↦ ?_
   rw [hd, hd, Preadditive.comp_sub]
   -- the identity of the tensor product is not syntactically the identity of the codomain of the
@@ -405,36 +433,29 @@ lemma tensorConeChain_d (n : ℕ) :
   refine Eq.trans ?_ (congrArg (· - _) (Category.comp_id _).symm)
   rcases r with _ | r
   · obtain rfl : s = n + 1 := by simp at h; omega
-    rw [ι_tensorConeChain_zero_assoc]
-    simp only [Preadditive.add_comp, Preadditive.comp_add, Category.assoc,
-      ChainComplex.ιTensorObj_D₁_succ, ChainComplex.ιTensorObj_D₂_succ,
-      ChainComplex.ιTensorObj_D₁_zero, ChainComplex.ιTensorObj_D₂_succ_assoc,
-      ChainComplex.ιTensorObj_D₁_zero_assoc, ι_tensorConeChain_zero, comp_zero,
-      Preadditive.comp_zsmul, pow_zero, one_smul, pow_one]
-    rw [← comp_whiskerRight_assoc, coneChain_zero_d, ← tensorHom_def_assoc,
-      tensorHom_comp_whiskerLeft_assoc, coneChain_d, whisker_exchange_assoc, ← tensorHom_def_assoc,
-      whiskerLeft_comp_tensorHom_assoc, tensorHom_def _ (𝟙 _ - _)]
-    rw [hR, hL]
-    simp only [Preadditive.sub_comp, Preadditive.comp_sub, id_whiskerRight, whiskerLeft_id,
-      Category.comp_id, Category.id_comp, ← tensorHom_def_assoc, Category.assoc, zero_comp]
+    simp only [ι_tensorConeChain_zero_assoc, ι_tensorConeChain_zero, Preadditive.add_comp,
+      Preadditive.comp_add, Preadditive.sub_comp, Category.assoc, Category.id_comp,
+      ChainComplex.ιTensorObj_D₁_succ, ChainComplex.ιTensorObj_D₁_zero,
+      ChainComplex.ιTensorObj_D₂_succ, ChainComplex.ιTensorObj_D₂_succ_assoc,
+      ChainComplex.ιTensorObj_D₁_zero_assoc, comp_zero, zero_comp, Preadditive.comp_zsmul,
+      pow_zero, pow_one, one_smul, coneChain_zero_whiskerRight_d_assoc,
+      constZeroChain_tensorHom_coneChain_d_assoc, whisker_exchange_assoc,
+      whiskerLeft_comp_tensorHom_assoc]
     abel
-  · rw [ι_tensorConeChain_succ_assoc]
-    rcases s with _ | s
+  · rcases s with _ | s
     · obtain rfl : r = n := by simp at h; omega
-      simp only [Preadditive.add_comp, Preadditive.comp_add,
+      simp only [ι_tensorConeChain_succ_assoc, Preadditive.add_comp, Preadditive.comp_add,
+        Preadditive.sub_comp, Category.assoc, Category.id_comp, ChainComplex.ιTensorObj_D₁_succ,
         ChainComplex.ιTensorObj_D₁_succ_assoc, ChainComplex.ιTensorObj_D₂_zero,
-        ChainComplex.ιTensorObj_D₁_succ, ChainComplex.ιTensorObj_D₂_zero_assoc,
-        d_whiskerRight_ι_tensorConeChain, add_zero, zero_comp]
-      rw [← comp_whiskerRight_assoc, ← comp_whiskerRight_assoc, coneChain_d, hR, id_whiskerRight,
-        Preadditive.sub_comp, Category.id_comp]
-    · simp only [Preadditive.add_comp, Preadditive.comp_add, Category.assoc,
-        ChainComplex.ιTensorObj_D₁_succ_assoc, ChainComplex.ιTensorObj_D₂_succ_assoc,
-        ChainComplex.ιTensorObj_D₁_succ, ChainComplex.ιTensorObj_D₂_succ,
-        d_whiskerRight_ι_tensorConeChain, ι_tensorConeChain_succ, Preadditive.comp_zsmul,
-        Preadditive.zsmul_comp]
-      rw [← comp_whiskerRight_assoc, ← comp_whiskerRight_assoc, coneChain_d, hR, id_whiskerRight,
-        Preadditive.sub_comp, Category.id_comp, whisker_exchange_assoc, ← tensorHom_def_assoc,
-        pow_succ _ (r + 1), mul_neg_one, neg_smul]
+        ChainComplex.ιTensorObj_D₂_zero_assoc, d_whiskerRight_ι_tensorConeChain,
+        coneChain_whiskerRight_d_assoc, comp_zero, zero_comp, add_zero]
+    · simp only [ι_tensorConeChain_succ_assoc, ι_tensorConeChain_succ, Preadditive.add_comp,
+        Preadditive.comp_add, Preadditive.sub_comp, Category.assoc, Category.id_comp,
+        ChainComplex.ιTensorObj_D₁_succ, ChainComplex.ιTensorObj_D₁_succ_assoc,
+        ChainComplex.ιTensorObj_D₂_succ, ChainComplex.ιTensorObj_D₂_succ_assoc,
+        d_whiskerRight_ι_tensorConeChain, coneChain_whiskerRight_d_assoc, Preadditive.comp_zsmul,
+        Preadditive.zsmul_comp, Preadditive.comp_neg, whisker_exchange_assoc, pow_succ _ (r + 1),
+        mul_neg_one, neg_smul]
       abel
 
 end TensorCone
@@ -445,6 +466,30 @@ section TensorAcyclicModels
 
 variable {C : Type u} [Category.{v} C] [Preadditive C] [HasCoproducts.{w} C] [MonoidalCategory C]
   [MonoidalPreadditive C] {R S R' S' : C}
+
+/-- The tensor product of the chain maps of `f : K ⟶ K'` and `g : L ⟶ L'` sends the summand of a
+pair of simplices `(x, y)` to the summand of `(f x, g y)`. -/
+@[reassoc]
+private lemma tensorHom_ιTensorObj_tensorHom_f {K K' L L' : SSet.{w}} (f : K ⟶ K') (g : L ⟶ L')
+    {p q n : ℕ} (x : K _⦋p⦌) (y : L _⦋q⦌) (h : p + q = n) :
+    (K.ιChainComplex (R := R) x ⊗ₘ L.ιChainComplex (R := S) y) ≫ ιTensorObj _ _ p q n h ≫
+        (chainComplexMap f R ⊗ₘ chainComplexMap g S).f n =
+      (K'.ιChainComplex (f.app _ x) ⊗ₘ L'.ιChainComplex (g.app _ y)) ≫ ιTensorObj _ _ p q n h := by
+  rw [tensorHom_eq_mapBifunctorMap, ι_tensorHom, tensorHom_comp_tensorHom_assoc,
+    ι_chainComplexMap_f, ι_chainComplexMap_f]
+
+/-- The tensor product of the chain maps classifying a pair of simplices `(x, y)`, followed by the
+tensor product of the chain maps of `f` and `g`, is the tensor product of the chain maps
+classifying `(f x, g y)`. -/
+@[reassoc]
+private lemma tensorHom_yonedaEquiv_symm_f_comp {K K' L L' : SSet.{w}} (f : K ⟶ K') (g : L ⟶ L')
+    {p q : ℕ} (x : K _⦋p⦌) (y : L _⦋q⦌) (m : ℕ) :
+    (chainComplexMap (yonedaEquiv.symm x) R ⊗ₘ chainComplexMap (yonedaEquiv.symm y) S).f m ≫
+        (chainComplexMap f R ⊗ₘ chainComplexMap g S).f m =
+      (chainComplexMap (yonedaEquiv.symm (f.app _ x)) R ⊗ₘ
+        chainComplexMap (yonedaEquiv.symm (g.app _ y)) S).f m := by
+  rw [← HomologicalComplex.comp_f, tensorHom_comp_tensorHom, ← Functor.map_comp,
+    ← Functor.map_comp, yonedaEquiv_symm_comp, yonedaEquiv_symm_comp]
 
 /-- The summand of a pair of simplices `(x, y)` of `K` and `L` in `C(K; R) ⊗ C(L; S)` is the image
 of the summand of the pair of nondegenerate top simplices of the models `Δ[p]` and `Δ[q]` under
@@ -509,10 +554,8 @@ private lemma tensorHom_f_tensorExtend {n : ℕ}
     (chainComplexMap f R ⊗ₘ chainComplexMap g S).f n ≫ tensorExtend c K' L' =
       tensorExtend c K L ≫ (chainComplexMap f R' ⊗ₘ chainComplexMap g S').f (n + 1) := by
   refine mapBifunctor.hom_ext fun p q h ↦ tensorChainComplexX_hom_ext fun x y ↦ ?_
-  rw [tensorHom_eq_mapBifunctorMap, ι_tensorHom_assoc, tensorHom_comp_tensorHom_assoc,
-    ι_chainComplexMap_f, ι_chainComplexMap_f, ι_tensorExtend, ι_tensorExtend_assoc,
-    ← HomologicalComplex.comp_f, tensorHom_comp_tensorHom, ← Functor.map_comp, ← Functor.map_comp,
-    yonedaEquiv_symm_comp, yonedaEquiv_symm_comp]
+  simp only [tensorHom_ιTensorObj_tensorHom_f_assoc, ι_tensorExtend, ι_tensorExtend_assoc,
+    tensorHom_yonedaEquiv_symm_f_comp]
 
 private lemma tensorExtend_zero {n : ℕ} (K L : SSet.{w}) :
     tensorExtend (fun p q (_ : p + q = n) ↦
