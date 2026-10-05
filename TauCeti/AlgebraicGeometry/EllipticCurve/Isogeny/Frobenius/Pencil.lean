@@ -24,16 +24,16 @@ algebraic, the degree is the integral quadratic form
 
 ## Main results
 
-* `TauCeti.Isogeny.Hom.pullbackDifferential_zsmul_baseChangeFrobenius_sub_zsmul_id`:
-  `(r π - s)^*ω = -s • ω`.
 * `TauCeti.Isogeny.Hom.zsmul_baseChangeFrobenius_sub_zsmul_id_ne_zero`:
   the pencil is nonzero when `s` is nonzero in the field.
 * `TauCeti.Isogeny.Hom.isSeparable_toIsogeny_zsmul_baseChangeFrobenius_sub_zsmul_id_iff`:
   a nonzero pencil is separable exactly when `s` is nonzero in the field.
 * `TauCeti.Isogeny.Hom.det_torsionLinearMap_zsmul_baseChangeFrobenius_sub_zsmul_id`:
-  the determinant on invertible torsion is the degree modulo `N` for a separable pencil.
+  over a separably closed extension, the determinant on invertible torsion is the degree
+  modulo `N` when `s` is nonzero in the field.
 * `TauCeti.Isogeny.Hom.degree_zsmul_baseChangeFrobenius_sub_zsmul_id`:
-  the integral quadratic degree formula for a separable pencil over an algebraic extension.
+  the integral quadratic degree formula over a separably closed algebraic extension when
+  `s` is nonzero in the field.
 
 ## References
 
@@ -52,14 +52,6 @@ variable {F K : Type*} [Field F] [Finite F] [Field K] [Algebra F K]
 namespace Hom
 
 variable [W.IsElliptic]
-
-/-- The Frobenius pencil `r π - s` pulls the invariant differential back to `-s • ω`. -/
-theorem pullbackDifferential_zsmul_baseChangeFrobenius_sub_zsmul_id (r s : ℤ) :
-    (r • ofIsogeny (baseChangeFrobenius K W) - s • id (W⁄K).toAffine).pullbackDifferential
-      (invariantDifferential (W⁄K).toAffine) = -s • invariantDifferential (W⁄K).toAffine := by
-  apply pullbackDifferential_zsmul_sub_zsmul_id_of_pullback_eq_zero
-  rw [pullbackDifferential_ofIsogeny,
-    pullbackDifferential_baseChangeFrobenius_invariantDifferential]
 
 /-- If `s` is nonzero in the field, the Frobenius pencil `r π - s` is nonzero. -/
 theorem zsmul_baseChangeFrobenius_sub_zsmul_id_ne_zero (r s : ℤ) (hs : (s : K) ≠ 0) :
