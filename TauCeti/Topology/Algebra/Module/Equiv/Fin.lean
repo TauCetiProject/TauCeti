@@ -48,6 +48,12 @@ def splitAt (h : d ≤ n) :
   (ContinuousLinearEquiv.piCongrLeft 𝕜 (fun _ : Fin n ↦ M)
     (finCongr (Nat.add_sub_of_le h))).symm.trans (splitCoords d (n - d))
 
+/-- The initial block of a vector split at `d` consists of its first `d` coordinates. -/
+@[simp]
+theorem splitAt_fst_apply (h : d ≤ n) (x : Fin n → M) (i : Fin d) :
+    (splitAt (𝕜 := 𝕜) h x).1 i = x (Fin.castLE h i) :=
+  (rfl)
+
 /-- The final block of a vector split at `d` consists of its coordinates starting at `d`. -/
 @[simp]
 theorem splitAt_snd_apply (h : d ≤ n) (x : Fin n → M) (i : Fin (n - d)) :
@@ -84,6 +90,84 @@ def productCoords (hd : d ≤ n) (he : e ≤ m) :
           (ContinuousLinearEquiv.piCongrLeft 𝕜
             (fun _ : Fin (n + m - (d + e)) ↦ M) (finCongr (by omega))))).trans
         (splitAt (by omega : d + e ≤ n + m)).symm))
+
+/-- The first block of regrouped coordinates is the first vector's initial block. -/
+@[simp]
+theorem productCoords_apply_fst_initial (hd : d ≤ n) (he : e ≤ m)
+    (x : (Fin n → M) × (Fin m → M)) (i : Fin d) :
+    productCoords (𝕜 := 𝕜) hd he x ⟨i.val, by omega⟩ = x.1 (Fin.castLE hd i) := by
+  have h := congrFun (congrArg Prod.fst
+    ((splitCoords (𝕜 := 𝕜) d e).apply_symm_apply
+      ((splitAt (𝕜 := 𝕜) hd x.1).1, (splitAt (𝕜 := 𝕜) he x.2).1))) i
+  simp only [splitCoords_apply, splitAt_fst_apply] at h
+  calc
+    _ = (splitAt (𝕜 := 𝕜) (by omega : d + e ≤ n + m)
+        (productCoords (𝕜 := 𝕜) hd he x)).1 (Fin.castAdd e i) :=
+      (splitAt_fst_apply _ _ _).symm
+    _ = _ := by
+      simpa only [productCoords, ContinuousLinearEquiv.trans_apply,
+        ContinuousLinearEquiv.apply_symm_apply, ContinuousLinearEquiv.prodCongr_apply,
+        ContinuousLinearEquiv.coe_prodProdProdComm, Equiv.prodProdProdComm, Equiv.coe_fn_mk] using h
+
+/-- The second block of regrouped coordinates is the second vector's initial block. -/
+@[simp]
+theorem productCoords_apply_snd_initial (hd : d ≤ n) (he : e ≤ m)
+    (x : (Fin n → M) × (Fin m → M)) (i : Fin e) :
+    productCoords (𝕜 := 𝕜) hd he x ⟨d + i.val, by omega⟩ = x.2 (Fin.castLE he i) := by
+  have h := congrFun (congrArg Prod.snd
+    ((splitCoords (𝕜 := 𝕜) d e).apply_symm_apply
+      ((splitAt (𝕜 := 𝕜) hd x.1).1, (splitAt (𝕜 := 𝕜) he x.2).1))) i
+  simp only [splitCoords_apply, splitAt_fst_apply] at h
+  calc
+    _ = (splitAt (𝕜 := 𝕜) (by omega : d + e ≤ n + m)
+        (productCoords (𝕜 := 𝕜) hd he x)).1 (Fin.natAdd d i) :=
+      (splitAt_fst_apply _ _ _).symm
+    _ = _ := by
+      simpa only [productCoords, ContinuousLinearEquiv.trans_apply,
+        ContinuousLinearEquiv.apply_symm_apply, ContinuousLinearEquiv.prodCongr_apply,
+        ContinuousLinearEquiv.coe_prodProdProdComm, Equiv.prodProdProdComm, Equiv.coe_fn_mk] using h
+
+/-- The third block of regrouped coordinates is the first vector's final block. -/
+@[simp]
+theorem productCoords_apply_fst_final (hd : d ≤ n) (he : e ≤ m)
+    (x : (Fin n → M) × (Fin m → M)) (i : Fin (n - d)) :
+    productCoords (𝕜 := 𝕜) hd he x ⟨d + e + i.val, by omega⟩ =
+      x.1 ⟨d + i.val, by omega⟩ := by
+  have h := congrFun (congrArg Prod.fst
+    ((splitCoords (𝕜 := 𝕜) (n - d) (m - e)).apply_symm_apply
+      ((splitAt (𝕜 := 𝕜) hd x.1).2, (splitAt (𝕜 := 𝕜) he x.2).2))) i
+  simp only [splitCoords_apply, splitAt_snd_apply] at h
+  calc
+    _ = (splitAt (𝕜 := 𝕜) (by omega : d + e ≤ n + m)
+        (productCoords (𝕜 := 𝕜) hd he x)).2 ⟨i.val, by omega⟩ :=
+      (splitAt_snd_apply _ _ _).symm
+    _ = _ := by
+      -- The remaining reindexing casts between equal lengths of the final block.
+      simpa [productCoords, Equiv.prodProdProdComm, ContinuousLinearEquiv.piCongrLeft,
+        Homeomorph.piCongrLeft, Equiv.piCongrLeft_apply, Fin.castAdd, Fin.castLE,
+        Fin.natAdd] using h
+
+/-- The fourth block of regrouped coordinates is the second vector's final block. -/
+@[simp]
+theorem productCoords_apply_snd_final (hd : d ≤ n) (he : e ≤ m)
+    (x : (Fin n → M) × (Fin m → M)) (i : Fin (m - e)) :
+    productCoords (𝕜 := 𝕜) hd he x ⟨d + e + (n - d) + i.val, by omega⟩ =
+      x.2 ⟨e + i.val, by omega⟩ := by
+  have h := congrFun (congrArg Prod.snd
+    ((splitCoords (𝕜 := 𝕜) (n - d) (m - e)).apply_symm_apply
+      ((splitAt (𝕜 := 𝕜) hd x.1).2, (splitAt (𝕜 := 𝕜) he x.2).2))) i
+  simp only [splitCoords_apply, splitAt_snd_apply] at h
+  calc
+    _ = (splitAt (𝕜 := 𝕜) (by omega : d + e ≤ n + m)
+        (productCoords (𝕜 := 𝕜) hd he x)).2 ⟨n - d + i.val, by omega⟩ := by
+      simpa only [Nat.add_assoc] using (splitAt_snd_apply
+        (𝕜 := 𝕜) (by omega : d + e ≤ n + m)
+        (productCoords (𝕜 := 𝕜) hd he x) ⟨n - d + i.val, by omega⟩).symm
+    _ = _ := by
+      -- The remaining reindexing casts between equal lengths of the final block.
+      simpa [productCoords, Equiv.prodProdProdComm, ContinuousLinearEquiv.piCongrLeft,
+        Homeomorph.piCongrLeft, Equiv.piCongrLeft_apply, Fin.castAdd, Fin.castLE,
+        Fin.natAdd] using h
 
 /-- Regrouped coordinates vanish at or beyond `d + e` exactly when each original
 vector vanishes beyond its initial block. -/
