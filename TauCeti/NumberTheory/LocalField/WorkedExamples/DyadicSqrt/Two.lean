@@ -48,7 +48,7 @@ extension with its quadratic subextension: the third lower group of `ℚ₂(√2
 * `TauCeti.DyadicSqrtTwo.isTotallyRamified` and `TauCeti.DyadicSqrtTwo.not_isUnramified`:
   the ramification predicates.
 * `TauCeti.DyadicSqrtTwo.apply_sqrtTwo_of_ne_one`,
-  `TauCeti.DyadicSqrtTwo.addVal_smul_integerSqrtTwo_sub_of_ne_one`, and
+  `TauCeti.DyadicSqrtTwo.addVal_smul_sub_integerSqrtTwo_of_ne_one`, and
   `TauCeti.DyadicSqrtTwo.lowerIndex_of_ne_one`: the nonidentity automorphism and its lower index.
 * `TauCeti.DyadicSqrtTwo.lowerRamificationGroup_eq`: the complete lower filtration.
 * `TauCeti.DyadicSqrtTwo.differentExponent_eq_three` and
@@ -215,7 +215,7 @@ theorem apply_sqrtTwo_of_ne_one {σ : DyadicSqrtTwo ≃ₐ[ℚ_[2]] DyadicSqrtTw
 
 /-- The displacement of any nonidentity automorphism at the integral generator has valuation
 three: `v(-√2 - √2) = v(2) + v(√2) = 2 + 1`. -/
-theorem addVal_smul_integerSqrtTwo_sub_of_ne_one
+theorem addVal_smul_sub_integerSqrtTwo_of_ne_one
     {σ : DyadicSqrtTwo ≃ₐ[ℚ_[2]] DyadicSqrtTwo} (hσ : σ ≠ 1) :
     IsDiscreteValuationRing.addVal 𝒪[DyadicSqrtTwo]
       (σ • integerSqrtTwo - integerSqrtTwo) = 3 := by
@@ -227,7 +227,7 @@ theorem addVal_smul_integerSqrtTwo_sub_of_ne_one
   have htwo : (2 : 𝒪[DyadicSqrtTwo]) = algebraMap 𝒪[ℚ_[2]] 𝒪[DyadicSqrtTwo] 2 :=
     (map_ofNat _ 2).symm
   rw [h, AddValuation.map_neg, IsDiscreteValuationRing.addVal_mul, htwo,
-    addVal_algebraMap, ← Nat.cast_ofNat (R := 𝒪[ℚ_[2]]), Padic.addVal_self 2,
+    addVal_algebraMap, ← Nat.cast_ofNat (R := 𝒪[ℚ_[2]]), Padic.addVal_natCast_self 2,
     ramificationIndex_eq_two,
     IsDiscreteValuationRing.addVal_uniformizer irreducible_integerSqrtTwo]
   norm_num
@@ -236,7 +236,7 @@ theorem addVal_smul_integerSqrtTwo_sub_of_ne_one
 theorem lowerIndex_of_ne_one {σ : DyadicSqrtTwo ≃ₐ[ℚ_[2]] DyadicSqrtTwo} (hσ : σ ≠ 1) :
     TauCeti.IsLocalRing.lowerIndex 𝒪[DyadicSqrtTwo] σ = 3 := by
   rw [TauCeti.IsLocalRing.lowerIndex_eq_addVal_of_adjoin_singleton_eq_top
-    adjoin_integerSqrtTwo_eq_top, addVal_smul_integerSqrtTwo_sub_of_ne_one hσ]
+    adjoin_integerSqrtTwo_eq_top, addVal_smul_sub_integerSqrtTwo_of_ne_one hσ]
 
 /-- The lower ramification groups are the whole Galois group through index two and trivial
 from index three, including the negative-index convention. -/
