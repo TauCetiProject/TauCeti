@@ -84,7 +84,8 @@ the unblocked grid homology `GH⁻` and in which the concordance invariant `τ` 
   bidegree `(-2, -1)`, and a monomial `V^d` has bidegree `-|d|` times `(2, 1)`.
 * `TauCeti.OddComponentGridDiagram.matrixMap_mem_bigradedChainMinusPiece` and
   `TauCeti.OddComponentGridDiagram.matrixMap_mem_alexanderChainMinusPiece`: a renamed matrix map
-  with bidegree-preserving weighted transitions preserves the homogeneous pieces.
+  whose weighted transitions preserve bidegree or Alexander degree preserves the corresponding
+  homogeneous pieces.
 * `TauCeti.OddComponentGridDiagram.isInternal_bigradedChainMinusPiece`: `GC⁻` is the internal
   direct sum of its homogeneous pieces.
 * `TauCeti.OddComponentGridDiagram.isHomogeneous_unblockedDifferential_alexanderChainMinusGrading`
@@ -565,16 +566,20 @@ theorem matrixMap_mem_bigradedChainMinusPiece
     G.exists_monomialBidegree_eq_of_mem_support_matrixMap R G' σ M f hf hgrade he
   rw [h, hc x d hd]
 
-/-- A renamed matrix map whose weighted transitions preserve bidegree sends an
+omit hgrade in
+/-- A renamed matrix map whose weighted transitions preserve Alexander degree sends an
 Alexander-homogeneous chain for `G` to a chain of the same Alexander degree for `G'`. -/
 theorem matrixMap_mem_alexanderChainMinusPiece
+    (hAlexander : ∀ x y, ∀ w ∈ (M x y).support, ∀ d : Fin n →₀ ℕ,
+      (G'.monomialBidegree y (Finsupp.mapDomain σ d + w)).2 = (G.monomialBidegree x d).2)
     {a : ℤ} {c : GridChainMinus R n} (hc : c ∈ G.alexanderChainMinusPiece R a) :
     f c ∈ G'.alexanderChainMinusPiece R a := by
   rw [mem_alexanderChainMinusPiece] at hc ⊢
   intro y e he
-  obtain ⟨x, d, hd, h⟩ :=
-    G.exists_monomialBidegree_eq_of_mem_support_matrixMap R G' σ M f hf hgrade he
-  rw [← monomialBidegree_snd, h, monomialBidegree_snd, hc x d hd]
+  rw [hf] at he
+  obtain ⟨x, d, hd, w, hw, rfl⟩ :=
+    GridChain.exists_eq_mapDomain_add_of_mem_support_sum_rename_mul R c σ M he
+  rw [← monomialBidegree_snd, hAlexander x y w hw d, monomialBidegree_snd, hc x d hd]
 
 end RenameMatrixMap
 

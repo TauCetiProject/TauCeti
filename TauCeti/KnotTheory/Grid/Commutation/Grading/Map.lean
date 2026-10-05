@@ -106,7 +106,8 @@ theorem pentagonMap_mem_alexanderChainMinusPiece (C : GridDiagram.ColumnCommutat
     G.1.pentagonMap R C c ∈ (G.swapColumns C).alexanderChainMinusPiece R a := by
   exact G.matrixMap_mem_alexanderChainMinusPiece R (G.swapColumns C) _ _ _
     (G.1.pentagonMap_apply_apply R C)
-    (G.monomialBidegree_mapDomain_add_of_mem_support_pentagonCoefficient R C) hc
+    (fun x y w hw d => congrArg Prod.snd
+      (G.monomialBidegree_mapDomain_add_of_mem_support_pentagonCoefficient R C x y w hw d)) hc
 
 /-- The initial-side pentagon map sends a chain of `GC⁻(G)` homogeneous of bidegree `g` to a
 chain of `GC⁻` of the commuted diagram homogeneous of the same bidegree. -/
@@ -126,7 +127,9 @@ theorem initialPentagonMap_mem_alexanderChainMinusPiece (C : GridDiagram.ColumnC
     G.1.initialPentagonMap R C c ∈ (G.swapColumns C).alexanderChainMinusPiece R a := by
   exact G.matrixMap_mem_alexanderChainMinusPiece R (G.swapColumns C) _ _ _
     (G.1.initialPentagonMap_apply_apply R C)
-    (G.monomialBidegree_mapDomain_add_of_mem_support_initialPentagonCoefficient R C) hc
+    (fun x y w hw d => congrArg Prod.snd
+      (G.monomialBidegree_mapDomain_add_of_mem_support_initialPentagonCoefficient R C
+        x y w hw d)) hc
 
 /-- The full commutation map, counting both kinds of pentagon, sends a chain of `GC⁻(G)`
 homogeneous of bidegree `g` to a chain of `GC⁻` of the commuted diagram of the same bidegree. -/
