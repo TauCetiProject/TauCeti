@@ -50,7 +50,7 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 
 variable {K ι : Type*} [Field K] [DecidableEq ι] [Fintype ι]
 
-private theorem lie_difference_opposite (i j : ι) :
+private theorem lie_differenceRootGenerator_opposite (i j : ι) :
     ⁅differenceRootGenerator (K := K) i j, differenceRootGenerator (K := K) j i⁆ =
       (typeDDiagonalEquiv (K := K) (Pi.single i 1 - Pi.single j 1) :
         typeDDiagonalCartan K ι) := by
@@ -67,7 +67,7 @@ private theorem lie_difference_opposite (i j : ι) :
       typeDDiagonalValue_inl, typeDDiagonalValue_inr, Pi.sub_apply, Pi.single_apply, neg_sub]
   all_goals split_ifs <;> simp_all [eq_comm]
 
-private theorem lie_sum_negSum (i j : ι) (hij : i ≠ j) :
+private theorem lie_sumRootGenerator_negSumRootGenerator (i j : ι) (hij : i ≠ j) :
     ⁅sumRootGenerator (K := K) i j, negSumRootGenerator (K := K) i j⁆ =
       (typeDDiagonalEquiv (K := K) (Pi.single i (-1) + Pi.single j (-1)) :
         typeDDiagonalCartan K ι) := by
@@ -178,7 +178,7 @@ private theorem exists_lieBasis_e_mem_of_root_inf_ne_bot
       generator_mem_of_mem_span_singleton I hxI hx0 hxroot
     let hdiag : H := typeDDiagonalEquiv (Pi.single i 1 - Pi.single j 1)
     have hdiagI : (hdiag : L) ∈ I := by
-      rw [← lie_difference_opposite]
+      rw [← lie_differenceRootGenerator_opposite]
       exact lie_mem_left K L I _ _ hgenI
     exact exists_lieBasis_e_mem_of_cartan_mem n hn I hdiagI hdiag.property
       (fun hzero => typeDDiagonalEquiv_sub_ne_zero (K := K) i j hij (Subtype.ext hzero))
@@ -190,7 +190,7 @@ private theorem exists_lieBasis_e_mem_of_root_inf_ne_bot
       generator_mem_of_mem_span_singleton I hxI hx0 hxroot
     let hdiag : H := typeDDiagonalEquiv (Pi.single i (-1) + Pi.single j (-1))
     have hdiagI : (hdiag : L) ∈ I := by
-      rw [← lie_sum_negSum _ _ hij]
+      rw [← lie_sumRootGenerator_negSumRootGenerator _ _ hij]
       exact lie_mem_left K L I _ _ hgenI
     exact exists_lieBasis_e_mem_of_cartan_mem n hn I hdiagI hdiag.property
       (fun hzero => typeDDiagonalEquiv_add_neg_ne_zero (K := K) i j hij (Subtype.ext hzero))
@@ -205,7 +205,7 @@ private theorem exists_lieBasis_e_mem_of_root_inf_ne_bot
       generator_mem_of_mem_span_singleton I hxI hx0 hxroot'
     let hdiag : H := typeDDiagonalEquiv (Pi.single i (-1) + Pi.single j (-1))
     have hdiagI : (hdiag : L) ∈ I := by
-      rw [← lie_sum_negSum _ _ hij]
+      rw [← lie_sumRootGenerator_negSumRootGenerator _ _ hij]
       exact lie_mem_right K L I _ _ hgenI
     exact exists_lieBasis_e_mem_of_cartan_mem n hn I hdiagI hdiag.property
       (fun hzero => typeDDiagonalEquiv_add_neg_ne_zero (K := K) i j hij (Subtype.ext hzero))
