@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.Sheaf.LocallyFree
-public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Quasicoherent.Refinement
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Free
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Quasicoherent.Biprod
+public import TauCeti.CategoryTheory.ObjectProperty
 
 /-!
 # Finite presentation of sheaves of modules
@@ -19,7 +21,8 @@ and no relations, so finiteness of the local bases is enough.
 The main result is
 `SheafOfModules.LocalGeneratorsData.IsLocallyFreeData.isFinitePresentation`. In particular, when
 the site has binary products, the free sheaf of modules on a finite type is finitely presented
-(`TauCeti.SheafOfModules.isFinitePresentation_free`).
+(`TauCeti.SheafOfModules.isFinitePresentation_free`). Finitely presented sheaves contain the
+zero sheaf and are closed under binary and finite products, which are direct sums.
 
 This advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer B, item "Coherent sheaves and
 cohomology `Hⁱ(X, ℱ)`". No formalization is vendored. The proof reuses Mathlib's
@@ -28,7 +31,7 @@ cohomology `Hⁱ(X, ℱ)`". No formalization is vendored. The proof reuses Mathl
 
 public section
 
-open CategoryTheory
+open CategoryTheory Limits
 
 namespace TauCeti
 
@@ -37,6 +40,8 @@ universe u v₁ u₁
 noncomputable section
 
 namespace SheafOfModules
+
+open _root_.SheafOfModules
 
 variable {C : Type u₁} [Category.{v₁} C] {J : GrothendieckTopology C}
   {R : Sheaf J RingCat.{u}}
@@ -86,6 +91,37 @@ instance isFinitePresentation_free [HasSheafify J AddCommGrpCat.{u}]
   _root_.SheafOfModules.LocalGeneratorsData.IsLocallyFreeData.isFinitePresentation
     (q := (_root_.SheafOfModules.free.generatingSections I).localGeneratorsData)
     inferInstance ⟨fun _ ↦ ⟨inferInstanceAs (Finite I)⟩⟩
+
+section DirectSum
+
+variable {C : Type u₁} [Category.{v₁} C] [HasPullbacks C] {J : GrothendieckTopology C}
+  {R : Sheaf J RingCat.{u}}
+  [HasSheafify J AddCommGrpCat.{u}] [J.WEqualsLocallyBijective AddCommGrpCat.{u}]
+  [∀ X, HasSheafify (J.over X) AddCommGrpCat.{u}]
+  [∀ X, (J.over X).WEqualsLocallyBijective AddCommGrpCat.{u}]
+
+/-- Finitely presented sheaves of modules are closed under binary products, which are direct
+sums. -/
+instance isClosedUnderBinaryProducts_isFinitePresentation :
+    (isFinitePresentation R).IsClosedUnderBinaryProducts :=
+  ObjectProperty.isClosedUnderBinaryProducts_of_prop_biprod _ fun _ _ hM hN ↦ by
+    let := hM
+    let := hN
+    exact isFinitePresentation_biprod
+
+variable [HasBinaryProducts C]
+
+/-- The zero sheaf of modules is finitely presented, being free on the empty type. -/
+instance containsZero_isFinitePresentation : (isFinitePresentation R).ContainsZero where
+  exists_zero := ⟨_, isZero_free PEmpty, isFinitePresentation_free PEmpty⟩
+
+/-- Finitely presented sheaves of modules are closed under finite products, which are finite
+direct sums. -/
+instance isClosedUnderFiniteProducts_isFinitePresentation :
+    (isFinitePresentation R).IsClosedUnderFiniteProducts :=
+  .mk'
+
+end DirectSum
 
 end SheafOfModules
 

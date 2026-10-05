@@ -80,59 +80,6 @@ variable {C : Type u₁} [Category.{v₁} C] {J : GrothendieckTopology C}
   [∀ X, (J.over X).WEqualsLocallyBijective AddCommGrpCat.{u}]
   {M N : SheafOfModules.{u} R}
 
-/-- Local generators data transported along an isomorphism `f : M ⟶ N`: the covering family is
-unchanged, and the generating sections of `M.over (q.X i)` are pushed forward along the
-restriction of `f`. -/
-def _root_.SheafOfModules.LocalGeneratorsData.ofIsIso (f : M ⟶ N) [IsIso f]
-    (q : M.LocalGeneratorsData) : N.LocalGeneratorsData where
-  I := q.I
-  X := q.X
-  coversTop := q.coversTop
-  generators i := (q.generators i).ofEpi (f.over (q.X i))
-
-/-- Transporting local generators preserves the cover's index type. -/
-@[simp]
-theorem _root_.SheafOfModules.LocalGeneratorsData.ofIsIso_I (f : M ⟶ N) [IsIso f]
-    (q : M.LocalGeneratorsData) : (q.ofIsIso f).I = q.I := (rfl)
-
-/-- Transporting local generators preserves the covering objects. -/
-@[simp]
-theorem _root_.SheafOfModules.LocalGeneratorsData.ofIsIso_X (f : M ⟶ N) [IsIso f]
-    (q : M.LocalGeneratorsData) :
-    (q.ofIsIso f).X = fun i ↦ q.X ((LocalGeneratorsData.ofIsIso_I f q).mp i) := (rfl)
-
-/-- Transporting local generators pushes each generating family along the restricted isomorphism. -/
-@[simp]
-theorem _root_.SheafOfModules.LocalGeneratorsData.ofIsIso_generators
-    (f : M ⟶ N) [IsIso f] (q : M.LocalGeneratorsData) (i : (q.ofIsIso f).I) :
-    (q.ofIsIso f).generators i =
-      cast (by rw [LocalGeneratorsData.ofIsIso_X])
-        ((q.generators ((LocalGeneratorsData.ofIsIso_I f q).mp i)).ofEpi
-          (f.over (q.X ((LocalGeneratorsData.ofIsIso_I f q).mp i)))) := (rfl)
-
-/-- Transporting local generators along an isomorphism preserves finite type. -/
-instance {M N : SheafOfModules.{u} R}
-    (f : M ⟶ N) [IsIso f] (q : M.LocalGeneratorsData) [hq : q.IsFiniteType] :
-    (q.ofIsIso f).IsFiniteType where
-  isFiniteType i := ⟨by
-    simpa only [LocalGeneratorsData.ofIsIso, GeneratingSections.ofEpi_I] using
-      (hq.isFiniteType i).finite⟩
-
-/-- Finite type of module sheaves is invariant under isomorphism. -/
-instance isClosedUnderIsomorphisms_isFiniteType :
-    (isFiniteType R).IsClosedUnderIsomorphisms where
-  of_iso e h := by
-    obtain ⟨q, _⟩ := h.exists_localGeneratorsData
-    exact ⟨q.ofIsIso e.hom, inferInstance⟩
-
-/-- Locally free data transported along an isomorphism is locally free data. -/
-instance (f : M ⟶ N) [IsIso f] (q : M.LocalGeneratorsData) [q.IsLocallyFreeData] :
-    (q.ofIsIso f).IsLocallyFreeData where
-  isIso i := by
-    rw [LocalGeneratorsData.ofIsIso_generators]
-    exact (q.generators _).isIso_ofEpi_π (f.over (q.X _))
-      (LocalGeneratorsData.IsLocallyFreeData.isIso (q := q) _)
-
 variable (R) in
 /-- Local freeness of sheaves of modules, as a property of objects. -/
 abbrev _root_.SheafOfModules.isLocallyFree : ObjectProperty (SheafOfModules.{u} R) :=
@@ -253,15 +200,6 @@ variable {C : Type u₁} [Category.{v₁} C] [HasPullbacks C] {J : GrothendieckT
   [∀ X, HasSheafify (J.over X) AddCommGrpCat.{u}]
   [∀ X, (J.over X).WEqualsLocallyBijective AddCommGrpCat.{u}]
 
-/-- Finitely presented sheaves of modules are closed under binary products, which are direct
-sums. -/
-instance isClosedUnderBinaryProducts_isFinitePresentation :
-    (isFinitePresentation R).IsClosedUnderBinaryProducts :=
-  ObjectProperty.isClosedUnderBinaryProducts_of_prop_biprod _ fun _ _ hM hN ↦ by
-    let := hM
-    let := hN
-    exact isFinitePresentation_biprod
-
 /-- Finite locally free sheaves of modules are closed under binary products, which are the direct
 sums `M ⊞ N`. -/
 instance isClosedUnderBinaryProducts_isFiniteLocallyFree :
@@ -272,16 +210,6 @@ instance isClosedUnderBinaryProducts_isFiniteLocallyFree :
     exact ⟨isLocallyFree_biprod, isFinitePresentation_biprod⟩
 
 variable [HasBinaryProducts C]
-
-/-- The zero sheaf of modules is finitely presented, being free on the empty type. -/
-instance containsZero_isFinitePresentation : (isFinitePresentation R).ContainsZero where
-  exists_zero := ⟨_, isZero_free PEmpty, isFinitePresentation_free PEmpty⟩
-
-/-- Finitely presented sheaves of modules are closed under finite products, which are finite
-direct sums. -/
-instance isClosedUnderFiniteProducts_isFinitePresentation :
-    (isFinitePresentation R).IsClosedUnderFiniteProducts :=
-  .mk'
 
 /-- The zero sheaf of modules is finite locally free, being the free sheaf on the empty type. -/
 instance containsZero_isFiniteLocallyFree : (isFiniteLocallyFree R).ContainsZero where
