@@ -70,12 +70,15 @@ theorem isJordanCurve_univ_onePoint_real :
 compactification of its ambient space. Both ends of the curve meet at infinity, and properness
 ensures continuity there. -/
 theorem isJordanCurve_insert_infty_range_of_isProperMap
-    {X : Type*} [TopologicalSpace X] [T2Space X] [WeaklyLocallyCompactSpace X]
+    {X : Type*} [TopologicalSpace X]
     {f : ℝ → X} (hf : IsProperMap f) (hinj : Function.Injective f) :
     IsJordanCurve (insert OnePoint.infty (((↑) : X → OnePoint X) '' range f)) := by
   rw [← range_onePointMap f, ← image_univ]
-  exact isJordanCurve_univ_onePoint_real.image
-    (continuous_onePointMap_of_isProperMap hf).continuousOn
-    (onePointMap_injective_iff.mpr hinj).injOn
+  have h := isClosedEmbedding_onePointMap
+    (Topology.IsClosedEmbedding.of_continuous_injective_isClosedMap
+      hf.continuous hinj hf.isClosedMap)
+  obtain ⟨e⟩ := isJordanCurve_iff.mp isJordanCurve_univ_onePoint_real
+  exact isJordanCurve_iff.mpr
+    ⟨(h.isEmbedding.homeomorphImage Set.univ).symm.trans e⟩
 
 end TauCeti
