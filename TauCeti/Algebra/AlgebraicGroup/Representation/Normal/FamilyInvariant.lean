@@ -84,15 +84,14 @@ theorem mem_quotientPointsSubgroup_iff_forall_commute_familyInvariant_of_subspac
     (hV : ⨆ χ, I.weightSpace V χ = ⊤)
     (χ : GroupLike k (H ⧸ I.toIdeal)) (L : Submodule k V) (hL : L ≤ I.weightSpace V χ)
     (A : CommAlgCat.{x} k)
-    (hstab : ∀ g : HopfAlgebra.points (R := k) (H := H) A,
-      g ∈ CommHopfAlgCat.quotientPointsSubgroup H I A ↔
-        (L.baseChange A).map (Comodule.endOfPoint V g.ofConv) = L.baseChange A)
-    (g : HopfAlgebra.points (R := k) (H := H) A) :
+    (g : HopfAlgebra.points (R := k) (H := H) A)
+    (hstab : g ∈ CommHopfAlgCat.quotientPointsSubgroup H I A ↔
+      (L.baseChange A).map (Comodule.endOfPoint V g.ofConv) = L.baseChange A) :
     g ∈ CommHopfAlgCat.quotientPointsSubgroup H I A ↔
       ∀ p ∈ Submodule.familyInvariant (I.weightSpace V),
         Commute (Comodule.endOfPoint V g.ofConv) (p.baseChange A) := by
   refine ⟨fun hg p hp ↦ I.commute_baseChange_of_mem_quotientPointsSubgroup V hV A g hg hp,
-    fun hg ↦ (hstab g).mpr ?_⟩
+    fun hg ↦ hstab.mpr ?_⟩
   have h := Submodule.map_baseChange_eq_of_forall_commute_familyInvariant
     (I.weightSpace V) (I.iSupIndep_weightSpace V) χ L hL (Comodule.pointsAction V g) (by
       simpa only [Comodule.pointsAction_toLinearMap] using hg)

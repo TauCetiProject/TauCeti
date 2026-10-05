@@ -6,7 +6,6 @@ Authors: Codex
 module
 
 public import Mathlib.LinearAlgebra.Basis.VectorSpace
-public import Mathlib.LinearAlgebra.Projection
 public import Mathlib.LinearAlgebra.TensorProduct.RightExactness
 
 /-!
@@ -120,8 +119,7 @@ section Field
 variable {k V ι : Type*} [Field k] [AddCommGroup V] [Module k V]
 
 /-- Every subspace of one member of an independent family is the range of a family-invariant
-idempotent. The other members can all be included in its kernel, even when the family does not
-span the ambient space. -/
+idempotent, even when the family does not span the ambient space. -/
 theorem exists_projection_mem_familyInvariant (S : ι → Submodule k V) (hS : iSupIndep S)
     (i : ι) (L : Submodule k V) (hL : L ≤ S i) :
     ∃ p ∈ familyInvariant S, IsIdempotentElem p ∧ LinearMap.range p = L := by
