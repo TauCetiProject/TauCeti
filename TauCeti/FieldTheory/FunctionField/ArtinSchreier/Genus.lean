@@ -9,6 +9,7 @@ public import TauCeti.FieldTheory.FunctionField.Different.Divisor
 public import TauCeti.FieldTheory.FunctionField.Divisor.Conorm
 public import TauCeti.FieldTheory.FunctionField.RiemannRoch.Genus
 public import TauCeti.AlgebraicGeometry.WeilDivisor.FiniteSum
+-- Supplies splitting-field and Galois instances in the public theorem statements.
 public import TauCeti.FieldTheory.ArtinSchreier.Basic
 
 import TauCeti.FieldTheory.FunctionField.Different.Hurwitz
