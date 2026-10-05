@@ -12,10 +12,10 @@ public import Mathlib.LinearAlgebra.TensorProduct.RightExactness
 # Endomorphisms preserving a submodule family and their centralizer
 
 For a family of submodules, the family-invariant endomorphisms are those preserving each member.
-An automorphism permuting the family preserves this space under conjugation. If the family is
-independent over a field, every subspace of a single member is the range of a family-invariant
-projection. Consequently an automorphism commuting with the scalar extensions of all
-family-invariant endomorphisms preserves the scalar extension of every such subspace.
+An automorphism permuting the family preserves this space under conjugation. Over a field, if one
+member is disjoint from the sum of the others, every subspace of that member is the range of a
+family-invariant projection. Consequently an automorphism commuting with the scalar extensions
+of all family-invariant endomorphisms preserves the scalar extension of every such subspace.
 
 The scalar-extension statement allows arbitrary coefficient algebras, including nonreduced
 ones. It supplies the linear-algebra step in the normal-subgroup kernel argument: subgroup
@@ -118,12 +118,12 @@ section Field
 
 variable {k V ι : Type*} [Field k] [AddCommGroup V] [Module k V]
 
-/-- Every subspace of one member of an independent family is the range of a family-invariant
-idempotent, even when the family does not span the ambient space. -/
-theorem exists_projection_mem_familyInvariant (S : ι → Submodule k V) (hS : iSupIndep S)
-    (i : ι) (L : Submodule k V) (hL : L ≤ S i) :
+/-- Every subspace of a family member disjoint from the sum of the other members is the range of
+a family-invariant idempotent, even when the family does not span the ambient space. -/
+theorem exists_projection_mem_familyInvariant (S : ι → Submodule k V) (i : ι)
+    (hS : Disjoint (S i) (⨆ j, ⨆ (_ : j ≠ i), S j)) (L : Submodule k V) (hL : L ≤ S i) :
     ∃ p ∈ familyInvariant S, IsIdempotentElem p ∧ LinearMap.range p = L := by
-  obtain ⟨Q, hQ, hcompl⟩ := ((hS i).mono_left hL).symm.exists_isCompl
+  obtain ⟨Q, hQ, hcompl⟩ := (hS.mono_left hL).symm.exists_isCompl
   let p := L.projection Q hcompl.symm
   refine ⟨p, mem_familyInvariant.mpr ?_, L.isIdempotentElem_projection hcompl.symm,
     L.range_projection hcompl.symm⟩
@@ -138,14 +138,15 @@ theorem exists_projection_mem_familyInvariant (S : ι → Submodule k V) (hS : i
 variable {A : Type*} [Ring A] [Algebra k A]
 
 /-- An automorphism commuting with every scalar-extended family-invariant endomorphism preserves
-any scalar-extended subspace of a member of an independent family. This tests arbitrary
-algebra-valued automorphisms rather than just rational points. -/
+any scalar-extended subspace of a family member disjoint from the sum of the other members.
+This tests arbitrary algebra-valued automorphisms rather than just rational points. -/
 theorem map_baseChange_eq_of_forall_commute_familyInvariant
-    (S : ι → Submodule k V) (hS : iSupIndep S) (i : ι) (L : Submodule k V) (hL : L ≤ S i)
+    (S : ι → Submodule k V) (i : ι)
+    (hS : Disjoint (S i) (⨆ j, ⨆ (_ : j ≠ i), S j)) (L : Submodule k V) (hL : L ≤ S i)
     (e : (A ⊗[k] V) ≃ₗ[A] (A ⊗[k] V))
     (he : ∀ p ∈ familyInvariant S, Commute e.toLinearMap (p.baseChange A)) :
     (L.baseChange A).map e.toLinearMap = L.baseChange A := by
-  obtain ⟨p, hp, hid, hrange⟩ := exists_projection_mem_familyInvariant S hS i L hL
+  obtain ⟨p, hp, hid, hrange⟩ := exists_projection_mem_familyInvariant S i hS L hL
   have hid' : IsIdempotentElem (p.baseChange A) :=
     hid.map (Module.End.baseChangeHom k A V)
   have hrange' : LinearMap.range (p.baseChange A) = L.baseChange A := by

@@ -79,21 +79,22 @@ variable (I : HopfIdeal k H) (V : Type w) [AddCommGroup V] [Module k V] [Comodul
 
 /-- A subgroup that stabilizes a subspace inside one character space of a representation spanned
 by its character spaces is detected by centralizing the endomorphisms preserving each character
-space, over the whole coefficient algebra. The subspace-stabilizer property is an explicit input. -/
+space, over the whole coefficient algebra. The implication from stabilizing the subspace to
+subgroup membership is an explicit input. -/
 theorem mem_quotientPointsSubgroup_iff_forall_commute_familyInvariant_of_subspace_stabilizer
     (hV : ⨆ χ, I.weightSpace V χ = ⊤)
     (χ : GroupLike k (H ⧸ I.toIdeal)) (L : Submodule k V) (hL : L ≤ I.weightSpace V χ)
     (A : CommAlgCat.{x} k)
     (g : HopfAlgebra.points (R := k) (H := H) A)
-    (hstab : g ∈ CommHopfAlgCat.quotientPointsSubgroup H I A ↔
-      (L.baseChange A).map (Comodule.endOfPoint V g.ofConv) = L.baseChange A) :
+    (hstab : (L.baseChange A).map (Comodule.endOfPoint V g.ofConv) = L.baseChange A →
+      g ∈ CommHopfAlgCat.quotientPointsSubgroup H I A) :
     g ∈ CommHopfAlgCat.quotientPointsSubgroup H I A ↔
       ∀ p ∈ Submodule.familyInvariant (I.weightSpace V),
         Commute (Comodule.endOfPoint V g.ofConv) (p.baseChange A) := by
   refine ⟨fun hg p hp ↦ I.commute_baseChange_of_mem_quotientPointsSubgroup V hV A g hg hp,
-    fun hg ↦ hstab.mpr ?_⟩
+    fun hg ↦ hstab ?_⟩
   have h := Submodule.map_baseChange_eq_of_forall_commute_familyInvariant
-    (I.weightSpace V) (I.iSupIndep_weightSpace V) χ L hL (Comodule.pointsAction V g) (by
+    (I.weightSpace V) χ (I.iSupIndep_weightSpace V χ) L hL (Comodule.pointsAction V g) (by
       simpa only [Comodule.pointsAction_toLinearMap] using hg)
   simpa only [Comodule.pointsAction_toLinearMap] using h
 
