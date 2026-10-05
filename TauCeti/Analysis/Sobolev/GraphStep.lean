@@ -13,12 +13,14 @@ public import Mathlib.MeasureTheory.Function.Holder
 # The closed-graph step for weak Sobolev spaces
 
 This file packages the successor step shared by the iterated weak Sobolev spaces. Given a
-normed space `X` and a continuous map from `X` to an `Lᵖ` space of `F`-valued fields,
+seminormed space `X` and a continuous linear map from `X` to an `Lᵖ` space of `F`-valued fields,
 `TauCeti.WeakDerivStep` adjoins an `Lᵖ` weak Fréchet derivative of that field. The admissibility
 condition is a closed subspace, so the resulting graph space is complete whenever `X` is. The
 construction works on any real normed domain with measurable opens and a measure finite on compact
-sets. Its intrinsic weak-derivative characterization additionally needs local finiteness, while
-finite dimensionality is needed only for extensionality via uniqueness of weak derivatives.
+sets. Its intrinsic weak-derivative characterization additionally needs local finiteness of the
+measure restricted to the open set, while finite dimensionality is needed only for extensionality
+via uniqueness of weak derivatives. The constructor takes an existing weak derivative and needs no
+local-finiteness assumption.
 
 The construction is independent of the order of differentiation. It is iterated by `Wkp`,
 which starts from the weak gradient and adjoins one weak derivative per order; the projections,
@@ -35,15 +37,14 @@ whose exponent is two whatever `p` is.  That is what makes the squared-norm iden
 
 * `TauCeti.weakDerivStepSubmodule`: the closed graph of one weak-derivative step.
 * `TauCeti.mem_weakDerivStepSubmodule_iff_hasWeakFDerivOn`: its intrinsic characterization.
-* `TauCeti.WeakDerivStep`: the resulting complete normed space, with projections
+* `TauCeti.WeakDerivStep`: the resulting complete seminormed space, with projections
   `TauCeti.WeakDerivStep.prev` and `TauCeti.WeakDerivStep.weakFDeriv`, constructor
   `TauCeti.WeakDerivStep.mk`, and extensionality `TauCeti.WeakDerivStep.ext`.
 
 ## References
 
-This supplies the order-independent successor step for Lane A.1, target 1, in
-`TauCetiRoadmap/PDE/README.md`.  The iterated weak-derivative definition and the closed-graph
-completeness argument follow L. C. Evans, *Partial Differential Equations*, Chapter 5, §5.2.
+The iterated weak-derivative definition and the closed-graph completeness argument follow
+L. C. Evans, *Partial Differential Equations*, Chapter 5, §5.2.
 -/
 
 public section
@@ -57,7 +58,7 @@ open scoped ContDiff Distributions ENNReal
 
 variable {E F X : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [NormedSpace ℝ E]
   [OpensMeasurableSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F]
-  [CompleteSpace F] [NormedAddCommGroup X] [NormedSpace ℝ X]
+  [CompleteSpace F] [SeminormedAddCommGroup X] [NormedSpace ℝ X]
   {mu : Measure E} [IsFiniteMeasureOnCompacts mu] {Omega : Opens E} {p : ENNReal}
   [Fact (1 <= p)]
 
@@ -128,19 +129,9 @@ private theorem weakDerivStepTestFunctional_apply
   have hdphi : (dphi : E → ℝ) = fun x => lineDeriv ℝ (phi : E → ℝ) x v := by
     funext x
     exact TestFunction.lineDerivCLM_apply_of_le le_top
-  -- `weakDerivStepTestFunctional` is assembled from `ContinuousLinearMap.comp` and `+` inside a
-  -- tactic block that `let`-binds the Hölder-conjugate instances, so `simp` cannot rewrite it.
-  -- Evaluating it at `J` is definitionally the sum of the two Hölder pairings.
-  have happly : weakDerivStepTestFunctional base phi v J =
-      weakDerivStepSmulPairing (mu := mu) (Omega := Omega) (F := F) p
-          (testFunctionLp (mu := mu) (ENNReal.conjExponent p) dphi)
-          (weakDerivStepBaseL base J) +
-        weakDerivStepSmulPairing (mu := mu) (Omega := Omega) (F := F) p
-          (testFunctionLp (mu := mu) (ENNReal.conjExponent p) phi)
-          (weakDerivStepDirectionL (mu := mu) (Omega := Omega) (p := p) (X := X) (F := F) v J) :=
-    rfl
-  rw [happly, weakDerivStepSmulPairing, ContinuousLinearMap.lpPairing_eq_integral,
-    ContinuousLinearMap.lpPairing_eq_integral]
+  simp only [weakDerivStepTestFunctional, add_apply,
+    ContinuousLinearMap.comp_apply, weakDerivStepSmulPairing,
+    ContinuousLinearMap.lpPairing_eq_integral, ContinuousLinearMap.lsmul_apply]
   have hfirst :
       (∫ x, testFunctionLp (mu := mu) (ENNReal.conjExponent p) dphi x •
           weakDerivStepBaseL base J x ∂mu.restrict Omega) =
@@ -158,7 +149,6 @@ private theorem weakDerivStepTestFunctional_apply
     filter_upwards [testFunctionLp_apply_ae (mu := mu) (ENNReal.conjExponent p) phi,
       (ContinuousLinearMap.apply ℝ F v).coeFn_compLp (WithLp.snd J)] with x hphi hx
     rw [hphi, weakDerivStepDirectionL_apply, hx, ContinuousLinearMap.apply_apply]
-  simp only [ContinuousLinearMap.lsmul_apply]
   rw [hfirst, hsecond, setIntegral_lineDeriv_smul_eq_integral_lineDeriv_smul,
     setIntegral_smul_eq_integral_smul]
 
@@ -177,17 +167,13 @@ theorem mem_weakDerivStepSubmodule_iff
       ∀ (phi : 𝓓(Omega, ℝ)) (v : E),
         (∫ x, lineDeriv ℝ (phi : E → ℝ) x v • base (WithLp.fst J) x ∂mu) +
           ∫ x, phi x • WithLp.snd J x v ∂mu = 0 := by
-  have hmem : J ∈ weakDerivStepSubmodule mu Omega p base ↔
-      ∀ (phi : 𝓓(Omega, ℝ)) (v : E), weakDerivStepTestFunctional base phi v J = 0 := by
-    simp only [weakDerivStepSubmodule, ClosedSubmodule.mem_iInf, ClosedSubmodule.mem_comap,
-      ClosedSubmodule.mem_bot]
-  rw [hmem]
-  simp only [weakDerivStepTestFunctional_apply]
+  simp only [weakDerivStepSubmodule, ClosedSubmodule.mem_iInf, ClosedSubmodule.mem_comap,
+    ClosedSubmodule.mem_bot, weakDerivStepTestFunctional_apply]
 
 /-- A jet is in the closed graph exactly when its last field is the weak derivative of the
 field selected by `base`. -/
 theorem mem_weakDerivStepSubmodule_iff_hasWeakFDerivOn
-    [IsLocallyFiniteMeasure mu]
+    [IsLocallyFiniteMeasure (mu.restrict Omega)]
     (base : X →L[ℝ] Lp F p (mu.restrict Omega))
     (J : WeakDerivStepJetLp mu Omega p X F) :
     J ∈ weakDerivStepSubmodule mu Omega p base ↔
@@ -256,13 +242,15 @@ theorem weakFDeriv_coe (base : X →L[ℝ] Lp F p (mu.restrict Omega))
   simp [weakFDeriv, weakFDerivL]
 
 /-- Construct an element of a weak-derivative graph from its two components. -/
-def mk [IsLocallyFiniteMeasure mu] (base : X →L[ℝ] Lp F p (mu.restrict Omega)) (x : X)
+def mk (base : X →L[ℝ] Lp F p (mu.restrict Omega)) (x : X)
     (D : Lp (E →L[ℝ] F) p (mu.restrict Omega))
     (h : HasWeakFDerivOn mu Omega (base x) D) : WeakDerivStep mu Omega p base :=
-  ⟨WithLp.toLp 2 (x, D), (mem_weakDerivStepSubmodule_iff_hasWeakFDerivOn base _).mpr (by simpa)⟩
+  ⟨WithLp.toLp 2 (x, D), (mem_weakDerivStepSubmodule_iff base _).mpr fun phi v => by
+    simpa using add_eq_zero_iff_eq_neg.mpr
+      ((hasWeakFDerivOn_iff.mp h v).integral_lineDeriv_smul_eq_neg_integral_smul phi)⟩
 
 @[simp]
-theorem prev_mk [IsLocallyFiniteMeasure mu]
+theorem prev_mk
     (base : X →L[ℝ] Lp F p (mu.restrict Omega)) (x : X)
     (D : Lp (E →L[ℝ] F) p (mu.restrict Omega))
     (h : HasWeakFDerivOn mu Omega (base x) D) : prev base (mk base x D h) = x := by
@@ -270,7 +258,7 @@ theorem prev_mk [IsLocallyFiniteMeasure mu]
   simp [mk]
 
 @[simp]
-theorem weakFDeriv_mk [IsLocallyFiniteMeasure mu]
+theorem weakFDeriv_mk
     (base : X →L[ℝ] Lp F p (mu.restrict Omega)) (x : X)
     (D : Lp (E →L[ℝ] F) p (mu.restrict Omega))
     (h : HasWeakFDerivOn mu Omega (base x) D) : weakFDeriv base (mk base x D h) = D := by
@@ -278,7 +266,7 @@ theorem weakFDeriv_mk [IsLocallyFiniteMeasure mu]
   simp [mk]
 
 /-- The adjoined field is the weak derivative of the field selected by `base`. -/
-theorem hasWeakFDerivOn_base_prev [IsLocallyFiniteMeasure mu]
+theorem hasWeakFDerivOn_base_prev [IsLocallyFiniteMeasure (mu.restrict Omega)]
     (base : X →L[ℝ] Lp F p (mu.restrict Omega))
     (u : WeakDerivStep mu Omega p base) :
     HasWeakFDerivOn mu Omega (base (prev base u)) (weakFDeriv base u) :=
@@ -289,11 +277,9 @@ adjoined weak derivatives are equal. -/
 theorem ext_prev_weakFDeriv {base : X →L[ℝ] Lp F p (mu.restrict Omega)}
     {u v : WeakDerivStep mu Omega p base} (hprev : prev base u = prev base v)
     (hweakFDeriv : weakFDeriv base u = weakFDeriv base v) : u = v := by
-  refine Subtype.ext ((WithLp.prodContinuousLinearEquiv 2 ℝ _ _).injective ?_)
-  refine Prod.ext ?_ ?_
-  · simpa only [WithLp.prodContinuousLinearEquiv_apply, WithLp.ofLp_fst, prev_coe] using hprev
-  · simpa only [WithLp.prodContinuousLinearEquiv_apply, WithLp.ofLp_snd, weakFDeriv_coe] using
-      hweakFDeriv
+  apply Subtype.ext (WithLp.ofLp_injective 2 (Prod.ext ?_ ?_))
+  · simpa only [WithLp.ofLp_fst, prev_coe] using hprev
+  · simpa only [WithLp.ofLp_snd, weakFDeriv_coe] using hweakFDeriv
 
 /-- Two elements of a weak-derivative graph are equal when their preceding components are equal:
 uniqueness of the weak derivative then forces the adjoined components to agree. -/
