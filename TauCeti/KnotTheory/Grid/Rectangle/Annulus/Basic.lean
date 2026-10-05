@@ -155,14 +155,14 @@ band: the same columns as the outgoing rectangle, and every row. -/
 theorem coveredSquares_union_coveredSquares_of_left_eq_left (h : S.left = R.left) :
     R.toGridRectangle.coveredSquares ∪ S.toGridRectangle.coveredSquares =
       R.toGridRectangle.coveredColumns ×ˢ (Finset.univ : Finset (Fin n)) := by
+  rw [R.coveredSquares_eq_product_of_left_eq_left S h, GridRectangle.coveredSquares_def]
   have hrow : Grid.cIco R.bottom R.top ∪ Grid.cIco R.top R.bottom = Finset.univ :=
     Grid.cIco_union_swap R.bottom_ne_top
   ext p
-  simp only [Finset.mem_union, GridRectangle.mem_coveredSquares,
+  simp only [Finset.mem_union,
     GridRectangle.mem_coveredColumns, GridRectangle.mem_coveredRows, Finset.mem_product,
     Finset.mem_univ, and_true, toGridRectangle_left, toGridRectangle_right,
-    toGridRectangle_bottom, toGridRectangle_top, h, R.right_eq_right_of_left_eq_left S h,
-    R.bottom_eq_top_of_left_eq_left S h, R.top_eq_bottom_of_left_eq_left S h]
+    toGridRectangle_bottom, toGridRectangle_top]
   refine ⟨fun hp => hp.elim And.left And.left, fun hp => ?_⟩
   have := hrow ▸ Finset.mem_univ p.2
   rcases Finset.mem_union.mp this with hb | hb
