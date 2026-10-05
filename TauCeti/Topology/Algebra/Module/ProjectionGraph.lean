@@ -94,26 +94,26 @@ variable {R M : Type*} [Semiring R] [TopologicalSpace M] [AddCommGroup M] [Modul
 continuous linear map. Its source and target are the cylinder over `U`. The coordinate
 change itself does not require idempotence. -/
 def projectionGraphChart (P : M →L[R] M) (g : M → M)
-    {U : Set M} (hU : IsOpen U) (hg : ContinuousOn g U)
-    (hPg : ∀ v ∈ U, P (g v) = 0) : OpenPartialHomeomorph M M where
+    {U : Set M} (hU : IsOpen U) (hg : ContinuousOn g (P.range ∩ U))
+    (hPg : ∀ v ∈ (P.range : Set M) ∩ U, P (g v) = 0) : OpenPartialHomeomorph M M where
   toFun z := z - g (P z)
   invFun z := z + g (P z)
   source := P ⁻¹' U
   target := P ⁻¹' U
-  map_source' z hz := by simpa [hPg _ hz] using hz
-  map_target' z hz := by simpa [hPg _ hz] using hz
-  left_inv' z hz := by simp [hPg _ hz]
-  right_inv' z hz := by simp [hPg _ hz]
+  map_source' z hz := by simpa [hPg (P z) ⟨P.mem_range_self z, hz⟩] using hz
+  map_target' z hz := by simpa [hPg (P z) ⟨P.mem_range_self z, hz⟩] using hz
+  left_inv' z hz := by simp [hPg (P z) ⟨P.mem_range_self z, hz⟩]
+  right_inv' z hz := by simp [hPg (P z) ⟨P.mem_range_self z, hz⟩]
   open_source := hU.preimage P.continuous
   open_target := hU.preimage P.continuous
   continuousOn_toFun := continuousOn_id.sub
-    (hg.comp P.continuous.continuousOn fun _ hz ↦ hz)
+    (hg.comp P.continuous.continuousOn fun z hz ↦ ⟨P.mem_range_self z, hz⟩)
   continuousOn_invFun := continuousOn_id.add
-    (hg.comp P.continuous.continuousOn fun _ hz ↦ hz)
+    (hg.comp P.continuous.continuousOn fun z hz ↦ ⟨P.mem_range_self z, hz⟩)
 
 variable (P : M →L[R] M) (g : M → M)
-  {U : Set M} (hU : IsOpen U) (hg : ContinuousOn g U)
-  (hPg : ∀ v ∈ U, P (g v) = 0)
+  {U : Set M} (hU : IsOpen U) (hg : ContinuousOn g (P.range ∩ U))
+  (hPg : ∀ v ∈ (P.range : Set M) ∩ U, P (g v) = 0)
 
 @[simp]
 theorem projectionGraphChart_source :
@@ -135,7 +135,7 @@ theorem projectionGraphChart_symm_apply (z : M) :
 The graph may be defined over a larger parameter set `S`, for example a closed disk whose
 interior contains `U`. -/
 theorem projectionGraphChart_mem_range_iff (hP : IsIdempotentElem P)
-    {S : Set M} (hUS : U ⊆ S) (hPgS : ∀ v ∈ S, P (g v) = 0)
+    {S : Set M} (hUS : U ⊆ S) (hPgS : ∀ v ∈ (P.range : Set M) ∩ S, P (g v) = 0)
     {z : M} (hz : P z ∈ U) :
     P.projectionGraphChart g hU hg hPg z ∈ P.range ↔
       z ∈ (fun v ↦ v + g v) '' ((P.range : Set M) ∩ S) := by
@@ -145,11 +145,12 @@ theorem projectionGraphChart_mem_range_iff (hP : IsIdempotentElem P)
   constructor
   · intro h
     have heq : P z = z - g (P z) := by
-      simpa only [projectionGraphChart_apply, map_sub, hPg _ hz, sub_zero] using (hfix _).mp h
+      simpa only [projectionGraphChart_apply, map_sub,
+        hPg (P z) ⟨P.mem_range_self z, hz⟩, sub_zero] using (hfix _).mp h
     exact ⟨P z, ⟨P.mem_range_self z, hUS hz⟩, (eq_sub_iff_add_eq).mp heq⟩
   · rintro ⟨v, ⟨hv, hvU⟩, rfl⟩
     have hvP := (hfix v).mp hv
-    simp only [projectionGraphChart_apply, map_add, hvP, hPgS v hvU, add_zero,
+    simp only [projectionGraphChart_apply, map_add, hvP, hPgS v ⟨hv, hvU⟩, add_zero,
       add_sub_cancel_right]
     exact hv
 

@@ -11,8 +11,8 @@ public import Mathlib.Analysis.Calculus.ContDiff.Operations
 /-!
 # Differentiability of graph-straightening charts
 
-The ambient chart `ContinuousLinearMap.projectionGraphChart` has the same differentiability
-as its graph map `g` locally at the projected point. Both the chart and its inverse have
+The ambient chart `ContinuousLinearMap.projectionGraphChart` and its inverse inherit
+the differentiability of the graph map `g` at the projected point. Both have
 explicit linear-shear differentials. In particular, a graph map with zero derivative gives
 an ambient chart with identity derivative, as needed to identify the tangent space of a
 local invariant disk.
@@ -28,8 +28,8 @@ namespace ContinuousLinearMap
 variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   (P : E →L[𝕜] E) (g : E → E)
-  {U : Set E} (hU : IsOpen U) (hg : ContinuousOn g U)
-  (hPg : ∀ v ∈ U, P (g v) = 0)
+  {U : Set E} (hU : IsOpen U) (hg : ContinuousOn g (P.range ∩ U))
+  (hPg : ∀ v ∈ (P.range : Set E) ∩ U, P (g v) = 0)
 
 /-- The graph chart is `C^n` wherever `g` is `C^n` at the projected point. -/
 theorem contDiffAt_projectionGraphChart {n : ℕ∞ω} {z : E}
@@ -39,7 +39,7 @@ theorem contDiffAt_projectionGraphChart {n : ℕ∞ω} {z : E}
   ext w
   simp
 
-/-- The inverse chart has the same local differentiability. -/
+/-- The inverse chart is `C^n` wherever `g` is `C^n` at the projected point. -/
 theorem contDiffAt_projectionGraphChart_symm {n : ℕ∞ω} {z : E}
     (hgs : ContDiffAt 𝕜 n g (P z)) :
     ContDiffAt 𝕜 n (P.projectionGraphChart g hU hg hPg).symm z := by
