@@ -37,8 +37,9 @@ constants or residue fields is assumed. Over imperfect residue fields such repre
 need not exist. The genus formula uses exact constants and the finite separable constant-field
 extension required by the Hurwitz theorem.
 
-For an extension of `k(x)` with supplied reduced representatives and a finite nonempty set
-of poles of orders prime to `p`,
+For a finite nonempty set of reduced poles,
+`two_mul_genus_sub_two_eq_of_artinSchreier_poles` derives nontriviality and exactness of
+the constants over any function field with exact constants. For an extension of `k(x)`,
 `two_mul_genus_eq_of_artinSchreier_poles` specialises this to
 `2g = (p - 1) (∑ P ∈ S, (m P + 1) deg P - 2)`. Finiteness, separability,
 nontriviality, and exactness of the constants are derived from the equation and a pole.
@@ -199,6 +200,71 @@ end Extension
 
 section Poles
 
+variable {k : Type u} {F : Type v} {F' : Type v'} [Field k] [Field F] [Field F']
+variable [Algebra k F] [Algebra k F'] [Algebra F F'] [IsScalarTower k F F']
+
+/-- An Artin--Schreier extension of a function field with exact constants and a finite
+nonempty set of supplied reduced poles has no new constants. Its genus is determined by
+`2g' - 2 = p (2g - 2) + (p - 1) ∑ P ∈ S, (m P + 1) deg P`.
+Finiteness, separability, nontriviality, and exactness of the extension's constants follow
+from the equation and a pole. The representatives may vary with the place. -/
+theorem two_mul_genus_sub_two_eq_of_artinSchreier_poles
+    (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F)
+    (p : ℕ) [Fact p.Prime] [CharP F p]
+    {y : F'} {u : F} (hgen : F⟮y⟯ = ⊤)
+    (hy : y ^ p - y = algebraMap F F' u)
+    (S : Finset (Place k F)) (m : Place k F → ℕ) (hS : S.Nonempty)
+    (hord : ∀ P ∈ S, ∃ w : F, P.ord (u - (w ^ p - w)) = -(m P : ℤ))
+    (hprime : ∀ P ∈ S, ¬ p ∣ m P)
+    (hreg : ∀ Q : Place k F, Q ∉ S → ∃ w : F, u - (w ^ p - w) ∈ Q.integers) :
+    2 * (genus k F' : ℤ) - 2 =
+      (p : ℤ) * (2 * genus k F - 2) +
+        (p - 1 : ℤ) * ∑ P ∈ S, (m P + 1 : ℤ) * P.degree := by
+  classical
+  have hpole : ∀ Q ∈ S, ∃ w : F, Q.ord (u - (w ^ p - w)) = -(m Q : ℤ) ∧
+      ¬ (p : ℤ) ∣ Q.ord (u - (w ^ p - w)) := by
+    intro Q hQ
+    obtain ⟨w, hw⟩ := hord Q hQ
+    have hprime' : ¬ (p : ℤ) ∣ (m Q : ℤ) := by exact_mod_cast hprime Q hQ
+    exact ⟨w, hw, by simpa [hw] using hprime'⟩
+  obtain ⟨P, hP⟩ := hS
+  obtain ⟨w₀, hw₀, hdiv⟩ := hpole P hP
+  have hm : 0 < m P := by
+    by_contra h
+    have hm0 : m P = 0 := by omega
+    exact hprime P hP (hm0 ▸ dvd_zero _)
+  have hneg : P.ord (u - (w₀ ^ p - w₀)) < 0 := by rw [hw₀]; omega
+  have hu : ∀ w : F, w ^ p - w ≠ u := by
+    intro w hw
+    -- The valuation order and the place order use the same multiplicative-to-additive convention.
+    apply P.valuation.ne_pow_sub_self_of_ord_neg_of_not_dvd
+      (Fact.out : p.Prime).one_lt
+      (by simpa only [Valuation.ord_def, ← P.ord_def] using hneg)
+      (by simpa only [Valuation.ord_def, ← P.ord_def] using hdiv) (w - w₀)
+    rw [← hw, sub_pow_char]
+    ring
+  let _ := ArtinSchreier.isSplittingField hy hgen
+  let _ := Polynomial.IsSplittingField.finiteDimensional F'
+    (Polynomial.X ^ p - Polynomial.X - Polynomial.C u)
+  let _ := ArtinSchreier.isGalois hy hgen
+  have hF' : IsFunctionField k F' := hF.finite_extension
+  obtain ⟨P', hP'⟩ := Place.restrict_surjective_of_finiteDimensional
+    (k' := k) hF hF' P
+  have he : Place.ramificationIdx F P' = p := by
+    apply Place.ramificationIdx_eq_of_exists_reduced_artinSchreier_pole
+      k F p hgen hy
+    exact ⟨w₀, by simpa only [hP'] using hneg, by simpa only [hP'] using hdiv⟩
+  have hex' : IsIntegrallyClosedIn k F' :=
+    isIntegrallyClosedIn_of_finrank_prime_of_ramificationIdx_ne_one hex
+      (by rw [ArtinSchreier.finrank_eq hy hgen hu]; exact Fact.out)
+      (P' := P') (he.trans_ne (Fact.out : p.Prime).ne_one)
+  simpa only [Module.finrank_self, Nat.cast_one, one_mul] using
+    artinSchreier_genus_formula hF hF' p hgen hy S m hpole hreg hex hex' hu
+
+end Poles
+
+section RatFunc
+
 variable {k : Type u} {F : Type v} [Field k] [Field F] [Algebra k F]
 variable [Algebra (RatFunc k) F] [IsScalarTower k (RatFunc k) F]
 
@@ -218,50 +284,11 @@ theorem two_mul_genus_eq_of_artinSchreier_poles
       u - (w ^ p - w) ∈ Q.integers) :
     2 * (genus k F : ℤ) =
       (p - 1 : ℤ) * (∑ P ∈ S, (m P + 1 : ℤ) * P.degree - 2) := by
-  classical
-  have hpole : ∀ Q ∈ S, ∃ w : RatFunc k, Q.ord (u - (w ^ p - w)) = -(m Q : ℤ) ∧
-      ¬ (p : ℤ) ∣ Q.ord (u - (w ^ p - w)) := by
-    intro Q hQ
-    obtain ⟨w, hw⟩ := hord Q hQ
-    have hprime' : ¬ (p : ℤ) ∣ (m Q : ℤ) := by exact_mod_cast hprime Q hQ
-    exact ⟨w, hw, by simpa [hw] using hprime'⟩
-  obtain ⟨P, hP⟩ := hS
-  obtain ⟨w₀, hw₀, hdiv⟩ := hpole P hP
-  have hm : 0 < m P := by
-    by_contra h
-    have hm0 : m P = 0 := by omega
-    exact hprime P hP (hm0 ▸ dvd_zero _)
-  have hneg : P.ord (u - (w₀ ^ p - w₀)) < 0 := by rw [hw₀]; omega
-  have hu : ∀ w : RatFunc k, w ^ p - w ≠ u := by
-    intro w hw
-    -- The valuation order and the place order use the same multiplicative-to-additive convention.
-    apply P.valuation.ne_pow_sub_self_of_ord_neg_of_not_dvd
-      (Fact.out : p.Prime).one_lt
-      (by simpa only [Valuation.ord_def, ← P.ord_def] using hneg)
-      (by simpa only [Valuation.ord_def, ← P.ord_def] using hdiv) (w - w₀)
-    rw [← hw, sub_pow_char]
-    ring
-  let _ := ArtinSchreier.isSplittingField hy hgen
-  let _ := Polynomial.IsSplittingField.finiteDimensional F
-    (Polynomial.X ^ p - Polynomial.X - Polynomial.C u)
-  let _ := ArtinSchreier.isGalois hy hgen
-  have hF : IsFunctionField k F := isFunctionField_iff_functionField.mpr inferInstance
-  obtain ⟨P', hP'⟩ := Place.restrict_surjective_of_finiteDimensional
-    (k' := k) (IsFunctionField.ratFunc k) hF P
-  have he : Place.ramificationIdx (RatFunc k) P' = p := by
-    apply Place.ramificationIdx_eq_of_exists_reduced_artinSchreier_pole
-      k (RatFunc k) p hgen hy
-    exact ⟨w₀, by simpa only [hP'] using hneg, by simpa only [hP'] using hdiv⟩
-  have hex : IsIntegrallyClosedIn k F :=
-    isIntegrallyClosedIn_of_finrank_prime_of_ramificationIdx_ne_one inferInstance
-      (by rw [ArtinSchreier.finrank_eq hy hgen hu]; exact Fact.out)
-      (P' := P') (he.trans_ne (Fact.out : p.Prime).ne_one)
-  have hg := artinSchreier_genus_formula (IsFunctionField.ratFunc k) hF p hgen hy
-    S m hpole hreg inferInstance hex hu
-  simp only [Module.finrank_self, Nat.cast_one, one_mul, genus_ratFunc, Nat.cast_zero,
-    mul_zero, zero_sub] at hg
+  have hg := two_mul_genus_sub_two_eq_of_artinSchreier_poles
+    (IsFunctionField.ratFunc k) inferInstance p hgen hy S m hS hord hprime hreg
+  simp only [genus_ratFunc, Nat.cast_zero, mul_zero, zero_sub] at hg
   linear_combination hg
 
-end Poles
+end RatFunc
 
 end TauCeti
