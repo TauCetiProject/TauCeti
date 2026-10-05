@@ -22,14 +22,12 @@ These formulas connect the group-theoretic transfer with the extension class
 that occur in the cyclic-quotient calculation of that class. No cohomological-dimension
 hypothesis is needed for the formulas, and no claim of injectivity or surjectivity is made.
 
-The transversal formula and continuity reuse `TauCeti.transfer_eq_prod_lWord` and
-`TauCeti.continuous_transfer`; the right-representative computation uses
-`MonoidHom.transfer_eq_prod_mul_out`.
-
 ## References
 
 * J. Neukirch, A. Schmidt and K. Wingberg, *Cohomology of Number Fields*, 2nd ed.,
   (1.5.9) and the transfer diagram (3.6.2).
+* Transfer API: `TauCeti.transfer_eq_prod_lWord`, `TauCeti.continuous_transfer`, and
+  `MonoidHom.transfer_eq_prod_mul_out`.
 -/
 
 public section
@@ -47,24 +45,20 @@ attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex
 noncomputable def abelianizationProPTransfer : G →* abelianizationProP p G V :=
   MonoidHom.transfer (abelianizationProPMk p G V)
 
-/-- The defining equation of the transfer to the pro-`p` class module. -/
-theorem abelianizationProPTransfer_def :
-    abelianizationProPTransfer p G V = MonoidHom.transfer (abelianizationProPMk p G V) := (rfl)
-
 /-- The transfer is the product of the classes of the transversal words, for every transversal.
 The representatives are arbitrary; the transfer itself does not depend on them. -/
 theorem abelianizationProPTransfer_eq_prod_lWord (t : G ⧸ V → G)
     (ht : ∀ q : G ⧸ V, (QuotientGroup.mk (t q) : G ⧸ V) = q) (g : G) :
     abelianizationProPTransfer p G V g =
       ∏ q : G ⧸ V, abelianizationProPMk p G V ⟨lWord V t q g, lWord_mem V t ht q g⟩ := by
-  rw [abelianizationProPTransfer_def]
+  unfold abelianizationProPTransfer
   exact transfer_eq_prod_lWord t ht _ g
 
 /-- Transfer to `V^ab(p)` is continuous when `V` is open. Compactness and primality of `p`
 are not required. -/
 theorem continuous_abelianizationProPTransfer (hV : IsOpen (V : Set G)) :
     Continuous (abelianizationProPTransfer p G V) := by
-  rw [abelianizationProPTransfer_def]
+  unfold abelianizationProPTransfer
   exact continuous_transfer hV (continuous_abelianizationProPMk p G V)
 
 variable [V.Normal]
@@ -73,7 +67,7 @@ variable [V.Normal]
 theorem abelianizationProPTransfer_apply_of_mem (v : V) :
     abelianizationProPTransfer p G V v =
       ∏ q : G ⧸ V, q • abelianizationProPMk p G V v := by
-  rw [abelianizationProPTransfer_def, MonoidHom.transfer_eq_prod_mul_out]
+  rw [abelianizationProPTransfer, MonoidHom.transfer_eq_prod_mul_out]
   apply Finset.prod_congr rfl
   intro q _
   rw [← QuotientGroup.out_eq' q, abelianizationProPMk_conj]
@@ -86,7 +80,7 @@ This is the additive form of the transfer formula used to evaluate the extension
 theorem abelianizationProPTransfer_out (q : G ⧸ V) :
     Additive.ofMul (abelianizationProPTransfer p G V q.out) =
       ∑ r : G ⧸ V, abelianizationProPFactorSet p G V (r, q) := by
-  rw [abelianizationProPTransfer_def, MonoidHom.transfer_eq_prod_mul_out]
+  rw [abelianizationProPTransfer, MonoidHom.transfer_eq_prod_mul_out]
   simp [abelianizationProPFactorSet_apply]
 
 /-- The image of transfer is fixed by the conjugation action of `G ⧸ V`. This is a containment
@@ -116,7 +110,7 @@ theorem smul_abelianizationProPTransfer (q : G ⧸ V) (g : G) :
     -- Transfer has commutative target, so its value on the inner conjugate of `g` equals its
     -- value on `g`. Naturality then says that conjugation fixes the transferred value.
     simpa [φ, ψ, MonoidHom.comp_apply, MulAut.conj_apply, map_mul, map_inv,
-      mul_comm, mul_left_comm, mul_assoc, abelianizationProPTransfer_def] using h
+      mul_comm, mul_left_comm, mul_assoc, abelianizationProPTransfer] using h
 
 /-- Transfer from the whole group is the canonical map to its pro-`p` abelianization. -/
 @[simp]
