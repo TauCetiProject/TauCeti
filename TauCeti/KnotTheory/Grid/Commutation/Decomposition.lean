@@ -19,15 +19,19 @@ the two kinds of decomposition and rewrites the two matrix products in the chain
 sums over them.
 
 For a validated column commutation `C` of `G`, write `G'` for the diagram obtained by swapping
-the columns of `C`. The coefficient of `Phi (partial x)` at `z` is the sum over
+the columns of `C`, and `Phi` for `GridDiagram.pentagonMap`. The coefficient of
+`Phi (partial x)` at `z` is the sum over
 `GridRectanglePentagonDecomposition C.column C.turnRow x z`; its weight is the rectangle weight,
 renamed into the coefficient variables of `G'`, times the pentagon weight. The coefficient of
 `partial' (Phi x)` is the sum over `GridPentagonRectangleDecomposition C.column C.turnRow x z`;
 its weight is the pentagon weight times the rectangle weight in `G'`.
 
-The remaining geometric step in commutation invariance is to match these two finite sets by
-repartitioning each composite domain. Keeping the counting identities here separate from that
-geometric pairing makes the exact target of the juxtaposition argument explicit.
+These are the terms of the chain-map equation in which the pentagon turns on its terminal side.
+The commutation map `GridDiagram.commutationMap` also counts pentagons turning on their initial
+side, and some composite domains here are matched only by decompositions involving those, so
+these two finite sets cannot be matched with each other alone. Keeping the counting identities
+here separate from the geometric pairing makes the target of the juxtaposition argument
+explicit.
 
 ## Main definitions
 

@@ -18,9 +18,11 @@ have equal total weights by the commuting bijection. Splitting each finite sum a
 to domains with a common side.
 
 The reduction is an equivalence: no condition on the overlapping terms is built into
-its hypotheses. The remaining geometric argument must pair their weights. The
-pentagon--rectangle juxtaposition is described in Ozsváth--Stipsicz--Szabó,
-*Grid Homology for Knots and Links*, Section 5.1.
+its hypotheses. It concerns `GridDiagram.pentagonMap` alone, which counts only the
+pentagons turning on their terminal side and is not a chain map by itself; the overlapping
+terms of the commutation map `GridDiagram.commutationMap` also involve pentagons turning on
+their initial side. The pentagon--rectangle juxtaposition is described in
+Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Section 5.1.
 -/
 
 public section
