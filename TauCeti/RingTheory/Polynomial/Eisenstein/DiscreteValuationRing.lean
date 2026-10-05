@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Polynomial.Eisenstein.Basic
+public import TauCeti.RingTheory.Polynomial.Eisenstein.Basic
 public import Mathlib.RingTheory.DiscreteValuationRing.Basic
 import TauCeti.RingTheory.DiscreteValuationRing.Basic
 
@@ -78,18 +78,10 @@ theorem isEisensteinAt_X_pow_sub_C_of_irreducible
     {R : Type*} [CommRing R] [IsDomain R] [IsDiscreteValuationRing R]
     {ϖ : R} (hϖ : Irreducible ϖ) {n : ℕ} (hn : 0 < n) :
     (X ^ n - C ϖ).IsEisensteinAt (maximalIdeal R) := by
-  refine (monic_X_pow_sub_C ϖ hn.ne').isEisensteinAt_of_mem_of_notMem
-    (maximalIdeal.isMaximal R).ne_top ?_ ?_
-  · intro i hi
-    rw [natDegree_X_pow_sub_C] at hi
-    by_cases hi0 : i = 0
-    · subst i
-      simp [Ne.symm hn.ne', hϖ.maximalIdeal_eq]
-    · simp [coeff_sub, coeff_X_pow, coeff_C, hi.ne, hi0]
-  · simp only [coeff_sub, coeff_X_pow, Ne.symm hn.ne', ↓reduceIte,
-      coeff_C_zero, zero_sub]
-    rw [Ideal.neg_mem_iff, IsDiscreteValuationRing.mem_maximalIdeal_pow_iff_le_addVal,
-      IsDiscreteValuationRing.addVal_uniformizer hϖ]
-    simp
+  apply isEisensteinAt_X_pow_sub_C (maximalIdeal.isMaximal R).ne_top
+    (by simp [hϖ.maximalIdeal_eq]) _ hn
+  rw [IsDiscreteValuationRing.mem_maximalIdeal_pow_iff_le_addVal,
+    IsDiscreteValuationRing.addVal_uniformizer hϖ]
+  simp
 
 end TauCeti

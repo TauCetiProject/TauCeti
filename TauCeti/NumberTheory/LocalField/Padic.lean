@@ -215,7 +215,6 @@ theorem irreducible_natCast_self : Irreducible (p : 𝒪[ℚ_[p]]) := by
 
 /-- The additive discrete valuation of the residue prime `p` in the integer ring of `ℚ_[p]`
 is `1`. -/
-@[simp]
 theorem addVal_natCast_self : IsDiscreteValuationRing.addVal 𝒪[ℚ_[p]] p = 1 :=
   IsDiscreteValuationRing.addVal_uniformizer (irreducible_natCast_self p)
 
