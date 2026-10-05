@@ -10,6 +10,7 @@ public import Mathlib.CategoryTheory.Sites.CoversTop.Over
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.GeneratingSections
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Quasicoherent.Biprod
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Quasicoherent.Monoidal
+public import TauCeti.CategoryTheory.ObjectProperty
 
 /-!
 # Locally free sheaves of modules
@@ -255,28 +256,20 @@ variable {C : Type u₁} [Category.{v₁} C] [HasPullbacks C] {J : GrothendieckT
 /-- Finitely presented sheaves of modules are closed under binary products, which are direct
 sums. -/
 instance isClosedUnderBinaryProducts_isFinitePresentation :
-    (isFinitePresentation R).IsClosedUnderBinaryProducts where
-  limitsOfShape_le := by
-    rintro M ⟨p⟩
-    have := p.prop_diag_obj ⟨.left⟩
-    have := p.prop_diag_obj ⟨.right⟩
-    exact (isFinitePresentation R).prop_of_iso
-      (IsLimit.conePointUniqueUpToIso (BinaryBiproduct.isLimit _ _)
-        ((IsLimit.postcomposeHomEquiv (diagramIsoPair p.diag) _).2 p.isLimit))
-      isFinitePresentation_biprod
+    (isFinitePresentation R).IsClosedUnderBinaryProducts :=
+  ObjectProperty.isClosedUnderBinaryProducts_of_prop_biprod _ fun _ _ hM hN ↦ by
+    let := hM
+    let := hN
+    exact isFinitePresentation_biprod
 
 /-- Finite locally free sheaves of modules are closed under binary products, which are the direct
 sums `M ⊞ N`. -/
 instance isClosedUnderBinaryProducts_isFiniteLocallyFree :
-    (isFiniteLocallyFree R).IsClosedUnderBinaryProducts where
-  limitsOfShape_le := by
-    rintro M ⟨p⟩
-    obtain ⟨_, _⟩ := p.prop_diag_obj ⟨.left⟩
-    obtain ⟨_, _⟩ := p.prop_diag_obj ⟨.right⟩
-    exact (isFiniteLocallyFree R).prop_of_iso
-      (IsLimit.conePointUniqueUpToIso (BinaryBiproduct.isLimit _ _)
-        ((IsLimit.postcomposeHomEquiv (diagramIsoPair p.diag) _).2 p.isLimit))
-      ⟨isLocallyFree_biprod, isFinitePresentation_biprod⟩
+    (isFiniteLocallyFree R).IsClosedUnderBinaryProducts :=
+  ObjectProperty.isClosedUnderBinaryProducts_of_prop_biprod _ fun _ _ hM hN ↦ by
+    obtain ⟨_, _⟩ := hM
+    obtain ⟨_, _⟩ := hN
+    exact ⟨isLocallyFree_biprod, isFinitePresentation_biprod⟩
 
 variable [HasBinaryProducts C]
 

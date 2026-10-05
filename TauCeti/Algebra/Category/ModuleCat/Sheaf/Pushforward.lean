@@ -50,18 +50,14 @@ noncomputable def SheafOfModules.pushforwardCompToPresheaf
 lemma SheafOfModules.pushforwardCompToPresheaf_hom_app_app
     (φ : S ⟶ (F.sheafPushforwardContinuous RingCat.{u} J K).obj R)
     (M : SheafOfModules.{v} R) (X : Cᵒᵖ) :
-    ((SheafOfModules.pushforwardCompToPresheaf φ).hom.app M).app X = 𝟙 _ := by
-  simp [SheafOfModules.pushforwardCompToPresheaf, NatIso.ofComponents]
-  rfl
+    ((SheafOfModules.pushforwardCompToPresheaf φ).hom.app M).app X = 𝟙 _ := (rfl)
 
 /-- The inverse pushforward comparison acts as the identity on sections. -/
 @[simp]
 lemma SheafOfModules.pushforwardCompToPresheaf_inv_app_app
     (φ : S ⟶ (F.sheafPushforwardContinuous RingCat.{u} J K).obj R)
     (M : SheafOfModules.{v} R) (X : Cᵒᵖ) :
-    ((SheafOfModules.pushforwardCompToPresheaf φ).inv.app M).app X = 𝟙 _ := by
-  simp [SheafOfModules.pushforwardCompToPresheaf, NatIso.ofComponents]
-  rfl
+    ((SheafOfModules.pushforwardCompToPresheaf φ).inv.app M).app X = 𝟙 _ := (rfl)
 
 /-- Pushforward of module sheaves along a continuous functor preserves limits indexed by
 categories whose objects and morphisms lie in the universe of the underlying modules. -/

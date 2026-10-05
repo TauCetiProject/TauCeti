@@ -553,7 +553,7 @@ instance _root_.TauCeti.AlgebraicGeometry.Scheme.Modules.isFiniteType_restrict
     ((Scheme.Modules.restrictFunctorIsoPullback f).app M).symm inferInstance
 
 /-- Restricting along an isomorphism and then its inverse recovers the original module. -/
-def _root_.TauCeti.AlgebraicGeometry.Scheme.Modules.restrictRestrictInvIso
+private def _root_.TauCeti.AlgebraicGeometry.Scheme.Modules.restrictRestrictInvIso
     (M : Y.Modules) (f : X ⟶ Y) [IsIso f] : (M.restrict f).restrict (inv f) ≅ M :=
   ((Scheme.Modules.restrictFunctorComp (inv f) f).app M).symm ≪≫
     (Scheme.Modules.restrictFunctorCongr (IsIso.inv_hom_id f)).app M ≪≫

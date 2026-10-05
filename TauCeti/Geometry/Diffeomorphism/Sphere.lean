@@ -115,7 +115,9 @@ theorem _root_.TauCeti.mfderiv_coe_sphere_unitSphereEquiv (e : E ≃ₗᵢ[ℝ] 
     ((contMDiff_unitSphereEquiv (m := 1) e).mdifferentiableAt one_ne_zero), hcomp,
     mvfderiv_comp_apply x ((e.contDiff (n := 1)).contMDiff.mdifferentiableAt one_ne_zero)
       (contMDiff_coe_sphere.mdifferentiableAt one_ne_zero), mvfderiv_eq_fderiv, e.fderiv]
-  simp [mvfderiv]
+  simp only [ContinuousLinearMap.comp_apply, mvfderiv_apply_eq_mfderiv_apply]
+  -- `fromTangentSpace` is the identity on a normed vector space; coercing the linear
+  -- isometry to its continuous linear map preserves its action.
   rfl
 
 /-- The diffeomorphism between unit spheres induced by a linear isometry equivalence. -/
