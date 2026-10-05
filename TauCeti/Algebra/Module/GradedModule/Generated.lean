@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Algebra.Operations
 public import TauCeti.Algebra.Module.GradedModule.DirectSum
 public import TauCeti.Algebra.Module.GradedModule.Shift
 
@@ -43,8 +42,6 @@ is shifted, and linear maps out of the module are determined by the indicated ho
 * `TauCeti.InternalGrading.IsGeneratedInDegree.piece_le_smul_top`: a graded module generated in
   degree `d` has all of its pieces of degree above `d` inside `A₊ M`, where `A₊` is the sum of the
   pieces of positive degree.
-* `TauCeti.InternalGrading.smul_top_eq_bot_of_piece_eq_bot`: a graded module concentrated in
-  one internal degree is annihilated by `A₊`.
 * `TauCeti.InternalGrading.apply_mem_smul_top_of_isGeneratedInDegree`: over a nonnegatively graded
   algebra, a degree-zero map from a module generated in degree `d'` to a module generated in a
   lower degree lands in `A₊ M`.
@@ -238,25 +235,6 @@ variable {k : Type u} {A : Type u'} {M : Type v}
 variable [CommSemiring k] [Semiring A] [Algebra k A]
 variable [AddCommMonoid M] [Module k M] [Module A M] [IsScalarTower k A M]
 variable (𝒜 : ℤ → Submodule k A)
-
-/-- A graded module concentrated in one internal degree is annihilated by the strictly
-positive part of the algebra. -/
-theorem smul_top_eq_bot_of_piece_eq_bot (G : InternalGrading k M)
-    [SetLike.GradedSMul 𝒜 G.piece] (j : ℤ) (h : ∀ p, p ≠ j → G.piece p = ⊥) :
-    (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k M) = ⊥ := by
-  rw [← G.isInternal.submodule_iSup_eq_top]
-  simp only [Submodule.iSup_smul, Submodule.smul_iSup]
-  apply le_bot_iff.mp
-  refine iSup_le fun p ↦ iSup_le fun i ↦ iSup_le fun hi ↦ ?_
-  refine Submodule.smul_le.mpr fun a ha x hx ↦ ?_
-  by_cases hp : p = j
-  · subst p
-    have hax : a • x ∈ G.piece (i + j) :=
-      SetLike.GradedSMul.smul_mem (B := G.piece) ha hx
-    rw [h (i + j) (by omega)] at hax
-    exact hax
-  · rw [h p hp, Submodule.mem_bot] at hx
-    simp only [hx, smul_zero, Submodule.zero_mem]
 
 variable [GradedAlgebra 𝒜]
 variable {G : InternalGrading k M} [SetLike.GradedSMul 𝒜 G.piece] {d : ℤ}

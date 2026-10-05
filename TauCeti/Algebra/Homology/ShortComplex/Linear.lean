@@ -14,8 +14,9 @@ public import Mathlib.CategoryTheory.Linear.Basic
 
 For an exact short complex `S` with an epimorphic second map, precomposition with `S.g`
 identifies `Hom(S.X₃, Y)` with `Hom(S.X₂, Y)` whenever every map from `S.X₂` to `Y` kills
-`S.f`. In a linear abelian category this identification is linear. In particular, it gives
-the degree-zero Hom computation for a projective resolution without any Ext hypothesis.
+`S.f`. In a balanced preadditive category with a linear structure, this identification is linear.
+In particular, it gives the degree-zero Hom computation for a projective resolution without any
+Ext hypothesis.
 
 ## Main definitions
 
@@ -31,8 +32,8 @@ open CategoryTheory CategoryTheory.Limits
 
 universe v u t
 
-variable {C : Type u} [Category.{v} C] [Abelian C] {k : Type t} [Ring k] [Linear k C]
-  {S : CategoryTheory.ShortComplex C} {Y : C} [Epi S.g]
+variable {C : Type u} [Category.{v} C] [Preadditive C] [Balanced C]
+  {k : Type t} [Ring k] [Linear k C] {S : CategoryTheory.ShortComplex C} {Y : C} [Epi S.g]
 
 /-- Precomposition with an epimorphic second map of an exact short complex identifies the
 two Hom modules when every map to the target kills the first map. -/
@@ -48,12 +49,5 @@ noncomputable def homLinearEquivOfExact (hS : S.Exact)
 theorem homLinearEquivOfExact_apply (hS : S.Exact)
     (h : ∀ f : S.X₂ ⟶ Y, S.f ≫ f = 0) (f : S.X₃ ⟶ Y) :
     homLinearEquivOfExact (k := k) hS h f = S.g ≫ f := (rfl)
-
-/-- The inverse Hom equivalence lifts a map along the second map. -/
-@[simp]
-theorem comp_homLinearEquivOfExact_symm (hS : S.Exact)
-    (h : ∀ f : S.X₂ ⟶ Y, S.f ≫ f = 0) (f : S.X₂ ⟶ Y) :
-    S.g ≫ (homLinearEquivOfExact (k := k) hS h).symm f = f :=
-  (homLinearEquivOfExact (k := k) hS h).apply_symm_apply f
 
 end TauCeti

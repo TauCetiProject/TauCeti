@@ -103,17 +103,6 @@ theorem augmentationHomLinearEquiv_apply
     (S := CategoryTheory.ShortComplex.mk (r.differential 0) r.augmentation
       r.differential_zero_comp_augmentation) _ h f
 
-/-- The inverse augmentation Hom equivalence lifts a map from the zeroth resolution term. -/
-@[simp]
-theorem augmentation_comp_augmentationHomLinearEquiv_symm
-    (h : ∀ f : r.termObj 0 ⟶ N, r.differential 0 ≫ f = 0)
-    (f : r.termObj 0 ⟶ N) :
-    r.augmentation ≫ (r.augmentationHomLinearEquiv h).symm f = f := by
-  unfold augmentationHomLinearEquiv
-  exact comp_homLinearEquivOfExact_symm
-    (S := CategoryTheory.ShortComplex.mk (r.differential 0) r.augmentation
-      r.differential_zero_comp_augmentation) _ h f
-
 private noncomputable def complex : ChainComplex (GradedModuleCat.{v} 𝒜) ℕ :=
   ChainComplex.of r.termObj r.differential r.differential_comp_differential
 

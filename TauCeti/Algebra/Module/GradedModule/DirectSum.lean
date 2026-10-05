@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Algebra.Operations
 public import Mathlib.Algebra.GradedMulAction
 public import Mathlib.RingTheory.GradedAlgebra.Basic
 public import TauCeti.Algebra.Module.GradedModule.Internal
@@ -21,7 +22,8 @@ This is the direct-sum compatibility target in Layer 0 of the `DGAInfinity` road
 
 The file also records how the decomposition of a graded module interacts with the action of a
 graded ring: `TauCeti.DirectSum.coe_decompose_smul_add_of_right_mem` computes the components of
-`a • x` for homogeneous `x`.
+`a • x` for homogeneous `x`. A module concentrated in one internal degree is annihilated by
+the strictly positive part of the algebra.
 
 ## Main definitions
 
@@ -34,6 +36,8 @@ graded ring: `TauCeti.DirectSum.coe_decompose_smul_add_of_right_mem` computes th
 
 * `TauCeti.DirectSum.coe_decompose_smul_add_of_right_mem`: the components of `a • x`, for `x`
   homogeneous in a graded module, are the products of the components of `a` with `x`.
+* `TauCeti.InternalGrading.smul_top_eq_bot_of_piece_eq_bot`: a graded module concentrated in
+  one internal degree is annihilated by the strictly positive part of the algebra.
 
 ## References
 
@@ -293,5 +297,33 @@ theorem coe_decompose_smul_add_of_right_mem {a : A} {x : M} {i j : ι} (hx : x �
       zero_apply, ZeroMemClass.coe_zero]
 
 end DirectSum
+
+namespace InternalGrading
+
+variable {k A M : Type*}
+variable [CommSemiring k] [Semiring A] [Algebra k A]
+variable [AddCommMonoid M] [Module k M] [Module A M] [IsScalarTower k A M]
+variable (𝒜 : ℤ → Submodule k A)
+
+/-- A graded module concentrated in one internal degree is annihilated by the strictly
+positive part of the algebra. -/
+theorem smul_top_eq_bot_of_piece_eq_bot (G : InternalGrading k M)
+    [SetLike.GradedSMul 𝒜 G.piece] (j : ℤ) (h : ∀ p, p ≠ j → G.piece p = ⊥) :
+    (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k M) = ⊥ := by
+  rw [← G.isInternal.submodule_iSup_eq_top]
+  simp only [Submodule.iSup_smul, Submodule.smul_iSup]
+  apply le_bot_iff.mp
+  refine iSup_le fun p ↦ iSup_le fun i ↦ iSup_le fun hi ↦ ?_
+  refine Submodule.smul_le.mpr fun a ha x hx ↦ ?_
+  by_cases hp : p = j
+  · subst p
+    have hax : a • x ∈ G.piece (i + j) :=
+      SetLike.GradedSMul.smul_mem (B := G.piece) ha hx
+    rw [h (i + j) (by omega)] at hax
+    exact hax
+  · rw [h p hp, Submodule.mem_bot] at hx
+    simp only [hx, smul_zero, Submodule.zero_mem]
+
+end InternalGrading
 
 end TauCeti

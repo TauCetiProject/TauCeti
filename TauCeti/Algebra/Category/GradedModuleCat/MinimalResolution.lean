@@ -118,7 +118,8 @@ representative with the augmentation. -/
 theorem IsMinimal.augmentation_comp_linearEquiv₀_extLinearEquiv (f : r.termObj 0 ⟶ N) :
     r.augmentation ≫ Ext.linearEquiv₀ (R := k) (hr.extLinearEquiv hN 0 f) = f := by
   rw [IsMinimal.extLinearEquiv, LinearEquiv.trans_apply, LinearEquiv.apply_symm_apply]
-  exact r.augmentation_comp_augmentationHomLinearEquiv_symm _ f
+  simpa only [augmentationHomLinearEquiv_apply] using
+    (r.augmentationHomLinearEquiv (hr.differential_comp_eq_zero hN 0)).apply_symm_apply f
 
 /-- The minimal-resolution Hom computation is natural in targets annihilated by `A₊`:
 postcomposition of graded maps computes the covariant map on Ext. -/
