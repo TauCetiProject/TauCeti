@@ -12,8 +12,9 @@ import TauCeti.RepresentationTheory.Quiver.Representation.AsModule
 # Independence of type-`A` preprojective valley words
 
 The bounded valley words in each corner of the signless preprojective algebra of `Aₙ`
-form a basis. A rectangular representation detects these words: starting at vertex `a`,
-descents increment the first coordinate and ascents increment the second. The rectangle has
+form a basis, whose cardinality gives the dimension of the corner. A rectangular representation
+detects these words: starting at vertex `a`, descents increment the first coordinate and ascents
+increment the second. The rectangle has
 `a + 1` rows and `n - a` columns. A descent carries the sign `(-1)^r`, where `r` is the
 column, so the two backtracks cancel, including in characteristic two.
 
@@ -79,17 +80,11 @@ private theorem gridStep_backtrack (a : Fin (DynkinType.A n).rank) (i j s r : �
   classical
   rcases h with h | h
   · subst j
-    simp only [gridStep_single, mul_one, Finsupp.smul_single, mul_one]
-    split_ifs <;> simp only [gridStep_single, map_zero]
-    all_goals try split_ifs
-    all_goals first | omega | simp only [pow_succ, mul_neg_one, smul_eq_mul, mul_one]
-    all_goals grind
+    simp only [gridStep_single, Finsupp.smul_single, smul_eq_mul, mul_one]
+    grind [gridStep_single, pow_succ]
   · subst i
-    simp only [gridStep_single, mul_one, Finsupp.smul_single, mul_one]
-    split_ifs <;> simp only [gridStep_single, map_zero]
-    all_goals try split_ifs
-    all_goals first | omega | simp only [smul_eq_mul, mul_one]
-    all_goals grind
+    simp only [gridStep_single, Finsupp.smul_single, smul_eq_mul, mul_one]
+    grind [gridStep_single]
 
 private noncomputable def gridRep (a : Fin (DynkinType.A n).rank) : QuiverRep k Q :=
   Paths.lift {
@@ -97,17 +92,25 @@ private noncomputable def gridRep (a : Fin (DynkinType.A n).rank) : QuiverRep k 
     map := fun {i j} _ => ModuleCat.ofHom (gridStep k a
       ((vertexEquiv AG).symm i).val ((vertexEquiv AG).symm j).val) }
 
+/-- `Paths.lift` assigns `ModuleCat.of k (Grid k)` to every vertex. Thus its underlying
+`QuiverRep.vertexSpace` reduces to `Grid k`; this equivalence records that identification. -/
 private noncomputable def gridVertexEquiv (a : Fin (DynkinType.A n).rank) (i : Q) :
     Grid k ≃ₗ[k] QuiverRep.vertexSpace k Q (gridRep k a) i :=
   LinearEquiv.refl k _
+
+private theorem gridRep_map_arrow (a : Fin (DynkinType.A n).rank) {i j : Q}
+    (f : i ⟶ j) :
+    (gridRep k a).map f.toPath = ModuleCat.ofHom (gridStep k a
+      ((vertexEquiv AG).symm i).val ((vertexEquiv AG).symm j).val) :=
+  Paths.lift_toPath _ _
 
 private theorem gridRep_arrow (a : Fin (DynkinType.A n).rank) {i j : Q} (f : i ⟶ j)
     (x : Grid k) :
     QuiverRep.mapₗ k Q (gridRep k a) f.toPath (gridVertexEquiv k a i x) =
       gridVertexEquiv k a j
         (gridStep k a ((vertexEquiv AG).symm i).val ((vertexEquiv AG).symm j).val x) := by
-  unfold QuiverRep.mapₗ gridRep
-  rw [Paths.lift_toPath]
+  rw [QuiverRep.mapₗ_apply, gridRep_map_arrow]
+  -- `gridVertexEquiv` is the underlying identity of each constant `ModuleCat.of` object.
   rfl
 
 private theorem gridRep_backtrack (a i : Fin (DynkinType.A n).rank) (s r : ℕ) :
@@ -124,23 +127,18 @@ private theorem gridRep_backtrack (a i : Fin (DynkinType.A n).rank) (s r : ℕ) 
   have hn := DynkinType.rank_A n
   have ha := a.isLt
   have hi := i.isLt
-  have adj (i j : Fin n) :
-      (diagramGraph (DynkinType.A n).cartanMatrix : SimpleGraph (Fin n)).Adj i j ↔
-        i.val + 1 = j.val ∨ j.val + 1 = i.val := by
-    rw [DynkinType.cartanMatrix_A, DynkinType.diagramGraph_cartanMatrix_A,
-      SimpleGraph.pathGraph_adj]
   have hadj (j : (AG).neighborSet i) : i.val + 1 = j.val.val ∨ j.val.val + 1 = i.val :=
-    (adj i j.val).1 (((AG).mem_neighborSet i j).1 j.property)
+    (diagramGraph_A_adj n i j.val).1 (((AG).mem_neighborSet i j).1 j.property)
   simp_rw [gridStep_backtrack k a _ _ s r (hadj _)]
   by_cases h : s < a.val ∧ r + 1 < n - a.val ∧ i.val + s = a.val + r
   · have hi : 0 < i.val ∧ i.val + 1 < (DynkinType.A n).rank := by omega
     let lo : (AG).neighborSet i := ⟨⟨i.val - 1, by omega⟩, by
       apply (SimpleGraph.mem_neighborSet _ _ _).2
-      apply (adj _ _).2
+      apply (diagramGraph_A_adj n _ _).2
       right; dsimp; omega⟩
     let up : (AG).neighborSet i := ⟨⟨i.val + 1, hi.2⟩, by
       apply (SimpleGraph.mem_neighborSet _ _ _).2
-      apply (adj _ _).2
+      apply (diagramGraph_A_adj n _ _).2
       left; rfl⟩
     have hcases (j : (AG).neighborSet i) : j = lo ∨ j = up := by
       rcases hadj j with hj | hj
@@ -179,9 +177,10 @@ private theorem gridRep_relator (a : Fin (DynkinType.A n).rank) (v : Q) :
   simp only [LinearMap.sum_apply, QuiverRep.pathEnd_apply]
   rw [← map_sum (DirectSum.lof k Q (QuiverRep.vertexSpace k Q (gridRep k a))
     (vertex AG i))]
-  -- The path-end API presents the vector component as a vertex-space element.
-  erw [← LinearMap.sum_apply, hzero]
-  simp only [LinearMap.zero_apply, map_zero]
+  have hz := LinearMap.congr_fun hzero
+    (DirectSum.component k Q (QuiverRep.vertexSpace k Q (gridRep k a)) (vertex AG i) z)
+  simpa only [LinearMap.sum_apply, LinearMap.zero_apply, map_zero] using
+    congrArg (DirectSum.lof k Q (QuiverRep.vertexSpace k Q (gridRep k a)) (vertex AG i)) hz
 
 private noncomputable def gridAction (a : Fin (DynkinType.A n).rank) :=
   signlessPreprojectiveLift (QuiverRep.toEnd k Q (gridRep k a)) (gridRep_relator k a)
@@ -223,14 +222,7 @@ private theorem gridAction_descent (a : Fin (DynkinType.A n).rank) (m s : ℕ)
     rw [← d_mul_ladderValley_succ_zero, map_mul, Module.End.mul_apply,
       ih (m + 1) (by omega) hm']
     have harr := gridAction_arrow k a ⟨m + 1, hm'⟩ ⟨m, hm⟩ s 0
-      (by
-        -- The explicit vertex type permits rewriting the Dynkin rank in the graph.
-        have h : (diagramGraph (DynkinType.A n).cartanMatrix : SimpleGraph (Fin n)).Adj
-            ⟨m + 1, hm'⟩ ⟨m, hm⟩ := by
-          rw [DynkinType.cartanMatrix_A, DynkinType.diagramGraph_cartanMatrix_A,
-            SimpleGraph.pathGraph_adj]
-          exact .inr rfl
-        exact h)
+      ((diagramGraph_A_adj n _ _).2 (.inr rfl))
     have ha : a.val < n := by simpa only [DynkinType.rank_A] using a.isLt
     have ha0 : 0 < n - a.val := by omega
     have hs' : s < a.val := by omega
@@ -253,14 +245,7 @@ private theorem gridAction_valley (a : Fin (DynkinType.A n).rank) (m s r : ℕ)
     rw [← u_mul_ladderValley, map_mul, Module.End.mul_apply,
       ih (by omega) hmr']
     have harr := gridAction_arrow k a ⟨m + r, hmr'⟩ ⟨m + (r + 1), hmr⟩ s r
-      (by
-        -- The explicit vertex type permits rewriting the Dynkin rank in the graph.
-        have h : (diagramGraph (DynkinType.A n).cartanMatrix : SimpleGraph (Fin n)).Adj
-            ⟨m + r, hmr'⟩ ⟨m + (r + 1), hmr⟩ := by
-          rw [DynkinType.cartanMatrix_A, DynkinType.diagramGraph_cartanMatrix_A,
-            SimpleGraph.pathGraph_adj]
-          left; dsimp; omega
-        exact h)
+      ((diagramGraph_A_adj n _ _).2 (.inl (by dsimp; omega)))
     have hs' : s ≤ a.val := by omega
     have hi : m + r + s = a.val + r := by omega
     have hr' : r < n - a.val := by omega
@@ -302,7 +287,7 @@ private theorem gridDetect_valley (a b : Fin (DynkinType.A n).rank) (m : ℕ)
 
 /-- The bounded valley classes in a type-`A` corner are linearly independent over every field.
 Together with the corner spanning theorem, this gives the complete corner normal form. -/
-theorem linearIndependent_signlessPreprojectiveAValley (a b : Fin (DynkinType.A n).rank) :
+theorem linearIndependent_signlessPreprojectiveAValley_Icc (a b : Fin (DynkinType.A n).rank) :
     LinearIndependent k (fun m : ↥(Finset.Icc (a.val + b.val + 1 - n) (min a.val b.val)) =>
       signlessPreprojectiveAValley k a b m.val) := by
   apply LinearIndependent.of_comp (gridDetect k a b)
@@ -324,36 +309,29 @@ theorem linearIndependent_signlessPreprojectiveAValley (a b : Fin (DynkinType.A 
 noncomputable def signlessPreprojectiveACornerBasis (a b : Fin (DynkinType.A n).rank) :
     Module.Basis ↥(Finset.Icc (a.val + b.val + 1 - n) (min a.val b.val)) k
       (cornerSubmodule k (π (vertexIdempotent k (vertex AG b)))
-        (π (vertexIdempotent k (vertex AG a)))) := by
-  let C := cornerSubmodule k (π (vertexIdempotent k (vertex AG b)))
-    (π (vertexIdempotent k (vertex AG a)))
-  let v : ↥(Finset.Icc (a.val + b.val + 1 - n) (min a.val b.val)) → C :=
-    fun m => ⟨signlessPreprojectiveAValley k a b m,
-      signlessPreprojectiveAValley_mem_cornerSubmodule k a b m⟩
-  have hli : LinearIndependent k v := by
-    apply LinearIndependent.of_comp (v := v) C.subtype
-    exact linearIndependent_signlessPreprojectiveAValley k a b
-  refine Module.Basis.mk hli ?_
-  apply le_of_eq
-  apply (Submodule.map_injective_of_injective C.injective_subtype)
-  rw [Submodule.map_span, Submodule.map_top, Submodule.range_subtype]
-  have hrange : C.subtype '' Set.range v = signlessPreprojectiveAValley k a b ''
-      (Finset.Icc (a.val + b.val + 1 - n) (min a.val b.val) : Set ℕ) := by
-    ext x
-    constructor
-    · rintro ⟨y, ⟨m, rfl⟩, rfl⟩
-      exact ⟨m, m.property, rfl⟩
-    · rintro ⟨m, hm, rfl⟩
-      exact ⟨v ⟨m, hm⟩, ⟨⟨m, hm⟩, rfl⟩, rfl⟩
-  rw [hrange, ← cornerSubmodule_signlessPreprojective_A_eq_span_valley]
+        (π (vertexIdempotent k (vertex AG a)))) :=
+  (Module.Basis.span (linearIndependent_signlessPreprojectiveAValley_Icc k a b)).map
+    (LinearEquiv.ofEq _ _ (by
+      rw [cornerSubmodule_signlessPreprojective_A_eq_span_valley,
+        Set.image_eq_range]
+      rfl))
 
 /-- The corner basis vector is the indicated bounded valley class. -/
 @[simp]
-theorem signlessPreprojectiveACornerBasis_apply (a b : Fin (DynkinType.A n).rank)
+theorem coe_signlessPreprojectiveACornerBasis_apply (a b : Fin (DynkinType.A n).rank)
     (m : ↥(Finset.Icc (a.val + b.val + 1 - n) (min a.val b.val))) :
     (signlessPreprojectiveACornerBasis k a b m : Π) =
       signlessPreprojectiveAValley k a b m := by
-  dsimp only [signlessPreprojectiveACornerBasis]
-  rw [Module.Basis.mk_apply]
+  rw [signlessPreprojectiveACornerBasis, Module.Basis.map_apply, Module.Basis.span_apply]
+  rfl
+
+/-- The dimension of the type-`A` corner is the number of its bounded valleys. -/
+@[simp]
+theorem finrank_cornerSubmodule_signlessPreprojective_A (a b : Fin (DynkinType.A n).rank) :
+    Module.finrank k (cornerSubmodule k (π (vertexIdempotent k (vertex AG b)))
+      (π (vertexIdempotent k (vertex AG a)))) =
+        min a.val b.val + 1 - (a.val + b.val + 1 - n) := by
+  rw [Module.finrank_eq_nat_card_basis (signlessPreprojectiveACornerBasis k a b),
+    Nat.card_eq_fintype_card, Fintype.card_coe, Nat.card_Icc]
 
 end TauCeti

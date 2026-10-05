@@ -228,13 +228,6 @@ end PathGraph
 
 /-! ### The `Aₙ` diagram -/
 
-/-- Two nodes of the `Aₙ` diagram are joined exactly when they are consecutive. -/
-private theorem diagramGraph_A_adj (n : ℕ) (i j : Fin n) :
-    (diagramGraph (DynkinType.A n).cartanMatrix : SimpleGraph (Fin n)).Adj i j ↔
-      (i : ℕ) + 1 = j ∨ (j : ℕ) + 1 = i := by
-  rw [DynkinType.cartanMatrix_A, DynkinType.diagramGraph_cartanMatrix_A,
-    SimpleGraph.pathGraph_adj]
-
 /-- The two-colouring of `Aₙ` by the parity of the node, read from the path graph. -/
 private def aColoring (n : ℕ) : (diagramGraph (DynkinType.A n).cartanMatrix).Coloring Bool := by
   simpa only [DynkinType.rank_A, DynkinType.cartanMatrix_A] using
