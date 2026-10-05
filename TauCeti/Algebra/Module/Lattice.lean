@@ -32,6 +32,8 @@ domain rationalizes to its ambient vector space over the fraction field.
   same finrank.
 * `LinearEquiv.extendOfIsLattice`: extension of an `R`-linear equivalence between
   full submodules to their ambient `K`-vector spaces.
+* `TauCeti.liftBaseChange_injective_of_injective`: extension to a fraction ring
+  preserves injectivity of a map from a free module, without a full-span hypothesis.
 * `TauCeti.Submodule.IsLattice.isBaseChange_subtype`: the inclusion of a free full lattice
   submodule into its ambient vector space over the fraction field is a base change.
 * `TauCeti.Submodule.rationalizationEquiv`: the canonical equivalence from the scalar extension
@@ -163,6 +165,24 @@ theorem _root_.LinearEquiv.extendOfIsLattice_map {S : Submodule R V} {T : Submod
     refine ⟨(xS : V), xS.2, ?_⟩
     simpa only [LinearEquiv.restrictScalars_apply, LinearEquiv.coe_toLinearMap,
       LinearEquiv.extendOfIsLattice_apply] using congr_arg Subtype.val (e.apply_symm_apply yT)
+
+end
+
+section
+
+variable {R K M V : Type*} [CommRing R] [CommRing K] [Algebra R K] [IsFractionRing R K]
+variable [AddCommGroup M] [Module R M] [Module.Free R M]
+variable [AddCommGroup V] [Module R V] [Module K V] [IsScalarTower R K V]
+
+variable (K) in
+/-- Extension to a fraction ring preserves injectivity of a linear map from a free module.
+Neither finite generation nor a full-span hypothesis is needed. -/
+theorem liftBaseChange_injective_of_injective (f : M →ₗ[R] V)
+    (hf : Function.Injective f) : Function.Injective (f.liftBaseChange K) := by
+  rw [LinearMap.liftBaseChange_injective_iff _ (Module.Free.chooseBasis R M)]
+  exact (LinearIndependent.iff_fractionRing R K).mp
+    ((Module.Free.chooseBasis R M).linearIndependent.map' f
+      (LinearMap.ker_eq_bot.mpr hf))
 
 end
 

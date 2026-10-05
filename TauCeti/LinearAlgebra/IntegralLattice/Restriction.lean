@@ -17,6 +17,7 @@ restricted integral form nevertheless defines a full integral lattice in `ℚ �
 `IntegralLattice.restrict` constructs this lattice, and `restrictMap` embeds its ambient space
 into that of `L`, preserving the forms. Its range is exactly the rational span of the embedded
 submodule, and its integral carrier maps onto that submodule.
+`isEven_restrict_iff` characterizes evenness by the original integral norm on the submodule.
 
 When the embedded submodule is full, `restrictFull` instead keeps the original ambient space.
 `restrictFullIsometry` identifies these two constructions through the canonical rational
@@ -79,21 +80,20 @@ theorem integralForm_restrictCarrierEquiv (L : IntegralLattice V) (S : Submodule
       L.integralForm s t :=
   ofIntegralForm.integralForm_carrierEquiv _ _ s t
 
+/-- Restriction recovers the original integral norm on the chosen submodule. -/
+@[simp]
+theorem integralNorm_restrictCarrierEquiv (L : IntegralLattice V) (S : Submodule ℤ L) (s : S) :
+    (L.restrict S).integralNorm (L.restrictCarrierEquiv S s) = L.integralNorm s := by
+  rw [integralNorm_apply, integralForm_restrictCarrierEquiv, integralNorm_apply]
+
 /-- A restricted lattice is even exactly when the original integral norm is even on the
 submodule. In particular restriction preserves evenness. -/
 theorem isEven_restrict_iff (L : IntegralLattice V) (S : Submodule ℤ L) :
     (L.restrict S).IsEven ↔ ∀ s : S, Even (L.integralNorm s) := by
-  have hnorm (s : S) : (L.restrict S).norm (L.restrictCarrierEquiv S s) = L.norm (s : L) := by
-    rw [← integralNorm_cast, ← L.integralNorm_cast, integralNorm_apply,
-      integralForm_restrictCarrierEquiv, integralNorm_apply]
-  rw [isEven_iff_forall_norm]
-  constructor
-  · intro h s
-    exact (L.even_integralNorm_iff s).mpr (by
-      simpa only [hnorm] using h (L.restrictCarrierEquiv S s))
-  · intro h x
-    obtain ⟨s, rfl⟩ := (L.restrictCarrierEquiv S).surjective x
-    simpa only [hnorm] using (L.even_integralNorm_iff s).mp (h s)
+  simpa only [LinearMap.BilinForm.restrict_apply, LinearMap.domRestrict_apply,
+    integralNorm_apply] using
+    (L.restrict S).isEven_iff_of_integralForm_equiv (L.integralForm.restrict S)
+      (L.restrictCarrierEquiv S) (L.integralForm_restrictCarrierEquiv S)
 
 /-- The rational extension of the inclusion of a submodule into the ambient space of a lattice. -/
 def restrictMap (L : IntegralLattice V) (S : Submodule ℤ L) : ℚ ⊗[ℤ] S →ₗ[ℚ] V :=
@@ -107,12 +107,9 @@ theorem restrictMap_tmul (L : IntegralLattice V) (S : Submodule ℤ L) (q : ℚ)
 /-- Rational extension of the inclusion remains injective. No nondegeneracy hypothesis on the
 form is needed. -/
 theorem restrictMap_injective (L : IntegralLattice V) (S : Submodule ℤ L) :
-    Function.Injective (L.restrictMap S) := by
-  rw [restrictMap, LinearMap.liftBaseChange_injective_iff _ (Module.Free.chooseBasis ℤ S)]
-  exact (LinearIndependent.iff_fractionRing ℤ ℚ).mp
-    ((Module.Free.chooseBasis ℤ S).linearIndependent.map'
-      (L.carrier.subtype.comp S.subtype)
-      (LinearMap.ker_eq_bot.mpr (Subtype.val_injective.comp Subtype.val_injective)))
+    Function.Injective (L.restrictMap S) :=
+  liftBaseChange_injective_of_injective ℚ _
+    (L.carrier.injective_subtype.comp S.injective_subtype)
 
 /-- The range of the rational inclusion is exactly the rational span of the embedded submodule. -/
 theorem range_restrictMap (L : IntegralLattice V) (S : Submodule ℤ L) :
@@ -124,36 +121,41 @@ theorem range_restrictMap (L : IntegralLattice V) (S : Submodule ℤ L) :
 @[simp]
 theorem form_restrictMap (L : IntegralLattice V) (S : Submodule ℤ L) (x y : ℚ ⊗[ℤ] S) :
     L.form (L.restrictMap S x) (L.restrictMap S y) = (L.restrict S).form x y := by
-  induction x using TensorProduct.inductionOn with
-  | add x₁ x₂ h₁ h₂ => simp only [map_add, LinearMap.add_apply, h₁, h₂]
-  | tmul q s =>
-    induction y using TensorProduct.inductionOn with
-    | add y₁ y₂ h₁ h₂ => simp only [map_add, h₁, h₂]
-    | tmul r t =>
-      simp only [restrictMap_tmul, restrict_form, LinearMap.BilinForm.baseChange_tmul,
-        LinearMap.BilinForm.restrict_apply, LinearMap.domRestrict_apply,
-        LinearMap.BilinForm.smul_left, LinearMap.BilinForm.smul_right, zsmul_eq_mul,
-        L.integralForm_cast]
-      ring
+  rw [restrict_form]
+  exact bilinForm_liftBaseChange (L.integralForm.restrict S) L.form
+    (fun s t ↦ (L.integralForm_cast s t).symm) x y
 
 /-- The restricted integral carrier maps onto the embedded submodule, not merely onto its
 rational span. -/
 theorem map_restrict_carrier (L : IntegralLattice V) (S : Submodule ℤ L) :
     (L.restrict S).carrier.map ((L.restrictMap S).restrictScalars ℤ) = S.map L.carrier.subtype := by
-  ext x
-  simp only [Submodule.mem_map, mem_restrict_carrier_iff]
-  constructor
-  · rintro ⟨y, ⟨s, rfl⟩, rfl⟩
-    exact ⟨(s : L), s.2, by simp⟩
-  · rintro ⟨s, hs, rfl⟩
-    exact ⟨1 ⊗ₜ[ℤ] (⟨s, hs⟩ : S), ⟨⟨s, hs⟩, rfl⟩, by simp⟩
+  have hcomp : (L.restrictMap S).restrictScalars ℤ ∘ₗ TensorProduct.mk ℤ ℚ S 1 =
+      L.carrier.subtype ∘ₗ S.subtype := by
+    ext s
+    change L.restrictMap S (1 ⊗ₜ[ℤ] s) = ((s : L) : V)
+    simp only [restrictMap_tmul, one_smul]
+  calc
+    _ = (LinearMap.range (TensorProduct.mk ℤ ℚ S 1)).map
+        ((L.restrictMap S).restrictScalars ℤ) :=
+      congrArg (Submodule.map ((L.restrictMap S).restrictScalars ℤ))
+        (ofIntegralForm_carrier _ _)
+    _ = LinearMap.range ((L.restrictMap S).restrictScalars ℤ ∘ₗ
+        TensorProduct.mk ℤ ℚ S 1) := (LinearMap.range_comp _ _).symm
+    _ = LinearMap.range (L.carrier.subtype ∘ₗ S.subtype) := congrArg LinearMap.range hcomp
+    _ = S.map L.carrier.subtype := by
+      rw [LinearMap.range_comp, Submodule.range_subtype]
 
 /-- Restriction to a full submodule, retaining the original rational ambient space. Fullness of
-the embedded submodule is an explicit hypothesis, unlike in `restrict`. -/
+the embedded submodule is supplied as an `IsLattice ℚ` instance. The constructor `restrict`
+needs no span condition because it builds its own rational ambient space `ℚ ⊗[ℤ] S`. -/
 def restrictFull (L : IntegralLattice V) (S : Submodule ℤ L)
     [(S.map L.carrier.subtype).IsLattice ℚ] : IntegralLattice V :=
   ofSubmodule (S.map L.carrier.subtype) L.form L.isSymm (by
-    rintro x ⟨s, hs, rfl⟩ y ⟨t, ht, rfl⟩
+    intro x hx
+    rw [LinearMap.BilinForm.mem_dualSubmodule]
+    intro y hy
+    obtain ⟨s, _, rfl⟩ := Submodule.mem_map.mp hx
+    obtain ⟨t, _, rfl⟩ := Submodule.mem_map.mp hy
     exact L.form_mem_one s t)
 
 @[simp]
