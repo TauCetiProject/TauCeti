@@ -103,12 +103,6 @@ theorem nonempty_linearEquiv_tameFrameModule_prod [Algebra ℚ_[p] L] [Module.Fi
   -- Restrict the scalars of `Y` to `ℤ_p`.
   let _ : Module ℤ_[p] Y := .compHom Y (algebraMap ℤ_[p] Λ)
   have : IsScalarTower ℤ_[p] Λ Y := .of_compHom _ _ _
-  have : Module.Finite Λ Y := .of_surjective ρ hρ
-  have : Module.Finite ℤ_[p] Y := .trans Λ Y
-  -- The trivial module `ℤ_p[G] ⧸ I_G ≃ ℤ_p` is free over `ℤ_p`.
-  have : Module.Projective ℤ_[p]
-      (Λ ⧸ RingHom.ker (MonoidAlgebra.augmentation ℤ_[p] (L ≃ₐ[K] L))) :=
-    .of_equiv (MonoidAlgebra.quotientKerAugmentationEquiv ℤ_[p] (L ≃ₐ[K] L)).symm
   -- The tame-frame module is presented by `0 → ℤ_p[G] → ℤ_p[G]² → M₀ → 0`.
   have hcard₀ := hcard ▸ (localRootOfUnityOrder_pos p L h).ne'
   have hcard₁ := hcard₀

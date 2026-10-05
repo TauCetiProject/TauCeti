@@ -9,8 +9,8 @@ public import Mathlib.Algebra.Exact.Basic
 public import Mathlib.LinearAlgebra.TensorProduct.Tower
 public import Mathlib.RepresentationTheory.Maschke
 public import Mathlib.RingTheory.Localization.FractionRing
-import Mathlib.RingTheory.Flat.TorsionFree
-import TauCeti.LinearAlgebra.Dimension.Localization
+import Mathlib.LinearAlgebra.TensorProduct.Prod
+import Mathlib.RingTheory.Flat.Localization
 
 /-!
 # Exact sequences of group-algebra modules split over the field of fractions
@@ -21,11 +21,11 @@ it does after tensoring with `Q`: this is Maschke's theorem for `Q[G]`. This fil
 form used for integral representations, where the rationalizations are written `M ⊗[R] Q` and
 remain modules over `R[G]` rather than over `Q[G]`.
 
-When `N` is finitely generated and `P` is projective over `R`, the splitting is obtained without
-dividing by the order of `G`. An `R`-linear section `s` of `N → P` averaged over `G`,
-`t = ∑_g g⁻¹ s g`, is `R[G]`-linear and satisfies `g ∘ t = #G`. Since `P` is torsion-free, the map
-`M × P → N`, `(m, x) ↦ f m + t x`, is then an injective `R[G]`-linear map between modules of the
-same rank, and it becomes bijective over `Q`.
+No finiteness or projectivity is needed. Since `Q` is flat over `R`, the sequence stays exact
+after tensoring with `Q`, and `P ⊗[R] Q` is a `Q`-vector space, so `N ⊗ Q → P ⊗ Q` has an
+`R`-linear section `s`. Averaged over `G`, `t = ∑_g g⁻¹ s g` is `R[G]`-linear and satisfies
+`g ∘ t = #G`. As `#G` is invertible on `P ⊗[R] Q`, the map `(m, x) ↦ f m + t x` from
+`(M ⊗ Q) × (P ⊗ Q)` to `N ⊗ Q` is then an `R[G]`-linear bijection.
 
 For `R = ℤ_p` and `Q = ℚ_p` this computes the rational representation of an extension of
 `ℤ_p[G]`-lattices from those of its two ends.
@@ -33,8 +33,8 @@ For `R = ℤ_p` and `Q = ℚ_p` this computes the rational representation of an 
 ## Main results
 
 * `TauCeti.IsFractionRing.nonempty_tensor_linearEquiv_prod_of_exact`: for an exact sequence
-  `0 → M → N → P → 0` of `R[G]`-modules with `N` finite and `P` projective over `R`, the
-  rationalization `N ⊗[R] Q` is `R[G]`-linearly isomorphic to `(M × P) ⊗[R] Q`.
+  `0 → M → N → P → 0` of `R[G]`-modules, the rationalization `N ⊗[R] Q` is `R[G]`-linearly
+  isomorphic to `(M × P) ⊗[R] Q`.
 
 ## References
 
@@ -47,7 +47,7 @@ namespace TauCeti.IsFractionRing
 
 open scoped TensorProduct
 
-variable {R : Type*} [CommRing R] [IsDomain R] (Q : Type*) [Field Q] [Algebra R Q]
+variable {R : Type*} [CommRing R] (Q : Type*) [Field Q] [Algebra R Q]
   [IsFractionRing R Q] {G : Type*} [Group G] [Finite G]
   {M N P : Type*} [AddCommGroup M] [Module R M] [Module (MonoidAlgebra R G) M]
   [IsScalarTower R (MonoidAlgebra R G) M]
@@ -58,46 +58,75 @@ variable {R : Type*} [CommRing R] [IsDomain R] (Q : Type*) [Field Q] [Algebra R 
 
 /-- **Short exact sequences of group-algebra modules split over the field of fractions.** Let `R`
 be a domain with field of fractions `Q` and `G` a finite group whose order is nonzero in `R`. For
-an exact sequence `0 → M → N → P → 0` of `R[G]`-modules with `N` finitely generated and `P`
-projective over `R`, the rationalization `N ⊗[R] Q` is `R[G]`-linearly isomorphic to
-`(M × P) ⊗[R] Q`. -/
-theorem nonempty_tensor_linearEquiv_prod_of_exact [NeZero (Nat.card G : R)] [Module.Finite R N]
-    [Module.Projective R P] {f : M →ₗ[MonoidAlgebra R G] N} {g : N →ₗ[MonoidAlgebra R G] P}
+an exact sequence `0 → M → N → P → 0` of `R[G]`-modules, the rationalization `N ⊗[R] Q` is
+`R[G]`-linearly isomorphic to `(M × P) ⊗[R] Q`. -/
+theorem nonempty_tensor_linearEquiv_prod_of_exact [NeZero (Nat.card G : R)]
+    {f : M →ₗ[MonoidAlgebra R G] N} {g : N →ₗ[MonoidAlgebra R G] P}
     (hfg : Function.Exact f g) (hf : Function.Injective f) (hg : Function.Surjective g) :
     Nonempty ((N ⊗[R] Q) ≃ₗ[MonoidAlgebra R G] ((M × P) ⊗[R] Q)) := by
   have := Fintype.ofFinite G
-  -- An `R`-linear section `s` of `g`, which exists because `P` is projective over `R`.
-  obtain ⟨s, hs⟩ := Module.projective_lifting_property (g.restrictScalars R) LinearMap.id hg
-  have hs' (x : P) : g (s x) = x := LinearMap.congr_fun hs x
-  -- Averaging `s` over `G` gives an `R[G]`-linear map `t` with `g ∘ t = #G`.
+  -- `Q` is flat over `R`, so `0 → M ⊗ Q → N ⊗ Q → P ⊗ Q → 0` is exact.
+  have := _root_.IsLocalization.flat Q (nonZeroDivisors R)
+  set f' := TensorProduct.AlgebraTensorModule.rTensor R Q f
+  set g' := TensorProduct.AlgebraTensorModule.rTensor R Q g
+  have hf' : Function.Injective f' :=
+    Module.Flat.rTensor_preserves_injective_linearMap (f.restrictScalars R) hf
+  have hfg' : Function.Exact f' g' :=
+    rTensor_exact Q (f := f.restrictScalars R) (g := g.restrictScalars R) hfg hg
+  -- An `R`-linear section `s` of `g ⊗ 𝟙 Q`, from a `Q`-linear section of `𝟙 Q ⊗ g`.
+  obtain ⟨s₀, hs₀⟩ := Module.projective_lifting_property
+    (TensorProduct.AlgebraTensorModule.lTensor Q Q (g.restrictScalars R)) LinearMap.id
+    (LinearMap.lTensor_surjective Q (g := g.restrictScalars R) hg)
+  let s : P ⊗[R] Q →ₗ[R] N ⊗[R] Q := (TensorProduct.comm R Q N).toLinearMap ∘ₗ
+    s₀.restrictScalars R ∘ₗ (TensorProduct.comm R P Q).toLinearMap
+  have hs' (x : P ⊗[R] Q) : g' (s x) = x := by
+    have hcomm (y : Q ⊗[R] N) : g' (TensorProduct.comm R Q N y) =
+        TensorProduct.comm R Q P (TensorProduct.AlgebraTensorModule.lTensor Q Q
+          (g.restrictScalars R) y) := by
+      induction y using TensorProduct.inductionOn with
+      | tmul q n => rfl
+      | add y z hy hz => simp_all
+    rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearEquiv.coe_coe, hcomm,
+      LinearMap.restrictScalars_apply, ← LinearMap.comp_apply, hs₀, LinearMap.id_apply,
+      LinearEquiv.coe_coe, TensorProduct.comm_comm]
+  -- Averaging `s` over `G` gives an `R[G]`-linear map `t` with `g' ∘ t = #G`.
   let t := s.sumOfConjugatesEquivariant G
-  have ht (x : P) : g (t x) = (Nat.card G : R) • x := by
+  have ht (x : P ⊗[R] Q) : g' (t x) = (Nat.card G : R) • x := by
     rw [LinearMap.sumOfConjugatesEquivariant_apply, map_sum]
     simp only [LinearMap.conjugate_apply, map_smul, hs', smul_smul,
       MonoidAlgebra.single_mul_single, inv_mul_cancel, one_mul, Finset.sum_const,
       Finset.card_univ, Fintype.card_eq_nat_card, ← Nat.cast_smul_eq_nsmul R]
     rw [← MonoidAlgebra.one_def, one_smul]
-  -- So `(m, x) ↦ f m + t x` is injective, as `P` is torsion-free.
-  let Φ : (M × P) →ₗ[MonoidAlgebra R G] N :=
-    f ∘ₗ LinearMap.fst _ M P + t ∘ₗ LinearMap.snd _ M P
-  have hΦ : Function.Injective Φ := by
-    rw [← LinearMap.ker_eq_bot, LinearMap.ker_eq_bot']
-    rintro ⟨m, x⟩ h
-    have hx : x = 0 := by
-      have h' := congrArg g h
+  -- Multiplication by `#G` is invertible on `P ⊗ Q`.
+  let u : P ⊗[R] Q →ₗ[R] P ⊗[R] Q :=
+    (LinearMap.mulLeft R (algebraMap R Q (Nat.card G))⁻¹).lTensor P
+  have hu (x : P ⊗[R] Q) : (Nat.card G : R) • u x = x := by
+    have hc : algebraMap R Q (Nat.card G) ≠ 0 :=
+      (map_ne_zero_iff _ (IsFractionRing.injective R Q)).mpr (NeZero.ne _)
+    induction x using TensorProduct.inductionOn with
+    | tmul p q =>
+      rw [LinearMap.lTensor_tmul, TensorProduct.smul_tmul', TensorProduct.smul_tmul,
+        LinearMap.mulLeft_apply, Algebra.smul_def, ← mul_assoc, mul_inv_cancel₀ hc, one_mul]
+    | add x y hx hy => simp_all
+  -- So `(m, x) ↦ f' m + t x` is bijective.
+  let Φ : (M ⊗[R] Q) × (P ⊗[R] Q) →ₗ[MonoidAlgebra R G] N ⊗[R] Q :=
+    f' ∘ₗ LinearMap.fst _ _ _ + t ∘ₗ LinearMap.snd _ _ _
+  have hΦ : Function.Bijective Φ := by
+    refine ⟨?_, fun n ↦ ?_⟩
+    · rw [← LinearMap.ker_eq_bot, LinearMap.ker_eq_bot']
+      rintro ⟨m, x⟩ h
+      have hx : x = 0 := by
+        have h' := congrArg g' h
+        simp only [Φ, LinearMap.add_apply, LinearMap.comp_apply, LinearMap.fst_apply,
+          LinearMap.snd_apply, map_add, ht, map_zero, hfg'.apply_apply_eq_zero, zero_add] at h'
+        rw [← hu x, ← map_smul, h', map_zero]
+      subst hx
       simp only [Φ, LinearMap.add_apply, LinearMap.comp_apply, LinearMap.fst_apply,
-        LinearMap.snd_apply, map_add, ht, map_zero, hfg.apply_apply_eq_zero, zero_add] at h'
-      exact (smul_eq_zero.mp h').resolve_left (NeZero.ne _)
-    subst hx
-    simp only [Φ, LinearMap.add_apply, LinearMap.comp_apply, LinearMap.fst_apply,
-      LinearMap.snd_apply, map_zero, add_zero] at h
-    rw [hf (h.trans f.map_zero.symm)]
-    rfl
-  -- Over `R` the sequence splits, so `M × P` and `N` have the same rank.
-  have hrank : Module.finrank R (M × P) = Module.finrank R N :=
-    (Function.Exact.splitSurjectiveEquiv (f := f.restrictScalars R) (g := g.restrictScalars R)
-      hfg hf ⟨s, hs⟩).1.finrank_eq.symm
-  exact ⟨(LinearEquiv.ofBijective _
-    (rTensor_bijective_of_injective_of_finrank_eq Q Φ hΦ hrank)).symm⟩
+        LinearMap.snd_apply, map_zero, add_zero] at h
+      rw [hf' (h.trans f'.map_zero.symm)]
+      rfl
+    · obtain ⟨m, hm⟩ := (hfg' (n - t (u (g' n)))).mp (by rw [map_sub, ht, hu, sub_self])
+      exact ⟨(m, u (g' n)), by simp [Φ, hm]⟩
+  exact ⟨(LinearEquiv.ofBijective Φ hΦ).symm ≪≫ₗ (TensorProduct.prodLeft _ _ _ _ _).symm⟩
 
 end TauCeti.IsFractionRing
