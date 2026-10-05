@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.GrothendieckGroup.Finrank
-public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.Projection
+public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.Induction
+public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.Ring
 import TauCeti.RepresentationTheory.AsModule
 
 /-!
@@ -69,8 +70,8 @@ theorem finrankK0_indK0 (S : Subgroup G)
   induction y using ExactK0.induction_on with
   | zero => simp
   | of V =>
-    rw [indK0_fdRepK0RingEquiv_of, finrankK0_fdRepK0RingEquiv_of,
-      finrankK0_fdRepK0RingEquiv_of, finrank_indFDRep, Nat.cast_mul]
+    rw [finrankK0_fdRepK0RingEquiv_of, fdRepK0RingEquiv_of, indK0_of_indFDRep,
+      ← fdRepK0RingEquiv_of, finrankK0_fdRepK0RingEquiv_of, finrank_indFDRep, Nat.cast_mul]
   | add a b ha hb => simp_all [mul_add]
   | neg a ha => simp_all
 
