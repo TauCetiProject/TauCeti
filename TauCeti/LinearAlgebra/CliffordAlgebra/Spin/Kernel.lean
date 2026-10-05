@@ -14,11 +14,12 @@ import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Basic
 /-!
 # The kernel of the Spin action
 
-On the zero-dimensional quadratic space, the Spin action is a bijection between trivial groups,
-so its kernel is trivial. For a positive-dimensional finite nondegenerate quadratic space over a
-field where `2` is invertible, the kernel instead consists of the two scalar elements. The proof
-first shows that an even Clifford element commuting with every generating vector is scalar, using
-contraction and the exterior-algebra basis. Unitarity then restricts the scalar to `1` or `-1`.
+On a subsingleton quadratic space, the Spin action is a bijection between trivial groups, so its
+kernel is trivial. In particular, this describes the zero-dimensional case over a field. For a
+positive-dimensional finite nondegenerate quadratic space over a field where `2` is invertible,
+the kernel instead consists of the two scalar elements. The proof first shows that an even
+Clifford element commuting with every generating vector is scalar, using contraction and the
+exterior-algebra basis. Unitarity then restricts the scalar to `1` or `-1`.
 
 ## Main results
 
@@ -28,10 +29,13 @@ exactly when it is `1` or the canonical scalar `-1`.
   canonical scalar `-1`.
 * `CliffordAlgebra.eq_or_eq_negOne_mul_of_spinToSpecialOrthogonal_eq`: two Spin elements with the
   same projection differ by at most the canonical scalar `-1`.
-* `CliffordAlgebra.ker_spinToSpecialOrthogonal_eq_bot_of_finrank_eq_zero`: in dimension zero,
+* `CliffordAlgebra.ker_spinToSpecialOrthogonal_eq_bot_of_subsingleton`: on a subsingleton module,
   the kernel of the Spin action is trivial.
-* `CliffordAlgebra.spinToSpecialOrthogonal_bijective_of_finrank_eq_zero`: in dimension zero, the
-  Spin action is bijective.
+* `CliffordAlgebra.spinToSpecialOrthogonal_bijective_of_subsingleton`: on a subsingleton module,
+  the Spin action is bijective.
+* `CliffordAlgebra.ker_spinToSpecialOrthogonal_eq_bot_of_finrank_eq_zero` and
+  `CliffordAlgebra.spinToSpecialOrthogonal_bijective_of_finrank_eq_zero` specialize these results
+  to zero-dimensional vector spaces.
 * `CliffordAlgebra.card_ker_spinToSpecialOrthogonal`: the kernel of the Spin action on
   the special orthogonal group has cardinality two in positive dimension.
 * `CliffordAlgebra.zmodTwoMulEquivKerSpinToSpecialOrthogonal`: the kernel is canonically
@@ -250,6 +254,20 @@ namespace CliffordAlgebra
 
 section Kernel
 
+variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M]
+
+/-- The Spin action on a subsingleton quadratic space has trivial kernel. -/
+theorem ker_spinToSpecialOrthogonal_eq_bot_of_subsingleton [Subsingleton M]
+    (Q : QuadraticForm R M) [Invertible (2 : R)] :
+    MonoidHom.ker (spinToSpecialOrthogonal Q) = ⊥ := by
+  exact (MonoidHom.ker_eq_bot_iff _).2 (Function.injective_of_subsingleton _)
+
+/-- The Spin action on a subsingleton quadratic space is a bijection between trivial groups. -/
+theorem spinToSpecialOrthogonal_bijective_of_subsingleton [Subsingleton M]
+    (Q : QuadraticForm R M) [Invertible (2 : R)] :
+    Function.Bijective (spinToSpecialOrthogonal Q) := by
+  exact Function.bijective_of_subsingleton' _
+
 variable {K : Type u} {M : Type v} [Field K] [AddCommGroup M] [Module K M]
   [FiniteDimensional K M]
 
@@ -309,17 +327,15 @@ theorem ker_spinToSpecialOrthogonal_eq_bot_of_finrank_eq_zero
     (hM : Module.finrank K M = 0) (Q : QuadraticForm K M) [Invertible (2 : K)] :
     MonoidHom.ker (spinToSpecialOrthogonal Q) = ⊥ := by
   let _ : Subsingleton M := Module.finrank_zero_iff.mp hM
-  exact (MonoidHom.ker_eq_bot_iff _).mpr fun _ _ _ ↦ Subsingleton.elim _ _
+  exact ker_spinToSpecialOrthogonal_eq_bot_of_subsingleton Q
 
 /-- The Spin action on a zero-dimensional quadratic space is a bijection between trivial
 groups. -/
 theorem spinToSpecialOrthogonal_bijective_of_finrank_eq_zero
     (hM : Module.finrank K M = 0) (Q : QuadraticForm K M) [Invertible (2 : K)] :
     Function.Bijective (spinToSpecialOrthogonal Q) := by
-  refine ⟨(MonoidHom.ker_eq_bot_iff _).mp
-    (ker_spinToSpecialOrthogonal_eq_bot_of_finrank_eq_zero hM Q), ?_⟩
   let _ : Subsingleton M := Module.finrank_zero_iff.mp hM
-  exact fun y ↦ ⟨1, Subsingleton.elim _ y⟩
+  exact spinToSpecialOrthogonal_bijective_of_subsingleton Q
 
 /-- The kernel of the Spin action on a positive-dimensional finite nondegenerate quadratic space
 over a field where `2` is invertible has cardinality two. -/
