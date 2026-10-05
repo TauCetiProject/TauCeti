@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Ring
 public import TauCeti.KnotTheory.Grid.Gradings
 public import TauCeti.KnotTheory.Grid.Rectangle.Swap
@@ -179,11 +178,12 @@ variable {n : ℕ}
 
 /-- Two grading functions that change in the same way across every rectangle, and agree at one
 grid state, agree everywhere. -/
-theorem eq_of_forall_sub_eq {f g : GridState n → ℚ} (x₀ : GridState n) (h₀ : f x₀ = g x₀)
+theorem eq_of_forall_sub_eq {A : Type*} [AddGroup A] {f g : GridState n → A}
+    (x₀ : GridState n) (h₀ : f x₀ = g x₀)
     (h : ∀ x y, GridRectangleBetween x y → f x - f y = g x - g y) (x : GridState n) :
     f x = g x :=
   GridState.rectangle_induction_on (P := fun x ↦ f x = g x) x₀ h₀
-    (fun x y R hx ↦ by linarith [h x y R]) x
+    (fun x y R hx ↦ by simpa only [hx, sub_right_inj] using h x y R) x
 
 end GridState
 
