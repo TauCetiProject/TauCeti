@@ -9,17 +9,24 @@ public import Mathlib.Dynamics.PeriodicPts.Defs
 public import Mathlib.Data.Finset.Card
 public import Mathlib.GroupTheory.Perm.Cycle.Basic
 import Mathlib.GroupTheory.Perm.ViaEmbedding
+import Mathlib.Tactic.Abel
+import Mathlib.Tactic.FinCases
 
 /-!
 # Elementary facts about permutations
 
-This file records general-purpose facts about permutations: a transposition preserves the
-complement of a set containing neither of its swapped points, an identity between transpositions,
+This file records general-purpose facts about permutations: a map intertwining two permutations
+intertwines their integer powers (`Function.Semiconj.perm_zpow_right`), a transposition
+preserves the complement of a set containing neither of its swapped points, an identity between
+transpositions,
 a permutation transporting two points outside a fixed set to another such pair,
 the values of the three-cycle written as a product of two transpositions sharing a point,
 a characterization of permutations with a unique fixed point, functions constant on a permutation
 orbit, the orbit relation of an involution, a positive-power representative of a relation inside a
-periodic orbit, a permutation transported along an injection, the combination of two
+periodic orbit, a function whose difference `z ↦ c (σ⁻¹ z) - c z` joins points in the same orbit
+(`Equiv.Perm.SameCycle.exists_comp_symm_sub_eq`, `Equiv.Perm.exists_comp_symm_sub_eq_sum`), a
+transposition forming one cycle on a `Fin 2` fibre over `Fin 1`, a
+permutation transported along an injection, the combination of two
 permutations transported along injections with disjoint ranges, the fact that a permutation
 is a single cycle on each of its own orbits, the transport of its cycles along an equivalence of
 types, and the factorization of an invariant function
@@ -30,14 +37,15 @@ permutation with functions on its cycle quotient (`TauCeti.invariantColouringEqu
 
 public section
 
-namespace Equiv.Perm.SameCycle
+namespace Function.Semiconj
 
-variable {α : Type*} {β : Sort*} {σ : Equiv.Perm α} {x y : α} {f : α → β}
+variable {α γ : Type*} {σ : Equiv.Perm α} {τ : Equiv.Perm γ} {g : α → γ}
 
-variable {γ : Type*} {τ : Equiv.Perm γ} {g : α → γ}
-
-private theorem map_zpow_apply (hg : ∀ z, g (σ z) = τ (g z)) (k : ℤ) (z : α) :
-    g ((σ ^ k) z) = (τ ^ k) (g z) := by
+/-- A map intertwining two permutations also intertwines all of their integer powers. This
+extends `Function.Semiconj.iterate_right` to negative exponents. -/
+theorem perm_zpow_right (hg : Function.Semiconj g σ τ) (k : ℤ) :
+    Function.Semiconj g ⇑(σ ^ k) ⇑(τ ^ k) := by
+  intro z
   have hinv : Function.Semiconj g (σ⁻¹ : Equiv.Perm α) (τ⁻¹ : Equiv.Perm γ) :=
     Function.Semiconj.inverses_right hg σ.right_inv τ.left_inv
   cases k with
@@ -48,11 +56,19 @@ private theorem map_zpow_apply (hg : ∀ z, g (σ z) = τ (g z)) (k : ℤ) (z : 
       simpa only [zpow_negSucc, ← inv_pow, Equiv.Perm.coe_pow] using
         (Function.Semiconj.iterate_right hinv (m + 1) z)
 
+end Function.Semiconj
+
+namespace Equiv.Perm.SameCycle
+
+variable {α : Type*} {β : Sort*} {σ : Equiv.Perm α} {x y : α} {f : α → β}
+
+variable {γ : Type*} {τ : Equiv.Perm γ} {g : α → γ}
+
 /-- A function invariant under one application of a permutation is constant on every orbit of
 that permutation. -/
 theorem apply_eq_of_apply_eq (hσ : σ.SameCycle x y) (hf : ∀ z, f (σ z) = f z) : f x = f y := by
   obtain ⟨k, rfl⟩ := hσ
-  have hmap := map_zpow_apply (τ := 1) (g := fun z => PLift.up (f z))
+  have hmap := Function.Semiconj.perm_zpow_right (τ := 1) (g := fun z => PLift.up (f z))
     (fun z => congrArg PLift.up (hf z)) k x
   exact congrArg PLift.down (by simpa only [one_zpow, Equiv.Perm.one_apply] using hmap.symm)
 
@@ -61,7 +77,7 @@ the second. -/
 theorem map (hσ : σ.SameCycle x y) (hg : ∀ z, g (σ z) = τ (g z)) :
     τ.SameCycle (g x) (g y) := by
   obtain ⟨k, rfl⟩ := hσ
-  exact ⟨k, (map_zpow_apply hg k x).symm⟩
+  exact ⟨k, (Function.Semiconj.perm_zpow_right hg k x).symm⟩
 
 /-- If a periodic point `x` of `σ` shares its orbit with `y`, some positive natural power of `σ`
 carries `x` to `y`. -/
@@ -82,7 +98,45 @@ theorem exists_pos_pow_eq_of_mem_periodicPts (h : σ.SameCycle x y)
   rw [← zpow_natCast, Nat.cast_add, Int.toNat_of_nonneg hnonneg]
   exact hred
 
+/-- Two points `x`, `y` in the same orbit of `σ` are joined along the orbit: some `c : α → M`
+has difference `z ↦ c (σ⁻¹ z) - c z` equal to `Pi.single y a - Pi.single x a`. -/
+theorem exists_comp_symm_sub_eq [DecidableEq α] {M : Type*} [AddCommGroup M]
+    (h : σ.SameCycle x y) (a : M) :
+    ∃ c : α → M, (fun z => c (σ.symm z) - c z) = Pi.single y a - Pi.single x a := by
+  -- Adding `s • [w]` to `c` adds `s • ([σ w] - [w])` to its difference.
+  have step (c : α → M) (w : α) (s : ℤ) :
+      (fun z => (c + s • Pi.single w a : α → M) (σ.symm z) - (c + s • Pi.single w a : α → M) z) =
+        (fun z => c (σ.symm z) - c z) + s • (Pi.single (σ w) a - Pi.single w a) := by
+    ext z
+    simp only [Pi.add_apply, Pi.sub_apply, Pi.smul_apply, Pi.single_apply, Equiv.symm_apply_eq]
+    split_ifs <;> simp only [smul_sub] <;> abel
+  obtain ⟨k, rfl⟩ := h
+  induction k using Int.induction_on with
+  | zero => exact ⟨0, funext fun z => by simp⟩
+  | succ k ih =>
+    obtain ⟨c, hc⟩ := ih
+    refine ⟨c + (1 : ℤ) • Pi.single ((σ ^ (k : ℤ)) x) a, ?_⟩
+    rw [step, hc, ← Equiv.Perm.mul_apply, ← zpow_one_add, add_comm (1 : ℤ)]
+    abel
+  | pred k ih =>
+    obtain ⟨c, hc⟩ := ih
+    have h_exp : (1 + (-k - 1) : ℤ) = -k := by omega
+    refine ⟨c + (-1 : ℤ) • Pi.single ((σ ^ (-k - 1 : ℤ)) x) a, ?_⟩
+    rw [step, hc, ← Equiv.Perm.mul_apply, ← zpow_one_add, h_exp]
+    abel
+
 end Equiv.Perm.SameCycle
+
+namespace TauCeti
+
+/-- The transposition of `Fin 2` is one cycle on every fibre of a map to `Fin 1`. -/
+theorem isCycleOn_swap_fin_two_fiber (f : Fin 2 → Fin 1) (i : Fin 1) :
+    (Equiv.swap (0 : Fin 2) 1).IsCycleOn {p | f p = i} := by
+  convert Equiv.Perm.isCycleOn_swap (a := (0 : Fin 2)) (b := 1) (by decide) using 1
+  ext p
+  fin_cases p <;> simp [Subsingleton.elim (f _) i]
+
+end TauCeti
 
 namespace Equiv.Perm
 
@@ -112,6 +166,18 @@ theorem factorsThrough_of_forall_isCycleOn {ι β : Type*} {g : α → ι}
     (hσ : ∀ i, σ.IsCycleOn {x | g x = i}) {f : α → β} (hf : ∀ x, f (σ x) = f x) :
     f.FactorsThrough g :=
   fun _ b hab => ((hσ (g b)).2 hab rfl).apply_eq_of_apply_eq hf
+
+/-- Finitely many pairs `u i`, `v i`, each in a single orbit of `σ`, are joined along the
+orbits with weights `a i`: some `c : α → M` has difference `z ↦ c (σ⁻¹ z) - c z` equal to
+`∑ i, Pi.single (v i) (a i) - ∑ i, Pi.single (u i) (a i)`. -/
+theorem exists_comp_symm_sub_eq_sum [DecidableEq α] {ι M : Type*} [Fintype ι] [AddCommGroup M]
+    {σ : Perm α} {u v : ι → α} (h : ∀ i, σ.SameCycle (u i) (v i)) (a : ι → M) :
+    ∃ c : α → M, (fun z => c (σ.symm z) - c z) =
+      ∑ i, Pi.single (v i) (a i) - ∑ i, Pi.single (u i) (a i) := by
+  choose c hc using fun i => (h i).exists_comp_symm_sub_eq (a i)
+  refine ⟨∑ i, c i, funext fun z => ?_⟩
+  simp only [Finset.sum_apply, Pi.sub_apply, ← Finset.sum_sub_distrib]
+  exact Finset.sum_congr rfl fun i _ => congrFun (hc i) z
 
 /-- A permutation commuting with a cycle can be corrected by a power of that cycle to fix its
 support pointwise, without changing it outside the support. -/

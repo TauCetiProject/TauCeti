@@ -116,7 +116,6 @@ theorem HasMultiplicativeReduction.frobeniusTrace_reduction_eq_neg_one
     (W.reduction R).frobeniusTrace = -1 :=
   frobeniusTrace_eq_neg_one_of_not_splits _
     ((reduction_Δ_eq_zero_iff R).2 (h.not_hasGoodReduction R))
-    (h.reduction_c₄_ne_zero R)
     (mt (h.splits_nodePolynomial_reduction_iff R).1 hs)
 
 /-- **The Frobenius trace of an additive reduction is `0`.** -/

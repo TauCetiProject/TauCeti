@@ -5,18 +5,21 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.CStarAlgebra.ContinuousLinearMap
 public import Mathlib.Analysis.CStarAlgebra.GelfandDuality
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
+public import Mathlib.Topology.Algebra.StarSubalgebra
 import Mathlib.Analysis.RCLike.ContinuousMap
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import Mathlib.MeasureTheory.Integral.RieszMarkovKakutani.Real
+import Mathlib.Topology.ContinuousMap.Lattice
 
 /-!
 # Positive functionals on commutative C⋆-algebras are measures on the character space
 
 Let `A` be a unital commutative C⋆-algebra, with character space `Δ = characterSpace ℂ A`. A
 linear functional `f : A → ℂ` that is nonnegative on every `star a * a` is integration against a
-finite positive measure on `Δ`:
+finite inner regular positive measure on `Δ`:
 
 `f a = ∫ ω, ω a ∂μ`.
 
@@ -31,7 +34,15 @@ into a measure on the joint spectrum.
 ## Main declarations
 
 * `LinearMap.exists_isFiniteMeasure_integral_characterSpace_eq`: a functional nonnegative on
-  `star a * a` is integration against a finite measure on the character space.
+  `star a * a` is integration against a finite inner regular measure on the character space.
+* `WeakDual.CharacterSpace.integral_apply_star_mul_self`: integrating `ω ↦ ω (star a * a)`
+  gives the squared `L²` norm of `ω ↦ ω a`, so a measure representing a functional `f` computes
+  `f (star a * a)`.
+* `StarSubalgebra.exists_isFiniteMeasure_integral_characterSpace_eq_inner`: for a closed
+  commutative star algebra of operators on a Hilbert space, each positive vector functional
+  `a ↦ ⟪ξ, a ξ⟫` is integration against a finite inner regular measure on the character space.
+* `StarSubalgebra.integral_norm_sq_eq_norm_apply_sq`: a measure representing such a functional
+  computes `‖a ξ‖²` as the squared `L²` norm of `ω ↦ ω a`.
 
 ## References
 
@@ -117,14 +128,15 @@ variable [MeasurableSpace (characterSpace ℂ A)] [BorelSpace (characterSpace �
 
 /-- **Positive functionals on a commutative C⋆-algebra are measures on its character space.**
 A linear functional on a unital commutative C⋆-algebra that is nonnegative on every
-`star a * a` is integration against a finite positive measure `μ` on the character space:
-`f a = ∫ ω, ω a ∂μ`. -/
+`star a * a` is integration against a finite inner regular positive measure `μ` on the
+character space: `f a = ∫ ω, ω a ∂μ`. -/
 theorem LinearMap.exists_isFiniteMeasure_integral_characterSpace_eq (f : A →ₗ[ℂ] ℂ)
     (hf : ∀ a, 0 ≤ f (star a * a)) :
-    ∃ μ : Measure (characterSpace ℂ A), IsFiniteMeasure μ ∧ ∀ a, f a = ∫ ω, ω a ∂μ := by
+    ∃ μ : Measure (characterSpace ℂ A), IsFiniteMeasure μ ∧ μ.InnerRegular ∧
+      ∀ a, f a = ∫ ω, ω a ∂μ := by
   set Λ := realFunctional f hf
   set μ := RealRMK.rieszMeasure Λ
-  refine ⟨μ, inferInstance, fun a ↦ ?_⟩
+  refine ⟨μ, inferInstance, inferInstance, fun a ↦ ?_⟩
   -- Split the Gelfand transform `F` of `a` into its real part `u` and imaginary part `v`.
   set F := gelfandStarTransform A a
   let u : C(characterSpace ℂ A, ℝ) := ⟨fun ω ↦ (F ω).re, Complex.continuous_re.comp F.continuous⟩
@@ -145,3 +157,61 @@ theorem LinearMap.exists_isFiniteMeasure_integral_characterSpace_eq (f : A →�
       rw [hF, map_add, map_smul, map_add, map_smul, hreal, hreal, smul_eq_mul, mul_comm]
     _ = ∫ ω, F ω ∂μ := integral_re_add_im hFint
     _ = ∫ ω, ω a ∂μ := by simp [F]
+
+/-- For a measure `μ` on the character space of a unital C⋆-algebra, integrating
+`ω ↦ ω (star a * a) = |ω a|²` gives the squared `L²` norm of `ω ↦ ω a`. Hence if `μ` represents a
+functional `f`, as in `LinearMap.exists_isFiniteMeasure_integral_characterSpace_eq`, then
+`f (star a * a) = ∫ |ω a|² dμ(ω)`. -/
+theorem WeakDual.CharacterSpace.integral_apply_star_mul_self {E : Type*} [CStarAlgebra E]
+    [MeasurableSpace (characterSpace ℂ E)] (μ : Measure (characterSpace ℂ E)) (a : E) :
+    ∫ ω, ω (star a * a) ∂μ = ((∫ ω, ‖ω a‖ ^ 2 ∂μ : ℝ) : ℂ) := by
+  simp_rw [map_mul, map_star, Complex.star_def, Complex.conj_mul', ← Complex.ofReal_pow]
+  exact integral_complex_ofReal
+
+section Operator
+
+open scoped InnerProductSpace
+
+variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
+  (B : StarSubalgebra ℂ (H →L[ℂ] H)) [IsClosed (B : Set (H →L[ℂ] H))]
+  [MeasurableSpace (characterSpace ℂ B)]
+
+omit [IsClosed (B : Set (H →L[ℂ] H))] [MeasurableSpace (characterSpace ℂ B)] in
+/-- For a star algebra `B` of operators, the positive vector functional of `ξ` takes the value
+`‖a ξ‖²` at `star a * a`. -/
+private lemma inner_star_mul_self_apply (ξ : H) (a : B) :
+    ⟪ξ, ((star a * a : B) : H →L[ℂ] H) ξ⟫_ℂ = ((‖(a : H →L[ℂ] H) ξ‖ ^ 2 : ℝ) : ℂ) := by
+  simp only [MulMemClass.coe_mul, StarMemClass.coe_star, ContinuousLinearMap.star_eq_adjoint,
+    mul_apply_eq_comp, ContinuousLinearMap.adjoint_inner_right, inner_self_eq_norm_sq_to_K]
+  norm_cast
+
+/-- For a closed star algebra `B` of operators, if a measure `μ` on the character space
+represents the positive vector functional of `ξ`, then `∫ |ω a|² dμ(ω) = ‖a ξ‖²` for every
+`a ∈ B`. -/
+theorem StarSubalgebra.integral_norm_sq_eq_norm_apply_sq {μ : Measure (characterSpace ℂ B)}
+    {ξ : H} (hμ : ∀ a : B, ⟪ξ, (a : H →L[ℂ] H) ξ⟫_ℂ = ∫ ω, ω a ∂μ) (a : B) :
+    ∫ ω, ‖ω a‖ ^ 2 ∂μ = ‖(a : H →L[ℂ] H) ξ‖ ^ 2 := by
+  have h := hμ (star a * a)
+  rw [inner_star_mul_self_apply, WeakDual.CharacterSpace.integral_apply_star_mul_self] at h
+  exact_mod_cast h.symm
+
+open scoped IsMulCommutative
+
+variable [IsMulCommutative B] [BorelSpace (characterSpace ℂ B)]
+
+/-- **Positive vector functionals are measures on the character space.** For a closed
+commutative star algebra `B` of operators on a complex Hilbert space and a vector `ξ`, the
+positive vector functional `a ↦ ⟪ξ, a ξ⟫` is integration against a finite inner regular positive
+measure on the character space of `B`. -/
+theorem StarSubalgebra.exists_isFiniteMeasure_integral_characterSpace_eq_inner (ξ : H) :
+    ∃ μ : Measure (characterSpace ℂ B), IsFiniteMeasure μ ∧ μ.InnerRegular ∧
+      ∀ a : B, ⟪ξ, (a : H →L[ℂ] H) ξ⟫_ℂ = ∫ ω, ω a ∂μ := by
+  let f : B →ₗ[ℂ] ℂ :=
+    { toFun a := ⟪ξ, (a : H →L[ℂ] H) ξ⟫_ℂ
+      map_add' a b := by simp [inner_add_right]
+      map_smul' c a := by simp [inner_smul_right] }
+  refine f.exists_isFiniteMeasure_integral_characterSpace_eq fun a ↦ ?_
+  simp only [f, LinearMap.coe_mk, AddHom.coe_mk, inner_star_mul_self_apply]
+  exact Complex.zero_le_real.mpr (sq_nonneg _)
+
+end Operator

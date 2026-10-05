@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.FDeriv.Defs
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.MeasureTheory.Group.Measure
+import Mathlib.Analysis.Calculus.FDeriv.Comp
 import Mathlib.MeasureTheory.Function.Jacobian
 import Mathlib.Analysis.Calculus.FDeriv.Equiv
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace

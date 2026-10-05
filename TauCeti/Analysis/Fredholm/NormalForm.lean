@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Fredholm.Basic
-public import Mathlib.Analysis.Calculus.Implicit
+public import Mathlib.Analysis.Normed.Operator.Fredholm.Basic
+public import Mathlib.Analysis.Calculus.InverseFunctionTheorem.FDeriv
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
 
 /-!
@@ -25,12 +25,12 @@ these coordinates the original map has the form
 where `q` takes values in the finite-dimensional codomain complement. Thus all failure of
 surjectivity is confined to the finite-dimensional codomain complement; after fixing `r`, the
 remaining variable `k` also ranges over a finite-dimensional space. This is the normal-form
-ingredient of the Sard--Smale argument in Lane F0 of the analytic Heegaard Floer roadmap.
+ingredient of the Sard--Smale argument.
 
 The construction follows S. Smale, *An infinite dimensional version of Sard's theorem*,
 Amer. J. Math. 87 (1965), 861--866, and McDuff--Salamon, *J-holomorphic Curves and Symplectic
 Topology*, Appendix A. The local chart is Mathlib's
-`ImplicitFunctionData.toOpenPartialHomeomorph`; the linear splittings are Mathlib's
+`HasStrictFDerivAt.toOpenPartialHomeomorph`; the linear splittings are Mathlib's
 `ContinuousLinearMap.FredholmPackage`.
 
 ## Main declarations
@@ -174,60 +174,17 @@ theorem contDiffAt_normalFormMap {f : E → F} {a x : E} {n : ℕ∞ω}
   unfold normalFormMap
   fun_prop
 
-/-- The essential component of the Fredholm operator factors through the package equivalence. -/
-private theorem proj_comp_eq :
-    pkg.decCodom.proj.comp T =
-      (pkg.equiv : pkg.decDom.X₁ →L[𝕜] pkg.decCodom.X₁).comp pkg.decDom.proj := by
-  ext x
-  simp [pkg.eq_equiv]
-
 /-! ### The normal-form chart -/
 
 section Chart
 
 variable [CompleteSpace E]
 
-/-- The inessential domain summand is closed in the complete space `E`. -/
-local instance : CompleteSpace pkg.decDom.X₀ :=
-  pkg.decDom.isTopCompl.isClosed'.completeSpace_coe
-
-/-- The essential codomain summand is linearly homeomorphic to a closed subspace of the complete
-space `E`. -/
-local instance : CompleteSpace pkg.decCodom.X₁ :=
-  haveI : CompleteSpace pkg.decDom.X₁ := pkg.decDom.isTopCompl.isClosed.completeSpace_coe
-  (pkg.equiv.isUniformEmbedding.completeSpace_congr pkg.equiv.surjective).mp inferInstance
-
-/-- The data feeding the Fredholm normal-form coordinates into Mathlib's implicit function
-theorem: the essential component of `f` on the left, the inessential coordinate of `x - a` on the
-right. Its `ImplicitFunctionData.prodFun` is `pkg.normalFormMap f a`. -/
-private def normalFormImplicitFunctionData {f : E → F} {a : E} (hf : HasStrictFDerivAt f T a) :
-    ImplicitFunctionData 𝕜 E pkg.decCodom.X₁ pkg.decDom.X₀ where
-  leftFun x := pkg.decCodom.proj (f x)
-  leftDeriv := pkg.decCodom.proj.comp T
-  rightFun x := pkg.decDom.X₀.projectionOntoL pkg.decDom.X₁ pkg.decDom.isTopCompl.symm (x - a)
-  rightDeriv := pkg.decDom.X₀.projectionOntoL pkg.decDom.X₁ pkg.decDom.isTopCompl.symm
-  pt := a
-  hasStrictFDerivAt_leftFun := pkg.decCodom.proj.hasStrictFDerivAt.comp a hf
-  hasStrictFDerivAt_rightFun := by
-    simpa only [map_sub] using (pkg.decDom.X₀.projectionOntoL pkg.decDom.X₁
-      pkg.decDom.isTopCompl.symm).hasStrictFDerivAt.sub_const
-      (pkg.decDom.X₀.projectionOntoL pkg.decDom.X₁ pkg.decDom.isTopCompl.symm a)
-  range_leftDeriv := by
-    rw [pkg.proj_comp_eq]
-    simp [LinearMap.range_comp]
-  range_rightDeriv := Submodule.range_projectionOntoL _
-  isCompl_ker := by
-    have hker : ((pkg.equiv : pkg.decDom.X₁ →L[𝕜] pkg.decCodom.X₁).comp
-        pkg.decDom.proj).ker = pkg.decDom.X₀ := by
-      simp [LinearMap.ker_comp]
-    rw [pkg.proj_comp_eq, hker, Submodule.ker_projectionOntoL]
-    exact pkg.decDom.isTopCompl.isCompl.symm
-
 /-- The local homeomorphism putting a map into Fredholm normal-form coordinates near a point where
 its derivative is represented by `pkg`. -/
 def normalFormOpenPartialHomeomorph {f : E → F} {a : E} (hf : HasStrictFDerivAt f T a) :
     OpenPartialHomeomorph E (pkg.decCodom.X₁ × pkg.decDom.X₀) :=
-  (pkg.normalFormImplicitFunctionData hf).toOpenPartialHomeomorph
+  (pkg.hasStrictFDerivAt_normalFormMap hf).toOpenPartialHomeomorph (pkg.normalFormMap f a)
 
 /-- The Fredholm normal-form homeomorphism agrees with the normal-form coordinate map everywhere;
 its source only controls where the inverse laws apply. -/
@@ -235,21 +192,21 @@ its source only controls where the inverse laws apply. -/
 theorem normalFormOpenPartialHomeomorph_apply {f : E → F} {a : E}
     (hf : HasStrictFDerivAt f T a) (x : E) :
     pkg.normalFormOpenPartialHomeomorph hf x = pkg.normalFormMap f a x :=
-  (pkg.normalFormImplicitFunctionData hf).toOpenPartialHomeomorph_apply x
+  congrFun (pkg.hasStrictFDerivAt_normalFormMap hf).toOpenPartialHomeomorph_coe x
 
 /-- The base point belongs to the source of the Fredholm normal-form homeomorphism. -/
 theorem mem_normalFormOpenPartialHomeomorph_source {f : E → F} {a : E}
     (hf : HasStrictFDerivAt f T a) :
     a ∈ (pkg.normalFormOpenPartialHomeomorph hf).source :=
-  (pkg.normalFormImplicitFunctionData hf).pt_mem_toOpenPartialHomeomorph_source
+  (pkg.hasStrictFDerivAt_normalFormMap hf).mem_toOpenPartialHomeomorph_source
 
 /-- The normal-form coordinate of the base point belongs to the target of the local
 homeomorphism. -/
 theorem normalFormOpenPartialHomeomorph_self_mem_target {f : E → F} {a : E}
     (hf : HasStrictFDerivAt f T a) :
     (pkg.decCodom.proj (f a), 0) ∈ (pkg.normalFormOpenPartialHomeomorph hf).target := by
-  rw [← pkg.normalFormMap_self f a]
-  exact (pkg.normalFormImplicitFunctionData hf).map_pt_mem_toOpenPartialHomeomorph_target
+  simpa only [normalFormMap_self, normalFormOpenPartialHomeomorph] using
+    (pkg.hasStrictFDerivAt_normalFormMap hf).image_mem_toOpenPartialHomeomorph_target
 
 /-- Applying the inverse normal-form coordinate map to the coordinate of the base point returns
 the base point. -/
@@ -309,8 +266,7 @@ of `f a`. Not a `simp` lemma: `obstructionMap_apply` and
 theorem obstructionMap_self {f : E → F} {a : E} (hf : HasStrictFDerivAt f T a) :
     pkg.obstructionMap hf (pkg.decCodom.proj (f a), 0) =
       pkg.decCodom.X₀.projectionOntoL pkg.decCodom.X₁ pkg.decCodom.isTopCompl.symm (f a) := by
-  rw [pkg.obstructionMap_apply hf, Submodule.coe_projectionOntoL pkg.decCodom.isTopCompl,
-    pkg.normalFormOpenPartialHomeomorph_symm_self hf]
+  simp
 
 /-- In normal-form coordinates, the essential component of `f` is the first coordinate. -/
 theorem proj_apply_normalFormOpenPartialHomeomorph_symm {f : E → F} {a : E}
@@ -330,36 +286,10 @@ theorem apply_normalFormOpenPartialHomeomorph_symm {f : E → F} {a : E}
     (hy : y ∈ (pkg.normalFormOpenPartialHomeomorph hf).target) :
     f ((pkg.normalFormOpenPartialHomeomorph hf).symm y) =
       (y.1 : F) + (pkg.obstructionMap hf y : F) := by
-  let e : (pkg.decCodom.X₁ × pkg.decCodom.X₀) ≃L[𝕜] F :=
-    Submodule.prodEquivOfIsTopCompl _ _ pkg.decCodom.isTopCompl
-  have hsplit := e.apply_symm_apply (f ((pkg.normalFormOpenPartialHomeomorph hf).symm y))
-  rw [Submodule.prodEquivOfIsTopCompl_symm_apply,
-    pkg.proj_apply_normalFormOpenPartialHomeomorph_symm hf hy] at hsplit
-  simpa [e, obstructionMap, Submodule.prodEquivOfIsTopCompl_apply] using hsplit.symm
-
-/-- The linear equivalence produced by the implicit-function data is the linear normal-form
-coordinate change. -/
-private theorem equivProd_normalFormImplicitFunctionData {f : E → F} {a : E}
-    (hf : HasStrictFDerivAt f T a) :
-    (pkg.normalFormImplicitFunctionData hf).leftDeriv.equivProdOfSurjectiveOfIsCompl
-        (pkg.normalFormImplicitFunctionData hf).rightDeriv
-        (pkg.normalFormImplicitFunctionData hf).range_leftDeriv
-        (pkg.normalFormImplicitFunctionData hf).range_rightDeriv
-        (pkg.normalFormImplicitFunctionData hf).isCompl_ker =
-      pkg.normalFormEquivL :=
-  ContinuousLinearEquiv.coe_injective pkg.prod_projection_eq_normalFormEquivL
-
-/-- Mathlib reaches the inverse of the implicit-function chart through
-`ImplicitFunctionData.implicitFunction`, so the two spellings of that inverse are identified
-pointwise. -/
-private theorem coe_symm_normalFormOpenPartialHomeomorph {f : E → F} {a : E}
-    (hf : HasStrictFDerivAt f T a) :
-    ⇑(pkg.normalFormOpenPartialHomeomorph hf).symm =
-      ⇑((pkg.normalFormImplicitFunctionData hf).hasStrictFDerivAt.toOpenPartialHomeomorph
-        (pkg.normalFormImplicitFunctionData hf).prodFun).symm := by
-  funext y
-  exact ((pkg.normalFormImplicitFunctionData hf).implicitFunction_apply).symm.trans
-    (congrFun (congrFun (pkg.normalFormImplicitFunctionData hf).implicitFunction_def y.1) y.2)
+  rw [pkg.obstructionMap_apply, ← pkg.proj_apply_normalFormOpenPartialHomeomorph_symm hf hy]
+  simpa only [Submodule.coe_projectionOntoL_apply] using
+    (Submodule.projectionL_add_projectionL_eq_self pkg.decCodom.isTopCompl
+      (f ((pkg.normalFormOpenPartialHomeomorph hf).symm y))).symm
 
 /-- The inverse normal-form coordinates have derivative inverse to the linear normal-form
 equivalence at the coordinate of the base point. -/
@@ -369,14 +299,9 @@ theorem hasStrictFDerivAt_normalFormOpenPartialHomeomorph_symm_self {f : E → F
       (pkg.normalFormEquivL.symm :
         (pkg.decCodom.X₁ × pkg.decDom.X₀) →L[𝕜] E)
       (pkg.decCodom.proj (f a), 0) := by
-  have hpt : (pkg.normalFormImplicitFunctionData hf).prodFun
-      (pkg.normalFormImplicitFunctionData hf).pt = (pkg.decCodom.proj (f a), 0) := by
-    simp [normalFormImplicitFunctionData]
-  have hinv := (pkg.normalFormImplicitFunctionData hf).hasStrictFDerivAt.to_localInverse
-  rw [HasStrictFDerivAt.localInverse_def] at hinv
-  rw [pkg.coe_symm_normalFormOpenPartialHomeomorph hf,
-    ← pkg.equivProd_normalFormImplicitFunctionData hf, ← hpt]
-  exact hinv
+  simpa only [HasStrictFDerivAt.localInverse_def, normalFormMap_self,
+    normalFormOpenPartialHomeomorph] using
+    (pkg.hasStrictFDerivAt_normalFormMap hf).to_localInverse
 
 /-- The finite-dimensional obstruction has zero derivative at the coordinate of the base point.
 This is the differential statement that the chosen essential coordinate absorbs the entire

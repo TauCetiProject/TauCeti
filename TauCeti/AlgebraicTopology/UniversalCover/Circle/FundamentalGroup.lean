@@ -58,6 +58,8 @@ transformation, so `deck ((↑) : 𝕜 → AddCircle p)` acts transitively on ev
   going once counterclockwise around the circle, is sent to the generator `ofAdd 1`.
 * `Circle.fundamentalGroupMulEquiv_fromPath`: the class of a loop is sent to its degree
   `Circle.degree`, computed from angle lifts.
+* `Circle.fundamentalGroupMulEquiv_map_pow`: the `n`-th power map of the circle acts on the
+  fundamental group as multiplication by `n`.
 
 ## References
 
@@ -390,6 +392,19 @@ theorem fundamentalGroupMulEquiv_expLoop :
   rw [fundamentalGroupMulEquiv_fromPath,
     degree_eq_of_sub_eq expLoop (θ := fun t => 2 * Real.pi * t) (by fun_prop) (fun _ => rfl)
       (n := 1) (by simp)]
+
+/-- **The `n`-th power map of the circle acts on `π₁(S¹) ≅ ℤ` as multiplication by `n`.** The
+isomorphism `fundamentalGroupMulEquiv` sends the image of a loop class under `z ↦ z ^ n` to the
+`n`-th power of the image of the class. -/
+theorem fundamentalGroupMulEquiv_map_pow (n : ℕ) {x : Circle} (γ : FundamentalGroup Circle x) :
+    fundamentalGroupMulEquiv _ (FundamentalGroup.map ⟨(· ^ n), continuous_pow n⟩ x γ) =
+      fundamentalGroupMulEquiv x γ ^ n := by
+  induction γ using Path.Homotopic.Quotient.ind with | mk γ => ?_
+  calc _ = Multiplicative.ofAdd (degree (γ.map (continuous_pow n))) :=
+        fundamentalGroupMulEquiv_fromPath _
+    _ = Multiplicative.ofAdd (degree γ) ^ n := by
+        rw [degree_map_pow, ← ofAdd_nsmul, nsmul_eq_mul]
+    _ = _ := congrArg (· ^ n) (fundamentalGroupMulEquiv_fromPath γ).symm
 
 end Circle
 

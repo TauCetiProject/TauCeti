@@ -58,51 +58,50 @@ variable {N V : Type u} [AddCommGroup N] [AddCommGroup V] [Module ℝ V]
 /-- The chart of a cone of a subfan and the chart of the same cone in the ambient fan carry the
 same topology. -/
 theorem subfan_analyticAffineChartDiagram_obj_str (σ : (Φ.subfan S hS hface).cones) :
-    (((Φ.subfan S hS hface).analyticAffineChartDiagram (hΦ.subfan S hS hface)).obj σ).str =
-      ((Φ.analyticAffineChartDiagram hΦ).obj
+    (((Φ.subfan S hS hface).analyticAffineChartDiagram).obj σ).str =
+      ((Φ.analyticAffineChartDiagram).obj
         ⟨σ.1, hS (by simpa only [subfan_cones] using σ.2)⟩).str := by
   let g := Φ.analyticChartGenerators ⟨σ.1, hS (by simpa only [subfan_cones] using σ.2)⟩
-    ((isRegular_iff.mp hΦ) σ.1 (hS (by simpa only [subfan_cones] using σ.2)))
-  exact ((Φ.subfan S hS hface).analyticAffineChart_str_eq σ _ g.2).trans
-    (Φ.analyticAffineChart_str_eq _ _ g.2).symm
+  exact ((Φ.subfan S hS hface).analyticAffineChart_str_eq σ g.2).trans
+    (Φ.analyticAffineChart_str_eq _ g.2).symm
 
 /-- The identity-on-points homeomorphism from the chart of a cone of a subfan to the chart of the
 same cone in the ambient fan. -/
 noncomputable def subfanAnalyticChartMap (σ : (Φ.subfan S hS hface).cones) :
-    ((Φ.subfan S hS hface).analyticAffineChartDiagram (hΦ.subfan S hS hface)).obj σ ≃ₜ
-      (Φ.analyticAffineChartDiagram hΦ).obj
+    ((Φ.subfan S hS hface).analyticAffineChartDiagram).obj σ ≃ₜ
+      (Φ.analyticAffineChartDiagram).obj
         ⟨σ.1, hS (by simpa only [subfan_cones] using σ.2)⟩ where
   toEquiv := Equiv.refl _
   continuous_toFun :=
-    continuous_id_iff_le.mpr (Φ.subfan_analyticAffineChartDiagram_obj_str hΦ S hS hface σ).le
+    continuous_id_iff_le.mpr (Φ.subfan_analyticAffineChartDiagram_obj_str S hS hface σ).le
   continuous_invFun :=
-    continuous_id_iff_le.mpr (Φ.subfan_analyticAffineChartDiagram_obj_str hΦ S hS hface σ).ge
+    continuous_id_iff_le.mpr (Φ.subfan_analyticAffineChartDiagram_obj_str S hS hface σ).ge
 
 /-- The chart comparison of a subfan is the identity on complex points. -/
 @[simp]
 theorem subfanAnalyticChartMap_apply (σ : (Φ.subfan S hS hface).cones)
-    (x : ((Φ.subfan S hS hface).analyticAffineChartDiagram (hΦ.subfan S hS hface)).obj σ) :
-    (Φ.subfanAnalyticChartMap hΦ S hS hface σ x :
+    (x : ((Φ.subfan S hS hface).analyticAffineChartDiagram).obj σ) :
+    (Φ.subfanAnalyticChartMap S hS hface σ x :
       AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.1)) = x :=
   (rfl)
 
 /-- The inverse chart comparison of a subfan is the identity on complex points. -/
 @[simp]
 theorem subfanAnalyticChartMap_symm_apply (σ : (Φ.subfan S hS hface).cones)
-    (x : (Φ.analyticAffineChartDiagram hΦ).obj
+    (x : (Φ.analyticAffineChartDiagram).obj
       ⟨σ.1, hS (by simpa only [subfan_cones] using σ.2)⟩) :
-    ((Φ.subfanAnalyticChartMap hΦ S hS hface σ).symm x :
+    ((Φ.subfanAnalyticChartMap S hS hface σ).symm x :
       AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.1)) = x :=
   (rfl)
 
 /-- The chart comparisons of a subfan commute with the face maps of the two chart diagrams. -/
 theorem subfanAnalyticChartMap_map {τ σ : (Φ.subfan S hS hface).cones} (f : τ ⟶ σ)
-    (x : ((Φ.subfan S hS hface).analyticAffineChartDiagram (hΦ.subfan S hS hface)).obj τ) :
-    Φ.subfanAnalyticChartMap hΦ S hS hface σ
-        (((Φ.subfan S hS hface).analyticAffineChartDiagram (hΦ.subfan S hS hface)).map f x) =
-      (Φ.analyticAffineChartDiagram hΦ).map
+    (x : ((Φ.subfan S hS hface).analyticAffineChartDiagram).obj τ) :
+    Φ.subfanAnalyticChartMap S hS hface σ
+        (((Φ.subfan S hS hface).analyticAffineChartDiagram).map f x) =
+      (Φ.analyticAffineChartDiagram).map
         (homOfLE (leOfHom f))
-        (Φ.subfanAnalyticChartMap hΦ S hS hface τ x) := by
+        (Φ.subfanAnalyticChartMap S hS hface τ x) := by
   -- Both face maps restrict a complex point along the same inclusion of dual semigroups, and the
   -- chart comparisons are the identity on complex points (`subfanAnalyticChartMap_apply`).
   rw [analyticAffineChartDiagram_map_apply, analyticAffineChartDiagram_map_apply]
@@ -112,12 +111,12 @@ theorem subfanAnalyticChartMap_map {τ σ : (Φ.subfan S hS hface).cones} (f : �
 same image, after the chart comparisons, in the ambient realization. -/
 private theorem analyticAffineChartι_subfanAnalyticChartMap_eq_of_eq
     {σ τ : (Φ.subfan S hS hface).cones}
-    {x : ((Φ.subfan S hS hface).analyticAffineChartDiagram (hΦ.subfan S hS hface)).obj σ}
-    {y : ((Φ.subfan S hS hface).analyticAffineChartDiagram (hΦ.subfan S hS hface)).obj τ}
+    {x : ((Φ.subfan S hS hface).analyticAffineChartDiagram).obj σ}
+    {y : ((Φ.subfan S hS hface).analyticAffineChartDiagram).obj τ}
     (h : (Φ.subfan S hS hface).analyticAffineChartι (hΦ.subfan S hS hface) σ x =
       (Φ.subfan S hS hface).analyticAffineChartι (hΦ.subfan S hS hface) τ y) :
-    Φ.analyticAffineChartι hΦ _ (Φ.subfanAnalyticChartMap hΦ S hS hface σ x) =
-      Φ.analyticAffineChartι hΦ _ (Φ.subfanAnalyticChartMap hΦ S hS hface τ y) := by
+    Φ.analyticAffineChartι hΦ _ (Φ.subfanAnalyticChartMap S hS hface σ x) =
+      Φ.analyticAffineChartι hΦ _ (Φ.subfanAnalyticChartMap S hS hface τ y) := by
   obtain ⟨z, rfl, rfl⟩ := ((Φ.subfan S hS hface).analyticAffineChartι_eq_analyticAffineChartι_iff
     (hΦ.subfan S hS hface) x y).mp h
   rw [analyticOverlapLeft_def, analyticOverlapRight_def, subfanAnalyticChartMap_map,
@@ -135,7 +134,7 @@ noncomputable def subfanAnalyticMap :
   Limits.Multicoequalizer.desc
     ((Φ.subfan S hS hface).analyticGlueData (hΦ.subfan S hS hface)).diagram
     (Φ.analyticRealization hΦ)
-    (fun σ ↦ (TopCat.isoOfHomeo (Φ.subfanAnalyticChartMap hΦ S hS hface σ)).hom ≫
+    (fun σ ↦ (TopCat.isoOfHomeo (Φ.subfanAnalyticChartMap S hS hface σ)).hom ≫
       Φ.analyticAffineChartι hΦ _) (by
     rintro ⟨σ, τ⟩
     ext x
@@ -157,7 +156,7 @@ inclusion of the chart of the same cone in the ambient realization. -/
 theorem analyticAffineChartι_comp_subfanAnalyticMap (σ : (Φ.subfan S hS hface).cones) :
     (Φ.subfan S hS hface).analyticAffineChartι (hΦ.subfan S hS hface) σ ≫
         Φ.subfanAnalyticMap hΦ S hS hface =
-      (TopCat.isoOfHomeo (Φ.subfanAnalyticChartMap hΦ S hS hface σ)).hom ≫
+      (TopCat.isoOfHomeo (Φ.subfanAnalyticChartMap S hS hface σ)).hom ≫
         Φ.analyticAffineChartι hΦ _ := by
   rw [analyticAffineChartι_def]
   exact Limits.Multicoequalizer.π_desc _ _ _ _ _
@@ -166,10 +165,10 @@ theorem analyticAffineChartι_comp_subfanAnalyticMap (σ : (Φ.subfan S hS hface
 complex point in the chart of that cone in the ambient realization. -/
 @[simp]
 theorem subfanAnalyticMap_analyticAffineChartι (σ : (Φ.subfan S hS hface).cones)
-    (x : ((Φ.subfan S hS hface).analyticAffineChartDiagram (hΦ.subfan S hS hface)).obj σ) :
+    (x : ((Φ.subfan S hS hface).analyticAffineChartDiagram).obj σ) :
     Φ.subfanAnalyticMap hΦ S hS hface
         ((Φ.subfan S hS hface).analyticAffineChartι (hΦ.subfan S hS hface) σ x) =
-      Φ.analyticAffineChartι hΦ _ (Φ.subfanAnalyticChartMap hΦ S hS hface σ x) :=
+      Φ.analyticAffineChartι hΦ _ (Φ.subfanAnalyticChartMap S hS hface σ x) :=
   ConcreteCategory.congr_hom (Φ.analyticAffineChartι_comp_subfanAnalyticMap hΦ S hS hface σ) x
 
 /-- The subfan map is injective. -/
@@ -183,12 +182,12 @@ theorem subfanAnalyticMap_injective : Function.Injective (Φ.subfanAnalyticMap h
     analyticAffineChartι_eq_analyticAffineChartι_iff] at hxy
   obtain ⟨z, hzx, hzy⟩ := hxy
   refine ((Φ.subfan S hS hface).analyticAffineChartι_eq_analyticAffineChartι_iff
-    (hΦ.subfan S hS hface) x y).mpr ⟨(Φ.subfanAnalyticChartMap hΦ S hS hface (σ ⊓ τ)).symm z,
+    (hΦ.subfan S hS hface) x y).mpr ⟨(Φ.subfanAnalyticChartMap S hS hface (σ ⊓ τ)).symm z,
       ?_, ?_⟩
-  · apply (Φ.subfanAnalyticChartMap hΦ S hS hface σ).injective
+  · apply (Φ.subfanAnalyticChartMap S hS hface σ).injective
     rw [analyticOverlapLeft_def, subfanAnalyticChartMap_map, ← hzx, analyticOverlapLeft_def,
       Homeomorph.apply_symm_apply]
-  · apply (Φ.subfanAnalyticChartMap hΦ S hS hface τ).injective
+  · apply (Φ.subfanAnalyticChartMap S hS hface τ).injective
     rw [analyticOverlapRight_def, subfanAnalyticChartMap_map, ← hzy, analyticOverlapRight_def,
       Homeomorph.apply_symm_apply]
 
@@ -208,7 +207,7 @@ theorem range_subfanAnalyticMap :
   · intro hx
     obtain ⟨σ, y, rfl⟩ := Set.mem_iUnion.mp hx
     refine ⟨(Φ.subfan S hS hface).analyticAffineChartι (hΦ.subfan S hS hface) σ
-      ((Φ.subfanAnalyticChartMap hΦ S hS hface σ).symm y), ?_⟩
+      ((Φ.subfanAnalyticChartMap S hS hface σ).symm y), ?_⟩
     rw [subfanAnalyticMap_analyticAffineChartι, Homeomorph.apply_symm_apply]
 
 /-- The subfan map is an open map. -/
@@ -230,7 +229,7 @@ theorem isOpenMap_subfanAnalyticMap : IsOpenMap (Φ.subfanAnalyticMap hΦ S hS h
   simp only [subfanAnalyticMap_analyticAffineChartι]
   rw [← Set.image_image]
   exact (Φ.isOpenEmbedding_analyticAffineChartι hΦ _).isOpenMap _
-    ((Φ.subfanAnalyticChartMap hΦ S hS hface σ).isOpenMap _
+    ((Φ.subfanAnalyticChartMap S hS hface σ).isOpenMap _
       (hs.preimage (TopCat.Hom.hom _).continuous))
 
 /-- The map from the analytic realization of a subfan to the ambient analytic realization is an

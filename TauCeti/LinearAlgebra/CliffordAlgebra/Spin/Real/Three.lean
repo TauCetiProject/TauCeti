@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Quaternion.ComplexMatrix
 public import TauCeti.LinearAlgebra.CliffordAlgebra.RealForm.Three
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.EvenUnitary
 import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.ReflectionPair
@@ -17,6 +18,9 @@ The reversal-preserving algebra equivalence `Cl⁺(3,0) ≃ ℍ` transports the 
 to the group of unitary Hamilton quaternions. Every such quaternion is a product of two unit
 vectors, so its inverse image belongs to the Lipschitz group and the even unitary carrier is
 exactly Spin. The vector representation becomes conjugation on the pure quaternions.
+
+Realizing the unit quaternions as complex matrices turns this into the compact real form of the
+exceptional isomorphism `Spin₃ ≅ SL₂`, namely `Spin(3) ≅ SU(2)`.
 
 The general unitary transport mechanism lives in
 `CliffordAlgebra.evenUnitaryGroupEquivUnitaryOfAlgEquiv`; this file records its compact
@@ -32,6 +36,8 @@ three-dimensional specialization and closes the remaining Lipschitz condition.
   unit Hamilton quaternions.
 * `TauCeti.realSpinThreeEquivQuaternionUnitary_action` identifies the vector action with
   quaternion conjugation.
+* `TauCeti.realSpinThreeEquivSpecialUnitary` identifies the compact real Spin group with `SU(2)`,
+  by composing with `Quaternion.unitaryEquivSpecialUnitaryGroup`.
 
 ## Reference
 
@@ -454,6 +460,47 @@ theorem realSpinThreeEquivQuaternionUnitary_action
   rw [← map_vectorEven3, vectorEven3_spin_action, map_mul, map_mul,
     map_vectorEven3, realCliffordThreeZeroEvenEquivQuaternion_reverseEven,
     coe_realSpinThreeEquivQuaternionUnitary_apply]
+
+/-! ### `Spin(3) ≅ SU(2)` -/
+
+/-- **The compact real three-dimensional Spin group is `SU(2)`.** The identification with the unit
+Hamilton quaternions, composed with their realization as special unitary matrices of degree two
+(`Quaternion.unitaryEquivSpecialUnitaryGroup`), is the compact real form of the exceptional
+isomorphism `Spin₃ ≅ SL₂`. -/
+noncomputable def realSpinThreeEquivSpecialUnitary :
+    spinGroup (realCliffordForm 3 0) ≃* Matrix.specialUnitaryGroup (Fin 2) ℂ :=
+  realSpinThreeEquivQuaternionUnitary.trans Quaternion.unitaryEquivSpecialUnitaryGroup
+
+/-- The special unitary matrix of a Spin element is the matrix of the corresponding unit
+quaternion. -/
+@[simp]
+theorem coe_realSpinThreeEquivSpecialUnitary_apply (s : spinGroup (realCliffordForm 3 0)) :
+    (realSpinThreeEquivSpecialUnitary s : Matrix (Fin 2) (Fin 2) ℂ) =
+      Quaternion.toComplexMatrix (realSpinThreeEquivQuaternionUnitary s : ℍ[ℝ]) := by
+  simp [realSpinThreeEquivSpecialUnitary]
+
+/-- The Spin element underlying a special unitary matrix has the expected quaternion: the composite
+equivalence is determined by `Quaternion.toComplexMatrix` in both directions. -/
+theorem toComplexMatrix_coe_realSpinThreeEquivQuaternionUnitary_symm_apply
+    (M : Matrix.specialUnitaryGroup (Fin 2) ℂ) :
+    Quaternion.toComplexMatrix
+        ((realSpinThreeEquivQuaternionUnitary
+          (realSpinThreeEquivSpecialUnitary.symm M) : unitary ℍ[ℝ]) : ℍ[ℝ]) =
+      (M : Matrix (Fin 2) (Fin 2) ℂ) := by
+  rw [← coe_realSpinThreeEquivSpecialUnitary_apply]
+  exact congrArg Subtype.val (realSpinThreeEquivSpecialUnitary.apply_symm_apply M)
+
+/-- **The vector action of `SU(2)` on three-dimensional space is quaternion conjugation.** The
+degree-two special unitary matrix of a Spin element determines its rotation of `ℝ³` through the
+unit quaternion it is the matrix of. -/
+theorem realSpinThreeEquivSpecialUnitary_action
+    (s : spinGroup (realCliffordForm 3 0)) (v : Fin 3 → ℝ) :
+    Quaternion.toComplexMatrix (realCliffordThreeZeroPureQuaternionEquiv (s • v) : ℍ[ℝ]) =
+      (realSpinThreeEquivSpecialUnitary s : Matrix (Fin 2) (Fin 2) ℂ) *
+        Quaternion.toComplexMatrix (realCliffordThreeZeroPureQuaternionEquiv v : ℍ[ℝ]) *
+          star (realSpinThreeEquivSpecialUnitary s : Matrix (Fin 2) (Fin 2) ℂ) := by
+  rw [realSpinThreeEquivQuaternionUnitary_action s v, map_mul, map_mul,
+    coe_realSpinThreeEquivSpecialUnitary_apply, map_star]
 
 end TauCeti
 

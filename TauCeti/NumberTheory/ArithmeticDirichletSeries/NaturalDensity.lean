@@ -10,7 +10,7 @@ public import TauCeti.Analysis.SpecialFunctions.LogIntegral
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.AbelSummation
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Convergence
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Counting
-import TauCeti.NumberTheory.ArithmeticDirichletSeries.Prime.DedekindZeta
+import TauCeti.NumberTheory.ArithmeticDirichletSeries.Prime.PrimeIdealTheorem
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Prime.IdealZetaSum
 import TauCeti.Analysis.Asymptotics.Lemmas
 public import TauCeti.NumberTheory.NumberField.DirichletDensityBounds

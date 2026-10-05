@@ -50,6 +50,8 @@ namespace, where dot notation on that Mathlib type elaborates.
 * `LieIdeal.isNilpotent_iff_exists_lcs_eq_bot` and `LieIdeal.isNilpotent_iff_isNilpotent_ambient`:
   the two ambient readings of nilpotency of an ideal.
 * `LieIdeal.isNilpotentSup`: a sum of nilpotent ideals is nilpotent.
+* `LieIdeal.exists_mem_notMem_lie_mem_of_lt`: a proper subspace `T` of a nilpotent ideal `I` is
+  enlarged by some `x ∈ I` with `⁅x, I⁆ ⊆ T`.
 * `LieIdeal.le_nilradical` and `TauCeti.LieAlgebra.nilradical_le_iff`: the two halves of the
   universal property of the supremum, neither needing a Noetherian assumption.
 * `TauCeti.LieAlgebra.nilradicalIsNilpotent`: over a Noetherian Lie algebra the nilradical is
@@ -229,6 +231,34 @@ instance isNilpotentSup (I J : LieIdeal R L) [LieRing.IsNilpotent I] [LieRing.Is
   rcases le_or_gt k i with h | h
   · exact inf_le_left.trans ((lcs_antitone L I h).trans hk.le)
   · exact inf_le_right.trans ((lcs_antitone L J (by omega)).trans hl.le)
+
+/-- **A proper subspace of a nilpotent ideal is normalized by a new element of the ideal.** If a
+submodule `T` lies strictly below a nilpotent ideal `I`, some `x ∈ I` outside `T` satisfies
+`⁅x, I⁆ ⊆ T`.  The element is taken from the last term of `⁅I, ⁅I, … ⁅I, L⁆…⁆⁆` not contained in
+`T`.  When `R` is a field, `I` is finite-dimensional and `T` is a subalgebra, repeated application
+builds a flag of subalgebras from `T` up to `I`, each an ideal of the next with codimension one. -/
+theorem exists_mem_notMem_lie_mem_of_lt (I : LieIdeal R L) [LieRing.IsNilpotent I]
+    {T : Submodule R L} (hT : T < I.toSubmodule) :
+    ∃ x ∈ I, x ∉ T ∧ ∀ y ∈ I, ⁅x, y⁆ ∈ T := by
+  classical
+  obtain ⟨k, hk⟩ := (isNilpotent_iff_exists_lcs_eq_bot I).1 ‹_›
+  -- `P j` says that the `j`-th term of the series meets `I` inside `T`; it fails at `0`.
+  let P : ℕ → Prop := fun j ↦ ∀ z ∈ I.lcs L j, z ∈ I → z ∈ T
+  have hPk : P k := fun z hz _ ↦ by
+    rw [hk, LieSubmodule.mem_bot] at hz
+    exact hz ▸ T.zero_mem
+  have hP0 : ¬ P 0 := fun h ↦ hT.not_ge fun z hz ↦ h z (by simp) hz
+  obtain ⟨j, hj⟩ : ∃ j, Nat.find ⟨k, hPk⟩ = j + 1 :=
+    Nat.exists_eq_add_one.mpr (Nat.pos_of_ne_zero fun h ↦ hP0 (h ▸ Nat.find_spec ⟨k, hPk⟩))
+  have hPj : ¬ P j := Nat.find_min ⟨k, hPk⟩ (by omega)
+  have hPj1 : P (j + 1) := hj ▸ Nat.find_spec ⟨k, hPk⟩
+  simp only [P, not_forall] at hPj
+  obtain ⟨x, hxj, hxI, hxT⟩ := hPj
+  refine ⟨x, hxI, hxT, fun y hy ↦ ?_⟩
+  rw [← lie_skew]
+  refine T.neg_mem (hPj1 _ ?_ (I.lie_mem hxI))
+  rw [lcs_succ]
+  exact LieSubmodule.lie_mem_lie hy hxj
 
 end LieIdeal
 

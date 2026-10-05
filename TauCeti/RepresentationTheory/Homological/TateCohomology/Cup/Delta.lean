@@ -6,6 +6,7 @@ Authors: Claude
 module
 
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Cup.Product
+public import TauCeti.RepresentationTheory.Homological.TateCohomology.HomologySequence
 public import TauCeti.RepresentationTheory.Rep.TensorShortExact
 import TauCeti.Algebra.Homology.ShortComplex.ShortExact
 
@@ -27,6 +28,13 @@ over `k`, such as `0 → ℤ → ℚ → ℚ/ℤ → 0` against classes of the t
 connecting map produces the class `δχ ∈ H²(G, ℤ)` of a character `χ` in the Artin–Tate character
 formula.
 
+In the first variable, the rule `δ (x ∪ y) = δ x ∪ y` holds for every short exact sequence whose
+first map has a `k`-linear retraction (`TauCeti.TateCohomology.δ_cup_of_leftInverse`), where the
+connecting map on the left is that of the tensor product of the sequence on the right with the
+second factor. It is proved by the same dimension shifting in the second variable, using that the
+connecting maps of the `3 × 3` diagram of tensor products of two `k`-split short exact sequences
+anticommute (`TauCeti.TateCohomology.δ_comp_δ_eq_neg`).
+
 ## Main statements
 
 * `TauCeti.TateCohomology.cup_δ_of_leftInverse`: for a short exact sequence whose first map has a
@@ -35,6 +43,9 @@ formula.
 * `TauCeti.TateCohomology.cup_δ_of_flat`: if the underlying module of `M` is flat over `k`, then
   `x ∪ δ y = (-1)^p δ (x ∪ y)` for every short exact sequence, `x` of degree `p` and `y` of any
   degree `q`.
+* `TauCeti.TateCohomology.δ_cup_of_leftInverse`: the rule in the first variable: for a short exact
+  sequence whose first map has a `k`-linear retraction, `δ (x ∪ y) = δ x ∪ y` for `x` and `y` of
+  any degrees.
 
 ## References
 
@@ -301,5 +312,155 @@ theorem cup_δ_of_flat (M : Rep k G) [Module.Flat k M.V] {S : ShortComplex (Rep 
   -- which is `y` by definition; it is not rewritten away because the identity is stated on `T.X₃`,
   -- which is `N₃` only up to unfolding `T`.
   exact e₁
+
+/-! ### The cup product rule in the first variable -/
+
+/- Proof of `δ_cup_of_leftInverse` for `S : 0 → M₁ → M₂ → M₃ → 0` and `y` of degree `q`. For
+`q = 0` it is `δ_cupH0`. The general case follows by induction on `q`, upwards through the dimension
+shift `0 → N → Coind_⊥^G N → dimensionShiftUp N → 0` and downwards through
+`0 → dimensionShiftDown N → Ind_⊥^G N → N → 0`, for which `x ∪ δ y = (-1)^p δ (x ∪ y)` holds by
+definition of the cup product. Both steps compare the connecting maps of the `3 × 3` diagram of
+tensor products of the terms of `S` and of the dimension-shifting sequence, whose rows and columns
+are short exact because both sequences split `k`-linearly. Its two composites of connecting maps
+differ by a sign (`TauCeti.TateCohomology.δ_comp_δ_eq_neg`), which accounts for the change of the
+sign `(-1)^p` of the rule for `x` to the sign `(-1)^(p + 1)` of the rule for `δ x`. -/
+
+/-- The `3 × 3` diagram of tensor products of the terms of `S` and of `T`: its rows are the tensor
+products of `T` on the left with the terms of `S`, and its columns are the tensor products of `S`
+on the right with the terms of `T`. -/
+private def tensorDiagram (S T : ShortComplex (Rep k G)) :
+    ShortComplex (ShortComplex (Rep k G)) :=
+  ShortComplex.mk (T.mapNatTrans ((tensoringLeft (Rep k G)).map S.f))
+    (T.mapNatTrans ((tensoringLeft (Rep k G)).map S.g)) (by
+      ext <;> simp [← comp_whiskerRight])
+
+/-- The connecting maps of the tensor products of two short exact sequences `S` and `T` that split
+`k`-linearly anticommute: the two composites `Ĥⁿ(G, S₃ ⊗ T₃) ⟶ Ĥⁿ⁺²(G, S₁ ⊗ T₁)` differ by a
+sign. -/
+private theorem δ_comp_δ_tensor {S T : ShortComplex (Rep k G)} (hS : S.ShortExact)
+    {r : S.X₂.V →ₗ[k] S.X₁.V} (hr : Function.LeftInverse r S.f.hom) (hT : T.ShortExact)
+    {r' : T.X₂.V →ₗ[k] T.X₁.V} (hr' : Function.LeftInverse r' T.f.hom) (n : ℤ)
+    (c : tateCohomology (S.X₃ ⊗ T.X₃) n) :
+    _root_.TateCohomology.δ (haveI := hS.epi_g;
+      Rep.shortExact_map_tensorRight_of_leftInverse hS.exact T.X₁ hr) (n + 1)
+        (_root_.TateCohomology.δ (haveI := hT.epi_g;
+          Rep.shortExact_map_tensorLeft_of_leftInverse hT.exact S.X₃ hr') n c) =
+      -_root_.TateCohomology.δ (haveI := hT.epi_g;
+        Rep.shortExact_map_tensorLeft_of_leftInverse hT.exact S.X₁ hr') (n + 1)
+          (_root_.TateCohomology.δ (haveI := hS.epi_g;
+            Rep.shortExact_map_tensorRight_of_leftInverse hS.exact T.X₃ hr) n c) := by
+  have := hS.epi_g
+  have := hT.epi_g
+  have key := δ_comp_δ_eq_neg (tensorDiagram S T)
+    (Rep.shortExact_map_tensorLeft_of_leftInverse hT.exact S.X₁ hr')
+    (Rep.shortExact_map_tensorLeft_of_leftInverse hT.exact S.X₂ hr')
+    (Rep.shortExact_map_tensorLeft_of_leftInverse hT.exact S.X₃ hr')
+    (Rep.shortExact_map_tensorRight_of_leftInverse hS.exact T.X₁ hr)
+    (Rep.shortExact_map_tensorRight_of_leftInverse hS.exact T.X₂ hr)
+    (Rep.shortExact_map_tensorRight_of_leftInverse hS.exact T.X₃ hr) n
+  exact ConcreteCategory.congr_hom key c
+
+variable {S : ShortComplex (Rep k G)} (hS : S.ShortExact) {r : S.X₂.V →ₗ[k] S.X₁.V}
+  (hr : Function.LeftInverse r S.f.hom)
+include hS hr
+
+/-- The rule `δ (x ∪ y) = δ x ∪ y` for a short exact sequence whose first map has a `k`-linear
+retraction, when `y` has degree zero. -/
+private theorem δ_cup_of_leftInverse_zero (N : Rep k G) {p n : ℤ} (h : p + 0 = n)
+    (x : tateCohomology S.X₃ p) (y : tateCohomology N 0) :
+    _root_.TateCohomology.δ (haveI := hS.epi_g;
+      Rep.shortExact_map_tensorRight_of_leftInverse hS.exact N hr) n (cup S.X₃ N p 0 n h x y) =
+      cup S.X₁ N (p + 1) 0 (n + 1) (by omega) (_root_.TateCohomology.δ hS p x) y := by
+  obtain rfl : p = n := by omega
+  rw [cup_zero_right, cup_zero_right]
+  exact δ_cupH0 hS _ p x y
+
+/-- The upward step in the proof of `δ_cup_of_leftInverse`: if the rule holds in degree `q ≥ 0` for
+the upward shift of `N`, then it holds in degree `q + 1` for `N`. -/
+private theorem δ_cup_of_leftInverse_add_one (N : Rep k G) {p q n : ℤ} (hq : 0 ≤ q)
+    (h : p + q = n) (x : tateCohomology S.X₃ p)
+    (ih : ∀ y : tateCohomology (dimensionShiftUp N) q,
+      _root_.TateCohomology.δ (haveI := hS.epi_g;
+        Rep.shortExact_map_tensorRight_of_leftInverse hS.exact (dimensionShiftUp N) hr) n
+          (cup S.X₃ (dimensionShiftUp N) p q n h x y) =
+        cup S.X₁ (dimensionShiftUp N) (p + 1) q (n + 1) (by omega)
+          (_root_.TateCohomology.δ hS p x) y)
+    (y : tateCohomology N (q + 1)) :
+    _root_.TateCohomology.δ (haveI := hS.epi_g;
+      Rep.shortExact_map_tensorRight_of_leftInverse hS.exact N hr) (n + 1)
+        (cup S.X₃ N p (q + 1) (n + 1) (by omega) x y) =
+      cup S.X₁ N (p + 1) (q + 1) (n + 1 + 1) (by omega) (_root_.TateCohomology.δ hS p x) y := by
+  obtain ⟨y, rfl⟩ : ∃ y', (dimensionShiftUpIso N q).hom y' = y :=
+    ⟨(dimensionShiftUpIso N q).inv y, Iso.inv_hom_id_apply _ _⟩
+  have hD : (ShortComplex.mk (coindBotUnit N) (dimensionShiftUpπ N)
+      (coindBotUnit_comp_dimensionShiftUpπ N)).ShortExact := by
+    simpa only [dimensionShiftUpSES_def] using dimensionShiftUpSES_shortExact N
+  rw [cup_dimensionShiftUpIso_hom S.X₃ N hq h rfl,
+    cup_dimensionShiftUpIso_hom S.X₁ N hq (by omega : p + 1 + q = n + 1) rfl, ← ih,
+    map_zsmul_unit, Int.negOnePow_succ, Units.neg_smul, ← smul_neg, tensorDimensionShiftUpIso_hom,
+    tensorDimensionShiftUpIso_hom]
+  exact congrArg (p.negOnePow • ·)
+    (δ_comp_δ_tensor hS hr hD (leftInverse_coindBotUnit N) n (cup S.X₃ _ p q n h x y))
+
+/-- The downward step in the proof of `δ_cup_of_leftInverse`: if the rule holds in degree `q + 1`
+for the downward shift of `N`, where `q < 0`, then it holds in degree `q` for `N`. -/
+private theorem δ_cup_of_leftInverse_of_add_one (N : Rep k G) {p q n : ℤ} (hq : q < 0)
+    (h : p + q = n) (x : tateCohomology S.X₃ p)
+    (ih : ∀ y : tateCohomology (dimensionShiftDown N) (q + 1),
+      _root_.TateCohomology.δ (haveI := hS.epi_g;
+        Rep.shortExact_map_tensorRight_of_leftInverse hS.exact (dimensionShiftDown N) hr) (n + 1)
+          (cup S.X₃ (dimensionShiftDown N) p (q + 1) (n + 1) (by omega) x y) =
+        cup S.X₁ (dimensionShiftDown N) (p + 1) (q + 1) (n + 1 + 1) (by omega)
+          (_root_.TateCohomology.δ hS p x) y)
+    (y : tateCohomology N q) :
+    _root_.TateCohomology.δ (haveI := hS.epi_g;
+      Rep.shortExact_map_tensorRight_of_leftInverse hS.exact N hr) n (cup S.X₃ N p q n h x y) =
+      cup S.X₁ N (p + 1) q (n + 1) (by omega) (_root_.TateCohomology.δ hS p x) y := by
+  have hD : (ShortComplex.mk (dimensionShiftDownι N) (indBotCounit N)
+      (dimensionShiftDownι_comp_indBotCounit N)).ShortExact := by
+    simpa only [dimensionShiftDownSES_def] using dimensionShiftDownSES_shortExact N
+  obtain ⟨ρ, hρ⟩ := Rep.exists_leftInverse_of_rightInverse hD.exact (rightInverse_indBotCounit N)
+  refine (tensorDimensionShiftDownIso N S.X₁ (n + 1) (n + 1 + 1) rfl).toLinearEquiv.injective ?_
+  rw [Iso.toLinearEquiv_apply, Iso.toLinearEquiv_apply]
+  have key := δ_comp_δ_tensor hS hr hD hρ n (cup S.X₃ N p q n h x y)
+  have e := cup_dimensionShiftDownIso_hom S.X₁ N hq (by omega : p + 1 + q = n + 1) rfl
+    (_root_.TateCohomology.δ hS p x) y
+  rw [← ih, cup_dimensionShiftDownIso_hom S.X₃ N hq h rfl x y, map_zsmul_unit, Int.negOnePow_succ,
+    Units.neg_smul] at e
+  replace e := congrArg (p.negOnePow • ·) e
+  simp only [negOnePow_smul_negOnePow_smul, smul_neg] at e
+  rw [tensorDimensionShiftDownIso_hom, tensorDimensionShiftDownIso_hom] at e
+  rw [tensorDimensionShiftDownIso_hom]
+  exact neg_inj.1 (key.symm.trans e)
+
+/-- **The cup product rule in the first variable for a split short exact sequence.** For a short
+exact sequence `S` whose first map has a `k`-linear retraction, `x` of degree `p` and `y` of any
+degree `q`, `δ (x ∪ y) = δ x ∪ y`, where the first `δ` is the connecting map of the tensor product
+of `S` on the right with `N`, which is short exact by
+`Rep.shortExact_map_tensorRight_of_leftInverse`. Together with the rule
+`x ∪ δ y = (-1)^p δ (x ∪ y)` in the second variable (`TauCeti.TateCohomology.cup_δ_of_leftInverse`),
+this is the compatibility of the cup product with connecting maps in both variables. -/
+theorem δ_cup_of_leftInverse (N : Rep k G) {p q n : ℤ} (h : p + q = n)
+    (x : tateCohomology S.X₃ p) (y : tateCohomology N q) :
+    _root_.TateCohomology.δ (haveI := hS.epi_g;
+      Rep.shortExact_map_tensorRight_of_leftInverse hS.exact N hr) n (cup S.X₃ N p q n h x y) =
+      cup S.X₁ N (p + 1) q (n + 1) (by omega) (_root_.TateCohomology.δ hS p x) y := by
+  rcases le_or_gt 0 q with hq | hq
+  · induction q, hq using Int.leInduction generalizing N n with
+    | base => exact δ_cup_of_leftInverse_zero hS hr N h x y
+    | succ q hq ih =>
+      obtain rfl : n = p + q + 1 := by omega
+      exact δ_cup_of_leftInverse_add_one hS hr N hq rfl x (ih (dimensionShiftUp N) rfl) y
+  · obtain ⟨m, rfl⟩ := Int.eq_negSucc_of_lt_zero hq
+    clear hq
+    induction m generalizing N n with
+    | zero =>
+      -- `Int.negSucc 0 + 1` is `0` by definition, so the hypothesis of the step is the degree-zero
+      -- case.
+      exact δ_cup_of_leftInverse_of_add_one hS hr N (Int.negSucc_lt_zero 0) h x
+        (δ_cup_of_leftInverse_zero hS hr (dimensionShiftDown N) (by omega) x) y
+    | succ m ih =>
+      exact δ_cup_of_leftInverse_of_add_one hS hr N (Int.negSucc_lt_zero _) h x
+        (ih (dimensionShiftDown N) (by omega)) y
 
 end TauCeti.TateCohomology

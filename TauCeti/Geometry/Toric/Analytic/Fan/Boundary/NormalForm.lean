@@ -66,16 +66,16 @@ theorem analyticAffineChartι_mem_analyticBoundaryComponent_iff (σ : Φ.cones) 
         ((isRegular_iff.mp hΦ) σ.1 σ.2).toIsToricCone hb x).1 (ρ.toToricRay Φ σ h) = 0 := by
   have hσ := (isRegular_iff.mp hΦ) σ.1 σ.2
   by_cases h : ρ.toCone ≤ σ
-  · have hF : (⟨ρ.toCone.1, Φ.isFaceOf_of_le σ.2 ρ.toCone.2 h⟩ : σ.1.Face) =
+  · have hF : Φ.orbitFace h =
         (ρ.toToricRay Φ σ h).1 :=
-      PointedCone.Face.ext fun v ↦
-        (Iff.of_eq (congrArg (v ∈ ·) (Ray.toPointedCone_toToricRay Φ ρ σ h))).symm
+      PointedCone.Face.ext fun v ↦ SetLike.ext_iff.mp
+        ((Φ.coe_orbitFace h).trans (Ray.toPointedCone_toToricRay Φ ρ σ h).symm) v
     rw [exists_prop_of_true h]
     refine (Set.ext_iff.1 (Φ.preimage_analyticAffineChartι_analyticBoundaryComponent hΦ h) x).trans
       ?_
     rw [hF]
     exact Set.ext_iff.1 (closure_affineConeOrbit_toricRay_eq_setOf_coneChartEquiv_fst_eq_zero
-      Φ.lattice hσ hb (ρ.toToricRay Φ σ h) (analyticChartGenerators Φ σ hσ).2) x
+      Φ.lattice hσ hb (ρ.toToricRay Φ σ h) (analyticChartGenerators Φ σ).2) x
   · refine iff_of_false (fun hx ↦ ?_) fun ⟨h', _⟩ ↦ h h'
     exact Set.notMem_empty x <| (Set.ext_iff.1
       (Φ.preimage_analyticAffineChartι_analyticBoundaryComponent_of_not_le hΦ h) x).1 hx
@@ -113,7 +113,7 @@ theorem exists_partialDiffeomorph_analyticBoundaryComponent_normalForm
       (Fin (Module.finrank ℤ N) → ℂ) :=
     ((LinearEquiv.sumArrowLequivProdArrow _ _ ℂ ℂ).symm.trans
       (LinearEquiv.funCongrLeft ℂ ℂ eN.symm)).toContinuousLinearEquiv
-  let g := (analyticChartGenerators Φ σ hσ).2
+  let g := (analyticChartGenerators Φ σ).2
   let _ := affinePointTopology g
   let _ := coneChartedSpace Φ.lattice hσ.toIsToricCone hB κ g
   have := isManifold_coneChartedSpace Φ.lattice hσ.toIsToricCone hB κ g n

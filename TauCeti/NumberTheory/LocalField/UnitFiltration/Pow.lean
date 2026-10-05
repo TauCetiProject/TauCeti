@@ -227,37 +227,20 @@ theorem map_powMonoidHom_unitFiltration_of_prime {p : ℕ} (hp : p.Prime) (hpK :
       unitFiltration K (i + natCastValuation K p hpK) := by
   set e := natCastValuation K p hpK
   set P := (unitFiltration K i).map (powMonoidHom p)
-  refine le_antisymm (map_powMonoidHom_unitFiltration_le_of_prime hp hpK hi) ?_
-  -- Iterating the one-step approximation, `U(K, i + e)` lies in `P · U(K, i + e + k)` for all `k`.
-  have hchain : ∀ k, unitFiltration K (i + e) ≤ P ⊔ unitFiltration K (i + e + k) := by
-    intro k
-    induction k with
-    | zero => exact le_sup_right
-    | succ k ih =>
-      have hstep := unitFiltration_le_map_powMonoidHom_sup_of_prime hp hpK (j := i + k)
-        (hi.trans_le (Nat.mul_le_mul_left _ (Nat.le_add_right i k)))
-      have hmono : (unitFiltration K (i + k)).map (powMonoidHom p) ≤ P :=
-        Subgroup.map_mono (unitFiltration_antitone (Nat.le_add_right i k))
-      calc unitFiltration K (i + e)
-          ≤ P ⊔ unitFiltration K (i + e + k) := ih
-        _ ≤ P ⊔ (P ⊔ unitFiltration K (i + e + (k + 1))) := by
-          refine sup_le_sup_left ?_ _
-          -- `hstep` is stated at depth `i + k + e`; reorder it to the depths `i + e + k` of `ih`.
-          rw [Nat.add_right_comm i k e] at hstep
-          rw [← add_assoc (i + e) k 1]
-          exact hstep.trans (sup_le_sup_right hmono _)
-        _ = P ⊔ unitFiltration K (i + e + (k + 1)) := by rw [← sup_assoc, sup_idem]
-  -- Hence `U(K, i + e)` lies in `P · U(K,m)` for every `m`, so in the closure of `P`, which is `P`
-  -- because `P` is the image of the compact set `U(K,i)` in the Hausdorff group `Kˣ`.
   have hP : IsClosed (P : Set Kˣ) := by
     simpa [P, Subgroup.coe_map] using
       ((isCompact_unitFiltration i).image (continuous_pow p)).isClosed
-  intro w hw
-  rw [← SetLike.mem_coe, ← hP.closure_eq,
-    ← hasBasis_nhds_one_unitFiltration.iInter_mul_right_eq_closure, Set.mem_iInter₂]
-  intro m _
-  rw [← Subgroup.mul_normal]
-  exact sup_le_sup_left (unitFiltration_antitone (Nat.le_add_left m (i + e))) _ (hchain m hw)
+  refine le_antisymm (map_powMonoidHom_unitFiltration_le_of_prime hp hpK hi)
+    (unitFiltration_le_of_isClosed_of_le_sup hP ?_)
+  intro n hn
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le hn
+  have hstep := unitFiltration_le_map_powMonoidHom_sup_of_prime hp hpK (j := i + k)
+    (hi.trans_le (Nat.mul_le_mul_left _ (Nat.le_add_right i k)))
+  have hmono : (unitFiltration K (i + k)).map (powMonoidHom p) ≤ P :=
+    Subgroup.map_mono (unitFiltration_antitone (Nat.le_add_right i k))
+  -- The one-step approximation uses depth `i + k + e`; the target uses `i + e + k`.
+  rw [Nat.add_right_comm i k e] at hstep
+  exact hstep.trans (sup_le_sup_right hmono _)
 
 /-- **Deep units carry no `p`-torsion.** For a prime `p` with `(p : K) ≠ 0` and a depth `i` with
 `v_K(p) < (p - 1) * i`, the only `p`-th root of unity in `U(K,i)` is `1`. -/

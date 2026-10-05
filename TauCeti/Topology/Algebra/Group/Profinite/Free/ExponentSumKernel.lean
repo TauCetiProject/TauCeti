@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Topology.Algebra.Group.LowerCentralSeries.Graded.Subgroup
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.BasisModification
-public import TauCeti.Topology.Algebra.Group.Profinite.ProP.CharacterKernel
+public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Character.Kernel
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.PadicUnits
 
 /-!

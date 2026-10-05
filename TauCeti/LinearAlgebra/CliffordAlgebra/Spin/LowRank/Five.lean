@@ -78,11 +78,8 @@ theorem evenUnitaryGroup_le_lipschitzGroup_of_finrank_eq_five (Q : QuadraticForm
       (prod_map_ι_mem_center_of_odd_length hl (by rw [hlen]; decide) hspan) z).symm
   have hsq : ω * ω = algebraMap K _ ((-1 : K) ^ l.length.choose 2 * (l.map Q).prod) :=
     prod_map_ι_sq_scalar hl
-  have hs : (-1 : K) ^ l.length.choose 2 * (l.map Q).prod ≠ 0 := by
-    refine mul_ne_zero (pow_ne_zero _ (neg_ne_zero.mpr one_ne_zero)) (List.prod_ne_zero ?_)
-    intro hmem
-    obtain ⟨v, hv, hv0⟩ := List.mem_map.mp hmem
-    exact haniso v hv hv0
+  have hs : (-1 : K) ^ l.length.choose 2 * (l.map Q).prod ≠ 0 :=
+    neg_one_pow_choose_two_mul_prod_map_ne_zero haniso
   -- A vector proportional to the central `ω` commutes with two orthogonal basis vectors, so it
   -- vanishes.
   have h0 : 0 < l.length := by omega

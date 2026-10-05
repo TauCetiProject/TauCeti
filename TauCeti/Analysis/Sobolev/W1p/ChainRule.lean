@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Sobolev.W1p.LocalApproximation
+public import TauCeti.Analysis.Sobolev.Wkp.LocalApproximation
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Limit
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Local
 public import TauCeti.MeasureTheory.Function.Lp.L1Convergence
@@ -40,8 +40,8 @@ by approximation, and the *order* of the two limits matters.
 
 * First, `u` is approximated. On a subdomain `V` relatively compact in `Ω`, test functions on `Ω`
   are dense in `W^{1,p}(V)` (`TauCeti.W1p.restrictL_mem_closure_range_ofTestFunctionₗ`), the
-  chain rule is classical for them, and it passes to the limit because `V` has finite measure and
-  weak derivatives are stable under `L¹` limits
+  chain rule is classical for them, and it passes to the limit because `V` has finite measure
+  and weak derivatives are stable under `L¹` limits
   (`TauCeti.hasWeakFDerivOn_of_tendsto_lintegral_enorm_sub`).  Here `F'` must be *continuous*: the
   convergence `F'(uₖ) → F'(u)` is what carries the derivative.  Locality of the weak derivative
   then returns the statement to `Ω`.

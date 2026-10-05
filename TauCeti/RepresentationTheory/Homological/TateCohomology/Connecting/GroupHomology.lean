@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Homology.Embedding.HomEquiv
 public import Mathlib.RepresentationTheory.Homological.GroupHomology.LongExactSequence
-public import TauCeti.Algebra.Homology.Embedding.ExtendHomologySequence
+public import TauCeti.Algebra.Homology.Embedding.ExtendHomology.Sequence
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Functoriality
 
 /-!

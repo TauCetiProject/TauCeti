@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Dynamic.Parabolic
 public import Mathlib.GroupTheory.GroupExtension.Basic
+import Mathlib.Tactic.Group
 
 /-!
 # The dynamic Levi decomposition as a semidirect product

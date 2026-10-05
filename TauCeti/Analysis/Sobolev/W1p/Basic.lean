@@ -416,6 +416,15 @@ theorem W1p.value_apply_ae (u : W1p mu Omega p) :
   exact Sobolev1JetLp.value_apply_ae (u : Sobolev1JetLp mu Omega p)
 
 omit [FiniteDimensional ℝ E] in
+/-- The value of a finite sum of Sobolev functions is almost everywhere the sum of their values. -/
+theorem W1p.value_finsetSum_ae {ι : Type*} (s : Finset ι) (u : ι → W1p mu Omega p) :
+    ∀ᵐ x ∂mu.restrict Omega, W1p.value (∑ j ∈ s, u j) x = ∑ j ∈ s, W1p.value (u j) x := by
+  have h : W1p.value (∑ j ∈ s, u j) = ∑ j ∈ s, W1p.value (u j) := by
+    simp only [← W1p.valueL_apply, map_sum]
+  filter_upwards [Lp.coeFn_fun_finsetSum s fun j => W1p.value (u j)] with x hx
+  rw [h, hx]
+
+omit [FiniteDimensional ℝ E] in
 /-- As for `TauCeti.W1p.value_coe`: the Sobolev gradient component is the gradient component of
 the underlying ambient jet. -/
 theorem W1p.gradient_coe (u : W1p mu Omega p) :
@@ -707,6 +716,45 @@ theorem W1p.ofExponentLE_ofExponentLE {r : ENNReal} [Fact (1 ≤ r)]
       (W1p.value_ofExponentLE_ae (hpq.trans hqr) u).symm
 
 end Exponent
+
+omit [FiniteDimensional ℝ E] in
+/-- Convergence in the first-order Sobolev norm is equivalent to convergence of both the
+value and the weak gradient in `Lᵖ`. -/
+theorem W1p.tendsto_iff_value_gradient {I : Type*} {l : Filter I}
+    {v : I → W1p mu Omega p} {u : W1p mu Omega p} :
+    Filter.Tendsto v l (nhds u) ↔
+      Filter.Tendsto (fun i => W1p.value (v i)) l (nhds (W1p.value u)) ∧
+      Filter.Tendsto (fun i => W1p.gradient (v i)) l (nhds (W1p.gradient u)) := by
+  constructor
+  · intro h
+    exact ⟨(W1p.valueL.continuous.tendsto u).comp h,
+      (W1p.gradientL.continuous.tendsto u).comp h⟩
+  · rintro ⟨hv, hg⟩
+    let a : ℝ →L[ℝ] Sobolev1Jet E :=
+      (WithLp.prodContinuousLinearEquiv 2 ℝ ℝ E).symm.toContinuousLinearMap.comp
+        (ContinuousLinearMap.inl ℝ ℝ E)
+    let b : E →L[ℝ] Sobolev1Jet E :=
+      (WithLp.prodContinuousLinearEquiv 2 ℝ ℝ E).symm.toContinuousLinearMap.comp
+        (ContinuousLinearMap.inr ℝ ℝ E)
+    have heq (w : W1p mu Omega p) :
+        w.1 = a.compLpL p (mu.restrict Omega) (W1p.value w) +
+          b.compLpL p (mu.restrict Omega) (W1p.gradient w) := by
+      apply Lp.ext
+      filter_upwards [a.coeFn_compLpL (W1p.value w), b.coeFn_compLpL (W1p.gradient w),
+        Lp.coeFn_add (a.compLpL p (mu.restrict Omega) (W1p.value w))
+          (b.compLpL p (mu.restrict Omega) (W1p.gradient w)),
+        W1p.value_apply_ae w, W1p.gradient_apply_ae w] with x ha hb hab hval hgrad
+      rw [hab, Pi.add_apply, ha, hb]
+      apply (WithLp.prodContinuousLinearEquiv 2 ℝ ℝ E).injective
+      simp only [WithLp.prodContinuousLinearEquiv_apply, ContinuousLinearMap.comp_apply,
+        ContinuousLinearMap.inl_apply, ContinuousLinearEquiv.coe_coe,
+        WithLp.prodContinuousLinearEquiv_symm_apply, ContinuousLinearMap.inr_apply,
+        WithLp.ofLp_add, Prod.mk_add_mk, add_zero, zero_add, a, b]
+      exact Prod.ext hval.symm hgrad.symm
+    rw [tendsto_subtype_rng]
+    simp_rw [heq]
+    exact ((a.compLpL p (mu.restrict Omega)).continuous.tendsto _ |>.comp hv).add
+      ((b.compLpL p (mu.restrict Omega)).continuous.tendsto _ |>.comp hg)
 
 /-- `W^{1,p}(Ω)` is complete in its value-gradient graph norm. -/
 instance : CompleteSpace (W1p mu Omega p) :=

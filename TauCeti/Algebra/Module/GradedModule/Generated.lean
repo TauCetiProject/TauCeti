@@ -148,6 +148,16 @@ theorem linearMap_eq_zero_iff_of_isGeneratedInDegree (G : InternalGrading R M) {
     f = 0 ↔ ∀ x : G.piece d, f x = 0 :=
   Submodule.linearMap_eq_zero_iff_of_span_eq_top f hG
 
+/-- A homogeneous map from a module generated in degree `d` vanishes when the target piece
+in degree `d + δ` vanishes. -/
+theorem linearMap_eq_zero_of_isGeneratedInDegree (G : InternalGrading R M) {d δ : ℤ}
+    (hG : G.IsGeneratedInDegree A d) [Module R N] {H : InternalGrading R N}
+    {f : M →ₗ[A] N} (hf : LinearMap.IsHomogeneous f G.piece H.piece δ)
+    (hH : H.piece (d + δ) = ⊥) : f = 0 := by
+  apply (G.linearMap_eq_zero_iff_of_isGeneratedInDegree hG f).2
+  intro x
+  exact (Submodule.eq_bot_iff _).1 hH _ (hf.map_mem x.property)
+
 section DirectSum
 
 variable {ι : Type*} {M : ι → Type v}

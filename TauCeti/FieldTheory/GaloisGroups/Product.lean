@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.Galois.FiberProduct
+public import Mathlib.FieldTheory.LinearDisjoint
 public import Mathlib.FieldTheory.PolynomialGaloisGroup
 public import Mathlib.FieldTheory.SeparableClosure
 
@@ -36,6 +37,10 @@ Separability is what makes `L/F` Galois, which the description of the image uses
   is the fibre product of the restriction maps `p.Gal →* Gal((L_p ∩ L_q)/F)` and
   `q.Gal →* Gal((L_p ∩ L_q)/F)`.
 * `Polynomial.Gal.restrictProd_surjective_iff`: `restrictProd` is surjective iff `L_p ∩ L_q = F`.
+* `Polynomial.Gal.restrictProd_surjective_iff_linearDisjoint`: for splitting fields, this is
+  equivalent to linear disjointness.
+* `Polynomial.Gal.restrictProdMulEquiv`: linearly disjoint splitting fields give an isomorphism
+  from the Galois group of the product to the product of the two Galois groups.
 -/
 
 public section
@@ -161,5 +166,54 @@ theorem _root_.Polynomial.Gal.restrictProd_surjective_iff (hp : p.Separable) (hq
   have := hp.isGalois_splittingField_mul hq
   rw [Gal.restrictProd_eq_restrict_prod_restrict p q (mul_ne_zero hp.ne_zero hq.ne_zero)]
   exact AlgEquiv.restrictNormalHom_prod_restrictNormalHom_surjective_iff
+
+/-- For separable `p` and `q`, `Polynomial.Gal.restrictProd` is surjective exactly when the
+images of their splitting fields in the splitting field of `p * q` are linearly disjoint over
+the base field. -/
+theorem _root_.Polynomial.Gal.restrictProd_surjective_iff_linearDisjoint
+    (hp : p.Separable) (hq : q.Separable)
+    [Fact ((p.map (algebraMap F (p * q).SplittingField)).Splits)]
+    [Fact ((q.map (algebraMap F (p * q).SplittingField)).Splits)] :
+    Function.Surjective (Gal.restrictProd p q) ↔
+      (IsScalarTower.toAlgHom F p.SplittingField (p * q).SplittingField).fieldRange.LinearDisjoint
+        (IsScalarTower.toAlgHom F q.SplittingField (p * q).SplittingField).fieldRange := by
+  let _ : IsGalois F p.SplittingField := IsGalois.of_separable_splitting_field hp
+  let _ : IsGalois F
+      (IsScalarTower.toAlgHom F p.SplittingField
+        (p * q).SplittingField).fieldRange :=
+    IsGalois.of_algEquiv
+      (IsScalarTower.toAlgHom F p.SplittingField
+        (p * q).SplittingField).equivFieldRange
+  rw [Gal.restrictProd_surjective_iff hp hq,
+    IntermediateField.LinearDisjoint.iff_inf_eq_bot]
+
+/-- **The Galois group of a product with linearly disjoint splitting fields.** For separable
+`p` and `q` whose splitting fields are linearly disjoint inside the splitting field of `p * q`,
+joint restriction is an isomorphism
+`(p * q).Gal ≃* p.Gal × q.Gal`. -/
+noncomputable def _root_.Polynomial.Gal.restrictProdMulEquiv
+    (hp : p.Separable) (hq : q.Separable)
+    [Fact ((p.map (algebraMap F (p * q).SplittingField)).Splits)]
+    [Fact ((q.map (algebraMap F (p * q).SplittingField)).Splits)]
+    (h :
+      (IsScalarTower.toAlgHom F p.SplittingField (p * q).SplittingField).fieldRange.LinearDisjoint
+        (IsScalarTower.toAlgHom F q.SplittingField (p * q).SplittingField).fieldRange) :
+    (p * q).Gal ≃* p.Gal × q.Gal :=
+  MulEquiv.ofBijective (Gal.restrictProd p q)
+    ⟨Gal.restrictProd_injective p q,
+      (Gal.restrictProd_surjective_iff_linearDisjoint hp hq).2 h⟩
+
+/-- The forward map of `Polynomial.Gal.restrictProdMulEquiv` is joint restriction. -/
+@[simp]
+theorem _root_.Polynomial.Gal.restrictProdMulEquiv_apply
+    (hp : p.Separable) (hq : q.Separable)
+    [Fact ((p.map (algebraMap F (p * q).SplittingField)).Splits)]
+    [Fact ((q.map (algebraMap F (p * q).SplittingField)).Splits)]
+    (h :
+      (IsScalarTower.toAlgHom F p.SplittingField (p * q).SplittingField).fieldRange.LinearDisjoint
+        (IsScalarTower.toAlgHom F q.SplittingField (p * q).SplittingField).fieldRange)
+    (g : (p * q).Gal) :
+    Gal.restrictProdMulEquiv hp hq h g = Gal.restrictProd p q g :=
+  (rfl)
 
 end TauCeti

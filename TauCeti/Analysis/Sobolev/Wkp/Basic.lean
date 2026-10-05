@@ -32,15 +32,25 @@ and the squared norm of the highest weak derivative.
 
 The bundled stage machinery `TauCeti.IteratedGradientModel`, `TauCeti.iteratedGradientModel`,
 `TauCeti.SobolevStage`, `TauCeti.firstSobolevStage`, `TauCeti.SobolevStage.next`, and
-`TauCeti.sobolevStage` is public and reducible on purpose: it is what indexes the types
+`TauCeti.sobolevStage` is public on purpose: it is what indexes the types
 `TauCeti.IteratedGradient` and `TauCeti.Wkp`, so their normed, complete structures and the order
-`0` and `1` boundary cases are recovered by unfolding it rather than by transport.  The shortcut
-instances are provided at both the bundled-stage and `Wkp` indexings so instance search need not
-rederive these structures through the recursion.  The projections below are sealed instead, and
-are used through their characteristic equations `TauCeti.Wkp.lowerOrder_zero`,
-`TauCeti.Wkp.lowerOrder_succ`, `TauCeti.Wkp.iteratedGradient_zero`,
-`TauCeti.Wkp.iteratedGradient_succ`, `TauCeti.Wkp.value_zero`, and
-`TauCeti.Wkp.value_succ`.
+`0` and `1` boundary cases are recovered by unfolding it rather than by transport.
+`TauCeti.iteratedGradientModel`, `TauCeti.firstSobolevStage`, `TauCeti.SobolevStage.next`, and
+`TauCeti.Wkp` are reducible.  The recursion `TauCeti.sobolevStage` is exposed but semireducible,
+so that at a concrete order instance search stops at `(sobolevStage j).Space` and finds the
+`TauCeti.SobolevStage` shortcut instances keyed there.  The shortcut instances are provided at both
+the bundled-stage and `Wkp` indexings so instance search need not rederive these structures
+through the recursion.  The identifications of `Wkp … 1` with `TauCeti.W1p` and of
+`Wkp … (k + 2)` with a `TauCeti.WeakDerivStep` are therefore definitional but not reducible, and
+`rw` and `simp` do not unfold `TauCeti.sobolevStage` to match across them in either direction: a
+lemma stated for `TauCeti.W1p` or `TauCeti.WeakDerivStep` applied to a `Wkp … 1` or
+`Wkp … (k + 2)` term, and a `Wkp`-indexed lemma applied to a term typed as `TauCeti.W1p` or
+`TauCeti.WeakDerivStep`, must both be given their argument explicitly.
+The projections below are sealed instead, and are used through their characteristic equations
+`TauCeti.Wkp.lowerOrder_zero`, `TauCeti.Wkp.lowerOrder_succ`, `TauCeti.Wkp.iteratedGradient_zero`,
+`TauCeti.Wkp.iteratedGradient_succ`, `TauCeti.Wkp.value_zero`, and `TauCeti.Wkp.value_succ`, and
+through `TauCeti.Wkp.lowerOrder_succ_coe` and `TauCeti.Wkp.iteratedGradient_succ_coe`, which give
+the two projections above first order as the components of the underlying graph element.
 
 ## Main declarations
 
@@ -141,16 +151,21 @@ theorem iteratedGradientChain_succ (f : F → ℝ) (j : ℕ) :
     iteratedGradientChain f (j + 1) = fderiv ℝ (iteratedGradientChain f j) :=
   by rw [iteratedGradientChain]
 
-/-- Every field in the iterated-gradient chain of a smooth function is smooth. -/
-theorem contDiff_iteratedGradientChain {f : F → ℝ} (hf : ContDiff ℝ ∞ f) :
-    ∀ j, ContDiff ℝ ∞ (iteratedGradientChain f j)
-  | 0 => by
+/-- The `j`th iterated-gradient field is `C^m` at a point whenever the scalar function
+is `C^n` there with `m + j + 1 ≤ n`. -/
+theorem contDiffAt_iteratedGradientChain {f : F → ℝ} {x : F} {m n : ℕ∞ω}
+    (hf : ContDiffAt ℝ n f x) (j : ℕ) (h : m + j + 1 ≤ n) :
+    ContDiffAt ℝ m (iteratedGradientChain f j) x := by
+  induction j generalizing m with
+  | zero =>
       rw [iteratedGradientChain_zero]
-      exact (InnerProductSpace.toDual ℝ F).symm.contDiff.comp
-        (contDiff_infty_iff_fderiv.mp hf).2
-  | j + 1 => by
+      exact (InnerProductSpace.toDual ℝ F).symm.contDiff.contDiffAt.comp x
+        (hf.fderiv_right (by simpa using h))
+  | succ j ih =>
       rw [iteratedGradientChain_succ]
-      exact (contDiff_infty_iff_fderiv.mp (contDiff_iteratedGradientChain hf j)).2
+      have hs := ih (m := m + 1) (by
+        simpa only [Nat.cast_add, Nat.cast_one, add_assoc, add_comm, add_left_comm] using h)
+      exact hs.fderiv_right le_rfl
 
 /-- Every field in the iterated-gradient chain of a compactly supported function has compact
 support. -/
@@ -197,7 +212,7 @@ its lower-order and highest-derivative projections. -/
       iteratedGradientL := WeakDerivStep.weakFDerivL S.iteratedGradientL }
 
 /-- The `j`th iterated weak-derivative stage, representing Sobolev order `j + 1`. -/
-@[reducible, expose] noncomputable def sobolevStage : (j : ℕ) → SobolevStage mu Omega p j
+@[expose] noncomputable def sobolevStage : (j : ℕ) → SobolevStage mu Omega p j
   | 0 => firstSobolevStage
   | j + 1 => (sobolevStage j).next
 
@@ -283,8 +298,10 @@ theorem firstOrderL_apply (k : ℕ) (u : Wkp mu Omega p (k + 1)) :
   (rfl)
 
 /-- The first-order part of a first-order Sobolev function is itself. -/
-@[simp] theorem firstOrder_zero (u : Wkp mu Omega p 1) : firstOrder 0 u = u := by
-  simp only [firstOrder, firstOrderL, ContinuousLinearMap.id_apply]
+@[simp] theorem firstOrder_zero (u : Wkp mu Omega p 1) : firstOrder 0 u = u :=
+  -- `firstOrderL 0` is the identity, and `Wkp … 1` unfolds to `W1p` because `sobolevStage 0`
+  -- is `firstSobolevStage`.
+  (rfl)
 
 /-- Forgetting one derivative before taking the first-order part has no effect. -/
 @[simp] theorem firstOrder_succ (k : ℕ) (u : Wkp mu Omega p (k + 2)) :
@@ -345,9 +362,10 @@ theorem value_succ (k : ℕ) (u : Wkp mu Omega p (k + 1)) :
 @[simp]
 theorem lowerOrder_zero (u : Wkp mu Omega p 1) : lowerOrder 0 u = W1p.value u :=
   by
-    -- `W1p.value` is sealed, so this boundary identification uses its application theorem.
-    simpa only [lowerOrder, lowerOrderL, sobolevStage, firstSobolevStage] using
-      W1p.valueL_apply u
+    -- `lowerOrderL 0` is `W1p.valueL`, and `exact` unfolds `Wkp … 1` to `W1p` (`sobolevStage 0`
+    -- is `firstSobolevStage`).  `W1p.value` is sealed, so the identification goes through its
+    -- application theorem.
+    exact W1p.valueL_apply u
 
 /-- At first order, the generic value projection is the `W1p` value projection. -/
 theorem value_one (u : Wkp mu Omega p 1) : value 1 u = W1p.value u := by
@@ -358,9 +376,10 @@ theorem value_one (u : Wkp mu Omega p 1) : value 1 u = W1p.value u := by
 theorem iteratedGradient_zero (u : Wkp mu Omega p 1) :
     iteratedGradient 0 u = W1p.gradient u :=
   by
-    -- `W1p.gradient` is sealed, so this boundary identification uses its application theorem.
-    simpa only [iteratedGradient, iteratedGradientL, sobolevStage, firstSobolevStage] using
-      W1p.gradientL_apply u
+    -- `iteratedGradientL 0` is `W1p.gradientL`, and `exact` unfolds `Wkp … 1` to `W1p`
+    -- (`sobolevStage 0` is `firstSobolevStage`).  `W1p.gradient` is sealed, so the
+    -- identification goes through its application theorem.
+    exact W1p.gradientL_apply u
 
 /-- Forgetting higher derivatives preserves the `Lᵖ` value. -/
 @[simp] theorem value_firstOrder (k : ℕ) (u : Wkp mu Omega p (k + 1)) :
@@ -396,6 +415,18 @@ theorem iteratedGradient_succ (k : ℕ) (u : Wkp mu Omega p (k + 2)) :
       (sobolevStage (mu := mu) (Omega := Omega) (p := p) k).iteratedGradientL u := by
   exact WeakDerivStep.weakFDerivL_apply
     (sobolevStage (mu := mu) (Omega := Omega) (p := p) k).iteratedGradientL u
+
+/-- Above first order, the lower-order projection is the first component of the underlying
+weak-derivative graph element. -/
+theorem lowerOrder_succ_coe (k : ℕ) (u : Wkp mu Omega p (k + 2)) :
+    lowerOrder (k + 1) u = WithLp.fst u.1 :=
+  (lowerOrder_succ k u).trans (WeakDerivStep.prev_coe _ u)
+
+/-- Above first order, the highest derivative is the second component of the underlying
+weak-derivative graph element. -/
+theorem iteratedGradient_succ_coe (k : ℕ) (u : Wkp mu Omega p (k + 2)) :
+    iteratedGradient (k + 1) u = WithLp.snd u.1 :=
+  (iteratedGradient_succ k u).trans (WeakDerivStep.weakFDeriv_coe _ u)
 
 /-- The first weak derivative identity, with the gradient identified with a linear functional
 through the real inner product. -/
@@ -464,9 +495,12 @@ theorem ext : ∀ (k : ℕ) {u v : Wkp mu Omega p k}, value k u = value k v → 
 theorem norm_lowerOrder_le (k : ℕ) (u : Wkp mu Omega p (k + 1)) :
     ‖lowerOrder k u‖ ≤ ‖u‖ := by
   cases k with
-  | zero => simpa only [lowerOrder_zero] using W1p.norm_value_le u
+  | zero =>
+      rw [lowerOrder_zero]
+      exact W1p.norm_value_le u
   | succ k =>
-      simpa only [lowerOrder_succ] using WeakDerivStep.norm_prev_le
+      rw [lowerOrder_succ]
+      exact WeakDerivStep.norm_prev_le
         (sobolevStage (mu := mu) (Omega := Omega) (p := p) k).iteratedGradientL u
 
 /-- The iterated graph norm controls the `Lᵖ` value component at every order. -/
@@ -479,9 +513,12 @@ theorem norm_value_le : ∀ (k : ℕ) (u : Wkp mu Omega p k), ‖value k u‖ �
 theorem norm_iteratedGradient_le (k : ℕ) (u : Wkp mu Omega p (k + 1)) :
     ‖iteratedGradient k u‖ ≤ ‖u‖ := by
   cases k with
-  | zero => simpa only [iteratedGradient_zero] using W1p.norm_gradient_le u
+  | zero =>
+      rw [iteratedGradient_zero]
+      exact W1p.norm_gradient_le u
   | succ k =>
-      simpa only [iteratedGradient_succ] using WeakDerivStep.norm_weakFDeriv_le
+      rw [iteratedGradient_succ]
+      exact WeakDerivStep.norm_weakFDeriv_le
         (sobolevStage (mu := mu) (Omega := Omega) (p := p) k).iteratedGradientL u
 
 /-- At order at least two, the squared graph norm is the sum of the squared norms of
@@ -489,9 +526,9 @@ the lower-order component and highest weak derivative. -/
 theorem norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_add_two (k : ℕ)
     (u : Wkp mu Omega p (k + 2)) :
     ‖u‖ ^ 2 = ‖lowerOrder (k + 1) u‖ ^ 2 + ‖iteratedGradient (k + 1) u‖ ^ 2 := by
-  simpa only [lowerOrder_succ, iteratedGradient_succ] using
-    WeakDerivStep.norm_sq_eq_norm_prev_sq_add_norm_weakFDeriv_sq
-      (sobolevStage (mu := mu) (Omega := Omega) (p := p) k).iteratedGradientL u
+  rw [lowerOrder_succ, iteratedGradient_succ]
+  exact WeakDerivStep.norm_sq_eq_norm_prev_sq_add_norm_weakFDeriv_sq
+    (sobolevStage (mu := mu) (Omega := Omega) (p := p) k).iteratedGradientL u
 
 /-- At exponent two, the squared graph norm at every positive order is the sum of the squared
 norm of the lower-order component and the squared norm of the highest weak derivative. -/
@@ -500,10 +537,32 @@ theorem norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq (k : ℕ)
     ‖u‖ ^ 2 = ‖lowerOrder k u‖ ^ 2 + ‖iteratedGradient k u‖ ^ 2 := by
   cases k with
   | zero =>
-      simpa only [lowerOrder_zero, iteratedGradient_zero] using
-        W1p.norm_sq_eq_norm_value_sq_add_norm_gradient_sq u
+      rw [lowerOrder_zero, iteratedGradient_zero]
+      exact W1p.norm_sq_eq_norm_value_sq_add_norm_gradient_sq u
   | succ k =>
       exact norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_add_two k u
+
+/-- Convergence in a positive-order Sobolev norm is equivalent to convergence of the
+preceding Sobolev component and the highest weak derivative. -/
+theorem tendsto_iff_lowerOrder_iteratedGradient (k : ℕ) {I : Type*} {l : Filter I}
+    {v : I → Wkp mu Omega p (k + 1)} {u : Wkp mu Omega p (k + 1)} :
+    Filter.Tendsto v l (nhds u) ↔
+      Filter.Tendsto (fun i => lowerOrder k (v i)) l (nhds (lowerOrder k u)) ∧
+      Filter.Tendsto (fun i => iteratedGradient k (v i)) l
+        (nhds (iteratedGradient k u)) := by
+  cases k with
+  | zero =>
+      simp only [lowerOrder_zero, iteratedGradient_zero]
+      exact W1p.tendsto_iff_value_gradient
+  | succ k =>
+      -- Each later stage is a subtype of a `WithLp` product; its product equivalence recovers
+      -- exactly the two characteristic projections, without a norm estimate.
+      simp only [lowerOrder_succ_coe, iteratedGradient_succ_coe]
+      refine (tendsto_subtype_rng (f := v) (x := u)).trans ?_
+      rw [(WithLp.prodContinuousLinearEquiv 2 ℝ _ _).toHomeomorph.isEmbedding.tendsto_nhds_iff]
+      simp only [Function.comp_def, ContinuousLinearEquiv.coe_toHomeomorph,
+        WithLp.prodContinuousLinearEquiv_apply]
+      exact Prod.tendsto_iff _ _
 
 end Wkp
 

@@ -24,15 +24,13 @@ basic properties (Silverman III.6.2(a), (c), (d), (e), (f)):
 * `φ̂ ∘ φ = [deg φ]` on `W₁`, and `φ̂` is the only isogeny with this property;
 * `φ ∘ φ̂ = [deg φ]` on `W₂`;
 * `deg φ̂ = deg φ`;
-* `φ̂ ∘ [n] = [n] ∘ φ̂`, so `φ̂` commutes with integer multiples of points;
 * `(ψ ∘ φ)^ = φ̂ ∘ ψ̂` for separable `φ`, `ψ`;
 * `φ̂̂ = φ` whenever `φ̂` is itself separable;
 * `[n]̂ = [n]` whenever `n` is nonzero in the base field.
 
-The identity `φ ∘ φ̂ = [deg φ]` needs `φ ∘ [n] = [n] ∘ φ`. This holds because composition with a
-separable isogeny over a separably closed field is additive in the inner morphism
-(`TauCeti.Isogeny.Hom.ofIsogeny_comp_add`). Precomposing with `φ` is injective, so it cancels from
-`φ ∘ φ̂ ∘ φ = φ ∘ [deg φ] = [deg φ] ∘ φ`.
+The identity `φ ∘ φ̂ = [deg φ]` needs `φ ∘ [n] = [n] ∘ φ`
+(`TauCeti.Isogeny.comp_mulByIntIsogenyOfNeZero`). Precomposing with `φ` is injective, so it cancels
+from `φ ∘ φ̂ ∘ φ = φ ∘ [deg φ] = [deg φ] ∘ φ`.
 
 ## Main definitions
 
@@ -49,8 +47,6 @@ separable isogeny over a separably closed field is additive in the inner morphis
   additive groups of morphisms.
 * `TauCeti.Isogeny.pointMap_dual_pointMap` and `TauCeti.Isogeny.pointMap_pointMap_dual`: on points,
   `φ̂ (φ P) = deg φ • P` and `φ (φ̂ Q) = deg φ • Q`.
-* `TauCeti.Isogeny.dual_comp_mulByIntIsogenyOfNeZero` and `TauCeti.Isogeny.pointMap_dual_zsmul`:
-  `φ̂ ∘ [n] = [n] ∘ φ̂`, and on points `φ̂ (n • Q) = n • φ̂ Q`.
 * `TauCeti.Isogeny.dual_comp_dual`: `(ψ ∘ φ)^ = φ̂ ∘ ψ̂`.
 * `TauCeti.Isogeny.dual_dual`: `φ̂̂ = φ` when `φ̂` is separable.
 * `TauCeti.Isogeny.dual_mulByIntIsogeny`: `[n]` is self-dual when it is separable.
@@ -124,36 +120,6 @@ theorem pointMap_dual_pointMap [DecidableEq F] (P : W₁.Point) :
 theorem pointMap_pointMap_dual [DecidableEq F] (Q : W₂.Point) :
     (Hom.ofIsogeny φ).pointMap ((Hom.ofIsogeny φ.dual).pointMap Q) = φ.degree • Q := by
   rw [← Hom.comp_pointMap, ofIsogeny_comp_ofIsogeny_dual, Hom.nsmul_pointMap, Hom.id_pointMap]
-
-/-- **The dual of a separable isogeny commutes with multiplication by `n`**: `φ̂ ∘ [n] = [n] ∘ φ̂`
-(Silverman III.4.8, for `φ̂`). -/
-@[simp]
-theorem dual_comp_mulByIntIsogenyOfNeZero {n : ℤ} (hn : n ≠ 0) :
-    φ.dual.comp (mulByIntIsogenyOfNeZero W₂ hn) = (mulByIntIsogenyOfNeZero W₁ hn).comp φ.dual := by
-  have hd : (φ.degree : ℤ) ≠ 0 := mod_cast φ.degree_ne_zero
-  -- composed with `φ`, both sides are multiplication by `n · deg φ`
-  refine comp_right_inj (φ := φ) |>.mp ?_
-  calc (φ.dual.comp (mulByIntIsogenyOfNeZero W₂ hn)).comp φ
-      = (φ.dual.comp φ).comp (mulByIntIsogenyOfNeZero W₁ hn) := by
-        rw [comp_assoc, ← comp_mulByIntIsogenyOfNeZero φ hn, comp_assoc]
-    _ = mulByIntIsogenyOfNeZero W₁ (mul_ne_zero hd hn) := by
-        rw [dual_comp φ, mulByIntIsogenyOfNeZero_comp_mulByIntIsogenyOfNeZero]
-    _ = mulByIntIsogenyOfNeZero W₁ (mul_ne_zero hn hd) :=
-        (mulByIntIsogeny_inj W₁ _ _).mpr (mul_comm _ _)
-    _ = ((mulByIntIsogenyOfNeZero W₁ hn).comp φ.dual).comp φ := by
-        rw [comp_assoc, dual_comp φ, mulByIntIsogenyOfNeZero_comp_mulByIntIsogenyOfNeZero]
-
-/-- **The dual of a separable isogeny commutes with integer multiples of points**:
-`φ̂ (n • Q) = n • φ̂ Q`. -/
-@[simp]
-theorem pointMap_dual_zsmul [DecidableEq F] (n : ℤ) (Q : W₂.Point) :
-    (Hom.ofIsogeny φ.dual).pointMap (n • Q) = n • (Hom.ofIsogeny φ.dual).pointMap Q := by
-  rcases eq_or_ne n 0 with rfl | hn
-  · rw [zero_smul, zero_smul, Hom.pointMap_zero]
-  have h := congrArg (fun ρ : Isogeny W₂ W₁ ↦ (Hom.ofIsogeny ρ).pointMap Q)
-    (φ.dual_comp_mulByIntIsogenyOfNeZero hn)
-  simpa only [← Hom.ofIsogeny_comp_ofIsogeny, ofIsogeny_mulByIntIsogeny, Hom.comp_pointMap,
-    Hom.zsmul_pointMap, Hom.id_pointMap] using h
 
 /-- **The dual of the dual is the original isogeny**, when the dual is separable
 (Silverman III.6.2(f)). -/

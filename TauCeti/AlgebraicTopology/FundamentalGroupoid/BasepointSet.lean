@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
 public import TauCeti.AlgebraicTopology.FundamentalGroupoid.Basic
 
 /-!
@@ -23,6 +24,8 @@ calculations, for instance on the circle covered by two arcs, where two basepoin
 * `TauCeti.FundamentalGroupoidOn.incl`: its inclusion into the fundamental groupoid of `X`.
 * `TauCeti.FundamentalGroupoidOn.map`: the functor induced by a continuous map sending one set of
   basepoints into another, with `map_id` and `map_comp`.
+* `TauCeti.FundamentalGroupoidOn.instSubsingletonHom`: on a simply connected space, there is at
+  most one morphism between two basepoints.
 
 ## References
 
@@ -95,6 +98,12 @@ theorem map_comp (g : C(Y, Z)) (f : C(X, Y)) (hg : MapsTo g T U) (hf : MapsTo f 
   refine CategoryTheory.Functor.hext (fun _ ↦ rfl) fun s t p ↦ heq_of_eq ?_
   ext
   exact FundamentalGroupoid.map_comp_map g f p.hom
+
+/-- In the fundamental groupoid of a simply connected space on a set of basepoints, there is at
+most one morphism between two objects. -/
+instance instSubsingletonHom [SimplyConnectedSpace X] (s t : FundamentalGroupoidOn S) :
+    Subsingleton (s ⟶ t) :=
+  ⟨fun _ _ ↦ InducedCategory.hom_ext (Subsingleton.elim (α := Path.Homotopic.Quotient _ _) _ _)⟩
 
 end FundamentalGroupoidOn
 

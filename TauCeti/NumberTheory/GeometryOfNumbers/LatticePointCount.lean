@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Module.ZLattice.Basic
 public import TauCeti.MeasureTheory.Group.Measure
 public import TauCeti.NumberTheory.GeometryOfNumbers.BoundaryCount
 public import TauCeti.Topology.MetricSpace.DiscreteAddSubgroup
+import Mathlib.Algebra.Group.Pointwise.Set.Card
 import TauCeti.Topology.Frontier
 
 /-!

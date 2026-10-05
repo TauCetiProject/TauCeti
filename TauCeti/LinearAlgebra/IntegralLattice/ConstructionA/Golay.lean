@@ -58,13 +58,13 @@ theorem isPosDef_constructionALattice : constructionALattice.IsPosDef :=
     (TwoPowCode.isTypeII_one_iff.mpr isTypeII_code).le_euclideanDual
 
 /-- **The Golay Construction A lattice is even.** -/
-theorem isEven_constructionALattice : constructionALattice.IsEven :=
-  ConstructionA.isEven_integralLattice_of_isTypeII (by decide)
-    (TwoPowCode.isTypeII_one_iff.mpr isTypeII_code)
+theorem isEven_constructionALattice : constructionALattice.IsEven := by
+  rw [constructionALattice_eq_integralLattice]
+  exact ConstructionA.isEven_integralLattice_two_of_isDoublyEven isDoublyEven_code
 
 /-- **The Golay Construction A lattice is unimodular.** -/
-theorem isUnimodular_constructionALattice : constructionALattice.IsUnimodular :=
-  ConstructionA.isUnimodular_integralLattice_of_isTypeII
-    (TwoPowCode.isTypeII_one_iff.mpr isTypeII_code)
+theorem isUnimodular_constructionALattice : constructionALattice.IsUnimodular := by
+  rw [constructionALattice_eq_integralLattice]
+  exact ConstructionA.isUnimodular_integralLattice_toAddSubgroup_of_isSelfDual 2 isSelfDual_code
 
 end TauCeti.BinaryGolay

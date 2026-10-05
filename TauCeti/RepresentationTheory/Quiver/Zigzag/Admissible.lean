@@ -28,6 +28,8 @@ the zigzag ideal is exactly `R ^ 3`.
 * `TauCeti.isAdmissibleIdeal_zigzagIdeal`: the zigzag ideal is admissible.
 * `TauCeti.zigzagIdeal_eq_arrowIdeal_pow_three`: if every quadratic relator lies in `R ^ 3`, the
   zigzag ideal is `R ^ 3`.
+* `TauCeti.instFiniteDimensionalNonisolatedZigzagQuotient`: the zigzag relation quotient is
+  finite-dimensional over a field.
 
 ## References
 
@@ -105,5 +107,11 @@ theorem zigzagIdeal_eq_arrowIdeal_pow_three
   induction hx with
   | quadratic hq => exact h _ hq
   | long_path y hy => exact Ideal.pow_le_pow_right hy (ofPath_mem_arrowIdeal_pow y)
+
+/-- **The zigzag relation quotient of every finite simple graph is finite-dimensional**, including
+graphs with isolated vertices, as a bound quiver algebra of the doubled quiver. -/
+instance instFiniteDimensionalNonisolatedZigzagQuotient (K : Type w) [Field K] :
+    FiniteDimensional K (nonisolatedZigzagQuotient K G) :=
+  (isAdmissibleIdeal_zigzagIdeal K G).finiteDimensional_quotient
 
 end TauCeti

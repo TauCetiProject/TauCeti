@@ -82,10 +82,7 @@ theorem finiteLocallyFreeCommAffineGroupSchemeProperty_baseChange
       ((finiteLocallyFreeBicommutativeHopfAlgProperty R).ι.obj (coordinateHopfAlgebra R G))).symm ≪≫
     (AffineGroupSchemeCat.baseChangeFunctor
       (CommRingCat.ofHom (algebraMap R S))).mapIso ?_
-  exact ((functorCompFullSubcategoryιIso R).app (op (coordinateHopfAlgebra R G))).symm ≪≫
-    (finiteLocallyFreeCommAffineGroupSchemeProperty (CommRingCat.of R)).ι.mapIso
-      ((finiteLocallyFreeBicommutativeHopfAlgCatOpEquivFiniteLocallyFreeCommAffineGroupSchemeCat
-        R).counitIso.app G)
+  exact hopfSpecCoordinateHopfAlgebraIso R G
 
 namespace FiniteLocallyFreeCommAffineGroupSchemeCat
 

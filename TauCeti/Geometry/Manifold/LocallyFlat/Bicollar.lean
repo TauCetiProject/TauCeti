@@ -206,6 +206,13 @@ theorem comp_homeomorph (h : IsBicollar f b) (e : N' ≃ₜ N) :
   isOpenEmbedding := h.isOpenEmbedding.comp (e.isOpenEmbedding.prodMap IsOpenEmbedding.id)
   apply_zero x := h.apply_zero (e x)
 
+/-- Reversing the depth coordinate of a bicollar gives a bicollar, with its two sides
+exchanged. -/
+theorem comp_prodMap_id_neg (h : IsBicollar f b) : IsBicollar f (b ∘ Prod.map id Neg.neg) where
+  isOpenEmbedding := h.isOpenEmbedding.comp
+    (IsOpenEmbedding.id.prodMap (Homeomorph.neg ℝ).isOpenEmbedding)
+  apply_zero x := by simpa using h.apply_zero x
+
 end IsBicollar
 
 /-- The standard local model: the inclusion of `N` as the zero slice of `N × ℝ` is bicollared, by

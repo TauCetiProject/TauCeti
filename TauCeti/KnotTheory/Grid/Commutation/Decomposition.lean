@@ -512,6 +512,23 @@ theorem rectanglePentagonWeight_eq_of_val_add_val_eq
     rename_OMonomial_eq_prod_swapSquareWeight, rename_OMonomial_eq_prod_swapSquareWeight]
   simp only [Finset.prod_eq_multiset_prod, ← Multiset.prod_add, ← Multiset.map_add, h]
 
+/-- Two pentagon--rectangle decompositions have the same weight when their composite domains
+cover the same squares with multiplicity, reading the rectangles of the commuted diagram
+in the original diagram by exchanging the two commuted columns. -/
+theorem pentagonRectangleWeight_eq_of_val_add_val_eq
+    {x z : GridState n} (D D' : GridPentagonRectangleDecomposition C.column C.turnRow x z)
+    (h : D'.pentagon.coveredSquares.val +
+        (D'.rectangle.toGridRectangle.coveredSquares.map
+          ((Equiv.swap C.column b).prodCongr (Equiv.refl (Fin n))).toEmbedding).val =
+      D.pentagon.coveredSquares.val +
+        (D.rectangle.toGridRectangle.coveredSquares.map
+          ((Equiv.swap C.column b).prodCongr (Equiv.refl (Fin n))).toEmbedding).val) :
+    G.pentagonRectangleWeight C R D' = G.pentagonRectangleWeight C R D := by
+  rw [pentagonRectangleWeight_def, pentagonRectangleWeight_def,
+    pentagonWeight_eq_prod_swapSquareWeight, pentagonWeight_eq_prod_swapSquareWeight,
+    OMonomial_swapColumns_eq_prod_swapSquareWeight, OMonomial_swapColumns_eq_prod_swapSquareWeight]
+  simp only [Finset.prod_eq_multiset_prod, ← Multiset.prod_add, ← Multiset.map_add, h]
+
 /-- The matrix product for the pentagon map after the original differential is the sum of the
 weights of the counted rectangle--pentagon decompositions. -/
 theorem sum_rename_unblockedCoefficient_mul_pentagonCoefficient (x z : GridState n) :

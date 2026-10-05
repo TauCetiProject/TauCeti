@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ModularForms.LevelOne.QExpansion
+import TauCeti.Analysis.Contour.Residue.Quotient
 import Mathlib.NumberTheory.ModularForms.RamanujanFormula
 import TauCeti.Analysis.Complex.UpperHalfPlane.Manifold
 import TauCeti.NumberTheory.ModularForms.EllipticPoints
@@ -52,6 +53,9 @@ of which vanishes because `Δ = (E₄³ - E₆²) / 1728` has no zeros.
 * `TauCeti.ModularForm.tendsto_qParam_mul_j_atImInfty`,
   `TauCeti.ModularForm.analyticAt_cuspFunction_qParam_mul_j`: `q j → 1` at `i∞`, and `q j` is
   analytic in `q` at the cusp.
+* `TauCeti.ModularForm.meromorphicAt_cuspFunction_j`,
+  `TauCeti.ModularForm.meromorphicOrderAt_cuspFunction_j`: `j` is meromorphic in its width-one
+  q-coordinate, with a simple pole at zero.
 * `TauCeti.ModularForm.hasSum_j_sub_inv_qParam`: the `q`-expansion `j = q⁻¹ + ∑ₘ cₘ₊₁ qᵐ`, with
   `cₘ` the coefficients of `q j`.
 * `TauCeti.ModularForm.qExpansion_qParam_mul_j_coeff_one`,
@@ -68,7 +72,7 @@ of which vanishes because `Δ = (E₄³ - E₆²) / 1728` has no zeros.
 
 public noncomputable section
 
-open UpperHalfPlane MatrixGroups ModularForm Matrix.SpecialLinearGroup Filter Topology
+open UpperHalfPlane MatrixGroups ModularForm Matrix.SpecialLinearGroup Filter Topology Function Set
 open scoped Manifold MatrixGroups
 
 namespace TauCeti.ModularForm
@@ -330,6 +334,42 @@ theorem qExpansion_qParam_mul_j_coeff_zero :
     EisensteinSeries.E_qExpansion_coeff_zero _ ⟨2, rfl⟩] at h
   simpa [PowerSeries.coeff_mul, Finset.Nat.antidiagonal_succ, discriminant_qExpansion_coeff_zero,
     discriminant_qExpansion_coeff_one] using h
+
+/-- The analytic cusp function of `q j` takes the value `1` at zero. -/
+@[simp]
+theorem cuspFunction_qParam_mul_j_zero :
+    cuspFunction 1 (fun τ : ℍ ↦ Periodic.qParam 1 τ * j τ) 0 = 1 := by
+  simpa [UpperHalfPlane.qExpansion_coeff] using qExpansion_qParam_mul_j_coeff_zero
+
+/-- In a punctured neighbourhood of zero, `j` in its width-one q-coordinate is the
+analytic cusp function of `q j` divided by `q`. -/
+theorem cuspFunction_j_eventuallyEq :
+    cuspFunction 1 j =ᶠ[𝓝[≠] 0]
+      fun q ↦ cuspFunction 1 (fun τ : ℍ ↦ Periodic.qParam 1 τ * j τ) q / q := by
+  filter_upwards [self_mem_nhdsWithin,
+    nhdsWithin_le_nhds (Metric.ball_mem_nhds (0 : ℂ) zero_lt_one)] with q hq hqn
+  simp only [mem_compl_iff, mem_singleton_iff] at hq
+  simp only [UpperHalfPlane.cuspFunction, Periodic.cuspFunction_eq_of_nonzero _ _ hq,
+    Function.comp_apply]
+  have hpos := Periodic.im_invQParam_pos_of_norm_lt_one one_pos
+    (mem_ball_zero_iff.mp hqn) hq
+  rw [ofComplex_apply_of_im_pos hpos, Periodic.qParam_right_inv one_ne_zero hq]
+  exact (mul_div_cancel_left₀ _ hq).symm
+
+/-- The modular invariant is meromorphic at zero in its width-one q-coordinate. -/
+theorem meromorphicAt_cuspFunction_j : _root_.MeromorphicAt (cuspFunction 1 j) 0 :=
+  (analyticAt_cuspFunction_qParam_mul_j.meromorphicAt.div analyticAt_id.meromorphicAt).congr
+    cuspFunction_j_eventuallyEq.symm
+
+/-- The modular invariant has order exactly `-1` at zero in its width-one q-coordinate. -/
+@[simp]
+theorem meromorphicOrderAt_cuspFunction_j :
+    _root_.meromorphicOrderAt (cuspFunction 1 j) 0 = -1 := by
+  rw [_root_.meromorphicOrderAt_congr cuspFunction_j_eventuallyEq]
+  exact TauCeti.Contour.meromorphicOrderAt_div_eq_neg_one
+    analyticAt_cuspFunction_qParam_mul_j
+    (by rw [cuspFunction_qParam_mul_j_zero]; exact one_ne_zero)
+    (h := id) analyticAt_id rfl (by simp)
 
 /-- `qExpansion_qParam_mul_j_coeff_zero` in the `constantCoeff` form `simp` normalizes to. -/
 private lemma constantCoeff_qExpansion_qParam_mul_j :

@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Calculus.Rademacher
 public import TauCeti.Analysis.Convex.EffectiveDomain
 public import TauCeti.Analysis.Convex.Subdifferential
 public import Mathlib.Analysis.Calculus.Gradient.Basic
+import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.LocalExtr.Basic
 import Mathlib.Analysis.Convex.Deriv
 

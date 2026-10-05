@@ -72,6 +72,13 @@ letters `(i, ε)` with `p = i` or `p = i + 1`. -/
 def crossingsAt (p : Fin n) : List (Fin w.length) :=
   (List.finRange w.length).filter fun j ↦ p = strand w[j.1].1 ∨ p = strandSucc w[j.1].1
 
+/-- The crossings involving a strand position are the indices of the letters with that position
+as one of their two strands, in increasing order. -/
+theorem crossingsAt_def (p : Fin n) :
+    w.crossingsAt p =
+      (List.finRange w.length).filter fun j ↦ p = strand w[j.1].1 ∨ p = strandSucc w[j.1].1 :=
+  (rfl)
+
 /-- A crossing involves a strand position exactly when that position is one of its two strands. -/
 @[simp]
 theorem mem_crossingsAt {p : Fin n} {j : Fin w.length} :
@@ -161,6 +168,16 @@ theorem outgoingSlot_strand (j : Fin w.length) : w.outgoingSlot j (strand w[j.1]
 theorem outgoingSlot_strandSucc (j : Fin w.length) :
     w.outgoingSlot j (strandSucc w[j.1].1) = 1 := by
   simp [outgoingSlot, (strand_ne_strandSucc _).symm]
+
+/-- The incoming slot at a crossing depends only on the letter of that crossing. -/
+theorem incomingSlot_congr {w w' : BraidWord n} {j : Fin w'.length} {i : Fin w.length}
+    (h : w'[j.1] = w[i.1]) (p : Fin n) : w'.incomingSlot j p = w.incomingSlot i p := by
+  rw [incomingSlot, incomingSlot, h]
+
+/-- The outgoing slot at a crossing depends only on the letter of that crossing. -/
+theorem outgoingSlot_congr {w w' : BraidWord n} {j : Fin w'.length} {i : Fin w.length}
+    (h : w'[j.1] = w[i.1]) (p : Fin n) : w'.outgoingSlot j p = w.outgoingSlot i p := by
+  rw [outgoingSlot, outgoingSlot, h]
 
 /-! ### The arcs of the closure -/
 

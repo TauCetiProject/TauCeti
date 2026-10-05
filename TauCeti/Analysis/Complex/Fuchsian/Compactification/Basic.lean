@@ -29,7 +29,8 @@ normalized cusp datum (`TauCeti.Subgroup.CuspDatum.cuspOrbit_surjective`), where
 nondiscrete `Γ` a cusp may have a noncyclic stabilizer and no such datum.
 
 The coarse quotient embeds as an open subset (`isOpenEmbedding_ofQuotient`), whose complement is
-the closed set of cusp orbits, and is dense. The compactified quotient is Hausdorff and second
+the closed set of cusp orbits, and is dense. Its preconnectedness therefore extends to the
+compactified quotient. The compactified quotient is Hausdorff and second
 countable: two cusps are separated by high horodiscs
 (`TauCeti.Subgroup.CuspDatum.disjoint_image_quotientMk_horodisc_iff`), and a point of the orbit
 space is separated from a cusp because orbits stay uniformly low near a point
@@ -283,6 +284,11 @@ theorem dense_range_ofQuotient : Dense (range (ofQuotient (Γ := Γ))) := by
     obtain ⟨D, -, A, hA⟩ := hU.2 C hx
     obtain ⟨z, hz⟩ := nonempty_horodisc D A
     exact ⟨_, hA (Or.inr ⟨_, ⟨z, hz, rfl⟩, rfl⟩), _, rfl⟩
+
+/-- The compactified quotient is preconnected: its dense coarse quotient is the continuous image
+of the connected upper half-plane. -/
+instance instPreconnectedSpace : PreconnectedSpace Γ.CompactifiedQuotient :=
+  DenseRange.preconnectedSpace dense_range_ofQuotient continuous_ofQuotient
 
 /-- A point of the coarse orbit space and a cusp orbit have disjoint open neighbourhoods. -/
 private theorem exists_isOpen_disjoint_ofQuotient_ofCusp (p : orbitRel.Quotient Γ ℍ)

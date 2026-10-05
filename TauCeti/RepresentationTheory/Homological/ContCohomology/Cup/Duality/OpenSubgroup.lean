@@ -78,9 +78,15 @@ along the pointwise pairing of the inverse Shapiro images
   `explicitDualityPairing11_projection` and `explicitDualityPairing20_projection`:
   **the projection formula** `cor ⟨res φ, b⟩_U = ⟨φ, cor b⟩_G` for the evaluation pairings.
 * `TauCeti.ContCohomology.explicitDualityPairing11_explicitCoeff1_toInternalHom` and
-  `explicitDualityPairing02_explicitCoeff0_toInternalHom`: **the evaluation pairing of a coinduced
-  module** is the corestriction of the `(1,1)`, respectively `(0,2)`, evaluation pairing of `U` on
-  the Shapiro images.
+  `explicitDualityPairing02_explicitCoeff0_toInternalHom` and
+  `explicitDualityPairing20_explicitCoeff2_toInternalHom`: **the evaluation pairing of a
+  coinduced module** is the corestriction of the corresponding evaluation pairing of `U` on the
+  Shapiro images.
+* `TauCeti.ContCohomology.dualityMap0_bijective_discreteCoind_of_bijective`,
+  `dualityMap1_bijective_discreteCoind_of_bijective` and
+  `dualityMap2_bijective_discreteCoind_of_bijective`: **perfect duality is transported by
+  Shapiro's lemma** from an open subgroup to a coinduced module, when corestriction on the target
+  is bijective.
 * `TauCeti.ContCohomology.dualityMap2_injective_of_injective_discreteCoind`: **injectivity of
   Tate's duality map `α₂` descends to an open subgroup**: if `α₂` of `G` is injective on
   `Coind_U^G A`, then `α₂` of `U` is injective on `A`.
@@ -367,6 +373,43 @@ theorem explicitDualityPairing11_explicitCoeff1_toInternalHom
   simp only [explicitCoeff2_id, explicitCoeff1_id, AddMonoidHom.id_apply] at h₁ h₂
   exact h₁.symm.trans h₂.symm
 
+/-- **The `(2,0)` evaluation pairing of a coinduced module is the corestriction of the `(2,0)`
+evaluation pairing of the subgroup**: a degree-two class with values in the coinduced internal
+hom, read in `Hom(Coind_U^G A, N)` through `TauCeti.DiscreteCoind.toInternalHom`, pairs with an
+invariant coinduced element to the corestriction of the pairing of their Shapiro images. -/
+theorem explicitDualityPairing20_explicitCoeff2_toInternalHom
+    (F : H2 G (DiscreteCoind G U (InternalHom U A N))) (x : H0 G (DiscreteCoind G U A)) :
+    explicitDualityPairing20 G (DiscreteCoind G U A) N
+        (explicitCoeff2 G (DiscreteCoind G U (InternalHom U A N))
+          (DiscreteCoind.toInternalHom U A N) continuous_of_discreteTopology F) x =
+      explicitCor2 G N U hU
+        (explicitDualityPairing20 U A N
+          (explicitShapiro2 G U (InternalHom U A N) (U.isClosed_of_isOpen hU) F)
+          (explicitShapiro0 G U A x)) := by
+  rw [explicitDualityPairing20_def, explicitDualityPairing20_def, explicitCor2_explicitCup20,
+    AddEquiv.symm_apply_apply, AddEquiv.symm_apply_apply]
+  have h₁ := explicitCoeff2_explicitCup20 G (DiscreteCoind G U (InternalHom U A N))
+    (DiscreteCoind G U A) N (InternalHom G (DiscreteCoind G U A) N)
+    (DiscreteCoind G U A) N (tracePairing G U A N) continuous_of_discreteTopology
+    (tracePairing_smul G U A N) (InternalHom.evalPairing G) continuous_of_discreteTopology
+    (InternalHom.evalPairing_equivariant (G := G)) (DiscreteCoind.toInternalHom U A N)
+    (DistribMulActionHom.id G) (DistribMulActionHom.id G) continuous_of_discreteTopology
+    continuous_id (fun F' f ↦ by
+      simp only [DistribMulActionHom.id_apply, tracePairing_eq_evalPairing_toInternalHom]) F x
+  have h₂ := explicitCoeff2_explicitCup20 G (DiscreteCoind G U (InternalHom U A N))
+    (DiscreteCoind G U A) (DiscreteCoind G U N)
+    (DiscreteCoind G U (InternalHom U A N)) (DiscreteCoind G U A) N
+    (DiscreteCoind.pointwisePairing U (InternalHom.evalPairing U)
+      (InternalHom.evalPairing_equivariant (G := U))) continuous_of_discreteTopology
+    (fun g f f' ↦ DiscreteCoind.pointwisePairing_smul U (InternalHom.evalPairing U)
+      (InternalHom.evalPairing_equivariant (G := U)) g f f') (tracePairing G U A N)
+    continuous_of_discreteTopology (tracePairing_smul G U A N)
+    (DistribMulActionHom.id G) (DistribMulActionHom.id G) (DiscreteCoind.trace G U N)
+    continuous_id DiscreteCoind.continuous_trace (fun F' f ↦ by
+      simp only [DistribMulActionHom.id_apply, tracePairing_apply]) F x
+  simp only [explicitCoeff2_id, explicitCoeff0_id, AddMonoidHom.id_apply] at h₁ h₂
+  exact h₁.symm.trans h₂.symm
+
 omit [Finite A] in
 /-- **The `(0,2)` evaluation pairing of a coinduced module is the corestriction of the `(0,2)`
 evaluation pairing of the subgroup**: for an invariant `F` of `Coind_U^G Hom(A, N)`, read in
@@ -433,6 +476,93 @@ theorem dualityMap2_injective_of_injective_discreteCoind
     AddMonoidHom.zero_apply]
 
 end Descent
+
+section Ascent
+
+variable [ContinuousSMul U (InternalHom U A N)]
+include hU
+
+/-- **Perfectness of `α₀` ascends from an open subgroup to a coinduced module.** If
+corestriction on `H²(-, N)` is bijective and `α₀` is bijective for the `U`-module `A`, then
+`α₀` is bijective for `Coind_U^G A`. -/
+theorem dualityMap0_bijective_discreteCoind_of_bijective
+    (hcor : Function.Bijective (explicitCor2 G N U hU))
+    (h : Function.Bijective (dualityMap0 U A N)) :
+    Function.Bijective (dualityMap0 G (DiscreteCoind G U A) N) := by
+  let c := explicitCoeff2 G (DiscreteCoind G U (InternalHom U A N))
+    (DiscreteCoind.toInternalHom U A N) continuous_of_discreteTopology
+  let ec := AddEquiv.ofBijective c
+    (explicitCoeff2_bijective G _ (DiscreteCoind.toInternalHom_bijective U A N hU))
+  let eY : H2 G (InternalHom G (DiscreteCoind G U A) N) →+
+      H2 U (InternalHom U A N) :=
+    (explicitShapiro2 G U (InternalHom U A N) (U.isClosed_of_isOpen hU)).toAddMonoidHom.comp
+      ec.symm.toAddMonoidHom
+  refine AddMonoidHom.bijective_of_bijective_pairing (dualityMap0 U A N)
+    (dualityMap0 G (DiscreteCoind G U A) N) (explicitShapiro0 G U A).toAddMonoidHom eY
+    (explicitCor2 G N U hU) (explicitShapiro0 G U A).bijective ?_ hcor h fun x y ↦ ?_
+  · exact (explicitShapiro2 G U (InternalHom U A N)
+      (U.isClosed_of_isOpen hU)).bijective.comp ec.symm.bijective
+  · rw [dualityMap0_eq_explicitDualityPairing20,
+      dualityMap0_eq_explicitDualityPairing20]
+    have hc : c (ec.symm y) = y := ec.apply_symm_apply y
+    have hec : ec.symm (c (ec.symm y)) = ec.symm y := congrArg ec.symm hc
+    rw [← hc, explicitDualityPairing20_explicitCoeff2_toInternalHom G U hU]
+    simp only [eY, AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom, hec]
+
+/-- **Perfectness of `α₁` ascends from an open subgroup to a coinduced module.** -/
+theorem dualityMap1_bijective_discreteCoind_of_bijective
+    (hcor : Function.Bijective (explicitCor2 G N U hU))
+    (h : Function.Bijective (dualityMap1 U A N)) :
+    Function.Bijective (dualityMap1 G (DiscreteCoind G U A) N) := by
+  let c := explicitCoeff1 G (DiscreteCoind G U (InternalHom U A N))
+    (DiscreteCoind.toInternalHom U A N) continuous_of_discreteTopology
+  let ec := AddEquiv.ofBijective c
+    (explicitCoeff1_bijective G _ (DiscreteCoind.toInternalHom_bijective U A N hU))
+  let eY : H1 G (InternalHom G (DiscreteCoind G U A) N) →+
+      H1 U (InternalHom U A N) :=
+    (explicitShapiro1 G U (InternalHom U A N)
+      (U.isClosed_of_isOpen hU)).toAddMonoidHom.comp ec.symm.toAddMonoidHom
+  refine AddMonoidHom.bijective_of_bijective_pairing (dualityMap1 U A N)
+    (dualityMap1 G (DiscreteCoind G U A) N)
+    (explicitShapiro1 G U A (U.isClosed_of_isOpen hU)).toAddMonoidHom eY
+    (explicitCor2 G N U hU) (explicitShapiro1 G U A
+      (U.isClosed_of_isOpen hU)).bijective ?_ hcor h fun x y ↦ ?_
+  · exact (explicitShapiro1 G U (InternalHom U A N)
+      (U.isClosed_of_isOpen hU)).bijective.comp ec.symm.bijective
+  · rw [dualityMap1_eq_neg_explicitDualityPairing11,
+      dualityMap1_eq_neg_explicitDualityPairing11]
+    have hc : c (ec.symm y) = y := ec.apply_symm_apply y
+    have hec : ec.symm (c (ec.symm y)) = ec.symm y := congrArg ec.symm hc
+    rw [← hc, explicitDualityPairing11_explicitCoeff1_toInternalHom G U hU, map_neg]
+    simp only [eY, AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom, hec]
+
+omit [Finite A] in
+/-- **Perfectness of `α₂` ascends from an open subgroup to a coinduced module.** -/
+theorem dualityMap2_bijective_discreteCoind_of_bijective
+    (hcor : Function.Bijective (explicitCor2 G N U hU))
+    (h : Function.Bijective (dualityMap2 U A N)) :
+    Function.Bijective (dualityMap2 G (DiscreteCoind G U A) N) := by
+  let c := explicitCoeff0 G (DiscreteCoind G U (InternalHom U A N))
+    (DiscreteCoind.toInternalHom U A N)
+  let ec := AddEquiv.ofBijective c
+    (explicitCoeff0_bijective G _ (DiscreteCoind.toInternalHom_bijective U A N hU))
+  let eY : H0 G (InternalHom G (DiscreteCoind G U A) N) →+
+      H0 U (InternalHom U A N) :=
+    (explicitShapiro0 G U (InternalHom U A N)).toAddMonoidHom.comp ec.symm.toAddMonoidHom
+  refine AddMonoidHom.bijective_of_bijective_pairing (dualityMap2 U A N)
+    (dualityMap2 G (DiscreteCoind G U A) N)
+    (explicitShapiro2 G U A (U.isClosed_of_isOpen hU)).toAddMonoidHom eY
+    (explicitCor2 G N U hU) (explicitShapiro2 G U A
+      (U.isClosed_of_isOpen hU)).bijective ?_ hcor h fun x y ↦ ?_
+  · exact (explicitShapiro0 G U (InternalHom U A N)).bijective.comp ec.symm.bijective
+  · rw [dualityMap2_eq_explicitDualityPairing02,
+      dualityMap2_eq_explicitDualityPairing02]
+    have hc : c (ec.symm y) = y := ec.apply_symm_apply y
+    have hec : ec.symm (c (ec.symm y)) = ec.symm y := congrArg ec.symm hc
+    rw [← hc, explicitDualityPairing02_explicitCoeff0_toInternalHom G U hU]
+    simp only [eY, AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom, hec]
+
+end Ascent
 
 end Shapiro
 

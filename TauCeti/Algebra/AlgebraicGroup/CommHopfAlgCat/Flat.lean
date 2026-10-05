@@ -6,14 +6,12 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Hopf.Translation
-public import Mathlib.Algebra.Category.CommHopfAlgCat
-public import Mathlib.RingTheory.RingHom.Flat
+public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.Surjective
+import TauCeti.RingTheory.Spectrum.Prime.GenericFreeness
 import TauCeti.RingTheory.RingHom.Flat
-import Mathlib.FieldTheory.IsAlgClosed.Basic
-import Mathlib.RingTheory.Jacobson.Ring
 
 /-!
-# Flatness of an affine group morphism at the identity
+# Flatness of affine group morphisms
 
 Over an algebraically closed field, an affine group morphism with finite-type source is
 flat if and only if it is flat at the identity. Right translation identifies the flatness
@@ -25,10 +23,27 @@ Equivalently, one can also localize the target coordinate ring at the image poin
 `Module.flat_iff_of_isLocalization`. This is the propagation step in proving flatness of
 quotient morphisms: it leaves only flatness at the identity to establish.
 
+Combined with generic freeness, it shows that a dominant homomorphism of finite-type affine
+groups onto a reduced group over an algebraically closed field is faithfully flat. Generic
+freeness makes the source coordinate ring free over a dense open subset of the target,
+dominance and density of rational points produce a rational source point lying over it, and
+translation propagates flatness from there to the identity. The source may be nonreduced, and
+the morphism need not be finite.
+
+## Main declarations
+
+* `TauCeti.CommHopfAlgCat.flat_iff_flat_localization_augmentation`: flatness can be checked at
+  the identity.
+* `TauCeti.CommHopfAlgCat.faithfullyFlat_of_dominant`: a dominant homomorphism onto a reduced
+  finite-type affine group over an algebraically closed field is faithfully flat.
+
 ## References
 
 * J. S. Milne, *Algebraic Groups* (2017), §5, for flatness of group homomorphisms
-  and the translation argument.
+  and the translation argument, and Propositions 1.65(a) and 1.70.
+* H. Matsumura, *Commutative Ring Theory*, Theorem 24.1, for generic freeness.
+* W. C. Waterhouse, *Introduction to Affine Group Schemes*, §14, for faithful flatness of
+  dominant homomorphisms via generic flatness and translation.
 -/
 
 public section
@@ -114,5 +129,43 @@ theorem flat_iff_flat_localization_augmentation [IsAlgClosed k] [Algebra.FiniteT
         algebraMap H (Localization.AtPrime p) :=
       (IsScalarTower.algebraMap_eq H K (Localization.AtPrime p)).symm
     rwa [heq, RingHom.flat_algebraMap_iff] at hlocal
+
+/-- A dominant homomorphism from a finite-type affine group to a reduced finite-type affine
+group over an algebraically closed field is faithfully flat. The source may be nonreduced, and
+the homomorphism need not be finite. -/
+theorem faithfullyFlat_of_dominant [IsAlgClosed k] [Algebra.FiniteType k H] [IsReduced H]
+    [Algebra.FiniteType k K] (f : H ⟶ K)
+    (hdom : DenseRange (PrimeSpectrum.comap f.hom.toAlgHom.toRingHom)) :
+    f.hom.toAlgHom.toRingHom.FaithfullyFlat := by
+  let := f.hom.toAlgHom.toAlgebra
+  have : IsScalarTower k H K := .of_algebraMap_eq fun x ↦ (f.hom.toAlgHom.commutes x).symm
+  have : Algebra.FiniteType H K := .of_restrictScalars_finiteType k H K
+  have : IsNoetherianRing H := Algebra.FiniteType.isNoetherianRing k H
+  have : Nontrivial H := (Bialgebra.counitAlgHom k H).toRingHom.domain_nontrivial
+  have hd := hdom.comp (denseRange_kernelPoint (k := k) (A := K))
+    (PrimeSpectrum.continuous_comap f.hom.toAlgHom.toRingHom)
+  -- Generic freeness gives a dense open set over which `K` is free; dominance and density of
+  -- rational points give a rational point of the source lying over it.
+  obtain ⟨g, hg⟩ := hd.exists_mem_open isOpen_interior
+    (Module.dense_interior_freeLocus_of_finiteType (A := H) (B := K) K).nonempty
+  have := (AlgHom.kernelPoint g).isPrime
+  have hlocal : Module.Flat H
+      (Localization.AtPrime (AlgHom.kernelPoint g).asIdeal) :=
+    PrimeSpectrum.flat_localization_of_comap_mem_freeLocus (AlgHom.kernelPoint g)
+      (interior_subset hg)
+  have hflat : f.hom.toAlgHom.toRingHom.Flat := by
+    apply (flat_iff_flat_localization_augmentation f).mpr
+    apply (flat_localization_kernel_iff f (toConv g)).mp
+    rw [← RingHom.algebraMap_toAlgebra f.hom.toAlgHom.toRingHom,
+      ← IsScalarTower.algebraMap_eq H K, RingHom.flat_algebraMap_iff]
+    -- Transport the prime together with its primality proof, so localization instances agree.
+    have hp : (AlgHom.kernelPoint g : PrimeSpectrum K) =
+        ⟨RingHom.ker g.toRingHom, RingHom.ker_isPrime _⟩ :=
+      PrimeSpectrum.ext (AlgHom.kernelPoint_asIdeal g)
+    exact (congrArg (fun p : PrimeSpectrum K ↦
+      Module.Flat H (Localization.AtPrime p.asIdeal)) hp).mp hlocal
+  have hinj : Function.Injective f.hom :=
+    (RingHom.denseRange_comap_iff_injective _).mp hdom
+  exact (faithfullyFlat_iff_flat_of_injective f hinj).mpr hflat
 
 end TauCeti.CommHopfAlgCat

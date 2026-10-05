@@ -80,11 +80,11 @@ namespace TauCeti
 section Interior
 
 variable {d : ℕ} [NeZero d] {k : WithTop ℕ∞} {M : Type*} [TopologicalSpace M]
-  [ChartedSpace (EuclideanHalfSpace d) M] [IsManifold (𝓡∂ d) k M]
+  [ChartedSpace (EuclideanHalfSpace d) M]
 
-/-- A point of a `C^k` manifold modeled on the `d`-dimensional Euclidean half-space is an interior
-point exactly when any chart of the maximal atlas around it reads it with positive zeroth
-coordinate. -/
+/-- A point of a charted space modeled on the `d`-dimensional Euclidean half-space is an interior
+point exactly when any chart of its `C^k` maximal atlas, `k ≠ 0`, around it reads it with positive
+zeroth coordinate. -/
 theorem ModelWithCorners.isInteriorPoint_euclideanHalfSpace_iff_of_mem_maximalAtlas (hk : k ≠ 0)
     {e : OpenPartialHomeomorph M (EuclideanHalfSpace d)}
     (he : e ∈ IsManifold.maximalAtlas (𝓡∂ d) k M) {x : M} (hx : x ∈ e.source) :

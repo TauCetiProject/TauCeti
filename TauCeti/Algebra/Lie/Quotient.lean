@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Lie.Quotient
+public import Mathlib.LinearAlgebra.Projection
 
 /-!
 # Homomorphisms from quotients by Lie ideals
@@ -13,16 +14,22 @@ public import Mathlib.Algebra.Lie.Quotient
 Mathlib equips the quotient of a Lie algebra by a Lie ideal with its Lie algebra structure and
 provides the quotient map as a morphism of Lie modules. This file records that map as a
 homomorphism of Lie algebras and gives its universal property: a homomorphism killing the ideal
-factors uniquely through the quotient.
+factors uniquely through the quotient. A Lie subalgebra complementary to the ideal is isomorphic
+to the quotient. For a surjective homomorphism, the induced map from the quotient by its kernel is
+an isomorphism, which is the first isomorphism theorem.
 
-These declarations live in the root `LieIdeal` namespace, extending Mathlib's API and supporting
-receiver notation on the ideal.
+These declarations live in the root `LieIdeal` and `LieHom` namespaces, extending Mathlib's API
+and supporting receiver notation on the ideal and the homomorphism.
 
 ## Main definitions
 
 * `LieIdeal.mkQ`: the quotient map `L →ₗ⁅R⁆ L ⧸ I`.
 * `LieIdeal.liftQ`: the homomorphism `L ⧸ I →ₗ⁅R⁆ L'` induced by a homomorphism
   `L →ₗ⁅R⁆ L'` whose kernel contains `I`.
+* `LieIdeal.quotientEquivOfIsCompl`: the isomorphism `L ⧸ I ≃ₗ⁅R⁆ S` for a Lie subalgebra `S`
+  complementary to `I`.
+* `LieHom.quotKerEquivOfSurjective`: the first isomorphism theorem, identifying the quotient of
+  `L` by the kernel of a surjective homomorphism with its target.
 
 ## Main results
 
@@ -36,6 +43,11 @@ receiver notation on the ideal.
 * `LieIdeal.lieHom_qext`: two homomorphisms from the quotient are equal when they agree after the
   quotient map.
 * `LieIdeal.eq_liftQ`: the lifted homomorphism is the unique such factorization.
+* `LieIdeal.ker_liftQ_mkQ`: for ideals `J ≤ I`, the kernel of `L ⧸ J → L ⧸ I` is the image of `I`.
+* `LieIdeal.mkQ_comp_incl_surjective`: a Lie subalgebra `P` with `I + P = L` maps onto `L ⧸ I`.
+* `LieIdeal.ker_mkQ_comp_incl`: the kernel of `P → L ⧸ I` is the ideal `I ∩ P` of `P`.
+* `LieIdeal.isCompl_map_incl`: a complement of `I ∩ P` inside a supplement `P` of `I` is a
+  complement of `I` in `L`.
 -/
 
 public section
@@ -128,4 +140,128 @@ theorem eq_liftQ {f : L →ₗ⁅R⁆ L'} {h : I ≤ f.ker} {g : L ⧸ I →ₗ�
     (hg : ∀ x : L, g (I.mkQ x) = f x) : g = I.liftQ f h :=
   I.lieHom_qext fun x => by rw [hg]; simp
 
+/-- For ideals `J ≤ I`, the kernel of the induced map `L ⧸ J → L ⧸ I` is the image of `I` in
+`L ⧸ J`. -/
+theorem ker_liftQ_mkQ {J : LieIdeal R L} (h : J ≤ I.mkQ.ker) :
+    (J.liftQ I.mkQ h).ker = I.map J.mkQ := by
+  rw [← LieSubmodule.toSubmodule_inj, LieHom.ker_toSubmodule, coe_liftQ, Submodule.ker_liftQ,
+    ← LieHom.ker_toSubmodule, ker_mkQ, coe_map_of_surjective J.mkQ_surjective]
+  rfl
+
+section Supplement
+
+variable {P : LieSubalgebra R L}
+
+/-- A Lie subalgebra `P` supplementing an ideal `I`, in the sense that `I + P = L`, maps onto the
+quotient `L ⧸ I`. -/
+theorem mkQ_comp_incl_surjective (hIP : Codisjoint I.toSubmodule P.toSubmodule) :
+    Function.Surjective (I.mkQ.comp P.incl) := by
+  intro y
+  obtain ⟨x, rfl⟩ := I.mkQ_surjective y
+  obtain ⟨i, hi, s, hs, rfl⟩ := Submodule.mem_sup.1 (hIP.eq_top ▸ Submodule.mem_top (x := x))
+  refine ⟨⟨s, hs⟩, ?_⟩
+  rw [LieHom.comp_apply, LieSubalgebra.coe_incl, ← sub_eq_zero, ← map_sub, ← LieHom.mem_ker,
+    ker_mkQ, Subtype.coe_mk, sub_add_cancel_right]
+  exact I.neg_mem hi
+
+/-- The kernel of the map `P → L ⧸ I` induced by a Lie subalgebra `P` is the ideal `I ∩ P` of
+`P`. -/
+@[simp]
+theorem ker_mkQ_comp_incl : (I.mkQ.comp P.incl).ker = I.comap P.incl := by
+  ext x
+  rw [LieHom.mem_ker, mem_comap, LieHom.comp_apply, mkQ_apply, LieSubmodule.Quotient.mk_eq_zero']
+
+end Supplement
+
+section IsCompl
+
+variable (S : LieSubalgebra R L) (h : IsCompl I.toSubmodule S.toSubmodule)
+
+/-- A Lie subalgebra `S` complementary to a Lie ideal `I` is isomorphic to the quotient `L ⧸ I`,
+the class of `x : S` corresponding to `x`. This is the Lie algebra version of
+`Submodule.quotientEquivOfIsCompl`, which is its underlying linear equivalence
+(`LieIdeal.toLinearEquiv_quotientEquivOfIsCompl`). -/
+noncomputable def quotientEquivOfIsCompl : (L ⧸ I) ≃ₗ⁅R⁆ S :=
+  (LieEquiv.ofBijective (I.mkQ.comp S.incl) <| by
+    convert (Submodule.quotientEquivOfIsCompl I.toSubmodule S.toSubmodule h).symm.bijective
+    ext x
+    simp [mkQ_apply]).symm
+
+/-- The inverse of `LieIdeal.quotientEquivOfIsCompl` sends `x : S` to its class. -/
+@[simp]
+theorem quotientEquivOfIsCompl_symm_apply (x : S) :
+    (I.quotientEquivOfIsCompl S h).symm x = LieSubmodule.Quotient.mk (x : L) := by
+  simp [quotientEquivOfIsCompl]
+
+/-- `LieIdeal.quotientEquivOfIsCompl` sends the class of `x : S` to `x`. -/
+@[simp]
+theorem quotientEquivOfIsCompl_apply_mk_coe (x : S) :
+    I.quotientEquivOfIsCompl S h (LieSubmodule.Quotient.mk (x : L)) = x := by
+  rw [← quotientEquivOfIsCompl_symm_apply I S h, LieEquiv.apply_symm_apply]
+
+/-- The linear equivalence underlying `LieIdeal.quotientEquivOfIsCompl` is
+`Submodule.quotientEquivOfIsCompl`. -/
+theorem toLinearEquiv_quotientEquivOfIsCompl :
+    (I.quotientEquivOfIsCompl S h).toLinearEquiv =
+      Submodule.quotientEquivOfIsCompl I.toSubmodule S.toSubmodule h :=
+  LinearEquiv.ext fun z => by
+    obtain ⟨x, rfl⟩ :=
+      (Submodule.quotientEquivOfIsCompl I.toSubmodule S.toSubmodule h).symm.surjective z
+    simp only [LinearEquiv.apply_symm_apply, LieEquiv.coe_toLinearEquiv]
+    -- `Submodule.quotientEquivOfIsCompl` inverts to `Submodule.Quotient.mk`, of which
+    -- `LieSubmodule.Quotient.mk` is an abbreviation
+    exact I.quotientEquivOfIsCompl_apply_mk_coe S h x
+
+end IsCompl
+
 end LieIdeal
+
+namespace LieHom
+
+variable {R L L' : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] [LieRing L'] [LieAlgebra R L']
+
+/-- **The first isomorphism theorem** for a surjective homomorphism of Lie algebras: the quotient
+by its kernel is isomorphic to the target. -/
+noncomputable def quotKerEquivOfSurjective (f : L →ₗ⁅R⁆ L') (hf : Function.Surjective f) :
+    (L ⧸ f.ker) ≃ₗ⁅R⁆ L' :=
+  LieEquiv.ofBijective (f.ker.liftQ f le_rfl)
+    ⟨f.ker.liftQ_injective f le_rfl le_rfl, f.ker.liftQ_surjective f le_rfl hf⟩
+
+/-- The first isomorphism theorem sends the class of `x` to `f x`. -/
+@[simp]
+theorem quotKerEquivOfSurjective_apply_mk (f : L →ₗ⁅R⁆ L') (hf : Function.Surjective f) (x : L) :
+    f.quotKerEquivOfSurjective hf (LieSubmodule.Quotient.mk x) = f x := (rfl)
+
+end LieHom
+
+namespace TauCeti
+
+variable {R L L' : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] [LieRing L'] [LieAlgebra R L']
+
+/-- The inverse of the first isomorphism theorem sends `f x` to the class of `x`. -/
+@[simp]
+theorem _root_.LieHom.quotKerEquivOfSurjective_symm_apply (f : L →ₗ⁅R⁆ L')
+    (hf : Function.Surjective f) (x : L) :
+    (f.quotKerEquivOfSurjective hf).symm (f x) = LieSubmodule.Quotient.mk x := by
+  simpa only [LieHom.quotKerEquivOfSurjective_apply_mk] using
+    (f.quotKerEquivOfSurjective hf).symm_apply_apply (LieSubmodule.Quotient.mk x)
+
+variable (I : LieIdeal R L) {P : LieSubalgebra R L}
+
+/-- **A complement inside a supplement.** If a Lie subalgebra `P` supplements an ideal `I`, then a
+complement in `P` of the ideal `I ∩ P` of `P` is a complement of `I` in `L`. -/
+theorem _root_.LieIdeal.isCompl_map_incl (hIP : Codisjoint I.toSubmodule P.toSubmodule)
+    {J : LieSubalgebra R P} (hJ : IsCompl (I.comap P.incl).toSubmodule J.toSubmodule) :
+    IsCompl I.toSubmodule (J.map P.incl).toSubmodule := by
+  refine ⟨Submodule.disjoint_def.2 fun x hxI hxJ ↦ ?_,
+    codisjoint_iff.2 (Submodule.eq_top_iff'.2 fun x ↦ ?_)⟩
+  · obtain ⟨j, hj, rfl⟩ := (LieSubalgebra.mem_map ..).1 hxJ
+    rw [Submodule.disjoint_def.1 hJ.disjoint j (LieIdeal.mem_comap.2 hxI) hj, map_zero]
+  · obtain ⟨i, hi, s, hs, rfl⟩ := Submodule.mem_sup.1 (hIP.eq_top ▸ Submodule.mem_top (x := x))
+    obtain ⟨k, hk, j, hj, hkj⟩ := Submodule.mem_sup.1
+      (hJ.codisjoint.eq_top ▸ Submodule.mem_top (x := (⟨s, hs⟩ : P)))
+    refine Submodule.mem_sup.2 ⟨i + P.incl k, I.add_mem hi (LieIdeal.mem_comap.1 hk), P.incl j,
+      (LieSubalgebra.mem_map ..).2 ⟨j, hj, rfl⟩, ?_⟩
+    rw [add_assoc, ← map_add, hkj, LieSubalgebra.coe_incl]
+
+end TauCeti

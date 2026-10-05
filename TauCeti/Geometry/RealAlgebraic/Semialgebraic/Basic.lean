@@ -33,6 +33,10 @@ Every closure property proved here follows directly from the definition:
   over `Fin n → R` with distinguished coordinate `0`; the vertical slice is a subset of
   `Fin 1 → R`, the one-coordinate space of the definition.
 
+Conversely, every semialgebraic set is described by a condition on the signs of finitely many
+polynomials (`TauCeti.IsSemialgebraic.exists_eq_setOf_sign_eval`), and so membership in it depends
+on only finitely many coordinates (`TauCeti.IsSemialgebraic.exists_finset_mem_iff_of_eqOn`).
+
 ## References
 
 S. Basu, R. Pollack, and M.-F. Roy,
@@ -291,6 +295,12 @@ theorem IsSemialgebraic.image_appendEquiv_prod {m n : ℕ} {s : Set (Fin m → R
   rw [Equiv.image_eq_preimage_symm]
   exact (hs.preimage_comp (Fin.castAdd n)).inter (ht.preimage_comp (Fin.natAdd m))
 
+/-- The cylinder `Fin.tail ⁻¹' s` over a semialgebraic subset `s` of `Fin n → R`, with
+distinguished coordinate `0`, is semialgebraic. -/
+theorem IsSemialgebraic.preimage_tail {n : ℕ} {s : Set (Fin n → R)} (hs : IsSemialgebraic s) :
+    IsSemialgebraic (Fin.tail ⁻¹' s : Set (Fin (n + 1) → R)) :=
+  hs.preimage_comp Fin.succ
+
 /-- The horizontal section at height `t` of a semialgebraic subset of `Fin (n + 1) → R`, whose
 distinguished coordinate is `0`, is semialgebraic. -/
 theorem IsSemialgebraic.preimage_cons_left {n : ℕ} {s : Set (Fin (n + 1) → R)}
@@ -318,5 +328,32 @@ theorem IsSemialgebraic.preimage_cons_right {n : ℕ} {s : Set (Fin (n + 1) → 
     (Fin.cons (X 0) fun j => C (x j) : Fin (n + 1) → MvPolynomial (Fin 1) R)
   rw [hf] at h
   exact h
+
+/-! ### Sign-condition normal form -/
+
+/-- **Sign-condition normal form.** Every semialgebraic set is described by a condition on the
+signs of finitely many polynomials. -/
+theorem IsSemialgebraic.exists_eq_setOf_sign_eval {s : Set (σ → R)} (hs : IsSemialgebraic s) :
+    ∃ (m : ℕ) (p : Fin m → MvPolynomial σ R) (Φ : (Fin m → SignType) → Prop),
+      s = {x | Φ fun i => SignType.sign (eval x (p i))} := by
+  refine IsSemialgebraic.induction (fun p => ⟨1, fun _ => p, fun ε => ε 0 = 0, by simp⟩)
+    (fun p => ⟨1, fun _ => p, fun ε => ε 0 = 1, by simp [sign_eq_one_iff]⟩)
+    ⟨0, Fin.elim0, fun _ => False, by simp⟩
+    (fun s _ ⟨m, p, Φ, hs⟩ => ⟨m, p, fun ε => ¬Φ ε, hs ▸ compl_ofPred _⟩)
+    (fun s t _ _ ⟨m, p, Φ, hs⟩ ⟨m', p', Φ', ht⟩ => ⟨m + m', Fin.append p p',
+      fun ε => Φ (fun i => ε (Fin.castAdd m' i)) ∨ Φ' (fun i => ε (Fin.natAdd m i)), ?_⟩) hs
+  ext x
+  simp [hs, ht]
+
+/-- **Finitely many coordinates.** Membership in a semialgebraic set depends on only finitely
+many coordinates: those of the variables of the polynomials describing it. -/
+theorem IsSemialgebraic.exists_finset_mem_iff_of_eqOn {s : Set (σ → R)} (hs : IsSemialgebraic s) :
+    ∃ F : Finset σ, ∀ x y : σ → R, EqOn x y F → (x ∈ s ↔ y ∈ s) := by
+  classical
+  obtain ⟨m, p, Φ, rfl⟩ := hs.exists_eq_setOf_sign_eval
+  refine ⟨Finset.univ.biUnion fun i => (p i).vars, fun x y hxy => ?_⟩
+  have h (i : Fin m) : eval x (p i) = eval y (p i) :=
+    eval₂Hom_congr' rfl (fun j hj _ => hxy (by simpa using ⟨i, hj⟩)) rfl
+  simp [h]
 
 end TauCeti

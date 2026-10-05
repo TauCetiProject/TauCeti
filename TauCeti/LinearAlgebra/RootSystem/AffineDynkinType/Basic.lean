@@ -78,6 +78,7 @@ number, which reduces connectedness to a single induction. Explicitly:
 
 * `TauCeti.AffineDynkinType.graph_connected`: every valid affine simply-laced diagram is
   connected.
+* `TauCeti.AffineDynkinType.exists_adj_graph`: every node of a valid diagram has a neighbour.
 * `TauCeti.AffineDynkinType.graph_A_adj`, `.graph_D_adj`, `.graph_E6_adj`, `.graph_E7_adj`,
   `.graph_E8_adj`: adjacency in each diagram, as a condition on node numbers.
 * `TauCeti.AffineDynkinType.cartanMatrix_eq_graphCartanMatrix`: outside `A₁` the Cartan matrix is
@@ -347,6 +348,14 @@ theorem graph_connected {t : AffineDynkinType} (ht : t.Valid) : t.graph.Connecte
   | E6 => exact SimpleGraph.connected_fin_of_exists_adj_lt E6.nodes_pos (by decide)
   | E7 => exact SimpleGraph.connected_fin_of_exists_adj_lt E7.nodes_pos (by decide)
   | E8 => exact SimpleGraph.connected_fin_of_exists_adj_lt E8.nodes_pos (by decide)
+
+/-- Every node of a valid affine simply-laced diagram has a neighbour: the diagram is connected
+and has at least two nodes. -/
+theorem exists_adj_graph {t : AffineDynkinType} (ht : t.Valid) (i : Fin t.nodes) :
+    ∃ j, t.graph.Adj i j := by
+  have : Nontrivial (Fin t.nodes) := Fin.nontrivial_iff_two_le.mpr (by
+    cases t <;> simp only [Valid, nodes] at ht ⊢ <;> omega)
+  exact (graph_connected ht).preconnected.exists_adj_of_nontrivial i
 
 /-! ## The generalized Cartan matrix -/
 

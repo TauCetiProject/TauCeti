@@ -93,6 +93,14 @@ lemma quotientSpecι_def (H : _root_.CommHopfAlgCat.{u} R) (I : HopfIdeal R H) :
       (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).map (mkQuotient H I).op :=
   (rfl)
 
+/-- A morphism into a quotient Hopf spectrum, followed by its inclusion, is represented by
+precomposing the coordinate morphism with the quotient map. -/
+lemma hopfSpec_map_comp_quotientSpecι {H K : _root_.CommHopfAlgCat.{u} R}
+    (I : HopfIdeal R H) (f : quotient H I ⟶ K) :
+    (hopfSpec (CommRingCat.of R)).map f.op ≫ quotientSpecι H I =
+      (hopfSpec (CommRingCat.of R)).map (mkQuotient H I ≫ f).op := by
+  rw [quotientSpecι_def, op_comp, Functor.map_comp]
+
 /-- Transporting a quotient spectrum along an equality of Hopf ideals and then including it into
 the ambient Hopf spectrum gives the original quotient-spectrum inclusion. -/
 theorem eqToHom_comp_quotientSpecι (H : _root_.CommHopfAlgCat.{u} R)

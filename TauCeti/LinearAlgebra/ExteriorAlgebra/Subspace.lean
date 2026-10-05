@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
-public import TauCeti.LinearAlgebra.ExteriorPower
+public import TauCeti.LinearAlgebra.ExteriorPower.Basic
 
 /-!
 # Recovering a subspace from its exterior line

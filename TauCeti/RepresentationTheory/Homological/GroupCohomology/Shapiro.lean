@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Claude
+Authors: Claude, Codex
 -/
 module
 
@@ -9,6 +9,9 @@ public import Mathlib.RepresentationTheory.Homological.GroupCohomology.Functoria
 public import Mathlib.RepresentationTheory.Homological.GroupCohomology.Shapiro
 public import TauCeti.RepresentationTheory.Homological.Resolution
 import TauCeti.RepresentationTheory.Homological.GroupCohomology.Resolution
+
+public import TauCeti.RepresentationTheory.Coinduced
+public import TauCeti.RepresentationTheory.Homological.GroupCohomology.LongExactSequence
 
 /-!
 # Shapiro's isomorphism is restriction followed by evaluation
@@ -38,6 +41,9 @@ a corestriction satisfying `cor ∘ res = [G : S]`.
   in the coefficients.
 * `TauCeti.groupCohomology.map_unit_comp_coindIso_hom`: read through Shapiro's isomorphism,
   restriction to `S` is the map induced by the unit `B ⟶ Coind_S^G Res_S B`.
+
+* `TauCeti.groupCohomology.δ_comp_coindIso_hom`: Shapiro's isomorphism intertwines the
+  connecting maps of a short exact sequence and its coinduction.
 
 ## References
 
@@ -130,5 +136,21 @@ theorem map_unit_comp_coindIso_hom (B : Rep.{u} k G) (n : ℕ) :
   rw [coindIso_hom, ← map_comp, (resCoindAdjunction k S.subtype).left_triangle_components B]
   -- `(MonoidHom.id G).comp S.subtype` is `S.subtype` by definition.
   rfl
+
+/-- Shapiro's isomorphism intertwines the connecting maps of a short exact sequence and
+its coinduction to the ambient group. -/
+@[reassoc]
+theorem δ_comp_coindIso_hom {X : ShortComplex (Rep k S)} (hX : X.ShortExact)
+    (i j : ℕ) (hij : i + 1 = j) :
+    δ (hX.map_of_exact (coindFunctor k S.subtype)) i j hij ≫ (coindIso X.X₁ j).hom =
+      (coindIso X.X₃ i).hom ≫ δ hX i j hij := by
+  rw [coindIso_hom, coindIso_hom]
+  exact TauCeti.groupCohomology.δ_naturality S.subtype
+    (hX.map_of_exact (coindFunctor k S.subtype)) hX
+    { τ₁ := (resCoindAdjunction k S.subtype).counit.app X.X₁
+      τ₂ := (resCoindAdjunction k S.subtype).counit.app X.X₂
+      τ₃ := (resCoindAdjunction k S.subtype).counit.app X.X₃
+      comm₁₂ := ((resCoindAdjunction k S.subtype).counit.naturality X.f).symm
+      comm₂₃ := ((resCoindAdjunction k S.subtype).counit.naturality X.g).symm } i j hij
 
 end TauCeti.groupCohomology

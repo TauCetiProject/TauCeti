@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Quaternion.SplittingCriterion
 public import TauCeti.FieldTheory.SquareClassGroup.Basic
+import Mathlib.Tactic.LinearCombination
 
 /-!
 # The norm-equation Hilbert symbol
