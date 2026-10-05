@@ -19,9 +19,8 @@ It is Mathlib's cyclotomic character restricted from ring automorphisms to the G
 The pointwise equation fixes this choice of character for later arithmetic comparisons.
 Its bundled form `continuousLocalCyclotomicCharacter p K` is the continuous homomorphism that the
 twisted coefficients `TauCeti.ZModTwist` and the prescription property
-`TauCeti.HasPrescriptionProperty` take. Its values only depend on the class of an element in the
-topological abelianization (`localCyclotomicCharacter_eq_of_mk_eq`), which is how it is evaluated
-on Artin symbols.
+`TauCeti.HasPrescriptionProperty` take. It factors through the topological abelianization as
+`abelianizedLocalCyclotomicCharacter p K`, which is how it is evaluated on Artin symbols.
 -/
 
 public section
@@ -62,13 +61,18 @@ theorem continuousLocalCyclotomicCharacter_apply (σ : Field.absoluteGaloisGroup
     continuousLocalCyclotomicCharacter p K σ = localCyclotomicCharacter p K σ :=
   (rfl)
 
-variable {p K} in
-/-- The cyclotomic character factors through the topological abelianization: two elements of
-`Gal(AlgebraicClosure K/K)` with the same class in `Field.absoluteGaloisGroupAbelianization K`
-have the same cyclotomic character. -/
-theorem localCyclotomicCharacter_eq_of_mk_eq {σ τ : Field.absoluteGaloisGroup K}
-    (h : (σ : Field.absoluteGaloisGroupAbelianization K) = τ) :
-    localCyclotomicCharacter p K σ = localCyclotomicCharacter p K τ := by
-  simpa using congrArg (TopologicalAbelianization.lift (continuousLocalCyclotomicCharacter p K)) h
+/-- The `p`-adic cyclotomic character on the topological abelianization of the absolute Galois
+group of `K`, through which the cyclotomic character factors since `ℤ_[p]ˣ` is commutative. -/
+noncomputable def abelianizedLocalCyclotomicCharacter :
+    Field.absoluteGaloisGroupAbelianization K →ₜ* ℤ_[p]ˣ :=
+  TopologicalAbelianization.lift (continuousLocalCyclotomicCharacter p K)
+
+/-- On the class of `σ`, the abelianized cyclotomic character is the cyclotomic character
+of `σ`. -/
+@[simp]
+theorem abelianizedLocalCyclotomicCharacter_mk (σ : Field.absoluteGaloisGroup K) :
+    abelianizedLocalCyclotomicCharacter p K (σ : Field.absoluteGaloisGroupAbelianization K) =
+      localCyclotomicCharacter p K σ :=
+  TopologicalAbelianization.lift_mk _ σ
 
 end TauCeti

@@ -45,9 +45,9 @@ the cyclotomic character of Artin symbols from `ℚ_p` to its finite extensions.
   `p` raises every root of unity of order prime to `p` to the `p`-th power.
 * `TauCeti.ClassFieldTheory.localArtinMap_Q2_zeta5`: over `ℚ_[2]`, the Artin symbol of `2` sends
   a fifth root of unity `ζ` to `ζ ^ 2`.
-* `TauCeti.ClassFieldTheory.localCyclotomicCharacter_eq_zpow_of_mk_eq_artinMap`: for `p` different
+* `TauCeti.ClassFieldTheory.abelianizedLocalCyclotomicCharacter_artinMap`: for `p` different
   from the residue characteristic, `χ_p(Art_K(x)) = q ^ v_K(x)`.
-* `TauCeti.ClassFieldTheory.localCyclotomicCharacter_eq_of_mk_eq_artinMap_norm`: the cyclotomic
+* `TauCeti.ClassFieldTheory.abelianizedLocalCyclotomicCharacter_artinMap_norm`: the cyclotomic
   character of the Artin symbol of `x ∈ Lˣ` is that of the Artin symbol of `N_{L/K} x`.
 
 ## Implementation notes
@@ -180,18 +180,18 @@ theorem localArtinMap_Q2_zeta5 (E : Type*) [Field E] [Algebra ℚ_[2] E]
 
 /-- **The `p`-adic cyclotomic character of an Artin symbol, `p` away from the residue
 characteristic.** Let `q` be the cardinality of the residue field of `K`, let `u ∈ ℤ_pˣ` be the
-unit `q`, and let `σ ∈ Gal(AlgebraicClosure K/K)` represent the absolute Artin symbol of `x ∈ Kˣ`.
-Then the `p`-adic cyclotomic character of `σ` is `q ^ v_K(x)`:
+unit `q`, and let `x ∈ Kˣ`. Then the `p`-adic cyclotomic character of the absolute Artin symbol
+of `x` is `q ^ v_K(x)`:
 
 ```text
 χ_p (Art_K x) = q ^ v_K(x).
 ```
 
 That `q` is a unit of `ℤ_[p]` forces `p` to differ from the residue characteristic. -/
-theorem localCyclotomicCharacter_eq_zpow_of_mk_eq_artinMap {p : ℕ} [Fact p.Prime] {u : ℤ_[p]ˣ}
-    (hu : (u : ℤ_[p]) = Nat.card 𝓀[K]) (x : Kˣ) {σ : Field.absoluteGaloisGroup K}
-    (hσ : (σ : Field.absoluteGaloisGroupAbelianization K) = artinMap K x) :
-    localCyclotomicCharacter p K σ = u ^ (normalizedValuation K x).toAdd := by
+theorem abelianizedLocalCyclotomicCharacter_artinMap {p : ℕ} [Fact p.Prime] {u : ℤ_[p]ˣ}
+    (hu : (u : ℤ_[p]) = Nat.card 𝓀[K]) (x : Kˣ) :
+    abelianizedLocalCyclotomicCharacter p K (artinMap K x) =
+      u ^ (normalizedValuation K x).toAdd := by
   -- `q` is a power of the residue characteristic and a `p`-adic unit, so `p` is prime to it.
   have hp : p.Coprime (ringChar 𝓀[K]) := by
     refine (Nat.coprime_primes Fact.out (CharP.prime_ringChar 𝓀[K])).2 fun hpq ↦ ?_
@@ -205,7 +205,7 @@ theorem localCyclotomicCharacter_eq_zpow_of_mk_eq_artinMap {p : ℕ} [Fact p.Pri
   obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[K]
   have hπ : IsUniformizer K (Units.mk0 (ϖ : K) fun h ↦ hϖ.ne_zero (Subtype.ext h)) :=
     (isUniformizer_iff_exists_irreducible K _).2 ⟨ϖ, hϖ, rfl⟩
-  obtain ⟨w, n, hw, rfl⟩ := exists_eq_mul_zpow_of_irreducible hϖ x
+  obtain ⟨w, n, hw, hx⟩ := exists_eq_mul_zpow_of_irreducible hϖ x
   -- The symbol of `π` is represented by a Frobenius lift, that of `w` by an element of inertia.
   obtain ⟨φ, hφ⟩ := QuotientGroup.mk_surjective
     (artinMap K (Units.mk0 (ϖ : K) fun h ↦ hϖ.ne_zero (Subtype.ext h)))
@@ -216,15 +216,16 @@ theorem localCyclotomicCharacter_eq_zpow_of_mk_eq_artinMap {p : ℕ} [Fact p.Pri
   have hτ1 : localCyclotomicCharacter p K τ = 1 :=
     localCyclotomicCharacter_eq_one_of_mem_inertiaSubgroup p hp
       (mem_inertiaSubgroup_of_mk_eq_artinMap K w hw τ hτ)
-  have hστ : (σ : Field.absoluteGaloisGroupAbelianization K) = ↑(τ * φ ^ n) := by
-    simp [hσ, hτ, hφ]
-  rw [localCyclotomicCharacter_eq_of_mk_eq hστ, map_mul, map_zpow, hτ1, hφu, one_mul]
+  have hart : artinMap K x =
+      ((τ * φ ^ n : Field.absoluteGaloisGroup K) : Field.absoluteGaloisGroupAbelianization K) := by
+    simp [hx, hτ, hφ]
+  rw [hart, abelianizedLocalCyclotomicCharacter_mk, map_mul, map_zpow, hτ1, hφu, one_mul]
+  subst x
   simp [(normalizedValuation_eq_one_iff w).2 hw, normalizedValuation_irreducible hϖ]
 
 /-- **The cyclotomic character of the Artin symbol of a norm.** Let `L/K` be a finite separable
-extension of nonarchimedean local fields. If `τ ∈ Gal(AlgebraicClosure L/L)` represents the
-absolute Artin symbol of `x ∈ Lˣ` and `σ ∈ Gal(AlgebraicClosure K/K)` represents that of its norm
-`N_{L/K} x`, then `τ` and `σ` have the same `p`-adic cyclotomic character:
+extension of nonarchimedean local fields. The absolute Artin symbol of `x ∈ Lˣ` and that of its
+norm `N_{L/K} x` have the same `p`-adic cyclotomic character:
 
 ```text
 χ_L (Art_L x) = χ_K (Art_K (N_{L/K} x)).
@@ -232,16 +233,14 @@ absolute Artin symbol of `x ∈ Lˣ` and `σ ∈ Gal(AlgebraicClosure K/K)` repr
 
 This reduces the cyclotomic character of the Artin symbols of a finite extension of `ℚ_p` to those
 of `ℚ_p` itself. -/
-theorem localCyclotomicCharacter_eq_of_mk_eq_artinMap_norm (p : ℕ) [Fact p.Prime] {L : Type}
+theorem abelianizedLocalCyclotomicCharacter_artinMap_norm (p : ℕ) [Fact p.Prime] {L : Type}
     [Field L] [Algebra K L] [FiniteDimensional K L] [Algebra.IsSeparable K L] [ValuativeRel L]
-    [TopologicalSpace L] [IsNonarchimedeanLocalField L] [ValuativeExtension K L] (x : Lˣ)
-    {τ : Field.absoluteGaloisGroup L}
-    (hτ : (τ : Field.absoluteGaloisGroupAbelianization L) = artinMap L x)
-    {σ : Field.absoluteGaloisGroup K}
-    (hσ : (σ : Field.absoluteGaloisGroupAbelianization K) = artinMap K (Algebra.normUnits K x)) :
-    localCyclotomicCharacter p L τ = localCyclotomicCharacter p K σ := by
+    [TopologicalSpace L] [IsNonarchimedeanLocalField L] [ValuativeExtension K L] (x : Lˣ) :
+    abelianizedLocalCyclotomicCharacter p L (artinMap L x) =
+      abelianizedLocalCyclotomicCharacter p K (artinMap K (Algebra.normUnits K x)) := by
   let iota : L →ₐ[K] SeparableClosure K := IsSepClosed.lift
-  rw [← localCyclotomicCharacter_absoluteGaloisGroupExtend p K L iota τ]
-  exact localCyclotomicCharacter_eq_of_mk_eq ((artinMap_norm L iota x τ hτ).trans hσ.symm)
+  obtain ⟨τ, hτ⟩ := QuotientGroup.mk_surjective (artinMap L x)
+  rw [← hτ, ← artinMap_norm L iota x τ hτ, abelianizedLocalCyclotomicCharacter_mk,
+    abelianizedLocalCyclotomicCharacter_mk, localCyclotomicCharacter_absoluteGaloisGroupExtend]
 
 end TauCeti.ClassFieldTheory
