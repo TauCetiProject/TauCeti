@@ -9,7 +9,7 @@ module
 public import Mathlib.LinearAlgebra.StdBasis
 
 /-!
-# The algebra homomorphisms out of a finite power of the base ring, and function algebra pullbacks
+# The algebra homomorphisms out of a finite power of the base ring
 
 Let `R` be a nontrivial commutative semiring without zero divisors and `ι` a finite index type.
 Mathlib's `AlgHom.eq_piEvalAlgHom` says that every `R`-algebra homomorphism `(ι → R) →ₐ[R] R` is a
@@ -22,18 +22,11 @@ makes the equivalence useful for counting: a split commutative algebra has exact
 characters as it has factors. The Burnside--Dixon--Schneider algorithm consumes it in that form, to
 count the central characters of a group algebra whose centre has been split into coordinates.
 
-In addition, this module provides the general contravariant pullback `Pi.pullback` between
-full function algebras: given `f : α → β`, precomposition induces an `R`-algebra homomorphism
-`(β → R) →ₐ[R] (α → R)`. This serves as general algebraic infrastructure for pulling back functions
-along arbitrary set-theoretic maps; it applies to coordinate rings when an explicit equivalence with
-a function algebra is available, as for finite constant groups.
-
 ## Main definitions
 
 * `Pi.evalAlgHom_injective`: distinct coordinates give distinct evaluation homomorphisms.
 * `Pi.evalAlgHomEquiv`: the coordinates of `ι → R` are exactly the `R`-algebra homomorphisms
   `(ι → R) →ₐ[R] R`.
-* `Pi.pullback`: pull functions back along a map of types, as an algebra homomorphism.
 -/
 
 public section
@@ -53,17 +46,6 @@ theorem evalAlgHom_injective [Nontrivial R] :
   rw [evalAlgHom_apply, evalAlgHom_apply, Pi.single_eq_same,
     Pi.single_eq_of_ne (Ne.symm hne)] at h
   exact one_ne_zero h
-
-variable {α β : Type*}
-
-/-- Pull functions back along a map of types, as an algebra homomorphism. -/
-def pullback (f : α → β) : (β → R) →ₐ[R] (α → R) :=
-  AlgHom.pi fun x => Pi.evalAlgHom R (fun _ : β => R) (f x)
-
-@[simp]
-theorem pullback_apply (f : α → β) (a : β → R) (x : α) :
-    pullback R f a x = a (f x) := by
-  simp [pullback]
 
 variable [NoZeroDivisors R] [Nontrivial R] [Finite ι]
 
