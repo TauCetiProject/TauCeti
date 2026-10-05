@@ -29,9 +29,9 @@ public section
 open Set MeasureTheory intervalIntegral
 open scoped ENNReal NNReal Interval
 
-variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedSpace ℝ F] [IsScalarTower ℝ 𝕜 F]
-  [CompleteSpace F]
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [NormedAlgebra ℝ 𝕜] [NormedAddCommGroup E]
+  [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedSpace ℝ F]
+  [IsScalarTower ℝ 𝕜 F] [CompleteSpace F]
 
 /-- If `f` has the power series `p` on the ball of radius `r` about `c`, and `L t` is a family of
 continuous linear maps of norm at most one, continuous in `t ∈ [0, 1]`, then the average
@@ -67,8 +67,8 @@ theorem HasFPowerSeriesOnBall.intervalIntegral_comp {f : E → F}
     simpa [edist_zero_right, enorm_eq_nnnorm] using lt_of_lt_of_le hy hf.r_le
   have happly (n : ℕ) : (∫ t in (0 : ℝ)..1, (p n).compContinuousLinearMap fun _ ↦ L t)
       (fun _ ↦ y) = ∫ t in (0 : ℝ)..1, p n fun _ ↦ L t y := by
-    simpa using ((ContinuousMultilinearMap.apply 𝕜 (fun _ : Fin n ↦ E) F
-      fun _ ↦ y).intervalIntegral_comp_comm (hint n)).symm
+    simpa using (((ContinuousMultilinearMap.apply 𝕜 (fun _ : Fin n ↦ E) F
+      fun _ ↦ y).restrictScalars ℝ).intervalIntegral_comp_comm (hint n)).symm
   simp only [happly]
   -- dominated convergence, with the summable bound `‖p n‖ * ‖y‖ ^ n`
   have hLy : ∀ t ∈ Ι (0 : ℝ) 1, ‖L t y‖ ≤ ‖y‖ := fun t ht ↦

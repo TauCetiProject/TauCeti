@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Analytic.Order
 public import Mathlib.Analysis.Calculus.FDeriv.Analytic
+public import TauCeti.Analysis.Analytic.Constructions
 public import TauCeti.Analysis.Analytic.IntervalIntegral
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
@@ -18,19 +19,15 @@ Let `G (x, y)` be analytic near `(x₀, y₀)`, over `ℝ` or `ℂ`, with `y` a 
 variable. This file shows that `G` vanishes to order exactly `m` in `y` along `y = y₀` for every
 `x` near `x₀` if and only if `G (x, y) = (y - y₀) ^ m • u (x, y)` near `(x₀, y₀)` with `u` analytic
 and `u (x₀, y₀) ≠ 0` (`AnalyticAt.eventually_analyticOrderAt_eq_natCast_iff`). This is
-McCallum–Parusiński–Paunescu, Lemma 4.4. Since `u` is then nonzero near `(x₀, y₀)`, it puts a
-function of constant order in a distinguished variable into the normal form `y ^ m * unit`, the
-form of the hypotheses of the Puiseux theorem with parameters (op. cit., §4).
+McCallum–Parusiński–Paunescu, Lemma 4.4. Since `u` is then nonzero near `(x₀, y₀)`, it writes a
+function of constant order in a distinguished variable as a centered power `(y - y₀) ^ m` times a
+nowhere-vanishing analytic factor, the form of the hypotheses of the Puiseux theorem with
+parameters (op. cit., §4).
 
 The version with `m ≤` the order in place of equality, and no condition on `u`, is
-`AnalyticAt.eventually_natCast_le_analyticOrderAt_iff`.
-
-## Implementation notes
-
-Both are proved by dividing out one factor `y - y₀` at a time. The division step is the integral
-form of Hadamard's lemma (`AnalyticAt.exists_eventuallyEq_sub_smul`): if `G` vanishes on `y = y₀`,
-then `G (x, y) = (y - y₀) • ∫ t in 0..1, ∂G/∂y (x, y₀ + t (y - y₀))`, and the integral is analytic
-by `AnalyticAt.intervalIntegral_comp`.
+`AnalyticAt.eventually_natCast_le_analyticOrderAt_iff`. It rests on Hadamard's lemma in a
+distinguished variable (`AnalyticAt.exists_eventuallyEq_sub_smul`): a function analytic at
+`(x₀, y₀)` that vanishes on `y = y₀` near `x₀` is `(y - y₀) • H` near `(x₀, y₀)` with `H` analytic.
 
 ## References
 
@@ -42,16 +39,8 @@ public section
 
 open Filter Set Topology
 
-variable {𝕜 E E' F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-  [CompleteSpace F]
-
-/-- The slices `y ↦ f (x, y)` of a function analytic at `p` are analytic at `p.2` for every `x`
-near `p.1`. -/
-theorem AnalyticAt.eventually_analyticAt_curry_right {f : E × E' → F} {p : E × E'}
-    (hf : AnalyticAt 𝕜 f p) : ∀ᶠ x in 𝓝 p.1, AnalyticAt 𝕜 (fun y ↦ f (x, y)) p.2 :=
-  ((continuous_id.prodMk continuous_const).tendsto p.1).eventually hf.eventually_analyticAt
-    |>.mono fun _ hx ↦ hx.curry_right
+variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
 
 /-- **Hadamard's lemma** in a distinguished variable: a function `G` analytic at `(x₀, y₀)` that
 vanishes on the hyperplane `y = y₀` near `x₀` is `(y - y₀) • H (x, y)` near `(x₀, y₀)`, with `H`
