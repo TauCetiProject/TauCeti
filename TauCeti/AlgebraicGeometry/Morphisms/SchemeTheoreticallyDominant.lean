@@ -47,19 +47,22 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.ext_of_isSchemeTheoreticallyDominant
   let ι' : W' ⟶ X' := Over.homMk ι
   have : IsSeparated Y'.hom := inferInstanceAs (IsSeparated s)
   have hι' : ι' ≫ f' = ι' ≫ g' := by
-    ext
-    exact hι
+    apply Over.OverMorphism.ext
+    simpa only [Over.comp_left, ι', f', g', Over.homMk_left] using hι
   have hker : (equalizer.ι f' g').left.ker = ⊥ := by
     apply le_antisymm _ bot_le
     calc
       (equalizer.ι f' g').left.ker ≤
           ((equalizer.lift ι' hι').left ≫ (equalizer.ι f' g').left).ker :=
         Scheme.Hom.le_ker_comp _ _
-      _ = ι.ker := by rw [← Over.comp_left, equalizer.lift_ι]; rfl
+      _ = ι.ker := by
+        rw [← Over.comp_left, equalizer.lift_ι]
+        simp only [ι', Over.homMk_left]
       _ = ⊥ := ι.ker_eq_bot
   have : IsIso (equalizer.ι f' g').left :=
     IsClosedImmersion.isIso_iff_ker_eq_bot.mpr hker
   rw [← cancel_epi (equalizer.ι f' g').left]
-  exact congrArg Over.Hom.left (equalizer.condition f' g')
+  simpa only [Over.comp_left, f', g', Over.homMk_left] using
+    congrArg Over.Hom.left (equalizer.condition f' g')
 
 end TauCeti
