@@ -54,6 +54,12 @@ local instance spinorNormImageInvertibleTwoRat : Invertible (2 : ℚ) :=
 local instance spinorNormImageInvertibleTwoPadic (p : Nat.Primes) : Invertible (2 : ℚ_[p]) :=
   invertibleOfNonzero two_ne_zero
 
+/-- Use the field structure directly when computing ranks over a `p`-adic field, avoiding
+unnecessary searches for alternative ring structures. -/
+instance instStrongRankConditionPadic (p : Nat.Primes) : StrongRankCondition ℚ_[p] := by
+  let hfield : Field ℚ_[p] := @NormedField.toField _ (Padic.normedField (p : ℕ))
+  exact @commRing_strongRankCondition _ hfield.toCommRing (@Field.toNontrivial _ hfield)
+
 variable {V : Type*} [AddCommGroup V] [Module ℚ V] [FiniteDimensional ℚ V]
   {Q : QuadraticForm ℚ V} (U : OrthogonalCompactOpens Q)
 

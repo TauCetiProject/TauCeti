@@ -155,7 +155,7 @@ theorem reductionK0_quotSMulTop (ρ : Representation ℤ G W) (r : ℤ)
     rw [← TensorProduct.smul_tmul, ← IsScalarTower.algebraMap_smul k r a]
     simp [hr]
   have hq : Function.Bijective (q.baseChange k) := by
-    rw [Representation.IntertwiningMap.coe_baseChange]
+    rw [coe_intertwiningMap_baseChange]
     refine ⟨?_, LinearMap.lTensor_surjective k (Submodule.mkQ_surjective _)⟩
     have hex := lTensor_exact k (exact_toLinearMap_mkQ r W)
       (Submodule.mkQ_surjective (r • (⊤ : Submodule ℤ W)))
@@ -182,7 +182,7 @@ private noncomputable abbrev reductionMap {ρ : Representation ℤ G W} {σ : Re
 
 private theorem coe_reductionMap {ρ : Representation ℤ G W} {σ : Representation ℤ G W'}
     (f : IntertwiningMap ρ σ) : ⇑(reductionMap k f) = f.toLinearMap.lTensor k :=
-  Representation.IntertwiningMap.coe_baseChange f k
+  coe_intertwiningMap_baseChange f k
 
 variable (ℓ : ℕ) [Fact ℓ.Prime] {V₁ V₂ V₃ : Type u} [AddCommGroup V₁] [Module ℤ V₁]
   [AddCommGroup V₂] [Module ℤ V₂] [AddCommGroup V₃] [Module ℤ V₃] {ρ₁ : Representation ℤ G V₁}

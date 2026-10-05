@@ -120,10 +120,10 @@ theorem Representation.nonempty_equiv_baseChange_of_comp_eq_smul
   obtain ⟨u, hu⟩ := hs
   have hf : Function.Bijective (f.baseChange A) := by
     refine ⟨fun x y hxy ↦ u.isUnit.smul_left_cancel.mp ?_, fun y ↦ ?_⟩
-    · simpa only [Representation.IntertwiningMap.baseChange_comp_apply_of_comp_eq_smul
+    · simpa only [intertwiningMap_baseChange_comp_apply_of_comp_eq_smul
         f f' s hf'f, ← hu] using congrArg (f'.baseChange A) hxy
     · refine ⟨(↑u⁻¹ : A) • f'.baseChange A y, ?_⟩
-      rw [map_smul, Representation.IntertwiningMap.baseChange_comp_apply_of_comp_eq_smul
+      rw [map_smul, intertwiningMap_baseChange_comp_apply_of_comp_eq_smul
         f' f s hff', ← hu, smul_smul, Units.inv_mul, one_smul]
   exact ⟨(f.baseChange A).ofBijective hf⟩
 

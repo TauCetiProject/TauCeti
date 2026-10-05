@@ -548,7 +548,7 @@ theorem _root_.Representation.IntertwiningMap.toLinearMap_baseChange
 
 /-- The function underlying a base-changed intertwining map is tensoring its linear map. -/
 @[simp]
-theorem Representation.IntertwiningMap.coe_baseChange
+theorem coe_intertwiningMap_baseChange
     (f : _root_.Representation.IntertwiningMap ρ σ) (A : Type*) [CommSemiring A] [Algebra R A] :
     ⇑(f.baseChange A) = f.toLinearMap.lTensor A := by
   rw [← LinearMap.baseChange_eq_ltensor]
@@ -556,7 +556,7 @@ theorem Representation.IntertwiningMap.coe_baseChange
 
 /-- A composite equal to scalar multiplication remains so after base change, with the scalar
 mapped into the coefficient algebra. -/
-theorem Representation.IntertwiningMap.baseChange_comp_apply_of_comp_eq_smul
+theorem intertwiningMap_baseChange_comp_apply_of_comp_eq_smul
     (f : _root_.Representation.IntertwiningMap ρ σ)
     (f' : _root_.Representation.IntertwiningMap σ ρ) (s : R)
     (h : ∀ v, f' (f v) = s • v) {A : Type*} [CommSemiring A] [Algebra R A]
