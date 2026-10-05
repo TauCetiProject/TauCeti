@@ -63,6 +63,8 @@ noncomputable def algebraicAnalyticDiffeomorph (n : ℕ∞ω) :
       𝓘(ℂ, Fin (Module.finrank ℤ N) → ℂ)⟯ Φ.analyticRealization hΦ := by
   letI := Φ.analyticChartedSpace hΦ
   letI := algebraicComplexPointChartedSpace hΦ
+  -- Package the given equivalence to retain its forward and inverse computation rules.
+  -- Mathlib's `diffeomorphOfBijective` has no exposed body or coercion lemma at this pin.
   exact
     { toEquiv := (algebraicAnalyticHomeomorph hΦ).toEquiv
       contMDiff_toFun :=
