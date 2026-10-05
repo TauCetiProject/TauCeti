@@ -21,14 +21,19 @@ controls the improper integrals.
 
 The half-line formulas identify the energy remaining before or after any time. Mathlib's
 `MeasureTheory.tendsto_integral_Iic_zero` and `MeasureTheory.tendsto_integral_Ioi_zero` give the
-vanishing of these tails. For a connecting orbit from `p` to `q`, the total energy is therefore
-`f p - f q`. This is the uniform energy bound used when extracting broken trajectories between
-fixed critical points.
+vanishing of these tails. Together with
+`TauCeti.IsIntegralCurveOn.exists_tendsto_comp_atTop` from `Morse.Convergence`, the forward
+integrability theorem gives finite energy for a negative gradient trajectory confined to a
+compact set. The forward and backward critical-point convergence theorems in that module
+similarly supply the limits for the whole-line identity. For a connecting orbit from `p` to `q`,
+the total energy is `f p - f q`; in particular it depends only on the endpoints. These energy
+formulas apply to the trajectories themselves, without manifold structures on their stable
+and unstable sets.
 
 ## References
 
 * M. Audin and M. Damian, *Morse Theory and Floer Homology*, Springer Universitext, 2014,
-  Chapter 2.
+  Chapter 2 (gradient trajectories) and Section 6.5.a (their energy).
 
 The improper-integral arguments use Mathlib's nonnegative-derivative FTC and
 `MeasureTheory.integrableOn_Iic_of_intervalIntegral_norm_tendsto`.
