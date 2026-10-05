@@ -21,7 +21,7 @@ parabolic.
 
 * `ConvexPolygon.SidePairing.isRight_vertex_of_mem_cycle`: all vertices in a cycle have the
   same type, finite or ideal.
-* `ConvexPolygon.SidePairing.cycleMap_smul_of_vertex_eq_inr`: an ideal cycle transformation
+* `ConvexPolygon.SidePairing.cycleMap_smul_eq_self_of_vertex_eq_inr`: an ideal cycle transformation
   fixes its boundary vertex.
 * `ConvexPolygon.SidePairing.cycleAngleSum_eq_zero_of_isRight_vertex`: an ideal cycle has zero
   total angle.
@@ -60,14 +60,14 @@ theorem isRight_vertex_of_mem_cycle {j i : Fin n} (hi : i ∈ σ.cycle j) :
 
 /-- The transformation of a full ideal cycle fixes its projective boundary vertex. -/
 @[simp]
-theorem cycleMap_smul_of_vertex_eq_inr {j : Fin n} {c : OnePoint ℝ}
+theorem cycleMap_smul_eq_self_of_vertex_eq_inr {j : Fin n} {c : OnePoint ℝ}
     (hj : P.vertex j = .inr c) : σ.cycleMap j • c = c := by
   have h := σ.cycleMap_smul_vertex j
   simpa [hj] using h
 
 /-- All angles on the cycle of an ideal vertex vanish, since that cycle consists of ideal
 vertices. -/
-theorem interiorAngle_eq_zero_of_mem_cycle_of_isRight_vertex {j i : Fin n}
+theorem interiorAngle_eq_zero_of_isRight_vertex_of_mem_cycle {j i : Fin n}
     (hj : (P.vertex j).isRight) (hi : i ∈ σ.cycle j) :
     P.interiorAngle i = 0 := by
   have h : (P.vertex i).isRight := by
@@ -82,6 +82,6 @@ theorem cycleAngleSum_eq_zero_of_isRight_vertex {j : Fin n}
     (hj : (P.vertex j).isRight) : σ.cycleAngleSum j = 0 := by
   rw [cycleAngleSum_def]
   exact Finset.sum_eq_zero fun i hi ↦
-    σ.interiorAngle_eq_zero_of_mem_cycle_of_isRight_vertex hj hi
+    σ.interiorAngle_eq_zero_of_isRight_vertex_of_mem_cycle hj hi
 
 end TauCeti.UpperHalfPlane.ConvexPolygon.SidePairing

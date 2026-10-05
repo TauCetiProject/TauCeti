@@ -337,9 +337,16 @@ theorem cycleAngleSum_pair_add_one (j : Fin n) :
     σ.cycleAngleSum (σ.pair j + 1) = σ.cycleAngleSum j := by
   rw [← next_apply, cycleAngleSum_next]
 
-/-- The angle sum along a cycle is nonnegative. It vanishes at ideal cycles. -/
+/-- The angle sum along a cycle is nonnegative. -/
 theorem cycleAngleSum_nonneg (j : Fin n) : 0 ≤ σ.cycleAngleSum j :=
   Finset.sum_nonneg fun i _ ↦ P.interiorAngle_nonneg i
+
+/-- The angle sum along the cycle of a finite vertex is positive. -/
+theorem cycleAngleSum_pos_of_isLeft_vertex {j : Fin n} (hj : (P.vertex j).isLeft) :
+    0 < σ.cycleAngleSum j := by
+  rw [cycleAngleSum_def]
+  exact Finset.sum_pos' (fun i _ ↦ P.interiorAngle_nonneg i)
+    ⟨j, σ.self_mem_cycle j, P.interiorAngle_pos_of_isLeft_vertex hj⟩
 
 /-- The angle sum as a sum over the first `cycleLength j` successors of `j`. -/
 theorem cycleAngleSum_eq_sum_range (j : Fin n) :
@@ -359,9 +366,7 @@ variable {n : ℕ} [NeZero n] {P : CompactConvexPolygon n}
 /-- A vertex cycle of a compact convex polygon has positive angle sum. -/
 theorem cycleAngleSum_pos (σ : P.toConvexPolygon.SidePairing) (j : Fin n) :
     0 < σ.cycleAngleSum j := by
-  rw [ConvexPolygon.SidePairing.cycleAngleSum_def]
-  exact Finset.sum_pos (fun i _ ↦ by
-    simpa using P.interiorAngle_pos i) ⟨j, σ.self_mem_cycle j⟩
+  exact σ.cycleAngleSum_pos_of_isLeft_vertex (by simp)
 
 end CompactConvexPolygon
 
