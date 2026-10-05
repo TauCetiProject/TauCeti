@@ -78,8 +78,7 @@ theorem isEisensteinAt_X_pow_sub_C_of_irreducible
     {R : Type*} [CommRing R] [IsDomain R] [IsDiscreteValuationRing R]
     {ϖ : R} (hϖ : Irreducible ϖ) {n : ℕ} (hn : 0 < n) :
     (X ^ n - C ϖ).IsEisensteinAt (maximalIdeal R) := by
-  apply isEisensteinAt_X_pow_sub_C (maximalIdeal.isMaximal R).ne_top
-    (by simp [hϖ.maximalIdeal_eq]) _ hn
+  apply isEisensteinAt_X_pow_sub_C (by simp [hϖ.maximalIdeal_eq]) _ hn
   rw [IsDiscreteValuationRing.mem_maximalIdeal_pow_iff_le_addVal,
     IsDiscreteValuationRing.addVal_uniformizer hϖ]
   simp

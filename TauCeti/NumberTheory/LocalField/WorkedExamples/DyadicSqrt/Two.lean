@@ -227,7 +227,8 @@ theorem addVal_smul_sub_integerSqrtTwo_of_ne_one
   have htwo : (2 : 𝒪[DyadicSqrtTwo]) = algebraMap 𝒪[ℚ_[2]] 𝒪[DyadicSqrtTwo] 2 :=
     (map_ofNat _ 2).symm
   rw [h, AddValuation.map_neg, IsDiscreteValuationRing.addVal_mul, htwo,
-    addVal_algebraMap, ← Nat.cast_ofNat (R := 𝒪[ℚ_[2]]), Padic.addVal_natCast_self 2,
+    addVal_algebraMap, ← Nat.cast_ofNat (R := 𝒪[ℚ_[2]]),
+    IsDiscreteValuationRing.addVal_uniformizer (Padic.irreducible_natCast_self 2),
     ramificationIndex_eq_two,
     IsDiscreteValuationRing.addVal_uniformizer irreducible_integerSqrtTwo]
   norm_num

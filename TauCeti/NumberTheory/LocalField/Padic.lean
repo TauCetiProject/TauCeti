@@ -32,8 +32,7 @@ concrete p-adic norm and valuation APIs.
   number with `padicValNat`, and `Padic.natCastValuation_self` and
   `Padic.natCastValuation_two` are the two values it takes on the residue prime and on `2`.
 * `TauCeti.Padic.irreducible_natCast_self` shows that the residue prime is a uniformizer of
-  the integer ring, and `TauCeti.Padic.addVal_natCast_self` gives its additive discrete
-  valuation `1`.
+  the integer ring.
 * `Padic.not_isSquare_neg_one_of_mod_four_eq_three`: `-1` is nonsquare in `ℚ_[p]` when
   `p ≡ 3 (mod 4)`.
 * `Padic.not_isSquare_intCast_of_not_isSquare_zmod`: an integer that is not a square modulo a
@@ -212,10 +211,5 @@ namespace TauCeti.Padic
 theorem irreducible_natCast_self : Irreducible (p : 𝒪[ℚ_[p]]) := by
   simpa only [map_natCast] using
     (PadicInt.irreducible_p (p := p)).map (_root_.Padic.integerRingEquiv p).symm
-
-/-- The additive discrete valuation of the residue prime `p` in the integer ring of `ℚ_[p]`
-is `1`. -/
-theorem addVal_natCast_self : IsDiscreteValuationRing.addVal 𝒪[ℚ_[p]] p = 1 :=
-  IsDiscreteValuationRing.addVal_uniformizer (irreducible_natCast_self p)
 
 end TauCeti.Padic
