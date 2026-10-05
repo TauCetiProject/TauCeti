@@ -98,6 +98,11 @@ private lemma primitive_row_tsum (a : Fin 2 → ZMod N) :
 
 variable [NeZero N]
 
+/-- The underlying function of the bundled primitive residue-class Eisenstein series. -/
+@[simp]
+theorem coe_eisensteinSeriesMF (hk : 3 ≤ k) (a : Fin 2 → ZMod N) :
+    ⇑(eisensteinSeriesMF hk a) = eisensteinSeries a k := (rfl)
+
 /-- At infinity, a primitive residue-class Eisenstein series has constant term `1` for the
 residue `(0, 1)` and `(-1)^k` for `(0, -1)`, adding both if the residues coincide. -/
 theorem tendsto_eisensteinSeries_atImInfty (hk : 3 ≤ k) (a : Fin 2 → ZMod N) :
@@ -109,6 +114,7 @@ theorem tendsto_eisensteinSeries_atImInfty (hk : 3 ≤ k) (a : Fin 2 → ZMod N)
   have hlim := TauCeti.ModularFormClass.tendsto_valueAtInfty
     (eisensteinSeriesMF hk a) (show (0 : ℝ) < N by exact_mod_cast NeZero.pos N)
     (by simp)
+  rw [coe_eisensteinSeriesMF] at hlim
   have hrow : Tendsto (fun t : ℝ ↦ eisensteinSeries a k (ofComplex (I * t))) atTop
       (𝓝 (∑' x : gammaSet N 1 a, if x.1 0 = 0 then (x.1 1 : ℂ) ^ (-k) else 0)) := by
     simp only [eisensteinSeries]
@@ -145,9 +151,7 @@ theorem constantTermAt_eisensteinSeriesMF (hk : 3 ≤ k) (a : Fin 2 → ZMod N)
         (if a ᵥ* γ = ![0, -1] then (-1 : ℂ) ^ k else 0) := by
   have h : eisensteinSeries a k ∣[k] mapGL ℝ γ = eisensteinSeries a k ∣[k] γ :=
     (SL_slash _ γ).symm
-  rw [constantTermAt_eq_valueAtInfty, coe_translate]
-  -- Mathlib's bundled series has the same underlying function as its defining sum.
-  change valueAtInfty (eisensteinSeries a k ∣[k] mapGL ℝ γ) = _
+  rw [constantTermAt_eq_valueAtInfty, coe_translate, coe_eisensteinSeriesMF]
   rw [h]
   rw [eisensteinSeries_slash_apply, valueAtInfty_eisensteinSeries hk]
 
@@ -162,15 +166,16 @@ theorem eisensteinSeriesMF_neg (hk : 3 ≤ k) (a : Fin 2 → ZMod N) :
     ext i
     fin_cases i <;> simp [vecMul, dotProduct]
   rw [SL_slash, hGL, ModularForm.slash_neg_one, hres] at h
-  ext z
-  exact congrFun h.symm z
+  apply DFunLike.coe_injective
+  simpa only [FunLike.coe_smul, coe_eisensteinSeriesMF] using h.symm
 
 /-- A residue class with no primitive integral lift has zero Eisenstein series. -/
 @[simp]
 theorem eisensteinSeriesMF_eq_zero_of_isEmpty (hk : 3 ≤ k) (a : Fin 2 → ZMod N)
     [IsEmpty (gammaSet N 1 a)] : eisensteinSeriesMF hk a = 0 := by
   ext z
-  exact tsum_empty
+  simp only [coe_eisensteinSeriesMF, FunLike.coe_zero, Pi.zero_apply,
+    eisensteinSeries, tsum_empty]
 
 private lemma coefficient_relation_of_cuspidal (hk : 3 ≤ k)
     (c : (Fin 2 → ZMod N) → ℂ)
@@ -216,18 +221,32 @@ def primitiveEisensteinSubspace (N : ℕ) [NeZero N] (hk : 3 ≤ k) :
     Submodule ℂ (ModularForm Γ(N) k) :=
   Submodule.span ℂ (Set.range (eisensteinSeriesMF hk))
 
+/-- The defining span of the primitive Eisenstein subspace. -/
+theorem primitiveEisensteinSubspace_def (hk : 3 ≤ k) :
+    primitiveEisensteinSubspace N hk =
+      Submodule.span ℂ (Set.range (eisensteinSeriesMF hk)) := (rfl)
+
 /-- Each primitive residue-class series belongs to the primitive Eisenstein span. -/
 theorem mem_primitiveEisensteinSubspace (hk : 3 ≤ k) (a : Fin 2 → ZMod N) :
-    eisensteinSeriesMF hk a ∈ primitiveEisensteinSubspace N hk :=
-  Submodule.subset_span ⟨a, rfl⟩
+    eisensteinSeriesMF hk a ∈ primitiveEisensteinSubspace N hk := by
+  rw [primitiveEisensteinSubspace_def]
+  exact Submodule.subset_span ⟨a, rfl⟩
 
 /-- Membership in the primitive Eisenstein span is equivalent to a finite sum indexed by
 residue pairs modulo `N`. -/
 theorem mem_primitiveEisensteinSubspace_iff (hk : 3 ≤ k) (f : ModularForm Γ(N) k) :
     f ∈ primitiveEisensteinSubspace N hk ↔
       ∃ c : (Fin 2 → ZMod N) → ℂ, ∑ a, c a • eisensteinSeriesMF hk a = f := by
-  rw [primitiveEisensteinSubspace]
+  rw [primitiveEisensteinSubspace_def]
   exact Submodule.mem_span_range_iff_exists_fun ℂ
+
+/-- A subspace containing every primitive residue-class Eisenstein series contains their span. -/
+theorem primitiveEisensteinSubspace_le (hk : 3 ≤ k)
+    {V : Submodule ℂ (ModularForm Γ(N) k)}
+    (hV : ∀ a : Fin 2 → ZMod N, eisensteinSeriesMF hk a ∈ V) :
+    primitiveEisensteinSubspace N hk ≤ V := by
+  rw [primitiveEisensteinSubspace_def, Submodule.span_le, Set.range_subset_iff]
+  exact hV
 
 /-- A cuspidal linear combination of primitive residue-class Eisenstein series is zero. -/
 private theorem eq_zero_of_mem_primitiveEisensteinSubspace_of_cuspidal (hk : 3 ≤ k)
