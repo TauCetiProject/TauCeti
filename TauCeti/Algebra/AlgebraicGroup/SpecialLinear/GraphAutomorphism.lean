@@ -167,6 +167,39 @@ theorem typeAGraphCoordinateIso_inv :
   rw [← cancel_epi (typeAGraphCoordinateIso R r).hom]
   simp
 
+/-- Lift a matrix identity between two root subgroups to their coordinate morphisms. -/
+private theorem typeAGraphCoordinateIso_hom_comp_rootSubgroupCoordinateMap_of_transvection
+    {i j k l : Fin (r + 1)} (hij : i ≠ j) (hkl : k ≠ l)
+    (h : ∀ (A : Type u) [CommRing A] (c : A),
+      Matrix.SpecialLinearGroup.typeAGraphAutomorphism r A
+        (Matrix.SpecialLinearGroup.transvection hij c) =
+          Matrix.SpecialLinearGroup.transvection hkl c) :
+    (typeAGraphCoordinateIso R r).hom ≫ rootSubgroupCoordinateMap (R := R) hij =
+      rootSubgroupCoordinateMap (R := R) hkl := by
+  apply Quiver.Hom.op_inj
+  apply (CommHopfAlgCat.pointsFunctor (R := R)).map_injective
+  rw [op_comp, Functor.map_comp]
+  ext A f
+  -- The categorical point functor is opaque; its underlying value is an algebra homomorphism.
+  change WithConv (AdditiveGroup.coordinateHopfAlgebra R →ₐ[R] A) at f
+  apply (pointsMulEquiv (R := R) (A := A) (r + 1)).injective
+  let x := rootSubgroupCoordinateMap (R := R) hij
+  let y := rootSubgroupCoordinateMap (R := R) hkl
+  have hx : toConv (f.ofConv.comp x.hom.toAlgHom) = rootSubgroupPoints hij f :=
+    (CommHopfAlgCat.mapPointsFunctor_app_apply x (CommAlgCat.of R A) f).symm.trans
+      (mapPointsFunctor_rootSubgroupCoordinateMap_app _ (CommAlgCat.of R A) f)
+  have hy : toConv (f.ofConv.comp y.hom.toAlgHom) = rootSubgroupPoints hkl f :=
+    (CommHopfAlgCat.mapPointsFunctor_app_apply y (CommAlgCat.of R A) f).symm.trans
+      (mapPointsFunctor_rootSubgroupCoordinateMap_app _ (CommAlgCat.of R A) f)
+  -- The opposite composite acts by precomposition of its algebra-homomorphism components.
+  change pointsMulEquiv (R := R) (A := A) (r + 1)
+      (toConv ((f.ofConv.comp x.hom.toAlgHom).comp
+        (typeAGraphCoordinateIso R r).hom.hom.toAlgHom)) =
+    pointsMulEquiv (R := R) (A := A) (r + 1) (toConv (f.ofConv.comp y.hom.toAlgHom))
+  rw [pointsMulEquiv_comp_typeAGraphCoordinateIso, hx, hy,
+    pointsMulEquiv_rootSubgroupPoints, pointsMulEquiv_rootSubgroupPoints]
+  exact h A _
+
 /-- The graph automorphism reverses the positive simple-root maps with their parameters
 unchanged. This is an equality of coordinate morphisms over the base ring. -/
 @[reassoc (attr := simp)]
@@ -174,34 +207,9 @@ theorem typeAGraphCoordinateIso_hom_comp_rootSubgroupCoordinateMap (i : Fin r) :
     (typeAGraphCoordinateIso R r).hom ≫
         rootSubgroupCoordinateMap (R := R) (Fin.castSucc_lt_succ (i := i)).ne =
       rootSubgroupCoordinateMap (R := R) (Fin.castSucc_lt_succ (i := i.rev)).ne := by
-  apply Quiver.Hom.op_inj
-  apply (CommHopfAlgCat.pointsFunctor (R := R)).map_injective
-  rw [op_comp, Functor.map_comp]
-  ext A f
-  -- The categorical point functor is opaque; its underlying value is an algebra homomorphism.
-  change WithConv (AdditiveGroup.coordinateHopfAlgebra R →ₐ[R] A) at f
-  apply (pointsMulEquiv (R := R) (A := A) (r + 1)).injective
-  let x := rootSubgroupCoordinateMap (R := R) (Fin.castSucc_lt_succ (i := i)).ne
-  let y := rootSubgroupCoordinateMap (R := R) (Fin.castSucc_lt_succ (i := i.rev)).ne
-  have hx : toConv (f.ofConv.comp x.hom.toAlgHom) =
-      rootSubgroupPoints (Fin.castSucc_lt_succ (i := i)).ne f :=
-    (CommHopfAlgCat.mapPointsFunctor_app_apply x (CommAlgCat.of R A) f).symm.trans
-      (mapPointsFunctor_rootSubgroupCoordinateMap_app _ (CommAlgCat.of R A) f)
-  have hy : toConv (f.ofConv.comp y.hom.toAlgHom) =
-      rootSubgroupPoints (Fin.castSucc_lt_succ (i := i.rev)).ne f :=
-    (CommHopfAlgCat.mapPointsFunctor_app_apply y (CommAlgCat.of R A) f).symm.trans
-      (mapPointsFunctor_rootSubgroupCoordinateMap_app _ (CommAlgCat.of R A) f)
-  -- The opposite composite acts by precomposition of its algebra-homomorphism components.
-  change pointsMulEquiv (R := R) (A := A) (r + 1)
-      (toConv ((f.ofConv.comp x.hom.toAlgHom).comp
-        (typeAGraphCoordinateIso R r).hom.hom.toAlgHom)) =
-    pointsMulEquiv (R := R) (A := A) (r + 1) (toConv (f.ofConv.comp y.hom.toAlgHom))
-  rw [pointsMulEquiv_comp_typeAGraphCoordinateIso, hx, hy]
-  rw [pointsMulEquiv_rootSubgroupPoints (R := R) (A := A)
-      (Fin.castSucc_lt_succ (i := i)).ne f,
-    pointsMulEquiv_rootSubgroupPoints (R := R) (A := A)
-      (Fin.castSucc_lt_succ (i := i.rev)).ne f]
-  exact Matrix.SpecialLinearGroup.typeAGraphAutomorphism_transvection r A i _
+  apply typeAGraphCoordinateIso_hom_comp_rootSubgroupCoordinateMap_of_transvection
+  intro A _ c
+  exact Matrix.SpecialLinearGroup.typeAGraphAutomorphism_transvection r A i c
 
 /-- The graph automorphism also reverses the negative simple-root maps without a sign. -/
 @[reassoc (attr := simp)]
@@ -209,34 +217,9 @@ theorem typeAGraphCoordinateIso_hom_comp_rootSubgroupCoordinateMap_lower (i : Fi
     (typeAGraphCoordinateIso R r).hom ≫
         rootSubgroupCoordinateMap (R := R) (Fin.castSucc_lt_succ (i := i)).ne' =
       rootSubgroupCoordinateMap (R := R) (Fin.castSucc_lt_succ (i := i.rev)).ne' := by
-  apply Quiver.Hom.op_inj
-  apply (CommHopfAlgCat.pointsFunctor (R := R)).map_injective
-  rw [op_comp, Functor.map_comp]
-  ext A f
-  -- The categorical point functor is opaque; its underlying value is an algebra homomorphism.
-  change WithConv (AdditiveGroup.coordinateHopfAlgebra R →ₐ[R] A) at f
-  apply (pointsMulEquiv (R := R) (A := A) (r + 1)).injective
-  let x := rootSubgroupCoordinateMap (R := R) (Fin.castSucc_lt_succ (i := i)).ne'
-  let y := rootSubgroupCoordinateMap (R := R) (Fin.castSucc_lt_succ (i := i.rev)).ne'
-  have hx : toConv (f.ofConv.comp x.hom.toAlgHom) =
-      rootSubgroupPoints (Fin.castSucc_lt_succ (i := i)).ne' f :=
-    (CommHopfAlgCat.mapPointsFunctor_app_apply x (CommAlgCat.of R A) f).symm.trans
-      (mapPointsFunctor_rootSubgroupCoordinateMap_app _ (CommAlgCat.of R A) f)
-  have hy : toConv (f.ofConv.comp y.hom.toAlgHom) =
-      rootSubgroupPoints (Fin.castSucc_lt_succ (i := i.rev)).ne' f :=
-    (CommHopfAlgCat.mapPointsFunctor_app_apply y (CommAlgCat.of R A) f).symm.trans
-      (mapPointsFunctor_rootSubgroupCoordinateMap_app _ (CommAlgCat.of R A) f)
-  -- The opposite composite acts by precomposition of its algebra-homomorphism components.
-  change pointsMulEquiv (R := R) (A := A) (r + 1)
-      (toConv ((f.ofConv.comp x.hom.toAlgHom).comp
-        (typeAGraphCoordinateIso R r).hom.hom.toAlgHom)) =
-    pointsMulEquiv (R := R) (A := A) (r + 1) (toConv (f.ofConv.comp y.hom.toAlgHom))
-  rw [pointsMulEquiv_comp_typeAGraphCoordinateIso, hx, hy]
-  rw [pointsMulEquiv_rootSubgroupPoints (R := R) (A := A)
-      (Fin.castSucc_lt_succ (i := i)).ne' f,
-    pointsMulEquiv_rootSubgroupPoints (R := R) (A := A)
-      (Fin.castSucc_lt_succ (i := i.rev)).ne' f]
-  exact Matrix.SpecialLinearGroup.typeAGraphAutomorphism_transvection_lower r A i _
+  apply typeAGraphCoordinateIso_hom_comp_rootSubgroupCoordinateMap_of_transvection
+  intro A _ c
+  exact Matrix.SpecialLinearGroup.typeAGraphAutomorphism_transvection_lower r A i c
 
 /-- The signed type-A graph automorphism as an isomorphism of special-linear group schemes
 over the base ring. -/
@@ -262,6 +245,13 @@ theorem typeAGraphIso_hom_comp_self :
   simp only [typeAGraphIso_hom, Category.assoc, eqToHom_trans_assoc, eqToHom_refl,
     Category.id_comp]
   rw [← Functor.map_comp_assoc, ← op_comp, typeAGraphCoordinateIso_hom_comp_self]
+  simp
+
+/-- The inverse group-scheme graph automorphism equals its forward morphism. -/
+@[simp]
+theorem typeAGraphIso_inv :
+    (typeAGraphIso R r).inv = (typeAGraphIso R r).hom := by
+  rw [← cancel_epi (typeAGraphIso R r).hom]
   simp
 
 /-- The group-scheme graph automorphism reverses positive simple-root subgroups, with the

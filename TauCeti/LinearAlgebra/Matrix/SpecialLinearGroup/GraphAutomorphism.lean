@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.GraphAutomorphism
+public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 
 /-!
 # The type-A graph automorphism on the special linear group
@@ -172,13 +173,7 @@ theorem map_typeAGraphAutomorphism {B : Type*} [CommRing B] (f : A →+* B)
     (g : Matrix.SpecialLinearGroup (Fin (r + 1)) A) :
     map f (typeAGraphAutomorphism r A g) = typeAGraphAutomorphism r B (map f g) := by
   apply toGL_injective
-  rw [toGL_typeAGraphAutomorphism]
-  convert TauCeti.map_typeAGraphAutomorphism f r (toGL g) using 1
-  · rw [← toGL_typeAGraphAutomorphism]
-    ext i j
-    rfl
-  · congr 1
-    ext i j
-    rfl
+  rw [toGL_map, toGL_typeAGraphAutomorphism, toGL_typeAGraphAutomorphism, toGL_map]
+  exact TauCeti.map_typeAGraphAutomorphism f r (toGL g)
 
 end Matrix.SpecialLinearGroup
