@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import TauCeti.NumberTheory.NumberField.Global.Adeles.Norm.Continuity
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.Extension
 public import TauCeti.RingTheory.Norm.Units
+public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 
 /-!
 # The norm map of ideles and idele classes
@@ -146,19 +146,20 @@ theorem principalSubgroup_le_comap_ideleNormMap :
 
 /-- **The norm map of idele classes** `N_{L/K} : C_L →ₜ* C_K`, induced by the norm map of
 ideles. -/
-def ideleClassNormMap : IdeleClassGroup (𝓞 L) L →ₜ* IdeleClassGroup (𝓞 K) K where
-  toMonoidHom := QuotientGroup.map _ _ (ideleNormMap K L).toMonoidHom
-    (principalSubgroup_le_comap_ideleNormMap K L)
-  continuous_toFun := (QuotientGroup.isQuotientMap_mk _).continuous_iff.mpr
-    (continuous_quot_mk.comp (continuous_ideleNormMap K L))
+def ideleClassNormMap : IdeleClassGroup (𝓞 L) L →ₜ* IdeleClassGroup (𝓞 K) K :=
+  ContinuousMonoidHom.quotientLift (IdeleGroup.principalSubgroup (𝓞 L) L)
+    ((ContinuousMonoidHom.quotientMk (IdeleGroup.principalSubgroup (𝓞 K) K)).comp
+      (ideleNormMap K L)) (by
+        intro x hx
+        simpa using principalSubgroup_le_comap_ideleNormMap K L hx)
 
 variable {K L} in
 /-- On an idele class, the norm is represented by the norm of a representing idele. -/
 @[simp]
 theorem ideleClassNormMap_mk (x : IdeleGroup (𝓞 L) L) :
     ideleClassNormMap K L (x : IdeleClassGroup (𝓞 L) L) =
-      (ideleNormMap K L x : IdeleClassGroup (𝓞 K) K) :=
-  (rfl)
+      (ideleNormMap K L x : IdeleClassGroup (𝓞 K) K) := by
+  simp [ideleClassNormMap]
 
 /-- The relative norm on idele classes is continuous for the quotient topology. -/
 @[continuity, fun_prop]
