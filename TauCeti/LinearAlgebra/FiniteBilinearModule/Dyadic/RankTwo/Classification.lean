@@ -187,7 +187,7 @@ theorem nonempty_isometry_dyadicU_or_dyadicV_restrict_zmultiples_sup {x y : A}
       rw [hu, ← map_nsmul, nsmul_eq_mul, ← mul_assoc, Nat.cast_pow, Nat.cast_ofNat, ← pow_succ,
         htwo_pow, zero_mul, map_zero]
     · simpa using isUnit_two_mul_add (c := c) isUnit_one
-  obtain ⟨e₁, e₂, f₁, f₂, h | h⟩ :=
+  obtain ⟨e₁, e₂, f₁, f₂, -, h | h⟩ :=
     ZMod.BinaryQuadraticForm.exists_basis a b hunit
   · refine Or.inl (nonempty_isometry_ofQuadraticMap_restrict_zmultiples_sup _
       (isNondegenerate_dyadicU _) hx hy e₁ e₂ f₁ f₂ fun m n ↦ ?_)

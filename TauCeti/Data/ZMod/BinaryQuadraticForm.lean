@@ -16,7 +16,7 @@ import Mathlib.Tactic.Ring
 
 This file supplies the elementary normal form used for binary quadratic forms over
 `ℤ/2^{k+1}` whose middle coefficient is a unit. Such a form is equivalent either to the
-hyperbolic form `mn` or to the anisotropic form `m² + mn + n²`.
+hyperbolic form `mn` or to the form `m² + mn + n²`, by an invertible change of coordinates.
 
 The key input is that, for a unit `u`, the map `s ↦ 2cs² + us` is a bijection. Its difference
 quotient is `2c(s + t) + u`, which is a unit because `2` is nilpotent in `ℤ/2^{k+1}`.
@@ -25,7 +25,7 @@ quotient is `2c(s + t) + u`, which is a unit because `2` is nilpotent in `ℤ/2^
 
 * `ZMod.bijective_two_mul_sq_add`: `s ↦ 2cs² + us` is bijective when `u` is a unit.
 * `ZMod.BinaryQuadraticForm.exists_basis`: a binary form with unit middle coefficient
-  has one of the two standard normal forms.
+  has one of the two standard normal forms in a basis of `(ℤ/2^{k+1})²`.
 -/
 
 public section
@@ -82,7 +82,7 @@ private theorem exists_hyperbolic_of_two_mul (a' b : ZMod (2 ^ (k + 1)))
   linear_combination (m ^ 2 + n ^ 2 * t ^ 2 + 2 * m * n * t) * hm₀ +
     (m * n - n ^ 2 * v ^ 2 * (2 * a')) * hv
 
-/-- **The anisotropic normal form.** For a unit `u`, the binary form
+/-- **The odd normal form.** For a unit `u`, the binary form
 `(2a' + 1)m² + umn + (2b' + 1)n²` over `ℤ/2^{k+1}` becomes `m² + mn + n²` in a suitable
 basis. -/
 private theorem exists_sq_add_mul_add_sq_of_odd (a' b' : ZMod (2 ^ (k + 1)))
@@ -112,24 +112,56 @@ private theorem exists_sq_add_mul_add_sq_of_odd (a' b' : ZMod (2 ^ (k + 1)))
     (n ^ 2 * (1 - 2 * t) * t + m * n * (1 - 2 * t)) * hv +
     2 * n ^ 2 * (4 * c - 1) * hs - 2 * n ^ 2 * r * hz
 
-/-- **Normal forms of binary forms with unit middle coefficient over `ℤ/2^{k+1}`.** The form
-`am² + umn + bn²` becomes `mn` in some basis, or `m² + mn + n²` in some basis. -/
+/-- If the binary form `am² + umn + bn²` becomes `Am² + Cmn + Bn²` under the
+coordinate change with matrix `!![e₁, f₁; e₂, f₂]`, and `4AB - C²` is a unit, then that matrix
+has unit determinant: the discriminants satisfy `4AB - C² = (e₁f₂ - f₁e₂)² (4ab - u²)`. -/
+private theorem isUnit_det_of_forall {a b u e₁ e₂ f₁ f₂ A B C : ZMod (2 ^ (k + 1))}
+    (hdisc : IsUnit (4 * A * B - C ^ 2))
+    (h : ∀ m n, a * (m * e₁ + n * f₁) ^ 2 + u * (m * e₁ + n * f₁) * (m * e₂ + n * f₂) +
+      b * (m * e₂ + n * f₂) ^ 2 = A * m ^ 2 + C * m * n + B * n ^ 2) :
+    IsUnit (e₁ * f₂ - f₁ * e₂) := by
+  have hdet : (e₁ * f₂ - f₁ * e₂) ^ 2 * (4 * a * b - u ^ 2) = 4 * A * B - C ^ 2 := by
+    linear_combination 4 * (a * e₁ ^ 2 + u * e₁ * e₂ + b * e₂ ^ 2) * h 0 1 + 4 * B * h 1 0 -
+      (2 * a * e₁ * f₁ + u * (e₁ * f₂ + f₁ * e₂) + 2 * b * e₂ * f₂ + C) *
+        (h 1 1 - h 1 0 - h 0 1)
+  rw [← hdet] at hdisc
+  exact (isUnit_pow_iff two_ne_zero).1 (isUnit_of_mul_isUnit_left hdisc)
+
+/-- **Normal forms of binary forms with unit middle coefficient over `ℤ/2^{k+1}`.** There is a
+change of coordinates `(m, n) ↦ (me₁ + nf₁, me₂ + nf₂)` with unit determinant `e₁f₂ - f₁e₂`
+under which the form `am² + umn + bn²` becomes `mn` or `m² + mn + n²`. -/
 theorem exists_basis (a b : ZMod (2 ^ (k + 1))) {u : ZMod (2 ^ (k + 1))}
     (hu : IsUnit u) :
-    ∃ e₁ e₂ f₁ f₂ : ZMod (2 ^ (k + 1)),
-      (∀ m n, a * (m * e₁ + n * f₁) ^ 2 + u * (m * e₁ + n * f₁) * (m * e₂ + n * f₂) +
+    ∃ e₁ e₂ f₁ f₂ : ZMod (2 ^ (k + 1)), IsUnit (e₁ * f₂ - f₁ * e₂) ∧
+      ((∀ m n, a * (m * e₁ + n * f₁) ^ 2 + u * (m * e₁ + n * f₁) * (m * e₂ + n * f₂) +
         b * (m * e₂ + n * f₂) ^ 2 = m * n) ∨
       (∀ m n, a * (m * e₁ + n * f₁) ^ 2 + u * (m * e₁ + n * f₁) * (m * e₂ + n * f₂) +
-        b * (m * e₂ + n * f₂) ^ 2 = m ^ 2 + m * n + n ^ 2) := by
+        b * (m * e₂ + n * f₂) ^ 2 = m ^ 2 + m * n + n ^ 2)) := by
+  have hU {a b e₁ e₂ f₁ f₂ : ZMod (2 ^ (k + 1))}
+      (h : ∀ m n, a * (m * e₁ + n * f₁) ^ 2 + u * (m * e₁ + n * f₁) * (m * e₂ + n * f₂) +
+        b * (m * e₂ + n * f₂) ^ 2 = m * n) :
+      IsUnit (e₁ * f₂ - f₁ * e₂) :=
+    isUnit_det_of_forall (a := a) (b := b) (u := u) (A := 0) (B := 0) (C := 1) (by simp)
+      fun m n ↦ by linear_combination h m n
+  have hV {a b e₁ e₂ f₁ f₂ : ZMod (2 ^ (k + 1))}
+      (h : ∀ m n, a * (m * e₁ + n * f₁) ^ 2 + u * (m * e₁ + n * f₁) * (m * e₂ + n * f₂) +
+        b * (m * e₂ + n * f₂) ^ 2 = m ^ 2 + m * n + n ^ 2) :
+      IsUnit (e₁ * f₂ - f₁ * e₂) :=
+    isUnit_det_of_forall (a := a) (b := b) (u := u) (A := 1) (B := 1) (C := 1)
+      (by convert isUnit_two_mul_add (c := 1) isUnit_one using 1; ring)
+      fun m n ↦ by linear_combination h m n
   obtain ⟨a', rfl⟩ | ⟨a', rfl⟩ := eq_two_mul_or_eq_two_mul_add_one a
   · obtain ⟨e₁, e₂, f₁, f₂, h⟩ := exists_hyperbolic_of_two_mul a' b hu
-    exact ⟨e₁, e₂, f₁, f₂, Or.inl h⟩
+    exact ⟨e₁, e₂, f₁, f₂, hU h, Or.inl h⟩
   obtain ⟨b', rfl⟩ | ⟨b', rfl⟩ := eq_two_mul_or_eq_two_mul_add_one b
   · -- Even `b`: exchange the two coordinates.
     obtain ⟨e₁, e₂, f₁, f₂, h⟩ := exists_hyperbolic_of_two_mul b' (2 * a' + 1) hu
-    exact ⟨e₂, e₁, f₂, f₁, Or.inl fun m n ↦ by linear_combination h m n⟩
+    have h' : ∀ m n, (2 * a' + 1) * (m * e₂ + n * f₂) ^ 2 +
+        u * (m * e₂ + n * f₂) * (m * e₁ + n * f₁) + 2 * b' * (m * e₁ + n * f₁) ^ 2 = m * n :=
+      fun m n ↦ by linear_combination h m n
+    exact ⟨e₂, e₁, f₂, f₁, hU h', Or.inl h'⟩
   · obtain ⟨e₁, e₂, f₁, f₂, h⟩ := exists_sq_add_mul_add_sq_of_odd a' b' hu
-    exact ⟨e₁, e₂, f₁, f₂, Or.inr h⟩
+    exact ⟨e₁, e₂, f₁, f₂, hV h, Or.inr h⟩
 
 end BinaryQuadraticForm
 
