@@ -23,12 +23,16 @@ The underlying equivalence is `TauCeti.SymmetricAlgebra.scalarTensorBialgEquiv`;
 on its source is Mathlib's `GradedAlgebra.baseChange`.
 
 The image computation follows the image-of-powers argument in
-`TauCeti.exteriorAlgebraEquivBaseChange_map_exteriorPower`, using
+`TauCeti.exteriorAlgebraEquivBaseChange_map_exteriorPower`, and the tensor-product comparison
+follows `TauCeti.exteriorPower.equivBaseChange`, using
 `Submodule.baseChange_map` and `Submodule.baseChange_pow` over commutative semirings.
 
 ## Main declarations
 
-* `TauCeti.SymmetricAlgebra.homogeneousSubmoduleBaseChangeEquiv`: the degreewise equivalence.
+* `TauCeti.SymmetricAlgebra.homogeneousSubmoduleEquivBaseChange`: symmetric powers commute
+  with scalar extension, in tensor-product form.
+* `TauCeti.SymmetricAlgebra.homogeneousSubmoduleBaseChangeEquiv`: the equivalence between
+  homogeneous submodules of the ambient algebras.
 * `TauCeti.SymmetricAlgebra.scalarTensorGradedAlgHom` and
   `TauCeti.SymmetricAlgebra.scalarTensorGradedAlgHomSymm`: the mutually inverse graded maps.
 * `TensorProduct.scalarTensorBialgEquiv_mem_homogeneousSubmodule_iff` and
@@ -62,11 +66,7 @@ theorem map_scalarTensorBialgEquiv_baseChange_homogeneousSubmodule (n : ℕ) :
   rw [← AlgEquiv.toLinearEquiv_toLinearMap, ← AlgEquiv.toAlgHom_toLinearMap,
     Submodule.map_pow]
   congr 1
-  have hr : (LinearMap.range (SymmetricAlgebra.ι R M)).baseChange S =
-      LinearMap.range ((SymmetricAlgebra.ι R M).baseChange S) := by
-    rw [← Submodule.map_top, Submodule.baseChange_map, Submodule.baseChange_top,
-      Submodule.map_top]
-  rw [hr, ← LinearMap.range_comp]
+  rw [LinearMap.baseChange_range, ← LinearMap.range_comp]
   congr 1
   ext m
   simp
@@ -142,6 +142,40 @@ theorem coe_homogeneousSubmoduleBaseChangeEquiv_symm_apply (n : ℕ)
       (scalarTensorBialgEquiv (k := R) (K := S)).symm x := by
   exact LinearEquiv.ofSubmodules_symm_apply _ _ x
 
+/-- Scalar extension of the inclusion of a homogeneous piece remains injective. -/
+theorem homogeneousSubmodule_baseChange_subtype_injective (n : ℕ) :
+    Function.Injective ((homogeneousSubmodule R M n).subtype.baseChange S) := by
+  intro x y h
+  exact DirectSum.toBaseChange_injective (S := S) (homogeneousSubmodule R M) n
+    (Subtype.ext h)
+
+/-- Symmetric powers commute with scalar extension, without a flatness assumption. -/
+noncomputable def homogeneousSubmoduleEquivBaseChange (n : ℕ) :
+    homogeneousSubmodule S (S ⊗[R] M) n ≃ₗ[S] S ⊗[R] homogeneousSubmodule R M n :=
+  (homogeneousSubmoduleBaseChangeEquiv n).symm.trans
+    (LinearEquiv.ofInjective ((homogeneousSubmodule R M n).subtype.baseChange S)
+      (homogeneousSubmodule_baseChange_subtype_injective n)).symm
+
+/-- The tensor-product comparison agrees with the inverse ambient comparison after inclusion. -/
+@[simp]
+theorem subtype_baseChange_homogeneousSubmoduleEquivBaseChange (n : ℕ)
+    (x : homogeneousSubmodule S (S ⊗[R] M) n) :
+    (homogeneousSubmodule R M n).subtype.baseChange S
+        (homogeneousSubmoduleEquivBaseChange n x) =
+      (scalarTensorBialgEquiv (k := R) (K := S)).symm (x : SymmetricAlgebra S (S ⊗[R] M)) := by
+  exact (LinearEquiv.ofInjective_symm_apply _
+    (h := homogeneousSubmodule_baseChange_subtype_injective n) _).trans
+      (coe_homogeneousSubmoduleBaseChangeEquiv_symm_apply n x)
+
+/-- The inverse tensor-product comparison agrees with the forward ambient comparison. -/
+@[simp]
+theorem coe_homogeneousSubmoduleEquivBaseChange_symm_apply (n : ℕ)
+    (x : S ⊗[R] homogeneousSubmodule R M n) :
+    ((homogeneousSubmoduleEquivBaseChange n).symm x : SymmetricAlgebra S (S ⊗[R] M)) =
+      scalarTensorBialgEquiv (k := R) (K := S)
+        ((homogeneousSubmodule R M n).subtype.baseChange S x) := by
+  exact coe_homogeneousSubmoduleBaseChangeEquiv_apply n _
+
 /-- The canonical scalar-extension equivalence, bundled as a graded algebra map. -/
 noncomputable def scalarTensorGradedAlgHom :
     (fun n ↦ (homogeneousSubmodule R M n).baseChange S) →ₐᵍ[S]
@@ -155,43 +189,6 @@ noncomputable def scalarTensorGradedAlgHomSymm :
       (fun n ↦ (homogeneousSubmodule R M n).baseChange S) where
   __ := (scalarTensorBialgEquiv (k := R) (K := S) (M := M)).symm.toAlgEquiv.toAlgHom
   map_mem := scalarTensorBialgEquiv_symm_mem_baseChange
-
-/-- The inverse graded map is a right inverse of the forward graded map. -/
-theorem scalarTensorGradedAlgHom_rightInverse :
-    Function.RightInverse
-      (scalarTensorGradedAlgHomSymm (R := R) (S := S) (M := M))
-      scalarTensorGradedAlgHom :=
-  (scalarTensorBialgEquiv (k := R) (K := S)).apply_symm_apply
-
-/-- The inverse graded map is a left inverse of the forward graded map. -/
-theorem scalarTensorGradedAlgHom_leftInverse :
-    Function.LeftInverse
-      (scalarTensorGradedAlgHomSymm (R := R) (S := S) (M := M))
-      scalarTensorGradedAlgHom :=
-  (scalarTensorBialgEquiv (k := R) (K := S)).symm_apply_apply
-
-/-- On degree zero, the forward comparison preserves the scalar copy of `S`. -/
-@[simp]
-theorem scalarTensorGradedAlgHom_gradedZeroRingHom_comp_algebraMap :
-    scalarTensorGradedAlgHom.toGradedRingHom.gradedZeroRingHom.comp
-        (algebraMap S ((homogeneousSubmodule R M 0).baseChange S)) =
-      algebraMap S (homogeneousSubmodule S (S ⊗[R] M) 0) := by
-  ext s
-  simp [GradedRingHom.gradedZeroRingHom_apply_coe, scalarTensorGradedAlgHom,
-    SetLike.GradeZero.coe_algebraMap]
-
-/-- On degree zero, the inverse comparison preserves the scalar copy of `S`. -/
-@[simp]
-theorem scalarTensorGradedAlgHomSymm_gradedZeroRingHom_comp_algebraMap :
-    scalarTensorGradedAlgHomSymm.toGradedRingHom.gradedZeroRingHom.comp
-        (algebraMap S (homogeneousSubmodule S (S ⊗[R] M) 0)) =
-      algebraMap S ((homogeneousSubmodule R M 0).baseChange S) := by
-  ext s
-  simp only [RingHom.comp_apply, GradedRingHom.gradedZeroRingHom_apply_coe,
-    scalarTensorGradedAlgHomSymm, GradedRingHom.coe_mk, AlgHom.toRingHom_eq_coe,
-    RingHom.coe_coe, AlgEquiv.coe_toAlgHom, BialgEquiv.coe_toAlgEquiv,
-    SetLike.GradeZero.coe_algebraMap, GradedAlgebra.coe_algebraMap_apply]
-  rw [← scalarTensorBialgEquiv_tmul_one, BialgEquiv.symm_apply_apply]
 
 end TauCeti.SymmetricAlgebra
 
@@ -216,6 +213,92 @@ open TauCeti.SymmetricAlgebra
 variable {R S M : Type*} [CommSemiring R] [CommSemiring S] [Algebra R S]
   [AddCommMonoid M] [Module R M]
 
+/-- The inverse graded map is the inverse scalar-extension equivalence. -/
+@[simp]
+theorem scalarTensorGradedAlgHomSymm_apply (x : SymmetricAlgebra S (S ⊗[R] M)) :
+    scalarTensorGradedAlgHomSymm x = (scalarTensorBialgEquiv (k := R) (K := S)).symm x := (rfl)
+
+end SymmetricAlgebra
+
+namespace TauCeti.SymmetricAlgebra
+
+variable {R S M : Type*} [CommSemiring R] [CommSemiring S] [Algebra R S]
+  [AddCommMonoid M] [Module R M]
+
+/-- The inverse graded map is a right inverse of the forward graded map. -/
+theorem scalarTensorGradedAlgHom_rightInverse :
+    Function.RightInverse
+      (scalarTensorGradedAlgHomSymm (R := R) (S := S) (M := M))
+      scalarTensorGradedAlgHom := by
+  intro x
+  simp only [TensorProduct.scalarTensorGradedAlgHom_apply,
+    _root_.SymmetricAlgebra.scalarTensorGradedAlgHomSymm_apply, BialgEquiv.apply_symm_apply]
+
+/-- The inverse graded map is a left inverse of the forward graded map. -/
+theorem scalarTensorGradedAlgHom_leftInverse :
+    Function.LeftInverse
+      (scalarTensorGradedAlgHomSymm (R := R) (S := S) (M := M))
+      scalarTensorGradedAlgHom := by
+  intro x
+  simp only [TensorProduct.scalarTensorGradedAlgHom_apply,
+    _root_.SymmetricAlgebra.scalarTensorGradedAlgHomSymm_apply, BialgEquiv.symm_apply_apply]
+
+/-- On degree zero, the forward comparison preserves each scalar from `S`. -/
+@[simp]
+theorem scalarTensorGradedAlgHom_gradedZeroRingHom_algebraMap (s : S) :
+    scalarTensorGradedAlgHom.toGradedRingHom.gradedZeroRingHom
+        (algebraMap S ((homogeneousSubmodule R M 0).baseChange S) s) =
+      algebraMap S (homogeneousSubmodule S (S ⊗[R] M) 0) s := by
+  apply Subtype.ext
+  simp only [GradedRingHom.gradedZeroRingHom_apply_coe,
+    SetLike.GradeZero.coe_algebraMap]
+  -- Mathlib has no coercion lemma for `GradedAlgHom.toGradedRingHom`; identify its
+  -- underlying function and scalar inclusions before using the computation lemma.
+  change scalarTensorGradedAlgHom (algebraMap S _ s) = algebraMap S _ s
+  rw [TensorProduct.scalarTensorGradedAlgHom_apply]
+  exact (scalarTensorBialgEquiv (k := R) (K := S)).toAlgEquiv.commutes s
+
+/-- On degree zero, the inverse comparison preserves each scalar from `S`. -/
+@[simp]
+theorem scalarTensorGradedAlgHomSymm_gradedZeroRingHom_algebraMap (s : S) :
+    scalarTensorGradedAlgHomSymm.toGradedRingHom.gradedZeroRingHom
+        (algebraMap S (homogeneousSubmodule S (S ⊗[R] M) 0) s) =
+      algebraMap S ((homogeneousSubmodule R M 0).baseChange S) s := by
+  apply Subtype.ext
+  simp only [GradedRingHom.gradedZeroRingHom_apply_coe,
+    SetLike.GradeZero.coe_algebraMap]
+  -- As above, identify the underlying function of `toGradedRingHom` and scalar inclusions.
+  change scalarTensorGradedAlgHomSymm (algebraMap S _ s) = algebraMap S _ s
+  rw [_root_.SymmetricAlgebra.scalarTensorGradedAlgHomSymm_apply]
+  exact (scalarTensorBialgEquiv (k := R) (K := S)).symm.toAlgEquiv.commutes s
+
+/-- On degree zero, the forward comparison preserves the scalar map from `S`. -/
+theorem scalarTensorGradedAlgHom_gradedZeroRingHom_comp_algebraMap :
+    scalarTensorGradedAlgHom.toGradedRingHom.gradedZeroRingHom.comp
+        (algebraMap S ((homogeneousSubmodule R M 0).baseChange S)) =
+      algebraMap S (homogeneousSubmodule S (S ⊗[R] M) 0) := by
+  apply RingHom.ext
+  intro s
+  exact scalarTensorGradedAlgHom_gradedZeroRingHom_algebraMap (R := R) (M := M) s
+
+/-- On degree zero, the inverse comparison preserves the scalar map from `S`. -/
+theorem scalarTensorGradedAlgHomSymm_gradedZeroRingHom_comp_algebraMap :
+    scalarTensorGradedAlgHomSymm.toGradedRingHom.gradedZeroRingHom.comp
+        (algebraMap S (homogeneousSubmodule S (S ⊗[R] M) 0)) =
+      algebraMap S ((homogeneousSubmodule R M 0).baseChange S) := by
+  apply RingHom.ext
+  intro s
+  exact scalarTensorGradedAlgHomSymm_gradedZeroRingHom_algebraMap (R := R) (M := M) s
+
+end TauCeti.SymmetricAlgebra
+
+namespace SymmetricAlgebra
+
+open TauCeti.SymmetricAlgebra
+
+variable {R S M : Type*} [CommSemiring R] [CommSemiring S] [Algebra R S]
+  [AddCommMonoid M] [Module R M]
+
 /-- The inverse comparison preserves and reflects homogeneous degree as well. -/
 -- Compare degrees before `Submodule.baseChange_pow` expands the source piece.
 @[simp↓]
@@ -226,10 +309,5 @@ theorem scalarTensorBialgEquiv_symm_mem_baseChange_iff {n : ℕ}
       x ∈ homogeneousSubmodule S (S ⊗[R] M) n := by
   rw [← TensorProduct.scalarTensorBialgEquiv_mem_homogeneousSubmodule_iff,
     BialgEquiv.apply_symm_apply]
-
-/-- The inverse graded map is the inverse scalar-extension equivalence. -/
-@[simp]
-theorem scalarTensorGradedAlgHomSymm_apply (x : SymmetricAlgebra S (S ⊗[R] M)) :
-    scalarTensorGradedAlgHomSymm x = (scalarTensorBialgEquiv (k := R) (K := S)).symm x := (rfl)
 
 end SymmetricAlgebra
