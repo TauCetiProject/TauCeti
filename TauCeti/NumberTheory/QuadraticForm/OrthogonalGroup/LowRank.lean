@@ -56,6 +56,12 @@ local instance lowRankInvertibleTwoRat : Invertible (2 : ℚ) :=
 local instance lowRankInvertibleTwoPadic (p : Nat.Primes) : Invertible (2 : ℚ_[p]) :=
   invertibleOfNonzero two_ne_zero
 
+/-- A direct witness keeps the base-change dimension calculation within the deterministic
+instance-search budget. -/
+private theorem lowRankStrongRankConditionPadic (p : Nat.Primes) : StrongRankCondition ℚ_[p] := by
+  let hfield : Field ℚ_[p] := @NormedField.toField _ (Padic.normedField (p : ℕ))
+  exact @commRing_strongRankCondition _ hfield.toCommRing (@Field.toNontrivial _ hfield)
+
 variable {V : Type*} [AddCommGroup V] [Module ℚ V] [FiniteDimensional ℚ V]
 
 namespace OrthogonalCompactOpens
@@ -72,6 +78,7 @@ def topOfFinrankLeOne (Q : QuadraticForm ℚ V) (hQ : Q.Nondegenerate)
   spin _ := ⊤
   isOpen_orthogonal _ := isOpen_univ
   isCompact_orthogonal p := by
+    let _ : StrongRankCondition ℚ_[p] := lowRankStrongRankConditionPadic p
     have hQp : (Q.baseChange ℚ_[p]).Nondegenerate :=
       QuadraticForm.Nondegenerate.baseChange hQ
     have hVp : Module.finrank ℚ_[p] (ℚ_[p] ⊗[ℚ] V) ≤ 1 := by
@@ -84,6 +91,7 @@ def topOfFinrankLeOne (Q : QuadraticForm ℚ V) (hQ : Q.Nondegenerate)
     exact isCompact_orthogonalGroup (Q.baseChange ℚ_[p]) hani
   isOpen_spin _ := isOpen_univ
   isCompact_spin p := by
+    let _ : StrongRankCondition ℚ_[p] := lowRankStrongRankConditionPadic p
     have hQp : (Q.baseChange ℚ_[p]).Nondegenerate :=
       QuadraticForm.Nondegenerate.baseChange hQ
     have hVp : Module.finrank ℚ_[p] (ℚ_[p] ⊗[ℚ] V) ≤ 1 := by

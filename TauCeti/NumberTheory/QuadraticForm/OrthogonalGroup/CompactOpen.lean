@@ -46,13 +46,6 @@ algebra; the package stores no topology of its own.
 public section
 
 namespace TauCeti
-
-/-- A direct witness keeps the base-change dimension calculation within the deterministic
-instance-search budget. -/
-instance instStrongRankConditionPadic (p : Nat.Primes) : StrongRankCondition ℚ_[p] := by
-  let hfield : Field ℚ_[p] := @NormedField.toField _ (Padic.normedField (p : ℕ))
-  exact @commRing_strongRankCondition _ hfield.toCommRing (@Field.toNontrivial _ hfield)
-
 namespace QuadraticMap
 
 open Filter
