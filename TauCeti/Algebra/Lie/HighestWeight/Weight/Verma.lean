@@ -10,6 +10,8 @@ public import TauCeti.LinearAlgebra.RootSystem.KostantPartition.Basic
 
 -- Non-public: `TauCeti.lie_mem_weightSpace_of_mem_weightSpace`, the weight shift by a root vector.
 import TauCeti.Algebra.Lie.Weights.Eigenvector
+-- Non-public: `Module.Basis.repr_eq_zero_of_weight_ne`, coordinates of a joint eigenvector.
+import TauCeti.LinearAlgebra.Eigenspace.DiagonalBasis
 
 /-!
 # The weights of a Verma module and their multiplicities
@@ -157,30 +159,20 @@ theorem weightSpace_vermaModule_eq_span {w : σ → Dual K H}
   have hV (n : σ →₀ ℕ) : V n ∈ weightSpace (VermaModule b lam)
       ((lam + n.sum fun i k ↦ k • w i : Dual K H) : H → K) :=
     vermaBasis_mem_weightSpace b lam B hB n
-  -- the action of `h` is diagonal in the basis `V`, with the weights of the basis vectors
-  have hcoord (n : σ →₀ ℕ) (h : H) (m : VermaModule b lam) :
-      V.coord n ⁅(h : L), m⁆ = (lam + n.sum fun i k ↦ k • w i : Dual K H) h * V.coord n m := by
-    have hcomp : (V.coord n).comp (toEnd K L (VermaModule b lam) (h : L)) =
-        (lam + n.sum fun i k ↦ k • w i : Dual K H) h • V.coord n := by
-      refine V.ext fun n' ↦ ?_
-      have h' := (mem_weightSpace _ _).mp (hV n') h
-      rw [LieSubalgebra.coe_bracket_of_module] at h'
-      rw [LinearMap.comp_apply, toEnd_apply_apply, h', map_smul, LinearMap.smul_apply]
-      by_cases hnn : n' = n
-      · subst hnn
-        rfl
-      · simp [Basis.coord_apply, Basis.repr_self, hnn]
-    simpa using LinearMap.congr_fun hcomp m
   refine le_antisymm (fun m hm ↦ ?_) (Submodule.span_le.mpr ?_)
   · rw [Basis.mem_span_image]
     intro n hn
     rw [Finset.mem_coe, Finsupp.mem_support_iff] at hn
-    refine LinearMap.ext fun h ↦ ?_
-    have hm' := (mem_weightSpace _ _).mp hm h
-    rw [LieSubalgebra.coe_bracket_of_module] at hm'
-    have := hcoord n h m
-    rw [hm', map_smul, smul_eq_mul] at this
-    exact (mul_right_cancel₀ hn this).symm
+    by_contra hns
+    -- the action of `H` is diagonal in the basis `V`, with the weights of the basis vectors
+    refine hn (V.repr_eq_zero_of_weight_ne
+      (f := fun h : H ↦ toEnd K L (VermaModule b lam) (h : L))
+      (a := fun n ↦ ((lam + n.sum fun i k ↦ k • w i : Dual K H) : H → K)) (c := (mu : H → K))
+      (fun n' h ↦ ?_) (fun h ↦ ?_) fun heq ↦ hns (DFunLike.coe_injective heq))
+    · rw [toEnd_apply_apply, ← LieSubalgebra.coe_bracket_of_module]
+      exact (mem_weightSpace _ _).mp (hV n') h
+    · rw [toEnd_apply_apply, ← LieSubalgebra.coe_bracket_of_module]
+      exact (mem_weightSpace _ _).mp hm h
   · rintro _ ⟨n, hn, rfl⟩
     have := hV n
     rwa [Set.mem_ofPred_eq.mp hn] at this
@@ -319,9 +311,10 @@ theorem iSup_weightSpace_vermaModule_eq_top :
   exact Submodule.mem_iSup_of_mem _
     (vermaBasis_mem_weightSpace b lam _ (lie_negativeNilradicalBasis_eq_neg_root_smul b) n)
 
+open scoped Classical in
 /-- **The weight-space decomposition of a Verma module**: `M(lam)` is the internal direct sum of
 its weight spaces. -/
-theorem isInternal_weightSpace_vermaModule [DecidableEq (Dual K H)] :
+theorem isInternal_weightSpace_vermaModule :
     DirectSum.IsInternal
       fun mu : Dual K H ↦ (weightSpace (VermaModule b lam) (mu : H → K)).toSubmodule := by
   refine DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top ?_ ?_
