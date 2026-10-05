@@ -7,7 +7,6 @@ module
 
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologicalDimension.ClosedSubgroup
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologicalDimension.Strict
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.FiniteCoefficients
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Torsion
 public import TauCeti.Topology.Algebra.Group.OpenSubgroup.FiniteIndex
 
