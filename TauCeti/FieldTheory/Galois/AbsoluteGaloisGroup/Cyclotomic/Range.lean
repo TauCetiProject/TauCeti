@@ -43,6 +43,8 @@ subgroups of `ℤ₂ˣ`, determine the image of `χ` in each branch of the marke
   Galois group is compact.
 * `TauCeti.infinite_range_localCyclotomicCharacter`: the image is infinite when `K` is a finite
   extension of `ℚ_p`.
+* `TauCeti.range_localCyclotomicCharacter_le_ratPadic`: the image lies in that over `ℚ_p`,
+  with relative index dividing the extension degree.
 * `TauCeti.index_range_localCyclotomicCharacter_dvd_finrank`: the index of the cyclotomic image
   divides the extension degree.
 
@@ -191,11 +193,21 @@ theorem infinite_range_localCyclotomicCharacter [Algebra ℚ_[p] K] [FiniteDimen
   have := hQ ▸ hle.trans (Nat.mul_le_mul_left N hK)
   omega
 
+/-- The cyclotomic image of a finite extension of `ℚ_p` is contained in the image over `ℚ_p`,
+with relative index dividing the extension degree. -/
+theorem range_localCyclotomicCharacter_le_ratPadic (p : ℕ) [Fact p.Prime]
+    (K : Type*) [Field K] [Algebra ℚ_[p] K] [FiniteDimensional ℚ_[p] K] :
+    (localCyclotomicCharacter p K).range ≤ (localCyclotomicCharacter p ℚ_[p]).range ∧
+      (localCyclotomicCharacter p K).range.relIndex (localCyclotomicCharacter p ℚ_[p]).range ∣
+        Module.finrank ℚ_[p] K :=
+  ⟨range_localCyclotomicCharacter_le_range p ℚ_[p] K IsSepClosed.lift,
+    relIndex_range_localCyclotomicCharacter_dvd_finrank p ℚ_[p] K IsSepClosed.lift⟩
+
 /-- The index of the cyclotomic image of a finite extension of `ℚ_p` divides its degree. -/
 theorem index_range_localCyclotomicCharacter_dvd_finrank (p : ℕ) [Fact p.Prime]
     (K : Type*) [Field K] [Algebra ℚ_[p] K] [FiniteDimensional ℚ_[p] K] :
     (localCyclotomicCharacter p K).range.index ∣ Module.finrank ℚ_[p] K := by
-  have h := relIndex_range_localCyclotomicCharacter_dvd_finrank p ℚ_[p] K IsSepClosed.lift
-  simpa only [range_localCyclotomicCharacter_ratPadic_eq_top, Subgroup.relIndex_top_right] using h
+  have h := (range_localCyclotomicCharacter_le_ratPadic p K).2
+  simpa only [range_localCyclotomicCharacter_ratPadic, Subgroup.relIndex_top_right] using h
 
 end TauCeti

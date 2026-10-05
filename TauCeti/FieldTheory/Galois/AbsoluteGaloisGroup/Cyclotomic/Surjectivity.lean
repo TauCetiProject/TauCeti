@@ -26,7 +26,7 @@ Over `ℚ_p`, irreducibility gives the full image `ℤ_pˣ`.
 ## Main results
 
 * `TauCeti.localCyclotomicCharacter_surjective_of_irreducible`: the irreducibility criterion.
-* `TauCeti.range_localCyclotomicCharacter_ratPadic_eq_top`: the image over `ℚ_p` is all of `ℤ_pˣ`.
+* `TauCeti.range_localCyclotomicCharacter_ratPadic`: the image over `ℚ_p` is all of `ℤ_pˣ`.
 
 ## References
 
@@ -120,7 +120,7 @@ theorem localCyclotomicCharacter_surjective_of_irreducible
 
 /-- The cyclotomic image of `G_{ℚ_p}` is all of `ℤ_pˣ`. -/
 @[simp]
-theorem range_localCyclotomicCharacter_ratPadic_eq_top (p : ℕ) [Fact p.Prime] :
+theorem range_localCyclotomicCharacter_ratPadic (p : ℕ) [Fact p.Prime] :
     (localCyclotomicCharacter p ℚ_[p]).range = ⊤ := by
   rw [MonoidHom.range_eq_top]
   exact localCyclotomicCharacter_surjective_of_irreducible
