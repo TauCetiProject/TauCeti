@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Analytic.Submanifold.Basic
-import Mathlib.Topology.Algebra.Module.Equiv.Pi
-import Mathlib.Topology.Algebra.Module.Equiv.Prod
+import TauCeti.Topology.Algebra.Module.Equiv.Fin
 import Mathlib.Topology.OpenPartialHomeomorph.Constructions
 
 /-!
@@ -41,68 +40,6 @@ namespace TauCeti
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {n m d e : ℕ}
 
-/-- Split a concatenated vector into its two coordinate blocks. -/
-private def splitCoords (n m : ℕ) :
-    (Fin (n + m) → 𝕜) ≃L[𝕜] (Fin n → 𝕜) × (Fin m → 𝕜) :=
-  (ContinuousLinearEquiv.piCongrLeft 𝕜 (fun _ : Fin (n + m) ↦ 𝕜)
-    finSumFinEquiv).symm.trans
-      (ContinuousLinearEquiv.sumPiEquivProdPi 𝕜 (Fin n) (Fin m) (fun _ ↦ 𝕜))
-
-private theorem splitCoords_apply (x : Fin (n + m) → 𝕜) :
-    splitCoords n m x =
-      (fun i ↦ x (Fin.castAdd m i), fun i ↦ x (Fin.natAdd n i)) :=
-  (rfl)
-
-/-- Split a vector at the dimension of its submanifold. -/
-private def splitAt (h : d ≤ n) :
-    (Fin n → 𝕜) ≃L[𝕜] (Fin d → 𝕜) × (Fin (n - d) → 𝕜) :=
-  (ContinuousLinearEquiv.piCongrLeft 𝕜 (fun _ : Fin n ↦ 𝕜)
-    (finCongr (Nat.add_sub_of_le h))).symm.trans (splitCoords d (n - d))
-
-private theorem splitAt_snd_apply (h : d ≤ n) (x : Fin n → 𝕜) (i : Fin (n - d)) :
-    (splitAt h x).2 i = x ⟨d + i.val, by omega⟩ :=
-  (rfl)
-
-private theorem splitAt_snd_eq_zero_iff (h : d ≤ n) (x : Fin n → 𝕜) :
-    (splitAt h x).2 = 0 ↔ ∀ i : Fin n, d ≤ i.val → x i = 0 := by
-  constructor
-  · intro hx i hi
-    have hxi := congrFun hx ⟨i.val - d, by omega⟩
-    rw [splitAt_snd_apply] at hxi
-    convert hxi using 1
-    congr 1
-    apply Fin.ext
-    dsimp
-    omega
-  · intro hx
-    ext i
-    rw [splitAt_snd_apply]
-    exact hx _ (by dsimp; omega)
-
-/-- Group the two free blocks before the two constrained blocks. -/
-private def productCoords (hd : d ≤ n) (he : e ≤ m) :
-    ((Fin n → 𝕜) × (Fin m → 𝕜)) ≃L[𝕜] (Fin (n + m) → 𝕜) :=
-  ((splitAt hd).prodCongr (splitAt he)).trans
-    ((ContinuousLinearEquiv.prodProdProdComm 𝕜 _ _ _ _).trans
-      (((splitCoords d e).symm.prodCongr
-        ((splitCoords (n - d) (m - e)).symm.trans
-          (ContinuousLinearEquiv.piCongrLeft 𝕜
-            (fun _ : Fin (n + m - (d + e)) ↦ 𝕜) (finCongr (by omega))))).trans
-        (splitAt (by omega : d + e ≤ n + m)).symm))
-
-private theorem productCoords_vanishing_iff (hd : d ≤ n) (he : e ≤ m)
-    (x : (Fin n → 𝕜) × (Fin m → 𝕜)) :
-    (∀ i : Fin (n + m), d + e ≤ i.val → productCoords hd he x i = 0) ↔
-      (∀ i : Fin n, d ≤ i.val → x.1 i = 0) ∧
-      (∀ i : Fin m, e ≤ i.val → x.2 i = 0) := by
-  rw [← splitAt_snd_eq_zero_iff (by omega : d + e ≤ n + m),
-    ← splitAt_snd_eq_zero_iff hd, ← splitAt_snd_eq_zero_iff he]
-  simp only [productCoords, ContinuousLinearEquiv.trans_apply,
-    ContinuousLinearEquiv.apply_symm_apply, ContinuousLinearEquiv.prodCongr_apply]
-  rw [ContinuousLinearEquiv.map_eq_zero_iff, ContinuousLinearEquiv.map_eq_zero_iff]
-  -- The four-block equivalence sends the constrained blocks to the second pair.
-  exact Prod.mk_eq_zero
-
 variable {S : Set (Fin n → 𝕜)} {T : Set (Fin m → 𝕜)}
   {c : OpenPartialHomeomorph (Fin n → 𝕜) (Fin n → 𝕜)}
   {c' : OpenPartialHomeomorph (Fin m → 𝕜) (Fin m → 𝕜)}
@@ -111,12 +48,12 @@ variable {S : Set (Fin n → 𝕜)} {T : Set (Fin m → 𝕜)}
 private theorem exists_product_chart (hd : d ≤ n) (he : e ≤ m)
     (hc : IsAnalyticChart d S c) (hc' : IsAnalyticChart e T c') :
     ∃ q : OpenPartialHomeomorph (Fin (n + m) → 𝕜) (Fin (n + m) → 𝕜),
-      q.source = {x | (splitCoords n m x).1 ∈ c.source ∧
-        (splitCoords n m x).2 ∈ c'.source} ∧
+      q.source = {x | (splitCoords (𝕜 := 𝕜) n m x).1 ∈ c.source ∧
+        (splitCoords (𝕜 := 𝕜) n m x).2 ∈ c'.source} ∧
       IsAnalyticChart (d + e)
-        {x | (splitCoords n m x).1 ∈ S ∧ (splitCoords n m x).2 ∈ T} q := by
-  let A : (Fin (n + m) → 𝕜) ≃L[𝕜] (Fin n → 𝕜) × (Fin m → 𝕜) := splitCoords n m
-  let B := productCoords (𝕜 := 𝕜) hd he
+        {x | (splitCoords (𝕜 := 𝕜) n m x).1 ∈ S ∧ (splitCoords (𝕜 := 𝕜) n m x).2 ∈ T} q := by
+  let A : (Fin (n + m) → 𝕜) ≃L[𝕜] (Fin n → 𝕜) × (Fin m → 𝕜) := splitCoords (𝕜 := 𝕜) n m
+  let B := productCoords (𝕜 := 𝕜) (M := 𝕜) hd he
   let q := (A.toHomeomorph.transOpenPartialHomeomorph (c.prod c')).transHomeomorph
     B.toHomeomorph
   have hsource : q.source = {x | (A x).1 ∈ c.source ∧ (A x).2 ∈ c'.source} := by
@@ -193,9 +130,10 @@ theorem AnalyticOnSubmanifold.prodMap {f : (Fin n → 𝕜) → E} {g : (Fin m �
   obtain ⟨q, hsource, hq⟩ := exists_product_chart hd he hc hc'
   have hxq : x ∈ q.source := by
     simpa only [hsource, mem_ofPred_eq, splitCoords_apply] using And.intro hxc hxc'
-  have hxST : x ∈ {x | (splitCoords n m x).1 ∈ S ∧ (splitCoords n m x).2 ∈ T} := by
+  have hxST : x ∈ {x | (splitCoords (𝕜 := 𝕜) n m x).1 ∈ S ∧
+      (splitCoords (𝕜 := 𝕜) n m x).2 ∈ T} := by
     simpa only [mem_ofPred_eq, splitCoords_apply] using hx
-  let A : (Fin (n + m) → 𝕜) ≃L[𝕜] (Fin n → 𝕜) × (Fin m → 𝕜) := splitCoords n m
+  let A : (Fin (n + m) → 𝕜) ≃L[𝕜] (Fin n → 𝕜) × (Fin m → 𝕜) := splitCoords (𝕜 := 𝕜) n m
   have hparam := (A.analyticAt _).fun_comp (hq.analyticAt_symm_firstCoords hxq hxST)
   have hbase := congrArg A (hq.symm_firstCoords_firstCoords_apply hxq hxST)
   have hmem := (hq.eventually_symm_firstCoords_mem hxq hxST).mono fun _ hu ↦ hu.2
@@ -209,6 +147,6 @@ theorem AnalyticOnSubmanifold.prodMap {f : (Fin n → 𝕜) → E} {g : (Fin m �
     (hmem.mono fun _ hu ↦ hu.2) (by simpa only [hbase, A, splitCoords_apply] using hgc)
   refine ⟨q, hxq, ?_, ?_⟩
   · simpa only [splitCoords_apply] using hq
-  · exact hleft.prod hright
+  · simpa only [Function.comp_def, A, splitCoords_apply] using hleft.prod hright
 
 end TauCeti
