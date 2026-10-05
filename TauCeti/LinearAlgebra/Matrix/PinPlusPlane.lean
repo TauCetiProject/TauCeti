@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 public import Mathlib.LinearAlgebra.UnitaryGroup
+public import TauCeti.Data.ZMod.Pow
 public import TauCeti.GroupTheory.GroupExtension.DihedralSixteen
 public import TauCeti.GroupTheory.SpecificGroups.Dihedral.Basic
 
@@ -23,7 +24,8 @@ reflection (`TauCeti.isPinLift_pinVec`).
 
 The wreath product `C₂ ≀ C₂` acts on `F²` by signed permutations (`TauCeti.wreathSignedPerm`).
 For a square root `r2` of `2`, the unit vector `t = (e₁ − e₂)/√2` (`TauCeti.pinT`) lifts the swap,
-`e₁ t` is the rotation by `π/4`, of order `8`, and `r ↦ e₁ t`, `f ↦ t` is a homomorphism
+`e₁ t = r2⁻¹ · [[1, −1], [1, 1]]` has order `8` (over `ℝ` with `r2 = √2 > 0` it is the rotation
+by `π/4`), and `r ↦ e₁ t`, `f ↦ t` is a homomorphism
 `TauCeti.pinDihedral` from the dihedral group `D₁₆` of order sixteen into `M₂(F)`. It lies over
 the quotient map `D₁₆ → C₂ ≀ C₂` (`TauCeti.isPinLift_pinDihedral`), and through the section
 `TauCeti.wreathSection` it gives a lift `TauCeti.pinLift` of `C₂ ≀ C₂` whose factor set is the
@@ -107,24 +109,6 @@ theorem pinE2_mul_diagonal (d : Fin 2 → R) :
     pinE2 * diagonal d = diagonal ![d 1, d 0] * pinE2 := by
   ext i j; fin_cases i <;> fin_cases j <;> simp [pinE2, Matrix.mul_apply, Fin.sum_univ_two]
 
-/-- A sign `(−1)^a` for `a : ZMod 2` is multiplicative in `a`. -/
-private theorem neg_one_pow_val_add (a b : ZMod 2) :
-    (-1 : R) ^ (a + b).val = (-1) ^ a.val * (-1) ^ b.val := by
-  rw [ZMod.val_add, ← neg_one_pow_eq_pow_mod_two, pow_add]
-
-/-- A power `e₂^c` for `c : ZMod 2` is multiplicative in `c`. -/
-private theorem pinE2_pow_val_add (a b : ZMod 2) :
-    (pinE2 : Matrix (Fin 2) (Fin 2) R) ^ (a + b).val = pinE2 ^ a.val * pinE2 ^ b.val := by
-  rw [ZMod.val_add, ← pow_eq_pow_mod _ (by rw [pow_two, pinE2_mul_self]), pow_add]
-
-/-- The diagonal sign matrix `diag((−1)^a, (−1)^b)` is multiplicative in `(a, b)`. -/
-private theorem diagonal_neg_one_pow_mul (a b a' b' : ZMod 2) :
-    diagonal ![(-1 : R) ^ a.val, (-1) ^ b.val] * diagonal ![(-1) ^ a'.val, (-1) ^ b'.val] =
-      diagonal ![(-1) ^ (a + a').val, (-1) ^ (b + b').val] := by
-  rw [diagonal_mul_diagonal, neg_one_pow_val_add, neg_one_pow_val_add]
-  congr 1
-  ext i; fin_cases i <;> rfl
-
 /-- **The signed-permutation representation of `C₂ ≀ C₂`,**
 `(a, b, c) ↦ diag((−1)^a, (−1)^b) · e₂^c`: the base coordinates are signs and the top coordinate
 swaps the two coordinates of `R²`. Its value on coordinates is `TauCeti.wreathSignedPerm_mk`. -/
@@ -134,19 +118,26 @@ def wreathSignedPerm : WreathC2 →* Matrix (Fin 2) (Fin 2) R where
     rw [coordA_one, coordB_one, coordC_one]
     ext i j; fin_cases i <;> fin_cases j <;> simp
   map_mul' g h := by
+    -- The diagonal sign matrix `diag((−1)^a, (−1)^b)` is multiplicative in `(a, b)`.
+    have hdiag (a b a' b' : ZMod 2) :
+        diagonal ![(-1 : R) ^ a.val, (-1) ^ b.val] * diagonal ![(-1) ^ a'.val, (-1) ^ b'.val] =
+          diagonal ![(-1) ^ (a + a').val, (-1) ^ (b + b').val] := by
+      rw [diagonal_mul_diagonal, ZMod.pow_val_add neg_one_sq, ZMod.pow_val_add neg_one_sq]
+      congr 1
+      ext i; fin_cases i <;> rfl
     simp only [coordA_mul, coordB_mul, coordC_mul]
     generalize coordA g = a, coordB g = b, coordC g = c, coordA h = a', coordB h = b',
       coordC h = c'
-    rw [pinE2_pow_val_add]
+    have hE2 : (pinE2 : Matrix (Fin 2) (Fin 2) R) ^ 2 = 1 := by rw [pow_two, pinE2_mul_self]
+    rw [ZMod.pow_val_add hE2]
     simp only [← mul_assoc]
     obtain rfl | rfl : c = 0 ∨ c = 1 := by revert c; decide
-    · simp only [zero_mul, add_zero, ZMod.val_zero, pow_zero, mul_one, diagonal_neg_one_pow_mul]
+    · simp only [zero_mul, add_zero, ZMod.val_zero, pow_zero, mul_one, hdiag]
     · have hA : ∀ x y z : ZMod 2, x + y + 1 * (y + z) = x + z := by decide
       have hB : ∀ x y z : ZMod 2, x + y + 1 * (z + y) = x + z := by decide
-      rw [mul_assoc (diagonal _) (pinE2 ^ _) (diagonal _), show (1 : ZMod 2).val = 1 from rfl,
-        pow_one, pinE2_mul_diagonal, ← mul_assoc, hA, hB]
-      simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one,
-        diagonal_neg_one_pow_mul]
+      rw [mul_assoc (diagonal _) (pinE2 ^ _) (diagonal _), ZMod.val_one, pow_one,
+        pinE2_mul_diagonal, ← mul_assoc, hA, hB]
+      simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one, hdiag]
 
 /-- The signed permutation of `g` is `diag((−1)^a, (−1)^b) · e₂^c` on its coordinates. -/
 theorem wreathSignedPerm_apply (g : WreathC2) :
@@ -166,7 +157,7 @@ theorem wreathSignedPerm_mk (a b c : ZMod 2) :
 theorem wreathSignedPerm_wreathSwap :
     (wreathSignedPerm wreathSwap : Matrix (Fin 2) (Fin 2) R) = pinE2 := by
   rw [wreathSignedPerm_apply, coordA_wreathSwap, coordB_wreathSwap, coordC_wreathSwap,
-    show (1 : ZMod 2).val = 1 from rfl, pow_one]
+    ZMod.val_one, pow_one]
   ext i j; fin_cases i <;> fin_cases j <;> simp [pinE2, Matrix.mul_apply, Fin.sum_univ_two]
 
 end Ring
@@ -187,6 +178,7 @@ theorem pinVec_eq (y : Fin 2 → R) : pinVec y = !![y 0, y 1; y 1, -y 0] := by
   ext i j; fin_cases i <;> fin_cases j <;> simp [pinVec_apply, pinE1, pinE2]
 
 /-- **The Clifford relation** `v² = q(v) · 1` for the unit form `q(y) = y₀² + y₁²`. -/
+@[simp]
 theorem pinVec_mul_self (y : Fin 2 → R) : pinVec y * pinVec y = (y ⬝ᵥ y) • 1 := by
   rw [pinVec_eq]
   ext i j; fin_cases i <;> fin_cases j <;>
@@ -296,6 +288,7 @@ private theorem dotProduct_pinTVec (hr2 : r2 ^ 2 = 2) :
   linear_combination -hr2
 
 /-- `t² = +1`. -/
+@[simp]
 theorem pinT_mul_self (hr2 : r2 ^ 2 = 2) : pinT r2 * pinT r2 = 1 := by
   rw [pinT, pinVec_mul_self, dotProduct_pinTVec hr2, one_smul]
 
@@ -309,8 +302,9 @@ theorem isPinLift_pinT (hr2 : r2 ^ 2 = 2) : IsPinLift (pinT r2) pinE2 := by
       first | linear_combination hr2 | linear_combination -hr2
   rwa [hw] at h
 
-/-- **`(e₁ t)⁴ = −1`:** `e₁ t` is the rotation by `π/4`, since `(e₁ t)² = [[0, −1], [1, 0]]`. So
-`e₁ t` has order `8`, the characteristic not being two. -/
+/-- **`(e₁ t)⁴ = −1`,** since `e₁ t = r2⁻¹ · [[1, −1], [1, 1]]` squares to `[[0, −1], [1, 0]]`.
+So `e₁ t` has order `8`, the characteristic not being two; over `ℝ` with `r2 = √2 > 0` it is the
+rotation by `π/4`. -/
 theorem pinE1_mul_pinT_pow_four (hr2 : r2 ^ 2 = 2) : (pinE1 * pinT r2) ^ 4 = -1 := by
   have hr : r2 ≠ 0 := ne_zero_pow two_ne_zero (hr2 ▸ two_ne_zero)
   have hsq : (pinE1 * pinT r2) ^ 2 = !![0, -1; 1, 0] := by
@@ -318,8 +312,10 @@ theorem pinE1_mul_pinT_pow_four (hr2 : r2 ^ 2 = 2) : (pinE1 * pinT r2) ^ 4 = -1 
     ext i j; fin_cases i <;> fin_cases j <;>
       simp [pow_two, pinE1, pinE2, Matrix.mul_apply, Fin.sum_univ_two] <;> field_simp <;>
       first | linear_combination hr2 | linear_combination -hr2
-  rw [show 4 = 2 * 2 from rfl, pow_mul, hsq]
-  ext i j; fin_cases i <;> fin_cases j <;> simp [pow_two, Matrix.mul_apply, Fin.sum_univ_two]
+  calc (pinE1 * pinT r2) ^ 4 = ((pinE1 * pinT r2) ^ 2) ^ 2 := by rw [← pow_mul]
+    _ = -1 := by
+      rw [hsq]
+      ext i j; fin_cases i <;> fin_cases j <;> simp [pow_two, Matrix.mul_apply, Fin.sum_univ_two]
 
 /-- The second involution `t e₁ t` of the dihedral presentation. -/
 private theorem pinT_mul_pinE1_mul_pinT_mul_self (hr2 : r2 ^ 2 = 2) :
@@ -333,33 +329,32 @@ private theorem pinT_mul_pinT_mul_pinE1_mul_pinT (hr2 : r2 ^ 2 = 2) :
     pinT r2 * (pinT r2 * pinE1 * pinT r2) = pinE1 * pinT r2 := by
   rw [← mul_assoc, ← mul_assoc, pinT_mul_self hr2, one_mul]
 
-/-- **The dihedral group `D₁₆` in `M₂(F)`,** on Mathlib's `DihedralGroup 8`: `r ↦ e₁ t`, the
-rotation by `π/4`, and `f = sr 0 ↦ t`, so that `r i ↦ (e₁ t)^i` and `sr i ↦ t (e₁ t)^i`
-(`TauCeti.pinDihedral_r`, `TauCeti.pinDihedral_sr`). It is `TauCeti.dihedralHom` at the two
-involutions `t` and `t e₁ t`, whose product `e₁ t` satisfies `(e₁ t)⁸ = 1` by
-`TauCeti.pinE1_mul_pinT_pow_four`. -/
+/-- **The dihedral group `D₁₆` in `M₂(F)`,** on Mathlib's `DihedralGroup 8`: `r ↦ e₁ t`, of
+order `8` (the rotation by `π/4` over `ℝ` with `r2 = √2 > 0`), and `f = sr 0 ↦ t`, so that
+`r i ↦ (e₁ t)^i` and `sr i ↦ t (e₁ t)^i` (`TauCeti.pinDihedral_r`, `TauCeti.pinDihedral_sr`).
+It is `TauCeti.dihedralHom` at the two involutions `t` and `t e₁ t`, whose product `e₁ t`
+satisfies `(e₁ t)⁸ = 1` by `TauCeti.pinE1_mul_pinT_pow_four`. -/
 noncomputable def pinDihedral (hr2 : r2 ^ 2 = 2) : DihedralGroup 8 →* Matrix (Fin 2) (Fin 2) F :=
   dihedralHom (pinT_mul_self hr2) (pinT_mul_pinE1_mul_pinT_mul_self hr2) (by
-    rw [pinT_mul_pinT_mul_pinE1_mul_pinT hr2, show 8 = 4 * 2 from rfl, pow_mul,
-      pinE1_mul_pinT_pow_four hr2, neg_one_sq])
+    rw [pinT_mul_pinT_mul_pinE1_mul_pinT hr2, ← neg_one_sq, ← pinE1_mul_pinT_pow_four hr2,
+      ← pow_mul])
 
 /-- The rotation `r i` maps to `(e₁ t)^i`. -/
 @[simp]
 theorem pinDihedral_r (hr2 : r2 ^ 2 = 2) (i : ZMod 8) :
     pinDihedral hr2 (r i) = (pinE1 * pinT r2) ^ i.val := by
-  rw [pinDihedral, dihedralHom_r_units, ZMod.cast_eq_val, zpow_natCast, Units.val_pow_eq_pow_val,
-    Units.val_mul, Units.val_mk, Units.val_mk, pinT_mul_pinT_mul_pinE1_mul_pinT hr2]
+  simp only [pinDihedral, dihedralHom_r_units, ZMod.cast_eq_val, zpow_natCast,
+    Units.val_pow_eq_pow_val, Units.val_mul, pinT_mul_pinT_mul_pinE1_mul_pinT hr2]
 
 /-- The reflection `sr i` maps to `t (e₁ t)^i`. -/
 @[simp]
 theorem pinDihedral_sr (hr2 : r2 ^ 2 = 2) (i : ZMod 8) :
     pinDihedral hr2 (sr i) = pinT r2 * (pinE1 * pinT r2) ^ i.val := by
-  rw [pinDihedral, dihedralHom_sr_units, ZMod.cast_eq_val, zpow_natCast, Units.val_pow_eq_pow_val,
-    Units.val_mul, Units.val_mk, Units.val_mk, pinT_mul_pinT_mul_pinE1_mul_pinT hr2]
+  rw [← pinDihedral_r hr2 i, pinDihedral, dihedralHom_sr_units, dihedralHom_r_units]
 
 /-- The central element `r⁴` of `D₁₆` maps to `−1`. -/
 theorem pinDihedral_r_four (hr2 : r2 ^ 2 = 2) : pinDihedral hr2 (r 4) = -1 := by
-  rw [pinDihedral_r, show (4 : ZMod 8).val = 4 from rfl, pinE1_mul_pinT_pow_four hr2]
+  rw [pinDihedral_r, ZMod.val_ofNat_of_lt (by norm_num), pinE1_mul_pinT_pow_four hr2]
 
 /-- **`D₁₆` lies over `C₂ ≀ C₂`:** `pinDihedral z` is a `Pin⁺` lift of the signed permutation of
 the image of `z` under `TauCeti.dihedralToWreath`. -/
@@ -367,10 +362,8 @@ theorem isPinLift_pinDihedral (hr2 : r2 ^ 2 = 2) (z : DihedralGroup 8) :
     IsPinLift (pinDihedral hr2 z) (wreathSignedPerm (dihedralToWreath z)) := by
   -- On the generators: `e₁ t` lifts `diag(−1, 1) · e₂` and `t` lifts `e₂`.
   have hr : IsPinLift (pinDihedral hr2 (r 1)) (wreathSignedPerm (dihedralToWreath (r 1))) := by
-    rw [pinDihedral_r, dihedralToWreath_r_one, wreathSignedPerm_mk,
-      show (1 : ZMod 8).val = 1 from rfl, show (1 : ZMod 2).val = 1 from rfl,
-      show (0 : ZMod 2).val = 0 from rfl]
-    simpa using isPinLift_pinE1.mul (isPinLift_pinT hr2)
+    rw [pinDihedral_r, dihedralToWreath_r_one, wreathSignedPerm_mk]
+    simpa [ZMod.val_one_eq_one_mod] using isPinLift_pinE1.mul (isPinLift_pinT hr2)
   have hs : IsPinLift (pinDihedral hr2 (sr 0)) (wreathSignedPerm (dihedralToWreath (sr 0))) := by
     rw [pinDihedral_sr, dihedralToWreath_sr_zero, wreathSignedPerm_wreathSwap]
     simpa using isPinLift_pinT hr2
@@ -417,8 +410,7 @@ theorem pinLift_mul_pinLift (hr2 : r2 ^ 2 = 2) (g h : WreathC2) :
     revert c
     decide
   · rw [h0, ZMod.val_zero, Nat.cast_zero, mul_zero, ← one_def, map_one, pow_zero]
-  · rw [h1, show (1 : ZMod 2).val = 1 from rfl, Nat.cast_one, mul_one, pow_one,
-      pinDihedral_r_four]
+  · rw [h1, ZMod.val_one, Nat.cast_one, mul_one, pow_one, pinDihedral_r_four]
 
 /-- **The factor set of `pinLift` is `c_{D₁₆}`,** the `D₁₆` extension cocycle
 `TauCeti.wreathD16Cocycle` read as a sign:
