@@ -223,7 +223,8 @@ private theorem tangentVector_ne_zero_and_mem_normalSubspace_iff {f : Circle →
     tangentVector f z ≠ 0 ∧
       ∀ v, v ∈ normalSubspace (𝓡 1) f z ↔ ⟪tangentVector f z, v⟫ = 0 := by
   obtain ⟨t, rfl⟩ := Circle.exp_surjective z
-  obtain ⟨hne, hrange⟩ := deriv_comp_circleExp_ne_zero_and_range_mfderiv hf himm t
+  obtain ⟨hne, hrange⟩ :=
+    deriv_comp_circleExp_ne_zero_and_range_mfderiv (hf.of_le one_le_two) himm t
   rw [tangentVector_circleExp]
   refine ⟨hne, fun v => ?_⟩
   set D : EuclideanSpace ℝ (Fin 1) →L[ℝ] V := mfderiv (𝓡 1) 𝓘(ℝ, V) f (Circle.exp t)
