@@ -112,7 +112,7 @@ theorem isPullback_preimageSubfan_analyticMap :
   TauCeti.TopCat.isPullback_of_isEmbedding_of_range_eq_preimage
     (Phi.isOpenEmbedding_subfanAnalyticMap hPhi (f.preimageCones S)
       (f.preimageCones_subset S) (f.preimageCones_closedUnderFaces S hface)).isEmbedding
-    (Psi.isOpenEmbedding_subfanAnalyticMap hPsi S hS hface).isEmbedding
+    (Psi.isOpenEmbedding_subfanAnalyticMap hPsi S hS hface).injective
     (f.preimageSubfanAnalyticMap_comp_analyticMap hPhi hPsi S hS hface)
     (f.range_preimageSubfanAnalyticMap hPhi hPsi S hS hface)
 
