@@ -47,7 +47,6 @@ variable {C : Type v} [Category.{w} C] {R : Cᵒᵖ ⥤ CommRingCat.{u}}
 
 /-- Auxiliary definition for `exteriorPower`: the restriction maps of the exterior power of a
 presheaf of modules, sending `m₁ ∧ ⋯ ∧ mₙ` to `M.map f m₁ ∧ ⋯ ∧ M.map f mₙ`. -/
-@[expose]
 def exteriorPowerObjMap (M : PresheafOfModulesOfCommRing.{u} R) (n : ℕ) {X Y : Cᵒᵖ}
     (f : X ⟶ Y) :
     (M.obj X).exteriorPower n ⟶
