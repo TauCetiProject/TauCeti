@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Toric.Algebraic.Fan.Over
 public import TauCeti.Geometry.Toric.Algebraic.Fan.Product.Basic
 public import TauCeti.Geometry.Toric.Algebraic.Product
+public import Mathlib.AlgebraicGeometry.PullbackCarrier
 
 /-!
 # Products of toric fan schemes
@@ -177,6 +178,28 @@ theorem affineToricChartι_comp_algebraicProdComparison
   · simp only [Category.assoc, algebraicProdComparison_snd,
       FanHom.affineToricChartι_prodCone_comp_snd_algebraicMap,
       affineToricChartProdMap_snd, affineToricSchemeProdIso_hom_snd_assoc]
+
+/-- The product of two affine cone opens is open in the fibre product of the fan schemes. -/
+instance isOpenImmersion_affineToricChartProdMap (σ : Phi.cones) (τ : Psi.cones) :
+    IsOpenImmersion (Phi.affineToricChartProdMap Psi σ τ) := by
+  unfold affineToricChartProdMap
+  exact MorphismProperty.pullbackMap (P := @IsOpenImmersion) inferInstance inferInstance
+    (by
+      rw [← Phi.algebraicRealization_over, ← specOverSpec_over]
+      exact (comp_over (Phi.affineToricChartι σ) (Spec (.of ℂ))).symm)
+    (by
+      rw [← Psi.algebraicRealization_over, ← specOverSpec_over]
+      exact (comp_over (Psi.affineToricChartι τ) (Spec (.of ℂ))).symm)
+
+/-- The product chart is the locus where both projections lie in the respective cone opens. -/
+theorem range_affineToricChartProdMap (σ : Phi.cones) (τ : Psi.cones) :
+    Set.range (Phi.affineToricChartProdMap Psi σ τ) =
+      pullback.fst Phi.algebraicRealizationStructureMap Psi.algebraicRealizationStructureMap ⁻¹'
+          Set.range (Phi.affineToricChartι σ) ∩
+        pullback.snd Phi.algebraicRealizationStructureMap Psi.algebraicRealizationStructureMap ⁻¹'
+          Set.range (Psi.affineToricChartι τ) := by
+  unfold affineToricChartProdMap
+  exact Scheme.Pullback.range_map _ _ _ _ _ _ _ _ _
 
 end Fan
 
