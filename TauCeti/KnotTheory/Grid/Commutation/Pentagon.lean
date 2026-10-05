@@ -334,6 +334,16 @@ theorem mem_coveredSquares (P : GridPentagonBetween a s x y) (p : Fin n × Fin n
   simp only [coveredSquares, Finset.mem_union, Finset.mem_product, Finset.mem_erase,
     Finset.mem_singleton, and_assoc]
 
+/-- Every square covered by a pentagon lies in the row arc of its underlying rectangle. -/
+theorem mem_cIco_of_mem_coveredSquares (P : GridPentagonBetween a s x y)
+    {p : Fin n × Fin n} (hp : p ∈ P.coveredSquares) :
+    p.2 ∈ Grid.cIco P.bottom P.top := by
+  have hsplit := Grid.ite_mem_cIco_eq_add_add P.turn_mem_cIco_bottom_top p.2
+  rcases (P.mem_coveredSquares p).1 hp with h | h | h
+  · exact h.2.2
+  · split_ifs at hsplit <;> grind
+  · split_ifs at hsplit <;> grind
+
 /-- A pentagon spanning one cyclic row has its turn in that row and covers only the
 columns of its underlying rectangle other than the first commuted column. -/
 theorem coveredSquares_eq_product_singleton_of_top_eq_finRotate_bottom
@@ -501,12 +511,10 @@ theorem pentagonWeight_eq_prod_coveredSquares {x y : GridState n}
       ∏ p ∈ P.coveredSquares,
         if p ∈ G.OSet then MvPolynomial.X (Equiv.swap C.column (finRotate n C.column) p.1)
         else (1 : MvPolynomial (Fin n) R) := by
-  classical
-  rw [pentagonWeight, Finset.prod_ite_mem, Finset.inter_comm,
-    G.OSet_inter_eq_image_OColumnsOfSquares P.coveredSquares]
-  simp only [pentagonOColumns]
-  rw [
-    Finset.prod_image fun _ _ _ _ hab => congrArg Prod.fst hab]
+  rw [G.prod_ite_OSet_eq_prod_OColumnsOfSquares
+    (fun c => (MvPolynomial.X (Equiv.swap C.column (finRotate n C.column) c) :
+      MvPolynomial (Fin n) R))]
+  rfl
 
 /-- The weight of a pentagon is the product of the variables of the columns of the commuted
 diagram whose `O`-marking the pentagon carries. -/

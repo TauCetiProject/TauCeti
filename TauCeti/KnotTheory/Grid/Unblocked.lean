@@ -234,6 +234,56 @@ theorem OSet_inter_eq_image_OColumnsOfSquares (s : Finset (Fin n × Fin n)) :
   · rintro ⟨c, hc, rfl⟩
     exact ⟨rfl, hc⟩
 
+/-- A product over marked squares is the product of the corresponding column factors over
+its covered `O`-columns. -/
+theorem prod_ite_OSet_eq_prod_OColumnsOfSquares {M : Type*} [CommMonoid M]
+    (f : Fin n → M) (S : Finset (Fin n × Fin n)) :
+    ∏ p ∈ S, (if p ∈ G.OSet then f p.1 else 1) =
+      ∏ c ∈ G.OColumnsOfSquares S, f c := by
+  classical
+  rw [Finset.prod_ite_mem, Finset.inter_comm, G.OSet_inter_eq_image_OColumnsOfSquares,
+    Finset.prod_image fun _ _ _ _ h => congrArg Prod.fst h]
+
+/-- A domain supported in two distinct columns contributes each column's factor exactly when
+its `O`-marking lies in the prescribed row set. -/
+theorem prod_OColumnsOfSquares_union_singleton_product {M : Type*} [CommMonoid M]
+    (f : Fin n → M) (i j : Fin n) (S T : Finset (Fin n)) (hij : i ≠ j) :
+    ∏ c ∈ G.OColumnsOfSquares (({i} ×ˢ S) ∪ ({j} ×ˢ T)), f c =
+      (if G.O i ∈ S then f i else 1) * (if G.O j ∈ T then f j else 1) := by
+  classical
+  have hcols : G.OColumnsOfSquares (({i} ×ˢ S) ∪ ({j} ×ˢ T)) =
+      ({i, j} : Finset (Fin n)).filter (fun c => if c = i then G.O c ∈ S else G.O c ∈ T) := by
+    ext c
+    simp only [mem_OColumnsOfSquares, Finset.mem_union, Finset.mem_product,
+      Finset.mem_singleton, Finset.mem_filter, Finset.mem_insert]
+    split_ifs <;> grind
+  rw [hcols, Finset.prod_filter, Finset.prod_pair hij]
+  simp only [ite_true, hij.symm, ite_false]
+
+/-- A row with one column omitted contributes its unique `O`-marking's factor unless that
+marking lies in the omitted column. -/
+theorem prod_OColumnsOfSquares_univ_erase_product_singleton {M : Type*} [CommMonoid M]
+    (f : Fin n → M) (c s : Fin n) :
+    ∏ d ∈ G.OColumnsOfSquares ((Finset.univ.erase c) ×ˢ {s}), f d =
+      if G.O c = s then 1 else f (G.O.transpose s) := by
+  classical
+  have hcols : G.OColumnsOfSquares ((Finset.univ.erase c) ×ˢ {s}) =
+      ({G.O.transpose s} : Finset (Fin n)).filter (fun d => d ≠ c) := by
+    ext d
+    simp only [mem_OColumnsOfSquares, Finset.mem_product, Finset.mem_erase,
+      Finset.mem_univ, Finset.mem_singleton, Finset.mem_filter,
+      GridState.transpose_apply, Equiv.eq_symm_apply]
+    tauto
+  have h : G.O.transpose s = c ↔ G.O c = s := by
+    constructor
+    · intro h
+      exact (congrArg G.O h).symm.trans (G.O.apply_transpose_apply s)
+    · intro h
+      exact (congrArg G.O.transpose h).symm.trans (G.O.transpose_apply_apply c)
+  rw [hcols, Finset.prod_filter, Finset.prod_singleton]
+  simp only [ne_eq, h]
+  split_ifs <;> rfl
+
 /-- The columns whose `O`-marking lies in the squares a toroidal rectangle covers.
 
 The `O`-markings of a grid diagram are indexed by their columns, so this finite set of columns is
@@ -348,9 +398,8 @@ theorem OMonomial_eq_prod_coveredSquares (r : GridRectangle n) :
     G.OMonomial R r =
       ∏ p ∈ r.coveredSquares,
         if p ∈ G.OSet then MvPolynomial.X p.1 else (1 : MvPolynomial (Fin n) R) := by
-  classical
-  rw [OMonomial, Finset.prod_ite_mem, Finset.inter_comm, G.OSet_inter_coveredSquares r,
-    Finset.prod_image fun _ _ _ _ hab => congrArg Prod.fst hab]
+  rw [G.prod_ite_OSet_eq_prod_OColumnsOfSquares]
+  rfl
 
 /-- The weight of a rectangle has total degree the number of `O`-markings the rectangle covers.
 

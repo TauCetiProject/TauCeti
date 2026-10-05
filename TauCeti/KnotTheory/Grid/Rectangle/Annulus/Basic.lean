@@ -132,6 +132,15 @@ theorem bottom_eq_top_of_left_eq_left (h : S.left = R.left) : S.bottom = R.top :
 theorem top_eq_bottom_of_left_eq_left (h : S.left = R.left) : S.top = R.bottom := by
   rw [top_def, R.right_eq_right_of_left_eq_left S h, R.map_right, bottom_def]
 
+/-- A returning rectangle starting on the same side column covers the outgoing column arc
+and the complementary row arc. -/
+theorem coveredSquares_eq_product_of_left_eq_left (h : S.left = R.left) :
+    S.toGridRectangle.coveredSquares = Grid.cIco R.left R.right ×ˢ Grid.cIco R.top R.bottom := by
+  simp only [GridRectangle.coveredSquares_def, GridRectangle.coveredColumns_def,
+    GridRectangle.coveredRows_def, toGridRectangle_left, toGridRectangle_right,
+    toGridRectangle_bottom, toGridRectangle_top, h, R.right_eq_right_of_left_eq_left S h,
+    R.bottom_eq_top_of_left_eq_left S h, R.top_eq_bottom_of_left_eq_left S h]
+
 /-- A returning rectangle starting on the terminal side column has the same two side rows, in the
 same order, as the outgoing one. -/
 theorem bottom_eq_bottom_of_left_eq_right (h : S.left = R.right) : S.bottom = R.bottom := by

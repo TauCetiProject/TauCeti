@@ -57,6 +57,11 @@ explicit.
   covering the same squares with the same multiplicities, a rectangle of the commuted diagram read
   with its two commuted columns exchanged, have the same weight.
 
+* `TauCeti.GridDiagram.rectanglePentagonWeight_eq_prod_OColumnsOfSquares_union` and
+  `TauCeti.GridDiagram.pentagonRectangleWeight_eq_prod_OColumnsOfSquares_union`: when the
+  constituent square domains are disjoint, the composite weight counts their covered
+  `O`-columns once.
+
 ## References
 
 The decomposition of the chain-map equation is the pentagon--rectangle juxtaposition argument in
@@ -487,16 +492,6 @@ private theorem pentagonWeight_eq_prod_swapSquareWeight {x y : GridState n}
       ∏ p ∈ P.coveredSquares, G.swapSquareWeight R C.column (finRotate n C.column) p :=
   G.pentagonWeight_eq_prod_coveredSquares R C P
 
-private theorem prod_swapSquareWeight_eq_prod_OColumnsOfSquares
-    (i j : Fin n) (S : Finset (Fin n × Fin n)) :
-    ∏ p ∈ S, G.swapSquareWeight R i j p =
-      ∏ c ∈ G.OColumnsOfSquares S, MvPolynomial.X (Equiv.swap i j c) := by
-  classical
-  simp only [swapSquareWeight]
-  rw [Finset.prod_ite_mem, Finset.inter_comm,
-    G.OSet_inter_eq_image_OColumnsOfSquares]
-  rw [Finset.prod_image fun _ _ _ _ h => congrArg Prod.fst h]
-
 /-- When the two domains have disjoint covered squares, their composite weight counts each
 covered O-marking once, in the variables of the commuted diagram. -/
 theorem rectanglePentagonWeight_eq_prod_OColumnsOfSquares_union
@@ -507,8 +502,10 @@ theorem rectanglePentagonWeight_eq_prod_OColumnsOfSquares_union
         (D.rectangle.toGridRectangle.coveredSquares ∪ D.pentagon.coveredSquares),
         MvPolynomial.X (Equiv.swap C.column b c) := by
   rw [rectanglePentagonWeight_def, rename_OMonomial_eq_prod_swapSquareWeight,
-    pentagonWeight_eq_prod_swapSquareWeight, ← Finset.prod_union h,
-    prod_swapSquareWeight_eq_prod_OColumnsOfSquares]
+    pentagonWeight_eq_prod_swapSquareWeight, ← Finset.prod_union h]
+  simp only [swapSquareWeight]
+  exact G.prod_ite_OSet_eq_prod_OColumnsOfSquares
+    (fun c => (MvPolynomial.X (Equiv.swap C.column b c) : MvPolynomial (Fin n) R)) _
 
 /-- When the pentagon and the rectangle read back in the original columns have disjoint
 covered squares, their composite weight counts each covered O-marking once. -/
@@ -523,8 +520,10 @@ theorem pentagonRectangleWeight_eq_prod_OColumnsOfSquares_union
           ((Equiv.swap C.column b).prodCongr (Equiv.refl (Fin n))).toEmbedding),
         MvPolynomial.X (Equiv.swap C.column b c) := by
   rw [pentagonRectangleWeight_def, pentagonWeight_eq_prod_swapSquareWeight,
-    OMonomial_swapColumns_eq_prod_swapSquareWeight, ← Finset.prod_union h,
-    prod_swapSquareWeight_eq_prod_OColumnsOfSquares]
+    OMonomial_swapColumns_eq_prod_swapSquareWeight, ← Finset.prod_union h]
+  simp only [swapSquareWeight]
+  exact G.prod_ite_OSet_eq_prod_OColumnsOfSquares
+    (fun c => (MvPolynomial.X (Equiv.swap C.column b c) : MvPolynomial (Fin n) R)) _
 
 /-- A pentagon followed by a rectangle of the commuted diagram has the weight of a rectangle
 followed by a pentagon when the two composite domains cover the same squares with the same

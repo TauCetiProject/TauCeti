@@ -14,9 +14,10 @@ public import TauCeti.KnotTheory.Grid.Commutation.Annulus.Vertical
 The diagonal rectangle--pentagon terms in a column commutation are thin annuli. Their
 constituent domains cover disjoint squares, so each O-marking contributes at most once.
 For a vertical annulus the weight is determined by the markings in the two commuted columns
-and their positions relative to the cut at the turn row. A horizontal annulus covers one row
-with one square omitted; when it avoids X-markings, the omitted square is X-marked, and the
-unique O-marking in the row contributes exactly one variable.
+and their positions on the arc from the pentagon's bottom to the turn row in rectangle--pentagon
+order, or from the turn row to the pentagon's top in pentagon--rectangle order. A horizontal
+annulus covers one row with one square omitted; when it avoids X-markings, the omitted square
+is X-marked, and the unique O-marking in the row contributes exactly one variable.
 
 The variables are those of the target diagram. In the pentagon--rectangle order the rectangle
 is read back in the original columns before its markings are counted. These formulas supply
@@ -48,25 +49,15 @@ theorem rectanglePentagonWeight_of_same_side_order
         then MvPolynomial.X C.column else 1) := by
   classical
   rw [G.rectanglePentagonWeight_eq_prod_OColumnsOfSquares_union C R D
-    (D.disjoint_coveredSquares_of_same_side_order hleft hthin),
+    (D.disjoint_coveredSquares_of_same_side_order hleft),
     D.coveredSquares_union_of_same_side_order hleft hthin]
-  have hcols : G.OColumnsOfSquares
-      (({C.column} ×ˢ (Finset.univ \ insert C.turnRow (Grid.cIco D.pentagon.bottom C.turnRow))) ∪
-        ({finRotate n C.column} ×ˢ Grid.cIco D.pentagon.bottom C.turnRow)) =
-      ({C.column, finRotate n C.column} : Finset (Fin n)).filter (fun c =>
-        if c = C.column then G.O c ∉ insert C.turnRow (Grid.cIco D.pentagon.bottom C.turnRow)
-        else G.O c ∈ Grid.cIco D.pentagon.bottom C.turnRow) := by
-    ext c
-    simp only [mem_OColumnsOfSquares, Finset.mem_union, Finset.mem_product,
-      Finset.mem_singleton, Finset.mem_sdiff, Finset.mem_univ, true_and,
-      Finset.mem_filter, Finset.mem_insert]
-    split_ifs <;> grind [C.column_ne_next]
-  rw [hcols, Finset.prod_filter, Finset.prod_pair C.column_ne_next]
-  simp only [ite_true, C.column_ne_next.symm, ite_false, Equiv.swap_apply_left,
-    Equiv.swap_apply_right]
+  rw [G.prod_OColumnsOfSquares_union_singleton_product _ _ _ _ _ C.column_ne_next]
+  simp only [Finset.mem_sdiff, Finset.mem_univ, true_and,
+    Equiv.swap_apply_left, Equiv.swap_apply_right]
 
 /-- A vertical pentagon--rectangle annulus is weighted by the two covered O-markings after
-reading the rectangle back in the original columns. Its cut is at the pentagon's top. -/
+reading the rectangle back in the original columns. Its cut is at the pentagon's top.
+The first column's variable is renamed to the second, and conversely. -/
 theorem pentagonRectangleWeight_of_same_side_order
     (D : GridPentagonRectangleDecomposition C.column C.turnRow x x)
     (hleft : D.rectangle.left = D.pentagon.left) (hthin : D.pentagon.left = C.column) :
@@ -77,21 +68,10 @@ theorem pentagonRectangleWeight_of_same_side_order
         then MvPolynomial.X C.column else 1) := by
   classical
   rw [G.pentagonRectangleWeight_eq_prod_OColumnsOfSquares_union C R D
-    (D.disjoint_coveredSquares_map_of_same_side_order hleft hthin),
+    (D.disjoint_coveredSquares_map_of_same_side_order hleft),
     D.coveredSquares_union_map_of_same_side_order hleft hthin]
-  have hcols : G.OColumnsOfSquares
-      (({C.column} ×ˢ Grid.cIoo C.turnRow D.pentagon.top) ∪
-        ({finRotate n C.column} ×ˢ Grid.cIco D.pentagon.top C.turnRow)) =
-      ({C.column, finRotate n C.column} : Finset (Fin n)).filter (fun c =>
-        if c = C.column then G.O c ∈ Grid.cIoo C.turnRow D.pentagon.top
-        else G.O c ∈ Grid.cIco D.pentagon.top C.turnRow) := by
-    ext c
-    simp only [mem_OColumnsOfSquares, Finset.mem_union, Finset.mem_product,
-      Finset.mem_singleton, Finset.mem_filter, Finset.mem_insert]
-    split_ifs <;> grind [C.column_ne_next]
-  rw [hcols, Finset.prod_filter, Finset.prod_pair C.column_ne_next]
-  simp only [ite_true, C.column_ne_next.symm, ite_false, Equiv.swap_apply_left,
-    Equiv.swap_apply_right]
+  rw [G.prod_OColumnsOfSquares_union_singleton_product _ _ _ _ _ C.column_ne_next]
+  simp only [Equiv.swap_apply_left, Equiv.swap_apply_right]
 
 /-- A horizontal rectangle--pentagon annulus counts the unique O-marking in the turn row
 unless it lies in the omitted square in the first commuted column. -/
@@ -106,21 +86,11 @@ theorem rectanglePentagonWeight_of_opposite_side_order
   rw [G.rectanglePentagonWeight_eq_prod_OColumnsOfSquares_union C R D
     (D.disjoint_coveredSquares_of_opposite_side_order hleft hthin),
     D.coveredSquares_union_of_opposite_side_order hleft hthin]
-  have hcols : G.OColumnsOfSquares ((Finset.univ.erase C.column) ×ˢ {C.turnRow}) =
-      ({G.O.transpose C.turnRow} : Finset (Fin n)).filter (fun c => c ≠ C.column) := by
-    ext c
-    simp only [mem_OColumnsOfSquares, Finset.mem_product, Finset.mem_erase,
-      Finset.mem_univ, Finset.mem_singleton, Finset.mem_filter,
-      GridState.transpose_apply, Equiv.eq_symm_apply]
-    tauto
-  rw [hcols, Finset.prod_filter, Finset.prod_singleton]
-  simp only [GridState.transpose_apply, ne_eq]
-  simp only [Equiv.symm_apply_eq]
-  simp only [eq_comm]
-  split_ifs <;> rfl
+  rw [G.prod_OColumnsOfSquares_univ_erase_product_singleton]
 
-/-- A horizontal pentagon--rectangle annulus omits the square in the second commuted column
-when its rectangle is read back in the original diagram. -/
+/-- A horizontal pentagon--rectangle annulus counts the unique O-marking in the turn row
+unless it lies in the omitted square in the second commuted column, reading the rectangle
+back in the original diagram. -/
 theorem pentagonRectangleWeight_of_opposite_side_order
     (D : GridPentagonRectangleDecomposition C.column C.turnRow x x)
     (hleft : D.rectangle.left = D.pentagon.right)
@@ -132,19 +102,7 @@ theorem pentagonRectangleWeight_of_opposite_side_order
   rw [G.pentagonRectangleWeight_eq_prod_OColumnsOfSquares_union C R D
     (D.disjoint_coveredSquares_map_of_opposite_side_order hleft hthin),
     D.coveredSquares_union_map_of_opposite_side_order hleft hthin]
-  have hcols : G.OColumnsOfSquares
-      ((Finset.univ.erase (finRotate n C.column)) ×ˢ {C.turnRow}) =
-      ({G.O.transpose C.turnRow} : Finset (Fin n)).filter (fun c => c ≠ finRotate n C.column) := by
-    ext c
-    simp only [mem_OColumnsOfSquares, Finset.mem_product, Finset.mem_erase,
-      Finset.mem_univ, Finset.mem_singleton, Finset.mem_filter,
-      GridState.transpose_apply, Equiv.eq_symm_apply]
-    tauto
-  rw [hcols, Finset.prod_filter, Finset.prod_singleton]
-  simp only [GridState.transpose_apply, ne_eq]
-  simp only [Equiv.symm_apply_eq]
-  simp only [eq_comm]
-  split_ifs <;> rfl
+  rw [G.prod_OColumnsOfSquares_univ_erase_product_singleton]
 
 /-- Every counted horizontal rectangle--pentagon term contributes the variable of the unique
 O-marking in the turn row, in target-column coordinates. -/
