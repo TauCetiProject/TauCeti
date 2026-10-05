@@ -101,6 +101,12 @@ lemma cupCochain_naturality {A' B' E' : ChainComplex C ℕ} [A'.HasTensor B']
   rw [cupCochain_apply, cupCochain_apply, ← tensorHom_f_comp_tensorCochain, ← Category.assoc,
     ← HomologicalComplex.comp_f, ← hD, HomologicalComplex.comp_f, Category.assoc]
 
+/-- Precomposing a diagonal pulls back the cup product of cochains. -/
+lemma cupCochain_precomp {E' : ChainComplex C ℕ} (e : E' ⟶ E)
+    (p q n : ℕ) (h : p + q = n) (φ : A.X p ⟶ M) (ψ : B.X q ⟶ N) :
+    cupCochain k (e ≫ D) μ p q n h φ ψ = e.f n ≫ cupCochain k D μ p q n h φ ψ := by
+  rw [cupCochain_apply, cupCochain_apply, comp_f, Category.assoc]
+
 end Cochain
 
 section Cohomology
@@ -320,6 +326,33 @@ lemma cup_naturality {A' B' E' : ChainComplex C ℕ} [A'.HasTensor B']
     iCycles_cyclesMap_linearYonedaFunctor_map_apply,
     iCycles_cyclesMap_linearYonedaFunctor_map_apply, iCycles_cupCycles]
   exact cupCochain_naturality D μ D' e f g hD p q n h _ _
+
+/-- Precomposing a diagonal with a chain map pulls back its cup product on cohomology. -/
+lemma cup_precomp {E' : ChainComplex C ℕ} (e : E' ⟶ E)
+    (p q n : ℕ) (h : p + q = n)
+    (a : (A.linearYonedaObj k M).homology p) (b : (B.linearYonedaObj k N).homology q) :
+    cup k (e ≫ D) μ p q n h a b =
+      homologyMap (K := E.linearYonedaObj k P) (L := E'.linearYonedaObj k P)
+        ((linearYonedaFunctor k P).map e.op) n (cup k D μ p q n h a b) := by
+  obtain ⟨a, rfl⟩ := moduleCat_homologyπ_surjective _ p a
+  obtain ⟨b, rfl⟩ := moduleCat_homologyπ_surjective _ q b
+  rw [cup_homologyπ, cup_homologyπ,
+    homologyMap_linearYonedaFunctor_map_homologyπ_apply]
+  congr 1
+  apply moduleCat_iCycles_injective
+  rw [iCycles_cupCycles, iCycles_cyclesMap_linearYonedaFunctor_map_apply, iCycles_cupCycles]
+  exact cupCochain_precomp D μ e p q n h _ _
+
+/-- Chain-homotopic diagonals give the same cup product on cohomology. -/
+lemma cup_eq_of_homotopy {D' : E ⟶ HomologicalComplex.tensorObj A B}
+    (H : Homotopy D D') (p q n : ℕ) (h : p + q = n)
+    (a : (A.linearYonedaObj k M).homology p) (b : (B.linearYonedaObj k N).homology q) :
+    cup k D μ p q n h a b = cup k D' μ p q n h a b := by
+  have hD := cup_precomp (𝟙 (HomologicalComplex.tensorObj A B)) μ D p q n h a b
+  have hD' := cup_precomp (𝟙 (HomologicalComplex.tensorObj A B)) μ D' p q n h a b
+  simpa only [Category.comp_id] using hD.trans
+    ((ConcreteCategory.congr_hom ((H.linearYonedaFunctorMap k P).homologyMap_eq n) _).trans
+      hD'.symm)
 
 end Cohomology
 
