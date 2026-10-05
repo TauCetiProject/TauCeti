@@ -24,9 +24,8 @@ the coordinate ring of `W`.  More precisely, the underlying module square
                   CoordinateRing.map
 ```
 
-is a pushout.  Localising it identifies the function field of `W.map f` with a scalar extension
-of the function field of `W`, which is what is needed to compare degrees of isogenies under base
-change.
+is a pushout.  This coordinate-ring comparison is an input to a later comparison of the function
+fields of `W` and `W.map f`, used to compare degrees of isogenies under base change.
 
 ## Main definitions
 
@@ -109,9 +108,8 @@ theorem _root_.WeierstrassCurve.Affine.CoordinateRing.isBaseChange_mapLinear :
       map_add' := fun x y ↦ by rw [TensorProduct.tmul_add, map_add]
       map_smul' := fun p x ↦ by
         rw [TensorProduct.tmul_smul, ← IsScalarTower.algebraMap_smul S[X] p, e.map_smul,
-          IsScalarTower.algebraMap_smul, RingHom.id_apply]
-        -- `AdjoinRoot`'s own `R[X]`-action agrees definitionally with the `compHom` one.
-        rfl }
+          RingHom.id_apply, MulAction.compHom_smul_def (Polynomial.mapRingHom f : R[X] →* S[X]),
+          RingHom.algebraMap_toAlgebra, MonoidHom.coe_ofClass] }
   have hg : ∀ x, g x = e (1 ⊗ₜ x) := fun _ ↦ rfl
   rw [← hg]
   refine LinearMap.congr_fun ((CoordinateRing.basis W).ext fun i ↦ ?_) z
