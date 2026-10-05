@@ -22,6 +22,10 @@ same computation applies whenever acyclicity of the two members is available.
 This is a two-member comparison in degree one, not the general Čech comparison
 for arbitrary affine covers.
 
+Use `TauCeti.AlgebraicGeometry.sectionsQuotientEquivCohomologyOne M U V hUV hU hV`
+for the comparison, where `hUV` states that the opens cover and `hU`, `hV` state
+vanishing of first cohomology on the two opens.
+
 ## References
 
 * R. Hartshorne, *Algebraic Geometry*, Chapter III, §4.

@@ -27,6 +27,10 @@ is characterized by the Mayer–Vietoris connecting homomorphism, fixing its sig
 The construction uses Mathlib's Mayer–Vietoris sequence and first isomorphism theorem
 for abelian groups, and `cohomologyZeroSectionsEquiv` for the degree-zero terms.
 
+Use `TauCeti.CategoryTheory.mayerVietorisSectionsQuotientEquiv S F h₂ h₃` for the
+quotient comparison, where `S` is the square and `F` is the coefficient sheaf.
+Opening `TauCeti.CategoryTheory` makes the unqualified names available.
+
 ## References
 
 * R. Hartshorne, *Algebraic Geometry*, Chapter III, §4 (Čech cohomology).

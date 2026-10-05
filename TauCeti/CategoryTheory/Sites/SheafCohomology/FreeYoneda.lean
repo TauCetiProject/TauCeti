@@ -30,8 +30,9 @@ naturally both in the object of the site and in the coefficient sheaf.
   morphisms from that sheaf to `F` and sections of `F` over `U`, and
   `TauCeti.CategoryTheory.freeYonedaSheafCorepresentableBy`, the same universal property phrased
   as a corepresentation of the sections functor;
-* `TauCeti.CategoryTheory.cohomologyPresheafZeroIso`, identifying degree-zero cohomology with
-  sections and their restriction maps;
+* `TauCeti.CategoryTheory.cohomologyZeroSectionsEquiv F U`, identifying degree-zero cohomology
+  over `U` with sections, and `TauCeti.CategoryTheory.cohomologyPresheafZeroIso F`, identifying
+  degree-zero cohomology with sections and their restriction maps;
 * `TauCeti.CategoryTheory.mono_freeYonedaSheafFunctor_map`, saying that a monomorphism of site
   objects induces a monomorphism between the corresponding free abelian sheaves.
 
