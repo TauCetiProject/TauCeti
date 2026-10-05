@@ -70,15 +70,81 @@ public section
 namespace TauCeti
 
 open CategoryTheory CategoryTheory.Limits CategoryTheory.Pretriangulated
+open _root_.DerivedCategory (homologyFunctor)
 
 universe w w' w'' v u
 
-variable {A : Type u} [Category.{v} A] [Abelian A] [EssentiallySmall.{w} A]
-  [HasDerivedCategory.{w'} A] [EssentiallySmall.{w''} (DerivedCategory.Bounded A)]
+variable {A : Type u} [Category.{v} A] [Abelian A]
+
+/-! ### Bounded derived category infrastructure -/
+
+section Bounded
+
+variable [HasDerivedCategory.{w'} A]
+
+namespace AbelianK0
+
+/-- An object of the bounded derived category has cohomology in only finitely many degrees. -/
+private lemma exists_finset_isZero_homology (X : DerivedCategory.Bounded A) :
+    ∃ s : Finset ℤ, ∀ n ∉ s, IsZero ((homologyFunctor A n).obj X.obj) := by
+  obtain ⟨⟨a, ha⟩, ⟨b, hb⟩⟩ := X.property
+  refine ⟨Finset.Icc a b, fun n hn ↦ ?_⟩
+  rw [Finset.mem_Icc, not_and_or, not_le, not_le] at hn
+  rcases hn with hn | hn
+  · exact (X.obj.isGE_iff a).1 ha n hn
+  · exact (X.obj.isLE_iff b).1 hb n hn
+
+/-- A bounded complex up to homotopy defines a bounded object of the derived category. -/
+private lemma bounded_Qh_obj (K : HomotopyCategory.Bounded A) :
+    (DerivedCategory.TStructure.t (C := A)).bounded (DerivedCategory.Qh.obj K.obj) := by
+  obtain ⟨a, b, _, _⟩ := (CochainComplex.bounded_iff _ _).1
+    ((HomotopyCategory.bounded_quotient_obj_iff _).1 K.property)
+  exact (DerivedCategory.TStructure.t (C := A)).bounded.prop_of_iso
+    ((DerivedCategory.quotientCompQhIso A).app K.obj.as).symm
+    ⟨⟨a, inferInstance⟩, ⟨b, inferInstance⟩⟩
+
+variable (A) in
+/-- The localization functor from the bounded homotopy category to the bounded derived
+category. -/
+private noncomputable abbrev boundedQh : HomotopyCategory.Bounded A ⥤ DerivedCategory.Bounded A :=
+  (DerivedCategory.TStructure.t (C := A)).bounded.lift
+    (HomotopyCategory.Bounded.ι A ⋙ DerivedCategory.Qh) bounded_Qh_obj
+
+/-- Every object of the bounded derived category is represented by a bounded complex. -/
+private lemma exists_iso_boundedQh_obj (Y : DerivedCategory.Bounded A) :
+    ∃ K : HomotopyCategory.Bounded A, Nonempty ((boundedQh A).obj K ≅ Y) := by
+  obtain ⟨⟨a, ha⟩, ⟨b, hb⟩⟩ := Y.property
+  obtain ⟨K, _, _, ⟨e⟩⟩ := Y.obj.exists_iso_Q_obj_of_isGE_of_isLE a b
+  have hK : CochainComplex.bounded A K := (CochainComplex.bounded_iff _ _).2 ⟨a, b, ‹_›, ‹_›⟩
+  exact ⟨(HomotopyCategory.Bounded.quotient A).obj ⟨K, hK⟩,
+    ⟨(DerivedCategory.TStructure.t (C := A)).bounded.fullyFaithfulι.preimageIso
+      (((DerivedCategory.TStructure.t (C := A)).bounded.liftCompιIso
+        (HomotopyCategory.Bounded.ι A ⋙ DerivedCategory.Qh) bounded_Qh_obj).app _ ≪≫
+        DerivedCategory.Qh.mapIso ((HomotopyCategory.Bounded.quotientCompιIso A).app ⟨K, hK⟩) ≪≫
+        (DerivedCategory.quotientCompQhIso A).app K ≪≫ e.symm)⟩⟩
+
+/-- The localization functor sends an object placed in degree zero to that object placed in degree
+zero. -/
+private noncomputable def boundedQhSingleIso (X : A) :
+    (boundedQh A).obj ((HomotopyCategory.Bounded.singleFunctor A 0).obj X) ≅
+      (DerivedCategory.Bounded.singleFunctor A 0).obj X :=
+  (DerivedCategory.TStructure.t (C := A)).bounded.fullyFaithfulι.preimageIso
+    (((DerivedCategory.TStructure.t (C := A)).bounded.liftCompιIso
+        (HomotopyCategory.Bounded.ι A ⋙ DerivedCategory.Qh) bounded_Qh_obj).app _ ≪≫
+      DerivedCategory.Qh.mapIso ((HomotopyCategory.Bounded.singleFunctorCompιIso A 0).app X) ≪≫
+      ((DerivedCategory.singleFunctorIsoCompQh A 0).app X).symm ≪≫
+      (((DerivedCategory.TStructure.t (C := A)).bounded.liftCompιIso
+        (DerivedCategory.singleFunctor A 0)
+        (fun _ ↦ ⟨⟨0, inferInstance⟩, ⟨0, inferInstance⟩⟩)).app X).symm)
+
+end AbelianK0
+
+section Triangulated
+
+variable [EssentiallySmall.{w''} (DerivedCategory.Bounded A)]
 
 namespace TriangulatedK0
 
-omit [EssentiallySmall.{w} A] in
 /-- A short exact sequence gives a distinguished triangle in the bounded derived category, so
 its degree-zero objects satisfy the triangulated `K₀` relation. -/
 theorem of_singleFunctor_shortExact {S : ShortComplex A} (hS : S.ShortExact) :
@@ -89,28 +155,26 @@ theorem of_singleFunctor_shortExact {S : ShortComplex A} (hS : S.ShortExact) :
 
 end TriangulatedK0
 
-namespace AbelianK0
+end Triangulated
 
-/-- The canonical homomorphism from abelian `K₀` to the triangulated `K₀` of the bounded derived
-category. It sends the class of an object to the class of the complex concentrated in degree
-zero. -/
-noncomputable def toBoundedDerivedK0 : AbelianK0 A →+ TriangulatedK0 (DerivedCategory.Bounded A) :=
-  lift
-    { obj := fun X ↦ TriangulatedK0.of ((DerivedCategory.Bounded.singleFunctor A 0).obj X)
-      map_shortExact := fun _ hS ↦ TriangulatedK0.of_singleFunctor_shortExact hS }
-
-/-- The canonical map to derived `K₀` sends an object class to the class of its degree-zero
-complex. -/
-@[simp] theorem toBoundedDerivedK0_of (X : A) :
-    toBoundedDerivedK0 (of X) =
-      TriangulatedK0.of ((DerivedCategory.Bounded.singleFunctor A 0).obj X) :=
-  lift_of _ X
+end Bounded
 
 /-! ### The alternating class of the cohomology -/
 
-open _root_.DerivedCategory (homologyFunctor)
+section Cohomology
 
-omit [EssentiallySmall.{w''} (DerivedCategory.Bounded A)] in
+variable [EssentiallySmall.{w} A]
+
+namespace AbelianK0
+
+/-- In an exact sequence `X₁ ⟶ X₂ ⟶ X₃`, the class of `X₁` is the sum of the classes of the two
+kernels. -/
+private lemma of_kernel_add_of_kernel_of_exact {S : ShortComplex A} (hS : S.Exact) :
+    (of (kernel S.g) : AbelianK0 A) + of (kernel S.f) = of S.X₁ := by
+  rw [of_kernel_add_of_kernel, of_eq_zero_of_isZero (S.exact_iff_isZero_homology.1 hS), zero_add]
+
+variable [HasDerivedCategory.{w'} A]
+
 /-- Enlarging a finite range of degrees beyond the cohomological support of an object of the
 derived category does not change the alternating class of its cohomology. -/
 private lemma sum_negOnePow_of_homology_eq_of_isZero (X : DerivedCategory A) {s t : Finset ℤ}
@@ -124,14 +188,6 @@ private lemma sum_negOnePow_of_homology_eq_of_isZero (X : DerivedCategory A) {s 
     Finset.sum_subset hu fun n _ hn ↦ by rw [of_eq_zero_of_isZero (hu' n hn), smul_zero]
   rw [key s Finset.subset_union_left hs, key t Finset.subset_union_right ht]
 
-omit [HasDerivedCategory.{w'} A] [EssentiallySmall.{w''} (DerivedCategory.Bounded A)] in
-/-- In an exact sequence `X₁ ⟶ X₂ ⟶ X₃`, the class of `X₁` is the sum of the classes of the two
-kernels. -/
-private lemma of_kernel_add_of_kernel_of_exact {S : ShortComplex A} (hS : S.Exact) :
-    (of (kernel S.g) : AbelianK0 A) + of (kernel S.f) = of S.X₁ := by
-  rw [of_kernel_add_of_kernel, of_eq_zero_of_isZero (S.exact_iff_isZero_homology.1 hS), zero_add]
-
-omit [EssentiallySmall.{w''} (DerivedCategory.Bounded A)] in
 /-- The degree-`n` relation behind additivity on a distinguished triangle: cutting the long exact
 cohomology sequence at the kernels of `Hⁿ(T.mor₁)` and `Hⁿ⁺¹(T.mor₁)`. -/
 private lemma of_homology_obj₁_add_of_homology_obj₃ {T : Triangle (DerivedCategory A)}
@@ -157,7 +213,6 @@ private lemma of_homology_obj₁_add_of_homology_obj₃ {T : Triangle (DerivedCa
   rw [← h₁, ← h₂, ← h₃]
   abel
 
-omit [EssentiallySmall.{w''} (DerivedCategory.Bounded A)] in
 /-- **The alternating class of the cohomology is additive on distinguished triangles.** For a
 distinguished triangle `X ⟶ Y ⟶ Z ⟶ X⟦1⟧` in the derived category and a finite set `s` of
 degrees outside which the cohomology of `X` and `Z` vanishes,
@@ -199,20 +254,6 @@ theorem sum_negOnePow_of_homology_of_distTriang {T : Triangle (DerivedCategory A
     of_eq_zero_of_isZero (hk _ ha), of_eq_zero_of_isZero (hk _ hb)]
   simp
 
-/-! ### The inverse comparison -/
-
-omit [EssentiallySmall.{w} A] [EssentiallySmall.{w''} (DerivedCategory.Bounded A)] in
-/-- An object of the bounded derived category has cohomology in only finitely many degrees. -/
-private lemma exists_finset_isZero_homology (X : DerivedCategory.Bounded A) :
-    ∃ s : Finset ℤ, ∀ n ∉ s, IsZero ((homologyFunctor A n).obj X.obj) := by
-  obtain ⟨⟨a, ha⟩, ⟨b, hb⟩⟩ := X.property
-  refine ⟨Finset.Icc a b, fun n hn ↦ ?_⟩
-  rw [Finset.mem_Icc, not_and_or, not_le, not_le] at hn
-  rcases hn with hn | hn
-  · exact (X.obj.isGE_iff a).1 ha n hn
-  · exact (X.obj.isLE_iff b).1 hb n hn
-
-omit [EssentiallySmall.{w''} (DerivedCategory.Bounded A)] in
 /-- The alternating class of the cohomology, as a triangle-additive invariant on the bounded
 derived category. -/
 private noncomputable def boundedDerivedHomologyEulerChar :
@@ -239,7 +280,6 @@ private noncomputable def boundedDerivedHomologyEulerChar :
     exact sum_negOnePow_of_homology_of_distTriang
       (DerivedCategory.Bounded.ι.map_distinguished T hT) h₁ h₃
 
-omit [EssentiallySmall.{w''} (DerivedCategory.Bounded A)] in
 /-- The invariant may be computed over any finite set of degrees containing the support of the
 cohomology. -/
 private lemma boundedDerivedHomologyEulerChar_obj (X : DerivedCategory.Bounded A) {s : Finset ℤ}
@@ -247,6 +287,34 @@ private lemma boundedDerivedHomologyEulerChar_obj (X : DerivedCategory.Bounded A
     boundedDerivedHomologyEulerChar.obj X =
       ∑ n ∈ s, (n.negOnePow : ℤ) • of ((homologyFunctor A n).obj X.obj) :=
   sum_negOnePow_of_homology_eq_of_isZero X.obj (exists_finset_isZero_homology X).choose_spec hs
+
+end AbelianK0
+
+end Cohomology
+
+/-! ### The comparison equivalence -/
+
+section Equivalence
+
+variable [EssentiallySmall.{w} A] [HasDerivedCategory.{w'} A]
+  [EssentiallySmall.{w''} (DerivedCategory.Bounded A)]
+
+namespace AbelianK0
+
+/-- The canonical homomorphism from abelian `K₀` to the triangulated `K₀` of the bounded derived
+category. It sends the class of an object to the class of the complex concentrated in degree
+zero. -/
+noncomputable def toBoundedDerivedK0 : AbelianK0 A →+ TriangulatedK0 (DerivedCategory.Bounded A) :=
+  lift
+    { obj := fun X ↦ TriangulatedK0.of ((DerivedCategory.Bounded.singleFunctor A 0).obj X)
+      map_shortExact := fun _ hS ↦ TriangulatedK0.of_singleFunctor_shortExact hS }
+
+/-- The canonical map to derived `K₀` sends an object class to the class of its degree-zero
+complex. -/
+@[simp] theorem toBoundedDerivedK0_of (X : A) :
+    toBoundedDerivedK0 (of X) =
+      TriangulatedK0.of ((DerivedCategory.Bounded.singleFunctor A 0).obj X) :=
+  lift_of _ X
 
 /-- The alternating class of the cohomology is a left inverse of `toBoundedDerivedK0`: an object
 placed in degree zero has its only cohomology in degree zero. -/
@@ -264,52 +332,6 @@ private lemma lift_boundedDerivedHomologyEulerChar_comp_toBoundedDerivedK0 :
       boundedDerivedHomologyEulerChar_obj _ hs, Finset.sum_singleton, Int.negOnePow_zero,
       Units.val_one, one_smul, AddMonoidHom.id_apply]
     exact of_congr ((DerivedCategory.singleFunctorCompHomologyFunctorIso A 0).app X)
-
-omit [EssentiallySmall.{w} A] [EssentiallySmall.{w''} (DerivedCategory.Bounded A)] in
-/-- A bounded complex up to homotopy defines a bounded object of the derived category. -/
-private lemma bounded_Qh_obj (K : HomotopyCategory.Bounded A) :
-    (DerivedCategory.TStructure.t (C := A)).bounded (DerivedCategory.Qh.obj K.obj) := by
-  obtain ⟨a, b, _, _⟩ := (CochainComplex.bounded_iff _ _).1
-    ((HomotopyCategory.bounded_quotient_obj_iff _).1 K.property)
-  exact (DerivedCategory.TStructure.t (C := A)).bounded.prop_of_iso
-    ((DerivedCategory.quotientCompQhIso A).app K.obj.as).symm
-    ⟨⟨a, inferInstance⟩, ⟨b, inferInstance⟩⟩
-
-variable (A) in
-/-- The localization functor from the bounded homotopy category to the bounded derived
-category. -/
-private noncomputable abbrev boundedQh : HomotopyCategory.Bounded A ⥤ DerivedCategory.Bounded A :=
-  (DerivedCategory.TStructure.t (C := A)).bounded.lift
-    (HomotopyCategory.Bounded.ι A ⋙ DerivedCategory.Qh) bounded_Qh_obj
-
-omit [EssentiallySmall.{w} A] [EssentiallySmall.{w''} (DerivedCategory.Bounded A)] in
-/-- Every object of the bounded derived category is represented by a bounded complex. -/
-private lemma exists_iso_boundedQh_obj (Y : DerivedCategory.Bounded A) :
-    ∃ K : HomotopyCategory.Bounded A, Nonempty ((boundedQh A).obj K ≅ Y) := by
-  obtain ⟨⟨a, ha⟩, ⟨b, hb⟩⟩ := Y.property
-  obtain ⟨K, _, _, ⟨e⟩⟩ := Y.obj.exists_iso_Q_obj_of_isGE_of_isLE a b
-  have hK : CochainComplex.bounded A K := (CochainComplex.bounded_iff _ _).2 ⟨a, b, ‹_›, ‹_›⟩
-  exact ⟨(HomotopyCategory.Bounded.quotient A).obj ⟨K, hK⟩,
-    ⟨(DerivedCategory.TStructure.t (C := A)).bounded.fullyFaithfulι.preimageIso
-      (((DerivedCategory.TStructure.t (C := A)).bounded.liftCompιIso
-        (HomotopyCategory.Bounded.ι A ⋙ DerivedCategory.Qh) bounded_Qh_obj).app _ ≪≫
-        DerivedCategory.Qh.mapIso ((HomotopyCategory.Bounded.quotientCompιIso A).app ⟨K, hK⟩) ≪≫
-        (DerivedCategory.quotientCompQhIso A).app K ≪≫ e.symm)⟩⟩
-
-omit [EssentiallySmall.{w} A] [EssentiallySmall.{w''} (DerivedCategory.Bounded A)] in
-/-- The localization functor sends an object placed in degree zero to that object placed in degree
-zero. -/
-private noncomputable def boundedQhSingleIso (X : A) :
-    (boundedQh A).obj ((HomotopyCategory.Bounded.singleFunctor A 0).obj X) ≅
-      (DerivedCategory.Bounded.singleFunctor A 0).obj X :=
-  (DerivedCategory.TStructure.t (C := A)).bounded.fullyFaithfulι.preimageIso
-    (((DerivedCategory.TStructure.t (C := A)).bounded.liftCompιIso
-        (HomotopyCategory.Bounded.ι A ⋙ DerivedCategory.Qh) bounded_Qh_obj).app _ ≪≫
-      DerivedCategory.Qh.mapIso ((HomotopyCategory.Bounded.singleFunctorCompιIso A 0).app X) ≪≫
-      ((DerivedCategory.singleFunctorIsoCompQh A 0).app X).symm ≪≫
-      (((DerivedCategory.TStructure.t (C := A)).bounded.liftCompιIso
-        (DerivedCategory.singleFunctor A 0)
-        (fun _ ↦ ⟨⟨0, inferInstance⟩, ⟨0, inferInstance⟩⟩)).app X).symm)
 
 /-- Every class in triangulated `K₀` of the bounded derived category comes from abelian `K₀`: it
 is a class in the bounded homotopy category, where the class of a complex is the alternating sum of
@@ -385,8 +407,6 @@ end AbelianK0
 
 namespace TriangulatedK0
 
-open _root_.DerivedCategory (homologyFunctor)
-
 /-- **The class of a bounded complex** in triangulated `K₀` of the bounded derived category is the
 alternating sum of the classes of its cohomology objects, each placed in degree zero. The sum runs
 over any finite set of degrees outside which the cohomology vanishes. -/
@@ -399,5 +419,7 @@ theorem of_eq_sum_homology (X : DerivedCategory.Bounded A) {s : Finset ℤ}
   simp
 
 end TriangulatedK0
+
+end Equivalence
 
 end TauCeti
