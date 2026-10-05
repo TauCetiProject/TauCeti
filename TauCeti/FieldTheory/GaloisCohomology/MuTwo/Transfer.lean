@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.GaloisCohomology.Corestriction.Basic
-public import TauCeti.FieldTheory.GaloisCohomology.MuTwo.Basic
+public import TauCeti.FieldTheory.GaloisCohomology.MuTwo.BrauerTorsion
+public import TauCeti.FieldTheory.GaloisCohomology.UnitsRestriction
 
 /-!
 # Restriction and corestriction of mod-two Kummer classes
@@ -33,6 +34,12 @@ isomorphism. Both are carried to `𝔽₂` coefficients by commuting squares of 
 agreement of the two dictionaries; corestriction also uses its naturality in the coefficients,
 `TauCeti.ContCohomology.explicitCor1_explicitMap1_id`.
 
+Finally, the map `TauCeti.h2MuToUnits : H²(G_K, 𝔽₂) → H²(G_K, (Kˢ)ˣ)` induced by `μ₂ ⊆ (Kˢ)ˣ`
+commutes with restriction, `TauCeti.galoisRes` on the source and `TauCeti.resHUnits` on the
+target. Both composites are compatible-pair maps along `G_L → G_K`
+(`TauCeti.ContinuousCohomology.map_comp_coeffMap`), and their coefficient maps agree because both
+send the nontrivial element of `𝔽₂` to `-1`.
+
 ## Main results
 
 * `TauCeti.mu2EquivZMod2_kummerCoeffMap`, `TauCeti.mu2EquivZMod2_kummerCoeffMapSymm`: the value
@@ -41,6 +48,8 @@ agreement of the two dictionaries; corestriction also uses its naturality in the
   of its image in `Lˣ`.
 * `TauCeti.galoisCor_kummerClass`: corestriction of the Kummer class of `b ∈ Lˣ` is the Kummer
   class of `N_{L/K} b`.
+* `TauCeti.galoisRes_comp_h2MuToUnits`, `TauCeti.h2MuToUnits_galoisRes`: `TauCeti.h2MuToUnits`
+  commutes with restriction.
 
 ## References
 
@@ -267,5 +276,59 @@ theorem galoisCor_kummerClass (b : Lˣ) :
   rw [galoisCor_def, galoisF2Iso_inv, ConcreteCategory.comp_apply]
   exact trivialF2CorMap_trivialF2Map_kummerClass K L σ _ _ (galoisSubgroupEquiv K L σ)
     (galoisSubgroup_toSubgroup K L σ) (galoisSubgroupEquiv_apply K L σ) b
+
+/-! ### Restriction and the map to the cohomological Brauer group -/
+
+/-- **The coefficient square of `μ₂ ⊆ (Kˢ)ˣ` along `L/K`**: reading a value of `𝔽₂` in `μ₂(Kˢ)`,
+including it into `(Kˢ)ˣ` and carrying it to `(Lˢ)ˣ` by `TauCeti.unitsCoeffMap` is reading it in
+`μ₂(Lˢ)` and including it into `(Lˢ)ˣ`. Both composites send `0` to `1` and `1` to `-1`. -/
+private theorem resFunctor_map_comp_ofDiscreteModulePair :
+    (TopRep.resFunctor ((ContinuousMonoidHom.subgroupSubtype
+        (galoisSubgroup K L σ).toSubgroup).comp
+          (ContinuousMonoidHom.toContinuousMonoidHom (galoisSubgroupEquiv K L σ)) :
+          AbsoluteGaloisGroup L →* AbsoluteGaloisGroup K)).map
+        ((kummerCoeffIsoTrivialF2 K).inv ≫ kummerCoeffToUnits K 2) ≫
+      ofDiscreteModulePair _ (unitsCoeffMap K L σ).toIntLinearMap
+        (unitsCoeffMap_galoisSubgroupEquiv_smul K L σ) =
+    eqToHom (res_trivialF2_hom _) ≫ (kummerCoeffIsoTrivialF2 L).inv ≫ kummerCoeffToUnits L 2 := by
+  refine TopRep.hom_ext (DFunLike.ext _ _ fun x => ?_)
+  rw [TopRep.comp_apply, TopRep.comp_apply, TopRep.comp_apply]
+  refine (ofDiscreteModulePair_hom_apply _ (unitsCoeffMap K L σ).toIntLinearMap
+    (unitsCoeffMap_galoisSubgroupEquiv_smul K L σ) _).trans ?_
+  -- `TopRep.resFunctor` keeps the underlying function of a morphism. The rules saying so,
+  -- `TopRep.resFunctor_map_hom` and `ContIntertwiningMap.restrict_apply`, are stated through
+  -- `TopRep.Hom.hom`, while the goal applies morphisms through `ConcreteCategory.hom`, so they do
+  -- not rewrite here; both hold by `rfl`, and `change` uses that.
+  change unitsCoeffMap K L σ (((kummerCoeffIsoTrivialF2 K).inv ≫ kummerCoeffToUnits K 2) x) = _
+  rw [TopRep.comp_apply, kummerCoeffIsoTrivialF2_inv_apply, kummerCoeffIsoTrivialF2_inv_apply,
+    kummerCoeffToUnits_hom_apply, kummerCoeffToUnits_hom_apply, TopRep.eqToHom_hom_apply,
+    kummerCoeffEquiv_symm_apply, kummerCoeffEquiv_symm_apply,
+    trivialF2Equiv_cast (AbsoluteGaloisGroup K) _ x]
+  generalize trivialF2Equiv (AbsoluteGaloisGroup K) x = z
+  -- The two `μ₂` dictionaries agree along `TauCeti.kummerCoeffMap`.
+  rw [show (mu2EquivZMod2 L).symm z = kummerCoeffMap K 2 L σ ((mu2EquivZMod2 K).symm z) by
+    rw [AddEquiv.symm_apply_eq, mu2EquivZMod2_kummerCoeffMap, AddEquiv.apply_symm_apply]]
+  exact Additive.toMul.injective <| Units.ext <| by simp
+
+/-- **Restriction commutes with `H²(G, 𝔽₂) → H²(G, (Kˢ)ˣ)`**, as morphisms: restricting a class
+of `H²(G_K, 𝔽₂)` to `G_L` and then carrying it to `H²(G_L, (Lˢ)ˣ)` is carrying it to
+`H²(G_K, (Kˢ)ˣ)` and then restricting with multiplicative coefficients. -/
+@[reassoc]
+theorem galoisRes_comp_h2MuToUnits :
+    galoisRes K L σ 2 ≫ h2MuToUnits L = h2MuToUnits K ≫ resHUnits K L σ 2 := by
+  rw [galoisRes_eq_map, h2MuToUnits_def, h2MuToUnits_def, h2KummerToUnits_def,
+    h2KummerToUnits_def, ← ContinuousCohomology.coeffMap_comp,
+    ← ContinuousCohomology.coeffMap_comp, resHUnits_def, trivialF2Map_def]
+  exact ContinuousCohomology.map_comp_coeffMap _ _ _ _ _
+    (resFunctor_map_comp_ofDiscreteModulePair K L σ) 2
+
+/-- **Compatibility of `TauCeti.h2MuToUnits` with restriction**: for `x ∈ H²(G_K, 𝔽₂)`, the image
+in `H²(G_L, (Lˢ)ˣ)` of the restriction of `x` is the restriction of the image of `x` in
+`H²(G_K, (Kˢ)ˣ)`. -/
+theorem h2MuToUnits_galoisRes
+    (x : continuousCohomology 2 (trivialF2 (AbsoluteGaloisGroup K))) :
+    (h2MuToUnits L).hom ((galoisRes K L σ 2).hom x) =
+      (resHUnits K L σ 2).hom ((h2MuToUnits K).hom x) :=
+  ConcreteCategory.congr_hom (galoisRes_comp_h2MuToUnits K L σ) x
 
 end TauCeti

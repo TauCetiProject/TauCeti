@@ -66,6 +66,14 @@ noncomputable def h2MuToUnits :
   ((ContinuousCohomology.continuousCohomologyFunctor ℤ (AbsoluteGaloisGroup K) 2).mapIso
     (kummerCoeffIsoTrivialF2 K)).inv ≫ h2KummerToUnits K 2
 
+/-- The defining equation of `TauCeti.h2MuToUnits`: the coefficient map of the inverse of the
+coefficient identification `TauCeti.kummerCoeffIsoTrivialF2`, followed by the Kummer-sequence map
+`TauCeti.h2KummerToUnits` at `n = 2`. -/
+theorem h2MuToUnits_def :
+    h2MuToUnits K =
+      ContinuousCohomology.coeffMap (kummerCoeffIsoTrivialF2 K).inv 2 ≫ h2KummerToUnits K 2 :=
+  (rfl)
+
 /-- Transporting a `μ₂`-class to trivial `𝔽₂` coefficients before applying
 `TauCeti.h2MuToUnits` recovers the Kummer-sequence map at `n = 2`. This equation characterizes
 the coefficient transport used in `TauCeti.h2MuToUnits`. -/
