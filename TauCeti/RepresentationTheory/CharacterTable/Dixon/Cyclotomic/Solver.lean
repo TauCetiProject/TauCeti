@@ -9,7 +9,7 @@ public import Mathlib.Data.FinEnum
 import Mathlib.Data.List.NodupEquivFin
 import TauCeti.Data.Array.OfFn
 public import TauCeti.RepresentationTheory.CharacterTable.Dixon.ClassData.CentralCharacterCount
-public import TauCeti.RepresentationTheory.CharacterTable.Dixon.Cyclotomic.Checker
+public import TauCeti.RepresentationTheory.CharacterTable.Dixon.Cyclotomic.Reduction
 public import TauCeti.RepresentationTheory.CharacterTable.Dixon.Lift
 
 /-!
@@ -51,8 +51,7 @@ needs the coefficient bound discussed in the cyclotomic-lift module.
 ## Main results
 
 * `TauCeti.ClassData.isSome_dixonCyclotomicCharacterTable_of_spec`: a certified exact table whose
-  conjugate reductions are distinct and whose coefficients lie in the balanced residue window is
-  found by the solver.
+  coefficients lie in the balanced residue window is found by the solver.
 * `conjugateResidueRow_mem_centralCharacterSearch_of_dixonCyclotomicCharacterTable?_eq_some`:
   every conjugate residue row of a returned central table comes from the modular search.
 * `TauCeti.ClassData.isCyclotomicCharacterTableSpec_of_dixonCyclotomicCharacterTable?_eq_some`:
@@ -355,9 +354,9 @@ private theorem mem_dixonCyclotomicCharacterTableCandidates (e : ℕ) (he : e = 
   refine CyclotomicCharacterTableData.ext (funext₂ fun i k ↦ ?_) (funext₂ fun i k ↦ ?_) rfl <;>
     simp only [Array.getElem_ofFn, Fin.eta, homega, d.table_eq_cyclotomicQuotient e hspec]
 
-/-- **Completeness criterion for the exact-cyclotomic solver.**  Suppose an exact certified table
-has coefficients within the balanced residue window and every Galois-conjugate reduction gives a
-distinct numbering of the modular central-character search.  Then the solver succeeds.
+/-- **Completeness criterion for the exact-cyclotomic solver.** An exact certified table whose
+central coefficients lie within the balanced residue window is found by the solver. Distinctness
+of every Galois-conjugate reduction follows from the certificate and the good-prime hypotheses.
 
 The theorem hides the solver's arbitrary canonical ordering of modular rows.  Internally, the
 reduction at the first primitive root aligns the supplied rows with that ordering; the remaining
@@ -368,10 +367,11 @@ theorem isSome_dixonCyclotomicCharacterTable_of_spec (e : ℕ)
     (degree : Fin d.numClasses → ℕ)
     (hspec : d.IsCyclotomicCharacterTableSpec e omega table degree)
     (hcoeff : ∀ i k (l : Fin e.totient),
-      2 * ((omega i k).coeff l).natAbs < q.p)
-    (hresidue_injective : ∀ j, Function.Injective fun i ↦
-      (fun k ↦ Cyclotomic.conjugateResidues q.root (omega i k) j)) :
+      2 * ((omega i k).coeff l).natAbs < q.p) :
     (d.dixonCyclotomicCharacterTable? e he q).isSome = true := by
+  have : NeZero e := ⟨he ▸ Monoid.exponent_ne_zero_of_finite⟩
+  have hresidue_injective := hspec.conjugateResidueRow_injective
+    (he ▸ q.isPrimitiveRoot_root) (by simpa using q.isGoodDixonPrime.natCast_natCard_ne_zero)
   obtain ⟨base, perms, hfirst, hinjective, hrows⟩ :=
     d.exists_perms_canonicalModularRow_eq_conjugateResidues e he q hspec hresidue_injective
   rw [dixonCyclotomicCharacterTable?, List.find?_isSome]
