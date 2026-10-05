@@ -64,6 +64,7 @@ theorem jimboGenerator_comp_lmapDomain_snoc (q : Rˣ) (j k : Fin n) (a : ι) :
 
 /-- The action of a braid after adding an uncrossed strand is its original action with
 the last colour held fixed. This intertwining identity applies to arbitrary vectors. -/
+@[simp↓]
 theorem jimbo_strandIncl_lmapDomain_snoc (q : Rˣ) (b : BraidGroup (n + 1)) (a : ι)
     (v : (Fin (n + 1) → ι) →₀ R) :
     (jimbo ι q (BraidGroup.strandIncl b) : Module.End R ((Fin (n + 2) → ι) →₀ R))
@@ -92,6 +93,7 @@ theorem jimbo_strandIncl_lmapDomain_snoc (q : Rˣ) (b : BraidGroup (n + 1)) (a :
       mul_inv_cancel, Units.val_one, Module.End.one_apply] using h.symm
 
 /-- Basis-vector form of compatibility with adding an uncrossed strand. -/
+@[simp]
 theorem jimbo_strandIncl_single_snoc (q : Rˣ) (b : BraidGroup (n + 1))
     (w : Fin (n + 1) → ι) (a : ι) (c : R) :
     (jimbo ι q (BraidGroup.strandIncl b) : Module.End R ((Fin (n + 2) → ι) →₀ R))
