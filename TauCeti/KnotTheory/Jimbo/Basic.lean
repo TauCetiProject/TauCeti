@@ -40,8 +40,9 @@ enhancement (for this R-matrix `α` is `q ^ N`, up to the choice of orientation 
 Turaev's invariant of a braid on `n` strands with exponent sum (writhe) `e` is the weighted trace
 multiplied by `α ^ (-e) * β ^ (-n)`. It is a Markov invariant of braids, the `sl_N`
 specialization of the HOMFLY polynomial at `z = q - q⁻¹` and `a = q ^ N`; these specializations,
-over all `N`, determine the HOMFLY polynomial. Neither the weighted trace nor its normalization is
-constructed in this file. For `N = 2` this is the vertex-model route to the Jones polynomial, which
+over all `N`, determine the HOMFLY polynomial. The weighted trace is constructed in
+`TauCeti/KnotTheory/Jimbo/Trace.lean`; its writhe normalization remains to be constructed.
+For `N = 2` this is the vertex-model route to the Jones polynomial, which
 `TauCeti.TemperleyLieb.markovTrace` follows through the Temperley-Lieb algebra.
 
 At `q = 1` the correction term vanishes, and the representation is the permutation action of
