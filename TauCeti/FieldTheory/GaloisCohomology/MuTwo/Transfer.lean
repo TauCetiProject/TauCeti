@@ -137,6 +137,19 @@ private theorem kummerCocycleModTwoClass_eq_explicitMap1 {a : Kˣ} {α : (Separa
 
 variable [FiniteDimensional K L]
 
+omit [Invertible (2 : K)] [Invertible (2 : L)] in
+/-- The composite `G_L ≃ galoisSubgroup K L σ ≤ G_K` used by `TauCeti.galoisRes_eq_map` is the
+composite `G_L ≃ Gal(Kˢ/σ(L)) ≤ G_K` used by `TauCeti.galoisResUnits`. -/
+private theorem galoisSubgroup_comp_eq_fixingSubgroup_comp :
+    (ContinuousMonoidHom.subgroupSubtype (galoisSubgroup K L σ).toSubgroup).comp
+        (ContinuousMonoidHom.toContinuousMonoidHom (galoisSubgroupEquiv K L σ)) =
+      (ContinuousMonoidHom.subgroupSubtype σ.fieldRange.fixingSubgroup).comp
+        (absoluteGaloisGroupEquivFixingSubgroup K L σ :
+          AbsoluteGaloisGroup L →ₜ* ↥σ.fieldRange.fixingSubgroup) :=
+  ContinuousMonoidHom.ext fun g => AlgEquiv.ext fun y =>
+    (galoisSubgroupEquiv_apply K L σ g y).trans
+      (absoluteGaloisGroupEquivFixingSubgroup_apply K L σ g y).symm
+
 /-- **Restriction of a Kummer class** (NSW, the display after (6.2.1), at `n = 2`): for a
 `K`-embedding `σ : L →ₐ[K] Kˢ` of a finite extension, restriction `H¹(G_K, 𝔽₂) → H¹(G_L, 𝔽₂)`
 sends the Kummer class of `a ∈ Kˣ` to the Kummer class of its image in `Lˣ`. -/
@@ -173,10 +186,7 @@ theorem galoisRes_kummerClass (a : Kˣ) :
   rw [kummerCocycleModTwoClass_eq_explicitMap1 K hα, kummerCocycleModTwoClass_eq_explicitMap1 L hβ]
   refine Eq.trans ?_ (congrArg (explicitMap1 _ _ _ _ (ContinuousMonoidHom.id _) _ _ _) hres)
   exact explicitMap1_explicitMap1_of_comp_eq
-    (hφ := by
-      exact ContinuousMonoidHom.ext fun g => AlgEquiv.ext fun y =>
-        (galoisSubgroupEquiv_apply K L σ g y).trans
-          (absoluteGaloisGroupEquivFixingSubgroup_apply K L σ g y).symm)
+    (hφ := by exact galoisSubgroup_comp_eq_fixingSubgroup_comp K L σ)
     (hqf := by exact comp_kummerCoeffEquiv_eq_comp_kummerCoeffMap K L σ) ..
 
 omit [Invertible (2 : K)] in
@@ -279,19 +289,6 @@ theorem galoisCor_kummerClass (b : Lˣ) :
 
 /-! ### Restriction and the map to the cohomological Brauer group -/
 
-omit [Invertible (2 : K)] [Invertible (2 : L)] in
-/-- The composite `G_L ≃ galoisSubgroup K L σ ≤ G_K` used by `TauCeti.galoisRes_eq_map` is the
-composite `G_L ≃ Gal(Kˢ/σ(L)) ≤ G_K` used by `TauCeti.galoisResUnits`. -/
-private theorem galoisSubgroup_comp_eq_fixingSubgroup_comp :
-    (ContinuousMonoidHom.subgroupSubtype (galoisSubgroup K L σ).toSubgroup).comp
-        (ContinuousMonoidHom.toContinuousMonoidHom (galoisSubgroupEquiv K L σ)) =
-      (ContinuousMonoidHom.subgroupSubtype σ.fieldRange.fixingSubgroup).comp
-        (absoluteGaloisGroupEquivFixingSubgroup K L σ :
-          AbsoluteGaloisGroup L →ₜ* ↥σ.fieldRange.fixingSubgroup) :=
-  ContinuousMonoidHom.ext fun g => AlgEquiv.ext fun y =>
-    (galoisSubgroupEquiv_apply K L σ g y).trans
-      (absoluteGaloisGroupEquivFixingSubgroup_apply K L σ g y).symm
-
 omit [FiniteDimensional K L] in
 /-- **The coefficient square of `μ₂ ⊆ (Kˢ)ˣ` along `L/K`**: reading a value of `𝔽₂` in `μ₂(Kˢ)`,
 including it into `(Kˢ)ˣ` and carrying it to `(Lˢ)ˣ` by `TauCeti.unitsCoeffMap` is reading it in
@@ -326,9 +323,8 @@ of `H²(G_K, 𝔽₂)` to `G_L` and then carrying it to `H²(G_L, (Lˢ)ˣ)` is c
 @[reassoc]
 theorem galoisRes_comp_h2MuToUnits :
     galoisRes K L σ 2 ≫ h2MuToUnits L = h2MuToUnits K ≫ galoisResUnits K L σ 2 := by
-  rw [galoisRes_eq_map, galoisSubgroup_comp_eq_fixingSubgroup_comp, h2MuToUnits_def,
-    h2MuToUnits_def, h2KummerToUnits_def, h2KummerToUnits_def,
-    ← ContinuousCohomology.coeffMap_comp, ← ContinuousCohomology.coeffMap_comp,
+  rw [galoisRes_eq_map, galoisSubgroup_comp_eq_fixingSubgroup_comp]
+  simp only [h2MuToUnits_def, h2KummerToUnits_def, ← ContinuousCohomology.coeffMap_comp,
     galoisResUnits_def, trivialF2Map_def]
   exact ContinuousCohomology.map_comp_coeffMap _ _ _ _ _
     (resFunctor_map_comp_ofDiscreteModulePair K L σ) 2
