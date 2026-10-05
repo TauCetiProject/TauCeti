@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Convex.PathConnected
-public import Mathlib.Analysis.Complex.Arg
+public import Mathlib.Analysis.InnerProductSpace.Convex
 
 /-!
 # Crosscuts of planar domains
@@ -18,8 +18,7 @@ identified when they eventually select the same side of each other.
 
 This file introduces the crosscut predicate at the level of paths, proves the elementary API that
 later prime-end constructions need, and supplies its fundamental nondegenerate examples: chords
-between distinct points of the boundary circle are crosscuts of an open disc. In particular, the
-predicate is exercised here rather than introduced as unsupported scaffolding.
+between distinct points of the boundary circle are crosscuts of an open disc.
 
 The definition uses the open unit interval in the path parameter. This excludes the endpoints
 from the part required to lie in `U`, while injectivity prevents a boundary endpoint from being
@@ -136,13 +135,12 @@ theorem IsCrosscut.symm (hγ : IsCrosscut γ U) : IsCrosscut γ.symm U := by
     apply hγ.injective
     exact hst
   · intro t ht
-    apply hγ.mapsTo_interior
-    constructor
-    · change (0 : ℝ) < 1 - (t : ℝ)
-      exact sub_pos.mpr ht.2
-    · change 1 - (t : ℝ) < 1
-      have ht0 : (0 : ℝ) < (t : ℝ) := by exact_mod_cast ht.1
-      linarith
+    rw [Path.symm_apply]
+    refine hγ.mapsTo_interior ⟨?_, ?_⟩
+    · rw [← unitInterval.symm_one]
+      exact unitInterval.strictAnti_symm ht.2
+    · rw [← unitInterval.symm_zero]
+      exact unitInterval.strictAnti_symm ht.1
 
 /-- A path is a crosscut exactly when its reversal is a crosscut. -/
 @[simp]
