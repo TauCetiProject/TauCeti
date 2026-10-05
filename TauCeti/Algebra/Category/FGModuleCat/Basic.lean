@@ -20,6 +20,8 @@ feeds the Grothendieck-group computation for finite-dimensional vector spaces.
 
 * `FGModuleCat.hom_hom_ofHom`: the linear map underlying `FGModuleCat.ofHom f` is `f`, the
   analogue of Mathlib's `ModuleCat.hom_ofHom`.
+* `FGModuleCat.hom_hom_add`: morphisms of finitely generated modules add pointwise, the
+  companion of Mathlib's `FGModuleCat.hom_hom_comp` and `FGModuleCat.hom_hom_id`.
 * `FGModuleCat.finrank_biprod`: rank is additive on biproducts of finite free modules.
 -/
 
@@ -36,6 +38,14 @@ universe u v
 theorem _root_.FGModuleCat.hom_hom_ofHom {R : Type u} [Ring R] {V W : Type v} [AddCommGroup V]
     [Module R V] [Module.Finite R V] [AddCommGroup W] [Module R W] [Module.Finite R W]
     (f : V →ₗ[R] W) : (FGModuleCat.ofHom f).hom.hom = f :=
+  (rfl)
+
+/-- The linear map underlying a sum of morphisms of finitely generated modules is the sum of the
+linear maps underlying them: addition of morphisms in a full subcategory of `ModuleCat R` is the
+addition of the underlying linear maps. -/
+@[simp]
+theorem _root_.FGModuleCat.hom_hom_add {R : Type u} [Ring R] {V W : FGModuleCat.{v} R}
+    (f g : V ⟶ W) : (f + g).hom.hom = f.hom.hom + g.hom.hom :=
   (rfl)
 
 attribute [local instance] HasBinaryBiproducts.of_hasBinaryCoproducts

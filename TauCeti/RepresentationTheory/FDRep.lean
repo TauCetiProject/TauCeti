@@ -67,6 +67,10 @@ subgroup.
   object.
 * `FDRep.forget₂_additive`: forgetting is an additive functor, and `FDRep.forget₂_obj_tensor`:
   it takes a tensor product to the tensor product of the forgotten objects, on the nose.
+* `FDRep.hom_hom_hom_comm`: a morphism intertwines the actions, read on the underlying linear
+  maps.
+* `FDRep.tensorUnit_ρ` and `FDRep.tensor_ρ`: the actions on the tensor unit and on a tensor
+  product, read on the underlying linear maps.
 * `FDRep.of_ρ_eq_self`: rebundling the representation carried by an object returns that object.
 * `FDRep.ofShrinkEquiv`: `FDRep.ofShrink ρ` carries a representation equivalent to `ρ`, whence
   `FDRep.finrank_ofShrink` and `FDRep.character_ofShrink`.
@@ -212,6 +216,27 @@ theorem forget₂_obj_tensor {R : Type u} {G : Type v} [CommRing R] [Monoid G] (
     (forget₂ (FDRep R G) (Rep R G)).obj (X ⊗ Y) =
       (forget₂ (FDRep R G) (Rep R G)).obj X ⊗ (forget₂ (FDRep R G) (Rep R G)).obj Y := (rfl)
 
+/-- **A morphism of `FDRep R G` intertwines the two actions**, read on the underlying linear maps:
+`CategoryTheory.Action.Hom.comm` with the two layers of bundling, by morphisms of `FGModuleCat R`
+and of `ModuleCat R`, stripped away. -/
+theorem hom_hom_hom_comm {R : Type u} {G : Type v} [CommRing R] [Monoid G] {X Y : FDRep R G}
+    (φ : X ⟶ Y) (g : G) : φ.hom.hom.hom ∘ₗ X.ρ g = Y.ρ g ∘ₗ φ.hom.hom.hom := by
+  simpa using congrArg (fun t : X.V ⟶ Y.V => t.hom.hom) (φ.comm g)
+
+open MonoidalCategory in
+/-- **The tensor unit of `FDRep R G` carries the trivial action**, read on the underlying linear
+maps: this is `CategoryTheory.Action.tensorUnit_ρ` stated for `FDRep.ρ` rather than for
+`Action.ρ`, the `FDRep` counterpart of Mathlib's `Rep.tensorUnit_ρ`. -/
+theorem tensorUnit_ρ {R : Type u} {G : Type v} [CommRing R] [Monoid G] (g : G) :
+    (𝟙_ (FDRep R G)).ρ g = LinearMap.id := (rfl)
+
+open MonoidalCategory in
+/-- **`G` acts diagonally on a tensor product in `FDRep R G`**, read on the underlying linear
+maps: this is `CategoryTheory.Action.tensor_ρ` stated for `FDRep.ρ` rather than for `Action.ρ`,
+the `FDRep` counterpart of Mathlib's `Rep.tensor_ρ`. -/
+theorem tensor_ρ {R : Type u} {G : Type v} [CommRing R] [Monoid G] (X Y : FDRep R G) (g : G) :
+    (X ⊗ Y).ρ g = TensorProduct.map (X.ρ g) (Y.ρ g) := (rfl)
+
 section Shrink
 
 variable {k : Type u} {G : Type v} {V : Type w} [CommRing k] [Monoid G] [AddCommGroup V]
@@ -270,15 +295,11 @@ This is the one computation behind `FDRep.char_biprod`: cyclicity of the trace m
 private theorem trace_comp_of_retraction {X B : FDRep k G} (i : X ⟶ B) (p : B ⟶ X)
     (h : i ≫ p = 𝟙 X) (g : G) :
     LinearMap.trace k B ((B.ρ g ∘ₗ i.hom.hom.hom) ∘ₗ p.hom.hom.hom) = X.character g := by
-  -- equivariance of `i`, namely `CategoryTheory.Action.Hom.comm`, read through the two layers of
-  -- bundling: `simp` strips the morphisms of `FGModuleCat k` and of `ModuleCat k` down to their
-  -- underlying linear maps, so no definitional unfolding is involved
-  have hcomm : i.hom.hom.hom ∘ₗ X.ρ g = B.ρ g ∘ₗ i.hom.hom.hom := by
-    simpa using congrArg (fun t : X.V ⟶ B.V => t.hom.hom) (i.comm g)
-  -- the retraction `h`, read the same way; here `simp` also rewrites the underlying map of `𝟙 X`
+  -- the retraction `h`, read through the two layers of bundling the way `FDRep.hom_hom_hom_comm`
+  -- reads the equivariance of `i`; here `simp` also rewrites the underlying map of `𝟙 X`
   have hpi : p.hom.hom.hom ∘ₗ i.hom.hom.hom = LinearMap.id := by
     simpa using congrArg (fun t : X ⟶ X => t.hom.hom.hom) h
-  rw [LinearMap.trace_comp_comm', ← hcomm, ← LinearMap.comp_assoc, hpi]
+  rw [LinearMap.trace_comp_comm', ← hom_hom_hom_comm i g, ← LinearMap.comp_assoc, hpi]
   simp [FDRep.character]
 
 /-- **The character is additive on biproducts.** Together with `FDRep.char_iso` and

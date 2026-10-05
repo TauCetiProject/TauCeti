@@ -21,8 +21,12 @@ public import TauCeti.RepresentationTheory.PermutationModule
 import Mathlib.RingTheory.Flat.Equalizer
 import Mathlib.RingTheory.TensorProduct.IsBaseChangeHom
 import Mathlib.LinearAlgebra.TensorProduct.Pi
--- Non-public: the bundling lemmas `FDRep.character_of` and `FDRep.character_ρ` are used only inside
--- the proof of `FDRep.character_baseChange`.
+-- Non-public: the `FGModuleCat`-level projection lemmas `FGModuleCat.hom_hom_ofHom` and
+-- `FGModuleCat.hom_hom_add` are used only inside the proofs of the `FDRep` base-change API.
+import TauCeti.Algebra.Category.FGModuleCat.Basic
+-- Non-public: the bundling lemmas `FDRep.character_of` and `FDRep.character_ρ`, and the
+-- projection lemmas `FDRep.hom_hom_hom_comm`, `FDRep.tensorUnit_ρ` and `FDRep.tensor_ρ`, are used
+-- only inside proofs.
 import TauCeti.RepresentationTheory.FDRep
 
 /-!
@@ -76,6 +80,13 @@ of a permutation lattice `ℤ[X]` modulo a prime is `k[X]` and its rationalizati
 * `Representation.Equiv.baseChange`: base change transports an equivalence of representations.
 * `TauCeti.baseChangeOfMulActionEquiv`: the base change of `R[X]` is `A[X]`.
 * `TauCeti.baseChangeComapEquiv`: the base change of the permutation module `X →₀ R` is `A[X]`.
+* `TauCeti.fdRepIsoOfEquivariant`: an isomorphism in `FDRep` from an equivariant linear
+  equivalence.
+* `TauCeti.baseChangeFDRepHom` and `TauCeti.baseChangeFDRep`: scalar extension of an equivariant
+  map, and scalar extension as an additive functor `FDRep k G ⥤ FDRep k' G`.
+* `TauCeti.baseChangeFDRepUnitIso` and `TauCeti.baseChangeFDRepTensorIso`: the comparison
+  isomorphisms `k' ⊗[k] k ≅ k'` and `k' ⊗[k] (V ⊗ W) ≅ (k' ⊗[k] V) ⊗ (k' ⊗[k] W)`, which make the
+  functor compatible with the monoidal structures.
 -/
 
 public section
@@ -658,5 +669,117 @@ theorem baseChangeComapEquiv_symm_single (a : A) (x : X) :
 end Comap
 
 end PermutationRepresentation
+
+section FDRepBaseChange
+
+open CategoryTheory MonoidalCategory TensorProduct
+
+universe u v
+
+variable {k : Type u} (k' : Type u) [Field k] [Field k'] [Algebra k k'] {G : Type v} [Monoid G]
+
+/-- **An isomorphism in `FDRep k G` from an equivariant linear equivalence.** This is
+`CategoryTheory.Action.mkIso` for `FDRep k G`, with the commutation condition stated pointwise on
+the underlying linear maps instead of as an equation of morphisms of `FGModuleCat k`. -/
+noncomputable def fdRepIsoOfEquivariant {X Y : FDRep k G} (e : X ≃ₗ[k] Y)
+    (he : ∀ (g : G) (x : X), e (X.ρ g x) = Y.ρ g (e x)) : X ≅ Y :=
+  Action.mkIso (LinearEquiv.toFGModuleCatIso e) fun g =>
+    FGModuleCat.hom_ext (by simpa using LinearMap.ext (he g))
+
+/-- **Base change of an equivariant map.** An equivariant map `V → W` extends to the equivariant
+map `k' ⊗[k] V → k' ⊗[k] W` that acts on the second factor.
+
+The body is exposed because `TauCeti.shortExact_map_baseChangeFDRep` has to read the underlying
+map of the base-changed morphism as `LinearMap.lTensor k'` of the underlying map of `φ`, the form
+the flatness lemmas are stated in; `TauCeti.baseChangeFDRepHom_hom_hom_hom` records it as
+`LinearMap.baseChange k'`, and the two agree only definitionally. -/
+@[expose]
+noncomputable def baseChangeFDRepHom {V W : FDRep k G} (φ : V ⟶ W) :
+    (FDRep.of (_root_.Representation.baseChange k' V.ρ) : FDRep k' G) ⟶
+      FDRep.of (_root_.Representation.baseChange k' W.ρ) where
+  hom := FGModuleCat.ofHom (LinearMap.baseChange k' φ.hom.hom.hom)
+  comm g := FGModuleCat.hom_ext <| by
+    rw [FGModuleCat.hom_hom_comp, FGModuleCat.hom_hom_comp, FDRep.hom_hom_action_ρ,
+      FDRep.hom_hom_action_ρ, FDRep.of_ρ', FDRep.of_ρ', _root_.Representation.baseChange_apply,
+      _root_.Representation.baseChange_apply, FGModuleCat.hom_hom_ofHom,
+      ← LinearMap.baseChange_comp, ← LinearMap.baseChange_comp]
+    exact congrArg (LinearMap.baseChange k') (FDRep.hom_hom_hom_comm φ g)
+
+/-- The linear map underlying the base change of an equivariant map is the base change of the
+linear map underlying it. -/
+@[simp]
+theorem baseChangeFDRepHom_hom_hom_hom {V W : FDRep k G} (φ : V ⟶ W) :
+    (baseChangeFDRepHom k' φ).hom.hom.hom = LinearMap.baseChange k' φ.hom.hom.hom := (rfl)
+
+/-- **Base change of equivariant maps is additive.** -/
+theorem baseChangeFDRepHom_add {V W : FDRep k G} (φ ψ : V ⟶ W) :
+    baseChangeFDRepHom k' (φ + ψ) = baseChangeFDRepHom k' φ + baseChangeFDRepHom k' ψ :=
+  Action.hom_ext _ _ <| FGModuleCat.hom_ext <| by simp [LinearMap.baseChange_add]
+
+/-- **Scalar extension as a functor on finite-dimensional representations.** It sends a
+representation `V` of `G` over `k` to `k' ⊗[k] V` with `g` acting by `1 ⊗ V.ρ g`, and an
+equivariant map to its base change.
+
+The body is exposed because the type of `(baseChangeFDRep k').map φ` mentions
+`(baseChangeFDRep k').obj`, so `TauCeti.baseChangeFDRep_map` does not even typecheck against an
+opaque `obj`. `TauCeti.fdRepIsoOfEquivariant` and the two comparison isomorphisms below need no
+such reading and keep their bodies hidden. -/
+@[expose]
+noncomputable def baseChangeFDRep : FDRep k G ⥤ FDRep k' G where
+  obj V := FDRep.of (_root_.Representation.baseChange k' V.ρ)
+  map φ := baseChangeFDRepHom k' φ
+  map_id V := Action.hom_ext _ _ <| FGModuleCat.hom_ext <| by simp [LinearMap.baseChange_id]
+  map_comp φ ψ := Action.hom_ext _ _ <| FGModuleCat.hom_ext <| by
+    simp [LinearMap.baseChange_comp]
+
+/-- The functor takes a representation to its scalar extension.
+
+Deliberately not a `simp` lemma: it is an equation between *objects* of `FDRep k' G`, which has
+no business in the global `simp` set. -/
+theorem baseChangeFDRep_obj (V : FDRep k G) :
+    (baseChangeFDRep k').obj V = FDRep.of (_root_.Representation.baseChange k' V.ρ) := (rfl)
+
+/-- The functor takes an equivariant map to its base change. -/
+@[simp]
+theorem baseChangeFDRep_map {V W : FDRep k G} (φ : V ⟶ W) :
+    (baseChangeFDRep k').map φ = baseChangeFDRepHom k' φ := (rfl)
+
+instance : (baseChangeFDRep (k := k) k' (G := G)).Additive where
+  map_add {_ _ φ ψ} := baseChangeFDRepHom_add k' φ ψ
+
+/-- **The tensor unit is preserved**: `k' ⊗[k] k` is the trivial one-dimensional representation
+over `k'`. -/
+noncomputable def baseChangeFDRepUnitIso :
+    (FDRep.of (_root_.Representation.baseChange k' (𝟙_ (FDRep k G)).ρ) : FDRep k' G) ≅
+      𝟙_ (FDRep k' G) :=
+  fdRepIsoOfEquivariant (AlgebraTensorModule.rid k k' k') fun g z => by
+    rw [FDRep.of_ρ', _root_.Representation.baseChange_apply, FDRep.tensorUnit_ρ,
+      FDRep.tensorUnit_ρ]
+    induction z using TensorProduct.inductionOn with
+    | tmul a x => simp
+    | add x y hx hy => simp_all
+
+/-- **Tensor products are preserved**: extending the scalars of a tensor product of
+representations gives the tensor product over `k'` of the extensions. -/
+noncomputable def baseChangeFDRepTensorIso (X Y : FDRep k G) :
+    (FDRep.of (_root_.Representation.baseChange k' (X ⊗ Y).ρ) : FDRep k' G) ≅
+      FDRep.of (_root_.Representation.baseChange k' X.ρ) ⊗
+        FDRep.of (_root_.Representation.baseChange k' Y.ρ) :=
+  fdRepIsoOfEquivariant (AlgebraTensorModule.distribBaseChange k k' X Y) fun g z => by
+    rw [FDRep.of_ρ', _root_.Representation.baseChange_apply, FDRep.tensor_ρ, FDRep.tensor_ρ,
+      FDRep.of_ρ', FDRep.of_ρ', _root_.Representation.baseChange_apply,
+      _root_.Representation.baseChange_apply]
+    induction z using TensorProduct.inductionOn with
+    | tmul a x =>
+        induction x using TensorProduct.inductionOn with
+        | tmul p q =>
+            rw [LinearMap.baseChange_tmul, TensorProduct.map_tmul,
+              AlgebraTensorModule.distribBaseChange_tmul,
+              AlgebraTensorModule.distribBaseChange_tmul, TensorProduct.map_tmul,
+              LinearMap.baseChange_tmul, LinearMap.baseChange_tmul]
+        | add p q hp hq => simp only [map_add, tmul_add, hp, hq]
+    | add x y hx hy => simp_all
+
+end FDRepBaseChange
 
 end TauCeti
