@@ -32,7 +32,7 @@ class of its group-algebra module `Representation.asModule V.ρ`. The additive s
 
 Restriction along a monoid homomorphism is then multiplicative and unital (`TauCeti.resK0_mul`,
 `TauCeti.resK0_one`), because restricting a tensor product of representations is tensoring the
-restrictions.
+restrictions; bundled, it is the ring homomorphism `TauCeti.resK0RingHom`.
 
 ## Implementation notes
 
@@ -45,6 +45,7 @@ product over `k` with the diagonal action of `G`, the one of representations.
 * `TauCeti.fdRepK0RingEquiv`: the exact Grothendieck ring of `FDRep k G` is isomorphic to
   `G₀(k[G])`.
 * `TauCeti.instCommRingExactK0MonoidAlgebra`: the commutative ring structure on `G₀(k[G])`.
+* `TauCeti.resK0RingHom`: restriction as a ring homomorphism.
 
 ## Main results
 
@@ -53,6 +54,8 @@ product over `k` with the diagonal action of `G`, the one of representations.
 * `TauCeti.of_asModule_mul_of_asModule`: the product of the classes of two representations is the
   class of their tensor product.
 * `TauCeti.exactK0_one_eq_of_trivial`: the unit is the class of the trivial line.
+* `TauCeti.fdRepK0RingEquiv_hom_ext₂`: biadditive maps out of `G₀(k[G])` and `G₀(k[H])` are
+  determined by their values on pairs of classes of representations.
 * `TauCeti.resK0_mul` and `TauCeti.resK0_one`: restriction is a ring homomorphism.
 
 ## References
@@ -180,6 +183,26 @@ section Restriction
 
 variable {k G H : Type u} [Field k] [Monoid G] [Monoid H] [Finite G] [Finite H]
 
+/-- **Biadditive maps are determined on representations.** Two biadditive maps out of
+`G₀(k[G])` and `G₀(k[H])` agree once they agree on pairs of classes of representations, read
+through `TauCeti.fdRepK0RingEquiv`. -/
+theorem fdRepK0RingEquiv_hom_ext₂ {M : Type*} [AddCommGroup M]
+    {f g : ExactK0 (finiteModulesExactStructure k[G]) →+
+      ExactK0 (finiteModulesExactStructure k[H]) →+ M}
+    (h : ∀ (V : FDRep k G) (W : FDRep k H),
+      f (fdRepK0RingEquiv k G (ExactK0.of V)) (fdRepK0RingEquiv k H (ExactK0.of W)) =
+        g (fdRepK0RingEquiv k G (ExactK0.of V)) (fdRepK0RingEquiv k H (ExactK0.of W))) :
+    f = g := by
+  have hfg : (f.comp (fdRepK0RingEquiv k G).toAddMonoidHom).compl₂
+      (fdRepK0RingEquiv k H).toAddMonoidHom =
+      (g.comp (fdRepK0RingEquiv k G).toAddMonoidHom).compl₂
+        (fdRepK0RingEquiv k H).toAddMonoidHom :=
+    ExactK0.hom_ext fun V ↦ ExactK0.hom_ext fun W ↦ h V W
+  refine AddMonoidHom.ext_iff₂.2 fun x y ↦ ?_
+  obtain ⟨a, rfl⟩ := (fdRepK0RingEquiv k G).surjective x
+  obtain ⟨b, rfl⟩ := (fdRepK0RingEquiv k H).surjective y
+  exact AddMonoidHom.ext_iff₂.1 hfg a b
+
 /-- **Restriction of the class of a representation**, read through `TauCeti.fdRepK0RingEquiv`: it
 is the class of the restricted representation `Action.res φ V`. -/
 theorem resK0_fdRepK0RingEquiv_of (φ : H →* G) (V : FDRep k G) :
@@ -194,27 +217,39 @@ the restricted classes. -/
 @[simp]
 theorem resK0_mul (φ : H →* G) (x y : ExactK0 (finiteModulesExactStructure k[G])) :
     resK0 k φ (x * y) = resK0 k φ x * resK0 k φ y := by
-  obtain ⟨a, rfl⟩ := (fdRepK0RingEquiv k G).surjective x
-  obtain ⟨b, rfl⟩ := (fdRepK0RingEquiv k G).surjective y
-  induction a using ExactK0.induction_on with
-  | zero => simp
-  | add a a' ha ha' => simp only [map_add, add_mul, ha, ha']
-  | neg a ha => simp only [map_neg, neg_mul, ha]
-  | of V =>
-    induction b using ExactK0.induction_on with
-    | zero => simp
-    | add b b' hb hb' => simp only [map_add, mul_add, hb, hb']
-    | neg b hb => simp only [map_neg, mul_neg, hb]
-    | of W =>
-      rw [← map_mul, ExactK0.of_mul_of, resK0_fdRepK0RingEquiv_of, resK0_fdRepK0RingEquiv_of,
-        resK0_fdRepK0RingEquiv_of, ← map_mul, ExactK0.of_mul_of]
-      exact congrArg _ (ExactK0.of_congr (Action.resTensorator _ φ V W).symm)
+  refine (AddMonoidHom.map_mul_iff (resK0 k φ)).2 (fdRepK0RingEquiv_hom_ext₂ fun V W ↦ ?_) x y
+  simp only [AddMonoidHom.compr₂_apply, AddMonoidHom.compl₂_apply, AddMonoidHom.coe_comp,
+    Function.comp_apply, AddMonoidHom.mul_apply]
+  rw [← map_mul, ExactK0.of_mul_of, resK0_fdRepK0RingEquiv_of, resK0_fdRepK0RingEquiv_of,
+    resK0_fdRepK0RingEquiv_of, ← map_mul, ExactK0.of_mul_of]
+  exact congrArg _ (ExactK0.of_congr (Action.resTensorator _ φ V W).symm)
 
 /-- **Restriction is unital**: it sends the class of the trivial line to the class of the trivial
 line. -/
 @[simp]
 theorem resK0_one (φ : H →* G) : resK0 k φ 1 = 1 := by
   rw [exactK0_one_eq_of_trivial, exactK0_one_eq_of_trivial, resK0_of_trivial]
+
+variable (k) in
+/-- **Restriction as a ring homomorphism** `G₀(k[G]) →+* G₀(k[H])`: the additive map
+`TauCeti.resK0` together with its multiplicativity `TauCeti.resK0_mul` and unitality
+`TauCeti.resK0_one`. -/
+noncomputable def resK0RingHom (φ : H →* G) :
+    ExactK0 (finiteModulesExactStructure k[G]) →+* ExactK0 (finiteModulesExactStructure k[H]) where
+  __ := resK0 k φ
+  map_mul' := resK0_mul φ
+  map_one' := resK0_one φ
+
+/-- The underlying function of `TauCeti.resK0RingHom` is `TauCeti.resK0`. -/
+@[simp]
+theorem coe_resK0RingHom (φ : H →* G) : ⇑(resK0RingHom k φ) = resK0 k φ :=
+  (rfl)
+
+/-- The underlying additive map of `TauCeti.resK0RingHom` is `TauCeti.resK0`. -/
+@[simp]
+theorem resK0RingHom_toAddMonoidHom (φ : H →* G) :
+    (resK0RingHom k φ).toAddMonoidHom = resK0 k φ :=
+  (rfl)
 
 end Restriction
 

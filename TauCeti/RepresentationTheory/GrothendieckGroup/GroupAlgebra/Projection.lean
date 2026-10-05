@@ -67,21 +67,15 @@ induction from a subgroup is a homomorphism of `G₀(k[G])`-modules, where `G₀
 theorem indK0_mul_resK0 (y : ExactK0 (finiteModulesExactStructure k[S]))
     (x : ExactK0 (finiteModulesExactStructure k[G])) :
     indK0 k S (y * resK0 k S.subtype x) = indK0 k S y * x := by
-  obtain ⟨a, rfl⟩ := (fdRepK0RingEquiv k S).surjective y
-  obtain ⟨b, rfl⟩ := (fdRepK0RingEquiv k G).surjective x
-  induction a using ExactK0.induction_on with
-  | zero => simp
-  | add a a' ha ha' => simp only [map_add, add_mul, ha, ha']
-  | neg a ha => simp only [map_neg, neg_mul, ha]
-  | of A =>
-    induction b using ExactK0.induction_on with
-    | zero => simp
-    | add b b' hb hb' => simp only [map_add, mul_add, hb, hb']
-    | neg b hb => simp only [map_neg, mul_neg, hb]
-    | of B =>
-      rw [resK0_fdRepK0RingEquiv_of, ← map_mul, ExactK0.of_mul_of, indK0_fdRepK0RingEquiv_of,
-        indK0_fdRepK0RingEquiv_of, ← map_mul, ExactK0.of_mul_of]
-      exact congrArg _ (ExactK0.of_congr (indFDRepProjection A B))
+  refine AddMonoidHom.ext_iff₂.1
+    (fdRepK0RingEquiv_hom_ext₂
+      (f := (AddMonoidHom.mul.compl₂ (resK0 k S.subtype)).compr₂ (indK0 k S))
+      (g := AddMonoidHom.mul.comp (indK0 k S)) fun A B ↦ ?_) y x
+  simp only [AddMonoidHom.compr₂_apply, AddMonoidHom.compl₂_apply, AddMonoidHom.coe_comp,
+    Function.comp_apply, AddMonoidHom.mul_apply]
+  rw [resK0_fdRepK0RingEquiv_of, ← map_mul, ExactK0.of_mul_of, indK0_fdRepK0RingEquiv_of,
+    indK0_fdRepK0RingEquiv_of, ← map_mul, ExactK0.of_mul_of]
+  exact congrArg _ (ExactK0.of_congr (indFDRepProjection A B))
 
 /-- **Induction of the unit** is the permutation class `[k[G ⧸ S]]` of the cosets of `S`. -/
 @[simp]
