@@ -152,27 +152,27 @@ theorem coeff_ramificationDivisor_ofCusp_eq_widthIndex (D : Δ.CuspDatum) (E : �
   rw [coeff_ramificationDivisor, coe_finiteHolomorphicMap,
     localMultiplicity_compactifiedQuotientMap_ofCusp_eq_widthIndex h D E hσ]
 
-/-- An interior point is in the ramification support exactly when the elliptic stabilizer
-index is greater than one. -/
+/-- The ramification coefficient at an interior point is nonzero exactly when the elliptic
+stabilizer index is greater than one. -/
 @[simp]
-theorem ofQuotient_mem_support_ramificationDivisor_iff (z : ℍ) :
+theorem ramificationDivisor_apply_ofQuotient_ne_zero_iff (z : ℍ) :
     letI : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
-    ofQuotient (Quotient.mk'' z) ∈ (ramificationDivisor (finiteHolomorphicMap h)).support ↔
+    (ramificationDivisor (finiteHolomorphicMap h)) (ofQuotient (Quotient.mk'' z)) ≠ 0 ↔
       1 < ellipticRamificationIndex h z := by
   let : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
-  rw [← Finset.mem_coe, support_ramificationDivisor]
+  rw [← Finsupp.mem_support_iff, ← Finset.mem_coe, support_ramificationDivisor]
   simp only [mem_ofPred_eq, coe_finiteHolomorphicMap,
     localMultiplicity_compactifiedQuotientMap_ofQuotient_eq_ellipticRamificationIndex]
 
-/-- A cusp is in the ramification support exactly when its boundary stabilizer index is
+/-- The ramification coefficient at a cusp is nonzero exactly when its boundary stabilizer index is
 greater than one. -/
 @[simp]
-theorem ofCusp_mem_support_ramificationDivisor_iff (c : Δ.cuspPoints) :
+theorem ramificationDivisor_apply_ofCusp_ne_zero_iff (c : Δ.cuspPoints) :
     letI : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
-    ofCusp (Δ.cuspOrbitMk c) ∈ (ramificationDivisor (finiteHolomorphicMap h)).support ↔
+    (ramificationDivisor (finiteHolomorphicMap h)) (ofCusp (Δ.cuspOrbitMk c)) ≠ 0 ↔
       1 < (Δ.subgroupOf Γ).relIndex (stabilizer Γ (c : OnePoint ℝ)) := by
   let : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
-  rw [← Finset.mem_coe, support_ramificationDivisor]
+  rw [← Finsupp.mem_support_iff, ← Finset.mem_coe, support_ramificationDivisor]
   simp only [mem_ofPred_eq, coe_finiteHolomorphicMap,
     localMultiplicity_compactifiedQuotientMap_ofCusp_cuspOrbitMk]
 
