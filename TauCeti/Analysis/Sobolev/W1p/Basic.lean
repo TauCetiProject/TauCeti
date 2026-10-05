@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.TestFunctionLp
+public import TauCeti.MeasureTheory.Function.Lp.Norm
 public import Mathlib.MeasureTheory.Function.Holder
 public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.SpecificCodomains.WithLp
@@ -16,9 +17,10 @@ import Mathlib.Analysis.InnerProductSpace.Dual
 # First-order weak Sobolev spaces
 
 This file constructs the first-order, real-valued Sobolev space `W^{1,p}(Ω)` on an open subset
-of a finite-dimensional real inner product space.  An element is an `Lᵖ` value-gradient jet
-`(u, ∇u)` satisfying the distributional integration-by-parts identity from
-`TauCeti.HasWeakFDerivOn`.
+of a real inner product space `E`. An element is an `Lᵖ` value-gradient jet `(u, ∇u)` satisfying
+the distributional integration-by-parts pairing against test functions. When `E` is
+finite-dimensional, this closed-subspace definition is identified with the weak Fréchet
+derivative predicate `TauCeti.HasWeakFDerivOn`.
 
 The quotient issue is handled at the definition boundary.  Both components of a jet are `Lp`
 classes for `μ.restrict Ω`; the weak relation is imposed by the continuous Hölder pairing with
@@ -35,9 +37,9 @@ distributional condition by a merely formal closedness assumption.
 The pointwise jet uses the Euclidean product norm on `ℝ × E`.  Thus at `p = 2` the inherited norm
 is the usual Hilbert norm
 
-`(∥u∥²₂ + ∥∇u∥²₂)¹⁄²`,
+`(∥u∥²₂ + ‖∇u∥²₂)¹⁄²`,
 
-which is the space needed by the energy-method lane of the PDE roadmap.  No boundedness or
+which is the space needed for energy methods in PDE.  No boundedness or
 boundary regularity of `Ω` is used.
 
 ## Main declarations
@@ -58,10 +60,9 @@ boundary regularity of `Ω` is used.
 
 ## References
 
-This is the first-order part of Lane A.1 of `TauCetiRoadmap/PDE/README.md`.  The graph-space
-construction and completeness argument follow L. C. Evans, *Partial Differential Equations*,
-Chapter 5, §5.2.  The continuous annihilator presentation is the quotient-respecting version of
-the standard proof that weak differentiation is a closed operator on `Lᵖ`.
+The graph-space construction and completeness argument follow L. C. Evans, *Partial Differential
+Equations*, Chapter 5, §5.2.  The continuous annihilator presentation is the quotient-respecting
+version of the standard proof that weak differentiation is a closed operator on `Lᵖ`.
 -/
 
 public section
@@ -259,7 +260,7 @@ private theorem gradient_assembleSobolev1JetLp (u : Lp ℝ p (mu.restrict Omega)
 
 /-! ### The weak Sobolev space `W^{1,p}(Ω)` -/
 
-variable [BorelSpace E]
+variable [OpensMeasurableSpace E]
 
 private def weakDerivativeTestFunction (phi : 𝓓(Omega, ℝ)) (v : E) (x : E) :
     Sobolev1Jet E :=
@@ -373,6 +374,10 @@ weak gradient. -/
 abbrev W1p (mu : Measure E) [mu.IsAddHaarMeasure] (Omega : Opens E) (p : ENNReal)
     [Fact (1 <= p)] := (w1pSubmodule mu Omega p).toSubmodule
 
+/-- `W^{1,p}(Ω)` is complete in its value-gradient graph norm. -/
+instance [CompleteSpace E] : CompleteSpace (W1p mu Omega p) :=
+  (w1pSubmodule mu Omega p).isClosed.completeSpace_coe
+
 /-- The continuous linear projection from `W1p` to its `Lᵖ` value component. -/
 def W1p.valueL : W1p mu Omega p →L[ℝ] Lp ℝ p (mu.restrict Omega) :=
   Sobolev1JetLp.valueL.comp (w1pSubmodule mu Omega p).toSubmodule.subtypeL
@@ -441,18 +446,6 @@ theorem W1p.norm_sq_eq_norm_value_sq_add_norm_gradient_sq (u : W1p mu Omega 2) :
     ‖u‖ ^ 2 = ‖W1p.value u‖ ^ 2 + ‖W1p.gradient u‖ ^ 2 :=
   norm_sq_eq_norm_value_sq_add_norm_gradient_sq_ambient u.1
 
-/-- The integral of the squared pointwise norm of an `L²` function is its squared `L²` norm.
-
-Kept `private`: the natural home for this generic `Lp` fact is the root `MeasureTheory.Lp`
-namespace, which is unreachable from inside `namespace TauCeti`, and its only uses are the two
-Sobolev specializations below. -/
-private theorem integral_norm_sq_eq_norm_sq {alpha F : Type*} [MeasurableSpace alpha]
-    {m : Measure alpha} [NormedAddCommGroup F] [InnerProductSpace ℝ F] (f : Lp F 2 m) :
-    ∫ x, ‖f x‖ ^ 2 ∂m = ‖f‖ ^ 2 := by
-  refine Eq.symm ?_
-  rw [← real_inner_self_eq_norm_sq f, L2.inner_def]
-  exact integral_congr_ae (Filter.Eventually.of_forall fun x => real_inner_self_eq_norm_sq (f x))
-
 /-- The squared pointwise norm of a Sobolev gradient is integrable. -/
 theorem W1p.integrable_norm_gradient_sq (u : W1p mu Omega 2) :
     Integrable (fun x => ‖W1p.gradient u x‖ ^ 2) (mu.restrict Omega) :=
@@ -467,12 +460,12 @@ theorem W1p.integrable_value_sq (u : W1p mu Omega 2) :
 /-- The integral of the squared Sobolev gradient is its squared `L²` norm. -/
 theorem W1p.integral_norm_gradient_sq_eq_norm_gradient_sq (u : W1p mu Omega 2) :
     ∫ x in Omega, ‖W1p.gradient u x‖ ^ 2 ∂mu = ‖W1p.gradient u‖ ^ 2 :=
-  integral_norm_sq_eq_norm_sq (W1p.gradient u)
+  Lp.integral_norm_sq_eq_norm_sq (W1p.gradient u)
 
 /-- The integral of the squared Sobolev value is its squared `L²` norm. -/
 theorem W1p.integral_value_sq_eq_norm_value_sq (u : W1p mu Omega 2) :
     ∫ x in Omega, (W1p.value u x) ^ 2 ∂mu = ‖W1p.value u‖ ^ 2 := by
-  rw [← integral_norm_sq_eq_norm_sq (W1p.value u)]
+  rw [← Lp.integral_norm_sq_eq_norm_sq (W1p.value u)]
   exact integral_congr_ae (Filter.Eventually.of_forall fun x => by
     simp [Real.norm_eq_abs, sq_abs])
 
@@ -591,6 +584,9 @@ theorem W1p.locallyIntegrableOn_gradient (u : W1p mu Omega p) :
   locallyIntegrableOn_of_locallyIntegrable_restrict
     ((Lp.memLp (W1p.gradient u)).locallyIntegrable Fact.out)
 
+section
+variable [BorelSpace E]
+
 /-- **A Sobolev function vanishing on an open subset has vanishing weak gradient there.** The
 weak gradient is determined almost everywhere by the function on every open set
 (`TauCeti.HasWeakFDerivOn.ae_eq`), and the zero function has zero weak gradient. -/
@@ -619,6 +615,8 @@ theorem W1p.ext_value {u v : W1p mu Omega p} (hvalue : W1p.value u = W1p.value v
   filter_upwards [hderiv] with x hx
   exact innerSL_inj.mp hx
 
+end
+
 section Exponent
 
 variable {q : ENNReal} [Fact (1 <= q)] [IsFiniteMeasure (mu.restrict (Omega : Set E))]
@@ -645,6 +643,8 @@ theorem W1p.gradient_ofExponentLE_ae (hpq : p ≤ q) (u : W1p mu Omega q) :
     ⇑(W1p.gradient (W1p.ofExponentLE hpq u)) =ᵐ[mu.restrict Omega] W1p.gradient u := by
   rw [W1p.ofExponentLE, W1p.gradient_mk]
   exact MemLp.coeFn_toLp _
+
+variable [BorelSpace E]
 
 /-- Lowering the exponent sends zero to zero. -/
 @[simp]
@@ -720,9 +720,5 @@ theorem W1p.ofExponentLE_ofExponentLE {r : ENNReal} [Fact (1 ≤ r)]
       (W1p.value_ofExponentLE_ae (hpq.trans hqr) u).symm
 
 end Exponent
-
-/-- `W^{1,p}(Ω)` is complete in its value-gradient graph norm. -/
-instance : CompleteSpace (W1p mu Omega p) :=
-  (w1pSubmodule mu Omega p).isClosed.completeSpace_coe
 
 end TauCeti
