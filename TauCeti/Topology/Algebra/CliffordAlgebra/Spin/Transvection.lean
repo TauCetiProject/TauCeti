@@ -71,6 +71,6 @@ theorem continuous_spinTransvectionHom {u : V} (hQ : Q.Nondegenerate) (hu : Q u 
   funext w
   apply Additive.toMul.injective
   rw [Function.comp_apply, Submodule.mkQ_apply,
-    toMul_spinTransvectionHom_mk hQ hu w, toMul_ofMul]
+    toMul_spinTransvectionHom_mk hQ hu (hw w), toMul_ofMul]
 
 end CliffordAlgebra
