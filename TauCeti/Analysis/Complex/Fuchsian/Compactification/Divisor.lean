@@ -40,6 +40,9 @@ variable {Δ Γ : Subgroup PSL(2, ℝ)} [DiscreteTopology Γ]
 
 variable (h : Δ ≤ Γ) [Δ.IsFiniteRelIndex Γ]
 
+-- The representative coefficient formulas are rewrite lemmas: the generic coefficient simp lemmas
+-- already simplify their left-hand sides, so marking these specializations @[simp] fails simpNF.
+
 /-- Pullback at an interior orbit multiplies the coefficient by the relative index of the
 elliptic stabilizers. -/
 theorem coeff_divisorPullback_ofQuotient (D : WeilDivisor Γ.CompactifiedQuotient) (z : ℍ) :
