@@ -12,9 +12,9 @@ public import Mathlib.Analysis.Complex.UpperHalfPlane.Metric
 
 For two points `p` and `q` of the upper half-plane, the points equidistant from them in the
 hyperbolic metric are cut out by the equation `q.im * |z - p|² = p.im * |z - q|²` in the plane.
-When `p ≠ q` this is a Euclidean line (if `p.im = q.im`) or a Euclidean circle, so the hyperbolic
-perpendicular bisector of `p` and `q` has zero invariant area, as proved in
-`TauCeti.Analysis.Complex.UpperHalfPlane.Bisector.Geometry`.
+For distinct centres, the perpendicular bisector has zero invariant area. This is proved in
+`TauCeti.Analysis.Complex.UpperHalfPlane.Bisector.Geometry` by identifying the equidistant locus
+with a geodesic line.
 
 Likewise, the points at least as close to `p` as to `q` (the distance-dominance, or Voronoi,
 region of `p` relative to `q`) are cut out by the weak inequality

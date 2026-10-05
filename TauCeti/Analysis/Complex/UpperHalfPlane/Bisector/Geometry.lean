@@ -22,12 +22,6 @@ line does.
 The construction moves the segment onto the imaginary axis, dilates to its midpoint, and
 rotates by `π / 4` in `SL(2, ℝ)`, which rotates the tangent by `π / 2`.
 
-Use `TauCeti.UpperHalfPlane.perpBisector p q` to construct the bisector and
-`TauCeti.UpperHalfPlane.perpBisector_def p q` for its defining equation. These share the namespace
-of the geodesic and half-plane API used in the membership characterizations below.
-The field notation `p.perpBisector q` does not resolve: `ℍ` is Mathlib's `UpperHalfPlane` type,
-whose namespace differs from `TauCeti.UpperHalfPlane`.
-
 ## References
 
 * Alan Beardon, *The Geometry of Discrete Groups*, §9.4.
@@ -57,15 +51,16 @@ theorem perpBisector_def (p q : ℍ) :
       geodesicBetween p q * ↑(dilation (dist p q / 2)) * ↑(rotation (Real.pi / 4)) :=
   (rfl)
 
-/-- In coordinates with the segment on the imaginary axis, both the signed side of the
-bisector and the difference of the two hyperbolic cosines are positive multiples of
-`|w|² - exp (dist p q)`. -/
+/-- The real part of `(perpBisector p q)⁻¹ • z` is a positive multiple of
+`Real.cosh (dist z p) - Real.cosh (dist z q)`. -/
 private theorem exists_pos_re_inv_perpBisector_smul_eq {p q : ℍ} (hpq : p ≠ q) (z : ℍ) :
     ∃ κ : ℝ, 0 < κ ∧ ((perpBisector p q)⁻¹ • z : ℍ).re =
       κ * (Real.cosh (dist z p) - Real.cosh (dist z q)) := by
   let g := geodesicBetween p q
   let w : ℍ := g⁻¹ • z
   let d := dist p q
+  -- In these imaginary-axis coordinates, both the signed side of the bisector and the
+  -- difference of the two hyperbolic cosines are positive multiples of `|w|² - exp d`.
   let a := Real.exp (-(d / 2))
   let v : ℍ := (↑(dilation (d / 2)) : PSL(2, ℝ))⁻¹ • w
   let N := Complex.normSq ((Real.sin (Real.pi / 4) : ℂ) * v + Real.cos (Real.pi / 4))
