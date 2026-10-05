@@ -273,8 +273,22 @@ noncomputable def realCliffordSpinToSpecialOrthogonalSmoothRange (n : ℕ) :
     ContMDiffMonoidMorphism 𝓘(ℝ, SpinLieModel(n))
       𝓘(ℝ, SpecialOrthogonalLieModel(n)) ∞
       (SpinUnitsRange(n)) (SpecialOrthogonalUnitsRange(n)) :=
+  -- The type annotation fixes the target carrier before synthesis chooses its selected chart.
   (show SpinUnitsRange(n) →ₜ* SpecialOrthogonalUnitsRange(n) from
     realCliffordSpinToSpecialOrthogonalRange n).toContMDiffMonoidMorphism _ _
+
+/-- The smooth carrier projection has the same underlying map as the continuous projection. -/
+@[simp]
+theorem realCliffordSpinToSpecialOrthogonalSmoothRange_apply (n : ℕ) (x : SpinUnitsRange(n)) :
+    realCliffordSpinToSpecialOrthogonalSmoothRange n x =
+      realCliffordSpinToSpecialOrthogonalRange n x :=
+  by
+    rw [realCliffordSpinToSpecialOrthogonalSmoothRange]
+    exact congrFun
+      (ContinuousMonoidHom.coe_toContMDiffMonoidMorphism
+        (I := 𝓘(ℝ, SpinLieModel(n))) (I' := 𝓘(ℝ, SpecialOrthogonalLieModel(n)))
+        (show SpinUnitsRange(n) →ₜ* SpecialOrthogonalUnitsRange(n) from
+          realCliffordSpinToSpecialOrthogonalRange n)) x
 
 /-- The abstract Lie map of the smooth projection between the two closed range carriers. -/
 noncomputable def realCliffordSpinToSpecialOrthogonalRangeLieMap (n : ℕ) :
@@ -282,6 +296,13 @@ noncomputable def realCliffordSpinToSpecialOrthogonalRangeLieMap (n : ℕ) :
       LeftInvariantDerivation 𝓘(ℝ, SpecialOrthogonalLieModel(n))
         (SpecialOrthogonalUnitsRange(n)) :=
   lieMap (realCliffordSpinToSpecialOrthogonalSmoothRange n)
+
+/-- The abstract range map is the Lie functor applied to the smooth carrier projection. -/
+theorem realCliffordSpinToSpecialOrthogonalRangeLieMap_eq_lieMap (n : ℕ) :
+    realCliffordSpinToSpecialOrthogonalRangeLieMap n =
+      lieMap (realCliffordSpinToSpecialOrthogonalSmoothRange n) :=
+  by
+    simp only [realCliffordSpinToSpecialOrthogonalRangeLieMap]
 
 /-- The differential of the compact real Spin projection in quadratic-Clifford source
 coordinates and skew-symmetric-matrix target coordinates. -/
