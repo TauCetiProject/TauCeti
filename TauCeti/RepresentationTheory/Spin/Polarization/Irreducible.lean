@@ -198,8 +198,9 @@ theorem isIrreducible_typeDSpinPlusLieRep (hline : P.line = ⊥) :
   refine (P.eq_bot_or_eq_top_of_map_typeDSpinPlusLieRep_le b hline N.toSubmodule ?_).resolve_left ?_
   · intro x
     rintro _ ⟨m, hm, rfl⟩
-    change ⁅x, m⁆ ∈ N
-    exact (LieSubmodule.mem_carrier (N := N)).mp (N.lie_mem (x := x) hm)
+    have hm' := N.lie_mem (x := x) hm
+    rw [LieRingModule.compLieHom_apply, Module.End.lie_apply] at hm'
+    exact (LieSubmodule.mem_carrier (N := N)).mp hm'
   · exact fun h => hN ((LieSubmodule.toSubmodule_eq_bot N).mp h)
 
 /-- **The odd type-`D` half-spin Lie module is irreducible when it is nonzero.** The action is
@@ -222,8 +223,9 @@ theorem isIrreducible_typeDSpinMinusLieRep (hline : P.line = ⊥) (hW : P.W ≠ 
     ?_
   · intro x
     rintro _ ⟨m, hm, rfl⟩
-    change ⁅x, m⁆ ∈ N
-    exact (LieSubmodule.mem_carrier (N := N)).mp (N.lie_mem (x := x) hm)
+    have hm' := N.lie_mem (x := x) hm
+    rw [LieRingModule.compLieHom_apply, Module.End.lie_apply] at hm'
+    exact (LieSubmodule.mem_carrier (N := N)).mp hm'
   · exact fun h => hN ((LieSubmodule.toSubmodule_eq_bot N).mp h)
 
 end TypeD
