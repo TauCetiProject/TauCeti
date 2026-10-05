@@ -42,10 +42,17 @@ half, over `ℂ`, is `TauCeti/RepresentationTheory/CharacterTable/Kernel.lean`. 
 no characters at all, the **common kernel of a family** of representations is registered as a normal
 subgroup.
 
+It also records the constructor `TauCeti.fdRepIsoOfEquivariant`, which turns an equivariant linear
+equivalence into an isomorphism of `FDRep R G`: the `FDRep` counterpart of Mathlib's `Rep.mkIso`,
+with the equivariance condition read pointwise on the underlying linear maps rather than as an
+equation of morphisms of `FGModuleCat R`.
+
 ## Main definitions
 
 * `FDRep.ofShrink`: a module-finite representation on a carrier in an arbitrary universe, as an
   object of `FDRep k G`.
+* `TauCeti.fdRepIsoOfEquivariant`: an isomorphism in `FDRep R G` from an equivariant linear
+  equivalence.
 
 ## Main statements
 
@@ -403,3 +410,18 @@ instance normal_iInf_ker (W : ι → FDRep k G) : (⨅ i, (W i).ρ.ker).Normal :
 end CommonKernel
 
 end FDRep
+
+namespace TauCeti
+
+open CategoryTheory
+
+/-- **An isomorphism in `FDRep R G` from an equivariant linear equivalence.** This is
+`CategoryTheory.Action.mkIso` for `FDRep R G`, with the commutation condition stated pointwise on
+the underlying linear maps instead of as an equation of morphisms of `FGModuleCat R`. -/
+noncomputable def fdRepIsoOfEquivariant {R : Type u} {G : Type v} [CommRing R] [Monoid G]
+    {X Y : FDRep R G} (e : X ≃ₗ[R] Y)
+    (he : ∀ (g : G) (x : X), e (X.ρ g x) = Y.ρ g (e x)) : X ≅ Y :=
+  Action.mkIso (LinearEquiv.toFGModuleCatIso e) fun g =>
+    FGModuleCat.hom_ext (by simpa using LinearMap.ext (he g))
+
+end TauCeti

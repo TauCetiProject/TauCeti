@@ -7,6 +7,9 @@ module
 
 public import TauCeti.RepresentationTheory.BaseChange
 public import TauCeti.RepresentationTheory.GrothendieckGroup.FDRep
+-- Non-public: the isomorphism constructor `TauCeti.fdRepIsoOfEquivariant` is used only inside the
+-- proofs of `TauCeti.baseChangeK0_id`, `baseChangeK0_of_ofMulAction` and `baseChangeK0_comp`.
+import TauCeti.RepresentationTheory.FDRep
 
 /-!
 # Base change on the Grothendieck ring of finite-dimensional representations
@@ -73,6 +76,21 @@ private noncomputable abbrev fdRepForget (K : Type u) [Field K] :
     FDRep K G ⥤ ModuleCat.{u} K :=
   Action.forget (FGModuleCat K) G ⋙ forget₂ (FGModuleCat K) (ModuleCat K)
 
+/-- The two maps of a short complex of representations, base changed and forgotten to `k'`-modules,
+read as `LinearMap.lTensor k'` of the maps forgotten to `k`-modules: this is
+`TauCeti.coe_baseChangeFDRepHom_hom_hom_hom` with the functors applied, the form the flatness
+lemmas behind `TauCeti.shortExact_map_baseChangeFDRep` are stated in. -/
+private theorem coe_map_baseChangeFDRep_f (S : ShortComplex (FDRep k G)) :
+    ⇑(ConcreteCategory.hom (S.map (baseChangeFDRep k' ⋙ fdRepForget k')).f) =
+      ⇑(LinearMap.lTensor k' (S.map (fdRepForget k)).f.hom) :=
+  coe_baseChangeFDRepHom_hom_hom_hom k' S.f
+
+/-- The companion of `TauCeti.coe_map_baseChangeFDRep_f` for the second map of the complex. -/
+private theorem coe_map_baseChangeFDRep_g (S : ShortComplex (FDRep k G)) :
+    ⇑(ConcreteCategory.hom (S.map (baseChangeFDRep k' ⋙ fdRepForget k')).g) =
+      ⇑(LinearMap.lTensor k' (S.map (fdRepForget k)).g.hom) :=
+  coe_baseChangeFDRepHom_hom_hom_hom k' S.g
+
 /-- **Base change is exact.** A short exact sequence of finite-dimensional representations over
 `k` stays short exact after extending the scalars to `k'`: the forgetful functor to `k'`-modules
 is faithful and exact, so it is enough to see the extension as `k' ⊗[k] -` on the underlying
@@ -84,10 +102,13 @@ theorem shortExact_map_baseChangeFDRep {S : ShortComplex (FDRep k G)} (hS : S.Sh
   have hk := hS.map_of_exact (fdRepForget k)
   rw [← ShortComplex.map_comp]
   refine ModuleCat.shortComplex_shortExact _ ?_ ?_ ?_
-  · exact Module.Flat.lTensor_exact k'
+  · rw [coe_map_baseChangeFDRep_f, coe_map_baseChangeFDRep_g]
+    exact Module.Flat.lTensor_exact k'
       ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).mp hk.exact)
-  · exact Module.Flat.lTensor_preserves_injective_linearMap _ hk.moduleCat_injective_f
-  · exact LinearMap.lTensor_surjective k' hk.moduleCat_surjective_g
+  · rw [coe_map_baseChangeFDRep_f]
+    exact Module.Flat.lTensor_preserves_injective_linearMap _ hk.moduleCat_injective_f
+  · rw [coe_map_baseChangeFDRep_g]
+    exact LinearMap.lTensor_surjective k' hk.moduleCat_surjective_g
 
 /-- Base change is exact for the canonical exact structures on `FDRep k G` and `FDRep k' G`. -/
 theorem isConflationExact_baseChangeFDRep :

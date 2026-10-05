@@ -24,9 +24,9 @@ import Mathlib.LinearAlgebra.TensorProduct.Pi
 -- Non-public: the `FGModuleCat`-level projection lemmas `FGModuleCat.hom_hom_ofHom` and
 -- `FGModuleCat.hom_hom_add` are used only inside the proofs of the `FDRep` base-change API.
 import TauCeti.Algebra.Category.FGModuleCat.Basic
--- Non-public: the bundling lemmas `FDRep.character_of` and `FDRep.character_ρ`, and the
--- projection lemmas `FDRep.hom_hom_hom_comm`, `FDRep.tensorUnit_ρ` and `FDRep.tensor_ρ`, are used
--- only inside proofs.
+-- Non-public: the bundling lemmas `FDRep.character_of` and `FDRep.character_ρ`, the projection
+-- lemmas `FDRep.hom_hom_hom_comm`, `FDRep.tensorUnit_ρ` and `FDRep.tensor_ρ`, and the isomorphism
+-- constructor `TauCeti.fdRepIsoOfEquivariant` are used only inside proofs and definition bodies.
 import TauCeti.RepresentationTheory.FDRep
 
 /-!
@@ -80,8 +80,6 @@ of a permutation lattice `ℤ[X]` modulo a prime is `k[X]` and its rationalizati
 * `Representation.Equiv.baseChange`: base change transports an equivalence of representations.
 * `TauCeti.baseChangeOfMulActionEquiv`: the base change of `R[X]` is `A[X]`.
 * `TauCeti.baseChangeComapEquiv`: the base change of the permutation module `X →₀ R` is `A[X]`.
-* `TauCeti.fdRepIsoOfEquivariant`: an isomorphism in `FDRep` from an equivariant linear
-  equivalence.
 * `TauCeti.baseChangeFDRepHom` and `TauCeti.baseChangeFDRep`: scalar extension of an equivariant
   map, and scalar extension as an additive functor `FDRep k G ⥤ FDRep k' G`.
 * `TauCeti.baseChangeFDRepUnitIso` and `TauCeti.baseChangeFDRepTensorIso`: the comparison
@@ -678,22 +676,8 @@ universe u v
 
 variable {k : Type u} (k' : Type u) [Field k] [Field k'] [Algebra k k'] {G : Type v} [Monoid G]
 
-/-- **An isomorphism in `FDRep k G` from an equivariant linear equivalence.** This is
-`CategoryTheory.Action.mkIso` for `FDRep k G`, with the commutation condition stated pointwise on
-the underlying linear maps instead of as an equation of morphisms of `FGModuleCat k`. -/
-noncomputable def fdRepIsoOfEquivariant {X Y : FDRep k G} (e : X ≃ₗ[k] Y)
-    (he : ∀ (g : G) (x : X), e (X.ρ g x) = Y.ρ g (e x)) : X ≅ Y :=
-  Action.mkIso (LinearEquiv.toFGModuleCatIso e) fun g =>
-    FGModuleCat.hom_ext (by simpa using LinearMap.ext (he g))
-
 /-- **Base change of an equivariant map.** An equivariant map `V → W` extends to the equivariant
-map `k' ⊗[k] V → k' ⊗[k] W` that acts on the second factor.
-
-The body is exposed because `TauCeti.shortExact_map_baseChangeFDRep` has to read the underlying
-map of the base-changed morphism as `LinearMap.lTensor k'` of the underlying map of `φ`, the form
-the flatness lemmas are stated in; `TauCeti.baseChangeFDRepHom_hom_hom_hom` records it as
-`LinearMap.baseChange k'`, and the two agree only definitionally. -/
-@[expose]
+map `k' ⊗[k] V → k' ⊗[k] W` that acts on the second factor. -/
 noncomputable def baseChangeFDRepHom {V W : FDRep k G} (φ : V ⟶ W) :
     (FDRep.of (_root_.Representation.baseChange k' V.ρ) : FDRep k' G) ⟶
       FDRep.of (_root_.Representation.baseChange k' W.ρ) where
@@ -711,6 +695,15 @@ linear map underlying it. -/
 theorem baseChangeFDRepHom_hom_hom_hom {V W : FDRep k G} (φ : V ⟶ W) :
     (baseChangeFDRepHom k' φ).hom.hom.hom = LinearMap.baseChange k' φ.hom.hom.hom := (rfl)
 
+/-- **The function underlying the base change of an equivariant map is `LinearMap.lTensor k'`** of
+the function underlying it. This is `TauCeti.baseChangeFDRepHom_hom_hom_hom` followed by
+`LinearMap.baseChange_eq_ltensor`, the two maps differing only in the ring they are linear over;
+it is the reading `TauCeti.shortExact_map_baseChangeFDRep` needs, the flatness lemmas being stated
+for `LinearMap.lTensor`. -/
+theorem coe_baseChangeFDRepHom_hom_hom_hom {V W : FDRep k G} (φ : V ⟶ W) :
+    ⇑(baseChangeFDRepHom k' φ).hom.hom.hom = ⇑(LinearMap.lTensor k' φ.hom.hom.hom) := by
+  rw [baseChangeFDRepHom_hom_hom_hom, LinearMap.baseChange_eq_ltensor]
+
 /-- **Base change of equivariant maps is additive.** -/
 theorem baseChangeFDRepHom_add {V W : FDRep k G} (φ ψ : V ⟶ W) :
     baseChangeFDRepHom k' (φ + ψ) = baseChangeFDRepHom k' φ + baseChangeFDRepHom k' ψ :=
@@ -722,8 +715,8 @@ equivariant map to its base change.
 
 The body is exposed because the type of `(baseChangeFDRep k').map φ` mentions
 `(baseChangeFDRep k').obj`, so `TauCeti.baseChangeFDRep_map` does not even typecheck against an
-opaque `obj`. `TauCeti.fdRepIsoOfEquivariant` and the two comparison isomorphisms below need no
-such reading and keep their bodies hidden. -/
+opaque `obj`. It is the only definition here whose body is exposed: `TauCeti.baseChangeFDRepHom`
+and the two comparison isomorphisms below are read only through the lemmas stated beside them. -/
 @[expose]
 noncomputable def baseChangeFDRep : FDRep k G ⥤ FDRep k' G where
   obj V := FDRep.of (_root_.Representation.baseChange k' V.ρ)
