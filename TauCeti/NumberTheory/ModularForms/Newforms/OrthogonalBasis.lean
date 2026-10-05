@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.ModularForms.Newforms.HeckeStability
+public import TauCeti.NumberTheory.ModularForms.Newforms.Hecke.Stability
 public import TauCeti.NumberTheory.ModularForms.Newforms.Nebentypus
 public import TauCeti.NumberTheory.ModularForms.Newforms.PeterssonAdjoint
 public import TauCeti.NumberTheory.ModularForms.Newforms.StrongMultiplicityOne

@@ -147,7 +147,7 @@ theorem apply_basis_eq_newHeckeCharacter_smul (f : Newform N k) (T : newHeckeAlg
 /-- The character on a good `T_p` is the good Hecke eigenvalue, hence the Fourier coefficient
 `a_p` of the normalized newform. -/
 @[simp]
-theorem newHeckeCharacter_heckeTNew (f : Newform N k) {p : ℕ} (hp : p.Prime)
+theorem newHeckeCharacter_apply_heckeTNew (f : Newform N k) {p : ℕ} (hp : p.Prime)
     (hpN : Nat.Coprime p N) :
     f.newHeckeCharacter ⟨heckeTNew N k hp hpN, heckeTNew_mem_newHeckeAlgebra N k hp hpN⟩ =
       f.eigenvalue ⟨p, hp.pos⟩ hpN := by
@@ -156,7 +156,7 @@ theorem newHeckeCharacter_heckeTNew (f : Newform N k) {p : ℕ} (hp : p.Prime)
 
 /-- The character on a diamond operator is the nebentypus value. -/
 @[simp]
-theorem newHeckeCharacter_diamondNew (f : Newform N k) (u : (ZMod N)ˣ) :
+theorem newHeckeCharacter_apply_diamondNew (f : Newform N k) (u : (ZMod N)ˣ) :
     f.newHeckeCharacter ⟨diamondNew N k u, diamondNew_mem_newHeckeAlgebra N k u⟩ = (f.χ u : ℂ) := by
   apply smul_left_injective ℂ (Module.Basis.ne_zero (basis N k) f)
   exact (f.apply_basis_eq_newHeckeCharacter_smul _).symm.trans (diamondNew_basis u f)
@@ -168,11 +168,11 @@ theorem newHeckeCharacter_injective :
   intro f g h
   have hχ : f.χ = g.χ := by
     ext u
-    simpa only [newHeckeCharacter_diamondNew] using DFunLike.congr_fun h
+    simpa only [newHeckeCharacter_apply_diamondNew] using DFunLike.congr_fun h
       ⟨diamondNew N k u, diamondNew_mem_newHeckeAlgebra N k u⟩
   apply eq_of_forall_prime_eigenvalue_eq hχ
   intro p hp hpN
-  simpa only [newHeckeCharacter_heckeTNew] using DFunLike.congr_fun h
+  simpa only [newHeckeCharacter_apply_heckeTNew] using DFunLike.congr_fun h
     ⟨heckeTNew N k hp hpN, heckeTNew_mem_newHeckeAlgebra N k hp hpN⟩
 
 /-- Every complex character of the newspace Hecke algebra belongs to a normalized newform. -/
@@ -207,3 +207,15 @@ theorem newHeckeCharacterEquiv_apply (f : Newform N k) :
     newHeckeCharacterEquiv f = f.newHeckeCharacter := (rfl)
 
 end HeckeRing.GL2.Newform
+
+namespace TauCeti
+
+/-- The newspace Hecke algebra is commutative, with its existing operator ring structure. -/
+instance instCommRingNewHeckeAlgebra {N : ℕ} [NeZero N] {k : ℤ} :
+    CommRing (newHeckeAlgebra N k) where
+  __ := (newHeckeAlgebra N k).toRing
+  mul_comm a b := by
+    apply HeckeRing.GL2.Newform.newHeckeAlgebraEquiv.injective
+    simp only [map_mul, mul_comm]
+
+end TauCeti
