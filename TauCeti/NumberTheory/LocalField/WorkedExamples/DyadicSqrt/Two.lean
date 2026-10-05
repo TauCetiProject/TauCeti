@@ -8,7 +8,7 @@ module
 public import TauCeti.NumberTheory.LocalField.Different.Hilbert
 public import TauCeti.NumberTheory.LocalField.Discriminant.Basic
 public import TauCeti.NumberTheory.LocalField.Eisenstein.TotallyRamified
-public import TauCeti.NumberTheory.LocalField.Padic
+public import TauCeti.NumberTheory.LocalField.AbsoluteRamificationIndex
 public import TauCeti.RingTheory.AdjoinRoot
 import TauCeti.FieldTheory.Galois.SquareRoot
 import TauCeti.FieldTheory.Kummer.Extension
@@ -38,7 +38,10 @@ extension with its quadratic subextension: the third lower group of `ℚ₂(√2
 * `TauCeti.DyadicSqrtTwo.adjoin_sqrtTwo_eq_top` and
   `TauCeti.DyadicSqrtTwo.adjoin_integerSqrtTwo_eq_top`: field and integral generation.
 * `TauCeti.DyadicSqrtTwo.irreducible_integerSqrtTwo`: the generator is a uniformizer.
+* `TauCeti.DyadicSqrtTwo.isEisensteinAt_X_sq_sub_two` and `TauCeti.DyadicSqrtTwo.isRoot`:
+  the Eisenstein polynomial and its integral root.
 * `TauCeti.DyadicSqrtTwo.finrank_eq_two`, `TauCeti.DyadicSqrtTwo.ramificationIndex_eq_two`,
+  `TauCeti.DyadicSqrtTwo.absoluteRamificationIndex_eq_two`,
   `TauCeti.DyadicSqrtTwo.inertiaDegree_eq_one`, and
   `TauCeti.DyadicSqrtTwo.natCard_residueField`: the degree, ramification, and residue invariants.
 * `TauCeti.DyadicSqrtTwo.isTotallyRamified` and `TauCeti.DyadicSqrtTwo.not_isUnramified`:
@@ -142,7 +145,8 @@ def integerSqrtTwo : 𝒪[DyadicSqrtTwo] :=
 @[simp]
 theorem coe_integerSqrtTwo : (integerSqrtTwo : DyadicSqrtTwo) = sqrtTwo := (rfl)
 
-private theorem isRoot :
+/-- The integer generator `√2` is a root of `X² - 2` over `𝒪[ℚ₂]`. -/
+theorem isRoot :
     ((X ^ 2 - C 2 : 𝒪[ℚ_[2]][X]).map
       (algebraMap 𝒪[ℚ_[2]] 𝒪[DyadicSqrtTwo])).IsRoot integerSqrtTwo := by
   have htwoL : ((2 : 𝒪[DyadicSqrtTwo]) : DyadicSqrtTwo) = 2 :=
@@ -150,29 +154,33 @@ private theorem isRoot :
   apply Subtype.ext
   simp [map_ofNat, htwoL]
 
+/-- The polynomial `X² - 2` is Eisenstein over the integer ring of `ℚ₂`. -/
+theorem isEisensteinAt_X_sq_sub_two :
+    (X ^ 2 - C 2 : 𝒪[ℚ_[2]][X]).IsEisensteinAt 𝓂[ℚ_[2]] :=
+  isEisensteinAt_X_pow_sub_C_of_irreducible (Padic.irreducible_natCast_self 2) (by decide)
+
 /-- `√2` is a uniformizer of the integer ring of `ℚ₂(√2)`. -/
 theorem irreducible_integerSqrtTwo : Irreducible integerSqrtTwo :=
-  irreducible_of_eisenstein_adjoin_eq_top _ (isEisensteinAt_X_pow_sub_C_of_irreducible
-      (by simpa only [map_ofNat, Nat.cast_ofNat] using
-        (PadicInt.irreducible_p (p := 2)).map (Padic.integerRingEquiv 2).symm)
-      (by decide)) _ isRoot adjoin_sqrtTwo_eq_top
+  irreducible_of_eisenstein_adjoin_eq_top _ isEisensteinAt_X_sq_sub_two _ isRoot
+    adjoin_sqrtTwo_eq_top
 
 /-- The ramification index of `ℚ₂(√2)/ℚ₂` is two. -/
 @[simp]
 theorem ramificationIndex_eq_two : ramificationIndex ℚ_[2] DyadicSqrtTwo = 2 := by
   simpa using ramificationIndex_eq_natDegree_of_eisenstein_adjoin_eq_top
-    _ (isEisensteinAt_X_pow_sub_C_of_irreducible
-      (by simpa only [map_ofNat, Nat.cast_ofNat] using
-        (PadicInt.irreducible_p (p := 2)).map (Padic.integerRingEquiv 2).symm)
-      (by decide)) _ isRoot adjoin_sqrtTwo_eq_top
+    _ isEisensteinAt_X_sq_sub_two _ isRoot adjoin_sqrtTwo_eq_top
+
+/-- The absolute ramification index of `ℚ₂(√2)` is two. -/
+@[simp high] -- Compute the index before the general valuation comparison changes its form.
+theorem absoluteRamificationIndex_eq_two : absoluteRamificationIndex DyadicSqrtTwo 2 = 2 := by
+  rw [absoluteRamificationIndex_tower ℚ_[2] 2 DyadicSqrtTwo, ramificationIndex_eq_two,
+    absoluteRamificationIndex_padic, mul_one]
 
 /-- The residue degree of `ℚ₂(√2)/ℚ₂` is one. -/
 @[simp]
 theorem inertiaDegree_eq_one : inertiaDegree ℚ_[2] DyadicSqrtTwo = 1 :=
-  inertiaDegree_eq_one_of_eisenstein_adjoin_eq_top _ (isEisensteinAt_X_pow_sub_C_of_irreducible
-      (by simpa only [map_ofNat, Nat.cast_ofNat] using
-        (PadicInt.irreducible_p (p := 2)).map (Padic.integerRingEquiv 2).symm)
-      (by decide)) _ isRoot adjoin_sqrtTwo_eq_top
+  inertiaDegree_eq_one_of_eisenstein_adjoin_eq_top _ isEisensteinAt_X_sq_sub_two _ isRoot
+    adjoin_sqrtTwo_eq_top
 
 /-- `ℚ₂(√2)/ℚ₂` is totally ramified. -/
 theorem isTotallyRamified : IsTotallyRamified ℚ_[2] DyadicSqrtTwo :=
@@ -192,10 +200,7 @@ theorem not_isUnramified : ¬IsUnramified ℚ_[2] DyadicSqrtTwo := by
 /-- The ring of integers is `𝒪[ℚ₂][√2]`. -/
 theorem adjoin_integerSqrtTwo_eq_top : Algebra.adjoin 𝒪[ℚ_[2]] {integerSqrtTwo} = ⊤ :=
   algebra_adjoin_eq_top_of_eisenstein_adjoin_eq_top
-    (isEisensteinAt_X_pow_sub_C_of_irreducible
-      (by simpa only [map_ofNat, Nat.cast_ofNat] using
-        (PadicInt.irreducible_p (p := 2)).map (Padic.integerRingEquiv 2).symm)
-      (by decide)) isRoot adjoin_sqrtTwo_eq_top
+    isEisensteinAt_X_sq_sub_two isRoot adjoin_sqrtTwo_eq_top
 
 /-- Every nonidentity automorphism sends `√2` to `-√2`. -/
 theorem apply_sqrtTwo_of_ne_one {σ : DyadicSqrtTwo ≃ₐ[ℚ_[2]] DyadicSqrtTwo} (hσ : σ ≠ 1) :
