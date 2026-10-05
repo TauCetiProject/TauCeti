@@ -35,6 +35,17 @@ algebraic, the degree is the integral quadratic form
   the integral quadratic degree formula over a separably closed algebraic extension when
   `s` is nonzero in the field.
 
+## Provenance
+
+The AINTLIB `HasseWeil` project (Chris Birkbeck, Apache 2.0, commit
+`513e83879e2f8cbc626eb9e04d660e92be16ccba`) has conditional degree-form counterparts in
+`DegreeQuadraticForm.lean` (dual-isogeny witnesses) and `WeilPairing/Reduction.lean`
+(`deg_eq_of_frobMatrix_data` / `deg_eq_of_frob_det_data`, assuming per-prime matrix data).
+The latter reduction is ported in `TauCeti.LinearAlgebra.Matrix.QuadraticFormCongruence`.
+Here the pencil is formed in the morphism group of function-field isogenies, and its
+matrix data is proved, so the degree formula needs no additional witness or matrix-data
+hypotheses beyond the stated field and coefficient conditions.
+
 ## References
 
 * [J. H. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], III.5, III.8 and V.1.

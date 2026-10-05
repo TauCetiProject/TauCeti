@@ -52,6 +52,12 @@ in `RouteBGeneral.lean`, and for a scalar coefficient `omegaPullbackCoeff` of th
 rather than for the differential. Here the statement is for two arbitrary morphisms
 `f, g : W₁ → W₂` and for the pulled-back differential itself; nothing is taken from the source.
 
+The same revision proves Frobenius-pencil separability as `genuineIsogSmulSub_isSeparable`
+in `GapSpines.lean`, using the scalar identity `genuineIsogSmulSub_omegaPullbackCoeff`, and
+transports it across base change in `WeilPairing/PencilSeparable.lean`. The pencil lemmas here
+are independent proofs for any endomorphism `f` with `f^*ω = 0`, using the pulled-back
+differential and function-field separability; no finite-field or Frobenius hypothesis is needed.
+
 ## References
 
 * [J. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], III.5.2.
