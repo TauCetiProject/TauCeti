@@ -21,7 +21,9 @@ No integrality or reducedness assumption is imposed on the ambient scheme.
 The equivalent `isEffectiveCartier_iff_exists_comap` formulation describes the actual
 restriction of the ideal sheaf to each affine open. It transports local equations under
 flat pullback and identifies the resulting closed subscheme with the fibre product through
-Mathlib's `Scheme.IdealSheafData.comapIso`.
+Mathlib's `Scheme.IdealSheafData.comapIso`. By `isEffectiveCartier_iff_exists_isOpenImmersion`,
+the local equations may also be given on affine schemes openly immersed in `X`, such as the
+charts `Spec (A ⊗[R] B)` of a fibre product.
 
 The empty closed subscheme is an effective Cartier divisor, with equation `1`. Equations
 need not generate proper ideals; a zero equation is permitted only on the empty scheme.
@@ -129,6 +131,35 @@ theorem isEffectiveCartier_iff_exists_comap (I : X.IdealSheafData) :
       have h' := congrArg (Ideal.map U.1.topIso.hom.hom) h
       simpa only [Ideal.map_map, ← CommRingCat.hom_comp, Iso.inv_hom_id,
         CommRingCat.hom_id, Ideal.map_id, Ideal.map_span, Set.image_singleton] using h'
+
+/-- Effective Cartier equations can equivalently be given on any affine schemes openly immersed
+in `X`, not only on the affine open subschemes of `X`. -/
+theorem isEffectiveCartier_iff_exists_isOpenImmersion (I : X.IdealSheafData) :
+    I.IsEffectiveCartier ↔ ∀ x : X, ∃ (Y : Scheme.{u}) (_ : IsAffine Y) (φ : Y ⟶ X)
+      (_ : IsOpenImmersion φ), x ∈ Set.range φ ∧ ∃ a : Γ(Y, ⊤), IsSMulRegular Γ(Y, ⊤) a ∧
+        I.comap φ = ofIdealTop (Ideal.span {a}) := by
+  rw [isEffectiveCartier_iff_exists_comap]
+  constructor
+  · intro hI x
+    obtain ⟨U, hx, a, ha, hUa⟩ := hI x
+    exact ⟨U.1, inferInstance, U.1.ι, inferInstance, by rwa [Scheme.Opens.range_ι], a, ha, hUa⟩
+  · intro hI x
+    obtain ⟨Y, _, φ, _, ⟨y, rfl⟩, a, ha, hφa⟩ := hI x
+    -- Transport the equation from `Y` to the affine open `φ.opensRange` through
+    -- `e : Y ≅ φ.opensRange`, whose inverse induces a ring isomorphism on global sections.
+    let e := φ.isoOpensRange
+    let t : Γ(Y, ⊤) ≃+* Γ(φ.opensRange.toScheme, ⊤) :=
+      RingEquiv.ofRingHom e.inv.appTop.hom e.hom.appTop.hom
+        (by rw [← CommRingCat.hom_comp, ← Scheme.Hom.comp_appTop, e.inv_hom_id,
+          Scheme.Hom.id_appTop, CommRingCat.hom_id])
+        (by rw [← CommRingCat.hom_comp, ← Scheme.Hom.comp_appTop, e.hom_inv_id,
+          Scheme.Hom.id_appTop, CommRingCat.hom_id])
+    refine ⟨⟨φ.opensRange, isAffineOpen_opensRange φ⟩, ⟨y, rfl⟩, t a,
+      (Equiv.isSMulRegular_congr (e := t.toEquiv) (r := a) (s := t a)
+        fun b ↦ t.map_mul a b).mp ha, ?_⟩
+    rw [← φ.isoOpensRange_inv_comp, comap_comp, hφa, comap_ofIdealTop, Ideal.map_span,
+      Set.image_singleton]
+    simp [t, e]
 
 /-- Pullback along a flat morphism preserves effective Cartier divisors on arbitrary
 schemes. The pulled-back ideal defines the usual fibre-product closed subscheme. -/
