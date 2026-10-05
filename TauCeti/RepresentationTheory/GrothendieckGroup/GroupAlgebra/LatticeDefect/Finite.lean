@@ -15,10 +15,7 @@ exact Grothendieck group, even though the two representations need not be isomor
 Together with additivity, this is the finite-module input to invariance of lattice defects
 under inclusions with finite cokernel.
 
-The argument uses multiplication by a prime `ℓ`. Its kernel is killed by `ℓ` and therefore has
-zero defect. If multiplication is injective, finiteness makes it bijective, so both reduction
-and torsion vanish. Otherwise its image has smaller cardinality, and additivity reduces the
-claim to that image. The coefficient ring and the acting monoid are arbitrary.
+The coefficient ring and the acting monoid are arbitrary.
 
 ## References
 
@@ -87,6 +84,11 @@ private theorem latticeDefect_eq_zero_of_injective_zsmul (W : Type u) [AddCommGr
         ((Submodule.mem_torsionBy_iff _ _).mp y.property).symm⟩
   rw [latticeDefect_def]
   simp
+
+/- The argument uses multiplication by a prime `ℓ`. Its kernel is killed by `ℓ` and therefore has
+zero defect. If multiplication is injective, finiteness makes it bijective, so both reduction
+and torsion vanish. Otherwise its image has smaller cardinality, and additivity reduces the
+claim to that image. -/
 
 /-- A finite module has zero lattice defect in the exact Grothendieck group. The torsion and
 reduction representations have the same class; no equivariant isomorphism is asserted. -/
