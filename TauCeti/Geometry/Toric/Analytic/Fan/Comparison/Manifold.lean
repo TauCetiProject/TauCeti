@@ -14,13 +14,9 @@ public import TauCeti.Geometry.Toric.Analytic.Fan.Map.Holomorphic
 
 The complex points of the scheme of a regular fan carry the affine-chart topology, not the
 Zariski topology. Pulling the atlas of the analytic realization back along the chartwise
-comparison makes this carrier a complex manifold. Every algebraic affine chart inclusion is a
-local biholomorphism for the independently defined structure of any extending basis and finite
-generating family, by `Fan.isLocalDiffeomorph_ofAffinePoint`. Its local inverse is holomorphic.
-Together with
-`Fan.AlgebraicComplexPoint.exists_ofAffinePoint_eq`, these local biholomorphisms cover all
-algebraic complex points. Thus the pulled-back structure agrees locally in both directions with
-the regular coordinate structures on the algebraic affine charts.
+comparison makes this carrier a complex manifold. The pulled-back structure agrees locally with
+the independently defined regular affine-chart structures for any extending basis and finite
+generating family: every algebraic affine chart inclusion is a local biholomorphism.
 
 The comparison is a biholomorphism, and the scheme-theoretic map on complex points induced by
 a fan morphism is holomorphic. The comparison intertwines this map with the analytic toric map.
