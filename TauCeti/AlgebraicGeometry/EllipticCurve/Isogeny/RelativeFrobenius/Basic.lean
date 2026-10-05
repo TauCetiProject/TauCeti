@@ -368,8 +368,8 @@ theorem fieldPullback_iterateRelativeFrobeniusIsogeny_comp_map
         (FunctionField.map W (iterateFrobenius F p n)) =
       iterateFrobenius W.FunctionField p n := by
   let := expChar_of_injective_algebraMap (algebraMap F W.FunctionField).injective p
-  ext z
-  obtain ⟨a, b, -, rfl⟩ := IsFractionRing.div_surjective (A := W.CoordinateRing) z
+  apply IsFractionRing.ringHom_ext (A := W.CoordinateRing)
+  intro z
   simp [iterateFrobenius_def]
 
 /-- The coefficient Frobenius followed by the iterated relative Frobenius pullback is

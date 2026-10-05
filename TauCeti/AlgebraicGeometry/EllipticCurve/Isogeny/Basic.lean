@@ -145,7 +145,7 @@ structure Isogeny (W₁ W₂ : WeierstrassCurve.Affine F) where
 namespace Isogeny
 
 /-- Isogenies with equal target curves agree after transport if their pullbacks agree on
-both affine coordinates. Comparing coordinates first avoids unfolding dependent casts. -/
+both affine coordinates. -/
 theorem eq_of_pullback_coords
     {U V V' : WeierstrassCurve.Affine F} (e : V = V')
     (φ : Isogeny U V) (ψ : Isogeny U V')
