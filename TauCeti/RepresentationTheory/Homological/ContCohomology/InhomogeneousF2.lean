@@ -69,10 +69,10 @@ variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 `(g₀, g₁) ↦ f (g₀⁻¹ * g₁)` of the trivial `𝔽₂` coefficients `trivialF2 G`, lifted to their
 carrier.
 
-Source: this constructor is close to the degree-`1` constructor of the open Tau Ceti PR
-[#11157](https://github.com/TauCetiProject/TauCeti/pull/11157), which builds it inside a larger
-change; here it is stated on `homogeneousCochains (trivialF2 G)` directly, without local
-compactness, with `inhomogeneousCochain2` as its degree-`2` counterpart. -/
+Source: this constructor is close to the degree-`1` constructor of Tau Ceti PR
+[#11157](https://github.com/TauCetiProject/TauCeti/pull/11157); here it is stated on
+`homogeneousCochains (trivialF2 G)` directly, without local compactness, with
+`inhomogeneousCochain2` as its degree-`2` counterpart. -/
 noncomputable def inhomogeneousCochain1 (f : G → ZMod 2) (hf : Continuous f) :
     (homogeneousCochains (trivialF2 G)).X 1 :=
   ⟨ContinuousMap.curry ⟨fun q : G × G ↦ (trivialF2Equiv G).symm (f (q.1⁻¹ * q.2)),
