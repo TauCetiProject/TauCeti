@@ -22,20 +22,18 @@ rings.
 
 ## Main declarations
 
-* `TauCeti.PresheafOfModulesOfCommRing.exteriorPower n` is the `n`-th exterior power, as an
+* `PresheafOfModulesOfCommRing.exteriorPower n` is the `n`-th exterior power, as an
   endofunctor of presheaves of `R`-modules; `exteriorPower_obj_obj`, `exteriorPower_obj_map_mk`
   and `exteriorPower_map_app` compute its sections, restriction maps and action on morphisms;
-* `TauCeti.PresheafOfModulesOfCommRing.exteriorPowerZeroIso` identifies the zeroth exterior power
+* `PresheafOfModulesOfCommRing.exteriorPowerZeroIso` identifies the zeroth exterior power
   with the constant functor at the unit presheaf of modules `R`;
-* `TauCeti.PresheafOfModulesOfCommRing.exteriorPowerOneIso` identifies the first exterior power
+* `PresheafOfModulesOfCommRing.exteriorPowerOneIso` identifies the first exterior power
   with the identity functor.
 -/
 
 public section
 
 open CategoryTheory
-
-namespace TauCeti
 
 universe u v w
 
@@ -75,7 +73,7 @@ lemma exteriorPowerObjMap_mk (M : PresheafOfModulesOfCommRing.{u} R) (n : ℕ) {
 @[expose]
 def exteriorPowerObj (M : PresheafOfModulesOfCommRing.{u} R) (n : ℕ) :
     PresheafOfModulesOfCommRing.{u} R :=
-  _root_.PresheafOfModulesOfCommRing.mk (fun X ↦ (M.obj X).exteriorPower n)
+  PresheafOfModulesOfCommRing.mk (fun X ↦ (M.obj X).exteriorPower n)
     (fun f ↦ exteriorPowerObjMap M n f)
     (fun X ↦ ModuleCat.exteriorPower.hom_ext (by
       ext x
@@ -105,7 +103,7 @@ lemma exteriorPowerObjMap_naturality {M N : PresheafOfModulesOfCommRing.{u} R} (
     refine Eq.trans ?_ ((congrArg (exteriorPowerObjMap N n f)
       (ModuleCat.exteriorPower.map_mk _ _)).trans (exteriorPowerObjMap_mk N n f _)).symm
     exact congrArg (ModuleCat.exteriorPower.mk (M := N.obj Y) (n := n))
-      (funext fun j ↦ _root_.PresheafOfModulesOfCommRing.naturality_apply φ f (x j)))
+      (funext fun j ↦ PresheafOfModulesOfCommRing.naturality_apply φ f (x j)))
 
 /-- The `n`-th exterior power of presheaves of modules over a presheaf of commutative rings,
 computed sectionwise: its sections over `X` are `⋀[R.obj X]^n (M.obj X)`, and its restriction maps
@@ -114,7 +112,7 @@ send `m₁ ∧ ⋯ ∧ mₙ` to the wedge product of the restrictions of the `m�
 def exteriorPower (n : ℕ) :
     PresheafOfModulesOfCommRing.{u} R ⥤ PresheafOfModulesOfCommRing.{u} R where
   obj M := exteriorPowerObj M n
-  map φ := _root_.PresheafOfModulesOfCommRing.homMk
+  map φ := PresheafOfModulesOfCommRing.homMk
     (fun X ↦ ModuleCat.exteriorPower.map (φ.app' X) n)
     (fun f ↦ exteriorPowerObjMap_naturality φ n f)
   map_id M := by
@@ -148,16 +146,16 @@ variable (R) in
 /-- The zeroth exterior power of a presheaf of `R`-modules is the unit presheaf of modules `R`,
 naturally; on sections it is `ModuleCat.exteriorPower.iso₀`. -/
 def exteriorPowerZeroIso :
-    exteriorPower (R := R) 0 ≅ (Functor.const _).obj (_root_.PresheafOfModulesOfCommRing.unit R) :=
+    exteriorPower (R := R) 0 ≅ (Functor.const _).obj (PresheafOfModulesOfCommRing.unit R) :=
   NatIso.ofComponents
-    (fun M ↦ _root_.PresheafOfModulesOfCommRing.isoMk
+    (fun M ↦ PresheafOfModulesOfCommRing.isoMk
       (fun X ↦ ModuleCat.exteriorPower.iso₀ (M.obj X))
       (fun X Y f ↦ ModuleCat.exteriorPower.hom_ext (by
         ext x
         refine ((congrArg (ModuleCat.exteriorPower.iso₀ (M.obj Y)).hom
           (exteriorPower_obj_map_mk 0 M f x)).trans
             (ModuleCat.exteriorPower.iso₀_hom_apply _)).trans ?_
-        exact ((congrArg ((_root_.PresheafOfModulesOfCommRing.unit R).map f)
+        exact ((congrArg ((PresheafOfModulesOfCommRing.unit R).map f)
           (ModuleCat.exteriorPower.iso₀_hom_apply x)).trans
             (PresheafOfModules.unit_map_one _ f)).symm)))
     (fun φ ↦ by
@@ -179,7 +177,7 @@ variable (R) in
 naturally; on sections it is `ModuleCat.exteriorPower.iso₁`. -/
 def exteriorPowerOneIso : exteriorPower (R := R) 1 ≅ 𝟭 _ :=
   NatIso.ofComponents
-    (fun M ↦ _root_.PresheafOfModulesOfCommRing.isoMk
+    (fun M ↦ PresheafOfModulesOfCommRing.isoMk
       (fun X ↦ ModuleCat.exteriorPower.iso₁ (M.obj X))
       (fun X Y f ↦ ModuleCat.exteriorPower.hom_ext (by
         ext x
@@ -204,5 +202,3 @@ lemma exteriorPowerOneIso_inv_app_app (M : PresheafOfModulesOfCommRing.{u} R) (X
 end PresheafOfModulesOfCommRing
 
 end
-
-end TauCeti
