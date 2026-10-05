@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.Coxeter.Dihedral
+public import TauCeti.GroupTheory.Coxeter.Length
 
 /-!
 # The exchange condition characterizes Coxeter systems
@@ -63,8 +64,9 @@ product. In particular a word reduced in `W` whose image is `1` is empty, so `φ
   preserves lengths.
 * `CoxeterSystem.injective_of_exchange`: a homomorphism satisfying the exchange condition is
   injective.
-* `CoxeterSystem.ofExchange_simple` and `CoxeterSystem.length_ofExchange`: the simple reflections
-  and the length function of `CoxeterSystem.ofExchange`.
+* `CoxeterSystem.ofExchange_simple`, `CoxeterSystem.ofExchange_wordProd` and
+  `CoxeterSystem.length_ofExchange`: the simple reflections, the products of words, and the length
+  function of `CoxeterSystem.ofExchange`.
 
 ## References
 
@@ -246,14 +248,14 @@ private theorem alternating_induction
     (hexch : ∀ (ω : List B) (i : B), ℓ (φ (π ω)) = ω.length →
       ℓ (φ (π ω * s i)) ≤ ω.length → ∃ j < ω.length, φ (π (ω.eraseIdx j)) = φ (π ω * s i))
     {r : ℕ} (ih : WordsAgree (cs := cs) φ ℓ r) :
-    ∀ n ≤ r, ∀ (u : List B) (p q : B), u.length = n → p ≠ q → ∀ y : List B, y.length = r →
+    ∀ n ≤ r, ∀ (u : List B) (p q : B), u.length = n → ∀ y : List B, y.length = r →
       ℓ (φ (π (u ++ alternatingWord q p (r + 1 - n)))) = r + 1 →
       φ (π (u ++ alternatingWord q p (r + 1 - n))) = φ (π (y ++ [q])) →
       π (u ++ alternatingWord q p (r + 1 - n)) = π (y ++ [q]) := by
   intro n
   induction n with
   | zero =>
-    intro _ u p q hu hpq y hy hmin heq
+    intro _ u p q hu y hy hmin heq
     rw [List.length_eq_zero_iff.mp hu, List.nil_append, Nat.sub_zero] at hmin heq ⊢
     rcases exchange_step φ ℓ hℓ hexch ih (by simp) hy hmin heq with h | ⟨hφ, hπ⟩
     · exact h
@@ -265,7 +267,7 @@ private theorem alternating_induction
       rw [← hπ]
       exact wordProd_alternatingWord_eq_of_minimal φ ℓ horder hℓ (Nat.succ_pos r) hmin hφ.symm
   | succ n ihn =>
-    intro hn u p q hu hpq y hy hmin heq
+    intro hn u p q hu y hy hmin heq
     obtain ⟨a, u', rfl⟩ := List.exists_cons_of_length_eq_add_one hu
     have hu' : u'.length = n := by simpa using hu
     obtain ⟨k, hk⟩ : ∃ k, r + 1 - (n + 1) = k + 1 := ⟨r - n - 1, by omega⟩
@@ -289,7 +291,7 @@ private theorem alternating_induction
         simp only [List.length_append, List.length_cons, length_alternatingWord, hu']
         omega
       rw [hrot] at hφ hπ
-      have h := ihn (by omega) u' q p hu' hpq.symm _ hzlen (by rw [hφ, hmin])
+      have h := ihn (by omega) u' q p hu' _ hzlen (by rw [hφ, hmin])
         (hφ.trans (congrArg (fun z ↦ φ (π z)) hlast))
       rw [← hπ, h, ← hlast]
 
@@ -315,7 +317,7 @@ private theorem wordsAgree
     by_cases hpq : p = q
     · subst hpq
       exact wordsAgree_append_singleton φ ℓ hℓ ih hx' hy' hmin heq
-    · have h := alternating_induction φ ℓ horder hℓ hexch ih r le_rfl x' p q hx' hpq y' hy'
+    · have h := alternating_induction φ ℓ horder hℓ hexch ih r le_rfl x' p q hx' y' hy'
       rw [Nat.add_sub_cancel_left] at h
       exact h hmin heq
 
@@ -418,6 +420,17 @@ theorem ofExchange_simple
   rw [ofExchange, map_simple]
   exact MulEquiv.ofBijective_apply _ _ _
 
+/-- A word for `CoxeterSystem.ofExchange` spells the image of the word for `cs`. -/
+@[simp]
+theorem ofExchange_wordProd
+    (horder : ∀ i i', orderOf (φ (s i) * φ (s i')) = M i i')
+    (hℓ : ∀ g, IsLeast {n | ∃ ω : List B, φ (π ω) = g ∧ ω.length = n} (ℓ g))
+    (hexch : ∀ (ω : List B) (i : B), ℓ (φ (π ω)) = ω.length →
+      ℓ (φ (π ω * s i)) ≤ ω.length → ∃ j < ω.length, φ (π (ω.eraseIdx j)) = φ (π ω * s i))
+    (ω : List B) : (cs.ofExchange φ ℓ horder hℓ hexch).wordProd ω = φ (π ω) := by
+  rw [ofExchange, TauCeti.wordProd_map]
+  exact MulEquiv.ofBijective_apply _ _ _
+
 /-- The length function of `CoxeterSystem.ofExchange` is `ℓ`. -/
 @[simp]
 theorem length_ofExchange
@@ -427,10 +440,7 @@ theorem length_ofExchange
       ℓ (φ (π ω * s i)) ≤ ω.length → ∃ j < ω.length, φ (π (ω.eraseIdx j)) = φ (π ω * s i))
     (g : G) : (cs.ofExchange φ ℓ horder hℓ hexch).length g = ℓ g := by
   set cs' := cs.ofExchange φ ℓ horder hℓ hexch
-  have hw (ω : List B) : cs'.wordProd ω = φ (π ω) := by
-    rw [wordProd, wordProd, map_list_prod, List.map_map]
-    exact congrArg List.prod
-      (List.map_congr_left fun i _ ↦ ofExchange_simple φ ℓ horder hℓ hexch i)
+  have hw := ofExchange_wordProd φ ℓ horder hℓ hexch
   refine ((hℓ g).unique ⟨?_, ?_⟩).symm
   · obtain ⟨ω, hω, rfl⟩ := cs'.exists_isReduced g
     exact ⟨ω, (hw ω).symm, hω.eq.symm⟩

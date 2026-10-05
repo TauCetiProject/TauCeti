@@ -173,10 +173,11 @@ element as the word in the simple root reflections. -/
 @[simp]
 theorem weylCoxeterSystem_wordProd (l : List b.support) :
     (weylCoxeterSystem P b).wordProd l = wordProd P b l := by
-  simp [CoxeterSystem.wordProd, wordProd]
+  rw [weylCoxeterSystem, CoxeterSystem.ofExchange_wordProd, weylCoxeterHom_wordProd]
 
 /-- **Length equals inversions.** The Coxeter length of a Weyl-group element is the number of
 positive roots it sends to negative roots. -/
+@[simp]
 theorem length_weylCoxeterSystem_eq (w : P.weylGroup) :
     (weylCoxeterSystem P b).length w = (inversions P b w).ncard :=
   CoxeterSystem.length_ofExchange _ _ _ _ _ w

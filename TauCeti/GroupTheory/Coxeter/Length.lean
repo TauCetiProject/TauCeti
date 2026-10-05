@@ -31,6 +31,8 @@ pushing the system through a group isomorphism leaves lengths unchanged.
 * `TauCeti.natCard_length_even_eq_natCard_length_odd`: as many elements have even length as odd
   length, provided there is at least one simple reflection.
 * `TauCeti.even_natCard_of_nonempty_index`: hence a Coxeter group of positive rank has even order.
+* `TauCeti.wordProd_map`: a word for `CoxeterSystem.map` is the image of the word for the original
+  system.
 * `TauCeti.length_reindex` and `TauCeti.length_map`: the length function is unchanged by
   `CoxeterSystem.reindex` and by `CoxeterSystem.map`.
 
@@ -130,7 +132,8 @@ private theorem wordProd_reindex (e : B ≃ B') (ω : List B') :
 
 /-- Pushing a word through the isomorphism computes the corresponding word for the transported
 Coxeter system. -/
-private theorem wordProd_map (e : W ≃* H) (ω : List B) :
+@[simp]
+theorem wordProd_map (e : W ≃* H) (ω : List B) :
     (cs.map e).wordProd ω = e (cs.wordProd ω) := by
   induction ω with
   | nil => simp
