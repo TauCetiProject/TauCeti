@@ -9,7 +9,6 @@ public import TauCeti.Topology.Algebra.CliffordAlgebra.Lipschitz.OpenMap
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Lipschitz.Norm
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpinorNorm.Basic
 import Mathlib.Analysis.Normed.Field.ProperSpace
-import TauCeti.Topology.Algebra.Group.Generation
 
 /-!
 # The spinor kernel is open
@@ -99,33 +98,18 @@ theorem isOpen_range_spinToSpecialOrthogonal (hQ : Q.Nondegenerate)
   rw [range_spinToSpecialOrthogonal_eq_ker_spinorNorm Q hQ]
   exact isOpen_ker_spinorNorm Q hQ hsq
 
-omit [LocallyCompactSpace K] [Invertible (2 : K)] in
-/-- The square subgroup remains open when viewed additively. `Additive` and
-`Subgroup.toAddSubgroup` are identity wrappers on the carrier and topology, so the `change` below
-only exposes this definitional equality. -/
-private theorem isOpen_square_toAddSubgroup
-    (hsq : IsOpen (Subgroup.square Kˣ : Set Kˣ)) :
-    IsOpen ((Subgroup.square Kˣ).toAddSubgroup : Set (Additive Kˣ)) := by
-  change IsOpen (Subgroup.square Kˣ : Set Kˣ)
-  exact hsq
-
-/-- **The spinor norm on `O(Q)` is continuous.** If the squares are open in `Kˣ`, the
-square-class quotient is discrete, so continuity is equivalent to openness of the kernel. -/
+/-- **The spinor norm on `O(Q)` is continuous.** If the squares are open in `Kˣ`, the kernel of
+the spinor norm is open, and a homomorphism with open kernel is continuous. -/
 theorem continuous_orthogonalSpinorNorm (hQ : Q.Nondegenerate)
     (hsq : IsOpen (Subgroup.square Kˣ : Set Kˣ)) :
-    Continuous (orthogonalSpinorNorm Q hQ) := by
-  let _ : DiscreteTopology (SquareClassGroup K) :=
-    QuotientAddGroup.discreteTopology (isOpen_square_toAddSubgroup hsq)
-  exact (MonoidHom.continuous_iff_isOpen_ker _).mpr
-    (isOpen_ker_orthogonalSpinorNorm Q hQ hsq)
+    Continuous (orthogonalSpinorNorm Q hQ) :=
+  (orthogonalSpinorNorm Q hQ).continuous_of_isOpen_ker (isOpen_ker_orthogonalSpinorNorm Q hQ hsq)
 
-/-- **The spinor norm on `SO(Q)` is continuous.** If the squares are open in `Kˣ`, the
-square-class quotient is discrete, so continuity is equivalent to openness of the kernel. -/
+/-- **The spinor norm on `SO(Q)` is continuous.** If the squares are open in `Kˣ`, the kernel of
+the spinor norm is open, and a homomorphism with open kernel is continuous. -/
 theorem continuous_spinorNorm (hQ : Q.Nondegenerate)
     (hsq : IsOpen (Subgroup.square Kˣ : Set Kˣ)) :
-    Continuous (spinorNorm Q hQ) := by
-  let _ : DiscreteTopology (SquareClassGroup K) :=
-    QuotientAddGroup.discreteTopology (isOpen_square_toAddSubgroup hsq)
-  exact (MonoidHom.continuous_iff_isOpen_ker _).mpr (isOpen_ker_spinorNorm Q hQ hsq)
+    Continuous (spinorNorm Q hQ) :=
+  (spinorNorm Q hQ).continuous_of_isOpen_ker (isOpen_ker_spinorNorm Q hQ hsq)
 
 end CliffordAlgebra
