@@ -72,6 +72,13 @@ letters `(i, ε)` with `p = i` or `p = i + 1`. -/
 def crossingsAt (p : Fin n) : List (Fin w.length) :=
   (List.finRange w.length).filter fun j ↦ p = strand w[j.1].1 ∨ p = strandSucc w[j.1].1
 
+/-- The crossings involving a strand position are the indices of the letters with that position
+as one of their two strands, in increasing order. -/
+theorem crossingsAt_def (p : Fin n) :
+    w.crossingsAt p =
+      (List.finRange w.length).filter fun j ↦ p = strand w[j.1].1 ∨ p = strandSucc w[j.1].1 :=
+  (rfl)
+
 /-- A crossing involves a strand position exactly when that position is one of its two strands. -/
 @[simp]
 theorem mem_crossingsAt {p : Fin n} {j : Fin w.length} :

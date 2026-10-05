@@ -6,15 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.BraidWord.Relabel
--- Filtering the crossings of the rotated word unfolds the unexposed body of `crossingsAt`.
-import all TauCeti.KnotTheory.BraidWord.PDCode
+public import TauCeti.KnotTheory.PDCode.Oriented.Reidemeister.Equivalence
 
 /-!
 # Cyclic rotation of braid-word closures
 
 Cyclically rotating a braid word cuts its closed braid between two different levels. The closure
 diagram therefore does not change: only its crossing and half-edge names do. This file describes
-that renaming explicitly and proves equality of the resulting oriented PD-codes.
+that renaming explicitly, proves equality of the resulting oriented PD-codes, and concludes that
+the two closures are Reidemeister equivalent.
 
 For a word `w` and a rotation distance `k`, `List.rotateIndexEquiv w k` sends an index in
 `w.rotate k` to the index of the same letter in `w`. Its inverse renames the old crossings, and
@@ -31,6 +31,8 @@ word-level generator needed for the conjugation part of Markov equivalence.
 
 * `TauCeti.BraidWord.closure_rotate`: rotating a braid word changes its closure only by the
   explicit induced renaming.
+* `TauCeti.BraidWord.reidemeisterEquiv_closure_rotate`: a braid word and its rotation have
+  Reidemeister equivalent closures.
 
 ## References
 
@@ -59,7 +61,7 @@ private theorem crossingsAt_rotate_isRotated (w : BraidWord n) (k : ℕ) (p : Fi
     (fun j : Fin w.length => p = BraidGroup.strand w[j.1].1 ∨
       p = BraidGroup.strandSucc w[j.1].1)
   rw [List.filter_map] at hfilter
-  rw [crossingsAt, crossingsAt]
+  rw [crossingsAt_def, crossingsAt_def]
   simpa only [Function.comp_def, List.getElem_rotateIndexEquiv] using hfilter
 
 /-- Rotating a braid word changes its oriented closure PD-code only by renaming crossings and
@@ -73,6 +75,12 @@ theorem closure_rotate (w : BraidWord n) (k : ℕ) :
         (w.rotateIndexEquiv k).symm :=
   closure_eq_relabel_of_isRotated _ (List.getElem_rotateIndexEquiv w k)
     (crossingsAt_rotate_isRotated w k)
+
+/-- Rotating a braid word gives a Reidemeister equivalent closure. -/
+theorem reidemeisterEquiv_closure_rotate (w : BraidWord n) (k : ℕ) :
+    OrientedPDCode.ReidemeisterEquiv w.closure (closure (w.rotate k)) := by
+  rw [closure_rotate]
+  exact OrientedPDCode.reidemeisterEquiv_relabel _ _ _
 
 end BraidWord
 

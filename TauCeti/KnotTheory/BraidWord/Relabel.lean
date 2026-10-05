@@ -20,7 +20,7 @@ other.
 
 This is the common source of the word-level moves that keep the closure diagram: cyclically
 rotating a word (`TauCeti.BraidWord.closure_rotate`) and exchanging two adjacent letters on
-disjoint strands (`TauCeti.BraidWord.closure_append_cons_cons`).
+disjoint strands (`TauCeti.BraidWord.closure_append_cons_cons_comm`).
 
 ## Main results
 

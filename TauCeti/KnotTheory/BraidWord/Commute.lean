@@ -27,9 +27,9 @@ relations of the braid group and of the conjugation move in Markov equivalence.
 
 ## Main results
 
-* `TauCeti.BraidWord.closure_append_cons_cons`: exchanging two adjacent letters on disjoint
-  strands changes the closure only by exchanging the names of their crossings.
-* `TauCeti.BraidWord.reidemeisterEquiv_closure_append_cons_cons`: the two closures are
+* `TauCeti.BraidWord.closure_append_cons_cons_comm`: exchanging two adjacent letters on
+  disjoint strands changes the closure only by exchanging the names of their crossings.
+* `TauCeti.BraidWord.reidemeisterEquiv_closure_append_cons_cons_comm`: the two closures are
   Reidemeister equivalent.
 
 ## References
@@ -61,22 +61,20 @@ private theorem map_crossingsAt_swapIndexEquiv (u v : BraidWord n) {a b : Fin (n
     refine (List.sortedLT_iff_pairwise.1 (sortedLT_crossingsAt _ p)).imp_of_mem ?_
     intro x y hx hy hxy
     rw [mem_crossingsAt] at hx hy
-    rw [Fin.lt_def] at hxy ⊢
-    simp only [e, List.val_swapIndexEquiv]
-    split_ifs with hx₁ hx₂ hy₁ hy₂ <;> try omega
     -- The only pair whose order is reversed is the pair of exchanged crossings, which involve
     -- disjoint strand positions, so they cannot both involve `p`.
-    have hxb : ∀ (k : ℕ) (hk : k < (u ++ b :: a :: v).length), k = u.length →
-        (u ++ b :: a :: v)[k] = b := by
-      rintro k hk rfl
-      simp
-    have hya : ∀ (k : ℕ) (hk : k < (u ++ b :: a :: v).length), k = u.length + 1 →
-        (u ++ b :: a :: v)[k] = a := by
-      rintro k hk rfl
-      simp
-    rw [hxb x.1 x.2 hx₁] at hx
-    rw [hya y.1 y.2 hy₁] at hy
-    rcases hx with rfl | rfl <;> rcases hy with hy | hy <;> simp [Fin.ext_iff] at hy <;> omega
+    have hxy' : ¬((x : ℕ) = u.length ∧ (y : ℕ) = u.length + 1) := by
+      rintro ⟨hx₁, hy₁⟩
+      have hxb : (u ++ b :: a :: v)[(x : ℕ)] = b := by simp [hx₁]
+      have hya : (u ++ b :: a :: v)[(y : ℕ)] = a := by simp [hy₁]
+      rw [hxb] at hx
+      rw [hya] at hy
+      have hnd := nodup_strand_strandSucc_strand_strandSucc h
+      simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, not_or] at hnd
+      rcases hx with rfl | rfl <;> rcases hy with hy | hy <;> simp_all
+    rw [Fin.lt_def] at hxy ⊢
+    simp only [e, List.val_swapIndexEquiv]
+    split_ifs <;> omega
   · simp only [List.mem_map]
     constructor
     · rintro ⟨j, hj, rfl⟩
@@ -90,7 +88,7 @@ private theorem map_crossingsAt_swapIndexEquiv (u v : BraidWord n) {a b : Fin (n
 `i + 2 ≤ j` or `j + 2 ≤ i` changes its oriented closure PD-code only by renaming crossings and
 half-edges: the two crossings of `a` and `b` exchange their names, and
 `PDCode.crossingBlockEquiv` applies the same renaming to all four crossing slots. -/
-theorem closure_append_cons_cons (u v : BraidWord n) {a b : Fin (n - 1) × ℤˣ}
+theorem closure_append_cons_cons_comm (u v : BraidWord n) {a b : Fin (n - 1) × ℤˣ}
     (h : (a.1 : ℕ) + 2 ≤ b.1 ∨ (b.1 : ℕ) + 2 ≤ a.1) :
     closure (u ++ b :: a :: v) =
       (closure (u ++ a :: b :: v)).relabel
@@ -101,10 +99,10 @@ theorem closure_append_cons_cons (u v : BraidWord n) {a b : Fin (n - 1) × ℤˣ
 
 /-- Exchanging two adjacent letters on disjoint strands of a braid word gives a Reidemeister
 equivalent closure. -/
-theorem reidemeisterEquiv_closure_append_cons_cons (u v : BraidWord n)
+theorem reidemeisterEquiv_closure_append_cons_cons_comm (u v : BraidWord n)
     {a b : Fin (n - 1) × ℤˣ} (h : (a.1 : ℕ) + 2 ≤ b.1 ∨ (b.1 : ℕ) + 2 ≤ a.1) :
     OrientedPDCode.ReidemeisterEquiv (closure (u ++ a :: b :: v)) (closure (u ++ b :: a :: v)) := by
-  rw [closure_append_cons_cons u v h]
+  rw [closure_append_cons_cons_comm u v h]
   exact OrientedPDCode.reidemeisterEquiv_relabel _ _ _
 
 end BraidWord
