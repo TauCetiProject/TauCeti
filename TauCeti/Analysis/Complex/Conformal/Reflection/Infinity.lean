@@ -33,7 +33,11 @@ The point at infinity may instead be sent to a vertex at infinity of the target:
 infinity there, and far out its image is a sector of opening `β * π`, `0 < β < 2`, with vertex
 some point `c`.  Inverting the target about `c` turns this into a corner at `0` in the inverse
 coordinate, and the power coordinate at that corner gives `z * f''(z) / f'(z) → β - 1` instead
-(`TauCeti.tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_eqOn_div_neg_inv`).
+(`TauCeti.tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_eqOn_div_neg_inv`).  If instead far out
+its image is a half-strip between two parallel rays, the exponential of the normalized map has a
+straight edge through `0` in the inverse coordinate, and the map is a logarithm of its Schwarz
+reflection, which gives `z * f''(z) / f'(z) → -1`
+(`TauCeti.tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_eqOn_exp_neg_inv`).
 
 ## References
 
@@ -242,34 +246,64 @@ theorem tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_eqOn_div_neg_inv
     (fun w hw => mem_slitPlane_iff.mpr (Or.inl (hre w hw.1 hw.2)))
     (neg_ne_zero.mpr (ofReal_ne_zero.mpr hβ.1.ne')) hpowF
   -- Pass back to the original coordinate by the pre-Schwarzian chain rule.
-  have hchain : ∀ w ∈ s, logDeriv (deriv fun w => (f (-w⁻¹) - c) / b) w =
-      logDeriv (deriv f) (-w⁻¹) / w ^ 2 - 2 / w := by
-    intro w hw
-    have hw0 : w ≠ 0 := fun h0 => by simpa [h0] using hw.2
-    have hz : -w⁻¹ ∈ upperHalfPlaneSet := im_neg_inv_pos.mpr hw.2
-    have hderiv : (deriv fun w : ℂ => (f (-w⁻¹) - c) / b) =
-        fun w => deriv (fun w : ℂ => f (-w⁻¹)) w / b := by
-      ext w
-      simp only [deriv_div_const, deriv_sub_const]
-    rw [hderiv]
-    simp only [div_eq_mul_inv (deriv _ _), logDeriv_mul_const w b⁻¹ (inv_ne_zero hb)]
-    exact logDeriv_deriv_comp_neg_inv (hf.analyticAt (isOpen_upperHalfPlaneSet.mem_nhds hz))
-      (hfn _ hz) hw0
-  have h0 : Tendsto (fun z : ℂ => -z⁻¹) (cobounded ℂ ⊓ 𝓟 upperHalfPlaneSet) (𝓝 0) := by
-    simpa using ((tendsto_inv₀_cobounded (α := ℂ)).neg).mono_left inf_le_left
-  have hT : Tendsto (fun z : ℂ => -z⁻¹) (cobounded ℂ ⊓ 𝓟 upperHalfPlaneSet) (𝓝[s] 0) := by
-    refine tendsto_nhdsWithin_iff.mpr ⟨h0, ?_⟩
-    filter_upwards [h0.eventually (Metric.ball_mem_nhds 0 hr),
-      mem_inf_of_right (mem_principal_self upperHalfPlaneSet)] with z hz hzH
-    exact ⟨hz, im_neg_inv_pos.mpr hzH⟩
-  have hlim := ((hcorner.comp hT).neg).sub_const 2
-  rw [show -(-(β : ℂ) - 1) - 2 = (β : ℂ) - 1 by ring] at hlim
-  refine hlim.congr' ?_
-  filter_upwards [hT.eventually self_mem_nhdsWithin,
-    mem_inf_of_right (mem_principal_self upperHalfPlaneSet)] with z hz hzH
-  have hz0 : z ≠ 0 := fun h0 => by simp [h0] at hzH
-  simp only [Function.comp_apply, sub_zero, hchain _ hz, inv_neg, inv_inv, neg_neg]
-  field_simp
-  ring
+  have hlim := tendsto_mul_logDeriv_deriv_of_tendsto_mul_logDeriv_deriv_neg_inv hr hb hf hfn
+    (by simpa only [sub_zero] using hcorner)
+  rwa [show -(-(β : ℂ) - 1) - 2 = (β : ℂ) - 1 by ring] at hlim
+
+/-- **The pre-Schwarzian of a map with a parallel-sided end at infinity.**  Read the map `f` of
+the upper half-plane in the coordinate `w ↦ -1 / w` at infinity, normalize the target by
+`w ↦ (w - c) / b`, and exponentiate.  If the result extends to a function `g` with `g 0 = 0`
+which is continuous and injective up to a real segment through `0`, upper half-plane valued
+above it, and real on it, then `z * f''(z) / f'(z) → -1` as `z` tends to infinity in the upper
+half-plane.
+
+The hypotheses are local at `w = 0`, that is near infinity in the source: they constrain `f` only
+through `g` on the upper half of the ball of radius `r`, and say nothing about the rest of the
+image of `f`.  The typical source of such a `g` is a map `f` which far out fills a half-strip
+between two parallel rays, with the far parts of the real axis carried to those rays, where `c`
+and `b` are chosen so that `w ↦ (w - c) / b` carries that half-strip to
+`{w | w.re < 0 ∧ 0 < w.im ∧ w.im < π}`, which the exponential maps onto the upper half of the unit
+disc; the polygonal-domain theorems derive the hypotheses on `g` from such geometry.  This is
+the opening `β = 0` counterpart of
+`TauCeti.tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_eqOn_div_neg_inv`. -/
+theorem tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_eqOn_exp_neg_inv
+    {f : ℂ → ℂ} {c b : ℂ} {r : ℝ} (hr : 0 < r) (hb : b ≠ 0)
+    (hf : DifferentiableOn ℂ f upperHalfPlaneSet)
+    (hfn : ∀ z ∈ upperHalfPlaneSet, deriv f z ≠ 0)
+    (hgf : EqOn g (fun w => exp ((f (-w⁻¹) - c) / b)) (Metric.ball 0 r ∩ upperHalfPlaneSet))
+    (hg0 : g 0 = 0)
+    (hcont : ContinuousOn g (Metric.ball 0 r ∩ {z : ℂ | 0 ≤ z.im}))
+    (hreal : ∀ z ∈ Metric.ball (0 : ℂ) r, z.im = 0 → (g z).im = 0)
+    (hupper : MapsTo g (Metric.ball 0 r ∩ upperHalfPlaneSet) upperHalfPlaneSet)
+    (hinj : InjOn g (Metric.ball 0 r ∩ {z : ℂ | 0 ≤ z.im})) :
+    Tendsto (fun z : ℂ => z * logDeriv (deriv f) z)
+      (cobounded ℂ ⊓ 𝓟 upperHalfPlaneSet) (𝓝 (-1)) := by
+  have hs : IsOpen (Metric.ball (0 : ℂ) r ∩ upperHalfPlaneSet) :=
+    Metric.isOpen_ball.inter isOpen_upperHalfPlaneSet
+  have hball : MapsTo (starRingEnd ℂ) (Metric.ball (0 : ℂ) r) (Metric.ball 0 r) := fun z hz => by
+    rw [Metric.mem_ball, ← map_zero (starRingEnd ℂ), Complex.dist_conj_conj]
+    exact hz
+  have hF : DifferentiableOn ℂ (fun w => (f (-w⁻¹) - c) / b)
+      (Metric.ball 0 r ∩ upperHalfPlaneSet) :=
+    differentiableOn_of_eqOn_neg_inv hf fun _ _ => rfl
+  have hholo : DifferentiableOn ℂ g (Metric.ball 0 r ∩ upperHalfPlaneSet) :=
+    hF.cexp.congr fun w hw => hgf hw
+  -- Schwarz reflection continues `g` across the axis with a simple zero at `0`.
+  have hzero : (0 : ℂ) ∈ Metric.ball 0 r := Metric.mem_ball_self hr
+  have hG := differentiableOn_schwarzReflection_of_symmetric Metric.isOpen_ball hball hcont
+    hholo hreal
+  have hG0 : schwarzReflection g 0 = 0 := by
+    rw [schwarzReflection_of_im_nonneg (by simp), hg0]
+  have hdG := deriv_schwarzReflection_ne_zero Metric.isOpen_ball hball hcont hholo hreal hupper
+    hinj hzero
+  -- So `(f (-1 / w) - c) / b` is a logarithm of a function with a simple zero at `0`.
+  have hexp : EqOn (fun w => exp ((f (-w⁻¹) - c) / b)) (schwarzReflection g)
+      (Metric.ball 0 r ∩ upperHalfPlaneSet) := fun w hw => by
+    rw [schwarzReflection_of_im_nonneg (le_of_lt hw.2), hgf hw]
+  have hlog := tendsto_sub_mul_logDeriv_deriv_of_eqOn_exp
+    (hG.analyticAt (Metric.isOpen_ball.mem_nhds hzero)) hG0 hdG hs hF hexp
+  have hlim := tendsto_mul_logDeriv_deriv_of_tendsto_mul_logDeriv_deriv_neg_inv hr hb hf hfn
+    (by simpa only [sub_zero] using hlog)
+  rwa [show -(-1 : ℂ) - 2 = -1 by ring] at hlim
 
 end TauCeti

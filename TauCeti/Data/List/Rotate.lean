@@ -28,6 +28,8 @@ rotated braid words.
 
 * `List.rotateIndexEquiv`: identify the entries before and after rotating a list.
 * `List.formPerm_map_equiv`: mapping a list by an equivalence conjugates its formed permutation.
+* `List.formPerm_map_apply`: mapping a list by an injective function intertwines the formed
+  permutations on the image.
 * `List.formPerm_append_apply_of_mem_right` and `List.formPerm_append_apply_getLast_left`: the
   permutation formed by `T ++ V` on the entries of `V`, and on the last entry of `T`.
 * `List.IsRotated.filter`: filtering preserves cyclic rotation of lists.
@@ -83,6 +85,20 @@ theorem formPerm_map_equiv {α β : Type*} [DecidableEq α] [DecidableEq β]
       simp only [List.map_cons, List.formPerm_cons_cons, Equiv.permCongr_mul]
       rw [Equiv.permCongr_def, Equiv.symm_trans_swap_trans]
       exact congrArg (Equiv.swap (e x) (e y) * ·) ih
+
+/-- Mapping a list by an injective function intertwines the permutations formed by the two lists:
+on the image of `f`, the permutation formed by `l.map f` is `l.formPerm` transported along `f`. -/
+theorem formPerm_map_apply {α β : Type*} [DecidableEq α] [DecidableEq β] {f : α → β}
+    (hf : Function.Injective f) (l : List α) (x : α) :
+    (l.map f).formPerm (f x) = f (l.formPerm x) := by
+  induction l with
+  | nil => simp
+  | cons y l ih =>
+    cases l with
+    | nil => simp
+    | cons z l =>
+      rw [List.map_cons, List.map_cons, List.formPerm_cons_cons, List.formPerm_cons_cons,
+        Equiv.Perm.mul_apply, Equiv.Perm.mul_apply, ← List.map_cons, ih, hf.swap_apply]
 
 /-- On an entry `x` of `V`, the permutation formed by `T ++ V` agrees with the one formed by `V`,
 except that the last entry of `V`, which `V.formPerm` sends back to the head of `V`, is sent to

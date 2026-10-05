@@ -15,7 +15,8 @@ import Mathlib.Tactic.LinearCombination
 `TauCeti.hilbertSymbol a b` is the sign `+1` when `b = x² - a y²` is solvable, and
 `-1` otherwise. The definition makes sense over any field. This file supplies the
 field-generic part of its theory: the quadratic-algebra norm and quaternion splitting
-criteria, symmetry, square rescaling, and the elementary split values.
+criteria, symmetry, square rescaling, invariance under isomorphisms of fields, and the elementary
+split values.
 
 The comparison theorems reuse the four-fold splitting criterion in
 `TauCeti.Algebra.Quaternion.SplittingCriterion`. No local classification enters the
@@ -154,6 +155,23 @@ theorem hilbertSymbol_congr_sq (a a' b b' : Kˣ)
     rw [div_pow, pow_two d, ← hd]
     simp [pow_two, div_eq_mul_inv, mul_assoc, mul_left_comm]
   rw [ha', hb', hilbertSymbol_mul_sq_left, hilbertSymbol_mul_sq_right]
+
+/-- The Hilbert symbol is invariant under a ring isomorphism of fields: the norm equation
+`b = x² - a y²` is solvable over `K` exactly when its image is solvable over `L`. -/
+@[simp]
+theorem hilbertSymbol_units_map_ringEquiv {L : Type*} [Field L] (e : K ≃+* L) (a b : Kˣ) :
+    hilbertSymbol (Units.map (e : K →* L) a) (Units.map (e : K →* L) b) = hilbertSymbol a b := by
+  classical
+  have he : (∃ x y : L, ((Units.map (e : K →* L) b : Lˣ) : L) =
+      x ^ 2 - (Units.map (e : K →* L) a : Lˣ) * y ^ 2) ↔
+      ∃ x y : K, (b : K) = x ^ 2 - a * y ^ 2 := by
+    simp only [Units.coe_map, MonoidHom.coe_ofClass]
+    constructor
+    · rintro ⟨x, y, h⟩
+      exact ⟨e.symm x, e.symm y, e.injective (by simpa using h)⟩
+    · rintro ⟨x, y, h⟩
+      exact ⟨e x, e y, by simp [h]⟩
+  simp only [hilbertSymbol_def, he]
 
 -- The quotient-representative construction follows
 -- `TauCeti.BrauerGroup.quaternionClassOnSquareClasses`.

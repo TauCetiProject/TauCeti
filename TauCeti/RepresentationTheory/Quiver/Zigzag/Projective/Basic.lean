@@ -5,11 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Module.Projective
 public import TauCeti.LinearAlgebra.Graded.Shift
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Grading
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Radical
-public import TauCeti.RingTheory.PrimitiveIdempotent
+public import TauCeti.RingTheory.Idempotents.Projective
 
 /-!
 # Vertex projectives of a zigzag algebra
@@ -125,43 +124,11 @@ theorem zigzagProjectiveShiftGrade_apply (i : V) (d p : ℤ) :
     zigzagProjectiveShiftGrade k G i d p = zigzagProjectiveGrade k G i (p - d) := by
   simp [zigzagProjectiveShiftGrade, sub_eq_add_neg]
 
-/-! ### Projectivity -/
-
-/-- Right multiplication by `e_i`, corestricted to `Z e_i`. -/
-noncomputable def zigzagProjectiveProjection (i : V) :
-    nonisolatedZigzagQuotient k G →ₗ[nonisolatedZigzagQuotient k G]
-      zigzagProjective k G i where
-  toFun x := ⟨x * zigzagVertexIdempotent k G i,
-    Ideal.mem_span_singleton'.2 ⟨x, rfl⟩⟩
-  map_add' x y := Subtype.ext (add_mul x y _)
-  map_smul' x y := Subtype.ext (mul_assoc x y _)
-
-@[simp]
-theorem coe_zigzagProjectiveProjection (i : V) (x : nonisolatedZigzagQuotient k G) :
-    (zigzagProjectiveProjection k G i x : nonisolatedZigzagQuotient k G) =
-      x * zigzagVertexIdempotent k G i :=
-  (rfl)
-
-/-- Projecting an element of `Z e_i` back onto `Z e_i` fixes it. -/
-@[simp]
-theorem zigzagProjectiveProjection_coe (i : V) (x : zigzagProjective k G i) :
-    zigzagProjectiveProjection k G i (x : nonisolatedZigzagQuotient k G) = x := by
-  apply Subtype.ext
-  rw [coe_zigzagProjectiveProjection]
-  exact (mem_zigzagProjective_iff k G).mp x.2
-
-/-- The projection onto `Z e_i` splits its inclusion into the regular module. -/
-theorem zigzagProjectiveProjection_comp_subtype (i : V) :
-    (zigzagProjectiveProjection k G i).comp (zigzagProjective k G i).subtype = LinearMap.id := by
-  apply LinearMap.ext
-  intro x
-  exact zigzagProjectiveProjection_coe k G i x
-
 /-- The vertex ideal `Z e_i` is a projective left module over the zigzag relation quotient. -/
 theorem zigzagProjective_projective (i : V) :
-    Module.Projective (nonisolatedZigzagQuotient k G) (zigzagProjective k G i) :=
-  Module.Projective.of_split (zigzagProjective k G i).subtype
-    (zigzagProjectiveProjection k G i) (zigzagProjectiveProjection_comp_subtype k G i)
+    Module.Projective (nonisolatedZigzagQuotient k G) (zigzagProjective k G i) := by
+  rw [zigzagProjective_def]
+  exact (isIdempotentElem_zigzagVertexIdempotent k G i).projective_span_singleton
 
 end CommRing
 

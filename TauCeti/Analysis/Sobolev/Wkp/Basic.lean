@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Calculus.IteratedGradient
 public import TauCeti.Analysis.Sobolev.GraphStep
 public import TauCeti.Analysis.Sobolev.W1p.Basic
 
@@ -36,14 +37,13 @@ Banach-space norm, not in general the Hilbert-space norm of `H^k(Ω)`.
 
 ## Implementation notes
 
-The bundled stage machinery `TauCeti.IteratedGradientModel`, `TauCeti.iteratedGradientModel`,
-`TauCeti.SobolevStage`, `TauCeti.firstSobolevStage`, `TauCeti.SobolevStage.next`, and
-`TauCeti.sobolevStage` is public on purpose: it is what indexes the types
-`TauCeti.IteratedGradient` and `TauCeti.Wkp`, so their normed, complete structures and the order
-`0` and `1` boundary cases are recovered by unfolding it rather than by transport.
-`TauCeti.iteratedGradientModel`, `TauCeti.firstSobolevStage`, `TauCeti.SobolevStage.next`, and
-`TauCeti.Wkp` are reducible.  The recursion `TauCeti.sobolevStage` is exposed but semireducible,
-so that at a concrete order instance search stops at `(sobolevStage j).Space` and finds the
+The bundled stage machinery `TauCeti.SobolevStage`, `TauCeti.firstSobolevStage`,
+`TauCeti.SobolevStage.next`, and `TauCeti.sobolevStage` is public on purpose: it is what indexes
+the type `TauCeti.Wkp`, so its normed, complete structure and the order `0` and `1` boundary cases
+are recovered by unfolding it rather than by transport.  `TauCeti.firstSobolevStage`,
+`TauCeti.SobolevStage.next`, and `TauCeti.Wkp` are reducible.  The recursion
+`TauCeti.sobolevStage` is exposed but semireducible, so that at a concrete order instance search
+stops at `(sobolevStage j).Space` and finds the
 `TauCeti.SobolevStage` shortcut instances keyed there.  The shortcut instances are provided at both
 the bundled-stage and `Wkp` indexings so instance search need not rederive these structures
 through the recursion.  The identifications of `Wkp … 1` with `TauCeti.W1p` and of
@@ -60,9 +60,6 @@ the two projections above first order as the components of the underlying graph 
 
 ## Main declarations
 
-* `TauCeti.IteratedGradient`: the basis-free target of an iterated weak derivative.
-* `TauCeti.iteratedGradientChain`: the corresponding classical derivative fields of a smooth
-  scalar function.
 * `TauCeti.Wkp`: `W^{k,p}(Ω)`, with `Wkp 0 = Lᵖ(Ω)` and `Wkp 1 = W1p`.
 * `TauCeti.Wkp.lowerOrder`: the continuous projection `W^{k+1,p} → W^{k,p}`.
 * `TauCeti.Wkp.iteratedGradient`: the highest weak derivative of a positive-order Sobolev function.
@@ -82,108 +79,13 @@ noncomputable section
 namespace TauCeti
 
 open MeasureTheory Set TopologicalSpace
-open scoped ContDiff Distributions ENNReal InnerProductSpace
+open scoped Distributions ENNReal InnerProductSpace
 
 universe u
 
 variable {E : Type u} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
   {Omega : Opens E} {p : ENNReal} [Fact (1 <= p)]
-
-/-- The normed-space data underlying an iterated weak gradient. -/
-structure IteratedGradientModel (E : Type u) [NormedAddCommGroup E] [NormedSpace ℝ E] where
-  /-- The carrier space for the iterated weak gradient. -/
-  Space : Type u
-  /-- The normed additive commutative group structure on `Space`. -/
-  [normedAddCommGroup : NormedAddCommGroup Space]
-  /-- The normed `ℝ`-space structure on `Space`. -/
-  [normedSpace : NormedSpace ℝ Space]
-
-/-- The recursively bundled target of an iterated weak gradient. -/
-@[reducible, expose] noncomputable def iteratedGradientModel (E : Type u)
-    [NormedAddCommGroup E] [NormedSpace ℝ E] : ℕ → IteratedGradientModel E
-  | 0 => { Space := E }
-  | j + 1 =>
-      let S := iteratedGradientModel E j
-      letI : NormedAddCommGroup S.Space := S.normedAddCommGroup
-      letI : NormedSpace ℝ S.Space := S.normedSpace
-      { Space := E →L[ℝ] S.Space }
-
-/-- The target of an iterated weak gradient, indexed by the number of derivative directions added
-beyond the gradient.  At `j = 0` this is the gradient vector `E`; each successor adds one
-continuous-linear derivative direction on the left. -/
-abbrev IteratedGradient (E : Type u) [NormedAddCommGroup E] [NormedSpace ℝ E] (j : ℕ) : Type u :=
-  (iteratedGradientModel E j).Space
-
-section IteratedGradient
-
-variable {E : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E]
-
-noncomputable instance (j : ℕ) : NormedAddCommGroup (IteratedGradient E j) :=
-  (iteratedGradientModel E j).normedAddCommGroup
-
-noncomputable instance (j : ℕ) : NormedSpace ℝ (IteratedGradient E j) :=
-  (iteratedGradientModel E j).normedSpace
-
-noncomputable instance [CompleteSpace E] (j : ℕ) : CompleteSpace (IteratedGradient E j) := by
-  induction j with
-  | zero => exact inferInstance
-  | succ j ih =>
-      let _ : CompleteSpace (IteratedGradient E j) := ih
-      exact inferInstance
-
-end IteratedGradient
-
-section IteratedGradientChain
-
-variable {F : Type u} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [CompleteSpace F]
-
-/-- The classical derivative fields of a smooth scalar function, in the basis-free
-nested-linear-map types used by `TauCeti.Wkp`. Index zero is the gradient and each successor is
-the Fréchet derivative of the preceding field. -/
-noncomputable def iteratedGradientChain (f : F → ℝ) :
-    (j : ℕ) → F → IteratedGradient F j
-  | 0 => fun x => gradient f x
-  | j + 1 => fderiv ℝ (iteratedGradientChain f j)
-
-@[simp]
-theorem iteratedGradientChain_zero (f : F → ℝ) :
-    iteratedGradientChain f 0 = fun x => gradient f x :=
-  by rw [iteratedGradientChain]
-
-@[simp]
-theorem iteratedGradientChain_succ (f : F → ℝ) (j : ℕ) :
-    iteratedGradientChain f (j + 1) = fderiv ℝ (iteratedGradientChain f j) :=
-  by rw [iteratedGradientChain]
-
-/-- The `j`th iterated-gradient field is `C^m` at a point whenever the scalar function
-is `C^n` there with `m + j + 1 ≤ n`. -/
-theorem contDiffAt_iteratedGradientChain {f : F → ℝ} {x : F} {m n : ℕ∞ω}
-    (hf : ContDiffAt ℝ n f x) (j : ℕ) (h : m + j + 1 ≤ n) :
-    ContDiffAt ℝ m (iteratedGradientChain f j) x := by
-  induction j generalizing m with
-  | zero =>
-      rw [iteratedGradientChain_zero]
-      exact (InnerProductSpace.toDual ℝ F).symm.contDiff.contDiffAt.comp x
-        (hf.fderiv_right (by simpa using h))
-  | succ j ih =>
-      rw [iteratedGradientChain_succ]
-      have hs := ih (m := m + 1) (by
-        simpa only [Nat.cast_add, Nat.cast_one, add_assoc, add_comm, add_left_comm] using h)
-      exact hs.fderiv_right le_rfl
-
-/-- Every field in the iterated-gradient chain of a compactly supported function has compact
-support. -/
-theorem hasCompactSupport_iteratedGradientChain {f : F → ℝ} (hf : HasCompactSupport f) :
-    ∀ j, HasCompactSupport (iteratedGradientChain f j)
-  | 0 => by
-      rw [iteratedGradientChain_zero]
-      exact (hf.fderiv ℝ).comp_left (map_zero _)
-  | j + 1 => by
-      rw [iteratedGradientChain_succ]
-      exact (hasCompactSupport_iteratedGradientChain hf j).fderiv ℝ
-
-end IteratedGradientChain
 
 /-- The bundled data used to iterate weak-derivative graph spaces.  Its `j`th stage carries the
 space of order `j + 1` and its highest derivative projection. -/

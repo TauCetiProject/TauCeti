@@ -19,12 +19,18 @@ defines the words and the braid each word represents.
 
 * `TauCeti.BraidWord`: the braid words on `n` strands.
 * `TauCeti.BraidWord.toBraid`: the braid represented by a word, the product of its letters.
+* `TauCeti.BraidWord.strandIncl`: the same word on one strand more, the new strand uncrossed.
+* `TauCeti.BraidWord.stabilize`: the Markov stabilization of a word, which adds a strand and
+  crosses it once with the previous last strand.
 
 ## Main results
 
 * `TauCeti.BraidWord.toBraid_surjective`: every braid is represented by a word.
 * `TauCeti.BraidWord.exponentSum_toBraid`: the exponent sum of the represented braid is the sum
   of the signs of the letters.
+* `TauCeti.BraidWord.toBraid_strandIncl` and `TauCeti.BraidWord.toBraid_stabilize`: these word
+  operations represent `TauCeti.BraidGroup.strandIncl` and the stabilization of
+  `TauCeti.IsMarkovMove`.
 
 ## References
 
@@ -96,6 +102,61 @@ theorem exponentSum_toBraid (w : BraidWord n) :
   | cons x w ih =>
     simp only [toBraid_cons, map_mul, map_zpow, exponentSum_sigma, ih, List.map_cons,
       List.sum_cons, ofAdd_add, ← ofAdd_zsmul, smul_eq_mul, mul_one]
+
+/-! ### Adding a strand -/
+
+/-- The same braid word on one strand more: every letter keeps its index, so the new top strand
+is never crossed. It represents `TauCeti.BraidGroup.strandIncl` of the braid of the word. -/
+def strandIncl (w : BraidWord (n + 1)) : BraidWord (n + 2) :=
+  w.map fun x ↦ ((x.1.castSucc : Fin (n + 1)), x.2)
+
+/-- The defining equation of `TauCeti.BraidWord.strandIncl`: each letter keeps its index. -/
+theorem strandIncl_def (w : BraidWord (n + 1)) :
+    w.strandIncl = w.map fun x ↦ ((x.1.castSucc : Fin (n + 1)), x.2) :=
+  (rfl)
+
+-- The list type is written `Fin (n + 1) × ℤˣ` rather than `BraidWord (n + 2)`: `simp` rewrites the
+-- `n + 2 - 1` hidden in the latter, after which a left-hand side stated with it no longer matches.
+/-- Adding a strand keeps the number of letters. -/
+@[simp]
+theorem length_strandIncl (w : BraidWord (n + 1)) :
+    List.length (α := Fin (n + 1) × ℤˣ) w.strandIncl = w.length :=
+  List.length_map _
+
+/-- Adding a strand to a word adds an uncrossed strand to the braid it represents. -/
+@[simp]
+theorem toBraid_strandIncl (w : BraidWord (n + 1)) :
+    w.strandIncl.toBraid = BraidGroup.strandIncl w.toBraid := by
+  induction w with
+  | nil => rw [strandIncl_def, List.map_nil, toBraid_nil, toBraid_nil, map_one]
+  | cons x w ih =>
+    rw [strandIncl_def, List.map_cons, toBraid_cons, ← strandIncl_def, ih, toBraid_cons, map_mul,
+      map_zpow, strandIncl_sigma]
+
+/-- The **Markov stabilization** of a braid word with sign `ε`: add a strand and cross it once
+with the previous last strand, by the letter `σ (Fin.last n) ^ ε` placed at the top. -/
+def stabilize (w : BraidWord (n + 1)) (ε : ℤˣ) : BraidWord (n + 2) :=
+  w.strandIncl ++ ([(Fin.last n, ε)] : BraidWord (n + 2))
+
+/-- The defining equation of `TauCeti.BraidWord.stabilize`: the new letter is placed at the top. -/
+theorem stabilize_def (w : BraidWord (n + 1)) (ε : ℤˣ) :
+    w.stabilize ε = w.strandIncl ++ ([(Fin.last n, ε)] : BraidWord (n + 2)) :=
+  (rfl)
+
+-- The list type is written `Fin (n + 1) × ℤˣ` for the reason given at `length_strandIncl`.
+/-- Stabilization adds one letter. -/
+@[simp]
+theorem length_stabilize (w : BraidWord (n + 1)) (ε : ℤˣ) :
+    List.length (α := Fin (n + 1) × ℤˣ) (w.stabilize ε) = w.length + 1 := by
+  rw [stabilize_def, List.length_append, length_strandIncl, List.length_singleton]
+
+/-- A stabilized word represents the braid `strandIncl b * σ (Fin.last n) ^ ε`, the stabilization
+of the braid `b` of the word, as in `TauCeti.IsMarkovMove.stabilize` and
+`TauCeti.IsMarkovMove.stabilizeInv`. -/
+@[simp]
+theorem toBraid_stabilize (w : BraidWord (n + 1)) (ε : ℤˣ) :
+    (w.stabilize ε).toBraid = BraidGroup.strandIncl w.toBraid * sigma (Fin.last n) ^ (ε : ℤ) := by
+  rw [stabilize_def, toBraid_append, toBraid_strandIncl, toBraid_cons, toBraid_nil, mul_one]
 
 end BraidWord
 

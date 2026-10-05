@@ -183,24 +183,52 @@ theorem sum_ite_mem_rows {R : Type*} [AddCommMonoidWithOne R] (x : GridState n)
   rw [sum_pointSet, Equiv.sum_comp x.toPerm fun r => if r ∈ D then (1 : R) else 0]
   simp
 
+/-- A product of column and row sets avoids a grid state's points exactly when every
+column in the first set has its occupied row outside the second set. -/
+theorem disjoint_product_pointSet_iff (M : GridState n) (s t : Finset (Fin n)) :
+    Disjoint (s ×ˢ t) M.pointSet ↔ ∀ c ∈ s, M c ∉ t := by
+  rw [Finset.disjoint_left]
+  constructor
+  · intro h c hc ht
+    exact h (Finset.mk_mem_product hc ht) ((M.mk_mem_pointSet c (M c)).2 rfl)
+  · intro h p hp hM
+    obtain ⟨hc, hr⟩ := Finset.mem_product.mp hp
+    exact h p.1 hc ((M.mem_pointSet p).1 hM ▸ hr)
+
 /-- A grid state occupies a grid point in every column, so its point set meets `s ×ˢ univ` for every
 nonempty set `s` of columns. -/
 theorem not_disjoint_product_univ_pointSet (M : GridState n) {s : Finset (Fin n)}
     (hs : s.Nonempty) : ¬Disjoint (s ×ˢ (Finset.univ : Finset (Fin n))) M.pointSet := by
+  rw [M.disjoint_product_pointSet_iff]
   obtain ⟨c, hc⟩ := hs
-  intro h
-  exact Finset.disjoint_left.mp h (Finset.mk_mem_product hc (Finset.mem_univ (M c)))
-    ((M.mk_mem_pointSet c (M c)).mpr rfl)
+  exact fun h => h c hc (Finset.mem_univ (M c))
 
 /-- A grid state occupies a grid point in every row, so its point set meets `univ ×ˢ t` for every
 nonempty set `t` of rows. -/
 theorem not_disjoint_univ_product_pointSet (M : GridState n) {t : Finset (Fin n)}
     (ht : t.Nonempty) : ¬Disjoint ((Finset.univ : Finset (Fin n)) ×ˢ t) M.pointSet := by
+  rw [M.disjoint_product_pointSet_iff]
   obtain ⟨r, hr⟩ := ht
   intro h
-  exact Finset.disjoint_left.mp h
-    (Finset.mk_mem_product (Finset.mem_univ (M.toPerm.symm r)) hr)
-    ((M.mk_mem_pointSet (M.toPerm.symm r) r).mpr (M.toPerm.apply_symm_apply r))
+  exact h (M.toPerm.symm r) (Finset.mem_univ _)
+    ((M.toPerm.apply_symm_apply r).symm ▸ hr)
+
+/-- A row with one column removed avoids a grid state's points exactly when the point in
+that row lies in the removed column. -/
+theorem disjoint_univ_erase_product_singleton_pointSet_iff (M : GridState n) (c r : Fin n) :
+    Disjoint ((Finset.univ.erase c) ×ˢ ({r} : Finset (Fin n))) M.pointSet ↔ M c = r := by
+  classical
+  rw [M.disjoint_product_pointSet_iff]
+  simp only [Finset.mem_erase, Finset.mem_univ, and_true, Finset.mem_singleton]
+  constructor
+  · intro h
+    obtain ⟨d, hd⟩ := M.toPerm.surjective r
+    have hdc : d = c := by
+      by_contra hdc
+      exact h d hdc hd
+    simpa only [hdc] using hd
+  · intro h d hdc hd
+    exact hdc (M.toPerm.injective (hd.trans h.symm))
 
 /-- Point sets of grid states are equal exactly when the underlying permutations are equal. -/
 @[simp]
@@ -299,6 +327,42 @@ theorem mem_pointSet_relabelRows (ρ : Equiv.Perm (Fin n)) (x : GridState n) (p 
 theorem mem_pointSet_relabelColumns (κ : Equiv.Perm (Fin n)) (x : GridState n) (p : Fin n × Fin n) :
     p ∈ (x.relabelColumns κ).pointSet ↔ (κ.symm p.1, p.2) ∈ x.pointSet := by
   simp
+
+/-- Undoing a row relabeling transports the relabeled state's points to the original
+point set. -/
+theorem pointSet_eq_map_relabelRows (x : GridState n) (ρ : Equiv.Perm (Fin n)) :
+    x.pointSet = (x.relabelRows ρ).pointSet.map
+      ((Equiv.refl (Fin n)).prodCongr ρ.symm).toEmbedding := by
+  ext p
+  simp only [Finset.mem_map_equiv, Equiv.prodCongr_symm, Equiv.symm_symm,
+    Equiv.refl_symm, Equiv.prodCongr_apply, Prod.map_apply', Equiv.refl_apply,
+    mem_pointSet_relabelRows, Equiv.symm_apply_apply]
+
+/-- Undoing a column relabeling transports the relabeled state's points to the original
+point set. -/
+theorem pointSet_eq_map_relabelColumns (x : GridState n) (κ : Equiv.Perm (Fin n)) :
+    x.pointSet = (x.relabelColumns κ).pointSet.map
+      (κ.symm.prodCongr (Equiv.refl (Fin n))).toEmbedding := by
+  ext p
+  simp only [Finset.mem_map_equiv, Equiv.prodCongr_symm, Equiv.symm_symm,
+    Equiv.refl_symm, Equiv.prodCongr_apply, Prod.map_apply', Equiv.refl_apply,
+    mem_pointSet_relabelColumns, Equiv.symm_apply_apply]
+
+/-- A set of squares relabeled back avoids a state's points exactly when the set avoids
+the row-relabeled state's points. -/
+theorem disjoint_map_relabelRows_pointSet_iff (x : GridState n) (ρ : Equiv.Perm (Fin n))
+    (S : Finset (Fin n × Fin n)) :
+    Disjoint (S.map ((Equiv.refl (Fin n)).prodCongr ρ.symm).toEmbedding) x.pointSet ↔
+      Disjoint S (x.relabelRows ρ).pointSet := by
+  rw [x.pointSet_eq_map_relabelRows ρ, Finset.disjoint_map]
+
+/-- A set of squares relabeled back avoids a state's points exactly when the set avoids
+the column-relabeled state's points. -/
+theorem disjoint_map_relabelColumns_pointSet_iff (x : GridState n) (κ : Equiv.Perm (Fin n))
+    (S : Finset (Fin n × Fin n)) :
+    Disjoint (S.map (κ.symm.prodCongr (Equiv.refl (Fin n))).toEmbedding) x.pointSet ↔
+      Disjoint S (x.relabelColumns κ).pointSet := by
+  rw [x.pointSet_eq_map_relabelColumns κ, Finset.disjoint_map]
 
 /-- Swapping two rows in a grid state. -/
 def swapRows (a b : Fin n) (x : GridState n) : GridState n :=
@@ -775,6 +839,24 @@ theorem mem_XSet_relabelColumns (κ : Equiv.Perm (Fin n)) (p : Fin n × Fin n) :
     p ∈ (G.relabelColumns κ).XSet ↔ (κ.symm p.1, p.2) ∈ G.XSet := by
   simp [XSet_def]
 
+/-- A set of squares with rows relabeled back avoids the original X-markings exactly when
+the set avoids the row-relabeled diagram's X-markings. -/
+theorem disjoint_map_relabelRows_XSet_iff (ρ : Equiv.Perm (Fin n))
+    (S : Finset (Fin n × Fin n)) :
+    Disjoint (S.map ((Equiv.refl (Fin n)).prodCongr ρ.symm).toEmbedding) G.XSet ↔
+      Disjoint S (G.relabelRows ρ).XSet := by
+  simpa only [XSet, relabelRows_X] using
+    G.X.disjoint_map_relabelRows_pointSet_iff ρ S
+
+/-- A set of squares relabeled back avoids the original X-markings exactly when the set
+avoids the relabeled diagram's X-markings. -/
+theorem disjoint_map_relabelColumns_XSet_iff (κ : Equiv.Perm (Fin n))
+    (S : Finset (Fin n × Fin n)) :
+    Disjoint (S.map (κ.symm.prodCongr (Equiv.refl (Fin n))).toEmbedding) G.XSet ↔
+      Disjoint S (G.relabelColumns κ).XSet := by
+  simpa only [XSet, relabelColumns_X] using
+    G.X.disjoint_map_relabelColumns_pointSet_iff κ S
+
 /-- Swapping two rows in a grid diagram. -/
 def swapRows (a b : Fin n) (G : GridDiagram n) : GridDiagram n :=
   G.relabelRows (Equiv.swap a b)
@@ -822,6 +904,22 @@ theorem mem_OSet_swapColumns (a b : Fin n) (p : Fin n × Fin n) :
 theorem mem_XSet_swapColumns (a b : Fin n) (p : Fin n × Fin n) :
     p ∈ (G.swapColumns a b).XSet ↔ (Equiv.swap a b p.1, p.2) ∈ G.XSet := by
   simp [swapColumns]
+
+/-- A set of squares with rows swapped back avoids the original X-markings exactly when
+the set avoids the row-swapped diagram's X-markings. -/
+theorem disjoint_map_swapRows_XSet_iff (a b : Fin n) (S : Finset (Fin n × Fin n)) :
+    Disjoint (S.map ((Equiv.refl (Fin n)).prodCongr (Equiv.swap a b)).toEmbedding) G.XSet ↔
+      Disjoint S (G.swapRows a b).XSet := by
+  simpa only [swapRows, Equiv.symm_swap] using
+    G.disjoint_map_relabelRows_XSet_iff (Equiv.swap a b) S
+
+/-- A set of squares swapped back avoids the original X-markings exactly when the set
+avoids the swapped diagram's X-markings. -/
+theorem disjoint_map_swapColumns_XSet_iff (a b : Fin n) (S : Finset (Fin n × Fin n)) :
+    Disjoint (S.map ((Equiv.swap a b).prodCongr (Equiv.refl (Fin n))).toEmbedding) G.XSet ↔
+      Disjoint S (G.swapColumns a b).XSet := by
+  simpa only [swapColumns, Equiv.symm_swap] using
+    G.disjoint_map_relabelColumns_XSet_iff (Equiv.swap a b) S
 
 /-- Swapping the same pair of rows twice is the identity on grid diagrams. -/
 @[simp]
