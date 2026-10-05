@@ -395,13 +395,12 @@ theorem explicitH2CyclicEquiv_mk (G' : Type u) [Group G'] [TopologicalSpace G']
     (hg' : ∀ x : G', x ∈ Subgroup.zpowers g') (f : Z2 G' M') :
     explicitH2CyclicEquiv G' M' g' hg' (f : H2 G' M') =
       QuotientAddGroup.mk (s := (groupNorm G' M').range.addSubgroupOf (H0 G' M'))
-        ⟨∑ x : G', (f : G' × G' → M') (x, g'), sumCocycle_mem_H0 G' M' f g'⟩ := by
+        ⟨∑ x : G', (f : G' × G' → M') (x, g'),
+          sumCocycle_val g' f ▸ (sumCocycle g' f).property⟩ := by
   calc
     explicitH2CyclicEquiv G' M' g' hg' (f : H2 G' M') =
         QuotientAddGroup.mk (sumCocycle g' f) := cyclicH2Map_mk g' f
-    _ = QuotientAddGroup.mk
-        ⟨∑ x : G', (f : G' × G' → M') (x, g'), sumCocycle_mem_H0 G' M' f g'⟩ :=
-      congrArg QuotientAddGroup.mk (Subtype.ext (sumCocycle_val g' f))
+    _ = _ := congrArg QuotientAddGroup.mk (Subtype.ext (sumCocycle_val g' f))
 
 end DegreeTwo
 
