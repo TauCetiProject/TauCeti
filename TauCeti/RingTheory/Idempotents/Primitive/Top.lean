@@ -20,15 +20,13 @@ projective left ideal `Ae`, and its **top** is the semisimple quotient
 This quotient is simple exactly when `e` is primitive, and its quotient map is the projective cover
 of that simple module (`TauCeti.isProjectiveCover_mkQ_smul_top_span_singleton`).  Conversely, every
 simple module over a left Artinian ring is isomorphic to the top of `Ae` for some primitive
-idempotent `e`: choose a primitive orthogonal decomposition of `1`, map one of its summands onto the
-simple module, and compare the two maximal kernels.
+idempotent `e`.
 
-Nothing in the argument uses more about `Ae` than that it is projective
-(`IsIdempotentElem.projective_span_singleton`), so the results specialize the statements about
-tops of projective modules in `TauCeti.Algebra.Module.Projective.Top`, such as
-`TauCeti.isIndecomposableModule_iff_isSimpleModule_quotient_jacobson_smul_top`, using that
-primitivity of `e` is indecomposability of `Ae`
-(`TauCeti.isPrimitiveIdempotent_iff_isIndecomposableModule`).
+These results are the specializations to the projective module `Ae`
+(`IsIdempotentElem.projective_span_singleton`) of the statements about tops of projective modules
+in `TauCeti.Algebra.Module.Projective.Top`, such as
+`TauCeti.isIndecomposableModule_iff_isSimpleModule_quotient_jacobson_smul_top`, since primitivity
+of `e` is indecomposability of `Ae` (`TauCeti.isPrimitiveIdempotent_iff_isIndecomposableModule`).
 
 ## Main results
 

@@ -14,15 +14,13 @@ public import TauCeti.RingTheory.KrullSchmidt.Indecomposable
 /-!
 # Tops of indecomposable projective modules
 
-Let `P` be a projective module over a ring `R`, and let `I` be a nilpotent ideal.  The endomorphism
-reduction `Ideal.endMapQ I P` is surjective because `P` is projective, and its kernel consists of
-nilpotent endomorphisms.  Thus idempotents lift between the endomorphism rings of `P` and of
-`P / IP`, which transfers indecomposability in both directions.
+Let `P` be a projective module over a ring `R`, and let `I` be a nilpotent ideal.  Then `P` is
+indecomposable exactly when `P / IP` is.
 
-Over a semiprimary ring with Jacobson radical `J`, the **top** `P / JP` is semisimple, so it is
-indecomposable exactly when it is simple.  Hence an indecomposable projective module has a simple
-top, `JP` is the kernel of every surjection onto a simple module, and every such surjection is a
-projective cover.
+Over a semiprimary ring with Jacobson radical `J`, the **top** of `P` is `P / JP`.  A projective
+module is indecomposable exactly when its top is simple.  For an indecomposable projective module
+`P`, the submodule `JP` is maximal and is the kernel of every surjection onto a simple module, and
+every such surjection is a projective cover.
 
 ## Main definitions
 
@@ -65,8 +63,7 @@ variable {R : Type u} [Ring R] {P : Type v} [AddCommGroup P] [Module R P] [Modul
 
 omit [Module.Projective R P] in
 /-- **Indecomposability reflects from the top.**  If `I` is nilpotent and `P / IP` is
-indecomposable, then so is `P`: an idempotent endomorphism of `P` reducing to `0` or `1` differs
-from it by a nilpotent idempotent, hence equals it.  No projectivity is needed. -/
+indecomposable, then so is `P`.  This holds for every module `P`, projective or not. -/
 theorem IsIndecomposableModule.of_quotient_smul_top (hI : IsNilpotent I)
     (h : IsIndecomposableModule R (P ⧸ I • (⊤ : Submodule R P))) : IsIndecomposableModule R P := by
   let q := Ideal.endMapQ I P
@@ -82,8 +79,7 @@ theorem IsIndecomposableModule.of_quotient_smul_top (hI : IsNilpotent I)
       rw [RingHom.mem_ker, map_sub, map_one, hq1, sub_self]
 
 /-- **Indecomposability of a projective module is read off its top.**  If `I` is nilpotent, a
-projective module `P` is indecomposable exactly when `P / IP` is: idempotent endomorphisms lift
-along the surjective reduction `Ideal.endMapQ I P`, whose kernel is nil. -/
+projective module `P` is indecomposable exactly when `P / IP` is. -/
 theorem isIndecomposableModule_quotient_smul_top_iff (hI : IsNilpotent I) :
     IsIndecomposableModule R (P ⧸ I • (⊤ : Submodule R P)) ↔ IsIndecomposableModule R P := by
   refine ⟨IsIndecomposableModule.of_quotient_smul_top hI, fun hP ↦ ?_⟩
@@ -98,9 +94,8 @@ theorem isIndecomposableModule_quotient_smul_top_iff (hI : IsNilpotent I) :
     (RingHom.mem_range.mpr (Ideal.endMapQ_surjective I P g)) hg
   exact (h f hf).imp (fun hf0 ↦ by simp [hf0]) (fun hf1 ↦ by simp [hf1])
 
-/-- **A projective module is indecomposable exactly when its top is simple.**  Over a semiprimary
-ring the top `P / JP` is semisimple, and a semisimple module is indecomposable exactly when it is
-simple. -/
+/-- **A projective module is indecomposable exactly when its top is simple.**  Here `R` is
+semiprimary with Jacobson radical `J`, and the top of `P` is `P / JP`. -/
 theorem isIndecomposableModule_iff_isSimpleModule_quotient_jacobson_smul_top
     [IsSemiprimaryRing R] :
     IsIndecomposableModule R P ↔
@@ -130,7 +125,7 @@ theorem IsIndecomposableModule.ker_eq_jacobson_smul_top_of_surjective [IsSemipri
 
 /-- **An indecomposable projective module is the projective cover of each of its simple
 quotients.**  Over a semiprimary ring, any surjection from an indecomposable projective module onto
-a simple module has kernel `JP`, which is superfluous since `J` is nilpotent. -/
+a simple module is a projective cover. -/
 theorem IsIndecomposableModule.isProjectiveCover_of_surjective [IsSemiprimaryRing R]
     (h : IsIndecomposableModule R P) (M : Type w) [AddCommGroup M] [Module R M]
     [IsSimpleModule R M] (f : P →ₗ[R] M) (hf : Function.Surjective f) : IsProjectiveCover f where
