@@ -206,4 +206,9 @@ instance : Algebra.FiniteType A (generatedCoordinateHopfAlgebra A) := by
   rw [generatedCoordinateHopfAlgebra_def]
   infer_instance
 
+/-- The generated E₆ minuscule subgroup as a finite-type commutative Hopf algebra. -/
+noncomputable abbrev finiteTypeGeneratedCoordinateHopfAlgebra : FiniteTypeCommHopfAlgCat A :=
+  ⟨generatedCoordinateHopfAlgebra A,
+    inferInstanceAs (Algebra.FiniteType A (generatedCoordinateHopfAlgebra A))⟩
+
 end TauCeti.E6Minuscule

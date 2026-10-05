@@ -196,12 +196,19 @@ theorem torusCorestrict_eq_ofWeights :
     coordinateMap_comp_weightTorusToBaseChangeCoordinateMap,
     GeneralLinear.hom_weightTorusBaseChangeCoordinateMap, weightTable_weight]
 
-private theorem minusculeCharacter_injective : Function.Injective minusculeCharacter := by
+/-- Distinct minuscule basis indices give distinct characters of the weight torus. -/
+theorem minusculeCharacter_injective : Function.Injective minusculeCharacter := by
   intro a b h
   apply DynkinType.e6MinusculeWeight_injective
   funext i
   simpa only [minusculeCharacter, SplitTorus.toAdd_weightCharacter] using
     congrArg (fun χ : Multiplicative (Fin 6 →₀ ℤ) ↦ Multiplicative.toAdd χ i) h
+
+end Simple
+
+section RootInvariant
+
+variable (k : Type u) [CommRing k]
 
 private theorem positiveRoot_mulVec_single_sub (i : Fin 6) (a : Fin 27)
     (ha : DynkinType.e6MinusculeWeight a i = -1) :
@@ -227,22 +234,31 @@ private theorem negativeRoot_mulVec_single_sub (i : Fin 6) (a : Fin 27)
   rw [Matrix.mulVec_single_one, weightTable.loweringMatrix_map_col]
   simp only [weightTable_weight, weightTable_reflection, ha, ite_true, add_sub_cancel_left]
 
-/-- Invariance under the two simple-root points makes membership of coordinate basis vectors
-stable under every simple reflection. -/
-private theorem single_reflection_mem
-    (N : Subcomodule k (coordinateHopfAlgebra k) (Fin 27 → k))
+/-- A submodule invariant under the numbered root points at parameter one contains the reflected
+coordinate vector whenever it contains the original coordinate vector. -/
+theorem single_reflection_mem_of_rootSubgroup_invariant
+    (N : Submodule k (Fin 27 → k))
+    (hN : ∀ (j : Fin 6 ⊕ Fin 6) (w : Fin 27 → k), w ∈ N →
+      ((rootSubgroupPoints j k (Multiplicative.ofAdd 1) :
+        Matrix.GeneralLinearGroup (Fin 27) k) : Matrix (Fin 27) (Fin 27) k) *ᵥ w ∈ N)
     (a : Fin 27) (i : Fin 6) (ha : Pi.single a 1 ∈ N) :
     Pi.single (DynkinType.e6MinusculeReflection i a) 1 ∈ N := by
   rcases DynkinType.e6MinusculeWeight_apply_eq_neg_one_or_eq_zero_or_eq_one a i with
     hneg | hzero | hpos
-  · have hact := rootSubgroupPoints_mulVec_mem k N (.inl i) ha
-    have hsub := N.toSubmodule.sub_mem hact ha
+  · have hact := hN (.inl i) _ ha
+    have hsub := N.sub_mem hact ha
     rwa [positiveRoot_mulVec_single_sub k i a hneg] at hsub
   · rw [(DynkinType.e6MinusculeReflection_eq_self_iff i a).2 hzero]
     exact ha
-  · have hact := rootSubgroupPoints_mulVec_mem k N (.inr i) ha
-    have hsub := N.toSubmodule.sub_mem hact ha
+  · have hact := hN (.inr i) _ ha
+    have hsub := N.sub_mem hact ha
     rwa [negativeRoot_mulVec_single_sub k i a hpos] at hsub
+
+end RootInvariant
+
+section Simple
+
+variable (k : Type u) [Field k]
 
 /-- **The standard comodule of the specialized type-`E₆` minuscule carrier is simple over
 every field.** -/
@@ -253,7 +269,8 @@ instance instIsSimpleOrderSubcomodule :
     minusculeCharacter_injective (torusCorestrict_eq_ofWeights k)
     (fun i a ↦ DynkinType.e6MinusculeReflection i a)
     (fun i ↦ DynkinType.e6MinusculeReflection_apply_apply i)
-    (fun N a i ↦ single_reflection_mem k N a i) 0
+    (fun N a i ↦ single_reflection_mem_of_rootSubgroup_invariant k N.toSubmodule
+      (fun j _ hw ↦ rootSubgroupPoints_mulVec_mem k N j hw) a i) 0
     DynkinType.exists_e6MinusculeReflections_eq
 
 end Simple
