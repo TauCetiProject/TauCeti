@@ -100,16 +100,15 @@ theorem _root_.WeierstrassCurve.Affine.CoordinateRing.isBaseChange_mapLinear :
   intro z
   let : Module R[X] (W.map f).CoordinateRing :=
     Module.compHom (W.map f).CoordinateRing (Polynomial.mapRingHom f)
-  have : IsScalarTower R[X] S[X] (W.map f).CoordinateRing := mapScalarTower W f
   -- `z ↦ e (1 ⊗ₜ z)` as an `R[X]`-linear map, so that it can be compared with `mapLinear` on
   -- the basis `{1, Y}` of `R[W]`.
   let g : W.CoordinateRing →ₗ[R[X]] (W.map f).CoordinateRing :=
     { toFun := fun x ↦ e (1 ⊗ₜ x)
       map_add' := fun x y ↦ by rw [TensorProduct.tmul_add, map_add]
       map_smul' := fun p x ↦ by
-        rw [TensorProduct.tmul_smul, ← IsScalarTower.algebraMap_smul S[X] p, e.map_smul,
-          RingHom.id_apply, MulAction.compHom_smul_def (Polynomial.mapRingHom f : R[X] →* S[X]),
-          RingHom.algebraMap_toAlgebra, MonoidHom.coe_ofClass] }
+        -- The tower is named explicitly: instance search would find `AdjoinRoot`'s `R[X]`-action.
+        rw [TensorProduct.tmul_smul, ← smul_one_smul S[X] p, map_smul, RingHom.id_apply,
+          (mapScalarTower W f).smul_assoc, one_smul] }
   have hg : ∀ x, g x = e (1 ⊗ₜ x) := fun _ ↦ rfl
   rw [← hg]
   refine LinearMap.congr_fun ((CoordinateRing.basis W).ext fun i ↦ ?_) z
