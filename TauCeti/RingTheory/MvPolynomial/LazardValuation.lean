@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Polynomial.Degree.TrailingDegree
-public import Mathlib.Data.Finsupp.Weight
 public import Mathlib.RingTheory.MvPowerSeries.LexOrder
+public import TauCeti.Data.Finsupp.Weight
 public import TauCeti.RingTheory.MvPolynomial.OrderAt
 
 /-!
@@ -73,37 +73,6 @@ public section
 open Finsupp
 
 section Evaluator
-
-namespace Finsupp
-
-variable {σ M : Type*} [LinearOrder σ]
-
-/-- A finitely supported function splits into its values before `i`, at `i`, and after `i`. -/
-theorem filter_gt_add_single_add_filter_lt [AddZeroClass M] (f : σ →₀ M) (i : σ) :
-    f.filter (· < i) + single i (f i) + f.filter (i < ·) = f := by
-  ext j
-  rcases lt_trichotomy j i with hj | rfl | hj
-  · simp [hj, hj.not_gt, single_eq_of_ne hj.ne]
-  · simp
-  · simp [hj, hj.not_gt, single_eq_of_ne hj.ne']
-
-/-- The `c`-weight of an exponent `w` splits into the weights of its coordinates before `i`, at
-`i`, and after `i`. -/
-theorem weight_filter_gt_add_smul_add_weight_filter_lt [AddCommMonoid M] (c : σ → M)
-    (w : σ →₀ ℕ) (i : σ) :
-    weight c (w.filter (· < i)) + w i • c i + weight c (w.filter (i < ·)) = weight c w := by
-  conv_rhs => rw [← filter_gt_add_single_add_filter_lt w i]
-  rw [map_add, map_add, weight_single]
-
-omit [LinearOrder σ] in
-/-- Scaling the weight vector scales the weight. -/
-theorem weight_smul_left {R S : Type*} [Semiring R] [AddCommMonoid M] [Module R M] [Monoid S]
-    [DistribMulAction S M] [SMulCommClass R S M] (s : S) (c : σ → M) (w : σ →₀ R) :
-    weight (s • c) w = s • weight c w := by
-  simp only [weight_apply, smul_sum, Pi.smul_apply]
-  exact sum_congr fun _ _ ↦ smul_comm _ s _
-
-end Finsupp
 
 namespace TauCeti
 
