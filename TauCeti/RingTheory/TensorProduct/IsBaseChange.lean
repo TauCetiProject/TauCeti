@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.TensorProduct.Basis
 public import Mathlib.LinearAlgebra.TensorProduct.Tower
 public import Mathlib.RingTheory.IsTensorProduct
-public import Mathlib.RingTheory.Localization.Module
+public import Mathlib.RingTheory.Localization.BaseChange
 
 /-!
 # Base change of a tensor product, and injectivity of the lifted map
@@ -26,8 +25,8 @@ If `f : M →ₗ[R] N` exhibits `N` as the base change of `M` along `R → S`, t
 `S ⊗[R] M →ₗ[S] N` it induces, Mathlib's `LinearMap.liftBaseChange`, is injective: it is the
 equivalence `IsBaseChange.equiv`.
 
-Over a fraction ring, extension also preserves injectivity of any linear map from a free module,
-without requiring its image to span the target.
+Over a fraction ring, extension also preserves injectivity of any linear map from an arbitrary
+module, without requiring its image to span the target.
 
 ## Main results
 
@@ -36,7 +35,7 @@ without requiring its image to span the target.
 * `IsBaseChange.liftBaseChange_injective`: the map `S ⊗[R] M →ₗ[S] N` induced by a base change is
   injective.
 * `LinearMap.liftBaseChange_injective`: extension to a fraction ring preserves injectivity of a
-  map from a free module, without a full-span hypothesis.
+  map from an arbitrary module, without a full-span hypothesis.
 -/
 
 public section
@@ -76,17 +75,18 @@ namespace TauCeti
 section
 
 variable {R K M V : Type*} [CommRing R] [CommRing K] [Algebra R K] [IsFractionRing R K]
-variable [AddCommGroup M] [Module R M] [Module.Free R M]
+variable [AddCommGroup M] [Module R M]
 variable [AddCommGroup V] [Module R V] [Module K V] [IsScalarTower R K V]
 
-/-- Extension to a fraction ring preserves injectivity of a linear map from a free module.
-Neither finite generation nor a full-span hypothesis is needed. -/
+/-- Extension to a fraction ring preserves injectivity of a linear map from an arbitrary module.
+Neither freeness, finite generation nor a full-span hypothesis is needed. -/
 theorem _root_.LinearMap.liftBaseChange_injective (f : M →ₗ[R] V)
     (hf : Function.Injective f) : Function.Injective (f.liftBaseChange K) := by
-  rw [LinearMap.liftBaseChange_injective_iff _ (Module.Free.chooseBasis R M)]
-  exact (LinearIndependent.iff_fractionRing R K).mp
-    ((Module.Free.chooseBasis R M).linearIndependent.map' f
-      (LinearMap.ker_eq_bot.mpr hf))
+  refine IsLocalizedModule.injective_of_map_zero (nonZeroDivisors R)
+    (TensorProduct.mk R K M 1) (g := (f.liftBaseChange K).restrictScalars R) ?_
+  intro m hm
+  have hm' : m = 0 := hf (by simpa using hm)
+  rw [hm', map_zero]
 
 end
 

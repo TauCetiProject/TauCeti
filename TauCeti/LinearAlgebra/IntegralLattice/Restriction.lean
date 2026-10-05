@@ -115,7 +115,7 @@ theorem isEven_restrict_iff (L : IntegralLattice V) (S : Submodule ℤ L) :
   simpa only [LinearMap.BilinForm.restrict_apply, LinearMap.domRestrict_apply,
     integralNorm_apply] using
     (L.restrict S).isEven_iff_of_integralForm_equiv (L.integralForm.restrict S)
-      (L.restrictCarrierEquiv S) (L.integralForm_restrictCarrierEquiv S)
+      (L.restrictCarrierEquiv S) (fun s ↦ L.integralForm_restrictCarrierEquiv S s s)
 
 /-- The rational extension of the inclusion of a submodule into the ambient space of a lattice. -/
 def restrictMap (L : IntegralLattice V) (S : Submodule ℤ L) : ℚ ⊗[ℤ] S →ₗ[ℚ] V :=

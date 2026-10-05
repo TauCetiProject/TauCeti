@@ -31,8 +31,8 @@ condition, because they occur twice in the norm of an integral linear combinatio
   even.
 * `TauCeti.IntegralLattice.isEven_ofGramMatrix_iff`: a Gram lattice is even exactly when its
   diagonal entries are even.
-* `TauCeti.IntegralLattice.isEven_iff_of_integralForm_equiv`: an integral-form equivalence
-  identifies lattice evenness with even self-pairings in the source module.
+* `TauCeti.IntegralLattice.isEven_iff_of_integralForm_equiv`: an equivalence preserving
+  self-pairings identifies lattice evenness with even self-pairings in the source module.
 * `TauCeti.IntegralLattice.Isometry.isEven_iff`: evenness is invariant under lattice isometry.
 * `TauCeti.IntegralLattice.IsEven.exists_eq_two_mul_of_mem_vectorsOfNorm`: a norm represented by an
   even lattice is twice an integer.
@@ -144,11 +144,11 @@ theorem isEven_ofGramMatrix_iff {ι : Type*} [Fintype ι] (b : Basis ι ℚ V)
   intro i
   rw [integralNorm_apply, integralForm_ofGramMatrix_apply]
 
-/-- An integral-form equivalence identifies lattice evenness with even self-pairings in an
-arbitrary integral module. -/
+/-- An equivalence preserving self-pairings identifies lattice evenness with even self-pairings
+in an arbitrary integral module. -/
 theorem isEven_iff_of_integralForm_equiv (L : IntegralLattice V) {M : Type*}
     [AddCommGroup M] [Module ℤ M] (B : LinearMap.BilinForm ℤ M) (e : M ≃ₗ[ℤ] L)
-    (hB : ∀ x y, L.integralForm (e x) (e y) = B x y) :
+    (hB : ∀ x, L.integralForm (e x) (e x) = B x x) :
     L.IsEven ↔ ∀ x, Even (B x x) := by
   rw [IsEven, e.surjective.forall]
   simp only [integralNorm_apply, hB]
@@ -159,7 +159,7 @@ theorem Isometry.isEven_iff {W : Type*} [AddCommGroup W] [Module ℚ W]
     L.IsEven ↔ M.IsEven := by
   simpa only [IsEven, integralNorm_apply] using
     (M.isEven_iff_of_integralForm_equiv L.integralForm e.carrierEquiv
-      e.carrierEquiv_map_integralForm).symm
+      (fun x ↦ e.carrierEquiv_map_integralForm x x)).symm
 
 /-! ## Prescribed norm properties for even lattices -/
 
