@@ -5,13 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.NumberField.Completion.LiesOverInstances
 public import TauCeti.NumberTheory.NumberField.Global.Places.Basic
-public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Norm
-
-import Mathlib.NumberTheory.NumberField.Completion.Ramification
-import TauCeti.NumberTheory.NumberField.Global.Places.Semilocal
-import TauCeti.NumberTheory.NumberField.LocalGlobal.Semilocal.Basic
+public import TauCeti.NumberTheory.NumberField.InfinitePlace.Completion.Extension
+public import TauCeti.NumberTheory.NumberField.LocalGlobal.Norm
 
 /-!
 # Normalized absolute values under a finite extension
@@ -72,21 +68,21 @@ theorem normalizedAbsValue_inl_algebraMap (w : HeightOneSpectrum (𝓞 L))
     [w.asIdeal.LiesOver v.asIdeal] (x : K) :
     normalizedAbsValue (Sum.inl w) (algebraMap K L x) =
       normalizedAbsValue (Sum.inl v) x ^ finrank (v.adicCompletion K) (w.adicCompletion L) := by
-  rw [normalizedAbsValue_inl, normalizedAbsValue_inl, ← FinitePlace.norm_embedding,
-    ← FinitePlace.norm_embedding, FinitePlace.embedding_apply, FinitePlace.embedding_apply,
+  rw [normalizedAbsValue_inl_eq_norm_coe, normalizedAbsValue_inl_eq_norm_coe,
     ← HeightOneSpectrum.adicCompletionExtension_coe K L v w,
     HeightOneSpectrum.norm_adicCompletionExtension]
 
 attribute [local instance] Fintype.ofFinite in
 /-- The product over the finite places `w ∣ v` of `L` of the normalized absolute values of
 `x ∈ K` is `‖x‖_v ^ [L : K]`. -/
+@[simp↓]
 theorem finprod_normalizedAbsValue_inl_algebraMap (x : K) :
     ∏ᶠ w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal},
         normalizedAbsValue (Sum.inl w.1) (algebraMap K L x) =
       normalizedAbsValue (Sum.inl v) x ^ finrank K L := by
-  rw [finprod_eq_prod_of_fintype,
-    Finset.prod_congr rfl fun w _ ↦ have := w.2; normalizedAbsValue_inl_algebraMap v w.1 x,
-    Finset.prod_pow_eq_pow_sum, TauCeti.sum_finrank_adicCompletion_eq_finrank]
+  simp_rw [finprod_eq_prod_of_fintype, normalizedAbsValue_inl_eq_norm_coe,
+    ← HeightOneSpectrum.adicCompletionExtension_coe K L v,
+    TauCeti.prod_norm_adicCompletionExtension_eq_norm_pow]
 
 end Finite
 
@@ -94,25 +90,40 @@ section Infinite
 
 variable (v : InfinitePlace K)
 
+omit [NumberField K] in
+/-- At an infinite place `w ∣ v`, the normalized absolute value of `x ∈ K` is the normalized
+absolute value on `L_w` of the image of `x` under `K_v → L_w`. -/
+private theorem normalizedAbsValue_inr_algebraMap_eq_completionMap (w : InfinitePlace L)
+    [w.LiesOver v] (x : K) :
+    normalizedAbsValue (Sum.inr w) (algebraMap K L x) =
+      completionNormalizedAbsValue w (LiesOver.completionMap (algebraMap K v.Completion x)) := by
+  rw [normalizedAbsValue_inr, ← completionNormalizedAbsValue_algebraMap,
+    ← IsScalarTower.algebraMap_apply K L w.Completion,
+    IsScalarTower.algebraMap_apply K v.Completion w.Completion]
+  rfl
+
 /-- **Normalized absolute values at an infinite place under extension.** If the infinite place `w`
 of `L` lies over the infinite place `v` of `K`, then `‖x‖_w = ‖x‖_v ^ [L_w : K_v]` for `x ∈ K`.
 The exponent is `2` exactly when `w` is complex and `v` is real, and `1` otherwise. -/
 theorem normalizedAbsValue_inr_algebraMap (w : InfinitePlace L) [w.LiesOver v] (x : K) :
     normalizedAbsValue (Sum.inr w) (algebraMap K L x) =
       normalizedAbsValue (Sum.inr v) x ^ finrank v.Completion w.Completion := by
-  rw [normalizedAbsValue_inr, normalizedAbsValue_inr, ← comap_apply, LiesOver.comap_eq w v,
-    ← mult_mul_finrank v w, pow_mul]
+  rw [normalizedAbsValue_inr_algebraMap_eq_completionMap v,
+    completionNormalizedAbsValue_completionMap, completionNormalizedAbsValue_algebraMap,
+    normalizedAbsValue_inr]
 
 open scoped Classical in
 /-- The product over the infinite places `w ∣ v` of `L` of the normalized absolute values of
 `x ∈ K` is `‖x‖_v ^ [L : K]`. -/
+@[simp↓]
 theorem finprod_normalizedAbsValue_inr_algebraMap (x : K) :
     ∏ᶠ w : {w : InfinitePlace L // w.LiesOver v},
         normalizedAbsValue (Sum.inr w.1) (algebraMap K L x) =
       normalizedAbsValue (Sum.inr v) x ^ finrank K L := by
   rw [finprod_eq_prod_of_fintype,
-    Finset.prod_congr rfl fun w _ ↦ have := w.2; normalizedAbsValue_inr_algebraMap v w.1 x,
-    Finset.prod_pow_eq_pow_sum, sum_finrank_infiniteCompletion_eq_finrank]
+    Finset.prod_congr rfl fun w _ ↦ normalizedAbsValue_inr_algebraMap_eq_completionMap v w.1 x,
+    prod_completionNormalizedAbsValue_completionMap, completionNormalizedAbsValue_algebraMap,
+    normalizedAbsValue_inr]
 
 end Infinite
 
