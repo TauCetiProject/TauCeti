@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.FiniteExtension
+public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Norm
+public import TauCeti.NumberTheory.ClassFieldTheory.Formation.GroundNorm
+public import TauCeti.NumberTheory.ClassFieldTheory.Formation.NormLimitation
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Units
 public import TauCeti.RingTheory.Norm.Units
 
@@ -36,6 +39,15 @@ These are the two identifications through which the abstract Artin map of a clas
 `unitsFormation K` becomes the norm-residue map `Kˣ / N_{L/K}(Lˣ) ≃ Gal(L/K)^ab` of finite local
 reciprocity. Nothing here uses that `K` is local.
 
+The norm computation is done more generally, for the level of an arbitrary finite subextension
+`ι : E →ₐ[K] Kˢ`, with no normality assumption: the norm `Formation.levelNorm` from that level to
+the level of `G_K` is the field norm `N_{E/K}` (`levelNorm_unitsLevelEquiv`). The norm of the layer
+of `L` is the field norm `N_{L/K}` (`norm_unitsLevelEquiv`), the case `E = L`, because the norm of
+a layer is `Formation.levelNorm` between its top and ground levels
+(`TauCeti.ClassFieldTheory.NormalLayer.toAddMonoidHom_norm`). The non-normal case is needed for
+the norm functoriality of the absolute local Artin map, where the ground level of a restricted
+layer is cut out by a subextension that need not be normal.
+
 ## Main definitions
 
 * `TauCeti.ClassFieldTheory.layerGalEquiv ι`: the Galois group of the layer is `Gal(L/K)`.
@@ -49,9 +61,15 @@ reciprocity. Nothing here uses that `K` is local.
 * `TauCeti.ClassFieldTheory.fixedField_top_ofOpenNormal_fixingOpenNormalSubgroup`: the top
   level of the layer is cut out by the image of any embedding of `L`, so that
   `TauCeti.ClassFieldTheory.unitsLevelEquiv` identifies it with `Lˣ`.
+* `TauCeti.ClassFieldTheory.eq_top_of_fixedField_toSubgroup_eq`: the only open subgroup of `G_K`
+  with fixed field `K` is `G_K`.
 * `TauCeti.ClassFieldTheory.abelianizationCongr_layerGalEquiv`: the identification of the
   abelianized Galois group does not depend on the embedding.
-* `TauCeti.ClassFieldTheory.norm_unitsLevelEquiv`: the norm of the layer is the field norm.
+* `TauCeti.ClassFieldTheory.levelNorm_unitsLevelEquiv`: for a finite extension `E/K` embedded in
+  `Kˢ`, not necessarily normal, the norm `Formation.levelNorm` from the level of `Gal(Kˢ/E)` to the
+  level of `G_K` is the field norm `N_{E/K}`.
+* `TauCeti.ClassFieldTheory.norm_unitsLevelEquiv`: in particular, the norm of the layer of `L` is
+  the field norm `N_{L/K}`.
 * `TauCeti.ClassFieldTheory.unitsLevelEquiv_mem_normSubgroup_iff`: an element of `Kˣ` lies in
   the norm subgroup of the layer exactly when it is a field norm from `L`.
 
@@ -85,6 +103,16 @@ theorem fixedField_toSubgroup_top :
   rw [OpenSubgroup.toSubgroup_top, InfiniteGalois.fixedField_bot]
   ext x
   simp [mem_bot, Algebra.ofId_apply]
+
+/-- The only open subgroup of `G_K` whose fixed field is `K` is `G_K` itself. -/
+theorem eq_top_of_fixedField_toSubgroup_eq {W : OpenSubgroup (AbsoluteGaloisGroup K)}
+    (h : fixedField W.toSubgroup = (Algebra.ofId K (SeparableClosure K)).fieldRange) : W = ⊤ :=
+  OpenSubgroup.toSubgroup_injective <|
+    calc W.toSubgroup = (fixedField W.toSubgroup).fixingSubgroup :=
+          (InfiniteGalois.fixingSubgroup_fixedField ⟨_, W.isClosed⟩).symm
+      _ = (fixedField (⊤ : OpenSubgroup (AbsoluteGaloisGroup K)).toSubgroup).fixingSubgroup := by
+          rw [h, fixedField_toSubgroup_top]
+      _ = _ := InfiniteGalois.fixingSubgroup_fixedField ⟨_, (⊤ : OpenSubgroup _).isClosed⟩
 
 variable (K) in
 /-- The fixed field of the ground subgroup `G_K` of a layer `V ◁ G_K` is `K`, the image of the
@@ -167,6 +195,53 @@ theorem abelianizationCongr_layerGalEquiv (ι ι' : L →ₐ[K] SeparableClosure
 
 end Galois
 
+/-! ### The norm from the level of a finite extension -/
+
+section LevelNorm
+
+attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex
+
+variable {E : Type*} [Field E] [Algebra K E] [FiniteDimensional K E]
+
+/-- **The norm from the level of a finite extension is the field norm**: if the fixed field of the
+open subgroup `W` is the image of a `K`-embedding `ι : E →ₐ[K] Kˢ` of a finite extension `E/K`, and
+that of `W₀ ⊇ W` is `K`, then under the identifications `unitsLevelEquiv` of the two levels with
+`Eˣ` and `Kˣ`, the norm `Formation.levelNorm` from `((Kˢ)ˣ)^W` to `((Kˢ)ˣ)^{W₀}` is `N_{E/K}`. The
+extension `E/K` need not be normal. -/
+theorem levelNorm_unitsLevelEquiv (ι : E →ₐ[K] SeparableClosure K)
+    {W W₀ : OpenSubgroup (AbsoluteGaloisGroup K)} (h : W ≤ W₀)
+    (hW : fixedField W.toSubgroup = ι.fieldRange)
+    (hW₀ : fixedField W₀.toSubgroup = (Algebra.ofId K (SeparableClosure K)).fieldRange)
+    (y : Additive Eˣ) :
+    (unitsFormation K).levelNorm h (unitsLevelEquiv ι hW y) =
+      unitsLevelEquiv (Algebra.ofId K (SeparableClosure K)) hW₀
+        (Additive.ofMul (Algebra.normUnits K y.toMul)) := by
+  obtain rfl : W₀ = ⊤ := eq_top_of_fixedField_toSubgroup_eq hW₀
+  -- The representatives of the cosets of `W` in `G_K` are a transversal of `Gal(Kˢ/ι(E))`, so the
+  -- norm is the product of the conjugates of `ι y` (`TauCeti.algebraMap_norm_eq_prod_transversal`).
+  have hfix : W.toSubgroup = ι.fieldRange.fixingSubgroup := by
+    rw [← hW, InfiniteGalois.fixingSubgroup_fixedField ⟨W.toSubgroup, W.isClosed⟩]
+  let e := Subgroup.quotientEquivOfEq hfix
+  refine Subtype.ext ?_
+  rw [Formation.levelNorm_top_apply_coe, unitsLevelEquiv_apply_coe, unitsLevelEquiv_apply_coe,
+    finsum_eq_sum_of_fintype]
+  calc _ = ∑ q : AbsoluteGaloisGroup K ⧸ W.toSubgroup,
+        unitsCoeffEquivUnitsFormation K ((q.out : AbsoluteGaloisGroup K) •
+          Additive.ofMul (Units.map (ι : E →* SeparableClosure K) y.toMul)) :=
+      Finset.sum_congr rfl fun q _ => (unitsCoeffEquivUnitsFormation_smul K _ _).symm
+    _ = _ := by
+      rw [← map_sum]
+      congr 1
+      refine Additive.toMul.injective (Units.ext ?_)
+      simp only [toMul_sum, Units.coe_prod, Additive.toMul_smul, toMul_ofMul,
+        AlgEquiv.smul_units_def, Units.coe_map, MonoidHom.coe_ofClass, Algebra.coe_normUnits,
+        Algebra.ofId_apply]
+      rw [algebraMap_norm_eq_prod_transversal K E ι (fun u => (e.symm u).out) (fun u => by
+        rw [← Subgroup.quotientEquivOfEq_mk hfix, QuotientGroup.out_eq', Equiv.apply_symm_apply]),
+        ← e.symm.prod_comp]
+
+end LevelNorm
+
 /-! ### The norm quotient of the layer -/
 
 section Norm
@@ -193,27 +268,17 @@ theorem rep_ρ_unitsLevelEquiv (ι : L →ₐ[K] SeparableClosure K)
     simp [AlgEquiv.smul_units_def]
 
 /-- **The norm of the layer is the field norm**: under the identifications of its top and ground
-levels with `Lˣ` and `Kˣ`, the norm `N_{G_K/V}` of the layer of `L` is `N_{L/K}`. -/
+levels with `Lˣ` and `Kˣ`, the norm `N_{G_K/V}` of the layer of `L` is `N_{L/K}`. This is the
+case `E = L` of `levelNorm_unitsLevelEquiv`, since the norm of a layer is `Formation.levelNorm`
+between its top and ground levels (`NormalLayer.toAddMonoidHom_norm`). -/
 theorem norm_unitsLevelEquiv (ι : L →ₐ[K] SeparableClosure K) (y : Additive Lˣ) :
     (NormalLayer.ofOpenNormal (fixingOpenNormalSubgroup K L)).norm (unitsFormation K)
         (unitsLevelEquiv ι (fixedField_top_ofOpenNormal_fixingOpenNormalSubgroup ι) y) =
       unitsLevelEquiv (Algebra.ofId K (SeparableClosure K))
         (fixedField_ground_ofOpenNormal K (fixingOpenNormalSubgroup K L))
         (Additive.ofMul (Algebra.normUnits K y.toMul)) := by
-  refine Subtype.ext ?_
-  rw [NormalLayer.norm_apply_coe, ← (layerGalEquiv ι).symm.toEquiv.sum_comp]
-  calc _ = ∑ g : Gal(L/K), unitsCoeffEquivUnitsFormation K
-        (Additive.ofMul (Units.map (ι : L →* SeparableClosure K) (g • y.toMul))) :=
-      Finset.sum_congr rfl fun g _ => by
-        rw [MulEquiv.toEquiv_eq_coe, EquivLike.coe_coe, rep_ρ_unitsLevelEquiv,
-          MulEquiv.apply_symm_apply, unitsLevelEquiv_apply_coe, toMul_ofMul]
-    _ = _ := by
-      rw [← map_sum, unitsLevelEquiv_apply_coe]
-      congr 1
-      refine Additive.toMul.injective (Units.ext ?_)
-      simp only [toMul_sum, Units.coe_prod, Units.coe_map, MonoidHom.coe_ofClass, toMul_ofMul,
-        AlgEquiv.smul_units_def, Algebra.coe_normUnits, Algebra.ofId_apply]
-      rw [← map_prod, ← Algebra.norm_eq_prod_automorphisms, AlgHom.commutes]
+  rw [← LinearMap.toAddMonoidHom_coe, NormalLayer.toAddMonoidHom_norm]
+  exact levelNorm_unitsLevelEquiv ι _ _ _ y
 
 variable (K L) in
 /-- **The norm subgroup of the layer is the norm group** `N_{L/K}(Lˣ)`: an element of `Kˣ` lies

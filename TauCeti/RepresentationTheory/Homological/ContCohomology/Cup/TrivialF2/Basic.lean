@@ -39,7 +39,9 @@ continuous cohomology are formed from. It is the `ℤ`-coefficient counterpart o
   bidegree, without the Koszul sign.
 * `TauCeti.trivialF2Map_cup`: pullback preserves cup products with trivial `𝔽₂` coefficients.
 * `TauCeti.trivialF2TopPairing_cup_one_one_explicitH1`: on explicit cocycles, the cup product of
-  two classes of `H¹(G, 𝔽₂)` is the class of the product cocycle `(g, h) ↦ a g * b h`.
+  two classes of `H¹(G, 𝔽₂)` is the class of the product cocycle `(g, h) ↦ a g * b h`;
+  `TauCeti.trivialF2TopPairing_cup_one_one_explicitH1_subgroup` is the same statement for classes
+  of a subgroup with values in the ambient carrier.
 * `TauCeti.trivialF2CorMap_cup_one_one`: corestriction satisfies the projection formula for the
   cup product of two degree-one classes.
 -/
@@ -214,11 +216,14 @@ private theorem eqToHom_ofDiscreteModuleSubgroupPairing_bil (S : Subgroup G)
   exact congrArg₂ (· * ·) (trivialF2Equiv_eqToHom_ofDiscreteModule_subgroup_trivialF2 G S x).symm
     (trivialF2Equiv_eqToHom_ofDiscreteModule_subgroup_trivialF2 G S y).symm
 
-/-- The canonical cup product on a subgroup, expressed using explicit cocycles valued in the
-ambient trivial `𝔽₂` carrier. -/
-private theorem trivialF2TopPairing_cup_one_one_explicitH1_subgroup (S : Subgroup G)
-    (hS : IsOpen (S : Set G)) (x y : H1 S (trivialF2 G).V) :
-    let _ : LocallyCompactSpace S := (S.isClosed_of_isOpen hS).locallyCompactSpace
+omit [LocallyCompactSpace G] in
+/-- **The cup product of two classes of `H¹(S, 𝔽₂)` on explicit cocycles, for a subgroup `S`.**
+For explicit classes `x` and `y` of `S` valued in the carrier of the ambient trivial `𝔽₂` object,
+read in `H¹(S, 𝔽₂)` through the comparison with continuous cohomology and the transport
+`ofDiscreteModule_subgroup_trivialF2`, their cup product along `trivialF2TopPairing` is the
+explicit `(1, 1)` cup product of multiplication in `𝔽₂`, read in `H²(S, 𝔽₂)` the same way. -/
+theorem trivialF2TopPairing_cup_one_one_explicitH1_subgroup (S : Subgroup G)
+    [LocallyCompactSpace S] (x y : H1 S (trivialF2 G).V) :
     (trivialF2TopPairing S).cup 1 1
       ((eqToHom (congrArg (continuousCohomology 1)
           (ofDiscreteModule_subgroup_trivialF2 G S))).hom
@@ -231,7 +236,6 @@ private theorem trivialF2TopPairing_cup_one_one_explicitH1_subgroup (S : Subgrou
         (explicitH2AddEquivContinuousCohomology S _
           (explicitCup11 S _ _ _ (trivialF2Pairing G) continuous_of_discreteTopology
             (fun s a b ↦ trivialF2Pairing_smul_smul G (s : G) a b) x y)) := by
-  let _ : LocallyCompactSpace S := (S.isClosed_of_isOpen hS).locallyCompactSpace
   have key := (ofDiscreteModulePairing (G := S) (trivialF2Pairing G)
     (fun s a b ↦ trivialF2Pairing_smul_smul G (s : G) a b)).cup_coeffMap
     (trivialF2TopPairing S) (eqToHom (ofDiscreteModule_subgroup_trivialF2 G S))
@@ -297,6 +301,5 @@ theorem trivialF2CorMap_cup_one_one [CompactSpace G] [TotallyDisconnectedSpace G
     ContCohomology.explicitCup_projection11,
     trivialF2CorMap_explicitH1AddEquivContinuousCohomology,
     trivialF2TopPairing_cup_one_one_explicitH1]
-  exact hS
 
 end TauCeti

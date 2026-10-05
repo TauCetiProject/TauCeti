@@ -327,6 +327,9 @@ def cylinder (S : Set (Fin n → α)) (z : S × α) : Fin (n + 1) → α :=
 
 variable {S : Set (Fin n → α)}
 
+theorem cylinder_def (z : S × α) : cylinder S z = Fin.cons z.2 z.1.val :=
+  (rfl)
+
 @[simp]
 theorem cylinder_apply_zero (z : S × α) : cylinder S z 0 = z.2 :=
   (rfl)

@@ -115,9 +115,15 @@ systems `𝔽_p` and `ℤ/pⁱ` of a Demushkin group.
   `dualityMap2_bijective_of_injective_of_addEquiv_zmod`: for `N ≃+ ZMod n` and
   `H²(G, N) ≃+ ZMod n`, if `αᵢ` is injective on `M` and `α₂₋ᵢ` is injective on its dual `M'`
   (and, for `i = 1`, `H¹(G, M')` is finite), then `αᵢ` is bijective on `M`, by counting.
-* `TauCeti.ContCohomology.dualityMap2_zmod_bijective` and
-  `dualityMap0_zmod_bijective_of_finrank_eq_one`: bijectivity of `α₂` and of `α₀` for a trivial
-  action on `ZMod n`.
+* `TauCeti.ContCohomology.dualityMap2_zmod_bijective`: `α₂` is bijective for a trivial action on
+  `ZMod n`.
+* `TauCeti.ContCohomology.dualityMap0_zmod_bijective_of_addEquiv`: for a trivial action on
+  `ZMod n`, `α₀` is bijective when `H²(G, ZMod n) ≃+ ZMod n`; and
+  `dualityMap0_zmod_bijective_of_finrank_eq_one`: the same for `n` prime when `H²(G, ZMod n)` has
+  `ℤ/n`-dimension `1`.
+* `TauCeti.ContCohomology.dualityMap1_zmod_bijective_iff`: for a trivial action on `ZMod n`, `α₁`
+  is bijective exactly when the cup product of multiplication on `H¹(G, ZMod n)` is a perfect
+  pairing.
 
 ## References
 
@@ -1282,29 +1288,52 @@ theorem dualityMap1_zmod (a : H1 G (ZMod n)) (b : H1 G (InternalHom G (ZMod n) (
         InternalHom.evalPairing_apply, InternalHom.toAddMonoidHom_apply_eq_smul]
       simp [htriv]
 
-/-- **`α₀` at trivial `𝔽_p` coefficients is bijective when `H²(G, 𝔽_p)` is one-dimensional**:
-under evaluation at `1` it sends `c` to multiplication by `c`, and every endomorphism of a
-one-dimensional space is a scalar. -/
-theorem dualityMap0_zmod_bijective_of_finrank_eq_one [Fact n.Prime]
-    (hrank : Module.finrank (ZMod n) (H2 G (ZMod n)) = 1) :
+/-- **`α₁` at trivial `ZMod n` coefficients is bijective exactly when the cup product of
+multiplication is a perfect pairing on `H¹(G, ZMod n)`**: by `dualityMap1_zmod`, `α₁` is
+`a ↦ a ⌣ -`, read on `H¹(G, Hom(ZMod n, ZMod n))` through evaluation at `1`. -/
+theorem dualityMap1_zmod_bijective_iff :
+    Function.Bijective (dualityMap1 G (ZMod n) (ZMod n)) ↔
+      Function.Bijective (explicitCup11 G (ZMod n) (ZMod n) (ZMod n) AddMonoidHom.mul
+        continuous_mul (smul_mul_smul_of_smul_eq_self htriv)) := by
+  have h : ⇑(dualityMap1 G (ZMod n) (ZMod n)) =
+      (H1InternalHomZModEquiv htriv).symm.addMonoidHomCongrLeft ∘
+        explicitCup11 G (ZMod n) (ZMod n) (ZMod n) AddMonoidHom.mul continuous_mul
+          (smul_mul_smul_of_smul_eq_self htriv) :=
+    funext fun a => AddMonoidHom.ext fun b => by simp [dualityMap1_zmod htriv]
+  rw [h, EquivLike.comp_bijective]
+
+/-- **`α₀` at trivial `ZMod n` coefficients is bijective when `H²(G, ZMod n)` is `ZMod n`**:
+under evaluation at `1` it sends `c` to multiplication by `c`, and every additive endomorphism of
+`ZMod n` is a multiplication. -/
+theorem dualityMap0_zmod_bijective_of_addEquiv (e : H2 G (ZMod n) ≃+ ZMod n) :
     Function.Bijective (dualityMap0 G (ZMod n) (ZMod n)) := by
-  have : Nontrivial (H2 G (ZMod n)) :=
-    Module.nontrivial_of_finrank_pos (R := ZMod n) (hrank ▸ Nat.one_pos)
+  -- the class `w` of `H²(G, Hom(ZMod n, ZMod n))` whose invariant is `1`
+  let w := (H2InternalHomZModEquiv htriv).symm (e.symm 1)
+  have hw : e (H2InternalHomZModEquiv htriv w) = 1 := by
+    rw [AddEquiv.apply_symm_apply, AddEquiv.apply_symm_apply]
   constructor
   · intro m m' h
-    obtain ⟨w, hw⟩ := exists_ne (0 : H2 G (ZMod n))
-    have := congrArg (fun f : H2 G (InternalHom G (ZMod n) (ZMod n)) →+ H2 G (ZMod n) =>
-      f ((H2InternalHomZModEquiv htriv).symm w)) h
-    simp only [dualityMap0_zmod htriv, AddEquiv.apply_symm_apply] at this
-    exact Subtype.ext (smul_left_injective (ZMod n) hw this)
+    have := congrArg e (DFunLike.congr_fun h w)
+    rwa [dualityMap0_zmod htriv, dualityMap0_zmod htriv, ZMod.map_smul e, ZMod.map_smul e, hw,
+      smul_eq_mul, smul_eq_mul, mul_one, mul_one, ← Subtype.ext_iff] at this
   · intro f
-    obtain ⟨c, hc⟩ := ((f.comp (H2InternalHomZModEquiv htriv).symm.toAddMonoidHom).toZModLinearMap
-      n).existsUnique_eq_smul_id_of_finrank_eq_one hrank |>.exists
-    refine ⟨⟨c, (FixedPoints.mem_addSubgroup _ _ _).2 fun g => htriv g c⟩,
-      AddMonoidHom.ext fun b => ?_⟩
-    rw [dualityMap0_zmod htriv]
-    have := LinearMap.congr_fun hc (H2InternalHomZModEquiv htriv b)
-    simpa using this.symm
+    refine ⟨⟨e (f w), (FixedPoints.mem_addSubgroup _ _ _).2 fun g => htriv g _⟩,
+      AddMonoidHom.ext fun b => e.injective ?_⟩
+    -- `b` is `k • w` for the invariant `k` of `b`, so both sides are `k • e (f w)`
+    obtain ⟨k, hk⟩ : ∃ k : ℕ, b = k • w := ⟨(e (H2InternalHomZModEquiv htriv b)).val,
+      (H2InternalHomZModEquiv htriv).injective (e.injective (by
+        rw [map_nsmul, map_nsmul, hw, nsmul_one, ZMod.natCast_zmod_val]))⟩
+    rw [dualityMap0_zmod htriv, ZMod.map_smul e, hk, map_nsmul, map_nsmul, map_nsmul, map_nsmul,
+      hw, smul_eq_mul, nsmul_one, nsmul_eq_mul, mul_comm]
+
+/-- **`α₀` at trivial `𝔽_p` coefficients is bijective when `H²(G, 𝔽_p)` is one-dimensional**,
+being then isomorphic to `𝔽_p` (`dualityMap0_zmod_bijective_of_addEquiv`). -/
+theorem dualityMap0_zmod_bijective_of_finrank_eq_one [Fact n.Prime]
+    (hrank : Module.finrank (ZMod n) (H2 G (ZMod n)) = 1) :
+    Function.Bijective (dualityMap0 G (ZMod n) (ZMod n)) :=
+  have : Module.Finite (ZMod n) (H2 G (ZMod n)) := Module.finite_of_finrank_eq_succ hrank
+  dualityMap0_zmod_bijective_of_addEquiv htriv
+    (LinearEquiv.ofFinrankEq _ _ (by rw [hrank, Module.finrank_self])).toAddEquiv
 
 end TrivialZMod
 

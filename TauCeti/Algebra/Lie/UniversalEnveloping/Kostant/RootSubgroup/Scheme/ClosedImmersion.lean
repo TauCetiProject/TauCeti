@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.GroupScheme.ClosedSubgroup
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Transvection
-import TauCeti.CategoryTheory.Comma.Over
+import TauCeti.LinearAlgebra.SymmetricAlgebra.Basic
 
 /-!
 # A Kostant root subgroup is a closed copy of the additive group
@@ -387,40 +387,18 @@ theorem kostantRootSubgroupCoordinateMap_surjective :
     rw [BialgHom.coe_toAlgHom, map_zsmul,
       kostantRootSubgroupCoordinateMap_X_of_isRootStep e h ρ M hM i hnil b hc hstep hsq,
       smul_smul, ← hu, ← Units.val_mul, inv_mul_cancel, Units.val_one, one_smul]
-  intro y
-  have hy : y ∈ (kostantRootSubgroupCoordinateMap e h ρ M hM i hnil b).hom.toAlgHom.range := by
-    induction y using SymmetricAlgebra.induction with
-    | algebraMap z => exact Subalgebra.algebraMap_mem _ z
-    | ι z =>
-        have hz : SymmetricAlgebra.ι ℤ ℤ z = z • SymmetricAlgebra.ι ℤ ℤ 1 := by
-          rw [← map_zsmul]
-          congr 1
-          simp
-        rw [hz]
-        exact zsmul_mem hgen z
-    | mul y z hy hz => exact mul_mem hy hz
-    | add y z hy hz => exact add_mem hy hz
-  obtain ⟨z, hz⟩ := (AlgHom.mem_range _).1 hy
-  exact ⟨z, hz⟩
+  exact (kostantRootSubgroupCoordinateMap e h ρ M hM i hnil b).hom.toAlgHom
+    |>.surjective_of_ι_one_mem_range hgen
 
 include hc hstep hsq in
 /-- **A Kostant root subgroup is a closed immersion.** The one-parameter subgroup
 `xᵢ : 𝔾ₐ → GLₙ` identifies `𝔾ₐ` with a closed subscheme of `GLₙ` over `ℤ`. -/
 theorem isClosedImmersion_kostantRootSubgroup :
     IsClosedImmersion (kostantRootSubgroup e h ρ M hM i hnil b).hom.hom.left := by
-  let e₁ := (eqToHom (AdditiveGroup.groupScheme_def ℤ)).hom.hom.left
-  let c₁ := ((AlgebraicGeometry.hopfSpec (CommRingCat.of ℤ)).map
-    (kostantRootSubgroupCoordinateMap e h ρ M hM i hnil b).op ≫
-      eqToHom (GeneralLinear.groupScheme_def ℤ n).symm).hom.hom.left
-  have hc₁ : IsClosedImmersion c₁ :=
-    (CommHopfAlgCat.isClosedImmersion_hopfSpec_map_comp_eqToHom_iff
-      (GeneralLinear.groupScheme_def ℤ n) _).2
-      (kostantRootSubgroupCoordinateMap_surjective e h ρ M hM i hnil b hc hstep hsq)
-  have he₁c : IsClosedImmersion (e₁ ≫ c₁) :=
-    (MorphismProperty.cancel_left_of_respectsIso _ e₁ c₁).2 hc₁
   rw [kostantRootSubgroup_def]
-  simp only [Grp.comp', Mon.comp_hom', Over.comp_left]
-  exact he₁c
+  exact (CommHopfAlgCat.isClosedImmersion_eqToHom_comp_hopfSpec_map_comp_eqToHom_iff
+    (AdditiveGroup.groupScheme_def ℤ) (GeneralLinear.groupScheme_def ℤ n) _).2
+    (kostantRootSubgroupCoordinateMap_surjective e h ρ M hM i hnil b hc hstep hsq)
 
 include hc hstep hsq in
 /-- A root subgroup is a monomorphism of group schemes over `ℤ`. -/

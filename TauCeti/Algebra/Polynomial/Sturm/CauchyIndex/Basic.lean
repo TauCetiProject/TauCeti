@@ -92,6 +92,13 @@ theorem cauchyJump_zero_left (q : R[X]) (a : R) : cauchyJump 0 q a = 0 :=
 theorem cauchyJump_zero_right (p : R[X]) (a : R) : cauchyJump p 0 a = 0 := by
   simp [cauchyJump_def]
 
+/-- A constant denominator has no poles. -/
+@[simp]
+theorem cauchyJump_C (c : R) (q : R[X]) (a : R) : cauchyJump (C c) q a = 0 := by
+  rcases eq_or_ne c 0 with rfl | hc
+  · simp
+  · exact cauchyJump_of_eval_ne_zero q (by simpa using hc)
+
 /-- The Cauchy index of `q / p` on `s`: the sum of the jumps of `q / p` at the points of `s`. -/
 noncomputable def cauchyIndex (p q : R[X]) (s : Set R) : ℤ :=
   ∑ᶠ x ∈ s, cauchyJump p q x
@@ -113,6 +120,10 @@ theorem cauchyIndex_zero_left (q : R[X]) (s : Set R) : cauchyIndex 0 q s = 0 := 
 
 @[simp]
 theorem cauchyIndex_zero_right (p : R[X]) (s : Set R) : cauchyIndex p 0 s = 0 := by
+  simp [cauchyIndex_def]
+
+@[simp]
+theorem cauchyIndex_C (c : R) (q : R[X]) (s : Set R) : cauchyIndex (C c) q s = 0 := by
   simp [cauchyIndex_def]
 
 end Definitions

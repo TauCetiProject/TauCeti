@@ -364,6 +364,19 @@ theorem affineToricChartι_comp_algebraicMap (f : FanHom Φ Ψ) (σ : Φ.cones) 
   rw [← Fan.affineToricCocone_ι_app]
   exact Φ.isColimitAffineToricCocone.fac f.algebraicMapCocone σ)
 
+/-- If the least target cone containing the image of `σ` is `τ`, then on the chart of `σ` the
+global algebraic map is the affine toric map into the chart of `τ`, followed by that chart's
+inclusion. -/
+theorem affineToricChartι_comp_algebraicMap_of_leastCone_eq (f : FanHom Φ Ψ) (σ : Φ.cones)
+    (τ : Ψ.cones) (h : f.leastCone σ.2 = τ.1)
+    (hmaps : Set.MapsTo f.realMap (σ.1 : Set V) (τ.1 : Set V')) :
+    Φ.affineToricChartι σ ≫ f.algebraicMap =
+      affineToricSchemeMap Φ.lattice Ψ.lattice f.latticeMap f.realMap f.map_lattice hmaps ≫
+        Ψ.affineToricChartι τ := by
+  obtain ⟨τ, hτ⟩ := τ
+  subst h
+  rw [affineToricChartι_comp_algebraicMap, affineToricChartMap_def]
+
 /-- The algebraic map induced by the identity fan morphism is the identity. -/
 @[simp]
 theorem algebraicMap_id (Φ : Fan i) :

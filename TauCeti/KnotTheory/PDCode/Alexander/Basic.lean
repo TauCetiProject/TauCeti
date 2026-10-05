@@ -91,6 +91,12 @@ def alexanderWeight (i : Fin n) (slot : Fin 4) : ℤ[T;T⁻¹] :=
   if D.isOver i slot then 1
   else T (if D.orientation (D.crossing i slot) then -D.crossingSign i else D.crossingSign i)
 
+/-- The defining equation for the weight of a slot in its crossing relation. -/
+theorem alexanderWeight_def (i : Fin n) (slot : Fin 4) :
+    D.alexanderWeight i slot = if D.isOver i slot then 1
+      else T (if D.orientation (D.crossing i slot) then -D.crossingSign i else D.crossingSign i) :=
+  (rfl)
+
 /-- On the over-strand the weight is `1`. -/
 @[simp]
 theorem alexanderWeight_of_isOver {i : Fin n} {slot : Fin 4} (h : D.isOver i slot = true) :
