@@ -38,8 +38,10 @@ algebra of the `𝔽_p`-vector space `M`.
 * `TauCeti.exists_addMonoidHom_zmod_apply_ne_zero`: for `a ≠ 0` in `M` killed by `n`, some
   `f : M →+ ZMod n` has `f a ≠ 0`; `TauCeti.exists_distribMulActionHom_apply_ne_zero`: the same
   for equivariant maps to any `N ≃+ ZMod n` when a monoid acts trivially on `M` and `N`.
-* `TauCeti.forall_eq_zero_and_exists_eq_of_bijective_flip`: a pairing `M × M' → ZMod n`, with `M`
-  finite and killed by `n`, one of whose adjoints `M' → (M →+ ZMod n)` is bijective, is perfect;
+* `TauCeti.bijective_of_bijective_flip`: for a pairing `Φ : M →+ M' →+ ZMod n`, with `M` finite
+  and killed by `n`, if the adjoint `M' → (M →+ ZMod n)` is bijective then so is
+  `Φ : M → (M' →+ ZMod n)`; `TauCeti.forall_eq_zero_and_exists_eq_of_bijective_flip` is its
+  pointwise form: such a pairing is perfect;
   `TauCeti.forall_eq_zero_and_exists_eq_of_bijective_flip_of_addEquiv` reads it through additive
   equivalences.
 -/
@@ -89,31 +91,40 @@ theorem exists_distribMulActionHom_apply_ne_zero {G : Type*} [Monoid G] {N : Typ
       map_smul' g x := by rw [MonoidHom.id_apply, hMtriv, hN] },
     fun h ↦ hf (e.symm.map_eq_zero_iff.1 h)⟩
 
-/-- **A pairing into `ZMod n` with a bijective adjoint is perfect.** Let `Φ : M × M' → ZMod n` be
-biadditive, with `M` finite and killed by `n ≠ 0`. If every homomorphism `M →+ ZMod n` is
-`Φ (-, y)` for exactly one `y`, then `Φ` separates the points of `M`, and every homomorphism
-`M' →+ ZMod n` is `Φ (x, -)` for some `x`. -/
-theorem forall_eq_zero_and_exists_eq_of_bijective_flip {M' : Type*} [AddCommGroup M'] [Finite M]
+/-- **A pairing into `ZMod n` with a bijective adjoint has a bijective adjoint on the other
+side.** Let `Φ : M →+ M' →+ ZMod n` be biadditive, with `M` finite and killed by `n ≠ 0`. If its
+adjoint `Φ.flip : M' → (M →+ ZMod n)` is bijective, then so is `Φ : M → (M' →+ ZMod n)`. -/
+theorem bijective_of_bijective_flip {M' : Type*} [AddCommGroup M'] [Finite M]
     (hM : ∀ x : M, n • x = 0) (Φ : M →+ M' →+ ZMod n) (hΦ : Function.Bijective Φ.flip) :
-    (∀ x : M, (∀ y : M', Φ x y = 0) → x = 0) ∧
-      ∀ φ : M' →+ ZMod n, ∃ x : M, ∀ y : M', Φ x y = φ y := by
-  have hsep : ∀ x : M, (∀ y : M', Φ x y = 0) → x = 0 := fun x hx => by_contra fun hne => by
-    obtain ⟨f, hf⟩ := exists_addMonoidHom_zmod_apply_ne_zero hM hne
-    obtain ⟨y, rfl⟩ := hΦ.2 f
-    exact hf (hx y)
+    Function.Bijective Φ := by
   have hM' : ∀ y : M', n • y = 0 := fun y => hΦ.1 <| by
     ext x
     simp
   have : Finite (M →+ ZMod n) := Finite.of_injective _ DFunLike.coe_injective
   have : Finite M' := Finite.of_injective _ hΦ.1
   have : Finite (M' →+ ZMod n) := Finite.of_injective _ DFunLike.coe_injective
-  have hinj : Function.Injective Φ :=
-    (injective_iff_map_eq_zero Φ).2 fun x hx => hsep x fun y => by simp [hx]
-  refine ⟨hsep, fun φ => ?_⟩
-  obtain ⟨x, hx⟩ := (hinj.bijective_of_nat_card_le (by
+  have hinj : Function.Injective Φ := (injective_iff_map_eq_zero Φ).2 fun x hx => by
+    by_contra hne
+    obtain ⟨f, hf⟩ := exists_addMonoidHom_zmod_apply_ne_zero hM hne
+    obtain ⟨y, rfl⟩ := hΦ.2 f
+    exact hf (DFunLike.congr_fun hx y)
+  exact hinj.bijective_of_nat_card_le (by
     rw [natCard_addMonoidHom_zmod hM', Nat.card_congr (Equiv.ofBijective _ hΦ),
-      natCard_addMonoidHom_zmod hM])).2 φ
-  exact ⟨x, fun y => DFunLike.congr_fun hx y⟩
+      natCard_addMonoidHom_zmod hM])
+
+/-- **A pairing into `ZMod n` with a bijective adjoint is perfect.** Let `Φ : M × M' → ZMod n` be
+biadditive, with `M` finite and killed by `n ≠ 0`. If every homomorphism `M →+ ZMod n` is
+`Φ (-, y)` for exactly one `y`, then `Φ` separates the points of `M`, and every homomorphism
+`M' →+ ZMod n` is `Φ (x, -)` for some `x` (the pointwise form of
+`TauCeti.bijective_of_bijective_flip`). -/
+theorem forall_eq_zero_and_exists_eq_of_bijective_flip {M' : Type*} [AddCommGroup M'] [Finite M]
+    (hM : ∀ x : M, n • x = 0) (Φ : M →+ M' →+ ZMod n) (hΦ : Function.Bijective Φ.flip) :
+    (∀ x : M, (∀ y : M', Φ x y = 0) → x = 0) ∧
+      ∀ φ : M' →+ ZMod n, ∃ x : M, ∀ y : M', Φ x y = φ y := by
+  have hb := bijective_of_bijective_flip hM Φ hΦ
+  refine ⟨fun x hx => hb.1 ?_, fun φ => (hb.2 φ).imp fun x hx y => DFunLike.congr_fun hx y⟩
+  ext y
+  simp [hx]
 
 /-- **A pairing into `ZMod n` that is a perfect pairing up to additive equivalences is perfect.**
 If `pair : X → Y → ZMod n` reads, through additive equivalences `eX : X₀ ≃+ X` and
