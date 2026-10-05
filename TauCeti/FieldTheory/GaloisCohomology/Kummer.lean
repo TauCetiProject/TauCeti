@@ -74,6 +74,7 @@ corestriction on the invariant `σ b` of the fixing subgroup is the product of t
 * `TauCeti.kummerIso`: the Kummer isomorphism `Kˣ ⧸ (Kˣ)ⁿ ≃* H¹(G_K, μₙ)`.
 * `TauCeti.kummerIsoTransport`: the Kummer isomorphism after an equivariant identification of
   the roots of unity with another discrete coefficient module.
+* `TauCeti.kummerCoeffPow`: the power map `μₙ → μₘ`, `ζ ↦ ζ ^ (n / m)`, for `m ∣ n`.
 * `TauCeti.kummerRes`: restriction `H¹(G_K, μₙ) → H¹(G_L, μₙ)` along a `K`-embedding
   `σ : L →ₐ[K] Kˢ`, with its coefficient identification `TauCeti.kummerCoeffMap`.
 * `TauCeti.kummerCor`: corestriction `H¹(G_L, μₙ) → H¹(G_K, μₙ)` along a `K`-embedding of a
@@ -94,6 +95,9 @@ corestriction on the invariant `σ b` of the fixing subgroup is the product of t
 * `TauCeti.finite_H1_kummerCoeff`: `H¹(G_K, μₙ)` is finite when `Kˣ ⧸ (Kˣ)ⁿ` is.
 * `TauCeti.finite_H1_of_isPrimitiveRoot_of_natCard_eq`: the same for every cyclic trivial module of
   order `n` over a group isomorphic to `G_K`, when `K` contains the `n`th roots of unity.
+* `TauCeti.explicitCoeff1_kummerCoeffPow_kummerMap`: the power map `μₙ → μₘ` sends the Kummer
+  class of `a` at level `n` to its Kummer class at level `m`, and
+  `TauCeti.explicitCoeff1_kummerCoeffPow_surjective`: it is surjective on `H¹`.
 * `TauCeti.explicitIso_kummerMap`: the explicit and canonical Kummer maps agree under the
   degree-one comparison isomorphism.
 * `TauCeti.kummerIso_res`: the Kummer isomorphism is natural for restriction along a field
@@ -424,6 +428,65 @@ theorem finite_H1_of_isPrimitiveRoot_of_natCard_eq [NeZero n] {ζ : K}
     (addEquivOfAddCyclicCardEq hcard.symm) continuous_of_discreteTopology
     continuous_of_discreteTopology fun g m ↦ by
       rw [htriv, smul_kummerCoeff_eq_self hζ]).symm.toEquiv
+
+/-! ### Changing the level of the roots of unity
+
+For `m ∣ n`, raising to the power `n / m` maps `μₙ` onto `μₘ`. On Kummer classes it is the
+change of level: an `n`th root `α` of `a` gives the `m`th root `α ^ (n / m)` of the same `a`, and
+`(g α / α) ^ (n / m) = g α ^ (n / m) / α ^ (n / m)`. As every class at level `m` is a Kummer
+class, the induced map on `H¹` is surjective. -/
+
+variable {K n}
+
+variable (K) in
+/-- **The power map `μₙ → μₘ`**, `ζ ↦ ζ ^ (n / m)` for `m ∣ n`, as an equivariant homomorphism
+of Kummer coefficients. It carries the Kummer class of `a` at level `n` to the Kummer class of
+`a` at level `m` (`TauCeti.explicitCoeff1_kummerCoeffPow_kummerMap`). -/
+def kummerCoeffPow {m : ℕ} (h : m ∣ n) :
+    KummerCoeff K n →+[AbsoluteGaloisGroup K] KummerCoeff K m where
+  toFun x := Additive.ofMul ⟨(x.toMul : (SeparableClosure K)ˣ) ^ (n / m), by
+    rw [mem_rootsOfUnity, ← pow_mul, Nat.div_mul_cancel h]
+    exact (mem_rootsOfUnity _ _).1 x.toMul.2⟩
+  map_zero' := Additive.toMul.injective (Subtype.ext (by simp))
+  map_add' x y := Additive.toMul.injective (Subtype.ext (by simp [mul_pow]))
+  map_smul' g x := Additive.toMul.injective (Subtype.ext (by simp [smul_pow']))
+
+/-- The power map `μₙ → μₘ` raises a root of unity to the power `n / m`. -/
+@[simp]
+theorem coe_toMul_kummerCoeffPow {m : ℕ} (h : m ∣ n) (x : KummerCoeff K n) :
+    ((kummerCoeffPow K h x).toMul : (SeparableClosure K)ˣ) =
+      (x.toMul : (SeparableClosure K)ˣ) ^ (n / m) :=
+  (rfl)
+
+/-- **The power map `μₙ → μₘ` changes the level of Kummer classes**: for `m ∣ n`, it sends the
+Kummer class of `a` in `H¹(G_K, μₙ)` to the Kummer class of `a` in `H¹(G_K, μₘ)`. -/
+theorem explicitCoeff1_kummerCoeffPow_kummerMap (hn : IsUnit (n : K)) {m : ℕ} (h : m ∣ n)
+    (a : Kˣ) :
+    explicitCoeff1 (AbsoluteGaloisGroup K) (KummerCoeff K n) (kummerCoeffPow K h)
+        continuous_of_discreteTopology (Multiplicative.toAdd (kummerMap K n hn a)) =
+      Multiplicative.toAdd
+        (kummerMap K m (isUnit_of_dvd_unit (Nat.cast_dvd_cast h) hn) a) := by
+  rw [kummerMap_apply, kummerMap_apply, toAdd_ofAdd, toAdd_ofAdd, explicitCoeff1_eq_explicitMap1]
+  exact (kummerShortExact K n hn).explicitDelta0_naturality (kummerShortExact K m _)
+    (ContinuousMonoidHom.id _) (kummerCoeffPow K h) (unitsCoeffPow K (n / m)) (AddMonoidHom.id _)
+    _ (fun _ _ => unitsCoeffPow_equivariant K (n / m) _ _)
+    (fun _ => Additive.toMul.injective (by simp))
+    (fun _ => Additive.toMul.injective (by simp [← pow_mul, Nat.div_mul_cancel h]))
+    _ _ rfl
+
+/-- **The power map `μₙ → μₘ` is surjective on `H¹`** for `m ∣ n` and `n` invertible in `K`:
+every class of `H¹(G_K, μₘ)` is the Kummer class of some `a ∈ Kˣ`, which is the image of the
+Kummer class of `a` at level `n`. -/
+theorem explicitCoeff1_kummerCoeffPow_surjective (hn : IsUnit (n : K)) {m : ℕ} (h : m ∣ n) :
+    Function.Surjective (explicitCoeff1 (AbsoluteGaloisGroup K) (KummerCoeff K n)
+      (kummerCoeffPow K h) continuous_of_discreteTopology) := by
+  have hm : IsUnit (m : K) := isUnit_of_dvd_unit (Nat.cast_dvd_cast h) hn
+  intro y
+  obtain ⟨a, ha⟩ := kummerMap_surjective hm (Multiplicative.ofAdd y)
+  exact ⟨Multiplicative.toAdd (kummerMap K n hn a), by
+    rw [explicitCoeff1_kummerCoeffPow_kummerMap hn h, ha, toAdd_ofAdd]⟩
+
+variable (K n)
 
 /-! ### The Kummer map against canonical continuous cohomology -/
 

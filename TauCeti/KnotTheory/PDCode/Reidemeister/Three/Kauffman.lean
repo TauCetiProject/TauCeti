@@ -45,7 +45,7 @@ private theorem localVertex_eq (i : Fin 12) :
   apply (crossingSlotEquiv 3).injective
   rw [localVertex, Equiv.apply_symm_apply]
   have hf (p : Fin 3 × Fin 4) : (crossingSlotEquiv 3 p).val = p.2.val + 4 * p.1.val :=
-    crossingSlotEquiv_apply_val 3 p.1 p.2
+    crossingSlotEquiv_apply_val p.1 p.2
   fin_cases i <;> apply Fin.ext <;> simp [hf]
 
 private def localSmoothing (q : Fin 3 → Bool) : Perm (Fin 3 × Fin 4) :=

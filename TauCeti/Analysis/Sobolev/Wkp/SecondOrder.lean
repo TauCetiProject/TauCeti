@@ -101,7 +101,7 @@ theorem W1p.exists_lowerOrder_eq_of_forall_hasWeakLineDerivOn {ι : Type*} [Fint
     filter_upwards with x
     simp [norm_smul, mul_comm]
   refine ⟨Wkp.mk 0 u (hmem.toLp D) ?_, Wkp.lowerOrder_mk 0 _ _ _⟩
-  rw [Wkp.iteratedGradient_zero]
+  rw [Wkp.iteratedGradient_zero u]
   refine HasWeakFDerivOn.congr_ae_deriv ?_ hmem.coeFn_toLp.symm
   refine b.toBasis.hasWeakFDerivOn_of_forall (W1p.locallyIntegrableOn_gradient u) fun i => ?_
   rw [OrthonormalBasis.coe_toBasis]

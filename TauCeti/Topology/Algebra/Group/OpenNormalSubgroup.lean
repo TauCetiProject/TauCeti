@@ -35,6 +35,8 @@ the relevant quotients discrete; the preimage criterion needs it only on the tar
 
 ## Main results
 
+* `OpenNormalSubgroup.toSubgroup_inf`, `OpenNormalSubgroup.toSubgroup_sup`: the lattice operations
+  on open normal subgroups are those of the underlying subgroups.
 * `OpenNormalSubgroup.continuous_mk_inf`, `OpenNormalSubgroup.continuous_mk_comap`: continuity of
   a map into the quotient by an intersection, and by a preimage, of open normal subgroups.
 * `TauCeti.mem_openNormalSubgroupBot`: the trivial open normal subgroup contains only the
@@ -52,6 +54,20 @@ variable {G H : Type*} [Group G] [TopologicalSpace G] [Group H] [TopologicalSpac
 /-- Open normal subgroups compare through their underlying subgroups. -/
 theorem toSubgroup_le {U V : OpenNormalSubgroup G} : U.toSubgroup ≤ V.toSubgroup ↔ U ≤ V :=
   Iff.rfl
+
+/-- The underlying subgroup of the intersection of two open normal subgroups is the intersection
+of the underlying subgroups. -/
+@[simp]
+theorem toSubgroup_inf (U V : OpenNormalSubgroup G) :
+    (U ⊓ V).toSubgroup = U.toSubgroup ⊓ V.toSubgroup :=
+  (rfl)
+
+/-- The underlying subgroup of the join of two open normal subgroups is the join of the underlying
+subgroups. -/
+@[simp]
+theorem toSubgroup_sup [SeparatelyContinuousMul G] (U V : OpenNormalSubgroup G) :
+    (U ⊔ V).toSubgroup = U.toSubgroup ⊔ V.toSubgroup :=
+  (rfl)
 
 /-- The preimage of an open normal subgroup under a continuous group homomorphism. -/
 def comap (U : OpenNormalSubgroup H) (f : G →* H) (hf : Continuous f) :

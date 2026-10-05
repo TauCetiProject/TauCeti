@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Connected.Clopen
 public import Mathlib.Topology.Connected.LocallyConnected
 public import Mathlib.Topology.Irreducible
+public import Mathlib.SetTheory.Cardinal.Finite
 public import TauCeti.Topology.PathComponent
 import Mathlib.Topology.Homeomorph.Lemmas
 
@@ -31,11 +32,13 @@ space by them.
   to the disjoint union of its connected components.
 * `TauCeti.finite_connectedComponents_of_finite_irreducibleComponents`: finiteness of the
   irreducible components implies finiteness of the connected components.
+* `TauCeti.natCard_connectedComponents_eq_of_iUnion_eq_univ`: a space covered by finitely many
+  pairwise disjoint closed connected sets has exactly as many connected components as sets.
 -/
 
 public section
 
-open Set Topology
+open Function Set Topology
 
 universe u
 
@@ -181,5 +184,30 @@ theorem finite_connectedComponents_of_finite_irreducibleComponents
     obtain ⟨x, rfl⟩ := ConnectedComponents.surjective_coe c
     exact Set.mem_biUnion (irreducibleComponent_mem_irreducibleComponents x)
       ⟨x, mem_irreducibleComponent, rfl⟩
+
+/-- A space covered by finitely many pairwise disjoint closed connected sets has exactly as many
+connected components as sets: the sets are its connected components. -/
+theorem natCard_connectedComponents_eq_of_iUnion_eq_univ {ι : Type*} [Finite ι] {U : ι → Set X}
+    (hclosed : ∀ i, IsClosed (U i)) (hdisj : Pairwise (Disjoint on U))
+    (hunion : ⋃ i, U i = univ) (hconn : ∀ i, IsConnected (U i)) :
+    Nat.card (ConnectedComponents X) = Nat.card ι := by
+  -- Each set is open, its complement being the finite union of the other sets.
+  have hclopen (i : ι) : IsClopen (U i) := by
+    refine ⟨hclosed i, ?_⟩
+    have : (U i)ᶜ = ⋃ j : {j // j ≠ i}, U j := by
+      ext x
+      obtain ⟨k, hk⟩ := mem_iUnion.1 (hunion ▸ mem_univ x)
+      simp only [mem_compl_iff, mem_iUnion, Subtype.exists, exists_prop]
+      refine ⟨fun hx ↦ ⟨k, fun h ↦ hx (h ▸ hk), hk⟩, ?_⟩
+      rintro ⟨j, hji, hj⟩ hi
+      exact disjoint_left.1 (hdisj hji) hj hi
+    rw [← isClosed_compl_iff, this]
+    exact isClosed_iUnion_of_finite fun j ↦ hclosed j
+  have (i : ι) : Unique (ConnectedComponents (U i)) :=
+    have := isPreconnected_iff_preconnectedSpace.1 (hconn i).isPreconnected
+    have := (hconn i).nonempty.to_subtype
+    uniqueOfSubsingleton (ConnectedComponents.mk (Classical.arbitrary _))
+  exact Nat.card_congr ((ConnectedComponents.equivOfIsClopen hclopen hdisj hunion).trans
+    (Equiv.sigmaUnique ι _))
 
 end TauCeti

@@ -28,6 +28,10 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
 
 * `HasMFDerivAt.hasFDerivWithinAt_of_mem_source`: the derivative of `f` read in the extended
   charts at `x` and `y`.
+* `TauCeti.mfderiv_eq_fderiv_comp_mfderiv_extChartAt` and
+  `TauCeti.fderiv_comp_extChartAt_symm_injective`: for a map into a normed space, the manifold
+  derivative at any point of a chart's source, in terms of the Fréchet derivative of the
+  coordinate expression, and the resulting transfer of injectivity.
 * `ContMDiffAt.contDiffAt_comp_extChartAt_symm` and
   `MDifferentiableAt.differentiableAt_comp_extChartAt_symm`: on a boundaryless manifold, the
   coordinate expression of a `C^n` (resp. differentiable) map into a normed space is `C^n` (resp.
@@ -78,6 +82,39 @@ theorem HasMFDerivAt.hasFDerivWithinAt_of_mem_source {f : M → M'} {x x' : M} {
     exact (mdifferentiableAt_extChartAt hy).hasMFDerivAt
   exact hasMFDerivWithinAt_iff_hasFDerivWithinAt.1
     ((hchart.comp _ hf').comp_hasMFDerivWithinAt _ hsymm)
+
+/-! ### Maps into a normed space, read in a chart of the source -/
+
+namespace TauCeti
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] {f : M → F} {x y : M}
+
+/-- At a point `y` of the source of the extended chart at `x`, the manifold derivative of a map
+into a normed space is the Fréchet derivative of its coordinate expression
+`f ∘ (extChartAt I x).symm` at the chart image of `y`, composed with the manifold derivative of
+the chart. The chart need not be centred at `y`. -/
+theorem mfderiv_eq_fderiv_comp_mfderiv_extChartAt (hy : y ∈ (extChartAt I x).source)
+    (hg : DifferentiableAt 𝕜 (f ∘ (extChartAt I x).symm) (extChartAt I x y)) :
+    mfderiv I 𝓘(𝕜, F) f y = (fderiv 𝕜 (f ∘ (extChartAt I x).symm) (extChartAt I x y)).comp
+      (mfderiv I 𝓘(𝕜, E) (extChartAt I x) y) := by
+  have he : HasMFDerivAt I 𝓘(𝕜, E) (extChartAt I x) y (mfderiv I 𝓘(𝕜, E) (extChartAt I x) y) :=
+    (mdifferentiableAt_extChartAt (by simpa using hy)).hasMFDerivAt
+  have hfeq : f =ᶠ[𝓝 y] (f ∘ (extChartAt I x).symm) ∘ extChartAt I x := by
+    filter_upwards [(isOpen_extChartAt_source x).mem_nhds hy] with z hz
+    rw [Function.comp_apply, Function.comp_apply, (extChartAt I x).left_inv hz]
+  exact ((hg.hasFDerivAt.hasMFDerivAt.comp y he).congr_of_eventuallyEq_abuse hfeq).mfderiv
+
+/-- Read in a chart, a map into a normed space whose manifold derivative at `y` is injective has
+injective Fréchet derivative at the chart image of `y`. -/
+theorem fderiv_comp_extChartAt_symm_injective (hy : y ∈ (extChartAt I x).source)
+    (hg : DifferentiableAt 𝕜 (f ∘ (extChartAt I x).symm) (extChartAt I x y))
+    (hf : Function.Injective (mfderiv I 𝓘(𝕜, F) f y)) :
+    Function.Injective (fderiv 𝕜 (f ∘ (extChartAt I x).symm) (extChartAt I x y)) := by
+  obtain ⟨L, hL⟩ := isInvertible_mfderiv_extChartAt hy
+  rw [mfderiv_eq_fderiv_comp_mfderiv_extChartAt hy hg, ← hL] at hf
+  exact Function.Injective.of_comp_right (g := L) hf L.surjective
+
+end TauCeti
 
 /-! ### Maps into a normed space on a boundaryless manifold -/
 

@@ -26,8 +26,10 @@ sign.
 
 Over a ring without additive torsion, such as `ℝ`, the order is detected by partial derivatives:
 `p` has order at least `n` at `a` exactly when every iterated partial derivative of `p` of order
-less than `n` vanishes at `a`. Substituting polynomials into `p` can only increase the order
-at corresponding points, and renaming the variables along an injective map does not change it.
+less than `n` vanishes at `a`; since a nonzero polynomial vanishes to order at most its total
+degree, finitely many derivatives suffice. Substituting polynomials into `p` can only increase
+the order at corresponding points, and renaming the variables along an injective map does not
+change it.
 
 ## Main definitions
 
@@ -44,6 +46,10 @@ at corresponding points, and renaming the variables along an injective map does 
   `p` vanishes at `a` and every partial derivative of `p` has order at least `n` there.
 * `MvPolynomial.le_orderAt_iff_eval_foldl_pderiv`: the order is at least `n` if and only if
   every iterated partial derivative of order less than `n` vanishes at `a`.
+* `MvPolynomial.orderAt_le_totalDegree`: a nonzero polynomial vanishes to order at most its
+  total degree.
+* `MvPolynomial.orderAt_eq_of_forall_eval_foldl_pderiv_eq_zero_iff`: the order at a point is
+  determined by which iterated partial derivatives, up to the total degree, vanish there.
 * `MvPolynomial.orderAt_le_orderAt_aeval`: substitution does not decrease the order.
 * `MvPolynomial.orderAt_rename`: renaming along an injective map preserves the order.
 
@@ -102,6 +108,21 @@ theorem taylor_taylor (a b : σ → R) (p : MvPolynomial σ R) :
     taylor a (taylor b p) = taylor (a + b) p := by
   induction p using MvPolynomial.induction_on <;> simp_all [add_assoc]
 
+/-- The Taylor shift does not increase the total degree. -/
+theorem totalDegree_taylor_le (a : σ → R) (p : MvPolynomial σ R) :
+    (taylor a p).totalDegree ≤ p.totalDegree := by
+  conv_lhs => rw [p.as_sum, map_sum]
+  refine (totalDegree_finsetSum _ _).trans (Finset.sup_le fun d hd ↦ ?_)
+  rw [taylor_apply, aeval_monomial, algebraMap_eq]
+  refine (totalDegree_mul _ _).trans ?_
+  rw [totalDegree_C, zero_add]
+  refine (totalDegree_finsetProd _ _).trans (le_trans ?_ (le_totalDegree hd))
+  refine Finset.sum_le_sum fun i _ ↦ (totalDegree_pow _ _).trans ?_
+  refine (Nat.mul_le_mul_left _ ((totalDegree_add _ _).trans (max_le ?_ ?_))).trans_eq
+    (mul_one _)
+  · exact (totalDegree_monomial_le _ _).trans_eq (by simp)
+  · simp
+
 /-- Partial differentiation commutes with the Taylor shift. -/
 @[simp]
 theorem pderiv_taylor (a : σ → R) (i : σ) (p : MvPolynomial σ R) :
@@ -123,6 +144,12 @@ variable [CommRing R]
 @[simp]
 theorem taylor_neg_taylor (a : σ → R) (p : MvPolynomial σ R) : taylor (-a) (taylor a p) = p := by
   rw [taylor_taylor, neg_add_cancel, taylor_zero]
+
+/-- The Taylor shift preserves the total degree. -/
+@[simp]
+theorem totalDegree_taylor (a : σ → R) (p : MvPolynomial σ R) :
+    (taylor a p).totalDegree = p.totalDegree :=
+  (totalDegree_taylor_le a p).antisymm <| by simpa using totalDegree_taylor_le (-a) (taylor a p)
 
 theorem taylor_injective (a : σ → R) : Function.Injective (taylor a) :=
   Function.LeftInverse.injective (taylor_neg_taylor a)
@@ -238,6 +265,13 @@ variable [CommRing R] {p q : MvPolynomial σ R} {a : σ → R}
 theorem orderAt_eq_top_iff : p.orderAt a = ⊤ ↔ p = 0 := by
   simp [orderAt_def, MvPowerSeries.order_eq_top_iff, coe_eq_zero_iff]
 
+/-- A nonzero polynomial vanishes at each point to order at most its total degree. -/
+theorem orderAt_le_totalDegree (hp : p ≠ 0) (a : σ → R) : p.orderAt a ≤ p.totalDegree := by
+  obtain ⟨d, hd⟩ := ne_zero_iff.1 (taylor_eq_zero.not.2 hp : taylor a p ≠ 0)
+  calc p.orderAt a ≤ d.degree := orderAt_le hd
+    _ ≤ p.totalDegree := by
+      exact_mod_cast totalDegree_taylor a p ▸ le_totalDegree (mem_support_iff.2 hd)
+
 @[simp]
 theorem orderAt_neg (p : MvPolynomial σ R) (a : σ → R) : (-p).orderAt a = p.orderAt a := by
   simp only [orderAt_def, map_neg, ← coeToMvPowerSeries.ringHom_apply, MvPowerSeries.order_neg]
@@ -327,6 +361,29 @@ theorem le_orderAt_iff_eval_foldl_pderiv {n : ℕ} :
     cases l with
     | nil => exact h0
     | cons i l => exact h i l (by simpa using hl)
+
+/-- Over a ring without additive torsion, the order of `p` at a point is determined by which
+iterated partial derivatives of `p`, of order at most the total degree of `p`, vanish there: if
+the same ones vanish at `a` and at `b`, then `p` has the same order at `a` and at `b`. -/
+theorem orderAt_eq_of_forall_eval_foldl_pderiv_eq_zero_iff {b : σ → R}
+    (h : ∀ l : List σ, l.length ≤ p.totalDegree →
+      (eval a (l.foldl (fun q i ↦ pderiv i q) p) = 0 ↔
+        eval b (l.foldl (fun q i ↦ pderiv i q) p) = 0)) :
+    p.orderAt a = p.orderAt b := by
+  rcases eq_or_ne p 0 with rfl | hp
+  · simp
+  -- Up to the total degree, the order is detected by the iterated derivatives in `h`, and the
+  -- order of a nonzero polynomial never exceeds its total degree.
+  have key {m : ℕ} (hm : m ≤ p.totalDegree) :
+      (m : ℕ∞) ≤ p.orderAt a ↔ (m : ℕ∞) ≤ p.orderAt b := by
+    simp only [le_orderAt_iff_eval_foldl_pderiv]
+    exact forall_congr' fun l ↦ forall_congr' fun hl ↦ h l (by omega)
+  obtain ⟨k, hk⟩ := ENat.ne_top_iff_exists.1 (orderAt_eq_top_iff.not.2 hp : p.orderAt a ≠ ⊤)
+  obtain ⟨k', hk'⟩ := ENat.ne_top_iff_exists.1 (orderAt_eq_top_iff.not.2 hp : p.orderAt b ≠ ⊤)
+  have hka : k ≤ p.totalDegree := by exact_mod_cast hk ▸ orderAt_le_totalDegree hp a
+  have hkb : k' ≤ p.totalDegree := by exact_mod_cast hk' ▸ orderAt_le_totalDegree hp b
+  rw [← hk, ← hk'] at key ⊢
+  exact le_antisymm ((key hka).1 le_rfl) ((key hkb).2 le_rfl)
 
 end Derivative
 
