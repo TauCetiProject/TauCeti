@@ -5,7 +5,8 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Reductive.Over
+public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.DiagonalTorus.ClosedImmersion
+public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.UpperTriangular.Basic
 import TauCeti.AlgebraicGeometry.AffineGroupScheme.ClosedImmersion
 
 /-!
@@ -18,9 +19,10 @@ recovers the standard torus, and its algebra-valued points are the same diagonal
 in fundamental-weight coordinates.
 
 This gives the represented containment of the chosen torus in the chosen Borel used in a
-standard type-A pinning. The existing Hopf-ideal containment
-`SpecialLinear.UpperTriangular.definingHopfIdeal_le_splitMaximalTorus_definingIdeal`
-supplies the factorization, including over nonreduced base rings.
+standard type-A pinning. The elementary Hopf-ideal containment
+`SpecialLinear.UpperTriangular.definingHopfIdeal_le_diagonalTorusDefiningIdeal`
+supplies the factorization, including over nonreduced base rings, without using reductivity
+or maximality of the torus.
 
 The construction uses `CommHopfAlgCat.liftQuotient` and
 `SpecialLinear.diagonalTorusCoordinateMap`. Its general-linear analogue is
@@ -42,6 +44,18 @@ universe u v
 
 variable (r : ℕ) (R : Type u) [CommRing R]
 
+/-- The standard diagonal torus of `SL_{r+1}` lies in the upper-triangular subgroup over every
+commutative base ring. The order of Hopf ideals reverses inclusion of closed subgroups. -/
+theorem definingHopfIdeal_le_diagonalTorusDefiningIdeal :
+    definingHopfIdeal R (r + 1) ≤ SpecialLinear.diagonalTorusDefiningIdeal r R := by
+  rw [← HopfIdeal.toIdeal_le_toIdeal, definingHopfIdeal_toIdeal, Ideal.span_le]
+  rintro _ ⟨x, hx, rfl⟩
+  obtain ⟨i, j, hji, rfl⟩ := (GeneralLinear.UpperTriangular.mem_definingRelationSet_iff R _ x).mp hx
+  rw [SetLike.mem_coe, HopfIdeal.mem_toIdeal, SpecialLinear.mem_diagonalTorusDefiningIdeal,
+    ← CommHopfAlgCat.comp_apply, SpecialLinear.coordinateMap_comp_diagonalTorusCoordinateMap,
+    GeneralLinear.weightTorusCoordinateMap_X]
+  simp [hji.ne']
+
 /-- Restriction from the special-linear upper-triangular coordinate algebra to its standard
 diagonal torus, in fundamental-weight coordinates. -/
 noncomputable def diagonalTorusCoordinateMap :
@@ -53,9 +67,8 @@ noncomputable def diagonalTorusCoordinateMap :
     (by
       intro x hx
       apply RingHom.mem_ker.mpr
-      have hle := definingHopfIdeal_le_splitMaximalTorus_definingIdeal R r
-      rw [SpecialLinear.splitMaximalTorus_definingIdeal] at hle
-      exact (SpecialLinear.mem_diagonalTorusDefiningIdeal r R x).mp (hle hx))
+      exact (SpecialLinear.mem_diagonalTorusDefiningIdeal r R x).mp
+        (definingHopfIdeal_le_diagonalTorusDefiningIdeal r R hx))
 
 /-- The factored coordinate map recovers restriction from `SL_{r+1}` to its diagonal torus. -/
 @[reassoc (attr := simp)]

@@ -9,7 +9,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Reductive.Over
 public import TauCeti.Algebra.AlgebraicGroup.SplitTorus.Maximal
 public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Reductive.Basic
 public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.DiagonalTorus.Maximal
-public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.UpperTriangular.Basic
+public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.UpperTriangular.DiagonalTorus
 import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Smooth
 
 /-!
@@ -115,13 +115,7 @@ theorem splitMaximalTorus_baseChange_comapOfIso (S : Type u) [CommRing S] [Algeb
 every commutative base ring. The order of Hopf ideals reverses inclusion of closed subgroups. -/
 theorem UpperTriangular.definingHopfIdeal_le_splitMaximalTorus_definingIdeal (r : ℕ) :
     UpperTriangular.definingHopfIdeal R (r + 1) ≤ (splitMaximalTorus R r).definingIdeal := by
-  rw [splitMaximalTorus_definingIdeal, ← HopfIdeal.toIdeal_le_toIdeal,
-    UpperTriangular.definingHopfIdeal_toIdeal, Ideal.span_le]
-  rintro _ ⟨x, hx, rfl⟩
-  obtain ⟨i, j, hji, rfl⟩ := (GeneralLinear.UpperTriangular.mem_definingRelationSet_iff R _ x).mp hx
-  rw [SetLike.mem_coe, HopfIdeal.mem_toIdeal, mem_diagonalTorusDefiningIdeal,
-    ← CommHopfAlgCat.comp_apply, coordinateMap_comp_diagonalTorusCoordinateMap,
-    GeneralLinear.weightTorusCoordinateMap_X]
-  simp [hji.ne']
+  rw [splitMaximalTorus_definingIdeal]
+  exact UpperTriangular.definingHopfIdeal_le_diagonalTorusDefiningIdeal r R
 
 end TauCeti.SpecialLinear
