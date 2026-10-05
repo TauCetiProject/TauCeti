@@ -309,12 +309,14 @@ theorem exactK0_of_range_of_injective {M N : Type u} [AddCommGroup M] [Module R 
 /-- The image of a surjective linear map onto a finitely generated module has the class of its
 target in `G₀(mod R)`. -/
 theorem exactK0_of_range_of_surjective {M N : Type u} [AddCommGroup M] [Module R M]
-    [Module.Finite R M] [AddCommGroup N] [Module R N] [Module.Finite R N] {f : M →ₗ[R] N}
+    [AddCommGroup N] [Module R N] [Module.Finite R N] {f : M →ₗ[R] N}
     (hf : Function.Surjective f) :
+    letI := Module.Finite.equiv (LinearEquiv.ofTop _ (LinearMap.range_eq_top.mpr hf)).symm
     (ExactK0.of (FGModuleCat.of R (LinearMap.range f)) :
         ExactK0 (finiteModulesExactStructure R)) =
-      ExactK0.of (FGModuleCat.of R N) :=
-  ExactK0.of_congr (LinearEquiv.ofTop _ (LinearMap.range_eq_top.mpr hf)).toFGModuleCatIso
+      ExactK0.of (FGModuleCat.of R N) := by
+  let := Module.Finite.equiv (LinearEquiv.ofTop _ (LinearMap.range_eq_top.mpr hf)).symm
+  exact ExactK0.of_congr (LinearEquiv.ofTop _ (LinearMap.range_eq_top.mpr hf)).toFGModuleCatIso
 
 /-- **The Euler relation of a six-term exact sequence.** For an exact sequence
 `0 → M₁ → M₂ → M₃ → M₄ → M₅ → M₆ → 0` of finitely generated modules, the classes of the odd-indexed
