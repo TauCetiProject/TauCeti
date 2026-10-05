@@ -372,12 +372,12 @@ theorem GL2CharacterTable_apply (i : GL2CharacterParam F E) (g : GL (Fin 2) F) :
 
 /-- An explicit matrix containing every parameter row is the full `GL₂` character table
 up to an enumeration of its rows, provided its columns enumerate all conjugacy classes and
-its row index has as many elements as the parameter type. -/
+its row index has at most as many elements as the parameter type. -/
 theorem exists_equiv_submatrix_GL2CharacterTable_eq {ι κ : Type*} [Finite ι]
     (c : κ → ConjClasses (GL (Fin 2) F)) (hc : Function.Bijective c)
     (M : Matrix ι κ ℂ)
     (hrow : ∀ i : GL2CharacterParam F E, ∃ k, ∀ j, GL2CharacterTable F E i (c j) = M k j)
-    (hcard : Nat.card (GL2CharacterParam F E) = Nat.card ι) :
+    (hcard : Nat.card ι ≤ Nat.card (GL2CharacterParam F E)) :
     ∃ e : ι ≃ GL2CharacterParam F E, (GL2CharacterTable F E).submatrix e c = M := by
   -- The common enumeration argument from `CharacterTable.GL2.Field.Three`.
   choose f hf using hrow
@@ -385,7 +385,7 @@ theorem exists_equiv_submatrix_GL2CharacterTable_eq {ι κ : Type*} [Finite ι]
     refine GL2CharacterParam.coe_classFunction_injective (funext fun g => ?_)
     obtain ⟨j, hj⟩ := hc.surjective (ConjClasses.mk g)
     simp only [← GL2CharacterTable_apply (E := E), ← hj, hf, h]
-  have hbij : Function.Bijective f := hinj.bijective_of_nat_card_le hcard.ge
+  have hbij : Function.Bijective f := hinj.bijective_of_nat_card_le hcard
   refine ⟨(Equiv.ofBijective f hbij).symm, Matrix.ext fun k j => ?_⟩
   rw [submatrix_apply, hf, Equiv.ofBijective_apply_symm_apply f hbij k]
 
