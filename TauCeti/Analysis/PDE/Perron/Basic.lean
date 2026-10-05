@@ -47,6 +47,7 @@ principle `W' = W` on `B`, contradicting `W' z ≥ v z > W z`. Hence `u = W` is 
 * `TauCeti.perronFamily`: the Perron family of subharmonic functions below the boundary data.
 * `TauCeti.perronFamily_nonempty`: the Perron family is nonempty when the boundary data is
   bounded below.
+* `TauCeti.sup_mem_perronFamily`: the Perron family is closed under pointwise maxima.
 * `TauCeti.perronSolution`: the Perron solution, the pointwise supremum of the Perron family.
 * `TauCeti.le_perronSolution`, `TauCeti.perronSolution_le`: the Perron solution lies above every
   member of the Perron family and below every upper bound of the boundary data.
@@ -130,6 +131,7 @@ variable [MeasurableSpace E] [BorelSpace E]
 def perronFamily (Ω : Set E) (g : E → ℝ) : Set (E → ℝ) :=
   {v | SubharmonicOn v Ω ∧ ContinuousOn v (closure Ω) ∧ ∀ x ∈ frontier Ω, v x ≤ g x}
 
+@[simp]
 theorem mem_perronFamily : v ∈ perronFamily Ω g ↔
     SubharmonicOn v Ω ∧ ContinuousOn v (closure Ω) ∧ ∀ x ∈ frontier Ω, v x ≤ g x :=
   Iff.rfl
@@ -158,7 +160,7 @@ theorem perronSolution_def :
   (rfl)
 
 /-- The Perron family is closed under pointwise maxima. -/
-private lemma sup_mem_perronFamily (hΩ : IsOpen Ω) (hv : v ∈ perronFamily Ω g)
+theorem sup_mem_perronFamily (hΩ : IsOpen Ω) (hv : v ∈ perronFamily Ω g)
     (hw : w ∈ perronFamily Ω g) : v ⊔ w ∈ perronFamily Ω g :=
   ⟨hv.1.sup hw.1 hΩ, hv.2.1.sup hw.2.1, fun x hx ↦ sup_le (hv.2.2 x hx) (hw.2.2 x hx)⟩
 
