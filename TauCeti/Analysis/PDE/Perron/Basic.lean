@@ -22,7 +22,8 @@ of the functions `v`, continuous on `closure Ω` and subharmonic on `Ω`, with `
 
 `u x = sup {v x | v in the Perron family}`.
 
-This file proves Perron's theorem: `u` is harmonic in `Ω`, for any bounded open `Ω`, with no
+This file proves Perron's theorem: if the Perron family is nonempty (for instance, if `g` is
+bounded on `frontier Ω`), then `u` is harmonic in `Ω`, for any bounded open `Ω`, with no
 regularity of `frontier Ω` and no continuity of `g`. Whether `u` attains the boundary values `g`
 is a separate question, decided at each boundary point by the existence of a barrier.
 
@@ -49,8 +50,8 @@ principle `W' = W` on `B`, contradicting `W' z ≥ v z > W z`. Hence `u = W` is 
 * `TauCeti.perronSolution`: the Perron solution, the pointwise supremum of the Perron family.
 * `TauCeti.le_perronSolution`, `TauCeti.perronSolution_le`: the Perron solution lies above every
   member of the Perron family and below every upper bound of the boundary data.
-* `TauCeti.harmonicOnNhd_perronSolution`: **Perron's theorem**, the Perron solution is harmonic
-  in `Ω`.
+* `TauCeti.harmonicOnNhd_perronSolution`: **Perron's theorem**, the Perron solution of a
+  nonempty Perron family is harmonic in `Ω`.
 
 ## References
 
@@ -143,13 +144,12 @@ theorem perronFamily_nonempty (hg : BddBelow (g '' frontier Ω)) :
 
 /-- The **Perron solution** of the Dirichlet problem on `Ω` with boundary data `g`: the pointwise
 supremum of the Perron family `TauCeti.perronFamily Ω g`. It is harmonic in `Ω` when `Ω` is
-bounded and open and `g` is bounded above on `frontier Ω`
-(`TauCeti.harmonicOnNhd_perronSolution`).
+bounded and open, `g` is bounded above on `frontier Ω` and the Perron family is nonempty
+(`TauCeti.harmonicOnNhd_perronSolution`); the family is nonempty when `g` is also bounded below
+on `frontier Ω` (`TauCeti.perronFamily_nonempty`).
 
-The family is nonempty when `g` is also bounded below on `frontier Ω`
-(`TauCeti.perronFamily_nonempty`), so it is empty only when `g` is unbounded below on
-`frontier Ω`; classically the Perron solution is then `-∞`, and here it is the constant `0`,
-by the convention `sSup ∅ = 0` in `ℝ`. -/
+If the family is empty, the supremum is the junk value `sSup ∅ = 0`; no result here is stated
+for that case. -/
 def perronSolution (Ω : Set E) (g : E → ℝ) (x : E) : ℝ :=
   sSup ((fun v ↦ v x) '' perronFamily Ω g)
 
@@ -329,15 +329,15 @@ private lemma exists_harmonicOnNhd_eqOn_perronSolution (hΩ : IsOpen Ω)
 
 end Perron
 
-/-- **Perron's theorem.** Let `Ω` be a bounded open set and let `g` be bounded above on
-`frontier Ω`. Then the Perron solution `TauCeti.perronSolution Ω g` is harmonic in `Ω`.
+/-- **Perron's theorem.** Let `Ω` be a bounded open set, let `g` be bounded above on
+`frontier Ω`, and suppose the Perron family of `g` is nonempty. Then the Perron solution
+`TauCeti.perronSolution Ω g` is harmonic in `Ω`.
 
-When `g` is also bounded below on `frontier Ω`, as in Perron's setting of bounded boundary data,
-the Perron family is nonempty (`TauCeti.perronFamily_nonempty`) and this is the classical
-statement. Otherwise the family may be empty, the Perron solution is the constant `0` (see
-`TauCeti.perronSolution`), and the statement holds trivially. -/
+In Perron's setting of bounded boundary data the family is nonempty by
+`TauCeti.perronFamily_nonempty`. -/
 theorem harmonicOnNhd_perronSolution (hΩ : IsOpen Ω) (hb : Bornology.IsBounded Ω)
-    (hg : BddAbove (g '' frontier Ω)) : HarmonicOnNhd (perronSolution Ω g) Ω := by
+    (hg : BddAbove (g '' frontier Ω)) (hne : (perronFamily Ω g).Nonempty) :
+    HarmonicOnNhd (perronSolution Ω g) Ω := by
   intro y hy
   rcases subsingleton_or_nontrivial E with hE | hE
   · -- In the trivial space every function is constant.
@@ -345,14 +345,8 @@ theorem harmonicOnNhd_perronSolution (hΩ : IsOpen Ω) (hb : Bornology.IsBounded
       funext fun z ↦ congrArg _ (Subsingleton.elim z y)
     rw [hconst]
     exact harmonicAt_const _
-  rcases (perronFamily Ω g).eq_empty_or_nonempty with hS | hS
-  · -- The supremum of the empty family is `sSup ∅ = 0`.
-    have hzero : perronSolution Ω g = fun _ ↦ 0 := funext fun z ↦ by
-      rw [perronSolution_def, hS, image_empty, Real.sSup_empty]
-    rw [hzero]
-    exact harmonicAt_const _
   obtain ⟨r, hr, hrΩ⟩ := nhds_basis_closedBall.mem_iff.1 (hΩ.mem_nhds hy)
-  obtain ⟨W, hW, heq⟩ := exists_harmonicOnNhd_eqOn_perronSolution hΩ hb hg hS hr hrΩ
+  obtain ⟨W, hW, heq⟩ := exists_harmonicOnNhd_eqOn_perronSolution hΩ hb hg hne hr hrΩ
   exact (harmonicAt_congr_nhds (eventually_of_mem (ball_mem_nhds y hr) heq)).2
     (hW y (mem_ball_self hr))
 
