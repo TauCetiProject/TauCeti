@@ -46,7 +46,7 @@ arguments need, since eigen-ness of an `EigenformAwayFromLevel` is stated for
 at a prime the two operators agree on `S_k(N, χ)`
 (`HeckeRing.GL2.coe_heckeRingHomCuspCharSpace_heckeTGeneratorGamma0`). Since every `T_n` in the
 ring is a polynomial in the prime generators and the scalar cosets
-(`HeckeRing.GL2.heckeRingHomCuspCharSpace_heckeTCompositeGamma0_mem_of_forall_prime`), the old
+(`HeckeRing.GL2.heckeRingHomCuspCharSpace_heckeTCompositeGamma0_mem_of_forall_prime_dvd`), the old
 part of `S_k(N, χ)` is moreover stable under every `T_n`, the indices sharing a factor with the
 level included.
 
@@ -164,10 +164,10 @@ theorem coe_heckeRingHomCuspCharSpace_heckeTCompositeGamma0_mem_cuspFormsOld [Ne
     (hF : (F : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) ∈ cuspFormsOld N k) :
     (HeckeRing.GL2.heckeRingHomCuspCharSpace k χ (HeckeRing.GL2.heckeTCompositeGamma0 N n) F :
         CuspForm ((Gamma1 N).map (mapGL ℝ)) k) ∈ cuspFormsOld N k :=
-  HeckeRing.GL2.heckeRingHomCuspCharSpace_heckeTCompositeGamma0_mem_of_forall_prime
+  HeckeRing.GL2.heckeRingHomCuspCharSpace_heckeTCompositeGamma0_mem_of_forall_prime_dvd
     (V := (cuspFormsOld N k).comap (cuspFormCharSpace k χ).subtype)
-    (fun _ hp _ hF ↦ coe_heckeRingHomCuspCharSpace_heckeTGeneratorGamma0_mem_cuspFormsOld hp hF)
-    n hF
+    (fun _ hp _ _ hF ↦ coe_heckeRingHomCuspCharSpace_heckeTGeneratorGamma0_mem_cuspFormsOld hp hF)
+    hF
 
 /-- **The old part of `S_k(N, χ)` is stable under every `T_n`**, in `Submodule.map` form. -/
 theorem cuspFormsOld_comap_map_heckeRingHomCuspCharSpace_heckeTCompositeGamma0_le [NeZero N]

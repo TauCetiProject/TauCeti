@@ -26,7 +26,7 @@ any bad-prime stability), so `U_p` carries a spanning family of the new subspace
 
 On a character space `S_k(N, χ)`, where the Hecke ring of `Γ₀(N)` acts, the new part is then
 stable under every prime generator, hence under every `T_n`
-(`HeckeRing.GL2.heckeRingHomCuspCharSpace_heckeTCompositeGamma0_mem_of_forall_prime`).
+(`HeckeRing.GL2.heckeRingHomCuspCharSpace_heckeTCompositeGamma0_mem_of_forall_prime_dvd`).
 
 ## Main results
 
@@ -106,8 +106,8 @@ theorem coe_heckeRingHomCuspCharSpace_heckeTCompositeGamma0_mem_cuspFormsNew
     (hF : (F : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) ∈ cuspFormsNew N k) :
     (HeckeRing.GL2.heckeRingHomCuspCharSpace k χ (HeckeRing.GL2.heckeTCompositeGamma0 N n) F :
         CuspForm ((Gamma1 N).map (mapGL ℝ)) k) ∈ cuspFormsNew N k := by
-  refine HeckeRing.GL2.heckeRingHomCuspCharSpace_heckeTCompositeGamma0_mem_of_forall_prime
-    (V := (cuspFormsNew N k).comap (cuspFormCharSpace k χ).subtype) (fun p hp G hG ↦ ?_) n hF
+  refine HeckeRing.GL2.heckeRingHomCuspCharSpace_heckeTCompositeGamma0_mem_of_forall_prime_dvd
+    (V := (cuspFormsNew N k).comap (cuspFormCharSpace k χ).subtype) (fun p hp _ G hG ↦ ?_) hF
   -- at a prime the generator acts as `T_p`
   rw [Submodule.mem_comap, Submodule.subtype_apply,
     HeckeRing.GL2.coe_heckeRingHomCuspCharSpace_heckeTGeneratorGamma0 k χ hp]

@@ -31,8 +31,8 @@ is a polynomial in `T_p` and the scalar coset `T(p, p)`, which acts on `S_k(N, �
 
 ## Main results
 
-* `HeckeRing.GL2.heckeRingHomCuspCharSpace_heckeTCompositeGamma0_mem_of_forall_prime`: a subspace
-  of `S_k(N, χ)` stable under every `T_p` is stable under every `T_n`.
+* `HeckeRing.GL2.heckeRingHomCuspCharSpace_heckeTCompositeGamma0_mem_of_forall_prime_dvd`: a
+  subspace of `S_k(N, χ)` stable under `T_p` at every prime `p ∣ n` is stable under `T_n`.
 * `HeckeRing.GL2.qExpansion_coeff_heckeRingHomCharSpace_heckeTCompositeGamma0_of_coprime`:
   `a_m(T_n F) = a_{m n}(F)` for `n ≠ 0` and `m` coprime to `n`, on `M_k(N, χ)`.
 * `HeckeRing.GL2.qExpansion_coeff_one_heckeRingHomCharSpace_heckeTCompositeGamma0`: its `m = 1`
@@ -149,16 +149,16 @@ theorem qExpansion_coeff_heckeRingHomCuspCharSpace_heckeTCompositeGamma0_of_copr
   simp only [coe_cuspToModFormCharSpace, ModularFormClass.coe_modularForm] at h
   exact h
 
-/-- **A subspace of `S_k(N, χ)` stable under every prime generator `T_p` is stable under every
-`T_n`.** The composite element `heckeTCompositeGamma0 N n` is a product of the prime-power blocks
-`T_{p^v}`, each a polynomial in `T_p` and the scalar coset `T(p, p)`; the latter acts on
-`S_k(N, χ)` by the scalar `χ(p) p^{k-2}` when `p ∤ N` and is `0` when `p ∣ N`, so it preserves
-every subspace. -/
-theorem heckeRingHomCuspCharSpace_heckeTCompositeGamma0_mem_of_forall_prime
-    {V : Submodule ℂ (cuspFormCharSpace k χ)}
-    (hV : ∀ p : ℕ, p.Prime → ∀ F ∈ V,
+/-- **A subspace of `S_k(N, χ)` stable under the prime generators `T_p` at every prime `p ∣ n` is
+stable under `T_n`.** The composite element `heckeTCompositeGamma0 N n` is a product of the
+prime-power blocks `T_{p^v}` over the primes `p ∣ n`, each a polynomial in `T_p` and the scalar
+coset `T(p, p)`; the latter acts on `S_k(N, χ)` by the scalar `χ(p) p^{k-2}` when `p ∤ N` and is
+`0` when `p ∣ N`, so it preserves every subspace. -/
+theorem heckeRingHomCuspCharSpace_heckeTCompositeGamma0_mem_of_forall_prime_dvd
+    {V : Submodule ℂ (cuspFormCharSpace k χ)} {n : ℕ}
+    (hV : ∀ p : ℕ, p.Prime → p ∣ n → ∀ F ∈ V,
       heckeRingHomCuspCharSpace k χ (heckeTGeneratorGamma0 N p) F ∈ V)
-    (n : ℕ) {F : cuspFormCharSpace k χ} (hF : F ∈ V) :
+    {F : cuspFormCharSpace k χ} (hF : F ∈ V) :
     heckeRingHomCuspCharSpace k χ (heckeTCompositeGamma0 N n) F ∈ V := by
   -- the elements of the Hecke ring whose action preserves `V` form a subring; membership in `S`
   -- is, by definition, its carrier predicate, which `intro` and the final `refine` unfold
@@ -179,7 +179,7 @@ theorem heckeRingHomCuspCharSpace_heckeTCompositeGamma0_mem_of_forall_prime
         exact V.neg_mem (ha F hF) }
   -- it contains every prime generator, and the scalar cosets, which act by scalars; hence every
   -- composite
-  refine (heckeTCompositeGamma0_mem_of_forall_prime_dvd N (S := S) (fun p hp _ ↦ hV p hp)
+  refine (heckeTCompositeGamma0_mem_of_forall_prime_dvd N (S := S) (fun p hp hpn ↦ hV p hp hpn)
     fun p hp _ ↦ ?_) F hF
   by_cases hpN : Nat.Coprime p N
   · intro F hF
