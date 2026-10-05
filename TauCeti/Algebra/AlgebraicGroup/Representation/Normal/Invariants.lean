@@ -8,6 +8,7 @@ module
 public import Mathlib.RepresentationTheory.Invariants
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Normal.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction
+public import TauCeti.Algebra.AlgebraicGroup.Representation.Normal.SubgroupWeights
 
 /-!
 # Invariants of normal closed subgroups
@@ -27,6 +28,12 @@ The definition deliberately says `basePointFixedSubmodule`: without a point-sepa
 hypothesis, base-valued points need not detect scheme-theoretic invariants. The normality and
 stability results require no reducedness, finite-type, or field hypotheses.
 
+For a reduced ambient group of finite type over an algebraically closed field,
+`HopfIdeal.IsNormal.weightSpaceOneSubcomodule` instead constructs the scheme-theoretic invariant
+representation. It is the subgroup's trivial-character weight space, which normality makes
+ambient-stable. The subgroup itself need not be reduced. Its points over every commutative
+value algebra act trivially on these invariant vectors.
+
 The group-representation step is Mathlib's `Representation.toInvariants`; this file adds the
 Hopf-ideal and comodule interface around it rather than repeating the normal-subgroup conjugation
 argument.
@@ -44,6 +51,8 @@ argument.
 * `TauCeti.HopfIdeal.IsNormal.endOfPoint_one_tmul_mem_basePointFixedSubmodule_baseChange`:
   pointwise
   stability in the scalar-extension form used to detect subcomodules.
+* `TauCeti.HopfIdeal.IsNormal.weightSpaceOneSubcomodule`: the scheme-theoretic invariant
+  representation, admitting nonreduced normal subgroups.
 
 ## References
 
@@ -171,6 +180,56 @@ theorem mem_basePointFixedSubmodule_iff_quotient_coact_eq_tmul_one
   · exact mem_basePointFixedSubmodule_of_quotient_coact_eq_tmul_one I m
 
 end GeometricDetection
+
+section SchemeTheoretic
+
+variable {k : Type u} {A : Type v} {V : Type w}
+variable [Field k] [IsAlgClosed k] [CommRing A] [HopfAlgebra k A]
+variable [Algebra.FiniteType k A] [IsReduced A]
+variable [AddCommGroup V] [Module k V] [Comodule k A V]
+variable {I : HopfIdeal k A}
+
+variable (V) in
+/-- Scheme-theoretic invariants of a normal closed subgroup form an ambient subrepresentation.
+Only the ambient group is required to be reduced; the subgroup can be nonreduced. -/
+noncomputable def IsNormal.weightSpaceOneSubcomodule (hI : I.IsNormal) : Subcomodule k A V :=
+  Subcomodule.ofEndOfPointStable (K := k) (I.weightSpace V 1) fun g v hv ↦ by
+    have h := basePointsRepresentation_mem_weightSpace (WithConv.toConv g)
+      (hI.le_conjugate _) hv
+    simp only [map_one] at h
+    rw [Comodule.endOfPoint_tmul, one_smul,
+      Comodule.endOfPoint_one_tmul_eq_one_tmul_basePointsRepresentation]
+    exact Submodule.tmul_mem_baseChange_of_mem _ h
+
+/-- Normal-subgroup invariants are the weight space of the trivial character. -/
+@[simp]
+theorem IsNormal.weightSpaceOneSubcomodule_toSubmodule (hI : I.IsNormal) :
+    (hI.weightSpaceOneSubcomodule V).toSubmodule = I.weightSpace V 1 :=
+  Subcomodule.ofEndOfPointStable_toSubmodule _ _
+
+/-- An ambient vector belongs to the normal-subgroup invariant representation precisely when
+its coaction restricts to the trivial coaction on the subgroup. -/
+@[simp]
+theorem IsNormal.mem_weightSpaceOneSubcomodule (hI : I.IsNormal) {v : V} :
+    v ∈ hI.weightSpaceOneSubcomodule V ↔
+      TensorProduct.map LinearMap.id (Ideal.Quotient.mkₐ k I.toIdeal).toLinearMap
+          (Comodule.coact (R := k) (C := A) v) = v ⊗ₜ[k] (1 : A ⧸ I.toIdeal) := by
+  rw [← Subcomodule.mem_toSubmodule, hI.weightSpaceOneSubcomodule_toSubmodule,
+    mem_weightSpace, GroupLike.val_one]
+
+/-- Every algebra-valued subgroup point fixes the scalar extension of an invariant vector. -/
+theorem IsNormal.endOfPoint_comp_mkₐ_tmul_of_mem_weightSpaceOneSubcomodule
+    (hI : I.IsNormal) {B : Type*} [CommSemiring B] [Algebra k B]
+    (g : A ⧸ I.toIdeal →ₐ[k] B) (b : B) {v : V}
+    (hv : v ∈ hI.weightSpaceOneSubcomodule V) :
+    Comodule.endOfPoint V (g.comp (Ideal.Quotient.mkₐ k I.toIdeal)) (b ⊗ₜ[k] v) =
+      b ⊗ₜ[k] v := by
+  have hv' : v ∈ I.weightSpace V 1 := by
+    simpa only [← Subcomodule.mem_toSubmodule, hI.weightSpaceOneSubcomodule_toSubmodule] using hv
+  simpa only [GroupLike.val_one, map_one, mul_one] using
+    endOfPoint_comp_mkₐ_tmul_of_mem_weightSpace g b hv'
+
+end SchemeTheoretic
 
 namespace IsNormal
 

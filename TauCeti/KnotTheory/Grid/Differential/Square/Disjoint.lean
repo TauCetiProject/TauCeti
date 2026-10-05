@@ -326,7 +326,7 @@ theorem isEmpty_commute_first (D : GridRectangleDecomposition x z) (h : D.HasDis
       (x.toPerm.injective.ne hrr) (fun hxb => hout₁ ⟨hcol, hxb⟩) hrow
     exact D.first.notMem_interior_of_isEmpty h₁
       ((x.mk_mem_pointSet D.second.right (x D.second.right)).mpr rfl)
-      ((D.first.mem_toGridRectangle_interior _).mpr ⟨hcols.1, hrows.1⟩)
+      (D.first.mem_toGridRectangle_interior.mpr ⟨hcols.1, hrows.1⟩)
   · intro hmem
     rw [D.mem_interior_second_iff h] at hmem
     obtain ⟨hcol, hrow⟩ := hmem
@@ -336,7 +336,7 @@ theorem isEmpty_commute_first (D : GridRectangleDecomposition x z) (h : D.HasDis
       (x.toPerm.injective.ne hlr) (fun hxa => hout₂ ⟨hcol, hxa⟩) hrow
     exact D.first.notMem_interior_of_isEmpty h₁
       ((x.mk_mem_pointSet D.second.left (x D.second.left)).mpr rfl)
-      ((D.first.mem_toGridRectangle_interior _).mpr ⟨hcols.2, hrows.2⟩)
+      (D.first.mem_toGridRectangle_interior.mpr ⟨hcols.2, hrows.2⟩)
   · intro p hleft hright
     exact (D.first.mem_target_pointSet_iff_of_ne hleft hright).mpr
   · exact h₂
@@ -359,12 +359,12 @@ theorem isEmpty_commute_second (D : GridRectangleDecomposition x z) (h : D.HasDi
       x D.second.left ∈ Grid.cIoo (x D.first.left) (x D.first.right)) :=
     fun hc => D.first.notMem_interior_of_isEmpty h₁
       ((x.mk_mem_pointSet D.second.left (x D.second.left)).mpr rfl)
-      ((D.first.mem_toGridRectangle_interior _).mpr hc)
+      (D.first.mem_toGridRectangle_interior.mpr hc)
   have hout₂ : ¬((D.second.right ∈ Grid.cIoo D.first.left D.first.right) ∧
       x D.second.right ∈ Grid.cIoo (x D.first.left) (x D.first.right)) :=
     fun hc => D.first.notMem_interior_of_isEmpty h₁
       ((x.mk_mem_pointSet D.second.right (x D.second.right)).mpr rfl)
-      ((D.first.mem_toGridRectangle_interior _).mpr hc)
+      (D.first.mem_toGridRectangle_interior.mpr hc)
   rw [GridRectangleBetween.IsEmpty, D.commute_second_toGridRectangle h]
   apply D.first.toGridRectangle.isEmptyFor_of_eq_away (u := (D.commute h).middle) (v := x)
     D.second.left D.second.right

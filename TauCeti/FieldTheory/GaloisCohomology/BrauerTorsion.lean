@@ -144,6 +144,12 @@ def h2KummerToUnits :
       continuousCohomology 2 (ofDiscreteModule ℤ (AbsoluteGaloisGroup K) (UnitsCoeff K)) :=
   ContinuousCohomology.coeffMap (kummerCoeffToUnits K n) 2
 
+/-- The defining equation of `h2KummerToUnits`: it is the coefficient map of the inclusion
+`kummerCoeffToUnits K n`. -/
+theorem h2KummerToUnits_def :
+    h2KummerToUnits K n = ContinuousCohomology.coeffMap (kummerCoeffToUnits K n) 2 :=
+  (rfl)
+
 variable {K n}
 
 /-- The comparison with the explicit model carries the explicit coefficient map of `μₙ ⊆ (Kˢ)ˣ` to

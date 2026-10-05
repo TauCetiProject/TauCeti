@@ -5,27 +5,44 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Rational.Cover
+public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Rational.Topology
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.KanExtension
+public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.SheafyRing
 
 import Mathlib.CategoryTheory.Functor.KanExtension.Preserves
 import TauCeti.CategoryTheory.Sites.IsSheafFor
 
 /-!
-# The underlying set sheaf of a strongly noetherian Tate pair
+# Sheafiness of strongly noetherian Tate pairs
 
-For a strongly noetherian Tate ring, the presentation-limit structure presheaf satisfies the
-sheaf condition as a presheaf of sets on all opens of its adic spectrum. The sheaf condition for
-rational covers of rational opens, including the empty cover, extends to all opens because the
-presheaf is the limit of its values on the rational basis.
+For a strongly noetherian Tate ring `A` and a ring of integral elements `A⁺`, the
+presentation-limit structure presheaf of `Spa(A, A⁺)` is a sheaf of complete separated topological
+rings. This is Wedhorn's Theorem 8.28(b) for the pair `(A, A⁺)`; `A` itself need not be complete
+or Hausdorff.
 
-This establishes the underlying set assertion in Wedhorn's Theorem 8.28(b). The additional
-topological assertion requires identifying the topology on sections with the topology induced
-by a covering family of restriction maps.
+Gluing for rational covers of rational opens, including the empty cover, holds both for sections
+(`isSheafFor_ofArrows_spaRationalOpens_of_iSup_eq`) and for continuous ring homomorphisms out of
+an arbitrary topological commutative ring
+(`isSheafFor_ofArrows_spaRationalOpens_of_iSup_eq_topCommRingCat`). Intersections of rational
+opens are rational, so either form is the sheaf condition on the basis of rational opens, and it
+extends to all opens because the presheaf is the limit of its values on that basis.
+
+## Main results
+
+* `TauCeti.ValuationSpectrum.isSheaf_underlying_presentationLimitPresheaf_of_isStronglyNoetherian` :
+  the underlying presheaf of sets is a sheaf.
+* `TauCeti.ValuationSpectrum.isSheaf_presentationLimitPresheaf_of_isStronglyNoetherian` : the
+  structure presheaf is a sheaf of complete separated topological rings.
+* `TauCeti.Huber.isSheafyForEveryPresentation_of_isStronglyNoetherian` : every ring of integral
+  elements of a strongly noetherian Tate ring satisfies
+  `TauCeti.Huber.IsSheafyForEveryPresentation`.
+* `TauCeti.Huber.isSheafyRing_of_isStronglyNoetherian` : a complete Hausdorff strongly noetherian
+  Tate ring is sheafy.
 
 ## References
 
-* [T. Wedhorn, *Adic Spaces*][wedhorn_adic] (arXiv:1910.05934v1), Theorem 8.28(b) and Lemma 8.34.
+* [T. Wedhorn, *Adic Spaces*][wedhorn_adic] (arXiv:1910.05934v1), Theorem 8.28(b), Lemma 8.34,
+  and Definition 8.26.
 -/
 
 public section
@@ -33,20 +50,26 @@ public section
 open CategoryTheory CategoryTheory.Limits TopologicalSpace Opposite
   TauCeti.Huber TauCeti.Huber.PairOfDefinition
 
-universe v
+universe v w
 
 namespace TauCeti.ValuationSpectrum
 
 variable {A : Type v} [CommRing A] [UniformSpace A] [IsTopologicalRing A] [IsTateRing A]
   [IsStronglyNoetherian A] (P : PairOfDefinition A) {Aplus : Subring A}
 
-private theorem isSheaf_underlying_presentationLimitPresheaf_rational
-    (hP : P.ringOfDefinition ≤ Aplus) (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) :
+omit [IsStronglyNoetherian A] in
+/-- Gluing along rational covers of rational opens, for the presentation-limit presheaf followed
+by a functor `G` into types, is the sheaf condition on the rational opens for the restricted
+topology. Only the gluing hypothesis is used. -/
+private theorem isSheaf_rational_comp_of_isSheafFor_ofArrows
+    (G : TopCommRingCat.isCompleteSeparated.{v}.FullSubcategory ⥤ Type w)
+    (hrat : ∀ {W : Opens ↥(spa Aplus)} {ι : Type v} {U : ι → Opens ↥(spa Aplus)},
+      W ∈ spaRationalOpens Aplus → (∀ i, U i ∈ spaRationalOpens Aplus) → ∀ hcov : ⨆ i, U i = W,
+      (Presieve.ofArrows U fun i ↦ homOfLE ((le_iSup U i).trans_eq hcov)).IsSheafFor
+        (presentationLimitPresheaf P Aplus ⋙ G)) :
     Presieve.IsSheaf
       ((rationalOpensFunctor Aplus).restrictedTopology (Opens.grothendieckTopology ↥(spa Aplus)))
-      ((rationalOpensFunctor Aplus).op ⋙ presentationLimitPresheaf P Aplus ⋙
-        TopCommRingCat.isCompleteSeparated.ι ⋙ forget _root_.TopCommRingCat) := by
-  have : IsHuberRing A := ⟨⟨P⟩⟩
+      ((rationalOpensFunctor Aplus).op ⋙ presentationLimitPresheaf P Aplus ⋙ G) := by
   intro W S hS
   obtain ⟨ι, U, π, rfl⟩ := S.exists_eq_ofArrows
   rw [Functor.mem_restrictedTopology_iff, Sieve.functorPushforward_ofArrows] at hS
@@ -57,8 +80,7 @@ private theorem isSheaf_underlying_presentationLimitPresheaf_rational
     obtain ⟨V', g, f', hf', rfl⟩ := hf
     obtain ⟨i⟩ := hf'
     exact Opens.mem_iSup.mpr ⟨i, g.le hxV⟩
-  have hrat := isSheafFor_ofArrows_spaRationalOpens_of_iSup_eq P hP hAplus W.2
-    (fun i ↦ (U i).2) hcov
+  have hrat := hrat W.2 (fun i ↦ (U i).2) hcov
   have hπ (i : ι) : (rationalOpensFunctor Aplus).map (π i) =
       homOfLE ((le_iSup (fun i ↦ (U i).1) i).trans_eq hcov) := Subsingleton.elim _ _
   rw [← Presieve.isSheafFor_iff_generate, Presieve.isSheafFor_arrows_iff]
@@ -66,9 +88,7 @@ private theorem isSheaf_underlying_presentationLimitPresheaf_rational
   intro x hx
   -- Intersections of rational opens are rational, so compatibility on the basis supplies the
   -- pairwise-intersection compatibility required in the ambient category of opens.
-  have hcompat : Presieve.Arrows.Compatible
-      (presentationLimitPresheaf P Aplus ⋙ TopCommRingCat.isCompleteSeparated.ι ⋙
-        forget _root_.TopCommRingCat)
+  have hcompat : Presieve.Arrows.Compatible (presentationLimitPresheaf P Aplus ⋙ G)
       (fun i ↦ homOfLE ((le_iSup (fun i ↦ (U i).1) i).trans_eq hcov)) x := by
     apply (Presieve.Arrows.compatible_homOfLE_iff _ _).mpr
     intro i j
@@ -102,6 +122,50 @@ theorem isSheaf_underlying_presentationLimitPresheaf_of_isStronglyNoetherian
   apply TopCat.Presheaf.isSheaf_of_isAdapted_of_isSheaf_restrictedTopology
     (X := TopCat.of ↥(spa Aplus)) _ _ (isBasis_spaRationalOpens Aplus) hAdapted
   exact (isSheaf_iff_isSheaf_of_type _ _).mpr
-    (isSheaf_underlying_presentationLimitPresheaf_rational P hP hAplus)
+    (isSheaf_rational_comp_of_isSheafFor_ofArrows P G fun hW hU hcov ↦
+      isSheafFor_ofArrows_spaRationalOpens_of_iSup_eq P hP hAplus hW hU hcov)
+
+/-- **Wedhorn's Theorem 8.28(b) for a pair: the structure presheaf of a strongly noetherian Tate
+pair is a sheaf.** Let `A` be a strongly noetherian Tate ring, `P` a pair of definition whose ring
+of definition lies in `A⁺`, and `A⁺` a subring of power-bounded elements. Then the
+presentation-limit structure presheaf of `Spa(A, A⁺)` is a sheaf of complete separated topological
+rings on all opens.
+
+`A` itself need not be complete or Hausdorff. -/
+theorem isSheaf_presentationLimitPresheaf_of_isStronglyNoetherian
+    (hP : P.ringOfDefinition ≤ Aplus) (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) :
+    Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa Aplus))
+      (presentationLimitPresheaf P Aplus) := by
+  refine isSheaf_presentationLimitPresheaf_of_isSheaf_rational <|
+    Presheaf.isSheaf_of_isSheaf_comp _ _ TopCommRingCat.isCompleteSeparated.ι fun E ↦ ?_
+  -- a sheaf of topological rings is one whose continuous homomorphisms out of each `E` glue
+  exact isSheaf_rational_comp_of_isSheafFor_ofArrows P _ fun hW hU hcov ↦
+    isSheafFor_ofArrows_spaRationalOpens_of_iSup_eq_topCommRingCat P hP hAplus hW hU hcov E
 
 end TauCeti.ValuationSpectrum
+
+namespace TauCeti.Huber
+
+open TauCeti.ValuationSpectrum
+
+/-- **Strongly noetherian Tate pairs are sheafy**: every ring of integral elements `A⁺` of a
+strongly noetherian Tate ring `A` satisfies `TauCeti.Huber.IsSheafyForEveryPresentation`, so the
+structure presheaf of `Spa(A, A⁺)` is a sheaf of complete separated topological rings. This is
+Wedhorn's Theorem 8.28(b) for the pair `(A, A⁺)`; `A` need not be complete or Hausdorff. -/
+theorem isSheafyForEveryPresentation_of_isStronglyNoetherian {A : Type v} [CommRing A]
+    [UniformSpace A] [IsTopologicalRing A] [IsTateRing A] [IsStronglyNoetherian A]
+    {Aplus : Subring A} (hAplus : IsRingOfIntegralElements Aplus) :
+    IsSheafyForEveryPresentation Aplus :=
+  ⟨hAplus, fun P hP ↦
+    isSheaf_presentationLimitPresheaf_of_isStronglyNoetherian P hP hAplus.isPowerBounded_of_mem⟩
+
+/-- **A complete Hausdorff strongly noetherian Tate ring is sheafy** in the sense of Wedhorn's
+Definition 8.26 (`TauCeti.Huber.IsSheafyRing`). This is Wedhorn's Theorem 8.28(b) for a complete
+Hausdorff ring. -/
+theorem isSheafyRing_of_isStronglyNoetherian {A : Type v} [CommRing A] [UniformSpace A]
+    [IsUniformAddGroup A] [IsTopologicalRing A] [IsTateRing A] [IsStronglyNoetherian A]
+    [CompleteSpace A] [T0Space A] : IsSheafyRing A :=
+  isSheafyRing_iff_forall_isSheafyForEveryPresentation.mpr fun _ ↦
+    isSheafyForEveryPresentation_of_isStronglyNoetherian
+
+end TauCeti.Huber

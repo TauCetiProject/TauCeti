@@ -43,7 +43,7 @@ variable (N : ℕ) [NeZero N] (k : ℤ)
 def heckeTCuspNewEnd {p : ℕ} (hp : p.Prime) (hpN : Nat.Coprime p N) :
     Module.End ℂ (cuspFormsNew N k) :=
   (@heckeTCuspNat N _ k p ⟨hp.ne_zero⟩).restrict
-    (fun _ hf ↦ heckeTCuspNat_mem_cuspFormsNew hp hpN hf)
+    (fun _ hf ↦ heckeTCuspNat_mem_cuspFormsNew_of_coprime hp hpN hf)
 
 /-- The restriction of a diamond operator to the new subspace. -/
 def diamondOpCuspNewEnd (u : (ZMod N)ˣ) : Module.End ℂ (cuspFormsNew N k) :=

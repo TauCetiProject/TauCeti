@@ -13,13 +13,18 @@ public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Total
 
 This file connects the bundled `TauCeti.HyperbolicMetric` with the Riemannian volume API.  A
 hyperbolic metric is data, so its volume is defined as the total volume of the carried Riemannian
-metric.  Metric-independence is the volume consequence of Mostow rigidity.
+metric.  Metric-independence is the volume consequence of Mostow rigidity, which is taken here as
+the hypothesis `TauCeti.IsMostowRigid` rather than proved.
 
-The construction follows J. M. Lee, *Introduction to Riemannian Manifolds*, 2nd ed., Chapter 2.
+The volume construction follows J. M. Lee, *Introduction to Riemannian Manifolds*, 2nd ed.,
+Chapter 2. Metric-independence uses Mostow rigidity in J. Ratcliffe, *Foundations of Hyperbolic
+Manifolds*, 3rd ed., Theorem 11.8.5.
 
 ## Main definitions
 
 * `TauCeti.hypVolumeOfMetric`: total Riemannian volume of a bundled hyperbolic metric.
+* `TauCeti.hypVolume`: the volume obtained from a hyperbolic structure; under
+  `TauCeti.IsMostowRigid` this is independent of the chosen metric in dimension at least three.
 -/
 
 public section
@@ -105,5 +110,44 @@ theorem hypVolumeOfMetric_eq_of_mostow [BoundarylessManifold I M]
   let _ : ConnectedSpace M := hConn
   obtain ⟨Φ⟩ := h.isometry (hdim := hdim) g g'
   exact hypVolumeOfMetric_eq_of_isometry g g' Φ
+
+/-! ### Metric-independent hyperbolic volume -/
+
+/-- The hyperbolic volume of a compact manifold carrying a hyperbolic metric.
+
+The definition chooses one bundled hyperbolic metric. On a closed connected manifold of
+dimension at least three, `TauCeti.hypVolume_eq_hypVolumeOfMetric` shows that, under the
+Mostow-rigidity hypothesis `TauCeti.IsMostowRigid`, the result equals the volume of every
+hyperbolic metric. Mostow rigidity itself is not proved in this file. -/
+noncomputable def hypVolume (h : IsHyperbolic (I := I) (M := M)) : ℝ :=
+  hypVolumeOfMetric (I := I) (Classical.choice (isHyperbolic_iff.mp h))
+
+omit [LindelofSpace M] in
+/-- Hyperbolic volume is the volume of the chosen bundled hyperbolic metric. -/
+theorem hypVolume_def (h : IsHyperbolic (I := I) (M := M)) :
+    hypVolume (I := I) h =
+      hypVolumeOfMetric (I := I) (Classical.choice (isHyperbolic_iff.mp h)) :=
+  (rfl)
+
+omit [LindelofSpace M] in
+/-- The hyperbolic volume of a compact hyperbolic manifold is nonnegative. -/
+theorem hypVolume_nonneg (h : IsHyperbolic (I := I) (M := M)) :
+    0 ≤ hypVolume (I := I) h := by
+  rw [hypVolume_def]
+  exact hypVolumeOfMetric_nonneg (Classical.choice (isHyperbolic_iff.mp h))
+
+omit [LindelofSpace M] in
+/-- On a closed connected manifold of dimension at least three, Mostow rigidity makes
+hyperbolic volume independent of the metric chosen in its definition. -/
+theorem hypVolume_eq_hypVolumeOfMetric [BoundarylessManifold I M]
+    (hConn : ConnectedSpace M)
+    (hdim : 3 ≤ Module.finrank ℝ E)
+    (hMostow : IsMostowRigid (I := I) (M := M))
+    (h : IsHyperbolic (I := I) (M := M))
+    (g : HyperbolicMetric (I := I) (M := M)) :
+    hypVolume (I := I) h = hypVolumeOfMetric (I := I) g := by
+  rw [hypVolume_def]
+  exact hypVolumeOfMetric_eq_of_mostow hConn hdim hMostow
+    (Classical.choice (isHyperbolic_iff.mp h)) g
 
 end TauCeti

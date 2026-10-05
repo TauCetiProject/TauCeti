@@ -57,7 +57,7 @@ theorem twoByTwo_OSet :
     twoByTwo.OSet = {(0, 0), (1, 1)} := by
   ext p
   rcases p with ⟨c, r⟩
-  fin_cases c <;> fin_cases r <;> simp [OSet]
+  fin_cases c <;> fin_cases r <;> simp [OSet_def]
 
 /-- The standard two-by-two diagram has `X` markings at `(0,1)` and `(1,0)`. -/
 @[simp]
@@ -65,7 +65,7 @@ theorem twoByTwo_XSet :
     twoByTwo.XSet = {(0, 1), (1, 0)} := by
   ext p
   rcases p with ⟨c, r⟩
-  fin_cases c <;> fin_cases r <;> simp [XSet]
+  fin_cases c <;> fin_cases r <;> simp [XSet_def]
 
 private theorem twoByTwoId_pairCard_self : (Finset.univ.filter fun p : Fin 2 × Fin 2 =>
       p.1 < p.2 ∧ GridState.twoByTwoId p.1 < GridState.twoByTwoId p.2).card = 1 := by

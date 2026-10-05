@@ -8,14 +8,18 @@ module
 public import Mathlib.Topology.Order.IntermediateValue
 
 /-!
-# Images of real half-intervals under monotone maps
+# Intervals in order topologies
+
+An unordered closed interval is a neighbourhood of each of its points other than its endpoints.
 
 The image of a half-infinite real interval under a continuous strictly monotone map is determined
 by its value at the finite endpoint and its limit at infinity.  The endpoint at infinity is omitted
 when the limit is finite.
 
-## Main result
+## Main results
 
+* `TauCeti.uIcc_mem_nhds_of_ne` — `uIcc a b` is a neighbourhood of each of its points other than
+  `a` and `b`.
 * `ContinuousOn.image_Ici_of_strictMonoOn_of_tendsto` — a continuous strictly
   increasing map
   on `Ici p` with a finite limit at `+∞` maps that interval to the half-open interval between its
@@ -27,6 +31,17 @@ public section
 open Filter Set Topology
 
 namespace TauCeti
+
+/-- An unordered closed interval `uIcc a b` is a neighbourhood of each of its points other than
+its endpoints `a` and `b`. -/
+theorem uIcc_mem_nhds_of_ne {α : Type*} [TopologicalSpace α] [LinearOrder α]
+    [OrderClosedTopology α] {a b t : α} (ht : t ∈ uIcc a b) (ha : t ≠ a) (hb : t ≠ b) :
+    uIcc a b ∈ 𝓝 t := by
+  rcases le_total a b with hab | hab
+  · rw [uIcc_of_le hab] at ht ⊢
+    exact Icc_mem_nhds (lt_of_le_of_ne ht.1 ha.symm) (lt_of_le_of_ne ht.2 hb)
+  · rw [uIcc_of_ge hab] at ht ⊢
+    exact Icc_mem_nhds (lt_of_le_of_ne ht.1 hb.symm) (lt_of_le_of_ne ht.2 ha)
 
 /-- **A continuous strictly increasing map sends a half-line to a half-open interval.** The finite
 limit at `+∞` is approached but is not attained. -/

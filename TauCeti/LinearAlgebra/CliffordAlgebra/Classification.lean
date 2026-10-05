@@ -7,12 +7,12 @@ module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.EightPeriodicity
 
-import Mathlib.RingTheory.TensorProduct.Pi
 import Mathlib.Analysis.Complex.Polynomial.Basic
 import TauCeti.Algebra.CentralSimple.Quaternion
 import TauCeti.Algebra.CentralSimple.Splitting
 import TauCeti.LinearAlgebra.Matrix.TensorProduct
 import TauCeti.LinearAlgebra.CliffordAlgebra.RealForm.Four
+import TauCeti.RingTheory.TensorProduct.Pi
 
 /-!
 # Classification of real Clifford algebras
@@ -114,23 +114,6 @@ private noncomputable def realCliffordZeroZeroEquiv :
         simp))).trans
     CliffordAlgebraRing.equiv
 
-private def prodTensorAlgebraEquiv (R A B : Type*) [CommSemiring R]
-    [Semiring A] [Semiring B] [Algebra R A] [Algebra R B] :
-    (A × A) ⊗[R] B ≃ₐ[R] (A ⊗[R] B) × (A ⊗[R] B) :=
-  (Algebra.TensorProduct.comm R _ _).trans <|
-    (Algebra.TensorProduct.prodRight R R B A A).trans <|
-    AlgEquiv.prodCongr (Algebra.TensorProduct.comm R B A)
-      (Algebra.TensorProduct.comm R B A)
-
-private noncomputable def complexTensorQuaternionEquiv :
-    ℂ ⊗[ℝ] ℍ[ℝ] ≃ₐ[ℝ] Matrix (Fin 2) (Fin 2) ℂ := by
-  have hdeg : Algebra.deg ℝ ℍ[ℝ] = 2 :=
-    Algebra.deg_eq_of_finrank_eq_sq (by rw [Quaternion.finrank_eq_four]; norm_num)
-  let e : ℂ ⊗[ℝ] ℍ[ℝ] ≃ₐ[ℂ] Matrix (Fin 2) (Fin 2) ℂ :=
-    Classical.choice <| hdeg ▸
-      (Algebra.isSplittingField_of_isSepClosed ℝ ℍ[ℝ] ℂ).nonempty_algEquiv_matrix_deg ..
-  exact e.restrictScalars ℝ
-
 private def matrixTensorAlgebraEquiv (R A B : Type*) [CommSemiring R]
     [Semiring A] [Semiring B] [Algebra R A] [Algebra R B] (m : ℕ) :
     Matrix (Fin m) (Fin m) A ⊗[R] B ≃ₐ[R]
@@ -141,32 +124,17 @@ private def matrixTensorAlgebraEquiv (R A B : Type*) [CommSemiring R]
   Matrix.reindexAlgEquiv R _ (finCongr (Nat.mul_one m))
 
 private def flattenMatrixEquiv (R A : Type*) [CommSemiring R] [Semiring A] [Algebra R A]
-    (m n : ℕ) :
-    Matrix (Fin m) (Fin m) (Matrix (Fin n) (Fin n) A) ≃ₐ[R]
-      Matrix (Fin (m * n)) (Fin (m * n)) A :=
+    {m n k : ℕ} (h : m * n = k) :
+    Matrix (Fin m) (Fin m) (Matrix (Fin n) (Fin n) A) ≃ₐ[R] Matrix (Fin k) (Fin k) A :=
   (Matrix.compAlgEquiv (Fin m) (Fin n) A R).trans
-    (Matrix.reindexAlgEquiv R A finProdFinEquiv)
-
-private def castMatrixTargetEquiv {R S A : Type*} [CommSemiring R]
-    [Semiring S] [Semiring A] [Algebra R S] [Algebra R A] {m n : ℕ} (h : m = n)
-    (e : S ≃ₐ[R] Matrix (Fin m) (Fin m) A) :
-    S ≃ₐ[R] Matrix (Fin n) (Fin n) A :=
-  h ▸ e
-
-private def castMatrixProdTargetEquiv {R S A : Type*} [CommSemiring R]
-    [Semiring S] [Semiring A] [Algebra R S] [Algebra R A] {m n : ℕ} (h : m = n)
-    (e : S ≃ₐ[R]
-      Matrix (Fin m) (Fin m) A × Matrix (Fin m) (Fin m) A) :
-    S ≃ₐ[R] Matrix (Fin n) (Fin n) A × Matrix (Fin n) (Fin n) A :=
-  h ▸ e
+    (Matrix.reindexAlgEquiv R A (finProdFinEquiv.trans (finCongr h)))
 
 private def matrixTensorByCoefficientEquiv {R A B D : Type*} [CommSemiring R]
     [Semiring A] [Semiring B] [Semiring D] [Algebra R A] [Algebra R B] [Algebra R D]
-    {n : ℕ} (m : ℕ) (coeff : A ⊗[R] B ≃ₐ[R] Matrix (Fin n) (Fin n) D) :
-    Matrix (Fin m) (Fin m) A ⊗[R] B ≃ₐ[R]
-      Matrix (Fin (m * n)) (Fin (m * n)) D :=
+    {n k : ℕ} (m : ℕ) (coeff : A ⊗[R] B ≃ₐ[R] Matrix (Fin n) (Fin n) D) (h : m * n = k) :
+    Matrix (Fin m) (Fin m) A ⊗[R] B ≃ₐ[R] Matrix (Fin k) (Fin k) D :=
   (matrixTensorAlgebraEquiv R A B m).trans <|
-    coeff.mapMatrix.trans <| flattenMatrixEquiv R D m n
+    coeff.mapMatrix.trans <| flattenMatrixEquiv R D h
 
 private def matrixModelTensorEquiv {R S T A B D : Type*} [CommSemiring R]
     [Semiring S] [Semiring T] [Semiring A] [Semiring B] [Semiring D]
@@ -176,7 +144,7 @@ private def matrixModelTensorEquiv {R S T A B D : Type*} [CommSemiring R]
     (coeff : A ⊗[R] B ≃ₐ[R] Matrix (Fin n) (Fin n) D) (h : m * n = k) :
     T ≃ₐ[R] Matrix (Fin k) (Fin k) D :=
   step.trans <| (Algebra.TensorProduct.congr model (AlgEquiv.refl : B ≃ₐ[R] B)).trans <|
-    castMatrixTargetEquiv h (matrixTensorByCoefficientEquiv m coeff)
+    matrixTensorByCoefficientEquiv m coeff h
 
 private def matrixProdModelTensorEquiv {R S T A B D : Type*} [CommSemiring R]
     [Semiring S] [Semiring T] [Semiring A] [Semiring B] [Semiring D]
@@ -187,10 +155,10 @@ private def matrixProdModelTensorEquiv {R S T A B D : Type*} [CommSemiring R]
     (coeff : A ⊗[R] B ≃ₐ[R] Matrix (Fin n) (Fin n) D) (h : m * n = k) :
     T ≃ₐ[R] Matrix (Fin k) (Fin k) D × Matrix (Fin k) (Fin k) D :=
   step.trans <| (Algebra.TensorProduct.congr model (AlgEquiv.refl : B ≃ₐ[R] B)).trans <|
-    (prodTensorAlgebraEquiv R (Matrix (Fin m) (Fin m) A) B).trans <|
-      castMatrixProdTargetEquiv h <|
-        AlgEquiv.prodCongr (matrixTensorByCoefficientEquiv m coeff)
-          (matrixTensorByCoefficientEquiv m coeff)
+    (Algebra.TensorProduct.prodLeft R (Matrix (Fin m) (Fin m) A) (Matrix (Fin m) (Fin m) A)
+      B).trans <|
+      AlgEquiv.prodCongr (matrixTensorByCoefficientEquiv m coeff h)
+        (matrixTensorByCoefficientEquiv m coeff h)
 
 private theorem pow_half_sub_mul_pow (n d s t : ℕ)
     (h : (n - d) / 2 + s = t / 2) :
@@ -256,7 +224,8 @@ private noncomputable def realCliffordPositiveSixEquiv :
 private noncomputable def realCliffordZeroFiveEquiv :
     C 0 5 ≃ₐ[ℝ] Matrix (Fin 4) (Fin 4) ℂ :=
   matrixModelTensorEquiv (realCliffordQuaternionRecurrenceEquiv 0 3)
-    realCliffordPositiveThreeEquiv complexTensorQuaternionEquiv (by norm_num)
+    realCliffordPositiveThreeEquiv (Quaternion.complexTensorAlgEquivMatrix.restrictScalars ℝ)
+    (by norm_num)
 
 private noncomputable def realCliffordPositiveSevenEquiv :
     C 7 0 ≃ₐ[ℝ] Matrix (Fin 8) (Fin 8) ℂ :=
@@ -342,7 +311,7 @@ private theorem realClifford_negativeAxis_classification (q : ℕ) :
         (by simpa only [Nat.sub_zero, Nat.reducePow, mul_one, Nat.zero_add] using
           pow_half_sub_mul_pow n 0 0 (n + 1 + 1 - 2) (by omega))⟩
     · exact ⟨matrixModelTensorEquiv (realCliffordQuaternionRecurrenceEquiv 0 n) e
-        complexTensorQuaternionEquiv
+        (Quaternion.complexTensorAlgEquivMatrix.restrictScalars ℝ)
         (by simpa only [Nat.reducePow, Nat.zero_add] using
           pow_half_sub_mul_pow n 1 1 (n + 1) (by omega))⟩
     · exact ⟨matrixModelTensorEquiv (realCliffordQuaternionRecurrenceEquiv 0 n) e
@@ -358,7 +327,7 @@ private theorem realClifford_negativeAxis_classification (q : ℕ) :
         (by simpa only [Nat.reducePow, Nat.zero_add] using
           pow_half_sub_mul_pow n 2 2 (n + 1 + 1) (by omega))⟩
     · exact ⟨matrixModelTensorEquiv (realCliffordQuaternionRecurrenceEquiv 0 n) e
-        complexTensorQuaternionEquiv
+        (Quaternion.complexTensorAlgEquivMatrix.restrictScalars ℝ)
         (by simpa only [Nat.reducePow, Nat.zero_add] using
           pow_half_sub_mul_pow n 1 1 (n + 1) (by omega))⟩
 

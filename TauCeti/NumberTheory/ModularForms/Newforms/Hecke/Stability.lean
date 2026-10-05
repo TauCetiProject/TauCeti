@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ModularForms.HeckeSlash.Degeneracy
-public import TauCeti.NumberTheory.ModularForms.HeckeSlash.Nebentypus.Prime.Basic
+public import TauCeti.NumberTheory.ModularForms.HeckeSlash.Nebentypus.Composite
 public import TauCeti.NumberTheory.ModularForms.Newforms.Basic
 import TauCeti.NumberTheory.ModularForms.Petersson.Hecke
 
@@ -35,29 +35,37 @@ The new subspace is the Petersson-orthogonal complement of the old subspace. For
 `⟨p⟩⁻¹ Tₚ` there. It is the invariant-subspace input for restricting the simultaneous good-Hecke
 diagonalization to the newspace. The stability of both old and new subspaces under every Hecke
 operator is Diamond–Shurman, *A First Course in Modular Forms*, Proposition 5.6.2; at `p ∣ N`
-the old-space half is proved here and the new-space half is not, since the adjoint of `Uₚ` is not
-a multiple of `Uₚ`.
+the old-space half is proved here. The new-space half at `p ∣ N` does not follow the same way,
+since the adjoint of `Uₚ` is not a multiple of `Uₚ`; it is proved from the newform basis in
+`TauCeti.NumberTheory.ModularForms.Newforms.BadPrime.Stability`.
 
 Both stability statements also hold for the Hecke-ring *generator*
 `heckeTGeneratorGamma0 N p`, acting on a character space — the form eigenform
 arguments need, since eigen-ness of an `EigenformAwayFromLevel` is stated for
 `heckeRingHomCuspCharSpace` rather than for `heckeTCuspNat`. No separate argument is required:
 at a prime the two operators agree on `S_k(N, χ)`
-(`HeckeRing.GL2.coe_heckeRingHomCuspCharSpace_heckeTGeneratorGamma0`). Nothing here is claimed
-for a general element of the ring; the generators at primes are what the eigenform arguments
-use, and stability for the subring they generate would need the products handled too.
+(`HeckeRing.GL2.coe_heckeRingHomCuspCharSpace_heckeTGeneratorGamma0`). Since every `T_n` in the
+ring is a polynomial in the prime generators and the scalar cosets
+(`HeckeRing.GL2.heckeRingHomCuspCharSpace_heckeTCompositeGamma0_mem_of_forall_prime_dvd`), the old
+part of `S_k(N, χ)` is moreover stable under every `T_n`, the indices sharing a factor with the
+level included.
 
 ## Main results
 
 * `TauCeti.heckeTCuspNat_mem_cuspFormsOld`: `Tₚ` maps the old subspace into itself, for every
   prime `p`.
 * `TauCeti.cuspFormsOld_map_heckeTCuspNat_le`: the same in `Submodule.map` form.
-* `TauCeti.heckeTCuspNat_mem_cuspFormsNew`: `Tₚ` maps the new subspace into itself, for `p`
-  prime and coprime to `N`, with `TauCeti.cuspFormsNew_map_heckeTCuspNat_le` as its
-  `Submodule.map` form.
+* `TauCeti.heckeTCuspNat_mem_cuspFormsNew_of_coprime`: `Tₚ` maps the new subspace into itself,
+  for `p` prime and coprime to `N`, with `TauCeti.cuspFormsNew_map_heckeTCuspNat_le_of_coprime`
+  as its `Submodule.map` form. Every prime is `TauCeti.heckeTCuspNat_mem_cuspFormsNew`, in
+  `TauCeti.NumberTheory.ModularForms.Newforms.BadPrime.Stability`.
 * `TauCeti.coe_heckeRingHomCuspCharSpace_heckeTGeneratorGamma0_mem_cuspFormsOld`: the same
   old-space stability, for the Hecke-ring generator at a prime acting on `S_k(N, χ)`, and
   `TauCeti.cuspFormsOld_comap_map_heckeRingHomCuspCharSpace_heckeTGeneratorGamma0_le` in
+  `Submodule.map` form.
+* `TauCeti.coe_heckeRingHomCuspCharSpace_heckeTCompositeGamma0_mem_cuspFormsOld`: the old part of
+  `S_k(N, χ)` is stable under every `T_n`, with
+  `TauCeti.cuspFormsOld_comap_map_heckeRingHomCuspCharSpace_heckeTCompositeGamma0_le` its
   `Submodule.map` form.
 * `TauCeti.coe_heckeRingHomCuspCharSpace_heckeTGeneratorGamma0_mem_cuspFormsNew`: the
   corresponding newspace stability on `S_k(N, χ)` at a good prime, and
@@ -146,6 +154,30 @@ theorem cuspFormsOld_comap_map_heckeRingHomCuspCharSpace_heckeTGeneratorGamma0_l
   exact fun F hF ↦
     coe_heckeRingHomCuspCharSpace_heckeTGeneratorGamma0_mem_cuspFormsOld hp hF
 
+/-- **The old part of `S_k(N, χ)` is stable under every Hecke operator `T_n`**, the composite
+element `heckeTCompositeGamma0 N n` of the `Γ₀(N)` Hecke ring acting on `S_k(N, χ)`, whether or
+not `n` shares a factor with the level. This is the old-space half of Diamond–Shurman's
+Proposition 5.6.2 for the operators `T_n`; it follows from the prime case
+`coe_heckeRingHomCuspCharSpace_heckeTGeneratorGamma0_mem_cuspFormsOld`. -/
+theorem coe_heckeRingHomCuspCharSpace_heckeTCompositeGamma0_mem_cuspFormsOld [NeZero N]
+    {χ : (ZMod N)ˣ →* ℂˣ} (n : ℕ) {F : cuspFormCharSpace k χ}
+    (hF : (F : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) ∈ cuspFormsOld N k) :
+    (HeckeRing.GL2.heckeRingHomCuspCharSpace k χ (HeckeRing.GL2.heckeTCompositeGamma0 N n) F :
+        CuspForm ((Gamma1 N).map (mapGL ℝ)) k) ∈ cuspFormsOld N k :=
+  HeckeRing.GL2.heckeRingHomCuspCharSpace_heckeTCompositeGamma0_mem_of_forall_prime_dvd
+    (V := (cuspFormsOld N k).comap (cuspFormCharSpace k χ).subtype)
+    (fun _ hp _ _ hF ↦ coe_heckeRingHomCuspCharSpace_heckeTGeneratorGamma0_mem_cuspFormsOld hp hF)
+    hF
+
+/-- **The old part of `S_k(N, χ)` is stable under every `T_n`**, in `Submodule.map` form. -/
+theorem cuspFormsOld_comap_map_heckeRingHomCuspCharSpace_heckeTCompositeGamma0_le [NeZero N]
+    (χ : (ZMod N)ˣ →* ℂˣ) (n : ℕ) (k : ℤ) :
+    ((cuspFormsOld N k).comap (cuspFormCharSpace k χ).subtype).map
+        (HeckeRing.GL2.heckeRingHomCuspCharSpace k χ (HeckeRing.GL2.heckeTCompositeGamma0 N n)) ≤
+      (cuspFormsOld N k).comap (cuspFormCharSpace k χ).subtype := by
+  rw [Submodule.map_le_iff_le_comap]
+  exact fun _ hF ↦ coe_heckeRingHomCuspCharSpace_heckeTCompositeGamma0_mem_cuspFormsOld n hF
+
 /-- The old subspace is Hecke-stable at every prime, in the `Submodule.map` form. -/
 theorem cuspFormsOld_map_heckeTCuspNat_le [NeZero N] (hp : p.Prime) (k : ℤ) :
     haveI : NeZero p := ⟨hp.ne_zero⟩
@@ -158,7 +190,7 @@ theorem cuspFormsOld_map_heckeTCuspNat_le [NeZero N] (hp : p.Prime) (k : ℤ) :
 
 /-- **The new subspace is Hecke-stable** at a prime `p` coprime to the level: `Tₚ` maps
 `S_k(Γ₁(N))ⁿᵉᵂ` into itself. -/
-theorem heckeTCuspNat_mem_cuspFormsNew [NeZero N] (hp : p.Prime)
+theorem heckeTCuspNat_mem_cuspFormsNew_of_coprime [NeZero N] (hp : p.Prime)
     (hpN : Nat.Coprime p N) {f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k}
     (hf : f ∈ cuspFormsNew N k) :
     haveI : NeZero p := ⟨hp.ne_zero⟩
@@ -180,7 +212,7 @@ theorem coe_heckeRingHomCuspCharSpace_heckeTGeneratorGamma0_mem_cuspFormsNew [Ne
     (HeckeRing.GL2.heckeRingHomCuspCharSpace k χ (HeckeRing.GL2.heckeTGeneratorGamma0 N p) F :
         CuspForm ((Gamma1 N).map (mapGL ℝ)) k) ∈ cuspFormsNew N k := by
   rw [HeckeRing.GL2.coe_heckeRingHomCuspCharSpace_heckeTGeneratorGamma0 k χ hp]
-  exact heckeTCuspNat_mem_cuspFormsNew hp hpN hF
+  exact heckeTCuspNat_mem_cuspFormsNew_of_coprime hp hpN hF
 
 /-- **The fixed-nebentypus newspace is stable under a good prime Hecke generator**, in
 `Submodule.map` form. The newspace is pulled back along the inclusion because the Hecke-ring
@@ -195,13 +227,14 @@ theorem cuspFormsNew_comap_map_heckeRingHomCuspCharSpace_heckeTGeneratorGamma0_l
   exact fun F hF ↦
     coe_heckeRingHomCuspCharSpace_heckeTGeneratorGamma0_mem_cuspFormsNew hp hpN hF
 
-/-- The new subspace is Hecke-stable, in the `Submodule.map` form. -/
-theorem cuspFormsNew_map_heckeTCuspNat_le [NeZero N] (hp : p.Prime)
+/-- The new subspace is Hecke-stable at a prime coprime to the level, in the `Submodule.map`
+form. -/
+theorem cuspFormsNew_map_heckeTCuspNat_le_of_coprime [NeZero N] (hp : p.Prime)
     (hpN : Nat.Coprime p N) (k : ℤ) :
     haveI : NeZero p := ⟨hp.ne_zero⟩
     (cuspFormsNew N k).map (HeckeRing.GL2.heckeTCuspNat k p) ≤ cuspFormsNew N k := by
   have : NeZero p := ⟨hp.ne_zero⟩
   rw [Submodule.map_le_iff_le_comap]
-  exact fun _ hf ↦ heckeTCuspNat_mem_cuspFormsNew hp hpN hf
+  exact fun _ hf ↦ heckeTCuspNat_mem_cuspFormsNew_of_coprime hp hpN hf
 
 end TauCeti

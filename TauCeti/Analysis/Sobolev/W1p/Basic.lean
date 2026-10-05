@@ -416,6 +416,15 @@ theorem W1p.value_apply_ae (u : W1p mu Omega p) :
   exact Sobolev1JetLp.value_apply_ae (u : Sobolev1JetLp mu Omega p)
 
 omit [FiniteDimensional ℝ E] in
+/-- The value of a finite sum of Sobolev functions is almost everywhere the sum of their values. -/
+theorem W1p.value_finsetSum_ae {ι : Type*} (s : Finset ι) (u : ι → W1p mu Omega p) :
+    ∀ᵐ x ∂mu.restrict Omega, W1p.value (∑ j ∈ s, u j) x = ∑ j ∈ s, W1p.value (u j) x := by
+  have h : W1p.value (∑ j ∈ s, u j) = ∑ j ∈ s, W1p.value (u j) := by
+    simp only [← W1p.valueL_apply, map_sum]
+  filter_upwards [Lp.coeFn_fun_finsetSum s fun j => W1p.value (u j)] with x hx
+  rw [h, hx]
+
+omit [FiniteDimensional ℝ E] in
 /-- As for `TauCeti.W1p.value_coe`: the Sobolev gradient component is the gradient component of
 the underlying ambient jet. -/
 theorem W1p.gradient_coe (u : W1p mu Omega p) :

@@ -28,6 +28,8 @@ rotated braid words.
 
 * `List.rotateIndexEquiv`: identify the entries before and after rotating a list.
 * `List.formPerm_map_equiv`: mapping a list by an equivalence conjugates its formed permutation.
+* `List.formPerm_append_apply_of_mem_right` and `List.formPerm_append_apply_getLast_left`: the
+  permutation formed by `T ++ V` on the entries of `V`, and on the last entry of `T`.
 * `List.IsRotated.filter`: filtering preserves cyclic rotation of lists.
 -/
 
@@ -81,6 +83,49 @@ theorem formPerm_map_equiv {α β : Type*} [DecidableEq α] [DecidableEq β]
       simp only [List.map_cons, List.formPerm_cons_cons, Equiv.permCongr_mul]
       rw [Equiv.permCongr_def, Equiv.symm_trans_swap_trans]
       exact congrArg (Equiv.swap (e x) (e y) * ·) ih
+
+/-- On an entry `x` of `V`, the permutation formed by `T ++ V` agrees with the one formed by `V`,
+except that the last entry of `V`, which `V.formPerm` sends back to the head of `V`, is sent to
+the head of `T ++ V` instead. -/
+theorem formPerm_append_apply_of_mem_right {α : Type*} [DecidableEq α] {T V : List α} {x : α}
+    (h : (T ++ V).Nodup) (hx : x ∈ V) :
+    (T ++ V).formPerm x =
+      if V.formPerm x = V.head (ne_nil_of_mem hx) then (T ++ V).head (by simp [ne_nil_of_mem hx])
+      else V.formPerm x := by
+  induction T with
+  | nil => split_ifs with hc <;> simp [hc]
+  | cons t T ih =>
+    rw [cons_append, nodup_cons] at h
+    obtain ⟨u, us, hU⟩ : ∃ u us, T ++ V = u :: us :=
+      exists_cons_of_ne_nil (by simp [ne_nil_of_mem hx])
+    have hmem : V.formPerm x ∈ V := formPerm_apply_mem_of_mem hx
+    have ht : V.formPerm x ≠ t := fun he ↦ h.1 (he ▸ mem_append_right T hmem)
+    have ih' := ih h.2
+    simp only [cons_append, head_cons]
+    rw [hU, formPerm_cons_cons, Equiv.Perm.mul_apply, ← hU, ih']
+    simp only [hU, head_cons] at ih' ⊢
+    split_ifs with hc
+    · exact Equiv.swap_apply_right t u
+    · refine Equiv.swap_apply_of_ne_of_ne ht fun hu ↦ ?_
+      rcases T with _ | ⟨t', T⟩
+      · simp only [nil_append] at hU
+        subst hU
+        exact hc hu
+      · simp only [cons_append, cons.injEq] at hU
+        rw [← hU.1] at hu
+        exact (nodup_append.1 h.2).2.2 t' mem_cons_self _ hmem hu.symm
+
+/-- The permutation formed by `T ++ V` sends the last entry of `T` to the head of `V`, or to the
+head of `T` if `V` is empty. -/
+theorem formPerm_append_apply_getLast_left {α : Type*} [DecidableEq α] {T V : List α}
+    (h : (T ++ V).Nodup) (hT : T ≠ []) :
+    (T ++ V).formPerm (T.getLast hT) = (V ++ T).head (by simp [hT]) := by
+  rw [formPerm_eq_of_isRotated h isRotated_append]
+  obtain ⟨z, zs, hz⟩ : ∃ z zs, V ++ T = z :: zs := exists_cons_of_ne_nil (by simp [hT])
+  have hl : T.getLast hT = (z :: zs).getLast (cons_ne_nil z zs) := by
+    simp only [← hz]
+    exact (getLast_append_of_ne_nil _ hT).symm
+  simp only [hz, hl, formPerm_apply_getLast, head_cons]
 
 /-- Filtering cyclically rotated lists by the same Boolean predicate preserves their cyclic
 rotation. -/
