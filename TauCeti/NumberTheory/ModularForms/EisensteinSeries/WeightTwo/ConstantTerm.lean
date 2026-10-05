@@ -16,10 +16,6 @@ For `t > 0`, the constant term of `E₂(z) - t E₂(tz)` at the cusp represented
 corrected series used in the weight-two Eisenstein subspace. The formula includes infinity
 (`c = 0`) and holds without a squarefree-level assumption.
 
-The proof uses Mathlib's `EisensteinSeries.E2_slash_action`. Reduce the first column of
-`diag(t,1) γ` by its gcd and complete the primitive column using `IsCoprime.exists_SL2_col`.
-The remaining upper-triangular slash has constant automorphy factor `gcd(c,t)²/t`.
-
 ## References
 
 * F. Diamond and J. Shurman, *A First Course in Modular Forms*, Chapter 4.
@@ -35,6 +31,10 @@ namespace TauCeti.EisensteinSeries
 open _root_.EisensteinSeries
 
 variable (t : ℕ) [NeZero t]
+
+/- The proof uses Mathlib's `EisensteinSeries.E2_slash_action`. Reduce the first column of
+`diag(t,1) γ` by its gcd and complete the primitive column using `IsCoprime.exists_SL2_col`.
+The remaining upper-triangular slash has constant automorphy factor `gcd(c,t)²/t`. -/
 
 private lemma exists_scaled_cusp_reduction (γ : SL(2, ℤ)) :
     ∃ δ : SL(2, ℤ), (t : ℤ) * γ 0 0 = δ 0 0 * Int.gcd (γ 1 0) t ∧
