@@ -70,13 +70,6 @@ theorem neg_mem_compl_singleton_inter_compl_singleton_neg {p x : sphere (0 : E) 
   simp only [Set.mem_inter_iff, Set.mem_compl_singleton_iff] at hx ⊢
   exact ⟨fun h ↦ hx.2 (neg_eq_iff_eq_neg.mp h), fun h ↦ hx.1 (neg_inj.mp h)⟩
 
-/-- The unit sphere minus `p` and `-p` is the set of its points off the line through `p`. -/
-private lemma compl_singleton_inter_compl_singleton_neg_eq (p : sphere (0 : E) 1) :
-    ({p}ᶜ ∩ {-p}ᶜ : Set (sphere (0 : E) 1)) =
-      ({x | (x : E) ∉ ℝ ∙ (p : E)} : Set (sphere (0 : E) 1)) := by
-  ext x
-  simp [not_or]
-
 end Seminormed
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
@@ -87,47 +80,27 @@ section Subspace
 
 variable (K : Submodule ℝ E) [K.HasOrthogonalProjection]
 
-/-- Moving a point off `K` along its orthogonal projection onto `K` keeps it off `K`. -/
-private lemma sub_smul_starProjection_notMem {x : E} (hx : x ∉ K) (t : ℝ) :
-    x - t • K.starProjection x ∉ K := by
-  intro h
-  exact hx (by simpa using K.add_mem h (K.smul_mem t (K.starProjection_apply_mem x)))
-
-/-- The orthogonal projection onto `Kᗮ` of a point off `K` is nonzero. -/
-private lemma orthogonalProjectionOnto_ne_zero {x : E} (hx : x ∉ K) :
-    Kᗮ.orthogonalProjectionOnto x ≠ 0 := by
-  intro h
-  apply hx
-  rw [← Submodule.starProjection_eq_self_iff]
-  apply Eq.symm
-  simpa [Submodule.orthogonalProjectionOnto_orthogonal, sub_eq_zero] using
-    congrArg (fun v : Kᗮ => (v : E)) h
-
 /-- Radial projection of the orthogonal projection onto `Kᗮ`, retracting the unit sphere minus
 `K` onto the unit sphere of `Kᗮ`. -/
 private def toSphereOrthogonal :
     C({x : sphere (0 : E) 1 | (x : E) ∉ K}, sphere (0 : Kᗮ) 1) :=
   normalizeToSphere (fun x => Kᗮ.orthogonalProjectionOnto ((x : sphere (0 : E) 1) : E))
     ((ContinuousLinearMap.continuous _).comp (continuous_subtype_val.comp continuous_subtype_val))
-    (fun x => orthogonalProjectionOnto_ne_zero K x.2)
+    (fun x => by simpa only [ne_eq, Submodule.orthogonalProjectionOnto_eq_zero_iff,
+      Submodule.orthogonal_orthogonal, Set.mem_ofPred_eq] using x.2)
 
 private lemma coe_toSphereOrthogonal_apply (x : {x : sphere (0 : E) 1 | (x : E) ∉ K}) :
     ((toSphereOrthogonal K x : Kᗮ) : E) =
       normalize (Kᗮ.starProjection ((x : sphere (0 : E) 1) : E)) := by
   simp [toSphereOrthogonal, NormedSpace.normalize]
 
-omit [K.HasOrthogonalProjection] in
-/-- A unit vector of `Kᗮ` is not in `K`. -/
-private lemma coe_notMem (y : sphere (0 : Kᗮ) 1) : ((y : Kᗮ) : E) ∉ K := fun h ↦
-  ne_zero_of_mem_unit_sphere y
-    ((Submodule.mem_left_iff_eq_zero_of_disjoint K.orthogonal_disjoint).1 h)
-
 /-- The inclusion of the unit sphere of `Kᗮ` into the unit sphere minus `K`. -/
 private def ofSphereOrthogonal :
     C(sphere (0 : Kᗮ) 1, {x : sphere (0 : E) 1 | (x : E) ∉ K}) where
   toFun y := ⟨⟨((y : Kᗮ) : E),
     mem_sphere_zero_iff_norm.2 ((Submodule.norm_coe _).trans (norm_eq_of_mem_sphere y))⟩,
-    coe_notMem K y⟩
+    fun h => ne_zero_of_mem_unit_sphere y
+      ((Submodule.mem_left_iff_eq_zero_of_disjoint K.orthogonal_disjoint).1 h)⟩
   continuous_toFun := by fun_prop
 
 /-- Retracting the unit sphere of `Kᗮ` onto itself is the identity. -/
@@ -147,12 +120,14 @@ private def deformation :
   let g : I × {x : sphere (0 : E) 1 | (x : E) ∉ K} → E := fun z =>
     ((z.2 : sphere (0 : E) 1) : E) - (z.1 : ℝ) • K.starProjection (z.2 : sphere (0 : E) 1)
   have hg : Continuous g := by fun_prop
-  have hg0 : ∀ z, g z ≠ 0 := fun z h => sub_smul_starProjection_notMem K z.2.2 z.1
+  have hgK : ∀ z, g z ∉ K := fun z =>
+    (K.sub_mem_iff_left (K.smul_mem z.1 (K.starProjection_apply_mem _))).not.mpr z.2.2
+  have hg0 : ∀ z, g z ≠ 0 := fun z h => hgK z
     ((congrArg (· ∈ K) h).mpr K.zero_mem)
   have hmem : ∀ z, normalizeToSphere g hg hg0 z ∈ {x : sphere (0 : E) 1 | (x : E) ∉ K} :=
     fun z h => by
-      apply sub_smul_starProjection_notMem K z.2.2 z.1
-      simpa [g] using K.smul_mem ‖g z‖ h
+      apply hgK z
+      simpa using K.smul_mem ‖g z‖ h
   { toFun z := ⟨_, hmem z⟩
     continuous_toFun := (ContinuousMap.continuous _).subtype_mk hmem
     map_zero_left x := by

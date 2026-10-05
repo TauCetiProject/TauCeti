@@ -211,15 +211,6 @@ theorem compl_range_greatCircle :
     exact ⟨⟨w, by simp [Submonoid.unitSphere, hn]⟩,
       Subtype.ext ((coe_greatCircle_apply ι _).trans hw')⟩
 
-/-- The plane `ι ℂ` has a two-dimensional orthogonal complement in the four-dimensional space. -/
-private theorem finrank_orthogonal_range :
-    finrank ℝ (LinearMap.range ι.toLinearMap)ᗮ = 2 := by
-  have : FiniteDimensional ℝ F := .of_fact_finrank_eq_succ 3
-  have h := Submodule.finrank_add_finrank_orthogonal (LinearMap.range ι.toLinearMap)
-  rw [LinearMap.finrank_range_of_inj ι.injective, Complex.finrank_real_complex,
-    (Fact.out : finrank ℝ F = 3 + 1)] at h
-  omega
-
 /-- The complement of a great circle `ι S¹` in the three-sphere is homotopy equivalent to a circle:
 it deformation retracts onto the complementary great circle, the unit sphere of `(ι ℂ)ᗮ`. -/
 def complRangeGreatCircleHomotopyEquiv :
@@ -229,7 +220,9 @@ def complRangeGreatCircleHomotopyEquiv :
     ((sphereDiffHomotopyEquiv (LinearMap.range ι.toLinearMap)).trans
       ((LinearIsometryEquiv.unitSphereIsometryEquiv
         ((stdOrthonormalBasis ℝ (LinearMap.range ι.toLinearMap)ᗮ).reindex
-          (finCongr (finrank_orthogonal_range ι))).repr).toHomeomorph.trans
+          (finCongr (Submodule.finrank_add_finrank_orthogonal' (by
+            rw [LinearMap.finrank_range_of_inj ι.injective, Complex.finrank_real_complex,
+              (Fact.out : finrank ℝ F = 3 + 1)])))).repr).toHomeomorph.trans
         EuclideanSpace.sphereHomeomorphCircle).toHomotopyEquiv)
 
 /-- **The knot group of a great circle in the three-sphere is infinite cyclic.** For a linear
