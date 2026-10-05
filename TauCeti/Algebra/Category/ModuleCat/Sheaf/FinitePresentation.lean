@@ -45,7 +45,7 @@ variable {C : Type u₁} [Category.{v₁} C] {J : GrothendieckTopology C}
   {M : SheafOfModules.{u} R}
 
 /-- A finite global presentation gives finite presentations on the trivial covering family. -/
-instance _root_.SheafOfModules.Presentation.isFinitePresentation_quasicoherentData
+instance Presentation.isFinitePresentation_quasicoherentData
     [HasSheafify J AddCommGrpCat.{u}] [J.WEqualsLocallyBijective AddCommGrpCat.{u}]
     [Limits.HasBinaryProducts C] (P : M.Presentation) [P.IsFinite] :
     P.quasicoherentData.IsFinitePresentation where

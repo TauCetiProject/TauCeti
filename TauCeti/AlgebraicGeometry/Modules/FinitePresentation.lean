@@ -70,13 +70,9 @@ instance isFinitePresentation_tilde [Module.FinitePresentation R M] :
   obtain ⟨s, hs, t, ht⟩ := Module.FinitePresentation.out (R := R) (M := M)
   let P := presentationTilde M (s : Set M) hs (t : Set (s →₀ R)) ht
   have : P.IsFinite := isFinite_presentationTilde M _ hs _ ht
-  let q := P.quasicoherentData
-  have : q.IsFinitePresentation := by
-    refine { isFinite_presentation := ?_ }
-    intro U
-    dsimp [q, SheafOfModules.Presentation.quasicoherentData]
-    apply +allowSynthFailures SheafOfModules.Presentation.isFinite_map
-  exact SheafOfModules.IsFinitePresentation.mk (M := tilde M) ⟨q, inferInstance⟩
+  exact SheafOfModules.IsFinitePresentation.mk (M := tilde M)
+    ⟨P.quasicoherentData,
+      TauCeti.SheafOfModules.Presentation.isFinitePresentation_quasicoherentData P⟩
 
 /-- A finite global presentation on `Spec R` gives a finitely presented module of global
 sections over `R`. -/
@@ -423,23 +419,11 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.isFinitePresentation_iff_affine_
       ((Scheme.Modules.restrictFunctorComp U.2.isoSpec.inv U.1.ι).app M).symm
     have h := (SheafOfModules.isFinitePresentation (Spec Γ(X, U.1)).ringCatSheaf).prop_of_iso
       eSpec.symm (hM U)
-    have := ((M.restrict U.1.ι).isFinitePresentation_restrict_iff_of_isIso U.2.isoSpec.inv).mp h
+    have := (TauCeti.AlgebraicGeometry.Scheme.Modules.isFinitePresentation_restrict_iff_of_isIso
+      (M.restrict U.1.ι) U.2.isoSpec.inv).mp h
     obtain ⟨P, hP⟩ := (M.restrict U.1.ι).exists_isFinite_presentation_of_isAffine
-    let E := Scheme.Modules.overEquiv U.1
-    let F : SheafOfModules U.1.toScheme.ringCatSheaf ⥤
-        SheafOfModules (X.ringCatSheaf.over U.1) := E.inverse
-    have : PreservesColimitsOfSize.{u, u} F :=
-      E.symm.toAdjunction.leftAdjoint_preservesColimits
-    let η : SheafOfModules.unit (X.ringCatSheaf.over U.1) ≅
-        F.obj (SheafOfModules.unit U.1.toScheme.ringCatSheaf) :=
-      E.unitIso.app _ ≪≫ E.inverse.mapIso (U.1.sheafOfModulesEquivOverUnit X.ringCatSheaf)
-    let e : F.obj (M.restrict U.1.ι) ≅ M.over U.1 :=
-      E.inverse.mapIso ((Scheme.Modules.overFunctorEquiv U.1).app M).symm ≪≫
-        (E.unitIso.app (M.over U.1)).symm
-    let Q := (P.map F η).ofIsIso e.hom
-    have : (P.map F η).IsFinite := SheafOfModules.Presentation.isFinite_map _ _ _
-    have : Q.IsFinite :=
-      @SheafOfModules.instIsFiniteOfIsIso _ _ _ _ _ _ _ _ _ (Iso.isIso_hom e) _ inferInstance
+    let Q := TauCeti.AlgebraicGeometry.Scheme.Modules.presentationOver U.1 P
+    have : P.IsFinite := hP
     exact SheafOfModules.IsFinitePresentation.mk (M := M.over U.1)
       ⟨Q.quasicoherentData, inferInstance⟩
   exact SheafOfModules.IsFinitePresentation.of_coversTop M (fun U : X.affineOpens ↦ U.1)

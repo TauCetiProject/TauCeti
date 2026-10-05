@@ -538,32 +538,37 @@ instance _root_.TauCeti.AlgebraicGeometry.Scheme.Modules.preservesLimitsOfSize_r
   apply TauCeti.SheafOfModules.preservesLimitsOfSize_pushforward
 
 /-- Restriction to an open subscheme preserves finite presentation. -/
-instance isFinitePresentation_restrict
+instance _root_.TauCeti.AlgebraicGeometry.Scheme.Modules.isFinitePresentation_restrict
     (M : Y.Modules) [M.IsFinitePresentation] (f : X ⟶ Y) [IsOpenImmersion f] :
     (M.restrict f).IsFinitePresentation :=
   (SheafOfModules.isFinitePresentation X.ringCatSheaf).prop_of_iso
     ((Scheme.Modules.restrictFunctorIsoPullback f).app M).symm inferInstance
 
 /-- Restriction to an open subscheme preserves finite type. -/
-instance isFiniteType_restrict
+instance _root_.TauCeti.AlgebraicGeometry.Scheme.Modules.isFiniteType_restrict
     (M : Y.Modules) [M.IsFiniteType] (f : X ⟶ Y) [IsOpenImmersion f] :
     (M.restrict f).IsFiniteType :=
   ObjectProperty.prop_of_iso (fun A : SheafOfModules X.ringCatSheaf ↦ A.IsFiniteType)
     ((Scheme.Modules.restrictFunctorIsoPullback f).app M).symm inferInstance
 
+/-- Restricting along an isomorphism and then its inverse recovers the original module. -/
+@[expose]
+def _root_.TauCeti.AlgebraicGeometry.Scheme.Modules.restrictRestrictInvIso
+    (M : Y.Modules) (f : X ⟶ Y) [IsIso f] : (M.restrict f).restrict (inv f) ≅ M :=
+  ((Scheme.Modules.restrictFunctorComp (inv f) f).app M).symm ≪≫
+    (Scheme.Modules.restrictFunctorCongr (IsIso.inv_hom_id f)).app M ≪≫
+    Scheme.Modules.restrictFunctorId.app M
+
 /-- Restriction along an isomorphism detects finite presentation. -/
 @[simp]
-theorem isFinitePresentation_restrict_iff_of_isIso
+theorem _root_.TauCeti.AlgebraicGeometry.Scheme.Modules.isFinitePresentation_restrict_iff_of_isIso
     (M : Y.Modules) (f : X ⟶ Y) [IsIso f] :
     (M.restrict f).IsFinitePresentation ↔ M.IsFinitePresentation := by
   constructor
   · intro h
     let := h
-    let e : (M.restrict f).restrict (inv f) ≅ M :=
-      ((Scheme.Modules.restrictFunctorComp (inv f) f).app M).symm ≪≫
-        (Scheme.Modules.restrictFunctorCongr (IsIso.inv_hom_id f)).app M ≪≫
-        Scheme.Modules.restrictFunctorId.app M
-    exact (SheafOfModules.isFinitePresentation Y.ringCatSheaf).prop_of_iso e inferInstance
+    exact (SheafOfModules.isFinitePresentation Y.ringCatSheaf).prop_of_iso
+      (TauCeti.AlgebraicGeometry.Scheme.Modules.restrictRestrictInvIso M f) inferInstance
   · intro h
     let := h
     infer_instance
@@ -576,12 +581,9 @@ theorem _root_.TauCeti.AlgebraicGeometry.Scheme.Modules.isFiniteType_restrict_if
   constructor
   · intro h
     let := h
-    let e : (M.restrict f).restrict (inv f) ≅ M :=
-      ((Scheme.Modules.restrictFunctorComp (inv f) f).app M).symm ≪≫
-        (Scheme.Modules.restrictFunctorCongr (IsIso.inv_hom_id f)).app M ≪≫
-        Scheme.Modules.restrictFunctorId.app M
     exact ObjectProperty.prop_of_iso
-      (fun A : SheafOfModules Y.ringCatSheaf ↦ A.IsFiniteType) e inferInstance
+      (fun A : SheafOfModules Y.ringCatSheaf ↦ A.IsFiniteType)
+      (TauCeti.AlgebraicGeometry.Scheme.Modules.restrictRestrictInvIso M f) inferInstance
   · intro h
     let := h
     infer_instance

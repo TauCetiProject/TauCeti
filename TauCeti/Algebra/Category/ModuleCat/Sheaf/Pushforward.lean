@@ -37,7 +37,7 @@ variable {C : Type u₁} [Category.{v₁} C] {D : Type u₂} [Category.{v₂} D]
 
 /-- Forgetting the module and sheaf structures after pushforward gives precomposition of
 the underlying presheaf of abelian groups. The comparison is the identity on every section. -/
-noncomputable def SheafOfModules.pushforwardCompToPresheaf
+private noncomputable def SheafOfModules.pushforwardCompToPresheaf
     (φ : S ⟶ (F.sheafPushforwardContinuous RingCat.{u} J K).obj R) :
     SheafOfModules.pushforward.{v} φ ⋙
       SheafOfModules.forget S ⋙ PresheafOfModules.toPresheaf S.obj ≅
