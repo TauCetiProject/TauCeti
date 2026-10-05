@@ -9,17 +9,18 @@ public import Mathlib.Algebra.BigOperators.Intervals
 import Mathlib.Tactic.Abel
 
 /-!
-# Regrouping a sum over `Finset.range` into adjacent pairs
+# Sums over intervals of natural numbers
 
 A sum `∑ k ∈ range (N + 3), f k` whose summands split as `f 0 = 0`, `f 1 = β 1`,
 `f k = γ k + β k` for `2 ≤ k ≤ N + 1` and `f (N + 2) = γ (N + 2)` regroups as the sum over
 `1 ≤ k ≤ N + 1` of the adjacent pairs `β k + γ (k + 1)`. The codomain is any additive commutative
-monoid.
+monoid. A constant summed over the `n - 2` indices `1 ≤ k < n - 1` is `(n - 2)` times it.
 
 ## Main results
 
 * `Finset.sum_range_eq_sum_Ico_add`: the regrouping of `∑ k ∈ range (N + 3), f k` into the pairs
   `β k + γ (k + 1)`.
+* `Finset.sum_Ico_one_sub_one_const`: `∑ _k ∈ Ico 1 (n - 1), c = (n - 2) * c` for `2 ≤ n`.
 -/
 
 public section
@@ -45,5 +46,10 @@ theorem sum_range_eq_sum_Ico_add {M : Type*} [AddCommMonoid M] {f β γ : ℕ �
     rw [sum_Ico_add' γ, sum_Ico_succ_top (by omega : 2 ≤ N + 2)]
   simp only [hf, sum_congr rfl hmid, sum_add_distrib, hβ, hγ, h₀, h₁, hlast]
   abel
+
+/-- A constant summed over the `n - 2` indices `1 ≤ k < n - 1` is `(n - 2)` times it. -/
+theorem sum_Ico_one_sub_one_const {R : Type*} [Ring R] {n : ℕ} (hn : 2 ≤ n) (c : R) :
+    ∑ _k ∈ Ico 1 (n - 1), c = ((n : R) - 2) * c := by
+  rw [sum_const, Nat.card_Ico, nsmul_eq_mul, Nat.sub_sub, Nat.cast_sub hn, Nat.cast_ofNat]
 
 end Finset

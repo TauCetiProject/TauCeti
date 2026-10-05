@@ -178,14 +178,6 @@ theorem volume_carrier_inter_re_le_of_vertex_zero (h₀ : P.vertex 0 = .inr ∞)
         (by linarith [P.vertexAngle_add_vertexAngle_le_pi_natCast h₀ hk₀ hkn]),
       Finset.sum_Ico_succ_top hk₁]
 
-omit [NeZero n] in
-/-- Summing `π` over the `n - 2` indices `1 ≤ k < n - 1` gives `(n - 2) π`. -/
-private theorem sum_Ico_one_sub_one_pi (hn : 2 ≤ n) :
-    ∑ _k ∈ Finset.Ico 1 (n - 1), π = (n - 2) * π := by
-  have hcard : ((Finset.Ico 1 (n - 1)).card : ℝ) = n - 2 := by
-    rw [Nat.card_Ico, Nat.sub_sub, Nat.cast_sub hn, Nat.cast_ofNat]
-  rw [Finset.sum_const, nsmul_eq_mul, hcard]
-
 /-- The Gauss–Bonnet formula for a convex polygon whose `vertex 0` is `∞`. -/
 theorem volume_carrier_of_vertex_zero (h₀ : P.vertex 0 = .inr ∞) :
     volume P.carrier = ENNReal.ofReal ((n - 2) * π - ∑ i, P.interiorAngle i) := by
@@ -201,7 +193,7 @@ theorem volume_carrier_of_vertex_zero (h₀ : P.vertex 0 = .inr ∞) :
   rw [hcarrier, P.volume_carrier_inter_re_le_of_vertex_zero h₀ (by omega) (by omega),
     P.sum_interiorAngle_eq_of_vertex_zero h₀]
   simp_rw [sub_sub]
-  rw [Finset.sum_sub_distrib, sum_Ico_one_sub_one_pi (by omega)]
+  rw [Finset.sum_sub_distrib, Finset.sum_Ico_one_sub_one_const (by omega) π]
 
 /-- The angular defect of a convex polygon whose `vertex 0` is `∞` is nonnegative. -/
 theorem sum_interiorAngle_le_of_vertex_zero (h₀ : P.vertex 0 = .inr ∞) :
@@ -212,7 +204,7 @@ theorem sum_interiorAngle_le_of_vertex_zero (h₀ : P.vertex 0 = .inr ∞) :
       (Nat.one_le_iff_ne_zero.1 (Finset.mem_Ico.1 hk).1)
       (by have := (Finset.mem_Ico.1 hk).2; omega)
   rw [P.sum_interiorAngle_eq_of_vertex_zero h₀]
-  exact hle.trans_eq (sum_Ico_one_sub_one_pi (by omega))
+  exact hle.trans_eq (Finset.sum_Ico_one_sub_one_const (by omega) π)
 
 /-! ### Gauss–Bonnet -/
 
