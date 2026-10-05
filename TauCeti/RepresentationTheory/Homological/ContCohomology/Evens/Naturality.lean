@@ -34,7 +34,7 @@ that differ by an inner automorphism of the absolute Galois group of the base.
 
 * `TauCeti.ContCohomology.trivialF2Map_graphClass`: pullback of the graph class along a continuous
   homomorphism is the graph class of the pulled-back subgroup and homomorphism.
-* `TauCeti.ContCohomology.graphClass_comap_conj`: the graph class is invariant under conjugation.
+* `TauCeti.ContCohomology.graphClass_comp_of_conj`: the graph class is invariant under conjugation.
 
 ## References
 
