@@ -26,8 +26,9 @@ on `S` matter. Analyticity does not depend on the chart: once the coordinate exp
 analytic in one chart, it is analytic in every chart around the point, since the transition
 between two charts is analytic. This is what makes the notion usable: analytic functions on `S`
 are closed under composition with analytic maps of the values, under pairing, and under
-composition with analytic maps from `S` into another analytic submanifold. Both notions restrict
-to relatively open subsets, and analyticity of functions is a local property.
+composition with analytic maps from `S` into another analytic submanifold. Submanifolds restrict
+to nonempty relatively open subsets, analytic functions restrict to arbitrary relatively open
+subsets, and analyticity of functions is a local property.
 
 Over `ℝ`, analytic submanifolds are the cells over which McCallum's and Lazard's projection
 theorems lift cylindrical decompositions: the lifting theorems assert that, over such a cell, the
@@ -54,7 +55,7 @@ defined without the hypothesis `d ≤ n`, so that charts and analytic functions 
   functions, compositions and pairs.
 * `TauCeti.IsAnalyticSubmanifold.inter`, `TauCeti.AnalyticOnSubmanifold.inter`,
   `TauCeti.analyticOnSubmanifold_of_locally_analyticOnSubmanifold`: restriction to relatively
-  open subsets, and locality.
+  open subsets (nonempty ones, for submanifolds), and locality.
 * `TauCeti.isAnalyticSubmanifold_coordSubspace`, `IsOpen.isAnalyticSubmanifold`,
   `TauCeti.isAnalyticSubmanifold_singleton`: coordinate subspaces, open sets and points.
 
