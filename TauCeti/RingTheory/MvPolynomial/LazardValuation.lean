@@ -95,6 +95,14 @@ theorem weight_filter_gt_add_smul_add_weight_filter_lt [AddCommMonoid M] (c : σ
   conv_rhs => rw [← filter_gt_add_single_add_filter_lt w i]
   rw [map_add, map_add, weight_single]
 
+omit [LinearOrder σ] in
+/-- Scaling the weight vector scales the weight. -/
+theorem weight_smul_left {R S : Type*} [Semiring R] [AddCommMonoid M] [Module R M] [Monoid S]
+    [DistribMulAction S M] [SMulCommClass R S M] (s : S) (c : σ → M) (w : σ →₀ R) :
+    weight (s • c) w = s • weight c w := by
+  simp only [weight_apply, smul_sum, Pi.smul_apply]
+  exact sum_congr fun _ _ ↦ smul_comm _ s _
+
 end Finsupp
 
 namespace TauCeti
@@ -116,10 +124,8 @@ theorem mono (hc : IsLazardEvaluator W c) (h : V ⊆ W) : IsLazardEvaluator V c 
 
 /-- Positive multiples of an evaluator are evaluators. -/
 theorem smul (hc : IsLazardEvaluator V c) {k : ℕ} (hk : 0 < k) : IsLazardEvaluator V (k • c) := by
-  have hw (v : σ →₀ ℕ) : weight (k • c) v = k * weight c v := by
-    simp only [weight_apply, Finsupp.mul_sum, Pi.smul_apply, smul_eq_mul, mul_left_comm]
   refine ⟨fun i ↦ Nat.mul_pos hk (hc.pos i), fun v hv i ↦ ?_⟩
-  rw [hw, Pi.smul_apply, smul_eq_mul]
+  rw [weight_smul_left, Pi.smul_apply, smul_eq_mul, smul_eq_mul]
   exact Nat.mul_lt_mul_of_pos_left (hc.weight_filter_lt v hv i) hk
 
 /-- An evaluator for `V` turns the lexicographic comparison of an exponent in `V` with any
@@ -154,9 +160,12 @@ theorem exists_isLazardEvaluator (hV : V.Finite) :
   set S : Finset σ := hV.toFinset.biUnion Finsupp.support
   have hS {v : σ →₀ ℕ} (hv : v ∈ V) : v.support ⊆ S := fun j hj ↦
     Finset.mem_biUnion.2 ⟨v, hV.mem_toFinset.2 hv, hj⟩
+  -- `K` bounds every coordinate of every exponent in `V`.
   obtain ⟨K, hK⟩ := (hV.biUnion fun v _ ↦ v.finite_range).bddAbove
   replace hK (v) (hv : v ∈ V) (i : σ) : v i ≤ K :=
     hK (Set.mem_biUnion hv (Set.mem_range_self i))
+  -- The weights are positional in base `M`: `c i = M ^ rk i`, where `rk i` counts the occurring
+  -- variables less significant than `i`, so `c j` for `i < j` in `S` is at most `c i / M`.
   set M := S.card * K + 1
   set rk : σ → ℕ := fun i ↦ (S.filter (i < ·)).card
   have hrk {i j : σ} (hjS : j ∈ S) (h : i < j) : rk j + 1 ≤ rk i := by
@@ -168,6 +177,8 @@ theorem exists_isLazardEvaluator (hV : V.Finite) :
   refine ⟨fun i ↦ M ^ rk i, ⟨fun i ↦ by positivity, fun v hv i ↦ ?_⟩⟩
   rw [weight_apply, sum_of_support_subset _ ((Finset.filter_subset _ _).trans (hS hv))
     (fun j n ↦ n • M ^ rk j) fun _ _ ↦ zero_smul _ _]
+  -- After multiplying by `M`, each of the at most `S.card` less significant terms is at most
+  -- `K * c i`, and `M > S.card * K` makes their sum less than `M * c i`.
   refine Nat.lt_of_mul_lt_mul_left (a := M) ?_
   calc M * ∑ j ∈ S, (v.filter (i < ·)) j • M ^ rk j
       = ∑ j ∈ S, if i < j then v j * M ^ (rk j + 1) else 0 := by
