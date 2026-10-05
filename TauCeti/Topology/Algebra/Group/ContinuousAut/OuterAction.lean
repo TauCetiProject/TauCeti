@@ -12,8 +12,9 @@ public import TauCeti.Topology.Algebra.Group.ContinuousAut.ConjClasses
 # The outer action of an extension
 
 Let `E` be a topological group and `N` a normal subgroup of `E`, with the subspace topology.
-Conjugation gives `ContinuousAut.conjNormal : E →* ContinuousAut N`, `n ↦ e * n * e⁻¹`. Conjugation
-by an element of `N` is an inner automorphism of `N` (`ContinuousAut.conjNormal_coe`), so composing
+Conjugation gives `ContinuousAut.conjNormal : E →* ContinuousAut N`, where `conjNormal e` sends `n`
+to `e * n * e⁻¹`. Conjugation by an element of `N` is an inner automorphism of `N`
+(`ContinuousAut.conjNormal_coe`), so composing
 with the quotient map to `ContinuousOut N` kills `N`, and the result descends to the **outer
 action** `TauCeti.outerAction : E ⧸ N →* ContinuousOut N`, sending `e N` to the class of
 conjugation by `e` (`TauCeti.outerAction_mk`). Its kernel is the image of `N ⊔ C_E(N)`: the classes
