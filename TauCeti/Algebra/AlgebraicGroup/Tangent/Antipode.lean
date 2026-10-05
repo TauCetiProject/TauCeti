@@ -14,9 +14,10 @@ A counit-valued derivation `d` of a commutative Hopf algebra is a tangent vector
 of the corresponding affine group. Inversion on the group is represented by the antipode `S`, and
 its differential at the identity is negation: `d ∘ S = -d`.
 
-The proof reads this off the tangent group. The dual-number point attached to `-d` is the
-convolution inverse of the point attached to `d`, and convolution inversion precomposes with the
-antipode.
+Consequently a tangent vector that annihilates a set of coordinate functions also annihilates
+their antipodes. This is what lets the Lie algebra of a closed subgroup be computed from an
+antipode-stable generating set of its ideal, such as the matrix coefficients and their antipodes
+cutting out the stabilizer of a subspace of a representation.
 
 ## Main declaration
 
