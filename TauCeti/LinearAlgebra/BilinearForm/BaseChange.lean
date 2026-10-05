@@ -28,7 +28,7 @@ base change acts entrywise on the Gram matrix of a basis and maps its determinan
 
 ## Main declarations
 
-* `TauCeti.bilinForm_liftBaseChange`: lifting a form-preserving map preserves the
+* `LinearMap.BilinForm.liftBaseChange`: lifting a form-preserving map preserves the
   base-changed form, without assuming the map exhibits a base change.
 * `IsBaseChange.bilinForm_baseChange`: if a bilinear form restricts along a map to a
   second form, evaluating it through the associated base-change equivalence agrees with the
@@ -62,7 +62,7 @@ variable {f : M →ₗ[R] N}
 
 /-- If `B` restricts along `f` to `B'`, evaluating `B` on the images of `f.liftBaseChange A`
 agrees with the canonical base change of `B'`. The map `f` need not exhibit a base change. -/
-theorem bilinForm_liftBaseChange (B' : LinearMap.BilinForm R M)
+theorem _root_.LinearMap.BilinForm.liftBaseChange (B' : LinearMap.BilinForm R M)
     (B : LinearMap.BilinForm A N)
     (hB : ∀ x y : M, B (f x) (f y) = algebraMap R A (B' x y)) (x y : A ⊗[R] M) :
     B (f.liftBaseChange A x) (f.liftBaseChange A y) = B'.baseChange A x y := by
@@ -88,7 +88,7 @@ theorem _root_.IsBaseChange.bilinForm_baseChange (h : IsBaseChange A f)
   have hf : f.liftBaseChange A = h.equiv.toLinearMap := by
     ext
     simp [IsBaseChange.equiv_tmul]
-  simpa only [hf, LinearEquiv.coe_coe] using bilinForm_liftBaseChange B' B hB x y
+  simpa only [hf, LinearEquiv.coe_coe] using B'.liftBaseChange B hB x y
 
 end
 

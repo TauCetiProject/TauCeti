@@ -145,7 +145,7 @@ theorem range_restrictMap (L : IntegralLattice V) (S : Submodule ℤ L) :
 theorem form_restrictMap (L : IntegralLattice V) (S : Submodule ℤ L) (x y : ℚ ⊗[ℤ] S) :
     L.form (L.restrictMap S x) (L.restrictMap S y) = (L.restrict S).form x y := by
   rw [restrict_form]
-  exact bilinForm_liftBaseChange (L.integralForm.restrict S) L.form
+  exact (L.integralForm.restrict S).liftBaseChange L.form
     (fun s t ↦ (L.integralForm_cast s t).symm) x y
 
 /-- The restricted integral carrier maps onto the embedded submodule, not merely onto its
@@ -198,23 +198,41 @@ restriction in the original ambient space. The underlying map is the rational ex
 inclusion, so this identifies both the carriers and the forms. -/
 noncomputable def restrictFullIsometry (L : IntegralLattice V) (S : Submodule ℤ L)
     [(S.map L.carrier.subtype).IsLattice ℚ] : Isometry (L.restrict S)
-      (L.restrictFull (S.map L.carrier.subtype) (L.carrier.map_subtype_le S)) where
-  toIsometryEquiv :=
-    { toLinearEquiv := LinearEquiv.ofBijective (L.restrictMap S) (L.restrictMap_bijective S)
-      map_app' x y := by
-        simp only [restrictFull_form, LinearEquiv.coe_coe, AddHom.toFun_eq_coe,
-          LinearMap.coe_toAddHom, LinearEquiv.ofBijective_apply]
-        exact L.form_restrictMap S x y }
-  map_carrier := by
-    rw [restrictFull_carrier]
-    exact L.map_restrictMap_restrict_carrier S
+      (L.restrictFull (S.map L.carrier.subtype) (L.carrier.map_subtype_le S)) :=
+  Isometry.ofCarrierEquiv
+    ((L.restrictCarrierEquiv S).symm.trans
+      ((Submodule.equivMapOfInjective L.carrier.subtype L.carrier.injective_subtype S).trans
+        (LinearEquiv.ofEq _ _ (L.restrictFull_carrier _
+          (L.carrier.map_subtype_le S)).symm))) (by
+    intro x y
+    obtain ⟨s, rfl⟩ := (L.restrictCarrierEquiv S).surjective x
+    obtain ⟨t, rfl⟩ := (L.restrictCarrierEquiv S).surjective y
+    rw [integralForm_restrictCarrierEquiv]
+    apply Int.cast_injective (α := ℚ)
+    simp only [integralForm_cast, restrictFull_form, LinearEquiv.trans_apply,
+      LinearEquiv.symm_apply_apply, LinearEquiv.coe_ofEq_apply,
+      Submodule.coe_equivMapOfInjective_apply,
+      Submodule.subtype_apply])
 
 /-- The canonical comparison applies the rational extension of the inclusion. -/
--- The `Isometry` wrapper uses `LinearEquiv.ofBijective`, whose underlying map is unchanged.
 @[simp]
 theorem restrictFullIsometry_apply (L : IntegralLattice V) (S : Submodule ℤ L)
     [(S.map L.carrier.subtype).IsLattice ℚ] (x : ℚ ⊗[ℤ] S) :
-    L.restrictFullIsometry S x = L.restrictMap S x := (rfl)
+    L.restrictFullIsometry S x = L.restrictMap S x := by
+  let e := (L.restrictCarrierEquiv S).symm.trans
+    ((Submodule.equivMapOfInjective L.carrier.subtype L.carrier.injective_subtype S).trans
+      (LinearEquiv.ofEq _ _ (L.restrictFull_carrier _ (L.carrier.map_subtype_le S)).symm))
+  have he := LinearEquiv.eq_extendOfIsLattice e
+    (LinearEquiv.ofBijective (L.restrictMap S) (L.restrictMap_bijective S)) (by
+      intro y
+      obtain ⟨s, rfl⟩ := (L.restrictCarrierEquiv S).surjective y
+      simp only [e, LinearEquiv.ofBijective_apply, coe_restrictCarrierEquiv_apply,
+        restrictMap_tmul, one_smul, LinearEquiv.trans_apply, LinearEquiv.symm_apply_apply,
+        LinearEquiv.coe_ofEq_apply, Submodule.coe_equivMapOfInjective_apply,
+        Submodule.subtype_apply])
+  -- Unfold only the comparison constructor to use its carrier-extension characterization.
+  simp only [restrictFullIsometry, Isometry.ofCarrierEquiv_apply]
+  exact (LinearEquiv.congr_fun he x).symm
 
 end IntegralLattice
 end TauCeti
