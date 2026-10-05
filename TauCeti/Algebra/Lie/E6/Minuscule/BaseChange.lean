@@ -301,7 +301,9 @@ theorem coordinateMap_comp_rootSubgroupToBaseChangeCoordinateMap (k : Fin 6 ⊕ 
 
 /-- The specialized root-subgroup coordinate map sends an additive point to the numbered
 minuscule root matrix with the same parameter. -/
-theorem pointToGeneralLinear_rootSubgroupToBaseChangeCoordinateMap
+-- Normalize the point before `AlgHom.mapDomain_apply` unfolds the inner map.
+@[simp↓]
+theorem pointToGeneralLinear_mapDomain_rootSubgroupToBaseChangeCoordinateMap_eq_rootSubgroupPoints
     (i : Fin 6 ⊕ Fin 6) (B : CommAlgCat.{w} A)
     (q : HopfAlgebra.points (R := A) (H := AdditiveGroup.coordinateHopfAlgebra A) B) :
     GeneralLinear.pointToGeneralLinear 27

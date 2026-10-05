@@ -45,7 +45,7 @@ attribute [local instance] generatedStandardComodule
 
 /-- Every normal smooth unipotent closed subgroup of the subgroup generated over the field by
 the type-`E₆` minuscule root subgroups and weight torus is trivial. -/
-theorem eq_augmentation_of_isNormal_of_smoothUnipotent_generated
+theorem eq_augmentation_generated_of_isNormal_of_smoothUnipotent
     (I : HopfIdeal k (generatedCoordinateHopfAlgebra k)) (hI : I.IsNormal)
     (hU : smoothUnipotentCommHopfAlgProperty k
       (FiniteTypeCommHopfAlgCat.quotient

@@ -38,7 +38,7 @@ open scoped Matrix
 
 namespace TauCeti.E6Minuscule
 
-universe u
+universe u v
 
 variable (R : Type u) [CommRing R]
 
@@ -55,6 +55,32 @@ theorem generatedCoordinateMap_comp_generatedWeightTorusCoordinateMap :
       GeneralLinear.weightTorusBaseChangeCoordinateMap ℤ R weightTable.weight := by
   rw [generatedWeightTorusCoordinateMap, generatedCoordinateMap_comp_generatedCoordinateLift,
     generatorCoordinateMap_inr]
+
+/-- A point induced by a generated root-subgroup lift maps to the numbered minuscule root matrix
+with the same parameter, over every value algebra. -/
+-- Avoid indexing the lift's dependent codomain; rewrite before `mapDomain_apply` unfolds.
+@[simp↓]
+theorem pointToGeneralLinear_mapDomain_generatedCoordinateLift_inl_eq_rootSubgroupPoints
+    (i : Fin 6 ⊕ Fin 6) (B : CommAlgCat.{v} R)
+    (q : HopfAlgebra.points (R := R) (H := AdditiveGroup.coordinateHopfAlgebra R) B) :
+    GeneralLinear.pointToGeneralLinear 27
+        (AlgHom.mapDomain (generatedCoordinateMap R).hom
+          (no_index (toConv (q.ofConv.comp (generatedCoordinateLift R (.inl i)).hom.toAlgHom)))) =
+      (rootSubgroupPoints i B (AdditiveGroup.gaPointsMulEquiv q) :
+        Matrix.GeneralLinearGroup (Fin 27) B) := by
+  have hcomp : generatedCoordinateMap R ≫ generatedCoordinateLift R (.inl i) =
+      coordinateMap R ≫ rootSubgroupToBaseChangeCoordinateMap R i := by
+    rw [generatedCoordinateMap_comp_generatedCoordinateLift, generatorCoordinateMap_inl]
+    exact (coordinateMap_comp_rootSubgroupToBaseChangeCoordinateMap R i).symm
+  have hpoint : AlgHom.mapDomain (generatedCoordinateMap R).hom
+      (toConv (q.ofConv.comp (generatedCoordinateLift R (.inl i)).hom.toAlgHom)) =
+      AlgHom.mapDomain (coordinateMap R).hom
+        (toConv (q.ofConv.comp (rootSubgroupToBaseChangeCoordinateMap R i).hom.toAlgHom)) := by
+    apply WithConv.ext
+    ext x
+    exact congrArg (fun f ↦ q.ofConv (f.hom x)) hcomp
+  rw [hpoint,
+    pointToGeneralLinear_mapDomain_rootSubgroupToBaseChangeCoordinateMap_eq_rootSubgroupPoints]
 
 /-- The standard right comodule of the generated type-`E₆` minuscule subgroup on `R²⁷`. -/
 @[instance_reducible]
@@ -82,18 +108,7 @@ theorem generatedRootSubgroupPoints_mulVec_mem
   have h := GeneralLinear.corestrictStandardComodule_mulVec_mem R 27
     (generatedCoordinateMap R).hom N
     (toConv (q.ofConv.comp (generatedCoordinateLift R (.inl i)).hom.toAlgHom)) hw
-  have hcomp : generatedCoordinateMap R ≫ generatedCoordinateLift R (.inl i) =
-      coordinateMap R ≫ rootSubgroupToBaseChangeCoordinateMap R i := by
-    rw [generatedCoordinateMap_comp_generatedCoordinateLift, generatorCoordinateMap_inl]
-    exact (coordinateMap_comp_rootSubgroupToBaseChangeCoordinateMap R i).symm
-  have hpoint : AlgHom.mapDomain (generatedCoordinateMap R).hom
-      (toConv (q.ofConv.comp (generatedCoordinateLift R (.inl i)).hom.toAlgHom)) =
-      AlgHom.mapDomain (coordinateMap R).hom
-        (toConv (q.ofConv.comp (rootSubgroupToBaseChangeCoordinateMap R i).hom.toAlgHom)) := by
-    apply WithConv.ext
-    ext x
-    exact congrArg (fun f ↦ q.ofConv (f.hom x)) hcomp
-  rw [hpoint, pointToGeneralLinear_rootSubgroupToBaseChangeCoordinateMap R i
+  rw [pointToGeneralLinear_mapDomain_generatedCoordinateLift_inl_eq_rootSubgroupPoints R i
     (CommAlgCat.of R R) q, MulEquiv.apply_symm_apply] at h
   exact h
 
