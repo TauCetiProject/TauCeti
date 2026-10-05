@@ -32,6 +32,15 @@ have hRing := (TauCeti.isStandardSyntomicOfRelativeDimension_iff n f).mpr hAlg
 The relative dimension is the first explicit argument, as in
 `RingHom.IsStandardSmoothOfRelativeDimension`.
 
+For example, the proof methods supply both ring-map consequences:
+
+```lean
+example (n : ℕ) {R S : Type*} [CommRing R] [CommRing S]
+    (f : R →+* S) (hf : TauCeti.IsStandardSyntomicOfRelativeDimension n f) :
+    f.Flat ∧ f.FinitePresentation := by
+  exact ⟨hf.flat, hf.finitePresentation⟩
+```
+
 The ring-homomorphism bridge follows Mathlib's `RingHom.IsStandardSmoothOfRelativeDimension`
 in `Mathlib/RingTheory/RingHom/StandardSmooth.lean`, by Christian Merten. The underlying
 complete-intersection definition follows the Stacks Project, *Syntomic morphisms*.
