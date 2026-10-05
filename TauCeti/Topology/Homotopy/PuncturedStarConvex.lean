@@ -11,6 +11,7 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import Mathlib.Topology.Homotopy.Equiv
 
 import Mathlib.Analysis.Normed.Module.Convex
+import TauCeti.Analysis.Normed.Module.Normalize
 import TauCeti.Topology.Homotopy.HomotopyEquiv
 import TauCeti.Topology.JordanCurve.Basic
 
@@ -226,19 +227,16 @@ section Complex
 variable {V : Set ℂ} {p : ℂ} {r R : ℝ}
 
 /-- The direction `(z - p) / ‖z - p‖` of a point `z` of `V \ {p}` seen from `p`, as a point of the
-unit circle. -/
-def _root_.Complex.directionFrom (p : ℂ) (V : Set ℂ) : C(↥(V \ {p}), Circle) where
-  toFun z := ⟨((z : ℂ) - p) / ‖(z : ℂ) - p‖, by
-    have hz : (z : ℂ) - p ≠ 0 := sub_ne_zero.2 z.2.2
-    simp [Submonoid.unitSphere, hz]⟩
-  continuous_toFun := by
-    refine Continuous.subtype_mk (Continuous.div (by fun_prop) (by fun_prop) fun z => ?_) _
-    simpa [sub_eq_zero] using z.2.2
+unit circle: the normalization `TauCeti.normalizeToSphere` of `z - p`, read in `Circle`. -/
+def _root_.Complex.directionFrom (p : ℂ) (V : Set ℂ) : C(↥(V \ {p}), Circle) :=
+  (sphereCircleHomeomorph 0 one_pos : C(sphere (0 : ℂ) 1, Circle)).comp
+    (normalizeToSphere (fun z : ↥(V \ {p}) ↦ (z : ℂ) - p) (by fun_prop)
+      fun z ↦ sub_ne_zero.2 z.2.2)
 
 @[simp]
 theorem _root_.Complex.coe_directionFrom_apply (p : ℂ) (V : Set ℂ) (z : ↥(V \ {p})) :
-    (p.directionFrom V z : ℂ) = ((z : ℂ) - p) / ‖(z : ℂ) - p‖ :=
-  (rfl)
+    (p.directionFrom V z : ℂ) = ((z : ℂ) - p) / ‖(z : ℂ) - p‖ := by
+  simp [Complex.directionFrom, NormedSpace.normalize, div_eq_inv_mul]
 
 /-- A punctured star-convex subset of `ℂ` containing a circle about the puncture is path
 connected, being homotopy equivalent to the circle. -/
