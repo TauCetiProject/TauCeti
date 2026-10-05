@@ -61,8 +61,9 @@ noncomputable instance pointTorsionModule (W : WeierstrassCurve.Affine F) (N : �
   AddSubgroup.torsionBy.zmodModule
 
 /-- **`E[N]` has a basis of two points over `ZMod N`**, over a separably closed field in which `N`
-is invertible: `WeierstrassCurve.torsion_addEquiv_prod`, an additive equivalence being
-`ZMod N`-linear. The basis is noncanonical, so the result asserts its existence. -/
+is invertible. It identifies `E[N]` with the rank-two free module `ZMod N × ZMod N`, so that the
+action of an endomorphism on `E[N]` is a `2 × 2` matrix over `ZMod N` and has a determinant and
+trace. The basis is noncanonical, so the result asserts its existence. -/
 theorem nonempty_basis_torsionBy [IsSepClosed F] (W : WeierstrassCurve.Affine F) [W.IsElliptic]
     (N : ℕ) [NeZero N] (hN : (N : F) ≠ 0) :
     Nonempty (Module.Basis (Fin 2) (ZMod N) (AddSubgroup.torsionBy W.Point (N : ℤ))) := by
