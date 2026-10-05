@@ -79,6 +79,20 @@ private lemma ιChainComplex_diag_chainComplexMap_f {K L : SSet.{w}} {n : ℕ}
   -- `𝟙` under the maps classifying `x.1` and `x.2`
   exact congrArg _ (Prod.ext (yonedaEquiv_symm_app_id x.1) (yonedaEquiv_symm_app_id x.2))
 
+/-- A natural family of maps between the simplicial chains of products is determined by its values
+on the diagonal simplices of the models: on the summand of an `n`-simplex `(x, y)` of `K × L` it is
+the image of its value on the diagonal `n`-simplex of `Δ[n] × Δ[n]` under the map classifying
+`(x, y)`. -/
+private lemma ιChainComplex_comp_eq_diag {n m : ℕ}
+    (u : ∀ K L : SSet.{w}, ((K ⊗ L).chainComplex T).X n ⟶ ((K ⊗ L).chainComplex T').X m)
+    (hu : ∀ ⦃K K' L L' : SSet.{w}⦄ (f : K ⟶ K') (g : L ⟶ L'),
+      (chainComplexMap (f ⊗ₘ g) T).f n ≫ u K' L' = u K L ≫ (chainComplexMap (f ⊗ₘ g) T').f m)
+    {K L : SSet.{w}} (x : (K ⊗ L) _⦋n⦌) :
+    (K ⊗ L).ιChainComplex x ≫ u K L =
+      ((Δ[n] : SSet.{w}) ⊗ Δ[n]).ιChainComplex (diag n) ≫ u _ _ ≫
+        (chainComplexMap (yonedaEquiv.symm x.1 ⊗ₘ yonedaEquiv.symm x.2) T').f m := by
+  rw [← ιChainComplex_diag_chainComplexMap_f x, Category.assoc, hu]
+
 /-- The natural extension of a chain `c` of `Δ[n] × Δ[n]` of degree `n + 1`: the map raising the
 degree of the simplicial chains of `K × L` by one which sends the summand of an `n`-simplex
 `(x, y)` to the image of `c` under the map `Δ[n] × Δ[n] ⟶ K × L` classifying `(x, y)`. -/
@@ -103,9 +117,8 @@ private lemma chainComplexMap_f_extend {n : ℕ}
     (chainComplexMap (f ⊗ₘ g) T).f n ≫ extend c K' L' =
       extend c K L ≫ (chainComplexMap (f ⊗ₘ g) T').f (n + 1) := by
   ext x
-  rw [ι_chainComplexMap_f_assoc, ιChainComplex_extend, ιChainComplex_extend_assoc,
-    chainComplexMap_f_comp, tensorHom_comp_tensorHom, yonedaEquiv_symm_comp,
-    yonedaEquiv_symm_comp]
+  simp only [ι_chainComplexMap_f_assoc, ιChainComplex_extend, ιChainComplex_extend_assoc,
+    chainComplexMap_f_comp, tensorHom_comp_tensorHom, yonedaEquiv_symm_comp]
   -- a tensor product of maps acts on the components of a simplex of a product separately
   rfl
 
@@ -123,9 +136,8 @@ extension of the value in degree `n`. -/
 private def modelHom : (n : ℕ) → (T ⟶ (((Δ[n] : SSet.{w}) ⊗ Δ[n]).chainComplex T').X (n + 1))
   | 0 => 0
   | n + 1 =>
-      (((Δ[n + 1] : SSet.{w}) ⊗ Δ[n + 1]).ιChainComplex (diag (n + 1)) ≫
-          (θ (Δ[n + 1]) (Δ[n + 1])).f (n + 1) -
-        ((Δ[n + 1] : SSet.{w}) ⊗ Δ[n + 1]).ιChainComplex (diag (n + 1)) ≫
+      ((Δ[n + 1] : SSet.{w}) ⊗ Δ[n + 1]).ιChainComplex (diag (n + 1)) ≫
+        ((θ (Δ[n + 1]) (Δ[n + 1])).f (n + 1) -
           (((Δ[n + 1] : SSet.{w}) ⊗ Δ[n + 1]).chainComplex T).d (n + 1) n ≫
             extend (modelHom n) (Δ[n + 1]) (Δ[n + 1])) ≫
         stdSimplex.prodConeChain (n + 1) (n + 1) T' (n + 1)
@@ -146,28 +158,33 @@ private lemma extend_modelHom_succ_d (n : ℕ)
     (K L : SSet.{w}) :
     extend (modelHom θ (n + 1)) K L ≫ ((K ⊗ L).chainComplex T').d (n + 2) (n + 1) =
       (θ K L).f (n + 1) - ((K ⊗ L).chainComplex T).d (n + 1) n ≫ extend (modelHom θ n) K L := by
-  -- on the model, the chain `z = θ (ι) - h (∂ ι)` is a cycle, so the cone on it bounds it
-  set z := ((Δ[n + 1] : SSet.{w}) ⊗ Δ[n + 1]).ιChainComplex (diag (n + 1)) ≫
-      (θ (Δ[n + 1]) (Δ[n + 1])).f (n + 1) -
-    ((Δ[n + 1] : SSet.{w}) ⊗ Δ[n + 1]).ιChainComplex (diag (n + 1)) ≫
-      (((Δ[n + 1] : SSet.{w}) ⊗ Δ[n + 1]).chainComplex T).d (n + 1) n ≫
-        extend (modelHom θ n) (Δ[n + 1]) (Δ[n + 1]) with hz
-  have hzd : z ≫ (((Δ[n + 1] : SSet.{w}) ⊗ Δ[n + 1]).chainComplex T').d (n + 1) n = 0 := by
-    rw [hz, Preadditive.sub_comp, Category.assoc, Category.assoc, Category.assoc,
-      Hom.comm, hcyc, sub_self]
+  -- the map `θ - h ∂` raising degrees by one is natural
+  have hnat : ∀ ⦃K K' L L' : SSet.{w}⦄ (f : K ⟶ K') (g : L ⟶ L'),
+      (chainComplexMap (f ⊗ₘ g) T).f (n + 1) ≫ ((θ K' L').f (n + 1) -
+          ((K' ⊗ L').chainComplex T).d (n + 1) n ≫ extend (modelHom θ n) K' L') =
+        ((θ K L).f (n + 1) - ((K ⊗ L).chainComplex T).d (n + 1) n ≫ extend (modelHom θ n) K L) ≫
+          (chainComplexMap (f ⊗ₘ g) T').f (n + 1) := fun _ _ _ _ f g ↦ by
+    simp only [Preadditive.comp_sub, Preadditive.sub_comp, Category.assoc,
+      ← chainComplexMap_f_extend, Hom.comm_assoc, ← HomologicalComplex.comp_f, hθ]
+  -- on the model, the chain `(θ - h ∂) (ι)` is a cycle, so the cone on it bounds it
   have hmodel : modelHom θ (n + 1) ≫
-      (((Δ[n + 1] : SSet.{w}) ⊗ Δ[n + 1]).chainComplex T').d (n + 2) (n + 1) = z := by
-    rw [modelHom, ← hz, Category.assoc, stdSimplex.prodConeChain_d, Preadditive.comp_sub,
-      Category.comp_id, reassoc_of% hzd, zero_comp, sub_zero]
+      (((Δ[n + 1] : SSet.{w}) ⊗ Δ[n + 1]).chainComplex T').d (n + 2) (n + 1) =
+        ((Δ[n + 1] : SSet.{w}) ⊗ Δ[n + 1]).ιChainComplex (diag (n + 1)) ≫
+          ((θ (Δ[n + 1]) (Δ[n + 1])).f (n + 1) -
+            (((Δ[n + 1] : SSet.{w}) ⊗ Δ[n + 1]).chainComplex T).d (n + 1) n ≫
+              extend (modelHom θ n) (Δ[n + 1]) (Δ[n + 1])) := by
+    have hcyc' : ((θ (Δ[n + 1]) (Δ[n + 1])).f (n + 1) -
+        (((Δ[n + 1] : SSet.{w}) ⊗ Δ[n + 1]).chainComplex T).d (n + 1) n ≫
+          extend (modelHom θ n) (Δ[n + 1]) (Δ[n + 1])) ≫
+        (((Δ[n + 1] : SSet.{w}) ⊗ Δ[n + 1]).chainComplex T').d (n + 1) n = 0 := by
+      simp only [Preadditive.sub_comp, Category.assoc, Hom.comm, hcyc, sub_self]
+    simp only [modelHom, Category.assoc, stdSimplex.prodConeChain_d, Preadditive.comp_sub,
+      Category.comp_id, reassoc_of% hcyc', zero_comp, sub_zero]
   -- by naturality, the identity on a simplex `(x, y)` is the image of the identity on the model
   ext x
-  have hθx := congrArg (fun φ ↦ φ.f (n + 1)) (hθ (yonedaEquiv.symm x.1) (yonedaEquiv.symm x.2))
-  simp only [HomologicalComplex.comp_f] at hθx
-  rw [ιChainComplex_extend_assoc, Hom.comm, reassoc_of% hmodel, hz, Preadditive.sub_comp,
-    Preadditive.comp_sub, Category.assoc, Category.assoc, Category.assoc, ← hθx,
-    ← chainComplexMap_f_extend, ← Hom.comm_assoc,
-    reassoc_of% (ιChainComplex_diag_chainComplexMap_f (T := T) x),
-    reassoc_of% (ιChainComplex_diag_chainComplexMap_f (T := T) x)]
+  rw [ιChainComplex_extend_assoc, Hom.comm, reassoc_of% hmodel,
+    ιChainComplex_comp_eq_diag (fun K L ↦ (θ K L).f (n + 1) -
+      ((K ⊗ L).chainComplex T).d (n + 1) n ≫ extend (modelHom θ n) K L) hnat]
 
 variable (h₀ : ∀ K L : SSet.{w}, (θ K L).f 0 = 0)
 include h₀
@@ -250,11 +267,11 @@ variable {C : Type u} [Category.{v} C] [Preadditive C] [HasCoproducts.{w} C] [Mo
 /-- In degree zero, the Alexander–Whitney map followed by the shuffle map is the identity: both
 maps send the summand of a vertex `(x, y)` to the summand of `x` tensored with that of `y`, and
 back. -/
+@[reassoc (attr := simp)]
 lemma alexanderWhitney_shuffle_f_zero :
-    (alexanderWhitney K L R S ≫ shuffle K L R S).f 0 = 𝟙 _ := by
+    (alexanderWhitney K L R S).f 0 ≫ (shuffle K L R S).f 0 = 𝟙 _ := by
   ext x
-  rw [HomologicalComplex.comp_f, ιChainComplex_alexanderWhitney_f_assoc, Fin.sum_univ_one,
-    Category.comp_id]
+  rw [ιChainComplex_alexanderWhitney_f_assoc, Fin.sum_univ_one, Category.comp_id]
   simp only [Fin.val_zero, Nat.sub_zero, TauCeti.SimplexCategory.subinterval_zero_eq_id, op_id,
     Functor.map_id_apply, Category.assoc]
   exact ιChainComplex_tensorHom_ιChainComplex_shuffle_f_zero K L R S x.1 x.2
@@ -270,7 +287,7 @@ def alexanderWhitneyShuffleHomotopy :
     (fun _ _ _ _ f g ↦ by
       rw [alexanderWhitney_naturality_assoc, shuffle_naturality, Category.assoc])
     (fun _ _ _ _ _ _ ↦ by rw [Category.comp_id, Category.id_comp])
-    (fun K L ↦ alexanderWhitney_shuffle_f_zero K L R S) K L
+    (fun _ _ ↦ by simp) K L
 
 end EilenbergZilber
 
