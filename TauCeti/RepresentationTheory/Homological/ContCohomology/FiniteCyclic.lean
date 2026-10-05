@@ -8,6 +8,7 @@ module
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.LowDegree
 
 import TauCeti.Data.Nat.Carry
+import TauCeti.GroupTheory.SpecificGroups.Cyclic.Log
 
 /-!
 # Cohomology of finite cyclic groups with topological coefficients
@@ -129,26 +130,6 @@ variable {G : Type u} [Group G] [TopologicalSpace G] [Fintype G]
 
 variable [DiscreteTopology G] [ContinuousSMul G M]
   (g : G) (hg : ∀ x : G, x ∈ Subgroup.zpowers g)
-
-private noncomputable def cyclicLog (x : G) : ℕ :=
-  ((finEquivZPowers (isOfFinOrder_of_finite g)).symm ⟨x, hg x⟩ : ℕ)
-
-omit [TopologicalSpace G] [DiscreteTopology G] in
-private theorem pow_cyclicLog (x : G) : g ^ cyclicLog g hg x = x :=
-  pow_finEquivZPowers_symm_apply (isOfFinOrder_of_finite g) ⟨x, hg x⟩
-
-omit [TopologicalSpace G] [DiscreteTopology G] in
-private theorem cyclicLog_lt (x : G) : cyclicLog g hg x < orderOf g :=
-  ((finEquivZPowers (isOfFinOrder_of_finite g)).symm ⟨x, hg x⟩).2
-
-omit [TopologicalSpace G] [DiscreteTopology G] in
-private theorem cyclicLog_pow (i : ℕ) : cyclicLog g hg (g ^ i) = i % orderOf g :=
-  congrArg Fin.val (finEquivZPowers_symm_apply (isOfFinOrder_of_finite g) i)
-
-omit [TopologicalSpace G] [DiscreteTopology G] in
-private theorem cyclicLog_mul (x y : G) :
-    cyclicLog g hg (x * y) = (cyclicLog g hg x + cyclicLog g hg y) % orderOf g := by
-  rw [← cyclicLog_pow, pow_add, pow_cyclicLog, pow_cyclicLog]
 
 private noncomputable def finEquivCyclic : Fin (orderOf g) ≃ G where
   toFun i := g ^ (i : ℕ)

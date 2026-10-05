@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Data.Nat.Basic
 
-import Mathlib.Tactic
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # Carries in addition modulo a natural number
