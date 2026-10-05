@@ -96,12 +96,10 @@ theorem orbitRel_psl2zToPSL2RRange_iff_orbitRel_sl {z w : ℍ} :
   · rintro ⟨⟨_, p, rfl⟩, h⟩
     induction p using QuotientGroup.induction_on with
     | H a =>
-      exact ⟨a, by simpa only [Subgroup.smul_def, UpperHalfPlane.psl2zToPSL2R_smul,
-        UpperHalfPlane.pslMk_smul] using h⟩
+      exact ⟨a, by simpa [Subgroup.smul_def, UpperHalfPlane.psl2zToPSL2R_smul] using h⟩
   · rintro ⟨a, h⟩
     exact ⟨⟨psl2zToPSL2R (a : PSL(2, ℤ)), a, rfl⟩,
-      by simpa only [Subgroup.smul_def, UpperHalfPlane.psl2zToPSL2R_smul,
-        UpperHalfPlane.pslMk_smul] using h⟩
+      by simpa [Subgroup.smul_def, UpperHalfPlane.psl2zToPSL2R_smul] using h⟩
 
 /-- The stabilizer of `i` in the effective level-one group has order `2`. -/
 theorem card_stabilizer_psl2zToPSL2RRange_I :

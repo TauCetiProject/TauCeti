@@ -84,7 +84,7 @@ theorem j_smul_psl2zToPSL2RRange (g : psl2zToPSL2R.range) (z : ℍ) : j (g • z
   induction p using QuotientGroup.induction_on with
   | H a =>
     rw [Subgroup.smul_def, psl2zToPSL2R_smul, pslMk_smul]
-    exact j_smul a z
+    simp
 
 /-- **The modular invariant on the coarse level-one quotient**: the function on the orbit space of
 the effective level-one group whose pullback along the orbit projection is the modular
