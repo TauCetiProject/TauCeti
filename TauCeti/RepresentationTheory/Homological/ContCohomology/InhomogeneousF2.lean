@@ -67,7 +67,12 @@ variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 
 /-- A continuous function `f : G → ZMod 2`, as the homogeneous `1`-cochain
 `(g₀, g₁) ↦ f (g₀⁻¹ * g₁)` of the trivial `𝔽₂` coefficients `trivialF2 G`, lifted to their
-carrier. -/
+carrier.
+
+Source: this constructor is close to the degree-`1` constructor of the open Tau Ceti PR
+[#11157](https://github.com/TauCetiProject/TauCeti/pull/11157), which builds it inside a larger
+change; here it is stated on `homogeneousCochains (trivialF2 G)` directly, without local
+compactness, with `inhomogeneousCochain2` as its degree-`2` counterpart. -/
 noncomputable def inhomogeneousCochain1 (f : G → ZMod 2) (hf : Continuous f) :
     (homogeneousCochains (trivialF2 G)).X 1 :=
   ⟨ContinuousMap.curry ⟨fun q : G × G ↦ (trivialF2Equiv G).symm (f (q.1⁻¹ * q.2)),
@@ -120,8 +125,8 @@ theorem d_inhomogeneousCochain1 (ψ : G → ZMod 2) (hψ : Continuous ψ) :
   apply Subtype.ext
   ext g₀ g₁ g₂
   rw [homogeneousCochains.d_one_apply, inhomogeneousCochain1_apply, inhomogeneousCochain1_apply,
-    inhomogeneousCochain1_apply, inhomogeneousCochain2_apply, ← map_sub, ← map_sub]
-  simp only [mul_assoc, mul_inv_cancel_left]
+    inhomogeneousCochain1_apply, inhomogeneousCochain2_apply]
+  simp only [← map_sub, mul_assoc, mul_inv_cancel_left]
   congr 1
   abel
 
@@ -144,13 +149,14 @@ theorem inhomogeneousCochain1_d_eq_zero_iff (f : G → ZMod 2) (hf : Continuous 
     apply Subtype.ext
     ext g₀ g₁ g₂
     rw [homogeneousCochains.d_one_apply, inhomogeneousCochain1_apply, inhomogeneousCochain1_apply,
-      inhomogeneousCochain1_apply, ← map_sub, ← map_sub, Submodule.coe_zero,
-      ContinuousMap.zero_apply, ContinuousMap.zero_apply, ContinuousMap.zero_apply,
+      inhomogeneousCochain1_apply]
+    simp only [← map_sub, Submodule.coe_zero, ContinuousMap.zero_apply,
       ← map_zero (trivialF2Equiv G).symm]
     have h := hc (g₀⁻¹ * g₁) (g₁⁻¹ * g₂)
     simp only [mul_assoc, mul_inv_cancel_left] at h
     congr 1
     linear_combination -h
+
 /-- **The image of a homomorphism is a cocycle.** -/
 theorem inhomogeneousCochain1_d_eq_zero (f : G → ZMod 2) (hf : Continuous f)
     (hcocycle : ∀ g h : G, f (g * h) = f g + f h) :
@@ -177,9 +183,9 @@ theorem inhomogeneousCochain2_d_eq_zero_iff (f : G × G → ZMod 2) (hf : Contin
     apply Subtype.ext
     ext g₀ g₁ g₂ g₃
     rw [homogeneousCochains.d_two_apply, inhomogeneousCochain2_apply, inhomogeneousCochain2_apply,
-      inhomogeneousCochain2_apply, inhomogeneousCochain2_apply, ← map_sub, ← map_sub, ← map_sub,
-      Submodule.coe_zero, ContinuousMap.zero_apply, ContinuousMap.zero_apply,
-      ContinuousMap.zero_apply, ContinuousMap.zero_apply, ← map_zero (trivialF2Equiv G).symm]
+      inhomogeneousCochain2_apply, inhomogeneousCochain2_apply]
+    simp only [← map_sub, Submodule.coe_zero, ContinuousMap.zero_apply,
+      ← map_zero (trivialF2Equiv G).symm]
     have h := hc (g₀⁻¹ * g₁) (g₁⁻¹ * g₂) (g₂⁻¹ * g₃)
     simp only [mul_assoc, mul_inv_cancel_left] at h
     congr 1
