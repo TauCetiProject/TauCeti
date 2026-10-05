@@ -68,9 +68,13 @@ theorem localArtinMap_quadratic_eq_nontrivial_iff_not_norm (L : Type*) [Field L]
   obtain ⟨σ, hσ⟩ := Abelianization.equivOfComm.surjective
     (localArtinMap K L ι (Additive.ofMul a)).toMul
   have hστ : σ ≠ 1 → σ = τ := fun h ↦ ((Nat.card_eq_two_iff' 1).1 hcard).unique h hτ
-  rw [← localArtinMap_eq_zero_iff K L ι, ← ofMul_toMul (localArtinMap K L ι _), ← hσ,
-    ← Abelianization.equivOfComm_apply, ofMul_eq_zero, EmbeddingLike.apply_eq_iff_eq,
-    EmbeddingLike.apply_eq_iff_eq, MulEquiv.map_eq_one_iff]
+  rw [← localArtinMap_eq_zero_iff K L ι, ← ofMul_toMul (localArtinMap K L ι _), ← hσ]
+  have heq : Additive.ofMul (Abelianization.equivOfComm σ) =
+      Additive.ofMul (Abelianization.of τ) ↔ σ = τ := by
+    simp [← Abelianization.equivOfComm_apply]
+  have hone : Additive.ofMul (Abelianization.equivOfComm σ) = 0 ↔ σ = 1 := by
+    simp [-Abelianization.equivOfComm_apply]
+  rw [heq, hone]
   exact ⟨fun h ↦ h ▸ hτ, hστ⟩
 
 /-- **The quadratic test against the local symbol.** Let `L = K(s)` with `s² = d`, Galois over
