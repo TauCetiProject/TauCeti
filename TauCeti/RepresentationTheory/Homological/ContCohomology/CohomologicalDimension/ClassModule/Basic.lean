@@ -36,6 +36,8 @@ representatives, after passing to the abelianization.
 
 ## Main results
 
+* `TauCeti.abelianizationProPMk_apply`: the canonical map is the composite of the two quotient
+  maps.
 * `TauCeti.continuous_abelianizationProPMk`: the canonical map is continuous.
 * `TauCeti.abelianizationProPMk_conj`: the canonical map is equivariant for conjugation.
 * `TauCeti.abelianizationProPFactorSet_mem_Z2`: the factor set is a continuous `2`-cocycle when
@@ -65,6 +67,13 @@ abbrev abelianizationProP (V : Subgroup G) : Type u :=
 noncomputable def abelianizationProPMk (V : Subgroup G) : V →* abelianizationProP p G V :=
   (maximalProPQuotient.mk p (TopologicalAbelianization V)).comp
     (QuotientGroup.mk' (commutator V).topologicalClosure)
+
+/-- The quotient map `V → V^ab(p)` sends `v` to the class in the maximal pro-`p` quotient of its
+class in the topological abelianization. -/
+theorem abelianizationProPMk_apply (V : Subgroup G) (v : V) :
+    abelianizationProPMk p G V v =
+      maximalProPQuotient.mk p (TopologicalAbelianization V) (v : TopologicalAbelianization V) :=
+  (rfl)
 
 /-- Every element of `V^ab(p)` is represented by an element of `V`. -/
 theorem abelianizationProPMk_surjective (V : Subgroup G) :
