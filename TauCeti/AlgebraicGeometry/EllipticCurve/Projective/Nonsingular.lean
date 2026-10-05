@@ -18,6 +18,9 @@ three partial derivatives vanish there.
 
 ## Main results
 
+* `WeierstrassCurve.Projective.equation_iff_nonsingular_of_Δ_ne_zero_of_ne_zero`: over a field,
+  if the discriminant is nonzero, a nonzero point representative satisfies the equation if and
+  only if it is nonsingular.
 * `WeierstrassCurve.Projective.equation_iff_nonsingular_of_ne_zero`: on an elliptic curve over a
   field, a nonzero point representative satisfies the equation if and only if it is nonsingular.
 -/
@@ -28,19 +31,26 @@ namespace WeierstrassCurve.Projective
 
 variable {F : Type*} [Field F] {W : Projective F}
 
-/-- On an elliptic curve over a field, a nonzero point representative satisfies the projective
-Weierstrass equation if and only if it is nonsingular. If `Z ≠ 0`, this is the affine statement;
-if `Z = 0`, the equation forces `X = 0`, and then `Y ≠ 0` makes `W_Z = Y²` nonzero. -/
-theorem equation_iff_nonsingular_of_ne_zero [W.IsElliptic] {P : Fin 3 → F} (hP : P ≠ 0) :
-    W.Equation P ↔ W.Nonsingular P := by
+/-- Over a field, if the discriminant is nonzero, then a nonzero point representative satisfies
+the projective Weierstrass equation if and only if it is nonsingular. If `Z ≠ 0`, this is the
+affine statement; if `Z = 0`, the equation forces `X = 0`, and then `Y ≠ 0` makes `W_Z = Y²`
+nonzero. -/
+theorem equation_iff_nonsingular_of_Δ_ne_zero_of_ne_zero (hΔ : W.Δ ≠ 0) {P : Fin 3 → F}
+    (hP : P ≠ 0) : W.Equation P ↔ W.Nonsingular P := by
   refine ⟨fun h ↦ ?_, And.left⟩
   by_cases hz : P 2 = 0
   · have hx : P 0 = 0 := X_eq_zero_of_Z_eq_zero h hz
     have hy : P 1 ≠ 0 := fun hy ↦ hP (funext fun k ↦ by fin_cases k <;> assumption)
     rw [nonsingular_of_Z_eq_zero hz]
     exact ⟨h, Or.inr (by simpa [hx] using hy)⟩
-  · rw [nonsingular_of_Z_ne_zero hz, ← Affine.equation_iff_nonsingular,
+  · rw [nonsingular_of_Z_ne_zero hz, ← Affine.equation_iff_nonsingular_of_Δ_ne_zero hΔ,
       ← equation_of_Z_ne_zero hz]
     exact h
+
+/-- On an elliptic curve over a field, a nonzero point representative satisfies the projective
+Weierstrass equation if and only if it is nonsingular. -/
+theorem equation_iff_nonsingular_of_ne_zero [W.IsElliptic] {P : Fin 3 → F} (hP : P ≠ 0) :
+    W.Equation P ↔ W.Nonsingular P :=
+  equation_iff_nonsingular_of_Δ_ne_zero_of_ne_zero (W.coe_Δ' ▸ W.Δ'.ne_zero) hP
 
 end WeierstrassCurve.Projective

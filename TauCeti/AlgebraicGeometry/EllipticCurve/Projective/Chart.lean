@@ -94,8 +94,8 @@ private theorem awayToChartRing_mk {n : ℕ} {a : W'.CoordinateRing}
       W'.toChartRing i a := by
   rw [awayToChartRing, Away.lift_mk]
   generalize_proofs hu
-  rw [show hu.unit = 1 from Units.ext (W'.toChartRing_coord_self i), one_pow, inv_one,
-    Units.val_one, mul_one, AlgHom.toRingHom_eq_coe, RingHom.coe_coe]
+  have hu1 : hu.unit = 1 := Units.ext (W'.toChartRing_coord_self i)
+  rw [hu1, one_pow, inv_one, Units.val_one, mul_one, AlgHom.toRingHom_eq_coe, RingHom.coe_coe]
 
 /-- The structure map `R → A_(Xᵢ)`, through the degree-zero part of the coordinate ring. -/
 private noncomputable def awayBase : R →+* Away W'.grading (W'.coord i) :=

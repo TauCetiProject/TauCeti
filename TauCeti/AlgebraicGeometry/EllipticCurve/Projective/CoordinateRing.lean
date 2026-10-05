@@ -162,8 +162,8 @@ theorem irrelevant_le_span_range_coord :
     refine mem_ideal_span_X_image.mpr fun m hm ↦ ?_
     obtain ⟨k, hk⟩ : ∃ k, m k ≠ 0 := by
       by_contra! h
-      exact hn.ne' ((hq (mem_support_iff.mp hm)).symm.trans (by
-        rw [show m = 0 from Finsupp.ext h, map_zero]))
+      have hm0 : m = 0 := Finsupp.ext h
+      exact hn.ne' ((hq (mem_support_iff.mp hm)).symm.trans (by rw [hm0, map_zero]))
     exact ⟨k, Set.mem_univ _, hk⟩
   have := Ideal.mem_map_of_mem (Ideal.Quotient.mk (Ideal.span {W'.polynomial})) hqX
   rwa [Ideal.map_span, Set.image_univ, ← Set.range_comp] at this
