@@ -207,6 +207,7 @@ theorem adjoin_integerSqrtTwo_eq_top : Algebra.adjoin 𝒪[ℚ_[2]] {integerSqrt
     isEisensteinAt_X_sq_sub_two isRoot_integerSqrtTwo adjoin_sqrtTwo_eq_top
 
 /-- Every nonidentity automorphism sends `√2` to `-√2`. -/
+@[simp]
 theorem apply_sqrtTwo_of_ne_one {σ : DyadicSqrtTwo ≃ₐ[ℚ_[2]] DyadicSqrtTwo} (hσ : σ ≠ 1) :
     σ sqrtTwo = -sqrtTwo := by
   refine (AlgEquiv.apply_eq_or_eq_neg_of_sq_eq σ
@@ -215,6 +216,7 @@ theorem apply_sqrtTwo_of_ne_one {σ : DyadicSqrtTwo ≃ₐ[ℚ_[2]] DyadicSqrtTw
 
 /-- The displacement of any nonidentity automorphism at the integral generator has valuation
 three: `v(-√2 - √2) = v(2) + v(√2) = 2 + 1`. -/
+@[simp]
 theorem addVal_smul_sub_integerSqrtTwo_of_ne_one
     {σ : DyadicSqrtTwo ≃ₐ[ℚ_[2]] DyadicSqrtTwo} (hσ : σ ≠ 1) :
     IsDiscreteValuationRing.addVal 𝒪[DyadicSqrtTwo]
@@ -234,6 +236,7 @@ theorem addVal_smul_sub_integerSqrtTwo_of_ne_one
   norm_num
 
 /-- Every nonidentity automorphism has lower index three. -/
+@[simp]
 theorem lowerIndex_of_ne_one {σ : DyadicSqrtTwo ≃ₐ[ℚ_[2]] DyadicSqrtTwo} (hσ : σ ≠ 1) :
     TauCeti.IsLocalRing.lowerIndex 𝒪[DyadicSqrtTwo] σ = 3 := by
   rw [TauCeti.IsLocalRing.lowerIndex_eq_addVal_of_adjoin_singleton_eq_top
