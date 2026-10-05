@@ -19,8 +19,7 @@ These formulas determine multiplication on the corner spanning families over any
 ring, including characteristic two. They supply the products whose top-degree coefficients
 enter a Frobenius functional; no linear independence or nonvanishing is asserted here.
 
-The proof uses `TauCeti.ladderValley_mul_ladderValley` and the existing projected valley
-normal forms. The local relations are those of W. Crawley-Boevey, *Quiver algebras, weighted
+The local relations are those of W. Crawley-Boevey, *Quiver algebras, weighted
 projective lines, and the Deligne--Simpson problem*, Section 1. For the finite-Dynkin
 Frobenius property, see C. M. Ringel, *The preprojective algebra of a quiver*.
 -/
