@@ -57,7 +57,8 @@ and the one Shapiro's lemma is stated against.
   in the coefficients;
 * `TauCeti.DiscreteCoind.eval_unit` and `TauCeti.DiscreteCoind.trace_unit`: evaluation at `1`
   retracts the unit, and the trace of the unit is multiplication by the index `[G : U]`;
-* `TauCeti.DiscreteCoind.trace_conj`: for `V = gUg⁻¹`, conjugation commutes with the traces;
+* `TauCeti.DiscreteCoind.trace_conj`: for `V = gUg⁻¹`, conjugation commutes with the traces, and
+  for a normal `V` conjugation acts on `Coind_V^G M` (`Subgroup.Normal.map_conj_toMonoidHom_eq`);
 * `TauCeti.DiscreteCoind.ofContinuousMap` and `TauCeti.DiscreteCoind.toContinuousMap`: a
   continuous map into a discrete group as an element of `Coind_1^G A`, and conversely, packaged as
   the additive equivalence `TauCeti.DiscreteCoind.addEquivContinuousMap : Coind_1^G A ≃+ C(G, A)`,
@@ -638,6 +639,16 @@ def conj (g : G) (hVU : V ≤ U.map (MulAut.conj g).toMonoidHom) :
 theorem conj_apply (g : G) (hVU : V ≤ U.map (MulAut.conj g).toMonoidHom)
     (f : DiscreteCoind G U M) (x : G) : conj U V M g hVU f x = g • f (g⁻¹ * x) :=
   (rfl)
+
+omit [TopologicalSpace G] [ContinuousMul G] in
+/-- `Subgroup.Normal.map_conj_eq` with conjugation read as `(MulAut.conj g).toMonoidHom`, the form
+in which `conj` and `trace_conj` take their hypothesis: for a normal subgroup `V`, `conj V V M g`
+is an endomorphism of `Coind_V^G M`. Passing `Subgroup.Normal.map_conj_eq`, stated with the
+coercion `↑(MulAut.conj g)`, instead leaves a term that is not type-correct at instance
+transparency, so that `conj_apply` no longer rewrites it. -/
+theorem _root_.Subgroup.Normal.map_conj_toMonoidHom_eq (V : Subgroup G) [V.Normal] (g : G) :
+    V.map (MulAut.conj g).toMonoidHom = V :=
+  Subgroup.Normal.map_conj_eq V g
 
 variable [U.FiniteIndex] [V.FiniteIndex]
 
