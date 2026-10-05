@@ -35,8 +35,6 @@ ellipticity or perfectness assumption, and include exponential characteristic `1
 ## References
 
 * [J. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], II.2.11–12 and III.6.1.
-
-No material is copied from an external formalisation.
 -/
 
 public section
@@ -47,19 +45,6 @@ namespace TauCeti.Isogeny
 
 variable {F : Type*} [Field F] (p : ℕ) [ExpChar F p]
   {W₁ W₂ : WeierstrassCurve.Affine F}
-
--- Compare the two coordinate values before transporting the target curve. This avoids
--- unfolding coordinate rings or pullbacks through a dependent equality cast.
-private theorem eq_of_pullback_coords {K : Type*} [Field K]
-    {U V V' : WeierstrassCurve.Affine K} (e : V = V')
-    (φ : Isogeny U V) (ψ : Isogeny U V')
-    (hx : φ.pullback (AdjoinRoot.of V.polynomial X) =
-      ψ.pullback (AdjoinRoot.of V'.polynomial X))
-    (hy : φ.pullback (AdjoinRoot.root V.polynomial) =
-      ψ.pullback (AdjoinRoot.root V'.polynomial)) :
-    (e ▸ φ) = ψ := by
-  subst V'
-  exact Isogeny.ext (CoordinateRing.algHom_ext hx hy)
 
 /-- Iterated relative Frobenius commutes with arbitrary field base change, under the
 canonical equality between the base change of the twist and the twist of the base change. -/
