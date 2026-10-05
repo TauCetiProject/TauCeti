@@ -71,6 +71,7 @@ theorem mk_eq_zero (x : (Ring.jacobson (pathAlgebra k Q ⧸ I)).restrictScalars 
 
 /-- Two radical elements have the same class exactly when their difference lies in the
 radical square. -/
+@[simp]
 theorem mk_eq_mk (x y : (Ring.jacobson (pathAlgebra k Q ⧸ I)).restrictScalars k) :
     mk I x = mk I y ↔ x.1 - y.1 ∈ Ring.jacobson (pathAlgebra k Q ⧸ I) ^ 2 :=
   Submodule.Quotient.eq _
