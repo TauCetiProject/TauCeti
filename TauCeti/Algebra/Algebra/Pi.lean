@@ -76,7 +76,7 @@ end Pi
 namespace TauCeti
 
 variable {K A ι : Type*} [Field K] [Ring A] [Algebra K A]
-  [Module.Finite K A] [_root_.Finite ι]
+  [Module.Finite K A]
 
 /-- Evaluation at distinct characters that separate elements identifies a finite-dimensional
 algebra with the algebra of functions on the character index set. -/
@@ -84,8 +84,9 @@ theorem AlgHom.pi_bijective_of_injective (χ : ι → A →ₐ[K] K)
     (hχ : Function.Injective χ) (hinj : Function.Injective (AlgHom.pi χ)) :
     Function.Bijective (AlgHom.pi χ) := by
   classical
-  let := Fintype.ofFinite ι
   let := Finite.algHom K A K
+  let := Finite.of_injective χ hχ
+  let := Fintype.ofFinite ι
   have hle : Module.finrank K (ι → K) ≤ Module.finrank K A := by
     have h := (Nat.card_le_card_of_injective χ hχ).trans
       (card_algHom_le_finrank K A K)
