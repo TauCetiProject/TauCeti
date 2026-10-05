@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.AlgebraicGroup.FunctorOfPoints
 public import TauCeti.Algebra.Coalgebra.Comodule.Corestrict
 public import TauCeti.Algebra.Coalgebra.Comodule.TensorProduct
 public import TauCeti.Algebra.Coalgebra.Comodule.Trivial
@@ -421,6 +422,26 @@ lemma pointsRepresentation_apply (g : WithConv (H →ₐ[R] A)) :
   rfl
 
 end Bialgebra
+
+section HopfAlgebra
+
+variable {R H V A : Type*} [CommSemiring R] [Semiring H] [HopfAlgebra R H]
+  [AddCommMonoid V] [Module R V] [Comodule R H V]
+  [CommSemiring A] [Algebra R A]
+
+variable (V) in
+/-- The inverse point action cancels the point action on the left. -/
+lemma endOfPoint_inv_comp (g : WithConv (H →ₐ[R] A)) :
+    endOfPoint V (g⁻¹).ofConv ∘ₗ endOfPoint V g.ofConv = LinearMap.id := by
+  simpa only [inv_mul_cancel, endOfPoint_convOne] using (endOfPoint_convMul V g⁻¹ g).symm
+
+variable (V) in
+/-- The inverse point action cancels the point action on the right. -/
+lemma endOfPoint_comp_inv (g : WithConv (H →ₐ[R] A)) :
+    endOfPoint V g.ofConv ∘ₗ endOfPoint V (g⁻¹).ofConv = LinearMap.id := by
+  simpa only [inv_inv] using endOfPoint_inv_comp V g⁻¹
+
+end HopfAlgebra
 
 section Regular
 

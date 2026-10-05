@@ -107,6 +107,15 @@ theorem polar_eq_pairing (x y : A) :
     QuadraticMap.polar A.quadratic x y = A.toFiniteBilinearModule.pairing x y :=
   A.polar_eq_pairing' x y
 
+/-- The quadratic value of an integral combination `m • x + n • y`, expanded in terms of the
+quadratic values of `x` and `y` and their pairing. -/
+theorem quadratic_zsmul_add_zsmul (x y : A) (m n : ℤ) :
+    A.quadratic (m • x + n • y) = (m * m) • A.quadratic x +
+      (m * n) • A.toFiniteBilinearModule.pairing x y + (n * n) • A.quadratic y := by
+  rw [QuadraticMap.map_add A.quadratic, QuadraticMap.map_smul, QuadraticMap.map_smul,
+    QuadraticMap.polar_smul_left, QuadraticMap.polar_smul_right, polar_eq_pairing, smul_smul]
+  abel
+
 /-- If `n` kills an element, then `2 * n` kills its quadratic value. -/
 theorem two_mul_nsmul_quadratic_of_nsmul_eq_zero {n : ℕ} (x : A) (hx : n • x = 0) :
     (2 * n) • A.quadratic x = 0 := by

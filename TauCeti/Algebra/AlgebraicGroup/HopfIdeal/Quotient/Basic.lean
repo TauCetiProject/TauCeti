@@ -623,6 +623,22 @@ lemma quotientMapOfLe_comp (H : _root_.CommHopfAlgCat.{v} R)
   rw [← Category.assoc, mkQuotient_comp_quotientMapOfLe,
     mkQuotient_comp_quotientMapOfLe, mkQuotient_comp_quotientMapOfLe]
 
+/-- The quotient-to-quotient morphism induced by an inclusion `I ≤ J` of Hopf ideals is
+injective exactly when `I = J`. -/
+theorem quotientMapOfLe_injective_iff (H : _root_.CommHopfAlgCat.{v} R)
+    {I J : HopfIdeal R H} (hIJ : I ≤ J) :
+    Function.Injective (quotientMapOfLe H hIJ).hom ↔ I = J := by
+  constructor
+  · intro hinj
+    refine le_antisymm hIJ fun x hx ↦ ?_
+    rw [← HopfIdeal.mem_toIdeal, ← Ideal.Quotient.eq_zero_iff_mem, ← Ideal.Quotient.mkₐ_eq_mk R]
+    apply hinj
+    rw [quotientMapOfLe_mk, map_zero, Ideal.Quotient.mkₐ_eq_mk, Ideal.Quotient.eq_zero_iff_mem]
+    exact HopfIdeal.mem_toIdeal.mpr hx
+  · rintro rfl
+    rw [quotientMapOfLe_refl]
+    exact Function.injective_id
+
 end CommHopfAlgCat
 
 namespace FiniteTypeCommHopfAlgCat

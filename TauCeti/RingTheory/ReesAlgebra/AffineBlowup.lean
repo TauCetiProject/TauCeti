@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.GradedAlgebra.HomogeneousLocalization
+public import TauCeti.RingTheory.GradedAlgebra.HomogeneousLocalization
 public import TauCeti.RingTheory.Ideal.AffineBlowup
 public import TauCeti.RingTheory.ReesAlgebra.Grading
 
@@ -76,27 +76,14 @@ private theorem evalInv_monomialDegreeOne (ha : a ∈ I) :
 /-- The ring map `R[It]_(a t) → S` sending `x/(a t)ⁿ` to `x(1/a)`. -/
 private noncomputable def awayToLocalization (ha : a ∈ I) :
     Away (grade I) (monomialDegreeOne ha) →+* S :=
-  (IsLocalization.Away.lift (S := Localization.Away (monomialDegreeOne ha))
-    (monomialDegreeOne ha) (g := evalInv a S)
-    (by rw [evalInv_monomialDegreeOne]; exact isUnit_one)).comp
-    (algebraMap (Away (grade I) (monomialDegreeOne ha))
-      (Localization.Away (monomialDegreeOne ha)))
+  Away.lift (grade I) (evalInv a S) (by rw [evalInv_monomialDegreeOne]; exact isUnit_one)
 
 private theorem awayToLocalization_mk (ha : a ∈ I) {n : ℕ} {x : reesAlgebra I}
     (hx : x ∈ grade I (n • 1)) :
     awayToLocalization S ha (Away.mk (grade I) (monomialDegreeOne_mem_grade ha) n x hx) =
       evalInv a S x := by
-  have hspec := IsLocalization.mk'_spec (Localization.Away (monomialDegreeOne ha)) x
-    ⟨monomialDegreeOne ha ^ n, (Submonoid.mem_powers_iff _ _).mpr ⟨n, rfl⟩⟩
-  rw [← Localization.mk_eq_mk'] at hspec
-  have := congr_arg (IsLocalization.Away.lift (S := Localization.Away (monomialDegreeOne ha))
-    (monomialDegreeOne ha) (g := evalInv a S)
-    (by rw [evalInv_monomialDegreeOne]; exact isUnit_one)) hspec
-  rw [map_mul, IsLocalization.Away.lift_eq, IsLocalization.Away.lift_eq, map_pow] at this
-  simp only [evalInv_monomialDegreeOne, one_pow, mul_one] at this
-  rw [awayToLocalization, RingHom.comp_apply, HomogeneousLocalization.algebraMap_apply,
-    Away.val_mk]
-  exact this
+  rw [awayToLocalization, Away.lift_mk, Units.mul_inv_eq_iff_eq_mul, Units.val_pow_eq_pow_val,
+    IsUnit.unit_spec, evalInv_monomialDegreeOne, one_pow, mul_one]
 
 private theorem algebraMap_pow_mul_awayToLocalization_mk (ha : a ∈ I) {n : ℕ}
     {x : reesAlgebra I} (hx : x ∈ grade I (n • 1)) :
