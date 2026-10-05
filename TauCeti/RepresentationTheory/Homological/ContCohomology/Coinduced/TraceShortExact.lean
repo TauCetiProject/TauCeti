@@ -215,6 +215,7 @@ noncomputable def traceKerCover : (G ⧸ V → DiscreteCoind G V M) →+[G] Disc
     simp only [Pi.smul_apply, _root_.map_smul, MonoidHom.id_apply, Finset.smul_sum, smul_sub]
 
 /-- The defining formula of `traceKerCover`. -/
+@[simp]
 theorem traceKerCover_apply (φ : G ⧸ V → DiscreteCoind G V M) :
     traceKerCover V M φ =
       ∑ x : G ⧸ V,
