@@ -599,14 +599,14 @@ theorem orthogonalGroupBaseChange_baseChange (Q : _root_.QuadraticForm R M)
     (g : orthogonalGroup Q) :
     letI : Invertible (2 : A) :=
       (Invertible.map (algebraMap R A) 2).copy 2 (map_ofNat _ _).symm
-    orthogonalGroupCongr (QuadraticForm.baseChangeBaseChange (A := A) (B := B) Q)
+    (QuadraticForm.baseChangeBaseChange (A := A) (B := B) Q).orthogonalGroupCongr
         (orthogonalGroupBaseChange (A := B) Q g) =
       orthogonalGroupBaseChange (A := B) (Q.baseChange A)
         (orthogonalGroupBaseChange (A := A) Q g) := by
   apply Subtype.ext
   apply LinearEquiv.ext
   intro x
-  simp only [coe_orthogonalGroupCongr_apply,
+  simp only [QuadraticMap.IsometryEquiv.coe_orthogonalGroupCongr_apply,
     QuadraticForm.baseChangeBaseChange_toLinearEquiv,
     coe_orthogonalGroupBaseChange]
   have h := LinearMap.baseChange_baseChange (R := R) (A := A) (B := B)
@@ -631,7 +631,7 @@ theorem specialOrthogonalGroupBaseChange_baseChange [Module.Free R M] [Module.Fi
     (Q : _root_.QuadraticForm R M) (g : specialOrthogonalGroup Q) :
     letI : Invertible (2 : A) :=
       (Invertible.map (algebraMap R A) 2).copy 2 (map_ofNat _ _).symm
-    orthogonalGroupCongr (QuadraticForm.baseChangeBaseChange (A := A) (B := B) Q)
+    (QuadraticForm.baseChangeBaseChange (A := A) (B := B) Q).orthogonalGroupCongr
         (Subgroup.inclusion (specialOrthogonalGroup_le_orthogonalGroup (Q.baseChange B))
           (specialOrthogonalGroupBaseChange (A := B) Q g)) =
       Subgroup.inclusion

@@ -89,14 +89,14 @@ theorem mem_integralOrthogonalSubgroup_iff_norm (g : orthogonalGroup Q) :
 theorem mem_integralOrthogonalSubgroup_orthogonalGroupCongr
     {W : Type*} [AddCommGroup W] [Module ℚ_[p] W] {Q' : QuadraticForm ℚ_[p] W}
     (e : Q.IsometryEquiv Q') (g : orthogonalGroup Q) :
-    orthogonalGroupCongr e g ∈ integralOrthogonalSubgroup Q' (b.map e.toLinearEquiv) ↔
+    e.orthogonalGroupCongr g ∈ integralOrthogonalSubgroup Q' (b.map e.toLinearEquiv) ↔
       g ∈ integralOrthogonalSubgroup Q b := by
   have hm (g : orthogonalGroup Q) :
       LinearMap.toMatrix (b.map e.toLinearEquiv) (b.map e.toLinearEquiv)
-        (orthogonalGroupCongr e g : W ≃ₗ[ℚ_[p]] W).toLinearMap =
+        (e.orthogonalGroupCongr g : W ≃ₗ[ℚ_[p]] W).toLinearMap =
       LinearMap.toMatrix b b (g : V ≃ₗ[ℚ_[p]] V).toLinearMap := by
     ext i j
-    simp [LinearMap.toMatrix_apply, coe_orthogonalGroupCongr_apply]
+    simp [LinearMap.toMatrix_apply, e.coe_orthogonalGroupCongr_apply]
   simp only [mem_integralOrthogonalSubgroup_iff, ← Subgroup.coe_inv, ← map_inv, hm]
 
 /-- The integral orthogonal subgroup is open in the canonical topology on isometries. -/
