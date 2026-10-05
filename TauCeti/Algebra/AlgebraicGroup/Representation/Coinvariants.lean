@@ -6,10 +6,10 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Coinvariants.Quotient
-public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Comul
+import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Comul
 public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Adjoin
 public import TauCeti.Algebra.Coalgebra.Comodule.PointsAction
-public import TauCeti.LinearAlgebra.TensorProduct.Basis
+import TauCeti.LinearAlgebra.TensorProduct.Basis
 
 /-!
 # Subgroup-trivial representations and coinvariants
