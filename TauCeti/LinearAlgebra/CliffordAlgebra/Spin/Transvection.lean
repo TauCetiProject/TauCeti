@@ -44,11 +44,15 @@ nontrivial unit as soon as `u` and `w` are linearly independent.
 * `CliffordAlgebra.coe_spinToSpecialOrthogonal_spinTransvection`: the lift acts on the quadratic
   space as the Eichler transvection `E_{u,w}`.
 * `CliffordAlgebra.spinTransvection_add`: `L_{u,w + w'} = L_{u,w} * L_{u,w'}`.
+* `CliffordAlgebra.spinTransvection_conj`: conjugating `L_{u,w}` by a Spin element transports
+  both defining vectors by its vector action.
 * `QuadraticMap.Isometry.spinGroupMap_spinTransvection` and
   `QuadraticMap.IsometryEquiv.spinGroupEquiv_spinTransvection`: the canonical lifts are natural
   under isometries, in general map form and equivalence-specialized form.
 * `QuadraticMap.IsometryEquiv.spinGroupEquiv_comp_spinTransvectionHom`: the Spin root-subgroup
   homomorphisms are natural under isometric equivalences.
+* `CliffordAlgebra.conj_comp_spinTransvectionHom`: conjugation transports the Spin
+  root-subgroup homomorphisms.
 * `CliffordAlgebra.spinTransvection_eq_one_iff`: for `u ≠ 0`, `L_{u,w} = 1` exactly when
   `w ∈ K ∙ u`.
 * `CliffordAlgebra.spinToSpecialOrthogonal_comp_spinTransvectionHom`: the lifts lift
@@ -306,6 +310,42 @@ theorem spinTransvection_add_smul (hQ : Q.Nondegenerate) (hu : Q u = 0) (huw : p
   rw [spinTransvection_add hQ hu huw hcu, spinTransvection_eq_one_of_mem_span hQ hu hcu
     (Submodule.smul_mem _ c (Submodule.mem_span_singleton_self u)), mul_one]
 
+/-- **The conjugation law for Spin transvection lifts.** Conjugating `L_{u,w}` by a Spin element
+transports both defining vectors by its vector action:
+`s * L_{u,w} * s⁻¹ = L_{s • u, s • w}`. -/
+theorem spinTransvection_conj (s : spinGroup Q) (hQ : Q.Nondegenerate) (hu : Q u = 0)
+    (huw : polar Q u w = 0) :
+    s * spinTransvection hQ hu huw * s⁻¹ =
+      spinTransvection
+        (u := ((spinToOrthogonal Q s : orthogonalGroup Q) : V ≃ₗ[K] V) u)
+        (w := ((spinToOrthogonal Q s : orthogonalGroup Q) : V ≃ₗ[K] V) w) hQ
+        (by rw [map_app_of_mem_orthogonalGroup (spinToOrthogonal Q s).2, hu])
+        (by rw [polar_apply_of_mem_orthogonalGroup (spinToOrthogonal Q s).2, huw]) := by
+  apply Subtype.ext
+  have hinv : ((s⁻¹ : spinGroup Q) : CliffordAlgebra Q) =
+      star (s : CliffordAlgebra Q) := by
+    rw [← spinGroup.star_eq_inv s, spinGroup.coe_star]
+  simp only [Submonoid.coe_mul, coe_spinTransvection, hinv]
+  rw [mul_add, mul_one, add_mul, spinGroup.mul_star_self_of_mem s.2]
+  congr 1
+  have hunitInv :
+      (((spinGroup.toUnits s)⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) =
+        star (s : CliffordAlgebra Q) := by
+    change ((s⁻¹ : spinGroup Q) : CliffordAlgebra Q) = star (s : CliffordAlgebra Q)
+    exact hinv
+  have hunitVal : ((spinGroup.toUnits s : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) =
+      (s : CliffordAlgebra Q) := rfl
+  calc
+    (s : CliffordAlgebra Q) * (ι Q w * ι Q u) * star (s : CliffordAlgebra Q) =
+        ((s : CliffordAlgebra Q) * ι Q w * star (s : CliffordAlgebra Q)) *
+          ((s : CliffordAlgebra Q) * ι Q u * star (s : CliffordAlgebra Q)) := by
+      simpa only [ConjAct.units_smul_def, ConjAct.ofConjAct_toConjAct, hunitInv, hunitVal] using
+        (smul_mul' (ConjAct.toConjAct (spinGroup.toUnits s)) (ι Q w) (ι Q u))
+    _ = ι Q (((spinToOrthogonal Q s : orthogonalGroup Q) : V ≃ₗ[K] V) w) *
+        ι Q (((spinToOrthogonal Q s : orthogonalGroup Q) : V ≃ₗ[K] V) u) := by
+      rw [coe_spinToOrthogonal_apply, coe_spinToOrthogonal_apply,
+        ← ι_spinVectorAction_apply, ← ι_spinVectorAction_apply]
+
 /-- **The Spin lift of `E_{u,w}` acts on the quadratic space as `E_{u,w}`.** -/
 @[simp]
 theorem coe_spinToSpecialOrthogonal_spinTransvection (hQ : Q.Nondegenerate) (hu : Q u = 0)
@@ -401,6 +441,44 @@ theorem _root_.QuadraticMap.IsometryEquiv.spinGroupEquiv_comp_spinTransvectionHo
       toMul_spinTransvectionHom_mk (e.nondegenerate_iff.mp hQ) ((e.map_app u).trans hu)
         ((e.polar_apply u w).trans huw), htransport,
       e.spinGroupEquiv_spinTransvection]
+
+/-- Conjugation by a Spin element transports the root-subgroup homomorphism for `u` to the one
+for its image under the Spin vector action. The parameter quotient is transported by the induced
+isometry of the quadratic space. -/
+theorem conj_comp_spinTransvectionHom (s : spinGroup Q) (hQ : Q.Nondegenerate) (hu : Q u = 0) :
+    (MulAut.conj s).toMonoidHom.toAdditive.comp (spinTransvectionHom hQ hu) =
+      (spinTransvectionHom hQ
+        (((orthogonalGroupEquivIsometryEquiv Q (spinToOrthogonal Q s)).map_app u).trans hu)).comp
+        (((orthogonalGroupEquivIsometryEquiv Q
+          (spinToOrthogonal Q s)).transvectionParameterEquiv u).toLinearMap.toAddMonoidHom) := by
+  apply AddMonoidHom.ext
+  intro q
+  induction q using Submodule.Quotient.induction_on with | H w =>
+    obtain ⟨w, hw⟩ := w
+    have huw : polar Q u w = 0 := by simpa using hw
+    have hparam :
+        ((orthogonalGroupEquivIsometryEquiv Q
+            (spinToOrthogonal Q s)).transvectionParameterEquiv u).toLinearMap.toAddMonoidHom
+            (Submodule.Quotient.mk ⟨w, hw⟩) =
+          (orthogonalGroupEquivIsometryEquiv Q
+            (spinToOrthogonal Q s)).transvectionParameterEquiv u
+              (Submodule.Quotient.mk ⟨w, hw⟩) := by
+      rw [LinearEquiv.toAddMonoidHom_commutes]
+      rfl
+    have hconj : (MulAut.conj s).toMonoidHom (spinTransvection hQ hu huw) =
+        s * spinTransvection hQ hu huw * s⁻¹ := rfl
+    apply Additive.toMul.injective
+    simp only [AddMonoidHom.comp_apply, MonoidHom.toAdditive_apply_apply, toMul_ofMul]
+    rw [toMul_spinTransvectionHom_mk hQ hu huw, hparam,
+      (orthogonalGroupEquivIsometryEquiv Q (spinToOrthogonal Q s)).transvectionParameterEquiv_mk,
+      toMul_spinTransvectionHom_mk hQ
+        (((orthogonalGroupEquivIsometryEquiv Q (spinToOrthogonal Q s)).map_app u).trans hu)
+        (((orthogonalGroupEquivIsometryEquiv Q (spinToOrthogonal Q s)).polar_apply u w).trans huw),
+      hconj]
+    rw [spinTransvection_conj s hQ hu huw]
+    apply Subtype.ext
+    simp only [coe_spinTransvection]
+    rw [coe_orthogonalGroupEquivIsometryEquiv]
 
 /-- **The Spin lifts lift the Eichler transvections**: followed by the projection
 `Spin(Q) → SO(Q)`, the homomorphism `w ↦ L_{u,w}` is `w ↦ E_{u,w}`. -/
