@@ -27,10 +27,6 @@ The cuspidal computation uses a root `u` of `X² + X + 1` in the supplied quadra
 extension. It generates the three-element unit group, so a general-position character
 has value `ζ ≠ 1` at `u`, with `ζ³ = 1` and `ζ + ζ² = -1`.
 
-The proof of the final enumeration follows the parameter-to-row argument in
-`TauCeti.RepresentationTheory.CharacterTable.GL2.FieldThree`: distinct parameters give
-distinct rows, and the column labels exhaust the classes.
-
 ## Main results
 
 * `TauCeti.bijective_gl2FieldTwoClassIndex`: the three columns exhaust the conjugacy classes.
@@ -40,6 +36,8 @@ distinct rows, and the column labels exhaust the classes.
 ## References
 
 * W. Fulton and J. Harris, *Representation Theory: A First Course*, GTM 129, §5.2.
+* `TauCeti.RepresentationTheory.CharacterTable.GL2.Field.Three`, for the common
+  table-enumeration argument.
 -/
 
 public section
@@ -86,8 +84,8 @@ private theorem fieldTwo_facts (hF : Fintype.card F = 2) :
     (2 : F) = 0 ∧ (∀ a : F, a * a ≠ a + 1) := by
   let e := ZMod.ringEquivOfPrime F Nat.prime_two hF
   refine ⟨?_, fun a => ?_⟩
-  · simpa only [map_ofNat, map_zero] using
-      congrArg e (show (2 : ZMod 2) = 0 by decide)
+  · have hz : (2 : ZMod 2) = 0 := by decide
+    simpa only [map_ofNat, map_zero] using congrArg e hz
   · obtain ⟨b, rfl⟩ := e.surjective a
     have hb : ∀ b : ZMod 2, b * b ≠ b + 1 := by decide
     simpa using e.injective.ne (hb b)
@@ -135,8 +133,9 @@ private theorem character_fieldTwoNormalForm (hF : Fintype.card F = 2) {u : Eˣ}
     (V : FDRep ℂ (GL (Fin 2) F)) (j : Fin 3) :
     V.character (conjRepGLFinTwo (gl2FieldTwoClassIndex F j)) =
       V.character (fieldTwoNormalForm (F := F) u j) := by
-  obtain ⟨c, hc⟩ := isConj_iff.mp (isConj_fieldTwoNormalForm hF hu hout j)
-  rw [← hc, FDRep.char_conj]
+  simpa only [ClassFunction.ofFDRep_apply] using
+    ClassFunction.eq_of_isConj (ClassFunction.ofFDRep V)
+      (isConj_fieldTwoNormalForm hF hu hout j)
 
 /-- A general-position character of the extension takes primitive cube-root values at `u`. -/
 private theorem fieldTwo_cuspidal_value (hF : Fintype.card F = 2) {u : Eˣ}
@@ -227,16 +226,11 @@ theorem exists_equiv_submatrix_GL2CharacterTable_eq_gl2FieldTwoCharacterTable
     ∃ e : Fin 3 ≃ GL2CharacterParam F E,
       (GL2CharacterTable F E).submatrix e (conjClassesGLFinTwoEquiv ∘ gl2FieldTwoClassIndex F) =
         gl2FieldTwoCharacterTable := by
-  choose f hf using exists_fieldTwo_row (E := E) hF
-  have hinj : Function.Injective f := fun i i' h => by
-    refine GL2CharacterParam.coe_classFunction_injective (funext fun g => ?_)
-    obtain ⟨j, hj⟩ := ((conjClassesGLFinTwoEquiv (F := F)).bijective.comp
-      (bijective_gl2FieldTwoClassIndex hF)).2 (ConjClasses.mk g)
-    simp only [← GL2CharacterTable_apply (E := E), ← hj, Function.comp_apply, hf, h]
-  have hbij : Function.Bijective f := hinj.bijective_of_nat_card_le (by
-    rw [natCard_GL2CharacterParam, hF, Nat.card_fin]
-    norm_num)
-  refine ⟨(Equiv.ofBijective f hbij).symm, Matrix.ext fun k j => ?_⟩
-  rw [submatrix_apply, Function.comp_apply, hf, Equiv.ofBijective_apply_symm_apply f hbij k]
+  apply exists_equiv_submatrix_GL2CharacterTable_eq
+    (conjClassesGLFinTwoEquiv ∘ gl2FieldTwoClassIndex F)
+    ((conjClassesGLFinTwoEquiv (F := F)).bijective.comp (bijective_gl2FieldTwoClassIndex hF))
+    gl2FieldTwoCharacterTable (exists_fieldTwo_row hF)
+  rw [natCard_GL2CharacterParam, hF, Nat.card_fin]
+  norm_num
 
 end TauCeti
