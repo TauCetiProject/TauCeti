@@ -15,6 +15,7 @@ public import TauCeti.Topology.JordanCurve.Basic
 import Mathlib.Analysis.Normed.Module.Convex
 import TauCeti.AlgebraicTopology.FundamentalGroup.Product
 import TauCeti.AlgebraicTopology.FundamentalGroupoid.Basic
+import TauCeti.GroupTheory.SpecificGroups.Cyclic.Basic
 
 /-!
 # The fundamental group of a punctured star-convex set
@@ -40,20 +41,19 @@ puncture.
 * `Complex.sphereLoop` and `StarConvex.fundamentalGroupMulEquivInt_sphereLoop`: the loop going once
   counterclockwise around `sphere p r` from `p + r` is sent to the generator `ofAdd 1`, so its
   class generates `π₁(V \ {p}, p + r)`.
-* `Complex.directionFrom` and `StarConvex.fundamentalGroup_map_directionFrom_bijective`: the
-  direction map `z ↦ (z - p) / ‖z - p‖` to the unit circle induces a bijection of fundamental
-  groups at every point of `V \ {p}`, on the circle or off it. Composed with
+* `StarConvex.fundamentalGroup_map_directionFrom_bijective`: the direction map
+  `Complex.directionFrom`, `z ↦ (z - p) / ‖z - p‖` to the unit circle, induces a bijection of
+  fundamental groups at every point of `V \ {p}`, on the circle or off it. Composed with
   `Circle.fundamentalGroupMulEquiv`, it identifies `π₁(V \ {p}, z)` with `ℤ` by the degree of the
   direction of a loop.
-* `StarConvex.pathConnectedSpace_diff_singleton`: `V \ {p}` is path connected; in particular
-  so is a punctured ball (`TauCeti.pathConnectedSpace_ball_diff_singleton`).
 * `StarConvex.fundamentalGroup_map_directionFrom_comp_snd_bijective`: for simply connected `U`,
   the direction of the second coordinate induces a bijection of fundamental groups at every point
   of `U × (V \ {p})`. For a punctured ball, composing with `Circle.fundamentalGroupMulEquiv`
   identifies the fundamental group with `ℤ`
   (`TauCeti.fundamentalGroupMulEquiv_comp_map_directionFrom_comp_snd_bijective`).
-* `Complex.loopAround` and `TauCeti.zpowers_loopAround_eq_top`: for simply connected `U`, the loop
-  `t ↦ (u, p + (z - p) e^{2πit})` around the puncture generates `π₁(U × (ball p R \ {p}), (u, z))`.
+* `TauCeti.zpowers_loopAround_eq_top`: for simply connected `U`, the loop
+  `t ↦ (u, p + (z - p) e^{2πit})` around the puncture (`Complex.loopAround`) generates
+  `π₁(U × (ball p R \ {p}), (u, z))`.
 
 ## References
 
@@ -97,7 +97,7 @@ end NormedSpace
 
 section Complex
 
-variable {V : Set ℂ} {p : ℂ} {r R : ℝ}
+variable {V : Set ℂ} {p : ℂ} {r : ℝ}
 
 /-- **The fundamental group of a punctured star-convex subset of `ℂ` is infinite cyclic.** If `V`
 is star-convex about `p` and contains the circle `sphere p r` with `r > 0`, then
@@ -165,21 +165,6 @@ theorem _root_.StarConvex.not_simplyConnectedSpace_diff_singleton (hV : StarConv
   haveI := (hV.fundamentalGroupMulEquivInt hr hS x).toEquiv.nontrivial
   not_simplyConnectedSpace_of_nontrivial_fundamentalGroup (hV.sphereHomotopyEquiv hr hS x)
 
-/-- The direction `(z - p) / ‖z - p‖` of a point `z` of `V \ {p}` seen from `p`, as a point of the
-unit circle. -/
-def _root_.Complex.directionFrom (p : ℂ) (V : Set ℂ) : C(↥(V \ {p}), Circle) where
-  toFun z := ⟨((z : ℂ) - p) / ‖(z : ℂ) - p‖, by
-    have hz : (z : ℂ) - p ≠ 0 := sub_ne_zero.2 z.2.2
-    simp [Submonoid.unitSphere, hz]⟩
-  continuous_toFun := by
-    refine Continuous.subtype_mk (Continuous.div (by fun_prop) (by fun_prop) fun z => ?_) _
-    simpa [sub_eq_zero] using z.2.2
-
-@[simp]
-theorem _root_.Complex.coe_directionFrom_apply (p : ℂ) (V : Set ℂ) (z : ↥(V \ {p})) :
-    (p.directionFrom V z : ℂ) = ((z : ℂ) - p) / ‖(z : ℂ) - p‖ :=
-  (rfl)
-
 /-- **The direction map of a punctured star-convex set is bijective on fundamental groups.** If
 `V` is star-convex about `p` and contains a circle about `p`, then `z ↦ (z - p) / ‖z - p‖` induces
 a bijection `π₁(V \ {p}, z) → π₁(Circle, (z - p) / ‖z - p‖)` at every point `z`, not only on the
@@ -196,41 +181,6 @@ theorem _root_.StarConvex.fundamentalGroup_map_directionFrom_bijective (hV : Sta
     field_simp
   rw [← h]
   exact ContinuousMap.HomotopyEquiv.fundamentalGroup_map_bijective _ z
-
-/-- A punctured star-convex subset of `ℂ` containing a circle about the puncture is path
-connected, being homotopy equivalent to the circle. -/
-theorem _root_.StarConvex.pathConnectedSpace_diff_singleton (hV : StarConvex ℝ p V) (hr : 0 < r)
-    (hS : sphere p r ⊆ V) : PathConnectedSpace ↥(V \ {p}) :=
-  ((hV.sphereHomotopyEquiv hr hS).symm.trans
-    (sphereCircleHomeomorph p hr).toHomotopyEquiv).symm.pathConnectedSpace
-
-/-- A punctured open ball in `ℂ` of positive radius is path connected. -/
-theorem pathConnectedSpace_ball_diff_singleton (p : ℂ) (hR : 0 < R) :
-    PathConnectedSpace ↥(ball p R \ {p}) :=
-  ((convex_ball p R).starConvex (mem_ball_self hR)).pathConnectedSpace_diff_singleton
-    (half_pos hR) (sphere_subset_ball (half_lt_self hR))
-
-/-- Rotating a point of a punctured ball about its centre stays in the punctured ball. -/
-private theorem add_mul_exp_mem_ball_diff_singleton {z : ℂ} (hz : z ∈ ball p R \ {p})
-    (θ : ℝ) : p + (z - p) * Complex.exp (θ * Complex.I) ∈ ball p R \ {p} := by
-  have hzp : z - p ≠ 0 := sub_ne_zero.2 hz.2
-  refine ⟨?_, ?_⟩
-  · simpa [mem_ball, dist_eq_norm, Complex.norm_exp_ofReal_mul_I] using hz.1
-  · simp [hzp, Complex.exp_ne_zero]
-
-/-- The loop `t ↦ p + (z - p) e^{2πit}` based at `z`, going once counterclockwise around `p` along
-the circle through `z`, in the punctured ball `ball p R \ {p}`. -/
-def _root_.Complex.loopAround (p : ℂ) (z : ↥(ball p R \ {p})) : Path z z where
-  toFun t := ⟨p + (z - p) * Complex.exp (↑(2 * Real.pi * t) * Complex.I),
-    add_mul_exp_mem_ball_diff_singleton z.2 _⟩
-  continuous_toFun := Continuous.subtype_mk (by fun_prop) _
-  source' := by ext; simp
-  target' := by ext; simp
-
-@[simp]
-theorem _root_.Complex.coe_loopAround_apply (p : ℂ) (z : ↥(ball p R \ {p})) (t : unitInterval) :
-    (p.loopAround z t : ℂ) = p + (z - p) * Complex.exp (↑(2 * Real.pi * t) * Complex.I) :=
-  (rfl)
 
 end Complex
 
@@ -295,8 +245,7 @@ theorem zpowers_loopAround_eq_top (u : U) (z : ↥(ball p R \ {p})) :
     ext
     rw [Circle.exp_add, Circle.coe_mul, Circle.exp_arg]
     simp [d, Complex.norm_exp, div_mul_eq_mul_div]
-  refine eq_top_iff.2 fun g _ => ⟨Multiplicative.toAdd (W g), hW.1 ?_⟩
-  rw [map_zpow, hγ, ← ofAdd_zsmul, smul_eq_mul, mul_one, ofAdd_toAdd]
+  exact (MulEquiv.ofBijective W hW).zpowers_eq_top_of_apply_eq_ofAdd_one hγ
 
 end Product
 
