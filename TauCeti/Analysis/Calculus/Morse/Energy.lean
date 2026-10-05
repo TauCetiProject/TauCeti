@@ -194,7 +194,7 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteS
   {φ : _root_.Flow ℝ E} {f : E → ℝ} {p q x : E}
 
 /-- Every orbit connecting `p` to `q` has integrable squared gradient. -/
-theorem IsNegativeGradient.integrable_norm_gradient_sq
+theorem IsNegativeGradient.integrable_norm_gradient_sq_of_mem_unstableSet_inter_stableSet
     (hφ : IsNegativeGradient φ f) (hf : ∀ t, DifferentiableAt ℝ f (φ t x))
     (hfp : ContinuousAt f p) (hfq : ContinuousAt f q)
     (hx : x ∈ unstableSet φ p ∩ stableSet φ q) :
@@ -204,7 +204,7 @@ theorem IsNegativeGradient.integrable_norm_gradient_sq
     (hfq.tendsto.comp (mem_stableSet.mp hx.2))
 
 /-- Every orbit connecting `p` to `q` has total energy `f p - f q`. -/
-theorem IsNegativeGradient.integral_norm_gradient_sq_eq_sub
+theorem IsNegativeGradient.integral_norm_gradient_sq_eq_sub_of_mem_unstableSet_inter_stableSet
     (hφ : IsNegativeGradient φ f) (hf : ∀ t, DifferentiableAt ℝ f (φ t x))
     (hfp : ContinuousAt f p) (hfq : ContinuousAt f q)
     (hx : x ∈ unstableSet φ p ∩ stableSet φ q) :
