@@ -7,9 +7,9 @@ module
 
 public import Mathlib.Algebra.DirectSum.Module
 public import Mathlib.LinearAlgebra.Projection
-public import Mathlib.RingTheory.Idempotents
 public import TauCeti.Algebra.Module.Submodule.Pointwise
 public import TauCeti.LinearAlgebra.Dimension.DirectSum
+public import TauCeti.RingTheory.Idempotents.Corner
 
 /-!
 # A complete family of orthogonal idempotents decomposes every module
@@ -63,6 +63,10 @@ hypothesis in the intended applications.
   sum. This is what makes the sum direct.
 * `TauCeti.finrank_eq_sum_finrank_smul_top`: for a module finite-dimensional over a division
   ring `S`, the dimensions of the pieces add up to the dimension of the module.
+* `IsIdempotentElem.instModuleCornerSmulTop`: for a single idempotent `e`, the piece `e • M` is a
+  module over the corner ring `eAe` (`IsIdempotentElem.Corner`), which acts by restricting the
+  action of `A`, as recorded by `IsIdempotentElem.Corner.coe_smul`. This is the module structure the
+  corner functor `M ↦ eM` of Morita theory is built on.
 
 ## References
 
@@ -270,3 +274,38 @@ theorem finrank_eq_sum_finrank_smul_top [Module.Finite S M]
 end Finrank
 
 end TauCeti
+
+/-! ### The pieces as modules over the corner ring -/
+
+namespace IsIdempotentElem
+
+variable {S M A : Type*} [Semiring S] [Semiring A] [AddCommMonoid M] [Module S M] [Module A M]
+  [SMulCommClass A S M] {e : A} (he : IsIdempotentElem e)
+
+/-- The corner ring `eAe` acts on the piece `e • M` by restricting the action of `A`. -/
+instance instSMulCornerSmulTop : SMul he.Corner ↥(e • (⊤ : Submodule S M)) where
+  smul b x := ⟨b.1 • x.1, TauCeti.smul_mem_smul_top_of_mul_eq_self (he.mul_corner_val b) _⟩
+
+@[simp]
+theorem Corner.coe_smul (b : he.Corner) (x : ↥(e • (⊤ : Submodule S M))) :
+    ((b • x : ↥(e • (⊤ : Submodule S M))) : M) = b.1 • (x : M) := (rfl)
+
+/-- **The piece `e • M` of an `A`-module is a module over the corner ring `eAe`.** Its unit `e`
+acts trivially because `e` fixes `e • M` pointwise. -/
+instance instModuleCornerSmulTop : Module he.Corner ↥(e • (⊤ : Submodule S M)) where
+  one_smul x := Subtype.ext (he.smul_eq_self_of_mem_smul_top x.2)
+  mul_smul b c x := Subtype.ext (mul_smul b.1 c.1 x.1)
+  smul_zero b := Subtype.ext (smul_zero b.1)
+  smul_add b x y := Subtype.ext (smul_add b.1 x.1 y.1)
+  add_smul b c x := Subtype.ext (add_smul b.1 c.1 x.1)
+  zero_smul x := Subtype.ext (zero_smul A x.1)
+
+/-- On the piece `e • M`, the scalar `r • e` of the corner ring acts as `r` does on `M`. -/
+theorem coe_algebraMap_corner_smul {R : Type*} [CommSemiring R] [Algebra R A] (r : R)
+    (x : ↥(e • (⊤ : Submodule S M))) :
+    ((algebraMap R he.Corner r • x : ↥(e • (⊤ : Submodule S M))) : M) =
+      algebraMap R A r • (x : M) := by
+  rw [Corner.coe_smul, Corner.val_algebraMap, Algebra.smul_def, mul_smul,
+    he.smul_eq_self_of_mem_smul_top x.2]
+
+end IsIdempotentElem

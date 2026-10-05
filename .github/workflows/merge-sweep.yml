@@ -24,6 +24,10 @@ on:
         description: "List actions without enqueuing / updating / flagging"
         type: boolean
         default: false
+      full-scan:
+        description: "Inspect all open PRs (bounded by the API budget); normally handled hourly"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -39,9 +43,10 @@ jobs:
     # Re-pin together with the other two callers and .github/actions/checkout-merge-policy
     # (scripts/test_workflow_pins.py checks they agree). The called workflow checks out its own
     # commit, so no review_ref is passed.
-    uses: TauCetiProject/TauCetiReview/.github/workflows/merge-sweep.yml@4ca1ddcaee70bb01a6c56daf6520c522e6c2f002
+    uses: TauCetiProject/TauCetiReview/.github/workflows/merge-sweep.yml@5c64016298a1eab5bfe175f42128b8d23f3b638e
     with:
       dry_run: ${{ inputs.dry-run || false }}
+      focused: ${{ github.event_name == 'repository_dispatch' || (github.event_name == 'workflow_dispatch' && !inputs.full-scan) }}
     secrets:
       APP_ID: ${{ secrets.APP_ID }}
       APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}

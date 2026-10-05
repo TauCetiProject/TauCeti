@@ -247,7 +247,7 @@ private theorem maslovOℤ_swapColumns_O (G : GridDiagram n) {a : Fin n} (ha : a
   have h := (G.swapColumns a b).maslovO_sub_maslovO_eq_two_mul_card_sub_one_sub_two_mul_card R
   have hO' := (G.swapColumns a b).maslovOℤ_O
   rw [swapColumns_O] at hO'
-  rw [maslovO_eq_intCast, maslovO_eq_intCast, hO', ← OSet] at h
+  rw [maslovO_eq_intCast, maslovO_eq_intCast, hO', ← OSet_def] at h
   have h' : (G.swapColumns a b).maslovOℤ G.O - (1 - n) =
       2 * ((G.OSet ∩ R.toGridRectangle.coveredSquares).card : ℤ) - 1 -
         2 * ((G.swapColumns a b).OSet ∩ R.toGridRectangle.coveredSquares).card := by

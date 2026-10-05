@@ -242,8 +242,8 @@ end ConnectedFiberNumberedCover
 theorem ConnectedFiberNumberedCoverIso.pullback {c c' : ConnectedFiberNumberedCover y n}
     (hcc : ConnectedFiberNumberedCoverIso c c') :
     ConnectedFiberNumberedCoverIso (c.pullback h hx) (c'.pullback h hx) := by
-  obtain ⟨f, hf⟩ := connectedFiberNumberedCoverIso_iff_exists.1 hcc
-  exact connectedFiberNumberedCoverIso_iff_exists.2
+  obtain ⟨f, hf⟩ := connectedFiberNumberedCoverIso_def.1 hcc
+  exact connectedFiberNumberedCoverIso_def.2
     ⟨(ConnectedCoveringSpace.pullback h).mapIso f, hf⟩
 
 namespace ConnectedFiberNumberedCoverClass
@@ -333,8 +333,8 @@ theorem ConnectedFiberNumberedCover.markLabel_pullback (c : ConnectedFiberNumber
 theorem ConnectedPointedCoverIso.pullback {c c' : ConnectedPointedCover y n}
     (hcc : ConnectedPointedCoverIso c c') :
     ConnectedPointedCoverIso (c.pullback h hx) (c'.pullback h hx) := by
-  obtain ⟨f, hf⟩ := connectedPointedCoverIso_iff_exists.1 hcc
-  exact connectedPointedCoverIso_iff_exists.2 ⟨(ConnectedCoveringSpace.pullback h).mapIso f, hf⟩
+  obtain ⟨f, hf⟩ := connectedPointedCoverIso_def.1 hcc
+  exact connectedPointedCoverIso_def.2 ⟨(ConnectedCoveringSpace.pullback h).mapIso f, hf⟩
 
 namespace ConnectedPointedCoverClass
 

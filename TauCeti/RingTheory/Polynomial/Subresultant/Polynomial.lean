@@ -26,7 +26,7 @@ that controls the subresultant gcd criterion.
 
 * `Polynomial.subresultantCoeffMatrix_eq_updateRow`: the coefficient matrix replaces the first row
   of the principal matrix.
-* `TauCeti.subresultantCoeffMatrix_mulVec`: the coefficient matrix reads the coefficients of
+* `Polynomial.subresultantCoeffMatrix_mulVec`: the coefficient matrix reads the coefficients of
   `A * q + B * p`, with degree `k` in the first row.
 * `Polynomial.subresultant_coeff`: at a strict index `j < min m n`, the coefficients are the
   prescribed minors through degree `j`, and vanish above `j`; outside that range they all
@@ -47,9 +47,9 @@ that controls the subresultant gcd criterion.
 
 public section
 
-namespace TauCeti
+namespace Polynomial
 
-open Polynomial
+open TauCeti
 
 variable {R S : Type*}
 
@@ -59,7 +59,7 @@ defined for all indices; outside the strict range its determinant is only scalar
 
 The first row of `subresultantMatrix p q m n j`, which reads coefficients of degree `j`, is
 replaced by the row reading coefficients of degree `k`.  Applications use `k ≤ j`. -/
-def _root_.Polynomial.subresultantCoeffMatrix [Semiring R]
+def subresultantCoeffMatrix [Semiring R]
     (p q : R[X]) (m n j k : ℕ) :
     Matrix (Fin ((m - j) + (n - j))) (Fin ((m - j) + (n - j))) R :=
   Matrix.of fun i l =>
@@ -70,7 +70,7 @@ def _root_.Polynomial.subresultantCoeffMatrix [Semiring R]
 
 /-- An entry in the first, `q`-column block of a subresultant coefficient matrix. -/
 @[simp]
-theorem _root_.Polynomial.subresultantCoeffMatrix_castAdd [Semiring R]
+theorem subresultantCoeffMatrix_castAdd [Semiring R]
     (p q : R[X]) (m n j k : ℕ) (i : Fin ((m - j) + (n - j))) (l : Fin (m - j)) :
     subresultantCoeffMatrix p q m n j k i (Fin.castAdd (n - j) l) =
       let d := if i.val = 0 then k else i.val + j
@@ -79,7 +79,7 @@ theorem _root_.Polynomial.subresultantCoeffMatrix_castAdd [Semiring R]
 
 /-- An entry in the second, `p`-column block of a subresultant coefficient matrix. -/
 @[simp]
-theorem _root_.Polynomial.subresultantCoeffMatrix_natAdd [Semiring R]
+theorem subresultantCoeffMatrix_natAdd [Semiring R]
     (p q : R[X]) (m n j k : ℕ) (i : Fin ((m - j) + (n - j))) (l : Fin (n - j)) :
     subresultantCoeffMatrix p q m n j k i (Fin.natAdd (m - j) l) =
       let d := if i.val = 0 then k else i.val + j
@@ -88,7 +88,7 @@ theorem _root_.Polynomial.subresultantCoeffMatrix_natAdd [Semiring R]
 
 /-- When the formal bounds dominate the input degrees, coefficient-matrix entries are
 coefficients of shifted input polynomials, including the replaced first row. -/
-theorem _root_.Polynomial.subresultantCoeffMatrix_apply_eq_coeff [Semiring R]
+theorem subresultantCoeffMatrix_apply_eq_coeff [Semiring R]
     {p q : R[X]} {m n : ℕ} (hm : p.natDegree ≤ m) (hn : q.natDegree ≤ n)
     (j k : ℕ) (i l : Fin ((m - j) + (n - j))) :
     subresultantCoeffMatrix p q m n j k i l =
@@ -101,7 +101,7 @@ theorem _root_.Polynomial.subresultantCoeffMatrix_apply_eq_coeff [Semiring R]
 
 /-- A subresultant coefficient matrix replaces the row of degree `j` of the principal
 matrix by the row of degree `k`. -/
-theorem _root_.Polynomial.subresultantCoeffMatrix_eq_updateRow [Semiring R]
+theorem subresultantCoeffMatrix_eq_updateRow [Semiring R]
     (p q : R[X]) (m n j k : ℕ)
     (i₀ : Fin ((m - j) + (n - j))) (hi₀ : i₀.val = 0) :
     subresultantCoeffMatrix p q m n j k =
@@ -130,7 +130,7 @@ theorem subresultantCoeffMatrix_mulVec [CommSemiring R] [DecidableEq R]
 
 /-- At `k = j`, the coefficient matrix is the principal subresultant matrix. -/
 @[simp]
-theorem _root_.Polynomial.subresultantCoeffMatrix_index [Semiring R]
+theorem subresultantCoeffMatrix_index [Semiring R]
     (p q : R[X]) (m n j : ℕ) :
     subresultantCoeffMatrix p q m n j j = subresultantMatrix p q m n j := by
   ext i l
@@ -144,7 +144,7 @@ theorem _root_.Polynomial.subresultantCoeffMatrix_index [Semiring R]
 
 /-- Mapping coefficients maps every entry of a fixed-bound subresultant coefficient matrix. -/
 @[simp]
-theorem _root_.Polynomial.subresultantCoeffMatrix_map_map [Semiring R] [Semiring S]
+theorem subresultantCoeffMatrix_map_map [Semiring R] [Semiring S]
     (f : R →+* S) (p q : R[X]) (m n j k : ℕ) :
     subresultantCoeffMatrix (p.map f) (q.map f) m n j k =
       f.mapMatrix (subresultantCoeffMatrix p q m n j k) := by
@@ -154,7 +154,7 @@ theorem _root_.Polynomial.subresultantCoeffMatrix_map_map [Semiring R] [Semiring
 
 /-- Swapping the polynomials and bounds swaps the column blocks of every subresultant coefficient
 matrix. -/
-theorem _root_.Polynomial.subresultantCoeffMatrix_comm [Semiring R]
+theorem subresultantCoeffMatrix_comm [Semiring R]
     (p q : R[X]) (m n j k : ℕ) :
     subresultantCoeffMatrix p q m n j k =
       (subresultantCoeffMatrix q p n m j k).reindex
@@ -167,12 +167,12 @@ theorem _root_.Polynomial.subresultantCoeffMatrix_comm [Semiring R]
 a strict index `j < min m n`.  It is defined for all indices; outside the strict range it is
 scalar data only (the subresultant polynomial is then zero), e.g. the empty determinant `1` at
 `m = n = j = 0`. -/
-noncomputable def _root_.Polynomial.subresultantCoeff [CommRing R]
+noncomputable def subresultantCoeff [CommRing R]
     (p q : R[X]) (m n j k : ℕ) : R :=
   (subresultantCoeffMatrix p q m n j k).det
 
 /-- A subresultant coefficient is the determinant of its coefficient matrix. -/
-theorem _root_.Polynomial.subresultantCoeff_def [CommRing R]
+theorem subresultantCoeff_def [CommRing R]
     (p q : R[X]) (m n j k : ℕ) :
     subresultantCoeff p q m n j k = (subresultantCoeffMatrix p q m n j k).det := by
   rw [subresultantCoeff]
@@ -180,7 +180,7 @@ theorem _root_.Polynomial.subresultantCoeff_def [CommRing R]
 /-- At the smaller right terminal index, a coefficient minor reads a coefficient of the right
 input times a power of its coefficient at the bound. The empty determinant is excluded. -/
 @[simp]
-theorem _root_.Polynomial.subresultantCoeff_right_bound [CommRing R] (p q : R[X]) {m n k : ℕ}
+theorem subresultantCoeff_right_bound [CommRing R] (p q : R[X]) {m n k : ℕ}
     (hnm : n < m) (hk : k ≤ n) :
     subresultantCoeff p q m n n k = q.coeff k * q.coeff n ^ (m - n - 1) := by
   classical
@@ -221,21 +221,21 @@ theorem _root_.Polynomial.subresultantCoeff_right_bound [CommRing R] (p q : R[X]
 
 /-- The coefficient minor at `k = j` is the principal subresultant coefficient. -/
 @[simp]
-theorem _root_.Polynomial.subresultantCoeff_index [CommRing R]
+theorem subresultantCoeff_index [CommRing R]
     (p q : R[X]) (m n j : ℕ) :
     subresultantCoeff p q m n j j = psc p q m n j := by
   simp [subresultantCoeff_def, psc_def]
 
 /-- Subresultant coefficient minors commute with coefficient maps at fixed bounds. -/
 @[simp]
-theorem _root_.Polynomial.subresultantCoeff_map_map [CommRing R] [CommRing S]
+theorem subresultantCoeff_map_map [CommRing R] [CommRing S]
     (f : R →+* S) (p q : R[X]) (m n j k : ℕ) :
     subresultantCoeff (p.map f) (q.map f) m n j k =
       f (subresultantCoeff p q m n j k) := by
   simp [subresultantCoeff_def, RingHom.map_det]
 
 /-- Swapping the inputs changes every coefficient minor by the Sylvester block-swap sign. -/
-theorem _root_.Polynomial.subresultantCoeff_comm [CommRing R]
+theorem subresultantCoeff_comm [CommRing R]
     (p q : R[X]) (m n j k : ℕ) :
     subresultantCoeff p q m n j k =
       (-1) ^ ((m - j) * (n - j)) * subresultantCoeff q p n m j k := by
@@ -247,14 +247,14 @@ theorem _root_.Polynomial.subresultantCoeff_comm [CommRing R]
 /-- At the smaller left terminal index, a coefficient minor reads a coefficient of the left
 input times a power of its coefficient at the bound. The empty determinant is excluded. -/
 @[simp]
-theorem _root_.Polynomial.subresultantCoeff_left_bound [CommRing R] (p q : R[X]) {m n k : ℕ}
+theorem subresultantCoeff_left_bound [CommRing R] (p q : R[X]) {m n k : ℕ}
     (hmn : m < n) (hk : k ≤ m) :
     subresultantCoeff p q m n m k = p.coeff k * p.coeff m ^ (n - m - 1) := by
   rw [subresultantCoeff_comm, subresultantCoeff_right_bound q p hmn hk]
   simp
 
 /-- Scaling the left polynomial by `r` scales every coefficient minor by `r ^ (n - j)`. -/
-theorem _root_.Polynomial.subresultantCoeff_C_mul_left [CommRing R]
+theorem subresultantCoeff_C_mul_left [CommRing R]
     (p q : R[X]) (r : R) (m n j k : ℕ) :
     subresultantCoeff (C r * p) q m n j k =
       r ^ (n - j) * subresultantCoeff p q m n j k := by
@@ -267,7 +267,7 @@ theorem _root_.Polynomial.subresultantCoeff_C_mul_left [CommRing R]
   simp
 
 /-- Scaling the right polynomial by `r` scales every coefficient minor by `r ^ (m - j)`. -/
-theorem _root_.Polynomial.subresultantCoeff_C_mul_right [CommRing R]
+theorem subresultantCoeff_C_mul_right [CommRing R]
     (p q : R[X]) (r : R) (m n j k : ℕ) :
     subresultantCoeff p (C r * q) m n j k =
       r ^ (m - j) * subresultantCoeff p q m n j k := by
@@ -285,7 +285,7 @@ Its coefficient of degree `k ≤ j` is `subresultantCoeff p q m n j k`; all coef
 `j` vanish.  Subresultant polynomials occur only at strict indices `j < min m n`; outside that
 range this definition is zero.  In particular, it does not turn a terminal empty determinant
 into a polynomial, since terminal data is represented by `psc`. -/
-noncomputable def _root_.Polynomial.subresultant [CommRing R]
+noncomputable def subresultant [CommRing R]
     (p q : R[X]) (m n j : ℕ) : R[X] := by
   classical
   exact if j < min m n then
@@ -294,7 +294,7 @@ noncomputable def _root_.Polynomial.subresultant [CommRing R]
 
 /-- The coefficient formula for a fixed-bound subresultant polynomial. -/
 @[simp]
-theorem _root_.Polynomial.subresultant_coeff [CommRing R]
+theorem subresultant_coeff [CommRing R]
     (p q : R[X]) (m n j k : ℕ) :
     (subresultant p q m n j).coeff k =
       if j < min m n ∧ k ≤ j then subresultantCoeff p q m n j k else 0 := by
@@ -307,7 +307,7 @@ theorem _root_.Polynomial.subresultant_coeff [CommRing R]
 
 /-- There is no subresultant polynomial at or beyond the terminal index. -/
 @[simp]
-theorem _root_.Polynomial.subresultant_eq_zero_of_min_le [CommRing R]
+theorem subresultant_eq_zero_of_min_le [CommRing R]
     (p q : R[X]) (m n j : ℕ) (hj : min m n ≤ j) :
     subresultant p q m n j = 0 := by
   simp [subresultant, Nat.not_lt.mpr hj]
@@ -315,7 +315,7 @@ theorem _root_.Polynomial.subresultant_eq_zero_of_min_le [CommRing R]
 /-- When both formal bounds are positive, the subresultant polynomial at index zero is the
 constant resultant. -/
 @[simp]
-theorem _root_.Polynomial.subresultant_zero [CommRing R]
+theorem subresultant_zero [CommRing R]
     (p q : R[X]) (m n : ℕ) (h : 0 < min m n) :
     subresultant p q m n 0 = C (Polynomial.resultant p q m n) := by
   ext k
@@ -326,7 +326,7 @@ theorem _root_.Polynomial.subresultant_zero [CommRing R]
     simp [h, hk]
 
 /-- The subresultant polynomial at index `j` has degree at most `j`. -/
-theorem _root_.Polynomial.degree_subresultant_le [CommRing R]
+theorem degree_subresultant_le [CommRing R]
     (p q : R[X]) (m n j : ℕ) :
     (subresultant p q m n j).degree ≤ j := by
   classical
@@ -343,7 +343,7 @@ theorem _root_.Polynomial.degree_subresultant_le [CommRing R]
 
 /-- The subresultant polynomial has degree exactly `j` precisely when its principal coefficient
 does not vanish. -/
-theorem _root_.Polynomial.degree_subresultant_eq_iff [CommRing R]
+theorem degree_subresultant_eq_iff [CommRing R]
     (p q : R[X]) (m n j : ℕ) (hj : j < min m n) :
     (subresultant p q m n j).degree = j ↔ psc p q m n j ≠ 0 := by
   constructor
@@ -356,7 +356,7 @@ theorem _root_.Polynomial.degree_subresultant_eq_iff [CommRing R]
 /-- Fixed-bound subresultant polynomials commute with coefficient maps.  No degree-preservation
 hypothesis is required. -/
 @[simp]
-theorem _root_.Polynomial.subresultant_map_map [CommRing R] [CommRing S]
+theorem subresultant_map_map [CommRing R] [CommRing S]
     (f : R →+* S) (p q : R[X]) (m n j : ℕ) :
     subresultant (p.map f) (q.map f) m n j =
       (subresultant p q m n j).map f := by
@@ -365,7 +365,7 @@ theorem _root_.Polynomial.subresultant_map_map [CommRing R] [CommRing S]
 
 /-- Scaling the left input by `r` scales its subresultant polynomial at index `j` by
 `r ^ (n - j)`. -/
-theorem _root_.Polynomial.subresultant_C_mul_left [CommRing R]
+theorem subresultant_C_mul_left [CommRing R]
     (p q : R[X]) (r : R) (m n j : ℕ) :
     subresultant (C r * p) q m n j = C (r ^ (n - j)) * subresultant p q m n j := by
   ext k
@@ -375,7 +375,7 @@ theorem _root_.Polynomial.subresultant_C_mul_left [CommRing R]
 
 /-- Scaling the right input by `r` scales its subresultant polynomial at index `j` by
 `r ^ (m - j)`. -/
-theorem _root_.Polynomial.subresultant_C_mul_right [CommRing R]
+theorem subresultant_C_mul_right [CommRing R]
     (p q : R[X]) (r : R) (m n j : ℕ) :
     subresultant p (C r * q) m n j = C (r ^ (m - j)) * subresultant p q m n j := by
   ext k
@@ -385,7 +385,7 @@ theorem _root_.Polynomial.subresultant_C_mul_right [CommRing R]
 
 /-- Swapping the inputs and their bounds changes the subresultant polynomial by the Sylvester
 block-swap sign. -/
-theorem _root_.Polynomial.subresultant_comm [CommRing R]
+theorem subresultant_comm [CommRing R]
     (p q : R[X]) (m n j : ℕ) :
     subresultant p q m n j =
       C ((-1) ^ ((m - j) * (n - j))) * subresultant q p n m j := by
@@ -403,4 +403,5 @@ theorem _root_.Polynomial.subresultant_comm [CommRing R]
     rw [subresultant_coeff, subresultant_coeff]
     simp [hj, hj']
 
-end TauCeti
+end Polynomial
+

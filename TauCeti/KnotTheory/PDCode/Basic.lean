@@ -73,7 +73,7 @@ def crossingSlotEquiv (n : ℕ) : Fin n × Fin 4 ≃ Fin (4 * n) :=
 
 /-- The crossing-slot equivalence numbers slot `s` at crossing `i` by `s + 4 * i`. -/
 @[simp]
-theorem crossingSlotEquiv_apply_val (n : ℕ) (i : Fin n) (slot : Fin 4) :
+theorem crossingSlotEquiv_apply_val {n : ℕ} (i : Fin n) (slot : Fin 4) :
     (crossingSlotEquiv n (i, slot)).val = slot.val + 4 * i.val :=
   (rfl)
 
@@ -98,7 +98,7 @@ theorem crossingSlotEquiv_succ_last {n : ℕ} (slot : Fin 4) :
 
 -- Not `@[simp]`: `crossingSlotEquiv_apply_val` already rewrites the left-hand side.
 /-- The slot of a half-edge is recovered from its position modulo four. -/
-theorem crossingSlotEquiv_apply_val_mod_four (n : ℕ) (i : Fin n) (slot : Fin 4) :
+theorem crossingSlotEquiv_apply_val_mod_four {n : ℕ} (i : Fin n) (slot : Fin 4) :
     (crossingSlotEquiv n (i, slot)).val % 4 = slot.val := by
   rw [crossingSlotEquiv_apply_val]
   omega
@@ -953,10 +953,9 @@ theorem unknot_ne_empty (orientation : Bool) :
     unknot orientation ≠ empty :=
   unlinkEquiv.injective.ne (Multiset.singleton_ne_zero orientation)
 
-/-- The two explicit orientation choices give distinct crossing-free circle presentations. -/
-theorem unknot_true_ne_false :
-    unknot true ≠ unknot false :=
-  unlinkEquiv.injective.ne (by simp)
+/-- Distinct orientation choices give distinct crossing-free circle presentations. -/
+theorem unknot_injective : Function.Injective unknot := fun _ _ h =>
+  Multiset.singleton_inj.1 (congrArg crossinglessComponents h)
 
 /-- Reflection fixes every zero-crossing oriented PD-code. -/
 @[simp]
@@ -997,10 +996,11 @@ theorem orientation_positiveKink (h : Fin (4 * 1)) :
 theorem crossinglessComponents_positiveKink : positiveKink.crossinglessComponents = 0 :=
   (rfl)
 
-/-- The distinguished crossing of `positiveKink` has positive sign. -/
+/-- The crossing of `positiveKink` has positive sign. -/
 @[simp]
-theorem crossingSign_positiveKink :
-    positiveKink.crossingSign 0 = 1 := by
+theorem crossingSign_positiveKink (i : Fin 1) :
+    positiveKink.crossingSign i = 1 := by
+  fin_cases i
   decide
 
 end OrientedPDCode

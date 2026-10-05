@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RepresentationTheory.Basic
+public import Mathlib.RepresentationTheory.Intertwining
 public import Mathlib.RingTheory.QuotSMulTop
 
 /-!
@@ -25,6 +25,7 @@ groups modelled on them.
 ## Main definitions
 
 * `Representation.quotSMulTop`: the representation induced by `ρ` on `V ⧸ r • V`.
+* `Representation.IntertwiningMap.quotSMulTop`: the reduction modulo `r` of an intertwining map.
 
 ## Main statements
 
@@ -59,6 +60,28 @@ theorem quotSMulTop_apply (ρ : Representation k G V) (r : k) (g : G) :
 theorem quotSMulTop_apply_mk (ρ : Representation k G V) (r : k) (g : G) (x : V) :
     ρ.quotSMulTop r g (Submodule.Quotient.mk x) = Submodule.Quotient.mk (ρ g x) :=
   (rfl)
+
+namespace IntertwiningMap
+
+variable {W : Type*} [AddCommGroup W] [Module k W] {ρ : Representation k G V}
+  {σ : Representation k G W}
+
+/-- **Reduction of an intertwining map modulo `r`**: `QuotSMulTop.map r f : V ⧸ rV → W ⧸ rW`
+intertwines `ρ.quotSMulTop r` and `σ.quotSMulTop r`. -/
+noncomputable def quotSMulTop (f : IntertwiningMap ρ σ) (r : k) :
+    IntertwiningMap (ρ.quotSMulTop r) (σ.quotSMulTop r) where
+  toLinearMap := QuotSMulTop.map r f.toLinearMap
+  isIntertwining' g := by
+    rw [quotSMulTop_apply, quotSMulTop_apply, ← QuotSMulTop.map_comp, ← QuotSMulTop.map_comp,
+      f.isIntertwining']
+
+/-- The linear map underlying the reduction of an intertwining map is `QuotSMulTop.map`. -/
+@[simp]
+theorem toLinearMap_quotSMulTop (f : IntertwiningMap ρ σ) (r : k) :
+    (f.quotSMulTop r).toLinearMap = QuotSMulTop.map r f.toLinearMap :=
+  (rfl)
+
+end IntertwiningMap
 
 section Group
 

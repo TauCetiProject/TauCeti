@@ -77,6 +77,16 @@ theorem kummerCoeffIsoTrivialF2_hom_comp_h2MuToUnits :
     ((ContinuousCohomology.continuousCohomologyFunctor ℤ (AbsoluteGaloisGroup K) 2).mapIso
       (kummerCoeffIsoTrivialF2 K)) _
 
+/-- The defining equation of `TauCeti.h2MuToUnits`: the coefficient map of the inverse of the
+coefficient identification `TauCeti.kummerCoeffIsoTrivialF2`, followed by the Kummer-sequence map
+`TauCeti.h2KummerToUnits` at `n = 2`. -/
+theorem h2MuToUnits_def :
+    h2MuToUnits K =
+      ContinuousCohomology.coeffMap (kummerCoeffIsoTrivialF2 K).inv 2 ≫ h2KummerToUnits K 2 := by
+  rw [← kummerCoeffIsoTrivialF2_hom_comp_h2MuToUnits, ← Category.assoc,
+    ← ContinuousCohomology.coeffMap_comp, Iso.inv_hom_id, ContinuousCohomology.coeffMap_id,
+    Category.id_comp]
+
 /-- **The map `H²(G_K, 𝔽₂) → H²(G_K, (Kˢ)ˣ)` is injective.** -/
 theorem h2MuToUnits_injective : Function.Injective (h2MuToUnits K).hom :=
   (h2KummerToUnits_injective (K := K) (n := 2) (isUnit_of_invertible (2 : K))).comp
