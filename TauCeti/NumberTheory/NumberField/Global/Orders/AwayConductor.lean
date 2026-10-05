@@ -11,6 +11,7 @@ public import TauCeti.NumberTheory.NumberField.Global.RayClass.Modulus
 public import TauCeti.RingTheory.Ideal.Conductor
 import Mathlib.LinearAlgebra.FreeModule.IdealQuotient
 import TauCeti.RingTheory.ClassGroup.CoprimeRepresentative
+import TauCeti.RingTheory.Ideal.Quotient.Artinian
 
 /-!
 # Ideals of an order away from its conductor
@@ -24,9 +25,13 @@ modulus, `NumberFieldOrder.conductorModulus`, the same monoid the ray class grou
 Every nonzero ideal of `O` coprime to `𝔣` is invertible, even though `O` need not be a Dedekind
 domain. These ideals therefore map injectively to the group of invertible fractional ideals of
 `O`, whose classes modulo principal ideals form the Picard group `Pic O` (via `mkPic`); they are
-the order-side ideals used to describe `Pic O` by ideals prime to the conductor. Every class of
-`Pic O` is the class of such an ideal, because the conductor lies in only finitely many maximal
-ideals of `O` (`ClassGroup.exists_mk_eq_and_sup_eq_top`).
+the order-side ideals used to describe `Pic O` by ideals prime to the conductor. Here `O` is
+represented by its copy `O.toRingOfIntegers` inside `𝓞 K`, and an ideal of `O` is coprime to `𝔣`
+when it is coprime to the contraction
+`O.conductor.comap (O.toRingOfIntegers.val : O.toRingOfIntegers →+* 𝓞 K)` of `𝔣` to `O`. Every
+class of `Pic O` is the class of such an ideal, because that contraction is a nonzero ideal of `O`,
+so it has finite quotient and lies in only finitely many maximal ideals of `O`
+(`ClassGroup.exists_mk_eq_and_sup_eq_top`).
 
 ## Main definitions
 
@@ -297,7 +302,7 @@ theorem mkPic_comp_integralIdealsAwayConductorToInvertible_surjective :
     (Ideal.map_eq_bot_iff_of_injective e.injective).not.mpr O.comap_conductor_ne_bot
   have : Finite (O.toSubalgebra ⧸ 𝔣.map e) := Ideal.finiteQuotientOfFreeOfNeBot _ h𝔣
   obtain ⟨I, hI, hc, hI𝔣⟩ := ClassGroup.exists_mk_eq_and_sup_eq_top (K := K)
-    (Ideal.finite_setOf_isMaximal_and_le (𝔣.map e)) c
+    (Ideal.finite_setOfPred_isMaximal_and_le (𝔣.map e)) c
   have hIe : (I.comap e).map e = I := Ideal.map_comap_of_surjective _ e.surjective I
   have hmem : I.comap e ∈ O.integralIdealsAwayConductor := by
     refine ⟨fun h => hI.ne_zero ?_, ?_⟩
