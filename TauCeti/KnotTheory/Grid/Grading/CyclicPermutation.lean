@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import Mathlib.Tactic.Linarith
 public import TauCeti.KnotTheory.Grid.Grading.MarkingCount
 public import TauCeti.KnotTheory.Grid.Grading.Parity
 public import TauCeti.KnotTheory.Grid.Rectangle.Relabeling
@@ -56,14 +55,6 @@ namespace TauCeti
 namespace GridDiagram
 
 variable {n : ℕ} (G : GridDiagram n)
-
-/-- Two grading functions that change in the same way across every rectangle, and agree at one
-grid state, agree everywhere. -/
-private theorem eq_of_forall_sub_eq {f g : GridState n → ℚ} (x₀ : GridState n) (h₀ : f x₀ = g x₀)
-    (h : ∀ x y, GridRectangleBetween x y → f x - f y = g x - g y) (x : GridState n) :
-    f x = g x :=
-  GridState.rectangle_induction_on (P := fun x ↦ f x = g x) x₀ h₀
-    (fun x y R hx ↦ by linarith [h x y R]) x
 
 /-! ### Cyclic permutation of the rows -/
 

@@ -28,7 +28,7 @@ variable {n : ℕ}
 
 /-- The marking-pairing numerator of the diagonal state is the sum of the numbers of diagonal
 points weakly southwest and strictly northeast of each marking. -/
-theorem JNumCenter_diagonal_pointSet (m : GridState n) :
+theorem JNumCenter_diagonal_pointSet_eq_sum (m : GridState n) :
     GridPoint.JNumCenter (GridState.mk 1).pointSet m.pointSet =
       ∑ c : Fin n, ((min c (m c) : Fin n).val + 1 +
         (n - 1 - (max c (m c) : Fin n).val)) := by
@@ -52,7 +52,7 @@ states and markings. -/
 theorem JNumCenter_diagonal_rotate (m : GridState n) :
     GridPoint.JNumCenter (GridState.mk 1).pointSet m.rotate.pointSet =
       GridPoint.JNumCenter (GridState.mk 1).pointSet m.pointSet := by
-  rw [JNumCenter_diagonal_pointSet, JNumCenter_diagonal_pointSet]
+  rw [JNumCenter_diagonal_pointSet_eq_sum, JNumCenter_diagonal_pointSet_eq_sum]
   refine Fintype.sum_equiv Fin.revPerm _ _ (fun c => ?_)
   simp only [Fin.revPerm_apply, rotate_apply]
   have hc := c.isLt

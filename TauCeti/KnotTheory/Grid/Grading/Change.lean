@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Ring
 public import TauCeti.KnotTheory.Grid.Gradings
 public import TauCeti.KnotTheory.Grid.Rectangle.Swap
@@ -15,6 +16,9 @@ public import TauCeti.KnotTheory.Grid.Rectangle.Swap
 This file records how the Maslov and Alexander gradings of two grid states differ, first as a
 pure identity between the grading formulas of any two states, then localized to the four corners
 of a rectangle move.
+
+Two grading functions with the same changes across rectangles agree everywhere once they agree
+at one grid state, by rectangle connectivity.
 
 The two Maslov gradings split the same way: their difference is the change in the state's
 `J`-self-pairing minus twice the change in the marking pairing,
@@ -172,6 +176,14 @@ end GridRectangleBetween
 namespace GridDiagram
 
 variable {n : ℕ} (G : GridDiagram n)
+
+/-- Two grading functions that change in the same way across every rectangle, and agree at one
+grid state, agree everywhere. -/
+theorem eq_of_forall_sub_eq {f g : GridState n → ℚ} (x₀ : GridState n) (h₀ : f x₀ = g x₀)
+    (h : ∀ x y, GridRectangleBetween x y → f x - f y = g x - g y) (x : GridState n) :
+    f x = g x :=
+  GridState.rectangle_induction_on (P := fun x ↦ f x = g x) x₀ h₀
+    (fun x y R hx ↦ by linarith [h x y R]) x
 
 /-- The difference of the `O`-Maslov grading at two grid states splits into the change in the
 state self-pairing and twice the change in the `O`-marking pairing. The two states need not be

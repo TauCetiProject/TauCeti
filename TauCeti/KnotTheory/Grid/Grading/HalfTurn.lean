@@ -9,7 +9,6 @@ public import TauCeti.KnotTheory.Grid.JFunction.Diagonal
 public import TauCeti.KnotTheory.Grid.Grading.MarkingCount
 public import TauCeti.KnotTheory.Grid.Grading.Parity
 public import TauCeti.KnotTheory.Grid.Rectangle.Relabeling
-import Mathlib.Tactic.Linarith
 
 /-!
 # The Alexander grading under the half-turn
@@ -49,9 +48,8 @@ theorem alexander_rotate_halfTurn (x : GridState n) :
     rw [hhalf, alexander_eq, alexander_eq]
     simp only [JO_def, JX_def, OSet_def, XSet_def, rotate_O, rotate_X,
       GridState.JCenter_diagonal_rotate, GridState.J_rotate]
-  refine GridState.rectangle_induction_on
-    (P := fun x => G.rotate.alexander x.halfTurn = G.alexander x)
-    (GridState.mk 1) hbase (fun u v R hu => ?_) x
+  refine eq_of_forall_sub_eq (f := fun x => G.rotate.alexander x.halfTurn)
+    (GridState.mk 1) hbase (fun u v R => ?_) x
   have hchange := G.rotate.alexander_sub_alexander_eq_card_sub_card
     (GridRectangleBetween.halfTurnEquiv u v R)
   rw [OSet_def, XSet_def, rotate_O, rotate_X,
@@ -59,7 +57,7 @@ theorem alexander_rotate_halfTurn (x : GridState n) :
     GridRectangleBetween.card_pointSet_inter_halfTurnEquiv] at hchange
   have horiginal := G.alexander_sub_alexander_eq_card_sub_card R
   rw [OSet_def, XSet_def] at horiginal
-  linarith
+  exact hchange.trans horiginal.symm
 
 end GridDiagram
 
