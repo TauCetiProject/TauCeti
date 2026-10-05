@@ -56,7 +56,7 @@ variable [W.IsElliptic]
 /-- If `s` is nonzero in the field, the Frobenius pencil `r π - s` is nonzero. -/
 theorem zsmul_baseChangeFrobenius_sub_zsmul_id_ne_zero (r s : ℤ) (hs : (s : K) ≠ 0) :
     r • ofIsogeny (baseChangeFrobenius K W) - s • id (W⁄K).toAffine ≠ 0 := by
-  apply zsmul_sub_zsmul_id_ne_zero_of_pullback_eq_zero _ r s hs
+  apply zsmul_sub_zsmul_id_ne_zero_of_pullbackDifferential_eq_zero _ r s hs
   rw [pullbackDifferential_ofIsogeny,
     pullbackDifferential_baseChangeFrobenius_invariantDifferential]
 
@@ -66,7 +66,7 @@ theorem isSeparable_toIsogeny_zsmul_baseChangeFrobenius_sub_zsmul_id_iff (r s : 
     (h : r • ofIsogeny (baseChangeFrobenius K W) - s • id (W⁄K).toAffine ≠ 0) :
     Algebra.IsSeparable (toIsogeny h).fieldPullback.fieldRange (W⁄K).toAffine.FunctionField ↔
       (s : K) ≠ 0 := by
-  apply isSeparable_toIsogeny_zsmul_sub_zsmul_id_iff_of_pullback_eq_zero _ r s h
+  apply isSeparable_toIsogeny_zsmul_sub_zsmul_id_iff_of_pullbackDifferential_eq_zero _ r s h
   rw [pullbackDifferential_ofIsogeny,
     pullbackDifferential_baseChangeFrobenius_invariantDifferential]
 

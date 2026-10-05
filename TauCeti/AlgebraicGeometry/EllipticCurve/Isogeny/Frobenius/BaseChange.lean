@@ -25,7 +25,7 @@ the identity, and it is this base change that acts on the points of `W` over `K`
 
 * `TauCeti.Isogeny.baseChangeFrobenius_pullback`: its coordinate pullback is the base change of the
   `q`-power Frobenius pullback of `W`.
-* `TauCeti.Isogeny.baseChangeFrobenius_eq_map`: identifies the base-changed Frobenius with
+* `TauCeti.Isogeny.baseChangeFrobenius_def`: identifies the base-changed Frobenius with
   `Isogeny.map`, allowing scalar-extension results to transfer to `W⁄K`.
 * `TauCeti.Isogeny.fieldPullback_baseChangeFrobenius_map`: its pullback raises the functions
   defined over `F` to the `q`-th power.
@@ -55,7 +55,7 @@ noncomputable def baseChangeFrobenius : Isogeny (W⁄K).toAffine (W⁄K).toAffin
 /-- Identify `baseChangeFrobenius K W` with the `Isogeny.map` presentation over
 `W.map (algebraMap F K)`, so scalar-extension results transfer to `W⁄K` without unfolding
 the definition in an importing module. -/
-theorem baseChangeFrobenius_eq_map :
+theorem baseChangeFrobenius_def :
     baseChangeFrobenius K W = (frobeniusIsogeny W).map (algebraMap F K) := (rfl)
 
 /-- **The coordinate pullback of `baseChangeFrobenius`** is the base change along `F → K` of the
