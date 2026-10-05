@@ -55,6 +55,9 @@ with the injection here gives `H²(G_K, μₙ) ≃ ℤ/n`.
 * `TauCeti.explicitCoeff2_kummerShortExact_incl_injective` and
   `TauCeti.mem_range_explicitCoeff2_kummerShortExact_incl_iff`: injectivity and the image, on the
   explicit model.
+* `TauCeti.explicitCoeff2_kummerShortExact_restrict_incl_injective` and
+  `TauCeti.mem_range_explicitCoeff2_kummerShortExact_restrict_incl_iff`: the corresponding
+  statements for subgroups; injectivity requires the subgroup to be closed.
 * `TauCeti.h2KummerToUnits_injective`: `H²(G_K, μₙ) → H²(G_K, (Kˢ)ˣ)` is injective.
 * `TauCeti.h2KummerToUnits_range`: its image is the `n`-torsion.
 
@@ -118,6 +121,52 @@ theorem mem_range_explicitCoeff2_kummerShortExact_incl_iff
     explicitCoeff2_kummerShortExact_proj]
 
 end Explicit
+
+/-! ### Subgroups -/
+
+section Subgroup
+
+variable (K : Type u) [Field K] {n : ℕ} (hn : IsUnit (n : K))
+  (U : Subgroup (AbsoluteGaloisGroup K))
+
+/-- On a subgroup of `G_K`, the projection of the restricted Kummer sequence induces
+multiplication by `n` on explicit second cohomology. -/
+@[simp]
+theorem explicitCoeff2_kummerShortExact_restrict_proj (x : H2 U (UnitsCoeff K)) :
+    explicitCoeff2 U (UnitsCoeff K)
+      ((kummerShortExact K n hn).restrict U).projDistribMulActionHom
+      continuous_of_discreteTopology x = n • x :=
+  explicitCoeff2_eq_nsmul U (UnitsCoeff K) _ continuous_of_discreteTopology
+    (fun m => by
+      rw [DiscreteShortExact.projDistribMulActionHom_apply, DiscreteShortExact.restrict_proj,
+        kummerShortExact_proj, unitsCoeffPow_eq_nsmul]) x
+
+/-- The Kummer coefficient inclusion is injective on `H²` of every closed subgroup of `G_K`.
+Hilbert 90 for that subgroup kills the preceding connecting map. -/
+theorem explicitCoeff2_kummerShortExact_restrict_incl_injective
+    (hU : IsClosed (U : Set (AbsoluteGaloisGroup K))) :
+    Function.Injective (explicitCoeff2 U (KummerCoeff K n)
+      ((kummerShortExact K n hn).restrict U).inclDistribMulActionHom
+      continuous_of_discreteTopology) := by
+  have := subsingleton_H1_unitsCoeff_of_isClosed K U hU
+  refine (injective_iff_map_eq_zero _).2 fun x hx => ?_
+  have hx' : x ∈ ((kummerShortExact K n hn).restrict U).explicitDelta1.range := by
+    rw [((kummerShortExact K n hn).restrict U).explicitLongExact_H2A]
+    exact hx
+  obtain ⟨y, rfl⟩ := hx'
+  rw [Subsingleton.elim y 0, map_zero]
+
+/-- The image of the Kummer coefficient inclusion on `H²` of any subgroup of `G_K` is precisely
+its `n`-torsion. Unlike injectivity, this image statement does not require closedness. -/
+theorem mem_range_explicitCoeff2_kummerShortExact_restrict_incl_iff
+    (x : H2 U (UnitsCoeff K)) :
+    x ∈ (explicitCoeff2 U (KummerCoeff K n)
+      ((kummerShortExact K n hn).restrict U).inclDistribMulActionHom
+      continuous_of_discreteTopology).range ↔ n • x = 0 := by
+  rw [((kummerShortExact K n hn).restrict U).explicitLongExact_H2B,
+    AddMonoidHom.mem_ker, explicitCoeff2_kummerShortExact_restrict_proj]
+
+end Subgroup
 
 /-! ### The canonical object -/
 
