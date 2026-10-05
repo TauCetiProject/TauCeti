@@ -21,9 +21,10 @@ Chevalley's theorem to projective orbit morphisms.
 The convention is that `M` consists of homogeneous linear coordinates. For the space of
 lines in a finite locally free representation `V`, use `M = V∨`.
 
-The construction uses Mathlib's `Proj.toSpecZero` and properness theorem for finitely
-generated graded algebras. The degree-zero part is identified with the coefficients by
-`SymmetricAlgebra.homogeneousSubmoduleZeroEquiv`.
+`SymmetricAlgebra.projToSpec` is the structural morphism over `R`. Its properness and
+quasi-compactness instances require only `Module.Finite R M`; its Noetherianity instance
+also requires `IsNoetherianRing R`. The chart formula describes this morphism on the
+standard affine charts.
 
 ## References
 
@@ -56,14 +57,14 @@ theorem projToSpec_def :
 private theorem isIso_scalarSpecMap :
     IsIso (Spec.map (CommRingCat.ofHom (algebraMap R (homogeneousSubmodule R M 0)))) := by
   have h : Function.Bijective (algebraMap R (homogeneousSubmodule R M 0)) := by
-    constructor
-    · intro r s hrs
-      apply (SymmetricAlgebra.algebraMap_leftInverse M).injective
-      simpa only [SetLike.GradeZero.coe_algebraMap] using congrArg Subtype.val hrs
-    · intro x
-      refine ⟨homogeneousSubmoduleZeroEquiv R M x, Subtype.ext ?_⟩
+    have h_eq : ⇑(homogeneousSubmoduleZeroEquiv R M).symm =
+        algebraMap R (homogeneousSubmodule R M 0) := by
+      funext r
+      apply Subtype.ext
       simpa only [SetLike.GradeZero.coe_algebraMap] using
-        algebraMap_homogeneousSubmoduleZeroEquiv_apply R M x
+        coe_homogeneousSubmoduleZeroEquiv_symm_apply R M r
+    rw [← h_eq]
+    exact (homogeneousSubmoduleZeroEquiv R M).symm.bijective
   have : IsIso (CommRingCat.ofHom (algebraMap R (homogeneousSubmodule R M 0))) :=
     (ConcreteCategory.isIso_iff_bijective _).mpr h
   infer_instance
@@ -78,11 +79,12 @@ theorem awayι_projToSpec {f : SymmetricAlgebra R M} {n : ℕ}
         ((HomogeneousLocalization.fromZeroRingHom (homogeneousSubmodule R M)
           (Submonoid.powers f)).comp (algebraMap R (homogeneousSubmodule R M 0)))) := by
   rw [projToSpec_def, Proj.awayι_toSpecZero_assoc, ← Spec.map_comp]
-  rfl
+  rw [← CommRingCat.ofHom_comp]
 
 /-- The projective spectrum of a finite module is proper over the coefficient ring.
 Freeness and projectivity are not required. -/
 instance instIsProperProjToSpec [Module.Finite R M] : IsProper (projToSpec R M) := by
+  -- Use Mathlib's properness theorem for `Proj.toSpecZero` and the degree-zero equivalence.
   have := isIso_scalarSpecMap R M
   rw [projToSpec_def]
   infer_instance

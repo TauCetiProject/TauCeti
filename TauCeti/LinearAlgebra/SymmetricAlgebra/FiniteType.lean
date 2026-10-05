@@ -17,9 +17,9 @@ The symmetric algebra of a finite module is a finitely generated algebra. No fre
 Noetherian hypothesis is needed. This supplies the algebraic finiteness input for the
 projective spectrum of a symmetric algebra.
 
-As in `TauCeti.LinearAlgebra.SymmetricAlgebra.Noetherian`, present the module as a quotient
-of a finite free module, identify the latter's symmetric algebra with a polynomial ring via
-Mathlib's `SymmetricAlgebra.equivMvPolynomial`, and use `SymmetricAlgebra.map_surjective`.
+The instances provide finite type over both the coefficient semiring and the degree-zero
+part. They are intended for Noetherianity of symmetric algebras and finiteness properties
+of their projective spectra.
 -/
 
 public section
@@ -33,6 +33,9 @@ variable (R : Type u) (M : Type v) [CommSemiring R] [AddCommMonoid M] [Module R 
 /-- The symmetric algebra of a finite module is of finite type over the coefficient semiring,
 without any freeness assumption. -/
 instance instFiniteType [Module.Finite R M] : Algebra.FiniteType R (SymmetricAlgebra R M) := by
+  -- This finite-free presentation argument follows the original proof in
+  -- `TauCeti.LinearAlgebra.SymmetricAlgebra.Noetherian`, using Mathlib's
+  -- `SymmetricAlgebra.equivMvPolynomial` and Tau Ceti's `SymmetricAlgebra.map_surjective`.
   obtain ⟨n, g, hg⟩ := Module.Finite.exists_fin' R M
   let : Algebra.FiniteType R (SymmetricAlgebra R (Fin n → R)) :=
     Algebra.FiniteType.equiv inferInstance
