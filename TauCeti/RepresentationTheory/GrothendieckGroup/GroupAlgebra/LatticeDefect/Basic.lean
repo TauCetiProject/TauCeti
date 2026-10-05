@@ -108,6 +108,17 @@ theorem reductionK0_congr {W' : Type u} [AddCommGroup W'] [Module ℤ W'] [Modul
     reductionK0 k ρ = reductionK0 k σ :=
   ExactK0.of_congr (Representation.asModuleLinearEquivOfEquiv (e.baseChange k)).toFGModuleCatIso
 
+/-- The reduction class of a zero module is zero. -/
+@[simp]
+theorem reductionK0_eq_zero_of_subsingleton [Subsingleton W] (ρ : Representation ℤ G W) :
+    reductionK0 k ρ = 0 := by
+  have : Subsingleton (Representation.baseChange k ρ).asModule :=
+    (Representation.baseChange k ρ).asModuleEquiv.injective.subsingleton
+  exact ExactK0.of_eq_zero_of_isZero <| CategoryTheory.Limits.IsZero.of_full_of_faithful_of_isZero
+    (ModuleCat.isFG k[G]).ι _
+      (ModuleCat.isZero_of_subsingleton
+        (ModuleCat.of k[G] (Representation.baseChange k ρ).asModule))
+
 end Reduction
 
 /-! ### The six-term sequence of reductions -/
