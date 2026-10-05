@@ -83,6 +83,19 @@ noncomputable def commShiftOfStableSuspension
   unfold stableHasShift
   exact hF
 
+/-- Transport compatibility out of the suspension-generated shift to the chosen stable
+shift, retaining any already installed shift on the target. -/
+@[instance_reducible]
+noncomputable def commShiftOfSuspensionShift
+    {D : Type u'} [Category.{v'} D] [HasShift D ℤ]
+    (F : E.ProjectiveStableCategory ⥤ D)
+    (hF : letI := hE.stableSuspension.asEquivalence.hasShift
+      F.CommShift ℤ) :
+    letI := hE.stableHasShift
+    F.CommShift ℤ := by
+  unfold stableHasShift
+  exact hF
+
 /-- The shift by `1` on the stable category of a Frobenius exact structure is stable
 suspension. -/
 noncomputable def stableShiftFunctorOneIso :

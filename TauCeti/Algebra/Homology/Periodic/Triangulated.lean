@@ -1,0 +1,108 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Algebra.Homology.Periodic.CommShift
+public import TauCeti.CategoryTheory.Exact.Stable.Triangulated
+public import TauCeti.CategoryTheory.Localization.Triangulated
+
+/-!
+# Periodic homotopy categories are triangulated
+
+The componentwise split exact category of cyclic cochain complexes is Frobenius, and its
+stable category is equivalent to Mathlib's homotopy category. The equivalence commutes with
+all integral shifts, retaining the signed cyclic shift on the homotopy category. Transporting
+Happel's triangulation along it makes the periodic homotopy category triangulated.
+
+Its distinguished triangles are precisely the triangles isomorphic to images of distinguished
+stable triangles. This description supplies the categorical structure for comparison with
+explicit mapping-cone triangles. No abelianity or positive-period assumption is needed; period
+zero gives integer indexing.
+
+The transport follows `TauCeti.CommutativeAlgebra.MatrixFactorization.Triangulated`, using
+Mathlib's localization at isomorphisms.
+
+## References
+
+* D. Happel, *Triangulated Categories in the Representation Theory of Finite Dimensional
+  Algebras*, Chapter I, Section 2, Theorem 2.6.
+* B. Keller, *Chain complexes and stable categories*, Manuscripta Mathematica **67**
+  (1990), 379–417, Section 1.
+* T. Stai, *The triangulated hull of periodic complexes*, Mathematical Research Letters **25**
+  (2018), 199–236, Section 3.
+-/
+
+public section
+
+universe v u
+
+namespace TauCeti.PeriodicComplex
+
+open CategoryTheory CategoryTheory.Limits CategoryTheory.Pretriangulated
+
+variable (C : Type u) [Category.{v} C] [Preadditive C] [HasZeroObject C]
+  [HasBinaryBiproducts C] (n : ℕ)
+
+local notation "E" => ExactStructure.homologicalComplex (ExactStructure.split C)
+  (ComplexShape.up (ZMod n))
+local notation "hE" => ExactStructure.homologicalComplex_split_isFrobenius
+  (C := C) (c := ComplexShape.up (ZMod n))
+  (fun j => Exists.intro (j - 1) (sub_add_cancel j 1))
+  (fun i => Exists.intro (i + 1) rfl)
+local notation "F" => ExactStructure.homologicalComplexSplitStableToHomotopy C
+  (ComplexShape.up (ZMod n)) (fun i => Exists.intro (i + 1) rfl)
+
+/-- The periodic homotopy category is pretriangulated, with distinguished triangles transported
+from the componentwise split stable category and the existing signed cyclic shift. -/
+noncomputable instance instPretriangulated :
+    Pretriangulated (HomotopyCategory C (ComplexShape.up (ZMod n))) :=
+  letI := (hE).stableHasShift
+  letI := (hE).stableShiftFunctor_additive
+  letI := (hE).stablePretriangulated
+  letI := stableToHomotopyCommShift C n
+  Triangulated.Localization.pretriangulated F (MorphismProperty.isomorphisms _)
+
+/-- The canonical equivalence from the split stable category to the periodic homotopy category
+is a triangle functor. -/
+theorem stableToHomotopy_isTriangulated :
+    letI := (hE).stableHasShift
+    letI := (hE).stableShiftFunctor_additive
+    letI := (hE).stablePretriangulated
+    letI := stableToHomotopyCommShift C n
+    (F).IsTriangulated :=
+  letI := (hE).stableHasShift
+  letI := (hE).stableShiftFunctor_additive
+  letI := (hE).stablePretriangulated
+  letI := stableToHomotopyCommShift C n
+  Triangulated.Localization.isTriangulated_functor F (MorphismProperty.isomorphisms _)
+
+/-- The periodic homotopy category with its signed cyclic shift is triangulated. -/
+instance instIsTriangulated :
+    IsTriangulated (HomotopyCategory C (ComplexShape.up (ZMod n))) :=
+  letI := (hE).stableHasShift
+  letI := (hE).stableShiftFunctor_additive
+  letI := (hE).stablePretriangulated
+  letI := stableToHomotopyCommShift C n
+  haveI := (hE).stableIsTriangulated
+  haveI := stableToHomotopy_isTriangulated C n
+  Triangulated.Localization.isTriangulated F (MorphismProperty.isomorphisms _)
+
+/-- A periodic homotopy triangle is distinguished exactly when it is isomorphic to the image
+of a distinguished triangle in the componentwise split stable category. -/
+theorem mem_distTriang_iff (T : Triangle (HomotopyCategory C (ComplexShape.up (ZMod n)))) :
+    letI := (hE).stableHasShift
+    letI := stableToHomotopyCommShift C n
+    T ∈ distTriang _ ↔
+      ∃ (T' : Triangle (E).ProjectiveStableCategory)
+        (_ : T ≅ (F).mapTriangle.obj T'), T' ∈ (hE).stableDistinguishedTriangles := by
+  let := (hE).stableHasShift
+  let := (hE).stableShiftFunctor_additive
+  let := (hE).stablePretriangulated
+  let := stableToHomotopyCommShift C n
+  rw [← (hE).stablePretriangulated_distinguishedTriangles]
+  rfl
+
+end TauCeti.PeriodicComplex
