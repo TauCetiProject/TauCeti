@@ -124,6 +124,7 @@ lemma tendsto_correctedE2_slash_atImInfty (γ : SL(2, ℤ)) :
 
 /-- **The constant term of the corrected weight-two Eisenstein series at every cusp.**
 For `γ = [a,b;c,d]`, it is `1 - gcd(c,t)²/t`, including infinity (`c = 0`). -/
+@[simp high]
 theorem constantTermAt_correctedE2 (γ : SL(2, ℤ)) :
     constantTermAt γ (correctedE2 t) =
       1 - (Int.gcd (γ 1 0) t : ℂ) ^ 2 / t := by
