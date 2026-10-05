@@ -24,7 +24,7 @@ quotient is `2c(s + t) + u`, which is a unit because `2` is nilpotent in `ℤ/2^
 
 ## Main results
 
-* `ZMod.bijective_two_mul_sq_add`: `s ↦ 2cs² + us` is bijective when `u` is a unit.
+* `ZMod.two_mul_sq_add_bijective`: `s ↦ 2cs² + us` is bijective when `u` is a unit.
 * `ZMod.BinaryQuadraticForm.exists_basis`: a binary form with unit middle coefficient
   has one of the two standard normal forms in a basis of `(ℤ/2^{k+1})²`.
 -/
@@ -36,7 +36,7 @@ namespace ZMod
 variable {k : ℕ}
 
 /-- For a unit `u`, the map `s ↦ 2cs² + us` is a bijection of `ℤ/2^{k+1}`. -/
-theorem bijective_two_mul_sq_add {c u : ZMod (2 ^ (k + 1))} (hu : IsUnit u) :
+theorem two_mul_sq_add_bijective {c u : ZMod (2 ^ (k + 1))} (hu : IsUnit u) :
     Function.Bijective fun s : ZMod (2 ^ (k + 1)) ↦ 2 * c * s ^ 2 + u * s := by
   refine Finite.injective_iff_bijective.1 fun s t hst ↦ ?_
   have h : (s - t) * (2 * (c * (s + t)) + u) = 0 := by
@@ -52,7 +52,7 @@ private theorem exists_hyperbolic_of_two_mul (a' b : ZMod (2 ^ (k + 1)))
     ∃ e₁ e₂ f₁ f₂ : ZMod (2 ^ (k + 1)), ∀ m n,
       2 * a' * (m * e₁ + n * f₁) ^ 2 + u * (m * e₁ + n * f₁) * (m * e₂ + n * f₂) +
         b * (m * e₂ + n * f₂) ^ 2 = m * n := by
-  obtain ⟨m₀, hm₀⟩ := (bijective_two_mul_sq_add (c := a') hu).2 (-b)
+  obtain ⟨m₀, hm₀⟩ := (two_mul_sq_add_bijective (c := a') hu).2 (-b)
   simp only at hm₀
   obtain ⟨v, hv⟩ := (isUnit_two_mul_add (c := 2 * a' * m₀) hu).exists_right_inv
   set t := -(v * (2 * a') * v)
@@ -70,7 +70,7 @@ private theorem exists_sq_add_mul_add_sq_of_odd (a' b' : ZMod (2 ^ (k + 1)))
           u * (m * e₁ + n * f₁) * (m * e₂ + n * f₂) +
         (2 * b' + 1) * (m * e₂ + n * f₂) ^ 2 = m ^ 2 + m * n + n ^ 2 := by
   set a := 2 * a' + 1
-  obtain ⟨j, hj⟩ := (bijective_two_mul_sq_add (c := a) hu).2 (-b')
+  obtain ⟨j, hj⟩ := (two_mul_sq_add_bijective (c := a) hu).2 (-b')
   simp only at hj
   obtain ⟨v, hv⟩ := (isUnit_two_mul_add (c := 2 * a * j) hu).exists_right_inv
   -- `v` is a unit, hence odd.
@@ -81,7 +81,7 @@ private theorem exists_sq_add_mul_add_sq_of_odd (a' b' : ZMod (2 ^ (k + 1)))
   set c := a * (2 * v' + 1) ^ 2
   set r := a' * (2 * v' + 1) ^ 2 + 2 * v' ^ 2 + 2 * v'
   obtain ⟨z, hz⟩ := (isUnit_two_mul_add (c := 2 * c) isUnit_one.neg).exists_right_inv
-  obtain ⟨s, hs⟩ := (bijective_two_mul_sq_add (c := 1) isUnit_one.neg).2 (-(r * z))
+  obtain ⟨s, hs⟩ := (two_mul_sq_add_bijective (c := 1) isUnit_one.neg).2 (-(r * z))
   simp only at hs
   set t := 2 * s
   set s₀ := (1 - 2 * t) * (2 * v' + 1)

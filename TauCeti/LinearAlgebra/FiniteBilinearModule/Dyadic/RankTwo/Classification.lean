@@ -75,13 +75,6 @@ variable {k : ℕ}
 
 variable {A : FiniteQuadraticModule}
 
-private theorem quadratic_zsmul_add_zsmul (x y : A) (m n : ℤ) :
-    A.quadratic (m • x + n • y) = (m * m) • A.quadratic x +
-      (m * n) • A.toFiniteBilinearModule.pairing x y + (n * n) • A.quadratic y := by
-  rw [QuadraticMap.map_add A.quadratic, QuadraticMap.map_smul, QuadraticMap.map_smul,
-    QuadraticMap.polar_smul_left, QuadraticMap.polar_smul_right, polar_eq_pairing, smul_smul]
-  abel
-
 /-- The homomorphism `ℤ/2^{k+1} → A` sending `1` to an element killed by `2^{k+1}`. -/
 private def zmodHom {x : A} (hx : 2 ^ (k + 1) • x = 0) : ZMod (2 ^ (k + 1)) →+ A :=
   ZMod.lift _ ⟨zmultiplesHom A x, by rw [zmultiplesHom_apply, natCast_zsmul, hx]⟩
