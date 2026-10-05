@@ -25,10 +25,11 @@ follows from the corresponding stabilizer conjugacy theorem. The finer statement
 Galois group of `L` with these subgroups differ by conjugation by a single element of `G_K`.
 
 The same holds for any other way of realizing `G_L` inside `G_K`: if a ring isomorphism
-`e : L̄ ≃+* K̄` of algebraic closures extends the embedding `σ`, then conjugation by `e` agrees with
-`TauCeti.absoluteGaloisGroupExtend K L σ` up to a single inner automorphism of `G_K`
-(`TauCeti.exists_absoluteGaloisGroupExtend_eq_conj`). The isomorphism `e` restricts to the
-separable closures because separability over `L` and over `K` agree, `L/K` being separable.
+`e : AlgebraicClosure L ≃+* AlgebraicClosure K` of algebraic closures extends the embedding `σ`,
+then conjugation by `e` agrees with `TauCeti.absoluteGaloisGroupExtend K L σ` up to a single inner
+automorphism of `G_K` (`TauCeti.exists_absoluteGaloisGroupExtend_eq_conj`). The isomorphism `e`
+restricts to the separable closures because separability over `L` and over `K` agree, `L/K` being
+separable.
 -/
 
 public section
@@ -76,9 +77,9 @@ theorem exists_galoisSubgroupEquiv_eq_conj [FiniteDimensional K L]
     galoisSubgroupEquiv_apply_separableClosureRingEquiv, hγ]
 
 /-- **`absoluteGaloisGroupExtend` is conjugation by any extension of the embedding, up to an inner
-automorphism of `G_K`.** Let `e : L̄ ≃+* K̄` be a ring isomorphism of algebraic closures that
-extends `σ : L →ₐ[K] Kˢ`. There is `γ : G_K` such that, whenever `τ' ∈ G_K` corresponds to
-`τ ∈ G_L` under `e` (that is, `e ∘ τ = τ' ∘ e`), the image of `τ` under
+automorphism of `G_K`.** Let `e : AlgebraicClosure L ≃+* AlgebraicClosure K` be a ring isomorphism
+of algebraic closures that extends `σ : L →ₐ[K] Kˢ`. There is `γ : G_K` such that, whenever
+`τ' ∈ G_K` corresponds to `τ ∈ G_L` under `e` (that is, `e ∘ τ = τ' ∘ e`), the image of `τ` under
 `absoluteGaloisGroupExtend K L σ` is `γ * τ' * γ⁻¹`. The element `γ` is the automorphism of `Kˢ`
 carrying the restriction of `e` to the separable closures to `separableClosureRingEquiv K L σ`. -/
 theorem exists_absoluteGaloisGroupExtend_eq_conj [FiniteDimensional K L]
