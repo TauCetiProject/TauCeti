@@ -125,7 +125,7 @@ private noncomputable def mackeyCoindMap (s : G) :
         mackeySubgroup_le_conj) g Φ) ≫
     (DiscreteCoind.transIso (A := M) (U := V) (V := (mackeySubgroup s U V).subgroupOf V)
       (W := mackeySubgroup s U V) (Subgroup.map_subgroupOf_eq_of_le mackeySubgroup_le_right)
-      (subgroupOf_smul_eq V (mackeySubgroup s U V) M) isClosed_closure.isCompact).inv ≫
+      (Subgroup.subgroupOf_smul_eq V (mackeySubgroup s U V) M) isClosed_closure.isCompact).inv ≫
     ofDiscreteModuleMap
       (DiscreteCoind.map
         (DiscreteCoind.trace V ((mackeySubgroup s U V).subgroupOf V) M).toIntLinearMap
@@ -200,12 +200,12 @@ private theorem mackeyCoindMap_apply (s : G) (Φ : DiscreteCoind G U M) (x : G) 
   let c := DiscreteCoind.conj U (mackeySubgroup s U V) M s mackeySubgroup_le_conj
   let t := DiscreteCoind.transIso (A := M) (U := V) (V := W') (W := mackeySubgroup s U V)
     (Subgroup.map_subgroupOf_eq_of_le mackeySubgroup_le_right)
-    (subgroupOf_smul_eq V (mackeySubgroup s U V) M) isClosed_closure.isCompact
+    (Subgroup.subgroupOf_smul_eq V (mackeySubgroup s U V) M) isClosed_closure.isCompact
   let m := DiscreteCoind.map (DiscreteCoind.trace V W' M).toAddMonoidHom.toIntLinearMap
     (fun v φ => _root_.map_smul (DiscreteCoind.trace V W' M) v φ)
   let e := DiscreteCoind.transEquiv (A := M) (U := V) (V := W') (W := mackeySubgroup s U V)
     (Subgroup.map_subgroupOf_eq_of_le mackeySubgroup_le_right)
-    (subgroupOf_smul_eq V (mackeySubgroup s U V) M) isClosed_closure.isCompact
+    (Subgroup.subgroupOf_smul_eq V (mackeySubgroup s U V) M) isClosed_closure.isCompact
   -- A composite of morphisms of `TopRep` evaluates as the composite of their underlying maps.
   have h : (mackeyCoindMap U V M s).hom Φ =
       (ofDiscreteModuleMap m.toAddMonoidHom.toIntLinearMap
