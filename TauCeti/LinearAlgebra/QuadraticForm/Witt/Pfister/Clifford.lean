@@ -18,6 +18,9 @@ values on the additive generators of the square and cube of the fundamental idea
 Adjoining a two-fold Pfister form to any even-rank class multiplies its Clifford invariant
 by the corresponding quaternion symbol.
 
+Together with additivity and descent to Witt classes, these generator values determine the
+Clifford homomorphism on the square of the fundamental ideal and its vanishing on the cube.
+
 We use the minus-sign convention for Pfister forms. The computations use the actual Clifford
 invariant, defined by the Clifford algebra in even rank, and its binary-plane recurrence.
 
