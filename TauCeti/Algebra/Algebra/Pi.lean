@@ -23,9 +23,10 @@ characters as it has factors. The Burnside--Dixon--Schneider algorithm consumes 
 count the central characters of a group algebra whose centre has been split into coordinates.
 
 In addition, this module provides the general contravariant pullback `Pi.pullback` between
-function algebras: given `f : α → β`, precomposition induces an `R`-algebra homomorphism
+full function algebras: given `f : α → β`, precomposition induces an `R`-algebra homomorphism
 `(β → R) →ₐ[R] (α → R)`. This serves as general algebraic infrastructure for pulling back functions
-and coordinate rings along morphisms (such as group translations or morphisms of varieties).
+along arbitrary set-theoretic maps; it applies to coordinate rings when an explicit equivalence with
+a function algebra is available, as for finite constant groups.
 
 ## Main definitions
 
