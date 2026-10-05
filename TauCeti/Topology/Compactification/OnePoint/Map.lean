@@ -14,8 +14,8 @@ public import Mathlib.Topology.Maps.Proper.Basic
 The extension `OnePoint.map f` sends infinity to infinity. Its range is the range of `f`,
 embedded in the target compactification, together with infinity, and it is injective exactly
 when `f` is injective. For a proper map between arbitrary topological spaces, this extension
-is continuous: preimages of closed compact sets are closed and compact, so Mathlib's
-`OnePoint.continuous_map` applies.
+is continuous. These lemmas allow proper parametrizations to be compactified, with an explicit
+description of their range after adjoining infinity and a criterion for injectivity.
 -/
 
 public section
