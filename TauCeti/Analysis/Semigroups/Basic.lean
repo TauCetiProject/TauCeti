@@ -34,10 +34,12 @@ namespace TauCeti.Semigroups
 
 variable (X : Type*) [NormedAddCommGroup X] [NormedSpace ℝ X]
 
-/-- A strongly continuous one-parameter semigroup (C₀-semigroup) on a Banach space.
+/-- A strongly continuous one-parameter semigroup (C₀-semigroup) on a normed space `X`.
 
 The semigroup is indexed by nonnegative real time. The axioms are `S 0 = Id`,
-`S (s + t) = S s ∘ S t`, and strong continuity at `0`. -/
+`S (s + t) = S s ∘ S t`, and strong continuity at `0`. Note that the C₀-semigroup theory
+proper (uniform boundedness, continuity of orbits at positive times) additionally
+needs `X` complete. -/
 structure StronglyContinuousSemigroup where
   /-- The semigroup operator at time `t : ℝ≥0`. -/
   toFun : ℝ≥0 → X →L[ℝ] X
@@ -355,6 +357,12 @@ private theorem StronglyContinuousSemigroup.strongContWithinAt_right
   have ht_nn : 0 ≤ t - t₀ := by linarith
   rw [← S.realOperator_add_apply t₀ (t - t₀) ht₀ ht_nn, add_sub_cancel]
 
+/-! ## Results requiring completeness
+
+When `X` is complete, pointwise boundedness on `[0, 1]` implies uniform operator-norm
+boundedness on `[0, 1]` via the Banach--Steinhaus theorem. From this, uniform boundedness on
+compact intervals and left-continuity (and thus full continuity) of orbits follow. -/
+
 section CompleteSpace
 
 variable [CompleteSpace X]
@@ -362,7 +370,8 @@ variable [CompleteSpace X]
 /-- The operator norm of a C₀-semigroup is bounded on `[0, 1]`.
 
 One direction of [EN] Prop. I.5.3: strong continuity implies uniform boundedness
-on compact intervals. -/
+on compact intervals. This rests on the Banach--Steinhaus theorem and therefore
+requires `X` to be complete. -/
 theorem StronglyContinuousSemigroup.normBoundedOnUnitInterval (S : StronglyContinuousSemigroup X) :
     ∃ (M : ℝ), 1 ≤ M ∧
       ∀ (t : ℝ), 0 ≤ t → t ≤ 1 → ‖S.realOperator t‖ ≤ M := by
