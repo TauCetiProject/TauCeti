@@ -46,6 +46,10 @@ open scoped TensorProduct
 
 noncomputable section
 
+-- Prefer the canonical basis of a ring over itself to the PID/torsion-free route when
+-- simplifying base-change dimensions.
+attribute [instance high] Module.Free.self
+
 /-- The canonical invertibility witness for two over the rationals. -/
 local instance spinorNormImageInvertibleTwoRat : Invertible (2 : ℚ) :=
   invertibleOfNonzero two_ne_zero
