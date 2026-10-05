@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Data.ZMod.BinaryQuadraticForm
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Dyadic.RankTwo.Basic
 
+import TauCeti.Data.ZMod.BinaryQuadraticForm
 import TauCeti.Data.ZMod.Two
 
 /-!
