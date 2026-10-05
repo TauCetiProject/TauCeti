@@ -88,7 +88,7 @@ from its zeroth term whenever the first differential vanishes against the target
 noncomputable def augmentationHomLinearEquiv
     (h : ∀ f : r.termObj 0 ⟶ N, r.differential 0 ≫ f = 0) :
     (M ⟶ N) ≃ₗ[k] (r.termObj 0 ⟶ N) :=
-  ShortComplex.Exact.homLinearEquiv
+  homLinearEquivOfExact
     (S := CategoryTheory.ShortComplex.mk (r.differential 0) r.augmentation
       r.differential_zero_comp_augmentation)
     (GradedModuleCat.exact_iff.mpr r.exact_d_π) h
@@ -99,7 +99,7 @@ theorem augmentationHomLinearEquiv_apply
     (h : ∀ f : r.termObj 0 ⟶ N, r.differential 0 ≫ f = 0) (f : M ⟶ N) :
     r.augmentationHomLinearEquiv h f = r.augmentation ≫ f := by
   unfold augmentationHomLinearEquiv
-  exact ShortComplex.Exact.homLinearEquiv_apply
+  exact homLinearEquivOfExact_apply
     (S := CategoryTheory.ShortComplex.mk (r.differential 0) r.augmentation
       r.differential_zero_comp_augmentation) _ h f
 
@@ -110,7 +110,7 @@ theorem augmentation_comp_augmentationHomLinearEquiv_symm
     (f : r.termObj 0 ⟶ N) :
     r.augmentation ≫ (r.augmentationHomLinearEquiv h).symm f = f := by
   unfold augmentationHomLinearEquiv
-  exact ShortComplex.Exact.comp_homLinearEquiv_symm
+  exact comp_homLinearEquivOfExact_symm
     (S := CategoryTheory.ShortComplex.mk (r.differential 0) r.augmentation
       r.differential_zero_comp_augmentation) _ h f
 
@@ -207,7 +207,7 @@ noncomputable def extLinearEquivOfCompEqZero (n : ℕ)
     (h₁ : ∀ f : r.termObj (n + 1) ⟶ N, r.differential (n + 1) ≫ f = 0)
     (h₂ : ∀ g : r.termObj n ⟶ N, r.differential n ≫ g = 0) :
     (r.termObj (n + 1) ⟶ N) ≃ₗ[k] Ext.{w} M N (n + 1) :=
-  ProjectiveResolution.extLinearEquivOfIso r.toProjectiveResolution n
+  projectiveResolutionExtLinearEquivOfIso r.toProjectiveResolution n
     (r.toProjectiveResolutionXIso (n + 1))
     (r.toProjectiveResolution_d_comp_eq_zero (n + 1) h₁)
     (r.toProjectiveResolution_d_comp_eq_zero n h₂)
@@ -222,7 +222,7 @@ theorem extLinearEquivOfCompEqZero_apply (n : ℕ)
     r.extLinearEquivOfCompEqZero n h₁ h₂ f =
       r.toProjectiveResolution.extMk ((r.toProjectiveResolutionXIso (n + 1)).hom ≫ f)
         (n + 2) rfl (r.toProjectiveResolution_d_comp_eq_zero (n + 1) h₁ _) :=
-  ProjectiveResolution.extLinearEquivOfIso_apply _ n _ _ _ f
+  projectiveResolutionExtLinearEquivOfIso_apply _ n _ _ _ f
 
 end GradedProjectiveResolution
 

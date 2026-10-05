@@ -19,13 +19,13 @@ the degree-zero Hom computation for a projective resolution without any Ext hypo
 
 ## Main definitions
 
-* `TauCeti.ShortComplex.Exact.homLinearEquiv`: the linear identification induced by
+* `TauCeti.homLinearEquivOfExact`: the linear identification induced by
   precomposition with the second map of an exact short complex.
 -/
 
 public section
 
-namespace TauCeti.ShortComplex.Exact
+namespace TauCeti
 
 open CategoryTheory CategoryTheory.Limits
 
@@ -36,7 +36,7 @@ variable {C : Type u} [Category.{v} C] [Abelian C] {k : Type t} [Ring k] [Linear
 
 /-- Precomposition with an epimorphic second map of an exact short complex identifies the
 two Hom modules when every map to the target kills the first map. -/
-noncomputable def homLinearEquiv (hS : S.Exact)
+noncomputable def homLinearEquivOfExact (hS : S.Exact)
     (h : ∀ f : S.X₂ ⟶ Y, S.f ≫ f = 0) : (S.X₃ ⟶ Y) ≃ₗ[k] (S.X₂ ⟶ Y) :=
   LinearEquiv.ofBijective (Linear.leftComp k Y S.g)
     ⟨fun _ _ hfg ↦ (cancel_epi S.g).mp hfg,
@@ -45,15 +45,15 @@ noncomputable def homLinearEquiv (hS : S.Exact)
 /-- The Hom equivalence is precomposition with the second map. -/
 -- `ofBijective` preserves the underlying map; `Linear.leftComp` is precomposition.
 @[simp]
-theorem homLinearEquiv_apply (hS : S.Exact)
+theorem homLinearEquivOfExact_apply (hS : S.Exact)
     (h : ∀ f : S.X₂ ⟶ Y, S.f ≫ f = 0) (f : S.X₃ ⟶ Y) :
-    homLinearEquiv (k := k) hS h f = S.g ≫ f := (rfl)
+    homLinearEquivOfExact (k := k) hS h f = S.g ≫ f := (rfl)
 
 /-- The inverse Hom equivalence lifts a map along the second map. -/
 @[simp]
-theorem comp_homLinearEquiv_symm (hS : S.Exact)
+theorem comp_homLinearEquivOfExact_symm (hS : S.Exact)
     (h : ∀ f : S.X₂ ⟶ Y, S.f ≫ f = 0) (f : S.X₂ ⟶ Y) :
-    S.g ≫ (homLinearEquiv (k := k) hS h).symm f = f :=
-  (homLinearEquiv (k := k) hS h).apply_symm_apply f
+    S.g ≫ (homLinearEquivOfExact (k := k) hS h).symm f = f :=
+  (homLinearEquivOfExact (k := k) hS h).apply_symm_apply f
 
-end TauCeti.ShortComplex.Exact
+end TauCeti

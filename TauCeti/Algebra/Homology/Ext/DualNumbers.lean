@@ -378,7 +378,7 @@ theorem homDualNumberResidueEquiv_apply (f : dualNumberResidue k ⟶ dualNumberR
 noncomputable def extDualNumberResidueSuccEquiv (n : ℕ) :
     (dualNumberFree k ⟶ dualNumberResidue k) ≃ₗ[k]
       Ext.{u} (dualNumberResidue k) (dualNumberResidue k) (n + 1) :=
-  ProjectiveResolution.extLinearEquivOfIso (dualNumberProjectiveResolution k) n
+  projectiveResolutionExtLinearEquivOfIso (dualNumberProjectiveResolution k) n
     (dualNumberProjectiveResolutionXIso k (n + 1))
     (dualNumberProjectiveResolution_comp_eq_zero k _ _)
     (dualNumberProjectiveResolution_comp_eq_zero k _ _)
@@ -392,7 +392,7 @@ theorem extDualNumberResidueSuccEquiv_apply (n : ℕ)
       (dualNumberProjectiveResolution k).extMk
         ((dualNumberProjectiveResolutionXIso k (n + 1)).hom ≫ f) (n + 2) rfl
         (dualNumberProjectiveResolution_comp_eq_zero k _ _ _) :=
-  ProjectiveResolution.extLinearEquivOfIso_apply _ n _ _ _ f
+  projectiveResolutionExtLinearEquivOfIso_apply _ n _ _ _ f
 
 /-- **`Extⁿ_A(S, S) ≅ k` for every `n`**, where `A = k[ε]` is the ring of dual numbers and
 `S = A/(ε)`: the periodic resolution of `S` has zero `Hom(-, S)`-differentials. -/
