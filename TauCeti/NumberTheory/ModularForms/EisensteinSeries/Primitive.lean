@@ -21,8 +21,8 @@ characterization `mem_primitiveEisensteinSubspace_iff`.
 
 Only the pairs `(0, 1)` and `(0, -1)` survive at infinity. Consequently its constant term at
 the cusp represented by `γ` detects the residue of the bottom row of `γ⁻¹`, with the sign
-`(-1)^k` for its negative. These constant terms distinguish linear combinations of the
-primitive Eisenstein series: their span has zero intersection with the cusp forms.
+`(-1)^k` for its negative. These constant terms show that every cuspidal element of the
+primitive Eisenstein span is zero.
 
 This gives the directness input for cusp–Eisenstein decompositions without choosing cusp
 representatives or assuming that the Eisenstein series span the noncuspidal quotient.
