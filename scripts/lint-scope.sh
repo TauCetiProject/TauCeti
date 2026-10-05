@@ -11,7 +11,7 @@
 #
 # Inputs (environment):
 #   GH_TOKEN, REPO   GitHub API access and the repository
-#   EVENT            pull_request_target | workflow_dispatch | merge_group | push
+#   EVENT            pull_request_target | workflow_dispatch | merge_group | repository_dispatch | push
 #   NUM              the PR number (pull_request_target, workflow_dispatch)
 #   BASE, HEAD       commit SHAs whose three-dot diff is the change: for a PR its base commit and
 #                    the exact head being built, so the scope is bound to that immutable commit
@@ -51,14 +51,17 @@ case "$EVENT" in
     [ "$(jq '.files | length' <<<"$compare")" -lt 300 ] || full "the compare API's 300-file cap"
     files=$(jq -r '.files[] | [.status, .filename] | @tsv' <<<"$compare")
     ;;
-  merge_group|push)
+  merge_group|repository_dispatch|push)
     [[ "${BASE:-}" =~ ^[0-9a-f]{40}$ && ! "$BASE" =~ ^0+$ ]] || full "no base commit"
     [[ "${HEAD:-}" =~ ^[0-9a-f]{40}$ ]] || full "no head commit"
     compare=$(gh api "repos/$REPO/compare/$BASE...$HEAD")
-    # Each PR lands as one squashed commit titled `... (#N)`.
+    # GitHub merge groups and bors staging both use one squash commit per PR,
+    # titled `... (#N)`. The trusted workflow validates bors staging and its
+    # immutable base/head before calling this script. Unknown titles stay full lint.
     prs=$(jq -r '.commits[].commit.message | split("\n")[0]' <<<"$compare" \
       | sed -nE 's/.*\(#([0-9]+)\)$/\1/p' | sort -u)
     ncommits=$(jq '.commits | length' <<<"$compare")
+    [ "$(jq '.total_commits' <<<"$compare")" = "$ncommits" ] || full "the compare API truncated the commit list"
     nprs=$(grep -c . <<<"$prs" || true)
     [ "$nprs" -eq "$ncommits" ] || full "$ncommits commit(s) but $nprs PR number(s) in their titles"
     [ "$(jq '.files | length' <<<"$compare")" -lt 300 ] || full "the compare API's 300-file cap"

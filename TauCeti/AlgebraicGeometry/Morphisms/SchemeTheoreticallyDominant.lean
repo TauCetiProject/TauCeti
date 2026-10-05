@@ -35,7 +35,7 @@ variable {W X Y S : Scheme.{u}}
 
 /-- Two morphisms into a separated scheme over a base agree if they agree after precomposition
 with a scheme-theoretically dominant morphism. The source need not be reduced. -/
-theorem _root_.AlgebraicGeometry.Scheme.Hom.ext_of_isSchemeTheoreticallyDominant
+theorem ext_of_isSchemeTheoreticallyDominant
     (ι : W ⟶ X) [IsSchemeTheoreticallyDominant ι] {f g : X ⟶ Y}
     (s : Y ⟶ S) [IsSeparated s] (h : f ≫ s = g ≫ s)
     (hι : ι ≫ f = ι ≫ g) : f = g := by

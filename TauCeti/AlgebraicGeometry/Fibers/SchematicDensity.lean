@@ -62,6 +62,6 @@ theorem ext_of_genericFiberι_eq (hRK : Function.Injective (algebraMap R K))
     (h : f ≫ s = g ≫ s) (hK : genericFiberι R K toBase ≫ f = genericFiberι R K toBase ≫ g) :
     f = g := by
   have := isSchemeTheoreticallyDominant_genericFiberι R K hRK toBase
-  exact (genericFiberι R K toBase).ext_of_isSchemeTheoreticallyDominant s h hK
+  exact ext_of_isSchemeTheoreticallyDominant (genericFiberι R K toBase) s h hK
 
 end TauCeti

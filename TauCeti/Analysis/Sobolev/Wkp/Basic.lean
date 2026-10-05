@@ -211,7 +211,7 @@ theorem firstOrderL_apply (k : ℕ) (u : Wkp mu Omega p (k + 1)) :
   (rfl)
 
 /-- Forgetting one derivative before taking the first-order part has no effect. -/
-@[simp] theorem firstOrder_succ (k : ℕ) (u : Wkp mu Omega p (k + 2)) :
+theorem firstOrder_succ (k : ℕ) (u : Wkp mu Omega p (k + 2)) :
     firstOrder (k + 1) u = firstOrder k (lowerOrder (k + 1) u) := by
   simp only [firstOrder, firstOrderL, lowerOrder, ContinuousLinearMap.comp_apply]
 
@@ -277,6 +277,7 @@ theorem lowerOrder_zero (u : Wkp mu Omega p 1) : lowerOrder 0 u = W1p.value u :=
     exact W1p.valueL_apply u
 
 /-- At first order, the generic value projection is the `W1p` value projection. -/
+@[simp]
 theorem value_one (u : Wkp mu Omega p 1) : value 1 u = W1p.value u := by
   simp only [value_succ, value_zero, lowerOrder_zero]
 
@@ -362,6 +363,14 @@ theorem lowerOrder_mk (k : ℕ) (u : Wkp mu Omega p (k + 1))
   rw [lowerOrder_succ]
   exact WeakDerivStep.prev_mk
     (sobolevStage (mu := mu) (Omega := Omega) (p := p) k).iteratedGradientL u D h
+
+/-- The value component of `mk k u D h` is the value component of `u`. -/
+@[simp]
+theorem value_mk (k : ℕ) (u : Wkp mu Omega p (k + 1))
+    (D : Lp (IteratedGradient E (k + 1)) p (mu.restrict Omega))
+    (h : HasWeakFDerivOn mu Omega (iteratedGradient k u) D) :
+    value (k + 2) (mk k u D h) = value (k + 1) u := by
+  rw [value_succ, lowerOrder_mk]
 
 /-- The highest weak derivative of `mk k u D h` is the adjoined derivative `D`. -/
 @[simp]

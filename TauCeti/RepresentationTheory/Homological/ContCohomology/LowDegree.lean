@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.QuotientGroup.Basic
-public import Mathlib.Topology.Algebra.ContinuousMonoidHom
+public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 public import Mathlib.Topology.Algebra.MulAction
 public import Mathlib.Topology.ContinuousMap.Algebra
 public import TauCeti.GroupTheory.GroupAction.FixedPoints
@@ -963,6 +963,14 @@ theorem H1EquivOfSmulEqSelf_symm_apply
   (H1EquivOfSmulEqSelf htriv).symm_apply_eq.2
     (((Z1EquivOfSmulEqSelf htriv).apply_symm_apply φ).symm.trans
       (H1EquivOfSmulEqSelf_mk htriv _).symm)
+
+/-- A compact monoid has vanishing first continuous cohomology with trivial, discrete,
+torsion-free coefficients. In particular, this applies to trivial integer coefficients. -/
+theorem subsingleton_H1_of_isAddTorsionFree [CompactSpace G] [DiscreteTopology M]
+    [IsAddTorsionFree M] : Subsingleton (H1 G M) := by
+  refine subsingleton_of_forall_eq 0 fun x ↦ (H1EquivOfSmulEqSelf htriv).injective ?_
+  apply Additive.toMul.injective
+  exact (Additive.toMul ((H1EquivOfSmulEqSelf htriv) x)).eq_one_of_isMulTorsionFree
 
 end TrivialCohomology
 

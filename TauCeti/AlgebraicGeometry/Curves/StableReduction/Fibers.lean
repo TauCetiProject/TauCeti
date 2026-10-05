@@ -54,6 +54,13 @@ lemma genericι_hom {M N : Model R K C toK} (f : M ⟶ N) :
   rw [genericι_def, genericι_def, Category.assoc,
     ← M.baseChangeHom_genericFiberι f.hom f.overBase, ← Category.assoc, h]
 
+/-- Precomposed with the chosen identification of the generic fibre with `C`, the inclusion of a
+model's chosen generic fibre is the canonical inclusion of the generic fibre. -/
+@[reassoc (attr := simp)]
+lemma genericFiberIso_hom_left_genericι (M : Model R K C toK) :
+    M.genericFiberIso.hom.left ≫ M.genericι = genericFiberι R K M.toBase := by
+  rw [genericι, Over.hom_left_inv_left_assoc]
+
 /-- The inclusion of a model's chosen generic fibre lies over the fraction-field morphism. -/
 @[reassoc (attr := simp)]
 lemma genericι_toBase (M : Model R K C toK) :
@@ -70,7 +77,7 @@ lemma isPullback_genericι (M : Model R K C toK) :
     (Iso.refl _) (Iso.refl _) (Iso.refl _) ?_ ?_ ?_ ?_
   · have hleft :
         (Comma.leftIso M.genericFiberIso).hom = M.genericFiberIso.hom.left := rfl
-    rw [hleft, genericι, ← Category.assoc, Over.hom_left_inv_left, Category.id_comp]
+    rw [hleft, genericFiberIso_hom_left_genericι]
     simp
   · exact M.genericFiberIso.hom.w.symm
   · simp

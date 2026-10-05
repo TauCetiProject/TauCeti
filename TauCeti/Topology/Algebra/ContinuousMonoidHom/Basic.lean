@@ -43,6 +43,24 @@ namespace TauCeti
 
 variable {G : Type*} [Group G] [TopologicalSpace G]
 
+/-- A continuous homomorphism from a compact monoid to a discrete torsion-free left-cancellative
+monoid is trivial:
+its image is finite, hence consists of finite-order elements. -/
+@[to_additive /-- A continuous additive homomorphism from a compact additive monoid to a discrete
+torsion-free left-cancellative additive monoid is zero: its image is finite. -/]
+theorem _root_.ContinuousMonoidHom.eq_one_of_isMulTorsionFree
+    {A B : Type*} [Monoid A] [TopologicalSpace A] [CompactSpace A]
+    [LeftCancelMonoid B] [TopologicalSpace B] [DiscreteTopology B] [IsMulTorsionFree B]
+    (f : A →ₜ* B) : f = 1 := by
+  ext a
+  by_contra ha
+  have hfin : (Set.range fun k : ℕ ↦ f a ^ k).Finite :=
+    (isCompact_range f.continuous).finite_of_discrete.subset <| by
+      rintro _ ⟨k, rfl⟩
+      exact ⟨a ^ k, map_pow f a k⟩
+  exact (Set.infinite_range_of_injective
+    (injective_pow_iff_not_isOfFinOrder.2 (not_isOfFinOrder_of_isMulTorsionFree ha))) hfin
+
 /-- A continuous homomorphism into a commutative topological group has finite order exactly when
 all its values have a common positive exponent equal to one. -/
 theorem _root_.ContinuousMonoidHom.isOfFinOrder_iff_exists_pow_apply_eq_one

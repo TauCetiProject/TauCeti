@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Idempotents.PrimitiveDecomposition
+public import TauCeti.RingTheory.Idempotents.Primitive.Decomposition
 public import TauCeti.RingTheory.Idempotents.Projective
 public import TauCeti.Algebra.Module.ProjectiveCover.Simple
 
@@ -59,16 +59,6 @@ theorem IsPrimitiveIdempotent.isSimpleModule_quotient_jacobson_smul_top
   have := he.isIdempotentElem.projective_span_singleton
   exact he.isIndecomposableModule.isSimpleModule_quotient_jacobson_smul_top
     (isFiniteLength_iff_isNoetherian_isArtinian.mpr ⟨inferInstance, inferInstance⟩)
-
-/-- In a left Artinian ring an idempotent is primitive exactly when the head of its left
-ideal is simple. -/
-theorem isPrimitiveIdempotent_iff_isSimpleModule_quotient_jacobson_smul_top
-    (he : IsIdempotentElem e) :
-    IsPrimitiveIdempotent e ↔ IsSimpleModule R ((Ideal.span {e} : Ideal R) ⧸
-      Ring.jacobson R • (⊤ : Submodule R (Ideal.span {e} : Ideal R))) := by
-  refine ⟨fun h ↦ h.isSimpleModule_quotient_jacobson_smul_top, fun h ↦ ?_⟩
-  have := h
-  exact isPrimitiveIdempotent_of_isSimpleModule_quotient_jacobson_smul_top he
 
 /-- Every surjection from the left ideal of a primitive idempotent onto a simple module is
 a projective cover. -/

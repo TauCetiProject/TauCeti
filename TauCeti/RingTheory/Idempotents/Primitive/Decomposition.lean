@@ -10,7 +10,7 @@ public import Mathlib.RingTheory.HopkinsLevitzki
 public import TauCeti.RingTheory.Idempotents.Module
 public import TauCeti.RingTheory.KrullSchmidt.Existence
 public import TauCeti.RingTheory.KrullSchmidt.Uniqueness
-public import TauCeti.RingTheory.PrimitiveIdempotent
+public import TauCeti.RingTheory.Idempotents.Primitive.Basic
 
 /-!
 # Decomposing `1` into primitive orthogonal idempotents
