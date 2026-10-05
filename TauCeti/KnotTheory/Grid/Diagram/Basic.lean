@@ -343,6 +343,16 @@ theorem mem_pointSet_relabelColumns (κ : Equiv.Perm (Fin n)) (x : GridState n) 
     p ∈ (x.relabelColumns κ).pointSet ↔ (κ.symm p.1, p.2) ∈ x.pointSet := by
   simp
 
+/-- Undoing a row relabeling transports the relabeled state's points to the original
+point set. -/
+theorem pointSet_eq_map_relabelRows (x : GridState n) (ρ : Equiv.Perm (Fin n)) :
+    x.pointSet = (x.relabelRows ρ).pointSet.map
+      ((Equiv.refl (Fin n)).prodCongr ρ.symm).toEmbedding := by
+  ext p
+  simp only [Finset.mem_map_equiv, Equiv.prodCongr_symm, Equiv.symm_symm,
+    Equiv.refl_symm, Equiv.prodCongr_apply, Prod.map_apply', Equiv.refl_apply,
+    mem_pointSet_relabelRows, Equiv.symm_apply_apply]
+
 /-- Undoing a column relabeling transports the relabeled state's points to the original
 point set. -/
 theorem pointSet_eq_map_relabelColumns (x : GridState n) (κ : Equiv.Perm (Fin n)) :
@@ -352,6 +362,14 @@ theorem pointSet_eq_map_relabelColumns (x : GridState n) (κ : Equiv.Perm (Fin n
   simp only [Finset.mem_map_equiv, Equiv.prodCongr_symm, Equiv.symm_symm,
     Equiv.refl_symm, Equiv.prodCongr_apply, Prod.map_apply', Equiv.refl_apply,
     mem_pointSet_relabelColumns, Equiv.symm_apply_apply]
+
+/-- A set of squares relabeled back avoids a state's points exactly when the set avoids
+the row-relabeled state's points. -/
+theorem disjoint_map_relabelRows_pointSet_iff (x : GridState n) (ρ : Equiv.Perm (Fin n))
+    (S : Finset (Fin n × Fin n)) :
+    Disjoint (S.map ((Equiv.refl (Fin n)).prodCongr ρ.symm).toEmbedding) x.pointSet ↔
+      Disjoint S (x.relabelRows ρ).pointSet := by
+  rw [x.pointSet_eq_map_relabelRows ρ, Finset.disjoint_map]
 
 /-- A set of squares relabeled back avoids a state's points exactly when the set avoids
 the column-relabeled state's points. -/
@@ -929,6 +947,15 @@ theorem mem_XSet_relabelColumns (κ : Equiv.Perm (Fin n)) (p : Fin n × Fin n) :
     p ∈ (G.relabelColumns κ).XSet ↔ (κ.symm p.1, p.2) ∈ G.XSet := by
   simp [XSet]
 
+/-- A set of squares with rows relabeled back avoids the original X-markings exactly when
+the set avoids the row-relabeled diagram's X-markings. -/
+theorem disjoint_map_relabelRows_XSet_iff (ρ : Equiv.Perm (Fin n))
+    (S : Finset (Fin n × Fin n)) :
+    Disjoint (S.map ((Equiv.refl (Fin n)).prodCongr ρ.symm).toEmbedding) G.XSet ↔
+      Disjoint S (G.relabelRows ρ).XSet := by
+  simpa only [XSet, relabelRows_X] using
+    G.X.disjoint_map_relabelRows_pointSet_iff ρ S
+
 /-- A set of squares relabeled back avoids the original X-markings exactly when the set
 avoids the relabeled diagram's X-markings. -/
 theorem disjoint_map_relabelColumns_XSet_iff (κ : Equiv.Perm (Fin n))
@@ -985,6 +1012,14 @@ theorem mem_OSet_swapColumns (a b : Fin n) (p : Fin n × Fin n) :
 theorem mem_XSet_swapColumns (a b : Fin n) (p : Fin n × Fin n) :
     p ∈ (G.swapColumns a b).XSet ↔ (Equiv.swap a b p.1, p.2) ∈ G.XSet := by
   simp [swapColumns]
+
+/-- A set of squares with rows swapped back avoids the original X-markings exactly when
+the set avoids the row-swapped diagram's X-markings. -/
+theorem disjoint_map_swapRows_XSet_iff (a b : Fin n) (S : Finset (Fin n × Fin n)) :
+    Disjoint (S.map ((Equiv.refl (Fin n)).prodCongr (Equiv.swap a b)).toEmbedding) G.XSet ↔
+      Disjoint S (G.swapRows a b).XSet := by
+  simpa only [swapRows, Equiv.symm_swap] using
+    G.disjoint_map_relabelRows_XSet_iff (Equiv.swap a b) S
 
 /-- A set of squares swapped back avoids the original X-markings exactly when the set
 avoids the swapped diagram's X-markings. -/

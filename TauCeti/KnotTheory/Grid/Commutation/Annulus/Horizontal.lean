@@ -193,6 +193,7 @@ theorem X_next_eq_turnRow_of_mem_pentagonRectangleOppositeSideOrder (x : GridSta
 
 /-- The horizontal rectangle--pentagon family is empty unless the first commuted column's
 X-marking lies in the turn row. -/
+@[simp]
 theorem rectanglePentagonOppositeSideOrder_eq_empty_of_X_column_ne_turnRow (x : GridState n)
     (hX : G.X C.column ≠ C.turnRow) : G.rectanglePentagonOppositeSideOrder C x = ∅ := by
   apply Finset.eq_empty_iff_forall_notMem.2
@@ -201,12 +202,14 @@ theorem rectanglePentagonOppositeSideOrder_eq_empty_of_X_column_ne_turnRow (x : 
 
 /-- The horizontal pentagon--rectangle family is empty unless the second commuted column's
 X-marking lies in the turn row. -/
+@[simp]
 theorem pentagonRectangleOppositeSideOrder_eq_empty_of_X_next_ne_turnRow (x : GridState n)
-    (hX : G.X (finRotate n C.column) ≠ C.turnRow) :
+    (hX : haveI := C.column.neZero; G.X (C.column + 1) ≠ C.turnRow) :
     G.pentagonRectangleOppositeSideOrder C x = ∅ := by
   apply Finset.eq_empty_iff_forall_notMem.2
   intro D hD
-  exact hX (G.X_next_eq_turnRow_of_mem_pentagonRectangleOppositeSideOrder C x D hD)
+  exact hX (by simpa only [finRotate_apply] using
+    G.X_next_eq_turnRow_of_mem_pentagonRectangleOppositeSideOrder C x D hD)
 
 /-- At least one horizontal family in the diagonal pentagon chain-map equation is empty.
 The two commuted columns cannot have their X-markings in the same turn row. -/
@@ -218,7 +221,8 @@ theorem rectanglePentagonOppositeSideOrder_eq_empty_or_pentagonRectangleOpposite
   · right
     apply G.pentagonRectangleOppositeSideOrder_eq_empty_of_X_next_ne_turnRow C x
     intro hX'
-    exact C.column_ne_next (G.X.toPerm.injective (hX.trans hX'.symm))
+    exact C.column_ne_next (by simpa only [finRotate_apply] using
+      (G.X.toPerm.injective (hX.trans hX'.symm)))
   · exact Or.inl (G.rectanglePentagonOppositeSideOrder_eq_empty_of_X_column_ne_turnRow C x hX)
 
 end GridDiagram
