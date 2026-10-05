@@ -59,6 +59,13 @@ def singularCross (X Y : TopCat.{w}) (μ : M ⊗ N ⟶ P) (p q n : ℕ) (h : p +
       (X ⊗ Y).singularCohomology (R ⊗ S) k P n :=
   ChainComplex.cup k (TopCat.alexanderWhitney X Y R S) μ p q n h
 
+/-- The external product is the cohomology cup product along Alexander–Whitney. -/
+lemma singularCross_def (X Y : TopCat.{w}) (μ : M ⊗ N ⟶ P)
+    (p q n : ℕ) (h : p + q = n) :
+    singularCross k X Y μ p q n h =
+      ChainComplex.cup k (TopCat.alexanderWhitney X Y R S) μ p q n h :=
+  (rfl)
+
 /-- The external product of classes of cocycles is represented by their tensor cochain
 precomposed with the Alexander–Whitney map. -/
 @[simp]
@@ -89,7 +96,7 @@ lemma singularCross_diagonal (X : TopCat.{w}) (μ : M ⊗ N ⟶ P)
     TopCat.singularCohomologyMap (lift (𝟙 X) (𝟙 X)) n
         (singularCross k X X μ p q n h a b) =
       X.singularCup k (𝟙 (R ⊗ S)) μ p q n h a b := by
-  simpa [singularCross, singularCup_def, alexanderWhitneyDiagonal_def] using
+  simpa [singularCross_def, singularCup_def, alexanderWhitneyDiagonal_def] using
     (ChainComplex.cup_precomp (TopCat.alexanderWhitney X X R S) μ
       (SSet.chainComplexMap (TopCat.toSSet.map (lift (𝟙 X) (𝟙 X))) (R ⊗ S))
       p q n h a b).symm
@@ -123,7 +130,7 @@ lemma singularCross_eq_singularCup (X Y : TopCat.{w}) (μ : M ⊗ N ⟶ P)
     rw [← Category.assoc, ← ((SSet.chainComplexFunctor C).obj (R ⊗ S)).map_comp,
       ← TopCat.toSSet.map_comp, hdiag, TopCat.toSSet.map_id,
       ((SSet.chainComplexFunctor C).obj (R ⊗ S)).map_id, Category.id_comp]
-  simpa [singularCross, singularCup_def] using
+  simpa [singularCross_def, singularCup_def] using
     (ChainComplex.cup_naturality (TopCat.alexanderWhitney X Y R S) μ
       ((X ⊗ Y).alexanderWhitneyDiagonal (𝟙 (R ⊗ S))) (𝟙 _) _ _
       (by simpa using hD') p q n h a b).symm
@@ -205,6 +212,28 @@ lemma singularEilenbergZilberCohomologyIso_hom_naturality
   rw [op_comp, op_comp, F.map_comp, F.map_comp] at hF
   rw [singularEilenbergZilberCohomologyIso_hom, singularEilenbergZilberCohomologyIso_hom]
   exact hF.symm
+
+/-- The inverse Eilenberg–Zilber comparison commutes with pullback in both spaces. -/
+@[reassoc]
+lemma singularEilenbergZilberCohomologyIso_inv_naturality
+    {X Y X' Y' : TopCat.{w}} (f : X ⟶ X') (g : Y ⟶ Y') (R S P : C) (n : ℕ) :
+    (singularEilenbergZilberCohomologyIso k X' Y' R S P n).inv ≫
+        TopCat.singularCohomologyMap (R := R ⊗ S) (k := k) (M := P) (f ⊗ₘ g) n =
+      homologyMap
+          (K := _root_.ChainComplex.linearYonedaObj
+            (HomologicalComplex.tensorObj ((TopCat.toSSet.obj X').chainComplex R)
+              ((TopCat.toSSet.obj Y').chainComplex S)) k P)
+          (L := _root_.ChainComplex.linearYonedaObj
+            (HomologicalComplex.tensorObj ((TopCat.toSSet.obj X).chainComplex R)
+              ((TopCat.toSSet.obj Y).chainComplex S)) k P)
+          ((ChainComplex.linearYonedaFunctor k P).map
+            (HomologicalComplex.tensorHom
+              (SSet.chainComplexMap (TopCat.toSSet.map f) R)
+              (SSet.chainComplexMap (TopCat.toSSet.map g) S)).op) n ≫
+        (singularEilenbergZilberCohomologyIso k X Y R S P n).inv := by
+  apply (cancel_mono (singularEilenbergZilberCohomologyIso k X Y R S P n).hom).1
+  rw [Category.assoc, singularEilenbergZilberCohomologyIso_hom_naturality,
+    Iso.inv_hom_id_assoc, Category.assoc, Iso.inv_hom_id, Category.comp_id]
 
 end EilenbergZilber
 
