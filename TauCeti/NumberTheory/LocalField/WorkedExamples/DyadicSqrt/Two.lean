@@ -109,10 +109,6 @@ def integerSqrtTwo : 𝒪[DyadicSqrtTwo] :=
 @[simp]
 theorem coe_integerSqrtTwo : (integerSqrtTwo : DyadicSqrtTwo) = sqrtTwo := (rfl)
 
-private theorem addVal_two : IsDiscreteValuationRing.addVal 𝒪[ℚ_[2]] 2 = 1 := by
-  simpa using (TauCeti.IsDiscreteValuationRing.addVal_natCast ℚ_[2] 2 (by norm_num)).trans
-    (congrArg (fun n : ℕ => (n : ℕ∞)) (Padic.natCastValuation_self (p := 2)))
-
 private theorem isEisensteinAt : (X ^ 2 - C 2 : 𝒪[ℚ_[2]][X]).IsEisensteinAt 𝓂[ℚ_[2]] := by
   refine ⟨?_, ?_, ?_⟩
   · simp [leadingCoeff_X_pow_sub_C (by norm_num : 0 < (2 : ℕ))]
@@ -122,13 +118,14 @@ private theorem isEisensteinAt : (X ^ 2 - C 2 : 𝒪[ℚ_[2]][X]).IsEisensteinAt
     · simp only [coeff_sub, coeff_X_pow, show ¬(0 : ℕ) = 2 by omega, ↓reduceIte, coeff_C_zero,
         zero_sub]
       rw [Ideal.neg_mem_iff, ← pow_one 𝓂[ℚ_[2]],
-        TauCeti.IsDiscreteValuationRing.mem_maximalIdeal_pow_iff_le_addVal, addVal_two]
+        TauCeti.IsDiscreteValuationRing.mem_maximalIdeal_pow_iff_le_addVal,
+        ← Nat.cast_ofNat (R := 𝒪[ℚ_[2]]), Padic.addVal_self 2]
       norm_num
     · simp
   · simp only [coeff_sub, coeff_X_pow, show ¬(0 : ℕ) = 2 by omega, ↓reduceIte, coeff_C_zero,
       zero_sub]
     rw [Ideal.neg_mem_iff, TauCeti.IsDiscreteValuationRing.mem_maximalIdeal_pow_iff_le_addVal,
-      addVal_two]
+      ← Nat.cast_ofNat (R := 𝒪[ℚ_[2]]), Padic.addVal_self 2]
     norm_num
 
 private theorem isRoot :
@@ -196,7 +193,8 @@ theorem addVal_smul_integerSqrtTwo_sub_of_ne_one
   have htwo : (2 : 𝒪[DyadicSqrtTwo]) = algebraMap 𝒪[ℚ_[2]] 𝒪[DyadicSqrtTwo] 2 :=
     (map_ofNat _ 2).symm
   rw [h, AddValuation.map_neg, IsDiscreteValuationRing.addVal_mul, htwo,
-    addVal_algebraMap, addVal_two, ramificationIndex_eq_two,
+    addVal_algebraMap, ← Nat.cast_ofNat (R := 𝒪[ℚ_[2]]), Padic.addVal_self 2,
+    ramificationIndex_eq_two,
     IsDiscreteValuationRing.addVal_uniformizer irreducible_integerSqrtTwo]
   norm_num
 
