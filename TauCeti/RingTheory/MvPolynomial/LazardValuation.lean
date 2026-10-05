@@ -74,6 +74,29 @@ open Finsupp
 
 section Evaluator
 
+namespace Finsupp
+
+variable {σ M : Type*} [LinearOrder σ]
+
+/-- A finitely supported function splits into its values before `i`, at `i`, and after `i`. -/
+theorem filter_gt_add_single_add_filter_lt [AddZeroClass M] (f : σ →₀ M) (i : σ) :
+    f.filter (· < i) + single i (f i) + f.filter (i < ·) = f := by
+  ext j
+  rcases lt_trichotomy j i with hj | rfl | hj
+  · simp [hj, hj.not_gt, single_eq_of_ne hj.ne]
+  · simp
+  · simp [hj, hj.not_gt, single_eq_of_ne hj.ne']
+
+/-- The `c`-weight of an exponent `w` splits into the weights of its coordinates before `i`, at
+`i`, and after `i`. -/
+theorem weight_filter_gt_add_smul_add_weight_filter_lt [AddCommMonoid M] (c : σ → M)
+    (w : σ →₀ ℕ) (i : σ) :
+    weight c (w.filter (· < i)) + w i • c i + weight c (w.filter (i < ·)) = weight c w := by
+  conv_rhs => rw [← filter_gt_add_single_add_filter_lt w i]
+  rw [map_add, map_add, weight_single]
+
+end Finsupp
+
 namespace TauCeti
 
 variable {σ : Type*} [LinearOrder σ] {V W : Set (σ →₀ ℕ)} {c : σ → ℕ}
@@ -105,24 +128,15 @@ theorem weight_lt_weight (hc : IsLazardEvaluator V c) {v u : σ →₀ ℕ} (hv 
     (h : toLex v < toLex u) : weight c v < weight c u := by
   obtain ⟨i, heq, hlt⟩ := Finsupp.Lex.lt_iff.1 h
   simp only [ofLex_toLex] at heq hlt
-  -- Split each exponent into its coordinates before `i`, at `i`, and after `i`.
-  have hsplit (w : σ →₀ ℕ) :
-      weight c w = weight c (w.filter (· < i)) + w i * c i + weight c (w.filter (i < ·)) := by
-    have hw : w = w.filter (· < i) + single i (w i) + w.filter (i < ·) := by
-      ext j
-      rcases lt_trichotomy j i with hj | rfl | hj
-      · simp [hj, hj.not_gt, single_eq_of_ne hj.ne]
-      · simp
-      · simp [hj, hj.not_gt, single_eq_of_ne hj.ne']
-    conv_lhs => rw [hw]
-    simp [weight_single]
   have hbefore : v.filter (· < i) = u.filter (· < i) := by
     ext j
     simp only [filter_apply]
     split_ifs with hj
     · exact heq j hj
     · rfl
-  rw [hsplit v, hsplit u, hbefore, add_assoc, add_assoc]
+  rw [← weight_filter_gt_add_smul_add_weight_filter_lt c v i,
+    ← weight_filter_gt_add_smul_add_weight_filter_lt c u i, hbefore, smul_eq_mul, smul_eq_mul,
+    add_assoc, add_assoc]
   refine Nat.add_lt_add_left ?_ _
   calc v i * c i + weight c (v.filter (i < ·)) < v i * c i + c i :=
         Nat.add_lt_add_left (hc.weight_filter_lt v hv i) _
@@ -160,9 +174,9 @@ theorem exists_isLazardEvaluator (hV : V.Finite) :
         rw [Finset.mul_sum]
         refine Finset.sum_congr rfl fun j _ ↦ ?_
         split_ifs with hj
-        · simp [hj, pow_succ]
+        · rw [filter_apply_pos _ _ hj, smul_eq_mul, pow_succ]
           ring
-        · simp [hj]
+        · rw [filter_apply_neg _ _ hj, zero_smul, mul_zero]
     _ ≤ ∑ _j ∈ S, K * M ^ rk i := Finset.sum_le_sum fun j hjS ↦ by
         split_ifs with hj
         · exact Nat.mul_le_mul (hK v hv j) (Nat.pow_le_pow_right (by omega) (hrk hjS hj))
@@ -281,18 +295,18 @@ theorem toLex_lt_of_coeff_taylor_ne_zero (h : p.lazardValuation a = toLex v)
 theorem lazardValuation_zero (a : σ → R) : (0 : MvPolynomial σ R).lazardValuation a = ⊤ := by
   simp [lazardValuation_def]
 
-/-- The Lazard valuation of `p` at `a` is zero exactly when `p` does not vanish at `a`. -/
-theorem lazardValuation_eq_zero_iff : p.lazardValuation a = 0 ↔ eval a p ≠ 0 := by
-  rw [← WithTop.coe_zero, ← toLex_zero, lazardValuation_eq_coe_iff, ← constantCoeff_taylor,
-    constantCoeff_eq]
-  exact and_iff_left_of_imp fun _ d hd ↦
-    absurd hd (toLex_monotone (zero_le : (0 : σ →₀ ℕ) ≤ d)).not_gt
-
 theorem zero_le_lazardValuation (p : MvPolynomial σ R) (a : σ → R) :
     0 ≤ p.lazardValuation a := by
   rw [← WithTop.coe_zero, ← toLex_zero]
   exact le_lazardValuation_iff.2 fun d hd ↦
     absurd hd (WithTop.coe_le_coe.2 (toLex_monotone (zero_le : (0 : σ →₀ ℕ) ≤ d))).not_gt
+
+/-- The Lazard valuation of `p` at `a` is zero exactly when `p` does not vanish at `a`. -/
+theorem lazardValuation_eq_zero_iff : p.lazardValuation a = 0 ↔ eval a p ≠ 0 := by
+  rw [← constantCoeff_taylor, constantCoeff_eq]
+  refine ⟨fun h ↦ coeff_taylor_ne_zero_of_lazardValuation_eq
+    (by rw [h, toLex_zero, WithTop.coe_zero]), fun h ↦ (zero_le_lazardValuation p a).antisymm' ?_⟩
+  simpa using lazardValuation_le_of_coeff_taylor_ne_zero h
 
 /-- The Lazard valuation of `p` at `a` is positive exactly when `p` vanishes at `a`. -/
 theorem lazardValuation_pos_iff : 0 < p.lazardValuation a ↔ eval a p = 0 := by
@@ -345,8 +359,9 @@ theorem finite_range_lazardValuation (p : MvPolynomial σ R) :
   induction h : p.lazardValuation a with
   | top => exact Set.mem_insert _ _
   | coe w =>
-    refine Set.mem_insert_of_mem _ ⟨ofLex w, fun i ↦ ?_, by simp⟩
-    simpa [degreeOf_def] using lazardValuation_apply_le_degreeOf (v := ofLex w) h i
+    refine Set.mem_insert_of_mem _ ⟨ofLex w, Set.mem_Iic.2 (Finsupp.le_def.2 fun i ↦ ?_), by simp⟩
+    simpa [degreeOf_def] using
+      lazardValuation_apply_le_degreeOf (v := ofLex w) (by rw [toLex_ofLex]; exact h) i
 
 /-- The exponents occurring as Lazard valuations of a fixed polynomial form a finite set. -/
 theorem finite_setOf_lazardValuation_eq (p : MvPolynomial σ R) :
@@ -396,6 +411,14 @@ variable [CommSemiring R]
 variable {V : Set (σ →₀ ℕ)} {c : σ → ℕ} {p : MvPolynomial σ R} {a : σ → R} {v : σ →₀ ℕ}
 
 /-- If the Lazard valuation `v` of `p` at `a` lies in `V` and `c` is an evaluator for `V`, then
+every other exponent of a nonzero Taylor coefficient of `p` at `a` has larger `c`-weight than
+`v`. -/
+theorem weight_lt_weight_of_coeff_taylor_ne_zero (h : p.lazardValuation a = toLex v) (hv : v ∈ V)
+    (hc : TauCeti.IsLazardEvaluator V c) {m : σ →₀ ℕ} (hm : (taylor a p).coeff m ≠ 0)
+    (hmv : m ≠ v) : weight c v < weight c m :=
+  hc.weight_lt_weight hv (toLex_lt_of_coeff_taylor_ne_zero h hm hmv)
+
+/-- If the Lazard valuation `v` of `p` at `a` lies in `V` and `c` is an evaluator for `V`, then
 the restriction of `p` to the curve `y ↦ a + y ^ c` has no terms of degree below the `c`-weight
 of `v`. -/
 theorem coeff_aeval_monomialCurve_eq_zero_of_lt_weight (h : p.lazardValuation a = toLex v)
@@ -406,8 +429,7 @@ theorem coeff_aeval_monomialCurve_eq_zero_of_lt_weight (h : p.lazardValuation a 
   rw [Finset.mem_filter, mem_support_iff] at hm
   obtain rfl | hmv := eq_or_ne m v
   · exact absurd hm.2 hk.ne'
-  · exact absurd (hc.weight_lt_weight hv (toLex_lt_of_coeff_taylor_ne_zero h hm.1 hmv))
-      (hm.2 ▸ hk).not_gt
+  · exact absurd (weight_lt_weight_of_coeff_taylor_ne_zero h hv hc hm.1 hmv) (hm.2 ▸ hk).not_gt
 
 /-- If the Lazard valuation `v` of `p` at `a` lies in `V` and `c` is an evaluator for `V`, then
 the coefficient of `y` to the `c`-weight of `v` in the restriction of `p` to the curve
@@ -420,8 +442,7 @@ theorem coeff_aeval_monomialCurve_weight (h : p.lazardValuation a = toLex v) (hv
   refine Finset.sum_eq_single_of_mem v (Finset.mem_filter.2
     ⟨mem_support_iff.2 (coeff_taylor_ne_zero_of_lazardValuation_eq h), rfl⟩) fun m hm hmv ↦ ?_
   rw [Finset.mem_filter, mem_support_iff] at hm
-  exact absurd hm.2 (hc.weight_lt_weight hv
-    (toLex_lt_of_coeff_taylor_ne_zero h hm.1 hmv)).ne'
+  exact absurd hm.2 (weight_lt_weight_of_coeff_taylor_ne_zero h hv hc hm.1 hmv).ne'
 
 /-- If the Lazard valuation of `p` at `a` lies in a set with evaluator `c`, then `p` does not
 vanish identically on the curve `y ↦ a + y ^ c`. -/
