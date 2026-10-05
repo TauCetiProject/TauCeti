@@ -52,8 +52,8 @@ induction from `⊤` is surjective (`TauCeti.indClassesK0_eq_top`).
   family is induced from it.
 * `TauCeti.indClassesK0_eq_top`: a family containing `⊤` induces all of `G₀(k[G])`.
 * `TauCeti.indCyclicK0_eq_top` and `TauCeti.indCyclicCoprimeK0_eq_top`: for a cyclic group every
-  class is induced from a cyclic subgroup, and from one of order prime to `ℓ` when `ℓ` does not
-  divide the order.
+  class is induced from a cyclic subgroup, and from one of order prime to `ℓ` when the order is
+  prime to `ℓ`.
 
 ## References
 
@@ -163,10 +163,12 @@ noncomputable abbrev indCyclicK0 : AddSubgroup (ExactK0 (finiteModulesExactStruc
   indClassesK0 k G fun C ↦ IsCyclic C
 
 /-- **The classes induced from cyclic subgroups of order prime to `ℓ`**, the subgroup of
-`G₀(k[G])` in which the modular Artin theorem places a multiple of every class. -/
+`G₀(k[G])` in which the modular Artin theorem places a multiple of every class. For a prime `ℓ`,
+the case the modular theorem is stated in, coprimality of the order is non-divisibility by `ℓ`
+(`Nat.Prime.coprime_iff_not_dvd`), so the family is the cyclic `ℓ′`-subgroups. -/
 noncomputable abbrev indCyclicCoprimeK0 (ℓ : ℕ) :
     AddSubgroup (ExactK0 (finiteModulesExactStructure k[G])) :=
-  indClassesK0 k G fun C ↦ IsCyclic C ∧ ¬ ℓ ∣ Nat.card C
+  indClassesK0 k G fun C ↦ IsCyclic C ∧ Nat.Coprime ℓ (Nat.card C)
 
 /-- The classes induced from cyclic subgroups of order prime to `ℓ` are induced from cyclic
 subgroups. -/
@@ -185,11 +187,13 @@ theorem indK0_zpowers_mem_indCyclicK0 (g : G)
   indK0_mem_indClassesK0 k (Subgroup.isCyclic_zpowers g) y
 
 /-- **Classes induced from the trivial subgroup are induced from a cyclic `ℓ′`-subgroup.** The
-trivial subgroup is cyclic of order `1`, so `ℓ` divides its order only for `ℓ = 1`. -/
-theorem indK0_bot_mem_indCyclicCoprimeK0 {ℓ : ℕ} (hℓ : ℓ ≠ 1)
+trivial subgroup is cyclic of order `1`, which is prime to every `ℓ`. -/
+theorem indK0_bot_mem_indCyclicCoprimeK0 (ℓ : ℕ)
     (y : ExactK0 (finiteModulesExactStructure k[(⊥ : Subgroup G)])) :
-    indK0 k ⊥ y ∈ indCyclicCoprimeK0 k G ℓ :=
-  indK0_mem_indClassesK0 k ⟨Bot.isCyclic, by simpa [Subgroup.card_bot] using hℓ⟩ y
+    indK0 k ⊥ y ∈ indCyclicCoprimeK0 k G ℓ := by
+  refine indK0_mem_indClassesK0 k ⟨Bot.isCyclic, ?_⟩ y
+  rw [Subgroup.card_bot]
+  exact Nat.coprime_one_right ℓ
 
 end Cyclic
 
@@ -204,7 +208,7 @@ theorem indCyclicK0_eq_top [IsCyclic G] : indCyclicK0 k G = ⊤ :=
 
 /-- **For a cyclic group of order prime to `ℓ` every class is induced from a cyclic subgroup of
 order prime to `ℓ`**, the whole group being one. -/
-theorem indCyclicCoprimeK0_eq_top [IsCyclic G] {ℓ : ℕ} (hℓ : ¬ ℓ ∣ Nat.card G) :
+theorem indCyclicCoprimeK0_eq_top [IsCyclic G] {ℓ : ℕ} (hℓ : Nat.Coprime ℓ (Nat.card G)) :
     indCyclicCoprimeK0 k G ℓ = ⊤ :=
   indClassesK0_eq_top ⟨Subgroup.isCyclic ⊤, by rwa [Subgroup.card_top]⟩
 
