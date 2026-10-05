@@ -241,9 +241,9 @@ theorem weightPow_one_weight (ν : Fin k →₀ ℕ) :
   simp [weightPow]
 
 /-- A monoid homomorphism carries the weight `Tν` onto the weight of the image family. -/
-theorem image_weightPow {B : Type*} [CommMonoid B] (φ : A →* B)
-    (T : Fin k → Set A) (ν : Fin k →₀ ℕ) :
-    φ '' weightPow T ν = weightPow (fun i ↦ φ '' T i) ν := by
+theorem image_weightPow {F B : Type*} [CommMonoid B] [FunLike F A B] [MonoidHomClass F A B]
+    (φ : F) (T : Fin k → Set A) (ν : Fin k →₀ ℕ) :
+    (φ : A → B) '' weightPow T ν = weightPow (fun i ↦ (φ : A → B) '' T i) ν := by
   simp only [weightPow_def, Set.image_finsetProd, Set.image_pow]
 
 end WeightPow
@@ -1331,7 +1331,7 @@ theorem weightMul_map_le (φ : A →+* B) {T : Fin k → Set A} {S : Fin k → S
   refine weightMul_le.mpr fun t ht u hu ↦ ?_
   simp only [AddSubgroup.mem_comap, AddMonoidHom.coe_ofClass, map_mul]
   exact mul_mem_weightMul S ν V
-    (weightPow_mono hTS ν (image_weightPow φ.toMonoidHom T ν ▸ Set.mem_image_of_mem φ ht)) (hUV hu)
+    (weightPow_mono hTS ν (image_weightPow φ T ν ▸ Set.mem_image_of_mem φ ht)) (hUV hu)
 
 variable [TopologicalSpace A] [TopologicalSpace B]
 
