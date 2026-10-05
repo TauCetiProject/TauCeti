@@ -74,9 +74,8 @@ theorem disjoint_coveredSquares_of_same_side_order
     Disjoint D.rectangle.toGridRectangle.coveredSquares D.pentagon.coveredSquares := by
   rw [D.pentagon.toGridRectangleBetween.coveredSquares_eq_product_of_left_eq_left
     D.rectangle hleft]
-  refine Finset.disjoint_left.2 fun p hr hp => ?_
-  exact Finset.disjoint_left.mp (Grid.disjoint_cIco_swap D.pentagon.bottom D.pentagon.top)
-    (D.pentagon.mem_cIco_of_mem_coveredSquares hp) (Finset.mem_product.1 hr).2
+  exact (D.pentagon.disjoint_coveredSquares_of_forall_mem_cIco
+    fun _ hp => (Finset.mem_product.1 hp).2).symm
 
 /-- Avoiding any marking state in a thin vertical rectangle--pentagon annulus amounts to
 placing the first column's marking in the omitted closed arc and the second column's
@@ -144,10 +143,12 @@ theorem disjoint_coveredSquares_map_of_same_side_order
       ((Equiv.swap a (finRotate n a)).prodCongr (Equiv.refl (Fin n))).toEmbedding) := by
   rw [D.pentagon.toGridRectangleBetween.coveredSquares_eq_product_of_left_eq_left
     D.rectangle hleft]
-  refine Finset.disjoint_left.2 fun p hp hr => ?_
-  obtain ⟨q, hq, rfl⟩ := Finset.mem_map.1 hr
-  exact Finset.disjoint_left.mp (Grid.disjoint_cIco_swap D.pentagon.bottom D.pentagon.top)
-    (D.pentagon.mem_cIco_of_mem_coveredSquares hp) (Finset.mem_product.1 hq).2
+  apply D.pentagon.disjoint_coveredSquares_of_forall_mem_cIco
+  intro p hp
+  obtain ⟨q, hq, rfl⟩ := Finset.mem_map.1 hp
+  -- The commutation swap acts only on columns, so the row is unchanged.
+  simpa only [Equiv.coe_toEmbedding, Equiv.prodCongr_apply, Prod.map_snd,
+    Equiv.refl_apply] using (Finset.mem_product.1 hq).2
 
 /-- The marking test for a thin vertical pentagon--rectangle annulus, testing the rectangle
 in the commuted marking state and the pentagon in the original marking state. -/

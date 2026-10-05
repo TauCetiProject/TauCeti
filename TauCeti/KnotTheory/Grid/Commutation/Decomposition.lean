@@ -508,7 +508,8 @@ theorem rectanglePentagonWeight_eq_prod_OColumnsOfSquares_union
     (fun c => (MvPolynomial.X (Equiv.swap C.column b c) : MvPolynomial (Fin n) R)) _
 
 /-- When the pentagon and the rectangle read back in the original columns have disjoint
-covered squares, their composite weight counts each covered O-marking once. -/
+covered squares, their composite weight counts each covered O-marking once, in the variables
+of the commuted diagram. -/
 theorem pentagonRectangleWeight_eq_prod_OColumnsOfSquares_union
     {x z : GridState n} (D : GridPentagonRectangleDecomposition C.column C.turnRow x z)
     (h : Disjoint D.pentagon.coveredSquares

@@ -344,6 +344,15 @@ theorem mem_cIco_of_mem_coveredSquares (P : GridPentagonBetween a s x y)
   · split_ifs at hsplit <;> grind
   · split_ifs at hsplit <;> grind
 
+/-- A pentagon covers no square in a set supported on the complementary row arc. -/
+theorem disjoint_coveredSquares_of_forall_mem_cIco (P : GridPentagonBetween a s x y)
+    {S : Finset (Fin n × Fin n)}
+    (hS : ∀ p ∈ S, p.2 ∈ Grid.cIco P.top P.bottom) :
+    Disjoint P.coveredSquares S := by
+  refine Finset.disjoint_left.2 fun p hp h => ?_
+  exact Finset.disjoint_left.mp (Grid.disjoint_cIco_swap P.bottom P.top)
+    (P.mem_cIco_of_mem_coveredSquares hp) (hS p h)
+
 /-- A pentagon spanning one cyclic row has its turn in that row and covers only the
 columns of its underlying rectangle other than the first commuted column. -/
 theorem coveredSquares_eq_product_singleton_of_top_eq_finRotate_bottom
@@ -511,10 +520,9 @@ theorem pentagonWeight_eq_prod_coveredSquares {x y : GridState n}
       ∏ p ∈ P.coveredSquares,
         if p ∈ G.OSet then MvPolynomial.X (Equiv.swap C.column (finRotate n C.column) p.1)
         else (1 : MvPolynomial (Fin n) R) := by
-  rw [G.prod_ite_OSet_eq_prod_OColumnsOfSquares
+  rw [pentagonWeight, pentagonOColumns, G.prod_ite_OSet_eq_prod_OColumnsOfSquares
     (fun c => (MvPolynomial.X (Equiv.swap C.column (finRotate n C.column) c) :
       MvPolynomial (Fin n) R))]
-  rfl
 
 /-- The weight of a pentagon is the product of the variables of the columns of the commuted
 diagram whose `O`-marking the pentagon carries. -/

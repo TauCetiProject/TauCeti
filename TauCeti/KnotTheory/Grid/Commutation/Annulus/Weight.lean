@@ -73,8 +73,9 @@ theorem pentagonRectangleWeight_of_same_side_order
   rw [G.prod_OColumnsOfSquares_union_singleton_product _ _ _ _ _ C.column_ne_next]
   simp only [Equiv.swap_apply_left, Equiv.swap_apply_right]
 
-/-- A horizontal rectangle--pentagon annulus counts the unique O-marking in the turn row
-unless it lies in the omitted square in the first commuted column. -/
+/-- A horizontal rectangle--pentagon annulus contributes the variable of the unique O-marking
+in the turn row, with its column renamed by the commutation swap, unless that marking lies in
+the omitted square in the first commuted column. -/
 theorem rectanglePentagonWeight_of_opposite_side_order
     (D : GridRectanglePentagonDecomposition C.column C.turnRow x x)
     (hleft : D.rectangle.left = D.pentagon.right)
@@ -88,9 +89,9 @@ theorem rectanglePentagonWeight_of_opposite_side_order
     D.coveredSquares_union_of_opposite_side_order hleft hthin]
   rw [G.prod_OColumnsOfSquares_univ_erase_product_singleton]
 
-/-- A horizontal pentagon--rectangle annulus counts the unique O-marking in the turn row
-unless it lies in the omitted square in the second commuted column, reading the rectangle
-back in the original diagram. -/
+/-- A horizontal pentagon--rectangle annulus contributes the variable of the unique O-marking
+in the turn row of the original diagram, with its column renamed by the commutation swap,
+unless that marking lies in the omitted square in the second commuted column. -/
 theorem pentagonRectangleWeight_of_opposite_side_order
     (D : GridPentagonRectangleDecomposition C.column C.turnRow x x)
     (hleft : D.rectangle.left = D.pentagon.right)
@@ -118,8 +119,9 @@ theorem rectanglePentagonWeight_of_mem_rectanglePentagonOppositeSideOrder
   have hX := G.X_column_eq_turnRow_of_mem_rectanglePentagonOppositeSideOrder C x D hD
   exact ite_eq_right (fun hO => G.disjoint C.column (hO.trans hX.symm))
 
-/-- Every counted horizontal pentagon--rectangle term has the same row-variable weight,
-with the O-marking read in the original diagram and its column renamed. -/
+/-- Every counted horizontal pentagon--rectangle term contributes the variable of the unique
+O-marking in the turn row of the original diagram, with its column renamed by the commutation
+swap. -/
 @[simp]
 theorem pentagonRectangleWeight_of_mem_pentagonRectangleOppositeSideOrder
     (D : GridPentagonRectangleDecomposition C.column C.turnRow x x)
