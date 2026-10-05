@@ -68,7 +68,7 @@ open Equiv MvPolynomial
 variable {n : ℕ}
 
 /-- **The inner product of two permutation characters**: `∑_π ψ^ν(π) ψ^ξ(π) = n! ∑_μ K_{μν} K_{μξ}`.
-Both sides are `n!` times the coefficient of the monomial of `ξ` in `∑_π ψ^ν(π) p_{ρ(π)} = n! h_ν`,
+Both sides are the coefficient of the monomial of `ξ` in `∑_π ψ^ν(π) p_{ρ(π)} = n! h_ν`,
 read on the left through the monomial expansion of the power sums and on the right through the
 Schur expansion `h_ν = ∑_μ K_{μν} s_μ`. -/
 theorem sum_char_permutationModule_mul_char_permutationModule (ν ξ : n.Partition) :
