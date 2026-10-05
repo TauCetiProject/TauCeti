@@ -299,6 +299,16 @@ def AnalyticOnSubmanifold (d : ℕ) (f : (Fin n → 𝕜) → E) (S : Set (Fin n
     IsAnalyticChart d S e ∧
       AnalyticAt 𝕜 (fun u ↦ f (e.symm (firstCoords 𝕜 d n u))) (firstCoords 𝕜 n d (e x))
 
+/-- A function is analytic on `S` exactly when it has an analytic coordinate expression in
+some analytic chart around every point of `S`. -/
+theorem analyticOnSubmanifold_iff {f : (Fin n → 𝕜) → E} :
+    AnalyticOnSubmanifold d f S ↔
+      ∀ x ∈ S, ∃ e : OpenPartialHomeomorph (Fin n → 𝕜) (Fin n → 𝕜), x ∈ e.source ∧
+        IsAnalyticChart d S e ∧
+          AnalyticAt 𝕜 (fun u ↦ f (e.symm (firstCoords 𝕜 d n u)))
+            (firstCoords 𝕜 n d (e x)) :=
+  Iff.rfl
+
 variable {f g : (Fin n → 𝕜) → E}
 
 namespace AnalyticOnSubmanifold

@@ -109,6 +109,14 @@ theorem homogeneousQuotientPresheafProjection_app_apply
       homogeneousQuotientPresheafMk H I A g :=
   (rfl)
 
+/-- Every section of the coset presheaf is represented by an ambient group point. -/
+theorem homogeneousQuotientPresheafProjection_surjective
+    (A : ((CommAlgCat.{u} R)ᵒᵖ)ᵒᵖ) :
+    Function.Surjective ((homogeneousQuotientPresheafProjection H I).app A) := by
+  intro q
+  induction q using homogeneousQuotientPresheaf_induction_on H I with
+  | h g => exact ⟨ULift.up g, homogeneousQuotientPresheafProjection_app_apply H I A g⟩
+
 /-- Two points have the same coset exactly when their difference lies in the closed subgroup. -/
 theorem homogeneousQuotientPresheafProjection_eq_iff
     (A : ((CommAlgCat.{u} R)ᵒᵖ)ᵒᵖ)
@@ -209,6 +217,14 @@ def fppfHomogeneousQuotient : Sheaf (CommAlgCat.fppfTopology R) (Type (u + 1)) :
   (presheafToSheaf (CommAlgCat.fppfTopology R) (Type (u + 1))).obj
     (homogeneousQuotientPresheaf H I)
 
+/-- The homogeneous quotient is obtained by applying the fppf sheafification functor
+to the coset presheaf. -/
+theorem fppfHomogeneousQuotient_eq :
+    fppfHomogeneousQuotient H I =
+      (presheafToSheaf (CommAlgCat.fppfTopology R) (Type (u + 1))).obj
+        (homogeneousQuotientPresheaf H I) :=
+  (rfl)
+
 /-- The quotient's underlying presheaf is the sheafification of the coset presheaf. -/
 @[simp]
 theorem fppfHomogeneousQuotient_obj :
@@ -222,6 +238,15 @@ def fppfHomogeneousQuotientProjection :
       (fppfHomogeneousQuotient H I).obj :=
   homogeneousQuotientPresheafProjection H I ≫
     toSheafify (CommAlgCat.fppfTopology R) (homogeneousQuotientPresheaf H I)
+
+/-- The projection to the homogeneous quotient is the coset projection followed
+by the unit of fppf sheafification. -/
+theorem fppfHomogeneousQuotientProjection_def :
+    fppfHomogeneousQuotientProjection H I =
+      homogeneousQuotientPresheafProjection H I ≫
+        toSheafify (CommAlgCat.fppfTopology R) (homogeneousQuotientPresheaf H I) ≫
+          eqToHom (fppfHomogeneousQuotient_obj H I).symm :=
+  (rfl)
 
 /-- The quotient projection sends a point to the sheafification of its left coset. -/
 @[simp]
@@ -242,9 +267,7 @@ instance fppfHomogeneousQuotientProjection_isLocallySurjective :
   have : Presheaf.IsLocallySurjective (CommAlgCat.fppfTopology R)
       (homogeneousQuotientPresheafProjection H I) := by
     apply Presheaf.isLocallySurjective_of_surjective
-    intro A q
-    induction q using homogeneousQuotientPresheaf_induction_on H I with
-    | h g => exact ⟨ULift.up g, homogeneousQuotientPresheafProjection_app_apply H I A g⟩
+    exact homogeneousQuotientPresheafProjection_surjective H I
   unfold fppfHomogeneousQuotientProjection
   have := Presheaf.isLocallySurjective_toSheafify'
     (CommAlgCat.fppfTopology R) (homogeneousQuotientPresheaf H I)
