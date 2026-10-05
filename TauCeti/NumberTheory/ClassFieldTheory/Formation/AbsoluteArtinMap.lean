@@ -32,6 +32,10 @@ absolute map with this projection is the finite Artin map of the layer `V ◁ G`
 (`eq_absoluteArtinMap_of_forall_abelianizationRestrict`). Every finite Artin map is surjective,
 so the absolute map has dense image (`denseRange_absoluteArtinMap`). It need not be surjective:
 for a local field the source is `Kˣ` and the target is the abelianized absolute Galois group.
+Since the kernel of each finite Artin map is the norm subgroup of its layer, the preimage of every
+open subgroup of `G^ab` is the norm subgroup of a layer (`exists_absoluteArtinMap_mem_iff`), and
+the kernel of the absolute map is the intersection of all norm subgroups
+(`absoluteArtinMap_eq_zero_iff`).
 
 The construction runs over the open normal subgroups `U` of `G^ab`. Each of them is the image of
 the open normal subgroup `V` of `G` it pulls back to, and `G^ab ⧸ U` is the abelianized Galois
@@ -52,8 +56,14 @@ homomorphism.
   restrictions of the absolute Artin map are the finite Artin maps.
 * `TauCeti.ClassFieldTheory.ClassFormation.eq_absoluteArtinMap_of_forall_abelianizationRestrict`:
   the absolute Artin map is the unique homomorphism with these restrictions.
+* `TauCeti.ClassFieldTheory.NormalLayer.eq_of_forall_le_abelianizationRestrict_eq`: elements of
+  `G^ab` are determined by their projections to the layers below any fixed open normal subgroup.
 * `TauCeti.ClassFieldTheory.ClassFormation.denseRange_absoluteArtinMap`: the absolute Artin map
   has dense image.
+* `TauCeti.ClassFieldTheory.ClassFormation.exists_absoluteArtinMap_mem_iff`: the preimage of an
+  open subgroup of `G^ab` under the absolute Artin map is the norm subgroup of a layer.
+* `TauCeti.ClassFieldTheory.ClassFormation.absoluteArtinMap_eq_zero_iff`: the kernel of the
+  absolute Artin map is the intersection of the norm subgroups of all layers.
 
 ## References
 
@@ -126,6 +136,25 @@ theorem abelianizationRestrict_surjective (V : OpenNormalSubgroup G) :
 
 end NormalLayer
 
+/-- **The projections of `G^ab` are compatible with refinement**: for open normal subgroups
+`W ≤ V` of `G`, projecting to `(G/W)^ab` and then to the quotient `(G/V)^ab` is the projection to
+`(G/V)^ab`. -/
+@[simp]
+theorem LayerRefinement.quotientHom_abelianizationRestrict {V W : OpenNormalSubgroup G}
+    (T : LayerRefinement (NormalLayer.ofOpenNormal V) (NormalLayer.ofOpenNormal W))
+    (x : Additive (TopologicalAbelianization G)) :
+    T.quotientHom (NormalLayer.abelianizationRestrict W x) =
+      NormalLayer.abelianizationRestrict V x := by
+  obtain ⟨x, rfl⟩ : ∃ y, Additive.ofMul y = x := ⟨x.toMul, ofMul_toMul x⟩
+  induction x using QuotientGroup.induction_on with
+  | H g =>
+    have hg (U : OpenNormalSubgroup G) : g ∈ (NormalLayer.ofOpenNormal U).ground := by simp
+    rw [NormalLayer.abelianizationRestrict_mk W ⟨g, hg W⟩,
+      NormalLayer.abelianizationRestrict_mk V ⟨g, hg V⟩, quotientHom_of, galHom_mk]
+    exact congrArg (fun w ↦ Additive.ofMul (Abelianization.of
+      (QuotientGroup.mk w : (NormalLayer.ofOpenNormal V).Gal)))
+      (Subtype.ext (Subgroup.coe_inclusion _ _))
+
 /-! ### Finite quotients of the topological abelianization -/
 
 section Quotient
@@ -192,6 +221,28 @@ private theorem mapOfLE_quotientOfAbelianizationGal
       rw [LayerRefinement.quotientHom_of, toMul_ofMul, LayerRefinement.galHom_mk,
         quotientOfAbelianizationGal_of_mk, quotientOfAbelianizationGal_of_mk,
         QuotientGroup.mapOfLE_mk, Subgroup.coe_inclusion]
+
+/-- **Every open subgroup of `G^ab` is cut out by a finite layer.** For every open subgroup `U` of
+`G^ab` there is an open normal subgroup `V` of `G` (the preimage of `U`) such that `U` is the kernel
+of the projection `G^ab → (G/V)^ab`. -/
+theorem NormalLayer.exists_abelianizationRestrict_eq_zero_iff
+    (U : OpenSubgroup (TopologicalAbelianization G)) :
+    ∃ V : OpenNormalSubgroup G, ∀ x : TopologicalAbelianization G,
+      abelianizationRestrict V (Additive.ofMul x) = 0 ↔ x ∈ U := by
+  -- `G^ab` is commutative, so `U` is normal.
+  let U' : OpenNormalSubgroup (TopologicalAbelianization G) :=
+    { toOpenSubgroup := U, isNormal' := inferInstance }
+  refine ⟨comapAb U', fun x ↦ ⟨fun h ↦ ?_, fun h ↦ ?_⟩⟩
+  · have hx := quotientOfAbelianizationGal_abelianizationRestrict U' x
+    rw [h, toMul_zero, map_one] at hx
+    exact (QuotientGroup.eq_one_iff x).mp hx.symm
+  · induction x using QuotientGroup.induction_on with
+    | H g =>
+      have hg : g ∈ (ofOpenNormal (comapAb U')).ground := by simp
+      have hgV : g ∈ (comapAb U').toSubgroup := mem_comapAb.mpr h
+      rw [abelianizationRestrict_mk (comapAb U') ⟨g, hg⟩, ofMul_eq_zero,
+        (QuotientGroup.eq_one_iff _).mpr (Subgroup.mem_subgroupOf.mpr (by simpa using hgV)),
+        map_one]
 
 end Quotient
 
@@ -305,6 +356,16 @@ theorem _root_.TauCeti.ClassFieldTheory.NormalLayer.eq_of_forall_abelianizationR
   rw [← quotientOfAbelianizationGal_abelianizationRestrict,
     ← quotientOfAbelianizationGal_abelianizationRestrict, ofMul_toMul, ofMul_toMul, h]
 
+/-- Elements of `G^ab` with the same projection to `(G/V)^ab` for every open normal subgroup `V`
+of `G` contained in a fixed open normal subgroup `N` are equal: the layers below `N` are cofinal. -/
+theorem _root_.TauCeti.ClassFieldTheory.NormalLayer.eq_of_forall_le_abelianizationRestrict_eq
+    (N : OpenNormalSubgroup G) {x y : Additive (TopologicalAbelianization G)}
+    (h : ∀ V ≤ N, abelianizationRestrict V x = abelianizationRestrict V y) : x = y :=
+  eq_of_forall_abelianizationRestrict_eq fun V ↦ by
+    have T := LayerRefinement.ofOpenNormal (inf_le_left : V ⊓ N ≤ V)
+    rw [← T.quotientHom_abelianizationRestrict, h _ inf_le_right,
+      T.quotientHom_abelianizationRestrict]
+
 /-- **Uniqueness of the absolute Artin map**: a homomorphism `A^G → G^ab` whose projection to
 `(G/V)^ab` is the finite Artin map of the layer `V ◁ G`, for every open normal subgroup `V`, is
 the absolute Artin map. -/
@@ -316,6 +377,36 @@ theorem eq_absoluteArtinMap_of_forall_abelianizationRestrict
     φ = cf.absoluteArtinMap :=
   AddMonoidHom.ext fun a ↦ eq_of_forall_abelianizationRestrict_eq fun V ↦ by
     rw [hφ, abelianizationRestrict_absoluteArtinMap]
+
+/-- The absolute Artin symbol of `a ∈ A^G` dies in `(G/V)^ab` exactly when `a` is a norm from the
+layer `V ◁ G`. -/
+theorem abelianizationRestrict_absoluteArtinMap_eq_zero_iff (V : OpenNormalSubgroup G)
+    (a : F.level ⊤) :
+    abelianizationRestrict V (cf.absoluteArtinMap a) = 0 ↔
+      groundEquivOfOpenNormal F V a ∈ (ofOpenNormal V).normSubgroup F := by
+  rw [abelianizationRestrict_absoluteArtinMap, artinMap_eq_zero_iff]
+
+/-- **The preimage of an open subgroup under the absolute Artin map is a norm subgroup.** For every
+open subgroup `U` of `G^ab` there is an open normal subgroup `V` of `G` such that the absolute Artin
+symbol of `a ∈ A^G` lies in `U` exactly when `a` is a norm from the layer `V ◁ G`. -/
+theorem exists_absoluteArtinMap_mem_iff (U : OpenSubgroup (TopologicalAbelianization G)) :
+    ∃ V : OpenNormalSubgroup G, ∀ a : F.level ⊤,
+      (cf.absoluteArtinMap a).toMul ∈ U ↔
+        groundEquivOfOpenNormal F V a ∈ (ofOpenNormal V).normSubgroup F := by
+  obtain ⟨V, hV⟩ := exists_abelianizationRestrict_eq_zero_iff U
+  exact ⟨V, fun a ↦ by
+    rw [← hV, ofMul_toMul, abelianizationRestrict_absoluteArtinMap_eq_zero_iff]⟩
+
+/-- **The kernel of the absolute Artin map is the intersection of the norm subgroups**: the
+absolute Artin symbol of `a ∈ A^G` vanishes exactly when `a` is a norm from every layer `V ◁ G`. -/
+theorem absoluteArtinMap_eq_zero_iff (a : F.level ⊤) :
+    cf.absoluteArtinMap a = 0 ↔
+      ∀ V : OpenNormalSubgroup G,
+        groundEquivOfOpenNormal F V a ∈ (ofOpenNormal V).normSubgroup F := by
+  refine ⟨fun h V ↦ ?_, fun h ↦ eq_of_forall_abelianizationRestrict_eq fun V ↦ ?_⟩
+  · rw [← abelianizationRestrict_absoluteArtinMap_eq_zero_iff, h, map_zero]
+  · rw [map_zero, abelianizationRestrict_absoluteArtinMap_eq_zero_iff]
+    exact h V
 
 /-- **The absolute Artin map has dense image**: modulo every open normal subgroup of `G^ab` it is
 a finite Artin map, which is surjective. -/

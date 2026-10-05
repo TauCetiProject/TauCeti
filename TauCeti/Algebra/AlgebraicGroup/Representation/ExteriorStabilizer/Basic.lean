@@ -18,18 +18,14 @@ ideal realizes that subgroup as a subspace stabilizer. Over every commutative va
 the top-exterior-line criterion in the exterior algebra over `A` of `A ⊗ V`, together with
 compatibility of the exterior point action with scalar extension, turns this into the stabilizer
 of a line in the finite-dimensional exterior-power comodule `⋀ᵈ V`, where `d` is the dimension of
-the defining subspace. This works for nonreduced value algebras and subgroup schemes, and gives
-Chevalley's theorem in line form: the closed subgroup is the stabilizer, over every commutative
-value algebra, of the line spanned by the top exterior power of the defining subspace in the
-rational representation `⋀ᵈ V`.
+the defining subspace. This works for nonreduced value algebras and subgroup schemes. The
+existence of a stabilizing line, together with its unique subgroup character, is proved in
+`TauCeti.Algebra.AlgebraicGroup.Representation.ExteriorStabilizer.Character`.
 
 ## Main statements
 
 * `TauCeti.Comodule.map_endOfPoint_baseChange_range_exteriorPowerMap_finrank_eq_iff`: a point
   stabilizes the top exterior line of a subspace exactly when it stabilizes the subspace.
-* `TauCeti.HopfIdeal.exists_finite_subcomodule_exteriorPower_line_stabilizer`: a closed subgroup
-  with finitely generated ideal is the stabilizer of a line in a finite-dimensional
-  representation.
 
 ## References
 
@@ -88,27 +84,5 @@ theorem mem_quotientPointsSubgroup_iff_map_baseChange_range_exteriorPowerMap_eq
   let : AddCommGroup V := Module.addCommMonoidToAddCommGroup k
   rw [Comodule.map_endOfPoint_baseChange_range_exteriorPowerMap_finrank_eq_iff]
   exact I.mem_quotientPointsSubgroup_iff_map_definingSubspace_eq V hgen A g
-
-/-- **Chevalley's theorem**, line form: a closed subgroup with finitely generated defining
-ideal, in particular any closed subgroup of a finite-type affine group, is the stabilizer of a
-line in a finite-dimensional representation. The representation is an exterior power of a
-finite regular subcomodule, and one line works simultaneously over all commutative value
-algebras, so the statement detects nonreduced subgroup schemes. -/
-theorem exists_finite_subcomodule_exteriorPower_line_stabilizer (I : HopfIdeal k H)
-    (hI : I.toIdeal.FG) :
-    ∃ (V : Subcomodule k H H) (n : ℕ), Module.Finite k V.toSubmodule ∧
-      letI : AddCommGroup V := Module.addCommMonoidToAddCommGroup k
-      ∃ L : Submodule k (⋀[k]^n V), Module.finrank k L = 1 ∧
-        ∀ (A : CommAlgCat.{w} k) (g : HopfAlgebra.points (R := k) (H := H) A),
-          g ∈ CommHopfAlgCat.quotientPointsSubgroup H I A ↔
-            (L.baseChange A).map (Comodule.endOfPoint (⋀[k]^n V) g.ofConv) = L.baseChange A := by
-  obtain ⟨V, hV, hgen⟩ := I.exists_finite_subcomodule_generating hI
-  let : Module.Finite k V := hV
-  let : AddCommGroup V := Module.addCommMonoidToAddCommGroup k
-  let W := I.definingSubspace V
-  refine ⟨V, Module.finrank k W, hV, LinearMap.range (_root_.exteriorPower.map _ W.subtype),
-    ?_, fun A g ↦ I.mem_quotientPointsSubgroup_iff_map_baseChange_range_exteriorPowerMap_eq
-      V hgen A g⟩
-  rw [exteriorPower.finrank_range_map W.injective_subtype, Nat.choose_self]
 
 end TauCeti.HopfIdeal

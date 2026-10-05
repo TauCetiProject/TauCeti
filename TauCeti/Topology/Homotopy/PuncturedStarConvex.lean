@@ -7,7 +7,13 @@ module
 
 public import Mathlib.Analysis.Convex.Star
 public import Mathlib.Analysis.Normed.Module.Basic
+public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import Mathlib.Topology.Homotopy.Equiv
+
+import Mathlib.Analysis.Normed.Module.Convex
+import TauCeti.Analysis.Normed.Module.Normalize
+import TauCeti.Topology.Homotopy.HomotopyEquiv
+import TauCeti.Topology.JordanCurve.Basic
 
 /-!
 # A punctured star-convex set retracts onto a sphere about the puncture
@@ -24,6 +30,10 @@ In particular the inclusion of the sphere into `V \ {p}` is a homotopy equivalen
 convex subset of `ℂ` this is the reduction of the fundamental group of a punctured convex domain
 to that of a circle.
 
+For subsets of `ℂ`, the file also records the direction map `z ↦ (z - p) / ‖z - p‖` to the unit
+circle, the resulting path connectedness of `V \ {p}`, and the loop going once around the
+puncture of a punctured ball.
+
 Connectedness and openness alone do not suffice: a punctured annulus is connected and open but is
 not homotopy equivalent to a circle.
 
@@ -34,6 +44,12 @@ not homotopy equivalent to a circle.
   (`StarConvex.coe_sphereHomotopyEquiv_apply`, `StarConvex.coe_sphereHomotopyEquiv_symm_apply`).
 * `StarConvex.radialHomotopy`: the straight-line deformation from the radial projection to the
   identity, fixing the included sphere pointwise throughout.
+* `Complex.directionFrom`: the direction map `z ↦ (z - p) / ‖z - p‖` from `V \ {p}` to the unit
+  circle, for `V ⊆ ℂ`.
+* `StarConvex.pathConnectedSpace_diff_singleton`: for `V ⊆ ℂ`, `V \ {p}` is path connected; in
+  particular so is a punctured ball (`TauCeti.pathConnectedSpace_ball_diff_singleton`).
+* `Complex.loopAround`: the loop `t ↦ p + (z - p) e^{2πit}` going once around the puncture of
+  `ball p R \ {p}`.
 
 ## References
 
@@ -49,6 +65,8 @@ open Metric Set
 open scoped unitInterval
 
 namespace TauCeti
+
+section NormedSpace
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {V : Set E} {p : E} {r : ℝ}
 
@@ -201,5 +219,60 @@ theorem _root_.StarConvex.coe_sphereHomotopyEquiv_symm_apply (hV : StarConvex �
     (hr : 0 < r) (hS : sphere p r ⊆ V) (z : ↥(V \ {p})) :
     ((hV.sphereHomotopyEquiv hr hS).symm z : E) = p + (r / ‖(z : E) - p‖) • ((z : E) - p) :=
   (rfl)
+
+end NormedSpace
+
+section Complex
+
+variable {V : Set ℂ} {p : ℂ} {r R : ℝ}
+
+/-- The direction `(z - p) / ‖z - p‖` of a point `z` of `V \ {p}` seen from `p`, as a point of the
+unit circle: the normalization `TauCeti.normalizeToSphere` of `z - p`, read in `Circle`. -/
+def _root_.Complex.directionFrom (p : ℂ) (V : Set ℂ) : C(↥(V \ {p}), Circle) :=
+  (sphereCircleHomeomorph 0 one_pos : C(sphere (0 : ℂ) 1, Circle)).comp
+    (normalizeToSphere (fun z : ↥(V \ {p}) ↦ (z : ℂ) - p) (by fun_prop)
+      fun z ↦ sub_ne_zero.2 z.2.2)
+
+@[simp]
+theorem _root_.Complex.coe_directionFrom_apply (p : ℂ) (V : Set ℂ) (z : ↥(V \ {p})) :
+    (p.directionFrom V z : ℂ) = ((z : ℂ) - p) / ‖(z : ℂ) - p‖ := by
+  simp [Complex.directionFrom, NormedSpace.normalize, div_eq_inv_mul]
+
+/-- A punctured star-convex subset of `ℂ` containing a circle about the puncture is path
+connected, being homotopy equivalent to the circle. -/
+theorem _root_.StarConvex.pathConnectedSpace_diff_singleton (hV : StarConvex ℝ p V) (hr : 0 < r)
+    (hS : sphere p r ⊆ V) : PathConnectedSpace ↥(V \ {p}) :=
+  ((hV.sphereHomotopyEquiv hr hS).symm.trans
+    (sphereCircleHomeomorph p hr).toHomotopyEquiv).symm.pathConnectedSpace
+
+/-- A punctured open ball in `ℂ` of positive radius is path connected. -/
+theorem pathConnectedSpace_ball_diff_singleton (p : ℂ) (hR : 0 < R) :
+    PathConnectedSpace ↥(ball p R \ {p}) :=
+  ((convex_ball p R).starConvex (mem_ball_self hR)).pathConnectedSpace_diff_singleton
+    (half_pos hR) (sphere_subset_ball (half_lt_self hR))
+
+/-- Rotating a point of a punctured ball about its centre stays in the punctured ball. -/
+private theorem add_mul_exp_mem_ball_diff_singleton {z : ℂ} (hz : z ∈ ball p R \ {p})
+    (θ : ℝ) : p + (z - p) * Complex.exp (θ * Complex.I) ∈ ball p R \ {p} := by
+  have hzp : z - p ≠ 0 := sub_ne_zero.2 hz.2
+  refine ⟨?_, ?_⟩
+  · simpa [mem_ball, dist_eq_norm, Complex.norm_exp_ofReal_mul_I] using hz.1
+  · simp [hzp, Complex.exp_ne_zero]
+
+/-- The loop `t ↦ p + (z - p) e^{2πit}` based at `z`, going once counterclockwise around `p` along
+the circle through `z`, in the punctured ball `ball p R \ {p}`. -/
+def _root_.Complex.loopAround (p : ℂ) (z : ↥(ball p R \ {p})) : Path z z where
+  toFun t := ⟨p + (z - p) * Complex.exp (↑(2 * Real.pi * t) * Complex.I),
+    add_mul_exp_mem_ball_diff_singleton z.2 _⟩
+  continuous_toFun := Continuous.subtype_mk (by fun_prop) _
+  source' := by ext; simp
+  target' := by ext; simp
+
+@[simp]
+theorem _root_.Complex.coe_loopAround_apply (p : ℂ) (z : ↥(ball p R \ {p})) (t : unitInterval) :
+    (p.loopAround z t : ℂ) = p + (z - p) * Complex.exp (↑(2 * Real.pi * t) * Complex.I) :=
+  (rfl)
+
+end Complex
 
 end TauCeti

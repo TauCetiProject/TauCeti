@@ -73,7 +73,7 @@ def crossingSlotEquiv (n : ℕ) : Fin n × Fin 4 ≃ Fin (4 * n) :=
 
 /-- The crossing-slot equivalence numbers slot `s` at crossing `i` by `s + 4 * i`. -/
 @[simp]
-theorem crossingSlotEquiv_apply_val (n : ℕ) (i : Fin n) (slot : Fin 4) :
+theorem crossingSlotEquiv_apply_val {n : ℕ} (i : Fin n) (slot : Fin 4) :
     (crossingSlotEquiv n (i, slot)).val = slot.val + 4 * i.val :=
   (rfl)
 
@@ -98,7 +98,7 @@ theorem crossingSlotEquiv_succ_last {n : ℕ} (slot : Fin 4) :
 
 -- Not `@[simp]`: `crossingSlotEquiv_apply_val` already rewrites the left-hand side.
 /-- The slot of a half-edge is recovered from its position modulo four. -/
-theorem crossingSlotEquiv_apply_val_mod_four (n : ℕ) (i : Fin n) (slot : Fin 4) :
+theorem crossingSlotEquiv_apply_val_mod_four {n : ℕ} (i : Fin n) (slot : Fin 4) :
     (crossingSlotEquiv n (i, slot)).val % 4 = slot.val := by
   rw [crossingSlotEquiv_apply_val]
   omega

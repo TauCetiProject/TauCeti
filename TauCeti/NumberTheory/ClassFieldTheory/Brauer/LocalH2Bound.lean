@@ -22,6 +22,10 @@ quotient `h(U_L) = 1` (`TauCeti.TateCohomology.herbrandQuotient_unitFiltration_z
 
 `#H²(Gal(L/K), Lˣ) = [L : K]`.
 
+Since two-periodicity also identifies `H²(Gal(L/K), Lˣ)` with the norm quotient
+`Kˣ / N_{L/K}(Lˣ)` (`TauCeti.cyclicNormQuotientEquiv`), this is the cyclic norm index
+`[Kˣ : N_{L/K}(Lˣ)] = [L : K]`. It is a Herbrand-quotient computation and uses no reciprocity.
+
 For a general finite Galois extension, the local Galois group is solvable, and the
 field-theoretic solvable reduction propagates the prime-degree cyclic case to the bound
 `#H²(Gal(L/K), Lˣ) ∣ [L : K]`. This bounds the relative Brauer group of a finite Galois layer;
@@ -31,6 +35,7 @@ split by an unramified extension.
 ## Main results
 
 * `TauCeti.natCard_H2_units_eq_finrank`: `#H²(Gal(L/K), Lˣ) = [L : K]` for cyclic `L/K`.
+* `TauCeti.index_normGroup_of_isCyclic`: `[Kˣ : N_{L/K}(Lˣ)] = [L : K]` for cyclic `L/K`.
 * `TauCeti.natCard_H2_units_dvd_finrank`: `#H²(Gal(L/K), Lˣ) ∣ [L : K]` for every finite Galois
   `L/K`.
 
@@ -61,6 +66,14 @@ theorem natCard_H2_units_eq_finrank [IsCyclic (L ≃ₐ[K] L)] :
   rw [herbrandQuotient_units_eq_finrank_mul, TateCohomology.herbrandQuotient_unitFiltration_zero,
     mul_one] at h
   exact_mod_cast h
+
+/-- **The cyclic norm index.** For a cyclic extension `L/K` of nonarchimedean local fields, the
+norm group `N_{L/K}(Lˣ)` has index `[L : K]` in `Kˣ`. -/
+theorem index_normGroup_of_isCyclic [IsCyclic (L ≃ₐ[K] L)] :
+    (normGroup K L).index = finrank K L := by
+  obtain ⟨g, hg⟩ := IsCyclic.exists_generator (α := L ≃ₐ[K] L)
+  rw [← natCard_H2_units_eq_finrank K L, Subgroup.index]
+  exact Nat.card_congr (Additive.ofMul.trans (cyclicNormQuotientEquiv hg).toEquiv)
 
 /-- **The local `H²` bound.** For a finite Galois extension `L/K` of nonarchimedean local fields,
 the order of `H²(Gal(L/K), Lˣ)` divides `[L : K]`. -/
