@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.CoordinateRingMap
+public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Point
 public import Mathlib.RingTheory.TensorProduct.IsBaseChangeFree
 
 /-!
@@ -24,12 +24,9 @@ the coordinate ring of `W`.  More precisely, the underlying module square
                   CoordinateRing.map
 ```
 
-is a pushout.  The proof uses the canonical bases `{1, Y}` on both sides: the coordinate-ring map
-sends the first basis to the second, so the induced map from the tensor product sends a basis to a
-basis.
-
-This is the coordinate-ring comparison needed for invariance of isogeny degree under base change.
-The remaining step is to localise this pushout compatibly with the two function-field pullbacks.
+is a pushout.  Localising it identifies the function field of `W.map f` with a scalar extension
+of the function field of `W`, which is what is needed to compare degrees of isogenies under base
+change.
 
 ## Main definitions
 
@@ -41,11 +38,6 @@ The remaining step is to localise this pushout compatibly with the two function-
 * `WeierstrassCurve.Affine.CoordinateRing.isBaseChange_mapLinear`: the target coordinate ring is
   the module base change of the source coordinate ring.
 
-## Roadmap
-
-`TauCetiRoadmap/EllipticCurves/README.md`, **Layer 0.5**, asks for base change of coordinate rings,
-function fields and isogenies compatible with degree.  This file supplies the coordinate-ring
-pushout required before the corresponding fraction-field degree comparison.
 -/
 
 public section
@@ -63,7 +55,6 @@ variable (W : _root_.WeierstrassCurve.Affine R) (f : R →+* S)
 
 /-- `CoordinateRing.map`, as a linear map over the coefficientwise homomorphism
 `R[X] → S[X]`. -/
-@[expose]
 noncomputable def _root_.WeierstrassCurve.Affine.CoordinateRing.mapLinear :
     let _ : Module R[X] (W.map f).CoordinateRing :=
       Module.compHom (W.map f).CoordinateRing (Polynomial.mapRingHom f)
@@ -77,7 +68,9 @@ noncomputable def _root_.WeierstrassCurve.Affine.CoordinateRing.mapLinear :
 
 @[simp]
 theorem _root_.WeierstrassCurve.Affine.CoordinateRing.mapLinear_apply
-    (z : W.CoordinateRing) : mapLinear W f z = map W f z := rfl
+    (z : W.CoordinateRing) : mapLinear W f z = map W f z := by
+  unfold mapLinear
+  rfl
 
 private theorem mapScalarTower :
     @IsScalarTower R[X] S[X] (W.map f).CoordinateRing
@@ -106,37 +99,27 @@ theorem _root_.WeierstrassCurve.Affine.CoordinateRing.isBaseChange_mapLinear :
     inferInstance (Module.compHom (W.map f).CoordinateRing (Polynomial.mapRingHom f))
     inferInstance (mapScalarTower W f) (mapLinear W f) e ?_
   intro z
-  let g :
-      let _ : Module R[X] (W.map f).CoordinateRing :=
-        Module.compHom (W.map f).CoordinateRing (Polynomial.mapRingHom f)
-      W.CoordinateRing →ₗ[R[X]] (W.map f).CoordinateRing := by
-    letI : Module R[X] (W.map f).CoordinateRing :=
-      Module.compHom (W.map f).CoordinateRing (Polynomial.mapRingHom f)
-    haveI : IsScalarTower R[X] S[X] (W.map f).CoordinateRing := mapScalarTower W f
-    exact
-      { toFun := fun x ↦ e (1 ⊗ₜ[R[X]] x)
-        map_add' := fun x y ↦ by simp only [TensorProduct.tmul_add, map_add]
-        map_smul' := fun p x ↦ by
-          change e ((TensorProduct.mk R[X] S[X] W.CoordinateRing 1) (p • x)) =
-            p • e ((TensorProduct.mk R[X] S[X] W.CoordinateRing 1) x)
-          rw [(TensorProduct.mk R[X] S[X] W.CoordinateRing 1).map_smul]
-          rw [← IsScalarTower.algebraMap_smul S[X] p
-            ((TensorProduct.mk R[X] S[X] W.CoordinateRing 1) x)]
-          rw [e.map_smul]
-          exact IsScalarTower.algebraMap_smul S[X] p _ }
-  change g z = mapLinear W f z
-  apply LinearMap.congr_fun
-  apply (CoordinateRing.basis W).ext
-  intro i
-  change e ((TensorProduct.mk R[X] S[X] W.CoordinateRing 1) (CoordinateRing.basis W i)) =
-    mapLinear W f (CoordinateRing.basis W i)
-  rw [← IsBaseChange.basis_apply (CoordinateRing.basis W)
-    (TensorProduct.isBaseChange R[X] W.CoordinateRing S[X]) i]
-  change e (bₜ i) = mapLinear W f (CoordinateRing.basis W i)
-  rw [show e (bₜ i) = CoordinateRing.basis (W.map f) i by simp [e]]
-  fin_cases i
-  · simp
-  · simp
+  let : Module R[X] (W.map f).CoordinateRing :=
+    Module.compHom (W.map f).CoordinateRing (Polynomial.mapRingHom f)
+  have : IsScalarTower R[X] S[X] (W.map f).CoordinateRing := mapScalarTower W f
+  -- `z ↦ e (1 ⊗ₜ z)` as an `R[X]`-linear map, so that it can be compared with `mapLinear` on
+  -- the basis `{1, Y}` of `R[W]`.
+  let g : W.CoordinateRing →ₗ[R[X]] (W.map f).CoordinateRing :=
+    { toFun := fun x ↦ e (1 ⊗ₜ x)
+      map_add' := fun x y ↦ by rw [TensorProduct.tmul_add, map_add]
+      map_smul' := fun p x ↦ by
+        rw [TensorProduct.tmul_smul, ← IsScalarTower.algebraMap_smul S[X] p, e.map_smul,
+          IsScalarTower.algebraMap_smul, RingHom.id_apply]
+        -- `AdjoinRoot`'s own `R[X]`-action agrees definitionally with the `compHom` one.
+        rfl }
+  have hg : ∀ x, g x = e (1 ⊗ₜ x) := fun _ ↦ rfl
+  rw [← hg]
+  refine LinearMap.congr_fun ((CoordinateRing.basis W).ext fun i ↦ ?_) z
+  have hb : e (bₜ i) = CoordinateRing.basis (W.map f) i := by simp [e]
+  rw [hg, ← TensorProduct.mk_apply,
+    ← IsBaseChange.basis_apply (CoordinateRing.basis W)
+      (TensorProduct.isBaseChange R[X] W.CoordinateRing S[X]) i, hb]
+  fin_cases i <;> simp [basis_one, map_mk, -AdjoinRoot.mk_X]
 
 end TauCeti
 
