@@ -12,7 +12,7 @@ public import TauCeti.Geometry.Toric.Algebraic.Fan.Scheme
 # Toric fan schemes over the complex numbers
 
 The structure morphisms of the affine toric charts descend to a structure morphism from the
-scheme of a regular fan to `Spec ℂ`. The chart inclusions and the algebraic maps induced by fan
+scheme of a finite fan to `Spec ℂ`. The chart inclusions and the algebraic maps induced by fan
 morphisms commute with these structure morphisms. Thus these schemes and maps can be used in
 Mathlib's category of schemes over `Spec ℂ`, and their complex points can be expressed as
 morphisms over `Spec ℂ`.
@@ -62,31 +62,31 @@ private noncomputable def structureCocone : Cocone Φ.affineToricDiagram where
           (faceAffineCoordinateRingMap Φ.lattice
             (Φ.isFaceOf_of_le σ.2 τ.2 (leOfHom h))).toRingHom)) (Spec (.of ℂ)) }
 
-/-- The structure morphism to `Spec ℂ` of the scheme of a regular fan. -/
-noncomputable def algebraicRealizationStructureMap (hΦ : Φ.IsRegular) :
-    Φ.algebraicRealization hΦ ⟶ Spec (.of ℂ) :=
-  (Φ.isColimitAffineToricCocone hΦ).desc (structureCocone Φ)
+/-- The structure morphism to `Spec ℂ` of the scheme of a finite fan. -/
+noncomputable def algebraicRealizationStructureMap :
+    Φ.algebraicRealization ⟶ Spec (.of ℂ) :=
+  Φ.isColimitAffineToricCocone.desc (structureCocone Φ)
 
-/-- The canonical structure over `Spec ℂ` on the scheme of a regular fan, induced by the
+/-- The canonical structure over `Spec ℂ` on the scheme of a finite fan, induced by the
 complex-algebra structures on its affine coordinate rings. -/
-noncomputable instance algebraicRealizationOver (hΦ : Φ.IsRegular) :
-    (Φ.algebraicRealization hΦ).Over (Spec (.of ℂ)) :=
-  OverClass.ofHom (Φ.algebraicRealizationStructureMap hΦ)
+noncomputable instance algebraicRealizationOver :
+    Φ.algebraicRealization.Over (Spec (.of ℂ)) :=
+  OverClass.ofHom Φ.algebraicRealizationStructureMap
 
 /-- The canonical complex structure morphism is the descended structure morphism. -/
-theorem algebraicRealization_over (hΦ : Φ.IsRegular) :
-    Φ.algebraicRealization hΦ ↘ Spec (.of ℂ) = Φ.algebraicRealizationStructureMap hΦ :=
+theorem algebraicRealization_over :
+    Φ.algebraicRealization ↘ Spec (.of ℂ) = Φ.algebraicRealizationStructureMap :=
   (rfl)
 
 /-- Each affine toric chart inclusion respects the complex-scheme structures. -/
-instance isOver_affineToricChartι (hΦ : Φ.IsRegular) (σ : Φ.cones) :
-    (Φ.affineToricChartι hΦ σ).IsOver (Spec (.of ℂ)) where
+instance isOver_affineToricChartι (σ : Φ.cones) :
+    (Φ.affineToricChartι σ).IsOver (Spec (.of ℂ)) where
   comp_over := by
     rw [algebraicRealization_over, specOverSpec_over]
     -- State the factorization on the chart carriers before rewriting their over-structures.
-    have h : Φ.affineToricChartι hΦ σ ≫ Φ.algebraicRealizationStructureMap hΦ =
+    have h : Φ.affineToricChartι σ ≫ Φ.algebraicRealizationStructureMap =
         Φ.affineToricChart σ ↘ Spec (.of ℂ) := by
-      have h := (Φ.isColimitAffineToricCocone hΦ).fac (structureCocone Φ) σ
+      have h := Φ.isColimitAffineToricCocone.fac (structureCocone Φ) σ
       rw [affineToricCocone_ι_app] at h
       exact h
     simpa only [specOverSpec_over] using h
@@ -99,10 +99,10 @@ variable {N' : Type} {V' : Type*} [AddCommGroup N'] [AddCommGroup V'] [Module �
   {i' : N' →+ V'} {Φ : Fan i} {Ψ : Fan i'}
 
 /-- The algebraic morphism induced by a fan morphism respects the complex-scheme structures. -/
-instance isOver_algebraicMap (f : FanHom Φ Ψ) (hΦ : Φ.IsRegular) (hΨ : Ψ.IsRegular) :
-    (f.algebraicMap hΦ hΨ).IsOver (Spec (.of ℂ)) where
+instance isOver_algebraicMap (f : FanHom Φ Ψ) :
+    f.algebraicMap.IsOver (Spec (.of ℂ)) where
   comp_over := by
-    apply Fan.algebraicRealization_hom_ext Φ hΦ
+    apply Fan.algebraicRealization_hom_ext Φ
     intro σ
     simp only [affineToricChartι_comp_algebraicMap_assoc, comp_over]
     rw [affineToricChartMap_def, affineToricSchemeMap_def]

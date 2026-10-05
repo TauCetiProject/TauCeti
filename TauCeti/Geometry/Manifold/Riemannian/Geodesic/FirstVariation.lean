@@ -15,15 +15,17 @@ import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 The first variation formula `TauCeti.Manifold.IsFixedEndpointVariation.hasDerivAt_energy` of
 `TauCeti.Geometry.Manifold.Riemannian.FirstVariation` expresses the derivative at `s = 0` of the
 energy of a fixed-endpoint variation `F` of `γ = F 0` as `-∫_a^b ⟪V(t), D_t γ'(t)⟫ dt`.  This file
-proves the variational characterization of geodesics: on a boundaryless manifold, a curve which
-is `C²` near `[a, b]` is a critical point of the energy between `a` and `b`
-(`TauCeti.Manifold.IsEnergyCritical`) exactly when it is a geodesic on the open interval between
-`a` and `b`.
+proves the variational characterization of geodesics: on a boundaryless `C^n` manifold with
+`2 ≤ n ≤ ∞`, a curve which is `C^n` near `[a, b]` is a critical point of the energy between `a`
+and `b` among `C^n` variations (`TauCeti.Manifold.IsEnergyCritical`) exactly when it is a geodesic
+on the open interval between `a` and `b`.  In particular, for `n = ∞`, a smooth curve is critical
+among smooth variations with fixed endpoints exactly when it is a geodesic.
 
 Along a geodesic the covariant acceleration `D_t γ'` vanishes, so the first variation vanishes.
 Conversely, suppose `D_t γ'(t₀) ≠ 0` at an interior parameter `t₀`.  In the extended chart at
 `γ t₀`, pushing `γ` in the direction of a fixed coordinate vector `e`, with a bump function `φ`
-supported near `t₀` as profile, is a fixed-endpoint variation whose variation field is `φ` times
+supported near `t₀` as profile, is a fixed-endpoint variation, as regular as `γ` and the
+manifold, whose variation field is `φ` times
 the coordinate field of `e`.  For `e` the coordinate vector of `D_t γ'(t₀)`, the pairing `g` of
 that coordinate field with `D_t γ'` is positive at `t₀`; it is continuous there, because the
 first-variation integrand of such a variation is
@@ -33,9 +35,9 @@ first-variation integrand of such a variation is
 ## Main definitions and results
 
 * `TauCeti.Manifold.IsGeodesicCurveOn.isEnergyCritical`: **geodesics are critical points of the
-  energy** among variations with fixed endpoints.
+  energy** among `C^n` variations with fixed endpoints, for every `2 ≤ n`.
 * `TauCeti.Manifold.IsEnergyCritical.isGeodesicCurveOn`: **critical points of the energy are
-  geodesics**.
+  geodesics**, for `2 ≤ n ≤ ∞`.
 * `TauCeti.Manifold.isEnergyCritical_iff_isGeodesicCurveOn`: the two combined.
 
 ## References
@@ -68,12 +70,13 @@ variable [FiniteDimensional ℝ E] [IsManifold I 2 M]
 
 /-! ### Geodesics are critical -/
 
-/-- **Geodesics are critical points of the energy.** A geodesic on the open interval between `a`
-and `b` which is `C²` at every point of `[a, b]` is a critical point of the energy between `a` and
-`b` among variations with fixed endpoints. -/
-theorem IsGeodesicCurveOn.isEnergyCritical (h : IsGeodesicCurveOn I γ (uIoo a b))
-    (hγ : ∀ t ∈ uIcc a b, ContMDiffAt 𝓘(ℝ, ℝ) I 2 γ t) : IsEnergyCritical I γ a b := by
-  refine (isEnergyCritical_iff_integral_inner_eq_zero hγ).mpr fun F hF0 _ ↦ ?_
+/-- **Geodesics are critical points of the energy.** For `2 ≤ n`, a geodesic on the open interval
+between `a` and `b` which is `C^n` at every point of `[a, b]` is a critical point of the energy
+between `a` and `b` among `C^n` variations with fixed endpoints. -/
+theorem IsGeodesicCurveOn.isEnergyCritical {n : WithTop ℕ∞} (hn : 2 ≤ n)
+    (h : IsGeodesicCurveOn I γ (uIoo a b)) (hγ : ∀ t ∈ uIcc a b, ContMDiffAt 𝓘(ℝ, ℝ) I n γ t) :
+    IsEnergyCritical I n γ a b := by
+  refine (isEnergyCritical_iff_integral_inner_eq_zero hn hγ).mpr fun F hF0 _ ↦ ?_
   subst hF0
   refine (intervalIntegral.integral_congr_uIoo (g := fun _ ↦ (0 : ℝ)) fun t ht ↦ ?_).trans
     intervalIntegral.integral_zero
@@ -83,7 +86,7 @@ theorem IsGeodesicCurveOn.isEnergyCritical (h : IsGeodesicCurveOn I γ (uIoo a b
 
 section Converse
 
-variable [I.Boundaryless] {x₀ : M} {J : Set ℝ} {φ : ℝ → ℝ} {e : E}
+variable [I.Boundaryless] {n : ℕ∞} {x₀ : M} {J : Set ℝ} {φ : ℝ → ℝ} {e : E}
 
 open scoped Classical in
 variable (I) in
@@ -120,48 +123,49 @@ private theorem chartVariation_zero (hJ : ∀ t ∈ J, γ t ∈ (extChartAt I x�
     chartVariation I γ x₀ J φ e 0 = γ :=
   funext fun _ ↦ chartVariation_of_mul_eq_zero hJ (zero_mul _)
 
-omit [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [FiniteDimensional ℝ E]
+omit [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [FiniteDimensional ℝ E] [IsManifold I 2 M]
   [ContMDiffVectorBundle 1 E (TangentSpace I : M → Type _) I]
   [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)] in
-/-- The chart variation of a curve which is `C²` at `t` is `C²` at `(0, t)`, for a `C²` profile
-supported in the open set `J`. -/
-private theorem contMDiffAt_chartVariation (hJo : IsOpen J)
-    (hJ : ∀ t ∈ J, γ t ∈ (extChartAt I x₀).source) (hφ : ContDiff ℝ 2 φ) (hφJ : tsupport φ ⊆ J)
-    {t : ℝ} (hγ : ContMDiffAt 𝓘(ℝ, ℝ) I 2 γ t) :
-    ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 2 (fun z : ℝ × ℝ ↦ chartVariation I γ x₀ J φ e z.1 z.2) (0, t) := by
+/-- On a `C^n` manifold, the chart variation of a curve which is `C^n` at `t` is `C^n` at `(0, t)`,
+for a `C^n` profile supported in the open set `J`. -/
+private theorem contMDiffAt_chartVariation [IsManifold I n M] (hJo : IsOpen J)
+    (hJ : ∀ t ∈ J, γ t ∈ (extChartAt I x₀).source) (hφ : ContDiff ℝ n φ) (hφJ : tsupport φ ⊆ J)
+    {t : ℝ} (hγ : ContMDiffAt 𝓘(ℝ, ℝ) I n γ t) :
+    ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I n (fun z : ℝ × ℝ ↦ chartVariation I γ x₀ J φ e z.1 z.2) (0, t) := by
   by_cases htJ : t ∈ J
   · -- near `(0, t)` the family is given by the chart formula
-    have hc : ContDiffAt ℝ 2 (extChartAt I x₀ ∘ γ) t :=
+    have hc : ContDiffAt ℝ n (extChartAt I x₀ ∘ γ) t :=
       contMDiffAt_iff_contDiffAt.mp
         ((contMDiffAt_extChartAt' (by simpa using hJ t htJ)).comp t hγ)
-    have hg : ContDiffAt ℝ 2 (fun z : ℝ × ℝ ↦ extChartAt I x₀ (γ z.2) + (z.1 * φ z.2) • e)
+    have hg : ContDiffAt ℝ n (fun z : ℝ × ℝ ↦ extChartAt I x₀ (γ z.2) + (z.1 * φ z.2) • e)
         (0, t) :=
       (hc.comp (0, t) contDiffAt_snd).add
         ((contDiffAt_fst.mul (hφ.contDiffAt.comp (0, t) contDiffAt_snd)).smul contDiffAt_const)
     have hmem : extChartAt I x₀ (γ t) + ((0 : ℝ) * φ t) • e ∈ (extChartAt I x₀).target := by
       simpa using (extChartAt I x₀).map_source (hJ t htJ)
-    have hsymm : ContMDiffAt 𝓘(ℝ, E) I 2 (extChartAt I x₀).symm
+    have hsymm : ContMDiffAt 𝓘(ℝ, E) I n (extChartAt I x₀).symm
         (extChartAt I x₀ (γ t) + ((0 : ℝ) * φ t) • e) :=
       (contMDiffOn_extChartAt_symm x₀ _ hmem).contMDiffAt
         ((isOpen_extChartAt_target x₀).mem_nhds hmem)
     refine (hsymm.comp (0, t) (contMDiffAt_iff_contDiffAt.mpr hg)).congr_of_eventuallyEq ?_
     filter_upwards [continuousAt_snd.preimage_mem_nhds (hJo.mem_nhds htJ)] with z hz
     simp [chartVariation, show z.2 ∈ J from hz]
-  · -- away from the support of `φ` the family is `γ`, which is `C²` near `t`
+  · -- away from the support of `φ` the family is `γ`, which is `C^n` near `t`
     have hev : φ =ᶠ[𝓝 t] 0 := notMem_tsupport_iff_eventuallyEq.mp fun h ↦ htJ (hφJ h)
     refine (hγ.comp (0, t) contDiff_snd.contMDiff.contMDiffAt).congr_of_eventuallyEq ?_
     filter_upwards [continuousAt_snd.preimage_mem_nhds hev] with z hz
     exact chartVariation_of_mul_eq_zero hJ (by rw [hz, Pi.zero_apply, mul_zero])
 
-omit [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [FiniteDimensional ℝ E]
+omit [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [FiniteDimensional ℝ E] [IsManifold I 2 M]
   [ContMDiffVectorBundle 1 E (TangentSpace I : M → Type _) I]
   [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)] in
-/-- The chart variation of a curve which is `C²` on `[a, b]`, for a `C²` profile supported in an
-open set `J ⊆ uIoo a b`, is a `C²` variation with fixed endpoints between `a` and `b`. -/
-private theorem isFixedEndpointVariation_chartVariation (hJo : IsOpen J) (hJab : J ⊆ uIoo a b)
-    (hJ : ∀ t ∈ J, γ t ∈ (extChartAt I x₀).source) (hφ : ContDiff ℝ 2 φ) (hφJ : tsupport φ ⊆ J)
-    (hγ : ∀ t ∈ uIcc a b, ContMDiffAt 𝓘(ℝ, ℝ) I 2 γ t) :
-    IsFixedEndpointVariation I 2 (chartVariation I γ x₀ J φ e) a b := by
+/-- On a `C^n` manifold, the chart variation of a curve which is `C^n` on `[a, b]`, for a `C^n`
+profile supported in an open set `J ⊆ uIoo a b`, is a `C^n` variation with fixed endpoints between
+`a` and `b`. -/
+private theorem isFixedEndpointVariation_chartVariation [IsManifold I n M] (hJo : IsOpen J)
+    (hJab : J ⊆ uIoo a b) (hJ : ∀ t ∈ J, γ t ∈ (extChartAt I x₀).source) (hφ : ContDiff ℝ n φ)
+    (hφJ : tsupport φ ⊆ J) (hγ : ∀ t ∈ uIcc a b, ContMDiffAt 𝓘(ℝ, ℝ) I n γ t) :
+    IsFixedEndpointVariation I n (chartVariation I γ x₀ J φ e) a b := by
   have hend : ∀ c ∉ uIoo a b, ∀ᶠ s in 𝓝 (0 : ℝ),
       chartVariation I γ x₀ J φ e s c = chartVariation I γ x₀ J φ e 0 c :=
     fun c hc ↦ .of_forall fun s ↦ by
@@ -218,36 +222,40 @@ private theorem inner_variationField_chartVariation
       rw [chartVariation_of_notMem htJ, chartVariation_of_notMem htJ]), inner_zero_left, hφt,
       zero_mul]
 
-/-- **The chart variations of a critical point.** Let `γ` be a critical point of the energy
-between `a` and `b`, and let `φ` be a `C²` profile
-supported in an open set `J ⊆ uIoo a b` on which `γ` stays in the chart at `x₀`.  Write `g t` for
-the pairing of the tangent vector with trivialization coordinates `e` at `γ t` against the
-covariant acceleration of `γ`.  Then `∫_a^b φ g = 0`, and `φ g` is continuous at every point of
-`[a, b]`. -/
-private theorem IsEnergyCritical.integral_mul_inner_eq_zero (h : IsEnergyCritical I γ a b)
-    (hJo : IsOpen J) (hJab : J ⊆ uIoo a b)
-    (hJ : ∀ t ∈ J, γ t ∈ (extChartAt I x₀).source) (hφ : ContDiff ℝ 2 φ) (hφJ : tsupport φ ⊆ J)
+/-- **The chart variations of a critical point.** On a `C^n` manifold with `2 ≤ n`, let `γ` be a
+critical point of the energy among `C^n` variations between `a` and `b`, and let `φ` be a `C^n`
+profile supported in an open set `J ⊆ uIoo a b` on which `γ` stays in the chart at `x₀`.  Write
+`g t` for the pairing of the tangent vector with trivialization coordinates `e` at `γ t` against
+the covariant acceleration of `γ`.  Then `∫_a^b φ g = 0`, and `φ g` is continuous at every point
+of `[a, b]`. -/
+private theorem IsEnergyCritical.integral_mul_inner_eq_zero [IsManifold I n M] (hn : 2 ≤ n)
+    (h : IsEnergyCritical I n γ a b) (hJo : IsOpen J) (hJab : J ⊆ uIoo a b)
+    (hJ : ∀ t ∈ J, γ t ∈ (extChartAt I x₀).source) (hφ : ContDiff ℝ n φ) (hφJ : tsupport φ ⊆ J)
     (e : E) :
     (∫ t in a..b, φ t * inner ℝ ((trivializationAt E (TangentSpace I) x₀).symmL ℝ (γ t) e)
         (acceleration (leviCivitaConnection I M) γ t)) = 0 ∧
       ∀ t ∈ uIcc a b, ContinuousAt (fun t ↦ φ t * inner ℝ
         ((trivializationAt E (TangentSpace I) x₀).symmL ℝ (γ t) e)
         (acceleration (leviCivitaConnection I M) γ t)) t := by
-  have hF : IsFixedEndpointVariation I 2 (chartVariation I γ x₀ J φ e) a b :=
+  have hn' : (2 : WithTop ℕ∞) ≤ n := WithTop.coe_le_coe.mpr hn
+  have hF : IsFixedEndpointVariation I n (chartVariation I γ x₀ J φ e) a b :=
     isFixedEndpointVariation_chartVariation hJo hJab hJ hφ hφJ h.contMDiffAt
   have hpt := inner_variationField_chartVariation (e := e) hJ
     ((subset_tsupport φ).trans hφJ)
   refine ⟨?_, fun t ht ↦ ?_⟩
-  · simpa only [hpt] using (isEnergyCritical_iff_integral_inner_eq_zero h.contMDiffAt).mp h _
-      (chartVariation_zero hJ) hF
-  · simpa only [hpt] using continuousAt_inner_variationField_acceleration (hF.contMDiffAt t ht)
+  · simpa only [hpt] using (isEnergyCritical_iff_integral_inner_eq_zero hn' h.contMDiffAt).mp h
+      _ (chartVariation_zero hJ) hF
+  · simpa only [hpt] using
+      continuousAt_inner_variationField_acceleration ((hF.of_le hn').contMDiffAt t ht)
 
-/-- **Critical points of the energy are geodesics.** On a boundaryless manifold, a critical point
-of the energy between `a` and `b` among variations with fixed endpoints is a geodesic on the open
-interval between `a` and `b`. -/
-theorem IsEnergyCritical.isGeodesicCurveOn (h : IsEnergyCritical I γ a b) :
-    IsGeodesicCurveOn I γ (uIoo a b) := by
-  have hγ := h.contMDiffAt
+/-- **Critical points of the energy are geodesics.** On a boundaryless `C^n` manifold with
+`2 ≤ n ≤ ∞`, a critical point of the energy between `a` and `b` among `C^n` variations with fixed
+endpoints is a geodesic on the open interval between `a` and `b`.  For `n = ∞` this is the
+statement for smooth curves and smooth variations. -/
+theorem IsEnergyCritical.isGeodesicCurveOn [IsManifold I n M] (hn : 2 ≤ n)
+    (h : IsEnergyCritical I n γ a b) : IsGeodesicCurveOn I γ (uIoo a b) := by
+  have hγ : ∀ t ∈ uIcc a b, ContMDiffAt 𝓘(ℝ, ℝ) I 2 γ t :=
+    fun t ht ↦ (h.contMDiffAt t ht).of_le (WithTop.coe_le_coe.mpr hn)
   refine (isGeodesicCurveOn_iff_of_isOpen isOpen_Ioo).mpr
     ⟨fun t ht ↦ (hγ t (uIoo_subset_uIcc_self ht)).contMDiffWithinAt, fun t₀ ht₀ ↦ ?_⟩
   by_contra hA
@@ -269,7 +277,7 @@ theorem IsEnergyCritical.isGeodesicCurveOn (h : IsEnergyCritical I γ a b) :
   have hJ : ∀ t ∈ ball t₀ δ, γ t ∈ (extChartAt I (γ t₀)).source := fun t ht ↦ (hδJ ht).2
   have hbump : ∀ φ : ContDiffBump t₀, φ.rOut < δ →
       (∫ t in a..b, φ t * g t) = 0 ∧ ∀ t ∈ uIcc a b, ContinuousAt (fun t ↦ φ t * g t) t :=
-    fun φ hφ ↦ h.integral_mul_inner_eq_zero isOpen_ball hJab hJ φ.contDiff
+    fun φ hφ ↦ h.integral_mul_inner_eq_zero hn isOpen_ball hJab hJ φ.contDiff
       (φ.tsupport_eq ▸ closedBall_subset_ball hφ) e
   -- `g` is continuous at `t₀`, since it agrees there with `φ g` for a bump `φ` equal to `1`
   -- near `t₀`
@@ -303,14 +311,16 @@ theorem IsEnergyCritical.isGeodesicCurveOn (h : IsEnergyCritical I γ a b) :
   rw [φ₂.one_of_mem_closedBall (mem_closedBall_self (by positivity)), one_mul] at heq
   exact hg₀.ne' heq
 
-/-- **The variational characterization of geodesics.** On a boundaryless manifold, a curve which
-is `C²` near every point of `[a, b]` is a critical point of the energy between `a` and `b` among
-variations with fixed endpoints exactly when it is a geodesic on the open interval between `a`
-and `b`. -/
-theorem isEnergyCritical_iff_isGeodesicCurveOn
-    (hγ : ∀ t ∈ uIcc a b, ContMDiffAt 𝓘(ℝ, ℝ) I 2 γ t) :
-    IsEnergyCritical I γ a b ↔ IsGeodesicCurveOn I γ (uIoo a b) :=
-  ⟨IsEnergyCritical.isGeodesicCurveOn, fun h ↦ h.isEnergyCritical hγ⟩
+/-- **The variational characterization of geodesics.** On a boundaryless `C^n` manifold with
+`2 ≤ n ≤ ∞`, a curve which is `C^n` near every point of `[a, b]` is a critical point of the energy
+between `a` and `b` among `C^n` variations with fixed endpoints exactly when it is a geodesic on
+the open interval between `a` and `b`.  For `n = ∞`: a smooth curve is critical among smooth
+variations exactly when it is a geodesic. -/
+theorem isEnergyCritical_iff_isGeodesicCurveOn [IsManifold I n M] (hn : 2 ≤ n)
+    (hγ : ∀ t ∈ uIcc a b, ContMDiffAt 𝓘(ℝ, ℝ) I n γ t) :
+    IsEnergyCritical I n γ a b ↔ IsGeodesicCurveOn I γ (uIoo a b) :=
+  ⟨IsEnergyCritical.isGeodesicCurveOn hn,
+    fun h ↦ h.isEnergyCritical (WithTop.coe_le_coe.mpr hn) hγ⟩
 
 end Converse
 

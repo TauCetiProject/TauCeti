@@ -30,15 +30,19 @@ of each degree:
 degrees, with these multiplicities, sum to the order of `GL₂(F)`; it needs no lower bound on `q`.
 
 The lower bound `q ≥ 3` is necessary for the degree-`1` and degree-`(q - 1)` identifications, since
-at `q = 2` those two degrees coincide. The last section treats that degenerate case separately: over
-the field with two elements the principal series is empty and the three irreducible characters of
-`GL₂(𝔽₂)` have degrees `1`, `1` and `2`, which are the degrees of `S₃`.
+at `q = 2` those two degrees coincide. A separate section treats that degenerate case: over the
+field with two elements the principal series is empty and the three irreducible characters of
+`GL₂(𝔽₂)` have degrees `1`, `1` and `2`, which are the degrees of `S₃`. The last section specializes
+the counts to the smallest uniform case `q = 3`, where all four families occur: the eight
+irreducible characters of `GL₂(𝔽₃)` have degrees `1, 1, 2, 2, 2, 3, 3, 4`.
 
 ## Main results
 
 * `TauCeti.irreducibleCharacters_GL2_degree_one_eq_range` and its three companions identify the
   irreducible characters of each degree with the corresponding constructed family.
 * `TauCeti.ncard_irreducibleCharacters_GL2_degree_one` and its three companions count those sets.
+* `TauCeti.image_degree_irreducibleCharacters_GL2`: for `q ≥ 3` the irreducible characters have
+  exactly the four degrees `1`, `q - 1`, `q` and `q + 1`.
 * `TauCeti.GL2_sum_degreeCount_mul_degree_sq_eq_natCard` adds the four degree counts, each
   weighted by the square of the degree it counts.
 * `TauCeti.image_character_GL2PrincipalSeries_eq_empty_of_card_eq_two`: the principal series of
@@ -47,6 +51,10 @@ the field with two elements the principal series is empty and the three irreduci
   `TauCeti.ncard_irreducibleCharacters_GL2_degree_one_of_card_eq_two` and
   `TauCeti.ncard_irreducibleCharacters_GL2_degree_two_of_card_eq_two`: `GL₂(𝔽₂)` has two
   irreducible characters of degree `1` and one of degree `2`, and no others.
+* `TauCeti.image_degree_irreducibleCharacters_GL2_of_card_eq_three` and
+  `TauCeti.ncard_irreducibleCharacters_GL2_degree_one_of_card_eq_three` with its three companions:
+  `GL₂(𝔽₃)` has two irreducible characters of degree `1`, three of degree `2`, two of degree `3`
+  and one of degree `4`, and no others.
 
 ## References
 
@@ -269,6 +277,38 @@ theorem GL2_sum_degreeCount_mul_degree_sq_eq_natCard :
     Nat.cast_div_charZero hprincipal, Nat.cast_div_charZero hcuspidal]
   ring
 
+/-- **The degrees of the irreducible characters of `GL₂(F)` are `1`, `q - 1`, `q` and `q + 1`**
+for `q ≥ 3`: the linear characters have degree `1`, the cuspidal ones `q - 1`, the Steinberg twists
+`q` and the principal series `q + 1`, and each family is nonempty. -/
+theorem image_degree_irreducibleCharacters_GL2 (hq : 3 ≤ Fintype.card F) :
+    (fun chi => chi 1) '' irreducibleCharacters ℂ (GL (Fin 2) F) =
+      {1, ((Fintype.card F - 1 : ℕ) : ℂ), (Fintype.card F : ℂ), (Fintype.card F : ℂ) + 1} := by
+  refine Set.Subset.antisymm ?_ ?_
+  · rintro - ⟨chi, hchi, rfl⟩
+    rw [irreducibleCharacters_GL2_eq_union F (gl2QuadraticExtension F)
+      (primitiveChar_to_Complex_ne_one F)] at hchi
+    simp only [Set.mem_insert_iff, Set.mem_singleton_iff]
+    rcases hchi with (((hlin | hstein) | hprincipal) | hcuspidal)
+    · exact .inl (character_degree_eq_of_mem_linear F hlin)
+    · exact .inr (.inr (.inl (character_degree_eq_of_mem_steinberg F hstein)))
+    · exact .inr (.inr (.inr (character_degree_eq_of_mem_principalSeries F hprincipal)))
+    · exact .inr (.inl
+        (character_degree_eq_of_mem_cuspidal F (gl2QuadraticExtension F) hcuspidal))
+  · -- each degree is attained, its set of characters having positive cardinality
+    have hne {d : ℂ} (h : {chi ∈ irreducibleCharacters ℂ (GL (Fin 2) F) | chi 1 = d}.ncard ≠ 0) :
+        d ∈ (fun chi => chi 1) '' irreducibleCharacters ℂ (GL (Fin 2) F) := by
+      obtain ⟨chi, hchi, hd⟩ := Set.nonempty_of_ncard_ne_zero h
+      exact ⟨chi, hchi, hd⟩
+    rintro x (rfl | rfl | rfl | rfl) <;> refine hne ?_
+    · rw [ncard_irreducibleCharacters_GL2_degree_one F hq]
+      omega
+    · rw [ncard_irreducibleCharacters_GL2_degree_card_sub_one F hq]
+      exact (Nat.div_pos (Nat.mul_le_mul (by omega : 2 ≤ _) (by omega : 1 ≤ _)) two_pos).ne'
+    · rw [ncard_irreducibleCharacters_GL2_degree_card F]
+      omega
+    · rw [ncard_irreducibleCharacters_GL2_degree_card_add_one F]
+      exact (Nat.div_pos (Nat.mul_le_mul (by omega : 2 ≤ _) (by omega : 1 ≤ _)) two_pos).ne'
+
 /-! ### The degenerate case `q = 2`
 
 Over the field with two elements the four families of the classification degenerate: there is one
@@ -371,5 +411,62 @@ theorem ncard_irreducibleCharacters_GL2_degree_one_of_card_eq_two (hq : Fintype.
   omega
 
 end CardTwo
+
+/-! ### The uniform case `q = 3`
+
+Over the field with three elements all four families are present, and the degrees `1`, `q`,
+`q + 1` and `q - 1` are the four distinct numbers `1`, `3`, `4` and `2`. The general counts give
+two linear characters, two Steinberg twists, one principal series and three cuspidal characters,
+so `GL₂(𝔽₃)` has eight irreducible characters, of degrees `1, 1, 2, 2, 2, 3, 3, 4`; their squares
+add up to `48`, the order of the group. The eight conjugacy classes they are evaluated on, of sizes
+`1, 1, 6, 6, 6, 8, 8, 12`, are listed in
+`TauCeti/LinearAlgebra/Matrix/GeneralLinearGroup/ClassSize.lean`. -/
+
+section CardThree
+
+-- Unlike its three companions this is not a `@[simp]` lemma: its left-hand side is that of the
+-- general `@[simp]` lemma `ncard_irreducibleCharacters_GL2_degree_one`, so `simp [hq]` already
+-- proves it, and the `simpNF` linter rejects the attribute.
+/-- **`GL₂(𝔽₃)` has two irreducible characters of degree `1`**, the characters `α ∘ det` for the
+two characters `α` of `𝔽₃ˣ`. -/
+theorem ncard_irreducibleCharacters_GL2_degree_one_of_card_eq_three (hq : Fintype.card F = 3) :
+    {chi ∈ irreducibleCharacters ℂ (GL (Fin 2) F) | chi 1 = 1}.ncard = 2 := by
+  rw [ncard_irreducibleCharacters_GL2_degree_one F hq.ge, hq]
+
+/-- **`GL₂(𝔽₃)` has three irreducible characters of degree `2`**, the cuspidal characters: the
+degree `q - 1` is `2`, and there are `q (q - 1) / 2 = 3` of them. -/
+@[simp]
+theorem ncard_irreducibleCharacters_GL2_degree_two_of_card_eq_three (hq : Fintype.card F = 3) :
+    {chi ∈ irreducibleCharacters ℂ (GL (Fin 2) F) | chi 1 = 2}.ncard = 3 := by
+  -- rewrite the degree `2` back into `q - 1`, where the general count applies
+  have h2 : ((Fintype.card F - 1 : ℕ) : ℂ) = 2 := by rw [hq]; norm_num
+  rw [← h2, ncard_irreducibleCharacters_GL2_degree_card_sub_one F hq.ge, hq]
+
+/-- **`GL₂(𝔽₃)` has two irreducible characters of degree `3`**, the Steinberg twists. -/
+@[simp]
+theorem ncard_irreducibleCharacters_GL2_degree_three_of_card_eq_three (hq : Fintype.card F = 3) :
+    {chi ∈ irreducibleCharacters ℂ (GL (Fin 2) F) | chi 1 = 3}.ncard = 2 := by
+  -- rewrite the degree `3` back into `q`, where the general count applies
+  have h3 : ((Fintype.card F : ℕ) : ℂ) = 3 := by rw [hq]; norm_num
+  rw [← h3, ncard_irreducibleCharacters_GL2_degree_card F, hq]
+
+/-- **`GL₂(𝔽₃)` has one irreducible character of degree `4`**, the principal series attached to
+the two distinct characters of `𝔽₃ˣ`. -/
+@[simp]
+theorem ncard_irreducibleCharacters_GL2_degree_four_of_card_eq_three (hq : Fintype.card F = 3) :
+    {chi ∈ irreducibleCharacters ℂ (GL (Fin 2) F) | chi 1 = 4}.ncard = 1 := by
+  -- rewrite the degree `4` back into `q + 1`, where the general count applies
+  have h4 : ((Fintype.card F : ℕ) : ℂ) + 1 = 4 := by rw [hq]; norm_num
+  rw [← h4, ncard_irreducibleCharacters_GL2_degree_card_add_one F, hq]
+
+/-- **The degrees of the irreducible characters of `GL₂(𝔽₃)` are `1`, `2`, `3` and `4`**: the
+linear characters have degree `1`, the cuspidal ones `q - 1 = 2`, the Steinberg twists `q = 3` and
+the principal series `q + 1 = 4`, and each family is nonempty. -/
+theorem image_degree_irreducibleCharacters_GL2_of_card_eq_three (hq : Fintype.card F = 3) :
+    (fun chi => chi 1) '' irreducibleCharacters ℂ (GL (Fin 2) F) = {1, 2, 3, 4} := by
+  rw [image_degree_irreducibleCharacters_GL2 F hq.ge, hq]
+  norm_num
+
+end CardThree
 
 end TauCeti

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Compact.RegularRepresentation
+import Mathlib.MeasureTheory.Function.LpSpace.ContinuousCompMeasurePreserving
 
 /-!
 # The biregular representation of a compact group on `L²(G)`

@@ -16,6 +16,8 @@ import Mathlib.LinearAlgebra.Dimension.Constructions
 
 The monomial basis of a homogeneous component is indexed by exponent vectors of its degree.
 For two variables this gives dimension `w + 1`, used for the scalar-matrix trace on binary forms.
+Changing the coefficients along a ring homomorphism, `TauCeti.mapHomogeneousSubmodule`, is
+semilinear and sends this basis to the monomial basis over the new ring.
 -/
 
 public section
@@ -74,6 +76,53 @@ theorem homogeneousMonomialBasis_repr_apply {σ R : Type*} [CommSemiring R] (n :
     (p : homogeneousSubmodule σ R n) (s : {s : σ →₀ ℕ // s.degree = n}) :
     (homogeneousMonomialBasis n).repr p s = p.1.coeff s.1 := by
   rfl
+
+/-- Mapping the coefficients of the homogeneous polynomials of degree `n` along a ring
+homomorphism `f : R →+* S`, as an `f`-semilinear map. -/
+noncomputable def mapHomogeneousSubmodule {σ R S : Type*} [CommSemiring R] [CommSemiring S]
+    (f : R →+* S) (n : ℕ) : homogeneousSubmodule σ R n →ₛₗ[f] homogeneousSubmodule σ S n where
+  toFun p := ⟨map f p, p.2.map f⟩
+  map_add' p q := Subtype.ext (map_add (map f) (p : MvPolynomial σ R) q)
+  map_smul' a p := Subtype.ext <| by simp [smul_eq_C_mul]
+
+@[simp]
+theorem coe_mapHomogeneousSubmodule_apply {σ R S : Type*} [CommSemiring R] [CommSemiring S]
+    (f : R →+* S) {n : ℕ} (p : homogeneousSubmodule σ R n) :
+    (mapHomogeneousSubmodule f n p : MvPolynomial σ S) = map f p :=
+  (rfl)
+
+/-- Changing coefficients sends the monomial basis to the monomial basis. -/
+@[simp]
+theorem mapHomogeneousSubmodule_homogeneousMonomialBasis {σ R S : Type*} [CommSemiring R]
+    [CommSemiring S] (f : R →+* S) (n : ℕ) (s : {s : σ →₀ ℕ // s.degree = n}) :
+    mapHomogeneousSubmodule f n (homogeneousMonomialBasis n s) = homogeneousMonomialBasis n s :=
+  Subtype.ext <| by simp
+
+/-- Exponent vectors of degree `w` in two variables are determined by their value at `0`. -/
+noncomputable def finsuppDegreeFinTwoEquiv (w : ℕ) :
+    {s : Fin 2 →₀ ℕ // s.degree = w} ≃ Fin (w + 1) where
+  toFun s := ⟨s.1 0, by
+    have h := s.2
+    rw [Finsupp.degree_eq_sum, Fin.sum_univ_two] at h
+    omega⟩
+  invFun j := ⟨Finsupp.single (0 : Fin 2) (j : ℕ) + Finsupp.single 1 (w - j), by
+    rw [Finsupp.degree_eq_sum, Fin.sum_univ_two]
+    simp
+    omega⟩
+  left_inv s := by
+    have h := s.2
+    rw [Finsupp.degree_eq_sum, Fin.sum_univ_two] at h
+    ext i
+    fin_cases i
+    · simp
+    · simp; omega
+  right_inv j := by ext; simp
+
+@[simp]
+theorem coe_finsuppDegreeFinTwoEquiv_symm (w : ℕ) (j : Fin (w + 1)) :
+    ((finsuppDegreeFinTwoEquiv w).symm j).1 =
+      Finsupp.single (0 : Fin 2) (j : ℕ) + Finsupp.single 1 (w - j) :=
+  (rfl)
 
 /-- The dimension of a homogeneous component is the number of exponent vectors of its degree. -/
 theorem finrank_homogeneousSubmodule (σ R : Type*) [CommSemiring R]

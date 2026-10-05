@@ -7,7 +7,7 @@ module
 
 public import Mathlib.GroupTheory.Abelianization.Defs
 public import Mathlib.Topology.Algebra.Group.TopologicalAbelianization
-public import TauCeti.Topology.Algebra.ContinuousMonoidHom
+public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 
 /-!
 # The universal property of the topological abelianization

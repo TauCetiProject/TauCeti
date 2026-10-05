@@ -559,14 +559,21 @@ theorem precomp_injective {f : M →+[G] M'} (hf : Function.Surjective f) :
   obtain ⟨m, rfl⟩ := hf m'
   exact congrArg (fun χ : InternalHom G M N => evalPairing G χ m) h
 
+/-- Precomposition with `f` is surjective on internal homs as soon as every additive homomorphism
+`M →+ N` is the restriction along `f` of an additive homomorphism `M' →+ N`: the extension, with
+the conjugation action, is a preimage in the internal hom. -/
+theorem precomp_surjective_of_forall_exists_comp_eq {f : M →+[G] M'}
+    (h : ∀ φ : M →+ N, ∃ ψ : M' →+ N, ψ.comp f = φ) :
+    Function.Surjective (precomp G f (N := N)) := fun φ =>
+  let ⟨ψ, hψ⟩ := h φ.toAddMonoidHom
+  ⟨of G ψ, InternalHom.ext hψ⟩
+
 /-- Precomposition with a bijection is bijective: `Hom(-, N)` takes isomorphisms to isomorphisms.
 The inverse is precomposition with the inverse bijection. -/
 theorem precomp_bijective {f : M →+[G] M'} (hf : Function.Bijective f) :
     Function.Bijective (precomp G f (N := N)) :=
-  ⟨precomp_injective hf.2, fun φ =>
-    ⟨of G (φ.toAddMonoidHom.comp (AddEquiv.ofBijective (f : M →+ M') hf).symm.toAddMonoidHom),
-      InternalHom.ext (AddMonoidHom.ext fun m =>
-        congrArg φ.toAddMonoidHom ((AddEquiv.ofBijective (f : M →+ M') hf).symm_apply_apply m))⟩⟩
+  ⟨precomp_injective hf.2, precomp_surjective_of_forall_exists_comp_eq
+    (AddMonoidHom.compHom'_bijective (f := (f : M →+ M')) hf).2⟩
 
 end Precomp
 
@@ -680,12 +687,13 @@ end Restrict
 
 section Exact
 
-variable {G : Type*} [Group G] {M M' M'' : Type*} [AddMonoid M] [AddCommGroup M']
-  [AddCommGroup M''] [DistribMulAction G M] [DistribMulAction G M'] [DistribMulAction G M'']
+variable {G : Type*} [Group G] {M M' M'' : Type*} [AddMonoid M] [AddGroup M']
+  [AddGroup M''] [DistribMulAction G M] [DistribMulAction G M'] [DistribMulAction G M'']
   {N : Type*} [AddCommGroup N] [DistribMulAction G N]
 
 /-- Precomposition along an exact pair `f : M →+[G] M'`, `g : M' →+[G] M''` with `g` surjective is
-exact: a homomorphism on `M'` killing the image of `f` factors through `g`. -/
+exact: a homomorphism on `M'` killing the image of `f` factors through `g`. The groups
+`M'` and `M''` need not be commutative. -/
 theorem exact_precomp (f : M →+[G] M') (g : M' →+[G] M'') (hg : Function.Surjective g)
     (hfg : Function.Exact f g) :
     Function.Exact (precomp G g (N := N)) (precomp G f) := by
@@ -712,15 +720,6 @@ section Surjective
 variable {G : Type*} [Group G] {M M' : Type*} [AddCommGroup M] [AddCommGroup M']
   [DistribMulAction G M] [DistribMulAction G M'] {N : Type*} [AddCommMonoid N]
   [DistribMulAction G N]
-
-/-- Precomposition with `f` is surjective on internal homs as soon as every additive homomorphism
-`M →+ N` is the restriction along `f` of an additive homomorphism `M' →+ N`: the extension, with
-the conjugation action, is a preimage in the internal hom. -/
-theorem precomp_surjective_of_forall_exists_comp_eq {f : M →+[G] M'}
-    (h : ∀ φ : M →+ N, ∃ ψ : M' →+ N, ψ.comp f = φ) :
-    Function.Surjective (precomp G f (N := N)) := fun φ =>
-  let ⟨ψ, hψ⟩ := h φ.toAddMonoidHom
-  ⟨of G ψ, InternalHom.ext hψ⟩
 
 /-- Precomposition with an injection into a module killed by a prime `p` is surjective, for any
 `N`: `Hom(-, N)` is exact on the modules killed by `p`. This is

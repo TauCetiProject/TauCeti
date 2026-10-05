@@ -261,6 +261,30 @@ theorem tendsto_sub_I_div_add_I_cobounded :
   field_simp
   ring
 
+/-- The inverse Cayley transform tends to infinity within the upper half-plane as the disc
+variable tends to the omitted boundary point `1`. -/
+theorem tendsto_I_mul_one_add_div_one_sub_nhdsWithin_one :
+    Tendsto (fun ζ : ℂ => I * (1 + ζ) / (1 - ζ)) (𝓝[ball 0 1] 1)
+      (cobounded ℂ ⊓ 𝓟 UpperHalfPlane.upperHalfPlaneSet) := by
+  have hzero : Tendsto (fun ζ : ℂ => 1 - ζ) (𝓝[ball 0 1] 1) (𝓝[≠] 0) := by
+    refine tendsto_nhdsWithin_iff.mpr ⟨?_, ?_⟩
+    · simpa using (tendsto_const_nhds.sub
+        (tendsto_id.mono_left nhdsWithin_le_nhds) :
+        Tendsto (fun ζ : ℂ => 1 - ζ) (𝓝[ball 0 1] 1) (𝓝 (1 - 1)))
+    · exact eventually_nhdsWithin_of_forall fun ζ hζ =>
+        sub_ne_zero.mpr (ne_of_mem_ball_of_norm_eq_one hζ norm_one).symm
+  have hlim := (tendsto_sub_const_cobounded I).comp
+    ((tendsto_mul_left_cobounded (mul_ne_zero two_ne_zero I_ne_zero)).comp
+      (tendsto_inv₀_nhdsNE_zero.comp hzero))
+  refine tendsto_inf.mpr ⟨hlim.congr' ?_, ?_⟩
+  · filter_upwards [self_mem_nhdsWithin] with ζ hζ
+    have hne := sub_ne_zero.mpr (ne_of_mem_ball_of_norm_eq_one hζ norm_one).symm
+    dsimp only [Function.comp_def]
+    field_simp
+    ring
+  · exact tendsto_principal.mpr (eventually_nhdsWithin_of_forall fun ζ hζ =>
+      bijOn_I_mul_one_add_div_one_sub_ball.mapsTo hζ)
+
 /-- The boundary Cayley map from the real line to the unit circle, sending
 `x` to `(x - i) / (x + i)`. -/
 noncomputable def boundaryCayley (x : ℝ) : Circle :=

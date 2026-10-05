@@ -17,7 +17,8 @@ Herbrand order isomorphism carries the lower jumps exactly to the upper jumps. T
 definition and its integer criterion are in `RamificationGroup`.
 
 In prime degree, an upper break at a natural number `t` implies that the lower ramification
-group `G_t` is the full Galois group and that `G_{t+1}` is trivial.
+group `G_t` is the full Galois group and that `G_{t+1}` is trivial. The natural inverse Herbrand
+function fixes every depth up to `t`.
 
 These statements identify the breaks used by the norm filtration and Hasse–Arf theory.
 
@@ -90,6 +91,17 @@ theorem lowerRamificationGroup_natCast_eq_top_of_upperJump (hℓ : (Module.finra
     ((lowerRamificationGroup K L _).eq_bot_or_eq_top_of_prime_card).resolve_left hne
   have htψ : (t : ℤ) ≤ psiNat K L t := by exact_mod_cast self_le_psiNat K L t
   exact top_le_iff.1 <| hψ ▸ lowerRamificationGroup_antitone K L htψ
+
+/-- In prime degree, the natural inverse Herbrand function fixes every depth at or below a
+natural upper break. -/
+theorem psiNat_eq_self_of_le_break (hℓ : (Module.finrank K L).Prime)
+    {v t : ℕ} (hvt : v ≤ t)
+    (ht : UpperJump K L ⟨t, Nat.cast_mem_ramificationIndexDomain t⟩) :
+    psiNat K L v = v := by
+  have hGi (i : ℕ) (hi : i ≤ t) : lowerRamificationGroup K L i = ⊤ :=
+    top_le_iff.1 <| lowerRamificationGroup_natCast_eq_top_of_upperJump K L hℓ ht ▸
+      lowerRamificationGroup_antitone K L (by exact_mod_cast hi)
+  exact (psiNat_eq_self_iff K L).2 (by rw [hGi v hvt, ← Nat.cast_zero, hGi 0 (Nat.zero_le t)])
 
 /-- In prime degree, an upper break at a natural number `t` has `G_{t+1} = 1`. Together with
 `G_t = Gal(L/K)` (`lowerRamificationGroup_natCast_eq_top_of_upperJump`), this says that the lower

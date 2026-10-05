@@ -27,6 +27,8 @@ infinite field.
 * `TauCeti.commute_permTensorAction_tensorPowerRep` proves that the general-linear and
   symmetric-group actions commute, and `TauCeti.commute_permTensorActionAlgHom_tensorPowerRep`
   extends that to the whole group algebra `k[S_d]`.
+* `TauCeti.trace_permTensorAction_conj_mul_tensorPowerRep`: for any `g ∈ GL n k`, the trace of a
+  permutation of the tensor factors composed with `g^{⊗d}` is a class function of the permutation.
 * `TauCeti.tensorPowerPermIntertwiningMap` packages `g^{⊗d}` as an intertwining map of the
   symmetric-group action, and `TauCeti.tensorPowerIntertwiningRep` is the resulting action of
   `GL n k` on the `S_d`-intertwining maps into the tensor power, by composition.
@@ -72,6 +74,25 @@ theorem commute_permTensorAction_tensorPowerRep (σ : Equiv.Perm (Fin d)) (g : G
     Commute (permTensorAction k n d σ) (tensorPowerRep k n d g) := by
   rw [tensorPowerRep, Representation.tensorPower_apply, permTensorAction_def]
   exact PiTensorProduct.commute_reindexRepresentation_map k (Fin n → k) (Fin d) σ (stdRep k n g)
+
+variable {k n d} in
+/-- **The trace of a permutation of the tensor factors composed with `g^{⊗d}` is a class function
+of the permutation**, because the two actions commute. -/
+theorem trace_permTensorAction_conj_mul_tensorPowerRep (σ τ : Equiv.Perm (Fin d))
+    (g : GL (Fin n) k) :
+    LinearMap.trace k _ (permTensorAction k n d (τ * σ * τ⁻¹) * tensorPowerRep k n d g) =
+      LinearMap.trace k _ (permTensorAction k n d σ * tensorPowerRep k n d g) := by
+  set P := permTensorAction k n d
+  set G := tensorPowerRep k n d g
+  have hc : P τ⁻¹ * G = G * P τ⁻¹ := (commute_permTensorAction_tensorPowerRep k n d τ⁻¹ g).eq
+  have hinv : P τ⁻¹ * P τ = 1 := by rw [← map_mul P, inv_mul_cancel, map_one]
+  calc LinearMap.trace k _ (P (τ * σ * τ⁻¹) * G)
+      _ = LinearMap.trace k _ (P τ * (P σ * G * P τ⁻¹)) := by
+        rw [map_mul P, map_mul P, mul_assoc, hc]
+        simp only [mul_assoc]
+      _ = LinearMap.trace k _ (P σ * G * (P τ⁻¹ * P τ)) := by
+        rw [LinearMap.trace_mul_comm, mul_assoc]
+      _ = LinearMap.trace k _ (P σ * G) := by rw [hinv, mul_one]
 
 /-- The whole group algebra `k[S_d]` commutes with the general-linear action on the tensor power,
 so a Young symmetrizer cuts out a `GL n k`-subrepresentation. -/

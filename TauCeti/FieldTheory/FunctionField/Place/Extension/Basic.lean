@@ -73,6 +73,8 @@ to the canonical fraction fields used by Mathlib's different API.
 * `TauCeti.Place.ramificationIdx_mul_relativeDegree_le_finrank`: `e(P' ∣ P) · f(P' ∣ P) ≤
   [F' : F]`, with `TauCeti.Place.ramificationIdx_le_finrank` and
   `TauCeti.Place.relativeDegree_le_finrank` its two halves (Stichtenoth, Corollary 3.1.12).
+* `TauCeti.Place.linearIndependent_pow_fin_ramificationIdx`: the first `e(P' ∣ P)` powers of
+  a uniformizer at `P'` are linearly independent over `F`.
 * `TauCeti.Place.finiteDimensional_residueField_restrict`: the relative degree is finite, so it
   is not the junk value of `Module.finrank`; `TauCeti.Place.one_le_relativeDegree` and
   `TauCeti.Place.ramificationIdx_pos` are the matching lower bounds.
@@ -720,7 +722,9 @@ section RamificationIdxBound
 
 variable (F) (P' : Place k' F')
 
-private theorem linearIndependent_pow_fin_ramificationIdx {t : F'} (ht : P'.ord t = 1) :
+/-- The first `e(P' | P)` powers of a uniformizer at `P'` are linearly independent over the
+field below. -/
+theorem linearIndependent_pow_fin_ramificationIdx {t : F'} (ht : P'.ord t = 1) :
     LinearIndependent F fun j : Fin (ramificationIdx F P') ↦ t ^ (j : ℕ) := by
   classical
   have ht0 : t ≠ 0 := by rintro rfl; simp at ht

@@ -9,6 +9,7 @@ public import Mathlib.Dynamics.Ergodic.Extreme
 public import TauCeti.MeasureTheory.Group.Action
 public import TauCeti.MeasureTheory.Group.CountableAction
 public import Mathlib.Probability.Kernel.Composition.MeasureComp
+import Mathlib.Dynamics.Ergodic.RadonNikodym
 import Mathlib.MeasureTheory.Function.AEEqOfLIntegral
 import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Coding
 

@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.BigOperators.Fin
 public import Mathlib.GroupTheory.GroupAction.Primitive
 public import Mathlib.GroupTheory.GroupAction.SubMulAction.OfStabilizer
+import Mathlib.GroupTheory.GroupAction.Transitive
 import TauCeti.Algebra.Group.Subgroup.Cover
 
 /-!

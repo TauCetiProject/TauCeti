@@ -13,9 +13,9 @@ import TauCeti.Analysis.Bochner.LocallyCompactGroup
 
 A function `φ` on a discrete abelian group `G` is positive definite,
 `∑ᵢ ∑ⱼ cᵢ conj(cⱼ) φ(gᵢ - gⱼ) ≥ 0` for every finite family, if and only if it is the
-Fourier–Stieltjes transform `φ(g) = ∫ χ(g) dμ(χ)` of a finite positive measure `μ` on the
-Pontryagin dual of `G`. Every function on a discrete group is continuous, so no continuity
-hypothesis appears.
+Fourier–Stieltjes transform `φ(g) = ∫ χ(g) dμ(χ)` of a finite inner regular positive measure `μ`
+on the Pontryagin dual of `G`. Every function on a discrete group is continuous, so no
+continuity hypothesis appears.
 
 The representing measure is the one of Bochner's theorem on locally compact abelian groups,
 `TauCeti.IsPositiveDefiniteSub.exists_pontryaginMeasureTransform_eq_of_continuousAt`, whose
@@ -47,14 +47,14 @@ variable {G : Type*} [AddCommGroup G] [TopologicalSpace G] [DiscreteTopology G]
   [BorelSpace (PontryaginDual (Multiplicative G))]
 
 /-- **Bochner's theorem on a discrete abelian group.** A function on a discrete abelian group is
-positive definite if and only if it is the Fourier–Stieltjes transform of a finite measure on the
-Pontryagin dual. -/
+positive definite if and only if it is the Fourier–Stieltjes transform of a finite inner regular
+measure on the Pontryagin dual. -/
 theorem isPositiveDefiniteSub_iff_exists_pontryaginMeasureTransform_eq (φ : G → ℂ) :
     IsPositiveDefiniteSub φ ↔
       ∃ μ : FiniteMeasure (PontryaginDual (Multiplicative G)),
-        μ.pontryaginMeasureTransform = φ :=
+        μ.toMeasure.InnerRegular ∧ μ.pontryaginMeasureTransform = φ :=
   ⟨fun hφ ↦ hφ.exists_pontryaginMeasureTransform_eq_of_continuousAt
       continuous_of_discreteTopology.continuousAt,
-    fun ⟨μ, hμ⟩ ↦ hμ ▸ μ.isPositiveDefiniteSub_pontryaginMeasureTransform⟩
+    fun ⟨μ, _, hμ⟩ ↦ hμ ▸ μ.isPositiveDefiniteSub_pontryaginMeasureTransform⟩
 
 end TauCeti

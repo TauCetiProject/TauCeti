@@ -8,6 +8,7 @@ module
 import Mathlib.LinearAlgebra.Matrix.Block
 public import Mathlib.Algebra.Polynomial.OfFn
 public import Mathlib.RingTheory.Polynomial.Resultant.Basic
+public import TauCeti.Algebra.Polynomial.Coeff.Basic
 
 /-!
 # Principal subresultant coefficients
@@ -89,6 +90,19 @@ theorem _root_.Polynomial.subresultantMatrix_natAdd [Semiring R]
         p.coeff (i.val + j - k.val) else 0 := by
   simp [subresultantMatrix]
 
+/-- When the formal bounds dominate the degrees, subresultant entries are simply
+coefficients of the shifted input polynomials. -/
+theorem _root_.Polynomial.subresultantMatrix_apply_eq_coeff [Semiring R]
+    {p q : R[X]} {m n : ℕ}
+    (hm : p.natDegree ≤ m) (hn : q.natDegree ≤ n) (j : ℕ)
+    (i k : Fin ((m - j) + (n - j))) :
+    subresultantMatrix p q m n j i k =
+      k.addCases (fun k => (X ^ k.val * q).coeff (i.val + j))
+        (fun k => (X ^ k.val * p).coeff (i.val + j)) := by
+  induction k using Fin.addCases <;>
+    simp [subresultantMatrix, coeff_X_pow_mul_of_natDegree_le hm,
+      coeff_X_pow_mul_of_natDegree_le hn]
+
 /-- At index zero, the principal subresultant matrix is Mathlib's Sylvester matrix. -/
 @[simp]
 theorem _root_.Polynomial.subresultantMatrix_zero [Semiring R]
@@ -127,23 +141,11 @@ theorem coefficientRow_dotProduct [CommSemiring R] [DecidableEq R]
       ⬝ᵥ v =
       (ofFn a (fun l => v (Fin.castAdd b l)) * q +
         ofFn b (fun l => v (Fin.natAdd a l)) * p).coeff d := by
+  simp_rw [← coeff_X_pow_mul_of_natDegree_le hn, ← coeff_X_pow_mul_of_natDegree_le hm]
   simp only [dotProduct, Fin.sum_univ_add, Fin.addCases_left, Fin.addCases_right,
     ofFn_eq_sum_monomial, Finset.sum_mul, coeff_add, finsetSum_coeff]
-  congr 1 <;> refine Finset.sum_congr rfl fun l _ => ?_
-  · rw [← C_mul_X_pow_eq_monomial, mul_assoc, coeff_C_mul, coeff_X_pow_mul']
-    by_cases h₁ : (l : ℕ) ≤ d
-    · by_cases h₂ : d ≤ l.val + n
-      · simp [h₁, h₂, mul_comm]
-      · have : q.coeff (d - l.val) = 0 := coeff_eq_zero_of_natDegree_lt (by omega)
-        simp [h₁, h₂, this]
-    · simp [h₁]
-  · rw [← C_mul_X_pow_eq_monomial, mul_assoc, coeff_C_mul, coeff_X_pow_mul']
-    by_cases h₁ : (l : ℕ) ≤ d
-    · by_cases h₂ : d ≤ l.val + m
-      · simp [h₁, h₂, mul_comm]
-      · have : p.coeff (d - l.val) = 0 := coeff_eq_zero_of_natDegree_lt (by omega)
-        simp [h₁, h₂, this]
-    · simp [h₁]
+  congr 1 <;> refine Finset.sum_congr rfl fun l _ => ?_ <;>
+    rw [← C_mul_X_pow_eq_monomial, mul_assoc, coeff_C_mul, mul_comm]
 
 /-- The principal subresultant matrix acts on a vector as the linear map `(A, B) ↦ A * q + B * p`,
 where `A` and `B` are the polynomials whose coefficients are the first `m - j` and the last `n - j`

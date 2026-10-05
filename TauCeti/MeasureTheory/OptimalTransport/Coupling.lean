@@ -259,6 +259,14 @@ protected theorem add {σ : Measure (X × Y)} {μ' : Measure X} {ν' : Measure Y
   fst_eq := by rw [Measure.fst_add, hπ.fst_eq, hσ.fst_eq]
   snd_eq := by rw [Measure.snd_add, hπ.snd_eq, hσ.snd_eq]
 
+/-- A convex combination of two couplings of `μ` and `ν` is again a coupling of `μ` and `ν`. -/
+protected theorem smul_add_smul {σ : Measure (X × Y)} (hπ : IsCoupling π μ ν)
+    (hσ : IsCoupling σ μ ν) {a b : NNReal} (hab : a + b = 1) :
+    IsCoupling (a • π + b • σ) μ ν := by
+  have h := (hπ.smul (a : ENNReal)).add (hσ.smul (b : ENNReal))
+  simp only [Measure.coe_nnreal_smul] at h
+  rwa [← add_smul, ← add_smul, hab, one_smul, one_smul] at h
+
 /-- The sum of a family of couplings couples the sums of the two families of marginals. -/
 protected theorem sum {ι : Type*} {πs : ι → Measure (X × Y)} {μs : ι → Measure X}
     {νs : ι → Measure Y} (h : ∀ i, IsCoupling (πs i) (μs i) (νs i)) :

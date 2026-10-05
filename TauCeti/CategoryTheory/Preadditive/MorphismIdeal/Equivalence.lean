@@ -210,6 +210,11 @@ theorem mapEquivalence_functor (h : I = J.comap e.functor) :
     (mapEquivalence e I J h).functor = I.map J e.functor h.le :=
   (rfl)
 
+/-- The functor of the induced equivalence is additive. -/
+instance mapEquivalence_functor_additive (h : I = J.comap e.functor) :
+    (mapEquivalence e I J h).functor.Additive :=
+  inferInstanceAs (I.map J e.functor h.le).Additive
+
 /-- The inverse of the induced equivalence is the functor induced by `e.inverse`. -/
 @[simp]
 theorem mapEquivalence_inverse (h : I = J.comap e.functor) :

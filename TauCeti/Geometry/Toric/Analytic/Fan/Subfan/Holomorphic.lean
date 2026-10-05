@@ -65,7 +65,7 @@ theorem isLocalDiffeomorph_subfanAnalyticMap (n : ℕ∞ω) :
   obtain ⟨l, B, hB⟩ := hσ.exists_basis_sum
   have : Finite (ToricRay σ.1) := ToricRay.finite_of_fg hσ.fg
   let κ := Finite.equivFin (ToricRay σ.1)
-  let g := (analyticChartGenerators (Φ.subfan S hS hface) σ hσ).2
+  let g := (analyticChartGenerators (Φ.subfan S hS hface) σ).2
   -- Both chart inclusions of `σ` carry the complex structure of the same extending basis and
   -- generating family on its complex points; the subfan has the lattice of the ambient fan.
   let _ := affinePointTopology g
@@ -86,7 +86,7 @@ theorem isLocalDiffeomorph_subfanAnalyticMap (n : ℕ∞ω) :
     have h : Φ.subfanAnalyticMap hΦ S hS hface (PΨ y) = PΦ y := by
       rw [analyticAffineChartPartialDiffeomorph_apply, analyticAffineChartPartialDiffeomorph_apply]
       exact (Φ.subfanAnalyticMap_analyticAffineChartι hΦ S hS hface σ y).trans
-        (congrArg _ (Φ.subfanAnalyticChartMap_apply hΦ S hS hface σ y))
+        (congrArg _ (Φ.subfanAnalyticChartMap_apply S hS hface σ y))
     -- The composite `PΦ ∘ PΨ.symm` is, by definition, the composite partial diffeomorphism.
     exact h.trans (congrArg PΦ hy.symm)
 

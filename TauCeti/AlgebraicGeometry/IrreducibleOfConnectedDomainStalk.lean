@@ -7,6 +7,7 @@ module
 
 
 public import Mathlib.AlgebraicGeometry.Noetherian
+public import Mathlib.AlgebraicGeometry.Properties
 public import TauCeti.RingTheory.RegularLocalRing.Basic
 
 /-!

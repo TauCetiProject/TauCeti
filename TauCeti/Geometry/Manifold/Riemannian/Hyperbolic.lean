@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Basic
+public import TauCeti.Geometry.Manifold.Riemannian.Distance
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Metric
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Sectional
@@ -35,7 +36,7 @@ noncomputable section
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  {M : Type*} [MetricSpace M] [ChartedSpace H M]
+  {M : Type*} [TopologicalSpace M] [T3Space M] [PreconnectedSpace M] [ChartedSpace H M]
   [IsManifold I ∞ M]
 
 namespace TauCeti
@@ -45,10 +46,14 @@ namespace TauCeti
 structure HyperbolicMetric where
   /-- The smooth Riemannian metric. -/
   metric : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)
-  /-- The metric induces the ambient Riemannian distance. -/
-  inducesRiemannianDistance : metric.InducesRiemannianDistance (I := I) (M := M)
-  /-- The Riemannian distance is metrically complete. -/
-  complete : CompleteSpace M
+  /-- The metric's own Riemannian distance is metrically complete. -/
+  complete : letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+      ⟨metric.toRiemannianMetric⟩
+    letI : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
+      IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle
+        (IB := I) (n := ∞) (F := E) (V := fun x : M ↦ TangentSpace I x)
+    @CompleteSpace M
+      (MetricSpace.ofRiemannianMetric I M).toPseudoMetricSpace.toUniformSpace
   /-- The Levi-Civita connection has the constant-curvature tensor with parameter `-1`. -/
   curvature : Bundle.ContMDiffRiemannianMetric.IsConstantCurvatureTensor
     (I := I) (M := M) metric (-1)
@@ -58,6 +63,11 @@ structure HyperbolicMetric where
 This is the existence predicate used by later hyperbolic-volume and Mostow-rigidity statements;
 the chosen metric remains available through `HyperbolicMetric` when a proof is needed. -/
 def IsHyperbolic : Prop := Nonempty (HyperbolicMetric (I := I) (M := M))
+
+/-- A manifold is hyperbolic exactly when it carries a hyperbolic metric. -/
+theorem isHyperbolic_iff : IsHyperbolic (I := I) (M := M) ↔
+    Nonempty (HyperbolicMetric (I := I) (M := M)) :=
+  Iff.rfl
 
 namespace HyperbolicMetric
 

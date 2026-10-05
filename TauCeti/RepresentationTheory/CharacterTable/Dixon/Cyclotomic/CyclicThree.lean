@@ -51,6 +51,8 @@ with the complex character table up to row order.
   recovers every exact entry from its two conjugate residues.
 * `TauCeti.isSome_dixonCyclotomicCharacterTable_cyclicGroupThree`: the assembled exact solver
   succeeds on the certified data.
+* `TauCeti.isSome_characterTableDixon_cyclicGroupThree`: the assembled algorithm, searching for
+  its own prime, reaches `7` and succeeds there.
 * `TauCeti.isCharacterTableSpec_cyclicGroupThree`: the embedded exact table satisfies the complex
   character-table specification.
 
@@ -319,5 +321,15 @@ theorem isCharacterTableSpec_cyclicGroupThree :
     IsCharacterTableSpec (Multiplicative (ZMod 3))
       cyclicGroupThreeComplexCharacterTable :=
   isCyclotomicCharacterTableSpec_cyclicGroupThree.isCharacterTableSpec
+
+/-- **The Burnside--Dixon--Schneider algorithm computes a character table of `C₃` with its own
+choice of prime.** Its search tries `4` and then `7`, finds the primitive cube root `2` modulo `7`,
+and the solver succeeds there. -/
+theorem isSome_characterTableDixon_cyclicGroupThree :
+    ((cyclicClassData 3).characterTableDixon? 3 (by simp) 2).isSome = true :=
+  (cyclicClassData 3).isSome_characterTableDixon?_of_isSome 3 (by simp)
+    cyclicGroupThreeDixonPrimeData (DixonPrimeData.ofPrime?_eq_some
+      (ZMod.map_val_primitiveRoot?_eq_some_iff.mpr (by decide))) (by decide)
+    isSome_dixonCyclotomicCharacterTable_cyclicGroupThree
 
 end TauCeti

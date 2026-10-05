@@ -6,9 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.PontryaginDual
+public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Polish
 
 /-!
-# The Pontryagin dual of the integers
+# Topology of Pontryagin duals
+
+The Pontryagin dual of a second-countable locally compact monoid is Polish. For locally compact
+abelian groups this ensures that finite Borel measures on the dual are tight and determined by
+their Fourier–Stieltjes transforms.
 
 A continuous character of the discrete group `ℤ` is determined by its value at `1`, which may be
 any point of the unit circle. This file packages that correspondence as an isomorphism of
@@ -31,6 +36,11 @@ public section
 noncomputable section
 
 namespace TauCeti
+
+/-- The Pontryagin dual of a second-countable locally compact monoid is Polish. -/
+instance instPolishSpacePontryaginDual {A : Type*} [Monoid A] [TopologicalSpace A]
+    [LocallyCompactSpace A] [SecondCountableTopology A] : PolishSpace (PontryaginDual A) :=
+  inferInstanceAs (PolishSpace (A →ₜ* Circle))
 
 /-- The unit circle is the Pontryagin dual of `ℤ`: the point `z` corresponds to the character
 `n ↦ zⁿ`, and a character corresponds to its value at `1`. -/

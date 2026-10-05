@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Coinduced.Discrete
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete.Basic
 
 /-!
 # Transitivity of discrete coinduction

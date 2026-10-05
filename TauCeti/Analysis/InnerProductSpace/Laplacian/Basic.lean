@@ -41,7 +41,8 @@ corollaries, where smoothness re-enters, live in the companion files
 `TauCeti/Analysis/InnerProductSpace/Harmonic/Isometry.lean` and
 `TauCeti/Analysis/InnerProductSpace/Harmonic/Dilation.lean`.
 
-The file also records the base second-derivative computation `laplacian_norm_sq`
+The file also records the characterization `laplacian_eq_traceL` of the Laplacian as the trace of
+the second Fréchet derivative and the base second-derivative computation `laplacian_norm_sq`
 (`Δ ‖x‖² = 2 · dim E`), a reusable characteristic value of the Laplacian on the squared norm,
 its chain-rule generalization `ContDiff.laplacian_comp_norm_sq` to radial functions
 `x ↦ ρ (‖x‖²)`, the Leibniz rules `ContDiffAt.laplacian_fun_mul` and
@@ -58,6 +59,7 @@ statement `tsupport_laplacian_subset` that `Δ f` vanishes wherever `f` vanishes
 * `TauCeti.laplacian_comp_homothety_right`: `Δ` scales by `c ^ 2` under
   `AffineMap.homothety a c`.
 * `TauCeti.laplacian_comp_smul_right`: the origin-centered homothety special case.
+* `TauCeti.laplacian_eq_traceL`: the Laplacian as the trace of the second Fréchet derivative.
 * `TauCeti.laplacian_norm_sq`: `Δ (fun x => ‖x‖ ^ 2) x = 2 * dim E`, the Laplacian of the
   squared norm.
 * `ContDiff.laplacian_comp_norm_sq`: the Laplacian of a radial function `x ↦ ρ (‖x‖ ^ 2)` is
@@ -78,6 +80,14 @@ variable
   {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   {E' : Type*} [NormedAddCommGroup E'] [InnerProductSpace ℝ E'] [FiniteDimensional ℝ E']
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+
+/-- The Laplacian of a function is the trace of its second Fréchet derivative, expressed as a
+continuous linear functional of `fderiv ℝ (fderiv ℝ f) x` in the standard orthonormal basis. -/
+theorem laplacian_eq_traceL (f : E → F) (x : E) :
+    Δ f x = (∑ i, (ContinuousLinearMap.apply ℝ F (stdOrthonormalBasis ℝ E i)).comp
+      (ContinuousLinearMap.apply ℝ (E →L[ℝ] F) (stdOrthonormalBasis ℝ E i)))
+        (fderiv ℝ (fderiv ℝ f) x) := by
+  simp [laplacian_eq_iteratedFDeriv_stdOrthonormalBasis, iteratedFDeriv_two_apply]
 
 omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [NormedSpace ℝ F] in
 /-- Scalar dilation as a continuous linear equivalence. -/

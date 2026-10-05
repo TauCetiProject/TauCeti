@@ -7,6 +7,7 @@ module
 
 public import Mathlib.GroupTheory.Transfer
 public import TauCeti.GroupTheory.Index.Basic
+public import TauCeti.GroupTheory.TransversalWord
 import TauCeti.GroupTheory.Coset.Basic
 
 /-!
@@ -35,6 +36,8 @@ index to one of finite index, and in a tower `K ≤ H` the index of `H` divides 
 * `MonoidHom.transfer_apply_of_mulEquiv`: the transfer is invariant under an isomorphism of
   ambient groups carrying one subgroup onto the other.
 * `MonoidHom.transfer_transfer`: transitivity of the transfer along a tower `K ≤ H ≤ G`.
+* `TauCeti.transfer_eq_prod_lWord`: computation with the transversal words used by
+  cohomological corestriction.
 
 ## References
 
@@ -136,3 +139,33 @@ theorem transfer_transfer {K : Subgroup G} (hKH : K ≤ H) [K.FiniteIndex] (ϕ :
   simp [h, mul_assoc]
 
 end MonoidHom
+
+namespace TauCeti
+
+variable {G A : Type*} [Group G] [CommGroup A] {U : Subgroup G} [U.FiniteIndex]
+
+attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex
+
+/-- The transfer is the product of the images of the transversal words, for any transversal.
+The index convention is the one used by cohomological corestriction. -/
+theorem transfer_eq_prod_lWord (t : G ⧸ U → G)
+    (ht : ∀ q : G ⧸ U, (QuotientGroup.mk (t q) : G ⧸ U) = q)
+    (φ : U →* A) (g : G) :
+    MonoidHom.transfer φ g = ∏ q : G ⧸ U, φ ⟨lWord U t q g, lWord_mem U t ht q g⟩ := by
+  have htbij : Function.Bijective fun q : G ⧸ U => (t q : G ⧸ U) :=
+    ⟨fun _ _ h => by simpa only [ht] using h, fun q => ⟨q, ht q⟩⟩
+  have hπ : ∀ q : G ⧸ U, (t (g • q) : G ⧸ U) = (g * t q : G) := by
+    intro q
+    rw [← smul_eq_mul, ← MulAction.Quotient.smul_mk, ht, ht]
+  rw [MonoidHom.transfer_eq_prod_of_bijective φ t htbij g (g • ·) hπ]
+  calc
+    _ = ∏ q : G ⧸ U, φ ⟨lWord U t (g • q) g, lWord_mem U t ht (g • q) g⟩ := by
+      apply Finset.prod_congr rfl
+      intro q _
+      congr 1
+      apply Subtype.ext
+      simp [lWord_def, mul_assoc]
+    _ = ∏ q : G ⧸ U, φ ⟨lWord U t q g, lWord_mem U t ht q g⟩ :=
+      Fintype.prod_equiv (MulAction.toPerm g) _ _ (fun _ => rfl)
+
+end TauCeti

@@ -31,6 +31,10 @@ computes the candidate ordinary table by coefficientwise exact division.  The ex
 cyclotomic checker is the final gate: a candidate is returned only when the division-free
 central-to-ordinary identity and all other character-table identities hold.
 
+The assembled algorithm, `TauCeti.ClassData.characterTableDixon?`, chooses the prime itself: it
+runs this solver at the Dixon prime data found by `TauCeti.DixonPrimeData.candidates`, in
+increasing order of the prime, and returns the first table accepted.
+
 The result is deliberately an `Option`.  `none` records that no alignment and degree vector passes
 the exact checker; no unverified coefficient bound is used to claim success.  Soundness is
 unconditional: every returned table satisfies `TauCeti.IsCharacterTableSpec` after the distinguished
@@ -41,6 +45,8 @@ needs the coefficient bound discussed in the cyclotomic-lift module.
 
 * `TauCeti.ClassData.CyclotomicCharacterTableData`: numbered exact cyclotomic output data.
 * `TauCeti.ClassData.dixonCyclotomicCharacterTable?`: the executable exact-cyclotomic solver.
+* `TauCeti.ClassData.characterTableDixon?`: the solver run at searched Dixon primes, the assembled
+  Burnside--Dixon--Schneider algorithm with a bounded prime search.
 
 ## Main results
 
@@ -53,6 +59,11 @@ needs the coefficient bound discussed in the cyclotomic-lift module.
   every returned output passes the exact cyclotomic certificate.
 * `TauCeti.ClassData.isCharacterTableSpec_of_dixonCyclotomicCharacterTable?_eq_some`: after
   embedding, every returned table satisfies the complex character-table specification.
+* `TauCeti.ClassData.isCharacterTableSpec_of_characterTableDixon?_eq_some`: **soundness of the
+  assembled algorithm**, every table it returns is the character table up to the order of its rows.
+* `TauCeti.ClassData.isSome_characterTableDixon?_of_isSome` and
+  `TauCeti.ClassData.characterTableDixon?_eq_some_of_le`: the algorithm succeeds as soon as the
+  solver does at a prime it reaches, and a larger budget does not change its answer.
 
 ## References
 
@@ -405,6 +416,82 @@ theorem isCharacterTableSpec_of_dixonCyclotomicCharacterTable?_eq_some
       (d.complexTableOfCyclotomic e output.table) :=
   (d.isCyclotomicCharacterTableSpec_of_dixonCyclotomicCharacterTable?_eq_some
     e he q h).isCharacterTableSpec
+
+/-! ### Searching for the prime
+
+The solver above runs at one given Dixon prime. The assembled algorithm chooses the prime itself:
+it walks through the Dixon prime data found by `TauCeti.DixonPrimeData.candidates` and returns the
+first table the solver accepts there. -/
+
+/-- **The Burnside--Dixon--Schneider algorithm, with its own choice of prime.** The Dixon prime
+data at the good primes among `e + 1, 2e + 1, …, fuel · e + 1` is tried in increasing order, and
+the first table that `TauCeti.ClassData.dixonCyclotomicCharacterTable?` returns is the result. The
+exponent `e` is passed with its equality to the group exponent, so evaluation never computes
+Mathlib's noncomputable `Monoid.exponent`; the order of the group is `Fintype.card G`. -/
+def characterTableDixon? (e : ℕ) (he : e = Monoid.exponent G) (fuel : ℕ) :
+    Option (d.CyclotomicCharacterTableData e) :=
+  (DixonPrimeData.candidates e he (Fintype.card G) Nat.card_eq_fintype_card.symm fuel).findSome?
+    (d.dixonCyclotomicCharacterTable? e he)
+
+/-- **The algorithm succeeds exactly when the solver does at some searched prime.** -/
+theorem isSome_characterTableDixon?_iff (e : ℕ) (he : e = Monoid.exponent G) (fuel : ℕ) :
+    (d.characterTableDixon? e he fuel).isSome ↔
+      ∃ q ∈ DixonPrimeData.candidates e he (Fintype.card G) Nat.card_eq_fintype_card.symm fuel,
+        (d.dixonCyclotomicCharacterTable? e he q).isSome := by
+  rw [characterTableDixon?]
+  exact List.findSome?_isSome_iff
+
+/-- Every table the algorithm returns is returned by the solver at one of the searched primes. -/
+theorem exists_mem_candidates_of_characterTableDixon?_eq_some (e : ℕ)
+    (he : e = Monoid.exponent G) {fuel : ℕ} {output : d.CyclotomicCharacterTableData e}
+    (h : d.characterTableDixon? e he fuel = some output) :
+    ∃ q ∈ DixonPrimeData.candidates e he (Fintype.card G) Nat.card_eq_fintype_card.symm fuel,
+      d.dixonCyclotomicCharacterTable? e he q = some output := by
+  rw [characterTableDixon?] at h
+  exact List.exists_of_findSome?_eq_some h
+
+/-- **The algorithm succeeds once the solver succeeds at a prime it reaches.** If the solver
+returns a table at the Dixon prime data `q`, the search computes `q` at its prime, and that prime
+is at most `e · fuel + 1`, then the algorithm returns a table, possibly found at a smaller prime. -/
+theorem isSome_characterTableDixon?_of_isSome (e : ℕ) (he : e = Monoid.exponent G) {fuel : ℕ}
+    (q : DixonPrimeData G)
+    (hq : DixonPrimeData.ofPrime? e he (Fintype.card G) Nat.card_eq_fintype_card.symm q.p = some q)
+    (hfuel : q.p ≤ e * fuel + 1) (hsolve : (d.dixonCyclotomicCharacterTable? e he q).isSome) :
+    (d.characterTableDixon? e he fuel).isSome :=
+  (d.isSome_characterTableDixon?_iff e he fuel).mpr
+    ⟨q, DixonPrimeData.mem_candidates_iff.mpr ⟨hq, hfuel⟩, hsolve⟩
+
+/-- **Running the algorithm longer does not change its answer**: once it has returned a table, it
+returns the same table with any larger budget, because the search only appends primes. -/
+theorem characterTableDixon?_eq_some_of_le (e : ℕ) (he : e = Monoid.exponent G)
+    {fuel fuel' : ℕ} (hle : fuel ≤ fuel') {output : d.CyclotomicCharacterTableData e}
+    (h : d.characterTableDixon? e he fuel = some output) :
+    d.characterTableDixon? e he fuel' = some output := by
+  obtain ⟨l, hl⟩ := DixonPrimeData.candidates_prefix (he := he) (n := Fintype.card G)
+    (hn := Nat.card_eq_fintype_card.symm) hle
+  rw [characterTableDixon?] at h ⊢
+  rw [← hl, List.findSome?_append, h, Option.some_or]
+
+/-- Every table the algorithm returns passes the exact cyclotomic certificate. -/
+theorem isCyclotomicCharacterTableSpec_of_characterTableDixon?_eq_some (e : ℕ)
+    (he : e = Monoid.exponent G) {fuel : ℕ} {output : d.CyclotomicCharacterTableData e}
+    (h : d.characterTableDixon? e he fuel = some output) :
+    d.IsCyclotomicCharacterTableSpec e output.omega output.table output.degree := by
+  obtain ⟨q, -, hq⟩ := d.exists_mem_candidates_of_characterTableDixon?_eq_some e he h
+  exact isCyclotomicCharacterTableSpec_of_dixonCyclotomicCharacterTable?_eq_some e he q hq
+
+/-- **Soundness of the Burnside--Dixon--Schneider algorithm.** Every table the algorithm returns,
+embedded in `ℂ` and reindexed by the conjugacy classes, satisfies the complex character-table
+specification, so it is the character table of `G` up to the order of its rows. The exponent
+of a finite group is nonzero, so the statement supplies the `NeZero e` instance the embedding needs
+from `he`. -/
+theorem isCharacterTableSpec_of_characterTableDixon?_eq_some (e : ℕ)
+    (he : e = Monoid.exponent G) {fuel : ℕ} {output : d.CyclotomicCharacterTableData e}
+    (h : d.characterTableDixon? e he fuel = some output) :
+    haveI : NeZero e := ⟨he ▸ Monoid.exponent_ne_zero_of_finite⟩
+    IsCharacterTableSpec G (d.complexTableOfCyclotomic e output.table) :=
+  haveI : NeZero e := ⟨he ▸ Monoid.exponent_ne_zero_of_finite⟩
+  (d.isCyclotomicCharacterTableSpec_of_characterTableDixon?_eq_some e he h).isCharacterTableSpec
 
 end ClassData
 

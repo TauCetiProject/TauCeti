@@ -9,12 +9,13 @@ public import TauCeti.Algebra.Lie.Orthogonal.TypeD.Root.AllGenerators
 import TauCeti.LinearAlgebra.Pi
 
 /-!
-# Root-space lines of the split even orthogonal Lie algebra
+# Roots of the split even orthogonal Lie algebra
 
-This file identifies the root spaces for the three standard nonzero root families of the split
-type-`D` Lie algebra relative to its diagonal Cartan. The coordinate-difference root `εᵢ - εⱼ` is
-spanned by the standard paired diagonal-block matrix, while `εᵢ + εⱼ` and `-εᵢ - εⱼ` are
-spanned by the standard skew matrices in the two off-diagonal blocks.
+This file classifies the nonzero roots of the split type-`D` Lie algebra relative to its diagonal
+Cartan. The coordinate-difference root `εᵢ - εⱼ` is spanned by the standard paired diagonal-block
+matrix, while `εᵢ + εⱼ` and `-εᵢ - εⱼ` are spanned by the standard skew matrices in the two
+off-diagonal blocks. Conversely, every nonzero functional whose root space is nontrivial belongs
+to one of these three families.
 
 These line descriptions provide the concrete root spaces needed to describe the positive
 nilradical, construct a compatible Borel subalgebra, and match the resulting split Cartan data to
@@ -28,6 +29,8 @@ the abstract type-`D` root datum.
   line through `sumRootGenerator i j`.
 * `TauCeti.TypeDStd.rootSpace_neg_typeDWeightAdd_eq_span`: the root space of `-εᵢ - εⱼ` is
   the line through `negSumRootGenerator i j`.
+* `TauCeti.TypeDStd.rootSpace_typeDDiagonalCartan_ne_bot_iff`: the three displayed families
+  exhaust the nonzero roots.
 
 ## References
 
@@ -332,6 +335,73 @@ theorem rootSpace_neg_typeDWeightAdd_eq_span [Nontrivial K]
         (rootSpace_neg_typeDWeightAdd_apply_eq_zero h2 hij X hX)⟩
   · rw [Submodule.span_le, Set.singleton_subset_iff]
     exact negSumRootGenerator_mem_rootSpace i j
+
+/-! ## Exhaustion of the nonzero roots -/
+
+/-- **The nonzero roots of the split even orthogonal Lie algebra are exactly the type-`D` roots.**
+
+Over a domain away from characteristic two, a nonzero functional on the diagonal Cartan has a
+nontrivial root space precisely when it is `εᵢ - εⱼ`, `εᵢ + εⱼ`, or `-εᵢ - εⱼ` for two
+distinct coordinates. -/
+theorem rootSpace_typeDDiagonalCartan_ne_bot_iff [IsDomain K]
+    (h2 : (2 : K) ≠ 0) (chi : Module.Dual K (typeDDiagonalCartan K ι)) (hchi : chi ≠ 0) :
+    LieAlgebra.rootSpace (typeDDiagonalCartan K ι) chi ≠ ⊥ ↔
+      ∃ i j : ι, i ≠ j ∧
+        (chi = typeDWeightSub i j ∨ chi = typeDWeightAdd i j ∨
+          chi = -typeDWeightAdd i j) := by
+  constructor
+  · intro hroot
+    rw [ne_eq, ← LieSubmodule.toSubmodule_eq_bot] at hroot
+    obtain ⟨X, hX, hX0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hroot
+    rw [LieSubmodule.mem_toSubmodule] at hX
+    have hmatrix : (X : Matrix (ι ⊕ ι) (ι ⊕ ι) K) ≠ 0 := by
+      intro hzero
+      exact hX0 (Subtype.ext hzero)
+    obtain ⟨a, b, hab⟩ : ∃ a b, (X : Matrix (ι ⊕ ι) (ι ⊕ ι) K) a b ≠ 0 := by
+      by_contra hentries
+      push Not at hentries
+      apply hmatrix
+      ext a b
+      exact hentries a b
+    have hweight : typeDMatrixWeight (K := K) a b = chi := by
+      by_contra hne
+      exact hab ((mem_rootSpace_typeDDiagonalCartan_iff chi X).mp hX a b hne)
+    have eq_zero_of_eq_neg_self {x : K} (hx : x = -x) : x = 0 := by
+      apply (mul_eq_zero.mp ?_).resolve_left h2
+      rw [two_mul]
+      exact eq_neg_iff_add_eq_zero.mp hx
+    rcases a with i | i <;> rcases b with j | j
+    · refine ⟨i, j, ?_, Or.inl ?_⟩
+      · intro hij
+        subst j
+        exact hchi (hweight.symm.trans (typeDMatrixWeight_self _))
+      · simpa using hweight.symm
+    · refine ⟨i, j, ?_, Or.inr (Or.inl ?_)⟩
+      · intro hij
+        subst j
+        exact hab (eq_zero_of_eq_neg_self (typeD.apply_inl_inr X i i))
+      · simpa using hweight.symm
+    · refine ⟨i, j, ?_, Or.inr (Or.inr ?_)⟩
+      · intro hij
+        subst j
+        exact hab (eq_zero_of_eq_neg_self (typeD.apply_inr_inl X i i))
+      · simpa using hweight.symm
+    · refine ⟨j, i, ?_, Or.inl ?_⟩
+      · intro hij
+        subst j
+        exact hchi (hweight.symm.trans (typeDMatrixWeight_self _))
+      · simpa using hweight.symm
+  · rintro ⟨i, j, hij, rfl | rfl | rfl⟩ <;>
+      intro hbot
+    · have hmem := differenceRootGenerator_mem_rootSpace (K := K) i j
+      rw [hbot] at hmem
+      exact differenceRootGenerator_ne_zero i j (by simpa using hmem)
+    · have hmem := sumRootGenerator_mem_rootSpace (K := K) i j
+      rw [hbot] at hmem
+      exact sumRootGenerator_ne_zero i j hij (by simpa using hmem)
+    · have hmem := negSumRootGenerator_mem_rootSpace (K := K) i j
+      rw [hbot] at hmem
+      exact negSumRootGenerator_ne_zero i j hij (by simpa using hmem)
 
 /-! ## Dimensions -/
 

@@ -41,6 +41,7 @@ This file defines `𝒴` and proves its first properties.
 
 ## Main definitions
 
+* `TauCeti.FarguesFontaine.frobeniusHomeomorph` : Frobenius as a self-homeomorphism of `𝒴`.
 * `TauCeti.FarguesFontaine.spaY` : the subset `𝒴 = D(p) ∩ D([ϖ])` of `Spa(𝕎 R, 𝕎 R)`.
 
 ## Main results
@@ -208,6 +209,54 @@ theorem comap_frobenius_mem_spaY_iff [PerfectRing R p]
   rw [mem_spaY_iff] at h ⊢
   exact ⟨hv ▸ comap_mem_spa (TauCeti.WittVector.continuous_frobeniusEquiv_symm hI)
     (fun _ _ ↦ Subring.mem_top _) h.1, (notMem_supp_comap_frobenius_iff v).mp h.2⟩
+
+variable [PerfectRing R p]
+
+noncomputable section
+
+/-- Pullback along Witt Frobenius, as a homeomorphism of `𝒴`. -/
+def frobeniusHomeomorph
+    (hI : IsAdic (Ideal.span {(p : WittVector p R), teichmuller p ϖ})) :
+    spaY p ϖ ≃ₜ spaY p ϖ := by
+  let e := frobeniusEquiv p R
+  let h : Spv (WittVector p R) ≃ₜ Spv (WittVector p R) :=
+    { toFun := comap (e : WittVector p R →+* WittVector p R)
+      invFun := comap (e.symm : WittVector p R →+* WittVector p R)
+      left_inv := fun v ↦ by
+        rw [← Function.comp_apply (f := comap _) (g := comap _), ← comap_comp]
+        simp
+      right_inv := fun v ↦ by
+        rw [← Function.comp_apply (f := comap _) (g := comap _), ← comap_comp]
+        simp
+      continuous_toFun := continuous_comap _
+      continuous_invFun := continuous_comap _ }
+  exact h.subtype fun v ↦ (comap_frobenius_mem_spaY_iff hI v).symm
+
+/-- On underlying valuations, the Frobenius homeomorphism is pullback along Frobenius. -/
+@[simp]
+theorem frobeniusHomeomorph_apply_val
+    (hI : IsAdic (Ideal.span {(p : WittVector p R), teichmuller p ϖ})) (v : spaY p ϖ) :
+    (frobeniusHomeomorph hI v).val = comap frobenius v.val := (rfl)
+
+/-- The inverse Frobenius homeomorphism is pullback along inverse Witt Frobenius. -/
+@[simp]
+theorem frobeniusHomeomorph_symm_apply_val
+    (hI : IsAdic (Ideal.span {(p : WittVector p R), teichmuller p ϖ})) (v : spaY p ϖ) :
+    ((frobeniusHomeomorph hI).symm v).val =
+      comap ((frobeniusEquiv p R).symm : WittVector p R →+* WittVector p R) v.val := (rfl)
+
+/-- Positive powers of the Frobenius homeomorphism are the usual Frobenius iterates. -/
+theorem frobeniusHomeomorph_pow_apply_val
+    (hI : IsAdic (Ideal.span {(p : WittVector p R), teichmuller p ϖ})) (k : ℕ)
+    (v : spaY p ϖ) :
+    ((frobeniusHomeomorph hI ^ k) v).val = (comap frobenius)^[k] v.val := by
+  induction k with
+  | zero => rfl
+  | succ k ih =>
+    rw [pow_succ', Function.iterate_succ_apply']
+    exact congrArg (comap frobenius) ih
+
+end
 
 end CharP
 

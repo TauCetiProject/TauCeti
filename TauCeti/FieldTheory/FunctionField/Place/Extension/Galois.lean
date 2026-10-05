@@ -7,7 +7,6 @@ module
 
 public import Mathlib.FieldTheory.Galois.Basic
 public import Mathlib.RingTheory.Norm.Transitivity
-public import Mathlib.RingTheory.Valuation.RamificationGroup
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Degree
 -- `TauCeti.Place.restrict_surjective_of_finiteDimensional` is what makes the fibre of a place of a
 -- function field nonempty, hence its ramification index positive.
@@ -15,6 +14,7 @@ public import TauCeti.FieldTheory.FunctionField.Place.Extension.Existence
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Fundamental
 public import TauCeti.FieldTheory.FunctionField.Place.Map
 public import TauCeti.FieldTheory.IntermediateField.ScalarTower
+public import TauCeti.RingTheory.Valuation.RamificationGroup
 
 /-!
 # The Galois action on the places lying over a place

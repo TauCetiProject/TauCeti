@@ -8,11 +8,12 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Log.NegMulLog
 public import Mathlib.Data.Matrix.Mul
 public import Mathlib.Topology.Instances.Matrix
+import Mathlib.Analysis.Calculus.LocalExtr.Basic
 import TauCeti.Analysis.SpecialFunctions.Log.MulLog
 import TauCeti.Data.Finset.Basic
 
 /-!
-# The entropy minimiser with prescribed marginals
+# The entropy minimiser with prescribed marginals and the Sinkhorn–Knopp theorem
 
 Let `ι` and `κ` be finite types, let `a : ι → ℝ` and `b : κ → ℝ` be the row and the column sums,
 and let `S` be the set of the nonnegative matrices `P : ι × κ → ℝ` whose row sums are `a` and
@@ -20,19 +21,30 @@ whose column sums are `b`. Against a fixed matrix `K : ι × κ → ℝ`, the re
 attains a minimum on `S` as soon as `S` is nonempty, and for strictly positive marginals of equal
 total mass every minimiser has strictly positive entries.
 
+For a strictly positive `K` the minimiser is a diagonal scaling `P i j = u i * K i j * v j` of `K`
+by strictly positive factors. At a minimiser with positive entries the relative entropy is
+differentiable along every direction that preserves the marginals, and its derivative vanishes
+there; testing against the rectangle directions splits `log (P i j) - log (K i j)` into a function
+of the row plus a function of the column. Conversely, Gibbs' inequality and the Pythagorean identity
+`relEntropy Q K = relEntropy Q P + relEntropy P K` show that every such scaling with marginals `a`
+and `b` is the minimiser. This gives the Sinkhorn–Knopp theorem for a strictly positive kernel:
+strictly positive marginals of equal total mass are the row and column sums of a diagonal scaling
+of `K`, the scaled matrix is unique, and its factors are unique up to one common scalar.
+
 Nothing here uses the ordinal structure of the row and column types: the results are stated for
 arbitrary finite `ι` and `κ`, and the diagonal scaling of a kernel between two enumerated finite
 sets is the specialisation of `Matrix.IsDiagonalScaling` to `Fin n` and `Fin m`.
 
-`K` itself is unrestricted. The relative entropy `Matrix.relEntropy P K` below is the formula
+The relative entropy `Matrix.relEntropy P K` below is the formula
 `∑ i, ∑ j, (P i j * log (P i j) - P i j * log (K i j))`; for a nonnegative `P` and a strictly
-positive `K` it is the relative entropy of `P` against `K`, and the minimiser is positive for every
-`K`. Strict positivity of `K` is needed only in the later steps, which identify the minimiser with a
-diagonal scaling of `K`.
+positive `K` it is the relative entropy of `P` against `K`. Existence and positivity of the
+minimiser hold for every `K`; strict positivity of `K` is needed only to identify the minimiser with
+a diagonal scaling of `K`. A kernel with zero entries constrains the support of a scaling and is
+not treated here.
 
-`Matrix.IsDiagonalScaling P K u v` records the shape of the minimiser described by the later steps
-of this development: `P i j = u i * K i j * v j` for row factors `u` and column factors `v`, that
-is a diagonal scaling of `K`.
+`Matrix.IsDiagonalScaling P K u v` records the shape of the minimiser:
+`P i j = u i * K i j * v j` for row factors `u` and column factors `v`, that is a diagonal scaling
+of `K`.
 
 The marginals here are arbitrary vectors of equal total mass, not probability distributions, and
 the matrices are real: this is the setting of a diagonal scaling of a kernel, where the scaled
@@ -55,6 +67,29 @@ plan with `PMF` marginals is `TauCeti.TransportMatrix`.
 * `Matrix.pos_of_relEntropy_minOn`: every such minimiser has strictly positive entries.
 * `Matrix.HasMarginals.add_vecMulVec_of_sum_eq_zero`: the row and column sums of a matrix are
   preserved by an outer product of a row weight and a column weight, each of total sum `0`.
+* `Matrix.relEntropy_nonneg` and `Matrix.relEntropy_eq_zero_iff`: Gibbs' inequality for matrices
+  of equal total mass, with its equality case.
+* `Matrix.hasDerivAt_relEntropy_add_smul` and
+  `Matrix.sum_sum_mul_log_sub_log_eq_zero_of_relEntropy_minOn`: the derivative of the relative
+  entropy along a direction, and the first-order condition at a positive minimiser.
+* `Matrix.exists_isDiagonalScaling_of_relEntropy_minOn`: for a strictly positive `K`, every
+  minimiser is a diagonal scaling of `K` by strictly positive factors;
+  `Matrix.relEntropy_minOn_iff_exists_isDiagonalScaling` is the resulting characterisation.
+* `Matrix.IsDiagonalScaling.relEntropy_eq_relEntropy_add`: the Pythagorean identity of the relative
+  entropy at a diagonal scaling.
+* `Matrix.exists_sinkhorn_scaling`: **the Sinkhorn–Knopp theorem** for a strictly positive kernel.
+* `Matrix.IsDiagonalScaling.eq_of_hasMarginals` and
+  `Matrix.IsDiagonalScaling.exists_eq_rescale_factors`: the scaled matrix is unique, and its
+  factors are unique up to a common scalar.
+
+## References
+
+* R. Sinkhorn and P. Knopp, *Concerning nonnegative matrices and doubly stochastic matrices*,
+  Pacific J. Math. 21 (1967), 343--348.
+* I. Csiszár, *I-divergence geometry of probability distributions and minimization problems*,
+  Ann. Probab. 3 (1975), 146--158, for the Pythagorean identity of the relative entropy.
+* G. Peyré and M. Cuturi, *Computational Optimal Transport*, Found. Trends Mach. Learn. 11 (2019),
+  Proposition 4.3, for the characterisation of the entropic minimiser as a diagonal scaling.
 -/
 public section
 
@@ -115,6 +150,15 @@ theorem IsDiagonalScaling.rescale_factors {P K : Matrix ι κ ℝ} {u : ι → �
   calc P i j = u i * K i j * v j := h i j
     _ = (u i * K i j * v j) * (r * r⁻¹) := by rw [hrr]; ring
     _ = r * u i * K i j * (r⁻¹ * v j) := by ring
+
+omit [Fintype ι] [Fintype κ] in
+/-- A diagonal scaling of a strictly positive `K` by strictly positive factors is strictly
+positive. -/
+theorem IsDiagonalScaling.pos {P K : Matrix ι κ ℝ} {u : ι → ℝ} {v : κ → ℝ}
+    (h : IsDiagonalScaling P K u v) (hK : ∀ i j, 0 < K i j) (hu : ∀ i, 0 < u i)
+    (hv : ∀ j, 0 < v j) (i : ι) (j : κ) : 0 < P i j := by
+  rw [h i j]
+  exact mul_pos (mul_pos (hu i) (hK i j)) (hv j)
 
 /-! ### The relative entropy of a matrix against a kernel -/
 
@@ -273,8 +317,9 @@ theorem exists_relEntropy_minOn_of_nonneg (K : Matrix ι κ ℝ) (a : ι → ℝ
 `K` attains a minimum on the nonnegative matrices with row sums `a` and column sums `b`.
 
 This is the case of nonnegative marginals of `exists_relEntropy_minOn_of_nonneg`; it is stated
-separately because strictly positive marginals are the setting of the later steps of this
-development, which identify the minimiser with a diagonal scaling of `K`. -/
+separately because strictly positive marginals are the setting of
+`Matrix.exists_isDiagonalScaling_of_relEntropy_minOn`, which identifies the minimiser with a
+diagonal scaling of `K`. -/
 theorem exists_relEntropy_minOn_of_pos (K : Matrix ι κ ℝ) (a : ι → ℝ) (b : κ → ℝ)
     (ha : ∀ i, 0 < a i) (hb : ∀ j, 0 < b j) (hmass : (∑ i, a i) = ∑ j, b j) :
     ∃ P : Matrix ι κ ℝ, (∀ i j, 0 ≤ P i j) ∧ HasMarginals P a b ∧
@@ -700,5 +745,288 @@ theorem pos_of_relEntropy_minOn (K : Matrix ι κ ℝ) (a : ι → ℝ) (b : κ 
     have key2 : (Real.log t + C) * t < 0 := mul_neg_of_neg_of_pos key1 ht0
     linarith [hby, hbz, hbq, hL]
   linarith
+
+/-! ### Linearity of the marginal constraints -/
+
+/-- The row and column sums of a sum of two matrices are the sums of their row and column sums. -/
+theorem HasMarginals.add {P Q : Matrix ι κ ℝ} {a a' : ι → ℝ} {b b' : κ → ℝ}
+    (hP : HasMarginals P a b) (hQ : HasMarginals Q a' b') :
+    HasMarginals (P + Q) (a + a') (b + b') :=
+  ⟨fun i => by simp [Finset.sum_add_distrib, hP.1 i, hQ.1 i],
+    fun j => by simp [Finset.sum_add_distrib, hP.2 j, hQ.2 j]⟩
+
+/-- The row and column sums of a scalar multiple of a matrix are the same multiple of its row and
+column sums. -/
+theorem HasMarginals.smul {P : Matrix ι κ ℝ} {a : ι → ℝ} {b : κ → ℝ} (hP : HasMarginals P a b)
+    (t : ℝ) : HasMarginals (t • P) (t • a) (t • b) :=
+  ⟨fun i => by simp [← Finset.mul_sum, hP.1 i], fun j => by simp [← Finset.mul_sum, hP.2 j]⟩
+
+/-- Summed against a matrix with row sums `a` and column sums `b`, a function `f i + g j` of the
+row plus a function of the column gives `∑ i, a i * f i + ∑ j, b j * g j`: only the marginals of
+the matrix enter. -/
+theorem HasMarginals.sum_sum_mul_add {Q : Matrix ι κ ℝ} {a : ι → ℝ} {b : κ → ℝ}
+    (hQ : HasMarginals Q a b) (f : ι → ℝ) (g : κ → ℝ) :
+    ∑ i, ∑ j, Q i j * (f i + g j) = ∑ i, a i * f i + ∑ j, b j * g j := by
+  simp only [mul_add, Finset.sum_add_distrib]
+  congr 1
+  · simp_rw [← Finset.sum_mul, hQ.1]
+  · rw [Finset.sum_comm]
+    simp_rw [← Finset.sum_mul, hQ.2]
+
+/-! ### Gibbs' inequality -/
+
+/-- Gibbs' inequality in its quantitative form: the relative entropy of a nonnegative matrix `Q`
+against a strictly positive matrix `P` of the same total mass dominates the squared Hellinger
+distance `∑ i, ∑ j, (√(Q i j) - √(P i j)) ^ 2`. -/
+theorem sum_sum_sq_sqrt_sub_sqrt_le_relEntropy {P Q : Matrix ι κ ℝ} (hQ : ∀ i j, 0 ≤ Q i j)
+    (hP : ∀ i j, 0 < P i j) (hmass : ∑ i, ∑ j, Q i j = ∑ i, ∑ j, P i j) :
+    ∑ i, ∑ j, (√(Q i j) - √(P i j)) ^ 2 ≤ relEntropy Q P := by
+  -- Summed over the cells, the gap of the supporting line of `x ↦ x * log x` at `P i j` is the
+  -- relative entropy, because the linear terms add up to the difference of the total masses.
+  have hgap : relEntropy Q P = ∑ i, ∑ j, (Q i j * Real.log (Q i j) - P i j * Real.log (P i j)
+      - (Q i j - P i j) * (Real.log (P i j) + 1)) := by
+    have hlin : ∑ i, ∑ j, (Q i j - P i j) = 0 := by
+      simp only [Finset.sum_sub_distrib, hmass, sub_self]
+    rw [relEntropy_def, ← sub_zero (∑ i, ∑ j, _), ← hlin, ← Finset.sum_sub_distrib]
+    refine Finset.sum_congr rfl fun i _ => ?_
+    rw [← Finset.sum_sub_distrib]
+    refine Finset.sum_congr rfl fun j _ => ?_
+    ring
+  rw [hgap]
+  exact Finset.sum_le_sum fun i _ => Finset.sum_le_sum fun j _ =>
+    TauCeti.sq_sqrt_sub_sqrt_le_mul_log_sub_mul_log_sub (hP i j) (hQ i j)
+
+/-- Gibbs' inequality: the relative entropy of a nonnegative matrix `Q` against a strictly positive
+matrix `P` of the same total mass is nonnegative. -/
+theorem relEntropy_nonneg {P Q : Matrix ι κ ℝ} (hQ : ∀ i j, 0 ≤ Q i j) (hP : ∀ i j, 0 < P i j)
+    (hmass : ∑ i, ∑ j, Q i j = ∑ i, ∑ j, P i j) : 0 ≤ relEntropy Q P :=
+  le_trans (Finset.sum_nonneg fun _ _ => Finset.sum_nonneg fun _ _ => sq_nonneg _)
+    (sum_sum_sq_sqrt_sub_sqrt_le_relEntropy hQ hP hmass)
+
+/-- The equality case of Gibbs' inequality: the relative entropy of a nonnegative matrix `Q` against
+a strictly positive matrix `P` of the same total mass vanishes exactly when `Q = P`. -/
+theorem relEntropy_eq_zero_iff {P Q : Matrix ι κ ℝ} (hQ : ∀ i j, 0 ≤ Q i j)
+    (hP : ∀ i j, 0 < P i j) (hmass : ∑ i, ∑ j, Q i j = ∑ i, ∑ j, P i j) :
+    relEntropy Q P = 0 ↔ Q = P := by
+  refine ⟨fun h => ?_, fun h => by simp [h]⟩
+  have hle := sum_sum_sq_sqrt_sub_sqrt_le_relEntropy hQ hP hmass
+  rw [h] at hle
+  have hrow : ∀ i, 0 ≤ ∑ j, (√(Q i j) - √(P i j)) ^ 2 :=
+    fun i => Finset.sum_nonneg fun _ _ => sq_nonneg _
+  have hzero := (Finset.sum_eq_zero_iff_of_nonneg fun i _ => hrow i).mp
+    (le_antisymm hle (Finset.sum_nonneg fun i _ => hrow i))
+  ext i j
+  have hij := (Finset.sum_eq_zero_iff_of_nonneg fun _ _ => sq_nonneg _).mp
+    (hzero i (Finset.mem_univ i)) j (Finset.mem_univ j)
+  rw [sq_eq_zero_iff, sub_eq_zero] at hij
+  rw [← Real.sq_sqrt (hQ i j), ← Real.sq_sqrt (hP i j).le, hij]
+
+/-! ### The first-order condition at a positive minimiser -/
+
+/-- The relative entropy against `K` of the matrix `P + t • D` has derivative
+`∑ i, ∑ j, D i j * (log (P i j) + 1 - log (K i j))` in `t` at `t = 0`, as soon as no entry of `P`
+vanishes. -/
+theorem hasDerivAt_relEntropy_add_smul (K P D : Matrix ι κ ℝ) (hP : ∀ i j, P i j ≠ 0) :
+    HasDerivAt (fun t : ℝ => relEntropy (P + t • D) K)
+      (∑ i, ∑ j, D i j * (Real.log (P i j) + 1 - Real.log (K i j))) 0 := by
+  simp only [relEntropy_def, Matrix.add_apply, Matrix.smul_apply, smul_eq_mul]
+  refine HasDerivAt.fun_sum fun i _ => HasDerivAt.fun_sum fun j _ => ?_
+  have hlin : HasDerivAt (fun t : ℝ => P i j + t * D i j) (D i j) 0 := by
+    simpa using ((hasDerivAt_id (0 : ℝ)).mul_const (D i j)).const_add (P i j)
+  have hlog :
+      HasDerivAt (fun x => x * Real.log x) (Real.log (P i j) + 1) (P i j + 0 * D i j) := by
+    simpa using Real.hasDerivAt_mul_log (hP i j)
+  refine ((hlog.comp 0 hlin).sub (hlin.mul_const (Real.log (K i j)))).congr_deriv ?_
+  ring
+
+/-- The first-order condition at a minimiser with positive entries: if `P` minimises the relative
+entropy against `K` among the nonnegative matrices with row sums `a` and column sums `b`, and
+every entry of `P` is positive, then the matrix `log (P i j) - log (K i j)` is orthogonal to every
+direction `D` whose row and column sums vanish. -/
+theorem sum_sum_mul_log_sub_log_eq_zero_of_relEntropy_minOn (K : Matrix ι κ ℝ) {a : ι → ℝ}
+    {b : κ → ℝ} {P D : Matrix ι κ ℝ} (hP : ∀ i j, 0 < P i j) (hPa : HasMarginals P a b)
+    (hmin : ∀ Q : Matrix ι κ ℝ, (∀ i j, 0 ≤ Q i j) → HasMarginals Q a b →
+      relEntropy P K ≤ relEntropy Q K)
+    (hD : HasMarginals D 0 0) :
+    ∑ i, ∑ j, D i j * (Real.log (P i j) - Real.log (K i j)) = 0 := by
+  -- For `t` near `0` the matrix `P + t • D` is still nonnegative and has the marginals of `P`, so
+  -- `t = 0` is a local minimum of its relative entropy.
+  have hloc : IsLocalMin (fun t : ℝ => relEntropy (P + t • D) K) 0 := by
+    have hpos : ∀ᶠ t in nhds (0 : ℝ), ∀ i j, 0 < (P + t • D) i j := by
+      simp only [Filter.eventually_all]
+      intro i j
+      have hc : Continuous fun t : ℝ => (P + t • D) i j := by
+        simp only [Matrix.add_apply, Matrix.smul_apply, smul_eq_mul]
+        fun_prop
+      exact continuousAt_const.eventually_lt hc.continuousAt (by simpa using hP i j)
+    refine hpos.mono fun t ht => ?_
+    simpa using hmin _ (fun i j => (ht i j).le) (by simpa using hPa.add (hD.smul t))
+  have hderiv := hloc.hasDerivAt_eq_zero
+    (hasDerivAt_relEntropy_add_smul K P D fun i j => (hP i j).ne')
+  -- The constant `1` in the derivative contributes `∑ i, ∑ j, D i j`, which vanishes.
+  have hsum : ∑ i, ∑ j, D i j = 0 := by simp [hD.1]
+  have hsplit : ∑ i, ∑ j, D i j * (Real.log (P i j) + 1 - Real.log (K i j))
+      = ∑ i, ∑ j, D i j * (Real.log (P i j) - Real.log (K i j)) + ∑ i, ∑ j, D i j := by
+    rw [← Finset.sum_add_distrib]
+    refine Finset.sum_congr rfl fun i _ => ?_
+    rw [← Finset.sum_add_distrib]
+    refine Finset.sum_congr rfl fun j _ => ?_
+    ring
+  linarith
+
+/-! ### The minimiser is a diagonal scaling -/
+
+/-- For a strictly positive kernel `K` and strictly positive marginals `a` and `b`, every minimiser
+`P` of the relative entropy against `K` among the nonnegative matrices with row sums `a` and column
+sums `b` is a diagonal scaling of `K` by strictly positive row and column factors. -/
+theorem exists_isDiagonalScaling_of_relEntropy_minOn {K : Matrix ι κ ℝ} (hK : ∀ i j, 0 < K i j)
+    {a : ι → ℝ} {b : κ → ℝ} (ha : ∀ i, 0 < a i) (hb : ∀ j, 0 < b j) {P : Matrix ι κ ℝ}
+    (hP : ∀ i j, 0 ≤ P i j) (hPa : HasMarginals P a b)
+    (hmin : ∀ Q : Matrix ι κ ℝ, (∀ i j, 0 ≤ Q i j) → HasMarginals Q a b →
+      relEntropy P K ≤ relEntropy Q K) :
+    ∃ (u : ι → ℝ) (v : κ → ℝ), (∀ i, 0 < u i) ∧ (∀ j, 0 < v j) ∧ IsDiagonalScaling P K u v := by
+  classical
+  have hPpos := pos_of_relEntropy_minOn K a b ha hb hP hPa hmin
+  set H : ι → κ → ℝ := fun i j => Real.log (P i j) - Real.log (K i j) with hH
+  -- Testing the first-order condition against the rectangle direction on `i`, `i'` by `j`, `j'`
+  -- makes the alternating sum of `H` over the four cells vanish, so `H` is the sum of a function
+  -- of the row and a function of the column.
+  have hrect : ∀ i i' j j', H i j - H i j' - H i' j + H i' j' = 0 := by
+    intro i i' j j'
+    have hD : HasMarginals (Matrix.vecMulVec (subIndicator i i') (subIndicator j j')) 0 0 :=
+      ⟨fun x => by simp [Matrix.vecMulVec_apply, ← Finset.mul_sum, sum_subIndicator],
+        fun y => by simp [Matrix.vecMulVec_apply, ← Finset.sum_mul, sum_subIndicator]⟩
+    rw [← sum_subIndicator_prod H i i' j j',
+      ← sum_sum_mul_log_sub_log_eq_zero_of_relEntropy_minOn K hPpos hPa hmin hD]
+    simp only [Matrix.vecMulVec_apply, hH, mul_assoc]
+  rcases isEmpty_or_nonempty ι with hι | ⟨⟨i₀⟩⟩
+  · exact ⟨1, 1, fun _ => one_pos, fun _ => one_pos, fun i => isEmptyElim i⟩
+  rcases isEmpty_or_nonempty κ with hκ | ⟨⟨j₀⟩⟩
+  · exact ⟨1, 1, fun _ => one_pos, fun _ => one_pos, fun _ j => isEmptyElim j⟩
+  refine ⟨fun i => Real.exp (H i j₀), fun j => Real.exp (H i₀ j - H i₀ j₀),
+    fun _ => Real.exp_pos _, fun _ => Real.exp_pos _, fun i j => ?_⟩
+  have hHij : H i j = H i j₀ + (H i₀ j - H i₀ j₀) := by linarith [hrect i i₀ j j₀]
+  calc P i j = Real.exp (H i j) * K i j := by
+        rw [hH, Real.exp_sub, Real.exp_log (hPpos i j), Real.exp_log (hK i j),
+          div_mul_cancel₀ _ (hK i j).ne']
+    _ = Real.exp (H i j₀) * K i j * Real.exp (H i₀ j - H i₀ j₀) := by
+        rw [hHij, Real.exp_add]
+        ring
+
+/-- **The Sinkhorn–Knopp theorem** for a strictly positive kernel: a strictly positive matrix `K`
+and strictly positive row sums `a` and column sums `b` of equal total mass admit strictly positive
+row factors `u` and column factors `v` such that the diagonal scaling `u i * K i j * v j` has row
+sums `a` and column sums `b`.
+
+The scaled matrix is the minimiser of the relative entropy against `K` with these marginals. -/
+theorem exists_sinkhorn_scaling {K : Matrix ι κ ℝ} (hK : ∀ i j, 0 < K i j) {a : ι → ℝ}
+    {b : κ → ℝ} (ha : ∀ i, 0 < a i) (hb : ∀ j, 0 < b j) (hmass : ∑ i, a i = ∑ j, b j) :
+    ∃ (u : ι → ℝ) (v : κ → ℝ), (∀ i, 0 < u i) ∧ (∀ j, 0 < v j) ∧
+      (∀ i, ∑ j, u i * K i j * v j = a i) ∧ ∀ j, ∑ i, u i * K i j * v j = b j := by
+  obtain ⟨P, hP, hPa, hmin⟩ := exists_relEntropy_minOn_of_pos K a b ha hb hmass
+  obtain ⟨u, v, hu, hv, hPuv⟩ :=
+    exists_isDiagonalScaling_of_relEntropy_minOn hK ha hb hP hPa hmin
+  refine ⟨u, v, hu, hv, fun i => ?_, fun j => ?_⟩
+  · rw [← hPa.1 i]
+    exact Finset.sum_congr rfl fun j _ => (hPuv i j).symm
+  · rw [← hPa.2 j]
+    exact Finset.sum_congr rfl fun i _ => (hPuv i j).symm
+
+/-- The Pythagorean identity of the relative entropy at a diagonal scaling: if `K` and the scaling
+factors have no zero entries, then for every matrix `Q` with the row and column sums of `P`,
+`relEntropy Q K = relEntropy Q P + relEntropy P K`. -/
+theorem IsDiagonalScaling.relEntropy_eq_relEntropy_add {P K : Matrix ι κ ℝ} {u : ι → ℝ}
+    {v : κ → ℝ} (h : IsDiagonalScaling P K u v) (hK : ∀ i j, K i j ≠ 0) (hu : ∀ i, u i ≠ 0)
+    (hv : ∀ j, v j ≠ 0) {a : ι → ℝ} {b : κ → ℝ} (hP : HasMarginals P a b) {Q : Matrix ι κ ℝ}
+    (hQ : HasMarginals Q a b) :
+    relEntropy Q K = relEntropy Q P + relEntropy P K := by
+  have hlog : ∀ i j,
+      Real.log (P i j) = Real.log (K i j) + (Real.log (u i) + Real.log (v j)) := by
+    intro i j
+    rw [h i j, Real.log_mul (mul_ne_zero (hu i) (hK i j)) (hv j),
+      Real.log_mul (hu i) (hK i j)]
+    ring
+  have hQK : relEntropy Q K
+      = relEntropy Q P + ∑ i, ∑ j, Q i j * (Real.log (u i) + Real.log (v j)) := by
+    simp only [relEntropy_def, ← Finset.sum_add_distrib]
+    refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
+    rw [hlog]
+    ring
+  have hPK : relEntropy P K = ∑ i, ∑ j, P i j * (Real.log (u i) + Real.log (v j)) := by
+    simp only [relEntropy_def]
+    refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
+    rw [hlog]
+    ring
+  rw [hQK, hPK, hQ.sum_sum_mul_add, hP.sum_sum_mul_add]
+
+/-- A diagonal scaling of a strictly positive `K` by strictly positive factors minimises the
+relative entropy against `K` among the nonnegative matrices with its row and column sums. -/
+theorem IsDiagonalScaling.relEntropy_le {P K : Matrix ι κ ℝ} {u : ι → ℝ} {v : κ → ℝ}
+    (h : IsDiagonalScaling P K u v) (hK : ∀ i j, 0 < K i j) (hu : ∀ i, 0 < u i)
+    (hv : ∀ j, 0 < v j) {a : ι → ℝ} {b : κ → ℝ} (hP : HasMarginals P a b) {Q : Matrix ι κ ℝ}
+    (hQ0 : ∀ i j, 0 ≤ Q i j) (hQ : HasMarginals Q a b) :
+    relEntropy P K ≤ relEntropy Q K := by
+  have hPpos := h.pos hK hu hv
+  have hmass : ∑ i, ∑ j, Q i j = ∑ i, ∑ j, P i j := by simp only [hQ.1, hP.1]
+  rw [h.relEntropy_eq_relEntropy_add (fun i j => (hK i j).ne') (fun i => (hu i).ne')
+    (fun j => (hv j).ne') hP hQ]
+  linarith [relEntropy_nonneg hQ0 hPpos hmass]
+
+/-- For a strictly positive kernel `K` and strictly positive marginals `a` and `b`, a nonnegative
+matrix with row sums `a` and column sums `b` minimises the relative entropy against `K` among all
+such matrices exactly when it is a diagonal scaling of `K` by strictly positive factors. -/
+theorem relEntropy_minOn_iff_exists_isDiagonalScaling {K : Matrix ι κ ℝ} (hK : ∀ i j, 0 < K i j)
+    {a : ι → ℝ} {b : κ → ℝ} (ha : ∀ i, 0 < a i) (hb : ∀ j, 0 < b j) {P : Matrix ι κ ℝ}
+    (hP : ∀ i j, 0 ≤ P i j) (hPa : HasMarginals P a b) :
+    (∀ Q : Matrix ι κ ℝ, (∀ i j, 0 ≤ Q i j) → HasMarginals Q a b →
+      relEntropy P K ≤ relEntropy Q K) ↔
+      ∃ (u : ι → ℝ) (v : κ → ℝ), (∀ i, 0 < u i) ∧ (∀ j, 0 < v j) ∧ IsDiagonalScaling P K u v :=
+  ⟨exists_isDiagonalScaling_of_relEntropy_minOn hK ha hb hP hPa,
+    fun ⟨_, _, hu, hv, h⟩ _ hQ0 hQ => h.relEntropy_le hK hu hv hPa hQ0 hQ⟩
+
+/-- Two diagonal scalings of a strictly positive `K` by strictly positive factors that have the same
+row and column sums are equal: the scaled matrix of the Sinkhorn–Knopp theorem is unique. -/
+theorem IsDiagonalScaling.eq_of_hasMarginals {P P' K : Matrix ι κ ℝ} {u u' : ι → ℝ}
+    {v v' : κ → ℝ} (h : IsDiagonalScaling P K u v) (h' : IsDiagonalScaling P' K u' v')
+    (hK : ∀ i j, 0 < K i j) (hu : ∀ i, 0 < u i) (hv : ∀ j, 0 < v j) (hu' : ∀ i, 0 < u' i)
+    (hv' : ∀ j, 0 < v' j) {a : ι → ℝ} {b : κ → ℝ} (hP : HasMarginals P a b)
+    (hP' : HasMarginals P' a b) : P = P' := by
+  have hPpos := h.pos hK hu hv
+  have hP'pos := h'.pos hK hu' hv'
+  have hmass : ∑ i, ∑ j, P' i j = ∑ i, ∑ j, P i j := by simp only [hP.1, hP'.1]
+  -- Each scaling is the minimiser, so the two Pythagorean identities force both relative
+  -- entropies between them to vanish.
+  have e1 := h.relEntropy_eq_relEntropy_add (fun i j => (hK i j).ne')
+    (fun i => (hu i).ne') (fun j => (hv j).ne') hP hP'
+  have e2 := h'.relEntropy_eq_relEntropy_add (fun i j => (hK i j).ne')
+    (fun i => (hu' i).ne') (fun j => (hv' j).ne') hP' hP
+  have n1 := relEntropy_nonneg (fun i j => (hP'pos i j).le) hPpos hmass
+  have n2 := relEntropy_nonneg (fun i j => (hPpos i j).le) hP'pos hmass.symm
+  exact ((relEntropy_eq_zero_iff (fun i j => (hP'pos i j).le) hPpos hmass).mp (by linarith)).symm
+
+omit [Fintype ι] [Fintype κ] in
+/-- Up to a common scalar, the factors of a diagonal scaling of a kernel with no zero entry are
+unique: if `P` is the diagonal scaling of `K` both by `u`, `v` and by `u'`, `v'`, with nonzero
+`u'` and `v'`, then `u = r * u'` and `v = r⁻¹ * v'` for a nonzero scalar `r`. This is the converse
+of `Matrix.IsDiagonalScaling.rescale_factors`. -/
+theorem IsDiagonalScaling.exists_eq_rescale_factors [Nonempty ι] [Nonempty κ]
+    {P K : Matrix ι κ ℝ} {u u' : ι → ℝ} {v v' : κ → ℝ} (h : IsDiagonalScaling P K u v)
+    (h' : IsDiagonalScaling P K u' v') (hK : ∀ i j, K i j ≠ 0) (hu' : ∀ i, u' i ≠ 0)
+    (hv' : ∀ j, v' j ≠ 0) :
+    ∃ r : ℝ, r ≠ 0 ∧ (∀ i, u i = r * u' i) ∧ ∀ j, v j = r⁻¹ * v' j := by
+  obtain ⟨i₀⟩ := ‹Nonempty ι›
+  obtain ⟨j₀⟩ := ‹Nonempty κ›
+  -- Cancelling the entry of `K` identifies the two outer products of the factors.
+  have huv : ∀ i j, u i * v j = u' i * v' j := fun i j =>
+    mul_right_cancel₀ (hK i j) (by linear_combination (h' i j) - (h i j))
+  have hu : ∀ i, u i ≠ 0 := fun i hi => mul_ne_zero (hu' i) (hv' j₀) (by rw [← huv, hi, zero_mul])
+  have hv : ∀ j, v j ≠ 0 := fun j hj => mul_ne_zero (hu' i₀) (hv' j) (by rw [← huv, hj, mul_zero])
+  refine ⟨u i₀ / u' i₀, div_ne_zero (hu i₀) (hu' i₀), fun i => ?_, fun j => ?_⟩
+  · have hcross : u i * u' i₀ * v j₀ = u i₀ * u' i * v j₀ := by
+      linear_combination u' i₀ * huv i j₀ - u' i * huv i₀ j₀
+    rw [div_mul_eq_mul_div, eq_div_iff (hu' i₀)]
+    exact mul_right_cancel₀ (hv j₀) hcross
+  · rw [inv_div, div_mul_eq_mul_div, eq_div_iff (hu i₀)]
+    linear_combination huv i₀ j
 
 end Matrix

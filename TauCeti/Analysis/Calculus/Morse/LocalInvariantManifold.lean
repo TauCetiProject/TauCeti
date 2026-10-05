@@ -25,13 +25,17 @@ Lipschitz constant on a sufficiently small ball. This file combines those facts 
 Lyapunov--Perron theorem: the initial displacements of forward negative-gradient trajectories
 confined to that ball form a Lipschitz graph over a ball in the stable linear subspace.
 
-This is a local stable-set graph and tangency theorem at the equilibrium: the graph map is
-Lipschitz, differentiable at the origin with derivative zero, and hence tangent there to the stable
-linear subspace. Smoothness away from the equilibrium and the resulting embedded-submanifold
-structure are not established here.
+This is a local stable-manifold theorem at the equilibrium: the graph map is Lipschitz,
+differentiable at the origin with derivative zero, and hence tangent there to the stable linear
+subspace. It is moreover continuously differentiable at every point of the closed ball over which
+the set is a graph, since on a small enough ball the remainder is `C¹` with uniformly continuous
+derivative (`ContinuousLinearMap.contDiffAt_localStableGraphMap`). The embedded-submanifold
+structure carried by this `C¹` graph, and its globalization along the flow, are not established
+here.
 
 Applying the same construction after reversing time gives the corresponding local unstable set
-as a Lipschitz graph tangent at the origin to the unstable Hessian spectral subspace.
+as the graph of a Lipschitz, `C¹` map tangent at the origin to the unstable Hessian spectral
+subspace.
 
 Because the projection inverts the graph parameterization, each of the two sets is homeomorphic to
 a closed ball in the spectral subspace it is a graph over, hence to a Euclidean closed ball of the
@@ -49,8 +53,9 @@ radii are nonnegative, belongs to both sets.
   `IsNondegenerateCriticalPoint.localStableSet` and
   `IsNondegenerateCriticalPoint.localUnstableSet`.
 * `IsNondegenerateCriticalPoint.exists_localStableSet_eq_lipschitzGraph`: confined forward
-  trajectories in coordinates centred at a nondegenerate critical point form a Lipschitz graph,
-  tangent at the origin to the stable Hessian spectral subspace.
+  trajectories in coordinates centred at a nondegenerate critical point form the graph of a
+  Lipschitz map that is `C¹` over the whole graph domain, tangent at the origin to the stable
+  Hessian spectral subspace.
 * `IsNondegenerateCriticalPoint.exists_localUnstableSet_eq_lipschitzGraph`: the backward-time
   counterpart, tangent at the origin to the unstable Hessian spectral subspace.
 * `IsNondegenerateCriticalPoint.exists_localStableSet_homeomorph_closedBall` and
@@ -190,7 +195,10 @@ private theorem neg_gradient_centered_time_eq :
 exponential dichotomy constants `K`, `alpha` for the linearization `-hessianOperator f x` along
 the stable projection, and a radius `r` on which the nonlinear remainder of the centred
 negative-gradient field is Lipschitz with a constant `epsilon` small enough both for the
-Lyapunov--Perron machinery and to make the resulting graph constant at most `C`.
+Lyapunov--Perron machinery and to make the resulting graph constant at most `C`. On the open ball
+of that radius the remainder is moreover continuously differentiable with uniformly continuous
+derivative, which is what makes the resulting graph maps `C¹`, and the Lyapunov--Perron bound
+`K / (1 - 2 K (2 epsilon) / alpha)` on solutions in terms of their parameter is nonnegative.
 
 This is the setup shared by `IsNondegenerateCriticalPoint.exists_localStableSet_eq_lipschitzGraph`
 and `IsNondegenerateCriticalPoint.exists_localUnstableSet_eq_lipschitzGraph`. -/
@@ -205,7 +213,11 @@ private theorem exists_lyapunovPerronData (h : IsNondegenerateCriticalPoint f x)
           K * Real.exp (alpha * t) * ‖v‖) ∧
       LipschitzOnWith epsilon (fun z ↦ negativeGradientRemainder f x (x + z)) (closedBall 0 r) ∧
       2 * K * (epsilon * 2) < alpha ∧
-      2 * K * (epsilon * 2) / alpha * (K / (1 - 2 * K * (epsilon * 2) / alpha)) ≤ C := by
+      2 * K * (epsilon * 2) / alpha * (K / (1 - 2 * K * (epsilon * 2) / alpha)) ≤ C ∧
+      (∀ z ∈ ball (0 : E) r, ContDiffAt ℝ 1 (fun z ↦ negativeGradientRemainder f x (x + z)) z) ∧
+      UniformContinuousOn (fderiv ℝ fun z ↦ negativeGradientRemainder f x (x + z))
+        (ball (0 : E) r) ∧
+      0 ≤ (K : ℝ) / (1 - 2 * K * ((epsilon : ℝ) * 2) / alpha) := by
   obtain ⟨K, alpha, hK, halpha, hs, hu⟩ := h.exists_stableProjection_exponential_bounds
   have hK' : (0 : ℝ) < K := by exact_mod_cast hK
   have halpha' : (0 : ℝ) < alpha := by exact_mod_cast halpha
@@ -221,15 +233,30 @@ private theorem exists_lyapunovPerronData (h : IsNondegenerateCriticalPoint f x)
       field_simp
       nlinarith
     exact_mod_cast hsmall'
-  obtain ⟨r, hr, hrem⟩ :=
+  obtain ⟨r₁, hr₁, hrem⟩ :=
     h.contDiffAt.exists_lipschitzOnWith_negativeGradientRemainder epsilon hepsilon
-  refine ⟨K, alpha, epsilon, r, hr, hs, hu, ?_, hsmall, ?_⟩
+  -- The centred remainder is `C¹` near the origin. Shrink the radius to a closed ball at every
+  -- point of which it is `C¹`, so that its derivative is uniformly continuous by compactness.
+  have hC1 : ∀ᶠ z in 𝓝 (0 : E),
+      ContDiffAt ℝ 1 (fun z ↦ negativeGradientRemainder f x (x + z)) z := by
+    have h0 : ContDiffAt ℝ 1 (negativeGradientRemainder f x) (x + 0) := by
+      simpa only [add_zero] using h.contDiffAt.contDiffAt_negativeGradientRemainder
+    exact (h0.comp (0 : E) (contDiffAt_const.add contDiffAt_id)).eventually (by simp)
+  obtain ⟨r₂, hr₂, hr₂C1⟩ := Metric.eventually_nhds_iff_ball.1 hC1
+  set r := min r₁ (r₂ / 2)
+  have hr : 0 < r := lt_min hr₁ (half_pos hr₂)
+  have hrem' := hrem.mono (closedBall_subset_closedBall (min_le_left r₁ (r₂ / 2)))
+  have hC1r : ∀ z ∈ closedBall (0 : E) r,
+      ContDiffAt ℝ 1 (fun z ↦ negativeGradientRemainder f x (x + z)) z := fun z hz ↦
+    hr₂C1 z <| closedBall_subset_ball ((min_le_right _ _).trans_lt (half_lt_self hr₂)) hz
+  refine ⟨K, alpha, epsilon, r, hr, hs, hu, ?_, hsmall, ?_,
+    fun z hz ↦ hC1r z (ball_subset_closedBall hz), ?_, ?_⟩
   · intro z hz w hw
     have hz' : x + z ∈ closedBall x r := by
       simpa only [mem_closedBall, ← dist_add_left x z 0, add_zero] using hz
     have hw' : x + w ∈ closedBall x r := by
       simpa only [mem_closedBall, ← dist_add_left x w 0, add_zero] using hw
-    simpa only [edist_dist, dist_add_left] using hrem hz' hw'
+    simpa only [edist_dist, dist_add_left] using hrem' hz' hw'
   · have hq : 2 * K * (epsilon * 2) / alpha < 1 := (div_lt_one halpha).2 hsmall
     apply NNReal.coe_le_coe.1
     have heq : ((2 * K * (epsilon * 2) / alpha * (K / (1 - 2 * K * (epsilon * 2) / alpha)) :
@@ -245,22 +272,29 @@ private theorem exists_lyapunovPerronData (h : IsNondegenerateCriticalPoint f x)
     rw [heq]
     apply (div_le_iff₀ (by positivity : (0 : ℝ) < 2 * K + C)).2
     nlinarith
+  · exact ((isCompact_closedBall (0 : E) r).uniformContinuousOn_of_continuous fun z hz ↦
+      ((hC1r z hz).continuousAt_fderiv one_ne_zero).continuousWithinAt).mono
+        ball_subset_closedBall
+  · have hsmall' : (2 : ℝ) * K * ((epsilon : ℝ) * 2) < alpha := by exact_mod_cast hsmall
+    exact div_nonneg K.coe_nonneg (sub_nonneg.2 ((div_le_one halpha').2 hsmall'.le))
 
-/-- **Confined trajectories at a Morse critical point form a Lipschitz graph.** For every
+/-- **Confined trajectories at a Morse critical point form a `C¹` Lipschitz graph.** For every
 positive Lipschitz constant `C`, there are positive radii `r` and `rho` such that the initial
 displacements of forward solutions of the centred negative-gradient equation that remain in
 `closedBall 0 r`, restricted by `norm (stableProjection z) ≤ rho`, are exactly the graph of a
 `C`-Lipschitz map over `stableLinearSubspace ∩ closedBall 0 rho`.
 
-The graph map vanishes at the origin, has derivative zero there, takes values in the unstable
-linear subspace (the kernel of the stable projection), and depends only on the stable component of
-its input. Thus its graph is tangent at the origin to the stable linear subspace. The same radius
-`r` also guarantees that every confined solution tends to zero. -/
+The graph map is continuously differentiable at every point of `closedBall 0 rho`. It vanishes at
+the origin, has derivative zero there, takes values in the unstable linear subspace (the kernel of
+the stable projection), and depends only on the stable component of its input. Thus its graph
+is tangent at the origin to the stable linear subspace. The same radius `r` also guarantees that
+every confined solution tends to zero. -/
 theorem exists_localStableSet_eq_lipschitzGraph
     (h : IsNondegenerateCriticalPoint f x) (C : ℝ≥0) (hC : 0 < C) :
     ∃ r > 0, ∃ rho > 0, ∃ g : E → E,
       LipschitzWith C g ∧ g 0 = 0 ∧
       HasFDerivAt g (0 : E →L[ℝ] E) 0 ∧
+      (∀ v ∈ closedBall (0 : E) rho, ContDiffAt ℝ 1 g v) ∧
       (∀ v, h.stableProjection (g v) = 0) ∧
       (∀ v, g (h.stableProjection v) = g v) ∧
       h.localStableSet r rho =
@@ -269,7 +303,8 @@ theorem exists_localStableSet_eq_lipschitzGraph
       (∀ y : ℝ → E,
         IsIntegralCurveOn y (fun _ w ↦ (-∇ f) (x + w)) (Ici 0) →
         MapsTo y (Ici 0) (closedBall 0 r) → Tendsto y atTop (𝓝 0)) := by
-  obtain ⟨K, alpha, epsilon, r, hr, hs, hu, hN, hsmall, hC₀⟩ := h.exists_lyapunovPerronData C hC
+  obtain ⟨K, alpha, epsilon, r, hr, hs, hu, hN, hsmall, hC₀, hNC1, hNuc, hbound⟩ :=
+    h.exists_lyapunovPerronData C hC
   set N : E → E := fun z ↦ negativeGradientRemainder f x (x + z) with hNdef
   have hN0 : N 0 = 0 := by
     rw [hNdef]
@@ -282,15 +317,24 @@ theorem exists_localStableSet_eq_lipschitzGraph
         fun (_ : ℝ) z ↦ (-∇ f) (x + z) := by
     rw [hNdef]
     exact neg_gradient_centered_time_eq
-  obtain ⟨rho, hrho, hset⟩ :=
-    ContinuousLinearMap.exists_setOf_exists_isIntegralCurveOn_mapsTo_closedBall_eq_image
+  -- Choose `rho` so that the Lyapunov--Perron solutions with parameters in `closedBall 0 rho`
+  -- stay strictly inside the ball of confinement, where the cutoff is invisible.
+  obtain ⟨rho, hrho, hrho_lt⟩ :=
+    exists_pos_mul_lt hr ((K : ℝ) / (1 - 2 * K * ((epsilon : ℝ) * 2) / alpha))
+  have hset :=
+    ContinuousLinearMap.setOf_exists_isIntegralCurveOn_mapsTo_closedBall_eq_image
       (A := -hessianOperator f x) (P := h.stableProjection) (N := N)
-      (K := K) (α := alpha) (ε := epsilon) hs hu hN hsmall hN0
+      (K := K) (α := alpha) (ε := epsilon) hs hu hr.le hN hsmall hN0
       h.isIdempotentElem_stableProjection
-      h.commute_neg_hessianOperator_stableProjection hr
+      h.commute_neg_hessianOperator_stableProjection hrho_lt.le
   let g : E → E := ContinuousLinearMap.localStableGraphMap
     (-hessianOperator f x) h.stableProjection N r hs hu hr.le hN hsmall
-  refine ⟨r, hr, rho, hrho, g, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  have hNd : ∀ z ∈ ball (0 : E) r, HasFDerivAt N (fderiv ℝ N z) z := fun z hz ↦
+    ((hNC1 z hz).differentiableAt one_ne_zero).hasFDerivAt
+  have hball : ∀ v ∈ closedBall (0 : E) rho,
+      (K : ℝ) / (1 - 2 * K * ((epsilon : ℝ) * 2) / alpha) * ‖v‖ < r := fun v hv ↦
+    (mul_le_mul_of_nonneg_left (mem_closedBall_zero_iff.1 hv) hbound).trans_lt hrho_lt
+  refine ⟨r, hr, rho, hrho, g, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · have hg : LipschitzWith
         (2 * K * (epsilon * 2) / alpha * (K / (1 - 2 * K * (epsilon * 2) / alpha))) g :=
       ContinuousLinearMap.lipschitzWith_localStableGraphMap hs hu hr.le hN hsmall
@@ -298,6 +342,8 @@ theorem exists_localStableSet_eq_lipschitzGraph
     exact (hg v w).trans (by gcongr)
   · exact ContinuousLinearMap.localStableGraphMap_zero hs hu hr.le hN hsmall hN0
   · exact ContinuousLinearMap.hasFDerivAt_localStableGraphMap_zero hs hu hr.le hN hsmall hr hN0 hN'
+  · exact fun v hv ↦ ContinuousLinearMap.contDiffAt_localStableGraphMap hs hu hr.le hN hsmall hN0
+      hNd hNuc (hball v hv)
   · intro v
     exact ContinuousLinearMap.apply_localStableGraphMap hs hu hr.le hN hsmall
       h.isIdempotentElem_stableProjection h.commute_neg_hessianOperator_stableProjection v
@@ -319,21 +365,23 @@ theorem exists_localStableSet_eq_lipschitzGraph
       exact hy
     · exact hmaps
 
-/-- **Confined backward trajectories at a Morse critical point form a Lipschitz graph.** For
+/-- **Confined backward trajectories at a Morse critical point form a `C¹` Lipschitz graph.** For
 every positive Lipschitz constant `C`, there are positive radii `r` and `rho` such that the
 initial displacements of backward solutions of the centred negative-gradient equation that stay
 in `closedBall 0 r`, restricted by `norm (unstableProjection z) ≤ rho`, are exactly the graph of
 a `C`-Lipschitz map over `unstableLinearSubspace ∩ closedBall 0 rho`.
 
-The graph map vanishes at the origin, has derivative zero there, takes values in the stable linear
-subspace (the kernel of the unstable projection), and depends only on the unstable component of
-its input. Thus its graph is tangent at the origin to the unstable linear subspace. Every such
-confined backward solution tends to zero in backward time. -/
+The graph map is continuously differentiable at every point of `closedBall 0 rho`. It vanishes at
+the origin, has derivative zero there, takes values in the stable linear subspace (the kernel of
+the unstable projection), and depends only on the unstable component of its input. Thus its
+graph is tangent at the origin to the unstable linear subspace. Every such confined backward
+solution tends to zero in backward time. -/
 theorem exists_localUnstableSet_eq_lipschitzGraph
     (h : IsNondegenerateCriticalPoint f x) (C : ℝ≥0) (hC : 0 < C) :
     ∃ r > 0, ∃ rho > 0, ∃ g : E → E,
       LipschitzWith C g ∧ g 0 = 0 ∧
       HasFDerivAt g (0 : E →L[ℝ] E) 0 ∧
+      (∀ v ∈ closedBall (0 : E) rho, ContDiffAt ℝ 1 g v) ∧
       (∀ v, h.unstableProjection (g v) = 0) ∧
       (∀ v, g (h.unstableProjection v) = g v) ∧
       h.localUnstableSet r rho =
@@ -342,7 +390,8 @@ theorem exists_localUnstableSet_eq_lipschitzGraph
       (∀ y : ℝ → E,
         IsIntegralCurveOn y (fun _ w ↦ (-∇ f) (x + w)) (Iic 0) →
         MapsTo y (Iic 0) (closedBall 0 r) → Tendsto y atBot (nhds 0)) := by
-  obtain ⟨K, alpha, epsilon, r, hr, hs, hu, hN, hsmall, hC₀⟩ := h.exists_lyapunovPerronData C hC
+  obtain ⟨K, alpha, epsilon, r, hr, hs, hu, hN, hsmall, hC₀, hNC1, hNuc, hbound⟩ :=
+    h.exists_lyapunovPerronData C hC
   set N : E → E := fun z ↦ negativeGradientRemainder f x (x + z) with hNdef
   have hN0 : N 0 = 0 := by
     rw [hNdef]
@@ -355,14 +404,22 @@ theorem exists_localUnstableSet_eq_lipschitzGraph
         fun (_ : ℝ) z ↦ (-∇ f) (x + z) := by
     rw [hNdef]
     exact neg_gradient_centered_time_eq
-  obtain ⟨rho, hrho, hset⟩ :=
-    ContinuousLinearMap.exists_setOf_exists_isIntegralCurveOn_Iic_mapsTo_closedBall_eq_image
+  obtain ⟨rho, hrho, hrho_lt⟩ :=
+    exists_pos_mul_lt hr ((K : ℝ) / (1 - 2 * K * ((epsilon : ℝ) * 2) / alpha))
+  have hset :=
+    ContinuousLinearMap.setOf_exists_isIntegralCurveOn_Iic_mapsTo_closedBall_eq_image
       (A := -hessianOperator f x) (P := h.stableProjection) (N := N)
-      (K := K) (α := alpha) (ε := epsilon) hs hu hN hsmall hN0
-      h.isIdempotentElem_stableProjection h.commute_neg_hessianOperator_stableProjection hr
+      (K := K) (α := alpha) (ε := epsilon) hs hu hr.le hN hsmall hN0
+      h.isIdempotentElem_stableProjection h.commute_neg_hessianOperator_stableProjection
+      hrho_lt.le
   let g : E → E := ContinuousLinearMap.localUnstableGraphMap
     (-hessianOperator f x) h.stableProjection N r hs hu hr.le hN hsmall
-  refine ⟨r, hr, rho, hrho, g, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  have hNd : ∀ z ∈ ball (0 : E) r, HasFDerivAt N (fderiv ℝ N z) z := fun z hz ↦
+    ((hNC1 z hz).differentiableAt one_ne_zero).hasFDerivAt
+  have hball : ∀ v ∈ closedBall (0 : E) rho,
+      (K : ℝ) / (1 - 2 * K * ((epsilon : ℝ) * 2) / alpha) * ‖v‖ < r := fun v hv ↦
+    (mul_le_mul_of_nonneg_left (mem_closedBall_zero_iff.1 hv) hbound).trans_lt hrho_lt
+  refine ⟨r, hr, rho, hrho, g, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · have hg : LipschitzWith
         (2 * K * (epsilon * 2) / alpha * (K / (1 - 2 * K * (epsilon * 2) / alpha))) g :=
       ContinuousLinearMap.lipschitzWith_localUnstableGraphMap hs hu hr.le hN hsmall
@@ -371,6 +428,8 @@ theorem exists_localUnstableSet_eq_lipschitzGraph
   · exact ContinuousLinearMap.localUnstableGraphMap_zero hs hu hr.le hN hsmall hN0
   · exact ContinuousLinearMap.hasFDerivAt_localUnstableGraphMap_zero
       hs hu hr.le hN hsmall hr hN0 hN'
+  · exact fun v hv ↦ ContinuousLinearMap.contDiffAt_localUnstableGraphMap hs hu hr.le hN hsmall
+      hN0 hNd hNuc (hball v hv)
   · intro v
     have hgP := ContinuousLinearMap.apply_localUnstableGraphMap hs hu hr.le hN hsmall
       h.isIdempotentElem_stableProjection h.commute_neg_hessianOperator_stableProjection v

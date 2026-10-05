@@ -9,7 +9,7 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.Coinduced.
 
 import all TauCeti.RepresentationTheory.Homological.ContCohomology.Coinduced.Functor
 import all TauCeti.RepresentationTheory.Homological.ContCohomology.Coinduced.Discrete
-import all TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete
+import all TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete.Basic
 
 /-!
 # Continuous Frobenius reciprocity
