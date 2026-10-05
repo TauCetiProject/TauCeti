@@ -20,7 +20,12 @@ extends affine acyclicity inductively to these unions.
 For a quasi-compact scheme this supplies a bound independent of the coefficient sheaf: there
 is a positive integer `N` such that every quasi-coherent sheaf has zero cohomology in degrees
 at least `N`. This is a bound from the cover, not a dimension-sharp vanishing theorem.
-It is useful when truncating cohomological arguments based on finite affine covers.
+It supplies the starting degree for descending induction in the proof of finite-dimensionality
+of coherent cohomology on projective schemes over a field. Projective `r`-space has a standard
+cover by `r + 1` affine opens; the resulting
+vanishing starts the induction using presentations of coherent sheaves by sums of twists
+and the long exact cohomology sequence (Stacks Project, Tag 01YS). Those presentations and
+the cohomology of twists are further ingredients, not proved here.
 
 The proof uses the existing affine-open acyclicity and the vanishing consequence of
 Mayer–Vietoris in `TauCeti.AlgebraicGeometry.Cohomology.MayerVietoris`.
@@ -29,14 +34,18 @@ Mayer–Vietoris in `TauCeti.AlgebraicGeometry.Cohomology.MayerVietoris`.
 
 * R. Hartshorne, *Algebraic Geometry*, Chapter III, Sections 3 and 4 (affine acyclicity and
   cohomology computed using affine covers).
+* Stacks Project, Tags [01XI](https://stacks.math.columbia.edu/tag/01XI) (the cover bound)
+  and [01YS](https://stacks.math.columbia.edu/tag/01YS) (its use in coherent-cohomology finiteness).
 -/
 
 public section
 
 open CategoryTheory Limits TopologicalSpace AlgebraicGeometry
-open TauCeti.AlgebraicGeometry.Scheme.Modules
+open AlgebraicGeometry.Scheme.Modules TauCeti.AlgebraicGeometry.Scheme.Modules
 
 universe u v
+
+namespace TauCeti
 
 namespace AlgebraicGeometry.Scheme.Modules
 
@@ -48,8 +57,8 @@ section Coefficients
 variable (M : X.Modules) [M.IsQuasicoherent]
 
 /-- On the union of a nonempty finite family of affine opens, quasi-coherent cohomology vanishes
-in every degree at least the number of members of the family. The scheme need only have affine
-diagonal; no properness or field hypothesis is required. -/
+in every degree at least the number of members of the family. The scheme must be locally
+Noetherian with affine diagonal; no properness or field hypothesis is required. -/
 theorem subsingleton_cohomologyOn_biSup_of_isAffineOpen {ι : Type v}
     (s : Finset ι) (hs : s.Nonempty) (U : ι → X.Opens)
     (hU : ∀ i ∈ s, IsAffineOpen (U i)) (n : ℕ) (hn : s.card ≤ n) :
@@ -92,16 +101,6 @@ theorem subsingleton_cohomology_of_isAffineOpen_finset_cover {ι : Type v}
   rw [hcover] at h
   exact (cohomologyOnTopIso M n).symm.addCommGroupIsoToAddEquiv.toEquiv.subsingleton
 
-/-- A finite affine cover indexed by a nonempty finite type gives vanishing in degrees at least
-the cardinality of that type. -/
-theorem subsingleton_cohomology_of_isAffineOpen_fintype_cover {ι : Type v}
-    [Fintype ι] [Nonempty ι] (U : ι → X.Opens) (hU : ∀ i, IsAffineOpen (U i))
-    (hcover : iSup U = ⊤) (n : ℕ) (hn : Fintype.card ι ≤ n) :
-    Subsingleton (Cohomology M n) := by
-  classical
-  exact subsingleton_cohomology_of_isAffineOpen_finset_cover M Finset.univ
-    Finset.univ_nonempty U (fun i _ ↦ hU i) (by simpa using hcover) n (by simpa using hn)
-
 end Coefficients
 
 /-- A quasi-compact open has a uniform positive cohomological bound for all quasi-coherent
@@ -135,3 +134,5 @@ theorem exists_cohomology_bound_of_compactSpace [CompactSpace X] :
   exact (cohomologyOnTopIso M n).symm.addCommGroupIsoToAddEquiv.toEquiv.subsingleton
 
 end AlgebraicGeometry.Scheme.Modules
+
+end TauCeti
