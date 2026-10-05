@@ -32,6 +32,8 @@ and unstable sets.
 
 Apply the trajectory lemmas by their qualified names in `TauCeti.IsIntegralCurveOn` and
 `TauCeti.IsIntegralCurve`, following the organization of `Morse.GradientFlow`. The
+curve predicates themselves are Mathlib's `IsIntegralCurveOn` and `IsIntegralCurve`; the
+qualified namespaces above contain the energy lemmas, not new predicates. The
 connecting-orbit lemmas are in `TauCeti.Flow.IsNegativeGradient`.
 
 ## References
