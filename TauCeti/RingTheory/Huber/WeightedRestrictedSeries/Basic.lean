@@ -194,7 +194,9 @@ namespace TauCeti.Huber
 
 public section
 
-variable {k : ℕ} {A : Type*} [CommRing A]
+section WeightPow
+
+variable {k : ℕ} {A : Type*} [CommMonoid A]
 
 /-! ### Weights and weighted subgroups -/
 
@@ -237,6 +239,18 @@ theorem weightPow_single (T : Fin k → Set A) (i : Fin k) (m : ℕ) :
 theorem weightPow_one_weight (ν : Fin k →₀ ℕ) :
     weightPow (fun _ : Fin k ↦ ({1} : Set A)) ν = {1} := by
   simp [weightPow]
+
+/-- A monoid homomorphism carries the weight `Tν` onto the weight of the image family. -/
+theorem image_weightPow {B : Type*} [CommMonoid B] (φ : A →* B)
+    (T : Fin k → Set A) (ν : Fin k →₀ ℕ) :
+    φ '' weightPow T ν = weightPow (fun i ↦ φ '' T i) ν := by
+  simp only [weightPow_def, Set.image_finsetProd, Set.image_pow]
+
+end WeightPow
+
+section WeightMul
+
+variable {k : ℕ} {A : Type*} [CommRing A]
 
 /-- The additive subgroup `Tν · U`. See the module docstring: the subgroup, not the pointwise
 product set, is what Wedhorn's statement requires.
@@ -1306,10 +1320,6 @@ section Functoriality
 
 variable {B : Type*} [CommRing B]
 
-/-- A ring map carries the weight `Tν` onto the weight of the image family. -/
-theorem image_weightPow (φ : A →+* B) (T : Fin k → Set A) (ν : Fin k →₀ ℕ) :
-    φ '' weightPow T ν = weightPow (fun i ↦ φ '' T i) ν := by
-  simp only [weightPow_def, Set.image_finsetProd, Set.image_pow]
 
 /-- **`weightMul` is functorial**: a ring map carrying each `T i` into `S i` and `U` into `V`
 carries `Tν · U` into `Sν · V`. -/
@@ -1321,7 +1331,7 @@ theorem weightMul_map_le (φ : A →+* B) {T : Fin k → Set A} {S : Fin k → S
   refine weightMul_le.mpr fun t ht u hu ↦ ?_
   simp only [AddSubgroup.mem_comap, AddMonoidHom.coe_ofClass, map_mul]
   exact mul_mem_weightMul S ν V
-    (weightPow_mono hTS ν (image_weightPow φ T ν ▸ Set.mem_image_of_mem φ ht)) (hUV hu)
+    (weightPow_mono hTS ν (image_weightPow φ.toMonoidHom T ν ▸ Set.mem_image_of_mem φ ht)) (hUV hu)
 
 variable [TopologicalSpace A] [TopologicalSpace B]
 
@@ -1439,6 +1449,7 @@ theorem weightedMap_weightedX [NonarchimedeanRing A] [NonarchimedeanRing B] {φ 
 
 end Functoriality
 
+end WeightMul
 
 end
 
