@@ -35,7 +35,6 @@ among permutation classes, such as Artin's identity, spreads to every class of `
 * `TauCeti.indK0_mul_resK0`: the projection formula.
 * `TauCeti.indK0_one`: induction of the unit is the permutation class of the cosets.
 * `TauCeti.indK0_resK0`: inducing a restricted class multiplies it by that permutation class.
-* `TauCeti.permK0_quotient_top_eq_one`: the permutation class of the cosets of `⊤` is the unit.
 
 ## References
 
@@ -88,14 +87,5 @@ theorem indK0_one : indK0 k S 1 = permK0 k G (G ⧸ S) := by
 theorem indK0_resK0 (x : ExactK0 (finiteModulesExactStructure k[G])) :
     indK0 k S (resK0 k S.subtype x) = permK0 k G (G ⧸ S) * x := by
   rw [← indK0_one, ← indK0_mul_resK0, one_mul]
-
-/-- **The permutation class of the cosets of `⊤` is the unit**: the cosets of the whole group are
-a single point, so `[k[G ⧸ ⊤]] = [k] = 1`. Together with `TauCeti.indK0_resK0` this says that
-induction from `⊤` is surjective. Not a `simp` lemma: `TauCeti.permK0_of_subsingleton` already
-rewrites the left-hand side to the class of the trivial line. -/
-theorem permK0_quotient_top_eq_one :
-    permK0 k G (G ⧸ (⊤ : Subgroup G)) = 1 := by
-  have := QuotientGroup.subsingleton_quotient_top (G := G)
-  rw [permK0_of_subsingleton, exactK0_one_eq_of_trivial]
 
 end TauCeti

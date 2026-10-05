@@ -33,7 +33,11 @@ Two instances are the ones the induction theorems are stated with: `TauCeti.indC
 classes induced from cyclic subgroups, and `TauCeti.indCyclicCoprimeK0 ℓ`, the classes induced
 from cyclic subgroups of order prime to `ℓ`. Both are everything when `G` is itself cyclic (of
 order prime to `ℓ` in the second case), since the whole group is then a member of the family and
-induction from `⊤` is surjective (`TauCeti.indClassesK0_eq_top`).
+induction from `⊤` is surjective (`TauCeti.indClassesK0_eq_top`). Induction from `⊤` is in fact
+inverse to restriction to `⊤`, which is an equivalence of representation categories with
+induction as its right adjoint (`Rep.resIndAdjunction`), so the computations at `⊤` are over a
+commutative ring, like the definitions; only the ideal property needs the ring structure of
+`G₀(k[G])` and hence a field.
 
 ## Main definitions
 
@@ -115,6 +119,42 @@ theorem indClassesK0_congr {P Q : Subgroup G → Prop} (h : ∀ C, P C ↔ Q C) 
   le_antisymm (indClassesK0_le_indClassesK0 k fun C hC ↦ (h C).1 hC)
     (indClassesK0_le_indClassesK0 k fun C hC ↦ (h C).2 hC)
 
+/-- **Induction from `⊤` undoes restriction to `⊤`.** Restriction along `(⊤ : Subgroup G).subtype`
+is an equivalence of representation categories, with inverse restriction along
+`Subgroup.topEquiv.symm`, and induction is right adjoint to it (`Rep.resIndAdjunction`); a right
+adjoint is unique, so inducing a restricted representation gives it back. Private: it exists only
+to feed `TauCeti.indClassesK0_eq_top`. -/
+private noncomputable def indTopEquiv {W : Type u} [AddCommGroup W] [Module k W]
+    (σ : Representation k G W) :
+    (Representation.ind (⊤ : Subgroup G).subtype
+      (σ.comp (⊤ : Subgroup G).subtype)).Equiv σ := by
+  classical
+  exact Representation.equivOfIso
+    ((CategoryTheory.Adjunction.rightAdjointUniq (Rep.resIndAdjunction k ⊤)
+      (CategoryTheory.Equivalence.mk (Rep.resFunctor (⊤ : Subgroup G).subtype)
+        (Rep.resFunctor (Subgroup.topEquiv (G := G)).symm.toMonoidHom)
+        (CategoryTheory.eqToIso rfl) (CategoryTheory.eqToIso rfl)).toAdjunction).app
+      (Rep.of (σ.comp (⊤ : Subgroup G).subtype)))
+
+/-- **A family containing `⊤` induces everything.** Induction from the whole group is inverse to
+restriction to it, so every class, being the class of some module, is induced from `⊤`. -/
+theorem indClassesK0_eq_top {P : Subgroup G → Prop} (hP : P ⊤) : indClassesK0 k G P = ⊤ := by
+  rw [eq_top_iff, ← ExactK0.closure_range_of, AddSubgroup.closure_le]
+  rintro _ ⟨M, rfl⟩
+  -- Write `M` as the module of the representation `σ` it defines, as in `TauCeti.indK0_indK0`.
+  let := Module.restrictScalars k k[G] M.obj
+  have := IsScalarTower.restrictScalars k k[G] M.obj
+  have : Module.Finite k[G] M.obj := M.2
+  have : Module.Finite k M.obj := Module.Finite.trans k[G] M.obj
+  let σ := Representation.ofModule' (k := k) (G := G) M.obj
+  have : Module.Finite k[G] σ.asModule := Module.Finite.of_restrictScalars_finite k _ σ.asModule
+  have hM : (ExactK0.of M : ExactK0 (finiteModulesExactStructure k[G])) =
+      ExactK0.of (FGModuleCat.of _ σ.asModule) :=
+    ExactK0.of_congr (Representation.ofModule'AsModuleEquiv M.obj).symm.toFGModuleCatIso
+  rw [SetLike.mem_coe, hM,
+    ← indK0_of_asModule_of_equiv k ⊤ (σ.comp (⊤ : Subgroup G).subtype) σ (indTopEquiv k σ)]
+  exact indK0_mem_indClassesK0 k hP _
+
 end CommRing
 
 section Field
@@ -142,15 +182,6 @@ theorem permK0_quotient_mem_indClassesK0 {P : Subgroup G → Prop} {C : Subgroup
   rw [← indK0_one (k := k) (S := C)]
   exact indK0_mem_indClassesK0 k hC 1
 
-/-- **A family containing `⊤` induces everything.** Induction from the whole group is surjective:
-the cosets of `⊤` are a single point, so the projection formula at the unit
-(`TauCeti.indK0_resK0`) exhibits every class as induced from `⊤`. -/
-theorem indClassesK0_eq_top {P : Subgroup G → Prop} (hP : P ⊤) : indClassesK0 k G P = ⊤ := by
-  refine eq_top_iff.2 fun x _ ↦ ?_
-  have hx : indK0 k ⊤ (resK0 k (⊤ : Subgroup G).subtype x) = x := by
-    rw [indK0_resK0, permK0_quotient_top_eq_one, one_mul]
-  exact hx ▸ indK0_mem_indClassesK0 k hP _
-
 end Field
 
 section Cyclic
@@ -176,6 +207,17 @@ theorem indCyclicCoprimeK0_le_indCyclicK0 (ℓ : ℕ) :
     indCyclicCoprimeK0 k G ℓ ≤ indCyclicK0 k G :=
   indClassesK0_le_indClassesK0 k fun _ hC ↦ hC.1
 
+/-- **For a cyclic group every class is induced from a cyclic subgroup**, the whole group being
+one. Artin's theorem is vacuous here: no multiplier is needed. -/
+theorem indCyclicK0_eq_top [IsCyclic G] : indCyclicK0 k G = ⊤ :=
+  indClassesK0_eq_top k (Subgroup.isCyclic ⊤)
+
+/-- **For a cyclic group of order prime to `ℓ` every class is induced from a cyclic subgroup of
+order prime to `ℓ`**, the whole group being one. -/
+theorem indCyclicCoprimeK0_eq_top [IsCyclic G] {ℓ : ℕ} (hℓ : Nat.Coprime ℓ (Nat.card G)) :
+    indCyclicCoprimeK0 k G ℓ = ⊤ :=
+  indClassesK0_eq_top k ⟨Subgroup.isCyclic ⊤, by rwa [Subgroup.card_top]⟩
+
 variable {G}
 
 /-- **Induction from the subgroup generated by an element lands in the cyclic classes.** Every
@@ -196,22 +238,5 @@ theorem indK0_bot_mem_indCyclicCoprimeK0 (ℓ : ℕ)
   exact Nat.coprime_one_right ℓ
 
 end Cyclic
-
-section CyclicField
-
-variable (k : Type u) [Field k] (G : Type u) [Group G] [Finite G]
-
-/-- **For a cyclic group every class is induced from a cyclic subgroup**, the whole group being
-one. Artin's theorem is vacuous here: no multiplier is needed. -/
-theorem indCyclicK0_eq_top [IsCyclic G] : indCyclicK0 k G = ⊤ :=
-  indClassesK0_eq_top (Subgroup.isCyclic ⊤)
-
-/-- **For a cyclic group of order prime to `ℓ` every class is induced from a cyclic subgroup of
-order prime to `ℓ`**, the whole group being one. -/
-theorem indCyclicCoprimeK0_eq_top [IsCyclic G] {ℓ : ℕ} (hℓ : Nat.Coprime ℓ (Nat.card G)) :
-    indCyclicCoprimeK0 k G ℓ = ⊤ :=
-  indClassesK0_eq_top ⟨Subgroup.isCyclic ⊤, by rwa [Subgroup.card_top]⟩
-
-end CyclicField
 
 end TauCeti
