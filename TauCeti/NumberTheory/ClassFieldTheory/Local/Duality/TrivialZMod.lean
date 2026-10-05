@@ -8,21 +8,29 @@ module
 public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.RootsOfUnity
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.HilbertPairing
 public import TauCeti.NumberTheory.LocalField.Cohomology
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Duality.Basic
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Duality.TrivialAction
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.TrivialFp.Cup
 import TauCeti.Algebra.Module.ZMod.Dual
 
 /-!
-# Local Tate duality for the trivial module `ℤ/n`
+# Local Tate duality for modules with trivial action
 
 Let `K` be a nonarchimedean local field containing a primitive `n`th root of unity `ζ`. This file
-completes Tate's local duality for the trivial module `ℤ/n` with values in `ℤ/n`: it proves that
+proves Tate's local duality with values in `ℤ/n` for every finite module killed by `n` on which
+`G_K` acts trivially. It first treats the trivial module `ℤ/n` itself, proving that
 the duality maps `αᵢ : Hⁱ(G_K, ℤ/n) → Hom(H²⁻ⁱ(G_K, Hom(ℤ/n, ℤ/n)), H²(G_K, ℤ/n))` in degrees `0`
 and `1` (`TauCeti.ContCohomology.dualityMap0`, `dualityMap1`) are bijective, `α₂`
 (`TauCeti.ContCohomology.dualityMap2`) being bijective for every group acting trivially. The root
 `ζ` identifies the trivial coefficients `ℤ/n` with `μₙ`, so this is the duality of `μₙ` with itself,
 and it is the base case from which local duality for a general finite module is reached by
 Shapiro's lemma and the four lemma.
+
+From `ℤ/n` the duality passes to every finite module `A` killed by `n` with trivial action
+(`TauCeti.ClassFieldTheory.dualityMap0_bijective_of_isPrimitiveRoot` and its companions in degrees
+`1` and `2`), by the dévissage of
+`TauCeti/RepresentationTheory/Homological/ContCohomology/Cup/Duality/TrivialAction.lean`: `A`
+embeds into a free `ℤ/n`-module, along which the four lemma gives injectivity, and the injections
+are bijections by counting, `H¹(G_K, ℤ/n)` being finite.
 
 The arithmetic input is in degree `(1, 1)`: **the cup square on `H¹(G_K, ℤ/n)` is a perfect
 pairing** (`TauCeti.ClassFieldTheory.cupFp_bijective_of_isPrimitiveRoot`). Through `ζ` it is the
@@ -48,6 +56,11 @@ appears in Shapiro's lemma.
   `TauCeti.ClassFieldTheory.dualityMap1_zmod_bijective_of_isPrimitiveRoot`: Tate's duality maps
   `α₀` and `α₁` at the trivial module `ℤ/n` are bijective, for any topological group isomorphic to
   `G_K`.
+* `TauCeti.ClassFieldTheory.dualityMap0_bijective_of_isPrimitiveRoot`,
+  `TauCeti.ClassFieldTheory.dualityMap1_bijective_of_isPrimitiveRoot`,
+  `TauCeti.ClassFieldTheory.dualityMap2_bijective_of_isPrimitiveRoot`: Tate's duality maps with
+  values in `ℤ/n` are bijective on every finite module killed by `n` with trivial action, for any
+  topological group isomorphic to `G_K`.
 
 ## References
 
@@ -100,6 +113,14 @@ variable {H : Type} [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
 
 include φ htriv
 
+/-- `H²(H, ℤ/n) ≃+ ZMod n` for a topological group `H` isomorphic to `G_K`, through the local
+invariant `h2FpEquivZMod`. -/
+private noncomputable def h2ZModEquiv : H2 H (ZMod n) ≃+ ZMod n :=
+  let ψ := (absoluteGaloisGroupRestrictEquiv K).trans φ
+  have : LocallyCompactSpace H := ψ.symm.toHomeomorph.isOpenEmbedding.locallyCompactSpace
+  (cohomFpAddEquivH2 n H htriv).symm.trans
+    ((cohomFpLinearEquiv n ψ 2).symm.toAddEquiv.trans (h2FpEquivZMod hζ))
+
 /-- **Tate's duality map `α₁` at the trivial module `ℤ/n` is bijective** for a topological group
 `H` isomorphic to `G_K`, when the local field `K` contains a primitive `n`th root of unity:
 `H¹(H, ℤ/n) → Hom(H¹(H, Hom(ℤ/n, ℤ/n)), H²(H, ℤ/n))` is a bijection. Under evaluation at `1` it is
@@ -116,10 +137,56 @@ theorem dualityMap1_zmod_bijective_of_isPrimitiveRoot :
 `H⁰(H, ℤ/n) → Hom(H²(H, Hom(ℤ/n, ℤ/n)), H²(H, ℤ/n))` is a bijection, since it is scalar
 multiplication on `H²(H, ℤ/n)`, which is `ℤ/n` by the local invariant (`h2FpEquivZMod`). -/
 theorem dualityMap0_zmod_bijective_of_isPrimitiveRoot :
-    Function.Bijective (dualityMap0 H (ZMod n) (ZMod n)) := by
-  let ψ := (absoluteGaloisGroupRestrictEquiv K).trans φ
-  have : LocallyCompactSpace H := ψ.symm.toHomeomorph.isOpenEmbedding.locallyCompactSpace
-  exact dualityMap0_zmod_bijective_of_addEquiv htriv ((cohomFpAddEquivH2 n H htriv).symm.trans
-    ((cohomFpLinearEquiv n ψ 2).symm.toAddEquiv.trans (h2FpEquivZMod hζ)))
+    Function.Bijective (dualityMap0 H (ZMod n) (ZMod n)) :=
+  dualityMap0_zmod_bijective_of_addEquiv htriv (h2ZModEquiv hζ φ htriv)
+
+/-- `H¹(H, ℤ/n)` is finite for a topological group `H` isomorphic to `G_K`, when the local field
+`K` contains a primitive `n`th root of unity. -/
+private theorem finite_H1_zmod : Finite (H1 H (ZMod n)) := by
+  have : NeZero (n : K) := ⟨hζ.neZero'.out⟩
+  exact Finite.of_equiv _ ((cohomFpLinearEquiv n ((absoluteGaloisGroupRestrictEquiv K).trans φ)
+    1).toAddEquiv.trans (cohomFpAddEquivH1 n H htriv)).toEquiv
+
+variable (A : Type*) [AddCommGroup A] [TopologicalSpace A] [DiscreteTopology A]
+  [DistribMulAction H A] [ContinuousSMul H A] [Finite A] (hA : ∀ a : A, n • a = 0)
+  (hAtriv : ∀ (h : H) (a : A), h • a = a)
+
+include hA hAtriv
+
+/-- **Tate's duality map `α₀` on a finite module with trivial action is bijective** for a
+topological group `H` isomorphic to `G_K`, when the local field `K` contains a primitive `n`th
+root of unity: for every finite discrete `H`-module `A` killed by `n` on which `H` acts trivially,
+`H⁰(H, A) → Hom(H²(H, Hom(A, ℤ/n)), H²(H, ℤ/n))` is a bijection. This is the case `A = ℤ/n`
+(`dualityMap0_zmod_bijective_of_isPrimitiveRoot` and its companions) propagated to every such `A`
+by `TauCeti.ContCohomology.dualityMap0_bijective_of_smul_eq_self`. -/
+theorem dualityMap0_bijective_of_isPrimitiveRoot :
+    Function.Bijective (dualityMap0 H A (ZMod n)) :=
+  dualityMap0_bijective_of_smul_eq_self htriv (AddEquiv.refl _) (h2ZModEquiv hζ φ htriv)
+    (dualityMap0_zmod_bijective_of_isPrimitiveRoot hζ φ htriv)
+    (dualityMap1_zmod_bijective_of_isPrimitiveRoot hζ φ htriv)
+    (dualityMap2_zmod_bijective htriv).1 A hA hAtriv
+
+/-- **Tate's duality map `α₁` on a finite module with trivial action is bijective** for a
+topological group `H` isomorphic to `G_K`, when the local field `K` contains a primitive `n`th
+root of unity: for every finite discrete `H`-module `A` killed by `n` on which `H` acts trivially,
+`H¹(H, A) → Hom(H¹(H, Hom(A, ℤ/n)), H²(H, ℤ/n))` is a bijection. -/
+theorem dualityMap1_bijective_of_isPrimitiveRoot :
+    Function.Bijective (dualityMap1 H A (ZMod n)) :=
+  have := finite_H1_zmod hζ φ htriv
+  dualityMap1_bijective_of_smul_eq_self htriv (AddEquiv.refl _) (h2ZModEquiv hζ φ htriv)
+    (dualityMap0_zmod_bijective_of_isPrimitiveRoot hζ φ htriv)
+    (dualityMap1_zmod_bijective_of_isPrimitiveRoot hζ φ htriv)
+    (dualityMap2_zmod_bijective htriv).1 A hA hAtriv
+
+/-- **Tate's duality map `α₂` on a finite module with trivial action is bijective** for a
+topological group `H` isomorphic to `G_K`, when the local field `K` contains a primitive `n`th
+root of unity: for every finite discrete `H`-module `A` killed by `n` on which `H` acts trivially,
+`H²(H, A) → Hom(H⁰(H, Hom(A, ℤ/n)), H²(H, ℤ/n))` is a bijection. -/
+theorem dualityMap2_bijective_of_isPrimitiveRoot :
+    Function.Bijective (dualityMap2 H A (ZMod n)) :=
+  dualityMap2_bijective_of_smul_eq_self htriv (AddEquiv.refl _) (h2ZModEquiv hζ φ htriv)
+    (dualityMap0_zmod_bijective_of_isPrimitiveRoot hζ φ htriv)
+    (dualityMap1_zmod_bijective_of_isPrimitiveRoot hζ φ htriv)
+    (dualityMap2_zmod_bijective htriv).1 A hA hAtriv
 
 end TauCeti.ClassFieldTheory
