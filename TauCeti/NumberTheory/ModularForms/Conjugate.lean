@@ -400,7 +400,6 @@ lemma coe_conjCharSpace_symm_apply (f : cuspFormCharSpace k χ⁻¹) :
 
 /-- Conjugating twice, first on `S_k(N, χ)` and then on `S_k(N, χ⁻¹)`, gives back the original
 form. -/
-@[simp]
 lemma coe_conjCharSpace_conjCharSpace (f : cuspFormCharSpace k χ) :
     (CuspForm.conjCharSpace k χ⁻¹ (CuspForm.conjCharSpace k χ f) :
       _root_.CuspForm ((Gamma1 N).map (mapGL ℝ)) k) = f := by
