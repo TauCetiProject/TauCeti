@@ -6,18 +6,20 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Representation.Normal.SubgroupWeights
-public import TauCeti.LinearAlgebra.End.BlockDiagonal
+public import TauCeti.LinearAlgebra.End.FamilyInvariant
 
 /-!
-# Detecting a subgroup by block-diagonal endomorphisms
+# Detecting a subgroup by endomorphisms preserving each character space
 
 Suppose a representation is spanned by the character spaces of a closed subgroup, and the
 subgroup is the stabilizer of a line inside one character space. A point belongs to the subgroup
-if and only if it commutes with the scalar extensions of all block-diagonal endomorphisms.
+if and only if it commutes with the scalar extensions of all endomorphisms preserving each
+character space.
 
 The forward implication uses the subgroup's scalar action on each character space. For the
-reverse implication, independence of the character spaces supplies a block-diagonal projection
-onto the line. Commuting with its scalar extension forces the point to stabilize the line.
+reverse implication, independence of the character spaces supplies a projection onto the line
+preserving each character space. Commuting with its scalar extension forces the point to stabilize
+the line.
 All coefficient algebras are allowed, so the criterion detects scheme-theoretic subgroups,
 including nonreduced ones.
 
@@ -26,7 +28,7 @@ spaces containing a Chevalley line. This file proves the centralizer criterion f
 and line-stabilizer properties; it does not construct that representation or its line.
 
 The character-space API is `HopfIdeal.weightSpace`; the linear-algebra argument is
-`Submodule.map_baseChange_eq_of_forall_commute_blockDiagonal`.
+`Submodule.map_baseChange_eq_of_forall_commute_familyInvariant`.
 
 ## References
 
@@ -48,13 +50,13 @@ variable {R : Type u} [CommRing R] {H : _root_.CommHopfAlgCat.{v} R}
 variable (I : HopfIdeal R H) (V : Type w) [AddCommMonoid V] [Module R V] [Comodule R H V]
 
 /-- If subgroup character spaces span a representation, every subgroup point commutes with the
-scalar extensions of its block-diagonal endomorphisms. This assertion needs neither normality,
-finite type, reducedness, nor algebraic closure. -/
+scalar extensions of the endomorphisms preserving each character space. This assertion needs
+neither normality, finite type, reducedness, nor algebraic closure. -/
 theorem commute_baseChange_of_mem_quotientPointsSubgroup
     (hV : ⨆ χ, I.weightSpace V χ = ⊤) (A : CommAlgCat.{x} R)
     (g : HopfAlgebra.points (R := R) (H := H) A)
     (hg : g ∈ CommHopfAlgCat.quotientPointsSubgroup H I A)
-    {p : Module.End R V} (hp : p ∈ Submodule.blockDiagonal (I.weightSpace V)) :
+    {p : Module.End R V} (hp : p ∈ Submodule.familyInvariant (I.weightSpace V)) :
     Commute (Comodule.endOfPoint V g.ofConv) (p.baseChange A) := by
   have hzero := (CommHopfAlgCat.mem_quotientPointsSubgroup_iff H I A g).mp hg
   let q := CommHopfAlgCat.liftQuotientPoint H I A g hzero
@@ -76,9 +78,9 @@ variable {k : Type u} [Field k] {H : _root_.CommHopfAlgCat.{v} k}
 variable (I : HopfIdeal k H) (V : Type w) [AddCommGroup V] [Module k V] [Comodule k H V]
 
 /-- A subgroup that stabilizes a subspace inside one character space of a representation spanned
-by its character spaces is detected by centralizing the block-diagonal endomorphisms, over the
-whole coefficient algebra. The subspace-stabilizer property is an explicit input. -/
-theorem mem_quotientPointsSubgroup_iff_forall_commute_blockDiagonal_of_subspace_stabilizer
+by its character spaces is detected by centralizing the endomorphisms preserving each character
+space, over the whole coefficient algebra. The subspace-stabilizer property is an explicit input. -/
+theorem mem_quotientPointsSubgroup_iff_forall_commute_familyInvariant_of_subspace_stabilizer
     (hV : ⨆ χ, I.weightSpace V χ = ⊤)
     (χ : GroupLike k (H ⧸ I.toIdeal)) (L : Submodule k V) (hL : L ≤ I.weightSpace V χ)
     (A : CommAlgCat.{x} k)
@@ -87,11 +89,11 @@ theorem mem_quotientPointsSubgroup_iff_forall_commute_blockDiagonal_of_subspace_
         (L.baseChange A).map (Comodule.endOfPoint V g.ofConv) = L.baseChange A)
     (g : HopfAlgebra.points (R := k) (H := H) A) :
     g ∈ CommHopfAlgCat.quotientPointsSubgroup H I A ↔
-      ∀ p ∈ Submodule.blockDiagonal (I.weightSpace V),
+      ∀ p ∈ Submodule.familyInvariant (I.weightSpace V),
         Commute (Comodule.endOfPoint V g.ofConv) (p.baseChange A) := by
   refine ⟨fun hg p hp ↦ I.commute_baseChange_of_mem_quotientPointsSubgroup V hV A g hg hp,
     fun hg ↦ (hstab g).mpr ?_⟩
-  have h := Submodule.map_baseChange_eq_of_forall_commute_blockDiagonal
+  have h := Submodule.map_baseChange_eq_of_forall_commute_familyInvariant
     (I.weightSpace V) (I.iSupIndep_weightSpace V) χ L hL (Comodule.pointsAction V g) (by
       simpa only [Comodule.pointsAction_toLinearMap] using hg)
   simpa only [Comodule.pointsAction_toLinearMap] using h
