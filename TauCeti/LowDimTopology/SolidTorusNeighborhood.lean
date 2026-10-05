@@ -273,7 +273,7 @@ private theorem tangentVector_ne_zero_and_mem_normalSubspace_iff {f : Circle →
 
 /-- Some vector is nowhere tangent to a `C²` loop in a space of dimension at least three: the
 tangent lines of the loop form the image of a `C¹` map from the plane. -/
-private theorem exists_forall_notMem_span_tangentVector [FiniteDimensional ℝ V]
+private theorem exists_forall_notMem_span_tangentVector
     (hV : 2 < Module.finrank ℝ V) {f : Circle → V} (hf : ContMDiff (𝓡 1) 𝓘(ℝ, V) 2 f) :
     ∃ a : V, ∀ z, a ∉ ℝ ∙ tangentVector f z := by
   have hγ : ContDiff ℝ (1 + 1) (f ∘ Circle.exp) :=
