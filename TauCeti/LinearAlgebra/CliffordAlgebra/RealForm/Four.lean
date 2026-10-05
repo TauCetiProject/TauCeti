@@ -220,7 +220,7 @@ theorem realCliffordFourZeroEvenEquivQuaternionProd_map_reverseEven_mul_self_eq_
 /-- The oriented Hamilton-quaternion model of the vector space underlying `Cl(4,0)`. The
 coordinate order is chosen so that the two unit-quaternion factors act by left and inverse right
 multiplication. -/
-@[expose] noncomputable def realCliffordFourZeroQuaternionEquiv :
+noncomputable def realCliffordFourZeroQuaternionEquiv :
     (realCliffordForm 4 0).IsometryEquiv
       (QuaternionAlgebra.normForm (-1 : ℝ) 0 (-1 : ℝ)) where
   toFun v := ⟨-v 2, v 1, -v 0, v 3⟩
@@ -240,14 +240,14 @@ model. -/
 @[simp]
 theorem realCliffordFourZeroQuaternionEquiv_apply (v : Fin 4 → ℝ) :
     realCliffordFourZeroQuaternionEquiv v = ⟨-v 2, v 1, -v 0, v 3⟩ :=
-  rfl
+  (rfl)
 
 /-- The vector coordinates recovered from a Hamilton quaternion. -/
 @[simp]
 theorem realCliffordFourZeroQuaternionEquiv_symm_apply (q : ℍ[ℝ]) :
     realCliffordFourZeroQuaternionEquiv.symm q =
       ![-q.imJ, q.imI, -q.re, q.imK] :=
-  rfl
+  (rfl)
 
 end TauCeti
 
