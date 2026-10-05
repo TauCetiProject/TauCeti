@@ -212,6 +212,17 @@ This is the compatibility hypothesis the enveloping-algebra dictionary consumes.
 theorem vermaModule_ι_smul (x : L) (m : VermaModule b lam) : (ι K x : U) • m = ⁅x, m⁆ :=
   (UniversalEnvelopingAlgebra.asLieRingModule_bracket K L (VermaModule b lam) x m).symm
 
+/-- **The enveloping representation of the Verma module is its `U(L)`-module structure**: the
+action of `U(L)` induced by the `L`-action, `TauCeti.UniversalEnvelopingAlgebra.representation`,
+is the scalar action of `U(L)` on the quotient `U(L) ⧸ vermaIdeal b lam`. -/
+theorem representation_vermaModule_apply (u : U) (m : VermaModule b lam) :
+    UniversalEnvelopingAlgebra.representation K L (VermaModule b lam) u m = u • m := by
+  induction u using UniversalEnvelopingAlgebra.induction_ι generalizing m with
+  | ι x => rw [UniversalEnvelopingAlgebra.representation_ι_apply, vermaModule_ι_smul]
+  | algebraMap r => rw [AlgHom.commutes, Module.algebraMap_end_apply, algebraMap_smul]
+  | add u w hu hw => rw [map_add, LinearMap.add_apply, hu, hw, add_smul]
+  | mul u w hu hw => rw [map_mul, Module.End.mul_apply, hw, hu, mul_smul]
+
 /-- **The canonical projection** `U(L) → M(lam)`, bundled as a `U(L)`-linear map so that its
 algebraic behaviour — `map_zero`, `map_add`, `map_smul` — is available from the `LinearMap` API
 without unfolding the quotient. -/

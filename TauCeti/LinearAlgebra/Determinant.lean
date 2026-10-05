@@ -41,6 +41,8 @@ results over the rows multiplies the determinant by the total of the factors.
   for `R` cancellative and `N` torsion-free.
 * `LinearMap.IsAlt.compl₁₂_self_eq_det_smul` and `LinearMap.det_eq_of_compl₁₂_self_eq_smul`: the
   same two statements for an alternating bilinear form on a module of rank two.
+* `LinearMap.det_eq_of_compl₁₂_self_eq_smul_of_separatingLeft`: the recovery statement over any
+  commutative ring, for a left-separating form.
 * `Matrix.detRowAlternating_mulVec`: multiplication by a square matrix scales the
   standard-basis determinant form by the matrix determinant.
 * `Matrix.sum_det_updateRow_mul_row`: Jacobi's formula for a determinant, in row form.
@@ -65,9 +67,13 @@ assumed can be dropped:
   determinant form reduced mod `2`, `(x, y) ↦ x₀ y₁ - x₁ y₀`, is nonzero and alternating, and
   `φ = 3 • id` scales it by `9`, that is by `1`, while `det φ = 9`.
 
-`IsCancelMulZero R` and `Module.IsTorsionFree R N` are assumed for the recovery statements, and
+`IsCancelMulZero R` and `Module.IsTorsionFree R N` are assumed for these recovery statements, and
 for nothing else; together they let a nonzero form, an element of a torsion-free module of
-alternating or bilinear maps, cancel from `det φ • ω = d • ω`.
+alternating or bilinear maps, cancel from `det φ • ω = d • ω`. A left-separating form needs neither:
+a scalar killing it kills a basis vector, so vanishes, and
+`LinearMap.det_eq_of_compl₁₂_self_eq_smul_of_separatingLeft` holds over every commutative ring. The
+examples above are not left-separating: `2 • b.det` pairs `2 • b 0` to zero, and the reduced
+determinant form pairs `2 • e₀` to zero.
 
 None of the transformation laws stated for a basis is a `simp` lemma: the basis is a hypothesis
 and does not occur in the conclusion, so `simp` could not infer it.
@@ -82,7 +88,7 @@ The four transformation and recovery laws are ported from the AINTLIB `HasseWeil
 `alternating_comp_eq_det_smul` and `det_eq_of_alternating_scaling`. The source states them over a
 field, for a scalar-valued form, evaluated at a basis, and proves the first by expanding `φ (b j)`
 in coordinates; none of that is reproduced here. `Matrix.detRowAlternating_mulVec` predates
-that port and is not from the source.
+that port and is not from the source, nor is the left-separating recovery statement.
 -/
 
 public section
@@ -160,6 +166,22 @@ theorem det_eq_of_compl₁₂_self_eq_smul [IsCancelMulZero R] [Module.IsTorsion
     (b : Basis (Fin 2) R M) {ω : M →ₗ[R] M →ₗ[R] N} (halt : ω.IsAlt) (hω : ω ≠ 0)
     {φ : M →ₗ[R] M} {d : R} (h : ω.compl₁₂ φ φ = d • ω) : LinearMap.det φ = d :=
   smul_left_injective R hω <| (halt.compl₁₂_self_eq_det_smul b φ).symm.trans h
+
+/-- **The multiplier of a left-separating alternating bilinear form on a rank-two module is the
+determinant**, over any commutative ring. Left separation of `ω` takes the place of the
+cancellation hypotheses of `LinearMap.det_eq_of_compl₁₂_self_eq_smul`; this is the form that
+applies to the Weil pairing on `N`-torsion, a module over `ZMod N`, which is not a domain for
+composite `N`. -/
+theorem det_eq_of_compl₁₂_self_eq_smul_of_separatingLeft (b : Basis (Fin 2) R M)
+    {ω : M →ₗ[R] M →ₗ[R] N} (halt : ω.IsAlt) (hω : ω.SeparatingLeft) {φ : M →ₗ[R] M} {d : R}
+    (h : ω.compl₁₂ φ φ = d • ω) : LinearMap.det φ = d := by
+  have hd : LinearMap.det φ • ω = d • ω := (halt.compl₁₂_self_eq_det_smul b φ).symm.trans h
+  -- the difference kills `ω (b 0)`, so it kills `b 0` by left separation, so it vanishes
+  have hb : (LinearMap.det φ - d) • b 0 = 0 := hω _ fun y ↦ by
+    rw [map_smul, smul_apply, sub_smul, sub_eq_zero]
+    simpa using congr($hd (b 0) y)
+  rw [← sub_eq_zero]
+  simpa using congr(b.repr $hb 0)
 
 end LinearMap
 

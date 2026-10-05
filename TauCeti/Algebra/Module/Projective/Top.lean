@@ -6,10 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Idempotents
-public import TauCeti.Algebra.Module.LinearMap.EndQuotient
-public import TauCeti.Algebra.Module.ProjectiveCover.Basic
-public import TauCeti.RingTheory.Jacobson.Semiprimary
-public import TauCeti.RingTheory.KrullSchmidt.Indecomposable
+public import TauCeti.Algebra.Module.ProjectiveCover.Simple
 
 /-!
 # Tops of indecomposable projective modules
@@ -34,10 +31,9 @@ every such surjection is a projective cover.
   `TauCeti.IsIndecomposableModule.of_quotient_smul_top` holds for every module.
 * `TauCeti.isIndecomposableModule_iff_isSimpleModule_quotient_jacobson_smul_top`: over a
   semiprimary ring, a projective module is indecomposable exactly when its top is simple.
-* `TauCeti.IsIndecomposableModule.isCoatom_jacobson_smul_top` and
-  `TauCeti.IsIndecomposableModule.ker_eq_jacobson_smul_top_of_surjective`: the radical of an
-  indecomposable projective module is its unique maximal submodule, and is the kernel of every
-  surjection onto a simple module.
+* `TauCeti.IsIndecomposableModule.isCoatom_jacobson_smul_top`: the radical of an
+  indecomposable projective module is its unique maximal submodule, so it is the kernel of every
+  surjection onto a simple module (`TauCeti.ker_eq_jacobson_smul_top_of_surjective`).
 * `TauCeti.IsIndecomposableModule.isProjectiveCover_of_surjective`: such a surjection is a
   projective cover.
 
@@ -112,17 +108,6 @@ theorem IsIndecomposableModule.isCoatom_jacobson_smul_top [IsSemiprimaryRing R]
   rw [← isSimpleModule_iff_isCoatom]
   exact isIndecomposableModule_iff_isSimpleModule_quotient_jacobson_smul_top.mp h
 
-/-- Any surjection from an indecomposable projective module `P` onto a simple module has kernel
-`JP`.  Thus it identifies the simple module with the canonical top of `P`. -/
-theorem IsIndecomposableModule.ker_eq_jacobson_smul_top_of_surjective [IsSemiprimaryRing R]
-    (h : IsIndecomposableModule R P) (M : Type w) [AddCommGroup M] [Module R M]
-    [IsSimpleModule R M] (f : P →ₗ[R] M) (hf : Function.Surjective f) :
-    LinearMap.ker f = Ring.jacobson R • (⊤ : Submodule R P) := by
-  have hle : Ring.jacobson R • (⊤ : Submodule R P) ≤ LinearMap.ker f :=
-    (Ring.jacobson_smul_top_le R P).trans <| IsSemisimpleModule.jacobson_le_ker R R P M f
-  exact (h.isCoatom_jacobson_smul_top.le_iff_eq (LinearMap.isCoatom_ker_of_surjective hf).ne_top).mp
-    hle
-
 /-- **An indecomposable projective module is the projective cover of each of its simple
 quotients.**  Over a semiprimary ring, any surjection from an indecomposable projective module onto
 a simple module is a projective cover. -/
@@ -131,8 +116,10 @@ theorem IsIndecomposableModule.isProjectiveCover_of_surjective [IsSemiprimaryRin
     [IsSimpleModule R M] (f : P →ₗ[R] M) (hf : Function.Surjective f) : IsProjectiveCover f where
   projective := ‹_›
   surjective := hf
-  isSuperfluous_ker := h.ker_eq_jacobson_smul_top_of_surjective M f hf ▸
-    isSuperfluous_smul_top_of_isNilpotent IsSemiprimaryRing.isNilpotent
+  isSuperfluous_ker :=
+    have := isIndecomposableModule_iff_isSimpleModule_quotient_jacobson_smul_top.mp h
+    ker_eq_jacobson_smul_top_of_surjective hf ▸
+      isSuperfluous_smul_top_of_isNilpotent IsSemiprimaryRing.isNilpotent
 
 /-- A surjection from an indecomposable projective module `P` onto a simple module induces the
 canonical equivalence from the simple top of `P` to that module. -/
@@ -140,7 +127,8 @@ noncomputable def IsIndecomposableModule.quotientJacobsonEquivOfSurjective [IsSe
     (h : IsIndecomposableModule R P) (M : Type w) [AddCommGroup M] [Module R M]
     [IsSimpleModule R M] (f : P →ₗ[R] M) (hf : Function.Surjective f) :
     (P ⧸ Ring.jacobson R • (⊤ : Submodule R P)) ≃ₗ[R] M :=
-  (Submodule.quotEquivOfEq _ _ (h.ker_eq_jacobson_smul_top_of_surjective M f hf).symm).trans
+  have := isIndecomposableModule_iff_isSimpleModule_quotient_jacobson_smul_top.mp h
+  (Submodule.quotEquivOfEq _ _ (ker_eq_jacobson_smul_top_of_surjective hf).symm).trans
     (f.quotKerEquivOfSurjective hf)
 
 @[simp]

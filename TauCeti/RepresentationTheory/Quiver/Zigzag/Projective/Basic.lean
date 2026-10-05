@@ -5,12 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Module.Projective
 public import TauCeti.LinearAlgebra.Graded.Shift
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Grading
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Radical
-public import TauCeti.RingTheory.Idempotents.Primitive.Basic
-import TauCeti.RingTheory.Idempotents.Module
+public import TauCeti.RingTheory.Idempotents.Projective
 
 /-!
 # Vertex projectives of a zigzag algebra
@@ -126,12 +124,11 @@ theorem zigzagProjectiveShiftGrade_apply (i : V) (d p : ℤ) :
     zigzagProjectiveShiftGrade k G i d p = zigzagProjectiveGrade k G i (p - d) := by
   simp [zigzagProjectiveShiftGrade, sub_eq_add_neg]
 
-/-! ### Projectivity -/
-
 /-- The vertex ideal `Z e_i` is a projective left module over the zigzag relation quotient. -/
 theorem zigzagProjective_projective (i : V) :
-    Module.Projective (nonisolatedZigzagQuotient k G) (zigzagProjective k G i) :=
-  (isIdempotentElem_zigzagVertexIdempotent k G i).projective_span_singleton
+    Module.Projective (nonisolatedZigzagQuotient k G) (zigzagProjective k G i) := by
+  rw [zigzagProjective_def]
+  exact (isIdempotentElem_zigzagVertexIdempotent k G i).projective_span_singleton
 
 end CommRing
 

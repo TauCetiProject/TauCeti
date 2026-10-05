@@ -15,7 +15,6 @@ import Mathlib.Analysis.Normed.Field.ProperSpace
 import TauCeti.FieldTheory.SquareClassGroup.Multiplicative
 import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Basic
 import TauCeti.LinearAlgebra.QuadraticForm.Representation
-import TauCeti.Topology.Algebra.Group.Subgroup
 import TauCeti.Topology.Compactness.LocallyCompact
 
 /-!
@@ -171,10 +170,9 @@ theorem isProperMap_spinToSpecialOrthogonal (hQ : Q.Nondegenerate) :
   have h : QuadraticMap.specialOrthogonalToOrthogonal Q ∘ spinToSpecialOrthogonal Q =
       spinToOrthogonal Q :=
     funext (specialOrthogonalToOrthogonal_spinToSpecialOrthogonal Q)
-  have hcont : Continuous (QuadraticMap.specialOrthogonalToOrthogonal Q) :=
-    (Subgroup.continuous_inclusion (QuadraticMap.specialOrthogonalGroup_le_orthogonalGroup Q)).congr
-      fun g => Subtype.ext (QuadraticMap.coe_specialOrthogonalToOrthogonal g).symm
-  exact isProperMap_of_comp_of_t2 (by fun_prop) hcont (h ▸ isProperMap_spinToOrthogonal Q hQ)
+  exact isProperMap_of_comp_of_t2 (by fun_prop)
+    (_root_.QuadraticMap.continuous_specialOrthogonalToOrthogonal Q)
+    (h ▸ isProperMap_spinToOrthogonal Q hQ)
 
 /-- **Compactness of the Spin group.** For a nondegenerate quadratic form on a finite-dimensional
 space over a locally compact nontrivially normed field in which `2` is invertible, such as `ℝ` or

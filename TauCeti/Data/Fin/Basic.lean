@@ -48,6 +48,8 @@ range, so the value is a `dite` rather than a plain application.
   the last and penultimate indices differ from `0` and `1` in the nondegenerate cases.
 * `Fin.sum_univ_eq_zero_add_last_add_sum_erase`: a sum over `Fin (n + 1)` with its first and last
   summands split off.
+* `Fin.natCast_ne_zero`: the cast of a natural number `0 < a < n` to `Fin n` (under
+  `open Fin.NatCast`) is nonzero.
 * `Fin.predAbove_succ_succAbove`: `Fin.predAbove p` inverts `p.succ.succAbove`, the
   counterpart of Mathlib's `Fin.predAbove_succAbove` for `p.castSucc.succAbove`.
 * `Fin.val_succAbove`: the value of `p.succAbove i`, read off the comparison of `i` with `p`.
@@ -311,6 +313,11 @@ theorem sum_univ_eq_zero_add_last_add_sum_erase {n : ℕ} {M : Type*} [AddCommMo
   rw [add_assoc, Finset.add_sum_erase _ _
     (Finset.mem_erase.2 ⟨mt last_eq_zero_iff.1 hn, Finset.mem_univ _⟩),
     Finset.add_sum_erase _ _ (Finset.mem_univ 0)]
+
+open Fin.NatCast in
+/-- The cast of a natural number `0 < a < n` to `Fin n` is nonzero. -/
+theorem natCast_ne_zero {n a : ℕ} [NeZero n] (ha : a ≠ 0) (han : a < n) : (a : Fin n) ≠ 0 :=
+  natCast_eq_zero.not.2 (Nat.not_dvd_of_pos_of_lt (Nat.pos_of_ne_zero ha) han)
 
 /-- Below the top element of `Fin n`, the order successor increments the value. -/
 theorem val_orderSucc_of_lt {n : ℕ} {i : Fin n} (h : (i : ℕ) + 1 < n) :

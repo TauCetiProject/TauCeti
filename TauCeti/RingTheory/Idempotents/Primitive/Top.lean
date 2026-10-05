@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Module.Projective.Top
-public import TauCeti.RingTheory.Idempotents.Module
+public import TauCeti.RingTheory.Idempotents.Projective
 public import TauCeti.RingTheory.Idempotents.Primitive.Decomposition
 
 /-!

@@ -46,6 +46,8 @@ homomorphism to `ℝ≥0ˣ`.
 * `TauCeti.GlobalNumberFields.ideleNormMap_ideleExtension`,
   `TauCeti.GlobalNumberFields.ideleClassNormMap_ideleClassExtension`: the norm of an idele, or of
   an idele class, extended from `K` is its `[L : K]`-th power.
+* `TauCeti.GlobalNumberFields.ideleNormMap_comp`,
+  `TauCeti.GlobalNumberFields.ideleClassNormMap_comp`: norm maps compose in towers.
 
 ## References
 
@@ -113,6 +115,17 @@ theorem ideleNormMap_ideleExtension (x : IdeleGroup (𝓞 K) K) :
   apply Units.ext
   simp [ideleNormMap]
 
+/-- Norm maps of ideles compose in a tower of number fields. -/
+@[simp]
+theorem ideleNormMap_comp (M : Type*) [Field M] [NumberField M] [Algebra L M]
+    [Algebra K M] [IsScalarTower K L M] :
+    (ideleNormMap K L).comp (ideleNormMap L M) = ideleNormMap K M := by
+  apply MonoidHom.ext
+  intro x
+  apply Units.ext
+  simpa only [MonoidHom.comp_apply, coe_ideleNormMap] using
+    DFunLike.congr_fun (adeleNorm_comp K L M) (x : AdeleRing (𝓞 M) M)
+
 /-- The norm map of ideles sends principal ideles to principal ideles. -/
 theorem principalSubgroup_le_comap_ideleNormMap :
     IdeleGroup.principalSubgroup (𝓞 L) L ≤
@@ -138,5 +151,18 @@ theorem ideleClassNormMap_ideleClassExtension (x : IdeleClassGroup (𝓞 K) K) :
     ideleClassNormMap K L (ideleClassExtension K L x) = x ^ Module.finrank K L := by
   induction x using QuotientGroup.induction_on with
   | H x => simp [← QuotientGroup.mk_pow]
+
+/-- Norm maps of idele classes compose in a tower of number fields. -/
+@[simp]
+theorem ideleClassNormMap_comp (M : Type*) [Field M] [NumberField M] [Algebra L M]
+    [Algebra K M] [IsScalarTower K L M] :
+    (ideleClassNormMap K L).comp (ideleClassNormMap L M) = ideleClassNormMap K M := by
+  unfold ideleClassNormMap
+  simpa only [ideleNormMap_comp] using
+    QuotientGroup.map_comp_map (IdeleGroup.principalSubgroup (𝓞 M) M)
+      (IdeleGroup.principalSubgroup (𝓞 L) L) (IdeleGroup.principalSubgroup (𝓞 K) K)
+      (ideleNormMap L M) (ideleNormMap K L)
+      (principalSubgroup_le_comap_ideleNormMap L M)
+      (principalSubgroup_le_comap_ideleNormMap K L)
 
 end TauCeti.GlobalNumberFields

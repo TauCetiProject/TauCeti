@@ -9,6 +9,8 @@ public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.GroupTheory.Index
 public import TauCeti.Topology.Homotopy.Covering
 
+import Mathlib.Data.Finite.Perm
+
 /-!
 # The subgroup a cover recovers from a chosen lift of the basepoint
 
@@ -52,6 +54,8 @@ subgroups differ, and it is the stabiliser, not the kernel, that the classificat
   chosen lift under monodromy exactly when it is the image of a loop class of the cover.
 * `IsCoveringMap.stabilizer_eq_range`, `IsCoveringMap.comap_stabilizer_monodromyPerm`: the same
   statement for the monodromy `MulAction` and for the monodromy homomorphism.
+* `IsCoveringMap.monodromyPerm_pow_eq_one`: over a fibre with `d` points, the `n`-th power of
+  every loop class has trivial monodromy whenever `d !` divides `n`.
 * `IsCoveringMap.exists_monodromy_eq_of_joined`,
   `IsCoveringMap.exists_monodromy_eq` and
   `IsCoveringMap.monodromy_isPretransitive`: monodromy carries a lift to any lift joined
@@ -166,6 +170,15 @@ theorem _root_.IsCoveringMap.comap_stabilizer_monodromyPerm (hp : IsCoveringMap 
   ext γ
   rw [Subgroup.mem_comap, MulAction.mem_stabilizer_iff, Equiv.Perm.smul_def,
     IsCoveringMap.coe_monodromyPerm, IsCoveringMap.monodromy_eq_self_iff_mem_range]
+
+/-- **Over a finite fibre, a suitable power of every loop has trivial monodromy.** If the fibre
+over `x` has `d` points and `d !` divides `n`, then the `n`-th power of every loop class at `x`
+acts trivially on that fibre, because the monodromy permutation lies in a group of order `d !`. -/
+theorem _root_.IsCoveringMap.monodromyPerm_pow_eq_one (hp : IsCoveringMap p)
+    [Finite (p ⁻¹' {x})] {n : ℕ} (hn : (Nat.card (p ⁻¹' {x})).factorial ∣ n)
+    (γ : FundamentalGroup X x) : hp.monodromyPerm x (γ ^ n) = 1 := by
+  obtain ⟨k, rfl⟩ := hn
+  rw [map_pow, pow_mul, ← Nat.card_perm, pow_card_eq_one', one_pow]
 
 /-! ### Transitivity on a fibre -/
 

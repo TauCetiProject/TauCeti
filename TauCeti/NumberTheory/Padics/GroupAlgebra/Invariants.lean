@@ -12,6 +12,9 @@ public import TauCeti.RepresentationTheory.BaseChange
 public import TauCeti.RepresentationTheory.Invariants
 import Mathlib.Algebra.Module.Submodule.Pointwise
 import Mathlib.RingTheory.Flat.Localization
+import TauCeti.NumberTheory.Padics.GroupAlgebra.Reduction
+import TauCeti.RepresentationTheory.AsModule
+import TauCeti.RepresentationTheory.OfModule
 
 /-!
 # Invariants of projective `p`-adic group-algebra modules
@@ -38,6 +41,8 @@ projective integral representations.
   above, for an arbitrary equivariant semilinear reduction map with the expected kernel. The
   cardinality of the reduction of a finite free `ℤ_p`-module is
   `TauCeti.natCard_quotient_padicInt_smul_top`.
+* `Representation.natCard_invariants_eq_pow_finrank_of_bijective`: the same count when
+  the projective modular representation is identified with the reduction of a `ℤ_p[G]`-module.
 
 ## References
 
@@ -139,5 +144,37 @@ theorem natCard_invariants_eq_pow_finrank_of_reduction
     hFker, TauCeti.natCard_quotient_padicInt_smul_top p ρ.invariants]
 
 end Reduction
+
+end Representation
+
+open TauCeti TauCeti.Representation
+
+namespace Representation
+
+/-- **Invariant counts of projective lifts.** If a projective `𝔽_p[G]`-representation `η` is the
+reduction of a `ℤ_p[G]`-module `X`, then `#η^G = p ^ rank (X^G)`. -/
+theorem natCard_invariants_eq_pow_finrank_of_bijective
+    (p : ℕ) [Fact p.Prime] {G : Type*} [Group G] [Finite G] {W : Type*} [AddCommGroup W]
+    [Module (ZMod p) W] (η : _root_.Representation (ZMod p) G W)
+    [Module.Projective (MonoidAlgebra (ZMod p) G) η.asModule]
+    (X : Type*) [AddCommGroup X] [Module ℤ_[p] X] [Module (MonoidAlgebra ℤ_[p] G) X]
+    [IsScalarTower ℤ_[p] (MonoidAlgebra ℤ_[p] G) X] [Module.Finite ℤ_[p] X]
+    [Module.IsTorsionFree ℤ_[p] X]
+    (f : (X ⧸ Ideal.span {(p : MonoidAlgebra ℤ_[p] G)} •
+      (⊤ : Submodule (MonoidAlgebra ℤ_[p] G) X)) →ₛₗ[MonoidAlgebra.mapRingHom G
+        (PadicInt.toZMod (p := p))] η.asModule)
+    (hf : Function.Bijective f) :
+    Nat.card η.invariants = p ^ Module.finrank ℤ_[p]
+      (_root_.Representation.ofModule' (k := ℤ_[p]) (G := G) X).invariants := by
+  -- Compare `η` with the representation `Representation.ofModule' η.asModule`, which the
+  -- reduction map intertwines with `Representation.ofModule' X`.
+  let e := ofModule'AsModuleEquiv (k := ZMod p) (G := G) η.asModule
+  let _ : Module.Projective (MonoidAlgebra (ZMod p) G)
+      (_root_.Representation.ofModule' (k := ZMod p) (G := G) η.asModule).asModule :=
+    Module.Projective.of_equiv' e.symm
+  rw [← Nat.card_congr (equivOfAsModuleLinearEquiv e).invariantsLinearEquiv.toEquiv]
+  exact _root_.Representation.natCard_invariants_eq_pow_finrank_of_reduction p _ _
+    (compPadicReductionMk p G f) (compPadicReductionMk_surjective p G f hf.2)
+    (compPadicReductionMk_ofModule' p G f) (compPadicReductionMk_eq_zero_iff p G f hf.1)
 
 end Representation

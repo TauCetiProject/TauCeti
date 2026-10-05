@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Smooth
+public import TauCeti.AlgebraicGeometry.Modules.GlobalSections
 
 /-!
 # Standard smooth charts over an affine target
@@ -35,7 +36,7 @@ than from a chart of a second smooth morphism.
 
 public section
 
-open CategoryTheory AlgebraicGeometry TopologicalSpace RingHom
+open CategoryTheory AlgebraicGeometry Opposite TopologicalSpace RingHom
 
 namespace AlgebraicGeometry.SmoothOfRelativeDimension
 
@@ -69,3 +70,26 @@ theorem exists_isStandardSmoothOfRelativeDimension_appLE_top
     _ r _ hf₁
 
 end AlgebraicGeometry.SmoothOfRelativeDimension
+
+namespace TauCeti.AlgebraicGeometry
+
+universe u
+
+variable (R : Type u) [CommRing R] {X : Scheme.{u}} [X.Over (Spec (.of R))]
+
+/-- Around every point of a scheme smooth of relative dimension `n` over `Spec R`, there is an
+affine open whose ring of functions is standard smooth of relative dimension `n` over `R`. -/
+lemma exists_isStandardSmoothOfRelativeDimension (n : ℕ)
+    [SmoothOfRelativeDimension n (X ↘ Spec (.of R))] (x : X) :
+    ∃ W : X.affineOpens, x ∈ W.1 ∧
+      ((X.baseRingToStructurePresheaf R).app (op W.1)).hom.IsStandardSmoothOfRelativeDimension n
+        := by
+  obtain ⟨W, hxW, h⟩ :=
+    SmoothOfRelativeDimension.exists_isStandardSmoothOfRelativeDimension_appLE_top
+      (X ↘ Spec (.of R)) n x
+  refine ⟨W, hxW, ?_⟩
+  rw [Scheme.baseRingToStructurePresheaf_app_eq_appLE, CommRingCat.hom_comp]
+  exact (isStandardSmoothOfRelativeDimension_respectsIso (n := n)).right _
+    (Scheme.ΓSpecIso (.of R)).symm.commRingCatIsoToRingEquiv h
+
+end TauCeti.AlgebraicGeometry

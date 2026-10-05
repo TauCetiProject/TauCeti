@@ -8,6 +8,7 @@ module
 public import Mathlib.FieldTheory.PolynomialGaloisGroup
 import Mathlib.Data.Finite.Perm
 import Mathlib.GroupTheory.Coset.Card
+import Mathlib.GroupTheory.SpecificGroups.Alternating.Simple
 
 /-!
 # Degree of the root permutation representation
@@ -20,7 +21,8 @@ with reference permutation groups to carry their chosen numbering explicitly.
 
 The Galois action itself is faithful over every splitting extension. Consequently its image has
 the same cardinality as the polynomial Galois group, and the Galois-group order divides the
-factorial of the polynomial degree.
+factorial of the polynomial degree. For the same reason the Galois group of a polynomial of degree
+at most four embeds in a symmetric group on at most four points, and is therefore solvable.
 
 ## Main results
 
@@ -32,6 +34,8 @@ factorial of the polynomial degree.
   of the number of distinct roots.
 * `TauCeti.natCard_gal_dvd_factorial_natDegree`: the order of a polynomial's Galois group divides
   the factorial of its degree.
+* `TauCeti.isSolvable_gal_of_natDegree_le_four`: a polynomial of degree at most four has a
+  solvable Galois group.
 
 The proofs reuse Mathlib's `Polynomial.card_rootSet_eq_natDegree`,
 `Polynomial.Gal.galActionHom_injective`, `MonoidHom.ofInjective`, and Lagrange's theorem. This is
@@ -94,5 +98,21 @@ theorem natCard_gal_dvd_factorial_natDegree (p : F[X]) :
     (Nat.factorial_dvd_factorial <| by
       rw [Set.fintypeCard_eq_ncard]
       exact Polynomial.ncard_rootSet_le p p.SplittingField)
+
+/-! ## Solvability in degree at most four -/
+
+/-- **A polynomial of degree at most four has a solvable Galois group.** The Galois group acts
+faithfully on the at most four roots in the splitting field, and the symmetric group on at most
+four points is solvable. Neither separability nor irreducibility is needed. This is a statement
+about the group, not about `solvableByRad`. -/
+theorem isSolvable_gal_of_natDegree_le_four {p : F[X]} (hp : p.natDegree ≤ 4) :
+    Group.IsSolvable p.Gal := by
+  have : Fact ((p.map (algebraMap F p.SplittingField)).Splits) :=
+    ⟨IsSplittingField.splits p.SplittingField p⟩
+  have : Group.IsSolvable (Equiv.Perm (p.rootSet p.SplittingField)) :=
+    Equiv.Perm.isSolvable <| (Nat.card_coe_set_eq _).trans_le <|
+      (Polynomial.ncard_rootSet_le p p.SplittingField).trans hp
+  exact Group.isSolvable_of_isSolvable_injective
+    (Polynomial.Gal.galActionHom_injective p p.SplittingField)
 
 end TauCeti
