@@ -27,6 +27,8 @@ through Mathlib's `MoritaEquivalence`.
 * `TauCeti.cornerSubmodule`: the corner `eAf`, as a `k`-submodule of `A`.
 * `IsIdempotentElem.Corner.instAlgebra`: the corner ring `eAe` of an idempotent of an `R`-algebra
   is an `R`-algebra.
+* `IsIdempotentElem.cornerLinearEquivCornerSubmodule`: the corner ring `eAe`, as an `R`-module,
+  agrees with the corner submodule `TauCeti.cornerSubmodule R e e`.
 
 ## Main results
 
@@ -124,6 +126,24 @@ theorem val_one : (1 : he.Corner).1 = e := (rfl)
 @[simp]
 theorem val_mul (b c : he.Corner) : (b * c).1 = b.1 * c.1 := (rfl)
 
+@[simp]
+theorem val_zero : (0 : he.Corner).1 = 0 := (rfl)
+
+@[simp]
+theorem val_add (b c : he.Corner) : (b + c).1 = b.1 + c.1 := (rfl)
+
+section Ring
+
+variable {A : Type u} [Ring A] {e : A} {he : IsIdempotentElem e}
+
+@[simp]
+theorem val_neg (b : he.Corner) : (-b).1 = -b.1 := (rfl)
+
+@[simp]
+theorem val_sub (b c : he.Corner) : (b - c).1 = b.1 - c.1 := (rfl)
+
+end Ring
+
 variable {R : Type v} [CommSemiring R] [Algebra R A]
 
 instance instSMul : SMul R he.Corner where
@@ -150,5 +170,34 @@ instance instAlgebra : Algebra R he.Corner :=
 theorem val_algebraMap (r : R) : (algebraMap R he.Corner r).1 = r • e := (rfl)
 
 end Corner
+
+variable {R : Type v} [CommSemiring R] [Algebra R A]
+
+/-- The carrier of the corner ring `eAe` is the corner submodule `TauCeti.cornerSubmodule R e e`:
+both are the range of `x ↦ e * x * e`. -/
+theorem coe_corner_eq_cornerSubmodule (e : A) :
+    (Subsemigroup.corner e : Set A) = TauCeti.cornerSubmodule R e e := by
+  ext x
+  simp only [SetLike.mem_coe, TauCeti.cornerSubmodule, LinearMap.mem_range,
+    TauCeti.cornerMap_apply]
+  rfl
+
+/-- The corner ring `eAe`, as an `R`-module, is the corner submodule
+`TauCeti.cornerSubmodule R e e`. -/
+def cornerLinearEquivCornerSubmodule : he.Corner ≃ₗ[R] TauCeti.cornerSubmodule R e e where
+  toFun b := ⟨b.1, (Set.ext_iff.1 (coe_corner_eq_cornerSubmodule (R := R) e) b.1).1 b.2⟩
+  invFun x := ⟨x.1, (Set.ext_iff.1 (coe_corner_eq_cornerSubmodule (R := R) e) x.1).2 x.2⟩
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+  left_inv _ := rfl
+  right_inv _ := rfl
+
+@[simp]
+theorem coe_cornerLinearEquivCornerSubmodule_apply (b : he.Corner) :
+    (he.cornerLinearEquivCornerSubmodule (R := R) b : A) = b.1 := (rfl)
+
+@[simp]
+theorem val_cornerLinearEquivCornerSubmodule_symm_apply (x : TauCeti.cornerSubmodule R e e) :
+    ((he.cornerLinearEquivCornerSubmodule (R := R)).symm x).1 = x := (rfl)
 
 end IsIdempotentElem

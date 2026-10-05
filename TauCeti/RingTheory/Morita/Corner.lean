@@ -438,6 +438,11 @@ noncomputable def moritaEquivalenceCorner (hfull : TwoSidedIdeal.span {e} = ⊤)
   eqv := he.cornerEquivalence.{u, u} hfull
   linear := inferInstanceAs (he.cornerFunctor.{u}.Linear R)
 
+@[simp]
+theorem moritaEquivalenceCorner_eqv (hfull : TwoSidedIdeal.span {e} = ⊤) :
+    (he.moritaEquivalenceCorner R hfull).eqv = he.cornerEquivalence.{u, u} hfull :=
+  (rfl)
+
 /-- **A ring is Morita equivalent to the corner ring of any full idempotent.** -/
 theorem isMoritaEquivalent_corner (hfull : TwoSidedIdeal.span {e} = ⊤) :
     IsMoritaEquivalent R A he.Corner :=
