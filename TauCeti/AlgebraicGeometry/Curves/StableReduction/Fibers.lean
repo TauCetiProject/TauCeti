@@ -37,6 +37,23 @@ variable {C : Scheme.{u}} {toK : C ⟶ Spec (.of K)}
 noncomputable def genericι (M : Model R K C toK) : C ⟶ M.total :=
   M.genericFiberIso.inv.left ≫ genericFiberι R K M.toBase
 
+/-- The chosen generic-fibre inclusion is the pullback projection transported along the
+model's prescribed generic-fibre identification. -/
+lemma genericι_def (M : Model R K C toK) :
+    M.genericι = M.genericFiberIso.inv.left ≫ genericFiberι R K M.toBase :=
+  (rfl)
+
+/-- A morphism of models restricts to the prescribed identification on the generic fibre. -/
+@[reassoc (attr := simp)]
+lemma genericι_hom {M N : Model R K C toK} (f : M ⟶ N) :
+    M.genericι ≫ f.hom = N.genericι := by
+  have h : M.genericFiberIso.inv.left ≫ M.baseChangeHom f.hom f.overBase =
+      N.genericFiberIso.inv.left := by
+    rw [← cancel_mono N.genericFiberIso.hom.left]
+    simp only [Category.assoc, f.genericFiber, Over.inv_left_hom_left]
+  rw [genericι_def, genericι_def, Category.assoc,
+    ← M.baseChangeHom_genericFiberι f.hom f.overBase, ← Category.assoc, h]
+
 /-- Precomposed with the chosen identification of the generic fibre with `C`, the inclusion of a
 model's chosen generic fibre is the canonical inclusion of the generic fibre. -/
 @[reassoc (attr := simp)]

@@ -44,6 +44,8 @@ homogeneous coordinate rings `WeierstrassCurve.Projective.variableChangeEquiv W 
   base.
 * `WeierstrassCurve.projModelZero_projModelOver`: the zero section is a section of the structure
   morphism.
+* `WeierstrassCurve.awayι_projModelOver`: on a standard affine chart, the structure morphism is
+  `Spec` of the structure map of the chart.
 * `WeierstrassCurve.projModelVariableChangeIso_one` and
   `WeierstrassCurve.projModelVariableChangeIso_mul`: the isomorphisms induced by changes of
   variables are compatible with the identity and with products.
@@ -84,22 +86,32 @@ instance isProper_projModelOver : IsProper W.projModelOver := by
   unfold projModelOver
   infer_instance
 
-/-- The coordinate `Y`, of degree one in the homogeneous coordinate ring. -/
-private noncomputable abbrev projY : W.toProjective.CoordinateRing :=
-  Ideal.Quotient.mk _ (X 1)
+/-- On a standard affine chart `D₊(f)`, the structure morphism of the projective model is `Spec` of
+the structure map `R → A_(f)`, through the degree-zero part of the homogeneous coordinate ring. -/
+@[reassoc]
+theorem awayι_projModelOver {f : W.toProjective.CoordinateRing} {m : ℕ}
+    (f_deg : f ∈ W.toProjective.grading m) (hm : 0 < m) :
+    Proj.awayι W.toProjective.grading f f_deg hm ≫ W.projModelOver =
+      Spec.map (CommRingCat.ofHom ((HomogeneousLocalization.fromZeroRingHom _ _).comp
+        (algebraMap R (W.toProjective.grading 0)))) := by
+  rw [projModelOver, Proj.awayι_toSpecZero_assoc, ← Spec.map_comp]
+  congr 1
+  ext r
+  simp
 
 /-- The point `[0 : 1 : 0]` on the standard affine chart `D₊(Y)` of the projective model:
 evaluation of the degree-zero part of the localization away from `Y` at `X/Y = Z/Y = 0`. -/
 private noncomputable def awayYEvalZero :
-    HomogeneousLocalization.Away W.toProjective.grading W.projY →+* R :=
-  HomogeneousLocalization.Away.lift _ W.toProjective.evalZero.toRingHom (f := W.projY) (by simp)
+    HomogeneousLocalization.Away W.toProjective.grading (W.toProjective.coord 1) →+* R :=
+  HomogeneousLocalization.Away.lift _ W.toProjective.evalZero.toRingHom
+    (f := W.toProjective.coord 1) (by simp)
 
 /-- The **zero section** `[0 : 1 : 0]` of the projective Weierstrass model, a morphism
 `Spec R ⟶ projModel W` through the standard affine chart `D₊(Y)`. -/
 noncomputable def projModelZero : Spec (.of R) ⟶ W.projModel :=
   Spec.map (CommRingCat.ofHom W.awayYEvalZero) ≫
-    Proj.awayι W.toProjective.grading W.projY
-      (W.toProjective.mk_mem_grading (isHomogeneous_X R 1)) one_pos
+    Proj.awayι W.toProjective.grading (W.toProjective.coord 1)
+      (W.toProjective.coord_mem_grading 1) one_pos
 
 /-- The zero section is a section of the structure morphism. -/
 @[reassoc (attr := simp)]
@@ -204,14 +216,15 @@ section: `[0 : 1 : 0] ↦ [0 : u³ : 0] = [0 : 1 : 0]`. -/
 @[reassoc (attr := simp)]
 theorem projModelZero_projModelVariableChangeIso_hom :
     (C • W).projModelZero ≫ (W.projModelVariableChangeIso C).hom = W.projModelZero := by
-  have hY : W.projY ∈ W.toProjective.grading 1 :=
-    W.toProjective.mk_mem_grading (isHomogeneous_X R 1)
+  have hY : W.toProjective.coord 1 ∈ W.toProjective.grading 1 :=
+    W.toProjective.coord_mem_grading 1
   -- the image `u²sX + u³Y + tZ` of `Y` under the change of variables is `u³` at `[0 : 1 : 0]`
   have hFY :
-      IsUnit ((C • W).toProjective.evalZero.toRingHom (variableChangeGradedHom W C W.projY)) := by
+      IsUnit ((C • W).toProjective.evalZero.toRingHom
+        (variableChangeGradedHom W C (W.toProjective.coord 1))) := by
     rw [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, variableChangeGradedHom_apply,
       Projective.evalZero_variableChangeEquiv W C hY]
-    simp [projY]
+    simp
   rw [projModelVariableChangeIso, Proj.mapIso_hom, projModelZero, projModelZero, awayYEvalZero,
     awayYEvalZero, Proj.SpecMap_awayLift_awayι_eq _ _ one_pos
       (GradedFunLike.map_mem (variableChangeGradedHom W C) hY) one_pos _ hFY,

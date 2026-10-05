@@ -15,6 +15,7 @@ import Mathlib.Topology.MetricSpace.HausdorffDimension
 import TauCeti.Geometry.Euclidean.Angle.Unoriented.CrossProduct
 import TauCeti.Geometry.Manifold.Instances.Sphere
 import TauCeti.Geometry.Manifold.TubularNeighborhood.Euclidean
+import TauCeti.Topology.Homeomorph.SetCongr
 
 /-!
 # Solid torus neighbourhoods of knots
@@ -54,6 +55,8 @@ onto the normal plane, and `n₂ z` is the cross product of the unit tangent wit
   `S¹ × S¹` embeds.
 * `TauCeti.IsSolidTorusNeighborhood.comp`: solid torus neighbourhoods are carried along open
   embeddings of the ambient space.
+* `TauCeti.IsSolidTorusNeighborhood.exteriorFrontierHomeomorph`: the framing identifies the torus
+  with the frontier of the exterior.
 * `TauCeti.exists_isSolidTorusNeighborhood`: a `C²` embedded circle in `ℝ³` has a solid torus
   neighbourhood inside any neighbourhood of its image.
 
@@ -184,6 +187,21 @@ torus when the ambient space is Hausdorff. -/
 theorem isEmbedding_comp_boundaryInclusion (h : IsSolidTorusNeighborhood f Φ) :
     IsEmbedding (Φ ∘ SolidTorus.boundaryInclusion) :=
   h.isEmbedding.comp SolidTorus.isEmbedding_boundaryInclusion
+
+/-- The framing identifies the boundary torus with the frontier of the knot exterior,
+the complement of the image of the open solid torus. -/
+noncomputable def exteriorFrontierHomeomorph [T2Space X] (h : IsSolidTorusNeighborhood f Φ) :
+    Circle × Circle ≃ₜ frontier (Φ '' {p | ‖(p.1 : ℂ)‖ < 1})ᶜ :=
+  h.isEmbedding_comp_boundaryInclusion.toHomeomorph.trans
+    (Homeomorph.setCongr (by rw [frontier_compl, h.frontier_image]))
+
+/-- The frontier parametrization is the restriction of the solid torus framing. -/
+@[simp]
+theorem coe_exteriorFrontierHomeomorph_apply [T2Space X]
+    (h : IsSolidTorusNeighborhood f Φ) (q : Circle × Circle) :
+    (h.exteriorFrontierHomeomorph q : X) = Φ (SolidTorus.boundaryInclusion q) := by
+  simp only [exteriorFrontierHomeomorph, Homeomorph.trans_apply,
+    Homeomorph.setCongr_apply, IsEmbedding.toHomeomorph_apply_coe, Function.comp_apply]
 
 end IsSolidTorusNeighborhood
 
