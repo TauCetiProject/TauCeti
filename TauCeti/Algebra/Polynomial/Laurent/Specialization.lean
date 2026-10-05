@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Basis.Basic
 public import Mathlib.LinearAlgebra.Quotient.Basic
+public import Mathlib.RingTheory.TensorProduct.IsBaseChangeFree
 public import TauCeti.Algebra.Polynomial.Laurent.Basic
 
 /-!
@@ -32,13 +33,16 @@ turning multiplication by `q` into multiplication by `ε`.
 * `TauCeti.LaurentSpecialization.mk`: the specialization map `N → N_ε`.
 * `TauCeti.LaurentSpecialization.lift`: the universal property for `R`-linear maps.
 * `TauCeti.LaurentSpecialization.map`: specialize a Laurent-linear map.
-* `TauCeti.LaurentSpecialization.basis`: specialize a Laurent-module basis coefficientwise.
+* `TauCeti.LaurentSpecialization.basis`: specialize a Laurent-module basis coefficientwise, as the
+  base-change basis `IsBaseChange.basis`.
 
 ## Main results
 
 * `TauCeti.LaurentSpecialization.mk_smul`: a Laurent scalar acts on `N_ε` by its value at `ε`.
 * `TauCeti.LaurentSpecialization.lift_mk` and `TauCeti.LaurentSpecialization.hom_ext`: the
   universal property.
+* `TauCeti.LaurentSpecialization.isBaseChange`: the specialization is the base change along
+  evaluation at `ε`, for any algebra structure on `R` given by that evaluation.
 -/
 
 public section
@@ -154,86 +158,68 @@ theorem map_comp (g : M →ₗ[R[T;T⁻¹]] P) (f : N →ₗ[R[T;T⁻¹]] M) :
 
 section Basis
 
+open scoped TensorProduct
+
+/-- Under an `R[q,q⁻¹]`-algebra structure on `R` given by evaluation at `ε`, Laurent scalars and
+coefficients act compatibly on the specialization at `ε`. -/
+theorem isScalarTower [Algebra R[T;T⁻¹] R] (h : ∀ p, algebraMap R[T;T⁻¹] R p = laurentEval ε p) :
+    IsScalarTower R[T;T⁻¹] R (LaurentSpecialization ε N) :=
+  ⟨fun p r y => by
+    obtain ⟨x, rfl⟩ := mk_surjective ε y
+    rw [Algebra.smul_def, mul_smul, h, mk_apply, ← Submodule.Quotient.mk_smul, ← mk_apply,
+      mk_smul]⟩
+
+/-- **The specialization at `ε` is the base change along evaluation at `ε`.**  This is stated for
+any `R[q,q⁻¹]`-algebra structure on `R` whose algebra map is `TauCeti.laurentEval ε`, since that
+structure depends on `ε` and so is not an instance. -/
+theorem isBaseChange [Algebra R[T;T⁻¹] R] (h : ∀ p, algebraMap R[T;T⁻¹] R p = laurentEval ε p)
+    [IsScalarTower R[T;T⁻¹] R (LaurentSpecialization ε N)] :
+    IsBaseChange R (mk ε : N →ₗ[R[T;T⁻¹]] LaurentSpecialization ε N) := by
+  have hC (r : R) : algebraMap R R[T;T⁻¹] r • (1 : R) = r := by
+    rw [Algebra.smul_def, h, AlgHom.commutes, Algebra.algebraMap_self, RingHom.id_apply, mul_one]
+  let g : N →ₗ[R] R ⊗[R[T;T⁻¹]] N :=
+    { toFun x := 1 ⊗ₜ x
+      map_add' := TensorProduct.tmul_add 1
+      map_smul' r x := by
+        rw [RingHom.id_apply, ← algebraMap_smul R[T;T⁻¹] r x, ← TensorProduct.smul_tmul, hC,
+          TensorProduct.smul_tmul', smul_eq_mul, mul_one] }
+  have hg (x : N) : g ((T 1 : R[T;T⁻¹]) • x) = (ε : R) • g x := by
+    change 1 ⊗ₜ ((T 1 : R[T;T⁻¹]) • x) = (ε : R) • (1 ⊗ₜ[R[T;T⁻¹]] x)
+    rw [← TensorProduct.smul_tmul, Algebra.smul_def, h, laurentEval_T_one, mul_one,
+      TensorProduct.smul_tmul', smul_eq_mul, mul_one]
+  refine ⟨Function.LeftInverse.injective (g := lift ε g hg) fun z => ?_, fun y => ?_⟩
+  · induction z with
+    | tmul s x => simp [g, TensorProduct.smul_tmul']
+    | add z w hz hw => rw [map_add, map_add, hz, hw]
+  · obtain ⟨x, rfl⟩ := mk_surjective ε y
+    exact ⟨1 ⊗ₜ x, by simp⟩
+
 variable {ι : Type*}
 
-/-- The coordinate map of a Laurent basis, with every coefficient evaluated at the
-specialization point. -/
-private noncomputable def basisCoordinates (b : Module.Basis ι R[T;T⁻¹] N) : N →ₗ[R] ι →₀ R :=
-  (Finsupp.mapRange.linearMap (laurentEval ε).toLinearMap).comp
-    (b.repr.toLinearMap.restrictScalars R)
-
-private theorem basisCoordinates_T (b : Module.Basis ι R[T;T⁻¹] N) (x : N) :
-    basisCoordinates ε b ((T 1 : R[T;T⁻¹]) • x) = (ε : R) • basisCoordinates ε b x := by
-  ext i
-  simp [basisCoordinates]
-  ac_rfl
-
-/-- The coordinate map on a specialized free Laurent module. Its coefficients lie in the base
-ring because Laurent coefficients are evaluated at the specialization point. -/
-private noncomputable def basisRepr (b : Module.Basis ι R[T;T⁻¹] N) :
-    LaurentSpecialization ε N →ₗ[R] ι →₀ R :=
-  lift ε (basisCoordinates ε b) (basisCoordinates_T ε b)
-
-/-- Coordinates of a specialized element are obtained by evaluating its Laurent coordinates. -/
-@[simp]
-private theorem basisRepr_mk (b : Module.Basis ι R[T;T⁻¹] N) (x : N) :
-    basisRepr ε b (mk ε x) =
-      Finsupp.mapRange.linearMap (laurentEval ε).toLinearMap (b.repr x) := by
-  rw [basisRepr, lift_mk]
-  simp [basisCoordinates]
-
-/-- Reconstruct a specialized element from its evaluated basis coordinates. -/
-private noncomputable def basisLinearCombination (b : Module.Basis ι R[T;T⁻¹] N) :
-    (ι →₀ R) →ₗ[R] LaurentSpecialization ε N :=
-  Finsupp.linearCombination R fun i ↦ mk ε (b i)
-
-private theorem basisLinearCombination_basisRepr (b : Module.Basis ι R[T;T⁻¹] N)
-    (x : LaurentSpecialization ε N) :
-    basisLinearCombination ε b (basisRepr ε b x) = x := by
-  obtain ⟨x, rfl⟩ := mk_surjective ε x
-  rw [basisRepr_mk]
-  have h (z : ι →₀ R[T;T⁻¹]) :
-      basisLinearCombination ε b
-          (Finsupp.mapRange.linearMap (laurentEval ε).toLinearMap z) =
-        mk ε (Finsupp.linearCombination R[T;T⁻¹] b z) := by
-    induction z using Finsupp.induction_linear with
-    | zero => simp
-    | add z w hz hw =>
-      rw [map_add, map_add, hz, hw, map_add]
-      exact (map_add (mk ε) _ _).symm
-    | single i p => simp [basisLinearCombination, mk_smul]
-  rw [h, b.linearCombination_repr]
-
-private theorem basisRepr_basisLinearCombination (b : Module.Basis ι R[T;T⁻¹] N)
-    (x : ι →₀ R) :
-    basisRepr ε b (basisLinearCombination ε b x) = x := by
-  induction x using Finsupp.induction_linear with
-  | zero => simp
-  | add x y hx hy => simp [hx, hy]
-  | single i r => simp [basisLinearCombination]
-
-/-- A Laurent-module basis specializes to a basis over the coefficient ring. Its vectors are the
-classes of the original basis vectors, and its coordinates are obtained by evaluating Laurent
-coordinates at the specialization point. -/
+/-- A Laurent-module basis specializes to a basis over the coefficient ring. It is the base-change
+basis `IsBaseChange.basis` along evaluation at `ε`: its vectors are the classes of the original
+basis vectors, and its coordinates are obtained by evaluating Laurent coordinates at `ε`. -/
 noncomputable def basis (b : Module.Basis ι R[T;T⁻¹] N) :
     Module.Basis ι R (LaurentSpecialization ε N) :=
-  Module.Basis.ofRepr
-    { basisRepr ε b with
-      invFun := basisLinearCombination ε b
-      left_inv := basisLinearCombination_basisRepr ε b
-      right_inv := basisRepr_basisLinearCombination ε b }
+  letI : Algebra R[T;T⁻¹] R := (laurentEval ε).toAlgebra
+  haveI := isScalarTower ε (N := N) fun _ ↦ rfl
+  (isBaseChange ε fun _ ↦ rfl).basis b
 
 /-- Specializing a basis specializes each basis vector. -/
 @[simp]
 theorem basis_apply (b : Module.Basis ι R[T;T⁻¹] N) (i : ι) :
     basis ε b i = mk ε (b i) := by
-  simp [basis, basisLinearCombination]
+  let _ : Algebra R[T;T⁻¹] R := (laurentEval ε).toAlgebra
+  have := isScalarTower ε (N := N) fun _ ↦ rfl
+  exact IsBaseChange.basis_apply ..
 
 /-- Coordinates in the specialized basis are evaluated Laurent coordinates. -/
 @[simp]
 theorem basis_repr_mk_apply (b : Module.Basis ι R[T;T⁻¹] N) (x : N) (i : ι) :
     (basis ε b).repr (mk ε x) i = laurentEval ε (b.repr x i) := by
-  simp [basis, basisRepr_mk]
+  let _ : Algebra R[T;T⁻¹] R := (laurentEval ε).toAlgebra
+  have := isScalarTower ε (N := N) fun _ ↦ rfl
+  exact IsBaseChange.basis_repr_comp_apply ..
 
 end Basis
 
