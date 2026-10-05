@@ -170,9 +170,10 @@ theorem continuous_integratedCharacterToPontryaginDual :
     hnum.continuousAt.div hden.continuousAt (by simpa only [a] using hf)
   have hden_ne : ∀ᶠ p in 𝓝 (ω, g), p.1.1 a ≠ 0 :=
     hden.continuousAt.eventually_ne (by simpa only [a] using hf)
+  change ContinuousAt (fun p : D × Multiplicative G => (θ p.1 p.2 : ℂ)) (ω, g)
   apply hquot.congr_of_eventuallyEq
   filter_upwards [hden_ne] with p hp
-  exact π.coe_integratedCharacterToPontryaginDual_apply_eq_div
+  simpa only [θ, v, a, ofAdd_toAdd] using π.coe_integratedCharacterToPontryaginDual_apply_eq_div
     hcont hbdd A hA hπ p.1 p.2.toAdd f hp
 
 end ContRepresentation
