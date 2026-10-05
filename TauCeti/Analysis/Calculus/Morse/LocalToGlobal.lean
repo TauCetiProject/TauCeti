@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.Morse.FlowExistence
 public import TauCeti.Analysis.Calculus.Morse.LocalInvariantManifold
+public import TauCeti.Dynamics.Flow.Graph
 
 /-!
 # From local invariant disks to global stable sets
@@ -36,11 +37,9 @@ manifold structures and intersected to form Morse trajectory spaces.
 * `IsNondegenerateCriticalPoint.exists_stableSet_eq_biUnion_orbit_localStableSet` and
   `IsNondegenerateCriticalPoint.exists_unstableSet_eq_biUnion_orbit_localUnstableSet`: positive
   radii for which the local sets generate the global stable and unstable sets.
-* `isEmbedding_flow_graph`: flowing a graph over the range of an idempotent continuous linear map
-  gives another topological embedding.
 * `IsNondegenerateCriticalPoint.isEmbedding_stableGraph_orbit` and
-  `IsNondegenerateCriticalPoint.isEmbedding_unstableGraph_orbit`: the stable and unstable spectral
-  specializations.
+  `IsNondegenerateCriticalPoint.isEmbedding_unstableGraph_orbit`: flowing a graph over the stable
+  or unstable spectral subspace gives another topological embedding.
 * `contDiffAt_negativeGradientFlow_graph`: when a graph and the function are `C¹` and `C²`
   respectively, its transported parameterization is `C¹`.
 
@@ -254,21 +253,6 @@ theorem contDiffAt_negativeGradientFlow_graph (hf : LipschitzWith K (∇ f))
     ContDiffAt ℝ 1 (fun w ↦ negativeGradientFlow f hf t (x + (w + g w))) v :=
   (contDiff_negativeGradientFlow_apply f hf hfs t).contDiffAt.comp v
     (contDiffAt_const.add (contDiffAt_id.add hg))
-
-omit [FiniteDimensional ℝ E] [CompleteSpace E] in
-/-- A graph over the range of an idempotent continuous linear map remains embedded after
-translation and transport by any fixed time of a flow. -/
-theorem isEmbedding_flow_graph (φ : Flow ℝ E) (P : E →L[ℝ] E) (hP : IsIdempotentElem P)
-    (g : E → E) (hPg : ∀ v ∈ P.range, P (g v) = 0) (hg : ContinuousOn g P.range)
-    (x : E) (t : ℝ) :
-    IsEmbedding (fun v : P.range ↦ φ t (x + ((v : E) + g (v : E)))) := by
-  have hgraph : IsEmbedding (fun v : P.range ↦ (v : E) + g (v : E)) :=
-    ContinuousLinearMap.isEmbedding_graph P hP g hPg hg
-  have hcomp := φ.toHomeomorph t |>.isEmbedding.comp
-    ((Homeomorph.addLeft x).isEmbedding.comp hgraph)
-  convert hcomp using 1
-  funext v
-  simp [Function.comp_apply, Homeomorph.addLeft]
 
 namespace IsNondegenerateCriticalPoint
 
