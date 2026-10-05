@@ -62,7 +62,7 @@ AINTLIB `LeanModularForms` project
   invariance passes to integer powers, and an eigenvalue law survives multiplication on both
   sides by powers of an invariance.
 * `Subgroup.IsArithmetic.isCusp_of_isCusp`: any two arithmetic groups have the same cusps.
-* `TauCeti.ModularForm.eq_zero_of_eq_const`: a constant modular form of nonzero weight
+* `TauCeti.ModularForm.eq_zero_of_eq_const`: a constant slash-invariant form of nonzero weight
   vanishes when its group has finite-index intersection with the modular group.
 * `ModularForm.mem_range_ofLeₗ_iff`, `CuspForm.mem_range_ofLeₗ_iff`: for `Γ' ≤ Γ` with every
   cusp of `Γ` a cusp of `Γ'`, a form for `Γ'` extends to `Γ` exactly when it is `Γ`-slash
@@ -486,11 +486,12 @@ theorem exists_mem_lowerLeft_ne_zero [Subgroup.IsFiniteRelIndex Γ 𝒮ℒ] :
   simp only [RingHom.mapMatrix_apply, Matrix.map_apply, he]
   simp [algebraMap_int_eq, hn.ne']
 
-/-- A modular form of nonzero weight whose group has finite-index intersection with the modular
-group cannot be a nonzero constant. -/
+/-- A slash-invariant form of nonzero weight whose group has finite-index intersection with the
+modular group cannot be a nonzero constant. -/
 theorem eq_zero_of_eq_const [Γ.HasDetOne] [Subgroup.IsFiniteRelIndex Γ 𝒮ℒ]
-    {f : ModularForm Γ k} {c : ℂ} (hf : ⇑f = Function.const ℍ c) (hk : k ≠ 0) : c = 0 := by
+    {F : Type*} [FunLike F ℍ ℂ] [SlashInvariantFormClass F Γ k] {f : F} {c : ℂ}
+    (hf : ⇑f = Function.const ℍ c) (hk : k ≠ 0) : c = 0 := by
   obtain ⟨γ, hγ, hc⟩ := exists_mem_lowerLeft_ne_zero (Γ := Γ)
-  exact eq_zero_of_eq_const_of_weight_ne_zero (f := f.toSlashInvariantForm) hf hk hγ hc
+  exact eq_zero_of_eq_const_of_weight_ne_zero hf hk hγ hc
 
 end TauCeti.ModularForm
