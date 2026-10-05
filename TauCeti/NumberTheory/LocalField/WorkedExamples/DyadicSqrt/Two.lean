@@ -38,7 +38,8 @@ extension with its quadratic subextension: the third lower group of `ℚ₂(√2
 * `TauCeti.DyadicSqrtTwo.adjoin_sqrtTwo_eq_top` and
   `TauCeti.DyadicSqrtTwo.adjoin_integerSqrtTwo_eq_top`: field and integral generation.
 * `TauCeti.DyadicSqrtTwo.irreducible_integerSqrtTwo`: the generator is a uniformizer.
-* `TauCeti.DyadicSqrtTwo.isEisensteinAt_X_sq_sub_two` and `TauCeti.DyadicSqrtTwo.isRoot`:
+* `TauCeti.DyadicSqrtTwo.isEisensteinAt_X_sq_sub_two` and
+  `TauCeti.DyadicSqrtTwo.isRoot_integerSqrtTwo`:
   the Eisenstein polynomial and its integral root.
 * `TauCeti.DyadicSqrtTwo.finrank_eq_two`, `TauCeti.DyadicSqrtTwo.ramificationIndex_eq_two`,
   `TauCeti.DyadicSqrtTwo.absoluteRamificationIndex_eq_two`,
@@ -113,15 +114,15 @@ def sqrtTwo : DyadicSqrtTwo := AdjoinRoot.root (X ^ 2 - C 2 : ℚ_[2][X])
 
 /-- The defining equation of the generator `√2`. -/
 @[simp]
-theorem sqrtTwo_sq : sqrtTwo ^ 2 = 2 := by
-  convert! TauCeti.AdjoinRoot.root_sq (2 : ℚ_[2]) using 1
+theorem sqrtTwo_sq : sqrtTwo ^ 2 = 2 :=
+  (TauCeti.AdjoinRoot.root_sq (2 : ℚ_[2])).trans (map_ofNat _ 2)
 
 /-- The minimal polynomial of `√2` over `ℚ₂` is `X² - 2`. -/
 @[simp]
 theorem minpoly_sqrtTwo : minpoly ℚ_[2] sqrtTwo = X ^ 2 - C 2 := by
-  convert! AdjoinRoot.minpoly_root
-    (Fact.out : Irreducible (X ^ 2 - C 2 : ℚ_[2][X])).ne_zero using 1
-  simp [leadingCoeff_X_pow_sub_C (by norm_num : 0 < (2 : ℕ))]
+  exact (AdjoinRoot.minpoly_root
+    (Fact.out : Irreducible (X ^ 2 - C 2 : ℚ_[2][X])).ne_zero).trans
+    (by simp [leadingCoeff_X_pow_sub_C (by norm_num : 0 < (2 : ℕ))])
 
 /-- `√2` generates `ℚ₂(√2)` as a field extension of `ℚ₂`. -/
 theorem adjoin_sqrtTwo_eq_top : ℚ_[2]⟮sqrtTwo⟯ = ⊤ :=
@@ -145,14 +146,16 @@ def integerSqrtTwo : 𝒪[DyadicSqrtTwo] :=
 @[simp]
 theorem coe_integerSqrtTwo : (integerSqrtTwo : DyadicSqrtTwo) = sqrtTwo := (rfl)
 
+@[simp]
+private theorem coe_ofNat_two : ((2 : 𝒪[DyadicSqrtTwo]) : DyadicSqrtTwo) = 2 :=
+  map_ofNat (Subring.subtype 𝒪[DyadicSqrtTwo]) 2
+
 /-- The integer generator `√2` is a root of `X² - 2` over `𝒪[ℚ₂]`. -/
-theorem isRoot :
+theorem isRoot_integerSqrtTwo :
     ((X ^ 2 - C 2 : 𝒪[ℚ_[2]][X]).map
       (algebraMap 𝒪[ℚ_[2]] 𝒪[DyadicSqrtTwo])).IsRoot integerSqrtTwo := by
-  have htwoL : ((2 : 𝒪[DyadicSqrtTwo]) : DyadicSqrtTwo) = 2 :=
-    map_ofNat (Subring.subtype 𝒪[DyadicSqrtTwo]) 2
   apply Subtype.ext
-  simp [map_ofNat, htwoL]
+  simp [map_ofNat]
 
 /-- The polynomial `X² - 2` is Eisenstein over the integer ring of `ℚ₂`. -/
 theorem isEisensteinAt_X_sq_sub_two :
@@ -161,14 +164,14 @@ theorem isEisensteinAt_X_sq_sub_two :
 
 /-- `√2` is a uniformizer of the integer ring of `ℚ₂(√2)`. -/
 theorem irreducible_integerSqrtTwo : Irreducible integerSqrtTwo :=
-  irreducible_of_eisenstein_adjoin_eq_top _ isEisensteinAt_X_sq_sub_two _ isRoot
+  irreducible_of_eisenstein_adjoin_eq_top _ isEisensteinAt_X_sq_sub_two _ isRoot_integerSqrtTwo
     adjoin_sqrtTwo_eq_top
 
 /-- The ramification index of `ℚ₂(√2)/ℚ₂` is two. -/
 @[simp]
 theorem ramificationIndex_eq_two : ramificationIndex ℚ_[2] DyadicSqrtTwo = 2 := by
   simpa using ramificationIndex_eq_natDegree_of_eisenstein_adjoin_eq_top
-    _ isEisensteinAt_X_sq_sub_two _ isRoot adjoin_sqrtTwo_eq_top
+    _ isEisensteinAt_X_sq_sub_two _ isRoot_integerSqrtTwo adjoin_sqrtTwo_eq_top
 
 /-- The absolute ramification index of `ℚ₂(√2)` is two. -/
 @[simp high] -- Compute the index before the general valuation comparison changes its form.
@@ -179,7 +182,8 @@ theorem absoluteRamificationIndex_eq_two : absoluteRamificationIndex DyadicSqrtT
 /-- The residue degree of `ℚ₂(√2)/ℚ₂` is one. -/
 @[simp]
 theorem inertiaDegree_eq_one : inertiaDegree ℚ_[2] DyadicSqrtTwo = 1 :=
-  inertiaDegree_eq_one_of_eisenstein_adjoin_eq_top _ isEisensteinAt_X_sq_sub_two _ isRoot
+  inertiaDegree_eq_one_of_eisenstein_adjoin_eq_top _ isEisensteinAt_X_sq_sub_two _
+    isRoot_integerSqrtTwo
     adjoin_sqrtTwo_eq_top
 
 /-- `ℚ₂(√2)/ℚ₂` is totally ramified. -/
@@ -200,7 +204,7 @@ theorem not_isUnramified : ¬IsUnramified ℚ_[2] DyadicSqrtTwo := by
 /-- The ring of integers is `𝒪[ℚ₂][√2]`. -/
 theorem adjoin_integerSqrtTwo_eq_top : Algebra.adjoin 𝒪[ℚ_[2]] {integerSqrtTwo} = ⊤ :=
   algebra_adjoin_eq_top_of_eisenstein_adjoin_eq_top
-    isEisensteinAt_X_sq_sub_two isRoot adjoin_sqrtTwo_eq_top
+    isEisensteinAt_X_sq_sub_two isRoot_integerSqrtTwo adjoin_sqrtTwo_eq_top
 
 /-- Every nonidentity automorphism sends `√2` to `-√2`. -/
 theorem apply_sqrtTwo_of_ne_one {σ : DyadicSqrtTwo ≃ₐ[ℚ_[2]] DyadicSqrtTwo} (hσ : σ ≠ 1) :
@@ -216,11 +220,9 @@ theorem addVal_smul_integerSqrtTwo_sub_of_ne_one
     IsDiscreteValuationRing.addVal 𝒪[DyadicSqrtTwo]
       (σ • integerSqrtTwo - integerSqrtTwo) = 3 := by
   have h : σ • integerSqrtTwo - integerSqrtTwo = -(2 * integerSqrtTwo) := by
-    have htwoL : ((2 : 𝒪[DyadicSqrtTwo]) : DyadicSqrtTwo) = 2 :=
-      map_ofNat (Subring.subtype 𝒪[DyadicSqrtTwo]) 2
     apply Subtype.ext
     simp only [AddSubgroupClass.coe_sub, AlgEquiv.coe_smul_integerRing, coe_integerSqrtTwo,
-      apply_sqrtTwo_of_ne_one hσ, Subring.coe_neg, Subring.coe_mul, htwoL]
+      apply_sqrtTwo_of_ne_one hσ, Subring.coe_neg, Subring.coe_mul, coe_ofNat_two]
     ring
   have htwo : (2 : 𝒪[DyadicSqrtTwo]) = algebraMap 𝒪[ℚ_[2]] 𝒪[DyadicSqrtTwo] 2 :=
     (map_ofNat _ 2).symm
