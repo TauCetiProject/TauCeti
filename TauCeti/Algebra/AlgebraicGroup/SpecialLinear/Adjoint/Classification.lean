@@ -125,14 +125,10 @@ weights of `SL_{r+1}`. -/
 def diagonalRootIndexEquivNontrivialAdjointWeights :
     SplitTorus.CoordinateRootIndex (Fin (r + 1)) ≃
       {α // α ∈ Derivation.nontrivialAdjointWeights (diagonalTorusCoordinateMap r R).hom} :=
-  Equiv.ofBijective
-    (fun p ↦ ⟨Multiplicative.ofAdd ((diagonalRootDatum.{u} r).root p),
-      ofAdd_root_mem_nontrivialAdjointWeights p⟩)
-    ⟨fun p q h ↦ (diagonalRootDatum.{u} r).root.injective
-        (Multiplicative.ofAdd.injective (congrArg Subtype.val h)),
-      fun ⟨α, hα⟩ ↦ by
-        obtain ⟨p, hp⟩ := (mem_nontrivialAdjointWeights_iff_exists_diagonalRoot α).mp hα
-        exact ⟨p, Subtype.ext hp.symm⟩⟩
+  (Equiv.ofInjective
+    (fun p ↦ Multiplicative.ofAdd ((diagonalRootDatum.{u} r).root p))
+    (Multiplicative.ofAdd.injective.comp (diagonalRootDatum.{u} r).root.injective)).trans
+    (Set.equivOfEq range_ofAdd_diagonalRootDatum_root_eq_nontrivialAdjointWeights)
 
 /-- The root-index equivalence sends an index to its root character. -/
 @[simp]

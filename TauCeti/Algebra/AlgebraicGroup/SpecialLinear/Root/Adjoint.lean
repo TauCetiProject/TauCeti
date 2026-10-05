@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Adjoint.Comodule
+public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Adjoint.Classification
 public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Root.Differential
 
 /-!
