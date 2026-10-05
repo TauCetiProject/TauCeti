@@ -247,15 +247,14 @@ section CupZeroOne
 variable (G : Type uG) [Group G] [TopologicalSpace G]
   (M : Type uM) [AddCommGroup M] [TopologicalSpace M] [DistribMulAction G M]
   (N : Type uN) [AddCommGroup N] [TopologicalSpace N] [IsTopologicalAddGroup N]
-    [DistribMulAction G N] [ContinuousSMul G N]
+    [DistribMulAction G N]
   (P : Type uP) [AddCommGroup P] [TopologicalSpace P] [IsTopologicalAddGroup P]
-    [DistribMulAction G P] [ContinuousSMul G P]
+    [DistribMulAction G P]
   (μ : M →+ N →+ P) (hμ : Continuous fun p : M × N => μ p.1 p.2)
   (hequiv : ∀ (g : G) (m : M) (x : N), μ (g • m) (g • x) = g • μ m x)
 
 include hμ hequiv
 
-omit [ContinuousSMul G N] [ContinuousSMul G P] in
 /-- **The `(0,1)` cup of an invariant element with a continuous `1`-cocycle is a continuous
 `1`-cocycle.** -/
 theorem cup01_mem_Z1 (m : H0 G M) {b : G → N} (hb : b ∈ Z1 G N) :
@@ -265,6 +264,8 @@ theorem cup01_mem_Z1 (m : H0 G M) {b : G → N} (hb : b ∈ Z1 G N) :
   -- beta-reduce the cup cochain; see the implementation notes.
   change μ (m : M) (b (g * h)) = g • μ (m : M) (b h) + μ (m : M) (b g)
   rw [(mem_Z1_iff.1 hb).2 g h, map_add, pairingLeft_smul μ hequiv m g (b h)]
+
+variable [ContinuousSMul G N] [ContinuousSMul G P]
 
 /-- **The `(0,1)` cup product**, `(m ⌣ b) g = μ m (b g)`. For invariant `m` this is the
 coefficient map induced by `μ m`. -/
@@ -301,16 +302,15 @@ section CupOneZero
 
 variable (G : Type uG) [Group G] [TopologicalSpace G]
   (M : Type uM) [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
-    [DistribMulAction G M] [ContinuousSMul G M]
+    [DistribMulAction G M]
   (N : Type uN) [AddCommGroup N] [TopologicalSpace N] [DistribMulAction G N]
   (P : Type uP) [AddCommGroup P] [TopologicalSpace P] [IsTopologicalAddGroup P]
-    [DistribMulAction G P] [ContinuousSMul G P]
+    [DistribMulAction G P]
   (μ : M →+ N →+ P) (hμ : Continuous fun p : M × N => μ p.1 p.2)
   (hequiv : ∀ (g : G) (m : M) (x : N), μ (g • m) (g • x) = g • μ m x)
 
 include hμ hequiv
 
-omit [ContinuousSMul G M] [ContinuousSMul G P] in
 /-- **The `(1,0)` cup of a continuous `1`-cocycle with an invariant element is a continuous
 `1`-cocycle.** The translation factor `g •` is the one the general inhomogeneous formula carries;
 it disappears only because `n` is invariant. -/
@@ -324,6 +324,8 @@ theorem cup10_mem_Z1 {a : G → M} (ha : a ∈ Z1 G M) (n : H0 G N) :
   -- beta-reduce the cup cochain; see the implementation notes.
   change μ (a (g * h)) (n : N) = g • μ (a h) (n : N) + μ (a g) (n : N)
   rw [(mem_Z1_iff.1 ha).2 g h, hadd, pairingRight_smul μ hequiv n g (a h)]
+
+variable [ContinuousSMul G M] [ContinuousSMul G P]
 
 /-- **The `(1,0)` cup product**, `(a ⌣ n) g = μ (a g) (g • n)`. For invariant `n` this is the
 coefficient map induced by `m ↦ μ m n`. -/
@@ -359,18 +361,17 @@ end CupOneZero
 
 section CupZeroTwo
 
-variable (G : Type uG) [Group G] [TopologicalSpace G] [ContinuousMul G]
+variable (G : Type uG) [Group G] [TopologicalSpace G]
   (M : Type uM) [AddCommGroup M] [TopologicalSpace M] [DistribMulAction G M]
   (N : Type uN) [AddCommGroup N] [TopologicalSpace N] [IsTopologicalAddGroup N]
-    [DistribMulAction G N] [ContinuousSMul G N]
+    [DistribMulAction G N]
   (P : Type uP) [AddCommGroup P] [TopologicalSpace P] [IsTopologicalAddGroup P]
-    [DistribMulAction G P] [ContinuousSMul G P]
+    [DistribMulAction G P]
   (μ : M →+ N →+ P) (hμ : Continuous fun p : M × N => μ p.1 p.2)
   (hequiv : ∀ (g : G) (m : M) (x : N), μ (g • m) (g • x) = g • μ m x)
 
 include hμ hequiv
 
-omit [ContinuousMul G] [ContinuousSMul G N] [ContinuousSMul G P] in
 /-- **The `(0,2)` cup of an invariant element with a continuous `2`-cocycle is a continuous
 `2`-cocycle.** -/
 theorem cup02_mem_Z2 (m : H0 G M) {b : G × G → N} (hb : b ∈ Z2 G N) :
@@ -382,6 +383,8 @@ theorem cup02_mem_Z2 (m : H0 G M) {b : G × G → N} (hb : b ∈ Z2 G N) :
     g • μ (m : M) (b (h, j)) + μ (m : M) (b (g, h * j))
   rw [← pairingLeft_smul μ hequiv m g (b (h, j)), ← map_add, ← map_add,
     (mem_Z2_iff.1 hb).2 g h j]
+
+variable [ContinuousMul G] [ContinuousSMul G N] [ContinuousSMul G P]
 
 /-- **The `(0,2)` cup product**, `(m ⌣ b) (g, h) = μ m (b (g, h))`. -/
 noncomputable def explicitCup02 : H0 G M →+ H2 G N →+ H2 G P :=
@@ -415,18 +418,17 @@ end CupZeroTwo
 
 section CupTwoZero
 
-variable (G : Type uG) [Group G] [TopologicalSpace G] [ContinuousMul G]
+variable (G : Type uG) [Group G] [TopologicalSpace G]
   (M : Type uM) [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
-    [DistribMulAction G M] [ContinuousSMul G M]
+    [DistribMulAction G M]
   (N : Type uN) [AddCommGroup N] [TopologicalSpace N] [DistribMulAction G N]
   (P : Type uP) [AddCommGroup P] [TopologicalSpace P] [IsTopologicalAddGroup P]
-    [DistribMulAction G P] [ContinuousSMul G P]
+    [DistribMulAction G P]
   (μ : M →+ N →+ P) (hμ : Continuous fun p : M × N => μ p.1 p.2)
   (hequiv : ∀ (g : G) (m : M) (x : N), μ (g • m) (g • x) = g • μ m x)
 
 include hμ hequiv
 
-omit [ContinuousMul G] [ContinuousSMul G M] [ContinuousSMul G P] in
 /-- **The `(2,0)` cup of a continuous `2`-cocycle with an invariant element is a continuous
 `2`-cocycle.** -/
 theorem cup20_mem_Z2 {a : G × G → M} (ha : a ∈ Z2 G M) (n : H0 G N) :
@@ -440,6 +442,8 @@ theorem cup20_mem_Z2 {a : G × G → M} (ha : a ∈ Z2 G M) (n : H0 G N) :
   change μ (a (g * h, j)) (n : N) + μ (a (g, h)) (n : N) =
     g • μ (a (h, j)) (n : N) + μ (a (g, h * j)) (n : N)
   rw [← pairingRight_smul μ hequiv n g (a (h, j)), ← hadd, ← hadd, (mem_Z2_iff.1 ha).2 g h j]
+
+variable [ContinuousMul G] [ContinuousSMul G M] [ContinuousSMul G P]
 
 /-- **The `(2,0)` cup product**, `(a ⌣ n) (g, h) = μ (a (g, h)) ((g * h) • n)`. This is the last
 of the six shapes: no explicit cup goes above total degree `2`. -/
@@ -476,19 +480,20 @@ end CupTwoZero
 
 section CupOneOne
 
-variable (G : Type uG) [Group G] [TopologicalSpace G] [ContinuousMul G]
-  (M : Type uM) [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
-    [DistribMulAction G M] [ContinuousSMul G M]
-  (N : Type uN) [AddCommGroup N] [TopologicalSpace N] [IsTopologicalAddGroup N]
-    [DistribMulAction G N] [ContinuousSMul G N]
+variable (G : Type uG) [Group G] [TopologicalSpace G]
+  (M : Type uM) [AddCommGroup M] [TopologicalSpace M] [DistribMulAction G M]
+  (N : Type uN) [AddCommGroup N] [TopologicalSpace N] [DistribMulAction G N]
   (P : Type uP) [AddCommGroup P] [TopologicalSpace P] [IsTopologicalAddGroup P]
-    [DistribMulAction G P] [ContinuousSMul G P]
+    [DistribMulAction G P]
   (μ : M →+ N →+ P) (hμ : Continuous fun p : M × N => μ p.1 p.2)
   (hequiv : ∀ (g : G) (m : M) (x : N), μ (g • m) (g • x) = g • μ m x)
 
 include hμ hequiv
 
-omit [ContinuousMul G] [ContinuousSMul G M] [ContinuousSMul G P] in
+section Cocycle
+
+variable [IsTopologicalAddGroup M] [IsTopologicalAddGroup N] [ContinuousSMul G N]
+
 /-- **The `(1,1)` cup of two continuous `1`-cocycles is a continuous `2`-cocycle.** This is the
 cochain-level heart of the only shape that is not a coefficient map: the translation factor `g •`
 on the second cocycle is what turns the two `1`-cocycle identities into the `2`-cocycle
@@ -505,8 +510,43 @@ theorem cup11_mem_Z2 {a : G → M} (ha : a ∈ Z1 G M) {b : G → N} (hb : b ∈
   simp only [ha1 g h, hb1 h j, map_add, AddMonoidHom.add_apply, smul_add, mul_smul, hequiv]
   abel
 
-omit [ContinuousMul G] [IsTopologicalAddGroup M] [ContinuousSMul G M] [ContinuousSMul G N]
-  [ContinuousSMul G P] in
+/-- The `(1,1)` cup of two continuous `1`-cocycles, as a continuous `2`-cocycle. -/
+private noncomputable def cup11Cocycle (a : Z1 G M) (b : Z1 G N) : Z2 G P :=
+  ⟨fun q : G × G => μ ((a : G → M) q.1) (q.1 • (b : G → N) q.2),
+    cup11_mem_Z2 G M N P μ hμ hequiv a.2 b.2⟩
+
+/-- The `(1,1)` cup on cocycles is additive in the first variable. -/
+private theorem cup11Cocycle_add_left (a a' : Z1 G M) (b : Z1 G N) :
+    cup11Cocycle G M N P μ hμ hequiv (a + a') b =
+      cup11Cocycle G M N P μ hμ hequiv a b + cup11Cocycle G M N P μ hμ hequiv a' b :=
+  Subtype.ext (funext fun q => by simp [cup11Cocycle])
+
+/-- The `(1,1)` cup on cocycles is additive in the second variable. -/
+private theorem cup11Cocycle_add_right (a : Z1 G M) (b b' : Z1 G N) :
+    cup11Cocycle G M N P μ hμ hequiv a (b + b') =
+      cup11Cocycle G M N P μ hμ hequiv a b + cup11Cocycle G M N P μ hμ hequiv a b' :=
+  Subtype.ext (funext fun q => by simp [cup11Cocycle, smul_add])
+
+/-- The `(1,1)` cup on cocycles vanishes on the zero cocycle. -/
+private theorem cup11Cocycle_zero_left (b : Z1 G N) :
+    cup11Cocycle G M N P μ hμ hequiv 0 b = 0 :=
+  Subtype.ext (funext fun q => by simp [cup11Cocycle])
+
+/-- The `(1,1)` cup on cocycles, biadditive by construction. -/
+private noncomputable def cocyclesCup11 : Z1 G M →+ Z1 G N →+ Z2 G P where
+  toFun a :=
+    { toFun := fun b => cup11Cocycle G M N P μ hμ hequiv a b
+      map_zero' := Subtype.ext (funext fun q => by simp [cup11Cocycle])
+      map_add' := cup11Cocycle_add_right G M N P μ hμ hequiv a }
+  map_zero' := AddMonoidHom.ext fun b => cup11Cocycle_zero_left G M N P μ hμ hequiv b
+  map_add' a a' := AddMonoidHom.ext fun b => cup11Cocycle_add_left G M N P μ hμ hequiv a a' b
+
+end Cocycle
+
+section Left
+
+variable [IsTopologicalAddGroup N]
+
 /-- **The `(1,1)` cup descends through coboundaries in the first variable**: if `a = d⁰ m` then
 `a ⌣ b = d¹ (x ↦ μ m (b x))`. -/
 theorem cup11_mem_B2_left {a : G → M} (ha : a ∈ B1 G M) {b : G → N} (hb : b ∈ Z1 G N) :
@@ -521,7 +561,12 @@ theorem cup11_mem_B2_left {a : G → M} (ha : a ∈ B1 G M) {b : G → N} (hb : 
   simp only [map_add, map_sub, AddMonoidHom.sub_apply, hequiv]
   abel
 
-omit [ContinuousMul G] [ContinuousSMul G M] [IsTopologicalAddGroup N] [ContinuousSMul G P] in
+end Left
+
+section Right
+
+variable [IsTopologicalAddGroup M] [ContinuousSMul G N]
+
 /-- **The `(1,1)` cup descends through coboundaries in the second variable**: if `b = d⁰ n` then
 `a ⌣ b = d¹ (x ↦ -μ (a x) (x • n))`. -/
 theorem cup11_mem_B2_right {a : G → M} (ha : a ∈ Z1 G M) {b : G → N} (hb : b ∈ B1 G N) :
@@ -537,39 +582,12 @@ theorem cup11_mem_B2_right {a : G → M} (ha : a ∈ Z1 G M) {b : G → N} (hb :
   simp only [mul_smul, smul_sub, smul_neg, map_add, map_sub, AddMonoidHom.add_apply, hequiv]
   abel
 
-/-- The `(1,1)` cup of two continuous `1`-cocycles, as a continuous `2`-cocycle. -/
-private noncomputable def cup11Cocycle (a : Z1 G M) (b : Z1 G N) : Z2 G P :=
-  ⟨fun q : G × G => μ ((a : G → M) q.1) (q.1 • (b : G → N) q.2),
-    cup11_mem_Z2 G M N P μ hμ hequiv a.2 b.2⟩
+end Right
 
-omit [ContinuousMul G] [ContinuousSMul G M] [ContinuousSMul G P] in
-/-- The `(1,1)` cup on cocycles is additive in the first variable. -/
-private theorem cup11Cocycle_add_left (a a' : Z1 G M) (b : Z1 G N) :
-    cup11Cocycle G M N P μ hμ hequiv (a + a') b =
-      cup11Cocycle G M N P μ hμ hequiv a b + cup11Cocycle G M N P μ hμ hequiv a' b :=
-  Subtype.ext (funext fun q => by simp [cup11Cocycle])
-
-omit [ContinuousMul G] [ContinuousSMul G M] [ContinuousSMul G P] in
-/-- The `(1,1)` cup on cocycles is additive in the second variable. -/
-private theorem cup11Cocycle_add_right (a : Z1 G M) (b b' : Z1 G N) :
-    cup11Cocycle G M N P μ hμ hequiv a (b + b') =
-      cup11Cocycle G M N P μ hμ hequiv a b + cup11Cocycle G M N P μ hμ hequiv a b' :=
-  Subtype.ext (funext fun q => by simp [cup11Cocycle, smul_add])
-
-omit [ContinuousMul G] [ContinuousSMul G M] [ContinuousSMul G P] in
-/-- The `(1,1)` cup on cocycles vanishes on the zero cocycle. -/
-private theorem cup11Cocycle_zero_left (b : Z1 G N) :
-    cup11Cocycle G M N P μ hμ hequiv 0 b = 0 :=
-  Subtype.ext (funext fun q => by simp [cup11Cocycle])
-
-/-- The `(1,1)` cup on cocycles, biadditive by construction. -/
-private noncomputable def cocyclesCup11 : Z1 G M →+ Z1 G N →+ Z2 G P where
-  toFun a :=
-    { toFun := fun b => cup11Cocycle G M N P μ hμ hequiv a b
-      map_zero' := Subtype.ext (funext fun q => by simp [cup11Cocycle])
-      map_add' := cup11Cocycle_add_right G M N P μ hμ hequiv a }
-  map_zero' := AddMonoidHom.ext fun b => cup11Cocycle_zero_left G M N P μ hμ hequiv b
-  map_add' a a' := AddMonoidHom.ext fun b => cup11Cocycle_add_left G M N P μ hμ hequiv a a' b
+variable [ContinuousMul G]
+  [IsTopologicalAddGroup M] [ContinuousSMul G M]
+  [IsTopologicalAddGroup N] [ContinuousSMul G N]
+  [ContinuousSMul G P]
 
 /-- **The `(1,1)` cup product**, the descent of the cochain formula
 `(a ⌣ b) (g, h) = μ (a g) (g • b h)`. This is the only one of the six shapes that is not a
@@ -709,21 +727,18 @@ theorem explicitCup02_eq_cup20_flip (m : H0 G M) (b : H2 G N) :
 
 end CommZeroTwo
 
-section CommOneOne
+section Homotopy
 
-variable (G : Type uG) [Group G] [TopologicalSpace G] [ContinuousMul G]
+variable (G : Type uG) [Group G] [TopologicalSpace G]
   (M : Type uM) [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
-    [DistribMulAction G M] [ContinuousSMul G M]
+    [DistribMulAction G M]
   (N : Type uN) [AddCommGroup N] [TopologicalSpace N] [IsTopologicalAddGroup N]
-    [DistribMulAction G N] [ContinuousSMul G N]
-  (P : Type uP) [AddCommGroup P] [TopologicalSpace P] [IsTopologicalAddGroup P]
-    [DistribMulAction G P] [ContinuousSMul G P]
-  (μ : M →+ N →+ P) (hμ : Continuous fun p : M × N => μ p.1 p.2)
+    [DistribMulAction G N]
+  (P : Type uP) [AddCommGroup P] [DistribMulAction G P]
+  (μ : M →+ N →+ P)
   (hequiv : ∀ (g : G) (m : M) (x : N), μ (g • m) (g • x) = g • μ m x)
 
 include hequiv in
-omit [ContinuousMul G] [ContinuousSMul G M] [ContinuousSMul G N] [TopologicalSpace P]
-  [IsTopologicalAddGroup P] [ContinuousSMul G P] in
 /-- **The homotopy behind graded commutativity in bidegree `(1,1)`.** The two cochains
 `a ⌣_μ b` and `b ⌣_{μᵒᵖ} a` need not be equal in general; their sum is the coboundary of the
 `1`-cochain `g ↦ -μ (a g) (b g)`. -/
@@ -739,8 +754,21 @@ theorem cup11_add_cup11_flip_eq_d1 {a : G → M} (ha : a ∈ Z1 G M) {b : G → 
     AddMonoidHom.add_apply, smul_neg, hequiv]
   abel
 
+end Homotopy
+
+section CommOneOne
+
+variable (G : Type uG) [Group G] [TopologicalSpace G]
+  (M : Type uM) [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
+    [DistribMulAction G M]
+  (N : Type uN) [AddCommGroup N] [TopologicalSpace N] [IsTopologicalAddGroup N]
+    [DistribMulAction G N]
+  (P : Type uP) [AddCommGroup P] [TopologicalSpace P] [IsTopologicalAddGroup P]
+    [DistribMulAction G P]
+  (μ : M →+ N →+ P) (hμ : Continuous fun p : M × N => μ p.1 p.2)
+  (hequiv : ∀ (g : G) (m : M) (x : N), μ (g • m) (g • x) = g • μ m x)
+
 include hμ hequiv in
-omit [ContinuousMul G] [ContinuousSMul G M] [ContinuousSMul G N] [ContinuousSMul G P] in
 /-- **The sum of the two `(1,1)` cup cochains is a coboundary**, by
 `TauCeti.ContCohomology.cup11_add_cup11_flip_eq_d1`; its primitive is continuous because `μ` is
 jointly continuous. -/
@@ -751,6 +779,8 @@ theorem cup11_add_cup11_flip_mem_B2 {a : G → M} (ha : a ∈ Z1 G M) {b : G →
   mem_B2_iff.2 ⟨fun g => -μ (a g) (b g),
     (hμ.comp ((mem_Z1_iff.1 ha).1.prodMk (mem_Z1_iff.1 hb).1)).neg,
     (cup11_add_cup11_flip_eq_d1 G M N P μ hequiv ha hb).symm⟩
+
+variable [ContinuousMul G] [ContinuousSMul G M] [ContinuousSMul G N] [ContinuousSMul G P]
 
 include hμ hequiv in
 /-- **Graded commutativity in bidegree `(1,1)`**, `a ⌣_μ b = -(b ⌣_{μᵒᵖ} a)`, the sign
@@ -833,7 +863,7 @@ section AssocFirstZero
 /-! The tridegrees `(0,0,r)`: the first two factors are invariant, so `μ₁` is used only through
 the `(0,0)` cup and no continuity of it is needed. -/
 
-variable (G : Type uG) [Group G] [TopologicalSpace G] [ContinuousMul G]
+variable (G : Type uG) [Group G] [TopologicalSpace G]
   (A : Type uA) [AddCommGroup A] [TopologicalSpace A] [DistribMulAction G A]
   (B : Type uB) [AddCommGroup B] [TopologicalSpace B] [DistribMulAction G B]
   (C : Type uC) [AddCommGroup C] [TopologicalSpace C] [IsTopologicalAddGroup C]
@@ -853,7 +883,6 @@ variable (G : Type uG) [Group G] [TopologicalSpace G] [ContinuousMul G]
   (hassoc : ∀ (a : A) (b : B) (c : C), μ₂ (μ₁ a b) c = ν₂ a (ν₁ b c))
 
 include hassoc in
-omit [ContinuousMul G] in
 /-- **Associativity of the cup product in tridegree `(0,0,1)`.** -/
 theorem explicitCup_assoc001 (x : H0 G A) (y : H0 G B) (z : H1 G C) :
     explicitCup01 G D C E μ₂ hμ₂ hequiv₂ (explicitCup00 G A B D μ₁ hequiv₁ x y) z =
@@ -863,6 +892,8 @@ theorem explicitCup_assoc001 (x : H0 G A) (y : H0 G B) (z : H1 G C) :
     simp only [explicitCup01_mk]
     exact congrArg (fun w : Z1 G E => (w : H1 G E))
       (Subtype.ext (funext fun _ => by simp [hassoc]))
+
+variable [ContinuousMul G]
 
 include hassoc in
 /-- **Associativity of the cup product in tridegree `(0,0,2)`**, the degree-`2` counterpart of
@@ -882,7 +913,7 @@ section AssocMiddle
 
 /-! The tridegrees `(0,q,0)`: the outer factors are invariant. -/
 
-variable (G : Type uG) [Group G] [TopologicalSpace G] [ContinuousMul G]
+variable (G : Type uG) [Group G] [TopologicalSpace G]
   (A : Type uA) [AddCommGroup A] [TopologicalSpace A] [DistribMulAction G A]
   (B : Type uB) [AddCommGroup B] [TopologicalSpace B] [IsTopologicalAddGroup B]
     [DistribMulAction G B] [ContinuousSMul G B]
@@ -904,7 +935,6 @@ variable (G : Type uG) [Group G] [TopologicalSpace G] [ContinuousMul G]
   (hassoc : ∀ (a : A) (b : B) (c : C), μ₂ (μ₁ a b) c = ν₂ a (ν₁ b c))
 
 include hassoc in
-omit [ContinuousMul G] in
 /-- **Associativity of the cup product in tridegree `(0,1,0)`.** -/
 theorem explicitCup_assoc010 (x : H0 G A) (y : H1 G B) (z : H0 G C) :
     explicitCup10 G D C E μ₂ hμ₂ hequiv₂ (explicitCup01 G A B D μ₁ hμ₁ hequiv₁ x y) z =
@@ -914,6 +944,8 @@ theorem explicitCup_assoc010 (x : H0 G A) (y : H1 G B) (z : H0 G C) :
     simp only [explicitCup01_mk, explicitCup10_mk]
     exact congrArg (fun w : Z1 G E => (w : H1 G E))
       (Subtype.ext (funext fun _ => by simp [hassoc]))
+
+variable [ContinuousMul G]
 
 include hassoc in
 /-- **Associativity of the cup product in tridegree `(0,2,0)`**, the degree-`2` counterpart of
@@ -935,7 +967,7 @@ section AssocLastZero
 `(0,0)` cup. The translation factor of the general formula sits on `ν₁ b c`, and it is
 `hequiv₃` that moves it onto the two factors separately. -/
 
-variable (G : Type uG) [Group G] [TopologicalSpace G] [ContinuousMul G]
+variable (G : Type uG) [Group G] [TopologicalSpace G]
   (A : Type uA) [AddCommGroup A] [TopologicalSpace A] [IsTopologicalAddGroup A]
     [DistribMulAction G A] [ContinuousSMul G A]
   (B : Type uB) [AddCommGroup B] [TopologicalSpace B] [DistribMulAction G B]
@@ -955,7 +987,6 @@ variable (G : Type uG) [Group G] [TopologicalSpace G] [ContinuousMul G]
   (hassoc : ∀ (a : A) (b : B) (c : C), μ₂ (μ₁ a b) c = ν₂ a (ν₁ b c))
 
 include hassoc in
-omit [ContinuousMul G] in
 /-- **Associativity of the cup product in tridegree `(1,0,0)`.** -/
 theorem explicitCup_assoc100 (x : H1 G A) (y : H0 G B) (z : H0 G C) :
     explicitCup10 G D C E μ₂ hμ₂ hequiv₂ (explicitCup10 G A B D μ₁ hμ₁ hequiv₁ x y) z =
@@ -965,6 +996,8 @@ theorem explicitCup_assoc100 (x : H1 G A) (y : H0 G B) (z : H0 G C) :
     simp only [explicitCup10_mk]
     exact congrArg (fun w : Z1 G E => (w : H1 G E))
       (Subtype.ext (funext fun _ => by simp [hassoc, hequiv₃]))
+
+variable [ContinuousMul G]
 
 include hassoc in
 /-- **Associativity of the cup product in tridegree `(2,0,0)`**, the degree-`2` counterpart of
@@ -1115,12 +1148,9 @@ ten statements below is the corresponding general statement instantiated there. 
 
 universe uR
 
-variable (G : Type uG) [Group G] [TopologicalSpace G] [ContinuousMul G]
-  (R : Type uR) [Ring R] [TopologicalSpace R] [IsTopologicalRing R] [MulSemiringAction G R]
-  [ContinuousSMul G R]
+variable (G : Type uG) [Group G]
+  (R : Type uR) [Ring R] [MulSemiringAction G R]
 
-omit [TopologicalSpace G] [ContinuousMul G] [TopologicalSpace R] [IsTopologicalRing R]
-  [ContinuousSMul G R] in
 /-- **Associativity of the ring cup product in tridegree `(0,0,0)`.** -/
 theorem explicitCup_assoc000_mul (x y z : H0 G R) :
     explicitCup00 G R R R AddMonoidHom.mul (fun g a b => (smul_mul' g a b).symm)
@@ -1129,7 +1159,8 @@ theorem explicitCup_assoc000_mul (x y z : H0 G R) :
         (explicitCup00 G R R R AddMonoidHom.mul (fun g a b => (smul_mul' g a b).symm) y z) :=
   explicitCup_assoc000 G R R R R R R _ _ _ _ _ _ _ _ mul_assoc x y z
 
-omit [ContinuousMul G] in
+variable [TopologicalSpace G] [TopologicalSpace R] [IsTopologicalRing R] [ContinuousSMul G R]
+
 /-- **Associativity of the ring cup product in tridegree `(0,0,1)`.** -/
 theorem explicitCup_assoc001_mul (x y : H0 G R) (z : H1 G R) :
     explicitCup01 G R R R AddMonoidHom.mul continuous_mul
@@ -1141,18 +1172,6 @@ theorem explicitCup_assoc001_mul (x y : H0 G R) (z : H1 G R) :
           (fun g a b => (smul_mul' g a b).symm) y z) :=
   explicitCup_assoc001 G R R R R R R _ _ _ _ _ _ _ _ _ _ _ mul_assoc x y z
 
-/-- **Associativity of the ring cup product in tridegree `(0,0,2)`.** -/
-theorem explicitCup_assoc002_mul (x y : H0 G R) (z : H2 G R) :
-    explicitCup02 G R R R AddMonoidHom.mul continuous_mul
-        (fun g a b => (smul_mul' g a b).symm)
-        (explicitCup00 G R R R AddMonoidHom.mul (fun g a b => (smul_mul' g a b).symm) x y) z =
-      explicitCup02 G R R R AddMonoidHom.mul continuous_mul
-        (fun g a b => (smul_mul' g a b).symm) x
-        (explicitCup02 G R R R AddMonoidHom.mul continuous_mul
-          (fun g a b => (smul_mul' g a b).symm) y z) :=
-  explicitCup_assoc002 G R R R R R R _ _ _ _ _ _ _ _ _ _ _ mul_assoc x y z
-
-omit [ContinuousMul G] in
 /-- **Associativity of the ring cup product in tridegree `(0,1,0)`.** -/
 theorem explicitCup_assoc010_mul (x : H0 G R) (y : H1 G R) (z : H0 G R) :
     explicitCup10 G R R R AddMonoidHom.mul continuous_mul
@@ -1165,6 +1184,30 @@ theorem explicitCup_assoc010_mul (x : H0 G R) (y : H1 G R) (z : H0 G R) :
           (fun g a b => (smul_mul' g a b).symm) y z) :=
   explicitCup_assoc010 G R R R R R R _ _ _ _ _ _ _ _ _ _ _ _ mul_assoc x y z
 
+/-- **Associativity of the ring cup product in tridegree `(1,0,0)`.** -/
+theorem explicitCup_assoc100_mul (x : H1 G R) (y z : H0 G R) :
+    explicitCup10 G R R R AddMonoidHom.mul continuous_mul
+        (fun g a b => (smul_mul' g a b).symm)
+        (explicitCup10 G R R R AddMonoidHom.mul continuous_mul
+          (fun g a b => (smul_mul' g a b).symm) x y) z =
+      explicitCup10 G R R R AddMonoidHom.mul continuous_mul
+        (fun g a b => (smul_mul' g a b).symm) x
+        (explicitCup00 G R R R AddMonoidHom.mul (fun g a b => (smul_mul' g a b).symm) y z) :=
+  explicitCup_assoc100 G R R R R R R _ _ _ _ _ _ _ _ _ _ _ mul_assoc x y z
+
+variable [ContinuousMul G]
+
+/-- **Associativity of the ring cup product in tridegree `(0,0,2)`.** -/
+theorem explicitCup_assoc002_mul (x y : H0 G R) (z : H2 G R) :
+    explicitCup02 G R R R AddMonoidHom.mul continuous_mul
+        (fun g a b => (smul_mul' g a b).symm)
+        (explicitCup00 G R R R AddMonoidHom.mul (fun g a b => (smul_mul' g a b).symm) x y) z =
+      explicitCup02 G R R R AddMonoidHom.mul continuous_mul
+        (fun g a b => (smul_mul' g a b).symm) x
+        (explicitCup02 G R R R AddMonoidHom.mul continuous_mul
+          (fun g a b => (smul_mul' g a b).symm) y z) :=
+  explicitCup_assoc002 G R R R R R R _ _ _ _ _ _ _ _ _ _ _ mul_assoc x y z
+
 /-- **Associativity of the ring cup product in tridegree `(0,2,0)`.** -/
 theorem explicitCup_assoc020_mul (x : H0 G R) (y : H2 G R) (z : H0 G R) :
     explicitCup20 G R R R AddMonoidHom.mul continuous_mul
@@ -1176,18 +1219,6 @@ theorem explicitCup_assoc020_mul (x : H0 G R) (y : H2 G R) (z : H0 G R) :
         (explicitCup20 G R R R AddMonoidHom.mul continuous_mul
           (fun g a b => (smul_mul' g a b).symm) y z) :=
   explicitCup_assoc020 G R R R R R R _ _ _ _ _ _ _ _ _ _ _ _ mul_assoc x y z
-
-omit [ContinuousMul G] in
-/-- **Associativity of the ring cup product in tridegree `(1,0,0)`.** -/
-theorem explicitCup_assoc100_mul (x : H1 G R) (y z : H0 G R) :
-    explicitCup10 G R R R AddMonoidHom.mul continuous_mul
-        (fun g a b => (smul_mul' g a b).symm)
-        (explicitCup10 G R R R AddMonoidHom.mul continuous_mul
-          (fun g a b => (smul_mul' g a b).symm) x y) z =
-      explicitCup10 G R R R AddMonoidHom.mul continuous_mul
-        (fun g a b => (smul_mul' g a b).symm) x
-        (explicitCup00 G R R R AddMonoidHom.mul (fun g a b => (smul_mul' g a b).symm) y z) :=
-  explicitCup_assoc100 G R R R R R R _ _ _ _ _ _ _ _ _ _ _ mul_assoc x y z
 
 /-- **Associativity of the ring cup product in tridegree `(2,0,0)`.** -/
 theorem explicitCup_assoc200_mul (x : H2 G R) (y z : H0 G R) :
