@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.QuadraticForm.OrthogonalGroup.CompactOpen
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpinorNorm.LowRank
+public import TauCeti.NumberTheory.Padics.Rank
 import Mathlib.NumberTheory.Padics.LocalField
 import TauCeti.Algebra.Group.PowMonoidHom
 import TauCeti.NumberTheory.LocalField.PowerSubgroup.Open
@@ -57,12 +58,6 @@ local instance spinorNormImageInvertibleTwoRat : Invertible (2 : ℚ) :=
 /-- The canonical invertibility witness for two over a `p`-adic field. -/
 local instance spinorNormImageInvertibleTwoPadic (p : Nat.Primes) : Invertible (2 : ℚ_[p]) :=
   invertibleOfNonzero two_ne_zero
-
-/-- Use the field structure directly when computing ranks over a `p`-adic field, avoiding
-unnecessary searches for alternative ring structures. -/
-instance instStrongRankConditionPadic (p : Nat.Primes) : StrongRankCondition ℚ_[p] := by
-  let hfield : Field ℚ_[p] := @NormedField.toField _ (Padic.normedField (p : ℕ))
-  exact @commRing_strongRankCondition _ hfield.toCommRing (@Field.toNontrivial _ hfield)
 
 variable {V : Type*} [AddCommGroup V] [Module ℚ V] [FiniteDimensional ℚ V]
   {Q : QuadraticForm ℚ V} (U : OrthogonalCompactOpens Q)

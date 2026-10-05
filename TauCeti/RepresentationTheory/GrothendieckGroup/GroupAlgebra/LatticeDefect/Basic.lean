@@ -140,7 +140,8 @@ before extending scalars does not change its reduction class. -/
 theorem reductionK0_quotSMulTop (ρ : Representation ℤ G W) (r : ℤ)
     (hr : (r : k) = 0) :
     reductionK0 k (ρ.quotSMulTop r) = reductionK0 k ρ := by
-  -- Integer module structures are unique; normalize the scalar actions before forming `rW`.
+  -- `exact_toLinearMap_mkQ` and `DistribSMul.toLinearMap ℤ W r` use the canonical integer
+  -- module structure, which is only propositionally equal to the given instance.
   cases Subsingleton.elim ‹Module ℤ W› (AddCommGroup.toIntModule W)
   let q : IntertwiningMap ρ (ρ.quotSMulTop r) :=
     { toLinearMap := (r • (⊤ : Submodule ℤ W)).mkQ

@@ -9,6 +9,7 @@ public import Mathlib.GroupTheory.FiniteAbelian.Basic
 public import Mathlib.RingTheory.Localization.BaseChange
 public import TauCeti.Algebra.Module.LocalizedModule.Lift
 public import TauCeti.RepresentationTheory.BaseChange
+import TauCeti.LinearAlgebra.TensorProduct.Map
 
 /-!
 # Lattices with equivalent localizations
@@ -112,19 +113,25 @@ theorem _root_.Representation.Equiv.exists_intertwiningMap_comp_eq_smul
 
 /-- Maps inverse up to a scalar become equivalent after base change when that scalar is a unit
 in the coefficient algebra. -/
-theorem Representation.nonempty_equiv_baseChange_of_comp_eq_smul
+theorem nonempty_equiv_baseChange_of_comp_eq_smul
     (f : ρ.IntertwiningMap σ) (f' : σ.IntertwiningMap ρ) (s : R)
     (hf'f : ∀ v, f' (f v) = s • v) (hff' : ∀ w, f (f' w) = s • w)
     (hs : IsUnit (algebraMap R A s)) :
     Nonempty ((Representation.baseChange A ρ).Equiv (Representation.baseChange A σ)) := by
   obtain ⟨u, hu⟩ := hs
+  have hf'fA (x : A ⊗[R] V) : f'.baseChange A (f.baseChange A x) = (u : A) • x := by
+    rw [coe_intertwiningMap_baseChange, coe_intertwiningMap_baseChange,
+      lTensor_comp_apply_of_comp_eq_smul f.toLinearMap f'.toLinearMap s hf'f,
+      ← IsScalarTower.algebraMap_smul A, ← hu]
+  have hff'A (y : A ⊗[R] W) : f.baseChange A (f'.baseChange A y) = (u : A) • y := by
+    rw [coe_intertwiningMap_baseChange, coe_intertwiningMap_baseChange,
+      lTensor_comp_apply_of_comp_eq_smul f'.toLinearMap f.toLinearMap s hff',
+      ← IsScalarTower.algebraMap_smul A, ← hu]
   have hf : Function.Bijective (f.baseChange A) := by
     refine ⟨fun x y hxy ↦ u.isUnit.smul_left_cancel.mp ?_, fun y ↦ ?_⟩
-    · simpa only [intertwiningMap_baseChange_comp_apply_of_comp_eq_smul
-        f f' s hf'f, ← hu] using congrArg (f'.baseChange A) hxy
+    · simpa only [hf'fA] using congrArg (f'.baseChange A) hxy
     · refine ⟨(↑u⁻¹ : A) • f'.baseChange A y, ?_⟩
-      rw [map_smul, intertwiningMap_baseChange_comp_apply_of_comp_eq_smul
-        f' f s hff', ← hu, smul_smul, Units.inv_mul, one_smul]
+      rw [map_smul, hff'A, smul_smul, Units.inv_mul, one_smul]
   exact ⟨(f.baseChange A).ofBijective hf⟩
 
 end Localization

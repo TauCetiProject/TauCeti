@@ -20,9 +20,10 @@ public section
 namespace TauCeti
 
 /-- A finitely generated abelian group modulo a nonzero integer multiple is finite. -/
-instance instFiniteQuotSMulTopInt (M : Type*) [AddCommGroup M] [Module.Finite ℤ M]
-    (r : ℤ) [NeZero r] : Finite (QuotSMulTop r M) :=
-  Module.finite_of_fg_torsion _ fun x =>
+instance instFiniteQuotSMulTopInt (M : Type*) [AddCommGroup M] [Module ℤ M] [Module.Finite ℤ M]
+    (r : ℤ) [NeZero r] : Finite (QuotSMulTop r M) := by
+  let : Module ℤ (QuotSMulTop r M) := Submodule.Quotient.module _
+  exact Module.finite_of_fg_torsion _ fun x =>
     ⟨⟨r, mem_nonZeroDivisors_of_ne_zero (NeZero.ne r)⟩,
       Module.mem_annihilator.mp (QuotSMulTop.mem_annihilator M r) x⟩
 

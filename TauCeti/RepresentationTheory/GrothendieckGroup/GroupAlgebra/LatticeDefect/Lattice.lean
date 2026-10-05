@@ -31,7 +31,7 @@ their nonzero integer scalar.
 
 * `TauCeti.latticeDefect_eq_reductionK0_of_subsingleton_torsionBy`: when the scalar torsion is
   trivial, the defect equals the reduction class.
-* `TauCeti.reductionK0_eq_of_injective_of_finite_cokernel`: finite-index inclusions preserve
+* `TauCeti.reductionK0_eq_of_injective_of_finite_quotient_range`: finite-index inclusions preserve
   reduction classes in prime characteristic.
 * `TauCeti.reductionK0_eq_of_nonempty_equiv_baseChange_rat`: isomorphic rationalizations give
   equal reduction classes over every field.
@@ -80,7 +80,7 @@ include ℓ
 
 /-- An injective equivariant map with finite cokernel between finitely generated integral
 modules with trivial `ℓ`-torsion identifies their reduction classes in characteristic `ℓ`. -/
-theorem reductionK0_eq_of_injective_of_finite_cokernel {V W : Type u}
+theorem reductionK0_eq_of_injective_of_finite_quotient_range {V W : Type u}
     [AddCommGroup V] [DistribMulAction G V] [Module.Finite ℤ V]
     [Subsingleton (Submodule.torsionBy ℤ V ℓ)]
     [AddCommGroup W] [DistribMulAction G W] [Module.Finite ℤ W]
@@ -112,7 +112,7 @@ theorem reductionK0_eq_of_nonempty_equiv_baseChange_rat_of_prime_char {V W : Typ
     reductionK0 k (Representation.ofDistribMulAction ℤ G V) =
       reductionK0 k (Representation.ofDistribMulAction ℤ G W) := by
   obtain ⟨f, hf, hfin⟩ := exists_injective_finite_quotient_range_of_nonempty_equiv h
-  exact reductionK0_eq_of_injective_of_finite_cokernel k G ℓ f hf hfin
+  exact reductionK0_eq_of_injective_of_finite_quotient_range k G ℓ f hf hfin
 
 end PrimeCharacteristic
 
@@ -135,7 +135,7 @@ private theorem reductionK0_eq_of_nonempty_equiv_baseChange_rat_of_charZero [Cha
     (fun s ↦ .of_ne_zero (nonZeroDivisors.coe_ne_zero s))
     fun s ↦ .of_ne_zero (nonZeroDivisors.coe_ne_zero s)
   have hs : ((s : ℤ) : k) ≠ 0 := Int.cast_ne_zero.mpr (nonZeroDivisors.coe_ne_zero s)
-  obtain ⟨e'⟩ := Representation.nonempty_equiv_baseChange_of_comp_eq_smul
+  obtain ⟨e'⟩ := nonempty_equiv_baseChange_of_comp_eq_smul
     (A := k) f f' (s : ℤ) hf'f hff' (isUnit_iff_ne_zero.mpr hs)
   exact reductionK0_congr_baseChange k e'
 
