@@ -110,15 +110,6 @@ theorem scalarTensorBialgEquiv_mem_homogeneousSubmodule_iff {n : ℕ}
       scalarTensorBialgEquiv_symm_mem_baseChange hx
   · exact scalarTensorBialgEquiv_mem_homogeneousSubmodule
 
-/-- The inverse comparison preserves and reflects homogeneous degree as well. -/
-@[simp]
-theorem scalarTensorBialgEquiv_symm_mem_baseChange_iff {n : ℕ}
-    (x : SymmetricAlgebra S (S ⊗[R] M)) :
-    (scalarTensorBialgEquiv (k := R) (K := S)).symm x ∈
-        (homogeneousSubmodule R M n).baseChange S ↔
-      x ∈ homogeneousSubmodule S (S ⊗[R] M) n := by
-  rw [← scalarTensorBialgEquiv_mem_homogeneousSubmodule_iff, BialgEquiv.apply_symm_apply]
-
 /-- The image of the scalar-extended degree-`n` piece is exactly the degree-`n` piece of the
 symmetric algebra on the scalar-extended module. -/
 @[simp]
@@ -175,11 +166,6 @@ noncomputable def scalarTensorGradedAlgHomSymm :
 theorem scalarTensorGradedAlgHom_apply (x : S ⊗[R] SymmetricAlgebra R M) :
     scalarTensorGradedAlgHom x = scalarTensorBialgEquiv (k := R) (K := S) x := (rfl)
 
-/-- The inverse graded map is the inverse scalar-extension equivalence. -/
-@[simp]
-theorem scalarTensorGradedAlgHomSymm_apply (x : SymmetricAlgebra S (S ⊗[R] M)) :
-    scalarTensorGradedAlgHomSymm x = (scalarTensorBialgEquiv (k := R) (K := S)).symm x := (rfl)
-
 /-- The scalar-extension comparison commutes with maps induced by linear maps. -/
 theorem scalarTensorBialgEquiv_comp_map {N : Type*} [AddCommMonoid N] [Module R N]
     (f : M →ₗ[R] N) :
@@ -194,3 +180,26 @@ theorem scalarTensorBialgEquiv_comp_map {N : Type*} [AddCommMonoid N] [Module R 
     simp
 
 end TauCeti.SymmetricAlgebra
+
+namespace SymmetricAlgebra
+
+open TauCeti.SymmetricAlgebra
+
+variable {R S M : Type*} [CommSemiring R] [CommSemiring S] [Algebra R S]
+  [AddCommMonoid M] [Module R M]
+
+/-- The inverse comparison preserves and reflects homogeneous degree as well. -/
+@[simp]
+theorem scalarTensorBialgEquiv_symm_mem_baseChange_iff {n : ℕ}
+    (x : SymmetricAlgebra S (S ⊗[R] M)) :
+    (scalarTensorBialgEquiv (k := R) (K := S)).symm x ∈
+        (homogeneousSubmodule R M n).baseChange S ↔
+      x ∈ homogeneousSubmodule S (S ⊗[R] M) n := by
+  rw [← scalarTensorBialgEquiv_mem_homogeneousSubmodule_iff, BialgEquiv.apply_symm_apply]
+
+/-- The inverse graded map is the inverse scalar-extension equivalence. -/
+@[simp]
+theorem scalarTensorGradedAlgHomSymm_apply (x : SymmetricAlgebra S (S ⊗[R] M)) :
+    scalarTensorGradedAlgHomSymm x = (scalarTensorBialgEquiv (k := R) (K := S)).symm x := (rfl)
+
+end SymmetricAlgebra
