@@ -43,6 +43,8 @@ morphism of the associated toric schemes.
   toric scheme.
 * `TauCeti.Toric.Fan.exists_affineToricChartι_apply_eq`: the affine toric charts cover the toric
   scheme.
+* `TauCeti.Toric.Fan.affineToricOpenCover`: the cone-indexed affine open cover of the toric
+  scheme.
 * `TauCeti.Toric.Fan.affineToricChartι_eq_affineToricChartι_iff`: points of two
   charts are identified exactly along the chart of the intersection of the two cones.
 * `TauCeti.Toric.FanHom.affineToricChartMap`: the affine chart map attached to a fan morphism.
