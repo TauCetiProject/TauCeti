@@ -31,7 +31,7 @@ public section
 
 namespace TauCeti
 
-open AlgebraicGeometry CategoryTheory Limits
+open AlgebraicGeometry _root_.CategoryTheory Limits
 
 universe u
 

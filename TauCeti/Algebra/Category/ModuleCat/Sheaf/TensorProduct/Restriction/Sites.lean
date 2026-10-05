@@ -26,7 +26,7 @@ and `lifting_isMonoidal`, applied to the existing
 
 public section
 
-open CategoryTheory MonoidalCategory
+open CategoryTheory MonoidalCategory TauCeti.CategoryTheory.Functor
 
 namespace TauCeti.SheafOfModules
 
@@ -93,7 +93,7 @@ local instance restrictionSheafificationMonoidal : (restrictionSheafification).M
 
 /-- Restriction to a continuous and cocontinuous site is strong monoidal. Its tensor and
 unit comparisons descend those of presheaf restriction through sheafification. -/
-instance pushforwardModuleMonoidal :
+instance _root_.TauCeti.CategoryTheory.Functor.pushforwardModuleMonoidal :
     (pushforwardModule (J := J) (K := K) F R).Monoidal :=
   @CategoryTheory.Localization.Monoidal.functorMonoidalOfComp
     _ _ _ _ _ _ _ _ _ sourceSheafification sourceW _ _
@@ -102,7 +102,7 @@ instance pushforwardModuleMonoidal :
 
 /-- The sheafification comparison respects tensor and unit maps. This identifies restriction's
 monoidal structure with precomposition and sheafification of presheaves. -/
-instance isMonoidal_pushforwardSheafificationNatIso_hom :
+instance _root_.TauCeti.CategoryTheory.Functor.isMonoidal_pushforwardSheafificationNatIso_hom :
     @NatTrans.IsMonoidal _ _ _ _ _ _ _ _
       (pushforwardSheafificationNatIso (J := J) (K := K) F (ringCatSheaf R)).hom
       (inferInstanceAs (sourceSheafification ⋙

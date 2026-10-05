@@ -17,7 +17,7 @@ The coherent tensor and unit comparisons allow tensor units, evaluation, and coe
 be transported through restriction to slice sites. They are the local compatibility needed when
 studying dualizable and finite locally free sheaves on a cover.
 
-The monoidal structure specializes `TauCeti.SheafOfModules.pushforwardModuleMonoidal`.
+The monoidal structure specializes `TauCeti.CategoryTheory.Functor.pushforwardModuleMonoidal`.
 The generic descent construction uses Mathlib's
 [`CategoryTheory.Localization.Monoidal.functorMonoidalOfComp`](https://leanprover-community.github.io/mathlib4_docs/Mathlib/CategoryTheory/Localization/Monoidal/Functor.html#CategoryTheory.Localization.Monoidal.functorMonoidalOfComp).
 
@@ -34,7 +34,7 @@ The generic descent construction uses Mathlib's
 
 public section
 
-open CategoryTheory Category MonoidalCategory
+open CategoryTheory Category MonoidalCategory TauCeti.CategoryTheory.Functor
 
 namespace TauCeti
 

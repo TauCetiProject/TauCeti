@@ -409,7 +409,7 @@ theorem sheafification_map_pushforward_map_comp_counit
 
 /-- Restriction after sheafification is naturally isomorphic to sheafification after restriction
 of presheaves along a continuous and cocontinuous functor of sites. -/
-def pushforwardSheafificationNatIso :
+def _root_.TauCeti.CategoryTheory.Functor.pushforwardSheafificationNatIso :
     PresheafOfModules.sheafification (R := R) (𝟙 R.obj) ⋙
         SheafOfModules.pushforward (J := J) (K := K) (F := F) (𝟙 _) ≅
       PresheafOfModules.pushforward (F := F) (pushforwardRingIso F R).inv ⋙
@@ -419,16 +419,20 @@ def pushforwardSheafificationNatIso :
   exact NatIso.ofComponents (fun P ↦ (pushforwardSheafificationIso F R P).symm)
     (fun f ↦ pushforwardSheafificationIso_inv_naturality F R f)
 
+open TauCeti.CategoryTheory.Functor
+
 /-- The forward component is the pushforward--sheafification comparison. -/
 @[simp]
-theorem pushforwardSheafificationNatIso_hom_app (P : PresheafOfModules.{v} R.obj) :
+theorem _root_.TauCeti.CategoryTheory.Functor.pushforwardSheafificationNatIso_hom_app
+    (P : PresheafOfModules.{v} R.obj) :
     (pushforwardSheafificationNatIso (J := J) (K := K) F R).hom.app P =
       (pushforwardSheafificationIso (J := J) (K := K) F R P).hom :=
   (rfl)
 
 /-- The inverse component is the inverse pushforward--sheafification comparison. -/
 @[simp]
-theorem pushforwardSheafificationNatIso_inv_app (P : PresheafOfModules.{v} R.obj) :
+theorem _root_.TauCeti.CategoryTheory.Functor.pushforwardSheafificationNatIso_inv_app
+    (P : PresheafOfModules.{v} R.obj) :
     (pushforwardSheafificationNatIso (J := J) (K := K) F R).inv.app P =
       (pushforwardSheafificationIso (J := J) (K := K) F R P).inv :=
   (rfl)

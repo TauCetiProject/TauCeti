@@ -45,7 +45,7 @@ noncomputable section
 
 variable (X : Scheme.{v})
 
-open CategoryTheory MonoidalCategory
+open _root_.CategoryTheory MonoidalCategory
 
 /-- The monoidal category structure on `𝒪ₓ`-modules: the tensor product sheafifies the
 sectionwise tensor product, and the unit is the structure sheaf. -/

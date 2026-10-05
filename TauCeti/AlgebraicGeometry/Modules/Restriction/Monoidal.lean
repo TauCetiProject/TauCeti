@@ -23,10 +23,13 @@ pullback objects, without choosing a new monoidal structure on pullback.
 
 ## Main declarations
 
-* `TauCeti.restrictFunctorMonoidal`: the monoidal structure on restriction;
-* `TauCeti.pullbackInclusionExactPairing`: an exact pairing on the pullback objects;
-* `TauCeti.nonempty_hasLeftDual_pullback_inclusion` and
-  `TauCeti.nonempty_hasRightDual_pullback_inclusion`: preservation of module duals;
+* `TauCeti.AlgebraicGeometry.Scheme.Opens.restrictFunctorMonoidal`:
+  the monoidal structure on restriction;
+* `TauCeti.AlgebraicGeometry.Scheme.Opens.pullbackInclusionExactPairing`:
+  an exact pairing on the pullback objects;
+* `TauCeti.AlgebraicGeometry.Scheme.Opens.nonempty_hasLeftDual_pullback_inclusion` and
+  `TauCeti.AlgebraicGeometry.Scheme.Opens.nonempty_hasRightDual_pullback_inclusion`:
+  preservation of module duals;
 * `TauCeti.AlgebraicGeometry.QuasicoherentSheaf.nonempty_hasLeftDual_pullback_inclusion` and
   `TauCeti.AlgebraicGeometry.QuasicoherentSheaf.nonempty_hasRightDual_pullback_inclusion`:
   preservation of quasicoherent-sheaf duals.
@@ -46,12 +49,14 @@ noncomputable section
 
 variable {X : Scheme.{u}}
 
+namespace AlgebraicGeometry.Scheme.Opens
+
 /-- Restriction to an open subscheme preserves tensor products and the structure sheaf. -/
 instance restrictFunctorMonoidal (U : X.Opens) :
     (Scheme.Modules.restrictFunctor U.ι).Monoidal := by
   unfold Scheme.Modules.restrictFunctor
   simp only [Scheme.Opens.ι_appIso]
-  exact SheafOfModules.pushforwardModuleMonoidal U.ι.opensFunctor X.sheaf
+  exact CategoryTheory.Functor.pushforwardModuleMonoidal U.ι.opensFunctor X.sheaf
 
 /-- Pullback to an open subscheme preserves exact pairings, by restriction of the evaluation
 and coevaluation maps. -/
@@ -115,6 +120,10 @@ theorem nonempty_hasRightDual_pullback_inclusion (U : X.Opens) (M : X.Modules)
   obtain ⟨hM⟩ := hM
   let := pullbackInclusionExactPairing U M (Mᘁ)
   exact ⟨⟨(Scheme.Modules.pullback U.ι).obj (Mᘁ)⟩⟩
+
+end AlgebraicGeometry.Scheme.Opens
+
+open _root_.TauCeti.AlgebraicGeometry.Scheme.Opens
 
 namespace AlgebraicGeometry.QuasicoherentSheaf
 
