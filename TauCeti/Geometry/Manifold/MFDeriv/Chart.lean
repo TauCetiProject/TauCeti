@@ -29,7 +29,7 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
 * `HasMFDerivAt.hasFDerivWithinAt_of_mem_source`: the derivative of `f` read in the extended
   charts at `x` and `y`.
 * `TauCeti.mfderiv_eq_fderiv_comp_mfderiv_extChartAt` and
-  `TauCeti.injective_fderiv_comp_extChartAt_symm`: for a map into a normed space, the manifold
+  `TauCeti.fderiv_comp_extChartAt_symm_injective`: for a map into a normed space, the manifold
   derivative at any point of a chart's source, in terms of the Fréchet derivative of the
   coordinate expression, and the resulting transfer of injectivity.
 * `ContMDiffAt.contDiffAt_comp_extChartAt_symm` and
@@ -106,7 +106,7 @@ theorem mfderiv_eq_fderiv_comp_mfderiv_extChartAt (hy : y ∈ (extChartAt I x).s
 
 /-- Read in a chart, a map into a normed space whose manifold derivative at `y` is injective has
 injective Fréchet derivative at the chart image of `y`. -/
-theorem injective_fderiv_comp_extChartAt_symm (hy : y ∈ (extChartAt I x).source)
+theorem fderiv_comp_extChartAt_symm_injective (hy : y ∈ (extChartAt I x).source)
     (hg : DifferentiableAt 𝕜 (f ∘ (extChartAt I x).symm) (extChartAt I x y))
     (hf : Function.Injective (mfderiv I 𝓘(𝕜, F) f y)) :
     Function.Injective (fderiv 𝕜 (f ∘ (extChartAt I x).symm) (extChartAt I x y)) := by

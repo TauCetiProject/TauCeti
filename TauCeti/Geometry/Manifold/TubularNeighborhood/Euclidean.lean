@@ -38,17 +38,9 @@ for noncompact submanifolds the radius has to be a positive continuous function 
 * `TauCeti.exists_isTubularNeighborhood_normalBundle`: the same statement as
   `TauCeti.IsTubularNeighborhood` data on the total space of the normal bundle.
 
-## Implementation notes
-
-The proof follows Lee's. In a chart, with coordinate expression `g` of `f`, let `Q u` be the
-orthogonal projection onto the normal space at `u`; it is `C¹` in `u` by
-`ContDiffAt.starProjection_range`. With `W₀` the normal space at a point `u₀`, the map
-`(u, w) ↦ g u + Q u w` on `E × W₀` has invertible derivative at `(u₀, 0)`, so it is a local
-homeomorphism there. Near `u₀`, `Q u` maps `W₀` onto the normal space at `u`, so the normal map
-factors through this local homeomorphism on small normal vectors. Compactness then gives a single
-radius, since points of `M` whose images are close lie in a common chart neighbourhood.
-
 ## References
+
+The proof follows Lee's.
 
 * J. M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Graduate Texts in Mathematics 218,
   Springer (2013), Theorem 6.24.
@@ -306,7 +298,7 @@ private theorem exists_injOn_isOpen_image_normalTube [I.Boundaryless] [IsManifol
   have hx₀ : x₀ ∈ e.source := mem_extChartAt_source x₀
   obtain ⟨s, hs, δ, hδ, hinjOn, hopen⟩ := exists_injOn_isOpen_image_normal
     (hgat _ (e.map_source hx₀))
-    (injective_fderiv_comp_extChartAt_symm hx₀ (hdiff x₀ hx₀) (himm x₀))
+    (fderiv_comp_extChartAt_symm_injective hx₀ (hdiff x₀ hx₀) (himm x₀))
   -- Transport the local statement along the chart `e × id`.
   set s' := interior s ∩ e.target
   have hs'o : IsOpen s' := isOpen_interior.inter (isOpen_extChartAt_target x₀)
