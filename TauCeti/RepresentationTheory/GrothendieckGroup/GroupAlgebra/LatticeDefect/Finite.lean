@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.LatticeDefect.Basic
+public import TauCeti.Algebra.Module.Torsion.Free
 
 /-!
 # Vanishing of the lattice defect for finite modules
@@ -79,9 +80,7 @@ private theorem latticeDefect_eq_zero_of_injective_zsmul (W : Type u) [AddCommGr
   have : Subsingleton (QuotSMulTop (ℓ : ℤ) W) :=
     Submodule.Quotient.subsingleton_iff.mpr htop
   have : Subsingleton (Submodule.torsionBy ℤ W (ℓ : ℤ)) :=
-    ⟨fun x y => Subtype.ext <| hf <| by
-      exact ((Submodule.mem_torsionBy_iff _ _).mp x.property).trans
-        ((Submodule.mem_torsionBy_iff _ _).mp y.property).symm⟩
+    Submodule.subsingleton_torsionBy_of_isSMulRegular hf
   rw [latticeDefect_def]
   simp
 

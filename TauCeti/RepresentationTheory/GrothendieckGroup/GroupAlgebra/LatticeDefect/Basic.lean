@@ -104,11 +104,18 @@ theorem reductionK0_def (ρ : Representation ℤ G W) :
     reductionK0 k ρ = ExactK0.of (FGModuleCat.of k[G] (Representation.baseChange k ρ).asModule) :=
   (rfl)
 
+/-- Equivalent scalar extensions have equal reduction classes. -/
+theorem reductionK0_congr_baseChange {W' : Type u} [AddCommGroup W'] [Module ℤ W']
+    [Module.Finite ℤ W'] {ρ : Representation ℤ G W} {σ : Representation ℤ G W'}
+    (e : (Representation.baseChange k ρ).Equiv (Representation.baseChange k σ)) :
+    reductionK0 k ρ = reductionK0 k σ :=
+  ExactK0.of_congr (Representation.asModuleLinearEquivOfEquiv e).toFGModuleCatIso
+
 /-- Equivalent representations have equal reduction classes. -/
 theorem reductionK0_congr {W' : Type u} [AddCommGroup W'] [Module ℤ W'] [Module.Finite ℤ W']
     {ρ : Representation ℤ G W} {σ : Representation ℤ G W'} (e : ρ.Equiv σ) :
     reductionK0 k ρ = reductionK0 k σ :=
-  ExactK0.of_congr (Representation.asModuleLinearEquivOfEquiv (e.baseChange k)).toFGModuleCatIso
+  reductionK0_congr_baseChange k (e.baseChange k)
 
 /-- The reduction class of a zero module is zero. -/
 @[simp]
@@ -125,7 +132,7 @@ end Reduction
 
 section QuotientReduction
 
-variable {W : Type u} [AddCommGroup W] [Module.Finite ℤ W]
+variable {W : Type u} [AddCommGroup W] [Module ℤ W] [Module.Finite ℤ W]
 
 /-- If `r` vanishes in the coefficient ring, quotienting an integral representation by `r`
 before extending scalars does not change its reduction class. -/
@@ -133,6 +140,8 @@ before extending scalars does not change its reduction class. -/
 theorem reductionK0_quotSMulTop (ρ : Representation ℤ G W) (r : ℤ)
     (hr : (r : k) = 0) :
     reductionK0 k (ρ.quotSMulTop r) = reductionK0 k ρ := by
+  -- Integer module structures are unique; normalize the scalar actions before forming `rW`.
+  cases Subsingleton.elim ‹Module ℤ W› (AddCommGroup.toIntModule W)
   let q : IntertwiningMap ρ (ρ.quotSMulTop r) :=
     { toLinearMap := (r • (⊤ : Submodule ℤ W)).mkQ
       isIntertwining' g := by
@@ -146,16 +155,13 @@ theorem reductionK0_quotSMulTop (ρ : Representation ℤ G W) (r : ℤ)
     rw [← TensorProduct.smul_tmul, ← IsScalarTower.algebraMap_smul k r a]
     simp [hr]
   have hq : Function.Bijective (q.baseChange k) := by
-    -- Intertwining-map coercions retain the underlying linear function.
-    have hfun : ⇑(q.baseChange k) = ⇑(q.baseChange k).toLinearMap := rfl
-    rw [hfun, IntertwiningMap.toLinearMap_baseChange, LinearMap.baseChange_eq_ltensor]
+    rw [Representation.IntertwiningMap.coe_baseChange]
     refine ⟨?_, LinearMap.lTensor_surjective k (Submodule.mkQ_surjective _)⟩
     have hex := lTensor_exact k (exact_toLinearMap_mkQ r W)
       (Submodule.mkQ_surjective (r • (⊤ : Submodule ℤ W)))
     rw [hzero] at hex
     exact (LinearMap.exact_zero_iff_injective _ _).mp hex
-  exact (ExactK0.of_congr (Representation.asModuleLinearEquivOfEquiv
-    ((q.baseChange k).ofBijective hq)).toFGModuleCatIso).symm
+  exact (reductionK0_congr_baseChange k ((q.baseChange k).ofBijective hq)).symm
 
 end QuotientReduction
 
@@ -175,10 +181,8 @@ private noncomputable abbrev reductionMap {ρ : Representation ℤ G W} {σ : Re
   IntertwiningMap.equivLinearMapAsModule _ _ (f.baseChange k)
 
 private theorem coe_reductionMap {ρ : Representation ℤ G W} {σ : Representation ℤ G W'}
-    (f : IntertwiningMap ρ σ) : ⇑(reductionMap k f) = f.toLinearMap.lTensor k := by
-  -- `equivLinearMapAsModule` keeps the underlying function of an intertwining map
-  have h : ⇑(reductionMap k f) = ⇑(f.baseChange k).toLinearMap := rfl
-  rw [h, IntertwiningMap.toLinearMap_baseChange, LinearMap.baseChange_eq_ltensor]
+    (f : IntertwiningMap ρ σ) : ⇑(reductionMap k f) = f.toLinearMap.lTensor k :=
+  Representation.IntertwiningMap.coe_baseChange f k
 
 variable (ℓ : ℕ) [Fact ℓ.Prime] {V₁ V₂ V₃ : Type u} [AddCommGroup V₁] [Module ℤ V₁]
   [AddCommGroup V₂] [Module ℤ V₂] [AddCommGroup V₃] [Module ℤ V₃] {ρ₁ : Representation ℤ G V₁}

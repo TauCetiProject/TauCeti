@@ -20,13 +20,19 @@ public section
 
 namespace TauCeti.Submodule
 
+/-- Torsion by a scalar acting injectively is trivial. -/
+theorem subsingleton_torsionBy_of_isSMulRegular {R M : Type*} [CommSemiring R]
+    [AddCommMonoid M] [Module R M] {r : R} (h : IsSMulRegular M r) :
+    Subsingleton (_root_.Submodule.torsionBy R M r) :=
+  ⟨fun x y ↦ Subtype.ext <| h
+    (((_root_.Submodule.mem_torsionBy_iff _ _).mp x.property).trans
+      ((_root_.Submodule.mem_torsionBy_iff _ _).mp y.property).symm)⟩
+
 /-- Torsion by a nonzero scalar in a torsion-free module over a commutative semiring with
 cancellation away from zero is trivial. -/
 instance instSubsingletonTorsionBy {R M : Type*} [CommSemiring R] [IsCancelMulZero R]
     [AddCommMonoid M] [Module R M] [Module.IsTorsionFree R M] (r : R) [NeZero r] :
     Subsingleton (_root_.Submodule.torsionBy R M r) :=
-  ⟨fun x y ↦ Subtype.ext <| IsSMulRegular.of_ne_zero (NeZero.ne r)
-    (((_root_.Submodule.mem_torsionBy_iff _ _).mp x.property).trans
-      ((_root_.Submodule.mem_torsionBy_iff _ _).mp y.property).symm)⟩
+  subsingleton_torsionBy_of_isSMulRegular (IsSMulRegular.of_ne_zero (NeZero.ne r))
 
 end TauCeti.Submodule

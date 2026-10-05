@@ -546,6 +546,27 @@ theorem _root_.Representation.IntertwiningMap.toLinearMap_baseChange
     (f.baseChange A).toLinearMap = f.toLinearMap.baseChange A :=
   (rfl)
 
+/-- The function underlying a base-changed intertwining map is tensoring its linear map. -/
+@[simp]
+theorem Representation.IntertwiningMap.coe_baseChange
+    (f : _root_.Representation.IntertwiningMap ρ σ) (A : Type*) [CommSemiring A] [Algebra R A] :
+    ⇑(f.baseChange A) = f.toLinearMap.lTensor A := by
+  rw [← LinearMap.baseChange_eq_ltensor]
+  rfl
+
+/-- A composite equal to scalar multiplication remains so after base change, with the scalar
+mapped into the coefficient algebra. -/
+theorem Representation.IntertwiningMap.baseChange_comp_apply_of_comp_eq_smul
+    (f : _root_.Representation.IntertwiningMap ρ σ)
+    (f' : _root_.Representation.IntertwiningMap σ ρ) (s : R)
+    (h : ∀ v, f' (f v) = s • v) {A : Type*} [CommSemiring A] [Algebra R A]
+    (x : A ⊗[R] V) : f'.baseChange A (f.baseChange A x) = algebraMap R A s • x := by
+  induction x using TensorProduct.inductionOn with
+  | tmul a v =>
+    simp [h, ← IsScalarTower.algebraMap_smul A s a,
+      smul_tmul', mul_comm]
+  | add x y hx hy => simp only [map_add, smul_add, hx, hy]
+
 /-- **Base change transports an equivalence of representations**: an equivariant isomorphism
 `ρ ≃ σ` becomes an equivariant isomorphism `A ⊗[R] V ≃ A ⊗[R] W` after extending the scalars,
 because the extension acts on the second factor, where the equivalence already intertwines the

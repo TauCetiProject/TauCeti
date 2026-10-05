@@ -7,8 +7,8 @@ module
 
 public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.LatticeDefect.Finite
 public import TauCeti.Algebra.Module.QuotSMulTop
-public import TauCeti.Algebra.Module.Torsion.Free
 public import TauCeti.RepresentationTheory.Lattice
+public import TauCeti.Algebra.GroupAction.QuotientAddGroup
 
 /-!
 # Reduction classes of integral lattices
@@ -29,8 +29,8 @@ their nonzero integer scalar.
 
 ## Main results
 
-* `TauCeti.latticeDefect_eq_reductionK0`: the defect of an integral lattice in prime
-  characteristic equals its reduction class.
+* `TauCeti.latticeDefect_eq_reductionK0_of_subsingleton_torsionBy`: when the scalar torsion is
+  trivial, the defect equals the reduction class.
 * `TauCeti.reductionK0_eq_of_injective_of_finite_cokernel`: finite-index inclusions preserve
   reduction classes in prime characteristic.
 * `TauCeti.reductionK0_eq_of_nonempty_equiv_baseChange_rat`: isomorphic rationalizations give
@@ -54,48 +54,53 @@ attribute [local instance high] Submodule.module Submodule.Quotient.module Tenso
 
 universe u
 
+section ScalarCharacteristic
+
+variable (k G : Type u) [CommRing k] [Monoid G] (ℓ : ℕ) [NeZero ℓ]
+
+/-- For a finitely generated integral module with trivial `ℓ`-torsion, the lattice defect is
+its reduction class over a coefficient ring in which `ℓ` vanishes. -/
+@[simp]
+theorem latticeDefect_eq_reductionK0_of_subsingleton_torsionBy (V : Type u)
+    [AddCommGroup V] [DistribMulAction G V] [Module.Finite ℤ V]
+    [Subsingleton (Submodule.torsionBy ℤ V ℓ)] (hℓ : (ℓ : k) = 0) :
+    latticeDefect k G ℓ V = reductionK0 k (Representation.ofDistribMulAction ℤ G V) := by
+  rw [latticeDefect_def,
+    reductionK0_eq_zero_of_subsingleton k
+      ((Representation.ofDistribMulAction ℤ G V).torsionBy (ℓ : ℤ)), sub_zero,
+    reductionK0_quotSMulTop k _ (ℓ : ℤ) (by simpa using hℓ)]
+
+end ScalarCharacteristic
+
 section PrimeCharacteristic
 
 variable (k G : Type u) [CommRing k] [Monoid G] (ℓ : ℕ) [Fact ℓ.Prime] [CharP k ℓ]
 
 include ℓ
 
-/-- For a finitely generated torsion-free integral module, the lattice defect is the class of
-its scalar extension to characteristic `ℓ`. -/
-@[simp]
-theorem latticeDefect_eq_reductionK0 (V : Type u) [AddCommGroup V] [DistribMulAction G V]
-    [Module.Finite ℤ V] [Module.IsTorsionFree ℤ V] :
-    latticeDefect k G ℓ V = reductionK0 k (Representation.ofDistribMulAction ℤ G V) := by
-  rw [latticeDefect_def,
-    reductionK0_eq_zero_of_subsingleton k
-      ((Representation.ofDistribMulAction ℤ G V).torsionBy (ℓ : ℤ)), sub_zero,
-    reductionK0_quotSMulTop k _ (ℓ : ℤ) (by simp)]
-
-/-- An injective equivariant map with finite cokernel between finitely generated torsion-free
-integral modules identifies their reduction classes in characteristic `ℓ`. -/
+/-- An injective equivariant map with finite cokernel between finitely generated integral
+modules with trivial `ℓ`-torsion identifies their reduction classes in characteristic `ℓ`. -/
 theorem reductionK0_eq_of_injective_of_finite_cokernel {V W : Type u}
-    [AddCommGroup V] [DistribMulAction G V] [Module.Finite ℤ V] [Module.IsTorsionFree ℤ V]
-    [AddCommGroup W] [DistribMulAction G W] [Module.Finite ℤ W] [Module.IsTorsionFree ℤ W]
-    (f : V →+[G] W) (hf : Injective f)
-    [Finite (W ⧸ f.toAddMonoidHom.toIntLinearMap.range)] :
+    [AddCommGroup V] [DistribMulAction G V] [Module.Finite ℤ V]
+    [Subsingleton (Submodule.torsionBy ℤ V ℓ)]
+    [AddCommGroup W] [DistribMulAction G W] [Module.Finite ℤ W]
+    [Subsingleton (Submodule.torsionBy ℤ W ℓ)]
+    (f : V →+[G] W) (hf : Injective f) (hfin : Finite (W ⧸ (f : V →+ W).range)) :
     reductionK0 k (Representation.ofDistribMulAction ℤ G V) =
       reductionK0 k (Representation.ofDistribMulAction ℤ G W) := by
-  let m := f.toAddMonoidHom.toIntLinearMap
-  let σ := Representation.ofDistribMulAction ℤ G W
-  let τ := σ.quotient m.range fun g x hx => by
+  let N := (f : V →+ W).range
+  have hN : ∀ g : G, ∀ x ∈ N, g • x ∈ N := fun g x hx ↦ by
     obtain ⟨y, rfl⟩ := hx
     exact ⟨g • y, map_smul f g y⟩
-  let : DistribMulAction G (W ⧸ m.range) := DistribMulAction.compHom _ τ
-  let q : W →+[G] (W ⧸ m.range) :=
-    { m.range.mkQ.toAddMonoidHom with
-      map_smul' := fun g x => by
-        change m.range.mkQ (σ g x) = τ g (m.range.mkQ x)
-        -- The quotient representation is defined by the maps induced by `σ g`.
-        rfl }
-  have hex : Exact f q := LinearMap.exact_iff.mpr (Submodule.ker_mkQ m.range)
-  rw [← latticeDefect_eq_reductionK0 k G ℓ V, ← latticeDefect_eq_reductionK0 k G ℓ W]
+  let : DistribMulAction G (W ⧸ N) := N.quotientDistribMulAction hN
+  let q : W →+[G] (W ⧸ N) :=
+    { QuotientAddGroup.mk' N with
+      map_smul' := fun g x ↦ (N.quotientDistribMulAction_smul_mk hN g x).symm }
+  have hex : Exact f q := AddMonoidHom.exact_iff.mpr (QuotientAddGroup.ker_mk' N)
+  rw [← latticeDefect_eq_reductionK0_of_subsingleton_torsionBy k G ℓ V (by simp),
+    ← latticeDefect_eq_reductionK0_of_subsingleton_torsionBy k G ℓ W (by simp)]
   exact latticeDefect_eq_of_exact_of_finite k G ℓ f q hf hex
-    (Submodule.mkQ_surjective m.range)
+    (QuotientAddGroup.mk'_surjective N)
 
 /-- Integral lattices with equivalent rationalizations have equal reduction classes in prime
 characteristic. Their reductions themselves need not be equivalent representations. -/
@@ -107,8 +112,7 @@ theorem reductionK0_eq_of_nonempty_equiv_baseChange_rat_of_prime_char {V W : Typ
     reductionK0 k (Representation.ofDistribMulAction ℤ G V) =
       reductionK0 k (Representation.ofDistribMulAction ℤ G W) := by
   obtain ⟨f, hf, hfin⟩ := exists_injective_finite_quotient_range_of_nonempty_equiv h
-  let : Finite (W ⧸ f.toAddMonoidHom.toIntLinearMap.range) := hfin
-  exact reductionK0_eq_of_injective_of_finite_cokernel k G ℓ f hf
+  exact reductionK0_eq_of_injective_of_finite_cokernel k G ℓ f hf hfin
 
 end PrimeCharacteristic
 
@@ -131,35 +135,9 @@ private theorem reductionK0_eq_of_nonempty_equiv_baseChange_rat_of_charZero [Cha
     (fun s ↦ .of_ne_zero (nonZeroDivisors.coe_ne_zero s))
     fun s ↦ .of_ne_zero (nonZeroDivisors.coe_ne_zero s)
   have hs : ((s : ℤ) : k) ≠ 0 := Int.cast_ne_zero.mpr (nonZeroDivisors.coe_ne_zero s)
-  have hcomp (x : k ⊗[ℤ] V) :
-      f'.baseChange k (f.baseChange k x) = ((s : ℤ) : k) • x := by
-    have hc : f'.toLinearMap ∘ₗ f.toLinearMap = (s : ℤ) • LinearMap.id :=
-      LinearMap.ext hf'f
-    change ((f'.baseChange k).toLinearMap ∘ₗ (f.baseChange k).toLinearMap) x = _
-    rw [Representation.IntertwiningMap.toLinearMap_baseChange,
-      Representation.IntertwiningMap.toLinearMap_baseChange,
-      ← LinearMap.baseChange_comp, hc, LinearMap.baseChange_smul, LinearMap.baseChange_id,
-      LinearMap.smul_apply, LinearMap.id_apply, ← IsScalarTower.algebraMap_smul k (s : ℤ) x]
-    simp
-  have hcomp' (x : k ⊗[ℤ] W) :
-      f.baseChange k (f'.baseChange k x) = ((s : ℤ) : k) • x := by
-    have hc : f.toLinearMap ∘ₗ f'.toLinearMap = (s : ℤ) • LinearMap.id :=
-      LinearMap.ext hff'
-    change ((f.baseChange k).toLinearMap ∘ₗ (f'.baseChange k).toLinearMap) x = _
-    rw [Representation.IntertwiningMap.toLinearMap_baseChange,
-      Representation.IntertwiningMap.toLinearMap_baseChange,
-      ← LinearMap.baseChange_comp, hc, LinearMap.baseChange_smul, LinearMap.baseChange_id,
-      LinearMap.smul_apply, LinearMap.id_apply, ← IsScalarTower.algebraMap_smul k (s : ℤ) x]
-    simp
-  have hf : Bijective (f.baseChange k) := by
-    refine ⟨fun x y hxy ↦ (smul_right_injective _ hs) ?_, fun y ↦ ?_⟩
-    · simpa only [hcomp] using congrArg (f'.baseChange k) hxy
-    · refine ⟨((s : ℤ) : k)⁻¹ • f'.baseChange k y, ?_⟩
-      rw [map_smul, hcomp', smul_smul, inv_mul_cancel₀ hs, one_smul]
-  rw [reductionK0_def, reductionK0_def]
-  apply ExactK0.of_congr
-  exact (Representation.asModuleLinearEquivOfEquiv
-    ((f.baseChange k).ofBijective hf)).toFGModuleCatIso
+  obtain ⟨e'⟩ := Representation.nonempty_equiv_baseChange_of_comp_eq_smul
+    (A := k) f f' (s : ℤ) hf'f hff' (isUnit_iff_ne_zero.mpr hs)
+  exact reductionK0_congr_baseChange k e'
 
 /-- Integral lattices with equivalent rationalizations have equal reduction classes over every
 field, even when the reduced representations are not equivalent. -/

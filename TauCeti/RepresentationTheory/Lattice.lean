@@ -110,6 +110,23 @@ theorem _root_.Representation.Equiv.exists_intertwiningMap_comp_eq_smul
   exact ⟨⟨h, fun g ↦ LinearMap.ext (hint g)⟩, ⟨h', fun g ↦ LinearMap.ext (hint' g)⟩, s * t,
     by simpa using hcomp, by simpa using hcomp'⟩
 
+/-- Maps inverse up to a scalar become equivalent after base change when that scalar is a unit
+in the coefficient algebra. -/
+theorem Representation.nonempty_equiv_baseChange_of_comp_eq_smul
+    (f : ρ.IntertwiningMap σ) (f' : σ.IntertwiningMap ρ) (s : R)
+    (hf'f : ∀ v, f' (f v) = s • v) (hff' : ∀ w, f (f' w) = s • w)
+    (hs : IsUnit (algebraMap R A s)) :
+    Nonempty ((Representation.baseChange A ρ).Equiv (Representation.baseChange A σ)) := by
+  obtain ⟨u, hu⟩ := hs
+  have hf : Function.Bijective (f.baseChange A) := by
+    refine ⟨fun x y hxy ↦ u.isUnit.smul_left_cancel.mp ?_, fun y ↦ ?_⟩
+    · simpa only [Representation.IntertwiningMap.baseChange_comp_apply_of_comp_eq_smul
+        f f' s hf'f, ← hu] using congrArg (f'.baseChange A) hxy
+    · refine ⟨(↑u⁻¹ : A) • f'.baseChange A y, ?_⟩
+      rw [map_smul, Representation.IntertwiningMap.baseChange_comp_apply_of_comp_eq_smul
+        f' f s hff', ← hu, smul_smul, Units.inv_mul, one_smul]
+  exact ⟨(f.baseChange A).ofBijective hf⟩
+
 end Localization
 
 section Int
