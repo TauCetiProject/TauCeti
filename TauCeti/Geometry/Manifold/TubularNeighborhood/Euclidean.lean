@@ -59,7 +59,7 @@ radius, since points of `M` whose images are close lie in a common chart neighbo
 public section
 
 open Set Function Filter Topology Bundle
-open scoped Manifold ContDiff
+open scoped Manifold ContDiff InnerProductSpace
 
 namespace TauCeti
 
@@ -198,9 +198,9 @@ private theorem exists_injOn_isOpen_image_normal {g : E → V} {u₀ : E}
     have h2 : ∀ᶠ u in 𝓝 u₀, Injective (A u) :=
       (hg.fderiv_right (m := 1) (by norm_num)).continuousAt.preimage_mem_nhds
         (ContinuousLinearMap.isOpen_injective.mem_nhds hinj)
+    have hRu₀ : IsUnit (R u₀) := hR₀ ▸ isUnit_one
     have h3 : ∀ᶠ u in 𝓝 u₀, IsUnit (R u) :=
-      hRc.preimage_mem_nhds ((Units.isOpen (R := W₀ →L[ℝ] W₀)).mem_nhds
-        (show IsUnit (R u₀) by rw [hR₀]; exact isUnit_one))
+      hRc.preimage_mem_nhds ((Units.isOpen (R := W₀ →L[ℝ] W₀)).mem_nhds hRu₀)
     exact (hg.eventually (by simp)).and (h2.and h3)
   -- The normal map, with fibres parametrized by `W₀`, is a local homeomorphism `h`.
   obtain ⟨h, hsrc, hΨh⟩ := exists_openPartialHomeomorph_normal hg hinj
@@ -261,7 +261,8 @@ private theorem exists_injOn_isOpen_image_normal {g : E → V} {u₀ : E}
       · rintro ⟨p, ⟨hpO, hu, hv, hvδ⟩, rfl⟩
         obtain ⟨hρp, hQp⟩ := hkey p hu hv hvδ
         refine ⟨ρ p, ⟨⟨hρp, hu, mem_univ _⟩, ?_⟩, hΨρ p hQp⟩
-        rw [mem_preimage, show θ (ρ p) = p from Prod.ext rfl hQp]
+        have hθρ : θ (ρ p) = p := Prod.ext rfl hQp
+        rw [mem_preimage, hθρ]
         exact ⟨hpO, mem_univ _, mem_ball_zero_iff.mpr hvδ⟩
       · rintro ⟨⟨u, w⟩, ⟨⟨-, hu, -⟩, hθO, -, hθδ⟩, rfl⟩
         refine ⟨θ (u, w), ⟨hθO, hu, Submodule.starProjection_apply_mem _ _,
@@ -286,6 +287,15 @@ complement in `V` of the range of the differential of `f` at `x`. It realizes th
 space `TauCeti.SmoothEmbedding.NormalSpace` as a subspace of `V`, using the inner product. -/
 noncomputable def normalSubspace (f : M → V) (x : M) : Submodule ℝ V :=
   (mfderiv I 𝓘(ℝ, V) f x : E →L[ℝ] V).rangeᗮ
+
+omit [FiniteDimensional ℝ V] [FiniteDimensional ℝ E] in
+/-- A vector is normal to `f` at `x` exactly when it is orthogonal to every value of the
+differential of `f` at `x`. -/
+@[simp]
+theorem mem_normalSubspace_iff {f : M → V} {x : M} {v : V} :
+    v ∈ normalSubspace I f x ↔ ∀ u : E, ⟪v, (mfderiv I 𝓘(ℝ, V) f x : E →L[ℝ] V) u⟫_ℝ = 0 :=
+  ⟨fun h u => Submodule.inner_left_of_mem_orthogonal (LinearMap.mem_range_self _ u) h,
+    fun h _ ⟨u, hu⟩ => hu ▸ inner_eq_zero_symm.mp (h u)⟩
 
 variable (I) in
 /-- The normal vectors along `f : M → V` of length less than `ε`, as a subset of `M × V`. -/
