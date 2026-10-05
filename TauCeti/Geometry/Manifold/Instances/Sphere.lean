@@ -13,6 +13,8 @@ public import TauCeti.Geometry.Sphere.LinearIsometry
 
 import Mathlib.Analysis.Calculus.Deriv.Linear
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+import Mathlib.Analysis.SpecialFunctions.Complex.Circle
+import Mathlib.Topology.MetricSpace.HausdorffDimension
 
 /-!
 # The stereographic charts of the sphere, and the smooth embeddings of spheres induced by
@@ -36,7 +38,8 @@ makes the restriction a smooth embedding. Great circles, the geometric presentat
 are the case of a linear isometry `ℂ →ₗᵢ[ℝ] E`.
 
 Finally, the covering map `Circle.exp : ℝ → S¹` has injective derivative everywhere, so that a
-loop and its lift to `ℝ` have the same tangent lines.
+loop and its lift to `ℝ` have the same tangent lines. A differentiable loop in a sphere of dimension
+at least two omits a point, allowing the entire loop to be read in one stereographic chart.
 
 ## Main results
 
@@ -49,6 +52,8 @@ loop and its lift to `ℝ` have the same tangent lines.
 * `TauCeti.injective_mfderiv_circleExp`: the derivative of `Circle.exp : ℝ → S¹` is injective.
 * `TauCeti.deriv_comp_circleExp_ne_zero_and_range_mfderiv`: lifting a `C¹` immersed circle
   along `Circle.exp` gives a nonzero derivative spanning its tangent line.
+* `TauCeti.exists_notMem_range_circle_sphere`: a differentiable loop in a sphere of dimension
+  at least two omits a point.
 -/
 
 public section
@@ -218,5 +223,35 @@ theorem deriv_comp_circleExp_ne_zero_and_range_mfderiv {f : Circle → V}
   simp only [ContinuousLinearMap.toLinearMap_comp,
     LinearMap.range_comp_of_range_eq_top _ (LinearMap.range_eq_top.mpr he_surj)] at this
   exact this.symm
+
+/-! ### Points omitted by differentiable loops -/
+
+/-- A differentiable loop in a sphere of dimension at least two omits a point.
+No immersion or injectivity assumption is needed. -/
+theorem exists_notMem_range_circle_sphere
+    {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+    {n : ℕ} [Fact (finrank ℝ E = n + 1)] (hn : 2 ≤ n)
+    {f : Circle → sphere (0 : E) 1} (hf : MDifferentiable (𝓡 1) (𝓡 n) f) :
+    ∃ p : sphere (0 : E) 1, p ∉ range f := by
+  -- The cone over the loop is the image of a differentiable map from a plane.
+  have hγ : Differentiable ℝ (fun t => (f (Circle.exp t) : E)) :=
+    mdifferentiable_iff_differentiable.mp <|
+      ((contMDiff_coe_sphere (m := 1)).mdifferentiable one_ne_zero).comp
+        (hf.comp ((contMDiff_circleExp (m := 1)).mdifferentiable one_ne_zero))
+  let F : ℝ × ℝ → E := fun q => q.1 • (f (Circle.exp q.2) : E)
+  have hF : Differentiable ℝ F := differentiable_fst.smul (hγ.comp differentiable_snd)
+  obtain ⟨a, ha⟩ := (hF.dense_compl_range_of_finrank_lt_finrank (by
+    rw [Module.finrank_prod, Module.finrank_self, (Fact.out : finrank ℝ E = n + 1)]
+    omega)).nonempty
+  have ha0 : a ≠ 0 := by
+    rintro rfl
+    exact ha ⟨(0, 0), by simp [F]⟩
+  have hnorm : ‖‖a‖⁻¹ • a‖ = 1 := norm_smul_inv_norm ha0
+  refine ⟨⟨‖a‖⁻¹ • a, mem_sphere_zero_iff_norm.mpr hnorm⟩, ?_⟩
+  rintro ⟨z, hz⟩
+  obtain ⟨t, rfl⟩ := Circle.exp_surjective z
+  have hz' := congrArg Subtype.val hz
+  refine ha ⟨(‖a‖, t), ?_⟩
+  simp only [F, hz', smul_smul, mul_inv_cancel₀ (norm_ne_zero_iff.mpr ha0), one_smul]
 
 end TauCeti
