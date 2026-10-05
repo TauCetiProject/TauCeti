@@ -13,9 +13,9 @@ public import Mathlib.RingTheory.GradedAlgebra.HomogeneousLocalization
 For a graded ring `A`, an element `f : A` and a ring homomorphism `φ : A →+* R` with `φ f` a unit,
 `HomogeneousLocalization.Away.lift 𝒜 φ hf` is the ring homomorphism `A_{(f)} →+* R` sending
 `a / fⁿ` to `φ a / (φ f)ⁿ`: the restriction to the degree-zero part `A_{(f)}` of the lift
-`A_f →+* R` of `φ`. Geometrically, when `R` is the coordinate ring of an affine scheme, it is the
-morphism `Spec R ⟶ Spec A_{(f)} ⊆ Proj A` through the standard chart `D₊(f)` given by
-"homogeneous coordinates" `φ`.
+`A_f →+* R` of `φ`. Geometrically, when `A` is `ℕ`-graded and `f` is homogeneous of positive
+degree, `Spec A_{(f)}` is the standard affine chart `D₊(f)` of `Proj A`, and `Spec` of `lift` is
+the morphism `Spec R ⟶ D₊(f) ⊆ Proj A` given by the "homogeneous coordinates" `φ`.
 
 ## Main definitions
 
