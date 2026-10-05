@@ -50,6 +50,8 @@ namespace TauCeti
 open Function TensorProduct
 open scoped MonoidAlgebra Pointwise
 
+-- The structural integer actions on submodules, quotients and tensor products agree with
+-- the canonical action of an abelian group only propositionally; prefer the structural ones.
 attribute [local instance high] Submodule.module Submodule.Quotient.module TensorProduct.instModule
 
 universe u
@@ -104,7 +106,7 @@ theorem reductionK0_eq_of_injective_of_finite_quotient_range {V W : Type u}
 
 /-- Integral lattices with equivalent rationalizations have equal reduction classes in prime
 characteristic. Their reductions themselves need not be equivalent representations. -/
-theorem reductionK0_eq_of_nonempty_equiv_baseChange_rat_of_prime_char {V W : Type u}
+theorem reductionK0_eq_of_nonempty_equiv_baseChange_rat_of_charP {V W : Type u}
     [AddCommGroup V] [DistribMulAction G V] [Module.Finite ℤ V] [Module.IsTorsionFree ℤ V]
     [AddCommGroup W] [DistribMulAction G W] [Module.Finite ℤ W] [Module.IsTorsionFree ℤ W]
     (h : Nonempty ((Representation.baseChange ℚ (Representation.ofDistribMulAction ℤ G V)).Equiv
@@ -137,7 +139,7 @@ private theorem reductionK0_eq_of_nonempty_equiv_baseChange_rat_of_charZero [Cha
   have hs : ((s : ℤ) : k) ≠ 0 := Int.cast_ne_zero.mpr (nonZeroDivisors.coe_ne_zero s)
   obtain ⟨e'⟩ := nonempty_equiv_baseChange_of_comp_eq_smul
     (A := k) f f' (s : ℤ) hf'f hff' (isUnit_iff_ne_zero.mpr hs)
-  exact reductionK0_congr_baseChange k e'
+  exact reductionK0_congr_of_equiv_baseChange k e'
 
 /-- Integral lattices with equivalent rationalizations have equal reduction classes over every
 field, even when the reduced representations are not equivalent. -/
@@ -150,7 +152,7 @@ theorem reductionK0_eq_of_nonempty_equiv_baseChange_rat
   let : CharP k ℓ := hℓ
   rcases CharP.char_is_prime_or_zero k ℓ with hp | rfl
   · let : Fact ℓ.Prime := ⟨hp⟩
-    exact reductionK0_eq_of_nonempty_equiv_baseChange_rat_of_prime_char k G ℓ h
+    exact reductionK0_eq_of_nonempty_equiv_baseChange_rat_of_charP k G ℓ h
   · let : CharZero k := CharP.charP_to_charZero k
     exact reductionK0_eq_of_nonempty_equiv_baseChange_rat_of_charZero k G h
 

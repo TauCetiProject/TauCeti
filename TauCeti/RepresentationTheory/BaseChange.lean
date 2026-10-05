@@ -551,8 +551,9 @@ theorem _root_.Representation.IntertwiningMap.toLinearMap_baseChange
 theorem coe_intertwiningMap_baseChange
     (f : _root_.Representation.IntertwiningMap ρ σ) (A : Type*) [CommSemiring A] [Algebra R A] :
     ⇑(f.baseChange A) = f.toLinearMap.lTensor A := by
-  rw [← LinearMap.baseChange_eq_ltensor]
-  rfl
+  rw [← LinearMap.baseChange_eq_ltensor,
+    ← Representation.IntertwiningMap.toLinearMap_baseChange,
+    Representation.IntertwiningMap.coe_toLinearMap]
 
 /-- **Base change transports an equivalence of representations**: an equivariant isomorphism
 `ρ ≃ σ` becomes an equivariant isomorphism `A ⊗[R] V ≃ A ⊗[R] W` after extending the scalars,

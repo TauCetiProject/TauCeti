@@ -21,8 +21,7 @@ public section
 namespace TauCeti.Padic
 
 /-- A p-adic field satisfies the strong rank condition. -/
-instance instStrongRankCondition (p : ℕ) [Fact p.Prime] : StrongRankCondition ℚ_[p] := by
-  let hfield : Field ℚ_[p] := @NormedField.toField _ (_root_.Padic.normedField p)
-  exact @commRing_strongRankCondition _ hfield.toCommRing (@Field.toNontrivial _ hfield)
+instance instStrongRankCondition (p : ℕ) [Fact p.Prime] : StrongRankCondition ℚ_[p] :=
+  commRing_strongRankCondition _
 
 end TauCeti.Padic

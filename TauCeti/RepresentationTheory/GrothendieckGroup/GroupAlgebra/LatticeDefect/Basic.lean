@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Category.ModuleCat.CartanMap.Basic
 public import TauCeti.Algebra.Module.Torsion.Tensor
+import TauCeti.Algebra.Module.QuotSMulTop
 public import TauCeti.RepresentationTheory.AsModule
 public import TauCeti.RepresentationTheory.BaseChange
 public import TauCeti.RepresentationTheory.TorsionBy
@@ -105,7 +106,7 @@ theorem reductionK0_def (ρ : Representation ℤ G W) :
   (rfl)
 
 /-- Equivalent scalar extensions have equal reduction classes. -/
-theorem reductionK0_congr_baseChange {W' : Type u} [AddCommGroup W'] [Module ℤ W']
+theorem reductionK0_congr_of_equiv_baseChange {W' : Type u} [AddCommGroup W'] [Module ℤ W']
     [Module.Finite ℤ W'] {ρ : Representation ℤ G W} {σ : Representation ℤ G W'}
     (e : (Representation.baseChange k ρ).Equiv (Representation.baseChange k σ)) :
     reductionK0 k ρ = reductionK0 k σ :=
@@ -115,7 +116,7 @@ theorem reductionK0_congr_baseChange {W' : Type u} [AddCommGroup W'] [Module ℤ
 theorem reductionK0_congr {W' : Type u} [AddCommGroup W'] [Module ℤ W'] [Module.Finite ℤ W']
     {ρ : Representation ℤ G W} {σ : Representation ℤ G W'} (e : ρ.Equiv σ) :
     reductionK0 k ρ = reductionK0 k σ :=
-  reductionK0_congr_baseChange k (e.baseChange k)
+  reductionK0_congr_of_equiv_baseChange k (e.baseChange k)
 
 /-- The reduction class of a zero module is zero. -/
 @[simp]
@@ -140,29 +141,18 @@ before extending scalars does not change its reduction class. -/
 theorem reductionK0_quotSMulTop (ρ : Representation ℤ G W) (r : ℤ)
     (hr : (r : k) = 0) :
     reductionK0 k (ρ.quotSMulTop r) = reductionK0 k ρ := by
-  -- `exact_toLinearMap_mkQ` and `DistribSMul.toLinearMap ℤ W r` use the canonical integer
-  -- module structure, which is only propositionally equal to the given instance.
+  -- Integer pointwise scaling on submodules uses the canonical integer action, which
+  -- agrees only propositionally with the supplied `Module ℤ W` instance.
   cases Subsingleton.elim ‹Module ℤ W› (AddCommGroup.toIntModule W)
   let q : IntertwiningMap ρ (ρ.quotSMulTop r) :=
     { toLinearMap := (r • (⊤ : Submodule ℤ W)).mkQ
       isIntertwining' g := by
         ext x
         simp [LinearMap.comp_apply, Submodule.mkQ_apply] }
-  have hzero : (DistribSMul.toLinearMap ℤ W r).lTensor k = 0 := by
-    ext a x
-    simp only [AlgebraTensorModule.curry_apply, TensorProduct.curry_apply,
-      LinearMap.restrictScalars_apply, LinearMap.zero_apply,
-      LinearMap.lTensor_tmul, DistribSMul.toLinearMap_apply]
-    rw [← TensorProduct.smul_tmul, ← IsScalarTower.algebraMap_smul k r a]
-    simp [hr]
   have hq : Function.Bijective (q.baseChange k) := by
     rw [coe_intertwiningMap_baseChange]
-    refine ⟨?_, LinearMap.lTensor_surjective k (Submodule.mkQ_surjective _)⟩
-    have hex := lTensor_exact k (exact_toLinearMap_mkQ r W)
-      (Submodule.mkQ_surjective (r • (⊤ : Submodule ℤ W)))
-    rw [hzero] at hex
-    exact (LinearMap.exact_zero_iff_injective _ _).mp hex
-  exact (reductionK0_congr_baseChange k ((q.baseChange k).ofBijective hq)).symm
+    exact bijective_lTensor_mkQ_smul_top_of_algebraMap_eq_zero r (by simpa using hr)
+  exact (reductionK0_congr_of_equiv_baseChange k ((q.baseChange k).ofBijective hq)).symm
 
 end QuotientReduction
 
@@ -183,6 +173,8 @@ private noncomputable abbrev reductionMap {ρ : Representation ℤ G W} {σ : Re
 
 private theorem coe_reductionMap {ρ : Representation ℤ G W} {σ : Representation ℤ G W'}
     (f : IntertwiningMap ρ σ) : ⇑(reductionMap k f) = f.toLinearMap.lTensor k :=
+  -- `equivLinearMapAsModule` and the `asModule` synonym keep the underlying function
+  -- of an intertwining map, so the coercion lemma applies to `reductionMap`.
   coe_intertwiningMap_baseChange f k
 
 variable (ℓ : ℕ) [Fact ℓ.Prime] {V₁ V₂ V₃ : Type u} [AddCommGroup V₁] [Module ℤ V₁]

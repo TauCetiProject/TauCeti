@@ -111,13 +111,13 @@ theorem _root_.Representation.Equiv.exists_intertwiningMap_comp_eq_smul
   exact ⟨⟨h, fun g ↦ LinearMap.ext (hint g)⟩, ⟨h', fun g ↦ LinearMap.ext (hint' g)⟩, s * t,
     by simpa using hcomp, by simpa using hcomp'⟩
 
-/-- Maps inverse up to a scalar become equivalent after base change when that scalar is a unit
-in the coefficient algebra. -/
-theorem nonempty_equiv_baseChange_of_comp_eq_smul
+/-- A map with a two-sided inverse up to a scalar becomes bijective after base change when
+that scalar is a unit in the coefficient algebra. -/
+theorem bijective_baseChange_of_comp_eq_smul
     (f : ρ.IntertwiningMap σ) (f' : σ.IntertwiningMap ρ) (s : R)
     (hf'f : ∀ v, f' (f v) = s • v) (hff' : ∀ w, f (f' w) = s • w)
     (hs : IsUnit (algebraMap R A s)) :
-    Nonempty ((Representation.baseChange A ρ).Equiv (Representation.baseChange A σ)) := by
+    Function.Bijective (f.baseChange A) := by
   obtain ⟨u, hu⟩ := hs
   have hf'fA (x : A ⊗[R] V) : f'.baseChange A (f.baseChange A x) = (u : A) • x := by
     rw [coe_intertwiningMap_baseChange, coe_intertwiningMap_baseChange,
@@ -127,12 +127,19 @@ theorem nonempty_equiv_baseChange_of_comp_eq_smul
     rw [coe_intertwiningMap_baseChange, coe_intertwiningMap_baseChange,
       lTensor_comp_apply_of_comp_eq_smul f'.toLinearMap f.toLinearMap s hff',
       ← IsScalarTower.algebraMap_smul A, ← hu]
-  have hf : Function.Bijective (f.baseChange A) := by
-    refine ⟨fun x y hxy ↦ u.isUnit.smul_left_cancel.mp ?_, fun y ↦ ?_⟩
-    · simpa only [hf'fA] using congrArg (f'.baseChange A) hxy
-    · refine ⟨(↑u⁻¹ : A) • f'.baseChange A y, ?_⟩
-      rw [map_smul, hff'A, smul_smul, Units.inv_mul, one_smul]
-  exact ⟨(f.baseChange A).ofBijective hf⟩
+  refine ⟨fun x y hxy ↦ u.isUnit.smul_left_cancel.mp ?_, fun y ↦ ?_⟩
+  · simpa only [hf'fA] using congrArg (f'.baseChange A) hxy
+  · refine ⟨(↑u⁻¹ : A) • f'.baseChange A y, ?_⟩
+    rw [map_smul, hff'A, smul_smul, Units.inv_mul, one_smul]
+
+/-- Maps inverse up to a scalar become equivalent after base change when that scalar is a unit
+in the coefficient algebra. -/
+theorem nonempty_equiv_baseChange_of_comp_eq_smul
+    (f : ρ.IntertwiningMap σ) (f' : σ.IntertwiningMap ρ) (s : R)
+    (hf'f : ∀ v, f' (f v) = s • v) (hff' : ∀ w, f (f' w) = s • w)
+    (hs : IsUnit (algebraMap R A s)) :
+    Nonempty ((Representation.baseChange A ρ).Equiv (Representation.baseChange A σ)) :=
+  ⟨(f.baseChange A).ofBijective (bijective_baseChange_of_comp_eq_smul f f' s hf'f hff' hs)⟩
 
 end Localization
 
