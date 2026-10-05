@@ -163,7 +163,7 @@ theorem range_derivationCompLieHom_rootSubgroup_eq_adjointWeightSpace_baseChange
 variable [Nontrivial R]
 
 /-- Every root of the diagonal root datum occurs as a nontrivial adjoint weight of
-`SL_{r+1}`. The normalized matrix unit witnesses that its weight space is nonzero. -/
+`SL_{r+1}`. -/
 @[simp↓ 1100]
 theorem ofAdd_root_mem_nontrivialAdjointWeights
     (p : SplitTorus.CoordinateRootIndex (Fin (r + 1))) :
