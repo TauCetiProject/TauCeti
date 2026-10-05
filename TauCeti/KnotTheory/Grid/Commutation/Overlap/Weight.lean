@@ -61,10 +61,6 @@ namespace GridPentagonBetween
 
 variable {n : ℕ} {a s : Fin n} {x y : GridState n}
 
-/-- The two columns next to the replaced grid line of a pentagon are distinct. -/
-private theorem ne_finRotate (P : GridPentagonBetween a s x y) : a ≠ finRotate n a := fun h =>
-  Grid.right_notMem_cIco P.left (finRotate n a) (h ▸ Grid.self_mem_cIco_finRotate P.left_ne)
-
 /-- In the column before the replaced grid line a pentagon covers the rows above the turn row. -/
 private theorem mk_mem_coveredSquares_left_column (P : GridPentagonBetween a s x y) (t : Fin n) :
     (a, t) ∈ P.coveredSquares ↔ t ∈ Grid.cIoo s P.top := by
@@ -97,12 +93,6 @@ private theorem mk_notMem_toGridRectangle_coveredSquares_right_column
   simp only [GridRectangle.mem_coveredSquares, GridRectangle.mem_coveredColumns,
     GridRectangleBetween.toGridRectangle_left, GridRectangleBetween.toGridRectangle_right,
     P.right_eq, Grid.right_notMem_cIco, false_and, not_false_eq_true]
-
-/-- The turn row of a pentagon lies among its rows. -/
-private theorem turn_mem_cIco_bottom_top (P : GridPentagonBetween a s x y) :
-    s ∈ Grid.cIco P.bottom P.top := by
-  rw [GridRectangleBetween.bottom_def, GridRectangleBetween.top_def]
-  exact P.turn_mem
 
 end GridPentagonBetween
 

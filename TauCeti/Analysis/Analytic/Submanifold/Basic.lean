@@ -56,6 +56,10 @@ defined without the hypothesis `d ≤ n`, so that charts and analytic functions 
 * `TauCeti.IsAnalyticSubmanifold.inter`, `TauCeti.AnalyticOnSubmanifold.inter`,
   `TauCeti.analyticOnSubmanifold_of_locally_analyticOnSubmanifold`: restriction to relatively
   open subsets (nonempty ones, for submanifolds), and locality.
+* `TauCeti.AnalyticOnSubmanifold.exists_analyticAt_eqOn`,
+  `TauCeti.AnalyticOnSubmanifold.exists_analyticOnNhd_eqOn`: local ambient analytic extensions.
+* `TauCeti.AnalyticOnSubmanifold.continuousOn`: intrinsic analytic functions are continuous.
+* `TauCeti.IsAnalyticSubmanifold.of_isOpen_preimage_val`: nonempty relatively open subsets.
 * `TauCeti.isAnalyticSubmanifold_coordSubspace`, `IsOpen.isAnalyticSubmanifold`,
   `TauCeti.isAnalyticSubmanifold_singleton`: coordinate subspaces, open sets and points.
 
@@ -268,6 +272,21 @@ theorem IsAnalyticSubmanifold.inter (hS : IsAnalyticSubmanifold d S) (hU : IsOpe
   obtain ⟨e, hxe, he⟩ := hS.exists_isAnalyticChart x hx.1
   exact ⟨e.restrOpen U hU, ⟨hxe, hx.2⟩, he.restrOpen_inter hU⟩
 
+/-- A nonempty relatively open subset of an analytic submanifold is an analytic submanifold
+of the same dimension. Relative openness is expressed using the subtype topology. -/
+theorem IsAnalyticSubmanifold.of_isOpen_preimage_val (hS : IsAnalyticSubmanifold d S)
+    (hTS : T ⊆ S) (hT : IsOpen (Subtype.val ⁻¹' T : Set S)) (hne : T.Nonempty) :
+    IsAnalyticSubmanifold d T := by
+  obtain ⟨U, hU, hUT⟩ := isOpen_induced_iff.mp hT
+  have h : S ∩ U = T := by
+    ext x
+    constructor
+    · rintro ⟨hxS, hxU⟩
+      exact (Set.ext_iff.mp hUT ⟨x, hxS⟩).mp hxU
+    · intro hxT
+      exact ⟨hTS hxT, (Set.ext_iff.mp hUT ⟨x, hTS hxT⟩).mpr hxT⟩
+  simpa only [h] using hS.inter hU (h.symm ▸ hne)
+
 /-! ### Analytic functions on analytic submanifolds -/
 
 /-- A function `f` on `𝕜ⁿ` is *analytic on* `S` in dimension `d` if every point `x ∈ S` lies in the
@@ -316,6 +335,51 @@ theorem congr (hf : AnalyticOnSubmanifold d f S) (hfg : EqOn f g S) :
   refine ⟨e, hxe, he, hf'.congr ?_⟩
   filter_upwards [he.eventually_symm_firstCoords_mem hxe hx] with u hu
   exact hfg hu.2
+
+/-- A function analytic on a submanifold has an ambient extension analytic at each point.
+The extension agrees with the function on the submanifold in an open neighborhood. -/
+theorem exists_analyticAt_eqOn (hf : AnalyticOnSubmanifold d f S) (hx : x ∈ S) :
+    ∃ U, IsOpen U ∧ x ∈ U ∧ ∃ g : (Fin n → 𝕜) → E,
+      AnalyticAt 𝕜 g x ∧ EqOn f g (S ∩ U) := by
+  obtain ⟨e, hxe, he, hf'⟩ := hf x hx
+  let g := fun y ↦ f (e.symm (firstCoords 𝕜 d n (firstCoords 𝕜 n d (e y))))
+  have hτ : AnalyticAt 𝕜 (fun y ↦ firstCoords 𝕜 n d (e y)) x :=
+    ((firstCoords 𝕜 n d).analyticAt _).comp (he.analyticOnNhd _ hxe)
+  refine ⟨e.source, e.open_source, hxe, g, hf'.comp_of_eq hτ rfl, fun y hy ↦ ?_⟩
+  dsimp [g]
+  rw [he.symm_firstCoords_firstCoords_apply hy.2 hy.1]
+
+/-- A function analytic on a submanifold of dimension `d ≤ n` has an ambient analytic
+extension on an open neighborhood of each point. -/
+theorem exists_analyticOnNhd_eqOn (hf : AnalyticOnSubmanifold d f S) (hd : d ≤ n) (hx : x ∈ S) :
+    ∃ U, IsOpen U ∧ x ∈ U ∧ ∃ g : (Fin n → 𝕜) → E,
+      AnalyticOnNhd 𝕜 g U ∧ EqOn f g (S ∩ U) := by
+  obtain ⟨e, hxe, he, _⟩ := hf x hx
+  let P := (firstCoords 𝕜 d n).comp (firstCoords 𝕜 n d)
+  let U := e.source ∩ e ⁻¹' (P ⁻¹' e.target)
+  have hU : IsOpen U := e.isOpen_inter_preimage (e.open_target.preimage P.continuous)
+  have hxU : x ∈ U := by
+    refine ⟨hxe, ?_⟩
+    -- `P` is the projection onto the chart's tangent coordinates.
+    change firstCoords 𝕜 d n (firstCoords 𝕜 n d (e x)) ∈ e.target
+    rw [he.firstCoords_firstCoords_apply hxe hx]
+    exact e.map_source hxe
+  let g := fun y ↦ f (e.symm (firstCoords 𝕜 d n (firstCoords 𝕜 n d (e y))))
+  refine ⟨U, hU, hxU, g, ?_, fun y hy ↦ ?_⟩
+  · intro y hy
+    have hτ : AnalyticAt 𝕜 (fun z ↦ firstCoords 𝕜 n d (e z)) y :=
+      ((firstCoords 𝕜 n d).analyticAt _).comp (he.analyticOnNhd _ hy.1)
+    exact (hf.analyticOnNhd he hd _ hy.2).comp_of_eq hτ rfl
+  · dsimp [g]
+    rw [he.symm_firstCoords_firstCoords_apply hy.2.1 hy.1]
+
+/-- A function analytic on a submanifold is continuous on it. -/
+theorem continuousOn (hf : AnalyticOnSubmanifold d f S) : ContinuousOn f S := by
+  intro x hx
+  obtain ⟨U, hU, hxU, g, hg, hfg⟩ := hf.exists_analyticAt_eqOn hx
+  refine hg.continuousAt.continuousWithinAt.congr_of_eventuallyEq ?_ (hfg ⟨hx, hxU⟩)
+  filter_upwards [self_mem_nhdsWithin, mem_nhdsWithin_of_mem_nhds (hU.mem_nhds hxU)] with y hy hyU
+  exact hfg ⟨hy, hyU⟩
 
 /-- The restriction of an analytic function on `S` to the intersection of `S` with an open set is
 analytic. -/

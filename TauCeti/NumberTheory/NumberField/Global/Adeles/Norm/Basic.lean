@@ -70,6 +70,18 @@ variable (K L : Type*) [Field K] [NumberField K] [Field L] [NumberField L] [Alge
 
 /-! ### Finite adeles -/
 
+/-- The product of local norms above `v` is integral if every source coordinate above `v`
+is integral. -/
+theorem finprod_norm_mem_adicCompletionIntegers
+    (x : ∀ w : HeightOneSpectrum (𝓞 L), w.adicCompletion L)
+    (v : HeightOneSpectrum (𝓞 K))
+    (hx : ∀ w, w.under (𝓞 K) = v → x w ∈ w.adicCompletionIntegers L) :
+    (∏ᶠ w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal},
+      Algebra.norm (v.adicCompletion K) (x w.1)) ∈ v.adicCompletionIntegers K :=
+  finprod_induction _ (one_mem _) (fun _ _ ↦ mul_mem) fun w ↦
+    HeightOneSpectrum.norm_mem_adicCompletionIntegers v w.1
+      (hx w.1 (HeightOneSpectrum.ext w.2.over.symm))
+
 /-- The product over the places `w ∣ v` of the local norms of a finite adele of `L` lies in `𝒪_v`
 for all but finitely many finite places `v` of `K`. -/
 private theorem eventually_finprod_norm_mem_adicCompletionIntegers
@@ -83,10 +95,9 @@ private theorem eventually_finprod_norm_mem_adicCompletionIntegers
   refine Filter.eventually_cofinite.2 ((hx.image (HeightOneSpectrum.under (𝓞 K))).subset ?_)
   intro v hv
   by_contra hvS
-  refine hv (finprod_induction _ (one_mem _) (fun _ _ ↦ mul_mem) fun w ↦ ?_)
-  refine HeightOneSpectrum.norm_mem_adicCompletionIntegers v w.1 ?_
+  refine hv (finprod_norm_mem_adicCompletionIntegers K L x v fun w hwv ↦ ?_)
   by_contra hw
-  exact hvS ⟨w.1, hw, HeightOneSpectrum.ext w.2.over.symm⟩
+  exact hvS ⟨w, hw, hwv⟩
 
 /-- **The norm map of finite adeles.** For an extension `L / K` of number fields, the component of
 the norm of a finite adele `x` of `L` at a finite place `v` of `K` is `∏_{w ∣ v} N_{L_w/K_v}(x_w)`.

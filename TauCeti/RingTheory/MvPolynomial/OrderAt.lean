@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.MvPolynomial.Equiv
 public import Mathlib.Algebra.MvPolynomial.PDeriv
+public import Mathlib.Algebra.Polynomial.Taylor
 public import Mathlib.RingTheory.MvPowerSeries.NoZeroDivisors
 public import TauCeti.RingTheory.MvPowerSeries.Derivative
 
@@ -52,6 +54,9 @@ change it.
   determined by which iterated partial derivatives, up to the total degree, vanish there.
 * `MvPolynomial.orderAt_le_orderAt_aeval`: substitution does not decrease the order.
 * `MvPolynomial.orderAt_rename`: renaming along an injective map preserves the order.
+* `MvPolynomial.finSuccEquiv_taylor`, `MvPolynomial.coeff_taylor_cons`: singling out the
+  variable `X₀` turns the Taylor shift at `a` into the univariate Taylor shift at `a₀` followed by
+  the Taylor shift at the remaining coordinates.
 
 ## References
 
@@ -134,6 +139,34 @@ theorem pderiv_taylor (a : σ → R) (i : σ) (p : MvPolynomial σ R) :
     obtain rfl | hj := eq_or_ne j i
     · simp [hp]
     · simp [hp, pderiv_X_of_ne hj]
+
+/-- Singling out the variable `X₀` commutes with the Taylor shift: shifting `X₀` by `a₀` is the
+Taylor shift of the resulting univariate polynomial at `a₀`, and the remaining variables are
+shifted coefficientwise. -/
+theorem finSuccEquiv_taylor {n : ℕ} (a : Fin (n + 1) → R) (p : MvPolynomial (Fin (n + 1)) R) :
+    finSuccEquiv R n (taylor a p) =
+      (Polynomial.taylor (C (a 0)) (finSuccEquiv R n p)).map
+        (taylor (Fin.tail a) : MvPolynomial (Fin n) R →+* MvPolynomial (Fin n) R) := by
+  have hC (r : R) : finSuccEquiv R n (C r) = Polynomial.C (C r) := by simp [finSuccEquiv_apply]
+  induction p using MvPolynomial.induction_on with
+  | C r => simp [hC]
+  | add p q hp hq => simp [hp, hq]
+  | mul_X p i hp =>
+    cases i using Fin.cases with
+    | zero => simp [hp, hC, finSuccEquiv_X_zero, Polynomial.taylor_mul, Polynomial.map_mul]
+    | succ j =>
+      simp [hp, hC, finSuccEquiv_X_succ, Polynomial.taylor_mul, Polynomial.map_mul, Fin.tail]
+
+/-- The Taylor coefficients of `p` at `a`, read off after singling out the variable `X₀`: the
+coefficient of `X₀ ^ i * Xᵘ` is the coefficient of `Xᵘ` in the Taylor shift at `Fin.tail a` of
+the `i`-th coefficient of the univariate Taylor expansion at `a₀`. -/
+theorem coeff_taylor_cons {n : ℕ} (a : Fin (n + 1) → R) (p : MvPolynomial (Fin (n + 1)) R)
+    (i : ℕ) (u : Fin n →₀ ℕ) :
+    (taylor a p).coeff (u.cons i) =
+      (taylor (Fin.tail a)
+        ((Polynomial.taylor (C (a 0)) (finSuccEquiv R n p)).coeff i)).coeff u := by
+  rw [← finSuccEquiv_coeff_coeff, finSuccEquiv_taylor, Polynomial.coeff_map]
+  rfl
 
 end Taylor
 

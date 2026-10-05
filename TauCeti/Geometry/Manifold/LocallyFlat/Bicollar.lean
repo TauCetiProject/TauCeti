@@ -187,6 +187,15 @@ theorem disjoint_image_Ioi_Iio (h : IsBicollar f b) :
   rw [htt] at hneg
   exact absurd (hpos.trans hneg) (lt_irrefl 0)
 
+/-- Every point of the image of a bicollared map is a limit of points of the bicollar at depths
+in `s`, if `0` is in the closure of `s`. -/
+theorem apply_mem_closure_image (h : IsBicollar f b) {s : Set ℝ} (hs : (0 : ℝ) ∈ closure s)
+    (x : N) : f x ∈ closure (b '' (univ ×ˢ s)) := by
+  rw [← h.apply_zero x]
+  refine image_closure_subset_closure_image h.isOpenEmbedding.continuous ⟨(x, 0), ?_, rfl⟩
+  rw [closure_prod_eq, closure_univ]
+  exact ⟨mem_univ _, hs⟩
+
 /-- A bicollar restricts to a bicollar over any open subset of the domain. -/
 theorem restrict (h : IsBicollar f b) {U : Set N} (hU : IsOpen U) :
     IsBicollar (f ∘ ((↑) : U → N)) (b ∘ Prod.map ((↑) : U → N) id) where
@@ -260,6 +269,14 @@ theorem exists_isOpen_sdiff_range_eq_union [Nonempty N] (h : IsBicollared f) :
 end IsBicollared
 
 namespace IsLocallyBicollared
+
+/-- A locally bicollared map is continuous, being continuous on each open set on which it is
+bicollared. -/
+theorem continuous (h : IsLocallyBicollared f) : Continuous f :=
+  continuous_iff_continuousAt.2 fun x =>
+    let ⟨_, hU, hxU, hb⟩ := h x
+    (continuousOn_iff_continuous_domRestrict.2 hb.isEmbedding.continuous).continuousAt
+      (hU.mem_nhds hxU)
 
 /-- Local bicollaring is inherited by the restriction to an open subset of the domain. -/
 theorem restrict (h : IsLocallyBicollared f) {U : Set N} (hU : IsOpen U) :

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Ring.LadderValley
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Diagram
-public import TauCeti.RepresentationTheory.Quiver.AdmissibleIdeal
+public import TauCeti.RepresentationTheory.Quiver.AdmissibleIdeal.Basic
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Admissible
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Preprojective
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Signless

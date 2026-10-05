@@ -23,12 +23,12 @@ pullback objects, without choosing a new monoidal structure on pullback.
 
 ## Main declarations
 
-* `TauCeti.AlgebraicGeometry.Scheme.Opens.restrictFunctorMonoidal`:
+* `TauCeti.AlgebraicGeometry.restrictFunctorMonoidal`:
   the monoidal structure on restriction;
-* `TauCeti.AlgebraicGeometry.Scheme.Opens.pullbackInclusionExactPairing`:
+* `TauCeti.AlgebraicGeometry.pullbackInclusionExactPairing`:
   an exact pairing on the pullback objects;
-* `TauCeti.AlgebraicGeometry.Scheme.Opens.nonempty_hasLeftDual_pullback_inclusion` and
-  `TauCeti.AlgebraicGeometry.Scheme.Opens.nonempty_hasRightDual_pullback_inclusion`:
+* `TauCeti.AlgebraicGeometry.nonempty_hasLeftDual_pullback_inclusion` and
+  `TauCeti.AlgebraicGeometry.nonempty_hasRightDual_pullback_inclusion`:
   preservation of module duals;
 * `TauCeti.AlgebraicGeometry.QuasicoherentSheaf.nonempty_hasLeftDual_pullback_inclusion` and
   `TauCeti.AlgebraicGeometry.QuasicoherentSheaf.nonempty_hasRightDual_pullback_inclusion`:
@@ -49,7 +49,7 @@ noncomputable section
 
 variable {X : Scheme.{u}}
 
-namespace AlgebraicGeometry.Scheme.Opens
+namespace AlgebraicGeometry
 
 /-- Restriction to an open subscheme preserves tensor products and the structure sheaf. -/
 instance restrictFunctorMonoidal (U : X.Opens) :
@@ -121,9 +121,9 @@ theorem nonempty_hasRightDual_pullback_inclusion (U : X.Opens) (M : X.Modules)
   let := pullbackInclusionExactPairing U M (Mᘁ)
   exact ⟨⟨(Scheme.Modules.pullback U.ι).obj (Mᘁ)⟩⟩
 
-end AlgebraicGeometry.Scheme.Opens
+end AlgebraicGeometry
 
-open _root_.TauCeti.AlgebraicGeometry.Scheme.Opens
+open _root_.TauCeti.AlgebraicGeometry
 
 namespace AlgebraicGeometry.QuasicoherentSheaf
 

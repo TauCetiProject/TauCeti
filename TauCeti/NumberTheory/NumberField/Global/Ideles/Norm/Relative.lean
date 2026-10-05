@@ -5,23 +5,24 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.NumberField.Global.Adeles.Norm
+public import TauCeti.NumberTheory.NumberField.Global.Adeles.Norm.Continuity
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.Extension
 public import TauCeti.RingTheory.Norm.Units
+public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 
 /-!
 # The norm map of ideles and idele classes
 
 Let `L / K` be an extension of number fields. The norm map of adeles `adeleNorm` is
-multiplicative, so it restricts to a homomorphism of idele groups
+multiplicative and continuous, so it restricts to a continuous homomorphism of idele groups
 
-`ideleNormMap K L : 𝕀_L →* 𝕀_K`.
+`ideleNormMap K L : 𝕀_L →ₜ* 𝕀_K`.
 
 Its coordinate at a place `v` of `K` is the product, over the places `w ∣ v` of `L`, of the local
 norms `N_{L_w/K_v}` of the coordinates at `w`. It sends the principal idele of `x ∈ Lˣ` to the
-principal idele of `N_{L/K}(x)`, so it descends to a homomorphism of idele class groups
+principal idele of `N_{L/K}(x)`, so it descends to a continuous homomorphism of idele class groups
 
-`ideleClassNormMap K L : C_L →* C_K`.
+`ideleClassNormMap K L : C_L →ₜ* C_K`.
 
 Composed with extension of ideles from `K` to `L`, both maps are the `[L : K]`-th power map.
 
@@ -31,12 +32,14 @@ homomorphism to `ℝ≥0ˣ`.
 
 ## Main definitions
 
-* `TauCeti.GlobalNumberFields.ideleNormMap`: the norm map `𝕀_L →* 𝕀_K` of idele groups.
-* `TauCeti.GlobalNumberFields.ideleClassNormMap`: the induced norm map `C_L →* C_K` of idele
+* `TauCeti.GlobalNumberFields.ideleNormMap`: the norm map `𝕀_L →ₜ* 𝕀_K` of idele groups.
+* `TauCeti.GlobalNumberFields.ideleClassNormMap`: the induced norm map `C_L →ₜ* C_K` of idele
   class groups.
 
 ## Main results
 
+* `TauCeti.GlobalNumberFields.continuous_ideleNormMap`,
+  `TauCeti.GlobalNumberFields.continuous_ideleClassNormMap`: the relative norm maps are continuous.
 * `TauCeti.GlobalNumberFields.ideleFiniteCoord_ideleNormMap`,
   `TauCeti.GlobalNumberFields.ideleInfiniteCoord_ideleNormMap`: the coordinate of the norm of an
   idele at a place `v` of `K` is the product of the local norms of its coordinates at the places
@@ -64,10 +67,11 @@ namespace TauCeti.GlobalNumberFields
 
 variable (K L : Type*) [Field K] [NumberField K] [Field L] [NumberField L] [Algebra K L]
 
-/-- **The norm map of ideles** `N_{L/K} : 𝕀_L →* 𝕀_K`, the restriction of the multiplicative
+/-- **The norm map of ideles** `N_{L/K} : 𝕀_L →ₜ* 𝕀_K`, the restriction of the multiplicative
 norm map of adeles `adeleNorm` to units. -/
-def ideleNormMap : IdeleGroup (𝓞 L) L →* IdeleGroup (𝓞 K) K :=
-  Units.map (adeleNorm K L)
+def ideleNormMap : IdeleGroup (𝓞 L) L →ₜ* IdeleGroup (𝓞 K) K where
+  toMonoidHom := Units.map (adeleNorm K L)
+  continuous_toFun := (continuous_adeleNorm K L).units_map _
 
 variable {K L} in
 /-- The underlying adele of the norm of an idele is the adele norm of its underlying adele. -/
@@ -75,6 +79,12 @@ variable {K L} in
 theorem coe_ideleNormMap (x : IdeleGroup (𝓞 L) L) :
     (ideleNormMap K L x : AdeleRing (𝓞 K) K) = adeleNorm K L x :=
   (rfl)
+
+/-- The relative idele norm is continuous for the units topology, which controls both an
+adele and its inverse. -/
+@[continuity, fun_prop]
+theorem continuous_ideleNormMap : Continuous (ideleNormMap K L) :=
+  (ideleNormMap K L).continuous
 
 variable {K L} in
 /-- **The finite coordinates of the idele norm.** The coordinate of `N_{L/K}(x)` at a finite place
@@ -106,44 +116,55 @@ theorem ideleNormMap_unitEmbedding (x : Lˣ) :
     ideleNormMap K L (IdeleGroup.unitEmbedding (𝓞 L) L x) =
       IdeleGroup.unitEmbedding (𝓞 K) K (Algebra.normUnits K x) := by
   apply Units.ext
-  simp [ideleNormMap]
+  simp
 
 /-- The norm of an idele extended from `K` is its `[L : K]`-th power. -/
 @[simp]
 theorem ideleNormMap_ideleExtension (x : IdeleGroup (𝓞 K) K) :
     ideleNormMap K L (ideleExtension K L x) = x ^ Module.finrank K L := by
   apply Units.ext
-  simp [ideleNormMap]
+  simp
 
 /-- Norm maps of ideles compose in a tower of number fields. -/
 @[simp]
 theorem ideleNormMap_comp (M : Type*) [Field M] [NumberField M] [Algebra L M]
     [Algebra K M] [IsScalarTower K L M] :
     (ideleNormMap K L).comp (ideleNormMap L M) = ideleNormMap K M := by
-  apply MonoidHom.ext
+  apply ContinuousMonoidHom.ext
   intro x
   apply Units.ext
-  simpa only [MonoidHom.comp_apply, coe_ideleNormMap] using
+  simpa only [ContinuousMonoidHom.coe_comp, Function.comp_apply, MonoidHom.comp_apply,
+    coe_ideleNormMap] using
     DFunLike.congr_fun (adeleNorm_comp K L M) (x : AdeleRing (𝓞 M) M)
 
 /-- The norm map of ideles sends principal ideles to principal ideles. -/
 theorem principalSubgroup_le_comap_ideleNormMap :
     IdeleGroup.principalSubgroup (𝓞 L) L ≤
-      (IdeleGroup.principalSubgroup (𝓞 K) K).comap (ideleNormMap K L) := by
+      (IdeleGroup.principalSubgroup (𝓞 K) K).comap (ideleNormMap K L).toMonoidHom := by
   rintro _ ⟨x, rfl⟩
   exact ⟨Algebra.normUnits K x, (ideleNormMap_unitEmbedding K L x).symm⟩
 
-/-- **The norm map of idele classes** `N_{L/K} : C_L →* C_K`, induced by the norm map of ideles. -/
-def ideleClassNormMap : IdeleClassGroup (𝓞 L) L →* IdeleClassGroup (𝓞 K) K :=
-  QuotientGroup.map _ _ (ideleNormMap K L) (principalSubgroup_le_comap_ideleNormMap K L)
+/-- **The norm map of idele classes** `N_{L/K} : C_L →ₜ* C_K`, induced by the norm map of
+ideles. -/
+def ideleClassNormMap : IdeleClassGroup (𝓞 L) L →ₜ* IdeleClassGroup (𝓞 K) K :=
+  ContinuousMonoidHom.quotientLift (IdeleGroup.principalSubgroup (𝓞 L) L)
+    ((ContinuousMonoidHom.quotientMk (IdeleGroup.principalSubgroup (𝓞 K) K)).comp
+      (ideleNormMap K L)) (by
+        intro x hx
+        simpa using principalSubgroup_le_comap_ideleNormMap K L hx)
 
 variable {K L} in
 /-- On an idele class, the norm is represented by the norm of a representing idele. -/
 @[simp]
 theorem ideleClassNormMap_mk (x : IdeleGroup (𝓞 L) L) :
     ideleClassNormMap K L (x : IdeleClassGroup (𝓞 L) L) =
-      (ideleNormMap K L x : IdeleClassGroup (𝓞 K) K) :=
-  (rfl)
+      (ideleNormMap K L x : IdeleClassGroup (𝓞 K) K) := by
+  simp [ideleClassNormMap]
+
+/-- The relative norm on idele classes is continuous for the quotient topology. -/
+@[continuity, fun_prop]
+theorem continuous_ideleClassNormMap : Continuous (ideleClassNormMap K L) :=
+  (ideleClassNormMap K L).continuous
 
 /-- The norm of an idele class extended from `K` is its `[L : K]`-th power. -/
 @[simp]
@@ -157,12 +178,12 @@ theorem ideleClassNormMap_ideleClassExtension (x : IdeleClassGroup (𝓞 K) K) :
 theorem ideleClassNormMap_comp (M : Type*) [Field M] [NumberField M] [Algebra L M]
     [Algebra K M] [IsScalarTower K L M] :
     (ideleClassNormMap K L).comp (ideleClassNormMap L M) = ideleClassNormMap K M := by
-  unfold ideleClassNormMap
-  simpa only [ideleNormMap_comp] using
-    QuotientGroup.map_comp_map (IdeleGroup.principalSubgroup (𝓞 M) M)
-      (IdeleGroup.principalSubgroup (𝓞 L) L) (IdeleGroup.principalSubgroup (𝓞 K) K)
-      (ideleNormMap L M) (ideleNormMap K L)
-      (principalSubgroup_le_comap_ideleNormMap L M)
-      (principalSubgroup_le_comap_ideleNormMap K L)
+  apply ContinuousMonoidHom.ext
+  intro x
+  induction x using QuotientGroup.induction_on with
+  | H x =>
+    simpa only [ContinuousMonoidHom.coe_comp, Function.comp_apply, ideleClassNormMap_mk] using
+      congrArg (fun y : IdeleGroup (𝓞 K) K ↦ (y : IdeleClassGroup (𝓞 K) K))
+        (DFunLike.congr_fun (ideleNormMap_comp K L M) x)
 
 end TauCeti.GlobalNumberFields

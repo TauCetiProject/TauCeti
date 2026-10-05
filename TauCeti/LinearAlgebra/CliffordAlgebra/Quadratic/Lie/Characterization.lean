@@ -44,7 +44,8 @@ variable {R : Type u} [CommRing R] {M : Type v} [AddCommGroup M] [Module R M]
   [Invertible (2 : R)]
 
 /-- Reversal negates every quadratic Clifford element. -/
-@[simp]
+-- Prefer direct formulas for bivectors to proving membership in the quadratic Lie algebra.
+@[simp 900]
 theorem reverse_eq_neg_of_mem_quadraticLieSubalgebra
     (Q : QuadraticForm R M) {x : CliffordAlgebra Q}
     (hx : x ∈ quadraticLieSubalgebra Q) :

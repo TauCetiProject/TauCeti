@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 public import Mathlib.Analysis.Calculus.Gradient.Basic
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
+public import TauCeti.Analysis.Calculus.IteratedGradient
 public import TauCeti.Analysis.Calculus.Morse.Basic
 -- Private: strict differentiability, the gradient/Fréchet-derivative norm comparison, and the
 -- mean value inequality are used only to prove the local estimates below.
@@ -20,7 +21,8 @@ import TauCeti.Analysis.Calculus.Gradient
 The stable-manifold theorem starts with the derivative of the vector field at an equilibrium. For
 a gradient field on a real Hilbert space, the second derivative of the function naturally takes
 values in the continuous dual. The Riesz equivalence turns it into an endomorphism of the original
-space: `TauCeti.hessianOperator`.
+space, which is the derivative of the gradient: `TauCeti.hessianOperator`, the order-one field of
+`TauCeti.iteratedGradientChain`.
 
 At a twice continuously differentiable point this operator is self-adjoint, by symmetry of the
 second derivative. At a nondegenerate critical point it is invertible, and the negative-gradient
@@ -37,6 +39,7 @@ results that identify the operator as the derivative of the gradient and prove s
 ## Main declarations
 
 * `TauCeti.hessianOperator`: the Riesz-represented Hessian as an endomorphism of the Hilbert space.
+* `TauCeti.hessianOperator_eq_continuousLinearMapOfBilin`: its Riesz formula.
 * `TauCeti.hessianOperator_congr_of_eventuallyEq`: the operator depends only on the germ of the
   function at the point.
 * `ContDiffAt.isSelfAdjoint_hessianOperator`: symmetry of the second derivative becomes
@@ -76,41 +79,48 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
   {f g : E → ℝ} {x : E}
 
-/-- The Hessian of `f` at `x`, represented as an endomorphism of the Hilbert space using the Riesz
-equivalence. Its inner product with `w` is the second derivative of `f` evaluated on `v, w`.
+/-- The Hessian of `f` at `x` as an endomorphism of the Hilbert space: the order-one field
+`TauCeti.iteratedGradientChain f 1` of the iterated-gradient chain, that is, the Fréchet derivative
+of the gradient. Its inner product with `w` is the second derivative of `f` evaluated on `v, w`.
 
 The definition is meaningful without regularity because Mathlib's Fréchet derivative is
 totalized by zero. Twice continuous differentiability is assumed when this operator is used as
 the derivative of the gradient. -/
 noncomputable def hessianOperator (f : E → ℝ) (x : E) : E →L[ℝ] E :=
-  (InnerProductSpace.toDual ℝ E).symm.toContinuousLinearEquiv.toContinuousLinearMap ∘L
-    fderiv ℝ (fderiv ℝ f) x
+  iteratedGradientChain f 1 x
+
+/-- The Fréchet derivative of the gradient is the Hessian operator, with no regularity assumption:
+both sides use Mathlib's totalized derivatives. -/
+theorem fderiv_gradient (f : E → ℝ) (x : E) : fderiv ℝ (∇ f) x = hessianOperator f x := by
+  rw [hessianOperator, iteratedGradientChain_succ, iteratedGradientChain_zero]
+
+/-- The Riesz formula for the Hessian operator: it is the endomorphism that the inner product
+associates with the second derivative of `f`, viewed as a bilinear form. -/
+theorem hessianOperator_eq_continuousLinearMapOfBilin (f : E → ℝ) (x : E) :
+    hessianOperator f x = continuousLinearMapOfBilin (fderiv ℝ (fderiv ℝ f) x) := by
+  rw [← fderiv_gradient]
+  exact (toDual ℝ E).symm.toContinuousLinearEquiv.comp_fderiv (f := fderiv ℝ f) (x := x)
+
+/-- The inner-product characterization of the Hessian operator. -/
+@[simp]
+theorem inner_hessianOperator_left (f : E → ℝ) (x v w : E) :
+    ⟪hessianOperator f x v, w⟫_ℝ = fderiv ℝ (fderiv ℝ f) x v w := by
+  rw [hessianOperator_eq_continuousLinearMapOfBilin]
+  exact continuousLinearMapOfBilin_apply _ _ _
 
 /-- Applying the Riesz map to the Hessian operator recovers the dual-valued second derivative. -/
 @[simp]
 theorem toDual_hessianOperator (f : E → ℝ) (x : E) :
     (InnerProductSpace.toDual ℝ E).toContinuousLinearEquiv.toContinuousLinearMap ∘L
       hessianOperator f x = fderiv ℝ (fderiv ℝ f) x := by
-  ext v
-  simp [hessianOperator]
-
-/-- The inner-product characterization of the Hessian operator. -/
-@[simp]
-theorem inner_hessianOperator_left (f : E → ℝ) (x v w : E) :
-    ⟪hessianOperator f x v, w⟫_ℝ = fderiv ℝ (fderiv ℝ f) x v w := by
-  simp only [hessianOperator, ContinuousLinearMap.comp_apply,
-    ContinuousLinearEquiv.coe_coe, LinearIsometryEquiv.coe_toContinuousLinearEquiv]
-  exact InnerProductSpace.toDual_symm_apply
-
-/-- The Fréchet derivative of the gradient is the Hessian operator, with no regularity assumption:
-both sides use Mathlib's totalized derivatives. -/
-theorem fderiv_gradient (f : E → ℝ) (x : E) : fderiv ℝ (∇ f) x = hessianOperator f x :=
-  (InnerProductSpace.toDual ℝ E).symm.toContinuousLinearEquiv.comp_fderiv (f := fderiv ℝ f) (x := x)
+  ext v w
+  simp
 
 /-- The Hessian operator depends only on the germ of the function at the point. -/
 theorem hessianOperator_congr_of_eventuallyEq (hfg : f =ᶠ[𝓝 x] g) :
     hessianOperator f x = hessianOperator g x := by
-  rw [hessianOperator, hessianOperator, hfg.fderiv.fderiv_eq]
+  rw [hessianOperator_eq_continuousLinearMapOfBilin, hessianOperator_eq_continuousLinearMapOfBilin,
+    hfg.fderiv.fderiv_eq]
 
 end TauCeti
 
@@ -148,8 +158,8 @@ theorem hasFDerivAt_gradient (hf : ContDiffAt ℝ 2 f x) :
     simp only [Function.comp_apply, LinearIsometryEquiv.coe_toContinuousLinearEquiv]
     exact ((InnerProductSpace.toDual ℝ E).eq_symm_apply.2 toDual_gradient).symm
   rw [hfun] at h
-  -- The composed derivative is the Hessian operator, by its definition.
-  rw [hessianOperator]
+  -- The composed derivative is the Hessian operator, by its Riesz formula.
+  rw [hessianOperator_eq_continuousLinearMapOfBilin]
   exact h
 
 /-- The negative-gradient vector field is differentiable at a twice continuously differentiable

@@ -336,8 +336,8 @@ theorem coe_rankOneWeylNormalizerPoint (A : Type u) [CommRing A] :
 
 /-- The class of the Weyl representative in the pointwise torus normalizer quotient. -/
 noncomputable def rankOneWeylClass (A : Type u) [CommRing A] :
-    TauCeti.Subgroup.normalizerQuotient (rankOneCarrierTorusPoints A) :=
-  TauCeti.Subgroup.normalizerQuotientMk (rankOneCarrierTorusPoints A)
+    Subgroup.normalizerQuotient (rankOneCarrierTorusPoints A) :=
+  Subgroup.normalizerQuotientMk (rankOneCarrierTorusPoints A)
     (rankOneWeylNormalizerPoint A)
 
 /-- The Weyl class in the torus normalizer quotient has square one. -/
@@ -345,7 +345,7 @@ noncomputable def rankOneWeylClass (A : Type u) [CommRing A] :
 theorem rankOneWeylClass_sq (A : Type u) [CommRing A] :
     rankOneWeylClass A ^ 2 = 1 := by
   rw [rankOneWeylClass, ← map_pow]
-  apply (TauCeti.Subgroup.normalizerQuotientMk_eq_one_iff
+  apply (Subgroup.normalizerQuotientMk_eq_one_iff
     (rankOneCarrierTorusPoints A) ((rankOneWeylNormalizerPoint A) ^ 2)).mpr
   have hsquare : rankOneWeylPoint A ^ 2 ∈ rankOneCarrierTorusPoints A := by
     rw [rankOneWeylPoint_sq]
@@ -371,7 +371,7 @@ theorem rankOneWeylClass_ne_one (A : Type u) [CommRing A] [Nontrivial A] :
     rankOneWeylClass A ≠ 1 := by
   intro hclass
   rw [rankOneWeylClass] at hclass
-  have hm := (TauCeti.Subgroup.normalizerQuotientMk_eq_one_iff
+  have hm := (Subgroup.normalizerQuotientMk_eq_one_iff
     (rankOneCarrierTorusPoints A) (rankOneWeylNormalizerPoint A)).mp hclass
   exact rankOneWeylPoint_notMem_rankOneCarrierTorusPoints A
     (by simpa only [coe_rankOneWeylNormalizerPoint] using hm)

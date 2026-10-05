@@ -38,7 +38,7 @@ length at least three are the copies of `SimpleGraph.cycleGraph`, which Mathlib'
 `SimpleGraph.isAcyclic_iff_free_cycleGraph` identifies as the obstructions to acyclicity. With the
 tree case of Gabriel's dichotomy (`TauCeti.IsFiniteRepType.posDef_titsForm_of_isTree`) this gives
 the dichotomy's converse half for every finite connected quiver with finitely many arrows between
-any two vertices and without a pair of opposite arrows
+any two vertices
 (`TauCeti.IsFiniteRepType.posDef_titsForm_of_connected`).
 
 ## Main results
@@ -50,16 +50,17 @@ any two vertices and without a pair of opposite arrows
 * `TauCeti.IsFiniteRepType.isAcyclic_underlyingGraph`: the underlying graph of a quiver of finite
   representation type is acyclic.
 * `TauCeti.IsFiniteRepType.posDef_titsForm_of_connected`: **a finite connected quiver of finite
-  representation type with no pair of opposite arrows has a positive definite Tits form.**
+  representation type has a positive definite Tits form.**
 
 ## Implementation notes
 
 The cycles here have length at least three because that is what the underlying simple graph can
 see: a cycle of length two is a pair of opposite arrows `a ⟶ b`, `b ⟶ a`, which the underlying
 graph records as a single edge, and a cycle of length one is a loop, excluded already by
-`TauCeti.IsFiniteRepType.isEmpty_hom_self`. Length three is also what the construction needs: the
-closing edge must be the only edge of the cycle joining `x (n + 2)` and `x 0`, so that the other
-arrows can act by the identity.
+`TauCeti.IsFiniteRepType.isEmpty_hom_self`. The two-cycle obstruction is proved separately in
+`TauCeti.RepresentationTheory.Quiver.FiniteRepType.TwoCycle`. Length three is also what the
+construction below needs: the closing edge must be the only edge of the cycle joining
+`x (n + 2)` and `x 0`, so that the other arrows can act by the identity.
 
 The construction and the indecomposability argument adapt the nilpotent Jordan blocks on the
 one-loop quiver in `TauCeti/RepresentationTheory/Quiver/OneLoop/FiniteRepType.lean`
@@ -305,16 +306,15 @@ theorem IsFiniteRepType.isAcyclic_underlyingGraph (h : IsFiniteRepType.{u, v, w,
   exact not_isFiniteRepType_of_copy_cycleGraph f h
 
 /-- **Finite representation type of a connected quiver forces a positive definite Tits form.** A
-finite quiver of finite representation type whose underlying graph is connected, and which has no
-pair of opposite arrows `a ⟶ b`, `b ⟶ a`, has a positive definite Tits form.
+finite quiver of finite representation type whose underlying graph is connected has a positive
+definite Tits form.
 
 Its underlying graph is acyclic (`TauCeti.IsFiniteRepType.isAcyclic_underlyingGraph`), hence a
 tree, and the tree case is `TauCeti.IsFiniteRepType.posDef_titsForm_of_isTree`. This is the converse
 of `TauCeti.isFiniteRepType_of_titsForm_posDef` for such quivers. -/
 theorem IsFiniteRepType.posDef_titsForm_of_connected [Fintype Q] [∀ a b : Q, Fintype (a ⟶ b)]
     (h : IsFiniteRepType.{u, v, w, u} k Q)
-    (hopp : ∀ ⦃a b : Q⦄, a ≠ b → (a ⟶ b) → IsEmpty (b ⟶ a))
     (hconn : (underlyingGraph Q).Connected) : (titsForm Q).PosDef :=
-  h.posDef_titsForm_of_isTree hopp ⟨hconn, h.isAcyclic_underlyingGraph⟩
+  h.posDef_titsForm_of_isTree ⟨hconn, h.isAcyclic_underlyingGraph⟩
 
 end TauCeti

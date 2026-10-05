@@ -207,7 +207,7 @@ theorem normalizer_torus :
 /-! ### The Weyl group -/
 
 /-- **The Weyl group of `SU(2)`**, `N(T) / T` for the diagonal maximal torus `T`. This is
-`TauCeti.Subgroup.normalizerQuotient`, the general normalizer quotient of
+`Subgroup.normalizerQuotient`, the general normalizer quotient of
 `TauCeti/Algebra/Group/NormalizerQuotient/Basic.lean`, at the maximal torus. -/
 abbrev weylGroup : Type := Subgroup.normalizerQuotient torus
 
