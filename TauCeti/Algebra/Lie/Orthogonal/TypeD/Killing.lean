@@ -17,17 +17,12 @@ import TauCeti.LinearAlgebra.Span.Basic
 The split orthogonal Lie algebra on `Fin n ⊕ Fin n` is simple for `4 ≤ n` over a field of
 characteristic zero. Consequently its Killing form is nondegenerate.
 
-The proof uses the diagonal Cartan and concrete root-space classification. A nonzero ideal has a
-nonzero intersection with either the Cartan or a root space. In the first case, some simple root
-does not vanish on a chosen Cartan element, so the corresponding raising generator belongs to the
-ideal. In the second case, the root-space classification makes a nonzero element a scalar multiple
-of one of the standard root generators. Bracketing it with the opposite generator produces a
-nonzero diagonal element, reducing to the first case.
-
-Once one raising generator belongs to the ideal, the connected type-`D` diagram and the Cartan
-relations propagate membership to every raising generator. The `sl₂` relations then recover every
-lowering generator, and `LieAlgebra.Basis.span_ef` shows that the ideal is the whole algebra.
-Mathlib's simple-to-semisimple and Cartan-criterion instances supply the Killing conclusion.
+The Killing certificate makes the generic Borel and highest-weight APIs available for the concrete
+type-`D` basis `TypeDStd.lieBasis`. In particular,
+`LieAlgebra.Basis.borelSubalgebra_eq_sup_lieSpan_e` describes its compatible Borel using the
+diagonal Cartan and raising generators, while
+`LieAlgebra.Basis.isHighestWeightVector_iff_forall_e` reduces highest-weight conditions to the
+action of those generators.
 
 ## Main results
 
