@@ -23,7 +23,7 @@ when either fan is empty. No regularity hypothesis is needed.
 * `TauCeti.Toric.Fan.algebraicProdIso`: the canonical product-fan scheme isomorphism.
 * `TauCeti.Toric.Fan.isPullback_fst_snd_algebraicMap`: the fan projections form a pullback
   square over `Spec ℂ`.
-* `TauCeti.Toric.Fan.affineToricChartProdMap_comp_algebraicProdIso_inv`: the inverse formula
+* `TauCeti.Toric.Fan.affineToricChartProdMap_comp_algebraicProdComparison_inv`: the inverse formula
   on each product affine chart.
 
 ## References
@@ -109,6 +109,7 @@ noncomputable def algebraicProdIso : (Φ.prod Ψ).algebraicRealization ≅
 theorem algebraicProdIso_hom : (Φ.algebraicProdIso Ψ).hom = Φ.algebraicProdComparison Ψ :=
   (rfl)
 
+@[simp]
 theorem algebraicProdIso_inv : (Φ.algebraicProdIso Ψ).inv = inv (Φ.algebraicProdComparison Ψ) :=
   (rfl)
 
@@ -127,13 +128,13 @@ theorem isPullback_fst_snd_algebraicMap :
 /-- On each product open, the inverse global comparison is the inverse affine product
 isomorphism followed by the inclusion of the product-cone chart. -/
 @[reassoc]
-theorem affineToricChartProdMap_comp_algebraicProdIso_inv (σ : Φ.cones) (τ : Ψ.cones) :
-    Φ.affineToricChartProdMap Ψ σ τ ≫ (Φ.algebraicProdIso Ψ).inv =
+theorem affineToricChartProdMap_comp_algebraicProdComparison_inv (σ : Φ.cones) (τ : Ψ.cones) :
+    Φ.affineToricChartProdMap Ψ σ τ ≫ inv (Φ.algebraicProdComparison Ψ) =
       (affineToricSchemeProdIso Φ.lattice Ψ.lattice σ.1 τ.1).inv ≫
         (Φ.prod Ψ).affineToricChartι (Φ.prodCone Ψ σ τ) := by
-  apply (cancel_mono (Φ.algebraicProdIso Ψ).hom).mp
-  rw [Category.assoc, Iso.inv_hom_id, Category.comp_id]
-  simp only [algebraicProdIso_hom, Category.assoc,
+  apply (cancel_mono (Φ.algebraicProdComparison Ψ)).mp
+  rw [Category.assoc, IsIso.inv_hom_id, Category.comp_id]
+  simp only [Category.assoc,
     affineToricChartι_comp_algebraicProdComparison, Iso.inv_hom_id_assoc]
 
 end TauCeti.Toric.Fan
