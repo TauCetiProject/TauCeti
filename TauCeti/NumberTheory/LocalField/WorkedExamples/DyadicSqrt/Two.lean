@@ -10,6 +10,7 @@ public import TauCeti.NumberTheory.LocalField.Discriminant.Basic
 public import TauCeti.NumberTheory.LocalField.Eisenstein.TotallyRamified
 public import TauCeti.NumberTheory.LocalField.Padic
 public import TauCeti.RingTheory.AdjoinRoot
+import TauCeti.FieldTheory.Galois.SquareRoot
 import TauCeti.FieldTheory.Kummer.Extension
 
 /-!
@@ -175,8 +176,8 @@ theorem adjoin_integerSqrtTwo_eq_top : Algebra.adjoin 𝒪[ℚ_[2]] {integerSqrt
 /-- Every nonidentity automorphism sends `√2` to `-√2`. -/
 theorem apply_sqrtTwo_of_ne_one {σ : DyadicSqrtTwo ≃ₐ[ℚ_[2]] DyadicSqrtTwo} (hσ : σ ≠ 1) :
     σ sqrtTwo = -sqrtTwo := by
-  have hsq : σ sqrtTwo ^ 2 = sqrtTwo ^ 2 := by rw [← map_pow, sqrtTwo_sq, map_ofNat]
-  refine (sq_eq_sq_iff_eq_or_eq_neg.1 hsq).resolve_left fun h ↦ hσ ?_
+  refine (AlgEquiv.apply_eq_or_eq_neg_of_sq_eq σ
+    (c := (2 : ℚ_[2])) (by simpa only [map_ofNat] using sqrtTwo_sq)).resolve_left fun h ↦ hσ ?_
   exact AlgEquiv.coe_toAlgHom_injective (AdjoinRoot.algHom_ext h)
 
 /-- The displacement of any nonidentity automorphism at the integral generator has valuation
