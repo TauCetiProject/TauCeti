@@ -72,6 +72,9 @@ the field norm `N_{L/K}` (`TauCeti.ClassFieldTheory.levelNorm_unitsLevelEquiv`).
   subgroups.
 * `TauCeti.ClassFieldTheory.artinMap_norm`: the absolute local Artin map is functorial for the
   norm of a finite extension.
+* `TauCeti.ClassFieldTheory.groundEquiv_localFormationLayerEquiv_unitsLevelEquiv`: on ground
+  levels, the comparison `localFormationLayerEquiv` of a layer over `L` with its image over `K`
+  sends `y ∈ Lˣ` to `iota y`.
 
 ## References
 
@@ -234,59 +237,30 @@ section Layer
 
 omit [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K]
 
-/-- The ground subgroup of the layer over `K` corresponding to a layer `V' ◁ G_L` is
-`Gal(Kˢ/iota(L))`. -/
-private theorem localFormationMap_ofOpenNormal_ground_toSubgroup
-    (V' : OpenNormalSubgroup (AbsoluteGaloisGroup L)) :
-    ((ofOpenNormal V').localFormationMap K L iota).ground.toSubgroup =
-      (galoisSubgroup K L iota).toSubgroup := by
-  rw [localFormationMap_ground_toSubgroup, ground_ofOpenNormal, OpenSubgroup.toSubgroup_top,
-    ← MonoidHom.range_eq_map, range_localFormationHom]
-
-/-- The ground subgroup `Gal(Kˢ/iota(L))` of the layer over `K` corresponding to a layer
-`V' ◁ G_L` has fixed field `iota(L)`. -/
-private theorem fixedField_localFormationMap_ofOpenNormal_ground
-    (V' : OpenNormalSubgroup (AbsoluteGaloisGroup L)) :
-    IntermediateField.fixedField ((ofOpenNormal V').localFormationMap K L iota).ground.toSubgroup =
-      iota.fieldRange := by
-  rw [localFormationMap_ofOpenNormal_ground_toSubgroup, galoisSubgroup_toSubgroup,
-    InfiniteGalois.fixedField_fixingSubgroup]
-
-/-- For an open normal subgroup `V ≤ Gal(Kˢ/iota(L))` of `G_K` with preimage `V'` in `G_L`, the
-layer over `K` corresponding to `V' ◁ G_L` is the restriction `V ◁ Gal(Kˢ/iota(L))` of `V ◁ G_K`. -/
-private theorem layerRestriction_localFormationMap (V : OpenNormalSubgroup (AbsoluteGaloisGroup K))
-    (hV : V ≤ (galoisSubgroup K L iota).toSubgroup) :
-    LayerRestriction ((ofOpenNormal (V.comap (localFormationHom K L iota)
-      (continuous_localFormationHom K L iota))).localFormationMap K L iota) (ofOpenNormal V) := by
-  refine ⟨OpenSubgroup.toSubgroup_injective ?_, by rw [ground_ofOpenNormal]; exact le_top⟩
-  rw [localFormationMap_top_toSubgroup, top_ofOpenNormal, top_ofOpenNormal,
-    OpenNormalSubgroup.toSubgroup_comap, Subgroup.map_comap_eq, range_localFormationHom]
-  exact inf_eq_right.mpr hV
-
 /-- The norm from the ground level `Gal(Kˢ/iota(L))` to the ground level `G_K` of the restriction
 `layerRestriction_localFormationMap` sends `iota x` to `N_{L/K} x`. -/
 private theorem groundNorm_layerRestriction_localFormationMap
     (V : OpenNormalSubgroup (AbsoluteGaloisGroup K))
     (hV : V ≤ (galoisSubgroup K L iota).toSubgroup) (x : Additive Lˣ) :
-    (layerRestriction_localFormationMap L iota V hV).groundNorm (unitsFormation K)
-        (unitsLevelEquiv iota (fixedField_localFormationMap_ofOpenNormal_ground L iota _) x) =
+    (layerRestriction_localFormationMap K L iota V hV).groundNorm (unitsFormation K)
+        (unitsLevelEquiv iota (fixedField_localFormationMap_ofOpenNormal_ground K L iota _) x) =
       groundEquivOfOpenNormal (unitsFormation K) V
         (unitsLevelEquiv (Algebra.ofId K (SeparableClosure K)) (fixedField_toSubgroup_top K)
           (Additive.ofMul (Algebra.normUnits K x.toMul))) := by
   refine Subtype.ext ?_
   rw [LayerRestriction.groundNorm_apply_coe, ← Formation.levelNorm_apply_coe _
-    (layerRestriction_localFormationMap L iota V hV).ground_le,
+    (layerRestriction_localFormationMap K L iota V hV).ground_le,
     levelNorm_unitsLevelEquiv iota _ _ (fixedField_ground_ofOpenNormal K V)]
   simp
 
 /-- The unit `y ∈ Lˣ`, read in the ground level `((Lˢ)ˣ)^{G_L}` of a layer `V' ◁ G_L` and carried to
 the corresponding layer over `K`, is the unit `iota y` of the level of `Gal(Kˢ/iota(L))`. -/
-private theorem groundEquiv_localFormationLayerEquiv_unitsLevelEquiv
+theorem groundEquiv_localFormationLayerEquiv_unitsLevelEquiv
     (V' : OpenNormalSubgroup (AbsoluteGaloisGroup L)) (y : Additive Lˣ) :
     (localFormationLayerEquiv K L iota (ofOpenNormal V')).groundEquiv
         (groundEquivOfOpenNormal (unitsFormation L) V'
           (unitsLevelEquiv (Algebra.ofId L (SeparableClosure L)) (fixedField_toSubgroup_top L) y)) =
-      unitsLevelEquiv iota (fixedField_localFormationMap_ofOpenNormal_ground L iota V') y := by
+      unitsLevelEquiv iota (fixedField_localFormationMap_ofOpenNormal_ground K L iota V') y := by
   refine Subtype.ext ?_
   rw [LayerEquiv.groundEquiv_apply_coe, unitsLevelEquiv_apply_coe]
   apply (unitsCoeffEquivUnitsFormation K).symm.injective
@@ -315,10 +289,10 @@ private theorem abelianizationRestrict_absoluteArtinMap_normUnits
       abelianizationRestrict V (Additive.ofMul ((localFormationHom K L iota τ :
         AbsoluteGaloisGroup K) : TopologicalAbelianization (AbsoluteGaloisGroup K))) := by
   let V' := V.comap (localFormationHom K L iota) (continuous_localFormationHom K L iota)
-  have T := layerRestriction_localFormationMap L iota V hV
+  have T := layerRestriction_localFormationMap K L iota V hV
   have hτs :
       localFormationHom K L iota τ ∈ ((ofOpenNormal V').localFormationMap K L iota).ground := by
-    rw [← OpenSubgroup.mem_toSubgroup, localFormationMap_ofOpenNormal_ground_toSubgroup,
+    rw [← OpenSubgroup.mem_toSubgroup, localFormationMap_ofOpenNormal_ground_toSubgroup K L iota,
       ← range_localFormationHom]
     exact ⟨τ, rfl⟩
   -- Pass to the layer `V ◁ G_K` and write `N x` as the norm of `iota x` from the restricted layer
