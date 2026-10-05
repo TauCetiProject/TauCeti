@@ -65,8 +65,9 @@ private theorem awayLift_mk_eq_iff (φ : A →+* R) {f : A} (hf : IsUnit (φ f))
 theorem Away.lift_mk (φ : A →+* R) {f : A} (hf : IsUnit (φ f)) {d : ι} (hfd : f ∈ 𝒜 d) (n : ℕ)
     (a : A) (ha : a ∈ 𝒜 (n • d)) :
     Away.lift 𝒜 φ hf (Away.mk 𝒜 hfd n a ha) = φ a * ↑(hf.unit ^ n)⁻¹ := by
-  rw [Away.lift_apply, Away.val_mk, awayLift_mk_eq_iff, mul_left_comm,
-    show φ (f ^ n) = ↑(hf.unit ^ n) by simp, Units.mul_inv, mul_one]
+  have hfn : φ (f ^ n) = ↑(hf.unit ^ n) := by
+    rw [map_pow, Units.val_pow_eq_pow_val, IsUnit.unit_spec]
+  rw [Away.lift_apply, Away.val_mk, awayLift_mk_eq_iff, mul_left_comm, hfn, Units.mul_inv, mul_one]
 
 /-- `Away.lift` restricts to `φ` on the degree-zero part `𝒜 0`. -/
 @[simp]

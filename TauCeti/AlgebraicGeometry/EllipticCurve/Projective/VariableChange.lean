@@ -34,6 +34,9 @@ and `W`.
   action `(C * C') • W = C • C' • W`.
 * `WeierstrassCurve.Projective.linearSubst_polynomial`: the substitution multiplies the
   homogeneous Weierstrass polynomial by `u⁶`.
+* `WeierstrassCurve.Projective.variableChangeEquiv_one` and
+  `WeierstrassCurve.Projective.variableChangeEquiv_mul`: the isomorphisms are compatible with the
+  identity and with products of changes of variables.
 * `WeierstrassCurve.Projective.variableChangeEquiv_mem_grading`: the isomorphism preserves the
   grading.
 * `WeierstrassCurve.Projective.evalZero_variableChangeEquiv`: the point `[0 : 1 : 0]` of `C • W` is
@@ -122,15 +125,18 @@ private noncomputable def linearSubstEquiv : MvPolynomial (Fin 3) R ≃ₐ[R] Mv
     (by rw [← linearSubst_mul, VariableChange.toMatrix_inv_mul_toMatrix, linearSubst_one])
     (by rw [← linearSubst_mul, VariableChange.toMatrix_mul_toMatrix_inv, linearSubst_one])
 
+private theorem linearSubstEquiv_apply (p : MvPolynomial (Fin 3) R) :
+    linearSubstEquiv C p = linearSubst C.toMatrix p :=
+  rfl
+
 /-- The isomorphism of homogeneous coordinate rings `R[X, Y, Z] ⧸ (W) ≃ₐ[R] R[X, Y, Z] ⧸ (C • W)`
 induced by the change of variables `C`: the class of `p(X, Y, Z)` goes to the class of
 `p(u²X + rZ, u²sX + u³Y + tZ, Z)`. -/
 noncomputable def variableChangeEquiv :
     W.toProjective.CoordinateRing ≃ₐ[R] (C • W).toProjective.CoordinateRing :=
   Ideal.quotientEquivAlg _ _ (linearSubstEquiv C) <| by
-    rw [Ideal.map_span, Set.image_singleton]
-    change _ = Ideal.span {linearSubst C.toMatrix W.toProjective.polynomial}
-    rw [linearSubst_polynomial, Ideal.span_singleton_mul_left_unit
+    rw [Ideal.map_span, Set.image_singleton, RingHom.coe_coe, linearSubstEquiv_apply,
+      linearSubst_polynomial, Ideal.span_singleton_mul_left_unit
       ((C.u.isUnit.pow 6).map MvPolynomial.C)]
 
 @[simp]
@@ -144,6 +150,24 @@ theorem variableChangeEquiv_symm_mk (p : MvPolynomial (Fin 3) R) :
     (variableChangeEquiv W C).symm (Ideal.Quotient.mk _ p) =
       Ideal.Quotient.mk _ (linearSubst C⁻¹.toMatrix p) :=
   (rfl)
+
+/-- The identity change of variables induces the canonical isomorphism
+`R[X, Y, Z] ⧸ (W) ≃ₐ[R] R[X, Y, Z] ⧸ (1 • W)` coming from `1 • W = W`. -/
+theorem variableChangeEquiv_one :
+    variableChangeEquiv W 1 = Ideal.quotientEquivAlgOfEq R (by rw [one_smul]) := by
+  ext x
+  obtain ⟨p, rfl⟩ := Ideal.Quotient.mk_surjective x
+  simp
+
+/-- The isomorphism induced by a product `C * C'` is the isomorphism induced by `C'` followed by
+the one induced by `C`, up to the canonical isomorphism coming from `C • C' • W = (C * C') • W`. -/
+theorem variableChangeEquiv_mul (C' : VariableChange R) :
+    variableChangeEquiv W (C * C') =
+      ((variableChangeEquiv W C').trans (variableChangeEquiv (C' • W) C)).trans
+        (Ideal.quotientEquivAlgOfEq R (by rw [mul_smul])) := by
+  ext x
+  obtain ⟨p, rfl⟩ := Ideal.Quotient.mk_surjective x
+  simp [VariableChange.toMatrix_mul, linearSubst_mul_apply]
 
 /-- The isomorphism of homogeneous coordinate rings preserves the grading by total degree. -/
 theorem variableChangeEquiv_mem_grading {n : ℕ} {x : W.toProjective.CoordinateRing}

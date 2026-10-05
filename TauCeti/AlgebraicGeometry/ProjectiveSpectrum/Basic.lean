@@ -10,7 +10,7 @@ public import TauCeti.RingTheory.GradedAlgebra.Homogeneous.Maps
 public import TauCeti.RingTheory.GradedAlgebra.HomogeneousLocalization
 
 /-!
-# Points of `Proj` through standard charts, and complements on `Proj.map`
+# Points of `Proj` through standard charts, and compatibilities of `Proj.map`
 
 For a graded ring `A`, a ring homomorphism `φ : A →+* R` and a homogeneous element `f` of positive
 degree with `φ f` a unit, the composite
@@ -92,7 +92,6 @@ theorem map_toSpecZero (f : 𝒜 →+*ᵍ ℬ) (hf : HomogeneousIdeal.irrelevant
 
 /-- Mutually inverse graded ring homomorphisms `f : 𝒜 →+*ᵍ ℬ` and `g : ℬ →+*ᵍ 𝒜` induce mutually
 inverse morphisms `Proj.map f` and `Proj.map g`. -/
-@[expose, simps]
 noncomputable def mapIso (f : 𝒜 →+*ᵍ ℬ) (g : ℬ →+*ᵍ 𝒜) (hfg : Function.RightInverse g f)
     (hgf : Function.LeftInverse g f) : Proj ℬ ≅ Proj 𝒜 where
   hom := map f (HomogeneousIdeal.irrelevant_le_map_of_surjective f hfg.surjective)
@@ -105,5 +104,19 @@ noncomputable def mapIso (f : 𝒜 →+*ᵍ ℬ) (g : ℬ →+*ᵍ 𝒜) (hfg : 
     rw [← map_comp]
     convert map_id (𝒜 := 𝒜)
     exact GradedRingHom.ext hgf
+
+@[simp]
+theorem mapIso_hom (f : 𝒜 →+*ᵍ ℬ) (g : ℬ →+*ᵍ 𝒜) (hfg : Function.RightInverse g f)
+    (hgf : Function.LeftInverse g f) :
+    (mapIso f g hfg hgf).hom =
+      map f (HomogeneousIdeal.irrelevant_le_map_of_surjective f hfg.surjective) :=
+  (rfl)
+
+@[simp]
+theorem mapIso_inv (f : 𝒜 →+*ᵍ ℬ) (g : ℬ →+*ᵍ 𝒜) (hfg : Function.RightInverse g f)
+    (hgf : Function.LeftInverse g f) :
+    (mapIso f g hfg hgf).inv =
+      map g (HomogeneousIdeal.irrelevant_le_map_of_surjective g hgf.surjective) :=
+  (rfl)
 
 end AlgebraicGeometry.Proj

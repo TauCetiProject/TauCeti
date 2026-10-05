@@ -44,6 +44,9 @@ homogeneous coordinate rings `WeierstrassCurve.Projective.variableChangeEquiv W 
   base.
 * `WeierstrassCurve.projModelZero_projModelOver`: the zero section is a section of the structure
   morphism.
+* `WeierstrassCurve.projModelVariableChangeIso_one` and
+  `WeierstrassCurve.projModelVariableChangeIso_mul`: the isomorphisms induced by changes of
+  variables are compatible with the identity and with products.
 * `WeierstrassCurve.projModelVariableChangeIso_hom_projModelOver` and
   `WeierstrassCurve.projModelZero_projModelVariableChangeIso_hom`: the isomorphism induced by a
   change of variables lies over `Spec R` and preserves the zero section.
@@ -127,6 +130,9 @@ private theorem variableChangeGradedHom_apply (x : W.toProjective.CoordinateRing
     variableChangeGradedHom W C x = Projective.variableChangeEquiv W C x :=
   rfl
 
+/- `Projective.variableChangeEquiv` is not exposed, so the graded-hom statements of the inverse laws
+are recorded once here: inline `AlgEquiv.apply_symm_apply` leaves `projModelVariableChangeIso`
+with an argument whose inferred type matches the expected one only after unfolding it. -/
 private theorem rightInverse_variableChangeGradedHomSymm :
     Function.RightInverse (variableChangeGradedHomSymm W C) (variableChangeGradedHom W C) :=
   (Projective.variableChangeEquiv W C).apply_symm_apply
@@ -142,6 +148,45 @@ the change of variables `C`. On homogeneous coordinates it is
 noncomputable def projModelVariableChangeIso : (C • W).projModel ≅ W.projModel :=
   Proj.mapIso (variableChangeGradedHom W C) (variableChangeGradedHomSymm W C)
     (rightInverse_variableChangeGradedHomSymm W C) (leftInverse_variableChangeGradedHomSymm W C)
+
+/-- `Proj.map` of graded ring homomorphisms into the homogeneous coordinate rings of equal
+Weierstrass curves `W₁ = W₂` which agree on representatives differ by `eqToHom`. -/
+private theorem map_eq_eqToHom_comp_map {W₁ W₂ : WeierstrassCurve R} (h : W₁ = W₂)
+    (g₁ : W.toProjective.grading →+*ᵍ W₁.toProjective.grading)
+    (g₂ : W.toProjective.grading →+*ᵍ W₂.toProjective.grading)
+    (q : MvPolynomial (Fin 3) R → MvPolynomial (Fin 3) R)
+    (hg₁ : ∀ p, g₁ (Ideal.Quotient.mk _ p) = Ideal.Quotient.mk _ (q p))
+    (hg₂ : ∀ p, g₂ (Ideal.Quotient.mk _ p) = Ideal.Quotient.mk _ (q p)) (hf₁ hf₂) :
+    Proj.map g₁ hf₁ = eqToHom (congrArg projModel h) ≫ Proj.map g₂ hf₂ := by
+  subst h
+  obtain rfl : g₁ = g₂ := GradedRingHom.ext fun x ↦ by
+    obtain ⟨p, rfl⟩ := Ideal.Quotient.mk_surjective x
+    rw [hg₁, hg₂]
+  rw [eqToHom_refl, Category.id_comp]
+
+/-- The identity change of variables induces the identity of the projective Weierstrass model, up
+to `1 • W = W`. -/
+theorem projModelVariableChangeIso_one :
+    W.projModelVariableChangeIso 1 = eqToIso (congrArg projModel (one_smul _ W)) := by
+  refine Iso.ext ?_
+  rw [projModelVariableChangeIso, Proj.mapIso_hom, eqToIso.hom,
+    map_eq_eqToHom_comp_map W (one_smul _ W) _ (.id _) id
+      (fun p ↦ by simp [variableChangeGradedHom_apply]) (fun _ ↦ rfl) _ (by simp),
+    Proj.map_id, Category.comp_id]
+
+/-- The isomorphism induced by a product `C * C'` is the isomorphism induced by `C` followed by
+the one induced by `C'`, up to `(C * C') • W = C • C' • W`. -/
+theorem projModelVariableChangeIso_mul (C' : VariableChange R) :
+    W.projModelVariableChangeIso (C * C') = eqToIso (congrArg projModel (mul_smul C C' W)) ≪≫
+      (C' • W).projModelVariableChangeIso C ≪≫ W.projModelVariableChangeIso C' := by
+  refine Iso.ext ?_
+  rw [Iso.trans_hom, Iso.trans_hom, eqToIso.hom, projModelVariableChangeIso,
+    projModelVariableChangeIso, projModelVariableChangeIso, Proj.mapIso_hom, Proj.mapIso_hom,
+    Proj.mapIso_hom, ← Proj.map_comp]
+  exact map_eq_eqToHom_comp_map W (mul_smul C C' W) _ _ (linearSubst (C * C').toMatrix)
+    (fun p ↦ by simp [variableChangeGradedHom_apply])
+    (fun p ↦ by simp [variableChangeGradedHom_apply, VariableChange.toMatrix_mul,
+      linearSubst_mul_apply]) _ _
 
 /-- The isomorphism induced by a change of variables lies over the base. -/
 @[reassoc (attr := simp)]
