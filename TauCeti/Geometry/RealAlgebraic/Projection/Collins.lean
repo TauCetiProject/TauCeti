@@ -9,6 +9,7 @@ public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import TauCeti.Algebra.MvPolynomial.Equiv
 public import TauCeti.RingTheory.Polynomial.Reductum
 public import TauCeti.RingTheory.Polynomial.Subresultant.GCD
+import TauCeti.Algebra.Polynomial.Degree.Map
 import TauCeti.Algebra.Polynomial.Derivative
 import TauCeti.RingTheory.Polynomial.Roots
 
@@ -264,19 +265,15 @@ theorem map_coeff_eq_zero_iff_of_collinsProjection
 family is nullified by `φ` exactly when it is nullified by `ψ`. -/
 theorem map_eq_zero_iff_of_collinsProjection
     (h : ∀ a ∈ F.collinsProjection, φ a = 0 ↔ ψ a = 0) (hp : p ∈ F) :
-    p.map φ = 0 ↔ p.map ψ = 0 := by
-  simp only [Polynomial.ext_iff, coeff_map, coeff_zero,
-    map_coeff_eq_zero_iff_of_collinsProjection h hp]
+    p.map φ = 0 ↔ p.map ψ = 0 :=
+  map_eq_zero_iff_of_map_coeff_eq_zero_iff (map_coeff_eq_zero_iff_of_collinsProjection h hp)
 
 /-- If the same elements of the Collins projection vanish under `φ` and `ψ`, then every member of
 the family has the same degree after either specialization. -/
 theorem natDegree_map_eq_of_collinsProjection
     (h : ∀ a ∈ F.collinsProjection, φ a = 0 ↔ ψ a = 0) (hp : p ∈ F) :
-    (p.map φ).natDegree = (p.map ψ).natDegree := by
-  have key (n : ℕ) : (p.map φ).natDegree ≤ n ↔ (p.map ψ).natDegree ≤ n := by
-    simp only [natDegree_le_iff_coeff_eq_zero, coeff_map,
-      map_coeff_eq_zero_iff_of_collinsProjection h hp]
-  exact le_antisymm ((key _).2 le_rfl) ((key _).1 le_rfl)
+    (p.map φ).natDegree = (p.map ψ).natDegree :=
+  natDegree_map_eq_of_map_coeff_eq_zero_iff (map_coeff_eq_zero_iff_of_collinsProjection h hp)
 
 /-- A single reductum of a member of the family specializes to the member under both `φ` and `ψ`,
 and its own degree is the specialized degree under each of them. -/
