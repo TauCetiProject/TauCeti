@@ -10,6 +10,7 @@ public import Mathlib.FieldTheory.Galois.GaloisClosure
 public import TauCeti.Algebra.GroupAction.QuotientAddGroup
 public import TauCeti.Algebra.GroupAction.TypeTags
 public import TauCeti.FieldTheory.GaloisCohomology.Coefficients
+public import TauCeti.NumberTheory.NumberField.FiniteGaloisIntermediateField
 public import TauCeti.NumberTheory.NumberField.Global.Adeles.GaloisAction
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.Extension
 
@@ -52,9 +53,13 @@ is exact by `principalIdele_injective`, `ideleClassMk_eq_zero_iff` and
   ideles along an inclusion of finite Galois subextensions of `Kˢ/K`.
 * `TauCeti.ClassFieldTheory.IdeleCoeff K`: the ideles of `Kˢ`, written additively.
 * `TauCeti.ClassFieldTheory.ideleCoeffOf E`: the ideles of `E` as ideles of `Kˢ`.
+* `TauCeti.ClassFieldTheory.IdeleCoeff.lift`: the homomorphism out of the ideles of `Kˢ` induced
+  by compatible homomorphisms out of the ideles of the finite Galois subextensions.
 * `TauCeti.ClassFieldTheory.principalIdele K`: the principal ideles `(Kˢ)ˣ → I_{Kˢ}`.
 * `TauCeti.ClassFieldTheory.IdeleClassCoeff K`: the idele classes of `Kˢ`, written additively.
 * `TauCeti.ClassFieldTheory.ideleClassMk K`: the quotient map `I_{Kˢ} → C_{Kˢ}`.
+* `TauCeti.ClassFieldTheory.IdeleClassCoeff.lift`: the homomorphism out of the idele classes of
+  `Kˢ` induced by a homomorphism out of the ideles of `Kˢ` vanishing on the principal ideles.
 
 ## Main results
 
@@ -82,11 +87,6 @@ public section
 noncomputable section
 
 open NumberField
-
-/-- **A finite Galois subextension of a number field is a number field.** -/
-instance FiniteGaloisIntermediateField.instNumberField {K L : Type*} [Field K] [NumberField K]
-    [Field L] [Algebra K L] (E : FiniteGaloisIntermediateField K L) : NumberField E :=
-  .of_module_finite K E
 
 namespace TauCeti.ClassFieldTheory
 
@@ -300,6 +300,42 @@ theorem ideleCoeffOf_eq_zero_iff {E : Ω} {a : IdeleGroup (𝓞 E) E} :
     (DirectLimit.exists_eq_one (G := fun E : Ω ↦ IdeleGroup (𝓞 E) E) (f := ideleTransition K)
       ⟨E, a⟩)
 
+/-- Two homomorphisms out of the ideles of `Kˢ` agree once they agree on the ideles of every
+finite Galois subextension. -/
+@[ext]
+theorem IdeleCoeff.hom_ext {M : Type*} [AddMonoid M] {φ ψ : IdeleCoeff K →+ M}
+    (h : ∀ E : Ω, φ.comp (ideleCoeffOf K E) = ψ.comp (ideleCoeffOf K E)) : φ = ψ := by
+  ext x
+  obtain ⟨E, a, rfl⟩ := exists_ideleCoeffOf_eq x
+  exact DFunLike.congr_fun (h E) (.ofMul a)
+
+variable (K) in
+/-- **The universal property of the ideles of `Kˢ`**: homomorphisms out of the ideles of the
+finite Galois subextensions of `Kˢ/K` that are compatible with the extension maps induce a
+homomorphism out of the ideles of `Kˢ` (`IdeleCoeff.lift_ideleCoeffOf`). -/
+def IdeleCoeff.lift {M : Type*} [AddCommMonoid M]
+    (φ : ∀ E : Ω, Additive (IdeleGroup (𝓞 E) E) →+ M)
+    (hφ : ∀ (E E' : Ω) (h : E ≤ E') (a : IdeleGroup (𝓞 E) E),
+      φ E' (.ofMul (ideleTransition K E E' h a)) = φ E (.ofMul a)) :
+    IdeleCoeff K →+ M :=
+  MonoidHom.toAdditiveLeft
+    { toFun := DirectLimit.lift (ideleTransition K)
+        (fun E a ↦ AddMonoidHom.toMultiplicativeRight (φ E) a)
+        fun E E' h a ↦ congrArg Multiplicative.ofAdd (hφ E E' h a).symm
+      map_one' := DirectLimit.lift_one (fun E ↦ AddMonoidHom.toMultiplicativeRight (φ E)) _
+      map_mul' := DirectLimit.lift_mul (fun E ↦ AddMonoidHom.toMultiplicativeRight (φ E)) _ }
+
+/-- The homomorphism induced by compatible homomorphisms out of the ideles of the finite Galois
+subextensions restricts to each of them on the ideles of that subextension. -/
+@[simp]
+theorem IdeleCoeff.lift_ideleCoeffOf {M : Type*} [AddCommMonoid M]
+    (φ : ∀ E : Ω, Additive (IdeleGroup (𝓞 E) E) →+ M) (hφ) (E : Ω)
+    (a : Additive (IdeleGroup (𝓞 E) E)) :
+    IdeleCoeff.lift K φ hφ (ideleCoeffOf K E a) = φ E a := by
+  -- A bare `rfl` would make this a `dsimp` lemma, which needs the carrier definitions exposed.
+  unfold IdeleCoeff.lift
+  rfl
+
 /-- **The Galois action on the ideles of `Kˢ`**: `g ∈ G_K` acts on the ideles of `E` through its
 restriction to `Gal(E/K)`. -/
 @[simp]
@@ -351,6 +387,24 @@ private def principalIdeleAt (E : Ω) (x : UnitsCoeff K)
     IdeleCoeff K :=
   ideleCoeffOf K E (.ofMul (IdeleGroup.unitEmbedding (𝓞 E) E (unitOfMem E x hx)))
 
+omit [NumberField K] in
+private theorem unitOfMem_zero (E : Ω) : unitOfMem E 0 (one_mem _) = 1 :=
+  Units.ext (Subtype.ext rfl)
+
+omit [NumberField K] in
+private theorem unitOfMem_add (E : Ω) {x y : UnitsCoeff K} (hx hy) :
+    unitOfMem E (x + y) (mul_mem hx hy) = unitOfMem E x hx * unitOfMem E y hy :=
+  Units.ext (Subtype.ext rfl)
+
+private theorem principalIdeleAt_zero (E : Ω) : principalIdeleAt K E 0 (one_mem _) = 0 := by
+  rw [principalIdeleAt, unitOfMem_zero, map_one, ofMul_one, map_zero]
+
+private theorem principalIdeleAt_add (E : Ω) {x y : UnitsCoeff K} (hx hy) :
+    principalIdeleAt K E (x + y) (mul_mem hx hy) =
+      principalIdeleAt K E x hx + principalIdeleAt K E y hy := by
+  rw [principalIdeleAt, unitOfMem_add, map_mul, ofMul_mul, map_add, principalIdeleAt,
+    principalIdeleAt]
+
 private theorem principalIdeleAt_eq {E E' : Ω} (x : UnitsCoeff K) (hx hx') :
     principalIdeleAt K E x hx = principalIdeleAt K E' x hx' :=
   ideleCoeffOf_unitEmbedding_eq rfl
@@ -367,10 +421,7 @@ and is sent to its principal idele in the ideles of `E`, independently of `E`
 `(Kˢ)ˣ → I_{Kˢ}` (`principalIdele_injective`). -/
 def principalIdele : UnitsCoeff K →+[AbsoluteGaloisGroup K] IdeleCoeff K where
   toFun x := principalIdeleAt K _ x (mem_adjoin x)
-  map_zero' := by
-    rw [principalIdeleAt_eq (E' := ⊥) 0 _ (one_mem _), principalIdeleAt,
-      show unitOfMem (⊥ : Ω) 0 (one_mem _) = 1 from Units.ext (Subtype.ext rfl), map_one,
-      ofMul_one, map_zero]
+  map_zero' := (principalIdeleAt_eq (E' := ⊥) 0 _ (one_mem _)).trans (principalIdeleAt_zero ⊥)
   map_add' x y := by
     let E : Ω := FiniteGaloisIntermediateField.adjoin K {(x.toMul : SeparableClosure K)} ⊔
       FiniteGaloisIntermediateField.adjoin K {(y.toMul : SeparableClosure K)}
@@ -379,10 +430,7 @@ def principalIdele : UnitsCoeff K →+[AbsoluteGaloisGroup K] IdeleCoeff K where
     have hy : (y.toMul : SeparableClosure K) ∈ (E : IntermediateField K (SeparableClosure K)) :=
       (le_sup_right : _ ≤ E) (mem_adjoin y)
     rw [principalIdeleAt_eq (E' := E) x _ hx, principalIdeleAt_eq (E' := E) y _ hy,
-      principalIdeleAt_eq (E' := E) (x + y) _ (mul_mem hx hy), principalIdeleAt, principalIdeleAt,
-      principalIdeleAt, ← map_add, ← ofMul_mul, ← map_mul]
-    congr 3
-    exact Units.ext (Subtype.ext rfl)
+      principalIdeleAt_eq (E' := E) (x + y) _ (mul_mem hx hy), principalIdeleAt_add]
   map_smul' g x := by
     let E : Ω := FiniteGaloisIntermediateField.adjoin K {(x.toMul : SeparableClosure K)}
     have hgx : ((g • x).toMul : SeparableClosure K) =
@@ -476,6 +524,29 @@ theorem ideleClassMk_eq_zero_iff {x : IdeleCoeff K} :
 @[simp]
 theorem ideleClassMk_principalIdele (y : UnitsCoeff K) : ideleClassMk K (principalIdele K y) = 0 :=
   ideleClassMk_eq_zero_iff.2 ⟨y, rfl⟩
+
+variable (K) in
+/-- **The universal property of the idele classes of `Kˢ`**: a homomorphism out of the ideles of
+`Kˢ` vanishing on the principal ideles induces a homomorphism out of the idele classes
+(`IdeleClassCoeff.lift_ideleClassMk`). -/
+def IdeleClassCoeff.lift {M : Type*} [AddCommGroup M] (φ : IdeleCoeff K →+ M)
+    (hφ : ∀ y, φ (principalIdele K y) = 0) : IdeleClassCoeff K →+ M :=
+  QuotientAddGroup.lift _ φ fun _ ⟨y, hy⟩ ↦ hy ▸ hφ y
+
+/-- The homomorphism induced on the idele classes of `Kˢ` sends the class of an idele to the
+value of the original homomorphism on it. -/
+@[simp]
+theorem IdeleClassCoeff.lift_ideleClassMk {M : Type*} [AddCommGroup M] (φ : IdeleCoeff K →+ M)
+    (hφ) (x : IdeleCoeff K) : IdeleClassCoeff.lift K φ hφ (ideleClassMk K x) = φ x :=
+  QuotientAddGroup.lift_mk' _ _ x
+
+/-- Two homomorphisms out of the idele classes of `Kˢ` agree once they agree on the classes of
+ideles. -/
+@[ext]
+theorem IdeleClassCoeff.hom_ext {M : Type*} [AddMonoid M] {φ ψ : IdeleClassCoeff K →+ M}
+    (h : φ.comp (ideleClassMk K).toAddMonoidHom = ψ.comp (ideleClassMk K).toAddMonoidHom) :
+    φ = ψ :=
+  QuotientAddGroup.addMonoidHom_ext _ h
 
 /-- **The idele classes of `Kˢ` are a discrete `G_K`-module**: the stabilizer of the class of an
 idele contains the stabilizer of the idele. -/
