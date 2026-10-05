@@ -152,9 +152,13 @@ theorem pointsMulEquiv_rootSubgroupCoordinateMap (hij : i < j)
       (SpecialLinear.coordinateHopfAlgebra R n) (definingHopfIdeal R n) (CommAlgCat.of R A)
       (toConv (f.ofConv.comp (rootSubgroupCoordinateMap R hij).hom)) =
       toConv (f.ofConv.comp (SpecialLinear.rootSubgroupCoordinateMap (R := R) hij.ne).hom) := by
-    rw [CommHopfAlgCat.quotientPointsHom_apply, ofConv_toConv, AlgHom.comp_assoc,
-      ← BialgHom.comp_toAlgHom, ← CommHopfAlgCat.hom_comp,
-      coordinateMap_comp_rootSubgroupCoordinateMap]
+    rw [← CommHopfAlgCat.mapPointsFunctor_app_apply (rootSubgroupCoordinateMap R hij),
+      ← CommHopfAlgCat.mapPointsFunctor_app_apply
+        (SpecialLinear.rootSubgroupCoordinateMap (R := R) hij.ne)]
+    exact (CommHopfAlgCat.mapPointsFunctor_eq_quotientPointsHom_of_mkQuotient_comp
+        (definingHopfIdeal R n) (rootSubgroupCoordinateMap R hij)
+        (SpecialLinear.rootSubgroupCoordinateMap (R := R) hij.ne)
+        (coordinateMap_comp_rootSubgroupCoordinateMap R hij) (CommAlgCat.of R A) f).symm
   rw [hquot]
   -- Calculate at the universal additive point, then map its coefficients to `A`.
   have hgeneric : toConv ((AlgHom.id R (AdditiveGroup.coordinateHopfAlgebra R)).comp
@@ -201,12 +205,12 @@ theorem rootSubgroup_comp_quotientSpecι (hij : i < j) :
         CommHopfAlgCat.quotientSpecι (SpecialLinear.coordinateHopfAlgebra R n)
           (definingHopfIdeal R n) ≫ eqToHom (SpecialLinear.groupScheme_def R n).symm =
       SpecialLinear.rootSubgroup hij.ne := by
-  rw [rootSubgroup, CommHopfAlgCat.quotientSpecι_def, SpecialLinear.rootSubgroup_def]
-  simp only [Category.assoc]
-  rw [← Category.assoc
-    ((hopfSpec (CommRingCat.of R)).map (rootSubgroupCoordinateMap R hij).op)
-    ((hopfSpec (CommRingCat.of R)).map (coordinateMap R n).op),
-    ← Functor.map_comp, ← op_comp, coordinateMap_comp_rootSubgroupCoordinateMap]
+  have hcomp := CommHopfAlgCat.hopfSpec_map_comp_quotientSpecι
+    (definingHopfIdeal R n) (rootSubgroupCoordinateMap R hij)
+  rw [coordinateMap_comp_rootSubgroupCoordinateMap] at hcomp
+  simpa only [rootSubgroup, SpecialLinear.rootSubgroup_def, Category.assoc] using
+    congrArg (fun g ↦ eqToHom (AdditiveGroup.groupScheme_def R) ≫ g ≫
+      eqToHom (SpecialLinear.groupScheme_def R n).symm) hcomp
 
 /-- Each positive root map identifies `𝔾ₐ` with a closed subgroup scheme of the Borel. -/
 instance isClosedImmersion_rootSubgroup (hij : i < j) :
