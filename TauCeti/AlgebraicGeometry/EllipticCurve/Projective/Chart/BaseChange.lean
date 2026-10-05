@@ -128,3 +128,40 @@ theorem chartRingBaseChangeEquiv_symm_chartRingMap (x : W.ChartRing i) :
 end Algebra
 
 end WeierstrassCurve.Projective
+
+namespace TauCeti
+
+open WeierstrassCurve.Projective
+
+variable {R S : Type*} [CommRing R] [CommRing S]
+variable {W : WeierstrassCurve.Projective R} {i : Fin 3}
+
+/-- Coefficient extension along the identity is the identity on the chart ring. -/
+@[simp]
+theorem chartRingMap_id : W.chartRingMap i (RingHom.id R) = RingHom.id (W.ChartRing i) := by
+  apply RingHom.ext
+  intro x
+  obtain ⟨p, rfl⟩ := Ideal.Quotient.mk_surjective x
+  rw [chartRingMap_mk, MvPolynomial.map_id]
+  exact (RingHom.id_apply _).symm
+
+/-- Successive coefficient extensions compose to extension along the composite ring map. -/
+theorem chartRingMap_comp_chartRingMap {T : Type*} [CommRing T]
+    {f : R →+* S} {g : S →+* T} :
+    ((W.map f).chartRingMap i g).comp (W.chartRingMap i f) =
+      W.chartRingMap i (g.comp f) := by
+  apply RingHom.ext
+  intro x
+  obtain ⟨p, rfl⟩ := Ideal.Quotient.mk_surjective x
+  rw [RingHom.comp_apply, chartRingMap_mk, chartRingMap_mk, MvPolynomial.map_map]
+  exact (W.chartRingMap_mk i (g.comp f) p).symm
+
+/-- Successive coefficient extensions on an element normalize to a single extension. -/
+@[simp]
+theorem chartRingMap_chartRingMap {T : Type*} [CommRing T]
+    {f : R →+* S} {g : S →+* T} (x : W.ChartRing i) :
+    (W.map f).chartRingMap i g (W.chartRingMap i f x) =
+      W.chartRingMap i (g.comp f) x :=
+  RingHom.congr_fun (chartRingMap_comp_chartRingMap (W := W) (i := i) (f := f) (g := g)) x
+
+end TauCeti
