@@ -33,11 +33,15 @@ Hecke relation. The representation therefore factors through the Iwahori-Hecke a
 `A`; for `ι = Fin N` it is the action of that algebra on the `n`-th tensor power of the vector
 representation of `U_q(gl_N)` in quantum Schur-Weyl duality.
 
-For `ι = Fin N`, a weighted trace of this representation (Turaev's enhancement of the R-matrix)
-is a Markov invariant of braids, the `sl_N` specialization of the HOMFLY polynomial at
-`z = q - q⁻¹` and `a = q ^ N` (up to the choice of orientation conventions); these
-specializations, over all `N`, determine the HOMFLY polynomial. The trace is not constructed in
-this file. For `N = 2` this is the vertex-model route to the Jones polynomial, which
+For `ι = Fin N`, Turaev's enhancement of the R-matrix gives a weighted trace of this
+representation. The weighted trace alone is not a Markov invariant: positive and negative
+stabilization multiply it by `α * β` and `α⁻¹ * β`, where `α` and `β` are the constants of the
+enhancement (for this R-matrix `α` is `q ^ N`, up to the choice of orientation conventions).
+Turaev's invariant of a braid on `n` strands with exponent sum (writhe) `e` is the weighted trace
+multiplied by `α ^ (-e) * β ^ (-n)`. It is a Markov invariant of braids, the `sl_N`
+specialization of the HOMFLY polynomial at `z = q - q⁻¹` and `a = q ^ N`; these specializations,
+over all `N`, determine the HOMFLY polynomial. Neither the weighted trace nor its normalization is
+constructed in this file. For `N = 2` this is the vertex-model route to the Jones polynomial, which
 `TauCeti.TemperleyLieb.markovTrace` follows through the Temperley-Lieb algebra.
 
 At `q = 1` the correction term vanishes, and the representation is the permutation action of
@@ -92,6 +96,7 @@ noncomputable def jimboGenerator (q : Rˣ) (j k : Fin n) : Module.End R ((Fin n 
     else single (w ∘ Equiv.swap j k) 1 + ((q : R) - ((q⁻¹ : Rˣ) : R)) • single w 1
 
 /-- The value of the Jimbo R-matrix on a basis word. -/
+@[simp]
 theorem jimboGenerator_single_one (q : Rˣ) (j k : Fin n) (w : Fin n → ι) :
     jimboGenerator q j k (single w 1) =
       if w j = w k then (q : R) • single w 1
@@ -99,24 +104,28 @@ theorem jimboGenerator_single_one (q : Rˣ) (j k : Fin n) (w : Fin n → ι) :
       else single (w ∘ Equiv.swap j k) 1 + ((q : R) - ((q⁻¹ : Rˣ) : R)) • single w 1 := by
   simp [jimboGenerator]
 
+/-- The value of the Jimbo R-matrix on the strands `j` and `k` on a basis word whose letters at
+`j` and `k` are `x` and `y`. -/
+theorem jimboGenerator_single_update_update (q : Rˣ) {j k : Fin n} (hjk : j ≠ k)
+    (w : Fin n → ι) (x y : ι) :
+    jimboGenerator q j k (single (update (update w j x) k y) 1) =
+      if x = y then (q : R) • single (update (update w j x) k y) 1
+      else if x < y then single (update (update w j y) k x) 1
+      else single (update (update w j y) k x) 1 +
+        ((q : R) - ((q⁻¹ : Rˣ) : R)) • single (update (update w j x) k y) 1 := by
+  have hswap : update (update w j x) k y ∘ Equiv.swap j k = update (update w j y) k x := by
+    rw [Equiv.comp_swap_eq_update]
+    simp [update_of_ne hjk, update_comm hjk.symm]
+  rw [jimboGenerator_single_one, hswap]
+  simp only [update_of_ne hjk, Function.update_self]
+
 /-- The Hecke quadratic relation `T * T = (q - q⁻¹) • T + 1` for the Jimbo R-matrix. -/
 theorem jimboGenerator_mul_self (q : Rˣ) {j k : Fin n} (hjk : j ≠ k) :
     jimboGenerator (ι := ι) q j k * jimboGenerator q j k =
       ((q : R) - ((q⁻¹ : Rˣ) : R)) • jimboGenerator q j k + 1 := by
   ext w : 2
-  -- The word with the letters `x, y` at the positions `j, k`.
-  let W (x y : ι) : Fin n → ι := update (update w j x) k y
-  have hT (x y : ι) : jimboGenerator q j k (single (W x y) 1) =
-      if x = y then (q : R) • single (W x y) 1
-      else if x < y then single (W y x) 1
-      else single (W y x) 1 + ((q : R) - ((q⁻¹ : Rˣ) : R)) • single (W x y) 1 := by
-    have hswap : W x y ∘ Equiv.swap j k = W y x := by
-      ext p
-      rcases eq_or_ne p j with rfl | hj <;> rcases eq_or_ne p k with rfl | hk <;>
-        simp_all [W, Equiv.swap_apply_of_ne_of_ne]
-    rw [jimboGenerator_single_one, hswap]
-    simp only [W, update_of_ne hjk, Function.update_self]
-  have hW : W (w j) (w k) = w := by simp [W]
+  have hT := jimboGenerator_single_update_update q hjk w
+  have hW : update (update w j (w j)) k (w k) = w := by simp
   simp only [LinearMap.coe_comp, comp_apply, lsingle_apply, Module.End.mul_apply,
     LinearMap.add_apply, LinearMap.smul_apply, Module.End.one_apply]
   rw [← hW]
@@ -130,14 +139,14 @@ theorem jimboGenerator_mul_self (q : Rˣ) {j k : Fin n} (hjk : j ≠ k) :
 /-- The Jimbo R-matrix is invertible, with right inverse `T + (q⁻¹ - q)`. -/
 theorem jimboGenerator_mul_add (q : Rˣ) {j k : Fin n} (hjk : j ≠ k) :
     jimboGenerator (ι := ι) q j k * (jimboGenerator q j k + (((q⁻¹ : Rˣ) : R) - q) • 1) = 1 := by
-  rw [mul_add, jimboGenerator_mul_self q hjk, mul_smul_comm, mul_one, add_right_comm, ← add_smul,
-    sub_add_sub_cancel', sub_self, zero_smul, zero_add]
+  rw [mul_add, jimboGenerator_mul_self q hjk, mul_smul_comm, mul_one]
+  module
 
 /-- The Jimbo R-matrix is invertible, with left inverse `T + (q⁻¹ - q)`. -/
 theorem add_mul_jimboGenerator (q : Rˣ) {j k : Fin n} (hjk : j ≠ k) :
     (jimboGenerator (ι := ι) q j k + (((q⁻¹ : Rˣ) : R) - q) • 1) * jimboGenerator q j k = 1 := by
-  rw [add_mul, jimboGenerator_mul_self q hjk, smul_mul_assoc, one_mul, add_right_comm, ← add_smul,
-    sub_add_sub_cancel', sub_self, zero_smul, zero_add]
+  rw [add_mul, jimboGenerator_mul_self q hjk, smul_mul_assoc, one_mul]
+  module
 
 /-- Jimbo R-matrices on disjoint pairs of strands commute. -/
 theorem jimboGenerator_mul_comm (q : Rˣ) {j k l m : Fin n} (h : [j, k, l, m].Nodup) :
@@ -153,25 +162,14 @@ theorem jimboGenerator_mul_comm (q : Rˣ) {j k l m : Fin n} (h : [j, k, l, m].No
       if x = y then (q : R) • single (W x y u v) 1
       else if x < y then single (W y x u v) 1
       else single (W y x u v) 1 + ((q : R) - ((q⁻¹ : Rˣ) : R)) • single (W x y u v) 1 := by
-    have hswap : W x y u v ∘ Equiv.swap j k = W y x u v := by
-      ext p
-      rcases eq_or_ne p j with rfl | hj <;> rcases eq_or_ne p k with rfl | hk <;>
-        rcases eq_or_ne p l with rfl | hl <;> rcases eq_or_ne p m with rfl | hm <;>
-        simp_all [W, Equiv.swap_apply_of_ne_of_ne]
-    rw [jimboGenerator_single_one, hswap]
-    simp only [W, update_of_ne hjm, update_of_ne hjl, update_of_ne hjk, update_of_ne hkm,
-      update_of_ne hkl, Function.update_self]
+    -- Write the letters at `j, k` last, so that `jimboGenerator q j k` sees them.
+    simp only [W, update_comm hkm, update_comm hkl, update_comm hjm, update_comm hjl,
+      jimboGenerator_single_update_update q hjk]
   have hT₂ (x y u v : ι) : jimboGenerator q l m (single (W x y u v) 1) =
       if u = v then (q : R) • single (W x y u v) 1
       else if u < v then single (W x y v u) 1
-      else single (W x y v u) 1 + ((q : R) - ((q⁻¹ : Rˣ) : R)) • single (W x y u v) 1 := by
-    have hswap : W x y u v ∘ Equiv.swap l m = W x y v u := by
-      ext p
-      rcases eq_or_ne p j with rfl | hj <;> rcases eq_or_ne p k with rfl | hk <;>
-        rcases eq_or_ne p l with rfl | hl <;> rcases eq_or_ne p m with rfl | hm <;>
-        simp_all [W, Equiv.swap_apply_of_ne_of_ne]
-    rw [jimboGenerator_single_one, hswap]
-    simp only [W, update_of_ne hlm, Function.update_self]
+      else single (W x y v u) 1 + ((q : R) - ((q⁻¹ : Rˣ) : R)) • single (W x y u v) 1 :=
+    jimboGenerator_single_update_update q hlm _ u v
   have hW : W (w j) (w k) (w l) (w m) = w := by simp [W]
   simp only [LinearMap.coe_comp, comp_apply, lsingle_apply, Module.End.mul_apply]
   rw [← hW]
@@ -194,22 +192,13 @@ theorem jimboGenerator_braid (q : Rˣ) {j k l : Fin n} (hjk : j ≠ k) (hkl : k 
       if x = y then (q : R) • single (W x y z) 1
       else if x < y then single (W y x z) 1
       else single (W y x z) 1 + ((q : R) - ((q⁻¹ : Rˣ) : R)) • single (W x y z) 1 := by
-    have hswap : W x y z ∘ Equiv.swap j k = W y x z := by
-      ext p
-      rcases eq_or_ne p j with rfl | hj <;> rcases eq_or_ne p k with rfl | hk <;>
-        rcases eq_or_ne p l with rfl | hl <;> simp_all [W, Equiv.swap_apply_of_ne_of_ne]
-    rw [jimboGenerator_single_one, hswap]
-    simp only [W, update_of_ne hjl, update_of_ne hkl, update_of_ne hjk, Function.update_self]
+    -- Write the letters at `j, k` last, so that `jimboGenerator q j k` sees them.
+    simp only [W, update_comm hkl, update_comm hjl, jimboGenerator_single_update_update q hjk]
   have hT₂ (x y z : ι) : jimboGenerator q k l (single (W x y z) 1) =
       if y = z then (q : R) • single (W x y z) 1
       else if y < z then single (W x z y) 1
-      else single (W x z y) 1 + ((q : R) - ((q⁻¹ : Rˣ) : R)) • single (W x y z) 1 := by
-    have hswap : W x y z ∘ Equiv.swap k l = W x z y := by
-      ext p
-      rcases eq_or_ne p j with rfl | hj <;> rcases eq_or_ne p k with rfl | hk <;>
-        rcases eq_or_ne p l with rfl | hl <;> simp_all [W, Equiv.swap_apply_of_ne_of_ne]
-    rw [jimboGenerator_single_one, hswap]
-    simp only [W, update_of_ne hkl, Function.update_self]
+      else single (W x z y) 1 + ((q : R) - ((q⁻¹ : Rˣ) : R)) • single (W x y z) 1 :=
+    jimboGenerator_single_update_update q hkl _ y z
   have hW : W (w j) (w k) (w l) = w := by simp [W]
   simp only [LinearMap.coe_comp, comp_apply, lsingle_apply, Module.End.mul_apply]
   rw [← hW]
@@ -224,6 +213,7 @@ theorem jimboGenerator_braid (q : Rˣ) {j k l : Fin n} (hjk : j ≠ k) (hkl : k 
     match_scalars <;> grind
 
 /-- At `q = 1` the Jimbo R-matrix exchanges the letters at the strands `j` and `k`. -/
+@[simp]
 theorem jimboGenerator_one_apply_single (j k : Fin n) (w : Fin n → ι) (c : R) :
     jimboGenerator (1 : Rˣ) j k (single w c) = single (w ∘ Equiv.swap j k) c := by
   rw [← smul_single_one, map_smul, jimboGenerator_single_one]
@@ -292,11 +282,12 @@ theorem val_jimbo_sigma_eq_val_inv_add (i : Fin (n - 1)) :
     (jimbo ι q (BraidGroup.sigma i) : Module.End R ((Fin n → ι) →₀ R)) =
       ((jimbo ι q (BraidGroup.sigma i))⁻¹ : (Module.End R ((Fin n → ι) →₀ R))ˣ) +
         ((q : R) - ((q⁻¹ : Rˣ) : R)) • 1 := by
-  rw [jimbo_sigma, jimboUnit_val, jimboUnit_inv_val, add_assoc, ← add_smul, sub_add_sub_cancel',
-    sub_self, zero_smul, add_zero]
+  rw [jimbo_sigma, jimboUnit_val, jimboUnit_inv_val]
+  module
 
 /-- At `q = 1` the Jimbo representation is the permutation action of braids on words: a braid `b`
 sends the word `w` to `w ∘ π⁻¹`, where `π` is the permutation of the strands underlying `b`. -/
+@[simp]
 theorem jimbo_one_apply_single (b : BraidGroup n) (w : Fin n → ι) (c : R) :
     (jimbo ι (1 : Rˣ) b : Module.End R ((Fin n → ι) →₀ R)) (single w c) =
       single (w ∘ ⇑(BraidGroup.permHom n b)⁻¹) c := by
