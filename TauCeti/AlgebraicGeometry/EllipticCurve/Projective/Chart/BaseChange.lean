@@ -19,6 +19,8 @@ pure tensors by coefficient extension. No flatness or ellipticity assumption is 
 
 These comparisons give the affine pieces of base change for the projective cubic. The map
 `chartRingMap` also makes coefficient extension available for arbitrary ring homomorphisms.
+Its functoriality laws are `TauCeti.chartRingMap_id`,
+`TauCeti.chartRingMap_comp_chartRingMap`, and `TauCeti.chartRingMap_chartRingMap`.
 
 The construction uses Mathlib's `Algebra.TensorProduct.tensorQuotientEquiv` and
 `MvPolynomial.algebraTensorAlgEquiv`.
