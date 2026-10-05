@@ -178,6 +178,19 @@ theorem mem_range_integralBockstein_iff (n : ℕ) [NeZero n] (i : ℕ)
     ConcreteCategory.hom_ofHom, smul_apply,
     TopModuleCat.hom_id, ContinuousLinearMap.id_apply] using h.symm
 
+section
+
+variable (n : ℕ) [NeZero n] (i : ℕ)
+    (x : continuousCohomology (i + 1) (ofDiscreteModule ℤ G (ULift.{u} ℤ)))
+
+/-- A preimage under the integral Bockstein exists exactly for classes annihilated by `n`. -/
+@[simp]
+theorem exists_integralBockstein_eq_iff :
+    (∃ y, integralBockstein G n i y = x) ↔ n • x = 0 := by
+  simpa only [Set.mem_range] using mem_range_integralBockstein_iff G n i x
+
+end
+
 /-- The degree-one integral connecting map identifies `ℤ/n`-valued first cohomology with the
 `n`-torsion subgroup of integral second cohomology. -/
 noncomputable def integralBocksteinH1Equiv (n : ℕ) [NeZero n] :
