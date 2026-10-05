@@ -420,13 +420,13 @@ theorem coe_proj_eq_pow_sub_nsmul (x : TateModule p A) {m n : ℕ} (h : m ≤ n)
   rw [Nat.add_sub_cancel_left, coe_proj_eq_pow_nsmul]
 
 /-- **Surjectivity from the finite levels.** A continuous map from a compact space into a Tate
-module is surjective as soon as each of its components is surjective: the fibres over the
-components of a point form a decreasing family of nonempty closed sets, whose intersection is the
-fibre over the point. -/
+module is surjective as soon as each of its components is surjective. -/
 theorem surjective_of_forall_surjective_proj {X : Type*} [TopologicalSpace X] [CompactSpace X]
     {f : X → TateModule p A} (hf : Continuous f)
     (h : ∀ n, Function.Surjective fun x ↦ proj n (f x)) : Function.Surjective f := by
   intro y
+  -- The fibres over the components of `y` form a decreasing family of nonempty closed sets,
+  -- whose intersection is the fibre over `y`.
   set t : ℕ → Set X := fun n ↦ {x | proj n (f x) = proj n y}
   -- The level-`n` component determines the level-`m` component for `m ≤ n`.
   have hsub {m n : ℕ} (hmn : m ≤ n) : t n ⊆ t m := fun x (hx : proj n (f x) = proj n y) ↦
