@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.MetricSpace.Thickening
+public import TauCeti.Topology.MetricSpace.Thickening
 public import TauCeti.LowDimTopology.SolidTorus.Neighborhood
 
 /-!
@@ -33,54 +33,6 @@ open Set Metric Function Topology
 open scoped Matrix Manifold ContDiff RealInnerProductSpace
 
 namespace TauCeti
-
-/-- A finite family of pairwise disjoint compact sets admits pairwise disjoint thickenings of one
-common positive radius. -/
-theorem exists_thickening_pairwiseDisjoint
-    {X ι : Type*} [MetricSpace X] [Finite ι]
-    (hι : Nonempty ι) (K : ι → Set X) (hK : ∀ i, IsCompact (K i))
-    (hdisj : Pairwise (Disjoint on K)) :
-    ∃ δ : ℝ, 0 < δ ∧ Pairwise (Disjoint on fun i => thickening δ (K i)) := by
-  classical
-  let _ := Fintype.ofFinite ι
-  have hex : ∀ i j, i ≠ j → ∃ δ : ℝ, 0 < δ ∧
-      Disjoint (thickening δ (K i)) (thickening δ (K j)) := by
-    intro i j hij
-    exact (hdisj hij).exists_thickenings (hK i) (hK j).isClosed
-  let r : ι → ι → ℝ := fun i j =>
-    if h : i = j then 1 else Classical.choose (hex i j h)
-  have hr_pos : ∀ i j, 0 < r i j := by
-    intro i j
-    by_cases hij : i = j
-    · simp [r, hij]
-    · simpa [r, hij] using (Classical.choose_spec (hex i j hij)).1
-  have hr_disj : ∀ i j, i ≠ j →
-      Disjoint (thickening (r i j) (K i)) (thickening (r i j) (K j)) := by
-    intro i j hij
-    simpa [r, hij] using (Classical.choose_spec (hex i j hij)).2
-  let P : Finset (ι × ι) := Finset.univ.product Finset.univ
-  have hP : P.Nonempty := by
-    rcases hι with ⟨i⟩
-    exact ⟨(i, i), by simp [P]⟩
-  let Q : Finset ℝ := P.image (fun p => r p.1 p.2)
-  have hQ : Q.Nonempty := hP.image _
-  let δ : ℝ := Q.min' hQ
-  have hδ_pos : 0 < δ := by
-    have hqpos : ∀ q ∈ Q, 0 < q := by
-      intro q hq
-      rcases Finset.mem_image.1 hq with ⟨p, hp, rfl⟩
-      exact hr_pos p.1 p.2
-    exact hqpos _ (Finset.min'_mem Q hQ)
-  have hδ_le (i j : ι) : δ ≤ r i j := by
-    apply Finset.min'_le Q (r i j)
-    exact Finset.mem_image.2 ⟨(i, j), by simp [P], rfl⟩
-  have hV_disj : ∀ i j, i ≠ j →
-      Disjoint (thickening δ (K i)) (thickening δ (K j)) := by
-    intro i j hij
-    apply (hr_disj i j hij).mono
-    · exact thickening_mono (hδ_le i j) _
-    · exact thickening_mono (hδ_le i j) _
-  exact ⟨δ, hδ_pos, hV_disj⟩
 
 variable {ι X : Type*} [TopologicalSpace X]
 
@@ -133,7 +85,7 @@ theorem exists_isSolidTorusLinkNeighborhood
       have hcompact : ∀ i, IsCompact (range (f i)) := fun i =>
         isCompact_range (hf i).continuous
       obtain ⟨δ, hδ, hV_disj⟩ :=
-        exists_thickening_pairwiseDisjoint hι (fun i => range (f i)) hcompact hdisj
+        exists_thickening_pairwiseDisjoint (fun i => range (f i)) hcompact hdisj
       have hV_mem (i : ι) : thickening δ (range (f i)) ∈ 𝓝ˢ (range (f i)) :=
         thickening_mem_nhdsSet _ hδ
       choose Φ hΦ hΦsub using fun i =>
