@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Function.L2Space
+public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
+import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 
 /-!
 # Norm inequalities in `Lᵖ` spaces
@@ -61,12 +62,24 @@ end TauCeti
 
 namespace MeasureTheory
 
+open scoped ENNReal
+
 /-- The integral of the squared pointwise norm of an `L²` function is its squared `L²` norm. -/
 theorem Lp.integral_norm_sq_eq_norm_sq {alpha F : Type*} [MeasurableSpace alpha]
-    {m : Measure alpha} [NormedAddCommGroup F] [InnerProductSpace ℝ F] (f : Lp F 2 m) :
+    {m : Measure alpha} [NormedAddCommGroup F] (f : Lp F 2 m) :
     ∫ x, ‖f x‖ ^ 2 ∂m = ‖f‖ ^ 2 := by
-  refine Eq.symm ?_
-  rw [← real_inner_self_eq_norm_sq f, L2.inner_def]
-  exact integral_congr_ae (Filter.Eventually.of_forall fun x => real_inner_self_eq_norm_sq (f x))
+  have hp0 : (2 : ℝ≥0∞) ≠ 0 := by norm_num
+  have hptop : (2 : ℝ≥0∞) ≠ ∞ := by norm_num
+  have h_lp := lpNorm_eq_integral_norm_rpow_toReal hp0 hptop (Lp.aestronglyMeasurable f)
+  rw [ENNReal.toReal_ofNat] at h_lp
+  have h_norm : ‖f‖ = lpNorm (⇑f) 2 m := by
+    rw [Lp.norm_def, toReal_eLpNorm]
+  have h_rpow : (fun x => ‖f x‖ ^ (2 : ℝ)) = fun x => ‖f x‖ ^ 2 := by
+    funext x
+    exact Real.rpow_two (‖f x‖)
+  rw [h_rpow] at h_lp
+  have h_nonneg : 0 ≤ ∫ x, ‖f x‖ ^ 2 ∂m := integral_nonneg fun x => sq_nonneg _
+  rw [h_norm, h_lp, ← Real.rpow_two, ← Real.rpow_mul h_nonneg, inv_mul_cancel₀ (by norm_num),
+    Real.rpow_one]
 
 end MeasureTheory

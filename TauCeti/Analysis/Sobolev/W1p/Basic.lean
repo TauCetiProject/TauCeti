@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.TestFunctionLp
-public import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Function.Lp.Norm
 public import Mathlib.MeasureTheory.Function.Holder
 public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.SpecificCodomains.WithLp
@@ -30,8 +30,9 @@ the test jet
 
 Consequently the admissible jets form an intersection of kernels of continuous linear
 functionals.  This makes `TauCeti.W1p` a closed subspace of the ambient Bochner `Lᵖ` space, and
-hence complete.  The theorem `TauCeti.mem_w1pSubmodule_iff_hasWeakFDerivOn` identifies this closed
-subspace definition with the weak-derivative predicate, so the construction does not replace the
+hence complete when `E` is complete.
+The theorem `TauCeti.mem_w1pSubmodule_iff_hasWeakFDerivOn` identifies this closed subspace
+definition with the weak-derivative predicate, so the construction does not replace the
 distributional condition by a merely formal closedness assumption.
 
 The pointwise jet uses the Euclidean product norm on `ℝ × E`.  Thus at `p = 2` the inherited norm
@@ -46,7 +47,7 @@ boundary regularity of `Ω` is used.
 
 * `TauCeti.Sobolev1Jet`: the value-gradient fibre `ℝ × E` with its Euclidean product norm.
 * `TauCeti.w1pSubmodule`: the closed subspace of jets annihilating every weak-derivative test.
-* `TauCeti.W1p`: the corresponding complete normed space.
+* `TauCeti.W1p`: the corresponding normed space (complete when `E` is complete).
 * `TauCeti.mem_w1pSubmodule_iff_hasWeakFDerivOn`: membership is exactly weak
   differentiability of the value component with the recorded gradient.
 * `TauCeti.W1p.valueL` and `TauCeti.W1p.gradientL`: the two components as continuous linear
