@@ -6,55 +6,52 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.LocallyFlat.Basic
-public import TauCeti.Topology.PL.Map
+public import Mathlib.Topology.Algebra.Ring.Real
+public import Mathlib.Topology.Algebra.ContinuousAffineMap
 
 /-!
-# Affine PL embeddings are locally flat
+# Graphs are locally flat
 
-A graph of a continuous affine map is the basic affine piece in a piecewise-linear
-embedding.  This file records two facts used when passing from affine charts to
-locally flat embeddings: the graph map is PL, and its image is locally flat.
-The latter is obtained by shearing the standard coordinate slice; the shear is a
-homeomorphism, so no differentiable structure is involved.
+A graph of a continuous map is locally flat.  The proof shears the standard coordinate slice by
+the map, and so uses only continuity and the additive topological-group structure of the model.
+The affine case is exposed in the `ContinuousAffineMap` namespace for consumers building PL
+embeddings.
 
-This is the affine building block for the PL embedding side of geometric topology.
+This is the graph building block for the locally flat embedding side of geometric topology.
 -/
 
 public section
 
 namespace TauCeti
 
-variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [NormedAddCommGroup F] [NormedSpace ℝ F]
+variable {E F : Type*} [NormedAddCommGroup E] [NormedAddCommGroup F]
 
-/-- The graph of a continuous affine map is piecewise affine on every subset of its domain. -/
-theorem isPLOn_affineGraph (A : E →ᴬ[ℝ] F) (s : Set E) :
-    IsPLOn (fun x : E => (x, A x)) s := by
-  convert isPLOn_continuousAffineMap ((ContinuousAffineMap.id ℝ E).prod A) s using 1
-  funext x
-  rfl
-
-/-- The graph of a continuous affine map is locally flat, with complementary model `F`. -/
-theorem isLocallyFlat_affineGraph (A : E →ᴬ[ℝ] F) :
-    IsLocallyFlat E F (fun x : E => (x, A x)) := by
+/-- The graph of a continuous map is locally flat, with complementary model `F`. -/
+theorem isLocallyFlat_graph (f : E → F) (hf : Continuous f) :
+    IsLocallyFlat E F (fun x : E => (x, f x)) := by
   let shear : E × F ≃ₜ E × F :=
-    { toFun := fun p => (p.1, p.2 + A p.1)
-      invFun := fun p => (p.1, p.2 - A p.1)
+    { toFun := fun p => (p.1, p.2 + f p.1)
+      invFun := fun p => (p.1, p.2 - f p.1)
       left_inv := by
         intro p
         simp
       right_inv := by
         intro p
         simp
-      continuous_toFun := by
-        fun_prop
-      continuous_invFun := by
-        fun_prop }
+      continuous_toFun := continuous_fst.prodMk (continuous_snd.add (hf.comp continuous_fst))
+      continuous_invFun := continuous_fst.prodMk (continuous_snd.sub (hf.comp continuous_fst)) }
   have h := (isLocallyFlat_prodMkLeft (N := E) (F := E) (F' := F)).homeomorph_comp shear
   convert h using 1
   ext x
   · rfl
-  · change A x = 0 + A x
-    simp
+  · dsimp [Function.comp_apply, shear]
+    simp only [zero_add]
+
+/-- The graph of a continuous affine map is locally flat, with complementary model `F`. -/
+theorem _root_.ContinuousAffineMap.isLocallyFlat_affineGraph
+    {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [NormedAddCommGroup F] [NormedSpace ℝ F] (A : E →ᴬ[ℝ] F) :
+    IsLocallyFlat E F (fun x : E => (x, A x)) :=
+  TauCeti.isLocallyFlat_graph A A.continuous
 
 end TauCeti
