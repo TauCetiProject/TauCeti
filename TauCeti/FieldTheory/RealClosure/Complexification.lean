@@ -6,21 +6,15 @@ Authors: Kim Morrison
 module
 
 public import Mathlib.FieldTheory.IsRealClosed.Basic
-public import Mathlib.Algebra.QuadraticAlgebra.Basic
-public import Mathlib.Algebra.Order.Field.Basic
+public import TauCeti.Algebra.QuadraticAlgebra.Square
 public import TauCeti.Algebra.Ring.Semireal
-public import TauCeti.Algebra.Order.Ring.Square
 import TauCeti.Algebra.Order.Ring.Ordering.Semireal
-import Mathlib.Tactic.Linarith
-import Mathlib.Tactic.LinearCombination
-import Mathlib.Tactic.FieldSimp
-import Mathlib.Tactic.Ring
 
 /-! # Square roots in the complexification of a real closed field
 
-The usual algebraic square-root formula works over any ordered field whose nonnegative
-elements are squares. In particular, it works over real closed fields. No odd-degree root,
-completeness, or Archimedean property is used.
+`QuadraticAlgebra.isSquare` specializes the algebraic square-root construction to a real
+closed field, without requiring an order on that field as a hypothesis. This square-closure
+property is used to prove algebraic closedness of the complexification.
 
 The semireal square obstruction supplies the field instance on `QuadraticAlgebra R (-1) 0`.
 -/
@@ -29,49 +23,8 @@ public section
 
 namespace QuadraticAlgebra
 
-variable {R : Type*} [Field R] [LinearOrder R] [IsStrictOrderedRing R]
+variable {R : Type*} [Field R]
 
-/-- Every element of `R[i]` is a square if every nonnegative element of `R` is a square. -/
-theorem isSquare_of_forall_nonneg_isSquare (z : QuadraticAlgebra R (-1) 0)
-    (hsq : ∀ {a : R}, 0 ≤ a → IsSquare a) : IsSquare z := by
-  by_cases him : z.im = 0
-  · rcases le_total 0 z.re with hre | hre
-    · obtain ⟨r, hr⟩ := hsq hre
-      refine ⟨⟨r, 0⟩, ?_⟩
-      ext <;> simp [him, hr]
-    · obtain ⟨r, hr⟩ := hsq (neg_nonneg.mpr hre)
-      refine ⟨⟨0, r⟩, ?_⟩
-      apply QuadraticAlgebra.ext
-      · simp only [QuadraticAlgebra.re_mul]
-        linear_combination -hr
-      · simp [him]
-  · obtain ⟨m, hm0, hm⟩ :=
-      (hsq (add_nonneg (sq_nonneg z.re) (sq_nonneg z.im))).exists_nonneg_sq
-    have hpos : 0 < (m + z.re) / 2 := by
-      have : 0 < z.im ^ 2 := sq_pos_of_ne_zero him
-      have : -z.re < m := by nlinarith
-      exact div_pos (by linarith) (by norm_num)
-    obtain ⟨s, _, hs⟩ := (hsq hpos.le).exists_nonneg_sq
-    have hsne : s ≠ 0 := fun h => hpos.ne' (by rw [← hs, h]; ring)
-    have hs2 : 2 * s ^ 2 = m + z.re := by linarith
-    let t := z.im / (2 * s)
-    have ht : 2 * s * t = z.im := by
-      dsimp only [t]
-      field_simp
-    -- Multiplying by `(2 * s) ^ 2` clears the denominator of `t`; then `hm` and `hs2`
-    -- identify the real part of the square.
-    have hprod : (2 * s) ^ 2 * (s ^ 2 - t ^ 2 - z.re) = 0 := by
-      linear_combination (2 * s ^ 2 + m - z.re) * hs2 + hm - (2 * s * t + z.im) * ht
-    have hre : s ^ 2 - t ^ 2 = z.re := sub_eq_zero.mp
-      ((mul_eq_zero.mp hprod).resolve_left (pow_ne_zero _ (mul_ne_zero two_ne_zero hsne)))
-    refine ⟨⟨s, t⟩, ?_⟩
-    apply QuadraticAlgebra.ext
-    · simp only [QuadraticAlgebra.re_mul]
-      linear_combination -hre
-    · simp only [QuadraticAlgebra.im_mul]
-      linear_combination -ht
-
-omit [LinearOrder R] [IsStrictOrderedRing R] in
 /-- Every element of `R[i]` is a square when `R` is real closed, without choosing an order. -/
 theorem isSquare [IsRealClosed R] (z : QuadraticAlgebra R (-1) 0) : IsSquare z := by
   obtain ⟨o, ho⟩ := IsSemireal.exists_linearOrder (K := R)
