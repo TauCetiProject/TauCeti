@@ -26,6 +26,7 @@ of the defining isomorphism `tensorProductIso`.
 
 * `SheafOfModules.tensorStalkComparison`: the comparison as a linear map over the ring stalk;
 * `SheafOfModules.tensorStalkEquiv`: the same comparison as a linear equivalence;
+* `SheafOfModules.tensorStalkEquiv_naturality`: compatibility with morphisms in both factors;
 * `SheafOfModules.tensorStalkEquiv_symm_tmul_germ`: its inverse on tensors of germs;
 * `SheafOfModules.tensorStalkComparison_apply`: its description as the composite above;
 * `SheafOfModules.tensorStalkComparison_germ_unit_tmul`: its value on the germ of a sheafified
@@ -158,6 +159,106 @@ theorem tensorStalkEquiv_symm_tmul_germ (U : Opens X) (hx : x ∈ U)
             (M.val ⊗ N.val)).app (op U) (m ⊗ₜ[R.obj.obj (op U)] n)))) := by
   apply (tensorStalkEquiv R M N x).symm_apply_eq.mpr
   exact (tensorStalkComparison_germ_unit_tmul R M N x U hx m n).symm
+
+private theorem tensorStalkEquiv_map_germ_unit_tmul
+    {M' N' : SheafOfModules.{u} (ringCatSheaf R)} (f : M ⟶ M') (g : N ⟶ N')
+    (U : Opens X) (hx : x ∈ U) (m : M.val.obj (op U)) (n : N.val.obj (op U)) :
+    dsimp% only [PresheafOfModules.presheaf_obj_coe, Functor.id_obj, Functor.comp_obj]
+    (tensorStalkEquiv R M' N' x
+      (PresheafOfModules.stalkMapCommRing (S := R.obj) x
+        ((tensorProductIso R M N).hom ≫
+          (PresheafOfModules.sheafification (𝟙 (ringCatSheaf R).obj)).map (f.val ⊗ₘ g.val) ≫
+            (tensorProductIso R M' N').inv).val
+        (TopCat.Presheaf.germ (tensorProduct R M N).val.presheaf U x hx
+          ((tensorProductIso R M N).inv.val.app (op U)
+            (((PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj)).unit.app
+              (M.val ⊗ N.val)).app (op U) (m ⊗ₜ[R.obj.obj (op U)] n))))) =
+      TopCat.Presheaf.germ M'.val.presheaf U x hx (f.val.app (op U) m) ⊗ₜ[
+        ↑(TopCat.Presheaf.stalk R.obj x)]
+        TopCat.Presheaf.germ N'.val.presheaf U x hx (g.val.app (op U) n)) := by
+  -- Give the unit its underlying-presheaf codomain, eliminating the identity scalar
+  -- restriction in the adjunction's right functor before applying categorical naturality.
+  let η (P : PresheafOfModules.{u} (ringCatSheaf R).obj) :
+      P ⟶ ((PresheafOfModules.sheafification (𝟙 (ringCatSheaf R).obj)).obj P).val :=
+    (PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj)).unit.app P
+  have hη : η (M.val ⊗ N.val) ≫
+      ((PresheafOfModules.sheafification (𝟙 (ringCatSheaf R).obj)).map (f.val ⊗ₘ g.val)).val =
+      (f.val ⊗ₘ g.val) ≫ η (M'.val ⊗ N'.val) :=
+    (PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj)).unit_naturality _
+  have hi : (tensorProductIso R M N).inv.val ≫ (tensorProductIso R M N).hom.val = 𝟙 _ :=
+    ((_root_.SheafOfModules.forget _).mapIso (tensorProductIso R M N)).inv_hom_id
+  have h :
+      η (M.val ⊗ N.val) ≫ (tensorProductIso R M N).inv.val ≫
+        ((tensorProductIso R M N).hom ≫
+          (PresheafOfModules.sheafification (𝟙 (ringCatSheaf R).obj)).map (f.val ⊗ₘ g.val) ≫
+            (tensorProductIso R M' N').inv).val =
+      (f.val ⊗ₘ g.val) ≫
+        η (M'.val ⊗ N'.val) ≫ (tensorProductIso R M' N').inv.val := by
+    simp only [_root_.SheafOfModules.comp_val]
+    rw [← Category.assoc (tensorProductIso R M N).inv.val, hi,
+      Category.id_comp, ← Category.assoc, hη, Category.assoc]
+  erw [PresheafOfModules.stalkMapCommRing_germ]
+  have hs := congrArg (fun k ↦ k.app (op U) (m ⊗ₜ[R.obj.obj (op U)] n)) h
+  simp only [PresheafOfModules.comp_app] at hs
+  dsimp only [η] at hs
+  refine (congrArg (fun s ↦ tensorStalkEquiv R M' N' x
+    (TopCat.Presheaf.germ (tensorProduct R M' N').val.presheaf U x hx s)) hs).trans ?_
+  exact tensorStalkComparison_germ_unit_tmul R M' N' x U hx
+    (f.val.app (op U) m) (g.val.app (op U) n)
+
+/-- The tensor stalk equivalence commutes with morphisms in both factors. The map on the sheaf
+tensor product is the sheafification of the sectionwise tensor map, read through
+`tensorProductIso`. -/
+-- The type ascriptions identify the presheaf stalk maps with the sheaf stalk module instances.
+theorem tensorStalkEquiv_naturality
+    {M' N' : SheafOfModules.{u} (ringCatSheaf R)} (f : M ⟶ M') (g : N ⟶ N') :
+    (tensorStalkEquiv R M' N' x).toLinearMap.comp
+        (show ↑(TopCat.Presheaf.stalk (tensorProduct R M N).val.presheaf x) →ₗ[
+          ↑(TopCat.Presheaf.stalk R.obj x)]
+          ↑(TopCat.Presheaf.stalk (tensorProduct R M' N').val.presheaf x) from
+          PresheafOfModules.stalkMapCommRing (S := R.obj) x
+          ((tensorProductIso R M N).hom ≫
+            (PresheafOfModules.sheafification (𝟙 (ringCatSheaf R).obj)).map
+              (f.val ⊗ₘ g.val) ≫ (tensorProductIso R M' N').inv).val) =
+      (TensorProduct.map
+        (show ↑(TopCat.Presheaf.stalk M.val.presheaf x) →ₗ[↑(TopCat.Presheaf.stalk R.obj x)]
+          ↑(TopCat.Presheaf.stalk M'.val.presheaf x) from
+          PresheafOfModules.stalkMapCommRing (S := R.obj) x f.val)
+        (show ↑(TopCat.Presheaf.stalk N.val.presheaf x) →ₗ[↑(TopCat.Presheaf.stalk R.obj x)]
+          ↑(TopCat.Presheaf.stalk N'.val.presheaf x) from
+          PresheafOfModules.stalkMapCommRing (S := R.obj) x g.val)).comp
+          (tensorStalkEquiv R M N x).toLinearMap := by
+  apply (LinearMap.cancel_right (tensorStalkEquiv R M N x).symm.surjective).mp
+  apply TensorProduct.ext'
+  intro m n
+  -- Expand the linear-map compositions on the left; the equivalence and stalk map have
+  -- definitionally equal presheaf and sheaf module structures.
+  change tensorStalkEquiv R M' N' x
+      (PresheafOfModules.stalkMapCommRing (S := R.obj) x
+        ((tensorProductIso R M N).hom ≫
+          (PresheafOfModules.sheafification (𝟙 (ringCatSheaf R).obj)).map
+            (f.val ⊗ₘ g.val) ≫ (tensorProductIso R M' N').inv).val
+          ((tensorStalkEquiv R M N x).symm
+            (m ⊗ₜ[↑(TopCat.Presheaf.stalk R.obj x)] n))) =
+    _
+  conv_rhs =>
+    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply]
+  have hmap := TensorProduct.map_tmul
+    (show ↑(TopCat.Presheaf.stalk M.val.presheaf x) →ₗ[↑(TopCat.Presheaf.stalk R.obj x)]
+      ↑(TopCat.Presheaf.stalk M'.val.presheaf x) from
+      PresheafOfModules.stalkMapCommRing (S := R.obj) x f.val)
+    (show ↑(TopCat.Presheaf.stalk N.val.presheaf x) →ₗ[↑(TopCat.Presheaf.stalk R.obj x)]
+      ↑(TopCat.Presheaf.stalk N'.val.presheaf x) from
+      PresheafOfModules.stalkMapCommRing (S := R.obj) x g.val) m n
+  rw [hmap]
+  obtain ⟨U, hxU, m, rfl⟩ := TopCat.Presheaf.exists_germ_eq M.val.presheaf m
+  obtain ⟨V, hVU, hxV, n, rfl⟩ := TopCat.Presheaf.exists_le_germ_eq N.val.presheaf n hxU
+  rw [← TopCat.Presheaf.germ_res_apply M.val.presheaf (homOfLE hVU) x hxV m]
+  erw [tensorStalkEquiv_symm_tmul_germ, tensorStalkEquiv_map_germ_unit_tmul]
+  conv_rhs =>
+    erw [PresheafOfModules.stalkMapCommRing_germ (S := R.obj) x f.val,
+      PresheafOfModules.stalkMapCommRing_germ (S := R.obj) x g.val]
+  rfl
 
 end SheafOfModules
 
