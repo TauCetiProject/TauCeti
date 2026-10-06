@@ -8,7 +8,7 @@ module
 public import Mathlib.MeasureTheory.Function.ConditionalExpectation.Basic
 public import Mathlib.MeasureTheory.Constructions.Polish.Basic
 public import TauCeti.Probability.Process.Tail.Basic
-public import TauCeti.Probability.Exchangeability.Cylinder
+public import TauCeti.Probability.Process.Cylinder
 public import TauCeti.Probability.Exchangeability.Contractability
 -- `PrefixDeletion` (the canonical dependency) `public import`s both
 -- `Mathlib.Probability.Independence.Conditional` (`CondIndep`/`condIndep_iff`, proof-only here) and
