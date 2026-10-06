@@ -21,9 +21,6 @@ When the topological image is closed, the factorization is surjective on points.
 * `TauCeti.specTargetImageIdeal_specMap`: the ideal defining the image of a spectrum map is the
   kernel of the corresponding ring homomorphism.
 
-The dominance proof uses Mathlib's `Scheme.Hom.toImage_app_injective`; reducedness
-then follows from `IsSchemeTheoreticallyDominant.isReduced`.
-
 ## References
 
 * The Stacks Project, Tag 01R5, especially Lemmas 29.6.3 and 29.6.7.
@@ -83,7 +80,7 @@ instance isReduced_image [IsReduced X] : IsReduced f.image :=
 
 /-- If a quasi-compact morphism has closed topological image, its map to the
 scheme-theoretic image is surjective. -/
-theorem surjective_toImage_of_isClosed_range (h : IsClosed (Set.range f)) :
+theorem toImage_surjective_of_isClosed_range (h : IsClosed (Set.range f)) :
     Function.Surjective f.toImage := by
   intro y
   have hy : f.imageι y ∈ Set.range f := by

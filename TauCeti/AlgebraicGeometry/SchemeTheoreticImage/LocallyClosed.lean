@@ -15,15 +15,14 @@ A quasi-compact morphism with locally closed topological image factors through a
 immersion with exactly that image. The intermediate scheme is the scheme-theoretic
 image inside the open complement of the boundary. The first map is surjective and
 scheme-theoretically dominant; if the source is reduced, the intermediate scheme
-is reduced as well. This constructs the scheme underlying a locally closed orbit
-before proving flatness of its orbit map or identifying a homogeneous quotient.
+is reduced as well. This gives a scheme structure on a locally closed orbit.
 
-The construction uses Mathlib's `Scheme.Hom.toImage` and `IsOpenImmersion.lift`.
-It keeps the scheme structure supplied by the morphism, including when the source
+The scheme structure is supplied by the morphism, including when the source
 is nonreduced. Local closedness alone does not imply flatness.
 
 ## References
 
+* Mathlib's `Scheme.Hom.toImage` and `IsOpenImmersion.lift` constructions.
 * J. S. Milne, *Algebraic Groups* (2017), §§7.c–7.f (orbit schemes).
 * The Stacks Project, Tag 01R5 (scheme-theoretic images).
 -/
@@ -129,7 +128,7 @@ variable [QuasiCompact f]
 instance instSurjectiveToLocallyClosedImage (h : IsLocallyClosed (Set.range f)) :
     Surjective (f.toLocallyClosedImage h) := by
   rw [toLocallyClosedImage_def]
-  exact ⟨(f.liftImageOpen h).surjective_toImage_of_isClosed_range
+  exact ⟨(f.liftImageOpen h).toImage_surjective_of_isClosed_range
     (f.isClosed_range_liftImageOpen h)⟩
 
 /-- The immersion has precisely the original topological image, including nonclosed points. -/
@@ -153,11 +152,6 @@ instance instQuasiCompactToLocallyClosedImage (h : IsLocallyClosed (Set.range f)
     QuasiCompact (f.toLocallyClosedImage h) := by
   rw [toLocallyClosedImage_def]
   infer_instance
-
-/-- Reduced sources give the reduced scheme structure on their locally closed image. -/
-instance instIsReducedLocallyClosedImage [IsReduced X]
-    (h : IsLocallyClosed (Set.range f)) : IsReduced (f.locallyClosedImage h) :=
-  IsSchemeTheoreticallyDominant.isReduced (f.toLocallyClosedImage h)
 
 /-- A locally finite-type morphism stays locally of finite type after factorization
 through its locally closed scheme image. -/
