@@ -35,6 +35,9 @@ equality. Every statement here holds in any characteristic, including two and th
 * `WeierstrassCurve.Affine.isSingular_iff'` and `WeierstrassCurve.Affine.isSingular_iff`: the
   coefficient-level restatements, the second as the two equalities `Nonsingular` negates.
 * `WeierstrassCurve.Affine.isSingular_zero`: singularity at the origin is `a₃ = a₄ = a₆ = 0`.
+* `WeierstrassCurve.Affine.equation_iff_of_isSingular_zero`: the equation of a model singular at
+  the origin is `y² + a₁ x y = x³ + a₂ x²`.
+* `WeierstrassCurve.Affine.c₄_eq_b₂_sq_of_isSingular_zero`: at such a model, `c₄ = b₂²`.
 * `WeierstrassCurve.Affine.isSingular_iff_variableChange`: singularity at a point is singularity at
   the origin of the model translated there.
 * `WeierstrassCurve.Affine.isSingular_iff_equation_and_not_nonsingular`: the comparison with
@@ -121,6 +124,18 @@ its equation reads `y (y + a₁x) = x² (x + a₂)`. -/
 theorem isSingular_zero (W : WeierstrassCurve.Affine R) :
     W.IsSingular 0 0 ↔ W.a₆ = 0 ∧ W.a₄ = 0 ∧ W.a₃ = 0 := by
   rw [IsSingular, equation_zero, evalEval_polynomialX_zero, evalEval_polynomialY_zero, neg_eq_zero]
+
+/-- At a model singular at the origin the equation reads `y² + a₁ x y = x³ + a₂ x²`. -/
+theorem equation_iff_of_isSingular_zero (h : W.IsSingular 0 0) (x y : R) :
+    W.Equation x y ↔ y ^ 2 + W.a₁ * x * y = x ^ 3 + W.a₂ * x ^ 2 := by
+  obtain ⟨h₆, h₄, h₃⟩ := (isSingular_zero _).1 h
+  simp [equation_iff', h₆, h₄, h₃, sub_eq_zero]
+
+/-- For a model singular at the origin, `c₄` is the square of `b₂`, the discriminant of the
+tangent quadratic `T² + a₁ T - a₂`. -/
+theorem c₄_eq_b₂_sq_of_isSingular_zero (h : W.IsSingular 0 0) : W.c₄ = W.b₂ ^ 2 := by
+  obtain ⟨-, h₄, h₃⟩ := (isSingular_zero _).1 h
+  simp [c₄, b₄, h₄, h₃]
 
 /-- **The Jacobian criterion is Mathlib's singularity condition**, `Nonsingular` being the
 conjunction of the equation with the negation of both partials vanishing. -/

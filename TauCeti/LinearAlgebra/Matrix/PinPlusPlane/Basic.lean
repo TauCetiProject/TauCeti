@@ -20,7 +20,12 @@ they satisfy `e₁² = e₂² = +1` and `e₁ e₂ = −e₂ e₁`, so that the 
 (`TauCeti.pinVec`) squares to `y₀² + y₁²`. An orthogonal matrix `x` acts on these vectors by the
 twisted adjoint action `v ↦ det(x) · x v xᵀ`; a **`Pin⁺` lift** of `w` is an orthogonal `x` whose
 twisted action is `w` (`TauCeti.IsPinLift`). With the sign, a unit vector lifts its own
-reflection (`TauCeti.isPinLift_pinVec`).
+reflection (`TauCeti.isPinLift_pinVec`). Lifts multiply, invert and are carried by ring
+homomorphisms, such as a Galois action on the entries; an orthogonal `x` lifts exactly one `w`
+(`TauCeti.IsPinLift.unique`), and over a domain in which `2 ≠ 0` two lifts of the same `w` differ by
+a sign (`TauCeti.IsPinLift.eq_or_eq_neg`). The sign matrix `diag((−1)^{ε₀}, (−1)^{ε₁})` has the
+diagonal lift `e₁^{ε₀} e₂^{ε₁}` (`TauCeti.pinDiagonalLift`), whose products carry the sign
+`(−1)^{ε₁ ε'₀}` (`TauCeti.pinDiagonalLift_mul`).
 
 The wreath product `C₂ ≀ C₂` acts on `F²` by signed permutations (`TauCeti.wreathSignedPerm`).
 For a square root `r2` of `2`, the unit vector `t = (e₁ − e₂)/√2` (`TauCeti.pinT`) lifts the swap,
@@ -42,6 +47,7 @@ his Théorème 1′ computes the Evens norm of a Kummer class, at `n = 2`.
 * `TauCeti.pinE1`, `TauCeti.pinE2`: the Clifford generators of `M₂(R)`.
 * `TauCeti.pinVec`: the vector `y₀ e₁ + y₁ e₂`, as a linear map.
 * `TauCeti.IsPinLift`: `x` is a `Pin⁺` lift of `w`.
+* `TauCeti.pinDiagonalLift`: the lift `e₁^{ε₀} e₂^{ε₁}` of a diagonal sign matrix.
 * `TauCeti.wreathSignedPerm`: the signed-permutation representation
   `(a, b, c) ↦ diag((−1)^a, (−1)^b) · e₂^c` of `C₂ ≀ C₂`.
 * `TauCeti.pinT`: the unit vector `(e₁ − e₂)/√2`.
@@ -53,6 +59,13 @@ his Théorème 1′ computes the Evens norm of a Kummer class, at `n = 2`.
 * `TauCeti.pinE1_mul_self`, `TauCeti.pinE2_mul_self`, `TauCeti.pinE1_mul_pinE2`,
   `TauCeti.pinVec_mul_self`: the Clifford relations.
 * `TauCeti.isPinLift_pinVec`: a unit vector lifts its own reflection.
+* `TauCeti.isPinLift_iff`: a lift is checked on the generators `e₁` and `e₂`.
+* `TauCeti.IsPinLift.mul`, `TauCeti.IsPinLift.inv`, `TauCeti.IsPinLift.map`: lifts multiply,
+  invert, and are natural in the coefficient ring.
+* `TauCeti.IsPinLift.unique`, `TauCeti.IsPinLift.eq_or_eq_neg`: a lift determines what it lifts,
+  and two lifts of the same matrix differ by a sign.
+* `TauCeti.isPinLift_pinDiagonalLift`, `TauCeti.pinDiagonalLift_mul`: the diagonal lift and its
+  factor set `(−1)^{ε₁ ε'₀}`; it is defined over the prime ring (`TauCeti.map_pinDiagonalLift`).
 * `TauCeti.pinE1_mul_pinT_pow_four`: `(e₁ t)⁴ = −1`.
 * `TauCeti.isPinLift_pinDihedral`: `pinDihedral z` lifts the signed permutation of the image
   of `z` in `C₂ ≀ C₂`.
@@ -160,6 +173,43 @@ theorem wreathSignedPerm_wreathSwap :
     ZMod.val_one, pow_one]
   ext i j; fin_cases i <;> fin_cases j <;> simp [pinE2, Matrix.mul_apply, Fin.sum_univ_two]
 
+/-- **The diagonal lift** `e₁^{ε₀} e₂^{ε₁}` of the sign matrix `diag((−1)^{ε₀}, (−1)^{ε₁})`
+(`TauCeti.isPinLift_pinDiagonalLift`). -/
+def pinDiagonalLift (ε : Fin 2 → ZMod 2) : Matrix (Fin 2) (Fin 2) R :=
+  pinE1 ^ (ε 0).val * pinE2 ^ (ε 1).val
+
+/-- The diagonal lift of `ε` is `e₁^{ε₀} e₂^{ε₁}`. -/
+theorem pinDiagonalLift_def (ε : Fin 2 → ZMod 2) :
+    (pinDiagonalLift ε : Matrix (Fin 2) (Fin 2) R) = pinE1 ^ (ε 0).val * pinE2 ^ (ε 1).val :=
+  (rfl)
+
+/-- The diagonal lift of the trivial sign is the identity. -/
+@[simp]
+theorem pinDiagonalLift_zero : (pinDiagonalLift 0 : Matrix (Fin 2) (Fin 2) R) = 1 := by
+  simp [pinDiagonalLift_def]
+
+/-- **The product of two diagonal lifts,**
+`e₁^a e₂^b · e₁^{a'} e₂^{b'} = (−1)^{b a'} e₁^{a + a'} e₂^{b + b'}`: this is where `e₁² = e₂² = +1`
+and `e₁ e₂ = −e₂ e₁` enter. -/
+@[simp]
+theorem pinDiagonalLift_mul (ε ε' : Fin 2 → ZMod 2) :
+    (pinDiagonalLift ε : Matrix (Fin 2) (Fin 2) R) * pinDiagonalLift ε' =
+      (-1) ^ (ε 1 * ε' 0).val * pinDiagonalLift (ε + ε') := by
+  -- Moving `e₂^b` past `e₁^{a'}` costs the sign `(−1)^{b a'}`.
+  have hswap (b a : ZMod 2) : (pinE2 : Matrix (Fin 2) (Fin 2) R) ^ b.val * pinE1 ^ a.val =
+      (-1) ^ (b * a).val * (pinE1 ^ a.val * pinE2 ^ b.val) := by
+    obtain rfl | rfl : b = 0 ∨ b = 1 := by revert b; decide
+    · simp
+    obtain rfl | rfl : a = 0 ∨ a = 1 := by revert a; decide
+    · simp
+    · simp [ZMod.val_one_eq_one_mod, pinE1_mul_pinE2]
+  have h1 : (pinE1 : Matrix (Fin 2) (Fin 2) R) ^ 2 = 1 := by rw [pow_two, pinE1_mul_self]
+  have h2 : (pinE2 : Matrix (Fin 2) (Fin 2) R) ^ 2 = 1 := by rw [pow_two, pinE2_mul_self]
+  rw [pinDiagonalLift_def, pinDiagonalLift_def, pinDiagonalLift_def, Pi.add_apply, Pi.add_apply,
+    pow_val_add h1, pow_val_add h2, Matrix.mul_assoc, ← Matrix.mul_assoc (pinE2 ^ _), hswap]
+  simp only [Matrix.mul_assoc]
+  rw [((Commute.neg_one_left _).pow_left _).symm.left_comm]
+
 end Ring
 
 section CommRing
@@ -176,6 +226,16 @@ theorem pinVec_apply (y : Fin 2 → R) : pinVec y = y 0 • pinE1 + y 1 • pinE
 /-- The vector `y₀ e₁ + y₁ e₂` is the symmetric matrix `[[y₀, y₁], [y₁, −y₀]]`. -/
 theorem pinVec_eq (y : Fin 2 → R) : pinVec y = !![y 0, y 1; y 1, -y 0] := by
   ext i j; fin_cases i <;> fin_cases j <;> simp [pinVec_apply, pinE1, pinE2]
+
+/-- A vector of the Clifford model determines its coordinates. -/
+theorem pinVec_injective :
+    Function.Injective (pinVec : (Fin 2 → R) → Matrix (Fin 2) (Fin 2) R) := by
+  intro y z hyz
+  have h0 := congrFun (congrFun hyz 0) 0
+  have h1 := congrFun (congrFun hyz 0) 1
+  simp only [pinVec_eq, of_apply, cons_val', cons_val_zero, cons_val_one, empty_val',
+    cons_val_fin_one] at h0 h1
+  ext i; fin_cases i <;> assumption
 
 /-- **The Clifford relation** `v² = q(v) · 1` for the unit form `q(y) = y₀² + y₁²`. -/
 @[simp]
@@ -263,7 +323,219 @@ theorem isPinLift_pinE1 : IsPinLift (pinE1 : Matrix (Fin 2) (Fin 2) R) (diagonal
     ext i j; fin_cases i <;> fin_cases j <;> norm_num [vecMulVec_apply, Matrix.one_apply]
   rwa [hv, hw] at h
 
+/-- **`e₂` lifts `diag(1, −1)`,** the reflection in the first coordinate axis. -/
+theorem isPinLift_pinE2 : IsPinLift (pinE2 : Matrix (Fin 2) (Fin 2) R) (diagonal ![1, -1]) := by
+  have h := isPinLift_pinVec (R := R) (u := ![0, 1]) (by simp)
+  have hv : pinVec ![(0 : R), 1] = pinE2 := by simp [pinVec_apply]
+  have hw : 1 - (2 : R) • vecMulVec ![(0 : R), 1] ![0, 1] = diagonal ![1, -1] := by
+    ext i j; fin_cases i <;> fin_cases j <;> norm_num [vecMulVec_apply, Matrix.one_apply]
+  rwa [hv, hw] at h
+
+/-- **The diagonal lift** `e₁^{ε₀} e₂^{ε₁}` lifts `diag((−1)^{ε₀}, (−1)^{ε₁})`, since `e₁` lifts
+`diag(−1, 1)` and `e₂` lifts `diag(1, −1)`. -/
+theorem isPinLift_pinDiagonalLift (ε : Fin 2 → ZMod 2) :
+    IsPinLift (pinDiagonalLift ε : Matrix (Fin 2) (Fin 2) R)
+      (diagonal fun i => (-1) ^ (ε i).val) := by
+  have h := (isPinLift_pinE1 (R := R).pow (ε 0).val).mul (isPinLift_pinE2.pow (ε 1).val)
+  rw [diagonal_pow, diagonal_pow, diagonal_mul_diagonal, ← pinDiagonalLift_def] at h
+  convert h using 2
+  ext i; fin_cases i <;> simp
+
+/-- **A `Pin⁺` lift is checked on the two generators:** `x` lifts `w` if and only if `x` is
+orthogonal and its twisted action sends `e₁` and `e₂` to the vectors of the two columns of `w`. -/
+theorem isPinLift_iff {x w : Matrix (Fin 2) (Fin 2) R} :
+    IsPinLift x w ↔ x ∈ orthogonalGroup (Fin 2) R ∧
+      x.det • (x * pinE1 * xᵀ) = pinVec (wᵀ 0) ∧ x.det • (x * pinE2 * xᵀ) = pinVec (wᵀ 1) := by
+  refine ⟨fun h => ⟨h.mem_orthogonalGroup, ?_, ?_⟩, fun ⟨hx, h1, h2⟩ => ⟨hx, fun y => ?_⟩⟩
+  · simpa [pinVec_apply, mulVec_single_one] using
+      h.det_smul_mul_pinVec_mul_transpose (Pi.single 0 1)
+  · simpa [pinVec_apply, mulVec_single_one] using
+      h.det_smul_mul_pinVec_mul_transpose (Pi.single 1 1)
+  · have hy : w *ᵥ y = y 0 • wᵀ 0 + y 1 • wᵀ 1 := by
+      ext i; simp [mulVec, dotProduct, Fin.sum_univ_two, mul_comm]
+    rw [hy, map_add, map_smul, map_smul, ← h1, ← h2, pinVec_apply]
+    simp only [Matrix.mul_add, Matrix.add_mul, Matrix.mul_smul, Matrix.smul_mul, smul_add]
+    rw [smul_comm x.det (y 0), smul_comm x.det (y 1)]
+
+/-- **The target of a `Pin⁺` lift is unique:** an orthogonal `x` has only one twisted action. -/
+theorem IsPinLift.unique {x w w' : Matrix (Fin 2) (Fin 2) R} (h : IsPinLift x w)
+    (h' : IsPinLift x w') : w = w' := by
+  rw [isPinLift_iff] at h h'
+  have c0 := pinVec_injective (h.2.1.symm.trans h'.2.1)
+  have c1 := pinVec_injective (h.2.2.symm.trans h'.2.2)
+  rw [← transpose_transpose w, ← transpose_transpose w']
+  congr 1
+  ext i j; fin_cases i
+  · exact congrFun c0 j
+  · exact congrFun c1 j
+
+/-- A symmetric matrix of trace zero is a vector of the Clifford model. -/
+private theorem pinVec_of_transpose_eq_of_trace_eq_zero {M : Matrix (Fin 2) (Fin 2) R}
+    (hM : Mᵀ = M) (htr : M.trace = 0) : pinVec ![M 0 0, M 0 1] = M := by
+  have h10 : M 1 0 = M 0 1 := by simpa using congrFun (congrFun hM 0) 1
+  have h11 : M 1 1 = -M 0 0 := by
+    rw [trace_fin_two] at htr
+    linear_combination htr
+  rw [pinVec_eq]
+  ext i j; fin_cases i <;> fin_cases j <;> simp [h10, h11]
+
+/-- **Every orthogonal matrix is a `Pin⁺` lift of something:** its twisted action preserves the
+vectors, which are the symmetric matrices of trace zero. -/
+private theorem exists_isPinLift_of_mem_orthogonalGroup {x : Matrix (Fin 2) (Fin 2) R}
+    (hx : x ∈ orthogonalGroup (Fin 2) R) : ∃ w, IsPinLift x w := by
+  have hxx : xᵀ * x = 1 := (mem_orthogonalGroup_iff' _ _).1 hx
+  -- The twisted action of `x` on a vector `v` is symmetric of trace zero.
+  have hvec (v : Matrix (Fin 2) (Fin 2) R) (hv : vᵀ = v) (htr : v.trace = 0) :
+      ∃ y, x.det • (x * v * xᵀ) = pinVec y := by
+    refine ⟨_, (pinVec_of_transpose_eq_of_trace_eq_zero ?_ ?_).symm⟩
+    · rw [transpose_smul, transpose_mul, transpose_mul, transpose_transpose, hv, Matrix.mul_assoc]
+    · rw [trace_smul, trace_mul_comm, ← Matrix.mul_assoc, hxx, Matrix.one_mul, htr, smul_zero]
+  obtain ⟨y₁, hy₁⟩ := hvec pinE1 (by rw [pinE1_def]; ext i j; fin_cases i <;> fin_cases j <;> rfl)
+    (by simp [pinE1_def, trace_fin_two])
+  obtain ⟨y₂, hy₂⟩ := hvec pinE2 (by rw [pinE2_def]; ext i j; fin_cases i <;> fin_cases j <;> rfl)
+    (by simp [pinE2_def, trace_fin_two])
+  refine ⟨(of ![y₁, y₂])ᵀ, isPinLift_iff.2 ⟨hx, ?_, ?_⟩⟩ <;>
+    simpa only [transpose_transpose, of_apply, cons_val_zero, cons_val_one, cons_val_fin_one]
+
+/-- **Lifts invert:** the inverse `x⁻¹ = xᵀ` of a lift of `w` lifts `w⁻¹`. -/
+theorem IsPinLift.inv {x w : Matrix (Fin 2) (Fin 2) R} (h : IsPinLift x w) :
+    IsPinLift x⁻¹ w⁻¹ := by
+  have hxx : x * xᵀ = 1 := (mem_orthogonalGroup_iff _ _).1 h.mem_orthogonalGroup
+  obtain ⟨w', h'⟩ :=
+    exists_isPinLift_of_mem_orthogonalGroup ((mem_orthogonalGroup_iff' _ _).2 (by
+      rwa [transpose_transpose]))
+  have hww : w * w' = 1 := (h.mul h').unique (by rw [hxx]; exact IsPinLift.one)
+  rwa [inv_eq_right_inv hxx, inv_eq_right_inv hww]
+
+variable {S : Type*} [CommRing S]
+
+/-- The generator `e₁` is defined over the prime ring. -/
+@[simp]
+theorem map_pinE1 (φ : R →+* S) : (pinE1 : Matrix (Fin 2) (Fin 2) R).map φ = pinE1 := by
+  ext i j; fin_cases i <;> fin_cases j <;> simp [pinE1]
+
+/-- The generator `e₂` is defined over the prime ring. -/
+@[simp]
+theorem map_pinE2 (φ : R →+* S) : (pinE2 : Matrix (Fin 2) (Fin 2) R).map φ = pinE2 := by
+  ext i j; fin_cases i <;> fin_cases j <;> simp [pinE2]
+
+/-- The diagonal lift is defined over the prime ring. -/
+@[simp]
+theorem map_pinDiagonalLift (φ : R →+* S) (ε : Fin 2 → ZMod 2) :
+    (pinDiagonalLift ε : Matrix (Fin 2) (Fin 2) R).map φ = pinDiagonalLift ε := by
+  rw [pinDiagonalLift_def, pinDiagonalLift_def, ← RingHom.mapMatrix_apply, map_mul, map_pow,
+    map_pow, RingHom.mapMatrix_apply, RingHom.mapMatrix_apply, map_pinE1, map_pinE2]
+
+/-- The vector `y₀ e₁ + y₁ e₂` is natural in the coefficient ring. -/
+@[simp]
+theorem map_pinVec (φ : R →+* S) (y : Fin 2 → R) : (pinVec y).map φ = pinVec (φ ∘ y) := by
+  rw [pinVec_eq, pinVec_eq]
+  ext i j; fin_cases i <;> fin_cases j <;> simp
+
+/-- **Lifts are carried by ring homomorphisms,** in particular by a Galois action on the entries. -/
+theorem IsPinLift.map (φ : R →+* S) {x w : Matrix (Fin 2) (Fin 2) R} (h : IsPinLift x w) :
+    IsPinLift (x.map φ) (w.map φ) := by
+  obtain ⟨hx, h1, h2⟩ := isPinLift_iff.1 h
+  refine isPinLift_iff.2 ⟨?_, ?_, ?_⟩
+  · rw [mem_orthogonalGroup_iff'] at hx ⊢
+    rw [← transpose_map, ← RingHom.mapMatrix_apply, ← RingHom.mapMatrix_apply, ← map_mul, hx,
+      map_one]
+  · have h := congrArg (·.map φ) h1
+    simp only [Matrix.map_smul' _ _ _ (map_mul φ), Matrix.map_mul, map_pinE1, map_pinVec,
+      transpose_map, RingHom.map_det, RingHom.mapMatrix_apply] at h
+    convert h using 2
+    ext i; simp
+  · have h := congrArg (·.map φ) h2
+    simp only [Matrix.map_smul' _ _ _ (map_mul φ), Matrix.map_mul, map_pinE2, map_pinVec,
+      transpose_map, RingHom.map_det, RingHom.mapMatrix_apply] at h
+    convert h using 2
+    ext i; simp
+
 end CommRing
+
+section IsDomain
+
+variable {R : Type*} [CommRing R] [IsDomain R] [NeZero (2 : R)]
+
+/-- The `Pin⁺` lifts of the identity are `±1`: of determinant `1` such a lift commutes with `e₁` and
+`e₂` and is a scalar, and of determinant `−1` it would anticommute with both, which no orthogonal
+matrix does when `2 ≠ 0`. -/
+private theorem eq_one_or_eq_neg_one_of_isPinLift_one {z : Matrix (Fin 2) (Fin 2) R}
+    (h : IsPinLift z 1) : z = 1 ∨ z = -1 := by
+  obtain ⟨hz, h1, h2⟩ := isPinLift_iff.1 h
+  have hzz := (mem_orthogonalGroup_iff' _ _).1 hz
+  have hzz' := (mem_orthogonalGroup_iff _ _).1 hz
+  rw [eta_fin_two z] at h1 h2 hzz hzz' ⊢
+  set a := z 0 0
+  set b := z 0 1
+  set c := z 1 0
+  set d := z 1 1
+  -- The entries of the two generator equations and of orthogonality.
+  have e1 : (a * d - b * c) * (a * a - b * b) = 1 := by
+    have := congrFun (congrFun h1 0) 0
+    simp [pinE1, pinVec_eq, det_fin_two, vecMul, dotProduct, Fin.sum_univ_two] at this
+    linear_combination this
+  have e2 : (a * d - b * c) * (2 * (a * b)) = 0 := by
+    have := congrFun (congrFun h2 0) 0
+    simp [pinE2, pinVec_eq, det_fin_two, vecMul, dotProduct, Fin.sum_univ_two, -mul_eq_zero]
+      at this
+    linear_combination this
+  have e3 : (a * d - b * c) * (a * d + b * c) = 1 := by
+    have := congrFun (congrFun h2 0) 1
+    simp [pinE2, pinVec_eq, det_fin_two, vecMul, dotProduct, Fin.sum_univ_two] at this
+    linear_combination this
+  have o1 : a * a + c * c = 1 := by
+    simpa [Matrix.mul_apply, Fin.sum_univ_two] using congrFun (congrFun hzz 0) 0
+  have o2 : a * a + b * b = 1 := by
+    simpa [vecMul, dotProduct, Fin.sum_univ_two] using congrFun (congrFun hzz' 0) 0
+  have o3 : a * c + b * d = 0 := by
+    simpa [vecMul, dotProduct, Fin.sum_univ_two, -mul_eq_zero] using congrFun (congrFun hzz' 0) 1
+  have o4 : b * b + d * d = 1 := by
+    simpa [Matrix.mul_apply, Fin.sum_univ_two] using congrFun (congrFun hzz 1) 1
+  have o5 : a * b + c * d = 0 := by
+    simpa [Matrix.mul_apply, Fin.sum_univ_two, -mul_eq_zero] using congrFun (congrFun hzz 0) 1
+  -- The determinant `δ = a d − b c` squares to one, and `δ (a d + b c) = 1`, so `b c = 0`.
+  have hδ : (a * d - b * c) * (a * d - b * c) = 1 := by
+    linear_combination (b * b + d * d) * o1 + o4 - (a * b + c * d) * o5
+  have hδ0 : a * d - b * c ≠ 0 := left_ne_zero_of_mul_eq_one hδ
+  have h20 : (2 : R) ≠ 0 := two_ne_zero
+  have hbc : b * c = 0 := by
+    have : (a * d - b * c) * (2 * (b * c)) = 0 := by linear_combination e3 - hδ
+    simpa [hδ0, h20] using this
+  have hab : a * b = 0 := by simpa [hδ0, h20] using e2
+  have ha : a ≠ 0 := by
+    rintro ha
+    exact hδ0 (by rw [ha, zero_mul, zero_sub, hbc, neg_zero])
+  have hb : b = 0 := (mul_eq_zero.1 hab).resolve_left ha
+  have hc : c = 0 := by
+    rw [hb, zero_mul, add_zero] at o3
+    exact (mul_eq_zero.1 o3).resolve_left ha
+  rw [hb, mul_zero, add_zero] at o2
+  have had : a * d = 1 := by
+    rw [hb, zero_mul, sub_zero, mul_zero, sub_zero, o2, mul_one] at e1
+    exact e1
+  have hd : d = a := by linear_combination (-d) * o2 + a * had
+  rw [hb, hc, hd]
+  rcases mul_self_eq_one_iff.1 o2 with ha1 | ha1 <;> rw [ha1]
+  · exact Or.inl (one_fin_two (α := R)).symm
+  · exact Or.inr (by ext i j; fin_cases i <;> fin_cases j <;> simp)
+
+/-- **Two `Pin⁺` lifts of the same `w` differ by a sign:** `x' x⁻¹` lifts the identity, hence is
+`±1`. -/
+theorem IsPinLift.eq_or_eq_neg {x x' w : Matrix (Fin 2) (Fin 2) R} (h : IsPinLift x w)
+    (h' : IsPinLift x' w) : x' = x ∨ x' = -x := by
+  have hdet : IsUnit x.det :=
+    isUnit_det_of_right_inverse ((mem_orthogonalGroup_iff _ _).1 h.mem_orthogonalGroup)
+  have hw : w * w⁻¹ = 1 :=
+    (h.mul h.inv).unique (by rw [mul_nonsing_inv _ hdet]; exact IsPinLift.one)
+  have hz := h'.mul h.inv
+  rw [hw] at hz
+  have hx' : x' = x' * x⁻¹ * x := by rw [Matrix.mul_assoc, nonsing_inv_mul _ hdet, Matrix.mul_one]
+  rcases eq_one_or_eq_neg_one_of_isPinLift_one hz with hz | hz <;> rw [hx', hz]
+  · exact Or.inl (Matrix.one_mul x)
+  · exact Or.inr (neg_one_mul x)
+
+end IsDomain
 
 section Field
 

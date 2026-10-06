@@ -81,19 +81,18 @@ namespace TauCeti
 open Filter MeasureTheory Set TopologicalSpace
 open scoped Distributions ENNReal Gradient InnerProductSpace NNReal Topology
 
-variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-  [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
-  {Omega : Opens E} {p : ENNReal} [Fact (1 ≤ p)]
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
-omit [MeasurableSpace E] [FiniteDimensional ℝ E] [BorelSpace E] [mu.IsAddHaarMeasure]
-    [Fact (1 ≤ p)] in
 private theorem enorm_innerSL_sub (x y : E) :
     ‖innerSL ℝ x - innerSL ℝ y‖ₑ = ‖x - y‖ₑ := by
   rw [← map_sub, ← ofReal_norm, ← ofReal_norm, innerSL_apply_norm]
 
 /-! ### The classical chain rule for a test function -/
 
-omit [MeasurableSpace E] [BorelSpace E] [mu.IsAddHaarMeasure] [Fact (1 ≤ p)] in
+section TestFunction
+
+variable [FiniteDimensional ℝ E] {Omega : Opens E}
+
 private theorem hasFDerivAt_comp_testFunction {F : ℝ → ℝ} (hF : ContDiff ℝ 1 F)
     (phi : 𝓓(Omega, ℝ)) (x : E) :
     HasFDerivAt (fun y => F (phi y)) (innerSL ℝ (deriv F (phi x) • ∇ (phi : E → ℝ) x)) x := by
@@ -104,6 +103,8 @@ private theorem hasFDerivAt_comp_testFunction {F : ℝ → ℝ} (hF : ContDiff �
   refine hd.congr_fderiv ?_
   ext y
   simp [inner_gradient_left (𝕜 := ℝ) (f := (phi : E → ℝ)) (x := x) (y := y)]
+
+variable [MeasurableSpace E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
 
 private theorem hasWeakFDerivOn_comp_testFunction {F : ℝ → ℝ} (hF : ContDiff ℝ 1 F)
     (phi : 𝓓(Omega, ℝ)) :
@@ -119,19 +120,21 @@ private theorem hasWeakFDerivOn_comp_testFunction {F : ℝ → ℝ} (hF : ContDi
   · exact (hcd.continuous.locallyIntegrable).locallyIntegrableOn _
   · exact ((hcd.continuous_fderiv one_ne_zero).locallyIntegrable).locallyIntegrableOn _
 
+end TestFunction
+
 /-! ### The chain rule in `W^{1,p}(Ω)` for `p < ∞` -/
 
 section ChainRule
 
+variable [MeasurableSpace E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
+  {Omega : Opens E} {p : ENNReal} [Fact (1 ≤ p)]
 variable {F : ℝ → ℝ} {M : ℝ≥0}
 
-omit [FiniteDimensional ℝ E] in
 private theorem memLp_comp_value (hlip : LipschitzWith M F) (hF0 : F 0 = 0)
     (u : W1p mu Omega p) :
     MemLp (fun x => F (W1p.value u x)) p (mu.restrict Omega) :=
   hlip.comp_memLp hF0 (Lp.memLp (W1p.value u))
 
-omit [FiniteDimensional ℝ E] in
 private theorem memLp_deriv_smul_gradient (hF : ContDiff ℝ 1 F) (hM : ∀ t, ‖deriv F t‖₊ ≤ M)
     (u : W1p mu Omega p) :
     MemLp (fun x => deriv F (W1p.value u x) • W1p.gradient u x) p (mu.restrict Omega) := by
@@ -144,6 +147,8 @@ private theorem memLp_deriv_smul_gradient (hF : ContDiff ℝ 1 F) (hM : ∀ t, �
       simpa [← NNReal.coe_le_coe] using hM (W1p.value u x)
     rw [norm_smul, Pi.smul_apply, norm_smul, Real.norm_of_nonneg M.coe_nonneg]
     exact mul_le_mul_of_nonneg_right hb (norm_nonneg _)
+
+variable [FiniteDimensional ℝ E]
 
 private theorem locallyIntegrableOn_comp_value (hlip : LipschitzWith M F)
     (u : W1p mu Omega p) :
@@ -513,17 +518,18 @@ private theorem tendsto_deriv_posPartApprox {d : ℕ → ℝ} (hd : ∀ n, 0 < d
 
 section PosPart
 
+variable [MeasurableSpace E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
+  {Omega : Opens E} {p : ENNReal} [Fact (1 ≤ p)]
+
 /-- The candidate weak gradient of `(u - k)⁺`. -/
 private def posPartAboveGradient (k : ℝ) (u : W1p mu Omega p) : E → E :=
   {x | k < W1p.value u x}.indicator ⇑(W1p.gradient u)
 
-omit [FiniteDimensional ℝ E] in
 private theorem posPartAboveGradient_apply (k : ℝ) (u : W1p mu Omega p) (x : E) :
     posPartAboveGradient k u x =
       (if k < W1p.value u x then (1 : ℝ) else 0) • W1p.gradient u x := by
   by_cases h : k < W1p.value u x <;> simp [posPartAboveGradient, h]
 
-omit [FiniteDimensional ℝ E] in
 private theorem tendsto_deriv_posPartApprox_sub_smul_gradient (k : ℝ) (u : W1p mu Omega p)
     {d : ℕ → ℝ} (hd : ∀ n, 0 < d n) (hd0 : Tendsto d atTop (𝓝 0)) (x : E) :
     Tendsto (fun n => deriv (posPartApprox (d n)) (W1p.value u x - k) • W1p.gradient u x)
@@ -532,7 +538,6 @@ private theorem tendsto_deriv_posPartApprox_sub_smul_gradient (k : ℝ) (u : W1p
   simpa only [sub_pos] using
     (tendsto_deriv_posPartApprox hd hd0 (W1p.value u x - k)).smul_const (W1p.gradient u x)
 
-omit [FiniteDimensional ℝ E] in
 private theorem aestronglyMeasurable_posPartAboveGradient (k : ℝ) (u : W1p mu Omega p) :
     AEStronglyMeasurable (posPartAboveGradient k u) (mu.restrict Omega) := by
   refine aestronglyMeasurable_of_tendsto_ae (u := atTop)
@@ -546,18 +551,15 @@ private theorem aestronglyMeasurable_posPartAboveGradient (k : ℝ) (u : W1p mu 
     exact tendsto_deriv_posPartApprox_sub_smul_gradient k u (fun n => by positivity)
       tendsto_one_div_add_atTop_nhds_zero_nat x
 
-omit [FiniteDimensional ℝ E] in
 private theorem norm_posPartAboveGradient_le (k : ℝ) (u : W1p mu Omega p) (x : E) :
     ‖posPartAboveGradient k u x‖ ≤ ‖W1p.gradient u x‖ := by
   by_cases h : k < W1p.value u x <;> simp [posPartAboveGradient, h]
 
-omit [FiniteDimensional ℝ E] in
 private theorem memLp_posPartAboveGradient (k : ℝ) (u : W1p mu Omega p) :
     MemLp (posPartAboveGradient k u) p (mu.restrict Omega) :=
   MemLp.of_le (Lp.memLp (W1p.gradient u)) (aestronglyMeasurable_posPartAboveGradient k u)
     (Filter.Eventually.of_forall (norm_posPartAboveGradient_le k u))
 
-omit [FiniteDimensional ℝ E] in
 /-- The pointwise truncation `(u - k)⁺` is in `Lᵖ` when `u` is and `k ≥ 0`. -/
 theorem W1p.memLp_posPartAbove {k : ℝ} (hk : 0 ≤ k) (u : W1p mu Omega p) :
     MemLp (fun x => max (W1p.value u x - k) 0) p (mu.restrict Omega) := by
@@ -567,7 +569,6 @@ theorem W1p.memLp_posPartAbove {k : ℝ} (hk : 0 ≤ k) (u : W1p mu Omega p) :
       MeasureTheory.Lp.lipschitzWith_pos_part.dist_le_mul (x - k) (y - k)
   exact hlip.comp_memLp (by simp [hk]) (Lp.memLp (W1p.value u))
 
-omit [FiniteDimensional ℝ E] in
 /-- Raising the level of an `Lᵖ` positive truncation preserves its `Lᵖ` membership. -/
 theorem W1p.memLp_posPartAbove_of_le (u : W1p mu Omega p) {k l : ℝ} (hkl : k ≤ l)
     (hk : MemLp (fun x => max (W1p.value u x - k) 0) p (mu.restrict Omega)) :
@@ -578,6 +579,8 @@ theorem W1p.memLp_posPartAbove_of_le (u : W1p mu Omega p) {k l : ℝ} (hkl : k �
     (Filter.Eventually.of_forall fun x => by
       rw [Real.norm_of_nonneg (le_max_right _ _), Real.norm_of_nonneg (le_max_right _ _)]
       exact max_le_max (sub_le_sub_left hkl _) le_rfl)
+
+variable [FiniteDimensional ℝ E]
 
 /-- **For `1 ≤ p < ∞`, truncation above any real level is weakly differentiable**, with
 weak gradient `1_{u > k} ∇u`. -/

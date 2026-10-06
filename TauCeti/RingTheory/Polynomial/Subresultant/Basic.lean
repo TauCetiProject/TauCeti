@@ -14,9 +14,9 @@ public import TauCeti.Algebra.Polynomial.Coeff.Basic
 /-!
 # Principal subresultant coefficients
 
-This file defines the fixed-bound principal subresultant coefficient of two polynomials.  Its
-matrix is obtained from the Sylvester matrix by deleting the first and last `j` rows and the
-last `j` columns from each polynomial block.  Thus the coefficient at index zero is the
+This file defines the fixed-bound principal subresultant coefficient of two polynomials.  For
+`j ≤ min m n`, its matrix is obtained from the Sylvester matrix by deleting the first and last `j`
+rows and the last `j` columns from each polynomial block.  Thus the coefficient at index zero is the
 resultant, while the terminal coefficient is a power of the coefficient at the smaller bound.
 
 Keeping the bounds explicit is essential for specialization: mapping coefficients commutes with
@@ -28,7 +28,7 @@ the scalar data used by subresultant gcd criteria and projection operators.
 * `TauCeti.coefficientRow_dotProduct`: a row of shifted polynomial coefficients reads any
   coefficient of `A * q + B * p` from the coefficient vector of `(A, B)`.
 * `Polynomial.subresultantMatrix_mulVec`: the matrix acts on a pair of coefficient vectors as
-  `(A, B) ↦ A * q + B * p`, read on the coefficients of degrees `j, …, m+n-j-1`.
+  `(A, B) ↦ A * q + B * p`, its row `i` reading the coefficient of degree `i + j`.
 * `Polynomial.psc_zero`: the zeroth principal subresultant coefficient is the resultant.
 * `Polynomial.psc_map_map`: fixed-bound principal subresultant coefficients commute with coefficient
   maps.
@@ -58,10 +58,12 @@ variable {R S : Type*}
 /-- The square coefficient matrix whose determinant is the principal subresultant coefficient at
 index `j` and formal degree bounds `m` and `n`.
 
-Its columns are `q, X*q, ..., X^(m-j-1)*q`, followed by
-`p, X*p, ..., X^(n-j-1)*p`; its rows read the coefficients of degrees
-`j, ..., m+n-j-1`.  The definition is meaningful for every `j`; subresultant applications use
-`j <= min m n`. -/
+Row `i` reads the coefficient of degree `i + j`. The first `m - j` columns read
+`q, X*q, ..., X^(m-j-1)*q` and the last `n - j` columns read `p, X*p, ..., X^(n-j-1)*p`, with
+`q` and `p` truncated to their formal bounds `n` and `m`; when `q.natDegree ≤ n` and
+`p.natDegree ≤ m` the entries are exactly those coefficients
+(`Polynomial.subresultantMatrix_apply_eq_coeff`). For `j ≤ min m n`, the case subresultant
+applications use, the rows read the degrees `j, ..., m+n-j-1`. -/
 def _root_.Polynomial.subresultantMatrix [Semiring R] (p q : R[X]) (m n j : ℕ) :
     Matrix (Fin ((m - j) + (n - j))) (Fin ((m - j) + (n - j))) R :=
   Matrix.of fun i k =>
@@ -149,8 +151,8 @@ theorem coefficientRow_dotProduct [CommSemiring R] [DecidableEq R]
 
 /-- The principal subresultant matrix acts on a vector as the linear map `(A, B) ↦ A * q + B * p`,
 where `A` and `B` are the polynomials whose coefficients are the first `m - j` and the last `n - j`
-entries of the vector, read on the coefficients of degrees `j, …, m+n-j-1`.  The formal bounds
-must dominate the actual degrees. -/
+entries of the vector: entry `i` of the result is the coefficient of degree `i + j`.  The formal
+bounds must dominate the actual degrees. -/
 theorem _root_.Polynomial.subresultantMatrix_mulVec [CommSemiring R] [DecidableEq R]
     {p q : R[X]} {m n : ℕ} (hm : p.natDegree ≤ m) (hn : q.natDegree ≤ n) (j : ℕ)
     (v : Fin ((m - j) + (n - j)) → R) (i : Fin ((m - j) + (n - j))) :

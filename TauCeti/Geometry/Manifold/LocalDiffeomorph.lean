@@ -8,6 +8,9 @@ module
 public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 public import TauCeti.Analysis.Calculus.InverseFunctionTheorem
 
+-- Access the constructor body only to supply its missing public computation rule.
+import all Mathlib.Geometry.Manifold.LocalDiffeomorph
+
 /-!
 # The inverse function theorem for manifolds
 
@@ -29,6 +32,8 @@ point witnesses it at every nearby point.
 
 ## Main results
 
+* `TauCeti.coe_diffeomorphOfBijective`: the associated global diffeomorphism
+  has the original forward map.
 * `TauCeti.extChartPartialDiffeomorph`: an extended chart restricted to the interior of its target,
   as a partial diffeomorphism onto an open subset of the model space.
 * `TauCeti.PartialDiffeomorph.ofOpenPartialHomeomorph`: an open partial homeomorphism between
@@ -63,6 +68,15 @@ variable {𝕂 : Type*} [NontriviallyNormedField 𝕂]
   {H : Type*} [TopologicalSpace H] {G : Type*} [TopologicalSpace G]
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   {N : Type*} [TopologicalSpace N] [ChartedSpace G N]
+
+/-- The diffeomorphism associated to a bijective local diffeomorphism has the given forward map.
+This computation rule lets callers use the constructor without unfolding its choice of inverse. -/
+@[simp]
+theorem coe_diffeomorphOfBijective
+    {I : ModelWithCorners 𝕂 E H} {J : ModelWithCorners 𝕂 F G} {n : WithTop ℕ∞}
+    {f : M → N} {hf : _root_.IsLocalDiffeomorph I J n f} {hf' : Function.Bijective f} :
+    ⇑(hf.diffeomorphOfBijective hf') = f := by
+  rfl
 
 section Charts
 

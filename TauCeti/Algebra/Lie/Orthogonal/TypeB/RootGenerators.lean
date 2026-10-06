@@ -20,12 +20,11 @@ root `εᵢ`, the normalization forced by Mathlib's form matrix `diag(2, J)` is
 eᵢ = 2 Eᵢ₀ - E₀,-ᵢ,       fᵢ = E₀,ᵢ - 2 E-ᵢ,₀.
 ```
 
-Thus `[eᵢ, fᵢ]` is the short coroot `2(Eᵢᵢ - E-ᵢ,-ᵢ)`. Unlike a long-root operator, `eᵢ` is not
-square-zero: its square is twice an integral matrix and its cube vanishes. The corresponding
+Thus `[eᵢ, fᵢ]` is `2(Eᵢᵢ - E-ᵢ,-ᵢ)`, the coroot of the short root `εᵢ`. Unlike a long-root
+operator, `eᵢ` is not square-zero over `ℤ`: its square is twice an integral matrix and its cube
+vanishes. The corresponding
 divided square is made explicit below. These integral divided powers are the data needed to
 exponentiate the root operators over `ℤ` in the type-`B` Chevalley construction.
-This advances the **Pinnings** and **Chevalley--Demazure construction** targets in Layer 9 of the
-[Reductive-groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/ReductiveGroups/README.md).
 
 ## Main definitions
 
@@ -76,8 +75,8 @@ theorem typeBLongRootMatrix_def (i j : ι) (hij : i ≠ j) :
         single (.inr (.inr j)) (.inr (.inr i)) 1 :=
   (rfl)
 
-/-- The long-root matrix sends a coordinate basis vector to the difference of its two selected
-coordinates. -/
+/-- The long-root matrix sends the basis vector at `+j` to the one at `+i` and the basis vector at
+`-i` to minus the one at `-j`, and kills every other basis vector. -/
 theorem toLinAlgEquiv_typeBLongRootMatrix_apply_basis {M : Type*} [AddCommGroup M] [Module K M]
     (bas : Module.Basis (Unit ⊕ ι ⊕ ι) K M) (i j : ι) (hij : i ≠ j)
     (c : Unit ⊕ ι ⊕ ι) :
@@ -128,6 +127,7 @@ def typeBLongRootGenerator (i j : ι) (hij : i ≠ j) :
     LieAlgebra.Orthogonal.typeB ι K :=
   ⟨typeBLongRootMatrix i j hij, typeBLongRootMatrix_mem_typeB i j hij⟩
 
+/-- The underlying matrix of `typeBLongRootGenerator`. -/
 @[simp]
 theorem coe_typeBLongRootGenerator (i j : ι) (hij : i ≠ j) :
     (typeBLongRootGenerator (K := K) i j hij :
@@ -140,17 +140,19 @@ def typeBLongCorootMatrix (i j : ι) (_hij : i ≠ j) :
     Matrix (Unit ⊕ ι ⊕ ι) (Unit ⊕ ι ⊕ ι) K :=
   typeBDiagonalMatrix (Pi.single i 1 - Pi.single j 1)
 
-/-- The long coroot `h_{εᵢ-εⱼ}` in the split type-`B` Lie algebra. -/
+/-- The coroot `h_{εᵢ-εⱼ}` of the long root `εᵢ - εⱼ` in the split type-`B` Lie algebra. -/
 def typeBLongCorootGenerator (i j : ι) (hij : i ≠ j) : LieAlgebra.Orthogonal.typeB ι K :=
   ⟨typeBLongCorootMatrix i j hij, typeBDiagonalMatrix_mem_typeB _⟩
 
+/-- The underlying matrix of `typeBLongCorootGenerator`. -/
 @[simp]
 theorem coe_typeBLongCorootGenerator (i j : ι) (hij : i ≠ j) :
     (typeBLongCorootGenerator (K := K) i j hij :
       Matrix (Unit ⊕ ι ⊕ ι) (Unit ⊕ ι ⊕ ι) K) = typeBLongCorootMatrix i j hij :=
   (rfl)
 
-/-- The long coroot has coordinate vector `εᵢ - εⱼ` in the split diagonal Cartan. -/
+/-- The coroot of the long root `εᵢ - εⱼ` has coordinate vector `εᵢ - εⱼ` in the split diagonal
+Cartan. -/
 theorem typeBLongCorootGenerator_eq_diagonal (i j : ι) (hij : i ≠ j) :
     typeBLongCorootGenerator (K := K) i j hij =
       ((typeBDiagonalEquiv (K := K) (ι := ι) (Pi.single i 1 - Pi.single j 1) :
@@ -213,7 +215,7 @@ theorem typeBShortNegativeRootMatrix_def (i : ι) :
       single (.inl ()) (.inr (.inl i)) 1 - single (.inr (.inr i)) (.inl ()) 2 :=
   (rfl)
 
-/-- The positive short-root matrix has its two nonzero coordinate-basis actions in the middle and
+/-- The positive short-root matrix acts on the coordinate basis only through the middle and
 negative summands. -/
 theorem toLinAlgEquiv_typeBShortRootMatrix_apply_basis {M : Type*} [AddCommGroup M] [Module K M]
     (bas : Module.Basis (Unit ⊕ ι ⊕ ι) K M) (i : ι) (c : Unit ⊕ ι ⊕ ι) :
@@ -224,7 +226,7 @@ theorem toLinAlgEquiv_typeBShortRootMatrix_apply_basis {M : Type*} [AddCommGroup
     toLinAlgEquiv_single_apply_basis, toLinAlgEquiv_single_apply_basis]
   simp
 
-/-- The negative short-root matrix has its two nonzero coordinate-basis actions in the positive and
+/-- The negative short-root matrix acts on the coordinate basis only through the positive and
 middle summands. -/
 theorem toLinAlgEquiv_typeBShortNegativeRootMatrix_apply_basis {M : Type*} [AddCommGroup M]
     [Module K M] (bas : Module.Basis (Unit ⊕ ι ⊕ ι) K M) (i : ι)
@@ -292,12 +294,14 @@ def typeBShortRootGenerator (i : ι) : LieAlgebra.Orthogonal.typeB ι K :=
 def typeBShortNegativeRootGenerator (i : ι) : LieAlgebra.Orthogonal.typeB ι K :=
   ⟨typeBShortNegativeRootMatrix i, typeBShortNegativeRootMatrix_mem_typeB i⟩
 
+/-- The underlying matrix of `typeBShortRootGenerator`. -/
 @[simp]
 theorem coe_typeBShortRootGenerator (i : ι) :
     (typeBShortRootGenerator (K := K) i :
       Matrix (Unit ⊕ ι ⊕ ι) (Unit ⊕ ι ⊕ ι) K) = typeBShortRootMatrix i :=
   (rfl)
 
+/-- The underlying matrix of `typeBShortNegativeRootGenerator`. -/
 @[simp]
 theorem coe_typeBShortNegativeRootGenerator (i : ι) :
     (typeBShortNegativeRootGenerator (K := K) i :
@@ -354,21 +358,22 @@ theorem typeBDiagonalEquiv_lie_shortNegativeRootGenerator (d : ι → K) (i : ι
     simp [typeBShortNegativeRootMatrix, typeBDiagonalMatrix_apply, Matrix.mul_apply,
       Matrix.single_apply] <;> aesop
 
-/-- The diagonal short coroot `2εᵢ` in the standard type-`B` coordinates. -/
+/-- The diagonal coroot `2εᵢ` of the short root `εᵢ`, in the standard type-`B` coordinates. -/
 def typeBShortCorootMatrix (i : ι) : Matrix (Unit ⊕ ι ⊕ ι) (Unit ⊕ ι ⊕ ι) K :=
   typeBDiagonalMatrix (2 • Pi.single i 1)
 
-/-- The short coroot `h_{εᵢ}` in the split type-`B` Lie algebra. -/
+/-- The coroot `h_{εᵢ}` of the short root `εᵢ` in the split type-`B` Lie algebra. -/
 def typeBShortCorootGenerator (i : ι) : LieAlgebra.Orthogonal.typeB ι K :=
   ⟨typeBShortCorootMatrix i, typeBDiagonalMatrix_mem_typeB _⟩
 
+/-- The underlying matrix of `typeBShortCorootGenerator`. -/
 @[simp]
 theorem coe_typeBShortCorootGenerator (i : ι) :
     (typeBShortCorootGenerator (K := K) i :
       Matrix (Unit ⊕ ι ⊕ ι) (Unit ⊕ ι ⊕ ι) K) = typeBShortCorootMatrix i :=
   (rfl)
 
-/-- The short coroot has coordinate vector `2εᵢ` in the split diagonal Cartan. -/
+/-- The coroot of the short root `εᵢ` has coordinate vector `2εᵢ` in the split diagonal Cartan. -/
 theorem typeBShortCorootGenerator_eq_diagonal (i : ι) :
     typeBShortCorootGenerator (K := K) i =
       ((typeBDiagonalEquiv (K := K) (ι := ι) (2 • Pi.single i 1) :
@@ -377,7 +382,7 @@ theorem typeBShortCorootGenerator_eq_diagonal (i : ι) :
   rw [coe_typeBDiagonalEquiv_apply]
   rfl
 
-/-- The positive and negative short-root vectors bracket to the short coroot. -/
+/-- The positive and negative short-root vectors bracket to the coroot of `εᵢ`. -/
 @[simp]
 theorem typeBShortRootGenerator_lie_negative (i : ι) :
     ⁅typeBShortRootGenerator (K := K) i, typeBShortNegativeRootGenerator (K := K) i⁆ =

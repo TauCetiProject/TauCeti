@@ -128,13 +128,6 @@ private theorem norm_inversion_le_one {y : EuclideanSpace ℝ (Fin n)} (hy : 0 �
     inversion_inversion _ hR]
   exact hy
 
-/-- The inversion is analytic away from its centre. -/
-private theorem contDiffAt_inversion {y : EuclideanSpace ℝ (Fin n)} (hy : y ≠ -e₀) :
-    ContDiffAt ℝ ω (inversion (-e₀) √2) y := by
-  have : ContDiffAt ℝ ω (fun z : EuclideanSpace ℝ (Fin n) ↦ √2 / dist z (-e₀)) y :=
-    contDiffAt_const.div (contDiffAt_id.dist ℝ contDiffAt_const hy) (dist_ne_zero.2 hy)
-  exact ((this.pow 2).smul (contDiffAt_id.sub contDiffAt_const)).add contDiffAt_const
-
 end Inversion
 
 /-! ### The charts -/
@@ -333,8 +326,9 @@ theorem contMDiff_subtypeVal_closedBall {k : ℕ∞ω} :
   have hmem : extChartAt (𝓡∂ n) x x ∈ range (𝓡∂ n) := extChartAt_target_subset_range x
     (mem_extChartAt_target x)
   rw [range_modelWithCornersEuclideanHalfSpace] at hmem
-  refine ((φ.symm.contDiff.contDiffAt.comp _ (contDiffAt_inversion (ne_neg_single_of_nonneg
-    hmem))).contDiffWithinAt.of_le le_top).congr_of_mem (fun z hz ↦ ?_) ?_
+  refine ((φ.symm.contDiff.contDiffAt.comp _ (contDiffAt_inversion (R := √2)
+    (ne_neg_single_of_nonneg hmem))).contDiffWithinAt.of_le le_top).congr_of_mem
+    (fun z hz ↦ ?_) ?_
   · rw [range_modelWithCornersEuclideanHalfSpace] at hz
     simp [h, modelWithCornersEuclideanHalfSpace_symm_apply_of_le hz]
   · rw [range_modelWithCornersEuclideanHalfSpace]

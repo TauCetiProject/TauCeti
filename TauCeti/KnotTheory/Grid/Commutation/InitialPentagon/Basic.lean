@@ -238,6 +238,17 @@ theorem disjoint_coveredSquares_XSet_iff (P : GridInitialPentagonBetween a s x y
     · exact h₂ (hpa ▸ hr)
     · exact h₃ (hpb ▸ hr)
 
+/-- Initial-side pentagons with the same underlying toroidal rectangle cover the same squares. -/
+theorem coveredSquares_eq_of_toGridRectangle_eq {u v : GridState n}
+    (P : GridInitialPentagonBetween a s x y) (Q : GridInitialPentagonBetween a s u v)
+    (h : P.toGridRectangle = Q.toGridRectangle) : P.coveredSquares = Q.coveredSquares := by
+  obtain ⟨-, hright, hbottom, htop⟩ := GridRectangle.ext_iff.mp h
+  simp only [GridRectangleBetween.toGridRectangle_right,
+    GridRectangleBetween.toGridRectangle_bottom,
+    GridRectangleBetween.toGridRectangle_top] at hright hbottom htop
+  ext p
+  rw [P.mem_coveredSquares, Q.mem_coveredSquares, hright, hbottom, htop]
+
 end GridInitialPentagonBetween
 
 namespace GridDiagram

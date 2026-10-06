@@ -33,6 +33,8 @@ realization, by a homeomorphism that is the identity of complex points on every 
 ## Main declarations
 
 * `TauCeti.Toric.Fan.AlgebraicComplexPoint`: the complex points of the toric scheme of a fan.
+* `TauCeti.Toric.FanHom.algebraicComplexPointMap`: the action of fan morphisms on complex points,
+  with identity and composition rules.
 * `TauCeti.Toric.Fan.AlgebraicComplexPoint.ofAffinePoint`: the complex point given by a point of
   the affine chart of a cone.
 * `TauCeti.Toric.Fan.AlgebraicComplexPoint.exists_ofAffinePoint_eq`: every complex point lies in
@@ -197,6 +199,43 @@ end AlgebraicComplexPoint
 end Fan
 
 end
+
+namespace FanHom
+
+variable {N N' N'' V V' V'' : Type} [AddCommGroup N] [AddCommGroup N'] [AddCommGroup N'']
+  [AddCommGroup V] [AddCommGroup V'] [AddCommGroup V''] [Module ℝ V] [Module ℝ V'] [Module ℝ V'']
+  {i : N →+ V} {i' : N' →+ V'} {i'' : N'' →+ V''}
+  {Φ : Fan i} {Ψ : Fan i'} {Ω : Fan i''} (f : FanHom Φ Ψ)
+
+/-- The map on algebraic complex points induced by a fan morphism: compose the morphism
+`Spec ℂ ⟶ X_Φ` over `Spec ℂ` with the toric morphism `X_Φ ⟶ X_Ψ`. -/
+noncomputable def algebraicComplexPointMap (p : Φ.AlgebraicComplexPoint) :
+    Ψ.AlgebraicComplexPoint :=
+  letI := p.2
+  ⟨p.1 ≫ f.algebraicMap, inferInstance⟩
+
+/-- On scheme morphisms, the map of complex points is postcomposition by the algebraic map. -/
+@[simp]
+theorem coe_algebraicComplexPointMap (p : Φ.AlgebraicComplexPoint) :
+    (f.algebraicComplexPointMap p).1 = p.1 ≫ f.algebraicMap :=
+  (rfl)
+
+/-- The identity fan morphism acts identically on algebraic complex points. -/
+@[simp]
+theorem algebraicComplexPointMap_id (p : Φ.AlgebraicComplexPoint) :
+    (FanHom.id Φ).algebraicComplexPointMap p = p := by
+  ext1
+  simp
+
+/-- Composition of fan morphisms acts by composition on algebraic complex points. -/
+@[simp]
+theorem algebraicComplexPointMap_comp (g : FanHom Ψ Ω) (p : Φ.AlgebraicComplexPoint) :
+    (g.comp f).algebraicComplexPointMap p =
+      g.algebraicComplexPointMap (f.algebraicComplexPointMap p) := by
+  ext1
+  simp [algebraicMap_comp, Category.assoc]
+
+end FanHom
 
 /-! ### The comparison with the analytic realization of a regular fan -/
 
