@@ -13,9 +13,9 @@ public import TauCeti.Topology.Compactification.OnePoint.ProjectiveLine
 
 If `g ∈ PSL(2, ℝ)` carries the real boundary point `ξ` to `∞`, then a lift of `g` has lower row
 proportional to `(1, -ξ)`, so `g` acts as `z ↦ (az + b) / (c (z - ξ))`. Its effect on heights is
-therefore `Im (g • z) = Im z / (c² |z - ξ|²)`. The sets `{z | A < Im (g • z)}` are the horodiscs at
-`ξ`, Euclidean discs tangent to `ℝ` at `ξ`, and this formula is how a horodisc at a real point is
-compared with Euclidean distances to that point.
+therefore `Im (g • z) = Im z / (c² |z - ξ|²)`. For `A > 0` the set `{z | A < Im (g • z)}` is a
+horodisc at `ξ`, a Euclidean disc tangent to `ℝ` at `ξ` (for `A ≤ 0` it is all of `ℍ`), and this
+formula is how a horodisc at a real point is compared with Euclidean distances to that point.
 
 ## Main result
 

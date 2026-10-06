@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Convex
 import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Convex.NormalForm
 import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.GaussBonnet
 import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.Height
+import TauCeti.Analysis.Complex.UpperHalfPlane.SemicircleHeight
 import TauCeti.Data.Fin.Basic
 
 /-!
@@ -16,25 +17,28 @@ import TauCeti.Data.Fin.Basic
 
 A convex hyperbolic polygon with ideal vertices is not compact: it runs off to the boundary of `ℍ`
 at each ideal vertex. This file proves that this is the only way in which it fails to be compact.
-Removing from the carrier an open horodisc at each ideal vertex, of arbitrary height, leaves a
+Removing from the carrier an open horodisc at each ideal vertex, of arbitrary size, leaves a
 compact set (`ConvexPolygon.isCompact_carrier_diff_iUnion`).
 
-A horodisc at an ideal vertex `ξ` is described by an element `g ∈ PSL(2, ℝ)` with `g • ξ = ∞` and
-a height `A`, as the set `{z | A < Im (g • z)}`. For a cusp datum of a Fuchsian group this is the
-horodisc `TauCeti.Subgroup.CuspDatum.horodisc` at the cusp, with `g` the scaling of the datum.
+The set removed at an ideal vertex `ξ` is described by an element `g ∈ PSL(2, ℝ)` with
+`g • ξ = ∞` and a real threshold `A`, as `{z | A < Im (g • z)}`. For `A > 0` this is an open
+horodisc at `ξ`; for `A ≤ 0` it is all of `ℍ`, and the theorem then holds trivially, so it is
+stated for every real `A`. For a cusp datum of a Fuchsian group this set is the horodisc
+`TauCeti.Subgroup.CuspDatum.horodisc` at the cusp, with `g` the scaling of the datum.
 This is the compactness of the truncated fundamental polygon that feeds the compactness criterion
 `Subgroup.CompactifiedQuotient.compactSpace_of_compact_truncations` for cusp compactifications.
 
 ## Proof
 
 The statement is invariant under `PSL(2, ℝ)` and under relabelling the vertices, so either all
-vertices lie in `ℍ`, and the carrier is compact already, or `vertex 0` is `∞` and its horodisc is
-`{z | A < Im z}`. In the second case the carrier lies in a vertical strip, and is the union of the
-triangles `∞, vertex k, vertex (k + 1)` of the fan from `∞`, each of them the region above a
-semicircle of centre `m` and radius `ρ` (`ConvexPolygon.exists_carrier_inter_strip_eq`). Above
-such a semicircle, between its centre and a finite endpoint `p`, the height is at least `Im p`.
-Between its centre and a real endpoint `x` it satisfies `ρ |Re z - x| ≤ (Im z)²`, so that a point
-outside a horodisc at `x`, where `Im z ≤ K |z - x|²`, has height at least `min ρ (1 / (2K))`.
+vertices lie in `ℍ`, and the carrier is compact already, or `vertex 0` is `∞` and the set removed
+there is `{z | A < Im z}`. In the second case the carrier lies in a vertical strip, and is the union
+of the triangles `∞, vertex k, vertex (k + 1)` of the fan from `∞`, each of them the region above a
+semicircle of centre `m` and radius `ρ` (`ConvexPolygon.exists_carrier_inter_strip_eq`). Above such
+a semicircle, between its centre and a finite endpoint `p`, the height is at least `Im p`. Between
+its centre and a real endpoint `x` it satisfies `ρ |Re z - x| ≤ (Im z)²`, so that a point outside a
+horodisc at `x`, where `Im z ≤ K |z - x|²`, has height at least `min ρ (1 / (2K))`. These two
+estimates are `im_le_im_of_normSq_sub_eq` and `min_le_im_of_sq_sub_eq`.
 Every truncated triangle therefore lies in a compact rectangle of `ℍ`.
 
 ## Main result
@@ -56,56 +60,6 @@ open Set UpperHalfPlane
 open scoped MatrixGroups Pointwise OnePoint
 
 namespace TauCeti.UpperHalfPlane
-
-/-! ### Heights above a semicircle -/
-
-/-- Above a semicircle of centre `m` through the point `p ∈ ℍ`, the height of a point whose real
-part lies between `Re p` and `m` is at least that of `p`. -/
-private theorem im_le_im_of_normSq_sub_eq {m ρ : ℝ} {p z : ℍ}
-    (hp : Complex.normSq ((p : ℂ) - m) = ρ ^ 2) (hz : ρ ^ 2 ≤ Complex.normSq ((z : ℂ) - m))
-    (hre : (z.re - p.re) * (z.re - m) ≤ 0) : p.im ≤ z.im := by
-  simp only [Complex.normSq_apply, Complex.sub_re, Complex.sub_im, Complex.ofReal_re,
-    Complex.ofReal_im, sub_zero, coe_re, coe_im] at hp hz
-  have hp₀ := p.im_pos
-  have hz₀ := z.im_pos
-  -- `Re z` is at least as close to `m` as `Re p`
-  have hsq : (z.re - m) ^ 2 ≤ (p.re - m) ^ 2 := by nlinarith
-  nlinarith
-
-/-- Above a semicircle of centre `m` and radius `ρ` ending at the real point `x`, a point `z` whose
-real part lies between `x` and `m`, and which lies outside the horodisc `Im z > K |z - x|²` at `x`,
-has height at least `min ρ (1 / (2K))`. -/
-private theorem min_le_im_of_sq_sub_eq {m ρ x K : ℝ} {z : ℍ} (hρ : 0 < ρ) (hK : 0 < K)
-    (hx : (x - m) ^ 2 = ρ ^ 2) (hz : ρ ^ 2 ≤ Complex.normSq ((z : ℂ) - m))
-    (hre : (z.re - x) * (z.re - m) ≤ 0) (hh : z.im ≤ K * Complex.normSq ((z : ℂ) - x)) :
-    min ρ (1 / (2 * K)) ≤ z.im := by
-  simp only [Complex.normSq_apply, Complex.sub_re, Complex.sub_im, Complex.ofReal_re,
-    Complex.ofReal_im, sub_zero, coe_re, coe_im] at hz hh
-  by_contra hlt
-  obtain ⟨hyρ, hyK⟩ := lt_min_iff.1 (not_le.1 hlt)
-  set u := z.re - x
-  set y := z.im
-  have hy := z.im_pos
-  -- with `t = m - x`, so that `t² = ρ²`: `u² ≤ u t ≤ y²`
-  have h₁ : u ^ 2 ≤ u * (m - x) := by nlinarith
-  have h₂ : u * (m - x) ≤ y ^ 2 := by nlinarith
-  -- `ρ² u² = (u t)² ≤ y⁴ ≤ ρ² y²`, so `u² ≤ y²`
-  have h₃ : (u * (m - x)) ^ 2 ≤ (y ^ 2) ^ 2 :=
-    pow_le_pow_left₀ ((sq_nonneg u).trans h₁) h₂ 2
-  have h₄ : u ^ 2 ≤ y ^ 2 := by
-    have hyρ' : y ^ 2 ≤ ρ ^ 2 := pow_le_pow_left₀ hy.le hyρ.le 2
-    have : ρ ^ 2 * u ^ 2 ≤ ρ ^ 2 * y ^ 2 := by
-      calc ρ ^ 2 * u ^ 2 = (u * (m - x)) ^ 2 := by rw [mul_pow, ← hx, sub_sq', sub_sq']; ring
-        _ ≤ (y ^ 2) ^ 2 := h₃
-        _ = y ^ 2 * y ^ 2 := by ring
-        _ ≤ ρ ^ 2 * y ^ 2 := mul_le_mul_of_nonneg_right hyρ' (sq_nonneg y)
-    exact le_of_mul_le_mul_left this (by positivity)
-  -- outside the horodisc, `y ≤ K (u² + y²) ≤ 2 K y²`, so `1 / (2K) ≤ y`
-  have h₅ : 1 ≤ 2 * K * y := by
-    have : y ≤ 2 * K * y * y := by nlinarith
-    nlinarith
-  rw [lt_div_iff₀ (by positivity)] at hyK
-  linarith
 
 namespace ConvexPolygon
 
@@ -210,7 +164,7 @@ private theorem exists_re_mem_strip (h₀ : P.vertex 0 = .inr ∞) {z : ℍ} (hz
     exact Fin.natCast_ne_zero (by omega) (by omega)
   · simpa [x] using hk
 
-/-- The truncation theorem for a convex polygon whose `vertex 0` is `∞`, with the horodisc at `∞`
+/-- The truncation theorem for a convex polygon whose `vertex 0` is `∞`, with the set removed at `∞`
 in its standard form `{z | A 0 < Im z}`. -/
 private theorem isCompact_carrier_diff_iUnion_of_vertex_zero (h₀ : P.vertex 0 = .inr ∞)
     {g : Fin n → PSL(2, ℝ)} (hg : ∀ i ξ, P.vertex i = .inr ξ → g i • ξ = ∞) (hg₀ : g 0 = 1)
@@ -239,10 +193,10 @@ private theorem isCompact_carrier_diff_iUnion_of_vertex_zero (h₀ : P.vertex 0 
 /-! ### The truncation theorem -/
 
 /-- **A convex polygon truncated at its ideal vertices is compact.** For each ideal vertex
-`vertex i = ξ` of a convex polygon `P`, let `g i ∈ PSL(2, ℝ)` carry `ξ` to `∞`, so that
-`{z | A i < Im (g i • z)}` is an open horodisc at `ξ`, of arbitrary height `A i`. Then the carrier
-of `P` minus these horodiscs is compact. The values of `g i` and `A i` at the vertices in `ℍ` play
-no role. -/
+`vertex i = ξ` of a convex polygon `P`, let `g i ∈ PSL(2, ℝ)` carry `ξ` to `∞`, and let
+`A i` be any real number. For `A i > 0` the set `{z | A i < Im (g i • z)}` is an open horodisc at
+`ξ`, and for `A i ≤ 0` it is all of `ℍ`. Then the carrier of `P` minus these sets is compact. The
+values of `g i` and `A i` at the vertices in `ℍ` play no role. -/
 theorem isCompact_carrier_diff_iUnion (g : Fin n → PSL(2, ℝ))
     (hg : ∀ i ξ, P.vertex i = .inr ξ → g i • ξ = ∞) (A : Fin n → ℝ) :
     IsCompact (P.carrier \ ⋃ i, ⋃ (_ : (P.vertex i).isRight), {z : ℍ | A i < (g i • z).im}) := by
