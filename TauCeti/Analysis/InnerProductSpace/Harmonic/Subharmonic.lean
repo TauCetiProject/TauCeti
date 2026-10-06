@@ -32,12 +32,10 @@ function that dominates it on the boundary sphere of a ball. The proof reduces t
 principle for the sub-mean-value property on a compact superlevel set
 (`TauCeti.exists_mem_frontier_isMaxOn_of_le_setAverage_ball`).
 
-The comparison principle extends to a subharmonic function `u` lying below a *superharmonic*
-function `w` (one with `-w` subharmonic) on `frontier U`. Here the sub-mean-value inequalities of
-`u` and `-w` may hold along different radii, so they cannot be added; instead, at an interior
-maximum point of `u - w` both functions are compared with their harmonic liftings in small balls,
-built from the solution of the Dirichlet problem on a ball, and the strong maximum principle for
-the sum of the liftings shows that the set of maximum points is open.
+The comparison principle also holds between a subharmonic function `u` and a *superharmonic*
+function `w` (one with `-w` subharmonic): if `u ≤ w` on `frontier U`, both continuous on
+`closure U`, then `u ≤ w` on `closure U`. This is the form needed to compare members of the Perron
+family with upper barriers.
 
 ## Main declarations
 
@@ -245,6 +243,10 @@ theorem SubharmonicOn.le_of_le_frontier_of_subharmonicOn_neg (hU : IsOpen U)
     (hUb : Bornology.IsBounded U) (hu : SubharmonicOn u U) (huc : ContinuousOn u (closure U))
     (hw : SubharmonicOn (-w) U) (hwc : ContinuousOn w (closure U))
     (hle : ∀ x ∈ frontier U, u x ≤ w x) : ∀ x ∈ closure U, u x ≤ w x := by
+  -- The sub-mean-value inequalities of `u` and `-w` may hold along different radii, so they
+  -- cannot be added. Instead, near an interior maximum point of `u - w`, both functions are
+  -- compared with their harmonic liftings in small balls (`sub_eq_of_mem_sphere`), and the
+  -- strong maximum principle shows that the set of maximum points is open.
   by_contra! ⟨x, hx, hlt⟩
   have hfc : ContinuousOn (fun y ↦ u y - w y) (closure U) := huc.sub hwc
   obtain ⟨z, hz, hzmax⟩ := hUb.isCompact_closure.exists_isMaxOn ⟨x, hx⟩ hfc

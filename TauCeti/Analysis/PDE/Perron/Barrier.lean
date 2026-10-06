@@ -23,17 +23,6 @@ If every boundary point is regular, the Perron solution of continuous boundary d
 therefore continuous on `closure Ω` and equal to `g` on `frontier Ω`, and so solves the Dirichlet
 problem `Δu = 0` in `Ω`, `u = g` on `frontier Ω`.
 
-## The argument
-
-Given `ε > 0`, choose `δ > 0` with `|g x - g ξ| < ε` for boundary points `x` within `δ` of `ξ`,
-and `k ≥ 0` so large that `k w ≥ |g ξ| + sup |g|` on `closure Ω` away from the `δ`-ball, where
-`w` is bounded below by a positive constant. Then `g ξ - ε - k w` is subharmonic and at most `g`
-on `frontier Ω`, so it is a member of the Perron family and lies below `u`. Symmetrically,
-`g ξ + ε + k w` is superharmonic and at least `g` on `frontier Ω`, so by the comparison principle
-`TauCeti.SubharmonicOn.le_of_le_frontier_of_subharmonicOn_neg` it lies above every member of the
-Perron family, hence above `u`. Thus `|u x - g ξ| ≤ ε + k w x` on `closure Ω`, and `w x → 0` as
-`x → ξ`.
-
 ## Exterior sphere condition
 
 If a closed ball `closedBall y R` meets `closure Ω` only at `ξ`, the function
@@ -108,6 +97,11 @@ private lemma exists_abs_perronSolution_sub_le (hΩ : IsOpen Ω) (hb : Bornology
     (hg : Bornology.IsBounded (g '' frontier Ω)) (hw : IsBarrier Ω ξ w)
     (hgξ : ContinuousWithinAt g (frontier Ω) ξ) {ε : ℝ} (hε : 0 < ε) :
     ∃ k, ∀ x ∈ closure Ω, |perronSolution Ω g x - g ξ| ≤ ε + k * w x := by
+  -- Choose `δ` with `|g x - g ξ| < ε` on boundary points within `δ` of `ξ`, and `k ≥ 0` with
+  -- `k w ≥ |g ξ| + sup |g|` on `closure Ω` away from `ball ξ δ`. Then `g ξ - ε - k w` is a
+  -- member of the Perron family, so lies below the Perron solution, while the superharmonic
+  -- function `g ξ + ε + k w` lies above every member of the family by the comparison principle
+  -- `SubharmonicOn.le_of_le_frontier_of_subharmonicOn_neg`, so above the Perron solution.
   obtain ⟨M, hM0, hM⟩ := hg.exists_pos_norm_le
   have hgM : ∀ x ∈ frontier Ω, |g x| ≤ M := fun x hx ↦ hM _ (mem_image_of_mem g hx)
   obtain ⟨δ, hδ, hδg⟩ := Metric.continuousWithinAt_iff.1 hgξ ε hε
