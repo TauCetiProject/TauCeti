@@ -10,10 +10,9 @@ public import TauCeti.GroupTheory.Presentation.Coxeter
 /-!
 # A transcribed presentation of the Baby Monster
 
-This file carries the `B` row of the sporadic presentation data required by milestone S1 of
-`TauCetiRoadmap/CFSGStatement/README.md`. It records the `Y₄₃₃` presentation of the Baby Monster
-as a `TauCeti.GroupPresentation`, together with the diagram it expands, the exact source, the
-generator convention, the transcription notes, and decidable checks on the transcribed data.
+This file records the `Y₄₃₃` presentation of the Baby Monster as a `TauCeti.GroupPresentation`,
+together with the diagram it expands, the exact source, the generator convention, the
+transcription notes, and decidable checks on the transcribed data.
 
 The eleven involutory generators are the nodes of a `Y`-shaped Coxeter diagram: a chain of eight
 nodes with a further arm of three nodes attached to its fifth node,
@@ -41,22 +40,19 @@ presents `2 × 2·B`, and adjoining the two further relations
 
 presents the Baby Monster itself. The `69` relators are therefore `66 + 1 + 2`.
 
-The source is admissible in the sense the roadmap requires: it presents the abstract group rather
-than recognizing generators inside a group constructed elsewhere. The presentation was conjectured
-in the ATLAS of Finite Groups and proved by Ivanov, subject to the Monster having no proper double
-cover; that hypothesis is Griess's determination of the Schur multiplier of the Monster. The row
-below records that chain of attributions rather than reproving any part of it.
+The source presents the abstract group rather than recognizing generators inside a group
+constructed elsewhere. The presentation was conjectured in the ATLAS of Finite Groups and proved by
+Ivanov, subject to the Monster having no proper double cover; that hypothesis is Griess's
+determination of the Schur multiplier of the Monster. The row below records that chain of
+attributions rather than reproving any part of it.
 
 Nothing here asserts that the presented group is nontrivial, finite or simple, that it has any
-particular order, or that it is isomorphic to any other construction of the Baby Monster. The
-roadmap's independent permutation-group cross-check does not cover `B`, whose smallest faithful
-permutation representation has degree `13 571 955 000`. The independent source-to-Lean
-read-through below therefore supplies the whole of this row's S1 review obligation.
+particular order, or that it is isomorphic to any other construction of the Baby Monster.
 
-## Independent source-to-Lean read-through
+## Source-to-Lean read-through
 
-An independent read-through used Breuer--Magaard--Wilson, Section 3.1, in arXiv:1902.07758v2. The
-source numbers eleven involutions `t₁` through `t₁₁` and lists the exponent-three pairs
+The transcription was compared with Breuer--Magaard--Wilson, Section 3.1, in arXiv:1902.07758v2.
+The source numbers eleven involutions `t₁` through `t₁₁` and lists the exponent-three pairs
 
 ```text
 (1,2), (2,3), (3,4), (4,5), (5,6), (6,7), (7,8), (5,9), (9,10), (10,11).
@@ -83,8 +79,8 @@ and the two words
 Their letters, order, and exponents agree exactly with `spiderRelator_eq`,
 `extraRelatorOne_eq`, and `extraRelatorTwo_eq`. The source states that the Coxeter relations plus
 the spider relation present `2 × 2·B`, and that adjoining the last two relations presents `B`.
-`relatorList_def` appends precisely those three words in that order, giving the checked total
-`66 + 3 = 69`. This closes the row's S1 source-to-Lean read-through.
+`adjoinedRelators_def` lists precisely those three words in that order, and `relatorList_def`
+appends them to the Coxeter relators, giving the checked total `66 + 3 = 69`.
 
 ## Main definitions
 
@@ -319,17 +315,13 @@ def presentation : GroupPresentation where
     of the remaining 45 unordered pairs of distinct nodes. Appended to them are the source's \
     spider relation, which presents 2 x 2.B, and then its two further relations, which present B. \
     The source displays its relations by family rather than as a numbered list and records no \
-    total length, so the expected relator count is the sum 11 + 55 + 1 + 2 over those families. \
-    The independent source-to-Lean read-through checked the 66 Coxeter relations and all three \
-    adjoined relators. The FiniteSimpleGroups permutation construction does not cover B."
+    total length, so the expected relator count is the sum 11 + 55 + 1 + 2 over those families."
   expectedGeneratorCount := 11
   expectedRelatorCount := 69
   transcribed := relatorList
 
-/-- The relators of the row are the Coxeter relations of the diagram followed by the three
-adjoined relators. The record's body is exposed, so its metadata fields are read off it directly;
-this equation is the one field projection that is not read off it, because
-`TauCeti.Sporadic.BabyMonster.relatorList` is sealed. -/
+/-- The relators of the row are `TauCeti.Sporadic.BabyMonster.relatorList`: the Coxeter relations
+of the diagram followed by the three adjoined relators (`relatorList_def`). -/
 @[simp]
 theorem presentation_transcribed : presentation.transcribed = relatorList := rfl
 

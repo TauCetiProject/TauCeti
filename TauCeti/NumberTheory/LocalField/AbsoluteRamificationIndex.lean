@@ -71,10 +71,11 @@ class FinitePadicExtension (K : Type*) [Field K] [ValuativeRel K] [TopologicalSp
 
 namespace FinitePadicExtension
 
-attribute [instance] toModuleFinite toValuativeExtension
+-- Prefer direct instances to projections that can recurse through `ofInstances`.
+attribute [instance 100] toModuleFinite toValuativeExtension
 
 @[instance_reducible]
-instance toAlgebra (K : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
+instance (priority := 100) toAlgebra (K : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
     [IsNonarchimedeanLocalField K] (p : ℕ) [Fact p.Prime] [h : FinitePadicExtension K p] :
     Algebra ℚ_[p] K := h.algebra
 

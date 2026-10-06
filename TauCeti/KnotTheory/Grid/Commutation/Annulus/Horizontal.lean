@@ -34,6 +34,28 @@ namespace GridPentagonBetween
 
 variable {n : ℕ} {a s : Fin n} {x y : GridState n}
 
+/-- Swapping the two commuted columns preserves a thin horizontal pentagon's covered squares,
+since neither of those columns is covered. -/
+private theorem coveredSquares_map_swap_eq_of_top_eq_finRotate_bottom
+    (P : GridPentagonBetween a s x y) (hthin : P.top = finRotate n P.bottom) :
+    P.coveredSquares.map
+        ((Equiv.swap a (finRotate n a)).prodCongr (Equiv.refl (Fin n))).toEmbedding =
+      P.coveredSquares := by
+  classical
+  rw [P.coveredSquares_eq_product_singleton_of_top_eq_finRotate_bottom hthin]
+  ext p
+  simp only [Finset.mem_map_equiv, Equiv.prodCongr_symm, Equiv.symm_swap,
+    Equiv.refl_symm, Equiv.prodCongr_apply, Prod.map_apply', Equiv.refl_apply,
+    Finset.mem_product, Finset.mem_erase, Finset.mem_singleton]
+  have hbnot := Grid.right_notMem_cIco P.left (finRotate n a)
+  by_cases ha : p.1 = a
+  · simp only [ha, Equiv.swap_apply_left, hbnot, and_false, false_and,
+      ne_eq, not_true_eq_false]
+  · by_cases hb : p.1 = finRotate n a
+    · simp only [hb, Equiv.swap_apply_right, hbnot, and_false, false_and,
+        ne_eq, not_true_eq_false]
+    · rw [Equiv.swap_apply_of_ne_of_ne ha hb]
+
 /-- A thin pentagon together with a rectangle occupying its complementary column arc
 covers the turn row except for the first commuted column. -/
 theorem coveredSquares_union_of_opposite_side_order (P : GridPentagonBetween a s x y)
@@ -56,6 +78,17 @@ theorem coveredSquares_union_of_opposite_side_order (P : GridPentagonBetween a s
     exact Finset.mem_univ _
   grind
 
+/-- A thin horizontal pentagon and a rectangle on its complementary column arc cover
+disjoint squares, regardless of the rectangle's row span. -/
+theorem disjoint_coveredSquares_of_opposite_side_order (P : GridPentagonBetween a s x y)
+    (r : GridRectangle n) (hthin : P.top = finRotate n P.bottom)
+    (hleft : r.left = finRotate n a) (hright : r.right = P.left) :
+    Disjoint P.coveredSquares r.coveredSquares := by
+  rw [P.coveredSquares_eq_product_singleton_of_top_eq_finRotate_bottom hthin,
+    GridRectangle.coveredSquares_def, GridRectangle.coveredColumns_def, hleft, hright]
+  exact Finset.disjoint_product.2 (Or.inl
+    ((Grid.disjoint_cIco_swap P.left (finRotate n a)).mono_left (Finset.erase_subset _ _)))
+
 end GridPentagonBetween
 
 namespace GridRectanglePentagonDecomposition
@@ -70,10 +103,8 @@ theorem coveredSquares_union_of_opposite_side_order
     (hthin : D.rectangle.top = finRotate n D.rectangle.bottom) :
     D.rectangle.toGridRectangle.coveredSquares ∪ D.pentagon.coveredSquares =
       (Finset.univ.erase a) ×ˢ {s} := by
-  have hright : D.rectangle.right = D.pentagon.left := by
-    rcases D.pentagon.toGridRectangleBetween.left_right_eq_cases D.rectangle with h | h
-    · exact False.elim (D.pentagon.left_ne_right (h.1.symm.trans hleft))
-    · exact h.2
+  have hright := D.pentagon.toGridRectangleBetween.right_eq_left_of_left_eq_right
+    D.rectangle hleft
   have hbottom := D.rectangle.bottom_eq_bottom_of_left_eq_right
     D.pentagon.toGridRectangleBetween hright.symm
   have htop := D.rectangle.top_eq_top_of_left_eq_right
@@ -82,6 +113,23 @@ theorem coveredSquares_union_of_opposite_side_order
   exact D.pentagon.coveredSquares_union_of_opposite_side_order D.rectangle.toGridRectangle
     (htop.trans (hthin.trans (congrArg (finRotate n) hbottom).symm))
     (hleft.trans D.pentagon.right_eq) hright hbottom.symm htop.symm
+
+/-- The constituent domains of a thin horizontal rectangle--pentagon annulus cover disjoint
+squares. -/
+theorem disjoint_coveredSquares_of_opposite_side_order
+    (D : GridRectanglePentagonDecomposition a s x x)
+    (hleft : D.rectangle.left = D.pentagon.right)
+    (hthin : D.rectangle.top = finRotate n D.rectangle.bottom) :
+    Disjoint D.rectangle.toGridRectangle.coveredSquares D.pentagon.coveredSquares := by
+  have hright := D.pentagon.toGridRectangleBetween.right_eq_left_of_left_eq_right
+    D.rectangle hleft
+  have htop := D.rectangle.top_eq_top_of_left_eq_right
+    D.pentagon.toGridRectangleBetween hright.symm
+  have hbottom := D.rectangle.bottom_eq_bottom_of_left_eq_right
+    D.pentagon.toGridRectangleBetween hright.symm
+  have hPthin := htop.trans (hthin.trans (congrArg (finRotate n) hbottom).symm)
+  exact (D.pentagon.disjoint_coveredSquares_of_opposite_side_order
+    D.rectangle.toGridRectangle hPthin (hleft.trans D.pentagon.right_eq) hright).symm
 
 /-- The two domains of a thin horizontal rectangle--pentagon annulus avoid X-markings
 exactly when the first commuted column contains the X-marking in the turn row. -/
@@ -111,33 +159,18 @@ theorem coveredSquares_union_map_of_opposite_side_order
         ((Equiv.swap a (finRotate n a)).prodCongr (Equiv.refl (Fin n))).toEmbedding =
       (Finset.univ.erase (finRotate n a)) ×ˢ {s} := by
   classical
-  have hright : D.rectangle.right = D.pentagon.left := by
-    rcases D.pentagon.toGridRectangleBetween.left_right_eq_cases D.rectangle with h | h
-    · exact False.elim (D.pentagon.left_ne_right (h.1.symm.trans hleft))
-    · exact h.2
+  have hright := D.pentagon.toGridRectangleBetween.right_eq_left_of_left_eq_right
+    D.rectangle hleft
   have hbottom := D.pentagon.toGridRectangleBetween.bottom_eq_bottom_of_left_eq_right
     D.rectangle hleft
   have htop := D.pentagon.toGridRectangleBetween.top_eq_top_of_left_eq_right
     D.rectangle hleft
   let e := ((Equiv.swap a (finRotate n a)).prodCongr (Equiv.refl (Fin n))).toEmbedding
-  have hP : D.pentagon.coveredSquares.map e = D.pentagon.coveredSquares := by
-    rw [D.pentagon.coveredSquares_eq_product_singleton_of_top_eq_finRotate_bottom hthin]
-    ext p
-    simp only [e, Finset.mem_map_equiv, Equiv.prodCongr_symm, Equiv.symm_swap,
-      Equiv.refl_symm, Equiv.prodCongr_apply, Prod.map_apply', Equiv.refl_apply,
-      Finset.mem_product, Finset.mem_erase, Finset.mem_singleton]
-    have hbnot := Grid.right_notMem_cIco D.pentagon.left (finRotate n a)
-    by_cases ha : p.1 = a
-    · simp only [ha, Equiv.swap_apply_left, hbnot, and_false, false_and,
-        ne_eq, not_true_eq_false]
-    · by_cases hb : p.1 = finRotate n a
-      · simp only [hb, Equiv.swap_apply_right, hbnot, and_false, false_and,
-          ne_eq, not_true_eq_false]
-      · rw [Equiv.swap_apply_of_ne_of_ne ha hb]
   have hunion := congrArg (fun S : Finset (Fin n × Fin n) => S.map e)
     (D.pentagon.coveredSquares_union_of_opposite_side_order D.rectangle.toGridRectangle
       hthin (hleft.trans D.pentagon.right_eq) hright hbottom htop)
-  rw [Finset.map_union, hP] at hunion
+  rw [Finset.map_union,
+    D.pentagon.coveredSquares_map_swap_eq_of_top_eq_finRotate_bottom hthin] at hunion
   rw [hunion]
   -- Swapping back moves the missing square from the first column to the second.
   ext p
@@ -145,6 +178,22 @@ theorem coveredSquares_union_map_of_opposite_side_order
     Equiv.refl_symm, Equiv.prodCongr_apply, Prod.map_apply', Equiv.refl_apply,
     Finset.mem_product, Finset.mem_erase, Finset.mem_univ, Finset.mem_singleton, and_true,
     ne_eq, Equiv.swap_apply_eq_iff, Equiv.swap_apply_left]
+
+/-- The pentagon and the rectangle read back in the original columns cover disjoint squares
+in a thin horizontal pentagon--rectangle annulus. -/
+theorem disjoint_coveredSquares_map_of_opposite_side_order
+    (D : GridPentagonRectangleDecomposition a s x x)
+    (hleft : D.rectangle.left = D.pentagon.right)
+    (hthin : D.pentagon.top = finRotate n D.pentagon.bottom) :
+    Disjoint D.pentagon.coveredSquares (D.rectangle.toGridRectangle.coveredSquares.map
+      ((Equiv.swap a (finRotate n a)).prodCongr (Equiv.refl (Fin n))).toEmbedding) := by
+  have hright := D.pentagon.toGridRectangleBetween.right_eq_left_of_left_eq_right
+    D.rectangle hleft
+  let e := ((Equiv.swap a (finRotate n a)).prodCongr (Equiv.refl (Fin n))).toEmbedding
+  have hdisjoint := D.pentagon.disjoint_coveredSquares_of_opposite_side_order
+    D.rectangle.toGridRectangle hthin (hleft.trans D.pentagon.right_eq) hright
+  have h := (Finset.disjoint_map e).2 hdisjoint
+  rwa [D.pentagon.coveredSquares_map_swap_eq_of_top_eq_finRotate_bottom hthin] at h
 
 /-- For a thin horizontal pentagon--rectangle annulus, with the rectangle tested against
 the commuted diagram, X-avoidance is equivalent to the second commuted column containing

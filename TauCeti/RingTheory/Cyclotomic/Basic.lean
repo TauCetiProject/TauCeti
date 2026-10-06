@@ -24,13 +24,14 @@ The ring is identified with Mathlib's `AdjoinRoot (Polynomial.cyclotomic e ℤ)`
 evaluation at `exp (2 * π * I / e)` then gives the distinguished embedding into `ℂ` used to state
 the correctness of exact character-table computations.
 
-The interface followed here is the one blueprinted in the character-theory roadmap
-(`RepresentationTheory/CharacterTheory/README.md` in TauCetiRoadmap, Layer 6: "Exact cyclotomic
-arithmetic", whose `Suggested.lean` pins `Cyclotomic e` with its `CommRing` instance, the
-generator `ζ_e` as the class of `X`, the reduction to `ZMod p`, and the *pinned* embedding into
-`ℂ` as a ring homomorphism together with its injectivity).  The choice of `exp (2 * π * I / e)`
-for that pin, of descending coefficient lists as the representation, and the identification with
-`AdjoinRoot` rather than the roadmap's `CyclotomicRing e ℤ ℚ` are this file's.
+A ring homomorphism out of `Cyclotomic e` is determined by the image of `ζ`
+(`TauCeti.Cyclotomic.ringHom_ext`).  Evaluating at a root of the cyclotomic polynomial gives a ring
+homomorphism (`TauCeti.Cyclotomic.evalRingHom`); `TauCeti.Cyclotomic.evalCoeffs` evaluates a
+coefficient list by Horner's rule.  Evaluation specialises to the reduction modulo a prime `p` at a
+primitive `e`-th root in `ZMod p` (`TauCeti.Cyclotomic.reduce`, bundled as
+`TauCeti.Cyclotomic.reduceRingHom`) and to the complex embedding
+`TauCeti.Cyclotomic.complexEmbedding`, which is injective
+(`TauCeti.Cyclotomic.complexEmbedding_injective`).
 -/
 
 public section
@@ -140,13 +141,13 @@ that the proofs which need it can rewrite rather than appeal to definitional unf
 them is `simp`: they unfold arithmetic into coefficient lists, which is the opposite direction to
 the normal form everything else is stated in. -/
 
-/-- Zero is the empty coefficient list. -/
+/-- Zero is the reduction `ofCoeffList e []` of the empty coefficient list. -/
 theorem zero_def : (0 : Cyclotomic e) = ofCoeffList e [] := rfl
 
-/-- One is the coefficient list `[1]`. -/
+/-- One is the reduction `ofCoeffList e [1]` of the coefficient list `[1]`. -/
 theorem one_def : (1 : Cyclotomic e) = ofCoeffList e [1] := rfl
 
-/-- An integer cast is its singleton coefficient list. -/
+/-- An integer cast is the reduction `ofCoeffList e [z]` of its singleton coefficient list. -/
 theorem intCast_def (z : ℤ) : (z : Cyclotomic e) = ofCoeffList e [z] := rfl
 
 /-- Addition adds coefficient lists entrywise. -/
@@ -450,8 +451,8 @@ theorem evalCoeffs_eq_sum {R : Type*} [Semiring R] (f : ℤ →+* R) (r : R) (x 
     exact Finset.sum_congr rfl fun j _ => by rw [coeff_toPolynomial]
 
 /-- Reduction of exact cyclotomic integers in `ZMod p`, evaluated at a chosen residue `r`.
-When `r` is an `e`-th primitive root, `TauCeti.Cyclotomic.reduceRingHom` packages this as a ring
-homomorphism. -/
+When `p` is prime and `r` is a primitive `e`-th root, `TauCeti.Cyclotomic.reduceRingHom` packages
+this as a ring homomorphism. -/
 @[expose] def reduce (p : ℕ) (r : ZMod p) (x : Cyclotomic e) : ZMod p :=
   evalCoeffs (Int.castRingHom (ZMod p)) r x
 
@@ -474,7 +475,8 @@ theorem reduceRingHom_apply (p : ℕ) [Fact p.Prime] [NeZero e]
   rw [reduceRingHom, reduce, evalRingHom, RingHom.comp_apply, toAdjoinRootRingHom_apply,
     toAdjoinRoot, AdjoinRoot.lift_mk, evalCoeffs_eq_eval₂]
 
-/-- Reduction at an `e`-th primitive root sends the distinguished generator `ζ` to that root. -/
+/-- For a prime `p`, reduction at a primitive `e`-th root in `ZMod p` sends the distinguished
+generator `ζ` to that root. -/
 @[simp]
 theorem reduce_zeta (p : ℕ) [Fact p.Prime] [NeZero e] (r : ZMod p) (hr : IsPrimitiveRoot r e) :
     reduce p r (zeta e) = r := by
@@ -482,12 +484,13 @@ theorem reduce_zeta (p : ℕ) [Fact p.Prime] [NeZero e] (r : ZMod p) (hr : IsPri
 
 /-! ## The distinguished complex embedding -/
 
-/-- The distinguished complex primitive `e`-th root `exp (2πi/e)`. -/
+/-- The distinguished complex `e`-th root of unity `exp (2πi/e)`.  It is primitive for `e ≠ 0`
+(`TauCeti.Cyclotomic.isPrimitiveRoot_complexRoot`); at `e = 0` it is `exp 0 = 1`. -/
 noncomputable def complexRoot (e : ℕ) : ℂ := Complex.exp (2 * Real.pi * Complex.I / e)
 
-/-- For nonzero `e`, the distinguished root `TauCeti.Cyclotomic.complexRoot e = exp (2πi/e)` is a
-primitive `e`-th root of unity.  This is what pins which complex root `ζ` names, and hence which
-embedding `TauCeti.Cyclotomic.complexEmbedding` is. -/
+/-- For nonzero `e`, the distinguished root `TauCeti.Cyclotomic.complexRoot e` is a primitive
+`e`-th root of unity.  Which primitive root it is, and hence which embedding
+`TauCeti.Cyclotomic.complexEmbedding` is, is fixed by the definition `exp (2πi/e)`. -/
 theorem isPrimitiveRoot_complexRoot [NeZero e] : IsPrimitiveRoot (complexRoot e) e :=
   Complex.isPrimitiveRoot_exp e (NeZero.ne e)
 
@@ -553,8 +556,8 @@ theorem complexEmbedding_injective [NeZero e] :
   apply toAdjoinRoot_injective
   rw [toAdjoinRoot, hp, map_zero, toAdjoinRoot_zero]
 
-/-! The exact arithmetic reduces in the kernel.  In `Cyclotomic 5`, `ζ⁵ = 1`; reduction at
-`2 : ZMod 5`, a primitive fourth root, sends `ζ + 1` to `3`. -/
+/-! The exact arithmetic reduces in the kernel.  In `Cyclotomic 5`, `ζ₅⁵ = 1`; in `Cyclotomic 4`,
+reduction at `2 : ZMod 5`, a primitive fourth root, sends `ζ₄ + 1` to `3`. -/
 
 example : (zeta 5 ^ 5).coeffs = (1 : Cyclotomic 5).coeffs := by decide
 

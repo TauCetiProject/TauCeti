@@ -98,12 +98,8 @@ theorem exists_monodromyFunctor_iso_sigma (F : FundamentalGroupoid (Σ i, X i) �
   let hp : IsCoveringMap p := isCoveringMap_sigmaMap f hf
   let Q : CoveringSpace (TopCat.of (Σ i, X i)) := mk p hp
   refine ⟨Q, ⟨?_⟩⟩
-  let h : (Q : TopCat) ≃ₜ TopCat.of (Σ i, ((q i : TopCat) : Type u)) :=
-    TopCat.homeoOfIso (eqToIso (mk_coe p hp))
-  have hh : p.hom ∘ h = Q.proj.hom := by
-    funext z
-    have hproj := DFunLike.congr_fun (congrArg TopCat.Hom.hom (mk_proj p hp)) z
-    exact hproj.symm
+  let h : (Q : TopCat) ≃ₜ TopCat.of (Σ i, ((q i : TopCat) : Type u)) := Homeomorph.refl _
+  have hh : p.hom ∘ h = Q.proj.hom := rfl
   exact eqToIso (monodromyFunctor_obj Q) ≪≫
     IsCoveringMap.monodromyNatIso Q.isCoveringMap_proj hp h hh ≪≫
       sigmaMonodromyNatIso f hf F fun i => (hq i).some

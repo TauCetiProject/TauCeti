@@ -295,9 +295,8 @@ def ofAddSubgroup (N : AddSubgroup B) (hN : ∀ g : G, ∀ x ∈ N, g • x ∈ 
     proj_equivariant := fun g b ↦ (N.quotientDistribMulAction_smul_mk hN g b).symm
     incl_injective := N.subtype_injective
     proj_surjective := QuotientAddGroup.mk'_surjective N
-    exact := fun b ↦ by
-      rw [QuotientAddGroup.mk'_apply, QuotientAddGroup.eq_zero_iff]
-      exact ⟨fun hb ↦ ⟨⟨b, hb⟩, rfl⟩, fun ⟨a, ha⟩ ↦ ha ▸ a.2⟩ }
+    exact := by
+      rw [AddMonoidHom.exact_iff, QuotientAddGroup.ker_mk', AddSubgroup.range_subtype] }
 
 @[simp]
 theorem ofAddSubgroup_incl (N : AddSubgroup B) (hN : ∀ g : G, ∀ x ∈ N, g • x ∈ N) :
