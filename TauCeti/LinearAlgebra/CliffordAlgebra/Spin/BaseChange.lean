@@ -213,9 +213,9 @@ open _root_.QuadraticMap
 variable {K L V : Type*} [Field K] [Field L] [Algebra K L]
   [AddCommGroup V] [Module K V] [FiniteDimensional K V] [Invertible (2 : K)]
 
-/-- Extending scalars of the canonical Spin root-subgroup homomorphism agrees with extending
-its quotient parameters. Thus localization transports the entire subgroup with its additive
-composition law. -/
+/-- Extending scalars along a field extension carries the canonical Spin root-subgroup
+homomorphism to that of the extended quotient parameters, preserving its additive composition
+law. -/
 theorem spinGroupBaseChange_comp_spinTransvectionHom {Q : QuadraticForm K V} {u : V}
     (hQ : Q.Nondegenerate) (hu : Q u = 0) :
     letI : Invertible (2 : L) :=
