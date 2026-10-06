@@ -21,6 +21,8 @@ available, as in the Bruhat--Tits form of nonpositive curvature in metric geomet
 
 ## Main results
 
+* `TauCeti.le_chord_of_midpoint` — on `[0, 1]`, a continuous midpoint-convex real function lies
+  below the chord joining its values at `0` and `1`.
 * `TauCeti.convexOn_of_midpoint` — on a convex subset of a real topological vector space, a
   continuous midpoint-convex function is convex.
 
@@ -36,8 +38,9 @@ namespace TauCeti
 
 open Set
 
-/-- On `[0, 1]`, a continuous midpoint-convex function lies below its chord. -/
-private theorem le_chord_of_midpoint {g : ℝ → ℝ} (hg : ContinuousOn g (Icc 0 1))
+/-- On `[0, 1]`, a continuous midpoint-convex function lies below its chord: its value at `t` is at
+most `(1 - t) * g 0 + t * g 1`. -/
+theorem le_chord_of_midpoint {g : ℝ → ℝ} (hg : ContinuousOn g (Icc 0 1))
     (h : ∀ s ∈ Icc (0 : ℝ) 1, ∀ t ∈ Icc (0 : ℝ) 1, g (midpoint ℝ s t) ≤ (g s + g t) / 2)
     {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) : g t ≤ (1 - t) * g 0 + t * g 1 := by
   -- The gap `c` between `g` and its chord vanishes at both ends of `[0, 1]`. If it had a positive
