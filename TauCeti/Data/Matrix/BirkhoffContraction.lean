@@ -106,22 +106,16 @@ theorem hilbertProjectiveDist_le {x y : ι → ℝ} {C : ℝ}
     hilbertProjectiveDist x y ≤ C :=
   Real.iSup_le (fun i ↦ Real.iSup_le (h i) hC) hC
 
-/-- The logarithm of `a / a` vanishes for every real `a`, including `a = 0`. -/
-private theorem log_div_self' (a : ℝ) : log (a / a) = 0 := by
-  rcases eq_or_ne a 0 with rfl | ha
-  · simp
-  · simp [ha]
-
 /-- Hilbert's projective metric is nonnegative: the diagonal cross ratios have logarithm `0`. -/
 theorem hilbertProjectiveDist_nonneg [Finite ι] (x y : ι → ℝ) :
     0 ≤ hilbertProjectiveDist x y :=
   Real.iSup_nonneg fun i ↦ le_ciSup_of_le (Set.finite_range _).bddAbove i <| by
-    rw [mul_comm (y i), log_div_self']
+    rw [mul_comm (y i), log_div_self]
 
 /-- Every vector is at Hilbert distance `0` from itself. -/
 @[simp]
 theorem hilbertProjectiveDist_self (x : ι → ℝ) : hilbertProjectiveDist x x = 0 := by
-  simp only [hilbertProjectiveDist_def, log_div_self', Real.iSup_const_zero]
+  simp only [hilbertProjectiveDist_def, log_div_self, Real.iSup_const_zero]
 
 /-- Hilbert's projective metric is symmetric. -/
 theorem hilbertProjectiveDist_comm [Finite ι] (x y : ι → ℝ) :
@@ -141,9 +135,8 @@ theorem hilbertProjectiveDist_triangle [Finite ι] (x z : ι → ℝ) {y : ι �
     (add_nonneg (hilbertProjectiveDist_nonneg x y) (hilbertProjectiveDist_nonneg y z))
   have hxz : x i * z j / (z i * x j) =
       x i * y j / (y i * x j) * (y i * z j / (z i * y j)) := by
-    rw [div_mul_div_comm, show x i * y j * (y i * z j) = (y i * y j) * (x i * z j) by ring,
-      show y i * x j * (z i * y j) = (y i * y j) * (z i * x j) by ring,
-      mul_div_mul_left _ _ (mul_ne_zero (hy i) (hy j))]
+    rw [← mul_div_mul_left (x i * z j) (z i * x j) (mul_ne_zero (hy i) (hy j))]
+    ring
   rw [hxz]
   rcases eq_or_ne (x i * y j / (y i * x j)) 0 with h₁ | h₁
   · rw [h₁, zero_mul, log_zero]
@@ -160,8 +153,8 @@ theorem hilbertProjectiveDist_smul_left {c : ℝ} (hc : c ≠ 0) (x y : ι → �
     hilbertProjectiveDist (c • x) y = hilbertProjectiveDist x y := by
   simp only [hilbertProjectiveDist_def, Pi.smul_apply, smul_eq_mul]
   refine iSup_congr fun i ↦ iSup_congr fun j ↦ congrArg log ?_
-  rw [show c * x i * y j = c * (x i * y j) by ring, show y i * (c * x j) = c * (y i * x j) by ring,
-    mul_div_mul_left _ _ hc]
+  rw [← mul_div_mul_left (x i * y j) (y i * x j) hc]
+  ring
 
 /-- Rescaling the second vector by a nonzero scalar does not change Hilbert's projective
 metric. -/
@@ -170,8 +163,8 @@ theorem hilbertProjectiveDist_smul_right {c : ℝ} (hc : c ≠ 0) (x y : ι → 
     hilbertProjectiveDist x (c • y) = hilbertProjectiveDist x y := by
   simp only [hilbertProjectiveDist_def, Pi.smul_apply, smul_eq_mul]
   refine iSup_congr fun i ↦ iSup_congr fun j ↦ congrArg log ?_
-  rw [show x i * (c * y j) = c * (x i * y j) by ring, show c * y i * x j = c * (y i * x j) by ring,
-    mul_div_mul_left _ _ hc]
+  rw [← mul_div_mul_left (x i * y j) (y i * x j) hc]
+  ring
 
 /-- A common diagonal scaling by a vector with nonzero entries does not change Hilbert's
 projective metric. -/
@@ -179,9 +172,8 @@ theorem hilbertProjectiveDist_mul_left {w : ι → ℝ} (hw : ∀ i, w i ≠ 0) 
     hilbertProjectiveDist (w * x) (w * y) = hilbertProjectiveDist x y := by
   simp only [hilbertProjectiveDist_def, Pi.mul_apply]
   refine iSup_congr fun i ↦ iSup_congr fun j ↦ congrArg log ?_
-  rw [show w i * x i * (w j * y j) = (w i * w j) * (x i * y j) by ring,
-    show w i * y i * (w j * x j) = (w i * w j) * (y i * x j) by ring,
-    mul_div_mul_left _ _ (mul_ne_zero (hw i) (hw j))]
+  rw [← mul_div_mul_left (x i * y j) (y i * x j) (mul_ne_zero (hw i) (hw j))]
+  ring
 
 /-- Taking entrywise inverses does not change Hilbert's projective metric. -/
 @[simp]
@@ -359,15 +351,6 @@ end Finite
 
 variable [Finite ι] [Fintype κ]
 
-omit [Finite ι] in
-/-- A matrix with strictly positive entries maps a nonnegative vector with a positive entry to a
-strictly positive vector. -/
-private theorem mulVec_pos {K : Matrix ι κ ℝ} (hK : ∀ i j, 0 < K i j) {u : κ → ℝ}
-    (hu : ∀ j, 0 ≤ u j) {j₀ : κ} (hj₀ : 0 < u j₀) (i : ι) : 0 < (K *ᵥ u) i := by
-  rw [mulVec, dotProduct]
-  exact (mul_pos (hK i j₀) hj₀).trans_le <| Finset.single_le_sum
-    (fun j _ ↦ mul_nonneg (hK i j).le (hu j)) (Finset.mem_univ j₀)
-
 /-- The cross-ratio form of the projective diameter bound: for nonnegative `u` and `v`,
 `(K *ᵥ u) i * (K *ᵥ v) i' ≤ exp Δ(K) * ((K *ᵥ v) i * (K *ᵥ u) i')`. -/
 private theorem mulVec_mul_mulVec_le {K : Matrix ι κ ℝ} (hK : ∀ i j, 0 < K i j) {u v : κ → ℝ}
@@ -425,8 +408,11 @@ private theorem log_cross_mulVec_le {K : Matrix ι κ ℝ} (hK : ∀ i j, 0 < K 
   -- the images `α` and `β` of the nonnegative vectors `x - m • y` and `M • y - x`
   have hu : ∀ j, 0 ≤ (x - m • y) j := fun j ↦ by simpa using hmx j
   have hv : ∀ j, 0 ≤ (M • y - x) j := fun j ↦ by simpa using hxM j
-  have hα := mulVec_pos hK hu (j₀ := j₁) (by simpa using hj₁)
-  have hβ := mulVec_pos hK hv (j₀ := j₂) (by simpa using hj₂)
+  have hpos : ∀ {w : κ → ℝ}, (∀ j, 0 ≤ w j) → ∀ {j₀}, 0 < w j₀ → ∀ i, 0 < (K *ᵥ w) i :=
+    fun hw j₀ hj₀ i ↦ Finset.sum_pos' (fun j _ ↦ mul_nonneg (hK i j).le (hw j))
+      ⟨j₀, Finset.mem_univ j₀, mul_pos (hK i j₀) hj₀⟩
+  have hα := hpos hu (j₀ := j₁) (by simpa using hj₁)
+  have hβ := hpos hv (j₀ := j₂) (by simpa using hj₂)
   have hcross := mulVec_mul_mulVec_le hK hu hv i i'
   rw [← add_halves K.projectiveDiameter, exp_add, ← sq] at hcross
   have key := log_cross_le (R := M / m) (hα i) (hβ i) (hα i') (hβ i')
@@ -444,11 +430,9 @@ private theorem log_cross_mulVec_le {K : Matrix ι κ ℝ} (hK : ∀ i j, 0 < K 
   have hc : (M - m) / m * (M - m) ≠ 0 := by
     have := sub_pos.2 hmM
     positivity
-  rwa [show (M - m) / m * (K *ᵥ x) i * ((M - m) * (K *ᵥ y) i') /
-      ((M - m) * (K *ᵥ y) i * ((M - m) / m * (K *ᵥ x) i')) =
-      (M - m) / m * (M - m) * ((K *ᵥ x) i * (K *ᵥ y) i') /
-      ((M - m) / m * (M - m) * ((K *ᵥ y) i * (K *ᵥ x) i')) by ring,
-    mul_div_mul_left _ _ hc] at key
+  convert key using 2
+  rw [← mul_div_mul_left ((K *ᵥ x) i * (K *ᵥ y) i') ((K *ᵥ y) i * (K *ᵥ x) i') hc]
+  ring
 
 /-- **Birkhoff's contraction theorem.** A matrix `K` with strictly positive entries contracts
 Hilbert's projective metric between strictly positive vectors by the factor
