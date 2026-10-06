@@ -85,7 +85,7 @@ instance chainMeasure.instIsProbabilityMeasure
 /-- The initial coordinate has the first marginal of the initial plan, without any
 matching-marginal assumption. -/
 @[simp]
-theorem map_zero_chainMeasure
+theorem map_eval_zero_chainMeasure
     (pi : ∀ n, Measure (X n × X (n + 1))) [∀ n, IsFiniteMeasure (pi n)] :
     (chainMeasure pi).map (fun x ↦ x 0) = (pi 0).fst := by
   let e : ((i : Iic 0) → X i) ≃ᵐ X 0 := MeasurableEquiv.piUnique _
@@ -110,7 +110,7 @@ theorem chainMeasure_univ
     chainMeasure pi Set.univ = pi 0 Set.univ := by
   simpa only [MeasureTheory.Measure.map_apply (measurable_pi_apply 0) MeasurableSet.univ,
     Set.preimage_univ, MeasureTheory.Measure.fst_univ] using
-    congrArg (fun μ : Measure (X 0) ↦ μ Set.univ) (map_zero_chainMeasure pi)
+    congrArg (fun μ : Measure (X 0) ↦ μ Set.univ) (map_eval_zero_chainMeasure pi)
 
 private theorem map_adjacent_chainMeasure_of_map_eval
     (pi : ∀ n, Measure (X n × X (n + 1))) [∀ n, IsFiniteMeasure (pi n)] (n : ℕ)
@@ -153,7 +153,7 @@ theorem map_eval_chainMeasure (pi : ∀ n, Measure (X n × X (n + 1)))
     (hpi : ∀ k < n, (pi k).snd = (pi (k + 1)).fst) :
     (chainMeasure pi).map (fun x ↦ x n) = (pi n).fst := by
   induction n with
-  | zero => exact map_zero_chainMeasure pi
+  | zero => exact map_eval_zero_chainMeasure pi
   | succ n ih =>
       have hn := ih (fun k hk ↦ hpi k (Nat.lt_trans hk n.lt_succ_self))
       rw [← MeasureTheory.Measure.snd_map_prodMk (measurable_pi_apply n)
@@ -173,13 +173,6 @@ theorem map_adjacent_chainMeasure (pi : ∀ n, Measure (X n × X (n + 1)))
 noncomputable def prefixChainMeasure (pi : ∀ n, Measure (X n × X (n + 1)))
     [∀ n, IsFiniteMeasure (pi n)] (N : ℕ) : Measure ((i : Iic N) → X i) :=
   (chainMeasure pi).map (frestrictLe N)
-
-/-- Restricting the path law to the coordinates through time `N` gives its finite-prefix law. -/
-@[simp]
-theorem map_frestrictLe_chainMeasure
-    (pi : ∀ n, Measure (X n × X (n + 1))) [∀ n, IsFiniteMeasure (pi n)] (N : ℕ) :
-    (chainMeasure pi).map (frestrictLe N) = prefixChainMeasure pi N :=
-  (rfl)
 
 instance prefixChainMeasure.instIsFiniteMeasure
     (pi : ∀ n, Measure (X n × X (n + 1))) [∀ n, IsFiniteMeasure (pi n)] (N : ℕ) :
@@ -210,9 +203,18 @@ theorem map_adjacent_prefixChainMeasure
     {n N : ℕ} (hpi : ∀ k < n, (pi k).snd = (pi (k + 1)).fst) (hn : n < N) :
     (prefixChainMeasure pi N).map
         (fun x ↦ (x ⟨n, mem_Iic.mpr (Nat.le_of_lt hn)⟩, x ⟨n + 1, mem_Iic.mpr hn⟩)) = pi n := by
-  rw [prefixChainMeasure, MeasureTheory.Measure.map_map (by fun_prop)
-    (measurable_frestrictLe N)]
-  exact map_adjacent_chainMeasure pi n hpi
+  let adjacent : ((i : Iic N) → X i) → X n × X (n + 1) :=
+    fun x ↦ (x ⟨n, mem_Iic.mpr (Nat.le_of_lt hn)⟩, x ⟨n + 1, mem_Iic.mpr hn⟩)
+  have hrestrict : adjacent ∘ frestrictLe N = fun x : (k : ℕ) → X k ↦ (x n, x (n + 1)) := by
+    funext x
+    rfl
+  calc
+    (prefixChainMeasure pi N).map adjacent
+        = (chainMeasure pi).map (adjacent ∘ frestrictLe N) := by
+            rw [prefixChainMeasure, MeasureTheory.Measure.map_map (by fun_prop)
+              (measurable_frestrictLe N)]
+    _ = (chainMeasure pi).map (fun x ↦ (x n, x (n + 1))) := by rw [hrestrict]
+    _ = pi n := map_adjacent_chainMeasure pi n hpi
 
 end Chain
 
