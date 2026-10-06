@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Basic
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Simplex.Realization
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Maps
 public import Mathlib.Topology.ContinuousMap.Basic
-public import Mathlib.Geometry.Convex.ConvexSpace.Topology
 import Mathlib.Topology.Algebra.Ring.Real
 
 /-!
@@ -20,15 +19,13 @@ map is unnecessary. Identity and composition are preserved, and mutually inverse
 induce a homeomorphism. These maps transport simplicial local models and their relabelings to the
 polyhedra used in triangulations and piecewise-linear charts.
 
-The construction uses Mathlib's `Finsupp.lmapDomain` for barycentric-coordinate pushforward and
-`LinearMap.image_convexHull` for its action on simplices. The finite-face comparison
-`Finset.standardSimplexHomeomorph` lets the continuity proof reuse
-`Convexity.StdSimplex.continuous_map`. Continuity of the global map is tested face by face, as in
-`AbstractSimplicialComplex.continuous_barycentricSubdivisionRealizationMap`.
+For a vertex map `f`, the barycentric coordinate at a target vertex `b` is the sum of the
+source coordinates over vertices sent to `b`. On each face, the induced map is the affine
+extension of `f` into the simplex on the image vertex set; `realizationMap_comp_faceInclusion`
+characterizes this restriction. The induced map is injective exactly when the vertex map is.
 
 ## Main definitions
 
-* `Finset.standardSimplexHomeomorph`: the comparison with Mathlib's finite standard simplex.
 * `AbstractSimplicialComplex.StandardSimplex.map`: affine pushforward on a closed simplex.
 * `PreAbstractSimplicialComplex.SimplicialMap.realizationMap`: the induced continuous map.
 * `PreAbstractSimplicialComplex.SimplicialMap.realizationHomeomorph`: the homeomorphism induced by
@@ -45,68 +42,6 @@ noncomputable section
 
 open Set TauCeti.SetLike
 
-namespace Finset
-
-open AbstractSimplicialComplex
-
-variable {α : Type*} {σ : Finset α}
-
-attribute [local instance] Classical.decEq
-
-/-- A closed coordinate simplex is homeomorphic to Mathlib's standard simplex on its finite
-vertex set, including when that set is empty. -/
-def standardSimplexHomeomorph (σ : Finset α) : StandardSimplex σ ≃ₜ Convexity.StdSimplex ℝ σ where
-  toFun x := {
-    weights := x.1.subtypeDomain (· ∈ σ)
-    nonneg := fun a => StandardSimplex.nonneg x a
-    total := by
-      exact (Finsupp.sum_subtypeDomain_index (p := fun a => a ∈ σ)
-        (h := fun (_ : α) (r : ℝ) => r) (StandardSimplex.support_subset x)).trans
-          (StandardSimplex.sum_eq_one x) }
-  invFun w := ⟨w.weights.mapDomain Subtype.val, by
-    rw [Finset.coe_image, mem_standardSimplex_iff]
-    refine ⟨fun a => Finsupp.mapDomain_nonneg w.nonneg a, ?_, ?_⟩
-    · rw [Finsupp.sum_mapDomain_index (fun _ => rfl) (fun _ _ _ => rfl)]
-      exact w.total
-    · intro a ha
-      obtain ⟨b, -, rfl⟩ := Finset.mem_image.mp (Finsupp.mapDomain_support ha)
-      exact b.2⟩
-  left_inv x := by
-    apply Subtype.ext
-    ext a
-    by_cases ha : a ∈ σ
-    · simpa only [Finsupp.subtypeDomain_apply] using
-        Finsupp.mapDomain_apply_of_injective Subtype.val_injective
-          (x.1.subtypeDomain (· ∈ σ)) ⟨a, ha⟩
-    · rw [Finsupp.mapDomain_of_notMem_range]
-      · exact (Finsupp.notMem_support_iff.mp
-          (fun h => ha (StandardSimplex.support_subset x h))).symm
-      · simpa using ha
-  right_inv w := by
-    apply Convexity.StdSimplex.ext
-    ext a
-    exact Finsupp.mapDomain_apply_of_injective Subtype.val_injective w.weights a
-  continuous_toFun := by
-    apply (Convexity.StdSimplex.isEmbedding_toFun_comp_weights ℝ σ).continuous_iff.mpr
-    exact continuous_pi fun a => (continuous_apply a.1).comp continuous_induced_dom
-  continuous_invFun := by
-    apply continuous_induced_rng.mpr
-    exact continuous_pi fun a =>
-      (Convexity.StdSimplex.continuous_weights_apply ℝ a).comp
-        (Convexity.StdSimplex.continuous_map ℝ (Subtype.val : σ → α))
-
-/-- The finite-simplex comparison reads the original coordinate at each vertex of the face. -/
-@[simp]
-theorem standardSimplexHomeomorph_weights (σ : Finset α) (x : StandardSimplex σ) (a : σ) :
-    (standardSimplexHomeomorph σ x).weights a = x.1 a := (rfl)
-
-/-- The inverse finite-simplex comparison extends the finite coordinate vector by zero. -/
-@[simp]
-theorem standardSimplexHomeomorph_symm_val (σ : Finset α) (w : Convexity.StdSimplex ℝ σ) :
-    ((standardSimplexHomeomorph σ).symm w : α →₀ ℝ) = w.weights.mapDomain Subtype.val := (rfl)
-
-end Finset
-
 namespace AbstractSimplicialComplex.StandardSimplex
 
 variable {α β : Type*} [DecidableEq β] {σ : Finset α}
@@ -114,6 +49,7 @@ variable {α β : Type*} [DecidableEq β] {σ : Finset α}
 /-- Push barycentric coordinates forward along a vertex map, adding weights when vertices are
 identified. The resulting point lies in the simplex on the image vertex set. -/
 def map (x : StandardSimplex σ) (f : α → β) : StandardSimplex (σ.image f) :=
+  -- Mathlib's `Finsupp.lmapDomain` and `LinearMap.image_convexHull` give the simplex image.
   ⟨Finsupp.mapDomain f x.1, by
     classical
     have h := mem_image_of_mem (Finsupp.lmapDomain ℝ ℝ f) x.2
@@ -138,6 +74,7 @@ theorem map_apply (x : StandardSimplex σ) (f : α → β) (b : β) :
 theorem continuous_map (f : α → β) :
     Continuous (fun x : StandardSimplex σ => StandardSimplex.map x f) := by
   classical
+  -- The finite-face comparison transports Mathlib's `Convexity.StdSimplex.continuous_map`.
   let g : σ → σ.image f := fun a => ⟨f a, Finset.mem_image_of_mem f a.2⟩
   have h : Continuous (fun x : StandardSimplex σ =>
       (Finset.standardSimplexHomeomorph (σ.image f)).symm
@@ -172,6 +109,8 @@ def realizationMap
     faceInclusion L ⟨(carrier K x).1.image f, f.map_face (carrier K x).2⟩
       (StandardSimplex.map ⟨x.1, mem_convexHull_carrier K x⟩ f)
   continuous_toFun := by
+    -- Follow `AbstractSimplicialComplex.continuous_barycentricSubdivisionRealizationMap`:
+    -- test continuity face by face in the weak topology.
     apply continuous_iff_faceInclusion.2
     intro σ
     convert (continuous_faceInclusion L ⟨σ.1.image f, f.map_face σ.2⟩).comp
