@@ -20,14 +20,6 @@ maximal pro-`p` quotient `G_K(p)` of its absolute Galois group is a Demushkin gr
 order of the torsion subgroup of its topological abelianization (`TauCeti.demushkinQ`), is the
 number `q(K)` of `p`-power roots of unity in `K` (`TauCeti.localRootOfUnityOrder`).
 
-Both numbers are read off the cyclotomic character `χ`. The cyclotomic orientation of `G_K(p)` has
-the prescription property, so it is the canonical character of the Demushkin group, and the
-canonical character lands in `1 + p^kℤ_p` exactly when `p^k ∣ q(G_K(p))`
-(`TauCeti.range_demushkinCharacter_le_unitsPrincipal_iff`). On the arithmetic side `χ` lands in
-`1 + p^kℤ_p` exactly when `K` contains a primitive `p^k`th root of unity
-(`TauCeti.range_localCyclotomicCharacter_le_unitsPrincipal_iff`), that is when `p^k ∣ q(K)`. Both
-invariants are powers of `p`, the arithmetic one positive, so they agree.
-
 This is the value of `q` substituted into Labute's marked classification of Demushkin groups when it
 is applied to `G_K(p)`, alongside the rank `[K : ℚ_p] + 2`
 (`TauCeti.demushkinRank_absoluteGaloisGroupProP`).
@@ -61,14 +53,17 @@ theorem demushkinQ_absoluteGaloisGroupProP (hmu : ∃ ζ : K, IsPrimitiveRoot ζ
       localRootOfUnityOrder p K h := by
   set hG := isDemushkin_absoluteGaloisGroupProP_of_mu p K hmu
   have : NeZero (p : K) := hmu.choose_spec.neZero'
-  -- The cyclotomic orientation has the prescription property, so it is the canonical character,
-  -- and both invariants are divisible by exactly the same powers of `p`.
+  -- The cyclotomic orientation has the prescription property, so it is the canonical character.
+  -- The canonical character lands in `1 + p^kℤ_p` exactly when `p^k ∣ q(G_K(p))`, and the
+  -- cyclotomic character lands there exactly when `K` contains a primitive `p^k`th root of
+  -- unity, that is when `p^k ∣ q(K)`. So both invariants are divisible by the same powers of `p`.
   have hχ := (cyclotomicOrientation_hasPrescriptionProperty p K hmu).eq_demushkinCharacter hG
   have hdvd (k : ℕ) : p ^ k ∣ demushkinQ hG ↔ p ^ k ∣ localRootOfUnityOrder p K h := by
     rw [← range_demushkinCharacter_le_unitsPrincipal_iff hG, ← hχ, cyclotomicOrientation_range,
       range_localCyclotomicCharacter_le_unitsPrincipal_iff,
       primitiveRoot_pow_iff_dvd_localRootOfUnityOrder_of_finite]
-  -- `q(K) = p^n` is positive, so `p^(n+1)` does not divide it, and `q(G_K(p)) ≠ 0`.
+  -- Both invariants are powers of `p`. `q(K) = p^n` is positive, so `p^(n+1)` does not divide
+  -- it, and hence `q(G_K(p)) ≠ 0`; comparing exponents then gives equality.
   obtain ⟨n, hn⟩ := localRootOfUnityOrder_isPow p K h
   have h0 : demushkinQ hG ≠ 0 := fun h0 ↦ by
     have hle := (hdvd (n + 1)).1 (h0 ▸ dvd_zero _)
