@@ -368,6 +368,7 @@ theorem equivAdjoinRoot_symm_root :
 /-- A ring homomorphism out of the exact cyclotomic integers is determined by the image of the
 distinguished generator `ζ`: the integers admit a unique ring homomorphism, and `ζ` generates
 everything else. -/
+@[ext high]
 theorem ringHom_ext {R : Type*} [Semiring R] {g₁ g₂ : Cyclotomic e →+* R}
     (h : g₁ (zeta e) = g₂ (zeta e)) : g₁ = g₂ := by
   have key : g₁.comp (equivAdjoinRoot (e := e)).symm.toRingHom
@@ -468,7 +469,9 @@ noncomputable def reduceRingHom (p : ℕ) [Fact p.Prime] [NeZero e]
     rw [← eval_map, map_cyclotomic]
     exact hr.isRoot_cyclotomic (NeZero.pos e)
 
-@[simp]
+-- Not `@[simp]`: `reduce p r` is multiplicative only when `r` is a root of the cyclotomic
+-- polynomial, so it has no `simp` API of its own, and rewriting `reduceRingHom` to it would stop
+-- `simp` from using `map_mul` and `map_add`.
 theorem reduceRingHom_apply (p : ℕ) [Fact p.Prime] [NeZero e]
     (r : ZMod p) (hr : IsPrimitiveRoot r e) (x : Cyclotomic e) :
     reduceRingHom p r hr x = reduce p r x := by

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.Exchangeability.Basic
+public import TauCeti.Probability.Process.PathLaw.Basic
 import Mathlib.Logic.Equiv.Basic
 import Mathlib.Data.Fin.Tuple.Sort
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
@@ -21,8 +21,9 @@ For a process `X : ℕ → Ω → α` and a finite coordinate selection `k : Fin
   `k = fun i => i.val`);
 * `blockIndicatorProd X k C ω = ∏ i, 𝟙_{C i}(X (k i) ω)` — its (`ℝ`-valued) indicator product.
 
-These are the finite-dimensional events and integrands the de Finetti block-product factorisation
-manipulates. `blockCylinder_eq_preimage_univ_pi` and `blockLaw_blockCylinder` bridge the cylinder
+These events and integrands describe finite-dimensional rectangles for arbitrary measurable
+sequences, without any symmetry assumption. They are used in finite-block factorization arguments.
+`blockCylinder_eq_preimage_univ_pi` and `blockLaw_blockCylinder` bridge the cylinder
 to the existing rectangle/`blockLaw` interface, while `blockCylinder_eq_iInter` gives the
 intersection form, which is what a proof meeting the cylinder with another event wants.
 `blockIndicatorProd_eq_indicator` identifies the product with the cylinder indicator, and

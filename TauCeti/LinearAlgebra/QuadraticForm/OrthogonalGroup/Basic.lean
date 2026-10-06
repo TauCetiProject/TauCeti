@@ -118,6 +118,8 @@ fixes `v` instead of negating it and is a transvection rather than a reflection 
   kernel of the determinant restricted there.
 * `TauCeti.QuadraticMap.orthogonalDet_sq`: if the polar form is left-separating on a finite free
   module over a domain, every orthogonal automorphism has determinant squaring to one.
+* `TauCeti.QuadraticMap.finiteIndex_specialOrthogonalWithin`: under the same hypotheses, `SO(Q)`
+  has finite index in `O(Q)`.
 * `TauCeti.QuadraticMap.range_orthogonalDet` and
   `TauCeti.QuadraticMap.index_specialOrthogonalWithin`: for a nondegenerate form on a nonzero space
   over a field of characteristic not two, the determinant takes exactly the values `±1`, so
@@ -1303,6 +1305,18 @@ theorem orthogonalDet_sq {Q : QuadraticForm R M} (hQ : Q.polarBilin.SeparatingLe
     (mem_nonZeroDivisors_of_ne_zero ((LinearMap.separatingLeft_iff_det_ne_zero _).mp hQ))
   ext
   simpa [LinearEquiv.coe_det] using h
+
+/-- If the polar form is left-separating on a finite free module over an integral domain, then
+`SO(Q)` has finite index in `O(Q)`: every orthogonal determinant is a square root of unity, and
+there are only finitely many of those. -/
+theorem finiteIndex_specialOrthogonalWithin {Q : QuadraticForm R M}
+    (hQ : Q.polarBilin.SeparatingLeft) : (specialOrthogonalWithin Q).FiniteIndex := by
+  have h : (orthogonalDet Q).range ≤ rootsOfUnity 2 R := by
+    rintro - ⟨g, rfl⟩
+    exact (mem_rootsOfUnity 2 _).mpr (orthogonalDet_sq hQ g)
+  have : Finite (orthogonalDet Q).range :=
+    Finite.of_injective (Subgroup.inclusion h) (Subgroup.inclusion_injective h)
+  exact Subgroup.finiteIndex_ker (orthogonalDet Q)
 
 end DetSquare
 

@@ -95,6 +95,26 @@ theorem taylor_X (a : σ → R) (i : σ) : taylor a (X i) = X i + C (a i) :=
 theorem taylor_C (a : σ → R) (r : R) : taylor a (C r) = C r :=
   aeval_C _ _
 
+/-- Taylor shifts commute with coefficient maps, with the center mapped along the same
+homomorphism. -/
+@[simp]
+theorem map_taylor {S : Type*} [CommSemiring S] (p : MvPolynomial σ R) (a : σ → R)
+    (f : R →+* S) :
+    map f (taylor a p) = taylor (fun i ↦ f (a i)) (map f p) := by
+  induction p using MvPolynomial.induction_on <;> simp_all
+
+/-- Taylor coefficients depend polynomially on the center. Evaluate the formal center in
+`taylor X (map C p)` at `a` to recover each coefficient of `taylor a p`. -/
+@[simp]
+theorem eval_coeff_taylor_map_C (p : MvPolynomial σ R) (a : σ → R) (v : σ →₀ ℕ) :
+    eval a ((taylor (X : σ → MvPolynomial σ R) (map C p)).coeff v) =
+      (taylor a p).coeff v := by
+  rw [← coeff_map, map_taylor, map_map]
+  have h : (eval a).comp (C : R →+* MvPolynomial σ R) = RingHom.id R := by
+    ext r
+    simp
+  simp [h, map_id]
+
 @[simp]
 theorem eval_taylor (a x : σ → R) (p : MvPolynomial σ R) :
     eval x (taylor a p) = eval (x + a) p := by

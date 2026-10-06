@@ -53,6 +53,8 @@ cone, induces a homeomorphism.
   continuous exactly when evaluation at every monomial is.
 * `TauCeti.Toric.isClosedEmbedding_monomialEmbedding`: the monomial embedding is a closed
   embedding, whence the Hausdorff, second countable and locally compact conclusions.
+* `TauCeti.Toric.isCompact_setOf_forall_norm_apply_single_le_one`: the points at which every
+  monomial has absolute value at most `1` form a compact set.
 * `TauCeti.Toric.AffineSemigroupComplexPoint.comap`: the map on complex points induced by a
   homomorphism of additive monoids, with `TauCeti.Toric.AffineSemigroupComplexPoint.comap_id`
   and `TauCeti.Toric.AffineSemigroupComplexPoint.comap_comp`.
@@ -340,6 +342,34 @@ theorem locallyCompactSpace_affinePointTopology (g : AddGeneratingFamily S r) :
     LocallyCompactSpace (AffineSemigroupComplexPoint S) :=
   letI := affinePointTopology g
   (isClosedEmbedding_monomialEmbedding g).locallyCompactSpace
+
+/-- The complex points at which every monomial has absolute value at most `1` form a compact set.
+For the dual semigroup of a cone, this is the part of the affine chart lying over the cone under
+the logarithm of absolute values; for a complete fan these parts of the charts cover the analytic
+realization. -/
+theorem isCompact_setOf_forall_norm_apply_single_le_one (g : AddGeneratingFamily S r) :
+    letI := affinePointTopology g
+    IsCompact {x : AffineSemigroupComplexPoint S |
+      ∀ s : S, ‖x (MonoidAlgebra.single (ofAdd s) 1)‖ ≤ 1} := by
+  let _ := affinePointTopology g
+  -- A monomial is a product of powers of generators, so the set is the preimage of the closed
+  -- unit polydisc under the monomial embedding, which is a closed embedding.
+  have h : {x : AffineSemigroupComplexPoint S |
+      ∀ s : S, ‖x (MonoidAlgebra.single (ofAdd s) 1)‖ ≤ 1} =
+      monomialEmbedding g ⁻¹' Metric.closedBall 0 1 := by
+    ext x
+    simp only [Set.mem_ofPred_eq, Set.mem_preimage, mem_closedBall_zero_iff,
+      pi_norm_le_iff_of_nonneg zero_le_one]
+    refine ⟨fun hx j ↦ by simpa using hx (g.toFun j), fun hx s ↦ ?_⟩
+    obtain ⟨a, ha⟩ := AddSubmonoid.exists_of_mem_closure_range g.toFun s (by
+      rw [g.spans]
+      trivial)
+    rw [apply_single_eq_prod_monomialEmbedding g ha, norm_prod]
+    exact Finset.prod_le_one₀ (fun _ _ ↦ norm_nonneg _) fun j _ ↦ by
+      rw [norm_pow]
+      exact pow_le_one₀ (norm_nonneg _) (hx j)
+  rw [h]
+  exact (isClosedEmbedding_monomialEmbedding g).isCompact_preimage (isCompact_closedBall 0 1)
 
 /-! ### Functoriality in the semigroup -/
 
