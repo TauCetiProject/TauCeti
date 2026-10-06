@@ -49,16 +49,6 @@ iteration) a contraction for Hilbert's projective metric.
   `d (K *ᵥ x) (K *ᵥ y) ≤ tanh (Δ(K) / 4) * d x y` for a strictly positive matrix `K` and strictly
   positive vectors `x` and `y`.
 
-## Implementation notes
-
-The proof of Birkhoff's theorem follows the classical reduction to two dimensions. With
-`m ≤ x j / y j ≤ M`, the vectors `x - m • y` and `M • y - x` are nonnegative, so their images
-`α` and `β` under `K` satisfy the cross-ratio bound `α i * β i' ≤ exp Δ(K) * β i * α i'`. Writing
-`K *ᵥ x` and `K *ᵥ y` in terms of `α` and `β` turns each cross ratio of the images into a
-two-dimensional quantity bounded by `((1 + λ s) / (λ + s)) ^ 2`, where `λ = exp (Δ(K) / 2)` and
-`s ^ 2 = M / m`, and the concavity estimate `log ((1 + λ s) / (λ + s)) ≤ tanh (Δ(K) / 4) * log s`
-finishes the proof.
-
 ## References
 
 * G. Birkhoff, *Extensions of Jentzsch's theorem*, Trans. Amer. Math. Soc. 85 (1957), 219--227.
@@ -393,6 +383,14 @@ theorem hilbertProjectiveDist_mulVec_le_projectiveDiameter {K : Matrix ι κ ℝ
     (div_nonneg (mul_nonneg (hnonneg hu i) (hnonneg hv i')) hden.le).lt_of_ne hr.symm
   rw [log_le_iff_le_exp hr_pos, div_le_iff₀ hden]
   exact mulVec_mul_mulVec_le hK hu hv i i'
+
+/- The proof of Birkhoff's theorem follows the classical reduction to two dimensions. With
+`m ≤ x j / y j ≤ M`, the vectors `x - m • y` and `M • y - x` are nonnegative, so their images
+`α` and `β` under `K` satisfy the cross-ratio bound `α i * β i' ≤ exp Δ(K) * β i * α i'`. Writing
+`K *ᵥ x` and `K *ᵥ y` in terms of `α` and `β` turns each cross ratio of the images into a
+two-dimensional quantity bounded by `((1 + λ s) / (λ + s)) ^ 2`, where `λ = exp (Δ(K) / 2)` and
+`s ^ 2 = M / m`, and the concavity estimate `log ((1 + λ s) / (λ + s)) ≤ tanh (Δ(K) / 4) * log s`
+finishes the proof. -/
 
 /-- The cross-ratio estimate behind Birkhoff's theorem, for `m * y ≤ x ≤ M * y` with both bounds
 strict somewhere: every logarithmic cross ratio of `K *ᵥ x` and `K *ᵥ y` is at most
