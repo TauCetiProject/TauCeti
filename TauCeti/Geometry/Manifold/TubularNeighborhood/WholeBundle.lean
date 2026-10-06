@@ -75,7 +75,7 @@ def normalBundleHomeomorphTube (f : M → V) {ε : ℝ} (hε : 0 < ε) :
     · rfl
     · simp [hε.ne', smul_smul]
   continuous_toFun := by
-    have hι := isEmbedding_totalSpace_normalSubspace (I := I) f
+    have hι := isEmbedding_totalSpace_normalSubspace (I := I) (F := V) f
     have hv := hι.continuous.snd
     have ha : Continuous fun p : TotalSpace V (fun x : M => normalSubspace I f x) =>
         (Real.sqrt (1 + ‖(p.2 : V)‖ ^ 2))⁻¹ :=
@@ -93,7 +93,7 @@ def normalBundleHomeomorphTube (f : M → V) {ε : ℝ} (hε : 0 < ε) :
       rw [mem_ball_zero_iff, norm_smul, Real.norm_of_nonneg (inv_pos.mpr hε).le]
       exact (inv_mul_lt_iff₀ hε).mpr (by simpa using (mem_normalTube.mp q.2).2)⟩
     have hk : Continuous k := hv.subtype_mk _
-    apply (isEmbedding_totalSpace_normalSubspace (I := I) f).isInducing.continuous_iff.mpr
+    apply (isEmbedding_totalSpace_normalSubspace (I := I) (F := V) f).isInducing.continuous_iff.mpr
     convert (continuous_fst.comp continuous_subtype_val).prodMk
       (Homeomorph.unitBall.symm.continuous.comp hk) using 1
     funext q
@@ -226,7 +226,7 @@ theorem exists_isTubularNeighborhood_wholeNormalBundle_subset [FiniteDimensional
     (hf.continuous.isClosedEmbedding hinj).isEmbedding, hzero, ?_⟩, hΦO⟩
   · intro x
     simpa using starConvex_univ (𝕜 := ℝ) (0 : normalSubspace I f x)
-  · have hι := isEmbedding_totalSpace_normalSubspace (I := I) f
+  · have hι := isEmbedding_totalSpace_normalSubspace (I := I) (F := V) f
     apply hι.isInducing.continuous_iff.mpr
     have hp : Continuous fun p : Icc (0 : ℝ) 1 ×
         (univ : Set (TotalSpace V (fun x : M => normalSubspace I f x))) =>

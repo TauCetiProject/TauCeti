@@ -308,10 +308,9 @@ theorem initialPentagonWeight_eq_prod_coveredSquares {x y : GridState n}
       ∏ p ∈ P.coveredSquares,
         if p ∈ G.OSet then MvPolynomial.X (Equiv.swap C.column (finRotate n C.column) p.1)
         else (1 : MvPolynomial (Fin n) R) := by
-  classical
-  rw [initialPentagonWeight, Finset.prod_ite_mem, Finset.inter_comm,
-    G.OSet_inter_eq_image_OColumnsOfSquares P.coveredSquares,
-    Finset.prod_image fun _ _ _ _ hab => congrArg Prod.fst hab]
+  rw [initialPentagonWeight, G.prod_ite_OSet_eq_prod_OColumnsOfSquares
+    (fun c => (MvPolynomial.X (Equiv.swap C.column (finRotate n C.column) c) :
+      MvPolynomial (Fin n) R))]
 
 /-- The matrix coefficient from `x` to `y` of the map counting pentagons turning on their initial
 side: the sum of the weights of the counted ones. -/

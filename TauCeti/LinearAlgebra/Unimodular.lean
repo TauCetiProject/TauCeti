@@ -13,10 +13,11 @@ public import Mathlib.RingTheory.LocalRing.Basic
 
 Complements to `Mathlib.LinearAlgebra.Unimodular`. Unimodularity of an element `v` of an
 `R`-module (some linear functional takes the value `1` at `v`) is preserved by multiplication by a
-unit, and a coordinate vector `v : ι → R` with a unit coordinate is unimodular. Over a local ring
-the converse holds for finitely many coordinates: `v` is unimodular exactly when one of its
-coordinates is a unit. This is the form in which homogeneous coordinates of points of projective
-schemes over a local ring are normalised.
+unit, so each unit multiple of a unimodular vector can be used as a generator when constructing
+projective orbit morphisms. A coordinate vector `v : ι → R` with a unit coordinate is unimodular.
+Over a local ring the converse holds for finitely many coordinates: `v` is unimodular exactly when
+one of its coordinates is a unit. This is the form in which homogeneous coordinates of points of
+projective schemes over a local ring are normalised.
 
 ## Main results
 
@@ -33,11 +34,11 @@ namespace TauCeti.Module
 
 section Semiring
 
-variable {R : Type*} [Semiring R]
+variable {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
 
 /-- Multiplication by a unit preserves unimodularity. -/
-theorem isUnimodular_units_smul {M : Type*} [AddCommMonoid M] [Module R M] (c : Rˣ) {m : M}
-    (hm : Module.IsUnimodular R m) : Module.IsUnimodular R (c • m) := by
+theorem isUnimodular_units_smul (c : Rˣ) {m : M} (hm : Module.IsUnimodular R m) :
+    Module.IsUnimodular R (c • m) := by
   obtain ⟨f, hf⟩ := Module.isUnimodular_iff.mp hm
   apply Module.isUnimodular_iff.mpr
   refine ⟨(LinearMap.mulRight R (↑c⁻¹ : R)).comp f, ?_⟩

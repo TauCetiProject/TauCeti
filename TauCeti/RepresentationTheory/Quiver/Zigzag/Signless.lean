@@ -164,6 +164,31 @@ theorem sum_signlessArrow_mul_signlessArrow (v : Fin n) :
         rw [← ofArrow_symm_mul_ofArrow _ k w.2, map_mul, ← signlessArrow_of_adj k w.2,
           ← signlessArrow_of_adj k (G.adj_symm w.2)]
 
+/-- **The signless relation at a vertex `v` of a graph whose edges join consecutive vertices**:
+the backtrack through `v + 1` cancels the backtrack through `v - 1`.
+At an end vertex the missing backtrack is zero. -/
+theorem signlessArrow_relation_of_consecutive
+    (hconsecutive : ∀ i j : Fin n, G.Adj i j → (i : ℕ) + 1 = j ∨ (j : ℕ) + 1 = i) (v : ℕ) :
+    signlessArrow k G (v + 1) v * signlessArrow k G v (v + 1) +
+      signlessArrow k G (v - 1) v * signlessArrow k G v (v - 1) = 0 := by
+  by_cases hv : v < n
+  swap
+  · rw [signlessArrow_eq_zero k (i := v + 1) (fun _ => by omega),
+      signlessArrow_eq_zero k (i := v - 1) (fun _ _ => by omega), zero_mul, zero_mul, add_zero]
+  let F : ℕ → signlessPreprojectiveAlgebra k (DoubledQuiver G) :=
+    fun w => signlessArrow k G w v * signlessArrow k G v w
+  have hF (w : ℕ) (hw : ¬(w + 1 = v ∨ v + 1 = w)) : F w = 0 := by
+    simp only [F, signlessArrow_eq_zero k (fun _ _ hij => hw (hconsecutive _ _ hij)), zero_mul]
+  -- Only the neighbours `v - 1` and `v + 1` contribute to the relation at `v`.
+  have hrel := sum_signlessArrow_mul_signlessArrow k G (⟨v, hv⟩ : Fin n)
+  rw [Fin.sum_univ_eq_sum_range F n] at hrel
+  rw [← hrel]
+  refine (Finset.sum_eq_add (v + 1) (v - 1) (by omega) (fun w _ hw => hF w (by omega))
+    (fun h => ?_) (fun h => absurd (Finset.mem_range.2 (by omega)) h)).symm
+  simp only [F]
+  rw [signlessArrow_eq_zero k (i := v + 1) (j := v) fun hi _ => absurd (Finset.mem_range.2 hi) h,
+    zero_mul]
+
 end FinArrow
 
 end TauCeti

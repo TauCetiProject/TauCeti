@@ -64,7 +64,8 @@ involution, and it lives downstream in
   `TauCeti.coeff_schurPoly_partWeight` reads it at the exponent of a partition.
 * `TauCeti.eval_diagramSchurPoly`: evaluating a Schur polynomial sums the monomials of its
   tableaux.
-* `TauCeti.eval_one_diagramSchurPoly_eq_card_boundedSSYT`: evaluating at one counts the bounded
+* `TauCeti.eval_one_diagramSchurPoly_eq_card_boundedSSYT` and
+  `TauCeti.eval_one_schurPoly_eq_card_boundedSSYT`: evaluating at one counts the bounded
   tableaux.
 * `TauCeti.diagramSchurPoly_eq_zero_iff` and `TauCeti.schurPoly_eq_zero_iff`: a Schur polynomial
   vanishes exactly for a shape taller than its alphabet.
@@ -376,6 +377,14 @@ theorem schurPoly_eq_rename (μ : n.Partition) :
     schurPoly σ R μ
       = rename (Fintype.equivFin σ).symm (diagramSchurPoly (Fintype.card σ) R (diagramOf μ)) :=
   (rfl)
+
+/-- **A Schur polynomial evaluated at one counts bounded semistandard tableaux**: the value of
+`s_μ` at the all-ones point of the alphabet `σ` is the number of semistandard tableaux of shape
+`μ` with entries below the number of letters of `σ`. -/
+@[simp] theorem eval_one_schurPoly_eq_card_boundedSSYT (μ : n.Partition) :
+    eval (fun _ : σ => (1 : R)) (schurPoly σ R μ) =
+      (Nat.card (BoundedSSYT (Fintype.card σ) (diagramOf μ)) : R) := by
+  simp [schurPoly_eq_rename, eval_rename, Function.comp_def]
 
 /-- The exponent vector on the alphabet `σ` recording the parts of `ν`, read through the ordering
 `Fintype.equivFin σ`: the image of `TauCeti.rowLenWeight` of the Young diagram of `ν`. -/

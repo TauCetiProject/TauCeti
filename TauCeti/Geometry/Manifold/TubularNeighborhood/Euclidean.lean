@@ -430,15 +430,16 @@ theorem exists_isOpenEmbedding_normalTube [I.Boundaryless] [IsManifold I 2 M] [C
     rw [himage]
     exact isOpen_biUnion fun x _ => hopen x _ (hO₁.inter (isOpen_univ.prod Metric.isOpen_ball))
 
-/-- The total space of the normal bundle of `f` carries the topology of a subspace of `M × V`. -/
-instance instTopologicalSpaceTotalSpaceNormalSubspace (f : M → V) :
-    TopologicalSpace (TotalSpace V fun x : M => normalSubspace I f x) :=
+/-- The total space of the normal bundle of `f` carries the topology of a subspace of `M × V`,
+independently of its model-fibre parameter `F`. -/
+instance instTopologicalSpaceTotalSpaceNormalSubspace {F : Type*} (f : M → V) :
+    TopologicalSpace (TotalSpace F fun x : M => normalSubspace I f x) :=
   TopologicalSpace.induced (fun p => (p.proj, (p.2 : V))) inferInstance
 
 omit [FiniteDimensional ℝ V] [FiniteDimensional ℝ E] in
 /-- The total space of the normal bundle of `f` is embedded in `M × V`. -/
-theorem isEmbedding_totalSpace_normalSubspace (f : M → V) :
-    IsEmbedding fun p : TotalSpace V (fun x : M => normalSubspace I f x) =>
+theorem isEmbedding_totalSpace_normalSubspace {F : Type*} (f : M → V) :
+    IsEmbedding fun p : TotalSpace F (fun x : M => normalSubspace I f x) =>
       (p.proj, (p.2 : V)) := by
   refine ⟨⟨rfl⟩, ?_⟩
   rintro ⟨x, v⟩ ⟨y, w⟩ h
