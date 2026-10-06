@@ -61,8 +61,7 @@ theorem formalCharacter_typeDSpinLieRep (hline : P.line = ⊥) :
     Module.Finite.of_basis b.ExteriorAlgebra
   apply b.ExteriorAlgebra.formalCharacter_eq_sum_single_of_weight_basis
     (μ := fun s => typeDWeightEquiv (spinWeight K s))
-  · intro s A
-    exact P.typeDSpinLieRep_apply_cartan_exteriorBasis b hline A s
-  · exact typeDWeightEquiv.injective.comp spinWeight_injective
+  intro s A
+  exact P.typeDSpinLieRep_apply_cartan_exteriorBasis b hline A s
 
 end TauCeti.SpinPolarizationData

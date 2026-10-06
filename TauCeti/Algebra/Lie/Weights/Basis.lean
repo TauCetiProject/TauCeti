@@ -13,9 +13,10 @@ import TauCeti.LinearAlgebra.Eigenspace.Semisimple
 # Formal characters from a weight basis
 
 A basis of simultaneous eigenvectors makes every acting endomorphism diagonalizable, so its
-honest and generalized weight spaces agree over the original field. If the basis weights are
-pairwise distinct, each occurring weight space is a line and the formal character is the sum
-of the corresponding group-algebra basis elements, with coefficient one.
+honest and generalized weight spaces agree over the original field. The formal character is
+the sum of the corresponding group-algebra basis elements, counting repeated weights with
+their multiplicities. If the basis weights are pairwise distinct, each occurring weight space
+is a line and each weight has coefficient one.
 
 These results connect explicit diagonal actions, such as the exterior model of spinors, to
 `TauCeti.formalCharacter` without requiring algebraic closedness or characteristic zero.
@@ -75,39 +76,34 @@ theorem weightSpace_eq_span_singleton_of_weight_basis
 
 variable [Fintype ι] [LinearWeights K L M]
 
-/-- The formal character of a module with a basis of distinct weight vectors is the sum of
-those weights, each with multiplicity one. -/
-theorem formalCharacter_eq_sum_single_of_weight_basis (hμ : Function.Injective μ) :
+/-- The formal character of a module with a finite basis of weight vectors is the sum of
+those weights, counting repeated weights with their multiplicities. -/
+theorem formalCharacter_eq_sum_single_of_weight_basis :
     letI := b.finiteDimensional_of_finite
     TauCeti.formalCharacter K L M = ∑ i, AddMonoidAlgebra.single (μ i) (1 : ℤ) := by
   let _ := b.finiteDimensional_of_finite
   classical
   refine AddMonoidAlgebra.ext (Finsupp.ext fun χ => ?_)
   rw [TauCeti.formalCharacter_coeff,
-    b.genWeightSpace_eq_weightSpace_of_weight_basis hb]
-  by_cases hχ : χ ∈ Set.range μ
-  · obtain ⟨i, rfl⟩ := hχ
-    rw [← TauCeti.finrank_toSubmodule,
-      b.weightSpace_eq_span_singleton_of_weight_basis hb hμ,
-      finrank_span_singleton (b.ne_zero i)]
-    simp only [Nat.cast_one, AddMonoidAlgebra.coeff_sum, Finsupp.finsetSum_apply,
-      AddMonoidAlgebra.coeff_single, Finsupp.single_apply]
-    rw [Finset.sum_eq_single i]
-    · simp
-    · intro j _ hji
-      exact ite_eq_right (fun h => hji (hμ h))
-    · simp
-  · have hbot : weightSpace M (χ : L → K) = ⊥ := by
-      rw [LieSubmodule.eq_bot_iff]
-      intro m hm
-      apply b.repr.injective
-      ext i
-      have hne : (μ i : L → K) ≠ χ := fun h => hχ ⟨i, DFunLike.coe_injective h⟩
-      simpa using b.repr_eq_zero_of_weight_ne (f := toEnd K L M)
-          (a := fun i => (μ i : L → K)) hb ((mem_weightSpace _ _).mp hm) hne
-    rw [hbot]
-    simp only [LieSubmodule.finrank_bot, Nat.cast_zero, AddMonoidAlgebra.coeff_sum,
-      Finsupp.finsetSum_apply, AddMonoidAlgebra.coeff_single, Finsupp.single_apply]
-    exact (Finset.sum_eq_zero fun i _ => ite_eq_right (fun h => hχ ⟨i, h⟩)).symm
+    b.genWeightSpace_eq_weightSpace_of_weight_basis hb, ← TauCeti.finrank_toSubmodule]
+  have hspace : (weightSpace M (χ : L → K)).toSubmodule =
+      Submodule.span K (b '' {i | μ i = χ}) := by
+    refine le_antisymm (fun m hm => ?_) (Submodule.span_le.mpr ?_)
+    · apply b.mem_span_image.mpr
+      intro i hi
+      by_contra hne
+      have hne' : (μ i : L → K) ≠ χ := fun h => hne (DFunLike.coe_injective h)
+      exact Finsupp.mem_support_iff.mp hi
+        (b.repr_eq_zero_of_weight_ne (f := toEnd K L M)
+          (a := fun i => (μ i : L → K)) hb ((mem_weightSpace _ _).mp hm) hne')
+    · rintro _ ⟨i, hi, rfl⟩
+      exact (mem_weightSpace _ _).mpr (by
+        simpa only [Set.mem_ofPred_eq.mp hi] using hb i)
+  rw [hspace, Set.image_eq_range]
+  have hlin : LinearIndependent K (fun i : ({i | μ i = χ} : Set ι) => b i) :=
+    b.linearIndependent.comp _ Subtype.val_injective
+  rw [finrank_span_eq_card hlin]
+  simp [Fintype.card_subtype, AddMonoidAlgebra.coeff_sum, AddMonoidAlgebra.coeff_single,
+    Finsupp.single_apply, eq_comm]
 
 end Module.Basis
