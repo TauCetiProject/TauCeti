@@ -74,7 +74,7 @@ instance _root_.AlgebraicGeometry.Scheme.Modules.isQuasicoherent_kernel
 
 /-- Quasicoherence is closed under ambient kernels. The generic full-subcategory construction
 therefore supplies kernels in `QuasicoherentSheaf X`. -/
-instance _root_.AlgebraicGeometry.Scheme.Modules.isClosedUnderKernels_isQuasicoherent
+instance _root_.AlgebraicGeometry.Scheme.Modules.isQuasicoherent_isClosedUnderKernels
     (X : Scheme.{u}) :
     (SheafOfModules.isQuasicoherent X.ringCatSheaf).IsClosedUnderKernels where
   kernels_le := by
@@ -88,7 +88,7 @@ namespace QuasicoherentSheaf
 
 /-- The inclusion of quasicoherent sheaves preserves kernels: their universal property is the
 one in the ambient category of all module sheaves. -/
-instance preservesKernel_inclusion {X : Scheme.{u}} {E F : QuasicoherentSheaf X}
+instance inclusion_preservesKernel {X : Scheme.{u}} {E F : QuasicoherentSheaf X}
     (f : E ⟶ F) :
     PreservesLimit (parallelPair f 0) (ObjectProperty.ι
       (SheafOfModules.isQuasicoherent X.ringCatSheaf)) :=
