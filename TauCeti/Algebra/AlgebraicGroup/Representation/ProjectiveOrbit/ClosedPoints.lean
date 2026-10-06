@@ -6,9 +6,9 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.FiniteType
+public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Points
 public import TauCeti.AlgebraicGeometry.AugmentationPoint.ClosedPoints
 public import TauCeti.AlgebraicGeometry.Morphisms.FiniteType
-public import Mathlib.LinearAlgebra.Dual.Lemmas
 
 /-!
 # Closed points of a projective orbit image
