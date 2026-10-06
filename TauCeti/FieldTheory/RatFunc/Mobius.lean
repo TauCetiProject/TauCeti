@@ -14,24 +14,24 @@ import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.CenterFinTwo
 /-!
 # Linear fractional transformations of the rational function field
 
-Four elements `a, b, c, d` of a field `k` with `a d - b c ≠ 0` give the linear fractional
-transformation `(a X + b) / (c X + d)` of `k(X)`. The inverse of the coefficient matrix recovers
-`X` from it, so it is a transcendental generator of `k(X)` over `k` and therefore the image of `X`
-under an automorphism of `k(X)` over `k`.
+Four elements `a, b, c, d` of an integral domain `k` with `a d - b c ≠ 0` give the linear fractional
+transformation `(a X + b) / (c X + d)` of `k(X)`. The inverse linear fractional formula recovers
+`X` from it. When `k` is a field, it is a transcendental generator of `k(X)` over `k` and
+therefore the image of `X` under an automorphism of `k(X)` over `k`.
 
-The coefficients form an invertible `2 × 2` matrix, and conversely every invertible `2 × 2` matrix
-over `k` has nonzero determinant, so the construction applies to `GL₂(k)`.
+Over a field `k`, the coefficients form an invertible `2 × 2` matrix, and conversely every
+invertible `2 × 2` matrix over `k` has nonzero determinant, so the construction applies to `GL₂(k)`.
 
 ## Main definitions
 
 * `RatFunc.mobiusOf`: the linear fractional transformation of four coefficients, with its defining
   equation `mobiusOf_def`.
 * `RatFunc.mobiusAutOf`: the automorphism of `k(X)` sending `X` to it.
-* `RatFunc.mobius` (with `mobius_def`) and `RatFunc.mobiusAut`: the same for an invertible
-  matrix.
+* `Matrix.GeneralLinearGroup.mobius` (with `Matrix.GeneralLinearGroup.mobius_def`) and
+  `Matrix.GeneralLinearGroup.mobiusAut`: the same for an invertible matrix.
 * `RatFunc.mobiusAutHom`: the group homomorphism `GL₂(k) →* Aut(k(X)/k)`.
 * `RatFunc.pglEquivAlgEquiv`: the isomorphism `PGL₂(k) ≃* Aut(k(X)/k)`, evaluated on a class of
-  matrices by `RatFunc.pglEquivAlgEquiv_mk`.
+  matrices by `Matrix.GeneralLinearGroup.pglEquivAlgEquiv_mk`.
 * `RatFunc.translationAut`: the translation `X ↦ X + c`.
 
 ## Main results
@@ -39,8 +39,8 @@ over `k` has nonzero determinant, so the construction applies to `GL₂(k)`.
 * `RatFunc.transcendental_mobiusOf` and `RatFunc.adjoin_mobiusOf_eq_top`: a linear fractional
   transformation is a transcendental generator of `k(X)`.
 * `RatFunc.X_eq_div_mobiusOf`: the inverse coefficient matrix recovers `X`.
-* `RatFunc.mobiusAut_mobius` and `RatFunc.mobiusAutHom`: substitution composes the coefficient
-  matrices in the opposite order, so inversion turns the construction into a group homomorphism
+* `Matrix.GeneralLinearGroup.mobiusAut_mobius` and `RatFunc.mobiusAutHom`: substitution composes
+  the coefficient matrices in the opposite order, so inversion gives a group homomorphism
   `GL₂(k) →* Aut(k(X)/k)`.
 * `RatFunc.infinite_algEquiv`: over an infinite field the translations already make
   `Aut(k(X)/k)` infinite.
@@ -57,7 +57,11 @@ open scoped MatrixGroups
 
 namespace RatFunc
 
-variable {K : Type*} [Field K]
+variable {K : Type*}
+
+section Domain
+
+variable [CommRing K] [IsDomain K]
 
 /-- A nonzero linear polynomial in `X`, read in `k(X)`, is nonzero. -/
 theorem mul_X_add_C_ne_zero {c d : K} (hcd : c ≠ 0 ∨ d ≠ 0) : C c * X + C d ≠ 0 := by
@@ -71,22 +75,6 @@ theorem mul_X_add_C_ne_zero {c d : K} (hcd : c ≠ 0 ∨ d ≠ 0) : C c * X + C 
   rcases hcd with h | h
   · exact h h1
   · exact h h0'
-
-/-- **A constant lies in every intermediate field** of `k(X) / k`. -/
-theorem C_mem (S : IntermediateField K (RatFunc K)) (x : K) : C x ∈ S := by
-  rw [← algebraMap_eq_C]
-  exact IntermediateField.algebraMap_mem _ x
-
-/-- A constant of `k(X)` is nonzero when the scalar is. -/
-theorem C_ne_zero {x : K} (hx : x ≠ 0) : (C x : RatFunc K) ≠ 0 := by
-  rw [← algebraMap_eq_C, Ne, map_eq_zero_iff _ (FaithfulSMul.algebraMap_injective K (RatFunc K))]
-  exact hx
-
-/-- An automorphism of `k(X)` over `k` fixes the constants. -/
-@[simp]
-theorem algEquiv_apply_C (σ : RatFunc K ≃ₐ[K] RatFunc K) (x : K) : σ (C x) = C x := by
-  rw [← algebraMap_eq_C]
-  exact σ.commutes x
 
 section MobiusOf
 
@@ -123,7 +111,7 @@ theorem sub_mul_mobiusOf_mul_den :
 /-- **The coefficient `a - c · m` is nonzero**, being the determinant over the denominator. -/
 theorem sub_mul_mobiusOf_ne_zero : C a - C c * mobiusOf a b c d ≠ 0 := by
   intro h0
-  refine C_ne_zero hdet ?_
+  refine ((map_eq_zero_iff C C_injective).not.mpr hdet) ?_
   rw [← sub_mul_mobiusOf_mul_den hdet, h0, zero_mul]
 
 /-- **The inverse coefficient matrix recovers `X`**: `X · (a - c · m) = d · m - b`, both sides
@@ -140,31 +128,25 @@ theorem X_eq_div_mobiusOf :
       (C d * mobiusOf a b c d - C b) / (C a - C c * mobiusOf a b c d) :=
   (eq_div_iff (sub_mul_mobiusOf_ne_zero hdet)).mpr (X_mul_sub_mul_mobiusOf hdet)
 
-/-- **A linear fractional transformation generates `k(X)`**, since `X` is a linear fractional
-transformation of it. -/
-theorem adjoin_mobiusOf_eq_top : IntermediateField.adjoin K {mobiusOf a b c d} = ⊤ := by
-  refine top_le_iff.mp ?_
-  rw [← adjoin_X]
-  refine IntermediateField.adjoin_simple_le_iff.mpr ?_
-  rw [X_eq_div_mobiusOf hdet]
-  exact div_mem
-    (sub_mem (mul_mem (C_mem _ _) (IntermediateField.mem_adjoin_simple_self _ _))
-      (C_mem _ _))
-    (sub_mem (C_mem _ _)
-      (mul_mem (C_mem _ _) (IntermediateField.mem_adjoin_simple_self _ _)))
+/-- **A linear fractional transformation is transcendental**: its inverse formula expresses
+`X` in terms of it and the constants. -/
+theorem transcendental_mobiusOf : Transcendental K (mobiusOf a b c d) := by
+  intro halg
+  apply transcendental_X (K := K)
+  rw [X_eq_div_mobiusOf hdet, div_eq_mul_inv]
+  have hC (x : K) : IsAlgebraic K (C x : RatFunc K) := by
+    simpa only [algebraMap_eq_C] using isAlgebraic_algebraMap (A := RatFunc K) x
+  exact ((hC d).mul halg |>.sub (hC b)).mul (((hC a).sub ((hC c).mul halg)).inv)
 
-/-- **A linear fractional transformation is transcendental**, being a generator of `k(X)`. -/
-theorem transcendental_mobiusOf : Transcendental K (mobiusOf a b c d) :=
-  transcendental_of_adjoin_eq_top (adjoin_mobiusOf_eq_top hdet)
-
-/-- **The automorphism of `k(X)` given by a linear fractional transformation**: the automorphism
-sending `X` to `(a X + b) / (c X + d)`. -/
-noncomputable def mobiusAutOf : RatFunc K ≃ₐ[K] RatFunc K :=
-  algEquivOfAdjoinEqTop (adjoin_mobiusOf_eq_top hdet)
-
-@[simp]
-theorem mobiusAutOf_X : mobiusAutOf hdet X = mobiusOf a b c d :=
-  algEquivOfAdjoinEqTop_X _
+/-- A nonzero linear expression in a Möbius transformation is nonzero. -/
+theorem mul_mobiusOf_add_ne_zero (c' d' : K) (hcd' : c' ≠ 0 ∨ d' ≠ 0) :
+    C c' * mobiusOf a b c d + C d' ≠ 0 := by
+  intro h0
+  apply mul_X_add_C_ne_zero hcd'
+  have hpoly : (Polynomial.C c' * Polynomial.X + Polynomial.C d' : Polynomial K) = 0 :=
+    (transcendental_iff.mp (transcendental_mobiusOf hdet)) _
+      (by simpa [← algebraMap_eq_C] using h0)
+  simpa using congrArg (algebraMap (Polynomial K) (RatFunc K)) hpoly
 
 /-- **A linear fractional transformation is the identity exactly for a scalar coefficient
 matrix**: `(a X + b) / (c X + d) = X` if and only if `b = 0`, `c = 0` and `a = d`. -/
@@ -186,75 +168,35 @@ theorem mobiusOf_eq_X_iff : mobiusOf a b c d = X ↔ b = 0 ∧ c = 0 ∧ a = d :
       intro h
       rw [h] at hdet
       simp at hdet
-    rw [mobiusOf_def, map_zero, add_zero, zero_mul, zero_add, mul_comm, mul_div_assoc,
-      div_self (C_ne_zero ha), mul_one]
+    simp [mobiusOf_def, (map_eq_zero_iff C C_injective).not.mpr ha]
 
-/-- **A linear fractional transformation gives the identity automorphism exactly for a scalar
-coefficient matrix.** -/
-theorem mobiusAutOf_eq_one_iff : mobiusAutOf hdet = 1 ↔ b = 0 ∧ c = 0 ∧ a = d := by
-  rw [← mobiusOf_eq_X_iff hdet]
-  refine ⟨fun h ↦ ?_, fun h ↦ algEquiv_ext (by rw [mobiusAutOf_X, h, AlgEquiv.one_apply])⟩
-  rw [← mobiusAutOf_X hdet, h, AlgEquiv.one_apply]
-
-section Comp
-
-variable {a' b' c' d' : K} (hdet' : a' * d' - b' * c' ≠ 0)
-include hdet hdet'
-
-/-- The determinant of a product of coefficient matrices is the product of the determinants, so it
-is nonzero. -/
-theorem det_comp_ne_zero :
-    (a' * a + b' * c) * (c' * b + d' * d) - (a' * b + b' * d) * (c' * a + d' * c) ≠ 0 := by
-  intro h
-  exact mul_ne_zero hdet' hdet (by linear_combination h)
-
-omit hdet' in
-/-- Substituting a linear fractional transformation into another is a linear fractional
-transformation, with the product coefficient matrix: the denominator. -/
-theorem mul_mobiusOf_add_mul_den :
+/-- Multiplying a linear expression in a Möbius transformation by its denominator multiplies
+its coefficient row by the coefficient matrix. -/
+theorem mul_mobiusOf_add_mul_den (c' d' : K) :
     (C c' * mobiusOf a b c d + C d') * (C c * X + C d) =
       C (c' * a + d' * c) * X + C (c' * b + d' * d) := by
   have hm := mobiusOf_mul_den hdet
   simp only [map_add, map_mul]
   linear_combination (C c') * hm
 
-/-- The denominator of the substituted transformation is nonzero. -/
-theorem mul_mobiusOf_add_ne_zero : C c' * mobiusOf a b c d + C d' ≠ 0 := by
-  intro h0
-  refine mobiusOf_den_ne_zero (det_comp_ne_zero hdet hdet') ?_
-  rw [← mul_mobiusOf_add_mul_den hdet, h0, zero_mul]
-
-/-- **Substitution composes linear fractional transformations by multiplying their coefficient
-matrices in the opposite order.** -/
-theorem mobiusAutOf_mobiusOf :
-    mobiusAutOf hdet (mobiusOf a' b' c' d') =
-      mobiusOf (a' * a + b' * c) (a' * b + b' * d) (c' * a + d' * c) (c' * b + d' * d) := by
-  have hm := mobiusOf_mul_den hdet
-  have hsub : mobiusAutOf hdet (mobiusOf a' b' c' d') =
-      (C a' * mobiusOf a b c d + C b') / (C c' * mobiusOf a b c d + C d') := by
-    rw [mobiusOf, map_div₀, map_add, map_add, map_mul, map_mul, algEquiv_apply_C,
-      algEquiv_apply_C, algEquiv_apply_C, algEquiv_apply_C, mobiusAutOf_X]
-  rw [hsub]
-  conv_rhs => rw [mobiusOf]
-  rw [div_eq_div_iff (mul_mobiusOf_add_ne_zero hdet hdet')
-    (mobiusOf_den_ne_zero (det_comp_ne_zero hdet hdet'))]
-  simp only [map_add, map_mul]
-  linear_combination (C a' * C d' - C b' * C c') * hm
-
-end Comp
-
 end MobiusOf
 
-section GeneralLinear
+/-- A translation `X + c` is a linear fractional transformation. -/
+@[simp]
+theorem mobiusOf_one_right (c : K) : mobiusOf 1 c 0 1 = X + C c := by
+  simp [mobiusOf_def]
+
+end Domain
+
+end RatFunc
+
+namespace Matrix.GeneralLinearGroup
+
+open RatFunc
+
+variable {K : Type*} [CommRing K] [IsDomain K]
 
 variable (A : GL (Fin 2) K)
-
-/-- The determinant of an invertible `2 × 2` matrix, in terms of its entries. -/
-theorem det_entries_ne_zero :
-    (A : Matrix (Fin 2) (Fin 2) K) 0 0 * (A : Matrix (Fin 2) (Fin 2) K) 1 1 -
-      (A : Matrix (Fin 2) (Fin 2) K) 0 1 * (A : Matrix (Fin 2) (Fin 2) K) 1 0 ≠ 0 := by
-  rw [← Matrix.det_fin_two]
-  exact Matrix.GeneralLinearGroup.det_ne_zero A
 
 /-- The **linear fractional transformation of an invertible matrix** `A = !![a, b; c, d]`. -/
 noncomputable def mobius : RatFunc K :=
@@ -266,9 +208,91 @@ theorem mobius_def : mobius A =
     mobiusOf ((A : Matrix (Fin 2) (Fin 2) K) 0 0) ((A : Matrix (Fin 2) (Fin 2) K) 0 1)
       ((A : Matrix (Fin 2) (Fin 2) K) 1 0) ((A : Matrix (Fin 2) (Fin 2) K) 1 1) := (rfl)
 
+/-- The identity matrix gives the identity transformation. -/
+@[simp]
+theorem mobius_one : mobius (1 : GL (Fin 2) K) = X := by
+  rw [mobius, mobiusOf]
+  simp
+
+end Matrix.GeneralLinearGroup
+
+namespace RatFunc
+
+variable {K : Type*}
+
+section Field
+
+variable [Field K]
+
+section MobiusOf
+
+variable {a b c d : K} (hdet : a * d - b * c ≠ 0)
+include hdet
+
+/-- **A linear fractional transformation generates `k(X)`**, since `X` is a linear fractional
+transformation of it. -/
+theorem adjoin_mobiusOf_eq_top : IntermediateField.adjoin K {mobiusOf a b c d} = ⊤ := by
+  refine top_le_iff.mp ?_
+  rw [← adjoin_X]
+  refine IntermediateField.adjoin_simple_le_iff.mpr ?_
+  rw [X_eq_div_mobiusOf hdet]
+  simp only [← algebraMap_eq_C]
+  exact div_mem
+    (sub_mem (mul_mem (IntermediateField.algebraMap_mem _ _)
+      (IntermediateField.mem_adjoin_simple_self _ _)) (IntermediateField.algebraMap_mem _ _))
+    (sub_mem (IntermediateField.algebraMap_mem _ _)
+      (mul_mem (IntermediateField.algebraMap_mem _ _)
+        (IntermediateField.mem_adjoin_simple_self _ _)))
+
+/-- **The automorphism of `k(X)` given by a linear fractional transformation**: the automorphism
+sending `X` to `(a X + b) / (c X + d)`. -/
+noncomputable def mobiusAutOf : RatFunc K ≃ₐ[K] RatFunc K :=
+  algEquivOfAdjoinEqTop (adjoin_mobiusOf_eq_top hdet)
+
+@[simp]
+theorem mobiusAutOf_X : mobiusAutOf hdet X = mobiusOf a b c d :=
+  algEquivOfAdjoinEqTop_X _
+
+/-- **A linear fractional transformation gives the identity automorphism exactly for a scalar
+coefficient matrix.** -/
+theorem mobiusAutOf_eq_one_iff : mobiusAutOf hdet = 1 ↔ b = 0 ∧ c = 0 ∧ a = d := by
+  rw [← mobiusOf_eq_X_iff hdet]
+  refine ⟨fun h ↦ ?_, fun h ↦ algEquiv_ext (by rw [mobiusAutOf_X, h, AlgEquiv.one_apply])⟩
+  rw [← mobiusAutOf_X hdet, h, AlgEquiv.one_apply]
+
+section Comp
+
+variable (a' b' c' d' : K)
+
+/-- **Substitution composes linear fractional transformations by multiplying their coefficient
+matrices in the opposite order.** Only the inner transformation needs an invertible coefficient
+matrix; the outer coefficients may be arbitrary. -/
+theorem mobiusAutOf_mobiusOf :
+    mobiusAutOf hdet (mobiusOf a' b' c' d') =
+      mobiusOf (a' * a + b' * c) (a' * b + b' * d) (c' * a + d' * c) (c' * b + d' * d) := by
+  rw [mobiusOf_def, map_div₀]
+  simp only [map_add, map_mul, ← algebraMap_eq_C, AlgEquiv.commutes, mobiusAutOf_X]
+  simp only [algebraMap_eq_C]
+  rw [← mul_div_mul_right _ _ (mobiusOf_den_ne_zero hdet),
+    mul_mobiusOf_add_mul_den hdet, mul_mobiusOf_add_mul_den hdet, mobiusOf_def]
+
+end Comp
+
+end MobiusOf
+
+end Field
+
+end RatFunc
+
+namespace Matrix.GeneralLinearGroup
+
+open RatFunc
+
+variable {K : Type*} [Field K] (A : GL (Fin 2) K)
+
 /-- The automorphism of `k(X)` given by an invertible matrix. -/
 noncomputable def mobiusAut : RatFunc K ≃ₐ[K] RatFunc K :=
-  mobiusAutOf (det_entries_ne_zero A)
+  mobiusAutOf (by simpa only [Matrix.det_fin_two] using A.det_ne_zero)
 
 @[simp]
 theorem mobiusAut_X : mobiusAut A X = mobius A :=
@@ -277,15 +301,20 @@ theorem mobiusAut_X : mobiusAut A X = mobius A :=
 /-- **Substituting one linear fractional transformation into another multiplies the matrices in
 the opposite order.** -/
 theorem mobiusAut_mobius (B : GL (Fin 2) K) : mobiusAut A (mobius B) = mobius (B * A) := by
-  rw [mobiusAut, mobius_def, mobius_def,
-    mobiusAutOf_mobiusOf (det_entries_ne_zero A) (det_entries_ne_zero B)]
+  rw [mobiusAut, mobius_def, mobius_def, mobiusAutOf_mobiusOf]
   simp only [Matrix.GeneralLinearGroup.coe_mul, Matrix.mul_apply, Fin.sum_univ_two]
 
-/-- The identity matrix gives the identity transformation. -/
-@[simp]
-theorem mobius_one : mobius (1 : GL (Fin 2) K) = X := by
-  rw [mobius, mobiusOf]
-  simp
+/-- **The identity automorphism comes exactly from the central matrices.** -/
+theorem mobiusAut_eq_one_iff : mobiusAut A = 1 ↔ A ∈ Subgroup.center (GL (Fin 2) K) := by
+  rw [mobiusAut, mobiusAutOf_eq_one_iff, Matrix.GeneralLinearGroup.mem_center_iff_entries]
+
+end Matrix.GeneralLinearGroup
+
+namespace RatFunc
+
+open Matrix.GeneralLinearGroup
+
+variable {K : Type*} [Field K]
 
 /-- **The linear fractional transformations as a group of automorphisms**: the homomorphism
 `GL₂(k) →* Aut(k(X)/k)` sending `A` to the automorphism `X ↦ (a X + b) / (c X + d)` of the inverse
@@ -297,13 +326,25 @@ noncomputable def mobiusAutHom : GL (Fin 2) K →* (RatFunc K ≃ₐ[K] RatFunc 
   map_mul' A B := algEquiv_ext (by
     rw [AlgEquiv.mul_apply, mobiusAut_X, mobiusAut_X, mobiusAut_mobius, mul_inv_rev])
 
+end RatFunc
+
+namespace Matrix.GeneralLinearGroup
+
+open RatFunc
+
+variable {K : Type*} [Field K] (A : GL (Fin 2) K)
+
 @[simp]
 theorem mobiusAutHom_apply_X : mobiusAutHom A X = mobius A⁻¹ :=
   mobiusAut_X _
 
-/-- **The identity automorphism comes exactly from the central matrices.** -/
-theorem mobiusAut_eq_one_iff : mobiusAut A = 1 ↔ A ∈ Subgroup.center (GL (Fin 2) K) := by
-  rw [mobiusAut, mobiusAutOf_eq_one_iff, Matrix.GeneralLinearGroup.mem_center_iff_entries]
+end Matrix.GeneralLinearGroup
+
+namespace RatFunc
+
+open Matrix.GeneralLinearGroup
+
+variable {K : Type*} [Field K]
 
 /-- **The kernel of the linear fractional action is the centre of `GL₂(k)`**: the scalar matrices.
 So `PGL₂(k)` acts faithfully on `k(X)`. -/
@@ -383,11 +424,7 @@ theorem mobiusAutHom_surjective :
   refine ⟨hunit.unit⁻¹, ?_⟩
   refine algEquiv_ext ?_
   rw [mobiusAutHom_apply_X, inv_inv, mobius_def]
-  have hentries : ∀ i j : Fin 2,
-      ((hunit.unit : Matrix (Fin 2) (Fin 2) K)) i j = (!![a, b; c, d] : Matrix _ _ K) i j :=
-    fun _ _ ↦ by rw [IsUnit.unit_spec]
-  rw [hentries 0 0, hentries 0 1, hentries 1 0, hentries 1 1]
-  simpa using hf
+  simpa [IsUnit.unit_spec] using hf
 
 /-- **`PGL₂(k)` is the automorphism group of the rational function field** (Stichtenoth,
 Exercise 1.2): the linear fractional transformations exhaust the automorphisms of `k(X)` over `k`,
@@ -396,22 +433,29 @@ noncomputable def pglEquivAlgEquiv : PGL(2, K) ≃* (RatFunc K ≃ₐ[K] RatFunc
   (QuotientGroup.quotientMulEquivOfEq ker_mobiusAutHom.symm).trans
     (QuotientGroup.quotientKerEquivOfSurjective _ mobiusAutHom_surjective)
 
+end RatFunc
+
+namespace Matrix.GeneralLinearGroup
+
+open RatFunc
+
+variable {K : Type*} [Field K]
+
 /-- The isomorphism `PGL₂(k) ≃* Aut(k(X)/k)` sends the class of a matrix to its linear fractional
-transformation; with `RatFunc.mobiusAutHom_apply_X` this evaluates it at `X`. -/
+transformation; with `Matrix.GeneralLinearGroup.mobiusAutHom_apply_X` this evaluates it at `X`. -/
 @[simp]
 theorem pglEquivAlgEquiv_mk (A : GL (Fin 2) K) :
     pglEquivAlgEquiv (Matrix.ProjGenLinGroup.mk A) = mobiusAutHom A := by rfl
 
-end GeneralLinear
+end Matrix.GeneralLinearGroup
+
+namespace RatFunc
+
+variable {K : Type*} [Field K]
 
 section Translation
 
 variable (b : K)
-
-/-- A translation `X + c` is a linear fractional transformation. -/
-theorem mobiusOf_one_right (c : K) : mobiusOf 1 c 0 1 = X + C c := by
-  rw [mobiusOf]
-  simp
 
 /-- The **translation automorphism** `X ↦ X + c` of `k(X)`. -/
 noncomputable def translationAut : RatFunc K ≃ₐ[K] RatFunc K :=
@@ -426,7 +470,7 @@ theorem translationAut_injective : Function.Injective (translationAut : K → _)
   intro b₁ b₂ h
   have hX := congrArg (fun σ : RatFunc K ≃ₐ[K] RatFunc K ↦ σ X) h
   simp only [translationAut_X, add_right_inj] at hX
-  exact (FaithfulSMul.algebraMap_injective K (RatFunc K)) (by rwa [algebraMap_eq_C])
+  exact C_injective hX
 
 /-- **The automorphism group of `k(X)` over an infinite field is infinite**, witnessed by the
 translations. This is why the finiteness of the automorphism group of a function field needs genus
