@@ -8,10 +8,12 @@ module
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.LocalInvariant
 import Mathlib.RingTheory.DedekindDomain.Different
 import Mathlib.RingTheory.DedekindDomain.FiniteAdeleRing
+import TauCeti.Data.DFinsupp.Basic
 import TauCeti.NumberTheory.ClassFieldTheory.Brauer.Unramified
 import TauCeti.NumberTheory.NumberField.LocalGlobal.DecompositionGroup
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.RamificationIndex
 import TauCeti.RingTheory.DedekindDomain.PrimesAbove
+import TauCeti.RingTheory.DedekindDomain.SelmerGroup
 
 /-!
 # The localization map and the sum of the local invariants
@@ -40,7 +42,7 @@ values of `c` are `w`-adic units. For a finite place `v` of `K` below such a pla
 localization of `x` at `v` is inflated from `H²(Gal(E_w/K_v), E_wˣ)`
 (`TauCeti.ClassFieldTheory.brBaseChange_relBrInfl`), where the extension `E_w/K_v` is unramified
 and `c` takes unit values, so the localization vanishes
-(`TauCeti.ClassFieldTheory.H2π_eq_zero_of_forall_mem_unitFiltration_zero`).
+(`TauCeti.ClassFieldTheory.brBaseChange_relBrInfl_eq_zero`).
 
 ## Main definitions
 
@@ -77,35 +79,7 @@ namespace TauCeti.ClassFieldTheory
 open IsDedekindDomain NumberField groupCohomology
 open scoped AdicCompletionExtension
 
-variable (K : Type) [Field K]
-
-/-- A class inflated from a finite Galois extension `E/K` vanishes after base change to a
-nonarchimedean local field `F/K` when `E` maps into a finite unramified Galois extension `M/F` in
-which the inflated cocycle takes unit values. -/
-private theorem brBaseChange_relBrInfl_eq_zero (E : IntermediateField K (SeparableClosure K))
-    [FiniteDimensional K E] [Normal K E]
-    (F : Type) [Field F] [ValuativeRel F] [TopologicalSpace F] [IsNonarchimedeanLocalField F]
-    [Algebra K F]
-    (M : Type) [Field M] [ValuativeRel M] [TopologicalSpace M] [IsNonarchimedeanLocalField M]
-    [Algebra F M] [ValuativeExtension F M] [FiniteDimensional F M] [IsGalois F M]
-    [IsUnramified F M] [Algebra K M] [IsScalarTower K F M] [Algebra E M] [IsScalarTower K E M]
-    (c : cocycles₂ (Rep.ofMulDistribMulAction Gal(E/K) Eˣ))
-    (hc : ∀ g h, Units.map (algebraMap E M : E →* M) (Rep.toAdditive (c (g, h))).toMul ∈
-      unitFiltration M 0) :
-    brBaseChange K F (relBrInfl K E E.val (H2π _ c)) = 0 := by
-  rw [brBaseChange_relBrInfl K F E M E.val IsSepClosed.lift, H2π_comp_map_apply,
-    H2π_eq_zero_of_forall_mem_unitFiltration_zero F M _ fun g h ↦ ?_, map_zero]
-  -- The values of the base-changed cocycle are the images of those of `c`.
-  have hval : Additive.toMul (Rep.toAdditive ((mapCocycles₂ ((AlgEquiv.restrictNormalHom E).comp
-      (AlgEquiv.restrictScalarsHom K)) (unitsBaseChangeHom K E F M) c) (g, h))) =
-      Units.map (algebraMap E M : E →* M) (Additive.toMul (Rep.toAdditive
-        (c ((AlgEquiv.restrictNormalHom E).comp (AlgEquiv.restrictScalarsHom K) g,
-          (AlgEquiv.restrictNormalHom E).comp (AlgEquiv.restrictScalarsHom K) h)))) :=
-    congrArg (fun x ↦ Additive.toMul (Rep.toAdditive x)) (unitsBaseChangeHom_apply K E F M _)
-  rw [hval]
-  exact hc _ _
-
-variable [NumberField K]
+variable (K : Type) [Field K] [NumberField K]
 
 /-! ### Finiteness of the ramification set -/
 
@@ -121,13 +95,10 @@ theorem hasFiniteSupport_finiteInvAt (x : Br K) :
   let val : Gal(E/K) × Gal(E/K) → Eˣ := fun p ↦ (Rep.toAdditive (c p)).toMul
   let bad : Set (HeightOneSpectrum (𝓞 E)) :=
     {w | w.asIdeal ∣ differentIdeal (𝓞 K) (𝓞 E)} ∪
-      ⋃ p, (HeightOneSpectrum.Support (𝓞 E) ((val p : Eˣ) : E) ∪
-        HeightOneSpectrum.Support (𝓞 E) (((val p)⁻¹ : Eˣ) : E))
-  have hbad : bad.Finite := by
-    refine (Ideal.finite_factors ?_).union (Set.finite_iUnion fun p ↦ ?_)
-    · exact differentIdeal_ne_bot
-    · exact (HeightOneSpectrum.Support.finite (𝓞 E) _).union
-        (HeightOneSpectrum.Support.finite (𝓞 E) _)
+      ⋃ p, {w | w.valuation E ((val p : Eˣ) : E) ≠ 1}
+  have hbad : bad.Finite :=
+    (Ideal.finite_factors differentIdeal_ne_bot).union (Set.finite_iUnion fun _ ↦
+      HeightOneSpectrum.finite_setOfPred_valuation_ne_one (Units.ne_zero _))
   -- The invariant vanishes at every place `v` below none of them.
   refine (hbad.image (HeightOneSpectrum.under (𝓞 K))).subset fun v hv ↦ ?_
   obtain ⟨w, rfl⟩ := HeightOneSpectrum.under_surjective (𝓞 K) (𝓞 E) v
@@ -135,18 +106,15 @@ theorem hasFiniteSupport_finiteInvAt (x : Br K) :
   by_contra hvS
   refine hv ?_
   have hw : w ∉ bad := fun h ↦ hvS ⟨w, h, rfl⟩
-  simp only [bad, Set.mem_union, Set.mem_iUnion, Set.mem_ofPred_eq, not_or, not_exists] at hw
+  simp only [bad, Set.mem_union, Set.mem_iUnion, Set.mem_ofPred_eq, not_or, not_exists,
+    not_not] at hw
   have : Algebra.IsUnramifiedAt (𝓞 K) w.asIdeal := not_dvd_differentIdeal_iff.1 hw.1
   have : IsGalois K E := {}
   have : IsUnramified ((w.under (𝓞 K)).adicCompletion K) (w.adicCompletion E) :=
     HeightOneSpectrum.isUnramified_adicCompletion_of_isUnramifiedAt _ w
   rw [finiteInvAt_eq_zero_iff]
-  refine brBaseChange_relBrInfl_eq_zero K E _ (w.adicCompletion E) c fun g h ↦ ?_
-  refine (HeightOneSpectrum.unitsMap_algebraMap_mem_unitFiltration_zero_iff w _).2 ?_
-  obtain ⟨h₁, h₂⟩ := hw.2 (g, h)
-  simp only [HeightOneSpectrum.Support, Set.mem_ofPred_eq, not_lt, Units.val_inv_eq_inv_val,
-    map_inv₀] at h₁ h₂
-  exact le_antisymm h₁ ((inv_le_one₀ (zero_lt_iff.2 (by simp))).1 h₂)
+  exact brBaseChange_relBrInfl_eq_zero _ (w.adicCompletion E) K E E.val c fun g h ↦
+    (HeightOneSpectrum.unitsMap_algebraMap_mem_unitFiltration_zero_iff w _).2 (hw.2 (g, h))
 
 /-- **The ramification set of a global Brauer class**: the finite set of the finite places where
 its local invariant is nonzero. -/
@@ -175,20 +143,19 @@ supported on the ramification set `brauerSupport K x`. -/
 def brLocalization : Br K →+ (Π₀ v : HeightOneSpectrum (𝓞 K), Br (v.adicCompletion K)) ×
     ((w : InfinitePlace K) → Br w.Completion) where
   toFun x :=
-    (⟨fun v ↦ brBaseChange K (v.adicCompletion K) x,
-      Trunc.mk ⟨(brauerSupport K x).val, fun v ↦ (em _).imp_right fun hv ↦
-        (finiteInvAt_eq_zero_iff K v x).1 (finiteInvAt_eq_zero_of_notMem_brauerSupport K hv)⟩⟩,
+    (dfinsuppOfFiniteSupport (fun v ↦ brBaseChange K (v.adicCompletion K) x)
+      ((hasFiniteSupport_finiteInvAt K x).subset fun v hv ↦
+        mt (finiteInvAt_eq_zero_iff K v x).1 hv),
       fun w ↦ brBaseChange K w.Completion x)
-  map_zero' := Prod.ext (DFinsupp.ext fun _ ↦ map_zero (brBaseChange K _))
-    (funext fun _ ↦ map_zero (brBaseChange K _))
-  map_add' x y := Prod.ext (DFinsupp.ext fun _ ↦ map_add (brBaseChange K _) x y)
+  map_zero' := Prod.ext (DFinsupp.ext fun _ ↦ by simp) (funext fun _ ↦ map_zero (brBaseChange K _))
+  map_add' x y := Prod.ext (DFinsupp.ext fun _ ↦ by simp)
     (funext fun _ ↦ map_add (brBaseChange K _) x y)
 
 /-- The component of the localization map at a finite place `v` is base change to `K_v`. -/
 @[simp]
 theorem brLocalization_fst_apply (x : Br K) (v : HeightOneSpectrum (𝓞 K)) :
     (brLocalization K x).1 v = brBaseChange K (v.adicCompletion K) x :=
-  (rfl)
+  dfinsuppOfFiniteSupport_apply _ _ v
 
 /-- The component of the localization map at an infinite place `w` is base change to `K_w`. -/
 @[simp]
@@ -201,15 +168,11 @@ sequence: the sum of the invariants `inv_{K_v}` of a finitely supported family o
 classes at the finite places, plus the archimedean invariants of a family at the infinite places
 (`sumLocalInv_eq_sum`). -/
 def sumLocalInv : (Π₀ v : HeightOneSpectrum (𝓞 K), Br (v.adicCompletion K)) ×
-    ((w : InfinitePlace K) → Br w.Completion) →+ AddCircle (1 : ℚ) := by
-  classical
-  exact AddMonoidHom.coprod
-    (DFinsupp.sumAddHom fun v : HeightOneSpectrum (𝓞 K) ↦
-      (invMap (v.adicCompletion K)).toAddMonoidHom :
-      (Π₀ v : HeightOneSpectrum (𝓞 K), Br (v.adicCompletion K)) →+ AddCircle (1 : ℚ))
-    { toFun y := ∑ w, infiniteInvMap w (y w)
-      map_zero' := by simp
-      map_add' y z := by simp [Finset.sum_add_distrib] }
+    ((w : InfinitePlace K) → Br w.Completion) →+ AddCircle (1 : ℚ) :=
+  open Classical in
+  AddMonoidHom.coprod
+    (DFinsupp.sumAddHom fun v ↦ (invMap (v.adicCompletion K)).toAddMonoidHom)
+    (∑ w, (infiniteInvMap w).comp (Pi.evalAddMonoidHom _ w))
 
 /-- The sum of the local invariants of a family of local Brauer classes may be computed over any
 finite set of finite places outside which the family vanishes. -/
@@ -221,8 +184,9 @@ theorem sumLocalInv_eq_sum (y : (Π₀ v : HeightOneSpectrum (𝓞 K), Br (v.adi
   classical
   rw [sumLocalInv, AddMonoidHom.coprod_apply, DFinsupp.sumAddHom_apply,
     DFinsupp.sum_of_support_subset (s := S)
-      (fun v hv ↦ not_not.1 fun h ↦ DFinsupp.mem_support_iff.1 hv (hS v h)) fun _ _ ↦ map_zero _]
-  rfl
+      (fun v hv ↦ not_not.1 fun h ↦ DFinsupp.mem_support_iff.1 hv (hS v h)) fun _ _ ↦ map_zero _,
+    AddMonoidHom.finsetSum_apply]
+  simp
 
 /-- **The sum of the local invariants of a global Brauer class**, the composite of the localization
 map with the sum of the local invariants, may be computed over any finite set of finite places
@@ -231,8 +195,10 @@ theorem sumLocalInv_brLocalization (x : Br K) {S : Finset (HeightOneSpectrum (�
     (hS : brauerSupport K x ⊆ S) :
     sumLocalInv K (brLocalization K x) =
       ∑ v ∈ S, finiteInvAt K v x + ∑ w, infiniteInvAt K w x := by
-  simp only [finiteInvAt_apply, infiniteInvAt_apply]
-  exact sumLocalInv_eq_sum K _ fun _ hv ↦ (finiteInvAt_eq_zero_iff K _ x).1
-    (finiteInvAt_eq_zero_of_notMem_brauerSupport K fun h ↦ hv (hS h))
+  rw [sumLocalInv_eq_sum K _ fun v hv ↦ (brLocalization_fst_apply K x v).trans
+    ((finiteInvAt_eq_zero_iff K v x).1
+      (finiteInvAt_eq_zero_of_notMem_brauerSupport K fun h ↦ hv (hS h)))]
+  simp only [brLocalization_fst_apply, brLocalization_snd_apply, finiteInvAt_apply,
+    infiniteInvAt_apply]
 
 end TauCeti.ClassFieldTheory

@@ -291,17 +291,8 @@ theorem brBaseChange_relBrInfl (y : groupCohomology (Rep.ofMulDistribMulAction G
   refine (cocyclesMap2_apply _ _ _ _ _ _ _ _ _ g h).trans ?_
   refine Additive.toMul.injective (Units.ext ?_)
   rw [toMul_unitsCoeffBaseChange, relBrCocycle_apply, relBrCocycle_apply, hres, hres]
-  have hc : Additive.toMul (Rep.toAdditive
-      ((groupCohomology.mapCocycles₂ ((AlgEquiv.restrictNormalHom L).comp
-        (AlgEquiv.restrictScalarsHom K)) (unitsBaseChangeHom K L F M) c)
-          (σ'.restrictNormalHom g, σ'.restrictNormalHom h))) =
-      Units.map (algebraMap L M : L →* M) (Additive.toMul (Rep.toAdditive
-        (c ((AlgEquiv.restrictNormalHom L).comp (AlgEquiv.restrictScalarsHom K)
-            (σ'.restrictNormalHom g),
-          (AlgEquiv.restrictNormalHom L).comp (AlgEquiv.restrictScalarsHom K)
-            (σ'.restrictNormalHom h))))) :=
-    congrArg (fun x ↦ Additive.toMul (Rep.toAdditive x)) (unitsBaseChangeHom_apply K L F M _)
-  simp only [embeddedUnitsEquivInvariants_apply, toMul_coe_embeddedUnitsInvariants, hc]
+  simp only [embeddedUnitsEquivInvariants_apply, toMul_coe_embeddedUnitsInvariants]
+  rw [toMul_mapCocycles₂_unitsBaseChangeHom]
   -- Both sides are `σ' (algebraMap L M u)` for the same unit `u` of `L`, by the choice of `τ`.
   exact hτ _
 
