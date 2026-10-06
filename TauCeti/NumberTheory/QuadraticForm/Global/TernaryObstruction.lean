@@ -66,6 +66,11 @@ every real place. -/
 def sumTwoSquaresSubSq : _root_.QuadraticForm ℚ (Fin 3 → ℚ) :=
   weightedSumSquares ℚ ![1, 1, -1]
 
+/-- `sumTwoSquaresSubSq` is the diagonal form `⟨1, 1, -1⟩`. -/
+theorem sumTwoSquaresSubSq_def : sumTwoSquaresSubSq = weightedSumSquares ℚ ![(1 : ℚ), 1, -1] := by
+  ext x
+  simp [sumTwoSquaresSubSq, weightedSumSquares_apply, Fin.sum_univ_three]
+
 /-- The value of `⟨1, 1, -1⟩` at `(x, y, z)` is `x² + y² - z²`. -/
 @[simp]
 theorem sumTwoSquaresSubSq_apply (x : Fin 3 → ℚ) :
