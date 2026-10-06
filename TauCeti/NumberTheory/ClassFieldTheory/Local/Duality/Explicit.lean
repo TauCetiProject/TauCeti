@@ -27,11 +27,7 @@ internal hom from `A` to `KummerCoeff F n` for that action is the Tate dual
 (`TauCeti.ClassFieldTheory.internalHomEquivTateDual`). Pulling the explicit cocycles back along
 the comparison and passing to continuous cohomology, the Tate-duality pairing of the resulting
 classes is the image in `ZMod n` of their explicit evaluation cup, in each of the three bidegrees
-of total degree two. The proof combines the naturality of the explicit cups in compatible pairs
-(`TauCeti.ContCohomology.explicitMap2_explicitCup02` and its companions), their agreement with
-the canonical cup on discrete `ℤ`-modules (`TauCeti.ContCohomology.explicitAddEquiv_cup02` and its
-companions), and the independence of the cup product from the scalars
-(`TauCeti.TopPairing.cup_zero_two_ofDiscreteModuleRestrictScalarsInt` and its companions).
+of total degree two.
 
 ## Main definitions
 
@@ -83,8 +79,7 @@ theorem absoluteGaloisGroupRestrictEquiv_smul (A : GalRep n F) (h : Field.absolu
 theorem continuousSMul_absoluteGaloisGroupAction (A : GalRep n F)
     [ContinuousSMul (Field.absoluteGaloisGroup F) A.V] :
     ContinuousSMul (AbsoluteGaloisGroup F) A.V :=
-  ⟨(continuous_smul (M := Field.absoluteGaloisGroup F) (X := A.V)).comp
-    ((absoluteGaloisGroupRestrictEquiv F).symm.continuous.prodMap continuous_id)⟩
+  MulAction.continuousSMul_compHom (absoluteGaloisGroupRestrictEquiv F).symm.continuous
 
 /-! ### The Tate dual over the separable closure -/
 
