@@ -126,9 +126,7 @@ noncomputable def padicReductionModule : Module kG (M ⧸ I • (⊤ : Submodule
   let _ : Module (A ⧸ RingHom.ker π) Q := htor.module
   exact Module.compHom Q (padicMonoidAlgebraQuotientEquiv p G).symm.toRingHom
 
-/-- The canonical reduction module structure, installed locally for the API below. -/
-noncomputable local instance reductionModule :
-    Module kG (M ⧸ I • (⊤ : Submodule A M)) := padicReductionModule p G M
+attribute [local instance] padicReductionModule
 
 /-- Scalar multiplication on the reduction is induced by coefficientwise reduction. -/
 @[simp]

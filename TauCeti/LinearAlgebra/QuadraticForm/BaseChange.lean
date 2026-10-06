@@ -475,6 +475,18 @@ theorem specialOrthogonalGroupBaseChange_to_orthogonalGroup [Module.Free R M] [M
         (Subgroup.inclusion (specialOrthogonalGroup_le_orthogonalGroup Q) g) := by
   rfl
 
+/-- Base change commutes with the inclusion `SO(Q) →* O(Q)`. -/
+@[simp]
+theorem specialOrthogonalToOrthogonal_specialOrthogonalGroupBaseChange [Module.Free R M]
+    [Module.Finite R M] (Q : _root_.QuadraticForm R M) (g : specialOrthogonalGroup Q) :
+    _root_.QuadraticMap.specialOrthogonalToOrthogonal (Q.baseChange A)
+        (specialOrthogonalGroupBaseChange (A := A) Q g) =
+      orthogonalGroupBaseChange (A := A) Q
+        (_root_.QuadraticMap.specialOrthogonalToOrthogonal Q g) := by
+  apply Subtype.ext
+  rw [_root_.QuadraticMap.coe_specialOrthogonalToOrthogonal, coe_orthogonalGroupBaseChange,
+    coe_specialOrthogonalGroupBaseChange, _root_.QuadraticMap.coe_specialOrthogonalToOrthogonal]
+
 /-- On pure tensors, base change of a special orthogonal automorphism acts on the second factor. -/
 @[simp]
 theorem specialOrthogonalGroupBaseChange_apply_tmul [Module.Free R M] [Module.Finite R M]

@@ -22,6 +22,7 @@ sends `1 + ι w * ι u` to the lift determined by the pure tensors `1 ⊗ u` and
 ## Main results
 
 * `CliffordAlgebra.spinGroupBaseChange` extends a Spin element's scalars.
+* `CliffordAlgebra.spinGroupBaseChange_injective` proves injectivity for faithful flat extensions.
 * `CliffordAlgebra.spinVectorAction_baseChange_tmul` computes the extended action on pure tensors.
 * `CliffordAlgebra.spinToSpecialOrthogonal_baseChange` gives the commuting square with extension
   of special orthogonal automorphisms.
@@ -79,6 +80,14 @@ theorem coe_spinGroupBaseChange_apply (Q : QuadraticForm R M) (x : spinGroup Q) 
     (spinGroupBaseChange (A := A) Q x : CliffordAlgebra (Q.baseChange A)) =
       ofBaseChangeAux A Q (x : CliffordAlgebra Q) :=
   (rfl)
+
+/-- Extension of scalars of Spin groups is injective when the extension is faithful and the
+Clifford algebra is flat; in particular, for every extension of fields. -/
+theorem spinGroupBaseChange_injective [FaithfulSMul R A] (Q : QuadraticForm R M)
+    [Module.Flat R (CliffordAlgebra Q)] :
+    Function.Injective (spinGroupBaseChange (A := A) Q) := fun x y hxy ↦
+  Subtype.ext <| ofBaseChangeAux_injective Q <| by
+    simpa only [coe_spinGroupBaseChange_apply] using congrArg Subtype.val hxy
 
 /-- On a pure tensor, the action of a scalar-extended Spin element is the extension of the
 original action. -/
