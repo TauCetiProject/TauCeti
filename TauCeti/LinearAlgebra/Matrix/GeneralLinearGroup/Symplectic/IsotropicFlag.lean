@@ -88,11 +88,18 @@ def matrixSubgroup : Subgroup (GLSymplecticFin m A) :=
 theorem mem_matrixSubgroup_iff_flagOrder (g : GLSymplecticFin m A) :
     g ∈ matrixSubgroup m (A := A) ↔
       ∀ i j, flagOrder m j < flagOrder m i → (g.val : Matrix _ _ A) i j = 0 := by
-  rw [matrixSubgroup, Subgroup.mem_comap, MonoidHom.comp_apply,
-    Subgroup.subtype_apply, MulEquiv.coe_toMonoidHom, UpperTriangularGroup.mem_iff,
-    Equiv.coe_reindexGL, Matrix.IsUpperTriangular, ← Matrix.reindex_apply,
-    Matrix.blockTriangular_reindex_iff]
-  simp only [Matrix.BlockTriangular, Function.comp_apply, id_eq]
+  calc
+    _ ↔ (flagOrder m).reindexGL A g.val ∈ upperTriangularGroup (Fin (m + m)) A := by
+      simp only [matrixSubgroup, Subgroup.mem_comap, MonoidHom.comp_apply,
+        Subgroup.subtype_apply, MulEquiv.coe_toMonoidHom]
+    _ ↔ (Matrix.reindex (flagOrder m) (flagOrder m)
+          (g.val : Matrix _ _ A)).BlockTriangular id := by
+      simp only [UpperTriangularGroup.mem_iff, Equiv.coe_reindexGL,
+        Matrix.IsUpperTriangular, Matrix.reindex_apply]
+    _ ↔ (g.val : Matrix _ _ A).BlockTriangular (id ∘ flagOrder m) :=
+      Matrix.blockTriangular_reindex_iff
+    _ ↔ ∀ i j, flagOrder m j < flagOrder m i → (g.val : Matrix _ _ A) i j = 0 := by
+      simp only [Matrix.BlockTriangular, Function.comp_apply, id_eq]
 
 /-- In paired coordinates, the flag subgroup consists of matrices whose upper-left block
 is upper triangular, whose lower-right block is lower triangular, and whose lower-left

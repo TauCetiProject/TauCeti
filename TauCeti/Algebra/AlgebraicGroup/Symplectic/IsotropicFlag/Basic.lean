@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Symplectic.DiagonalTorus.ClosedImmersion
+public import TauCeti.Algebra.AlgebraicGroup.Symplectic.Basic
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.UpperTriangular.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Solvable.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.IsotropicFlag
@@ -22,14 +22,14 @@ lower-triangular lower-right block, and zero lower-left block.
 
 The quotient Hopf algebra represents these matrices over every commutative algebra,
 including nonreduced algebras and characteristic two. Its algebra-valued point groups
-are solvable, and the diagonal symplectic torus factors through the closed subgroup.
+are solvable. The diagonal symplectic torus factorization is developed in
+`TauCeti.Algebra.AlgebraicGroup.Symplectic.IsotropicFlag.DiagonalTorus`.
 These constructions provide the flag subgroup used in the standard symplectic pinning;
 no smoothness, connectedness, or Borel maximality assertion is made here.
 
 The construction uses `GeneralLinear.weightParabolicDefiningHopfIdeal`; the quotient
-points and torus-factorization arguments follow
-`TauCeti.Algebra.AlgebraicGroup.SpecialLinear.UpperTriangular.Basic` and
-`TauCeti.Algebra.AlgebraicGroup.SpecialLinear.UpperTriangular.DiagonalTorus`.
+points arguments follow
+`TauCeti.Algebra.AlgebraicGroup.SpecialLinear.UpperTriangular.Basic`.
 
 ## References
 
@@ -141,20 +141,38 @@ theorem mem_definingPointsSubgroup_iff
         (Symplectic.coordinateHopfAlgebra R m) (definingHopfIdeal R m)
         (CommAlgCat.of R A) ↔
       Symplectic.pointsMulEquiv R m (A := A) g ∈ matrixSubgroup m := by
-  rw [mem_matrixSubgroup_iff_flagOrder, definingHopfIdeal_def,
-    CommHopfAlgCat.mem_quotientPointsSubgroup_map_iff_of_surjective
-      (Symplectic.coordinateMap R m)
-      (by
-        rw [Symplectic.coordinateMap_def]
-        exact CommHopfAlgCat.mkQuotient_surjective _ _),
-    GeneralLinear.mem_weightParabolicDefiningPointsSubgroup_iff_blockTriangular,
-    CommHopfAlgCat.mapPointsFunctor_app_apply, Symplectic.coordinateMap_def,
-    ← CommHopfAlgCat.quotientPointsHom_apply
-      (GeneralLinear.coordinateHopfAlgebra R (m + m)) (Symplectic.definingHopfIdeal R m)
-      (CommAlgCat.of R A) g,
-    Symplectic.pointsMulEquiv_coe]
-  simp only [Matrix.BlockTriangular, Function.comp_apply, OrderDual.toDual_lt_toDual,
-    weights_lt_weights_iff]
+  have hsurj : Function.Surjective (Symplectic.coordinateMap R m).hom := by
+    rw [Symplectic.coordinateMap_def]
+    exact CommHopfAlgCat.mkQuotient_surjective _ _
+  have hpullback :
+      (CommHopfAlgCat.mapPointsFunctor (Symplectic.coordinateMap R m)).app
+          (CommAlgCat.of R A) g =
+        CommHopfAlgCat.quotientPointsHom
+          (GeneralLinear.coordinateHopfAlgebra R (m + m)) (Symplectic.definingHopfIdeal R m)
+          (CommAlgCat.of R A) g := by
+    rw [CommHopfAlgCat.mapPointsFunctor_app_apply, Symplectic.coordinateMap_def,
+      CommHopfAlgCat.quotientPointsHom_apply]
+  calc
+    _ ↔ (CommHopfAlgCat.mapPointsFunctor (Symplectic.coordinateMap R m)).app
+          (CommAlgCat.of R A) g ∈ CommHopfAlgCat.quotientPointsSubgroup
+            (GeneralLinear.coordinateHopfAlgebra R (m + m))
+            (GeneralLinear.weightParabolicDefiningHopfIdeal R (weights m))
+            (CommAlgCat.of R A) := by
+      rw [definingHopfIdeal_def]
+      exact CommHopfAlgCat.mem_quotientPointsSubgroup_map_iff_of_surjective
+        (Symplectic.coordinateMap R m) hsurj _ _ g
+    _ ↔ (GeneralLinear.pointsMulEquiv (m + m)
+          ((CommHopfAlgCat.mapPointsFunctor (Symplectic.coordinateMap R m)).app
+            (CommAlgCat.of R A) g) : Matrix _ _ A).BlockTriangular
+          (OrderDual.toDual ∘ weights m) :=
+      GeneralLinear.mem_weightParabolicDefiningPointsSubgroup_iff_blockTriangular _ _ _
+    _ ↔ ((Symplectic.pointsMulEquiv R m (A := A) g).val : Matrix _ _ A).BlockTriangular
+          (OrderDual.toDual ∘ weights m) := by
+      rw [hpullback, Symplectic.pointsMulEquiv_coe]
+    _ ↔ Symplectic.pointsMulEquiv R m (A := A) g ∈ matrixSubgroup m := by
+      rw [mem_matrixSubgroup_iff_flagOrder]
+      simp only [Matrix.BlockTriangular, Function.comp_apply, OrderDual.toDual_lt_toDual,
+        weights_lt_weights_iff]
 
 private noncomputable def definingPointsSubgroupMulEquiv :
     CommHopfAlgCat.quotientPointsSubgroup
@@ -243,87 +261,5 @@ theorem geometricallySolvablePointsCommHopfAlgProperty_coordinateHopfAlgebra
     geometricallySolvablePointsCommHopfAlgProperty k (coordinateHopfAlgebra k m) := by
   rw [geometricallySolvablePointsCommHopfAlgProperty_iff]
   exact isSolvable_points k m
-
-/-- The diagonal symplectic torus lies in the standard isotropic flag subgroup.
-The order of defining ideals reverses the inclusion of closed subgroups. -/
-theorem definingHopfIdeal_le_diagonalTorusDefiningIdeal :
-    definingHopfIdeal R m ≤ Symplectic.diagonalTorusDefiningIdeal R m := by
-  rw [← HopfIdeal.toIdeal_le_toIdeal, definingHopfIdeal_toIdeal, Ideal.span_le]
-  rintro _ ⟨x, hx, rfl⟩
-  obtain ⟨i, j, hij, rfl⟩ :=
-    (GeneralLinear.mem_weightParabolicRelationSet_iff R (weights m) x).mp hx
-  rw [weights_lt_weights_iff] at hij
-  rw [SetLike.mem_coe, HopfIdeal.mem_toIdeal, Symplectic.mem_diagonalTorusDefiningIdeal]
-  exact Symplectic.coordinateMap_comp_diagonalTorusCoordinateMap_X_of_ne _ _
-    (fun h ↦ hij.ne (congrArg (flagOrder m) h).symm)
-
-/-- Restriction from the isotropic flag subgroup to its diagonal symplectic torus. -/
-noncomputable def diagonalTorusCoordinateMap :
-    coordinateHopfAlgebra R m ⟶
-      (DiagonalizableGroup.coordinateRing R
-        (SplitTorus.characterGroup (ULift.{u} (Fin m)))).obj :=
-  CommHopfAlgCat.liftQuotient (definingHopfIdeal R m)
-    (Symplectic.diagonalTorusCoordinateMap (R := R) (m := m)) (by
-      intro x hx
-      apply RingHom.mem_ker.mpr
-      exact (Symplectic.mem_diagonalTorusDefiningIdeal R m x).mp
-        (definingHopfIdeal_le_diagonalTorusDefiningIdeal R m hx))
-
-/-- The factored torus restriction recovers the original restriction from the symplectic group. -/
-@[reassoc (attr := simp)]
-theorem coordinateMap_comp_diagonalTorusCoordinateMap :
-    coordinateMap R m ≫ diagonalTorusCoordinateMap R m =
-      Symplectic.diagonalTorusCoordinateMap (R := R) (m := m) :=
-  CommHopfAlgCat.mkQuotient_comp_liftQuotient _ _ _
-
-/-- The torus restriction from the isotropic flag subgroup is surjective. -/
-theorem diagonalTorusCoordinateMap_surjective :
-    Function.Surjective (diagonalTorusCoordinateMap R m).hom :=
-  CommHopfAlgCat.liftQuotient_surjective_of_surjective _ _ _
-    Symplectic.diagonalTorusCoordinateMap_surjective
-
-/-- The standard diagonal torus as a morphism into the isotropic flag subgroup scheme. -/
-noncomputable def diagonalTorus :
-    SplitTorus.groupScheme R (ULift.{u} (Fin m)) ⟶ groupScheme R m :=
-  eqToHom (DiagonalizableGroup.groupScheme_def R
-    (SplitTorus.characterGroup (ULift.{u} (Fin m)))) ≫
-      (hopfSpec (CommRingCat.of R)).map (diagonalTorusCoordinateMap R m).op
-
-/-- Inclusion of the factored diagonal torus recovers the ambient symplectic diagonal torus. -/
-@[reassoc (attr := simp)]
-theorem diagonalTorus_comp_inclusion :
-    diagonalTorus R m ≫ inclusion R m = Symplectic.diagonalTorus (R := R) (m := m) := by
-  have hcomp := CommHopfAlgCat.hopfSpec_map_comp_quotientSpecι
-    (definingHopfIdeal R m) (diagonalTorusCoordinateMap R m)
-  rw [coordinateMap_comp_diagonalTorusCoordinateMap] at hcomp
-  simpa only [diagonalTorus, inclusion, Symplectic.diagonalTorus_def,
-    eqToHom_refl, Category.comp_id, Category.assoc] using congrArg
-    (fun g ↦ eqToHom (DiagonalizableGroup.groupScheme_def R
-      (SplitTorus.characterGroup (ULift.{u} (Fin m)))) ≫ g) hcomp
-
-/-- The standard diagonal torus is a closed subgroup scheme of the isotropic flag subgroup. -/
-instance isClosedImmersion_diagonalTorus :
-    IsClosedImmersion (diagonalTorus R m).hom.hom.left := by
-  rw [diagonalTorus]
-  exact (CommHopfAlgCat.isClosedImmersion_eqToHom_comp_hopfSpec_map_iff
-    (DiagonalizableGroup.groupScheme_def R
-      (SplitTorus.characterGroup (ULift.{u} (Fin m)))) _).mpr
-    (diagonalTorusCoordinateMap_surjective R m)
-
-/-- The factored torus map gives the same symplectic diagonal matrix as the ambient torus map. -/
-@[simp]
-theorem pointsMulEquiv_diagonalTorusCoordinateMap {A : Type w} [CommRing A] [Algebra R A]
-    (f : WithConv
-      (MonoidAlgebra R (SplitTorus.characterGroup (ULift.{u} (Fin m))) →ₐ[R] A)) :
-    (pointsMulEquiv R m (A := A)
-        (toConv (f.ofConv.comp (diagonalTorusCoordinateMap R m).hom)) : GLSymplecticFin m A) =
-      Symplectic.pointsMulEquiv R m (A := A) (Symplectic.diagonalTorusPoints f) := by
-  have hquot := CommHopfAlgCat.mapPointsFunctor_eq_quotientPointsHom_of_mkQuotient_comp
-    (definingHopfIdeal R m) (diagonalTorusCoordinateMap R m)
-    (Symplectic.diagonalTorusCoordinateMap (R := R) (m := m))
-    (coordinateMap_comp_diagonalTorusCoordinateMap R m) (CommAlgCat.of R A) f
-  rw [CommHopfAlgCat.mapPointsFunctor_app_apply (diagonalTorusCoordinateMap R m)
-    (CommAlgCat.of R A) f] at hquot
-  rw [← pointsMulEquiv_coe, ← hquot, Symplectic.mapPointsFunctor_diagonalTorusCoordinateMap_app]
 
 end TauCeti.Symplectic.IsotropicFlag
