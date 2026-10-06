@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Modules.FittingIdeal.Basic
+public import TauCeti.AlgebraicGeometry.Modules.Sheaf
 public import TauCeti.RingTheory.Localization.Annihilator
 import Mathlib.RingTheory.LocalRing.Module
 import Mathlib.RingTheory.Support
