@@ -38,7 +38,10 @@ section ExistingShift
 variable [HasShift C ℤ]
 
 /-- The sequence of all integral shifts of an object, linked by the shift by one. -/
--- Exposure is required to type the component formulas with their literal shift endpoints.
+-- The public evaluation and reindexing equations below compare morphisms whose endpoints
+-- are components of this functor with morphisms between literal shifts. Lean's module system
+-- needs this body exposed to type those equations; object-equality lemmas would require
+-- `eqToHom` transports in their statements, even when the proofs use `:= (rfl)`.
 @[expose, simps!]
 noncomputable def sequenceFunctor : C ⥤ IntSequence (shiftEquiv C (1 : ℤ)) where
   obj X :=
