@@ -103,7 +103,9 @@ theorem WittRing.intCast_signature (x : WittRing K) : (signature x : WittRing K)
     · rw [RegularFormClass.mk_rankOne_eq_one_of_pos ha, RegularFormClass.signature_one]
       simp
 
-/-- The Witt ring of an ordered real closed field is isomorphic to the integers by its signature. -/
+/-- The Witt ring of an ordered real closed field is isomorphic to the integers by its signature.
+Its inverse is integer cast, as characterized by Mathlib's `eq_intCast`;
+`simp` simplifies inverse applications to integer casts. -/
 noncomputable def WittRing.equivInt : WittRing K ≃+* ℤ :=
   RingEquiv.ofBijective signature ⟨
     Function.LeftInverse.injective intCast_signature,
