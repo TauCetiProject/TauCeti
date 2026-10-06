@@ -18,6 +18,10 @@ quasicoherent modules on an affine scheme, even when no finite generation is ass
 The restriction to an open subscheme and the module on its slice site have compatible
 presentations. Quasicoherence can therefore be checked on restrictions to affine opens.
 
+The open-subscheme transport and restriction criteria live in `TauCeti.AlgebraicGeometry`.
+Use `TauCeti.AlgebraicGeometry.presentationOver M U P`, or open that namespace and use
+`presentationOver M U P`; the finiteness instance is inferred automatically.
+
 ## References
 
 * R. Hartshorne, *Algebraic Geometry*, Proposition II.5.1.
