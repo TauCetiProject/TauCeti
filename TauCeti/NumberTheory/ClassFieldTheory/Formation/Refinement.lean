@@ -68,6 +68,9 @@ compared across refinements.
 * `TauCeti.ClassFieldTheory.LayerRefinement.galHom_surjective` and
   `TauCeti.ClassFieldTheory.LayerRefinement.galHom_mk_eq_one_iff`: the map of Galois groups is the
   quotient by `V/V'`.
+* `TauCeti.ClassFieldTheory.LayerRefinement.mk_mem_ker_galHom_iff`: for nested open normal
+  subgroups, a quotient class lies in the kernel exactly when its representative lies in the
+  larger subgroup.
 * `TauCeti.ClassFieldTheory.LayerRefinement.degree_mul_relativeDegree`:
   `[U : V] * [V : V'] = [U : V']`.
 * `TauCeti.ClassFieldTheory.LayerRefinement.relativeDegree_trans`,
@@ -245,6 +248,16 @@ theorem ofOpenNormal {V V' : OpenNormalSubgroup G} (h : V' ≤ V) :
   · rw [NormalLayer.ground_ofOpenNormal, NormalLayer.ground_ofOpenNormal]
   · rw [NormalLayer.top_ofOpenNormal, NormalLayer.top_ofOpenNormal]
     exact h
+
+/-- For open normal subgroups `U ≤ V`, the class of `w` in `G/U` lies in the kernel of the
+quotient map to `G/V` exactly when `w ∈ V`. -/
+theorem mk_mem_ker_galHom_iff {U V : OpenNormalSubgroup G} (h : U ≤ V)
+    (w : (NormalLayer.ofOpenNormal U).ground) :
+    (QuotientGroup.mk w : (NormalLayer.ofOpenNormal U).Gal) ∈ (ofOpenNormal h).galHom.ker ↔
+      (w : G) ∈ V := by
+  rw [MonoidHom.mem_ker, galHom_mk_eq_one_iff, NormalLayer.top_ofOpenNormal]
+  -- Membership in an open normal subgroup is membership in its underlying open subgroup.
+  exact Iff.rfl
 
 /-! ### Towers of refinements -/
 

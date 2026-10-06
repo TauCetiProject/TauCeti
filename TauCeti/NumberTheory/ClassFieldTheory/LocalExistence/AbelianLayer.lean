@@ -162,21 +162,13 @@ theorem localNormSubgroup_eq_comap_ker (hU : U.IsAbelianClassFieldLayer) (h : U 
     ← groundEquiv_localGroundEquiv K h, ← ClassFormation.artinMap_quotient,
     ClassFormation.artinMap_eq_zero_iff, localGroundEquiv_mem_normSubgroup_iff]
 
-omit [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K] in
-/-- The class of `w ∈ G_K` in the Galois group of the layer of `U` dies in that of `V` exactly when
-`w ∈ V`. -/
-private theorem mk_mem_ker_galHom_iff (h : U ≤ V) (w : (ofOpenNormal U).ground) :
-    (QuotientGroup.mk w : (ofOpenNormal U).Gal) ∈ (LayerRefinement.ofOpenNormal h).galHom.ker ↔
-      (w : AbsoluteGaloisGroup K) ∈ V := by
-  rw [MonoidHom.mem_ker, LayerRefinement.galHom_mk_eq_one_iff, top_ofOpenNormal]
-  -- Membership in an open normal subgroup is membership in its underlying open subgroup.
-  exact Iff.rfl
-
 end Refinement
 
 /-! ### Composita and intersections -/
 
 section Lattice
+
+open LayerRefinement (mk_mem_ker_galHom_iff)
 
 variable {K} {V W : OpenNormalSubgroup (AbsoluteGaloisGroup K)}
 

@@ -22,7 +22,8 @@ abelian subextensions.
 
 ## Main results
 
-* `TauCeti.ClassFieldTheory.localNormSubgroup_le_iff`: order reflection for abelian layers.
+* `TauCeti.ClassFieldTheory.localNormSubgroup_le_iff_of_isAbelian`: order reflection when the
+  right-hand layer is abelian.
 * `TauCeti.ClassFieldTheory.localClassField_unique`: uniqueness of an abelian layer with a given
   norm subgroup.
 * `TauCeti.ClassFieldTheory.localNormSubgroup_eq_iff_maximalAbelianLayer_eq`: two finite Galois
@@ -44,25 +45,23 @@ variable {K : Type} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
   {V W : OpenNormalSubgroup (AbsoluteGaloisGroup K)}
 
-/-- Inclusion of local norm subgroups reflects inclusion of abelian layer subgroups. In terms
-of fields, the inclusions run in opposite directions. -/
-theorem localNormSubgroup_le_iff (hV : V.IsAbelianClassFieldLayer)
-    (hW : W.IsAbelianClassFieldLayer) :
+/-- Inclusion of local norm subgroups reflects inclusion of layer subgroups when the
+right-hand layer is abelian. In terms of fields, the inclusions run in opposite directions. -/
+theorem localNormSubgroup_le_iff_of_isAbelian (hW : W.IsAbelianClassFieldLayer) :
     localNormSubgroup K V ≤ localNormSubgroup K W ↔ V ≤ W := by
-  refine ⟨fun h ↦ ?_, fun h ↦ localNormSubgroup_mono K h⟩
-  have hU := hV.inf hW
+  rw [← localNormSubgroup_maximalAbelianLayer K V]
+  refine ⟨fun h ↦ V.le_maximalAbelianLayer.trans ?_,
+    fun h ↦ localNormSubgroup_mono K (OpenNormalSubgroup.maximalAbelianLayer_le h hW)⟩
+  have hU := V.isAbelianClassFieldLayer_maximalAbelianLayer.inf hW
   rw [localNormSubgroup_eq_comap_ker hU inf_le_left,
     localNormSubgroup_eq_comap_ker hU inf_le_right,
     Subgroup.comap_le_comap_of_surjective (surjective_localAbelianArtinHom hU)] at h
   intro σ hσ
-  let s : (ofOpenNormal (V ⊓ W)).ground := ⟨σ, by simp⟩
-  have hs : (QuotientGroup.mk s : (ofOpenNormal (V ⊓ W)).Gal) ∈
-      (LayerRefinement.ofOpenNormal (inf_le_left : V ⊓ W ≤ V)).galHom.ker := by
-    rw [MonoidHom.mem_ker, LayerRefinement.galHom_mk_eq_one_iff, top_ofOpenNormal]
-    exact hσ
-  have ht := h hs
-  rw [MonoidHom.mem_ker, LayerRefinement.galHom_mk_eq_one_iff, top_ofOpenNormal] at ht
-  exact ht
+  exact (LayerRefinement.mk_mem_ker_galHom_iff
+    (inf_le_right : V.maximalAbelianLayer ⊓ W ≤ W)
+    ⟨σ, by rw [ground_ofOpenNormal]; exact OpenSubgroup.mem_top σ⟩).1
+    (h ((LayerRefinement.mk_mem_ker_galHom_iff inf_le_left
+      ⟨σ, by rw [ground_ofOpenNormal]; exact OpenSubgroup.mem_top σ⟩).2 hσ))
 
 /-- Distinct finite abelian extensions of a local field have distinct norm subgroups.
 Abelianity is essential: norm limitation identifies every finite Galois extension's norm
@@ -70,8 +69,8 @@ subgroup with that of its maximal abelian subextension. -/
 theorem localClassField_unique (hV : V.IsAbelianClassFieldLayer)
     (hW : W.IsAbelianClassFieldLayer)
     (h : localNormSubgroup K V = localNormSubgroup K W) : V = W :=
-  le_antisymm ((localNormSubgroup_le_iff hV hW).1 h.le)
-    ((localNormSubgroup_le_iff hW hV).1 h.ge)
+  le_antisymm ((localNormSubgroup_le_iff_of_isAbelian hW).1 h.le)
+    ((localNormSubgroup_le_iff_of_isAbelian hV).1 h.ge)
 
 /-- For arbitrary finite Galois layers, inclusion of norm subgroups is equivalent to inclusion
 of their maximal abelian layer subgroups. -/
@@ -80,8 +79,7 @@ theorem localNormSubgroup_le_iff_maximalAbelianLayer_le :
       V.maximalAbelianLayer ≤ W.maximalAbelianLayer := by
   rw [← localNormSubgroup_maximalAbelianLayer K V,
     ← localNormSubgroup_maximalAbelianLayer K W]
-  exact localNormSubgroup_le_iff V.isAbelianClassFieldLayer_maximalAbelianLayer
-    W.isAbelianClassFieldLayer_maximalAbelianLayer
+  exact localNormSubgroup_le_iff_of_isAbelian W.isAbelianClassFieldLayer_maximalAbelianLayer
 
 /-- Two finite Galois layers have the same local norm subgroup exactly when their maximal
 abelian sublayers coincide. -/
@@ -90,11 +88,19 @@ theorem localNormSubgroup_eq_iff_maximalAbelianLayer_eq :
       V.maximalAbelianLayer = W.maximalAbelianLayer := by
   simp only [le_antisymm_iff, localNormSubgroup_le_iff_maximalAbelianLayer_le]
 
-/-- Inclusion of finite abelian class fields is reverse inclusion of their local norm
-subgroups. The fields here are the actual fixed fields inside the separable closure. -/
-theorem classField_le_classField_iff_localNormSubgroup_le
-    (hV : V.IsAbelianClassFieldLayer) (hW : W.IsAbelianClassFieldLayer) :
+/-- Inclusion of a finite abelian class field in a finite Galois class field is reverse
+inclusion of their local norm subgroups. The fields are fixed fields in the separable closure. -/
+theorem classField_le_classField_iff_localNormSubgroup_le_of_isAbelian
+    (hW : W.IsAbelianClassFieldLayer) :
     classField K W ≤ classField K V ↔ localNormSubgroup K V ≤ localNormSubgroup K W :=
-  (classField_le_classField_iff K V W).trans (localNormSubgroup_le_iff hV hW).symm
+  (classField_le_classField_iff K V W).trans (localNormSubgroup_le_iff_of_isAbelian hW).symm
+
+/-- Two finite abelian class fields inside the separable closure are equal exactly when their
+local norm subgroups are equal. -/
+theorem classField_eq_classField_iff_localNormSubgroup_eq_of_isAbelian
+    (hV : V.IsAbelianClassFieldLayer) (hW : W.IsAbelianClassFieldLayer) :
+    classField K V = classField K W ↔ localNormSubgroup K V = localNormSubgroup K W :=
+  ⟨fun h ↦ congrArg (localNormSubgroup K) (classField_injective K h),
+    fun h ↦ congrArg (classField K) (localClassField_unique hV hW h)⟩
 
 end TauCeti.ClassFieldTheory
