@@ -46,7 +46,8 @@ variable {k H M : Type u} [Field k] [IsAlgClosed k] [CommRing H] [HopfAlgebra k 
 
 /-- Rational orbit images are exactly the closed points in the full topological image of
 the projective orbit morphism. -/
-theorem range_projectiveOrbitMap_kernelPoint_eq (m : M) (hm : Module.IsUnimodular k m) :
+theorem range_projectiveOrbitMap_kernelPoint_eq_range_inter_closedPoints
+    (m : M) (hm : Module.IsUnimodular k m) :
     Set.range (fun g : WithConv (H →ₐ[k] k) ↦
       projectiveOrbitMap (H := H) m hm (AlgHom.kernelPoint g.ofConv)) =
         Set.range (projectiveOrbitMap (H := H) m hm) ∩
