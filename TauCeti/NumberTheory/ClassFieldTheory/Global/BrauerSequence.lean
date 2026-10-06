@@ -29,6 +29,19 @@ localization of a global Brauer class.
 The section uses `DFinsupp.singleAddHom` and the inverse of
 `TauCeti.ClassFieldTheory.invMap`, the local invariant normalized by arithmetic Frobenius.
 
+## Main definitions
+
+* `TauCeti.ClassFieldTheory.sumLocalInvSection`: an additive section supported at a chosen
+  finite place.
+
+## Main statements
+
+* `TauCeti.ClassFieldTheory.sumLocalInvSection_apply`: the section's single-supported family.
+* `TauCeti.ClassFieldTheory.sumLocalInv_sumLocalInvSection`: the section is a right inverse.
+* `TauCeti.ClassFieldTheory.surjective_sumLocalInv`: the sum of local invariants is surjective.
+* `TauCeti.ClassFieldTheory.sumLocalInv_add_single_eq_iff`: the unique adjustment at a finite
+  place giving a prescribed total invariant.
+
 ## References
 
 * J. S. Milne, *Class Field Theory*, Chapter VIII, §4, Theorem 4.2.
@@ -42,21 +55,8 @@ namespace TauCeti.ClassFieldTheory
 open IsDedekindDomain NumberField
 
 variable (K : Type) [Field K] [NumberField K]
+variable [DecidableEq (HeightOneSpectrum (𝓞 K))]
 
-open Classical in
-/-- The sum of the local invariants of a family supported at one finite place is its local
-invariant there. -/
-@[simp]
-theorem sumLocalInv_single (v : HeightOneSpectrum (𝓞 K)) (x : Br (v.adicCompletion K)) :
-    sumLocalInv K (DFinsupp.single v x, 0) = invMap (v.adicCompletion K) x := by
-  classical
-  rw [sumLocalInv_eq_sum K _ (S := {v})]
-  · simp
-  · intro w hw
-    simp only [Finset.mem_singleton] at hw
-    exact DFinsupp.single_eq_of_ne hw
-
-open Classical in
 /-- An additive section of the sum of local invariants, supported at the chosen finite place
 `v`. Its class at `v` has invariant the given element of `ℚ/ℤ`. -/
 def sumLocalInvSection (v : HeightOneSpectrum (𝓞 K)) :
@@ -65,7 +65,6 @@ def sumLocalInvSection (v : HeightOneSpectrum (𝓞 K)) :
         ((w : InfinitePlace K) → Br w.Completion) :=
   ((DFinsupp.singleAddHom _ v).comp (invMap (v.adicCompletion K)).symm.toAddMonoidHom).prod 0
 
-open Classical in
 /-- The section is the family supported at `v` with the prescribed local invariant. -/
 theorem sumLocalInvSection_apply (v : HeightOneSpectrum (𝓞 K)) (r : AddCircle (1 : ℚ)) :
     sumLocalInvSection K v r = (DFinsupp.single v ((invMap (v.adicCompletion K)).symm r), 0) :=
@@ -77,12 +76,13 @@ theorem sumLocalInv_sumLocalInvSection (v : HeightOneSpectrum (𝓞 K))
     (r : AddCircle (1 : ℚ)) : sumLocalInv K (sumLocalInvSection K v r) = r := by
   simp [sumLocalInvSection_apply]
 
+omit [DecidableEq (HeightOneSpectrum (𝓞 K))] in
 /-- The sum of local Brauer invariants is surjective for every number field. -/
 theorem surjective_sumLocalInv : Function.Surjective (sumLocalInv K) := by
+  classical
   let v : HeightOneSpectrum (𝓞 K) := Classical.arbitrary _
   exact Function.RightInverse.surjective (sumLocalInv_sumLocalInvSection K v)
 
-open Classical in
 /-- A prescribed total invariant determines the unique adjustment of a local family at a
 chosen finite place. -/
 theorem sumLocalInv_add_single_eq_iff (v : HeightOneSpectrum (𝓞 K))

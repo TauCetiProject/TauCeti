@@ -58,6 +58,8 @@ and `c` takes unit values, so the localization vanishes
   local invariant at only finitely many finite places.
 * `TauCeti.ClassFieldTheory.sumLocalInv_eq_sum`: the sum of the local invariants of a family may
   be computed over any finite set of finite places outside which the family vanishes.
+* `TauCeti.ClassFieldTheory.sumLocalInv_single`: the sum for a family supported at one finite
+  place is its invariant there.
 * `TauCeti.ClassFieldTheory.sumLocalInv_brLocalization`: the sum of the local invariants of a
   global class may be computed over any finite set of finite places containing
   `brauerSupport K x`.
@@ -187,6 +189,19 @@ theorem sumLocalInv_eq_sum (y : (Π₀ v : HeightOneSpectrum (𝓞 K), Br (v.adi
       (fun v hv ↦ not_not.1 fun h ↦ DFinsupp.mem_support_iff.1 hv (hS v h)) fun _ _ ↦ map_zero _,
     AddMonoidHom.finsetSum_apply]
   simp
+
+/-- The sum of the local invariants of a family supported at one finite place is its local
+invariant there. -/
+@[simp]
+theorem sumLocalInv_single [DecidableEq (HeightOneSpectrum (𝓞 K))]
+    (v : HeightOneSpectrum (𝓞 K)) (x : Br (v.adicCompletion K)) :
+    sumLocalInv K (DFinsupp.single v x, 0) = invMap (v.adicCompletion K) x := by
+  classical
+  rw [sumLocalInv_eq_sum K _ (S := {v})]
+  · simp
+  · intro w hw
+    simp only [Finset.mem_singleton] at hw
+    exact DFinsupp.single_eq_of_ne hw
 
 /-- **The sum of the local invariants of a global Brauer class**, the composite of the localization
 map with the sum of the local invariants, may be computed over any finite set of finite places
