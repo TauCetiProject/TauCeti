@@ -19,7 +19,7 @@ all rational orbit images are closed. The existing rational-fiber characterizati
 describes every closed point of the image, rather than only a possibly smaller rational subset.
 
 This is the closed-point lifting input for realizing homogeneous spaces as locally closed
-projective orbits. The full image still includes nonclosed points. No smoothness or
+projective orbits. The full image may also include nonclosed points. No smoothness or
 reducedness hypothesis is imposed on the group.
 
 The comparison uses `range_kernelPoint_eq_closedPoints` and the closed-point image theorem
