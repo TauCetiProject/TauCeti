@@ -17,8 +17,8 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Torsion.Roots
 # Supersingular and ordinary Weierstrass curves
 
 An elliptic curve `E` over a field `K` of characteristic `p > 0` is **supersingular** when it has
-no nonzero geometric point of order `p`, that is `E[p](K̄) = O`, and **ordinary** otherwise
-(Silverman V.3.1). The definition here is this geometric one, read over Mathlib's
+no nonzero geometric point of order `p`, that is `E[p](AlgebraicClosure K) = O`, and **ordinary**
+otherwise (Silverman V.3.1). The definition here is this geometric one, read over Mathlib's
 `AlgebraicClosure K`, and it makes sense over an arbitrary field of characteristic `p`, where there
 is in general no trace of Frobenius.
 
@@ -112,8 +112,8 @@ theorem isOrdinary_iff_exists :
   simp [IsOrdinary, isSupersingular_iff_forall]
 
 open scoped Classical in
-/-- **A supersingular curve has no geometric `p`-power torsion**: if `E[p](K̄) = O` then
-`E[p ^ r](K̄) = O` for every `r`. -/
+/-- **A supersingular curve has no geometric `p`-power torsion**: if
+`E[p](AlgebraicClosure K) = O` then `E[p ^ r](AlgebraicClosure K) = O` for every `r`. -/
 theorem isSupersingular_iff_forall_pow :
     W.IsSupersingular p ↔
       ∀ r : ℕ, AddSubgroup.torsionBy (W.baseChange (AlgebraicClosure K)).toAffine.Point
