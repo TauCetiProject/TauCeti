@@ -84,14 +84,21 @@ section Points
 
 variable [DecidableEq K]
 
-/-- Iterated Frobenius on points agrees with the iterate of the coordinate Frobenius. -/
+/-- Iterated Frobenius on points agrees with mapping by the power of the coordinate Frobenius. -/
 theorem pow_ofIsogeny_baseChangeFrobenius_pointMap [Fintype F] (n : ℕ)
     (P : (W⁄K).toAffine.Point) :
     ((ofIsogeny (baseChangeFrobenius K W)) ^ n).pointMap P =
-      (Point.map (FiniteField.frobeniusAlgHom F K))^[n] P := by
+      Point.map ((FiniteField.frobeniusAlgHom F K) ^ n) P := by
   rw [pow_pointMap]
-  congr 1
-  exact funext (pointMap_ofIsogeny_baseChangeFrobenius W)
+  have hmap := funext (pointMap_ofIsogeny_baseChangeFrobenius (K := K) W)
+  rw [hmap]
+  induction n with
+  | zero =>
+    rw [Function.iterate_zero_apply, pow_zero]
+    cases P <;> rfl
+  | succ n ih =>
+    rw [Function.iterate_succ_apply', ih,
+      Point.map_map, pow_succ', AlgHom.End_toMul_mul]
 
 /-- The `x`-coordinate of the `n`th Frobenius iterate is raised to `q ^ n`. -/
 @[simp]
@@ -101,12 +108,8 @@ theorem xCoord_pow_ofIsogeny_baseChangeFrobenius_pointMap (n : ℕ)
       Point.xCoord P ^ (Nat.card F) ^ n := by
   classical
   have : Fintype F := Fintype.ofFinite F
-  induction n with
-  | zero => simp
-  | succ n ih =>
-    rw [pow_succ', mul_def, comp_pointMap, pointMap_ofIsogeny_baseChangeFrobenius,
-      Point.xCoord_map, FiniteField.coe_frobeniusAlgHom, ih]
-    simp only [← pow_mul, pow_succ, Nat.card_eq_fintype_card]
+  rw [pow_ofIsogeny_baseChangeFrobenius_pointMap, Point.xCoord_map,
+    TauCeti.FiniteField.frobeniusAlgHom_pow_apply]
 
 /-- The `y`-coordinate of the `n`th Frobenius iterate is raised to `q ^ n`. -/
 @[simp]
@@ -116,15 +119,12 @@ theorem yCoord_pow_ofIsogeny_baseChangeFrobenius_pointMap (n : ℕ)
       Point.yCoord P ^ (Nat.card F) ^ n := by
   classical
   have : Fintype F := Fintype.ofFinite F
-  induction n with
-  | zero => simp
-  | succ n ih =>
-    rw [pow_succ', mul_def, comp_pointMap, pointMap_ofIsogeny_baseChangeFrobenius,
-      Point.yCoord_map, FiniteField.coe_frobeniusAlgHom, ih]
-    simp only [← pow_mul, pow_succ, Nat.card_eq_fintype_card]
+  rw [pow_ofIsogeny_baseChangeFrobenius_pointMap, Point.yCoord_map,
+    TauCeti.FiniteField.frobeniusAlgHom_pow_apply]
 
 /-- A point is fixed by the `n`th Frobenius iterate exactly when both its affine coordinates
 are fixed by `q ^ n`-powering. This includes the point at infinity. -/
+@[simp]
 theorem pow_ofIsogeny_baseChangeFrobenius_pointMap_eq_self_iff (n : ℕ)
     (P : (W⁄K).toAffine.Point) :
     ((ofIsogeny (baseChangeFrobenius K W)) ^ n).pointMap P = P ↔
@@ -141,11 +141,10 @@ theorem pow_ofIsogeny_baseChangeFrobenius_pointMap_eq_self_iff (n : ℕ)
     · simp [hP]
     classical
     have : Fintype F := Fintype.ofFinite F
-    have hiter : (Point.map (FiniteField.frobeniusAlgHom F K))^[n] 0 = 0 :=
-      Function.iterate_fixed (Point.map_zero (W' := W) (FiniteField.frobeniusAlgHom F K)) n
     have hne : ((ofIsogeny (baseChangeFrobenius K W)) ^ n).pointMap P ≠ 0 := by
-      rw [pow_ofIsogeny_baseChangeFrobenius_pointMap, ← hiter]
-      exact fun h ↦ hP ((Point.map_injective _).iterate n h)
+      rw [pow_ofIsogeny_baseChangeFrobenius_pointMap, ← Point.map_zero (W' := W)
+        ((FiniteField.frobeniusAlgHom F K) ^ n)]
+      exact fun h ↦ hP (Point.map_injective _ h)
     exact Point.eq_of_coords hne hP
       ((xCoord_pow_ofIsogeny_baseChangeFrobenius_pointMap W n P).trans hx)
       ((yCoord_pow_ofIsogeny_baseChangeFrobenius_pointMap W n P).trans hy)
