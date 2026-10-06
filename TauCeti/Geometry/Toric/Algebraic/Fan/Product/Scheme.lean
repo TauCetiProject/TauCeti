@@ -208,11 +208,12 @@ theorem exists_affineToricChartProdMap_apply_eq
 
 /-- Intersections of product cone opens are computed in each factor. -/
 @[simp]
-theorem range_affineToricChartProdMap_inter (σ σ' : Phi.cones) (τ τ' : Psi.cones) :
+theorem range_affineToricChartProdMap_inter_range_affineToricChartProdMap
+    (σ σ' : Phi.cones) (τ τ' : Psi.cones) :
     Set.range (Phi.affineToricChartProdMap Psi σ τ) ∩
         Set.range (Phi.affineToricChartProdMap Psi σ' τ') =
       Set.range (Phi.affineToricChartProdMap Psi (σ ⊓ σ') (τ ⊓ τ')) := by
-  simp only [range_affineToricChartProdMap, ← range_affineToricChartι_inter,
+  simp only [range_affineToricChartProdMap, ← range_affineToricChartι_inter_range_affineToricChartι,
     Set.preimage_inter]
   exact Set.inter_inter_inter_comm _ _ _ _
 

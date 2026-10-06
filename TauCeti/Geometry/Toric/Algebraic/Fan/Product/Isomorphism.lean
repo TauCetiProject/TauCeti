@@ -65,7 +65,7 @@ private theorem injective_algebraicProdComparison :
   let B := (Φ.prod Ψ).affineToricChartι (Φ.prodCone Ψ σ' τ')
   let C := (Φ.prod Ψ).affineToricChartι (Φ.prodCone Ψ (σ ⊓ σ') (τ ⊓ τ'))
   have hq : c (A a) ∈ Set.range (Φ.affineToricChartProdMap Ψ (σ ⊓ σ') (τ ⊓ τ')) := by
-    rw [← range_affineToricChartProdMap_inter]
+    rw [← range_affineToricChartProdMap_inter_range_affineToricChartProdMap]
     constructor
     · rw [← range_affineToricChartι_comp_algebraicProdComparison]
       exact ⟨a, rfl⟩
@@ -74,7 +74,8 @@ private theorem injective_algebraicProdComparison :
   obtain ⟨z, hz⟩ : c (A a) ∈ Set.range (C ≫ c) := by
     rwa [range_affineToricChartι_comp_algebraicProdComparison]
   have hzin : C z ∈ Set.range A ∩ Set.range B := by
-    rw [(Φ.prod Ψ).range_affineToricChartι_inter, prodCone_inf_prodCone]
+    rw [(Φ.prod Ψ).range_affineToricChartι_inter_range_affineToricChartι,
+      prodCone_inf_prodCone]
     exact ⟨z, rfl⟩
   obtain ⟨⟨a', ha'⟩, ⟨b', hb'⟩⟩ := hzin
   have ha : a' = a := (A ≫ c).isOpenEmbedding.injective <| by
