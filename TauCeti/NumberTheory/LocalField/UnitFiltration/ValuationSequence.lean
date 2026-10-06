@@ -71,11 +71,9 @@ def unitsValuationHom : Rep.ofMulDistribMulAction (L ≃ₐ[K] L) Lˣ ⟶ Rep.tr
       -- `change` evaluates `Representation.ofMulDistribMulAction` on `Additive Lˣ`,
       -- reduces the target's `Representation.trivial` action to the identity, and evaluates
       -- `toAdditiveLeft.toIntLinearMap` as `Multiplicative.toAdd` of normalized valuation.
-      -- Equality then follows from the original valuations through their order comparison.
       change (normalizedValuation L (σ • x.toMul)).toAdd =
         (normalizedValuation L x.toMul).toAdd
-      apply le_antisymm <;> rw [toAdd_normalizedValuation_le_iff_valuation_le] <;>
-        simp [AlgEquiv.smul_units_def, σ.valuation_eq]
+      rw [AlgEquiv.smul_units_def, AlgEquiv.normalizedValuation_unitsMap]
 
 /-- The valuation morphism evaluates to the additive normalized valuation. -/
 @[simp]

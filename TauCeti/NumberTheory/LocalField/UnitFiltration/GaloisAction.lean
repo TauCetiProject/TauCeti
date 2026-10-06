@@ -24,6 +24,8 @@ passing to successive quotients in ramification theory.
 
 * `AlgEquiv.unitsMap_mem_unitFiltration_iff`: membership in `U(L,i)` is invariant under an
   extension automorphism.
+* `AlgEquiv.normalizedValuation_unitsMap`: an extension automorphism preserves the normalized
+  valuation of a unit.
 * `AlgEquiv.smul_unitFiltration`: an extension automorphism maps `U(L,i)` onto itself.
 * `AlgEquiv.coe_smul_unitFiltration`: the restricted action agrees with the action on `Lˣ`.
 * `AlgEquiv.val_coe_smul_unitFiltration`: the restricted action agrees with applying the
@@ -63,6 +65,16 @@ theorem unitsMap_mem_unitFiltration_iff (σ : L ≃ₐ[K] L) {i : ℕ} {x : Lˣ}
   rw [mem_unitFiltration_iff_valuation_le hπ, mem_unitFiltration_iff_valuation_le hπ]
   simp only [Units.coe_map, MonoidHom.coe_ofClass]
   rw [σ.valuation_eq, hsub]
+
+/-- Every automorphism of a finite extension of a nonarchimedean local field preserves the
+normalized valuation of a unit. The action of `σ` on `Lˣ` is `Units.map σ`, so this is also the
+statement that `normalizedValuation L (σ • x) = normalizedValuation L x`. -/
+@[simp]
+theorem normalizedValuation_unitsMap (σ : L ≃ₐ[K] L) (x : Lˣ) :
+    normalizedValuation L (Units.map (σ : L →* L) x) = normalizedValuation L x := by
+  apply le_antisymm <;>
+    rw [← Multiplicative.toAdd_le, toAdd_normalizedValuation_le_iff_valuation_le] <;>
+    simp [σ.valuation_eq]
 
 /-- Every automorphism of a finite extension of a nonarchimedean local field maps each step of
 the unit filtration onto itself. -/

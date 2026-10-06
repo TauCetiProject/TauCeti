@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.RingTheory.Ideal.Quotient.Basic
 public import Mathlib.RingTheory.RootsOfUnity.Minpoly
 
@@ -29,6 +30,8 @@ unity, and hence the values of a character of a finite group, are integral over 
   unity.
 * `IsPrimitiveRoot.neg_of_odd`: when `2 ≠ 0`, the negative of a primitive root of unity of odd
   order `n` is a primitive `2n`-th root of unity.
+* `TauCeti.finite_torsionBy_additive_units`: the `n`-torsion of `Mˣ`, written additively, is
+  finite when the `n`-th roots of unity are, for instance in a domain for `n ≠ 0`.
 -/
 
 public section
@@ -88,5 +91,15 @@ theorem _root_.IsPrimitiveRoot.neg_of_odd {ζ : R} {n : ℕ} (hζ : IsPrimitiveR
   rw [IsPrimitiveRoot.iff_orderOf, neg_eq_neg_one_mul,
     (Commute.all _ _).orderOf_mul_eq_mul_orderOf_of_coprime, ← hneg.eq_orderOf, ← hζ.eq_orderOf]
   rwa [← hneg.eq_orderOf, ← hζ.eq_orderOf, Nat.coprime_two_left]
+
+/-- The `n`-torsion of the unit group of a commutative monoid, written additively, consists of the
+`n`-th roots of unity; so it is finite when they are, for instance in a domain for `n ≠ 0`. -/
+instance finite_torsionBy_additive_units {M : Type*} [CommMonoid M] (n : ℕ)
+    [Finite (rootsOfUnity n M)] : Finite (Submodule.torsionBy ℤ (Additive Mˣ) (n : ℤ)) := by
+  refine Finite.of_injective (β := rootsOfUnity n M)
+    (fun x ↦ ⟨x.1.toMul, (mem_rootsOfUnity _ _).2 ?_⟩) fun x y h ↦ ?_
+  · have hx := congrArg Additive.toMul ((Submodule.mem_torsionBy_iff _ _).mp x.2)
+    rwa [natCast_zsmul, toMul_nsmul, toMul_zero] at hx
+  · exact Subtype.ext (Additive.toMul.injective (congrArg Subtype.val h))
 
 end TauCeti
