@@ -28,12 +28,13 @@ public section
 namespace TauCeti
 
 variable (k F : Type*) [Field k] [Field F] [Algebra k F]
-variable (p : ℕ) [ExpChar k p] [ExpChar F p] [PerfectRing k p] (n : ℕ)
+variable (p : ℕ) [ExpChar k p] [PerfectRing k p] (n : ℕ)
 
 /-- The intermediate field `F^{p^n}` of iterated Frobenius powers. Perfectness ensures that
 it contains every constant from `k`. -/
-noncomputable def frobeniusPowers : IntermediateField k F :=
-  (iterateFrobenius F p n).fieldRange.toIntermediateField fun c ↦ by
+noncomputable def frobeniusPowers : IntermediateField k F := by
+  have : ExpChar F p := expChar_of_injective_algebraMap (algebraMap k F).injective p
+  exact (iterateFrobenius F p n).fieldRange.toIntermediateField fun c ↦ by
     refine ⟨algebraMap k F ((iterateFrobeniusEquiv k p n).symm c), ?_⟩
     rw [← RingHom.map_iterateFrobenius, ← coe_iterateFrobeniusEquiv,
       RingEquiv.apply_symm_apply]
@@ -45,11 +46,13 @@ theorem mem_frobeniusPowers (z : F) :
 
 /-- The underlying subfield is Mathlib's field range of iterated Frobenius. -/
 theorem frobeniusPowers_toSubfield :
+    letI : ExpChar F p := expChar_of_injective_algebraMap (algebraMap k F).injective p
     (frobeniusPowers k F p n).toSubfield = (iterateFrobenius F p n).fieldRange := (rfl)
 
 /-- Iterated Frobenius as an isomorphism from `F` onto its power subfield. It is semilinear,
 not generally linear, over `k`. -/
 noncomputable def iterateFrobeniusEquivPowers : F ≃+* frobeniusPowers k F p n := by
+  have : ExpChar F p := expChar_of_injective_algebraMap (algebraMap k F).injective p
   -- Adding the proof that the range contains `k` does not change its underlying field.
   unfold frobeniusPowers
   exact (iterateFrobenius F p n).rangeRestrictFieldEquiv
