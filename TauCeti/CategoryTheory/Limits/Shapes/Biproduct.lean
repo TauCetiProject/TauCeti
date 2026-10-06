@@ -167,25 +167,26 @@ instance (priority := 100) preservesBiproductsOfShape_comp (J : Type w) (F : C �
   preserves := { preserves := fun hb =>
     ⟨isBilimitOfPreserves G (isBilimitOfPreserves F hb)⟩ }
 
-set_option backward.defeqAttrib.useBackward true in
 /-- A functor preserving zero morphisms, products and coproducts of shape `J` preserves
 biproducts of that shape. -/
 instance (priority := 100) preservesBiproductsOfShape_of_preservesLimits_and_colimits
     (J : Type w) (F : C ⥤ D) [F.PreservesZeroMorphisms]
     [PreservesLimitsOfShape (Discrete J) F] [PreservesColimitsOfShape (Discrete J) F] :
     PreservesBiproductsOfShape J F where
-  preserves := { preserves := fun {b} hb => ⟨{
+  preserves := fun {f} => { preserves := fun {b} hb => ⟨{
     isLimit := IsLimit.ofIsoLimit
       ((IsLimit.postcomposeHomEquiv (Discrete.compNatIsoDiscrete _ _) _).symm
         (isLimitOfPreserves F hb.isLimit))
-      (Cone.ext (Iso.refl _) (by
+      (Cone.ext (Iso.refl (F.obj b.pt)) (by
         rintro ⟨j⟩
+        change F.map (b.π j) ≫ 𝟙 (F.obj (f j)) = 𝟙 (F.obj b.pt) ≫ F.map (b.π j)
         simp))
     isColimit := IsColimit.ofIsoColimit
       ((IsColimit.precomposeInvEquiv (Discrete.compNatIsoDiscrete _ _) _).symm
         (isColimitOfPreserves F hb.isColimit))
-      (Cocone.ext (Iso.refl _) (by
+      (Cocone.ext (Iso.refl (F.obj b.pt)) (by
         rintro ⟨j⟩
+        change (𝟙 (F.obj (f j)) ≫ F.map (b.ι j)) ≫ 𝟙 (F.obj b.pt) = F.map (b.ι j)
         simp)) }⟩ }
 
 end CategoryTheory.Limits
