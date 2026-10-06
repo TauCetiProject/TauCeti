@@ -239,9 +239,11 @@ theorem toAdjoinRoot_mul (x y : Cyclotomic e) :
     ofCoeffList_mulCoeffList]
   simp only [toPolynomial]
 
-/-- The computable arithmetic is the ring structure transported from the polynomial quotient
-along the injective comparison map, using `Function.Injective.commRing`. -/
+/-- The commutative ring structure on exact cyclotomic integers, with executable arithmetic on
+canonical coefficient vectors. -/
 instance : CommRing (Cyclotomic e) := fast_instance% by
+  -- Transport the laws using `Function.Injective.commRing`; normalization keeps the operations
+  -- computable.
   have hn (n : ℕ) (x : Cyclotomic e) :
       toAdjoinRoot (nsmulRec n x) = n • toAdjoinRoot x := by
     induction n with
