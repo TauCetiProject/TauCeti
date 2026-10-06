@@ -6,6 +6,7 @@ Authors: Claude
 module
 
 public import Mathlib.RepresentationTheory.Coinvariants
+public import TauCeti.RepresentationTheory.Coset
 public import TauCeti.RepresentationTheory.Rep.ChangeOfGroup
 public import TauCeti.GroupTheory.QuotientGroup.Basic
 import TauCeti.GroupTheory.Coset.Basic
@@ -42,7 +43,7 @@ subgroup in the two degrees where Tate cohomology is not ordinary group cohomolo
 
 * `Representation.relNorm_comp_norm`: `N_{G/H} ∘ N_H = N_G`.
 * `Representation.norm_comp_relTransfer`: `N_H ∘ N_{G/H}' = N_G`.
-* `Representation.self_relNorm_apply`: the relative norm carries `H`-fixed vectors to `G`-fixed
+* `Representation.relNorm_apply_eq_self`: the relative norm carries `H`-fixed vectors to `G`-fixed
   vectors, over any semiring.
 * `Representation.relNorm_apply_of_forall_apply_eq`: on `G`-fixed vectors the relative norm is
   `[G : H] • ·`, over any semiring.
@@ -80,7 +81,7 @@ variable [Fintype (G ⧸ H)]
 
 /-- The relative norm of a finite-index subgroup `H ≤ G`: the sum of `ρ` over the transversal of
 `H` given by `Quotient.out`. On the `H`-invariants it does not depend on that choice and lands in
-the `G`-invariants; see `Representation.self_relNorm_apply`. -/
+the `G`-invariants; see `Representation.relNorm_apply_eq_self`. -/
 def relNorm : Module.End R V := ∑ q : G ⧸ H, ρ q.out
 
 /-- The relative transfer of a finite-index subgroup `H ≤ G`: the sum of `ρ` over the inverses of
@@ -169,18 +170,10 @@ section FixedVectors
 
 variable {H}
 
-/-- The image of an `H`-fixed vector under `ρ` depends only on the left coset `aH`. -/
-theorem apply_eq_apply_of_quotientGroup_mk_eq {x : V}
-    (hx : ∀ h : H, ρ h x = x) {a b : G}
-    (hab : (a : G ⧸ H) = (b : G ⧸ H)) : ρ a x = ρ b x := by
-  obtain ⟨h, rfl⟩ : ∃ h : H, a * (h : G) = b :=
-    ⟨⟨a⁻¹ * b, QuotientGroup.eq.mp hab⟩, by simp⟩
-  simp [map_mul, Module.End.mul_apply, hx]
-
 variable [Fintype (G ⧸ H)]
 
 /-- The relative norm sends `H`-fixed vectors to `G`-fixed vectors. -/
-theorem self_relNorm_apply {x : V} (hx : ∀ h : H, ρ h x = x) (g : G) :
+theorem relNorm_apply_eq_self {x : V} (hx : ∀ h : H, ρ h x = x) (g : G) :
     ρ g (relNorm ρ H x) = relNorm ρ H x := by
   rw [relNorm_apply, map_sum]
   refine Fintype.sum_bijective (g • ·) (MulAction.bijective g) _ _ fun q => ?_
@@ -211,7 +204,7 @@ variable [Fintype (G ⧸ H)]
 def relNormInvariants :
     Representation.invariants (ρ.comp H.subtype) →ₗ[R] ρ.invariants :=
   (relNorm ρ H).restrict fun x hx =>
-    (mem_invariants ρ _).2 (ρ.self_relNorm_apply ((mem_invariants _ x).1 hx))
+    (mem_invariants ρ _).2 (ρ.relNorm_apply_eq_self ((mem_invariants _ x).1 hx))
 
 /-- On underlying elements, `relNormInvariants` is the relative norm. -/
 @[simp]
