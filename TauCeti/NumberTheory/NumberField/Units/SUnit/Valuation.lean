@@ -10,6 +10,8 @@ public import TauCeti.RingTheory.DedekindDomain.Action
 public import Mathlib.RepresentationTheory.Rep.Basic
 public import Mathlib.Algebra.Group.Action.Units
 public import Mathlib.GroupTheory.GroupAction.SubMulAction
+public import Mathlib.Algebra.Homology.ShortComplex.ShortExact
+import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 import Mathlib.NumberTheory.NumberField.ClassNumber
 import TauCeti.NumberTheory.NumberField.LocalGlobal.DecompositionGroup
 
@@ -28,6 +30,10 @@ on exactness or equivariance.
 
 The arithmetic finite-index input is `TauCeti.finiteIndex_range_unitValuation`; the permutation
 module and its action are Mathlib's `Rep.ofMulAction`.
+
+`TauCeti.sUnitShortComplex` packages the ordinary-unit inclusion and valuation onto Mathlib's
+categorical image as a short exact sequence. The image inclusion has finite categorical
+cokernel, so it can be used with Herbrand-quotient invariance under finite cokernels.
 
 ## References
 
@@ -240,3 +246,70 @@ theorem finiteIndex_range_sUnitValuation :
   exact AddSubgroup.FiniteIndex.map_of_surjective _ (valuationCoordinates S).surjective
 
 end SubMulAction
+
+namespace TauCeti
+
+open _root_.SubMulAction CategoryTheory.Limits
+
+attribute [local instance] Units.mulDistribMulActionRight
+
+variable {K L : Type*} [Field K] [Field L] [NumberField L] [Algebra K L]
+  (S : SubMulAction (L ≃ₐ[K] L) (HeightOneSpectrum (𝓞 L))) [Finite S]
+
+/-- Ordinary units have zero finite-prime valuation, as a composite in `Rep`. -/
+@[simp]
+theorem sUnitInclusion_comp_sUnitValuation : sUnitInclusion S ≫ sUnitValuation S = 0 := by
+  apply Rep.hom_ext
+  apply Representation.IntertwiningMap.ext
+  apply LinearMap.ext
+  intro u
+  -- Evaluate the categorical composite through its underlying intertwining and linear maps.
+  change (sUnitValuation S).hom ((sUnitInclusion S).hom u) = 0
+  exact (LinearMap.mem_ker.mp <| range_sUnitInclusion_eq_ker_sUnitValuation S ▸
+    LinearMap.mem_range_self (sUnitInclusion S).hom.toLinearMap u)
+
+/-- The ordinary-unit inclusion followed by the valuation onto its categorical image.
+Mathlib's `image.ι` embeds the last term into the finite-prime permutation representation. -/
+abbrev sUnitShortComplex : ShortComplex (Rep ℤ (L ≃ₐ[K] L)) where
+  X₁ := Rep.ofMulDistribMulAction (L ≃ₐ[K] L) (𝓞 L)ˣ
+  X₂ := sUnitRep S
+  X₃ := image (sUnitValuation S)
+  f := sUnitInclusion S
+  g := factorThruImage (sUnitValuation S)
+  zero := comp_factorThruImage_eq_zero (sUnitInclusion_comp_sUnitValuation S)
+
+/-- The first arrow of the S-unit sequence is the ordinary-unit inclusion. -/
+@[simp]
+theorem sUnitShortComplex_f : (sUnitShortComplex S).f = sUnitInclusion S := (rfl)
+
+/-- The last arrow of the S-unit sequence is the canonical valuation image factorization. -/
+@[simp]
+theorem sUnitShortComplex_g :
+    (sUnitShortComplex S).g = factorThruImage (sUnitValuation S) := (rfl)
+
+/-- Ordinary units, S-units, and the valuation image form a short exact sequence. -/
+theorem sUnitShortComplex_shortExact : (sUnitShortComplex S).ShortExact := by
+  have h : (ShortComplex.mk (sUnitInclusion S) (sUnitValuation S)
+      (sUnitInclusion_comp_sUnitValuation S)).Exact := by
+    rw [← ShortComplex.exact_map_iff_of_faithful _
+      (forget₂ (Rep ℤ (L ≃ₐ[K] L)) (ModuleCat ℤ)),
+      ShortComplex.moduleCat_exact_iff_range_eq_ker]
+    exact range_sUnitInclusion_eq_ker_sUnitValuation S
+  exact
+    { exact := ShortComplex.exact_of_g_is_cokernel _ h.isColimitImage
+      mono_f := (Rep.mono_iff_injective _).mpr (sUnitInclusion_injective S)
+      epi_g := inferInstanceAs (Epi (factorThruImage (sUnitValuation S))) }
+
+/-- The valuation image has finite categorical cokernel in the permutation representation. -/
+instance finite_cokernel_sUnitValuation_image_ι :
+    Finite ↑(cokernel (image.ι (sUnitValuation S))) := by
+  let F := forget₂ (Rep ℤ (L ≃ₐ[K] L)) (ModuleCat ℤ)
+  let := finiteIndex_range_sUnitValuation S
+  have : Finite ↑(cokernel (sUnitValuation S)) :=
+    Finite.of_equiv (ℤ[S] ⧸ (sUnitValuation S).hom.toLinearMap.range.toAddSubgroup)
+      ((PreservesCokernel.iso F (sUnitValuation S) ≪≫
+        ModuleCat.cokernelIsoRangeQuotient (F.map (sUnitValuation S))).toLinearEquiv.toEquiv.symm)
+  exact Finite.of_equiv _ (F.mapIso
+    (cokernelImageι (sUnitValuation S))).toLinearEquiv.toEquiv.symm
+
+end TauCeti
