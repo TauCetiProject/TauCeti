@@ -89,6 +89,25 @@ theorem tangentMatrix_apply_coe
         (HopfIdeal.quotientLieHom (B := B) (definingHopfIdeal R m) d)).submatrix
           finSumFinEquiv finSumFinEquiv := (rfl)
 
+/-- Extending the coefficients of a symplectic tangent vector applies the coefficient
+map to every entry of its paired tangent matrix. -/
+@[simp]
+theorem tangentMatrix_mapValue_coe {C : Type*} [CommRing C] [Algebra R C]
+    (φ : B →ₐ[R] C)
+    (d : Derivation R (coordinateHopfAlgebra R m)
+      (Bialgebra.CounitAlgebra R (coordinateHopfAlgebra R m) B)) :
+    (tangentMatrix m (Derivation.mapValue φ d) :
+      Matrix (Fin m ⊕ Fin m) (Fin m ⊕ Fin m) C) =
+      (tangentMatrix m d : Matrix (Fin m ⊕ Fin m) (Fin m ⊕ Fin m) B).map φ := by
+  rw [tangentMatrix_apply_coe, tangentMatrix_apply_coe]
+  ext i j
+  simp only [Matrix.submatrix_apply, GeneralLinear.tangentMatrix_apply,
+    HopfIdeal.quotientLieHom_apply_apply, Derivation.mapValue_apply, Matrix.map_apply]
+  -- The quotient and ambient counit algebras have different indices but the same coefficients.
+  erw [Bialgebra.CounitAlgebra.algEquivSelf_apply,
+    Bialgebra.CounitAlgebra.algEquivSelf_apply, Bialgebra.CounitAlgebra.algEquivSelf_apply,
+    Bialgebra.CounitAlgebra.algEquivSelf_apply]
+
 private theorem tangentMatrix_injective :
     Function.Injective (tangentMatrix (R := R) (B := B) m) := by
   intro d e h
