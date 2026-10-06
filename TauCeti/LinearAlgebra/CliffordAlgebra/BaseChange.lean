@@ -22,6 +22,7 @@ Lipschitz, Pin, and Spin subgroups along scalar extensions.
 ## Main results
 
 * `CliffordAlgebra.ofBaseChangeAux_involute` proves naturality of the grade involution.
+* `CliffordAlgebra.ofBaseChangeAux_reverse` proves naturality of Clifford reversal.
 * `CliffordAlgebra.ofBaseChangeAux_star` proves naturality of Clifford conjugation.
 * `CliffordAlgebra.ofBaseChangeAux_mem_even` proves preservation of the even subalgebra.
 * `CliffordAlgebra.ofBaseChangeAux_baseChange` identifies direct and successive scalar extension.
@@ -52,17 +53,26 @@ theorem ofBaseChangeAux_involute (Q : QuadraticForm R M) (x : CliffordAlgebra Q)
   | mul x y hx hy => simp only [map_mul, hx, hy]
 
 /-- The canonical map to the Clifford algebra after extension of scalars commutes with Clifford
+reversal. -/
+@[simp]
+theorem ofBaseChangeAux_reverse (Q : QuadraticForm R M) (x : CliffordAlgebra Q) :
+    ofBaseChangeAux A Q (reverse x) =
+      reverse (Q := Q.baseChange A) (ofBaseChangeAux A Q x) := by
+  induction x using CliffordAlgebra.induction with
+  | algebraMap r =>
+      rw [reverse.commutes, (ofBaseChangeAux A Q).commutes]
+      rw [IsScalarTower.algebraMap_apply R A (CliffordAlgebra (Q.baseChange A)),
+        reverse.commutes]
+  | ι m => simp
+  | add x y hx hy => simp only [map_add, hx, hy]
+  | mul x y hx hy => simp only [reverse.map_mul, map_mul, hx, hy]
+
+/-- The canonical map to the Clifford algebra after extension of scalars commutes with Clifford
 conjugation. -/
 @[simp]
 theorem ofBaseChangeAux_star (Q : QuadraticForm R M) (x : CliffordAlgebra Q) :
     ofBaseChangeAux A Q (star x) = star (ofBaseChangeAux A Q x) := by
-  induction x using CliffordAlgebra.induction with
-  | algebraMap r =>
-      rw [star_algebraMap, (ofBaseChangeAux A Q).commutes]
-      rw [IsScalarTower.algebraMap_apply R A (CliffordAlgebra (Q.baseChange A)), star_algebraMap]
-  | ι m => simp
-  | add x y hx hy => simp only [star_add, map_add, hx, hy]
-  | mul x y hx hy => simp only [star_mul, map_mul, hx, hy]
+  simp only [star_def, ofBaseChangeAux_reverse, ofBaseChangeAux_involute]
 
 /-- The canonical map to the Clifford algebra after extension of scalars sends even elements to
 even elements. -/
