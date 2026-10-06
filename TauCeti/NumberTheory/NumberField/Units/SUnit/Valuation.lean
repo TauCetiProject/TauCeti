@@ -257,7 +257,7 @@ variable {K L : Type*} [Field K] [Field L] [NumberField L] [Algebra K L]
   (S : SubMulAction (L ≃ₐ[K] L) (HeightOneSpectrum (𝓞 L))) [Finite S]
 
 /-- Ordinary units have zero finite-prime valuation, as a composite in `Rep`. -/
-@[simp]
+@[reassoc (attr := simp)]
 theorem sUnitInclusion_comp_sUnitValuation : sUnitInclusion S ≫ sUnitValuation S = 0 := by
   apply Rep.hom_ext
   apply Representation.IntertwiningMap.ext
