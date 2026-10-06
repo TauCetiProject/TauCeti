@@ -145,6 +145,24 @@ theorem basePointsRepresentation_eq_mulVec
   rw [hg, ← GeneralLinear.pointsMulEquiv_apply, pointsMulEquiv_toGL]
   rfl
 
+/-- A scalar point in the standard representation of `SL_n` has scalar an `n`th root of unity. -/
+theorem scalar_pow_eq_one_of_basePointsRepresentation_eq_smul {R : Type u} [CommRing R] {n : ℕ}
+    (g : WithConv (coordinateHopfAlgebra R n →ₐ[R] R)) (c : R)
+    (hc : Comodule.basePointsRepresentation (R := R) (H := coordinateHopfAlgebra R n)
+      (Fin n → R) g = c • (1 : Module.End R (Fin n → R))) : c ^ n = 1 := by
+  have hm : (pointsMulEquiv (R := R) (A := R) n g : Matrix (Fin n) (Fin n) R) =
+      c • (1 : Matrix (Fin n) (Fin n) R) := by
+    apply Matrix.toLin'.injective
+    apply LinearMap.ext
+    intro v
+    have hv := LinearMap.congr_fun hc v
+    rw [basePointsRepresentation_eq_mulVec] at hv
+    simpa only [Matrix.toLin'_apply, Matrix.smul_mulVec, Matrix.one_mulVec,
+      LinearMap.smul_apply, Module.End.one_apply] using hv
+  have hd := Matrix.SpecialLinearGroup.det_coe (pointsMulEquiv (R := R) (A := R) n g)
+  rw [hm, Matrix.det_smul] at hd
+  simpa using hd
+
 /-- **A subcomodule of the standard comodule of `SL_n` is stable under every determinant-one
 matrix.** -/
 theorem mulVec_mem (N : Subcomodule R (coordinateHopfAlgebra R n) (Fin n → R))
