@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.End.Adjoin
+import TauCeti.Algebra.Lie.Basic
 import TauCeti.RepresentationTheory.Spin.OddStructure
 public import TauCeti.RepresentationTheory.Spin.Polarization.TypeB.Representation
 public import TauCeti.RepresentationTheory.Spin.Polarization.TypeD.Representation
@@ -144,20 +145,9 @@ theorem isIrreducible_typeBSpinLieRep :
     letI : LieModule K (LieAlgebra.Orthogonal.typeB ι K) (ExteriorAlgebra K P.W) :=
       LieModule.compLieHom _ (P.typeBSpinLieRep b z hz)
     LieModule.IsIrreducible K (LieAlgebra.Orthogonal.typeB ι K)
-      (ExteriorAlgebra K P.W) := by
-  let _ : LieRingModule (LieAlgebra.Orthogonal.typeB ι K) (ExteriorAlgebra K P.W) :=
-    LieRingModule.compLieHom _ (P.typeBSpinLieRep b z hz)
-  let _ : LieModule K (LieAlgebra.Orthogonal.typeB ι K) (ExteriorAlgebra K P.W) :=
-    LieModule.compLieHom _ (P.typeBSpinLieRep b z hz)
-  refine LieModule.IsIrreducible.mk fun N hN => ?_
-  rw [← LieSubmodule.toSubmodule_eq_top]
-  refine (P.eq_bot_or_eq_top_of_map_typeBSpinLieRep_le b z hz N.toSubmodule ?_).resolve_left ?_
-  · intro x
-    rintro _ ⟨m, hm, rfl⟩
-    have hm' := N.lie_mem (x := x) hm
-    rw [LieRingModule.compLieHom_apply, Module.End.lie_apply] at hm'
-    exact (LieSubmodule.mem_carrier (N := N)).mp hm'
-  · exact fun h => hN ((LieSubmodule.toSubmodule_eq_bot N).mp h)
+      (ExteriorAlgebra K P.W) :=
+  LieModule.isIrreducible_compLieHom_of_eq_bot_or_eq_top (P.typeBSpinLieRep b z hz)
+    (P.eq_bot_or_eq_top_of_map_typeBSpinLieRep_le b z hz)
 
 end TypeB
 
@@ -214,20 +204,9 @@ theorem isIrreducible_typeDSpinPlusLieRep (hline : P.line = ⊥) :
     letI : LieModule K (LieAlgebra.Orthogonal.typeD ι K) (spinPlus Q P) :=
       LieModule.compLieHom _ (P.typeDSpinPlusLieRep b hline)
     LieModule.IsIrreducible K (LieAlgebra.Orthogonal.typeD ι K) (spinPlus Q P) := by
-  let _ : LieRingModule (LieAlgebra.Orthogonal.typeD ι K) (spinPlus Q P) :=
-    LieRingModule.compLieHom _ (P.typeDSpinPlusLieRep b hline)
-  let _ : LieModule K (LieAlgebra.Orthogonal.typeD ι K) (spinPlus Q P) :=
-    LieModule.compLieHom _ (P.typeDSpinPlusLieRep b hline)
   let _ : Nontrivial (spinPlus Q P) := nontrivial_spinPlus P
-  refine LieModule.IsIrreducible.mk fun N hN => ?_
-  rw [← LieSubmodule.toSubmodule_eq_top]
-  refine (P.eq_bot_or_eq_top_of_map_typeDSpinPlusLieRep_le b hline N.toSubmodule ?_).resolve_left ?_
-  · intro x
-    rintro _ ⟨m, hm, rfl⟩
-    have hm' := N.lie_mem (x := x) hm
-    rw [LieRingModule.compLieHom_apply, Module.End.lie_apply] at hm'
-    exact (LieSubmodule.mem_carrier (N := N)).mp hm'
-  · exact fun h => hN ((LieSubmodule.toSubmodule_eq_bot N).mp h)
+  exact LieModule.isIrreducible_compLieHom_of_eq_bot_or_eq_top
+    (P.typeDSpinPlusLieRep b hline) (P.eq_bot_or_eq_top_of_map_typeDSpinPlusLieRep_le b hline)
 
 /-- **The odd type-`D` half-spin Lie module is irreducible when it is nonzero.** The action is
 pulled back along `P.typeDSpinMinusLieRep b hline`; the hypothesis `P.W ≠ ⊥` is necessary
@@ -238,21 +217,9 @@ theorem isIrreducible_typeDSpinMinusLieRep (hline : P.line = ⊥) (hW : P.W ≠ 
     letI : LieModule K (LieAlgebra.Orthogonal.typeD ι K) (spinMinus Q P) :=
       LieModule.compLieHom _ (P.typeDSpinMinusLieRep b hline)
     LieModule.IsIrreducible K (LieAlgebra.Orthogonal.typeD ι K) (spinMinus Q P) := by
-  let _ : LieRingModule (LieAlgebra.Orthogonal.typeD ι K) (spinMinus Q P) :=
-    LieRingModule.compLieHom _ (P.typeDSpinMinusLieRep b hline)
-  let _ : LieModule K (LieAlgebra.Orthogonal.typeD ι K) (spinMinus Q P) :=
-    LieModule.compLieHom _ (P.typeDSpinMinusLieRep b hline)
   let _ : Nontrivial (spinMinus Q P) := nontrivial_spinMinus P hW
-  refine LieModule.IsIrreducible.mk fun N hN => ?_
-  rw [← LieSubmodule.toSubmodule_eq_top]
-  refine (P.eq_bot_or_eq_top_of_map_typeDSpinMinusLieRep_le b hline N.toSubmodule ?_).resolve_left
-    ?_
-  · intro x
-    rintro _ ⟨m, hm, rfl⟩
-    have hm' := N.lie_mem (x := x) hm
-    rw [LieRingModule.compLieHom_apply, Module.End.lie_apply] at hm'
-    exact (LieSubmodule.mem_carrier (N := N)).mp hm'
-  · exact fun h => hN ((LieSubmodule.toSubmodule_eq_bot N).mp h)
+  exact LieModule.isIrreducible_compLieHom_of_eq_bot_or_eq_top
+    (P.typeDSpinMinusLieRep b hline) (P.eq_bot_or_eq_top_of_map_typeDSpinMinusLieRep_le b hline)
 
 end TypeD
 
