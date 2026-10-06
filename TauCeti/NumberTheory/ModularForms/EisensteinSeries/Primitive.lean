@@ -191,20 +191,6 @@ theorem eisensteinSeriesMF_eq_zero_of_isEmpty (hk : 3 ≤ k) (a : Fin 2 → ZMod
   simp only [coe_eisensteinSeriesMF, FunLike.coe_zero, Pi.zero_apply,
     eisensteinSeries, tsum_empty]
 
-omit [NeZero N] in
-/-- Right multiplication by `γ ∈ SL₂(ℤ)` on residue pairs modulo `N` is inverted by `γ⁻¹`. -/
-private lemma vecMul_eq_iff_eq_vecMul_inv (γ : SL(2, ℤ)) (a y : Fin 2 → ZMod N) :
-    (a ᵥ* γ : Fin 2 → ZMod N) = y ↔ a = y ᵥ* (γ⁻¹ : SL(2, ℤ)) := by
-  have h (v : Fin 2 → ZMod N) (g : SL(2, ℤ)) :
-      ((v ᵥ* g : Fin 2 → ZMod N) ᵥ* (g⁻¹ : SL(2, ℤ)) : Fin 2 → ZMod N) = v := by
-    rw [vecMul_vecMul, ← Matrix.SpecialLinearGroup.coe_mul, ← map_mul, mul_inv_cancel, map_one,
-      Matrix.SpecialLinearGroup.coe_one, vecMul_one]
-  constructor
-  · rintro rfl
-    exact (h a γ).symm
-  · rintro rfl
-    simpa using h y γ⁻¹
-
 private lemma coefficient_relation_of_cuspidal (hk : 3 ≤ k)
     (c : (Fin 2 → ZMod N) → ℂ)
     (hc : (∑ a, c a • eisensteinSeriesMF hk a) ∈ cuspFormSubmodule Γ(N) k)
@@ -222,7 +208,7 @@ private lemma coefficient_relation_of_cuspidal (hk : 3 ≤ k)
     rw [hsign, neg_vecMul, hpos]
   have hiff (b y : Fin 2 → ZMod N) :
       b ᵥ* (σ⁻¹ : SL(2, ℤ)) = y ↔ b = y ᵥ* σ := by
-    simpa using vecMul_eq_iff_eq_vecMul_inv σ⁻¹ b y
+    simpa using vecMul_eq_iff_eq_vecMul_inv ((σ⁻¹ : SL(2, ℤ)) : SL(2, ZMod N)) b y
   have H := (mem_cuspFormSubmodule_iff_constantTermAt_eq_zero _).mp hc σ⁻¹
   simp only [map_sum, map_smul, constantTermAt_eisensteinSeriesMF,
     hiff, hpos, hneg, smul_eq_mul, mul_add] at H
@@ -316,7 +302,7 @@ private theorem exists_sub_sum_smul_eisensteinSeriesMF_mem_cuspFormSubmodule (hk
     fin_cases i <;> simp [vecMul, dotProduct]
   refine ⟨c, (mem_cuspFormSubmodule_iff_constantTermAt_eq_zero _).mpr fun γ ↦ ?_⟩
   simp only [map_sub, map_sum, map_smul, constantTermAt_eisensteinSeriesMF,
-    vecMul_eq_iff_eq_vecMul_inv, smul_eq_mul, mul_add, mul_ite, mul_one, mul_zero,
+    vecMul_eq_iff_eq_vecMul_inv, ← map_inv, smul_eq_mul, mul_add, mul_ite, mul_one, mul_zero,
     Finset.sum_add_distrib, Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte, hc, hneg,
     constantTermAt_neg]
   have hsq : (-1 : ℂ) ^ k * (-1) ^ k = 1 := by
