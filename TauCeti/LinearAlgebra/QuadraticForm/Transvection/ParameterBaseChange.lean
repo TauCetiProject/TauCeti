@@ -16,6 +16,11 @@ sends the span of `u` into the span of `1 ⊗ u`. It therefore induces a semilin
 quotient parameter spaces. For isotropic `u`, these are the spaces `u^⊥ / R ∙ u` that
 parametrize Eichler transvections and their canonical Spin lifts. The map lets entire root
 subgroups, rather than just individual elements, be transported by extension of scalars.
+
+The maps are `TauCeti.QuadraticMap.polarKernelBaseChange` and
+`TauCeti.QuadraticMap.transvectionParameterBaseChange`, alongside the orthogonal-group
+base-change maps. Use function application, for example
+`TauCeti.QuadraticMap.transvectionParameterBaseChange (A := A) Q u`.
 -/
 
 public section
