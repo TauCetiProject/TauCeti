@@ -8,7 +8,6 @@ module
 public import TauCeti.NumberTheory.ModularForms.EisensteinSeries.ConstantTerm
 import TauCeti.NumberTheory.ModularForms.QExpansion.BigO
 import Mathlib.Analysis.Normed.Group.Tannery
-import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 import TauCeti.Analysis.Complex.UpperHalfPlane.ResToImagAxis
 
 /-!
