@@ -19,10 +19,7 @@ category. Their kernels and cokernels are computed in all sheaves of modules, an
 preserves finite limits and finite colimits. Consequently, a short exact sequence of coherent
 sheaves remains short exact as a sequence of module sheaves, where sheaf cohomology applies.
 
-Cokernel closure needs no Noetherian hypothesis. Kernel closure follows from the corresponding
-module theorem on affine opens and descent of finite presentation. The categorical construction
-uses Mathlib's abelian-full-subcategory theorem, rather than transporting a separately chosen
-abelian structure.
+Cokernel closure needs no Noetherian hypothesis.
 
 ## References
 

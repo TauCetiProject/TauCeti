@@ -22,26 +22,18 @@ presented. More generally, the sections of a finitely presented sheaf over any a
 a finitely presented module over its ring of functions. On an affine scheme, the sheaf admits
 a global presentation with finitely many generators and relations.
 
-The forward implication uses Mathlib's `presentationTilde`, whose generating and relation
-families are precisely those of the module presentation. For the converse, finite local sheaf
-presentations can be refined to basic opens. A finite global presentation on an affine scheme
-gives a finite module presentation, and Mathlib's localization descent glues these finite
-presentations of modules. The analogous finite-type comparison supplies ambient cokernel
-closure for maps from quasicoherent sheaves of finite type to finitely presented sheaves.
-On arbitrary schemes, ambient cokernels satisfy the same closure property, and over a locally
-Noetherian scheme ambient kernels of maps from quasicoherent sheaves of finite type to
-quasicoherent sheaves are finitely presented. Both assertions descend from affine charts.
+Cokernels of maps from quasicoherent sheaves of finite type to finitely presented sheaves are
+finitely presented on any scheme. On a locally Noetherian scheme, kernels of maps from
+quasicoherent sheaves of finite type to quasicoherent sheaves are finitely presented.
 This supplies the affine algebraic description of coherent sheaves on locally Noetherian
 schemes without imposing a Noetherian hypothesis on the affine result.
-
-The module-cokernel construction follows Mathlib's
-`AlgebraicGeometry.isIso_fromTildeΓ_of_presentation`, using the fully faithful tilde functor
-and its preservation of cokernels.
 
 ## References
 
 * The Stacks Project, *Properties of Schemes*, Section 28.17 (Tag 01PA),
   Lemma 28.17.2 (Tag 01PC).
+* Mathlib, `AlgebraicGeometry.isIso_fromTildeΓ_of_presentation` (formalization reference for
+  the module-cokernel construction).
 -/
 
 public section

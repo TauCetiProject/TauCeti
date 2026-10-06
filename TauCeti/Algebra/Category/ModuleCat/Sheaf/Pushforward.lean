@@ -16,10 +16,6 @@ import Mathlib.CategoryTheory.Functor.ReflectsIso.Balanced
 Pushforward along a continuous functor of sites preserves small limits of sheaves of modules.
 In particular, restriction to an open subscheme preserves kernels. No cocontinuity or flatness
 assumption is needed for this assertion.
-
-The construction uses Mathlib's forgetful functors to presheaves of modules and abelian groups:
-they preserve and reflect small limits, and pushforward on underlying abelian presheaves is
-precomposition.
 -/
 
 public section
