@@ -59,6 +59,9 @@ respectively `(b₂x³ + b₈)²`, and on an elliptic curve it is a nonzero cons
 * `WeierstrassCurve.isSupersingular_two_iff_j_eq_zero` and
   `WeierstrassCurve.isSupersingular_three_iff_j_eq_zero`: in characteristic `2` and `3`, an elliptic
   curve is supersingular exactly when `j = 0`.
+* `WeierstrassCurve.isOrdinary_two_iff_j_ne_zero` and
+  `WeierstrassCurve.isOrdinary_three_iff_j_ne_zero`: in characteristic `2` and `3`, an elliptic
+  curve is ordinary exactly when `j ≠ 0`.
 
 ## References
 
@@ -170,6 +173,7 @@ end Elliptic
 
 /-- **Supersingularity is invariant under a change of variables**: isomorphic Weierstrass curves
 have isomorphic point groups over `AlgebraicClosure K`. -/
+@[simp]
 theorem isSupersingular_variableChange_iff (C : VariableChange K) :
     (C • W).IsSupersingular p ↔ W.IsSupersingular p := by
   classical
@@ -180,6 +184,7 @@ theorem isSupersingular_variableChange_iff (C : VariableChange K) :
   · rw [h (e P) (by rw [← map_nsmul, hP, map_zero]), map_zero]
 
 /-- **Ordinarity is invariant under a change of variables.** -/
+@[simp]
 theorem isOrdinary_variableChange_iff (C : VariableChange K) :
     (C • W).IsOrdinary p ↔ W.IsOrdinary p :=
   (isSupersingular_variableChange_iff C).not
@@ -205,6 +210,14 @@ theorem isSupersingular_three_iff_j_eq_zero [CharP K 3] : W.IsSupersingular 3 �
   have hj : (W.baseChange (AlgebraicClosure K)).j = algebraMap K _ W.j := W.map_j _
   rw [IsSupersingular, Nat.cast_ofNat, torsionBy_three_eq_bot_iff_of_char_three,
     ← j_eq_zero_iff_of_char_three, hj, FaithfulSMul.algebraMap_eq_zero_iff]
+
+/-- **In characteristic `2` an elliptic curve is ordinary exactly when `j ≠ 0`.** -/
+theorem isOrdinary_two_iff_j_ne_zero [CharP K 2] : W.IsOrdinary 2 ↔ W.j ≠ 0 :=
+  isSupersingular_two_iff_j_eq_zero.not
+
+/-- **In characteristic `3` an elliptic curve is ordinary exactly when `j ≠ 0`.** -/
+theorem isOrdinary_three_iff_j_ne_zero [CharP K 3] : W.IsOrdinary 3 ↔ W.j ≠ 0 :=
+  isSupersingular_three_iff_j_eq_zero.not
 
 end WeierstrassCurve
 
