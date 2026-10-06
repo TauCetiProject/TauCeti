@@ -10,7 +10,7 @@ public import Mathlib.Algebra.Polynomial.Reverse
 public import TauCeti.Algebra.MvPolynomial.Equiv
 public import TauCeti.Algebra.Polynomial.Taylor
 public import TauCeti.Data.Finsupp.Fin
-public import TauCeti.RingTheory.MvPolynomial.OrderAt
+public import TauCeti.RingTheory.MvPolynomial.LazardValuation.Basic
 
 /-!
 # Lazard evaluation
@@ -198,6 +198,23 @@ theorem lazardExponent_eq_iff {p : MvPolynomial (Fin n) S} (hp : p ≠ 0) {a : F
     · exact absurd (hlt _ h) hne
     · exact toLex.injective h
     · exact absurd (coeff_taylor_eq_zero_of_lt_lazardExponent h) hu
+
+/-- For a nonzero polynomial, the Lazard valuation is the vector of removed exponents. -/
+theorem lazardValuation_eq_lazardExponent {p : MvPolynomial (Fin n) S} (hp : p ≠ 0)
+    (a : Fin n → S) : p.lazardValuation a = toLex (p.lazardExponent a) := by
+  apply lazardValuation_eq_coe_iff.2
+  simpa only [coeff_taylor_lazardExponent] using (lazardExponent_eq_iff hp).1 rfl
+
+/-- A fixed polynomial has only finitely many vectors of removed Lazard exponents. -/
+theorem finite_range_lazardExponent (p : MvPolynomial (Fin n) S) :
+    (Set.range p.lazardExponent).Finite := by
+  by_cases hp : p = 0
+  · subst p
+    apply (Set.finite_singleton (0 : Fin n →₀ ℕ)).subset
+    rintro _ ⟨a, rfl⟩
+    simp
+  · exact (finite_setOf_lazardValuation_eq p).subset fun _ ⟨a, ha⟩ ↦
+      ⟨a, ha ▸ lazardValuation_eq_lazardExponent hp a⟩
 
 /-- No power is removed by Lazard evaluation at a point where `p` does not vanish. -/
 theorem lazardExponent_eq_zero_of_eval_ne_zero {p : MvPolynomial (Fin n) S} {a : Fin n → S}
