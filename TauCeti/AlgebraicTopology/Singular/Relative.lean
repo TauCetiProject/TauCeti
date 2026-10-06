@@ -24,6 +24,10 @@ morphisms in relative singular homology.  A simplex of the singular pair restric
 of the ambient simplicial set comes from the subspace exactly when its image lies in the subspace
 (`TopPair.mem_range_restrict_hom_app_iff`).
 
+For a coefficient object `R`, `TauCeti.TopPair.singularChainComplexShortComplexFunctor R`
+packages the chain sequence as a functor on pairs. Its three projection lemmas identify the
+subspace, ambient, and relative chain functors.
+
 The construction follows the quotient-chain presentation in Eilenberg--Steenrod, *Foundations of
 Algebraic Topology*, Chapters I--III, and is implemented using Mathlib's `SSetPair` relative-chain
 functor.

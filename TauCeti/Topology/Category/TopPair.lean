@@ -27,6 +27,9 @@ A map of pairs which is an isomorphism of the ambient spaces and is surjective o
 an isomorphism of pairs (`TopPair.isIso_of_isIso_fst_of_surjective_snd`): the inverse on the
 subspaces is continuous because subspaces are embedded.
 
+An embedding of ambient spaces also embeds the subspaces, by
+`TauCeti.isEmbedding_topPairHom_snd_of_isEmbedding_fst f h` for a map of pairs `f`.
+
 The disjoint union `TopPair.sigma P = (Σ i, Xᵢ, Σ i, Aᵢ)` of a family of pairs `P i = (Xᵢ, Aᵢ)`,
 with the inclusions `TopPair.sigmaι P i` of the summands, is the coproduct of the family in
 `TopPair` (`TopPair.sigmaCofanIsColimit`).  Relative singular homology is additive along it.
