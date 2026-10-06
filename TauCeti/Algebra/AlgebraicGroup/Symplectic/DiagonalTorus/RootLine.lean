@@ -42,6 +42,25 @@ universe u
 
 variable {m : ℕ}
 
+/-- The integral character of a paired coordinate of the standard symplectic representation.
+The two halves have weights `eᵢ` and `-eᵢ`; a matrix entry `(a, b)` has character
+`pairedCoordinateWeight a - pairedCoordinateWeight b`. -/
+noncomputable def pairedCoordinateWeight : (Fin m ⊕ Fin m) → (ULift.{u} (Fin m) →₀ ℤ) :=
+  Sum.elim (fun i ↦ Finsupp.single (ULift.up i) 1)
+    (fun i ↦ Finsupp.single (ULift.up i) (-1))
+
+/-- A coordinate in the first half has the positive standard weight. -/
+@[simp]
+theorem pairedCoordinateWeight_inl (i : Fin m) :
+    pairedCoordinateWeight.{u} (Sum.inl i) = Finsupp.single (ULift.up i) 1 :=
+  (rfl)
+
+/-- A coordinate in the second half has the negative standard weight. -/
+@[simp]
+theorem pairedCoordinateWeight_inr (i : Fin m) :
+    pairedCoordinateWeight.{u} (Sum.inr i) = Finsupp.single (ULift.up i) (-1) :=
+  (rfl)
+
 /-- The root occupying a matrix position, with diagonal entries having weight zero. -/
 private def rootAtEntry : (Fin m ⊕ Fin m) → (Fin m ⊕ Fin m) → Option (RootSubgroupIndex m)
   | .inl a, .inl b => if h : a = b then none else some (.difference a b h)
@@ -70,10 +89,7 @@ private theorem rootAtEntry_eq_some_iff_root (root : RootSubgroupIndex m)
     (a b : Fin m ⊕ Fin m) :
     rootAtEntry a b = some root ↔
       (diagonalRootDatum.{u} m).root root =
-        Sum.elim (fun i ↦ Finsupp.single (ULift.up i) 1)
-            (fun i ↦ Finsupp.single (ULift.up i) (-1)) a -
-          Sum.elim (fun i ↦ Finsupp.single (ULift.up i) 1)
-            (fun i ↦ Finsupp.single (ULift.up i) (-1)) b := by
+        pairedCoordinateWeight a - pairedCoordinateWeight b := by
   have hr (r : RootSubgroupIndex m) : some r = some root ↔
       (diagonalRootDatum.{u} m).root root = (diagonalRootDatum.{u} m).root r := by
     rw [Option.some.injEq, ← (diagonalRootDatum.{u} m).root.injective.eq_iff, eq_comm]
@@ -84,7 +100,7 @@ private theorem rootAtEntry_eq_some_iff_root (root : RootSubgroupIndex m)
     norm_num
   have hzero := (diagonalRootDatum.{u} m).ne_zero root
   cases a <;> cases b <;> simp only [rootAtEntry] <;> split_ifs <;> subst_vars <;>
-    simp only [hr, Sum.elim_inl, Sum.elim_inr,
+    simp only [hr, pairedCoordinateWeight_inl, pairedCoordinateWeight_inr,
       diagonalRootDatum_root_positiveLong, diagonalRootDatum_root_negativeLong,
       diagonalRootDatum_root_difference, diagonalRootDatum_root_positiveSum,
       diagonalRootDatum_root_negativeSum] <;>
@@ -97,25 +113,19 @@ theorem tangentMatrix_apply_ne_zero_iff_root_eq (root : RootSubgroupIndex m)
     (a b : Fin m ⊕ Fin m) :
     root.tangentMatrix (1 : ℤ) a b ≠ 0 ↔
       (diagonalRootDatum.{u} m).root root =
-        Sum.elim (fun i ↦ Finsupp.single (ULift.up i) 1)
-            (fun i ↦ Finsupp.single (ULift.up i) (-1)) a -
-          Sum.elim (fun i ↦ Finsupp.single (ULift.up i) 1)
-            (fun i ↦ Finsupp.single (ULift.up i) (-1)) b := by
+        pairedCoordinateWeight a - pairedCoordinateWeight b := by
   rw [← rootAtEntry_eq_some_iff, rootAtEntry_eq_some_iff_root]
 
 /-- A symplectic Lie matrix has entries only of a given root character exactly when
 it is a unique scalar multiple of that root's normalized matrix. This holds over
 arbitrary commutative rings, including in characteristic two. -/
-theorem existsUnique_eq_tangentMatrix_iff_root_eq
+theorem existsUnique_eq_tangentMatrix_iff
     {R : Type*} [CommRing R] (root : RootSubgroupIndex m)
     {A : Matrix (Fin m ⊕ Fin m) (Fin m ⊕ Fin m) R}
     (hA : A ∈ LieAlgebra.Symplectic.sp (Fin m) R) :
     (∃! c : R, A = root.tangentMatrix c) ↔
       ∀ a b, (diagonalRootDatum.{u} m).root root ≠
-          Sum.elim (fun i ↦ Finsupp.single (ULift.up i) 1)
-              (fun i ↦ Finsupp.single (ULift.up i) (-1)) a -
-            Sum.elim (fun i ↦ Finsupp.single (ULift.up i) 1)
-              (fun i ↦ Finsupp.single (ULift.up i) (-1)) b → A a b = 0 := by
+          pairedCoordinateWeight a - pairedCoordinateWeight b → A a b = 0 := by
   rw [root.existsUnique_eq_tangentMatrix_iff hA]
   apply forall_congr' fun a ↦ forall_congr' fun b ↦ ?_
   apply imp_congr ?_ Iff.rfl

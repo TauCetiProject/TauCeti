@@ -17,7 +17,7 @@ an entrywise adjoint-weight calculation into membership in the actual scheme-the
 root-subgroup differential, over arbitrary coefficient algebras. The root characters
 are integral, so the criterion distinguishes them even in characteristic two.
 
-The construction combines `Symplectic.existsUnique_eq_tangentMatrix_iff_root_eq`
+The construction combines `Symplectic.existsUnique_eq_tangentMatrix_iff`
 with `Symplectic.range_derivationCompLieHom_rootSubgroup_eq_span`. Its normalization
 is the existing `Symplectic.rootVector`, rather than a separately chosen Lie vector.
 
@@ -44,10 +44,7 @@ theorem mem_range_derivationCompLieHom_rootSubgroup_iff
       (Bialgebra.CounitAlgebra R (coordinateHopfAlgebra R m) B)) :
     d ∈ (derivationCompLieHom (B := B) (rootSubgroupCoordinateMap (R := R) root).hom).range ↔
       ∀ a b, (diagonalRootDatum.{u} m).root root ≠
-          Sum.elim (fun i ↦ Finsupp.single (ULift.up i) 1)
-              (fun i ↦ Finsupp.single (ULift.up i) (-1)) a -
-            Sum.elim (fun i ↦ Finsupp.single (ULift.up i) 1)
-              (fun i ↦ Finsupp.single (ULift.up i) (-1)) b →
+          pairedCoordinateWeight a - pairedCoordinateWeight b →
         (tangentMatrix m d : Matrix (Fin m ⊕ Fin m) (Fin m ⊕ Fin m) B) a b = 0 := by
   rw [← LieSubalgebra.mem_toSubmodule, range_derivationCompLieHom_rootSubgroup_eq_span,
     Submodule.mem_span_singleton]
@@ -62,7 +59,7 @@ theorem mem_range_derivationCompLieHom_rootSubgroup_iff
     exact root.tangentMatrix_apply_eq_zero_of_int_eq_zero c a b
       (not_ne_iff.mp (mt (tangentMatrix_apply_ne_zero_iff_root_eq.{u} root a b).mp h))
   · intro hs
-    obtain ⟨c, hc, _⟩ := (existsUnique_eq_tangentMatrix_iff_root_eq.{u} root
+    obtain ⟨c, hc, _⟩ := (existsUnique_eq_tangentMatrix_iff.{u} root
       (tangentMatrix m d).property).mpr hs
     refine ⟨c, ?_⟩
     apply (tangentLieEquivSp (R := R) (B := B) m).injective
