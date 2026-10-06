@@ -83,12 +83,6 @@ namespace HeegaardRegionSystem
 
 variable (p : ℕ) [NeZero p] (q : (ZMod p)ˣ)
 
-omit [NeZero p] in
-/-- Translation by a unit of `ZMod p` is a single cycle on `ZMod p`. -/
-private theorem isCycleOn_addRight_units (u : (ZMod p)ˣ) {s : Set (ZMod p)}
-    (hs : s = Set.univ) : (Equiv.addRight (u : ZMod p)).IsCycleOn s :=
-  hs ▸ Equiv.isCycleOn_addRight_univ_iff.mpr (ZMod.zmultiples_coe_unit_eq_top u)
-
 /-- The genus-one Heegaard diagram of the lens space `L(p, q)`, with its basepoint in the region
 `r`. The point `x_j` and the region `R_j` are both indexed by `j : ZMod p`; the point after `x_j`
 is `x_{j+1}` along `α` and `x_{j+q}` along `β`. The `α`-arc starting at `x_j` has `R_j` on its
@@ -99,11 +93,13 @@ def lensSpace (r : ZMod p) : HeegaardRegionSystem 1 (ZMod p) (ZMod p) Unit where
   alpha _ := 0
   beta _ := 0
   alphaNext := Equiv.addRight 1
-  alphaNext_isCycleOn _ := isCycleOn_addRight_units p 1 (Set.eq_univ_of_forall fun _ =>
-    Subsingleton.elim _ _)
+  alphaNext_isCycleOn i :=
+    Set.eq_univ_of_forall (s := {_j : ZMod p | (0 : Fin 1) = i}) (fun _ => Subsingleton.elim _ _) ▸
+      Equiv.isCycleOn_addRight_univ_iff.mpr (ZMod.zmultiples_coe_unit_eq_top 1)
   betaNext := Equiv.addRight (q : ZMod p)
-  betaNext_isCycleOn _ := isCycleOn_addRight_units p q (Set.eq_univ_of_forall fun _ =>
-    Subsingleton.elim _ _)
+  betaNext_isCycleOn i :=
+    Set.eq_univ_of_forall (s := {_j : ZMod p | (0 : Fin 1) = i}) (fun _ => Subsingleton.elim _ _) ▸
+      Equiv.isCycleOn_addRight_univ_iff.mpr (ZMod.zmultiples_coe_unit_eq_top q)
   alphaLeft j := j
   alphaRight j := j - q
   betaLeft j := j - 1
@@ -166,14 +162,15 @@ theorem coe_lensSpaceGenerator_snd (a : ZMod p) (i : Fin 1) :
   simp [lensSpaceGenerator]
 
 /-- Every generator of `lensSpace p q r` is the generator at its intersection point. -/
+@[simp]
 theorem lensSpaceGenerator_point (x : (lensSpace p q r).Generator) :
-    lensSpaceGenerator p q r ((lensSpace p q r).point x 0) = x := by
+    lensSpaceGenerator p q r (x.2 0) = x := by
   refine HeegaardIntersectionSystem.point_injective _ (funext fun i => ?_)
   simp [Subsingleton.elim i 0]
 
 /-- The generators of `lensSpace p q r` are indexed by the intersection points. -/
 theorem lensSpaceGenerator_bijective : Function.Bijective (lensSpaceGenerator p q r) :=
-  Function.bijective_iff_has_inverse.mpr ⟨fun x => (lensSpace p q r).point x 0,
+  Function.bijective_iff_has_inverse.mpr ⟨fun x => x.2 0,
     fun _ => by simp, lensSpaceGenerator_point⟩
 
 /-- The `0`-chain of the generator at `x_a` is the point `x_a`. -/
@@ -209,15 +206,6 @@ private theorem betaWinding_apply (c : (ZMod p → ℤ) × (ZMod p → ℤ)) :
     betaWinding p q c = -(q * ∑ j, (c.2 j : ZMod p)) :=
   (rfl)
 
-/-- The sum of `D (j - 1) - D j + m` over `ZMod p` vanishes in `ZMod p`. -/
-private theorem sum_sub_add_const_cast (D : ZMod p → ℤ) (m : ℤ) :
-    ∑ j, ((D (j - 1) - D j + m : ℤ) : ZMod p) = 0 := by
-  have h : ∑ j, (D (j - 1) : ZMod p) = ∑ j, (D j : ZMod p) :=
-    Fintype.sum_equiv (Equiv.subRight 1) _ _ fun _ => rfl
-  simp only [Int.cast_add, Int.cast_sub, Finset.sum_add_distrib, Finset.sum_sub_distrib, h,
-    sub_self, Finset.sum_const, Finset.card_univ, ZMod.card, nsmul_eq_mul, ZMod.natCast_self,
-    zero_mul, zero_add]
-
 /-- The winding vanishes on the relations: boundaries of domains and whole curves. -/
 private theorem betaWinding_eq_zero_of_mem_arcRelations {c : (ZMod p → ℤ) × (ZMod p → ℤ)}
     (hc : c ∈ (lensSpace p q r).arcRelations) : betaWinding p q c = 0 := by
@@ -229,7 +217,11 @@ private theorem betaWinding_eq_zero_of_mem_arcRelations {c : (ZMod p → ℤ) ×
       lensSpace_betaLeft, lensSpace_betaRight,
       Subsingleton.elim ((lensSpace p q r).beta j) 0] at this
     omega
-  simp only [betaWinding_apply, h, sum_sub_add_const_cast, mul_zero, neg_zero]
+  have hD : ∑ j, (D (j - 1) : ZMod p) = ∑ j, (D j : ZMod p) :=
+    Fintype.sum_equiv (Equiv.subRight 1) _ _ fun _ => rfl
+  simp only [betaWinding_apply, h, Int.cast_add, Int.cast_sub, Finset.sum_add_distrib,
+    Finset.sum_sub_distrib, hD, sub_self, Finset.sum_const, Finset.card_univ, ZMod.card,
+    nsmul_eq_mul, ZMod.natCast_self, zero_mul, zero_add, mul_zero, neg_zero]
 
 variable (p q r) in
 /-- The class map `CurveHomology → ZMod p` induced by `betaWinding`. -/
@@ -267,7 +259,8 @@ private theorem mem_arcRelations_of_betaWinding_eq_zero {c : (ZMod p → ℤ) ×
   obtain ⟨m, hm⟩ := h0
   obtain ⟨D, hD⟩ := Equiv.Perm.exists_comp_symm_sub_eq_sum (σ := Equiv.addRight (1 : ZMod p))
     (u := fun _ => 0) (v := id)
-    (fun i => (isCycleOn_addRight_units p 1 rfl).2 (Set.mem_univ _) (Set.mem_univ _))
+    (fun i => (Equiv.isCycleOn_addRight_univ_iff.mpr (ZMod.zmultiples_coe_unit_eq_top 1)).2
+      (Set.mem_univ _) (Set.mem_univ _))
     (fun j => c.2 j - m)
   have hβD : ∀ j, (lensSpace p q r).betaBoundary D j = c.2 j - m := fun j => by
     have := congrFun hD j
@@ -320,7 +313,8 @@ theorem epsilon_lensSpace_eq_zero_iff {x y : (lensSpace p q r).Generator} :
     (lensSpace p q r).epsilon x y = 0 ↔ x = y := by
   refine ⟨fun h => ?_, fun h => h ▸ epsilon_self x⟩
   have := lensSpaceCurveHomologyEquiv_epsilon x y
-  rw [h, map_zero, eq_comm, sub_eq_zero] at this
+  rw [h, map_zero, eq_comm, sub_eq_zero, HeegaardIntersectionSystem.point_apply,
+    HeegaardIntersectionSystem.point_apply] at this
   rw [← lensSpaceGenerator_point x, ← lensSpaceGenerator_point y, this]
 
 /-- In the lens space diagram a domain joins `x` to `y` only when `x = y`. -/
@@ -348,9 +342,10 @@ theorem addOrderOf_epsilon_lensSpace (a : ZMod p) :
     lensSpaceCurveHomologyEquiv_epsilon]
   simp [ZMod.addOrderOf_one]
 
-/-- The lens space diagram has no nonzero periodic domain. A periodic domain `P` has
-`β`-boundary a multiple `b` of the whole `β`-curve, so `P (j - 1) - P j = b` for every `j`;
-summing over `j` gives `p b = 0`, so `P` is constant, and it vanishes at the basepoint. -/
+/-- The lens space diagram has no nonzero periodic domain: a domain whose boundary is a
+combination of whole `α`- and `β`-curves and whose multiplicity at the basepoint region `R_r` is
+zero must vanish. Hence the diagram is weakly admissible (`weaklyAdmissible_lensSpace`) for every
+basepoint, and for each pair of generators there is at most one domain joining them. -/
 @[simp]
 theorem periodicDomains_lensSpace : (lensSpace p q r).periodicDomains = ⊥ := by
   refine (AddSubgroup.eq_bot_iff_forall _).mpr fun P hP => ?_
@@ -368,7 +363,8 @@ theorem periodicDomains_lensSpace : (lensSpace p q r).periodicDomains = ⊥ := b
     exact (mul_eq_zero.mp hsum).resolve_left (Int.natCast_ne_zero.mpr (NeZero.ne p))
   funext j
   have hconst : P j = P r := Equiv.Perm.SameCycle.apply_eq_of_apply_eq
-    ((isCycleOn_addRight_units p 1 rfl).2 (Set.mem_univ j) (Set.mem_univ r)) fun z => by
+    ((Equiv.isCycleOn_addRight_univ_iff.mpr (ZMod.zmultiples_coe_unit_eq_top 1)).2
+      (Set.mem_univ j) (Set.mem_univ r)) fun z => by
       have := hb' (z + 1)
       rw [hb0, add_sub_cancel_right, sub_eq_zero] at this
       simpa using this.symm
