@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.MonoidAlgebra.RelationModule.Basic
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologicalDimension.ClassModule
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologicalDimension.ClassModule.Basic
 public import TauCeti.RepresentationTheory.Homological.GroupCohomology.Cocycle.Topology
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.PadicInt.Basic
