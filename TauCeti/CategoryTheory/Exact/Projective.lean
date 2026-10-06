@@ -434,6 +434,22 @@ noncomputable def projectivePresentation (h : E.EnoughProjectives) (X : C) :
     E.ProjectivePresentation X :=
   (h.presentation X).some
 
+/-- Enough relative projectives transfer along an additive equivalence that preserves
+conflations in both directions: a presentation of `Y` is the image of a presentation of the
+inverse image of `Y`, corrected by the counit. -/
+theorem of_equivalence {D : Type u'} [Category.{v'} D] [Preadditive D] [HasZeroObject D]
+    [HasBinaryBiproducts D] {E' : ExactStructure D} (h : E.EnoughProjectives) (e : C ≌ D)
+    [e.functor.Additive] (hF : E.IsConflationExact E' e.functor)
+    (hG : E'.IsConflationExact E e.inverse) : E'.EnoughProjectives := by
+  refine ⟨fun Y ↦ ?_⟩
+  let P := h.projectivePresentation (e.inverse.obj Y)
+  have hp : E'.IsDeflation (e.functor.map P.p ≫ e.counit.app Y) :=
+    E'.isDeflation_comp _ _ (hF.map_isDeflation (E.isDeflation_g P.conflation))
+      (E'.deflations.of_isIso _)
+  obtain ⟨K, i, zero, hS⟩ := (ConflationClass.isDeflation_iff _ _).1 hp
+  exact ⟨⟨K, _, i, _, zero, hS,
+    (E.isProjective_map_equivalence_iff E' e hF hG P.P).2 P.isProjective⟩⟩
+
 end EnoughProjectives
 
 /-- **Schanuel's lemma.** Two conflations `K ↪ Q ↠ X` and `K' ↪ Q' ↠ X` with projective middle

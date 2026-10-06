@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Homology.HomologicalComplexLimits
+public import Mathlib.Algebra.Homology.Homotopy
 public import Mathlib.Algebra.Homology.Linear
 public import Mathlib.CategoryTheory.DifferentialObject
 public import Mathlib.CategoryTheory.Preadditive.Biproducts
@@ -27,7 +29,10 @@ and its forgetful functor, and relates it to the neighbouring notions without id
   Mathlib's homotopies, homotopy category and homology of complexes, and the periodic shift of
   `TauCeti.PeriodicComplex`, apply to differential modules through this equivalence (the
   one-object complex `TauCeti.oneObjectHomologicalComplex` uses the shape
-  `ComplexShape.refl Unit` instead, which carries no periodic shift);
+  `ComplexShape.refl Unit` instead, which carries no periodic shift); in particular a homotopy
+  between the one-periodic complexes of `φ ψ : M ⟶ N` is a single `h : M.X ⟶ N.X` with
+  `φ - ψ = d h + h d` (`DifferentialModule.nonempty_homotopy_toOnePeriodicComplex_map_iff`), and
+  the zero object and binary biproducts of differential modules are obtained through it;
 * `DifferentialModule.differentialObjectEquivalence`: for a shift on `C` together with a natural
   isomorphism `e : shiftFunctor C 1 ≅ 𝟭 C`, differential modules are equivalent to Mathlib's
   differential objects `DifferentialObject S C`, whose differentials are `d : X ⟶ X⟦1⟧` with
@@ -325,6 +330,39 @@ variable {R : Type w'} [Semiring R] [Linear R C]
 
 instance : (toOnePeriodicComplex C).Linear R where
 instance : (ofOnePeriodicComplex C).Linear R where
+
+instance : (onePeriodicComplexEquivalence C).functor.Additive := by
+  rw [onePeriodicComplexEquivalence_functor]
+  infer_instance
+
+/-- Differential modules have a zero object when the underlying category does: it is the image of
+the zero one-periodic complex. -/
+instance [HasZeroObject C] : HasZeroObject (DifferentialModule C) :=
+  Functor.hasZeroObject_of_additive (ofOnePeriodicComplex C)
+
+/-- Differential modules have binary biproducts when the underlying category does, since they
+are equivalent to one-periodic complexes. -/
+instance [HasBinaryBiproducts C] : HasBinaryBiproducts (DifferentialModule C) :=
+  have := Adjunction.hasLimitsOfShape_of_equivalence (J := Discrete WalkingPair)
+    (onePeriodicComplexEquivalence C).functor
+  HasBinaryBiproducts.of_hasBinaryProducts
+
+/-- A homotopy between the one-periodic complexes of two morphisms `φ ψ : M ⟶ N` of differential
+modules is a single morphism `h : M.X ⟶ N.X` with `φ - ψ = d h + h d`. -/
+theorem nonempty_homotopy_toOnePeriodicComplex_map_iff {M N : DifferentialModule C}
+    (φ ψ : M ⟶ N) :
+    Nonempty (Homotopy ((toOnePeriodicComplex C).map φ) ((toOnePeriodicComplex C).map ψ)) ↔
+      ∃ h : M.X ⟶ N.X, φ.f = M.d ≫ h + h ≫ N.d + ψ.f := by
+  -- The unique index `0 : ZMod 1` is its own successor and predecessor.
+  have h₀ : (ComplexShape.up (ZMod 1)).Rel 0 0 := Subsingleton.elim _ _
+  constructor
+  · rintro ⟨H⟩
+    refine ⟨H.hom 0 0, ?_⟩
+    simpa [dNext_eq _ h₀, prevD_eq _ h₀] using H.comm 0
+  · rintro ⟨h, hh⟩
+    refine ⟨{ hom _ _ := h, zero i j hij := absurd (Subsingleton.elim _ _) hij, comm i := ?_ }⟩
+    obtain rfl := Subsingleton.elim i 0
+    simpa [dNext_eq _ h₀, prevD_eq _ h₀] using hh
 
 end OnePeriodicPreadditive
 
