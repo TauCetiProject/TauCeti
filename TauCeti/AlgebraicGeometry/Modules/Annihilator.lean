@@ -125,20 +125,15 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.annihilator_congr
     (hM : ∀ U : X.affineOpens, Module.Finite Γ(X, U) Γ(M, U)) (e : M ≅ N) :
     letI : N.IsQuasicoherent :=
       (SheafOfModules.isQuasicoherent X.ringCatSheaf).prop_of_iso e inferInstance
-    let hN : ∀ U : X.affineOpens, Module.Finite Γ(X, U) Γ(N, U) := fun U ↦ by
+    let hN : ∀ U : X.affineOpens, Module.Finite Γ(X, U) Γ(N, U) := fun U ↦
       have := hM U
-      apply Module.Finite.equiv (M := Γ(M, U))
-      -- The sections functor uses ModuleCat wrappers for the same underlying sections.
-      convert! ((Scheme.Modules.sectionsFunctor U).mapIso e).toLinearEquiv
+      .equiv (Scheme.Modules.sectionsLinearEquiv e U)
     M.annihilator hM = N.annihilator hN := by
   dsimp only
   apply Scheme.IdealSheafData.ext
   funext U
-  let l : Γ(M, U) ≃ₗ[Γ(X, U)] Γ(N, U) := by
-    -- The sections functor uses ModuleCat wrappers for the same underlying sections.
-    convert! ((Scheme.Modules.sectionsFunctor U).mapIso e).toLinearEquiv
   rw [Scheme.Modules.annihilator_ideal, Scheme.Modules.annihilator_ideal]
-  exact l.annihilator_eq
+  exact (Scheme.Modules.sectionsLinearEquiv e U).annihilator_eq
 
 /-- On a spectrum, the annihilator ideal of global sections is the image of the annihilator
 computed over the original ring under the canonical global-sections isomorphism. -/

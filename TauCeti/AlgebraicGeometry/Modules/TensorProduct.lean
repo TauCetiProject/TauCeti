@@ -32,7 +32,9 @@ product of `𝒪ₓ`-modules is `M ⊗ N`.
   `𝒪ₓ`-modules;
 * `TauCeti.AlgebraicGeometry.isQuasicoherent_unit` and
   `TauCeti.AlgebraicGeometry.isQuasicoherent_structureSheaf`: the structure sheaf, viewed as a
-  module over itself, is quasi-coherent in monoidal-unit and explicit-unit notation.
+  module over itself, is quasi-coherent in monoidal-unit and explicit-unit notation;
+* `AlgebraicGeometry.Scheme.Modules.sectionsLinearEquiv`: the `Γ(X, U)`-linear equivalence of
+  sections over `U` induced by an isomorphism of `𝒪ₓ`-modules.
 
 -/
 
@@ -124,6 +126,37 @@ variable {X} in
 @[simp]
 lemma _root_.AlgebraicGeometry.Scheme.Modules.sectionsFunctor_map (U : X.Opens) {M N : X.Modules}
     (φ : M ⟶ N) : (Scheme.Modules.sectionsFunctor U).map φ = φ.val.app (Opposite.op U) :=
+  rfl
+
+variable {X} in
+/-- An isomorphism of `𝒪ₓ`-modules induces a `Γ(X, U)`-linear equivalence between the modules
+of sections over `U`, given by the components of the isomorphism and of its inverse at `U`. -/
+def _root_.AlgebraicGeometry.Scheme.Modules.sectionsLinearEquiv {M N : X.Modules} (e : M ≅ N)
+    (U : X.Opens) : Γ(M, U) ≃ₗ[Γ(X, U)] Γ(N, U) where
+  toFun := e.hom.app U
+  invFun := e.inv.app U
+  map_add' := map_add _
+  map_smul' := Scheme.Modules.Hom.app_smul e.hom
+  left_inv x := by simp [← ConcreteCategory.comp_apply, ← Scheme.Modules.Hom.comp_app]
+  right_inv x := by simp [← ConcreteCategory.comp_apply, ← Scheme.Modules.Hom.comp_app]
+
+variable {X} in
+/-- The linear equivalence induced by `e` on sections over `U` is the component of `e.hom`. -/
+@[simp]
+lemma _root_.AlgebraicGeometry.Scheme.Modules.sectionsLinearEquiv_apply {M N : X.Modules}
+    (e : M ≅ N) (U : X.Opens) (x : Γ(M, U)) :
+    Scheme.Modules.sectionsLinearEquiv e U x = e.hom.app U x := by
+  rw [Scheme.Modules.sectionsLinearEquiv]
+  rfl
+
+variable {X} in
+/-- The inverse of the linear equivalence induced by `e` on sections over `U` is the component
+of `e.inv`. -/
+@[simp]
+lemma _root_.AlgebraicGeometry.Scheme.Modules.sectionsLinearEquiv_symm_apply {M N : X.Modules}
+    (e : M ≅ N) (U : X.Opens) (x : Γ(N, U)) :
+    (Scheme.Modules.sectionsLinearEquiv e U).symm x = e.inv.app U x := by
+  rw [Scheme.Modules.sectionsLinearEquiv]
   rfl
 
 end
