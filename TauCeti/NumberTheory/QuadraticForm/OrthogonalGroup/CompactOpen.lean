@@ -159,16 +159,7 @@ theorem eventually_specialOrthogonal (g : specialOrthogonalGroup Q) :
       specialOrthogonalGroupBaseChange (A := ℚ_[p]) Q g ∈ U.specialOrthogonal p := by
   filter_upwards [U.eventually_orthogonal
     (_root_.QuadraticMap.specialOrthogonalToOrthogonal Q g)] with p hp
-  rw [mem_specialOrthogonal_iff]
-  have hmap :
-      _root_.QuadraticMap.specialOrthogonalToOrthogonal (Q.baseChange ℚ_[p])
-          (specialOrthogonalGroupBaseChange (A := ℚ_[p]) Q g) =
-        orthogonalGroupBaseChange (A := ℚ_[p]) Q
-          (_root_.QuadraticMap.specialOrthogonalToOrthogonal Q g) := by
-    apply Subtype.ext
-    rw [coe_specialOrthogonalToOrthogonal, coe_orthogonalGroupBaseChange,
-      coe_specialOrthogonalGroupBaseChange, coe_specialOrthogonalToOrthogonal]
-  rw [hmap]
+  rw [mem_specialOrthogonal_iff, specialOrthogonalToOrthogonal_specialOrthogonalGroupBaseChange]
   exact hp
 
 end OrthogonalCompactOpens
