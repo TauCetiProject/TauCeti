@@ -62,8 +62,9 @@ it spans the centre together with `1`.
 * `CliffordAlgebra.finite_even_over_center`: the even Clifford algebra is module-finite over its
   centre when the quadratic space is finite-dimensional.
 * `CliffordAlgebra.finrank_center_even`: this centre has dimension two over the base field.
-* `CliffordAlgebra.finrank_even_over_center_of_finrank_eq_four`: in dimension four, when the
-  centre is a field, the even Clifford algebra has dimension four over its centre.
+* `CliffordAlgebra.finrank_even_over_center`: when the centre is a field, the even Clifford
+  algebra has dimension `2 ^ (finrank K V - 2)` over its centre, with
+  `CliffordAlgebra.finrank_even_over_center_of_finrank_eq_four` the dimension-four case.
 * `TauCeti.CliffordAlgebra.exists_mem_center_even_forall_ne_algebraMap`: in even positive
   dimension, the centre contains a non-scalar element.
 
@@ -442,27 +443,38 @@ theorem finrank_center_even (Q : QuadraticForm K V) (hQ : Q.Nondegenerate)
     _ = p.natDegree := (AdjoinRoot.powerBasis (X_pow_sub_C_ne_zero two_pos _)).finrank
     _ = 2 := natDegree_X_pow_sub_C
 
+/-- If the centre of a regular, positive even-dimensional even Clifford algebra is a field, then
+the algebra has dimension `2 ^ (finrank K V - 2)` over its centre. -/
+theorem finrank_even_over_center (Q : QuadraticForm K V) (hQ : Q.Nondegenerate)
+    (heven : Even (finrank K V)) (hpos : 0 < finrank K V)
+    (hfield : IsField (Subalgebra.center K (even Q))) :
+    finrank (Subalgebra.center K (even Q)) (even Q) = 2 ^ (finrank K V - 2) := by
+  let _ := hfield.toField
+  let _ : Invertible (2 : K) := invertibleOfNonzero (NeZero.ne (2 : K))
+  let _ : Nontrivial V := Module.nontrivial_of_finrank_pos hpos
+  let _ : IsScalarTower K (Subalgebra.center K (even Q)) (even Q) :=
+    Subalgebra.isScalarTower_centerAlgebra
+  let _ : Module.Finite (Subalgebra.center K (even Q)) (even Q) :=
+    finite_even_over_center Q
+  have hcenter := finrank_center_even Q hQ heven hpos
+  have htower := Module.finrank_mul_finrank K (Subalgebra.center K (even Q)) (even Q)
+  rw [hcenter, finrank_even Q] at htower
+  obtain ⟨m, hm⟩ := heven
+  have hpow : 2 * 2 ^ (finrank K V - 2) = 2 ^ (finrank K V - 1) := by
+    rw [← pow_succ']
+    congr
+    omega
+  omega
+
 /-- If the discriminant centre of a regular four-dimensional even Clifford algebra is a field,
 then the even Clifford algebra has dimension four over that centre. -/
 theorem finrank_even_over_center_of_finrank_eq_four (Q : QuadraticForm K V)
     (hQ : Q.Nondegenerate) (hV : finrank K V = 4)
     (hfield : IsField (Subalgebra.center K (even Q))) :
     finrank (Subalgebra.center K (even Q)) (even Q) = 4 := by
-  let _ := hfield.toField
-  let _ : Invertible (2 : K) := invertibleOfNonzero (NeZero.ne (2 : K))
-  let _ : Nontrivial V := Module.nontrivial_of_finrank_pos (by rw [hV]; norm_num)
-  let _ : IsScalarTower K (Subalgebra.center K (even Q)) (even Q) :=
-    Subalgebra.isScalarTower_centerAlgebra
-  let _ : Module.Finite (Subalgebra.center K (even Q)) (even Q) :=
-    finite_even_over_center Q
-  have hcenter : finrank K (Subalgebra.center K (even Q)) = 2 := by
-    apply finrank_center_even Q hQ
-    · rw [hV]
-      exact ⟨2, by norm_num⟩
-    · simp [hV]
-  have htower := Module.finrank_mul_finrank K (Subalgebra.center K (even Q)) (even Q)
-  rw [hcenter, finrank_even Q, hV] at htower
-  omega
+  rw [finrank_even_over_center Q hQ (by rw [hV]; exact ⟨2, by norm_num⟩)
+    (by simp [hV]) hfield, hV]
+  norm_num
 
 end FiniteDimensional
 

@@ -73,11 +73,7 @@ theorem centerAlgebra_algebraMap :
 /-- The original base ring, the center, and the ambient algebra form a scalar tower for the
 canonical action of the center by inclusion. -/
 theorem isScalarTower_centerAlgebra : IsScalarTower R (center R A) A := by
-  refine ⟨fun r z a ↦ ?_⟩
-  simp only [Algebra.smul_def]
-  change (((algebraMap R (center R A) r * z : center R A) : A) * a) =
-    algebraMap R A r * ((z : A) * a)
-  rw [Subalgebra.coe_mul, Subalgebra.coe_algebraMap, mul_assoc]
+  exact IsScalarTower.of_algebraMap_eq fun _ ↦ rfl
 
 /-- Every algebra is central when regarded as an algebra over its full center. -/
 instance centerAlgebraIsCentral : Algebra.IsCentral (center R A) A := by
