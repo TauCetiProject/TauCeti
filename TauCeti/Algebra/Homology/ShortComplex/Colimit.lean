@@ -30,6 +30,8 @@ live in unrelated universes.
   associated to a homological complex preserves all existing colimits.
 * `TauCeti.homologicalComplexHomologyFunctor_preservesColimitsOfShape`: homology of homological
   complexes preserves colimits of any exact shape.
+* `TauCeti.isColimitπ₃MapCoconeOfIsCokernel`: in a cocone of cokernel sequences, colimits on the
+  first two terms imply a colimit on the third, without exactness assumptions.
 
 ## Implementation notes
 
@@ -47,6 +49,10 @@ cocone into the chosen colimit of the pointwise homology diagram.
 Mathlib's AB5 instance for `ModuleCat.{u} R` asks for `R : Type u`. The instance here removes the
 corresponding restriction on the module universe for small filtered shapes by transporting
 exactness along the forgetful functor to abelian groups.
+
+The cokernel-cocone criterion generalizes the coproduct argument of
+`TauCeti.isColimitCofanMkCokernelCofork` in `TauCeti/CategoryTheory/Limits/Shapes/Products` to
+arbitrary diagrams, using Mathlib's `ShortComplex` projections and cokernel universal properties.
 -/
 
 public section
@@ -244,5 +250,63 @@ instance homologicalComplexHomologyFunctor_preservesColimitsOfShape :
       (HomologicalComplex.homologyFunctor C c q) := by
   exact preservesColimitsOfShape_of_natIso
     (HomologicalComplex.homologyFunctorIso C c q).symm
+
+end TauCeti
+
+namespace TauCeti
+
+open CategoryTheory Limits
+
+variable {D : Type*} [Category* D] [HasZeroMorphisms D]
+  {I : Type*} [Category I] {F : I ⥤ ShortComplex D}
+
+/-- A cocone of cokernel sequences is a colimit on the third terms if it is a colimit on the
+first two terms and its apex is also a cokernel sequence. No exactness of colimits is needed. -/
+noncomputable def isColimitπ₃MapCoconeOfIsCokernel (c : Cocone F)
+    (h₁ : IsColimit (ShortComplex.π₁.mapCocone c))
+    (h₂ : IsColimit (ShortComplex.π₂.mapCocone c))
+    (h : ∀ i, IsColimit (CokernelCofork.ofπ (F.obj i).g (F.obj i).zero))
+    (hpt : IsColimit (CokernelCofork.ofπ c.pt.g c.pt.zero)) :
+    IsColimit (ShortComplex.π₃.mapCocone c) := by
+  let t (s : Cocone (F ⋙ ShortComplex.π₃)) : Cocone (F ⋙ ShortComplex.π₂) :=
+    (Cocone.precompose (Functor.whiskerLeft F ShortComplex.π₂Toπ₃)).obj s
+  have hz (s : Cocone (F ⋙ ShortComplex.π₃)) : c.pt.f ≫ h₂.desc (t s) = 0 := by
+    apply h₁.hom_ext
+    intro i
+    calc
+      _ = (F.obj i).f ≫ (c.ι.app i).τ₂ ≫ h₂.desc (t s) :=
+        (reassoc_of% (c.ι.app i).comm₁₂) _
+      _ = (F.obj i).f ≫ (t s).ι.app i := congrArg ((F.obj i).f ≫ ·) (h₂.fac (t s) i)
+      _ = 0 := ((reassoc_of% (F.obj i).zero) _).trans zero_comp
+      _ = _ := comp_zero.symm
+  refine
+    { desc := fun s ↦ hpt.desc (CokernelCofork.ofπ (h₂.desc (t s)) (hz s))
+      fac := ?_
+      uniq := ?_ }
+  · intro s i
+    have hd : c.pt.g ≫ hpt.desc (CokernelCofork.ofπ (h₂.desc (t s)) (hz s)) =
+        h₂.desc (t s) := Cofork.IsColimit.π_desc hpt
+    have ht : (c.ι.app i).τ₂ ≫ h₂.desc (t s) = (F.obj i).g ≫ s.ι.app i :=
+      h₂.fac (t s) i
+    apply Cofork.IsColimit.hom_ext (h i)
+    calc
+      _ = (c.ι.app i).τ₂ ≫ c.pt.g ≫
+          hpt.desc (CokernelCofork.ofπ (h₂.desc (t s)) (hz s)) :=
+        ((reassoc_of% (c.ι.app i).comm₂₃) _).symm
+      _ = (c.ι.app i).τ₂ ≫ h₂.desc (t s) :=
+        congrArg ((c.ι.app i).τ₂ ≫ ·) hd
+      _ = _ := ht
+  · intro s m hm
+    apply Cofork.IsColimit.hom_ext hpt
+    have hd : c.pt.g ≫ hpt.desc (CokernelCofork.ofπ (h₂.desc (t s)) (hz s)) =
+        h₂.desc (t s) := Cofork.IsColimit.π_desc hpt
+    refine (h₂.hom_ext (fun i ↦ ?_)).trans hd.symm
+    have ht : (c.ι.app i).τ₂ ≫ h₂.desc (t s) = (F.obj i).g ≫ s.ι.app i :=
+      h₂.fac (t s) i
+    calc
+      _ = (F.obj i).g ≫ (c.ι.app i).τ₃ ≫ m :=
+        (reassoc_of% (c.ι.app i).comm₂₃) _
+      _ = (F.obj i).g ≫ s.ι.app i := congrArg ((F.obj i).g ≫ ·) (hm i)
+      _ = _ := ht.symm
 
 end TauCeti
