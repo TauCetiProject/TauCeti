@@ -105,6 +105,36 @@ theorem pentagonRectangleWeight_of_opposite_side_order
     D.coveredSquares_union_map_of_opposite_side_order hleft hthin]
   rw [G.prod_OColumnsOfSquares_univ_erase_product_singleton]
 
+/-- Every counted vertical rectangle--pentagon term has one factor for each covered O-marking
+in the commuted columns, with each column's variable renamed to the other column. -/
+@[simp]
+theorem rectanglePentagonWeight_of_mem_rectanglePentagonSameSideOrder
+    (D : GridRectanglePentagonDecomposition C.column C.turnRow x x)
+    (hD : D ∈ G.rectanglePentagonSameSideOrder C x) :
+    G.rectanglePentagonWeight C R D =
+      (if G.O C.column ∉ insert C.turnRow (Grid.cIco D.pentagon.bottom C.turnRow)
+        then MvPolynomial.X (finRotate n C.column) else 1) *
+      (if G.O (finRotate n C.column) ∈ Grid.cIco D.pentagon.bottom C.turnRow
+        then MvPolynomial.X C.column else 1) := by
+  exact G.rectanglePentagonWeight_of_same_side_order C R D
+    ((G.mem_rectanglePentagonSameSideOrder C x D).1 hD).2.1
+    (G.pentagon_left_eq_column_of_mem_rectanglePentagonSameSideOrder C x D hD)
+
+/-- Every counted vertical pentagon--rectangle term has one factor for each covered O-marking
+in the original commuted columns, with each column's variable renamed to the other column. -/
+@[simp]
+theorem pentagonRectangleWeight_of_mem_pentagonRectangleSameSideOrder
+    (D : GridPentagonRectangleDecomposition C.column C.turnRow x x)
+    (hD : D ∈ G.pentagonRectangleSameSideOrder C x) :
+    G.pentagonRectangleWeight C R D =
+      (if G.O C.column ∈ Grid.cIoo C.turnRow D.pentagon.top
+        then MvPolynomial.X (finRotate n C.column) else 1) *
+      (if G.O (finRotate n C.column) ∈ Grid.cIco D.pentagon.top C.turnRow
+        then MvPolynomial.X C.column else 1) := by
+  exact G.pentagonRectangleWeight_of_same_side_order C R D
+    ((G.mem_pentagonRectangleSameSideOrder C x D).1 hD).2.1
+    (G.pentagon_left_eq_column_of_mem_pentagonRectangleSameSideOrder C x D hD)
+
 /-- Every counted horizontal rectangle--pentagon term contributes the variable of the unique
 O-marking in the turn row, in target-column coordinates. -/
 @[simp]
