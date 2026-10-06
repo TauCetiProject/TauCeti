@@ -22,18 +22,13 @@ The group exponent is `30`. Its primitive root `4` modulo `61` has sixth power `
 these reductions compatible with the root used for the full group exponent. The reconstruction
 here takes place in the smaller ring containing the displayed character values.
 
-The search identification consumes
-`ClassData.centralCharacterSearch_eq_rowsOfMap_of_isGoodDixonPrime`
-and the exact eigenrow certificate in `AlternatingFive.Basic`. The lift consumes
-`Cyclotomic.lift_conjugateResidues`.
-
 ## References
 
 * J. D. Dixon, *High speed computation of group characters*, Numerische Mathematik 10 (1967),
   446–450.
 * J.-P. Serre, *Linear Representations of Finite Groups*, §5.2 (the displayed A₅ table).
-
-The modular search and reconstruction follow the existing `Cyclotomic.AlternatingFour` API.
+* The existing A₄ formalization in `Cyclotomic.AlternatingFour`, the source for this
+  formalization of modular search and reconstruction.
 -/
 
 public section
@@ -129,6 +124,14 @@ theorem alternatingGroupFive_centralCharacterSearch (α : ZMod 61)
     simp only [Cyclotomic.reduceRingHom_apply, f] at hinj
     rw [ClassData.rowsOfMap, Finset.card_image_of_injective _ hinj,
       Finset.card_univ, Fintype.card_fin]
+
+/-- Dixon's modular search at prime `61` returns the named central-character row set of A₅,
+reduced at the chosen primitive fifth root `9`. -/
+@[simp]
+theorem alternatingGroupFive_centralCharacterSearch_eq_modularCentralRows :
+    alternatingGroupFiveClassData.centralCharacterSearch (F := ZMod 61) =
+      alternatingGroupFiveModularCentralRows :=
+  alternatingGroupFive_centralCharacterSearch 9 isPrimitiveRoot_alternatingGroupFive_modularRoot
 
 /-- Every exact central-character coefficient of A₅ fits in the balanced residue window
 modulo `61`. This includes the trivial row's entry `20`. -/
