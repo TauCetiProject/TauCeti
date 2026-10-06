@@ -32,8 +32,6 @@ is what lets it be compared, through mates, with the tensor comparison of a pull
 
 ## Main declarations
 
-* `TauCeti.SheafOfModules.pushforward_μ_app_forget_μ_app_tmul`: on sections, the tensor map of a
-  pushforward sends the class of `m ⊗ n` to the class of `m ⊗ n`;
 * `TauCeti.SheafOfModules.pushforwardPushforwardAdj_unit_app_tensor` and
   `TauCeti.SheafOfModules.pushforwardPushforwardAdj_counit_app_tensor`: the unit and counit of the
   adjunction are compatible with the tensor maps;
@@ -58,35 +56,6 @@ universe u
 noncomputable section
 
 namespace SheafOfModules
-
-section Pushforward
-
-variable {C D : Type u} [SmallCategory C] [SmallCategory D]
-  {J : GrothendieckTopology C} {K : GrothendieckTopology D}
-  [J.HasSheafCompose (forget₂ CommRingCat RingCat.{u})]
-  [K.HasSheafCompose (forget₂ CommRingCat RingCat.{u})]
-  [HasWeakSheafify J AddCommGrpCat.{u}] [J.WEqualsLocallyBijective AddCommGrpCat.{u}]
-  [HasWeakSheafify K AddCommGrpCat.{u}] [K.WEqualsLocallyBijective AddCommGrpCat.{u}]
-  {F : C ⥤ D} [F.IsContinuous J K] {S : Sheaf J CommRingCat.{u}} {R : Sheaf K CommRingCat.{u}}
-  (φ : ringCatSheaf S ⟶ (F.sheafPushforwardContinuous RingCat.{u} J K).obj (ringCatSheaf R))
-
-/-- On sections over `U`, the tensor map `φ_* M ⊗ φ_* N ⟶ φ_* (M ⊗ N)` of a pushforward sends the
-class of `m ⊗ n` in the sheaf tensor product to the class of `m ⊗ n`. -/
-lemma pushforward_μ_app_forget_μ_app_tmul (M N : _root_.SheafOfModules.{u} (ringCatSheaf R))
-    (U : Cᵒᵖ) (m : M.val.obj (F.op.obj U)) (n : N.val.obj (F.op.obj U)) :
-    ((_root_.SheafOfModules.forget (ringCatSheaf S)).map
-        (μ (_root_.SheafOfModules.pushforward φ) M N)).app U
-      ((μ (_root_.SheafOfModules.forget (ringCatSheaf S))
-        ((_root_.SheafOfModules.pushforward φ).obj M)
-        ((_root_.SheafOfModules.pushforward φ).obj N)).app U (m ⊗ₜ[S.obj.obj U] n)) =
-      (μ (_root_.SheafOfModules.forget (ringCatSheaf R)) M N).app (F.op.obj U)
-        (m ⊗ₜ[R.obj.obj (F.op.obj U)] n) :=
-  (congrArg (fun f ↦ f.app U (m ⊗ₜ[S.obj.obj U] n))
-    (forget_μ_comp_map_pushforward_μ φ M N)).trans
-      (congrArg ((μ (_root_.SheafOfModules.forget (ringCatSheaf R)) M N).app (F.op.obj U))
-        (presheafPushforward_μ_app_tmul φ M.val N.val U m n))
-
-end Pushforward
 
 section Adjunction
 
