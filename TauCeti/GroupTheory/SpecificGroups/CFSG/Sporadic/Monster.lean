@@ -273,9 +273,10 @@ theorem presentation_expectedGeneratorCount : presentation.expectedGeneratorCoun
 theorem presentation_expectedRelatorCount : presentation.expectedRelatorCount = 80 := by
   rw [presentation]
 
+-- Not `@[simp]`: the right side is a `cast` from `List (Relator (Fin 12))`, which `simp` cannot
+-- see through, so rewriting with it would leave `simp` stuck; rewrite with it instead.
 /-- The relator expressions carried by the Monster presentation are exactly the transcribed
 relator list, whose decomposition is `relatorList_def`. -/
-@[simp]
 theorem presentation_transcribed : presentation.transcribed = cast (by simp) relatorList := by
   rfl
 
@@ -298,6 +299,12 @@ theorem length_relatorList : relatorList.length = 80 := by
   simp [relatorList_def, adjoinedRelators_def]
   norm_num [Nat.choose]
 
+/-- The Monster presentation carries eighty relator expressions. -/
+@[simp]
+theorem presentation_transcribed_length : presentation.transcribed.length = 80 := by
+  rw [presentation_transcribed]
+  exact length_relatorList
+
 /-- The generator and relator counts recorded for the Monster agree with the transcribed data. -/
 theorem presentation_matchesMetadata : presentation.matchesMetadata := by
   rw [GroupPresentation.matchesMetadata_iff]
@@ -305,20 +312,19 @@ theorem presentation_matchesMetadata : presentation.matchesMetadata := by
   · rw [GroupPresentation.generatorCount, presentation_generatorNames,
       presentation_expectedGeneratorCount]
     rfl
-  · rw [presentation_transcribed, presentation_expectedRelatorCount]
-    exact length_relatorList
+  · rw [presentation_transcribed_length, presentation_expectedRelatorCount]
 
 /-- The spider relator has ninety letters. -/
-theorem length_spiderRelator : spiderRelator.toWord.length = 90 := by
+@[simp]
+theorem length_spiderRelator : spiderRelator.length = 90 := by
   simp [spiderRelator]
 
 /-- The seventy-nine relators presenting `M × 2` have the source's total length `400`. -/
 theorem coxeterAndSpider_totalLength :
-    ((coxeterRelators coxeterMatrix ++ [spiderRelator]).map
-      fun r => r.toWord.length).sum = 400 := by
+    ((coxeterRelators coxeterMatrix ++ [spiderRelator]).map Relator.length).sum = 400 := by
   rw [coxeterRelators_def, coxeterRelatorsOfList_def]
   rw [List.map_append, List.sum_append, List.map_map]
-  simp_rw [Function.comp_def, length_toWord_coxeterRelator]
+  simp_rw [Function.comp_def, ← Relator.length_toWord, length_toWord_coxeterRelator]
   simp only [coxeterMatrix_apply]
   rw [edges_def]
   simp only [List.map_cons, List.map_nil, List.sum_cons, List.sum_nil, Nat.add_zero,
@@ -326,19 +332,20 @@ theorem coxeterAndSpider_totalLength :
   decide
 
 /-- The central-involution relator `f₃₁₂` has sixty-three letters. -/
-theorem length_centralInvolutionRelator : centralInvolutionRelator.toWord.length = 63 := by
+@[simp]
+theorem length_centralInvolutionRelator : centralInvolutionRelator.length = 63 := by
   simp [centralInvolutionRelator]
 
 /-- The compiled relators of the Monster presentation contain `463` signed letters in total. -/
 theorem presentation_totalLength : presentation.totalLength = 463 := by
-  have h : (relatorList.map fun r => r.toWord.length).sum = 463 := by
+  have h : (relatorList.map Relator.length).sum = 463 := by
     rw [relatorList_def, adjoinedRelators_def, ← List.singleton_append, ← List.append_assoc,
       List.map_append, List.sum_append]
     simp only [List.map_cons, List.map_nil, List.sum_cons, List.sum_nil, Nat.add_zero]
     rw [coxeterAndSpider_totalLength, length_centralInvolutionRelator]
   rw [← GroupPresentation.sum_map_length_relatorLetters, presentation_relatorLetters,
     List.map_map]
-  simpa only [Function.comp_def, List.length_map] using h
+  simpa only [Function.comp_def, List.length_map, Relator.length_toWord] using h
 
 /-- Every expression in the Monster relator list compiles to a cyclically reduced word. -/
 theorem isCyclicallyReduced_toWord_of_mem_relatorList (r : Relator (Fin 12))
@@ -362,13 +369,6 @@ theorem presentation_relatorsCyclicallyReduced :
 
 /-! ### The row against the Coxeter group of its diagram -/
 
-/-- **The relators of the row are the `Y₄₄₃` Coxeter relators followed by the two adjoined
-relators.** -/
-theorem presentation_transcribed_append :
-    presentation.transcribed = cast (by simp)
-      (coxeterRelators coxeterMatrix ++ adjoinedRelators) := by
-  rw [presentation_transcribed, relatorList_def]
-
 /-- **The row presents the Coxeter group of the `Y₄₄₃` diagram cut down by the spider and central
 relations**, which is the shape in which Bray and Ivanov state the presentation.
 
@@ -380,14 +380,11 @@ def mulEquivPresentedGroupCoxeterAppend :
       PresentedGroup (coxeterMatrix.relationsSet ∪ Relator.relatorSet adjoinedRelators) := by
   -- The generic equivalence indexes its Coxeter matrix and extra relators by
   -- `Fin presentation.generatorCount`. That is `Fin 12` by definition but not syntactically,
-  -- because the row is sealed, so the row is unfolded here — in the goal and in the transcription
-  -- equation alike — to make the two index types meet.
-  have h := presentation_transcribed_append
-  unfold presentation at h ⊢
+  -- because the row is sealed, so the row is unfolded here to make the two index types meet; its
+  -- relators are then `relatorList` itself.
+  unfold presentation
   apply GroupPresentation.mulEquivPresentedGroupCoxeterAppend
-  -- The cast in `h` transports along an equality of a type with itself, so it is the identity and
-  -- the two relator lists are literally the same list.
-  exact congrArg Subgroup.normalClosure (congrArg Relator.relatorSet h)
+  exact congrArg Subgroup.normalClosure (congrArg Relator.relatorSet relatorList_def)
 
 /-- The Coxeter equivalence sends each canonical generator to the corresponding canonical
 generator. -/

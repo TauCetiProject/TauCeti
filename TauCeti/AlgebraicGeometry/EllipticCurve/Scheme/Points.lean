@@ -158,11 +158,6 @@ private theorem comp_awayEquivChartRing_symm_mk
   exact (congrArg α (RingHom.congr_fun
     (W.toProjective.awayEquivChartRing_symm_comp_algebraMap i) r)).trans (RingHom.congr_fun hα r)
 
--- In the chart ring `R[X₀, X₁, X₂] ⧸ (W, Xᵢ - 1)`, the coordinate `Xᵢ` is `1`.
-private theorem chartRing_mk_X_self :
-    (Ideal.Quotient.mk _ (X i) : W.toProjective.ChartRing i) = 1 :=
-  (Ideal.Quotient.mk_eq_one_iff_sub_mem _).mpr (Ideal.subset_span ⟨1, by simp⟩)
-
 -- A homomorphism `α : A_(Xᵢ) →+* R` over `R` is the `chartHom` of its values `Q` on the fractions
 -- `Xⱼ / Xᵢ`, which solve the projective equation with `Qᵢ = 1`.
 private theorem exists_eq_chartHom
@@ -171,7 +166,7 @@ private theorem exists_eq_chartHom
       RingHom.id R) {Q : Fin 3 → R}
     (hQ : ∀ k, α ((W.toProjective.awayEquivChartRing i).symm (Ideal.Quotient.mk _ (X k))) = Q k) :
     ∃ (hP : W.toProjective.Equation Q) (hi : IsUnit (Q i)), α = chartHom hP hi := by
-  have hQi : Q i = 1 := by rw [← hQ, chartRing_mk_X_self, map_one, map_one]
+  have hQi : Q i = 1 := by rw [← hQ, Projective.chartRing_mk_X_self, map_one, map_one]
   have hW : (Ideal.Quotient.mk _ W.toProjective.polynomial : W.toProjective.ChartRing i) = 0 :=
     Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.subset_span ⟨0, by simp⟩)
   have hP : W.toProjective.Equation Q := by

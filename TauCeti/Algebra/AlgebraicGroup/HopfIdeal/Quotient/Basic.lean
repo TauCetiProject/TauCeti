@@ -51,8 +51,6 @@ The same quotient of a finite-type commutative Hopf algebra is again an object o
   precomposition with the quotient morphism.
 * `TauCeti.FiniteTypeCommHopfAlgCat.quotientMapOfLe_surjective`: the finite-type form of
   quotient-to-quotient surjectivity.
-* `TauCeti.HopfIdeal.comapOfSurjective_map_mkQuotient`: pulling the image of `J` back from
-  `H ⧸ I` recovers `J`, provided `I ≤ J`.
 * `TauCeti.CommHopfAlgCat.kerOfSurjective_quotientMapOfLe`: over a commutative ring, the
   Hopf ideal `J/I` is the surjective kernel of the induced quotient map.
 * `TauCeti.CommHopfAlgCat.ker_quotientMapOfLe`: over a field, the Hopf ideal `J/I` is the
@@ -92,26 +90,6 @@ public section
 namespace TauCeti
 
 universe u v
-
-namespace HopfIdeal
-
-variable {R : Type u} [CommRing R]
-variable {H : Type v} [CommRing H] [HopfAlgebra R H]
-
-/-- Pulling the image of `J` in `H ⧸ I` back along the quotient morphism recovers `J`
-when `I ≤ J`. -/
-@[simp]
-theorem comapOfSurjective_map_mkQuotient {I J : HopfIdeal R H} (hIJ : I ≤ J) :
-    (J.map (Bialgebra.Quotient.mkBialgHom I.toIdeal)).comapOfSurjective
-        (Bialgebra.Quotient.mkBialgHom I.toIdeal)
-        (by
-          intro q
-          obtain ⟨h, rfl⟩ := Ideal.Quotient.mk_surjective q
-          exact ⟨h, Bialgebra.Quotient.mkBialgHom_apply I.toIdeal h⟩) = J := by
-  rw [comapOfSurjective_map, kerOfSurjective_mkBialgHom, sup_eq_left]
-  exact hIJ
-
-end HopfIdeal
 
 namespace CommHopfAlgCat
 

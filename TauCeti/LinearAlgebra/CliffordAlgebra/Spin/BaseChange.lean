@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.BaseChange
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.BaseChange
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Map
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Transvection
+public import TauCeti.LinearAlgebra.QuadraticForm.Transvection.ParameterBaseChange
 
 /-!
 # Extension of scalars for Spin groups
@@ -30,6 +31,8 @@ sends `1 + ι w * ι u` to the lift determined by the pure tensors `1 ⊗ u` and
   for orthogonal automorphisms.
 * `CliffordAlgebra.spinGroupBaseChange_spinTransvection` identifies the scalar extension of a
   canonical transvection lift.
+* `TauCeti.CliffordAlgebra.spinGroupBaseChange_comp_spinTransvectionHom` transports the entire
+  quotient root-subgroup homomorphism.
 * `CliffordAlgebra.spinGroupBaseChange_baseChange` identifies direct and successive scalar
   extension.
 -/
@@ -213,5 +216,33 @@ theorem spinToOrthogonal_baseChange (Q : QuadraticForm R M) (x : spinGroup Q) :
         coe_spinToOrthogonal_apply]
       exact spinVectorAction_baseChange_tmul (A := A) Q x a m
   | add z w hz hw => simp only [map_add, hz, hw]
+
+open _root_.QuadraticMap
+
+variable {K L V : Type*} [Field K] [Field L] [Algebra K L]
+  [AddCommGroup V] [Module K V] [FiniteDimensional K V] [Invertible (2 : K)]
+
+/-- Extending scalars along a field extension carries the canonical Spin root-subgroup
+homomorphism to that of the extended quotient parameters, preserving its additive composition
+law. -/
+theorem spinGroupBaseChange_comp_spinTransvectionHom {Q : QuadraticForm K V} {u : V}
+    (hQ : Q.Nondegenerate) (hu : Q u = 0) :
+    letI : Invertible (2 : L) :=
+      (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
+    (spinGroupBaseChange (A := L) Q).toAdditive.comp (spinTransvectionHom hQ hu) =
+      (spinTransvectionHom (QuadraticForm.Nondegenerate.baseChange hQ)
+        (u := 1 ⊗ₜ[K] u) (by simp [QuadraticForm.baseChange_tmul, hu])).comp
+          (transvectionParameterBaseChange (A := L) Q u).toAddMonoidHom := by
+  let : Invertible (2 : L) :=
+    (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
+  apply AddMonoidHom.ext
+  intro q
+  induction q using Submodule.Quotient.induction_on with | H w =>
+    have huw : polar Q u (w : V) = 0 := LinearMap.mem_ker.mp w.2
+    apply Additive.toMul.injective
+    simp only [AddMonoidHom.comp_apply, MonoidHom.toAdditive_apply_apply,
+      LinearMap.toAddMonoidHom_coe, transvectionParameterBaseChange_mk, toMul_ofMul]
+    rw [toMul_spinTransvectionHom_mk hQ hu huw, spinGroupBaseChange_spinTransvection,
+      toMul_spinTransvectionHom_mk]
 
 end TauCeti.CliffordAlgebra

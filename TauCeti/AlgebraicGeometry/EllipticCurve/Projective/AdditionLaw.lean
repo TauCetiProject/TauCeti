@@ -7,8 +7,11 @@ module
 
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Projective.Formula
 public import Mathlib.LinearAlgebra.CrossProduct
+public import Mathlib.LinearAlgebra.Unimodular
 import Mathlib.AlgebraicGeometry.EllipticCurve.Projective.Point
 import Mathlib.LinearAlgebra.Projectivization.Constructions
+import Mathlib.RingTheory.LocalRing.ResidueField.Ideal
+import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.Nonsingular
 
 /-!
 # The second Bosma–Lenstra addition law on a projective Weierstrass curve
@@ -46,6 +49,10 @@ curve its diagonal is the doubling formula, so its coordinates are named `dblAdd
 * `WeierstrassCurve.Projective.addXYZ_ne_zero_or_dblAddXYZ_ne_zero`: over a field, the laws
   `addXYZ` and `dblAddXYZ` do not vanish simultaneously at two nonsingular point representatives,
   which is the non-vanishing condition for the two laws to form a complete system.
+* `WeierstrassCurve.Projective.map_dblAddXYZ`: the law commutes with ring homomorphisms.
+* `WeierstrassCurve.Projective.span_range_addXYZ_union_range_dblAddXYZ_eq_top`: over a
+  commutative ring, at two unimodular solutions of the equation of an elliptic curve, the six
+  coordinates of `addXYZ` and `dblAddXYZ` generate the unit ideal.
 
 ## References
 
@@ -66,6 +73,13 @@ Ported from AINTLIB (`github.com/CBirkbeck/AINTLIB`, Apache-2.0) at commit
 * from `AdditionLawField.lean`: `equation_dblAddXYZ` and `addXYZ_ne_zero_or_dblAddXYZ_ne_zero`. The
   source's proportionality lemma for vectors with vanishing `2 × 2` minors is replaced by Mathlib's
   `Projectivization.mk_eq_mk_iff_crossProduct_eq_zero`, through `addXYZ_cross_dblAddXYZ`.
+* from `AdditionLawOnCurve.lean`: `map_dblAddX`, `map_dblAddY`, `map_dblAddZ` and `map_dblAddXYZ`,
+  and `map_addXYZ_ne_zero_or_map_dblAddXYZ_ne_zero`, within
+  `span_range_addXYZ_union_range_dblAddXYZ_eq_top`.
+* from `AdditionChartDomain.lean`: `span_lawOneTriple_union_lawTwoTriple_eq_top`, as
+  `span_range_addXYZ_union_range_dblAddXYZ_eq_top`. The source states it at the universal points of
+  a product of two charts; here the points are arbitrary solutions whose coordinates generate the
+  unit ideal.
 -/
 
 public section
@@ -589,5 +603,70 @@ theorem addXYZ_ne_zero_or_dblAddXYZ_ne_zero {P Q : Fin 3 → F} (hP : W.Nonsingu
   exact .inl <| ne_zero_of_nonsingular <| add_of_not_equiv hPQ ▸ nonsingular_add hP hQ
 
 end Field
+
+/-! ### Maps -/
+
+section Map
+
+variable {S : Type*} [CommRing S] (f : R →+* S) (P Q : Fin 3 → R)
+
+/-- The `X`-coordinate of the addition law attached to the line `Y = 0` commutes with a ring
+homomorphism applied to the coefficients of the curve and to the point representatives. -/
+@[simp]
+theorem map_dblAddX : (W'.map f).dblAddX (f ∘ P) (f ∘ Q) = f (W'.dblAddX P Q) := by
+  simp only [dblAddX, map_ofNat, map_neg, map_add, map_sub, map_mul, map_pow, WeierstrassCurve.map,
+    Function.comp_apply]
+
+/-- The `Y`-coordinate of the addition law attached to the line `Y = 0` commutes with a ring
+homomorphism applied to the coefficients of the curve and to the point representatives. -/
+@[simp]
+theorem map_dblAddY : (W'.map f).dblAddY (f ∘ P) (f ∘ Q) = f (W'.dblAddY P Q) := by
+  simp only [dblAddY, map_ofNat, map_neg, map_add, map_sub, map_mul, map_pow, WeierstrassCurve.map,
+    Function.comp_apply]
+
+/-- The `Z`-coordinate of the addition law attached to the line `Y = 0` commutes with a ring
+homomorphism applied to the coefficients of the curve and to the point representatives. -/
+@[simp]
+theorem map_dblAddZ : (W'.map f).dblAddZ (f ∘ P) (f ∘ Q) = f (W'.dblAddZ P Q) := by
+  simp only [dblAddZ, map_ofNat, map_add, map_mul, map_pow, WeierstrassCurve.map,
+    Function.comp_apply]
+
+/-- The addition law attached to the line `Y = 0` commutes with a ring homomorphism applied to the
+coefficients of the curve and to the point representatives. -/
+@[simp]
+theorem map_dblAddXYZ : (W'.map f).dblAddXYZ (f ∘ P) (f ∘ Q) = f ∘ W'.dblAddXYZ P Q := by
+  simp only [dblAddXYZ, map_dblAddX, map_dblAddY, map_dblAddZ, comp_fin3]
+
+end Map
+
+/-! ### Non-vanishing over a ring -/
+
+/-- Let `P` and `Q` be unimodular solutions of the Weierstrass equation of an elliptic curve over a
+commutative ring. Then the six coordinates of the two addition laws `addXYZ P Q` and
+`dblAddXYZ P Q` generate the unit ideal; equivalently, at every prime ideal, some coordinate of one
+of the two laws does not vanish. The analogue over a field, for nonsingular point representatives,
+is `addXYZ_ne_zero_or_dblAddXYZ_ne_zero`. -/
+theorem span_range_addXYZ_union_range_dblAddXYZ_eq_top [W'.IsElliptic] {P Q : Fin 3 → R}
+    (hP : W'.Equation P) (hQ : W'.Equation Q) (hP₁ : Module.IsUnimodular R P)
+    (hQ₁ : Module.IsUnimodular R Q) :
+    Ideal.span (Set.range (W'.addXYZ P Q) ∪ Set.range (W'.dblAddXYZ P Q)) = ⊤ := by
+  by_contra h
+  obtain ⟨m, hm, hle⟩ := Ideal.exists_le_maximal _ h
+  -- the reduction of a triple modulo `m` vanishes exactly when its coordinates lie in `m`
+  have hφ {T : Fin 3 → R} : algebraMap R m.ResidueField ∘ T = 0 ↔ Ideal.span (Set.range T) ≤ m := by
+    simp [funext_iff, Ideal.span_le, Set.range_subset_iff]
+  -- the reductions of `P` and `Q` are nonzero, hence nonsingular, points of the reduced curve
+  have hns {T : Fin 3 → R} (hT : W'.Equation T) (hT₁ : Module.IsUnimodular R T) := by
+    refine (equation_iff_nonsingular_of_ne_zero (W := W'.map (algebraMap R m.ResidueField))
+      fun h0 ↦ hm.ne_top ?_).mp (hT.map _)
+    -- a linear functional taking the value `1` at `T` would take a value in `m`
+    obtain ⟨f, hf⟩ := Module.isUnimodular_iff.mp hT₁
+    rw [Ideal.eq_top_iff_one, ← hf, LinearMap.pi_apply_eq_sum_univ]
+    exact Ideal.sum_mem _ fun i _ ↦ by
+      rw [smul_eq_mul]
+      exact Ideal.mul_mem_right _ _ (hφ.mp h0 (Ideal.subset_span ⟨i, rfl⟩))
+  -- `hle` says both laws vanish at the reductions of `P` and `Q`, which the field case excludes
+  rw [Ideal.span_union, sup_le_iff, ← hφ, ← hφ, ← map_addXYZ, ← map_dblAddXYZ] at hle
+  exact not_and_or.mpr (addXYZ_ne_zero_or_dblAddXYZ_ne_zero (hns hP hP₁) (hns hQ hQ₁)) hle
 
 end WeierstrassCurve.Projective

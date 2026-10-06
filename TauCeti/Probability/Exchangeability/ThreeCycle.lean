@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Probability.Exchangeability.Contractability
 public import TauCeti.Probability.Exchangeability.MixedMarkovChain
-public import TauCeti.Probability.Exchangeability.PathSpace.Shift
+public import TauCeti.Probability.Process.PathLaw.Shift
 public import Mathlib.MeasureTheory.Group.Measure
 public import Mathlib.MeasureTheory.Measure.DiracProba
 public import Mathlib.Probability.UniformOn
