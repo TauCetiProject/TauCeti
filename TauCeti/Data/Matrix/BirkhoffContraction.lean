@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import Mathlib.Data.Matrix.Mul
 import Mathlib.Data.Fintype.Lattice
-import TauCeti.Analysis.SpecialFunctions.Log.OneAddMulExp
+import TauCeti.Analysis.SpecialFunctions.Log.BirkhoffCrossRatio
 
 /-!
 # Hilbert's projective metric and Birkhoff's contraction theorem
@@ -195,58 +195,6 @@ theorem hilbertProjectiveDist_eq_zero_iff [Finite ι] {x y : ι → ℝ} (hx : �
   · rintro ⟨c, hc, rfl⟩
     rw [hilbertProjectiveDist_smul_left hc.ne', hilbertProjectiveDist_self]
 
-/-! ### The two-dimensional estimate behind Birkhoff's theorem -/
-
-/-- The two-dimensional polynomial inequality behind Birkhoff's theorem: under the cross-ratio
-bound `α * β' ≤ l ^ 2 * (β * α')`, the cross ratio of `(s ^ 2 * α + β, α + β)` and
-`(s ^ 2 * α' + β', α' + β')` is at most `((1 + l * s) / (l + s)) ^ 2`. -/
-private theorem two_dim_le {α β α' β' s l : ℝ} (hα : 0 < α) (hβ : 0 < β) (hα' : 0 < α')
-    (hβ' : 0 < β') (hs : 1 ≤ s) (hl : 1 ≤ l) (h : α * β' ≤ l ^ 2 * (β * α')) :
-    (s ^ 2 * α + β) * (α' + β') * (l + s) ^ 2 ≤
-      (1 + l * s) ^ 2 * ((α + β) * (s ^ 2 * α' + β')) := by
-  have hs2 : 0 ≤ s ^ 2 - 1 := by nlinarith
-  have hl2 : 0 ≤ l ^ 2 - 1 := by nlinarith
-  -- increasing the ratio `α / β` up to `l ^ 2 * α' / β'` only increases the left side
-  have h₁ : (s ^ 2 * α + β) * (l ^ 2 * α' + β') ≤ (s ^ 2 * (l ^ 2 * α') + β') * (α + β) := by
-    nlinarith [mul_le_mul_of_nonneg_left h hs2]
-  -- at the extreme ratio the difference is `(l ^ 2 - 1) * (s ^ 2 - 1) * (l * s * α' - β') ^ 2`
-  have h₂ : (s ^ 2 * (l ^ 2 * α') + β') * (α' + β') * (l + s) ^ 2 ≤
-      (1 + l * s) ^ 2 * ((l ^ 2 * α' + β') * (s ^ 2 * α' + β')) := by
-    nlinarith [mul_nonneg (mul_nonneg hl2 hs2) (sq_nonneg (l * s * α' - β'))]
-  refine le_of_mul_le_mul_right ?_ (by positivity : 0 < l ^ 2 * α' + β')
-  nlinarith [mul_le_mul_of_nonneg_right h₁ (by positivity : 0 ≤ (α' + β') * (l + s) ^ 2),
-    mul_le_mul_of_nonneg_left h₂ (by positivity : 0 ≤ α + β)]
-
-/-- The two-dimensional form of Birkhoff's theorem: for `R ≥ 1` and positive `α, β, α', β'` with
-`α * β' ≤ l ^ 2 * (β * α')`, the logarithmic cross ratio of `(R * α + β, α + β)` and
-`(R * α' + β', α' + β')` is at most `(l - 1) / (l + 1) * log R`. -/
-private theorem log_cross_le {α β α' β' R l : ℝ} (hα : 0 < α) (hβ : 0 < β) (hα' : 0 < α')
-    (hβ' : 0 < β') (hR : 1 ≤ R) (hl : 1 ≤ l) (h : α * β' ≤ l ^ 2 * (β * α')) :
-    log ((R * α + β) * (α' + β') / ((α + β) * (R * α' + β'))) ≤
-      (l - 1) / (l + 1) * log R := by
-  set s := exp (log R / 2)
-  have hs : 1 ≤ s := one_le_exp (by linarith [log_nonneg hR])
-  have hsR : s ^ 2 = R := by
-    rw [sq, ← exp_add, add_halves, exp_log (by linarith)]
-  have hden : 0 < (α + β) * (R * α' + β') := by
-    have : 0 < R := by linarith
-    positivity
-  have hnum : 0 < (R * α + β) * (α' + β') := by
-    have : 0 < R := by linarith
-    positivity
-  have hls : 0 < l + s := by linarith
-  have hle : (R * α + β) * (α' + β') / ((α + β) * (R * α' + β')) ≤
-      ((1 + l * s) / (l + s)) ^ 2 := by
-    rw [div_pow, div_le_div_iff₀ hden (by positivity), ← hsR]
-    nlinarith [two_dim_le hα hβ hα' hβ' hs hl h]
-  calc log ((R * α + β) * (α' + β') / ((α + β) * (R * α' + β')))
-      ≤ log (((1 + l * s) / (l + s)) ^ 2) := log_le_log (div_pos hnum hden) hle
-    _ = 2 * log ((1 + l * s) / (l + s)) := by rw [log_pow]; norm_num
-    _ ≤ 2 * ((l - 1) / (l + 1) * (log R / 2)) := by
-        gcongr
-        exact log_one_add_mul_exp_div_add_exp_le hl (by linarith [log_nonneg hR])
-    _ = (l - 1) / (l + 1) * log R := by ring
-
 end TauCeti
 
 /-! ### Birkhoff's contraction theorem -/
@@ -363,8 +311,10 @@ theorem hilbertProjectiveDist_mulVec_le_projectiveDiameter {K : Matrix ι κ ℝ
 `α` and `β` under `K` satisfy the cross-ratio bound `α i * β i' ≤ exp Δ(K) * β i * α i'`. Writing
 `K *ᵥ x` and `K *ᵥ y` in terms of `α` and `β` turns each cross ratio of the images into a
 two-dimensional quantity bounded by `((1 + λ s) / (λ + s)) ^ 2`, where `λ = exp (Δ(K) / 2)` and
-`s ^ 2 = M / m`, and the concavity estimate `log ((1 + λ s) / (λ + s)) ≤ tanh (Δ(K) / 4) * log s`
-(`TauCeti.log_one_add_mul_exp_div_add_exp_le`) finishes the proof. -/
+`s ^ 2 = M / m` (`TauCeti.birkhoff_cross_ratio_le`), and the concavity estimate
+`log ((1 + λ s) / (λ + s)) ≤ tanh (Δ(K) / 4) * log s`
+(`TauCeti.log_one_add_mul_exp_div_add_exp_le`) finishes the proof
+(`TauCeti.log_birkhoff_cross_ratio_le`). -/
 
 /-- The cross-ratio estimate behind Birkhoff's theorem, for `m * y ≤ x ≤ M * y` with both bounds
 strict somewhere: every logarithmic cross ratio of `K *ᵥ x` and `K *ᵥ y` is at most
@@ -387,7 +337,7 @@ private theorem log_cross_mulVec_le {K : Matrix ι κ ℝ} (hK : ∀ i j, 0 < K 
   have hβ := hpos hv (j₀ := j₂) (by simpa using hj₂)
   have hcross := mulVec_mul_mulVec_le hK hu hv i i'
   rw [← add_halves K.projectiveDiameter, exp_add, ← sq] at hcross
-  have key := log_cross_le (R := M / m) (hα i) (hβ i) (hα i') (hβ i')
+  have key := log_birkhoff_cross_ratio_le (R := M / m) (hα i) (hβ i) (hα i') (hβ i')
     ((one_le_div hm).2 hmM.le) (one_le_exp (by linarith [projectiveDiameter_nonneg K])) hcross
   -- `(M / m) • α + β = (M - m) / m • K *ᵥ x` and `α + β = (M - m) • K *ᵥ y`
   have hcongr : ∀ i, M / m * (K *ᵥ (x - m • y)) i + (K *ᵥ (M • y - x)) i =
