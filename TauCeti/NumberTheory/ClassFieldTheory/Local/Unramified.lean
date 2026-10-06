@@ -59,7 +59,7 @@ noncomputable section
 namespace TauCeti.ClassFieldTheory
 
 open CategoryTheory MonoidalCategory
-open ValuativeRel
+open _root_.ValuativeRel
 
 variable (K L : Type) [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]

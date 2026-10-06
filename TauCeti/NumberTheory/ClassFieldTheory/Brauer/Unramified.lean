@@ -9,8 +9,10 @@ public import TauCeti.Algebra.AddCircle
 public import TauCeti.NumberTheory.LocalField.Norm.Unramified.Basic
 public import TauCeti.NumberTheory.LocalField.ResidueCorrespondence
 public import TauCeti.FieldTheory.GaloisCohomology.Cyclic
+public import TauCeti.NumberTheory.LocalField.UnitFiltration.GaloisAction
 import TauCeti.GroupTheory.QuotientGroup.KerEquiv
 import TauCeti.NumberTheory.LocalField.Frobenius
+import TauCeti.NumberTheory.LocalField.UnitFiltration.ValuationSequence
 
 /-!
 # The local invariant of an unramified layer
@@ -92,6 +94,10 @@ Thus restriction preserves the representing unit and multiplies the invariant by
   multiplies the invariant by `[K' : K]`.
 * `TauCeti.ClassFieldTheory.map_baseChange_eq_zero_of_finrank_dvd`: base change along an
   extension `K'/K` of degree a multiple of `[L : K]` kills `H²(Gal(L/K), Lˣ)`.
+* `TauCeti.ClassFieldTheory.subsingleton_H2_unitFiltration_zero`: the units `U(L,0)` of valuation
+  one have trivial `H²(Gal(L/K), U(L,0))`, since the norm maps them onto `U(K,0)`.
+* `TauCeti.ClassFieldTheory.H2π_eq_zero_of_forall_mem_unitFiltration_zero`: so a `2`-cocycle with
+  values in `U(L,0)` represents the zero class of `H²(Gal(L/K), Lˣ)`.
 
 ## References
 
@@ -357,5 +363,103 @@ theorem map_baseChange_eq_zero_of_finrank_dvd (h : Module.finrank K L ∣ Module
   rw [unramifiedInv_map_baseChange, hd, mul_nsmul, hx, nsmul_zero]
 
 end BaseChange
+
+/-! ### Cocycles with unit values -/
+
+/-- **The units of an unramified layer have trivial `H²`**: `H²(Gal(L/K), U(L,0)) = 0`. By
+two-periodicity at arithmetic Frobenius, a class is represented by a Galois-fixed unit of valuation
+one, that is, by an element of `U(K,0)`, and in an unramified extension the norm maps `U(L,0)`
+onto `U(K,0)` (`TauCeti.map_normUnits_unitFiltration`). -/
+theorem subsingleton_H2_unitFiltration_zero :
+    Subsingleton (H2 (Rep.ofMulDistribMulAction (L ≃ₐ[K] L) (unitFiltration L 0))) := by
+  let _ : IsCyclic (L ≃ₐ[K] L) :=
+    ⟨frobeniusAlgEquiv (K := K) (L := L), fun σ ↦
+      Subgroup.mem_zpowers_iff.1 (mem_zpowers_frobeniusAlgEquiv K L σ)⟩
+  let _ : CommGroup (L ≃ₐ[K] L) := IsCyclic.commGroup
+  set A := Rep.ofMulDistribMulAction (L ≃ₐ[K] L) (unitFiltration L 0)
+  refine subsingleton_of_forall_eq 0 fun x ↦ ?_
+  obtain ⟨y, rfl⟩ := Rep.FiniteCyclicGroup.groupCohomologyπEven_surjective A _
+    (mem_zpowers_frobeniusAlgEquiv K L) 2 even_two x
+  refine (Rep.FiniteCyclicGroup.groupCohomologyπEven_eq_zero_iff A _
+    (mem_zpowers_frobeniusAlgEquiv K L) 2 even_two y).2 ?_
+  -- The Frobenius-fixed unit `u` of valuation one is a unit `a` of `K` of valuation one.
+  set u : unitFiltration L 0 := (Rep.toAdditive y.1).toMul
+  have hfix (σ : L ≃ₐ[K] L) : σ ((u : Lˣ) : L) = (u : Lˣ) := by
+    have h₁ : frobeniusAlgEquiv (K := K) (L := L) • u = u := by
+      have := LinearMap.mem_ker.1 y.2
+      simp only [Rep.sub_hom, Representation.IntertwiningMap.sub_toLinearMap,
+        LinearMap.sub_apply, sub_eq_zero] at this
+      exact congrArg (fun z ↦ (Rep.toAdditive z).toMul) this
+    obtain ⟨k, rfl⟩ := Subgroup.mem_zpowers_iff.1 (mem_zpowers_frobeniusAlgEquiv K L σ)
+    have h : (frobeniusAlgEquiv (K := K) (L := L) ^ k) • u = u :=
+      (MulAction.stabilizer _ u).zpow_mem h₁ k
+    exact congr((((($h : unitFiltration L 0) : Lˣ)) : L))
+  obtain ⟨a, ha⟩ := (IsGalois.mem_range_algebraMap_iff_fixed (F := K) _).2 hfix
+  have ha0 : a ≠ 0 := by
+    rintro rfl
+    exact (u : Lˣ).ne_zero (by simpa using ha.symm)
+  have hau : Units.map (algebraMap K L : K →* L) (Units.mk0 a ha0) = u :=
+    Units.ext ha
+  have haU : Units.mk0 a ha0 ∈ unitFiltration K 0 := by
+    rw [← ker_normalizedValuation, MonoidHom.mem_ker,
+      ← normalizedValuation_algebraMap_eq_one_iff (L := L), hau, ← MonoidHom.mem_ker,
+      ker_normalizedValuation]
+    exact u.2
+  -- `a` is the norm of some `b ∈ U(L,0)`, and the representation norm of `b` is `a`.
+  obtain ⟨b, hb, hba⟩ := (map_normUnits_unitFiltration (K := K) (L := L) 0).ge haU
+  refine ⟨Rep.toAdditive.symm (Additive.ofMul ⟨b, hb⟩), ?_⟩
+  apply (Rep.toAdditive (M := L ≃ₐ[K] L) (G := unitFiltration L 0)).injective
+  apply Additive.toMul.injective
+  apply Subtype.ext
+  apply Units.ext
+  -- Compare in `Lˣ`, where the representation norm is the field norm.
+  have hι (z : A) : (unitFiltrationZeroIncl K L).hom z =
+      Rep.toAdditive.symm (Additive.ofMul ((Rep.toAdditive z).toMul : Lˣ)) :=
+    unitFiltrationZeroIncl_apply K L z
+  have hc := congr($(Rep.norm_comm (unitFiltrationZeroIncl K L)).hom
+    (Rep.toAdditive.symm (Additive.ofMul (⟨b, hb⟩ : unitFiltration L 0))))
+  simp only [Rep.hom_comp, Representation.IntertwiningMap.comp_apply] at hc
+  have h : ((Additive.toMul (Rep.toAdditive ((Rep.ofMulDistribMulAction (L ≃ₐ[K] L) Lˣ).norm.hom
+      ((unitFiltrationZeroIncl K L).hom (Rep.toAdditive.symm (Additive.ofMul ⟨b, hb⟩))))) : Lˣ) :
+      L) = algebraMap K L (Algebra.norm K (b : L)) := by
+    rw [hι, AddEquiv.apply_symm_apply, toMul_ofMul]
+    exact norm_ofAlgebraAutOnUnits_eq (K := K) (b : Lˣ)
+  rw [hc, hι, AddEquiv.apply_symm_apply, toMul_ofMul] at h
+  refine h.trans ?_
+  rw [← Algebra.coe_normUnits, hba, Units.val_mk0, ha]
+
+/-- **A unit-valued cocycle of an unramified layer is a coboundary.** If a `2`-cocycle of
+`Gal(L/K)` with values in `Lˣ` takes all its values in the units `U(L,0)` of valuation one, its
+class in `H²(Gal(L/K), Lˣ)` vanishes. -/
+theorem H2π_eq_zero_of_forall_mem_unitFiltration_zero
+    (c : cocycles₂ (Rep.ofMulDistribMulAction (L ≃ₐ[K] L) Lˣ))
+    (hc : ∀ g h, (Rep.toAdditive (c (g, h))).toMul ∈ unitFiltration L 0) :
+    H2π _ c = 0 := by
+  set A := Rep.ofMulDistribMulAction (L ≃ₐ[K] L) (unitFiltration L 0)
+  set ι := unitFiltrationZeroIncl K L
+  have hι_apply (z : A) : ι.hom z =
+      Rep.toAdditive.symm (Additive.ofMul ((Rep.toAdditive z).toMul : Lˣ)) :=
+    unitFiltrationZeroIncl_apply K L z
+  have hι : Function.Injective ι.hom := fun x y hxy ↦ by
+    rw [hι_apply, hι_apply] at hxy
+    exact Rep.toAdditive.injective (Additive.toMul.injective
+      (Subtype.ext (Additive.ofMul.injective (Rep.toAdditive.symm.injective hxy))))
+  -- The cocycle `c`, read in `U(L,0)`.
+  let c' : (L ≃ₐ[K] L) × (L ≃ₐ[K] L) → A := fun p ↦
+    Rep.toAdditive.symm (Additive.ofMul ⟨_, hc p.1 p.2⟩)
+  have hc' (p) : ι.hom (c' p) = c p := by
+    rw [hι_apply, AddEquiv.apply_symm_apply, toMul_ofMul, Subgroup.coe_mk, ofMul_toMul,
+      AddEquiv.symm_apply_apply]
+  have hmem : c' ∈ cocycles₂ A := by
+    rw [mem_cocycles₂_iff]
+    intro g h j
+    apply hι
+    simp only [map_add, hc']
+    rw [Rep.hom_comm_apply, hc']
+    exact (mem_cocycles₂_iff (c : _ → _)).1 c.2 g h j
+  have hmap : mapCocycles₂ (MonoidHom.id _) ι ⟨c', hmem⟩ = c :=
+    cocycles₂_ext fun g h ↦ hc' (g, h)
+  have := subsingleton_H2_unitFiltration_zero K L
+  rw [← hmap, ← H2π_comp_map_apply, Subsingleton.elim (H2π A ⟨c', hmem⟩) 0, map_zero]
 
 end TauCeti.ClassFieldTheory
