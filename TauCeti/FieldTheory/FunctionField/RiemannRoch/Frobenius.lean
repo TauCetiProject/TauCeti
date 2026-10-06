@@ -1,0 +1,47 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.FieldTheory.Frobenius.Range
+public import TauCeti.FieldTheory.FunctionField.RiemannRoch.Equiv
+
+/-!
+# The genus of Frobenius power subfields
+
+Over perfect constants of exponential characteristic `p`, the power subfield `F^{p^n}` has the
+same genus as `F`. This concerns the normalized places of the power subfield, not the unnormalized
+restriction of the valuations of `F`. The isomorphism given by iterated Frobenius transports the
+places, divisor degrees and dimensions of Riemann–Roch spaces semilinearly.
+
+No separability of `F / F^{p^n}` is assumed; in positive characteristic this extension is purely
+inseparable. Nor is exactness of the constant field needed for equality of the two suprema.
+
+## References
+
+* H. Stichtenoth, *Algebraic Function Fields and Codes*, second edition, Proposition 3.10.2.
+-/
+
+public section
+
+namespace TauCeti
+
+variable {k F : Type*} [Field k] [Field F] [Algebra k F] [PerfectField k]
+
+/-- The iterated Frobenius power subfield of a function field over perfect constants is again
+a function field over the same constants. -/
+theorem IsFunctionField.frobeniusPowers (hF : IsFunctionField k F)
+    (p : ℕ) [ExpChar k p] [ExpChar F p] (n : ℕ) :
+    IsFunctionField k (TauCeti.frobeniusPowers k F p n) :=
+  hF.of_isAlgebraic_top
+
+/-- Iterated Frobenius preserves the genus over perfect constants: `g(F^{p^n} / k) = g(F / k)`.
+The statement identifies the defining suprema even without a function-field hypothesis. -/
+theorem genus_frobeniusPowers (p : ℕ) [ExpChar k p] [ExpChar F p] (n : ℕ) :
+    genus k (frobeniusPowers k F p n) = genus k F :=
+  genus_eq_of_ringEquiv (iterateFrobeniusEquiv k p n)
+    (iterateFrobeniusEquivPowers k F p n) (iterateFrobeniusEquivPowers_algebraMap k F p n)
+
+end TauCeti
