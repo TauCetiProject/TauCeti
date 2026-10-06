@@ -87,8 +87,10 @@ theorem demushkinCharacter_absoluteGaloisGroupProP (hmu : ∃ ζ : K, IsPrimitiv
 
 /-- **The image of the canonical character of `G_K(p)`** is the image of the cyclotomic character
 of `G_K`, for a nonarchimedean local field `K` containing a primitive `p`th root of unity. -/
+@[simp]
 theorem range_demushkinCharacter_absoluteGaloisGroupProP (hmu : ∃ ζ : K, IsPrimitiveRoot ζ p) :
-    (demushkinCharacter (isDemushkin_absoluteGaloisGroupProP_of_mu p K hmu)).toMonoidHom.range =
+    (demushkinCharacter (isDemushkin_absoluteGaloisGroupProP_of_mu p K hmu) :
+        absoluteGaloisGroupProP p K →* ℤ_[p]ˣ).range =
       (localCyclotomicCharacter p K).range := by
   rw [demushkinCharacter_absoluteGaloisGroupProP p K hmu]
   exact cyclotomicOrientation_range hmu
