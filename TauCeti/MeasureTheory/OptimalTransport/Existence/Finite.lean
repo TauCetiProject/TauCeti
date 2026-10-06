@@ -18,8 +18,9 @@ attainment by normalization; zero mass is treated by the zero plan, without norm
 The optimal value is allowed to be infinite.
 
 For an extended-real cost bounded below by integrable marginal terms, attainment follows
-by minimizing the nonnegative residual. Upper semicontinuity of the two lower-bound
-terms ensures that this residual is lower semicontinuous. The resulting plan minimizes
+by minimizing the nonnegative residual whenever it is lower semicontinuous. Lower
+semicontinuity of the cost and upper semicontinuity of the two lower-bound terms suffice
+for this hypothesis. The resulting plan minimizes
 the signed cost for every choice of integrable split lower bound, not just the one used
 in the existence argument.
 
@@ -64,20 +65,17 @@ theorem exists_isOptimalCoupling_iff {c : X × Y → ℝ≥0∞} (hc : LowerSemi
   simpa only [← hmass, smul_smul, ENNReal.mul_inv_cancel hμ0 (measure_ne_top μ univ),
     one_smul] using hscaled
 
-/-- A lower-semicontinuous extended-real cost with upper-semicontinuous integrable split
-lower bound attains its signed transport value between finite equal-mass measures.
+/-- An extended-real cost with an integrable split lower bound whose residual is lower
+semicontinuous attains its signed transport value between finite equal-mass measures.
 The same plan attains the value for every other integrable split lower bound, without any
 semicontinuity assumption on that alternative normalization. -/
-theorem exists_planCostBddBelow_eq_transportCostBddBelow {c : X × Y → EReal}
+theorem exists_isCoupling_planCostBddBelow_eq_transportCostBddBelow_of_lowerSemicontinuous_residual
+    {c : X × Y → EReal}
     (hmass : μ univ = ν univ) (h : IntegrableSplitLowerBound c μ ν)
-    (hc : LowerSemicontinuous c) (ha : UpperSemicontinuous h.fst)
-    (hb : UpperSemicontinuous h.snd) :
+    (hres : LowerSemicontinuous h.residual) :
     ∃ (π : Measure (X × Y)) (hπ : IsCoupling π μ ν),
       ∀ k : IntegrableSplitLowerBound c μ ν,
         planCostBddBelow π hπ k = transportCostBddBelow c μ ν k := by
-  have hres : LowerSemicontinuous h.residual := by
-    rw [funext h.residual_def]
-    exact lowerSemicontinuous_residual h.fst h.snd hc ha hb
   obtain ⟨π, hπ⟩ := (exists_isOptimalCoupling_iff hres).2 hmass
   have heq : planCostBddBelow π hπ.toIsCoupling h = transportCostBddBelow c μ ν h := by
     rw [planCostBddBelow_def,
@@ -87,5 +85,21 @@ theorem exists_planCostBddBelow_eq_transportCostBddBelow {c : X × Y → EReal}
   rw [← planCostBddBelow_congr_lowerBound h k hπ.toIsCoupling,
     ← transportCostBddBelow_congr_lowerBound h k]
   exact heq
+
+/-- A lower-semicontinuous extended-real cost with upper-semicontinuous integrable split
+lower bound attains its signed transport value between finite equal-mass measures.
+The same plan attains the value for every other integrable split lower bound, without any
+semicontinuity assumption on that alternative normalization. -/
+theorem exists_isCoupling_planCostBddBelow_eq_transportCostBddBelow {c : X × Y → EReal}
+    (hmass : μ univ = ν univ) (h : IntegrableSplitLowerBound c μ ν)
+    (hc : LowerSemicontinuous c) (ha : UpperSemicontinuous h.fst)
+    (hb : UpperSemicontinuous h.snd) :
+    ∃ (π : Measure (X × Y)) (hπ : IsCoupling π μ ν),
+      ∀ k : IntegrableSplitLowerBound c μ ν,
+        planCostBddBelow π hπ k = transportCostBddBelow c μ ν k := by
+  apply exists_isCoupling_planCostBddBelow_eq_transportCostBddBelow_of_lowerSemicontinuous_residual
+    hmass h
+  rw [funext h.residual_def]
+  exact lowerSemicontinuous_residual h.fst h.snd hc ha hb
 
 end TauCeti
