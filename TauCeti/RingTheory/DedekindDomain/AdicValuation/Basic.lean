@@ -224,7 +224,6 @@ instance isTrivialOn_valuation (p : HeightOneSpectrum R) :
     (p.valuation F).IsTrivialOn k where
   eq_one c hc := by
     rw [IsScalarTower.algebraMap_apply k R F, valuation_eq_one_iff_notMem]
-    exact fun hmem => p.isPrime.ne_top (Ideal.eq_top_of_isUnit_mem _ hmem
-      ((algebraMap k R).isUnit_map (isUnit_iff_ne_zero.2 hc)))
+    exact Ideal.notMem_of_isUnit _ ((isUnit_iff_ne_zero.mpr hc).map (algebraMap k R))
 
 end IsDedekindDomain.HeightOneSpectrum

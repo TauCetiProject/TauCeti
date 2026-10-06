@@ -25,23 +25,23 @@ function field it produces the places of a chosen affine model.
 
 ## Main definitions
 
-* `TauCeti.Place.adic`: the place of `F / k` attached to `p : IsDedekindDomain.HeightOneSpectrum R`.
-* `TauCeti.Place.integersAdicEquiv`: the valuation ring of that place is the localization of `R`
+* `TauCeti.Place.ofPrime`: the place of `F / k` attached to a height-one prime of `R`.
+* `TauCeti.Place.integersOfPrimeEquiv`: the valuation ring of that place is the localization of `R`
   at `p`.
 
 Reduction `R → F_P` at an adic place is the canonical map
-`algebraMap R (TauCeti.Place.adic k F p).ResidueField`.
+`algebraMap R (TauCeti.Place.ofPrime k F p).ResidueField`.
 
 ## Main results
 
-* `TauCeti.Place.adic_injective`: distinct height-one primes give distinct places.
-* `TauCeti.Place.adicResidueFieldEquiv`: the residue field of `Place.adic k F p` is `R ⧸ p`, as a
-  `k`-algebra; `TauCeti.Place.adicResidueFieldEquiv_mk` computes this equivalence on quotient
-  representatives, and `TauCeti.Place.degree_adic` reads off the degree of the place. The valuation
-  ring of the place is the localization of `R` at `p`, so this is Mathlib's
+* `TauCeti.Place.ofPrime_injective`: distinct height-one primes give distinct places.
+* `TauCeti.Place.quotientAlgEquivResidueFieldOfPrime`: the residue field of `Place.ofPrime k F p`
+  is `R ⧸ p`, as a `k`-algebra. `TauCeti.Place.quotientAlgEquivResidueFieldOfPrime_mk` computes
+  this equivalence on quotient representatives, and `TauCeti.Place.degree_ofPrime` reads off the
+  degree of the place. The valuation ring is the localization of `R` at `p`, so this is Mathlib's
   `IsLocalization.AtPrime.equivQuotMaximalIdeal`.
-* `TauCeti.Place.ord_algebraMap_adic`: the order of `r : R` at the place is the multiplicity of
-  `p` in `(r)`; `TauCeti.Place.isUniformizer_algebraMap_adic` specializes this to a generator of
+* `TauCeti.Place.ord_ofPrime_algebraMap`: the order of `r : R` at the place is the multiplicity of
+  `p` in `(r)`; `TauCeti.Place.isUniformizer_ofPrime_algebraMap` specializes this to a generator of
   `p`, which is therefore a prime element for the place.
 
 ## References
@@ -75,128 +75,136 @@ namespace Place
 
 /-- The place of `F / k` attached to a height-one prime `p` of a Dedekind `k`-algebra `R` with
 fraction field `F`: the normalized `p`-adic valuation. -/
-def adic (p : HeightOneSpectrum R) : Place k F where
+def ofPrime (p : HeightOneSpectrum R) : Place k F where
   valuation := p.valuation F
   valuation_surjective := p.valuation_surjective F
   isTrivialOn := inferInstance
 
 @[simp]
-theorem valuation_adic (p : HeightOneSpectrum R) : (adic k F p).valuation = p.valuation F :=
+theorem valuation_ofPrime (p : HeightOneSpectrum R) : (ofPrime k F p).valuation = p.valuation F :=
   (rfl)
 
 variable (p : HeightOneSpectrum R)
 
-theorem integers_adic : (adic k F p).integers = HeightOneSpectrum.valuationSubringAtPrime F p := by
-  rw [HeightOneSpectrum.valuationSubringAtPrime_eq_valuationSubring]
-  ext x
-  rw [mem_integers_iff, valuation_adic, Valuation.mem_valuationSubring_iff]
+theorem integers_ofPrime :
+    (ofPrime k F p).integers = HeightOneSpectrum.valuationSubringAtPrime F p := by
+  rw [integers_def, valuation_ofPrime,
+    HeightOneSpectrum.valuationSubringAtPrime_eq_valuationSubring]
 
 /-- Distinct height-one primes give distinct places: the place remembers its prime. -/
-theorem adic_injective : Function.Injective (adic k F (R := R)) := fun p q h => by
+theorem ofPrime_injective : Function.Injective (ofPrime k F (R := R)) := fun p q h => by
   refine HeightOneSpectrum.eq_of_valuation_isEquiv_valuation (K := F) ?_
-  rw [← valuation_adic k F p, ← valuation_adic k F q, h]
+  rw [← valuation_ofPrime k F p, ← valuation_ofPrime k F q, h]
 
 /-! ### Orders of elements of `R` -/
 
-theorem algebraMap_mem_integers_adic (r : R) : algebraMap R F r ∈ (adic k F p).integers :=
-  ((adic k F p).mem_integers_iff).mpr (by rw [valuation_adic]; exact p.valuation_le_one r)
+theorem algebraMap_mem_integers_ofPrime (r : R) : algebraMap R F r ∈ (ofPrime k F p).integers :=
+  ((ofPrime k F p).mem_integers_iff).mpr (by rw [valuation_ofPrime]; exact p.valuation_le_one r)
 
-theorem ord_algebraMap_adic_nonneg (r : R) : 0 ≤ (adic k F p).ord (algebraMap R F r) :=
-  ((adic k F p).mem_integers_iff_ord_nonneg).mp (algebraMap_mem_integers_adic k F p r)
+/-- The valuation of the place of `p` extends the `p`-adic valuation of the model. -/
+theorem valuation_ofPrime_algebraMap (r : R) :
+    (ofPrime k F p).valuation (algebraMap R F r) = p.intValuation r := by
+  rw [valuation_ofPrime, HeightOneSpectrum.valuation_of_algebraMap]
 
-/-- An element of `R` has positive order at `adic k F p` exactly when it lies in `p`. -/
-theorem ord_algebraMap_adic_pos_iff_mem {r : R} (hr : r ≠ 0) :
-    0 < (adic k F p).ord (algebraMap R F r) ↔ r ∈ p.asIdeal := by
+/-- The elements of the model with a zero at the place of `p` are exactly the elements of `p`. -/
+theorem valuation_ofPrime_algebraMap_lt_one_iff {r : R} :
+    (ofPrime k F p).valuation (algebraMap R F r) < 1 ↔ r ∈ p.asIdeal := by
+  rw [valuation_ofPrime, HeightOneSpectrum.valuation_lt_one_iff_mem]
+
+theorem ord_ofPrime_algebraMap_nonneg (r : R) : 0 ≤ (ofPrime k F p).ord (algebraMap R F r) :=
+  ((ofPrime k F p).mem_integers_iff_ord_nonneg).mp (algebraMap_mem_integers_ofPrime k F p r)
+
+/-- An element of `R` has positive order at `ofPrime k F p` exactly when it lies in `p`. -/
+theorem ord_ofPrime_algebraMap_pos_iff_mem {r : R} (hr : r ≠ 0) :
+    0 < (ofPrime k F p).ord (algebraMap R F r) ↔ r ∈ p.asIdeal := by
   have hr' : algebraMap R F r ≠ 0 := IsFractionRing.to_map_eq_zero_iff.ne.mpr hr
-  rw [← HeightOneSpectrum.valuation_lt_one_iff_mem (K := F), ← valuation_adic k F p,
-    (adic k F p).valuation_eq_exp_neg_ord hr', ← WithZero.exp_zero, WithZero.exp_lt_exp]
-  omega
+  rw [← (ofPrime k F p).valuation_lt_one_iff_ord_pos hr',
+    valuation_ofPrime_algebraMap_lt_one_iff]
 
-/-- The order of an element of `R` at the place `adic k F p` is the multiplicity of `p` in the
+/-- The order of an element of `R` at the place `ofPrime k F p` is the multiplicity of `p` in the
 principal ideal it generates. -/
-theorem ord_algebraMap_adic {r : R} (hr : r ≠ 0) :
-    (adic k F p).ord (algebraMap R F r) = multiplicity p.asIdeal (Ideal.span {r}) := by
+theorem ord_ofPrime_algebraMap {r : R} (hr : r ≠ 0) :
+    (ofPrime k F p).ord (algebraMap R F r) = multiplicity p.asIdeal (Ideal.span {r}) := by
   have hr' : algebraMap R F r ≠ 0 := IsFractionRing.to_map_eq_zero_iff.ne.mpr hr
-  rw [(adic k F p).ord_eq_iff_valuation_eq_exp_neg hr', valuation_adic,
-    HeightOneSpectrum.valuation_of_algebraMap, p.intValuation_eq_exp_neg_multiplicity hr]
+  rw [(ofPrime k F p).ord_eq_iff_valuation_eq_exp_neg hr', valuation_ofPrime_algebraMap,
+    p.intValuation_eq_exp_neg_multiplicity hr]
 
-/-- A generator of `p` is a prime element for the place `adic k F p`, i.e. a uniformizer for its
+/-- A generator of `p` is a prime element for the place `ofPrime k F p`, i.e. a uniformizer for its
 normalized valuation. -/
-theorem isUniformizer_algebraMap_adic {π : R} (h : p.asIdeal = Ideal.span {π}) :
-    (adic k F p).valuation.IsUniformizer (algebraMap R F π) := by
+theorem isUniformizer_ofPrime_algebraMap {π : R} (h : p.asIdeal = Ideal.span {π}) :
+    (ofPrime k F p).valuation.IsUniformizer (algebraMap R F π) := by
   have hπ : π ≠ 0 := by
     rintro rfl
     exact p.ne_bot (by simp [h])
   have hπ' : algebraMap R F π ≠ 0 := IsFractionRing.to_map_eq_zero_iff.ne.mpr hπ
-  rw [isUniformizer_iff_ord_eq_one, (adic k F p).ord_eq_iff_valuation_eq_exp_neg hπ',
-    valuation_adic, HeightOneSpectrum.valuation_of_algebraMap,
-    p.intValuation_singleton hπ h]
+  rw [isUniformizer_iff_ord_eq_one, (ofPrime k F p).ord_eq_iff_valuation_eq_exp_neg hπ',
+    valuation_ofPrime_algebraMap, p.intValuation_singleton hπ h]
 
 /-! ### The residue field -/
 
-/-- `R` maps into the valuation ring of `adic k F p`, every element of `R` being integral there. -/
-instance : Algebra R (adic k F p).integers :=
-  ((algebraMap R F).codRestrict _ (algebraMap_mem_integers_adic k F p)).toAlgebra
+/-- `R` maps into the valuation ring of `ofPrime k F p`: every element is integral there. -/
+instance : Algebra R (ofPrime k F p).integers :=
+  ((algebraMap R F).codRestrict _ (algebraMap_mem_integers_ofPrime k F p)).toAlgebra
 
-instance : IsScalarTower R (adic k F p).integers F :=
+instance : IsScalarTower R (ofPrime k F p).integers F :=
   IsScalarTower.of_algebraMap_eq fun _ => rfl
 
-instance : IsScalarTower k R (adic k F p).integers :=
+instance : IsScalarTower k R (ofPrime k F p).integers :=
   IsScalarTower.of_algebraMap_eq fun c => Subtype.ext (IsScalarTower.algebraMap_apply k R F c)
 
 /-- **The valuation ring of an adic place is the localization at its prime**, by
 `IsDedekindDomain.HeightOneSpectrum.valuationSubringAtPrime_eq_valuationSubring`. -/
-def integersAdicEquiv :
-    HeightOneSpectrum.valuationSubringAtPrime F p ≃ₐ[R] (adic k F p).integers :=
+def integersOfPrimeEquiv :
+    HeightOneSpectrum.valuationSubringAtPrime F p ≃ₐ[R] (ofPrime k F p).integers :=
   AlgEquiv.ofRingEquiv (f := RingEquiv.subringCongr
-    (congrArg ValuationSubring.toSubring (integers_adic k F p).symm)) fun _ => rfl
+    (congrArg ValuationSubring.toSubring (integers_ofPrime k F p).symm)) fun _ => rfl
 
 /-- The equivalence from the localization at `p` to the integers of the adic place preserves
 the underlying element of `F`. -/
 @[simp]
-theorem integersAdicEquiv_apply (x : HeightOneSpectrum.valuationSubringAtPrime F p) :
-    ((integersAdicEquiv k F p x : (adic k F p).integers) : F) = x :=
+theorem integersOfPrimeEquiv_apply (x : HeightOneSpectrum.valuationSubringAtPrime F p) :
+    ((integersOfPrimeEquiv k F p x : (ofPrime k F p).integers) : F) = x :=
   (rfl)
 
-instance : IsLocalization.AtPrime ((adic k F p).integers) p.asIdeal :=
-  IsLocalization.isLocalization_of_algEquiv p.asIdeal.primeCompl (integersAdicEquiv k F p)
+instance : IsLocalization.AtPrime ((ofPrime k F p).integers) p.asIdeal :=
+  IsLocalization.isLocalization_of_algEquiv p.asIdeal.primeCompl (integersOfPrimeEquiv k F p)
 
 variable {k F p}
 
 /-- Reduction from `R` at an adic place vanishes exactly on its prime ideal. -/
 @[simp]
-theorem algebraMap_residueField_adic_eq_zero_iff {r : R} :
-    algebraMap R (adic k F p).ResidueField r = 0 ↔ r ∈ p.asIdeal := by
-  rw [IsScalarTower.algebraMap_apply R (adic k F p).integers _,
-    IsLocalRing.ResidueField.algebraMap_eq, IsLocalRing.residue_eq_zero_iff]
-  exact IsLocalization.AtPrime.to_map_mem_maximal_iff ((adic k F p).integers) p.asIdeal r
+theorem algebraMap_residueField_ofPrime_eq_zero_iff {r : R} :
+    algebraMap R (ofPrime k F p).ResidueField r = 0 ↔ r ∈ p.asIdeal := by
+  rw [algebraMap_residueField, IsLocalRing.residue_eq_zero_iff]
+  exact IsLocalization.AtPrime.to_map_mem_maximal_iff ((ofPrime k F p).integers) p.asIdeal r
 
 variable (k F p)
 
 /-- **The residue field of an adic place is the residue field of its prime**: reduction at
-`adic k F p` identifies `R ⧸ p` with `F_P`, as `k`-algebras. Since the valuation ring of the place
-is the localization of `R` at `p`, this is Mathlib's
+`ofPrime k F p` identifies `R ⧸ p` with `F_P`, as `k`-algebras. Its valuation ring is the
+localization of `R` at `p`, so this is Mathlib's
 `IsLocalization.AtPrime.equivQuotMaximalIdeal`, restricted from `R` to `k`. -/
-def adicResidueFieldEquiv : (R ⧸ p.asIdeal) ≃ₐ[k] (adic k F p).ResidueField :=
+def quotientAlgEquivResidueFieldOfPrime : (R ⧸ p.asIdeal) ≃ₐ[k] (ofPrime k F p).ResidueField :=
   haveI := p.isMaximal
   (IsLocalization.AtPrime.equivQuotMaximalIdeal p.asIdeal
-    ((adic k F p).integers)).restrictScalars k
+    ((ofPrime k F p).integers)).restrictScalars k
 
 @[simp]
-theorem adicResidueFieldEquiv_mk (r : R) :
-    adicResidueFieldEquiv k F p (Ideal.Quotient.mk p.asIdeal r) =
-      algebraMap R (adic k F p).ResidueField r :=
+theorem quotientAlgEquivResidueFieldOfPrime_mk (r : R) :
+    quotientAlgEquivResidueFieldOfPrime k F p (Ideal.Quotient.mk p.asIdeal r) =
+      algebraMap R (ofPrime k F p).ResidueField r := by
   have := p.isMaximal
-  (IsLocalization.AtPrime.equivQuotMaximalIdeal p.asIdeal
-    ((adic k F p).integers)).commutes r
+  rw [← Ideal.Quotient.algebraMap_eq]
+  let e := IsLocalization.AtPrime.equivQuotMaximalIdeal p.asIdeal ((ofPrime k F p).integers)
+  exact (AlgEquiv.restrictScalars_apply k e _).trans (e.commutes r)
 
 /-- The degree of an adic place is the degree of the residue field of its prime. -/
-theorem degree_adic : (adic k F p).degree = Module.finrank k (R ⧸ p.asIdeal) := by
-  rw [degree_eq_finrank, ← (adicResidueFieldEquiv k F p).toLinearEquiv.finrank_eq]
+theorem degree_ofPrime : (ofPrime k F p).degree = Module.finrank k (R ⧸ p.asIdeal) := by
+  rw [degree_eq_finrank, ← (quotientAlgEquivResidueFieldOfPrime k F p).toLinearEquiv.finrank_eq]
 
-instance finiteDimensional_residueField_adic [Module.Finite k (R ⧸ p.asIdeal)] :
-    Module.Finite k (adic k F p).ResidueField :=
-  Module.Finite.equiv (adicResidueFieldEquiv k F p).toLinearEquiv
+instance finiteDimensional_residueField_ofPrime [Module.Finite k (R ⧸ p.asIdeal)] :
+    Module.Finite k (ofPrime k F p).ResidueField :=
+  Module.Finite.equiv (quotientAlgEquivResidueFieldOfPrime k F p).toLinearEquiv
 
 end Place
 
