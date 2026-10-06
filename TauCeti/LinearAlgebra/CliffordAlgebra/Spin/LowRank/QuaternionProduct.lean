@@ -9,7 +9,6 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Even.Quaternion
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.LowRank.SplitCenter
 
 import TauCeti.Algebra.Subalgebra.Center
-import TauCeti.LinearAlgebra.CliffordAlgebra.CentralSimple.Even
 import TauCeti.LinearAlgebra.CliffordAlgebra.OddSplitting
 import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalBasis
 
@@ -97,11 +96,12 @@ theorem exists_evenQuaternionProdEquiv_of_finrank_eq_four
     rw [← ht, ht0, zero_mul]
   let s : K := t⁻¹
   have hs : s * s * ((-1 : K) ^ l.length.choose 2 * (l.map P).prod) = 1 := by
-    change s * s * c = 1
-    rw [← ht]
-    calc
-      s * s * (t * t) = (t⁻¹ * t) * (t⁻¹ * t) := by simp [s]; ring
-      _ = 1 := by simp [ht0]
+    have hsc : s * s * c = 1 := by
+      rw [← ht]
+      calc
+        s * s * (t * t) = (t⁻¹ * t) * (t⁻¹ * t) := by simp [s]; ring
+        _ = 1 := by simp [ht0]
+    simpa only [c] using hsc
   let split := equivEvenProdOfOddLength hl hodd hspan hs
   have hstarVolume : star (s • (l.map (ι P)).prod) = s • (l.map (ι P)).prod := by
     simp [star_def, involute_prod_map_ι, reverse_prod_map_ι_of_pairwise_isOrtho hl,
@@ -124,9 +124,8 @@ noncomputable def spinGroupEquivQuaternionUnitaryProd
     (he : ∀ x, e (reverseEven Q x) = star (e x)) :
     spinGroup Q ≃* unitary ℍ[K,a,0,b] × unitary ℍ[K,a,0,b] :=
   let _ : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
-  (spinGroupEquivEvenUnitaryOfFinrankLeFour Q hQ (by omega) (by omega)).trans <|
-    (evenUnitaryGroupEquivUnitaryOfAlgEquiv Q e he).trans <|
-      Unitary.prodEquiv ℍ[K,a,0,b] ℍ[K,a,0,b]
+  (spinGroupEquivUnitaryOfAlgEquivOfFinrankLeFour Q hQ (by omega) (by omega) e he).trans <|
+    Unitary.prodEquiv ℍ[K,a,0,b] ℍ[K,a,0,b]
 
 /-- The chosen Spin equivalence evaluates the quaternion-product algebra model on the underlying
 even Clifford element. -/
@@ -140,11 +139,8 @@ theorem coe_spinGroupEquivQuaternionUnitaryProd_apply
       e (evenUnitaryGroupEvenPart Q (spinGroupToEvenUnitary Q s)) := by
   let _ : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
   rw [spinGroupEquivQuaternionUnitaryProd, MulEquiv.trans_apply,
-    spinGroupEquivEvenUnitaryOfFinrankLeFour_apply]
-  have h := Unitary.coe_prodEquiv_apply ℍ[K,a,0,b] ℍ[K,a,0,b]
-    (evenUnitaryGroupEquivUnitaryOfAlgEquiv Q e he (spinGroupToEvenUnitary Q s))
-  rw [coe_evenUnitaryGroupEquivUnitaryOfAlgEquiv_apply] at h
-  exact h
+    Unitary.coe_prodEquiv_apply,
+    coe_spinGroupEquivUnitaryOfAlgEquivOfFinrankLeFour_apply]
 
 /-- The inverse chosen Spin equivalence recovers the Clifford value through the inverse
 quaternion-product algebra model. -/
@@ -156,17 +152,13 @@ theorem coe_spinGroupEquivQuaternionUnitaryProd_symm_apply
     (q : unitary ℍ[K,a,0,b] × unitary ℍ[K,a,0,b]) :
     ((spinGroupEquivQuaternionUnitaryProd Q hQ hV e he).symm q : CliffordAlgebra Q) =
       (e.symm ((q.1 : ℍ[K,a,0,b]), (q.2 : ℍ[K,a,0,b])) : CliffordAlgebra Q) := by
-  let s := (spinGroupEquivQuaternionUnitaryProd Q hQ hV e he).symm q
-  have hs : e (evenUnitaryGroupEvenPart Q (spinGroupToEvenUnitary Q s)) =
-      ((q.1 : ℍ[K,a,0,b]), (q.2 : ℍ[K,a,0,b])) := by
-    rw [← coe_spinGroupEquivQuaternionUnitaryProd_apply Q hQ hV e he]
-    exact congrArg (fun p ↦ ((p.1 : ℍ[K,a,0,b]), (p.2 : ℍ[K,a,0,b])))
-      ((spinGroupEquivQuaternionUnitaryProd Q hQ hV e he).apply_symm_apply q)
-  have h := congrArg (fun x : even Q ↦ (x : CliffordAlgebra Q))
-    ((e.symm_apply_eq).mpr hs.symm)
-  simpa [s] using h.symm
+  let _ : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
+  rw [spinGroupEquivQuaternionUnitaryProd, MulEquiv.symm_trans_apply,
+    coe_spinGroupEquivUnitaryOfAlgEquivOfFinrankLeFour_symm_apply,
+    Unitary.coe_prodEquiv_symm_apply]
 
 /-- The first quaternion attached to a quaternary Spin element has norm one. -/
+@[simp]
 theorem normForm_fst_spinGroupEquivQuaternionUnitaryProd
     (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) (hV : Module.finrank K V = 4)
     {a b : K} (e : even Q ≃ₐ[K] ℍ[K,a,0,b] × ℍ[K,a,0,b])
@@ -177,6 +169,7 @@ theorem normForm_fst_spinGroupEquivQuaternionUnitaryProd
     (spinGroupEquivQuaternionUnitaryProd Q hQ hV e he s).1.2
 
 /-- The second quaternion attached to a quaternary Spin element has norm one. -/
+@[simp]
 theorem normForm_snd_spinGroupEquivQuaternionUnitaryProd
     (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) (hV : Module.finrank K V = 4)
     {a b : K} (e : even Q ≃ₐ[K] ℍ[K,a,0,b] × ℍ[K,a,0,b])
