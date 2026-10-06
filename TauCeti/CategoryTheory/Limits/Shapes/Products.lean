@@ -9,7 +9,7 @@ public import Mathlib.CategoryTheory.Limits.Shapes.Products
 public import Mathlib.CategoryTheory.Limits.Shapes.ZeroMorphisms
 public import Mathlib.Algebra.Homology.ShortComplex.Exact
 public import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Products
-import TauCeti.Algebra.Homology.ShortComplex.Colimit
+import TauCeti.Algebra.Homology.ShortComplex.CokernelColimit
 
 /-!
 # Split maps between coproducts, and cokernels of maps between coproducts

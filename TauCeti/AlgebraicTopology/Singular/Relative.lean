@@ -424,6 +424,7 @@ lemma singularChainComplexShortComplexFunctor_obj (P : TopPair.{w}) :
   rw [singularChainComplexShortComplexFunctor.eq_def]
 
 /-- The first term is the singular chain functor of the subspace. -/
+@[simp]
 lemma singularChainComplexShortComplexFunctor_comp_π₁ :
     singularChainComplexShortComplexFunctor R ⋙ ShortComplex.π₁ =
       TopPair.proj₂ ⋙ TopCat.toSSet ⋙ (SSet.chainComplexFunctor C).obj R := by
@@ -437,6 +438,7 @@ lemma singularChainComplexShortComplexFunctor_comp_π₁ :
   rfl
 
 /-- The second term is the singular chain functor of the ambient space. -/
+@[simp]
 lemma singularChainComplexShortComplexFunctor_comp_π₂ :
     singularChainComplexShortComplexFunctor R ⋙ ShortComplex.π₂ =
       TopPair.proj₁ ⋙ TopCat.toSSet ⋙ (SSet.chainComplexFunctor C).obj R := by
@@ -450,6 +452,7 @@ lemma singularChainComplexShortComplexFunctor_comp_π₂ :
   rfl
 
 /-- The third term is the relative singular chain functor. -/
+@[simp]
 lemma singularChainComplexShortComplexFunctor_comp_π₃ :
     singularChainComplexShortComplexFunctor R ⋙ ShortComplex.π₃ =
       (TopPair.singularChainComplexFunctor C).obj R := by

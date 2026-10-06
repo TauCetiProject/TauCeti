@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.MappingTorus
+import TauCeti.AlgebraicTopology.Singular.Basic
 public import Mathlib.AlgebraicTopology.SingularHomology.HomotopyInvariance
 
 /-!
@@ -78,9 +79,8 @@ lemma homologyMap_monodromy_comp_incl [CategoryWithHomology C] (n : ℕ) :
         (SSet.chainComplexMap
           (TopCat.toSSet.map (TopCat.ofHom (TauCeti.MappingTorus.incl φ))) R) n := by
   rw [← HomologicalComplex.homologyMap_comp]
-  simpa only [singularChainComplexFunctor, SSet.chainComplex, SSet.chainComplexMap,
-    Functor.comp_obj, Functor.comp_map, Functor.whiskeringLeft_obj_obj,
-    Functor.whiskeringLeft_obj_map]
-    using (singularChainHomotopy φ R).homologyMap_eq n
+  have h := (singularChainHomotopy φ R).homologyMap_eq n
+  simp only [TauCeti.singularChainComplexFunctor_obj_map] at h
+  exact h
 
 end TauCeti.MappingTorus

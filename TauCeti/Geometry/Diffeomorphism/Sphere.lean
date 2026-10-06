@@ -108,16 +108,20 @@ theorem _root_.TauCeti.mfderiv_coe_sphere_unitSphereEquiv
     mfderiv (𝓡 k) 𝓘(ℝ, F) ((↑) : sphere (0 : F) 1 → F) (unitSphereEquiv e x)
         (mfderiv (𝓡 n) (𝓡 k) (unitSphereEquiv e) x v) =
       e (mfderiv (𝓡 n) 𝓘(ℝ, E) ((↑) : sphere (0 : E) 1 → E) x v) := by
-  rw [← mvfderiv_apply_eq_mfderiv_apply, ← mvfderiv_apply_eq_mfderiv_apply]
-  have hcomp : ((↑) : sphere (0 : F) 1 → F) ∘ unitSphereEquiv e =
-      e ∘ ((↑) : sphere (0 : E) 1 → E) :=
-    funext fun y ↦ coe_unitSphereEquiv_apply e y
-  rw [← mvfderiv_comp_apply x (contMDiff_coe_sphere.mdifferentiableAt one_ne_zero)
-    ((contMDiff_unitSphereEquiv (m := 1) e).mdifferentiableAt one_ne_zero), hcomp,
-    mvfderiv_comp_apply x ((e.contDiff (n := 1)).contMDiff.mdifferentiableAt one_ne_zero)
-      (contMDiff_coe_sphere.mdifferentiableAt one_ne_zero), mvfderiv_eq_fderiv, e.fderiv]
-  simp [mvfderiv]
-  rfl
+  have h :
+      mvfderiv (𝓡 k) ((↑) : sphere (0 : F) 1 → F) (unitSphereEquiv e x)
+          (mfderiv (𝓡 n) (𝓡 k) (unitSphereEquiv e) x v) =
+        e (mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) x v) := by
+    have hcomp : ((↑) : sphere (0 : F) 1 → F) ∘ unitSphereEquiv e =
+        e ∘ ((↑) : sphere (0 : E) 1 → E) :=
+      funext fun y ↦ coe_unitSphereEquiv_apply e y
+    rw [← mvfderiv_comp_apply x (contMDiff_coe_sphere.mdifferentiableAt one_ne_zero)
+      ((contMDiff_unitSphereEquiv (m := 1) e).mdifferentiableAt one_ne_zero), hcomp,
+      mvfderiv_comp_apply x ((e.contDiff (n := 1)).contMDiff.mdifferentiableAt one_ne_zero)
+        (contMDiff_coe_sphere.mdifferentiableAt one_ne_zero), mvfderiv_eq_fderiv, e.fderiv]
+    simp [mvfderiv]
+  simp only [mvfderiv_apply_eq_mfderiv_apply] at h
+  exact h
 
 /-- The diffeomorphism between unit spheres induced by a linear isometry equivalence. -/
 def unitSphereDiffeomorph (e : E ≃ₗᵢ[ℝ] F) (m : ℕ∞ω) :
