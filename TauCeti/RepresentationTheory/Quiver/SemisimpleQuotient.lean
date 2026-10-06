@@ -18,7 +18,7 @@ Killing the arrows of a quiver leaves its vertices. This file makes that precise
 algebras: reading off the coordinates of an element of `pathAlgebra k Q` on the trivial paths is an
 algebra homomorphism `TauCeti.PathAlgebra.trivialCoeff` onto the product algebra `Q → k`, and its
 kernel is exactly the arrow ideal. So the arrow ideal is the kernel of a map onto a product of
-copies of the base semiring, and
+copies of the base semiring. Over a commutative ring this induces the equivalence
 
 `pathAlgebra k Q ⧸ arrowIdeal k Q ≃ₐ[k] (Q → k)`.
 
@@ -165,7 +165,8 @@ of the base field, one for each vertex.** This is its Wedderburn decomposition: 
 base field, so every block is one-dimensional, matching the vertex simple modules. -/
 noncomputable def quotientJacobsonAlgEquiv (h : Quiver.IsAcyclic Q) :
     (pathAlgebra k Q ⧸ Ring.jacobson (pathAlgebra k Q)) ≃ₐ[k] (Q → k) :=
-  (Ideal.quotientEquivAlgOfEq k (jacobson_pathAlgebra_eq_arrowIdeal k Q h)).trans
+  (Ideal.quotientEquivAlgOfEq k
+    (jacobson_pathAlgebra_eq_arrowIdeal k Q (IsSemisimpleRing.jacobson_eq_bot k) h)).trans
     (quotientArrowIdealAlgEquiv k Q)
 
 /-- The equivalence out of the semisimple quotient is the trivial-coefficient homomorphism. -/
