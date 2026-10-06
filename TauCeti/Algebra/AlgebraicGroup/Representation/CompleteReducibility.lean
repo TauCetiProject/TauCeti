@@ -9,7 +9,6 @@ public import TauCeti.Algebra.AlgebraicGroup.Connected.CommHopfAlgCat
 public import TauCeti.Algebra.AlgebraicGroup.FiniteType.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.LinearlyReductive
 public import TauCeti.Algebra.AlgebraicGroup.Representation.LieStable
-public import TauCeti.Algebra.AlgebraicGroup.Tangent.Dimension
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.FiniteType
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.BaseChange
 public import TauCeti.Algebra.Lie.HighestWeight.CompleteReducibility
@@ -121,7 +120,7 @@ theorem linearlyReductiveCommHopfAlgProperty.of_geometricallyConnected_of_isKill
     linearlyReductiveCommHopfAlgProperty k H.obj := by
   let HK := FiniteTypeCommHopfAlgCat.baseChange (K := AlgebraicClosure k) H
   have : ConnectedSpace (PrimeSpectrum HK) := hH.connectedSpace_algebraicClosureBaseChange
-  have := isKilling_lie_baseChange (k := k) (K := AlgebraicClosure k) (H := H)
+  have := (isKilling_lie_baseChange_iff (k := k) (K := AlgebraicClosure k) (H := H)).2 ‹_›
   exact linearlyReductiveCommHopfAlgProperty.of_baseChange (AlgebraicClosure k)
     (linearlyReductiveCommHopfAlgProperty.of_isKilling (H := HK))
 
