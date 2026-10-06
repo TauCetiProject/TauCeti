@@ -44,6 +44,14 @@ namespace TauCeti
 variable {R ι : Type*} [Field R] [LinearOrder R] [IsStrictOrderedRing R] [IsRealClosed R]
   {n : ℕ}
 
+/-- The distinct roots of a product of nonzero polynomials are the distinct roots of its factors
+together. -/
+private theorem roots_prod_toFinset {K : Type*} [CommRing K] [IsDomain K] [DecidableEq K]
+    (s : Finset ι) (p : ι → K[X]) (hp : ∀ k ∈ s, p k ≠ 0) :
+    (s.prod p).roots.toFinset = s.biUnion fun k ↦ (p k).roots.toFinset := by
+  classical
+  rw [roots_prod _ _ (Finset.prod_ne_zero_iff.mpr hp), Finset.bind_toFinset, s.val_toFinset]
+
 /-- **The ordered root loci of a finite family are semialgebraic.** Let `P k` be a finite family
 of polynomial families over `R ^ n`. On a semialgebraic base `S` where every member specializes
 to a nonzero polynomial, the points whose distinguished coordinate is a root of some member and
@@ -70,9 +78,7 @@ theorem IsSemialgebraic.setOf_mem_biUnion_roots_card_lt {S : Set (Fin n → R)}
         (Finset.prod_ne_zero_iff.mpr fun k hk ↦ hP k hk _ hy)
     have hroots : (Q.map (MvPolynomial.eval (Fin.tail y))).roots.toFinset =
         s.biUnion (fun k ↦ ((P k).map (MvPolynomial.eval (Fin.tail y))).roots.toFinset) := by
-      simp only [Q, Polynomial.map_prod]
-      rw [roots_prod _ _ (Finset.prod_ne_zero_iff.mpr fun k hk ↦ hP k hk _ hy),
-        Finset.bind_toFinset, s.val_toFinset]
+      simpa only [Q, Polynomial.map_prod] using roots_prod_toFinset s _ fun k hk ↦ hP k hk _ hy
     simp only [hy, true_and, ← hroots, Multiset.mem_toFinset, mem_roots hprod]
   · simp only [hy, false_and]
 
@@ -102,9 +108,7 @@ theorem IsSemialgebraic.setOf_not_mem_biUnion_roots_card_lt {S : Set (Fin n → 
         (Finset.prod_ne_zero_iff.mpr fun k hk ↦ hP k hk _ hy)
     have hroots : (Q.map (MvPolynomial.eval (Fin.tail y))).roots.toFinset =
         s.biUnion (fun k ↦ ((P k).map (MvPolynomial.eval (Fin.tail y))).roots.toFinset) := by
-      simp only [Q, Polynomial.map_prod]
-      rw [roots_prod _ _ (Finset.prod_ne_zero_iff.mpr fun k hk ↦ hP k hk _ hy),
-        Finset.bind_toFinset, s.val_toFinset]
+      simpa only [Q, Polynomial.map_prod] using roots_prod_toFinset s _ fun k hk ↦ hP k hk _ hy
     simp only [hy, true_and, ← hroots, Multiset.mem_toFinset, mem_roots hprod]
   · simp only [hy, false_and]
 
