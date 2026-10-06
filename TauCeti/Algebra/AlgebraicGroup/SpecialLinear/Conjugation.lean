@@ -25,10 +25,7 @@ assert faithful flatness or finiteness of the morphism, which require scheme-lev
 
 * J. S. Milne, *Algebraic Groups* (2017), Examples 5.49 and 21.4.
 
-The construction reuses `ProjectiveGeneralLinear.conjugationMap`; the kernel proof follows
-its universal-point argument. The surjectivity proof combines Mathlib's `PSL ≃ PGL`
-equivalence over algebraically closed fields with the existing Skolem–Noether identification
-`Matrix.ProjGenLinGroup.innerAut_bijective`.
+The construction reuses `ProjectiveGeneralLinear.conjugationMap`.
 -/
 
 public section
@@ -98,6 +95,7 @@ The equality is of defining Hopf ideals, so also detects nonreduced central subg
 theorem kernelHopfIdeal_conjugationMap {k : Type u} [Field k] (hn : 0 < n) :
     CommHopfAlgCat.kernelHopfIdeal (conjugationMap n k) =
       CommHopfAlgCat.centerDefiningIdeal (coordinateHopfAlgebra k n) := by
+  -- Follow the universal-point kernel argument for `ProjectiveGeneralLinear.conjugationMap`.
   have hmem : ∀ (A : CommAlgCat.{u} k)
       (g : HopfAlgebra.points (R := k) (H := coordinateHopfAlgebra k n) A),
       g ∈ CommHopfAlgCat.quotientPointsSubgroup _
@@ -133,6 +131,8 @@ theorem mapPointsFunctor_conjugationMap_app_surjective {R : Type u} [CommRing R]
     (K : Type w) [Field K] [IsAlgClosed K] [Algebra R K] :
     Function.Surjective
       ((CommHopfAlgCat.mapPointsFunctor (conjugationMap n R)).app (CommAlgCat.of R K)) := by
+  -- Combine Mathlib's `PSL ≃ PGL` equivalence over algebraically closed fields with the
+  -- Skolem–Noether identification `Matrix.ProjGenLinGroup.innerAut_bijective`.
   intro q
   obtain ⟨p, hp⟩ := (Matrix.ProjGenLinGroup.innerAut_bijective (n := Fin n) K).2
     (ProjectiveGeneralLinear.pointsMulEquiv n R _ q)
