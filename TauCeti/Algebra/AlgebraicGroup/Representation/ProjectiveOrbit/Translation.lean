@@ -245,4 +245,30 @@ theorem image_projectivePointTranslation_range_projectiveOrbitMap
 
 end Scheme
 
+section Field
+
+variable {k H M : Type u} [Field k] [CommRing H] [HopfAlgebra k H]
+  [AddCommGroup M] [Module k M] [Comodule k H M] [Module.Finite k M]
+
+/-- Projective translation of a rational orbit image corresponds to left multiplication
+of its group point. -/
+-- Apply before `projectivePointTranslation_hom` unfolds the translation to a coordinate map.
+@[simp↓]
+theorem projectivePointTranslation_projectiveOrbitMap_kernelPoint
+    (g h : WithConv (H →ₐ[k] k)) (m : M) (hm : Module.IsUnimodular k m) :
+    (projectivePointTranslation (M := M) g).hom
+        (projectiveOrbitMap (H := H) m hm (AlgHom.kernelPoint h.ofConv)) =
+      projectiveOrbitMap (H := H) m hm (AlgHom.kernelPoint (g * h).ofConv) := by
+  rw [← projectiveOrbitMap_leftTranslation_apply g m hm (AlgHom.kernelPoint h.ofConv)]
+  have hpoint : PrimeSpectrum.comap (HopfAlgebra.leftTranslationAlgEquiv g).toRingEquiv
+      (AlgHom.kernelPoint h.ofConv) = AlgHom.kernelPoint (g * h).ofConv := by
+    rw [AlgEquiv.toRingEquiv_toRingHom, ← AlgEquiv.toAlgHom_toRingHom,
+      AlgHom.comap_kernelPoint]
+    congr 1
+    apply toConv_injective
+    simpa using HopfAlgebra.toConv_comp_leftTranslationAlgEquiv g h
+  rw [hpoint]
+
+end Field
+
 end TauCeti.Comodule
