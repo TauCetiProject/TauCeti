@@ -74,10 +74,17 @@ theorem latticeDefect_eq_zero_of_isTorsionBy (V : Type u) [AddCommGroup V]
   rw [latticeDefect_def, reductionK0_congr k eQ, reductionK0_congr k eT, sub_self]
 
 /-- A module on which multiplication by `ℓ` is bijective has zero lattice defect: both its
-reduction modulo `ℓ` and its `ℓ`-torsion vanish. -/
+reduction modulo `ℓ` and its `ℓ`-torsion vanish. Bijectivity alone makes both of them trivial,
+hence finite, so no finiteness hypothesis is needed. -/
 theorem latticeDefect_eq_zero_of_bijective_zsmul (V : Type u) [AddCommGroup V]
-    [DistribMulAction G V] (hV : Bijective fun x : V => (ℓ : ℤ) • x)
-    [Finite (QuotSMulTop (ℓ : ℤ) V)] [Finite (Submodule.torsionBy ℤ V ℓ)] :
+    [DistribMulAction G V] (hV : Bijective fun x : V => (ℓ : ℤ) • x) :
+    haveI : Finite (QuotSMulTop (ℓ : ℤ) V) := Finite.of_surjective (fun _ : Unit ↦ 0) fun x ↦
+      Submodule.Quotient.induction_on _ x fun y ↦ ⟨(), ((Submodule.Quotient.mk_eq_zero _).mpr <|
+        (Submodule.mem_smul_pointwise_iff_exists y (ℓ : ℤ) ⊤).mpr
+          ⟨_, trivial, (hV.2 y).choose_spec⟩).symm⟩
+    haveI : Finite (Submodule.torsionBy ℤ V ℓ) := Finite.of_injective (fun _ ↦ ()) fun x y _ ↦
+      Subtype.ext <| hV.1 <| ((Submodule.mem_torsionBy_iff _ _).mp x.2).trans
+        ((Submodule.mem_torsionBy_iff _ _).mp y.2).symm
     latticeDefect k G ℓ V = 0 := by
   have htop : (ℓ : ℤ) • (⊤ : Submodule ℤ V) = ⊤ := by
     apply top_unique
