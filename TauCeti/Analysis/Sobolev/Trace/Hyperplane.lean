@@ -207,9 +207,12 @@ theorem W1p.norm_hyperplaneTrace_le (a : ℝ)
 
 /-- The operator norm of the hyperplane trace is at most one. -/
 theorem W1p.opNorm_hyperplaneTrace_le (a : ℝ) :
-    ‖W1p.hyperplaneTrace (E := E) a‖ ≤ 1 :=
-  ContinuousLinearMap.opNorm_le_bound _ zero_le_one
-    (fun u ↦ by simpa only [one_mul] using W1p.norm_hyperplaneTrace_le a u)
+    ‖W1p.hyperplaneTrace (E := E) a‖ ≤ 1 := by
+  simpa only [W1p.hyperplaneTrace] using
+    (LinearMap.opNorm_extendOfNorm_le (f := hyperplaneTestFunctionₗ a)
+      (W1p.denseRange_ofTestFunctionₗ_top
+        (mu := (volume : Measure (WithLp 2 (ℝ × E)))) (p := 2) (by norm_num)) zero_le_one
+      (fun φ ↦ by simpa only [one_mul] using norm_hyperplaneTestFunction_le a φ))
 
 /-- A continuous linear boundary operator agreeing with restriction on every test function is
 the hyperplane trace. -/
@@ -218,13 +221,14 @@ theorem W1p.hyperplaneTrace_unique (a : ℝ)
     (hT : ∀ φ : 𝓓((⊤ : Opens (WithLp 2 (ℝ × E))), ℝ),
       ∀ᵐ y ∂(volume : Measure E), T (W1p.ofTestFunctionₗ volume ⊤ 2 φ) y =
         φ (WithLp.toLp 2 (a, y))) : T = W1p.hyperplaneTrace a := by
-  apply DFunLike.coe_injective
-  exact (W1p.denseRange_ofTestFunctionₗ_top
-      (mu := (volume : Measure (WithLp 2 (ℝ × E)))) (p := 2) (by norm_num)).equalizer
-    T.continuous (W1p.hyperplaneTrace a).continuous (by
-      funext φ
-      apply Lp.ext
-      filter_upwards [hT φ, W1p.hyperplaneTrace_ofTestFunction_apply_ae a φ] with y ht hf
-      exact ht.trans hf.symm)
+  apply Eq.symm
+  unfold W1p.hyperplaneTrace
+  refine LinearMap.extendOfNorm_unique
+    (W1p.denseRange_ofTestFunctionₗ_top
+      (mu := (volume : Measure (WithLp 2 (ℝ × E)))) (p := 2) (by norm_num)) 1
+    (fun φ ↦ by simpa only [one_mul] using norm_hyperplaneTestFunction_le a φ) T ?_
+  ext φ
+  filter_upwards [hT φ, (hyperplane_memLp a φ).coeFn_toLp] with y ht hf
+  exact ht.trans hf.symm
 
 end TauCeti
