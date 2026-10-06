@@ -144,7 +144,9 @@ namespace TauCeti
 
 open CategoryTheory CategoryTheory.Abelian
 
-variable {C : Type u} [Category.{v} C] [Abelian C] {k : Type t} [Ring k] [Linear k C]
+section Hom
+
+variable {C : Type u} [Category.{v} C] [Abelian C] {k : Type t} [Semiring k] [Linear k C]
   {X Y Z : C}
 
 /-- Precomposition with a projective resolution's augmentation identifies Hom from the resolved
@@ -163,7 +165,10 @@ theorem projectiveResolutionHomLinearEquivOfCompEqZero_apply
     projectiveResolutionHomLinearEquivOfCompEqZero (k := k) R h f = R.π.f 0 ≫ f :=
   homLinearEquivOfExact_apply R.exact₀ h f
 
-variable [HasExt.{w} C]
+end Hom
+
+variable {C : Type u} [Category.{v} C] [Abelian C] {k : Type t} [Ring k] [Linear k C]
+  [HasExt.{w} C] {X Y Z : C}
 
 /-- Compute positive-degree Ext from an object isomorphic to a resolution term when both
 adjacent differentials vanish against the target. -/

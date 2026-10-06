@@ -33,7 +33,7 @@ open CategoryTheory CategoryTheory.Limits
 universe v u t
 
 variable {C : Type u} [Category.{v} C] [Preadditive C] [Balanced C]
-  {k : Type t} [Ring k] [Linear k C] {S : CategoryTheory.ShortComplex C} {Y : C} [Epi S.g]
+  {k : Type t} [Semiring k] [Linear k C] {S : CategoryTheory.ShortComplex C} {Y : C} [Epi S.g]
 
 /-- Precomposition with an epimorphic second map of an exact short complex identifies the
 two Hom modules when every map to the target kills the first map. -/
