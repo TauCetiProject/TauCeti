@@ -12,7 +12,7 @@ public import Mathlib.Topology.Algebra.Group.ZPow
 public import TauCeti.Algebra.Group.FreeAbelianCharacter
 public import TauCeti.Algebra.Group.FreeCommMonoidCharacter
 public import TauCeti.Algebra.Group.Prod
-public import TauCeti.Geometry.Toric.Analytic.AffinePoint
+public import TauCeti.Geometry.Toric.Analytic.AffinePoint.Basic
 
 /-!
 # Mixed coordinates on the complex points of a split affine semigroup
