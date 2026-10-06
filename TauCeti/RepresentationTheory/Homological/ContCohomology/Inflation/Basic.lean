@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.ExplicitFunctoriality
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Invariants
+import TauCeti.RepresentationTheory.Homological.GroupCohomology.LowDegree
 
 /-!
 # Inflation and the inflation-restriction sequence
@@ -88,15 +89,13 @@ on `G ⧸ N`. This is the continuous counterpart of Mathlib's discrete `groupCoh
 and `groupCohomology.H1InfRes_exact`, which are stated for `Rep k G` and so are unavailable at the
 universe-polymorphic unbundled generality used here.
 
-The degree-two exactness is also proved on cochains, in two corrections by coboundaries. A
-`2`-cocycle `f` whose restriction to `N` is the coboundary of `c` is first corrected, with the help
-of coset representatives and of `c`, to vanish on `G × N`. Then for each `h` the function
-`n ↦ f (n, h)` is a `1`-cocycle on `N`, and the vanishing of `H¹(N, M)` writes it as the coboundary
-of some `x h`; subtracting the coboundary of `g ↦ x r - x σ`, with `r` and `σ` the chosen
-representatives of `g N` and of `N`, makes `f` vanish on `N × G` as well, and such a cocycle
-descends to `G ⧸ N` (`TauCeti.ContCohomology.descendZ2`). Both corrections are built from a
-choice of coset representatives, and it is the openness of `N`, which makes `G ⧸ N` discrete, that
-keeps them continuous.
+In degree two, exactness at `H²(G, M)` says that a class whose restriction to `N` vanishes is
+inflated from `H²(G ⧸ N, M ^ N)`. The hypothesis `H¹(N, M) = 0` is needed: without it, the kernel
+of restriction can be strictly larger than the image of inflation. The proof on cochains replaces
+a cocycle killed by restriction with a cohomologous one vanishing on `G × N` and on `N × G`, which
+then descends to `G ⧸ N` (`TauCeti.ContCohomology.descendZ2`). The cohomologous cocycle is built
+from a choice of coset representatives of `N`; openness of `N` makes `G ⧸ N` discrete, so that
+this choice, and hence the correction, is continuous.
 
 This implements the inflation part of the "three instances, in all three degrees" milestone of
 Layer 2, and the "inflation-restriction" milestone of Layer 5, of the human-authored roadmap
@@ -521,43 +520,6 @@ theorem explicitInfl2_descendZ2 (z : Z2 G M)
 
 end DegreeTwo
 
-section VanishingCocycles
-
-/-! A `2`-cocycle on `G` vanishing on `G × N` and on `N × G` is constant on the cosets of `N` in
-both variables and takes values in `M ^ N`, so it descends to `G ⧸ N` through
-`TauCeti.ContCohomology.descendZ2`. -/
-
-variable {G : Type u} [Group G] {M : Type v} [AddCommGroup M] [DistribMulAction G M]
-  {N : Subgroup G} [N.Normal]
-
-omit [N.Normal] in
-/-- A `2`-cocycle vanishing on `G × N` is unchanged by right multiplication of its second argument
-by `N`. -/
-private theorem apply_mul_snd_of_vanishing {f : G × G → M} (hf : groupCohomology.IsCocycle₂ f)
-    (hR : ∀ (g : G) (n : N), f (g, n) = 0) (g h : G) (n : N) : f (g, h * n) = f (g, h) := by
-  simpa [hR] using (hf g h n).symm
-
-/-- A `2`-cocycle vanishing on `G × N` and on `N × G` is unchanged by right multiplication of its
-first argument by `N`. -/
-private theorem apply_mul_fst_of_vanishing {f : G × G → M} (hf : groupCohomology.IsCocycle₂ f)
-    (hR : ∀ (g : G) (n : N), f (g, n) = 0) (hL : ∀ (n : N) (g : G), f (n, g) = 0) (g h : G)
-    (n : N) : f (g * n, h) = f (g, h) := by
-  have h₁ := hf g n h
-  rw [hR, hL, smul_zero, zero_add, add_zero] at h₁
-  rw [h₁, show (n : G) * h = h * (h⁻¹ * n * h) by group]
-  exact apply_mul_snd_of_vanishing hf hR g h ⟨_, ‹N.Normal›.conj_mem' _ n.2 h⟩
-
-/-- The values of a `2`-cocycle vanishing on `G × N` and on `N × G` are fixed by `N`. -/
-private theorem smul_apply_of_vanishing {f : G × G → M} (hf : groupCohomology.IsCocycle₂ f)
-    (hR : ∀ (g : G) (n : N), f (g, n) = 0) (hL : ∀ (n : N) (g : G), f (n, g) = 0) (n : N)
-    (g h : G) : (n : G) • f (g, h) = f (g, h) := by
-  have h₁ := hf n g h
-  rw [hL, hL, add_zero, add_zero, show (n : G) * g = g * (g⁻¹ * n * g) by group,
-    apply_mul_fst_of_vanishing hf hR hL g h ⟨_, ‹N.Normal›.conj_mem' _ n.2 g⟩] at h₁
-  exact h₁.symm
-
-end VanishingCocycles
-
 section DegreeTwoExact
 
 variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
@@ -629,8 +591,11 @@ private theorem exists_sub_mem_B2_vanishing (hN : IsOpen (N : Set G)) [Subsingle
     let φ : Z1 N M := ⟨fun n => (f : G × G → M) (n, h), mem_Z1_iff.2
       ⟨hf.1.comp (continuous_subtype_val.prodMk continuous_const), fun n n' => by
         have h₁ := hf.2 n n' h
-        rw [hR, add_zero, show (n' : G) * h = h * (h⁻¹ * n' * h) by group,
-          apply_mul_snd_of_vanishing hf.2 hR _ h ⟨_, ‹N.Normal›.conj_mem' _ n'.2 h⟩] at h₁
+        -- `n' * h = h * (h⁻¹ * n' * h)`, with `h⁻¹ * n' * h ∈ N` by normality.
+        have h₂ := groupCohomology.apply_mul_snd_of_isCocycle₂_of_vanishing hf.2 hR n h
+          ⟨_, ‹N.Normal›.conj_mem' _ n'.2 h⟩
+        rw [← mul_assoc, mul_inv_cancel_left] at h₂
+        rw [hR, add_zero, h₂] at h₁
         exact h₁⟩⟩
     have h0 : (φ : H1 N M) = 0 := Subsingleton.elim _ _
     exact mem_B1_iff.1 (H1pi_eq_zero_iff.1 h0)
@@ -658,7 +623,8 @@ private theorem exists_sub_mem_B2_vanishing (hN : IsOpen (N : Set G)) [Subsingle
     have h₁ := hx (g : G ⧸ N).out n
     have h₂ := hx (1 : G ⧸ N).out n
     rw [hR n ⟨_, hσ⟩] at h₂
-    rw [← apply_mul_snd_of_vanishing hf.2 hR n _ ⟨_, hs g⟩, mul_inv_cancel_left] at h₁
+    rw [← groupCohomology.apply_mul_snd_of_isCocycle₂_of_vanishing hf.2 hR n _ ⟨_, hs g⟩,
+      mul_inv_cancel_left] at h₁
     simp only [AddSubgroup.coe_sub, Pi.sub_apply, d1_apply, hng, he_N, e, smul_sub]
     rw [Subgroup.smul_def] at h₁ h₂
     linear_combination (norm := abel) h₂ - h₁
@@ -681,9 +647,11 @@ theorem explicitInfRes2_exact (hN : IsOpen (N : Set G))
     obtain ⟨f₂, hf₂, hR, hL⟩ := exists_sub_mem_B2_vanishing hN f₁ hR₁
     have hf := (mem_Z2_iff.1 f₂.2).2
     have hff₂ : (f : H2 G M) = f₂ := H2pi_eq_iff.2 (by simpa using add_mem hf₁ hf₂)
-    refine ⟨descendZ2 f₂ (fun g h n n' => ?_) (smul_apply_of_vanishing hf hR hL),
+    refine ⟨descendZ2 f₂ (fun g h n n' => ?_)
+      (groupCohomology.smul_apply_of_isCocycle₂_of_vanishing hf hR hL),
       (explicitInfl2_descendZ2 _ _ _).trans hff₂.symm⟩
-    rw [apply_mul_snd_of_vanishing hf hR, apply_mul_fst_of_vanishing hf hR hL]
+    rw [groupCohomology.apply_mul_snd_of_isCocycle₂_of_vanishing hf hR,
+      groupCohomology.apply_mul_fst_of_isCocycle₂_of_vanishing hf hR hL]
 
 end DegreeTwoExact
 
