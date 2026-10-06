@@ -56,6 +56,12 @@ theorem cornerSubmodule_zigzagAlgebra_eq_bot_of_ne_of_not_adj {i j : V}
       · subst v
         simp [hij]
       · simp [h]
-  exact (cornerSubmodule_eq_bot_iff_cornerMap_eq_zero k (e i) (e j)).2 hzero
+  apply (Submodule.eq_bot_iff _).mpr
+  intro x hx
+  have hfixed := (mem_cornerSubmodule_iff k
+    (isIdempotentElem_zigzagAlgebraBasis_inl k G i)
+    (isIdempotentElem_zigzagAlgebraBasis_inl k G j)).mp hx
+  simpa only [cornerMap_apply, LinearMap.zero_apply, hfixed] using
+    LinearMap.congr_fun hzero x
 
 end TauCeti
