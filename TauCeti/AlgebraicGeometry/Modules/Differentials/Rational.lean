@@ -126,6 +126,16 @@ def rationalDifferentialStalk (x : X) :
         (X.presheaf.germ V x hxV (X.presheaf.map (homOfLE hVU).op a)),
       X.algebraMap_germ_eq_germToFunctionField]
 
+/-- The local rational value is specialization to the generic stalk under the stalk comparison.
+This is not a simp lemma: computation rules preserve `rationalDifferentialStalk` as the normal form.
+-/
+lemma rationalDifferentialStalk_apply (x : X)
+    (s : (X.relativeDifferentials R).presheaf.stalk x) :
+    rationalDifferentialStalk R x s = relativeDifferentialsGenericStalkEquiv R
+      ((X.relativeDifferentials R).presheaf.stalkSpecializes
+        ((genericPoint_spec X).specializes (Set.mem_univ x)) s) :=
+  (rfl)
+
 /-- Passing from a differential section through any stalk gives its rational value. -/
 @[simp]
 lemma rationalDifferentialStalk_germ {U : X.Opens} [Nonempty U] (x : X) (hx : x ∈ U)
