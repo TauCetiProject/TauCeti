@@ -54,8 +54,9 @@ and to deduce `TauCeti.character_ind` from `Subgroup.indClassFun_eq_natCard_inv_
   the inducing function is invariant under conjugation in the subgroup.
 * `Subgroup.indClassFun_conj` and `Subgroup.indClassFun_mem_classFunction`: induction preserves
   conjugation invariance over additive coefficients and sends class functions to class functions.
-* `Subgroup.indClassFun_top` and `Subgroup.indClassFun_indClassFun_subgroupOf`: induction from `⊤`
-  is the identity, and induction is transitive along `L ≤ T ≤ G`.
+* `Subgroup.indClassFun_top` and `Subgroup.indClassFun_indClassFun_subgroupOf`: for
+  conjugation-invariant inducing functions, induction from `⊤` is the identity, and induction is
+  transitive along `L ≤ T ≤ G`.
 * `Subgroup.natCard_nsmul_indClassFun`: for a conjugation-invariant function `f`, the additive
   group-sum form `|S| • (Ind f)(g) = ∑_{x ∈ G} f(x⁻¹gx)`, and its averaged corollary
   `Subgroup.indClassFun_eq_natCard_inv_mul_sum`.
@@ -234,14 +235,14 @@ theorem _root_.Subgroup.indClassFun_comp (S : Subgroup G) [S.FiniteIndex] {k' : 
   intro t _
   split <;> simp
 
-/-- Induction of class functions kills the zero function. -/
+/-- Induction of functions kills the zero function. -/
 @[simp]
 theorem _root_.Subgroup.indClassFun_zero (S : Subgroup G) [S.FiniteIndex] :
     Subgroup.indClassFun S (0 : S → k) = 0 := by
   funext g
   simp [Subgroup.indClassFun, Function.indTerm_zero]
 
-/-- Induction of class functions is additive. -/
+/-- Induction of functions is additive. -/
 @[simp]
 theorem _root_.Subgroup.indClassFun_add (S : Subgroup G) [S.FiniteIndex] (f₁ f₂ : S → k) :
     Subgroup.indClassFun S (f₁ + f₂) = Subgroup.indClassFun S f₁ + Subgroup.indClassFun S f₂ := by
@@ -394,7 +395,7 @@ section ClassFun
 
 variable {f : S → k}
 
-/-- The summand of the induced class function depends only on the left coset of its
+/-- For a class function `f` on `S`, the induction summand depends only on the left coset of its
 representative. -/
 theorem _root_.Function.indTerm_eq_of_mk_eq (f : S → k) (hf : f ∈ ClassFunction k S) (g x y : G)
     (hxy : (QuotientGroup.mk x : G ⧸ S) = QuotientGroup.mk y) :
@@ -473,9 +474,9 @@ section DivisionSemiring
 variable [DivisionSemiring k]
 
 open scoped Classical in
-/-- **The averaged group-sum form of the induced class function.**  The order of the subgroup must
-be invertible in the coefficient division semiring; without that hypothesis
-`Subgroup.natCard_nsmul_indClassFun` is the division-free identity to use. -/
+/-- **The averaged group-sum form of induction for a class function `f` on `S`.**
+The order of the subgroup must be invertible in the coefficient division semiring; without that
+hypothesis, `Subgroup.natCard_nsmul_indClassFun` is the division-free identity to use. -/
 theorem _root_.Subgroup.indClassFun_eq_natCard_inv_mul_sum (S : Subgroup G) [Fintype G] {f : S → k}
     (hS : IsUnit (Nat.card S : k)) (hf : f ∈ ClassFunction k S) (g : G) :
     Subgroup.indClassFun S f g =
