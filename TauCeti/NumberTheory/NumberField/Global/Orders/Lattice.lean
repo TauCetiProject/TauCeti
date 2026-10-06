@@ -30,6 +30,17 @@ a quadratic order.
 * `TauCeti.GlobalNumberFields.NumberFieldOrder.finrank_int_eq_finrank_rat`: a nonzero
   fractional ideal has `ℤ`-rank `[K : ℚ]`.
 
+## Implementation notes
+
+This generalises Mathlib's treatment of fractional ideals of the maximal order `𝓞 K` in
+`Mathlib/NumberTheory/NumberField/FractionalIdeal.lean`. The `Module.Finite ℤ` and
+`Module.Free ℤ` instances follow its instances for `𝓞 K`, which transport the ideal to its
+numerator (there along `FractionalIdeal.equivNum`, here along
+`FractionalIdeal.equivNumOfIsLocalization`). The results `span_int_range_basis` and
+`finrank_int_eq_finrank_rat` are the order analogues of
+`NumberField.mem_span_basisOfFractionalIdeal` and `NumberField.fractionalIdeal_rank`, which
+Mathlib states only for `𝓞 K`.
+
 ## References
 
 * J. Neukirch, *Algebraic Number Theory*, Chapter I, §2 and §12.
@@ -78,10 +89,11 @@ theorem span_int_range_basis {I : FractionalIdeal (nonZeroDivisors O.toSubalgebr
     {ι : Type*} (b : Module.Basis ι ℤ I) :
     (Submodule.span ℤ (Set.range fun i ↦ (b i : K)) : Set K) = I := by
   let f := (I : Submodule O.toSubalgebra K).subtype.restrictScalars ℤ
-  rw [show (Set.range fun i ↦ (b i : K)) = f '' Set.range b by rw [← Set.range_comp]; rfl,
-    Submodule.span_image, b.span_eq, Submodule.map_top, LinearMap.range_restrictScalars,
-    Submodule.range_subtype]
-  rfl
+  have hf : (Set.range fun i ↦ (b i : K)) = f '' Set.range b := by
+    rw [← Set.range_comp]
+    simp [f, Function.comp_def]
+  rw [hf, Submodule.span_image, b.span_eq, Submodule.map_top, LinearMap.range_restrictScalars,
+    Submodule.range_subtype, Submodule.coe_restrictScalars, FractionalIdeal.coeToSet_coeToSubmodule]
 
 /-- **A `ℤ`-basis of a nonzero fractional ideal spans the number field over `ℚ`.** -/
 theorem span_rat_range_basis {I : FractionalIdeal (nonZeroDivisors O.toSubalgebra) K}
