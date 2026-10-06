@@ -76,10 +76,6 @@ is induced from, written the way `TauCeti.mackeySummand` writes it: the restrict
 
 ## References
 
-Layer 4 of
-[the induction and restriction roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/InductionRestriction/README.md),
-"the intertwining-number formula".
-
 * J.-P. Serre, *Linear Representations of Finite Groups*, Chapter 7.3, Proposition 22.
 * I. M. Isaacs, *Character Theory of Finite Groups*, Chapter 5.
 -/

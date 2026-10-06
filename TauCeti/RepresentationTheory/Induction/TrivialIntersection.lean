@@ -14,15 +14,15 @@ public import TauCeti.RepresentationTheory.Induction.FrobeniusReciprocity
 Let `H` be a trivial-intersection subgroup of a finite group `G`: one meeting each of its distinct
 conjugates trivially (`TauCeti.IsTISubgroup`).  A class function on `H` that vanishes at the
 identity then induces to `G` *without changing its values on `H`*, and therefore without changing
-its norm, as long as the relevant group order is invertible in the coefficient field `k` — the
-characteristic of `k` must not divide it, as everywhere in this theory, because induction divides
-by that order.  Concretely, if `f` is a class function on `H` with `f 1 = 0` then
+its norm, as long as the relevant group order is invertible in the coefficient field `k`.  This
+allows cancellation in the group-sum identity and normalization of the character pairing.
+Concretely, if `f` is a class function on `H` with `f 1 = 0` then
 
 `Res_H (Ind_H^G f) = f`  when `(|H| : k)` is a unit,  hence  `⟨Ind f, Ind f⟩_G = ⟨f, f⟩_H`  when
 `(|G| : k)` is (which gives the former, by `TauCeti.isUnit_natCard_subgroup`).  All the statements
 below carry that hypothesis.
 
-The first statement is `TauCeti.ClassFunction.comap_subtype_ind_eq_self` and the second is
+The first statement is `Subgroup.comap_subtype_indClassFunction_eq_self` and the second is
 `TauCeti.characterPairing_ind_ind`.  This is the isometry that the exceptional-character route to
 Frobenius's theorem runs on: it is what makes a difference `χᵢ - χⱼ` of two *distinct* ordinary
 irreducible characters of `H` *of the same degree*, which then vanishes at `1` and has norm `2`,
@@ -38,8 +38,8 @@ terms all equal `f x`.
 
 ## Main statements
 
-* `TauCeti.indClassFun_apply_coe`: the induced class function agrees with `f` on `H`.
-* `TauCeti.ClassFunction.comap_subtype_ind_eq_self`: restriction undoes induction, `Res ∘ Ind = id`.
+* `Subgroup.indClassFun_apply_coe`: the induced class function agrees with `f` on `H`.
+* `Subgroup.comap_subtype_indClassFunction_eq_self`: restriction undoes induction, `Res ∘ Ind = id`.
 * `TauCeti.characterPairing_ind_ind`: induction preserves the character pairing.
 * `TauCeti.characterPairing_ind_ind_of_isTISet` and `TauCeti.isometry_ind_of_isTISet`: the same,
   for a class function supported on a trivial-intersection set of a proper trivial-intersection
@@ -56,8 +56,6 @@ put on either argument.
 ## References
 
 * I. M. Isaacs, *Character Theory of Finite Groups*, Chapter 7, Lemma 7.2 and Theorem 7.5.
-* [Character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md),
-  Layer 8 (`isometry_ind_of_isTISet`).
 -/
 
 public section
@@ -75,7 +73,8 @@ In the group-sum form `|H| · (Ind f)(x) = ∑_{y ∈ G} f (y⁻¹ x y)` (terms 
 `0`), a term with `y ∉ H` contributes nothing: if `y⁻¹ x y ∈ H` then the trivial-intersection
 condition forces `x = 1`, and `f` vanishes there.  The `|H|` terms with `y ∈ H` each equal `f x`,
 because `f` is a class function. -/
-theorem indClassFun_apply_coe [Finite G] (hH : IsTISubgroup H) (hk : IsUnit (Nat.card H : k))
+theorem _root_.Subgroup.indClassFun_apply_coe (H : Subgroup G) [Finite G]
+    (hH : IsTISubgroup H) (hk : IsUnit (Nat.card H : k))
     {f : H → k} (hf : f ∈ ClassFunction k H) (hf1 : f 1 = 0) (x : H) :
     Subgroup.indClassFun H f (x : G) = f x := by
   classical
@@ -114,13 +113,14 @@ theorem indClassFun_apply_coe [Finite G] (hH : IsTISubgroup H) (hk : IsUnit (Nat
     _ = (Nat.card H : k) * f x := by simp [Nat.card_eq_fintype_card]
 
 /-- **Restriction undoes induction, for a class function on a trivial-intersection subgroup that
-vanishes at the identity.**  This is the bundled form of `TauCeti.indClassFun_apply_coe`. -/
-theorem ClassFunction.comap_subtype_ind_eq_self [Finite G] (hH : IsTISubgroup H)
+vanishes at the identity.**  This is the bundled form of `Subgroup.indClassFun_apply_coe`. -/
+theorem _root_.Subgroup.comap_subtype_indClassFunction_eq_self (H : Subgroup G) [Finite G]
+    (hH : IsTISubgroup H)
     (hk : IsUnit (Nat.card H : k)) (f : ClassFunction k H) (hf1 : f.1 1 = 0) :
     ClassFunction.comap H.subtype (Subgroup.indClassFunction H f) = f := by
   refine Subtype.ext (funext fun x => ?_)
   simp only [ClassFunction.comap_apply, Subgroup.indClassFunction_apply, Subgroup.coe_subtype]
-  exact indClassFun_apply_coe hH hk f.2 hf1 x
+  exact H.indClassFun_apply_coe hH hk f.2 hf1 x
 
 open scoped Classical in
 /-- **Induction from a trivial-intersection subgroup preserves the character pairing**, provided
@@ -132,7 +132,7 @@ theorem characterPairing_ind_ind [Fintype G] (hG : IsUnit (Nat.card G : k))
       f₂) =
       ClassFunction.characterPairing f₁ f₂ := by
   rw [characterPairing_ind hG,
-    ClassFunction.comap_subtype_ind_eq_self hH (isUnit_natCard_subgroup H hG) f₂ hf₂]
+    H.comap_subtype_indClassFunction_eq_self hH (isUnit_natCard_subgroup H hG) f₂ hf₂]
 
 open scoped Classical in
 /-- **A class function supported on a trivial-intersection set of a proper trivial-intersection
@@ -156,8 +156,8 @@ ordinary irreducible characters of `H` of the same degree is supported off the i
 norm `2`, so it induces to a norm-`2` virtual character of `G`; that is the step the
 exceptional-character correspondence begins with.
 
-The name is the one the character-theory roadmap pins for this result: preserving the pairing at
-equal arguments is preservation of the norm, which is what "isometry" refers to. -/
+Preserving the pairing at equal arguments is preservation of the norm, which is what "isometry"
+refers to. -/
 theorem isometry_ind_of_isTISet [Fintype G] (hG : IsUnit (Nat.card G : k))
     (hH : IsTISubgroup H) (hne_top : H ≠ ⊤) (hS : IsTISet S H) (f : ClassFunction k H)
     (hf : ∀ y : H, (y : G) ∉ S → f.1 y = 0) :

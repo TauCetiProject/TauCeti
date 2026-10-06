@@ -41,8 +41,8 @@ representation is involved, so it also covers class functions that are not chara
   which says that induction does not change the (normalized) average of a character.
 * `TauCeti.frobenius_reciprocity_classFunction` and `TauCeti.characterPairing_ind`: the class
   function form, `⟨Ind f, h⟩_G = ⟨f, Res h⟩_S`, for arbitrary class functions `f` on `S` and `h`
-  on `G`.  `TauCeti.frobenius_reciprocity` is its special case for two characters, but is not
-  derived from it: it is what the earlier layers of the roadmap are stated against.
+  on `G`.  `TauCeti.frobenius_reciprocity` is its special case for two characters and follows
+  directly from the representation-theoretic reciprocity isomorphism.
 
 ## Implementation notes
 

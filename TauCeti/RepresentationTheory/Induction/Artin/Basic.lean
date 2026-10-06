@@ -40,8 +40,7 @@ formula propagates it from the trivial character to every virtual character.
 * `TauCeti.ClassFunction.natCard_nsmul_mem_indVirtualCharacters_isCyclic`: **Artin's induction
   theorem, sharp form**, through the canonical induced-virtual-character API.
 * `TauCeti.ClassFunction.natCard_nsmul_mem_indCharacterSpanInt_isCyclic`: the non-modular
-  algebraically closed form, including characteristic zero, with the roadmap's literal
-  induced-character-span target.
+  algebraically closed form, including characteristic zero, through the induced-character span.
 * `TauCeti.ClassFunction.natCard_nsmul_one_mem_indVirtualCharacters_isCyclic`: the sharp
   membership statement for the trivial character.
 * `TauCeti.ClassFunction.indVirtualCharacterDirectSumBaseChangeRat_isCyclic_surjective`: rational
@@ -53,10 +52,6 @@ formula propagates it from the trivial character to every virtual character.
   read for the elementary subgroups.
 
 ## References
-
-This proves both parts of the "Artin's induction theorem" item of Layer 6 in
-`TauCetiRoadmap/RepresentationTheory/InductionRestriction/README.md`: rational surjectivity of the
-direct-sum induction map and `ℤ`-membership of `|G| • χ` in the cyclic-induced subgroup.
 
 * J.-P. Serre, *Linear Representations of Finite Groups*, Springer GTM 42 (1977), Section 9.2,
   Theorem 17 and its corollary.

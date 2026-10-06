@@ -92,8 +92,6 @@ degree of an irreducible character.
 ## References
 
 * I. M. Isaacs, *Character Theory of Finite Groups* (1976), Chapter 7, Lemma 7.2 and Theorem 7.5.
-* [Character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md),
-  Layer 8, the exceptional-character correspondence.
 -/
 
 public section
@@ -240,12 +238,12 @@ variable [Finite G]
 trivial-intersection subgroup whose order is invertible in `k`.
 
 The correction term is what makes this work: `φ - φ(1) · 1_H` vanishes at the identity, so
-restriction undoes its induction (`TauCeti.ClassFunction.comap_subtype_ind_eq_self`), and the
+restriction undoes its induction (`Subgroup.comap_subtype_indClassFunction_eq_self`), and the
 trivial character of `G` restricts to that of `H`, returning the term that was subtracted. -/
 theorem comap_subtype_indExtend (hH : IsTISubgroup H) (hk : IsUnit (Nat.card H : k))
     (φ : ClassFunction k H) : comap H.subtype (indExtend H φ) = φ := by
   rw [indExtend_def, map_add, map_smul,
-    comap_subtype_ind_eq_self hH hk _ (sub_smul_trivial_apply_one φ),
+    H.comap_subtype_indClassFunction_eq_self hH hk _ (sub_smul_trivial_apply_one φ),
     comap_subtype_ofCharacter_trivial, sub_add_cancel]
 
 /-- **Distinct class functions have distinct exceptional extensions**, restriction being a left

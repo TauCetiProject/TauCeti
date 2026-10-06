@@ -80,8 +80,6 @@ this foundational module.
 
 ## References
 
-* [Character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md),
-  Layer 9, "The boundary: linear and Steinberg constituents", whose target `GL2Steinberg` this is.
 * C. Bonnafé, *Representations of `SL₂(𝔽_q)`* (2011), Chapter 5.
 * W. Fulton and J. Harris, *Representation Theory: A First Course* (1991), Lecture 5.2.
 -/

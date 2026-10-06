@@ -101,11 +101,6 @@ induced virtual characters with coefficients in a ring such as `ℤ[ζ]`. The co
 
 ## References
 
-This is the "`Ind_H^G : R(H) → R(G)` is a homomorphism of `R(G)`-modules -- Frobenius reciprocity
-as a module identity" item of Layer 6 in
-`TauCetiRoadmap/RepresentationTheory/InductionRestriction/README.md`, and the reduction step of the
-Brauer-induction item of the same layer.
-
 * J.-P. Serre, *Linear Representations of Finite Groups*, Springer GTM 42 (1977), Section 10.1,
   where `V_G` is introduced and shown to be an ideal, and Theorem 18; Chapter 10, in the proof of
   Theorem 18, for the reduction to one prime at a time over `ℤ[ζ]`.

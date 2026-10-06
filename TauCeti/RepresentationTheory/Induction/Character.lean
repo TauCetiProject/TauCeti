@@ -32,8 +32,6 @@ subgroup order.
 
 ## References
 
-* [Induction and restriction roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/InductionRestriction/README.md),
-  Layer 2.
 * J.-P. Serre, *Linear Representations of Finite Groups*, Chapter 7.
 -/
 
