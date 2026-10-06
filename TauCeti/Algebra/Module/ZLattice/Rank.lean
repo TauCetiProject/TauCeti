@@ -12,12 +12,17 @@ import Mathlib.LinearAlgebra.FreeModule.PID
 # A rank criterion for discrete integer submodules
 
 A finitely generated integer submodule of a real normed space is discrete
-if and only if its integer rank equals the dimension of its real span. The converse to
-Mathlib's `Real.finrank_eq_int_finrank_of_discrete` turns an integer basis into a real basis
-of the span, then uses discreteness of the integer span of a real basis.
+if and only if its integer rank equals the dimension of its real span.
+The necessity direction follows from `ZLattice.rank` and extends the rank comparison in
+Mathlib's `Real.finrank_eq_int_finrank_of_discrete` to arbitrary ambient dimension.
 
 This criterion allows logarithmic images of finitely generated unit groups to be proved
 discrete from their rank and real span, without a separate compactness argument.
+
+## Main results
+
+- `TauCeti.discreteTopology_iff_finrank_eq_finrank_span`: discreteness of a finitely generated
+  integer submodule is equivalent to equality of its integer rank and its real span's dimension.
 -/
 
 public section
@@ -26,14 +31,22 @@ open Submodule Module
 
 namespace TauCeti
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+variable {E : Type*} [NormedAddCommGroup E]
 
-private theorem discreteTopology_of_span_eq_top (L : Submodule ℤ E) [Module.Finite ℤ L]
+private theorem isometry_comapSubtypeEquivOfLe {L F : Submodule ℤ E} (hLF : L ≤ F) :
+    Isometry (Submodule.comapSubtypeEquivOfLe hLF) := by
+  -- Both metrics are induced from E along Subtype.val, including the nested subtype of F.
+  intro x y
+  simp only [Subtype.edist_eq, Submodule.comapSubtypeEquivOfLe_apply_coe]
+
+variable [NormedSpace ℝ E]
+
+private theorem discreteTopology_of_span_eq_top_of_finrank_eq
+    (L : Submodule ℤ E) [Module.Finite ℤ L]
     (hs : Submodule.span ℝ (L : Set E) = ⊤)
     (hr : Module.finrank ℤ L = Module.finrank ℝ E) : DiscreteTopology L := by
   classical
-  have : Module ℚ E := Module.compHom E (algebraMap ℚ ℝ)
-  have : IsAddTorsionFree E := .of_module_rat _
+  have : IsAddTorsionFree E := .of_isTorsionFree ℝ E
   let b := Module.Free.chooseBasis ℤ L
   let v := fun i ↦ (b i : E)
   have hz : Submodule.span ℤ (Set.range v) = L := by
@@ -51,7 +64,8 @@ private theorem discreteTopology_of_span_eq_top (L : Submodule ℤ E) [Module.Fi
 
 /-- A finitely generated integer submodule is discrete exactly when its integer rank is
 the dimension of its real span. The ambient space need not be finite-dimensional. -/
-theorem discreteTopology_iff_finrank_eq (L : Submodule ℤ E) [Module.Finite ℤ L] :
+theorem discreteTopology_iff_finrank_eq_finrank_span
+    (L : Submodule ℤ E) [Module.Finite ℤ L] :
     DiscreteTopology L ↔
       Module.finrank ℤ L = Module.finrank ℝ (Submodule.span ℝ (L : Set E)) := by
   -- Work inside the real span; the original submodule need not have full ambient rank.
@@ -59,26 +73,22 @@ theorem discreteTopology_iff_finrank_eq (L : Submodule ℤ E) [Module.Finite ℤ
   have hLF : L ≤ F.restrictScalars ℤ := Submodule.subset_span
   let L' : Submodule ℤ F := L.comap (F.restrictScalars ℤ).subtype
   let e := Submodule.comapSubtypeEquivOfLe hLF
+  have he : Isometry e := isometry_comapSubtypeEquivOfLe hLF
   have : Module.Finite ℤ L' := Module.Finite.equiv e.symm
+  -- L' has carrier Subtype.val ⁻¹' (L : Set E) by definition of comap and restrictScalars.
   have hs : Submodule.span ℝ (L' : Set F) = ⊤ := Submodule.span_span_coe_preimage
-  have : FiniteDimensional ℝ F := by
-    have hfg : L.FG := Module.Finite.iff_fg.mp inferInstance
-    obtain ⟨s, hs, hL⟩ := Submodule.fg_def.mp hfg
-    have he : Submodule.span ℝ s = F := by
-      rw [← Submodule.span_span_of_tower ℤ, hL]
-    rw [← he]
-    exact FiniteDimensional.span_of_finite ℝ hs
+  have : FiniteDimensional ℝ F :=
+    Module.Finite.iff_fg.mpr ((Module.Finite.iff_fg.mp inferInstance : L.FG).span)
   constructor
   · intro h
     have : DiscreteTopology L' := DiscreteTopology.of_continuous_injective
-      (Isometry.continuous (fun _ _ ↦ rfl) : Continuous (e : L' → L)) e.injective
+      he.continuous e.injective
     have : IsZLattice ℝ L' := ⟨hs⟩
     exact e.symm.finrank_eq.trans (ZLattice.rank ℝ L')
   · intro hr
-    have : DiscreteTopology L' := discreteTopology_of_span_eq_top L' hs
+    have : DiscreteTopology L' := discreteTopology_of_span_eq_top_of_finrank_eq L' hs
       (e.finrank_eq.trans hr)
-    let f : L → L' := e.symm
-    exact DiscreteTopology.of_continuous_injective
-      (Isometry.continuous (fun _ _ ↦ rfl) : Continuous f) e.symm.injective
+    exact DiscreteTopology.of_continuous_injective (β := L')
+      (he.right_inv e.apply_symm_apply).continuous e.symm.injective
 
 end TauCeti
