@@ -83,6 +83,7 @@ theorem orbitRelQuotientStabilizerEquiv_symm_mk [MulAction.IsPretransitive G Y]
   exact (orbitRelQuotientStabilizerEquiv (G := G) y).symm_apply_apply (Quotient.mk'' x)
 
 /-- Move the mark back to `y` by applying the inverse translator to the object as well. -/
+@[simp]
 theorem orbitRelQuotientStabilizerEquiv_symm_mk_smul [MulAction.IsPretransitive G Y]
     (y : Y) (x : X) (g : G) :
     (orbitRelQuotientStabilizerEquiv (G := G) y).symm (Quotient.mk'' (x, g • y)) =
