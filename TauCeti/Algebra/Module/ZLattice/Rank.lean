@@ -24,7 +24,7 @@ public section
 
 open Submodule Module
 
-namespace TauCeti.Submodule
+namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
@@ -81,4 +81,4 @@ theorem discreteTopology_iff_finrank_eq (L : Submodule ℤ E) [Module.Finite ℤ
     exact DiscreteTopology.of_continuous_injective
       (Isometry.continuous (fun _ _ ↦ rfl) : Continuous f) e.symm.injective
 
-end TauCeti.Submodule
+end TauCeti
