@@ -108,6 +108,15 @@ variable {n : ℕ} {a s : Fin n} {x y : GridState n}
 theorem right_ne (P : GridInitialPentagonBetween a s x y) : P.right ≠ finRotate n a :=
   P.left_eq ▸ P.left_ne_right.symm
 
+/-- The two columns next to the replaced line of a pentagon turning on its initial side are
+distinct. -/
+theorem ne_finRotate (P : GridInitialPentagonBetween a s x y) : a ≠ finRotate n a := fun h => by
+  -- The initial side `finRotate n a` lies in the column arc, but `a` never does.
+  have hmem : a ∈ Grid.cIco (finRotate n a) P.right :=
+    Eq.subst (motive := fun c => c ∈ Grid.cIco (finRotate n a) P.right) h.symm
+      (Grid.left_mem_cIco P.right_ne.symm)
+  simp at hmem
+
 /-- The turn row lies in the rows spanned by the initial side, from the row of `x` on the replaced
 line to its row on the terminal side. -/
 theorem turn_mem_cIco (P : GridInitialPentagonBetween a s x y) :
