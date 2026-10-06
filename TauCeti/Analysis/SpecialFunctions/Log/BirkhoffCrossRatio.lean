@@ -21,18 +21,20 @@ derivative `l * exp σ / (1 + l * exp σ) - exp σ / (l + exp σ)`, which is at 
 `(l - 1) / (l + 1)` (with equality at `σ = 0`). It is therefore bounded by `(l - 1) / (l + 1) * σ`
 for `σ ≥ 0`. Writing `l = exp (Δ / 2)`, the slope is `tanh (Δ / 4)`.
 
-Combined with a polynomial inequality, this bounds the logarithmic cross ratio of the pairs
-`(R * α + β, α + β)` and `(R * α' + β', α' + β')` by `(l - 1) / (l + 1) * log R` whenever the
-pairs `(α, β)` and `(α', β')` themselves have cross ratio `α * β' / (β * α')` at most `l ^ 2`:
-this is Birkhoff's theorem in two dimensions.
+Combined with a polynomial inequality, this gives the following for `R ≥ 1`, `l ≥ 1` and
+positive `α, β, α', β'`. The logarithmic cross ratio of the pairs `(R * α + β, α + β)` and
+`(R * α' + β', α' + β')` is at most `(l - 1) / (l + 1) * log R` whenever the pairs `(α, β)` and
+`(α', β')` themselves have cross ratio `α * β' / (β * α')` at most `l ^ 2`. This is Birkhoff's
+theorem in two dimensions.
 
 ## Main results
 
 * `TauCeti.log_one_add_mul_exp_div_add_exp_le`:
   `log ((1 + l * exp σ) / (l + exp σ)) ≤ (l - 1) / (l + 1) * σ` for `1 ≤ l` and `0 ≤ σ`.
 * `TauCeti.birkhoff_cross_ratio_le`: the polynomial cross-ratio bound by
-  `((1 + l * s) / (l + s)) ^ 2`.
-* `TauCeti.log_birkhoff_cross_ratio_le`: the two-dimensional form of Birkhoff's theorem.
+  `((1 + l * s) / (l + s)) ^ 2` for `1 ≤ s` and `1 ≤ l`.
+* `TauCeti.log_birkhoff_cross_ratio_le`: the two-dimensional form of Birkhoff's theorem, for
+  `1 ≤ R` and `1 ≤ l`.
 
 ## References
 
@@ -70,9 +72,10 @@ theorem log_one_add_mul_exp_div_add_exp_le {l σ : ℝ} (hl : 1 ≤ l) (hσ : 0 
   rw [log_div (hpos₁ σ).ne' (hpos₂ σ).ne']
   linarith
 
-/-- The two-dimensional polynomial inequality behind Birkhoff's theorem: under the cross-ratio
-bound `α * β' ≤ l ^ 2 * (β * α')`, the cross ratio of `(s ^ 2 * α + β, α + β)` and
-`(s ^ 2 * α' + β', α' + β')` is at most `((1 + l * s) / (l + s)) ^ 2`. -/
+/-- The two-dimensional polynomial inequality behind Birkhoff's theorem. Let `1 ≤ s` and
+`1 ≤ l`, and let `α, β, α', β'` be positive with `α * β' ≤ l ^ 2 * (β * α')`. Then the cross ratio
+of `(s ^ 2 * α + β, α + β)` and `(s ^ 2 * α' + β', α' + β')` is at most
+`((1 + l * s) / (l + s)) ^ 2`. -/
 theorem birkhoff_cross_ratio_le {α β α' β' s l : ℝ} (hα : 0 < α) (hβ : 0 < β) (hα' : 0 < α')
     (hβ' : 0 < β') (hs : 1 ≤ s) (hl : 1 ≤ l) (h : α * β' ≤ l ^ 2 * (β * α')) :
     (s ^ 2 * α + β) * (α' + β') * (l + s) ^ 2 ≤
@@ -90,9 +93,9 @@ theorem birkhoff_cross_ratio_le {α β α' β' s l : ℝ} (hα : 0 < α) (hβ : 
   nlinarith [mul_le_mul_of_nonneg_right h₁ (by positivity : 0 ≤ (α' + β') * (l + s) ^ 2),
     mul_le_mul_of_nonneg_left h₂ (by positivity : 0 ≤ α + β)]
 
-/-- The two-dimensional form of Birkhoff's theorem: for `R ≥ 1` and positive `α, β, α', β'` with
-`α * β' ≤ l ^ 2 * (β * α')`, the logarithmic cross ratio of `(R * α + β, α + β)` and
-`(R * α' + β', α' + β')` is at most `(l - 1) / (l + 1) * log R`. -/
+/-- The two-dimensional form of Birkhoff's theorem: for `R ≥ 1`, `l ≥ 1` and positive
+`α, β, α', β'` with `α * β' ≤ l ^ 2 * (β * α')`, the logarithmic cross ratio of
+`(R * α + β, α + β)` and `(R * α' + β', α' + β')` is at most `(l - 1) / (l + 1) * log R`. -/
 theorem log_birkhoff_cross_ratio_le {α β α' β' R l : ℝ} (hα : 0 < α) (hβ : 0 < β) (hα' : 0 < α')
     (hβ' : 0 < β') (hR : 1 ≤ R) (hl : 1 ≤ l) (h : α * β' ≤ l ^ 2 * (β * α')) :
     log ((R * α + β) * (α' + β') / ((α + β) * (R * α' + β'))) ≤
