@@ -6,15 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.Support
-public import Mathlib.MeasureTheory.Measure.Restrict
+public import Mathlib.Dynamics.Ergodic.MeasurePreserving
 
 /-!
-# Restricting a measure to its support
+# Pulling a measure back to its support
 
-When the topological support is conull, pulling a measure back to it gives a measure positive
-on every nonempty open set of that subtype, and the inclusion preserves the measure.
-These facts allow measured spaces to discard points outside their support without changing
-their measure. Supports also commute with pushforward by homeomorphisms.
+Pullback along the inclusion of a measurable conull set preserves the measure. When the
+topological support is conull, its pullback measure is positive on every nonempty open set
+of the support subtype. Supports also commute with pushforward by homeomorphisms.
 -/
 
 public section
@@ -22,6 +21,13 @@ public section
 open MeasureTheory Set Topology
 
 namespace TauCeti
+
+/-- Pullback to a measurable conull set preserves the original measure under inclusion. -/
+theorem measurePreserving_subtype_val_of_ae_mem {X : Type*} [MeasurableSpace X]
+    (μ : Measure X) {s : Set X} (hs : MeasurableSet s) (hμ : ∀ᵐ x ∂μ, x ∈ s) :
+    MeasurePreserving ((↑) : s → X) (μ.comap (↑)) μ := by
+  simpa only [Measure.restrict_eq_self_of_ae_mem hμ] using
+    (measurePreserving_subtype_coe (μa := μ) hs)
 
 variable {X Y : Type*} [TopologicalSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
 
