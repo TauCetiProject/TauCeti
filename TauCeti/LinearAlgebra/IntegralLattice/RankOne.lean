@@ -396,8 +396,11 @@ theorem rankOne_level : (rankOne m).level = 4 * m.natAbs := by
   have hgen : AddSubgroup.zmultiples (rankOneClass m) = ⊤ := by
     rw [← Submodule.span_singleton_toAddSubgroup_eq_zmultiples, span_rankOneClass_eq_top]
     rfl
-  rw [(isEven_rankOne m).level_eq_addOrderOf _ hgen, discriminantQuadraticMap_rankOneClass,
-    AddCircle.addOrderOf_coe_rat_one, one_div,
+  rw [(isEven_rankOne m).level_eq_addOrderOf _ hgen, discriminantQuadraticMap_rankOneClass]
+  suffices hden : (1 / (4 * m) : ℚ).den = 4 * m.natAbs by
+    simpa only [Rat.cast_id, mul_one] using
+      (_root_.AddCircle.addOrderOf_coe_rat (p := (1 : ℚ)) (q := 1 / (4 * m))).trans hden
+  rw [one_div,
     Rat.den_inv_of_ne_zero (mul_ne_zero (by norm_num) (rankOne_cast_ne_zero m))]
   norm_cast
   simp [Int.natAbs_mul]

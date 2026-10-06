@@ -37,7 +37,10 @@ theorem level_typeARootLattice (n : ℕ) :
   rw [(isEven_typeARootLattice n).level_eq_addOrderOf _
     (zmultiples_typeAFundamentalWeightClass n),
     discriminantQuadraticMap_typeAFundamentalWeightClass]
-  rw [AddCircle.addOrderOf_coe_rat_one]
+  suffices hden : ((n : ℚ) / (2 * ((n : ℚ) + 1))).den = 2 * (n + 1) / n.gcd 2 by
+    simpa only [Rat.cast_id, mul_one] using
+      (_root_.AddCircle.addOrderOf_coe_rat (p := (1 : ℚ))
+        (q := n / (2 * ((n : ℚ) + 1)))).trans hden
   have hgcd : n.gcd (2 * (n + 1)) = n.gcd 2 := by
     rw [Nat.mul_add, Nat.mul_one, Nat.add_comm (2 * n) 2, Nat.gcd_comm n (2 + 2 * n),
       Nat.gcd_add_mul_right_left, Nat.gcd_comm 2 n]

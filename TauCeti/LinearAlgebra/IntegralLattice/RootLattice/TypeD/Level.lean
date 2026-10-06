@@ -39,11 +39,12 @@ theorem level_checkerboardLattice (n : ℕ) [NeZero n] :
     (checkerboardLattice n).level = 8 / n.gcd 4 := by
   have hhalf (N : ℕ) :
       N • (((1 : ℚ) / 2 : ℚ) : AddCircle (1 : ℚ)) = 0 ↔ 2 ∣ N := by
-    rw [← addOrderOf_dvd_iff_nsmul_eq_zero, AddCircle.addOrderOf_coe_rat_one]
-    norm_num
+    simpa [addOrderOf_dvd_iff_nsmul_eq_zero] using
+      (congrArg (· ∣ N) (_root_.AddCircle.addOrderOf_coe_rat (p := (1 : ℚ)) (q := 1 / 2)))
   have hspin (N : ℕ) :
       N • (((n : ℚ) / 8 : ℚ) : AddCircle (1 : ℚ)) = 0 ↔ ((n : ℚ) / 8).den ∣ N := by
-    rw [← addOrderOf_dvd_iff_nsmul_eq_zero, AddCircle.addOrderOf_coe_rat_one]
+    simpa [addOrderOf_dvd_iff_nsmul_eq_zero] using
+      (congrArg (· ∣ N) (_root_.AddCircle.addOrderOf_coe_rat (p := (1 : ℚ)) (q := n / 8)))
   have h (N : ℕ) : (checkerboardLattice n).level ∣ N ↔
       2 ∣ N ∧ ((n : ℚ) / 8).den ∣ N := by
     rw [← Int.natCast_dvd_natCast, (isEven_checkerboardLattice n).level_dvd_iff]

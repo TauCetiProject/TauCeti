@@ -36,8 +36,6 @@ cyclic of order `n` with a distinguished generator, the one of invariant `1 / n`
 
 ## Main declarations
 
-* `TauCeti.AddCircle.addOrderOf_coe_rat_one`: the additive order of a rational class in
-  `ℚ/ℤ` is its reduced denominator.
 * `AddCircle.coe_eq_zero_iff_mem_one`: vanishing in `AddCircle (1 : ℚ)` is membership in
   `(1 : Submodule ℤ ℚ)`.
 * `AddCircle.zsmul_coe_eq_zero`: an integer multiple of a rational number vanishes in
@@ -83,15 +81,6 @@ cyclic of order `n` with a distinguished generator, the one of invariant `1 / n`
 public section
 
 open AddSubgroup
-
-namespace TauCeti.AddCircle
-
-/-- The additive order of a rational class in `ℚ/ℤ` is its reduced denominator. -/
-theorem addOrderOf_coe_rat_one (q : ℚ) :
-    addOrderOf (q : _root_.AddCircle (1 : ℚ)) = q.den := by
-  simpa using (_root_.AddCircle.addOrderOf_coe_rat (p := (1 : ℚ)) (q := q))
-
-end TauCeti.AddCircle
 
 namespace AddCircle
 

@@ -335,8 +335,8 @@ theorem level_typeE₆RootLattice : typeE₆RootLattice.level = 3 := by
   rw [isEven_typeE₆RootLattice.level_eq_addOrderOf _
     zmultiples_typeE₆MinusculeWeightClass_eq_top,
     discriminantQuadraticMap_typeE₆MinusculeWeightClass]
-  rw [AddCircle.addOrderOf_coe_rat_one]
-  norm_num
+  simpa only [Rat.cast_id, mul_one] using
+    (_root_.AddCircle.addOrderOf_coe_rat (p := (1 : ℚ)) (q := 2 / 3)).trans (by norm_num)
 
 /-- **The discriminant bilinear value of the minuscule weight `ϖ₁` of type `E₆` is `1/3`.** -/
 @[simp]
@@ -620,8 +620,8 @@ theorem level_typeE₇RootLattice : typeE₇RootLattice.level = 4 := by
   rw [isEven_typeE₇RootLattice.level_eq_addOrderOf _
     zmultiples_typeE₇MinusculeWeightClass_eq_top,
     discriminantQuadraticMap_typeE₇MinusculeWeightClass]
-  rw [AddCircle.addOrderOf_coe_rat_one]
-  norm_num
+  simpa only [Rat.cast_id, mul_one] using
+    (_root_.AddCircle.addOrderOf_coe_rat (p := (1 : ℚ)) (q := 3 / 4)).trans (by norm_num)
 
 /-- **The discriminant bilinear value of the minuscule weight `ϖ₇` of type `E₇` is `1/2`.** -/
 @[simp]
