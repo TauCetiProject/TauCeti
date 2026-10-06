@@ -14,9 +14,11 @@ import TauCeti.RingTheory.FractionalIdeal.Operations
 /-!
 # Gorenstein orders
 
-For a fractional ideal `I` of an order `O` in a number field `K`, the trace dual
-`Iᵛ = {x ∈ K | Tr_{K/ℚ}(x I) ⊆ ℤ}` is again a fractional ideal of `O`, and `Iᵛᵛ = I`. The
-multiplier ring of `I` is the trace dual of `I Iᵛ`, so `I` is proper exactly when `I Iᵛ = Oᵛ`.
+For a nonzero fractional ideal `I` of an order `O` in a number field `K`, the trace dual
+`Iᵛ = {x ∈ K | Tr_{K/ℚ}(x I) ⊆ ℤ}` is again a nonzero fractional ideal of `O`, and `Iᵛᵛ = I`.
+The multiplier ring of `I` is the trace dual of `I Iᵛ`, so `I` is proper exactly when
+`I Iᵛ = Oᵛ`. The trace dual of the zero ideal is all of `K`, which is not fractional, so the
+packaged dual `NumberFieldOrder.dual` assigns the junk value `0` to the zero ideal.
 
 The order `O` is *Gorenstein* when its trace dual `Oᵛ`, the codifferent, is an invertible
 fractional ideal. The criterion above then shows that a fractional ideal of a Gorenstein order is
@@ -36,6 +38,8 @@ is the minimal polynomial of `x`.
 
 ## Main results
 
+* `TauCeti.GlobalNumberFields.NumberFieldOrder.exists_basis_restrictScalars_eq_span`: a nonzero
+  fractional ideal of an order is the `ℤ`-span of a `ℚ`-basis of the number field.
 * `TauCeti.GlobalNumberFields.NumberFieldOrder.dual_dual`: the trace dual is an involution.
 * `TauCeti.GlobalNumberFields.NumberFieldOrder.isProperFractionalIdeal_iff_mul_dual_eq_dual_one`:
   a nonzero fractional ideal `I` is proper if and only if `I Iᵛ = Oᵛ`.
@@ -71,8 +75,10 @@ universe u
 
 variable {K : Type u} [Field K] [NumberField K] (O : NumberFieldOrder K)
 
+/-! ### Fractional ideals as lattices -/
+
 /-- A nonzero fractional ideal of an order is the `ℤ`-span of a `ℚ`-basis of the number field. -/
-private theorem exists_basis_restrictScalars_eq_span
+theorem exists_basis_restrictScalars_eq_span
     {I : FractionalIdeal O.toSubalgebra⁰ K} (hI : I ≠ 0) :
     ∃ b : Basis (Fin (finrank ℚ K)) ℚ K,
       (I : Submodule O.toSubalgebra K).restrictScalars ℤ = span ℤ (Set.range b) := by
@@ -226,11 +232,17 @@ private theorem mul_dual_ne_zero {I : FractionalIdeal O.toSubalgebra⁰ K} (hI :
 /-- **The multiplier ring of a nonzero fractional ideal `I` is the trace dual of `I Iᵛ`.** -/
 theorem mem_multiplierRing_iff_mem_dual {I : FractionalIdeal O.toSubalgebra⁰ K} (hI : I ≠ 0)
     {x : K} : x ∈ O.multiplierRing I ↔ x ∈ O.dual (I * O.dual I) := by
-  rw [← FractionalIdeal.mem_coe, coe_dual (mul_dual_ne_zero hI),
-    FractionalIdeal.coe_mul, coe_dual hI, ← span_singleton_le_iff_mem, le_traceDual_mul_iff,
-    O.traceDual_traceDual hI, ← Submodule.le_div_iff_mul_le, span_singleton_le_iff_mem,
-    mem_multiplierRing_iff, mem_div_iff_forall_mul_mem]
-  simp only [FractionalIdeal.mem_coe]
+  let J := (I : Submodule O.toSubalgebra K)
+  -- Trace duality: `x` lies in `(I Iᵛ)ᵛ` exactly when `x I ⊆ Iᵛᵛ = I`.
+  have hdual : x ∈ traceDual ℤ ℚ (J * traceDual ℤ ℚ J) ↔ span O.toSubalgebra {x} * J ≤ J := by
+    rw [← span_singleton_le_iff_mem, le_traceDual_mul_iff, O.traceDual_traceDual hI]
+  -- `x I ⊆ I` says that `x` lies in the multiplier ring `(I : I)`.
+  have hmul : span O.toSubalgebra {x} * J ≤ J ↔ x ∈ O.multiplierRing I := by
+    rw [← Submodule.le_div_iff_mul_le, span_singleton_le_iff_mem, mem_div_iff_forall_mul_mem,
+      mem_multiplierRing_iff]
+    simp [J]
+  rw [← hmul, ← hdual, ← FractionalIdeal.mem_coe, coe_dual (mul_dual_ne_zero hI),
+    FractionalIdeal.coe_mul, coe_dual hI]
 
 /-- **A nonzero fractional ideal `I` is proper exactly when `I Iᵛ = Oᵛ`.** -/
 theorem isProperFractionalIdeal_iff_mul_dual_eq_dual_one {I : FractionalIdeal O.toSubalgebra⁰ K}
