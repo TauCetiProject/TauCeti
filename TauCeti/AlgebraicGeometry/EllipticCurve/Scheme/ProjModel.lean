@@ -28,6 +28,9 @@ The zero section is defined on the standard affine chart `D₊(Y)`, where it is 
 An admissible change of variables `C` induces an isomorphism `projModel (C • W) ≅ projModel W`
 over `Spec R` carrying the zero section to the zero section: `Proj` of the graded isomorphism of
 homogeneous coordinate rings `WeierstrassCurve.Projective.variableChangeEquiv W C`.
+The isomorphism `TauCeti.projModelRingIso` transports the pointed model along a coefficient-ring
+isomorphism. This identifies models over arbitrary affine presentations with models over the
+canonical ring of sections of the affine base open.
 
 ## Main definitions
 
@@ -239,3 +242,114 @@ theorem projModelZero_projModelVariableChangeIso_hom :
 end VariableChange
 
 end WeierstrassCurve
+
+namespace TauCeti
+
+variable {R T : Type u} [CommRing R] [CommRing T] (W : WeierstrassCurve R) (e : R ≃+* T)
+
+/-- Coefficient transport preserves the grading of the homogeneous coordinate ring. -/
+private noncomputable def weierstrassGradedRingHom :
+    W.toProjective.grading →+*ᵍ (W.map e.toRingHom).toProjective.grading where
+  __ := (weierstrassCoordinateRingEquiv W e).toRingHom
+  map_mem {n} {x} hx := by
+    obtain ⟨p, hp, rfl⟩ := W.toProjective.mem_grading_iff.mp hx
+    exact (W.map e.toRingHom).toProjective.mem_grading_iff.mpr
+      ⟨MvPolynomial.map e.toRingHom p, hp.map _, (weierstrassCoordinateRingEquiv_mk W e p).symm⟩
+
+/-- Inverse coefficient transport preserves the grading of the homogeneous coordinate ring. -/
+private noncomputable def weierstrassGradedRingHomInv :
+    (W.map e.toRingHom).toProjective.grading →+*ᵍ W.toProjective.grading where
+  __ := (weierstrassCoordinateRingEquiv W e).symm.toRingHom
+  map_mem {n} {x} hx := by
+    obtain ⟨p, hp, rfl⟩ := (W.map e.toRingHom).toProjective.mem_grading_iff.mp hx
+    exact W.toProjective.mem_grading_iff.mpr
+      ⟨MvPolynomial.map e.symm.toRingHom p, hp.map _,
+        (weierstrassCoordinateRingEquiv_symm_mk W e p).symm⟩
+
+private theorem gradedRingHom_rightInverse :
+    Function.RightInverse (weierstrassGradedRingHomInv W e) (weierstrassGradedRingHom W e) :=
+  (weierstrassCoordinateRingEquiv W e).apply_symm_apply
+
+private theorem gradedRingHom_leftInverse :
+    Function.LeftInverse (weierstrassGradedRingHomInv W e) (weierstrassGradedRingHom W e) :=
+  (weierstrassCoordinateRingEquiv W e).symm_apply_apply
+
+/-- The pointed projective Weierstrass model transported along a coefficient-ring isomorphism. -/
+noncomputable def projModelRingIso : (W.map e.toRingHom).projModel ≅ W.projModel :=
+  Proj.mapIso (weierstrassGradedRingHom W e) (weierstrassGradedRingHomInv W e)
+    (gradedRingHom_rightInverse W e) (gradedRingHom_leftInverse W e)
+
+/-- Transport of projective models commutes with projection to the coefficient spectra. -/
+@[reassoc (attr := simp)]
+theorem projModelRingIso_hom_over :
+    (projModelRingIso W e).hom ≫ W.projModelOver =
+      (W.map e.toRingHom).projModelOver ≫ Spec.map (CommRingCat.ofHom e.toRingHom) := by
+  rw [projModelRingIso, Proj.mapIso_hom, WeierstrassCurve.projModelOver,
+    Proj.map_toSpecZero_assoc, WeierstrassCurve.projModelOver, Category.assoc,
+    ← Spec.map_comp, ← Spec.map_comp]
+  congr 2
+  ext r
+  simp only [CommRingCat.hom_comp, RingEquiv.toCommRingCatIso_hom]
+  dsimp only [CommRingCat.hom_ofHom, RingHom.comp_apply]
+  -- The spectrum maps agree on the degree-zero subrings.
+  change ((weierstrassGradedRingHom W e).gradedZeroRingHom
+    (W.toProjective.gradingZeroEquiv r) : (W.map e.toRingHom).toProjective.CoordinateRing) =
+      ((W.map e.toRingHom).toProjective.gradingZeroEquiv (e r) :
+        (W.map e.toRingHom).toProjective.CoordinateRing)
+  rw [WeierstrassCurve.Projective.gradingZeroEquiv_apply,
+    WeierstrassCurve.Projective.gradingZeroEquiv_apply]
+  -- Both degree-zero maps are coefficient maps in the quotient coordinate rings.
+  change weierstrassCoordinateRingEquiv W e
+    (algebraMap R W.toProjective.CoordinateRing r) =
+      algebraMap T (W.map e.toRingHom).toProjective.CoordinateRing (e r)
+  rw [IsScalarTower.algebraMap_apply R (MvPolynomial (Fin 3) R),
+    IsScalarTower.algebraMap_apply T (MvPolynomial (Fin 3) T)]
+  exact weierstrassCoordinateRingEquiv_mk W e (C r) |>.trans
+    (by rw [MvPolynomial.map_C]; rfl)
+
+/-- Coefficient transport carries the point at infinity to the point at infinity. -/
+@[reassoc (attr := simp)]
+theorem projModelRingIso_zero_hom :
+    (W.map e.toRingHom).projModelZero ≫ (projModelRingIso W e).hom =
+      Spec.map (CommRingCat.ofHom e.toRingHom) ≫ W.projModelZero := by
+  have hY : W.toProjective.coord 1 ∈ W.toProjective.grading 1 :=
+    W.toProjective.coord_mem_grading 1
+  have hFY : IsUnit ((W.map e.toRingHom).toProjective.evalZero.toRingHom
+      (weierstrassGradedRingHom W e (W.toProjective.coord 1))) := by
+    -- The image of the Y-coordinate is represented by the same variable.
+    change IsUnit ((W.map e.toRingHom).toProjective.evalZero
+      (weierstrassCoordinateRingEquiv W e (Ideal.Quotient.mk _ (X 1))))
+    rw [weierstrassCoordinateRingEquiv_mk, MvPolynomial.map_X,
+      WeierstrassCurve.Projective.evalZero_mk]
+    simp
+  rw [projModelRingIso, Proj.mapIso_hom, WeierstrassCurve.projModelZero,
+    WeierstrassCurve.projModelZero, WeierstrassCurve.awayYEvalZero,
+    WeierstrassCurve.awayYEvalZero, Proj.SpecMap_awayLift_awayι_eq _ _ one_pos
+      (GradedFunLike.map_mem (weierstrassGradedRingHom W e) hY) one_pos _ hFY,
+    Category.assoc, Proj.awayι_comp_map _ _ one_pos _ hY,
+    ← Category.assoc, ← Spec.map_comp, ← Category.assoc, ← Spec.map_comp,
+    ← CommRingCat.ofHom_comp,
+    HomogeneousLocalization.Away.lift_comp_map]
+  congr 3
+  ext x
+  -- Both spectrum maps evaluate a homogeneous fraction at infinity.
+  change HomogeneousLocalization.Away.lift W.toProjective.grading
+    ((W.map e.toRingHom).toProjective.evalZero.toRingHom.comp
+      (weierstrassGradedRingHom W e).toRingHom) hFY x =
+    e (HomogeneousLocalization.Away.lift W.toProjective.grading
+      W.toProjective.evalZero.toRingHom _ x)
+  obtain ⟨n, a, ha, rfl⟩ := HomogeneousLocalization.Away.mk_surjective _ hY x
+  rw [HomogeneousLocalization.Away.lift_mk, HomogeneousLocalization.Away.lift_mk,
+    map_mul]
+  congr 1
+  · exact weierstrassCoordinateRingEquiv_evalZero W e a
+  · -- The monoid-hom view transports the invertible denominator and its inverse.
+    change _ = e.toMonoidHom _
+    rw [← Units.coe_map]
+    simp only [map_inv, map_pow]
+    congr 3
+    apply Units.ext
+    simp only [Units.coe_map, IsUnit.unit_spec]
+    exact weierstrassCoordinateRingEquiv_evalZero W e (W.toProjective.coord 1)
+
+end TauCeti

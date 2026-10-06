@@ -181,3 +181,48 @@ theorem evalZero_mk (p : MvPolynomial (Fin 3) R) :
   simp [evalZero]
 
 end WeierstrassCurve.Projective
+
+namespace TauCeti
+
+open MvPolynomial
+
+variable {R T : Type*} [CommRing R] [CommRing T] (W : WeierstrassCurve R) (e : R ≃+* T)
+
+/-- Transport of the homogeneous coordinate ring along a coefficient-ring isomorphism. -/
+noncomputable def weierstrassCoordinateRingEquiv :
+    W.toProjective.CoordinateRing ≃+* (W.map e.toRingHom).toProjective.CoordinateRing :=
+  Ideal.quotientEquiv _ _ (MvPolynomial.mapEquiv (Fin 3) e) (by
+    rw [Ideal.map_span, Set.image_singleton]
+    congr 1
+    exact congrArg Set.singleton (W.toProjective.map_polynomial e.toRingHom))
+
+/-- Coefficient transport acts on polynomial representatives by mapping their coefficients. -/
+@[simp]
+theorem weierstrassCoordinateRingEquiv_mk (p : MvPolynomial (Fin 3) R) :
+    weierstrassCoordinateRingEquiv W e (Ideal.Quotient.mk _ p) =
+      Ideal.Quotient.mk _ (MvPolynomial.map e.toRingHom p) :=
+  Ideal.quotientEquiv_mk _ _ _ _ p
+
+/-- The inverse coefficient transport maps polynomial representatives by the inverse ring map. -/
+@[simp]
+theorem weierstrassCoordinateRingEquiv_symm_mk (p : MvPolynomial (Fin 3) T) :
+    (weierstrassCoordinateRingEquiv W e).symm (Ideal.Quotient.mk _ p) =
+      Ideal.Quotient.mk _ (MvPolynomial.map e.symm.toRingHom p) :=
+  Ideal.quotientEquiv_symm_mk _ _ _ _ p
+
+/-- Coefficient transport commutes with evaluation at the point at infinity. -/
+@[simp]
+theorem weierstrassCoordinateRingEquiv_evalZero (a : W.toProjective.CoordinateRing) :
+    (W.map e.toRingHom).toProjective.evalZero (weierstrassCoordinateRingEquiv W e a) =
+      e (W.toProjective.evalZero a) := by
+  obtain ⟨p, rfl⟩ := Ideal.Quotient.mk_surjective a
+  rw [weierstrassCoordinateRingEquiv_mk, WeierstrassCurve.Projective.evalZero_mk,
+    WeierstrassCurve.Projective.evalZero_mk, eval_map]
+  -- Use the ring-hom view of the equivalence to apply evaluation naturality.
+  change eval₂ e.toRingHom _ p = e.toRingHom (eval _ p)
+  rw [eval₂_comp]
+  congr 1
+  funext i
+  fin_cases i <;> simp
+
+end TauCeti
