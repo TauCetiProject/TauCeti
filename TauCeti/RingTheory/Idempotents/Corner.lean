@@ -78,6 +78,13 @@ theorem mem_cornerSubmodule_iff {e f x : A} (he : IsIdempotentElem e)
   · intro h
     exact ⟨x, by simpa only [cornerMap_apply] using h⟩
 
+/-- A corner vanishes exactly when every element is annihilated by its two cuts.
+No idempotency assumption is needed. -/
+theorem cornerSubmodule_eq_bot_iff (e f : A) :
+    cornerSubmodule k e f = ⊥ ↔ ∀ x : A, e * x * f = 0 := by
+  rw [cornerSubmodule, LinearMap.range_eq_bot, LinearMap.ext_iff]
+  simp only [cornerMap_apply, LinearMap.zero_apply]
+
 variable {k}
 
 /-- An element of the corner `eAf` is fixed by `e` on the left. -/
