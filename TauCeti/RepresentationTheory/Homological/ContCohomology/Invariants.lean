@@ -68,15 +68,11 @@ variable (G : Type*) [Group G]
 variable (M : Type*) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
   [DistribMulAction G M]
 
-/-- **The coefficient dictionary commutes with quotient invariants.** The explicit fixed-point
-module `M^H`, regarded as a discrete module over `G ⧸ H`, maps canonically to the invariants of
-the restricted canonical object. Its underlying function preserves the coefficient in `M`; only
-the two equivalent proofs of invariance differ.
-
-This is the coefficient morphism used to compare explicit and canonical inflation. -/
-def ofDiscreteModuleQuotient (H : Subgroup G) [H.Normal] :
-    ofDiscreteModule ℤ (G ⧸ H) (FixedPoints.addSubgroup H M) ⟶
-      TopRep.quotientToInvariants (ofDiscreteModule ℤ G M) H := by
+/-- The linear coefficient map from explicit fixed points to the restricted representation's
+invariants. -/
+private def ofDiscreteModuleQuotientLinearMap (H : Subgroup G) :
+    let π : ContRepresentation ℤ H M := (ofDiscreteModule ℤ G M).ρ.restrict H.subtype
+    FixedPoints.addSubgroup H M →L[ℤ] π.invariants := by
   let _ : IsTopologicalAddGroup M := isTopologicalAddGroup_of_discreteTopology
   let π : ContRepresentation ℤ H M := (ofDiscreteModule ℤ G M).ρ.restrict H.subtype
   let f : FixedPoints.addSubgroup H M →L[ℤ] π.invariants :=
@@ -86,29 +82,48 @@ def ofDiscreteModuleQuotient (H : Subgroup G) [H.Normal] :
         -- The bundled representation and the linear subtype map hide the coefficient carrier.
         change ∀ h : H, (h : G) • (m : M) = (m : M)
         simpa only [Subgroup.smul_def] using (FixedPoints.mem_addSubgroup H M _).1 m.2
+  exact f
+
+private theorem ofDiscreteModuleQuotientLinearMap_apply (H : Subgroup G)
+    (m : FixedPoints.addSubgroup H M) :
+    (ofDiscreteModuleQuotientLinearMap G M H m).1 = (m : M) := by
+  exact ContinuousLinearMap.coe_codRestrict_apply _ _ _ m
+
+/-- **The coefficient dictionary commutes with quotient invariants.** The explicit fixed-point
+module `M^H`, regarded as a discrete module over `G ⧸ H`, maps canonically to the invariants of
+the restricted canonical object. Its underlying function preserves the coefficient in `M`; only
+the two equivalent proofs of invariance differ.
+
+This is the coefficient morphism used to compare explicit and canonical inflation. -/
+def ofDiscreteModuleQuotient (H : Subgroup G) [H.Normal] :
+    ofDiscreteModule ℤ (G ⧸ H) (FixedPoints.addSubgroup H M) ⟶
+      TopRep.quotientToInvariants (ofDiscreteModule ℤ G M) H := by
   exact TopRep.ofHom
-    { toContinuousLinearMap := f
+    { toContinuousLinearMap := ofDiscreteModuleQuotientLinearMap G M H
       isIntertwining' q := by
         induction q using QuotientGroup.induction_on with
         | H g =>
           refine ContinuousLinearMap.ext fun m ↦ Subtype.ext ?_
-          have f_apply (x : FixedPoints.addSubgroup H M) : (f x).1 = (x : M) :=
-            ContinuousLinearMap.coe_codRestrict_apply _ _ _ x
           -- Apply the composed operators and cross the categorical carrier wrappers once.
           change
-            (f ((ofDiscreteModule ℤ (G ⧸ H) (FixedPoints.addSubgroup H M)).ρ
+            (ofDiscreteModuleQuotientLinearMap G M H
+              ((ofDiscreteModule ℤ (G ⧸ H) (FixedPoints.addSubgroup H M)).ρ
                 (QuotientGroup.mk g) m)).1 =
               (((ofDiscreteModule ℤ G M).ρ.quotientToInvariants H)
-                (QuotientGroup.mk g) (f m)).1
-          exact (f_apply _).trans
-            ((congrArg (fun x : FixedPoints.addSubgroup H M => (x : M))
-              (ofDiscreteModule_ρ_apply_apply (R := ℤ) (QuotientGroup.mk g) m)).trans
-            ((congrArg (fun x : FixedPoints.addSubgroup H M => (x : M))
-              (coe_quotient_smul_fixedPoints_addSubgroup g m)).trans
-            ((congrArg (fun x : M => g • x) (f_apply m).symm).trans
-              (ContRepresentation.coe_quotientToInvariants_mk_apply
-                (ofDiscreteModule ℤ G M).ρ H g (f m)).symm))) }
-
+                (QuotientGroup.mk g) (ofDiscreteModuleQuotientLinearMap G M H m)).1
+          simp only [ofDiscreteModule_ρ_apply_apply, ofDiscreteModuleQuotientLinearMap_apply,
+            coe_quotient_smul_fixedPoints_addSubgroup, coe_smul_fixedPoints_addSubgroup]
+          -- State the public action formula over M: simp does not unfold the TopRep carrier.
+          have haction :
+              ((((ofDiscreteModule ℤ G M).ρ.quotientToInvariants H)
+                (QuotientGroup.mk g) (ofDiscreteModuleQuotientLinearMap G M H m)).1 : M) =
+                ((ofDiscreteModule ℤ G M).ρ g
+                  (ofDiscreteModuleQuotientLinearMap G M H m).1 : M) :=
+            ContRepresentation.coe_quotientToInvariants_mk_apply
+              (ofDiscreteModule ℤ G M).ρ H g (ofDiscreteModuleQuotientLinearMap G M H m)
+          simp only [ofDiscreteModule_ρ_apply_apply (R := ℤ) (G := G) (M := M),
+            ofDiscreteModuleQuotientLinearMap_apply G M H] at haction
+          exact haction.symm }
 
 -- `simp` reduces the carrier of the `abbrev` `TopRep.quotientToInvariants` in implicit type
 -- arguments before it looks a term up, so the left-hand side is stated through `dsimp% only`, as
@@ -118,7 +133,7 @@ def ofDiscreteModuleQuotient (H : Subgroup G) [H.Normal] :
 theorem ofDiscreteModuleQuotient_apply (H : Subgroup G) [H.Normal]
     (m : FixedPoints.addSubgroup H M) :
     (dsimp% only ((ofDiscreteModuleQuotient G M H m).1)) = (m : M) :=
-  (rfl)
+  ofDiscreteModuleQuotientLinearMap_apply G M H m
 
 end Dictionary
 

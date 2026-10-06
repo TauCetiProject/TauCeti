@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Algebra.MulAction
 public import Mathlib.Topology.Algebra.OpenSubgroup
 public import TauCeti.GroupTheory.GroupAction.FixedPoints
 
@@ -91,9 +90,10 @@ theorem continuous_fixedPointsPairing (H : Subgroup G) (μ : M →+ N →+ P)
     (hμ : Continuous fun p : M × N => μ p.1 p.2) :
     Continuous fun p : FixedPoints.addSubgroup H M × FixedPoints.addSubgroup H N =>
       fixedPointsPairing H μ hequiv p.1 p.2 := by
-  refine continuous_induced_rng.2 ?_
-  simpa only [Function.comp_def, coe_fixedPointsPairing, Prod.map_fst, Prod.map_snd] using
-    hμ.comp (continuous_subtype_val.prodMap continuous_subtype_val)
+  refine (continuous_fixedPointsAddSubmonoidPairing H μ hequiv hμ).congr fun p ↦ ?_
+  apply Subtype.ext
+  exact (coe_fixedPointsAddSubmonoidPairing H μ hequiv p.1 p.2).trans
+    (coe_fixedPointsPairing H μ hequiv p.1 p.2).symm
 
 end PairingAddGroup
 
@@ -132,7 +132,7 @@ intersection, and the invariants grow as the subgroup shrinks. The corresponding
 is filtered for this reason. -/
 theorem directed_fixedPoints_addSubgroup :
     Directed (· ≤ ·) fun U : OpenNormalSubgroup G ↦ FixedPoints.addSubgroup U.toSubgroup M :=
-  Antitone.directed_le fun _ _ h ↦ fixedPoints_subgroup_antitone G M h
+  directed_fixedPoints_addSubmonoid G M
 
 variable [SeparatelyContinuousMul G] [TopologicalSpace M] [DiscreteTopology M]
 
