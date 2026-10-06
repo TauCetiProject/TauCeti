@@ -194,6 +194,18 @@ instance : IsIso (koszulBraidingHom A B) := (koszulBraiding A B).isIso_hom
 lemma inv_koszulBraidingHom : inv (koszulBraidingHom A B) = (koszulBraiding A B).inv :=
   IsIso.inv_eq_of_hom_inv_id (koszulBraiding A B).hom_inv_id
 
+/-- Signed interchange followed by its inverse is the identity chain map. -/
+@[reassoc (attr := simp)]
+lemma koszulBraidingHom_comp_koszulBraiding_inv :
+    koszulBraidingHom A B ≫ (koszulBraiding A B).inv = 𝟙 _ :=
+  (koszulBraiding A B).hom_inv_id
+
+/-- The inverse of signed interchange followed by the forward map is the identity chain map. -/
+@[reassoc (attr := simp)]
+lemma koszulBraiding_inv_comp_koszulBraidingHom :
+    (koszulBraiding A B).inv ≫ koszulBraidingHom A B = 𝟙 _ :=
+  (koszulBraiding A B).inv_hom_id
+
 /-- On the bidegree-`(q, p)` summand, inverse interchange is the inverse coefficient braiding
 multiplied by `(-1)^(p*q)`, followed by the inclusion of the swapped summand. -/
 @[reassoc (attr := simp)]
