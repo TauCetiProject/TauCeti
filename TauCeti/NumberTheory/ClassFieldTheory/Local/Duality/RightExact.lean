@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.Duality.Perfect
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.DegreeZero
 
+import TauCeti.RepresentationTheory.Homological.ContCohomology.DegreeZero
 import TauCeti.Algebra.Module.ZMod.Extend
 import TauCeti.Algebra.Module.ZMod.Injective
 
@@ -44,15 +44,29 @@ open CategoryTheory ContCohomology
 variable {n : ℕ} {F : Type} [Field F] [ValuativeRel F] [TopologicalSpace F]
   [IsNonarchimedeanLocalField F]
 
-/-- A surjection between finite smooth discrete Galois representations induces a surjection on
-second continuous cohomology when the coefficient exponent is invertible in the local field. -/
+/-- A surjection from a finite smooth discrete Galois representation to a discrete representation
+induces a surjection on second continuous cohomology when the coefficient exponent is invertible
+in the local field. The target is automatically finite and smooth. -/
 theorem coeffMap_two_surjective (hn : IsUnit (n : F)) {B C : GalRep n F}
     [DiscreteTopology B.V] [DiscreteTopology C.V] [Finite B.V]
-    [Fact (IsSmoothDiscrete (ZMod n) B)] [Fact (IsSmoothDiscrete (ZMod n) C)]
+    [Fact (IsSmoothDiscrete (ZMod n) B)]
     (f : B ⟶ C) (hf : Function.Surjective f.hom) :
     Function.Surjective (ContinuousCohomology.coeffMap f 2).hom := by
   have : NeZero n := NeZero.of_neZero_natCast F (h := ⟨hn.ne_zero⟩)
   have : Finite C.V := Finite.of_surjective f.hom hf
+  have : Fact (IsSmoothDiscrete (ZMod n) C) := by
+    let := B.distribMulAction
+    let := C.distribMulAction
+    refine ⟨⟨inferInstance, fun c ↦ ?_⟩⟩
+    obtain ⟨b, rfl⟩ := hf c
+    -- The target stabilizer contains the open stabilizer of any lift.
+    rw [← TopRep.coe_stabilizer]
+    apply Subgroup.isOpen_mono (H₁ := MulAction.stabilizer (Field.absoluteGaloisGroup F) b)
+    · intro g hg
+      simp only [MulAction.mem_stabilizer_iff, TopRep.distribMulAction_smul] at hg ⊢
+      rw [← f.hom.isIntertwining, hg]
+    · simpa only [TopRep.coe_stabilizer] using
+        (Fact.out : IsSmoothDiscrete (ZMod n) B).stabilizer_isOpen b
   let tr := h2MuEquivZMod F hn
   let ι := (ContinuousCohomology.coeffMap (tateDualMap f) 0).hom.toAddMonoidHom
   -- On H⁰ the dual map is its restriction to invariants, hence is injective.
