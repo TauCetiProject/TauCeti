@@ -18,7 +18,10 @@ For a morphism `f : X ⟶ Y` with affine target `Y`, the canonical comparison
 `f^*(M ⊗ N) ⟶ f^*M ⊗ f^*N` is an isomorphism whenever either factor is quasicoherent.
 The other factor is an arbitrary sheaf of modules. No flatness or finiteness assumption is
 required. The comparison is the tensor map of the existing oplax monoidal pullback, so its
-associativity and unit compatibilities are retained.
+associativity and unit compatibilities are retained. These affine statements are the local input
+for the same comparison over an arbitrary target
+(`Scheme.Modules.isIso_pullback_δ_of_isQuasicoherent` in
+`TauCeti.AlgebraicGeometry.Modules.Pullback.Quasicoherent`).
 
 In particular, pullback from quasicoherent sheaves on `Y` to modules on `X` is strong
 symmetric monoidal (`Scheme.Modules.pullbackFromAffineBraided`). The tensor comparisons are also
@@ -53,7 +56,7 @@ open _root_.AlgebraicGeometry.Scheme.Modules
 
 /-- Pullback from an affine base preserves a tensor product with a quasicoherent left factor.
 The right factor need not be quasicoherent. -/
-theorem _root_.AlgebraicGeometry.Scheme.Modules.isIso_pullback_δ_of_isQuasicoherent
+theorem _root_.AlgebraicGeometry.Scheme.Modules.isIso_pullback_δ_of_isAffine
     (M N : Y.Modules)
     [M.IsQuasicoherent] : IsIso (Functor.OplaxMonoidal.δ (pullback f) M N) := by
   obtain ⟨P⟩ := M.nonempty_presentation_of_isAffine
@@ -63,7 +66,7 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.isIso_pullback_δ_of_isQuasicohe
 
 /-- Pullback from an affine base preserves a tensor product with a quasicoherent right factor.
 The left factor need not be quasicoherent. -/
-theorem _root_.AlgebraicGeometry.Scheme.Modules.isIso_pullback_δ_of_isQuasicoherent_right
+theorem _root_.AlgebraicGeometry.Scheme.Modules.isIso_pullback_δ_right_of_isAffine
     (M N : Y.Modules)
     [N.IsQuasicoherent] : IsIso (Functor.OplaxMonoidal.δ (pullback f) M N) := by
   obtain ⟨P⟩ := N.nonempty_presentation_of_isAffine
@@ -80,7 +83,7 @@ def _root_.AlgebraicGeometry.Scheme.Modules.pullbackTensorLeftIso
     rw [NatTrans.isIso_iff_isIso_app]
     intro N
     rw [Functor.oplaxCommTensorLeft_app]
-    exact isIso_pullback_δ_of_isQuasicoherent f M N
+    exact isIso_pullback_δ_of_isAffine f M N
   exact asIso ((pullback f).oplaxCommTensorLeft M)
 
 /-- The left tensor comparison is the canonical oplax tensor map of pullback. -/
@@ -99,7 +102,7 @@ def _root_.AlgebraicGeometry.Scheme.Modules.pullbackTensorRightIso
     rw [NatTrans.isIso_iff_isIso_app]
     intro M
     rw [Functor.oplaxCommTensorRight_app]
-    exact isIso_pullback_δ_of_isQuasicoherent_right f M N
+    exact isIso_pullback_δ_right_of_isAffine f M N
   exact asIso ((pullback f).oplaxCommTensorRight N)
 
 /-- The right tensor comparison is the canonical oplax tensor map of pullback. -/
@@ -125,7 +128,7 @@ instance _root_.AlgebraicGeometry.Scheme.Modules.pullbackFromAffineMonoidal :
     rw [Functor.OplaxMonoidal.comp_δ]
     have : E.obj.IsQuasicoherent := E.property
     have : IsIso (Functor.OplaxMonoidal.δ (pullback f) (I.obj E) (I.obj F)) :=
-      isIso_pullback_δ_of_isQuasicoherent f E.obj F.obj
+      isIso_pullback_δ_of_isAffine f E.obj F.obj
     infer_instance
   exact Functor.Monoidal.ofOplaxMonoidal (I ⋙ pullback f)
 
