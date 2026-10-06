@@ -58,8 +58,8 @@ other intersection point as its turn row.
 
 The pentagons here lie to the left of `β ∪ γ`. The commutation map `Φ` also counts the pentagons
 lying to its right, whose initial side turns at the same point; those, and `Φ` itself
-(`GridDiagram.commutationMap`), are in `Commutation/InitialPentagon.lean`. The map defined here
-is only one part of `Φ` and is not a chain map on its own.
+(`GridDiagram.commutationMap`), are in `Commutation/InitialPentagon/Basic.lean`. The map defined
+here is only one part of `Φ` and is not a chain map on its own.
 
 This file sets up the pentagons and the map. That `Φ` is a chain map, and that together with the
 reverse map it is a chain homotopy equivalence via the hexagon-counting homotopies, is not proved
