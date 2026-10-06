@@ -29,6 +29,7 @@ namespace TauCeti
 
 /-- The Herbrand quotient of the multiplicative group of a finite cyclic Galois extension
 is the index of its norm group in the ground field's units. -/
+@[simp]
 theorem herbrandQuotient_units_eq_index_normGroup {K L : Type} [Field K] [Field L]
     [Algebra K L] [FiniteDimensional K L] [IsGalois K L] [IsCyclic (L ≃ₐ[K] L)] :
     TateCohomology.herbrandQuotient (Rep.ofMulDistribMulAction (L ≃ₐ[K] L) Lˣ) =
@@ -49,8 +50,8 @@ theorem herbrandQuotient_units_eq_one_of_isAlgClosed (K L : Type) [Field K] [Fie
   have : IsGalois K L := IsGalois.of_algEquiv e
   have : IsCyclic (L ≃ₐ[K] L) :=
     isCyclic_of_injective e.symm.autCongr.toMonoidHom e.symm.autCongr.injective
-  rw [herbrandQuotient_units_eq_index_normGroup, normGroup_of_isAlgClosed, Subgroup.index_top,
-    Nat.cast_one]
+  rw [herbrandQuotient_units_eq_index_normGroup, normGroup_eq_top_of_isAlgClosed,
+    Subgroup.index_top, Nat.cast_one]
 
 
 end TauCeti

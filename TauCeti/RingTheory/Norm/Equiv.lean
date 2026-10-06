@@ -44,7 +44,7 @@ theorem _root_.AlgEquiv.normGroup_eq {K L M : Type*} [Field K] [Field L] [Field 
 
 /-- Every unit is a norm in a finite extension of an algebraically closed field. -/
 @[simp]
-theorem normGroup_of_isAlgClosed (K L : Type*) [Field K] [Field L] [Algebra K L]
+theorem normGroup_eq_top_of_isAlgClosed (K L : Type*) [Field K] [Field L] [Algebra K L]
     [IsAlgClosed K] [FiniteDimensional K L] : normGroup K L = ⊤ := by
   let e := AlgEquiv.ofBijective (Algebra.ofId K L)
     (IsAlgClosed.algebraMap_bijective_of_isIntegral (k := K))
