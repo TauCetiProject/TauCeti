@@ -484,7 +484,8 @@ theorem H0Iso_inv_comp_corestriction_comp_H0Iso_hom (M : Rep.{u} k G)
   refine Fintype.sum_equiv (QuotientGroup.quotientRightRelEquivQuotientLeftRel H) _ _
     fun q => ?_
   rw [hf, ← hx]
-  apply Representation.apply_eq_apply_of_quotientGroup_mk_eq x.2
+  apply M.ρ.apply_eq_apply_of_quotientGroup_mk_eq
+    ((Representation.mem_invariants _ _).1 x.2)
   calc ((q.out⁻¹ : G) : G ⧸ H) =
       QuotientGroup.quotientRightRelEquivQuotientLeftRel H q :=
         congrArg (QuotientGroup.quotientRightRelEquivQuotientLeftRel H) q.out_eq

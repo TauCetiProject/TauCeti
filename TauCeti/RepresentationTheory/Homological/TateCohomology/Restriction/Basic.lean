@@ -233,7 +233,8 @@ theorem H0Cor_comp_H0Res_apply (x : tateCohomology M 0) :
     rw [H0π_comp_H0Res_apply, H0π_comp_H0Cor_apply, ← map_nsmul]
     congr 1
     ext
-    simpa using Representation.relNorm_apply_of_mem_invariants (H := H) y.2
+    simpa using M.ρ.relNorm_apply_of_forall_apply_eq (H := H)
+      ((Representation.mem_invariants _ _).1 y.2)
 
 /-- Restriction followed by corestriction is multiplication by the index, in degree zero. -/
 theorem H0Res_comp_H0Cor :
