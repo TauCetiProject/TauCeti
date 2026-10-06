@@ -258,18 +258,9 @@ theorem eqToHom_explicitH1AddEquivContinuousCohomology_eq_cochainClass
   refine eqToHom_π_eq_cochainClass (ofDiscreteModule_trivialF2 G) _ _ _ (Subtype.ext ?_)
   ext g₀ g₁
   rw [inhomogeneousCochain1_apply]
-  -- The transport along the equality of objects is a `cast` of values once that equality has a
-  -- variable side; here both carriers are `(trivialF2 G).V`, so the `cast` is the identity.
-  have hev : ∀ (B : TopRep ℤ G) (h : ofDiscreteModule ℤ G (trivialF2 G).V = B),
-      ((homogeneousCochains B).iCycles 1
-          (eqToHom (congrArg (_root_.ContinuousCohomology.cocycles · 1) h)
-            (cocycleEquiv1 G (trivialF2 G).V c))).val g₀ g₁ =
-        cast (congrArg TopRep.V h)
-          (((homogeneousCochains (ofDiscreteModule ℤ G (trivialF2 G).V)).iCycles 1
-            (cocycleEquiv1 G (trivialF2 G).V c)).val g₀ g₁) := by
-    rintro B rfl
-    simp only [eqToHom_refl, ConcreteCategory.id_apply, cast_eq]
-  refine ((hev _ (ofDiscreteModule_trivialF2 G)).trans (cast_eq _ _)).trans ?_
+  -- Both carriers are `(trivialF2 G).V`, so the `cast` of values along the transport is trivial.
+  refine ((eval_iCycles_eqToHom (ofDiscreteModule_trivialF2 G) _ (n := 1) (T := TopRep.V)
+    (fun B a => a.val g₀ g₁)).trans (cast_eq _ _)).trans ?_
   refine (congrArg (fun z => z.val g₀ g₁) (iCycles_cocycleEquiv1 G (trivialF2 G).V c)).trans ?_
   rw [cochainEquiv1_apply, homogeneous1_apply, TopRep.distribMulAction_smul,
     trivialF2_ρ_apply_apply, hcf]
@@ -289,17 +280,8 @@ theorem eqToHom_explicitH2AddEquivContinuousCohomology_eq_cochainClass [LocallyC
   refine eqToHom_π_eq_cochainClass (ofDiscreteModule_trivialF2 G) _ _ _ (Subtype.ext ?_)
   ext g₀ g₁ g₂
   rw [inhomogeneousCochain2_apply]
-  -- The same transport of values as in degree one.
-  have hev : ∀ (B : TopRep ℤ G) (h : ofDiscreteModule ℤ G (trivialF2 G).V = B),
-      ((homogeneousCochains B).iCycles 2
-          (eqToHom (congrArg (_root_.ContinuousCohomology.cocycles · 2) h)
-            (cocycleEquiv2 G (trivialF2 G).V c))).val g₀ g₁ g₂ =
-        cast (congrArg TopRep.V h)
-          (((homogeneousCochains (ofDiscreteModule ℤ G (trivialF2 G).V)).iCycles 2
-            (cocycleEquiv2 G (trivialF2 G).V c)).val g₀ g₁ g₂) := by
-    rintro B rfl
-    simp only [eqToHom_refl, ConcreteCategory.id_apply, cast_eq]
-  refine ((hev _ (ofDiscreteModule_trivialF2 G)).trans (cast_eq _ _)).trans ?_
+  refine ((eval_iCycles_eqToHom (ofDiscreteModule_trivialF2 G) _ (n := 2) (T := TopRep.V)
+    (fun B a => a.val g₀ g₁ g₂)).trans (cast_eq _ _)).trans ?_
   refine (congrArg (fun z => z.val g₀ g₁ g₂) (iCycles_cocycleEquiv2 G (trivialF2 G).V c)).trans ?_
   rw [cochainEquiv2_apply, homogeneous2_apply, TopRep.distribMulAction_smul,
     trivialF2_ρ_apply_apply, hcf]
