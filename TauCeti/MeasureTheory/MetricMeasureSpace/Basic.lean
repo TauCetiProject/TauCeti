@@ -103,6 +103,8 @@ def supportSpace (X : MetricMeasureSpace) : MetricMeasureSpace where
     rw [comap_subtype_coe_apply X.referenceMeasure.isClosed_support.measurableSet]
     exact X.measure_lt_top_of_isBounded (isometry_subtype_coe.lipschitzWith.isBounded_image hs)
 
+/-- The reduced reference measure is the pullback along the support subtype inclusion. -/
+@[simp]
 theorem referenceMeasure_supportSpace (X : MetricMeasureSpace) :
     X.supportSpace.referenceMeasure =
       X.referenceMeasure.comap ((↑) : X.referenceMeasure.support → X) := (rfl)
@@ -116,9 +118,12 @@ theorem measurePreserving_subtype_val (X : MetricMeasureSpace) :
 
 /-- The support representative has positive reference measure on every nonempty open set. -/
 instance (X : MetricMeasureSpace) : X.supportSpace.referenceMeasure.IsOpenPosMeasure :=
-  isOpenPosMeasure_comap_subtype_support X.referenceMeasure X.referenceMeasure.support_mem_ae
+  isOpenPosMeasure_comap_subtype_support X.referenceMeasure
+    X.referenceMeasure.isClosed_support.measurableSet X.referenceMeasure.support_mem_ae
 
-@[simp]
+/-- The reduced reference measure has support equal to the entire reduced carrier. -/
+-- Rewrite the support before simp expands the reference-measure projection.
+@[simp↓]
 theorem support_referenceMeasure_supportSpace (X : MetricMeasureSpace) :
     X.supportSpace.referenceMeasure.support = univ :=
   Measure.support_eq_univ
@@ -246,7 +251,6 @@ def supportEquiv (e : Equiv X Y) : Equiv X.supportSpace Y.supportSpace where
     let f : X.referenceMeasure.support → Y.referenceMeasure.support := e.supportIsometryEquiv
     let μ : Measure X.referenceMeasure.support := X.supportSpace.referenceMeasure
     let ν : Measure Y.referenceMeasure.support := Y.supportSpace.referenceMeasure
-    change MeasurePreserving f μ ν
     have hf : Measurable f := e.supportIsometryEquiv.continuous.measurable
     have hX : MeasurePreserving ((↑) : X.referenceMeasure.support → X) μ X.referenceMeasure :=
       X.measurePreserving_subtype_val

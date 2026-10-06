@@ -29,16 +29,16 @@ theorem measurePreserving_subtype_val_of_ae_mem {X : Type*} [MeasurableSpace X]
   simpa only [Measure.restrict_eq_self_of_ae_mem hμ] using
     (measurePreserving_subtype_coe (μa := μ) hs)
 
-variable {X Y : Type*} [TopologicalSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
+variable {X Y : Type*} [TopologicalSpace X] [MeasurableSpace X]
 
 /-- If the support is conull, the pullback measure is positive on nonempty relatively open
 sets of the support. -/
 theorem isOpenPosMeasure_comap_subtype_support (μ : Measure X)
-    (hμ : μ.support ∈ ae μ) :
+    (hs : MeasurableSet μ.support) (hμ : μ.support ∈ ae μ) :
     (μ.comap ((↑) : μ.support → X)).IsOpenPosMeasure := by
   refine ⟨fun U hU ⟨x, hx⟩ ↦ ?_⟩
   obtain ⟨V, hV, rfl⟩ := isOpen_induced_iff.mp hU
-  rw [comap_subtype_coe_apply μ.isClosed_support.measurableSet]
+  rw [comap_subtype_coe_apply hs]
   have himage : (Subtype.val '' (Subtype.val ⁻¹' V : Set μ.support)) = V ∩ μ.support := by
     simp [image_preimage_eq_inter_range]
   rw [himage]
@@ -49,7 +49,8 @@ theorem isOpenPosMeasure_comap_subtype_support (μ : Measure X)
   exact ne_of_gt (heq.symm ▸ hpos)
 
 /-- A homeomorphism transports the support exactly, without a regularity hypothesis. -/
-theorem support_map_homeomorph [TopologicalSpace Y] [MeasurableSpace Y] [BorelSpace Y]
+theorem support_map_homeomorph [OpensMeasurableSpace X]
+    [TopologicalSpace Y] [MeasurableSpace Y] [BorelSpace Y]
     (μ : Measure X) (e : X ≃ₜ Y) : (μ.map e).support = e '' μ.support := by
   ext y
   simp only [Measure.support_eq_forall_isOpen, mem_ofPred_eq]
