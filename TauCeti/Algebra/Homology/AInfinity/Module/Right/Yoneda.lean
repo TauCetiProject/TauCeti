@@ -25,13 +25,7 @@ map `a ↦ x a` of `TauCeti.dgYonedaIso`.
 
 These cochains form a morphism of cochain complexes from the underlying complex of `M`, with the
 unary operation `m₁` as differential, to `Hom(A, M)`; the sign `(-1)^p` is what makes it commute
-with the differentials.  Write `ι_x : sA ⊗ Tᶜ(sA) → sM ⊗ Tᶜ(sA)` for `a ⊗ w ↦ x ⊗ a w`.  Expanding
-the module bar differential on `x ⊗ a w` according to where its blocks lie, the block consisting
-of `x` alone gives `ι_{m₁ x}`, the blocks starting at `x` and running into `a w` give the unsigned
-Yoneda cochain of `x`, and the algebra bar differential acting on `a w` is the bar differential of
-the free module followed by `ι_x`, with a Koszul sign.  After the Taylor map of `M`, the module
-Stasheff equation `taylor ∘ b^M = 0` therefore says that the differential of the unsigned
-cochain of `x` is minus the unsigned cochain of `m₁ x`.
+with the differentials.
 
 The Yoneda lemma for `A∞` modules asserts that this morphism is a quasi-isomorphism when `A` and
 `M` are strictly unital.  This file only constructs the morphism, over an arbitrary commutative
@@ -207,7 +201,13 @@ private theorem homDifferential_yonedaBar {p : ℤ} {x : M} (hx : x ∈ MM.gradi
         MM.yonedaBar_mem_homCochains (MM.differential_mem_piece hx)⟩ := by
   have hx' : x ∈ (MM.grading.shift 1).piece (p - 1) := by
     rwa [InternalGrading.shift_piece, sub_add_cancel]
-  -- The module Stasheff equation `taylor ∘ b^M = 0`, read through the insertion of `x`.
+  -- Write `ι_x : sA ⊗ Tᶜ(sA) → sM ⊗ Tᶜ(sA)` for `a ⊗ w ↦ x ⊗ a w`. Expanding the module bar
+  -- differential on `x ⊗ a w` according to where its blocks lie, the block consisting of `x`
+  -- alone gives `ι_{m₁ x}`, the blocks starting at `x` and running into `a w` give the unsigned
+  -- Yoneda cochain of `x`, and the algebra bar differential acting on `a w` is the bar
+  -- differential of the free module followed by `ι_x`, with a Koszul sign
+  -- (`barDifferential_comp_mk_comp_concat`). After the Taylor map of `M`, the module Stasheff
+  -- equation `taylor ∘ b^M = 0` therefore gives the claim.
   have hkey := congrArg (MM.taylor ∘ₗ ·) (MM.barDifferential_comp_mk_comp_concat x)
   simp only [LinearMap.comp_add] at hkey
   rw [← LinearMap.comp_assoc _ MM.barDifferential MM.taylor, taylor_comp_barDifferential,
