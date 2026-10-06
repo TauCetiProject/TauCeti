@@ -29,9 +29,11 @@ the weight-two cusp–Eisenstein decomposition.
 
 ## Main results
 
-* `TauCeti.ModularForm.sum_width_mul_constantTermAtCuspTranslationOrbit_eq_zero`: the
+The following results are in `TauCeti.ModularForm`.
+
+* `weight_two_sum_cuspTranslationOrbitWidth_mul_constantTermAtCuspTranslationOrbit_eq_zero`:
   width-weighted residue relation in weight two.
-* `TauCeti.mem_cuspFormSubmodule_iff_forall_ne_constantTermAtCuspTranslationOrbit_eq_zero`:
+* `weight_two_mem_cuspFormSubmodule_iff_forall_ne_constantTermAtCuspTranslationOrbit_eq_zero`:
   a weight-two modular form is cuspidal if and only if its constant terms vanish at every
   cusp translation orbit except any one chosen orbit.
 
@@ -53,7 +55,8 @@ variable [ModularFormClass F 𝒢 k]
 
 /-- The constant term of the trace to level one is the width-weighted sum of the cusp
 translation constant terms. -/
-theorem valueAtInfty_trace_eq_sum_width_mul_constantTermAtCuspTranslationOrbit (f : F) :
+theorem valueAtInfty_trace_eq_sum_cuspTranslationOrbitWidth_mul_constantTermAtCuspTranslationOrbit
+    (f : F) :
     valueAtInfty (_root_.ModularForm.trace 𝒮ℒ f) =
       ∑ c : CuspTranslationOrbit 𝒢,
         (cuspTranslationOrbitWidth c : ℂ) * constantTermAtCuspTranslationOrbit f c := by
@@ -84,10 +87,11 @@ variable {F : Type*} [FunLike F ℍ ℂ] [ModularFormClass F 𝒢 2]
 
 /-- **The weight-two residue relation**: the width-weighted sum of the constant terms at all
 cusp translation orbits is zero. -/
-theorem sum_width_mul_constantTermAtCuspTranslationOrbit_eq_zero (f : F) :
+theorem weight_two_sum_cuspTranslationOrbitWidth_mul_constantTermAtCuspTranslationOrbit_eq_zero
+    (f : F) :
     ∑ c : CuspTranslationOrbit 𝒢,
       (cuspTranslationOrbitWidth c : ℂ) * constantTermAtCuspTranslationOrbit f c = 0 := by
-  rw [← valueAtInfty_trace_eq_sum_width_mul_constantTermAtCuspTranslationOrbit]
+  rw [← valueAtInfty_trace_eq_sum_cuspTranslationOrbitWidth_mul_constantTermAtCuspTranslationOrbit]
   have hzero : _root_.ModularForm.trace 𝒮ℒ f = 0 :=
     (rank_zero_iff_forall_zero.mp _root_.ModularForm.levelOne_weight_two_rank_zero) _
   rw [hzero]
@@ -95,12 +99,13 @@ theorem sum_width_mul_constantTermAtCuspTranslationOrbit_eq_zero (f : F) :
 
 /-- In weight two, vanishing of all other cusp translation constant terms forces vanishing at
 the remaining orbit as well. -/
-theorem constantTermAtCuspTranslationOrbit_eq_zero_of_forall_ne (f : F)
+theorem weight_two_constantTermAtCuspTranslationOrbit_eq_zero_of_forall_ne (f : F)
     (c : CuspTranslationOrbit 𝒢)
     (h : ∀ c' ≠ c, constantTermAtCuspTranslationOrbit f c' = 0) :
     constantTermAtCuspTranslationOrbit f c = 0 := by
   classical
-  have hsum := sum_width_mul_constantTermAtCuspTranslationOrbit_eq_zero f
+  have hsum :=
+    weight_two_sum_cuspTranslationOrbitWidth_mul_constantTermAtCuspTranslationOrbit_eq_zero f
   rw [Finset.sum_eq_single c (fun c' _ hc' ↦ by rw [h c' hc', mul_zero])
     (by simp)] at hsum
   exact (mul_eq_zero.mp hsum).resolve_left
@@ -108,7 +113,7 @@ theorem constantTermAtCuspTranslationOrbit_eq_zero_of_forall_ne (f : F)
 
 end TauCeti.ModularForm
 
-namespace TauCeti
+namespace TauCeti.ModularForm
 
 open TauCeti.ModularForm _root_.ModularForm _root_.Matrix.SpecialLinearGroup
 
@@ -116,7 +121,7 @@ variable {𝒢 : Subgroup (GL (Fin 2) ℝ)} [𝒢.IsArithmetic] [𝒢.HasDetOne]
 
 /-- **A weight-two cusp-form test with one cusp omitted.** Vanishing at any one cusp
 translation orbit follows from vanishing at all the others. -/
-theorem mem_cuspFormSubmodule_iff_forall_ne_constantTermAtCuspTranslationOrbit_eq_zero
+theorem weight_two_mem_cuspFormSubmodule_iff_forall_ne_constantTermAtCuspTranslationOrbit_eq_zero
     (f : ModularForm 𝒢 2)
     (c : CuspTranslationOrbit 𝒢) :
     f ∈ cuspFormSubmodule 𝒢 2 ↔
@@ -125,7 +130,7 @@ theorem mem_cuspFormSubmodule_iff_forall_ne_constantTermAtCuspTranslationOrbit_e
   refine ⟨fun h c' _ ↦ h c', fun h c' ↦ ?_⟩
   by_cases hc' : c' = c
   · subst c'
-    exact constantTermAtCuspTranslationOrbit_eq_zero_of_forall_ne f c h
+    exact weight_two_constantTermAtCuspTranslationOrbit_eq_zero_of_forall_ne f c h
   · exact h c' hc'
 
-end TauCeti
+end TauCeti.ModularForm
