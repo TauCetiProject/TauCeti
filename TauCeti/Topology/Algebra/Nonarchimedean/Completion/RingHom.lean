@@ -6,7 +6,7 @@ Authors: Chris Birkbeck
 module
 
 public import Mathlib.RingTheory.RingHom.Flat
-public import TauCeti.Topology.Algebra.Nonarchimedean.Completion.Basic
+public import Mathlib.Topology.Algebra.UniformRing
 
 /-!
 # Ring homomorphisms between completions
@@ -32,9 +32,10 @@ namespace TauCeti
 
 /-- Two completion ring homomorphisms are heterogeneously equal when their source and target
 uniformities agree and the first map satisfies the characterization that uniquely determines the
-second. -/
+second. The rings being completed need not be commutative, and the fixed source of the structure
+maps need only be a nonassociative semiring. -/
 theorem completionRingHom_heq_of_uniformSpace_eq
-    {A S S' : Type*} [CommRing A] [CommRing S] [CommRing S']
+    {A S S' : Type*} [NonAssocSemiring A] [Ring S] [Ring S']
     {u₁ u₂ : UniformSpace S} (hu : u₂ = u₁) {v₁ v₂ : UniformSpace S'} (hv : v₂ = v₁)
     (g₁ : @IsUniformAddGroup S u₁ _) (g₂ : @IsUniformAddGroup S u₂ _)
     (t₁ : @IsTopologicalRing S u₁.toTopologicalSpace _)
@@ -46,10 +47,10 @@ theorem completionRingHom_heq_of_uniformSpace_eq
     let B₂ := @UniformSpace.Completion S u₂
     let C₁ := @UniformSpace.Completion S' v₁
     let C₂ := @UniformSpace.Completion S' v₂
-    let b₁ := @UniformSpace.Completion.commRing S _ u₁ g₁ t₁
-    let b₂ := @UniformSpace.Completion.commRing S _ u₂ g₂ t₂
-    let c₁ := @UniformSpace.Completion.commRing S' _ v₁ g₁' t₁'
-    let c₂ := @UniformSpace.Completion.commRing S' _ v₂ g₂' t₂'
+    let b₁ := @UniformSpace.Completion.ring S _ u₁ t₁ g₁
+    let b₂ := @UniformSpace.Completion.ring S _ u₂ t₂ g₂
+    let c₁ := @UniformSpace.Completion.ring S' _ v₁ t₁' g₁'
+    let c₂ := @UniformSpace.Completion.ring S' _ v₂ t₂' g₂'
     ∀ (f₂ : @RingHom B₂ C₂ b₂.toNonAssocSemiring c₂.toNonAssocSemiring)
       (f₁ : @RingHom B₁ C₁ b₁.toNonAssocSemiring c₁.toNonAssocSemiring)
       (a₂ : @RingHom A B₂ _ b₂.toNonAssocSemiring)
@@ -98,9 +99,8 @@ theorem ringHom_flat_of_completion_heq
         @RingHom.Flat R₁ B₁ r₁ b₁ f₁ := by
   subst hu
   subst hv
-  dsimp only
-  intro f₂ f₁ hf hflat
-  rwa [eq_of_heq hf] at hflat
+  -- With both uniformities identified, the completion ring structures also agree.
+  exact fun _ _ hf hflat ↦ hf.eq ▸ hflat
 
 /-- Flatness of a ring homomorphism from `A` into a completion passes across a heterogeneous
 equality with a ring homomorphism into the completion for an equal uniformity. This is the
