@@ -62,26 +62,33 @@ private theorem ambientCounitPoint_weightTorus {B : Type*} [CommRing B] [Algebra
           (toConv (s.ofConv.comp π.toAlgHom)))) =
       diagGL (fun i => DiagonalizableGroup.charOfPoint s.ofConv
         (SplitTorus.weightCharacter (w i))) := by
-  apply Matrix.GeneralLinearGroup.ext
-  intro i j
-  rw [GeneralLinear.counitPointsMulEquiv_apply]
-  -- `mapDomain` returns the ambient-indexed counit algebra, while the point uses
-  -- the quotient-indexed one. Their exported instances agree only at reducible
-  -- transparency; the application rules erase these two coefficient indexings.
-  erw [Bialgebra.CounitAlgebra.algEquivSelf_apply, AlgHom.mapDomain_apply_apply,
-    Derivation.pointInCounitAlgebra_apply]
-  rw [ofConv_toConv, AlgHom.comp_apply]
-  -- Restate the matrix coercion after the coefficient rules have removed its indexing.
-  change s.ofConv (π ((Bialgebra.Quotient.mkBialgHom (R := R) I.toIdeal)
-    (GeneralLinear.coordinateHopfAlgebraAlgEquiv R n
-      (GeneralLinear.coordinateRingMap R n (MvPolynomial.X (i, j)))))) =
-    (diagGL (fun k => DiagonalizableGroup.charOfPoint s.ofConv
-      (SplitTorus.weightCharacter (w k))) : Matrix (Fin n) (Fin n) B) i j
-  rw [← BialgHom.comp_apply, hπ, GeneralLinear.weightTorusCoordinateMap_X]
-  rw [← SplitTorus.weightCharacter_coe, Finsupp.coe_equivFunOnFinite_symm]
-  by_cases hij : i = j <;>
-    simp only [diagGL_apply, hij, ↓reduceIte, DiagonalizableGroup.charOfPoint_apply_coe,
-      map_zero]
+  rw [GeneralLinear.counitPointsMulEquiv_eq_pointsMulEquiv]
+  have hpoint :
+      AlgHom.mapValue
+          (Bialgebra.CounitAlgebra.algEquivSelf R
+            (GeneralLinear.coordinateHopfAlgebra R n) B).toAlgHom
+          (AlgHom.mapDomain (A := Bialgebra.CounitAlgebra R
+            (GeneralLinear.coordinateHopfAlgebra R n) B)
+            (Bialgebra.Quotient.mkBialgHom I.toIdeal)
+            (Derivation.pointInCounitAlgebra
+              (H := GeneralLinear.coordinateHopfAlgebra R n ⧸ I.toIdeal) B
+              (toConv (s.ofConv.comp π.toAlgHom)))) =
+        toConv (s.ofConv.comp (GeneralLinear.weightTorusCoordinateMap w).hom.toAlgHom) := by
+    apply WithConv.ofConv_injective
+    ext x
+    rw [AlgHom.mapValue_apply, ofConv_toConv, AlgHom.comp_apply]
+    -- `mapDomain` returns the ambient-indexed counit algebra, while the point uses
+    -- the quotient-indexed one. The application rules erase these coefficient indexings.
+    erw [Bialgebra.CounitAlgebra.algEquivSelf_apply, AlgHom.mapDomain_apply_apply,
+      Derivation.pointInCounitAlgebra_apply]
+    rw [ofConv_toConv, AlgHom.comp_apply]
+    exact congrArg s.ofConv (BialgHom.congr_fun hπ x)
+  rw [hpoint]
+  have hdiag := GeneralLinear.pointsMulEquiv_mapPointsFunctor_weightTorusCoordinateMap w
+    (CommAlgCat.of R B) s
+  -- The categorical point uses `CommAlgCat.of R B`; expose its algebra-hom presentation.
+  erw [CommHopfAlgCat.mapPointsFunctor_app_apply] at hdiag
+  simpa only [SplitTorus.charOfPoint_weightCharacter] using hdiag
 
 /-- A weight-torus point scales each entry of the ambient tangent matrix of a closed
 subgroup by the difference of its two standard weights. -/

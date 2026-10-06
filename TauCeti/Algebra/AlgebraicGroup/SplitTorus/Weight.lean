@@ -62,7 +62,6 @@ noncomputable def weightCharacter (μ : σ → ℤ) : Multiplicative (σ →₀ 
   Multiplicative.ofAdd (Finsupp.equivFunOnFinite.symm μ)
 
 /-- A finitely supported exponent vector represents its own integral character. -/
-@[simp]
 theorem weightCharacter_coe (f : σ →₀ ℤ) :
     weightCharacter ⇑f = Multiplicative.ofAdd f := by
   rw [weightCharacter, Finsupp.equivFunOnFinite_symm_coe]

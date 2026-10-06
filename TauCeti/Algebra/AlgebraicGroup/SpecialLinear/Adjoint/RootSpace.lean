@@ -46,62 +46,6 @@ noncomputable section
 
 variable {R : Type u} [CommRing R] {r : ℕ}
 
-/-- The diagonal torus acts on each matrix entry of a tangent vector through the difference
-of the corresponding standard weights. -/
-theorem tangentMatrix_adDerivation_diagonalTorusPoints_apply
-    {B : Type*} [CommRing B] [Algebra R B]
-    (s : WithConv (MonoidAlgebra R (Multiplicative (ULift.{u} (Fin r) →₀ ℤ)) →ₐ[R] B))
-    (d : Derivation R (coordinateHopfAlgebra R (r + 1))
-      (Bialgebra.CounitAlgebra R (coordinateHopfAlgebra R (r + 1)) B))
-    (i j : Fin (r + 1)) :
-    (tangentMatrix (r + 1)
-      (Derivation.adDerivation B
-        ((Bialgebra.CounitAlgebra.pointsMulEquiv R
-          (coordinateHopfAlgebra R (r + 1)) B).symm (diagonalTorusPoints r R B s)) d) :
-      Matrix (Fin (r + 1)) (Fin (r + 1)) B) i j =
-      (DiagonalizableGroup.charOfPoint s.ofConv
-        (SplitTorus.weightCharacter (diagonalTorusWeight r i - diagonalTorusWeight r j)) : B) *
-      (tangentMatrix (r + 1) d : Matrix (Fin (r + 1)) (Fin (r + 1)) B) i j := by
-  let g := (Bialgebra.CounitAlgebra.pointsMulEquiv R
-    (coordinateHopfAlgebra R (r + 1)) B).symm (diagonalTorusPoints r R B s)
-  have hg : Matrix.SpecialLinearGroup.toGL (counitPointsMulEquiv (r + 1) g) =
-      diagGL fun k => torusCharacter (SplitTorus.pointsMulEquiv s) (diagonalTorusWeight r k) := by
-    rw [counitPointsMulEquiv_eq_pointsMulEquiv, MulEquiv.apply_symm_apply]
-    exact toGL_pointsMulEquiv_diagonalTorusPoints r R B s
-  rw [tangentMatrix_adDerivation_coe]
-  -- The adjoint formula uses determinant-one matrices; the diagonal formula is stated for
-  -- their general-linear images. Both matrix coercions have explicit comparison lemmas.
-  rw [← Matrix.SpecialLinearGroup.coe_GL_coe_matrix,
-    ← Matrix.SpecialLinearGroup.coe_GL_coe_matrix,
-    map_inv Matrix.SpecialLinearGroup.toGL, hg, ← map_inv diagGL]
-  simp only [diagGL_coe, Matrix.diagonal_mul, Matrix.mul_diagonal,
-    Pi.inv_apply]
-  rw [SplitTorus.charOfPoint_weightCharacter, torusCharacter_sub, div_eq_mul_inv,
-    Units.val_mul]
-  ring
-
-/-- At the universal torus point, the `(i,j)` entry has coefficient `ε_i - ε_j` in the
-group-algebra basis. This is valid over arbitrary commutative base rings. -/
-theorem tangentMatrix_adDerivation_universalDiagonalTorus_apply
-    (d : Derivation R (coordinateHopfAlgebra R (r + 1))
-      (Bialgebra.CounitAlgebra R (coordinateHopfAlgebra R (r + 1)) R))
-    (i j : Fin (r + 1)) :
-    (tangentMatrix (r + 1)
-      (Derivation.adDerivation
-        (MonoidAlgebra R (Multiplicative (ULift.{u} (Fin r) →₀ ℤ)))
-        ((Bialgebra.CounitAlgebra.pointsMulEquiv R (coordinateHopfAlgebra R (r + 1))
-          (MonoidAlgebra R (Multiplicative (ULift.{u} (Fin r) →₀ ℤ)))).symm
-          (diagonalTorusPoints r R _ (toConv (AlgHom.id R _))))
-        (Derivation.mapValue (Algebra.ofId R _) d)) : Matrix (Fin (r + 1)) (Fin (r + 1))
-          (MonoidAlgebra R (Multiplicative (ULift.{u} (Fin r) →₀ ℤ)))) i j =
-      MonoidAlgebra.single
-        (SplitTorus.weightCharacter (diagonalTorusWeight r i - diagonalTorusWeight r j))
-        ((tangentMatrix (r + 1) d : Matrix (Fin (r + 1)) (Fin (r + 1)) R) i j) := by
-  rw [tangentMatrix_adDerivation_diagonalTorusPoints_apply, tangentMatrix_mapValue_coe,
-    Matrix.map_apply, DiagonalizableGroup.charOfPoint_apply_coe,
-    ofConv_toConv, AlgHom.id_apply, Algebra.ofId_apply]
-  rw [mul_comm, ← MonoidAlgebra.of_apply, ← MonoidAlgebra.single_eq_algebraMap_mul_of]
-
 private theorem pointInCounitAlgebra_universalDiagonalTorus :
     Derivation.pointInCounitAlgebra
         (MonoidAlgebra R (Multiplicative (ULift.{u} (Fin r) →₀ ℤ)))

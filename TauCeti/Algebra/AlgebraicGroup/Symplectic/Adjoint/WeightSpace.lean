@@ -55,55 +55,30 @@ private theorem diagonalTorus_weightTorusFactorization :
   simpa only [CommHopfAlgCat.hom_comp, coordinateMap_def, CommHopfAlgCat.hom_mkQuotient] using
     congrArg (fun f => f.hom) (coordinateMap_comp_diagonalTorusCoordinateMap (R := R) (m := m))
 
-/-- Over any coefficient algebra, a diagonal-torus point scales each tangent-matrix entry
-by the difference of its two standard weights. -/
-theorem tangentMatrix_adDerivation_diagonalTorus_apply
-    {B : Type*} [CommRing B] [Algebra R B]
-    (s : WithConv (MonoidAlgebra R (Multiplicative (ULift.{u} (Fin m) →₀ ℤ)) →ₐ[R] B))
+private theorem forall_tangentMatrix_entry_iff
+    (α : Multiplicative (ULift.{u} (Fin m) →₀ ℤ))
     (d : Derivation R (coordinateHopfAlgebra R m)
-      (Bialgebra.CounitAlgebra R (coordinateHopfAlgebra R m) B))
-    (i j : Fin m ⊕ Fin m) :
-    (tangentMatrix m
-      (Derivation.adDerivation B
-        (Derivation.pointInCounitAlgebra B
-          (toConv (s.ofConv.comp
-            (diagonalTorusCoordinateMap (R := R) (m := m)).hom.toAlgHom))) d) :
-      Matrix (Fin m ⊕ Fin m) (Fin m ⊕ Fin m) B) i j =
-      (DiagonalizableGroup.charOfPoint s.ofConv
-        (Multiplicative.ofAdd (diagonalTorusWeight i - diagonalTorusWeight j)) : B) *
-        (tangentMatrix m d : Matrix (Fin m ⊕ Fin m) (Fin m ⊕ Fin m) B) i j := by
-  rw [tangentMatrix_apply_coe, tangentMatrix_apply_coe, Matrix.submatrix_apply,
-    Matrix.submatrix_apply]
-  simpa only [Equiv.symm_apply_apply, ← Finsupp.coe_sub, SplitTorus.weightCharacter_coe] using
-    HopfIdeal.tangentMatrix_adDerivation_weightTorus_apply (definingHopfIdeal R m)
-      (fun k : Fin (m + m) => ⇑(diagonalTorusWeight (finSumFinEquiv.symm k)))
-      (diagonalTorusCoordinateMap (R := R) (m := m)).hom
-      diagonalTorus_weightTorusFactorization s d (finSumFinEquiv i) (finSumFinEquiv j)
-
-/-- At the universal diagonal-torus point, each matrix entry is multiplied by its
-integral character in the group-algebra basis. -/
-theorem tangentMatrix_adDerivation_universalDiagonalTorus_apply
-    (d : Derivation R (coordinateHopfAlgebra R m)
-      (Bialgebra.CounitAlgebra R (coordinateHopfAlgebra R m) R))
-    (i j : Fin m ⊕ Fin m) :
-    (tangentMatrix m
-      (Derivation.adDerivation
-        (CommAlgCat.of R (MonoidAlgebra R (Multiplicative (ULift.{u} (Fin m) →₀ ℤ))))
-        (Derivation.pointInCounitAlgebra
-          (CommAlgCat.of R (MonoidAlgebra R (Multiplicative (ULift.{u} (Fin m) →₀ ℤ))))
-          (toConv (diagonalTorusCoordinateMap (R := R) (m := m)).hom.toAlgHom))
-        (Derivation.mapValue (Algebra.ofId R _) d)) :
-      Matrix (Fin m ⊕ Fin m) (Fin m ⊕ Fin m)
-        (MonoidAlgebra R (Multiplicative (ULift.{u} (Fin m) →₀ ℤ)))) i j =
-      MonoidAlgebra.single
-        (Multiplicative.ofAdd (diagonalTorusWeight i - diagonalTorusWeight j))
-        ((tangentMatrix m d : Matrix (Fin m ⊕ Fin m) (Fin m ⊕ Fin m) R) i j) := by
-  have h := tangentMatrix_adDerivation_diagonalTorus_apply
-    (toConv (AlgHom.id R _)) (Derivation.mapValue (Algebra.ofId R _) d) i j
-  rw [ofConv_toConv, AlgHom.id_comp] at h
-  rw [h, tangentMatrix_mapValue_coe, Matrix.map_apply,
-    DiagonalizableGroup.charOfPoint_apply_coe, AlgHom.id_apply, Algebra.ofId_apply]
-  rw [mul_comm, ← MonoidAlgebra.of_apply, ← MonoidAlgebra.single_eq_algebraMap_mul_of]
+      (Bialgebra.CounitAlgebra R (coordinateHopfAlgebra R m) R)) :
+    (∀ i j : Fin (m + m),
+      SplitTorus.weightCharacter
+        (⇑(diagonalTorusWeight (finSumFinEquiv.symm i)) -
+          ⇑(diagonalTorusWeight (finSumFinEquiv.symm j))) ≠ α →
+        GeneralLinear.tangentMatrix (m + m)
+          (HopfIdeal.quotientLieHom (definingHopfIdeal R m) d) i j = 0) ↔
+      ∀ i j : Fin m ⊕ Fin m,
+        Multiplicative.ofAdd (diagonalTorusWeight i - diagonalTorusWeight j) ≠ α →
+          (tangentMatrix m d : Matrix (Fin m ⊕ Fin m) (Fin m ⊕ Fin m) R) i j = 0 := by
+  simp only [← Finsupp.coe_sub, SplitTorus.weightCharacter_coe]
+  constructor
+  · intro h i j hij
+    rw [tangentMatrix_apply_coe, Matrix.submatrix_apply]
+    apply h
+    simpa only [Equiv.symm_apply_apply] using hij
+  · intro h i j hij
+    have hh := h (finSumFinEquiv.symm i) (finSumFinEquiv.symm j) hij
+    rw [tangentMatrix_apply_coe, Matrix.submatrix_apply, Equiv.apply_symm_apply,
+      Equiv.apply_symm_apply] at hh
+    exact hh
 
 /-- A symplectic tangent vector transforms by `α` at the universal torus point exactly
 when every entry of a different character vanishes. -/
@@ -125,17 +100,7 @@ theorem adDerivation_universalDiagonalTorus_eq_iff
     (fun k : Fin (m + m) => ⇑(diagonalTorusWeight (finSumFinEquiv.symm k)))
     (diagonalTorusCoordinateMap (R := R) (m := m)).hom
     diagonalTorus_weightTorusFactorization]
-  simp only [← Finsupp.coe_sub, SplitTorus.weightCharacter_coe]
-  constructor
-  · intro h i j hij
-    rw [tangentMatrix_apply_coe, Matrix.submatrix_apply]
-    apply h
-    simpa only [Equiv.symm_apply_apply] using hij
-  · intro h i j hij
-    have hh := h (finSumFinEquiv.symm i) (finSumFinEquiv.symm j) hij
-    rw [tangentMatrix_apply_coe, Matrix.submatrix_apply, Equiv.apply_symm_apply,
-      Equiv.apply_symm_apply] at hh
-    exact hh
+  exact forall_tangentMatrix_entry_iff α d
 
 /-- A cotangent-dual vector has adjoint weight `α` exactly when every entry of a
 different weight in its paired symplectic tangent matrix vanishes. -/
@@ -147,14 +112,11 @@ theorem mem_adjointWeightSpace_iff
         Multiplicative.ofAdd (diagonalTorusWeight i - diagonalTorusWeight j) ≠ α →
           (tangentMatrix m (Derivation.cotangentLinearEquiv (B := R) x) :
             Matrix (Fin m ⊕ Fin m) (Fin m ⊕ Fin m) R) i j = 0 := by
-  rw [Derivation.mem_adjointWeightSpace_iff_universalPointAction]
-  let K := MonoidAlgebra R (Multiplicative (ULift.{u} (Fin m) →₀ ℤ))
-  rw [← (Derivation.tangentScalarExtensionEquiv
-    (R := R) (A := coordinateHopfAlgebra R m) (B := K)).injective.eq_iff]
-  rw [Derivation.tangentScalarExtensionEquiv_adjointAction (CommAlgCat.of R K)
-      (toConv (diagonalTorusCoordinateMap (R := R) (m := m)).hom.toAlgHom),
-    Derivation.tangentScalarExtensionEquiv_tmul, one_smul,
-    Derivation.tangentScalarExtensionEquiv_tmul, adDerivation_universalDiagonalTorus_eq_iff]
+  rw [HopfIdeal.mem_adjointWeightSpace_iff_of_weightTorus (definingHopfIdeal R m)
+    (fun k : Fin (m + m) => ⇑(diagonalTorusWeight (finSumFinEquiv.symm k)))
+    (diagonalTorusCoordinateMap (R := R) (m := m)).hom
+    diagonalTorus_weightTorusFactorization]
+  exact forall_tangentMatrix_entry_iff α (Derivation.cotangentLinearEquiv (B := R) x)
 
 /-- A nonzero entry of a symplectic adjoint weight vector determines its character.
 The assertion holds over every commutative base ring, including rings with zero divisors. -/
