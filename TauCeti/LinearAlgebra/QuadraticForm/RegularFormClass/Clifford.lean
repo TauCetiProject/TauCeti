@@ -12,6 +12,7 @@ import Mathlib.LinearAlgebra.CliffordAlgebra.Equivs
 import TauCeti.Algebra.BrauerGroup.Splitting
 import TauCeti.Algebra.Quaternion.Binary
 import TauCeti.Data.Nat.Choose.Lucas
+import TauCeti.GroupTheory.OrderOfElement.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.CentralSimple.Even
 import TauCeti.LinearAlgebra.CliffordAlgebra.Even.Quaternion
 import TauCeti.LinearAlgebra.CliffordAlgebra.Even.Scaling
@@ -425,17 +426,6 @@ section Lam
 
 open BrauerGroup
 
-/-- The bookkeeping identity behind both induction steps of Lam's comparison: in a commutative
-monoid whose elements `u, v, w, z` are `2`-torsion, only the parities of the exponents matter. -/
-private theorem mul_pow_eq_of_sq_eq_one {G : Type*} [CommMonoid G] {S u v w z : G}
-    (hu : u ^ 2 = 1) (hv : v ^ 2 = 1) (hw : w ^ 2 = 1) (hz : z ^ 2 = 1) {A B C D E F : ℕ}
-    (hF : F ≡ A + D [MOD 2]) (hE : E ≡ A [MOD 2]) (hBC : E ≡ B + C [MOD 2]) (hB : 1 ≡ B [MOD 2]) :
-    S * (u * v) ^ A * (w * z) ^ B * w ^ C * u ^ D = S * z * (v * w) ^ E * u ^ F := by
-  conv_rhs => rw [pow_eq_pow_of_modEq hF hu, mul_pow, pow_eq_pow_of_modEq hE hv,
-    pow_eq_pow_of_modEq hBC hw, ← pow_one z, pow_eq_pow_of_modEq hB hz]
-  simp only [mul_pow, pow_add]
-  ac_rfl
-
 /-- The statement of Lam's comparison for a class `x`. -/
 private def LamFormula (x : RegularFormClass K) : Prop :=
   cliffordInvariant x = hasseInvariant x *
@@ -460,7 +450,7 @@ private theorem lamFormula_mk_binary_add (a b : Kˣ) {y : RegularFormClass K} (h
   simp only [quaternionClassOnSquareClasses_squareClass]
   simp only [Matrix.cons_val_zero, Matrix.cons_val_one]
   generalize a * b = c
-  rw [show -c = -1 * c from (neg_one_mul _).symm]
+  rw [← neg_one_mul c]
   simp only [quaternionClass_mul, quaternionClass_mul_left, quaternionClass_comm c (-1)]
   -- Write the rank of `y` as `2(j + 1)` and abstract the four `2`-torsion symbols.
   obtain ⟨j, hj⟩ : ∃ j, y.rank = 2 * (j + 1) := by
@@ -509,7 +499,7 @@ private theorem lamFormula_add_mk_rankOne (a : Kˣ) {y : RegularFormClass K} (hy
   obtain ⟨δ, hδ⟩ : ∃ δ : Kˣ, discr y = squareClass δ := ⟨_, (squareClass_toMul_out _).symm⟩
   rw [hδ, ← squareClass_mul]
   simp only [quaternionClassOnSquareClasses_squareClass]
-  rw [show -a = -1 * a from (neg_one_mul _).symm]
+  rw [← neg_one_mul a]
   simp only [quaternionClass_mul, quaternionClass_mul_left, quaternionClass_comm a (-1),
     quaternionClass_comm δ a]
   -- Write the rank of `y` as `2(j + 1)` and abstract the four `2`-torsion symbols.
@@ -602,7 +592,8 @@ theorem cliffordInvariant_eq_hasseInvariant_mul_of_signedDiscr_eq_zero {x : Regu
   have hC := Choose.choose_mul_add_mul_modEq_choose_nat (p := 2) (a := k) (b := 1) one_lt_two
   have hD := Choose.choose_mul_add_mul_modEq_choose_nat (p := 2) (a := k + 1) (b := 2) one_lt_two
   simp only [mul_one, Nat.reduceMul, Nat.choose_one_right] at hN hC hD
-  rw [show 2 * (k + 1) - 1 = 2 * k + 1 by omega]
+  have hk : 2 * (k + 1) - 1 = 2 * k + 1 := by omega
+  rw [hk]
   refine (Nat.ModEq.add (Nat.ModEq.mul hN hC) hD).trans ?_
   obtain ⟨t, ht⟩ := Nat.even_mul_succ_self k
   rw [mul_comm, ht]
