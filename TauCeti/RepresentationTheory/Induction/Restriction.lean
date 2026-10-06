@@ -9,6 +9,7 @@ public import TauCeti.RepresentationTheory.CharacterTable.ClassFunction
 public import TauCeti.RepresentationTheory.FDRep
 public import Mathlib.RepresentationTheory.Irreducible
 public import Mathlib.RepresentationTheory.Rep.Res
+public import TauCeti.RepresentationTheory.Simple.Basic
 
 /-!
 # Restriction of representations
@@ -19,7 +20,9 @@ restricted along, and, for a subgroup `S` of a group `G`, the restriction of a f
 representation of `G` to `S` together with its character and the class function that character
 carries (`TauCeti.ClassFunction.comap_subtype_ofFDRep`).  Restricting along a surjective
 homomorphism changes nothing essential: it identifies the lattices of invariant subspaces, and
-hence preserves irreducibility.
+hence preserves irreducibility. In particular a representation trivial on a normal subgroup is
+irreducible exactly when the representation of the quotient group it factors through is, which
+makes simplicity of that quotient representation independent of the normal subgroup chosen.
 
 `FDRep k G` is by definition `Action (FGModuleCat k) G`, so Mathlib's `Action.res` along
 `S.subtype` *is* the restriction functor `FDRep k G ⥤ FDRep k S`; nothing has to be built.
@@ -45,6 +48,9 @@ restriction of an intertwiner, the functor laws, naturality — is used straight
   dimension of an intertwining space.
 * `TauCeti.isIrreducible_comp_surjective_iff`: restriction along a surjective monoid homomorphism
   preserves irreducibility, with `TauCeti.isIrreducible_comp_equiv_iff` as the isomorphism case.
+* `Representation.isIrreducible_ofQuotient_iff`, `Rep.simple_ofQuotient_iff`: a representation
+  trivial on a normal subgroup `S` is irreducible, respectively simple, exactly when the
+  representation of `G ⧸ S` it factors through is.
 
 ## Implementation notes
 
@@ -193,6 +199,28 @@ theorem isIrreducible_comp_equiv_iff {V : Type*} [AddCommGroup V] [Module k V] (
     (ρ : Representation k K V) :
     Representation.IsIrreducible (ρ.comp (e : H →* K)) ↔ Representation.IsIrreducible ρ :=
   isIrreducible_comp_surjective_iff e.toMonoidHom e.surjective ρ
+
+/-- A representation trivial on a normal subgroup `S` is irreducible exactly when the
+representation of `G ⧸ S` it factors through is irreducible. -/
+@[simp]
+theorem _root_.Representation.isIrreducible_ofQuotient_iff {V : Type*} [AddCommGroup V]
+    [Module k V] (ρ : Representation k G V) (S : Subgroup G) [S.Normal]
+    [Representation.IsTrivial (ρ.comp S.subtype)] :
+    (ρ.ofQuotient S).IsIrreducible ↔ ρ.IsIrreducible := by
+  have h : (ρ.ofQuotient S).comp (QuotientGroup.mk' S) = ρ :=
+    MonoidHom.ext fun g ↦ LinearMap.ext fun v ↦ ρ.ofQuotient_coe_apply S g v
+  rw [← isIrreducible_comp_surjective_iff (QuotientGroup.mk' S) (QuotientGroup.mk'_surjective S),
+    h]
+
+/-- An object of `Rep k G` on which a normal subgroup `S` acts trivially is simple exactly when the
+object of `Rep k (G ⧸ S)` it factors through is simple. In particular simplicity of
+`A.ofQuotient S` does not depend on the normal subgroup `S` acting trivially on `A`. -/
+@[simp]
+theorem _root_.Rep.simple_ofQuotient_iff (A : Rep.{w} k G) (S : Subgroup G) [S.Normal]
+    [Representation.IsTrivial (A.ρ.comp S.subtype)] :
+    Simple (A.ofQuotient S) ↔ Simple A := by
+  rw [Rep.simple_iff_isIrreducible, Rep.simple_iff_isIrreducible, Rep.of_ρ,
+    Representation.isIrreducible_ofQuotient_iff]
 
 end Irreducible
 
