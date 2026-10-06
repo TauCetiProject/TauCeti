@@ -31,11 +31,6 @@ class group.
 
 ## Main definitions
 
-* `IsDedekindDomain.HeightOneSpectrum.ideleFiniteCoord`: the coordinate of an idele at a finite
-  place, as a homomorphism to the units of the `v`-adic completion.
-* `NumberField.InfinitePlace.ideleInfiniteCoord`: the coordinate of an idele at an infinite place,
-  as a homomorphism to the units of the archimedean completion.
-* `TauCeti.GlobalNumberFields.ideleOfUnits`: assemble an idele from prescribed local units.
 * `TauCeti.GlobalNumberFields.ideleNorm`: the idele norm, a homomorphism to `ℝ≥0ˣ`.
 
 ## Main results
@@ -78,68 +73,15 @@ section Coordinates
 
 variable {R : Type*} [CommRing R] [IsDedekindDomain R] [Algebra R K] [IsFractionRing R K]
 
-/-- The coordinate of an idele at a finite place `v`, a unit of the `v`-adic completion. -/
-def IsDedekindDomain.HeightOneSpectrum.ideleFiniteCoord (v : HeightOneSpectrum R) :
-    IdeleGroup R K →* (v.adicCompletion K)ˣ :=
-  Units.map <| (RestrictedProduct.evalMonoidHom _ v).comp
-    (MonoidHom.snd (InfiniteAdeleRing K) (FiniteAdeleRing R K))
-
-/-- The coordinate of an idele at an infinite place `w`, a unit of the completion at `w`. -/
-def NumberField.InfinitePlace.ideleInfiniteCoord
-    (w : InfinitePlace K) : IdeleGroup R K →* w.Completionˣ :=
-  Units.map <| (Pi.evalMonoidHom _ w).comp
-    (MonoidHom.fst (InfiniteAdeleRing K) (FiniteAdeleRing R K))
-
-@[simp]
-theorem IsDedekindDomain.HeightOneSpectrum.coe_ideleFiniteCoord
-    (v : HeightOneSpectrum R) (x : IdeleGroup R K) :
-    (v.ideleFiniteCoord x : v.adicCompletion K) = (x : AdeleRing R K).2 v :=
-  (rfl)
-
-@[simp]
-theorem NumberField.InfinitePlace.coe_ideleInfiniteCoord
-    (w : InfinitePlace K) (x : IdeleGroup R K) :
-    (w.ideleInfiniteCoord x : w.Completion) = (x : AdeleRing R K).1 w :=
-  (rfl)
-
-namespace TauCeti.GlobalNumberFields
-
-/-- Assemble an idele from local units that are integral units at almost every finite place. -/
-def ideleOfUnits (zi : ∀ w : InfinitePlace K, w.Completionˣ)
-    (z : ∀ v : HeightOneSpectrum R, (v.adicCompletion K)ˣ)
-    (hz : ∀ᶠ v in Filter.cofinite, z v ∈ (v.adicCompletionIntegers K).units) :
-    IdeleGroup R K :=
-  MulEquiv.prodUnits.symm (MulEquiv.piUnits.symm zi, RestrictedProduct.mkUnit z hz)
-
-/-- The finite coordinates of the idele assembled from local units are the prescribed units. -/
-@[simp]
-theorem ideleFiniteCoord_ideleOfUnits (zi : ∀ w : InfinitePlace K, w.Completionˣ)
-    (z : ∀ v : HeightOneSpectrum R, (v.adicCompletion K)ˣ)
-    (hz : ∀ᶠ v in Filter.cofinite, z v ∈ (v.adicCompletionIntegers K).units)
-    (v : HeightOneSpectrum R) : v.ideleFiniteCoord (ideleOfUnits zi z hz) = z v := by
-  apply Units.ext
-  rw [HeightOneSpectrum.coe_ideleFiniteCoord]
-  rfl
-
-/-- The infinite coordinates of the idele assembled from local units are the prescribed units. -/
-@[simp]
-theorem ideleInfiniteCoord_ideleOfUnits (zi : ∀ w : InfinitePlace K, w.Completionˣ)
-    (z : ∀ v : HeightOneSpectrum R, (v.adicCompletion K)ˣ)
-    (hz : ∀ᶠ v in Filter.cofinite, z v ∈ (v.adicCompletionIntegers K).units)
-    (w : InfinitePlace K) : w.ideleInfiniteCoord (ideleOfUnits zi z hz) = zi w := by
-  apply Units.ext
-  rw [InfinitePlace.coe_ideleInfiniteCoord]
-  rfl
-
-end TauCeti.GlobalNumberFields
-
 /-- The finite coordinate of a principal idele is the image of the global element. -/
 @[simp]
 theorem IsDedekindDomain.HeightOneSpectrum.ideleFiniteCoord_unitEmbedding
     (v : HeightOneSpectrum R) (x : Kˣ) :
     v.ideleFiniteCoord (IdeleGroup.unitEmbedding R K x) =
       Units.map (algebraMap K (v.adicCompletion K)).toMonoidHom x :=
-  Units.ext (rfl)
+  Units.ext <| by
+    rw [HeightOneSpectrum.coe_ideleFiniteCoord]
+    rfl
 
 /-- The infinite coordinate of a principal idele is the image of the global element. -/
 @[simp]
@@ -147,7 +89,9 @@ theorem NumberField.InfinitePlace.ideleInfiniteCoord_unitEmbedding
     (w : InfinitePlace K) (x : Kˣ) :
     w.ideleInfiniteCoord (IdeleGroup.unitEmbedding R K x) =
       Units.map (algebraMap K w.Completion).toMonoidHom x :=
-  Units.ext (rfl)
+  Units.ext <| by
+    rw [InfinitePlace.coe_ideleInfiniteCoord]
+    rfl
 
 /-- At its own place, the finite coordinate of an idele concentrated at a finite place `v` is the
 given unit of `K_v`. -/
@@ -158,6 +102,7 @@ theorem IsDedekindDomain.HeightOneSpectrum.ideleFiniteCoord_ofAdicCompletion_sel
     v.ideleFiniteCoord (IdeleGroup.ofAdicCompletion R K v u) = u :=
   Units.ext <| by
     classical
+    rw [HeightOneSpectrum.coe_ideleFiniteCoord]
     exact (FiniteAdeleRing.ofAdicCompletion_apply_coe K v u v).trans
       (Pi.mulSingle_eq_same _ _)
 
@@ -170,6 +115,7 @@ theorem IsDedekindDomain.HeightOneSpectrum.ideleFiniteCoord_ofAdicCompletion_of_
     v'.ideleFiniteCoord (IdeleGroup.ofAdicCompletion R K v u) = 1 :=
   Units.ext <| by
     classical
+    rw [HeightOneSpectrum.coe_ideleFiniteCoord]
     exact (FiniteAdeleRing.ofAdicCompletion_apply_coe K v u v').trans
       (Pi.mulSingle_eq_of_ne h _)
 
@@ -194,7 +140,9 @@ theorem NumberField.InfinitePlace.ideleInfiniteCoord_ofAdicCompletion
     (w : InfinitePlace K) (v : HeightOneSpectrum R)
     (u : (v.adicCompletion K)ˣ) :
     w.ideleInfiniteCoord (IdeleGroup.ofAdicCompletion R K v u) = 1 :=
-  Units.ext (rfl)
+  Units.ext <| by
+    rw [InfinitePlace.coe_ideleInfiniteCoord]
+    rfl
 
 /-- At its own place, the infinite coordinate of an idele concentrated at an infinite place `w`
 is the given unit of `K_w`. -/
@@ -204,6 +152,7 @@ theorem NumberField.InfinitePlace.ideleInfiniteCoord_ofCompletion_self
     w.ideleInfiniteCoord (IdeleGroup.ofCompletion R K w u) = u :=
   Units.ext <| by
     classical
+    rw [InfinitePlace.coe_ideleInfiniteCoord]
     exact (InfiniteAdeleRing.ofCompletion_apply w u w).trans (Pi.mulSingle_eq_same _ _)
 
 /-- Away from its own place, the infinite coordinates of an idele concentrated at an infinite
@@ -215,6 +164,7 @@ theorem NumberField.InfinitePlace.ideleInfiniteCoord_ofCompletion_of_ne
     w'.ideleInfiniteCoord (IdeleGroup.ofCompletion R K w u) = 1 :=
   Units.ext <| by
     classical
+    rw [InfinitePlace.coe_ideleInfiniteCoord]
     exact (InfiniteAdeleRing.ofCompletion_apply w u w').trans
       (Pi.mulSingle_eq_of_ne h _)
 
@@ -243,7 +193,9 @@ theorem IsDedekindDomain.HeightOneSpectrum.ideleFiniteCoord_ofCompletion
     (v : HeightOneSpectrum R) (w : InfinitePlace K)
     (u : w.Completionˣ) :
     v.ideleFiniteCoord (IdeleGroup.ofCompletion R K w u) = 1 :=
-  Units.ext (rfl)
+  Units.ext <| by
+    rw [HeightOneSpectrum.coe_ideleFiniteCoord]
+    rfl
 
 /-- **Ideles are determined by their coordinates**: two ideles with the same coordinate at every
 infinite place and the same finite component are equal. -/
@@ -412,9 +364,13 @@ private lemma norm_ideleFiniteCoord_eq_one_of_forall_mem {u : IdeleGroup (𝓞 K
     (v : HeightOneSpectrum (𝓞 K)) :
     ‖(v.ideleFiniteCoord u : v.adicCompletion K)‖ = 1 := by
   have h₁ : ‖(v.ideleFiniteCoord u : v.adicCompletion K)‖ ≤ 1 :=
-    Valued.toNormedField.norm_le_one_iff.mpr (hu v)
+    Valued.toNormedField.norm_le_one_iff.mpr <| by
+      simpa only [HeightOneSpectrum.coe_ideleFiniteCoord,
+        HeightOneSpectrum.mem_adicCompletionIntegers] using hu v
   have h₂ : ‖(v.ideleFiniteCoord u⁻¹ : v.adicCompletion K)‖ ≤ 1 :=
-    Valued.toNormedField.norm_le_one_iff.mpr (hu' v)
+    Valued.toNormedField.norm_le_one_iff.mpr <| by
+      simpa only [HeightOneSpectrum.coe_ideleFiniteCoord,
+        HeightOneSpectrum.mem_adicCompletionIntegers] using hu' v
   have h : ‖(v.ideleFiniteCoord u : v.adicCompletion K)‖ *
       ‖(v.ideleFiniteCoord u⁻¹ : v.adicCompletion K)‖ = 1 := by
     rw [← norm_mul, ← Units.val_mul, ← map_mul, mul_inv_cancel, map_one, Units.val_one, norm_one]
@@ -435,8 +391,10 @@ private lemma continuous_ideleNormAux : Continuous (ideleNormAux (K := K)) := by
     (hW.preimage Units.continuous_val).inter (hW.preimage Units.continuous_coe_inv)
   have hinf : Continuous fun x : IdeleGroup (𝓞 K) K ↦
       ∏ w, completionNormalizedAbsValue w (w.ideleInfiniteCoord x) :=
-    continuous_finsetProd _ fun w _ ↦ (continuous_completionNormalizedAbsValue w).comp
-      (((continuous_apply w).comp continuous_fst).comp Units.continuous_val)
+    continuous_finsetProd _ fun w _ ↦ by
+      simp only [InfinitePlace.coe_ideleInfiniteCoord]
+      exact (continuous_completionNormalizedAbsValue w).comp
+        (((continuous_apply w).comp continuous_fst).comp Units.continuous_val)
   have hU_eq (u : IdeleGroup (𝓞 K) K) (hu : u ∈ U) :
       ideleNormAux u = ∏ w, completionNormalizedAbsValue w (w.ideleInfiniteCoord u) := by
     rw [ideleNormAux, finprod_congr (norm_ideleFiniteCoord_eq_one_of_forall_mem hu.1 hu.2),
