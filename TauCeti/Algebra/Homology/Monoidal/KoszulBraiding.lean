@@ -27,6 +27,7 @@ pairing. No commutativity is asserted for the Alexander–Whitney diagonal itsel
 * `TauCeti.NatChainComplex.ιTensorObj_koszulBraidingHom_f`: its value on each bidegree summand.
 * `TauCeti.NatChainComplex.koszulBraidingHom_naturality`: naturality in both chain complexes.
 * `TauCeti.NatChainComplex.koszulBraiding`: the signed interchange isomorphism.
+* `TauCeti.NatChainComplex.inv_koszulBraidingHom`: the inverse of the signed interchange map.
 * `TauCeti.NatChainComplex.ιTensorObj_koszulBraiding_inv_f`: its inverse on each summand.
 * `TauCeti.NatChainComplex.koszulBraidingHom_comp`: interchanging twice is the identity in a
   symmetric category.
@@ -187,6 +188,11 @@ def koszulBraiding : tensorObj A B ≅ tensorObj B A :=
 lemma koszulBraiding_hom : (koszulBraiding A B).hom = koszulBraidingHom A B := (rfl)
 
 instance : IsIso (koszulBraidingHom A B) := (koszulBraiding A B).isIso_hom
+
+/-- The categorical inverse of signed interchange is the inverse of `koszulBraiding`. -/
+@[simp]
+lemma inv_koszulBraidingHom : inv (koszulBraidingHom A B) = (koszulBraiding A B).inv :=
+  IsIso.inv_eq_of_hom_inv_id (koszulBraiding A B).hom_inv_id
 
 /-- On the bidegree-`(q, p)` summand, inverse interchange is the inverse coefficient braiding
 multiplied by `(-1)^(p*q)`, followed by the inclusion of the swapped summand. -/
