@@ -5,8 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.Algebra.Lie.Orthogonal.TypeB.DiagonalCartan
-import TauCeti.Algebra.Lie.Orthogonal.TypeB.RootGenerators
 public import TauCeti.Algebra.Lie.Orthogonal.TypeB.SumRootGenerators
 
 /-!
@@ -25,8 +23,8 @@ for the standard type-`B` Lie basis and its upper Borel.
 
 ## Main declaration
 
-* `TauCeti.lieSpan_typeBSimpleRootGenerator_eq_top`: the numbered positive and negative simple
-  root generators span the split type-`B` Lie algebra.
+* `lieSpan_range_typeBSimpleRootGenerator_union_range_typeBSimpleNegativeRootGenerator_eq_top`:
+  the numbered positive and negative simple root generators span the split type-`B` Lie algebra.
 
 ## References
 
@@ -76,7 +74,8 @@ private theorem differenceRootGenerator_mem_lieSpan_of_lt
     simpa only [hai, haj] using ha
   · let k : Fin (n + 1) := ⟨(i : ℕ) + 1, by omega⟩
     have hik : i < k := by
-      change (i : ℕ) < (i : ℕ) + 1
+      rw [Fin.lt_def]
+      simp only [k]
       omega
     have hkj : k < j := by
       rw [Fin.lt_def]
@@ -116,7 +115,8 @@ private theorem reverseDifferenceRootGenerator_mem_lieSpan_of_lt
     simpa only [hai, haj] using ha
   · let k : Fin (n + 1) := ⟨(i : ℕ) + 1, by omega⟩
     have hik : i < k := by
-      change (i : ℕ) < (i : ℕ) + 1
+      rw [Fin.lt_def]
+      simp only [k]
       omega
     have hkj : k < j := by
       rw [Fin.lt_def]
@@ -143,6 +143,7 @@ private theorem lie_typeBDifferenceRootGenerator_shortRootGenerator
     ⁅typeBDifferenceRootGenerator (K := K) i j hij,
       typeBShortRootGenerator (K := K) j⁆ = typeBShortRootGenerator i := by
   apply Subtype.ext
+  -- Expose the ambient-matrix equality so the matrix bracket lemma can rewrite it.
   simpa only [LieSubalgebra.coe_bracket, coe_typeBDifferenceRootGenerator,
     coe_typeBShortRootGenerator] using show
       ⁅typeBDifferenceRootMatrix (K := K) i j hij, typeBShortRootMatrix (K := K) j⁆ =
@@ -157,6 +158,7 @@ private theorem lie_typeBShortNegativeRootGenerator_differenceRootGenerator
       typeBDifferenceRootGenerator (K := K) j i hij.symm⁆ =
         typeBShortNegativeRootGenerator i := by
   apply Subtype.ext
+  -- Expose the ambient-matrix equality so the matrix bracket lemma can rewrite it.
   simpa only [LieSubalgebra.coe_bracket, coe_typeBShortNegativeRootGenerator,
     coe_typeBDifferenceRootGenerator] using show
       ⁅typeBShortNegativeRootMatrix (K := K) j,
@@ -297,9 +299,11 @@ private theorem decomposition [NeZero (2 : K)] (n : ℕ)
           (Sum.inr (Sum.inr i)) (Sum.inr (Sum.inl j))) •
           typeBSumNegativeRootGenerator i j) := by
   have hX := X.2
+  -- The subtype witness is skew-adjointness for `JB`; expose its matrix equation blockwise.
   change (X : Matrix (typeBIndex n) (typeBIndex n) K) ∈
     skewAdjointMatricesSubmodule (LieAlgebra.Orthogonal.JB (Fin (n + 1)) K) at hX
   rw [mem_skewAdjointMatricesSubmodule] at hX
+  -- The anisotropic coordinate vanishes, while its row determines the two short-root columns.
   have hunit :
       (X : Matrix (typeBIndex n) (typeBIndex n) K) (Sum.inl ()) (Sum.inl ()) = 0 := by
     have h := congr_fun (congr_fun hX (Sum.inl ())) (Sum.inl ())
@@ -334,6 +338,8 @@ private theorem decomposition [NeZero (2 : K)] (n : ℕ)
     have h := congr_fun (congr_fun hX (Sum.inl ())) (Sum.inr (Sum.inl i))
     simpa [LieAlgebra.Orthogonal.JB, LieAlgebra.Orthogonal.JD, Matrix.mul_apply,
       Matrix.one_apply] using h
+  -- The two off-diagonal square blocks are skew, and the final diagonal block is minus the
+  -- transpose of the first one.
   have hsum (i j : Fin (n + 1)) :
       (X : Matrix (typeBIndex n) (typeBIndex n) K)
           (Sum.inr (Sum.inl j)) (Sum.inr (Sum.inr i)) =
@@ -359,6 +365,7 @@ private theorem decomposition [NeZero (2 : K)] (n : ℕ)
     simp [LieAlgebra.Orthogonal.JB, LieAlgebra.Orthogonal.JD, Matrix.mul_apply,
       Matrix.one_apply] at h
     linear_combination h
+  -- Each antisymmetric block is recovered from the full double sum with coefficient `2⁻¹`.
   have hsumScaled (i j : Fin (n + 1)) :
       (X : Matrix (typeBIndex n) (typeBIndex n) K)
           (Sum.inr (Sum.inl i)) (Sum.inr (Sum.inr j)) =
@@ -384,40 +391,53 @@ private theorem decomposition [NeZero (2 : K)] (n : ℕ)
     coe_typeBShortNegativeRootGenerator, coe_typeBShortRootGenerator,
     coe_typeBBlockGenerator, coe_typeBSumRootGenerator,
     coe_typeBSumNegativeRootGenerator]
+  -- Check the resulting `3 × 3` block matrix in row-major order: the first row and column are
+  -- the short-root terms, the positive diagonal block is the block-generator sum, the two
+  -- off-diagonal square blocks are the sum-root terms, and the last block is the forced transpose.
   ext (a | (a | a)) (b | (b | b))
+  -- Anisotropic-anisotropic entry.
   · simpa [typeBShortRootMatrix_def, typeBShortNegativeRootMatrix_def,
       typeBSumRootMatrix_def, typeBSumNegativeRootMatrix_def, Matrix.sum_apply,
       Matrix.smul_apply, Matrix.single_apply] using hunit
+  -- Anisotropic-positive entry.
   · simp [typeBShortRootMatrix_def, typeBShortNegativeRootMatrix_def,
       typeBSumRootMatrix_def, typeBSumNegativeRootMatrix_def, Matrix.sum_apply,
       Matrix.smul_apply, Matrix.single_apply]
+  -- Anisotropic-negative entry.
   · simp [typeBShortRootMatrix_def, typeBShortNegativeRootMatrix_def,
       typeBSumRootMatrix_def, typeBSumNegativeRootMatrix_def, Matrix.sum_apply,
       Matrix.smul_apply, Matrix.single_apply]
+  -- Positive-anisotropic entry.
   · simpa [typeBShortRootMatrix_def, typeBShortNegativeRootMatrix_def,
       typeBSumRootMatrix_def, typeBSumNegativeRootMatrix_def, Matrix.sum_apply,
       Matrix.smul_apply, Matrix.single_apply, mul_comm] using hposUnit a
+  -- Positive-positive block.
   · simp [typeBShortRootMatrix_def, typeBShortNegativeRootMatrix_def,
       typeBSumRootMatrix_def, typeBSumNegativeRootMatrix_def, Matrix.sum_apply,
       Matrix.smul_apply, Matrix.single_apply, ite_and, Finset.mem_univ]
+  -- Positive-negative block.
   · simpa [typeBShortRootMatrix_def, typeBShortNegativeRootMatrix_def,
       typeBSumRootMatrix_def, typeBSumNegativeRootMatrix_def, Matrix.sum_apply,
       Matrix.smul_apply, Matrix.single_apply, ite_and, Finset.mem_univ,
       sum_sum_mul_sub_single] using hsumScaled a b
+  -- Negative-anisotropic entry.
   · simpa [typeBShortRootMatrix_def, typeBShortNegativeRootMatrix_def,
       typeBSumRootMatrix_def, typeBSumNegativeRootMatrix_def, Matrix.sum_apply,
       Matrix.smul_apply, Matrix.single_apply, mul_comm] using hnegUnit a
+  -- Negative-positive block.
   · simpa [typeBShortRootMatrix_def, typeBShortNegativeRootMatrix_def,
       typeBSumRootMatrix_def, typeBSumNegativeRootMatrix_def, Matrix.sum_apply,
       Matrix.smul_apply, Matrix.single_apply, ite_and, Finset.mem_univ,
       sum_sum_mul_sub_single] using hsumNegScaled a b
+  -- Negative-negative block.
   · simpa [typeBShortRootMatrix_def, typeBShortNegativeRootMatrix_def,
       typeBSumRootMatrix_def, typeBSumNegativeRootMatrix_def, Matrix.sum_apply,
       Matrix.smul_apply, Matrix.single_apply, sum_sum_single_swap] using hblockNeg a b
 
 /-- The positive and negative Bourbaki simple-root generators generate the split odd orthogonal
 Lie algebra of type `B`. -/
-theorem lieSpan_typeBSimpleRootGenerator_eq_top [NeZero (2 : K)] (n : ℕ) :
+theorem lieSpan_range_typeBSimpleRootGenerator_union_range_typeBSimpleNegativeRootGenerator_eq_top
+    [NeZero (2 : K)] (n : ℕ) :
     LieSubalgebra.lieSpan K (LieAlgebra.Orthogonal.typeB (Fin (n + 1)) K)
       (Set.range (typeBSimpleRootGenerator (K := K)) ∪
         Set.range (typeBSimpleNegativeRootGenerator (K := K))) = ⊤ := by
@@ -451,6 +471,7 @@ theorem lieSpan_typeBSimpleRootGenerator_eq_top [NeZero (2 : K)] (n : ℕ) :
   have hcartan : typeBDiagonalCartan K (Fin (n + 1)) ≤ S := by
     intro A hA
     let Ac : typeBDiagonalCartan K (Fin (n + 1)) := ⟨A, hA⟩
+    -- Bundle the Cartan-membership witness so its coordinate basis can expand the ambient element.
     change (Ac : LieAlgebra.Orthogonal.typeB (Fin (n + 1)) K) ∈ S
     let B := typeBDiagonalCartanBasis (K := K) (ι := Fin (n + 1))
     rw [← B.sum_repr Ac]
