@@ -123,8 +123,7 @@ theorem exists_iSupIndep_linearEquiv_of_directSum (e : M ≃ₗ[A] ⨁ i, N i) :
       (Submodule.equivMapOfInjective _ e.symm.injective _)
 
 /-- **An indecomposable direct sum has a single summand**: a module isomorphic to `⨁ i, N i` that is
-indecomposable is isomorphic to one of the `N i`. The copy of a nonzero summand and the span of
-the others are complementary, so the latter vanishes and the former is everything. -/
+indecomposable is isomorphic to one of the `N i`, namely to the unique nonzero summand. -/
 theorem IsIndecomposableModule.exists_nonempty_linearEquiv_of_directSum
     (h : IsIndecomposableModule A M) (e : M ≃ₗ[A] ⨁ i, N i) :
     ∃ i, Nonempty (M ≃ₗ[A] N i) := by
