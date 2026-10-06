@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.AdjoinRoot
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Center
 
 import Mathlib.Algebra.Algebra.Prod
+import Mathlib.Algebra.Polynomial.FieldDivision
 import Mathlib.FieldTheory.KummerPolynomial
 import TauCeti.LinearAlgebra.CliffordAlgebra.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.Grading
@@ -340,74 +341,6 @@ theorem coe_adjoinRootEquivCenterEven_root [NeZero (2 : K)] {l : List V}
       CliffordAlgebra Q) = (l.map (ι Q)).prod := by
   simp [adjoinRootEquivCenterEven]
 
-/-- If `d = t² ≠ 0`, evaluation at the two roots `t` and `-t` identifies
-`K[X] ⧸ (X² - d)` with `K × K`. -/
-private noncomputable def adjoinRootEquivProdOfSq [NeZero (2 : K)] (d t : K)
-    (ht : t ^ 2 = d) (ht0 : t ≠ 0) : AdjoinRoot (X ^ 2 - C d) ≃ₐ[K] K × K := by
-  let p : K[X] := X ^ 2 - C d
-  have htroot : p.eval₂ (Algebra.ofId K K) t = 0 := by
-    simp [p, ht]
-  have hnegroot : p.eval₂ (Algebra.ofId K K) (-t) = 0 := by
-    simp [p, ht]
-  let f : AdjoinRoot p →ₐ[K] K × K :=
-    (AdjoinRoot.liftAlgHom p (Algebra.ofId K K) t htroot).prod
-      (AdjoinRoot.liftAlgHom p (Algebra.ofId K K) (-t) hnegroot)
-  apply AlgEquiv.ofBijective f
-  constructor
-  · rw [injective_iff_map_eq_zero]
-    intro z hz
-    induction z using AdjoinRoot.induction_on with
-    | ih q =>
-      rw [AdjoinRoot.mk_eq_zero]
-      have hmonic : p.Monic := by simpa [p] using monic_X_pow_sub_C d two_ne_zero
-      rw [← modByMonic_eq_zero_iff_dvd hmonic]
-      let r := q %ₘ p
-      have hrdeg : degree r ≤ 1 := by
-        have h := degree_modByMonic_lt q hmonic
-        change degree (q %ₘ p) ≤ 1
-        rw [show p = X ^ 2 - C d by rfl, degree_X_pow_sub_C two_pos] at h
-        exact Order.le_of_lt_succ h
-      have hr : r = C (r.coeff 1) * X + C (r.coeff 0) :=
-        eq_X_add_C_of_degree_le_one hrdeg
-      have hz' : f (AdjoinRoot.mk p r) = 0 := by
-        have hmod := modByMonic_eq_sub_mul_div q p
-        have hmk : AdjoinRoot.mk p r = AdjoinRoot.mk p q := by
-          rw [show r = q %ₘ p by rfl, hmod]
-          simp
-        rw [hmk, hz]
-      have hcoords := hz'
-      simp only [f, AlgHom.prod_apply, AdjoinRoot.liftAlgHom_mk, Prod.zero_eq_mk,
-        Prod.mk.injEq] at hcoords
-      have hfirst : r.eval t = 0 := by simpa [eval₂_at_apply] using hcoords.1
-      have hsecond : r.eval (-t) = 0 := by simpa [eval₂_at_apply] using hcoords.2
-      have hb : r.coeff 1 = 0 := by
-        rw [hr] at hfirst hsecond
-        simp only [eval_add, eval_mul, eval_C, eval_X] at hfirst hsecond
-        apply mul_right_cancel₀ ht0
-        apply mul_left_cancel₀ two_ne_zero
-        linear_combination hfirst - hsecond
-      have ha : r.coeff 0 = 0 := by
-        rw [hr, hb] at hfirst
-        simpa using hfirst
-      change r = 0
-      rw [hr, hb, ha]
-      simp
-  · rintro ⟨x, y⟩
-    let a : K := (x + y) / 2
-    let b : K := (x - y) / (2 * t)
-    refine ⟨AdjoinRoot.of p a + AdjoinRoot.of p b * AdjoinRoot.root p, ?_⟩
-    apply Prod.ext
-    · simp only [f, AlgHom.prod_apply, AdjoinRoot.liftAlgHom_root, map_add, map_mul,
-        AdjoinRoot.liftAlgHom_of, Algebra.ofId_apply]
-      dsimp [a, b]
-      field_simp
-      ring
-    · simp only [f, AlgHom.prod_apply, AdjoinRoot.liftAlgHom_root, map_add, map_mul,
-        AdjoinRoot.liftAlgHom_of, Algebra.ofId_apply]
-      dsimp [a, b]
-      field_simp
-      ring
-
 /-- The centre of an even Clifford algebra is a field exactly when the signed discriminant of an
 anisotropic orthogonal spanning list is not a square. -/
 theorem isField_center_even_iff_not_isSquare_discriminant [NeZero (2 : K)] {l : List V}
@@ -452,7 +385,28 @@ theorem nonempty_center_even_algEquiv_prod_iff_isSquare_discriminant [NeZero (2 
       intro ht0
       apply hd0
       rw [ht, ht0, zero_pow two_ne_zero]
-    exact ⟨e.symm.trans (adjoinRootEquivProdOfSq d t ht.symm ht0)⟩
+    let I : Ideal K[X] := Ideal.span {X - C t}
+    let J : Ideal K[X] := Ideal.span {X - C (-t)}
+    have hcoprime : IsCoprime I J := by
+      change IsCoprime (Ideal.span {X - C t}) (Ideal.span {X - C (-t)})
+      rw [Ideal.isCoprime_span_singleton_iff]
+      apply isCoprime_X_sub_C_of_isUnit_sub
+      simpa [sub_neg_eq_add, two_mul] using (mul_ne_zero two_ne_zero ht0).isUnit
+    have hfactor : X ^ 2 - C d = (X - C t) * (X - C (-t)) := by
+      rw [ht]
+      simp only [map_neg, map_pow]
+      ring
+    have hideal : Ideal.span ({X ^ 2 - C d} : Set K[X]) = I * J := by
+      change Ideal.span ({X ^ 2 - C d} : Set K[X]) =
+        Ideal.span {X - C t} * Ideal.span {X - C (-t)}
+      rw [Ideal.span_singleton_mul_span_singleton, hfactor]
+    let crtRing := Ideal.quotientMulEquivQuotientProd I J hcoprime
+    let crtAlg : (K[X] ⧸ I * J) ≃ₐ[K] (K[X] ⧸ I) × (K[X] ⧸ J) :=
+      AlgEquiv.ofRingEquiv (f := crtRing) (by intro k; rfl)
+    exact ⟨e.symm.trans <| (Ideal.quotientEquivAlgOfEq K hideal).trans <|
+      crtAlg.trans <| AlgEquiv.prodCongr
+        (Polynomial.quotientSpanXSubCAlgEquiv t)
+        (Polynomial.quotientSpanXSubCAlgEquiv (-t))⟩
 
 end CliffordAlgebra
 
