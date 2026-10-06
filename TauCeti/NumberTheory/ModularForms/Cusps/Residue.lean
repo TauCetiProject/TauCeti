@@ -27,6 +27,14 @@ Consequently, to test cuspidality in weight two it suffices to check all but one
 cusp translation constant terms. This is the linear restriction on the boundary data in
 the weight-two cusp–Eisenstein decomposition.
 
+## Main results
+
+* `TauCeti.ModularForm.sum_width_mul_constantTermAtCuspTranslationOrbit_eq_zero`: the
+  width-weighted residue relation in weight two.
+* `TauCeti.mem_cuspFormSubmodule_iff_forall_ne_constantTermAtCuspTranslationOrbit_eq_zero`:
+  a weight-two modular form is cuspidal if and only if its constant terms vanish at every
+  cusp translation orbit except any one chosen orbit.
+
 ## References
 
 * F. Diamond and J. Shurman, *A First Course in Modular Forms*, §§3.1 and 4.2.

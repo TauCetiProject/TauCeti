@@ -42,6 +42,10 @@ Eisenstein series through their constant terms.
 * `ModularForm.mem_cuspFormSubmodule_iff_constantTermAt_eq_zero`: a modular form is cuspidal if
   and only if every translated constant term vanishes.
 * `ModularForm.ker_constantTerms`: the kernel of `constantTerms` is the cusp-form submodule.
+* `TauCeti.constantTermAtCuspTranslationOrbit_mk_mapGL`: identifies an integral coset's orbit
+  constant term with the constant term at the cusp represented by the inverse matrix.
+* `TauCeti.mem_cuspFormSubmodule_iff_constantTermAtCuspTranslationOrbit_eq_zero`: a modular form
+  is cuspidal if and only if all its cusp translation orbit constant terms vanish.
 * `TauCeti.mem_range_cuspToModFormCharSpace_iff_constantTermAt_eq_zero`: the same
   characterization inside a nebentypus space.
 * `TauCeti.range_cuspToModFormCharSpace_eq_ker_constantTerms`: the image of `S_k(N, χ)` in
