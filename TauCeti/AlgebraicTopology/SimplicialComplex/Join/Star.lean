@@ -30,7 +30,7 @@ Geom. Topol. Monogr. 2 (1999), 299--320.
 
 public section
 
-open Finset
+open Finset TauCeti
 
 namespace PreAbstractSimplicialComplex
 
@@ -41,14 +41,14 @@ variable {ι : Type*} [DecidableEq ι] {K : PreAbstractSimplicialComplex ι}
 the join of the simplex on `σ` and the link of `σ`. -/
 @[simp]
 theorem map_closedStar_eq_join (hσ : σ ∈ K) :
-    (closedStar K σ).map (fun x => if x ∈ σ then Sum.inl x else Sum.inr x) =
+    (closedStar K σ).map (partitionEmbedding (· ∈ σ)) =
       join (simplex σ) (link K σ) := by
   refine SetLike.ext fun τ => ?_
   rw [mem_map_iff]
   constructor
   · rintro ⟨ρ, hρ, rfl⟩
     obtain ⟨hne, hlink⟩ := (mem_closedStar_iff_sdiff hσ).mp hρ
-    rw [image_ite_inl_inr]
+    rw [image_partitionEmbedding]
     simp only [filter_mem_eq_inter, filter_notMem_eq_sdiff, disjSum_mem_join_iff]
     refine ⟨?_, ?_, hlink⟩
     · obtain ⟨x, hx⟩ := hne
@@ -81,7 +81,7 @@ theorem map_closedStar_eq_join (hσ : σ ∈ K) :
       · have heq : (τ.toLeft ∪ τ.toRight) ∪ σ = τ.toRight ∪ σ := by
           grind
         rwa [heq]
-    · rw [image_ite_inl_inr]
+    · rw [image_partitionEmbedding]
       have hl : (τ.toLeft ∪ τ.toRight).filter (· ∈ σ) = τ.toLeft := by
         ext x
         simp only [mem_filter, mem_union]
@@ -97,18 +97,18 @@ boundary with the link, after tagging vertices according to membership in that f
 @[simp]
 theorem map_closedStar_inf_deletion_eq_join (hσ : σ ∈ K) :
     (closedStar K σ ⊓ deletion K σ).map
-        (fun x => if x ∈ σ then Sum.inl x else Sum.inr x) =
+        (partitionEmbedding (· ∈ σ)) =
       join (simplexBoundary σ) (link K σ) := by
   refine SetLike.ext fun τ => ?_
   rw [mem_map_iff]
   constructor
   · rintro ⟨ρ, hρ, rfl⟩
     obtain ⟨-, hproper, hlink⟩ := (mem_closedStar_inf_deletion_iff_sdiff hσ).mp hρ
-    have hmem : ρ.image (fun x => if x ∈ σ then Sum.inl x else Sum.inr x) ∈
+    have hmem : ρ.image (partitionEmbedding (· ∈ σ)) ∈
         join (simplex σ) (link K σ) := by
       rw [← map_closedStar_eq_join hσ]
       exact mem_map_iff.mpr ⟨ρ, (mem_inf.mp hρ).1, rfl⟩
-    rw [image_ite_inl_inr] at hmem ⊢
+    rw [image_partitionEmbedding] at hmem ⊢
     simp only [filter_mem_eq_inter, filter_notMem_eq_sdiff, disjSum_mem_join_iff] at hmem ⊢
     refine ⟨hmem.1, ?_, hlink⟩
     rcases hmem.2.1 with h | h
@@ -122,7 +122,7 @@ theorem map_closedStar_inf_deletion_eq_join (hσ : σ ∈ K) :
     refine ⟨ρ, mem_inf.mpr ⟨hρ, mem_deletion.mpr
       ⟨closedStar_le hρ, ?_⟩⟩, rfl⟩
     intro hsub
-    rw [image_ite_inl_inr] at hτ
+    rw [image_partitionEmbedding] at hτ
     simp only [filter_mem_eq_inter, filter_notMem_eq_sdiff, disjSum_mem_join_iff] at hτ
     have heq : ρ ∩ σ = σ := inter_eq_right.mpr hsub
     rcases hτ.2.1 with h | h
