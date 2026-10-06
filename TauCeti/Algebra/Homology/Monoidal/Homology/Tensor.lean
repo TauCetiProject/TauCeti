@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
+public import Mathlib.CategoryTheory.Limits.Preserves.BifunctorCokernel
 public import Mathlib.CategoryTheory.Monoidal.Preadditive
 
 /-!
@@ -62,7 +63,9 @@ def homologyWhiskerLeftIsCokernel (T : C)
   isColimitCoforkMapOfIsColimit' (tensorLeft T) _ (K.homologyIsCokernel (c.prev p) p rfl)
 
 /-- Morphisms out of `K.homology p ⊗ L.homology q` are determined by their composites with the
-tensor product of the projections from cycles. -/
+tensor product of the projections from cycles.  This is
+`CokernelCofork.isColimitMapBifunctor.hom_ext` for the tensor product bifunctor and the cokernel
+presentations `homologyIsCokernel`, stated as an `@[ext]` lemma. -/
 @[ext]
 lemma homology_tensor_homology_hom_ext
     [PreservesColimitsOfShape WalkingParallelPair (tensorLeft (K.homology p))]
@@ -70,8 +73,14 @@ lemma homology_tensor_homology_hom_ext
     {T : C} {f g : K.homology p ⊗ L.homology q ⟶ T}
     (hfg : (K.homologyπ p ⊗ₘ L.homologyπ q) ≫ f = (K.homologyπ p ⊗ₘ L.homologyπ q) ≫ g) :
     f = g := by
-  refine Cofork.IsColimit.hom_ext (L.homologyWhiskerLeftIsCokernel q _) ?_
-  refine Cofork.IsColimit.hom_ext (K.homologyWhiskerRightIsCokernel p _) ?_
-  simpa [tensorHom_def] using hfg
+  have : PreservesColimit (parallelPair (L.toCycles (c.prev q) q) 0)
+      ((curriedTensor C).obj
+        (CokernelCofork.ofπ (K.homologyπ p) (K.toCycles_comp_homologyπ (c.prev p) p)).pt) :=
+    inferInstanceAs (PreservesColimit _ (tensorLeft (K.homology p)))
+  have : PreservesColimit (parallelPair (K.toCycles (c.prev p) p) 0)
+      ((curriedTensor C).flip.obj (L.cycles q)) :=
+    inferInstanceAs (PreservesColimit _ (tensorRight (L.cycles q)))
+  exact CokernelCofork.isColimitMapBifunctor.hom_ext (K.homologyIsCokernel (c.prev p) p rfl)
+    (L.homologyIsCokernel (c.prev q) q rfl) (curriedTensor C) (by simpa [tensorHom_def] using hfg)
 
 end HomologicalComplex
