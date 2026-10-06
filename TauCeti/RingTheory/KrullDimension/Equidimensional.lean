@@ -42,8 +42,6 @@ is a rational function field over `K`, with `L / E` algebraic.
 
 ## Main results
 
-* `TauCeti.isPureDimensional_primeSpectrum_iff`: `Spec R` is pure-dimensional of dimension `d`
-  exactly when `R ⧸ P` has dimension `d` for every minimal prime `P`.
 * `TauCeti.comap_includeRight_mem_minimalPrimes`: for `L` flat over `K`, a minimal prime of
   `L ⊗[K] A` contracts to a minimal prime of `A`.
 * `TauCeti.ringKrullDim_quotient_tensorProduct_of_mem_minimalPrimes`: for finitely generated `A`,
