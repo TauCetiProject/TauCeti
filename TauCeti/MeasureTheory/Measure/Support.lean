@@ -14,6 +14,9 @@ public import Mathlib.Dynamics.Ergodic.MeasurePreserving
 Pullback along the inclusion of a measurable conull set preserves the measure. When the
 topological support is conull, its pullback measure is positive on every nonempty open set
 of the support subtype. Supports also commute with pushforward by homeomorphisms.
+
+For a measure `μ` and a homeomorphism `e`, use `TauCeti.support_map_homeomorph μ e he`,
+where `he : Measurable e`, to identify the support of the pushforward.
 -/
 
 public section
