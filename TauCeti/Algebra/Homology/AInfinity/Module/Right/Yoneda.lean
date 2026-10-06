@@ -190,10 +190,12 @@ private theorem barDifferential_comp_mk_comp_concat (x : M) :
   refine TensorProduct.ext' fun a w ↦ ?_
   have hbw := LinearMap.congr_fun hb (a ⊗ₜ[R] w)
   simp only [LinearMap.comp_apply, TensorProduct.lift.tmul] at hbw
+  have hΔ := LinearMap.congr_fun (deconcatenation_comp_reducedInclusion_comp_prepend a) w
+  simp only [LinearMap.add_apply, LinearMap.comp_apply, TensorProduct.mk_apply] at hΔ
   rw [barDifferential_eq, gradedCoderiv_def, yonedaBar_eq, Comodule.Hom.cofreeLift_toLinearMap]
   simp only [LinearMap.add_apply, LinearMap.comp_apply, TensorProduct.mk_apply,
     TensorProduct.lift.tmul, LinearMap.lTensor_tmul, LinearMap.rTensor_tmul,
-    deconcatenation_reducedInclusion_prepend, TensorProduct.tmul_add, map_add,
+    hΔ, TensorProduct.tmul_add, map_add,
     LinearEquiv.coe_coe, TensorProduct.assoc_symm_tmul, hbw, Comodule.cofree_coact_tmul, hcut, hd,
     LinearMap.congr_fun (comul_eq_deconcatenation R A)]
 
@@ -320,7 +322,7 @@ the module differential `m₁` to the morphism complex from the free module of r
 Its component of degree `p` is `TauCeti.AInfinityRightModule.yonedaCochain`. -/
 noncomputable def yonedaComplexHom :
     gradedCochainComplex MM.grading.piece MM.differential MM.isHomogeneous_differential
-        (fun _ x ↦ MM.differential_differential x) ⟶
+        (fun _ x ↦ LinearMap.congr_fun MM.differential_comp_self_eq_zero x) ⟶
       homComplex AA.toRightModule MM where
   f p := eqToHom (gradedCochainComplex_X p) ≫ ModuleCat.ofHom (MM.yonedaCochain p) ≫
     eqToHom (homComplex_X AA.toRightModule MM p).symm
@@ -331,7 +333,7 @@ noncomputable def yonedaComplexHom :
     have hd := congrArg (fun φ ↦ φ.hom (MM.yonedaCochain i x))
       (homComplex_d AA.toRightModule MM i)
     have key := gradedCochainComplex_d_apply (hdeg := MM.isHomogeneous_differential)
-      (hsq := fun _ x ↦ MM.differential_differential x) i x
+      (hsq := fun _ x ↦ LinearMap.congr_fun MM.differential_comp_self_eq_zero x) i x
     -- The `eqToHom` of `gradedCochainComplex_X` is cancelled by its inverse.
     rw [show (eqToHom (gradedCochainComplex_X i).symm) x = y from
       (eqToIso (gradedCochainComplex_X i)).hom_inv_id_apply y] at key

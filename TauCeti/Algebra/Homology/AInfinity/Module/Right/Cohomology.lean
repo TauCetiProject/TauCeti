@@ -75,11 +75,6 @@ theorem differential_comp_self_eq_zero (MM : AInfinityRightModule AA M) :
   simp only [LinearMap.comp_apply, differential_apply, LinearMap.zero_apply]
   exact MM.stasheff_arity_one x _ _
 
-/-- The module differential squares to zero, elementwise. -/
-theorem differential_differential (MM : AInfinityRightModule AA M) (x : M) :
-    MM.differential (MM.differential x) = 0 :=
-  LinearMap.congr_fun MM.differential_comp_self_eq_zero x
-
 /-- The cycles of a right `A∞` module are the kernel of its unary operation. -/
 def cycles (MM : AInfinityRightModule AA M) : Submodule R M :=
   LinearMap.ker MM.differential

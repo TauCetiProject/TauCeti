@@ -33,8 +33,8 @@ splices, which is the form in which coderivations are expanded.
   and the positive-length cases.
 * `TauCeti.TensorWords.prepend_subword` and `TauCeti.TensorWords.prepend_subword_eq_splice`:
   prepending to a block of a tuple.
-* `TauCeti.TensorWords.deconcatenation_reducedInclusion_prepend`: deconcatenating a word with a
-  prepended letter.
+* `TauCeti.TensorWords.deconcatenation_comp_reducedInclusion_comp_prepend`: deconcatenating a
+  word with a prepended letter.
 * `TauCeti.TensorWords.prepend_mem_gradedPiece` and
   `TauCeti.TensorWords.isHomogeneous_lift_prepend`: prepending adds total letter degrees.
 * `TauCeti.TensorWords.subword_tail`: blocks of the tail of a tuple.
@@ -160,15 +160,6 @@ theorem deconcatenation_comp_reducedInclusion_comp_prepend (a : M) :
   rw [h, reducedInclusion_subword R _ (Nat.succ_pos j)]
   congr 2
   omega
-
-/-- Deconcatenating a word `a w` with a prepended letter, evaluated: if `Δ w = ∑ w₁ ⊗ w₂`, then
-`Δ (a w) = 1 ⊗ a w + ∑ a w₁ ⊗ w₂`. -/
-theorem deconcatenation_reducedInclusion_prepend (a : M) (w : TensorWords R M) :
-    deconcatenation R M (reducedInclusion R M (prepend R M a w)) =
-      (1 : TensorWords R M) ⊗ₜ[R] reducedInclusion R M (prepend R M a w) +
-        (reducedInclusion R M ∘ₗ prepend R M a).rTensor (TensorWords R M)
-          (deconcatenation R M w) :=
-  LinearMap.congr_fun (deconcatenation_comp_reducedInclusion_comp_prepend a) w
 
 end TensorWords
 
