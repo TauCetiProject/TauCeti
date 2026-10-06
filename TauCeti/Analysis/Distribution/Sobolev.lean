@@ -18,7 +18,7 @@ defined by integer-order weak derivatives.
 The identity for the order-two Bessel potential retains Mathlib's Fourier normalization:
 it is `1 - (2π)⁻² Δ`.
 
-Use `TauCeti.besselPotential_two_eq f` for the operator identity and
+Use `TauCeti.besselPotential_two_apply f` for the operator identity and
 `TauCeti.memSobolev_add_one_iff f b s` for the regularity criterion.
 
 ## References
@@ -44,7 +44,7 @@ section Normed
 variable [NormedSpace ℂ F]
 
 /-- The order-two Bessel potential is `1 - (2π)⁻² Δ`, with Mathlib's Fourier convention. -/
-theorem besselPotential_two_eq (f : TemperedDistribution E F) :
+theorem besselPotential_two_apply (f : TemperedDistribution E F) :
     besselPotential E F 2 f = f - ((2 * π) ^ 2)⁻¹ • Δ f := by
   have hπ : (2 * π) ^ 2 ≠ 0 := by positivity
   rw [laplacian_eq_fourierMultiplierCLM, smul_smul]
@@ -89,7 +89,7 @@ theorem memSobolev_add_one_iff {ι : Type*} [Fintype ι]
     have h := hlow.sub (hhigh.smul (((2 * π) ^ 2)⁻¹ : ℝ))
     rw [← map_smul, ← map_sub] at h
     simp only [Complex.coe_smul] at h
-    rw [← besselPotential_two_eq, besselPotential_besselPotential_apply,
+    rw [← besselPotential_two_apply, besselPotential_besselPotential_apply,
       memSobolev_besselPotential_iff] at h
     convert h using 1; ring
 
