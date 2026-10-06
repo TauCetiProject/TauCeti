@@ -12,8 +12,9 @@ public import Mathlib.RingTheory.RootsOfUnity.Minpoly
 # Basic results on roots of unity
 
 This file records a criterion for a root of unity congruent to `1` modulo an ideal to equal `1`,
-and counts the square roots of unity in a domain in which `2 ≠ 0`. It also records that roots of
-unity, and hence the values of a character of a finite group, are integral over `ℤ`.
+and counts the square roots of unity in a domain in which `2 ≠ 0`. For a prime `p` it relates the
+triviality of the `p`th roots of unity to the absence of a primitive one. It also records that
+roots of unity, and hence the values of a character of a finite group, are integral over `ℤ`.
 
 ## Main results
 
@@ -29,6 +30,8 @@ unity, and hence the values of a character of a finite group, are integral over 
   unity.
 * `IsPrimitiveRoot.neg_of_odd`: when `2 ≠ 0`, the negative of a primitive root of unity of odd
   order `n` is a primitive `2n`-th root of unity.
+* `TauCeti.rootsOfUnity_eq_bot_iff`: for a prime `p`, the `p`th roots of unity are trivial
+  exactly when there is no primitive `p`th root of unity.
 -/
 
 public section
@@ -88,5 +91,19 @@ theorem _root_.IsPrimitiveRoot.neg_of_odd {ζ : R} {n : ℕ} (hζ : IsPrimitiveR
   rw [IsPrimitiveRoot.iff_orderOf, neg_eq_neg_one_mul,
     (Commute.all _ _).orderOf_mul_eq_mul_orderOf_of_coprime, ← hneg.eq_orderOf, ← hζ.eq_orderOf]
   rwa [← hneg.eq_orderOf, ← hζ.eq_orderOf, Nat.coprime_two_left]
+
+/-- For a prime `p`, the `p`th roots of unity of a commutative monoid are trivial exactly when it
+has no primitive `p`th root of unity: a `p`th root of unity other than `1` has order `p`. -/
+theorem rootsOfUnity_eq_bot_iff {M : Type*} [CommMonoid M] {p : ℕ} [Fact p.Prime] :
+    rootsOfUnity p M = ⊥ ↔ ¬ ∃ ζ : M, IsPrimitiveRoot ζ p := by
+  refine ⟨fun h ⟨ζ, hζ⟩ ↦ ?_, fun h ↦ eq_bot_iff.2 fun u hu ↦ Subgroup.mem_bot.2 <|
+    by_contra fun hu1 ↦ h ⟨u, IsPrimitiveRoot.coe_units_iff.2 <|
+      IsPrimitiveRoot.iff_orderOf.2 (orderOf_eq_prime ((mem_rootsOfUnity p u).1 hu) hu1)⟩⟩
+  have hp := (Fact.out : p.Prime).one_lt
+  have hu : (hζ.isUnit (by omega)).unit ∈ rootsOfUnity p M :=
+    (mem_rootsOfUnity p _).2 (Units.ext (by simp [hζ.pow_eq_one]))
+  rw [h, Subgroup.mem_bot, Units.ext_iff, IsUnit.unit_spec, Units.val_one] at hu
+  rw [hζ.eq_orderOf, hu, orderOf_one] at hp
+  exact lt_irrefl 1 hp
 
 end TauCeti
