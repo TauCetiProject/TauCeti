@@ -147,18 +147,25 @@ private theorem norm_hyperplaneTestFunction_le (a : ℝ)
     ‖hyperplaneTestFunctionₗ a φ‖ ≤ ‖W1p.ofTestFunctionₗ volume ⊤ 2 φ‖ := by
   have henergy : (∫ x : WithLp 2 (ℝ × E), φ x ^ 2 + ‖fderiv ℝ φ x‖ ^ 2) =
       ‖W1p.ofTestFunctionₗ volume ⊤ 2 φ‖ ^ 2 := by
-    rw [W1p.norm_sq_eq_norm_value_sq_add_norm_gradient_sq,
-      W1p.value_ofTestFunctionₗ, W1p.gradient_ofTestFunctionₗ,
-      ← Lp.integral_norm_sq_eq_norm_sq, ← Lp.integral_norm_sq_eq_norm_sq,
-      ← integral_add
-        ((Lp.memLp (testFunctionLp (mu := volume) 2 φ)).integrable_norm_pow (by norm_num))
-        ((Lp.memLp (gradientTestFunctionLp (mu := volume) 2 φ)).integrable_norm_pow (by norm_num))]
-    have hvalue := testFunctionLp_apply_ae (mu := volume) 2 φ
-    have hgrad := gradientTestFunctionLp_apply_ae (mu := volume) 2 φ
-    simp only [Opens.coe_top, Measure.restrict_univ] at *
-    apply integral_congr_ae
-    filter_upwards [hvalue, hgrad] with x hv hg
-    simp only [hv, hg, Real.norm_eq_abs, sq_abs, norm_gradient_eq_norm_fderiv]
+    rw [W1p.norm_sq_eq_norm_value_sq_add_norm_gradient_sq]
+    simp only [W1p.value_ofTestFunctionₗ, W1p.gradient_ofTestFunctionₗ]
+    calc
+      _ = ∫ x : WithLp 2 (ℝ × E),
+          ‖testFunctionLp (mu := volume) 2 φ x‖ ^ 2 +
+            ‖gradientTestFunctionLp (mu := volume) 2 φ x‖ ^ 2 := by
+        have hvalue := testFunctionLp_apply_ae (mu := volume) 2 φ
+        have hgrad := gradientTestFunctionLp_apply_ae (mu := volume) 2 φ
+        simp only [Opens.coe_top, Measure.restrict_univ] at hvalue hgrad
+        apply integral_congr_ae
+        filter_upwards [hvalue, hgrad] with x hv hg
+        simp only [hv, hg, Real.norm_eq_abs, sq_abs, norm_gradient_eq_norm_fderiv]
+      _ = _ := by
+        rw [← Lp.integral_norm_sq_eq_norm_sq, ← Lp.integral_norm_sq_eq_norm_sq]
+        simpa only [Opens.coe_top, Measure.restrict_univ]
+          using integral_add
+            ((Lp.memLp (testFunctionLp (mu := volume) 2 φ)).integrable_norm_pow (by norm_num))
+            ((Lp.memLp (gradientTestFunctionLp (mu := volume) 2 φ)).integrable_norm_pow
+              (by norm_num))
   apply (sq_le_sq₀ (norm_nonneg _) (norm_nonneg _)).mp
   rw [← Lp.integral_norm_sq_eq_norm_sq]
   calc
