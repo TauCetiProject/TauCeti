@@ -94,7 +94,7 @@ end Semiring
 section Field
 
 variable {k : Type u} {A : Type v} {M : Type w} {N : Type t} {P : Type w'} {Q : Type t'}
-  [Field k] [Ring A] [Algebra k A]
+  [Field k] [Semiring A] [Algebra k A]
   [AddCommGroup M] [Module Aᵐᵒᵖ M] [Module k M] [IsScalarTower k Aᵐᵒᵖ M]
   [AddCommGroup N] [Module A N] [Module k N] [IsScalarTower k A N]
   [AddCommGroup P] [Module Aᵐᵒᵖ P] [Module k P] [IsScalarTower k Aᵐᵒᵖ P]

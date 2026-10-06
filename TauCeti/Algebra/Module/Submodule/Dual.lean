@@ -62,6 +62,18 @@ theorem mem_moduleDualAnnihilator_iff (S : Submodule Aᵐᵒᵖ M) (n : N) :
   ⟨fun hn ↦ (Submodule.mem_dualAnnihilator _).mp hn,
     fun hn ↦ (Submodule.mem_dualAnnihilator _).mpr hn⟩
 
+/-- Annihilation takes a sum of right submodules to the intersection of their annihilators. -/
+@[simp]
+theorem moduleDualAnnihilator_sup (S T : Submodule Aᵐᵒᵖ M) :
+    moduleDualAnnihilator e he (S ⊔ T) =
+      moduleDualAnnihilator e he S ⊓ moduleDualAnnihilator e he T := by
+  ext n
+  -- Use the defining carriers to avoid requiring a scalar tower on the target `N`.
+  change n ∈ ((S ⊔ T).restrictScalars k).dualAnnihilator.comap e.toLinearMap ↔
+    n ∈ (S.restrictScalars k).dualAnnihilator.comap e.toLinearMap ⊓
+      (T.restrictScalars k).dualAnnihilator.comap e.toLinearMap
+  rw [Submodule.restrictScalars_sup, Submodule.dualAnnihilator_sup_eq, Submodule.comap_inf]
+
 /-- The annihilator of the zero submodule is the whole dual module. -/
 @[simp]
 theorem moduleDualAnnihilator_bot :
@@ -93,6 +105,18 @@ theorem mem_moduleDualCoannihilator_iff (T : Submodule A N) (m : M) :
     exact (Submodule.mem_dualCoannihilator _).mp hm _ ⟨n, hn, rfl⟩
   · intro hm
     exact (Submodule.mem_dualCoannihilator _).mpr fun _ ⟨n, hn, hφ⟩ ↦ hφ ▸ hm n hn
+
+/-- Coannihilation takes a sum of left submodules to the intersection of their coannihilators. -/
+@[simp]
+theorem moduleDualCoannihilator_sup (T U : Submodule A N) :
+    moduleDualCoannihilator e he (T ⊔ U) =
+      moduleDualCoannihilator e he T ⊓ moduleDualCoannihilator e he U := by
+  ext m
+  -- Use the defining carriers to avoid requiring a scalar tower on the target `M`.
+  change m ∈ (((T ⊔ U).restrictScalars k).map e.toLinearMap).dualCoannihilator ↔
+    m ∈ ((T.restrictScalars k).map e.toLinearMap).dualCoannihilator ⊓
+      ((U.restrictScalars k).map e.toLinearMap).dualCoannihilator
+  rw [Submodule.restrictScalars_sup, Submodule.map_sup, Submodule.dualCoannihilator_sup_eq]
 
 /-- Every vector is annihilated by the zero submodule of the dual. -/
 @[simp]
@@ -129,11 +153,34 @@ end Semiring
 section Field
 
 variable {k : Type u} {A : Type v} {M : Type w} {N : Type t}
-  [Field k] [Ring A] [Algebra k A]
+  [Field k] [Semiring A] [Algebra k A]
   [AddCommGroup M] [Module Aᵐᵒᵖ M] [Module k M] [IsScalarTower k Aᵐᵒᵖ M]
   [AddCommGroup N] [Module A N] [Module k N] [IsScalarTower k A N]
   (e : N ≃ₗ[k] Module.Dual k M)
   (he : ∀ (a : A) (n : N) (m : M), e (a • n) m = e n (MulOpposite.op a • m))
+
+/-- Over a field, annihilation takes an intersection to the sum of the annihilators.
+No finite-dimensionality assumption is needed. -/
+@[simp]
+theorem moduleDualAnnihilator_inf (S T : Submodule Aᵐᵒᵖ M) :
+    moduleDualAnnihilator e he (S ⊓ T) =
+      moduleDualAnnihilator e he S ⊔ moduleDualAnnihilator e he T := by
+  apply Submodule.restrictScalars_injective k
+  simp only [moduleDualAnnihilator_restrictScalars, Submodule.restrictScalars_inf,
+    Submodule.restrictScalars_sup, Subspace.dualAnnihilator_inf_eq]
+  simp only [Submodule.comap_equiv_eq_map_symm, Submodule.map_sup]
+
+/-- Coannihilation takes an intersection of finite-dimensional left submodules to the sum
+of their coannihilators. The original module need not be finite-dimensional. -/
+@[simp]
+theorem moduleDualCoannihilator_inf (T U : Submodule A N)
+    [FiniteDimensional k (T.restrictScalars k)] [FiniteDimensional k (U.restrictScalars k)] :
+    moduleDualCoannihilator e he (T ⊓ U) =
+      moduleDualCoannihilator e he T ⊔ moduleDualCoannihilator e he U := by
+  apply Submodule.restrictScalars_injective k
+  simp only [moduleDualCoannihilator_restrictScalars, Submodule.restrictScalars_inf,
+    Submodule.restrictScalars_sup, Submodule.map_inf _ e.injective,
+    Subspace.dualCoannihilator_inf]
 
 /-- Double annihilation recovers a right submodule. This direction does not need finite
 dimensionality. -/
@@ -199,16 +246,13 @@ theorem isEssential_moduleDualAnnihilator_iff (S : Submodule Aᵐᵒᵖ M) :
     IsEssential (moduleDualAnnihilator e he S) ↔ IsSuperfluous S := by
   let E := moduleDualSubmoduleOrderIso e he
   have htop : moduleDualAnnihilator e he ⊤ = ⊥ := congrArg OrderDual.ofDual E.map_top
-  have hsup (T : Submodule Aᵐᵒᵖ M) : moduleDualAnnihilator e he (S ⊔ T) =
-      moduleDualAnnihilator e he S ⊓ moduleDualAnnihilator e he T :=
-    congrArg OrderDual.ofDual (E.map_sup S T)
   rw [isEssential_iff, isSuperfluous_iff]
   constructor
   · intro h T hT
     apply E.injective
     exact congrArg OrderDual.toDual
-      ((h _ ((hsup T).symm.trans ((congrArg (moduleDualAnnihilator e he) hT).trans htop))).trans
-        htop.symm)
+      ((h _ ((moduleDualAnnihilator_sup e he S T).symm.trans
+        ((congrArg (moduleDualAnnihilator e he) hT).trans htop))).trans htop.symm)
   · intro h T hT
     obtain ⟨U, hU⟩ := E.surjective (OrderDual.toDual T)
     have hann : moduleDualAnnihilator e he U = T := congrArg OrderDual.ofDual hU
@@ -216,7 +260,8 @@ theorem isEssential_moduleDualAnnihilator_iff (S : Submodule Aᵐᵒᵖ M) :
       rw [hann]
       exact hT
     have hsum' : moduleDualAnnihilator e he (S ⊔ U) = moduleDualAnnihilator e he ⊤ :=
-      (hsup U).trans (hmeet.trans htop.symm)
+      (moduleDualAnnihilator_sup e he S U).trans
+        (hmeet.trans htop.symm)
     have hsum : S ⊔ U = ⊤ := E.injective (congrArg OrderDual.toDual hsum')
     rw [← hann, h U hsum, htop]
 
