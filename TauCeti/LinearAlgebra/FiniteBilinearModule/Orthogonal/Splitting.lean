@@ -181,8 +181,7 @@ private theorem exists_pairing_eq_of_addOrderOf_eq_prime_pow {p k : ℕ} [hp : F
 
 /-- **A pair detecting the top exponent of a primary part.** In a nondegenerate finite bilinear
 module whose order is divisible by a prime `p`, there are `x` and `y`, both killed by `p^{k+1}`,
-with `p^k b(x, y) ≠ 0`. In particular `x` and `y` both have order exactly `p^{k+1}`, the largest
-order of an element of `p`-power order. -/
+with `p^k b(x, y) ≠ 0`. In particular `x` and `y` both have order exactly `p^{k+1}`. -/
 theorem exists_nsmul_pairing_ne_zero_of_dvd_card {p : ℕ} [hp : Fact p.Prime]
     (hA : A.IsNondegenerate) (hpA : p ∣ Nat.card A) :
     ∃ (x y : A) (k : ℕ), p ^ (k + 1) • x = 0 ∧ p ^ (k + 1) • y = 0 ∧
