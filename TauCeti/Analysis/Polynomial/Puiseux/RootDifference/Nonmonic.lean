@@ -92,8 +92,9 @@ private theorem eventually_discr_normalized_splitting_eq {d a c : ℕ}
 /-- Differences of nonmonic root branches are Laurent powers times analytic units when the
 leading coefficient and discriminant are centered powers times analytic units. The scaled
 roots `s i` must extend analytically and split the integral normalization off the hyperplane.
-The original roots may have poles there. The exponent is constant in the parameters, and the
-unit is nonzero on a neighborhood including the hyperplane. -/
+Only the selected pair of original roots must satisfy the scaling identities, and they may
+have poles there. The exponent is constant in the parameters, and the unit is nonzero on a
+neighborhood including the hyperplane. -/
 theorem exists_root_sub_eq_zpow_mul_unit {d a c : ℕ}
     {P : E × 𝕜 → Polynomial 𝕜} {r s : Fin d → E × 𝕜 → 𝕜} {x₀ : E} {y₀ : 𝕜}
     {u v : E × 𝕜 → 𝕜} (hs : ∀ i, AnalyticAt 𝕜 (s i) (x₀, y₀))
@@ -105,9 +106,9 @@ theorem exists_root_sub_eq_zpow_mul_unit {d a c : ℕ}
       (P p).coeff d = (p.2 - y₀) ^ c * v p)
     (hdiscr : ∀ᶠ p in 𝓝 (x₀, y₀), p.2 ≠ y₀ →
       (P p).discr = (p.2 - y₀) ^ a * u p)
-    (hscale : ∀ᶠ p in 𝓝 (x₀, y₀), p.2 ≠ y₀ →
-      ∀ i, (P p).coeff d * r i p = s i p)
-    {i j : Fin d} (hij : i ≠ j) :
+    {i j : Fin d} (hscale : ∀ᶠ p in 𝓝 (x₀, y₀), p.2 ≠ y₀ →
+      (P p).coeff d * r i p = s i p ∧ (P p).coeff d * r j p = s j p)
+    (hij : i ≠ j) :
     ∃ b : ℤ, ∃ w : E × 𝕜 → 𝕜,
       AnalyticAt 𝕜 w (x₀, y₀) ∧ w (x₀, y₀) ≠ 0 ∧
         ∀ᶠ p in 𝓝 (x₀, y₀), w p ≠ 0 ∧
@@ -128,7 +129,7 @@ theorem exists_root_sub_eq_zpow_mul_unit {d a c : ℕ}
   have ht : p.2 - y₀ ≠ 0 := sub_ne_zero.mpr hp
   have hl : (P p).coeff d ≠ 0 := hlp hp ▸ mul_ne_zero (pow_ne_zero _ ht) hvp
   have hscaled : (P p).coeff d * (r i p - r j p) = s i p - s j p := by
-    rw [mul_sub, hsp hp i, hsp hp j]
+    rw [mul_sub, (hsp hp).1, (hsp hp).2]
   have hr : r i p - r j p = (s i p - s j p) / (P p).coeff d :=
     (eq_div_iff hl).mpr (by simpa only [mul_comm] using hscaled)
   rw [hr, hep, hlp hp, zpow_natCast_sub_natCast₀ ht]
