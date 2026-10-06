@@ -19,7 +19,7 @@ exactly of differences of restrictions from the two covering objects. If first
 cohomology vanishes on those two objects, this gives an additive equivalence from
 sections on the intersection modulo those differences to first cohomology.
 
-For two open subsets of a space this is the degree-one Čech comparison for an acyclic
+For two open subsets of a space this computes first cohomology from a two-member
 cover. Only vanishing in degree one on the two members is needed; neither vanishing on
 the intersection nor acyclicity in higher degrees is assumed. The class of a section
 is characterized by the Mayer–Vietoris connecting homomorphism, fixing its sign.
@@ -122,7 +122,7 @@ lemma mayerVietorisSectionClass_eq_zero_iff (s : F.obj.obj (op S.X₁)) :
     rw [← difference_eq_fromBiprod]
     simp [x₂, x₃]
 
-/-- The Čech coboundaries are exactly the kernel of the connecting class map. -/
+/-- Differences of local restrictions are exactly the kernel of the connecting class map. -/
 lemma range_mayerVietorisSectionsDifference :
     (mayerVietorisSectionsDifference S F).range = (mayerVietorisSectionClass S F).ker := by
   ext s

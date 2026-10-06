@@ -9,7 +9,7 @@ public import TauCeti.AlgebraicGeometry.Cohomology.MayerVietoris
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.SectionsQuotient
 
 /-!
-# The two-open Čech description of first cohomology
+# First cohomology as a quotient of sections on a two-open cover
 
 For a sheaf of modules `M` and a cover `X = U ∪ V` with vanishing `H¹(U, M)` and
 `H¹(V, M)`, this file identifies `H¹(X, M)` additively with
@@ -19,8 +19,8 @@ For a sheaf of modules `M` and a cover `X = U ∪ V` with vanishing `H¹(U, M)` 
 The equivalence is induced by the Mayer–Vietoris connecting map. The coefficients
 need not be quasi-coherent, and no vanishing on the overlap is required. Thus the
 same computation applies whenever acyclicity of the two members is available.
-This is a two-member comparison in degree one, not the general Čech comparison
-for arbitrary affine covers.
+This computes first cohomology directly from the Mayer–Vietoris sequence; it does
+not identify a Čech complex with derived cohomology.
 
 Use `TauCeti.AlgebraicGeometry.sectionsQuotientEquivCohomologyOne M U V hUV hU hV`
 for the comparison, where `hUV` states that the opens cover and `hU`, `hV` state
@@ -59,7 +59,7 @@ lemma mayerVietorisSectionsDifference_apply (s : Γ(M, U)) (t : Γ(M, V)) :
   TauCeti.CategoryTheory.mayerVietorisSectionsDifference_apply
     (Opens.mayerVietorisSquare U V) ((_root_.SheafOfModules.toSheaf X.ringCatSheaf).obj M) s t
 
-/-- The two-open Čech comparison in degree one: if the members cover the scheme and
+/-- The two-open quotient description in degree one: if the members cover the scheme and
 have vanishing first cohomology, the quotient of overlap sections by coboundaries is
 first cohomology of the scheme. -/
 def sectionsQuotientEquivCohomologyOne (hUV : U ⊔ V = ⊤)
@@ -71,7 +71,7 @@ def sectionsQuotientEquivCohomologyOne (hUV : U ⊔ V = ⊤)
       (eqToIso (congrArg (cohomologyOn M 1) hUV)).addCommGroupIsoToAddEquiv.trans
         (cohomologyOnTopIso M 1).addCommGroupIsoToAddEquiv
 
-/-- The Čech comparison sends an overlap section to its Mayer–Vietoris connecting class,
+/-- The quotient comparison sends an overlap section to its Mayer–Vietoris connecting class,
 transported from the union to the whole scheme. -/
 @[simp]
 lemma sectionsQuotientEquivCohomologyOne_mk (hUV : U ⊔ V = ⊤)
