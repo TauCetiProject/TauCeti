@@ -259,6 +259,11 @@ noncomputable def realCliffordTwoTwoEvenEquivMatrixProd :
       Matrix (Fin 2) (Fin 2) ℝ × Matrix (Fin 2) (Fin 2) ℝ :=
   realCliffordTwoTwoEvenEquivTwoOne.trans realCliffordTwoOneEquivMatrixProd
 
+instance instIsDedekindFiniteMonoidRealCliffordTwoTwoEven :
+    IsDedekindFiniteMonoid (CliffordAlgebra.even (realCliffordForm 2 2)) :=
+  .of_injective realCliffordTwoTwoEvenEquivMatrixProd
+    realCliffordTwoTwoEvenEquivMatrixProd.injective
+
 /-- The matrix coordinates of a product of two generators in the split model of `Cl⁺(2,2)`. -/
 @[simp]
 theorem realCliffordTwoTwoEvenEquivMatrixProd_ι (m n : Fin (2 + 2) → ℝ) :

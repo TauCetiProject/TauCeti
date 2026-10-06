@@ -46,6 +46,9 @@ open scoped TensorProduct
 
 noncomputable section
 
+instance (p : Nat.Primes) : StrongRankCondition ℚ_[p] :=
+  IsNoetherianRing.strongRankCondition ℚ_[p]
+
 /-- The canonical invertibility witness for two over the rationals. -/
 local instance spinorNormImageInvertibleTwoRat : Invertible (2 : ℚ) :=
   invertibleOfNonzero two_ne_zero

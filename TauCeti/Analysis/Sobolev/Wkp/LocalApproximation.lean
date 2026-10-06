@@ -76,6 +76,7 @@ private theorem gradient_smoothField (u : Wkp mu Omega p 1)
   apply (InnerProductSpace.toDual ℝ E).injective
   rw [toDual_gradient]
   have hd := fderiv_indicator_convolution_normed_value u phi x hx
+  simp only [value_one] at ⊢
   rw [convolution_flip, convolution_flip] at hd
   rw [smoothField, hd]
   have hmem := (memLp_indicator_iff_restrict Omega.isOpen.measurableSet.nullMeasurableSet).2

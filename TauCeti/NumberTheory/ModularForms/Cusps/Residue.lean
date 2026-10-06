@@ -78,7 +78,6 @@ theorem constantTermAtCuspTranslationOrbit_mk (f : F)
   exact valueAtInfty_quotientFunc_TSL_zpow_smul f q j
 
 /-- At the orbit representing infinity, the constant term is the value at infinity of `f`. -/
-@[simp]
 theorem constantTermAtCuspTranslationOrbit_mk_one (f : F) :
     constantTermAtCuspTranslationOrbit f
         (⟦(QuotientGroup.mk 1 : 𝒮ℒ ⧸ 𝒢.subgroupOf 𝒮ℒ)⟧ : CuspTranslationOrbit 𝒢) =
@@ -154,15 +153,14 @@ theorem constantTerm_eq_zero_of_forall_ne (f : F) (c : CuspTranslationOrbit 𝒢
 
 end TauCeti.ModularForm
 
-namespace TauCeti.ModularForm
+namespace TauCeti
 
-open _root_.ModularForm _root_.Matrix.SpecialLinearGroup
+open TauCeti.ModularForm _root_.ModularForm _root_.Matrix.SpecialLinearGroup
 
 variable {𝒢 : Subgroup (GL (Fin 2) ℝ)} [𝒢.IsArithmetic] [𝒢.HasDetOne] {k : ℤ}
 
 /-- The constant term at the orbit of an integral matrix coset is the constant term at the
 cusp represented by its inverse. -/
-@[simp]
 theorem constantTermAtCuspTranslationOrbit_mk_mapGL (f : ModularForm 𝒢 k) (γ : SL(2, ℤ)) :
     TauCeti.ModularForm.constantTermAtCuspTranslationOrbit f
         (⟦(QuotientGroup.mk ((mapGL ℝ).rangeRestrict γ) :
@@ -207,4 +205,4 @@ theorem mem_cuspFormSubmodule_iff_forall_ne_constantTerm_eq_zero (f : ModularFor
     exact constantTerm_eq_zero_of_forall_ne f c h
   · exact h c' hc'
 
-end TauCeti.ModularForm
+end TauCeti

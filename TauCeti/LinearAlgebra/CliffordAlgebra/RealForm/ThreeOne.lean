@@ -305,6 +305,11 @@ noncomputable def realCliffordThreeOneEvenEquivComplexMatrix :
       Matrix (Fin 2) (Fin 2) ℂ :=
   realCliffordThreeOneEvenEquivOneTwo.trans realCliffordOneTwoEquivComplexMatrix
 
+instance instIsDedekindFiniteMonoidRealCliffordThreeOneEven :
+    IsDedekindFiniteMonoid (CliffordAlgebra.even (realCliffordForm 3 1)) :=
+  .of_injective realCliffordThreeOneEvenEquivComplexMatrix
+    realCliffordThreeOneEvenEquivComplexMatrix.injective
+
 /-- The complex matrix coordinates of a product of two generators of `Cl⁺(3,1)`. -/
 @[simp]
 theorem realCliffordThreeOneEvenEquivComplexMatrix_ι
