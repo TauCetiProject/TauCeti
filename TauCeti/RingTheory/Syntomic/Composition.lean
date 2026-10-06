@@ -18,17 +18,13 @@ For a scalar tower `R → S → T`, standard syntomic algebras of relative dimen
 algebraic composition theorem for the local complete-intersection charts of syntomic
 morphisms. There are no Noetherian or nontriviality assumptions on the rings in the tower.
 
-The composed presentation adds both generators and relations. Over a residue field,
-the fibrewise dimension inequality gives the upper bound `n + m`; Krull's height theorem
-applied to that presentation gives the lower bound. Every nonempty fibre of the composite
-therefore has dimension `n + m`, even when either map also has empty fibres.
+Every nonempty fibre of the composite has dimension `n + m`, even when either map also
+has empty fibres.
 
 ## References
 
 * [Stacks Project, Section 10.136, Tag 00SK](https://stacks.math.columbia.edu/tag/00SK):
   relative global complete intersections and standard syntomic ring maps.
-* The proof uses Mathlib's `Algebra.Presentation.comp` and tensor-product base-change
-  equivalences, together with the existing fibrewise dimension inequality.
 -/
 
 public section

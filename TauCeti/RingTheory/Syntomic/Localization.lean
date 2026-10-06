@@ -51,13 +51,16 @@ namespace TauCeti
 
 namespace Algebra.IsStandardSyntomicOfRelativeDimension
 
+universe u v w
+
 /-- A localization away from one element is standard syntomic of relative dimension zero. -/
 theorem localization_away {R : Type*} [CommRing R] (S : Type*) [CommRing S] [Algebra R S]
     (r : R) [IsLocalization.Away r S] : IsStandardSyntomicOfRelativeDimension 0 R S := by
   have := _root_.Algebra.IsStandardSmoothOfRelativeDimension.localization_away (S := S) r
   infer_instance
 
-variable {n : ℕ} {R S T : Type*} [CommRing R] [CommRing S] [CommRing T] [Algebra R S]
+variable {n : ℕ} {R : Type u} {S : Type v} {T : Type w}
+  [CommRing R] [CommRing S] [CommRing T] [Algebra R S]
   [Algebra S T] [Algebra R T] [IsScalarTower R S T]
 
 /-- If `S` is standard syntomic of relative dimension `n` over `R`, then so is its localization
