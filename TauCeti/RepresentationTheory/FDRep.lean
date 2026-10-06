@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Category.FGModuleCat.Abelian
 public import Mathlib.RingTheory.Finiteness.Small
 public import Mathlib.RepresentationTheory.Character
+public import Mathlib.RepresentationTheory.Rep.Res
 public import TauCeti.RepresentationTheory.Subrepresentation
 
 /-!
@@ -60,6 +61,8 @@ subgroup.
 * `FDRep.moduleFinite_forget₂_obj`: the forgotten carrier is module-finite.
 * `FDRep.finrank_forget₂_obj`: forgetting does not change finrank.
 * `FDRep.character_forget₂_obj`: forgetting does not change the character.
+* `MonoidHom.forget₂_map_actionRes`: restriction of intertwiners commutes with forgetting
+  finite-dimensionality.
 * `FDRep.character_actionRes`: restricting an action along a monoid homomorphism pulls back its
   character.
 * `FDRep.character_of`: bundling a representation with `FDRep.of` does not change its character.
@@ -144,6 +147,14 @@ theorem character_actionRes {k : Type u} {G : Type v} {H : Type w} [Field k] [Mo
     [Monoid H] (V : FDRep k G) (phi : H →* G) (h : H) :
     FDRep.character ((Action.res (FGModuleCat k) phi).obj V) h = V.character (phi h) :=
   (rfl)
+
+/-- Restriction of an intertwiner commutes with forgetting finite-dimensionality. -/
+theorem _root_.MonoidHom.forget₂_map_actionRes {k : Type u} [CommRing k]
+    {H : Type v} {K : Type w} [Monoid H] [Monoid K]
+    (f : H →* K) {A B : FDRep k K} (g : A ⟶ B) :
+    (forget₂ (FDRep k H) (Rep k H)).map ((Action.res (FGModuleCat k) f).map g) =
+      (Rep.resFunctor f).map ((forget₂ (FDRep k K) (Rep k K)).map g) :=
+  rfl
 
 /-- Forgetting finite-dimensionality keeps the finite-generation instance on the carrier. -/
 instance moduleFinite_forget₂_obj {R : Type u} {G : Type v} [CommRing R] [Monoid G]

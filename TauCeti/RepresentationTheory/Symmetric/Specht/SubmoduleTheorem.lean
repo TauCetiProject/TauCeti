@@ -267,7 +267,7 @@ theorem isIrreducible_spechtSubrepresentation (μ : YoungDiagram) :
 isomorphism of groups, and restriction along an isomorphism preserves irreducibility. -/
 instance isIrreducible_spechtModule {n : ℕ} (μ : n.Partition) :
     _root_.Representation.IsIrreducible (spechtModule μ).ρ :=
-  (isIrreducible_comp_equiv_iff (finCongr (card_diagramOf μ).symm).permCongrHom
+  (MulEquiv.isIrreducible_comp_equiv_iff (finCongr (card_diagramOf μ).symm).permCongrHom
     (spechtSubrepresentation (diagramOf μ)).toRepresentation).mpr
     (isIrreducible_spechtSubrepresentation (diagramOf μ))
 

@@ -17,7 +17,7 @@ import TauCeti.RepresentationTheory.Coinduced
 
 This file records restriction and coinduction in stages for representations along composable monoid
 homomorphisms, and induction in stages along composable group homomorphisms. It obtains the natural
-isomorphisms from the equality of restriction functors `TauCeti.resFunctor_comp` and
+isomorphisms from the equality of restriction functors `MonoidHom.resFunctor_comp` and
 Mathlib's induction--restriction and restriction--coinduction adjunctions. This is the categorical
 core used by the subgroup form of induction in the induction and Mackey-theory roadmap.
 
@@ -169,13 +169,13 @@ section Restriction
 variable [Semiring k] [Monoid G] [Monoid H] [Monoid K]
 
 /-- Restriction along two composable group homomorphisms is naturally isomorphic to restriction
-along their composite.  The two functors are in fact equal (`TauCeti.resFunctor_comp`), so this is
+along their composite.  The two functors are in fact equal (`MonoidHom.resFunctor_comp`), so this is
 that equality read as an isomorphism. -/
 def Rep.resFunctorCompIso (φ : G →* H) (ψ : H →* K) :
     Rep.resFunctor.{max u v w x} (k := k) ψ ⋙
       Rep.resFunctor.{max u v w x} (k := k) φ ≅
         Rep.resFunctor.{max u v w x} (k := k) (ψ.comp φ) :=
-  eqToIso (resFunctor_comp ψ φ).symm
+  eqToIso (MonoidHom.resFunctor_comp ψ φ).symm
 
 /-- The forward component of `resFunctorCompIso` acts as the identity on vectors. -/
 @[simp↓]
@@ -331,14 +331,14 @@ lemma Rep.eq_indFunctorCompIso_hom_app (φ : G →* H) (ψ : H →* K) (A : Rep.
 
 /-- **Induction along an isomorphism is restriction along its inverse.** For `e : G ≃* H`,
 `Ind_e ≅ Res_{e⁻¹}` as functors `Rep k G ⥤ Rep k H`: both are left adjoint to `Res_e`, which is an
-equivalence (`TauCeti.resFunctorEquiv`). -/
+equivalence (`MulEquiv.resFunctorEquiv`). -/
 noncomputable def Rep.indFunctorMulEquivIso (e : G ≃* H) :
     Rep.indFunctor.{max u v w} k e.toMonoidHom ≅
       Rep.resFunctor.{max u v w} e.symm.toMonoidHom :=
   (Rep.indResAdjunction.{max u v w} k e.toMonoidHom).leftAdjointUniq
-      ((resFunctorEquiv e).symm.toAdjunction.ofNatIsoRight
-        (eqToIso (resFunctorEquiv_functor e))) ≪≫
-    eqToIso (resFunctorEquiv_inverse e)
+      ((MulEquiv.resFunctorEquiv e).symm.toAdjunction.ofNatIsoRight
+        (eqToIso (MulEquiv.resFunctorEquiv_functor e))) ≪≫
+    eqToIso (MulEquiv.resFunctorEquiv_inverse e)
 
 /-- **Induction in stages through an intermediate subgroup.** For subgroups `S ≤ T` of `G`,
 inducing a representation of `S`, viewed as the subgroup `S.subgroupOf T` of `T`, first to `T`

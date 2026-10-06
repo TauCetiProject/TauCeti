@@ -218,7 +218,7 @@ This characterization supplies the Weyl-cell contribution to the principal-serie
 number. -/
 @[simp]
 theorem nonempty_iso_mackey_weyl_iff (α β γ δ : Fˣ →* ℂˣ) :
-    Nonempty (resFDRep ((mackeySubgroup (GL2WeylElement F) (GL2Borel F)
+    Nonempty (Subgroup.resFDRep ((mackeySubgroup (GL2WeylElement F) (GL2Borel F)
           (GL2Borel F)).subgroupOf (GL2Borel F)) (GL2BorelRep F α β) ≅
         (Action.res (FGModuleCat ℂ)
           (mackeyToH (GL2WeylElement F) (GL2Borel F) (GL2Borel F))).obj (GL2BorelRep F γ δ))
@@ -226,7 +226,7 @@ theorem nonempty_iso_mackey_weyl_iff (α β γ δ : Fˣ →* ℂˣ) :
   rw [GL2BorelRep_def, GL2BorelRep_def, GL2Borel.linearRep_def,
     GL2Borel.linearRep_def, ← FDRep.ofLinearCharacter_def,
     ← FDRep.ofLinearCharacter_def]
-  -- `resFDRep` is a reducible abbreviation for this `Action.res`; `rw` does not unfold the
+  -- `Subgroup.resFDRep` is a reducible abbreviation for this `Action.res`; `rw` does not unfold the
   -- abbreviation when searching for `FDRep.actionRes_obj_ofLinearCharacter`.
   change Nonempty
     ((Action.res (FGModuleCat ℂ)
@@ -263,7 +263,7 @@ the Bruhat decomposition this is the whole content of
 theorem mackeyDisjoint_weyl_iff (α β : Fˣ →* ℂˣ) :
     MackeyDisjoint (GL2BorelRep F α β) (GL2WeylElement F) ↔ α ≠ β := by
   classical
-  have hres : Simple (resFDRep ((mackeySubgroup (GL2WeylElement F) (GL2Borel F)
+  have hres : Simple (Subgroup.resFDRep ((mackeySubgroup (GL2WeylElement F) (GL2Borel F)
       (GL2Borel F)).subgroupOf (GL2Borel F)) (GL2BorelRep F α β)) :=
     simple_of_finrank_eq_one _ (finrank_GL2BorelRep F α β)
   have hconj : Simple ((Action.res (FGModuleCat ℂ)

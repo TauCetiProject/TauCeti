@@ -85,7 +85,7 @@ theorem not_mackeyDisjoint_of_mackeySubgroup_eq_bot {A : FDRep k H} {s : G}
     infer_instance
   -- The identity of the underlying module, as an intertwiner: over the trivial group the
   -- equivariance condition is the one instance at `1`.
-  let φ : resFDRep ((mackeySubgroup s H H).subgroupOf H) A ⟶
+  let φ : Subgroup.resFDRep ((mackeySubgroup s H H).subgroupOf H) A ⟶
       (Action.res (FGModuleCat k) (mackeyToH s H H)).obj A :=
     { hom := 𝟙 A.V
       comm := fun g => by
