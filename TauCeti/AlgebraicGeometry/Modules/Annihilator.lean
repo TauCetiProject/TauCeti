@@ -96,13 +96,15 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.support_annihilator :
   let U' : X.affineOpens := ⟨U, hU⟩
   have := hM U'
   let p : PrimeSpectrum Γ(X, U) := ⟨RingHom.ker (X.evaluation U x hxU).hom, RingHom.ker_isPrime _⟩
-  have hzero (I : Ideal Γ(X, U)) : x ∈ X.zeroLocus (U := U) I ↔ I ≤ p.asIdeal := by
-    simp [Scheme.mem_zeroLocus_iff, IsConcreteLE.le_iff, p]
   have : p.asIdeal.IsPrime := p.isPrime
-  rw [SetLike.mem_coe, SetLike.mem_coe,
-    Scheme.IdealSheafData.mem_support_iff_of_mem (U := U') hxU,
-    Scheme.IdealSheafData.mem_support_iff_of_mem (U := U') hxU, Scheme.Modules.annihilator_ideal,
-    Scheme.Modules.fittingIdeal_ideal, hzero, hzero, ← Module.mem_support_iff_of_finite,
+  -- Over `U`, the point `x` lies in the support of an ideal sheaf `I` iff `I(U) ⊆ p`.
+  have hsupp (I : X.IdealSheafData) : x ∈ I.support ↔ I.ideal U' ≤ p.asIdeal := by
+    simp [Scheme.IdealSheafData.mem_support_iff_of_mem (U := U') hxU, Scheme.mem_zeroLocus_iff,
+      IsConcreteLE.le_iff, p]
+  simp only [SetLike.mem_coe, hsupp, Scheme.Modules.annihilator_ideal,
+    Scheme.Modules.fittingIdeal_ideal]
+  -- Both ideals lie in `p` exactly when the fibre `κ(p) ⊗ Γ(M, U)` is nonzero.
+  rw [← Module.mem_support_iff_of_finite,
     Module.mem_support_iff_nontrivial_residueField_tensorProduct, fittingIdeal_le_iff_lt_finrank,
     Module.finrank_pos_iff]
 
