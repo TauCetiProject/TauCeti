@@ -20,7 +20,7 @@ needed.
 
 Inverting the `Q`-component of a unit and fixing its `N / Q`-component is then the automorphism
 `u ↦ e_Q u⁻¹ + (1 - e_Q) u` of `(ZMod N)ˣ`, the instance of `IsIdempotentElem.unitsInvPart` at
-`e_Q`. On characters it is the operation `χ_Q · χ_{N/Q} ↦ χ̄_Q · χ_{N/Q}`, inverting the
+`e_Q`. On characters it is the operation `χ_Q · χ_{N/Q} ↦ χ_Q⁻¹ · χ_{N/Q}`, inverting the
 `Q`-part of a character and keeping its `N / Q`-part. This is how the Atkin–Lehner operator `W_Q`
 moves the nebentypus of a modular form of level `N`. At `Q = N` it is inversion, the shift
 `χ ↦ χ⁻¹` of the Fricke operator, and at `Q = 1` it is the identity.
@@ -169,7 +169,7 @@ theorem eq_unitsInvPart_iff (h : Q ∥ N) {u v : (ZMod N)ˣ} :
   · rw [← val_unitsMap, ← val_unitsMap, h.unitsMap_unitsInvPart_left, hQ]
   · rw [← val_unitsMap, ← val_unitsMap, h.unitsMap_unitsInvPart_right, hR]
 
-/-- **The character shift `χ_Q · χ_{N/Q} ↦ χ̄_Q · χ_{N/Q}`**: on a character of `(ZMod N)ˣ` pulled
+/-- **The character shift `χ_Q · χ_{N/Q} ↦ χ_Q⁻¹ · χ_{N/Q}`**: on a character of `(ZMod N)ˣ` pulled
 back from a character `ψ` modulo `Q` and a character `φ` modulo `N / Q`, precomposition with
 `unitsInvPart` inverts `ψ` and keeps `φ`. -/
 theorem comp_unitsInvPart {G : Type*} [CommGroup G] (h : Q ∥ N) (ψ : (ZMod Q)ˣ →* G)

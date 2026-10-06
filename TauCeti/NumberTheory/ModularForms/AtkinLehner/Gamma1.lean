@@ -28,7 +28,7 @@ automorphism `TauCeti.Nat.IsExactDivisor.unitsInvPart` of `(ZMod N)ˣ`,
 
 Read on a nebentypus space this is Atkin and Li's transport of characters: `W_Q` carries
 `M_k(N, χ)` into `M_k(N, χ ∘ ι_Q)`, and for `χ = χ_Q · χ_{N/Q}` split along `N = Q · (N / Q)`,
-`χ ∘ ι_Q = χ̄_Q · χ_{N/Q}` (`TauCeti.Nat.IsExactDivisor.comp_unitsInvPart`). So `W_Q` preserves the
+`χ ∘ ι_Q = χ_Q⁻¹ · χ_{N/Q}` (`TauCeti.Nat.IsExactDivisor.comp_unitsInvPart`). So `W_Q` preserves the
 nebentypus space only when the `Q`-part of `χ` is quadratic, which is why the Atkin–Lehner theory
 of a newform of general nebentypus is a theory of pseudo-eigenvalues rather than eigenvalues.
 
@@ -222,7 +222,7 @@ theorem atkinLehnerOperatorGamma1Cusp_diamondOpCusp (hQ : 0 < Q) (hQN : Q ∣ N)
     coe_atkinLehnerOperatorGamma1Cusp, ← SlashAction.slash_mul, ← SlashAction.slash_mul, hmul]
 
 /-- **`W_Q` shifts the nebentypus `χ` to `χ ∘ ι_Q`**: it carries `M_k(N, χ)` into
-`M_k(N, χ ∘ ι_Q)`. For `χ = χ_Q · χ_{N/Q}` the new nebentypus is `χ̄_Q · χ_{N/Q}`
+`M_k(N, χ ∘ ι_Q)`. For `χ = χ_Q · χ_{N/Q}` the new nebentypus is `χ_Q⁻¹ · χ_{N/Q}`
 (`Nat.IsExactDivisor.comp_unitsInvPart`). -/
 theorem atkinLehnerOperatorGamma1_mem_modFormCharSpace (hQ : 0 < Q) (hQN : Q ∣ N)
     (h : IsAtkinLehnerMatrix N Q M) {χ : (ZMod N)ˣ →* ℂˣ}
