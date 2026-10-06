@@ -56,4 +56,17 @@ noncomputable def stableToHomotopyCommShift :
     (Shift.commShiftOfIntertwiningToShift _ (hE).stableSuspension.asEquivalence _
       (stableSuspensionCompStableToHomotopyIso C n))
 
+/-- In degree one, the stable comparison identifies stable suspension with the signed
+cyclic shift using the supplied suspension comparison. -/
+theorem stableToHomotopyCommShift_iso_one :
+    letI := (hE).stableHasShift
+    letI := stableToHomotopyCommShift C n
+    (ExactStructure.homologicalComplexSplitStableToHomotopy C
+      (ComplexShape.up (ZMod n)) (fun i => ⟨i + 1, rfl⟩)).commShiftIso (1 : ℤ) =
+      Functor.isoWhiskerRight (hE).stableShiftFunctorOneIso _ ≪≫
+        stableSuspensionCompStableToHomotopyIso C n :=
+  (hE).commShiftOfSuspensionShift_iso_one _ _ (stableSuspensionCompStableToHomotopyIso C n)
+    (Shift.commShiftOfIntertwiningToShift_iso_one _ (hE).stableSuspension.asEquivalence _
+      (stableSuspensionCompStableToHomotopyIso C n))
+
 end TauCeti.PeriodicComplex

@@ -46,8 +46,6 @@ open CategoryTheory CategoryTheory.Limits CategoryTheory.Pretriangulated
 variable (C : Type u) [Category.{v} C] [Preadditive C] [HasZeroObject C]
   [HasBinaryBiproducts C] (n : ℕ)
 
-local notation "E" => ExactStructure.homologicalComplex (ExactStructure.split C)
-  (ComplexShape.up (ZMod n))
 local notation "hE" => ExactStructure.homologicalComplex_split_isFrobenius
   (C := C) (c := ComplexShape.up (ZMod n))
   (fun j => Exists.intro (j - 1) (sub_add_cancel j 1))
@@ -57,7 +55,7 @@ local notation "F" => ExactStructure.homologicalComplexSplitStableToHomotopy C
 
 /-- The periodic homotopy category is pretriangulated, with distinguished triangles transported
 from the componentwise split stable category and the existing signed cyclic shift. -/
-noncomputable instance instPretriangulated :
+noncomputable instance HomotopyCategory.instPretriangulated :
     Pretriangulated (HomotopyCategory C (ComplexShape.up (ZMod n))) :=
   letI := (hE).stableHasShift
   letI := (hE).stableShiftFunctor_additive
@@ -80,7 +78,7 @@ theorem stableToHomotopy_isTriangulated :
   Triangulated.Localization.isTriangulated_functor F (MorphismProperty.isomorphisms _)
 
 /-- The periodic homotopy category with its signed cyclic shift is triangulated. -/
-instance instIsTriangulated :
+instance HomotopyCategory.instIsTriangulated :
     IsTriangulated (HomotopyCategory C (ComplexShape.up (ZMod n))) :=
   letI := (hE).stableHasShift
   letI := (hE).stableShiftFunctor_additive
@@ -89,20 +87,5 @@ instance instIsTriangulated :
   haveI := (hE).stableIsTriangulated
   haveI := stableToHomotopy_isTriangulated C n
   Triangulated.Localization.isTriangulated F (MorphismProperty.isomorphisms _)
-
-/-- A periodic homotopy triangle is distinguished exactly when it is isomorphic to the image
-of a distinguished triangle in the componentwise split stable category. -/
-theorem mem_distTriang_iff (T : Triangle (HomotopyCategory C (ComplexShape.up (ZMod n)))) :
-    letI := (hE).stableHasShift
-    letI := stableToHomotopyCommShift C n
-    T ∈ distTriang _ ↔
-      ∃ (T' : Triangle (E).ProjectiveStableCategory)
-        (_ : T ≅ (F).mapTriangle.obj T'), T' ∈ (hE).stableDistinguishedTriangles := by
-  let := (hE).stableHasShift
-  let := (hE).stableShiftFunctor_additive
-  let := (hE).stablePretriangulated
-  let := stableToHomotopyCommShift C n
-  rw [← (hE).stablePretriangulated_distinguishedTriangles]
-  rfl
 
 end TauCeti.PeriodicComplex

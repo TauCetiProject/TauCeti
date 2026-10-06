@@ -103,6 +103,24 @@ noncomputable def stableShiftFunctorOneIso :
     shiftFunctor E.ProjectiveStableCategory (1 : ℤ) ≅ hE.stableSuspension :=
   hE.stableSuspension.asEquivalence.shiftFunctorOneIso
 
+/-- Transporting compatibility out of the suspension-generated shift preserves its
+specified degree-one comparison with stable suspension. -/
+theorem commShiftOfSuspensionShift_iso_one
+    {D : Type u'} [Category.{v'} D] [HasShift D ℤ]
+    (F : E.ProjectiveStableCategory ⥤ D)
+    (hF : letI := hE.stableSuspension.asEquivalence.hasShift
+      F.CommShift ℤ)
+    (α : hE.stableSuspension ⋙ F ≅ F ⋙ shiftFunctor D (1 : ℤ))
+    (hα : letI := hE.stableSuspension.asEquivalence.hasShift
+      letI := hF
+      F.commShiftIso (1 : ℤ) =
+        Functor.isoWhiskerRight hE.stableSuspension.asEquivalence.shiftFunctorOneIso F ≪≫ α) :
+    letI := hE.stableHasShift
+    letI := hE.commShiftOfSuspensionShift F hF
+    F.commShiftIso (1 : ℤ) = Functor.isoWhiskerRight hE.stableShiftFunctorOneIso F ≪≫ α := by
+  unfold commShiftOfSuspensionShift stableHasShift stableShiftFunctorOneIso
+  exact hα
+
 /-- In degree one, transported stable shift compatibility recovers the supplied suspension
 comparison. -/
 theorem commShiftOfStableSuspension_iso_one
