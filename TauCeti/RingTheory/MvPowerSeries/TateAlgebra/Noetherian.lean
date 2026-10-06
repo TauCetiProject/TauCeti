@@ -51,24 +51,19 @@ private theorem isNoetherianRing_isRestricted_subring_of_isEmpty {σ : Type*} [I
   ext d
   rw [Subsingleton.elim d 0, coe_algebraMap_isRestrictedSubring, coeff_C, ite_eq_left rfl]
 
-omit [IsUltrametricDist K] [CompleteSpace K] in
-private theorem norm_coeff_X_le_one {ι : Type*} (i : ι) (t : ι →₀ ℕ) :
-    ‖(MvPolynomial.X i : MvPolynomial ι K).coeff t‖ ≤ 1 := by
-  classical
-  rw [MvPolynomial.coeff_X]
-  split_ifs <;> simp
-
 omit [CompleteSpace K] in
 /-- Renaming the variables along an equivalence preserves noetherianity of Tate algebras. -/
 private theorem isNoetherianRing_isRestricted_subring_of_equiv {σ τ : Type*} [Finite σ]
     [Finite τ] (e : σ ≃ τ)
     (h : IsNoetherianRing (IsRestricted.subring (R := K) (fun _ : σ ↦ 1))) :
     IsNoetherianRing (IsRestricted.subring (R := K) (fun _ : τ ↦ 1)) := by
+  classical
   let E : IsRestricted.subring (R := K) (fun _ : σ ↦ 1) ≃ₐ[K]
       IsRestricted.subring (R := K) (fun _ : τ ↦ 1) :=
     restrictedSubstEquiv (fun s ↦ MvPolynomial.X (e s)) (fun _ ↦ MvPolynomial.constantCoeff_X _ _)
-      (fun s ↦ norm_coeff_X_le_one (e s)) (fun t ↦ MvPolynomial.X (e.symm t))
-      (fun _ ↦ MvPolynomial.constantCoeff_X _ _) (fun t ↦ norm_coeff_X_le_one (e.symm t))
+      (fun _ _ ↦ by rw [MvPolynomial.coeff_X]; split_ifs <;> simp)
+      (fun t ↦ MvPolynomial.X (e.symm t)) (fun _ ↦ MvPolynomial.constantCoeff_X _ _)
+      (fun _ _ ↦ by rw [MvPolynomial.coeff_X]; split_ifs <;> simp)
       (fun s ↦ by simp) (fun t ↦ by simp)
   exact isNoetherianRing_of_ringEquiv _ E.toRingEquiv
 

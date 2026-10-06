@@ -64,18 +64,6 @@ namespace TauCeti.MvPowerSeries
 open _root_.MvPowerSeries Filter
 open scoped Topology
 
-section Digits
-
-/-- Base-`b` expansions with digits below `b` are unique. -/
-private theorem eq_of_sum_pow_mul_eq {b m : ℕ} (hb : 1 < b) {v w : Fin m → ℕ}
-    (hv : ∀ j, v j < b) (hw : ∀ j, w j < b)
-    (h : ∑ j : Fin m, b ^ (j : ℕ) * v j = ∑ j : Fin m, b ^ (j : ℕ) * w j) : v = w := by
-  refine List.ofFn_injective (Nat.ofDigits_inj_of_len_eq hb (by simp) (by simpa using hv)
-    (by simpa using hw) ?_)
-  simpa [Nat.ofDigits_eq_sum_mapIdx, List.mapIdx_eq_ofFn, List.sum_ofFn, mul_comm] using h
-
-end Digits
-
 variable {σ R : Type*} [NormedCommRing R] [IsUltrametricDist R] [NormOneClass R]
 
 local notation "Tate" => IsRestricted.subring (R := R) (fun _ : σ ↦ 1)
@@ -208,44 +196,6 @@ private theorem norm_coeff_triangularEquiv_sub_le [Finite σ] [Nontrivial R] {α
   rw [coeff_optionElim_prod_triangularFamily hα ν t hm, mul_ite, mul_one, mul_zero] at h
   simpa [triangularEquiv] using h
 
-omit [NormOneClass R] in
-/-- A restricted series attains its Gauss norm, and the coefficients of smaller norm are bounded
-by a constant smaller than the Gauss norm. -/
-private theorem exists_norm_coeff_gap {τ : Type*} (f : IsRestricted.subring (R := R)
-    (fun _ : τ ↦ 1)) (hf : f ≠ 0) :
-    (∃ d, ‖coeff d (f : MvPowerSeries τ R)‖ = ‖f‖) ∧
-      ∃ ε, 0 ≤ ε ∧ ε < ‖f‖ ∧ ∀ d, ‖coeff d (f : MvPowerSeries τ R)‖ < ‖f‖ →
-        ‖coeff d (f : MvPowerSeries τ R)‖ ≤ ε := by
-  classical
-  set M := ‖f‖
-  have hM : 0 < M := norm_pos_iff.mpr hf
-  have hle (d) : ‖coeff d (f : MvPowerSeries τ R)‖ ≤ M := by
-    simpa using norm_coeff_mul_prod_le f d
-  have hF : {d | M / 2 ≤ ‖coeff d (f : MvPowerSeries τ R)‖}.Finite := by
-    have := (isRestricted_one_iff.mp f.2).eventually (gt_mem_nhds (half_pos hM))
-    simpa [eventually_cofinite, not_lt] using this
-  let F' := hF.toFinset.filter fun d ↦ ‖coeff d (f : MvPowerSeries τ R)‖ < M
-  have hgap : ∃ ε, 0 ≤ ε ∧ ε < M ∧ ∀ d, ‖coeff d (f : MvPowerSeries τ R)‖ < M →
-      ‖coeff d (f : MvPowerSeries τ R)‖ ≤ ε := by
-    rcases F'.eq_empty_or_nonempty with hF' | hF'
-    · refine ⟨M / 2, (half_pos hM).le, half_lt_self hM, fun d hd ↦ le_of_not_ge fun h ↦ ?_⟩
-      have : d ∈ F' := Finset.mem_filter.mpr ⟨hF.mem_toFinset.mpr h, hd⟩
-      simp [hF'] at this
-    · obtain ⟨d₀, hd₀, hmax⟩ := F'.exists_max_image (fun d ↦ ‖coeff d (f : MvPowerSeries τ R)‖)
-        hF'
-      refine ⟨max (M / 2) ‖coeff d₀ (f : MvPowerSeries τ R)‖, (half_pos hM).le.trans
-        (le_max_left _ _), max_lt (half_lt_self hM) (Finset.mem_filter.mp hd₀).2,
-        fun d hd ↦ ?_⟩
-      by_cases h : M / 2 ≤ ‖coeff d (f : MvPowerSeries τ R)‖
-      · exact le_max_of_le_right (hmax d (Finset.mem_filter.mpr ⟨hF.mem_toFinset.mpr h, hd⟩))
-      · exact le_max_of_le_left (le_of_not_ge h)
-  refine ⟨?_, hgap⟩
-  obtain ⟨ε, hε0, hεM, hε⟩ := hgap
-  by_contra! h
-  have hM' : M ≤ ε := (norm_le_iff hε0).mpr fun d ↦ by
-    simpa using hε d ((hle d).lt_of_ne (h d))
-  exact hM'.not_gt hεM
-
 omit [IsUltrametricDist R] [NormOneClass R] in
 /-- With the exponents `α i = b ^ (k i + 1)`, the triangular degree is a base-`b` expansion, so it
 separates exponents whose entries are all below `b`. -/
@@ -262,28 +212,15 @@ private theorem triangularDegree_injective {n : ℕ} (k : σ ≃ Fin n) {b : ℕ
     refine Fintype.sum_equiv E _ (fun j ↦ b ^ (j : ℕ) * μ (E.symm j)) fun x ↦ ?_
     rw [E.symm_apply_apply]
     cases x <;> simp [E]
-  have hv := eq_of_sum_pow_mul_eq hb (fun j ↦ hν _) (fun j ↦ hν' _)
-    ((hE ν).symm.trans (h.trans (hE ν')))
+  -- Base-`b` expansions with digits below `b` are unique.
+  have hdigits {m : ℕ} {v w : Fin m → ℕ} (hv : ∀ j, v j < b) (hw : ∀ j, w j < b)
+      (h : ∑ j : Fin m, b ^ (j : ℕ) * v j = ∑ j : Fin m, b ^ (j : ℕ) * w j) : v = w := by
+    refine List.ofFn_injective (Nat.ofDigits_inj_of_len_eq hb (by simp) (by simpa using hv)
+      (by simpa using hw) ?_)
+    simpa [Nat.ofDigits_eq_sum_mapIdx, List.mapIdx_eq_ofFn, List.sum_ofFn, mul_comm] using h
+  have hv := hdigits (fun j ↦ hν _) (fun j ↦ hν' _) ((hE ν).symm.trans (h.trans (hE ν')))
   ext x
   simpa using congrFun hv (E x)
-
-omit [NormOneClass R] in
-/-- A restricted series is distinguished of degree `s` once its coefficient in degree `s` is closer
-than its Gauss norm to an element of that norm, and every later coefficient is smaller than its
-Gauss norm. -/
-private theorem isDistinguished_of_norm_coeff_sub_lt
-    (G : PowerSeries.IsRestricted.subring (R := R) 1) {s : ℕ} {c : R} (hc : ‖c‖ = ‖G‖)
-    (hs : ‖PowerSeries.coeff s (G : PowerSeries R) - c‖ < ‖G‖)
-    (hm : ∀ m, s < m → ‖PowerSeries.coeff m (G : PowerSeries R)‖ < ‖G‖) :
-    PowerSeries.IsDistinguished 1 s (G : PowerSeries R) := by
-  have hGs : ‖PowerSeries.coeff s (G : PowerSeries R)‖ = ‖G‖ := by
-    rw [← sub_add_cancel (PowerSeries.coeff s (G : PowerSeries R)) c,
-      IsUltrametricDist.norm_add_eq_max_of_norm_ne_norm (by rw [hc]; exact hs.ne), hc]
-    exact max_eq_right hs.le
-  refine ⟨?_, fun m hm' ↦ ?_⟩
-  · rw [← TauCeti.PowerSeries.norm_eq_gaussNorm, one_pow, mul_one, hGs]
-  · rw [← TauCeti.PowerSeries.norm_eq_gaussNorm, one_pow, mul_one]
-    exact hm m hm'
 
 omit [NormOneClass R] in
 /-- **Choice of the triangular exponents.** For a nonzero restricted series `f` there are
@@ -296,7 +233,10 @@ private theorem exists_triangularDegree_dominant [Finite σ] (f : ExtraTate) (hf
         ‖coeff d (f : MvPowerSeries (Option σ) R)‖ ≤ ε := by
   classical
   have : Fintype σ := Fintype.ofFinite σ
-  obtain ⟨⟨d₀, hd₀⟩, ε, hε0, hεM, hε⟩ := exists_norm_coeff_gap f hf
+  obtain ⟨d₀, hd₀⟩ := exists_achievesGaussNorm f
+  obtain ⟨ε, hε0, hεM, hε⟩ := exists_norm_coeff_mul_prod_gap f hf
+  simp only [AchievesGaussNorm, ← norm_eq_gaussNorm, one_pow, Finsupp.prod_fun_one,
+    mul_one] at hd₀ hε
   have hM : 0 < ‖f‖ := norm_pos_iff.mpr hf
   have hle (d) : ‖coeff d (f : MvPowerSeries (Option σ) R)‖ ≤ ‖f‖ := by
     simpa using norm_coeff_mul_prod_le f d
@@ -346,6 +286,8 @@ theorem exists_algEquiv_isDistinguished [Finite σ] (f : ExtraTate) (hf : f ≠ 
   set s := triangularDegree α ν
   set G := Huber.restrictedOptionEquiv (triangularEquiv α hα f)
   have hG : ‖G‖ = ‖f‖ := by rw [Huber.norm_restrictedOptionEquiv, he]
+  have hGn : (G : PowerSeries Tate).gaussNorm norm 1 = ‖f‖ := by
+    rw [← TauCeti.PowerSeries.norm_eq_gaussNorm, hG]
   have hcoeffG (m : ℕ) (t : σ →₀ ℕ) :
       coeff t (PowerSeries.coeff (R := Tate) m (G : PowerSeries Tate) : MvPowerSeries σ R) =
         coeff (t.optionElim m) (triangularEquiv α hα f : MvPowerSeries (Option σ) R) := by
@@ -370,8 +312,11 @@ theorem exists_algEquiv_isDistinguished [Finite σ] (f : ExtraTate) (hf : f ≠ 
       Subtype.ext (coe_algebraMap_isRestrictedSubring _)
     rw [h, norm_C, hνM]
   refine ⟨triangularEquiv α hα, s, a, he, hνM,
-    isDistinguished_of_norm_coeff_sub_lt G (hCa.trans hG.symm) (hG ▸ hat.trans_lt hεM)
-      fun m hm ↦ hG ▸ (hbeyond m hm).trans_lt hεM, hat.trans_lt hεM⟩
+    PowerSeries.isDistinguished_of_norm_coeff_sub_lt zero_lt_one
+      (by rw [one_pow, mul_one, hGn, hCa])
+      (by rw [one_pow, mul_one, hGn]; exact hat.trans_lt hεM)
+      (fun m hm ↦ by rw [one_pow, mul_one, hGn]; exact (hbeyond m hm).trans_lt hεM),
+    hat.trans_lt hεM⟩
 
 /-- **Distinguishing automorphisms of Tate algebras over a field.** Over a complete
 nonarchimedean field `K`, every nonzero element `f` of the Tate algebra in the variables
