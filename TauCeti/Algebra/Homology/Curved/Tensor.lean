@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.Curved.Duplex
-public import Mathlib.CategoryTheory.Monoidal.Linear
+public import TauCeti.CategoryTheory.Monoidal.Linear
 public import Mathlib.CategoryTheory.Preadditive.Biproducts
+public import Mathlib.CategoryTheory.Linear.FunctorCategory
 
 /-!
 # Tensor products of curved duplexes
@@ -24,7 +25,7 @@ rule. The cross terms of its square cancel by the interchange law, and the diago
 so this is not an operation on duplexes of one fixed curvature.
 
 Even closed maps tensor componentwise, giving a bifunctor
-`CurvedDuplex C v ⥤ CurvedDuplex C w ⥤ CurvedDuplex C (v + w)` that is additive in each
+`CurvedDuplex C v ⥤ CurvedDuplex C w ⥤ CurvedDuplex C (v + w)` that is `R`-linear in each
 variable. Tensoring with any closed map preserves null-homotopic maps on either side: if
 `f = d h + h d`, then `f ⊗ g = d (h ⊗ g) + (h ⊗ g) d`, and dually with the Koszul sign for an
 odd map in the second variable. This is what lets the tensor product descend to homotopy
@@ -95,8 +96,8 @@ theorem biprod_inr_comp_tensorD₀ (X : CurvedDuplex C v) (Y : CurvedDuplex C w)
 
 @[reassoc (attr := simp)]
 theorem biprod_inl_comp_tensorD₁ (X : CurvedDuplex C v) (Y : CurvedDuplex C w) :
-    biprod.inl ≫ tensorD₁ X Y = X.d₁ ▷ Y.X₀ ≫ biprod.inl - X.X₁ ◁ Y.d₀ ≫ biprod.inr := by
-  simp [tensorD₁, sub_eq_add_neg]
+    biprod.inl ≫ tensorD₁ X Y = X.d₁ ▷ Y.X₀ ≫ biprod.inl + -(X.X₁ ◁ Y.d₀ ≫ biprod.inr) := by
+  simp [tensorD₁]
 
 @[reassoc (attr := simp)]
 theorem biprod_inr_comp_tensorD₁ (X : CurvedDuplex C v) (Y : CurvedDuplex C w) :
@@ -186,6 +187,14 @@ theorem tensorHom_comp_tensorHom (f : X ⟶ X') (f' : X' ⟶ X'') (g : Y ⟶ Y')
 @[simp] theorem tensorHom_zero (f : X ⟶ X') : tensorHom f (0 : Y ⟶ Y') = 0 := by
   ext <;> apply biprod.hom_ext' <;> apply biprod.hom_ext <;> simp
 
+@[simp] theorem smul_tensorHom (r : R) (f : X ⟶ X') (g : Y ⟶ Y') :
+    tensorHom (r • f) g = r • tensorHom f g := by
+  ext <;> apply biprod.hom_ext' <;> apply biprod.hom_ext <;> simp
+
+@[simp] theorem tensorHom_smul (r : R) (f : X ⟶ X') (g : Y ⟶ Y') :
+    tensorHom f (r • g) = r • tensorHom f g := by
+  ext <;> apply biprod.hom_ext' <;> apply biprod.hom_ext <;> simp
+
 /-- The tensor product of a null-homotopic map with a closed map is null-homotopic: if
 `f = d h + h d` for the odd map `h = (h₀, h₁)`, then `f ⊗ g` is the boundary of `h ⊗ g`. -/
 theorem tensorHom_nullHomotopicMap_left (h₀ : X.X₀ ⟶ X'.X₁) (h₁ : X.X₁ ⟶ X'.X₀) (g : Y ⟶ Y') :
@@ -206,7 +215,7 @@ theorem tensorHom_nullHomotopicMap_right (f : X ⟶ X') (k₀ : Y.X₀ ⟶ Y'.X�
         (Biprod.ofComponents 0 (-(f.f₁ ⊗ₘ k₀)) (f.f₀ ⊗ₘ k₁) 0) := by
   ext <;> apply biprod.hom_ext' <;> apply biprod.hom_ext <;>
     simp [← id_tensorHom, ← MonoidalCategory.tensorHom_id, MonoidalPreadditive.tensor_add,
-      Biprod.ofComponents, f.comm₀, f.comm₁]
+      reassoc_of% Biprod.inl_ofComponents, reassoc_of% Biprod.inr_ofComponents, f.comm₀, f.comm₁]
 
 /-- The tensor product of a null-homotopic map with any closed map is null-homotopic. -/
 theorem tensorHom_mem_nullHomotopic_left {f : X ⟶ X'} (hf : f ∈ (nullHomotopic C v).hom X X')
@@ -248,6 +257,15 @@ instance : (tensor C v w).Additive where
 
 instance (Y : CurvedDuplex C w) : ((tensor C v w).flip.obj Y).Additive where
   map_add {_ _ f g} := add_tensorHom f g (𝟙 Y)
+
+instance (X : CurvedDuplex C v) : ((tensor C v w).obj X).Linear R where
+  map_smul {_ _} g r := tensorHom_smul r (𝟙 X) g
+
+instance : (tensor C v w).Linear R where
+  map_smul {_ _} f r := NatTrans.ext (funext fun Y ↦ smul_tensorHom r f (𝟙 Y))
+
+instance (Y : CurvedDuplex C w) : ((tensor C v w).flip.obj Y).Linear R where
+  map_smul {_ _} f r := smul_tensorHom r f (𝟙 Y)
 
 /-- Tensoring on the left with a fixed curved duplex preserves null-homotopic maps. -/
 theorem nullHomotopic_le_comap_tensor_obj (X : CurvedDuplex C v) :

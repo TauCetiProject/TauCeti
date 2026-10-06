@@ -16,7 +16,7 @@ For matrix factorizations `X` of `v` and `Y` of `w` over a commutative ring `S`,
 product of their underlying curved duplexes has components `X₀ ⊗ Y₀ ⊕ X₁ ⊗ Y₁` and
 `X₁ ⊗ Y₀ ⊕ X₀ ⊗ Y₁`, which are again finitely generated and projective. It is therefore a
 matrix factorization of the summed potential `v + w`. Closed maps tensor componentwise, which
-gives a bifunctor additive in each variable, and tensoring with any map preserves
+gives a bifunctor `S`-linear in each variable, and tensoring with any map preserves
 null-homotopic maps on either side.
 
 ## Main definitions
@@ -58,13 +58,10 @@ duplexes. -/
 -- of curved duplexes, whose components occur in the types of the morphism formulas.
 @[expose] noncomputable def tensorObj (X : MatrixFactorization S v)
     (Y : MatrixFactorization S w) : MatrixFactorization S (v + w) :=
-  haveI : Module.Projective S (X.obj.X₀ ⊗ Y.obj.X₀ : FGModuleCat S) :=
-    Module.Projective.tensorProduct
-  haveI : Module.Projective S (X.obj.X₁ ⊗ Y.obj.X₁ : FGModuleCat S) :=
-    Module.Projective.tensorProduct
-  haveI : Module.Projective S (X.obj.X₁ ⊗ Y.obj.X₀ : FGModuleCat S) :=
-    Module.Projective.tensorProduct
-  haveI : Module.Projective S (X.obj.X₀ ⊗ Y.obj.X₁ : FGModuleCat S) :=
+  -- The carrier of a tensor product in `FGModuleCat S` is the module tensor product, so Mathlib's
+  -- `Module.Projective.tensorProduct` makes each of the four tensor summands projective.
+  letI (A B : FGModuleCat S) [Module.Projective S A] [Module.Projective S B] :
+      Module.Projective S (A ⊗ B : FGModuleCat S) :=
     Module.Projective.tensorProduct
   ofCurvedDuplex (CurvedDuplex.tensorObj X.obj Y.obj)
     (FGModuleCat.projective_biprod S _ _) (FGModuleCat.projective_biprod S _ _)
@@ -94,15 +91,17 @@ theorem tensorHom_comp_tensorHom (f : X ⟶ X') (f' : X' ⟶ X'') (g : Y ⟶ Y')
   ext : 1
   simp
 
+-- In the six lemmas below, `simp` reduces both sides to the same curved-duplex expression but
+-- cannot close the goal: the two sides remain indexed by `(tensorObj X Y).obj` and
+-- `CurvedDuplex.tensorObj X.obj Y.obj`, which `tensorObj_obj` cannot rewrite inside the hom types.
+-- Those agree definitionally, so the curved-duplex lemma is applied to the underlying maps.
 @[simp] theorem add_tensorHom (f f' : X ⟶ X') (g : Y ⟶ Y') :
     tensorHom (f + f') g = tensorHom f g + tensorHom f' g := by
-  -- The underlying map of a sum is the sum of the underlying maps.
   ext : 1
   exact CurvedDuplex.add_tensorHom f.hom f'.hom g.hom
 
 @[simp] theorem tensorHom_add (f : X ⟶ X') (g g' : Y ⟶ Y') :
     tensorHom f (g + g') = tensorHom f g + tensorHom f g' := by
-  -- The underlying map of a sum is the sum of the underlying maps.
   ext : 1
   exact CurvedDuplex.tensorHom_add f.hom g.hom g'.hom
 
@@ -113,6 +112,16 @@ theorem tensorHom_comp_tensorHom (f : X ⟶ X') (f' : X' ⟶ X'') (g : Y ⟶ Y')
 @[simp] theorem tensorHom_zero (f : X ⟶ X') : tensorHom f (0 : Y ⟶ Y') = 0 := by
   ext : 1
   exact CurvedDuplex.tensorHom_zero f.hom
+
+@[simp] theorem smul_tensorHom (r : S) (f : X ⟶ X') (g : Y ⟶ Y') :
+    tensorHom (r • f) g = r • tensorHom f g := by
+  ext : 1
+  exact CurvedDuplex.smul_tensorHom r f.hom g.hom
+
+@[simp] theorem tensorHom_smul (r : S) (f : X ⟶ X') (g : Y ⟶ Y') :
+    tensorHom f (r • g) = r • tensorHom f g := by
+  ext : 1
+  exact CurvedDuplex.tensorHom_smul r f.hom g.hom
 
 variable (S v w) in
 /-- The **tensor-product bifunctor** from matrix factorizations of `v` and of `w` to matrix
@@ -141,22 +150,36 @@ instance : (tensor S v w).Additive where
 instance (Y : MatrixFactorization S w) : ((tensor S v w).flip.obj Y).Additive where
   map_add {_ _ f g} := add_tensorHom f g (𝟙 Y)
 
+instance (X : MatrixFactorization S v) : ((tensor S v w).obj X).Linear S where
+  map_smul {_ _} g r := tensorHom_smul r (𝟙 X) g
+
+instance : (tensor S v w).Linear S where
+  map_smul {_ _} f r := NatTrans.ext (funext fun Y ↦ smul_tensorHom r f (𝟙 Y))
+
+instance (Y : MatrixFactorization S w) : ((tensor S v w).flip.obj Y).Linear S where
+  map_smul {_ _} f r := smul_tensorHom r f (𝟙 Y)
+
 /-- Tensoring on the left with a fixed matrix factorization preserves null-homotopic maps. -/
 theorem nullHomotopic_le_comap_tensor_obj (X : MatrixFactorization S v) :
     nullHomotopic (S := S) (w := w) ≤
       (nullHomotopic (S := S) (w := v + w)).comap ((tensor S v w).obj X) := by
   intro _ _ g hg
-  rw [MorphismIdeal.mem_comap_hom, mem_nullHomotopic_iff]
-  exact CurvedDuplex.mem_nullHomotopic_iff.1 <| CurvedDuplex.tensorHom_mem_nullHomotopic_right _ <|
-    CurvedDuplex.mem_nullHomotopic_iff.2 <| (mem_nullHomotopic_iff g).1 hg
+  rw [mem_nullHomotopic_iff, ← CurvedDuplex.mem_nullHomotopic_iff] at hg
+  rw [MorphismIdeal.mem_comap_hom, mem_nullHomotopic_iff, ← CurvedDuplex.mem_nullHomotopic_iff]
+  -- The underlying map is `CurvedDuplex.tensorHom (𝟙 X).hom g.hom` (`tensor_obj_map`,
+  -- `tensorHom_hom`); rewriting by these would also change the objects indexing its hom type,
+  -- so the identification is left to definitional unfolding.
+  exact CurvedDuplex.tensorHom_mem_nullHomotopic_right _ hg
 
 /-- Tensoring on the right with a fixed matrix factorization preserves null-homotopic maps. -/
 theorem nullHomotopic_le_comap_tensor_flip_obj (Y : MatrixFactorization S w) :
     nullHomotopic (S := S) (w := v) ≤
       (nullHomotopic (S := S) (w := v + w)).comap ((tensor S v w).flip.obj Y) := by
   intro _ _ f hf
-  rw [MorphismIdeal.mem_comap_hom, mem_nullHomotopic_iff]
-  exact CurvedDuplex.mem_nullHomotopic_iff.1 <| CurvedDuplex.tensorHom_mem_nullHomotopic_left
-    (CurvedDuplex.mem_nullHomotopic_iff.2 <| (mem_nullHomotopic_iff f).1 hf) _
+  rw [mem_nullHomotopic_iff, ← CurvedDuplex.mem_nullHomotopic_iff] at hf
+  rw [MorphismIdeal.mem_comap_hom, mem_nullHomotopic_iff, ← CurvedDuplex.mem_nullHomotopic_iff]
+  -- The underlying map is `CurvedDuplex.tensorHom f.hom (𝟙 Y).hom` (`Functor.flip_obj_map`,
+  -- `tensor_map_app`, `tensorHom_hom`); as above, it is identified by definitional unfolding.
+  exact CurvedDuplex.tensorHom_mem_nullHomotopic_left hf _
 
 end TauCeti.MatrixFactorization
