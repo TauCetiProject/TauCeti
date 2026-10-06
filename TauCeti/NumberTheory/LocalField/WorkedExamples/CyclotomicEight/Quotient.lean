@@ -193,7 +193,7 @@ private theorem restrictSqrtTwo_sigmaFive_ne_one : restrictSqrtTwo sigmaFive ≠
 
 /-- The third cyclotomic lower ramification group restricts onto the whole quadratic group. -/
 -- Use as a rewrite lemma: `simp` first computes the source lower group.
-theorem map_restrictSqrtTwo_lowerRamificationGroup_three :
+theorem map_restrictSqrtTwo_lowerRamificationGroup_three_eq_top :
     (LocalFieldsRamification.lowerRamificationGroup ℚ_[2] DyadicCyclotomicEight 3).map
       restrictSqrtTwo = ⊤ := by
   rw [lowerRamificationGroup_eq]
@@ -217,7 +217,8 @@ theorem map_restrictSqrtTwo_lowerRamificationGroup_three_ne :
     (LocalFieldsRamification.lowerRamificationGroup ℚ_[2] DyadicCyclotomicEight 3).map
       restrictSqrtTwo ≠
         LocalFieldsRamification.lowerRamificationGroup ℚ_[2] DyadicSqrtTwo 3 := by
-  rw [map_restrictSqrtTwo_lowerRamificationGroup_three, DyadicSqrtTwo.lowerRamificationGroup_eq]
+  rw [map_restrictSqrtTwo_lowerRamificationGroup_three_eq_top,
+    DyadicSqrtTwo.lowerRamificationGroup_eq]
   norm_num only [ite_false]
   intro h
   exact restrictSqrtTwo_sigmaFive_ne_one
@@ -225,7 +226,7 @@ theorem map_restrictSqrtTwo_lowerRamificationGroup_three_ne :
 
 /-- In quotient notation, `G₃H/H = G/H` for the inversion subgroup `H`. -/
 -- Use as a rewrite lemma: `simp` first computes the source lower group.
-theorem map_mk_lowerRamificationGroup_three :
+theorem map_mk_lowerRamificationGroup_three_eq_top :
     (LocalFieldsRamification.lowerRamificationGroup ℚ_[2] DyadicCyclotomicEight 3).map
       (QuotientGroup.mk' (Subgroup.zpowers sigmaSeven)) = ⊤ := by
   have hcomp : quotientEquivSqrtTwo.toMonoidHom.comp
@@ -235,7 +236,7 @@ theorem map_mk_lowerRamificationGroup_three :
     exact quotientEquivSqrtTwo_mk σ
   apply Subgroup.map_injective (f := quotientEquivSqrtTwo.toMonoidHom)
     quotientEquivSqrtTwo.injective
-  rw [Subgroup.map_map, hcomp, map_restrictSqrtTwo_lowerRamificationGroup_three,
+  rw [Subgroup.map_map, hcomp, map_restrictSqrtTwo_lowerRamificationGroup_three_eq_top,
     Subgroup.map_top]
   exact (MonoidHom.range_eq_top (f := quotientEquivSqrtTwo.toMonoidHom)).2
     quotientEquivSqrtTwo.surjective |>.symm
