@@ -388,7 +388,7 @@ theorem nonempty_center_even_algEquiv_prod_iff_isSquare_discriminant [NeZero (2 
     let I : Ideal K[X] := Ideal.span {X - C t}
     let J : Ideal K[X] := Ideal.span {X - C (-t)}
     have hcoprime : IsCoprime I J := by
-      change IsCoprime (Ideal.span {X - C t}) (Ideal.span {X - C (-t)})
+      dsimp only [I, J]
       rw [Ideal.isCoprime_span_singleton_iff]
       apply isCoprime_X_sub_C_of_isUnit_sub
       simpa [sub_neg_eq_add, two_mul] using (mul_ne_zero two_ne_zero ht0).isUnit
@@ -397,8 +397,7 @@ theorem nonempty_center_even_algEquiv_prod_iff_isSquare_discriminant [NeZero (2 
       simp only [map_neg, map_pow]
       ring
     have hideal : Ideal.span ({X ^ 2 - C d} : Set K[X]) = I * J := by
-      change Ideal.span ({X ^ 2 - C d} : Set K[X]) =
-        Ideal.span {X - C t} * Ideal.span {X - C (-t)}
+      dsimp only [I, J]
       rw [Ideal.span_singleton_mul_span_singleton, hfactor]
     let crtRing := Ideal.quotientMulEquivQuotientProd I J hcoprime
     let crtAlg : (K[X] ⧸ I * J) ≃ₐ[K] (K[X] ⧸ I) × (K[X] ⧸ J) :=
