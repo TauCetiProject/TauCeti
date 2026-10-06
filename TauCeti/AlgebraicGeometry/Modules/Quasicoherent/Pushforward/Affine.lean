@@ -69,10 +69,6 @@ instance isQuasicoherent_pushforward_of_isAffineHom (f : X ⟶ Y) [IsAffineHom f
       ((restrictPushforwardIso f U.1).app M).symm h
   exact isQuasicoherent_of_isQuasicoherent_restrict_affineOpens N hrestrict
 
-/-- The pushforward of the structure sheaf along an affine morphism is quasicoherent. -/
-theorem isQuasicoherent_pushforward_unit (f : X ⟶ Y) [IsAffineHom f] :
-    ((pushforward f).obj (𝟙_ X.Modules)).IsQuasicoherent := inferInstance
-
 end
 
 end TauCeti.AlgebraicGeometry
