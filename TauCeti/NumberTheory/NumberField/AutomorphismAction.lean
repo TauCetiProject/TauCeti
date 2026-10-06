@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.Basic
-public import Mathlib.NumberTheory.RamificationInertia.Galois
 
 /-!
 # Automorphisms acting on the ring of integers
@@ -40,11 +39,6 @@ recorded once here rather than reconstructed at each use site.
   into the top ring of integers gives the action of the original automorphism.
 * `NumberField.RingOfIntegers.smulCommClass`: `Gal(F/K)` acting on `𝓞 F` commutes with the
   `𝓞 K`-action.
-* `TauCeti.galRestrict_ringOfIntegers_eq_toRingHom`: restriction agrees with the canonical action
-  on the ring of integers.
-* `TauCeti.coe_smul_primesOver_ringOfIntegers` and
-  `TauCeti.isPretransitive_primesOver_ringOfIntegers`: the induced action on primes above a
-  base ideal agrees with the ideal action and is transitive for Galois extensions.
 * `AlgEquiv.mapAlgEquiv_symm_autCongr_smul`: restriction to rings of integers intertwines
   conjugation of automorphisms along an algebra equivalence.
 -/
@@ -109,43 +103,6 @@ instance RingOfIntegers.smulCommClass : SMulCommClass (F ≃ₐ[K] F) (𝓞 K) (
       IsScalarTower.algebraMap_apply (𝓞 K) K F, AlgEquiv.commutes]
 
 end NumberField
-
-namespace TauCeti
-
-open NumberField
-
-section PrimesOver
-
-variable (K L : Type*) [Field K] [Field L] [NumberField K] [NumberField L]
-  [Algebra K L]
-
-/-- Restriction to rings of integers agrees with the canonical Galois action. -/
-theorem galRestrict_ringOfIntegers_eq_toRingHom (σ : L ≃ₐ[K] L) :
-    (galRestrict (𝓞 K) K L (𝓞 L) σ : 𝓞 L →+* 𝓞 L) =
-      MulSemiringAction.toRingHom (L ≃ₐ[K] L) (𝓞 L) σ := by
-  ext1 z
-  apply RingOfIntegers.ext
-  exact (algebraMap_galRestrict_apply (𝓞 K) σ z).trans
-    (algebraMap_smul_eq_apply σ z).symm
-
-/-- The action on primes above a base ideal agrees with the action on their underlying ideals. -/
-@[simp]
-theorem coe_smul_primesOver_ringOfIntegers {p : Ideal (𝓞 K)}
-    (σ : L ≃ₐ[K] L) (P : p.primesOver (𝓞 L)) :
-    (σ • P).1 = σ • P.1 := by
-  rw [Ideal.coe_smul_primesOver_eq_map_galRestrict, Ideal.pointwise_smul_def,
-    ← Ideal.map_coe, galRestrict_ringOfIntegers_eq_toRingHom]
-
-/-- The Galois group acts transitively on primes above any fixed base ideal. -/
-instance isPretransitive_primesOver_ringOfIntegers [IsGalois K L] {p : Ideal (𝓞 K)} :
-    MulAction.IsPretransitive (L ≃ₐ[K] L) (p.primesOver (𝓞 L)) where
-  exists_smul_eq P Q := by
-    obtain ⟨σ, hσ⟩ := Ideal.exists_smul_eq_of_isGaloisGroup p P.1 Q.1 (L ≃ₐ[K] L)
-    exact ⟨σ, Subtype.ext ((coe_smul_primesOver_ringOfIntegers K L σ P).trans hσ)⟩
-
-end PrimesOver
-
-end TauCeti
 
 namespace AlgEquiv
 
