@@ -186,18 +186,27 @@ theorem signlessPreprojectiveAValley_mul (a b c : Fin (DynkinType.A n).rank) {m 
   simp only [← mul_assoc]
   rw [((Commute.neg_one_right (e c)).pow_right ((b.val - l) * (b.val - m))).eq]
 
-/-- The product is zero when commuting the descents past the climbs would cross rung zero. -/
+/-- The product is zero when commuting the descents past the climbs would cross rung zero.
+This includes valleys whose bottom lies above their source. -/
 @[simp]
 theorem signlessPreprojectiveAValley_mul_eq_zero (a b c : Fin (DynkinType.A n).rank) {m l : ℕ}
-    (hm : m ≤ a.val) (hbottom : m + l < b.val) :
+    (hbottom : m + l < b.val) :
     signlessPreprojectiveAValley k b c l * signlessPreprojectiveAValley k a b m = 0 := by
-  rw [signlessPreprojectiveAValley_def, signlessPreprojectiveAValley_def]
-  simp only [mul_assoc]
-  rw [target_ladderValley k a b (by omega) (by omega),
-    target_ladderValley k a b (by omega) (by omega),
-    ← mul_assoc (ladderValley u d l (b.val - l) (c.val - l)),
-    ladderValley_mul_ladderValley_eq_zero (ladder_bottom k (n := n))
-      (ladder_turn k (n := n)) (by omega) (by omega), zero_mul, mul_zero]
+  by_cases hm : m ≤ a.val
+  · rw [signlessPreprojectiveAValley_def, signlessPreprojectiveAValley_def]
+    simp only [mul_assoc]
+    rw [target_ladderValley k a b (by omega) (by omega),
+      target_ladderValley k a b (by omega) (by omega),
+      ← mul_assoc (ladderValley u d l (b.val - l) (c.val - l)),
+      ladderValley_mul_ladderValley_eq_zero (ladder_bottom k (n := n))
+        (ladder_turn k (n := n)) (by omega) (by omega), zero_mul, mul_zero]
+  · have ha : a.val - m = 0 := by omega
+    obtain ⟨r, hr⟩ : ∃ r, b.val - m = r + 1 := ⟨b.val - m - 1, by omega⟩
+    have hzero : signlessPreprojectiveAValley k a b m = 0 := by
+      rw [signlessPreprojectiveAValley_def, ha, hr, ← ladderValley_succ_zero_mul_u,
+        mul_assoc, mul_assoc, signlessArrow_mul_vertexIdempotent, ite_eq_right (by omega),
+        mul_zero, mul_zero]
+    rw [hzero, mul_zero]
 
 /-- Valleys in noncomposable corners have zero product, with no bounds on their bottoms. -/
 @[simp]
