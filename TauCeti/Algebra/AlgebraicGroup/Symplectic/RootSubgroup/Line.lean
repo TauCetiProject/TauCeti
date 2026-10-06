@@ -57,7 +57,7 @@ theorem mem_range_derivationCompLieHom_rootSubgroup_iff
   · rintro ⟨c, rfl⟩ a b h
     rw [hscalar]
     exact root.tangentMatrix_apply_eq_zero_of_int_eq_zero c a b
-      (not_ne_iff.mp (mt (tangentMatrix_apply_ne_zero_iff_root_eq.{u} root a b).mp h))
+      ((tangentMatrix_apply_eq_zero_iff_root_ne.{u} root a b).mpr h)
   · intro hs
     obtain ⟨c, hc, _⟩ := (existsUnique_eq_tangentMatrix_iff.{u} root
       (tangentMatrix m d).property).mpr hs

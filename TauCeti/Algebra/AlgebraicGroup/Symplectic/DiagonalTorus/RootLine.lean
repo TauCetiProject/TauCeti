@@ -116,6 +116,16 @@ theorem tangentMatrix_apply_ne_zero_iff_root_eq (root : RootSubgroupIndex m)
         pairedCoordinateWeight a - pairedCoordinateWeight b := by
   rw [← rootAtEntry_eq_some_iff, rootAtEntry_eq_some_iff_root]
 
+/-- A normalized integral root matrix vanishes exactly at entries whose paired-weight
+difference is not its root of the symplectic diagonal root datum. -/
+theorem tangentMatrix_apply_eq_zero_iff_root_ne (root : RootSubgroupIndex m)
+    (a b : Fin m ⊕ Fin m) :
+    root.tangentMatrix (1 : ℤ) a b = 0 ↔
+      (diagonalRootDatum.{u} m).root root ≠
+        pairedCoordinateWeight a - pairedCoordinateWeight b := by
+  simpa only [not_not] using
+    not_congr (tangentMatrix_apply_ne_zero_iff_root_eq.{u} root a b)
+
 /-- A symplectic Lie matrix has entries only of a given root character exactly when
 it is a unique scalar multiple of that root's normalized matrix. This holds over
 arbitrary commutative rings, including in characteristic two. -/
@@ -129,8 +139,7 @@ theorem existsUnique_eq_tangentMatrix_iff
   rw [root.existsUnique_eq_tangentMatrix_iff hA]
   apply forall_congr' fun a ↦ forall_congr' fun b ↦ ?_
   apply imp_congr ?_ Iff.rfl
-  simpa only [not_not] using
-    not_congr (tangentMatrix_apply_ne_zero_iff_root_eq.{u} root a b)
+  exact tangentMatrix_apply_eq_zero_iff_root_ne.{u} root a b
 
 
 end TauCeti.Symplectic
