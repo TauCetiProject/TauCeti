@@ -47,25 +47,6 @@ noncomputable section
 
 variable {R : Type u} [CommRing R] {r : ℕ}
 
-private theorem pointInCounitAlgebra_universalDiagonalTorus :
-    Derivation.pointInCounitAlgebra
-        (MonoidAlgebra R (Multiplicative (ULift.{u} (Fin r) →₀ ℤ)))
-        (toConv ((diagonalTorusCoordinateMap r R).hom :
-          coordinateHopfAlgebra R (r + 1) →ₐ[R]
-            MonoidAlgebra R (Multiplicative (ULift.{u} (Fin r) →₀ ℤ)))) =
-      (Bialgebra.CounitAlgebra.pointsMulEquiv R (coordinateHopfAlgebra R (r + 1))
-        (MonoidAlgebra R (Multiplicative (ULift.{u} (Fin r) →₀ ℤ)))).symm
-          (diagonalTorusPoints r R _ (toConv (AlgHom.id R _))) := by
-  apply WithConv.ofConv_injective
-  ext h
-  rw [Derivation.pointInCounitAlgebra_apply,
-    Bialgebra.CounitAlgebra.pointsMulEquiv_symm_apply,
-    Bialgebra.CounitAlgebra.algEquivSelf_symm_apply, diagonalTorusPoints_apply,
-    CommHopfAlgCat.mapPointsFunctor_app_apply_apply]
-  rw [AlgHom.id_apply]
-  -- The remaining coercion is the algebra-hom component of the categorical morphism.
-  rfl
-
 /-- A cotangent-dual tangent vector has weight `α` exactly when its matrix entries
 of every other weight vanish. This criterion uses the full torus coaction. -/
 theorem mem_adjointWeightSpace_iff
@@ -76,20 +57,12 @@ theorem mem_adjointWeightSpace_iff
         SplitTorus.weightCharacter (diagonalTorusWeight r i - diagonalTorusWeight r j) ≠ α →
           (tangentMatrix (r + 1) (Derivation.cotangentLinearEquiv (B := R) x) :
             Matrix (Fin (r + 1)) (Fin (r + 1)) R) i j = 0 := by
-  -- The categorical character group is an indexed copy of the exponent lattice; expose
-  -- that copy to apply the universal-point criterion.
-  erw [Derivation.mem_adjointWeightSpace_iff_universalPointAction]
-  let K := MonoidAlgebra R (Multiplicative (ULift.{u} (Fin r) →₀ ℤ))
-  rw [← (Derivation.tangentScalarExtensionEquiv
-    (R := R) (A := coordinateHopfAlgebra R (r + 1)) (B := K)).injective.eq_iff]
-  -- The scalar-extension action uses the same indexed coordinate presentations.
-  erw [Derivation.tangentScalarExtensionEquiv_adjointAction (CommAlgCat.of R K)
-      (toConv ((diagonalTorusCoordinateMap r R).hom :
-        coordinateHopfAlgebra R (r + 1) →ₐ[R] K)),
-    pointInCounitAlgebra_universalDiagonalTorus,
-    Derivation.tangentScalarExtensionEquiv_tmul, one_smul,
-    Derivation.tangentScalarExtensionEquiv_tmul,
-    adDerivation_universalDiagonalTorus_eq_iff]
+  rw [tangentMatrix_apply_coe]
+  have hπ := congrArg (fun f => f.hom)
+    (coordinateMap_comp_diagonalTorusCoordinateMap r R)
+  exact
+    HopfIdeal.mem_adjointWeightSpace_iff_of_weightTorus (definingHopfIdeal R (r + 1))
+      (diagonalTorusWeight r) (diagonalTorusCoordinateMap r R).hom hπ α x
 
 /-- A cotangent-dual tangent vector lies in a root weight space of the adjoint comodule
 exactly when its trace-zero matrix lies in the corresponding matrix-unit line. -/
