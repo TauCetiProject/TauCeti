@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LowDimTopology.SolidTorus.Neighborhood
+public import TauCeti.LowDimTopology.SolidTorusNeighborhood.Basic
 public import TauCeti.LowDimTopology.SolidTorus.Link
 
 /-!

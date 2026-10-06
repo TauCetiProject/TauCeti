@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.MetricSpace.Thickening
-public import TauCeti.LowDimTopology.SolidTorus.Neighborhood
+public import TauCeti.LowDimTopology.SolidTorusNeighborhood.Basic
 
 /-!
 # Disjoint solid-torus neighbourhoods of links
