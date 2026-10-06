@@ -155,6 +155,7 @@ noncomputable def signlessPreprojectiveAFrobeniusFunctional : Π →ₗ[k] k :=
   ∑ a, valleyCoord k a a.rev ⟨0, zero_mem_Icc_rev a⟩
 
 /-- The functional vanishes on the corner `e_d Π e_c` unless `d = ν c`. -/
+@[simp]
 theorem signlessPreprojectiveAFrobeniusFunctional_mul_mul_eq_zero
     {c d : Fin (DynkinType.A n).rank} (h : d ≠ c.rev) (x : Π) :
     signlessPreprojectiveAFrobeniusFunctional k (e d * x * e c) = 0 := by
@@ -168,6 +169,7 @@ theorem signlessPreprojectiveAFrobeniusFunctional_mul_mul_eq_zero
 
 /-- **The Frobenius functional on bounded valleys**: it is `1` on the longest valley of each
 corner `e_{ν a} Π e_a` and `0` on every other bounded valley. -/
+@[simp]
 theorem signlessPreprojectiveAFrobeniusFunctional_valley (a b : Fin (DynkinType.A n).rank) {m : ℕ}
     (hm : m ∈ Finset.Icc (a.val + b.val + 1 - n) (min a.val b.val)) :
     signlessPreprojectiveAFrobeniusFunctional k (signlessPreprojectiveAValley k a b m) =
