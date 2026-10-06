@@ -117,7 +117,8 @@ theorem differential_tmul_of_mem (hM : IsDGRightModule hA ℳ dM)
   rw [differential, lift_tmul, differentialBilinear_of_mem hm]
 
 /-- The differential on the balanced tensor product squares to zero. -/
-theorem differential_comp_self (hM : IsDGRightModule hA ℳ dM)
+@[simp]
+theorem differential_sq (hM : IsDGRightModule hA ℳ dM)
     (hN : IsDGLeftModule hA ℳN dN) :
     differential hM hN ∘ₗ differential hM hN = 0 := by
   apply hom_ext
@@ -138,9 +139,9 @@ theorem differential_comp_self (hM : IsDGRightModule hA ℳ dM)
 
 /-- Applying the tensor differential twice gives zero. -/
 @[simp]
-theorem differential_sq (hM : IsDGRightModule hA ℳ dM) (hN : IsDGLeftModule hA ℳN dN)
+theorem differential_sq_zero (hM : IsDGRightModule hA ℳ dM) (hN : IsDGLeftModule hA ℳN dN)
     (z : BalancedTensorProduct R A M N) : differential hM hN (differential hM hN z) = 0 :=
-  LinearMap.congr_fun (differential_comp_self hM hN) z
+  LinearMap.congr_fun (differential_sq hM hN) z
 
 section Naturality
 
@@ -152,9 +153,9 @@ variable {M' N' : Type*}
   [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece ℳ']
   [SetLike.GradedSMul 𝒜 ℳN'] {dM' : M' →ₗ[R] M'} {dN' : N' →ₗ[R] N'}
 
-/-- Tensoring degree-zero equivariant chain maps commutes with the balanced tensor differential.
-Only the first map's degree is needed for this differential identity. -/
-theorem differential_map (hM : IsDGRightModule hA ℳ dM) (hN : IsDGLeftModule hA ℳN dN)
+/-- Tensoring equivariant chain maps, with the first map of degree zero, commutes with the balanced
+tensor differential. Only the first map's degree is needed for this differential identity. -/
+theorem differential_naturality (hM : IsDGRightModule hA ℳ dM) (hN : IsDGLeftModule hA ℳN dN)
     (hM' : IsDGRightModule hA ℳ' dM') (hN' : IsDGLeftModule hA ℳN' dN')
     (f : M →ₗ[R] M') (g : N →ₗ[R] N')
     (hf : ∀ (a : A) m, f (op a • m) = op a • f m)
@@ -181,6 +182,7 @@ theorem differential_map (hM : IsDGRightModule hA ℳ dM) (hN : IsDGLeftModule h
 end Naturality
 
 /-- The left regular-module unit identification commutes with the tensor differential. -/
+@[simp]
 theorem lid_comp_differential (hA : IsDGAlgebra 𝒜 dA) (hN : IsDGLeftModule hA ℳN dN) :
     (lid R A N).toLinearMap ∘ₗ differential hA.isDGRightModule hN =
       dN ∘ₗ (lid R A N).toLinearMap := by
@@ -200,6 +202,7 @@ theorem lid_comp_differential (hA : IsDGAlgebra 𝒜 dA) (hN : IsDGLeftModule hA
   simpa only [LinearMap.comp_apply, LinearMap.flip_apply, mk_apply] using LinearMap.congr_fun key a
 
 /-- The right regular-module unit identification commutes with the tensor differential. -/
+@[simp]
 theorem rid_comp_differential (hA : IsDGAlgebra 𝒜 dA) (hM : IsDGRightModule hA ℳ dM) :
     (rid R A M).toLinearMap ∘ₗ differential hM hA.isDGLeftModule =
       dM ∘ₗ (rid R A M).toLinearMap := by
