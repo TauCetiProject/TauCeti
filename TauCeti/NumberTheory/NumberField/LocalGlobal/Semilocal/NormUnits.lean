@@ -10,7 +10,6 @@ public import TauCeti.NumberTheory.NumberField.LocalGlobal.Semilocal.NormTrace
 public import TauCeti.NumberTheory.LocalField.Norm.Unramified.Basic
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.RamificationIndex
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
-import TauCeti.NumberTheory.Chebotarev.RamifiedPrimes
 
 /-!
 # Norm equations in the local étale algebras
@@ -25,8 +24,6 @@ above the place, including split algebras and real and complex places.
   `TauCeti.mem_range_normUnits_completion_iff`: the local norm range as products of norms.
 * `TauCeti.exists_unit_preimages_of_isUnramifiedAt`: a unit has integral unit preimages
   if one completion above the place is unramified.
-* `TauCeti.eventually_isUnramifiedAt_liesOver`: almost every finite place has only
-  unramified places above it.
 
 ## References
 
@@ -97,18 +94,5 @@ theorem exists_unit_preimages_of_isUnramifiedAt (v : HeightOneSpectrum (𝓞 K))
       simp only [Pi.mulSingle_eq_same]
       exact ((mem_unitFiltration_adicCompletion_iff w.1).mp hb).1
     · simp [Pi.mulSingle_eq_of_ne hw']
-
-/-- Almost every finite place of a number field has only unramified primes above it. -/
-theorem eventually_isUnramifiedAt_liesOver :
-    ∀ᶠ v : HeightOneSpectrum (𝓞 K) in Filter.cofinite,
-      ∀ w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal},
-        Algebra.IsUnramifiedAt (𝓞 K) w.1.asIdeal := by
-  classical
-  refine Filter.eventually_cofinite.mpr
-    ((NumberField.Chebotarev.ramifiedPrimes K L).finite_toSet.subset ?_)
-  intro v hv
-  apply (NumberField.Chebotarev.mem_ramifiedPrimes_iff v).mpr
-  intro h
-  exact hv fun w ↦ h w.1.asIdeal
 
 end TauCeti

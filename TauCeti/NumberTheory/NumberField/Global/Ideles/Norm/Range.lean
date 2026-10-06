@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.Norm.Relative
 public import TauCeti.NumberTheory.NumberField.LocalGlobal.Semilocal.NormUnits
+import TauCeti.NumberTheory.Chebotarev.RamifiedPrimes
 
 /-!
 # Placewise characterization of idele norms

@@ -85,14 +85,10 @@ theorem algebraMap_norm_eq_prod_norm (x : L) :
     algebraMap K (v.adicCompletion K) (Algebra.norm K x) =
         Algebra.norm (v.adicCompletion K) ((1 : v.adicCompletion K) ⊗ₜ[K] x) :=
       (Algebra.norm_baseChange_tmul (A := v.adicCompletion K) (B := L) x).symm
-    _ = Algebra.norm (v.adicCompletion K)
-        (semilocalEquiv L v ((1 : v.adicCompletion K) ⊗ₜ[K] x)) := by
-      symm
-      exact Algebra.norm_eq_of_algEquiv (semilocalEquiv L v) _
     _ = ∏ w : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal},
         Algebra.norm (v.adicCompletion K)
         (semilocalEquiv L v ((1 : v.adicCompletion K) ⊗ₜ[K] x) w) :=
-      Algebra.norm_pi _
+      norm_eq_prod_norm_semilocalEquiv L v _
     _ = ∏ w : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal},
         Algebra.norm (v.adicCompletion K)
         (algebraMap L (w.1.adicCompletion L) x) := by
