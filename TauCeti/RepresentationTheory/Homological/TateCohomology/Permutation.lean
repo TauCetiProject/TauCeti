@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.HerbrandQuotient
+public import TauCeti.Algebra.GroupAction.Sigma
 import TauCeti.RepresentationTheory.Coinvariants
 import TauCeti.RepresentationTheory.OfMulAction
 
@@ -49,6 +50,8 @@ the product of the local degrees.
 * `TauCeti.TateCohomology.herbrandQuotient_ofMulAction`: `h(ℤ[X]) = ∏_ω |G_ω|`.
 * `TauCeti.TateCohomology.herbrandQuotient_ofMulAction_of_isPretransitive`: `h(ℤ[X]) = |G_x|`
   for a transitive action.
+* `TauCeti.TateCohomology.herbrandQuotient_ofMulAction_sigma`: the product of the stabilizer
+  orders for a finite family of transitive actions.
 * `TauCeti.TateCohomology.herbrandQuotient_ofMulAction_quotient`: `h(ℤ[G ⧸ H]) = |H|`.
 
 ## References
@@ -220,6 +223,27 @@ theorem herbrandQuotient_ofMulAction_of_isPretransitive {G X : Type} [Group G] [
   rw [herbrandQuotient_ofMulAction, Fintype.prod_subsingleton _ (Quotient.mk (orbitRel G X) x),
     Nat.card_congr
       (stabilizerEquivStabilizerOfOrbitRel (Quotient.mk_out (s := orbitRel G X) x)).toEquiv]
+
+/-- For a finite family of nonempty transitive actions, the Herbrand quotient of the
+permutation lattice is the product of the stabilizer orders, one for each fibre. -/
+theorem herbrandQuotient_ofMulAction_sigma {G ι : Type} {X : ι → Type} [Group G] [Fintype G]
+    [Fintype ι] [∀ i, MulAction G (X i)] [∀ i, IsPretransitive G (X i)]
+    (x : ∀ i, X i) :
+    herbrandQuotient (Rep.ofMulAction ℤ G (Σ i, X i)) =
+      ∏ i, (Nat.card (stabilizer G (x i)) : ℚ) := by
+  let : ∀ i, Nonempty (X i) := fun i ↦ ⟨x i⟩
+  let e := TauCeti.MulAction.orbitRelQuotientSigmaEquiv (G := G) (X := X)
+  let := Fintype.ofEquiv ι e.symm
+  rw [herbrandQuotient_ofMulAction]
+  refine Fintype.prod_equiv e _ _ fun ω ↦ ?_
+  have h : orbitRel G (Σ i, X i) ω.out (Sigma.mk (e ω) (x (e ω))) := by
+    apply Quotient.exact
+    apply e.injective
+    rw [Quotient.out_eq]
+    exact (TauCeti.MulAction.orbitRelQuotientSigmaEquiv_mk
+      (G := G) (Sigma.mk (e ω) (x (e ω)))).symm
+  rw [Nat.card_congr (stabilizerEquivStabilizerOfOrbitRel h).toEquiv,
+    TauCeti.MulAction.stabilizer_sigma_mk]
 
 /-- The Herbrand quotient of `ℤ[G ⧸ H]`, the module induced from the trivial `H`-module `ℤ`, is
 `|H|`. -/
