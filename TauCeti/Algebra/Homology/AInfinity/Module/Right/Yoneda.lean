@@ -330,17 +330,23 @@ noncomputable def yonedaComplexHom :
     rintro i j (rfl : i + 1 = j)
     refine ModuleCat.hom_ext (LinearMap.ext fun y ↦ ?_)
     set x := (eqToHom (gradedCochainComplex_X i)).hom y
-    have hd := congrArg (fun φ ↦ φ.hom (MM.yonedaCochain i x))
-      (homComplex_d AA.toRightModule MM i)
+    have hd : ((homComplex AA.toRightModule MM).d i (i + 1)).hom (MM.yonedaCochain i x) =
+        homDifferential AA.toRightModule MM i (MM.yonedaCochain i x) :=
+      congrArg (fun φ ↦ φ.hom (MM.yonedaCochain i x)) (homComplex_d AA.toRightModule MM i)
     have key := gradedCochainComplex_d_apply (hdeg := MM.isHomogeneous_differential)
       (hsq := fun _ x ↦ LinearMap.congr_fun MM.differential_comp_self_eq_zero x) i x
     -- The `eqToHom` of `gradedCochainComplex_X` is cancelled by its inverse.
     rw [show (eqToHom (gradedCochainComplex_X i).symm) x = y from
       (eqToIso (gradedCochainComplex_X i)).hom_inv_id_apply y] at key
+    -- The `eqToHom`s of `homComplex_X` are identities.
+    have e (p : ℤ) (v : homCochains AA.toRightModule MM p) :
+        (eqToHom (homComplex_X AA.toRightModule MM p).symm).hom v = v :=
+      (congrArg (fun φ ↦ ModuleCat.Hom.hom φ v)
+        (eqToHom_refl (ModuleCat.of R (homCochains AA.toRightModule MM p)) _)).trans
+          (ModuleCat.id_apply (ModuleCat.of R (homCochains AA.toRightModule MM p)) v)
     simp only [ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.hom_ofHom]
-    -- The `eqToHom`s of `homComplex_X` are identities of definitionally equal modules.
-    exact (hd.trans (MM.homDifferential_yonedaCochain i x)).trans
-      (congrArg (MM.yonedaCochain (i + 1)) key.symm)
+    rw [e, e, hd, MM.homDifferential_yonedaCochain i x]
+    exact congrArg (MM.yonedaCochain (i + 1)) key.symm
 
 /-- The degree-`p` component of the Yoneda map is the Yoneda cochain of degree `p`. -/
 @[simp]
