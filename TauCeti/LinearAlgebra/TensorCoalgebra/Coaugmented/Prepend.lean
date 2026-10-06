@@ -33,6 +33,8 @@ splices, which is the form in which coderivations are expanded.
   and the positive-length cases.
 * `TauCeti.TensorWords.prepend_subword` and `TauCeti.TensorWords.prepend_subword_eq_splice`:
   prepending to a block of a tuple.
+* `TauCeti.TensorWords.deconcatenation_reducedInclusion_prepend`: deconcatenating a word with a
+  prepended letter.
 * `TauCeti.TensorWords.prepend_mem_gradedPiece` and
   `TauCeti.TensorWords.isHomogeneous_lift_prepend`: prepending adds total letter degrees.
 * `TauCeti.TensorWords.subword_tail`: blocks of the tail of a tuple.
@@ -134,6 +136,39 @@ theorem prepend_subword_eq_splice {n : ℕ} (z : Fin n → M) {a b d : ℕ} (hd 
     simp only [Fin.cons_succ, Fin.val_cast, Fin.val_succ]
     rw [dite_eq_right (by omega), dite_eq_right (by omega)]
     exact congrArg z (Fin.ext (by simp only; omega))
+
+/-- Deconcatenating a word `a w` with a prepended letter cuts it either before `a`, or inside
+`w` after `a`: if `Δ w = ∑ w₁ ⊗ w₂`, then `Δ (a w) = 1 ⊗ a w + ∑ a w₁ ⊗ w₂`. -/
+theorem deconcatenation_comp_reducedInclusion_comp_prepend (a : M) :
+    deconcatenation R M ∘ₗ reducedInclusion R M ∘ₗ prepend R M a =
+      TensorProduct.mk R _ _ (1 : TensorWords R M) ∘ₗ reducedInclusion R M ∘ₗ prepend R M a +
+        (reducedInclusion R M ∘ₗ prepend R M a).rTensor (TensorWords R M) ∘ₗ
+          deconcatenation R M := by
+  refine linearMap_ext R M fun k y ↦ ?_
+  simp only [LinearMap.add_apply, LinearMap.comp_apply, TensorProduct.mk_apply]
+  rw [prepend_of_tprod, reducedInclusion_of,
+    of_tprod_eq_subword R (Fin.cons a y : Fin (k + 1) → M), deconcatenation_subword,
+    of_tprod_eq_subword R y, deconcatenation_subword, map_sum, Finset.sum_range_succ',
+    subword_length_zero R _ (Nat.zero_le _), add_comm]
+  congr 1
+  -- A cut after `j + 1` letters of `a y₁ ⋯ y_k` is `a` prepended to a cut after `j` letters of `y`.
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  rw [LinearMap.rTensor_tmul, LinearMap.comp_apply, ← Fin.tail_cons (α := fun _ ↦ M) a y,
+    subword_tail, subword_tail, Fin.tail_cons]
+  have h := prepend_subword (R := R) (Fin.cons a y : Fin (k + 1) → M) (a := 0) (Nat.succ_pos k) j
+  rw [Fin.zero_eta, Fin.cons_zero] at h
+  rw [h, reducedInclusion_subword R _ (Nat.succ_pos j)]
+  congr 2
+  omega
+
+/-- Deconcatenating a word `a w` with a prepended letter, evaluated: if `Δ w = ∑ w₁ ⊗ w₂`, then
+`Δ (a w) = 1 ⊗ a w + ∑ a w₁ ⊗ w₂`. -/
+theorem deconcatenation_reducedInclusion_prepend (a : M) (w : TensorWords R M) :
+    deconcatenation R M (reducedInclusion R M (prepend R M a w)) =
+      (1 : TensorWords R M) ⊗ₜ[R] reducedInclusion R M (prepend R M a w) +
+        (reducedInclusion R M ∘ₗ prepend R M a).rTensor (TensorWords R M)
+          (deconcatenation R M w) :=
+  LinearMap.congr_fun (deconcatenation_comp_reducedInclusion_comp_prepend a) w
 
 end TensorWords
 

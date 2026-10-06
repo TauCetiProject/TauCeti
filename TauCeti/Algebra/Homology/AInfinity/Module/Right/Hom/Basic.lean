@@ -155,28 +155,32 @@ theorem barDifferential_comp_iff
       mul_zero, Int.negOnePow_zero, Units.val_one, Int.cast_one, one_smul,
       Comodule.Hom.zero_toLinearMap, sub_eq_zero] using this
 
-private theorem isHomogeneous_cofreeLift
+/-- The cofree lift of a map `sM ⊗ Tᶜ(sA) → sN` of degree `p` is a map of cofree bar comodules of
+degree `p`. -/
+theorem isHomogeneous_cofreeLift {p : ℤ}
     (F : (M ⊗[R] TensorWords R A) →ₗ[R] N)
     (hF : LinearMap.IsHomogeneous F (AInfinityRightModule.barGrading AA MM.grading).piece
-      (NN.grading.shift 1).piece 0) :
+      (NN.grading.shift 1).piece p) :
     LinearMap.IsHomogeneous (Comodule.Hom.cofreeLift (C := TensorWords R A) F).toLinearMap
       (AInfinityRightModule.barGrading AA MM.grading).piece
-      (AInfinityRightModule.barGrading AA NN.grading).piece 0 := by
+      (AInfinityRightModule.barGrading AA NN.grading).piece p := by
   let W := TensorWords.grading (AA.grading.shift 1)
   have hG (G : InternalGrading R M) : AInfinityRightModule.barGrading AA G =
       (G.shift 1).tensorProduct W := by
-    ext p
+    ext q
     rw [AInfinityRightModule.barGrading_piece]
   have hH : AInfinityRightModule.barGrading AA NN.grading =
       (NN.grading.shift 1).tensorProduct W := by
-    ext p
+    ext q
     rw [AInfinityRightModule.barGrading_piece]
   rw [Comodule.Hom.cofreeLift_toLinearMap, Comodule.cofree_coact, hG, hH]
   rw [hG] at hF
   have hρ := (InternalGrading.isHomogeneous_assoc_symm (MM.grading.shift 1) W W).comp
     ((LinearMap.isHomogeneous_id (MM.grading.shift 1).piece).tensorProduct
       (TensorWords.isHomogeneous_deconcatenation (AA.grading.shift 1)))
-  exact (hF.tensorProduct (LinearMap.isHomogeneous_id W.piece)).comp hρ
+  have h := (hF.tensorProduct (LinearMap.isHomogeneous_id W.piece)).comp hρ
+  simp only [add_zero, zero_add] at h
+  exact h
 
 /-- Construct a module morphism from a degree-zero Taylor map satisfying the suspended component
 equation. Cofreeness supplies the bar map and reduces its differential law to this equation. -/

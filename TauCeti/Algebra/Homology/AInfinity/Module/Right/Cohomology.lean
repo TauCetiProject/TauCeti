@@ -57,6 +57,16 @@ theorem differential_apply (MM : AInfinityRightModule AA M) (x : M) :
   rw [differential, LinearMap.comp_apply, LinearMap.flip_apply, TensorProduct.mk_apply,
     MM.taylor_tmul_one]
 
+/-- The module differential raises the degree by one. -/
+theorem differential_mem_piece (MM : AInfinityRightModule AA M) {p : ℤ} {x : M}
+    (hx : x ∈ MM.grading.piece p) : MM.differential x ∈ MM.grading.piece (p + 1) := by
+  simpa using MM.m_mem_piece 0 hx (fun i ↦ i.elim0) (fun i ↦ i.elim0) (fun i ↦ i.elim0)
+
+/-- The module differential is homogeneous of degree one. -/
+theorem isHomogeneous_differential (MM : AInfinityRightModule AA M) :
+    LinearMap.IsHomogeneous MM.differential MM.grading.piece MM.grading.piece 1 :=
+  LinearMap.isHomogeneous_def.2 fun _ _ hx ↦ MM.differential_mem_piece hx
+
 /-- The unary operation of a right `A∞` module squares to zero. -/
 @[simp]
 theorem differential_comp_self_eq_zero (MM : AInfinityRightModule AA M) :
@@ -64,6 +74,11 @@ theorem differential_comp_self_eq_zero (MM : AInfinityRightModule AA M) :
   ext x
   simp only [LinearMap.comp_apply, differential_apply, LinearMap.zero_apply]
   exact MM.stasheff_arity_one x _ _
+
+/-- The module differential squares to zero, elementwise. -/
+theorem differential_differential (MM : AInfinityRightModule AA M) (x : M) :
+    MM.differential (MM.differential x) = 0 :=
+  LinearMap.congr_fun MM.differential_comp_self_eq_zero x
 
 /-- The cycles of a right `A∞` module are the kernel of its unary operation. -/
 def cycles (MM : AInfinityRightModule AA M) : Submodule R M :=
