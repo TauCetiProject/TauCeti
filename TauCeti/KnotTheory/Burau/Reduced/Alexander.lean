@@ -8,6 +8,7 @@ module
 public import TauCeti.KnotTheory.Burau.Alexander
 public import TauCeti.KnotTheory.Burau.Reduced.Basic
 public import TauCeti.LinearAlgebra.Matrix.InvariantReduction
+import Mathlib.Tactic.DSimpPercent
 
 /-!
 # The reduced Burau determinant and the braid Alexander polynomial
@@ -43,8 +44,10 @@ variable {R : Type*} [CommRing R] {n : ℕ}
 
 /-- The reduced Burau determinant is the geometric sum times the existing braid Alexander
 invariant, with unit factor `t⁻ⁿ`. This equality remains valid when the geometric sum is zero. -/
-theorem det_reducedBurauCol_sub_one (b : BraidGroup (n + 1)) (t : Rˣ) :
-    ((reducedBurauCol (n + 1) t b : Matrix (Fin (n + 1 - 1)) (Fin (n + 1 - 1)) R) - 1).det =
+@[simp] theorem det_reducedBurauCol_sub_one (b : BraidGroup (n + 1)) (t : Rˣ) :
+    -- Normalize dimension arithmetic in implicit coercion and instance arguments too.
+    (dsimp% only [Nat.add_one_sub_one]
+      ((reducedBurauCol (n + 1) t b : Matrix (Fin (n + 1 - 1)) (Fin (n + 1 - 1)) R) - 1).det) =
       (∑ i : Fin (n + 1), (t : R) ^ (i : ℕ)) *
         ((t⁻¹ : Rˣ) : R) ^ n * (MarkovBraid.mk n b).burauAlexander t := by
   let A := (burau (n + 1) t b : Matrix (Fin (n + 1)) (Fin (n + 1)) R) - 1
@@ -57,7 +60,7 @@ theorem det_reducedBurauCol_sub_one (b : BraidGroup (n + 1)) (t : Rˣ) :
     (fun _ => 1) (fun i => (t : R) ^ (i : ℕ))
     (burau_sub_one_mulVec_one t b) rfl
     (geom_vecMul_burauColMatrix_eq_zero (n + 1) (t : R))
-    (t.isUnit.pow n) (by
+    (by
       dsimp only [C]
       rw [det_burauColMatrix_submatrix_castSucc]
       exact t.isUnit.pow n) hAX
