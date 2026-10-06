@@ -112,8 +112,7 @@ instance (a b : irreducibleMorphismQuiver.{u, v, w, t} k Q) :
   QuiverRep.finiteDimensional_hom a.representative_property.1 b.representative_property.1
 
 instance (a b : irreducibleMorphismQuiver.{u, v, w, t} k Q) : Finite (a ⟶ b) := by
-  change Finite (Module.Free.ChooseBasisIndex k
-    (irreducibleMorphismSpace k a.representative b.representative))
+  dsimp only [Quiver.Hom, instQuiver]
   infer_instance
 
 /-- The arrow count is the dimension of the irreducible morphism space. -/
@@ -121,8 +120,7 @@ instance (a b : irreducibleMorphismQuiver.{u, v, w, t} k Q) : Finite (a ⟶ b) :
 theorem card_arrows (a b : irreducibleMorphismQuiver.{u, v, w, t} k Q) :
     Nat.card (a ⟶ b) = Module.finrank k
       (irreducibleMorphismSpace k a.representative b.representative) := by
-  change Nat.card (Module.Free.ChooseBasisIndex k
-    (irreducibleMorphismSpace k a.representative b.representative)) = _
+  dsimp only [Quiver.Hom, instQuiver]
   rw [Nat.card_eq_fintype_card, ← Module.finrank_eq_card_chooseBasisIndex]
 
 /-- The arrow count can be computed on any representatives of the two classes. -/
