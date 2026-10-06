@@ -8,6 +8,8 @@ module
 public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.VariableChange
+-- Proof-only: torsion is transported along an additive equivalence.
+import TauCeti.Algebra.Module.Torsion.Basic
 -- Proof-only: an extension of an algebraically closed field adds no torsion.
 import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Torsion.AlgClosed
 -- Proof-only: over an algebraically closed field, the `2`- and `3`-torsion in characteristic `2`
@@ -56,12 +58,12 @@ respectively `(b₂x³ + b₈)²`, and on an elliptic curve it is a nonzero cons
   variables.
 * `WeierstrassCurve.isSupersingular_iff_forall_pow`: a supersingular curve has no nonzero
   `p ^ r`-torsion over `AlgebraicClosure K` for any `r`.
-* `WeierstrassCurve.isSupersingular_two_iff_j_eq_zero` and
-  `WeierstrassCurve.isSupersingular_three_iff_j_eq_zero`: in characteristic `2` and `3`, an elliptic
-  curve is supersingular exactly when `j = 0`.
-* `WeierstrassCurve.isOrdinary_two_iff_j_ne_zero` and
-  `WeierstrassCurve.isOrdinary_three_iff_j_ne_zero`: in characteristic `2` and `3`, an elliptic
-  curve is ordinary exactly when `j ≠ 0`.
+* `WeierstrassCurve.isSupersingular_iff_j_eq_zero_of_char_two` and
+  `WeierstrassCurve.isSupersingular_iff_j_eq_zero_of_char_three`: in characteristic `2` and `3`,
+  an elliptic curve is supersingular exactly when `j = 0`.
+* `WeierstrassCurve.isOrdinary_iff_j_ne_zero_of_char_two` and
+  `WeierstrassCurve.isOrdinary_iff_j_ne_zero_of_char_three`: in characteristic `2` and `3`, an
+  elliptic curve is ordinary exactly when `j ≠ 0`.
 
 ## References
 
@@ -122,12 +124,14 @@ theorem isSupersingular_iff_forall_pow :
     W.IsSupersingular p ↔
       ∀ r : ℕ, AddSubgroup.torsionBy (W.baseChange (AlgebraicClosure K)).toAffine.Point
         ((p : ℤ) ^ r) = ⊥ := by
-  refine ⟨fun h r ↦ ?_, fun h ↦ by simpa [IsSupersingular] using h 1⟩
-  rw [isSupersingular_iff_forall] at h
-  simp only [← Nat.cast_pow, AddSubgroup.eq_bot_iff_forall, AddSubgroup.torsionBy.nsmul_iff]
-  induction r with
-  | zero => simp
-  | succ r ih => exact fun P hP ↦ h P (ih (p • P) (by rwa [smul_smul, ← pow_succ]))
+  -- `A[n] = ⊥` says that `n` is a regular scalar on `A`, and powers of regular scalars are regular.
+  have key (n : ℤ) :
+      AddSubgroup.torsionBy (W.baseChange (AlgebraicClosure K)).toAffine.Point n = ⊥ ↔
+        IsSMulRegular (W.baseChange (AlgebraicClosure K)).toAffine.Point n := by
+    rw [isSMulRegular_iff_torsionBy_eq_bot, ← Submodule.toAddSubgroup_inj,
+      Submodule.bot_toAddSubgroup]
+  simp only [IsSupersingular, key]
+  exact ⟨fun h r ↦ h.pow r, fun h ↦ by simpa using h 1⟩
 
 section Elliptic
 
@@ -177,11 +181,9 @@ have isomorphic point groups over `AlgebraicClosure K`. -/
 theorem isSupersingular_variableChange_iff (C : VariableChange K) :
     (C • W).IsSupersingular p ↔ W.IsSupersingular p := by
   classical
-  let e := W.pointEquivVariableChange (AlgebraicClosure K) C
-  simp only [isSupersingular_iff_forall]
-  refine ⟨fun h P hP ↦ ?_, fun h P hP ↦ e.injective ?_⟩
-  · rw [← e.apply_symm_apply P, h (e.symm P) (by rw [← map_nsmul, hP, map_zero]), map_zero]
-  · rw [h (e P) (by rw [← map_nsmul, hP, map_zero]), map_zero]
+  rw [IsSupersingular, IsSupersingular, ← not_iff_not, ← ne_eq, ← ne_eq,
+    ← AddSubgroup.nontrivial_iff_ne_bot, ← AddSubgroup.nontrivial_iff_ne_bot]
+  exact ((W.pointEquivVariableChange _ C).torsionByCongr p).toEquiv.nontrivial_congr
 
 /-- **Ordinarity is invariant under a change of variables.** -/
 @[simp]
@@ -195,7 +197,7 @@ variable [W.IsElliptic]
 
 /-- **In characteristic `2` an elliptic curve is supersingular exactly when `j = 0`**, equivalently
 `a₁ = 0` (`WeierstrassCurve.j_eq_zero_iff_of_char_two`). -/
-theorem isSupersingular_two_iff_j_eq_zero [CharP K 2] : W.IsSupersingular 2 ↔ W.j = 0 := by
+theorem isSupersingular_iff_j_eq_zero_of_char_two [CharP K 2] : W.IsSupersingular 2 ↔ W.j = 0 := by
   classical
   have : (W.baseChange (AlgebraicClosure K)).IsElliptic := inferInstanceAs (W.map _).IsElliptic
   have hj : (W.baseChange (AlgebraicClosure K)).j = algebraMap K _ W.j := W.map_j _
@@ -204,7 +206,8 @@ theorem isSupersingular_two_iff_j_eq_zero [CharP K 2] : W.IsSupersingular 2 ↔ 
 
 /-- **In characteristic `3` an elliptic curve is supersingular exactly when `j = 0`**, equivalently
 `b₂ = 0` (`WeierstrassCurve.j_eq_zero_iff_of_char_three`). -/
-theorem isSupersingular_three_iff_j_eq_zero [CharP K 3] : W.IsSupersingular 3 ↔ W.j = 0 := by
+theorem isSupersingular_iff_j_eq_zero_of_char_three [CharP K 3] :
+    W.IsSupersingular 3 ↔ W.j = 0 := by
   classical
   have : (W.baseChange (AlgebraicClosure K)).IsElliptic := inferInstanceAs (W.map _).IsElliptic
   have hj : (W.baseChange (AlgebraicClosure K)).j = algebraMap K _ W.j := W.map_j _
@@ -212,12 +215,12 @@ theorem isSupersingular_three_iff_j_eq_zero [CharP K 3] : W.IsSupersingular 3 �
     ← j_eq_zero_iff_of_char_three, hj, FaithfulSMul.algebraMap_eq_zero_iff]
 
 /-- **In characteristic `2` an elliptic curve is ordinary exactly when `j ≠ 0`.** -/
-theorem isOrdinary_two_iff_j_ne_zero [CharP K 2] : W.IsOrdinary 2 ↔ W.j ≠ 0 :=
-  isSupersingular_two_iff_j_eq_zero.not
+theorem isOrdinary_iff_j_ne_zero_of_char_two [CharP K 2] : W.IsOrdinary 2 ↔ W.j ≠ 0 :=
+  isSupersingular_iff_j_eq_zero_of_char_two.not
 
 /-- **In characteristic `3` an elliptic curve is ordinary exactly when `j ≠ 0`.** -/
-theorem isOrdinary_three_iff_j_ne_zero [CharP K 3] : W.IsOrdinary 3 ↔ W.j ≠ 0 :=
-  isSupersingular_three_iff_j_eq_zero.not
+theorem isOrdinary_iff_j_ne_zero_of_char_three [CharP K 3] : W.IsOrdinary 3 ↔ W.j ≠ 0 :=
+  isSupersingular_iff_j_eq_zero_of_char_three.not
 
 end WeierstrassCurve
 
