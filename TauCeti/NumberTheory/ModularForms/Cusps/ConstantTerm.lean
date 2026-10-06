@@ -56,9 +56,9 @@ Eisenstein series through their constant terms.
 * `ModularForm.mem_cuspFormSubmodule_iff_constantTermAt_eq_zero`: a modular form is cuspidal if
   and only if every translated constant term vanishes.
 * `ModularForm.ker_constantTerms`: the kernel of `constantTerms` is the cusp-form submodule.
-* `TauCeti.ModularForm.constantTermAtCuspTranslationOrbit_mk_mapGL`: identifies an integral
+* `TauCeti.constantTermAtCuspTranslationOrbit_mk_mapGL`: identifies an integral
   coset's orbit constant term with the constant term at the cusp represented by the inverse matrix.
-* `TauCeti.ModularForm.mem_cuspFormSubmodule_iff_constantTermAtCuspTranslationOrbit_eq_zero`:
+* `TauCeti.mem_cuspFormSubmodule_iff_constantTermAtCuspTranslationOrbit_eq_zero`:
   a modular form is cuspidal if and only if all its cusp translation orbit constant terms vanish.
 * `TauCeti.mem_range_cuspToModFormCharSpace_iff_constantTermAt_eq_zero`: the same
   characterization inside a nebentypus space.
@@ -344,7 +344,7 @@ theorem range_cuspToModFormCharSpace_eq_ker_constantTerms :
 
 end TauCeti
 
-namespace TauCeti.ModularForm
+namespace TauCeti
 
 open TauCeti.ModularForm _root_.ModularForm _root_.Matrix.SpecialLinearGroup
 open UpperHalfPlane _root_.SlashInvariantForm
@@ -386,4 +386,4 @@ theorem mem_cuspFormSubmodule_iff_constantTermAtCuspTranslationOrbit_eq_zero
       hf (⟦(QuotientGroup.mk ((mapGL ℝ).rangeRestrict γ⁻¹) :
         𝒮ℒ ⧸ 𝒢.subgroupOf 𝒮ℒ)⟧ : CuspTranslationOrbit 𝒢)
 
-end TauCeti.ModularForm
+end TauCeti
