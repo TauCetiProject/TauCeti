@@ -77,17 +77,14 @@ theorem link_stellarSubdivision_of_notMem (hvτ : v ∉ τ) :
       mem_stellarSubdivision_iff_of_notMem hvω, hsub]
     tauto
 
-/-- If the starring vertex is unused in the old link, the links of a surviving old face before
-and after starring are stellar equivalent. This applies to every face avoiding the starring
-vertex, not only to vertices. -/
+/-- If the starring vertex is unused in the old link and the starred set has a vertex outside
+`τ`, its links before and after starring are stellar equivalent. This applies to every set
+avoiding the starring vertex, not only to surviving faces. -/
 theorem stellarEquivalent_link_stellarSubdivision_of_notMem
     (hv : ({v} : Finset ι) ∉ link K τ) (hvτ : v ∉ τ)
-    (hτ : τ ∈ stellarSubdivision K σ v) :
+    (hne : (σ \ τ).Nonempty) :
     StellarEquivalent (link K τ) (link (stellarSubdivision K σ v) τ) := by
   rw [link_stellarSubdivision_of_notMem hvτ]
-  have havoid := (mem_stellarSubdivision_iff_of_notMem hvτ).mp hτ |>.2
-  have hne : (σ \ τ).Nonempty := Finset.nonempty_of_ne_empty fun h =>
-    havoid (sdiff_eq_empty_iff_subset.mp h)
   by_cases hrem : σ \ τ ∈ link K τ
   · exact stellarEquivalent_stellarSubdivision hrem hv
   · rw [stellarSubdivision_eq_self_of_notMem hv hne hrem]
@@ -99,13 +96,13 @@ theorem IsCombinatorialManifold.link_stellarSubdivision_eq_bot
     (hw : ({w} : Finset ι) ∈ stellarSubdivision K σ v) :
     link (stellarSubdivision K σ v) {w} = ⊥ := by
   have hvw : v ∉ ({w} : Finset ι) := by simpa [eq_comm] using hwv
-  have hwK := (mem_stellarSubdivision_iff_of_notMem hvw).mp hw |>.1
+  obtain ⟨hwK, havoid⟩ := (mem_stellarSubdivision_iff_of_notMem hvw).mp hw
   have hlink := isCombinatorialManifold_zero_iff.mp hK hwK
   have hvlink : ({v} : Finset ι) ∉ link K {w} := by
     rw [hlink]
     exact Set.notMem_empty _
   have he := stellarEquivalent_link_stellarSubdivision_of_notMem
-    hvlink hvw hw
+    hvlink hvw (sdiff_nonempty.mpr havoid)
   apply dimension_eq_bot_iff.mp
   rw [he.dimension_eq, hlink, dimension_bot]
 
@@ -120,9 +117,9 @@ theorem IsCombinatorialManifold.isCombinatorialSphere_or_isCombinatorialBall_lin
     IsCombinatorialSphere (link (stellarSubdivision K σ v) {w}) n ∨
       IsCombinatorialBall (link (stellarSubdivision K σ v) {w}) n := by
   have hvw : v ∉ ({w} : Finset ι) := by simpa [eq_comm] using hwv
-  have hwK := (mem_stellarSubdivision_iff_of_notMem hvw).mp hw |>.1
+  obtain ⟨hwK, havoid⟩ := (mem_stellarSubdivision_iff_of_notMem hvw).mp hw
   have he := (stellarEquivalent_link_stellarSubdivision_of_notMem
-    hvlink hvw hw).symm.stellarEquivalentUpToRelabeling
+    hvlink hvw (sdiff_nonempty.mpr havoid)).symm.stellarEquivalentUpToRelabeling
   exact (isCombinatorialManifold_succ_iff.mp hK hwK).imp
     (IsCombinatorialSphere.of_stellarEquivalentUpToRelabeling he)
     (IsCombinatorialBall.of_stellarEquivalentUpToRelabeling he)
