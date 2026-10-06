@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.ClassicalGroups.GelfandTsetlin.Count
-public import TauCeti.RepresentationTheory.ClassicalGroups.WeylDimension
+public import TauCeti.RepresentationTheory.ClassicalGroups.WeylDimension.Basic
 import TauCeti.LinearAlgebra.Vandermonde
 
 /-!
@@ -20,13 +20,13 @@ dimension formula for `GL n`:
 This is `TauCeti.GTPattern.card_topRow_eq_weylDimension`, and its `DominantWeight`-indexed form
 `TauCeti.GTPattern.card_topWeight_eq_weylDimension`.  Both sides are already built: the left by
 `TauCeti.RepresentationTheory.ClassicalGroups.GelfandTsetlin.Count`, the right by
-`TauCeti.RepresentationTheory.ClassicalGroups.WeylDimension`.  What is proved here is that they
-agree, so that the two candidate dimensions for the irreducible rational representation of `GL n`
-of highest weight `λ` — the number of Gelfand-Tsetlin patterns, and the Weyl product formula —
-are the same natural number.  That either of them *is* the dimension of a representation is not
-proved here and cannot yet be stated: no representation and no Gelfand-Tsetlin basis is
-constructed, and none is used.  This is an identity between a lattice-point count and a product
-formula.
+`TauCeti.RepresentationTheory.ClassicalGroups.WeylDimension.Basic`.  What is proved here is that
+they agree, so that the two candidate dimensions for the irreducible rational representation of
+`GL n` of highest weight `λ` — the number of Gelfand-Tsetlin patterns, and the Weyl product
+formula — are the same natural number.  That either of them *is* the dimension of a
+representation is not proved here and cannot yet be stated: no representation and no
+Gelfand-Tsetlin basis is constructed, and none is used.  This is an identity between a
+lattice-point count and a product formula.
 
 ## The proof
 

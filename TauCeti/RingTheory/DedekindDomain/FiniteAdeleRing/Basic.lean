@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.DedekindDomain.FiniteAdeleRing
 public import Mathlib.Topology.Algebra.Algebra
+public import TauCeti.Topology.Algebra.RestrictedProduct.TopologicalSpace
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.Approximation
 
 /-!
@@ -42,6 +43,8 @@ approximates `a`.
   the local integer rings into the finite adeles.
 * `IsDedekindDomain.FiniteAdeleRing.one_apply`, `sub_apply`, and `mul_apply`: the corresponding
   operations are computed place by place.
+* `IsDedekindDomain.FiniteAdeleRing.continuous_ofAdicCompletion`: the embedding of the completion
+  at a finite place into the finite adeles is continuous.
 * `IsDedekindDomain.FiniteAdeleRing.forall_algebraMap_mem_adicCompletionIntegers_iff`: the diagonal
   image of `x : K` is integral at every finite place if and only if `x` lies in `R`.
 * `IsDedekindDomain.FiniteAdeleRing.mul_nonZeroDivisor_mem_adicCompletionIntegers`: a finite adele
@@ -77,6 +80,9 @@ variable {R K}
 -- these are their restatements, and like them they hold by `rfl`.
 /-- The value of `1 : 𝔸ᶠ[R, K]` at a finite place is `1`. -/
 @[simp] theorem one_apply (v : HeightOneSpectrum R) : (1 : FiniteAdeleRing R K) v = 1 := rfl
+
+/-- The value of the zero finite adele at every finite place is zero. -/
+@[simp] theorem zero_apply (v : HeightOneSpectrum R) : (0 : FiniteAdeleRing R K) v = 0 := rfl
 
 /-- Subtraction of finite adeles is computed place by place. -/
 @[simp] theorem sub_apply (a b : FiniteAdeleRing R K) (v : HeightOneSpectrum R) :
@@ -123,6 +129,16 @@ theorem range_integralEmbedding :
     Set.range (integralEmbedding (R := R) (K := K)) =
       {a : FiniteAdeleRing R K | ∀ v, a v ∈ v.adicCompletionIntegers K} := by
   exact RestrictedProduct.range_structureMap _ _
+
+variable (K) in
+/-- The embedding of the completion at a finite place into the finite adele ring is continuous: it
+is the coordinate inclusion `RestrictedProduct.mulSingle v`. -/
+@[continuity, fun_prop]
+theorem continuous_ofAdicCompletion (v : HeightOneSpectrum R) :
+    Continuous (ofAdicCompletion K v) := by
+  let _ : DecidableEq (HeightOneSpectrum R) := Classical.decEq _
+  exact TauCeti.continuous_restrictedProduct_mulSingle
+    (fun w : HeightOneSpectrum R ↦ w.adicCompletionIntegers K) v
 
 /-- The integral finite adeles are compact when every local integer ring is compact. -/
 theorem isCompact_integralFiniteAdeles

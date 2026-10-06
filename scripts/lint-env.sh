@@ -220,11 +220,17 @@ run_lean() {
 # `timeout` is resolved here, by absolute path: `lake env` puts candidate-writable
 # `.lake/build/bin` directories first on PATH, where a candidate could plant its own `timeout`.
 TIMEOUT_BIN="$(command -v timeout)" || { echo "lint-env: timeout not found" >&2; exit 1; }
+# The driver's task pool defaults to one thread per core. Beyond about 16 the linter tasks mostly
+# contend in Lean's task manager (16 cores lint the whole library in under three minutes, see
+# scripts/LintEnvDriver.lean, and 80 cores are barely faster), and on a shared many-core host the
+# extra threads starve everything else. So use at most 16; LEAN_NUM_THREADS overrides.
+LINT_CORES="$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 16)"
+LINT_THREADS="${LEAN_NUM_THREADS:-$(( LINT_CORES < 16 ? LINT_CORES : 16 ))}"
 run_driver() {
   if [ -n "${WATCHDOG_TOOLCHAIN:-}" ]; then
-    lake env "$TIMEOUT_BIN" --signal=TERM --kill-after=30 3000 "$@"
+    LEAN_NUM_THREADS="$LINT_THREADS" lake env "$TIMEOUT_BIN" --signal=TERM --kill-after=30 3000 "$@"
   else
-    lake env "$@"
+    LEAN_NUM_THREADS="$LINT_THREADS" lake env "$@"
   fi
 }
 

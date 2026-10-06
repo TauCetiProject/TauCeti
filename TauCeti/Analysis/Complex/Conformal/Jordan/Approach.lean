@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Complex.Conformal.Inverse.BoundaryCluster
 public import TauCeti.Analysis.Complex.Conformal.Jordan.Domain
-public import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
 import TauCeti.Analysis.Complex.Conformal.Caratheodory
 import TauCeti.Analysis.Complex.PlaneSeparation.Basic
 import TauCeti.Topology.JordanCurve.SmallArc
@@ -212,7 +211,7 @@ theorem injOn_closedBall_of_isJordanCurve_frontier (hr : 0 < r)
 /-- **The Riemann map of a Jordan domain extends to a homeomorphism of the
 closures.** -/
 theorem exists_homeomorph_closedBall_closure_of_isJordanCurve_frontier {Ω : Set ℂ}
-    (hΩo : IsOpen Ω) (hΩc : IsSimplyConnected Ω) (hΩb : IsBounded Ω)
+    (hΩo : IsOpen Ω) (hΩc : IsConnected Ω) (hΩb : IsBounded Ω)
     (hΩJ : IsJordanCurve (frontier Ω)) :
     ∃ g : ℂ → ℂ, ContinuousOn g (closedBall 0 1) ∧ DifferentiableOn ℂ g (ball 0 1) ∧
       BijOn g (ball 0 1) Ω ∧

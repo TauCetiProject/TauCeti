@@ -8,10 +8,11 @@ module
 public import Mathlib.LinearAlgebra.Span.Basic
 
 /-!
-# Exchanging a generator in a finite span
+# Finite spans and one-dimensional lines
 
 A generator with a unit coefficient in a linear combination can be replaced by that combination
-without changing the span.
+without changing the span. Over a division ring, a nonzero vector in the line spanned by another
+vector can be used to recover that generator's membership in any submodule.
 -/
 
 public section
@@ -39,3 +40,22 @@ theorem span_insert_erase_eq_span_of_isUnit [DecidableEq M] {s : Finset M} {i x 
     _ = _ := Submodule.span_insert_eq_span hx
 
 end TauCeti.Submodule
+
+namespace Submodule
+
+variable {K V : Type*} [DivisionRing K] [AddCommGroup V] [Module K V]
+
+/-- If a nonzero member of a submodule lies in the line spanned by `y`, then `y` also belongs to
+the submodule. -/
+theorem mem_of_mem_span_singleton_of_ne_zero (P : Submodule K V) {x y : V}
+    (hx : x ∈ P) (hx0 : x ≠ 0) (hxy : x ∈ K ∙ y) : y ∈ P := by
+  rw [Submodule.mem_span_singleton] at hxy
+  obtain ⟨c, hcx⟩ := hxy
+  have hc : c ≠ 0 := by
+    rintro rfl
+    simp only [zero_smul] at hcx
+    exact hx0 hcx.symm
+  rw [← hcx] at hx
+  exact P.smul_mem_iff hc |>.mp hx
+
+end Submodule

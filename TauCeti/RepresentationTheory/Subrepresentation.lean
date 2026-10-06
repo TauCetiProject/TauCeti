@@ -54,6 +54,7 @@ group, as that construction does.
 * `Subrepresentation.mem_toSubmodule`
 * `Subrepresentation.toSubmodule_bot`
 * `Subrepresentation.toSubmodule_top`
+* `Subrepresentation.instNontrivial`
 * `Subrepresentation.toSubmodule_le_toSubmodule`
 * `Subrepresentation.toSubmodule_lt_toSubmodule`
 * `Subrepresentation.isCompl_toSubmodule`
@@ -94,6 +95,11 @@ lemma toSubmodule_bot : (⊥ : Subrepresentation ρ).toSubmodule = ⊥ := rfl
 /-- The top subrepresentation carries the top subspace. -/
 @[simp]
 lemma toSubmodule_top : (⊤ : Subrepresentation ρ).toSubmodule = ⊤ := rfl
+
+/-- The subrepresentation lattice of a nontrivial representation is nontrivial. -/
+instance instNontrivial [Nontrivial W] : Nontrivial (Subrepresentation ρ) :=
+  ⟨⟨⊥, ⊤, fun hc => _root_.bot_ne_top (α := Submodule A W) (by
+    rw [← toSubmodule_bot (ρ := ρ), ← toSubmodule_top (ρ := ρ), hc])⟩⟩
 
 /-- One subrepresentation is contained in another exactly when the subspace it carries is. -/
 @[simp]

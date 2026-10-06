@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Orthogonal.Complement
 public import TauCeti.LinearAlgebra.IntegralLattice.Overlattice.Naturality
+public import TauCeti.LinearAlgebra.IntegralLattice.Unimodular
 
 /-!
 # Duality for intermediate carriers of an integral lattice
@@ -44,10 +45,19 @@ computed componentwise on an orthogonal direct sum.
 * `TauCeti.IntegralLattice.dual_intermediateCarrierOfDiscriminantSubgroup`: the
   same statement read as `(L_H)ᵛ = L_{H⊥}`.
 * `TauCeti.IntegralLattice.IntermediateCarrier.dual_dual`: double duality.
-* `TauCeti.IntegralLattice.IntermediateCarrier.dual_eq_self_iff_isLagrangian`: an
-  intermediate carrier is unimodular exactly when its subgroup is Lagrangian.
+* `TauCeti.IntegralLattice.IntermediateCarrier.dual_eq_self_iff_isLagrangian`: the
+  carrier-level criterion: an intermediate carrier satisfies `Mᵛ = M` exactly when its subgroup
+  is Lagrangian.
+* In the namespace `TauCeti.IntegralLattice.IntermediateCarrier.IsIntegral`, for an integral
+  intermediate carrier `M`:
+  * `isUnimodular_toIntegralLattice_iff_dual_eq_self`: the lattice carried by `M` is
+    `IntegralLattice.IsUnimodular` exactly when `Mᵛ = M`;
+  * `isUnimodular_toIntegralLattice_iff_isLagrangian`: the lattice carried by `M` is
+    `IntegralLattice.IsUnimodular` exactly when its discriminant subgroup is Lagrangian.
 * `TauCeti.IntegralLattice.dual_intermediateCarrierOfDiscriminantSubgroup_eq_self_iff`: the
-  overlattice `L_H` is unimodular exactly when `H = H⊥`.
+  carrier-level criterion for `L_H`: `(L_H)ᵛ = L_H` exactly when `H = H⊥`.
+* `TauCeti.IntegralLattice.isUnimodular_ofIsotropicSubgroup_iff_isLagrangian`: the glued even
+  overlattice `L_H` is `IntegralLattice.IsUnimodular` exactly when `H` is Lagrangian.
 * `TauCeti.IntegralLattice.IntermediateCarrier.mem_dualCarrier_orthogonalSum_iff`: a vector is a
   dual vector of an assembled overlattice exactly when both of its components are dual vectors of
   the two factors.
@@ -242,6 +252,22 @@ theorem dual_eq_self_iff_isLagrangian (M : L.IntermediateCarrier) :
     exact (discriminantSubgroup_dual M).trans
       ((L.discriminantBilinearModule.isLagrangian_def _).mp h).symm
 
+/-- The lattice carried by an integral intermediate carrier is unimodular exactly when the
+carrier is its own dual. -/
+theorem IsIntegral.isUnimodular_toIntegralLattice_iff_dual_eq_self {M : L.IntermediateCarrier}
+    (hM : IsIntegral M) : hM.toIntegralLattice.IsUnimodular ↔ dual M = M := by
+  rw [isUnimodular_def, hM.toIntegralLattice_carrier, hM.toIntegralLattice_dualCarrier, eq_comm,
+    Subtype.ext_iff]
+
+/-- **An integral overlattice is unimodular exactly when its discriminant subgroup is
+Lagrangian.** For an integral intermediate carrier `L ≤ M ≤ Lᵛ`, the lattice `M` is unimodular
+exactly when `M / L` equals its orthogonal complement in the discriminant group of `L`. -/
+theorem IsIntegral.isUnimodular_toIntegralLattice_iff_isLagrangian {M : L.IntermediateCarrier}
+    (hM : IsIntegral M) :
+    hM.toIntegralLattice.IsUnimodular ↔
+      L.discriminantBilinearModule.IsLagrangian (L.discriminantSubgroup M) :=
+  hM.isUnimodular_toIntegralLattice_iff_dual_eq_self.trans (dual_eq_self_iff_isLagrangian M)
+
 end IntermediateCarrier
 
 open IntermediateCarrier
@@ -284,6 +310,19 @@ theorem dual_intermediateCarrierOfDiscriminantSubgroup_eq_self_iff
       L.discriminantBilinearModule.IsLagrangian H :=
   (dual_eq_self_iff_isLagrangian _).trans
     (Iff.of_eq (congrArg _ (L.discriminantSubgroup_intermediateCarrierOfDiscriminantSubgroup H)))
+
+/-- **The glued overlattice is unimodular exactly when the glue is Lagrangian.** For an even
+lattice `L` and a quadratic-isotropic subgroup `H` of its discriminant group, the even
+overlattice `L_H` is unimodular exactly when `H = H⊥` for the discriminant pairing. -/
+theorem isUnimodular_ofIsotropicSubgroup_iff_isLagrangian (hL : L.IsEven)
+    (H : AddSubgroup L.DiscriminantGroup)
+    (hH : (L.discriminantQuadraticModule hL).IsIsotropic H) :
+    (L.ofIsotropicSubgroup hL H hH).IsUnimodular ↔
+      L.discriminantBilinearModule.IsLagrangian H := by
+  rw [L.ofIsotropicSubgroup_eq_toIntegralLattice hL ⟨H, hH⟩,
+    IsIntegral.isUnimodular_toIntegralLattice_iff_isLagrangian,
+    evenIntermediateCarrierOrderIsoIsotropicSubgroup_symm_apply_coe,
+    discriminantSubgroup_intermediateCarrierOfDiscriminantSubgroup]
 
 end Subgroups
 

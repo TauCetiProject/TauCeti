@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Order.Ring.Units
 public import TauCeti.GroupTheory.Index.Basic
 public import Mathlib.NumberTheory.NumberField.InfinitePlace.Basic
 public import Mathlib.NumberTheory.NumberField.InfinitePlace.TotallyRealComplex
+public import TauCeti.NumberTheory.NumberField.InfinitePlace.Basic
 
 /-!
 # Totally positive elements of a number field
@@ -36,8 +37,8 @@ the narrow class group finite (see `NarrowClassGroup.Finite`).
 * `NumberField.IsTotallyPositive`: strict positivity at every real place, with
   `isTotallyPositive_iff` its introduction/elimination form.
 * `NumberField.isTotallyPositive_one`, `IsTotallyPositive.mul`, `IsTotallyPositive.inv`,
-  `isTotallyPositive_sq`: the multiplicative structure, including that nonzero squares are totally
-  positive.
+  `IsTotallyPositive.map`, `isTotallyPositive_sq`: the multiplicative and functorial structure,
+  including that nonzero squares are totally positive.
 * `NumberField.isTotallyPositive_ratCast`: a positive rational number is totally positive, with
   `NumberField.isTotallyPositive_intCast` its integer special case.
 * `NumberField.totallyPositiveUnits`: the subgroup of totally positive units of `Kˣ` (the
@@ -79,6 +80,16 @@ positivity at every real infinite place. -/
 /-- The element `1` is totally positive: every real embedding sends it to `1 > 0`. -/
 theorem isTotallyPositive_one : IsTotallyPositive (1 : K) :=
   isTotallyPositive_iff.mpr fun _ _ => by rw [map_one]; exact one_pos
+
+/-- A homomorphism of number fields sends totally positive elements to totally positive elements:
+every real place of the target restricts to a real place of the source. -/
+theorem IsTotallyPositive.map {L : Type*} [Field L] (f : K →+* L) {x : K}
+    (hx : IsTotallyPositive x) : IsTotallyPositive (f x) := by
+  apply isTotallyPositive_iff.mpr
+  intro w hw
+  have h := (isTotallyPositive_iff.mp hx) (w.comap f) (hw.comap f)
+  rw [InfinitePlace.embedding_of_isReal_comap] at h
+  simpa only [RingHom.comp_apply] using h
 
 /-- Totally positive elements are closed under multiplication: a product of positives is positive at
 each real place. -/

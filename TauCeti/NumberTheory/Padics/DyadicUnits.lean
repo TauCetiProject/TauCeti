@@ -57,6 +57,8 @@ or `4`, with `1` exactly for `A = 1` and `4` exactly for `A = V^(f)`.
   `TauCeti.not_exists_topologicalClosure_zpowers_eq_unitsPlusMinus`: `V^(f)` is not.
 * `TauCeti.map_powMonoidHom_two_unitsPlusMinus`: `(V^(f))² = U^(f+1)`;
   `TauCeti.relIndex_map_powMonoidHom_two_unitsPlusMinus`: `(V^(f) : (V^(f))²) = 4`.
+* `TauCeti.unitsPrincipal_three_eq_range_powMonoidHom_two`: the squares of `ℤ_2ˣ` are
+  `U^(3) = 1 + 8ℤ_2`.
 * `TauCeti.relIndex_map_powMonoidHom_two_eq_one_or_two_or_four`: `(A : A²) ∈ {1, 2, 4}` for
   closed `A`;
   `TauCeti.relIndex_map_powMonoidHom_two_eq_four_iff` and
@@ -153,6 +155,14 @@ theorem disjoint_unitsPrincipal_zpowers_neg_one {f : ℕ} (hf : 2 ≤ f) :
   rcases (Subgroup.mem_zpowers_neg_one_iff PadicInt.units_neg_one_ne_one).mp hx' with rfl | rfl
   · rfl
   · exact absurd (neg_one_mem_unitsPrincipal_two_iff.mp hx) (by omega)
+
+/-- `{±1}` is closed in `ℤ_2ˣ`, being the finite set `{1, -1}`. -/
+theorem isClosed_zpowers_neg_one :
+    IsClosed ((Subgroup.zpowers (-1 : ℤ_[2]ˣ)) : Set ℤ_[2]ˣ) := by
+  apply Set.Finite.isClosed
+  refine ((Set.finite_singleton (-1 : ℤ_[2]ˣ)).insert 1).subset fun x hx ↦ ?_
+  simpa only [Set.mem_insert_iff, Set.mem_singleton_iff] using
+    (Subgroup.mem_zpowers_neg_one_iff PadicInt.units_neg_one_ne_one).mp hx
 
 /-! ### Indices and levels of `V^(f)` -/
 
@@ -404,6 +414,11 @@ theorem relIndex_map_powMonoidHom_two_unitsPlusMinus {f : ℕ} (hf : 2 ≤ f) :
     ((unitsPlusMinus f).map (powMonoidHom 2)).relIndex (unitsPlusMinus f) = 4 := by
   rw [map_powMonoidHom_two_unitsPlusMinus hf]
   exact relIndex_unitsPrincipal_succ_unitsPlusMinus hf
+
+/-- The squares of `ℤ_2ˣ` are the units `U^(3)` that are `1 mod 8`. -/
+theorem unitsPrincipal_three_eq_range_powMonoidHom_two :
+    unitsPrincipal 2 3 = (powMonoidHom 2 : ℤ_[2]ˣ →* ℤ_[2]ˣ).range := by
+  rw [← map_powMonoidHom_two_unitsPlusMinus le_rfl, unitsPlusMinus_two, ← MonoidHom.range_eq_map]
 
 /-- **The table of `(A : A²)`.** A nontrivial closed subgroup `A ≤ ℤ_2ˣ` has `(A : A²) = 2`
 unless it is some `V^(f)` with `f ≥ 2`: the three procyclic families `U^(f)`, `{±1}` and `U^[f]`

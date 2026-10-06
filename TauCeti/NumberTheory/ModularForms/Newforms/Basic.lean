@@ -31,7 +31,7 @@ which additionally needs the diamond operators to be Petersson-unitary and is ca
 
 The old subspace is likewise stable under the Hecke operators `Tₚ` at every prime `p`
 (`TauCeti.heckeTCuspNat_mem_cuspFormsOld`, in
-`TauCeti/NumberTheory/ModularForms/Newforms/HeckeStability.lean`), for the Hecke action
+`TauCeti/NumberTheory/ModularForms/Newforms/Hecke/Stability.lean`), for the Hecke action
 `HeckeRing.GL2.heckeTCuspNat` on cusp forms. The same file proves the stability of the *new*
 subspace at primes coprime to the level.
 

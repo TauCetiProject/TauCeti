@@ -81,11 +81,33 @@ theorem coindResAdjunction_counit_app_hom_apply (A : Rep.{u} k G)
 
 end Subgroup
 
-namespace TauCeti.Rep
+namespace TauCeti
 
 open _root_.Rep
 
 universe u
+
+section Generators
+
+universe v w
+
+/-- Mathlib's induction-to-coinduction map sends a tensor generator to the function supported
+on its right coset, with value `a` at `g`. -/
+-- Keep the auxiliary-function equation for explicit rewriting: it exposes a decidability instance.
+theorem indToCoind_mk {k : Type u} {G : Type v} [CommRing k] [Group G] {S : Subgroup G}
+    [DecidableRel (QuotientGroup.rightRel S)] {A : _root_.Rep.{w} k S} (g : G) (a : A) :
+    (indToCoind A (Representation.IndV.mk S.subtype A.ρ g a)).1 = indToCoindAux A g a := by
+  simpa [indToCoind, Representation.IndV.mk] using
+    (LinearMap.codRestrict_apply (Representation.coindV S.subtype A.ρ)
+      (indToCoindAux A g) (h := fun _ _ _ ↦ by simp) a)
+
+end Generators
+
+end TauCeti
+
+namespace TauCeti.Rep
+
+open _root_.Rep
 
 variable {k G : Type u} [CommRing k] [Group G] (S : Subgroup G) [S.FiniteIndex]
 

@@ -35,6 +35,7 @@ from Mathlib.
 * `TauCeti.Relator.toFreeGroup`: direct structural interpretation of an expression.
 * `TauCeti.Relator.conj` and `TauCeti.Relator.div`: the conjugate `s⁻¹ r s` and the relator `r s⁻¹`
   by which a source states an equation between two words.
+* `TauCeti.Relator.commInvInv`: the commutator `r⁻¹ s⁻¹ r s` of the presentation literature.
 * `TauCeti.Relator.relatorSet`: the free-group elements denoted by a list of expressions.
 
 ## Main result
@@ -262,6 +263,16 @@ The body is exposed for the same reason as that of `TauCeti.Relator.conj`. -/
 @[expose]
 def div {α : Type*} (r s : Relator α) : Relator α := .mul r (.inv s)
 
+/-- The commutator `r⁻¹ s⁻¹ r s`, written `[r, s]` by most of the presentation literature.
+
+Mathlib's bracket is `⁅r, s⁆ = r s r⁻¹ s⁻¹`, carried by `Relator.comm`, so the presentation
+literature's commutator is `Relator.comm` applied to the two inverses, which is what this
+abbreviates; `Relator.toFreeGroup_commInvInv` computes what it denotes.
+
+The body is exposed for the same reason as that of `TauCeti.Relator.conj`. -/
+@[expose]
+def commInvInv {α : Type*} (r s : Relator α) : Relator α := .comm (.inv r) (.inv s)
+
 /-- The conjugate expression denotes the conjugate free-group element. -/
 @[simp]
 theorem toFreeGroup_conj {α : Type*} (r s : Relator α) :
@@ -286,17 +297,22 @@ theorem toWord_div {α : Type*} (r s : Relator α) :
     (r.div s).toWord = r.toWord ++ FreeGroup.invRev s.toWord := by
   rw [div, toWord_mul, toWord_inv]
 
-/-- **The commutator convention of the presentation literature.** Sources that write
-`[r, s] = r⁻¹ s⁻¹ r s`, rather than Mathlib's `⁅r, s⁆ = r s r⁻¹ s⁻¹` carried by `Relator.comm`, are
-transcribed by applying `Relator.comm` to the two inverses; this computes what that denotes.
-
-This is not a `simp` lemma: `Relator.toFreeGroup_comm` and `Relator.toFreeGroup_inv` already carry
-its left-hand side to `⁅r.toFreeGroup⁻¹, s.toFreeGroup⁻¹⁆`, so the statement here is the expanded
-word a reviewer compares against the printed source rather than a normal form. -/
-theorem toFreeGroup_comm_inv_inv {α : Type*} (r s : Relator α) :
-    (Relator.comm (.inv r) (.inv s)).toFreeGroup =
+/-- The commutator expression of the presentation literature denotes `r⁻¹ s⁻¹ r s`: the expanded
+word a reviewer compares against the printed source. -/
+@[simp]
+theorem toFreeGroup_commInvInv {α : Type*} (r s : Relator α) :
+    (r.commInvInv s).toFreeGroup =
       r.toFreeGroup⁻¹ * s.toFreeGroup⁻¹ * r.toFreeGroup * s.toFreeGroup := by
-  rw [toFreeGroup_comm, toFreeGroup_inv, toFreeGroup_inv, commutatorElement_def, inv_inv, inv_inv]
+  rw [commInvInv, toFreeGroup_comm, toFreeGroup_inv, toFreeGroup_inv, commutatorElement_def,
+    inv_inv, inv_inv]
+
+/-- The compiled word of a commutator expression of the presentation literature. -/
+@[simp]
+theorem toWord_commInvInv {α : Type*} (r s : Relator α) :
+    (r.commInvInv s).toWord =
+      FreeGroup.invRev r.toWord ++ FreeGroup.invRev s.toWord ++ r.toWord ++ s.toWord := by
+  rw [commInvInv, toWord_comm, toWord_inv, toWord_inv, FreeGroup.invRev_invRev,
+    FreeGroup.invRev_invRev]
 
 /-- The free-group elements denoted by a list of relator expressions. -/
 def relatorSet {α : Type*} (l : List (Relator α)) : Set (FreeGroup α) :=

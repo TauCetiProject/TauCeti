@@ -6,7 +6,7 @@ Authors: Claude
 module
 
 public import Mathlib.RepresentationTheory.Coinvariants
-public import Mathlib.RepresentationTheory.Invariants
+public import TauCeti.RepresentationTheory.Rep.ChangeOfGroup
 public import TauCeti.GroupTheory.QuotientGroup.Basic
 import TauCeti.GroupTheory.Coset.Basic
 
@@ -187,11 +187,6 @@ theorem apply_eq_apply_of_quotientGroup_mk_eq {x : V}
   rw [map_mul, Module.End.mul_apply]
   exact congrArg (ρ a) (((mem_invariants _ _).mp hx h).symm)
 
-/-- A `G`-invariant element is `H`-invariant. -/
-theorem invariants_le_invariants_comp_subtype :
-    ρ.invariants ≤ Representation.invariants (ρ.comp H.subtype) :=
-  fun _ hx h => hx (h : G)
-
 variable [Fintype (G ⧸ H)]
 
 /-- The relative norm carries the `H`-invariants into the `G`-invariants. -/
@@ -231,34 +226,6 @@ end Invariants
 section Coinvariants
 
 variable {ρ H}
-
-/-- The augmentation submodule of `H` is contained in the augmentation submodule of `G`. -/
-theorem coinvariantsKer_comp_subtype_le :
-    Coinvariants.ker (ρ.comp H.subtype) ≤ Coinvariants.ker ρ := by
-  rw [Coinvariants.ker, Coinvariants.ker, Submodule.span_le]
-  rintro _ ⟨⟨h, y⟩, rfl⟩
-  exact Submodule.subset_span ⟨((h : G), y), rfl⟩
-
-/-- **An intertwining map carries the augmentation submodule into the augmentation submodule.**
-Only the compatibility of the actions is used, so `e` need not be a homomorphism. -/
-theorem coinvariantsKer_map_le {G' V' : Type*} [Group G'] [AddCommGroup V'] [Module R V']
-    {ρ' : Representation R G' V'} (e : G → G') (φ : V →ₗ[R] V')
-    (hφ : ∀ g x, φ (ρ g x) = ρ' (e g) (φ x)) :
-    (Coinvariants.ker ρ).map φ ≤ Coinvariants.ker ρ' := by
-  rw [Coinvariants.ker, Submodule.map_span_le]
-  rintro _ ⟨⟨g, x⟩, rfl⟩
-  rw [map_sub, hφ]
-  exact Coinvariants.sub_mem_ker _ _
-
-/-- **Precomposing the restricting homomorphism with a surjection does not change the
-augmentation submodule.** -/
-theorem coinvariantsKer_comp_comp_of_surjective {G' G'' : Type*} [Group G'] [Group G'']
-    (ψ : G' →* G) (ε : G'' →* G') (hε : Function.Surjective ε) :
-    Coinvariants.ker (ρ.comp (ψ.comp ε)) = Coinvariants.ker (ρ.comp ψ) := by
-  rw [Coinvariants.ker, Coinvariants.ker]
-  exact congrArg (Submodule.span R)
-    ((Prod.map_surjective.2 ⟨hε, Function.surjective_id⟩).range_comp
-      fun gv : G' × V => (ρ.comp ψ) gv.1 gv.2 - gv.2)
 
 variable [Fintype (G ⧸ H)]
 

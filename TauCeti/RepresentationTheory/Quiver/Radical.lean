@@ -111,6 +111,12 @@ the path algebra. -/
 noncomputable def pathSpan (n : ℕ) : Submodule k (pathAlgebra k Q) :=
   Submodule.span k (pathAlgebraBasis k Q '' {x : Quiver.TotalPath Q | n ≤ x.2.2.length})
 
+/-- The length filtration is the span of the corresponding path-basis vectors. -/
+theorem pathSpan_eq_span_image_basis (n : ℕ) :
+    pathSpan k Q n =
+      Submodule.span k (pathAlgebraBasis k Q '' {x : Quiver.TotalPath Q | n ≤ x.2.2.length}) :=
+  (rfl)
+
 variable {k Q}
 
 /-- An element lies in the `n`-th step of the length filtration exactly when every path carrying a

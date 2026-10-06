@@ -224,6 +224,7 @@ private theorem points_frobeniusBialgHom {A : Type*} [CommRing A] [Algebra 𝔽�
     simp only [AlgHom.comp_apply, BialgHom.coe_toAlgHom,
       frobeniusBialgHom_apply, FiniteField.coe_frobeniusAlgHom, map_pow]
   rw [h]
+  rw [← AlgHom.mapValue_apply]
   exact GeneralLinear.pointsMulEquiv_mapValue 26 (FiniteField.frobeniusAlgHom 𝔽₂ A) _
 
 private theorem map_frobenius_root {A : Type} [CommRing A] [Algebra 𝔽₂ A]

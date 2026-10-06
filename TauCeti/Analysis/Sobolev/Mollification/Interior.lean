@@ -58,9 +58,9 @@ theorem HasWeakFDerivOn.hasFDerivAt_indicator_convolution_right
         (ContinuousLinearMap.lsmul ℝ ℝ :
           ℝ →L[ℝ] (E →L[ℝ] F) →L[ℝ] E →L[ℝ] F).flip, mu] rho) x) x := by
   have hu_ext : MemLp ((Omega : Set E).indicator u) p mu :=
-    (memLp_indicator_iff_restrict (f := u) Omega.isOpen.measurableSet).2 hu
+    (memLp_indicator_iff_restrict (f := u) Omega.isOpen.measurableSet.nullMeasurableSet).2 hu
   have hU_ext : MemLp ((Omega : Set E).indicator U) q mu :=
-    (memLp_indicator_iff_restrict (f := U) Omega.isOpen.measurableSet).2 hU
+    (memLp_indicator_iff_restrict (f := U) Omega.isOpen.measurableSet.nullMeasurableSet).2 hU
   exact h.indicator.hasFDerivAt_convolution_right (hu_ext.locallyIntegrable hp)
     (hU_ext.locallyIntegrable hq) rho hrho hrho_cpt x hx
 

@@ -31,10 +31,8 @@ Mangoldt transform is `Λ_K`.
 The constructor `TauCeti.PrimeBoundaryRemainder.ofDedekindZeta` obtains the series condition of
 the boundary data `TauCeti.PrimeBoundaryRemainder K Set.univ 1` from this identity, and builds the
 package from a single function `G`, continuous on `Re s ≥ 1`, that agrees with
-`-ζ_K'(s)/ζ_K(s) - 1/(s - 1)` on `Re s > 1`.  Producing such a `G` needs the meromorphic
-continuation of `ζ_K` across `Re s = 1`, with a simple pole at `1` and no zeros on that line; this
-file does not supply it.  Given one, `TauCeti.primeIdealTheorem_of_boundary` applied to the
-package gives the prime ideal theorem.
+`-ζ_K'(s)/ζ_K(s) - 1/(s - 1)` on `Re s > 1`. The unconditional construction of such a
+function belongs to the analytic theory of the Dedekind zeta function.
 
 ## Main results
 

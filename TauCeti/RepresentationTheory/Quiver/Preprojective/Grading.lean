@@ -53,12 +53,8 @@ graded-algebra structure and computes the concrete pieces.
 
 ## References
 
-This is the grading clause of the first bullet of Layer 4 of
-`TauCetiRoadmap/ZigzagPreprojective/README.md`, which asks for the additive preprojective
-algebra to carry path length with every doubled arrow in degree `1`. The descent construction is
-`TauCeti.RingTheory.GradedAlgebra.Homogeneous.Quotient`, instantiated for the zigzag relation
-quotient in `TauCeti.RepresentationTheory.Quiver.Zigzag.Grading`. See Crawley-Boevey, *Quiver
-algebras, weighted projective lines, and the Deligne--Simpson problem*, Section 1.
+See Crawley-Boevey, *Quiver algebras, weighted projective lines, and the Deligne--Simpson
+problem*, Section 1.
 -/
 
 public section
@@ -196,8 +192,8 @@ theorem mem_preprojectiveGrade_iff {n : ℕ} {x : preprojectiveAlgebra k Q} :
     exact ⟨y, hy, (preprojectiveMk_apply k Q y).symm⟩
 
 /-- **The preprojective algebra is the internal direct sum of its graded pieces**: this is the
-comparison of the direct-sum graded algebra with the ungraded quotient asked for by the roadmap,
-in the internal sense in which the pieces are submodules of the algebra itself. -/
+comparison of the direct-sum graded algebra with the ungraded quotient, in the internal sense
+in which the pieces are submodules of the algebra itself. -/
 theorem isInternal_preprojectiveGrade :
     DirectSum.IsInternal (preprojectiveGrade k Q) :=
   TauCeti.GradedAlgebra.isInternal_quotientPiece (grade k (Symmetrify Q))

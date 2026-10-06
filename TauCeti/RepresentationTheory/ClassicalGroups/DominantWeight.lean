@@ -63,6 +63,10 @@ for a nonempty weight (`TauCeti.DominantWeight.detShift_shift`).
   `TauCeti.DominantWeight.colLen_zero_detShiftShape_le_pred`, which bounds `μ` by `n - 1` rows.
 * `TauCeti.DominantWeight.eq_detShift_and_eq_detShiftShape`: that decomposition is the only one
   whose diagram has at most `n - 1` rows.
+* `TauCeti.DominantWeight.detShiftShape_eq_detShiftShape_iff`: the polynomial part is a complete
+  invariant of a weight modulo the constant weights, and
+  `TauCeti.DominantWeight.detShiftShape_weightOfShape` shows every diagram with at most `n - 1`
+  rows occurs as one.
 * `TauCeti.existsUnique_dominantWeight`: each orbit of the symmetric group permuting the
   coordinates of `ℤⁿ` contains exactly one dominant weight.
 
@@ -302,6 +306,60 @@ theorem colLen_zero_detShiftShape_le_pred (l : DominantWeight n) :
 form consumed by the dictionary between weights and Young diagrams. -/
 theorem colLen_zero_detShiftShape_le (l : DominantWeight n) : l.detShiftShape.colLen 0 ≤ n :=
   (colLen_zero_detShiftShape_le_pred l).trans (Nat.sub_le n 1)
+
+/-- **Shifting does not move the polynomial part**: `λ` and `λ + m·(1, …, 1)` have the same Young
+diagram, because the shift moves the last entry by `m` as well and is then subtracted off again.
+So the polynomial part only depends on the class of `λ` modulo the constant weights. -/
+@[simp]
+theorem detShiftShape_shift (l : DominantWeight n) (m : ℤ) :
+    (l.shift m).detShiftShape = l.detShiftShape := by
+  match n, l with
+  | 0, l =>
+    rw [detShiftShape, detShiftShape]
+    congr 1
+    ext i
+    exact i.elim0
+  | n + 1, l =>
+    have hm : m + -(l.detShift + m) = -l.detShift := by omega
+    rw [detShiftShape, detShiftShape, detShift_shift, shift_shift, hm]
+
+/-- The polynomial part of the weight of a Young diagram with at most `n - 1` rows is that diagram
+again: such a weight has vanishing last entry, so nothing is subtracted.  Together with
+`TauCeti.DominantWeight.colLen_zero_detShiftShape_le_pred` this makes the polynomial part a
+surjection onto the Young diagrams with at most `n - 1` rows. -/
+@[simp]
+theorem detShiftShape_weightOfShape {μ : YoungDiagram} (hμ : μ.colLen 0 ≤ n - 1) :
+    (weightOfShape n μ).detShiftShape = μ := by
+  have hdet : (weightOfShape n μ).detShift = 0 := by
+    match n, hμ with
+    | 0, _ => rfl
+    | n + 1, hμ =>
+      have hμ' : μ.colLen 0 ≤ n := by simpa using hμ
+      rw [detShift_succ, weightOfShape_apply, Fin.val_last,
+        YoungDiagram.rowLen_eq_zero_of_colLen_le hμ', Nat.cast_zero]
+  rw [detShiftShape, hdet, neg_zero, shift_zero,
+    shape_weightOfShape (hμ.trans (Nat.sub_le n 1))]
+
+/-- **The polynomial part is a complete invariant of a weight modulo the constant weights**: two
+dominant weights have the same polynomial part exactly when they differ by an integer multiple of
+`(1, …, 1)`.  With `TauCeti.DominantWeight.detShiftShape_weightOfShape` and
+`TauCeti.DominantWeight.colLen_zero_detShiftShape_le_pred` this identifies the dominant weights of
+`GL n` taken modulo the constant weights with the Young diagrams of at most `n - 1` rows; those
+classes, not the weights themselves, are what a representation of `SL n` can see. -/
+theorem detShiftShape_eq_detShiftShape_iff (l l' : DominantWeight n) :
+    l.detShiftShape = l'.detShiftShape ↔ ∃ m : ℤ, l' = l.shift m := by
+  refine ⟨fun h => ⟨l'.detShift - l.detShift, ?_⟩, ?_⟩
+  · have h1 : l.shift (-l.detShift) = l'.shift (-l'.detShift) := by
+      rw [← weightOfShape_detShiftShape, ← weightOfShape_detShiftShape, h]
+    calc l' = (l'.shift (-l'.detShift)).shift l'.detShift := by
+          rw [shift_shift, neg_add_cancel, shift_zero]
+      _ = (l.shift (-l.detShift)).shift l'.detShift := by rw [h1]
+      _ = l.shift (l'.detShift - l.detShift) := by
+          rw [shift_shift]
+          congr 1
+          omega
+  · rintro ⟨m, rfl⟩
+    rw [detShiftShape_shift]
 
 /-- **Uniqueness of the determinant twist**: a dominant weight for `GL (n + 1)` is
 `μ + m·(1, …, 1)` for exactly one integer `m` and one Young diagram `μ` with at most `n` rows,

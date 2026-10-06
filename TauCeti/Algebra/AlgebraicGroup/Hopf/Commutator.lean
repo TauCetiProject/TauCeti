@@ -117,7 +117,10 @@ theorem map_comp_commutatorAlgHom (f : H →ₐc[R] K) :
     apply WithConv.ofConv_injective
     simp only [map_mul, map_inv, AlgHom.mapValue_apply, AlgHom.mapDomain_apply]
     rw [hinclLeft, hinclRight]
-  exact congrArg (fun g : WithConv (H →ₐ[R] K ⊗[R] K) ↦ g.ofConv x) hleft
+  have h := congrArg WithConv.ofConv hleft
+  rw [AlgHom.mapValue_apply, AlgHom.mapDomain_apply, ofConv_toConv, ofConv_toConv,
+    ofConv_toConv, ofConv_toConv] at h
+  exact congrFun (congrArg DFunLike.coe h) x
 
 /-- Evaluating the commutator coordinate morphism at two algebra-valued points gives their
 group-theoretic commutator. -/

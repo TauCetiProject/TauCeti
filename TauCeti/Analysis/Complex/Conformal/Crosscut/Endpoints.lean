@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.Conformal.Crosscut.Basic
 import Mathlib.Geometry.Euclidean.Basic
+import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Arccos
 import TauCeti.Topology.Circle.Metric
 

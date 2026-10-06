@@ -81,23 +81,6 @@ private theorem rootSubgroupIntegralCoordinateMap_surjective (k : Fin 7 ⊕ Fin 
     exact hrepresented
   simpa only [_root_.CommHopfAlgCat.hom_comp, BialgHom.coe_comp] using hcomp
 
-/-- Composing a surjective integral coordinate map with the canonical source and target
-identifications preserves surjectivity after base change. -/
-private theorem baseChangeCoordinateMap_surjective
-    {H L : _root_.CommHopfAlgCat.{0} ℤ}
-    {H' L' : _root_.CommHopfAlgCat.{u} A}
-    (eH : H' ≅ CommHopfAlgCat.baseChange (K := A) H)
-    (eL : CommHopfAlgCat.baseChange (K := A) L ≅ L')
-    (f : H ⟶ L) (hf : Function.Surjective f.hom) :
-    Function.Surjective
-      (eH.hom ≫ CommHopfAlgCat.baseChangeMap (K := A) f ≫ eL.hom).hom := by
-  intro y
-  obtain ⟨x, rfl⟩ := (ConcreteCategory.bijective_of_isIso eL.hom).2 y
-  obtain ⟨z, rfl⟩ := CommHopfAlgCat.baseChangeMap_surjective (K := A) f hf x
-  obtain ⟨w, rfl⟩ := (ConcreteCategory.bijective_of_isIso eH.hom).2 z
-  refine ⟨w, ?_⟩
-  simp only [_root_.CommHopfAlgCat.hom_comp, BialgHom.comp_apply]
-
 /-- **Every transported numbered type-`E₇` root-subgroup coordinate map is surjective.**
 Thus the simple-root copy of `𝔾ₐ` remains scheme-theoretically closed after arbitrary base
 change from `ℤ`. -/
@@ -105,15 +88,15 @@ theorem rootSubgroupToBaseChangeCoordinateMap_surjective (k : Fin 7 ⊕ Fin 7) :
     Function.Surjective (rootSubgroupToBaseChangeCoordinateMap A k).hom := by
   rw [← baseChangeCoordinateIso_hom_comp_rootSubgroupBaseChangeMap A k]
   let e := AdditiveGroup.coordinateHopfAlgebraBaseChangeIso ℤ A
-  exact baseChangeCoordinateMap_surjective A
+  exact _root_.CommHopfAlgCat.baseChangeMap_surjective_of_iso (K := A)
     (H := CommHopfAlgCat.quotient
       (GeneralLinear.coordinateHopfAlgebra ℤ 56) definingIdeal)
     (L := AdditiveGroup.coordinateHopfAlgebra ℤ)
     (H' := CommHopfAlgCat.quotient
       (GeneralLinear.coordinateHopfAlgebra A 56) (baseChangeDefiningIdeal A))
     (L' := AdditiveGroup.coordinateHopfAlgebra A)
-    (baseChangeCoordinateIso A) e (rootSubgroupIntegralCoordinateMap k)
-      (rootSubgroupIntegralCoordinateMap_surjective k)
+    (rootSubgroupIntegralCoordinateMap k) (rootSubgroupIntegralCoordinateMap_surjective k)
+    (baseChangeCoordinateIso A) e
 
 /-- The named integral weight-torus coordinate map is surjective. -/
 private theorem weightTorusIntegralCoordinateMap_surjective :
@@ -139,7 +122,7 @@ theorem weightTorusToBaseChangeCoordinateMap_surjective :
     _root_.CommHopfAlgCat.isoMk
       (TauCeti.MonoidAlgebra.scalarTensorBialgEquiv ℤ A
         (G := SplitTorus.characterGroup (Fin 7)))
-  exact baseChangeCoordinateMap_surjective A
+  exact _root_.CommHopfAlgCat.baseChangeMap_surjective_of_iso (K := A)
     (H := CommHopfAlgCat.quotient
       (GeneralLinear.coordinateHopfAlgebra ℤ 56) definingIdeal)
     (L := (DiagonalizableGroup.coordinateRing ℤ
@@ -148,8 +131,8 @@ theorem weightTorusToBaseChangeCoordinateMap_surjective :
       (GeneralLinear.coordinateHopfAlgebra A 56) (baseChangeDefiningIdeal A))
     (L' := (DiagonalizableGroup.coordinateRing A
       (SplitTorus.characterGroup (Fin 7))).obj)
-    (baseChangeCoordinateIso A) e weightTorusIntegralCoordinateMap
-      weightTorusIntegralCoordinateMap_surjective
+    weightTorusIntegralCoordinateMap weightTorusIntegralCoordinateMap_surjective
+    (baseChangeCoordinateIso A) e
 
 /-! ## Scheme-theoretic closed generators
 

@@ -55,7 +55,7 @@ variable (μ) in
 /-- Extension by zero as a linear map; `TauCeti.extendByZeroLpₗᵢ` upgrades it to an isometry. -/
 private def extendByZeroLpₗ (hs : MeasurableSet s) :
     Lp F p (μ.restrict s) →ₗ[𝕜] Lp F p (μ.restrict t) where
-  toFun f := (((memLp_indicator_iff_restrict hs).2 (Lp.memLp f)).mono_measure
+  toFun f := (((memLp_indicator_iff_restrict hs.nullMeasurableSet).2 (Lp.memLp f)).mono_measure
     Measure.restrict_le_self).toLp _
   map_add' f g := by
     rw [← MemLp.toLp_add]
@@ -83,22 +83,24 @@ def extendByZeroLpₗᵢ [Fact (1 ≤ p)] (hs : MeasurableSet s) (hst : s ⊆ t)
     -- `extendByZeroLpₗ`, which the bundled `toLinearMap` field hides.
     change ‖(extendByZeroLpₗ 𝕜 μ hs f)‖ = ‖f‖
     dsimp [extendByZeroLpₗ]
-    rw [Lp.norm_toLp, eLpNorm_indicator_eq_eLpNorm_restrict hs,
+    rw [Lp.norm_toLp, eLpNorm_indicator_eq_eLpNorm_restrict hs.nullMeasurableSet,
       Measure.restrict_restrict_of_subset hst, ← Lp.norm_def]
 
 /-- **The extension by zero is the indicator of the original representative.** -/
 theorem coeFn_extendByZeroLpₗᵢ [Fact (1 ≤ p)] (hs : MeasurableSet s) (hst : s ⊆ t)
     (f : Lp F p (μ.restrict s)) :
     (extendByZeroLpₗᵢ 𝕜 μ hs hst f : α → F) =ᵐ[μ.restrict t] s.indicator (f : α → F) :=
-  MemLp.coeFn_toLp (((memLp_indicator_iff_restrict hs).2 (Lp.memLp f)).mono_measure
-    Measure.restrict_le_self)
+  MemLp.coeFn_toLp
+    (((memLp_indicator_iff_restrict hs.nullMeasurableSet).2 (Lp.memLp f)).mono_measure
+      Measure.restrict_le_self)
 
 /-- **The extension by zero restricts back to the original function.** -/
 theorem coeFn_extendByZeroLpₗᵢ_restrict [Fact (1 ≤ p)] (hs : MeasurableSet s) (hst : s ⊆ t)
     (f : Lp F p (μ.restrict s)) :
     (extendByZeroLpₗᵢ 𝕜 μ hs hst f : α → F) =ᵐ[μ.restrict s] (f : α → F) :=
   ((coeFn_extendByZeroLpₗᵢ 𝕜 hs hst f).filter_mono
-    (ae_mono (Measure.restrict_mono hst le_rfl))).trans (indicator_ae_eq_restrict hs)
+    (ae_mono (Measure.restrict_mono hst le_rfl))).trans
+    (indicator_ae_eq_restrict hs.nullMeasurableSet)
 
 /-- **Extending by zero along `s ⊆ s` does nothing.** -/
 @[simp]

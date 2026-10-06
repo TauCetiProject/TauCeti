@@ -76,10 +76,6 @@ is induced from, written the way `TauCeti.mackeySummand` writes it: the restrict
 
 ## References
 
-Layer 4 of
-[the induction and restriction roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/InductionRestriction/README.md),
-"the intertwining-number formula".
-
 * J.-P. Serre, *Linear Representations of Finite Groups*, Chapter 7.3, Proposition 22.
 * I. M. Isaacs, *Character Theory of Finite Groups*, Chapter 5.
 -/
@@ -103,7 +99,7 @@ function induced from `H` with one induced from `K` is the sum, over the double 
 the restriction of `f`. -/
 theorem characterPairing_ind_ind_mackey [Fintype G] (hG : IsUnit (Nat.card G : k))
     (f : ClassFunction k H) (h : ClassFunction k K) :
-    ClassFunction.characterPairing (ClassFunction.ind H f) (ClassFunction.ind K h) =
+    ClassFunction.characterPairing (Subgroup.indClassFunction H f) (Subgroup.indClassFunction K h) =
       letI := Fintype.ofFinite (DoubleCoset.Quotient (H : Set G) (K : Set G))
       ∑ D : DoubleCoset.Quotient (H : Set G) (K : Set G),
         ClassFunction.characterPairing (mackeyClassFunction D.out K H h)
@@ -113,18 +109,19 @@ theorem characterPairing_ind_ind_mackey [Fintype G] (hG : IsUnit (Nat.card G : k
   -- Both applications of Frobenius reciprocity are `characterPairing_ind`: the first moves the
   -- pairing from `G` down to `H`, the second moves each Mackey summand from `H` down to its
   -- Mackey subgroup.
-  calc ClassFunction.characterPairing (ClassFunction.ind H f) (ClassFunction.ind K h)
+  calc ClassFunction.characterPairing (Subgroup.indClassFunction H f) (Subgroup.indClassFunction K
+    h)
       = ClassFunction.characterPairing f
-          (ClassFunction.comap H.subtype (ClassFunction.ind K h)) :=
-        characterPairing_ind hG f (ClassFunction.ind K h)
+          (ClassFunction.comap H.subtype (Subgroup.indClassFunction K h)) :=
+        characterPairing_ind hG f (Subgroup.indClassFunction K h)
     _ = ClassFunction.characterPairing f
           (∑ D : DoubleCoset.Quotient (H : Set G) (K : Set G),
-            ClassFunction.ind ((mackeySubgroup D.out K H).subgroupOf H)
+            Subgroup.indClassFunction ((mackeySubgroup D.out K H).subgroupOf H)
               (mackeyClassFunction D.out K H h)) := by
-        rw [comap_subtype_ind_mackey]
+        rw [Subgroup.comap_subtype_indClassFunction_mackey]
     _ = ∑ D : DoubleCoset.Quotient (H : Set G) (K : Set G),
           ClassFunction.characterPairing f
-            (ClassFunction.ind ((mackeySubgroup D.out K H).subgroupOf H)
+            (Subgroup.indClassFunction ((mackeySubgroup D.out K H).subgroupOf H)
               (mackeyClassFunction D.out K H h)) :=
         map_sum (ClassFunction.characterPairing f) _ _
     _ = ∑ D : DoubleCoset.Quotient (H : Set G) (K : Set G),
@@ -184,7 +181,7 @@ one by one is a separate matter: it needs them to be nonnegative, which is what
 natural-number dimensions.  In that shape the identity is the Mackey irreducibility criterion. -/
 theorem characterPairing_ind_ind_mackey_erase [Fintype G] (hG : IsUnit (Nat.card G : k))
     (f : ClassFunction k H) :
-    ClassFunction.characterPairing (ClassFunction.ind H f) (ClassFunction.ind H f) =
+    ClassFunction.characterPairing (Subgroup.indClassFunction H f) (Subgroup.indClassFunction H f) =
       ClassFunction.characterPairing f f +
         letI := Fintype.ofFinite (DoubleCoset.Quotient (H : Set G) (H : Set G))
         ∑ D ∈ Finset.univ.erase (DoubleCoset.mk H H 1),
@@ -230,7 +227,7 @@ theorem natCast_finrank_hom_indFDRep_mackey [Finite G] (hG : IsUnit (Nat.card G 
   let := Fintype.ofFinite (DoubleCoset.Quotient (H : Set G) (K : Set G))
   let : Invertible (Nat.card G : k) := hG.invertible
   rw [← ClassFunction.characterPairing_ofFDRep_eq_finrank,
-    ← ClassFunction.ind_ofFDRep, ← ClassFunction.ind_ofFDRep,
+    ← Subgroup.indClassFunction_ofFDRep, ← Subgroup.indClassFunction_ofFDRep,
     characterPairing_ind_ind_mackey hG _ _]
   refine Finset.sum_congr rfl fun D _ => ?_
   let : Invertible (Nat.card ((mackeySubgroup D.out K H).subgroupOf H) : k) :=
@@ -275,7 +272,7 @@ theorem natCast_finrank_hom_indFDRep_mackey_erase [Finite G] (hG : IsUnit (Nat.c
   let : Invertible (Nat.card G : k) := hG.invertible
   have hH : IsUnit (Nat.card H : k) := isUnit_natCard_subgroup H hG
   let : Invertible (Nat.card H : k) := hH.invertible
-  rw [← ClassFunction.characterPairing_ofFDRep_eq_finrank, ← ClassFunction.ind_ofFDRep,
+  rw [← ClassFunction.characterPairing_ofFDRep_eq_finrank, ← Subgroup.indClassFunction_ofFDRep,
     characterPairing_ind_ind_mackey_erase hG]
   congr 1
   · exact ClassFunction.characterPairing_ofFDRep_eq_finrank A A

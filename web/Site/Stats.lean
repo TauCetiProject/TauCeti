@@ -89,21 +89,22 @@ private def contributorGraphs : Html := {{
   </div>
 }}
 
-/-- Who works on which roadmap: one grid for merged PRs, one for reviews. Regenerated with
-the rest of the pull-request statistics by `scripts/pr_stats_graphs.py`; both slices are a
-local join over the same snapshot, so neither costs an extra API call. -/
+/-- Who works where: one grid for merged PRs, one for reviews, with a column for each arXiv
+category, as declared by the roadmap a PR advances in its `metadata.toml` in TauCetiRoadmap.
+Regenerated with the rest of the pull-request statistics by `scripts/pr_stats_graphs.py`; both
+slices are a local join over the same snapshot, so neither costs an extra API call. -/
 private def roadmapContributorGraphs : Html := {{
   <figure class="loc-figure loc-figure-wide">
     <img class="loc-graph" src="static/merges-by-roadmap-and-contributor.svg"
-         alt="Merged pull requests per contributor per roadmap, over the trailing ninety days"
+         alt="Merged pull requests per contributor per arXiv category, over the trailing ninety days"
          loading="lazy"/>
-    <figcaption>"Merged PRs per contributor per roadmap over the trailing ninety days."</figcaption>
+    <figcaption>"Merged PRs per contributor per arXiv category over the trailing ninety days. Each PR counts under the category of the roadmap it advances."</figcaption>
   </figure>
   <figure class="loc-figure loc-figure-wide">
     <img class="loc-graph" src="static/reviews-by-roadmap-and-contributor.svg"
-         alt="Reviews per contributor per roadmap, over the trailing ninety days"
+         alt="Reviews per contributor per arXiv category, over the trailing ninety days"
          loading="lazy"/>
-    <figcaption>"Reviews per contributor per roadmap over the same window and the same columns."</figcaption>
+    <figcaption>"Reviews per contributor per arXiv category over the same window and the same columns."</figcaption>
   </figure>
 }}
 
@@ -174,18 +175,18 @@ posting login also authors a merged PR in the fetched snapshot.
 :::blob contributorGraphs
 :::
 
-Who works where? The two grids below slice the same merges and reviews by the roadmap each PR
-carries, over the trailing ninety days. Between them they answer the questions the cumulative
-histories cannot: who already knows an area well enough to review for it, whether a roadmap is
-resting on one person, and where somebody has been spending their effort.
+Who works where? The two grids below slice the same merges and reviews by area, over the trailing
+ninety days. Each pull request counts under the arXiv category of the roadmap it carries, as that
+roadmap declares it in its `metadata.toml` in TauCetiRoadmap; a roadmap that declares none counts
+as `Unsorted`. Between them the grids answer the questions the cumulative histories cannot: who
+already knows an area well enough to review for it, whether an area is resting on one person, and
+where somebody has been spending their effort.
 
-The columns are the fifteen roadmaps with the most merges in that window, rather than the
-largest of all time — every one of those questions is about now, and a whole-history cut would
-hold a column for a roadmap that finished in July while an active one could not get in. Both
-grids use the same columns, so they can be read against each other. Everything past the cut is
-summed into one `Other` column and the quietest contributors into one `Other` row, so nothing is
-dropped; exact per-contributor, per-roadmap counts are in
-[`pr-stats.json`](static/pr-stats.json).
+The columns are the categories with the most merges in that window, busiest first — every one of
+those questions is about now. Both grids use the same columns, so they can be read against each
+other. Past twenty categories the rest would share one `Other` column, and the quietest
+contributors are summed into one `Other` row, so nothing is dropped; exact
+per-contributor, per-category counts are in [`pr-stats.json`](static/pr-stats.json).
 
 :::blob roadmapContributorGraphs
 :::

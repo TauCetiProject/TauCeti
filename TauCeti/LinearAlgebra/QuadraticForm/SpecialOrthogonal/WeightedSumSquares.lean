@@ -27,7 +27,7 @@ form with the matrix special orthogonal group in the same coordinates.
 
 public section
 
-open Matrix
+open Matrix QuadraticMap
 
 namespace TauCeti.QuadraticMap
 

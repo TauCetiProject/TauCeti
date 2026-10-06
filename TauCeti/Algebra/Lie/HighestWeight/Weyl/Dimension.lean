@@ -87,12 +87,10 @@ theorem finrank_mul_prod_coweightPairing_weylVector_eq :
   have hlam : IsIntegralWeight (lam + weylVector (IsKilling.rootSystem H) b) :=
     hv.isDominantIntegral.isIntegralWeight.add hρ
   -- The character formula for `L(0)`, the second input of the root-pairing statement.
-  have h0 : vermaGenerator b (0 : Dual K H) ≠ 0 :=
-    (isHighestWeightVector_vermaGenerator_zero b).ne_zero
   have _ := finiteDimensional_irreducibleQuotient_of_isDominantIntegral
     (isDominantIntegral_zero (b := b))
   have hg := formalCharacter_mul_weylDenominator_eq_weylNumerator
-    (isHighestWeightVector_irreducibleQuotientGenerator b (0 : Dual K H) h0)
+    (isHighestWeightVector_irreducibleQuotientGenerator b (0 : Dual K H))
     (lieSpan_irreducibleQuotientGenerator_eq_top b 0)
   have key := sum_coeff_mul_prod_coroot'_weylVector_eq (IsKilling.rootSystem H) b
     rootInvariantForm (formalCharacter_mul_weylDenominator_eq_weylNumerator hv hgen) hg

@@ -51,7 +51,7 @@ whose `j`-th prevertex has absolute value `1`.  Its sign is the remaining real-o
 positive affine normalization. -/
 theorem exists_bijOn_normalized_schwarzChristoffelPrimitive_of_isJordanCurve_frontier
     (e : ι → ℝ) (he : ∀ k, e k ∈ Ioo (-1 : ℝ) 1) (z₀ : UpperHalfPlane)
-    {U : Set ℂ} (hUo : IsOpen U) (hUc : IsSimplyConnected U) (hUb : IsBounded U)
+    {U : Set ℂ} (hUo : IsOpen U) (hUc : IsConnected U) (hUb : IsBounded U)
     (hUJ : IsJordanCurve (frontier U)) {v : ι → ℂ} (hv : Function.Injective v)
     (hside : ∀ w ∈ frontier U, (∀ k, w ≠ v k) → ∃ ρ > 0, ∃ q b : ℂ, b ≠ 0 ∧
       ∀ z ∈ Metric.ball w ρ, (z ∈ U ↔ 0 < ((z - q) / b).im))

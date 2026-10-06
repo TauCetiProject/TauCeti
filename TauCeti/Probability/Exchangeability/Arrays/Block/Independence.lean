@@ -8,9 +8,7 @@ module
 public import TauCeti.Probability.Exchangeability.Arrays.Block.Basic
 public import Mathlib.Probability.Independence.Conditional
 import TauCeti.Probability.Independence.Conditional
-import TauCeti.MeasureTheory.Function.ConditionalExpectation
 import TauCeti.Data.Set.Infinite
-import Mathlib.Probability.Independence.Process.Basic
 
 /-!
 # Local conditional independence of finite array blocks
@@ -25,6 +23,23 @@ of cells in the rectangle and `B ⊆ C`, then `B` is conditionally independent o
 the hidden block `C` given the reservoir, the rectangle with `C` removed. Nothing forces `B` to
 be all of `C`, and `C` need not be minimal, so the reservoir -- the rest of the rectangle -- may be
 chosen coarsely as long as it still avoids `B`.
+
+A jointly exchangeable array is only invariant under relabelling both axes at once, so for it the
+infinite rectangle becomes an infinite square `S ×ˢ S`. The finite block may then contain diagonal
+entries and both orientations `(i, j)` and `(j, i)` of an off-diagonal cell, as the cell noise of
+the jointly exchangeable Aldous--Hoover representation requires.
+
+Both statements come from the reindexing criterion `condIndepFun_domRestrict_of_reindexing`: a
+self-injection of the index set fixing the block moves everything outside it into the reservoir,
+without changing the array law (`SeparatelyExchangeable.map_arrayBlock_eq`,
+`JointlyExchangeable.map_arrayBlock_diag_eq`).
+
+## Main results
+
+* `SeparatelyExchangeable.condIndepFun_domRestrict_subblock_compl_of_finite_block_of_subset`
+  — local conditional independence inside an infinite rectangle;
+* `JointlyExchangeable.condIndepFun_domRestrict_subblock_compl_of_finite_block_of_subset`
+  — local conditional independence inside an infinite square, for jointly exchangeable arrays.
 
 ## References
 
@@ -44,58 +59,8 @@ namespace TauCeti.Probability
 variable {α : Type*} [MeasurableSpace α] [StandardBorelSpace α]
   {ρ : Measure (ℕ × ℕ → α)} [IsFiniteMeasure ρ]
 
-/-- Conditional independence obtained by reindexing an array while fixing the observed entries and
-moving the remaining entries into an intermediate conditioning set. -/
-theorem SeparatelyExchangeable.condIndepFun_domRestrict_of_reindexing
-    (hρ : SeparatelyExchangeable ρ fun p x ↦ x p) (C R D : Set (ℕ × ℕ))
-    (hRD : R ⊆ D) (a b : ℕ → ℕ) (ha : Function.Injective a) (hb : Function.Injective b)
-    (hfix : ∀ p ∈ C, (a p.1, b p.2) = p) (hinto : ∀ p ∈ D, (a p.1, b p.2) ∈ R) :
-    C.domRestrict ⟂ᵢ[R.domRestrict, Set.measurable_restrict _; ρ] D.domRestrict := by
-  let H : (ℕ × ℕ → α) → ℕ × ℕ → α := fun x p ↦ x (a p.1, b p.2)
-  have hH : Measurable H := measurable_blockReadOff a b
-  have hlaw : ρ.map H = ρ := by
-    simpa only [Measure.map_id'] using
-      hρ.map_arrayBlock_eq (fun p ↦ (measurable_pi_apply p).aemeasurable) ha hb
-  have hfixed : ∀ x, C.domRestrict (H x) = C.domRestrict x := by
-    intro x
-    funext c
-    simp only [Set.domRestrict_apply, H, hfix c.1 c.2]
-  let K : (R → α) → D → α := fun y q ↦ y ⟨(a q.1.1, b q.1.2), hinto q.1 q.2⟩
-  have hK : Measurable K := Measurable.of_eval fun _ ↦ measurable_pi_apply _
-  let W : (ℕ × ℕ → α) → D → α := K ∘ R.domRestrict
-  have hW_eq : W = fun x ↦ D.domRestrict (H x) := by
-    funext x q
-    simp only [W, K, Function.comp_apply, Set.domRestrict_apply, H]
-  have hW : Measurable W := hK.comp (Set.measurable_restrict R)
-  have hWR : MeasurableSpace.comap W inferInstance ≤
-      MeasurableSpace.comap (R.domRestrict (π := fun _ ↦ α)) inferInstance := by
-    rw [← MeasurableSpace.comap_comp]
-    exact MeasurableSpace.comap_mono hK.comap_le
-  have hRD' : MeasurableSpace.comap (R.domRestrict (π := fun _ ↦ α)) inferInstance ≤
-      MeasurableSpace.comap (D.domRestrict (π := fun _ ↦ α))
-        (inferInstance : MeasurableSpace (D → α)) := by
-    rw [← Set.domRestrict₂_comp_domRestrict hRD, ← MeasurableSpace.comap_comp]
-    exact MeasurableSpace.comap_mono (Set.measurable_restrict₂ hRD).comap_le
-  have hpair : ρ.map (fun x ↦ (C.domRestrict x, W x)) =
-      ρ.map (fun x ↦ (C.domRestrict x, D.domRestrict x)) := by
-    have hcomp : (fun x ↦ (C.domRestrict x, W x)) =
-        (fun x ↦ (C.domRestrict x, D.domRestrict x)) ∘ H := by
-      funext x
-      exact Prod.ext (hfixed x).symm (congrFun hW_eq x)
-    rw [hcomp, ← Measure.map_map (by fun_prop) hH, hlaw]
-  rw [condIndepFun_iff_condIndep]
-  refine CondIndep.symm ?_
-  refine condIndep_of_indicator_condExp_eq (Set.measurable_restrict D).comap_le
-    (Set.measurable_restrict R).comap_le (Set.measurable_restrict C).comap_le ?_
-  rintro _ ⟨A, hA, rfl⟩
-  rw [sup_eq_left.mpr hRD']
-  have hcontr := condExp_indicator_eq_of_law_eq_of_comap_le C.domRestrict W D.domRestrict
-    (Set.measurable_restrict C) hW (Set.measurable_restrict D) hpair (hWR.trans hRD') hA
-  exact hcontr.trans (TauCeti.MeasureTheory.condExp_ae_eq_of_le_of_le hWR hRD'
-    (Set.measurable_restrict D).comap_le hcontr).symm
-
 /-- Conditional independence of all entries in `U` follows when every finite subset can be fixed
-by a reindexing that moves `D` into the intermediate conditioning set `R`. -/
+by a reindexing of the two axes that moves `D` into the intermediate conditioning set `R`. -/
 theorem SeparatelyExchangeable.condIndepFun_domRestrict_of_finite_reindexing
     (hρ : SeparatelyExchangeable ρ fun p x ↦ x p) (R D U : Set (ℕ × ℕ))
     (hRD : R ⊆ D)
@@ -103,19 +68,11 @@ theorem SeparatelyExchangeable.condIndepFun_domRestrict_of_finite_reindexing
       ∃ a b : ℕ → ℕ, Function.Injective a ∧ Function.Injective b ∧
         (∀ p ∈ C, (a p.1, b p.2) = p) ∧ ∀ p ∈ D, (a p.1, b p.2) ∈ R) :
     U.domRestrict ⟂ᵢ[R.domRestrict, Set.measurable_restrict _; ρ] D.domRestrict := by
-  classical
-  apply Kernel.IndepFun.process_indepFun
-    (fun p : U ↦ measurable_pi_apply p.1) (Set.measurable_restrict _)
-  intro F
-  let C : Set (ℕ × ℕ) := Subtype.val '' (F : Set U)
-  have hC : C.Finite := F.finite_toSet.image Subtype.val
-  have hCU : C ⊆ U := by rintro p ⟨q, _, rfl⟩; exact q.2
-  suffices h : C.domRestrict ⟂ᵢ[R.domRestrict, Set.measurable_restrict _; ρ]
-      D.domRestrict by
-    exact h.comp (Measurable.of_eval fun p : F ↦
-      measurable_pi_apply (⟨p.1.1, ⟨p.1, p.2, rfl⟩⟩ : C)) measurable_id
+  refine TauCeti.Probability.condIndepFun_domRestrict_of_finite_reindexing hRD fun C hC hCU ↦ ?_
   obtain ⟨a, b, ha, hb, hfix, hinto⟩ := hreindex C hC hCU
-  exact hρ.condIndepFun_domRestrict_of_reindexing C R D hRD a b ha hb hfix hinto
+  refine ⟨fun p ↦ (a p.1, b p.2), ?_, hfix, hinto⟩
+  simpa only [Measure.map_id'] using
+    hρ.map_arrayBlock_eq (fun p ↦ (measurable_pi_apply p).aemeasurable) ha hb
 
 /-- **A finite block of array entries in an infinite rectangle is conditionally independent of
 everything outside a finite block containing it, given the rest of the rectangle.**
@@ -158,6 +115,36 @@ theorem SeparatelyExchangeable.condIndepFun_domRestrict_subblock_compl_of_finite
       hb (hbG (b p.2) ⟨(a p.1, b p.2), hc, rfl⟩).symm
     have hpEq : p = (a p.1, b p.2) := Prod.ext hp1 hp2
     exact hpEq ▸ hc
+
+/-- **A finite block of entries of a jointly exchangeable array inside an infinite square is
+conditionally independent of everything outside a finite block containing it, given the rest of
+the square.**
+
+This is the jointly exchangeable form of
+`SeparatelyExchangeable.condIndepFun_domRestrict_subblock_compl_of_finite_block_of_subset`: the
+rectangle `S ×ˢ T` becomes the square `S ×ˢ S`, since only a simultaneous relabelling of both axes
+preserves the array law. The blocks may contain diagonal entries, and both orientations of an
+off-diagonal cell. -/
+theorem JointlyExchangeable.condIndepFun_domRestrict_subblock_compl_of_finite_block_of_subset
+    (hρ : JointlyExchangeable ρ fun p x ↦ x p) {S : Set ℕ} (hS : S.Infinite)
+    {B C : Set (ℕ × ℕ)} (hC : C.Finite) (hBsub : B ⊆ C) (hCsub : C ⊆ S ×ˢ S) :
+    B.domRestrict ⟂ᵢ[((S ×ˢ S) \ C).domRestrict, Set.measurable_restrict _; ρ]
+      Cᶜ.domRestrict := by
+  -- A single self-injection of `S` fixes every index occurring in `C`.
+  have hFS : Prod.fst '' C ∪ Prod.snd '' C ⊆ S := by
+    rintro i (⟨p, hp, rfl⟩ | ⟨p, hp, rfl⟩)
+    exacts [(hCsub hp).1, (hCsub hp).2]
+  obtain ⟨a, ha, haF, haS⟩ := hS.exists_injective_into_eqOn_of_finite
+    ((hC.image _).union (hC.image _)) hFS
+  refine condIndepFun_domRestrict_of_reindexing (Set.sdiff_subset_compl _ _)
+    (fun p ↦ (a p.1, a p.2)) ?_ (fun p hp ↦ ?_) (fun p hp ↦ ⟨⟨haS _, haS _⟩, fun hc ↦ hp ?_⟩)
+  · simpa only [Measure.map_id'] using
+      hρ.map_arrayBlock_diag_eq (fun p ↦ (measurable_pi_apply p).aemeasurable) ha
+  · exact Prod.ext (haF _ (Or.inl ⟨p, hBsub hp, rfl⟩)) (haF _ (Or.inr ⟨p, hBsub hp, rfl⟩))
+  · -- `a` fixes both indices of the cell `(a p.1, a p.2) ∈ C`, so by injectivity it is `p`.
+    have h₁ : a p.1 = p.1 := ha (haF _ (Or.inl ⟨_, hc, rfl⟩))
+    have h₂ : a p.2 = p.2 := ha (haF _ (Or.inr ⟨_, hc, rfl⟩))
+    simpa only [h₁, h₂, Prod.mk.eta] using hc
 
 end TauCeti.Probability
 

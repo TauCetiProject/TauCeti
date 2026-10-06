@@ -19,10 +19,9 @@ contravariant functor that sends it to its group-valued functor of points `A ↦
 The category of commutative Hopf algebras is Mathlib's bundled `CommHopfAlgCat`; this file
 adds the functor-of-points stack on top of it.
 
-This is the categorical form of the first concrete target in the Tau Ceti reductive-groups
-roadmap, Layer 0, "R-points as a group": for a commutative Hopf algebra representing an
-affine group scheme, the functor of points is group-valued by convolution, and a morphism of
-coordinate Hopf algebras acts on points by pre-composition.
+For a commutative Hopf algebra representing an affine group scheme, the functor of points
+is group-valued by convolution, and a morphism of coordinate Hopf algebras acts on points
+by pre-composition.
 
 ## Main declarations
 
@@ -40,15 +39,13 @@ coordinate Hopf algebras acts on points by pre-composition.
 * `CommHopfAlgCat.grpObjMap_injective`: represented group-object maps determine their coordinate
   Hopf-algebra morphisms.
 
-## References
+## See also
 
-The bundled category `CommHopfAlgCat`, its forgetful functor to `CommBialgCat`, and the
-equivalence `CommHopfAlgCat.commHopfAlgCatEquivCogrpCommAlgCat` with cogroup objects in
-commutative algebras are Mathlib's `Mathlib.Algebra.Category.CommHopfAlgCat`. The points
-functoriality uses Mathlib's convolution monoid and bialgebra morphism API, in particular
-`AlgHom.convMul_comp_bialgHom_distrib` from
-`Mathlib.RingTheory.Bialgebra.Convolution`, through the Tau Ceti wrapper
-`AlgHom.mapDomain`.
+* `Mathlib.Algebra.Category.CommHopfAlgCat`: the bundled category `CommHopfAlgCat`, its forgetful
+  functor to `CommBialgCat`, and the equivalence `commHopfAlgCatEquivCogrpCommAlgCat`.
+* `Mathlib.RingTheory.Bialgebra.Convolution`: convolution monoid and bialgebra morphism API,
+  in particular `AlgHom.convMul_comp_bialgHom_distrib`.
+* `TauCeti.Algebra.AlgebraicGroup.Hopf.Map`: the `AlgHom.mapDomain` wrapper.
 -/
 
 public section

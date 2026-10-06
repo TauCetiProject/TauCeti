@@ -32,6 +32,8 @@ modular forms); the AINTLIB `HeckePair` bundle is replaced by Mathlib's `IsHecke
 
 * `SLnZ`: `SL_n(ℤ)` as a subgroup of `GL_n(ℚ)`, via `mapGL ℚ`.
 * `posDetInt`: integral matrices with positive determinant, Shimura's `Δ`.
+* `intMatrix`: the integral matrix underlying an element of `intEntries n`, as a monoid
+  homomorphism, characterised by `map_intMatrix` and `intMatrix_eq_iff`.
 
 ## Main results
 
@@ -45,6 +47,10 @@ modular forms); the AINTLIB `HeckePair` bundle is replaced by Mathlib's `IsHecke
   `δ`. `mem_doubleCoset_SLnZ_of_intMatrix_eq` is its `SL_n(ℤ)` case, and
   `det_eq_of_mem_doubleCoset_of_le_SLnZ` extracts the determinant invariant in the other
   direction.
+* `mem_intEntries_of_mem_doubleCoset`: the double coset of an integral matrix between images of
+  subgroups of `SL_n(ℤ)` consists of integral matrices; `mem_intEntries_of_rightCoset_eq`,
+  `mem_intEntries_of_cover` and `mem_intEntries_of_mem_doubleCoset_mul_doubleCoset` read this off
+  a right coset, a family covering the double coset, and a product of two double cosets.
 * the `IsHeckeTriple (posDetInt n) (SLnZ n) (SLnZ n)` instance, and the
   Hecke ring `IntegralHeckeRing n` it founds.
 
@@ -264,6 +270,117 @@ lemma mem_posDetInt_iff {g : GL (Fin n) ℚ} :
 outside this file (`posDetInt` is not `@[expose]`), so consumers that need only positivity, and
 not integrality, must go through this lemma. -/
 lemma posDetInt_le_glpos : posDetInt n ≤ (Matrix.GLPos (Fin n) ℚ).toSubmonoid := inf_le_right
+
+/-- `posDetInt n` is contained in the integral-entry submonoid, forgetting positivity — the other
+projection of the meet, for consumers that need only integrality. -/
+lemma posDetInt_le_intEntries : posDetInt n ≤ intEntries n := inf_le_left
+
+/-- The image of `SL_n(ℤ)` has integer entries. -/
+lemma mapGL_mem_intEntries (σ : SpecialLinearGroup (Fin n) ℤ) : mapGL ℚ σ ∈ intEntries n :=
+  hasIntEntries_of_mem_SLnZ n (coe_mem_SLnZ n σ)
+
+/-- The image in `GL_n(ℚ)` of a subgroup of `SL_n(ℤ)` has integer entries. -/
+lemma map_mapGL_le_intEntries (Γ : Subgroup (SpecialLinearGroup (Fin n) ℤ)) :
+    (Γ.map (mapGL ℚ)).toSubmonoid ≤ intEntries n := by
+  rintro _ ⟨σ, -, rfl⟩
+  exact mapGL_mem_intEntries n σ
+
+/-- The double coset `Γ₁' δ Γ₂'` of an integral matrix `δ` between the images
+`Γᵢ' = Γᵢ.map (mapGL ℚ)` of two subgroups of `SL_n(ℤ)` consists of integral matrices. -/
+lemma mem_intEntries_of_mem_doubleCoset {Γ₁ Γ₂ : Subgroup (SpecialLinearGroup (Fin n) ℤ)}
+    {δ x : GL (Fin n) ℚ} (hδ : δ ∈ intEntries n)
+    (hx : x ∈ DoubleCoset.doubleCoset δ (Γ₁.map (mapGL ℚ)) (Γ₂.map (mapGL ℚ))) :
+    x ∈ intEntries n := by
+  obtain ⟨g₁, hg₁, g₂, hg₂, rfl⟩ := DoubleCoset.mem_doubleCoset.mp hx
+  exact mul_mem (mul_mem (map_mapGL_le_intEntries n Γ₁ hg₁) hδ) (map_mapGL_le_intEntries n Γ₂ hg₂)
+
+/-- A matrix generating the same right coset of `Γ' = Γ.map (mapGL ℚ)` as an integral matrix is
+integral: `Γ' δ₁ = Γ' δ₂` puts `δ₂ = (δ₂ δ₁⁻¹) δ₁` with `δ₂ δ₁⁻¹ ∈ Γ'`. -/
+lemma mem_intEntries_of_rightCoset_eq {Γ : Subgroup (SpecialLinearGroup (Fin n) ℤ)}
+    {δ₁ δ₂ : GL (Fin n) ℚ} (h₁ : δ₁ ∈ intEntries n)
+    (h : MulOpposite.op δ₁ • (Γ.map (mapGL ℚ) : Set (GL (Fin n) ℚ)) =
+      MulOpposite.op δ₂ • (Γ.map (mapGL ℚ) : Set (GL (Fin n) ℚ))) :
+    δ₂ ∈ intEntries n := by
+  have hγ : δ₂ * δ₁⁻¹ ∈ Γ.map (mapGL ℚ) := (rightCoset_eq_iff _).mp h
+  have := mul_mem (map_mapGL_le_intEntries n Γ hγ) h₁
+  rwa [inv_mul_cancel_right] at this
+
+/-- Every member of a family whose right cosets cover the double coset `Γ₁' δ Γ₂'` of an integral
+matrix `δ` is integral: it lies in its own right coset, hence in the double coset. Membership of
+the family in `intEntries n` is therefore not an extra hypothesis on statements that assume such
+a covering. -/
+lemma mem_intEntries_of_cover {Γ₁ Γ₂ : Subgroup (SpecialLinearGroup (Fin n) ℤ)}
+    {δ : GL (Fin n) ℚ} {ι : Type*} {a : ι → GL (Fin n) ℚ} (hδ : δ ∈ intEntries n)
+    (hcover : DoubleCoset.doubleCoset δ (Γ₁.map (mapGL ℚ)) (Γ₂.map (mapGL ℚ)) =
+      ⋃ i, MulOpposite.op (a i) • (Γ₁.map (mapGL ℚ) : Set (GL (Fin n) ℚ))) (i : ι) :
+    a i ∈ intEntries n :=
+  mem_intEntries_of_mem_doubleCoset n hδ
+    (hcover ▸ Set.mem_iUnion_of_mem i (mem_own_rightCoset _ _))
+
+/-- The product `Γ₁' δ₁ Γ₂' · Γ₂' δ₂ Γ₃'` of the double cosets of two integral matrices consists
+of integral matrices. -/
+lemma mem_intEntries_of_mem_doubleCoset_mul_doubleCoset
+    {Γ₁ Γ₂ Γ₃ : Subgroup (SpecialLinearGroup (Fin n) ℤ)} {δ₁ δ₂ x : GL (Fin n) ℚ}
+    (hδ₁ : δ₁ ∈ intEntries n) (hδ₂ : δ₂ ∈ intEntries n)
+    (hx : x ∈ DoubleCoset.doubleCoset δ₁ (Γ₁.map (mapGL ℚ)) (Γ₂.map (mapGL ℚ)) *
+      DoubleCoset.doubleCoset δ₂ (Γ₂.map (mapGL ℚ)) (Γ₃.map (mapGL ℚ))) :
+    x ∈ intEntries n := by
+  obtain ⟨y, hy, z, hz, rfl⟩ := Set.mem_mul.mp hx
+  exact mul_mem (mem_intEntries_of_mem_doubleCoset n hδ₁ hy)
+    (mem_intEntries_of_mem_doubleCoset n hδ₂ hz)
+
+/-! ### The integral matrix underlying an element of `intEntries n`
+
+Membership in `intEntries n` is an existential over integral matrices, so reading off *the*
+integral matrix of an element chooses a witness. The choice is harmless: the entrywise cast
+`ℤ → ℚ` is injective, so the witness is unique (`intMatrix_eq_iff`), and `intMatrix` is a monoid
+homomorphism. It is the interface through which integral structures — binary forms with integer
+coefficients, modular symbols — receive the action of a Hecke coset representative. -/
+
+/-- The integral matrix underlying an element of `intEntries n`: the chosen witness of its
+membership, unique because the cast `ℤ → ℚ` is injective (`intMatrix_eq_iff`). -/
+private noncomputable def intMatrixFun (g : intEntries n) : Matrix (Fin n) (Fin n) ℤ :=
+  Classical.choose ((mem_intEntries n).mp g.2)
+
+private lemma map_intMatrixFun (g : intEntries n) :
+    (intMatrixFun n g).map (Int.cast : ℤ → ℚ) = ((g : GL (Fin n) ℚ) : Matrix (Fin n) (Fin n) ℚ) :=
+  (Classical.choose_spec ((mem_intEntries n).mp g.2)).symm
+
+private lemma intMatrixFun_eq_iff {g : intEntries n} {A : Matrix (Fin n) (Fin n) ℤ} :
+    intMatrixFun n g = A ↔
+      ((g : GL (Fin n) ℚ) : Matrix (Fin n) (Fin n) ℚ) = A.map (Int.cast : ℤ → ℚ) :=
+  ⟨fun h ↦ h ▸ (map_intMatrixFun n g).symm,
+    fun h ↦ Matrix.map_injective Int.cast_injective ((map_intMatrixFun n g).trans h)⟩
+
+/-- **The integral matrix underlying an element of `intEntries n`**, as a monoid homomorphism
+`intEntries n →* Matrix (Fin n) (Fin n) ℤ`. It is characterised by `map_intMatrix` (its cast to
+`ℚ` is the matrix of `g`) and `intMatrix_eq_iff`. -/
+noncomputable def intMatrix : intEntries n →* Matrix (Fin n) (Fin n) ℤ where
+  toFun := intMatrixFun n
+  map_one' := (intMatrixFun_eq_iff n).mpr <| by
+    rw [Matrix.map_one _ Int.cast_zero Int.cast_one, OneMemClass.coe_one, Units.val_one]
+  map_mul' g h := (intMatrixFun_eq_iff n).mpr <| by
+    rw [Submonoid.coe_mul, Units.val_mul, ← map_intMatrixFun n g, ← map_intMatrixFun n h]
+    ext i j
+    simp [Matrix.mul_apply, Matrix.map_apply]
+
+/-- The cast to `ℚ` of the integral matrix of `g` is the matrix of `g`. -/
+@[simp] lemma map_intMatrix (g : intEntries n) :
+    (intMatrix n g).map (Int.cast : ℤ → ℚ) = ((g : GL (Fin n) ℚ) : Matrix (Fin n) (Fin n) ℚ) :=
+  map_intMatrixFun n g
+
+/-- **The integral matrix is characterised by its cast**: `intMatrix n g = A` exactly when the
+matrix of `g` is the cast of `A`. This is the introduction rule for computing `intMatrix` at an
+element given by an explicit integral matrix. -/
+lemma intMatrix_eq_iff {g : intEntries n} {A : Matrix (Fin n) (Fin n) ℤ} :
+    intMatrix n g = A ↔
+      ((g : GL (Fin n) ℚ) : Matrix (Fin n) (Fin n) ℚ) = A.map (Int.cast : ℤ → ℚ) :=
+  intMatrixFun_eq_iff n
+
+/-- The integral matrix of the image of `σ ∈ SL_n(ℤ)` is `σ` itself. -/
+@[simp] lemma intMatrix_mapGL (σ : SpecialLinearGroup (Fin n) ℤ) :
+    intMatrix n ⟨mapGL ℚ σ, mapGL_mem_intEntries n σ⟩ = σ :=
+  (intMatrix_eq_iff n).mpr <| by simp [mapGL_coe_matrix, algebraMap_int_eq]
 
 end PosDetInt
 

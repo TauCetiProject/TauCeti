@@ -22,7 +22,7 @@ itself. This file supplies both.
 * `Real.tanh_add` — `tanh (a + b) = (tanh a + tanh b) / (1 + tanh a * tanh b)`: the hyperbolic
   tangent of a sum is the Möbius sum of the hyperbolic tangents.
 * `Real.tanh_strictMono` and `Real.tanh_lt_tanh_iff` — `Real.tanh` is strictly monotone, so it
-  compares two real numbers exactly as they compare.
+  compares two real numbers exactly as they compare, and is positive on the positive reals.
 
 The formula is the quotient of the other two, both sides carrying the factor
 `cosh a * cosh b`, which is nonzero because `Real.cosh` is positive.

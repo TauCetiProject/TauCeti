@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.LineBundle.Rigidified
+public import TauCeti.AlgebraicGeometry.LineBundle.Rigidified.Basic
 public import TauCeti.AlgebraicGeometry.BaseChangeSection
 
 /-!
@@ -21,7 +21,12 @@ bundles on `X_T` rigidified along `x₀_T`: line bundles `L` on `X_T` together w
 The rigidification is how the section `x₀` enters the construction of the Picard scheme: when
 `f_* 𝒪_X = 𝒪_S` holds universally, a rigidified line bundle has no automorphisms other than the
 identity, and the rigidified functor is the relative Picard functor `T ↦ Pic(X_T) / Pic(T)`.
-Neither statement is proved in this file, which constructs the functor.
+The first statement is the rigidity theorem
+`TauCeti.AlgebraicGeometry.RigidifiedLineBundle.autSubgroup_eq_bot_iff` of the separate module
+`TauCeti.AlgebraicGeometry.LineBundle.Rigidified.Automorphisms`, which this file does not import;
+it identifies the automorphisms of a rigidified line bundle with the kernel of the pullback of
+global units along the section. The second statement is not proved in this file, which
+constructs the functor.
 
 ## Main declarations
 
