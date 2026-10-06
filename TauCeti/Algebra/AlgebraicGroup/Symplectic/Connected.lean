@@ -9,7 +9,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Connected.CommHopfAlgCat
 public import TauCeti.Algebra.AlgebraicGroup.Symplectic.Basic
 import TauCeti.Algebra.AlgebraicGroup.BaseChange.Naturality
 import TauCeti.Algebra.AlgebraicGroup.Connected.AlgebraicallyClosed
-import TauCeti.Algebra.AlgebraicGroup.Symplectic.RootSubgroup
+import TauCeti.Algebra.AlgebraicGroup.Symplectic.RootSubgroup.Basic
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.TorusGeneration
 
 /-!
