@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Grading
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement
 public import TauCeti.RingTheory.Idempotents.SquareRootOne
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Even
@@ -340,6 +341,40 @@ theorem coe_equivEvenProd_apply_snd
   rw [neg_neg, add_comm (halfOneAdd R (-ω) * b) (halfOneAdd R ω * a)] at h
   exact h.symm
 
+/-- A splitting element fixed by Clifford conjugation makes the odd splitting carry conjugation
+to componentwise reversal on the two even factors. -/
+theorem equivEvenProd_star
+    (hcomm : ∀ x : ↥(even Q), Commute ω (x : CliffordAlgebra Q))
+    (hodd : ω ∈ evenOdd Q 1) (hsq : ω * ω = 1) (hstar : star ω = ω)
+    (x : CliffordAlgebra Q) :
+    equivEvenProd Q ω hcomm hodd hsq (star x) =
+      (reverseEven Q (equivEvenProd Q ω hcomm hodd hsq x).1,
+        reverseEven Q (equivEvenProd Q ω hcomm hodd hsq x).2) := by
+  let e := equivEvenProd Q ω hcomm hodd hsq
+  apply e.symm.injective
+  rw [e.symm_apply_apply, equivEvenProd_symm_apply]
+  have hhalf : star (halfOneAdd R ω) = halfOneAdd R ω := by
+    simp [TauCeti.halfOneAdd_def, hstar]
+  have hhalfNeg : star (halfOneAdd R (-ω)) = halfOneAdd R (-ω) := by
+    simp [TauCeti.halfOneAdd_def, hstar]
+  calc
+    star x = star (e.symm (e x)) := congrArg star (e.symm_apply_apply x).symm
+    _ = star (halfOneAdd R ω * ((e x).1 : CliffordAlgebra Q) +
+        halfOneAdd R (-ω) * ((e x).2 : CliffordAlgebra Q)) := by
+      rw [equivEvenProd_symm_apply]
+    _ = reverseEven Q (e x).1 * halfOneAdd R ω +
+        reverseEven Q (e x).2 * halfOneAdd R (-ω) := by
+      simp only [star_add, star_mul, hhalf, hhalfNeg, ← reverse_eq_star_of_mem_even,
+        coe_reverseEven_apply]
+    _ = halfOneAdd R ω * reverseEven Q (e x).1 +
+        halfOneAdd R (-ω) * reverseEven Q (e x).2 := by
+      rw [TauCeti.halfOneAdd_def, TauCeti.halfOneAdd_def]
+      simp only [mul_smul_comm, smul_mul_assoc]
+      rw [mul_add, mul_add, add_mul, add_mul,
+        (hcomm (reverseEven Q (e x).1)).eq,
+        (hcomm (reverseEven Q (e x).2)).neg_left.eq]
+      simp only [one_mul, mul_one]
+
 end Splitting
 
 /-! ### The volume element as the splitting element -/
@@ -398,6 +433,18 @@ theorem coe_equivEvenProdOfOddLength_apply_snd {l : List M} (hl : l.Pairwise Q.I
       = halfOneAdd R (-(s • (l.map (ι Q)).prod)) * x
         + halfOneAdd R (s • (l.map (ι Q)).prod) * involute x :=
   coe_equivEvenProd_apply_snd Q (s • (l.map (ι Q)).prod) _ _ _ x
+
+/-- If the normalized odd volume is fixed by Clifford conjugation, its splitting carries
+conjugation to componentwise reversal on the two even factors. -/
+theorem equivEvenProdOfOddLength_star {l : List M} (hl : l.Pairwise Q.IsOrtho)
+    (hlen : Odd l.length) (hspan : Submodule.span R {x : M | x ∈ l} = ⊤) {s : R}
+    (hs : s * s * ((-1 : R) ^ l.length.choose 2 * (l.map Q).prod) = 1)
+    (hstar : star (s • (l.map (ι Q)).prod) = s • (l.map (ι Q)).prod)
+    (x : CliffordAlgebra Q) :
+    equivEvenProdOfOddLength hl hlen hspan hs (star x) =
+      (reverseEven Q (equivEvenProdOfOddLength hl hlen hspan hs x).1,
+        reverseEven Q (equivEvenProdOfOddLength hl hlen hspan hs x).2) :=
+  equivEvenProd_star _ _ _ hstar x
 
 /-- **Over a separably closed field of characteristic not two the normalization is automatic.**
 

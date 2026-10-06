@@ -116,6 +116,14 @@ theorem adeleTransition_algebraMap {E E' : Ω} (h : E ≤ E') (x : E) :
   let := (IntermediateField.inclusion h).toRingHom.toAlgebra
   exact adeleExtension_algebraMap (𝓞 E) E (𝓞 E') E' x
 
+/-- The finite component of the extension of an adele is the extension of its finite
+component. -/
+theorem adeleTransition_snd {E E' : Ω} (h : E ≤ E') (a : AdeleRing (𝓞 E) E) :
+    letI := (IntermediateField.inclusion h).toRingHom.toAlgebra
+    (adeleTransition h a).2 = IsDedekindDomain.finiteAdeleExtension (𝓞 E) E (𝓞 E') E' a.2 := by
+  let := (IntermediateField.inclusion h).toRingHom.toAlgebra
+  exact adeleExtension_snd (B := 𝓞 E') (L := E') a
+
 /-- The extension map of adele rings preserves the idempotent `(1, 0)`. -/
 private theorem adeleTransition_fst_snd {E E' : Ω} (h : E ≤ E') {a : AdeleRing (𝓞 E) E}
     (h₁ : a.1 = 1) (h₂ : a.2 = 0) :

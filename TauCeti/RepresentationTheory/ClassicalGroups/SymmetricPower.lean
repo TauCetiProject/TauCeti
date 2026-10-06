@@ -76,7 +76,7 @@ homogeneous symmetric polynomial in its diagonal entries. -/
 theorem char_symPowerRep_diagonal (t : Fin n → kˣ) : (symPowerRep k n d).character (diagGL t) =
       MvPolynomial.eval (fun i => (t i : k)) (MvPolynomial.hsymm (Fin n) k d) := by
   rw [Representation.character, Representation.symmetricPower_apply,
-    SymmetricPower.trace_map_of_apply_basis (Pi.basisFun k (Fin n))
+    Module.Basis.trace_map_symmetricPower_of_apply (Pi.basisFun k (Fin n))
       (stdRep k n (diagGL t)) (fun i => (t i : k)) d (stdRep_diagGL_apply_basisFun t)]
   -- both sides sum, over the unordered `d`-tuples of indices, the product of the entries listed
   rw [eval_hsymm]

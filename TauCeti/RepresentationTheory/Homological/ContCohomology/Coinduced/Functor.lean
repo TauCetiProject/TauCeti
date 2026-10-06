@@ -58,11 +58,6 @@ universe u v w
 
 attribute [local instance] TopRep.distribMulAction TopRep.smulCommClass
 
-local instance instDiscreteTopologyOfSmoothDiscreteCoind
-    {R : Type u} [Ring R] [TopologicalSpace R] {G : Type v} [Monoid G] [TopologicalSpace G]
-    (A : SmoothDiscreteTopRep.{u, v, w} R G) : DiscreteTopology A.obj.V :=
-  A.property.discreteTopology
-
 local instance instContinuousSMulOfSmoothDiscreteCoind
     {R : Type u} [Ring R] [TopologicalSpace R] {G : Type v} [Group G]
     [TopologicalSpace G] [IsTopologicalGroup G] (A : SmoothDiscreteTopRep.{u, v, w} R G) :
@@ -173,12 +168,10 @@ noncomputable def coindTraceHom [U.FiniteIndex]
     (coindTopRep R G U
       (⟨TopRep.res (U.subtype : U →* G) A.obj,
         A.property.res continuous_subtype_val⟩ : SmoothDiscreteTopRep R U)).obj ⟶ A.obj := by
-  letI : DiscreteTopology A.obj.V := A.property.discreteTopology
   letI : ContinuousSMul G A.obj.V := A.property.continuousSMul
   let X := coindTopRep R G U
     (⟨TopRep.res (U.subtype : U →* G) A.obj,
       A.property.res continuous_subtype_val⟩ : SmoothDiscreteTopRep R U)
-  letI : DiscreteTopology X.obj.V := X.property.discreteTopology
   exact CategoryTheory.ConcreteCategory.ofHom
     { toContinuousLinearMap :=
         ⟨DiscreteCoind.traceLinear (R := R) G U A.obj.V, continuous_of_discreteTopology⟩
@@ -376,7 +369,6 @@ variable (R : Type u) [Ring R] [TopologicalSpace R]
   (U : OpenSubgroup G)
   (A : SmoothDiscreteTopRep.{u, v, w} R U.toSubgroup)
 
-local instance : DiscreteTopology A.obj.V := A.property.discreteTopology
 local instance : ContinuousSMul U.toSubgroup A.obj.V := A.property.continuousSMul
 local instance : SMulCommClass U.toSubgroup R A.obj.V := TopRep.smulCommClass A.obj
 local instance : SMulCommClass G R (DiscreteCoind G U.toSubgroup A.obj.V) :=
@@ -493,10 +485,7 @@ noncomputable def algebraicCoindCounit :
     ⟨LinearMap.proj 1 ∘ₗ
       (Representation.coindV U.toSubgroup.subtype
         (Representation.ofDistribMulAction R U.toSubgroup A.obj.V)).subtype,
-      by
-        let : DiscreteTopology (algebraicCoindAsSmooth R G U A).obj.V :=
-          (algebraicCoindAsSmooth R G U A).property.discreteTopology
-        exact continuous_of_discreteTopology⟩
+      continuous_of_discreteTopology⟩
   isIntertwining' u := by
     ext f
     let f' : Representation.coindV U.toSubgroup.subtype

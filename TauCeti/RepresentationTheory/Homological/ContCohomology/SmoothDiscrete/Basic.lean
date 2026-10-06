@@ -9,6 +9,7 @@ public import Mathlib.CategoryTheory.Action.Continuous
 public import Mathlib.Data.ZMod.Basic
 public import Mathlib.RepresentationTheory.Continuous.TopRep
 public import Mathlib.Topology.Algebra.MulAction
+public import Mathlib.Topology.Instances.ZMod
 
 /-!
 # Smooth discrete topological representations
@@ -762,10 +763,10 @@ end Restriction
 
 /-! ### The equivalence of coefficient categories -/
 
-/-- The underlying module of a smooth discrete object is discrete. Recording this as a local
-instance is what lets the object map of `TauCeti.ofSmoothDiscrete` below build a
-`TauCeti.DiscreteRep` on it. -/
-local instance instDiscreteTopologyOfSmoothDiscrete {R : Type u} [Ring R] [TopologicalSpace R]
+/-- The underlying module of a smooth discrete object is discrete. This is what lets the object
+map of `TauCeti.ofSmoothDiscrete` below build a `TauCeti.DiscreteRep` on it, and what downstream
+constructions on smooth discrete objects use to treat their modules as discrete. -/
+instance instDiscreteTopologyOfSmoothDiscrete {R : Type u} [Ring R] [TopologicalSpace R]
     {G : Type v} [Monoid G] [TopologicalSpace G] (X : SmoothDiscreteTopRep.{u, v, w} R G) :
     DiscreteTopology X.obj.V :=
   X.property.discreteTopology
@@ -858,12 +859,6 @@ end CoefficientEquivalence
 /-! ### The smooth discrete subcategory is proper -/
 
 section NotSmooth
-
-/-- The coefficients of the non-example below carry the discrete topology. -/
-local instance instTopologicalSpaceZModThree : TopologicalSpace (ZMod 3) := ⊥
-
-/-- The topology chosen just above is by definition the discrete one. -/
-local instance instDiscreteTopologyZModThree : DiscreteTopology (ZMod 3) := ⟨rfl⟩
 
 /-- The group of the non-example below carries the indiscrete topology, whose only open sets are
 `∅` and the whole group. -/

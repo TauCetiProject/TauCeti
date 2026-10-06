@@ -7,15 +7,17 @@ module
 
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologicalDimension.ClassModule.Basic
 public import TauCeti.Topology.Algebra.Group.Transfer
+import TauCeti.Topology.Algebra.Group.TopologicalAbelianization.Lift
 
 /-!
 # Transfer to the pro-p class module
 
 For a finite-index subgroup `V` of a topological group `G`, the transfer to `V^ab(p)` is
 Mathlib's `MonoidHom.transfer` applied to the canonical map `V → V^ab(p)`. It is continuous
-when `V` is open. For normal `V`, its restriction to `V` is the norm for the conjugation action
-of `G ⧸ V`. Its value on a quotient representative is the sum of the factor set
-`abelianizationProPFactorSet` in the first variable.
+when `V` is open; for profinite `G` it then kills the kernel of `G → G^ab(p)`. For normal
+`V`, its restriction to `V` is the norm for the conjugation action of `G ⧸ V`. Its value on a
+quotient representative is the sum of the factor set `abelianizationProPFactorSet` in the first
+variable.
 
 These formulas connect the group-theoretic transfer with the extension class
 `abelianizationProPClass`: in particular, they identify the norm and the representative sum
@@ -45,6 +47,11 @@ attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex
 noncomputable def abelianizationProPTransfer : G →* abelianizationProP p G V :=
   MonoidHom.transfer (abelianizationProPMk p G V)
 
+/-- The transfer to `V^ab(p)` is Mathlib's transfer of the canonical map `V → V^ab(p)`. -/
+theorem abelianizationProPTransfer_def :
+    abelianizationProPTransfer p G V = MonoidHom.transfer (abelianizationProPMk p G V) :=
+  (rfl)
+
 /-- The transfer is the product of the classes of the transversal words, for every transversal.
 The representatives are arbitrary; the transfer itself does not depend on them. -/
 theorem abelianizationProPTransfer_eq_prod_lWord (t : G ⧸ V → G)
@@ -60,6 +67,25 @@ theorem continuous_abelianizationProPTransfer (hV : IsOpen (V : Set G)) :
     Continuous (abelianizationProPTransfer p G V) := by
   unfold abelianizationProPTransfer
   exact continuous_transfer hV (continuous_abelianizationProPMk p G V)
+
+variable {p G V} in
+/-- The transfer `Ver : G → V^ab(p)` kills the kernel of the canonical map `G → G^ab(p)`. It is a
+continuous homomorphism to the abelian pro-`p` group `V^ab(p)`, so it factors through `G^ab(p)`. No
+hypothesis on the cohomological dimension of `G` is needed. -/
+theorem abelianizationProPTransfer_eq_one_of_mk_eq_one [CompactSpace G]
+    [TotallyDisconnectedSpace G] (hV : IsOpen (V : Set G)) {g : G}
+    (hg : maximalProPQuotient.mk p (TopologicalAbelianization G)
+      (g : TopologicalAbelianization G) = 1) :
+    abelianizationProPTransfer p G V g = 1 := by
+  have : CompactSpace V := isCompact_iff_compactSpace.mp (V.isClosed_of_isOpen hV).isCompact
+  let Ver : G →ₜ* abelianizationProP p G V :=
+    ⟨abelianizationProPTransfer p G V, continuous_abelianizationProPTransfer p G V hV⟩
+  let Verab := TopologicalAbelianization.lift Ver
+  have hVer := congrArg (maximalProPQuotient.lift
+    (isProP_maximalProPQuotient (p := p) (G := TopologicalAbelianization V)) Verab.toMonoidHom
+    Verab.continuous) hg
+  rw [maximalProPQuotient.mk_apply, maximalProPQuotient.lift_mk, map_one] at hVer
+  exact (TopologicalAbelianization.lift_mk Ver g).symm.trans hVer
 
 variable [V.Normal]
 

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Combinatorics.Enumerative.SuccessorArray
 public import TauCeti.MeasureTheory.MeasurableSpace.Eval
-public import TauCeti.Probability.Exchangeability.Basic
+public import TauCeti.Probability.Process.PathLaw.Basic
 
 /-!
 # The successor array of a path

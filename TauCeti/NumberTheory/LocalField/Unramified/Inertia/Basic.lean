@@ -12,6 +12,8 @@ public import TauCeti.NumberTheory.LocalField.Unramified.Maximal
 import TauCeti.GroupTheory.OrderOfElement.Basic
 import TauCeti.NumberTheory.LocalField.InertiaDegree
 import TauCeti.NumberTheory.LocalField.Teichmuller
+import TauCeti.NumberTheory.LocalField.Unramified.ZHat
+import TauCeti.Topology.Algebra.Group.Profinite.ZHat.ZMod
 import TauCeti.Topology.Algebra.Group.Subgroup
 
 /-!
@@ -31,8 +33,9 @@ It is a closed normal subgroup, and it sits in the exact sequence
 
 given by restriction `TauCeti.restrictMaximalUnramifiedHom K`, which is surjective with kernel
 `I_K`; the unramified quotient `G_K ⧸ I_K` is identified with `Gal(K^{ur}/K)` as a topological
-group. A finite separable subextension of `K^{alg}/K` is unramified exactly when inertia fixes it,
-and on a finite normal subextension `L` inertia restricts into the inertia group `G_0` of `L/K`.
+group. Inertia is not open in `G_K`, since `Gal(K^{ur}/K) ≃ ℤ̂` is infinite. A finite separable
+subextension of `K^{alg}/K` is unramified exactly when inertia fixes it, and on a finite normal
+subextension `L` inertia restricts into the inertia group `G_0` of `L/K`.
 
 An **arithmetic Frobenius lift** is an element of `G_K` restricting to the arithmetic Frobenius
 `TauCeti.maximalUnramifiedFrobenius` of `K^{ur}/K`; equivalently, it raises every root of every
@@ -55,6 +58,7 @@ of `I_K`, and each of them generates `G_K` topologically together with `I_K`.
 * `TauCeti.apply_eq_self_of_mem_inertiaSubgroup_of_pow_eq_one`: `I_K` fixes the roots of unity of
   order prime to the residue characteristic.
 * `TauCeti.isClosed_inertiaSubgroup`, `TauCeti.inertiaSubgroup_normal`: `I_K` is closed and normal.
+* `TauCeti.not_isOpen_inertiaSubgroup`: `I_K` is not open in `G_K`.
 * `TauCeti.restrictMaximalUnramifiedHom_surjective`, `TauCeti.ker_restrictMaximalUnramifiedHom`:
   restriction `G_K → Gal(K^{ur}/K)` is surjective with kernel `I_K`.
 * `TauCeti.unramifiedDegree_surjective`, `TauCeti.continuous_unramifiedDegree`,
@@ -242,6 +246,16 @@ theorem quotientInertiaSubgroupEquiv_symm_restrictMaximalUnramifiedHom
       unramifiedDegree K σ :=
   -- `restrictMaximalUnramifiedHom K` is by definition `AlgEquiv.restrictNormalHom`.
   absoluteGaloisGroupQuotientEquiv_symm_restrictNormalHom σ
+
+/-- **Inertia is not open in `G_K`.** Otherwise `G_K ⧸ I_K ≃ ℤ̂` would be finite, since `G_K` is
+compact; but `ℤ` embeds into `ℤ̂`. -/
+theorem not_isOpen_inertiaSubgroup :
+    ¬ IsOpen (inertiaSubgroup K : Set (Field.absoluteGaloisGroup K)) := fun h ↦ by
+  have := Subgroup.quotient_finite_of_isOpen (inertiaSubgroup K) h
+  have : Finite zHat := .of_equiv _ ((quotientInertiaSubgroupEquiv K).toMulEquiv.trans
+    (maximalUnramifiedGaloisGroupEquivZHat K (AlgebraicClosure K)).toMulEquiv).toEquiv
+  have := Finite.of_injective _ (zHat.ofInt_injective.comp Multiplicative.ofAdd.injective)
+  exact not_finite ℤ
 
 variable {K} in
 /-- **Unramified subextensions are those fixed by inertia.** A finite separable subextension `E` of

@@ -62,19 +62,19 @@ root `εᵢ + εⱼ` pairs `typeBSumRootGenerator i j` with `typeBSumNegativeRoo
   odd orthogonal form.
 * `TauCeti.typeBSumRootMatrix_mul_sumRootMatrix` and its negative counterpart: products within
   one family vanish, so each sum-root vector is square-zero and any two of them commute.
-* `TauCeti.typeBDiagonalEquiv_lie_sumRootGenerator` and
-  `TauCeti.typeBDiagonalEquiv_lie_sumNegativeRootGenerator`: the split diagonal Cartan acts by
+* `TauCeti.typeBDiagonalMatrix_lie_sumRootGenerator` and
+  `TauCeti.typeBDiagonalMatrix_lie_sumNegativeRootGenerator`: the split diagonal Cartan acts by
   the weights `εᵢ + εⱼ` and `-εᵢ - εⱼ`.
 * `TauCeti.typeBSumRootGenerator_lie_negative`: `e_{εᵢ+εⱼ}` brackets with the index-swapped
   opposite vector `e_{-εⱼ-εᵢ}` to the coroot `h_{εᵢ+εⱼ}`.
 * `TauCeti.typeBShortRootMatrix_lie_shortRootMatrix` (with structure constant `-2`),
-  `TauCeti.typeBLongRootMatrix_lie_sumRootMatrix`,
+  `TauCeti.typeBDifferenceRootMatrix_lie_sumRootMatrix`,
   `TauCeti.typeBSumRootMatrix_lie_sumNegativeRootMatrix`,
   `TauCeti.typeBSumRootMatrix_lie_shortNegativeRootMatrix` and their lowering-side
   counterparts: the Chevalley relations linking the sum-root family to the short and
   difference-root families.
 * `TauCeti.typeBShortRootMatrix_lie_sumRootMatrix`,
-  `TauCeti.typeBLongRootMatrix_lie_sumRootMatrix_of_ne`,
+  `TauCeti.typeBDifferenceRootMatrix_lie_sumRootMatrix_of_ne`,
   `TauCeti.typeBSumRootMatrix_lie_sumNegativeRootMatrix_of_ne`,
   `TauCeti.typeBSumRootMatrix_lie_shortNegativeRootMatrix_of_ne` and their counterparts: the
   configurations in which the sum of the two roots is not a root, so the bracket vanishes.
@@ -313,7 +313,7 @@ theorem typeBSumCorootGenerator_eq_diagonal (i j : ι) :
 
 /-- A split diagonal element acts on the sum-root vector of weight `εᵢ + εⱼ` by that weight. -/
 @[simp]
-theorem typeBDiagonalEquiv_lie_sumRootGenerator (d : ι → K) (i j : ι) :
+theorem typeBDiagonalMatrix_lie_sumRootGenerator (d : ι → K) (i j : ι) :
     ⁅(⟨typeBDiagonalMatrix d, typeBDiagonalMatrix_mem_typeB d⟩ :
         LieAlgebra.Orthogonal.typeB ι K), typeBSumRootGenerator (K := K) i j⁆ =
       (d i + d j) • typeBSumRootGenerator i j := by
@@ -326,7 +326,7 @@ theorem typeBDiagonalEquiv_lie_sumRootGenerator (d : ι → K) (i j : ι) :
 
 /-- A split diagonal element acts on the sum-root vector of weight `-εᵢ - εⱼ`. -/
 @[simp]
-theorem typeBDiagonalEquiv_lie_sumNegativeRootGenerator (d : ι → K) (i j : ι) :
+theorem typeBDiagonalMatrix_lie_sumNegativeRootGenerator (d : ι → K) (i j : ι) :
     ⁅(⟨typeBDiagonalMatrix d, typeBDiagonalMatrix_mem_typeB d⟩ :
         LieAlgebra.Orthogonal.typeB ι K), typeBSumNegativeRootGenerator (K := K) i j⁆ =
       -(d i + d j) • typeBSumNegativeRootGenerator i j := by
@@ -381,41 +381,42 @@ theorem typeBShortNegativeRootMatrix_lie_sumNegativeRootMatrix (i k l : ι) :
 
 /-- Bracketing a long difference-root vector with a sum-root vector moves the sum-root
 vector's first coordinate: `⁅e_{εᵢ-εⱼ}, e_{εⱼ+ε_k}⁆ = e_{εᵢ+ε_k}`. -/
-theorem typeBLongRootMatrix_lie_sumRootMatrix (i j k : ι) (hij : i ≠ j) (hjk : j ≠ k) :
-    ⁅typeBLongRootMatrix (K := K) i j hij, typeBSumRootMatrix (K := K) j k⁆ =
+theorem typeBDifferenceRootMatrix_lie_sumRootMatrix (i j k : ι) (hij : i ≠ j) (hjk : j ≠ k) :
+    ⁅typeBDifferenceRootMatrix (K := K) i j hij, typeBSumRootMatrix (K := K) j k⁆ =
       typeBSumRootMatrix (K := K) i k := by
   rw [LieRing.of_associative_ring_bracket]
-  simp [typeBLongRootMatrix_def, typeBSumRootMatrix_def, mul_sub, sub_mul,
+  simp [typeBDifferenceRootMatrix_def, typeBSumRootMatrix_def, mul_sub, sub_mul,
     Matrix.single_mul_single_same, Matrix.single_mul_single_of_ne, hjk, hjk.symm]
 
 /-- A difference-root vector commutes with a positive sum-root vector whose coordinates avoid the
 lowered one: `εᵢ - εⱼ + ε_k + ε_l` is then not a root. -/
 @[simp]
-theorem typeBLongRootMatrix_lie_sumRootMatrix_of_ne (i j k l : ι) (hij : i ≠ j) (hjk : j ≠ k)
+theorem typeBDifferenceRootMatrix_lie_sumRootMatrix_of_ne (i j k l : ι) (hij : i ≠ j) (hjk : j ≠ k)
     (hjl : j ≠ l) :
-    ⁅typeBLongRootMatrix (K := K) i j hij, typeBSumRootMatrix (K := K) k l⁆ = 0 := by
+    ⁅typeBDifferenceRootMatrix (K := K) i j hij, typeBSumRootMatrix (K := K) k l⁆ = 0 := by
   rw [LieRing.of_associative_ring_bracket]
-  simp [typeBLongRootMatrix_def, typeBSumRootMatrix_def, mul_sub, sub_mul,
+  simp [typeBDifferenceRootMatrix_def, typeBSumRootMatrix_def, mul_sub, sub_mul,
     Matrix.single_mul_single_of_ne, hjk, hjk.symm, hjl, hjl.symm]
 
 /-- Bracketing a long difference-root vector with a negative sum-root vector moves the latter's
 first coordinate, with a sign: `⁅e_{εᵢ-εⱼ}, e_{-εᵢ-ε_l}⁆ = -e_{-εⱼ-ε_l}`. -/
-theorem typeBLongRootMatrix_lie_sumNegativeRootMatrix (i j l : ι) (hij : i ≠ j) (hil : i ≠ l) :
-    ⁅typeBLongRootMatrix (K := K) i j hij, typeBSumNegativeRootMatrix (K := K) i l⁆ =
+theorem typeBDifferenceRootMatrix_lie_sumNegativeRootMatrix (i j l : ι) (hij : i ≠ j)
+    (hil : i ≠ l) :
+    ⁅typeBDifferenceRootMatrix (K := K) i j hij, typeBSumNegativeRootMatrix (K := K) i l⁆ =
       -typeBSumNegativeRootMatrix (K := K) j l := by
   rw [LieRing.of_associative_ring_bracket]
-  simp [typeBLongRootMatrix_def, typeBSumNegativeRootMatrix_def, mul_sub, sub_mul,
+  simp [typeBDifferenceRootMatrix_def, typeBSumNegativeRootMatrix_def, mul_sub, sub_mul,
     Matrix.single_mul_single_same, Matrix.single_mul_single_of_ne, hil, hil.symm]
   abel
 
 /-- A difference-root vector commutes with a negative sum-root vector whose coordinates avoid the
 raised one. -/
 @[simp]
-theorem typeBLongRootMatrix_lie_sumNegativeRootMatrix_of_ne (i j k l : ι) (hij : i ≠ j)
+theorem typeBDifferenceRootMatrix_lie_sumNegativeRootMatrix_of_ne (i j k l : ι) (hij : i ≠ j)
     (hik : i ≠ k) (hil : i ≠ l) :
-    ⁅typeBLongRootMatrix (K := K) i j hij, typeBSumNegativeRootMatrix (K := K) k l⁆ = 0 := by
+    ⁅typeBDifferenceRootMatrix (K := K) i j hij, typeBSumNegativeRootMatrix (K := K) k l⁆ = 0 := by
   rw [LieRing.of_associative_ring_bracket]
-  simp [typeBLongRootMatrix_def, typeBSumNegativeRootMatrix_def, mul_sub, sub_mul,
+  simp [typeBDifferenceRootMatrix_def, typeBSumNegativeRootMatrix_def, mul_sub, sub_mul,
     Matrix.single_mul_single_of_ne, hik, hik.symm, hil, hil.symm]
 
 /-- A positive and a negative sum-root vector commute when their index pairs are disjoint: the
@@ -434,9 +435,9 @@ This is the bracket that returns from the sum-root family to the difference-root
 theorem typeBSumRootMatrix_lie_sumNegativeRootMatrix (i j k : ι) (hij : i ≠ j) (hjk : j ≠ k)
     (hik : i ≠ k) :
     ⁅typeBSumRootMatrix (K := K) i j, typeBSumNegativeRootMatrix (K := K) j k⁆ =
-      typeBLongRootMatrix (K := K) i k hik := by
+      typeBDifferenceRootMatrix (K := K) i k hik := by
   rw [LieRing.of_associative_ring_bracket]
-  simp [typeBSumRootMatrix_def, typeBSumNegativeRootMatrix_def, typeBLongRootMatrix_def,
+  simp [typeBSumRootMatrix_def, typeBSumNegativeRootMatrix_def, typeBDifferenceRootMatrix_def,
     mul_sub, sub_mul, Matrix.single_mul_single_same, Matrix.single_mul_single_of_ne,
     hij, hij.symm, hjk, hjk.symm, hik, hik.symm]
 
