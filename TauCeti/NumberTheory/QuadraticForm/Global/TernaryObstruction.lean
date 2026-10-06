@@ -78,6 +78,12 @@ theorem sumTwoSquaresSubSq_apply (x : Fin 3 → ℚ) :
   simp [sumTwoSquaresSubSq, weightedSumSquares_apply, Fin.sum_univ_three, pow_two]
   ring
 
+/-- `⟨1, 1, -1⟩` is nondegenerate. -/
+theorem nondegenerate_sumTwoSquaresSubSq : sumTwoSquaresSubSq.Nondegenerate := by
+  rw [sumTwoSquaresSubSq_def]
+  exact nondegenerate_weightedSumSquares fun i =>
+    isRegular_iff_ne_zero.mpr (by fin_cases i <;> simp)
+
 /-- The form `⟨1, 1, -3⟩` is isotropic at every real place of `ℚ`: `(√3, 0, 1)` is a zero. -/
 theorem not_anisotropic_sumTwoSquaresSubThreeSq_atRealPlace
     (w : {w : InfinitePlace ℚ // w.IsReal}) :
