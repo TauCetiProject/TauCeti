@@ -75,15 +75,11 @@ group be finite, and the root-system forms are read off from those using
 `RootPairing.finite_weylGroup`; this follows the shape of
 `RootPairing.exists_mem_dominantChamber_of_finite_weylGroup`, which is what they consume.
 
-## References
+Existence of a dominant representative is `RootPairing.exists_mem_dominantChamber`; for an
+interior dominant weight, `TauCeti.eq_one_of_smul_mem_dominantChamber` gives uniqueness and a
+trivial stabilizer. Together these yield simple transitivity on the nonempty open chambers.
 
-This file implements the remaining chamber items of Layer 4 of
-`TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`: that "the general chambers are the
-`W`-translates of the dominant chamber", and that the closed dominant chamber being a strict
-fundamental domain is the Weyl group "acting **simply transitively on the open chambers**". The
-existence and the uniqueness of the dominant representative are
-`RootPairing.exists_mem_dominantChamber` and `TauCeti.eq_one_of_smul_mem_dominantChamber`, proved
-elsewhere.
+## References
 
 The argument is the one in J. E. Humphreys, *Introduction to Lie Algebras and Representation
 Theory*, GTM 9, Ch. III, §10.3, and N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4-6*,
