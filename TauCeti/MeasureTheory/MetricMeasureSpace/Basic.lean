@@ -223,7 +223,8 @@ theorem symm_trans_self (e : Equiv X Y) : e.symm.trans e = Equiv.refl Y := by ex
 theorem image_support (e : Equiv X Y) : e '' X.referenceMeasure.support =
     Y.referenceMeasure.support := by
   rw [← e.measurePreserving.map_eq]
-  exact (support_map_homeomorph X.referenceMeasure e.toIsometryEquiv.toHomeomorph).symm
+  exact (support_map_homeomorph X.referenceMeasure e.toIsometryEquiv.toHomeomorph
+    e.measurePreserving.measurable).symm
 
 @[simp]
 theorem mem_support_iff (e : Equiv X Y) (x : X) :

@@ -48,10 +48,12 @@ theorem isOpenPosMeasure_comap_subtype_support (μ : Measure X)
     simp [hy])
   exact ne_of_gt (heq.symm ▸ hpos)
 
-/-- A homeomorphism transports the support exactly, without a regularity hypothesis. -/
-theorem support_map_homeomorph [OpensMeasurableSpace X]
-    [TopologicalSpace Y] [MeasurableSpace Y] [BorelSpace Y]
-    (μ : Measure X) (e : X ≃ₜ Y) : (μ.map e).support = e '' μ.support := by
+/-- A measurable homeomorphism transports the support exactly when target open sets are
+measurable, without a regularity hypothesis. -/
+theorem support_map_homeomorph
+    [TopologicalSpace Y] [MeasurableSpace Y] [OpensMeasurableSpace Y]
+    (μ : Measure X) (e : X ≃ₜ Y) (he : Measurable e) :
+    (μ.map e).support = e '' μ.support := by
   ext y
   simp only [Measure.support_eq_forall_isOpen, mem_ofPred_eq]
   constructor
@@ -59,9 +61,9 @@ theorem support_map_homeomorph [OpensMeasurableSpace X]
     refine ⟨e.symm y, ?_, e.apply_symm_apply y⟩
     intro U hyU hU
     have hpos := hy (e '' U) ⟨e.symm y, hyU, e.apply_symm_apply y⟩ (e.isOpenMap U hU)
-    simpa [Measure.map_apply e.measurable (e.isOpenMap U hU).measurableSet] using hpos
+    simpa [Measure.map_apply he (e.isOpenMap U hU).measurableSet] using hpos
   · rintro ⟨x, hx, rfl⟩ U hxU hU
-    rw [Measure.map_apply e.measurable hU.measurableSet]
+    rw [Measure.map_apply he hU.measurableSet]
     exact hx (e ⁻¹' U) hxU (hU.preimage e.continuous)
 
 end TauCeti
