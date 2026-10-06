@@ -7,7 +7,14 @@ module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.BaseChange
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.Coefficients
+public import TauCeti.NumberTheory.NumberField.Global.Ideles.Norm.Basic
 public import TauCeti.NumberTheory.NumberField.LocalGlobal.Semilocal.FiniteAdele
+import Mathlib.RingTheory.DedekindDomain.Different
+import TauCeti.NumberTheory.ClassFieldTheory.Brauer.Unramified
+import TauCeti.NumberTheory.NumberField.LocalGlobal.DecompositionGroup
+import TauCeti.RingTheory.DedekindDomain.AdicValuation.RamificationIndex
+import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
+import TauCeti.RingTheory.DedekindDomain.PrimesAbove
 
 /-!
 # The localization of idele cohomology at a finite place
@@ -38,7 +45,10 @@ the component at `v` of a global idele class. It does not depend on `τ`
 (`ideleBrLocalization_apply`): changing `τ` by `h ∈ G_K` changes the pair by the inner
 automorphism of `h`, which acts trivially on cohomology. On the image of
 `H²(G_K, (Kˢ)ˣ) = Br K` under the principal ideles it is the localization `Br K → Br K_v` of
-global Brauer classes (`ideleBrLocalization_principalIdele`).
+global Brauer classes (`ideleBrLocalization_principalIdele`). As for a global Brauer class, only
+finitely many of the localizations of a class of `H²(G_K, I_{Kˢ})` are nonzero
+(`finite_setOfPred_ideleBrLocalization_ne_zero`), so the local invariants of an idele class have
+a finite sum.
 
 ## Main definitions
 
@@ -59,6 +69,11 @@ global Brauer classes (`ideleBrLocalization_principalIdele`).
   pair of any `τ`.
 * `TauCeti.ClassFieldTheory.ideleBrLocalization_principalIdele`: on principal idele classes the
   localization is `brBaseChange K K_v`.
+* `TauCeti.ClassFieldTheory.toMul_ideleCoeffComponent_ideleCoeffOf_eq_map_ideleFiniteCoord`: for
+  `τ` extending an embedding of a completion `E_w` above `v`, the coordinate at `v` of an idele of
+  `E` is its component at `w`.
+* `TauCeti.ClassFieldTheory.finite_setOfPred_ideleBrLocalization_ne_zero`: a class has nonzero
+  localization at only finitely many finite places.
 
 ## References
 
@@ -282,5 +297,192 @@ theorem ideleBrLocalization_principalIdele (x : H2 (AbsoluteGaloisGroup K) (Unit
   rw [ideleBrLocalization_apply τ, brBaseChange_apply K _ τ, AddEquiv.symm_apply_apply,
     explicitCoeff2_eq_explicitMap2]
   exact congrArg _ (hcomp.symm.trans (DFunLike.congr_fun hpair x))
+
+/-! ### Finite support
+
+A class of `H²(G_K, I_{Kˢ})` is represented by a cocycle with finitely many values, all ideles of
+one finite Galois subextension `E` of `Kˢ/K`. At a place `w` of `E` that is unramified over `K` and
+at which all these ideles are units, choose the embedding `τ` of separable closures through the
+completion `E_w`: the coordinate along `τ` is then the component at `w`
+(`toMul_ideleCoeffComponent_ideleCoeffOf_eq_map_ideleFiniteCoord`), so the localization at the
+place `v` below `w` is inflated from a cocycle of the unramified layer `E_w/K_v` with values in its
+units of valuation one, and vanishes (`mk_eq_zero_of_forall_mem_unitFiltration_zero`). -/
+
+section FiniteSupport
+
+open scoped AdicCompletionExtension
+
+/-- **The coordinate at `v` through a completion of `E`.** If the embedding `τ : Kˢ → K_vˢ` agrees
+on a finite Galois subextension `E` with an embedding `τ'` of the completion `E_w` at a place `w`
+of `E` above `v`, then the coordinate at `v` along `τ` of an idele of `E` is its component at `w`,
+embedded in `K_vˢ` by `τ'`. -/
+theorem toMul_ideleCoeffComponent_ideleCoeffOf_eq_map_ideleFiniteCoord {E : Ω}
+    (w : HeightOneSpectrum (𝓞 E)) [w.asIdeal.LiesOver v.asIdeal]
+    (τ' : w.adicCompletion E →ₐ[v.adicCompletion K] SeparableClosure (v.adicCompletion K))
+    (τ : SeparableClosure K →ₐ[K] SeparableClosure (v.adicCompletion K))
+    (hτ : ∀ x : E, τ x = τ' (algebraMap E (w.adicCompletion E) x)) (a : IdeleGroup (𝓞 E) E) :
+    (ideleCoeffComponent τ (ideleCoeffOf K E (.ofMul a))).toMul =
+      Units.map (τ' : w.adicCompletion E →* SeparableClosure (v.adicCompletion K))
+        (w.ideleFiniteCoord a) := by
+  refine Units.ext ?_
+  rw [toMul_ideleCoeffComponent_ideleCoeffOf, Units.coe_map, MonoidHom.coe_ofClass,
+    HeightOneSpectrum.coe_ideleFiniteCoord]
+  -- The map `K_v ⊗[K] E → K_vˢ`, `a ⊗ x ↦ a τ(x)`, is `τ'` after projecting to the factor `E_w`.
+  have h : Algebra.TensorProduct.lift (Algebra.ofId _ _)
+      (τ.comp (IsScalarTower.toAlgHom K E (SeparableClosure K))) (fun _ _ ↦ .all _ _) =
+      τ'.comp ((Pi.evalAlgHom _ _ ⟨w, inferInstance⟩).comp (semilocalEquiv E v).toAlgHom) := by
+    refine Algebra.TensorProduct.ext' fun b x ↦ ?_
+    simp only [AlgHom.comp_apply, Algebra.TensorProduct.lift_tmul, Algebra.ofId_apply,
+      IsScalarTower.coe_toAlgHom', AlgEquiv.coe_toAlgHom, semilocalEquiv_tmul, Pi.evalAlgHom_apply,
+      map_mul, AlgHom.commutes, IntermediateField.algebraMap_apply, ← hτ]
+  rw [h]
+  simp only [AlgHom.coe_comp, AlgEquiv.coe_toAlgHom, Function.comp_apply,
+    semilocalEquiv_finiteAdeleSemilocalHom, Pi.evalAlgHom_apply]
+
+/-- Two elements of `G_{K_v}` with the same restriction to `τ'(E_w)` have images in `G_K` with the
+same restriction to `E`, for an embedding `τ` of `Kˢ` extending `τ'` on `E`. -/
+private theorem absoluteGaloisGroupMap_inv_mul_mem_fixingSubgroup {E : Ω}
+    (w : HeightOneSpectrum (𝓞 E)) [w.asIdeal.LiesOver v.asIdeal]
+    (τ' : w.adicCompletion E →ₐ[v.adicCompletion K] SeparableClosure (v.adicCompletion K))
+    (τ : SeparableClosure K →ₐ[K] SeparableClosure (v.adicCompletion K))
+    (hτ : ∀ x : E, τ x = τ' (algebraMap E (w.adicCompletion E) x))
+    {g g' : AbsoluteGaloisGroup (v.adicCompletion K)}
+    (hgg' : τ'.restrictNormalHom g = τ'.restrictNormalHom g') :
+    (absoluteGaloisGroupMap τ g)⁻¹ * absoluteGaloisGroupMap τ g' ∈
+      (E : IntermediateField K (SeparableClosure K)).fixingSubgroup := by
+  have hE (g : AbsoluteGaloisGroup (v.adicCompletion K)) (x : E) :
+      τ (absoluteGaloisGroupMap τ g x) =
+        τ' (τ'.restrictNormalHom g (algebraMap E (w.adicCompletion E) x)) := by
+    rw [absoluteGaloisGroupMap_commutes, hτ, AlgHom.restrictNormalHom_commutes]
+  refine (IntermediateField.mem_fixingSubgroup_iff _ _).2 fun x hx ↦ ?_
+  rw [AlgEquiv.mul_apply, AlgEquiv.aut_inv, AlgEquiv.symm_apply_eq]
+  exact τ.injective ((hE g' ⟨x, hx⟩).trans ((congrArg _ (by rw [hgg'])).trans (hE g ⟨x, hx⟩).symm))
+
+/-- The cocycle pulled back from `z` along the pair of `τ` is read off `Gal(E_w/K_v)` through `τ'`,
+if the values of `z` are the ideles `a` of `E`, `τ` extends `τ'` on `E`, and `u` reads the
+components at `w` of the `a`. -/
+private theorem cocyclesMap2_ideleCoeffComponent_apply {E : Ω}
+    {U : OpenNormalSubgroup (AbsoluteGaloisGroup K)} (z : Z2 (AbsoluteGaloisGroup K) (IdeleCoeff K))
+    (a : (AbsoluteGaloisGroup K ⧸ U.toSubgroup) × (AbsoluteGaloisGroup K ⧸ U.toSubgroup) →
+      IdeleGroup (𝓞 E) E)
+    (ha : ∀ g h : AbsoluteGaloisGroup K, ideleCoeffOf K E (.ofMul (a (g, h))) = z.1 (g, h))
+    (w : HeightOneSpectrum (𝓞 E)) [w.asIdeal.LiesOver v.asIdeal]
+    (τ' : w.adicCompletion E →ₐ[v.adicCompletion K] SeparableClosure (v.adicCompletion K))
+    (τ : SeparableClosure K →ₐ[K] SeparableClosure (v.adicCompletion K))
+    (hτ : ∀ x : E, τ x = τ' (algebraMap E (w.adicCompletion E) x))
+    (u : Gal(w.adicCompletion E/v.adicCompletion K) × Gal(w.adicCompletion E/v.adicCompletion K) →
+      (w.adicCompletion E)ˣ)
+    (hu : ∀ g h : AbsoluteGaloisGroup (v.adicCompletion K),
+      u (τ'.restrictNormalHom g, τ'.restrictNormalHom h) =
+        w.ideleFiniteCoord (a ((absoluteGaloisGroupMap τ g : AbsoluteGaloisGroup K),
+          (absoluteGaloisGroupMap τ h : AbsoluteGaloisGroup K))))
+    (g h : AbsoluteGaloisGroup (v.adicCompletion K)) :
+    ((cocyclesMap2 (AbsoluteGaloisGroup K) (IdeleCoeff K)
+      (AbsoluteGaloisGroup (v.adicCompletion K)) (UnitsCoeff (v.adicCompletion K))
+      (absoluteGaloisGroupMap τ) (ideleCoeffComponent τ) continuous_of_discreteTopology
+      (ideleCoeffComponent_smul τ) z).1 (g, h) : UnitsCoeff _) =
+      embeddedUnitsEquivInvariants _ _ τ'
+        (.ofMul (u (τ'.restrictNormalHom g, τ'.restrictNormalHom h))) := by
+  rw [cocyclesMap2_apply]
+  refine (congrArg (ideleCoeffComponent τ) (ha _ _).symm).trans (Additive.toMul.injective ?_)
+  refine (toMul_ideleCoeffComponent_ideleCoeffOf_eq_map_ideleFiniteCoord w τ' τ hτ _).trans ?_
+  rw [embeddedUnitsEquivInvariants_apply, toMul_coe_embeddedUnitsInvariants]
+  exact congrArg (Units.map _) (hu g h).symm
+
+/-- The localization at `v` of the class of a cocycle `z` vanishes if `z` factors through
+`G_K ⧸ U`, its values are the ideles `a` of a finite Galois subextension `E` fixed by `U`, and
+some place `w` of `E` above `v` is unramified over `K` with all the `a` units at `w`; here `τ`
+is an embedding of separable closures extending an embedding `τ'` of `E_w` on `E`. -/
+private theorem ideleBrLocalization_eq_zero_of_isUnramified {E : Ω}
+    {U : OpenNormalSubgroup (AbsoluteGaloisGroup K)}
+    (hU : (E : IntermediateField K (SeparableClosure K)).fixingSubgroup ≤ U.toSubgroup)
+    (z : Z2 (AbsoluteGaloisGroup K) (IdeleCoeff K))
+    (a : (AbsoluteGaloisGroup K ⧸ U.toSubgroup) × (AbsoluteGaloisGroup K ⧸ U.toSubgroup) →
+      IdeleGroup (𝓞 E) E)
+    (ha : ∀ g h : AbsoluteGaloisGroup K, ideleCoeffOf K E (.ofMul (a (g, h))) = z.1 (g, h))
+    (w : HeightOneSpectrum (𝓞 E)) [w.asIdeal.LiesOver v.asIdeal]
+    [IsUnramified (v.adicCompletion K) (w.adicCompletion E)]
+    (hw : ∀ q, Valued.v ((a q : AdeleRing (𝓞 E) E).2 w) = 1)
+    (τ' : w.adicCompletion E →ₐ[v.adicCompletion K] SeparableClosure (v.adicCompletion K))
+    (τ : SeparableClosure K →ₐ[K] SeparableClosure (v.adicCompletion K))
+    (hτ : ∀ x : E, τ x = τ' (algebraMap E (w.adicCompletion E) x)) :
+    ideleBrLocalization v (z : H2 (AbsoluteGaloisGroup K) (IdeleCoeff K)) = 0 := by
+  -- The pulled-back cocycle on `G_{K_v}` is read off `Gal(E_w/K_v)`: its value at `(g, h)` is the
+  -- component at `w` of `a` at the classes of the images of any lifts of `g|_{E_w}`, `h|_{E_w}`.
+  let lift := Function.surjInv τ'.restrictNormalHom_surjective
+  have hlift (g : AbsoluteGaloisGroup (v.adicCompletion K)) :
+      ((absoluteGaloisGroupMap τ (lift (τ'.restrictNormalHom g)) : AbsoluteGaloisGroup K) :
+        AbsoluteGaloisGroup K ⧸ U.toSubgroup) =
+        (absoluteGaloisGroupMap τ g : AbsoluteGaloisGroup K) :=
+    QuotientGroup.eq.2 (hU (absoluteGaloisGroupMap_inv_mul_mem_fixingSubgroup w τ' τ hτ
+      (Function.surjInv_eq _ _)))
+  refine (ideleBrLocalization_apply τ _).trans ?_
+  refine (congrArg (unitsRepH2Equiv (v.adicCompletion K))
+    (explicitMap2_mk (AbsoluteGaloisGroup K) (IdeleCoeff K)
+      (AbsoluteGaloisGroup (v.adicCompletion K)) (UnitsCoeff (v.adicCompletion K))
+      (absoluteGaloisGroupMap τ) (ideleCoeffComponent τ) continuous_of_discreteTopology
+      (ideleCoeffComponent_smul τ) z)).trans ?_
+  let u : Gal(w.adicCompletion E/v.adicCompletion K) × Gal(w.adicCompletion E/v.adicCompletion K) →
+      (w.adicCompletion E)ˣ := fun p ↦ w.ideleFiniteCoord
+    (a ((absoluteGaloisGroupMap τ (lift p.1) : AbsoluteGaloisGroup K),
+      (absoluteGaloisGroupMap τ (lift p.2) : AbsoluteGaloisGroup K)))
+  rw [mk_eq_zero_of_forall_mem_unitFiltration_zero _ _ τ' _ u
+    (fun _ ↦ (HeightOneSpectrum.mem_unitFiltration_zero_adicCompletion_iff w).2
+      (by rw [HeightOneSpectrum.coe_ideleFiniteCoord, hw]))
+    (cocyclesMap2_ideleCoeffComponent_apply z a ha w τ' τ hτ u fun g h ↦ by
+      simp only [u, hlift]), map_zero]
+
+/-- **The localization of idele cohomology is finitely supported**: a class of `H²(G_K, I_{Kˢ})`
+has nonzero localization `ideleBrLocalization v` at only finitely many finite places `v`. -/
+theorem finite_setOfPred_ideleBrLocalization_ne_zero
+    (x : H2 (AbsoluteGaloisGroup K) (IdeleCoeff K)) :
+    {v : HeightOneSpectrum (𝓞 K) | ideleBrLocalization v x ≠ 0}.Finite := by
+  induction x using QuotientAddGroup.induction_on with
+  | _ z =>
+  -- `z` factors through `G_K ⧸ U`, and its finitely many values are ideles of a finite Galois
+  -- subextension `E` of `Kˢ` whose fixing subgroup lies in `U`.
+  obtain ⟨U, c, hc⟩ := exists_openNormalSubgroup_descendZ2 z
+  have : Finite (AbsoluteGaloisGroup K ⧸ U.toSubgroup) :=
+    Subgroup.quotient_finite_of_isOpen _ U.isOpen
+  have : Fintype (AbsoluteGaloisGroup K ⧸ U.toSubgroup) := .ofFinite _
+  obtain ⟨E₀, _, _, hE₀⟩ := exists_galoisOpenNormalSubgroup_eq U
+  choose F a ha using fun q ↦ exists_ideleCoeffOf_eq (K := K) (c.1 q : IdeleCoeff K)
+  let E : Ω := ⟨E₀⟩ ⊔ Finset.univ.sup F
+  have hFE (q) : F q ≤ E := le_sup_of_le_right (Finset.le_sup (Finset.mem_univ q))
+  have hU : (E : IntermediateField K (SeparableClosure K)).fixingSubgroup ≤ U.toSubgroup := by
+    rw [← hE₀, galoisOpenNormalSubgroup_toSubgroup, IntermediateField.fieldRange_val]
+    exact IntermediateField.fixingSubgroup_le (le_sup_left (a := (⟨E₀⟩ : Ω)))
+  let b q : IdeleGroup (𝓞 E) E := ideleTransition K (F q) E (hFE q) (a q)
+  have hb (g h : AbsoluteGaloisGroup K) : ideleCoeffOf K E (.ofMul (b (g, h))) = z.1 (g, h) :=
+    ((ideleCoeffOf_ideleTransition _ _).trans (ha _)).trans (hc g h)
+  -- The places of `E` that ramify over `K` or at which a value of `b` is not a unit.
+  let bad : Set (HeightOneSpectrum (𝓞 E)) :=
+    {w | w.asIdeal ∣ differentIdeal (𝓞 K) (𝓞 E)} ∪
+      ⋃ q, {w | Valued.v ((b q : AdeleRing (𝓞 E) E).2 w) ≠ 1}
+  have hbad : bad.Finite := by
+    refine (Ideal.finite_factors differentIdeal_ne_bot).union (Set.finite_iUnion fun q ↦ ?_)
+    exact Filter.eventually_cofinite.1 (FiniteAdeleRing.isUnit_iff.1
+      ((b q).isUnit.map (RingHom.snd (InfiniteAdeleRing E) (FiniteAdeleRing (𝓞 E) E)))).2
+  -- The localization vanishes at every place below none of them.
+  refine (hbad.image (HeightOneSpectrum.under (𝓞 K))).subset fun v hv ↦ ?_
+  obtain ⟨w, rfl⟩ := HeightOneSpectrum.under_surjective (𝓞 K) (𝓞 E) v
+  by_contra hvS
+  have hw : w ∉ bad := fun h ↦ hvS ⟨w, h, rfl⟩
+  simp only [bad, Set.mem_union, Set.mem_iUnion, Set.mem_ofPred_eq, not_or, not_exists,
+    not_not] at hw
+  have : Algebra.IsUnramifiedAt (𝓞 K) w.asIdeal := not_dvd_differentIdeal_iff.1 hw.1
+  have : IsUnramified ((w.under (𝓞 K)).adicCompletion K) (w.adicCompletion E) :=
+    HeightOneSpectrum.isUnramified_adicCompletion_of_isUnramifiedAt _ w
+  -- An embedding `τ' : E_w → K_vˢ`, and an embedding `τ : Kˢ → K_vˢ` extending it on `E`.
+  let τ' : w.adicCompletion E →ₐ[(w.under (𝓞 K)).adicCompletion K]
+      SeparableClosure ((w.under (𝓞 K)).adicCompletion K) := IsSepClosed.lift
+  obtain ⟨τ, hτ⟩ := IsSepClosed.surjective_domRestrict_of_isSeparable (K := K)
+    E.toIntermediateField (E := SeparableClosure K)
+    (M := SeparableClosure ((w.under (𝓞 K)).adicCompletion K))
+    ((τ'.restrictScalars K).comp (IsScalarTower.toAlgHom K E (w.adicCompletion E)))
+  exact hv (ideleBrLocalization_eq_zero_of_isUnramified hU z b hb w hw.2 τ' τ
+    fun x ↦ congrArg (fun φ : E →ₐ[K] _ ↦ φ x) hτ)
+
+end FiniteSupport
 
 end TauCeti.ClassFieldTheory

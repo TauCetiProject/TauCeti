@@ -30,6 +30,8 @@ projective model is checked.
   `Xᵢ - 1`.
 * `WeierstrassCurve.Projective.ChartRing W' i`: the quotient of `R[X₀, X₁, X₂]` by them.
 * `WeierstrassCurve.Projective.awayEquivChartRing W' i`: the isomorphism `A_(Xᵢ) ≃+* ChartRing`.
+* `WeierstrassCurve.Projective.chartPoint W' i`: the universal point of the chart, whose
+  coordinates are the classes of `X₀, X₁, X₂` in `ChartRing W' i`.
 
 ## Main results
 
@@ -37,10 +39,19 @@ projective model is checked.
   class of `a`.
 * `WeierstrassCurve.Projective.awayEquivChartRing_symm_comp_algebraMap`: the isomorphism is
   compatible with the structure maps from `R`.
+* `WeierstrassCurve.Projective.equation_chartPoint`: the universal point of the chart is a solution
+  of the Weierstrass equation over `ChartRing W' i`.
 
 ## References
 
 * [R. Hartshorne, *Algebraic Geometry*, II.2.5][hartshorne1977]
+
+## Provenance
+
+`chartPoint` and `equation_chartPoint` are adapted from AINTLIB
+(`github.com/CBirkbeck/AINTLIB`, Apache-2.0) at commit `c3415f32a313e19ace43e05479aeaa0d56ca287a`,
+file `projects/ModularCurves/ModularCurves/EllipticCurve/AdditionChartRing.lean`
+(`affineChartPoint` and `equation_affineChartPoint`), stated for TauCeti's `ChartRing`.
 -/
 
 public section
@@ -207,5 +218,33 @@ theorem awayEquivChartRing_symm_comp_algebraMap :
     (W'.awayEquivChartRing i).symm.toRingHom.comp (algebraMap R (W'.ChartRing i)) =
       (fromZeroRingHom W'.grading _).comp (algebraMap R (W'.grading 0)) :=
   RingHom.ext fun r ↦ (W'.chartRingToAway_mk i (C r)).trans (eval₂_C _ _ _)
+
+/-- In the chart ring `ChartRing W' i`, the class of the coordinate `Xᵢ` is `1`. -/
+@[simp]
+theorem chartRing_mk_X_self : (Ideal.Quotient.mk _ (X i) : W'.ChartRing i) = 1 :=
+  (Ideal.Quotient.mk_eq_one_iff_sub_mem _).mpr (Ideal.subset_span ⟨1, by simp⟩)
+
+/-- The universal point of the standard affine chart `D₊(Xᵢ)` of the projective Weierstrass cubic:
+the classes of the three homogeneous coordinates in `ChartRing W' i`. -/
+noncomputable def chartPoint : Fin 3 → W'.ChartRing i :=
+  fun k ↦ Ideal.Quotient.mk _ (X k)
+
+/-- The coordinates of the universal point of the chart `D₊(Xᵢ)` are the classes of `X₀, X₁, X₂`. -/
+@[simp]
+theorem chartPoint_apply (k : Fin 3) : W'.chartPoint i k = Ideal.Quotient.mk _ (X k) :=
+  (rfl)
+
+/-- The `i`-th coordinate of the universal point of the chart `D₊(Xᵢ)` is `1`. -/
+theorem chartPoint_self : W'.chartPoint i i = 1 :=
+  W'.chartRing_mk_X_self i
+
+/-- The universal point of the chart `D₊(Xᵢ)` is a solution of the Weierstrass equation over
+`ChartRing W' i`. -/
+theorem equation_chartPoint : (W'.baseChange (W'.ChartRing i)).Equation (W'.chartPoint i) := by
+  -- by definition, `W'.baseChange B` is `W'.map (algebraMap R B)` and `chartPoint i` is `mkₐ ∘ X`
+  change (W'.map _).Equation (Ideal.Quotient.mkₐ R _ ∘ X)
+  -- evaluation at the classes of the variables is the quotient map, which kills `W'.polynomial`
+  rw [Equation, map_polynomial, eval_map, ← aeval_def, ← aeval_unique, Ideal.Quotient.mkₐ_eq_mk,
+    ← chartRelation_zero W' i, Ideal.Quotient.mk_span_range]
 
 end WeierstrassCurve.Projective

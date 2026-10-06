@@ -99,6 +99,8 @@ Thus restriction preserves the representing unit and multiplies the invariant by
   one have trivial `H²(Gal(L/K), U(L,0))`, since the norm maps them onto `U(K,0)`.
 * `TauCeti.ClassFieldTheory.H2π_eq_zero_of_forall_mem_unitFiltration_zero`: so a `2`-cocycle with
   values in `U(L,0)` represents the zero class of `H²(Gal(L/K), Lˣ)`.
+* `TauCeti.ClassFieldTheory.mk_eq_zero_of_forall_mem_unitFiltration_zero`: the same for a
+  continuous `2`-cocycle on `G_K` read off `Gal(L/K)` with values in `U(L,0)`.
 * `TauCeti.ClassFieldTheory.brBaseChange_relBrInfl_eq_zero`: a Brauer class inflated from a
   cocycle whose values are units of an unramified layer `L/K` vanishes after base change to `K`.
 
@@ -432,6 +434,22 @@ theorem H2π_eq_zero_of_forall_mem_unitFiltration_zero
     cocycles₂_ext fun g h ↦ hc' (g, h)
   have := subsingleton_H2_unitFiltration_zero K L
   rw [← hmap, ← H2π_comp_map_apply, Subsingleton.elim (H2π A ⟨c', hmem⟩) 0, map_zero]
+
+/-- **A continuous cocycle read off an unramified layer with unit values is a coboundary.** If a
+continuous `2`-cocycle `z` on `G_K` with values in `(Kˢ)ˣ` takes at `(g, h)` the value
+`σ (u (g|_L, h|_L))`, for a function `u` on `Gal(L/K) × Gal(L/K)` with values in the units `U(L,0)`
+of valuation one, then the class of `z` in `H²(G_K, (Kˢ)ˣ)` vanishes. -/
+theorem mk_eq_zero_of_forall_mem_unitFiltration_zero (σ : L →ₐ[K] SeparableClosure K)
+    (z : ContCohomology.Z2 (AbsoluteGaloisGroup K) (UnitsCoeff K)) (u : Gal(L/K) × Gal(L/K) → Lˣ)
+    (hu : ∀ p, u p ∈ unitFiltration L 0)
+    (hz : ∀ g h : AbsoluteGaloisGroup K, (z.1 (g, h) : UnitsCoeff K) =
+      embeddedUnitsEquivInvariants K L σ
+        (.ofMul (u (σ.restrictNormalHom g, σ.restrictNormalHom h)))) :
+    (z : ContCohomology.H2 (AbsoluteGaloisGroup K) (UnitsCoeff K)) = 0 := by
+  obtain ⟨c, hcu, rfl⟩ := exists_relBrCocycle_eq K L σ z u hz
+  apply (unitsRepH2Equiv K).injective
+  rw [map_zero, ← relBrInfl_H2π,
+    H2π_eq_zero_of_forall_mem_unitFiltration_zero K L c fun g h ↦ (hcu _).symm ▸ hu _, map_zero]
 
 /-- **A class inflated along an unramified layer with unit values vanishes locally.** Let `E/F`
 be a finite normal extension, embedded in `Fˢ` by `σ`, and let `K` be an `F`-algebra with a finite

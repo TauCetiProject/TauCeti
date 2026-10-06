@@ -763,10 +763,10 @@ end Restriction
 
 /-! ### The equivalence of coefficient categories -/
 
-/-- The underlying module of a smooth discrete object is discrete. Recording this as a local
-instance is what lets the object map of `TauCeti.ofSmoothDiscrete` below build a
-`TauCeti.DiscreteRep` on it. -/
-local instance instDiscreteTopologyOfSmoothDiscrete {R : Type u} [Ring R] [TopologicalSpace R]
+/-- The underlying module of a smooth discrete object is discrete. This is what lets the object
+map of `TauCeti.ofSmoothDiscrete` below build a `TauCeti.DiscreteRep` on it, and what downstream
+constructions on smooth discrete objects use to treat their modules as discrete. -/
+instance instDiscreteTopologyOfSmoothDiscrete {R : Type u} [Ring R] [TopologicalSpace R]
     {G : Type v} [Monoid G] [TopologicalSpace G] (X : SmoothDiscreteTopRep.{u, v, w} R G) :
     DiscreteTopology X.obj.V :=
   X.property.discreteTopology
