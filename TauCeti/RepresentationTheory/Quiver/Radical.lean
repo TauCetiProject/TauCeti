@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Ideal.Maximal
-public import Mathlib.RingTheory.Jacobson.Radical
+public import Mathlib.RingTheory.Jacobson.Ideal
 public import Mathlib.RingTheory.Nilpotent.Basic
 public import TauCeti.RepresentationTheory.Quiver.Acyclic.FinitePaths
 public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.Basic
@@ -82,16 +81,15 @@ of them would rewrite the left-hand side of `TauCeti.ofPath_mem_arrowIdeal_iff` 
 
 The arrow ideal is built over a commutative base semiring: the multiplicativity of the filtration,
 which is what makes it an ideal, needs `[CommSemiring k]` (see the `Multiplicative` section), and
-being an `Ideal` needs the unit of the path algebra, hence `[Finite Q]`. A field is only needed for
-the radical theorem, which inverts a coordinate.
+being an `Ideal` needs the unit of the path algebra, hence `[Finite Q]`. The arrow ideal of a
+finite acyclic quiver lies in the radical over any commutative ring. No vertex idempotent lies in
+the radical over any nontrivial ring. A field is needed only for the radical equality, which
+inverts a coordinate.
 
 ## References
 
-This implements the "radical, packaged" part of Layer 3 of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`, in the case of a path
-algebra; the arrow ideal is the ideal that the admissible ideals of that layer are measured
-against. See Assem--Simson--Skowroński, *Elements of the Representation Theory of Associative
-Algebras I*, Ch. II and III.
+Assem--Simson--Skowroński, *Elements of the Representation Theory of Associative Algebras I*,
+Ch. II and III.
 -/
 
 public section
@@ -289,10 +287,7 @@ theorem ofPath_mem_arrowIdeal_iff [Nontrivial k] {x : Quiver.TotalPath Q} :
 /-- No vertex idempotent lies in the arrow ideal: a trivial path has length zero. -/
 theorem vertexIdempotent_notMem_arrowIdeal [Nontrivial k] (v : Q) :
     (vertexIdempotent k v : pathAlgebra k Q) ∉ arrowIdeal k Q := by
-  intro hv
-  have := mem_pathSpan_iff.1 hv ⟨v, v, Quiver.Path.nil⟩
-  rw [vertexIdempotent_eq_single, pathAlgebraBasis_repr_single] at this
-  simp at this
+  simp [vertexIdempotent_eq_ofPath]
 
 /-- An arrow lies in the arrow ideal. -/
 theorem ofArrow_mem_arrowIdeal {a b : Q} (e : a ⟶ b) :
@@ -400,49 +395,31 @@ end ArrowIdeal
 
 section Jacobson
 
-variable {k : Type w} {Q : Type u} [Field k] [Quiver.{v} Q] [Finite Q]
+variable {k : Type w} {Q : Type u} [Quiver.{v} Q] [Finite Q]
 
-/-- **The arrow ideal of a finite acyclic quiver is contained in the Jacobson radical.** A maximal
-left ideal that missed the arrow ideal would join with it to the whole algebra, writing `1` as a
-sum of an element of the maximal ideal and a nilpotent, and hence containing a unit. -/
-theorem arrowIdeal_le_jacobson (h : Quiver.IsAcyclic Q) :
+/-- The arrow ideal of a finite acyclic quiver over a commutative ring is contained in the
+Jacobson radical. -/
+theorem arrowIdeal_le_jacobson [CommRing k] (h : Quiver.IsAcyclic Q) :
     arrowIdeal k Q ≤ Ring.jacobson (pathAlgebra k Q) := by
-  rw [Ring.jacobson_eq_sInf_isMaximal]
-  refine le_sInf fun m hm => ?_
-  have hcoatom : IsCoatom m := Ideal.isMaximal_def.1 hm
-  by_contra hle
-  have hlt : m < m ⊔ arrowIdeal k Q :=
-    lt_of_le_of_ne le_sup_left fun heq => hle (heq ▸ le_sup_right)
-  obtain ⟨y, hy, z, hz, hyz⟩ :=
-    Submodule.mem_sup.1 (hcoatom.2 _ hlt ▸ Submodule.mem_top : (1 : pathAlgebra k Q) ∈ _)
-  have hunit : IsUnit y := by
-    have hy' : y = 1 - z := eq_sub_of_add_eq hyz
-    exact hy' ▸ (isNilpotent_of_mem_arrowIdeal h hz).isUnit_one_sub
-  refine hcoatom.1 (Ideal.eq_top_iff_one _ |>.2 ?_)
-  obtain ⟨u, rfl⟩ := hunit
-  simpa using m.smul_mem (↑u⁻¹ : pathAlgebra k Q) hy
+  intro f hf
+  rw [← Ideal.jacobson_bot, Ideal.mem_jacobson_iff]
+  intro a
+  obtain ⟨u, hu⟩ := (isNilpotent_of_mem_arrowIdeal h
+    ((arrowIdeal k Q).mul_mem_left a hf)).isUnit_add_one
+  refine ⟨↑u⁻¹, ?_⟩
+  have hmul : (↑u⁻¹ : pathAlgebra k Q) * (a * f + 1) = 1 := by
+    rw [← hu]
+    exact u.inv_mul
+  simpa [Ideal.mem_bot, mul_add, mul_assoc, sub_eq_zero] using hmul
 
-/-- No vertex idempotent lies in the Jacobson radical: it is a nonzero idempotent, so `1 - eᵥ` is
-not a unit, and the left ideal it generates is contained in a maximal one that would then contain
-`1`. -/
-theorem vertexIdempotent_notMem_jacobson (v : Q) :
+/-- No vertex idempotent lies in the Jacobson radical over a nontrivial ring of coefficients. -/
+theorem vertexIdempotent_notMem_jacobson [Ring k] [Nontrivial k] (v : Q) :
     (vertexIdempotent k v : pathAlgebra k Q) ∉ Ring.jacobson (pathAlgebra k Q) := by
   intro hv
-  have hne : (vertexIdempotent k v : pathAlgebra k Q) ≠ 0 := vertexIdempotent_ne_zero v
-  have hproper : Ideal.span {1 - vertexIdempotent k v} ≠ (⊤ : Ideal (pathAlgebra k Q)) := by
-    intro htop
-    have hone : (1 : pathAlgebra k Q) ∈ Ideal.span {1 - vertexIdempotent k v} := by
-      rw [htop]; exact Submodule.mem_top
-    obtain ⟨c, hc⟩ := Ideal.mem_span_singleton'.1 hone
-    apply hne
-    have hmul := congrArg (· * vertexIdempotent k v) hc
-    simpa [mul_assoc, mul_sub, sub_mul] using hmul.symm
-  obtain ⟨m, hm, hle⟩ := Ideal.exists_le_maximal _ hproper
-  refine hm.ne_top (Ideal.eq_top_iff_one _ |>.2 ?_)
-  have h₁ : (1 : pathAlgebra k Q) - vertexIdempotent k v ∈ m :=
-    hle (Ideal.subset_span rfl)
-  have h₂ : (vertexIdempotent k v : pathAlgebra k Q) ∈ m := Ring.jacobson_le_of_isMaximal m hv
-  simpa using m.add_mem h₁ h₂
+  rw [← Ideal.jacobson_bot, Ideal.mem_jacobson_iff] at hv
+  obtain ⟨c, hc⟩ := hv (-1)
+  have hmul := congrArg (· * vertexIdempotent k v) (Ideal.mem_bot.1 hc)
+  simp [add_mul, sub_mul, mul_assoc] at hmul
 
 /-- **The Jacobson radical of the path algebra of a finite acyclic quiver is its arrow ideal.**
 
@@ -453,13 +430,9 @@ which it does not. -/
 theorem jacobson_pathAlgebra_eq_arrowIdeal (k : Type w) (Q : Type u) [Field k] [Quiver.{v} Q]
     [Finite Q] (h : Quiver.IsAcyclic Q) :
     Ring.jacobson (pathAlgebra k Q) = arrowIdeal k Q := by
-  refine le_antisymm (fun f hf => mem_arrowIdeal.2 (mem_pathSpan_iff.2 fun x hx => ?_))
+  refine le_antisymm (fun f hf => mem_arrowIdeal_iff_repr_nil.2 fun a => ?_)
     (arrowIdeal_le_jacobson h)
-  by_contra hlen
-  obtain ⟨a, b, p⟩ := x
-  have hzero : p.length = 0 := Nat.lt_one_iff.1 (Nat.not_le.1 hlen)
-  obtain rfl : a = b := p.eq_of_length_zero hzero
-  obtain rfl : p = Quiver.Path.nil := p.eq_nil_of_length_zero hzero
+  by_contra hx
   refine vertexIdempotent_notMem_jacobson (k := k) a ?_
   have hmem : (pathAlgebraBasis k Q).repr f ⟨a, a, Quiver.Path.nil⟩ • vertexIdempotent k a
       ∈ Ring.jacobson (pathAlgebra k Q) := by
