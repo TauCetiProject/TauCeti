@@ -66,12 +66,12 @@ def sumLocalInvSection (v : HeightOneSpectrum (𝓞 K)) :
   ((DFinsupp.singleAddHom _ v).comp (invMap (v.adicCompletion K)).symm.toAddMonoidHom).prod 0
 
 /-- The section is the family supported at `v` with the prescribed local invariant. -/
+@[simp]
 theorem sumLocalInvSection_apply (v : HeightOneSpectrum (𝓞 K)) (r : AddCircle (1 : ℚ)) :
     sumLocalInvSection K v r = (DFinsupp.single v ((invMap (v.adicCompletion K)).symm r), 0) :=
   (rfl)
 
 /-- Taking the sum of local invariants after the section recovers the prescribed invariant. -/
-@[simp]
 theorem sumLocalInv_sumLocalInvSection (v : HeightOneSpectrum (𝓞 K))
     (r : AddCircle (1 : ℚ)) : sumLocalInv K (sumLocalInvSection K v r) = r := by
   simp [sumLocalInvSection_apply]
