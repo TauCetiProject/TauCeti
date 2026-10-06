@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Harmonic.Constructions
+public import TauCeti.Analysis.InnerProductSpace.Harmonic.Isometry
 
 /-!
 # The planar Newtonian kernel away from its pole
@@ -23,12 +24,17 @@ The harmonicity proof consumes Mathlib's `AnalyticAt.harmonicAt_log_norm`, appli
 or to `z ↦ z - a`.  The remaining results record the translation, symmetry, and scaling API used
 when the kernel is integrated against a source to form a Newtonian potential.
 
+Transporting along a linear isometry onto `ℂ`, the function `x ↦ log ‖x - a‖` is harmonic away
+from `a` in every two-dimensional real inner product space, such as `EuclideanSpace ℝ (Fin 2)`.
+
 ## Main declarations
 
 * `TauCeti.planarNewtonianKernel`: the logarithmic kernel for `-Δ` on `ℂ`.
 * `TauCeti.harmonicAt_planarNewtonianKernel`: harmonicity away from the origin.
 * `TauCeti.harmonicAt_planarNewtonianKernel_sub`: harmonicity of a kernel with pole `a`.
 * `TauCeti.laplacian_planarNewtonianKernel`: the pointwise equation `Δ G = 0` off the pole.
+* `TauCeti.harmonicAt_log_norm_sub_of_finrank_eq_two`: harmonicity of `x ↦ log ‖x - a‖` away
+  from `a` in a two-dimensional real inner product space.
 -/
 
 public section
@@ -136,6 +142,32 @@ pole. -/
 theorem laplacian_planarNewtonianKernel_sub {z a : ℂ} (hza : z ≠ a) :
     Δ (fun w : ℂ ↦ planarNewtonianKernel (w - a)) z = 0 := by
   exact (harmonicAt_planarNewtonianKernel_sub hza).2.self_of_nhds
+
+section FinrankTwo
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+
+/-- In a two-dimensional real inner product space, `x ↦ log ‖x - a‖` is harmonic at every point
+other than `a`. -/
+theorem harmonicAt_log_norm_sub_of_finrank_eq_two (hE : Module.finrank ℝ E = 2) {x a : E}
+    (hxa : x ≠ a) : HarmonicAt (fun y ↦ Real.log ‖y - a‖) x := by
+  -- Transport to `ℂ`, where `log ‖z - l a‖` is the log-modulus of an analytic function.
+  let l : E ≃ₗᵢ[ℝ] ℂ := ((stdOrthonormalBasis ℝ E).reindex (finCongr hE)).repr.trans
+    Complex.orthonormalBasisOneI.repr.symm
+  have hfun : (fun y ↦ Real.log ‖y - a‖) = (fun z : ℂ ↦ Real.log ‖z - l a‖) ∘ l := by
+    ext y
+    simp [← map_sub]
+  rw [hfun, harmonicAt_comp_linearIsometryEquiv_right_iff]
+  exact (analyticAt_id.sub analyticAt_const).harmonicAt_log_norm
+    (sub_ne_zero.2 (l.injective.ne hxa))
+
+/-- In a two-dimensional real inner product space, `x ↦ log ‖x - a‖` is harmonic on the
+complement of `a`. -/
+theorem harmonicOnNhd_log_norm_sub_of_finrank_eq_two (hE : Module.finrank ℝ E = 2) (a : E) :
+    HarmonicOnNhd (fun y ↦ Real.log ‖y - a‖) ({a}ᶜ : Set E) :=
+  fun _ hx ↦ harmonicAt_log_norm_sub_of_finrank_eq_two hE hx
+
+end FinrankTwo
 
 end TauCeti
 
