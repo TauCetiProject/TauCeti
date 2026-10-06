@@ -5,6 +5,8 @@ Authors: Codex
 -/
 module
 
+public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Adjoint.WeightSpace
+
 public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Adjoint.Basic
 public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.DiagonalTorus.RootDatum
 
@@ -34,7 +36,7 @@ needed to normalize root vectors in a pinning.
 
 public section
 
-open WithConv
+open CategoryTheory WithConv
 
 namespace TauCeti.SpecialLinear
 
@@ -100,6 +102,25 @@ theorem tangentMatrix_adDerivation_universalDiagonalTorus_apply
     ofConv_toConv, AlgHom.id_apply, Algebra.ofId_apply]
   rw [mul_comm, ← MonoidAlgebra.of_apply, ← MonoidAlgebra.single_eq_algebraMap_mul_of]
 
+private theorem pointInCounitAlgebra_universalDiagonalTorus :
+    Derivation.pointInCounitAlgebra
+        (MonoidAlgebra R (Multiplicative (ULift.{u} (Fin r) →₀ ℤ)))
+        (toConv ((diagonalTorusCoordinateMap r R).hom :
+          coordinateHopfAlgebra R (r + 1) →ₐ[R]
+            MonoidAlgebra R (Multiplicative (ULift.{u} (Fin r) →₀ ℤ)))) =
+      (Bialgebra.CounitAlgebra.pointsMulEquiv R (coordinateHopfAlgebra R (r + 1))
+        (MonoidAlgebra R (Multiplicative (ULift.{u} (Fin r) →₀ ℤ)))).symm
+          (diagonalTorusPoints r R _ (toConv (AlgHom.id R _))) := by
+  apply WithConv.ofConv_injective
+  ext h
+  rw [Derivation.pointInCounitAlgebra_apply,
+    Bialgebra.CounitAlgebra.pointsMulEquiv_symm_apply,
+    Bialgebra.CounitAlgebra.algEquivSelf_symm_apply, diagonalTorusPoints_apply,
+    CommHopfAlgCat.mapPointsFunctor_app_apply_apply]
+  rw [AlgHom.id_apply]
+  -- The remaining coercion is the algebra-hom component of the categorical morphism.
+  rfl
+
 /-- A tangent vector transforms by the character `α` of the diagonal torus exactly
 when all its entries of a different character vanish. The action is tested at the universal
 torus point, after extending the coefficients to the torus coordinate algebra. -/
@@ -117,39 +138,14 @@ theorem adDerivation_universalDiagonalTorus_eq_iff
     ∀ i j : Fin (r + 1),
       SplitTorus.weightCharacter (diagonalTorusWeight r i - diagonalTorusWeight r j) ≠ α →
         (tangentMatrix (r + 1) d : Matrix (Fin (r + 1)) (Fin (r + 1)) R) i j = 0 := by
-  let K := MonoidAlgebra R (Multiplicative (ULift.{u} (Fin r) →₀ ℤ))
-  have hentry (i j : Fin (r + 1)) :
-      (tangentMatrix (B := K) (r + 1)
-          (MonoidAlgebra.single α (1 : R) • Derivation.mapValue (Algebra.ofId R K) d) :
-        Matrix (Fin (r + 1)) (Fin (r + 1))
-          (MonoidAlgebra R (Multiplicative (ULift.{u} (Fin r) →₀ ℤ)))) i j =
-        MonoidAlgebra.single α
-          ((tangentMatrix (r + 1) d : Matrix (Fin (r + 1)) (Fin (r + 1)) R) i j) := by
-    rw [map_smul, SetLike.val_smul, Matrix.smul_apply, smul_eq_mul,
-      tangentMatrix_mapValue_coe, Matrix.map_apply, Algebra.ofId_apply]
-    rw [mul_comm, ← MonoidAlgebra.of_apply, ← MonoidAlgebra.single_eq_algebraMap_mul_of]
-  constructor
-  · intro h i j hij
-    have hmatrix := congrArg (fun e =>
-      (tangentMatrix (r + 1) e : Matrix (Fin (r + 1)) (Fin (r + 1))
-        (MonoidAlgebra R (Multiplicative (ULift.{u} (Fin r) →₀ ℤ)))) i j) h
-    rw [tangentMatrix_adDerivation_universalDiagonalTorus_apply, hentry] at hmatrix
-    by_contra hne
-    exact hij (MonoidAlgebra.single_left_injective hne hmatrix)
-  · intro h
-    apply (tangentLieEquivSl (R := R) (r + 1)).injective
-    simp only [LieEquiv.coe_toLieHom]
-    -- Injectivity elaborates the coordinate algebra as its quotient presentation; expose
-    -- that presentation to apply the tangent-equivalence computation rule.
-    erw [tangentLieEquivSl_apply, tangentLieEquivSl_apply]
-    apply Subtype.ext
-    apply Matrix.ext
-    intro i j
-    rw [tangentMatrix_adDerivation_universalDiagonalTorus_apply, hentry]
-    by_cases hij : SplitTorus.weightCharacter
-        (diagonalTorusWeight r i - diagonalTorusWeight r j) = α
-    · rw [hij]
-    · simp [h i j hij]
+  rw [tangentMatrix_apply_coe]
+  have hπ := congrArg (fun f => f.hom)
+    (coordinateMap_comp_diagonalTorusCoordinateMap r R)
+  -- Use the coefficient ring consistently while identifying its counit-valued universal point.
+  have hpoint := pointInCounitAlgebra_universalDiagonalTorus (R := R) (r := r)
+  simpa only [hpoint] using
+    HopfIdeal.adDerivation_universalWeightTorus_eq_iff (definingHopfIdeal R (r + 1))
+      (diagonalTorusWeight r) (diagonalTorusCoordinateMap r R).hom hπ α d
 
 /-- The adjoint eigenspace of every root of `SL_{r+1}` over any commutative base ring is
 exactly the line spanned by its normalized matrix unit. The tangent-matrix equivalence

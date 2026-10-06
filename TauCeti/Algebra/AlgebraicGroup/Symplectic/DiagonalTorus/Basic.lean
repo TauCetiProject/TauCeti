@@ -44,6 +44,8 @@ morphism is surjective; its closed-subgroup interpretation is developed in
   `TauCeti.Symplectic.mapValue_diagonalTorusPoints`: injectivity and naturality.
 * `TauCeti.Symplectic.diagonalTorusPoints_mul_rootSubgroupPoints_mul_inv`: the pinning equation on
   every root subgroup.
+* `TauCeti.Symplectic.coordinateMap_comp_diagonalTorusCoordinateMap`: the ambient weight-torus
+  comparison.
 * `TauCeti.Symplectic.coordinateMap_comp_diagonalTorusCoordinateMap_X_castAdd`,
   `TauCeti.Symplectic.coordinateMap_comp_diagonalTorusCoordinateMap_X_addNat`, and
   `TauCeti.Symplectic.coordinateMap_comp_diagonalTorusCoordinateMap_X_of_ne`: the coordinate-map
@@ -341,15 +343,6 @@ theorem diagonalTorusWeight_inl (i : Fin m) :
 @[simp]
 theorem diagonalTorusWeight_inr (i : Fin m) :
     diagonalTorusWeight (.inr i) = -Finsupp.single (ULift.up i) (1 : ℤ) := (rfl)
-
-/-- The exponent-vector presentation of a paired weight gives its integral character. -/
-@[simp]
-theorem weightCharacter_diagonalTorusWeight (i : Fin m ⊕ Fin m) :
-    SplitTorus.weightCharacter ⇑(diagonalTorusWeight i) =
-      Multiplicative.ofAdd (diagonalTorusWeight i) := by
-  apply Multiplicative.ext
-  ext j
-  simp
 
 /-- Restricting the symplectic diagonal-torus coordinate map to the ambient general linear group
 is the general weight-torus map for the paired weights. -/

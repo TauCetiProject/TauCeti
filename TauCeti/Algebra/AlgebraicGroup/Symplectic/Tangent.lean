@@ -89,22 +89,6 @@ theorem tangentMatrix_apply_coe
         (HopfIdeal.quotientLieHom (B := B) (definingHopfIdeal R m) d)).submatrix
           finSumFinEquiv finSumFinEquiv := (rfl)
 
-/-- An entry of the paired tangent matrix evaluates the derivation on the corresponding
-ambient generic matrix coordinate restricted to the symplectic group. -/
-@[simp]
-theorem tangentMatrix_apply
-    (d : Derivation R (coordinateHopfAlgebra R m)
-      (Bialgebra.CounitAlgebra R (coordinateHopfAlgebra R m) B))
-    (i j : Fin m ⊕ Fin m) :
-    (tangentMatrix m d : Matrix (Fin m ⊕ Fin m) (Fin m ⊕ Fin m) B) i j =
-      Bialgebra.CounitAlgebra.algEquivSelf R (coordinateHopfAlgebra R m) B
-        (d ((coordinateMap R m).hom (GeneralLinear.coordinateHopfAlgebraAlgEquiv R (m + m)
-          (GeneralLinear.coordinateRingMap R (m + m)
-            (MvPolynomial.X (finSumFinEquiv i, finSumFinEquiv j)))))) := by
-  rw [tangentMatrix_apply_coe, Matrix.submatrix_apply, GeneralLinear.tangentMatrix_apply,
-    HopfIdeal.quotientLieHom_apply_apply, coordinateMap_def, CommHopfAlgCat.mkQuotient_apply]
-  exact Bialgebra.CounitAlgebra.algEquivSelf_apply R _ B _
-
 /-- Extending the coefficients of a symplectic tangent vector applies the coefficient
 map to every entry of its paired tangent matrix. -/
 @[simp]

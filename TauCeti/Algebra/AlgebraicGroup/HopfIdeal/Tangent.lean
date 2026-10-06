@@ -112,10 +112,7 @@ theorem quotientLieHom_mapValue (I : HopfIdeal R H)
       Derivation.mapValue φ (quotientLieHom I d) := by
   ext x
   simp only [quotientLieHom_apply_apply, Derivation.mapValue_apply]
-  -- The quotient-indexed and ambient-indexed counit algebras are copies of the same
-  -- coefficient rings. Use their identity-on-coefficients rules with explicit indices.
-  exact (Bialgebra.CounitAlgebra.algEquivSelf_apply R (H ⧸ I.toIdeal) C _).trans
-    (congrArg φ (Bialgebra.CounitAlgebra.algEquivSelf_apply R (H ⧸ I.toIdeal) B _).symm)
+  exact Bialgebra.CounitAlgebra.algEquivSelf_map φ _
 
 /-- The differential of a closed-subgroup inclusion is injective. -/
 theorem quotientLieHom_injective (I : HopfIdeal R H) :
