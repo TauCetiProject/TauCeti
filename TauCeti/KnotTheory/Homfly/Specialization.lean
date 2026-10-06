@@ -29,9 +29,6 @@ In fact, any infinite set of ranks suffices for uniqueness.
   Ann. of Math. 126 (1987), 335–388 (the HOMFLY specialization of braid traces).
 * V. G. Turaev, *The Yang-Baxter equation and invariants of links*, Invent. Math.
   92 (1988), 527–553 (enhanced representations).
-
-The algebraic detection argument uses Mathlib's finite-root theorem, Laurent
-localization, and transcendence of nonconstant rational functions.
 -/
 
 public section

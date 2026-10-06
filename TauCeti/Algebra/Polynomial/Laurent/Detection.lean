@@ -16,9 +16,6 @@ An infinite family of distinct units in an integral domain detects Laurent polyn
 provided that the coefficient homomorphism is injective. This applies in particular to
 reconstructing a polynomial from specializations of an invertible variable to successive
 powers of an indeterminate.
-
-The proof clears negative powers using `LaurentPolynomial.exists_T_pow` and uses
-Mathlib's theorem that a nonzero polynomial has only finitely many roots.
 -/
 
 public section
