@@ -70,6 +70,12 @@ def unitLogEmbedding : Additive (𝓞 K)ˣ →+ unitLogHyperplane K where
     ext w
     simp [unitLogEmbedding, h w]
 
+/-- The kernel of the full logarithmic embedding is the additive torsion subgroup of units. -/
+theorem unitLogEmbedding_ker :
+    (unitLogEmbedding K).ker = (NumberField.Units.torsion K).toAddSubgroup := by
+  ext u
+  simp only [AddMonoidHom.mem_ker, unitLogEmbedding_eq_zero_iff, Additive.mem_toAddSubgroup]
+
 /-- The unit logarithmic lattice, as an integral submodule of the sum-zero hyperplane. -/
 def fullUnitLattice : Submodule ℤ (unitLogHyperplane K) :=
   (unitLogEmbedding K).toIntLinearMap.range
