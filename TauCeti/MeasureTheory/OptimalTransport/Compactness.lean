@@ -63,7 +63,8 @@ this lives here rather than in the stability file that consumes it.
 * `TauCeti.exists_isCoupling_tendsto_of_isTightMeasureSet` — relative compactness of a family of
   plans with tight varying marginals;
 * `TauCeti.Coupling.instCompactSpace` — the bundled couplings of inner-regular probability
-  measures form a compact space.
+  measures form a compact space when the factors are Hausdorff with measurable opens, the product
+  is Borel, and both spaces of marginal probability measures are `T1`.
 
 ## References
 
@@ -189,9 +190,10 @@ theorem isCompact_setOfPred_isCoupling [T2Space (X × Y)]
   isCompact_setOfPred_isCoupling_of_prokhorov
     (fun _ ↦ isCompact_closure_of_isTightMeasureSet) hμ hν
 
-/-- The bundled couplings of two inner-regular probability measures on Hausdorff factors form a
-compact space for weak convergence. Hausdorffness makes the inner-regular marginals tight.
-This applies in particular to probability measures on Polish spaces. -/
+/-- The bundled couplings of two inner-regular probability measures form a compact space for weak
+convergence when both factors are Hausdorff with measurable opens, their product is a Borel space,
+and both spaces of marginal probability measures are `T1`. This applies in particular to
+probability measures on Polish Borel spaces. -/
 instance Coupling.instCompactSpace [T2Space X] [T2Space Y]
     {μ : ProbabilityMeasure X} {ν : ProbabilityMeasure Y}
     [μ.toMeasure.InnerRegular] [ν.toMeasure.InnerRegular] : CompactSpace (Coupling μ ν) :=
