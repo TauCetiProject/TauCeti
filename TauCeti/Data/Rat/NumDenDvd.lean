@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.Rat.Lemmas
 
 import Mathlib.Data.Int.Cast.Lemmas
+import Mathlib.Data.Int.GCD
 
 /-!
 # Numerator and denominator of a rational multiplier between integers
@@ -21,6 +22,8 @@ the scaling `(A, B) ↦ (r⁴A, r⁶B)` between two integral short Weierstrass e
 
 ## Main results
 
+* `TauCeti.Rat.den_natCast_div_natCast`: the reduced denominator of a fraction of naturals
+  with nonzero denominator is the denominator divided by the gcd.
 * `Rat.den_dvd_of_intCast_eq_mul_intCast`: `a' = r * a` implies `r.den ∣ a`.
 * `Rat.num_dvd_of_intCast_eq_mul_intCast`: `a' = r * a` implies `r.num ∣ a'`.
 -/
@@ -55,5 +58,15 @@ theorem num_dvd_of_intCast_eq_mul_intCast (r : ℚ) (h : (a' : ℚ) = r * a) : r
     exact num_dvd a' ha
 
 end Rat
+
+namespace TauCeti.Rat
+
+/-- The reduced denominator of a fraction of naturals with nonzero denominator. -/
+theorem den_natCast_div_natCast (a b : ℕ) (hb : b ≠ 0) :
+    ((a : ℚ) / b).den = b / a.gcd b := by
+  simpa [Rat.divInt_eq_div, Int.gcd_def, Nat.gcd_comm, hb] using
+    Rat.den_divInt (a : ℤ) (b : ℤ)
+
+end TauCeti.Rat
 
 end

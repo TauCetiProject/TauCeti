@@ -84,6 +84,7 @@ the branch node of the diagram is `α₄`, and `α₂` is the short arm.
 * `TauCeti.IntegralLattice.isUnimodular_typeE₈RootLattice`: `E₈` is unimodular, so its discriminant
   form is trivial.
 * `TauCeti.IntegralLattice.minimum_typeE₈RootLattice`: `E₈` has minimum `2`.
+* `TauCeti.IntegralLattice.level_typeE₆RootLattice` and its analogues: the levels are `3`, `4`, `1`.
 
 ## References
 
@@ -334,8 +335,8 @@ theorem level_typeE₆RootLattice : typeE₆RootLattice.level = 3 := by
   rw [isEven_typeE₆RootLattice.level_eq_addOrderOf _
     zmultiples_typeE₆MinusculeWeightClass_eq_top,
     discriminantQuadraticMap_typeE₆MinusculeWeightClass]
-  convert AddCircle.addOrderOf_coe_rat (p := (1 : ℚ)) (q := (2 : ℚ) / 3) using 1 <;>
-    norm_num
+  rw [AddCircle.addOrderOf_coe_rat_one]
+  norm_num
 
 /-- **The discriminant bilinear value of the minuscule weight `ϖ₁` of type `E₆` is `1/3`.** -/
 @[simp]
@@ -619,8 +620,8 @@ theorem level_typeE₇RootLattice : typeE₇RootLattice.level = 4 := by
   rw [isEven_typeE₇RootLattice.level_eq_addOrderOf _
     zmultiples_typeE₇MinusculeWeightClass_eq_top,
     discriminantQuadraticMap_typeE₇MinusculeWeightClass]
-  convert AddCircle.addOrderOf_coe_rat (p := (1 : ℚ)) (q := (3 : ℚ) / 4) using 1 <;>
-    norm_num
+  rw [AddCircle.addOrderOf_coe_rat_one]
+  norm_num
 
 /-- **The discriminant bilinear value of the minuscule weight `ϖ₇` of type `E₇` is `1/2`.** -/
 @[simp]

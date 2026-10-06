@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Data.Rat.NumDenDvd
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.TypeA.Basic
 public import TauCeti.LinearAlgebra.IntegralLattice.Level
 
@@ -26,8 +27,6 @@ fundamental weight's quadratic value computed in `TypeA.Basic`.
 
 public section
 
-open scoped Rat
-
 namespace TauCeti
 namespace IntegralLattice
 
@@ -38,18 +37,24 @@ theorem level_typeARootLattice (n : ℕ) :
   rw [(isEven_typeARootLattice n).level_eq_addOrderOf _
     (zmultiples_typeAFundamentalWeightClass n),
     discriminantQuadraticMap_typeAFundamentalWeightClass]
-  have horder (q : ℚ) : addOrderOf (q : AddCircle (1 : ℚ)) = q.den := by
-    simpa using (AddCircle.addOrderOf_coe_rat (p := (1 : ℚ)) (q := q))
-  rw [horder]
-  have hrat : (n : ℚ) / (2 * ((n : ℚ) + 1)) = (n : ℤ) /. (2 * (n + 1) : ℕ) := by
-    rw [Rat.divInt_eq_div]
-    push_cast
-    rfl
-  rw [hrat, Rat.den_divInt]
-  norm_cast
-  simp only [ite_false]
-  congr 1
-  rw [Nat.mul_add, Nat.mul_one, Nat.add_comm, Nat.gcd_add_mul_right_left, Nat.gcd_comm]
+  rw [AddCircle.addOrderOf_coe_rat_one]
+  have hgcd : n.gcd (2 * (n + 1)) = n.gcd 2 := by
+    rw [Nat.mul_add, Nat.mul_one, Nat.add_comm (2 * n) 2, Nat.gcd_comm n (2 + 2 * n),
+      Nat.gcd_add_mul_right_left, Nat.gcd_comm 2 n]
+  have hden : (n : ℚ) / (2 * ((n : ℚ) + 1)) = (n : ℚ) / (2 * (n + 1) : ℕ) := by
+    norm_cast
+  rw [hden, Rat.den_natCast_div_natCast n (2 * (n + 1)) (by omega), hgcd]
+
+/-- In even rank, the level of `Aₙ` is `n + 1`, including rank zero. -/
+theorem level_typeARootLattice_of_even {n : ℕ} (hn : Even n) :
+    (typeARootLattice n).level = n + 1 := by
+  rw [level_typeARootLattice, Nat.gcd_eq_right_iff_dvd.mpr (even_iff_two_dvd.mp hn)]
+  exact Nat.mul_div_cancel_left _ (by decide)
+
+/-- In odd rank, the level of `Aₙ` is `2 (n + 1)`. -/
+theorem level_typeARootLattice_of_odd {n : ℕ} (hn : Odd n) :
+    (typeARootLattice n).level = 2 * (n + 1) := by
+  rw [level_typeARootLattice, (Nat.coprime_two_right.mpr hn).gcd_eq_one, Nat.div_one]
 
 end IntegralLattice
 end TauCeti
