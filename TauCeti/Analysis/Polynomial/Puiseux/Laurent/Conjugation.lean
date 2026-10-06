@@ -36,11 +36,11 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
 
 /-- Laurent forms of nonmonic roots can be chosen compatibly with conjugation.
-The parameter map fixes the central parameter and conjugates the distinguished
-coordinate. Labels related by `σ` have the same Laurent exponent, and their
-unit germs satisfy the corresponding conjugation identity on the full
-neighborhood. The root equations themselves are required only off the
-hyperplane, where poles are allowed. -/
+The parameter map is continuous at and fixes the central parameter; the
+distinguished coordinate is conjugated. Labels related by `σ` have the same
+Laurent exponent, and their unit germs satisfy the corresponding conjugation
+identity on the full neighborhood. The root equations themselves are required
+only off the hyperplane, where poles are allowed. -/
 theorem exists_root_eq_zpow_mul_unit_conj {d a c : ℕ} (hd : 0 < d)
     {P : E × ℂ → Polynomial ℂ} {r s : Fin d → E × ℂ → ℂ} {x₀ : E}
     {u v : E × ℂ → ℂ} (hs : ∀ i, AnalyticAt ℂ (s i) (x₀, 0))
@@ -52,7 +52,7 @@ theorem exists_root_eq_zpow_mul_unit_conj {d a c : ℕ} (hd : 0 < d)
     (hconst : ∀ᶠ p in 𝓝 (x₀, (0 : ℂ)), (P p).coeff 0 = p.2 ^ a * u p)
     (hscale : ∀ᶠ p in 𝓝 (x₀, (0 : ℂ)), p.2 ≠ 0 →
       ∀ i, (P p).coeff d * r i p = s i p)
-    {τ : E → E} (hτ : Continuous τ) (hτ0 : τ x₀ = x₀) {σ : Fin d → Fin d}
+    {τ : E → E} (hτ : ContinuousAt τ x₀) (hτ0 : τ x₀ = x₀) {σ : Fin d → Fin d}
     (hσ : ∀ᶠ p in 𝓝 (x₀, (0 : ℂ)), p.2 ≠ 0 →
       ∀ i, r (σ i) p = conj (r i (τ p.1, conj p.2))) :
     ∃ e : Fin d → ℤ, ∃ w : Fin d → E × ℂ → ℂ,
@@ -68,13 +68,15 @@ theorem exists_root_eq_zpow_mul_unit_conj {d a c : ℕ} (hd : 0 < d)
       (∀ i, w i p ≠ 0) ∧ (p.2 ≠ 0 → ∀ i, r i p = p.2 ^ e i * w i p) := by
     simpa only [sub_zero] using hform
   let T : E × ℂ → E × ℂ := fun p ↦ (τ p.1, conj p.2)
-  have hT : Continuous T := (hτ.comp continuous_fst).prodMk
-    (Complex.continuous_conj.comp continuous_snd)
+  have hT : ContinuousAt T (x₀, 0) := (hτ.comp continuousAt_fst).prodMk
+    (Complex.continuous_conj.continuousAt.comp continuousAt_snd)
   have hT0 : T (x₀, 0) = (x₀, 0) := by simp [T, hτ0]
+  have hTt : Tendsto T (𝓝 (x₀, (0 : ℂ))) (𝓝 (x₀, (0 : ℂ))) := by
+    simpa only [hT0] using hT.tendsto
   have hconj (i : Fin d) : ∀ᶠ p in 𝓝 (x₀, (0 : ℂ)), p.2 ≠ 0 →
       p.2 ^ e (σ i) * w (σ i) p =
         conj ((conj p.2) ^ e i * w i (τ p.1, conj p.2)) := by
-    filter_upwards [hform', (hT.tendsto' _ _ hT0).eventually hform', hσ]
+    filter_upwards [hform', hTt.eventually hform', hσ]
       with p hp hTp hsp hp0
     have hTp0 : (T p).2 ≠ 0 := by simpa [T] using hp0
     rw [← hp.2 hp0 (σ i), hsp hp0 i, hTp.2 hTp0 i]
