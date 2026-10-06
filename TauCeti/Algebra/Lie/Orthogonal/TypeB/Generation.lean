@@ -262,21 +262,6 @@ private theorem coe_typeBBlockGenerator (n : ℕ) (i j : Fin (n + 1)) :
   · simp [typeBBlockGenerator, hij, coe_typeBDifferenceRootGenerator,
       typeBDifferenceRootMatrix_def]
 
-private theorem sum_sum_mul_sub_single
-    {ι : Type*} [Fintype ι] [DecidableEq ι] (f : ι → ι → K) (a b : ι) :
-    (∑ i, ∑ j, f i j *
-      ((if i = a then if j = b then 1 else 0 else 0) -
-        if j = a then if i = b then 1 else 0 else 0)) =
-      f a b - f b a := by
-  simp_rw [mul_sub, Finset.sum_sub_distrib]
-  simp
-
-private theorem sum_sum_single_swap
-    {ι : Type*} [Fintype ι] [DecidableEq ι] (f : ι → ι → K) (a b : ι) :
-    (∑ i, ∑ j, if j = a ∧ i = b then f i j else 0) = f b a := by
-  simp_rw [ite_and]
-  simp
-
 private theorem decomposition [NeZero (2 : K)] (n : ℕ)
     (X : LieAlgebra.Orthogonal.typeB (Fin (n + 1)) K) :
     X =
@@ -419,7 +404,7 @@ private theorem decomposition [NeZero (2 : K)] (n : ℕ)
   · simpa [typeBShortRootMatrix_def, typeBShortNegativeRootMatrix_def,
       typeBSumRootMatrix_def, typeBSumNegativeRootMatrix_def, Matrix.sum_apply,
       Matrix.smul_apply, Matrix.single_apply, ite_and, Finset.mem_univ,
-      sum_sum_mul_sub_single] using hsumScaled a b
+      mul_sub, Finset.sum_sub_distrib] using hsumScaled a b
   -- Negative-anisotropic entry.
   · simpa [typeBShortRootMatrix_def, typeBShortNegativeRootMatrix_def,
       typeBSumRootMatrix_def, typeBSumNegativeRootMatrix_def, Matrix.sum_apply,
@@ -428,11 +413,11 @@ private theorem decomposition [NeZero (2 : K)] (n : ℕ)
   · simpa [typeBShortRootMatrix_def, typeBShortNegativeRootMatrix_def,
       typeBSumRootMatrix_def, typeBSumNegativeRootMatrix_def, Matrix.sum_apply,
       Matrix.smul_apply, Matrix.single_apply, ite_and, Finset.mem_univ,
-      sum_sum_mul_sub_single] using hsumNegScaled a b
+      mul_sub, Finset.sum_sub_distrib] using hsumNegScaled a b
   -- Negative-negative block.
   · simpa [typeBShortRootMatrix_def, typeBShortNegativeRootMatrix_def,
       typeBSumRootMatrix_def, typeBSumNegativeRootMatrix_def, Matrix.sum_apply,
-      Matrix.smul_apply, Matrix.single_apply, sum_sum_single_swap] using hblockNeg a b
+      Matrix.smul_apply, Matrix.single_apply, ite_and] using hblockNeg a b
 
 /-- The positive and negative Bourbaki simple-root generators generate the split odd orthogonal
 Lie algebra of type `B`. -/
