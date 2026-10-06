@@ -23,7 +23,8 @@ Let `G` be a profinite group with `scd_p G ≤ 2` and let `V` be an open subgrou
 NSW (3.6.4)(ii) in `p`-primary form.
 
 One inclusion needs no hypothesis on `G` beyond profiniteness: `Ver` is a continuous homomorphism
-to the abelian pro-`p` group `V^ab(p)`, so it factors through `G^ab(p)`. The other inclusion is
+to the abelian pro-`p` group `V^ab(p)`, so it factors through `G^ab(p)`
+(`TauCeti.abelianizationProPTransfer_eq_one_of_mk_eq_one`). The other inclusion is
 NSW (3.3.11) in degree `2` with coefficients `ℤ`, read on characters. A continuous character
 `χ : G → ℤ/p^k` has a `p`-primary integral Bockstein `δχ ∈ H²(G, ℤ)`. Because `scd_p G ≤ 2`,
 `δχ` is a corestriction from `H²(V, ℤ)`, so it is the corestriction of the Bockstein `δψ` of a
@@ -38,8 +39,6 @@ The subgroup `V` need not be normal.
 
 ## Main results
 
-* `TauCeti.abelianizationProPTransfer_eq_one_of_mk_eq_one`: the transfer kills the kernel of
-  `G → G^ab(p)`.
 * `TauCeti.zmodChar_eq_one_of_transfer_eq_one`: under `scd_p G ≤ 2`, a continuous character of `G`
   of `p`-power order kills the kernel of the transfer.
 * `TauCeti.abelianizationProPTransfer_eq_one_iff`: under `scd_p G ≤ 2`, the kernel of the transfer
@@ -147,23 +146,6 @@ private theorem transfer_apply_eq_one [NeZero p] (hV : IsOpen (V : Set G)) {m : 
     simp [ψ', ψab, abelianizationProPMk_apply]
   rw [hψ, MonoidHom.transfer_comp, MonoidHom.comp_apply, ← abelianizationProPTransfer_def, hg,
     map_one]
-
-/-- The transfer `Ver : G → V^ab(p)` kills the kernel of the canonical map `G → G^ab(p)`. It is a
-continuous homomorphism to the abelian pro-`p` group `V^ab(p)`, so it factors through `G^ab(p)`. No
-hypothesis on the cohomological dimension of `G` is needed. -/
-theorem abelianizationProPTransfer_eq_one_of_mk_eq_one (hV : IsOpen (V : Set G)) {g : G}
-    (hg : maximalProPQuotient.mk p (TopologicalAbelianization G)
-      (g : TopologicalAbelianization G) = 1) :
-    abelianizationProPTransfer p G V g = 1 := by
-  have : CompactSpace V := isCompact_iff_compactSpace.mp (V.isClosed_of_isOpen hV).isCompact
-  let Ver : G →ₜ* abelianizationProP p G V :=
-    ⟨abelianizationProPTransfer p G V, continuous_abelianizationProPTransfer p G V hV⟩
-  let Verab := TopologicalAbelianization.lift Ver
-  have hVer := congrArg (maximalProPQuotient.lift
-    (isProP_maximalProPQuotient (p := p) (G := TopologicalAbelianization V)) Verab.toMonoidHom
-    Verab.continuous) hg
-  rw [maximalProPQuotient.mk_apply, maximalProPQuotient.lift_mk, map_one] at hVer
-  exact (TopologicalAbelianization.lift_mk Ver g).symm.trans hVer
 
 /-- **A character of `p`-power order dies on the kernel of the transfer.** For a profinite
 group `G` with `scd_p G ≤ 2` and an open subgroup `V`, every continuous character
