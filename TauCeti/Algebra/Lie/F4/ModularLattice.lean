@@ -379,9 +379,8 @@ theorem f4Modular_lie_rootVector_eq_zero_of_chainTopCoeff_eq_zero (α β : Fin 4
   by_contra hbot
   obtain ⟨ε, hε⟩ := exists_f4_root_eq_add_of_rootSpace_ne_bot α β
     (f4KillingRoot_add_ne_zero_of_ne_opposite α β hopp) hbot
-  have hlin := f4SimplyConnectedRootDatum.linearIndependent_of_add_mem_range_root'
+  have := f4SimplyConnectedRootDatum.one_le_chainTopCoeff_of_root_add_mem
     (i := α) (j := β) ⟨ε, by rw [hε, add_comm]⟩
-  have := f4SimplyConnectedRootDatum.chainTopCoeff_of_add hlin hε
   omega
 
 /-- Opposite integral root vectors bracket to the corresponding integral coroot. -/
