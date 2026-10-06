@@ -47,6 +47,10 @@ it, and two such cocycles have the same class exactly when they differ by a homo
   `a g₀ g₂ = a g₀ g₁ + a g₁ g₂` (`TopRep.homogeneousCochains.apply_eq_add_of_d_eq_zero`).
 * `TopRep.homogeneousCochains.d_two_apply`: the differential of a homogeneous two-cochain,
   evaluated, is `(d a) g₀ g₁ g₂ g₃ = a g₁ g₂ g₃ - (a g₀ g₂ g₃ - (a g₀ g₁ g₃ - a g₀ g₁ g₂))`.
+* `TopRep.eval_iCycles_eqToHom`: reading a cocycle transported along an equality of coefficient
+  objects is the `cast` of reading the untransported cocycle.
+* `TopRep.eqToHom_π_eq_cochainClass`: the transport of a class along an equality of coefficient
+  objects is the class of the transported cocycle.
 * `TopRep.cochainClass_eq_cochainClass_iff`: two homogeneous cocycles of positive degree have the
   same class exactly when their difference is a coboundary, and `TopRep.cochainClass_eq_of_sub_eq_d`
   is the direction that compares two explicit representatives.
@@ -170,6 +174,31 @@ theorem cochainClass_iCycles (z : ContinuousCohomology.cocycles X n) :
   congr 1
   apply (homogeneousCochains X).iCycles_injective n
   rw [HomologicalComplex.iCycles_cyclesMkOfEq]
+
+/-- Any reading `ev` of homogeneous cochains, applied to a cocycle transported along an equality
+`X = Y` of coefficient objects, is the `cast` of its reading of the untransported cocycle. Once the
+reading lands in a type that does not depend on the coefficient object up to definitional
+equality, the `cast` is the identity (`cast_eq`). -/
+theorem eval_iCycles_eqToHom {Y : TopRep k G} (h : X = Y) (z : ContinuousCohomology.cocycles X n)
+    {T : TopRep k G → Sort*} (ev : ∀ B : TopRep k G, (homogeneousCochains B).X n → T B) :
+    ev Y ((homogeneousCochains Y).iCycles n
+        (CategoryTheory.eqToHom (congrArg (ContinuousCohomology.cocycles · n) h) z)) =
+      cast (congrArg T h) (ev X ((homogeneousCochains X).iCycles n z)) := by
+  subst h
+  simp only [CategoryTheory.eqToHom_refl, CategoryTheory.ConcreteCategory.id_apply, cast_eq]
+
+/-- Transporting the class of a cocycle `z` along an equality `X = Y` of coefficient objects gives
+the class of any homogeneous cochain of `Y` that the transported cocycle presents. -/
+theorem eqToHom_π_eq_cochainClass {Y : TopRep k G} (h : X = Y)
+    (z : ContinuousCohomology.cocycles X n) (a : (homogeneousCochains Y).X n)
+    (ha : ((homogeneousCochains Y).d n (n + 1)).hom a = 0)
+    (hza : (homogeneousCochains Y).iCycles n
+      (CategoryTheory.eqToHom (congrArg (ContinuousCohomology.cocycles · n) h) z) = a) :
+    (CategoryTheory.eqToHom (congrArg (continuousCohomology n) h)).hom
+        (ContinuousCohomology.π X n z) =
+      Y.cochainClass n a ha := by
+  subst h hza
+  simpa using (cochainClass_iCycles z).symm
 
 /-- Every continuous cohomology class is the class of a homogeneous cocycle. -/
 theorem exists_cochainClass_eq (x : continuousCohomology n X) :

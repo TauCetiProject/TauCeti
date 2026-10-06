@@ -61,7 +61,7 @@ variable {N : ℕ} (W : (Fin 2 → ZMod N) → ℂ) {k : ℤ}
 
 /-- On the imaginary axis, a summand `(x₀ z + x₁)^(-k)` with `x₀ ≠ 0` tends to `0`, and a
 summand with `x₀ = 0` is the constant `x₁^(-k)`. -/
-private lemma tendsto_eisSummand_ofComplex_I_mul (hk : 0 < k) (x : Fin 2 → ℤ) :
+lemma tendsto_eisSummand_ofComplex_I_mul (hk : 0 < k) (x : Fin 2 → ℤ) :
     Tendsto (fun t : ℝ ↦ eisSummand k x (ofComplex (I * t))) atTop
       (𝓝 (if x 0 = 0 then (x 1 : ℂ) ^ (-k) else 0)) := by
   by_cases hx : x 0 = 0

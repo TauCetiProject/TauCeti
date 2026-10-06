@@ -51,9 +51,9 @@ fixes `v` instead of negating it and is a transvection rather than a reflection 
   regarded as a subgroup of `orthogonalGroup Q` rather than of `M ≃ₗ[R] M`, with
   `QuadraticMap.specialOrthogonalToOrthogonal Q : SO(Q) →* O(Q)` and
   `QuadraticMap.specialOrthogonalWithinEquiv Q` relating the two spellings.
-* `TauCeti.QuadraticMap.specialOrthogonalToGeneralLinear Q`: the faithful coordinate inclusion of
+* `QuadraticMap.specialOrthogonalToGeneralLinear Q`: the faithful coordinate inclusion of
   a special orthogonal group into matrix `GL`.
-* `TauCeti.QuadraticMap.orthogonalToGeneralLinear Q`: the corresponding faithful coordinate
+* `QuadraticMap.orthogonalToGeneralLinear Q`: the corresponding faithful coordinate
   inclusion of the full orthogonal group into matrix `GL`.
 * `TauCeti.QuadraticMap.reflection Q v`: the reflection in the hyperplane orthogonal to a vector `v`
   with `Q v` invertible, built from Mathlib's `Module.reflection`.
@@ -80,10 +80,11 @@ fixes `v` instead of negating it and is a transvection rather than a reflection 
   group is Mathlib's type of self-isometries `Q.IsometryEquiv Q`. This is the compatibility with the
   Mathlib vocabulary; the point of `orthogonalGroup` is the group structure, which
   `QuadraticMap.IsometryEquiv` does not carry.
-* `TauCeti.QuadraticMap.orthogonalGroupCongr`: isometric quadratic maps have isomorphic orthogonal
-  groups. Over an algebraically closed field this is what makes `O(Q)` depend only on the rank of
-  `Q`. The transport respects identity, composition, and inverses
-  (`orthogonalGroupCongr_refl`, `QuadraticMap.IsometryEquiv.orthogonalGroupCongr_trans`,
+* `QuadraticMap.IsometryEquiv.orthogonalGroupCongr`: isometric quadratic maps have isomorphic
+  orthogonal groups. Over an algebraically closed field this is what makes `O(Q)` depend only on the
+  rank of `Q`. The transport respects identity, composition, and inverses
+  (`QuadraticMap.IsometryEquiv.orthogonalGroupCongr_refl`,
+  `QuadraticMap.IsometryEquiv.orthogonalGroupCongr_trans`,
   `QuadraticMap.IsometryEquiv.orthogonalGroupCongr_symm`) and preserves the determinant
   (`QuadraticMap.IsometryEquiv.orthogonalDet_orthogonalGroupCongr`).
 * `QuadraticMap.IsometryEquiv.specialOrthogonalGroupCongr`: isometric quadratic maps have isomorphic
@@ -222,24 +223,36 @@ theorem coe_orthogonalGroupEquivIsometryEquiv (Q : QuadraticMap R M N) (f : orth
   rfl
 
 @[simp]
-theorem _root_.TauCeti.toLinearEquiv_orthogonalGroupEquivIsometryEquiv (Q : QuadraticMap R M N)
-    (f : orthogonalGroup Q) :
-    (orthogonalGroupEquivIsometryEquiv Q f).toLinearEquiv = (f : M ≃ₗ[R] M) :=
-  LinearEquiv.ext <| congrFun (coe_orthogonalGroupEquivIsometryEquiv Q f)
-
-@[simp]
 theorem coe_orthogonalGroupEquivIsometryEquiv_symm (Q : QuadraticMap R M N)
     (e : Q.IsometryEquiv Q) :
     (((orthogonalGroupEquivIsometryEquiv Q).symm e : M ≃ₗ[R] M) : M → M) = ⇑e := by
   simp [orthogonalGroupEquivIsometryEquiv]
 
+end CommSemiring
+
+end QuadraticMap
+
+@[simp]
+theorem toLinearEquiv_orthogonalGroupEquivIsometryEquiv {R : Type u} {M : Type v} {N : Type w}
+    [CommSemiring R] [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
+    (Q : QuadraticMap R M N) (f : QuadraticMap.orthogonalGroup Q) :
+    (QuadraticMap.orthogonalGroupEquivIsometryEquiv Q f).toLinearEquiv = (f : M ≃ₗ[R] M) :=
+  LinearEquiv.ext <| congrFun (QuadraticMap.coe_orthogonalGroupEquivIsometryEquiv Q f)
+
+end TauCeti
+
+namespace QuadraticMap.IsometryEquiv
+
 section Congr
 
-variable {M₁ : Type*} {M₂ : Type*} {M₃ : Type*}
+variable {R : Type u} {M₁ : Type*} {M₂ : Type*} {M₃ : Type*} {N : Type w}
+  [CommSemiring R]
   [AddCommMonoid M₁] [Module R M₁] [AddCommMonoid M₂] [Module R M₂]
-  [AddCommMonoid M₃] [Module R M₃]
+  [AddCommMonoid M₃] [Module R M₃] [AddCommMonoid N] [Module R N]
   {Q₁ : QuadraticMap R M₁ N} {Q₂ : QuadraticMap R M₂ N}
   {Q₃ : QuadraticMap R M₃ N}
+
+open TauCeti.QuadraticMap (orthogonalGroup mem_orthogonalGroup_iff)
 
 /-- Conjugation by an isometric equivalence carries `O(Q₁)` onto `O(Q₂)`. -/
 private theorem map_orthogonalGroup (e : Q₁.IsometryEquiv Q₂) :
@@ -269,20 +282,20 @@ def orthogonalGroupCongr (e : Q₁.IsometryEquiv Q₂) :
 
 @[simp]
 theorem coe_orthogonalGroupCongr_apply (e : Q₁.IsometryEquiv Q₂) (f : orthogonalGroup Q₁) (m : M₂) :
-    (orthogonalGroupCongr e f : M₂ ≃ₗ[R] M₂) m
+    (e.orthogonalGroupCongr f : M₂ ≃ₗ[R] M₂) m
       = e.toLinearEquiv ((f : M₁ ≃ₗ[R] M₁) (e.toLinearEquiv.symm m)) := by
   simp [orthogonalGroupCongr, LinearEquiv.autCongr_apply_apply]
 
 @[simp]
 theorem coe_orthogonalGroupCongr_symm_apply (e : Q₁.IsometryEquiv Q₂) (g : orthogonalGroup Q₂)
-    (m : M₁) : ((orthogonalGroupCongr e).symm g : M₁ ≃ₗ[R] M₁) m
+    (m : M₁) : ((e.orthogonalGroupCongr).symm g : M₁ ≃ₗ[R] M₁) m
       = e.toLinearEquiv.symm ((g : M₂ ≃ₗ[R] M₂) (e.toLinearEquiv m)) := by
   simp [orthogonalGroupCongr, LinearEquiv.autCongr_symm_apply_apply]
 
 /-- Transporting the orthogonal group along the identity isometry is the identity equivalence. -/
 @[simp]
 theorem orthogonalGroupCongr_refl :
-    orthogonalGroupCongr (QuadraticMap.IsometryEquiv.refl Q₁) =
+    (QuadraticMap.IsometryEquiv.refl Q₁).orthogonalGroupCongr =
       MulEquiv.refl (orthogonalGroup Q₁) := by
   ext g m
   simp
@@ -290,25 +303,29 @@ theorem orthogonalGroupCongr_refl :
 
 /-- Orthogonal-group transport respects composition of isometries. -/
 @[simp]
-theorem _root_.QuadraticMap.IsometryEquiv.orthogonalGroupCongr_trans
+theorem orthogonalGroupCongr_trans
     (e₁₂ : Q₁.IsometryEquiv Q₂) (e₂₃ : Q₂.IsometryEquiv Q₃) :
-    orthogonalGroupCongr (e₁₂.trans e₂₃) =
-      (orthogonalGroupCongr e₁₂).trans (orthogonalGroupCongr e₂₃) := by
+    (e₁₂.trans e₂₃).orthogonalGroupCongr =
+      e₁₂.orthogonalGroupCongr.trans e₂₃.orthogonalGroupCongr := by
   ext g m
   simp
   rfl
 
 /-- Inverting orthogonal-group transport is transport along the inverse isometry. -/
-theorem _root_.QuadraticMap.IsometryEquiv.orthogonalGroupCongr_symm
+theorem orthogonalGroupCongr_symm
     (e : Q₁.IsometryEquiv Q₂) :
-    (orthogonalGroupCongr e).symm = orthogonalGroupCongr e.symm := by
+    e.orthogonalGroupCongr.symm = e.symm.orthogonalGroupCongr := by
   ext g m
   simp
   rfl
 
 end Congr
 
-end CommSemiring
+end QuadraticMap.IsometryEquiv
+
+namespace TauCeti
+
+namespace QuadraticMap
 
 section Polar
 
@@ -561,26 +578,18 @@ end Det
 
 end QuadraticMap
 
-namespace TauCeti
-
-namespace QuadraticMap
-
-open _root_.QuadraticMap
-
-section Det
-
-variable {R : Type u} {M : Type v} {N : Type w} [CommRing R]
-  [AddCommGroup M] [Module R M] [AddCommMonoid N] [Module R N]
-
-variable {Q : QuadraticMap R M N}
+namespace QuadraticMap.IsometryEquiv
 
 section SpecialCongr
 
-variable {M₁ : Type*} {M₂ : Type*} {M₃ : Type*}
+variable {R : Type u} {M₁ : Type*} {M₂ : Type*} {M₃ : Type*} {N : Type w} [CommRing R]
   [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂] [Module R M₂]
-  [AddCommGroup M₃] [Module R M₃]
+  [AddCommGroup M₃] [Module R M₃] [AddCommMonoid N] [Module R N]
   {Q₁ : QuadraticMap R M₁ N} {Q₂ : QuadraticMap R M₂ N}
   {Q₃ : QuadraticMap R M₃ N}
+
+open TauCeti.QuadraticMap (orthogonalGroup specialOrthogonalGroup
+  mem_specialOrthogonalGroup_iff)
 
 /-- Conjugation by an isometric equivalence carries `SO(Q₁)` onto `SO(Q₂)`. -/
 private theorem map_specialOrthogonalGroup (e : Q₁.IsometryEquiv Q₂) :
@@ -591,7 +600,7 @@ private theorem map_specialOrthogonalGroup (e : Q₁.IsometryEquiv Q₂) :
   constructor
   · rintro ⟨f, hf, rfl⟩
     constructor
-    · exact (orthogonalGroupCongr e ⟨f, hf.1⟩).2
+    · exact (e.orthogonalGroupCongr ⟨f, hf.1⟩).2
     · -- Restate `autCongr` through Mathlib's special-linear congruence.
       rw [LinearEquiv.autCongr_apply]
       exact (SpecialLinearGroup.congr_linearEquiv e.toLinearEquiv ⟨f, hf.2⟩).prop
@@ -599,39 +608,39 @@ private theorem map_specialOrthogonalGroup (e : Q₁.IsometryEquiv Q₂) :
     refine ⟨(LinearEquiv.autCongr e.toLinearEquiv).symm g, ?_,
       (LinearEquiv.autCongr e.toLinearEquiv).apply_symm_apply g⟩
     constructor
-    · exact ((orthogonalGroupCongr e).symm ⟨g, hg.1⟩).2
+    · exact ((e.orthogonalGroupCongr).symm ⟨g, hg.1⟩).2
     · -- Restate inverse `autCongr` through Mathlib's special-linear congruence.
       rw [LinearEquiv.autCongr_symm_apply]
       exact (SpecialLinearGroup.congr_linearEquiv e.toLinearEquiv.symm ⟨g, hg.2⟩).prop
 
 /-- Isometric quadratic maps have isomorphic special orthogonal groups: conjugation by an
 isometric equivalence `e : Q₁ ≃qᵢ Q₂` carries `SO(Q₁)` onto `SO(Q₂)`. -/
-noncomputable def _root_.QuadraticMap.IsometryEquiv.specialOrthogonalGroupCongr
+noncomputable def specialOrthogonalGroupCongr
     (e : Q₁.IsometryEquiv Q₂) :
     specialOrthogonalGroup Q₁ ≃* specialOrthogonalGroup Q₂ :=
-  Subgroup.congrOfMapEq (LinearEquiv.autCongr e.toLinearEquiv)
+  TauCeti.Subgroup.congrOfMapEq (LinearEquiv.autCongr e.toLinearEquiv)
     (map_specialOrthogonalGroup e)
 
 /-- Evaluating special-orthogonal transport is conjugation by the isometry `e`. -/
 @[simp]
-theorem _root_.QuadraticMap.IsometryEquiv.coe_specialOrthogonalGroupCongr_apply
+theorem coe_specialOrthogonalGroupCongr_apply
     (e : Q₁.IsometryEquiv Q₂) (f : specialOrthogonalGroup Q₁) (m : M₂) :
     (e.specialOrthogonalGroupCongr f : M₂ ≃ₗ[R] M₂) m =
       e ((f : M₁ ≃ₗ[R] M₁) (e.symm m)) := by
-  simp only [QuadraticMap.IsometryEquiv.specialOrthogonalGroupCongr,
-    Subgroup.coe_congrOfMapEq_apply,
+  simp only [specialOrthogonalGroupCongr,
+    TauCeti.Subgroup.coe_congrOfMapEq_apply,
     LinearEquiv.autCongr_apply_apply]
   rfl
 
 /-- Evaluating inverse special-orthogonal transport is conjugation by the inverse isometry
 `e.symm`. -/
 @[simp]
-theorem _root_.QuadraticMap.IsometryEquiv.coe_specialOrthogonalGroupCongr_symm_apply
+theorem coe_specialOrthogonalGroupCongr_symm_apply
     (e : Q₁.IsometryEquiv Q₂) (g : specialOrthogonalGroup Q₂) (m : M₁) :
     (e.specialOrthogonalGroupCongr.symm g : M₁ ≃ₗ[R] M₁) m =
       e.symm ((g : M₂ ≃ₗ[R] M₂) (e m)) := by
-  simp only [QuadraticMap.IsometryEquiv.specialOrthogonalGroupCongr,
-    Subgroup.coe_congrOfMapEq_symm_apply,
+  simp only [specialOrthogonalGroupCongr,
+    TauCeti.Subgroup.coe_congrOfMapEq_symm_apply,
     LinearEquiv.autCongr_symm_apply_apply]
   rfl
 
@@ -640,13 +649,13 @@ theorem _root_.QuadraticMap.IsometryEquiv.coe_specialOrthogonalGroupCongr_symm_a
 This has high simplifier priority so it fires before the general `orthogonalDet_apply` projection
 lemma hides the transport. -/
 @[simp high]
-theorem _root_.QuadraticMap.IsometryEquiv.orthogonalDet_orthogonalGroupCongr
+theorem orthogonalDet_orthogonalGroupCongr
     (e : Q₁.IsometryEquiv Q₂) (g : orthogonalGroup Q₁) :
-    _root_.QuadraticMap.orthogonalDet Q₂ (orthogonalGroupCongr e g) =
-      _root_.QuadraticMap.orthogonalDet Q₁ g := by
-  rw [_root_.QuadraticMap.orthogonalDet_apply, _root_.QuadraticMap.orthogonalDet_apply]
+    orthogonalDet Q₂ (e.orthogonalGroupCongr g) =
+      orthogonalDet Q₁ g := by
+  rw [orthogonalDet_apply, orthogonalDet_apply]
   calc
-    LinearEquiv.det ((orthogonalGroupCongr e g : orthogonalGroup Q₂) : M₂ ≃ₗ[R] M₂) =
+    LinearEquiv.det ((e.orthogonalGroupCongr g : orthogonalGroup Q₂) : M₂ ≃ₗ[R] M₂) =
         LinearEquiv.det ((e.toLinearEquiv.symm.trans (g : M₁ ≃ₗ[R] M₁)).trans
           e.toLinearEquiv) := by
       apply congrArg LinearEquiv.det
@@ -658,11 +667,11 @@ theorem _root_.QuadraticMap.IsometryEquiv.orthogonalDet_orthogonalGroupCongr
 /-- Transport of special orthogonal groups commutes with their inclusions into the full
 orthogonal groups. -/
 @[simp]
-theorem _root_.QuadraticMap.IsometryEquiv.specialOrthogonalToOrthogonal_specialOrthogonalGroupCongr
+theorem specialOrthogonalToOrthogonal_specialOrthogonalGroupCongr
     (e : Q₁.IsometryEquiv Q₂) (g : specialOrthogonalGroup Q₁) :
-    _root_.QuadraticMap.specialOrthogonalToOrthogonal Q₂
+    specialOrthogonalToOrthogonal Q₂
         (e.specialOrthogonalGroupCongr g) =
-      orthogonalGroupCongr e (_root_.QuadraticMap.specialOrthogonalToOrthogonal Q₁ g) := by
+      e.orthogonalGroupCongr (specialOrthogonalToOrthogonal Q₁ g) := by
   apply Subtype.ext
   ext m
   simp
@@ -670,7 +679,7 @@ theorem _root_.QuadraticMap.IsometryEquiv.specialOrthogonalToOrthogonal_specialO
 /-- Transporting the special orthogonal group along the identity isometry is the identity
 equivalence. -/
 @[simp]
-theorem _root_.QuadraticMap.IsometryEquiv.specialOrthogonalGroupCongr_refl :
+theorem specialOrthogonalGroupCongr_refl :
     (QuadraticMap.IsometryEquiv.refl Q₁).specialOrthogonalGroupCongr =
       MulEquiv.refl (specialOrthogonalGroup Q₁) := by
   ext g m
@@ -679,7 +688,7 @@ theorem _root_.QuadraticMap.IsometryEquiv.specialOrthogonalGroupCongr_refl :
 
 /-- Special-orthogonal-group transport respects composition of isometries. -/
 @[simp]
-theorem _root_.QuadraticMap.IsometryEquiv.specialOrthogonalGroupCongr_trans
+theorem specialOrthogonalGroupCongr_trans
     (e₁₂ : Q₁.IsometryEquiv Q₂) (e₂₃ : Q₂.IsometryEquiv Q₃) :
     (e₁₂.trans e₂₃).specialOrthogonalGroupCongr =
       e₁₂.specialOrthogonalGroupCongr.trans e₂₃.specialOrthogonalGroupCongr := by
@@ -688,7 +697,7 @@ theorem _root_.QuadraticMap.IsometryEquiv.specialOrthogonalGroupCongr_trans
   rfl
 
 /-- Inverting special-orthogonal-group transport is transport along the inverse isometry. -/
-theorem _root_.QuadraticMap.IsometryEquiv.specialOrthogonalGroupCongr_symm
+theorem specialOrthogonalGroupCongr_symm
     (e : Q₁.IsometryEquiv Q₂) :
     e.specialOrthogonalGroupCongr.symm = e.symm.specialOrthogonalGroupCongr := by
   ext g m
@@ -697,7 +706,12 @@ theorem _root_.QuadraticMap.IsometryEquiv.specialOrthogonalGroupCongr_symm
 
 end SpecialCongr
 
-end Det
+end QuadraticMap.IsometryEquiv
+
+namespace QuadraticMap
+
+open TauCeti.QuadraticMap (orthogonalGroup specialOrthogonalGroup)
+open TauCeti (matrixGeneralLinearEquiv matrixGeneralLinearEquiv_apply)
 
 section Coordinate
 
@@ -705,7 +719,7 @@ variable {R : Type u} [CommSemiring R] {n : Type v} [Fintype n] [DecidableEq n]
   {N : Type w} [AddCommMonoid N] [Module R N]
 
 /-- The coordinate inclusion of an orthogonal group into `GL(n, R)`. -/
-noncomputable def _root_.TauCeti.QuadraticMap.orthogonalToGeneralLinear
+noncomputable def orthogonalToGeneralLinear
     (Q : QuadraticMap R (n → R) N) :
     orthogonalGroup Q →* Matrix.GeneralLinearGroup n R :=
   (matrixGeneralLinearEquiv (n := n) (R := R)).symm.toMonoidHom.comp
@@ -714,7 +728,7 @@ noncomputable def _root_.TauCeti.QuadraticMap.orthogonalToGeneralLinear
 
 /-- An orthogonal transformation acts through its usual coordinate matrix. -/
 @[simp]
-theorem _root_.TauCeti.QuadraticMap.orthogonalToGeneralLinear_apply
+theorem orthogonalToGeneralLinear_apply
     (Q : QuadraticMap R (n → R) N) (g : orthogonalGroup Q) (i j : n) :
     orthogonalToGeneralLinear Q g i j =
       (g : (n → R) ≃ₗ[R] (n → R)) (Pi.single j 1) i := by
@@ -730,7 +744,7 @@ theorem _root_.TauCeti.QuadraticMap.orthogonalToGeneralLinear_apply
 
 /-- The underlying matrix of the coordinate inclusion is the matrix of the linear equivalence. -/
 @[simp]
-theorem _root_.TauCeti.QuadraticMap.coe_orthogonalToGeneralLinear
+theorem coe_orthogonalToGeneralLinear
     (Q : QuadraticMap R (n → R) N) (g : orthogonalGroup Q) :
     ((orthogonalToGeneralLinear Q g : Matrix.GeneralLinearGroup n R) : Matrix n n R) =
       LinearMap.toMatrix' (g : (n → R) ≃ₗ[R] (n → R)).toLinearMap := by
@@ -739,7 +753,7 @@ theorem _root_.TauCeti.QuadraticMap.coe_orthogonalToGeneralLinear
     LinearEquiv.coe_coe]
 
 /-- The coordinate inclusion of an orthogonal group is injective. -/
-theorem _root_.TauCeti.QuadraticMap.orthogonalToGeneralLinear_injective
+theorem orthogonalToGeneralLinear_injective
     (Q : QuadraticMap R (n → R) N) :
     Function.Injective (orthogonalToGeneralLinear Q) :=
   (matrixGeneralLinearEquiv (n := n) (R := R)).symm.injective.comp
@@ -754,14 +768,14 @@ variable {R : Type u} [CommRing R] {n : Type v} [Fintype n] [DecidableEq n]
   {N : Type w} [AddCommMonoid N] [Module R N]
 
 /-- The coordinate inclusion of a special orthogonal group into `GL(n, R)`. -/
-noncomputable def _root_.TauCeti.QuadraticMap.specialOrthogonalToGeneralLinear
+noncomputable def specialOrthogonalToGeneralLinear
     (Q : QuadraticMap R (n → R) N) :
     specialOrthogonalGroup Q →* Matrix.GeneralLinearGroup n R :=
   (orthogonalToGeneralLinear Q).comp (specialOrthogonalToOrthogonal Q)
 
 /-- A special orthogonal transformation acts through its usual coordinate matrix. -/
 @[simp]
-theorem _root_.TauCeti.QuadraticMap.specialOrthogonalToGeneralLinear_apply
+theorem specialOrthogonalToGeneralLinear_apply
     (Q : QuadraticMap R (n → R) N)
     (g : specialOrthogonalGroup Q) (i j : n) :
     specialOrthogonalToGeneralLinear Q g i j =
@@ -787,12 +801,18 @@ theorem _root_.TauCeti.QuadraticMap.specialOrthogonalToGeneralLinear_mulVec
   rfl
 
 /-- The coordinate inclusion of a special orthogonal group is injective. -/
-theorem _root_.TauCeti.QuadraticMap.specialOrthogonalToGeneralLinear_injective
+theorem specialOrthogonalToGeneralLinear_injective
     (Q : QuadraticMap R (n → R) N) :
     Function.Injective (specialOrthogonalToGeneralLinear Q) :=
   (orthogonalToGeneralLinear_injective Q).comp specialOrthogonalToOrthogonal_injective
 
 end SpecialCoordinate
+
+end QuadraticMap
+
+namespace TauCeti
+
+namespace QuadraticMap
 
 section Reflection
 
@@ -920,12 +940,6 @@ theorem coe_reflectionOrthogonal :
     (reflectionOrthogonal Q v : M ≃ₗ[R] M) = reflection Q v := by
   simp only [reflectionOrthogonal]
 
-/-- The orthogonal determinant of a reflection is minus one. -/
-theorem _root_.QuadraticMap.orthogonalDet_reflectionOrthogonal [Module.Free R M]
-    [Module.Finite R M] :
-    orthogonalDet Q (reflectionOrthogonal Q v) = (-1 : Rˣ) := by
-  rw [orthogonalDet_apply, coe_reflectionOrthogonal, det_reflection]
-
 /-- Rescaling the defining vector by an invertible scalar does not change the bundled orthogonal
 reflection. -/
 @[simp]
@@ -960,6 +974,29 @@ theorem reflectionOrthogonal_inv :
 
 end Reflection
 
+end QuadraticMap
+
+end TauCeti
+
+namespace QuadraticMap
+
+variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M]
+  (Q : QuadraticForm R M) (v : M) [Invertible (Q v)]
+
+open TauCeti.QuadraticMap (reflectionOrthogonal coe_reflectionOrthogonal det_reflection)
+
+/-- The orthogonal determinant of a reflection is minus one. -/
+theorem orthogonalDet_reflectionOrthogonal [Module.Free R M]
+    [Module.Finite R M] :
+    orthogonalDet Q (reflectionOrthogonal Q v) = (-1 : Rˣ) := by
+  rw [orthogonalDet_apply, coe_reflectionOrthogonal, det_reflection]
+
+end QuadraticMap
+
+namespace TauCeti
+
+namespace QuadraticMap
+
 section ReflectionMap
 
 variable {R : Type u} {M : Type v} {M₁ : Type*} {M₂ : Type*} [CommRing R]
@@ -989,7 +1026,7 @@ theorem reflection_map (e : Q₁.IsometryEquiv Q₂) (v : M₁) [Invertible (Q�
 to the reflection in `e v`. -/
 theorem orthogonalGroupCongr_reflectionOrthogonal (e : Q₁.IsometryEquiv Q₂) (v : M₁)
     [Invertible (Q₁ v)] [Invertible (Q₂ (e v))] :
-    orthogonalGroupCongr e (reflectionOrthogonal Q₁ v) = reflectionOrthogonal Q₂ (e v) :=
+    e.orthogonalGroupCongr (reflectionOrthogonal Q₁ v) = reflectionOrthogonal Q₂ (e v) :=
   Subtype.ext <| LinearEquiv.ext fun x => by
     simp [reflection_map_apply]
 
@@ -1010,7 +1047,7 @@ theorem mul_reflectionOrthogonal_mul_inv (Q : QuadraticForm R M) (g : orthogonal
   intro _
   rw [reflection_map_apply e v x, ← QuadraticMap.IsometryEquiv.coe_toLinearEquiv e.symm,
     ← QuadraticMap.IsometryEquiv.coe_symm_toLinearEquiv,
-    TauCeti.toLinearEquiv_orthogonalGroupEquivIsometryEquiv,
+    toLinearEquiv_orthogonalGroupEquivIsometryEquiv,
     coe_orthogonalGroupEquivIsometryEquiv]
 
 end ReflectionMap
@@ -1025,13 +1062,35 @@ theorem reflection_apply_eq_sub_div (v : V) [Invertible (Q v)] (x : V) :
     reflection Q v x = x - (polar Q v x / Q v) • v := by
   rw [reflection_apply, invOf_eq_inv, div_eq_inv_mul]
 
+end ReflectionField
+
+end QuadraticMap
+
+end TauCeti
+
+namespace QuadraticForm
+
+variable {K : Type u} {V : Type v} [Field K] [AddCommGroup V] [Module K V]
+variable (Q : QuadraticForm K V)
+
 /-- **The two spellings of the reflection coefficient agree.** Dividing the un-halved polar form by
 `Q v` is the same as dividing twice it by `polar Q v v = 2 • Q v`, the form in which sources whose
 bilinear form `b` satisfies `b v v = Q v` write the reflection. No anisotropy is needed, since both
 sides vanish when `Q v = 0`. -/
-theorem _root_.QuadraticForm.polar_div_eq_two_mul_polar_div_polar [NeZero (2 : K)] (v x : V) :
+theorem polar_div_eq_two_mul_polar_div_polar [NeZero (2 : K)] (v x : V) :
     polar Q v x / Q v = 2 * polar Q v x / polar Q v v := by
   rw [polar_self, nsmul_eq_mul, Nat.cast_ofNat, mul_div_mul_left _ _ two_ne_zero]
+
+end QuadraticForm
+
+namespace TauCeti
+
+namespace QuadraticMap
+
+section ReflectionField
+
+variable {K : Type u} {V : Type v} [Field K] [AddCommGroup V] [Module K V]
+variable (Q : QuadraticForm K V)
 
 /-- The reflection in `v` is `x ↦ x - (2 * polar Q v x / polar Q v v) • v`. -/
 theorem reflection_apply_eq_sub_two_mul_div [NeZero (2 : K)] (v : V) [Invertible (Q v)]
@@ -1087,9 +1146,25 @@ theorem isUnit_sub_or_add_of_map_eq (x y : V) (hxy : Q x = Q y) (hy : Q y ≠ 0)
     exact hy ((mul_eq_zero.mp hzero).resolve_left h4)
   · exact Or.inl hsub
 
+end Field
+
+end CartanDieudonneStep
+
+end QuadraticMap
+
+end TauCeti
+
+namespace QuadraticMap
+
+variable {K : Type u} {V : Type v} [Field K] [AddCommGroup V] [Module K V]
+variable (Q : QuadraticForm K V) [NeZero (2 : K)]
+
+open TauCeti.QuadraticMap (isUnit_sub_or_add_of_map_eq orthogonalGroupEquivIsometryEquiv
+  reflectionOrthogonal reflection_sub_apply_eq_of_map_eq reflection)
+
 /-- **Witt transitivity** (Lam I.4.5): over a field of characteristic different from two, any two
 vectors with the same nonzero value are related by an isometry of the quadratic form. -/
-theorem _root_.QuadraticMap.exists_isometryEquiv_apply_eq_of_map_eq {x y : V} (hxy : Q x = Q y)
+theorem exists_isometryEquiv_apply_eq_of_map_eq {x y : V} (hxy : Q x = Q y)
     (hy : Q y ≠ 0) : ∃ f : Q.IsometryEquiv Q, f x = y := by
   rcases isUnit_sub_or_add_of_map_eq Q x y hxy hy with h | h
   · have := h.invertible
@@ -1102,7 +1177,13 @@ theorem _root_.QuadraticMap.exists_isometryEquiv_apply_eq_of_map_eq {x y : V} (h
     exact ⟨orthogonalGroupEquivIsometryEquiv Q
       (reflectionOrthogonal Q y * reflectionOrthogonal Q (x - -y)), by simp [hneg, map_neg]⟩
 
-end Field
+end QuadraticMap
+
+namespace TauCeti
+
+namespace QuadraticMap
+
+section CartanDieudonneStep
 
 section FixedSubspace
 

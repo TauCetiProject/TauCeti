@@ -497,17 +497,11 @@ theorem exists_equiv_submatrix_GL2CharacterTable_eq_gl2FieldThreeCharacterTable
     · exact exists_steinbergTwist_row hF hu α
     · exact exists_principalSeries_row hF hu s hs
     · exact exists_cuspidal_row hF hu o
-  choose f hf using hrow
-  -- distinct parameters land in distinct rows, because the columns exhaust the classes
-  have hinj : Function.Injective f := fun i i' h => by
-    refine GL2CharacterParam.coe_classFunction_injective (funext fun g => ?_)
-    obtain ⟨j, hj⟩ := ((conjClassesGLFinTwoEquiv (F := F)).bijective.comp
-      (bijective_gl2FieldThreeClassIndex hF)).2 (ConjClasses.mk g)
-    simp only [← GL2CharacterTable_apply (E := E), ← hj, Function.comp_apply, hf, h]
-  have hbij : Function.Bijective f := hinj.bijective_of_nat_card_le (by
-    rw [natCard_GL2CharacterParam, hF, Nat.card_fin]
-    norm_num)
-  refine ⟨(Equiv.ofBijective f hbij).symm, Matrix.ext fun k j => ?_⟩
-  rw [submatrix_apply, Function.comp_apply, hf, Equiv.ofBijective_apply_symm_apply f hbij k]
+  apply exists_equiv_submatrix_GL2CharacterTable_eq
+    (conjClassesGLFinTwoEquiv ∘ gl2FieldThreeClassIndex F)
+    ((conjClassesGLFinTwoEquiv (F := F)).bijective.comp (bijective_gl2FieldThreeClassIndex hF))
+    gl2FieldThreeCharacterTable hrow
+  rw [natCard_GL2CharacterParam, hF, Nat.card_fin]
+  norm_num
 
 end TauCeti

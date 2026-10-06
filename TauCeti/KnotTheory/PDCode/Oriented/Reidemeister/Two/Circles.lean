@@ -53,7 +53,7 @@ def twoCircleClasp (o₁ o₂ b : Bool) : OrientedPDCode 2 where
       Equiv.symm_apply_apply]
     fin_cases i <;> fin_cases s <;> simp [oppositeCrossingSlot_apply]
   crossinglessComponents := 0
-  crossinglessComponents_card := by simp
+  card_crossinglessComponents := by simp
 
 /-- Forgetting orientation gives the closed unoriented clasp. -/
 @[simp] theorem toPDCode_twoCircleClasp (o₁ o₂ b : Bool) :

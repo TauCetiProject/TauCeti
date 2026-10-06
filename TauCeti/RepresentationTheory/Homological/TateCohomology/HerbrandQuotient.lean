@@ -9,6 +9,7 @@ public import TauCeti.RepresentationTheory.Homological.TateCohomology.LowDegree
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Periodic
 import TauCeti.LinearAlgebra.LinearMap.Cardinality
 import Mathlib.RepresentationTheory.Homological.FiniteCyclic
+import TauCeti.RepresentationTheory.Homological.TateCohomology.Finite
 import TauCeti.RepresentationTheory.Invariants
 
 /-!

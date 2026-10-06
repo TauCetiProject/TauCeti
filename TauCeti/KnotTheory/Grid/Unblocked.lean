@@ -204,6 +204,23 @@ theorem renameMatrixMap_apply_apply (σ : Equiv.Perm (Fin n))
       Finset.sum_eq_single y (fun z _ hz => by simp [hz.symm]) (by simp),
       Finsupp.single_eq_same, Finsupp.sum_single_index (by simp)]
 
+/-- A monomial of the coefficient at `y` of `GridChain.renameMatrixMap R σ M c` comes from a
+monomial of an input coefficient `c x` and a monomial of the matrix entry `M x y`; its exponent
+is the `σ`-renaming of the former plus the latter. -/
+theorem exists_eq_mapDomain_add_of_mem_support_sum_rename_mul (c : GridChainMinus R n)
+    (σ : Equiv.Perm (Fin n)) (M : GridState n → GridState n → MvPolynomial (Fin n) R)
+    {y : GridState n} {e : Fin n →₀ ℕ}
+    (he : e ∈ (c.sum fun x p => rename σ p * M x y).support) :
+    ∃ x, ∃ d ∈ (c x).support, ∃ w ∈ (M x y).support,
+      e = Finsupp.mapDomain σ d + w := by
+  classical
+  rw [Finsupp.sum] at he
+  obtain ⟨x, -, hx⟩ := Finset.mem_biUnion.mp (MvPolynomial.support_sum he)
+  obtain ⟨d', hd', w, hw, rfl⟩ := Finset.mem_add.mp (MvPolynomial.support_mul _ _ hx)
+  rw [support_rename_of_injective σ.injective, Finset.mem_image] at hd'
+  obtain ⟨d, hd, rfl⟩ := hd'
+  exact ⟨x, d, hd, w, hw, rfl⟩
+
 end GridChain
 
 namespace GridDiagram
@@ -233,6 +250,12 @@ theorem OSet_inter_eq_image_OColumnsOfSquares (s : Finset (Fin n × Fin n)) :
     exact ⟨p.1, by rwa [hp], by rw [hp]⟩
   · rintro ⟨c, hc, rfl⟩
     exact ⟨rfl, hc⟩
+
+/-- The number of covered `O`-columns is the number of `O`-markings in a set of squares. -/
+theorem card_OColumnsOfSquares (s : Finset (Fin n × Fin n)) :
+    (G.OColumnsOfSquares s).card = (G.OSet ∩ s).card := by
+  rw [OSet_inter_eq_image_OColumnsOfSquares, Finset.card_image_of_injective _
+    fun a b hab => congrArg Prod.fst hab]
 
 /-- The columns whose `O`-marking lies in the squares a toroidal rectangle covers.
 
@@ -275,8 +298,7 @@ theorem OSet_inter_coveredSquares (r : GridRectangle n) :
 a grid diagram has exactly one `O`-marking in each column. -/
 theorem card_OColumns (r : GridRectangle n) :
     (G.OColumns r).card = (G.OSet ∩ r.coveredSquares).card := by
-  rw [OSet_inter_coveredSquares, Finset.card_image_of_injective]
-  exact fun a b hab => congrArg Prod.fst hab
+  exact G.card_OColumnsOfSquares r.coveredSquares
 
 /-- A rectangle covers no `O`-column exactly when its covered squares carry no `O`-marking. -/
 theorem OColumns_eq_empty_iff (r : GridRectangle n) :

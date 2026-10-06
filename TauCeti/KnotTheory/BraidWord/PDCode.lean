@@ -356,7 +356,7 @@ def closure : OrientedPDCode w.length where
     fin_cases slot <;> decide
   crossinglessComponents :=
     Multiset.replicate (Finset.univ.filter fun p ↦ w.crossingsAt p = []).card true
-  crossinglessComponents_card := Multiset.card_replicate _ _
+  card_crossinglessComponents := Multiset.card_replicate _ _
 
 /-- The half-edges of the closure are labelled by their crossing slots. -/
 @[simp]

@@ -238,6 +238,17 @@ theorem disjoint_coveredSquares_XSet_iff (P : GridInitialPentagonBetween a s x y
     · exact h₂ (hpa ▸ hr)
     · exact h₃ (hpb ▸ hr)
 
+/-- Initial-side pentagons with the same underlying toroidal rectangle cover the same squares. -/
+theorem coveredSquares_eq_of_toGridRectangle_eq {u v : GridState n}
+    (P : GridInitialPentagonBetween a s x y) (Q : GridInitialPentagonBetween a s u v)
+    (h : P.toGridRectangle = Q.toGridRectangle) : P.coveredSquares = Q.coveredSquares := by
+  obtain ⟨-, hright, hbottom, htop⟩ := GridRectangle.ext_iff.mp h
+  simp only [GridRectangleBetween.toGridRectangle_right,
+    GridRectangleBetween.toGridRectangle_bottom,
+    GridRectangleBetween.toGridRectangle_top] at hright hbottom htop
+  ext p
+  rw [P.mem_coveredSquares, Q.mem_coveredSquares, hright, hbottom, htop]
+
 end GridInitialPentagonBetween
 
 namespace GridDiagram
@@ -277,6 +288,17 @@ noncomputable def initialPentagonWeight {x y : GridState n} (C : ColumnCommutati
     (P : GridInitialPentagonBetween C.column C.turnRow x y) : MvPolynomial (Fin n) R :=
   ∏ c ∈ G.OColumnsOfSquares P.coveredSquares,
     MvPolynomial.X (Equiv.swap C.column (finRotate n C.column) c)
+
+/-- The weight of an initial-side pentagon is the monomial with one renamed variable for each
+covered `O`-marking. -/
+theorem initialPentagonWeight_eq_monomial {x y : GridState n}
+    (C : ColumnCommutationData G) (P : GridInitialPentagonBetween C.column C.turnRow x y) :
+    G.initialPentagonWeight R C P =
+      monomial (∑ c ∈ G.OColumnsOfSquares P.coveredSquares,
+        Finsupp.single (Equiv.swap C.column (finRotate n C.column) c) 1) 1 := by
+  classical
+  rw [initialPentagonWeight, monomial_sum_one]
+  simp only [← X_pow_eq_monomial, pow_one]
 
 /-- The weight of a pentagon turning on its initial side as a product over the squares it covers:
 the renamed variable of the column at each `O`-marked square and `1` elsewhere. -/

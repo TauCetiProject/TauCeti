@@ -158,11 +158,11 @@ variable {R : Type u} [CommRing R]
 @[simp]
 theorem orthogonalGroupCongr_lipschitzToOrthogonal [Invertible (2 : R)]
     (e : Q₁.IsometryEquiv Q₂) (x : lipschitzGroup Q₁) :
-    TauCeti.QuadraticMap.orthogonalGroupCongr e
+    e.orthogonalGroupCongr
         (CliffordAlgebra.lipschitzToOrthogonal Q₁ x) =
       CliffordAlgebra.lipschitzToOrthogonal Q₂ (e.toIsometry.lipschitzGroupMap x) := by
   ext m
-  rw [TauCeti.QuadraticMap.coe_orthogonalGroupCongr_apply,
+  rw [e.coe_orthogonalGroupCongr_apply,
     CliffordAlgebra.coe_lipschitzToOrthogonal_apply,
     CliffordAlgebra.coe_lipschitzToOrthogonal_apply]
   -- The preceding application lemmas leave both sides as bundled linear
