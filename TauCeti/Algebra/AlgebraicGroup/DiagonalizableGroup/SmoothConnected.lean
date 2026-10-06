@@ -5,10 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.Connected.CommHopfAlgCat
 public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.FiniteType
 public import TauCeti.Algebra.AlgebraicGroup.GeometricallyReduced.CommHopfAlgCat
+public import TauCeti.RingTheory.Idempotents.Connected.Spectrum
 import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.BaseChange
+import Mathlib.CategoryTheory.ConcreteCategory.EpiMono
 
 /-!
 # Geometric connectedness and reducedness of diagonalizable groups
@@ -20,6 +23,10 @@ of every split torus.
 
 ## Main declarations
 
+* `TauCeti.DiagonalizableGroup.connectedSpace_primeSpectrum_coordinateRing`: a diagonalizable
+  coordinate ring that is a domain has connected prime spectrum.
+* `TauCeti.DiagonalizableGroup.connectedSpace_primeSpectrum_baseChange_coordinateRing`:
+  the base-changed coordinate ring has connected prime spectrum when `K[G]` is a domain.
 * `TauCeti.DiagonalizableGroup.geometricallyConnected_coordinateRing`: the coordinate ring of a
   unique-product diagonalizable group is geometrically connected.
 * `TauCeti.DiagonalizableGroup.geometricallyReduced_coordinateRing`: the coordinate ring of a
@@ -36,13 +43,33 @@ This establishes the geometric connectedness and reducedness of the split-torus 
 
 public section
 
+open CategoryTheory
 open scoped TensorProduct
 
 namespace TauCeti
 
-universe u
+universe u v w
 
 namespace DiagonalizableGroup
+
+/-- The coordinate ring of a diagonalizable group has connected prime spectrum when it is a
+domain. -/
+theorem connectedSpace_primeSpectrum_coordinateRing
+    (K : Type v) [CommRing K] (G : FGCommGrpCat.{w}) [IsDomain (MonoidAlgebra K G)] :
+    ConnectedSpace (PrimeSpectrum (coordinateRing K G).obj) :=
+  inferInstanceAs (ConnectedSpace (PrimeSpectrum (MonoidAlgebra K G)))
+
+/-- The base change of a diagonalizable-group coordinate ring has connected prime spectrum when
+the resulting group algebra is a domain. -/
+theorem connectedSpace_primeSpectrum_baseChange_coordinateRing
+    (k : Type u) (K : Type v) [CommRing k] [CommRing K] [Algebra k K]
+    (G : FGCommGrpCat.{u}) [IsDomain (MonoidAlgebra K G)] :
+    ConnectedSpace (PrimeSpectrum
+      (CommHopfAlgCat.baseChange (K := K) (coordinateRing k G).obj)) := by
+  let e := baseChangeCoordinateHopfAlgebraIso k K G
+  have := connectedSpace_primeSpectrum_coordinateRing K G
+  exact connectedSpace_primeSpectrum_of_injective e.hom.hom.toAlgHom.toRingHom
+    (ConcreteCategory.bijective_of_isIso e.hom).1
 
 /-- Scalar extension identifies a diagonalizable-group coordinate ring with the corresponding
 group algebra over the extension field. -/

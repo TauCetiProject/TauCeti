@@ -97,8 +97,8 @@ Hopf ideal. -/
 theorem kostantToralPointsSubgroup_def (A : Type v) [CommRing A] :
     kostantToralPointsSubgroup e h ρ M hM hnil b wt A =
       GeneralLinear.hopfIdealPointsSubgroup n
-        (kostantToralDefiningIdeal e h ρ M hM hnil b wt) A := by
-  rw [kostantToralPointsSubgroup]
+        (kostantToralDefiningIdeal e h ρ M hM hnil b wt) A :=
+  (rfl)
 
 /-- Membership in the points of the toral closure is vanishing on its defining Hopf ideal. -/
 @[simp]
@@ -111,8 +111,9 @@ theorem mem_kostantToralPointsSubgroup_iff (A : Type v) [CommRing A]
   exact GeneralLinear.mem_hopfIdealPointsSubgroup_iff n
     (kostantToralDefiningIdeal e h ρ M hM hnil b wt) A g
 
-/-- Adjoining the weight torus can only enlarge the algebra-valued point subgroup cut out by the
-root-generated defining ideal. -/
+/-- The algebra-valued point subgroup of the toral closure contains the root-generated point
+subgroup: adjoining the weight torus to the generators enlarges the represented point subgroup (by
+shrinking the defining ideal). -/
 theorem kostantGeneratedPointsSubgroup_le_toralPoints (A : Type v) [CommRing A] :
     kostantGeneratedPointsSubgroup e h ρ M hM hnil b A ≤
       kostantToralPointsSubgroup e h ρ M hM hnil b wt A := by
@@ -311,16 +312,11 @@ noncomputable def kostantToralSchemePointMulEquiv (A : Type) [CommRing A] :
     WithConv (CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra ℤ n)
         (kostantToralDefiningIdeal e h ρ M hM hnil b wt) →ₐ[ℤ] A) ≃*
       ((Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of ℤ)) ⟶
-        (letI := (braidedAlgSpec (R := CommRingCat.of ℤ)).toMonoidal
-         ((algSpec (CommRingCat.of ℤ)).mapGrp.obj (Opposite.unop
-           ((commHopfAlgCatEquivCogrpCommAlgCat ℤ).functor.obj
-             (CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra ℤ n)
-               (kostantToralDefiningIdeal e h ρ M hM hnil b wt))))).X)) :=
+        (kostantToralGroupScheme e h ρ M hM hnil b wt).X) :=
   CommHopfAlgCat.mapMulEquivOfPresentation _ A
     (kostantToralGroupScheme_eq_hopfSpec e h ρ M hM hnil b wt)
 
 /-- The underlying spectrum map of a quotient point of the toral closure. -/
-@[simp]
 theorem kostantToralSchemePointMulEquiv_apply_left (A : Type) [CommRing A]
     (q : WithConv (CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra ℤ n)
       (kostantToralDefiningIdeal e h ρ M hM hnil b wt) →ₐ[ℤ] A)) :

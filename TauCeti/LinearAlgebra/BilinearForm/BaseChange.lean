@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.BilinearForm.IsometryEquiv
 public import Mathlib.LinearAlgebra.BilinearForm.TensorProduct
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.RingTheory.IsTensorProduct
@@ -27,6 +28,8 @@ base change acts entrywise on the Gram matrix of a basis and maps its determinan
 
 ## Main declarations
 
+* `LinearMap.BilinForm.liftBaseChange`: lifting a form-preserving map preserves the
+  base-changed form, without assuming the map exhibits a base change.
 * `IsBaseChange.bilinForm_baseChange`: if a bilinear form restricts along a map to a
   second form, evaluating it through the associated base-change equivalence agrees with the
   canonical base change of the second form.
@@ -39,6 +42,8 @@ base change acts entrywise on the Gram matrix of a basis and maps its determinan
   domain is, with no hypothesis on the structure map.
 * `TauCeti.nondegenerate_baseChange_iff`: along an injective structure map between
   integral domains the implication is an equivalence.
+* `LinearMap.BilinForm.IsometryEquiv.baseChange`: an isometric equivalence of bilinear forms
+  base-changes to an isometric equivalence of their base changes.
 -/
 
 public section
@@ -53,14 +58,14 @@ variable {R : Type*} {A : Type*} {M : Type*} {N : Type*}
 variable [CommSemiring R] [CommSemiring A] [Algebra R A]
 variable [AddCommMonoid M] [Module R M]
 variable [AddCommMonoid N] [Module A N] [Module R N] [IsScalarTower R A N]
-variable {f : M →ₗ[R] N} (h : IsBaseChange A f)
+variable {f : M →ₗ[R] N}
 
-/-- If `B` restricts along `f` to `B'`, evaluating `B` on base-changed vectors agrees with the
-canonical base change of `B'`. -/
-theorem _root_.IsBaseChange.bilinForm_baseChange (B' : LinearMap.BilinForm R M)
+/-- If `B` restricts along `f` to `B'`, evaluating `B` on the images of `f.liftBaseChange A`
+agrees with the canonical base change of `B'`. The map `f` need not exhibit a base change. -/
+theorem _root_.LinearMap.BilinForm.liftBaseChange (B' : LinearMap.BilinForm R M)
     (B : LinearMap.BilinForm A N)
     (hB : ∀ x y : M, B (f x) (f y) = algebraMap R A (B' x y)) (x y : A ⊗[R] M) :
-    B (h.equiv x) (h.equiv y) = B'.baseChange A x y := by
+    B (f.liftBaseChange A x) (f.liftBaseChange A y) = B'.baseChange A x y := by
   induction x using TensorProduct.inductionOn with
   | add x₁ x₂ hx₁ hx₂ =>
     simp only [map_add, LinearMap.add_apply, hx₁, hx₂]
@@ -69,10 +74,21 @@ theorem _root_.IsBaseChange.bilinForm_baseChange (B' : LinearMap.BilinForm R M)
     | add y₁ y₂ hy₁ hy₂ =>
       simp only [map_add, hy₁, hy₂]
     | tmul a' m' =>
-      simp only [IsBaseChange.equiv_tmul, LinearMap.BilinForm.smul_left,
+      simp only [LinearMap.liftBaseChange_tmul, LinearMap.BilinForm.smul_left,
         LinearMap.BilinForm.smul_right, LinearMap.BilinForm.baseChange_tmul,
         hB, Algebra.smul_def]
       ring
+
+/-- If `B` restricts along a base-change map to `B'`, its base-change equivalence preserves
+the canonical base change of `B'`. -/
+theorem _root_.IsBaseChange.bilinForm_baseChange (h : IsBaseChange A f)
+    (B' : LinearMap.BilinForm R M) (B : LinearMap.BilinForm A N)
+    (hB : ∀ x y : M, B (f x) (f y) = algebraMap R A (B' x y)) (x y : A ⊗[R] M) :
+    B (h.equiv x) (h.equiv y) = B'.baseChange A x y := by
+  have hf : f.liftBaseChange A = h.equiv.toLinearMap := by
+    ext
+    simp [IsBaseChange.equiv_tmul]
+  simpa only [hf, LinearEquiv.coe_coe] using B'.liftBaseChange B hB x y
 
 end
 
@@ -142,5 +158,36 @@ theorem nondegenerate_baseChange_iff [Finite ι] [IsDomain A] [FaithfulSMul R A]
     ((LinearMap.BilinForm.nondegenerate_iff_det_ne_zero b).mp h)
 
 end Nondegenerate
+
+section IsometryEquiv
+
+variable {R A M₁ M₂ : Type*}
+variable [CommSemiring R] [CommSemiring A] [Algebra R A]
+variable [AddCommMonoid M₁] [Module R M₁] [AddCommMonoid M₂] [Module R M₂]
+variable {B₁ : LinearMap.BilinForm R M₁} {B₂ : LinearMap.BilinForm R M₂}
+
+variable (A) in
+/-- Base change of an isometric equivalence of bilinear forms: the base change of the underlying
+linear equivalence is an isometric equivalence of the base-changed forms. -/
+def _root_.LinearMap.BilinForm.IsometryEquiv.baseChange (f : B₁.IsometryEquiv B₂) :
+    (B₁.baseChange A).IsometryEquiv (B₂.baseChange A) where
+  toLinearEquiv := (f : M₁ ≃ₗ[R] M₂).baseChange R A M₁ M₂
+  map_app' x y := by
+    simp only [AddHom.toFun_eq_coe, LinearMap.coe_toAddHom, LinearEquiv.coe_coe]
+    induction x using TensorProduct.inductionOn with
+    | add x₁ x₂ h₁ h₂ => simp only [map_add, LinearMap.add_apply, h₁, h₂]
+    | tmul a m =>
+      induction y using TensorProduct.inductionOn with
+      | add y₁ y₂ h₁ h₂ => simp only [map_add, h₁, h₂]
+      | tmul b n => simp
+
+/-- On pure tensors, a base-changed isometric equivalence applies the original equivalence to the
+vector. -/
+@[simp]
+theorem _root_.LinearMap.BilinForm.IsometryEquiv.baseChange_tmul (f : B₁.IsometryEquiv B₂)
+    (a : A) (m : M₁) : f.baseChange A (a ⊗ₜ m) = a ⊗ₜ f m :=
+  LinearEquiv.baseChange_tmul R A M₁ M₂ (e := (f : M₁ ≃ₗ[R] M₂)) a m
+
+end IsometryEquiv
 
 end TauCeti

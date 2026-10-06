@@ -70,13 +70,8 @@ isomorphism below after identifying the two doubled path algebras.
 
 ## References
 
-This is the gauge clause of Layer 4 of `TauCetiRoadmap/ZigzagPreprojective/README.md`, which asks
-to reverse a chosen arrow by an algebra isomorphism rescaling one of the exchanged arrows by `-1`,
-and then to generalize from signs to an antisymmetric sign function on oriented edges and prove
-independence under the explicit gauge change. This file proves that gauge clause; the cross-quiver
-clause preceding it is proved in
-`TauCeti.RepresentationTheory.Quiver.Preprojective.Orientation`. See Crawley-Boevey, *Quiver
-algebras, weighted projective lines, and the Deligne--Simpson problem*, Section 1.
+See Crawley-Boevey, *Quiver algebras, weighted projective lines, and the Deligne--Simpson
+problem*, Section 1.
 -/
 
 public section

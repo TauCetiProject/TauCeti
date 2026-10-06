@@ -88,12 +88,12 @@ open Function Set Matrix RootPairing
 -- makes it a local instance rather than a global one.
 attribute [local instance 100] LieRing.ofAssociativeRing
 
-variable {ι ι₂ R M N M₂ N₂ : Type*} [Finite ι] [Finite ι₂]
-  [CommRing R] [CharZero R] [IsDomain R]
+variable {ι ι₂ R M N M₂ N₂ : Type*}
+  [CommRing R]
   [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
   [AddCommGroup M₂] [Module R M₂] [AddCommGroup N₂] [Module R N₂]
   {P : RootPairing ι R M N} {P₂ : RootPairing ι₂ R M₂ N₂}
-  [P.IsCrystallographic] [P₂.IsCrystallographic] {b : P.Base} {b₂ : P₂.Base}
+  {b : P.Base} {b₂ : P₂.Base}
   (g : P.Equiv P₂) (τ : b.support ≃ b₂.support)
 
 /-- The equivalence of the index types of Geck's matrices formed from an equivalence `τ` of base
@@ -105,29 +105,21 @@ matrix lemmas separately assume that these agree on the base. -/
 def geckIndexEquiv : (b.support ⊕ ι) ≃ (b₂.support ⊕ ι₂) :=
   Equiv.sumCongr τ g.indexEquiv
 
-omit [Finite ι] [Finite ι₂] [CharZero R] [IsDomain R] [P.IsCrystallographic]
-  [P₂.IsCrystallographic] in
 @[simp]
 theorem geckIndexEquiv_apply_inl (i : b.support) :
     geckIndexEquiv g τ (Sum.inl i) = Sum.inl (τ i) := by
   simp [geckIndexEquiv]
 
-omit [Finite ι] [Finite ι₂] [CharZero R] [IsDomain R] [P.IsCrystallographic]
-  [P₂.IsCrystallographic] in
 @[simp]
 theorem geckIndexEquiv_apply_inr (i : ι) :
     geckIndexEquiv g τ (Sum.inr i) = Sum.inr (g.indexEquiv i) := by
   simp [geckIndexEquiv]
 
-omit [Finite ι] [Finite ι₂] [CharZero R] [IsDomain R] [P.IsCrystallographic]
-  [P₂.IsCrystallographic] in
 @[simp]
 theorem geckIndexEquiv_symm_apply_inl (i : b₂.support) :
     (geckIndexEquiv g τ).symm (Sum.inl i) = Sum.inl (τ.symm i) := by
   simp [geckIndexEquiv]
 
-omit [Finite ι] [Finite ι₂] [CharZero R] [IsDomain R] [P.IsCrystallographic]
-  [P₂.IsCrystallographic] in
 @[simp]
 theorem geckIndexEquiv_symm_apply_inr (i : ι₂) :
     (geckIndexEquiv g τ).symm (Sum.inr i) = Sum.inr (g.indexEquiv.symm i) := by
@@ -140,23 +132,17 @@ matrix lemmas separately assume that the two component equivalences agree on the
 def geckModuleEquiv : ((b.support ⊕ ι) → R) ≃ₗ[R] ((b₂.support ⊕ ι₂) → R) :=
   LinearEquiv.funCongrLeft R R (geckIndexEquiv g τ).symm
 
-omit [Finite ι] [Finite ι₂] [CharZero R] [IsDomain R] [P.IsCrystallographic]
-  [P₂.IsCrystallographic] in
 @[simp]
 theorem geckModuleEquiv_apply (v : (b.support ⊕ ι) → R) (x : b₂.support ⊕ ι₂) :
     geckModuleEquiv g τ v x = v ((geckIndexEquiv g τ).symm x) := by
   simp [geckModuleEquiv, LinearEquiv.funCongrLeft_apply, LinearMap.funLeft_apply]
 
-omit [Finite ι] [Finite ι₂] [CharZero R] [IsDomain R] [P.IsCrystallographic]
-  [P₂.IsCrystallographic] in
 @[simp]
 theorem geckModuleEquiv_symm_apply (v : (b₂.support ⊕ ι₂) → R) (x : b.support ⊕ ι) :
     (geckModuleEquiv g τ).symm v x = v (geckIndexEquiv g τ x) := by
   simp [geckModuleEquiv, LinearEquiv.funCongrLeft_symm, LinearEquiv.funCongrLeft_apply,
     LinearMap.funLeft_apply]
 
-omit [Finite ι] [Finite ι₂] [CharZero R] [IsDomain R] [P.IsCrystallographic]
-  [P₂.IsCrystallographic] in
 /-- The coordinate permutation carries the coordinate vector at `x` to the one at
 `geckIndexEquiv g τ x`. Taking `r = 1` this says that it carries Geck's `u i` and `v i` to `u (τ i)`
 and `v (g.indexEquiv i)`. -/
@@ -170,8 +156,6 @@ section
 
 variable [DecidableEq ι] [Fintype ι] [DecidableEq ι₂] [Fintype ι₂]
 
-omit [Finite ι] [Finite ι₂] [CharZero R] [IsDomain R] [P.IsCrystallographic]
-  [P₂.IsCrystallographic] in
 /-- The coordinate permutation intertwines the action of a matrix with the action of its
 conjugate. -/
 @[simp]
@@ -187,7 +171,6 @@ theorem geckModuleEquiv_mulVec (A : Matrix (b.support ⊕ ι) (b.support ⊕ ι)
 
 end
 
-omit [CharZero R] [IsDomain R] in
 private theorem reindexAlgEquiv_eq_of_submatrix
     {κ κ₂ : Type*} [DecidableEq κ] [Fintype κ] [DecidableEq κ₂] [Fintype κ₂]
     (e : κ ≃ κ₂) {A : Matrix κ κ R} {B : Matrix κ₂ κ₂ R}
@@ -197,12 +180,12 @@ private theorem reindexAlgEquiv_eq_of_submatrix
 
 section Numbered
 
+variable [CharZero R] [P.IsCrystallographic] [P₂.IsCrystallographic]
 variable (hτ : ∀ i : b.support, (τ i : ι₂) = g.indexEquiv i)
 include hτ
 
 /-! ## Conjugating the numbered matrices -/
 
-omit [Finite ι] [Finite ι₂] [IsDomain R] in
 /-- The entrywise computation behind `TauCeti.reindex_geckIndexEquiv_h`: pulling back
 `RootPairing.GeckConstruction.h (τ i)` along the index equivalence gives the matrix numbered by
 `i`. -/
@@ -217,6 +200,10 @@ private theorem submatrix_geckIndexEquiv_h (i : b.support) :
       GeckConstruction.h_def,
       fromBlocks_apply₁₁, fromBlocks_apply₁₂, fromBlocks_apply₂₁, fromBlocks_apply₂₂,
       Matrix.zero_apply, diagonal_apply, Equiv.apply_eq_iff_eq, hτ, pairingIn_indexEquiv]
+
+section RootGenerators
+
+variable [Finite ι] [Finite ι₂] [IsDomain R]
 
 /-- The entrywise computation behind `TauCeti.reindex_geckIndexEquiv_e`: pulling back
 `RootPairing.GeckConstruction.e (τ i)` along the index equivalence gives the matrix numbered by
@@ -254,11 +241,12 @@ private theorem submatrix_geckIndexEquiv_f (i : b.support) :
       Base.cartanMatrixIn_def, pairingIn_indexEquiv, root_indexEquiv_eq_sub_iff,
       chainTopCoeff_indexEquiv]
 
-section
+end RootGenerators
+
+section Reindex
 
 variable [DecidableEq ι] [Fintype ι] [DecidableEq ι₂] [Fintype ι₂]
 
-omit [Finite ι] [Finite ι₂] [IsDomain R] in
 /-- Conjugation by the index permutation carries the Cartan generator `h i` to the one
 numbered by `τ i`. -/
 @[simp]
@@ -266,6 +254,10 @@ theorem reindex_geckIndexEquiv_h (i : b.support) :
     reindexAlgEquiv R R (geckIndexEquiv g τ) (GeckConstruction.h (b := b) (R := R) i) =
       GeckConstruction.h (b := b₂) (τ i) :=
   reindexAlgEquiv_eq_of_submatrix (geckIndexEquiv g τ) (submatrix_geckIndexEquiv_h g τ hτ i)
+
+section LieAlgebra
+
+variable [IsDomain R]
 
 /-- Conjugation by the index permutation carries the raising matrix numbered by `i` to the one
 numbered by `τ i`. -/
@@ -354,13 +346,14 @@ theorem geckLieEquivOfEquiv_f (i : b.support) :
   apply Subtype.ext
   simpa using reindex_geckIndexEquiv_f g τ hτ i
 
-end
+end LieAlgebra
 
-section
+end Reindex
+
+section MulVecAction
 
 variable [Fintype ι] [Fintype ι₂]
 
-omit [Finite ι] [Finite ι₂] [IsDomain R] in
 /-- The coordinate permutation carries the action of the Cartan generator `h i` to the
 action of the one numbered by `τ i`. -/
 @[simp]
@@ -369,6 +362,10 @@ theorem geckModuleEquiv_mulVec_h (i : b.support) (v : (b.support ⊕ ι) → R) 
       GeckConstruction.h (b := b₂) (τ i) *ᵥ geckModuleEquiv g τ v := by
   classical
   rw [geckModuleEquiv_mulVec, reindex_geckIndexEquiv_h g τ hτ]
+
+section RootMulVec
+
+variable [IsDomain R]
 
 /-- The coordinate permutation carries the action of the raising matrix numbered by `i` to the
 action of the one numbered by `τ i`. This is the intertwining relation that a numbered symmetry of
@@ -389,7 +386,9 @@ theorem geckModuleEquiv_mulVec_f (i : b.support) (v : (b.support ⊕ ι) → R) 
   classical
   rw [geckModuleEquiv_mulVec, reindex_geckIndexEquiv_f g τ hτ]
 
-end
+end RootMulVec
+
+end MulVecAction
 
 end Numbered
 

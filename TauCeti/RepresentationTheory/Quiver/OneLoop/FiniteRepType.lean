@@ -73,7 +73,7 @@ representation is the same criterion read in the base field.
 
 The quiver `•↺` itself -- `TauCeti.Quiver.OneLoop`, with its `Quiver` instance and its loop
 `TauCeti.Quiver.OneLoop.loop` -- is defined in
-`TauCeti.RepresentationTheory.Quiver.OneLoop.Basic`, which carries the vertex and arrow data alone;
+`TauCeti.RepresentationTheory.Quiver.OneLoop.Basic`, which carries the vertex, arrow, and path data;
 the path-algebra results cited under "References" are not imported here.
 
 `TauCeti.oneLoopRep` and `TauCeti.oneLoopNilpotentRep` carry `@[expose]` because the vertex space of
@@ -86,7 +86,7 @@ through its definition, and without it even `TauCeti.oneLoopRep_map_loop_apply` 
 This proves the `¬ IsFiniteRepType` half of the loop-quiver worked example of
 `TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`, whose other half -- that the
 path algebra is `k[X]` and is infinite-dimensional -- is `TauCeti.PathAlgebra.oneLoopAlgEquiv`
-together with `TauCeti.not_finiteDimensional_pathAlgebra_oneLoop`.
+together with `TauCeti.not_module_finite_pathAlgebra_oneLoop`.
 -/
 
 public section

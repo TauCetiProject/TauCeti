@@ -38,9 +38,10 @@ roadmap and supplies the grading used by tensor products of DG objects.
 * `TauCeti.InternalGrading.tmul_mem_tensorProduct`: degrees add on pure tensors.
 * `TauCeti.InternalGrading.piTensorProduct_ext`: linear maps from a finite tensor product agree
   when they agree on pure tensors of homogeneous elements.
-* `TauCeti.InternalGrading.multilinearMap_ext`: multilinear maps agree when they agree on tuples
-  of homogeneous elements.
 * `TauCeti.LinearMap.IsHomogeneous.tensorProduct`: tensoring homogeneous maps adds their degrees.
+* `TauCeti.InternalGrading.isHomogeneous_assoc_symm`: reassociation preserves total degree.
+* `TauCeti.InternalGrading.koszulTwist_tensorProduct`: the Koszul twist of the total grading is
+  the tensor product of the Koszul twists of the factors.
 
 The proof reuses Tau Ceti's two-factor internal decomposition theorem
 `DirectSum.IsInternal.tensorProduct`; no formalization is vendored.
@@ -78,18 +79,6 @@ theorem piTensorProduct_ext (G : InternalGrading R M) {n : ℕ}
     intro a ha
     exact Submodule.subset_span ⟨⟨d, ⟨a, ha⟩⟩, rfl⟩
   · exact h
-
-/-- Two multilinear maps on an internally graded module agree if they agree on tuples of
-homogeneous elements. -/
-theorem multilinearMap_ext (G : InternalGrading R M) {n : ℕ}
-    {f g : MultilinearMap R (fun _ : Fin n ↦ M) N}
-    (h : ∀ (d : Fin n → ℤ) (x : Fin n → M), (∀ i, x i ∈ G.piece (d i)) → f x = g x) :
-    f = g := by
-  apply PiTensorProduct.lift.injective
-  apply G.piTensorProduct_ext
-  intro q
-  simpa only [PiTensorProduct.lift.tprod] using
-    h (fun i ↦ (q i).1) (fun i ↦ (q i).2) (fun i ↦ (q i).2.property)
 
 end PiTensorProduct
 
@@ -247,7 +236,47 @@ theorem tmul_mem_tensorProduct (G : InternalGrading R M) (H : InternalGrading R 
   simpa only [add_sub_cancel_left, TensorProduct.mk_apply] using
     Submodule.apply_mem_map₂ (TensorProduct.mk R M N) hx hy
 
+/-- Reassociating a triple tensor product preserves total degree. -/
+theorem isHomogeneous_assoc_symm {P : Type w'} [AddCommMonoid P] [Module R P]
+    (G : InternalGrading R M) (H : InternalGrading R N) (K : InternalGrading R P) :
+    LinearMap.IsHomogeneous (TensorProduct.assoc R M N P).symm.toLinearMap
+      (G.tensorProduct (H.tensorProduct K)).piece ((G.tensorProduct H).tensorProduct K).piece
+      0 := by
+  rw [LinearMap.isHomogeneous_def]
+  intro n z hz
+  rw [tensorProduct_piece_eq_iSup] at hz
+  refine (iSup_le fun p ↦ Submodule.map₂_le.mpr fun x hx t ht ↦ ?_ :
+    _ ≤ (((G.tensorProduct H).tensorProduct K).piece (n + 0)).comap
+      (TensorProduct.assoc R M N P).symm.toLinearMap) hz
+  rw [tensorProduct_piece_eq_iSup] at ht
+  refine (iSup_le fun r ↦ Submodule.map₂_le.mpr fun y hy u hu ↦ ?_ :
+    _ ≤ (((G.tensorProduct H).tensorProduct K).piece (n + 0)).comap
+      ((TensorProduct.assoc R M N P).symm.toLinearMap ∘ₗ TensorProduct.mk R M (N ⊗[R] P) x)) ht
+  rw [Submodule.mem_comap, LinearMap.comp_apply, TensorProduct.mk_apply, TensorProduct.mk_apply,
+    LinearEquiv.coe_coe, TensorProduct.assoc_symm_tmul]
+  have hdeg : n + 0 = p + r + (n - p - r) := by ring
+  rw [hdeg]
+  exact tmul_mem_tensorProduct _ _ (tmul_mem_tensorProduct G H hx hy) hu
+
 end Internal
+
+section KoszulTwist
+
+variable {R : Type u} [CommRing R]
+variable {M : Type v} {N : Type w}
+variable [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
+
+/-- The Koszul twist for the total grading of a tensor product is the tensor product of the
+Koszul twists of the factors. -/
+theorem koszulTwist_tensorProduct (G : InternalGrading R M) (H : InternalGrading R N) (q : ℤ) :
+    (G.tensorProduct H).koszulTwist q = TensorProduct.map (G.koszulTwist q) (H.koszulTwist q) := by
+  refine TensorProduct.ext (G.linearMap_ext fun p x hx ↦ H.linearMap_ext fun r y hy ↦ ?_)
+  simp only [LinearMap.compr₂ₛₗ_apply, TensorProduct.mk_apply, TensorProduct.map_tmul,
+    (G.tensorProduct H).koszulTwist_apply_of_mem (tmul_mem_tensorProduct G H hx hy),
+    G.koszulTwist_apply_of_mem hx, H.koszulTwist_apply_of_mem hy, TensorProduct.smul_tmul_smul,
+    mul_add, Int.negOnePow_add, Units.val_mul, Int.cast_mul]
+
+end KoszulTwist
 
 end InternalGrading
 

@@ -10,6 +10,8 @@ public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.D8Plus.Basic
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.TypeE
 public import TauCeti.LinearAlgebra.RootSystem.E8Coordinates
 
+import Mathlib.Algebra.BigOperators.Field
+
 /-!
 # The spinor glue lattice `D₈⁺` is the `E₈` root lattice
 

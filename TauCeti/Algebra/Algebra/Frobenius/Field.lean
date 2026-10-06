@@ -56,11 +56,11 @@ by a unique unit of the extension. -/
 theorem _root_.LinearMap.existsUnique_unit_apply_eq_apply_mul (s t : L →ₗ[K] K)
     [FiniteDimensional K L] (hs : s ≠ 0) (ht : t ≠ 0) :
     ∃! u : Lˣ, ∀ x : L, t x = s ((u : L) * x) := by
-  let e := s.isFrobeniusFunctional_iff_ne_zero.mpr hs |>.toDualEquiv
+  have hsFrob : s.IsFrobeniusFunctional := s.isFrobeniusFunctional_iff_ne_zero.mpr hs
+  let e := hsFrob.toDualEquiv
   let a := e.symm t
   have hta : e a = t := e.apply_symm_apply t
-  have happly (b x : L) : e b x = s (b * x) :=
-    LinearMap.IsFrobeniusFunctional.toDualEquiv_apply_apply _ b x
+  have happly (b x : L) : e b x = s (b * x) := hsFrob.toDualEquiv_apply_apply b x
   have ha : a ≠ 0 := by
     intro h
     apply ht
@@ -79,5 +79,19 @@ theorem _root_.LinearMap.existsUnique_unit_apply_eq_apply_mul (s t : L →ₗ[K]
         rw [happly]
         exact (hu x).symm
       _ = e a := hta.symm
+
+variable {E : Type*} [AddCommGroup E] [Module L E] [Module K E] [IsScalarTower K L E]
+
+/-- The composite of a nonzero linear functional on a field extension with a nonzero linear
+functional on an `L`-module is nonzero. The restriction of scalars is needed so that the inner
+functional can be composed over the base field. -/
+theorem _root_.LinearMap.comp_restrictScalars_ne_zero (s : L →ₗ[K] K) (t : E →ₗ[L] L)
+    (hs : s ≠ 0) (ht : t ≠ 0) : s.comp (t.restrictScalars K) ≠ 0 := by
+  have ht_surjective : Function.Surjective t :=
+    surjective_of_nonzero_of_finrank_eq_one (Module.finrank_self L) ht
+  intro hcomp
+  apply hs
+  exact Function.Surjective.injective_linearMapComp_right (g := t.restrictScalars K)
+    ht_surjective (by simpa using hcomp)
 
 end TauCeti

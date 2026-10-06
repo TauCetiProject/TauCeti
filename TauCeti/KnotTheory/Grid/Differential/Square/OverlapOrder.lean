@@ -91,7 +91,7 @@ theorem cyclicOrder_of_isEmpty_of_left_eq_left (D : GridRectangleDecomposition x
   rcases hcolumns with hfirstRight | hfirstRight
   · have hnot : D.first.bottom ∉ Grid.cIoo D.first.top D.second.top := by
       intro hrow
-      exact D.second.not_mem_interior_of_isEmpty hsecond
+      exact D.second.notMem_interior_of_isEmpty hsecond
         D.first.right_bottom_mem_target
         (by
           rw [GridRectangle.mem_interior]
@@ -111,7 +111,7 @@ theorem cyclicOrder_of_isEmpty_of_left_eq_left (D : GridRectangleDecomposition x
       Grid.mem_cIoo_cyclic_right hfirstRight
     have hnot : D.second.top ∉ Grid.cIoo D.first.bottom D.first.top := by
       intro hrow
-      exact D.first.not_mem_interior_target_of_isEmpty hfirst
+      exact D.first.notMem_interior_target_of_isEmpty hfirst
         D.second.right_top_mem_source
         (by
           rw [GridRectangle.mem_interior]
@@ -157,7 +157,7 @@ theorem cyclicOrder_of_isEmpty_of_right_eq_right (D : GridRectangleDecomposition
   rcases hcolumns with hfirstLeft | hfirstLeft
   · have hnot : D.first.top ∉ Grid.cIoo D.second.bottom D.first.bottom := by
       intro hrow
-      exact D.second.not_mem_interior_of_isEmpty hsecond
+      exact D.second.notMem_interior_of_isEmpty hsecond
         D.first.left_top_mem_target
         (by
           rw [GridRectangle.mem_interior]
@@ -177,7 +177,7 @@ theorem cyclicOrder_of_isEmpty_of_right_eq_right (D : GridRectangleDecomposition
       Grid.mem_cIoo_cyclic_left hfirstLeft
     have hnot : D.second.bottom ∉ Grid.cIoo D.first.bottom D.first.top := by
       intro hrow
-      exact D.first.not_mem_interior_target_of_isEmpty hfirst
+      exact D.first.notMem_interior_target_of_isEmpty hfirst
         D.second.left_bottom_mem_source
         (by
           rw [GridRectangle.mem_interior]

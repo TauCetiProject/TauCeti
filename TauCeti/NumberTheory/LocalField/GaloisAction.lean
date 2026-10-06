@@ -10,7 +10,7 @@ public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
 public import Mathlib.RingTheory.IsGaloisGroup.Basic
 public import Mathlib.RingTheory.Valuation.RamificationGroup
 public import TauCeti.NumberTheory.LocalField.FiniteExtension.Basic
-public import TauCeti.NumberTheory.LocalField.IntegerRing
+public import TauCeti.NumberTheory.LocalField.IntegerRing.Basic
 public import TauCeti.RingTheory.Valuation.ValuativeRel.Extension
 
 /-!
@@ -19,7 +19,8 @@ public import TauCeti.RingTheory.Valuation.ValuativeRel.Extension
 An automorphism of a finite extension of a nonarchimedean local field preserves the unique
 extended valuation. Consequently it restricts to the ring of integers and its maximal ideal,
 and descends to the residue field. This file constructs those three actions and records their
-compatibility with inclusion and reduction.
+compatibility with inclusion and reduction, including the comparison with the residue-field
+embedding `AlgHom.residueFieldHom` induced by an arbitrary `K`-embedding.
 
 The induced residue-field automorphism is linear over the residue field of the base. It therefore
 gives the canonical homomorphism between the corresponding automorphism groups. When the field
@@ -39,7 +40,14 @@ The homomorphism from field automorphisms to residue-field automorphisms is Math
 * `TauCeti.decompositionSubgroup_valuationSubring_eq_top`: every automorphism preserves the
   valuation subring of `L`, so Mathlib's `ValuationSubring.decompositionSubgroup` is everything.
 * `TauCeti.integerRingFaithfulSMul`: an automorphism is determined by its action on `𝒪[L]`.
+* `AlgEquiv.restrictScalars_smul_integerRing` and `AlgEquiv.smul_algebraMap_integerRing`: the
+  action is compatible with restricting scalars to a subextension and with restricting an
+  automorphism to a normal subextension.
 * `TauCeti.integerRingSMulCommClass`: the action on `𝒪[L]` is by `𝒪[K]`-algebra automorphisms.
+* `AlgEquiv.toAlgHom_residueFieldHom`: for an automorphism, the residue-field embedding
+  `AlgHom.residueFieldHom` is the induced automorphism `AlgEquiv.residueFieldEquiv`.
+* `AlgEquiv.normalizedValuation_unitsMap`: an extension automorphism preserves the normalized
+  valuation of a unit.
 
 ## References
 
@@ -130,6 +138,19 @@ theorem restrictScalars_smul_integerRing {K' : Type*} [Field K'] [ValuativeRel K
     σ.restrictScalars K • x = σ • x :=
   Subtype.ext (by rw [coe_smul_integerRing, coe_smul_integerRing, restrictScalars_apply])
 
+omit [TopologicalSpace L] [IsNonarchimedeanLocalField L] in
+/-- For a subextension `K'` of `L/K` normal over `K`, an automorphism of `L/K` acts on the image of
+the ring of integers of `K'` through its restriction to `K'`. -/
+@[simp]
+theorem smul_algebraMap_integerRing {K' : Type*} [Field K'] [ValuativeRel K']
+    [Algebra K K'] [Algebra K' L]
+    [IsScalarTower K K' L] [ValuativeExtension K K'] [ValuativeExtension K' L]
+    [Module.Finite K K'] [Normal K K'] (σ : L ≃ₐ[K] L) (w : 𝒪[K']) :
+    σ • algebraMap 𝒪[K'] 𝒪[L] w = algebraMap 𝒪[K'] 𝒪[L] (σ.restrictNormal K' • w) :=
+  Subtype.ext (by
+    rw [coe_smul_integerRing, coe_algebraMap_integerRing, coe_algebraMap_integerRing,
+      coe_smul_integerRing, restrictNormal_commutes])
+
 /-- The automorphism induced on the maximal ideal of the ring of integers. -/
 noncomputable def maximalIdealEquiv (σ : L ≃ₐ[K] L) : 𝓂[L] ≃+* 𝓂[L] where
   toFun x := ⟨MulSemiringAction.toRingAut (L ≃ₐ[K] L) 𝒪[L] σ x, by
@@ -180,6 +201,28 @@ theorem residueFieldEquiv_apply (σ : L ≃ₐ[K] L) (x : 𝓀[L]) :
   rw [residueFieldEquiv, IsLocalRing.ResidueField.mapAlgEquiv'_residue, integerRingEquiv_apply,
     IsLocalRing.ResidueField.residue_smul]
 
+/-- For an automorphism, the induced embedding of residue fields is the induced automorphism
+`AlgEquiv.residueFieldEquiv`. -/
+@[simp]
+theorem toAlgHom_residueFieldHom (σ : L ≃ₐ[K] L) :
+    σ.toAlgHom.residueFieldHom = σ.residueFieldEquiv.toAlgHom := by
+  ext x
+  obtain ⟨x, rfl⟩ := IsLocalRing.residue_surjective x
+  simp only [AlgHom.residueFieldHom_residue, coe_toAlgHom, residueFieldEquiv_apply,
+    ← IsLocalRing.ResidueField.residue_smul]
+  congr 1
+  exact Subtype.ext (by simp)
+
+/-- Every automorphism of a finite extension of a nonarchimedean local field preserves the
+normalized valuation of a unit. The action of `σ` on `Lˣ` is `Units.map σ`, so this is also the
+statement that `normalizedValuation L (σ • x) = normalizedValuation L x`. -/
+@[simp]
+theorem normalizedValuation_unitsMap (σ : L ≃ₐ[K] L) (x : Lˣ) :
+    normalizedValuation L (Units.map (σ : L →* L) x) = normalizedValuation L x := by
+  apply le_antisymm <;>
+    rw [← Multiplicative.toAdd_le, toAdd_normalizedValuation_le_iff_valuation_le] <;>
+    simp [σ.valuation_eq]
+
 end AlgEquiv
 
 namespace TauCeti
@@ -187,6 +230,12 @@ namespace TauCeti
 variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
   [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L] [Module.Finite K L]
+
+/-- Automorphisms act on the ring of integers by `𝒪[K]`-algebra automorphisms: the action commutes
+with the scalars from the ring of integers of the base field. -/
+instance integerRingSMulCommClass : SMulCommClass (L ≃ₐ[K] L) 𝒪[K] 𝒪[L] :=
+  ⟨fun σ x y ↦ by
+    simpa only [AlgEquiv.integerRingEquiv_apply] using map_smul σ.integerRingEquiv x y⟩
 
 /-- The residue-field action of extension automorphisms fixes the base residue field. -/
 noncomputable instance residueFieldSMulCommClass :
@@ -243,11 +292,5 @@ instance integerRingFaithfulSMul : FaithfulSMul (L ≃ₐ[K] L) 𝒪[L] where
     rw [AlgEquiv.coe_smul_integerRing, AlgEquiv.coe_smul_integerRing, map_mul, map_mul,
       AlgEquiv.commutes, AlgEquiv.commutes] at hσ
     exact mul_left_cancel₀ ha' hσ
-
-/-- Automorphisms act on the ring of integers by `𝒪[K]`-algebra automorphisms: the action commutes
-with the scalars from the ring of integers of the base field. -/
-instance integerRingSMulCommClass : SMulCommClass (L ≃ₐ[K] L) 𝒪[K] 𝒪[L] :=
-  ⟨fun σ x y ↦ by
-    simpa only [AlgEquiv.integerRingEquiv_apply] using map_smul σ.integerRingEquiv x y⟩
 
 end TauCeti

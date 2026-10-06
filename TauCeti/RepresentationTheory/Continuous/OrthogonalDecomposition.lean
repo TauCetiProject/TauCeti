@@ -22,8 +22,8 @@ blocks.
 
 The proof is the classical descent. A nonzero subrepresentation of a finite-dimensional
 representation contains an atom of the lattice of subrepresentations
-(`TauCeti.Representation.exists_isAtom_le`), and an atom carries an irreducible representation
-(`TauCeti.Representation.isIrreducible_toRepresentation_of_isAtom`). Unitarity enters exactly
+(`Representation.exists_isAtom_le`), and an atom carries an irreducible representation
+(`Representation.isIrreducible_toRepresentation_of_isAtom`). Unitarity enters exactly
 once, to split off that atom orthogonally: the orthogonal complement of an invariant subspace is
 again invariant (`TauCeti.ContRepresentation.IsUnitary.orthogonal_mem_invtSubmodule`), so the
 remainder is a strictly smaller subrepresentation and the descent recurses on it.

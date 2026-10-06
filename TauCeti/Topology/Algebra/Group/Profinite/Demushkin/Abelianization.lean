@@ -7,8 +7,8 @@ module
 
 public import TauCeti.GroupTheory.Torsion
 public import TauCeti.Topology.Algebra.ContinuousMulEquiv
-public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.D0
-public import TauCeti.Topology.Algebra.Group.Profinite.ProP.PadicInt
+public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.D0.Basic
+public import TauCeti.Topology.Algebra.Group.Profinite.ProP.PadicInt.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Product
 public import TauCeti.Topology.Algebra.Group.TopologicalAbelianization.Lift
 
@@ -283,8 +283,7 @@ theorem torsion_topologicalAbelianization_demushkinD0 :
 two elements, the identity and the class of `AS²`. -/
 theorem nat_card_torsion_topologicalAbelianization_demushkinD0 :
     Nat.card (torsion (TopologicalAbelianization demushkinD0)) = 2 := by
-  rw [Nat.card_congr (torsionMulEquiv isAddTorsion_of_finite
-    d0AbelianizationEquiv.toMulEquiv).toEquiv, Nat.card_eq_fintype_card,
-    Fintype.card_multiplicative, ZMod.card]
+  rw [natCard_torsion_of_mulEquiv isAddTorsion_of_finite d0AbelianizationEquiv.toMulEquiv,
+    Nat.card_zmod]
 
 end TauCeti

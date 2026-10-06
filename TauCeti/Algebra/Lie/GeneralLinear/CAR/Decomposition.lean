@@ -10,7 +10,7 @@ public import TauCeti.Algebra.Lie.GeneralLinear.CAR.WeightMultiplicity
 public import TauCeti.Algebra.Lie.GeneralLinear.CompleteReducibility
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Multiplicity
 import TauCeti.Algebra.Lie.Weights.Multiplicity
-import TauCeti.Data.Nat.Choose
+import TauCeti.Data.Nat.Choose.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
 
 /-!

@@ -20,6 +20,9 @@ the finite adele ring, and the idele `NumberField.IdeleGroup.ofFiniteIdele` with
 component and trivial infinite components.  This is how ideles are handed to and from the
 finite-idele theory of fractional ideals: on a principal idele the finite component is the
 principal finite idele of the same element.
+
+Finally, the embeddings of the units of the completions, at the infinite and at the finite places,
+into the idele group and the idele class group are continuous.
 -/
 
 public section
@@ -109,4 +112,32 @@ theorem continuous_ofCompletion (w : NumberField.InfinitePlace K) :
     Continuous (ofCompletion R K w) :=
   (AdeleRing.continuous_ofCompletion R K w).units_map _
 
+/-- The embedding of the units of the completion at a finite place into the idele group is
+continuous. -/
+@[continuity, fun_prop]
+theorem continuous_ofAdicCompletion (v : HeightOneSpectrum R) :
+    Continuous (ofAdicCompletion R K v) :=
+  (AdeleRing.continuous_ofAdicCompletion R K v).units_map _
+
 end NumberField.IdeleGroup
+
+namespace NumberField.IdeleClassGroup
+
+variable (R : Type*) [CommRing R] [IsDedekindDomain R]
+variable (K : Type*) [Field K] [Algebra R K] [IsFractionRing R K]
+
+/-- The embedding of the units of the completion at an infinite place into the idele class group
+is continuous. -/
+@[continuity, fun_prop]
+theorem continuous_ofCompletion (w : NumberField.InfinitePlace K) :
+    Continuous (ofCompletion R K w) :=
+  continuous_quot_mk.comp (IdeleGroup.continuous_ofCompletion R K w)
+
+/-- The embedding of the units of the completion at a finite place into the idele class group is
+continuous. -/
+@[continuity, fun_prop]
+theorem continuous_ofAdicCompletion (v : HeightOneSpectrum R) :
+    Continuous (ofAdicCompletion R K v) :=
+  continuous_quot_mk.comp (IdeleGroup.continuous_ofAdicCompletion R K v)
+
+end NumberField.IdeleClassGroup

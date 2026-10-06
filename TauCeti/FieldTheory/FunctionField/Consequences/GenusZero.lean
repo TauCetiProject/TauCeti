@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.Consequences.HighDegree
+-- Proof-only: the generator of `k(x)` generates it.
+import TauCeti.FieldTheory.IntermediateField.Adjoin.Basic
 
 /-!
 # Genus-zero function fields with a divisor of degree one
@@ -161,5 +163,13 @@ theorem genus_eq_zero_of_adjoin_eq_top {x : F} (hx : Transcendental k x)
     (D := l • Divisor.poles hF (Units.mk0 x hx0)) (by rw [hdeg, hl]; omega)
   rw [hdeg] at heq
   omega
+
+/-- **`k(x)` has genus zero** for every transcendental `x`, as a function field in its own
+right. -/
+theorem genus_adjoin_simple_eq_zero {x : F} (hx : Transcendental k x) : genus k k⟮x⟯ = 0 :=
+  genus_eq_zero_of_adjoin_eq_top (x := IntermediateField.AdjoinSimple.gen k x)
+    (by rwa [← transcendental_algebraMap_iff (algebraMap k⟮x⟯ F).injective,
+      IntermediateField.AdjoinSimple.algebraMap_gen])
+    (IntermediateField.adjoin_adjoinSimple_gen_eq_top x)
 
 end TauCeti

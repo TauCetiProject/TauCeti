@@ -34,12 +34,19 @@ associativity follow from transport.
 * `GradedOpposite.map`: the induced homomorphism of signed opposites of graded algebras.
 * `GradedOpposite.opAlgEquiv`: the algebra equivalence from the ordinary opposite of the
   graded opposite back to the original algebra.
+* `GradedOpposite.differential`: the linear endomorphism induced on the graded opposite by a
+  linear endomorphism of the algebra, unchanged on underlying elements.
 
 ## Main results
 
 * `GradedOpposite.op_mul`: the signed reversed-product formula on homogeneous elements.
 * `GradedOpposite.op_mem_piece_iff`: `op` preserves degree.
+* `GradedOpposite.op_mul_op_of_even_right` and `GradedOpposite.op_mul_op_of_even_left`: a
+  homogeneous factor of even degree reverses products without a Koszul sign.
 * `GradedOpposite.map_id` and `GradedOpposite.map_comp`: functoriality of the signed opposite.
+* `GradedOpposite.differential_map_mem` and `GradedOpposite.differential_leibniz`: the degree and
+  graded Leibniz laws of a differential transport to the graded opposite, using only those two
+  laws.
 
 The convention follows B. Keller, *Introduction to A-infinity algebras and modules*, Sections 3
 and 7.
@@ -322,6 +329,34 @@ theorem op_mul {p q : ℤ} {a b : A} (ha : a ∈ G.piece p) (hb : b ∈ G.piece 
   congr 1
   ac_rfl
 
+/-- Multiplying on the right by the image of a homogeneous element of even degree in the graded
+opposite reverses the factors without a Koszul sign. -/
+theorem op_mul_op_of_even_right {q : ℤ} {b : A} (hb : b ∈ G.piece q) (hq : Even q) (a : A) :
+    op G a * op G b = op G (b * a) := by
+  have key : (LinearMap.mulRight R (op G b)).comp (opLinearEquiv G).toLinearMap =
+      (opLinearEquiv G).toLinearMap.comp (LinearMap.mulLeft R b) := by
+    refine G.linearMap_ext fun p a ha ↦ ?_
+    simp only [LinearMap.coe_comp, LinearEquiv.coe_coe, Function.comp_apply,
+      LinearMap.mulRight_apply, LinearMap.mulLeft_apply, opLinearEquiv_apply]
+    rw [op_mul G ha hb, Int.negOnePow_even _ (hq.mul_left p), one_smul]
+  simpa only [LinearMap.coe_comp, LinearEquiv.coe_coe, Function.comp_apply,
+    LinearMap.mulRight_apply, LinearMap.mulLeft_apply, opLinearEquiv_apply] using
+    LinearMap.congr_fun key a
+
+/-- Multiplying on the left by the image of a homogeneous element of even degree in the graded
+opposite reverses the factors without a Koszul sign. -/
+theorem op_mul_op_of_even_left {q : ℤ} {b : A} (hb : b ∈ G.piece q) (hq : Even q) (a : A) :
+    op G b * op G a = op G (a * b) := by
+  have key : (LinearMap.mulLeft R (op G b)).comp (opLinearEquiv G).toLinearMap =
+      (opLinearEquiv G).toLinearMap.comp (LinearMap.mulRight R b) := by
+    refine G.linearMap_ext fun p a ha ↦ ?_
+    simp only [LinearMap.coe_comp, LinearEquiv.coe_coe, Function.comp_apply,
+      LinearMap.mulRight_apply, LinearMap.mulLeft_apply, opLinearEquiv_apply]
+    rw [op_mul G hb ha, Int.negOnePow_even _ (hq.mul_right p), one_smul]
+  simpa only [LinearMap.coe_comp, LinearEquiv.coe_coe, Function.comp_apply,
+    LinearMap.mulRight_apply, LinearMap.mulLeft_apply, opLinearEquiv_apply] using
+    LinearMap.congr_fun key a
+
 /-- Returning a homogeneous product from the graded opposite reverses its factors and retains the
 Koszul sign. -/
 theorem unop_mul {p q : ℤ} {a b : GradedOpposite G}
@@ -447,6 +482,111 @@ theorem map_injective : Function.Injective (map G H) := by
   simpa using this
 
 end Maps
+
+section Differential
+
+/-! ### Differentials on the graded opposite
+
+A linear endomorphism `d` of `A` induces one on the graded opposite, unchanged on underlying
+elements.  If `d` raises degree by one and satisfies the graded Leibniz rule on homogeneous left
+factors, so does the induced map, with respect to the Koszul-signed product.  Only these two laws
+are used, so the transport serves differential graded algebras and curved differential graded
+algebras alike; the square-zero and curvature laws are added by their respective theories. -/
+
+variable (G : InternalGrading R A)
+
+/-- The differential on the graded opposite, unchanged on underlying elements. -/
+noncomputable def differential (d : A →ₗ[R] A) :
+    GradedOpposite G →ₗ[R] GradedOpposite G :=
+  (opLinearEquiv G).conj d
+
+/-- The opposite differential acts by the original differential on underlying elements. -/
+@[simp]
+theorem differential_op (d : A →ₗ[R] A) (a : A) :
+    differential G d (op G a) = op G (d a) := by
+  rw [differential, LinearEquiv.conj_apply_apply]
+  simp
+
+/-- Returning the opposite differential to the original algebra gives the original
+differential. -/
+@[simp]
+theorem differential_unop (d : A →ₗ[R] A) (a : GradedOpposite G) :
+    unop G (differential G d a) = d (unop G a) := by
+  have h := differential_op G d (unop G a)
+  rw [op_unop G a] at h
+  exact (congrArg (unop G) h).trans (unop_op G _)
+
+/-- If `d` raises degree by one, so does the opposite differential. -/
+theorem differential_map_mem {d : A →ₗ[R] A}
+    (hd : ∀ {p : ℤ} {a : A}, a ∈ G.piece p → d a ∈ G.piece (p + 1))
+    {p : ℤ} {x : GradedOpposite G} (hx : x ∈ (grading G).piece p) :
+    differential G d x ∈ (grading G).piece (p + 1) := by
+  rw [← op_unop G x, differential_op, op_mem_piece_iff]
+  exact hd ((mem_piece_iff G p x).1 hx)
+
+variable [GradedAlgebra G.piece] {d : A →ₗ[R] A}
+
+private theorem differential_leibniz_of_mem
+    (hl : ∀ {p : ℤ} {a : A}, a ∈ G.piece p → ∀ b : A,
+      d (a * b) = d a * b + p.negOnePow • (a * d b))
+    (hd : ∀ {p : ℤ} {a : A}, a ∈ G.piece p → d a ∈ G.piece (p + 1))
+    {p q : ℤ} {a b : A} (ha : a ∈ G.piece p) (hb : b ∈ G.piece q) :
+    differential G d (op G a * op G b) =
+      differential G d (op G a) * op G b +
+        p.negOnePow • (op G a * differential G d (op G b)) := by
+  rw [op_mul G ha hb]
+  simp only [Units.smul_def, map_zsmul]
+  rw [differential_op, hl hb a, op_add]
+  have hop :
+      op G ((q.negOnePow : ℤ) • (b * d a)) =
+        (q.negOnePow : ℤ) • op G (b * d a) :=
+    by simpa only [opLinearEquiv_apply] using
+      map_zsmul (opLinearEquiv G) q.negOnePow (b * d a)
+  rw [Units.smul_def, hop]
+  rw [
+    differential_op, differential_op, op_mul G (hd ha) hb,
+    op_mul G ha (hd hb)]
+  simp only [Units.smul_def]
+  simp only [smul_add, smul_smul, add_comm]
+  have hfirstUnits :
+      (p * q).negOnePow * q.negOnePow = ((p + 1) * q).negOnePow := by
+    rw [← Int.negOnePow_add]
+    congr 1
+    ring
+  have hsecondUnits :
+      (p * q).negOnePow = p.negOnePow * (p * (q + 1)).negOnePow := by
+    rw [← Int.negOnePow_add]
+    apply (Int.negOnePow_eq_iff _ _).2
+    use -p
+    ring
+  have hfirst := congrArg Units.val hfirstUnits
+  have hsecond := congrArg Units.val hsecondUnits
+  simp only [Units.val_mul] at hfirst hsecond
+  rw [hfirst, hsecond]
+
+/-- **The Leibniz rule transports to the graded opposite.** If `d` raises degree by one and
+satisfies the graded Leibniz rule on homogeneous left factors, then the opposite differential
+satisfies the graded Leibniz rule on the Koszul-signed opposite. Only these two properties of `d`
+are used, so the statement applies to differential graded and to curved differential graded
+algebras alike. -/
+theorem differential_leibniz
+    (hd : ∀ {p : ℤ} {a : A}, a ∈ G.piece p → d a ∈ G.piece (p + 1))
+    (hl : ∀ {p : ℤ} {a : A}, a ∈ G.piece p → ∀ b : A,
+      d (a * b) = d a * b + p.negOnePow • (a * d b))
+    {p : ℤ} {x : GradedOpposite G} (hx : x ∈ (grading G).piece p) (y : GradedOpposite G) :
+    differential G d (x * y) =
+      differential G d x * y + p.negOnePow • (x * differential G d y) := by
+  classical
+  conv_lhs => rw [← DirectSum.sum_support_decompose (grading G).piece y, Finset.mul_sum, map_sum]
+  conv_rhs =>
+    rw [← DirectSum.sum_support_decompose (grading G).piece y, Finset.mul_sum, map_sum,
+      Finset.mul_sum, Finset.smul_sum, ← Finset.sum_add_distrib]
+  refine Finset.sum_congr rfl fun q _ ↦ ?_
+  rw [← op_unop G x, ← op_unop G (DirectSum.decompose (grading G).piece y q)]
+  exact differential_leibniz_of_mem G hl hd ((mem_piece_iff G p x).1 hx)
+    ((mem_piece_iff G q _).1 (SetLike.coe_mem _))
+
+end Differential
 
 end GradedOpposite
 

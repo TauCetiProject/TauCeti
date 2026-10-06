@@ -18,12 +18,17 @@ together with the fact that they are mutually inverse; this file packages them a
 corresponding equivalence.
 
 The file also records the value and the inverse of a product `MulEquiv.prodCongr` of two
-multiplicative isomorphisms, which Mathlib states only for the underlying `Equiv.prodCongr`.
+multiplicative isomorphisms, which Mathlib states only for the underlying `Equiv.prodCongr`, and
+recognizes a commutative monoid with projections and inclusions satisfying the biproduct
+identities as the product of the two factors.
 
 ## Main definitions
 
 * `MonoidHom.coprodEquiv`: the multiplicative equivalence `((M →* P) × (N →* P)) ≃* (M × N →* P)`
   for `P` a commutative monoid.
+* `MulEquiv.ofProdCoprod`: the multiplicative equivalence `P ≃* A × B` determined by
+  projections `P →* A`, `P →* B` and inclusions `A →* P`, `B →* P` satisfying the biproduct
+  identities.
 * `MulEquiv.prodCongr_apply`, `MulEquiv.prodCongr_symm`: the product of two isomorphisms acts
   componentwise, and its inverse is the product of the inverses.
 -/
@@ -75,5 +80,48 @@ theorem prodCongr_apply (f : M ≃* M') (g : N ≃* N') (x : M × N) :
 /-- The inverse of a product of two additive isomorphisms is the product of the inverses. -/]
 theorem prodCongr_symm (f : M ≃* M') (g : N ≃* N') :
     (f.prodCongr g).symm = f.symm.prodCongr g.symm := (rfl)
+
+section ofProdCoprod
+
+variable {P A B : Type*} [CommMonoid P] [MulOneClass A] [MulOneClass B]
+  (fst : P →* A) (snd : P →* B) (inl : A →* P) (inr : B →* P)
+  (h : (inl.coprod inr).comp (fst.prod snd) = MonoidHom.id P)
+  (fst_inl : fst.comp inl = MonoidHom.id A) (fst_inr : fst.comp inr = 1)
+  (snd_inl : snd.comp inl = 1) (snd_inr : snd.comp inr = MonoidHom.id B)
+
+/-- A commutative monoid `P` with projections `fst : P →* A`, `snd : P →* B` and inclusions
+`inl : A →* P`, `inr : B →* P` satisfying the biproduct identities is the product `A × B`: the
+forward map is `fst.prod snd` and the inverse is `inl.coprod inr`. -/
+@[to_additive ofProdCoprod
+/-- An additive commutative monoid `P` with projections `fst : P →+ A`,
+`snd : P →+ B` and inclusions `inl : A →+ P`, `inr : B →+ P` satisfying the biproduct identities
+is the product `A × B`: the forward map is `fst.prod snd` and the inverse is
+`inl.coprod inr`. -/]
+def ofProdCoprod : P ≃* A × B where
+  toFun := fst.prod snd
+  invFun := inl.coprod inr
+  map_mul' := map_mul _
+  left_inv x := DFunLike.congr_fun h x
+  right_inv := fun ⟨x, y⟩ => by
+    apply Prod.ext
+    · simpa using congrArg₂ (· * ·)
+        (DFunLike.congr_fun fst_inl x) (DFunLike.congr_fun fst_inr y)
+    · simpa using congrArg₂ (· * ·)
+        (DFunLike.congr_fun snd_inl x) (DFunLike.congr_fun snd_inr y)
+
+/-- The equivalence `MulEquiv.ofProdCoprod` is given by the two projections. -/
+@[to_additive (attr := simp) ofProdCoprod_apply
+/-- The equivalence `AddEquiv.ofProdCoprod` is given by the two projections. -/]
+theorem ofProdCoprod_apply (x : P) :
+    ofProdCoprod fst snd inl inr h fst_inl fst_inr snd_inl snd_inr x = (fst x, snd x) := (rfl)
+
+/-- The inverse of `MulEquiv.ofProdCoprod` multiplies the two inclusions. -/
+@[to_additive (attr := simp) ofProdCoprod_symm_apply
+/-- The inverse of `AddEquiv.ofProdCoprod` adds the two inclusions. -/]
+theorem ofProdCoprod_symm_apply (x : A × B) :
+    (ofProdCoprod fst snd inl inr h fst_inl fst_inr snd_inl snd_inr).symm x =
+      inl x.1 * inr x.2 := (rfl)
+
+end ofProdCoprod
 
 end MulEquiv

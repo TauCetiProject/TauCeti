@@ -45,9 +45,6 @@ ideal, so the represented closed subgroup is canonical.
 
 * J. S. Milne, *Algebraic Groups* (2017), §1.k and §2.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Chapter 2.
-
-This constructs the center `Z(G)` required in Layer 6, "Reductive and semisimple groups", of
-`TauCetiRoadmap/ReductiveGroups/README.md`.
 -/
 
 public section

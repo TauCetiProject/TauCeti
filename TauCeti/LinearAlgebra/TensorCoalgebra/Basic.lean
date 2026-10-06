@@ -39,6 +39,7 @@ the `DGAInfinity` roadmap.
   even when the two sides present its length by different arithmetic expressions.
 * `TauCeti.ReducedTensorWords.subword_congr`: equal-length blocks in different ambient tuples or
   at different offsets agree when their letters agree.
+* `TauCeti.ReducedTensorWords.subword_tail`: blocks of the tail of a tuple.
 * `TauCeti.ReducedTensorWords.prepend_subword`: prepending the preceding letter extends a block.
 * `TauCeti.ReducedTensorWords.map_subword`: mapping a block applies the map to each of its letters.
 * `TauCeti.ReducedTensorWords.deconcatenation_subword`: deconcatenation of a block.
@@ -230,6 +231,14 @@ theorem subword_congr {n m : ℕ} (x : Fin n → M) (y : Fin m → M) {a a' b : 
   · rw [subword_eq_of_tprod R x hb hab, subword_eq_of_tprod R y hb hab']
     exact of_tprod_congr R M _ rfl fun j ↦ h j.1 j.isLt
 
+/-- A block of the tail of a tuple is the block one position further along the tuple. -/
+theorem subword_tail {n : ℕ} (z : Fin (n + 1) → M) (a b : ℕ) :
+    subword R (Fin.tail z) a b = subword R z (a + 1) b :=
+  if hab : a + b ≤ n then
+    subword_congr R _ z hab (by omega) fun j _ ↦ congrArg z (Fin.ext (by simp; omega))
+  else by
+    rw [subword_eq_zero_of_lt_add R _ (by omega), subword_eq_zero_of_lt_add R z (by omega)]
+
 /-- Deconcatenating a block cuts it at each of its nontrivial internal positions. -/
 theorem deconcatenation_subword {n : ℕ} (x : Fin n → M) {a b : ℕ} :
     deconcatenation R M (subword R x a b) =
@@ -380,6 +389,28 @@ theorem map_comp (g : N →ₗ[R] P) (f : M →ₗ[R] N) :
     ReducedTensorWords.map (R := R) (g ∘ₗ f) =
       ReducedTensorWords.map (R := R) g ∘ₗ ReducedTensorWords.map (R := R) f := by
   simp only [map, PiTensorProduct.map_comp, DirectSum.lmap_comp]
+
+/-- Applying a linear equivalence and then its inverse to every letter is the identity. -/
+@[simp]
+theorem map_symm_map (e : M ≃ₗ[R] N) (z : ReducedTensorWords R M) :
+    ReducedTensorWords.map (R := R) e.symm.toLinearMap
+      (ReducedTensorWords.map (R := R) e.toLinearMap z) = z := by
+  rw [← LinearMap.comp_apply, ← map_comp, LinearEquiv.symm_comp, map_id, LinearMap.id_apply]
+
+/-- Applying the inverse of a linear equivalence and then the equivalence to every letter is the
+identity. -/
+@[simp]
+theorem map_map_symm (e : M ≃ₗ[R] N) (z : ReducedTensorWords R N) :
+    ReducedTensorWords.map (R := R) e.toLinearMap
+      (ReducedTensorWords.map (R := R) e.symm.toLinearMap z) = z := by
+  rw [← LinearMap.comp_apply, ← map_comp, LinearEquiv.comp_symm, map_id, LinearMap.id_apply]
+
+/-- Applying a linear equivalence to every letter is a bijection of reduced tensor words, with
+inverse the letterwise inverse equivalence. -/
+theorem map_bijective (e : M ≃ₗ[R] N) :
+    Function.Bijective (ReducedTensorWords.map (R := R) e.toLinearMap) :=
+  Function.bijective_iff_has_inverse.2
+    ⟨ReducedTensorWords.map (R := R) e.symm.toLinearMap, map_symm_map R e, map_map_symm R e⟩
 
 /-- Reduced deconcatenation is natural with respect to linear maps of the letters. -/
 theorem deconcatenation_natural (f : M →ₗ[R] N) :

@@ -31,7 +31,7 @@ above is the more general one, since a `ℚ`-linear ring homomorphism `ℂ →+*
 need not be surjective.
 
 Complex conjugation is the instance `j = n - 1` of all this, and gives back
-`TauCeti.Representation.conj_char_eq_char_inv`, `conj (χ g) = χ g⁻¹`.
+`Representation.conj_char_eq_char_inv`, `conj (χ g) = χ g⁻¹`.
 
 Two consequences are recorded: `χ(g)` and `χ(g ^ j)` are conjugate algebraic numbers over `ℚ`
 (they are `IsConjRoot ℚ`), and a character value that is rational is unchanged by the power maps

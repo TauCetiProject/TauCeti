@@ -519,6 +519,14 @@ theorem genericMatrix_inv_apply (i j : Fin n) :
     exact Matrix.map_one _ (map_zero _) (map_one _)
   rw [h, Matrix.map_apply]
 
+/-- Algebra morphisms out of `O(GLₙ)` commute with inverting the generic matrix. -/
+theorem map_inv_genericMatrix {T : Type*} [CommRing T] [Algebra R T]
+    (φ : coordinateHopfAlgebra R n →ₐ[R] T) :
+    ((genericMatrix R n)⁻¹).map φ = ((genericMatrix R n).map φ)⁻¹ := by
+  refine (Matrix.inv_eq_left_inv ?_).symm
+  rw [← Matrix.map_mul, Matrix.nonsing_inv_mul _ (isUnit_det_genericMatrix R n)]
+  simp
+
 /-- Mathlib has no `CommHopfAlgCat.of_comul` lemma exposing the comultiplication stored by
 `CommHopfAlgCat.of`. This bridge locally crosses the two definitional wrappers:
 `coordinateHopfAlgebra` stores `(hopfAlgebra R n).toCoalgebra` on the raw coordinate ring, and

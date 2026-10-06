@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.ModuleCat.Topology.Homology
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Graded
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Graded.Basic
 
 /-!
 # The cup product on continuous cohomology

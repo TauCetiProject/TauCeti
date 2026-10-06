@@ -249,6 +249,14 @@ lemma algEquivSelf_derivation_smul_apply
   -- coefficient-synonym reduction.
   rfl
 
+/-- The Leibniz rule of a counit-valued derivation, read in the coefficient algebra. -/
+lemma Bialgebra.CounitAlgebra.algEquivSelf_apply_mul
+    (d : Derivation R A (Bialgebra.CounitAlgebra R A B)) (a b : A) :
+    Bialgebra.CounitAlgebra.algEquivSelf R A B (d (a * b)) =
+      algebraMap R B (Coalgebra.counit a) * Bialgebra.CounitAlgebra.algEquivSelf R A B (d b) +
+        algebraMap R B (Coalgebra.counit b) * Bialgebra.CounitAlgebra.algEquivSelf R A B (d a) := by
+  simp only [d.leibniz, map_add, Bialgebra.CounitAlgebra.algEquivSelf_smul]
+
 end DerivationCoefficients
 
 end TauCeti
@@ -310,6 +318,15 @@ algebras. -/
 noncomputable def mapAlgHom (phi : B →ₐ[R] C) :
     CounitAlgebra R A B →ₐ[R] CounitAlgebra R A C :=
   (algEquivSelf R A C).symm.toAlgHom.comp (phi.comp (algEquivSelf R A B).toAlgHom)
+
+omit [CommSemiring A] [Bialgebra R A] in
+/-- Identifying counit coefficient algebras with their coefficient rings commutes with
+an algebra homomorphism of coefficients. -/
+@[simp]
+lemma algEquivSelf_map (phi : B →ₐ[R] C) (b : CounitAlgebra R A B) :
+    algEquivSelf R A C (phi b) = phi (algEquivSelf R A B b) := by
+  exact (algEquivSelf_apply R A C _).trans
+    (congrArg phi (algEquivSelf_apply R A B b).symm)
 
 omit [CommSemiring A] [Bialgebra R A] in
 /-- Transport of counit coefficient algebras acts pointwise by the original
@@ -547,8 +564,8 @@ private lemma toConv_mem_ker_iff
     toConv ψ₀ ∈ tangentKer R A B ↔
       (fstHom R _ _).comp ψ₀ =
         IsScalarTower.toAlgHom R A (Bialgebra.CounitAlgebra R A B) := by
-  rw [tangentKer, MonoidHom.mem_ker, toAlgHom_eq_one_ofConv]
-  exact ⟨fun h => congrArg ofConv h, fun h => ofConv_injective h⟩
+  rw [tangentKer, MonoidHom.mem_ker, dualNumberReduction_def, AlgHom.mapValue_apply,
+    ofConv_toConv, toAlgHom_eq_one_ofConv, toConv_injective.eq_iff]
 
 variable (R A B) in
 /-- The group of the tangent space at the identity: the kernel of the dual-number

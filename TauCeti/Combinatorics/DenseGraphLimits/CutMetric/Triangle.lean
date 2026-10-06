@@ -34,6 +34,9 @@ strict graphons on a fixed probability carrier with the cut-distance pseudometri
 
 * `TauCeti.DenseGraphLimits.cutDist_triangle` proves the triangle inequality on arbitrary
   probability carriers.
+* `TauCeti.DenseGraphLimits.cutDist_congr_left` and
+  `TauCeti.DenseGraphLimits.cutDist_congr_right` say that graphons at cut distance zero have the
+  same cut distance to every graphon.
 * `TauCeti.DenseGraphLimits.cutDist_comap_right` states that reading the right-hand graphon along
   a measure-preserving map leaves the cut distance unchanged.
 * `TauCeti.DenseGraphLimits.Graphon.instPseudoMetricSpace` is the cut-distance pseudometric on
@@ -201,6 +204,22 @@ theorem cutDist_triangle (U : Graphon Ω₁ μ₁) (W : Graphon Ω₂ μ₂) (X 
   have htransfer := cutDist_le_add_two_mul_cutNorm_of_le_add U W W' X htriangle
   dsimp only [W'] at htransfer
   nlinarith
+
+/-- **The cut distance factors through vanishing cut distance in its left argument**: two graphons
+at cut distance zero, on arbitrary probability carriers, are at the same cut distance from every
+graphon. This is the zero-distance analogue of `cutDist_congr_ae_left`. -/
+theorem cutDist_congr_left {U : Graphon Ω₁ μ₁} {U' : Graphon Ω₂ μ₂} (h : cutDist U U' = 0)
+    (W : Graphon Ω₃ μ₃) : cutDist U W = cutDist U' W := by
+  refine le_antisymm ?_ ?_
+  · simpa [h] using cutDist_triangle U U' W
+  · simpa [cutDist_comm U' U, h] using cutDist_triangle U' U W
+
+/-- **The cut distance factors through vanishing cut distance in its right argument**: every graphon
+is at the same cut distance from two graphons at cut distance zero, on arbitrary probability
+carriers. This is the zero-distance analogue of `cutDist_congr_ae_right`. -/
+theorem cutDist_congr_right {W : Graphon Ω₂ μ₂} {W' : Graphon Ω₃ μ₃} (h : cutDist W W' = 0)
+    (U : Graphon Ω₁ μ₁) : cutDist U W = cutDist U W' := by
+  rw [cutDist_comm U W, cutDist_comm U W', cutDist_congr_left h U]
 
 /-- Reading the right-hand graphon along a measure-preserving map `f : Ω₂' → Ω₂` leaves the cut
 distance unchanged: `cutDist U (W.comap f hf.measurable μ₂') = cutDist U W`.

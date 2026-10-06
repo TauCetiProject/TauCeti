@@ -87,19 +87,17 @@ universe u v
 
 variable {K : Type u} {L : Type v} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
   [IsKilling K L] [FiniteDimensional K L]
-  {H : LieSubalgebra K L} {ι : Type*} [Finite ι]
+  {H : LieSubalgebra K L} {ι : Type*} [Fintype ι]
 
 /-- A positive root for the base associated to a Lie algebra basis is a nonzero natural-number
 combination of the basis's simple roots. -/
 theorem exists_root_eq_sum_nat_baseSupp_of_mem_posRoots
     (b : LieAlgebra.Basis ι H) :
-    letI : Fintype ι := Fintype.ofFinite ι
     letI := b.isCartanSubalgebra
     letI := b.isTriangularizable
     ∀ {α : H.root}, α ∈ TauCeti.posRoots (IsKilling.rootSystem H) b.base →
       ∃ n : ι → ℕ, n ≠ 0 ∧
         (α : H → K) = ∑ i, n i • (b.baseSupp i : H → K) := by
-  let _ : Fintype ι := Fintype.ofFinite ι
   let _ := b.isCartanSubalgebra
   let _ := b.isTriangularizable
   intro α hα

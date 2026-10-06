@@ -46,6 +46,8 @@ restriction with a single `G`-orbit.
 
 * `TauCeti.mem_inertia_iff`: membership in the inertia group is the existence of an isomorphism
   `{}^g A ≅ A`.
+* `TauCeti.mem_inertia_iff_exists_linearEquiv`: equivalently, conjugation by `g` on `N` is
+  implemented by an invertible operator on `A`.
 * `Representation.IntertwiningMap.mem_inertia`: a nonzero intertwiner from an irreducible
   representation to one of its conjugates puts the conjugating element in the inertia group.
 * `Representation.IntertwiningMap.inv_mem_inertia_of_comp_ne_zero`: if an intertwiner from `V`
@@ -138,6 +140,34 @@ theorem char_conj_eq_of_mem_inertia {A : FDRep k N} {g : G} (hg : g ∈ inertia 
     A.character ⟨g⁻¹ * (x : G) * g, hN.conj_mem' (x : G) x.2 g⟩ = A.character x := by
   obtain ⟨e⟩ := mem_inertia_iff.1 hg
   rw [← char_conjNormalFDRep_mk, FDRep.char_iso e]
+
+/-- Membership in the inertia group, read on operators: `g ∈ inertia A` exactly when conjugation
+by `g` on `N` is implemented by an invertible operator `a` on `A`, that is,
+`a ∘ A.ρ n = A.ρ (g n g⁻¹) ∘ a` for all `n : N`.  Such an `a` is an isomorphism `{}^g A ≅ A` read
+on the common underlying space. -/
+theorem mem_inertia_iff_exists_linearEquiv {A : FDRep k N} {g : G} :
+    g ∈ inertia A ↔
+      ∃ a : A ≃ₗ[k] A, ∀ n x, a (A.ρ n x) = A.ρ (MulAut.conjNormal g n) (a x) := by
+  rw [mem_inertia_iff, nonempty_fdRepIso_iff]
+  constructor
+  · rintro ⟨e⟩
+    refine ⟨e.toLinearEquiv, fun n x ↦ ?_⟩
+    have h := Representation.IntertwiningMap.isIntertwining _ _ e.toIntertwiningMap
+      (MulAut.conjNormal g n) x
+    have hn : MulAut.conjNormal g⁻¹ (MulAut.conjNormal g n) = n := by simp
+    rw [conjNormalFDRep_ρ, hn] at h
+    -- `h` evaluates `e` through its `Representation.Equiv` coercion, which is
+    -- `e.toLinearEquiv` by `Representation.Equiv.toLinearEquiv_apply` (a `rfl` lemma).  It cannot
+    -- be rewritten with: `A.ρ n` in `h` is linear over the `CommRing` semiring structure on `k`
+    -- that `FDRep` uses, while the goal is stated over the `Field` one.
+    exact h
+  · rintro ⟨a, ha⟩
+    refine ⟨_root_.Representation.Equiv.mk a fun n ↦ LinearMap.ext fun x ↦ ?_⟩
+    have hn : MulAut.conjNormal g (MulAut.conjNormal g⁻¹ n) = n := by simp
+    -- The goal is `a ∘ₗ (conjNormalFDRep g A).ρ n = A.ρ n ∘ₗ a` at `x`, where the action of the
+    -- conjugate is `A.ρ (conjNormal g⁻¹ n)` (`conjNormalFDRep_ρ`, a `rfl` lemma); as above, the
+    -- two semiring structures on `k` block rewriting, so the instance of `ha` is closed directly.
+    exact (ha _ x).trans (congrArg (fun m ↦ A.ρ m (a x)) hn)
 
 end Field
 

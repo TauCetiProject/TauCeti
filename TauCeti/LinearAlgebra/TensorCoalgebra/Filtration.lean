@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.TensorCoalgebra.Basic
+public import TauCeti.LinearAlgebra.TensorCoalgebra.Primitives
 
 /-!
 # The conilpotence filtration of reduced tensor words
@@ -25,7 +26,13 @@ reduced tensor word.
 
 ## Main results
 
-* `TauCeti.ReducedTensorWords.iSup_filtration_eq_top`: the filtration is exhaustive.
+* `TauCeti.ReducedTensorWords.iSup_filtration_eq_top` and
+  `TauCeti.ReducedTensorWords.exists_mem_filtration`: the filtration is exhaustive.
+* `TauCeti.ReducedTensorWords.exists_pow_apply_eq_zero_of_filtration_lowering`: a map lowering
+  tensor length is locally nilpotent, also after composition with a length-preserving map.
+* `TauCeti.ReducedTensorWords.ofLetter_mem_filtration` and
+  `TauCeti.ReducedTensorWords.prepend_mem_filtration`: a letter has length one, and prepending a
+  letter raises the length bound by one.
 * `TauCeti.ReducedTensorWords.map_deconcatenation_filtration_succ_le`: deconcatenating a word of
   length at most `n + 1` produces a sum of tensors of two words of length at most `n`.
 
@@ -81,6 +88,41 @@ theorem iSup_filtration_eq_top : ⨆ n : ℕ, filtration R M n = ⊤ := by
   rintro _ ⟨x, rfl⟩
   exact of_mem_filtration R M le_rfl x
 
+/-- Every reduced tensor word has bounded length: it lies in some step of the filtration. -/
+theorem exists_mem_filtration (z : ReducedTensorWords R M) : ∃ n : ℕ, z ∈ filtration R M n := by
+  have hz : z ∈ ⨆ n : ℕ, filtration R M n := by
+    rw [iSup_filtration_eq_top]
+    trivial
+  exact (Submodule.mem_iSup_of_directed _ (filtration_monotone R M).directed_le).1 hz
+
+/-- A map strictly lowering the tensor-length filtration is locally nilpotent. -/
+theorem exists_pow_apply_eq_zero_of_filtration_lowering
+    (f : Module.End R (ReducedTensorWords R M))
+    (hf : ∀ n, Submodule.map f (filtration R M (n + 1)) ≤ filtration R M n)
+    (z : ReducedTensorWords R M) : ∃ n, (f ^ n) z = 0 := by
+  obtain ⟨n, hn⟩ := exists_mem_filtration R M z
+  refine ⟨n, ?_⟩
+  induction n generalizing z with
+  | zero =>
+      rw [filtration_zero] at hn
+      have : z = 0 := hn
+      simp [this]
+  | succ n ih =>
+      have hfz : f z ∈ filtration R M n := hf n ⟨z, hn, rfl⟩
+      simpa only [pow_succ, Module.End.mul_apply] using ih (f z) hfz
+
+/-- Composing a strictly length-lowering map with a length-preserving map remains locally
+nilpotent. -/
+theorem exists_pow_comp_apply_eq_zero_of_filtration_lowering
+    (f h : Module.End R (ReducedTensorWords R M))
+    (hf : ∀ n, Submodule.map f (filtration R M (n + 1)) ≤ filtration R M n)
+    (hh : ∀ n, Submodule.map h (filtration R M n) ≤ filtration R M n)
+    (z : ReducedTensorWords R M) : ∃ n, ((f ∘ₗ h) ^ n) z = 0 := by
+  apply exists_pow_apply_eq_zero_of_filtration_lowering R M (f ∘ₗ h)
+  intro n
+  rintro _ ⟨x, hx, rfl⟩
+  exact hf n ⟨h x, hh (n + 1) ⟨x, hx, rfl⟩, rfl⟩
+
 /-- A block of length at most `n` lies in the `n`-th step of the filtration. -/
 theorem subword_mem_filtration {l : ℕ} (x : Fin l → M) (a : ℕ) {b n : ℕ} (hb : b ≤ n) :
     subword R x a b ∈ filtration R M n := by
@@ -92,6 +134,27 @@ theorem subword_mem_filtration {l : ℕ} (x : Fin l → M) (a : ℕ) {b n : ℕ}
     exact of_mem_filtration R M hb _
   · rw [subword_eq_zero_of_lt_add R x (by omega)]
     exact Submodule.zero_mem _
+
+/-- A single letter is a word of length at most one. -/
+theorem ofLetter_mem_filtration (a : M) : ofLetter R M a ∈ filtration R M 1 := by
+  have h := subword_mem_filtration R M (fun _ : Fin 1 ↦ a) 0 (le_refl 1)
+  rwa [subword_one R M _ Nat.one_pos] at h
+
+/-- Prepending a letter to a word of length at most `n` gives a word of length at most `n + 1`. -/
+theorem prepend_mem_filtration (a : M) {n : ℕ} {z : ReducedTensorWords R M}
+    (hz : z ∈ filtration R M n) : prepend R M a z ∈ filtration R M (n + 1) := by
+  have h : filtration R M n ≤ (filtration R M (n + 1)).comap (prepend R M a) := by
+    rw [filtration_le_iff]
+    rintro k hk _ ⟨x, rfl⟩
+    simp only [Submodule.mem_comap]
+    induction x using PiTensorProduct.induction_on with
+    | smul_tprod r y =>
+        rw [map_smul, map_smul, prepend_of_tprod]
+        exact Submodule.smul_mem _ _ (of_mem_filtration R M (Nat.succ_le_succ hk) _)
+    | add u v hu hv =>
+        rw [map_add, map_add]
+        exact Submodule.add_mem _ hu hv
+  exact h hz
 
 /-- Reduced deconcatenation strictly decreases tensor length: a word of length at most `n + 1` is
 sent into the image of `filtration n ⊗ filtration n`.  This is the length-lowering step behind the

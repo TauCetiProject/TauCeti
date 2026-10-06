@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Topology.Algebra.OpenSubgroup
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.LowDegree
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete.Basic
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.LowDegree
 
 /-!
@@ -57,9 +57,9 @@ as `Kˣ` enters through an `Additive` adapter.
   coefficients.
 * `TauCeti.ClassFieldTheory.NormalLayer.tateHIsoH`: the identification of positive-degree Tate
   cohomology of the layer with its ordinary cohomology.
-* `TauCeti.ClassFieldTheory.NormalLayer.tateHMinusTwoEquivAbelianization`: the canonical
+* `TauCeti.ClassFieldTheory.NormalLayer.tateHMinusTwoEquivAbelianization`: the
   identification of degree `-2` Tate cohomology with the additive abelianization of the Galois
-  group.
+  group, normalized so that the Artin map satisfies the character formula.
 * `TauCeti.ClassFieldTheory.NormalLayer.norm`, `normSubgroup`, `NormQuotient`, `normQuotientMk`:
   the norm of the layer, its image, the norm quotient and the quotient map onto it.
 * `TauCeti.ClassFieldTheory.NormalLayer.zeroTateClass`: the zero-dimensional Tate class of an
@@ -71,7 +71,7 @@ as `Kˣ` enters through an `Additive` adapter.
   is fixed by an open subgroup.
 * `TauCeti.ClassFieldTheory.NormalLayer.groundLevelEquiv`: `(A^V)^{U/V} ≃ A^U`.
 * `TauCeti.ClassFieldTheory.NormalLayer.tateHMinusTwoEquivAbelianization_single_one`: the
-  degree `-2` identification sends the standard homology class of `g` to its abelianization.
+  degree `-2` identification sends the standard homology class of `g` to the class of `g⁻¹`.
 * `TauCeti.ClassFieldTheory.NormalLayer.tateHZeroEquivNormQuotient`: degree-zero Tate cohomology
   of the layer is the norm quotient.
 * `TauCeti.ClassFieldTheory.NormalLayer.zeroTateClass_eq_zero_iff`: the zero-dimensional Tate
@@ -94,7 +94,7 @@ finite group and the coefficient ring `ℤ` in one universe and for the coeffici
 same universe, and every carrier of the arithmetic instances is a `Type`, so nothing is lost.
 
 The coefficient module is read as a plain `Rep ℤ G` through `Representation.ofDistribMulAction` at
-the action `TauCeti.TopRep.distribMulAction` derives from the operators of the topological
+the action `TopRep.distribMulAction` derives from the operators of the topological
 representation. Passing instead through `ContRepresentation.toRepresentation` would carry the
 `Module ℤ` instance packaged inside `TopRep`, which is not the instance `AddCommGroup.toIntModule`
 that typeclass synthesis produces for an integral module, and the two are not definitionally
@@ -269,10 +269,9 @@ theorem degree_eq_natCard_gal : L.degree = Nat.card L.Gal :=
 
 /-- The degree of a layer is the relative index of its top subgroup in its ground subgroup. -/
 theorem degree_eq_relIndex :
-    L.degree = L.top.toSubgroup.relIndex L.ground.toSubgroup :=
-  by
-    rw [Subgroup.relIndex]
-    exact L.degree_eq_natCard_gal
+    L.degree = L.top.toSubgroup.relIndex L.ground.toSubgroup := by
+  rw [Subgroup.relIndex]
+  exact L.degree_eq_natCard_gal
 
 /-- The layer `V ◁ ⊤` cut out by an open normal subgroup of `G`. These layers are the finite
 Galois extensions of the ground field of a formation on `G`. -/
@@ -317,6 +316,19 @@ instance instFiniteGal : Finite L.Gal :=
 
 /-- The Galois group of a layer is finite, so it carries a `Fintype` structure. -/
 instance instFintypeGal : Fintype L.Gal := Fintype.ofFinite _
+
+/-- The top subgroup of a layer is normal in the ground subgroup, stated for the underlying
+subgroups of `G`: this is the form in which the continuous cohomology of the ground subgroup
+`L.ground.toSubgroup` takes it. -/
+instance instNormalSubgroupOf : (L.top.toSubgroup.subgroupOf L.ground.toSubgroup).Normal :=
+  L.normal
+
+/-- The top subgroup is open in the ground subgroup, so the Galois group, presented as the
+quotient of the underlying subgroup `L.ground.toSubgroup` of `G`, is discrete. -/
+instance instDiscreteTopologyQuotient :
+    DiscreteTopology (L.ground.toSubgroup ⧸ L.top.toSubgroup.subgroupOf L.ground.toSubgroup) :=
+  QuotientGroup.discreteTopology
+    (L.ground.toSubgroup.subgroupOf_isOpen L.top.toSubgroup L.top.isOpen)
 
 /-- The degree of a layer is positive. -/
 theorem degree_pos : 0 < L.degree :=
@@ -426,23 +438,42 @@ abbrev H (n : ℕ) : ModuleCat ℤ := groupCohomology (L.rep F) n
 abbrev TateH (r : ℤ) : ModuleCat ℤ := tateCohomology (L.rep F) r
 
 /-- **Tate cohomology of a finite normal layer with trivial integral coefficients**, the Tate
-group `H^r(U/V, ℤ)`. Its degree `-2` is the abelianization of the Galois group of the layer, and
-the Artin map of a class formation is a cup product between this carrier and `TateH`. -/
+group `H^r(U/V, ℤ)`. Its degree `-2` is the abelianization of the Galois group of the layer. In a
+class formation, cup product with the fundamental class of the layer carries that degree
+isomorphically onto `TateH` in degree `0`, and the Artin map is the inverse of this isomorphism. -/
 abbrev TrivialTateH (r : ℤ) : ModuleCat ℤ := tateCohomology (Rep.trivial ℤ L.Gal ℤ) r
+
+/-- **Ordinary cohomology of a finite normal layer with trivial integral coefficients**,
+`H^n(U/V, ℤ)`. This is the positive-degree comparison target for `TrivialTateH`. -/
+abbrev TrivialH (n : ℕ) : ModuleCat ℤ := groupCohomology (Rep.trivial ℤ L.Gal ℤ) n
 
 /-! ### The two low Tate degrees -/
 
 /-- **Degree `-2` Tate cohomology with trivial integral coefficients is the additive
-abelianization of the Galois group.** This is the finite-layer form of the canonical generic
-identification, and is the source of the Galois side of the Nakayama map. -/
+abelianization of the Galois group.** This is the source of the Galois side of the Nakayama map.
+
+It is the negative of the generic identification
+`TauCeti.TateCohomology.HNegTwoAddEquivAbelianization`, so the first-homology class of `(g, 1)`
+goes to `g⁻¹` (`tateHMinusTwoEquivAbelianization_single_one`). With the generic identification the
+Tate pairing of `σ ∈ Γ^ab` with the connecting class `δχ` of a character is `-χ(σ)`
+(`TauCeti.TateCohomology.toRatAddCircle_map_leftUnitor_cup_characterConnectingClass`). With this
+sign it is `χ(σ)`, and the Artin map satisfies the classical character formula
+`χ(artinMap a) = inv(a₀ ∪ δχ)` instead of being the inverse of the classical reciprocity map. -/
 def tateHMinusTwoEquivAbelianization :
     L.TrivialTateH (-2) ≃+ Additive (Abelianization L.Gal) :=
-  TauCeti.TateCohomology.HNegTwoAddEquivAbelianization
+  TauCeti.TateCohomology.HNegTwoAddEquivAbelianization.trans (AddEquiv.neg _)
+
+/-- The layer's degree-`-2` identification is the negative of the generic identification for its
+Galois group. -/
+theorem tateHMinusTwoEquivAbelianization_apply (x : L.TrivialTateH (-2)) :
+    L.tateHMinusTwoEquivAbelianization x =
+      -TauCeti.TateCohomology.HNegTwoAddEquivAbelianization x :=
+  (rfl)
 
 -- `dsimp% only` on the left-hand side, as explained in the implementation notes: Mathlib's
 -- `Rep.trivial` is also an `abbrev` for `Rep.of`, so `simp` reduces its carrier as well.
 /-- The degree `-2` identification sends the standard first-homology class represented by
-`(g, 1)` to the class of `g` in the additive abelianization. -/
+`(g, 1)` to the class of `g⁻¹` in the additive abelianization. -/
 @[simp]
 theorem tateHMinusTwoEquivAbelianization_single_one (g : L.Gal) :
     (dsimp% only (L.tateHMinusTwoEquivAbelianization
@@ -450,11 +481,12 @@ theorem tateHMinusTwoEquivAbelianization_single_one (g : L.Gal) :
         (groupHomology.H1π (Rep.trivial ℤ L.Gal ℤ)
           ((groupHomology.cycles₁IsoOfIsTrivial (Rep.trivial ℤ L.Gal ℤ)).inv
             (Finsupp.single g 1)))))) =
-      Additive.ofMul (Abelianization.of g) :=
-  TauCeti.TateCohomology.HNegTwoAddEquivAbelianization_single_one g
+      Additive.ofMul (Abelianization.of g⁻¹) := by
+  rw [tateHMinusTwoEquivAbelianization_apply,
+    TauCeti.TateCohomology.HNegTwoAddEquivAbelianization_single_one, map_inv, ofMul_inv]
 
-/-- The inverse degree `-2` identification sends the abelianization class of `g` to its standard
-first-homology representative with coefficient `1`. -/
+/-- The inverse degree `-2` identification sends the abelianization class of `g` to the standard
+first-homology class represented by `(g⁻¹, 1)`. -/
 @[simp]
 theorem tateHMinusTwoEquivAbelianization_symm_of (g : L.Gal) :
     L.tateHMinusTwoEquivAbelianization.symm (Additive.ofMul (Abelianization.of g)) =
@@ -462,14 +494,26 @@ theorem tateHMinusTwoEquivAbelianization_symm_of (g : L.Gal) :
         (Rep.trivial ℤ L.Gal ℤ)
         (groupHomology.H1π (Rep.trivial ℤ L.Gal ℤ)
           ((groupHomology.cycles₁IsoOfIsTrivial (Rep.trivial ℤ L.Gal ℤ)).inv
-            (Finsupp.single g 1))) := by
-  exact TauCeti.TateCohomology.HNegTwoAddEquivAbelianization_symm_of g
+            (Finsupp.single g⁻¹ 1))) := by
+  simp [AddEquiv.symm_apply_eq]
 
 /-- **In positive degrees the Tate cohomology of a finite normal layer is its ordinary
 cohomology.** This is Mathlib's comparison `TateCohomology.isoGroupCohomology`, stated between the
 carriers `TateH` and `H` of the layer, so that it composes with maps between those carriers. -/
 def tateHIsoH (r : ℕ) [NeZero r] : L.TateH F r ≅ L.H F r :=
   (TateCohomology.isoGroupCohomology r).app (L.rep F)
+
+/-- **In positive degrees Tate cohomology with trivial integral coefficients is ordinary
+cohomology.** -/
+def trivialTateHIsoH (r : ℕ) [NeZero r] : L.TrivialTateH r ≅ L.TrivialH r :=
+  (TateCohomology.isoGroupCohomology r).app (Rep.trivial ℤ L.Gal ℤ)
+
+/-- The positive-degree comparison for trivial coefficients is Mathlib's canonical comparison
+isomorphism. -/
+theorem trivialTateHIsoH_def (r : ℕ) [NeZero r] :
+    L.trivialTateHIsoH r =
+      (TateCohomology.isoGroupCohomology r).app (Rep.trivial ℤ L.Gal ℤ) :=
+  (rfl)
 
 /-- The identification of positive-degree Tate cohomology of a layer with its ordinary cohomology
 is Mathlib's comparison isomorphism at the coefficient module of the layer. -/
@@ -490,8 +534,7 @@ landing in the ground level through `groundLevelEquiv`. -/
 def norm : F.level L.top →ₗ[ℤ] F.level L.ground :=
   (L.groundLevelEquiv F).toLinearMap ∘ₗ
     (L.rep F).ρ.norm.codRestrict (L.rep F).ρ.invariants fun x ↦
-      (Representation.mem_invariants _ _).2 fun g ↦ by
-        rw [← LinearMap.comp_apply, Representation.self_comp_norm]
+      (Representation.mem_invariants _ _).2 fun g ↦ Representation.self_norm_apply _ g x
 
 /-- The norm of a layer is the sum of the Galois conjugates: `N_{U/V}(x) = ∑_{γ ∈ U ⧸ V} γ x`. -/
 @[simp]
@@ -548,18 +591,8 @@ theorem map_groundLevelEquiv_submoduleOf :
     Submodule.map (L.groundLevelEquiv F).toLinearMap
         ((LinearMap.range (L.rep F).ρ.norm).submoduleOf (L.rep F).ρ.invariants) =
       L.normSubgroup F := by
-  ext y
-  simp only [Submodule.mem_map, Submodule.submoduleOf, Submodule.mem_comap,
-    LinearMap.mem_range, mem_normSubgroup, LinearEquiv.coe_coe]
-  constructor
-  · rintro ⟨z, ⟨v, hv⟩, rfl⟩
-    refine ⟨v, Subtype.ext ?_⟩
-    -- The congruence is bound first: elaborated against the goal, `congrArg` would unify its
-    -- arguments with the two sides of the goal instead of with the two sides of `hv`.
-    have h := congrArg Subtype.val hv
-    exact h
-  · rintro ⟨v, rfl⟩
-    exact ⟨_, ⟨v, rfl⟩, rfl⟩
+  simp only [normSubgroup, norm, LinearMap.range_comp, LinearMap.range_codRestrict,
+    Submodule.submoduleOf]
 
 /-- **Degree-zero Tate cohomology of a finite normal layer is its norm quotient.** This is the
 low-degree identification that the Artin map of a class formation is read through. -/

@@ -401,6 +401,31 @@ theorem decompose_ofPath_gradeBy (x : Quiver.TotalPath Q) :
         ⟨ofPath x, ofPath_mem_gradeBy wt x⟩ :=
   DirectSum.decompose_of_mem _ (ofPath_mem_gradeBy wt x)
 
+/-- **Two arrow weights are compatible**: the `wt`-homogeneous components of an element which is
+homogeneous of degree `m` for a second weight `wt'` are again homogeneous of degree `m` for
+`wt'`, because every basis path is homogeneous for both weights at once. -/
+theorem isHomogeneous_gradeBy_gradeBy {M' : Type*} [AddMonoid M']
+    (wt' : ∀ {a b : Q}, (a ⟶ b) → M') (m : M') :
+    SetLike.IsHomogeneous (gradeBy k wt) (gradeBy k wt' m) := by
+  intro n x hx
+  rw [gradeBy] at hx
+  induction hx using Submodule.span_induction with
+  | mem y hy =>
+    obtain ⟨y, hy, rfl⟩ := hy
+    rw [decompose_ofPath_gradeBy, DirectSum.coe_of_apply]
+    split_ifs
+    · exact ofPath_mem_gradeBy_of_addWeight hy
+    · exact zero_mem _
+  | zero =>
+    rw [decompose_zero, DirectSum.zero_apply, Submodule.coe_zero]
+    exact zero_mem _
+  | add y z _ _ hy hz =>
+    rw [decompose_add, DirectSum.add_apply, Submodule.coe_add]
+    exact add_mem hy hz
+  | smul r y _ hy =>
+    rw [decompose_smul, DirectSum.smul_apply, Submodule.coe_smul]
+    exact Submodule.smul_mem _ r hy
+
 end GradedAlgebra
 
 /-! ### The path-length grading -/
@@ -544,6 +569,38 @@ theorem grade_one_eq_span_range_ofArrow : grade k Q 1 = Submodule.span k
     exact ⟨⟨a, c, e⟩, ofArrow_eq_ofPath e⟩
   · rintro ⟨⟨a, b, e⟩, rfl⟩
     exact ⟨⟨a, b, e.toPath⟩, rfl, (ofArrow_eq_ofPath e).symm⟩
+
+variable (k Q)
+
+/-- The arrows form a basis of the degree-one part of the path algebra. -/
+noncomputable def arrowBasis :
+    Module.Basis (Σ a b : Q, a ⟶ b) k (grade k Q 1) := by
+  have hli : LinearIndependent k fun e : Σ a b : Q, a ⟶ b =>
+      (ofArrow e.2.2 : pathAlgebra k Q) := by
+    have hinj : Function.Injective (fun e : Σ a b : Q, a ⟶ b =>
+        (⟨e.1, e.2.1, e.2.2.toPath⟩ : Quiver.TotalPath Q)) := by
+      rintro ⟨a, b, e⟩ ⟨c, d, f⟩ h
+      grind [_root_.Quiver.Hom.toPath]
+    simpa only [Function.comp_def, ← ofArrow_eq_ofPath] using
+      (linearIndependent_ofPath k Q).comp _ hinj
+  exact (Module.Basis.span hli).map
+    (LinearEquiv.ofEq _ _ grade_one_eq_span_range_ofArrow.symm)
+
+/-- A degree-one basis vector is the corresponding arrow in the path algebra. -/
+@[simp]
+theorem coe_arrowBasis_apply (e : Σ a b : Q, a ⟶ b) :
+    (arrowBasis k Q e : pathAlgebra k Q) = ofArrow e.2.2 := by
+  simp [arrowBasis, Module.Basis.map_apply, LinearEquiv.coe_ofEq_apply]
+
+/-- Each step of the length filtration splits into its lowest degree and the next step. -/
+theorem pathSpan_eq_grade_sup_pathSpan_succ (n : ℕ) :
+    pathSpan k Q n = grade k Q n ⊔ pathSpan k Q (n + 1) := by
+  rw [pathSpan_eq_span_image_basis, grade_eq_span_image_basis,
+    pathSpan_eq_span_image_basis, ← Submodule.span_union, ← Set.image_union]
+  congr 2
+  ext x
+  simp only [Set.mem_ofPred_eq, Set.mem_union]
+  omega
 
 end Grade
 

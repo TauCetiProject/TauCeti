@@ -39,6 +39,12 @@ local component `ω_P` respects, some function `x` with `ord_P x ≥ -(v_P (ω) 
 would be the trace of a function of `F'` bounded by `Con (ω) + Diff(F'/F) + P'` along the fibre
 over `P`, and `Cotr ω` would have to kill the corresponding fibre-constant repartition.
 
+Both further properties of Stichtenoth's Proposition 3.4.11 follow from uniqueness.  Multiplying
+a fibre-constant repartition by a function of `F` keeps it fibre-constant and commutes with the
+trace, so the cotrace is `F`-semilinear.  In a tower `F₀ ⊆ F₁ ⊆ F₂`, a fibre-constant
+repartition for `F₂ / F₀` is also fibre-constant for `F₂ / F₁`, its entrywise trace to `F₁` is
+fibre-constant for `F₁ / F₀`, and the traces compose, so the cotrace is transitive.
+
 ## Main definitions
 
 * `TauCeti.weilDifferentialCotrace`: the cotrace `Ω_F → Ω_{F'}`, as a `k`-linear map.
@@ -58,11 +64,15 @@ over `P`, and `Cotr ω` would have to kill the corresponding fibre-constant repa
   `Con (ω) + Diff(F'/F) ≤ (Cotr ω)` for a nonzero Weil differential `ω`.
 * `TauCeti.weilDifferentialDivisor_weilDifferentialCotrace`: **the divisor of the cotrace**,
   `(Cotr ω) = Con (ω) + Diff(F'/F)` (Stichtenoth, Theorem 3.4.6).
+* `TauCeti.weilDifferentialCotrace_smul`: the cotrace is `F`-semilinear,
+  `Cotr (f · ω) = f · Cotr ω` (Stichtenoth, Proposition 3.4.11(a)).
+* `TauCeti.weilDifferentialCotrace_weilDifferentialCotrace`: the cotrace is transitive in
+  towers, `Cotr_{F₂/F₁} ∘ Cotr_{F₁/F₀} = Cotr_{F₂/F₀}` (Stichtenoth, Proposition 3.4.11(b)).
 
 ## References
 
 * H. Stichtenoth, *Algebraic Function Fields and Codes*, 2nd ed., GTM 254, Springer, 2009,
-  Section III.4, Definition 3.4.5 and Theorem 3.4.6.
+  Section III.4, Definition 3.4.5, Theorem 3.4.6 and Proposition 3.4.11.
 -/
 
 public section
@@ -299,6 +309,29 @@ theorem weilDifferentialCotrace_injective (hF : IsFunctionField k F)
     (hF' : IsFunctionField k' F') : Function.Injective (weilDifferentialCotrace k' F' hF hF') :=
   (injective_iff_map_eq_zero _).mpr fun _ ↦ (weilDifferentialCotrace_eq_zero_iff hF hF').mp
 
+/-- **The cotrace is `F`-semilinear** (Stichtenoth, Proposition 3.4.11(a)):
+`Cotr (f · ω) = f · Cotr ω` for a function `f` of `F`, which acts on the Weil differentials of
+`F'` through `F → F'`. -/
+@[simp]
+theorem weilDifferentialCotrace_smul (hF : IsFunctionField k F) (hF' : IsFunctionField k' F')
+    (f : F) (ω : ↥(weilDifferentialSpace k F)) :
+    letI := weilDifferentialSpaceModule hF
+    letI := weilDifferentialSpaceModule hF'
+    weilDifferentialCotrace k' F' hF hF' (f • ω) =
+      algebraMap F F' f • weilDifferentialCotrace k' F' hF hF' ω := by
+  let := weilDifferentialSpaceModule hF
+  let := weilDifferentialSpaceModule hF'
+  refine Subtype.ext (eq_weilDifferentialCotrace hF hF' (f • ω) (Submodule.coe_mem _)
+    fun β ↦ ?_).symm
+  -- multiplying the pullback of `β` by `f` is pulling back `f • β`
+  have hpull : repartitionMul hF' (algebraMap F F' f) (relativeRepartitionPullback k k' F F' β) =
+      relativeRepartitionPullback k k' F F'
+        ⟨f • (β : Place k F → F'), smul_mem_relativeRepartitionSpace hF f β.2⟩ :=
+    Subtype.ext <| funext fun P' ↦ by simp [Algebra.smul_def]
+  rw [coe_weilDifferentialSpaceModule_smul, repartitionDualMul_apply_apply, hpull,
+    trace_weilDifferentialCotrace_apply, repartitionTrace_smul,
+    coe_weilDifferentialSpaceModule_smul, repartitionDualMul_apply_apply]
+
 /-- **The divisor of the cotrace is at least `Con (ω) + Diff(F'/F)`** (Stichtenoth,
 Theorem 3.4.6), for a nonzero Weil differential `ω` of `F / k`. -/
 theorem conorm_add_different_le_weilDifferentialDivisor (hF : IsFunctionField k F)
@@ -387,5 +420,100 @@ theorem weilDifferentialDivisor_weilDifferentialCotrace (hF : IsFunctionField k 
     weilDifferentialFiltration_apply_eq_zero_of_mem_adeleFiltration hbound _ hpull, map_zero]
 
 end Cotrace
+
+/-! ### The cotrace in a tower -/
+
+section Tower
+
+universe u₀ u₁ u₂ v₀ v₁ v₂
+
+variable {k₀ : Type u₀} {k₁ : Type u₁} {k₂ : Type u₂}
+variable {F₀ : Type v₀} {F₁ : Type v₁} {F₂ : Type v₂}
+variable [Field k₀] [Field k₁] [Field k₂] [Field F₀] [Field F₁] [Field F₂]
+variable [Algebra k₀ k₁] [Algebra k₁ k₂] [Algebra k₀ k₂] [IsScalarTower k₀ k₁ k₂]
+variable [Algebra F₀ F₁] [Algebra F₁ F₂] [Algebra F₀ F₂] [IsScalarTower F₀ F₁ F₂]
+variable [Algebra k₀ F₀] [Algebra k₁ F₁] [Algebra k₂ F₂]
+variable [Algebra k₀ F₁] [Algebra k₁ F₂] [Algebra k₀ F₂]
+variable [IsScalarTower k₀ k₁ F₁] [IsScalarTower k₁ k₂ F₂]
+variable [IsScalarTower k₀ F₀ F₁] [IsScalarTower k₁ F₁ F₂]
+variable [IsScalarTower k₀ k₂ F₂] [IsScalarTower k₀ F₀ F₂]
+variable [FiniteDimensional F₀ F₁] [FiniteDimensional F₁ F₂]
+variable [FiniteDimensional k₀ k₁] [FiniteDimensional k₁ k₂]
+
+attribute [local instance 10] Place.algebraIntegersExtension Place.isScalarTowerIntegersExtension
+
+/-- A relative repartition of `F₂ / F₀`, read at the places of `F₁` through restriction, is a
+relative repartition of `F₂ / F₁`: an element integral over `𝒪_{P₀}` is regular at every place
+of `F₂` over `P₀`, in particular at every place over a place `P₁` of `F₁` lying over `P₀`. -/
+private theorem comp_restrict_mem_relativeRepartitionSpace (hF₂ : IsFunctionField k₂ F₂)
+    {β : Place k₀ F₀ → F₂} (hβ : β ∈ relativeRepartitionSpace k₀ F₀ F₂) :
+    (fun P₁ : Place k₁ F₁ ↦ β (P₁.restrict k₀ F₀)) ∈ relativeRepartitionSpace k₁ F₁ F₂ := by
+  have : FiniteDimensional F₀ F₂ := FiniteDimensional.trans F₀ F₁ F₂
+  have : Algebra.IsIntegral k₀ k₂ := Algebra.IsIntegral.trans k₁
+  refine mem_relativeRepartitionSpace_iff.mpr <| Filter.eventually_cofinite.mpr <|
+    ((Filter.eventually_cofinite.mp (mem_relativeRepartitionSpace_iff.mp hβ)).biUnion fun P₀ _ ↦
+      Place.finite_setOf_restrict_eq (k' := k₁) (F' := F₁) k₀ F₀ P₀).subset fun P₁ hP₁ ↦
+        Set.mem_iUnion₂.mpr ⟨P₁.restrict k₀ F₀, fun hint ↦ hP₁ ?_, rfl⟩
+  refine (Place.isIntegral_iff_forall_restrict_eq_mem_integers hF₂ P₁).mpr fun P₂ hP₂ ↦ ?_
+  refine (Place.isIntegral_iff_forall_restrict_eq_mem_integers hF₂ _).mp hint P₂ ?_
+  rw [← hP₂, Place.restrict_restrict]
+
+omit [IsScalarTower k₀ k₁ k₂] [FiniteDimensional F₀ F₁] [FiniteDimensional k₀ k₁]
+  [FiniteDimensional k₁ k₂] in
+/-- The entrywise trace to `F₁` of a relative repartition of `F₂ / F₀` is a relative repartition
+of `F₁ / F₀`: the trace of an element integral over `𝒪_{P₀}` is integral over `𝒪_{P₀}`. -/
+private theorem trace_comp_mem_relativeRepartitionSpace {β : Place k₀ F₀ → F₂}
+    (hβ : β ∈ relativeRepartitionSpace k₀ F₀ F₂) :
+    (fun P₀ ↦ Algebra.trace F₁ F₂ (β P₀)) ∈ relativeRepartitionSpace k₀ F₀ F₁ :=
+  mem_relativeRepartitionSpace_iff.mpr <| (mem_relativeRepartitionSpace_iff.mp hβ).mono
+    fun P₀ h ↦
+      have : IsScalarTower P₀.integers F₁ F₂ :=
+        .of_algebraMap_eq fun x ↦ IsScalarTower.algebraMap_apply F₀ F₁ F₂ (x : F₀)
+      Algebra.isIntegral_trace (L := F₁) h
+
+variable [Algebra.IsSeparable F₀ F₁] [Algebra.IsSeparable F₁ F₂]
+variable [Algebra.IsSeparable k₀ k₁] [Algebra.IsSeparable k₁ k₂]
+
+/-- **The cotrace is transitive in towers** (Stichtenoth, Proposition 3.4.11(b)): for finite
+separable extensions `F₀ ⊆ F₁ ⊆ F₂` of function fields, with finite separable extensions
+`k₀ ⊆ k₁ ⊆ k₂` of their constant fields, `Cotr_{F₂/F₁} ∘ Cotr_{F₁/F₀} = Cotr_{F₂/F₀}`. -/
+@[simp]
+theorem weilDifferentialCotrace_weilDifferentialCotrace (hF₀ : IsFunctionField k₀ F₀)
+    (hF₁ : IsFunctionField k₁ F₁) (hF₂ : IsFunctionField k₂ F₂)
+    (ω : ↥(weilDifferentialSpace k₀ F₀)) :
+    haveI : FiniteDimensional F₀ F₂ := FiniteDimensional.trans F₀ F₁ F₂
+    haveI : Algebra.IsSeparable F₀ F₂ := Algebra.IsSeparable.trans F₀ F₁ F₂
+    haveI : FiniteDimensional k₀ k₂ := FiniteDimensional.trans k₀ k₁ k₂
+    haveI : Algebra.IsSeparable k₀ k₂ := Algebra.IsSeparable.trans k₀ k₁ k₂
+    weilDifferentialCotrace k₂ F₂ hF₁ hF₂ (weilDifferentialCotrace k₁ F₁ hF₀ hF₁ ω) =
+      weilDifferentialCotrace k₂ F₂ hF₀ hF₂ ω := by
+  have : FiniteDimensional F₀ F₂ := FiniteDimensional.trans F₀ F₁ F₂
+  have : Algebra.IsSeparable F₀ F₂ := Algebra.IsSeparable.trans F₀ F₁ F₂
+  have : FiniteDimensional k₀ k₂ := FiniteDimensional.trans k₀ k₁ k₂
+  have : Algebra.IsSeparable k₀ k₂ := Algebra.IsSeparable.trans k₀ k₁ k₂
+  refine Subtype.ext (eq_weilDifferentialCotrace hF₀ hF₂ ω (Submodule.coe_mem _) fun β ↦ ?_)
+  -- `β`, read at the places of `F₁`, is a relative repartition `β₁` of `F₂ / F₁` with the same
+  -- pullback to `F₂`
+  set β₁ : ↥(relativeRepartitionSpace k₁ F₁ F₂) :=
+    ⟨fun P₁ ↦ (β : Place k₀ F₀ → F₂) (P₁.restrict k₀ F₀),
+      comp_restrict_mem_relativeRepartitionSpace hF₂ β.2⟩
+  have hpull : relativeRepartitionPullback k₀ k₂ F₀ F₂ β =
+      relativeRepartitionPullback k₁ k₂ F₁ F₂ β₁ :=
+    Subtype.ext <| funext fun P₂ ↦ by
+      simp only [relativeRepartitionPullback_apply, β₁, Place.restrict_restrict]
+  -- and the trace of `β₁` to `F₁` is the pullback of the entrywise trace `γ` of `β` to `F₁`
+  set γ : ↥(relativeRepartitionSpace k₀ F₀ F₁) :=
+    ⟨fun P₀ ↦ Algebra.trace F₁ F₂ ((β : Place k₀ F₀ → F₂) P₀),
+      trace_comp_mem_relativeRepartitionSpace β.2⟩
+  have htr : repartitionTrace k₁ F₁ F₂ hF₁ β₁ = relativeRepartitionPullback k₀ k₁ F₀ F₁ γ :=
+    Subtype.ext <| funext fun P₁ ↦ by
+      simp only [repartitionTrace_apply, relativeRepartitionPullback_apply, β₁, γ]
+  have htrγ : repartitionTrace k₀ F₀ F₁ hF₀ γ = repartitionTrace k₀ F₀ F₂ hF₀ β :=
+    Subtype.ext <| funext fun P₀ ↦ by
+      simp only [repartitionTrace_apply, γ, Algebra.trace_trace]
+  rw [hpull, ← Algebra.trace_trace (S := k₁), trace_weilDifferentialCotrace_apply, htr,
+    trace_weilDifferentialCotrace_apply, htrγ]
+
+end Tower
 
 end TauCeti

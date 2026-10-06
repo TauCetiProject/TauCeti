@@ -14,14 +14,18 @@ public import TauCeti.AlgebraicGeometry.Modules.RationalFunctions
 
 A section of a line bundle on an integral scheme is determined by its restriction to any
 nonempty open subset, and even by its germ at any point of its domain. In particular, the
-map to the generic stalk is injective. This is the uniqueness input for realizing a line
-bundle as a subsheaf of rational sections in the divisor--line-bundle correspondence.
+map to the generic stalk is injective. A rational section is regular on an open subset exactly
+when it comes from the stalk at every point of that subset
+(`mem_range_genericPoint_germ_iff`). These are the uniqueness and gluing inputs for realizing a
+line bundle as a subsheaf of rational sections in the divisor--line-bundle correspondence.
 
 The statements require only integrality; no Noetherian, dimension, or properness
 hypotheses are needed.
 
 See Hartshorne, *Algebraic Geometry*, II.6, for the rational-section construction of the
-divisor associated with a line bundle.
+divisor associated with a line bundle. The local regularity argument extends the gluing argument
+of `TauCeti.AlgebraicGeometry.Scheme.exists_germToFunctionField_eq_of_forall_mem_range`
+from regular functions to line-bundle sections.
 -/
 
 public section
@@ -98,5 +102,50 @@ theorem germ_injective_of_isIntegral (L : InvertibleSheaf X) {U : X.Opens} (x : 
   obtain ⟨V, hxV, i, j, h⟩ := L.obj.presheaf.germ_eq x hx hx a b hab
   let : Nonempty V := ⟨⟨x, hxV⟩⟩
   exact L.map_injective_of_isIntegral i (by simpa only [Subsingleton.elim j i] using h)
+
+/-- A rational section of a line bundle is regular on a nonempty open subset if and only if
+it lies in the image of the stalk at every point of that open subset. The local images are taken
+under specialization to the generic stalk. -/
+theorem mem_range_genericPoint_germ_iff (L : InvertibleSheaf X) {U : X.Opens}
+    [Nonempty U] (q : L.obj.presheaf.stalk (genericPoint X)) :
+    q ∈ Set.range (L.obj.presheaf.germ U (genericPoint X) (Scheme.genericPoint_mem U)) ↔
+      ∀ x ∈ U, q ∈ Set.range
+        (L.obj.presheaf.stalkSpecializes ((genericPoint_spec X).specializes (Set.mem_univ x))) := by
+  constructor
+  · rintro ⟨s, rfl⟩ x hx
+    refine ⟨L.obj.presheaf.germ U x hx s, ?_⟩
+    exact ConcreteCategory.congr_hom (L.obj.presheaf.germ_stalkSpecializes hx _) s
+  · intro hq
+    -- Represent each local preimage by a section on a neighbourhood inside `U`.
+    have hlocal : ∀ x : U, ∃ V : X.Opens, ∃ hx : (x : X) ∈ V, ∃ hVU : V ≤ U,
+        ∃ s : Γ(L.obj, V),
+          L.obj.presheaf.germ V (genericPoint X)
+            (((genericPoint_spec X).specializes (Set.mem_univ (x : X))).mem_open V.isOpen hx) s =
+              q := by
+      intro x
+      obtain ⟨t, ht⟩ := hq x x.2
+      obtain ⟨V, hVU, hx, s, rfl⟩ := L.obj.presheaf.exists_le_germ_eq t x.2
+      refine ⟨V, hx, hVU, s, ?_⟩
+      exact (ConcreteCategory.congr_hom (L.obj.presheaf.germ_stalkSpecializes hx _) s).symm.trans ht
+    choose V hx hVU s hs using hlocal
+    have hne : ∀ x : U, Nonempty (V x) := fun x ↦ ⟨⟨x, hx x⟩⟩
+    -- All local sections have the same generic germ, so they agree on overlaps.
+    have hcompat : TopCat.Presheaf.IsCompatible L.obj.presheaf V s := by
+      intro x y
+      have : Nonempty (V x ⊓ V y : X.Opens) :=
+        ⟨⟨genericPoint X, @Scheme.genericPoint_mem X _ (V x) (hne x),
+          @Scheme.genericPoint_mem X _ (V y) (hne y)⟩⟩
+      apply L.germ_injective_of_isIntegral (genericPoint X) (Scheme.genericPoint_mem _)
+      rw [L.obj.presheaf.germ_res_apply, L.obj.presheaf.germ_res_apply]
+      exact (hs x).trans (hs y).symm
+    obtain ⟨a, ha, -⟩ :=
+      TopCat.Sheaf.existsUnique_gluing'
+        (⟨L.obj.presheaf, L.obj.isSheaf⟩ : TopCat.Sheaf AddCommGrpCat X)
+        V U (fun x ↦ homOfLE (hVU x))
+        (fun x hxU ↦ Opens.mem_iSup.mpr ⟨⟨x, hxU⟩, hx ⟨x, hxU⟩⟩) s hcompat
+    obtain ⟨x⟩ := ‹Nonempty U›
+    refine ⟨a, ?_⟩
+    have hres : L.obj.presheaf.map (homOfLE (hVU x)).op a = s x := ha x
+    rw [← hs x, ← hres, L.obj.presheaf.germ_res_apply]
 
 end TauCeti.AlgebraicGeometry.InvertibleSheaf

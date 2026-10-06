@@ -69,11 +69,12 @@ namespace UniformSpace.Completion
 
 section AddGroup
 
-variable {A : Type*} [AddGroup A] [UniformSpace A] [IsUniformAddGroup A]
+variable {A : Type*} [AddGroup A] [UniformSpace A]
 
 /-- The closure in the completion of the image of an open additive subgroup is open. Only the
 additive structure is involved. -/
-theorem isOpen_closure_image_coe {G : AddSubgroup A} (hG : IsOpen (G : Set A)) :
+theorem isOpen_closure_image_coe [IsUniformAddGroup A] {G : AddSubgroup A}
+    (hG : IsOpen (G : Set A)) :
     IsOpen (closure (((↑) : A → Completion A) '' (G : Set A))) := by
   have hmem := Completion.isDenseInducing_coe.closure_image_mem_nhds (hG.mem_nhds G.zero_mem)
   rw [Completion.coe_zero] at hmem
@@ -82,11 +83,14 @@ theorem isOpen_closure_image_coe {G : AddSubgroup A} (hG : IsOpen (G : Set A)) :
 /-- **An open additive subgroup is recovered from the closure of its image.** For `G` open, the
 preimage under `A → Â` of the closure of the image of `G` is `G` itself.
 
-This is the injectivity half of the bijection `G ↦ closure (ι '' G)` between the open subgroups of
-`A` and those of `Â` (Wedhorn, Example 5.33); `isOpen_closure_image_coe` says the map lands in open
-subgroups. Note it holds without assuming `A` separated: the kernel of `A → Â` is the closure of
-`⊥`, which lies in every neighbourhood of `0` and hence in the open `G`. -/
-theorem preimage_closure_image_coe {G : AddSubgroup A} (hG : IsOpen (G : Set A)) :
+For a uniform additive group, this is the injectivity half of the bijection
+`G ↦ closure (ι '' G)` between the open subgroups of `A` and those of `Â`
+(Wedhorn, Example 5.33); `isOpen_closure_image_coe` says the map lands in open subgroups.
+No separation assumption on `A` is needed. Separate continuity of addition suffices for this
+preimage equality: an open subgroup is closed, and the completion map induces the topology
+on `A`. -/
+theorem preimage_closure_image_coe [SeparatelyContinuousAdd A] {G : AddSubgroup A}
+    (hG : IsOpen (G : Set A)) :
     ((↑) : A → Completion A) ⁻¹' closure (((↑) : A → Completion A) '' (G : Set A))
       = (G : Set A) := by
   rw [← Completion.isDenseInducing_coe.isInducing.closure_eq_preimage_closure_image]
@@ -108,13 +112,9 @@ theorem coe_coeRingHom :
 theorem ker_coeRingHom :
     RingHom.ker (Completion.coeRingHom : A →+* Completion A) = (⊥ : Ideal A).closure := by
   ext x
-  rw [RingHom.mem_ker, ← SetLike.mem_coe, Ideal.coe_closure]
-  calc (Completion.coeRingHom x = 0)
-      ↔ ((x : Completion A) = ((0 : A) : Completion A)) := by rw [Completion.coe_zero]; rfl
-    _ ↔ Inseparable ((x : Completion A)) (((0 : A) : Completion A)) := inseparable_iff_eq.symm
-    _ ↔ Inseparable x (0 : A) := Completion.isDenseInducing_coe.isInducing.inseparable_iff
-    _ ↔ x - 0 ∈ closure ({0} : Set A) := addGroup_inseparable_iff
-    _ ↔ x ∈ closure ((⊥ : Ideal A) : Set A) := by rw [sub_zero]; simp
+  rw [RingHom.mem_ker, ← SetLike.mem_coe, Ideal.coe_closure,
+    Completion.isDenseInducing_coe.isInducing.closure_eq_preimage_closure_image]
+  simp
 
 /-- The closure `Ĝ` in `Â` of the image of a subring `G` of `A` is, as a set, the closure of the
 image of `G` under the completion coercion. This unfolds `Subring.topologicalClosure` and
@@ -188,9 +188,8 @@ private theorem isIntegral_of_isIntegral_topologicalClosure_coe {G : Subring A}
   -- pulls back to `G` itself
   have hpre : ((↑) : A → Completion A) ⁻¹'
       ((G.map Completion.coeRingHom).topologicalClosure : Set (Completion A)) = (G : Set A) := by
-    rw [coe_topologicalClosure_map_coeRingHom,
-      ← Completion.isDenseInducing_coe.isInducing.closure_eq_preimage_closure_image,
-      ← Subring.coe_toAddSubgroup, (G.toAddSubgroup.isClosed_of_isOpen hG).closure_eq]
+    rw [coe_topologicalClosure_map_coeRingHom]
+    exact preimage_closure_image_coe (G := G.toAddSubgroup) hG
   obtain ⟨n, c, hcmem, hc⟩ := TauCeti.exists_pow_add_sum_eq_zero_of_isIntegral hb
   choose! d hdG hd using fun (i : ℕ) (hi : i < n + 1) ↦
     exists_mem_coe_sub_mul_mem_topologicalClosure hG (hcmem i hi) ((b : Completion A) ^ i)

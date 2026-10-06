@@ -6,7 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.UnitDisc.Basic
+public import Mathlib.Analysis.Complex.Circle
+public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Topology.Algebra.ConstMulAction
+import Mathlib.Analysis.Calculus.Deriv.Add
+import Mathlib.Analysis.Calculus.Deriv.Mul
 
 /-!
 # Basic API for the complex unit disc
@@ -16,12 +20,39 @@ between a self-map of the bundled disc and a scalar representative `ℂ → ℂ`
 representative maps `Metric.ball 0 1` into itself, and bijectively onto itself when the bundled
 map is an equivalence — together with the basic properties of the `Circle` action on the disc: the
 disc is nontrivial, a rotation is determined by its value at any one nonzero point, and hence the
-circle acts faithfully.
+circle acts faithfully. It also records the slit-plane criterion
+`TauCeti.one_sub_div_mem_slitPlane` for a disc point and a circle point.
+It also records that a point of the open disc differs from every point of norm one.
 -/
 
 public section
 
 namespace TauCeti
+
+open Complex Metric
+
+/-- The derivative of the affine factor `1 - ξ / w` for a complex number `w`. -/
+theorem hasDerivAt_one_sub_div (w ζ : ℂ) :
+    HasDerivAt (fun ξ : ℂ => 1 - ξ / w) (-w⁻¹) ζ := by
+  simpa [div_eq_mul_inv] using ((hasDerivAt_id ζ).div_const w).const_sub 1
+
+/-- A point of the open unit disc differs from every point of norm one. -/
+theorem ne_of_mem_ball_of_norm_eq_one {ζ w : ℂ} (hζ : ζ ∈ ball (0 : ℂ) 1)
+    (hw : ‖w‖ = 1) : ζ ≠ w := by
+  intro h
+  have hnorm := congrArg norm h
+  rw [hw] at hnorm
+  exact (mem_ball_zero_iff.mp hζ).ne hnorm
+
+/-- For `w` on the unit circle and `ζ` in the open unit disc, `1 - ζ / w` lies in the slit plane,
+since `ζ / w` has norm less than one. -/
+theorem one_sub_div_mem_slitPlane (w : Circle) {ζ : ℂ} (hζ : ζ ∈ ball (0 : ℂ) 1) :
+    1 - ζ / w ∈ slitPlane := by
+  rw [sub_eq_add_neg]
+  apply mem_slitPlane_of_norm_lt_one
+  rw [norm_neg, norm_div, Circle.norm_coe, div_one]
+  exact mem_ball_zero_iff.mp hζ
+
 
 open Complex
 

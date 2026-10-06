@@ -6,12 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Form
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Torus.Basic
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.B.SpinWeight
 public import TauCeti.RepresentationTheory.Spin.Polarization.TypeB.Representation
 import TauCeti.LinearAlgebra.Eigenspace.Binomial
 import TauCeti.RingTheory.DividedPowers.Associative
 
 /-!
-# The type-B spinor lattice is stable under the simple-generator Kostant form
+# The coroot weights of the type-B spin module, and stability of its spinor lattice
 
 This file proves that, over `ℚ`, the coordinate spinor lattice of the type-`B` spin
 representation `TauCeti.SpinPolarizationData.typeBSpinRep` of an odd polarization is stable
@@ -21,9 +23,7 @@ Bourbaki-numbered simple-root family `TauCeti.typeBSimpleRootGeneratorFamily`, i
 the binomial coefficients in the simple coroots. As in
 `TauCeti/LinearAlgebra/RootSystem/SimplyConnectedRootDatum/KostantForm.lean`, identifying that
 subring with the canonical all-root Kostant `ℤ`-form is a separate theorem and is not claimed
-here; it would first need root vectors for the roots `εᵢ + εⱼ`, which the library does not yet
-have, since `TauCeti.typeBLongRootGenerator` covers only `εᵢ - εⱼ` and
-`TauCeti.typeBShortRootGenerator` only `εᵢ`.
+here.
 
 The positive and negative simple-root vectors act through square-zero Clifford bivectors, so
 their divided powers preserve the lattice. The simple coroots act diagonally on the exterior
@@ -31,6 +31,13 @@ basis with integral eigenvalues: adjacent differences of half-integral spin weig
 the terminal node, and twice the terminal half-weight at the short node. Their binomial
 coefficients therefore preserve the same lattice. These are precisely the two generator inputs
 consumed by `kostantForm_apply_mem`, so the whole subring they generate preserves the lattice.
+
+Those same eigenvalues are what the file records about weights. Over `ℚ` the exterior basis is a
+Cartan weight basis for the numbered simple coroots, with the integral weight read off which
+coordinates occur; that weight agrees with the simply connected type-`B` spin weight
+`TauCeti.DynkinType.typeBSpinWeight` of the same index set. The all-coordinate vector carries the
+last fundamental weight `ωₗ`, and reading the coroot weights from the terminal node downwards shows
+that it is the only exterior-basis vector that does.
 
 The nilpotence and eigenvalue computations are stated over an arbitrary field in which `2` is
 invertible, which is all the underlying Clifford comparison needs; only the lattice statements
@@ -45,10 +52,17 @@ Chevalley carrier in Layer 9 of the ReductiveGroups roadmap. That carrier is con
 * `TauCeti.SpinPolarizationData.typeBSpinRep_simpleRootGenerator_sq`: the represented
   simple-root operators are square-zero.
 * `TauCeti.SpinPolarizationData.typeBSpinCorootWeight`, with its values
-  `TauCeti.SpinPolarizationData.typeBSpinCorootWeight_last` and
-  `TauCeti.SpinPolarizationData.typeBSpinCorootWeight_castSucc`, and
+  `TauCeti.SpinPolarizationData.typeBSpinCorootWeight_last`,
+  `TauCeti.SpinPolarizationData.typeBSpinCorootWeight_castSucc`,
+  `TauCeti.SpinPolarizationData.typeBSpinCorootWeight_univ_eq_single` and
   `TauCeti.SpinPolarizationData.spinAction_typeBQuadraticEquiv_typeBSimpleCorootGenerator_basis`:
   the integral eigenvalues of the numbered simple coroots on the exterior basis.
+* `TauCeti.SpinPolarizationData.typeBSpinCorootWeight_eq_typeBSpinWeight`: those eigenvalues are
+  the simply connected type-`B` spin weight of the same index set.
+* `TauCeti.SpinPolarizationData.typeBSpinCorootWeight_eq_single_iff`: the last fundamental weight
+  occurs at exactly one exterior-basis vector.
+* `TauCeti.SpinPolarizationData.isCartanWeightVector_typeBSpinRep_exteriorBasis`: over `ℚ`, the
+  exterior basis is a Cartan weight basis with those eigenvalues.
 * `TauCeti.SpinPolarizationData.typeBSpinRep_kostantForm_apply_mem_integralLattice`: the
   simple-generator type-`B` Kostant form preserves the coordinate spinor lattice.
 
@@ -88,7 +102,7 @@ private theorem typeBQuadraticEquiv_typeBSimpleRootGenerator_mul_self
   · rw [typeBSimpleRootGenerator_last, pow_two]
     exact P.typeBQuadraticEquiv_typeBShortRootGenerator_mul_self b z hz (Fin.last n)
   · rw [typeBSimpleRootGenerator_castSucc, pow_two]
-    exact P.typeBQuadraticEquiv_typeBLongRootGenerator_mul_self b z hz
+    exact P.typeBQuadraticEquiv_typeBDifferenceRootGenerator_mul_self b z hz
       j.castSucc j.succ (ne_of_lt j.castSucc_lt_succ)
 
 private theorem typeBQuadraticEquiv_typeBSimpleNegativeRootGenerator_mul_self
@@ -99,7 +113,7 @@ private theorem typeBQuadraticEquiv_typeBSimpleNegativeRootGenerator_mul_self
   · rw [typeBSimpleNegativeRootGenerator_last, pow_two]
     exact P.typeBQuadraticEquiv_typeBShortNegativeRootGenerator_mul_self b z hz (Fin.last n)
   · rw [typeBSimpleNegativeRootGenerator_castSucc, pow_two]
-    exact P.typeBQuadraticEquiv_typeBLongRootGenerator_mul_self b z hz
+    exact P.typeBQuadraticEquiv_typeBDifferenceRootGenerator_mul_self b z hz
       j.succ j.castSucc (ne_of_gt j.castSucc_lt_succ)
 
 /-- Every represented positive or negative simple-root vector is square-zero. -/
@@ -115,16 +129,16 @@ theorem typeBSpinRep_simpleRootGenerator_sq (k : Fin (n + 1) ⊕ Fin (n + 1)) :
       rw [typeBSimpleRootGeneratorFamily_inr, ← pow_two,
         P.typeBQuadraticEquiv_typeBSimpleNegativeRootGenerator_mul_self b z hz i, map_zero]
 
-/-- The long-root operator indexed by distinct coordinates `i` and `j` contracts the `j`-th
+/-- The difference-root operator indexed by distinct coordinates `i` and `j` contracts the `j`-th
 exterior coordinate and then creates the `i`-th one. -/
-theorem typeBSpinRep_longRootGenerator_apply (i j : Fin (n + 1)) (hij : i ≠ j)
+theorem typeBSpinRep_differenceRootGenerator_apply (i j : Fin (n + 1)) (hij : i ≠ j)
     (x : ExteriorAlgebra K P.W) :
     P.typeBSpinRep b z hz
-        (_root_.UniversalEnvelopingAlgebra.ι K (typeBLongRootGenerator i j hij)) x =
+        (_root_.UniversalEnvelopingAlgebra.ι K (typeBDifferenceRootGenerator i j hij)) x =
       ExteriorAlgebra.ι K (b i) *
         CliffordAlgebra.contractLeft (b.coord j) x := by
   rw [_root_.UniversalEnvelopingAlgebra.ι_apply, P.typeBSpinRep_ι b z hz,
-    P.typeBQuadraticEquiv_typeBLongRootGenerator b z hz,
+    P.typeBQuadraticEquiv_typeBDifferenceRootGenerator b z hz,
     bivector_eq_ι_mul_ι_of_isOrtho Q (P.isOrtho_basis_dualVector b hij), map_mul,
     Module.End.mul_apply, spinAction_ι_wedge, spinAction_ι_contract,
     P.pairingEquiv_dualVector]
@@ -138,7 +152,7 @@ theorem typeBSpinRep_simpleRootGenerator_castSucc_exteriorBasis_singleton (j : F
         (b.ExteriorAlgebra {j.succ}) =
       b.ExteriorAlgebra {j.castSucc} := by
   rw [typeBSimpleRootGeneratorFamily_inl, typeBSimpleRootGenerator_castSucc,
-    P.typeBSpinRep_longRootGenerator_apply b z hz,
+    P.typeBSpinRep_differenceRootGenerator_apply b z hz,
     TauCeti.ExteriorAlgebra.basis_singleton, CliffordAlgebra.contractLeft_ι]
   simp [TauCeti.ExteriorAlgebra.basis_singleton]
 
@@ -151,7 +165,7 @@ theorem typeBSpinRep_simpleNegativeRootGenerator_castSucc_exteriorBasis_singleto
         (b.ExteriorAlgebra {j.castSucc}) =
       b.ExteriorAlgebra {j.succ} := by
   rw [typeBSimpleRootGeneratorFamily_inr, typeBSimpleNegativeRootGenerator_castSucc,
-    P.typeBSpinRep_longRootGenerator_apply b z hz,
+    P.typeBSpinRep_differenceRootGenerator_apply b z hz,
     TauCeti.ExteriorAlgebra.basis_singleton, CliffordAlgebra.contractLeft_ι]
   simp [TauCeti.ExteriorAlgebra.basis_singleton]
 
@@ -176,6 +190,52 @@ theorem typeBSpinCorootWeight_castSucc (s : Finset (Fin (n + 1))) (j : Fin n) :
     typeBSpinCorootWeight s j.castSucc =
       (if j.castSucc ∈ s then 1 else 0) - if j.succ ∈ s then 1 else 0 := by
   rw [typeBSpinCorootWeight, Fin.lastCases_castSucc]
+
+/-- The representation-theoretic coroot weight is the simply connected type-`B` spin weight. -/
+theorem typeBSpinCorootWeight_eq_typeBSpinWeight (s : Finset (Fin (n + 1))) :
+    typeBSpinCorootWeight s = TauCeti.DynkinType.typeBSpinWeight s := by
+  funext i
+  refine Fin.lastCases ?_ (fun j ↦ ?_) i
+  · rw [typeBSpinCorootWeight_last, TauCeti.DynkinType.typeBSpinWeight_apply]
+    by_cases h : Fin.last n ∈ s <;> simp [h]
+  · rw [typeBSpinCorootWeight_castSucc, TauCeti.DynkinType.typeBSpinWeight_apply]
+    simp
+
+/-- **The all-coordinate exterior-basis vector carries the last fundamental weight.** Every
+coordinate is occupied, so the terminal short node reads `1` and every adjacent difference
+vanishes: the weight is the last fundamental weight `ωₗ`, the `1` sitting at the terminal short
+node. The generator-level highest-weight data for the corresponding spinor, namely annihilation by
+the positive simple generators together with this weight, are proved in
+`TauCeti/RepresentationTheory/Spin/Polarization/TypeB/LastFundamentalWeight.lean`. -/
+@[simp]
+theorem typeBSpinCorootWeight_univ_eq_single :
+    typeBSpinCorootWeight (Finset.univ : Finset (Fin (n + 1))) = Pi.single (Fin.last n) 1 := by
+  rw [typeBSpinCorootWeight_eq_typeBSpinWeight,
+    TauCeti.DynkinType.typeBSpinWeight_univ_eq_single n.succ_pos]
+  -- the terminal index `⟨n + 1 - 1, _⟩` of the spin weight is `Fin.last n`
+  exact congrArg (fun i : Fin (n + 1) ↦ Pi.single i (1 : ℤ)) (Fin.ext (Nat.succ_sub_one n))
+
+/-- **The last fundamental weight occurs at exactly one exterior-basis vector.** Reading the
+coroot weights from the terminal node downwards, the value `1` at the short node forces the last
+coordinate to be occupied and each vanishing adjacent difference propagates occupation one step
+to the left, so the only index set with this weight is the full one. In particular the weight
+`ωₗ` of the type-`B` spin module occurs with multiplicity one in its exterior basis. -/
+@[simp]
+theorem typeBSpinCorootWeight_eq_single_iff {s : Finset (Fin (n + 1))} :
+    typeBSpinCorootWeight s = Pi.single (Fin.last n) 1 ↔ s = Finset.univ := by
+  refine ⟨fun h ↦ Finset.eq_univ_of_forall fun i ↦ ?_,
+    fun h ↦ h ▸ typeBSpinCorootWeight_univ_eq_single⟩
+  induction i using Fin.reverseInduction with
+  | last =>
+    have hval := congrFun h (Fin.last n)
+    rw [typeBSpinCorootWeight_last] at hval
+    by_contra hmem
+    simp [hmem] at hval
+  | cast j hj =>
+    have hval := congrFun h j.castSucc
+    rw [typeBSpinCorootWeight_castSucc, Pi.single_eq_of_ne (Fin.castSucc_lt_last j).ne] at hval
+    by_contra hmem
+    simp [hmem, hj] at hval
 
 /-- A difference of two spin weights is the corresponding difference of occupation numbers: the
 halves cancel. -/
@@ -207,19 +267,33 @@ theorem spinAction_typeBQuadraticEquiv_typeBSimpleCorootGenerator_basis
       P.spinAction_typeBQuadraticEquiv_typeBShortCorootGenerator_basis b z hz]
     by_cases hlast : Fin.last n ∈ s <;> simp [hlast]
   · rw [typeBSimpleCorootGenerator_castSucc,
-      P.spinAction_typeBQuadraticEquiv_typeBLongCorootGenerator_basis b z hz,
+      P.spinAction_typeBQuadraticEquiv_typeBDifferenceCorootGenerator_basis b z hz,
       spinWeight_sub_spinWeight]
     simp
 
 end Quadratic
-
-/-! ## Stability of the coordinate spinor lattice -/
 
 section Integral
 
 variable {V : Type v} [AddCommGroup V] [Module ℚ V] {Q : QuadraticForm ℚ V}
   (P : SpinPolarizationData Q) {n : ℕ} (b : Module.Basis (Fin (n + 1)) ℚ P.W)
   (z : P.line) (hz : Q (z : V) = 1)
+
+/-! ## Cartan weight vectors -/
+
+/-- **The exterior basis is a Cartan weight basis of the type-`B` spin module**: the numbered
+simple coroots act on the basis vector indexed by `s` through the integral weight
+`TauCeti.SpinPolarizationData.typeBSpinCorootWeight s`. -/
+theorem isCartanWeightVector_typeBSpinRep_exteriorBasis (s : Finset (Fin (n + 1))) :
+    TauCeti.UniversalEnvelopingAlgebra.IsCartanWeightVector
+      (typeBSimpleCorootGenerator (K := ℚ)) (P.typeBSpinRep b z hz)
+      (typeBSpinCorootWeight s) (b.ExteriorAlgebra s) := by
+  refine (TauCeti.UniversalEnvelopingAlgebra.isCartanWeightVector_iff
+    (typeBSimpleCorootGenerator (K := ℚ)) (P.typeBSpinRep b z hz)).mpr fun i ↦ ?_
+  rw [_root_.UniversalEnvelopingAlgebra.ι_apply, P.typeBSpinRep_ι b z hz]
+  exact P.spinAction_typeBQuadraticEquiv_typeBSimpleCorootGenerator_basis b z hz i s
+
+/-! ## Stability of the coordinate spinor lattice -/
 
 private theorem typeBQuadraticEquiv_typeBSimpleRootGenerator_mem_integralSpinActionSubring
     (i : Fin (n + 1)) :
@@ -230,7 +304,7 @@ private theorem typeBQuadraticEquiv_typeBSimpleRootGenerator_mem_integralSpinAct
     exact P.typeBQuadraticEquiv_typeBShortRootGenerator_mem_integralSpinActionSubring
       b z hz (Fin.last n)
   · rw [typeBSimpleRootGenerator_castSucc]
-    exact P.typeBQuadraticEquiv_typeBLongRootGenerator_mem_integralSpinActionSubring
+    exact P.typeBQuadraticEquiv_typeBDifferenceRootGenerator_mem_integralSpinActionSubring
       b z hz j.castSucc j.succ (ne_of_lt j.castSucc_lt_succ)
 
 private theorem
@@ -244,7 +318,7 @@ private theorem
     exact P.typeBQuadraticEquiv_typeBShortNegativeRootGenerator_mem_integralSpinActionSubring
       b z hz (Fin.last n)
   · rw [typeBSimpleNegativeRootGenerator_castSucc]
-    exact P.typeBQuadraticEquiv_typeBLongRootGenerator_mem_integralSpinActionSubring
+    exact P.typeBQuadraticEquiv_typeBDifferenceRootGenerator_mem_integralSpinActionSubring
       b z hz j.succ j.castSucc (ne_of_gt j.castSucc_lt_succ)
 
 /-- Every represented positive or negative simple-root vector preserves the coordinate spinor
@@ -303,7 +377,7 @@ theorem typeBSpinRep_kostantForm_apply_mem_integralLattice
     (fun k m _ hw ↦ by
       rw [Associative.map_dividedPower]
       exact Associative.dividedPower_apply_mem_of_pow_two_eq_zero _
-        (TauCeti.ExteriorAlgebra.integralLattice b).toAddSubgroup
+        (TauCeti.ExteriorAlgebra.integralLattice b) (zero_mem _)
         (P.typeBSpinRep_simpleRootGenerator_sq b z hz k)
         (fun hw' ↦ P.typeBSpinRep_simpleRootGenerator_apply_mem_integralLattice b z hz k hw') m hw)
     (fun i m _ hw ↦ P.typeBSpinRep_ringChoose_coroot_apply_mem_integralLattice

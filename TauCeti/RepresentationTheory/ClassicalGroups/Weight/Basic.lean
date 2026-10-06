@@ -15,6 +15,8 @@ public import TauCeti.RepresentationTheory.ClassicalGroups.Determinant
 public import TauCeti.LinearAlgebra.Basis.DiagonalTorus.Basic
 -- The independence of the joint eigenspaces of a representation, indexed by characters.
 public import TauCeti.LinearAlgebra.Eigenspace.JointEigenvector.Basic
+-- `Subrepresentation`, whose weight spaces are the traces of the ambient ones.
+public import Mathlib.RepresentationTheory.Subrepresentation
 
 /-!
 # Weights of the diagonal torus of the general linear group
@@ -35,7 +37,8 @@ where the coefficients enter: over `𝔽₂` the torus is trivial
 (`TauCeti.diagonalTorus_eq_bot`), every `l` gives the same character, and the whole module is a
 weight space for every weight at once, so nothing is independent. Rather than fix the coefficients,
 every statement below that separates weights takes `Function.Injective (weightChar k)` as a
-hypothesis, and `TauCeti.weightChar_injective` discharges it over an infinite field.
+hypothesis. `TauCeti.weightChar_injective` discharges it over an infinite field, and
+`TauCeti.weightChar_injective_of_algebraRat` over a field that is a `ℚ`-algebra.
 
 The definitions themselves need only a commutative ring, and are stated there.
 
@@ -58,6 +61,13 @@ The definitions themselves need only a commutative ring, and are stated there.
 * `TauCeti.weightSpace_detPowerRep`: all of `det ^ m` has the constant weight `m`, that is, its
   weight space at the constant sequence `m` is `⊤`. Over a general commutative ring this says
   nothing about the other weight spaces — over `𝔽₂` all of them are `⊤` as well.
+* `TauCeti.map_weightSpace_le_of_commute`: **an operator commuting with the torus action preserves
+  every weight space**, so when the ambient representation is the internal direct sum of its weight
+  spaces, a subrepresentation the operator cuts out inherits that decomposition.
+* `Subrepresentation.weightSpace_toRepresentation`: **the weight spaces of a
+  subrepresentation are the traces of the ambient ones**, with
+  `Subrepresentation.weightSpace_toRepresentation_eq_bot_iff` giving the criterion for a weight
+  not to occur in the subrepresentation.
 
 ## Implementation notes
 
@@ -118,6 +128,63 @@ theorem apply_of_mem_weightSpace {ρ : Representation k (GL (Fin n) k) W} {l : F
     (hw : w ∈ weightSpace ρ l) (t : Fin n → kˣ) :
     ρ (diagGL t) w = ((weightChar k l t : kˣ) : k) • w :=
   (mem_weightSpace_iff ρ l w).mp hw t
+
+/-- **An operator commuting with the torus action preserves every weight space.**  A weight space
+is a joint eigenspace of the torus, and an operator commuting with an endomorphism carries each of
+its eigenvectors to an eigenvector of the same eigenvalue.
+
+The operator therefore acts on each weight space separately, which is how a subrepresentation cut
+out of `W` by such an operator inherits a weight decomposition of `W` — when `W` has one, that is;
+the statement itself says nothing about whether the weight spaces of `W` span it or are
+independent. -/
+theorem map_weightSpace_le_of_commute {ρ : Representation k (GL (Fin n) k) W} (l : Fin n → ℤ)
+    {φ : Module.End k W} (hφ : ∀ t : Fin n → kˣ, Commute φ (ρ (diagGL t))) :
+    (weightSpace ρ l).map φ ≤ weightSpace ρ l := by
+  rw [Submodule.map_le_iff_le_comap]
+  intro w hw
+  simp only [Submodule.mem_comap, mem_weightSpace_iff] at hw ⊢
+  intro t
+  rw [← Module.End.mul_apply, ← (hφ t).eq, Module.End.mul_apply, hw t, map_smul]
+
+end CommRing
+
+end TauCeti
+
+/-! ## The weight spaces of a subrepresentation -/
+
+namespace Subrepresentation
+
+open TauCeti
+
+variable {k : Type u} [CommRing k] {n : ℕ}
+variable {W : Type v} [AddCommGroup W] [Module k W]
+
+/-- **The weight spaces of a subrepresentation are the traces of the ambient ones**: a vector of a
+subrepresentation has weight `l` exactly when it has weight `l` in the ambient representation, the
+torus acting on it by the same scalar either way. -/
+theorem weightSpace_toRepresentation {ρ : Representation k (GL (Fin n) k) W}
+    (S : Subrepresentation ρ) (l : Fin n → ℤ) :
+    weightSpace S.toRepresentation l = (weightSpace ρ l).comap S.toSubmodule.subtype := by
+  ext w
+  simp only [mem_weightSpace_iff, Submodule.mem_comap, Submodule.coe_subtype]
+  refine forall_congr' fun t => ?_
+  rw [Subrepresentation.toRepresentation_apply_coe, Submodule.coe_smul]
+
+/-- **A subrepresentation has no vector of weight `l` exactly when it meets the ambient weight
+space trivially.**  This is the form in which a weight is ruled out for a subrepresentation cut out
+of a weight-decomposed module. -/
+theorem weightSpace_toRepresentation_eq_bot_iff {ρ : Representation k (GL (Fin n) k) W}
+    (S : Subrepresentation ρ) (l : Fin n → ℤ) :
+    weightSpace S.toRepresentation l = ⊥ ↔ S.toSubmodule ⊓ weightSpace ρ l = ⊥ := by
+  rw [weightSpace_toRepresentation, ← Submodule.disjoint_iff_comap_eq_bot, disjoint_iff]
+
+end Subrepresentation
+
+namespace TauCeti
+
+section CommRing
+
+variable {k : Type u} [CommRing k] {n : ℕ}
 
 /-! ## The standard representation and the determinant powers -/
 

@@ -6,17 +6,18 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
-public import Mathlib.Topology.LocalAtTarget
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.Diffeomorph
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.SmoothAmbientIsotopy.Basic
+public import TauCeti.Topology.Homotopy.CollaredTrack
 
 /-!
 # Smooth concordance of smooth embeddings
 
 This file defines a globally collared smooth concordance between two smooth embeddings
 `f g : M → N`. To avoid manifolds with boundary, a concordance is a `C^n` embedding
-`F : M × ℝ → N × ℝ` which is the product `f × id` and `g × id` on uniform positive-width
-neighborhoods of the initial and final ends, and maps `M × (0, 1)` into `N × (0, 1)`.
+`F : M × ℝ → N × ℝ` which is a collared track from `f` to `g` (`TauCeti.IsCollaredTrack`): the
+product `f × id` and `g × id` on uniform positive-width neighborhoods of the initial and final
+ends, mapping `M × (0, 1)` into `N × (0, 1)`.
 
 Its restriction to `M × [0, 1]` is an ordinary smooth concordance which is a product near both
 ends. The uniform collar widths are part of the data here, so this is stronger than merely requiring
@@ -47,10 +48,14 @@ source is the circle.
 
 ## Implementation notes
 
-Stacking two concordances glues two immersions along an open cover. Mathlib's
-`Manifold.IsImmersion` requires a single complement for all points, so the glued map is shown to
-be an immersion with `TauCeti.isImmersion_iff_forall_isImmersionAt`, which needs the model of `N`
-to be finite-dimensional. Only `trans` and the statements depending on it carry that assumption.
+Everything about a concordance that does not depend on the smoothness of its track — the time-level
+lemmas, the reversed track `TauCeti.reverseTime` and the stacked track `TauCeti.stack` with its
+embedding property — is inherited from `TauCeti.IsCollaredTrack`; this file only supplies the
+smoothness of the reversed and stacked tracks. Stacking two concordances glues two immersions along
+an open cover. Mathlib's `Manifold.IsImmersion` requires a single complement for all points, so the
+glued map is shown to be an immersion with `TauCeti.isImmersion_iff_forall_isImmersionAt`, which
+needs the model of `N` to be finite-dimensional. Only `trans` and the statements depending on it
+carry that assumption.
 
 The trace of a diffeotopy is reparametrized by `Real.smoothTransition`, which is `C^∞` but not
 analytic; `ofDiffeotopy` therefore assumes `n ≤ ∞`.
@@ -88,15 +93,9 @@ of the initial and final ends, and maps `M × (0, 1)` into `N × (0, 1)`. -/
 structure Concordance (f g : SmoothEmbedding I J n M N) where
   /-- The track of the concordance, a smooth embedding of `M × ℝ` into `N × ℝ`. -/
   toSmoothEmbedding : SmoothEmbedding (I.prod 𝓘(ℝ)) (J.prod 𝓘(ℝ)) n (M × ℝ) (N × ℝ)
-  /-- The track is the product of `f` with the identity on a neighborhood of the initial end. -/
-  exists_pos_apply_eq_left' :
-    ∃ ε : ℝ, 0 < ε ∧ ∀ (x : M) (t : ℝ), t ≤ ε → toSmoothEmbedding (x, t) = (f x, t)
-  /-- The track is the product of `g` with the identity on a neighborhood of the final end. -/
-  exists_pos_apply_eq_right' :
-    ∃ ε : ℝ, 0 < ε ∧ ∀ (x : M) (t : ℝ), 1 - ε ≤ t → toSmoothEmbedding (x, t) = (g x, t)
-  /-- The track maps the open slab `M × (0, 1)` into the open slab `N × (0, 1)`. -/
-  snd_apply_mem_Ioo' (x : M) (t : ℝ) (ht : t ∈ Ioo 0 1) :
-    (toSmoothEmbedding (x, t)).2 ∈ Ioo 0 1
+  /-- The track is `f × id` near the initial end and `g × id` near the final end, and maps the open
+  slab `M × (0, 1)` into `N × (0, 1)`. -/
+  isCollaredTrack_toSmoothEmbedding : IsCollaredTrack f g toSmoothEmbedding
 
 /-- Two smooth embeddings are **concordant** when there is a concordance from one to the other. -/
 def Concordant (f g : SmoothEmbedding I J n M N) : Prop :=
@@ -131,66 +130,19 @@ theorem ext {F G : Concordance f g} (hFG : ∀ p, F p = G p) : F = G :=
 
 variable (F : Concordance f g)
 
-/-- A concordance is the product of its initial embedding with the identity on a positive-width
-collar. -/
-theorem exists_pos_apply_eq_left :
-    ∃ ε : ℝ, 0 < ε ∧ ∀ (x : M) (t : ℝ), t ≤ ε → F (x, t) = (f x, t) := by
-  rcases F.exists_pos_apply_eq_left' with ⟨ε, hε, hF⟩
-  exact ⟨ε, hε, fun x t ht => by simpa only [← coe_toSmoothEmbedding] using hF x t ht⟩
-
-/-- A concordance is the product of its final embedding with the identity on a positive-width
-collar. -/
-theorem exists_pos_apply_eq_right :
-    ∃ ε : ℝ, 0 < ε ∧ ∀ (x : M) (t : ℝ), 1 - ε ≤ t → F (x, t) = (g x, t) := by
-  rcases F.exists_pos_apply_eq_right' with ⟨ε, hε, hF⟩
-  exact ⟨ε, hε, fun x t ht => by simpa only [← coe_toSmoothEmbedding] using hF x t ht⟩
-
-/-- A concordance is the product of its initial embedding with the identity for `t ≤ 0`. -/
-theorem apply_of_nonpos (x : M) {t : ℝ} (ht : t ≤ 0) : F (x, t) = (f x, t) := by
-  rcases F.exists_pos_apply_eq_left with ⟨ε, hε, hF⟩
-  exact hF x t (ht.trans hε.le)
-
-/-- A concordance is the product of its final embedding with the identity for `1 ≤ t`. -/
-theorem apply_of_one_le (x : M) {t : ℝ} (ht : 1 ≤ t) : F (x, t) = (g x, t) := by
-  rcases F.exists_pos_apply_eq_right with ⟨ε, hε, hF⟩
-  exact hF x t (by linarith)
+/-- The track of a concordance is a collared track from `f` to `g`. -/
+theorem isCollaredTrack : IsCollaredTrack f g F :=
+  F.isCollaredTrack_toSmoothEmbedding
 
 /-- At time `0` a concordance is its initial embedding. -/
 @[simp]
 theorem apply_zero (x : M) : F (x, 0) = (f x, 0) :=
-  F.apply_of_nonpos x le_rfl
+  F.isCollaredTrack.apply_zero x
 
 /-- At time `1` a concordance is its final embedding. -/
 @[simp]
 theorem apply_one (x : M) : F (x, 1) = (g x, 1) :=
-  F.apply_of_one_le x le_rfl
-
-/-- A concordance moves no time outside the open interval `(0, 1)` and keeps times inside it, so
-it preserves the comparison of time with any level `c ∉ (0, 1)`. -/
-theorem snd_apply_lt_iff (x : M) {t c : ℝ} (hc : c ∉ Ioo 0 1) : (F (x, t)).2 < c ↔ t < c := by
-  rcases le_or_gt t 0 with ht | ht
-  · simp [F.apply_of_nonpos x ht]
-  rcases le_or_gt 1 t with ht' | ht'
-  · simp [F.apply_of_one_le x ht']
-  have hmem : (F (x, t)).2 ∈ Ioo 0 1 := F.snd_apply_mem_Ioo' x t ⟨ht, ht'⟩
-  simp only [mem_Ioo, not_and_or, not_lt] at hc hmem
-  constructor <;> intro <;> rcases hc with hc | hc <;> linarith
-
-/-- A concordance preserves the comparison of time with any level `c ∉ (0, 1)` from below. -/
-theorem lt_snd_apply_iff (x : M) {t c : ℝ} (hc : c ∉ Ioo 0 1) : c < (F (x, t)).2 ↔ c < t := by
-  rcases le_or_gt t 0 with ht | ht
-  · simp [F.apply_of_nonpos x ht]
-  rcases le_or_gt 1 t with ht' | ht'
-  · simp [F.apply_of_one_le x ht']
-  have hmem : (F (x, t)).2 ∈ Ioo 0 1 := F.snd_apply_mem_Ioo' x t ⟨ht, ht'⟩
-  simp only [mem_Ioo, not_and_or, not_lt] at hc hmem
-  constructor <;> intro <;> rcases hc with hc | hc <;> linarith
-
-/-- A concordance maps `M × (0, 1)` into `N × (0, 1)` and nothing else there. -/
-theorem snd_apply_mem_Ioo_iff (x : M) {t : ℝ} : (F (x, t)).2 ∈ Ioo 0 1 ↔ t ∈ Ioo 0 1 := by
-  have h0 : (0 : ℝ) ∉ Ioo 0 1 := fun h => lt_irrefl _ h.1
-  have h1 : (1 : ℝ) ∉ Ioo 0 1 := fun h => lt_irrefl _ h.2
-  simp only [mem_Ioo, F.lt_snd_apply_iff x h0, F.snd_apply_lt_iff x h1]
+  F.isCollaredTrack.apply_one x
 
 /-! ### Diffeomorphisms -/
 
@@ -205,13 +157,10 @@ def transDiffeomorph (F : Concordance f g) (e : N ≃ₘ^n⟮J, J⟯ P) :
     Concordance (f.transDiffeomorph e) (g.transDiffeomorph e) where
   toSmoothEmbedding :=
     F.toSmoothEmbedding.transDiffeomorph (e.prodCongr (Diffeomorph.refl 𝓘(ℝ) ℝ n))
-  exists_pos_apply_eq_left' := by
-    rcases F.exists_pos_apply_eq_left' with ⟨ε, hε, hF⟩
-    exact ⟨ε, hε, fun x t ht => by simp [hF x t ht]⟩
-  exists_pos_apply_eq_right' := by
-    rcases F.exists_pos_apply_eq_right with ⟨ε, hε, hF⟩
-    exact ⟨ε, hε, fun x t ht => by simp [hF x t ht]⟩
-  snd_apply_mem_Ioo' x t ht := by simpa using F.snd_apply_mem_Ioo' x t ht
+  isCollaredTrack_toSmoothEmbedding := by
+    simp only [coe_transDiffeomorph, Diffeomorph.coe_prodCongr, Diffeomorph.coe_refl 𝓘(ℝ) ℝ n,
+      coe_toSmoothEmbedding]
+    exact F.isCollaredTrack.prodMap_id_comp e
 
 @[simp]
 theorem transDiffeomorph_apply (F : Concordance f g) (e : N ≃ₘ^n⟮J, J⟯ P) (p : M × ℝ) :
@@ -224,13 +173,10 @@ def compDiffeomorph (F : Concordance f g) (e : M' ≃ₘ^n⟮I, I⟯ M) :
     Concordance (f.compDiffeomorph e) (g.compDiffeomorph e) where
   toSmoothEmbedding :=
     F.toSmoothEmbedding.compDiffeomorph (e.prodCongr (Diffeomorph.refl 𝓘(ℝ) ℝ n))
-  exists_pos_apply_eq_left' := by
-    rcases F.exists_pos_apply_eq_left with ⟨ε, hε, hF⟩
-    exact ⟨ε, hε, fun x t ht => by simp [hF _ t ht]⟩
-  exists_pos_apply_eq_right' := by
-    rcases F.exists_pos_apply_eq_right with ⟨ε, hε, hF⟩
-    exact ⟨ε, hε, fun x t ht => by simp [hF _ t ht]⟩
-  snd_apply_mem_Ioo' x t ht := by simpa using F.snd_apply_mem_Ioo' (e x) t ht
+  isCollaredTrack_toSmoothEmbedding := by
+    simp only [coe_compDiffeomorph, Diffeomorph.coe_prodCongr, Diffeomorph.coe_refl 𝓘(ℝ) ℝ n,
+      coe_toSmoothEmbedding]
+    exact F.isCollaredTrack.comp_prodMap_id e
 
 @[simp]
 theorem compDiffeomorph_apply (F : Concordance f g) (e : M' ≃ₘ^n⟮I, I⟯ M) (p : M' × ℝ) :
@@ -262,27 +208,28 @@ private theorem affineTime_symm_apply (n : ℕ∞ω) (a b : ℝ) (ha : a ≠ 0) 
 
 variable [IsManifold I n M] [IsManifold J n N]
 
-/-- Conjugate a smooth embedding of `M × ℝ` into `N × ℝ` by the affine change of time
-`t ↦ a * t + b`. -/
-private def conjTime (T : SmoothEmbedding (I.prod 𝓘(ℝ)) (J.prod 𝓘(ℝ)) n (M × ℝ) (N × ℝ))
+/-- The conjugate `TauCeti.conjTime T a b` of a smooth embedding `T` of `M × ℝ` into `N × ℝ` by the
+affine change of time `t ↦ a * t + b`, as a smooth embedding. -/
+private def conjTimeEmbedding (T : SmoothEmbedding (I.prod 𝓘(ℝ)) (J.prod 𝓘(ℝ)) n (M × ℝ) (N × ℝ))
     (a b : ℝ) (ha : a ≠ 0) : SmoothEmbedding (I.prod 𝓘(ℝ)) (J.prod 𝓘(ℝ)) n (M × ℝ) (N × ℝ) :=
   (T.compDiffeomorph ((Diffeomorph.refl I M n).prodCongr (affineTime n a b ha))).transDiffeomorph
     ((Diffeomorph.refl J N n).prodCongr (affineTime n a b ha).symm)
 
-private theorem conjTime_apply
-    (T : SmoothEmbedding (I.prod 𝓘(ℝ)) (J.prod 𝓘(ℝ)) n (M × ℝ) (N × ℝ)) (a b : ℝ) (ha : a ≠ 0)
-    (x : M) (t : ℝ) :
-    conjTime T a b ha (x, t) = ((T (x, a * t + b)).1, a⁻¹ * ((T (x, a * t + b)).2 - b)) := by
-  ext <;> simp [conjTime]
+private theorem coe_conjTimeEmbedding
+    (T : SmoothEmbedding (I.prod 𝓘(ℝ)) (J.prod 𝓘(ℝ)) n (M × ℝ) (N × ℝ)) (a b : ℝ) (ha : a ≠ 0) :
+    ⇑(conjTimeEmbedding T a b ha) = conjTime T a b := by
+  funext ⟨x, t⟩
+  rw [conjTime_apply, ← inv_mul_eq_div]
+  ext <;> simp [conjTimeEmbedding]
 
 /-! ### The constant and the reversed concordance -/
 
 /-- The constant concordance from `f` to itself, whose track is `f × id`. -/
 def refl (f : SmoothEmbedding I J n M N) : Concordance f f where
   toSmoothEmbedding := f.prodMap SmoothEmbedding.id
-  exists_pos_apply_eq_left' := ⟨1, by norm_num, by simp⟩
-  exists_pos_apply_eq_right' := ⟨1, by norm_num, by simp⟩
-  snd_apply_mem_Ioo' _ _ ht := by simpa using ht
+  isCollaredTrack_toSmoothEmbedding := by
+    rw [coe_prodMap, coe_id]
+    exact isCollaredTrack_prodMap_id f
 
 @[simp]
 theorem refl_apply (f : SmoothEmbedding I J n M N) (p : M × ℝ) : refl f p = (f p.1, p.2) := by
@@ -290,32 +237,19 @@ theorem refl_apply (f : SmoothEmbedding I J n M N) (p : M × ℝ) : refl f p = (
 
 /-- The reversed concordance from `g` to `f`, obtained by reflecting time in `1 / 2`. -/
 def symm (F : Concordance f g) : Concordance g f where
-  toSmoothEmbedding := conjTime F.toSmoothEmbedding (-1) 1 (by norm_num)
-  exists_pos_apply_eq_left' := by
-    rcases F.exists_pos_apply_eq_right with ⟨ε, hε, hF⟩
-    refine ⟨ε, hε, fun x t ht => ?_⟩
-    rw [conjTime_apply, coe_toSmoothEmbedding, hF x (-1 * t + 1) (by linarith)]
-    ext <;> simp
-  exists_pos_apply_eq_right' := by
-    rcases F.exists_pos_apply_eq_left with ⟨ε, hε, hF⟩
-    refine ⟨ε, hε, fun x t ht => ?_⟩
-    rw [conjTime_apply, coe_toSmoothEmbedding, hF x (-1 * t + 1) (by linarith)]
-    ext <;> simp
-  snd_apply_mem_Ioo' x t ht := by
-    rw [conjTime_apply, coe_toSmoothEmbedding]
-    have h_reflected_time : -1 * t + 1 ∈ Ioo 0 1 := by
-      simp only [mem_Ioo] at ht ⊢
-      constructor <;> linarith
-    have := (F.snd_apply_mem_Ioo_iff x).2 h_reflected_time
-    simp only [mem_Ioo] at this ⊢
-    constructor <;> linarith
+  toSmoothEmbedding := conjTimeEmbedding F.toSmoothEmbedding (-1) 1 (by norm_num)
+  isCollaredTrack_toSmoothEmbedding := by
+    rw [coe_conjTimeEmbedding, coe_toSmoothEmbedding, ← reverseTime_def]
+    exact F.isCollaredTrack.reverseTime
+
+/-- The track of the reversed concordance is the reversed track. -/
+theorem coe_symm (F : Concordance f g) : ⇑F.symm = reverseTime F := by
+  rw [← coe_toSmoothEmbedding, symm, coe_conjTimeEmbedding, coe_toSmoothEmbedding, reverseTime_def]
 
 @[simp]
 theorem symm_apply (F : Concordance f g) (x : M) (t : ℝ) :
     F.symm (x, t) = ((F (x, 1 - t)).1, 1 - (F (x, 1 - t)).2) := by
-  have h_reflected_time : -1 * t + 1 = 1 - t := by ring
-  rw [← coe_toSmoothEmbedding, symm, conjTime_apply, coe_toSmoothEmbedding, h_reflected_time]
-  ext <;> simp
+  rw [coe_symm, reverseTime_apply]
 
 /-- Reversing a concordance twice gives it back. -/
 @[simp]
@@ -324,123 +258,28 @@ theorem symm_symm (F : Concordance f g) : F.symm.symm = F := by
 
 /-! ### Stacking concordances -/
 
-/-- The first concordance, run at triple speed during `[0, 1/3]`. -/
-private def lower (F : Concordance f g) :
-    SmoothEmbedding (I.prod 𝓘(ℝ)) (J.prod 𝓘(ℝ)) n (M × ℝ) (N × ℝ) :=
-  conjTime F.toSmoothEmbedding 3 0 (by norm_num)
-
-/-- The second concordance, run at triple speed during `[2/3, 1]`. -/
-private def upper (G : Concordance g h) :
-    SmoothEmbedding (I.prod 𝓘(ℝ)) (J.prod 𝓘(ℝ)) n (M × ℝ) (N × ℝ) :=
-  conjTime G.toSmoothEmbedding 3 (-2) (by norm_num)
-
-private theorem lower_apply (F : Concordance f g) (x : M) (t : ℝ) :
-    lower F (x, t) = ((F (x, 3 * t)).1, (F (x, 3 * t)).2 / 3) := by
-  rw [lower, conjTime_apply, coe_toSmoothEmbedding, add_zero, sub_zero, inv_mul_eq_div]
-
-private theorem upper_apply (G : Concordance g h) (x : M) (t : ℝ) :
-    upper G (x, t) = ((G (x, 3 * t - 2)).1, ((G (x, 3 * t - 2)).2 + 2) / 3) := by
-  rw [upper, conjTime_apply, coe_toSmoothEmbedding, sub_neg_eq_add, inv_mul_eq_div,
-    ← sub_eq_add_neg]
-
-/-- The stacked track: the first concordance until time `1 / 2`, the second one afterwards.
-Both are the product `g × id` during `[1/3, 2/3]`. -/
-private def stack (F : Concordance f g) (G : Concordance g h) (p : M × ℝ) : N × ℝ :=
-  if p.2 ≤ 1 / 2 then lower F p else upper G p
-
-private theorem stack_eqOn_lower (F : Concordance f g) (G : Concordance g h) :
-    EqOn (stack F G) (lower F) {p | p.2 < 2 / 3} := by
-  rintro ⟨x, t⟩ (ht : t < 2 / 3)
-  by_cases ht' : t ≤ 1 / 2
-  · simp only [stack, ht', ↓reduceIte]
-  simp only [stack, ht', ↓reduceIte]
-  rw [lower_apply, upper_apply, F.apply_of_one_le x (by linarith),
-    G.apply_of_nonpos x (by linarith)]
-  ext <;> simp
-
-private theorem stack_eqOn_upper (F : Concordance f g) (G : Concordance g h) :
-    EqOn (stack F G) (upper G) {p | 1 / 3 < p.2} := by
-  rintro ⟨x, t⟩ (ht : 1 / 3 < t)
-  by_cases ht' : t ≤ 1 / 2
-  · simp only [stack, ht', ↓reduceIte]
-    rw [lower_apply, upper_apply, F.apply_of_one_le x (by linarith),
-      G.apply_of_nonpos x (by linarith)]
-    ext <;> simp
-  · simp only [stack, ht', ↓reduceIte]
-
-private theorem snd_stack_lt_iff (F : Concordance f g) (G : Concordance g h) (p : M × ℝ) :
-    (stack F G p).2 < 2 / 3 ↔ p.2 < 2 / 3 := by
-  obtain ⟨x, t⟩ := p
-  have h2 : (2 : ℝ) ∉ Ioo 0 1 := fun h => by linarith [h.2]
-  have h0 : (0 : ℝ) ∉ Ioo 0 1 := fun h => lt_irrefl _ h.1
-  by_cases ht : t ≤ 1 / 2
-  · simp only [stack, ht, ↓reduceIte, lower_apply]
-    have key := F.snd_apply_lt_iff x (t := 3 * t) h2
-    constructor
-    · intro hlt; linarith [key.1 (by linarith)]
-    · intro hlt; linarith [key.2 (by linarith)]
-  · simp only [stack, ht, ↓reduceIte, upper_apply]
-    have key := G.snd_apply_lt_iff x (t := 3 * t - 2) h0
-    constructor
-    · intro hlt; linarith [key.1 (by linarith)]
-    · intro hlt; linarith [key.2 (by linarith)]
-
-private theorem lt_snd_stack_iff (F : Concordance f g) (G : Concordance g h) (p : M × ℝ) :
-    1 / 3 < (stack F G p).2 ↔ 1 / 3 < p.2 := by
-  obtain ⟨x, t⟩ := p
-  have h1 : (1 : ℝ) ∉ Ioo 0 1 := fun h => lt_irrefl _ h.2
-  have hm1 : (-1 : ℝ) ∉ Ioo 0 1 := fun h => by linarith [h.1]
-  by_cases ht : t ≤ 1 / 2
-  · simp only [stack, ht, ↓reduceIte, lower_apply]
-    have key := F.lt_snd_apply_iff x (t := 3 * t) h1
-    constructor
-    · intro hlt; linarith [key.1 (by linarith)]
-    · intro hlt; linarith [key.2 (by linarith)]
-  · simp only [stack, ht, ↓reduceIte, upper_apply]
-    have key := G.lt_snd_apply_iff x (t := 3 * t - 2) hm1
-    constructor
-    · intro hlt; linarith [key.1 (by linarith)]
-    · intro hlt; linarith [key.2 (by linarith)]
-
 private theorem isSmoothEmbedding_stack [FiniteDimensional ℝ E'] (F : Concordance f g)
     (G : Concordance g h) :
     IsSmoothEmbedding (I.prod 𝓘(ℝ)) (J.prod 𝓘(ℝ)) n (stack F G) := by
+  have hF := F.isCollaredTrack
+  have hG := G.isCollaredTrack
   have hlow : IsOpen {p : M × ℝ | p.2 < 2 / 3} := isOpen_lt continuous_snd continuous_const
   have hup : IsOpen {p : M × ℝ | 1 / 3 < p.2} := isOpen_lt continuous_const continuous_snd
-  have himm : IsImmersion (I.prod 𝓘(ℝ)) (J.prod 𝓘(ℝ)) n (stack F G) := by
-    refine isImmersion_iff_forall_isImmersionAt.2 fun p => ?_
-    rcases lt_or_ge p.2 (2 / 3) with hp | hp
-    · exact ((lower F).isImmersion.isImmersionAt p).congr_of_eventuallyEq
-        (eventuallyEq_of_mem (hlow.mem_nhds hp) (stack_eqOn_lower F G).symm)
-    · exact ((upper G).isImmersion.isImmersionAt p).congr_of_eventuallyEq
-        (eventuallyEq_of_mem (hup.mem_nhds (lt_of_lt_of_le (by norm_num) hp))
-          (stack_eqOn_upper F G).symm)
-  refine ⟨himm, ?_⟩
-  -- The two open slabs `{s < 2 / 3}` and `{1 / 3 < s}` cover `N × ℝ`; over each the stacked
-  -- track is one of the two rescaled tracks, restricted to the matching slab of `M × ℝ`.
-  let U : Bool → TopologicalSpace.Opens (N × ℝ) := fun b => bif b
-    then ⟨{q | 1 / 3 < q.2}, isOpen_lt continuous_const continuous_snd⟩
-    else ⟨{q | q.2 < 2 / 3}, isOpen_lt continuous_snd continuous_const⟩
-  let W : Bool → Set (M × ℝ) := fun b => bif b then {p | 1 / 3 < p.2} else {p | p.2 < 2 / 3}
-  refine isEmbedding_of_iSup_eq_top_of_preimage_subset_range (stack F G) himm.contMDiff.continuous
-    U ?_ (fun b => W b) (fun b => Subtype.val) (fun b => continuous_subtype_val) ?_ ?_
-  · rintro _ ⟨p, rfl⟩
-    rw [SetLike.mem_coe, TopologicalSpace.Opens.mem_iSup]
-    rcases lt_or_ge (stack F G p).2 (2 / 3) with hp | hp
-    · exact ⟨false, hp⟩
-    · exact ⟨true, (by linarith : 1 / 3 < (stack F G p).2)⟩
-  · rintro (_ | _) p hp
-    · exact ⟨⟨p, (snd_stack_lt_iff F G p).1 hp⟩, rfl⟩
-    · exact ⟨⟨p, (lt_snd_stack_iff F G p).1 hp⟩, rfl⟩
-  · rintro (_ | _)
-    · have heq : stack F G ∘ (Subtype.val : W false → M × ℝ) = lower F ∘ Subtype.val :=
-        funext fun p => stack_eqOn_lower F G p.2
-      rw [heq]
-      exact (lower F).isEmbedding.comp IsEmbedding.subtypeVal
-    · have heq : stack F G ∘ (Subtype.val : W true → M × ℝ) = upper G ∘ Subtype.val :=
-        funext fun p => stack_eqOn_upper F G p.2
-      rw [heq]
-      exact (upper G).isEmbedding.comp IsEmbedding.subtypeVal
+  have hF3 : IsImmersion (I.prod 𝓘(ℝ)) (J.prod 𝓘(ℝ)) n (conjTime F 3 0) := by
+    have himm := (conjTimeEmbedding F.toSmoothEmbedding 3 0 (by norm_num)).isImmersion
+    rwa [coe_conjTimeEmbedding, coe_toSmoothEmbedding] at himm
+  have hG3 : IsImmersion (I.prod 𝓘(ℝ)) (J.prod 𝓘(ℝ)) n (conjTime G 3 (-2)) := by
+    have himm := (conjTimeEmbedding G.toSmoothEmbedding 3 (-2) (by norm_num)).isImmersion
+    rwa [coe_conjTimeEmbedding, coe_toSmoothEmbedding] at himm
+  refine ⟨?_,
+    hF.isEmbedding_stack hG F.toSmoothEmbedding.isEmbedding G.toSmoothEmbedding.isEmbedding⟩
+  refine isImmersion_iff_forall_isImmersionAt.2 fun p => ?_
+  rcases lt_or_ge p.2 (2 / 3) with hp | hp
+  · exact (hF3.isImmersionAt p).congr_of_eventuallyEq
+      (eventuallyEq_of_mem (hlow.mem_nhds hp) (hF.stack_eqOn_lower hG).symm)
+  · exact (hG3.isImmersionAt p).congr_of_eventuallyEq
+      (eventuallyEq_of_mem (hup.mem_nhds (lt_of_lt_of_le (by norm_num) hp))
+        (hF.stack_eqOn_upper hG).symm)
 
 /-- The stacked concordance from `f` to `h`: the concordance `F` from `f` to `g` at triple speed
 during `[0, 1/3]`, then the constant concordance at `g`, then the concordance `G` from `g` to `h`
@@ -448,62 +287,26 @@ at triple speed during `[2/3, 1]`. -/
 def trans [FiniteDimensional ℝ E'] (F : Concordance f g) (G : Concordance g h) :
     Concordance f h where
   toSmoothEmbedding := .ofIsSmoothEmbedding (stack F G) (isSmoothEmbedding_stack F G)
-  exists_pos_apply_eq_left' := by
-    rcases F.exists_pos_apply_eq_left with ⟨ε, hε, hF⟩
-    let δ := min (ε / 3) (1 / 4)
-    refine ⟨δ, lt_min (by linarith) (by norm_num), fun x t ht => ?_⟩
-    have hδε : δ ≤ ε / 3 := min_le_left _ _
-    have hδ : δ ≤ 1 / 4 := min_le_right _ _
-    have ht' : t ≤ 1 / 2 := by linarith
-    rw [ofIsSmoothEmbedding_apply]
-    simp only [stack, ht', ↓reduceIte, lower_apply]
-    rw [hF x (3 * t) (by linarith)]
-    ext <;> simp
-  exists_pos_apply_eq_right' := by
-    rcases G.exists_pos_apply_eq_right with ⟨ε, hε, hG⟩
-    let δ := min (ε / 3) (1 / 4)
-    refine ⟨δ, lt_min (by linarith) (by norm_num), fun x t ht => ?_⟩
-    have hδε : δ ≤ ε / 3 := min_le_left _ _
-    have hδ : δ ≤ 1 / 4 := min_le_right _ _
-    have ht' : ¬ t ≤ 1 / 2 := by linarith
-    rw [ofIsSmoothEmbedding_apply]
-    simp only [stack, ht', ↓reduceIte, upper_apply]
-    rw [hG x (3 * t - 2) (by linarith)]
-    ext <;> simp
-  snd_apply_mem_Ioo' x t ht := by
-    rw [ofIsSmoothEmbedding_apply]
-    have h0 : (0 : ℝ) ∉ Ioo 0 1 := fun h => lt_irrefl _ h.1
-    have h1 : (1 : ℝ) ∉ Ioo 0 1 := fun h => lt_irrefl _ h.2
-    have h3 : (3 : ℝ) ∉ Ioo 0 1 := fun h => by linarith [h.2]
-    have hm2 : (-2 : ℝ) ∉ Ioo 0 1 := fun h => by linarith [h.1]
-    simp only [mem_Ioo] at ht ⊢
-    by_cases ht' : t ≤ 1 / 2
-    · simp only [stack, ht', ↓reduceIte, lower_apply]
-      have hlo := F.lt_snd_apply_iff x (t := 3 * t) h0
-      have hhi := F.snd_apply_lt_iff x (t := 3 * t) h3
-      constructor <;> linarith [hlo.2 (by linarith), hhi.2 (by linarith)]
-    · simp only [stack, ht', ↓reduceIte, upper_apply]
-      have hlo := G.lt_snd_apply_iff x (t := 3 * t - 2) hm2
-      have hhi := G.snd_apply_lt_iff x (t := 3 * t - 2) h1
-      constructor <;> linarith [hlo.2 (by linarith), hhi.2 (by linarith)]
+  isCollaredTrack_toSmoothEmbedding := by
+    rw [coe_ofIsSmoothEmbedding]
+    exact F.isCollaredTrack.stack G.isCollaredTrack
 
-private theorem trans_apply_eq_stack [FiniteDimensional ℝ E'] (F : Concordance f g)
-    (G : Concordance g h) (p : M × ℝ) : F.trans G p = stack F G p :=
-  ofIsSmoothEmbedding_apply _ _ p
+/-- The track of the stacked concordance is the stacked track. -/
+theorem coe_trans [FiniteDimensional ℝ E'] (F : Concordance f g) (G : Concordance g h) :
+    ⇑(F.trans G) = stack F G :=
+  coe_ofIsSmoothEmbedding _ _
 
 /-- Before time `1 / 2` the stacked concordance runs the first concordance at triple speed. -/
 theorem trans_apply_of_le [FiniteDimensional ℝ E'] (F : Concordance f g) (G : Concordance g h)
     (x : M) {t : ℝ} (ht : t ≤ 1 / 2) :
     F.trans G (x, t) = ((F (x, 3 * t)).1, (F (x, 3 * t)).2 / 3) := by
-  rw [trans_apply_eq_stack]
-  simp only [stack, ht, ↓reduceIte, lower_apply]
+  rw [coe_trans, stack_apply_of_le _ _ x ht]
 
 /-- After time `1 / 2` the stacked concordance runs the second concordance at triple speed. -/
 theorem trans_apply_of_lt [FiniteDimensional ℝ E'] (F : Concordance f g) (G : Concordance g h)
     (x : M) {t : ℝ} (ht : 1 / 2 < t) :
     F.trans G (x, t) = ((G (x, 3 * t - 2)).1, ((G (x, 3 * t - 2)).2 + 2) / 3) := by
-  rw [trans_apply_eq_stack]
-  simp only [stack, not_le.2 ht, ↓reduceIte, upper_apply]
+  rw [coe_trans, stack_apply_of_lt _ _ x ht]
 
 /-! ### Diffeotopies -/
 
@@ -569,17 +372,18 @@ to its image under the final diffeomorphism of `Φ`, where
 def ofDiffeotopy (hn : n ≤ ∞) (Φ : Diffeotopy J n N) (f : SmoothEmbedding I J n M N) :
     Concordance f (f.transDiffeomorph Φ.final) where
   toSmoothEmbedding := (f.prodMap SmoothEmbedding.id).transDiffeomorph (traceDiffeomorph Φ hn)
-  exists_pos_apply_eq_left' := by
-    refine ⟨1 / 4, by norm_num, fun x t ht => ?_⟩
-    have : collaredSmoothTransitionUnit t = 0 :=
-      Subtype.ext (Real.smoothTransition.zero_of_nonpos (by linarith))
-    simp [this]
-  exists_pos_apply_eq_right' := by
-    refine ⟨1 / 4, by norm_num, fun x t ht => ?_⟩
-    have : collaredSmoothTransitionUnit t = 1 :=
-      Subtype.ext (Real.smoothTransition.one_of_one_le (by linarith))
-    simp [this, Diffeotopy.final_apply]
-  snd_apply_mem_Ioo' _ _ ht := by simpa using ht
+  isCollaredTrack_toSmoothEmbedding :=
+    { exists_pos_apply_eq_left := by
+        refine ⟨1 / 4, by norm_num, fun x t ht => ?_⟩
+        have : collaredSmoothTransitionUnit t = 0 :=
+          Subtype.ext (Real.smoothTransition.zero_of_nonpos (by linarith))
+        simp [this]
+      exists_pos_apply_eq_right := by
+        refine ⟨1 / 4, by norm_num, fun x t ht => ?_⟩
+        have : collaredSmoothTransitionUnit t = 1 :=
+          Subtype.ext (Real.smoothTransition.one_of_one_le (by linarith))
+        simp [this, Diffeotopy.final_apply]
+      snd_apply_mem_Ioo := fun _ _ ht => by simpa using ht }
 
 @[simp]
 theorem ofDiffeotopy_apply (hn : n ≤ ∞) (Φ : Diffeotopy J n N) (f : SmoothEmbedding I J n M N)

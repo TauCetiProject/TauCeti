@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Lie.Classical
 public import Mathlib.LinearAlgebra.Matrix.Cartan.Basic
+public import TauCeti.Algebra.Lie.Sl2.Basic
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.CoordinateLattice
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ClosedImmersion
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Points
@@ -14,6 +15,7 @@ public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Schem
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Torus
 public import TauCeti.Algebra.Lie.UniversalEnveloping.MatrixRepresentation
 import TauCeti.Algebra.Lie.GeneralLinear.DiagonalCartan
+import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.RootInToral
 import TauCeti.CategoryTheory.Comma.Over
 
 /-!
@@ -73,6 +75,8 @@ is any group here claimed to be finite or simple.
 
 * `TauCeti.SlStd.lie_cartanGenerator_rootGenerator`: the numbered Cartan generators act on the
   numbered root generators through the type `A_r` Cartan matrix.
+* `TauCeti.SlStd.isSl2Triple_rootGenerator`: the numbered generators at a Bourbaki node form an
+  `sl₂` triple, from the identification of them with matrix units of `sl_{r+1}`.
 * `TauCeti.SlStd.rep_kostantForm_mem_lattice`: the Kostant `ℤ`-form preserves the standard lattice,
   so the lattice is admissible.
 * `TauCeti.SlStd.span_range_weight_eq_top`: the weights of the standard module generate the full
@@ -143,14 +147,7 @@ theorem rootTarget_ne_rootSource (k : Fin r ⊕ Fin r) : rootTarget r k ≠ root
 sum. -/
 theorem odd_rootTarget_add_rootSource (k : Fin r ⊕ Fin r) :
     Odd ((rootTarget r k : ℕ) + (rootSource r k : ℕ)) := by
-  rw [Nat.odd_iff]
-  cases k with
-  | inl i =>
-    simp only [rootTarget_inl, rootSource_inl, Fin.val_castSucc, Fin.val_succ]
-    omega
-  | inr i =>
-    simp only [rootTarget_inr, rootSource_inr, Fin.val_castSucc, Fin.val_succ]
-    omega
+  cases k <;> simp
 
 /-! ## The pinned Chevalley generators -/
 
@@ -173,6 +170,15 @@ theorem val_rootGenerator (k : Fin r ⊕ Fin r) :
 theorem val_cartanGenerator (i : Fin r) :
     (cartanGenerator r i : Matrix (Fin (r + 1)) (Fin (r + 1)) ℚ) =
       Matrix.single i.castSucc i.castSucc 1 - Matrix.single i.succ i.succ 1 := (rfl)
+
+/-- **The numbered Chevalley generators at a Bourbaki node form an `sl₂` triple** in `sl_{r+1}`:
+they are the matrix units `E_{i, i+1}`, `E_{i+1, i}` and the diagonal difference
+`E_{i,i} - E_{i+1,i+1}`. -/
+theorem isSl2Triple_rootGenerator (i : Fin r) :
+    _root_.IsSl2Triple (cartanGenerator r i) (rootGenerator r (.inl i))
+      (rootGenerator r (.inr i)) := by
+  simpa only [rootGenerator, cartanGenerator, rootTarget, rootSource] using
+    isSl2Triple_single (Fin.castSucc_lt_succ (i := i)).ne
 
 /-! ## The standard representation -/
 
@@ -298,16 +304,6 @@ def rootGeneratorWeight : Fin r ⊕ Fin r → Fin r → ℤ
 @[simp] theorem rootGeneratorWeight_inr (i j : Fin r) :
     rootGeneratorWeight r (.inr i) j = -CartanMatrix.A r i j := (rfl)
 
-/-- A diagonal matrix unit acts on a standard coordinate vector by the corresponding
-Kronecker delta. -/
-private theorem diagSingle_mulVec (a k : Fin (r + 1)) :
-    Matrix.single a a (1 : ℚ) *ᵥ Pi.single k 1 =
-      (if k = a then (1 : ℚ) else 0) • Pi.single k 1 := by
-  rw [Matrix.single_mulVec_eq, one_mul, Pi.single_apply]
-  by_cases h : k = a
-  · subst h; simp
-  · simp [h, Ne.symm h]
-
 /-- Every standard coordinate vector is a Cartan weight vector, of the weight recorded by
 `TauCeti.SlStd.weight`. -/
 theorem isCartanWeightVector_single (k : Fin (r + 1)) :
@@ -315,9 +311,10 @@ theorem isCartanWeightVector_single (k : Fin (r + 1)) :
       (weight r k) (Pi.single k 1) := by
   refine (TauCeti.UniversalEnvelopingAlgebra.isCartanWeightVector_iff
     (cartanGenerator r) (rep r)).mpr fun j => ?_
-  rw [rep_ι_apply, val_cartanGenerator, Matrix.sub_mulVec, diagSingle_mulVec,
-    diagSingle_mulVec, ← sub_smul, weight]
-  simp only [Int.cast_sub, apply_ite (fun z : ℤ => (z : ℚ)), Int.cast_one, Int.cast_zero]
+  rw [rep_ι_apply, val_cartanGenerator, ← Matrix.diagonal_single, ← Matrix.diagonal_single,
+    Matrix.sub_mulVec, Matrix.diagonal_mulVec_single, Matrix.diagonal_mulVec_single,
+    ← Pi.single_sub, ← Pi.single_smul']
+  simp [weight, Pi.single_apply]
 
 /-- The Kronecker coefficient produced by conjugating a numbered root generator by a numbered
 Cartan generator is the corresponding entry of the type `A` Cartan matrix, with a sign for the
@@ -414,51 +411,21 @@ theorem rep_kostantForm_mem_lattice
 
 /-! ## The weights generate the full character lattice -/
 
-/-- The weight of an integral combination of coordinate vectors, as a linear map into the
-character lattice of the split torus of rank `r`. -/
-private def weightMap : (Fin (r + 1) → ℤ) →ₗ[ℤ] Fin r → ℤ where
-  toFun x i := x i.castSucc - x i.succ
-  map_add' x y := by funext i; simp only [Pi.add_apply]; ring
-  map_smul' c x := by funext i; simp only [Pi.smul_apply, smul_eq_mul, RingHom.id_apply]; ring
-
-@[simp]
-private theorem weightMap_apply (x : Fin (r + 1) → ℤ) (i : Fin r) :
-    weightMap r x i = x i.castSucc - x i.succ := (rfl)
-
-/-- The weight of the `k`-th coordinate vector is the image of its indicator function. -/
-private theorem weightMap_single (k : Fin (r + 1)) :
-    weightMap r (Pi.single k 1) = weight r k := by
-  funext i
-  simp only [weightMap_apply, weight, Pi.single_apply]
-  simp only [eq_comm]
-
-/-- **The weight map is surjective**: the differences `x_i - x_{i+1}` realize every integral
-character, by partial summation. -/
-private theorem weightMap_surjective : Function.Surjective (weightMap r) := by
-  classical
-  intro y
-  refine ⟨fun j => -∑ n ∈ Finset.range (j : ℕ), (if h : n < r then y ⟨n, h⟩ else 0), ?_⟩
-  funext i
-  have hval : (if h : (i : ℕ) < r then y ⟨(i : ℕ), h⟩ else 0) = y i := by simp
-  rw [weightMap_apply, Fin.val_castSucc, Fin.val_succ, Finset.sum_range_succ, hval]
-  ring
-
 /-- **The weights of the standard module generate the full character lattice.** This is the
 property that separates the standard module from the adjoint one, whose weights are the roots and
 generate the root lattice, of index `r + 1`. It is what makes the rank-`r` split torus a closed
 subgroup of the carrier assembled below. -/
 theorem span_range_weight_eq_top : Submodule.span ℤ (Set.range (weight r)) = ⊤ := by
-  have h1 : ⇑(weightMap r) '' Set.range (fun k : Fin (r + 1) => Pi.single k (1 : ℤ)) =
-      Set.range (weight r) := by
-    rw [← Set.range_comp]
-    exact congrArg Set.range (funext (weightMap_single r))
-  have hbasis : (fun k : Fin (r + 1) => Pi.single k (1 : ℤ)) =
-      ⇑(Pi.basisFun ℤ (Fin (r + 1))) := funext fun k => (Pi.basisFun_apply ℤ _ k).symm
-  have h2 : Submodule.span ℤ (Set.range fun k : Fin (r + 1) => Pi.single k (1 : ℤ)) = ⊤ := by
-    rw [hbasis]
-    exact (Pi.basisFun ℤ (Fin (r + 1))).span_eq
-  rw [← h1, Submodule.span_image, h2, Submodule.map_top,
-    LinearMap.range_eq_top.2 (weightMap_surjective r)]
+  rw [eq_top_iff, ← (Pi.basisFun ℤ (Fin r)).span_eq, Submodule.span_le]
+  rintro _ ⟨i, rfl⟩
+  -- The `i`-th fundamental weight is `ε₀ + ⋯ + εᵢ`.
+  have h : Pi.basisFun ℤ (Fin r) i = ∑ k ∈ Finset.Iic i.castSucc, weight r k := by
+    funext j
+    simp only [weight_def, Finset.sum_apply, Finset.sum_sub_distrib, Finset.sum_ite_eq',
+      Finset.mem_Iic, Pi.basisFun_apply, Pi.single_apply, Fin.castSucc_le_castSucc_iff,
+      Fin.succ_le_castSucc_iff]
+    split_ifs <;> omega
+  exact h ▸ Submodule.sum_mem _ fun k _ => Submodule.subset_span ⟨k, rfl⟩
 
 /-! ## The pinned carrier of type `A_r` -/
 
@@ -688,18 +655,6 @@ theorem rep_rootGenerator_latticeBasis (k : Fin r ⊕ Fin r) :
         Fin (r + 1) → ℚ) := by
   rw [rep_rootGenerator_latticeBasis_apply, ite_eq_left rfl, one_smul]
 
-/-- The coordinate morphism of a numbered root subgroup is surjective before factoring through
-the carrier. -/
-private theorem representedRootCoordinateMap_surjective (k : Fin r ⊕ Fin r) :
-    Function.Surjective
-      (TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupCoordinateMap (rootGenerator r)
-        (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-        (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv)
-        k (isNilpotent_rep_rootGenerator r k) (latticeBasis r)).hom :=
-  TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupCoordinateMap_surjective _ _ _ _ _ _ _ _
-    isUnit_one (rep_rootGenerator_latticeBasis r k)
-    (rep_rootGenerator_rep_rootGenerator_eq_zero r k _)
-
 /-- **The coordinate morphism of every numbered root subgroup of the type `A_r` carrier is
 surjective.** -/
 theorem rootSubgroupCoordinateMap_surjective (k : Fin r ⊕ Fin r) :
@@ -708,19 +663,17 @@ theorem rootSubgroupCoordinateMap_surjective (k : Fin r ⊕ Fin r) :
         (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
         (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv)
         (isNilpotent_rep_rootGenerator r) (latticeBasis r) (weight r) k).hom :=
-  TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupToralCoordinateMap_surjective_of_surjective
-    _ _ _ _ _ _ _ _ k (representedRootCoordinateMap_surjective r k)
+  TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupToralCoordinateMap_surjective
+    _ _ _ _ _ k _ _ _ isUnit_one (rep_rootGenerator_latticeBasis r k)
+    (rep_rootGenerator_rep_rootGenerator_eq_zero r k _)
 
 /-- **Every numbered root subgroup of the type `A_r` carrier is a closed immersion.** -/
 instance isClosedImmersion_rootSubgroup (k : Fin r ⊕ Fin r) :
     IsClosedImmersion (rootSubgroup r k).hom.hom.left := by
   rw [rootSubgroup]
-  exact
-    TauCeti.UniversalEnvelopingAlgebra.isClosedImmersion_kostantRootSubgroupToToral_of_surjective
-      (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-      (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv)
-      (isNilpotent_rep_rootGenerator r) (latticeBasis r) (weight r) k
-      (rootSubgroupCoordinateMap_surjective r k)
+  exact TauCeti.UniversalEnvelopingAlgebra.isClosedImmersion_kostantRootSubgroupToToral
+    _ _ _ _ _ k _ _ _ isUnit_one (rep_rootGenerator_latticeBasis r k)
+    (rep_rootGenerator_rep_rootGenerator_eq_zero r k _)
 
 /-- **The split torus of the type `A_r` carrier is a closed immersion.** This is exactly where the
 full-weight property is used: the weights of the standard module generate the whole character

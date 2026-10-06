@@ -8,7 +8,7 @@ module
 public import TauCeti.LinearAlgebra.RootSystem.DynkinType
 public import Mathlib.Algebra.IsPrimePow
 public import Mathlib.Data.Fintype.Card
-public import Mathlib.Data.Fintype.OfMap
+import Mathlib.Tactic.DeriveFintype
 
 /-!
 # Indices for the classification of finite simple groups
@@ -20,8 +20,8 @@ ranges and then removes the six remaining duplicate representatives. A Lie-type 
 determines its underlying untwisted Dynkin diagram, characteristic, and Frobenius parameter.
 
 The twenty-six sporadic names and the four-way `TauCeti.CFSGIndex` complete the indexing layer. No
-definition here asserts that a named group is finite or simple, and the group carriers themselves
-belong to later construction milestones.
+definition here asserts that a named group is finite or simple; the groups themselves are built from
+these indices elsewhere, the Lie-type entries as `TauCeti.ValidLieTypeIndex.Group`.
 
 The twisted families use the Gorenstein--Lyons--Solomon and ATLAS small-field convention. Thus
 `twistedA 2 q` denotes `²A₂(q)`, with a matrix realization over the field of `q²` elements, while
@@ -47,13 +47,9 @@ order `p ^ (2 * m + 1)`.
 
 ## References
 
-This is item I0 of `TauCetiRoadmap/CFSGStatement/README.md`. The family names and parameter
-conventions, including the small isomorphism exclusions, follow Gorenstein--Lyons--Solomon,
-*The Classification of the Finite Simple Groups*, and Conway et al., *Atlas of Finite Groups*.
-The declaration structure and definitions adapt the human-authored formal skeleton in
-`TauCetiRoadmap/CFSGStatement/Suggested.lean`.
-The underlying diagrams reuse the Bourbaki-numbered `TauCeti.DynkinType` supplied by the
-root-systems roadmap.
+The family names and parameter conventions, including the small isomorphism exclusions, follow
+Gorenstein--Lyons--Solomon, *The Classification of the Finite Simple Groups*, and Conway et al.,
+*Atlas of Finite Groups*. The underlying diagrams are the Bourbaki-numbered `TauCeti.DynkinType`.
 
 For the two families on the rank-two diagram `B₂`, the names `B₂(q)` and `²B₂(2^(2m+1))`, the
 retention of the rank-two symplectic family under the `B` name, and the isomorphisms that exclude
@@ -71,6 +67,7 @@ namespace TauCeti
 /-- A prime power `p ^ exponent`, retaining the prime and positive exponent needed to construct its
 finite field. Unlike the proposition `IsPrimePow`, this is parameter data rather than a property of
 an already specified cardinality. -/
+@[ext]
 structure PrimePower where
   /-- The prime base of the prime power. -/
   p : ℕ
@@ -81,13 +78,6 @@ structure PrimePower where
   deriving DecidableEq
 
 namespace PrimePower
-
-/-- Two prime-power parameters are equal when their bases and exponents are equal. -/
-@[ext]
-theorem ext (q r : PrimePower) (hp : q.p = r.p) (he : q.exponent = r.exponent) : q = r := by
-  cases q
-  cases r
-  simp_all
 
 /-- The cardinality represented by a prime-power parameter. -/
 def card (q : PrimePower) : ℕ := q.p ^ q.exponent
@@ -163,8 +153,9 @@ def InStandardRange : LieTypeIndex → Prop
 instance : DecidablePred InStandardRange := fun d => by
   cases d <;> rw [inStandardRange_iff] <;> infer_instance
 
-/-- Representatives omitted in favor of the alternating or Lie-type names selected by the CFSG
-roadmap. After `InStandardRange`, these are the remaining small isomorphism coincidences. -/
+/-- Representatives omitted in favor of the alternating or Lie-type name under which the
+classification list keeps the same group. After `InStandardRange`, these are the remaining small
+isomorphism coincidences. -/
 def IsDuplicateRepresentative : LieTypeIndex → Prop
   | .A rank q =>
       (rank = 1 ∧ (q.card = 4 ∨ q.card = 5 ∨ q.card = 9)) ∨
@@ -415,7 +406,7 @@ entry for each prime power. -/
 theorem valid_trialityD4 (q : PrimePower) : (trialityD4 q).Valid := by simp
 
 /-- The underlying untwisted Dynkin diagram. Twisted types map to the diagram from which they are
-constructed, so all later root indices use the root-systems roadmap's Bourbaki numbering.
+constructed, so all later root indices use the Bourbaki numbering of `TauCeti.DynkinType`.
 
 This is exposed because it appears in the *types* of the numbered data attached to an index: for
 `TauCeti.GraphTwistedIndex.diagramPerm` on the `²Aₙ` branch to be `TauCeti.graphPermA n`, the type
@@ -433,53 +424,43 @@ This is exposed because it appears in the *types* of the numbered data attached 
   | .G2 _ | .reeG2 _ => .G2
   | .suzuki _ => .B 2
 
-@[simp] theorem dynkinType_A (n : ℕ) (q : PrimePower) : (A n q).dynkinType = .A n :=
-  by simp only [dynkinType]
+@[simp] theorem dynkinType_A (n : ℕ) (q : PrimePower) : (A n q).dynkinType = .A n := rfl
 
 @[simp] theorem dynkinType_twistedA (n : ℕ) (q : PrimePower) :
-    (twistedA n q).dynkinType = .A n := by simp only [dynkinType]
+    (twistedA n q).dynkinType = .A n := rfl
 
-@[simp] theorem dynkinType_B (n : ℕ) (q : PrimePower) : (B n q).dynkinType = .B n :=
-  by simp only [dynkinType]
+@[simp] theorem dynkinType_B (n : ℕ) (q : PrimePower) : (B n q).dynkinType = .B n := rfl
 
-@[simp] theorem dynkinType_C (n : ℕ) (q : PrimePower) : (C n q).dynkinType = .C n :=
-  by simp only [dynkinType]
+@[simp] theorem dynkinType_C (n : ℕ) (q : PrimePower) : (C n q).dynkinType = .C n := rfl
 
-@[simp] theorem dynkinType_D (n : ℕ) (q : PrimePower) : (D n q).dynkinType = .D n :=
-  by simp only [dynkinType]
+@[simp] theorem dynkinType_D (n : ℕ) (q : PrimePower) : (D n q).dynkinType = .D n := rfl
 
 @[simp] theorem dynkinType_twistedD (n : ℕ) (q : PrimePower) :
-    (twistedD n q).dynkinType = .D n := by simp only [dynkinType]
+    (twistedD n q).dynkinType = .D n := rfl
 
 @[simp] theorem dynkinType_trialityD4 (q : PrimePower) :
-    (trialityD4 q).dynkinType = .D 4 := by simp only [dynkinType]
+    (trialityD4 q).dynkinType = .D 4 := rfl
 
-@[simp] theorem dynkinType_E6 (q : PrimePower) : (E6 q).dynkinType = .E6 :=
-  by simp only [dynkinType]
+@[simp] theorem dynkinType_E6 (q : PrimePower) : (E6 q).dynkinType = .E6 := rfl
 
 @[simp] theorem dynkinType_twistedE6 (q : PrimePower) :
-    (twistedE6 q).dynkinType = .E6 := by simp only [dynkinType]
+    (twistedE6 q).dynkinType = .E6 := rfl
 
-@[simp] theorem dynkinType_E7 (q : PrimePower) : (E7 q).dynkinType = .E7 :=
-  by simp only [dynkinType]
+@[simp] theorem dynkinType_E7 (q : PrimePower) : (E7 q).dynkinType = .E7 := rfl
 
-@[simp] theorem dynkinType_E8 (q : PrimePower) : (E8 q).dynkinType = .E8 :=
-  by simp only [dynkinType]
+@[simp] theorem dynkinType_E8 (q : PrimePower) : (E8 q).dynkinType = .E8 := rfl
 
-@[simp] theorem dynkinType_F4 (q : PrimePower) : (F4 q).dynkinType = .F4 :=
-  by simp only [dynkinType]
+@[simp] theorem dynkinType_F4 (q : PrimePower) : (F4 q).dynkinType = .F4 := rfl
 
-@[simp] theorem dynkinType_reeF4 (m : ℕ) : (reeF4 m).dynkinType = .F4 := by simp only [dynkinType]
+@[simp] theorem dynkinType_reeF4 (m : ℕ) : (reeF4 m).dynkinType = .F4 := rfl
 
-@[simp] theorem dynkinType_tits : tits.dynkinType = .F4 := by simp only [dynkinType]
+@[simp] theorem dynkinType_tits : tits.dynkinType = .F4 := rfl
 
-@[simp] theorem dynkinType_G2 (q : PrimePower) : (G2 q).dynkinType = .G2 :=
-  by simp only [dynkinType]
+@[simp] theorem dynkinType_G2 (q : PrimePower) : (G2 q).dynkinType = .G2 := rfl
 
-@[simp] theorem dynkinType_reeG2 (m : ℕ) : (reeG2 m).dynkinType = .G2 := by simp only [dynkinType]
+@[simp] theorem dynkinType_reeG2 (m : ℕ) : (reeG2 m).dynkinType = .G2 := rfl
 
-@[simp] theorem dynkinType_suzuki (m : ℕ) : (suzuki m).dynkinType = .B 2 :=
-  by simp only [dynkinType]
+@[simp] theorem dynkinType_suzuki (m : ℕ) : (suzuki m).dynkinType = .B 2 := rfl
 
 /-- The Lie-type families whose underlying Dynkin diagram has unimodular Cartan matrix, namely
 `E₈`, `F₄` and `G₂`.
@@ -527,8 +508,10 @@ theorem exists_eq_of_hasUnimodularDiagram_of_not_usesHalfFrobenius {d : LieTypeI
 
 Like `TauCeti.LieTypeIndex.HasUnimodularDiagram` this constrains the diagram alone and says nothing
 about the Steinberg map, which is what makes it the right hypothesis for data depending only on the
-diagram: all three families share one carrier and one character lattice, and differ in the diagram
-permutation their Steinberg map composes with, of order one, two and three respectively. -/
+diagram. The three families differ in the diagram permutation their Steinberg map composes with, of
+order one, two and three respectively. They do not all share a carrier: triality has no linear
+realization on the spin module the other two are built on, so `³D₄(q)` is built on the tripled
+carrier `TauCeti.D4Tripled.groupScheme`. -/
 def HasTypeDDiagram : LieTypeIndex → Prop
   | .D _ _ | .twistedD _ _ | .trialityD4 _ => True
   | _ => False
@@ -841,8 +824,9 @@ abbrev GraphTwistedIndex : Type _ := {d : ValidLieTypeIndex // ¬ d.1.UsesHalfFr
 
 /-- A valid index whose underlying Dynkin diagram has unimodular Cartan matrix: the six branches
 `E₈(q)`, `F₄(q)`, `G₂(q)`, `²G₂(3^(2m+1))`, `²F₄(2^(2m+1))` and `²F₄(2)'`. These are the diagrams
-on which the Geck carrier of the root-systems roadmap has full character span, so this subtype is
-the domain of the lattice results that span buys. -/
+on which the Geck weights span the full character lattice
+(`TauCeti.DynkinType.span_range_geckWeight_eq_top_iff`), so this subtype is the domain of the
+lattice results that span buys. -/
 abbrev UnimodularLieIndex : Type _ := {d : ValidLieTypeIndex // d.1.HasUnimodularDiagram}
 
 /-- A validated index in one of the two type-A families `A_r(q)` and `²A_r(q)`.
@@ -859,19 +843,19 @@ abbrev TypeCLieIndex : Type _ := {d : ValidLieTypeIndex // d.1.IsTypeC}
 /-- A validated index in the untwisted exceptional family `E₆(q)`.
 
 Every `E₆(q)` is valid, by `TauCeti.LieTypeIndex.valid_E6`, so the outer subtype excludes nothing
-here; it is retained because the carrier-valued constructions of milestone L0 take
-`TauCeti.ValidLieTypeIndex`. The graph-twisted family `²E₆(q)`, which shares the diagram, is not of
-this subtype. -/
+here; it is retained so that this family sits inside `TauCeti.ValidLieTypeIndex`, which the
+carrier-valued constructions take. The graph-twisted family `²E₆(q)`, which shares the diagram, is
+not of this subtype. -/
 abbrev TypeE6LieIndex : Type _ := {d : ValidLieTypeIndex // d.1.IsTypeE6}
 
 /-- A validated index in the graph-twisted exceptional family `²E₆(q)`.
 
 Every `²E₆(q)` is valid, by `TauCeti.LieTypeIndex.valid_twistedE6`, so the outer subtype excludes
-nothing here; it is retained because the carrier-valued constructions of milestone L0 take
-`TauCeti.ValidLieTypeIndex`. The untwisted family `E₆(q)`, which shares the diagram, is not of this
-subtype: the two differ by the diagram automorphism their Steinberg maps compose with, and they are
-built on different carriers, since the `E₆` diagram symmetry does not act on the `27`-dimensional
-minuscule one. -/
+nothing here; it is retained so that this family sits inside `TauCeti.ValidLieTypeIndex`, which the
+carrier-valued constructions take. The untwisted family `E₆(q)`, which shares the diagram, is not of
+this subtype: the two differ by the diagram automorphism their Steinberg maps compose with, and they
+are built on different carriers, since the `E₆` diagram symmetry does not act on the
+`27`-dimensional minuscule one. -/
 abbrev TypeTwistedE6LieIndex : Type _ := {d : ValidLieTypeIndex // d.1.IsTypeTwistedE6}
 
 /-- A validated index in the Suzuki family `²B₂(2^(2m+1))`.
@@ -887,10 +871,11 @@ abbrev SuzukiLieIndex : Type _ := {d : ValidLieTypeIndex // d.1.IsSuzuki}
 /-- A validated index on a type-`Dₙ` diagram: the untwisted `Dₙ(q)`, the graph-twisted `²Dₙ(q)`,
 or the triality-twisted `³D₄(q)`.
 
-The three families are collected because they share their carrier: the diagram, and hence the
-character lattice and the group the classification recipe is run inside, depends only on this
-subtype, while the family enters through the diagram permutation. Its rank is at least four, by
-`TauCeti.TypeDDiagramLieIndex.four_le_rank`. -/
+The three families are collected because they share their diagram, and with it everything read
+off the diagram, while the family enters through the diagram permutation. The untwisted and
+graph-twisted families also share their carrier, the spin carrier `TauCeti.TypeDSpinCarrier`; the
+triality-twisted family is built on the tripled carrier `TauCeti.D4Tripled.groupScheme` instead. Its
+rank is at least four, by `TauCeti.TypeDDiagramLieIndex.four_le_rank`. -/
 abbrev TypeDDiagramLieIndex : Type _ := {d : ValidLieTypeIndex // d.1.HasTypeDDiagram}
 
 /-- A validated index in the untwisted type-`D` family `Dₙ(q)`.
@@ -917,10 +902,11 @@ family, whose Steinberg map is the `q`-power Frobenius, and of the Suzuki family
 map is an odd power of a half-Frobenius. No rank-two `C` index appears: the `C` family starts at
 rank three in `InStandardRange`, so `B₂(q) = C₂(q)` is always named in the `B` family.
 
-This is diagram-level indexing data only; it does not attach the pinned L0 carrier that both
-branches will eventually consume. The outer subtype is important: `B₂(2)`, `B₂(3)` and `²B₂(2)`
-are excluded from the classification list and are not indices of this subtype; those exclusions
-are the small isomorphisms of Gorenstein--Lyons--Solomon, Number 1, §2.2. -/
+This is diagram-level indexing data only; the carrier both branches share is attached in
+`TauCeti/GroupTheory/SpecificGroups/CFSG/TypeB/Two/Basic.lean`. The outer subtype is important:
+`B₂(2)`, `B₂(3)` and `²B₂(2)` are excluded from the classification list and are not indices of this
+subtype; those exclusions are the small isomorphisms of Gorenstein--Lyons--Solomon, Number 1, §2.2.
+-/
 abbrev RankTwoBLieIndex : Type _ := {d : ValidLieTypeIndex // d.1.dynkinType = .B 2}
 
 /-- A validated index in the untwisted rank-two family `B₂(q)`. The Suzuki family, which shares the
@@ -1007,14 +993,14 @@ namespace TypeCLieIndex
 open LieTypeIndex (inStandardRange_iff valid_iff)
 
 /-- Introduce a valid type-`C` index. -/
-abbrev ofC (rank : ℕ) (q : PrimePower) (hvalid : (LieTypeIndex.C rank q).Valid) :
+abbrev of (rank : ℕ) (q : PrimePower) (hvalid : (LieTypeIndex.C rank q).Valid) :
     TypeCLieIndex :=
   ⟨⟨.C rank q, hvalid⟩, trivial⟩
 
-/-- Every type-C index is an introduction form `ofC rank q hvalid`. -/
-theorem exists_eq_ofC (d : TypeCLieIndex) :
+/-- Every type-C index is an introduction form `of rank q hvalid`. -/
+theorem exists_eq_of (d : TypeCLieIndex) :
     ∃ (rank : ℕ) (q : PrimePower) (hvalid : (LieTypeIndex.C rank q).Valid),
-      d = ofC rank q hvalid := by
+      d = of rank q hvalid := by
   obtain ⟨⟨d, hvalid⟩, hC⟩ := d
   revert hvalid hC
   cases d
@@ -1023,23 +1009,23 @@ theorem exists_eq_ofC (d : TypeCLieIndex) :
 
 /-- **The Cartan matrix of the diagram a validated type-`C` index names**, entry by entry: it is
 the type-`C` Cartan matrix at the index's rank. This is the projection of the introduction form
-`TauCeti.TypeCLieIndex.ofC` through `TauCeti.DynkinType.cartanMatrix_C`, stated on entries rather
+`TauCeti.TypeCLieIndex.of` through `TauCeti.DynkinType.cartanMatrix_C`, stated on entries rather
 than on matrices because the rank occurs in the index types of the two nodes. -/
 theorem dynkinType_cartanMatrix_apply (d : TypeCLieIndex) (i j : Fin d.1.rank) :
     d.1.dynkinType.cartanMatrix i j = CartanMatrix.C d.1.rank i j := by
-  obtain ⟨rank, q, hvalid, rfl⟩ := d.exists_eq_ofC
+  obtain ⟨rank, q, hvalid, rfl⟩ := d.exists_eq_of
   exact congrFun₂ (DynkinType.cartanMatrix_C rank) i j
 
 /-- The rank of a validated type-`C` index is at least three. -/
 theorem three_le_rank (d : TypeCLieIndex) : 3 ≤ d.1.rank := by
-  obtain ⟨rank, q, hvalid, rfl⟩ := d.exists_eq_ofC
+  obtain ⟨rank, q, hvalid, rfl⟩ := d.exists_eq_of
   simpa only [ValidLieTypeIndex.rank, ValidLieTypeIndex.dynkinType,
     LieTypeIndex.dynkinType_C, DynkinType.rank_C] using
       ((inStandardRange_iff _).mp ((valid_iff _).mp hvalid).1).1
 
 /-- A validated type-`C` index has characteristic different from two. -/
 theorem characteristic_ne_two (d : TypeCLieIndex) : d.1.characteristic ≠ 2 := by
-  obtain ⟨rank, q, hvalid, rfl⟩ := d.exists_eq_ofC
+  obtain ⟨rank, q, hvalid, rfl⟩ := d.exists_eq_of
   simpa only [ValidLieTypeIndex.characteristic, LieTypeIndex.characteristic_C] using
     ((inStandardRange_iff _).mp ((valid_iff _).mp hvalid).1).2
 
@@ -1245,7 +1231,7 @@ theorem dynkinType_eq : d.1.dynkinType = .D d.1.rank := by
 /-- **The Cartan matrix of the diagram a validated index on a type-`D` diagram names**, entry by
 entry: it is the type-`D` Cartan matrix at the index's rank. Like
 `TauCeti.TypeCLieIndex.dynkinType_cartanMatrix_apply` it is stated on entries rather than on
-matrices, because the rank occurs in the index types of the two nodes, so the matrix-level equation
+matrices, because the rank occurs in the index types of the two nodes, so the Dynkin-type equation
 `TauCeti.TypeDDiagramLieIndex.dynkinType_eq` cannot be rewritten with directly. -/
 theorem dynkinType_cartanMatrix_apply (i j : Fin d.1.rank) :
     d.1.dynkinType.cartanMatrix i j = CartanMatrix.D d.1.rank i j := by
@@ -1261,7 +1247,7 @@ theorem dynkinType_cartanMatrix_apply (i j : Fin d.1.rank) :
 
 /-- **The rank of a validated index on a type-`D` diagram is at least four.** This is the range on
 which `Dₙ` is a valid Dynkin type, `D₂` being `A₁ × A₁` and `D₃` being `A₃` relabelled, and it is
-the hypothesis the type-`D` carrier of the reductive-groups roadmap takes. -/
+the hypothesis the type-`D` spin carrier `TauCeti.TypeDSpinCarrier.groupScheme` takes. -/
 theorem four_le_rank : 4 ≤ d.1.rank :=
   DynkinType.valid_D.mp (d.dynkinType_eq ▸ d.1.dynkinType_valid)
 
@@ -1270,16 +1256,16 @@ end TypeDDiagramLieIndex
 namespace TypeDLieIndex
 
 /-- Introduce a valid untwisted type-`D` index. -/
-abbrev ofD (rank : ℕ) (q : PrimePower) (hvalid : (LieTypeIndex.D rank q).Valid) :
+abbrev of (rank : ℕ) (q : PrimePower) (hvalid : (LieTypeIndex.D rank q).Valid) :
     TypeDLieIndex :=
   ⟨⟨.D rank q, hvalid⟩, (LieTypeIndex.isTypeD_iff _).mpr trivial⟩
 
-/-- Every untwisted type-`D` index is an introduction form `ofD rank q hvalid`. This is the
-eliminator matching `ofD`, so a consumer never repeats the case split over the other
+/-- Every untwisted type-`D` index is an introduction form `of rank q hvalid`. This is the
+eliminator matching `of`, so a consumer never repeats the case split over the other
 constructors. -/
-theorem exists_eq_ofD (d : TypeDLieIndex) :
+theorem exists_eq_of (d : TypeDLieIndex) :
     ∃ (rank : ℕ) (q : PrimePower) (hvalid : (LieTypeIndex.D rank q).Valid),
-      d = ofD rank q hvalid := by
+      d = of rank q hvalid := by
   obtain ⟨⟨d, hvalid⟩, hd⟩ := d
   revert hvalid hd
   cases d
@@ -1295,14 +1281,14 @@ end TypeDLieIndex
 namespace TypeTwistedDLieIndex
 
 /-- Introduce a valid graph-twisted type-`D` index. -/
-abbrev ofTwistedD (rank : ℕ) (q : PrimePower) (hvalid : (LieTypeIndex.twistedD rank q).Valid) :
+abbrev of (rank : ℕ) (q : PrimePower) (hvalid : (LieTypeIndex.twistedD rank q).Valid) :
     TypeTwistedDLieIndex :=
   ⟨⟨.twistedD rank q, hvalid⟩, (LieTypeIndex.isTypeTwistedD_iff _).mpr trivial⟩
 
-/-- Every graph-twisted type-`D` index is an introduction form `ofTwistedD rank q hvalid`. -/
-theorem exists_eq_ofTwistedD (d : TypeTwistedDLieIndex) :
+/-- Every graph-twisted type-`D` index is an introduction form `of rank q hvalid`. -/
+theorem exists_eq_of (d : TypeTwistedDLieIndex) :
     ∃ (rank : ℕ) (q : PrimePower) (hvalid : (LieTypeIndex.twistedD rank q).Valid),
-      d = ofTwistedD rank q hvalid := by
+      d = of rank q hvalid := by
   obtain ⟨⟨d, hvalid⟩, hd⟩ := d
   revert hvalid hd
   cases d
@@ -1389,8 +1375,7 @@ abbrev tits : UnimodularLieIndex :=
 /-- The underlying untwisted Dynkin diagram of an index with unimodular diagram. -/
 abbrev dynkinType : DynkinType := d.1.dynkinType
 
-/-- That diagram is a valid Dynkin type, so the pinned Geck carrier of the root-systems roadmap is
-available for it. -/
+/-- That diagram is a valid Dynkin type, so the pinned Geck carrier is available for it. -/
 theorem dynkinType_valid : d.dynkinType.Valid := d.1.dynkinType_valid
 
 /-- The underlying Dynkin type of an index with unimodular diagram is one of the three unimodular
@@ -1466,11 +1451,7 @@ inductive SporadicName where
   deriving DecidableEq
 
 /-- The finite enumeration of the twenty-six sporadic group names. -/
-instance : Fintype SporadicName :=
-  Fintype.ofList
-    [.M11, .M12, .M22, .M23, .M24, .J1, .J2, .J3, .J4, .HS, .McL, .He, .Ru, .Suz, .ONan,
-      .Co1, .Co2, .Co3, .Fi22, .Fi23, .Fi24Prime, .HN, .Ly, .Th, .B, .M]
-    (by intro x; cases x <;> simp)
+instance : Fintype SporadicName := derive_fintype% _
 
 end
 

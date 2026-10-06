@@ -62,6 +62,8 @@ AINTLIB `LeanModularForms` project
   invariance passes to integer powers, and an eigenvalue law survives multiplication on both
   sides by powers of an invariance.
 * `Subgroup.IsArithmetic.isCusp_of_isCusp`: any two arithmetic groups have the same cusps.
+* `TauCeti.ModularForm.eq_zero_of_eq_const`: a constant slash-invariant form of nonzero weight
+  vanishes when its group has finite-index intersection with the modular group.
 * `ModularForm.mem_range_ofLeₗ_iff`, `CuspForm.mem_range_ofLeₗ_iff`: for `Γ' ≤ Γ` with every
   cusp of `Γ` a cusp of `Γ'`, a form for `Γ'` extends to `Γ` exactly when it is `Γ`-slash
   invariant.
@@ -431,3 +433,70 @@ lemma mem_range_ofLeₗ_iff [Γ.HasDetOne] [Γ'.HasDetOne] (h : Γ' ≤ Γ)
 end CuspForm
 
 end OfLe
+
+/-! ### Constant forms at nonzero weight -/
+
+namespace TauCeti.ModularForm
+
+open ModularGroup
+
+variable {Γ : Subgroup (GL (Fin 2) ℝ)} {k : ℤ}
+
+/-- A constant slash-invariant form of nonzero weight vanishes if its group contains a
+determinant-one matrix with nonzero lower-left entry. No holomorphy or cusp condition is needed.
+
+This extends Mathlib's level-one `SlashInvariantForm.wt_eq_zero_of_eq_const`: the nonconstant
+automorphy factor, rather than invariance under `S` itself, excludes a nonzero constant. -/
+theorem eq_zero_of_eq_const_of_weight_ne_zero
+    {F : Type*} [FunLike F ℍ ℂ] [SlashInvariantFormClass F Γ k] {f : F} {c : ℂ}
+    (hf : ⇑f = Function.const ℍ c)
+    (hk : k ≠ 0) {γ : GL (Fin 2) ℝ} (hγ : γ ∈ Γ) (hdet : γ.det = 1)
+    (hc : γ 1 0 ≠ 0) : c = 0 := by
+  by_contra hc0
+  let z : ℍ := ⟨Complex.I * (2 / |γ 1 0| : ℝ), by
+    simp only [Complex.mul_im, Complex.I_re, Complex.ofReal_im, mul_zero,
+      Complex.I_im, Complex.ofReal_re, one_mul, zero_add]
+    positivity⟩
+  have hdetpos : 0 < γ.val.det := by
+    simp [← GeneralLinearGroup.val_det_apply, hdet]
+  have h := SlashInvariantForm.slash_action_eqn_of_det_pos f hγ hdetpos z
+  simp only [hdet, Units.val_one, abs_one, Complex.ofReal_one, one_zpow, one_mul] at h
+  rw [hf, Function.const_apply, Function.const_apply] at h
+  have hd : denom γ z ^ k = 1 := mul_right_cancel₀ hc0 (by simpa using h.symm)
+  have hnorm : ‖denom γ z‖ = 1 := by
+    apply (zpow_left_inj₀ (norm_nonneg _) zero_le_one hk).mp
+    simpa only [norm_zpow, norm_one, one_zpow] using congrArg norm hd
+  have him : |(denom γ z).im| = 2 := by
+    simp [denom, z, Complex.mul_im, abs_mul, abs_div, abs_abs]
+    field_simp
+  have hle := Complex.abs_im_le_norm (denom γ z)
+  rw [him, hnorm] at hle
+  norm_num at hle
+
+/-- A group with finite-index intersection with the modular group contains a matrix in that
+intersection with nonzero lower-left entry. -/
+theorem exists_mem_lowerLeft_ne_zero [Subgroup.IsFiniteRelIndex Γ 𝒮ℒ] :
+    ∃ γ ∈ Γ ⊓ 𝒮ℒ, γ 1 0 ≠ 0 := by
+  let u : SL(2, ℤ) := S * T * S⁻¹
+  have hu : mapGL ℝ u ∈ (𝒮ℒ : Subgroup (GL (Fin 2) ℝ)) := ⟨u, rfl⟩
+  obtain ⟨n, hn, _, hmem⟩ := Γ.exists_pow_mem_of_relIndex_ne_zero Γ.relIndex_ne_zero hu
+  refine ⟨mapGL ℝ u ^ n, hmem, ?_⟩
+  have hp : u ^ n = S * T ^ n * S⁻¹ := by simp [u, conj_pow]
+  have he : (u ^ n : SL(2, ℤ)) 1 0 = -(n : ℤ) := by
+    rw [hp, ← zpow_natCast]
+    simp only [coe_mul, ModularGroup.S_inv, coe_neg, coe_S, coe_T_zpow]
+    norm_num [Matrix.mul_apply, Fin.sum_univ_two]
+  rw [← map_pow, mapGL_coe_matrix, map_apply_coe]
+  simp only [RingHom.mapMatrix_apply, Matrix.map_apply, he]
+  simp [algebraMap_int_eq, hn.ne']
+
+/-- A slash-invariant form of nonzero weight whose group has finite-index intersection with the
+modular group cannot be a nonzero constant. -/
+theorem eq_zero_of_eq_const [Subgroup.IsFiniteRelIndex Γ 𝒮ℒ]
+    {F : Type*} [FunLike F ℍ ℂ] [SlashInvariantFormClass F Γ k] {f : F} {c : ℂ}
+    (hf : ⇑f = Function.const ℍ c) (hk : k ≠ 0) : c = 0 := by
+  obtain ⟨γ, hγ, hc⟩ := exists_mem_lowerLeft_ne_zero (Γ := Γ)
+  exact eq_zero_of_eq_const_of_weight_ne_zero hf hk hγ.1
+    (Subgroup.HasDetOne.det_eq hγ.2) hc
+
+end TauCeti.ModularForm

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ModularForms.LevelOne.FundamentalDomainBoundary.Winding.Rho.Geometry
 
+import TauCeti.Analysis.Complex.UpperHalfPlane.Rho
 import TauCeti.NumberTheory.ModularForms.LevelOne.FundamentalDomainBoundary.Winding.Basic
 import TauCeti.Topology.Circle.Metric
 
@@ -65,20 +66,11 @@ Not `@[simp]`, for the same reason as `rho_im`: simp reaches `ρ.im` through
 theorem rho_add_one_im : ((UpperHalfPlane.ρ : ℂ) + 1).im = Real.sqrt 3 / 2 := by
   rw [Complex.add_im, rho_im, Complex.one_im, add_zero]
 
-/-- The corner `ρ + 1` is the unit-circle point of angle `π/3`. -/
-private lemma rho_add_one_eq_exp :
-    (UpperHalfPlane.ρ : ℂ) + 1 = Complex.exp (((Real.pi / 3 : ℝ) : ℂ) * Complex.I) := by
-  refine Complex.ext ?_ ?_
-  · rw [Complex.exp_ofReal_mul_I_re, Real.cos_pi_div_three]
-    norm_num [UpperHalfPlane.ρ]
-  · rw [Complex.exp_ofReal_mul_I_im, Real.sin_pi_div_three]
-    exact rho_add_one_im
-
 /-- The corner `ρ + 1` as a point of the unit circle traced by `circleMap`. -/
 private lemma rho_add_one_eq_circleMap :
     (UpperHalfPlane.ρ : ℂ) + 1 = circleMap 0 1 (Real.pi / 3) := by
   rw [circleMap_zero, Complex.ofReal_one, one_mul]
-  exact rho_add_one_eq_exp
+  exact UpperHalfPlane.ρ_add_one_eq_exp
 
 /-- On the right vertical the shifted contour is the purely imaginary linear form
 `(1 - t)·(H - √3/2)·i`. -/
@@ -222,7 +214,7 @@ private lemma fdBoundary_one_add_sub_rho_add_one_eq (H : ℝ) (hδ : 0 < δ) (h�
     exact Complex.exp_pi_div_two_mul_I.symm
   have hcurve : fdBoundary H (1 + δ) = circleMap 0 1 ((1 + δ + 1) * (Real.pi / 6)) :=
     eqOn_fdBoundary_arc H ⟨by linarith, by linarith⟩
-  rw [hcurve, circleMap_zero, Complex.ofReal_one, one_mul, rho_add_one_eq_exp,
+  rw [hcurve, circleMap_zero, Complex.ofReal_one, one_mul, UpperHalfPlane.ρ_add_one_eq_exp,
     exp_mul_I_sub_exp_mul_I,
     (by ring : ((1 + δ + 1) * (Real.pi / 6) - Real.pi / 3) / 2 = δ * (Real.pi / 12)),
     (by ring : ((1 + δ + 1) * (Real.pi / 6) + Real.pi / 3) / 2 =

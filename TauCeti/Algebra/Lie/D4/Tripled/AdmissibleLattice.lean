@@ -26,6 +26,9 @@ needed to construct the tripled type-`D₄` Chevalley carrier.
 * `TauCeti.D4Tripled.rep`: the rational representation of the universal enveloping algebra.
 * `TauCeti.D4Tripled.isSl2Triple_rep_serreRootGenerator`: the represented generators at every
   node form an `sl₂` triple.
+* `TauCeti.D4Tripled.rep_serreRootGenerator_inl_latticeBasis_eq_sum` and
+  `TauCeti.D4Tripled.rep_serreRootGenerator_inr_latticeBasis_eq_sum`: the represented root
+  generators act on the lattice basis by the raising and lowering matrices.
 * `TauCeti.D4Tripled.lattice`: the coordinate `ℤ`-lattice in the rational module.
 * `TauCeti.D4Tripled.rep_kostantForm_mem_lattice`: the generic Kostant form preserves the
   lattice.
@@ -110,6 +113,28 @@ theorem isCartanWeightVector_latticeBasis (a : Fin 24) :
       ((latticeBasis a : lattice) : Fin 24 → ℚ) := by
   rw [coe_latticeBasis]
   simpa only [rep, weightTable_weight] using weightTable.isCartanWeightVector_single a
+
+/-- A represented positive Serre root generator acts on the tripled lattice basis by the raising
+matrix. -/
+theorem rep_serreRootGenerator_inl_latticeBasis_eq_sum (i : Fin 4) (s : Fin 24) :
+    rep (_root_.UniversalEnvelopingAlgebra.ι ℚ
+        (TauCeti.serreRootGenerator weightTable.cartanMatrix (.inl i)))
+        ((latticeBasis s : lattice) : Fin 24 → ℚ) =
+      ∑ r, raisingMatrix i r s • ((latticeBasis r : lattice) : Fin 24 → ℚ) := by
+  rw [rep_def, raisingMatrix_def]
+  simpa only [coe_latticeBasis, TauCeti.coe_coordinateLatticeBasis, Pi.basisFun_apply] using
+    weightTable.rep_serreRootGenerator_inl_coordinateLatticeBasis_eq_sum i s
+
+/-- A represented negative Serre root generator acts on the tripled lattice basis by the lowering
+matrix. -/
+theorem rep_serreRootGenerator_inr_latticeBasis_eq_sum (i : Fin 4) (s : Fin 24) :
+    rep (_root_.UniversalEnvelopingAlgebra.ι ℚ
+        (TauCeti.serreRootGenerator weightTable.cartanMatrix (.inr i)))
+        ((latticeBasis s : lattice) : Fin 24 → ℚ) =
+      ∑ r, loweringMatrix i r s • ((latticeBasis r : lattice) : Fin 24 → ℚ) := by
+  rw [rep_def, loweringMatrix_def]
+  simpa only [coe_latticeBasis, TauCeti.coe_coordinateLatticeBasis, Pi.basisFun_apply] using
+    weightTable.rep_serreRootGenerator_inr_coordinateLatticeBasis_eq_sum i s
 
 /-- The tripled coordinate lattice is stable under the generic Kostant form built from the
 type-`D₄` Serre generators. This is the form consumed by the carrier and base-change APIs. -/

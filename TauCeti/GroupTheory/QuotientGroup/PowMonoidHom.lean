@@ -23,6 +23,11 @@ factors.
   `G ⧸ (powMonoidHom n).range ≃* H ⧸ (powMonoidHom n).range`.
 * `Units.modPowPiEquiv`: taking `n`-th power classes of units commutes with products.
 
+## Main results
+
+* `QuotientGroup.pow_eq_one_quotient_range_powMonoidHom`: every `n`-th power class is killed by
+  `n`.
+
 ## Provenance
 
 Adapted, with the author's proofs, from Michael Stoll's `EllipticCurves` project
@@ -32,7 +37,8 @@ Adapted, with the author's proofs, from Michael Stoll's `EllipticCurves` project
 `Units.modPow` abbreviation. Mathlib's `QuotientGroup.mulEquivPiModRangePowMonoidHom` and
 `MulEquiv.piUnits` do the work of the source's `Units.modPow.piEquiv`; what is left here is the
 transport along an equivalence and the composition of those two. The source is written against
-Lean `v4.32.0`; this is a forward port.
+Lean `v4.32.0`; this is a forward port. `QuotientGroup.pow_eq_one_quotient_range_powMonoidHom` is
+not from the source.
 
 ## Roadmap
 
@@ -58,6 +64,14 @@ lemma congrRangePowMonoidHom_mk {G H : Type*} [CommGroup G] [CommGroup H] (e : G
     (g : G) :
     congrRangePowMonoidHom e n (QuotientGroup.mk g) = QuotientGroup.mk (e g) :=
   (rfl)
+
+/-- Every class modulo the subgroup of `n`-th powers is killed by `n`. -/
+@[simp]
+theorem pow_eq_one_quotient_range_powMonoidHom {G : Type*} [CommGroup G] (n : ℕ)
+    (x : G ⧸ (powMonoidHom n : G →* G).range) :
+    x ^ n = 1 := by
+  induction x using QuotientGroup.induction_on with
+  | H g => exact (QuotientGroup.eq_one_iff _).mpr ⟨g, rfl⟩
 
 end QuotientGroup
 

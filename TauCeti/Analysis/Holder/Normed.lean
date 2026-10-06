@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Holder.Basic
+public import Mathlib.Analysis.Normed.Operator.NormedSpace
 
 /-!
 # The Banach space of global Hölder functions
@@ -27,6 +28,9 @@ parallel notion of Hölder continuity.
 * `TauCeti.HolderSpace`: bounded continuous globally `α`-Hölder functions.
 * `TauCeti.HolderSpace.instNormedAddCommGroup`: the supremum-plus-Hölder normed group structure.
 * `TauCeti.HolderSpace.instCompleteSpace`: completeness when the codomain is complete.
+* `TauCeti.HolderSpace.constL`, `TauCeti.HolderSpace.evalCLM`, and
+  `TauCeti.HolderSpace.toBoundedContinuousFunctionCLM`: continuous linear maps for constants,
+  evaluation, and inclusion, with operator-norm bounds.
 
 ## References
 
@@ -78,6 +82,20 @@ theorem toBoundedContinuousFunction_ofBoundedContinuousFunction (f : X →ᵇ Y)
 @[simp]
 theorem toBoundedContinuousFunction_apply (f : HolderSpace α X Y) (x : X) :
     f.toBoundedContinuousFunction x = f x := (rfl)
+
+@[simp]
+theorem coe_toBoundedContinuousFunction (f : HolderSpace α X Y) :
+    (f.toBoundedContinuousFunction : X → Y) = f := by
+  funext x
+  exact toBoundedContinuousFunction_apply f x
+
+@[simp]
+theorem ofBoundedContinuousFunction_apply (f : X →ᵇ Y) (hf : MemHolder α (f : X → Y))
+    (x : X) : ofBoundedContinuousFunction f hf x = f x := (rfl)
+
+/-- Every element of the bounded Hölder space is continuous, including at exponent zero. -/
+theorem continuous (f : HolderSpace α X Y) : Continuous (f : X → Y) := by
+  simpa using f.toBoundedContinuousFunction.continuous
 
 /-- A Hölder-space element satisfies the global Hölder condition. -/
 theorem memHolder (f : HolderSpace α X Y) :
@@ -133,6 +151,15 @@ instance : SMul ℤ (HolderSpace α X Y) := ⟨fun n f ↦ ⟨n • f.1⟩⟩
 @[simp] theorem toBoundedContinuousFunction_zsmul (n : ℤ) (f : HolderSpace α X Y) :
     (n • f).toBoundedContinuousFunction = n • f.toBoundedContinuousFunction := (rfl)
 
+@[simp]
+theorem zero_apply (x : X) : (0 : HolderSpace α X Y) x = 0 := (rfl)
+
+@[simp]
+theorem add_apply (f g : HolderSpace α X Y) (x : X) : (f + g) x = f x + g x := (rfl)
+
+@[simp]
+theorem smul_apply (c : ℝ) (f : HolderSpace α X Y) (x : X) : (c • f) x = c • f x := (rfl)
+
 /-- The underlying bounded continuous function determines a Hölder-space element. -/
 theorem toBoundedContinuousFunction_injective :
     Function.Injective (toBoundedContinuousFunction : HolderSpace α X Y → X →ᵇ Y) :=
@@ -162,7 +189,6 @@ theorem norm_eq_holderNorm (f : HolderSpace α X Y) :
     ‖f‖ = holderNorm α f.toBoundedContinuousFunction := (rfl)
 
 /-- The Hölder-space norm is the sum of the supremum norm and the global Hölder seminorm. -/
-@[simp]
 theorem norm_def (f : HolderSpace α X Y) :
     ‖f‖ = ‖f.toBoundedContinuousFunction‖ +
       nnHolderNorm α (f.toBoundedContinuousFunction : X → Y) := by
@@ -228,6 +254,25 @@ theorem toBoundedContinuousFunctionCLM_apply (f : HolderSpace α X Y) :
 theorem norm_toBoundedContinuousFunctionCLM_le_one :
     ‖toBoundedContinuousFunctionCLM (α := α) (X := X) (Y := Y)‖ ≤ 1 :=
   LinearMap.mkContinuous_norm_le _ zero_le_one _
+
+/-- Evaluation at a point as a continuous linear map on the Hölder space. -/
+def evalCLM (x : X) : HolderSpace α X Y →L[ℝ] Y :=
+  (BoundedContinuousFunction.evalCLM ℝ x).comp toBoundedContinuousFunctionCLM
+
+/-- Evaluation factors through the inclusion into bounded continuous functions. -/
+theorem evalCLM_def (x : X) : evalCLM (α := α) (Y := Y) x =
+    (BoundedContinuousFunction.evalCLM ℝ x).comp toBoundedContinuousFunctionCLM := (rfl)
+
+@[simp]
+theorem evalCLM_apply (x : X) (f : HolderSpace α X Y) : evalCLM x f = f x := by
+  simp [evalCLM_def]
+
+/-- Evaluation has operator norm at most one. -/
+theorem norm_evalCLM_le_one (x : X) : ‖evalCLM (α := α) (Y := Y) x‖ ≤ 1 := by
+  apply ContinuousLinearMap.opNorm_le_bound _ zero_le_one
+  intro f
+  simpa using (f.toBoundedContinuousFunction.norm_coe_le_norm x).trans
+    f.norm_toBoundedContinuousFunction_le
 
 private theorem holderWith_sub_of_tendsto_of_norm_sub_le {u : ℕ → HolderSpace α X Y}
     {F : X →ᵇ Y} (hF : Tendsto (fun n ↦ (u n).toBoundedContinuousFunction) atTop (𝓝 F))
@@ -328,6 +373,105 @@ noncomputable instance instCompleteSpace [CompleteSpace Y] : CompleteSpace (Hold
 theorem nnHolderNorm_le (f : HolderSpace α X Y) :
     (nnHolderNorm α (f.toBoundedContinuousFunction : X → Y) : ℝ) ≤ ‖f‖ :=
   nnHolderNorm_le_holderNorm f.toBoundedContinuousFunction
+
+/-- A constant function as an element of the bounded Hölder space. -/
+def const (c : Y) : HolderSpace α X Y :=
+  ofBoundedContinuousFunction (BoundedContinuousFunction.const X c) memHolder_const
+
+@[simp]
+theorem toBoundedContinuousFunction_const (c : Y) :
+    (const (α := α) (X := X) c).toBoundedContinuousFunction =
+      BoundedContinuousFunction.const X c := (rfl)
+
+@[simp]
+theorem const_apply (c : Y) (x : X) : const (α := α) c x = c := (rfl)
+
+/-- The Hölder norm of a constant is at most the norm of its value, even on an empty domain. -/
+theorem norm_const_le (c : Y) : ‖const (α := α) (X := X) c‖ ≤ ‖c‖ := by
+  rw [norm_def, toBoundedContinuousFunction_const]
+  have h : nnHolderNorm α ((BoundedContinuousFunction.const X c) : X → Y) = 0 :=
+    nnHolderNorm_const X α c
+  rw [h, NNReal.coe_zero, add_zero]
+  exact BoundedContinuousFunction.norm_const_le c
+
+/-- On a nonempty domain, constant functions have exactly the norm of their value. -/
+@[simp]
+theorem norm_const [Nonempty X] (c : Y) : ‖const (α := α) (X := X) c‖ = ‖c‖ := by
+  refine le_antisymm (norm_const_le c) ?_
+  obtain ⟨x⟩ := ‹Nonempty X›
+  exact ((const (α := α) c).toBoundedContinuousFunction.norm_coe_le_norm x).trans
+    (const c).norm_toBoundedContinuousFunction_le
+
+@[simp]
+theorem const_zero : const (α := α) (X := X) (0 : Y) = 0 := by
+  apply toBoundedContinuousFunction_injective
+  ext x
+  simp
+
+@[simp]
+theorem const_add (c d : Y) :
+    const (α := α) (X := X) (c + d) = const c + const d := by
+  apply toBoundedContinuousFunction_injective
+  ext x
+  simp
+
+@[simp]
+theorem const_smul (c : ℝ) (d : Y) :
+    const (α := α) (X := X) (c • d) = c • const d := by
+  apply toBoundedContinuousFunction_injective
+  ext x
+  simp
+
+/-- The continuous linear map assigning a constant bounded Hölder function to each value. -/
+def constL : Y →L[ℝ] HolderSpace α X Y :=
+  LinearMap.mkContinuous
+    { toFun := const
+      map_add' := const_add
+      map_smul' := const_smul } 1 fun c ↦ by simpa using norm_const_le (α := α) (X := X) c
+
+@[simp]
+theorem constL_apply (c : Y) : constL (α := α) (X := X) c = const c := (rfl)
+
+/-- The constant map has operator norm at most one, including on an empty domain. -/
+theorem norm_constL_le_one : ‖constL (α := α) (X := X) (Y := Y)‖ ≤ 1 :=
+  LinearMap.mkContinuous_norm_le _ zero_le_one _
+
+/-- On a nonempty domain with nontrivial values, the constant map has operator norm one. -/
+@[simp]
+theorem norm_constL [Nonempty X] [Nontrivial Y] :
+    ‖constL (α := α) (X := X) (Y := Y)‖ = 1 := by
+  obtain ⟨y, hy⟩ := exists_ne (0 : Y)
+  refine le_antisymm norm_constL_le_one ?_
+  have h := (constL (α := α) (X := X)).le_opNorm y
+  simpa only [constL_apply, norm_const,
+    le_mul_iff_one_le_left (norm_pos_iff.mpr hy)] using h
+
+/-- On a nonempty domain with nontrivial values, the inclusion has operator norm one. -/
+@[simp]
+theorem norm_toBoundedContinuousFunctionCLM [Nonempty X] [Nontrivial Y] :
+    ‖toBoundedContinuousFunctionCLM (α := α) (X := X) (Y := Y)‖ = 1 := by
+  obtain ⟨y, hy⟩ := exists_ne (0 : Y)
+  refine le_antisymm norm_toBoundedContinuousFunctionCLM_le_one ?_
+  have h := (toBoundedContinuousFunctionCLM (α := α) (X := X)).le_opNorm (const y)
+  simpa only [toBoundedContinuousFunctionCLM_apply, toBoundedContinuousFunction_const,
+    BoundedContinuousFunction.norm_const_eq, norm_const,
+    le_mul_iff_one_le_left (norm_pos_iff.mpr hy)] using h
+
+/-- With nontrivial values, evaluation has operator norm one. -/
+@[simp]
+theorem norm_evalCLM [Nontrivial Y] (x : X) : ‖evalCLM (α := α) (Y := Y) x‖ = 1 := by
+  let : Nonempty X := ⟨x⟩
+  obtain ⟨y, hy⟩ := exists_ne (0 : Y)
+  refine le_antisymm (norm_evalCLM_le_one x) ?_
+  have h := (evalCLM (α := α) x).le_opNorm (const y)
+  simpa only [evalCLM_apply, const_apply, norm_const,
+    le_mul_iff_one_le_left (norm_pos_iff.mpr hy)] using h
+
+@[simp]
+theorem evalCLM_comp_constL (x : X) :
+    (evalCLM (α := α) (Y := Y) x).comp constL = ContinuousLinearMap.id ℝ Y := by
+  ext y
+  simp
 
 end HolderSpace
 

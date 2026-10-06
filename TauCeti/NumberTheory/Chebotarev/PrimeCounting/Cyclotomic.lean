@@ -23,8 +23,7 @@ file proves the prime-number-theorem form of Chebotarev's theorem for `F / K`: f
 ```
 
 where `ψ_σ = frobeniusPsi K F (ConjClasses.mk σ)` counts the prime powers `𝔭 ^ j` of `K` with
-`𝔭` unramified in `F` and `Frob(𝔭) ^ j = σ`, weighted by `log N𝔭`. Taking `F = K` gives the
-prime ideal theorem `ψ_K(x) = x + o(x)` for every number field `K`.
+`𝔭` unramified in `F` and `Frob(𝔭) ^ j = σ`, weighted by `log N𝔭`.
 
 The proof applies the Wiener--Ikehara theorem `TauCeti.LSeries.wienerIkehara` to the nonnegative
 coefficients of `ψ_σ`. By the character expansion
@@ -47,8 +46,6 @@ So the Frobenius von Mangoldt series of `σ` minus `(1 / #G) / (s - 1)` extends 
 
 * `NumberField.Chebotarev.frobeniusPsi_asymptotic_of_isCyclotomicExtension`: for `F = K(μ_m)`,
   `ψ_σ(x) = x / #Gal(F/K) + o(x)`.
-* `NumberField.Chebotarev.primePsi_univ_asymptotic`: the prime ideal theorem
-  `ψ_K(x) = x + o(x)`.
 
 ## References
 
@@ -121,22 +118,5 @@ theorem frobeniusPsi_asymptotic_of_isCyclotomicExtension (m : ℕ) [NeZero m]
   filter_upwards [eventually_ne_atTop (0 : ℝ)] with x hx
   rw [frobeniusPsi_eq_sum_Icc]
   field_simp
-
-open scoped Classical in
-variable (K) in
-/-- **The prime ideal theorem, for Chebyshev's `ψ`.** For every number field `K`, the von Mangoldt
-summatory function `ψ_K(x) = ∑_{N𝔭^j ≤ x} log N𝔭` of `K` satisfies `ψ_K(x) = x + o(x)`. -/
-theorem primePsi_univ_asymptotic :
-    (fun x : ℝ ↦ primePsi K Set.univ x - x) =o[atTop] fun x : ℝ ↦ x := by
-  have : IsCyclotomicExtension {1} K K :=
-    IsCyclotomicExtension.singleton_one_of_algebraMap_bijective fun x ↦ ⟨x, rfl⟩
-  have hψ := frobeniusPsi_asymptotic_of_isCyclotomicExtension K K 1 1
-  have hsum := (primePsi_univ_sub_sum_frobeniusPsi_isBigO_log K K).trans_isLittleO
-    Real.isLittleO_log_id_atTop
-  -- `Gal(K/K)` is trivial, so it has a single conjugacy class.
-  have : Subsingleton (ConjClasses (K ≃ₐ[K] K)) := Quot.Subsingleton
-  refine (hsum.add hψ).congr (fun x ↦ ?_) fun _ ↦ rfl
-  rw [Fintype.sum_subsingleton _ (ConjClasses.mk 1), Nat.card_unique]
-  ring
 
 end NumberField.Chebotarev

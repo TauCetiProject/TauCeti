@@ -5,12 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.AlgebraicGroup.FunctorOfPoints
 public import TauCeti.Algebra.Coalgebra.Comodule.Corestrict
 public import TauCeti.Algebra.Coalgebra.Comodule.TensorProduct
 public import TauCeti.Algebra.Coalgebra.Comodule.Trivial
 import TauCeti.LinearAlgebra.End.ScalarExtension
 public import Mathlib.RingTheory.Bialgebra.Convolution
 public import Mathlib.RepresentationTheory.Basic
+import TauCeti.LinearAlgebra.TensorProduct.Submodule
 
 /-!
 # The points action of a comodule
@@ -42,6 +44,11 @@ the functor of points on scalar extensions of `V`.
   convolution monoid of points on the scalar extension.
 * `TauCeti.Comodule.baseChange_comp_endOfPoint`: the action is functorial in the
   comodule.
+* `TauCeti.Comodule.Hom.map_endOfPoint_baseChange_eq_iff`: injective comodule morphisms
+  preserve and reflect subspace stabilizers after flat scalar extension.
+* `BialgHom.baseChange_comp_endOfPoint_regular`: bialgebra morphisms intertwine regular actions.
+* `TauCeti.Comodule.map_endOfPoint_eq_of_mapsTo`: inverse points preserving a submodule
+  carry it onto itself.
 
 ## References
 
@@ -130,6 +137,21 @@ lemma baseChange_comp_endOfPoint (f : Hom R H V W) (g : H →ₐ[R] A) :
   simp only [LinearMap.coe_comp, Function.comp_apply, LinearMap.restrictScalars_apply,
     endOfPoint_tmul, map_smul, LinearMap.baseChange_tmul, hc, Hom.map_coact_apply,
     Hom.coe_toLinearMap]
+
+/-- An injective comodule morphism preserves and reflects the stabilizer of a subspace
+after flat scalar extension. Thus a subspace has the same stabilizer in a subrepresentation
+and in the ambient representation. -/
+theorem Hom.map_endOfPoint_baseChange_eq_iff [Module.Flat R A]
+    (f : Hom R H V W) (hf : Function.Injective f) (L : Submodule R V)
+    (g : H →ₐ[R] A) :
+    ((L.map f.toLinearMap).baseChange A).map (endOfPoint W g) =
+        (L.map f.toLinearMap).baseChange A ↔
+      (L.baseChange A).map (endOfPoint V g) = L.baseChange A := by
+  have hinj : Function.Injective (f.toLinearMap.baseChange A) :=
+    Module.Flat.lTensor_preserves_injective_linearMap f.toLinearMap hf
+  rw [Submodule.baseChange_map, ← Submodule.map_comp,
+    ← baseChange_comp_endOfPoint, Submodule.map_comp]
+  exact (Submodule.map_injective_of_injective hinj).eq_iff
 
 end Functorial
 
@@ -366,6 +388,22 @@ lemma endOfPoint_convMul (g h : WithConv (H →ₐ[R] A)) :
     endOfPoint_tmul, map_smul, c1, c2, c3, c4, c5]
 
 variable (V) in
+/-- If two points whose convolution product is one both preserve a submodule, the first
+point carries that submodule onto itself. -/
+theorem map_endOfPoint_eq_of_mapsTo (g h : WithConv (H →ₐ[R] A)) (hgh : g * h = 1)
+    (p : Submodule A (A ⊗[R] V))
+    (hg : Set.MapsTo (endOfPoint V g.ofConv) p p)
+    (hh : Set.MapsTo (endOfPoint V h.ofConv) p p) :
+    p.map (endOfPoint V g.ofConv) = p := by
+  apply le_antisymm
+  · rintro _ ⟨x, hx, rfl⟩
+    exact hg hx
+  · intro x hx
+    refine ⟨endOfPoint V h.ofConv x, hh hx, ?_⟩
+    have heq := LinearMap.congr_fun (endOfPoint_convMul V g h) x
+    simpa only [hgh, endOfPoint_convOne, LinearMap.id_apply, LinearMap.comp_apply] using heq.symm
+
+variable (V) in
 /-- The points action of a comodule, as a representation of the convolution monoid of
 points on the scalar extension. -/
 noncomputable def pointsRepresentation :
@@ -384,6 +422,61 @@ lemma pointsRepresentation_apply (g : WithConv (H →ₐ[R] A)) :
   rfl
 
 end Bialgebra
+
+section HopfAlgebra
+
+variable {R H V A : Type*} [CommSemiring R] [Semiring H] [HopfAlgebra R H]
+  [AddCommMonoid V] [Module R V] [Comodule R H V]
+  [CommSemiring A] [Algebra R A]
+
+variable (V) in
+/-- The inverse point action cancels the point action on the left. -/
+lemma endOfPoint_inv_comp (g : WithConv (H →ₐ[R] A)) :
+    endOfPoint V (g⁻¹).ofConv ∘ₗ endOfPoint V g.ofConv = LinearMap.id := by
+  simpa only [inv_mul_cancel, endOfPoint_convOne] using (endOfPoint_convMul V g⁻¹ g).symm
+
+variable (V) in
+/-- The inverse point action cancels the point action on the right. -/
+lemma endOfPoint_comp_inv (g : WithConv (H →ₐ[R] A)) :
+    endOfPoint V g.ofConv ∘ₗ endOfPoint V (g⁻¹).ofConv = LinearMap.id := by
+  simpa only [inv_inv] using endOfPoint_inv_comp V g⁻¹
+
+end HopfAlgebra
+
+section Regular
+
+variable {R H K A : Type*} [CommSemiring R] [Semiring H] [Semiring K]
+  [Bialgebra R H] [Bialgebra R K] [CommSemiring A] [Algebra R A]
+
+/-- A bialgebra morphism intertwines the regular point actions, with the point pulled back
+along the morphism on the source. -/
+theorem _root_.BialgHom.baseChange_comp_endOfPoint_regular (f : H →ₐc[R] K) (g : K →ₐ[R] A) :
+    f.toLinearMap.baseChange A ∘ₗ endOfPoint H (g.comp f.toAlgHom) =
+      endOfPoint K g ∘ₗ f.toLinearMap.baseChange A := by
+  apply TensorProduct.AlgebraTensorModule.ext
+  intro a h
+  simp only [LinearMap.comp_apply, LinearMap.baseChange_tmul, endOfPoint_tmul,
+    map_smul, instSelf_coact]
+  congr 1
+  have ht (t : H ⊗[R] H) :
+      f.toLinearMap.baseChange A
+          (TensorProduct.comm R H A
+            (LinearMap.lTensor H (g.comp f.toAlgHom).toLinearMap t)) =
+        TensorProduct.comm R K A
+          (LinearMap.lTensor K g.toLinearMap
+            (TensorProduct.map f.toLinearMap f.toLinearMap t)) := by
+    have hf : f.toLinearMap = f.toAlgHom.toLinearMap :=
+      (_root_.BialgHom.toAlgHom_toLinearMap f).symm
+    induction t using TensorProduct.inductionOn with
+    | tmul x y =>
+        simp only [LinearMap.lTensor_tmul, AlgHom.toLinearMap_apply, AlgHom.comp_apply,
+          TensorProduct.comm_tmul, LinearMap.baseChange_tmul, TensorProduct.map_tmul, hf]
+    | add x y hx hy => simp only [map_add, hx, hy]
+  rw [ht]
+  exact congrArg (fun t ↦ TensorProduct.comm R K A (LinearMap.lTensor K g.toLinearMap t))
+    (CoalgHomClass.map_comp_comul_apply f.toCoalgHom h)
+
+end Regular
 
 section Trivial
 

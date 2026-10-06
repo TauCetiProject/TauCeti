@@ -31,6 +31,8 @@ explicit.
 
 * `TauCeti.Huber.IsRingOfIntegralElements.mem_of_isTopologicallyNilpotent`: `A°° ⊆ A⁺` for
   every ring of integral elements.
+* `TauCeti.Huber.IsRingOfIntegralElements.map`: an isomorphism of topological rings carries a
+  ring of integral elements onto a ring of integral elements.
 * `TauCeti.Huber.Pair.powerBounded`: `A⁺ = A°` is a ring of integral elements, the largest one.
 * `TauCeti.Huber.Pair.discrete`: a discrete ring is a Huber pair with `A⁺ = A`, so the
   definitions above are not vacuous.
@@ -79,6 +81,13 @@ structure IsRingOfIntegralElements [NonarchimedeanRing A] (Aplus : Subring A) : 
   le_powerBoundedSubring : Aplus ≤ powerBoundedSubring A
 
 omit [IsTopologicalRing A] in
+/-- Every element of a ring of integral elements is power-bounded: the field
+`IsRingOfIntegralElements.le_powerBoundedSubring` read elementwise. -/
+theorem IsRingOfIntegralElements.isPowerBounded_of_mem [NonarchimedeanRing A] {Aplus : Subring A}
+    (h : IsRingOfIntegralElements Aplus) ⦃a : A⦄ (ha : a ∈ Aplus) : IsPowerBounded a :=
+  mem_powerBoundedSubring.mp (h.le_powerBoundedSubring ha)
+
+omit [IsTopologicalRing A] in
 /-- Wedhorn: an open integrally closed subring contains every topologically nilpotent element.
 
 Neither power-boundedness nor a nonarchimedean topology plays any part, so this is stated for an
@@ -100,6 +109,28 @@ theorem IsRingOfIntegralElements.mem_of_isTopologicallyNilpotent [Nonarchimedean
     (ha : IsTopologicallyNilpotent a) : a ∈ Aplus :=
   have := h.isIntegrallyClosedIn
   mem_of_isTopologicallyNilpotent_of_isIntegrallyClosedIn h.isOpen ha
+
+omit [IsTopologicalRing A] in
+/-- An isomorphism of topological rings carries a ring of integral elements onto a ring of
+integral elements. -/
+theorem IsRingOfIntegralElements.map {B : Type*} [CommRing B] [TopologicalSpace B]
+    [NonarchimedeanRing A] [NonarchimedeanRing B] {Aplus : Subring A}
+    (h : IsRingOfIntegralElements Aplus) (e : A ≃+* B) (he : Continuous e)
+    (he' : Continuous e.symm) : IsRingOfIntegralElements (Aplus.map (e : A →+* B)) where
+  isOpen := by
+    rw [Subring.map_equiv_eq_comap_symm, Subring.coe_comap]
+    exact h.isOpen.preimage he'
+  isIntegrallyClosedIn := by
+    refine Subring.isIntegrallyClosedIn_iff.mpr fun x hx ↦ ?_
+    -- `e.symm x` is integral over `A⁺`, through the restriction of `e.symm` to the plus rings
+    have hx' : IsIntegral Aplus (e.symm x) := hx.map_of_comp_eq
+      ((e.symm : B →+* A).restrict _ Aplus fun _ hy ↦ Subring.mem_map_equiv.mp hy)
+      (e.symm : B →+* A) (RingHom.ext fun _ ↦ rfl)
+    exact ⟨e.symm x, Subring.isIntegrallyClosedIn_iff.mp h.isIntegrallyClosedIn hx',
+      e.apply_symm_apply x⟩
+  le_powerBoundedSubring := by
+    rw [← map_powerBoundedSubring e he he']
+    exact (Subring.gc_map_comap _).monotone_l h.le_powerBoundedSubring
 
 variable (A) in
 /-- A *Huber pair* `(A, A⁺)`: a Huber ring together with a ring of integral elements. Only the
@@ -231,11 +262,8 @@ noncomputable def quotient (S : Pair A) (J : Ideal A) : Pair (A ⧸ J) where
     have hR_power : R ≤ powerBoundedSubring (A ⧸ J) := by
       rintro x hx
       obtain ⟨a, ha, rfl⟩ := Subring.mem_map.mp hx
-      have ha_power :=
-        mem_powerBoundedSubring.mp (S.isRingOfIntegralElements.le_powerBoundedSubring ha)
       exact mem_powerBoundedSubring.mpr <|
-        ha_power.map_of_isOpenMap continuous_quotient_mk'.continuousAt
-          (QuotientRing.isOpenMap_coe J)
+        (S.isRingOfIntegralElements.isPowerBounded_of_mem ha).quotientMk J
     exact isRingOfIntegralElements_integralClosure hR_open hR_power
 
 /-- The plus ring of the quotient pair is the integral closure of the image plus ring. -/

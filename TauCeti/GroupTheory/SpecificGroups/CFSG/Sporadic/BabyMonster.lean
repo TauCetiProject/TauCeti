@@ -10,10 +10,9 @@ public import TauCeti.GroupTheory.Presentation.Coxeter
 /-!
 # A transcribed presentation of the Baby Monster
 
-This file carries the `B` row of the sporadic presentation data required by milestone S1 of
-`TauCetiRoadmap/CFSGStatement/README.md`. It records the `Y₄₃₃` presentation of the Baby Monster
-as a `TauCeti.GroupPresentation`, together with the diagram it expands, the exact source, the
-generator convention, the transcription notes, and decidable checks on the transcribed data.
+This file records the `Y₄₃₃` presentation of the Baby Monster as a `TauCeti.GroupPresentation`,
+together with the diagram it expands, the exact source, the generator convention, the
+transcription notes, and decidable checks on the transcribed data.
 
 The eleven involutory generators are the nodes of a `Y`-shaped Coxeter diagram: a chain of eight
 nodes with a further arm of three nodes attached to its fifth node,
@@ -41,22 +40,19 @@ presents `2 × 2·B`, and adjoining the two further relations
 
 presents the Baby Monster itself. The `69` relators are therefore `66 + 1 + 2`.
 
-The source is admissible in the sense the roadmap requires: it presents the abstract group rather
-than recognizing generators inside a group constructed elsewhere. The presentation was conjectured
-in the ATLAS of Finite Groups and proved by Ivanov, subject to the Monster having no proper double
-cover; that hypothesis is Griess's determination of the Schur multiplier of the Monster. The row
-below records that chain of attributions rather than reproving any part of it.
+The source presents the abstract group rather than recognizing generators inside a group
+constructed elsewhere. The presentation was conjectured in the ATLAS of Finite Groups and proved by
+Ivanov, subject to the Monster having no proper double cover; that hypothesis is Griess's
+determination of the Schur multiplier of the Monster. The row below records that chain of
+attributions rather than reproving any part of it.
 
 Nothing here asserts that the presented group is nontrivial, finite or simple, that it has any
-particular order, or that it is isomorphic to any other construction of the Baby Monster. The
-roadmap's independent permutation-group cross-check does not cover `B`, whose smallest faithful
-permutation representation has degree `13 571 955 000`. The independent source-to-Lean
-read-through below therefore supplies the whole of this row's S1 review obligation.
+particular order, or that it is isomorphic to any other construction of the Baby Monster.
 
-## Independent source-to-Lean read-through
+## Source-to-Lean read-through
 
-An independent read-through used Breuer--Magaard--Wilson, Section 3.1, in arXiv:1902.07758v2. The
-source numbers eleven involutions `t₁` through `t₁₁` and lists the exponent-three pairs
+The transcription was compared with Breuer--Magaard--Wilson, Section 3.1, in arXiv:1902.07758v2.
+The source numbers eleven involutions `t₁` through `t₁₁` and lists the exponent-three pairs
 
 ```text
 (1,2), (2,3), (3,4), (4,5), (5,6), (6,7), (7,8), (5,9), (9,10), (10,11).
@@ -83,8 +79,8 @@ and the two words
 Their letters, order, and exponents agree exactly with `spiderRelator_eq`,
 `extraRelatorOne_eq`, and `extraRelatorTwo_eq`. The source states that the Coxeter relations plus
 the spider relation present `2 × 2·B`, and that adjoining the last two relations presents `B`.
-`relatorList_def` appends precisely those three words in that order, giving the checked total
-`66 + 3 = 69`. This closes the row's S1 source-to-Lean read-through.
+`adjoinedRelators_def` lists precisely those three words in that order, and `relatorList_def`
+appends them to the Coxeter relators, giving the checked total `66 + 3 = 69`.
 
 ## Main definitions
 
@@ -145,7 +141,6 @@ numbering with the customary offset, so `tᵢ` is index `i - 1`. -/
 def branchNode : Fin 11 := 4
 
 /-- The branch node is index four, corresponding to the source's `t₅`. -/
-@[simp]
 theorem branchNode_def : branchNode = 4 := (rfl)
 
 /-- The three arms of the diagram, each listed outwards from the branch node: `t₄ t₃ t₂ t₁`, then
@@ -153,7 +148,6 @@ theorem branchNode_def : branchNode = 4 := (rfl)
 def arms : List (List (Fin 11)) := [[3, 2, 1, 0], [5, 6, 7], [8, 9, 10]]
 
 /-- The three arms, spelled out in the numbered alphabet. -/
-@[simp]
 theorem arms_def : arms = [[3, 2, 1, 0], [5, 6, 7], [8, 9, 10]] := (rfl)
 
 /-- **The three arms have lengths four, three and three**, which is what the name `Y₄₃₃`
@@ -321,27 +315,18 @@ def presentation : GroupPresentation where
     of the remaining 45 unordered pairs of distinct nodes. Appended to them are the source's \
     spider relation, which presents 2 x 2.B, and then its two further relations, which present B. \
     The source displays its relations by family rather than as a numbered list and records no \
-    total length, so the expected relator count is the sum 11 + 55 + 1 + 2 over those families. \
-    The independent source-to-Lean read-through checked the 66 Coxeter relations and all three \
-    adjoined relators. The FiniteSimpleGroups permutation construction does not cover B."
+    total length, so the expected relator count is the sum 11 + 55 + 1 + 2 over those families."
   expectedGeneratorCount := 11
   expectedRelatorCount := 69
   transcribed := relatorList
 
-/-- The relators of the row are the Coxeter relations of the diagram followed by the three
-adjoined relators. The record's body is exposed, so its metadata fields are read off it directly;
-this equation is the one field projection that is not read off it, because
-`TauCeti.Sporadic.BabyMonster.relatorList` is sealed. -/
-@[simp]
-theorem presentation_transcribed : presentation.transcribed = relatorList := rfl
+/-- The relators of the row are `TauCeti.Sporadic.BabyMonster.relatorList`: the Coxeter relations
+of the diagram followed by the three adjoined relators (`relatorList_def`).
 
-/-- **The relators of the row are the Coxeter relators of the `Y₄₃₃` diagram followed by the three
-adjoined relators.** This is the form in which the source states the presentation, and the
-hypothesis that `TauCeti.Sporadic.BabyMonster.mulEquivPresentedGroupCoxeterAppend` below
-consumes. -/
-theorem presentation_transcribed_append :
-    presentation.transcribed = coxeterRelators coxeterMatrix ++ adjoinedRelators := by
-  rw [presentation_transcribed, relatorList_def]
+Not `@[simp]`: the two sides live in `List (Relator (Fin presentation.generatorNames.length))`
+and `List (Relator (Fin 11))`, which agree only after unfolding `presentation`, so `simp` cannot
+use it; rewrite with it instead. -/
+theorem presentation_transcribed : presentation.transcribed = relatorList := rfl
 
 /-- **The transcribed presentation has sixty-nine relators**, the `(11 + 1).choose 2 = 66` Coxeter
 relators of a diagram on eleven nodes together with the three adjoined relators. -/
@@ -445,15 +430,21 @@ def mulEquivPresentedGroupCoxeterAppend :
     presentation.Group ≃*
       PresentedGroup (coxeterMatrix.relationsSet ∪ Relator.relatorSet adjoinedRelators) :=
   presentation.mulEquivPresentedGroupCoxeterAppend coxeterMatrix adjoinedRelators
-    (congrArg Subgroup.normalClosure (congrArg Relator.relatorSet presentation_transcribed_append))
+    (congrArg Subgroup.normalClosure
+      (congrArg Relator.relatorSet (presentation_transcribed.trans relatorList_def)))
 
 /-- The Coxeter equivalence sends each canonical generator to the corresponding canonical
 generator. -/
 @[simp]
-theorem mulEquivPresentedGroupCoxeterAppend_apply_of (i : Fin presentation.generatorCount) :
-    mulEquivPresentedGroupCoxeterAppend (PresentedGroup.of i) = PresentedGroup.of i :=
+theorem mulEquivPresentedGroupCoxeterAppend_apply_of (i : Fin 11) :
+    mulEquivPresentedGroupCoxeterAppend
+        (PresentedGroup.of
+          (Fin.cast (by simp [GroupPresentation.generatorCount, presentation]) i)) =
+      PresentedGroup.of i :=
+  -- `Fin.cast` moves the index from `Fin 11` to `Fin presentation.generatorCount`, as in
+  -- `TauCeti.Sporadic.Monster.mulEquivPresentedGroupCoxeterAppend_apply_of`.
   GroupPresentation.mulEquivPresentedGroupCoxeterAppend_apply_of _ _ _
     (congrArg Subgroup.normalClosure
-      (congrArg Relator.relatorSet presentation_transcribed_append)) i
+      (congrArg Relator.relatorSet (presentation_transcribed.trans relatorList_def))) _
 
 end TauCeti.Sporadic.BabyMonster

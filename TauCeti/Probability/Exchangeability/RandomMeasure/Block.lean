@@ -8,7 +8,7 @@ module
 public import TauCeti.MeasureTheory.MeasurableSpace.Pi
 public import TauCeti.Probability.Exchangeability.RandomMeasure.Basic
 import TauCeti.MeasureTheory.Measure.Measurability
-import TauCeti.Probability.Exchangeability.FiniteMarginals
+import TauCeti.Probability.Process.PathLaw.FiniteMarginals
 import TauCeti.Probability.Exchangeability.FullyExchangeable
 import TauCeti.Probability.Exchangeability.Map
 

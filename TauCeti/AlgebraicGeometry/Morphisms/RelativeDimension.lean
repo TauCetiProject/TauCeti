@@ -54,6 +54,8 @@ over the field `κ(z)`, so the inequality bounds its dimension by `e + d`.
   morphisms locally of finite type.
 * `TauCeti.AlgebraicGeometry.relativeDimensionLE_iff_of_field`: over a field, the condition bounds
   the Krull dimension of the source.
+* `TauCeti.AlgebraicGeometry.relativeDimensionLE_SpecMap_iff`: for `Spec S ⟶ Spec R`, the
+  condition bounds the Krull dimensions of the fibre rings `κ(p) ⊗[R] S`.
 * `TauCeti.AlgebraicGeometry.topologicalKrullDim_le_add_of_relativeDimensionLE`: for a morphism of
   locally Noetherian schemes of relative dimension at most `d`, `dim X ≤ dim Y + d`.
 * `TauCeti.AlgebraicGeometry.RelativeDimensionLE.comp`: relative dimensions at most `d` and `e`
@@ -258,17 +260,31 @@ instance RelativeDimensionLE.pullback_fst (f : X ⟶ Z) (g : Y ⟶ Z) [LocallyOf
     [RelativeDimensionLE d g] : RelativeDimensionLE d (pullback.fst f g) :=
   .of_isPullback (IsPullback.of_hasPullback f g).flip
 
+/-- The morphism `Spec S ⟶ Spec R` induced by an `R`-algebra `S` has relative dimension at most `d`
+if and only if every fibre ring `κ(p) ⊗[R] S` has Krull dimension at most `d`. -/
+theorem relativeDimensionLE_SpecMap_iff (R S : Type u) [CommRing R] [CommRing S] [Algebra R S] :
+    RelativeDimensionLE d (Spec.map (CommRingCat.ofHom (algebraMap R S))) ↔
+      ∀ (p : Ideal R) [p.IsPrime], ringKrullDim (p.Fiber S) ≤ d := by
+  have hdim (p : PrimeSpectrum R) : topologicalKrullDim
+      ((Spec.map (CommRingCat.ofHom (algebraMap R S))) ⁻¹' {p}) =
+        ringKrullDim (p.asIdeal.Fiber S) := by
+    rw [← PrimeSpectrum.topologicalKrullDim_eq_ringKrullDim]
+    -- The underlying map of `Spec.map (CommRingCat.ofHom f)` is `PrimeSpectrum.comap f`.
+    exact (PrimeSpectrum.preimageHomeomorphFiber R S p).isHomeomorph.topologicalKrullDim_eq
+  rw [relativeDimensionLE_iff_topologicalKrullDim_preimage_le]
+  refine ⟨fun h p _ ↦ (hdim ⟨p, ‹_›⟩).symm.trans_le (h ⟨p, ‹_›⟩), fun h p ↦ ?_⟩
+  have := p.isPrime
+  exact (hdim p).trans_le (h p.asIdeal)
+
 /-- A morphism `Spec S ⟶ Spec R` of spectra of Noetherian rings of relative dimension at most `d`
 satisfies `dim S ≤ dim R + d`. -/
 private theorem ringKrullDim_le_add_of_relativeDimensionLE {R S : CommRingCat.{u}}
     [IsNoetherianRing R] [IsNoetherianRing S] (φ : R ⟶ S) [RelativeDimensionLE d (Spec.map φ)] :
     ringKrullDim S ≤ ringKrullDim R + d := by
   let := φ.hom.toAlgebra
-  refine ringKrullDim_le_ringKrullDim_add_of_ringKrullDim_fiber_le fun p _ ↦ ?_
-  rw [← PrimeSpectrum.topologicalKrullDim_eq_ringKrullDim,
-    ← (PrimeSpectrum.preimageHomeomorphFiber R S ⟨p, ‹_›⟩).isHomeomorph.topologicalKrullDim_eq]
-  -- The underlying map of `Spec.map φ` is `PrimeSpectrum.comap φ` by definition.
-  exact RelativeDimensionLE.topologicalKrullDim_preimage_le (Spec.map φ) ⟨p, ‹_›⟩
+  -- `φ` is `CommRingCat.ofHom (algebraMap R S)` up to structure eta.
+  exact ringKrullDim_le_ringKrullDim_add_of_ringKrullDim_fiber_le
+    ((relativeDimensionLE_SpecMap_iff R S).mp ‹RelativeDimensionLE d (Spec.map φ)›)
 
 /-- If `f : X ⟶ Y` is a morphism of locally Noetherian schemes of relative dimension at most `d`,
 then the Krull dimension of `X` is at most the Krull dimension of `Y` plus `d`. -/

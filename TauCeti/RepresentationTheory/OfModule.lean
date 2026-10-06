@@ -144,7 +144,7 @@ theorem char_ofModule'_pi {ι : Type*} [Fintype ι] (M : ι → Type*) [∀ i, A
     [∀ i, FiniteDimensional k (M i)] (g : G) :
     (_root_.Representation.ofModule' (k := k) (G := G) ((i : ι) → M i)).character g =
       ∑ i, (_root_.Representation.ofModule' (k := k) (G := G) (M i)).character g :=
-  LinearMap.trace_pi_of_apply_eq_dependent _ _ fun _ _ => rfl
+  LinearMap.trace_piMap fun i ↦ _root_.Representation.ofModule' (k := k) (G := G) (M i) g
 
 /-- **The character of `Representation.ofModule' ρ.asModule` is the character of `ρ`.**  This
 lets a character computed on a `k[G]`-module assembled from `asModule` summands be expressed

@@ -66,6 +66,8 @@ Each of the four predicates is restated as an `Iff` by `TauCeti.isPElementary_de
   subgroup forms are `TauCeti.IsPElementary.subgroup` and `TauCeti.IsPHyperelementary.subgroup`.
 * `TauCeti.IsHyperelementary.isSolvable`: a finite hyperelementary group is solvable, whence
   `TauCeti.not_isElementary_perm_fin_5`, the symmetric group on five letters is not elementary.
+* `TauCeti.IsElementary.isNilpotent`: a finite elementary group is nilpotent, its cyclic factor
+  being central.
 * `TauCeti.isPElementary_sup_of_commute`: a cyclic subgroup of order prime to `p` and a
   `p`-subgroup that centralises it generate a `p`-elementary subgroup, and
   `TauCeti.disjoint_of_not_dvd_natCard_of_isPGroup` supplies the disjointness it asks for.
@@ -220,17 +222,24 @@ theorem normal_of_commute_of_isComplement' {C P : Subgroup G}
     (hcomm : ∀ c ∈ C, ∀ x ∈ P, Commute c x) (hcompl : C.IsComplement' P) : C.Normal :=
   normal_of_commute_of_sup_eq_top hcomm hcompl.sup_eq_top
 
-/-- A `p`-elementary group is `p`-hyperelementary: the cyclic factor is normal, and the quotient by
-it is the `p`-group factor. -/
-theorem IsPElementary.isPHyperelementary (h : IsPElementary p G) : IsPHyperelementary p G := by
-  obtain ⟨C, P, hC, hCp, hP, hcomm, hcompl⟩ := h
-  refine ⟨C, normal_of_commute_of_isComplement' hcomm hcompl, hC, hCp, fun g => ?_⟩
+/-- If `C` and a `p`-subgroup `P` are complements centralising each other, every element of `G`
+has a `p`-power in `C`: write it as `a * b` with `a ∈ C`, `b ∈ P`, and kill `b`. -/
+theorem exists_pow_mem_of_isComplement' {C P : Subgroup G} (hP : IsPGroup p P)
+    (hcomm : ∀ c ∈ C, ∀ x ∈ P, Commute c x) (hcompl : C.IsComplement' P) (g : G) :
+    ∃ k : ℕ, g ^ p ^ k ∈ C := by
   obtain ⟨⟨a, b⟩, rfl⟩ := hcompl.2 g
   obtain ⟨k, hk⟩ := hP b
   refine ⟨k, ?_⟩
   have hk' : (b : G) ^ p ^ k = 1 := by exact_mod_cast hk
   rw [(hcomm a a.2 b b.2).mul_pow, hk', mul_one]
   exact pow_mem a.2 _
+
+/-- A `p`-elementary group is `p`-hyperelementary: the cyclic factor is normal, and the quotient by
+it is the `p`-group factor. -/
+theorem IsPElementary.isPHyperelementary (h : IsPElementary p G) : IsPHyperelementary p G := by
+  obtain ⟨C, P, hC, hCp, hP, hcomm, hcompl⟩ := h
+  exact ⟨C, normal_of_commute_of_isComplement' hcomm hcompl, hC, hCp,
+    exists_pow_mem_of_isComplement' hP hcomm hcompl⟩
 
 /-- An elementary group is hyperelementary. -/
 theorem IsElementary.isHyperelementary (h : IsElementary G) : IsHyperelementary G :=
@@ -297,7 +306,7 @@ theorem IsPHyperelementary.of_injective (h : IsPHyperelementary p G) (f : H →*
   obtain ⟨C, hCnormal, hCcyclic, hCp, hquot⟩ := h
   have := hCcyclic
   refine ⟨C.comap f, hCnormal.comap f,
-    isCyclic_of_injective _ (MonoidHom.subgroupComap_injective_of_injective hf C),
+    isCyclic_of_injective _ (f.subgroupComap_injective C hf),
     fun hdvd => hCp (hdvd.trans (Subgroup.card_comap_dvd_of_injective C f hf)), fun y => ?_⟩
   obtain ⟨k, hk⟩ := hquot (f y)
   exact ⟨k, mem_comap.mpr (by rwa [map_pow])⟩
@@ -329,9 +338,9 @@ private theorem exists_mem_comap_mul_mem_comap_eq {C P : Subgroup G}
   have hym : f (y ^ m) ∈ P := by
     rw [map_pow, ← hab, (hcomm a a.2 b b.2).mul_pow, ha, one_mul]
     exact pow_mem b.2 _
-  obtain ⟨i, j, hij⟩ := exists_zpow_mul_zpow_eq_of_coprime hcop y
+  obtain ⟨i, j, hij⟩ := exists_zpow_mul_zpow_eq_of_coprime (G := H) hcop
   exact ⟨(y ^ n) ^ i, zpow_mem (mem_comap.mpr hyn) _,
-    (y ^ m) ^ j, zpow_mem (mem_comap.mpr hym) _, hij⟩
+    (y ^ m) ^ j, zpow_mem (mem_comap.mpr hym) _, hij y⟩
 
 /-- `p`-elementarity passes to subgroups, in the form of an injective homomorphism into the group.
 
@@ -344,9 +353,9 @@ theorem IsPElementary.of_injective [Fact p.Prime] (h : IsPElementary p G) (f : H
   obtain ⟨C, P, hC, hCp, hP, hcomm, hcompl⟩ := h
   have := hC
   refine ⟨C.comap f, P.comap f,
-    isCyclic_of_injective _ (MonoidHom.subgroupComap_injective_of_injective hf C),
+    isCyclic_of_injective _ (f.subgroupComap_injective C hf),
     fun hdvd => hCp (hdvd.trans (Subgroup.card_comap_dvd_of_injective C f hf)),
-    hP.of_injective _ (MonoidHom.subgroupComap_injective_of_injective hf P), ?_, ?_⟩
+    hP.of_injective _ (f.subgroupComap_injective P hf), ?_, ?_⟩
   · intro c hc x hx
     refine hf ?_
     rw [map_mul, map_mul]
@@ -410,6 +419,29 @@ theorem IsHyperelementary.isSolvable [Finite G] (h : IsHyperelementary G) :
 /-- A finite elementary group is solvable. -/
 theorem IsElementary.isSolvable [Finite G] (h : IsElementary G) : Group.IsSolvable G :=
   h.isHyperelementary.isSolvable
+
+/-- A finite `p`-elementary group is nilpotent: the cyclic factor `C` is central, being
+commutative and centralised by the `p`-group factor, and `G ⧸ C` is a `p`-group. -/
+theorem IsPElementary.isNilpotent [Finite G] [Fact p.Prime] (h : IsPElementary p G) :
+    Group.IsNilpotent G := by
+  obtain ⟨C, P, hC, -, hP, hcomm, hcompl⟩ := h
+  have := normal_of_commute_of_isComplement' hcomm hcompl
+  let := IsCyclic.commGroup (α := C)
+  have hcenter : C ≤ Subgroup.center G := fun c hc => Subgroup.mem_center_iff.mpr fun g => by
+    obtain ⟨⟨a, b⟩, rfl⟩ := hcompl.2 g
+    have hca : Commute c a := congrArg Subtype.val (mul_comm (⟨c, hc⟩ : C) a)
+    exact (hca.mul_right (hcomm c hc b b.2)).eq.symm
+  have : Group.IsNilpotent (G ⧸ C) :=
+    IsPGroup.isNilpotent (isPGroup_quotient_of_forall_exists_pow_mem
+      (exists_pow_mem_of_isComplement' hP hcomm hcompl))
+  exact Subgroup.isNilpotent_of_ker_le_center (QuotientGroup.mk' C)
+    ((QuotientGroup.ker_mk' C).trans_le hcenter)
+
+/-- A finite elementary group is nilpotent. -/
+theorem IsElementary.isNilpotent [Finite G] (h : IsElementary G) : Group.IsNilpotent G := by
+  obtain ⟨q, hq, hqG⟩ := h
+  have : Fact q.Prime := ⟨hq⟩
+  exact hqG.isNilpotent
 
 /-- The symmetric group on five letters is not hyperelementary, since it is not solvable. Together
 with `TauCeti.isElementary_of_isCyclic` this pins the two predicates between the cyclic groups and

@@ -61,6 +61,12 @@ noncomputable def letter : ReducedTensorWords R M →ₗ[R] M :=
 noncomputable def ofLetter : M →ₗ[R] ReducedTensorWords R M :=
   of R M 1 ∘ₗ (TensorPower.oneEquiv R M).symm.toLinearMap
 
+/-- A single letter is the pure tensor word of length one on that letter. -/
+theorem ofLetter_eq_of_tprod (a : M) :
+    ofLetter R M a = of R M 1 (PiTensorProduct.tprod R fun _ ↦ a) := by
+  rw [ofLetter, LinearMap.comp_apply, LinearEquiv.coe_coe, TensorPower.oneEquiv_symm_apply]
+  rfl
+
 /-- The length-one component of a single letter is that letter under the tensor-power
 identification. -/
 theorem component_ofLetter (a : M) :
@@ -176,6 +182,17 @@ theorem subword_one {n : ℕ} (z : Fin n → M) {a : ℕ} (ha : a < n) :
       TensorPower.cast_refl, LinearEquiv.refl_apply, TauCeti.TensorPower.oneEquiv_tprod]
     exact congrArg z (Fin.ext (Nat.add_zero a))
 
+/-- A block whose length is not one has no letter component. -/
+theorem letter_subword_of_ne_one {n : ℕ} (z : Fin n → M) (a : ℕ) {b : ℕ} (hb : b ≠ 1) :
+    letter R M (subword R z a b) = 0 := by
+  rcases Nat.eq_zero_or_pos b with rfl | hb0
+  · rw [subword_length_zero, map_zero]
+  by_cases hab : a + b ≤ n
+  · rw [letter_apply, subword_eq_of_tprod R z hb0 hab,
+      component_of_of_ne R M (by simp only [ne_eq, Subtype.ext_iff, Positive.val_one]; omega),
+      map_zero]
+  · rw [subword_eq_zero_of_lt_add R z (by omega), map_zero]
+
 section Prepend
 
 variable {R M}
@@ -254,6 +271,11 @@ theorem letter_of_two (a b : M) :
   rw [← prepend_ofLetter, letter_prepend]
 
 end Prepend
+
+/-- A word whose length is not one has no letter component. -/
+theorem letter_of_of_ne_one {n : {n : ℕ // 0 < n}} (hn : n ≠ 1) (z : TensorPower R n.1 M) :
+    letter R M (of R M n z) = 0 := by
+  rw [letter_apply, component_of_of_ne R M hn z, map_zero]
 
 /-- The primitive elements of the reduced tensor coalgebra are exactly the single letters. -/
 theorem deconcatenation_eq_zero_iff {x : ReducedTensorWords R M} :

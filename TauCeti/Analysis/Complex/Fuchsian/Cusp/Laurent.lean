@@ -154,7 +154,8 @@ theorem laurentQExpansion_coeff_neg_eq_valueAtInfty (D : Γ.CuspDatum) (k : ℤ)
       valueAtInfty (fun z : ℍ ↦
         Function.Periodic.qParam D.width z ^ k * f (D.scaling⁻¹ • z)) := by
   rw [laurentQExpansion_coeff_neg,
-    twistedExtension_zero_eq_valueAtInfty D k f hf hhol hbound]
+    twistedExtension_zero_eq_valueAtInfty D k f hf
+      (.of_forall fun z ↦ hhol (D.scaling⁻¹ • z)) hbound]
 
 /-- The Laurent q-expansion converges to the cusp extension throughout the punctured unit disc,
 when reindexed over its potentially nonzero coefficients. -/
@@ -252,7 +253,8 @@ theorem laurentQExpansion_coeff_unique (D : Γ.CuspDatum) (k : ℤ) (f : ℍ →
     refine UpperHalfPlane.qExpansion_coeff_unique F
       (c := fun m ↦ c ((m : ℤ) - k)) D.width_pos ?_ ?_ n
     · simpa only [F, ContinuousMap.coe_mk, twistedExtension_def, cuspExtension_def] using
-        analyticAt_twistedExtension_zero D k f hf hhol hbound
+        analyticAt_twistedExtension_zero D k f hf
+          (.of_forall fun z ↦ hhol (D.scaling⁻¹ • z)) hbound
     · intro z
       have hsum' := hsum (D.scaling⁻¹ • z)
       rw [coordinate_inv_smul] at hsum'
