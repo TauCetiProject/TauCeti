@@ -37,9 +37,9 @@ their highest weight vectors are known. Nothing here needs the base field to be 
 separably closed: only `2` has to be invertible.
 
 The invariant-subspace statements are first proved in lattice form. They are then packaged as
-`LieModule.IsIrreducible` propositions for the type-`D` half-spin actions, so highest-weight
-uniqueness can consume them directly. `S⁻` is zero when `W = ⊥`, which the lattice dichotomy
-allows; its packaged theorem therefore assumes `P.W ≠ ⊥`, exactly as
+`LieModule.IsIrreducible` propositions for the type-`B` spin action and the type-`D` half-spin
+actions, so highest-weight uniqueness can consume them directly. `S⁻` is zero when `W = ⊥`, which
+the lattice dichotomy allows; its packaged theorem therefore assumes `P.W ≠ ⊥`, exactly as
 `TauCeti.nontrivial_spinMinus` does. `S` and `S⁺` always contain the scalars, so need no such
 hypothesis.
 
@@ -49,6 +49,8 @@ hypothesis.
   generate `Module.End K S`.
 * `TauCeti.SpinPolarizationData.eq_bot_or_eq_top_of_map_typeBSpinLieRep_le`: **the type-`B` spin
   module is irreducible.**
+* `TauCeti.SpinPolarizationData.isIrreducible_typeBSpinLieRep`: the type-`B` dichotomy packaged as
+  an irreducible Lie module for the spin action.
 * `TauCeti.SpinPolarizationData.adjoin_range_typeDSpinPlusLieRep_eq_top` and
   `TauCeti.SpinPolarizationData.adjoin_range_typeDSpinMinusLieRep_eq_top`: the type-`D` half-spin
   operators generate `Module.End K S⁺` and `Module.End K S⁻`.
@@ -132,6 +134,30 @@ theorem eq_bot_or_eq_top_of_map_typeBSpinLieRep_le (N : Submodule K (ExteriorAlg
   TauCeti.eq_bot_or_eq_top_of_adjoin_eq_top (P.adjoin_range_typeBSpinLieRep_eq_top b z hz) <| by
     rintro _ ⟨x, rfl⟩
     exact (Module.End.mem_invtSubmodule_iff_map_le _).2 (hN x)
+
+/-- **The type-`B` spin Lie module is irreducible.** The action is pulled back along
+`P.typeBSpinLieRep b z hz`; the spinor module is always nonzero because it contains the scalar
+vector. -/
+theorem isIrreducible_typeBSpinLieRep :
+    letI : LieRingModule (LieAlgebra.Orthogonal.typeB ι K) (ExteriorAlgebra K P.W) :=
+      LieRingModule.compLieHom _ (P.typeBSpinLieRep b z hz)
+    letI : LieModule K (LieAlgebra.Orthogonal.typeB ι K) (ExteriorAlgebra K P.W) :=
+      LieModule.compLieHom _ (P.typeBSpinLieRep b z hz)
+    LieModule.IsIrreducible K (LieAlgebra.Orthogonal.typeB ι K)
+      (ExteriorAlgebra K P.W) := by
+  let _ : LieRingModule (LieAlgebra.Orthogonal.typeB ι K) (ExteriorAlgebra K P.W) :=
+    LieRingModule.compLieHom _ (P.typeBSpinLieRep b z hz)
+  let _ : LieModule K (LieAlgebra.Orthogonal.typeB ι K) (ExteriorAlgebra K P.W) :=
+    LieModule.compLieHom _ (P.typeBSpinLieRep b z hz)
+  refine LieModule.IsIrreducible.mk fun N hN => ?_
+  rw [← LieSubmodule.toSubmodule_eq_top]
+  refine (P.eq_bot_or_eq_top_of_map_typeBSpinLieRep_le b z hz N.toSubmodule ?_).resolve_left ?_
+  · intro x
+    rintro _ ⟨m, hm, rfl⟩
+    have hm' := N.lie_mem (x := x) hm
+    rw [LieRingModule.compLieHom_apply, Module.End.lie_apply] at hm'
+    exact (LieSubmodule.mem_carrier (N := N)).mp hm'
+  · exact fun h => hN ((LieSubmodule.toSubmodule_eq_bot N).mp h)
 
 end TypeB
 
