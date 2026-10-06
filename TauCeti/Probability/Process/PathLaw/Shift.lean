@@ -25,10 +25,7 @@ preserved by such a reindexing, needs strict monotonicity and lives with `Contra
 
 The shift-specialized statements reuse the general time-reindexing path-law lemmas
 (`measurable_reindex`, `map_reindex_pathLaw`, `map_reindex_prefixProj_pathLaw`) from
-`TauCeti.Probability.Process.PathLaw.Basic`. Apart from the reindexing identity above, which is
-proved from Mathlib's `Function.IsFixedPt.preimage_iterate`, the implementation is a Tau Ceti
-adapter around the existing path-space definitions and Mathlib's generic `Measurable.iterate`; no
-Mathlib infrastructure is vendored.
+`TauCeti.Probability.Process.PathLaw.Basic`.
 -/
 
 public section
@@ -131,6 +128,8 @@ theorem preimage_reindex_eq_of_preimage_shift_eq_of_eventually_add {m C : ℕ} {
     {A : Set (ℕ → α)} (hshift : shift α ⁻¹' A = A)
     (hφ : ∀ n, m ≤ n → φ n = n + C) :
     (fun x : ℕ → α => fun k => x (φ k)) ⁻¹' A = A := by
+  -- Exact shift invariance transfers through both iterates by Mathlib's
+  -- `Function.IsFixedPt.preimage_iterate`.
   have hkey : ∀ x : ℕ → α,
       (shift α)^[m] (fun k => x (φ k)) = (shift α)^[m + C] x := by
     intro x

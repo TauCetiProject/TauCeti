@@ -180,11 +180,11 @@ def prefixSplitEquiv (r : ℕ) : (ℕ → α) ≃ᵐ (Fin r → α) × (ℕ → 
   (MeasurableEquiv.arrowCongr' (finSumNatEquiv r).symm (.refl α)).trans
     (MeasurableEquiv.sumPiEquivProdPi fun _ => α)
 
-/-- **Applying `prefixSplitEquiv`**: it reads off the length-`r` prefix and the tail from index `r`.
-
-This is the one place that depends on the definitional form of `MeasurableEquiv.arrowCongr'` and
-`sumPiEquivProdPi`, neither of which exposes an apply lemma. Everything else about the equivalence
-is derived from here, so the fragile step is isolated rather than repeated. -/
+/-- **Applying `prefixSplitEquiv`**: it reads off the length-`r` prefix and the tail from index
+`r`. -/
+-- This is the one place that depends on the definitional form of `MeasurableEquiv.arrowCongr'` and
+-- `sumPiEquivProdPi`, neither of which exposes an apply lemma. Everything else about the
+-- equivalence is derived from here, so the fragile step is isolated rather than repeated.
 @[simp]
 theorem prefixSplitEquiv_apply (r : ℕ) (f : ℕ → α) :
     prefixSplitEquiv r f = (fun i : Fin r => f (i : ℕ), fun j : ℕ => f (r + j)) := (rfl)
