@@ -135,10 +135,8 @@ theorem mem_range_ideleNormMap_iff (x : IdeleGroup (𝓞 K) K) :
   let y : IdeleGroup (𝓞 L) L :=
     ideleOfUnits zi z hz
   refine ⟨y, ?_⟩
-  apply Units.ext
-  apply Prod.ext
-  · funext v
-    have hv := GlobalNumberFields.ideleInfiniteCoord_ideleNormMap v y
+  refine IdeleGroup.ext (fun v ↦ ?_) (fun v ↦ ?_)
+  · have hv := GlobalNumberFields.ideleInfiniteCoord_ideleNormMap v y
     have hz' (w : {w : InfinitePlace L // w.LiesOver v}) : w.1.ideleInfiniteCoord y = t v w := by
       obtain ⟨w, hw⟩ := w
       have hwv := LiesOver.comap_eq w v
@@ -146,11 +144,8 @@ theorem mem_range_ideleNormMap_iff (x : IdeleGroup (𝓞 K) K) :
       exact ideleInfiniteCoord_ideleOfUnits _ _ _ _
     simp_rw [hz'] at hv
     rw [ht] at hv
-    simpa only [coe_ideleInfiniteCoord, ContinuousMonoidHom.coe_toMonoidHom,
-      MonoidHom.coe_ofClass] using congrArg Units.val hv
-  · apply FiniteAdeleRing.ext K
-    intro v
-    have hv := GlobalNumberFields.ideleFiniteCoord_ideleNormMap v y
+    exact hv
+  · have hv := GlobalNumberFields.ideleFiniteCoord_ideleNormMap v y
     have hz' (w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal}) :
         w.1.ideleFiniteCoord y = u v w := by
       obtain ⟨w, hw⟩ := w
@@ -159,7 +154,6 @@ theorem mem_range_ideleNormMap_iff (x : IdeleGroup (𝓞 K) K) :
       exact ideleFiniteCoord_ideleOfUnits _ _ _ _
     simp_rw [hz'] at hv
     rw [hu] at hv
-    simpa only [coe_ideleFiniteCoord, ContinuousMonoidHom.coe_toMonoidHom,
-      MonoidHom.coe_ofClass] using congrArg Units.val hv
+    exact hv
 
 end TauCeti.GlobalNumberFields

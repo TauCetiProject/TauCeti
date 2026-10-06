@@ -22,8 +22,9 @@ finite-idele theory of fractional ideals: on a principal idele the finite compon
 principal finite idele of the same element.
 
 The coordinate maps `IsDedekindDomain.HeightOneSpectrum.ideleFiniteCoord` and
-`NumberField.InfinitePlace.ideleInfiniteCoord` read the local units of an idele. The constructor
-`TauCeti.GlobalNumberFields.ideleOfUnits` assembles prescribed local units that are integral units
+`NumberField.InfinitePlace.ideleInfiniteCoord` read the local units of an idele.
+`NumberField.IdeleGroup.ext` determines an idele by equality of all these coordinates. The
+constructor `TauCeti.GlobalNumberFields.ideleOfUnits` assembles local units that are integral units
 at almost every finite place; `TauCeti.GlobalNumberFields.ideleFiniteCoord_ideleOfUnits` and
 `TauCeti.GlobalNumberFields.ideleInfiniteCoord_ideleOfUnits` recover those units.
 
@@ -178,6 +179,18 @@ theorem NumberField.InfinitePlace.coe_ideleInfiniteCoord
     (w : InfinitePlace K) (x : IdeleGroup R K) :
     (w.ideleInfiniteCoord x : w.Completion) = (x : AdeleRing R K).1 w :=
   (rfl)
+
+/-- **Ideles are determined by their coordinates**: two ideles with the same coordinate at every
+infinite and finite place are equal. -/
+@[ext]
+theorem NumberField.IdeleGroup.ext {x y : IdeleGroup R K}
+    (hinf : ∀ w : InfinitePlace K, w.ideleInfiniteCoord x = w.ideleInfiniteCoord y)
+    (hfin : ∀ v : HeightOneSpectrum R, v.ideleFiniteCoord x = v.ideleFiniteCoord y) : x = y := by
+  refine Units.ext (Prod.ext (funext fun w ↦ ?_) (FiniteAdeleRing.ext K fun v ↦ ?_))
+  · have h := congrArg Units.val (hinf w)
+    rwa [InfinitePlace.coe_ideleInfiniteCoord, InfinitePlace.coe_ideleInfiniteCoord] at h
+  · have h := congrArg Units.val (hfin v)
+    rwa [HeightOneSpectrum.coe_ideleFiniteCoord, HeightOneSpectrum.coe_ideleFiniteCoord] at h
 
 namespace TauCeti.GlobalNumberFields
 
