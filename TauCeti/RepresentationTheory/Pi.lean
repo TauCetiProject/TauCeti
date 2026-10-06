@@ -88,6 +88,7 @@ theorem mem_ker_norm_pi_iff [Group G] [Fintype G] (ρ : ∀ i, Representation k 
 
 /-- For a finite monoid, an element of a product of representations lies in the coinvariant
 kernel exactly when each of its components does. -/
+@[simp]
 theorem mem_coinvariantsKer_pi_iff [Monoid G] [Finite G] (ρ : ∀ i, Representation k G (V i))
     {x : ∀ i, V i} : x ∈ Coinvariants.ker (pi ρ) ↔ ∀ i, x i ∈ Coinvariants.ker (ρ i) := by
   have := Fintype.ofFinite G
