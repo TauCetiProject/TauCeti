@@ -67,9 +67,8 @@ lemma isBoundedAtImInfty_D2 (γ : SL(2, ℤ)) : IsBoundedAtImInfty (D2 γ) :=
 
 /-- Although `E₂` is not modular, each of its integral weight-two slashes is bounded
 at infinity. -/
-lemma isBoundedAtImInfty_E2_slash (γ : SL(2, ℤ)) : IsBoundedAtImInfty (E2 ∣[(2 : ℤ)] γ) := by
-  rw [E2_slash_action]
-  exact isBoundedAtImInfty_E2.sub ((isBoundedAtImInfty_D2 γ).smul _)
+lemma isBoundedAtImInfty_E2_slash (γ : SL(2, ℤ)) : IsBoundedAtImInfty (E2 ∣[(2 : ℤ)] γ) :=
+  (tendsto_E2_slash_atImInfty γ).isBigO_one ℝ
 
 /-- `E₂` is bounded in weight two at every cusp of the modular group. -/
 lemma isBoundedAt_E2 {c : OnePoint ℝ} (hc : IsCusp c 𝒮ℒ) : c.IsBoundedAt E2 2 :=
