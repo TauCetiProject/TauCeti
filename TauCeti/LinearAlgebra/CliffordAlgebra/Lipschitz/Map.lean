@@ -132,22 +132,29 @@ theorem map_lipschitzGroup_inv_coe (f : Q₁ →qᵢ Q₂) (x : lipschitzGroup Q
   CliffordAlgebra.lipschitzGroupMapOf_inv_coe (CliffordAlgebra.map f).toRingHom f
     (CliffordAlgebra.map_apply_ι f) x
 
+-- The functoriality and equivalence API below adapts the corresponding Spin-group interface in
+-- `TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Map`.
+
 /-- The identity isometry induces the identity homomorphism of a Lipschitz group. -/
 @[simp]
 theorem lipschitzGroupMap_id (Q₁ : QuadraticForm R M₁) :
     (QuadraticMap.Isometry.id Q₁).lipschitzGroupMap = MonoidHom.id (lipschitzGroup Q₁) := by
-  ext x
-  change CliffordAlgebra.map (QuadraticMap.Isometry.id Q₁)
-      ((x : lipschitzGroup Q₁) : (CliffordAlgebra Q₁)ˣ) = _
-  simp
+  apply MonoidHom.ext
+  intro x
+  apply Subtype.ext
+  apply Units.ext
+  simp only [coe_lipschitzGroupMap_apply, MonoidHom.id_apply]
+  exact AlgHom.congr_fun (CliffordAlgebra.map_id Q₁) _
 
 /-- Lipschitz-group maps respect composition of quadratic isometries. -/
 @[simp]
 theorem lipschitzGroupMap_comp (f : Q₂ →qᵢ Q₃) (g : Q₁ →qᵢ Q₂) :
     f.lipschitzGroupMap.comp g.lipschitzGroupMap = (f.comp g).lipschitzGroupMap := by
-  ext x
-  change CliffordAlgebra.map f (CliffordAlgebra.map g
-      ((x : lipschitzGroup Q₁) : (CliffordAlgebra Q₁)ˣ)) = _
+  apply MonoidHom.ext
+  intro x
+  apply Subtype.ext
+  apply Units.ext
+  simp only [MonoidHom.comp_apply, coe_lipschitzGroupMap_apply]
   exact AlgHom.congr_fun (CliffordAlgebra.map_comp_map f g) _
 
 /-- The Lipschitz action commutes with the map induced by a quadratic isometry. -/
@@ -174,9 +181,7 @@ variable {R : Type u} [CommRing R]
   {M₂ : Type w} [AddCommGroup M₂] [Module R M₂]
   {Q₁ : QuadraticForm R M₁} {Q₂ : QuadraticForm R M₂}
 
-/-- The equivalence of Lipschitz groups induced by a quadratic isometry equivalence. Its body is
-exposed so the characteristic application theorem remains available across module boundaries. -/
-@[expose]
+/-- The equivalence of Lipschitz groups induced by a quadratic isometry equivalence. -/
 def lipschitzGroupEquiv (e : Q₁.IsometryEquiv Q₂) : lipschitzGroup Q₁ ≃* lipschitzGroup Q₂ :=
   MonoidHom.toMulEquiv e.toIsometry.lipschitzGroupMap e.symm.toIsometry.lipschitzGroupMap
     (by
@@ -196,7 +201,7 @@ def lipschitzGroupEquiv (e : Q₁.IsometryEquiv Q₂) : lipschitzGroup Q₁ ≃*
 @[simp]
 theorem lipschitzGroupEquiv_apply (e : Q₁.IsometryEquiv Q₂) (x : lipschitzGroup Q₁) :
     e.lipschitzGroupEquiv x = e.toIsometry.lipschitzGroupMap x :=
-  rfl
+  (rfl)
 
 /-- The inverse of the induced Lipschitz equivalence is induced by the inverse quadratic
 isometry. -/
