@@ -553,11 +553,31 @@ instance _root_.TauCeti.AlgebraicGeometry.Scheme.Modules.isFiniteType_restrict
     ((Scheme.Modules.restrictFunctorIsoPullback f).app M).symm inferInstance
 
 /-- Restricting along an isomorphism and then its inverse recovers the original module. -/
-private def _root_.TauCeti.AlgebraicGeometry.Scheme.Modules.restrictRestrictInvIso
+def _root_.TauCeti.AlgebraicGeometry.Scheme.Modules.restrictRestrictInvIso
     (M : Y.Modules) (f : X ⟶ Y) [IsIso f] : (M.restrict f).restrict (inv f) ≅ M :=
   ((Scheme.Modules.restrictFunctorComp (inv f) f).app M).symm ≪≫
     (Scheme.Modules.restrictFunctorCongr (IsIso.inv_hom_id f)).app M ≪≫
     Scheme.Modules.restrictFunctorId.app M
+
+/-- The canonical restriction comparison is the composite of the composition, congruence and
+identity comparisons. -/
+@[simp]
+lemma _root_.TauCeti.AlgebraicGeometry.Scheme.Modules.restrictRestrictInvIso_hom
+    (M : Y.Modules) (f : X ⟶ Y) [IsIso f] :
+    (TauCeti.AlgebraicGeometry.Scheme.Modules.restrictRestrictInvIso M f).hom =
+      ((Scheme.Modules.restrictFunctorComp (inv f) f).inv.app M) ≫
+        (Scheme.Modules.restrictFunctorCongr (IsIso.inv_hom_id f)).hom.app M ≫
+        Scheme.Modules.restrictFunctorId.hom.app M := (rfl)
+
+/-- The inverse restriction comparison reverses the identity, congruence and composition
+comparisons. -/
+@[simp]
+lemma _root_.TauCeti.AlgebraicGeometry.Scheme.Modules.restrictRestrictInvIso_inv
+    (M : Y.Modules) (f : X ⟶ Y) [IsIso f] :
+    (TauCeti.AlgebraicGeometry.Scheme.Modules.restrictRestrictInvIso M f).inv =
+      Scheme.Modules.restrictFunctorId.inv.app M ≫
+        (Scheme.Modules.restrictFunctorCongr (IsIso.inv_hom_id f)).inv.app M ≫
+        ((Scheme.Modules.restrictFunctorComp (inv f) f).hom.app M) := (rfl)
 
 /-- Restriction along an isomorphism detects finite presentation. -/
 @[simp]
