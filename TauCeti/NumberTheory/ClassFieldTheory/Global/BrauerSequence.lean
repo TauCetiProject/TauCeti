@@ -28,6 +28,9 @@ localization of a global Brauer class.
 
 The section uses `DFinsupp.singleAddHom` and the inverse of
 `TauCeti.ClassFieldTheory.invMap`, the local invariant normalized by arithmetic Frobenius.
+The single-place API takes an explicit decidable-equality instance, as `DFinsupp.single` does,
+so its equations rewrite families constructed with any such instance. Consumers may supply it
+with `classical`; the surjectivity theorem itself needs no decidable-equality instance.
 
 ## Main definitions
 
