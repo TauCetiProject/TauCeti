@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.Shift.Intertwining
+public import Mathlib.CategoryTheory.Shift.Adjunction
+public import TauCeti.CategoryTheory.Shift.Autoequivalence
 
 /-!
 # Integer sequences from an existing shift
@@ -17,8 +18,18 @@ compare a shift constructed from an autoequivalence with an already installed sh
 replacing the latter.
 
 The sequence model and its evaluation equivalence are those of
-`CategoryTheory.Equivalence.IntSequence`. The coherence proofs use Mathlib's
-`shiftFunctorAdd'_assoc_inv_app`.
+`CategoryTheory.Equivalence.IntSequence`.
+
+## Main definitions
+
+* `TauCeti.Shift.sequenceFunctor`: the sequence of existing shifts of an object.
+* `TauCeti.Shift.evalCommShiftOfHasShift`: evaluation respects the existing shift.
+
+## Main results
+
+* `TauCeti.Shift.sequenceFunctorCompEvalIso_commShift`: evaluation's counit respects shifts.
+* `TauCeti.Shift.evalCommShiftOfHasShift_iso_one`: evaluation's degree-one comparison is
+  the linking isomorphism of the sequence.
 -/
 
 public section
@@ -78,53 +89,43 @@ noncomputable def sequenceFunctorShiftIso (k : ℤ) :
     shiftFunctor C k ⋙ sequenceFunctor C ≅
       sequenceFunctor C ⋙ shiftFunctor (IntSequence (shiftEquiv C (1 : ℤ))) k :=
   NatIso.ofComponents (fun X =>
-    { hom :=
-        { f := fun n => (shiftFunctorAdd' C k n (n + k) (add_comm _ _)).inv.app X
-          comm := fun n m h => by
-            -- Expose the degreewise endpoints of reindexing, without unfolding its category.
-            change ((shiftFunctorAdd' C k n (n + k) (add_comm _ _)).inv.app X)⟦(1 : ℤ)⟧' ≫
-                (shiftFunctorAdd' C (n + k) 1 (m + k) (by omega)).inv.app X =
-              (shiftFunctorAdd' C n 1 m h).inv.app (X⟦k⟧) ≫
-                (shiftFunctorAdd' C k m (m + k) (add_comm _ _)).inv.app X
-            exact shiftFunctorAdd'_assoc_inv_app k n 1 (n + k) m (m + k)
-              (add_comm _ _) h (by omega) X }
-      inv :=
-        { f := fun n => (shiftFunctorAdd' C k n (n + k) (add_comm _ _)).hom.app X
-          comm := fun n m h => by
-            -- As above, align the component types before cancellation in the base category.
-            change ((shiftFunctorAdd' C k n (n + k) (add_comm _ _)).hom.app X)⟦(1 : ℤ)⟧' ≫
-                (shiftFunctorAdd' C n 1 m h).inv.app (X⟦k⟧) =
-              (shiftFunctorAdd' C (n + k) 1 (m + k) (by omega)).inv.app X ≫
-                (shiftFunctorAdd' C k m (m + k) (add_comm _ _)).hom.app X
-            rw [← cancel_mono ((shiftFunctorAdd' C k m (m + k) (add_comm _ _)).inv.app X)]
-            simp only [Category.assoc, Iso.hom_inv_id_app, Category.comp_id]
-            rw [← cancel_epi
-              ((shiftFunctor C (1 : ℤ)).map
-                ((shiftFunctorAdd' C k n (n + k) (add_comm _ _)).inv.app X))]
-            simp only [← Functor.map_comp_assoc, Iso.inv_hom_id_app]
-            dsimp only [Functor.comp_obj]
-            erw [(shiftFunctor C (1 : ℤ)).map_id, Category.id_comp]
-            exact (shiftFunctorAdd'_assoc_inv_app k n 1 (n + k) m (m + k)
-              (add_comm _ _) h (by omega) X).symm }
-      hom_inv_id := by ext n; simp [sequenceFunctor]
-      inv_hom_id := by ext n; simp [sequenceFunctor] })
+    intSequenceIsoMk
+      (fun n => (shiftFunctorAdd' C k n (n + k) (add_comm _ _)).symm.app X)
+      (fun n m h => by
+        -- Expose the degreewise endpoints of reindexing, without unfolding its category.
+        change ((shiftFunctorAdd' C k n (n + k) (add_comm _ _)).inv.app X)⟦(1 : ℤ)⟧' ≫
+            (shiftFunctorAdd' C (n + k) 1 (m + k) (by omega)).inv.app X =
+          (shiftFunctorAdd' C n 1 m h).inv.app (X⟦k⟧) ≫
+            (shiftFunctorAdd' C k m (m + k) (add_comm _ _)).inv.app X
+        exact shiftFunctorAdd'_assoc_inv_app k n 1 (n + k) m (m + k)
+          (add_comm _ _) h (by omega) X))
     (fun f => by
       ext n
-      simpa [sequenceFunctor, Functor.comp_obj, Functor.comp_map,
-        IntSequence.shiftFunctor_eq_reindex, IntSequence.reindex, IntSequence.comap] using
-          (shiftFunctorAdd' C k n (n + k) (add_comm _ _)).inv.naturality f)
+      simp only [IntSequence.comp_f]
+      dsimp only [Functor.comp_obj, Functor.comp_map, sequenceFunctor,
+        IntSequence.shiftFunctor_eq_reindex, IntSequence.reindex, IntSequence.comap]
+      erw [intSequenceIsoMk_hom_f, intSequenceIsoMk_hom_f]
+      exact (shiftFunctorAdd' C k n (n + k) (add_comm _ _)).inv.naturality f)
 
 /-- The forward shift comparison in degree `n` is the inverse addition constraint. -/
 @[simp]
 theorem sequenceFunctorShiftIso_hom_app_f (k : ℤ) (X : C) (n : ℤ) :
     ((sequenceFunctorShiftIso C k).hom.app X).f n =
-      (shiftFunctorAdd' C k n (n + k) (add_comm _ _)).inv.app X := (rfl)
+      (shiftFunctorAdd' C k n (n + k) (add_comm _ _)).inv.app X := by
+  unfold sequenceFunctorShiftIso
+  dsimp only [NatIso.ofComponents_hom_app]
+  erw [intSequenceIsoMk_hom_f]
+  rfl
 
 /-- The inverse shift comparison in degree `n` is the addition constraint. -/
 @[simp]
 theorem sequenceFunctorShiftIso_inv_app_f (k : ℤ) (X : C) (n : ℤ) :
     ((sequenceFunctorShiftIso C k).inv.app X).f n =
-      (shiftFunctorAdd' C k n (n + k) (add_comm _ _)).hom.app X := (rfl)
+      (shiftFunctorAdd' C k n (n + k) (add_comm _ _)).hom.app X := by
+  unfold sequenceFunctorShiftIso
+  dsimp only [NatIso.ofComponents_inv_app]
+  erw [intSequenceIsoMk_inv_f]
+  rfl
 
 /-- Forming the sequence of shifts commutes coherently with the integral shift. -/
 noncomputable instance sequenceFunctorCommShift : (sequenceFunctor C).CommShift ℤ where
@@ -133,12 +134,17 @@ noncomputable instance sequenceFunctorCommShift : (sequenceFunctor C).CommShift 
     ext X n
     simp only [sequenceFunctorShiftIso_hom_app_f, CommShift.isoZero_hom_app,
       IntSequence.comp_f, sequenceFunctor_map_f, IntSequence.shiftFunctorZero_inv_app_f]
+    -- Reindexing by zero leaves an equality transport on the component endpoint.
+    change (shiftFunctorAdd' C 0 n (n + 0) (add_comm _ _)).inv.app X =
+      ((shiftFunctorZero C ℤ).hom.app X)⟦n⟧' ≫
+        eqToHom (congrArg (fun k : ℤ => X⟦k⟧) (by omega : n = n + 0))
     simp [shiftFunctorAdd', shiftFunctorAdd_zero_add_inv_app]
-    rfl
   commShiftIso_add a b := by
     ext X n
     simp only [sequenceFunctorShiftIso_hom_app_f, CommShift.isoAdd_hom_app,
       IntSequence.comp_f, sequenceFunctor_map_f, IntSequence.shiftFunctorAdd_inv_app_f]
+    simp only [IntSequence.shiftFunctor_eq_reindex, IntSequence.reindex, IntSequence.comap,
+      sequenceFunctorShiftIso_hom_app_f]
     -- Reindexing and composition endpoints reduce to components of the base shift.
     change (shiftFunctorAdd' C (a + b) n (n + (a + b)) (add_comm _ _)).inv.app X =
       ((shiftFunctorAdd C a b).hom.app X)⟦n⟧' ≫
@@ -214,6 +220,8 @@ theorem sequenceFunctorCompEvalIso_commShift :
       ((sequenceFunctor C).asEquivalence.counitIso_functor_comp X)
     simp only [IntSequence.comp_f, IntSequence.id_f, Functor.asEquivalence_functor] at hc
     erw [IntSequence.eval_map, ← Category.assoc, hc, Category.id_comp]
+    -- After the triangle identity, both sides are the zero-shift counit at `X`.
+    change (shiftFunctorZero C ℤ).hom.app X = (shiftFunctorZero C ℤ).hom.app X
     rfl
   rw [h]
   dsimp only [Iso.trans_hom, isoWhiskerLeft_hom]
@@ -257,122 +265,5 @@ theorem evalCommShiftOfHasShift_iso_one :
   simp [← Functor.map_comp]
 
 end ExistingShift
-
-variable {D : Type*} [Category* D] [HasShift D ℤ]
-
-/-- An intertwining functor, reconstructed through the sequence models. -/
-private noncomputable def intertwiningComparison (e : C ≌ C) (F : C ⥤ D)
-    (α : e.functor ⋙ F ≅ F ⋙ shiftFunctor D (1 : ℤ)) :
-    (IntSequence.eval (e := e)).inv ⋙ IntSequence.mapFunctor (e' := shiftEquiv D (1 : ℤ)) α ⋙
-        IntSequence.eval (e := shiftEquiv D (1 : ℤ)) ≅ F :=
-  Functor.isoWhiskerLeft _
-    (IntSequence.mapFunctorCompEvalIso (e' := shiftEquiv D (1 : ℤ)) α) ≪≫
-    (Functor.associator _ _ _).symm ≪≫
-    Functor.isoWhiskerRight (IntSequence.eval (e := e)).asEquivalence.counitIso F ≪≫
-    Functor.leftUnitor F
-
-/-- A functor intertwining an autoequivalence with an existing shift by one commutes
-coherently with the generated source shift and the existing target shift. -/
-@[instance_reducible]
-noncomputable def commShiftOfIntertwiningToShift (e : C ≌ C) (F : C ⥤ D)
-    (α : e.functor ⋙ F ≅ F ⋙ shiftFunctor D (1 : ℤ)) :
-    letI := e.hasShift
-    F.CommShift ℤ := by
-  letI := e.hasShift
-  letI : (IntSequence.eval (e := e)).asEquivalence.functor.CommShift ℤ := e.evalCommShift
-  letI : (IntSequence.eval (e := e)).inv.CommShift ℤ :=
-    (IntSequence.eval (e := e)).asEquivalence.commShiftInverse ℤ
-  letI : (IntSequence.mapFunctor (e' := shiftEquiv D (1 : ℤ)) α).CommShift ℤ :=
-    IntSequence.mapFunctorCommShift (e' := shiftEquiv D (1 : ℤ)) α
-  letI := evalCommShiftOfHasShift D
-  exact Functor.CommShift.ofIso (intertwiningComparison C e F α) ℤ
-
-/-- In degree one, the coherent comparison recovers the supplied intertwining isomorphism,
-preceded by the identification of the generated source shift with its autoequivalence. -/
-theorem commShiftOfIntertwiningToShift_iso_one (e : C ≌ C) (F : C ⥤ D)
-    (α : e.functor ⋙ F ≅ F ⋙ shiftFunctor D (1 : ℤ)) :
-    letI := e.hasShift
-    letI := commShiftOfIntertwiningToShift C e F α
-    F.commShiftIso (1 : ℤ) = isoWhiskerRight e.shiftFunctorOneIso F ≪≫ α := by
-  let := e.hasShift
-  let : (IntSequence.eval (e := e)).asEquivalence.functor.CommShift ℤ := e.evalCommShift
-  let : (IntSequence.eval (e := e)).inv.CommShift ℤ :=
-    (IntSequence.eval (e := e)).asEquivalence.commShiftInverse ℤ
-  let : (IntSequence.eval (e := e)).asEquivalence.inverse.CommShift ℤ :=
-    (IntSequence.eval (e := e)).asEquivalence.commShiftInverse ℤ
-  let := (IntSequence.eval (e := e)).asEquivalence.commShift_of_functor ℤ
-  let : (IntSequence.mapFunctor (e' := shiftEquiv D (1 : ℤ)) α).CommShift ℤ :=
-    IntSequence.mapFunctorCommShift (e' := shiftEquiv D (1 : ℤ)) α
-  let := evalCommShiftOfHasShift D
-  let := commShiftOfIntertwiningToShift C e F α
-  apply Iso.ext
-  ext X
-  let _ := e.evalCommShift
-  let U := (IntSequence.eval (e := e)).inv
-  let c := (IntSequence.eval (e := e)).asEquivalence.counitIso
-  have he := congr_app (congrArg Iso.hom e.evalCommShiftIso_one) (U.obj X)
-  simp only [Iso.trans_hom, NatTrans.comp_app, isoWhiskerLeft_hom,
-    whiskerLeft_app, IntSequence.reindexOneCompEvalIso_hom_app] at he
-  have hc := Adjunction.commShiftIso_hom_app_counit_app_shift
-    (IntSequence.eval (e := e)).asEquivalence.toAdjunction ℤ (1 : ℤ) X
-  rw [Functor.commShiftIso_comp_hom_app] at hc
-  simp only [Functor.asEquivalence_functor, Functor.asEquivalence_inverse,
-    Equivalence.toAdjunction_counit, IntSequence.eval_map] at hc
-  have he' : ((IntSequence.eval (e := e)).commShiftIso (1 : ℤ)).hom.app (U.obj X) ≫
-      e.shiftFunctorOneIso.hom.app ((U.obj X).X 0) =
-      ((U.obj X).iso 0 1 rfl).inv := he
-  have hc' : (((U.commShiftIso (1 : ℤ)).hom.app X).f 0) ≫
-      ((IntSequence.eval (e := e)).commShiftIso (1 : ℤ)).hom.app (U.obj X) =
-      c.hom.app (X⟦(1 : ℤ)⟧) ≫ (c.inv.app X)⟦(1 : ℤ)⟧' :=
-    (Iso.eq_comp_inv ((shiftFunctor C (1 : ℤ)).mapIso (c.app X))).2 hc
-  have hu : (((U.commShiftIso (1 : ℤ)).hom.app X).f 0) ≫
-      ((U.obj X).iso 0 1 rfl).inv =
-      c.hom.app (X⟦(1 : ℤ)⟧) ≫ (c.inv.app X)⟦(1 : ℤ)⟧' ≫
-        e.shiftFunctorOneIso.hom.app ((U.obj X).X 0) :=
-    (congrArg ((((U.commShiftIso (1 : ℤ)).hom.app X).f 0) ≫ ·) he'.symm).trans
-      ((Category.assoc _ _ _).symm.trans
-        ((congrArg (· ≫ e.shiftFunctorOneIso.hom.app ((U.obj X).X 0)) hc').trans
-          (Category.assoc _ _ _)))
-  let α' : e.functor ⋙ F ≅ F ⋙ (shiftEquiv D (1 : ℤ)).functor := α
-  -- Expand only the public transport and component formulas; the inverse evaluation
-  -- comparison is determined above by compatibility with its counit.
-  change ((Functor.CommShift.ofIso (intertwiningComparison C e F α') ℤ).commShiftIso
-    (1 : ℤ)).hom.app X = _
-  rw [Functor.CommShift.ofIso_commShiftIso_hom_app]
-  simp only [Functor.commShiftIso_comp_hom_app, evalCommShiftOfHasShift_iso_one,
-    IntSequence.eval_map, IntSequence.reindexOneCompEvalIso_hom_app]
-  rw [mapFunctor_commShiftIso]
-  simp only [IntSequence.mapFunctorShiftIso_hom_app_f]
-  simp only [intertwiningComparison, Iso.trans_hom, Iso.trans_inv, isoWhiskerLeft_hom,
-    isoWhiskerLeft_inv, isoWhiskerRight_hom, isoWhiskerRight_inv, NatTrans.comp_app,
-    whiskerLeft_app, whiskerRight_app, Functor.leftUnitor_hom_app, Functor.leftUnitor_inv_app,
-    IntSequence.mapFunctorCompEvalIso_hom_app, IntSequence.mapFunctorCompEvalIso_inv_app,
-    Category.id_comp, Functor.comp_obj, IntSequence.mapFunctor_obj_iso_inv, Category.assoc]
-  simp only [Iso.symm_inv, Iso.symm_hom, Functor.associator_hom_app,
-    Functor.associator_inv_app, Functor.comp_map, IntSequence.eval_map,
-    IntSequence.mapFunctor_map_f]
-  -- Evaluation and reindexing have definitionally equal endpoints; align them before
-  -- cancelling the identity components of the comparison.
-  erw [Category.id_comp, Category.comp_id, Category.id_comp, Category.id_comp,
-    Category.id_comp, Category.id_comp]
-  let u : (U.obj X).X 0 ≅ X := c.app X
-  let u₁ : (U.obj (X⟦(1 : ℤ)⟧)).X 0 ≅ X⟦(1 : ℤ)⟧ := c.app (X⟦(1 : ℤ)⟧)
-  let β : (U.obj (X⟦(1 : ℤ)⟧)).X 0 ⟶ (U.obj X).X 1 :=
-    ((U.commShiftIso (1 : ℤ)).hom.app X).f 0
-  change F.map u₁.inv ≫ F.map β ≫
-      (F.map ((U.obj X).iso 0 1 rfl).inv ≫ α.hom.app ((U.obj X).X 0)) ≫
-        (F.map u.hom)⟦(1 : ℤ)⟧' = _
-  simp only [Category.assoc]
-  rw [← F.map_comp_assoc β ((U.obj X).iso 0 1 rfl).inv]
-  have hβ : β ≫ ((U.obj X).iso 0 1 rfl).inv =
-      u₁.hom ≫ u.inv⟦(1 : ℤ)⟧' ≫ e.shiftFunctorOneIso.hom.app ((U.obj X).X 0) := hu
-  rw [hβ]
-  simp only [F.map_comp, Category.assoc, Iso.inv_hom_id_map_assoc]
-  have hn := (isoWhiskerRight e.shiftFunctorOneIso F ≪≫ α).hom.naturality u.inv
-  simp only [Iso.trans_hom, isoWhiskerRight_hom, NatTrans.comp_app,
-    whiskerRight_app, Functor.comp_map] at hn
-  rw [reassoc_of% hn]
-  simp only [← Functor.map_comp, Iso.inv_hom_id]
-  erw [F.map_id, (shiftFunctor D (1 : ℤ)).map_id, Category.comp_id]
 
 end TauCeti.Shift
