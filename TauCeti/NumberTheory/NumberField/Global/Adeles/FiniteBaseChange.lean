@@ -8,7 +8,6 @@ module
 public import TauCeti.NumberTheory.NumberField.LocalGlobal.Semilocal.Basic
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Extension
 import TauCeti.NumberTheory.NumberField.LocalGlobal.Semilocal.Integers
-import TauCeti.RingTheory.DedekindDomain.PrimesAbove
 import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.LocallyCompact
 import Mathlib.LinearAlgebra.Countable
 import TauCeti.Topology.Algebra.Module.ModuleTopology
