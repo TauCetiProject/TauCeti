@@ -17,9 +17,9 @@ tails separately. The lexicographic order compares the entries at `0` first, so 
 compared by their heads, and then by their tails.
 
 Dually, `Finsupp.snoc s x : Fin (n + 1) →₀ M` appends `x` after `s`, and `Finsupp.init t` forgets
-the last entry of `t`; these are the `Finsupp` versions of `Fin.snoc` and `Fin.init`. Two such
-vectors are compared lexicographically by their initial parts first, and then by their last
-entries.
+the last entry of `t`; these are the `Finsupp` versions of `Fin.snoc` and `Fin.init`. Adding two
+such vectors adds initial parts and last entries separately. Two such vectors are compared
+lexicographically by their initial parts first, and then by their last entries.
 -/
 
 public section
@@ -122,5 +122,10 @@ theorem toLex_snoc_lt_toLex_snoc_iff [LT M] {x y : M} {s t : Fin n →₀ M} :
       | cast j => simp
 
 end Snoc
+
+theorem snoc_add_snoc [AddZeroClass M] (s t : Fin n →₀ M) (x y : M) :
+    snoc s x + snoc t y = snoc (s + t) (x + y) := by
+  ext i
+  cases i using Fin.lastCases <;> simp
 
 end Finsupp
