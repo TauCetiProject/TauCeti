@@ -22,6 +22,14 @@ stable triangles. This description supplies the categorical structure for compar
 explicit mapping-cone triangles. No abelianity or positive-period assumption is needed; period
 zero gives integer indexing.
 
+The existential characterization is `CategoryTheory.Functor.distTriang_iff` applied to
+`ExactStructure.homologicalComplexSplitStableToHomotopy`. To use it, install the Frobenius
+structure's `stableHasShift`, `stableShiftFunctor_additive`, and `stablePretriangulated`,
+then `stableToHomotopyCommShift` and `stableToHomotopy_isTriangulated` locally. Unfolding
+`CategoryTheory.Functor.essImageDistTriang` gives the source triangle and image isomorphism;
+`ExactStructure.IsFrobenius.stablePretriangulated_distinguishedTriangles` identifies source
+membership with `stableDistinguishedTriangles`.
+
 The transport follows `TauCeti.CommutativeAlgebra.MatrixFactorization.Triangulated`, using
 Mathlib's localization at isomorphisms.
 
