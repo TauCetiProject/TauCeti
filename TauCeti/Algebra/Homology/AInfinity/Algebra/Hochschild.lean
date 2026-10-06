@@ -78,6 +78,22 @@ theorem hochschildDifferential_def (q : ℤ) (F : ReducedTensorWords R A →ₗ[
       gerstenhaberBracket (𝒜.grading.shift 1) 1 q 𝒜.taylor F :=
   (rfl)
 
+/-- The Hochschild differential is additive. -/
+theorem hochschildDifferential_add (q : ℤ) (F₁ F₂ : ReducedTensorWords R A →ₗ[R] A) :
+    𝒜.hochschildDifferential q (F₁ + F₂) =
+      𝒜.hochschildDifferential q F₁ + 𝒜.hochschildDifferential q F₂ :=
+  gerstenhaberBracket_add_right _ _ _ _ _
+
+/-- The Hochschild differential is `R`-linear. -/
+theorem hochschildDifferential_smul (q : ℤ) (c : R) (F : ReducedTensorWords R A →ₗ[R] A) :
+    𝒜.hochschildDifferential q (c • F) = c • 𝒜.hochschildDifferential q F :=
+  gerstenhaberBracket_smul_right _ _ _ _ _
+
+/-- The Hochschild differential of the zero cochain vanishes. -/
+@[simp]
+theorem hochschildDifferential_zero (q : ℤ) : 𝒜.hochschildDifferential q 0 = 0 :=
+  gerstenhaberBracket_zero_right _ _ _
+
 /-- The Hochschild differential raises the degree of a cochain by one. -/
 theorem isHomogeneous_hochschildDifferential {q : ℤ} {F : ReducedTensorWords R A →ₗ[R] A}
     (hF : LinearMap.IsHomogeneous F (gradedPiece (𝒜.grading.shift 1))

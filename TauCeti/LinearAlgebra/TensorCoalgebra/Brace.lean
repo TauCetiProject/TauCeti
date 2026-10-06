@@ -167,6 +167,42 @@ theorem letter_comp_gradedCoderiv_comp_gradedCoderiv (F g : ReducedTensorWords R
     letter R M ∘ₗ gradedCoderiv G F p ∘ₗ gradedCoderiv G g q = brace G F g q := by
   rw [← LinearMap.comp_assoc, letter_comp_gradedCoderiv, brace_def]
 
+/-- The brace is additive in its first argument. -/
+theorem brace_add_left (F₁ F₂ g : ReducedTensorWords R M →ₗ[R] M) (q : ℤ) :
+    brace G (F₁ + F₂) g q = brace G F₁ g q + brace G F₂ g q :=
+  LinearMap.add_comp _ _ _
+
+/-- The brace is `R`-linear in its first argument. -/
+theorem brace_smul_left (c : R) (F g : ReducedTensorWords R M →ₗ[R] M) (q : ℤ) :
+    brace G (c • F) g q = c • brace G F g q :=
+  LinearMap.smul_comp _ _ _
+
+/-- The brace of the zero map with any Taylor map vanishes. -/
+@[simp]
+theorem brace_zero_left (g : ReducedTensorWords R M →ₗ[R] M) (q : ℤ) :
+    brace G 0 g q = 0 :=
+  LinearMap.zero_comp _
+
+/-- The brace is additive in its second argument, since the graded Taylor expansion is. -/
+theorem brace_add_right (F g₁ g₂ : ReducedTensorWords R M →ₗ[R] M) (q : ℤ) :
+    brace G F (g₁ + g₂) q = brace G F g₁ q + brace G F g₂ q := by
+  have h := congrArg Subtype.val (map_add (gradedCoderivEquivTaylor G q).symm g₁ g₂)
+  simp only [gradedCoderivEquivTaylor_symm_apply, Submodule.coe_add] at h
+  rw [brace_def, h, LinearMap.comp_add, brace_def, brace_def]
+
+/-- The brace is `R`-linear in its second argument, since the graded Taylor expansion is. -/
+theorem brace_smul_right (c : R) (F g : ReducedTensorWords R M →ₗ[R] M) (q : ℤ) :
+    brace G F (c • g) q = c • brace G F g q := by
+  have h := congrArg Subtype.val (map_smul (gradedCoderivEquivTaylor G q).symm c g)
+  simp only [gradedCoderivEquivTaylor_symm_apply, Submodule.coe_smul] at h
+  rw [brace_def, h, LinearMap.comp_smul, brace_def]
+
+/-- The brace of a Taylor map with the zero map vanishes. -/
+@[simp]
+theorem brace_zero_right (F : ReducedTensorWords R M →ₗ[R] M) (q : ℤ) :
+    brace G F 0 q = 0 := by
+  simpa using brace_smul_right (G := G) (0 : R) F 0 q
+
 variable (G) in
 /-- The **Gerstenhaber bracket** `[F, g] = F{g} - (-1)^(p * q) g{F}` of a Taylor map `F` of
 degree `p` with a Taylor map `g` of degree `q`, the graded commutator of the brace. -/
@@ -177,6 +213,46 @@ noncomputable def gerstenhaberBracket (p q : ℤ) (F g : ReducedTensorWords R M 
 theorem gerstenhaberBracket_def (p q : ℤ) (F g : ReducedTensorWords R M →ₗ[R] M) :
     gerstenhaberBracket G p q F g = brace G F g q - negOnePowCast R (p * q) • brace G g F p :=
   (rfl)
+
+/-- The Gerstenhaber bracket is additive in its first argument. -/
+theorem gerstenhaberBracket_add_left (p q : ℤ) (F₁ F₂ g : ReducedTensorWords R M →ₗ[R] M) :
+    gerstenhaberBracket G p q (F₁ + F₂) g =
+      gerstenhaberBracket G p q F₁ g + gerstenhaberBracket G p q F₂ g := by
+  simp only [gerstenhaberBracket_def, brace_add_left, brace_add_right, smul_add]
+  abel
+
+/-- The Gerstenhaber bracket is additive in its second argument. -/
+theorem gerstenhaberBracket_add_right (p q : ℤ) (F g₁ g₂ : ReducedTensorWords R M →ₗ[R] M) :
+    gerstenhaberBracket G p q F (g₁ + g₂) =
+      gerstenhaberBracket G p q F g₁ + gerstenhaberBracket G p q F g₂ := by
+  simp only [gerstenhaberBracket_def, brace_add_left, brace_add_right, smul_add]
+  abel
+
+/-- The Gerstenhaber bracket is `R`-linear in its first argument. -/
+theorem gerstenhaberBracket_smul_left (p q : ℤ) (c : R)
+    (F g : ReducedTensorWords R M →ₗ[R] M) :
+    gerstenhaberBracket G p q (c • F) g = c • gerstenhaberBracket G p q F g := by
+  rw [gerstenhaberBracket_def, gerstenhaberBracket_def, brace_smul_left, brace_smul_right,
+    smul_sub, smul_comm c]
+
+/-- The Gerstenhaber bracket is `R`-linear in its second argument. -/
+theorem gerstenhaberBracket_smul_right (p q : ℤ) (c : R)
+    (F g : ReducedTensorWords R M →ₗ[R] M) :
+    gerstenhaberBracket G p q F (c • g) = c • gerstenhaberBracket G p q F g := by
+  rw [gerstenhaberBracket_def, gerstenhaberBracket_def, brace_smul_left, brace_smul_right,
+    smul_sub, smul_comm c]
+
+/-- The Gerstenhaber bracket of the zero map with any Taylor map vanishes. -/
+@[simp]
+theorem gerstenhaberBracket_zero_left (p q : ℤ) (g : ReducedTensorWords R M →ₗ[R] M) :
+    gerstenhaberBracket G p q 0 g = 0 := by
+  simp [gerstenhaberBracket_def]
+
+/-- The Gerstenhaber bracket of a Taylor map with the zero map vanishes. -/
+@[simp]
+theorem gerstenhaberBracket_zero_right (p q : ℤ) (F : ReducedTensorWords R M →ₗ[R] M) :
+    gerstenhaberBracket G p q F 0 = 0 := by
+  simp [gerstenhaberBracket_def]
 
 /-- The Gerstenhaber bracket of Taylor maps of degrees `p` and `q` has degree `p + q`. -/
 theorem isHomogeneous_gerstenhaberBracket {F g : ReducedTensorWords R M →ₗ[R] M} {p q : ℤ}
