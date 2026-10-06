@@ -159,6 +159,25 @@ private theorem transferModNorm_eq_one_iff (hp : p.Prime)
   · intro hg
     exact ⟨_, groupNorm_ofMul_abelianizationProPMk ⟨g, hg⟩⟩
 
+/-- Under `scd_p G ≤ 2`, for a commutative `p`-group quotient `G ⧸ V`, `transferModNorm` induces
+an isomorphism of `G ⧸ V` with the quotient `A^Γ / N(A)` of the invariants by the norms. -/
+private noncomputable def quotientEquivTransferModNorm (hp : p.Prime)
+    (h : strictCohomologicalDimensionAt.{u} p G ≤ 2) (hV : IsOpen (V : Set G))
+    (hpV : IsPGroup p (G ⧸ V)) [IsMulCommutative (G ⧸ V)] :
+    G ⧸ V ≃* Multiplicative (H0 (G ⧸ V) (Additive (abelianizationProP p G V)) ⧸
+      (groupNorm (G ⧸ V) (Additive (abelianizationProP p G V))).range.addSubgroupOf
+        (H0 (G ⧸ V) (Additive (abelianizationProP p G V)))) :=
+  (QuotientGroup.quotientMulEquivOfEq
+      (SetLike.ext (transferModNorm_eq_one_iff hp h hV hpV))).symm.trans
+    (QuotientGroup.quotientKerEquivOfSurjective _ (transferModNorm_surjective hp h hV))
+
+/-- `quotientEquivTransferModNorm` sends the class of `g` to `transferModNorm g`. -/
+private theorem quotientEquivTransferModNorm_mk (hp : p.Prime)
+    (h : strictCohomologicalDimensionAt.{u} p G ≤ 2) (hV : IsOpen (V : Set G))
+    (hpV : IsPGroup p (G ⧸ V)) [IsMulCommutative (G ⧸ V)] (g : G) :
+    quotientEquivTransferModNorm hp h hV hpV g = transferModNorm g :=
+  (rfl)
+
 omit [CompactSpace G] [TotallyDisconnectedSpace G] in
 /-- Under the cyclic `H²` computation at a generator `σ`, the class `u_{G/V}(p)` goes to the
 class of `Ver σ.out`. -/
@@ -170,6 +189,18 @@ private theorem explicitH2CyclicEquiv_abelianizationProPClass [DiscreteTopology 
   rw [abelianizationProPClass_def, transferModNorm_apply, toAdd_ofAdd]
   refine (explicitH2CyclicEquiv_mk _ _ σ hσ _).trans (congrArg QuotientAddGroup.mk ?_)
   exact Subtype.ext (abelianizationProPTransfer_out p G V σ).symm
+
+/-- Under the cyclic `H²` computation at a generator `σ`, the class `u_{G/V}(p)` corresponds to
+`σ` under `quotientEquivTransferModNorm`. -/
+private theorem quotientEquivTransferModNorm_generator [DiscreteTopology (G ⧸ V)] (hp : p.Prime)
+    (h : strictCohomologicalDimensionAt.{u} p G ≤ 2) (hV : IsOpen (V : Set G))
+    (hpV : IsPGroup p (G ⧸ V)) [IsMulCommutative (G ⧸ V)] (σ : G ⧸ V)
+    (hσ : ∀ q : G ⧸ V, q ∈ Subgroup.zpowers σ) :
+    quotientEquivTransferModNorm hp h hV hpV σ = Multiplicative.ofAdd
+      (explicitH2CyclicEquiv (G ⧸ V) (Additive (abelianizationProP p G V)) σ hσ
+        (abelianizationProPClass p G V hV)) := by
+  rw [explicitH2CyclicEquiv_abelianizationProPClass hV σ hσ, ofAdd_toAdd,
+    ← quotientEquivTransferModNorm_mk hp h hV hpV, QuotientGroup.out_eq']
 
 end FiniteIndex
 
@@ -190,24 +221,18 @@ theorem abelianizationProPClass_generates_of_isCyclic (hp : p.Prime)
   let : Fintype (G ⧸ V) := Subgroup.fintypeQuotientOfFiniteIndex
   obtain ⟨σ, hσ⟩ := IsCyclic.exists_generator (α := G ⧸ V)
   let e := explicitH2CyclicEquiv (G ⧸ V) (Additive (abelianizationProP p G V)) σ hσ
-  let φ := transferModNorm (p := p) (V := V)
-  have hsurj : Function.Surjective φ := transferModNorm_surjective hp h hV
-  have hker : φ.ker = V := SetLike.ext (transferModNorm_eq_one_iff hp h hV hpV)
+  let ψ := quotientEquivTransferModNorm hp h hV hpV
   constructor
-  · -- Write `e y = φ g` and `g = σ.out ^ k` modulo `V`; then `y = k • u_{G/V}(p)`.
+  · -- `ψ⁻¹ (e y) = σ ^ k` gives `e y = ψ σ ^ k = e (k • u_{G/V}(p))`.
     refine (AddSubgroup.eq_top_iff' _).2 fun y ↦ ?_
-    obtain ⟨g, hg⟩ := hsurj (Multiplicative.ofAdd (e y))
-    obtain ⟨k, hk : σ ^ k = (g : G ⧸ V)⟩ := hσ g
-    have hgk : φ g = φ σ.out ^ k := by
-      rw [← map_zpow, ← inv_mul_eq_one, ← map_inv, ← map_mul, ← MonoidHom.mem_ker, hker,
-        ← QuotientGroup.eq, QuotientGroup.mk_zpow, QuotientGroup.out_eq', hk]
-    refine AddSubgroup.mem_zmultiples_iff.2 ⟨k, e.injective ?_⟩
-    rw [map_zsmul, explicitH2CyclicEquiv_abelianizationProPClass hV σ hσ, ← toAdd_zpow, ← hgk,
-      hg, toAdd_ofAdd]
-  · -- `φ` identifies `G ⧸ V` with the target `A^Γ / N(A)` of `e`.
-    exact (Nat.card_congr (e.toEquiv.trans Multiplicative.ofAdd)).trans (Nat.card_congr
-      ((QuotientGroup.quotientMulEquivOfEq hker).symm.trans
-        (QuotientGroup.quotientKerEquivOfSurjective φ hsurj)).toEquiv).symm
+    obtain ⟨k, hk : σ ^ k = ψ.symm (Multiplicative.ofAdd (e y))⟩ :=
+      hσ (ψ.symm (Multiplicative.ofAdd (e y)))
+    refine AddSubgroup.mem_zmultiples_iff.2 ⟨k, e.injective (Multiplicative.ofAdd.injective ?_)⟩
+    rw [map_zsmul, ofAdd_zsmul, ← quotientEquivTransferModNorm_generator hp h hV hpV σ hσ,
+      ← map_zpow, hk, ψ.apply_symm_apply]
+  · -- `ψ` identifies `G ⧸ V` with the target `A^Γ / N(A)` of `e`.
+    exact (Nat.card_congr (e.toEquiv.trans Multiplicative.ofAdd)).trans
+      (Nat.card_congr ψ.toEquiv).symm
 
 /-- **The class of the pro-`p` class module generates `H²` for a quotient of prime order.** For
 a profinite group `G` with `scd_p G ≤ 2` and an open normal subgroup `V` of prime index `p`, the
