@@ -16,12 +16,6 @@ its barycentric-coordinate topology. In particular, the realization is compact a
 coordinate map into `ι → ℝ` is a closed embedding. This permits finite polyhedra, including
 finite local models of triangulated manifolds, to be treated as ordinary coordinate subspaces.
 
-The argument uses the realization of the full complex, identified with Mathlib's compact
-standard simplex by `realizationTopHomeomorphStdSimplex`. The given complex is a finite union
-of closed coordinate faces. Its inverse coordinate parametrization is continuous on each
-face, hence continuous by finite closed pasting. No local finiteness assumption is needed
-for continuity of the coordinate map itself.
-
 ## References
 
 * C. P. Rourke, B. J. Sanderson, *Introduction to Piecewise-Linear Topology*, Springer (1972),
