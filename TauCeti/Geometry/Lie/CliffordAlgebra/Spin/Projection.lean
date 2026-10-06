@@ -57,10 +57,7 @@ open _root_.CliffordAlgebra
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 
-/-- The operator-norm topology used by the general linear Lie group of real matrices. -/
-local instance matrixOperatorTopologicalSpace (n : Type*) [Fintype n] :
-    TopologicalSpace (Matrix n n ℝ) :=
-  Matrix.linftyOpTopologicalSpace n n ℝ
+attribute [local instance] Matrix.linftyOpTopologicalSpace
 
 local notation "SpinUnitsRange(" n ")" =>
   MonoidHom.range (spinGroup.toUnits (Q := realCliffordForm n 0))

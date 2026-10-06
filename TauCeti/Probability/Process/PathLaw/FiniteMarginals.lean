@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.Exchangeability.Basic
+public import TauCeti.Probability.Process.PathLaw.Basic
 import Mathlib.MeasureTheory.Constructions.Projective
 
 /-!
@@ -13,13 +13,12 @@ import Mathlib.MeasureTheory.Constructions.Projective
 
 A finite measure on path space `ℕ → α` is determined by its finite prefix marginals: any measure
 agreeing with it on every prefix projection (`prefixProj α n`, the projection to the first `n`
-coordinates) is equal to it. This is the Layer 0 finite-marginal uniqueness milestone of
-`TauCetiRoadmap/Exchangeability`: a thin ℕ-prefix wrapper over Mathlib's projective-limit
+coordinates) is equal to it. This is a thin ℕ-prefix wrapper over Mathlib's projective-limit
 machinery (`IsProjectiveLimit.unique`), not new measure theory.
 
 The public API:
 * `measure_eq_of_prefixProj_map_eq` — the map-equality form;
-* `measure_eq_of_fin_marginals_eq` — the roadmap-named setwise form;
+* `measure_eq_of_fin_marginals_eq` — the setwise form;
 * `prefixProjPair`, `measurable_prefixProjPair`, `prefixProjPair_comp` — the same prefix
   projection, carrying an extra factor along;
 * `measure_eq_of_prefixProjPair_map_eq` — paired finite-marginal uniqueness on `T × (ℕ → α)`.
@@ -82,9 +81,9 @@ theorem measure_eq_of_prefixProj_map_eq {μ ν : Measure (ℕ → α)} [IsFinite
   exact IsProjectiveLimit.unique (P := fun I => μ.map I.restrict)
     (fun I => rfl) (fun I => (key I).symm)
 
-/-- **Finite-marginal uniqueness, setwise form** (the roadmap-named milestone): two measures on
-`ℕ → α`, with `μ` finite, agreeing on every measurable prefix-cylinder are equal. It assumes only
-`μ` is finite; `ν`'s finiteness is forced by the conclusion. -/
+/-- **Finite-marginal uniqueness, setwise form**: two measures on `ℕ → α`, with `μ` finite,
+agreeing on every measurable prefix-cylinder are equal. It assumes only `μ` is finite; `ν`'s
+finiteness is forced by the conclusion. -/
 theorem measure_eq_of_fin_marginals_eq {μ ν : Measure (ℕ → α)} [IsFiniteMeasure μ]
     (h : ∀ (n : ℕ) (S : Set (Fin n → α)), MeasurableSet S →
       μ.map (prefixProj α n) S = ν.map (prefixProj α n) S) : μ = ν :=

@@ -18,9 +18,9 @@ import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Basic
 Over `ℂ` a nondegenerate quadratic form is determined by its rank, so there is one Clifford algebra
 in each dimension. Over `ℝ` this fails: a nondegenerate real form is classified by its signature
 `(p, q)`, and the resulting algebras `Cliff(p, q)` run through matrix algebras over `ℝ`, `ℂ` and
-`ℍ` in a pattern periodic modulo `8`. This file introduces the family of forms that the pattern is
-indexed by, the coordinate isometries for switching signatures, and the four small entries that
-fix the indexing convention.
+`ℍ`, and products of two copies of such a matrix algebra, in a pattern periodic modulo `8`. This
+file introduces the family of forms that the pattern is indexed by, the coordinate isometries for
+switching signatures, and the four small entries that fix the indexing convention.
 
 `TauCeti.realCliffordForm p q` is the diagonal form on `Fin (p + q) → ℝ` with `+1` in the first `p`
 coordinates and `-1` in the last `q`, written as a `QuadraticMap.weightedSumSquares` against the
@@ -50,25 +50,13 @@ transported along an isometry, since the forms Mathlib uses there are exactly th
 `(0,2)` signature forms in disguise. The last is the same transport for the split quaternions
 `ℍ[ℝ,1,-1]`, followed by their splitting `TauCeti.QuaternionAlgebra.oneEquivMatrix`. The first is
 built here from the universal property: a single generator squaring to `+1` splits the algebra into
-two copies of `ℝ`. The constructed algebra map is proved *surjective* by exhibiting explicit
-preimages, and injectivity is then forced by the dimension count `2 ^ (p + q)`, which is the general
-mechanism the complex structure theorem uses as well.
+two copies of `ℝ`.
 
 ## Implementation notes
 
 `Cliff(p, q)` is spelled `CliffordAlgebra (realCliffordForm p q)` throughout rather than being
 given an abbreviation, so that every lemma about a general `CliffordAlgebra` applies to it without
 unfolding.
-
-Most scaffolding of the four constructions remains `private`. The one- and two-dimensional
-coordinate isometries are public because later low-dimensional reductions compose them, while the
-public algebra interface consists of the four `AlgEquiv`s and the lemmas computing them on a
-generator.
-
-All four identifications are bundled `AlgEquiv`s rather than the `Nonempty` existence statements
-the roadmap asks for, and each comes with a lemma computing it on a generator: it is the
-equivalences and their values, not their bare existence, that the Bott-periodicity step
-`Cliff(p+1, q+1) ≅ Cliff(p, q) ⊗ M₂(ℝ)` will consume.
 
 ## Main definitions
 
@@ -101,8 +89,6 @@ equivalences and their values, not their bare existence, that the Bott-periodici
 
 ## References
 
-* [Clifford algebras, Pin and Spin, and spin representations roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SpinRepresentations/README.md),
-  Layer 7, "The real forms `Cliff(p, q)`".
 * H. B. Lawson, M.-L. Michelsohn, *Spin Geometry*, Princeton (1989), Chapter I, §4.
 -/
 
@@ -177,8 +163,7 @@ theorem realCliffordForm_zero_eq_weightedSumSquares_one (n : ℕ) :
   intro i _
   rw [realCliffordWeight_of_lt (by omega), one_mul]
 
-/-- The signature forms are nondegenerate: a weighted sum of squares whose weights are all regular
-is nondegenerate, and every signature weight is `±1`. -/
+/-- The signature forms are nondegenerate. -/
 theorem nondegenerate_realCliffordForm (p q : ℕ) : (realCliffordForm p q).Nondegenerate :=
   QuadraticMap.nondegenerate_weightedSumSquares fun i ↦
     (realCliffordWeight_ne_zero p q i).isUnit.isRegular
@@ -550,24 +535,28 @@ theorem realCliffordSignSwitchStandardIsometry_neg_of_pos (p q : ℕ)
 
 /-! ### The four base entries, in coordinates -/
 
+/-- The real Clifford form of signature `(1, 0)` in coordinates. -/
 @[simp]
 theorem realCliffordForm_one_zero_apply (v : Fin (1 + 0) → ℝ) :
     realCliffordForm 1 0 v = v 0 * v 0 := by
   rw [realCliffordForm_apply]
   simp [realCliffordWeight]
 
+/-- The real Clifford form of signature `(0, 1)` in coordinates. -/
 @[simp]
 theorem realCliffordForm_zero_one_apply (v : Fin (0 + 1) → ℝ) :
     realCliffordForm 0 1 v = -(v 0 * v 0) := by
   rw [realCliffordForm_apply]
   simp [realCliffordWeight]
 
+/-- The real Clifford form of signature `(0, 2)` in coordinates. -/
 @[simp]
 theorem realCliffordForm_zero_two_apply (v : Fin (0 + 2) → ℝ) :
     realCliffordForm 0 2 v = -(v 0 * v 0) + -(v 1 * v 1) := by
   rw [realCliffordForm_apply, Fin.sum_univ_two]
   simp [realCliffordWeight]
 
+/-- The real Clifford form of signature `(1, 1)` in coordinates. -/
 @[simp]
 theorem realCliffordForm_one_one_apply (v : Fin (1 + 1) → ℝ) :
     realCliffordForm 1 1 v = v 0 * v 0 - v 1 * v 1 := by
