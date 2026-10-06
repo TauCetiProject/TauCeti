@@ -153,7 +153,10 @@ theorem IsMinimal.subsingleton_ext_iff_of_piece_eq_bot_of_ne (j : ℤ)
     Subsingleton (Ext.{w} M N n) ↔ Subsingleton (r.termObj n ⟶ N) := by
   apply hr.subsingleton_ext_iff
   let := N.gradedSMul
-  exact InternalGrading.smul_top_eq_bot_of_piece_eq_bot_of_ne 𝒜 N.grading j hN₀
+  simp only [Submodule.iSup_smul]
+  apply le_bot_iff.mp
+  exact iSup_le fun i ↦ iSup_le fun hi ↦ le_of_eq
+    (InternalGrading.smul_top_eq_bot_of_piece_eq_bot_of_ne 𝒜 N.grading j hN₀ hi.ne')
 
 omit hN in
 /-- For a degree-zero target, Ext into any internal shift vanishes exactly when graded

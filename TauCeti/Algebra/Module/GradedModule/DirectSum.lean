@@ -23,7 +23,7 @@ This is the direct-sum compatibility target in Layer 0 of the `DGAInfinity` road
 The file also records how the decomposition of a graded module interacts with the action of a
 graded ring: `TauCeti.DirectSum.coe_decompose_smul_add_of_right_mem` computes the components of
 `a • x` for homogeneous `x`. A module concentrated in one internal degree is annihilated by
-the strictly positive part of the algebra.
+every nonzero-degree component of the algebra.
 
 ## Main definitions
 
@@ -37,7 +37,7 @@ the strictly positive part of the algebra.
 * `TauCeti.DirectSum.coe_decompose_smul_add_of_right_mem`: the components of `a • x`, for `x`
   homogeneous in a graded module, are the products of the components of `a` with `x`.
 * `TauCeti.InternalGrading.smul_top_eq_bot_of_piece_eq_bot_of_ne`: a graded module concentrated in
-  one internal degree is annihilated by the strictly positive part of the algebra.
+  one internal degree is annihilated by every nonzero-degree component of the algebra.
 
 ## References
 
@@ -305,15 +305,15 @@ variable [CommSemiring k] [Semiring A] [Algebra k A]
 variable [AddCommMonoid M] [Module k M] [Module A M] [IsScalarTower k A M]
 variable (𝒜 : ℤ → Submodule k A)
 
-/-- A graded module concentrated in one internal degree is annihilated by the strictly
-positive part of the algebra. -/
+/-- A graded module concentrated in one internal degree is annihilated by every
+nonzero-degree component of the algebra. -/
 theorem smul_top_eq_bot_of_piece_eq_bot_of_ne (G : InternalGrading k M)
-    [SetLike.GradedSMul 𝒜 G.piece] (j : ℤ) (h : ∀ p, p ≠ j → G.piece p = ⊥) :
-    (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k M) = ⊥ := by
+    [SetLike.GradedSMul 𝒜 G.piece] (j : ℤ) (h : ∀ p, p ≠ j → G.piece p = ⊥)
+    {i : ℤ} (hi : i ≠ 0) : 𝒜 i • (⊤ : Submodule k M) = ⊥ := by
   rw [← G.isInternal.submodule_iSup_eq_top]
-  simp only [Submodule.iSup_smul, Submodule.smul_iSup]
+  simp only [Submodule.smul_iSup]
   apply le_bot_iff.mp
-  refine iSup_le fun p ↦ iSup_le fun i ↦ iSup_le fun hi ↦ ?_
+  refine iSup_le fun p ↦ ?_
   refine Submodule.smul_le.mpr fun a ha x hx ↦ ?_
   by_cases hp : p = j
   · subst p
