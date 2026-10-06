@@ -82,15 +82,9 @@ instance isReduced_image [IsReduced X] : IsReduced f.image :=
 scheme-theoretic image is surjective. -/
 theorem toImage_surjective_of_isClosed_range (h : IsClosed (Set.range f)) :
     Function.Surjective f.toImage := by
-  intro y
-  have hy : f.imageι y ∈ Set.range f := by
-    have hy' : f.imageι y ∈ (f.ker.support : Set Y) := by
-      rw [← Scheme.IdealSheafData.range_subschemeι]
-      exact ⟨y, rfl⟩
-    rwa [Scheme.Hom.support_ker, h.closure_eq] at hy'
-  obtain ⟨x, hx⟩ := hy
-  refine ⟨x, f.imageι.isEmbedding.injective ?_⟩
-  rw [← Scheme.Hom.comp_apply, f.toImage_imageι]
-  exact hx
+  apply (surjective_of_isDominant_of_isClosed_range f.toImage ?_).surj
+  have h' := h.preimage f.imageι.continuous
+  simpa only [← f.toImage_imageι, Scheme.Hom.comp_base, TopCat.coe_comp, Set.range_comp,
+    f.imageι.isEmbedding.injective.preimage_image] using h'
 
 end AlgebraicGeometry.Scheme.Hom

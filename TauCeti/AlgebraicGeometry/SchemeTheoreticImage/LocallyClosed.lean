@@ -13,8 +13,9 @@ public import Mathlib.AlgebraicGeometry.Morphisms.Immersion
 
 A quasi-compact morphism with locally closed topological image factors through an
 immersion with exactly that image. The intermediate scheme is the scheme-theoretic
-image inside the open complement of the boundary. The first map is surjective and
-scheme-theoretically dominant; if the source is reduced, the intermediate scheme
+image inside the coborder, the complement of `closure (Set.range f) \ Set.range f`.
+The first map is surjective and scheme-theoretically dominant; if the source is reduced,
+the intermediate scheme
 is reduced as well. This gives a scheme structure on a locally closed orbit.
 
 The scheme structure is supplied by the morphism, including when the source
@@ -43,13 +44,12 @@ variable {X Y : Scheme.{u}} (f : X ⟶ Y)
 def coborderRangeOfIsLocallyClosed (h : IsLocallyClosed (Set.range f)) : Y.Opens :=
   ⟨coborder (Set.range f), h.isOpen_coborder⟩
 
-/-- The open used for the locally closed image is the complement of its boundary. -/
+/-- The open used for the locally closed image has the coborder as its underlying set. -/
 @[simp]
 theorem coe_coborderRangeOfIsLocallyClosed (h : IsLocallyClosed (Set.range f)) :
     (f.coborderRangeOfIsLocallyClosed h : Set Y) = coborder (Set.range f) := (rfl)
 
-/-- Regard a morphism with locally closed image as a morphism into the open
-complement of its image's boundary. -/
+/-- Regard a morphism with locally closed image as a morphism into the coborder of its image. -/
 def liftCoborderRange (h : IsLocallyClosed (Set.range f)) :
     X ⟶ f.coborderRangeOfIsLocallyClosed h :=
   IsOpenImmersion.lift (f.coborderRangeOfIsLocallyClosed h).ι f (by
@@ -72,7 +72,7 @@ theorem range_liftCoborderRange (h : IsLocallyClosed (Set.range f)) :
   exact LocallyRingedSpace.IsOpenImmersion.lift_range
     (f.coborderRangeOfIsLocallyClosed h).ι.toLRSHom f.toLRSHom H
 
-/-- The image becomes closed inside the open complement of its boundary. -/
+/-- The image becomes closed inside its coborder. -/
 theorem isClosed_range_liftCoborderRange (h : IsLocallyClosed (Set.range f)) :
     IsClosed (Set.range (f.liftCoborderRange h)) := by
   rw [range_liftCoborderRange]
@@ -100,7 +100,7 @@ def toLocallyClosedImage (h : IsLocallyClosed (Set.range f)) :
     X ⟶ f.locallyClosedImage h :=
   (f.liftCoborderRange h).toImage
 
-/-- The inclusion factors as a closed immersion into the boundary complement
+/-- The inclusion factors as a closed immersion into the coborder
 followed by that open subscheme's inclusion. -/
 theorem locallyClosedImageι_def (h : IsLocallyClosed (Set.range f)) :
     f.locallyClosedImageι h =
