@@ -17,7 +17,7 @@ these objects along continuous maps to discrete quotients supplies smooth coeffi
 continuous cohomology.
 
 The construction retains Mathlib's `Rep` and `TopRep` carriers; it only supplies the topology
-and continuity proofs.
+and continuity proofs. Ring coefficients are required by Mathlib's `TopRep`.
 -/
 
 public section
@@ -32,7 +32,7 @@ variable (R : Type u) [Ring R] [TopologicalSpace R] [DiscreteTopology R]
   (G : Type v) [Monoid G]
 
 /-- An algebraic representation with the discrete topology on its underlying module.
-The body is exposed so dependent statements can use elements of `A.V` as elements of the output. -/
+The body is exposed so the pointwise action equation can use elements of `A.V` directly. -/
 @[expose] def discreteTopRep (A : Rep.{w} R G) : TopRep.{w} R G :=
   letI : TopologicalSpace A.V := ⊥
   letI : DiscreteTopology A.V := ⟨rfl⟩
@@ -58,7 +58,7 @@ instance (A : Rep.{w} R G) : DiscreteTopology (discreteTopRep R G A).V :=
   ⟨rfl⟩
 
 /-- Equip every algebraic representation and intertwining map with the discrete topology.
-The body is exposed so the output carrier computes to the original algebraic module. -/
+The body is exposed so the pointwise morphism equation can use the original algebraic carriers. -/
 @[expose] def discreteTopRepFunctor : Rep.{w} R G ⥤ TopRep.{w} R G where
   obj := discreteTopRep R G
   map {A B} f :=

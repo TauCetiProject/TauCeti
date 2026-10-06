@@ -42,8 +42,8 @@ universe u
 variable (n : ℕ) (F : Type u) [Field F]
 
 /-- Read a `ZMod n`-representation of a finite Galois quotient as a discrete representation of
-`G_F`, by restriction along the canonical quotient map. The body is exposed so the coefficient
-carrier computes to the original module in dependent statements. -/
+`G_F`, by restriction along the canonical quotient map. The body is exposed so the pointwise
+action and morphism equations can use the original algebraic carriers. -/
 @[expose] noncomputable def galRepOfQuotient
     (V : OpenNormalSubgroup (Field.absoluteGaloisGroup F)) :
     Rep (ZMod n) (Field.absoluteGaloisGroup F ⧸ V.toSubgroup) ⥤ GalRep n F :=
