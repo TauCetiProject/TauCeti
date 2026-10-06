@@ -23,9 +23,6 @@ is closed and discrete.
 ## References
 
 * A. Hatcher, *Algebraic Topology*, Appendix, Proposition A.1.
-
-The proofs use Mathlib's `RelCWComplex.closed` and
-`RelCWComplex.cellFrontier_subset_finite_openCell` for weak topology and closure finiteness.
 -/
 
 public section
@@ -41,24 +38,9 @@ variable {X : Type*} [TopologicalSpace X] [T2Space X] {C D S : Set X}
 cell in a finite set. -/
 lemma isClosed_of_finite_inter_openCell (hSC : S ⊆ C) (hSD : Disjoint S D)
     (hS : ∀ n (i : cell C n), (S ∩ openCell n i).Finite) : IsClosed S := by
-  refine (RelCWComplex.closed C S hSC).2 ⟨fun n i ↦ ?_, ?_⟩
-  · obtain ⟨I, hI⟩ := cellFrontier_subset_finite_openCell n i
-    have hfinite : (⋃ (m : Fin n) (j ∈ I m), S ∩ openCell m j).Finite := by
-      apply Set.finite_iUnion
-      intro m
-      exact (I m).finite_toSet.biUnion fun j _ ↦ hS m j
-    apply Set.Finite.isClosed
-    refine (hfinite.union (hS n i)).subset ?_
-    intro x hx
-    rw [← cellFrontier_union_openCell_eq_closedCell] at hx
-    rcases hx.2 with hxF | hxO
-    · rcases hI hxF with hxD | hxF
-      · exact False.elim (Set.disjoint_left.1 hSD hx.1 hxD)
-      · obtain ⟨m, hm, j, hj, hxj⟩ := by simpa only [mem_iUnion, exists_prop] using hxF
-        exact Or.inl (mem_iUnion.2 ⟨⟨m, hm⟩, mem_iUnion.2
-          ⟨j, mem_iUnion.2 ⟨hj, hx.1, hxj⟩⟩⟩)
-    · exact Or.inr ⟨hx.1, hxO⟩
-  · simpa only [Set.disjoint_iff_inter_eq_empty.1 hSD] using isClosed_empty
+  refine isClosed_of_isClosed_inter_openCell_or_isClosed_inter_closedCell hSC ?_
+    (fun n _ i ↦ Or.inl (hS n i).isClosed)
+  simpa only [Set.disjoint_iff_inter_eq_empty.1 hSD] using isClosed_empty
 
 /-- A subset of a relative CW complex disjoint from its base is discrete if it meets each open
 cell in a finite set. -/
@@ -72,7 +54,7 @@ lemma isDiscrete_of_finite_inter_openCell (hSC : S ⊆ C) (hSD : Disjoint S D)
 /-- A compact subset of the ambient space meets only finitely many relative open cells.
 There is no local-finiteness or dimension assumption, and the base is excluded from the cell
 indexing. -/
-theorem finite_cells_inter_isCompact {K : Set X} (hK : IsCompact K) :
+theorem finite_setOf_nonempty_inter_openCell_of_isCompact {K : Set X} (hK : IsCompact K) :
     {a : Σ n, cell C n | (K ∩ openCell a.1 a.2).Nonempty}.Finite := by
   classical
   let A := {a : Σ n, cell C n | (K ∩ openCell a.1 a.2).Nonempty}
@@ -114,19 +96,19 @@ theorem finite_cells_inter_isCompact {K : Set X} (hK : IsCompact K) :
 /-- Every compact subset of a relative CW complex is contained in a skeleton of finite
 relative dimension. The skeleton contains the entire base, so no restriction on the base is
 needed. -/
-theorem exists_subset_skeleton_of_isCompact {K : Set X} (hK : IsCompact K) (hKC : K ⊆ C) :
-    ∃ n : ℕ, K ⊆ (skeleton C (n : ℕ∞) : Set X) := by
+theorem exists_subset_skeletonLT_of_isCompact {K : Set X} (hK : IsCompact K) (hKC : K ⊆ C) :
+    ∃ n : ℕ, K ⊆ (skeletonLT C (n : ℕ∞) : Set X) := by
   classical
   let A := {a : Σ n, cell C n | (K ∩ openCell a.1 a.2).Nonempty}
-  have hA : A.Finite := finite_cells_inter_isCompact (C := C) hK
-  refine ⟨hA.toFinset.sup Sigma.fst, fun x hx ↦ ?_⟩
+  have hA : A.Finite := finite_setOf_nonempty_inter_openCell_of_isCompact (C := C) hK
+  refine ⟨hA.toFinset.sup Sigma.fst + 1, fun x hx ↦ ?_⟩
   have hxC := hKC hx
   rw [← union_iUnion_openCell_eq_complex (C := C)] at hxC
   rcases hxC with hxD | hxC
-  · exact (skeleton C _).base_subset hxD
+  · exact (skeletonLT C _).base_subset hxD
   · obtain ⟨m, i, hxi⟩ := by simpa only [mem_iUnion] using hxC
-    refine mem_skeleton_iff.2 (Or.inr ⟨m, ?_, i, hxi⟩)
+    refine mem_skeletonLT_iff.2 (Or.inr ⟨m, ?_, i, hxi⟩)
     have hmem : (⟨m, i⟩ : Σ n, cell C n) ∈ hA.toFinset := hA.mem_toFinset.2 ⟨x, hx, hxi⟩
-    exact_mod_cast Finset.le_sup (f := Sigma.fst) hmem
+    exact_mod_cast Nat.lt_succ_of_le (Finset.le_sup (f := Sigma.fst) hmem)
 
 end TauCeti
