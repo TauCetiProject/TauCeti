@@ -291,9 +291,10 @@ private theorem evalInverseCommShiftIso_one_hom_app_f_zero (e : C ≌ C) (X : C)
   let : (IntSequence.eval (e := e)).inv.CommShift ℤ :=
     (IntSequence.eval (e := e)).asEquivalence.commShiftInverse ℤ
   let : (IntSequence.eval (e := e)).asEquivalence.inverse.CommShift ℤ :=
-    (IntSequence.eval (e := e)).asEquivalence.commShiftInverse ℤ
+    inferInstanceAs ((IntSequence.eval (e := e)).inv.CommShift ℤ)
   let := (IntSequence.eval (e := e)).asEquivalence.commShift_of_functor ℤ
-  let : (IntSequence.eval (e := e)).CommShift ℤ := e.evalCommShift
+  let : (IntSequence.eval (e := e)).CommShift ℤ :=
+    inferInstanceAs ((IntSequence.eval (e := e)).asEquivalence.functor.CommShift ℤ)
   let U := (IntSequence.eval (e := e)).inv
   let c := (IntSequence.eval (e := e)).asEquivalence.counitIso
   dsimp only []
@@ -344,7 +345,7 @@ theorem commShiftOfIntertwiningToShift_iso_one (e : C ≌ C) (F : C ⥤ D)
   let : (IntSequence.eval (e := e)).inv.CommShift ℤ :=
     (IntSequence.eval (e := e)).asEquivalence.commShiftInverse ℤ
   let : (IntSequence.eval (e := e)).asEquivalence.inverse.CommShift ℤ :=
-    (IntSequence.eval (e := e)).asEquivalence.commShiftInverse ℤ
+    inferInstanceAs ((IntSequence.eval (e := e)).inv.CommShift ℤ)
   let := (IntSequence.eval (e := e)).asEquivalence.commShift_of_functor ℤ
   let : (IntSequence.mapFunctor (e' := shiftEquiv D (1 : ℤ)) α).CommShift ℤ :=
     IntSequence.mapFunctorCommShift (e' := shiftEquiv D (1 : ℤ)) α

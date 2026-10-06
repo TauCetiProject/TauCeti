@@ -104,6 +104,8 @@ noncomputable def sequenceFunctorShiftIso (k : ℤ) :
       simp only [IntSequence.comp_f]
       dsimp only [Functor.comp_obj, Functor.comp_map, sequenceFunctor,
         IntSequence.shiftFunctor_eq_reindex, IntSequence.reindex, IntSequence.comap]
+      -- The component endpoints use the reindexed sequence; `erw` unfolds its shift functor
+      -- to identify them with the explicit `(n + k)` shifts in `intSequenceIsoMk`.
       erw [intSequenceIsoMk_hom_f, intSequenceIsoMk_hom_f]
       exact (shiftFunctorAdd' C k n (n + k) (add_comm _ _)).inv.naturality f)
 
@@ -114,8 +116,7 @@ theorem sequenceFunctorShiftIso_hom_app_f (k : ℤ) (X : C) (n : ℤ) :
       (shiftFunctorAdd' C k n (n + k) (add_comm _ _)).inv.app X := by
   unfold sequenceFunctorShiftIso
   dsimp only [NatIso.ofComponents_hom_app]
-  erw [intSequenceIsoMk_hom_f]
-  rfl
+  exact intSequenceIsoMk_hom_f _ _ _
 
 /-- The inverse shift comparison in degree `n` is the addition constraint. -/
 @[simp]
@@ -124,8 +125,7 @@ theorem sequenceFunctorShiftIso_inv_app_f (k : ℤ) (X : C) (n : ℤ) :
       (shiftFunctorAdd' C k n (n + k) (add_comm _ _)).hom.app X := by
   unfold sequenceFunctorShiftIso
   dsimp only [NatIso.ofComponents_inv_app]
-  erw [intSequenceIsoMk_inv_f]
-  rfl
+  exact intSequenceIsoMk_inv_f _ _ _
 
 /-- Forming the sequence of shifts commutes coherently with the integral shift. -/
 noncomputable instance sequenceFunctorCommShift : (sequenceFunctor C).CommShift ℤ where

@@ -23,7 +23,8 @@ zero gives integer indexing.
 
 `homotopyCategory_mem_distTriang_iff` characterizes distinguished triangles as images of
 standard stable triangles of componentwise split conflations, up to isomorphism.
-`homotopyCategory_mk_distinguished_of_conflation` supplies the corresponding introduction rule.
+`homotopyCategory_map_stableConflationTriangle_mem_distTriang` supplies the corresponding
+introduction rule.
 
 The transport follows `TauCeti.CommutativeAlgebra.MatrixFactorization.Triangulated`, using
 Mathlib's localization at isomorphisms.
@@ -81,7 +82,7 @@ instance homotopyCategoryIsTriangulated :
 
 /-- The image of the standard stable triangle of a componentwise split conflation is
 distinguished in the periodic homotopy category. -/
-theorem homotopyCategory_mk_distinguished_of_conflation
+theorem homotopyCategory_map_stableConflationTriangle_mem_distTriang
     (S : ShortComplex (CochainComplex C (ZMod n))) (hS : (E).Conflation S) :
     letI := (hE).stableHasShift
     letI := stableToHomotopyCommShift C n
