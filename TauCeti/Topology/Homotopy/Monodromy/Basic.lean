@@ -104,6 +104,14 @@ theorem coveringFiberEquiv_apply (hp : IsCoveringMap p) {x y : X}
     coveringFiberEquiv hp γ e = hp.monodromy γ e :=
   Equiv.ofBijective_apply _ _ _
 
+/-- The inverse of monodromy along `γ` is monodromy along the reversed class `γ.symm`. -/
+@[simp]
+theorem coveringFiberEquiv_symm_apply (hp : IsCoveringMap p) {x y : X}
+    (γ : Path.Homotopic.Quotient x y) (e : ↥(p ⁻¹' {y})) :
+    (coveringFiberEquiv hp γ).symm e = hp.monodromy γ.symm e := by
+  rw [Equiv.symm_apply_eq, coveringFiberEquiv_apply, ← hp.monodromy_trans_apply,
+    Path.Homotopic.Quotient.symm_trans, hp.monodromy_refl, id]
+
 /-- The permutation representation of the monodromy action of `π₁(X, x)` on the fibre over `x`
 is Mathlib's monodromy homomorphism `IsCoveringMap.monodromyPerm`, which is defined as it. -/
 theorem _root_.IsCoveringMap.toPermHom_eq_monodromyPerm (hp : IsCoveringMap p) (x : X) :
