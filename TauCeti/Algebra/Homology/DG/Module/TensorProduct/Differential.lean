@@ -118,7 +118,7 @@ theorem differential_tmul_of_mem (hM : IsDGRightModule hA ℳ dM)
 
 /-- The differential on the balanced tensor product squares to zero. -/
 @[simp]
-theorem differential_sq (hM : IsDGRightModule hA ℳ dM)
+theorem differential_comp_self (hM : IsDGRightModule hA ℳ dM)
     (hN : IsDGLeftModule hA ℳN dN) :
     differential hM hN ∘ₗ differential hM hN = 0 := by
   apply hom_ext
@@ -141,7 +141,7 @@ theorem differential_sq (hM : IsDGRightModule hA ℳ dM)
 @[simp]
 theorem differential_sq_zero (hM : IsDGRightModule hA ℳ dM) (hN : IsDGLeftModule hA ℳN dN)
     (z : BalancedTensorProduct R A M N) : differential hM hN (differential hM hN z) = 0 :=
-  LinearMap.congr_fun (differential_sq hM hN) z
+  LinearMap.congr_fun (differential_comp_self hM hN) z
 
 section Naturality
 
