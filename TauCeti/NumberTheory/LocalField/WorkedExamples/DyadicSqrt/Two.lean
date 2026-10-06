@@ -135,9 +135,6 @@ theorem finrank_eq_two : Module.finrank ℚ_[2] DyadicSqrtTwo = 2 := by
 
 instance : Algebra.IsQuadraticExtension ℚ_[2] DyadicSqrtTwo := ⟨finrank_eq_two⟩
 
-instance : IsGalois ℚ_[2] DyadicSqrtTwo :=
-  Algebra.IsQuadraticExtension.isGalois ℚ_[2] DyadicSqrtTwo
-
 private theorem integral_sqrtTwo : IsIntegral 𝒪[ℚ_[2]] sqrtTwo :=
   ⟨X ^ 2 - C 2, by monicity!, by simp [map_ofNat]⟩
 

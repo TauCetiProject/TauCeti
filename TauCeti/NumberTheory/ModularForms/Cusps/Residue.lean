@@ -77,13 +77,6 @@ theorem constantTermAtCuspTranslationOrbit_mk (f : F)
   rw [constantTermAtCuspTranslationOrbit_def, ← heq]
   exact valueAtInfty_quotientFunc_TSL_zpow_smul f q j
 
-/-- At the orbit representing infinity, the constant term is the value at infinity of `f`. -/
-theorem constantTermAtCuspTranslationOrbit_mk_one (f : F) :
-    constantTermAtCuspTranslationOrbit f
-        (⟦(QuotientGroup.mk 1 : 𝒮ℒ ⧸ 𝒢.subgroupOf 𝒮ℒ)⟧ : CuspTranslationOrbit 𝒢) =
-      valueAtInfty f := by
-  simp [constantTermAtCuspTranslationOrbit_mk]
-
 /-- The constant term is the zeroth coefficient in the orbit's own width parameter. -/
 theorem constantTermAtCuspTranslationOrbit_eq_qExpansion_coeff_zero (f : F)
     (c : CuspTranslationOrbit 𝒢) :
