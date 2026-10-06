@@ -145,7 +145,6 @@ numbering with the customary offset, so `tᵢ` is index `i - 1`. -/
 def branchNode : Fin 11 := 4
 
 /-- The branch node is index four, corresponding to the source's `t₅`. -/
-@[simp]
 theorem branchNode_def : branchNode = 4 := (rfl)
 
 /-- The three arms of the diagram, each listed outwards from the branch node: `t₄ t₃ t₂ t₁`, then
@@ -153,7 +152,6 @@ theorem branchNode_def : branchNode = 4 := (rfl)
 def arms : List (List (Fin 11)) := [[3, 2, 1, 0], [5, 6, 7], [8, 9, 10]]
 
 /-- The three arms, spelled out in the numbered alphabet. -/
-@[simp]
 theorem arms_def : arms = [[3, 2, 1, 0], [5, 6, 7], [8, 9, 10]] := (rfl)
 
 /-- **The three arms have lengths four, three and three**, which is what the name `Y₄₃₃`
@@ -335,14 +333,6 @@ this equation is the one field projection that is not read off it, because
 @[simp]
 theorem presentation_transcribed : presentation.transcribed = relatorList := rfl
 
-/-- **The relators of the row are the Coxeter relators of the `Y₄₃₃` diagram followed by the three
-adjoined relators.** This is the form in which the source states the presentation, and the
-hypothesis that `TauCeti.Sporadic.BabyMonster.mulEquivPresentedGroupCoxeterAppend` below
-consumes. -/
-theorem presentation_transcribed_append :
-    presentation.transcribed = coxeterRelators coxeterMatrix ++ adjoinedRelators := by
-  rw [presentation_transcribed, relatorList_def]
-
 /-- **The transcribed presentation has sixty-nine relators**, the `(11 + 1).choose 2 = 66` Coxeter
 relators of a diagram on eleven nodes together with the three adjoined relators. -/
 theorem length_relatorList : relatorList.length = 69 := by
@@ -445,7 +435,8 @@ def mulEquivPresentedGroupCoxeterAppend :
     presentation.Group ≃*
       PresentedGroup (coxeterMatrix.relationsSet ∪ Relator.relatorSet adjoinedRelators) :=
   presentation.mulEquivPresentedGroupCoxeterAppend coxeterMatrix adjoinedRelators
-    (congrArg Subgroup.normalClosure (congrArg Relator.relatorSet presentation_transcribed_append))
+    (congrArg Subgroup.normalClosure
+      (congrArg Relator.relatorSet (presentation_transcribed.trans relatorList_def)))
 
 /-- The Coxeter equivalence sends each canonical generator to the corresponding canonical
 generator. -/
@@ -454,6 +445,6 @@ theorem mulEquivPresentedGroupCoxeterAppend_apply_of (i : Fin presentation.gener
     mulEquivPresentedGroupCoxeterAppend (PresentedGroup.of i) = PresentedGroup.of i :=
   GroupPresentation.mulEquivPresentedGroupCoxeterAppend_apply_of _ _ _
     (congrArg Subgroup.normalClosure
-      (congrArg Relator.relatorSet presentation_transcribed_append)) i
+      (congrArg Relator.relatorSet (presentation_transcribed.trans relatorList_def))) i
 
 end TauCeti.Sporadic.BabyMonster

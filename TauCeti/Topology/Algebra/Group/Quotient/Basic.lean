@@ -26,6 +26,8 @@ Generic facts about quotients by subgroups of topological groups. Most results u
 * `TauCeti.quotientOpenSubgroup`: the image of an open subgroup of `G` in `G ⧸ N`, as an open
   subgroup.
 * `TauCeti.quotientOpenSubgroupMap`: the quotient homomorphism restricted to an open subgroup.
+* `TauCeti.quotientSubgroupOfEquivMap`: for an open normal subgroup `V`, the quotient
+  `W ⧸ V.subgroupOf W` is isomorphic, as a topological group, to the image of `W` in `G ⧸ V`.
 
 ## Main results
 
@@ -237,5 +239,33 @@ theorem continuous_quotientOpenSubgroupMap (U : OpenSubgroup G) :
   continuous_induced_rng.2 (QuotientGroup.continuous_mk.comp continuous_subtype_val)
 
 end OpenSubgroup
+
+section SubgroupOf
+
+variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+
+/-- For an open normal subgroup `V` and any subgroup `W` of `G`, the quotient `W ⧸ V.subgroupOf W`
+is isomorphic, as a topological group, to the image `W.map (mk' V)` of `W` in `G ⧸ V`. This is
+Noether's first isomorphism theorem for the composite `W → G → G ⧸ V`, whose kernel is
+`V.subgroupOf W`; both groups are discrete because `V` is open. -/
+noncomputable def quotientSubgroupOfEquivMap (V W : Subgroup G) [V.Normal]
+    (hV : IsOpen (V : Set G)) : W ⧸ V.subgroupOf W ≃ₜ* W.map (QuotientGroup.mk' V) :=
+  haveI : DiscreteTopology (G ⧸ V) := QuotientGroup.discreteTopology hV
+  haveI : DiscreteTopology (W ⧸ V.subgroupOf W) :=
+    QuotientGroup.discreteTopology (W.subgroupOf_isOpen V hV)
+  { QuotientGroup.liftEquiv (V.subgroupOf W) ((QuotientGroup.mk' V).subgroupMap_surjective W)
+      (by rw [Subgroup.ker_subgroupMap, QuotientGroup.ker_mk']) with
+    continuous_toFun := continuous_of_discreteTopology
+    continuous_invFun := continuous_of_discreteTopology }
+
+/-- `quotientSubgroupOfEquivMap` sends the class of `w : W` to the class of `w` in `G ⧸ V`. -/
+@[simp]
+theorem coe_quotientSubgroupOfEquivMap_mk (V W : Subgroup G) [V.Normal]
+    (hV : IsOpen (V : Set G)) (w : W) :
+    ((quotientSubgroupOfEquivMap V W hV (w : W ⧸ V.subgroupOf W) : W.map (QuotientGroup.mk' V)) :
+      G ⧸ V) = ((w : G) : G ⧸ V) :=
+  (rfl)
+
+end SubgroupOf
 
 end TauCeti

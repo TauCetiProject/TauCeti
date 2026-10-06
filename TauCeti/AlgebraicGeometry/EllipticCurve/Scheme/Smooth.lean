@@ -7,7 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Smooth
 public import Mathlib.RingTheory.LocalRing.ResidueField.Ideal
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.Chart
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.Chart.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.Nonsingular
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.ProjModel
 public import TauCeti.RingTheory.Smooth.Jacobian

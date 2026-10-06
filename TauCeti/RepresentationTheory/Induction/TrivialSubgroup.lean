@@ -191,7 +191,7 @@ theorem coindBotMap_comp {A B C : Rep k G} (f : A ⟶ B) (g : B ⟶ C) :
 @[simp]
 theorem coindBotMap_hom_apply_coe {A B : Rep k G} (f : A ⟶ B)
     (x : coindBot k G A.V) (g : G) :
-    ((coindBotMap f).hom x).1 g = f.hom (x.1 g) :=
+    (dsimp% only (((coindBotMap f).hom x).1 g)) = f.hom (x.1 g) :=
   coindBotFunctor_map_hom_apply_coe ((forget₂ (Rep k G) (ModuleCat k)).map f) x g
 
 /-- The embedding into a coinduced representation is natural in the representation. -/
@@ -307,8 +307,9 @@ variable (k G) in
 theorem indBotFunctor_obj (X : ModuleCat.{u} k) : (indBotFunctor k G).obj X = indBot k G X :=
   (rfl)
 
--- The generator-evaluation lemmas below are not simp lemmas: their `IndV.mk` arguments unfold
--- under simp, so `@[simp]` would violate the `simpNF` linter.
+-- The generator-evaluation lemmas below are not `@[simp]`: their `IndV.mk` arguments unfold under
+-- simp, so `@[simp]` would violate the `simpNF` linter. `indBotCounit_hom_mk` is a pre-simp lemma
+-- (`@[simp↓]`) instead, which fires before the argument unfolds.
 /-- The induction functor from the trivial subgroup acts on generators through the morphism:
 `⟦g ⊗ₜ x⟧ ↦ ⟦g ⊗ₜ f x⟧`. -/
 theorem indBotFunctor_map_hom_mk {X Y : ModuleCat.{u} k} (f : X ⟶ Y) (g : G) (x : X) :
@@ -337,6 +338,7 @@ def indBotCounit (A : Rep k G) : indBot k G A.V ⟶ A :=
     (resBotIsoTrivial A).inv
 
 /-- The projection from the induced representation on generators: `⟦g ⊗ₜ a⟧ ↦ A.ρ g⁻¹ a`. -/
+@[simp↓]
 theorem indBotCounit_hom_mk (A : Rep k G) (g : G) (a : A) :
     (indBotCounit A).hom
         (IndV.mk (⊥ : Subgroup G).subtype (Representation.trivial k (⊥ : Subgroup G) A.V) g a) =

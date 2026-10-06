@@ -32,6 +32,16 @@ the morphism `Spec R ⟶ D₊(f) ⊆ Proj A` given by the "homogeneous coordinat
   graded ring homomorphism.
 * `HomogeneousLocalization.Away.lift_eq_of_forall_mem`: rescaling the homogeneous coordinates,
   so that `ψ a = cⁿ φ a` on the degree-`n` part, does not change `lift`.
+* `HomogeneousLocalization.isReduced`: a homogeneous localization is reduced whenever the
+  corresponding localization is, in particular for any reduced graded ring.
+
+## Provenance
+
+`HomogeneousLocalization.isReduced` is adapted from AINTLIB (`github.com/CBirkbeck/AINTLIB`,
+Apache-2.0) at commit `c3415f32a313e19ace43e05479aeaa0d56ca287a`, file
+`projects/ModularCurves/ModularCurves/ForMathlib/ProjIntegral.lean`, declaration
+`AlgebraicGeometry.Proj.isReduced_away`, which treats `Away 𝒜 f` for an `ℕ`-graded domain; here
+the localization is at any submonoid and only its reducedness is assumed.
 -/
 
 public section
@@ -108,5 +118,12 @@ theorem Away.lift_eq_of_forall_mem {𝒜 : ℕ → σ} [GradedRing 𝒜] (φ ψ 
     Units.inv_mul_eq_iff_eq_mul]
   simp only [Units.val_pow_eq_pow_val, IsUnit.unit_spec, h _ _ ha, h _ _ hfd, smul_eq_mul]
   ring
+
+variable (𝒜) in
+/-- A homogeneous localization at `x` is reduced whenever the localization at `x` is reduced; in
+particular, it is reduced whenever the graded ring is. -/
+instance isReduced (x : Submonoid A) [IsReduced (Localization x)] :
+    IsReduced (HomogeneousLocalization 𝒜 x) :=
+  isReduced_of_injective (algebraMap _ (Localization x)) (val_injective x)
 
 end HomogeneousLocalization

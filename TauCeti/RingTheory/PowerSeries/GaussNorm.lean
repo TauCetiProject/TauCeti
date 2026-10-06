@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Group.InfiniteSum
 public import Mathlib.RingTheory.PowerSeries.GaussNorm
-public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra
+public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Basic
 public import Mathlib.RingTheory.PowerSeries.Trunc
 public import Mathlib.RingTheory.Valuation.Basic
 public import TauCeti.RingTheory.PowerSeries.Restricted

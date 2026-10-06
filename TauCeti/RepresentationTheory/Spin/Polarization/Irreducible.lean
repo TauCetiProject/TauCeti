@@ -36,9 +36,12 @@ counterparts, and are what identifies the spin modules as irreducible highest we
 their highest weight vectors are known. Nothing here needs the base field to be algebraically or
 separably closed: only `2` has to be invertible.
 
-As there, the invariant-subspace statements are in lattice form. `S⁻` is zero when `W = ⊥`, which
-the dichotomy allows; combine it with `TauCeti.nontrivial_spinMinus`, whose hypothesis `P.W ≠ ⊥`
-rules this out, for simplicity. `S` and `S⁺` always contain the scalars, so need no such hypothesis.
+The invariant-subspace statements are first proved in lattice form. They are then packaged as
+`LieModule.IsIrreducible` propositions for the type-`D` half-spin actions, so highest-weight
+uniqueness can consume them directly. `S⁻` is zero when `W = ⊥`, which the lattice dichotomy
+allows; its packaged theorem therefore assumes `P.W ≠ ⊥`, exactly as
+`TauCeti.nontrivial_spinMinus` does. `S` and `S⁺` always contain the scalars, so need no such
+hypothesis.
 
 ## Main results
 
@@ -54,6 +57,9 @@ rules this out, for simplicity. `S` and `S⁺` always contain the scalars, so ne
 * `TauCeti.SpinPolarizationData.eq_bot_or_eq_top_of_map_typeDSpinMinusLieRep_le`: the invariant-
   subspace dichotomy for the odd type-`D` half-spin module `S⁻`, which is therefore irreducible
   when `P.W ≠ ⊥` (`TauCeti.nontrivial_spinMinus`).
+* `TauCeti.SpinPolarizationData.isIrreducible_typeDSpinPlusLieRep` and
+  `TauCeti.SpinPolarizationData.isIrreducible_typeDSpinMinusLieRep`: the two dichotomies packaged
+  as irreducible Lie modules for their respective half-spin actions.
 
 ## References
 
@@ -172,6 +178,55 @@ theorem eq_bot_or_eq_top_of_map_typeDSpinMinusLieRep_le (hline : P.line = ⊥)
     (P.adjoin_range_typeDSpinMinusLieRep_eq_top b hline) <| by
     rintro _ ⟨x, rfl⟩
     exact (Module.End.mem_invtSubmodule_iff_map_le _).2 (hN x)
+
+/-- **The even type-`D` half-spin Lie module is irreducible.** The action is pulled back along
+`P.typeDSpinPlusLieRep b hline`; the even half-spin space is always nonzero because it contains
+the scalar vector. -/
+theorem isIrreducible_typeDSpinPlusLieRep (hline : P.line = ⊥) :
+    letI : LieRingModule (LieAlgebra.Orthogonal.typeD ι K) (spinPlus Q P) :=
+      LieRingModule.compLieHom _ (P.typeDSpinPlusLieRep b hline)
+    letI : LieModule K (LieAlgebra.Orthogonal.typeD ι K) (spinPlus Q P) :=
+      LieModule.compLieHom _ (P.typeDSpinPlusLieRep b hline)
+    LieModule.IsIrreducible K (LieAlgebra.Orthogonal.typeD ι K) (spinPlus Q P) := by
+  let _ : LieRingModule (LieAlgebra.Orthogonal.typeD ι K) (spinPlus Q P) :=
+    LieRingModule.compLieHom _ (P.typeDSpinPlusLieRep b hline)
+  let _ : LieModule K (LieAlgebra.Orthogonal.typeD ι K) (spinPlus Q P) :=
+    LieModule.compLieHom _ (P.typeDSpinPlusLieRep b hline)
+  let _ : Nontrivial (spinPlus Q P) := nontrivial_spinPlus P
+  refine LieModule.IsIrreducible.mk fun N hN => ?_
+  rw [← LieSubmodule.toSubmodule_eq_top]
+  refine (P.eq_bot_or_eq_top_of_map_typeDSpinPlusLieRep_le b hline N.toSubmodule ?_).resolve_left ?_
+  · intro x
+    rintro _ ⟨m, hm, rfl⟩
+    have hm' := N.lie_mem (x := x) hm
+    rw [LieRingModule.compLieHom_apply, Module.End.lie_apply] at hm'
+    exact (LieSubmodule.mem_carrier (N := N)).mp hm'
+  · exact fun h => hN ((LieSubmodule.toSubmodule_eq_bot N).mp h)
+
+/-- **The odd type-`D` half-spin Lie module is irreducible when it is nonzero.** The action is
+pulled back along `P.typeDSpinMinusLieRep b hline`; the hypothesis `P.W ≠ ⊥` is necessary
+because the odd half-spin space vanishes when the isotropic summand does. -/
+theorem isIrreducible_typeDSpinMinusLieRep (hline : P.line = ⊥) (hW : P.W ≠ ⊥) :
+    letI : LieRingModule (LieAlgebra.Orthogonal.typeD ι K) (spinMinus Q P) :=
+      LieRingModule.compLieHom _ (P.typeDSpinMinusLieRep b hline)
+    letI : LieModule K (LieAlgebra.Orthogonal.typeD ι K) (spinMinus Q P) :=
+      LieModule.compLieHom _ (P.typeDSpinMinusLieRep b hline)
+    LieModule.IsIrreducible K (LieAlgebra.Orthogonal.typeD ι K) (spinMinus Q P) := by
+  let _ : LieRingModule (LieAlgebra.Orthogonal.typeD ι K) (spinMinus Q P) :=
+    LieRingModule.compLieHom _ (P.typeDSpinMinusLieRep b hline)
+  let _ : LieModule K (LieAlgebra.Orthogonal.typeD ι K) (spinMinus Q P) :=
+    LieModule.compLieHom _ (P.typeDSpinMinusLieRep b hline)
+  let _ : Nontrivial (spinMinus Q P) := nontrivial_spinMinus P hW
+  refine LieModule.IsIrreducible.mk fun N hN => ?_
+  rw [← LieSubmodule.toSubmodule_eq_top]
+  refine (P.eq_bot_or_eq_top_of_map_typeDSpinMinusLieRep_le b hline N.toSubmodule ?_).resolve_left
+    ?_
+  · intro x
+    rintro _ ⟨m, hm, rfl⟩
+    have hm' := N.lie_mem (x := x) hm
+    rw [LieRingModule.compLieHom_apply, Module.End.lie_apply] at hm'
+    exact (LieSubmodule.mem_carrier (N := N)).mp hm'
+  · exact fun h => hN ((LieSubmodule.toSubmodule_eq_bot N).mp h)
 
 end TypeD
 

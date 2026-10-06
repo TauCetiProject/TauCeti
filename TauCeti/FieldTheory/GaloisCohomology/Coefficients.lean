@@ -14,6 +14,8 @@ public import TauCeti.FieldTheory.Galois.Restriction
 public import TauCeti.FieldTheory.KrullTopology
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.ShortExact
 public import TauCeti.RingTheory.RootsOfUnity.Action
+-- Non-public: the roots of unity of a separably closed field are used only inside a proof.
+import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 -- Non-public: lifting a unit of `Kˢ` lying in `K` to a unit of `K` is used only inside a proof.
 import TauCeti.Algebra.GroupWithZero.Units.Basic
 
@@ -58,6 +60,8 @@ are strictly larger than `Kˣ`.
 
 * `TauCeti.UnitsCoeff`, `TauCeti.KummerCoeff`: the two coefficient modules, with their discrete
   topologies.
+* `TauCeti.kummerCoeffAddEquivZMod`: an additive isomorphism `μₙ ≃ ℤ/nℤ`, for `n` invertible in
+  `K`.
 * `TauCeti.kummerCoeffIncl`, `TauCeti.unitsCoeffPow`: the inclusion `μₙ ↪ (Kˢ)ˣ` and the `n`-th
   power map, the two maps of the Kummer sequence.
 * `TauCeti.kummerShortExact`: the Kummer sequence as a short exact sequence of discrete
@@ -152,6 +156,18 @@ theorem smul_kummerCoeff_eq_self [NeZero n] {ζ : K} (hζ : IsPrimitiveRoot ζ n
   simp only [Additive.toMul_smul, rootsOfUnity.coe_smul, AlgEquiv.smul_units_def, Units.coe_map,
     MonoidHom.coe_ofClass]
   rw [hx, map_pow, AlgEquiv.commutes]
+
+variable {K n} in
+/-- **`μₙ` is cyclic of order `n`** for `n` invertible in `K`: the `n`th roots of unity of `Kˢ`
+are additively isomorphic to `ℤ/nℤ`. The isomorphism is not canonical; it amounts to a choice of
+primitive `n`th root of unity in `Kˢ`. -/
+def kummerCoeffAddEquivZMod (hn : IsUnit (n : K)) : KummerCoeff K n ≃+ ZMod n :=
+  have : NeZero (n : K) := ⟨hn.ne_zero⟩
+  have : NeZero n := NeZero.of_neZero_natCast K
+  addEquivOfAddCyclicCardEq <| by
+    obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_primitiveRoot (SeparableClosure K) n
+    rw [Nat.card_zmod]
+    exact (Nat.card_congr Additive.toMul).trans hζ.card_rootsOfUnity
 
 /-! ### The two maps of the Kummer sequence -/
 

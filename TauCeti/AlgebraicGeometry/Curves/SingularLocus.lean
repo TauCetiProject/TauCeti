@@ -8,7 +8,7 @@ module
 public import Mathlib.RingTheory.Etale.Kaehler
 public import Mathlib.AlgebraicGeometry.Morphisms.Flat
 public import TauCeti.AlgebraicGeometry.Modules.Differentials.Quasicoherent
-public import TauCeti.AlgebraicGeometry.Modules.FittingIdeal
+public import TauCeti.AlgebraicGeometry.Modules.FittingIdeal.Basic
 public import TauCeti.AlgebraicGeometry.Morphisms.PureRelativeDimension
 public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.StandardSmooth
 public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.PureRelativeDimension

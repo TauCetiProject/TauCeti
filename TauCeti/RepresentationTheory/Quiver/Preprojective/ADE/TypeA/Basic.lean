@@ -228,13 +228,6 @@ end PathGraph
 
 /-! ### The `Aₙ` diagram -/
 
-/-- Two nodes of the `Aₙ` diagram are joined exactly when they are consecutive. -/
-private theorem diagramGraph_A_adj (n : ℕ) (i j : Fin n) :
-    (diagramGraph (DynkinType.A n).cartanMatrix : SimpleGraph (Fin n)).Adj i j ↔
-      (i : ℕ) + 1 = j ∨ (j : ℕ) + 1 = i := by
-  rw [DynkinType.cartanMatrix_A, DynkinType.diagramGraph_cartanMatrix_A,
-    SimpleGraph.pathGraph_adj]
-
 /-- The two-colouring of `Aₙ` by the parity of the node, read from the path graph. -/
 private def aColoring (n : ℕ) : (diagramGraph (DynkinType.A n).cartanMatrix).Coloring Bool := by
   simpa only [DynkinType.rank_A, DynkinType.cartanMatrix_A] using
@@ -246,6 +239,13 @@ section CommRing
 variable (k : Type*) [CommRing k] {n : ℕ}
 
 local notation "AG" => diagramGraph (DynkinType.cartanMatrix (DynkinType.A n))
+
+/-- The signless relation at a type-`A` vertex: the backtracks through its two neighbours
+cancel. A missing neighbour contributes zero, including at the endpoints. -/
+theorem signlessArrow_A_relation (v : ℕ) :
+    signlessArrow k AG (v + 1) v * signlessArrow k AG v (v + 1) +
+      signlessArrow k AG (v - 1) v * signlessArrow k AG v (v - 1) = 0 :=
+  signlessArrow_relation k (fun i j => diagramGraph_A_adj n i j) v
 
 /-- A path from `a` to `b` in the signless algebra of `Aₙ` vanishes when its length exceeds
 `min (a + b) (2(n - 1) - a - b)`. -/
@@ -276,11 +276,9 @@ theorem signlessPreprojectiveMk_A_ofPath_eq_zero_or_ladderValley
       signlessArrow_eq_zero_of_not_consecutive k (n := (DynkinType.A n).rank)
         (G := AG) (fun i j => diagramGraph_A_adj n i j) (by omega)
     simpa only [Nat.zero_add, Nat.sub_self, hzero, zero_mul, add_zero] using
-      signlessArrow_relation k (n := (DynkinType.A n).rank) (G := AG)
-        (fun i j => diagramGraph_A_adj n i j) 0
+      signlessArrow_A_relation k (n := n) 0
   · intro w
-    simpa [add_comm] using signlessArrow_relation k (n := (DynkinType.A n).rank) (G := AG)
-      (fun i j => diagramGraph_A_adj n i j) (w + 1)
+    simpa [add_comm] using signlessArrow_A_relation k (n := n) (w + 1)
   · intro i j hij
     rcases (diagramGraph_A_adj n i j).1 hij with h | h
     · exact .inl ⟨h.symm, by rw [← h]⟩

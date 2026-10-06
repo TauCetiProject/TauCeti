@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 import Mathlib.LinearAlgebra.Matrix.Block
+import TauCeti.GroupTheory.Perm.Inversion
 public import Mathlib.Algebra.Polynomial.OfFn
 public import Mathlib.RingTheory.Polynomial.Resultant.Basic
 public import TauCeti.Algebra.Polynomial.Coeff.Basic
@@ -124,10 +125,9 @@ theorem _root_.Polynomial.subresultantMatrix_map_map [Semiring R] [Semiring S] (
 subresultant matrix. -/
 theorem _root_.Polynomial.subresultantMatrix_comm [Semiring R] (p q : R[X]) (m n j : ℕ) :
     subresultantMatrix p q m n j =
-      (subresultantMatrix q p n m j).reindex (finCongr (add_comm (n - j) (m - j)))
-        (finSumFinEquiv.symm.trans <| (Equiv.sumComm _ _).trans finSumFinEquiv) := by
+      (subresultantMatrix q p n m j).reindex (finCongr (add_comm (n - j) (m - j))) finAddFlip := by
   ext i k
-  induction k using Fin.addCases <;> simp [subresultantMatrix]
+  induction k using Fin.addCases <;> simp [subresultantMatrix, finAddFlip]
 
 /-- A row of coefficients of shifted `q` and `p` reads the coefficient of degree `d` of
 `A * q + B * p`, where the two blocks of `v` are the coefficients of `A` and `B`.
@@ -189,13 +189,8 @@ theorem _root_.Polynomial.psc_map_map [CommRing R] [CommRing S] (f : R →+* S)
 the sign `(-1) ^ ((m - j) * (n - j))`. -/
 theorem _root_.Polynomial.psc_comm [CommRing R] (p q : R[X]) (m n j : ℕ) :
     psc p q m n j = (-1) ^ ((m - j) * (n - j)) * psc q p n m j := by
-  -- The block swap is the Sylvester block swap at bounds `m - j` and `n - j`; read off its sign
-  -- from `resultant_comm` for the pair `X ^ (m - j)`, `1`, whose resultants are units.
-  have hsign := resultant_comm (X ^ (m - j) : ℤ[X]) 1 (m - j) (n - j)
-  rw [resultant, sylvester_comm, Matrix.det_reindex, ← resultant] at hsign
-  simp only [resultant_one_left, coeff_X_pow_self, one_pow, mul_one] at hsign
-  rw [Int.cast_id, mul_left_inj' (pow_ne_zero _ (neg_ne_zero.mpr one_ne_zero))] at hsign
-  rw [psc_def, psc_def, subresultantMatrix_comm, Matrix.det_reindex, hsign]
+  rw [psc_def, psc_def, subresultantMatrix_comm, Matrix.det_reindex, finCongr_symm,
+    sign_finAddFlip_trans_finCongr, mul_comm (n - j)]
   simp
 
 /-- Scaling the left polynomial by a constant `r` scales its `n - j` columns, hence the principal
