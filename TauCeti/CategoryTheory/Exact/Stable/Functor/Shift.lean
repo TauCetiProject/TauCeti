@@ -49,11 +49,13 @@ noncomputable def stableFunctorCommShift (hF : StableConflationExact E E' F)
     (hE : E.IsFrobenius) (hE' : E'.IsFrobenius) :
     letI := hE.stableHasShift
     letI := hE'.stableHasShift
-    (hF.stableFunctor hE).CommShift ℤ :=
-  hE.commShiftOfStableSuspension hE' (hF.stableFunctor hE)
-    (CategoryTheory.Functor.commShiftOfIntertwining
-      (hF.stableFunctor hE) hE.stableSuspension.asEquivalence
-      hE'.stableSuspension.asEquivalence (hF.stableSuspensionCompStableFunctorIso hE hE'))
+    (hF.stableFunctor hE).CommShift ℤ := by
+  letI := hE'.stableHasShift
+  exact hE.commShiftOfSuspensionShift (hF.stableFunctor hE)
+    (Shift.commShiftOfIntertwiningToShift _ hE.stableSuspension.asEquivalence
+      (hF.stableFunctor hE)
+      (hF.stableSuspensionCompStableFunctorIso hE hE' ≪≫
+        Functor.isoWhiskerLeft (hF.stableFunctor hE) hE'.stableShiftFunctorOneIso.symm))
 
 /-- In degree one, stable-functor shift compatibility is the suspension comparison used to
 construct it. -/
@@ -67,7 +69,13 @@ theorem stableFunctorCommShift_iso_one (hF : StableConflationExact E E' F)
         hF.stableSuspensionCompStableFunctorIso hE hE' ≪≫
           Functor.isoWhiskerLeft (hF.stableFunctor hE)
             hE'.stableShiftFunctorOneIso.symm := by
-  exact hE.commShiftOfStableSuspension_iso_one hE' (hF.stableFunctor hE)
-    (hF.stableSuspensionCompStableFunctorIso hE hE')
+  let := hE'.stableHasShift
+  exact hE.commShiftOfSuspensionShift_iso_one (hF.stableFunctor hE) _
+    (hF.stableSuspensionCompStableFunctorIso hE hE' ≪≫
+      Functor.isoWhiskerLeft (hF.stableFunctor hE) hE'.stableShiftFunctorOneIso.symm)
+    (Shift.commShiftOfIntertwiningToShift_iso_one _ hE.stableSuspension.asEquivalence
+      (hF.stableFunctor hE)
+      (hF.stableSuspensionCompStableFunctorIso hE hE' ≪≫
+        Functor.isoWhiskerLeft (hF.stableFunctor hE) hE'.stableShiftFunctorOneIso.symm))
 
 end TauCeti.StableConflationExact

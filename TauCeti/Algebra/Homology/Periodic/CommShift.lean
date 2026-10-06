@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Homology.Periodic.Suspension
 public import TauCeti.CategoryTheory.Exact.Stable.Shift
-public import TauCeti.CategoryTheory.Shift.Sequence
 
 /-!
 # The periodic stable comparison commutes with integral shifts

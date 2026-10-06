@@ -165,7 +165,7 @@ private noncomputable def evalIsoSequenceInverse :
 
 /-- Evaluation of shift sequences commutes with the already installed shift on the category. -/
 @[instance_reducible]
-noncomputable def evalCommShift :
+noncomputable def evalCommShiftOfHasShift :
     (IntSequence.eval (e := shiftEquiv C (1 : ℤ))).CommShift ℤ := by
   letI : (sequenceFunctor C).asEquivalence.functor.CommShift ℤ :=
     inferInstanceAs ((sequenceFunctor C).CommShift ℤ)
@@ -175,14 +175,14 @@ noncomputable def evalCommShift :
 
 /-- The counit of the canonical sequence/evaluation comparison respects integral shifts. -/
 theorem sequenceFunctorCompEvalIso_commShift :
-    let := evalCommShift C
+    let := evalCommShiftOfHasShift C
     NatTrans.CommShift (sequenceFunctorCompEvalIso C).hom ℤ := by
   let : (sequenceFunctor C).asEquivalence.functor.CommShift ℤ :=
     inferInstanceAs ((sequenceFunctor C).CommShift ℤ)
   let : (sequenceFunctor C).inv.CommShift ℤ :=
     (sequenceFunctor C).asEquivalence.commShiftInverse ℤ
   let := (sequenceFunctor C).asEquivalence.commShift_of_functor ℤ
-  let := evalCommShift C
+  let := evalCommShiftOfHasShift C
   have : NatTrans.CommShift (evalIsoSequenceInverse C).hom ℤ := by
     have := Functor.CommShift.ofIso_compatibility (evalIsoSequenceInverse C).symm ℤ
     exact NatTrans.CommShift.of_iso_symm (evalIsoSequenceInverse C).symm ℤ
@@ -217,11 +217,11 @@ theorem sequenceFunctorCompEvalIso_commShift :
   infer_instance
 
 /-- Evaluation's degree-one comparison is the sequence's own linking isomorphism. -/
-theorem evalCommShift_iso_one :
-    letI := evalCommShift C
+theorem evalCommShiftOfHasShift_iso_one :
+    letI := evalCommShiftOfHasShift C
     (IntSequence.eval (e := shiftEquiv C (1 : ℤ))).commShiftIso (1 : ℤ) =
       IntSequence.reindexOneCompEvalIso := by
-  let := evalCommShift C
+  let := evalCommShiftOfHasShift C
   have := sequenceFunctorCompEvalIso_commShift C
   apply Iso.ext
   apply ((whiskeringLeft C (IntSequence (shiftEquiv C (1 : ℤ))) C).obj
@@ -281,7 +281,7 @@ noncomputable def commShiftOfIntertwiningToShift (e : C ≌ C) (F : C ⥤ D)
     (IntSequence.eval (e := e)).asEquivalence.commShiftInverse ℤ
   letI : (IntSequence.mapFunctor (e' := shiftEquiv D (1 : ℤ)) α).CommShift ℤ :=
     IntSequence.mapFunctorCommShift (e' := shiftEquiv D (1 : ℤ)) α
-  letI := evalCommShift D
+  letI := evalCommShiftOfHasShift D
   exact Functor.CommShift.ofIso (intertwiningComparison C e F α) ℤ
 
 /-- In degree one, the coherent comparison recovers the supplied intertwining isomorphism,
@@ -300,7 +300,7 @@ theorem commShiftOfIntertwiningToShift_iso_one (e : C ≌ C) (F : C ⥤ D)
   let := (IntSequence.eval (e := e)).asEquivalence.commShift_of_functor ℤ
   let : (IntSequence.mapFunctor (e' := shiftEquiv D (1 : ℤ)) α).CommShift ℤ :=
     IntSequence.mapFunctorCommShift (e' := shiftEquiv D (1 : ℤ)) α
-  let := evalCommShift D
+  let := evalCommShiftOfHasShift D
   let := commShiftOfIntertwiningToShift C e F α
   apply Iso.ext
   ext X
@@ -336,7 +336,7 @@ theorem commShiftOfIntertwiningToShift_iso_one (e : C ≌ C) (F : C ⥤ D)
   change ((Functor.CommShift.ofIso (intertwiningComparison C e F α') ℤ).commShiftIso
     (1 : ℤ)).hom.app X = _
   rw [Functor.CommShift.ofIso_commShiftIso_hom_app]
-  simp only [Functor.commShiftIso_comp_hom_app, evalCommShift_iso_one,
+  simp only [Functor.commShiftIso_comp_hom_app, evalCommShiftOfHasShift_iso_one,
     IntSequence.eval_map, IntSequence.reindexOneCompEvalIso_hom_app]
   rw [mapFunctor_commShiftIso]
   simp only [IntSequence.mapFunctorShiftIso_hom_app_f]
