@@ -217,8 +217,17 @@ theorem signlessPreprojectiveAValley_mul_eq_zero_of_ne
   have he : e f * e b = 0 := by
     rw [← map_mul, vertexIdempotent_mul_vertexIdempotent_of_ne
       (fun hfb => h (vertex_injective AG hfb).symm), map_zero]
-  rw [signlessPreprojectiveAValley_def, signlessPreprojectiveAValley_def]
-  simp only [mul_assoc]
-  rw [← mul_assoc (e f), he, zero_mul, mul_zero, mul_zero]
+  have hid (i : Fin (DynkinType.A n).rank) : IsIdempotentElem (e i) :=
+    IsIdempotentElem.map (vertexIdempotent_mul_self (k := k) (vertex AG i)) π
+  have hsource := mul_eq_self_of_mem_cornerSubmodule_right (hid f)
+    (signlessPreprojectiveAValley_mem_cornerSubmodule k f c l)
+  have htarget := mul_eq_self_of_mem_cornerSubmodule (hid b)
+    (signlessPreprojectiveAValley_mem_cornerSubmodule k a b m)
+  calc
+    _ = (signlessPreprojectiveAValley k f c l * e f) *
+        (e b * signlessPreprojectiveAValley k a b m) := by rw [hsource, htarget]
+    _ = signlessPreprojectiveAValley k f c l * (e f * e b) *
+        signlessPreprojectiveAValley k a b m := by simp only [mul_assoc]
+    _ = 0 := by rw [he, mul_zero, zero_mul]
 
 end TauCeti
