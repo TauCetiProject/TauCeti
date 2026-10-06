@@ -138,27 +138,12 @@ theorem semisimpleCommHopfAlgProperty_of_geometricFiber_iso
         (CommHopfAlgCat.quotient G I) →
       I = HopfIdeal.augmentation (AlgebraicClosure k) G) :
     semisimpleCommHopfAlgProperty k H := by
-  rw [semisimpleCommHopfAlgProperty_iff]
-  refine ⟨hsmooth, hconnected, ?_⟩
-  intro I hI hconn hsm hsolv
-  let f : G →ₐc[AlgebraicClosure k]
-      FiniteTypeCommHopfAlgCat.baseChange (K := AlgebraicClosure k) H :=
-    CommHopfAlgCat.ofIso e.symm
-  have hf : Function.Bijective f := ConcreteCategory.bijective_of_isIso e.inv
-  let J := I.comapOfSurjective f hf.2
-  let qIso := CommHopfAlgCat.quotientIsoOfIso e.symm I
-  have hJ : J = HopfIdeal.augmentation (AlgebraicClosure k) G := by
-    apply htrivial J (hI.comapOfSurjective_of_bijective f hf.1 hf.2)
-    · exact (geometricallyConnectedCommHopfAlgProperty (AlgebraicClosure k)).prop_of_iso
-        qIso.symm hconn
-    · exact (smoothCommHopfAlgProperty_iff _).mp <|
-        (smoothCommHopfAlgProperty (AlgebraicClosure k)).prop_of_iso qIso.symm
-          ((smoothCommHopfAlgProperty_iff _).mpr hsm)
-    · exact (geometricallySolvablePointsCommHopfAlgProperty (AlgebraicClosure k)).prop_of_iso
-        qIso.symm hsolv
-  rw [← HopfIdeal.comapOfSurjective_eq_comapOfSurjective_iff f hf.2,
-    HopfIdeal.comapOfSurjective_augmentation]
-  exact hJ
+  apply geometricNormalSubgroupFreeCommHopfAlgProperty_of_geometricFiber_iso k
+    (smoothCommHopfAlgProperty (AlgebraicClosure k) ⊓
+      geometricallySolvablePointsCommHopfAlgProperty (AlgebraicClosure k))
+    H G hsmooth hconnected e
+  intro I hI hconn hP
+  exact htrivial I hI hconn ((smoothCommHopfAlgProperty_iff _).mp hP.1) hP.2
 
 /-- The category of semisimple finite-type commutative Hopf algebras over a field. -/
 abbrev SemisimpleCommHopfAlgCat (k : Type u) [Field k] :=
