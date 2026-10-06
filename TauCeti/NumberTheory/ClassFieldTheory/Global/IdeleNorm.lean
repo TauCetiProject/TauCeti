@@ -35,7 +35,7 @@ noncomputable section
 
 open IsDedekindDomain IsDedekindDomain.HeightOneSpectrum NumberField NumberField.InfinitePlace
   WithZeroMulInt
-open scoped AdicCompletionExtension NumberField.LiesOver WithZero
+open scoped TensorProduct AdicCompletionExtension NumberField.LiesOver WithZero
 
 namespace TauCeti.ClassFieldTheory
 
@@ -78,7 +78,8 @@ private theorem exists_unit_preimages (v : HeightOneSpectrum (𝓞 K))
 
 private theorem exists_restricted_finite_preimages (x : IdeleGroup (𝓞 K) K)
     (hfin : ∀ v : HeightOneSpectrum (𝓞 K),
-      v.ideleFiniteCoord x ∈ (finiteLocalNormMap K L v).range) :
+      v.ideleFiniteCoord x ∈
+        (Algebra.normUnits (v.adicCompletion K) (S := v.adicCompletion K ⊗[K] L)).range) :
     ∃ u : (v : HeightOneSpectrum (𝓞 K)) →
         (w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal}) →
           (w.1.adicCompletion L)ˣ,
@@ -115,7 +116,7 @@ private theorem exists_restricted_finite_preimages (x : IdeleGroup (𝓞 K) K)
     by_cases h : good v
     · obtain ⟨u, hu, hv⟩ := exists_unit_preimages K L v (v.ideleFiniteCoord x) h.2 h.1
       exact ⟨u, hu, fun _ ↦ hv⟩
-    · obtain ⟨u, hu⟩ := (mem_range_finiteLocalNormMap_iff K L v _).mp (hfin v)
+    · obtain ⟨u, hu⟩ := (mem_range_finite_normUnits_iff K L v _).mp (hfin v)
       exact ⟨u, hu, fun hv ↦ (h hv).elim⟩
   choose u hu huunit using hchoose
   refine ⟨u, hu, ?_⟩
@@ -128,18 +129,21 @@ from the actual local étale algebra. No cyclicity or Galois hypothesis is requi
 theorem mem_range_ideleNormMap_iff (x : IdeleGroup (𝓞 K) K) :
     x ∈ (GlobalNumberFields.ideleNormMap K L).toMonoidHom.range ↔
       (∀ v : HeightOneSpectrum (𝓞 K),
-        v.ideleFiniteCoord x ∈ (finiteLocalNormMap K L v).range) ∧
-      ∀ v : InfinitePlace K, v.ideleInfiniteCoord x ∈ (infiniteLocalNormMap K L v).range := by
+        v.ideleFiniteCoord x ∈
+          (Algebra.normUnits (v.adicCompletion K) (S := v.adicCompletion K ⊗[K] L)).range) ∧
+      ∀ v : InfinitePlace K,
+        v.ideleInfiniteCoord x ∈
+          (Algebra.normUnits v.Completion (S := v.Completion ⊗[K] L)).range := by
   classical
   constructor
   · rintro ⟨y, rfl⟩
-    exact ⟨ideleFiniteCoord_mem_range_finiteLocalNormMap K L y,
-      ideleInfiniteCoord_mem_range_infiniteLocalNormMap K L y⟩
+    exact ⟨ideleFiniteCoord_mem_range_normUnits K L y,
+      ideleInfiniteCoord_mem_range_normUnits K L y⟩
   rintro ⟨hfin, hinf⟩
   obtain ⟨u, hu, hz⟩ := exists_restricted_finite_preimages K L x hfin
   let z (w : HeightOneSpectrum (𝓞 L)) : (w.adicCompletion L)ˣ :=
     u (w.under (𝓞 K)) ⟨w, inferInstance⟩
-  choose t ht using fun v ↦ (mem_range_infiniteLocalNormMap_iff K L v _).mp (hinf v)
+  choose t ht using fun v ↦ (mem_range_infinite_normUnits_iff K L v _).mp (hinf v)
   let zi (w : InfinitePlace L) : w.Completionˣ :=
     t (w.comap (algebraMap K L)) ⟨w, inferInstance⟩
   let y : IdeleGroup (𝓞 L) L :=
