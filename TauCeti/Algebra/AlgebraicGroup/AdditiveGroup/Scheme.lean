@@ -6,11 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.AffineSpace
-public import Mathlib.LinearAlgebra.SymmetricAlgebra.Basis
 public import Mathlib.RingTheory.Smooth.Basic
 public import TauCeti.Algebra.AlgebraicGroup.AdditiveGroup.Basic
 public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.SchemePoints
 public import TauCeti.AlgebraicGeometry.AffineGroupScheme.HopfSpec
+public import TauCeti.LinearAlgebra.SymmetricAlgebra.FiniteType
 
 /-!
 # The additive group scheme
@@ -117,19 +117,6 @@ lemma coordinateAlgEquiv_ι_one :
       (Basis.singleton (CoordinateIndex.{u}) R) (default : CoordinateIndex.{u})
 
 end CoordinateAlgebra
-
-section FiniteType
-
-variable (R : Type u) [CommSemiring R]
-
-/-- The coordinate algebra of `𝔾ₐ` is of finite type: it is the polynomial algebra on the single
-generator `x`. -/
-instance instFiniteTypeSymmetricAlgebra : Algebra.FiniteType R (SymmetricAlgebra R R) :=
-  Algebra.FiniteType.equiv
-    (inferInstanceAs (Algebra.FiniteType R (MvPolynomial (CoordinateIndex.{u}) R)))
-    (coordinateAlgEquiv R).symm
-
-end FiniteType
 
 variable (R : Type u) [CommRing R]
 

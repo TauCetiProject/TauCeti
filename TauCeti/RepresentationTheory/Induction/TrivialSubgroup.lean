@@ -70,7 +70,11 @@ open CategoryTheory Representation MonoidalCategory
 
 namespace Rep
 
-variable {k G : Type u} [CommRing k] [Group G]
+variable {k G : Type u} [Group G]
+
+section Semiring
+
+variable [Semiring k]
 
 /-- The restriction of a representation to the trivial subgroup is the trivial representation on
 its underlying module. -/
@@ -98,6 +102,10 @@ subgroup does not move elements. -/
 theorem resBotIsoTrivial_inv_hom_apply (A : Rep k G) (x : A.V) :
     (dsimp% only ((resBotIsoTrivial A).inv.hom x)) = x :=
   (rfl)
+
+end Semiring
+
+variable [CommRing k]
 
 section Coinduction
 
@@ -319,17 +327,17 @@ theorem indBotFunctor_map_hom_mk {X Y : ModuleCat.{u} k} (f : X ⟶ Y) (g : G) (
   (rfl)
 
 /-- Two morphisms out of the representation induced from the trivial subgroup agree once they
-agree on the generators `⟦g ⊗ₜ x⟧`. -/
+agree on the generators `⟦1 ⊗ₜ x⟧`: by equivariance, these determine the values on every
+`⟦g ⊗ₜ x⟧`. -/
 theorem indBot_hom_ext {X : Type u} [AddCommGroup X] [Module k X] {B : Rep k G}
     {f f' : indBot k G X ⟶ B}
-    (h : ∀ (g : G) (x : X),
-      f.hom (IndV.mk (⊥ : Subgroup G).subtype (Representation.trivial k (⊥ : Subgroup G) X) g x) =
+    (h : ∀ x : X,
+      f.hom (IndV.mk (⊥ : Subgroup G).subtype (Representation.trivial k (⊥ : Subgroup G) X) 1 x) =
         f'.hom
-          (IndV.mk (⊥ : Subgroup G).subtype (Representation.trivial k (⊥ : Subgroup G) X) g x)) :
+          (IndV.mk (⊥ : Subgroup G).subtype (Representation.trivial k (⊥ : Subgroup G) X) 1 x)) :
     f = f' :=
-  Rep.hom_ext <| IntertwiningMap.ext <|
-    IndV.hom_ext (⊥ : Subgroup G).subtype (Representation.trivial k (⊥ : Subgroup G) X)
-      fun g ↦ LinearMap.ext (h g)
+  (indResHomEquiv (⊥ : Subgroup G).subtype _ B).injective <| Rep.hom_ext <|
+    IntertwiningMap.ext <| LinearMap.ext h
 
 /-- The canonical projection from the representation induced from the trivial subgroup on the
 underlying module of `A` onto `A`, `⟦g ⊗ₜ a⟧ ↦ A.ρ g⁻¹ a`. -/
@@ -366,13 +374,13 @@ def indBotMap {A B : Rep k G} (f : A ⟶ B) :
 /-- The map induced by an identity morphism is the identity. -/
 @[simp]
 theorem indBotMap_id (A : Rep k G) : indBotMap (𝟙 A) = 𝟙 _ :=
-  indBot_hom_ext fun _ _ ↦ rfl
+  indBot_hom_ext fun _ ↦ rfl
 
 /-- The map induced by a composite is the composite of the induced maps. -/
 @[simp]
 theorem indBotMap_comp {A B C : Rep k G} (f : A ⟶ B) (g : B ⟶ C) :
     indBotMap (f ≫ g) = indBotMap f ≫ indBotMap g :=
-  indBot_hom_ext fun _ _ ↦ rfl
+  indBot_hom_ext fun _ ↦ rfl
 
 /-- The induced map applies the underlying map to every generator. -/
 theorem indBotMap_hom_mk {A B : Rep k G} (f : A ⟶ B) (g : G) (a : A) :
@@ -388,10 +396,10 @@ theorem indBotMap_hom_mk {A B : Rep k G} (f : A ⟶ B) (g : G) (a : A) :
 @[reassoc]
 theorem indBotCounit_naturality {A B : Rep k G} (f : A ⟶ B) :
     indBotMap f ≫ indBotCounit B = indBotCounit A ≫ f :=
-  indBot_hom_ext fun g a ↦ by
+  indBot_hom_ext fun a ↦ by
     rw [Rep.hom_comp, Rep.hom_comp, IntertwiningMap.comp_apply, IntertwiningMap.comp_apply,
       indBotMap_hom_mk, indBotCounit_hom_mk, indBotCounit_hom_mk]
-    exact (Rep.hom_comm_apply f g⁻¹ a).symm
+    exact (Rep.hom_comm_apply f 1⁻¹ a).symm
 
 /-- The morphism `⟦g ⊗ₜ x⟧ ↦ g⁻¹ • s x` to a representation from the representation induced from
 the trivial subgroup, attached to a `k`-linear map `s`. -/
@@ -416,7 +424,7 @@ projection of the representation induced from the trivial subgroup onto `A`. -/
 theorem fromIndBot_comp_of_rightInverse {A B : Rep k G} (f : B ⟶ A)
     {s : A.V →ₗ[k] B.V} (hs : Function.RightInverse s f.hom) :
     fromIndBot B s ≫ f = indBotCounit A :=
-  indBot_hom_ext fun g a ↦ by
+  indBot_hom_ext fun a ↦ by
     rw [Rep.hom_comp, IntertwiningMap.comp_apply, fromIndBot_hom_mk, indBotCounit_hom_mk,
       Rep.hom_comm_apply, hs a]
 

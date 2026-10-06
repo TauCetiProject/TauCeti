@@ -100,5 +100,4 @@ theorem AddEquiv.natCard_linearMap_zmod {N : Type*} [AddCommGroup N] [Module (ZM
     (e : N ≃+ ZMod n) [Module (ZMod n) M] [Finite M] :
     Nat.card (M →ₗ[ZMod n] N) = Nat.card M := by
   rw [← Nat.card_congr (AddMonoidHom.toZModLinearMapEquiv n).toEquiv,
-    e.natCard_addMonoidHom_zmod fun x => by
-      rw [← Nat.cast_smul_eq_nsmul (ZMod n), ZMod.natCast_self, zero_smul]]
+    e.natCard_addMonoidHom_zmod (ZModModule.char_nsmul_eq_zero n)]

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Torus
 public import TauCeti.Algebra.AlgebraicGroup.Symplectic.BaseChange
-public import TauCeti.Algebra.AlgebraicGroup.Symplectic.RootSubgroup
+public import TauCeti.Algebra.AlgebraicGroup.Symplectic.RootSubgroup.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Diagonal.Basic
 
 /-!

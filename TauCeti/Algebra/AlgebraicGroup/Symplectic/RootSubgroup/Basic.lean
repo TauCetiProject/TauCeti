@@ -9,6 +9,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Root.Subgroup
 -- The symplectic scheme and its point equivalence identify the target of the root maps.
 public import TauCeti.Algebra.AlgebraicGroup.Symplectic.Scheme
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Lie
 
 /-!
 # Root subgroups of the symplectic group
@@ -383,6 +384,47 @@ theorem mapPointsFunctor_shortRootSubgroupCoordinateMap_app
       shortRootSubgroupPoints family hij q := by
   rw [shortRootSubgroupCoordinateMap, shortRootSubgroupPoints,
     mapPointsFunctor_rootSubgroupCoordinateMap_app]
+
+/-- A root coordinate morphism sends the generic symplectic matrix to the identity
+plus its normalized linear term. Entries are indexed in paired coordinates. -/
+@[simp]
+theorem rootSubgroupCoordinateMap_apply_X (root : GLSymplecticFin.RootSubgroupIndex m)
+    (a b : Fin m ⊕ Fin m) :
+    (rootSubgroupCoordinateMap (R := R) root).hom
+        ((coordinateMap R m).hom
+          (GeneralLinear.coordinateHopfAlgebraAlgEquiv R (m + m)
+            (GeneralLinear.coordinateRingMap R (m + m)
+              (MvPolynomial.X (finSumFinEquiv a, finSumFinEquiv b))))) =
+      (1 + root.tangentMatrix (SymmetricAlgebra.ι R R 1)) a b := by
+  let A := AdditiveGroup.coordinateHopfAlgebra R
+  let q : WithConv (A →ₐ[R] A) := toConv (AlgHom.id R A)
+  have h := congrArg (fun p : WithConv (coordinateHopfAlgebra R m →ₐ[R] A) =>
+    (GeneralLinear.pointsMulEquiv (m + m)
+      (CommHopfAlgCat.quotientPointsHom
+        (GeneralLinear.coordinateHopfAlgebra R (m + m)) (definingHopfIdeal R m)
+        (CommAlgCat.of R A) p) : Matrix (Fin (m + m)) (Fin (m + m)) A)
+      (finSumFinEquiv a) (finSumFinEquiv b))
+    (mapPointsFunctor_rootSubgroupCoordinateMap_app root (CommAlgCat.of R A) q)
+  rw [pointsMulEquiv_coe, pointsMulEquiv_rootSubgroupPoints,
+    GeneralLinear.pointsMulEquiv_apply, GeneralLinear.pointToGeneralLinear_apply] at h
+  -- The point functor hides the algebra-hom carrier under categorical coercions.
+  -- Present the two precompositions and the universal identity point explicitly.
+  change (rootSubgroupCoordinateMap (R := R) root).hom
+    ((CommHopfAlgCat.mkQuotient
+      (GeneralLinear.coordinateHopfAlgebra R (m + m)) (definingHopfIdeal R m)).hom
+      (GeneralLinear.coordinateHopfAlgebraAlgEquiv R (m + m)
+        (GeneralLinear.coordinateRingMap R (m + m)
+          (MvPolynomial.X (finSumFinEquiv a, finSumFinEquiv b))))) = _ at h
+  have hm := congrFun (congrFun (root.hom_apply_matrix
+    (AdditiveGroup.gaPointsMulEquiv (R := R) (A := A) q)) a) b
+  simp only [Matrix.submatrix_apply] at hm
+  have hc : (AdditiveGroup.gaPointsMulEquiv (R := R) (A := A) q).toAdd =
+      SymmetricAlgebra.ι R R 1 := by
+    rw [AdditiveGroup.toAdd_gaPointsMulEquiv]
+    rfl
+  rw [hc] at hm
+  rw [coordinateMap_def]
+  exact h.trans hm
 
 /-- The positive long-root coordinate morphism factors the matching general-linear root
 coordinate morphism through the symplectic quotient. -/

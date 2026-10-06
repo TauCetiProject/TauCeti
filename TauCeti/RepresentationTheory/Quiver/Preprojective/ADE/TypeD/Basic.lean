@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Ring.LadderValley
 public import TauCeti.Algebra.Algebra.SquareZeroPair
+public import TauCeti.Algebra.Ring.LadderValley
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Diagram
 public import TauCeti.RepresentationTheory.Quiver.AdmissibleIdeal.Basic
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Admissible
@@ -14,7 +14,7 @@ public import TauCeti.RepresentationTheory.Quiver.Zigzag.Preprojective
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Signless
 
 /-!
-# The preprojective algebra of `Dₙ` is finite-dimensional
+# Path reduction in the type-`D` preprojective algebra
 
 In the Bourbaki labelling of `Dₙ` (`n ≥ 3`), write `c = n - 3`. The nodes `0 — 1 — ⋯ — c` form
 the long arm, and the two leaves `c + 1` and `c + 2` are attached to the branch node `c`. In the
@@ -32,11 +32,12 @@ and every product of `c + 2` factors from `{x, y}` vanishes (`TauCeti.span_pair_
 
 A path is then rewritten, one arrow at a time, into one of the following normal forms: a valley
 word on the long arm which does not reach the branch node; or a word of the shape
-`(path out of c) · w · (path into c)`, where `w` is a product of factors from `{x, y}` and the
-outer paths have length at most `c + 1`. A long enough path has a word `w` with at least `c + 2`
-factors, so **every path of length at least `4 n` vanishes**. Below rank three the diagram has no
-edges, and the same bound holds trivially. The bound `4 n` is not sharp; the sharp bound `h - 1`,
-for the Coxeter number `h = 2 n - 2` of `Dₙ`, is not proved here.
+`(path out of c) · w · (path into c)`, where `w` lies in a power of the span of `{x, y}` and the
+outer paths are the direct paths into and out of the branch node, with the entry allowed an
+integer scalar, and have length at most `c + 1`. A long enough path has `w` in a power of degree
+at least `c + 2`, so **every path of length at least `4 n` vanishes**. Below rank three the diagram
+has no edges, and the same bound holds trivially. The bound `4 n` is not sharp; the sharp bound
+`h - 1`, for the Coxeter number `h = 2 n - 2` of `Dₙ`, is not proved here.
 
 The signless algebra of a bipartite graph is the preprojective algebra of each of its
 orientations, by an explicit sign rescaling of the arrows. Thus the same bound holds in the
@@ -61,6 +62,7 @@ relation ideal is admissible, and `Π_k(Q)` is finite-dimensional over every fie
   problem*, Section 1, for the preprojective algebra and its local relations.
 * S. Huerfano and M. Khovanov, *A category for the adjoint representation*, Section 3, for the
   signless relation and its comparison with the preprojective relation of a bipartite graph.
+* C. M. Ringel, *The preprojective algebra of a quiver*, for the finite-Dynkin Frobenius property.
 -/
 
 public section
@@ -100,13 +102,20 @@ private noncomputable def forkSpan :
     Submodule ℤ (signlessPreprojectiveAlgebra k (DoubledQuiver G)) :=
   Submodule.span ℤ {forkTurn k G c (c + 1), forkTurn k G c (c + 2)}
 
+/-- The direct path from `i` into the branch node, followed by its source idempotent. -/
+private noncomputable def forkEntry (i : ℕ)
+    (E : signlessPreprojectiveAlgebra k (DoubledQuiver G)) :=
+  if i ≤ c then ladderValley (forkUp k G c) (forkDown k G c) 0 (c - i) 0 * E
+  else signlessArrow k G i c * E
+
 /-- The **normal forms of a path** from the vertex `i₀` to the vertex `j`, of length `L`, whose
 source idempotent is `E`:
 
 * a valley word on the long arm, with rungs counted from the branch node, which stays at least
   one rung away from it;
 * a climb from the branch node to `j` on the long arm, after a product `w` of `t` backtracks into
-  the leaves and a path `D` into the branch node of length at most `c + 1`;
+  the leaves and an integer multiple `D` of the direct path into the branch node, of length at most
+  `c + 1`;
 * the arrow from the branch node to the leaf `j`, after such `w` and `D`;
 * the empty path at a leaf. -/
 private def ForkNormalForm (i₀ j L : ℕ) (E z : signlessPreprojectiveAlgebra k (DoubledQuiver G)) :
@@ -114,10 +123,11 @@ private def ForkNormalForm (i₀ j L : ℕ) (E z : signlessPreprojectiveAlgebra 
   (∃ m s r : ℕ, ∃ ε : ℤ, 0 < m ∧ s + r = L ∧ m + s = c - i₀ ∧ m + r = c - j ∧
       z = ε • (ladderValley (forkUp k G c) (forkDown k G c) m s r * E)) ∨
   (∃ t s₀ : ℕ, ∃ w D, w ∈ forkSpan k G c ^ t ∧ s₀ ≤ c + 1 ∧ j ≤ c ∧ L = s₀ + 2 * t + (c - j) ∧
-      z = ladderValley (forkUp k G c) (forkDown k G c) 0 0 (c - j) * w * D) ∨
+      z = ladderValley (forkUp k G c) (forkDown k G c) 0 0 (c - j) * w * D ∧
+      ∃ ε : ℤ, D = ε • forkEntry k G c i₀ E) ∨
   (∃ t s₀ : ℕ, ∃ w D, w ∈ forkSpan k G c ^ t ∧ s₀ ≤ c + 1 ∧ c < j ∧ L = s₀ + 2 * t + 1 ∧
-      z = signlessArrow k G c j * w * D) ∨
-  (L = 0 ∧ c < j ∧ z = E)
+      z = signlessArrow k G c j * w * D ∧ ∃ ε : ℤ, D = ε • forkEntry k G c i₀ E) ∨
+  (L = 0 ∧ c < j ∧ j = i₀ ∧ z = E)
 
 variable {G} {c}
 variable (hn : n = c + 3)
@@ -248,9 +258,13 @@ private theorem forkNormalForm_cons_valley {i₀ j j' L : ℕ}
       have hj'r : c - j' = r := by omega
       refine .inr (.inl ⟨0, s + 1, 1, (ε * (-1) ^ r) • (ladderValley (forkUp k G c)
         (forkDown k G c) 0 (s + 1) 0 * E), one_mem_forkSpan_pow_zero k, by omega, hj', by omega,
-        ?_⟩)
-      rw [hj'r, mul_one, mul_smul_comm, ← mul_assoc,
-        ladderValley_zero_mul_ladderValley]
+        ?_, ?_⟩)
+      · rw [hj'r, mul_one, mul_smul_comm, ← mul_assoc,
+          ladderValley_zero_mul_ladderValley]
+      · refine ⟨ε * (-1) ^ r, ?_⟩
+        have hi : i₀ ≤ c := by omega
+        have hs' : c - i₀ = s + 1 := by omega
+        rw [forkEntry, ite_eq_left hi, hs']
     · exact .inl ⟨m, s + 1, r, ε * (-1) ^ r, hm', by omega, by omega, by omega, rfl⟩
   · -- A step away from the branch node extends the climb.
     have harr : signlessArrow k G j j' = forkUp k G c (m + r) := by
@@ -267,9 +281,10 @@ private theorem forkNormalForm_cons_arm {i₀ j j' L : ℕ}
     (hadj : j + 1 = j' ∧ j' ≤ c ∨ j' + 1 = j ∧ j ≤ c ∨ j = c ∧ c < j' ∨ j' = c ∧ c < j)
     (h : ∃ t s₀ : ℕ, ∃ w D, w ∈ forkSpan k G c ^ t ∧ s₀ ≤ c + 1 ∧ j ≤ c ∧
       L = s₀ + 2 * t + (c - j) ∧
-      z = ladderValley (forkUp k G c) (forkDown k G c) 0 0 (c - j) * w * D) :
+      z = ladderValley (forkUp k G c) (forkDown k G c) 0 0 (c - j) * w * D ∧
+      ∃ ε : ℤ, D = ε • forkEntry k G c i₀ E) :
     ForkNormalForm k G c i₀ j' (L + 1) E (signlessArrow k G j j' * z) := by
-  obtain ⟨t, s₀, w, D, hw, hs₀, hjc, hL, rfl⟩ := h
+  obtain ⟨t, s₀, w, D, hw, hs₀, hjc, hL, rfl, hD⟩ := h
   rcases hadj with ⟨hj, hj'⟩ | ⟨hj, -⟩ | ⟨rfl, hj'⟩ | ⟨-, hj⟩
   · -- A step towards the branch node turns the climb back: one more backtrack, into the arm.
     obtain ⟨r, hr⟩ : ∃ r, c - j = r + 1 := ⟨c - j - 1, by omega⟩
@@ -277,7 +292,7 @@ private theorem forkNormalForm_cons_arm {i₀ j j' L : ℕ}
       rw [forkDown]
       congr 1 <;> omega
     refine .inr (.inl ⟨t + 1, s₀, ((-1 : ℤ) ^ r) • (forkDown k G c 0 * forkUp k G c 0 * w), D,
-      ?_, hs₀, hj', by omega, ?_⟩)
+      ?_, hs₀, hj', by omega, ?_, hD⟩)
     · rw [pow_succ']
       exact Submodule.smul_mem _ _
         (Submodule.mul_mem_mul (forkDown_mul_forkUp_mem_forkSpan k hn hG) hw)
@@ -290,11 +305,11 @@ private theorem forkNormalForm_cons_arm {i₀ j j' L : ℕ}
       rw [forkUp]
       congr 1 <;> omega
     have hj'r : c - j' = c - j + 1 := by omega
-    refine .inr (.inl ⟨t, s₀, w, D, hw, hs₀, by omega, by omega, ?_⟩)
+    refine .inr (.inl ⟨t, s₀, w, D, hw, hs₀, by omega, by omega, ?_, hD⟩)
     rw [harr, ← mul_assoc, ← mul_assoc, hj'r, ← u_mul_ladderValley,
       zero_add]
   · -- A step from the branch node into a leaf.
-    refine .inr (.inr (.inl ⟨t, s₀, w, D, hw, hs₀, hj', by omega, ?_⟩))
+    refine .inr (.inr (.inl ⟨t, s₀, w, D, hw, hs₀, hj', by omega, ?_, hD⟩))
     simp only [Nat.sub_self, ladderValley_zero_zero, one_mul, mul_assoc]
   · omega
 
@@ -304,16 +319,17 @@ private theorem forkNormalForm_cons_leaf {i₀ j j' L : ℕ}
     {E z : signlessPreprojectiveAlgebra k (DoubledQuiver G)} (hjn : j < n)
     (hadj : j + 1 = j' ∧ j' ≤ c ∨ j' + 1 = j ∧ j ≤ c ∨ j = c ∧ c < j' ∨ j' = c ∧ c < j)
     (h : ∃ t s₀ : ℕ, ∃ w D, w ∈ forkSpan k G c ^ t ∧ s₀ ≤ c + 1 ∧ c < j ∧
-      L = s₀ + 2 * t + 1 ∧ z = signlessArrow k G c j * w * D) :
+      L = s₀ + 2 * t + 1 ∧ z = signlessArrow k G c j * w * D ∧
+      ∃ ε : ℤ, D = ε • forkEntry k G c i₀ E) :
     ForkNormalForm k G c i₀ j' (L + 1) E (signlessArrow k G j j' * z) := by
-  obtain ⟨t, s₀, w, D, hw, hs₀, hcj, hL, rfl⟩ := h
+  obtain ⟨t, s₀, w, D, hw, hs₀, hcj, hL, rfl, hD⟩ := h
   obtain rfl : c = j' := by omega
   -- The step back to the branch node completes a backtrack into the leaf.
   have hturn : forkTurn k G c j ∈ forkSpan k G c := by
     obtain rfl | rfl : j = c + 1 ∨ j = c + 2 := by omega
     · exact Submodule.subset_span (by simp)
     · exact Submodule.subset_span (by simp)
-  refine .inr (.inl ⟨t + 1, s₀, forkTurn k G c j * w, D, ?_, hs₀, le_rfl, by omega, ?_⟩)
+  refine .inr (.inl ⟨t + 1, s₀, forkTurn k G c j * w, D, ?_, hs₀, le_rfl, by omega, ?_, hD⟩)
   · rw [pow_succ']
     exact Submodule.mul_mem_mul hturn hw
   · rw [Nat.sub_self, ladderValley_zero_zero, one_mul, forkTurn]
@@ -325,15 +341,16 @@ private theorem forkNormalForm_cons {i₀ j j' L : ℕ}
     (hadj : j + 1 = j' ∧ j' ≤ c ∨ j' + 1 = j ∧ j ≤ c ∨ j = c ∧ c < j' ∨ j' = c ∧ c < j)
     (h : ForkNormalForm k G c i₀ j L E z) :
     ForkNormalForm k G c i₀ j' (L + 1) E (signlessArrow k G j j' * z) := by
-  rcases h with h | h | h | ⟨rfl, hj, rfl⟩
+  rcases h with h | h | h | ⟨rfl, hj, rfl, rfl⟩
   · exact forkNormalForm_cons_valley k hn hG hadj h
   · exact forkNormalForm_cons_arm k hn hG hadj h
   · exact forkNormalForm_cons_leaf k hn hjn hadj h
   · -- The first step from a leaf goes to the branch node.
     obtain rfl : c = j' := by omega
     refine .inr (.inl ⟨0, 1, 1, signlessArrow k G j c * z, one_mem_forkSpan_pow_zero k, by omega,
-      le_rfl, by omega, ?_⟩)
-    rw [Nat.sub_self, ladderValley_zero_zero, one_mul, one_mul]
+      le_rfl, by omega, ?_, ?_⟩)
+    · rw [Nat.sub_self, ladderValley_zero_zero, one_mul, one_mul]
+    · exact ⟨1, by rw [one_smul, forkEntry, ite_eq_right (by omega)]⟩
 
 /-- **Every path has a normal form**, by induction on the path. -/
 private theorem forkNormalForm_ofPath {a b : DoubledQuiver G} (p : Path a b) :
@@ -349,9 +366,12 @@ private theorem forkNormalForm_ofPath {a b : DoubledQuiver G} (p : Path a b) :
         by rw [ladderValley_zero_zero, one_mul, one_smul]⟩
     · refine .inr (.inl ⟨0, 0, 1, signlessPreprojectiveMk k _ (ofPath ⟨a, a, .nil⟩),
         one_mem_forkSpan_pow_zero k, by omega, h.le,
-        by rw [Path.length_nil]; omega, ?_⟩)
-      rw [h, Nat.sub_self, ladderValley_zero_zero, one_mul, one_mul]
-    · exact .inr (.inr (.inr ⟨rfl, h, rfl⟩))
+        by rw [Path.length_nil]; omega, ?_, ?_⟩)
+      · rw [h, Nat.sub_self, ladderValley_zero_zero, one_mul, one_mul]
+      · refine ⟨1, ?_⟩
+        rw [one_smul, forkEntry, ite_eq_left h.le, h, Nat.sub_self,
+          ladderValley_zero_zero, one_mul]
+    · exact .inr (.inr (.inr ⟨rfl, h, rfl, rfl⟩))
   | @cons b b' q e ih =>
     rw [← ofArrow_mul_ofPath, map_mul, signlessPreprojectiveMk_ofArrow_eq_signlessArrow,
       Path.length_cons]
@@ -368,7 +388,8 @@ private theorem signlessPreprojectiveMk_ofPath_eq_zero_of_fork
   -- A valley word on the long arm, or the empty path, is too short; otherwise the word in the
   -- backtracks into the leaves is long enough to vanish.
   rcases forkNormalForm_ofPath k hn hG p with ⟨m, s, r, ε, hm, hL, hs, hr, -⟩ |
-    ⟨t, s₀, w, D, hw, hs₀, -, hL, h⟩ | ⟨t, s₀, w, D, hw, hs₀, -, hL, h⟩ | ⟨hL, -, -⟩
+    ⟨t, s₀, w, D, hw, hs₀, -, hL, h, -⟩ | ⟨t, s₀, w, D, hw, hs₀, -, hL, h, -⟩ |
+    ⟨hL, -, -, -⟩
   · omega
   · rw [forkSpan_pow_eq_bot k hn hG (by omega), Submodule.mem_bot] at hw
     rw [h, hw, mul_zero, zero_mul]

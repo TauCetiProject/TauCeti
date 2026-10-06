@@ -71,7 +71,7 @@ below it and the local embedding of the field element. -/
 theorem infiniteAdeleBaseChangeHom_tmul_apply (a : InfiniteAdeleRing K) (x : L)
     (w : InfinitePlace L) :
     infiniteAdeleBaseChangeHom K L (a ⊗ₜ x) w =
-      LiesOver.completionMap (a (w.comap (algebraMap K L))) *
+      LiesOver.completionMap _ w (a (w.comap (algebraMap K L))) *
         algebraMap L w.Completion x := by
   rw [infiniteAdeleBaseChangeHom_tmul]
   -- Evaluate multiplication in the infinite-adele type synonym before rewriting its factors.
@@ -206,7 +206,7 @@ map from the place below it and the local embedding of the field element. -/
 theorem infiniteAdeleBaseChangeEquiv_tmul_apply (a : InfiniteAdeleRing K) (x : L)
     (w : InfinitePlace L) :
     infiniteAdeleBaseChangeEquiv K L (a ⊗ₜ x) w =
-      LiesOver.completionMap (a (w.comap (algebraMap K L))) *
+      LiesOver.completionMap _ w (a (w.comap (algebraMap K L))) *
         algebraMap L w.Completion x := by
   have h : (infiniteAdeleBaseChangeEquiv K L).toAlgHom =
       infiniteAdeleBaseChangeHom K L := by simp
