@@ -88,21 +88,6 @@ theorem maslovOℤ_eq_of_isEmpty_initialHexagon
   push_cast at h
   linarith
 
-/-- A rectangle carrying exactly one `X`-marking and one more `O`-marking than a set `S` of columns
-raises the doubled Alexander grading by twice the size of `S`. -/
-private theorem alexanderTwoℤ_eq_of_card {r : GridRectangleBetween x y} {S : Finset (Fin n)}
-    (hO : (G.OColumns r.toGridRectangle).card = S.card + 1)
-    (hX : (G.XSet ∩ r.toGridRectangle.coveredSquares).card = 1) :
-    G.alexanderTwoℤ y = G.alexanderTwoℤ x + 2 * (S.card : ℤ) := by
-  have h := G.alexander_sub_alexander_eq_card_sub_card r
-  rw [hX, ← G.card_OColumns, hO] at h
-  have hx := G.two_mul_alexander_eq_intCast x
-  have hy := G.two_mul_alexander_eq_intCast y
-  have hq : (G.alexanderTwoℤ y : ℚ) = G.alexanderTwoℤ x + 2 * (S.card : ℚ) := by
-    push_cast at h
-    linarith
-  exact_mod_cast hq
-
 /-- **The Alexander grading across a counted hexagon**, in its doubled integer form: a hexagon
 counted by the hexagon map from `x` to `y` raises it by twice the number of `O`-markings it
 carries, `2 A(y) = 2 A(x) + 2 #(𝕆 ∩ P)`. -/
@@ -157,67 +142,35 @@ theorem alexanderℤ_eq_of_mem_initialHexagons
   rw [← two_mul_alexanderℤ, ← two_mul_alexanderℤ] at h
   omega
 
-/-- Multiplying `V^e · x` by a squarefree monomial `V^S` and passing to a state `y` raises the
-bidegree by `(1, 0)` when `M_O(y) = M_O(x) + 1 + 2 |S|` and `A(y) = A(x) + |S|`. -/
-private theorem monomialBidegree_add_sum_eq_add (S : Finset (Fin n)) (e : Fin n →₀ ℕ)
-    (hM : G.1.maslovOℤ y = G.1.maslovOℤ x + 1 + 2 * (S.card : ℤ))
-    (hA : G.alexanderℤ y = G.alexanderℤ x + S.card) :
-    G.monomialBidegree y (e + ∑ c ∈ S, Finsupp.single c 1) = G.monomialBidegree x e + (1, 0) := by
-  have hdeg : ((e + ∑ c ∈ S, Finsupp.single (M := ℕ) c 1).degree : ℤ) =
-      (e.degree : ℤ) + (S.card : ℤ) := by
-    rw [map_add, map_sum]
-    simp
-  refine Prod.ext ?_ ?_
-  · simp only [Prod.fst_add, monomialBidegree_fst, hdeg, hM]
-    ring
-  · simp only [Prod.snd_add, monomialBidegree_snd, hdeg, hA]
-    ring
-
-/-- A linear map on `GC⁻` given by a matrix whose weighted transitions raise the bidegree by `δ`
-sends a chain homogeneous of bidegree `g` to one homogeneous of bidegree `g + δ`. -/
-private theorem mem_bigradedChainMinusPiece_add_of_matrix {R : Type*} [CommSemiring R]
-    (f : GridChainMinus R n → GridChainMinus R n)
-    (M : GridState n → GridState n → MvPolynomial (Fin n) R) (δ : ℤ × ℤ)
-    (hf : ∀ c y, f c y = c.sum fun x p => p * M x y)
-    (hM : ∀ x y, ∀ w ∈ (M x y).support, ∀ e : Fin n →₀ ℕ,
-      G.monomialBidegree y (e + w) = G.monomialBidegree x e + δ)
-    {g : ℤ × ℤ} {c : GridChainMinus R n} (hc : c ∈ G.bigradedChainMinusPiece R g) :
-    f c ∈ G.bigradedChainMinusPiece R (g + δ) := by
-  classical
-  rw [mem_bigradedChainMinusPiece] at hc ⊢
-  intro z d hd
-  rw [hf, Finsupp.sum] at hd
-  obtain ⟨w, -, hdw⟩ := Finset.mem_biUnion.mp (MvPolynomial.support_sum hd)
-  obtain ⟨e, he, v, hv, rfl⟩ := Finset.mem_add.mp (MvPolynomial.support_mul _ _ hdw)
-  rw [hM w z v hv e, hc w e he]
-
 /-- Each monomial of a hexagon coefficient raises the bidegree by `(1, 0)`. -/
 private theorem monomialBidegree_add_of_mem_support_hexagonCoefficient (R : Type*)
     [CommSemiring R] (x y : GridState n) (w : Fin n →₀ ℕ)
     (hw : w ∈ (G.1.hexagonCoefficient R C x y).support) (e : Fin n →₀ ℕ) :
-    G.monomialBidegree y (e + w) = G.monomialBidegree x e + (1, 0) := by
+    G.monomialBidegree y (Finsupp.mapDomain (Equiv.refl (Fin n)) e + w) =
+      G.monomialBidegree x e + (1, 0) := by
   classical
   rw [GridDiagram.hexagonCoefficient_def] at hw
   obtain ⟨P, hP, hwP⟩ := Finset.mem_biUnion.mp (MvPolynomial.support_sum hw)
   rw [GridDiagram.hexagonWeight_eq_monomial] at hwP
   obtain rfl := Finset.mem_singleton.mp (MvPolynomial.support_monomial_subset hwP)
-  exact G.monomialBidegree_add_sum_eq_add _ e
+  exact G.monomialBidegree_mapDomain_add_sum_eq_add G _ e _ (1, 0)
     (G.1.maslovOℤ_eq_of_isEmpty_hexagon C ((G.1.mem_hexagons P).mp hP).1)
-    (G.alexanderℤ_eq_of_mem_hexagons C hP)
+    (by simpa using G.alexanderℤ_eq_of_mem_hexagons C hP)
 
 /-- Each monomial of an initial-side hexagon coefficient raises the bidegree by `(1, 0)`. -/
 private theorem monomialBidegree_add_of_mem_support_initialHexagonCoefficient (R : Type*)
     [CommSemiring R] (x y : GridState n) (w : Fin n →₀ ℕ)
     (hw : w ∈ (G.1.initialHexagonCoefficient R C x y).support) (e : Fin n →₀ ℕ) :
-    G.monomialBidegree y (e + w) = G.monomialBidegree x e + (1, 0) := by
+    G.monomialBidegree y (Finsupp.mapDomain (Equiv.refl (Fin n)) e + w) =
+      G.monomialBidegree x e + (1, 0) := by
   classical
   rw [GridDiagram.initialHexagonCoefficient_def] at hw
   obtain ⟨P, hP, hwP⟩ := Finset.mem_biUnion.mp (MvPolynomial.support_sum hw)
   rw [GridDiagram.initialHexagonWeight_eq_monomial] at hwP
   obtain rfl := Finset.mem_singleton.mp (MvPolynomial.support_monomial_subset hwP)
-  exact G.monomialBidegree_add_sum_eq_add _ e
+  exact G.monomialBidegree_mapDomain_add_sum_eq_add G _ e _ (1, 0)
     (G.1.maslovOℤ_eq_of_isEmpty_initialHexagon C ((G.1.mem_initialHexagons P).mp hP).1)
-    (G.alexanderℤ_eq_of_mem_initialHexagons C hP)
+    (by simpa using G.alexanderℤ_eq_of_mem_initialHexagons C hP)
 
 /-- **The hexagon map has bidegree `(1, 0)`.** The hexagon map of a validated column commutation
 `C` sends a chain of `GC⁻(G)` homogeneous of bidegree `g` to one homogeneous of bidegree
@@ -225,14 +178,16 @@ private theorem monomialBidegree_add_of_mem_support_initialHexagonCoefficient (R
 theorem hexagonMap_mem_bigradedChainMinusPiece (R : Type*) [CommSemiring R] {g : ℤ × ℤ}
     {c : GridChainMinus R n} (hc : c ∈ G.bigradedChainMinusPiece R g) :
     G.1.hexagonMap R C c ∈ G.bigradedChainMinusPiece R (g + (1, 0)) :=
-  G.mem_bigradedChainMinusPiece_add_of_matrix _ _ _ (G.1.hexagonMap_apply_apply R C)
+  G.matrixMap_mem_bigradedChainMinusPiece_add R G (Equiv.refl _) _ _
+    (fun c y => by simp [G.1.hexagonMap_apply_apply R C]) (1, 0)
     (G.monomialBidegree_add_of_mem_support_hexagonCoefficient C R) hc
 
 /-- The map counting hexagons turning on their initial side has bidegree `(1, 0)`. -/
 theorem initialHexagonMap_mem_bigradedChainMinusPiece (R : Type*) [CommSemiring R]
     {g : ℤ × ℤ} {c : GridChainMinus R n} (hc : c ∈ G.bigradedChainMinusPiece R g) :
     G.1.initialHexagonMap R C c ∈ G.bigradedChainMinusPiece R (g + (1, 0)) :=
-  G.mem_bigradedChainMinusPiece_add_of_matrix _ _ _ (G.1.initialHexagonMap_apply_apply R C)
+  G.matrixMap_mem_bigradedChainMinusPiece_add R G (Equiv.refl _) _ _
+    (fun c y => by simp [G.1.initialHexagonMap_apply_apply R C]) (1, 0)
     (G.monomialBidegree_add_of_mem_support_initialHexagonCoefficient C R) hc
 
 /-- **The commutation homotopy has bidegree `(1, 0)`.** Counting hexagons of both kinds, it sends a

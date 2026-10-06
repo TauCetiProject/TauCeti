@@ -85,7 +85,9 @@ the unblocked grid homology `GH⁻` and in which the concordance invariant `τ` 
 * `TauCeti.OddComponentGridDiagram.matrixMap_mem_bigradedChainMinusPiece` and
   `TauCeti.OddComponentGridDiagram.matrixMap_mem_alexanderChainMinusPiece`: a renamed matrix map
   whose weighted transitions preserve bidegree or Alexander degree preserves the corresponding
-  homogeneous pieces.
+  homogeneous pieces. More generally, one whose weighted transitions raise the bidegree by `δ`
+  raises the bidegree of homogeneous chains by `δ`
+  (`TauCeti.OddComponentGridDiagram.matrixMap_mem_bigradedChainMinusPiece_add`).
 * `TauCeti.OddComponentGridDiagram.isInternal_bigradedChainMinusPiece`: `GC⁻` is the internal
   direct sum of its homogeneous pieces.
 * `TauCeti.OddComponentGridDiagram.isHomogeneous_unblockedDifferential_alexanderChainMinusGrading`
@@ -134,6 +136,21 @@ theorem alexanderTwoℤ_sub_two_mul_card_OColumns {r : GridRectangleBetween x y}
   have hq : (G.alexanderTwoℤ y : ℚ) - 2 * ((G.OColumns r.toGridRectangle).card : ℚ) =
       (G.alexanderTwoℤ x : ℚ) := by
     rw [← hy, ← hx]
+    linarith
+  exact_mod_cast hq
+
+/-- A rectangle carrying exactly one `X`-marking and one more `O`-marking than a set `S` of columns
+raises the doubled Alexander grading by twice the size of `S`. -/
+theorem alexanderTwoℤ_eq_of_card {r : GridRectangleBetween x y} {S : Finset (Fin n)}
+    (hO : (G.OColumns r.toGridRectangle).card = S.card + 1)
+    (hX : (G.XSet ∩ r.toGridRectangle.coveredSquares).card = 1) :
+    G.alexanderTwoℤ y = G.alexanderTwoℤ x + 2 * (S.card : ℤ) := by
+  have h := G.alexander_sub_alexander_eq_card_sub_card r
+  rw [hX, ← G.card_OColumns, hO] at h
+  have hx := G.two_mul_alexander_eq_intCast x
+  have hy := G.two_mul_alexander_eq_intCast y
+  have hq : (G.alexanderTwoℤ y : ℚ) = G.alexanderTwoℤ x + 2 * (S.card : ℚ) := by
+    push_cast at h
     linarith
   exact_mod_cast hq
 
@@ -210,6 +227,27 @@ theorem monomialBidegree_snd (x : GridState n) (e : Fin n →₀ ℕ) :
     (G.monomialBidegree x e).2 = G.alexanderℤ x - (e.degree : ℤ) := by
   rw [monomialBidegree, Prod.snd_sub, bidegree_snd]
 
+/-- Renaming the input variables and multiplying by a squarefree weight raises the bidegree by
+`δ` when the target state's Maslov and Alexander gradings rise by `δ` plus twice and once the
+weight's size. -/
+theorem monomialBidegree_mapDomain_add_sum_eq_add (G' : OddComponentGridDiagram n)
+    (σ : Equiv.Perm (Fin n)) (d : Fin n →₀ ℕ) (S : Finset (Fin n)) (δ : ℤ × ℤ)
+    (hM : G'.1.maslovOℤ y = G.1.maslovOℤ x + δ.1 + 2 * (S.card : ℤ))
+    (hA : G'.alexanderℤ y = G.alexanderℤ x + δ.2 + S.card) :
+    G'.monomialBidegree y
+      (Finsupp.mapDomain σ d + ∑ c ∈ S, Finsupp.single (σ c) 1) =
+      G.monomialBidegree x d + δ := by
+  have hdeg : ((Finsupp.mapDomain σ d +
+      ∑ c ∈ S, Finsupp.single (M := ℕ) (σ c) 1).degree : ℤ) =
+      (d.degree : ℤ) + (S.card : ℤ) := by
+    rw [map_add, map_sum, Finsupp.degree_mapDomain]
+    simp
+  refine Prod.ext ?_ ?_
+  · simp only [Prod.fst_add, monomialBidegree_fst, hdeg, hM]
+    ring
+  · simp only [Prod.snd_add, monomialBidegree_snd, hdeg, hA]
+    ring
+
 /-- Renaming the input variables and multiplying by a squarefree weight preserves bidegree
 when the target state's Maslov and Alexander gradings rise by twice and once the weight's size. -/
 theorem monomialBidegree_mapDomain_add_sum (G' : OddComponentGridDiagram n)
@@ -219,16 +257,8 @@ theorem monomialBidegree_mapDomain_add_sum (G' : OddComponentGridDiagram n)
     G'.monomialBidegree y
       (Finsupp.mapDomain σ d + ∑ c ∈ S, Finsupp.single (σ c) 1) =
       G.monomialBidegree x d := by
-  have hdeg : ((Finsupp.mapDomain σ d +
-      ∑ c ∈ S, Finsupp.single (M := ℕ) (σ c) 1).degree : ℤ) =
-      (d.degree : ℤ) + (S.card : ℤ) := by
-    rw [map_add, map_sum, Finsupp.degree_mapDomain]
-    simp
-  refine Prod.ext ?_ ?_
-  · simp only [monomialBidegree_fst, hdeg, hM]
-    ring
-  · simp only [monomialBidegree_snd, hdeg, hA]
-    ring
+  simpa using G.monomialBidegree_mapDomain_add_sum_eq_add G' σ d S 0 (by simpa using hM)
+    (by simpa using hA)
 
 /-- A grid-state generator carries the bidegree of its state. -/
 @[simp]
@@ -543,28 +573,29 @@ variable (R : Type*) [CommSemiring R] (G' : OddComponentGridDiagram n) (σ : Equ
 
 include hf hgrade
 
-/-- A matrix whose weighted transitions preserve bidegree preserves the bidegree of each
-monomial occurring in an arbitrary input chain. -/
-private theorem exists_monomialBidegree_eq_of_mem_support_matrixMap
-    {c : GridChainMinus R n} {y : GridState n} {e : Fin n →₀ ℕ}
-    (he : e ∈ (f c y).support) :
-    ∃ x : GridState n, ∃ d ∈ (c x).support,
-      G'.monomialBidegree y e = G.monomialBidegree x d := by
+omit hgrade in
+/-- A renamed matrix map whose weighted transitions raise the bidegree by `δ` sends a chain
+homogeneous of bidegree `g` for the source diagram `G` to a chain of bidegree `g + δ` for the
+target diagram `G'`. -/
+theorem matrixMap_mem_bigradedChainMinusPiece_add (δ : ℤ × ℤ)
+    (hδ : ∀ x y, ∀ w ∈ (M x y).support, ∀ d : Fin n →₀ ℕ,
+      G'.monomialBidegree y (Finsupp.mapDomain σ d + w) = G.monomialBidegree x d + δ)
+    {g : ℤ × ℤ} {c : GridChainMinus R n} (hc : c ∈ G.bigradedChainMinusPiece R g) :
+    f c ∈ G'.bigradedChainMinusPiece R (g + δ) := by
+  rw [mem_bigradedChainMinusPiece] at hc ⊢
+  intro y e he
   rw [hf] at he
   obtain ⟨x, d, hd, w, hw, rfl⟩ :=
     GridChain.exists_eq_mapDomain_add_of_mem_support_sum_rename_mul R c σ M he
-  exact ⟨x, d, hd, hgrade x y w hw d⟩
+  rw [hδ x y w hw d, hc x d hd]
 
 /-- A renamed matrix map whose weighted transitions preserve bidegree sends a chain homogeneous
 for the source diagram `G` to a chain of the same bidegree for the target diagram `G'`. -/
 theorem matrixMap_mem_bigradedChainMinusPiece
     {g : ℤ × ℤ} {c : GridChainMinus R n} (hc : c ∈ G.bigradedChainMinusPiece R g) :
     f c ∈ G'.bigradedChainMinusPiece R g := by
-  rw [mem_bigradedChainMinusPiece] at hc ⊢
-  intro y e he
-  obtain ⟨x, d, hd, h⟩ :=
-    G.exists_monomialBidegree_eq_of_mem_support_matrixMap R G' σ M f hf hgrade he
-  rw [h, hc x d hd]
+  simpa using G.matrixMap_mem_bigradedChainMinusPiece_add R G' σ M f hf 0
+    (by simpa using hgrade) hc
 
 omit hgrade in
 /-- A renamed matrix map whose weighted transitions preserve Alexander degree sends an
