@@ -237,6 +237,59 @@ theorem rootSubgroupCoordinateMap_surjective (root : GLSymplecticFin.RootSubgrou
   | positiveSum i j hij => apply hentry (.inl i) (.inr j); simp [hij.ne, hij.ne']
   | negativeSum i j hij => exact (not_diagonalRootBase_isPos_negativeSum hij hroot).elim
 
+/-- The paired diagonal torus as a morphism into the standard flag stabilizer. -/
+noncomputable def diagonalTorus :
+    SplitTorus.groupScheme R (ULift.{u} (Fin m)) ⟶ groupScheme R m :=
+  eqToHom (DiagonalizableGroup.groupScheme_def R
+    (SplitTorus.characterGroup (ULift.{u} (Fin m)))) ≫
+      (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).map (diagonalTorusCoordinateMap R m).op
+
+/-- Composing the factored torus with inclusion recovers the symplectic torus morphism. -/
+@[reassoc (attr := simp)]
+theorem diagonalTorus_comp_inclusion :
+    diagonalTorus R m ≫ inclusion R m = Symplectic.diagonalTorus (R := R) (m := m) := by
+  rw [diagonalTorus, inclusion, CommHopfAlgCat.quotientSpecι_def,
+    Symplectic.diagonalTorus_def]
+  simp only [Category.assoc, ← Functor.map_comp, ← op_comp,
+    coordinateMap_comp_diagonalTorusCoordinateMap]
+  rfl
+
+/-- The paired diagonal torus is a closed subgroup of the flag stabilizer. -/
+instance isClosedImmersion_diagonalTorus :
+    AlgebraicGeometry.IsClosedImmersion (diagonalTorus R m).hom.hom.left := by
+  rw [diagonalTorus]
+  exact (CommHopfAlgCat.isClosedImmersion_eqToHom_comp_hopfSpec_map_iff
+    (DiagonalizableGroup.groupScheme_def R
+      (SplitTorus.characterGroup (ULift.{u} (Fin m)))) _).mpr
+    (diagonalTorusCoordinateMap_surjective R m)
+
+/-- A positive root subgroup as a morphism into the standard flag stabilizer. -/
+noncomputable def rootSubgroup (root : GLSymplecticFin.RootSubgroupIndex m)
+    (hroot : (diagonalRootBase.{u} m).IsPos root) :
+    AdditiveGroup.groupScheme R ⟶ groupScheme R m :=
+  eqToHom (AdditiveGroup.groupScheme_def R) ≫
+    (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).map
+      (rootSubgroupCoordinateMap R m root hroot).op
+
+/-- Composing a factored positive root with inclusion recovers its symplectic morphism. -/
+@[reassoc (attr := simp)]
+theorem rootSubgroup_comp_inclusion (root : GLSymplecticFin.RootSubgroupIndex m)
+    (hroot : (diagonalRootBase.{u} m).IsPos root) :
+    rootSubgroup R m root hroot ≫ inclusion R m = Symplectic.rootSubgroup (R := R) root := by
+  rw [rootSubgroup, inclusion, CommHopfAlgCat.quotientSpecι_def, Symplectic.rootSubgroup_def]
+  simp only [Category.assoc, ← Functor.map_comp, ← op_comp,
+    coordinateMap_comp_rootSubgroupCoordinateMap]
+  rfl
+
+/-- Every positive root subgroup is a closed subgroup of the flag stabilizer. -/
+instance isClosedImmersion_rootSubgroup (root : GLSymplecticFin.RootSubgroupIndex m)
+    (hroot : (diagonalRootBase.{u} m).IsPos root) :
+    AlgebraicGeometry.IsClosedImmersion (rootSubgroup R m root hroot).hom.hom.left := by
+  rw [rootSubgroup]
+  exact (CommHopfAlgCat.isClosedImmersion_eqToHom_comp_hopfSpec_map_iff
+    (AdditiveGroup.groupScheme_def R) _).mpr
+    (rootSubgroupCoordinateMap_surjective R m root hroot)
+
 section Points
 
 variable {A : Type v} [CommRing A] [Algebra R A]
@@ -315,6 +368,16 @@ noncomputable def pointsMulEquiv :
       (congrArg (fun g => Symplectic.pointsMulEquiv (R := R) (A := A) m g.val) h).symm
     _ = _ := (Subgroup.coe_congrOfMapEq_apply _ _ _).symm
 
+/-- The ambient point of a triangular symplectic matrix is its symplectic point. -/
+@[simp]
+theorem quotientPointsHom_pointsMulEquiv_symm (g : GLSymplecticFin.upperTriangular m A) :
+    CommHopfAlgCat.quotientPointsHom
+        (Symplectic.coordinateHopfAlgebra R m) (definingHopfIdeal R m)
+        (CommAlgCat.of R A) ((pointsMulEquiv R m (A := A)).symm g) =
+      (Symplectic.pointsMulEquiv (R := R) (A := A) m).symm g.val := by
+  apply (Symplectic.pointsMulEquiv (R := R) (A := A) m).injective
+  rw [pointsMulEquiv_coe, MulEquiv.apply_symm_apply, MulEquiv.apply_symm_apply]
+
 /-- The point comparison commutes with extension of the value algebra. -/
 theorem pointsMulEquiv_mapValue {B : Type w} [CommRing B] [Algebra R B]
     (φ : A →ₐ[R] B)
@@ -365,28 +428,8 @@ theorem pointsMulEquiv_rootSubgroupCoordinateMap (root : GLSymplecticFin.RootSub
   rw [CommHopfAlgCat.mapPointsFunctor_app_apply (rootSubgroupCoordinateMap R m root hroot)
     (CommAlgCat.of R A) f] at hquot
   rw [← pointsMulEquiv_coe, ← hquot]
-  let q := toConv (AlgHom.id R (AdditiveGroup.coordinateHopfAlgebra R))
-  have hgeneric := Symplectic.mapPointsFunctor_rootSubgroupCoordinateMap_app root
-    (CommAlgCat.of R (AdditiveGroup.coordinateHopfAlgebra R)) q
-  rw [CommHopfAlgCat.mapPointsFunctor_app_apply, AlgHom.id_comp] at hgeneric
-  have hmatrix := congrArg
-    (fun p => Symplectic.pointsMulEquiv R m (A := AdditiveGroup.coordinateHopfAlgebra R) p)
-    hgeneric
-  rw [Symplectic.pointsMulEquiv_rootSubgroupPoints] at hmatrix
-  have hq : AdditiveGroup.gaPointsMulEquiv q =
-      Multiplicative.ofAdd (SymmetricAlgebra.ι R R 1) := by
-    apply Multiplicative.toAdd.injective
-    simp only [AdditiveGroup.toAdd_gaPointsMulEquiv, q, AlgHom.id_apply, toAdd_ofAdd]
-  rw [hq] at hmatrix
-  have hvalue := Symplectic.pointsMulEquiv_mapValue (R := R) m f.ofConv
-    (toConv (Symplectic.rootSubgroupCoordinateMap (R := R) root).hom.toAlgHom)
-  rw [AlgHom.mapValue_apply, ofConv_toConv] at hvalue
-  rw [CommHopfAlgCat.mapPointsFunctor_app_apply, hvalue, hmatrix,
-    GLSymplecticFin.RootSubgroupIndex.map_hom_apply]
-  apply congrArg root.hom
-  apply Multiplicative.toAdd.injective
-  rw [toAdd_ofAdd, AdditiveGroup.toAdd_gaPointsMulEquiv]
-  exact congrFun (AlgHom.coe_toRingHom f.ofConv) (SymmetricAlgebra.ι R R 1)
+  rw [Symplectic.mapPointsFunctor_rootSubgroupCoordinateMap_app,
+    Symplectic.pointsMulEquiv_rootSubgroupPoints]
 
 /-- Every algebra-valued point group of the symplectic flag stabilizer is solvable. -/
 theorem isSolvable_points :
