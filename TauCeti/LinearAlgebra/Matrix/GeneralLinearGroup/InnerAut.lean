@@ -120,8 +120,7 @@ private theorem apply_mul_intertwiner (σ : Matrix n n A ≃ₐ[A] Matrix n n A)
   | h_zero => simp
   | h_add p q hp hq => rw [map_add, add_mul, mul_add, hp, hq]
   | h_std_basis k l c =>
-    rw [show single k l c = c • single k l 1 by rw [Matrix.smul_single, smul_eq_mul, mul_one],
-      map_smul, smul_mul_assoc, mul_smul_comm]
+    rw [← mul_one c, ← smul_eq_mul c 1, ← smul_single, map_smul, smul_mul_assoc, mul_smul_comm]
     congr 1
     simp only [intertwiner, Finset.mul_sum, Finset.sum_mul, ← mul_assoc, ← map_mul]
     rw [Finset.sum_eq_single l (fun j _ hj => by simp [Ne.symm hj]) (by simp),
@@ -134,8 +133,7 @@ private theorem mul_coIntertwiner (σ : Matrix n n A ≃ₐ[A] Matrix n n A) (a 
   | h_zero => simp
   | h_add p q hp hq => rw [map_add, add_mul, mul_add, hp, hq]
   | h_std_basis k l c =>
-    rw [show single k l c = c • single k l 1 by rw [Matrix.smul_single, smul_eq_mul, mul_one],
-      map_smul, smul_mul_assoc, mul_smul_comm]
+    rw [← mul_one c, ← smul_eq_mul c 1, ← smul_single, map_smul, smul_mul_assoc, mul_smul_comm]
     congr 1
     simp only [coIntertwiner, Finset.mul_sum, Finset.sum_mul, mul_assoc, ← map_mul]
     rw [Finset.sum_eq_single l (fun j _ hj => by simp [← mul_assoc, Ne.symm hj]) (by simp),
