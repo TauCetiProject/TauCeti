@@ -109,12 +109,6 @@ instance instIsSchemeTheoreticallyDominantToProjectiveOrbit
   rw [toProjectiveOrbit_def]
   infer_instance
 
-/-- The map onto the orbit scheme is quasi-compact. -/
-instance instQuasiCompactToProjectiveOrbit (m : M) (hm : Module.IsUnimodular k m) :
-    QuasiCompact (toProjectiveOrbit (H := H) m hm) := by
-  rw [toProjectiveOrbit_def]
-  infer_instance
-
 /-- The map onto the orbit scheme is locally of finite type. -/
 instance instLocallyOfFiniteTypeToProjectiveOrbit (m : M) (hm : Module.IsUnimodular k m) :
     LocallyOfFiniteType (toProjectiveOrbit (H := H) m hm) := by
@@ -124,8 +118,9 @@ instance instLocallyOfFiniteTypeToProjectiveOrbit (m : M) (hm : Module.IsUnimodu
 /-- The orbit scheme of a reduced affine group scheme is reduced. -/
 instance instIsReducedProjectiveOrbitScheme [_root_.IsReduced H]
     (m : M) (hm : Module.IsUnimodular k m) :
-    IsReduced (projectiveOrbitScheme (H := H) m hm) :=
-  IsSchemeTheoreticallyDominant.isReduced (toProjectiveOrbit (H := H) m hm)
+    IsReduced (projectiveOrbitScheme (H := H) m hm) := by
+  let := Algebra.FiniteType.isNoetherianRing k H
+  exact IsSchemeTheoreticallyDominant.isReduced (toProjectiveOrbit (H := H) m hm)
 
 /-- The orbit scheme is Noetherian, including when the group is nonreduced. -/
 instance instIsNoetherianProjectiveOrbitScheme (m : M) (hm : Module.IsUnimodular k m) :
