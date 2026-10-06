@@ -32,7 +32,7 @@ Proposition 1.4.9 for the description of `L(n · P_∞)`).
 The polynomiality step is `TauCeti.Place.forall_ord_adicOfIrreducible_nonneg_iff`, which reads
 Mathlib's `IsDedekindDomain.HeightOneSpectrum.mem_integers_of_valuation_le_one` for the Dedekind
 domain `k[X]` in place vocabulary.  It combines with
-`TauCeti.Place.eq_infty_or_exists_eq_adic`: the places of `k(x)` are the height-one primes of
+`TauCeti.Place.eq_infty_or_exists_eq_ofPrime`: the places of `k(x)` are the height-one primes of
 `k[X]` together with `P_∞`, so the two conditions defining `L(n · P_∞)` split exactly along that
 classification.
 
@@ -129,13 +129,13 @@ theorem mem_riemannRochSpace_zsmul_ofPoint_infty_iff {n : ℕ} {f : RatFunc k} :
       valuation_infty_algebraMap_le_exp_iff] at h
     exact h
   · rintro ⟨q, hq, rfl⟩ P
-    rcases Place.eq_infty_or_exists_eq_adic P with rfl | ⟨p, rfl⟩
+    rcases Place.eq_infty_or_exists_eq_ofPrime P with rfl | ⟨p, rfl⟩
     · rw [WeilDivisor.coeff_zsmul, WeilDivisor.coeff_ofPoint_self, mul_one,
         valuation_infty_algebraMap_le_exp_iff]
       exact hq
     · rw [WeilDivisor.coeff_zsmul,
-        WeilDivisor.coeff_ofPoint_of_ne (Place.adic_ne_infty k p), mul_zero,
-        WithZero.exp_zero, Place.valuation_adic]
+        WeilDivisor.coeff_ofPoint_of_ne (Place.ofPrime_ne_infty k p), mul_zero,
+        WithZero.exp_zero, Place.valuation_ofPrime]
       exact p.valuation_le_one q
 
 /-- **The Riemann–Roch spaces of `k(x)` at infinity**, as an equality of `k`-subspaces of `k(x)`:

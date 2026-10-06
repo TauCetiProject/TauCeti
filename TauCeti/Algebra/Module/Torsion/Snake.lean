@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Module.SnakeLemma
 public import Mathlib.Algebra.Module.Torsion.Basic
+public import Mathlib.GroupTheory.QuotientGroup.Finite
 public import Mathlib.RingTheory.QuotSMulTop
 
 /-!
@@ -44,6 +45,7 @@ sequence enters the comparison of `M ⧸ ℓM` with `M[ℓ]` for `G`-modules in 
 * `TauCeti.exact_torsionByMap_torsionByδ`, `TauCeti.exact_torsionByδ_quotSMulTop_map`: exactness
   at `M₃[r]` and at `M₁ ⧸ rM₁`.
 * `TauCeti.torsionByδ_comp_torsionByMap`: naturality of the connecting map.
+* `TauCeti.finite_quotSMulTop_of_exact`: `M₁ ⧸ rM₁` is finite when `M₃[r]` and `M₂ ⧸ rM₂` are.
 -/
 
 public section
@@ -161,6 +163,16 @@ theorem exact_torsionByδ_quotSMulTop_map (hfg : Exact f g) (hf : Injective f)
     Exact (torsionByδ r hfg hf hg) (QuotSMulTop.map r f) :=
   SnakeLemma.exact_δ'_left _ _ _ _ _ hfg _ _ hfg _ _ _ _ _ _ _ (exact_toLinearMap_mkQ r M₂) hg hf
     _ (QuotSMulTop.map_comp_mkQ r f) (r • (⊤ : Submodule R M₁)).mkQ_surjective
+
+/-- **Finiteness of `M₁ ⧸ rM₁` along a short exact sequence**: if `M₃[r]` and `M₂ ⧸ rM₂` are finite,
+so is `M₁ ⧸ rM₁`, which sits between them in the six-term sequence. -/
+theorem finite_quotSMulTop_of_exact (hfg : Exact f g) (hf : Injective f) (hg : Surjective g)
+    [Finite (torsionBy R M₃ r)] [Finite (QuotSMulTop r M₂)] : Finite (QuotSMulTop r M₁) := by
+  let := Fintype.ofFinite (torsionBy R M₃ r)
+  let := Fintype.ofFinite (QuotSMulTop r M₂)
+  have h := exact_torsionByδ_quotSMulTop_map (r := r) hfg hf hg
+  exact (AddGroup.fintypeOfKerLeRange (torsionByδ r hfg hf hg).toAddMonoidHom
+    (QuotSMulTop.map r f).toAddMonoidHom fun x hx ↦ (h x).1 hx).finite
 
 variable {N₁ N₂ N₃ : Type*} [AddCommGroup N₁] [Module R N₁] [AddCommGroup N₂] [Module R N₂]
   [AddCommGroup N₃] [Module R N₃] {f' : N₁ →ₗ[R] N₂} {g' : N₂ →ₗ[R] N₃}

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.RingTheory.Ideal.Quotient.Basic
 public import Mathlib.RingTheory.RootsOfUnity.Minpoly
 
@@ -32,6 +33,8 @@ roots of unity, and hence the values of a character of a finite group, are integ
   order `n` is a primitive `2n`-th root of unity.
 * `TauCeti.rootsOfUnity_eq_bot_iff`: for a prime `p`, the `p`th roots of unity are trivial
   exactly when there is no primitive `p`th root of unity.
+* `TauCeti.finite_torsionBy_additive_units`: the `n`-torsion of `Mˣ`, written additively, is
+  finite when the `n`-th roots of unity are, for instance in a domain for `n ≠ 0`.
 -/
 
 public section
@@ -105,5 +108,15 @@ theorem rootsOfUnity_eq_bot_iff {M : Type*} [CommMonoid M] {p : ℕ} [Fact p.Pri
   rw [h, Subgroup.mem_bot, Units.ext_iff, IsUnit.unit_spec, Units.val_one] at hu
   rw [hζ.eq_orderOf, hu, orderOf_one] at hp
   exact lt_irrefl 1 hp
+
+/-- The `n`-torsion of the unit group of a commutative monoid, written additively, consists of the
+`n`-th roots of unity; so it is finite when they are, for instance in a domain for `n ≠ 0`. -/
+instance finite_torsionBy_additive_units {M : Type*} [CommMonoid M] (n : ℕ)
+    [Finite (rootsOfUnity n M)] : Finite (Submodule.torsionBy ℤ (Additive Mˣ) (n : ℤ)) := by
+  refine Finite.of_injective (β := rootsOfUnity n M)
+    (fun x ↦ ⟨x.1.toMul, (mem_rootsOfUnity _ _).2 ?_⟩) fun x y h ↦ ?_
+  · have hx := congrArg Additive.toMul ((Submodule.mem_torsionBy_iff _ _).mp x.2)
+    rwa [natCast_zsmul, toMul_nsmul, toMul_zero] at hx
+  · exact Subtype.ext (Additive.toMul.injective (congrArg Subtype.val h))
 
 end TauCeti

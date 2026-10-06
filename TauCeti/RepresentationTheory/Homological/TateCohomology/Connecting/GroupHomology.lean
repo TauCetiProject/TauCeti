@@ -173,22 +173,6 @@ theorem δ_comp_negSuccIso_hom {S : ShortComplex (Rep R G)} (hS : S.ShortExact) 
   rw [← toGroupHomology_eq_negSuccIso_hom, ← toGroupHomology_eq_negSuccIso_hom,
     δ_comp_toGroupHomology]
 
-/-- A norm-zero element, as a cycle of degree `-1` of the Tate complex, is the same element as a
-`0`-chain. -/
-private theorem HNegOneCyclesIso_inv_comp_iCycles (M : Rep R G) :
-    (HNegOneCyclesIso M).inv ≫ (tateComplex M).iCycles (-1) =
-      ModuleCat.ofHom (LinearMap.ker M.ρ.norm).subtype ≫ (chainsIso₀ M).inv :=
-  (Iso.eq_comp_inv (chainsIso₀ M)).2 ((Category.assoc _ _ _).trans
-    ((Iso.inv_comp_eq _).2 (HNegOneCyclesIso_hom_comp_subtype M).symm))
-
-/-- An invariant element, as a cycle of degree `0` of the Tate complex, is the same element as a
-`0`-cochain. -/
-private theorem H0CyclesIso_inv_comp_iCycles (M : Rep R G) :
-    (H0CyclesIso M).inv ≫ (tateComplex M).iCycles 0 =
-      ModuleCat.ofHom M.ρ.invariants.subtype ≫ (cochainsIso₀ M).inv :=
-  (Iso.eq_comp_inv (cochainsIso₀ M)).2 ((Category.assoc _ _ _).trans
-    ((Iso.inv_comp_eq _).2 (H0CyclesIso_hom_comp_subtype M).symm))
-
 /-- In degree `-1` the comparison with group homology sends the class of a norm-zero element to its
 class in `H₀(G, M)`. -/
 @[reassoc (attr := simp)]

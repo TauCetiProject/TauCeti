@@ -141,7 +141,8 @@ theorem mk_coe {E : TopCat.{u}} (p : E ⟶ X) (hp : _root_.IsCoveringMap p) :
 abbrev proj (p : CoveringSpace X) : (p : TopCat) ⟶ X :=
   p.obj.hom
 
-@[simp]
+-- Not `@[simp]`: Mathlib's `ObjectProperty.ι_obj` rewrites `(forget X).obj p` first, so a `simp`
+-- attribute here would never fire.
 theorem forget_obj_left (p : CoveringSpace X) : ((forget X).obj p).left = (p : TopCat) :=
   rfl
 
@@ -161,11 +162,13 @@ theorem isCoveringMap_proj (p : CoveringSpace X) : _root_.IsCoveringMap p.proj :
 def fullyFaithfulForget (X : TopCat.{u}) : (forget X).FullyFaithful :=
   ObjectProperty.fullyFaithfulι _
 
-@[simp]
+-- The two characteristic equations below are deliberately not `@[simp]`: Mathlib's
+-- `ObjectProperty.ι*`, `Over.forget_*` and `Functor.comp_*` lemmas match these goals first, so a
+-- `simp` attribute here would never fire.
+
 theorem totalSpace_obj (p : CoveringSpace X) : (totalSpace X).obj p = (p : TopCat) :=
   rfl
 
-@[simp]
 theorem totalSpace_map {p q : CoveringSpace X} (f : p ⟶ q) :
     (totalSpace X).map f = f.hom.left :=
   rfl

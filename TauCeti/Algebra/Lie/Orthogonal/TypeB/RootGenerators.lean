@@ -55,10 +55,14 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 
 universe u
 
-variable {K : Type u} [CommRing K]
-variable {ι : Type*} [DecidableEq ι] [Fintype ι]
+variable {K : Type u}
+variable {ι : Type*} [DecidableEq ι]
 
 /-! ### Long roots -/
+
+section AddGroupWithOne
+
+variable [AddGroupWithOne K]
 
 /-- The ambient root matrix for the long type-`B` root `εᵢ - εⱼ`; the inequality witness
 excludes the degenerate zero-weight case. -/
@@ -67,7 +71,6 @@ def typeBLongRootMatrix (i j : ι) (_hij : i ≠ j) :
   single (.inr (.inl i)) (.inr (.inl j)) 1 -
     single (.inr (.inr j)) (.inr (.inr i)) 1
 
-omit [Fintype ι] in
 /-- The long type-`B` root matrix as a difference of two matrix units. -/
 theorem typeBLongRootMatrix_def (i j : ι) (hij : i ≠ j) :
     typeBLongRootMatrix (K := K) i j hij =
@@ -75,17 +78,11 @@ theorem typeBLongRootMatrix_def (i j : ι) (hij : i ≠ j) :
         single (.inr (.inr j)) (.inr (.inr i)) 1 :=
   (rfl)
 
-/-- The long-root matrix sends the basis vector at `+j` to the one at `+i` and the basis vector at
-`-i` to minus the one at `-j`, and kills every other basis vector. -/
-theorem toLinAlgEquiv_typeBLongRootMatrix_apply_basis {M : Type*} [AddCommGroup M] [Module K M]
-    (bas : Module.Basis (Unit ⊕ ι ⊕ ι) K M) (i j : ι) (hij : i ≠ j)
-    (c : Unit ⊕ ι ⊕ ι) :
-    Matrix.toLinAlgEquiv bas (typeBLongRootMatrix i j hij) (bas c) =
-      (if .inr (.inl j) = c then bas (.inr (.inl i)) else 0) -
-        if .inr (.inr i) = c then bas (.inr (.inr j)) else 0 := by
-  rw [typeBLongRootMatrix, map_sub, LinearMap.sub_apply,
-    toLinAlgEquiv_single_apply_basis, toLinAlgEquiv_single_apply_basis]
-  simp
+end AddGroupWithOne
+
+section Ring
+
+variable [Ring K] [Fintype ι]
 
 /-- Two long type-`B` root matrices bracket to zero when their directed index pairs cannot
 concatenate in either order. -/
@@ -106,6 +103,22 @@ theorem typeBLongRootMatrix_lie_longRootMatrix_chain (i j k l : ι)
   rw [LieRing.of_associative_ring_bracket]
   simp [typeBLongRootMatrix_def, mul_sub, sub_mul, Matrix.single_mul_single_same,
     Matrix.single_mul_single_of_ne, hil, hil.symm]
+
+end Ring
+
+variable [CommRing K] [Fintype ι]
+
+/-- The long-root matrix sends the basis vector at `+j` to the one at `+i` and the basis vector at
+`-i` to minus the one at `-j`, and kills every other basis vector. -/
+theorem toLinAlgEquiv_typeBLongRootMatrix_apply_basis {M : Type*} [AddCommGroup M] [Module K M]
+    (bas : Module.Basis (Unit ⊕ ι ⊕ ι) K M) (i j : ι) (hij : i ≠ j)
+    (c : Unit ⊕ ι ⊕ ι) :
+    Matrix.toLinAlgEquiv bas (typeBLongRootMatrix i j hij) (bas c) =
+      (if .inr (.inl j) = c then bas (.inr (.inl i)) else 0) -
+        if .inr (.inr i) = c then bas (.inr (.inr j)) else 0 := by
+  rw [typeBLongRootMatrix, map_sub, LinearMap.sub_apply,
+    toLinAlgEquiv_single_apply_basis, toLinAlgEquiv_single_apply_basis]
+  simp
 
 /-- The long-root matrix is skew-adjoint for the split odd orthogonal form. -/
 theorem typeBLongRootMatrix_mem_typeB (i j : ι) (hij : i ≠ j) :
