@@ -13,10 +13,10 @@ import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 /-!
 # Linear duality exchanges projective and injective modules
 
-For an algebra `A` over a field `k`, linear duality sends finitely generated projective right
-modules to injective left modules. Over a finite-dimensional algebra it also sends
-finite-dimensional injective right modules to projective left modules. These are the
-projective and injective terms used when dualizing finite module presentations.
+For an algebra `A` over a field `k`, linear duality sends projective right modules to injective
+left modules. Over a finite-dimensional algebra it also sends finite-dimensional injective right
+modules to projective left modules. These are the projective and injective terms used when
+dualizing finite module presentations.
 
 The left action on a dual is specified by a linear equivalence and the identity
 `e (a • q) x = e q (op a • x)`. This follows the convention of
@@ -45,49 +45,56 @@ variable {k : Type u} [Field k] {A : Type v} [Ring A] [Algebra k A]
   {N : Type w} [AddCommGroup N] [Module Aᵐᵒᵖ N] [Module k N] [IsScalarTower k Aᵐᵒᵖ N]
   {Q : Type z} [AddCommGroup Q] [Module A Q] [Module k Q]
 
-/-- The linear dual of a finitely generated projective right module is an injective left
-module, with the action given by precomposition. The algebra need not be finite-dimensional. -/
+/-- The linear dual of a projective right module is an injective left module, with the action
+given by precomposition. The algebra need not be finite-dimensional. -/
 theorem moduleInjective_of_dual_projective (e : Q ≃ₗ[k] Module.Dual k N)
     (he : ∀ (a : A) (q : Q) (x : N), e (a • q) x = e q (MulOpposite.op a • x))
-    [Module.Finite Aᵐᵒᵖ N] [Module.Projective Aᵐᵒᵖ N] : Module.Injective A Q := by
-  obtain ⟨n, f, g, -, -, hfg⟩ := Module.Finite.exists_comp_eq_id_of_projective Aᵐᵒᵖ N
+    [Module.Projective Aᵐᵒᵖ N] : Module.Injective A Q := by
+  classical
+  obtain ⟨g, hfg⟩ := Module.projective_def'.1 (inferInstance : Module.Projective Aᵐᵒᵖ N)
+  let f : (N →₀ Aᵐᵒᵖ) →ₗ[Aᵐᵒᵖ] N := Finsupp.linearCombination Aᵐᵒᵖ id
   -- The dual of the right regular module, with its left action.
   let : Module A (Module.Dual k A) := Module.compHom _ (dualRightAction k A)
   have hsmul (a : A) (φ : Module.Dual k A) (x : A) : (a • φ) x = φ (x * a) :=
     (dualRightAction_apply_apply k A a φ x).trans (by rw [op_smul_eq_mul])
   let : Module.Injective A (Module.Dual k A) :=
     moduleInjective_of_equiv_dual_regular k (LinearEquiv.refl k _) hsmul
-  let : Module.Injective A (Fin n → Module.Dual k A) := Module.Injective.pi A _
-  -- Dualize the splitting of `N` off a finite free right module.
-  let s : Q →ₗ[A] (Fin n → Module.Dual k A) :=
+  let : Module.Injective A (N → Module.Dual k A) := Module.Injective.pi A _
+  -- Dualize the splitting of `N` off a free right module.
+  let s : Q →ₗ[A] (N → Module.Dual k A) :=
     { toFun := fun q i ↦ (e q).comp ((f.restrictScalars k).comp
-        ((LinearMap.single k (fun _ : Fin n ↦ Aᵐᵒᵖ) i).comp
+        ((Finsupp.lsingle i : Aᵐᵒᵖ →ₗ[k] N →₀ Aᵐᵒᵖ).comp
           (MulOpposite.opLinearEquiv k).toLinearMap))
       map_add' := fun _ _ ↦ by ext; simp
       map_smul' := fun a q ↦ by
         ext i x
-        simp only [LinearMap.coe_comp, LinearMap.coe_restrictScalars, LinearMap.coe_single,
+        simp only [LinearMap.coe_comp, LinearMap.coe_restrictScalars, Finsupp.lsingle_apply,
           LinearEquiv.coe_coe, MulOpposite.coe_opLinearEquiv, Function.comp_apply,
           RingHom.id_apply, Pi.smul_apply, he, hsmul]
-        rw [← f.map_smul, ← Pi.single_smul', smul_eq_mul, ← MulOpposite.op_mul] }
-  let r : (Fin n → Module.Dual k A) →ₗ[A] Q :=
+        rw [← f.map_smul, Finsupp.smul_single, smul_eq_mul, ← MulOpposite.op_mul] }
+  let r : (N → Module.Dual k A) →ₗ[A] Q :=
     { toFun := fun φ ↦ e.symm
-        { toFun := fun x ↦ ∑ i, φ i (g x i).unop
-          map_add' := fun _ _ ↦ by simp [Finset.sum_add_distrib]
-          map_smul' := fun _ _ ↦ by simp [Finset.mul_sum] }
-      map_add' := fun _ _ ↦ by apply e.injective; ext; simp [Finset.sum_add_distrib]
-      map_smul' := fun a φ ↦ by apply e.injective; ext; simp [he, hsmul] }
+        { toFun := fun x ↦ (g x).sum fun i c ↦ φ i c.unop
+          map_add' := fun _ _ ↦ by simp [Finsupp.sum_add_index']
+          map_smul' := fun _ _ ↦ by
+            simp [Finsupp.sum_smul_index']
+            simp only [Finsupp.sum, Finset.mul_sum] }
+      map_add' := fun _ _ ↦ by apply e.injective; ext; simp [Finsupp.sum_add]
+      map_smul' := fun a φ ↦ by
+        apply e.injective
+        ext x
+        simp [he, hsmul, Finsupp.sum_smul_index'] }
   apply Module.Baer.injective
   apply (Module.Baer.of_injective
-    (inferInstance : Module.Injective A (Fin n → Module.Dual k A))).of_leftInverse s r
+    (inferInstance : Module.Injective A (N → Module.Dual k A))).of_leftInverse s r
   intro q
   apply e.injective
   ext x
   have hx := LinearMap.congr_fun hfg x
-  have hf : (∑ i, f (Pi.single i (g x i))) = x := by
-    rw [← map_sum, Finset.univ_sum_single]
+  have hf : (g x).sum (fun i c ↦ f (Finsupp.single i c)) = x := by
+    rw [← map_finsuppSum, Finsupp.sum_single]
     exact hx
-  simpa [s, r, map_sum] using congr(e q $hf)
+  simpa [s, r, map_finsuppSum] using congr(e q $hf)
 
 /-- Over a finite-dimensional algebra, the linear dual of a finite-dimensional injective
 right module is a projective left module, with the action given by precomposition. -/
