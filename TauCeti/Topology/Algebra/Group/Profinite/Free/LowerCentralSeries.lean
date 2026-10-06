@@ -50,7 +50,8 @@ the degree-zero basis to the degree-one basis.
 ## Main definitions
 
 * `TauCeti.freeProP.lcsDegreeZeroBasis`, `TauCeti.freeProP.lcsDegreeOneBasis`: the `ℤ_p`-bases
-  `x̄_i` of `gr_0(F)` and `[x̄_i, x̄_j]`, `i < j`, of `gr_1(F)`, for the `ℤ_p`-module structure
+  `x_i` of `gr_0(F)` and `[x_i, x_j]`, `i < j`, of `gr_1(F)` (classes of the generators and their
+  brackets), for the `ℤ_p`-module structure
   `TauCeti.freeProP.instModulePadicIntLcsGradedPiece`.
 * `TauCeti.freeProP.exteriorSquareEquivLcsGradedPieceOne`: the isomorphism `⋀²gr_0(F) ≃ gr_1(F)`,
   `x ∧ y ↦ [x, y]`.
@@ -303,7 +304,7 @@ noncomputable instance instModulePadicIntLcsGradedPiece (n : ℕ) :
   (isProP_freeProP p X).gradedPieceModule 0 n
 
 /-- **The `ℤ_p`-basis of `gr_0` of a free pro-`p` group of finite rank**, formed by the classes
-`x̄_i` of the generators (`TauCeti.lcsGradedPiece_zero_freeProP_bijective`). -/
+of the generators `x_i` (`TauCeti.lcsGradedPiece_zero_freeProP_bijective`). -/
 noncomputable def lcsDegreeZeroBasis : Module.Basis X ℤ_[p] (lcsGradedPiece (freeProP p X) 0) :=
   have h : Function.Bijective (Fintype.linearCombination ℤ_[p]
       fun i ↦ gradedMkZero 0 (freeProP p X) (of i)) := by
@@ -334,7 +335,7 @@ theorem finrank_lcsGradedPiece_zero :
   Module.finrank_eq_card_basis (lcsDegreeZeroBasis p X)
 
 /-- **The `ℤ_p`-basis of `gr_1` of a free pro-`p` group of finite rank**, formed by the brackets
-`[x̄_i, x̄_j]` of the generator classes for `i < j`
+`[x_i, x_j]` of the generator classes for `i < j`
 (`TauCeti.lcsGradedPiece_one_freeProP_bijective`). -/
 noncomputable def lcsDegreeOneBasis [LinearOrder X] :
     Module.Basis {ij : X × X // ij.1 < ij.2} ℤ_[p] (lcsGradedPiece (freeProP p X) 1) :=
