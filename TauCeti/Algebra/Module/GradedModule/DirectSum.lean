@@ -36,7 +36,7 @@ the strictly positive part of the algebra.
 
 * `TauCeti.DirectSum.coe_decompose_smul_add_of_right_mem`: the components of `a • x`, for `x`
   homogeneous in a graded module, are the products of the components of `a` with `x`.
-* `TauCeti.InternalGrading.smul_top_eq_bot_of_piece_eq_bot`: a graded module concentrated in
+* `TauCeti.InternalGrading.smul_top_eq_bot_of_piece_eq_bot_of_ne`: a graded module concentrated in
   one internal degree is annihilated by the strictly positive part of the algebra.
 
 ## References
@@ -307,7 +307,7 @@ variable (𝒜 : ℤ → Submodule k A)
 
 /-- A graded module concentrated in one internal degree is annihilated by the strictly
 positive part of the algebra. -/
-theorem smul_top_eq_bot_of_piece_eq_bot (G : InternalGrading k M)
+theorem smul_top_eq_bot_of_piece_eq_bot_of_ne (G : InternalGrading k M)
     [SetLike.GradedSMul 𝒜 G.piece] (j : ℤ) (h : ∀ p, p ≠ j → G.piece p = ⊥) :
     (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k M) = ⊥ := by
   rw [← G.isInternal.submodule_iSup_eq_top]
