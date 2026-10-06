@@ -63,6 +63,24 @@ def unitFiltrationZeroIncl :
 theorem unitFiltrationZeroIncl_apply (x : Additive (unitFiltration L 0)) :
     (unitFiltrationZeroIncl K L).hom x = Additive.ofMul (x.toMul : Lˣ) := (rfl)
 
+/-- The inclusion of the valuation-zero units in the multiplicative group is injective. -/
+theorem unitFiltrationZeroIncl_injective : Function.Injective (unitFiltrationZeroIncl K L).hom :=
+  fun _ _ h ↦ Additive.toMul.injective (Subtype.ext (congrArg Additive.toMul h))
+
+/-- On the valuation-zero units of a Galois extension, the representation norm of `Gal(L/K)` is
+the field norm. -/
+theorem coe_norm_unitFiltrationZero [IsGalois K L]
+    (x : Rep.ofMulDistribMulAction (L ≃ₐ[K] L) (unitFiltration L 0)) :
+    (((Rep.toAdditive
+        ((Rep.ofMulDistribMulAction (L ≃ₐ[K] L) (unitFiltration L 0)).norm.hom x)).toMul :
+          Lˣ) : L) =
+      algebraMap K L (Algebra.norm K (((Rep.toAdditive x).toMul : Lˣ) : L)) := by
+  -- Compare in `Lˣ`, where the representation norm is the field norm.
+  have hc := congr($(Rep.norm_comm (unitFiltrationZeroIncl K L)).hom x)
+  simp only [Rep.hom_comp, Representation.IntertwiningMap.comp_apply] at hc
+  rw [← groupCohomology.norm_ofAlgebraAutOnUnits_eq]
+  exact congr(((Additive.toMul (Rep.toAdditive $hc.symm) : Lˣ) : L))
+
 /-- Normalized valuation as a morphism from the multiplicative Galois representation to the
 trivial integral representation. -/
 def unitsValuationHom : Rep.ofMulDistribMulAction (L ≃ₐ[K] L) Lˣ ⟶ Rep.trivial ℤ (L ≃ₐ[K] L) ℤ :=
@@ -71,11 +89,9 @@ def unitsValuationHom : Rep.ofMulDistribMulAction (L ≃ₐ[K] L) Lˣ ⟶ Rep.tr
       -- `change` evaluates `Representation.ofMulDistribMulAction` on `Additive Lˣ`,
       -- reduces the target's `Representation.trivial` action to the identity, and evaluates
       -- `toAdditiveLeft.toIntLinearMap` as `Multiplicative.toAdd` of normalized valuation.
-      -- Equality then follows from the original valuations through their order comparison.
       change (normalizedValuation L (σ • x.toMul)).toAdd =
         (normalizedValuation L x.toMul).toAdd
-      apply le_antisymm <;> rw [toAdd_normalizedValuation_le_iff_valuation_le] <;>
-        simp [AlgEquiv.smul_units_def, σ.valuation_eq]
+      rw [AlgEquiv.smul_units_def, AlgEquiv.normalizedValuation_unitsMap]
 
 /-- The valuation morphism evaluates to the additive normalized valuation. -/
 @[simp]
@@ -133,10 +149,7 @@ theorem unitsValuationSequence_shortExact : (unitsValuationSequence K L).ShortEx
       exact ⟨Additive.ofMul ⟨(Rep.toAdditive x).toMul, hx⟩, rfl⟩
     · rintro ⟨y, rfl⟩
       exact y.toMul.2
-  · intro x y h
-    apply Additive.toMul.injective
-    apply Subtype.ext
-    exact congrArg Additive.toMul h
+  · exact unitFiltrationZeroIncl_injective K L
   · intro n
     obtain ⟨x, hx⟩ := normalizedValuation_surjective (K := L) (Multiplicative.ofAdd n)
     exact ⟨Additive.ofMul x, congrArg Multiplicative.toAdd hx⟩
