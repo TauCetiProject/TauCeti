@@ -16,6 +16,12 @@ Mathlib's `AnalyticAt.harmonicAt_log_norm` shows that `z ↦ log ‖z‖` is har
 harmonic away from `a` in every two-dimensional real inner product space, such as
 `EuclideanSpace ℝ (Fin 2)`.
 
+In the plane, `x ↦ log ‖x - a‖` plays the role that the Newtonian kernel plays in higher
+dimensions. These results supply the harmonicity behind the logarithmic exterior sphere barrier
+`TauCeti.isBarrier_log_norm_sub` in `TauCeti.Analysis.PDE.Perron.Barrier`. That barrier handles
+the two-dimensional case of Perron's method for the Dirichlet problem on domains satisfying the
+exterior sphere condition.
+
 ## Main declarations
 
 * `TauCeti.harmonicAt_log_norm_sub_of_finrank_eq_two`: harmonicity of `x ↦ log ‖x - a‖` away
