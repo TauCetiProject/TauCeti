@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import TauCeti.Algebra.Homology.AInfinity.Algebra.Unit
 public import TauCeti.Algebra.Homology.AInfinity.Module.Right.Free
 public import TauCeti.Algebra.Homology.AInfinity.Module.Right.Hom.Complex
+public import TauCeti.LinearAlgebra.TensorCoalgebra.Coaugmented.Concat
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
 
@@ -31,8 +32,9 @@ All constructions are made on the cofree bar comodules `sA ⊗ Tᶜ(sA)` and `sM
   to the one-letter word `e`.  It commutes with the differentials as soon as `m₁(e) = 0`.
 * The Yoneda cochain `TauCeti.AInfinityRightModule.yonedaCochain` of `x` has Taylor map
   `y ⊗ w ↦ b^M(x ⊗ y w)`, that is `(a₁, …, aₙ) ↦ m_{n+1}(x, a₁, …, aₙ)` up to the suspension
-  signs.  It is a chain map by the module Stasheff identities, and evaluating it at `e` returns
-  `m₂(x, e) = x`.
+  signs.  By the module Stasheff identities, the assignment `x ↦ yonedaCochain x` commutes with
+  the differentials, which makes it the map of complexes `TauCeti.AInfinityRightModule.yoneda`;
+  evaluating the Yoneda cochain of `x` at `e` returns `m₂(x, e) = x`.
 * Prepending `e` is a contracting homotopy of the bar complex of the free module of rank one
   (`TauCeti.AInfinityAlgebra.barDifferential_toRightModule_comp_tmulConcat_add`), because `e` is a
   strict unit.  Precomposing with it gives the homotopy
@@ -80,75 +82,13 @@ open scoped TensorProduct
 
 namespace TauCeti
 
-universe u uR uA uM uX uN
+universe u uR uA uM
 
 attribute [local instance] Comodule.cofree
 
 section Cochains
 
 variable {R : Type uR} {A : Type uA} [CommRing R] [AddCommGroup A] [Module R A]
-
-namespace TensorWords
-
-variable (R A) in
-/-- Concatenation after a fixed first factor: `x` sends `y ⊗ w` to `x ⊗ y w`, where `y w` is the
-word `w` with the letter `y` prepended. -/
-noncomputable def tmulConcat (X : Type uX) [AddCommGroup X] [Module R X] :
-    X →ₗ[R] A ⊗[R] TensorWords R A →ₗ[R] X ⊗[R] TensorWords R A :=
-  (TensorProduct.mk R X (TensorWords R A)).compl₂
-    (reducedInclusion R A ∘ₗ TensorProduct.lift (prepend R A))
-
-variable {X : Type uX} [AddCommGroup X] [Module R X]
-
-/-- Concatenation behind `x` applies prepending, followed by the inclusion of the nonempty words,
-behind `x`. -/
-theorem tmulConcat_apply (x : X) (z : A ⊗[R] TensorWords R A) :
-    tmulConcat R A X x z = x ⊗ₜ[R] reducedInclusion R A (TensorProduct.lift (prepend R A) z) :=
-  (rfl)
-
-/-- Concatenation behind `x` sends `y ⊗ w` to `x ⊗ y w`. -/
-@[simp]
-theorem tmulConcat_tmul (x : X) (y : A) (w : TensorWords R A) :
-    tmulConcat R A X x (y ⊗ₜ[R] w) = x ⊗ₜ[R] reducedInclusion R A (prepend R A y w) :=
-  (rfl)
-
-/-- The cofree lift of `φ` after concatenation behind `z`: the cut before the first letter of the
-concatenated word gives `φ (z ⊗ 1)` in front of the whole word, and every other cut falls inside
-the concatenated word. -/
-theorem cofreeLift_comp_tmulConcat {N : Type uN} [AddCommGroup N] [Module R N]
-    (φ : X ⊗[R] TensorWords R A →ₗ[R] N) (z : X) :
-    (Comodule.Hom.cofreeLift (C := TensorWords R A) φ).toLinearMap ∘ₗ tmulConcat R A X z =
-      tmulConcat R A N (φ (z ⊗ₜ[R] 1)) +
-        (Comodule.Hom.cofreeLift (C := TensorWords R A)
-          (φ ∘ₗ tmulConcat R A X z)).toLinearMap := by
-  refine TensorProduct.ext' fun y w ↦ ?_
-  have hΔ := deconcatenation_reducedInclusion_prepend (R := R) y w
-  simp only [LinearMap.comp_apply, LinearMap.add_apply, tmulConcat_tmul,
-    Comodule.Hom.cofreeLift_toLinearMap, Comodule.cofree_coact_tmul, comul_eq_deconcatenation]
-  rw [hΔ]
-  simp only [TensorProduct.tmul_add, map_add, TensorProduct.assoc_symm_tmul,
-    LinearMap.rTensor_tmul]
-  congr 1
-  induction deconcatenation R A w using TensorProduct.inductionOn with
-  | tmul u v => simp
-  | add s t hs ht => simp only [map_add, TensorProduct.tmul_add, hs, ht]
-
-/-- Concatenation behind an element of degree `q` raises the total degree by `q`. -/
-theorem isHomogeneous_tmulConcat (G : InternalGrading R A) (H : InternalGrading R X) {q : ℤ}
-    {x : X} (hx : x ∈ H.piece q) :
-    LinearMap.IsHomogeneous (tmulConcat R A X x) (G.tensorProduct (grading G)).piece
-      (H.tensorProduct (grading G)).piece q := by
-  rw [LinearMap.isHomogeneous_def]
-  intro d z hz
-  have hc := (isHomogeneous_lift_prepend G).map_mem hz
-  rw [add_zero] at hc
-  have hw : reducedInclusion R A (TensorProduct.lift (prepend R A) z) ∈ (grading G).piece d := by
-    rw [grading_piece]
-    exact mem_gradedPiece_of_reducedInclusion hc
-  rw [add_comm]
-  exact InternalGrading.tmul_mem_tensorProduct H (grading G) hx hw
-
-end TensorWords
 
 open TensorWords
 
@@ -197,9 +137,8 @@ theorem taylor_toRightModule_comp_tmulConcat (he : AA.StrictUnit e) :
     AA.toRightModule.taylor ∘ₗ tmulConcat R A A e =
       (TensorProduct.rid R A).toLinearMap ∘ₗ
         (Coalgebra.counit (R := R) (A := TensorWords R A)).lTensor A := by
-  have hte (q : ℤ) : AA.grading.koszulTwist q e = e := by
-    rw [AA.grading.koszulTwist_apply_of_mem he.degree_zero, mul_zero, Int.negOnePow_zero,
-      Units.val_one, Int.cast_one, one_smul]
+  have hte (q : ℤ) : AA.grading.koszulTwist q e = e :=
+    AA.grading.koszulTwist_apply_of_mem_zero he.degree_zero q
   refine TensorProduct.ext (LinearMap.ext fun y ↦ TensorWords.linearMap_ext R A fun n a ↦ ?_)
   simp only [LinearMap.compr₂ₛₗ_apply, TensorProduct.mk_apply, LinearMap.comp_apply,
     tmulConcat_tmul, toRightModule_taylor_tmul, prepend_of_tprod, LinearMap.lTensor_tmul,
@@ -228,12 +167,8 @@ theorem barDifferential_toRightModule_comp_tmulConcat_add (he : AA.StrictUnit e)
   have hid := Comodule.Hom.cofreeLift_rid_comp_lTensor_counit_comp
     (Comodule.Hom.id R (TensorWords R A) (A ⊗[R] TensorWords R A))
   have hτ : (AA.toRightModule.grading.shift 1).koszulTwist 1 e = -e := by
-    have he' : e ∈ (AA.grading.shift 1).piece (-1) := by
-      rw [InternalGrading.shift_piece, neg_add_cancel]
-      exact he.degree_zero
-    rw [toRightModule_grading, InternalGrading.koszulTwist_apply_of_mem _ he', mul_neg, mul_one,
-      Int.negOnePow_neg, Int.negOnePow_one, Units.val_neg, Units.val_one, Int.cast_neg,
-      Int.cast_one, neg_one_smul]
+    rw [toRightModule_grading, InternalGrading.koszulTwist_one_shift_one, LinearMap.neg_apply,
+      AA.grading.koszulTwist_apply_of_mem_zero he.degree_zero]
   rw [AInfinityRightModule.barDifferential_comp_tmulConcat, differential_toRightModule,
     differential_apply, he.unary_eq_zero, map_zero, zero_add,
     taylor_toRightModule_comp_tmulConcat he, hτ, map_neg, LinearMap.neg_comp]
@@ -391,11 +326,9 @@ private theorem cofreeLift_taylor_comp_tmulConcat_eq {p : ℤ} {z : M}
         (MM.taylor ∘ₗ tmulConcat R A M z)).toLinearMap =
       MM.barDifferential ∘ₗ tmulConcat R A M z - tmulConcat R A M (MM.differential z) +
         ((p.negOnePow : ℤ) : R) • (tmulConcat R A M z ∘ₗ AA.toRightModule.barDifferential) := by
-  have hz' : z ∈ (MM.grading.shift 1).piece (p - 1) := by
-    rwa [InternalGrading.shift_piece, sub_add_cancel]
   have hτ : (MM.grading.shift 1).koszulTwist 1 z = -(((p.negOnePow : ℤ) : R) • z) := by
-    rw [InternalGrading.koszulTwist_apply_of_mem _ hz', one_mul, Int.negOnePow_sub,
-      Int.negOnePow_one, mul_neg, mul_one, Units.val_neg, Int.cast_neg, neg_smul]
+    rw [InternalGrading.koszulTwist_one_shift_one, LinearMap.neg_apply,
+      MM.grading.koszulTwist_one_apply_of_mem hz]
   rw [barDifferential_comp_tmulConcat, hτ, map_neg, map_smul, LinearMap.neg_comp,
     LinearMap.smul_comp]
   abel
@@ -404,7 +337,7 @@ private theorem cofreeLift_taylor_comp_tmulConcat_eq {p : ℤ} {z : M}
 private theorem yonedaCochain_eq_smul {q : ℤ} {y : M} (hy : y ∈ MM.grading.piece q) :
     MM.yonedaCochain y = ((q.negOnePow : ℤ) : R) • (Comodule.Hom.cofreeLift (C := TensorWords R A)
       (MM.taylor ∘ₗ tmulConcat R A M y)).toLinearMap := by
-  rw [yonedaCochain_apply, InternalGrading.koszulTwist_apply_of_mem _ hy, one_mul, map_smul,
+  rw [yonedaCochain_apply, MM.grading.koszulTwist_one_apply_of_mem hy, map_smul,
     LinearMap.comp_smul, Comodule.Hom.cofreeLift_toLinearMap, Comodule.Hom.cofreeLift_toLinearMap,
     LinearMap.rTensor_smul, LinearMap.smul_comp]
 
@@ -422,7 +355,8 @@ theorem homDifferential_yonedaCochains {p : ℤ} (x : MM.grading.piece p) :
       MM.barDifferential ∘ₗ MM.barDifferential ∘ₗ f = 0 := by
     rw [← LinearMap.comp_assoc, MM.barDifferential_sq, LinearMap.zero_comp]
   have hs : ((p.negOnePow : ℤ) : R) * ((p.negOnePow : ℤ) : R) = 1 := by
-    rw [← Int.cast_mul, ← Units.val_mul, Int.units_mul_self, Units.val_one, Int.cast_one]
+    norm_cast
+    simp
   apply Subtype.ext
   rw [coe_homDifferential, coe_yonedaCochains, coe_yonedaCochains, yonedaCochain_eq_smul MM hx,
     yonedaCochain_eq_smul MM hdx, cofreeLift_taylor_comp_tmulConcat_eq MM hx,
@@ -535,7 +469,8 @@ theorem homDifferential_yonedaHomotopy_add (he : AA.StrictUnit e) {p q : ℤ} (h
   rw [coe_homDifferential, coe_yonedaHomotopy, coe_yonedaHomotopy, ← sub_eq_of_eq_add' hK,
     ← sub_eq_of_eq_add' hKδ, hdF, coe_homDifferential, hY]
   have hs : ((q.negOnePow : ℤ) : R) * ((q.negOnePow : ℤ) : R) = 1 := by
-    rw [← Int.cast_mul, ← Units.val_mul, Int.units_mul_self, Units.val_one, Int.cast_one]
+    norm_cast
+    simp
   simp only [Units.smul_def, ← Int.cast_smul_eq_zsmul R, Int.negOnePow_succ, Units.val_neg,
     Int.cast_neg, neg_neg, LinearMap.comp_sub, LinearMap.sub_comp, LinearMap.comp_smul,
     LinearMap.smul_comp, LinearMap.comp_assoc, smul_sub, smul_add, smul_smul, neg_mul, mul_neg,
@@ -606,10 +541,10 @@ theorem homComplexXEquiv_yoneda_f (p : ℤ) (x : MM.cochainComplex.X p) :
       MM.yonedaCochains p (gradedCochainComplexXEquiv p x) := by
   simp [yoneda]
 
-/-- If the unit is a right unit for the binary module operation, evaluation at the unit is a
-left inverse of the Yoneda cochains. -/
-theorem yoneda_comp_yonedaEval (he : AA.StrictUnit e) (hM : ∀ x, MM.m 2 x ![e] = x) :
-    MM.yoneda ≫ MM.yonedaEval he.degree_zero he.differential_eq_zero = 𝟙 MM.cochainComplex := by
+/-- If a degree-zero cycle `e` is a right unit for the binary module operation, evaluation at `e`
+is a left inverse of the Yoneda cochains. -/
+theorem yoneda_comp_yonedaEval (he : e ∈ AA.grading.piece 0) (hde : AA.differential e = 0)
+    (hM : ∀ x, MM.m 2 x ![e] = x) : MM.yoneda ≫ MM.yonedaEval he hde = 𝟙 MM.cochainComplex := by
   ext p : 1
   refine ModuleCat.hom_ext (LinearMap.ext fun x ↦ (gradedCochainComplexXEquiv p).injective
     (Subtype.ext ?_))
@@ -655,7 +590,8 @@ noncomputable def yonedaHomotopyEquiv (he : AA.StrictUnit e) (hM : ∀ x, MM.m 2
   hom := MM.yonedaEval he.degree_zero he.differential_eq_zero
   inv := MM.yoneda
   homotopyHomInvId := (MM.homotopyYonedaEvalCompYoneda he).symm
-  homotopyInvHomId := Homotopy.ofEq (MM.yoneda_comp_yonedaEval he hM)
+  homotopyInvHomId :=
+    Homotopy.ofEq (MM.yoneda_comp_yonedaEval he.degree_zero he.differential_eq_zero hM)
 
 /-- Evaluation at a strict unit `e` is a quasi-isomorphism from the morphism complex out of the
 free module of rank one to the underlying complex of a module on which `e` is a right unit for the
