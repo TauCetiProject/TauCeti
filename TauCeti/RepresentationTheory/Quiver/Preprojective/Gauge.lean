@@ -216,10 +216,11 @@ theorem rescale_doubledLabelling_comp (u u' : ∀ ⦃i j : Q⦄, (i ⟶ j) → k
 theorem rescale_doubledLabelling_rescale_doubledLabelling (u u' : ∀ ⦃i j : Q⦄, (i ⟶ j) → k)
     (h : ∀ ⦃i j : Q⦄ (a : i ⟶ j), u a * u' a = 1) (z : pathAlgebra k (Symmetrify Q)) :
     rescale (doubledLabelling k u) (rescale (doubledLabelling k u') z) = z := by
-  rw [← AlgHom.comp_apply, rescale_doubledLabelling_comp]
-  suffices (fun ⦃i j⦄ (a : i ⟶ j) => u a * u' a) = (fun _ _ _ => 1) by simp [this]
-  funext i j a
-  exact h a
+  apply rescale_rescale_of_mul_eq_one
+  intro _ _ b
+  cases b with
+  | inl a => exact h a
+  | inr a => exact one_mul 1
 
 end RescaleComposition
 
