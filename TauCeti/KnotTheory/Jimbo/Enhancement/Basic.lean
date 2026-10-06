@@ -71,11 +71,6 @@ product of the weights of its colours. -/
 noncomputable def jimboEnhancement (q : Rˣ) : Module.End R ((Fin n → Fin N) →₀ R) :=
   linearCombination R fun w ↦ (∏ i, jimboWeight q (w i)) • single w 1
 
-/-- The defining equation of the tensor-power enhancement. -/
-theorem jimboEnhancement_def (q : Rˣ) :
-    jimboEnhancement (N := N) (n := n) q =
-      linearCombination R (fun w ↦ (∏ i, jimboWeight q (w i)) • single w 1) := (rfl)
-
 /-- The enhancement acts diagonally in the canonical word basis. -/
 @[simp]
 theorem jimboEnhancement_single_one (q : Rˣ) (w : Fin n → Fin N) :

@@ -30,21 +30,19 @@ coefficient multiplied by the product of the colour weights. -/
 theorem jimboEnhancement_apply (q : Rˣ) (v : (Fin n → Fin N) →₀ R) (w : Fin n → Fin N) :
     jimboEnhancement q v w = (∏ i, jimboWeight q (w i)) * v w := by
   classical
-  rw [jimboEnhancement_def]
-  change (Finsupp.lapply w : ((Fin n → Fin N) →₀ R) →ₗ[R] R)
-      (Finsupp.linearCombination R (fun u ↦ (∏ i, jimboWeight q (u i)) • single u 1) v) = _
-  rw [Finsupp.apply_linearCombination]
-  have hfamily :
-      (Finsupp.lapply w : ((Fin n → Fin N) →₀ R) →ₗ[R] R) ∘
-          (fun u ↦ (∏ i, jimboWeight q (u i)) • single u 1) =
-        Pi.single w (∏ i, jimboWeight q (w i)) := by
-    funext u
+  induction v using Finsupp.induction_linear with
+  | zero => simp
+  | add v₁ v₂ h₁ h₂ =>
+    rw [map_add]
+    simp only [Finsupp.add_apply]
+    rw [h₁, h₂]
+    ring
+  | single u r =>
+    rw [← smul_single_one, map_smul, jimboEnhancement_single_one]
     by_cases h : u = w
-    · subst u
-      simp
+    · subst w
+      simp [mul_comm]
     · simp [h]
-  rw [hfamily, Finsupp.linearCombination_single_index]
-  exact mul_comm _ _
 
 
 
