@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.InnerProductSpace.Harmonic.LogNorm
 public import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.Basic
-public import TauCeti.Analysis.PDE.FundamentalSolution.Planar
 public import TauCeti.Analysis.PDE.Perron.Basic
 
 /-!
