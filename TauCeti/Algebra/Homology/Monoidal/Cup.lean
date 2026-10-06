@@ -105,7 +105,9 @@ lemma cupCochain_naturality {A' B' E' : ChainComplex C ℕ} [A'.HasTensor B']
 lemma cupCochain_precomp {E' : ChainComplex C ℕ} (e : E' ⟶ E)
     (p q n : ℕ) (h : p + q = n) (φ : A.X p ⟶ M) (ψ : B.X q ⟶ N) :
     cupCochain k (e ≫ D) μ p q n h φ ψ = e.f n ≫ cupCochain k D μ p q n h φ ψ := by
-  rw [cupCochain_apply, cupCochain_apply, comp_f, Category.assoc]
+  simpa only [id_f, Category.id_comp] using
+    cupCochain_naturality D μ (e ≫ D) e (𝟙 A) (𝟙 B)
+      (by simp [HomologicalComplex.tensorHom, mapBifunctorMap]) p q n h φ ψ
 
 end Cochain
 
@@ -334,14 +336,9 @@ lemma cup_precomp {E' : ChainComplex C ℕ} (e : E' ⟶ E)
     cup k (e ≫ D) μ p q n h a b =
       homologyMap (K := E.linearYonedaObj k P) (L := E'.linearYonedaObj k P)
         ((linearYonedaFunctor k P).map e.op) n (cup k D μ p q n h a b) := by
-  obtain ⟨a, rfl⟩ := moduleCat_homologyπ_surjective _ p a
-  obtain ⟨b, rfl⟩ := moduleCat_homologyπ_surjective _ q b
-  rw [cup_homologyπ, cup_homologyπ,
-    homologyMap_linearYonedaFunctor_map_homologyπ_apply]
-  congr 1
-  apply moduleCat_iCycles_injective
-  rw [iCycles_cupCycles, iCycles_cyclesMap_linearYonedaFunctor_map_apply, iCycles_cupCycles]
-  exact cupCochain_precomp D μ e p q n h _ _
+  simpa using
+    cup_naturality D μ (e ≫ D) e (𝟙 A) (𝟙 B)
+      (by simp [HomologicalComplex.tensorHom, mapBifunctorMap]) p q n h a b
 
 /-- Chain-homotopic diagonals give the same cup product on cohomology. -/
 lemma cup_eq_of_homotopy {D' : E ⟶ HomologicalComplex.tensorObj A B}
