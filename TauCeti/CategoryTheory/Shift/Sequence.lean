@@ -153,6 +153,8 @@ noncomputable instance sequenceFunctorCommShift : (sequenceFunctor C).CommShift 
         eqToHom (congrArg (fun k : ℤ => X⟦k⟧) (by omega : n + b + a = n + (a + b)))
     rw [← cancel_epi (((shiftFunctorAdd C a b).inv.app X)⟦n⟧')]
     simp only [← Functor.map_comp_assoc, Iso.inv_hom_id_app]
+    -- Cancellation leaves the identity at a composite shift-functor object; reduce
+    -- that endpoint before applying the shift functor identity law.
     dsimp only [Functor.comp_obj]
     erw [(shiftFunctor C n).map_id, Category.id_comp]
     rw [← shiftFunctorAdd'_eq_shiftFunctorAdd C a b,
@@ -209,6 +211,8 @@ theorem sequenceFunctorCompEvalIso_commShift :
         isoWhiskerRight_hom, Iso.symm_hom, NatTrans.comp_app, whiskerLeft_app,
         whiskerRight_app, Functor.associator_hom_app, Functor.leftUnitor_inv_app,
         Functor.rightUnitor_hom_app, IntSequence.eval_map, Category.id_comp, Category.assoc]
+      -- Inverse evaluation is the chosen inverse functor; reduce its object endpoints to
+      -- cancel the right-unitor identity and associate the evaluated components.
       erw [Category.comp_id, Category.assoc]
       exact this
     have hn := (sequenceFunctorCompEvalIso C).hom.naturality
@@ -219,6 +223,8 @@ theorem sequenceFunctorCompEvalIso_commShift :
     have hc := congrArg (fun φ => φ.f 0)
       ((sequenceFunctor C).asEquivalence.counitIso_functor_comp X)
     simp only [IntSequence.comp_f, IntSequence.id_f, Functor.asEquivalence_functor] at hc
+    -- The inverse and `asEquivalence.inverse` endpoints agree after reducing the wrappers;
+    -- evaluation then exposes the degree-zero component of the triangle identity.
     erw [IntSequence.eval_map, ← Category.assoc, hc, Category.id_comp]
     -- After the triangle identity, both sides are the zero-shift counit at `X`.
     change (shiftFunctorZero C ℤ).hom.app X = (shiftFunctorZero C ℤ).hom.app X
@@ -244,6 +250,7 @@ theorem evalCommShiftOfHasShift_iso_one :
   simp only [Functor.comp_obj, Functor.commShiftIso_id_hom_app,
     IntSequence.eval_map, sequenceFunctorShiftIso_hom_app_f,
     sequenceFunctorCompEvalIso_hom_app] at h
+  -- The component formula uses `0 + 1`, which reduces to `1` at this degree.
   erw [shiftFunctorAdd'_add_zero_inv_app, Category.comp_id] at h
   dsimp only [whiskeringLeft, whiskerLeft]
   rw [IntSequence.reindexOneCompEvalIso_hom_app, sequenceFunctor_obj_iso_inv]

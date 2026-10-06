@@ -18,7 +18,8 @@ existing signed cyclic shift, including its addition constraints. This supplies 
 compatibility required to transport the stable triangulation to the homotopy category.
 
 The construction uses `stableSuspensionCompStableToHomotopyIso` and the sequence-model
-comparison `TauCeti.Shift.commShiftOfIntertwiningToShift`.
+comparison
+`TauCeti.ExactStructure.IsFrobenius.commShiftOfIntertwiningStableSuspensionShift`.
 
 ## References
 

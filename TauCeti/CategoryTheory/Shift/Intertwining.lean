@@ -18,9 +18,9 @@ with the reindexing shift. This file constructs that degreewise functor and its
 The construction uses the strict models of autoequivalence-generated shifts from
 `CategoryTheory.Equivalence.IntSequence`. Applying `F` degreewise sends an `e`-sequence to an
 `e'`-sequence, and this functor commutes strictly with reindexing. The compatibility can then be
-transported back along evaluation in degree zero, using
-`TauCeti.Shift.commShiftOfIntertwiningToShift`. This transport retains the target's already
-installed shift while using the autoequivalence-generated source shift.
+transported back along evaluation in degree zero; this yields
+`TauCeti.Shift.commShiftOfIntertwiningToShift`, which retains the target's already installed
+shift while using the autoequivalence-generated source shift.
 
 ## Main definitions
 
@@ -297,6 +297,7 @@ private theorem evalInverseCommShiftIso_one_hom_app_f_zero (e : C ≌ C) (X : C)
     inferInstanceAs ((IntSequence.eval (e := e)).asEquivalence.functor.CommShift ℤ)
   let U := (IntSequence.eval (e := e)).inv
   let c := (IntSequence.eval (e := e)).asEquivalence.counitIso
+  -- Expand the statement's local names for inverse evaluation and its counit.
   dsimp only []
   have he := congr_app (congrArg Iso.hom e.evalCommShiftIso_one) (U.obj X)
   simp only [Iso.trans_hom, NatTrans.comp_app, isoWhiskerLeft_hom,
@@ -331,6 +332,8 @@ private theorem shiftFunctorOneIso_conj (e : C ≌ C) (F : C ⥤ D)
     whiskerRight_app, Functor.comp_map] at hn
   rw [reassoc_of% hn]
   simp only [← Functor.map_comp, Iso.inv_hom_id]
+  -- Naturality and inverse cancellation leave identities at composite-functor endpoints;
+  -- reduce those endpoints to apply the two functor identity laws.
   erw [F.map_id, (shiftFunctor D (1 : ℤ)).map_id, Category.comp_id]
 
 /-- In degree one, the coherent comparison recovers the supplied intertwining isomorphism,
@@ -384,6 +387,8 @@ theorem commShiftOfIntertwiningToShift_iso_one (e : C ≌ C) (F : C ⥤ D)
         (F.map u.hom)⟦(1 : ℤ)⟧' = _
   simp only [Category.assoc]
   rw [← F.map_comp_assoc β ((U.obj X).iso 0 1 rfl).inv]
+  -- Express `hu` through the proof-local component and counit names; only these local
+  -- abbreviations are expanded, without unfolding the inverse-evaluation construction.
   have hβ : β ≫ ((U.obj X).iso 0 1 rfl).inv =
       u₁.hom ≫ u.inv⟦(1 : ℤ)⟧' ≫ e.shiftFunctorOneIso.hom.app ((U.obj X).X 0) := hu
   rw [hβ]
