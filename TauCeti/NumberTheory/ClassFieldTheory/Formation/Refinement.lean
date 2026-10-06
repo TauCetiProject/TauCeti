@@ -71,8 +71,8 @@ compared across refinements.
 * `TauCeti.ClassFieldTheory.LayerRefinement.mk_mem_ker_galHom_ofOpenNormal_iff`: for nested
   open normal subgroups, a quotient class lies in the kernel exactly when its representative
   lies in the larger subgroup.
-* `TauCeti.ClassFieldTheory.LayerRefinement.ker_galHom_le_ker_galHom_iff_ofOpenNormal`: inclusion
-  of quotient kernels reflects inclusion of open normal subgroups above a common subgroup.
+* `TauCeti.ClassFieldTheory.LayerRefinement.ker_galHom_ofOpenNormal_le_ker_galHom_ofOpenNormal_iff`:
+  inclusion of quotient kernels reflects inclusion of open normal subgroups above a common subgroup.
 * `TauCeti.ClassFieldTheory.LayerRefinement.degree_mul_relativeDegree`:
   `[U : V] * [V : V'] = [U : V']`.
 * `TauCeti.ClassFieldTheory.LayerRefinement.relativeDegree_trans`,
@@ -263,7 +263,7 @@ theorem mk_mem_ker_galHom_ofOpenNormal_iff {U V : OpenNormalSubgroup G} (h : U �
 
 /-- For open normal subgroups above a common `U`, inclusion of the kernels of the quotient
 maps from `G/U` is equivalent to inclusion of the subgroups. -/
-theorem ker_galHom_le_ker_galHom_iff_ofOpenNormal {U V W : OpenNormalSubgroup G}
+theorem ker_galHom_ofOpenNormal_le_ker_galHom_ofOpenNormal_iff {U V W : OpenNormalSubgroup G}
     (hUV : U ≤ V) (hUW : U ≤ W) :
     (ofOpenNormal hUV).galHom.ker ≤ (ofOpenNormal hUW).galHom.ker ↔ V ≤ W := by
   constructor

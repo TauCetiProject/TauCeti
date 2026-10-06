@@ -56,7 +56,8 @@ theorem localNormSubgroup_le_localNormSubgroup_iff_of_isAbelian (hW : W.IsAbelia
   rw [localNormSubgroup_eq_comap_ker hU inf_le_left,
     localNormSubgroup_eq_comap_ker hU inf_le_right,
     Subgroup.comap_le_comap_of_surjective (surjective_localAbelianArtinHom hU)] at h
-  exact (LayerRefinement.ker_galHom_le_ker_galHom_iff_ofOpenNormal inf_le_left inf_le_right).1 h
+  exact (LayerRefinement.ker_galHom_ofOpenNormal_le_ker_galHom_ofOpenNormal_iff
+    inf_le_left inf_le_right).1 h
 
 /-- Distinct finite abelian extensions of a local field have distinct norm subgroups.
 Abelianity is essential: norm limitation identifies every finite Galois extension's norm
