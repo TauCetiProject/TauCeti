@@ -111,9 +111,10 @@ theorem tendsto_eisensteinSeries_atImInfty (hk : 3 ≤ k) (a : Fin 2 → ZMod N)
         (if a = ![0, -1] then (-1 : ℂ) ^ k else 0))) := by
   classical
   have hk' : (2 : ℝ) < k := by exact_mod_cast (by omega : (2 : ℤ) < k)
+  have hN : (0 : ℝ) < N := by exact_mod_cast NeZero.pos N
+  have hkpos : 0 < k := by omega
   have hlim := TauCeti.ModularFormClass.tendsto_valueAtInfty
-    (eisensteinSeriesMF hk a) (show (0 : ℝ) < N by exact_mod_cast NeZero.pos N)
-    (by simp)
+    (eisensteinSeriesMF hk a) hN (by simp)
   rw [coe_eisensteinSeriesMF] at hlim
   have hrow : Tendsto (fun t : ℝ ↦ eisensteinSeries a k (ofComplex (I * t))) atTop
       (𝓝 (∑' x : gammaSet N 1 a, if x.1 0 = 0 then (x.1 1 : ℂ) ^ (-k) else 0)) := by
@@ -122,7 +123,7 @@ theorem tendsto_eisensteinSeries_atImInfty (hk : 3 ≤ k) (a : Fin 2 → ZMod N)
       (bound := fun x : gammaSet N 1 a ↦ r ⟨⟨0, 1⟩, one_pos⟩ ^ (-k : ℝ) *
         ‖x.1‖ ^ (-k : ℝ))
       (((summable_one_div_norm_rpow hk').subtype _).mul_left _)
-      (fun x ↦ tendsto_eisSummand_ofComplex_I_mul (show 0 < k by omega) x.1) ?_
+      (fun x ↦ tendsto_eisSummand_ofComplex_I_mul hkpos x.1) ?_
     filter_upwards [eventually_ge_atTop 1] with t ht x
     have hz : (ofComplex (I * t) : ℍ) ∈ verticalStrip 0 1 := by
       rw [ofComplex_apply_of_im_pos (by simpa using zero_lt_one.trans_le ht)]
@@ -189,8 +190,9 @@ private lemma coefficient_relation_of_cuspidal (hk : 3 ≤ k)
     ext i
     fin_cases i <;> simpa [vecMul, dotProduct, hσ0, hσ1] using congrFun hx.1 _
   have hneg : (![0, -1] : Fin 2 → ZMod N) ᵥ* σ = -a := by
-    rw [show (![0, -1] : Fin 2 → ZMod N) = -![0, 1] by ext i; fin_cases i <;> simp,
-      neg_vecMul, hpos]
+    have hsign : (![0, -1] : Fin 2 → ZMod N) = -![0, 1] := by
+      ext i; fin_cases i <;> simp
+    rw [hsign, neg_vecMul, hpos]
   let τ := SpecialLinearGroup.map (Int.castRingHom (ZMod N)) σ
   have hmul (v : Fin 2 → ZMod N) : (v ᵥ* (↑(τ⁻¹) : Matrix (Fin 2) (Fin 2) (ZMod N))) ᵥ*
       (↑τ : Matrix (Fin 2) (Fin 2) (ZMod N)) = v := by
@@ -267,7 +269,8 @@ private theorem eq_zero_of_mem_primitiveEisensteinSubspace_of_cuspidal (hk : 3 �
   simp only [add_smul, mul_smul, Finset.sum_add_distrib,
     smul_comm ((-1 : ℂ) ^ k), ← eisensteinSeriesMF_neg] at H
   rw [hsum] at H
-  rw [← two_smul ℂ, smul_eq_zero_iff_right (show (2 : ℂ) ≠ 0 by norm_num)] at H
+  have htwo : (2 : ℂ) ≠ 0 := by norm_num
+  rw [← two_smul ℂ, smul_eq_zero_iff_right htwo] at H
   exact H
 
 /-- The primitive Eisenstein span and the cusp-form submodule have zero intersection. -/
