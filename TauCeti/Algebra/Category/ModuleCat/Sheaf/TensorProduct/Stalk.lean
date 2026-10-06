@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.ModuleCat.Presheaf.TensorProduct.Stalk
+public import TauCeti.Algebra.Category.ModuleCat.Presheaf.TensorProduct.Stalk.Equiv
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Stalk
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Basic
 
@@ -15,7 +15,7 @@ public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Basic
 This file constructs, over an arbitrary topological space and for arbitrary sheaves of modules
 `M`, `N`, the canonical linear map from the stalk of their tensor product to the tensor product
 of their stalks over the ring stalk, and computes its values on germs of sheafified pure tensors.
-The comparison is not asserted to be invertible.
+The comparison is a linear equivalence, with no finiteness or quasi-coherence hypotheses.
 
 It is the sectionwise comparison `PresheafOfModules.tensorStalkComparison`, precomposed with
 the inverse of the identification `PresheafOfModules.sheafificationStalkEquiv` of a stalk with
@@ -25,6 +25,8 @@ of the defining isomorphism `tensorProductIso`.
 ## Main declarations
 
 * `SheafOfModules.tensorStalkComparison`: the comparison as a linear map over the ring stalk;
+* `SheafOfModules.tensorStalkEquiv`: the same comparison as a linear equivalence;
+* `SheafOfModules.tensorStalkEquiv_symm_tmul_germ`: its inverse on tensors of germs;
 * `SheafOfModules.tensorStalkComparison_apply`: its description as the composite above;
 * `SheafOfModules.tensorStalkComparison_germ_unit_tmul`: its value on the germ of a sheafified
   pure tensor.
@@ -98,6 +100,64 @@ theorem tensorStalkComparison_germ_unit_tmul (U : Opens X) (hx : x ∈ U)
   -- The two sides differ only in writing the ring stalk via `(sheafToPresheaf _ _).obj R`,
   -- which is `R.obj` by definition.
   rfl
+
+/-- The canonical tensor stalk comparison is bijective for arbitrary sheaves of modules. -/
+theorem tensorStalkComparison_bijective :
+    Function.Bijective (tensorStalkComparison R M N x) := by
+  unfold tensorStalkComparison
+  apply (PresheafOfModules.tensorStalkComparison_bijective M.val N.val x).comp
+  apply ((PresheafOfModulesOfCommRing.Monoidal.tensorObj M.val N.val).sheafificationStalkEquiv
+    R x).symm.bijective.comp
+  -- The linear stalk map is the underlying additive stalk map of the defining tensor
+  -- isomorphism, so it is bijective because the stalk functor preserves isomorphisms.
+  have h : (PresheafOfModules.stalkMapCommRing (S := R.obj) x
+      (tensorProductIso R M N).hom.val : _ → _) =
+      (TopCat.Presheaf.stalkFunctor AddCommGrpCat x).map
+        ((PresheafOfModules.toPresheaf _).map (tensorProductIso R M N).hom.val) := by
+    funext t
+    obtain ⟨U, hx, t, rfl⟩ :=
+      TopCat.Presheaf.exists_germ_eq (tensorProduct R M N).val.presheaf t
+    erw [PresheafOfModules.stalkMapCommRing_germ,
+      TopCat.Presheaf.stalkFunctor_map_germ_apply]
+    rfl
+  have : IsIso (tensorProductIso R M N).hom.val :=
+    inferInstanceAs (IsIso ((_root_.SheafOfModules.forget _).map
+      (tensorProductIso R M N).hom))
+  erw [h]
+  exact (ConcreteCategory.isIso_iff_bijective _).mp (by infer_instance)
+
+/-- The stalk of the sheaf tensor product is canonically the tensor product of the stalks
+over the ring stalk. Its forward map is the existing tensor stalk comparison. -/
+def tensorStalkEquiv :
+    ↑(TopCat.Presheaf.stalk (tensorProduct R M N).val.presheaf x) ≃ₗ[
+      ↑(TopCat.Presheaf.stalk R.obj x)]
+      ↑(TopCat.Presheaf.stalk M.val.presheaf x) ⊗[↑(TopCat.Presheaf.stalk R.obj x)]
+        ↑(TopCat.Presheaf.stalk N.val.presheaf x) :=
+  LinearEquiv.ofBijective (tensorStalkComparison R M N x)
+    (tensorStalkComparison_bijective R M N x)
+
+/-- The tensor stalk equivalence is the canonical comparison. -/
+@[simp]
+theorem tensorStalkEquiv_apply
+    (t : ↑(TopCat.Presheaf.stalk (tensorProduct R M N).val.presheaf x)) :
+    tensorStalkEquiv R M N x t = tensorStalkComparison R M N x t := (rfl)
+
+/-- The inverse sends a tensor of germs to the germ of the sheafified tensor of their
+representatives on a common neighborhood. -/
+@[simp]
+theorem tensorStalkEquiv_symm_tmul_germ (U : Opens X) (hx : x ∈ U)
+    (m : M.val.obj (op U)) (n : N.val.obj (op U)) :
+    dsimp% only [PresheafOfModules.presheaf_obj_coe, CategoryTheory.Functor.id_obj,
+      CategoryTheory.Functor.comp_obj]
+    ((tensorStalkEquiv R M N x).symm
+        (TopCat.Presheaf.germ M.val.presheaf U x hx m ⊗ₜ[↑(TopCat.Presheaf.stalk R.obj x)]
+          TopCat.Presheaf.germ N.val.presheaf U x hx n) =
+      TopCat.Presheaf.germ (tensorProduct R M N).val.presheaf U x hx
+        ((tensorProductIso R M N).inv.val.app (op U)
+          (((PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj)).unit.app
+            (M.val ⊗ N.val)).app (op U) (m ⊗ₜ[R.obj.obj (op U)] n)))) := by
+  apply (tensorStalkEquiv R M N x).symm_apply_eq.mpr
+  exact (tensorStalkComparison_germ_unit_tmul R M N x U hx m n).symm
 
 end SheafOfModules
 
