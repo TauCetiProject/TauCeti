@@ -10,6 +10,7 @@ public import Mathlib.Data.Nat.Factorial.BigOperators
 public import Mathlib.Data.Pi.Interval
 public import Mathlib.LinearAlgebra.Vandermonde
 public import Mathlib.RingTheory.Polynomial.Pochhammer
+import Mathlib.Data.Int.SuccPred
 import Mathlib.LinearAlgebra.Matrix.Block
 import TauCeti.LinearAlgebra.Determinant
 import TauCeti.RingTheory.Polynomial.Pochhammer
@@ -40,7 +41,7 @@ exactly such a box, and the two Vandermonde products are the two Weyl dimension 
 
 Three moves prove it; only the last uses the ordering hypothesis.  *The falling-factorial basis*
 replaces the powers, because they have the closed-form discrete antiderivative
-`TauCeti.sum_Icc_descPochhammer_eval`.  *Multilinearity*: a determinant is multilinear in its rows
+`TauCeti.sum_Ico_descPochhammer_eval`.  *Multilinearity*: a determinant is multilinear in its rows
 and the box constrains the rows independently, so the sum of the determinants over the box is the
 determinant of the matrix of row sums (`MultilinearMap.map_sum_finset`); evaluating those row
 sums, and clearing the denominators `1, 2, …, n` by a column scaling, produces the matrix of
@@ -281,7 +282,8 @@ theorem factorial_mul_sum_det_vandermonde {n : ℕ} (x : Fin (n + 1) → ℤ)
         * Matrix.diagonal fun j : Fin n => ((j : ℕ) : ℤ) + 1 := by
     ext i j
     rw [Matrix.mul_diagonal, Matrix.of_apply, Matrix.of_apply, mul_comm]
-    exact (sum_Icc_descPochhammer_eval (j : ℕ) (hx i)).symm
+    rw [Finset.Icc_sub_one_right_eq_Ico]
+    exact (sum_Ico_descPochhammer_eval (j : ℕ) (hx i)).symm
   have hdet := det_descPochhammer_sub_eq_det_vandermonde x
   rw [hscale, Matrix.det_mul, Matrix.det_diagonal] at hdet
   simp only [← Nat.cast_add_one, ← Nat.cast_prod] at hdet

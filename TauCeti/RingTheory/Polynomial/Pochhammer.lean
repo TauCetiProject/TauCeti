@@ -27,7 +27,7 @@ The summation identity also holds over arbitrary rings; no division by `m + 1` i
 * `TauCeti.descPochhammer_degree`: `(descPochhammer R n).degree = n` for nontrivial `R`.
 * `TauCeti.descPochhammer_succ_eval_add_one`: the falling factorial of degree `m + 1` at `x + 1` is
   `x + 1` times the one of degree `m` at `x`.
-* `TauCeti.sum_Icc_descPochhammer_eval`: its sum over an integer interval is the endpoint
+* `TauCeti.sum_Ico_descPochhammer_eval`: its sum over a half-open integer interval is the endpoint
   difference of the next falling factorial, after clearing the denominator.
 * `TauCeti.mul_prod_sq_sub_sq_eq_descPochhammer_eval`: the odd polynomial
   `x (x² - 1²) ⋯ (x² - k²)` is the falling factorial of degree `2k + 1` at `x + k`.
@@ -91,17 +91,17 @@ factorial at the endpoints, after multiplying the sum by `m + 1`. The identity h
 coefficient ring; it does not require `m + 1` to be invertible.
 
 For `q < p` the interval is empty while the endpoint difference need not vanish. -/
-theorem sum_Icc_descPochhammer_eval {R : Type*} [Ring R] (m : ℕ) {p q : ℤ} (h : p ≤ q) :
-    ((m : R) + 1) * ∑ t ∈ Finset.Icc p (q - 1), (descPochhammer R m).eval (t : R)
+theorem sum_Ico_descPochhammer_eval {R : Type*} [Ring R] (m : ℕ) {p q : ℤ} (h : p ≤ q) :
+    ((m : R) + 1) * ∑ t ∈ Finset.Ico p q, (descPochhammer R m).eval (t : R)
       = (descPochhammer R (m + 1)).eval (q : R)
         - (descPochhammer R (m + 1)).eval (p : R) := by
   -- Translate the integer interval to a range so that the range telescoping identity applies.
-  rw [Int.Icc_eq_finset_map, Finset.sum_map, Finset.mul_sum]
+  rw [Int.Ico_eq_finset_map, Finset.sum_map, Finset.mul_sum]
   simp only [Function.Embedding.trans_apply, Nat.castEmbedding_apply, addLeftEmbedding_apply]
-  have hq : (((q - 1 + 1 - p).toNat : ℕ) : ℤ) = q - p := by omega
+  have hq : (((q - p).toNat : ℕ) : ℤ) = q - p := by omega
   have key := Finset.sum_range_sub
     (fun k : ℕ => (descPochhammer R (m + 1)).eval ((p + k : ℤ) : R))
-    (q - 1 + 1 - p).toNat
+    (q - p).toNat
   simp only [hq, Nat.cast_zero, add_zero] at key
   simp only [Int.cast_add, Int.cast_natCast, Nat.cast_add, Nat.cast_one] at key
   rw [Finset.sum_congr rfl (fun k _ => by
