@@ -30,15 +30,17 @@ exact sequence `1 → I_K → W_K → ℤ → 1`, and its image in `ℤ̂` is th
 
 The Weil group is wanted as a locally compact group in which `I_K`, with its profinite topology,
 is open. That is not the subspace topology of `G_K`: inertia is not open in `G_K`
-(`not_isOpen_inertiaSubgroup`), because its image `{1}` in `ℤ̂` is not open. The degree map is
-therefore stated on the type synonym `WeilGroup K` of `localWeilGroup K`, which does not inherit
-the subspace topology of the subtype.
+(`TauCeti.not_isOpen_inertiaSubgroup`), because its image `{1}` in `ℤ̂` is not open. The degree
+map is therefore stated on the type synonym `WeilGroup K` of `localWeilGroup K`, which does not
+inherit the subspace topology of the subtype; `weilGroupEquivLocalWeilGroup K` identifies the two
+as groups.
 
 ## Main definitions
 
 * `TauCeti.ClassFieldTheory.localWeilGroup K`: the local Weil group, as a subgroup of `G_K`.
 * `TauCeti.ClassFieldTheory.WeilGroup K`: a type synonym for `localWeilGroup K`, with its
-  inclusion `weilToAbsolute K : WeilGroup K →* G_K`.
+  inclusion `weilToAbsolute K : WeilGroup K →* G_K` and the group isomorphism
+  `weilGroupEquivLocalWeilGroup K : WeilGroup K ≃* localWeilGroup K`.
 * `TauCeti.ClassFieldTheory.weilDegree K : WeilGroup K →* Multiplicative ℤ`: the degree.
 
 ## Main results
@@ -53,7 +55,6 @@ the subspace topology of the subtype.
   arithmetic Frobenius lift `σ`.
 * `TauCeti.ClassFieldTheory.dense_localWeilGroup`,
   `TauCeti.ClassFieldTheory.localWeilGroup_ne_top`: `W_K` is dense and proper in `G_K`.
-* `TauCeti.ClassFieldTheory.not_isOpen_inertiaSubgroup`: inertia is not open in `G_K`.
 * `TauCeti.ClassFieldTheory.surjective_weilDegree`, `TauCeti.ClassFieldTheory.ker_weilDegree`:
   the exact sequence `1 → I_K → W_K → ℤ → 1`.
 * `TauCeti.ClassFieldTheory.unramifiedCoordinate_weilDegree`,
@@ -169,16 +170,6 @@ theorem localWeilGroup_ne_top : localWeilGroup K ≠ ⊤ := fun h ↦ by
   refine ⟨Multiplicative.ofAdd n, e.symm.injective ?_⟩
   rw [maximalUnramifiedGaloisGroupEquivZHat_symm_apply_ofInt, ← hn, hσ]
 
-/-- **Inertia is not open in `G_K`.** Otherwise `G_K ⧸ I_K ≃ ℤ̂` would be finite, since `G_K` is
-compact; but `ℤ` embeds into `ℤ̂`. -/
-theorem not_isOpen_inertiaSubgroup :
-    ¬ IsOpen (inertiaSubgroup K : Set (Field.absoluteGaloisGroup K)) := fun h ↦ by
-  have := Subgroup.quotient_finite_of_isOpen (inertiaSubgroup K) h
-  have : Finite zHat.{u} := .of_equiv _ ((quotientInertiaSubgroupEquiv K).toMulEquiv.trans
-    (maximalUnramifiedGaloisGroupEquivZHat K (AlgebraicClosure K)).toMulEquiv).toEquiv
-  have := Finite.of_injective _ (zHat.ofInt_injective.{u}.comp Multiplicative.ofAdd.injective)
-  exact not_finite ℤ
-
 /-! ### The Weil group as a type, and its degree -/
 
 /-- **The local Weil group as a type**: a type synonym for `localWeilGroup K`. It carries the group
@@ -191,6 +182,25 @@ instance : Group (WeilGroup K) := inferInstanceAs (Group (localWeilGroup K))
 /-- The inclusion `W_K → G_K` of the Weil group into the absolute Galois group. -/
 def weilToAbsolute : WeilGroup K →* Field.absoluteGaloisGroup K :=
   (localWeilGroup K).subtype
+
+/-- **The Weil group as a type is the local Weil group**: the group isomorphism
+`WeilGroup K ≃* localWeilGroup K`, under which the inclusion `weilToAbsolute K` is the subgroup
+inclusion (`coe_weilGroupEquivLocalWeilGroup`). -/
+def weilGroupEquivLocalWeilGroup : WeilGroup K ≃* localWeilGroup K :=
+  MulEquiv.refl (localWeilGroup K)
+
+/-- The isomorphism `WeilGroup K ≃* localWeilGroup K` is compatible with the inclusions into
+`G_K`. -/
+@[simp]
+theorem coe_weilGroupEquivLocalWeilGroup (w : WeilGroup K) :
+    (weilGroupEquivLocalWeilGroup K w : Field.absoluteGaloisGroup K) = weilToAbsolute K w :=
+  (rfl)
+
+/-- The element of the Weil group corresponding to `σ ∈ localWeilGroup K` maps to `σ` in `G_K`. -/
+@[simp]
+theorem weilToAbsolute_weilGroupEquivLocalWeilGroup_symm (σ : localWeilGroup K) :
+    weilToAbsolute K ((weilGroupEquivLocalWeilGroup K).symm σ) = σ :=
+  (rfl)
 
 /-- The inclusion of the Weil group into `G_K` is injective. -/
 theorem injective_weilToAbsolute : Function.Injective (weilToAbsolute K) :=
