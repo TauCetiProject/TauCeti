@@ -44,8 +44,8 @@ theorem projectiveOrbitMap_units_smul (m : M) (c : Rˣ)
     _ _ _ (c.map ((Scheme.ΓSpecIso (.of H)).inv.hom.comp (algebraMap R H)))
   intro n s hs
   simp only [Units.coe_map, RingHom.comp_apply, AlgHom.toRingHom_eq_coe,
-    AlgHom.coe_toRingHom, Units.smul_def, orbitCoordinates, map_smul,
-    SymmetricAlgebra.lift_smul_of_mem_homogeneousSubmodule R (Module.Dual R M) _ (c : R) hs,
+    AlgHom.coe_toRingHom, Units.smul_def,
+    orbitCoordinates_smul_of_mem_homogeneousSubmodule m (c : R) hs,
     Algebra.smul_def, map_mul, map_pow]
   rfl
 
