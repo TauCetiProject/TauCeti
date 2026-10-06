@@ -46,8 +46,9 @@ points of `T` (read in `S` along a ring map `R →+* S`, such as `C : R →+* R[
 evaluator for the finitely many exponents removed from `f` and from finitely many further
 polynomials `g` over `R` at the points of `T`. Then
 `f (α + y ^ c) = y ^ (∑ i, cᵢ vᵢ) * (f_{α,v} + y * Q (α, y))` on `T` with a single polynomial
-`Q`, and each `y ↦ g (α + y ^ c)` vanishes at `y = 0` to the order given by the `c`-weight of
-the exponents removed from `g` at `α`
+`Q`, and for each nonzero `g` the polynomial `y ↦ g (α + y ^ c)` vanishes at `y = 0` to the order
+given by the `c`-weight of the exponents removed from `g` at `α` (for `g = 0` its trailing
+degree and that weight are both zero)
 (`exists_isLazardEvaluator_forall_aeval_monomialCurve_eq`).
 
 ## Main definitions
@@ -335,9 +336,10 @@ polynomial over `S` (for instance over `S = R[z]`, with `φ = C`), let `G` be a 
 polynomials over `R`, and let `T` be a nonempty set of points of `Rⁿ`, read in `Sⁿ` along `φ` when
 evaluating `f`. There is an evaluator `c` for the exponents removed by Lazard evaluation of `f`
 and of the members of `G` at the points of `T`, such that for every `α ∈ T`:
-* each `g ∈ G` restricts to `y ↦ g (α + y ^ c)` vanishing at `y = 0` to order exactly the
-  `c`-weight of the exponents removed by Lazard evaluation of `g` at `α`; in particular this
-  order is constant on `T` when the Lazard valuation of `g` is;
+* each nonzero `g ∈ G` restricts to `y ↦ g (α + y ^ c)` vanishing at `y = 0` to order exactly
+  the `c`-weight of the exponents removed by Lazard evaluation of `g` at `α`; in particular this
+  order is constant on `T` when the Lazard valuation of `g` is. For `g = 0` both sides of the
+  stated `natTrailingDegree` equation are zero;
 * with `v` the lexicographically least vector of exponents removed from `f` at the points of `T`,
   `f (α + y ^ c) = y ^ (∑ i, cᵢ vᵢ) * (f_{α,v} + y * Q (α, y))` for a single polynomial `Q`
   independent of `α`. Here `f_{α,v}` is the Taylor coefficient of `f` at `α` with exponent `v`,
