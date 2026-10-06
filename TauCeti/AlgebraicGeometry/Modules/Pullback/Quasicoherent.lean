@@ -17,23 +17,16 @@ quasicoherent (`Scheme.Modules.isIso_pullback_δ_of_isQuasicoherent` and
 `Scheme.Modules.isIso_pullback_δ_of_isQuasicoherent_right`). The target `Y` is arbitrary and the
 other factor is an arbitrary sheaf of modules; no flatness or finiteness is assumed.
 
-The proof is local on `Y`. Over an affine open `V ⊆ Y` the comparison for `f ∣_ V` is
-invertible (`Scheme.Modules.isIso_pullback_δ_of_isAffine`). Two further inputs transport this
-to `f`.
+Pullback along an open immersion `j : U ⟶ Y` is strong monoidal for all sheaves of modules
+(`Scheme.Modules.isIso_pullback_δ_of_isOpenImmersion`), and restriction along `j` is lax monoidal
+with invertible tensor map (`Scheme.Modules.restrictFunctorLaxMonoidal`,
+`Scheme.Modules.isIso_restrictFunctor_μ`).
 
-* Pullback along an open immersion `j : U ⟶ Y` is strong monoidal: its tensor comparison is an
-  isomorphism for all sheaves of modules (`Scheme.Modules.isIso_pullback_δ_of_isOpenImmersion`).
-  Restriction along `j` is the pushforward along the left adjoint `j.opensFunctor` of
-  `Opens.map j.base`, so it is lax monoidal (`Scheme.Modules.restrictFunctorLaxMonoidal`), and by
-  `TauCeti.SheafOfModules.isIso_pushforward_μ_of_adjunction` its tensor map is invertible.
-  Pullback along `j` is isomorphic to restriction, and the isomorphism of left adjoints of
-  `pushforward j` respects their tensor comparisons.
-* A morphism of sheaves of modules is an isomorphism as soon as its pullbacks to the members of
-  an open cover are (`Scheme.Modules.isIso_iff_of_isOpenCover`).
-
-Writing `(f⁻¹ V).ι ≫ f = f ∣_ V ≫ V.ι` and using the compatibility of the tensor comparison with
-composition (`Scheme.Modules.pullback_comp_δ`), the pullback of the comparison for `f` to `f⁻¹ V`
-is invertible, hence so is the comparison for `f`.
+These isomorphisms say that pulling back along `f` turns tensor products into tensor products as
+long as one factor is quasicoherent; in particular they apply to line bundles. This is what makes
+pullback of line-bundle classes multiplicative (`LineBundleClass.pullback_mul`), so that every
+morphism of schemes induces a homomorphism of Picard groups `Pic(Y) →* Pic(X)`
+(`LineBundleClass.pullbackHom`), as the Picard functor `T ↦ Pic(X_T)` requires.
 
 ## References
 
@@ -133,6 +126,10 @@ of schemes `f : X ⟶ Y`, the tensor comparison `f^*(M ⊗ N) ⟶ f^*M ⊗ f^*N`
 `M` is quasicoherent. The right factor need not be quasicoherent. -/
 instance isIso_pullback_δ_of_isQuasicoherent (f : X ⟶ Y) (M N : Y.Modules)
     [M.IsQuasicoherent] : IsIso (δ (pullback f) M N) := by
+  -- The claim is local on `Y` (`isIso_iff_of_isOpenCover`). Over an affine open `V ⊆ Y` the
+  -- comparison for `f ∣_ V` is invertible (`isIso_pullback_δ_of_isAffine`), and so is the
+  -- comparison for the open immersion `V.ι`. Writing `(f⁻¹ V).ι ≫ f = f ∣_ V ≫ V.ι` and using
+  -- `pullback_comp_δ`, the pullback of the comparison for `f` to `f⁻¹ V` is invertible.
   refine (isIso_iff_of_isOpenCover
     (TopologicalSpace.IsOpenCover.comap (iSup_affineOpens_eq_top Y) f.base.hom) _).mpr fun V ↦ ?_
   have : IsAffine V.1 := V.2
