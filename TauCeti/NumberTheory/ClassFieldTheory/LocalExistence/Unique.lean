@@ -22,8 +22,8 @@ abelian subextensions.
 
 ## Main results
 
-* `TauCeti.ClassFieldTheory.localNormSubgroup_le_iff_of_isAbelian`: order reflection when the
-  right-hand layer is abelian.
+* `TauCeti.ClassFieldTheory.localNormSubgroup_le_localNormSubgroup_iff_of_isAbelian`: order
+  reflection when the right-hand layer is abelian.
 * `TauCeti.ClassFieldTheory.localClassField_unique`: uniqueness of an abelian layer with a given
   norm subgroup.
 * `TauCeti.ClassFieldTheory.localNormSubgroup_eq_iff_maximalAbelianLayer_eq`: two finite Galois
@@ -47,7 +47,7 @@ variable {K : Type} [Field K] [ValuativeRel K] [TopologicalSpace K]
 
 /-- Inclusion of local norm subgroups reflects inclusion of layer subgroups when the
 right-hand layer is abelian. In terms of fields, the inclusions run in opposite directions. -/
-theorem localNormSubgroup_le_iff_of_isAbelian (hW : W.IsAbelianClassFieldLayer) :
+theorem localNormSubgroup_le_localNormSubgroup_iff_of_isAbelian (hW : W.IsAbelianClassFieldLayer) :
     localNormSubgroup K V ≤ localNormSubgroup K W ↔ V ≤ W := by
   rw [← localNormSubgroup_maximalAbelianLayer K V]
   refine ⟨fun h ↦ V.le_maximalAbelianLayer.trans ?_,
@@ -56,12 +56,7 @@ theorem localNormSubgroup_le_iff_of_isAbelian (hW : W.IsAbelianClassFieldLayer) 
   rw [localNormSubgroup_eq_comap_ker hU inf_le_left,
     localNormSubgroup_eq_comap_ker hU inf_le_right,
     Subgroup.comap_le_comap_of_surjective (surjective_localAbelianArtinHom hU)] at h
-  intro σ hσ
-  exact (LayerRefinement.mk_mem_ker_galHom_iff
-    (inf_le_right : V.maximalAbelianLayer ⊓ W ≤ W)
-    ⟨σ, by rw [ground_ofOpenNormal]; exact OpenSubgroup.mem_top σ⟩).1
-    (h ((LayerRefinement.mk_mem_ker_galHom_iff inf_le_left
-      ⟨σ, by rw [ground_ofOpenNormal]; exact OpenSubgroup.mem_top σ⟩).2 hσ))
+  exact (LayerRefinement.ker_galHom_le_ker_galHom_iff_ofOpenNormal inf_le_left inf_le_right).1 h
 
 /-- Distinct finite abelian extensions of a local field have distinct norm subgroups.
 Abelianity is essential: norm limitation identifies every finite Galois extension's norm
@@ -69,8 +64,8 @@ subgroup with that of its maximal abelian subextension. -/
 theorem localClassField_unique (hV : V.IsAbelianClassFieldLayer)
     (hW : W.IsAbelianClassFieldLayer)
     (h : localNormSubgroup K V = localNormSubgroup K W) : V = W :=
-  le_antisymm ((localNormSubgroup_le_iff_of_isAbelian hW).1 h.le)
-    ((localNormSubgroup_le_iff_of_isAbelian hV).1 h.ge)
+  le_antisymm ((localNormSubgroup_le_localNormSubgroup_iff_of_isAbelian hW).1 h.le)
+    ((localNormSubgroup_le_localNormSubgroup_iff_of_isAbelian hV).1 h.ge)
 
 /-- For arbitrary finite Galois layers, inclusion of norm subgroups is equivalent to inclusion
 of their maximal abelian layer subgroups. -/
@@ -79,7 +74,8 @@ theorem localNormSubgroup_le_iff_maximalAbelianLayer_le :
       V.maximalAbelianLayer ≤ W.maximalAbelianLayer := by
   rw [← localNormSubgroup_maximalAbelianLayer K V,
     ← localNormSubgroup_maximalAbelianLayer K W]
-  exact localNormSubgroup_le_iff_of_isAbelian W.isAbelianClassFieldLayer_maximalAbelianLayer
+  exact localNormSubgroup_le_localNormSubgroup_iff_of_isAbelian
+    W.isAbelianClassFieldLayer_maximalAbelianLayer
 
 /-- Two finite Galois layers have the same local norm subgroup exactly when their maximal
 abelian sublayers coincide. -/
@@ -90,10 +86,11 @@ theorem localNormSubgroup_eq_iff_maximalAbelianLayer_eq :
 
 /-- Inclusion of a finite abelian class field in a finite Galois class field is reverse
 inclusion of their local norm subgroups. The fields are fixed fields in the separable closure. -/
-theorem classField_le_classField_iff_localNormSubgroup_le_of_isAbelian
+theorem classField_le_classField_iff_localNormSubgroup_ge_of_isAbelian
     (hW : W.IsAbelianClassFieldLayer) :
     classField K W ≤ classField K V ↔ localNormSubgroup K V ≤ localNormSubgroup K W :=
-  (classField_le_classField_iff K V W).trans (localNormSubgroup_le_iff_of_isAbelian hW).symm
+  (classField_le_classField_iff K V W).trans
+    (localNormSubgroup_le_localNormSubgroup_iff_of_isAbelian hW).symm
 
 /-- Two finite abelian class fields inside the separable closure are equal exactly when their
 local norm subgroups are equal. -/

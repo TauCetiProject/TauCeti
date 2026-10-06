@@ -68,9 +68,11 @@ compared across refinements.
 * `TauCeti.ClassFieldTheory.LayerRefinement.galHom_surjective` and
   `TauCeti.ClassFieldTheory.LayerRefinement.galHom_mk_eq_one_iff`: the map of Galois groups is the
   quotient by `V/V'`.
-* `TauCeti.ClassFieldTheory.LayerRefinement.mk_mem_ker_galHom_iff`: for nested open normal
-  subgroups, a quotient class lies in the kernel exactly when its representative lies in the
-  larger subgroup.
+* `TauCeti.ClassFieldTheory.LayerRefinement.mk_mem_ker_galHom_ofOpenNormal_iff`: for nested
+  open normal subgroups, a quotient class lies in the kernel exactly when its representative
+  lies in the larger subgroup.
+* `TauCeti.ClassFieldTheory.LayerRefinement.ker_galHom_le_ker_galHom_iff_ofOpenNormal`: inclusion
+  of quotient kernels reflects inclusion of open normal subgroups above a common subgroup.
 * `TauCeti.ClassFieldTheory.LayerRefinement.degree_mul_relativeDegree`:
   `[U : V] * [V : V'] = [U : V']`.
 * `TauCeti.ClassFieldTheory.LayerRefinement.relativeDegree_trans`,
@@ -251,13 +253,30 @@ theorem ofOpenNormal {V V' : OpenNormalSubgroup G} (h : V' ≤ V) :
 
 /-- For open normal subgroups `U ≤ V`, the class of `w` in `G/U` lies in the kernel of the
 quotient map to `G/V` exactly when `w ∈ V`. -/
-theorem mk_mem_ker_galHom_iff {U V : OpenNormalSubgroup G} (h : U ≤ V)
+theorem mk_mem_ker_galHom_ofOpenNormal_iff {U V : OpenNormalSubgroup G} (h : U ≤ V)
     (w : (NormalLayer.ofOpenNormal U).ground) :
     (QuotientGroup.mk w : (NormalLayer.ofOpenNormal U).Gal) ∈ (ofOpenNormal h).galHom.ker ↔
       (w : G) ∈ V := by
   rw [MonoidHom.mem_ker, galHom_mk_eq_one_iff, NormalLayer.top_ofOpenNormal]
   -- Membership in an open normal subgroup is membership in its underlying open subgroup.
   exact Iff.rfl
+
+/-- For open normal subgroups above a common `U`, inclusion of the kernels of the quotient
+maps from `G/U` is equivalent to inclusion of the subgroups. -/
+theorem ker_galHom_le_ker_galHom_iff_ofOpenNormal {U V W : OpenNormalSubgroup G}
+    (hUV : U ≤ V) (hUW : U ≤ W) :
+    (ofOpenNormal hUV).galHom.ker ≤ (ofOpenNormal hUW).galHom.ker ↔ V ≤ W := by
+  constructor
+  · intro h σ hσ
+    let w : (NormalLayer.ofOpenNormal U).ground := ⟨σ, by simp⟩
+    have hw := (mk_mem_ker_galHom_ofOpenNormal_iff hUV w).2 hσ
+    exact (mk_mem_ker_galHom_ofOpenNormal_iff hUW w).1 (h hw)
+  · intro h γ hγ
+    induction γ using QuotientGroup.induction_on with
+    | H w =>
+      rw [mk_mem_ker_galHom_ofOpenNormal_iff hUV] at hγ
+      rw [mk_mem_ker_galHom_ofOpenNormal_iff hUW]
+      exact h hγ
 
 /-! ### Towers of refinements -/
 
