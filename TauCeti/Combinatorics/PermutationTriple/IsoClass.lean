@@ -241,7 +241,8 @@ end ConnectedIsoClass
 action `τ • (t, i) = (τ • t, τ i)`: the relabeling moves the label along with the triple.
 Quotienting by the stabilizer of the label instead would never identify pairs with different
 labels. -/
-def MarkedIsoClass (n : ℕ) : Type :=
+-- Expose the quotient carrier so generic orbit-space equivalences can be instantiated.
+@[expose] def MarkedIsoClass (n : ℕ) : Type :=
   MulAction.orbitRel.Quotient (Perm (Fin n)) (ConnectedTriple n × Fin n)
 
 namespace MarkedIsoClass
@@ -251,6 +252,11 @@ variable {n : ℕ}
 /-- The class of a connected triple with the marked label `i`. -/
 def mk (t : ConnectedTriple n) (i : Fin n) : MarkedIsoClass n :=
   Quotient.mk'' (t, i)
+
+/-- The generic diagonal-orbit constructor is the marked-class constructor. -/
+@[simp]
+theorem quotient_mk (t : ConnectedTriple n) (i : Fin n) :
+    (Quotient.mk'' (t, i) : MarkedIsoClass n) = mk t i := (rfl)
 
 /-- Two marked connected triples determine the same class exactly when they are related by the
 diagonal relabeling action. -/
