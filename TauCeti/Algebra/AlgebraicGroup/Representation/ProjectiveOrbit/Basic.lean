@@ -49,6 +49,7 @@ variable [AddCommMonoid M] [Module R M] [Comodule R H M]
 
 /-- The homogeneous coordinate map of the orbit of a vector: the linear coordinate `φ`
 pulls back to the matrix coefficient `c(φ, m)`. -/
+@[expose]
 noncomputable def orbitCoordinates (m : M) : SymmetricAlgebra R (Module.Dual R M) →ₐ[R] H :=
   SymmetricAlgebra.lift ((matrixCoefficientBilinear (C := H)).flip m)
 
@@ -66,16 +67,6 @@ theorem counitAlgHom_comp_orbitCoordinates (m : M) :
       SymmetricAlgebra.lift (Module.Dual.eval R M m) := by
   ext φ
   simp [Bialgebra.counitAlgHom_apply]
-
-/-- Rescaling the orbit vector multiplies each homogeneous coordinate of degree `n`
-by the `n`th power of the scalar. -/
-theorem orbitCoordinates_smul_of_mem_homogeneousSubmodule (m : M) (r : R)
-    {s : SymmetricAlgebra R (Module.Dual R M)} {n : ℕ}
-    (hs : s ∈ TauCeti.SymmetricAlgebra.homogeneousSubmodule R (Module.Dual R M) n) :
-    orbitCoordinates (H := H) (r • m) s = r ^ n • orbitCoordinates (H := H) m s := by
-  simp only [orbitCoordinates, map_smul]
-  exact TauCeti.SymmetricAlgebra.lift_smul_of_mem_homogeneousSubmodule
-    R (Module.Dual R M) _ r hs
 
 end Coordinates
 

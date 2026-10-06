@@ -15,8 +15,8 @@ does not change the morphism to `Proj`. This is equality of scheme morphisms, in
 their structure-sheaf maps, not merely equality on field-valued points. It permits
 semi-invariant homogeneous coordinates to define invariant projective morphisms.
 
-The chart calculation uses `HomogeneousLocalization.Away.lift_eq_of_forall_mem` and
-Mathlib's `Proj.fromOfGlobalSections` construction.
+For Mathlib's `Proj.fromOfGlobalSections`, the coordinates must send the irrelevant
+ideal to the unit ideal.
 
 ## References
 
