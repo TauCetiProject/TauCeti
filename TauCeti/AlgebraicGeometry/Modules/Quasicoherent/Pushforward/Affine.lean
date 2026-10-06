@@ -26,7 +26,7 @@ the structure sheaf along an affine morphism is quasicoherent. The spectrum case
 
 public section
 
-open CategoryTheory AlgebraicGeometry
+open CategoryTheory MonoidalCategory AlgebraicGeometry
 
 namespace TauCeti.AlgebraicGeometry
 
@@ -39,7 +39,7 @@ open _root_.AlgebraicGeometry.Scheme.Modules
 variable {X Y : Scheme.{u}}
 
 /-- Pushforward between affine schemes preserves quasicoherence. -/
-instance isQuasicoherent_pushforward_of_isAffine [IsAffine X] [IsAffine Y]
+private theorem isQuasicoherent_pushforward_of_isAffine [IsAffine X] [IsAffine Y]
     (f : X ⟶ Y) (M : X.Modules) [M.IsQuasicoherent] :
     ((pushforward f).obj M).IsQuasicoherent := by
   have := isQuasicoherent_pushforward_of_iso X.isoSpec M
@@ -69,6 +69,10 @@ instance isQuasicoherent_pushforward_of_isAffineHom (f : X ⟶ Y) [IsAffineHom f
     exact (SheafOfModules.isQuasicoherent U.1.toScheme.ringCatSheaf).prop_of_iso
       ((restrictPushforwardIso f U.1).app M).symm h
   exact isQuasicoherent_of_isQuasicoherent_restrict_affineOpens N hrestrict
+
+/-- The pushforward of the structure sheaf along an affine morphism is quasicoherent. -/
+theorem isQuasicoherent_pushforward_unit (f : X ⟶ Y) [IsAffineHom f] :
+    ((pushforward f).obj (𝟙_ X.Modules)).IsQuasicoherent := inferInstance
 
 end
 
