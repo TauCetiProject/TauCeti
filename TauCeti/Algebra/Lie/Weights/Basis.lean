@@ -19,7 +19,6 @@ of the corresponding group-algebra basis elements, with coefficient one.
 
 These results connect explicit diagonal actions, such as the exterior model of spinors, to
 `TauCeti.formalCharacter` without requiring algebraic closedness or characteristic zero.
-The diagonalizability argument uses `TauCeti.isSemisimple_of_iSup_eigenspace_eq_top`.
 -/
 
 public section
@@ -51,8 +50,7 @@ theorem genWeightSpace_eq_weightSpace_of_weight_basis (χ : L → K) :
   refine forall_congr' fun x => ?_
   rw [← Module.End.mem_maxGenEigenspace,
     (hss x).isFinitelySemisimple.maxGenEigenspace_eq_eigenspace,
-    Module.End.mem_eigenspace_iff]
-  rfl
+    Module.End.mem_eigenspace_iff, LieModule.toEnd_apply_apply]
 
 omit [LieRing.IsNilpotent L] in
 /-- With distinct basis weights, the weight space at a basis weight is its basis-vector line. -/
@@ -75,12 +73,14 @@ theorem weightSpace_eq_span_singleton_of_weight_basis
   · rw [Submodule.span_singleton_le_iff_mem]
     exact (mem_weightSpace _ _).mpr (hb i)
 
-variable [Fintype ι] [LinearWeights K L M] [FiniteDimensional K M]
+variable [Fintype ι] [LinearWeights K L M]
 
 /-- The formal character of a module with a basis of distinct weight vectors is the sum of
 those weights, each with multiplicity one. -/
 theorem formalCharacter_eq_sum_single_of_weight_basis (hμ : Function.Injective μ) :
+    letI := b.finiteDimensional_of_finite
     TauCeti.formalCharacter K L M = ∑ i, AddMonoidAlgebra.single (μ i) (1 : ℤ) := by
+  let _ := b.finiteDimensional_of_finite
   classical
   refine AddMonoidAlgebra.ext (Finsupp.ext fun χ => ?_)
   rw [TauCeti.formalCharacter_coeff,
