@@ -23,10 +23,6 @@ The main result is
 the site has binary products, the free sheaf of modules on a finite type is finitely presented
 (`TauCeti.SheafOfModules.isFinitePresentation_free`). Finitely presented sheaves contain the
 zero sheaf and are closed under binary and finite products, which are direct sums.
-
-This advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer B, item "Coherent sheaves and
-cohomology `Hⁱ(X, ℱ)`". No formalization is vendored. The proof reuses Mathlib's
-`SheafOfModules.LocalGeneratorsData.quasiCoherentData`.
 -/
 
 public section
