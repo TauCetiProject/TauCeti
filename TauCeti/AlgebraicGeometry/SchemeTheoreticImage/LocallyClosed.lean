@@ -40,74 +40,76 @@ noncomputable section
 variable {X Y : Scheme.{u}} (f : X ⟶ Y)
 
 /-- The largest open subset of the target in which the topological image is closed. -/
-def imageOpen (h : IsLocallyClosed (Set.range f)) : Y.Opens :=
+def coborderRangeOfIsLocallyClosed (h : IsLocallyClosed (Set.range f)) : Y.Opens :=
   ⟨coborder (Set.range f), h.isOpen_coborder⟩
 
 /-- The open used for the locally closed image is the complement of its boundary. -/
 @[simp]
-theorem coe_imageOpen (h : IsLocallyClosed (Set.range f)) :
-    (f.imageOpen h : Set Y) = coborder (Set.range f) := (rfl)
+theorem coe_coborderRangeOfIsLocallyClosed (h : IsLocallyClosed (Set.range f)) :
+    (f.coborderRangeOfIsLocallyClosed h : Set Y) = coborder (Set.range f) := (rfl)
 
 /-- Regard a morphism with locally closed image as a morphism into the open
 complement of its image's boundary. -/
-def liftImageOpen (h : IsLocallyClosed (Set.range f)) : X ⟶ f.imageOpen h :=
-  IsOpenImmersion.lift (f.imageOpen h).ι f (by
-    rw [Scheme.Opens.range_ι, coe_imageOpen]
+def liftCoborderRange (h : IsLocallyClosed (Set.range f)) :
+    X ⟶ f.coborderRangeOfIsLocallyClosed h :=
+  IsOpenImmersion.lift (f.coborderRangeOfIsLocallyClosed h).ι f (by
+    rw [Scheme.Opens.range_ι, coe_coborderRangeOfIsLocallyClosed]
     exact subset_coborder)
 
 /-- Composing the lift with the open inclusion recovers the original morphism. -/
 @[reassoc (attr := simp)]
-theorem liftImageOpen_ι (h : IsLocallyClosed (Set.range f)) :
-    f.liftImageOpen h ≫ (f.imageOpen h).ι = f :=
+theorem liftCoborderRange_ι (h : IsLocallyClosed (Set.range f)) :
+    f.liftCoborderRange h ≫ (f.coborderRangeOfIsLocallyClosed h).ι = f :=
   IsOpenImmersion.lift_fac _ _ _
 
 /-- The lifted image is the preimage of the original image under the open inclusion. -/
-theorem range_liftImageOpen (h : IsLocallyClosed (Set.range f)) :
-    Set.range (f.liftImageOpen h) = (f.imageOpen h).ι ⁻¹' Set.range f := by
+theorem range_liftCoborderRange (h : IsLocallyClosed (Set.range f)) :
+    Set.range (f.liftCoborderRange h) = (f.coborderRangeOfIsLocallyClosed h).ι ⁻¹' Set.range f := by
   -- Scheme lifts use the locally ringed space lift; reuse its range formula.
-  have H : Set.range f ⊆ Set.range (f.imageOpen h).ι := by
-    rw [Scheme.Opens.range_ι, coe_imageOpen]
+  have H : Set.range f ⊆ Set.range (f.coborderRangeOfIsLocallyClosed h).ι := by
+    rw [Scheme.Opens.range_ι, coe_coborderRangeOfIsLocallyClosed]
     exact subset_coborder
   exact LocallyRingedSpace.IsOpenImmersion.lift_range
-    (f.imageOpen h).ι.toLRSHom f.toLRSHom H
+    (f.coborderRangeOfIsLocallyClosed h).ι.toLRSHom f.toLRSHom H
 
 /-- The image becomes closed inside the open complement of its boundary. -/
-theorem isClosed_range_liftImageOpen (h : IsLocallyClosed (Set.range f)) :
-    IsClosed (Set.range (f.liftImageOpen h)) := by
-  rw [range_liftImageOpen]
+theorem isClosed_range_liftCoborderRange (h : IsLocallyClosed (Set.range f)) :
+    IsClosed (Set.range (f.liftCoborderRange h)) := by
+  rw [range_liftCoborderRange]
   -- The carrier of an open subscheme is definitionally the subtype of its open set.
   exact isClosed_preimage_val_coborder
 
-instance instQuasiCompactLiftImageOpen [QuasiCompact f]
-    (h : IsLocallyClosed (Set.range f)) : QuasiCompact (f.liftImageOpen h) := by
-  have : QuasiCompact (f.liftImageOpen h ≫ (f.imageOpen h).ι) := by
-    rw [liftImageOpen_ι]
+instance instQuasiCompactLiftCoborderRange [QuasiCompact f]
+    (h : IsLocallyClosed (Set.range f)) : QuasiCompact (f.liftCoborderRange h) := by
+  have : QuasiCompact (f.liftCoborderRange h ≫ (f.coborderRangeOfIsLocallyClosed h).ι) := by
+    rw [liftCoborderRange_ι]
     infer_instance
-  exact QuasiCompact.of_comp _ (f.imageOpen h).ι
+  exact QuasiCompact.of_comp _ (f.coborderRangeOfIsLocallyClosed h).ι
 
 /-- The scheme-theoretic image formed in an open where the original image is closed. -/
 abbrev locallyClosedImage (h : IsLocallyClosed (Set.range f)) : Scheme.{u} :=
-  (f.liftImageOpen h).image
+  (f.liftCoborderRange h).image
 
 /-- The immersion of the locally closed image into the original target. -/
 def locallyClosedImageι (h : IsLocallyClosed (Set.range f)) :
     f.locallyClosedImage h ⟶ Y :=
-  (f.liftImageOpen h).imageι ≫ (f.imageOpen h).ι
+  (f.liftCoborderRange h).imageι ≫ (f.coborderRangeOfIsLocallyClosed h).ι
 
 /-- The canonical map from the source onto its locally closed scheme image. -/
 def toLocallyClosedImage (h : IsLocallyClosed (Set.range f)) :
     X ⟶ f.locallyClosedImage h :=
-  (f.liftImageOpen h).toImage
+  (f.liftCoborderRange h).toImage
 
 /-- The inclusion factors as a closed immersion into the boundary complement
 followed by that open subscheme's inclusion. -/
 theorem locallyClosedImageι_def (h : IsLocallyClosed (Set.range f)) :
-    f.locallyClosedImageι h = (f.liftImageOpen h).imageι ≫ (f.imageOpen h).ι := (rfl)
+    f.locallyClosedImageι h =
+      (f.liftCoborderRange h).imageι ≫ (f.coborderRangeOfIsLocallyClosed h).ι := (rfl)
 
 /-- The image factorization map is the usual scheme-theoretic image factorization
 of the lifted morphism. -/
 theorem toLocallyClosedImage_def (h : IsLocallyClosed (Set.range f)) :
-    f.toLocallyClosedImage h = (f.liftImageOpen h).toImage := (rfl)
+    f.toLocallyClosedImage h = (f.liftCoborderRange h).toImage := (rfl)
 
 /-- The locally closed scheme image inclusion is an immersion. -/
 instance instIsImmersionLocallyClosedImageι (h : IsLocallyClosed (Set.range f)) :
@@ -120,7 +122,7 @@ instance instIsImmersionLocallyClosedImageι (h : IsLocallyClosed (Set.range f))
 theorem toLocallyClosedImage_locallyClosedImageι (h : IsLocallyClosed (Set.range f)) :
     f.toLocallyClosedImage h ≫ f.locallyClosedImageι h = f := by
   rw [toLocallyClosedImage_def, locallyClosedImageι_def,
-    Scheme.Hom.toImage_imageι_assoc, liftImageOpen_ι]
+    Scheme.Hom.toImage_imageι_assoc, liftCoborderRange_ι]
 
 variable [QuasiCompact f]
 
@@ -128,8 +130,8 @@ variable [QuasiCompact f]
 instance instSurjectiveToLocallyClosedImage (h : IsLocallyClosed (Set.range f)) :
     Surjective (f.toLocallyClosedImage h) := by
   rw [toLocallyClosedImage_def]
-  exact ⟨(f.liftImageOpen h).toImage_surjective_of_isClosed_range
-    (f.isClosed_range_liftImageOpen h)⟩
+  exact ⟨(f.liftCoborderRange h).toImage_surjective_of_isClosed_range
+    (f.isClosed_range_liftCoborderRange h)⟩
 
 /-- The immersion has precisely the original topological image, including nonclosed points. -/
 @[simp]
