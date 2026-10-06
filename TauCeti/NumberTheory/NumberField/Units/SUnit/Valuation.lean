@@ -96,7 +96,7 @@ variable (S : SubMulAction (L ≃ₐ[K] L) (HeightOneSpectrum (𝓞 L))) [Finite
 
 private def valuationVector :
     Additive ((S : Set (HeightOneSpectrum (𝓞 L))).unit L) →ₗ[ℤ] ℤ[S] :=
-  (TauCeti.MonoidAlgebra.funMultiplicativeIntLinearEquiv S).toLinearMap ∘ₗ
+  (TauCeti.funMultiplicativeIntLinearEquiv S).toLinearMap ∘ₗ
     (Set.unitValuation (S : Set (HeightOneSpectrum (𝓞 L))) L).toAdditive.toIntLinearMap
 
 private theorem valuationVector_coeff
@@ -104,7 +104,7 @@ private theorem valuationVector_coeff
     (valuationVector S u).coeff v =
       Multiplicative.toAdd (v.val.valuationOfNeZero u.toMul.val) := by
   rw [valuationVector, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap,
-    TauCeti.MonoidAlgebra.funMultiplicativeIntLinearEquiv_coeff]
+    TauCeti.funMultiplicativeIntLinearEquiv_coeff]
   -- The additive homomorphism is the type-tagged valuation tuple.
   change Multiplicative.toAdd
     (Set.unitValuation (S : Set (HeightOneSpectrum (𝓞 L))) L u.toMul v) = _
@@ -206,7 +206,7 @@ theorem range_sUnitInclusion_eq_ker_sUnitValuation :
   have hzero : (sUnitValuation S).hom u = 0 ↔
       u.toMul ∈ (Set.unitValuation (S : Set (HeightOneSpectrum (𝓞 L))) L).ker := by
     -- The coordinate equivalence is injective; only the valuation tuple can vanish.
-    change TauCeti.MonoidAlgebra.funMultiplicativeIntLinearEquiv S
+    change TauCeti.funMultiplicativeIntLinearEquiv S
       ((Set.unitValuation (S : Set (HeightOneSpectrum (𝓞 L))) L).toAdditive u) = 0 ↔ _
     rw [LinearEquiv.map_eq_zero_iff]
     rfl
@@ -234,7 +234,7 @@ theorem finiteIndex_range_sUnitValuation :
       (TauCeti.finiteIndex_range_unitValuation (𝓞 L) L _)
   have hrange : (sUnitValuation S).hom.toLinearMap.range.toAddSubgroup =
       (Set.unitValuation (S : Set (HeightOneSpectrum (𝓞 L))) L).range.toAddSubgroup.map
-        (TauCeti.MonoidAlgebra.funMultiplicativeIntLinearEquiv S).toAddMonoidHom := by
+        (TauCeti.funMultiplicativeIntLinearEquiv S).toAddMonoidHom := by
     ext y
     constructor
     · rintro ⟨u, rfl⟩
@@ -243,7 +243,7 @@ theorem finiteIndex_range_sUnitValuation :
       exact ⟨Additive.ofMul u, rfl⟩
   rw [hrange]
   exact AddSubgroup.FiniteIndex.map_of_surjective _
-    (TauCeti.MonoidAlgebra.funMultiplicativeIntLinearEquiv S).surjective
+    (TauCeti.funMultiplicativeIntLinearEquiv S).surjective
 
 end SubMulAction
 

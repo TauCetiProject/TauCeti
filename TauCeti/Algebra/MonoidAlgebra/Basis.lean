@@ -40,7 +40,7 @@ public section
 namespace TauCeti
 
 /-- Finite families of multiplicatively written integers are integral monoid-algebra vectors. -/
-noncomputable def MonoidAlgebra.funMultiplicativeIntLinearEquiv (X : Type*) [Finite X] :
+noncomputable def funMultiplicativeIntLinearEquiv (X : Type*) [Finite X] :
     Additive (X → Multiplicative ℤ) ≃ₗ[ℤ] MonoidAlgebra ℤ X :=
   (MulEquiv.funMultiplicative X ℤ).symm.toAdditiveLeft.toIntLinearEquiv.trans
     ((Finsupp.linearEquivFunOnFinite ℤ ℤ X).symm.trans
@@ -48,14 +48,14 @@ noncomputable def MonoidAlgebra.funMultiplicativeIntLinearEquiv (X : Type*) [Fin
 
 /-- The coefficient is the corresponding integer coordinate in additive notation. -/
 @[simp]
-theorem MonoidAlgebra.funMultiplicativeIntLinearEquiv_coeff {X : Type*} [Finite X]
+theorem funMultiplicativeIntLinearEquiv_coeff {X : Type*} [Finite X]
     (u : Additive (X → Multiplicative ℤ)) (x : X) :
     (funMultiplicativeIntLinearEquiv X u).coeff x = Multiplicative.toAdd (u.toMul x) :=
   (rfl)
 
 /-- The inverse reads coefficients in multiplicative notation. -/
 @[simp]
-theorem MonoidAlgebra.funMultiplicativeIntLinearEquiv_symm_apply {X : Type*} [Finite X]
+theorem funMultiplicativeIntLinearEquiv_symm_apply {X : Type*} [Finite X]
     (u : MonoidAlgebra ℤ X) (x : X) :
     ((funMultiplicativeIntLinearEquiv X).symm u).toMul x =
       Multiplicative.ofAdd (u.coeff x) :=
