@@ -17,11 +17,12 @@ Let `G` be a finite group and `M i` a family of representations of `G`, indexed 
 type `ι`. This file shows that Tate cohomology in degrees `0` and `-1` commutes with the product
 `Rep.pi M`:
 
-`Ĥ⁰(G, ∏ i, M i) ≃ ∏ i, Ĥ⁰(G, M i)` and `Ĥ⁻¹(G, ∏ i, M i) ≃ ∏ i, Ĥ⁻¹(G, M i)`,
+`H-hat^0(G, ∏ i, M i) ≃ ∏ i, H-hat^0(G, M i)` and
+`H-hat^(-1)(G, ∏ i, M i) ≃ ∏ i, H-hat^(-1)(G, M i)`,
 
 the `i`-th component being induced by the projection onto `M i`. Both rest on the low-degree
-descriptions `Ĥ⁰ = Mᴳ / N_G M` and `Ĥ⁻¹ = ker N_G / I_G M`, where invariants, norms and the
-augmentation submodule `I_G M` of a product are all computed componentwise. For the norm image
+descriptions `H-hat^0 = Mᴳ / N_G M` and `H-hat^(-1) = ker N_G / I_G M`, where invariants, norms and
+the augmentation submodule `I_G M` of a product are all computed componentwise. For the norm image
 and the augmentation submodule this needs a choice in every factor at once, and for the latter
 also the finiteness of `G` (`Representation.mem_coinvariantsKer_pi_iff`).
 
@@ -34,8 +35,9 @@ when `L/K` is unramified at `v`.
 
 ## Main definitions
 
-* `TauCeti.TateCohomology.H0LinearEquivPi`: `Ĥ⁰(G, ∏ i, M i) ≃ ∏ i, Ĥ⁰(G, M i)`.
-* `TauCeti.TateCohomology.HNegOneLinearEquivPi`: `Ĥ⁻¹(G, ∏ i, M i) ≃ ∏ i, Ĥ⁻¹(G, M i)`.
+* `TauCeti.TateCohomology.H0LinearEquivPi`: `H-hat^0(G, ∏ i, M i) ≃ ∏ i, H-hat^0(G, M i)`.
+* `TauCeti.TateCohomology.HNegOneLinearEquivPi`:
+  `H-hat^(-1)(G, ∏ i, M i) ≃ ∏ i, H-hat^(-1)(G, M i)`.
 
 ## Main results
 
@@ -71,7 +73,7 @@ private theorem isIntertwiningMap_proj (i : ι) :
 
 /-! ### Degree zero -/
 
-/-- The family of the maps `Ĥ⁰(G, ∏ j, M j) → Ĥ⁰(G, M i)` induced by the projections. -/
+/-- The family of the maps `H-hat^0(G, ∏ j, M j) → H-hat^0(G, M i)` induced by the projections. -/
 private def H0ToPi : tateCohomology (Rep.pi M) 0 →ₗ[R] ∀ i, tateCohomology (M i) 0 :=
   LinearMap.pi fun i ↦ (map (isIntertwiningMap_proj M i) 0).hom
 
@@ -102,8 +104,8 @@ private theorem H0ToPi_bijective : Function.Bijective (H0ToPi M) := by
       fun i ↦ (y i).2⟩, funext fun i ↦ ?_⟩
     rw [H0ToPi_H0π, ← hy i]
 
-/-- **Degree-zero Tate cohomology commutes with products**: `Ĥ⁰(G, ∏ i, M i) ≃ ∏ i, Ĥ⁰(G, M i)`,
-with components induced by the projections. -/
+/-- **Degree-zero Tate cohomology commutes with products**:
+`H-hat^0(G, ∏ i, M i) ≃ ∏ i, H-hat^0(G, M i)`, with components induced by the projections. -/
 def H0LinearEquivPi : tateCohomology (Rep.pi M) 0 ≃ₗ[R] ∀ i, tateCohomology (M i) 0 :=
   LinearEquiv.ofBijective (H0ToPi M) (H0ToPi_bijective M)
 
@@ -117,7 +119,8 @@ theorem H0LinearEquivPi_H0π (y : (Rep.pi M).ρ.invariants) (i : ι) :
 
 /-! ### Degree minus one -/
 
-/-- The family of the maps `Ĥ⁻¹(G, ∏ j, M j) → Ĥ⁻¹(G, M i)` induced by the projections. -/
+/-- The family of the maps `H-hat^(-1)(G, ∏ j, M j) → H-hat^(-1)(G, M i)` induced by the
+projections. -/
 private def HNegOneToPi : tateCohomology (Rep.pi M) (-1) →ₗ[R] ∀ i, tateCohomology (M i) (-1) :=
   LinearMap.pi fun i ↦ (map (isIntertwiningMap_proj M i) (-1)).hom
 
@@ -147,7 +150,7 @@ private theorem HNegOneToPi_bijective : Function.Bijective (HNegOneToPi M) := by
     rw [HNegOneToPi_HNegOneπ, ← hy i]
 
 /-- **Degree `-1` Tate cohomology commutes with products**:
-`Ĥ⁻¹(G, ∏ i, M i) ≃ ∏ i, Ĥ⁻¹(G, M i)`, with components induced by the projections. -/
+`H-hat^(-1)(G, ∏ i, M i) ≃ ∏ i, H-hat^(-1)(G, M i)`, with components induced by the projections. -/
 def HNegOneLinearEquivPi : tateCohomology (Rep.pi M) (-1) ≃ₗ[R] ∀ i, tateCohomology (M i) (-1) :=
   LinearEquiv.ofBijective (HNegOneToPi M) (HNegOneToPi_bijective M)
 
