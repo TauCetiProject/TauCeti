@@ -128,6 +128,7 @@ theorem frontier_dirichletDomain_eq_iUnion_dirichletFace {p : ℍ} :
 
 /-- A point is in the interior exactly when all constraints from indices moving the centre
 are strict. Local finiteness of the constraints is essential for the reverse implication. -/
+@[simp]
 theorem mem_interior_dirichletDomain_iff {p z : ℍ} :
     z ∈ interior (dirichletDomain G p) ↔
       ∀ g : G, g • p ≠ p → dist z p < dist z (g • p) := by
