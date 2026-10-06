@@ -28,6 +28,10 @@ by `TauCeti.absoluteGaloisGroupRestrictEquiv`.
   along a topological group isomorphism.
 * `TauCeti.cohomologicalDimensionAt_le_of_continuousMulEquiv`: `cd_p G ≤ cd_p H` for `G ≃ₜ* H`.
 * `TauCeti.cohomologicalDimensionAt_congr`: **`cd_p G = cd_p H`** for `G ≃ₜ* H`.
+
+## References
+
+* J.-P. Serre, *Galois Cohomology*, Ch. I, §3.
 -/
 
 public section
