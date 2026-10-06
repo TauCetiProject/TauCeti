@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Basic
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Jacobian.Point
+public import Mathlib.Algebra.Module.Torsion.Basic
 -- Proof-only: a vanishing `ψₙ` annihilates the point, and conversely.
 import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.ZSMul
 -- Proof-only: over an algebraically closed field every `x` is the abscissa of a point.
@@ -31,6 +32,8 @@ of `ΨSqₙ` two-to-one away from the `2`-torsion, which is what matches `#ker [
   field, the roots of `ΨSqₙ` are exactly the abscissae of the `n`-torsion points. The pointwise
   form, for a supplied `y`, is `eval_ΨSq_eq_zero_iff_zsmul_eq_zero` in
   `DivisionPolynomial/ZSMul.lean`; only the existence of `y` needs the closure assumption.
+* `WeierstrassCurve.torsionBy_eq_bot_iff_forall_eval_ΨSq_ne_zero`: over an algebraically closed
+  field, the `n`-torsion subgroup is trivial exactly when `ΨSqₙ` has no root.
 
 ## References
 
@@ -56,6 +59,21 @@ theorem eval_ΨSq_eq_zero_iff_exists_zsmul_eq_zero [IsAlgClosed F] [W.IsElliptic
   obtain ⟨y, hy⟩ := W.toAffine.exists_point_on_curve x
   have hns : W.toAffine.Nonsingular x y := Affine.equation_iff_nonsingular.mp hy
   exact ⟨y, hns, (eval_ΨSq_eq_zero_iff_zsmul_eq_zero W hns n).mp hx⟩
+
+/-- **Over an algebraically closed field the `n`-torsion is trivial exactly when `ΨSqₙ` has no
+root**: a root is the abscissa of a nonzero affine `n`-torsion point, and the point at infinity is
+the only point with no abscissa. -/
+theorem torsionBy_eq_bot_iff_forall_eval_ΨSq_ne_zero [IsAlgClosed F] [W.IsElliptic] [DecidableEq F]
+    {n : ℤ} : AddSubgroup.torsionBy W.toAffine.Point n = ⊥ ↔ ∀ x, (W.ΨSq n).eval x ≠ 0 := by
+  simp only [AddSubgroup.eq_bot_iff_forall, Submodule.mem_toAddSubgroup,
+    Submodule.mem_torsionBy_iff]
+  refine ⟨fun h x hx ↦ ?_, ?_⟩
+  · obtain ⟨y, hns, htors⟩ := W.eval_ΨSq_eq_zero_iff_exists_zsmul_eq_zero.mp hx
+    exact Affine.Point.some_ne_zero hns (h _ (zsmul_fromAffine_eq_zero_iff_zsmul_eq_zero.mp htors))
+  · rintro h (_ | ⟨x, y, hns⟩) hP
+    · rfl
+    · exact absurd ((eval_ΨSq_eq_zero_iff_zsmul_eq_zero W hns n).mpr
+        (zsmul_fromAffine_eq_zero_iff_zsmul_eq_zero.mpr hP)) (h x)
 
 end WeierstrassCurve
 
