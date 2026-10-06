@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Defs
 public import TauCeti.Algebra.Category.ModuleCat.Presheaf.ExteriorPower
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Restriction.Basic
 
 /-!
 # Exterior powers of sheaves of modules
@@ -25,7 +26,14 @@ exterior powers of `𝒪ₓ`-modules from which determinants of vector bundles a
 * `SheafOfModules.exteriorPowerIso` and `SheafOfModules.exteriorPower_map` are its
   defining identification with the sheafification of the sectionwise exterior power;
 * `SheafOfModules.exteriorPowerZeroIso` identifies `⋀⁰ M` with the structure sheaf;
-* `SheafOfModules.exteriorPowerOneIso` identifies `⋀¹ M` with `M`.
+* `SheafOfModules.exteriorPowerOneIso` identifies `⋀¹ M` with `M`;
+* `SheafOfModules.pushforwardExteriorPowerIso` identifies the pushforward of `⋀ⁿ M` along a
+  continuous and cocontinuous functor with the exterior power of the pushforward of `M`, and
+  `SheafOfModules.overExteriorPowerIso` specializes it to the restriction `(⋀ⁿ M)|_X ≅ ⋀ⁿ (M|_X)`
+  to a slice site.
+
+The restriction comparison lets local computations of exterior powers, such as those on the
+charts of a locally free sheaf, be carried out on the restriction to a covering object.
 -/
 
 public section
@@ -33,7 +41,7 @@ public section
 open CategoryTheory
 open TauCeti.SheafOfModules (ringCatSheaf)
 
-universe u v₁ u₁
+universe u v₁ v₂ u₁ u₂
 
 noncomputable section
 
@@ -133,6 +141,71 @@ theorem exteriorPowerOneIso_hom_app (M : SheafOfModules.{u} (ringCatSheaf R)) :
           ((PresheafOfModulesOfCommRing.exteriorPowerOneIso R.obj).hom.app M.val) ≫
         (TauCeti.SheafOfModules.sheafificationIso (ringCatSheaf R) M).hom :=
   (rfl)
+
+section Pushforward
+
+open TauCeti.SheafOfModules (pushforwardCommRing pushforwardModule pushforwardSheafificationIso)
+
+variable {D : Type u₂} [Category.{v₂} D] {K : GrothendieckTopology D}
+  [K.HasSheafCompose (forget₂ CommRingCat RingCat.{u})]
+  [HasWeakSheafify K AddCommGrpCat.{u}] [K.WEqualsLocallyBijective AddCommGrpCat.{u}]
+  (F : D ⥤ C) [F.IsContinuous K J] [F.IsCocontinuous K J]
+
+/-- For each sheaf of modules `M`, pushforward along a continuous and cocontinuous functor
+commutes with the `n`-th exterior power: `F_*(⋀ⁿ M) ≅ ⋀ⁿ (F_* M)`. -/
+def pushforwardExteriorPowerIso (n : ℕ) (M : SheafOfModules.{u} (ringCatSheaf R)) :
+    (pushforwardModule (J := K) F R).obj ((exteriorPower R n).obj M) ≅
+      (exteriorPower (pushforwardCommRing (J := K) F R) n).obj
+        ((pushforwardModule (J := K) F R).obj M) :=
+  (pushforwardModule (J := K) F R).mapIso (exteriorPowerIso n M) ≪≫
+    pushforwardSheafificationIso F (ringCatSheaf R)
+      ((PresheafOfModulesOfCommRing.exteriorPower (R := R.obj) n).obj M.val) ≪≫
+    (PresheafOfModules.sheafification
+      (𝟙 (ringCatSheaf (pushforwardCommRing (J := K) F R)).obj)).mapIso
+        ((PresheafOfModulesOfCommRing.pushforward₀ExteriorPowerIso (S := R.obj) F n).app
+          M.val) ≪≫
+    (exteriorPowerIso n ((pushforwardModule (J := K) F R).obj M)).symm
+
+/-- The forward map of `pushforwardExteriorPowerIso` is the sheafification--pushforward comparison
+followed by the sheafified presheaf-level comparison
+`PresheafOfModulesOfCommRing.pushforward₀ExteriorPowerIso`, read through the defining
+identifications of the two exterior powers. -/
+@[simp]
+theorem pushforwardExteriorPowerIso_hom (n : ℕ) (M : SheafOfModules.{u} (ringCatSheaf R)) :
+    (pushforwardExteriorPowerIso F n M).hom =
+      (pushforwardModule (J := K) F R).map (exteriorPowerIso n M).hom ≫
+        (pushforwardSheafificationIso F (ringCatSheaf R)
+          ((PresheafOfModulesOfCommRing.exteriorPower (R := R.obj) n).obj M.val)).hom ≫
+        (PresheafOfModules.sheafification
+          (𝟙 (ringCatSheaf (pushforwardCommRing (J := K) F R)).obj)).map
+            ((PresheafOfModulesOfCommRing.pushforward₀ExteriorPowerIso (S := R.obj) F n).hom.app
+              M.val) ≫
+        (exteriorPowerIso n ((pushforwardModule (J := K) F R).obj M)).inv :=
+  -- `Iso.trans_hom` does not fire: as for `pushforwardTensorProductIso_hom`, the coefficient
+  -- sheaves of the middle isomorphisms agree with the outer ones only up to unfolding
+  (rfl)
+
+/-- For each object `X` of the site, the restriction of `⋀ⁿ M` to the slice site over `X` is the
+`n`-th exterior power of the restriction of `M`. -/
+def overExteriorPowerIso (n : ℕ) (M : SheafOfModules.{u} (ringCatSheaf R)) (X : C)
+    [(J.over X).HasSheafCompose (forget₂ CommRingCat RingCat.{u})]
+    [HasWeakSheafify (J.over X) AddCommGrpCat.{u}]
+    [(J.over X).WEqualsLocallyBijective AddCommGrpCat.{u}] :
+    ((exteriorPower R n).obj M).over X ≅ (exteriorPower (R.over X) n).obj (M.over X) :=
+  pushforwardExteriorPowerIso (K := J.over X) (Over.forget X) n M
+
+/-- The forward map of `overExteriorPowerIso` is the slice-site instance of
+`pushforwardExteriorPowerIso_hom`. -/
+@[simp]
+theorem overExteriorPowerIso_hom (n : ℕ) (M : SheafOfModules.{u} (ringCatSheaf R)) (X : C)
+    [(J.over X).HasSheafCompose (forget₂ CommRingCat RingCat.{u})]
+    [HasWeakSheafify (J.over X) AddCommGrpCat.{u}]
+    [(J.over X).WEqualsLocallyBijective AddCommGrpCat.{u}] :
+    (overExteriorPowerIso n M X).hom =
+      (pushforwardExteriorPowerIso (K := J.over X) (Over.forget X) n M).hom :=
+  (rfl)
+
+end Pushforward
 
 end SheafOfModules
 

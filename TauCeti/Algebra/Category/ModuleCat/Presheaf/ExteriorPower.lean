@@ -28,14 +28,16 @@ rings.
 * `PresheafOfModulesOfCommRing.exteriorPowerZeroIso` identifies the zeroth exterior power
   with the constant functor at the unit presheaf of modules `R`;
 * `PresheafOfModulesOfCommRing.exteriorPowerOneIso` identifies the first exterior power
-  with the identity functor.
+  with the identity functor;
+* `PresheafOfModulesOfCommRing.pushforward₀ExteriorPowerIso` identifies the pushforward along a
+  functor of the exterior power with the exterior power of the pushforward.
 -/
 
 public section
 
 open CategoryTheory
 
-universe u v w
+universe u v w v' w'
 
 noncomputable section
 
@@ -198,6 +200,39 @@ lemma exteriorPowerOneIso_hom_app_app (M : PresheafOfModulesOfCommRing.{u} R) (X
 lemma exteriorPowerOneIso_inv_app_app (M : PresheafOfModulesOfCommRing.{u} R) (X : Cᵒᵖ) :
     ((exteriorPowerOneIso R).inv.app M).app X = (ModuleCat.exteriorPower.iso₁ (M.obj X)).inv :=
   (rfl)
+
+section Pushforward
+
+variable {D : Type v'} [Category.{w'} D] (F : C ⥤ D) {S : Dᵒᵖ ⥤ CommRingCat.{u}}
+
+/-- Exterior powers commute with pushforward along a functor `F : C ⥤ D`: over `X`, both
+presheaves of modules have sections `⋀[S(F X)]^n M(F X)` and the same restriction maps. -/
+def pushforward₀ExteriorPowerIso (n : ℕ) :
+    exteriorPower n ⋙ pushforward₀ F S ≅ pushforward₀ F S ⋙ exteriorPower n :=
+  NatIso.ofComponents
+    (fun M ↦ isoMk (fun _ ↦ Iso.refl _) (fun X Y f ↦ by
+      refine ModuleCat.exteriorPower.hom_ext (R := S.obj (Opposite.op (F.obj X.unop))) ?_
+      ext x
+      exact (exteriorPower_obj_map_mk n M (F.op.map f) x).trans
+        (exteriorPower_obj_map_mk n ((pushforward₀ F S).obj M) f x).symm))
+    (fun _ ↦ by
+      ext X : 1
+      exact (Category.comp_id _).trans (Category.id_comp _).symm)
+
+/-- On sections, `pushforward₀ExteriorPowerIso` is the identity of `⋀[S(F X)]^n M(F X)`. -/
+@[simp]
+lemma pushforward₀ExteriorPowerIso_hom_app_app (n : ℕ) (M : PresheafOfModulesOfCommRing.{u} S)
+    (X : Cᵒᵖ) : ((pushforward₀ExteriorPowerIso F n).hom.app M).app X = 𝟙 _ :=
+  (rfl)
+
+/-- On sections, the inverse of `pushforward₀ExteriorPowerIso` is the identity of
+`⋀[S(F X)]^n M(F X)`. -/
+@[simp]
+lemma pushforward₀ExteriorPowerIso_inv_app_app (n : ℕ) (M : PresheafOfModulesOfCommRing.{u} S)
+    (X : Cᵒᵖ) : ((pushforward₀ExteriorPowerIso F n).inv.app M).app X = 𝟙 _ :=
+  (rfl)
+
+end Pushforward
 
 end PresheafOfModulesOfCommRing
 
