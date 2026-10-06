@@ -45,7 +45,7 @@ variable [ModularFormClass F 𝒢 k]
 
 /-- The constant term of the trace to level one is the width-weighted sum of the cusp
 translation constant terms. -/
-theorem valueAtInfty_trace_eq_sum_width_mul_constantTerm (f : F) :
+theorem valueAtInfty_trace_eq_sum_width_mul_constantTermAtCuspTranslationOrbit (f : F) :
     valueAtInfty (_root_.ModularForm.trace 𝒮ℒ f) =
       ∑ c : CuspTranslationOrbit 𝒢,
         (cuspTranslationOrbitWidth c : ℂ) * constantTermAtCuspTranslationOrbit f c := by
@@ -76,10 +76,10 @@ variable {F : Type*} [FunLike F ℍ ℂ] [ModularFormClass F 𝒢 2]
 
 /-- **The weight-two residue relation**: the width-weighted sum of the constant terms at all
 cusp translation orbits is zero. -/
-theorem sum_width_mul_constantTerm_eq_zero (f : F) :
+theorem sum_width_mul_constantTermAtCuspTranslationOrbit_eq_zero (f : F) :
     ∑ c : CuspTranslationOrbit 𝒢,
       (cuspTranslationOrbitWidth c : ℂ) * constantTermAtCuspTranslationOrbit f c = 0 := by
-  rw [← valueAtInfty_trace_eq_sum_width_mul_constantTerm]
+  rw [← valueAtInfty_trace_eq_sum_width_mul_constantTermAtCuspTranslationOrbit]
   have hzero : _root_.ModularForm.trace 𝒮ℒ f = 0 :=
     (rank_zero_iff_forall_zero.mp _root_.ModularForm.levelOne_weight_two_rank_zero) _
   rw [hzero]
@@ -92,7 +92,7 @@ theorem constantTermAtCuspTranslationOrbit_eq_zero_of_forall_ne (f : F)
     (h : ∀ c' ≠ c, constantTermAtCuspTranslationOrbit f c' = 0) :
     constantTermAtCuspTranslationOrbit f c = 0 := by
   classical
-  have hsum := sum_width_mul_constantTerm_eq_zero f
+  have hsum := sum_width_mul_constantTermAtCuspTranslationOrbit_eq_zero f
   rw [Finset.sum_eq_single c (fun c' _ hc' ↦ by rw [h c' hc', mul_zero])
     (by simp)] at hsum
   exact (mul_eq_zero.mp hsum).resolve_left
