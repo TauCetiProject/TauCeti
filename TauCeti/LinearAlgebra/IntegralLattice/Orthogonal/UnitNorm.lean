@@ -160,20 +160,4 @@ theorem unitNormSplittingIsometry_symm_apply_fst (hx : IsUnit (L.integralForm x 
     one_mul] at h
   exact (eq_div_iff hx0).mpr (by simpa [mul_comm] using h.symm)
 
-/-- The orthogonal complement of a vector with nonzero pairing functional has integral rank
-one less than the lattice, without any assumption on the radical of the ambient form. -/
-theorem finrank_orthogonal_span_singleton_add_one (hx : L.integralForm x ≠ 0) :
-    finrank ℤ (L.integralForm.orthogonal (ℤ ∙ x)) + 1 = finrank ℤ L := by
-  let f := L.integralForm x
-  have hr := f.ker.finrank_quotient_add_finrank
-  rw [f.quotKerEquivRange.finrank_eq] at hr
-  have hle : finrank ℤ f.range ≤ 1 := by
-    simpa using f.range.finrank_le
-  have hpos : 0 < finrank ℤ f.range :=
-    Module.finrank_pos_iff.mpr
-      (Submodule.nontrivial_iff_ne_bot.mpr (LinearMap.range_eq_bot.not.mpr hx))
-  have hs : finrank ℤ f.range = 1 := by omega
-  rw [LinearMap.BilinForm.orthogonal, Submodule.orthogonalBilin_span_singleton]
-  simpa only [hs, add_comm, f] using hr
-
 end TauCeti.IntegralLattice
