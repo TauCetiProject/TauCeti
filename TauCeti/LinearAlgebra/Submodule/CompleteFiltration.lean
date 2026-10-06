@@ -37,10 +37,9 @@ perturbation lemma for complete filtered contractions, where the series need not
   then `(1 + T) u ∈ F k` forces `u ∈ F k`.
 * `TauCeti.IsCompleteFiltration.isUnit_one_add`: `1 + T` is a unit when `T` raises a complete
   separated filtration with `F 0 = ⊤`.
-* `TauCeti.IsCompleteFiltration.ringInverse_one_add_apply_sub_sum_mem`: the inverse of `1 + T`
+* `Module.End.ringInverse_one_add_apply_sub_sum_mem`: when `1 + T` is invertible, its inverse
   is the limit of the partial geometric sums, with an explicit rate of convergence.
-* `TauCeti.IsCompleteFiltration.ringInverse_one_add_apply_mem`: the inverse preserves the
-  filtration.
+* `Module.End.ringInverse_one_add_apply_mem`: the inverse preserves the filtration.
 * `TauCeti.isCompleteFiltration_pi`: the filtration of a product `∀ i, E i` by vanishing of the
   coordinates of weight below `n` is complete and separated.
 
@@ -103,6 +102,35 @@ theorem mem_of_one_add_apply_mem (hanti : Antitone F) (hF0 : F 0 = ⊤)
       exact sub_mem hu' hTu
   simpa using key k
 
+private theorem map_neg_le (hT : ∀ n, (F n).map T ≤ F (n + 1)) (n : ℕ) :
+    (F n).map (-T) ≤ F (n + 1) := by
+  rw [Submodule.map_neg]
+  exact hT n
+
+/-- **The inverse of `1 + T` is the sum of the geometric series.**  If `T` raises a decreasing
+filtration with `F 0 = ⊤` and `1 + T` is invertible, then on `y ∈ F m` the inverse of `1 + T`
+differs from the partial sum `∑_{k < n} (-T)ᵏ y` by an element of `F (m + n)`.  No completeness is
+needed once invertibility is known; on a complete filtration it is supplied by
+`TauCeti.IsCompleteFiltration.isUnit_one_add`. -/
+theorem ringInverse_one_add_apply_sub_sum_mem (hanti : Antitone F) (hF0 : F 0 = ⊤)
+    (hT : ∀ n, (F n).map T ≤ F (n + 1)) (hu : IsUnit (1 + T)) {m : ℕ} {y : M} (hy : y ∈ F m)
+    (n : ℕ) : Ring.inverse (1 + T) y - ∑ k ∈ Finset.range n, ((-T) ^ k) y ∈ F (m + n) := by
+  refine mem_of_one_add_apply_mem hanti hF0 hT ?_
+  have hinv : (1 + T) (Ring.inverse (1 + T) y) = y := by
+    rw [← Module.End.mul_apply, Ring.mul_inverse_cancel _ hu, Module.End.one_apply]
+  have hgeom := LinearMap.congr_fun (mul_neg_geom_sum (-T) n) y
+  rw [sub_neg_eq_add, Module.End.mul_apply, LinearMap.sub_apply, Module.End.one_apply,
+    LinearMap.sum_apply] at hgeom
+  rw [map_sub, hinv, hgeom, sub_sub_cancel]
+  exact pow_apply_mem_of_map_le (map_neg_le hT) hy n
+
+/-- If `T` raises a decreasing filtration with `F 0 = ⊤` and `1 + T` is invertible, then the
+inverse of `1 + T` preserves the filtration. -/
+theorem ringInverse_one_add_apply_mem (hanti : Antitone F) (hF0 : F 0 = ⊤)
+    (hT : ∀ n, (F n).map T ≤ F (n + 1)) (hu : IsUnit (1 + T)) {m : ℕ} {y : M} (hy : y ∈ F m) :
+    Ring.inverse (1 + T) y ∈ F m := by
+  simpa using ringInverse_one_add_apply_sub_sum_mem hanti hF0 hT hu hy 0
+
 end Module.End
 
 namespace TauCeti.IsCompleteFiltration
@@ -110,11 +138,6 @@ namespace TauCeti.IsCompleteFiltration
 variable {F : ℕ → Submodule R M} (hF : IsCompleteFiltration F) (hF0 : F 0 = ⊤)
   {T : Module.End R M} (hT : ∀ n, (F n).map T ≤ F (n + 1))
 include hF hF0 hT
-
-omit hF hF0 in
-private theorem map_neg_le (n : ℕ) : (F n).map (-T) ≤ F (n + 1) := by
-  rw [Submodule.map_neg]
-  exact hT n
 
 /-- **Inverting `1 + T` on a complete filtered module.**  If `T` raises a complete separated
 filtration with `F 0 = ⊤`, then `1 + T` is invertible, its inverse being the convergent geometric
@@ -126,8 +149,9 @@ theorem isUnit_one_add : IsUnit (1 + T) := by
       Module.End.mem_of_one_add_apply_mem hF.antitone hF0 hT (hu ▸ zero_mem (F n))
   · -- The partial geometric sums form a Cauchy sequence; its limit is a preimage of `y`.
     have hy : y ∈ F 0 := by simp [hF0]
+    have hpow := Module.End.pow_apply_mem_of_map_le (Module.End.map_neg_le hT) hy
     obtain ⟨L, hL⟩ := hF.exists_limit (fun n ↦ (∑ k ∈ Finset.range n, (-T) ^ k) y) fun n ↦ by
-      simpa [Finset.sum_range_succ] using Module.End.pow_apply_mem_of_map_le (map_neg_le hT) hy n
+      simpa [Finset.sum_range_succ] using hpow n
     refine ⟨L, sub_eq_zero.mp (hF.eq_zero_of_forall_mem _ fun n ↦ ?_)⟩
     have hgeom := LinearMap.congr_fun (mul_neg_geom_sum (-T) n) y
     rw [sub_neg_eq_add, Module.End.mul_apply, LinearMap.sub_apply, Module.End.one_apply] at hgeom
@@ -135,28 +159,9 @@ theorem isUnit_one_add : IsUnit (1 + T) := by
         (1 + T) (L - (∑ k ∈ Finset.range n, (-T) ^ k) y) - ((-T) ^ n) y := by
       rw [map_sub, hgeom, sub_sub, sub_add_cancel]
     rw [h]
-    refine sub_mem ?_ (by simpa using Module.End.pow_apply_mem_of_map_le (map_neg_le hT) hy n)
+    refine sub_mem ?_ (by simpa using hpow n)
     rw [LinearMap.add_apply, Module.End.one_apply]
     exact add_mem (hL n) (hF.antitone (Nat.le_succ n) (hT n ⟨_, hL n, rfl⟩))
-
-/-- **The inverse of `1 + T` is the sum of the geometric series.**  On `y ∈ F m`, the inverse of
-`1 + T` differs from the partial sum `∑_{k < n} (-T)ᵏ y` by an element of `F (m + n)`. -/
-theorem ringInverse_one_add_apply_sub_sum_mem {m : ℕ} {y : M} (hy : y ∈ F m) (n : ℕ) :
-    Ring.inverse (1 + T) y - ∑ k ∈ Finset.range n, ((-T) ^ k) y ∈ F (m + n) := by
-  refine Module.End.mem_of_one_add_apply_mem hF.antitone hF0 hT ?_
-  have hinv : (1 + T) (Ring.inverse (1 + T) y) = y := by
-    rw [← Module.End.mul_apply, Ring.mul_inverse_cancel _ (hF.isUnit_one_add hF0 hT),
-      Module.End.one_apply]
-  have hgeom := LinearMap.congr_fun (mul_neg_geom_sum (-T) n) y
-  rw [sub_neg_eq_add, Module.End.mul_apply, LinearMap.sub_apply, Module.End.one_apply,
-    LinearMap.sum_apply] at hgeom
-  rw [map_sub, hinv, hgeom, sub_sub_cancel]
-  exact Module.End.pow_apply_mem_of_map_le (map_neg_le hT) hy n
-
-/-- The inverse of `1 + T` preserves the filtration. -/
-theorem ringInverse_one_add_apply_mem {m : ℕ} {y : M} (hy : y ∈ F m) :
-    Ring.inverse (1 + T) y ∈ F m := by
-  simpa using hF.ringInverse_one_add_apply_sub_sum_mem hF0 hT hy 0
 
 end TauCeti.IsCompleteFiltration
 

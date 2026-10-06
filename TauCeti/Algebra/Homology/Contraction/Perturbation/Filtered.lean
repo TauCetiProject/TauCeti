@@ -27,7 +27,8 @@ perturbation operator raises the filtration and is the limit of the partial sums
 series, and the perturbed homotopy again preserves the filtration, so that the perturbed
 contraction satisfies the same hypotheses and perturbations can be iterated.  The typical example
 is a contraction of a bar construction completed with respect to tensor length, whose filtration
-is complete by `TauCeti.CompletedTensorWords.isCompleteFiltration_filtration`.
+is complete by `TauCeti.CompletedTensorWords.isCompleteFiltration_filtration`.  Completeness is
+only used to invert `1 + δ h`; the other results assume a descending filtration and invertibility.
 
 ## Main results
 
@@ -61,42 +62,48 @@ private theorem map_mul_homotopy_le (hh : ∀ n, (F n).map c.homotopy ≤ F n)
   rw [Module.End.mul_eq_comp, Submodule.map_comp]
   exact (Submodule.map_mono (hh n)).trans (hδ n)
 
-variable (hF : IsCompleteFiltration F) (hF0 : F 0 = ⊤) (hh : ∀ n, (F n).map c.homotopy ≤ F n)
+variable (hF0 : F 0 = ⊤) (hh : ∀ n, (F n).map c.homotopy ≤ F n)
   (hδ : ∀ n, (F n).map δ ≤ F (n + 1))
-include hF hF0 hh hδ
+include hF0 hh hδ
 
 /-- **Invertibility in the complete filtered regime.**  If `M` carries a complete separated
 filtration with `F 0 = ⊤`, preserved by the homotopy `h` and raised by the perturbation `δ`, then
 `1 + δ h` is invertible, so the basic perturbation lemma `LinearSpecialContraction.perturb`
 applies to `δ`. -/
-theorem isUnit_one_add_mul_homotopy_of_isCompleteFiltration : IsUnit (1 + δ * c.homotopy) :=
+theorem isUnit_one_add_mul_homotopy_of_isCompleteFiltration (hF : IsCompleteFiltration F) :
+    IsUnit (1 + δ * c.homotopy) :=
   hF.isUnit_one_add hF0 (c.map_mul_homotopy_le δ hh hδ)
 
-/-- **The perturbation operator is the sum of its geometric series.**  On `z ∈ F m`, the
-perturbation operator `X = (1 + δ h)⁻¹ δ` differs from the partial sum
+variable (hanti : Antitone F) (hU : IsUnit (1 + δ * c.homotopy))
+include hanti hU
+
+/-- **The perturbation operator is the sum of its geometric series.**  If `1 + δ h` is
+invertible (on a complete filtration, by
+`isUnit_one_add_mul_homotopy_of_isCompleteFiltration`), then on `z ∈ F m` the perturbation
+operator `X = (1 + δ h)⁻¹ δ` differs from the partial sum
 `∑_{j < n} (-1)ʲ (δ h)ʲ δ z` by an element of `F (m + 1 + n)`. -/
 theorem perturbationSeries_apply_sub_sum_mem {m : ℕ} {z : M} (hz : z ∈ F m) (n : ℕ) :
     c.perturbationSeries δ z - ∑ j ∈ Finset.range n, ((-(δ * c.homotopy)) ^ j) (δ z) ∈
       F (m + 1 + n) := by
   rw [perturbationSeries_def, Module.End.mul_apply]
-  exact hF.ringInverse_one_add_apply_sub_sum_mem hF0 (c.map_mul_homotopy_le δ hh hδ)
-    (hδ m ⟨z, hz, rfl⟩) n
+  exact Module.End.ringInverse_one_add_apply_sub_sum_mem hanti hF0
+    (c.map_mul_homotopy_le δ hh hδ) hU (hδ m ⟨z, hz, rfl⟩) n
 
 /-- The perturbation operator `X = (1 + δ h)⁻¹ δ` raises the filtration. -/
 theorem perturbationSeries_apply_mem {m : ℕ} {z : M} (hz : z ∈ F m) :
     c.perturbationSeries δ z ∈ F (m + 1) := by
   rw [perturbationSeries_def, Module.End.mul_apply]
-  exact hF.ringInverse_one_add_apply_mem hF0 (c.map_mul_homotopy_le δ hh hδ) (hδ m ⟨z, hz, rfl⟩)
+  exact Module.End.ringInverse_one_add_apply_mem hanti hF0 (c.map_mul_homotopy_le δ hh hδ) hU
+    (hδ m ⟨z, hz, rfl⟩)
 
 /-- The perturbed homotopy `h - h X h` preserves the filtration, so the perturbed contraction again
 satisfies the hypotheses of the complete filtered perturbation lemma. -/
-theorem map_perturb_homotopy_le (hsq : (dM + δ) ∘ₗ (dM + δ) = dM ∘ₗ dM)
-    (hU : IsUnit (1 + δ * c.homotopy)) (n : ℕ) :
+theorem map_perturb_homotopy_le (hsq : (dM + δ) ∘ₗ (dM + δ) = dM ∘ₗ dM) (n : ℕ) :
     (F n).map (c.perturb δ hsq hU).homotopy ≤ F n := by
   rintro _ ⟨z, hz, rfl⟩
   have hhz : c.homotopy z ∈ F n := hh n ⟨z, hz, rfl⟩
   have hX : c.perturbationSeries δ (c.homotopy z) ∈ F n :=
-    hF.antitone (Nat.le_succ n) (c.perturbationSeries_apply_mem δ hF hF0 hh hδ hhz)
+    hanti (Nat.le_succ n) (c.perturbationSeries_apply_mem δ hF0 hh hδ hanti hU hhz)
   rw [perturb_homotopy, LinearMap.sub_apply, LinearMap.comp_apply, LinearMap.comp_apply]
   exact sub_mem hhz (hh n ⟨_, hX, rfl⟩)
 
