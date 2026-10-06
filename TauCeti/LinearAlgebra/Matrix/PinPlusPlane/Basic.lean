@@ -65,7 +65,7 @@ his Théorème 1′ computes the Evens norm of a Kummer class, at `n = 2`.
 * `TauCeti.IsPinLift.unique`, `TauCeti.IsPinLift.eq_or_eq_neg`: a lift determines what it lifts,
   and two lifts of the same matrix differ by a sign.
 * `TauCeti.isPinLift_pinDiagonalLift`, `TauCeti.pinDiagonalLift_mul`: the diagonal lift and its
-  factor set `(−1)^{ε₁ ε'₀}`.
+  factor set `(−1)^{ε₁ ε'₀}`; it is defined over the prime ring (`TauCeti.map_pinDiagonalLift`).
 * `TauCeti.pinE1_mul_pinT_pow_four`: `(e₁ t)⁴ = −1`.
 * `TauCeti.isPinLift_pinDihedral`: `pinDihedral z` lifts the signed permutation of the image
   of `z` in `C₂ ≀ C₂`.
@@ -191,6 +191,7 @@ theorem pinDiagonalLift_zero : (pinDiagonalLift 0 : Matrix (Fin 2) (Fin 2) R) = 
 /-- **The product of two diagonal lifts,**
 `e₁^a e₂^b · e₁^{a'} e₂^{b'} = (−1)^{b a'} e₁^{a + a'} e₂^{b + b'}`: this is where `e₁² = e₂² = +1`
 and `e₁ e₂ = −e₂ e₁` enter. -/
+@[simp]
 theorem pinDiagonalLift_mul (ε ε' : Fin 2 → ZMod 2) :
     (pinDiagonalLift ε : Matrix (Fin 2) (Fin 2) R) * pinDiagonalLift ε' =
       (-1) ^ (ε 1 * ε' 0).val * pinDiagonalLift (ε + ε') := by
@@ -417,6 +418,13 @@ theorem map_pinE1 (φ : R →+* S) : (pinE1 : Matrix (Fin 2) (Fin 2) R).map φ =
 @[simp]
 theorem map_pinE2 (φ : R →+* S) : (pinE2 : Matrix (Fin 2) (Fin 2) R).map φ = pinE2 := by
   ext i j; fin_cases i <;> fin_cases j <;> simp [pinE2]
+
+/-- The diagonal lift is defined over the prime ring. -/
+@[simp]
+theorem map_pinDiagonalLift (φ : R →+* S) (ε : Fin 2 → ZMod 2) :
+    (pinDiagonalLift ε : Matrix (Fin 2) (Fin 2) R).map φ = pinDiagonalLift ε := by
+  rw [pinDiagonalLift_def, pinDiagonalLift_def, ← RingHom.mapMatrix_apply, map_mul, map_pow,
+    map_pow, RingHom.mapMatrix_apply, RingHom.mapMatrix_apply, map_pinE1, map_pinE2]
 
 /-- The vector `y₀ e₁ + y₁ e₂` is natural in the coefficient ring. -/
 @[simp]

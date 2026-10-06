@@ -13,9 +13,10 @@ import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.Reflection
 /-!
 # Every orthogonal matrix of the plane has a `Pin⁺` lift
 
-Over a separably closed field `F` of characteristic not two, every orthogonal matrix `P ∈ O₂(F)`
-has a `Pin⁺` lift in the Clifford model `M₂(F)` of the plane (`TauCeti.exists_isPinLift`). By the
-Cartan–Dieudonné theorem, in the matrix form
+Over a field `F` of characteristic not two in which every sum of two squares is a square, every
+orthogonal matrix `P ∈ O₂(F)` has a `Pin⁺` lift in the Clifford model `M₂(F)` of the plane
+(`TauCeti.exists_isPinLift_of_forall_isSquare`); this applies to a separably closed field
+(`TauCeti.exists_isPinLift`). By the Cartan–Dieudonné theorem, in the matrix form
 `TauCeti.closure_reflection_mul_eq_matrixSpecialOrthogonalGroup`, a special orthogonal `P` is a
 product of pairs of reflections in anisotropic vectors `v`. Since `F` contains a square root `s`
 of `v ⬝ᵥ v`, the reflection in `v` is the reflection in the unit vector `s⁻¹ v`, which lifts its
@@ -28,8 +29,9 @@ valued in the `Pin⁺` model, as in Serre's computation of the Evens norm of a K
 
 ## Main results
 
-* `TauCeti.exists_isPinLift`: every orthogonal `2 × 2` matrix over a separably closed field of
-  characteristic not two has a `Pin⁺` lift.
+* `TauCeti.exists_isPinLift_of_forall_isSquare`: every orthogonal `2 × 2` matrix over a field of
+  characteristic not two in which sums of two squares are squares has a `Pin⁺` lift.
+* `TauCeti.exists_isPinLift`: the case of a separably closed field.
 
 ## References
 
@@ -44,18 +46,18 @@ namespace TauCeti
 
 open Matrix
 
-variable {F : Type*} [Field F] [IsSepClosed F] [NeZero (2 : F)]
+variable {F : Type*} [Field F]
 
 /-- The reflection of the standard quadratic form in an anisotropic vector `v` has a `Pin⁺` lift,
 the unit vector `s⁻¹ v` for a square root `s` of `v ⬝ᵥ v`. -/
-private theorem exists_isPinLift_toMatrix'_reflection (v : Fin 2 → F)
+private theorem exists_isPinLift_toMatrix'_reflection
+    (hF : ∀ a b : F, IsSquare (a * a + b * b)) (v : Fin 2 → F)
     [Invertible (toQuadraticForm' (1 : Matrix (Fin 2) (Fin 2) F) v)] :
     ∃ x, IsPinLift x (LinearMap.toMatrix' (QuadraticMap.reflection
       (toQuadraticForm' (1 : Matrix (Fin 2) (Fin 2) F)) v).toLinearMap) := by
-  obtain ⟨s, hs⟩ :=
-    IsSepClosed.exists_eq_mul_self (toQuadraticForm' (1 : Matrix (Fin 2) (Fin 2) F) v)
-  have hv : v 0 * v 0 + v 1 * v 1 = s * s := by
-    rw [← hs, toQuadraticForm'_one_apply, dotProduct, Fin.sum_univ_two]
+  obtain ⟨s, hv⟩ := hF (v 0) (v 1)
+  have hs : toQuadraticForm' (1 : Matrix (Fin 2) (Fin 2) F) v = s * s := by
+    rw [← hv, toQuadraticForm'_one_apply, dotProduct, Fin.sum_univ_two]
   have hs0 : s ≠ 0 := by
     rintro rfl
     have := isUnit_of_invertible (toQuadraticForm' (1 : Matrix (Fin 2) (Fin 2) F) v)
@@ -73,9 +75,12 @@ private theorem exists_isPinLift_toMatrix'_reflection (v : Fin 2 → F)
     vecMulVec_apply, smul_eq_mul, mul_inv]
   ring
 
-/-- **Every orthogonal matrix of the plane has a `Pin⁺` lift** over a separably closed field of
-characteristic not two. The lift is unique up to sign (`TauCeti.IsPinLift.eq_or_eq_neg`). -/
-theorem exists_isPinLift {P : Matrix (Fin 2) (Fin 2) F} (hP : P ∈ orthogonalGroup (Fin 2) F) :
+/-- **Every orthogonal matrix of the plane has a `Pin⁺` lift** over a field of characteristic not
+two in which every sum of two squares is a square, such as `ℝ` or a separably closed field. The
+lift is unique up to sign (`TauCeti.IsPinLift.eq_or_eq_neg`). -/
+theorem exists_isPinLift_of_forall_isSquare [NeZero (2 : F)]
+    (hF : ∀ a b : F, IsSquare (a * a + b * b)) {P : Matrix (Fin 2) (Fin 2) F}
+    (hP : P ∈ orthogonalGroup (Fin 2) F) :
     ∃ x, IsPinLift x P := by
   -- The matrices that have a lift form a submonoid.
   let M : Submonoid (Matrix (Fin 2) (Fin 2) F) :=
@@ -86,8 +91,8 @@ theorem exists_isPinLift {P : Matrix (Fin 2) (Fin 2) F} (hP : P ∈ orthogonalGr
   have hSO : specialOrthogonalGroup (Fin 2) F ≤ M := by
     rw [← closure_reflection_mul_eq_matrixSpecialOrthogonalGroup, Submonoid.closure_le]
     rintro _ ⟨v, w, _, _, rfl⟩
-    obtain ⟨x, hx⟩ := exists_isPinLift_toMatrix'_reflection v
-    obtain ⟨y, hy⟩ := exists_isPinLift_toMatrix'_reflection w
+    obtain ⟨x, hx⟩ := exists_isPinLift_toMatrix'_reflection hF v
+    obtain ⟨y, hy⟩ := exists_isPinLift_toMatrix'_reflection hF w
     exact ⟨x * y, hx.mul hy⟩
   have hdet : P.det * P.det = 1 := by
     simpa using congrArg det ((mem_orthogonalGroup_iff' _ _).1 hP)
@@ -105,5 +110,11 @@ theorem exists_isPinLift {P : Matrix (Fin 2) (Fin 2) F} (hP : P ∈ orthogonalGr
   have h := hx.mul isPinLift_pinE1
   rw [Matrix.mul_assoc, hDD, Matrix.mul_one] at h
   exact ⟨_, h⟩
+
+/-- **Every orthogonal matrix of the plane has a `Pin⁺` lift** over a separably closed field of
+characteristic not two. The lift is unique up to sign (`TauCeti.IsPinLift.eq_or_eq_neg`). -/
+theorem exists_isPinLift [IsSepClosed F] [NeZero (2 : F)] {P : Matrix (Fin 2) (Fin 2) F}
+    (hP : P ∈ orthogonalGroup (Fin 2) F) : ∃ x, IsPinLift x P :=
+  exists_isPinLift_of_forall_isSquare (fun _ _ => IsSepClosed.exists_eq_mul_self _) hP
 
 end TauCeti
