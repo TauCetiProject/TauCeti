@@ -511,7 +511,8 @@ theorem proPKernel_proPKernel_eq_top : proPKernel p (proPKernel p G) = ⊤ := by
     obtain ⟨g, rfl⟩ := QuotientGroup.mk_surjective x
     exact ⟨QuotientGroup.mk ⟨g, (QuotientGroup.eq_one_iff g).mp hx⟩, rfl⟩
   -- So `G ⧸ K'` is pro-`p`, and the universal property puts `N` inside `K'`.
-  have hpro : IsProP p (G ⧸ K') := isProP_maximalProPQuotient.of_ker_isProP hf hfs
+  have hpro : IsProP p (G ⧸ K') := isProP_maximalProPQuotient.of_ker_isProP
+    (Topology.IsQuotientMap.of_surjective_continuous hfs hf)
     (isProP_maximalProPQuotient.of_surjective φ hφ hφs)
   have hle : N ≤ K' := by
     simpa using proPKernel_le_ker hpro (QuotientGroup.mk' K') QuotientGroup.continuous_mk

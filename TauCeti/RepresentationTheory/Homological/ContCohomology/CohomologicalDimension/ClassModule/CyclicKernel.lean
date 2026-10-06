@@ -176,7 +176,7 @@ private theorem cyclicKernel_quotient_isProP (hV : IsOpen (V : Set G))
   have hproKer : IsProP p f.ker :=
     (isProP_maximalProPQuotient (p := p) (G := TopologicalAbelianization V)).quotient D
       |>.of_surjective (φ.comp e.symm.toMonoidHom) (hφ.comp hec) (hφs.comp e.symm.surjective)
-  exact hpV.isProP.of_ker_isProP hf hfs hproKer
+  exact hpV.isProP.of_ker_isProP (Topology.IsQuotientMap.of_surjective_continuous hfs hf) hproKer
 
 variable [TotallyDisconnectedSpace G]
 
