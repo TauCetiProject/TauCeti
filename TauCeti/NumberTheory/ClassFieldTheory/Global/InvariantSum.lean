@@ -14,19 +14,23 @@ import TauCeti.RingTheory.DedekindDomain.AdicValuation.RamificationIndex
 import TauCeti.RingTheory.DedekindDomain.PrimesAbove
 
 /-!
-# The sum of the local invariants of a global Brauer class
+# The localization map and the sum of the local invariants
 
 Let `K` be a number field. A cohomological Brauer class `x ∈ Br K` has a local invariant
 `TauCeti.ClassFieldTheory.finiteInvAt K v x` at every finite place `v` and
 `TauCeti.ClassFieldTheory.infiniteInvAt K w x` at every infinite place `w`. This file proves that
 only finitely many of the finite invariants are nonzero, names the finite set where they are,
-`brauerSupport K x`, and defines the middle map of the global Brauer sequence
+`brauerSupport K x`, and defines the two maps of the global Brauer sequence
 
 ```text
-0 → Br K → ⨁_v Br K_v → ℚ/ℤ → 0,
+0 → Br K → ⨁_v Br K_v → ℚ/ℤ → 0:
 ```
 
-the sum of the local invariants `sumLocalInv K : Br K →+ ℚ/ℤ`.
+the localization map `brLocalization K : Br K → ⨁_v Br K_v`, and the sum of the local invariants
+`sumLocalInv K : ⨁_v Br K_v → ℚ/ℤ`. The direct sum is modelled as the product of the finitely
+supported families `Π₀ v, Br K_v` over the finite places with the families `Π w, Br K_w` over the
+finitely many infinite places. The composite `sumLocalInv K ∘ brLocalization K` is the sum of the
+local invariants of a global class (`sumLocalInv_brLocalization`).
 
 Finiteness is the classical argument. The class `x` is inflated from `H²(Gal(E/K), Eˣ)` for a
 finite Galois subextension `E` of `Kˢ` (`TauCeti.ClassFieldTheory.exists_relBrInfl_eq`), so it is
@@ -42,15 +46,19 @@ and `c` takes unit values, so the localization vanishes
 
 * `TauCeti.ClassFieldTheory.brauerSupport K x`: the finite set of the finite places where `x` has
   nonzero local invariant.
+* `TauCeti.ClassFieldTheory.brLocalization K`: the localization map `Br K →+ ⨁_v Br K_v`.
 * `TauCeti.ClassFieldTheory.sumLocalInv K`: the sum of the local invariants at all places,
-  `Br K →+ ℚ/ℤ`.
+  `⨁_v Br K_v →+ ℚ/ℤ`.
 
 ## Main results
 
 * `TauCeti.ClassFieldTheory.hasFiniteSupport_finiteInvAt`: a global Brauer class has nonzero
   local invariant at only finitely many finite places.
-* `TauCeti.ClassFieldTheory.sumLocalInv_eq_sum`: the sum of the local invariants may be computed
-  over any finite set of finite places containing `brauerSupport K x`.
+* `TauCeti.ClassFieldTheory.sumLocalInv_eq_sum`: the sum of the local invariants of a family may
+  be computed over any finite set of finite places outside which the family vanishes.
+* `TauCeti.ClassFieldTheory.sumLocalInv_brLocalization`: the sum of the local invariants of a
+  global class may be computed over any finite set of finite places containing
+  `brauerSupport K x`.
 
 ## References
 
@@ -158,47 +166,73 @@ theorem finiteInvAt_eq_zero_of_notMem_brauerSupport {x : Br K} {v : HeightOneSpe
     (hv : v ∉ brauerSupport K x) : finiteInvAt K v x = 0 :=
   not_not.1 fun h ↦ hv ((mem_brauerSupport K).2 h)
 
-/-! ### The sum of the local invariants -/
+/-! ### The localization map and the sum of the local invariants -/
 
-/-- The sum of the finite local invariants of `x` over its ramification set is their sum over any
-finite set of finite places containing it. -/
-private theorem sum_brauerSupport_eq (x : Br K) {S : Finset (HeightOneSpectrum (𝓞 K))}
-    (hS : brauerSupport K x ⊆ S) :
-    ∑ v ∈ brauerSupport K x, finiteInvAt K v x = ∑ v ∈ S, finiteInvAt K v x :=
-  Finset.sum_subset hS fun _ _ hv ↦ finiteInvAt_eq_zero_of_notMem_brauerSupport K hv
+/-- **The localization map of the global Brauer sequence** `Br K → ⨁_v Br K_v`: base change of a
+global Brauer class to every completion, as a finitely supported family at the finite places
+together with a family at the (finitely many) infinite places. The family at the finite places is
+supported on the ramification set `brauerSupport K x`. -/
+def brLocalization : Br K →+ (Π₀ v : HeightOneSpectrum (𝓞 K), Br (v.adicCompletion K)) ×
+    ((w : InfinitePlace K) → Br w.Completion) where
+  toFun x :=
+    (⟨fun v ↦ brBaseChange K (v.adicCompletion K) x,
+      Trunc.mk ⟨(brauerSupport K x).val, fun v ↦ (em _).imp_right fun hv ↦
+        (finiteInvAt_eq_zero_iff K v x).1 (finiteInvAt_eq_zero_of_notMem_brauerSupport K hv)⟩⟩,
+      fun w ↦ brBaseChange K w.Completion x)
+  map_zero' := Prod.ext (DFinsupp.ext fun _ ↦ map_zero (brBaseChange K _))
+    (funext fun _ ↦ map_zero (brBaseChange K _))
+  map_add' x y := Prod.ext (DFinsupp.ext fun _ ↦ map_add (brBaseChange K _) x y)
+    (funext fun _ ↦ map_add (brBaseChange K _) x y)
 
-/-- **The sum of the local invariants**, the middle map `Br K → ℚ/ℤ` of the global Brauer
-sequence: the sum of the finite local invariants over the ramification set, plus the archimedean
-invariants at all infinite places (`sumLocalInv_apply`). -/
-def sumLocalInv : Br K →+ AddCircle (1 : ℚ) where
-  toFun x := ∑ v ∈ brauerSupport K x, finiteInvAt K v x + ∑ w, infiniteInvAt K w x
-  map_zero' := by simp
-  map_add' x y := by
-    classical
-    -- Compute all three sums over the union of the three ramification sets.
-    let S := brauerSupport K x ∪ brauerSupport K y ∪ brauerSupport K (x + y)
-    have hx : brauerSupport K x ⊆ S :=
-      Finset.subset_union_left.trans Finset.subset_union_left
-    have hy : brauerSupport K y ⊆ S :=
-      Finset.subset_union_right.trans Finset.subset_union_left
-    have hxy : brauerSupport K (x + y) ⊆ S := Finset.subset_union_right
-    rw [sum_brauerSupport_eq K x hx, sum_brauerSupport_eq K y hy,
-      sum_brauerSupport_eq K (x + y) hxy]
-    simp only [map_add, Finset.sum_add_distrib]
-    abel
-
-/-- The sum of the local invariants of `x` is the sum of its finite local invariants over its
-ramification set, plus its archimedean invariants. -/
-theorem sumLocalInv_apply (x : Br K) :
-    sumLocalInv K x =
-      ∑ v ∈ brauerSupport K x, finiteInvAt K v x + ∑ w, infiniteInvAt K w x :=
+/-- The component of the localization map at a finite place `v` is base change to `K_v`. -/
+@[simp]
+theorem brLocalization_fst_apply (x : Br K) (v : HeightOneSpectrum (𝓞 K)) :
+    (brLocalization K x).1 v = brBaseChange K (v.adicCompletion K) x :=
   (rfl)
 
-/-- The sum of the local invariants may be computed over any finite set of finite places
+/-- The component of the localization map at an infinite place `w` is base change to `K_w`. -/
+@[simp]
+theorem brLocalization_snd_apply (x : Br K) (w : InfinitePlace K) :
+    (brLocalization K x).2 w = brBaseChange K w.Completion x :=
+  (rfl)
+
+/-- **The sum of the local invariants**, the map `⨁_v Br K_v → ℚ/ℤ` of the global Brauer
+sequence: the sum of the invariants `inv_{K_v}` of a finitely supported family of local Brauer
+classes at the finite places, plus the archimedean invariants of a family at the infinite places
+(`sumLocalInv_eq_sum`). -/
+def sumLocalInv : (Π₀ v : HeightOneSpectrum (𝓞 K), Br (v.adicCompletion K)) ×
+    ((w : InfinitePlace K) → Br w.Completion) →+ AddCircle (1 : ℚ) := by
+  classical
+  exact AddMonoidHom.coprod
+    (DFinsupp.sumAddHom fun v : HeightOneSpectrum (𝓞 K) ↦
+      (invMap (v.adicCompletion K)).toAddMonoidHom :
+      (Π₀ v : HeightOneSpectrum (𝓞 K), Br (v.adicCompletion K)) →+ AddCircle (1 : ℚ))
+    { toFun y := ∑ w, infiniteInvMap w (y w)
+      map_zero' := by simp
+      map_add' y z := by simp [Finset.sum_add_distrib] }
+
+/-- The sum of the local invariants of a family of local Brauer classes may be computed over any
+finite set of finite places outside which the family vanishes. -/
+theorem sumLocalInv_eq_sum (y : (Π₀ v : HeightOneSpectrum (𝓞 K), Br (v.adicCompletion K)) ×
+    ((w : InfinitePlace K) → Br w.Completion)) {S : Finset (HeightOneSpectrum (𝓞 K))}
+    (hS : ∀ v ∉ S, y.1 v = 0) :
+    sumLocalInv K y =
+      ∑ v ∈ S, invMap (v.adicCompletion K) (y.1 v) + ∑ w, infiniteInvMap w (y.2 w) := by
+  classical
+  rw [sumLocalInv, AddMonoidHom.coprod_apply, DFinsupp.sumAddHom_apply,
+    DFinsupp.sum_of_support_subset (s := S)
+      (fun v hv ↦ not_not.1 fun h ↦ DFinsupp.mem_support_iff.1 hv (hS v h)) fun _ _ ↦ map_zero _]
+  rfl
+
+/-- **The sum of the local invariants of a global Brauer class**, the composite of the localization
+map with the sum of the local invariants, may be computed over any finite set of finite places
 containing the ramification set. -/
-theorem sumLocalInv_eq_sum (x : Br K) {S : Finset (HeightOneSpectrum (𝓞 K))}
+theorem sumLocalInv_brLocalization (x : Br K) {S : Finset (HeightOneSpectrum (𝓞 K))}
     (hS : brauerSupport K x ⊆ S) :
-    sumLocalInv K x = ∑ v ∈ S, finiteInvAt K v x + ∑ w, infiniteInvAt K w x := by
-  rw [sumLocalInv_apply, sum_brauerSupport_eq K x hS]
+    sumLocalInv K (brLocalization K x) =
+      ∑ v ∈ S, finiteInvAt K v x + ∑ w, infiniteInvAt K w x := by
+  simp only [finiteInvAt_apply, infiniteInvAt_apply]
+  exact sumLocalInv_eq_sum K _ fun _ hv ↦ (finiteInvAt_eq_zero_iff K _ x).1
+    (finiteInvAt_eq_zero_of_notMem_brauerSupport K fun h ↦ hv (hS h))
 
 end TauCeti.ClassFieldTheory
