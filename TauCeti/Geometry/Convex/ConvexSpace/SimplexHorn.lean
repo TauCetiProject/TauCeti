@@ -23,6 +23,13 @@ amount transferred gives a deformation which fixes the horn pointwise. This is t
 geometric deformation used in an elementary simplicial collapse: the omitted facet is the
 free face, and the horn is the part retained in the complex.
 
+The roadmap target is [AlgebraicTopology, Stage 8, item 2]
+(https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/AlgebraicTopology/README.md#stage-8-relative-homotopy-hurewicz-and-whitehead):
+prove that the singular simplicial set of every topological space is Kan. The endpoint
+`hornRetraction a` extends any continuous map `f` from the horn to the simplex by composition;
+`hornRetraction_apply_coe` proves that this extension restricts to `f`. To obtain singular
+horn fillers, one still needs to paste the compatible facet maps into a map on this horn.
+
 The simplex and its topology are Mathlib's `Convexity.StdSimplex`; the deformation is bundled
 as a `ContinuousMap.HomotopyRel`. No finiteness assumption on an ambient complex is involved.
 
