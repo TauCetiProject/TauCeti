@@ -180,16 +180,9 @@ theorem galoisRes_kummerClass (a : Kˣ) :
     have h := congrArg Multiplicative.toAdd (kummerRes_kummerCocycleClass K 2 L σ hα)
     rw [toAdd_kummerRes, toAdd_ofAdd, toAdd_ofAdd, explicitRes1_eq_explicitMap1] at h
     rw [← h, ← AddMonoidHom.comp_apply,
-      ← explicitMap1_comp (AbsoluteGaloisGroup K) (KummerCoeff K 2)
-        σ.fieldRange.fixingSubgroup (KummerCoeff K 2)
-        (ContinuousMonoidHom.subgroupSubtype _) (AddMonoidHom.id _) continuous_id
-        (fun s m => by
-          simpa only [ContinuousMonoidHom.subgroupSubtype_apply, AddMonoidHom.id_apply]
-            using (Subgroup.smul_def s m).symm)
-        (AbsoluteGaloisGroup L) (KummerCoeff L 2)
-        (absoluteGaloisGroupEquivFixingSubgroup K L σ :
-          AbsoluteGaloisGroup L →ₜ* ↥σ.fieldRange.fixingSubgroup)
-        (kummerCoeffMap K 2 L σ) continuous_of_discreteTopology (kummerCoeffMap_smul K 2 L σ)]
+      ← explicitMap1_comp (G := AbsoluteGaloisGroup K) (M := KummerCoeff K 2)
+        (H := σ.fieldRange.fixingSubgroup) (N := KummerCoeff K 2)
+        (K := AbsoluteGaloisGroup L) (P := KummerCoeff L 2)]
     exact DFunLike.congr_fun (explicitMap1_congr_of_eq _ _ _ _ _ _ _ _ rfl
       (AddMonoidHom.comp_id _).symm) _
   rw [kummerCocycleModTwoClass_eq_explicitMap1 K hα, kummerCocycleModTwoClass_eq_explicitMap1 L hβ]

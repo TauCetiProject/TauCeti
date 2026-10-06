@@ -229,9 +229,7 @@ theorem explicitMap2_layerInfl_eq_zero (x : L.H (unitsFormation K) 2) :
   have h1 := explicitMap2_comp L.ground.toSubgroup (UnitsCoeff K)
     (L.top.toSubgroup.subgroupOf L.ground.toSubgroup) (UnitsCoeff K)
     (ContinuousMonoidHom.subgroupSubtype _) (AddMonoidHom.id _) continuous_id
-    (fun s m => by
-      simpa only [ContinuousMonoidHom.subgroupSubtype_apply, AddMonoidHom.id_apply]
-        using (Subgroup.smul_def s m).symm) L.top.toSubgroup (UnitsCoeff K)
+    (ContinuousMonoidHom.id_subgroupSubtype_smul _ _) L.top.toSubgroup (UnitsCoeff K)
     ((Subgroup.subgroupOfContinuousMulEquivOfLe
       (OpenSubgroup.toSubgroup_le.2 L.top_le_ground)).symm : _ →ₜ* _)
     (AddMonoidHom.id _) continuous_id fun _ _ => rfl

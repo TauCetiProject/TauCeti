@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.GroupAction.Equiv
-public import TauCeti.Algebra.GroupAction.Hom
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.LowDegree
 
 /-!
@@ -256,7 +255,7 @@ theorem cocyclesMap1_id (hid : ∀ (g : G) (m : M),
 
 /-- Pullback of continuous cocycles along a composite compatible pair is the composite of the
 pullbacks: it is contravariant in the group homomorphism and covariant in the coefficient map.
-The compatibility of the composite pair follows from `Function.comp_map_smul`. -/
+The compatibility of the composite pair follows from `ContinuousMonoidHom.comp_map_smul`. -/
 theorem cocyclesMap1_comp
     (φ : H →ₜ* G) (f : M →+ N) (hf : Continuous f)
     (hequiv : ∀ (h : H) (m : M), f (φ h • m) = h • f m)
@@ -266,9 +265,7 @@ theorem cocyclesMap1_comp
     (ψ : K →ₜ* H) (q : N →+ P) (hq : Continuous q)
     (hequivq : ∀ (k : K) (n : N), q (ψ k • n) = k • q n)
     (hcomp : ∀ (k : K) (m : M), (q.comp f) ((φ.comp ψ) k • m) = k • (q.comp f) m :=
-      fun k m => by
-        simpa only [Function.comp_apply, AddMonoidHom.comp_apply, ContinuousMonoidHom.coe_comp]
-          using Function.comp_map_smul f q φ ψ hequiv hequivq k m) :
+      φ.comp_map_smul ψ f q hequiv hequivq) :
     cocyclesMap1 G M K P (φ.comp ψ) (q.comp f) (hq.comp hf) hcomp =
       (cocyclesMap1 H N K P ψ q hq hequivq).comp
         (cocyclesMap1 G M H N φ f hf hequiv) := by
@@ -302,9 +299,10 @@ theorem cocyclesMap2_apply (φ : H →ₜ* G) (f : M →+ N) (hf : Continuous f)
 /-- Pullback of continuous degree-two cocycles along the identity compatible pair is the
 identity. -/
 @[simp]
-theorem cocyclesMap2_id :
-    cocyclesMap2 G M G M (ContinuousMonoidHom.id G) (AddMonoidHom.id M) continuous_id
-      (fun g m => by simp) =
+theorem cocyclesMap2_id (hid : ∀ (g : G) (m : M),
+    (AddMonoidHom.id M) ((ContinuousMonoidHom.id G) g • m) = g • (AddMonoidHom.id M) m :=
+      fun _ _ => rfl) :
+    cocyclesMap2 G M G M (ContinuousMonoidHom.id G) (AddMonoidHom.id M) continuous_id hid =
       AddMonoidHom.id _ := by
   ext c p
   obtain ⟨g, h⟩ := p
@@ -318,11 +316,10 @@ theorem cocyclesMap2_comp
     (P : Type uP) [AddCommGroup P] [TopologicalSpace P] [IsTopologicalAddGroup P]
     [DistribSMul K P]
     (ψ : K →ₜ* H) (q : N →+ P) (hq : Continuous q)
-    (hequivq : ∀ (k : K) (n : N), q (ψ k • n) = k • q n) :
-    cocyclesMap2 G M K P (φ.comp ψ) (q.comp f) (hq.comp hf)
-      (fun k m => by
-        simpa only [Function.comp_apply, AddMonoidHom.comp_apply, ContinuousMonoidHom.coe_comp]
-          using Function.comp_map_smul f q φ ψ hequiv hequivq k m) =
+    (hequivq : ∀ (k : K) (n : N), q (ψ k • n) = k • q n)
+    (hcomp : ∀ (k : K) (m : M), (q.comp f) ((φ.comp ψ) k • m) = k • (q.comp f) m :=
+      φ.comp_map_smul ψ f q hequiv hequivq) :
+    cocyclesMap2 G M K P (φ.comp ψ) (q.comp f) (hq.comp hf) hcomp =
       (cocyclesMap2 H N K P ψ q hq hequivq).comp
         (cocyclesMap2 G M H N φ f hf hequiv) := by
   ext c p
@@ -383,7 +380,7 @@ theorem explicitMap1_id (hid : ∀ (g : G) (m : M),
 
 /-- Pullback on explicit `H¹` respects composition of compatible pairs: it is contravariant in the
 group homomorphism and covariant in the coefficient map. The compatibility of the composite pair
-follows from `Function.comp_map_smul`. -/
+follows from `ContinuousMonoidHom.comp_map_smul`. -/
 theorem explicitMap1_comp
     (φ : H →ₜ* G) (f : M →+ N) (hf : Continuous f)
     (hequiv : ∀ (h : H) (m : M), f (φ h • m) = h • f m)
@@ -393,9 +390,7 @@ theorem explicitMap1_comp
     (ψ : K →ₜ* H) (q : N →+ P) (hq : Continuous q)
     (hequivq : ∀ (k : K) (n : N), q (ψ k • n) = k • q n)
     (hcomp : ∀ (k : K) (m : M), (q.comp f) ((φ.comp ψ) k • m) = k • (q.comp f) m :=
-      fun k m => by
-        simpa only [Function.comp_apply, AddMonoidHom.comp_apply, ContinuousMonoidHom.coe_comp]
-          using Function.comp_map_smul f q φ ψ hequiv hequivq k m) :
+      φ.comp_map_smul ψ f q hequiv hequivq) :
     explicitMap1 G M K P (φ.comp ψ) (q.comp f) (hq.comp hf) hcomp =
       (explicitMap1 H N K P ψ q hq hequivq).comp
         (explicitMap1 G M H N φ f hf hequiv) := by
@@ -448,22 +443,24 @@ noncomputable def explicitMap1Equiv
   exact
     { toFun := explicitMap1 G M H N φ e.toAddMonoidHom he hequiv
       invFun := explicitMap1 H N G M φ.symm e.symm.toAddMonoidHom he' hequiv'
-      left_inv := fun x => by
-        induction x using QuotientAddGroup.induction_on with
-        | _ c =>
-          rw [explicitMap1_mk G M H N φ e.toAddMonoidHom he hequiv c,
-            explicitMap1_mk H N G M φ.symm e.symm.toAddMonoidHom he' hequiv']
-          apply congrArg (fun z : Z1 G M => (z : H1 G M))
-          ext g
-          simp [cocyclesMap1_apply]
-      right_inv := fun x => by
-        induction x using QuotientAddGroup.induction_on with
-        | _ c =>
-          rw [explicitMap1_mk H N G M φ.symm e.symm.toAddMonoidHom he' hequiv' c,
-            explicitMap1_mk G M H N φ e.toAddMonoidHom he hequiv]
-          apply congrArg (fun z : Z1 H N => (z : H1 H N))
-          ext h
-          simp [cocyclesMap1_apply]
+      left_inv := fun x => DFunLike.congr_fun
+        ((explicitMap1_comp G M H N φ e.toAddMonoidHom he hequiv
+          G M φ.symm e.symm.toAddMonoidHom he' hequiv').symm.trans
+          ((explicitMap1_congr_of_eq G M G M
+            ((φ : H →ₜ* G).comp (φ.symm : G →ₜ* H)) (ContinuousMonoidHom.id G)
+            (e.symm.toAddMonoidHom.comp e.toAddMonoidHom) (AddMonoidHom.id M)
+            (hq := continuous_id) (hψ := fun _ _ => rfl)
+            (ContinuousMonoidHom.ext φ.apply_symm_apply)
+            (AddMonoidHom.ext e.symm_apply_apply)).trans (explicitMap1_id G M))) x
+      right_inv := fun x => DFunLike.congr_fun
+        ((explicitMap1_comp H N G M φ.symm e.symm.toAddMonoidHom he' hequiv'
+          H N φ e.toAddMonoidHom he hequiv).symm.trans
+          ((explicitMap1_congr_of_eq H N H N
+            ((φ.symm : G →ₜ* H).comp (φ : H →ₜ* G)) (ContinuousMonoidHom.id H)
+            (e.toAddMonoidHom.comp e.symm.toAddMonoidHom) (AddMonoidHom.id N)
+            (hq := continuous_id) (hψ := fun _ _ => rfl)
+            (ContinuousMonoidHom.ext φ.symm_apply_apply)
+            (AddMonoidHom.ext e.apply_symm_apply)).trans (explicitMap1_id H N))) x
       map_add' := map_add (explicitMap1 G M H N φ e.toAddMonoidHom he hequiv) }
 
 /-- The equivalence on explicit `H¹` is the pullback along its forward compatible pair. -/
@@ -515,9 +512,10 @@ theorem explicitMap2_congr_of_eq [ContinuousMul G] [ContinuousMul H]
 
 /-- Pullback by the identity compatible pair is the identity on explicit `H²`. -/
 @[simp]
-theorem explicitMap2_id [ContinuousMul G] :
-    explicitMap2 G M G M (ContinuousMonoidHom.id G) (AddMonoidHom.id M) continuous_id
-      (fun g m => by simp) =
+theorem explicitMap2_id [ContinuousMul G] (hid : ∀ (g : G) (m : M),
+    (AddMonoidHom.id M) ((ContinuousMonoidHom.id G) g • m) = g • (AddMonoidHom.id M) m :=
+      fun _ _ => rfl) :
+    explicitMap2 G M G M (ContinuousMonoidHom.id G) (AddMonoidHom.id M) continuous_id hid =
       AddMonoidHom.id _ := by
   apply AddMonoidHom.ext
   intro x
@@ -525,7 +523,7 @@ theorem explicitMap2_id [ContinuousMul G] :
   | _ c =>
       rw [explicitMap2_mk, AddMonoidHom.id_apply]
       exact congrArg (fun z : Z2 G M => (z : H2 G M))
-        (DFunLike.congr_fun (cocyclesMap2_id G M) c)
+        (DFunLike.congr_fun (cocyclesMap2_id G M hid) c)
 
 /-- Pullback on explicit `H²` respects composition of compatible pairs. -/
 theorem explicitMap2_comp
@@ -536,11 +534,10 @@ theorem explicitMap2_comp
     (P : Type uP) [AddCommGroup P] [TopologicalSpace P] [IsTopologicalAddGroup P]
     [DistribMulAction K P] [ContinuousSMul K P]
     (ψ : K →ₜ* H) (q : N →+ P) (hq : Continuous q)
-    (hequivq : ∀ (k : K) (n : N), q (ψ k • n) = k • q n) :
-    explicitMap2 G M K P (φ.comp ψ) (q.comp f) (hq.comp hf)
-      (fun k m => by
-        simpa only [Function.comp_apply, AddMonoidHom.comp_apply, ContinuousMonoidHom.coe_comp]
-          using Function.comp_map_smul f q φ ψ hequiv hequivq k m) =
+    (hequivq : ∀ (k : K) (n : N), q (ψ k • n) = k • q n)
+    (hcomp : ∀ (k : K) (m : M), (q.comp f) ((φ.comp ψ) k • m) = k • (q.comp f) m :=
+      φ.comp_map_smul ψ f q hequiv hequivq) :
+    explicitMap2 G M K P (φ.comp ψ) (q.comp f) (hq.comp hf) hcomp =
       (explicitMap2 H N K P ψ q hq hequivq).comp
         (explicitMap2 G M H N φ f hf hequiv) := by
   apply AddMonoidHom.ext
@@ -550,7 +547,7 @@ theorem explicitMap2_comp
       rw [explicitMap2_mk, AddMonoidHom.comp_apply, explicitMap2_mk, explicitMap2_mk]
       exact congrArg (fun z : Z2 K P => (z : H2 K P))
         (DFunLike.congr_fun
-          (cocyclesMap2_comp G M H N φ f hf hequiv K P ψ q hq hequivq) c)
+          (cocyclesMap2_comp G M H N φ f hf hequiv K P ψ q hq hequivq hcomp) c)
 
 /-- Pullback along a compatible pair made of a continuous multiplicative equivalence and an additive
 equivalence of coefficients is an additive equivalence on explicit second continuous cohomology.
@@ -564,24 +561,24 @@ noncomputable def explicitMap2Equiv [ContinuousMul G] [ContinuousMul H]
   exact
     { toFun := explicitMap2 G M H N φ e.toAddMonoidHom he hequiv
       invFun := explicitMap2 H N G M φ.symm e.symm.toAddMonoidHom he' hequiv'
-      left_inv := fun x => by
-        induction x using QuotientAddGroup.induction_on with
-        | _ c =>
-          rw [explicitMap2_mk G M H N φ e.toAddMonoidHom he hequiv c,
-            explicitMap2_mk H N G M φ.symm e.symm.toAddMonoidHom he' hequiv']
-          apply congrArg (fun z : Z2 G M => (z : H2 G M))
-          ext p
-          obtain ⟨g, h⟩ := p
-          simp [cocyclesMap2_apply]
-      right_inv := fun x => by
-        induction x using QuotientAddGroup.induction_on with
-        | _ c =>
-          rw [explicitMap2_mk H N G M φ.symm e.symm.toAddMonoidHom he' hequiv' c,
-            explicitMap2_mk G M H N φ e.toAddMonoidHom he hequiv]
-          apply congrArg (fun z : Z2 H N => (z : H2 H N))
-          ext p
-          obtain ⟨h, k⟩ := p
-          simp [cocyclesMap2_apply]
+      left_inv := fun x => DFunLike.congr_fun
+        ((explicitMap2_comp G M H N φ e.toAddMonoidHom he hequiv
+          G M φ.symm e.symm.toAddMonoidHom he' hequiv').symm.trans
+          ((explicitMap2_congr_of_eq G M G M
+            ((φ : H →ₜ* G).comp (φ.symm : G →ₜ* H)) (ContinuousMonoidHom.id G)
+            (e.symm.toAddMonoidHom.comp e.toAddMonoidHom) (AddMonoidHom.id M)
+            (hq := continuous_id) (hψ := fun _ _ => rfl)
+            (ContinuousMonoidHom.ext φ.apply_symm_apply)
+            (AddMonoidHom.ext e.symm_apply_apply)).trans (explicitMap2_id G M))) x
+      right_inv := fun x => DFunLike.congr_fun
+        ((explicitMap2_comp H N G M φ.symm e.symm.toAddMonoidHom he' hequiv'
+          H N φ e.toAddMonoidHom he hequiv).symm.trans
+          ((explicitMap2_congr_of_eq H N H N
+            ((φ.symm : G →ₜ* H).comp (φ : H →ₜ* G)) (ContinuousMonoidHom.id H)
+            (e.toAddMonoidHom.comp e.symm.toAddMonoidHom) (AddMonoidHom.id N)
+            (hq := continuous_id) (hψ := fun _ _ => rfl)
+            (ContinuousMonoidHom.ext φ.symm_apply_apply)
+            (AddMonoidHom.ext e.apply_symm_apply)).trans (explicitMap2_id H N))) x
       map_add' := map_add (explicitMap2 G M H N φ e.toAddMonoidHom he hequiv) }
 
 /-- The equivalence on explicit `H²` is the pullback along its forward compatible pair. -/
@@ -616,18 +613,14 @@ variable (G : Type uG) [Group G] [TopologicalSpace G]
 map. -/
 noncomputable def explicitRes1 (S : Subgroup G) : H1 G M →+ H1 S M :=
   explicitMap1 G M S M (ContinuousMonoidHom.subgroupSubtype S) (AddMonoidHom.id M)
-    continuous_id (fun s m => by
-      simpa only [ContinuousMonoidHom.subgroupSubtype_apply, AddMonoidHom.id_apply]
-        using (Subgroup.smul_def s m).symm)
+    continuous_id (ContinuousMonoidHom.id_subgroupSubtype_smul M S)
 
 /-- Restriction sends the class of a continuous `1`-cocycle to the class of its restriction. -/
 @[simp]
 theorem explicitRes1_mk (S : Subgroup G) (c : Z1 G M) :
     explicitRes1 G M S (c : H1 G M) =
       (cocyclesMap1 G M S M (ContinuousMonoidHom.subgroupSubtype S) (AddMonoidHom.id M)
-        continuous_id (fun s m => by
-          simpa only [ContinuousMonoidHom.subgroupSubtype_apply, AddMonoidHom.id_apply]
-            using (Subgroup.smul_def s m).symm) c : H1 S M) :=
+        continuous_id (ContinuousMonoidHom.id_subgroupSubtype_smul M S) c : H1 S M) :=
   explicitMap1_mk G M S M _ _ _ _ c
 
 /-- Restriction on explicit `H¹` is the compatible-pair pullback along the inclusion of the
@@ -636,9 +629,7 @@ subgroup with the identity on the coefficients, the degree-one counterpart of
 theorem explicitRes1_eq_explicitMap1 (S : Subgroup G) :
     explicitRes1 G M S =
       explicitMap1 G M S M (ContinuousMonoidHom.subgroupSubtype S) (AddMonoidHom.id M)
-        continuous_id (fun s m => by
-          simpa only [ContinuousMonoidHom.subgroupSubtype_apply, AddMonoidHom.id_apply]
-            using (Subgroup.smul_def s m).symm) := by
+        continuous_id (ContinuousMonoidHom.id_subgroupSubtype_smul M S) := by
   rfl
 
 /-- Restricting explicit `H¹` first to `S` and then to a subgroup `T` of `S` is restriction
@@ -650,31 +641,23 @@ theorem explicitRes1_comp (S : Subgroup G) (T : Subgroup S) :
           (ContinuousMonoidHom.subgroupSubtype T))
         (AddMonoidHom.id M) continuous_id (fun _ _ => rfl) := by
   exact (explicitMap1_comp G M S M (ContinuousMonoidHom.subgroupSubtype S)
-    (AddMonoidHom.id M) continuous_id (fun s m => by
-      simpa only [ContinuousMonoidHom.subgroupSubtype_apply, AddMonoidHom.id_apply]
-        using (Subgroup.smul_def s m).symm) T M
+    (AddMonoidHom.id M) continuous_id (ContinuousMonoidHom.id_subgroupSubtype_smul M S) T M
     (ContinuousMonoidHom.subgroupSubtype T) (AddMonoidHom.id M) continuous_id
-    (fun s m => by
-      simpa only [ContinuousMonoidHom.subgroupSubtype_apply, AddMonoidHom.id_apply]
-        using (Subgroup.smul_def s m).symm) (fun _ _ => rfl)).symm
+    (ContinuousMonoidHom.id_subgroupSubtype_smul M T) (fun _ _ => rfl)).symm
 
 /-- Restriction on explicit `H²`, induced by the subgroup inclusion and the identity coefficient
 map. -/
 noncomputable def explicitRes2 (S : Subgroup G) [ContinuousMul G] [ContinuousMul S] :
     H2 G M →+ H2 S M :=
   explicitMap2 G M S M (ContinuousMonoidHom.subgroupSubtype S) (AddMonoidHom.id M)
-    continuous_id (fun s m => by
-      simpa only [ContinuousMonoidHom.subgroupSubtype_apply, AddMonoidHom.id_apply]
-        using (Subgroup.smul_def s m).symm)
+    continuous_id (ContinuousMonoidHom.id_subgroupSubtype_smul M S)
 
 /-- Restriction sends the class of a continuous `2`-cocycle to the class of its restriction. -/
 @[simp]
 theorem explicitRes2_mk (S : Subgroup G) [ContinuousMul G] [ContinuousMul S] (c : Z2 G M) :
     explicitRes2 G M S (c : H2 G M) =
       (cocyclesMap2 G M S M (ContinuousMonoidHom.subgroupSubtype S) (AddMonoidHom.id M)
-        continuous_id (fun s m => by
-          simpa only [ContinuousMonoidHom.subgroupSubtype_apply, AddMonoidHom.id_apply]
-            using (Subgroup.smul_def s m).symm) c : H2 S M) :=
+        continuous_id (ContinuousMonoidHom.id_subgroupSubtype_smul M S) c : H2 S M) :=
   explicitMap2_mk G M S M _ _ _ _ c
 
 /-- Restriction on explicit `H²` is the compatible-pair pullback along the inclusion of the
@@ -682,9 +665,7 @@ subgroup with the identity on the coefficients. -/
 theorem explicitRes2_eq_explicitMap2 (S : Subgroup G) [ContinuousMul G] [ContinuousMul S] :
     explicitRes2 G M S =
       explicitMap2 G M S M (ContinuousMonoidHom.subgroupSubtype S) (AddMonoidHom.id M)
-        continuous_id (fun s m => by
-          simpa only [ContinuousMonoidHom.subgroupSubtype_apply, AddMonoidHom.id_apply]
-            using (Subgroup.smul_def s m).symm) := by
+        continuous_id (ContinuousMonoidHom.id_subgroupSubtype_smul M S) := by
   rfl
 
 /-- Restricting explicit `H²` first to `S` and then to a subgroup `T` of `S` is restriction
@@ -697,13 +678,9 @@ theorem explicitRes2_comp (S : Subgroup G) (T : Subgroup S)
           (ContinuousMonoidHom.subgroupSubtype T))
         (AddMonoidHom.id M) continuous_id (fun _ _ => rfl) := by
   exact (explicitMap2_comp G M S M (ContinuousMonoidHom.subgroupSubtype S)
-    (AddMonoidHom.id M) continuous_id (fun s m => by
-      simpa only [ContinuousMonoidHom.subgroupSubtype_apply, AddMonoidHom.id_apply]
-        using (Subgroup.smul_def s m).symm) T M
+    (AddMonoidHom.id M) continuous_id (ContinuousMonoidHom.id_subgroupSubtype_smul M S) T M
     (ContinuousMonoidHom.subgroupSubtype T) (AddMonoidHom.id M) continuous_id
-    (fun s m => by
-      simpa only [ContinuousMonoidHom.subgroupSubtype_apply, AddMonoidHom.id_apply]
-        using (Subgroup.smul_def s m).symm)).symm
+    (ContinuousMonoidHom.id_subgroupSubtype_smul M T)).symm
 
 end NamedMaps
 

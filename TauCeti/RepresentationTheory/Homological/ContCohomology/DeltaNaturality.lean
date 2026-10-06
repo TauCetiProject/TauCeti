@@ -77,15 +77,11 @@ and `explicitDelta1_coeffMap` half and not the change of group.
 
 ## Implementation notes
 
-The named instances `explicitRes1`, `explicitRes2`, `explicitCoeff1` and `explicitCoeff2` are
-definitions of `TauCeti/RepresentationTheory/Homological/ContCohomology/ExplicitFunctoriality.lean`
-whose bodies are not exposed, so they are not definitionally the compatible-pair pullbacks the two
-general squares are stated against. The four private lemmas at the head of this file identify them,
-each by evaluating both sides on a cocycle class with the `_mk` lemmas that file exports.
-
-This implements the naturality half of the long exact sequence milestone of Layer 5 of the
-human-authored roadmap at `TauCetiRoadmap/ProfiniteCohomology/README.md`, whose `Suggested.lean`
-fixes the names `explicitDelta0_res` and `explicitDelta1_res`.
+The two general squares are stated for arbitrary compatible pairs. The named maps
+`explicitRes1`, `explicitRes2`, `explicitCoeff1`, and `explicitCoeff2` are rewritten into that
+form using the public `explicitRes1_eq_explicitMap1`, `explicitRes2_eq_explicitMap2`,
+`explicitCoeff1_eq_explicitMap1`, and `explicitCoeff2_eq_explicitMap2` lemmas from
+`TauCeti/RepresentationTheory/Homological/ContCohomology/ExplicitFunctoriality.lean`.
 
 ## References
 
@@ -221,12 +217,8 @@ theorem explicitDelta0_res (c : H0 G C) :
   rw [explicitRes1_eq_explicitMap1]
   exact S.explicitDelta0_naturality (S.restrict T) (ContinuousMonoidHom.subgroupSubtype T)
     (AddMonoidHom.id A) (AddMonoidHom.id B) (AddMonoidHom.id C)
-    (fun s m => by
-      simpa only [ContinuousMonoidHom.subgroupSubtype_apply, AddMonoidHom.id_apply]
-        using (Subgroup.smul_def s m).symm)
-    (fun s m => by
-      simpa only [ContinuousMonoidHom.subgroupSubtype_apply, AddMonoidHom.id_apply]
-        using (Subgroup.smul_def s m).symm) (fun _ => by simp)
+    (ContinuousMonoidHom.id_subgroupSubtype_smul A T)
+    (ContinuousMonoidHom.id_subgroupSubtype_smul B T) (fun _ => by simp)
     (fun _ => by simp) c _ (by simp)
 
 /-- **Restriction commutes with `δ¹`**, the degree-one counterpart of
@@ -239,14 +231,9 @@ theorem explicitDelta1_res [ContinuousMul G] [ContinuousMul T] [ContinuousSMul G
   rw [explicitRes2_eq_explicitMap2, explicitRes1_eq_explicitMap1]
   exact S.explicitDelta1_naturality (S.restrict T) (ContinuousMonoidHom.subgroupSubtype T)
     (AddMonoidHom.id A) (AddMonoidHom.id B) (AddMonoidHom.id C)
-    (fun s m => by
-      simpa only [ContinuousMonoidHom.subgroupSubtype_apply, AddMonoidHom.id_apply]
-        using (Subgroup.smul_def s m).symm) (fun s m => by
-      simpa only [ContinuousMonoidHom.subgroupSubtype_apply, AddMonoidHom.id_apply]
-        using (Subgroup.smul_def s m).symm)
-    (fun s m => by
-      simpa only [ContinuousMonoidHom.subgroupSubtype_apply, AddMonoidHom.id_apply]
-        using (Subgroup.smul_def s m).symm) (fun _ => by simp) (fun _ => by simp) x
+    (ContinuousMonoidHom.id_subgroupSubtype_smul A T)
+    (ContinuousMonoidHom.id_subgroupSubtype_smul B T)
+    (ContinuousMonoidHom.id_subgroupSubtype_smul C T) (fun _ => by simp) (fun _ => by simp) x
 
 end Restriction
 
