@@ -157,15 +157,12 @@ so this reads the component of the idele at one place `w` of `E` above `v`, embe
 `K_vˢ`. -/
 def ideleCoeffComponent : IdeleCoeff K →+ UnitsCoeff (v.adicCompletion K) :=
   IdeleCoeff.lift K (fun E ↦ (Units.map (adeleComponent τ E).toMonoidHom).toAdditive)
-    fun E E' h a ↦ by
-      rw [MonoidHom.toAdditive_apply_apply, MonoidHom.toAdditive_apply_apply]
-      exact congrArg Additive.ofMul (Units.ext (by simp [adeleComponent_adeleTransition]))
+    fun E E' h a ↦ Additive.toMul.injective (Units.ext (by simp [adeleComponent_adeleTransition]))
 
 private theorem toMul_ideleCoeffComponent_ideleCoeffOf' (E : Ω) (a : IdeleGroup (𝓞 E) E) :
     ((ideleCoeffComponent τ (ideleCoeffOf K E (.ofMul a))).toMul :
       SeparableClosure (v.adicCompletion K)) = adeleComponent τ E a := by
-  rw [ideleCoeffComponent, IdeleCoeff.lift_ideleCoeffOf, MonoidHom.toAdditive_apply_apply,
-    toMul_ofMul, toMul_ofMul, Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass]
+  simp [ideleCoeffComponent, IdeleCoeff.lift_ideleCoeffOf]
 
 /-- **The coordinate at `v` of an idele of `E`**: the image of its components above `v`, read in
 `K_v ⊗[K] E`, under `a ⊗ x ↦ a τ(x)`. -/
@@ -184,9 +181,8 @@ theorem ideleCoeffComponent_comp (h : AbsoluteGaloisGroup K) (x : IdeleCoeff K) 
       ideleCoeffComponent τ (h • x) := by
   obtain ⟨E, a, rfl⟩ := exists_ideleCoeffOf_eq x
   refine Additive.toMul.injective (Units.ext ?_)
-  rw [smul_ideleCoeffOf, toMul_ideleCoeffComponent_ideleCoeffOf',
-    toMul_ideleCoeffComponent_ideleCoeffOf',
-    Units.coe_map, MonoidHom.coe_ofClass, adeleComponent_adeleGaloisAction]
+  simp [smul_ideleCoeffOf, toMul_ideleCoeffComponent_ideleCoeffOf',
+    adeleComponent_adeleGaloisAction]
 
 /-- **The coordinate at `v` is equivariant** along the decomposition map
 `absoluteGaloisGroupMap τ : G_{K_v} → G_K`. -/
@@ -199,9 +195,9 @@ theorem ideleCoeffComponent_smul (g : AbsoluteGaloisGroup (v.adicCompletion K)) 
     AlgHom.ext fun y ↦ absoluteGaloisGroupMap_commutes τ g y
   obtain ⟨E, a, rfl⟩ := exists_ideleCoeffOf_eq x
   refine Additive.toMul.injective (Units.ext ?_)
-  rw [hτ, toMul_ideleCoeffComponent_ideleCoeffOf', adeleComponent_comp_left, Additive.toMul_smul,
-    AlgEquiv.smul_units_def, Units.coe_map, MonoidHom.coe_ofClass,
-    toMul_ideleCoeffComponent_ideleCoeffOf']
+  rw [hτ]
+  simp [toMul_ideleCoeffComponent_ideleCoeffOf', adeleComponent_comp_left, Additive.toMul_smul,
+    AlgEquiv.smul_units_def]
 
 /-- **On principal ideles the coordinate at `v` is `τ`**: the coordinate of the principal idele
 of a unit `x` of `Kˢ` is `τ x`. -/
@@ -216,11 +212,9 @@ theorem ideleCoeffComponent_principalIdele (x : UnitsCoeff K) :
   have hxu : x = .ofMul (Units.map (algebraMap E (SeparableClosure K)).toMonoidHom u) :=
     Additive.toMul.injective (Units.ext rfl)
   refine Additive.toMul.injective (Units.ext ?_)
-  rw [hxu, principalIdele_ofMul_map_algebraMap, toMul_ideleCoeffComponent_ideleCoeffOf',
-    adeleComponent_apply, IdeleGroup.coe_unitEmbedding, AdeleRing.algebraMap_snd,
-    finiteAdeleSemilocalHom_algebraMap, semilocalLift_tmul, map_one, one_mul,
-    toMul_unitsCoeffBaseChange, toMul_ofMul, Units.coe_map, Units.coe_map, MonoidHom.coe_ofClass,
-    RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass, IntermediateField.algebraMap_apply]
+  rw [hxu, principalIdele_ofMul_map_algebraMap]
+  simp [toMul_ideleCoeffComponent_ideleCoeffOf', adeleComponent_apply,
+    finiteAdeleSemilocalHom_algebraMap]
 
 end Coordinate
 
