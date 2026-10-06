@@ -7,14 +7,14 @@ module
 
 public import Mathlib.Dynamics.PeriodicPts.Lemmas
 public import Mathlib.GroupTheory.Perm.Cycle.Basic
-public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Basic
+public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Convex
 import TauCeti.Analysis.Complex.UpperHalfPlane.Stabilizer
 import TauCeti.Data.Fin.Basic
 
 /-!
-# Side pairings and vertex cycles of a compact convex hyperbolic polygon
+# Side pairings and vertex cycles of a convex hyperbolic polygon
 
-A side pairing of a compact convex polygon `P` is an involution `pair` of its sides together with,
+A side pairing of a convex polygon `P` is an involution `pair` of its sides together with,
 for each side `i`, an element `map i` of `PSL(2, ℝ)` carrying side `i` onto side `pair i` with the
 orientation reversed: `vertex i ↦ vertex (pair i + 1)` and `vertex (i + 1) ↦ vertex (pair i)`, the
 map of the paired side being the inverse. Following a vertex `j` through the pairing of the side
@@ -22,38 +22,42 @@ leaving it, then switching to the other side at the image vertex, is the permuta
 `next : j ↦ pair j + 1` of the vertices. Its orbits are the vertex cycles, and the product of the
 side-pairing maps along a cycle is the cycle transformation.
 
-No Fuchsian group appears: these are the standalone definitions and their elementary properties.
-The relation `m · sum = 2π` between the order of a cycle transformation and the angle sum needs
-the polygon to be a fundamental domain and is left to Poincaré's polygon theorem.
+Vertices may be finite or ideal, so the paired sides may be segments, rays, or full geodesic
+lines. No Fuchsian group appears: these are the standalone definitions and their elementary
+properties.
+
+At a finite vertex cycle, the relation `m · sum = 2π` between the order of a cycle transformation
+and the angle sum needs the polygon to be a fundamental domain and is left to Poincaré's polygon
+theorem.
 
 ## Main definitions
 
-* `CompactConvexPolygon.SidePairing`: a side pairing of a compact convex polygon.
-* `CompactConvexPolygon.SidePairing.next`: the successor of a vertex along its cycle,
+* `ConvexPolygon.SidePairing`: a side pairing of a convex polygon.
+* `ConvexPolygon.SidePairing.next`: the successor of a vertex along its cycle,
   `j ↦ pair j + 1`.
-* `CompactConvexPolygon.SidePairing.cycleLength`: the length of the vertex cycle through `j`.
-* `CompactConvexPolygon.SidePairing.partialCycleMap`: the product of the first `m` side-pairing maps
+* `ConvexPolygon.SidePairing.cycleLength`: the length of the vertex cycle through `j`.
+* `ConvexPolygon.SidePairing.partialCycleMap`: the product of the first `m` side-pairing maps
   along the cycle starting at `j`.
-* `CompactConvexPolygon.SidePairing.cycleMap`: the cycle transformation at the vertex `j`.
-* `CompactConvexPolygon.SidePairing.cycle`: the vertex cycle through `j`, as a `Finset`.
-* `CompactConvexPolygon.SidePairing.cycleAngleSum`: the sum of the interior angles along a cycle.
+* `ConvexPolygon.SidePairing.cycleMap`: the cycle transformation at the vertex `j`.
+* `ConvexPolygon.SidePairing.cycle`: the vertex cycle through `j`, as a `Finset`.
+* `ConvexPolygon.SidePairing.cycleAngleSum`: the sum of the interior angles along a cycle.
 
 ## Main results
 
-* `CompactConvexPolygon.SidePairing.map_smul_side`: the side-pairing map carries side `i` onto side
+* `ConvexPolygon.SidePairing.map_smul_side`: the side-pairing map carries side `i` onto side
   `pair i`.
-* `CompactConvexPolygon.SidePairing.map_ne_one`: a side-pairing map is not the identity.
-* `CompactConvexPolygon.SidePairing.cycleMap_smul_vertex`: the cycle transformation at `j` fixes
+* `ConvexPolygon.SidePairing.map_ne_one`: a side-pairing map is not the identity.
+* `ConvexPolygon.SidePairing.cycleMap_smul_vertex`: the cycle transformation at `j` fixes
   `vertex j`.
-* `CompactConvexPolygon.SidePairing.cycleMap_next`: the cycle transformations at the vertices of one
+* `ConvexPolygon.SidePairing.cycleMap_next`: the cycle transformations at the vertices of one
   cycle are conjugate.
-* `CompactConvexPolygon.SidePairing.isElliptic_of_cycleMap_eq`: a cycle transformation other than
-  the identity is elliptic.
-* `CompactConvexPolygon.SidePairing.card_cycle`: the vertex cycle through `j` has `cycleLength j`
+* `ConvexPolygon.SidePairing.isElliptic_of_cycleMap_eq`: a nonidentity cycle transformation at
+  a vertex in `ℍ` is elliptic.
+* `ConvexPolygon.SidePairing.card_cycle`: the vertex cycle through `j` has `cycleLength j`
   vertices.
-* `CompactConvexPolygon.SidePairing.cycleAngleSum_next`,
-  `CompactConvexPolygon.SidePairing.cycleAngleSum_pos`: the angle sum does not depend on the
-  starting vertex of the cycle, and is positive.
+* `ConvexPolygon.SidePairing.cycleAngleSum_next`,
+  `ConvexPolygon.SidePairing.cycleAngleSum_nonneg`: the angle sum does not depend on the
+  starting vertex of the cycle, and is nonnegative.
 
 ## Source
 
@@ -72,15 +76,16 @@ open scoped MatrixGroups Pointwise Real
 
 namespace TauCeti.UpperHalfPlane
 
-namespace CompactConvexPolygon
+namespace ConvexPolygon
 
 variable {n : ℕ} [NeZero n]
 
-/-- A side pairing of the compact convex polygon `P`: an involution `pair` of the sides (side `i`
+/-- A side pairing of the convex polygon `P`: an involution `pair` of the sides (side `i`
 runs from `vertex i` to `vertex (i + 1)`) and, for each side `i`, an element `map i` of `PSL(2, ℝ)`
 carrying side `i` onto side `pair i` with the orientation reversed, the map of the paired side being
 the inverse. A side may be paired with itself. -/
-structure SidePairing (P : CompactConvexPolygon n) where
+@[ext]
+structure SidePairing (P : ConvexPolygon n) where
   /-- The side paired with side `i`. -/
   pair : Equiv.Perm (Fin n)
   /-- Pairing is an involution. -/
@@ -96,9 +101,9 @@ structure SidePairing (P : CompactConvexPolygon n) where
 
 namespace SidePairing
 
-attribute [simp] pair_pair
+attribute [simp] pair_pair map_pair
 
-variable {P : CompactConvexPolygon n} (σ : P.SidePairing)
+variable {P : ConvexPolygon n} (σ : P.SidePairing)
 
 /-! ### The pairing of the sides -/
 
@@ -123,8 +128,8 @@ theorem map_pair_smul_vertex_add_one (i : Fin n) :
 
 /-- The side-pairing map carries side `i` onto side `pair i`. -/
 theorem map_smul_side (i : Fin n) : σ.map i • P.side i = P.side (σ.pair i) := by
-  rw [side_def, side_def, smul_geodesicSegment, σ.map_smul_vertex, σ.map_smul_vertex_add_one,
-    geodesicSegment_comm]
+  rw [side_def, side_def, smul_extGeodesicSegment, σ.map_smul_vertex, σ.map_smul_vertex_add_one,
+    extGeodesicSegment_comm]
 
 /-- A side-pairing map is not the identity. -/
 theorem map_ne_one (i : Fin n) : σ.map i ≠ 1 := by
@@ -258,13 +263,15 @@ theorem cycleMap_next_symm (j : Fin n) :
   rw [Equiv.apply_symm_apply] at h
   simp [h, mul_assoc]
 
-/-- **A cycle transformation other than the identity is elliptic**, since it fixes a point of
-`ℍ`: if `cycleMap j ≠ 1` and `g ∈ SL(2, ℝ)` represents `cycleMap j`, then `g` is elliptic. -/
-theorem isElliptic_of_cycleMap_eq {j : Fin n} (hj : σ.cycleMap j ≠ 1) {g : SL(2, ℝ)}
-    (hg : (↑g : PSL(2, ℝ)) = σ.cycleMap j) :
-    Matrix.GeneralLinearGroup.IsElliptic (Matrix.SpecialLinearGroup.mapGL ℝ g) :=
-  Matrix.SpecialLinearGroup.isElliptic_of_smul_eq_self_of_ne_one
-    (by rw [← pslMk_smul, hg, cycleMap_smul_vertex]) (hg ▸ hj)
+/-- A nonidentity cycle transformation at a vertex in `ℍ` is elliptic. Ideal vertices are
+excluded: their cycle transformations instead fix a point of the projective boundary. -/
+theorem isElliptic_of_cycleMap_eq {j : Fin n} {z : ℍ} (hz : P.vertex j = .inl z)
+    (hj : σ.cycleMap j ≠ 1) {g : SL(2, ℝ)} (hg : (↑g : PSL(2, ℝ)) = σ.cycleMap j) :
+    Matrix.GeneralLinearGroup.IsElliptic (Matrix.SpecialLinearGroup.mapGL ℝ g) := by
+  have hfix := σ.cycleMap_smul_vertex j
+  rw [hz, Sum.smul_inl, Sum.inl.injEq] at hfix
+  exact Matrix.SpecialLinearGroup.isElliptic_of_smul_eq_self_of_ne_one
+    (by rw [← pslMk_smul, hg, hfix]) (hg ▸ hj)
 
 /-! ### Vertex cycles and angle sums -/
 
@@ -330,9 +337,16 @@ theorem cycleAngleSum_pair_add_one (j : Fin n) :
     σ.cycleAngleSum (σ.pair j + 1) = σ.cycleAngleSum j := by
   rw [← next_apply, cycleAngleSum_next]
 
-/-- The angle sum along a cycle is positive. -/
-theorem cycleAngleSum_pos (j : Fin n) : 0 < σ.cycleAngleSum j :=
-  Finset.sum_pos (fun i _ ↦ P.interiorAngle_pos i) ⟨j, σ.self_mem_cycle j⟩
+/-- The angle sum along a cycle is nonnegative. -/
+theorem cycleAngleSum_nonneg (j : Fin n) : 0 ≤ σ.cycleAngleSum j :=
+  Finset.sum_nonneg fun i _ ↦ P.interiorAngle_nonneg i
+
+/-- The angle sum along the cycle of a finite vertex is positive. -/
+theorem cycleAngleSum_pos_of_isLeft_vertex {j : Fin n} (hj : (P.vertex j).isLeft) :
+    0 < σ.cycleAngleSum j := by
+  rw [cycleAngleSum_def]
+  exact Finset.sum_pos' (fun i _ ↦ P.interiorAngle_nonneg i)
+    ⟨j, σ.self_mem_cycle j, P.interiorAngle_pos_of_isLeft_vertex hj⟩
 
 /-- The angle sum as a sum over the first `cycleLength j` successors of `j`. -/
 theorem cycleAngleSum_eq_sum_range (j : Fin n) :
@@ -342,6 +356,17 @@ theorem cycleAngleSum_eq_sum_range (j : Fin n) :
     Function.iterate_injOn_Iio_minimalPeriod)]
 
 end SidePairing
+
+end ConvexPolygon
+
+namespace CompactConvexPolygon
+
+variable {n : ℕ} [NeZero n] {P : CompactConvexPolygon n}
+
+/-- A vertex cycle of a compact convex polygon has positive angle sum. -/
+theorem cycleAngleSum_pos (σ : P.toConvexPolygon.SidePairing) (j : Fin n) :
+    0 < σ.cycleAngleSum j := by
+  exact σ.cycleAngleSum_pos_of_isLeft_vertex (by simp)
 
 end CompactConvexPolygon
 

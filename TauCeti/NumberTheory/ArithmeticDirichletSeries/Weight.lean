@@ -71,10 +71,10 @@ into good primes; this is the engine behind both
   `TauCeti.UnitaryIdealWeight.normTwist` (the last for the imaginary norm twists only), and
   `TauCeti.UnitaryIdealWeight.toIdealArithmeticFunction` for its passage to the general carrier;
 * `TauCeti.MultiplicativeIdealWeight.map` and `TauCeti.UnitaryIdealWeight.map`, with their
-  equivalences `mapEquiv`: functoriality under an isomorphism `K ≃+* L` of the ambient fields,
-  together with the identity and composition laws, the preservation of the pointwise product
-  (`map_one` and `map_mul` on both carriers), the naturality of restriction, conjugation and norm
-  twists, and the compatibilities
+  multiplicative equivalences `mapEquiv`: functoriality under an isomorphism `K ≃+* L` of the
+  ambient fields, together with the identity and composition laws, the preservation of the
+  pointwise product (`map_one` and `map_mul` on both carriers), the naturality of restriction,
+  conjugation and norm twists, and the compatibilities
   `TauCeti.MultiplicativeIdealWeight.badPrimes_map` and
   `TauCeti.MultiplicativeIdealWeight.toIdealArithmeticFunction_map`.
 
@@ -467,6 +467,7 @@ theorem normTwist_zero (χ : MultiplicativeIdealWeight K) : normTwist 0 χ = χ 
   simp
 
 /-- Successive norm twists combine by adding their parameters. -/
+@[simp]
 theorem normTwist_normTwist (z w : ℂ) (χ : MultiplicativeIdealWeight K) :
     normTwist z (normTwist w χ) = normTwist (z + w) χ := by
   ext I
@@ -662,16 +663,19 @@ theorem toIdealArithmeticFunction_apply (χ : MultiplicativeIdealWeight K) (I : 
     χ.toIdealArithmeticFunction I = χ I :=
   IdealArithmeticFunction.restrict_apply _ I
 
+/-- The ideal arithmetic function underlying a norm twist multiplies by `N(I) ^ (-z)`. -/
+theorem toIdealArithmeticFunction_normTwist (z : ℂ) (χ : MultiplicativeIdealWeight K) :
+    (normTwist z χ).toIdealArithmeticFunction =
+      fun I ↦ χ.toIdealArithmeticFunction I * (Ideal.absNorm (I : Ideal (𝓞 K)) : ℂ) ^ (-z) :=
+  funext fun I ↦ by simp [normTwist_apply]
+
 /-- **Regrouping absorbs a norm twist.** Twisting a weight by `N(I) ^ (-z)` twists its `n`-th norm
 coefficient by `n ^ (-z)`. -/
 @[simp]
 theorem normCoeff_normTwist (z : ℂ) (χ : MultiplicativeIdealWeight K) (n : ℕ) :
     normCoeff K (normTwist z χ).toIdealArithmeticFunction n =
       normCoeff K χ.toIdealArithmeticFunction n * (n : ℂ) ^ (-z) := by
-  have h : (normTwist z χ).toIdealArithmeticFunction =
-      fun I ↦ χ.toIdealArithmeticFunction I * (Ideal.absNorm (I : Ideal (𝓞 K)) : ℂ) ^ (-z) :=
-    funext fun I ↦ by simp [normTwist_apply]
-  rw [h, normCoeff_mul_absNorm_cpow]
+  rw [toIdealArithmeticFunction_normTwist, normCoeff_mul_absNorm_cpow]
 
 /-- The ideal arithmetic function underlying a completely multiplicative ideal weight is
 multiplicative on relatively prime ideals. -/
@@ -779,23 +783,6 @@ theorem map_map (e : K ≃+* L) (e' : L ≃+* M) (χ : MultiplicativeIdealWeight
     rw [toIdealArithmeticFunction_map, toIdealArithmeticFunction_map,
       toIdealArithmeticFunction_map, IdealArithmeticFunction.map_map]
 
-/-- **Transport along an isomorphism of fields, as an equivalence** of the two carriers, with
-inverse the transport along `e.symm`. -/
-noncomputable def mapEquiv (e : K ≃+* L) :
-    MultiplicativeIdealWeight K ≃ MultiplicativeIdealWeight L where
-  toFun := map e
-  invFun := map e.symm
-  left_inv χ := by rw [map_map, e.self_trans_symm, map_id]
-  right_inv χ := by rw [map_map, e.symm_trans_self, map_id]
-
-@[simp]
-theorem mapEquiv_apply (e : K ≃+* L) (χ : MultiplicativeIdealWeight K) :
-    mapEquiv e χ = map e χ := (rfl)
-
-@[simp]
-theorem mapEquiv_symm_apply (e : K ≃+* L) (χ : MultiplicativeIdealWeight L) :
-    (mapEquiv e).symm χ = map e.symm χ := (rfl)
-
 /-! Transport preserves the pointwise `CommMonoid` structure. -/
 
 @[simp]
@@ -809,6 +796,24 @@ theorem map_mul (e : K ≃+* L) (χ ψ : MultiplicativeIdealWeight K) :
     map e (χ * ψ) = map e χ * map e ψ := by
   ext I
   rw [map_apply, mul_apply, mul_apply, map_apply, map_apply]
+
+/-- **Transport along an isomorphism of fields, as a multiplicative equivalence** of the two
+carriers, with inverse the transport along `e.symm`. -/
+noncomputable def mapEquiv (e : K ≃+* L) :
+    MultiplicativeIdealWeight K ≃* MultiplicativeIdealWeight L where
+  toFun := map e
+  invFun := map e.symm
+  left_inv χ := by rw [map_map, e.self_trans_symm, map_id]
+  right_inv χ := by rw [map_map, e.symm_trans_self, map_id]
+  map_mul' := map_mul e
+
+@[simp]
+theorem mapEquiv_apply (e : K ≃+* L) (χ : MultiplicativeIdealWeight K) :
+    mapEquiv e χ = map e χ := (rfl)
+
+@[simp]
+theorem mapEquiv_symm_apply (e : K ≃+* L) (χ : MultiplicativeIdealWeight L) :
+    (mapEquiv e).symm χ = map e.symm χ := (rfl)
 
 /-- Transport carries an indicator weight to the indicator of the image prime set. -/
 @[simp]
@@ -1081,21 +1086,6 @@ theorem map_map (e : K ≃+* L) (e' : L ≃+* M) (χ : UnitaryIdealWeight K) :
     map e' (map e χ) = map (e.trans e') χ :=
   Subtype.ext (by rw [val_map, val_map, val_map, MultiplicativeIdealWeight.map_map])
 
-/-- **Transport along an isomorphism of fields, as an equivalence** of the unitary carriers. -/
-noncomputable def mapEquiv (e : K ≃+* L) : UnitaryIdealWeight K ≃ UnitaryIdealWeight L where
-  toFun := map e
-  invFun := map e.symm
-  left_inv χ := by rw [map_map, e.self_trans_symm, map_id]
-  right_inv χ := by rw [map_map, e.symm_trans_self, map_id]
-
-@[simp]
-theorem mapEquiv_apply (e : K ≃+* L) (χ : UnitaryIdealWeight K) :
-    mapEquiv e χ = map e χ := (rfl)
-
-@[simp]
-theorem mapEquiv_symm_apply (e : K ≃+* L) (χ : UnitaryIdealWeight L) :
-    (mapEquiv e).symm χ = map e.symm χ := (rfl)
-
 /-! Transport preserves the pointwise `CommMonoid` structure of the unitary carrier too. -/
 
 @[simp]
@@ -1107,6 +1097,23 @@ theorem map_mul (e : K ≃+* L) (χ ψ : UnitaryIdealWeight K) :
     map e (χ * ψ) = map e χ * map e ψ :=
   Subtype.ext (by
     rw [val_map, val_mul, val_mul, val_map, val_map, MultiplicativeIdealWeight.map_mul])
+
+/-- **Transport along an isomorphism of fields, as a multiplicative equivalence** of the unitary
+carriers. -/
+noncomputable def mapEquiv (e : K ≃+* L) : UnitaryIdealWeight K ≃* UnitaryIdealWeight L where
+  toFun := map e
+  invFun := map e.symm
+  left_inv χ := by rw [map_map, e.self_trans_symm, map_id]
+  right_inv χ := by rw [map_map, e.symm_trans_self, map_id]
+  map_mul' := map_mul e
+
+@[simp]
+theorem mapEquiv_apply (e : K ≃+* L) (χ : UnitaryIdealWeight K) :
+    mapEquiv e χ = map e χ := (rfl)
+
+@[simp]
+theorem mapEquiv_symm_apply (e : K ≃+* L) (χ : UnitaryIdealWeight L) :
+    (mapEquiv e).symm χ = map e.symm χ := (rfl)
 
 /-- Transport commutes with restriction on unitary weights after carrying the excluded prime set
 forward. -/

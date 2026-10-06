@@ -278,6 +278,17 @@ noncomputable def initialPentagonWeight {x y : GridState n} (C : ColumnCommutati
   ∏ c ∈ G.OColumnsOfSquares P.coveredSquares,
     MvPolynomial.X (Equiv.swap C.column (finRotate n C.column) c)
 
+/-- The weight of an initial-side pentagon is the monomial with one renamed variable for each
+covered `O`-marking. -/
+theorem initialPentagonWeight_eq_monomial {x y : GridState n}
+    (C : ColumnCommutationData G) (P : GridInitialPentagonBetween C.column C.turnRow x y) :
+    G.initialPentagonWeight R C P =
+      monomial (∑ c ∈ G.OColumnsOfSquares P.coveredSquares,
+        Finsupp.single (Equiv.swap C.column (finRotate n C.column) c) 1) 1 := by
+  classical
+  rw [initialPentagonWeight, monomial_sum_one]
+  simp only [← X_pow_eq_monomial, pow_one]
+
 /-- The weight of a pentagon turning on its initial side as a product over the squares it covers:
 the renamed variable of the column at each `O`-marked square and `1` elsewhere. -/
 theorem initialPentagonWeight_eq_prod_coveredSquares {x y : GridState n}

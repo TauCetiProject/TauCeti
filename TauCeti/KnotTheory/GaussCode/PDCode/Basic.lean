@@ -274,7 +274,7 @@ noncomputable def toOrientedPDCode (D : BasedOrientedGaussCode n) : OrientedPDCo
     rw [← slotEquiv_snd D c (PDCode.oppositeCrossingSlot slot), ← slotEquiv_snd D c slot]
     exact slotEquiv_snd_opposite (D.sign c) slot
   crossinglessComponents := if n = 0 then {true} else 0
-  crossinglessComponents_card := by split <;> simp_all
+  card_crossinglessComponents := by split <;> simp_all
 
 /-- The converted code uses slots zero and two for the over-strand at every crossing. -/
 @[simp]
@@ -440,7 +440,7 @@ noncomputable def toFramedOrientedPDCode (D : FramedBasedOrientedGaussCode n) :
   framing_edgePair _ := (rfl)
   framing_oppositeCrossingSlot _ _ := (rfl)
   crossinglessFramings := if n = 0 then {(true, D.framing)} else 0
-  crossinglessFramings_map_fst := by
+  map_fst_crossinglessFramings := by
     by_cases h : n = 0 <;>
       simp [h, BasedOrientedGaussCode.toOrientedPDCode]
 

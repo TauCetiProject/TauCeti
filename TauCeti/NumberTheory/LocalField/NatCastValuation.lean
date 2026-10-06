@@ -34,6 +34,8 @@ characteristic is the absolute ramification index of `K`.
 
 ## Main results
 
+* `TauCeti.natCast_ne_zero_of_coprime_ringChar`: a natural number prime to the residue
+  characteristic is nonzero in `K`.
 * `TauCeti.normalizedValuation_natCast`: the characteristic equation, which also records that
   the value is nonnegative.
 * `TauCeti.toAdd_normalizedValuation_natCast` and `TauCeti.valuation_natCast_eq_pow`: the
@@ -66,18 +68,23 @@ open scoped NNRat WithZero
 
 namespace TauCeti
 
-variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
-  [IsNonarchimedeanLocalField K]
+variable {K : Type*} [Field K] [ValuativeRel K]
 
-omit [TopologicalSpace K] [IsNonarchimedeanLocalField K] in
 /-- A natural number that is a unit in the integer ring is nonzero in the field. -/
 theorem natCast_ne_zero_of_isUnit {n : ℕ} (hn : IsUnit (n : 𝒪[K])) : (n : K) ≠ 0 := by
   simpa only [map_natCast] using (hn.map (Subring.subtype 𝒪[K])).ne_zero
 
-omit [TopologicalSpace K] [IsNonarchimedeanLocalField K] in
+/-- A natural number prime to the residue characteristic is nonzero in the field. -/
+theorem natCast_ne_zero_of_coprime_ringChar {n : ℕ} (hn : n.Coprime (ringChar 𝓀[K])) :
+    (n : K) ≠ 0 :=
+  natCast_ne_zero_of_isUnit <| IsLocalRing.isUnit_natCast_iff_not_dvd.2 fun h ↦
+    CharP.ringChar_ne_one (hn.symm.eq_one_of_dvd h)
+
 /-- If `2` is a unit in the integer ring, it is nonzero in the field. -/
 theorem two_ne_zero_of_isUnit_two (h2 : IsUnit (2 : 𝒪[K])) : (2 : K) ≠ 0 := by
   exact_mod_cast natCast_ne_zero_of_isUnit (K := K) (n := 2) (by exact_mod_cast h2)
+
+variable [TopologicalSpace K] [IsNonarchimedeanLocalField K]
 
 -- The declaration sequence follows the human-authored specification in
 -- `TauCetiRoadmap/LocalFieldsRamification/Suggested.lean`.

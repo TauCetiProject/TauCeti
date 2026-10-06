@@ -158,10 +158,9 @@ theorem subresultantCoeffMatrix_comm [Semiring R]
     (p q : R[X]) (m n j k : ℕ) :
     subresultantCoeffMatrix p q m n j k =
       (subresultantCoeffMatrix q p n m j k).reindex
-        (finCongr (add_comm (n - j) (m - j)))
-        (finSumFinEquiv.symm.trans <| (Equiv.sumComm _ _).trans finSumFinEquiv) := by
+        (finCongr (add_comm (n - j) (m - j))) finAddFlip := by
   ext i l
-  induction l using Fin.addCases <;> simp [subresultantCoeffMatrix]
+  induction l using Fin.addCases <;> simp [subresultantCoeffMatrix, finAddFlip]
 
 /-- The scalar minor used as the coefficient of degree `k ≤ j` in the subresultant polynomial at
 a strict index `j < min m n`.  It is defined for all indices; outside the strict range it is
@@ -240,8 +239,7 @@ theorem subresultantCoeff_comm [CommRing R]
     subresultantCoeff p q m n j k =
       (-1) ^ ((m - j) * (n - j)) * subresultantCoeff q p n m j k := by
   rw [subresultantCoeff_def, subresultantCoeff_def, subresultantCoeffMatrix_comm,
-    Matrix.det_reindex, finCongr_symm, ← Equiv.trans_assoc, ← finAddFlip.eq_def,
-    sign_finAddFlip_trans_finCongr, mul_comm (n - j)]
+    Matrix.det_reindex, finCongr_symm, sign_finAddFlip_trans_finCongr, mul_comm (n - j)]
   simp
 
 /-- At the smaller left terminal index, a coefficient minor reads a coefficient of the left

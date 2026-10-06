@@ -13,19 +13,17 @@ public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Basic
 public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Map
 
 /-!
-# Hopf-ideal quotients of finite-type commutative Hopf algebras
+# Hopf-ideal quotients of commutative Hopf algebras
 
-This file packages the quotient of a finite-type commutative Hopf algebra by a Hopf ideal
-as another object of `FiniteTypeCommHopfAlgCat`. The Hopf algebra structure and quotient
-bialgebra morphism are supplied by Mathlib's quotient instances and morphisms; the only extra
-ingredient needed for the finite-type wrapper is that finite type descends along the surjective
-quotient algebra map. The file also transports quotients along surjective ambient morphisms and
-identifies the quotient by the zero Hopf ideal with the original Hopf algebra.
+This file packages the quotient of a commutative Hopf algebra by a Hopf ideal as an object of
+`CommHopfAlgCat`, with its quotient morphism, the induced morphisms out of it, its kernel, the
+maps between quotients by nested Hopf ideals, and its transport along surjective ambient
+morphisms; the quotient by the zero Hopf ideal is the original Hopf algebra. The Hopf algebra
+structure and quotient bialgebra morphism are supplied by Mathlib's quotient instances and
+morphisms.
 
-This is a small Layer 3 prerequisite for the reductive-groups roadmap target
-"Hopf ideals ↔ closed subgroup schemes": once closed subgroup schemes are represented by
-Hopf ideals on coordinate rings, their quotient coordinate Hopf algebras should remain in
-the finite-type coordinate-Hopf-algebra category.
+The same quotient of a finite-type commutative Hopf algebra is again an object of
+`FiniteTypeCommHopfAlgCat`: finite type descends along the surjective quotient algebra map.
 
 ## Main declarations
 
@@ -39,6 +37,8 @@ the finite-type coordinate-Hopf-algebra category.
 * `TauCeti.FiniteTypeCommHopfAlgCat.mkQuotient_hom_ext`: morphisms out of a quotient are
   determined after precomposition with the quotient morphism.
 * `TauCeti.FiniteTypeCommHopfAlgCat.mkQuotient_ker`: its kernel characterization.
+* `TauCeti.CommHopfAlgCat.liftQuotient`, `TauCeti.CommHopfAlgCat.liftQuotient_unique`: the
+  morphism out of a quotient induced by a morphism killing the Hopf ideal, and its uniqueness.
 * `TauCeti.FiniteTypeCommHopfAlgCat.liftQuotient`: the induced morphism out of a quotient.
 * `TauCeti.CommHopfAlgCat.toIdeal_le_ker_of_mkQuotient_comp`: a morphism factoring through
   the quotient by a Hopf ideal kills that ideal.
@@ -72,8 +72,9 @@ the finite-type coordinate-Hopf-algebra category.
   ambient automorphism imply invariance of a Hopf ideal.
 * `TauCeti.FiniteTypeCommHopfAlgCat.quotientIsoOfIso`: an ambient isomorphism induces an
   isomorphism between the corresponding finite-type Hopf-ideal quotients.
-* `TauCeti.FiniteTypeCommHopfAlgCat.minimal_quotientProperty_comapOfIso`: a minimal
-  isomorphism-invariant quotient property is preserved by an ambient isomorphism.
+* `TauCeti.FiniteTypeCommHopfAlgCat.minimal_quotientProperty_comapOfIso`: a minimal Hopf ideal
+  among those whose quotient has an isomorphism-closed property pulls back to a minimal one along
+  an ambient isomorphism.
 * `TauCeti.FiniteTypeCommHopfAlgCat.quotientBotIso`: quotienting by the zero Hopf ideal does
   not change a finite-type commutative Hopf algebra.
 
@@ -715,8 +716,9 @@ noncomputable def quotientIsoOfIso (e : H ≅ K) (I : HopfIdeal R K) :
       ((forget₂ (FiniteTypeCommHopfAlgCat.{u, v} R)
         (_root_.CommHopfAlgCat.{v} R)).mapIso e) I
 
-/-- A minimal isomorphism-invariant property of finite-type Hopf-algebra quotients is preserved
-when the ambient Hopf algebra is replaced by an isomorphic one. -/
+/-- If `I` is a minimal Hopf ideal of `K` among those whose quotient satisfies the
+isomorphism-closed property `P`, then its inverse image along an isomorphism `e : H ≅ K` is a
+minimal such Hopf ideal of `H`. -/
 theorem minimal_quotientProperty_comapOfIso
     (P : ObjectProperty (FiniteTypeCommHopfAlgCat.{u, v} R)) [P.IsClosedUnderIsomorphisms]
     (I : HopfIdeal R K)

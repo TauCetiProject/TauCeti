@@ -269,12 +269,6 @@ private def cyclesIso : (tateComplex M).cycles (-1) ≅ (shortComplex M).cycles 
   ShortComplex.cyclesMapIso (isoShortComplex M)
 
 @[reassoc]
-private theorem cyclesIso_hom_comp_iCycles :
-    (cyclesIso M).hom ≫ (shortComplex M).iCycles =
-      (tateComplex M).iCycles (-1) ≫ (chainsIso₀ M).hom :=
-  ShortComplex.cyclesMap_i (isoShortComplex M).hom
-
-@[reassoc]
 private theorem cyclesIso_inv_comp_homologyπ_comp_homologyMapIso_hom :
     (cyclesIso M).inv ≫ (tateComplex M).homologyπ (-1) ≫
         (ShortComplex.homologyMapIso (isoShortComplex M)).hom =
@@ -300,13 +294,7 @@ def HNegOneIsoNormKernelQuotient (M : Rep R G) :
         (Representation.Coinvariants.ker M.ρ).submoduleOf (ker M.ρ.norm)) := by
     refine (Submodule.Quotient.equiv _ _ (LinearEquiv.refl R _) ?_).toModuleIso
     rw [← range_d₁₀_eq_coinvariantsKer]
-    refine Submodule.ext fun ⟨x, hx⟩ ↦ ⟨?_, ?_⟩
-    · rintro ⟨_, ⟨y, rfl⟩, hy⟩
-      exact ⟨y, congr(Subtype.val $hy)⟩
-    · rintro ⟨y, rfl⟩
-      exact ⟨⟨d₁₀ M y,
-        LinearMap.congr_fun (ModuleCat.hom_ext_iff.mp (Rep.comp_eq_zero M)) y⟩,
-        ⟨_, rfl⟩, rfl⟩
+    exact (Submodule.map_id _).trans (LinearMap.range_codRestrict _ _ _)
 
 /-- Degree `-1` Tate cohomology of a finite representation is finite: it is a subquotient of the
 coefficient module. -/
@@ -387,7 +375,7 @@ theorem HNegOneCyclesIso_hom_comp_subtype (M : Rep R G) :
       (tateComplex M).iCycles (-1) ≫ (chainsIso₀ M).hom := by
   simp only [HNegOneCyclesIso, Iso.trans_hom, Category.assoc]
   exact (congrArg _ (NegOne.shortComplex M).moduleCatCyclesIso_hom_i).trans
-    (NegOne.cyclesIso_hom_comp_iCycles M)
+    (ShortComplex.cyclesMap_i (NegOne.isoShortComplex M).hom)
 
 /-- The representative map to degree `-1` Tate cohomology is the canonical projection from
 degree `-1` cycles to homology, after identifying those cycles with the kernel of the norm. -/
@@ -518,7 +506,7 @@ def H0LinearEquivTrivialIntZModCard :
   -- A trivial representation is its own invariant submodule, so the inclusion of the invariants
   -- is an equivalence onto `ℤ`.
   let e : (Rep.trivial ℤ H ℤ).ρ.invariants ≃ₗ[ℤ] ℤ :=
-    LinearEquiv.ofEq _ _ (Representation.invariants_eq_top _) ≪≫ₗ Submodule.topEquiv
+    LinearEquiv.ofTop _ (Representation.invariants_eq_top _)
   have he : (e : (Rep.trivial ℤ H ℤ).ρ.invariants →ₗ[ℤ] ℤ) =
       (Rep.trivial ℤ H ℤ).ρ.invariants.subtype := by
     ext x

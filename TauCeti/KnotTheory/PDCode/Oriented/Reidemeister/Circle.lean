@@ -59,7 +59,7 @@ def adjoinKink (D : OrientedPDCode n) (o b : Bool) : OrientedPDCode (n + 1) wher
       fin_cases s <;> cases o <;> decide
     | cast i => simp
   crossinglessComponents := D.crossinglessComponents
-  crossinglessComponents_card := by simp
+  card_crossinglessComponents := by simp
 
 /-- Forgetting orientation gives the isolated unoriented kink. -/
 @[simp] theorem toPDCode_adjoinKink (D : OrientedPDCode n) (o b : Bool) :
