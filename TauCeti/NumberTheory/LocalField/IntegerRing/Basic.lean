@@ -29,6 +29,8 @@ inverting only the nonzero elements of `𝒪[K]`.
 ## Main results
 
 * `TauCeti.integerRingHasFiniteQuotients`: `𝒪[K]` has finite quotients by nonzero ideals.
+* `TauCeti.subsingleton_torsionBy_integerRing`, `TauCeti.finite_quotSMulTop_integerRing`: for
+  `n ≠ 0` in `K`, `𝒪[K]` has no `n`-torsion and `𝒪[K] ⧸ n𝒪[K]` is finite.
 * `TauCeti.integerRingModuleFinite`: `𝒪[L]` is a finite `𝒪[K]`-module.
 * `TauCeti.integerRingModuleFree`: `𝒪[L]` is a free `𝒪[K]`-module.
 * `TauCeti.isLocalization_integerRing`: `L` is the localization of `𝒪[L]` at the image of the
@@ -45,6 +47,7 @@ inverting only the nonzero elements of `𝒪[K]`.
 public section
 
 open ValuativeRel IsLocalRing
+open scoped Pointwise
 
 namespace TauCeti
 
@@ -62,6 +65,39 @@ instance integerRingHasFiniteQuotients : Ring.HasFiniteQuotients 𝒪[K] where
     rw [IsLocalRing.finite_quotient_iff]
     exact ⟨n, by rw [hn, (IsDiscreteValuationRing.irreducible_iff_uniformizer ϖ).1 hϖ,
       Ideal.span_singleton_pow]⟩
+
+section
+
+variable {K}
+
+/-- `𝒪[K]` has no `n`-torsion when `n ≠ 0` in `K`. -/
+instance subsingleton_torsionBy_integerRing (n : ℕ) [NeZero (n : K)] :
+    Subsingleton (Submodule.torsionBy ℤ 𝒪[K] (n : ℤ)) := by
+  refine ⟨fun x y ↦ Subtype.ext ?_⟩
+  have hx := (Submodule.mem_torsionBy_iff _ _).mp x.property
+  have hy := (Submodule.mem_torsionBy_iff _ _).mp y.property
+  have hn : (n : 𝒪[K]) ≠ 0 := fun h ↦ NeZero.ne (n : K) (congrArg Subtype.val h)
+  rw [natCast_zsmul, nsmul_eq_mul, mul_eq_zero] at hx hy
+  rw [hx.resolve_left hn, hy.resolve_left hn]
+
+/-- When `n ≠ 0` in `K`, the reduction `𝒪[K] ⧸ n𝒪[K]` is finite. -/
+instance finite_quotSMulTop_integerRing (n : ℕ) [NeZero (n : K)] :
+    Finite (QuotSMulTop (n : ℤ) 𝒪[K]) := by
+  have hn : (n : 𝒪[K]) ≠ 0 := fun h ↦ NeZero.ne (n : K) (congrArg Subtype.val h)
+  have h : ((n : ℤ) • ⊤ : Submodule ℤ 𝒪[K]).toAddSubgroup =
+      (Ideal.span {(n : 𝒪[K])}).toAddSubgroup := by
+    ext x
+    rw [Submodule.mem_toAddSubgroup, Submodule.mem_toAddSubgroup,
+      Submodule.mem_smul_pointwise_iff_exists, Ideal.mem_span_singleton']
+    simp only [Submodule.mem_top, true_and, natCast_zsmul, nsmul_eq_mul, mul_comm]
+  have : Finite (𝒪[K] ⧸ Ideal.span {(n : 𝒪[K])}) :=
+    Ring.HasFiniteQuotients.finiteQuotient (Ideal.span_singleton_eq_bot.not.mpr hn)
+  -- a quotient by a submodule is by definition the quotient by its additive subgroup
+  change Finite (𝒪[K] ⧸ ((n : ℤ) • ⊤ : Submodule ℤ 𝒪[K]).toAddSubgroup)
+  rw [h]
+  exact this
+
+end
 
 /-- The reduction `𝒪[L] / 𝓂[K] 𝒪[L]` is finite: `𝓂[K] 𝒪[L]` is a nonzero ideal of `𝒪[L]`, which
 has finite quotients. -/

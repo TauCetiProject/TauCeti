@@ -82,11 +82,11 @@ reduction modulo `ℓ` and its `ℓ`-torsion vanish. Bijectivity alone makes bot
 hence finite, so no finiteness hypothesis is needed. -/
 theorem latticeDefect_eq_zero_of_bijective_zsmul (V : Type u) [AddCommGroup V]
     [DistribMulAction G V] (hV : Bijective fun x : V => (ℓ : ℤ) • x) :
-    haveI := subsingleton_quotSMulTop_of_bijective_zsmul ℓ hV
-    haveI := subsingleton_torsionBy_of_bijective_zsmul ℓ hV
+    haveI := subsingleton_quotSMulTop_of_surjective_zsmul ℓ hV.2
+    haveI := subsingleton_torsionBy_of_injective_zsmul ℓ hV.1
     latticeDefect k G ℓ V = 0 := by
-  have := subsingleton_quotSMulTop_of_bijective_zsmul ℓ hV
-  have := subsingleton_torsionBy_of_bijective_zsmul ℓ hV
+  have := subsingleton_quotSMulTop_of_surjective_zsmul ℓ hV.2
+  have := subsingleton_torsionBy_of_injective_zsmul ℓ hV.1
   rw [latticeDefect_def]
   simp
 
@@ -212,8 +212,8 @@ theorem latticeDefect_eq_of_bijective_zsmul_quotient [Fact ℓ.Prime] {W V : Typ
   let q : V →+[G] V ⧸ N :=
     { QuotientAddGroup.mk' N with
       map_smul' := fun g x ↦ N.quotientDistribMulAction_smul_mk hN g x }
-  have := subsingleton_quotSMulTop_of_bijective_zsmul ℓ h
-  have := subsingleton_torsionBy_of_bijective_zsmul ℓ h
+  have := subsingleton_quotSMulTop_of_surjective_zsmul ℓ h.2
+  have := subsingleton_torsionBy_of_injective_zsmul ℓ h.1
   rw [latticeDefect_add_of_exact k G ℓ f q hf (fun x ↦ QuotientAddGroup.eq_zero_iff x)
     (QuotientAddGroup.mk'_surjective N), latticeDefect_eq_zero_of_bijective_zsmul k G ℓ _ h,
     add_zero]

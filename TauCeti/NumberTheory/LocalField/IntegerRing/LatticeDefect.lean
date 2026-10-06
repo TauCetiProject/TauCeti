@@ -33,9 +33,6 @@ permutation lattice `ℤ_p[X]` on the disjoint union `X` of `[K : ℚ_p]` copies
 permutation lattice `ℤ[X]`, which is the permutation class `[k[X]] = [K : ℚ_p] · [k[G]]`
 (`TauCeti.latticeDefect_finsupp_padicInt`, `TauCeti.permK0_sigma_fin`).
 
-The finiteness of `𝒪[L] ⧸ n𝒪[L]` and the vanishing of the `n`-torsion of `𝒪[L]`, which the
-definition of the defect asks for, are recorded as instances for every `n` nonzero in `L`.
-
 ## Main results
 
 * `TauCeti.latticeDefect_integerRing_eq_finrank_smul`: the `p`-defect of `𝒪[L]` is
@@ -55,41 +52,6 @@ open Function ValuativeRel IsNonarchimedeanLocalField Module
 open scoped Pointwise
 
 namespace TauCeti
-
-/-! ### Finiteness for the ring of integers -/
-
-section LocalField
-
-variable {L : Type*} [Field L] [ValuativeRel L] [TopologicalSpace L] [IsNonarchimedeanLocalField L]
-
-/-- `𝒪[L]` has no `n`-torsion when `n ≠ 0` in `L`. -/
-instance subsingleton_torsionBy_integerRing (n : ℕ) [NeZero (n : L)] :
-    Subsingleton (Submodule.torsionBy ℤ 𝒪[L] (n : ℤ)) := by
-  refine ⟨fun x y ↦ Subtype.ext ?_⟩
-  have hx := (Submodule.mem_torsionBy_iff _ _).mp x.property
-  have hy := (Submodule.mem_torsionBy_iff _ _).mp y.property
-  have hn : (n : 𝒪[L]) ≠ 0 := fun h ↦ NeZero.ne (n : L) (congrArg Subtype.val h)
-  rw [natCast_zsmul, nsmul_eq_mul, mul_eq_zero] at hx hy
-  rw [hx.resolve_left hn, hy.resolve_left hn]
-
-/-- When `n ≠ 0` in `L`, the reduction `𝒪[L] ⧸ n𝒪[L]` is finite. -/
-instance finite_quotSMulTop_integerRing (n : ℕ) [NeZero (n : L)] :
-    Finite (QuotSMulTop (n : ℤ) 𝒪[L]) := by
-  have hn : (n : 𝒪[L]) ≠ 0 := fun h ↦ NeZero.ne (n : L) (congrArg Subtype.val h)
-  have h : ((n : ℤ) • ⊤ : Submodule ℤ 𝒪[L]).toAddSubgroup =
-      (Ideal.span {(n : 𝒪[L])}).toAddSubgroup := by
-    ext x
-    rw [Submodule.mem_toAddSubgroup, Submodule.mem_toAddSubgroup,
-      Submodule.mem_smul_pointwise_iff_exists, Ideal.mem_span_singleton']
-    simp only [Submodule.mem_top, true_and, natCast_zsmul, nsmul_eq_mul, mul_comm]
-  have : Finite (𝒪[L] ⧸ Ideal.span {(n : 𝒪[L])}) :=
-    Ring.HasFiniteQuotients.finiteQuotient (Ideal.span_singleton_eq_bot.not.mpr hn)
-  -- a quotient by a submodule is by definition the quotient by its additive subgroup
-  change Finite (𝒪[L] ⧸ ((n : ℤ) • ⊤ : Submodule ℤ 𝒪[L]).toAddSubgroup)
-  rw [h]
-  exact this
-
-end LocalField
 
 section Galois
 

@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.Padics.RingHoms
 public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.LatticeDefect.Finite
 public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.LatticeDefect.Lattice
+import TauCeti.NumberTheory.Padics.FreeModuleReduction
 
 /-!
 # The lattice defect of a `p`-adic permutation lattice
@@ -19,7 +20,9 @@ permutation class `[k[X]]` (`TauCeti.latticeDefect_finsupp_padicInt`).
 
 The inclusion `ℤ[X] ⊆ ℤ_p[X]` is not of finite index, but its cokernel `(ℤ_p / ℤ)[X]` is uniquely
 `p`-divisible: every `p`-adic integer is congruent to an integer modulo `p`, and a `p`-adic integer
-whose `p`-fold is an integer is itself an integer. So the defect does not change
+whose `p`-fold is an integer is itself an integer
+(`TauCeti.PadicInt.exists_finsupp_eq_mapRange_intCast_add`,
+`TauCeti.PadicInt.mem_range_finsupp_mapRange_intCast_of_smul_mem`). So the defect does not change
 (`TauCeti.latticeDefect_eq_of_bijective_zsmul_quotient`), and the defect of `ℤ[X]` is computed by
 `TauCeti.latticeDefect_finsupp_int`.
 
@@ -54,44 +57,12 @@ private noncomputable abbrev finsuppIntCast : (X →₀ ℤ) →+ (X →₀ ℤ_
 
 variable [Finite X]
 
-/-- Every element of `ℤ_p[X]` is in `ℤ[X]` modulo `p`. -/
-private theorem exists_eq_finsuppIntCast_add (v : X →₀ ℤ_[p]) :
-    ∃ w : X →₀ ℤ, ∃ y, v = finsuppIntCast p w + (p : ℤ) • y := by
-  have h (a : ℤ_[p]) : ∃ n : ℤ, ∃ z, a = n + p * z := by
-    obtain ⟨n, -, hn⟩ := PadicInt.exists_mem_range a
-    rw [PadicInt.maximalIdeal_eq_span_p (p := p)] at hn
-    obtain ⟨z, hz⟩ := Ideal.mem_span_singleton'.mp hn
-    exact ⟨n, z, by push_cast; linear_combination -hz⟩
-  choose n z hz using fun x ↦ h (v x)
-  refine ⟨Finsupp.equivFunOnFinite.symm n, Finsupp.equivFunOnFinite.symm z, Finsupp.ext fun x ↦ ?_⟩
-  simp [hz x]
-
-/-- An element of `ℤ_p[X]` whose `p`-fold is in `ℤ[X]` is itself in `ℤ[X]`. -/
-private theorem mem_range_finsuppIntCast (v : X →₀ ℤ_[p])
-    (h : (p : ℤ) • v ∈ (finsuppIntCast p).range) : v ∈ (finsuppIntCast p).range := by
-  obtain ⟨w, hw⟩ := h
-  -- coordinatewise: `p a = n ∈ ℤ` forces `p ∣ n`, as `‖n‖ < 1`, and then `a = n / p ∈ ℤ`
-  have hcoord (x : X) : ∃ m : ℤ, v x = m := by
-    have hx : (p : ℤ_[p]) * v x = w x := by
-      have := DFunLike.congr_fun hw x
-      simp only [Finsupp.mapRange.addMonoidHom_apply, Finsupp.mapRange_apply,
-        Int.coe_castAddHom] at this
-      rw [this, Finsupp.smul_apply, zsmul_eq_mul, Int.cast_natCast]
-    obtain ⟨m, hm⟩ := (PadicInt.norm_int_lt_one_iff_dvd (w x)).mp <|
-      (PadicInt.norm_lt_one_iff_dvd _).mpr ⟨v x, hx.symm⟩
-    refine ⟨m, mul_left_cancel₀ (Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero) ?_⟩
-    rw [hx, hm]
-    push_cast
-    ring
-  choose m hm using hcoord
-  exact ⟨Finsupp.equivFunOnFinite.symm m, Finsupp.ext fun x ↦ (hm x).symm⟩
-
 /-- The reduction `ℤ_p[X] ⧸ p` of the `p`-adic permutation lattice is finite: it is the image of
 `ℤ[X] ⧸ p`. -/
 instance finite_quotSMulTop_finsupp_padicInt : Finite (QuotSMulTop (p : ℤ) (X →₀ ℤ_[p])) :=
   Finite.of_surjective (QuotSMulTop.map (p : ℤ) (finsuppIntCast p (X := X)).toIntLinearMap)
     fun v ↦ Submodule.Quotient.induction_on _ v fun v ↦ by
-      obtain ⟨w, y, rfl⟩ := exists_eq_finsuppIntCast_add p v
+      obtain ⟨w, y, rfl⟩ := PadicInt.exists_finsupp_eq_mapRange_intCast_add v
       refine ⟨Submodule.Quotient.mk w, (Submodule.Quotient.eq _).mpr ?_⟩
       -- `QuotSMulTop.map` is `Submodule.mapQ`, which sends the class of `w` to that of its image
       change finsuppIntCast p w - (finsuppIntCast p w + (p : ℤ) • y) ∈ _
@@ -115,10 +86,10 @@ theorem latticeDefect_finsupp_padicInt : latticeDefect k G p (X →₀ ℤ_[p]) 
     dsimp only at hxy
     rw [← QuotientAddGroup.mk_zsmul, ← QuotientAddGroup.mk_zsmul, QuotientAddGroup.eq] at hxy
     rw [QuotientAddGroup.eq]
-    refine mem_range_finsuppIntCast p _ ?_
+    refine PadicInt.mem_range_finsupp_mapRange_intCast_of_smul_mem ?_
     rwa [smul_add, smul_neg]
   · induction x using QuotientAddGroup.induction_on with | H v => ?_
-    obtain ⟨w, y, rfl⟩ := exists_eq_finsuppIntCast_add p v
+    obtain ⟨w, y, rfl⟩ := PadicInt.exists_finsupp_eq_mapRange_intCast_add v
     refine ⟨y, ?_⟩
     dsimp only
     rw [← QuotientAddGroup.mk_zsmul, QuotientAddGroup.eq]
