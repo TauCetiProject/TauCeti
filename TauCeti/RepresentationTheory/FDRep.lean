@@ -21,6 +21,9 @@ same spirit it records that rebundling the representation an object carries retu
 which is the identification a construction phrased as `FDRep.of ρ` needs in order to be read as a
 statement about the object it started from.
 
+`FDRep.forget₂Rep` supplies the canonical forgetful functor over any ring, extending Mathlib's
+commutative-ring instance with the same underlying construction.
+
 It also records the character of a trivial representation, the constant `finrank`, in both the
 `Representation` and the `FDRep.of` spellings in which consumers meet it.
 
@@ -58,6 +61,7 @@ subgroup.
   subrepresentations.
 * `FDRep.character_eq_zero_of_finrank_intertwiningMap_eq_zero`: a representation without nonzero
   equivariant endomorphisms has character zero.
+* `FDRep.forget₂Rep`: forgetting finite generation over any coefficient ring.
 * `FDRep.moduleFinite_forget₂_obj`: the forgotten carrier is module-finite.
 * `FDRep.finrank_forget₂_obj`: forgetting does not change finrank.
 * `FDRep.character_forget₂_obj`: forgetting does not change the character.
@@ -130,6 +134,15 @@ namespace FDRep
 
 open CategoryTheory
 
+/-- Forgetting finite generation of a representation over any ring.
+
+This uses the same construction as Mathlib's `FDRep` forgetful instance, whose coefficient
+assumption is currently `CommRing`. The lower priority keeps that instance selected over
+commutative rings; the two functors agree definitionally. -/
+instance (priority := 100) forget₂Rep {R : Type u} [Ring R] {G : Type v} [Monoid G] :
+    HasForget₂ (FDRep R G) (Rep R G) where
+  forget₂ := (forget₂ (FGModuleCat R) (ModuleCat R)).mapAction G ⋙ Rep.ActionToRep R G
+
 /-- **The character of the trivial one-dimensional representation is constantly `1`**, that
 dimension being `1`. This is the form in which the trivial character enters a pairing or a
 Frobenius reciprocity computation, both of which are phrased for objects of `FDRep k G`. -/
@@ -148,8 +161,8 @@ theorem character_actionRes {k : Type u} {G : Type v} {H : Type w} [Field k] [Mo
     FDRep.character ((Action.res (FGModuleCat k) phi).obj V) h = V.character (phi h) :=
   (rfl)
 
-/-- Restriction of an intertwiner commutes with forgetting finite-dimensionality. -/
-theorem _root_.MonoidHom.forget₂_map_actionRes {k : Type u} [CommRing k]
+/-- Restriction of an intertwiner commutes with forgetting finite generation. -/
+theorem _root_.MonoidHom.forget₂_map_actionRes {k : Type u} [Ring k]
     {H : Type v} {K : Type w} [Monoid H] [Monoid K]
     (f : H →* K) {A B : FDRep k K} (g : A ⟶ B) :
     (forget₂ (FDRep k H) (Rep k H)).map ((Action.res (FGModuleCat k) f).map g) =

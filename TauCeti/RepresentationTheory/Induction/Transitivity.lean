@@ -19,7 +19,7 @@ This file records restriction and coinduction in stages for representations alon
 homomorphisms, and induction in stages along composable group homomorphisms. It obtains the natural
 isomorphisms from the equality of restriction functors `MonoidHom.resFunctor_comp` and
 Mathlib's induction--restriction and restriction--coinduction adjunctions. This is the categorical
-core used by the subgroup form of induction in the induction and Mackey-theory roadmap.
+core used by the subgroup form of induction.
 
 Uniqueness of adjoints produces those isomorphisms without ever saying what they *do*, and a
 comparison map known only up to an abstract adjoint characterisation is of no use to a computation
@@ -92,9 +92,6 @@ in the readable form, and `rw` and `exact` still apply the lemmas as usual.
 
 ## References
 
-This is the "explicit representative-level formula for the isomorphism" that Layer 0 of
-`TauCetiRoadmap/RepresentationTheory/InductionRestriction/README.md` asks for alongside
-transitivity of induction, "rather than leaving it an abstract adjoint comparison". See
 C. W. Curtis, I. Reiner, *Methods of Representation Theory, Vol. I*, §10, and J.-P. Serre,
 *Linear Representations of Finite Groups*, §7.
 -/

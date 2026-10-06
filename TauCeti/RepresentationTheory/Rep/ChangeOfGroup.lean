@@ -41,7 +41,7 @@ and restriction along a monoid isomorphism is an equivalence of representation c
 ## Main results
 
 * `MonoidHom.resFunctor_comp`: restriction along a composite is successive restriction.
-* `TauCeti.resFunctor_id`: restriction along the identity is the identity functor.
+* `MonoidHom.resFunctor_id`: restriction along the identity is the identity functor.
 * `Representation.isTrivial_comp`: the restriction of a trivial representation along a
   homomorphism of monoids is trivial; in particular `Rep.res f A` is trivial when `A` is.
 * `Representation.IsIntertwiningMap.trans` and `Representation.IsIntertwiningMap.symm`:
@@ -277,7 +277,8 @@ theorem _root_.MonoidHom.resFunctor_comp (φ : K →* L) (ψ : H →* K) :
   rfl
 
 /-- Restricting along the identity is the identity functor. -/
-theorem resFunctor_id : Rep.resFunctor (k := k) (MonoidHom.id H) = 𝟭 (Rep k H) :=
+theorem _root_.MonoidHom.resFunctor_id :
+    Rep.resFunctor (k := k) (MonoidHom.id H) = 𝟭 (Rep k H) :=
   rfl
 
 /-- Restriction along a monoid isomorphism is an equivalence of categories, with inverse
@@ -295,8 +296,8 @@ def _root_.MulEquiv.resFunctorEquiv (e : H ≃* K) : Rep k K ≌ Rep k H :=
   have symm_comp : e.symm.toMonoidHom.comp e.toMonoidHom = MonoidHom.id H :=
     MulEquiv.toMonoidHom_symm_comp_toMonoidHom e
   CategoryTheory.Equivalence.mk (Rep.resFunctor e.toMonoidHom) (Rep.resFunctor e.symm.toMonoidHom)
-    (eqToIso (by rw [← MonoidHom.resFunctor_comp, comp_symm, resFunctor_id]))
-    (eqToIso (by rw [← MonoidHom.resFunctor_comp, symm_comp, resFunctor_id]))
+    (eqToIso (by rw [← MonoidHom.resFunctor_comp, comp_symm, MonoidHom.resFunctor_id]))
+    (eqToIso (by rw [← MonoidHom.resFunctor_comp, symm_comp, MonoidHom.resFunctor_id]))
 
 /-- The forward functor of the restriction equivalence is restriction along the isomorphism. -/
 @[simp]

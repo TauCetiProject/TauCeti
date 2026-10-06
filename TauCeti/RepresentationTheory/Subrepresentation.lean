@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RepresentationTheory.Intertwining
+public import Mathlib.RepresentationTheory.Irreducible
 public import Mathlib.RingTheory.SimpleModule.Basic
 
 /-!
@@ -50,11 +51,14 @@ being additive and preserving both summands, supplies the equivariance.  Being a
 group, as that construction does.
 
 Restriction along a surjective monoid homomorphism identifies the lattices of invariant
-submodules, keeping the underlying submodule in both directions.
+submodules, keeping the underlying submodule in both directions. In particular it preserves
+irreducibility, as does restriction along a monoid isomorphism.
 
 ## Main results
 
 * `MonoidHom.resSubrepresentationOrderIso`
+* `MonoidHom.isIrreducible_comp_surjective_iff`
+* `MulEquiv.isIrreducible_comp_equiv_iff`
 * `Subrepresentation.mem_toSubmodule`
 * `Subrepresentation.toSubmodule_bot`
 * `Subrepresentation.toSubmodule_top`
@@ -355,3 +359,25 @@ theorem resSubrepresentationOrderIso_symm_apply_toSubmodule (f : H →* K)
   (rfl)
 
 end MonoidHom
+
+section Irreducible
+
+variable {k : Type*} [Field k] {H K : Type*} [Monoid H] [Monoid K]
+  {V : Type*} [AddCommGroup V] [Module k V]
+
+/-- Restriction along a surjective monoid homomorphism preserves irreducibility: irreducibility is
+simplicity of the lattice of invariant subspaces, and `MonoidHom.resSubrepresentationOrderIso`
+identifies the two lattices. -/
+@[simp]
+theorem MonoidHom.isIrreducible_comp_surjective_iff (f : H →* K) (hf : Function.Surjective f)
+    (ρ : Representation k K V) :
+    Representation.IsIrreducible (ρ.comp f) ↔ Representation.IsIrreducible ρ :=
+  (f.resSubrepresentationOrderIso hf ρ).isSimpleOrder_iff
+
+/-- Restriction along a monoid isomorphism preserves irreducibility. -/
+@[simp]
+theorem MulEquiv.isIrreducible_comp_equiv_iff (e : H ≃* K) (ρ : Representation k K V) :
+    Representation.IsIrreducible (ρ.comp (e : H →* K)) ↔ Representation.IsIrreducible ρ :=
+  e.toMonoidHom.isIrreducible_comp_surjective_iff e.surjective ρ
+
+end Irreducible

@@ -84,11 +84,6 @@ irreducible ones is not carved out here.
 * `TauCeti.isIrreducible_conjRep_iff`, `TauCeti.isIrreducible_conjFDRep_iff`: conjugation
   preserves irreducibility, because it identifies the invariant subspaces.
 
-## References
-
-The convention and implementation plan follow
-`TauCetiRoadmap/RepresentationTheory/InductionRestriction/README.md` and its accompanying
-`Suggested.lean`.
 -/
 
 public section

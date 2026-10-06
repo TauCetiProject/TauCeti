@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.CharacterTable.ClassFunction
 public import TauCeti.RepresentationTheory.FDRep
-public import Mathlib.RepresentationTheory.Irreducible
+public import TauCeti.RepresentationTheory.Subrepresentation
 public import TauCeti.CategoryTheory.Action.Restriction
 public import TauCeti.RepresentationTheory.Rep.ChangeOfGroup
 public import TauCeti.RepresentationTheory.Simple.Basic
@@ -17,7 +17,7 @@ public import TauCeti.RepresentationTheory.Simple.Basic
 
 This file collects restriction infrastructure shared by the induction files: how the restriction
 functors `Rep.resFunctor` and `Action.res` behave under composing and inverting the homomorphism
-restricted along, and, for a subgroup `S` of a group `G`, the restriction of a finite-dimensional
+restricted along, and, for a subgroup `S` of a group `G`, the restriction of a finitely generated
 representation of `G` to `S` together with its character and the class function that character
 carries (`Subgroup.comap_subtype_ofFDRep`).  Restricting along a surjective
 homomorphism changes nothing essential: it identifies the lattices of invariant subspaces, and
@@ -39,7 +39,7 @@ restriction of an intertwiner, the functor laws, naturality — is used straight
   categories.
 * `MonoidHom.resSubrepresentationOrderIso`: restriction along a surjective monoid homomorphism
   identifies the lattices of invariant subspaces.
-* `Subgroup.resFDRep`: restriction of a finite-dimensional representation to a subgroup.
+* `Subgroup.resFDRep`: restriction of a finitely generated representation to a subgroup.
 
 ## Main statements
 
@@ -55,7 +55,7 @@ restriction of an intertwiner, the functor laws, naturality — is used straight
 
 ## Implementation notes
 
-The abbreviation is over a commutative ring, matching Mathlib's `FDRep`. Irreducibility and
+The abbreviation is over a ring, matching Mathlib's `FDRep`. Irreducibility and
 characters use a field, as their Mathlib definitions require.
 -/
 
@@ -71,23 +71,7 @@ variable {k : Type u} {G : Type v} [Group G]
 
 section Irreducible
 
-variable [Field k] {H K : Type*} [Monoid H] [Monoid K]
-
-/-- Restriction along a surjective monoid homomorphism preserves irreducibility: irreducibility is
-simplicity of the lattice of invariant subspaces, and `MonoidHom.resSubrepresentationOrderIso`
-identifies the two lattices. -/
-@[simp]
-theorem _root_.MonoidHom.isIrreducible_comp_surjective_iff {V : Type*} [AddCommGroup V] [Module k V]
-    (f : H →* K) (hf : Function.Surjective f) (ρ : Representation k K V) :
-    Representation.IsIrreducible (ρ.comp f) ↔ Representation.IsIrreducible ρ :=
-  (MonoidHom.resSubrepresentationOrderIso f hf ρ).isSimpleOrder_iff
-
-/-- Restriction along a monoid isomorphism preserves irreducibility. -/
-@[simp]
-theorem _root_.MulEquiv.isIrreducible_comp_equiv_iff {V : Type*} [AddCommGroup V] [Module k V]
-    (e : H ≃* K) (ρ : Representation k K V) :
-    Representation.IsIrreducible (ρ.comp (e : H →* K)) ↔ Representation.IsIrreducible ρ :=
-  MonoidHom.isIrreducible_comp_surjective_iff e.toMonoidHom e.surjective ρ
+variable [Field k]
 
 /-- A representation trivial on a normal subgroup `S` is irreducible exactly when the
 representation of `G ⧸ S` it factors through is irreducible. -/
@@ -115,9 +99,9 @@ end Irreducible
 
 section Representation
 
-variable [CommRing k]
+variable [Ring k]
 
-/-- Restriction of a finite-dimensional representation of `G` to a subgroup `S`: Mathlib's
+/-- Restriction of a finitely generated representation of `G` to a subgroup `S`: Mathlib's
 `Action.res` along `S.subtype`, under the definitional identification
 `FDRep k G = Action (FGModuleCat k) G`.
 
@@ -127,7 +111,7 @@ restricts an intertwiner, and is functorial by `Functor.map_id` and `Functor.map
 abbrev _root_.Subgroup.resFDRep (S : Subgroup G) (B : FDRep k G) : FDRep k S :=
   (Action.res (FGModuleCat k) S.subtype).obj B
 
-/-- Restriction commutes with forgetting finite-dimensionality: after forgetting,
+/-- Restriction commutes with forgetting finite generation: after forgetting,
 `Subgroup.resFDRep` is Mathlib's `Rep.res`, on the nose rather than up to isomorphism. -/
 @[simp]
 theorem _root_.Subgroup.forget₂_obj_resFDRep (S : Subgroup G) (B : FDRep k G) :

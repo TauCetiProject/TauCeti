@@ -11,10 +11,6 @@ import TauCeti.RepresentationTheory.OfModule
 import TauCeti.RepresentationTheory.Simple.Basic
 import TauCeti.RingTheory.SimpleModule.Isotypic
 
-/-
-Roadmap source: `TauCetiRoadmap/RepresentationTheory/InductionRestriction/README.md`, Layer 5.
--/
-
 /-!
 # The representation decomposition in Clifford's theorem
 

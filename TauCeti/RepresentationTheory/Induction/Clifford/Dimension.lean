@@ -108,8 +108,8 @@ This is the form in which the dimension identity of `FDRep.clifford_restrict_fin
 number of distinct conjugates occurring in the restriction is `[G : inertia V]`, and it is
 constrained from two sides at once: by the degree of `W`, through the dimension identity, and by
 the index of `N`, through `TauCeti.le_inertia`.  Neither constraint mentions the multiplicity `e`,
-which the last divisibility divides out instead: `dim W / (e * dim V)` is the roadmap's form of the
-count of distinct conjugates. -/
+which the last divisibility divides out instead: `dim W / (e * dim V)` counts the distinct
+conjugates. -/
 theorem clifford_restrict_dvd_finrank [IsAlgClosed k] (W : FDRep k G) [Simple W] :
     ∃ (V : FDRep k N) (_ : Simple V) (hfinite : Finite (G ⧸ inertia V)),
       let _ := hfinite

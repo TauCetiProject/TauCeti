@@ -81,8 +81,7 @@ private theorem finrank_mackeyTerm_weyl (α β γ δ : Fˣ →* ℂˣ) :
       (GL2Borel F)).subgroupOf (GL2Borel F)) (GL2BorelRep F α β)) := by
     rw [GL2BorelRep_def, GL2Borel.linearRep_def, ← FDRep.ofLinearCharacter_def]
     -- `Subgroup.resFDRep` is a reducible abbreviation for this `Action.res`; `rw` does not unfold
-    -- the
-    -- abbreviation when searching for `FDRep.actionRes_obj_ofLinearCharacter`.
+    -- the abbreviation when searching for `FDRep.actionRes_obj_ofLinearCharacter`.
     change Simple ((Action.res (FGModuleCat ℂ)
       ((mackeySubgroup (GL2WeylElement F) (GL2Borel F)
         (GL2Borel F)).subgroupOf (GL2Borel F)).subtype).obj

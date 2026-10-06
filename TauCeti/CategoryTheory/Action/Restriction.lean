@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Action.Limits
 public import Mathlib.LinearAlgebra.Dimension.Finrank
+public import TauCeti.CategoryTheory.Linear.FullyFaithful
 
 /-!
 # Restriction of actions
@@ -15,9 +16,9 @@ Restriction along a composite monoid homomorphism is successive restriction, as 
 of functors. This equality form complements Mathlib's natural isomorphism `Action.resComp`.
 
 For actions in a linear category, restriction along a surjective monoid homomorphism preserves
-the finrank
-of morphism spaces. This uses Mathlib's fullness result `Action.full_res`, and in particular applies
-to intertwining spaces of finite-dimensional representations over a commutative ring.
+the finrank of morphism spaces. This uses Mathlib's fullness result `Action.full_res` and
+`Functor.homLinearEquiv`, and in particular applies to intertwining spaces of finite-dimensional
+representations over a commutative ring.
 
 ## Main results
 
@@ -46,5 +47,4 @@ theorem MonoidHom.finrank_hom_actionRes_of_surjective {k : Type*} [Semiring k]
     Module.finrank k ((Action.res V f).obj X ⟶ (Action.res V f).obj Y) =
       Module.finrank k (X ⟶ Y) := by
   let : (Action.res V f).Full := Action.full_res V f hf
-  exact (LinearEquiv.ofBijective ((Action.res V f).mapLinearMap k (X := X) (Y := Y))
-    ⟨(Action.res V f).map_injective, (Action.res V f).map_surjective⟩).finrank_eq.symm
+  exact ((Action.res V f).homLinearEquiv k X Y).finrank_eq.symm
