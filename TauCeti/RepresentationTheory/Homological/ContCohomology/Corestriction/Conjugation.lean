@@ -55,6 +55,9 @@ of the conjugation `f ↦ (x ↦ g • f (g⁻¹ x))` of `Coind_V^G M`.
   for the explicit inhomogeneous model, with the transversal corestriction `explicitCor2`.
 * `TauCeti.ContinuousCohomology.shapiroMap_comp_conjNormalMap`: for a normal subgroup, Shapiro's
   map intertwines `(g)_*` with the conjugation of `Coind_V^G M`.
+* `TauCeti.ContinuousCohomology.conjNormalMap_one`,
+  `TauCeti.ContinuousCohomology.conjNormalMap_comp`: `g ↦ (g)_*` is an action of `G` on
+  `Hⁿ(V, M)`, `(1)_* = 𝟙` and `(g)_* ≫ (h)_* = (h * g)_*`.
 * `TauCeti.ContinuousCohomology.conjNormalMap_naturality`: `(g)_*` is natural in the
   coefficients.
 
@@ -264,6 +267,41 @@ theorem conjNormalMap_def (g : G) (n : ℕ) :
         (ContinuousMonoidHom.toContinuousMonoidHom (ContinuousAut.conjNormal g⁻¹))
         (conjNormalPair V M g) n :=
   (rfl)
+
+/-- Conjugation by `1` is the identity of `Hⁿ(V, M)`. -/
+@[simp]
+theorem conjNormalMap_one (n : ℕ) : conjNormalMap V M 1 n = 𝟙 _ := by
+  rw [conjNormalMap_def, ← _root_.ContinuousCohomology.map_id (ofDiscreteModule ℤ V M) n]
+  have hφ : ContinuousMonoidHom.toContinuousMonoidHom
+      (ContinuousAut.conjNormal (1 : G)⁻¹ : ContinuousAut V) = ContinuousMonoidHom.id V :=
+    ContinuousMonoidHom.ext fun v => Subtype.ext (by simp)
+  refine map_congr hφ ?_ n
+  -- Both coefficient maps are the identity of `M`.
+  refine ofDiscreteModulePair_heq_of_hom_apply (congrArg (fun φ : V →ₜ* V => (φ : V →* V)) hφ)
+    _ _ (𝟙 (ofDiscreteModule ℤ V M)) fun m => ?_
+  exact (one_smul G m).symm
+
+/-- **Conjugation is multiplicative**: conjugation by `g` followed by conjugation by `h` is
+conjugation by `h * g`. -/
+@[reassoc]
+theorem conjNormalMap_comp (g h : G) (n : ℕ) :
+    conjNormalMap V M g n ≫ conjNormalMap V M h n = conjNormalMap V M (h * g) n := by
+  rw [conjNormalMap_def, conjNormalMap_def, conjNormalMap_def,
+    ← _root_.ContinuousCohomology.map_comp]
+  have hφ : (ContinuousMonoidHom.toContinuousMonoidHom
+        (ContinuousAut.conjNormal g⁻¹ : ContinuousAut V)).comp
+        (ContinuousMonoidHom.toContinuousMonoidHom
+          (ContinuousAut.conjNormal h⁻¹ : ContinuousAut V)) =
+      ContinuousMonoidHom.toContinuousMonoidHom
+        (ContinuousAut.conjNormal (h * g)⁻¹ : ContinuousAut V) :=
+    ContinuousMonoidHom.ext fun v => Subtype.ext (by simp [mul_assoc])
+  refine map_congr hφ ?_ n
+  -- Both coefficient maps are the action of `h * g` on `M`.
+  refine HEq.symm (ofDiscreteModulePair_heq_of_hom_apply
+    (congrArg (fun φ : V →ₜ* V => (φ : V →* V)) hφ.symm) _ _ _ fun m => ?_)
+  -- The composite of `TopRep` morphisms evaluates as the composite of the underlying maps.
+  change (conjNormalPair V M h).hom ((conjNormalPair V M g).hom m) = (h * g) • m
+  rw [conjNormalPair_hom_apply, conjNormalPair_hom_apply, smul_smul]
 
 /-- **Shapiro's map intertwines conjugation**: for a normal subgroup `V`, Shapiro's map followed by
 `(g)_*` is the coefficient map of the conjugation of `Coind_V^G M` by `g`, followed by Shapiro's
