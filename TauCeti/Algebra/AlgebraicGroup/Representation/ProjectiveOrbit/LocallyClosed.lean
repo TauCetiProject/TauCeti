@@ -44,16 +44,6 @@ variable {k H M : Type u} [Field k] [IsAlgClosed k] [CommRing H] [HopfAlgebra k 
   [Algebra.FiniteType k H] [AddCommGroup M] [Module k M] [Comodule k H M]
   [Module.Finite k M]
 
-/-- Select projective translation for the closed-point transitivity and local-closedness
-criteria. -/
-noncomputable local instance : MulAction (WithConv (H →ₐ[k] k))
-    (Proj (TauCeti.SymmetricAlgebra.homogeneousSubmodule k (Module.Dual k M))) :=
-  projectivePointMulAction
-
-local instance : ContinuousConstSMul (WithConv (H →ₐ[k] k))
-    (Proj (TauCeti.SymmetricAlgebra.homogeneousSubmodule k (Module.Dual k M))) :=
-  projectivePointMulAction_continuousConstSMul
-
 /-- Rational translations are transitive on the closed points of the full projective
 orbit image. -/
 theorem exists_smul_eq_of_mem_range_projectiveOrbitMap_inter_closedPoints
@@ -61,7 +51,9 @@ theorem exists_smul_eq_of_mem_range_projectiveOrbitMap_inter_closedPoints
     {x y : Proj (TauCeti.SymmetricAlgebra.homogeneousSubmodule k (Module.Dual k M))}
     (hx : x ∈ Set.range (projectiveOrbitMap (H := H) m hm) ∩ closedPoints _)
     (hy : y ∈ Set.range (projectiveOrbitMap (H := H) m hm) ∩ closedPoints _) :
+    letI := projectivePointMulAction (R := k) (H := H) (M := M)
     ∃ g : WithConv (H →ₐ[k] k), g • x = y := by
+  let := projectivePointMulAction (R := k) (H := H) (M := M)
   rw [← range_projectiveOrbitMap_kernelPoint_eq_range_inter_closedPoints m hm] at hx hy
   obtain ⟨g, rfl⟩ := hx
   obtain ⟨h, rfl⟩ := hy
@@ -74,6 +66,8 @@ theorem exists_smul_eq_of_mem_range_projectiveOrbitMap_inter_closedPoints
 is locally closed over an algebraically closed field, including for nonreduced groups. -/
 theorem isLocallyClosed_range_projectiveOrbitMap (m : M) (hm : Module.IsUnimodular k m) :
     IsLocallyClosed (Set.range (projectiveOrbitMap (H := H) m hm)) := by
+  let := projectivePointMulAction (R := k) (H := H) (M := M)
+  have := projectivePointMulAction_continuousConstSMul (R := k) (H := H) (M := M)
   apply isLocallyClosed_of_isConstructible_of_closedPoints_transitive
     (G := WithConv (H →ₐ[k] k)) (isConstructible_range_projectiveOrbitMap m hm)
   · intro g

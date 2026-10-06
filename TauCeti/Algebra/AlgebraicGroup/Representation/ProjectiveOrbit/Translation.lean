@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Hopf.LeftTranslation
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.LinearAction
+public import TauCeti.RepresentationTheory.Dual
 
 /-!
 # Translation invariance of projective orbit images
@@ -113,22 +114,9 @@ theorem projectivePoint_smul_def (g : WithConv (H →ₐ[R] R))
     g • x = (projectivePointTranslation (M := M) g).hom x := by
   let := projectivePointMulAction (R := R) (H := H) (M := M)
   rw [Proj.symmetricAlgebra_smul_def, projectivePointTranslation]
-  have hdual :
-      ((LinearMap.GeneralLinearGroup.generalLinearEquiv R (Module.Dual R M))
-        ((Representation.dual (basePointsRepresentation M)).asGroupHom g)).symm =
-      ((LinearMap.GeneralLinearGroup.generalLinearEquiv R M)
-        (Representation.asGroupHom (basePointsRepresentation M) g)).dualMap := by
-    -- Express symmetry as group inversion so the monoid homomorphisms can carry
-    -- the inverse back to the group point; Mathlib has no bundled comparison lemma.
-    rw [show ∀ e : Module.Dual R M ≃ₗ[R] Module.Dual R M, e.symm = e⁻¹ from
-      fun e ↦ by ext φ; simp]
-    rw [← map_inv, ← map_inv]
-    ext φ m
-    simp only [LinearMap.GeneralLinearGroup.coeFn_generalLinearEquiv,
-      Representation.asGroupHom_apply, Representation.dual_apply, inv_inv,
-      Module.Dual.transpose_apply, LinearEquiv.dualMap_apply, LinearMap.comp_apply]
   exact congrArg (fun e : Module.Dual R M ≃ₗ[R] Module.Dual R M ↦
-    (Proj.symmetricAlgebraMapIso R e).hom x) hdual
+    (Proj.symmetricAlgebraMapIso R e).hom x)
+    (Representation.generalLinearEquiv_dual_asGroupHom_symm (basePointsRepresentation M) g)
 
 /-- Every translation of the selected projective point action is continuous. -/
 theorem projectivePointMulAction_continuousConstSMul :
@@ -157,14 +145,8 @@ theorem projectivePointTranslation_mul (g h : WithConv (H →ₐ[R] R)) :
 theorem projectivePointTranslation_inv_eq_symm (g : WithConv (H →ₐ[R] R)) :
     projectivePointTranslation (M := M) g⁻¹ = (projectivePointTranslation (M := M) g).symm := by
   simp only [projectivePointTranslation, map_inv]
-  -- Inversion in the linear-equivalence group is symmetry; Mathlib has no bundled
-  -- comparison lemma, so identify the two equivalences by their functions.
-  rw [show ((LinearMap.GeneralLinearGroup.generalLinearEquiv R M)
-    (Representation.asGroupHom (basePointsRepresentation M) g))⁻¹ =
-      ((LinearMap.GeneralLinearGroup.generalLinearEquiv R M)
-        (Representation.asGroupHom (basePointsRepresentation M) g)).symm by
-          ext x; simp]
-  rw [← LinearEquiv.dualMap_symm, Proj.symmetricAlgebraMapIso_symm]
+  rw [← LinearEquiv.symm_eq_inv, ← LinearEquiv.dualMap_symm,
+    Proj.symmetricAlgebraMapIso_symm]
 
 /-- The forward projective translation is the projective map induced by the dual
 linear map of the point action. -/
