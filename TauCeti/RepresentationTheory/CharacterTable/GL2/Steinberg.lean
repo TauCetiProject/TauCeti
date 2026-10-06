@@ -160,8 +160,8 @@ theorem character_GL2PrincipalSeries_one_one_eq_character_ofMulAction (g : GL (F
     funext b
     rw [character_GL2BorelRep, FDRep.character_of_trivial]
     simp
-  rw [GL2PrincipalSeries_def, ← indClassFun_ofFDRep_character, hchar,
-    indClassFun_ofFDRep_character, character_indFDRep, FDRep.of_ρ', char_ind_trivial,
+  rw [GL2PrincipalSeries_def, ← Subgroup.indClassFun_ofFDRep_character, hchar,
+    Subgroup.indClassFun_ofFDRep_character, character_indFDRep, FDRep.of_ρ', char_ind_trivial,
     char_ofMulAction]
 
 /-- **The character of the boundary principal series is `1` plus the Steinberg character.** The

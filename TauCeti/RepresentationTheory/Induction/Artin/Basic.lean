@@ -136,7 +136,7 @@ theorem natCard_nsmul_one_mem_indVirtualCharacters_isCyclic :
   let _ := Fintype.ofFinite G
   let α : CyclicSubgroup G → (G → k) := fun C ↦
     (C : Subgroup G).artinCoeff • (Nat.card (C : Subgroup G) •
-      indClassFun (C : Subgroup G) (fun _ : (C : Subgroup G) ↦ (1 : k)))
+      Subgroup.indClassFun (C : Subgroup G) (fun _ : (C : Subgroup G) ↦ (1 : k)))
   have hα (C : CyclicSubgroup G) : α C ∈ indVirtualCharacters k G (fun C ↦ IsCyclic C) := by
     exact AddSubgroup.zsmul_mem _ (AddSubgroup.nsmul_mem _
       (indClassFun_mem_indVirtualCharacters C.2 one_mem_virtualCharacters) _) _
@@ -147,11 +147,12 @@ theorem natCard_nsmul_one_mem_indVirtualCharacters_isCyclic :
   simp only [α, Finset.sum_apply, Pi.smul_apply]
   have hnat (C : CyclicSubgroup G) :
       (Nat.card (C : Subgroup G) : k) *
-          indClassFun (C : Subgroup G) (fun _ : (C : Subgroup G) ↦ (1 : k)) g =
+          Subgroup.indClassFun (C : Subgroup G) (fun _ : (C : Subgroup G) ↦ (1 : k)) g =
         ∑ x : G, if h : x⁻¹ * g * x ∈ (C : Subgroup G) then
           (1 : k) else 0 := by
     simpa only [nsmul_eq_mul] using
-      natCard_nsmul_indClassFun (f := fun _ : (C : Subgroup G) ↦ (1 : k)) (fun _ _ ↦ rfl) g
+      Subgroup.natCard_nsmul_indClassFun C (f := fun _ : (C : Subgroup G) ↦ (1 : k)) (fun _ _ ↦
+        rfl) g
   simp_rw [← Int.cast_smul_eq_zsmul k, ← Nat.cast_smul_eq_nsmul k,
     smul_eq_mul, hnat]
   simp_rw [Finset.mul_sum]
