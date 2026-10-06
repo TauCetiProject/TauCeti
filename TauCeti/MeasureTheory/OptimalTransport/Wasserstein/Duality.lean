@@ -55,7 +55,9 @@ theorem ofReal_integral_add_integral_le_wassersteinEDist_add_rpow (hp1 : 1 ≤ p
   set e := eLpNorm (fun y ↦ edist y (Q₁ y)) p A + eLpNorm (fun y ↦ edist y (Q₂ y)) p B
   set D := ENNReal.ofReal (∫ y, f₁ y ∂A + ∫ y, f₂ y ∂B)
   -- the pair is feasible for the cost read at the quantized points
-  have hfeas : DualFeasible (fun z : Y × Y ↦ edist (Q₁ z.1) (Q₂ z.2) ^ p.toReal) f₁ f₂ := by
+  have hfeas :
+      DualFeasible (fun z : Y × Y ↦ ((edist (Q₁ z.1) (Q₂ z.2) ^ p.toReal : ℝ≥0∞) : EReal))
+        f₁ f₂ := by
     refine dualFeasible_iff_ofReal_add_le.2 fun y y' ↦ ?_
     rw [edist_dist, ENNReal.ofReal_rpow_of_nonneg dist_nonneg hr.le]
     exact ENNReal.ofReal_le_ofReal (hf y y')

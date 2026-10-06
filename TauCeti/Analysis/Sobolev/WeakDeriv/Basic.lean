@@ -418,15 +418,17 @@ theorem HasWeakFDerivOn.congr_ae_deriv {U W : E → E →L[ℝ] F} (h : HasWeakF
 derivative on the original domain `Ω`. -/
 theorem HasWeakLineDerivOn.indicator (h : HasWeakLineDerivOn μ Ω u u' v) :
     HasWeakLineDerivOn μ Ω ((Ω : Set E).indicator u) ((Ω : Set E).indicator u') v :=
-  (h.congr_ae (indicator_ae_eq_restrict Ω.isOpen.measurableSet).symm).congr_ae_deriv
-    (indicator_ae_eq_restrict Ω.isOpen.measurableSet).symm
+  have hΩ : NullMeasurableSet (Ω : Set E) μ := Ω.isOpen.measurableSet.nullMeasurableSet
+  (h.congr_ae (indicator_ae_eq_restrict hΩ).symm).congr_ae_deriv
+    (indicator_ae_eq_restrict hΩ).symm
 
 /-- Extending a function and its weak Fréchet derivative field by zero preserves the weak
 derivative on the original domain `Ω`. -/
 theorem HasWeakFDerivOn.indicator {U : E → E →L[ℝ] F} (h : HasWeakFDerivOn μ Ω u U) :
     HasWeakFDerivOn μ Ω ((Ω : Set E).indicator u) ((Ω : Set E).indicator U) :=
-  (h.congr_ae (indicator_ae_eq_restrict Ω.isOpen.measurableSet).symm).congr_ae_deriv
-    (indicator_ae_eq_restrict Ω.isOpen.measurableSet).symm
+  have hΩ : NullMeasurableSet (Ω : Set E) μ := Ω.isOpen.measurableSet.nullMeasurableSet
+  (h.congr_ae (indicator_ae_eq_restrict hΩ).symm).congr_ae_deriv
+    (indicator_ae_eq_restrict hΩ).symm
 
 end Integrability
 

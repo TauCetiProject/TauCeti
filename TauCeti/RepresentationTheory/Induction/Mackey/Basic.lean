@@ -31,9 +31,10 @@ Counting the same bijection instead of summing over it gives the classical index
 `[G : H] = ∑_{KsH} [K : K ⊓ sHs⁻¹]` (`TauCeti.index_eq_sum_relIndex_mackeySubgroup`), the
 dimension shadow of the decomposition.
 
-The summands are built from the fixed representatives `Quotient.out`, as the roadmap prescribes:
+The summands are built from the fixed representatives `Quotient.out`:
 no representative-independent summand is asserted, only that a different representative gives a
-conjugate Mackey subgroup (`TauCeti.mackeySubgroup_conj`).
+conjugate Mackey subgroup (`TauCeti.mackeySubgroup_conj`).  The splitting
+`TauCeti.mackeyQuotientEquiv` itself accepts any choice of representatives.
 
 ## Main definitions
 
@@ -54,9 +55,9 @@ conjugate Mackey subgroup (`TauCeti.mackeySubgroup_conj`).
 
 * `TauCeti.index_eq_sum_relIndex_mackeySubgroup`: `[G : H] = ∑_{KsH} [K : K ⊓ sHs⁻¹]`.
 * `TauCeti.mackeyClassFun_mem_classFunction`: the conjugate of a class function is one.
-* `TauCeti.indClassFun_mackey`: the Mackey decomposition for induced class functions.
-* `TauCeti.comap_subtype_ind_mackey`: the same decomposition as an identity of bundled class
-  functions.
+* `Subgroup.indClassFun_mackey`: the Mackey decomposition for induced class functions.
+* `Subgroup.comap_subtype_indClassFunction_mackey`: the same decomposition as an identity of
+  bundled class functions.
 * `TauCeti.character_resFDRep_indFDRep_mackey`: the Mackey decomposition for the character of
   `Res_K (Ind_H^G A)`.
 
@@ -74,7 +75,7 @@ The Mackey subgroup `K ⊓ sHs⁻¹` is a subgroup of `G`; inducing from it up t
 along the subtype of `(K ⊓ sHs⁻¹).subgroupOf K : Subgroup ↥K`, so that is the subgroup the sums
 below are indexed by.  `TauCeti.mackeyToH` absorbs the passage back and forth, and
 `TauCeti.mackeySummand_eq_indFDRep_res_conjFDRep` records that the summand really is the
-restriction of the conjugate representation that the roadmap describes.
+restriction of the conjugate representation.
 
 Only the character form is proved here; the isomorphism of representations
 `Res_K (Ind_H^G A) ≅ ⨁_{KsH} Ind_{K ⊓ sHs⁻¹}^K Res ({}^s A)` refining it is
@@ -82,9 +83,6 @@ Only the character form is proved here; the isomorphism of representations
 `TauCeti.RepresentationTheory.Induction.Mackey.Decomposition`.
 
 ## References
-
-Layer 3b of
-[the induction and restriction roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/InductionRestriction/README.md).
 
 * J.-P. Serre, *Linear Representations of Finite Groups*, Chapter 7.3.
 * I. M. Isaacs, *Character Theory of Finite Groups*, Chapter 5.
@@ -127,26 +125,39 @@ theorem mackeyCoset_out (s : G) (H K : Subgroup G)
     mackeyCoset s H K u = QuotientGroup.mk ((u.out : G) * s) := by
   rw [← mackeyCoset_mk s H K u.out, QuotientGroup.out_eq']
 
+/-- `TauCeti.mackeyCoset` is `K`-equivariant for the translation actions of `K` on
+`K ⧸ (K ⊓ sHs⁻¹)` and on `G ⧸ H`. -/
+theorem mackeyCoset_smul (s : G) (H K : Subgroup G) (k : K)
+    (u : K ⧸ (mackeySubgroup s H K).subgroupOf K) :
+    mackeyCoset s H K (k • u) = (k : G) • mackeyCoset s H K u := by
+  induction u using QuotientGroup.induction_on with
+  | H u =>
+    rw [MulAction.Quotient.smul_mk, mackeyCoset_mk, mackeyCoset_mk, MulAction.Quotient.smul_mk,
+      smul_eq_mul, smul_eq_mul, Subgroup.coe_mul, mul_assoc]
+
 /-- **The double-coset splitting of `G ⧸ H`.**  Sorting the left cosets of `H` by the double coset
 they lie in, `G ⧸ H` is the disjoint union over `K \ G / H` of the `K`-orbits, and the orbit of
 `sH` is a copy of `K ⧸ (K ⊓ sHs⁻¹)`.
 
-This is the combinatorial content of the Mackey decomposition; the representatives are the fixed
-`Quotient.out` ones. -/
-noncomputable def mackeyQuotientEquiv (H K : Subgroup G) :
+This is the combinatorial content of the Mackey decomposition.  The representatives are any choice
+`r D ∈ D` of one element in each double coset; `Quotient.out` with `DoubleCoset.out_eq'` is the
+canonical one. -/
+noncomputable def mackeyQuotientEquiv (H K : Subgroup G)
+    (r : DoubleCoset.Quotient (K : Set G) (H : Set G) → G)
+    (hr : ∀ D, DoubleCoset.mk K H (r D) = D) :
     (Σ D : DoubleCoset.Quotient (K : Set G) (H : Set G),
-        K ⧸ (mackeySubgroup D.out H K).subgroupOf K) ≃ G ⧸ H :=
-  Equiv.ofBijective (fun p => mackeyCoset p.1.out H K p.2) (by
+        K ⧸ (mackeySubgroup (r D) H K).subgroupOf K) ≃ G ⧸ H :=
+  Equiv.ofBijective (fun p => mackeyCoset (r p.1) H K p.2) (by
     constructor
     · rintro ⟨D, u⟩ ⟨D', v⟩ hp
       simp only [mackeyCoset_out, QuotientGroup.eq] at hp
       -- The two representatives lie in one double coset, so the double cosets agree.
       have hD : D = D' := by
-        have hmk := (DoubleCoset.eq (H := K) (K := H) (a := D.out) (b := D'.out)).mpr
+        have hmk := (DoubleCoset.eq (H := K) (K := H) (a := r D) (b := r D')).mpr
           ⟨(v.out : G)⁻¹ * (u.out : G),
             K.mul_mem (K.inv_mem (SetLike.coe_mem v.out)) (SetLike.coe_mem u.out), _, hp, by
               group⟩
-        rwa [DoubleCoset.out_eq', DoubleCoset.out_eq'] at hmk
+        rwa [hr, hr] at hmk
       subst hD
       -- With one representative fixed, the two cosets of the Mackey subgroup agree.
       have huv : u = v := by
@@ -154,8 +165,8 @@ noncomputable def mackeyQuotientEquiv (H K : Subgroup G) :
           Subgroup.mem_subgroupOf, mem_mackeySubgroup_iff]
         refine ⟨?_, ?_⟩
         · exact SetLike.coe_mem _
-        · have heq : (D.out)⁻¹ * ((u.out⁻¹ * v.out : K) : G) * D.out
-              = ((u.out : G) * D.out)⁻¹ * ((v.out : G) * D.out) := by
+        · have heq : (r D)⁻¹ * ((u.out⁻¹ * v.out : K) : G) * r D
+              = ((u.out : G) * r D)⁻¹ * ((v.out : G) * r D) := by
             push_cast
             group
           rw [heq]
@@ -163,23 +174,51 @@ noncomputable def mackeyQuotientEquiv (H K : Subgroup G) :
       rw [huv]
     · intro t
       obtain ⟨a, ha, b, hb, hab⟩ :=
-        DoubleCoset.eq.mp (DoubleCoset.out_eq' (DoubleCoset.mk K H t.out))
+        DoubleCoset.eq.mp (hr (DoubleCoset.mk K H t.out))
       refine ⟨⟨DoubleCoset.mk K H t.out, QuotientGroup.mk ⟨a, ha⟩⟩, ?_⟩
       simp only [mackeyCoset_mk]
       conv_rhs => rw [← QuotientGroup.out_eq' t]
       rw [QuotientGroup.eq]
       -- `t.out = a * s * b` with `b ∈ H`, so the two cosets differ by `b`.
-      have hrw : (a * (DoubleCoset.mk K H t.out).out)⁻¹ * t.out = b :=
-        (congrArg (fun z => (a * (DoubleCoset.mk K H t.out).out)⁻¹ * z) hab).trans (by group)
+      have hrw : (a * r (DoubleCoset.mk K H t.out))⁻¹ * t.out = b :=
+        (congrArg (fun z => (a * r (DoubleCoset.mk K H t.out))⁻¹ * z) hab).trans (by group)
       rw [hrw]
       exact hb)
 
 @[simp]
 theorem mackeyQuotientEquiv_apply (H K : Subgroup G)
+    (r : DoubleCoset.Quotient (K : Set G) (H : Set G) → G)
+    (hr : ∀ D, DoubleCoset.mk K H (r D) = D)
     (p : Σ D : DoubleCoset.Quotient (K : Set G) (H : Set G),
-        K ⧸ (mackeySubgroup D.out H K).subgroupOf K) :
-    mackeyQuotientEquiv H K p = mackeyCoset p.1.out H K p.2 :=
+        K ⧸ (mackeySubgroup (r D) H K).subgroupOf K) :
+    mackeyQuotientEquiv H K r hr p = mackeyCoset (r p.1) H K p.2 :=
   (rfl)
+
+/-- `TauCeti.mackeyQuotientEquiv` is `K`-equivariant: translation by `k ∈ K` keeps the double coset
+of an index and translates its coset of the Mackey subgroup. -/
+theorem smul_mackeyQuotientEquiv (H K : Subgroup G)
+    (r : DoubleCoset.Quotient (K : Set G) (H : Set G) → G)
+    (hr : ∀ D, DoubleCoset.mk K H (r D) = D)
+    (k : K) (D : DoubleCoset.Quotient (K : Set G) (H : Set G))
+    (u : K ⧸ (mackeySubgroup (r D) H K).subgroupOf K) :
+    (k : G) • mackeyQuotientEquiv H K r hr ⟨D, u⟩ = mackeyQuotientEquiv H K r hr ⟨D, k • u⟩ := by
+  rw [mackeyQuotientEquiv_apply, mackeyQuotientEquiv_apply, mackeyCoset_smul]
+
+/-- **Sorting a sum over `G ⧸ H` by double cosets.**  Along `TauCeti.mackeyQuotientEquiv`, a sum
+over the left cosets `G ⧸ H` is the sum over the double cosets `K \ G / H` of the sums over the
+`K`-orbits `K ⧸ (K ⊓ sHs⁻¹)`. -/
+theorem sum_mackeyQuotientEquiv {A : Type*} [AddCommMonoid A] (H K : Subgroup G)
+    (r : DoubleCoset.Quotient (K : Set G) (H : Set G) → G)
+    (hr : ∀ D, DoubleCoset.mk K H (r D) = D)
+    [Fintype (G ⧸ H)] [Fintype (DoubleCoset.Quotient (K : Set G) (H : Set G))]
+    [∀ D : DoubleCoset.Quotient (K : Set G) (H : Set G),
+      Fintype (K ⧸ (mackeySubgroup (r D) H K).subgroupOf K)]
+    (F : G ⧸ H → A) :
+    ∑ q : G ⧸ H, F q =
+      ∑ D : DoubleCoset.Quotient (K : Set G) (H : Set G),
+        ∑ u : K ⧸ (mackeySubgroup (r D) H K).subgroupOf K,
+          F (mackeyQuotientEquiv H K r hr ⟨D, u⟩) := by
+  rw [← (mackeyQuotientEquiv H K r hr).sum_comp F, Fintype.sum_sigma]
 
 /-- **The double-coset index formula** `[G : H] = ∑_{KsH ∈ K \ G / H} [K : K ⊓ sHs⁻¹]`, obtained by
 counting `TauCeti.mackeyQuotientEquiv`.  It is the dimension shadow of the Mackey decomposition:
@@ -198,7 +237,7 @@ theorem index_eq_sum_relIndex_mackeySubgroup (H K : Subgroup G) [H.FiniteIndex] 
       = Nat.card (G ⧸ H) := H.index_eq_card
     _ = Nat.card (Σ D : DoubleCoset.Quotient (K : Set G) (H : Set G),
           K ⧸ (mackeySubgroup D.out H K).subgroupOf K) :=
-        (Nat.card_congr (mackeyQuotientEquiv H K)).symm
+        (Nat.card_congr (mackeyQuotientEquiv H K Quotient.out DoubleCoset.out_eq')).symm
     _ = Fintype.card (Σ D : DoubleCoset.Quotient (K : Set G) (H : Set G),
           K ⧸ (mackeySubgroup D.out H K).subgroupOf K) := Nat.card_eq_fintype_card
     _ = ∑ D : DoubleCoset.Quotient (K : Set G) (H : Set G),
@@ -273,10 +312,10 @@ from `H` to `G`, taken at the representative `u s` and at an element of `K`, is 
 class function induced from the Mackey subgroup to `K`, taken at the representative `u`.
 
 This single identity is where the conjugation `s⁻¹ (·) s` enters the Mackey decomposition.  It is
-private: it speaks about the individual representatives that `TauCeti.indClassFun_mackey` sums
+private: it speaks about the individual representatives that `Subgroup.indClassFun_mackey` sums
 over, and that sum is the interface. -/
 private theorem indTerm_mackeyClassFun (s : G) (H K : Subgroup G) (f : H → k) (x u : K) :
-    indTerm f (x : G) ((u : G) * s) = indTerm (mackeyClassFun s H K f) x u := by
+    Function.indTerm f (x : G) ((u : G) * s) = Function.indTerm (mackeyClassFun s H K f) x u := by
   classical
   have hconj : ((u : G) * s)⁻¹ * (x : G) * ((u : G) * s)
       = s⁻¹ * ((u⁻¹ * x * u : K) : G) * s := by
@@ -286,7 +325,7 @@ private theorem indTerm_mackeyClassFun (s : G) (H K : Subgroup G) (f : H → k) 
       u⁻¹ * x * u ∈ (mackeySubgroup s H K).subgroupOf K := by
     rw [hconj, Subgroup.mem_subgroupOf, mem_mackeySubgroup_iff]
     exact ⟨fun h => ⟨SetLike.coe_mem _, h⟩, fun h => h.2⟩
-  rw [indTerm_apply, indTerm_apply]
+  rw [Function.indTerm_apply, Function.indTerm_apply]
   by_cases hmem : ((u : G) * s)⁻¹ * (x : G) * ((u : G) * s) ∈ H
   · rw [dite_eq_left hmem, dite_eq_left (hiff.mp hmem), mackeyClassFun_apply]
     exact congrArg f (Subtype.ext (by rw [coe_mackeyToH_apply]; exact hconj))
@@ -298,64 +337,63 @@ finite-index subgroup `H` and an element `x` of a subgroup `K`, the induced clas
 induced to `K` from the Mackey subgroups.
 
 The character form is `TauCeti.character_resFDRep_indFDRep_mackey`. -/
-theorem indClassFun_mackey [H.FiniteIndex] {f : H → k} (hf : f ∈ ClassFunction k H) (x : K) :
-    indClassFun H f (x : G) =
+theorem _root_.Subgroup.indClassFun_mackey (H : Subgroup G) {K : Subgroup G}
+    [H.FiniteIndex] {f : H → k} (hf : f ∈ ClassFunction k H) (x : K) :
+    Subgroup.indClassFun H f (x : G) =
       letI := Fintype.ofFinite (DoubleCoset.Quotient (K : Set G) (H : Set G))
       ∑ D : DoubleCoset.Quotient (K : Set G) (H : Set G),
-        indClassFun ((mackeySubgroup D.out H K).subgroupOf K)
+        Subgroup.indClassFun ((mackeySubgroup D.out H K).subgroupOf K)
           (mackeyClassFun D.out H K f) x := by
   classical
   let := Fintype.ofFinite (DoubleCoset.Quotient (K : Set G) (H : Set G))
   let := Fintype.ofFinite (G ⧸ H)
   let (D : DoubleCoset.Quotient (K : Set G) (H : Set G)) :
       Fintype (K ⧸ (mackeySubgroup D.out H K).subgroupOf K) := Fintype.ofFinite _
-  calc indClassFun H f (x : G)
-      = ∑ t : G ⧸ H, indTerm f (x : G) t.out := by
-        rw [indClassFun_apply]
-        exact Finset.sum_congr rfl fun t _ => (indTerm_apply _ _ _).symm
-    _ = ∑ p : Σ D : DoubleCoset.Quotient (K : Set G) (H : Set G),
-            K ⧸ (mackeySubgroup D.out H K).subgroupOf K,
-          indTerm f (x : G) (mackeyQuotientEquiv H K p).out :=
-        (Equiv.sum_comp (mackeyQuotientEquiv H K) _).symm
+  calc Subgroup.indClassFun H f (x : G)
+      = ∑ t : G ⧸ H, Function.indTerm f (x : G) t.out := by
+        rw [Subgroup.indClassFun_apply]
+        exact Finset.sum_congr rfl fun t _ => (Function.indTerm_apply _ _ _).symm
     _ = ∑ D : DoubleCoset.Quotient (K : Set G) (H : Set G),
           ∑ u : K ⧸ (mackeySubgroup D.out H K).subgroupOf K,
-            indTerm f (x : G) ((u.out : G) * D.out) := by
-        rw [← Finset.univ_sigma_univ, Finset.sum_sigma]
+            Function.indTerm f (x : G) ((u.out : G) * D.out) := by
+        rw [sum_mackeyQuotientEquiv H K Quotient.out DoubleCoset.out_eq']
         refine Finset.sum_congr rfl fun D _ => Finset.sum_congr rfl fun u _ => ?_
         -- The two representatives `(Φ ⟨D, u⟩).out` and `u.out * D.out` span one coset of `H`.
-        refine indTerm_eq_of_mk_eq hf _ _ _ ?_
+        refine Function.indTerm_eq_of_mk_eq f hf _ _ _ ?_
         rw [QuotientGroup.out_eq']
-        exact (mackeyQuotientEquiv_apply H K ⟨D, u⟩).trans (mackeyCoset_out _ _ _ _)
+        exact (mackeyQuotientEquiv_apply H K _ _ ⟨D, u⟩).trans (mackeyCoset_out _ _ _ _)
     _ = ∑ D : DoubleCoset.Quotient (K : Set G) (H : Set G),
           ∑ u : K ⧸ (mackeySubgroup D.out H K).subgroupOf K,
-            indTerm (mackeyClassFun D.out H K f) x u.out :=
+            Function.indTerm (mackeyClassFun D.out H K f) x u.out :=
         Finset.sum_congr rfl fun D _ => Finset.sum_congr rfl fun u _ =>
           indTerm_mackeyClassFun _ _ _ _ _ _
     _ = ∑ D : DoubleCoset.Quotient (K : Set G) (H : Set G),
-          indClassFun ((mackeySubgroup D.out H K).subgroupOf K)
+          Subgroup.indClassFun ((mackeySubgroup D.out H K).subgroupOf K)
             (mackeyClassFun D.out H K f) x :=
         Finset.sum_congr rfl fun D _ => by
-          rw [indClassFun_apply]
-          exact Finset.sum_congr rfl fun u _ => indTerm_apply _ _ _
+          rw [Subgroup.indClassFun_apply]
+          exact Finset.sum_congr rfl fun u _ => Function.indTerm_apply _ _ _
 
 /-- **The Mackey decomposition of a restricted induced class function.**  Restricting to `K` a
 class function induced from `H` gives the sum, over the double cosets `K \ G / H`, of the class
 functions induced to `K` from the Mackey subgroups.
 
-This is `TauCeti.indClassFun_mackey` rewritten as an identity of bundled class functions, which is
+This is `Subgroup.indClassFun_mackey` rewritten as an identity of bundled class functions, which is
 the form the character pairing consumes. -/
-theorem comap_subtype_ind_mackey (K : Subgroup G) [H.FiniteIndex] (f : ClassFunction k H) :
-    ClassFunction.comap K.subtype (ClassFunction.ind H f) =
+theorem _root_.Subgroup.comap_subtype_indClassFunction_mackey (K : Subgroup G) {H : Subgroup G}
+    [H.FiniteIndex]
+    (f : ClassFunction k H) :
+    ClassFunction.comap K.subtype (Subgroup.indClassFunction H f) =
       letI := Fintype.ofFinite (DoubleCoset.Quotient (K : Set G) (H : Set G))
       ∑ D : DoubleCoset.Quotient (K : Set G) (H : Set G),
-        ClassFunction.ind ((mackeySubgroup D.out H K).subgroupOf K)
+        Subgroup.indClassFunction ((mackeySubgroup D.out H K).subgroupOf K)
           (mackeyClassFunction D.out H K f) := by
   let := Fintype.ofFinite (DoubleCoset.Quotient (K : Set G) (H : Set G))
   refine Subtype.ext (funext fun x => ?_)
-  rw [ClassFunction.comap_apply, ClassFunction.ind_apply, Subgroup.coe_subtype]
-  simp only [Submodule.coe_sum, Finset.sum_apply, ClassFunction.ind_apply,
+  rw [ClassFunction.comap_apply, Subgroup.indClassFunction_apply, Subgroup.coe_subtype]
+  simp only [Submodule.coe_sum, Finset.sum_apply, Subgroup.indClassFunction_apply,
     mackeyClassFunction_coe]
-  exact indClassFun_mackey f.2 x
+  exact H.indClassFun_mackey f.2 x
 
 end ClassFun
 
@@ -369,7 +407,7 @@ induced back up to `K`.
 
 The restriction and the conjugation are packaged into the single homomorphism
 `TauCeti.mackeyToH`; `TauCeti.mackeySummand_eq_indFDRep_res_conjFDRep` unfolds it into the two
-steps the roadmap names.
+steps.
 
 Only the Mackey subgroup is assumed of finite index in `K`, which is what inducing up to `K`
 uses; `H` of finite index in `G` gives that for every `s`
@@ -409,16 +447,16 @@ theorem character_res_mackeyToH (s : G) (A : FDRep k H) :
 theorem character_mackeySummand (s : G) [(mackeySubgroup s H K).IsFiniteRelIndex K]
     (A : FDRep k H) (x : K) :
     (mackeySummand (K := K) s A).character x =
-      indClassFun ((mackeySubgroup s H K).subgroupOf K)
+      Subgroup.indClassFun ((mackeySubgroup s H K).subgroupOf K)
         (mackeyClassFun s H K A.character) x := by
-  rw [mackeySummand, ← indClassFun_ofFDRep_character, character_res_mackeyToH]
+  rw [mackeySummand, ← Subgroup.indClassFun_ofFDRep_character, character_res_mackeyToH]
 
 /-- **The Mackey decomposition formula, character form.**  For a finite-dimensional representation
 `A` of a finite-index subgroup `H` and an element `x` of a subgroup `K`, the character of
 `Res_K (Ind_H^G A)` at `x` is the sum, over the double cosets `K \ G / H`, of the characters of
 the Mackey summands.
 
-This is the formula the roadmap states.  The character of `Ind_H^G A` at `x : K`, read on `G`, is
+The character of `Ind_H^G A` at `x : K`, read on `G`, is
 the same number: `FDRep.character_actionRes` is a `simp` lemma rewriting the left-hand side into
 it. -/
 theorem character_resFDRep_indFDRep_mackey [H.FiniteIndex] (A : FDRep k H) (x : K) :
@@ -429,8 +467,8 @@ theorem character_resFDRep_indFDRep_mackey [H.FiniteIndex] (A : FDRep k H) (x : 
   let := Fintype.ofFinite (DoubleCoset.Quotient (K : Set G) (H : Set G))
   rw [FDRep.character_actionRes]
   simp only [character_mackeySummand]
-  rw [← indClassFun_ofFDRep_character]
-  exact indClassFun_mackey (ClassFunction.mem_iff.mpr A.char_conj) x
+  rw [← Subgroup.indClassFun_ofFDRep_character]
+  exact H.indClassFun_mackey (ClassFunction.mem_iff.mpr A.char_conj) x
 
 end Character
 

@@ -11,6 +11,8 @@ public import TauCeti.InformationTheory.Coding.Weight.Euclidean
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.CoordinatePower
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.ZModStandard
 
+import Mathlib.Algebra.BigOperators.Field
+
 /-!
 # Codes over `ℤ/m` as subgroups of a discriminant module
 

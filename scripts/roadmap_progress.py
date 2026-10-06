@@ -27,7 +27,11 @@ Three kinds of evidence go into the output, and the page keeps them apart:
   sub-roadmap reads its own marker from the umbrella's report and nothing else there. That is
   what this page will accept, offered as a proposal to
   TauCetiProgress, not a contract it has agreed to; a marker without the README binding is left
-  unassessed with a reason rather than applied to whatever README happens to be current. Until
+  unassessed with a reason rather than applied to whatever README happens to be current. A marker
+  bound to an earlier README is still applied when the README names exactly the same layer ids,
+  but flagged (`readme_changed`): editing a README is routine, its report lags as every report
+  does, and the board shows that as a report due rather than as layers nobody has assessed. A
+  re-layered README cannot be mapped onto the old verdicts, so its layers are unassessed. Until
   TauCetiProgress emits such a marker,
   `scripts/roadmap_coverage.json` carries the same verdicts transcribed by hand from the prose.
   A transcription is bound to the exact report it was read from (its library commit and a hash of
@@ -90,8 +94,9 @@ MALFORMED = "malformed"  # a marker that is present but whose JSON does not pars
 STATES = ("done", "partial", "untouched", "unassessed")
 _STATE_CHAR = {"d": "done", "p": "partial", "u": "untouched", "?": "unassessed"}
 
-# Why a row's layers carry the states they do. `ok` means an assessment applied; every other
-# reason leaves the layers unassessed and says which kind of gap that is.
+# Why a row's layers carry the states they do. `ok` means an assessment applied (possibly one made
+# against an earlier README, which the row flags as `readme_changed`); every other reason leaves
+# the layers unassessed and says which kind of gap that is.
 REASONS = ("ok", "no-layers", "no-report", "not-transcribed", "transcription-retired",
            "specification-changed", "invalid-marker")
 
@@ -281,17 +286,24 @@ def _check_ids(by_id: dict, ids: list[str]) -> str | None:
     return None
 
 
+DIFFERENT_README = "marker assessed a different README than the one the layers were read from"
+# What a marker's `readme_sha` must be: a prefix of at least twelve characters of a SHA-256 hex
+# digest. Anything else names no README, so it can never count as an earlier one.
+_README_SHA_RE = re.compile(r"[0-9a-f]{12,64}")
+
+
 def states_from_marker(marker, name: str, layers: list[str], to_sha: str,
                        readme_sha: str) -> tuple[list[str] | None, str | None]:
     """Per-layer states from a `tauceti-coverage:v1` marker, or (None, reason).
 
     It fits when it names this roadmap, this library commit and the README it assessed (a
-    `readme_sha` matching, as a prefix of at least twelve characters, the hash of the README the
-    layers were read from), and lists every layer id exactly once with a legal state; anything
+    `readme_sha` of 12 to 64 lowercase hex digits matching, as a prefix, the hash of the README
+    the layers were read from), and lists every layer id exactly once with a legal state; anything
     else is refused whole, with a reason, rather than half-applied. Layer ids alone are not a
     specification identity: a layer's requirements can change under an unchanged heading, which
-    is exactly what the README hash detects. An entry's optional string `remaining` is read by
-    `remaining_notes`.
+    is exactly what the README hash detects, so a marker for another README is refused here with
+    `DIFFERENT_README` (`read_roadmap` decides what to show instead). An entry's optional string
+    `remaining` is read by `remaining_notes`.
     """
     if marker == MALFORMED:
         return None, "marker JSON does not parse"
@@ -301,9 +313,13 @@ def states_from_marker(marker, name: str, layers: list[str], to_sha: str,
         return None, f"marker names roadmap {marker.get('roadmap')!r}, not {name!r}"
     if marker.get("to_sha") != to_sha:
         return None, "marker describes a different library commit than the status header"
-    if not _prefix_ok(marker.get("readme_sha"), readme_sha, 12):
-        return None, ("marker does not name the README it assessed (no readme_sha)" if marker.get("readme_sha") is None
-                      else "marker assessed a different README than the one the layers were read from")
+    named = marker.get("readme_sha")
+    if named is None:
+        return None, "marker does not name the README it assessed (no readme_sha)"
+    if not isinstance(named, str) or _README_SHA_RE.fullmatch(named) is None:
+        return None, "marker's readme_sha is not a README hash"
+    if not _prefix_ok(named, readme_sha, 12):
+        return None, DIFFERENT_README
     entries = marker.get("layers")
     if not isinstance(entries, list):
         return None, "marker has no layer list"
@@ -393,7 +409,7 @@ def read_roadmap(dirpath: pathlib.Path, base: str, transitional: dict, parent: s
         "layer_lines": [line for _, line in with_lines],
         "states": ["unassessed"] * len(layers),
         "assessment": {"source": None, "reason": "no-layers" if not layers else "no-report", "detail": None,
-                       "notes": {}, "remaining": {}},
+                       "notes": {}, "remaining": {}, "readme_changed": False},
         "links": [l for l in ((links or {}).get(rel) or []) if isinstance(l, dict)
                   and isinstance(l.get("label"), str) and isinstance(l.get("url"), str)
                   and l["url"].startswith("https://")],
@@ -419,6 +435,17 @@ def read_roadmap(dirpath: pathlib.Path, base: str, transitional: dict, parent: s
     marker = st["sub_coverage"].get(own_id) if inherited else st["coverage"]
     if marker is not None:
         states, why = states_from_marker(marker, own_id, layers, st["to_sha"], row["readme_sha"])
+        if why == DIFFERENT_README:
+            # The README changed after the report. While it names the same layers, keep the
+            # report's verdicts, flagged, until the next report assesses the README as it now
+            # stands; a re-layered README leaves them unassessed, since old verdicts cannot be
+            # mapped onto new layers.
+            states, relayered = states_from_marker(marker, own_id, layers, st["to_sha"], marker["readme_sha"])
+            if states:
+                a["readme_changed"] = True
+                a["detail"] = "the README changed after this report, so these states assess it as it was then"
+            else:
+                why = f"{why}; {relayered}"
         if states:
             row["states"], a["source"], a["reason"] = states, "marker", "ok"
             a["remaining"] = remaining_notes(marker.get("layers"), row["layer_ids"])

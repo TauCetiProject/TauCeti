@@ -243,11 +243,14 @@ theorem hasEval_formalAddEval {t₁ t₂ : O} (h₁ : PowerSeries.HasEval t₁)
 theorem formalSlopeEval_mul_sub {t₁ t₂ : O} (h₁ : PowerSeries.HasEval t₁)
     (h₂ : PowerSeries.HasEval t₂) :
     W.formalSlopeEval t₁ t₂ * (t₂ - t₁) = W.formalWEval t₂ - W.formalWEval t₁ := by
-  have h := congrArg (evalPair h₁ h₂) W.formalSlope_mul_sub
-  rw [map_mul, map_sub, map_sub] at h
-  simpa [formalSlopeEval, W.formalWEval_def, coe_evalPair, Sum.elim_inl, Sum.elim_inr,
-    PowerSeries.eval₂_id_toMvPowerSeries (hasEval_pair h₁ h₂),
-    MvPowerSeries.eval₂_X] using h
+  have h := congrArg (evalPair h₁ h₂) W.formalSlope_mul_X_add
+  simp only [map_mul, map_add] at h
+  have h' : W.formalSlopeEval t₁ t₂ * t₂ + W.formalWEval t₁ =
+      W.formalSlopeEval t₁ t₂ * t₁ + W.formalWEval t₂ := by
+    simpa [formalSlopeEval, W.formalWEval_def, coe_evalPair, Sum.elim_inl, Sum.elim_inr,
+      PowerSeries.eval₂_id_toMvPowerSeries (hasEval_pair h₁ h₂),
+      MvPowerSeries.eval₂_X] using h
+  linear_combination h'
 
 /-- **The evaluated intercept identity**: `ν(t₁, t₂) = w(t₁) - λ(t₁, t₂) * t₁`. -/
 theorem formalInterceptEval_eq {t₁ t₂ : O} (h₁ : PowerSeries.HasEval t₁)

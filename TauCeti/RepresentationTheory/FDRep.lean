@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Category.FGModuleCat.Abelian
 public import Mathlib.RingTheory.Finiteness.Small
 public import Mathlib.RepresentationTheory.Character
+public import TauCeti.RepresentationTheory.Subrepresentation
 
 /-!
 # Finite-dimensional representations
@@ -31,7 +32,8 @@ being a commutative ring throughout otherwise.
 
 Finally it records the structural properties of the character that Mathlib's
 `RepresentationTheory/Character.lean` leaves out beside `FDRep.char_iso` and `FDRep.char_tensor`:
-the character is **additive on biproducts** (and, unbundled, on products of representations), the
+the character is **additive on biproducts** (and, unbundled, on products of representations and on
+complementary subrepresentations), the
 character of the **tensor unit** is the constant function `1`, and the character is **constant on
 the cosets of its kernel**. The first two are what
 is still missing before the character can be read as a ring homomorphism out of the representation
@@ -51,6 +53,10 @@ subgroup.
   carrier, whence `FDRep.character_of_trivial` for the trivial representation on `k` itself.
 * `Representation.char_prod`: the character is additive on products of representations, the
   unbundled counterpart of `FDRep.char_biprod`.
+* `Subrepresentation.char_add_eq_of_isCompl`: the character is additive on complementary
+  subrepresentations.
+* `FDRep.character_eq_zero_of_finrank_intertwiningMap_eq_zero`: a representation without nonzero
+  equivariant endomorphisms has character zero.
 * `FDRep.moduleFinite_forget₂_obj`: the forgotten carrier is module-finite.
 * `FDRep.finrank_forget₂_obj`: forgetting does not change finrank.
 * `FDRep.character_forget₂_obj`: forgetting does not change the character.
@@ -100,6 +106,22 @@ theorem char_prod {k : Type u} {G : Type v} {V W : Type*} [Field k] [Monoid G]
   exact LinearMap.trace_prodMap' (ρ g) (σ g)
 
 end Representation
+
+namespace Subrepresentation
+
+/-- **The character is additive on complementary subrepresentations**: if `ρ₁` and `ρ₂` are
+complementary subrepresentations of `ρ`, the characters of the representations they carry add up
+to the character of `ρ`. This is `Representation.char_prod` read through the splitting
+`Subrepresentation.equivProdOfIsCompl`. -/
+@[simp]
+theorem char_add_eq_of_isCompl {k : Type u} {G : Type v} {V : Type w} [Field k] [Monoid G]
+    [AddCommGroup V] [Module k V] [FiniteDimensional k V] {ρ : Representation k G V}
+    {ρ₁ ρ₂ : Subrepresentation ρ} (h : IsCompl ρ₁ ρ₂) :
+    ρ₁.toRepresentation.character + ρ₂.toRepresentation.character = ρ.character := by
+  funext g
+  rw [Pi.add_apply, ← Representation.char_prod, Representation.char_iso (equivProdOfIsCompl h)]
+
+end Subrepresentation
 
 namespace FDRep
 
@@ -321,6 +343,28 @@ theorem char_mul_of_mem_ker_left (V : FDRep k G) {g : G} (hg : g ∈ V.ρ.ker) (
   simp only [character, map_mul, MonoidHom.mem_ker.1 hg, one_mul]
 
 end Kernel
+
+section Zero
+
+variable {k : Type u} {G : Type v} [Field k] [Monoid G]
+
+open _root_.Representation in
+/-- A representation of dimension zero, recognised by its zero-dimensional space of equivariant
+endomorphisms, has character zero. -/
+theorem character_eq_zero_of_finrank_intertwiningMap_eq_zero (C : FDRep k G)
+    (hC : Module.finrank k (IntertwiningMap C.ρ C.ρ) = 0) : C.character = 0 := by
+  have : Subsingleton C := by
+    by_contra hC'
+    rw [not_subsingleton_iff_nontrivial] at hC'
+    obtain ⟨v, hv⟩ := exists_ne (0 : C)
+    have hid : IntertwiningMap.id C.ρ ≠ 0 := fun h0 =>
+      hv (by simpa using congrArg (fun φ : IntertwiningMap C.ρ C.ρ => φ v) h0)
+    exact (Module.finrank_pos_iff_exists_ne_zero.mpr ⟨_, hid⟩).ne' hC
+  funext g
+  rw [← FDRep.character_ρ, Representation.character, Subsingleton.elim (C.ρ g) 0, map_zero,
+    Pi.zero_apply]
+
+end Zero
 
 section CommonKernel
 

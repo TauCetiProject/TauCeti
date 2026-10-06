@@ -19,7 +19,9 @@ points valued in every algebraically closed field over `R`.
 The algebraic point-lifting theorem is
 `AlgHom.surjective_comp_right_of_faithfullyFlat`. The result here records it in the group-valued
 functor-of-points API, where precomposition is the component of
-`CommHopfAlgCat.mapPointsFunctor f`.
+`CommHopfAlgCat.mapPointsFunctor f`. Applied to the faithfully flat morphism from an affine
+group onto its scheme-theoretic image, it lets properties of source points descend to all
+image points.
 
 ## Main declaration
 
@@ -30,10 +32,6 @@ functor-of-points API, where precomposition is the component of
 
 * The Stacks Project, Tag 00HQ, Lemma 10.39.16.
 * The Stacks Project, Tag 00FV, *Hilbert Nullstellensatz*.
-
-This is the group-valued point-lifting interface used in Layer 5, "The unipotent radical", of the
-ReductiveGroups roadmap. Applied to the faithfully flat morphism from an affine group onto its
-scheme-theoretic image, it lets properties of source points descend to all image points.
 -/
 
 public section

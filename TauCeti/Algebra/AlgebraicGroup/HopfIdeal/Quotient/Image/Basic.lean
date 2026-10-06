@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.ConcreteCategory.EpiMono
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Basic
+public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Kernel.Basic
 public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Kernel
 
 /-!
@@ -112,6 +113,22 @@ theorem imageι_injective (f : H ⟶ K) : Function.Injective (imageι f).hom := 
   apply (Ideal.quotientEquivAlgOfEq k (HopfIdeal.ker_toIdeal f.hom)).injective
   apply Ideal.kerLiftAlg_injective f.hom.toAlgHom
   simpa only [← imageι_apply] using hxy
+
+/-- If the source affine group has finite-type coordinate algebra, its canonical morphism
+onto the scheme-theoretic image is of finite type. -/
+theorem imageι_finiteType (f : H ⟶ K) [Algebra.FiniteType k K] :
+    (imageι f).hom.toAlgHom.FiniteType := by
+  apply AlgHom.FiniteType.of_comp_finiteType (f := Algebra.ofId k (image f))
+  rw [Algebra.comp_ofId]
+  exact RingHom.finiteType_algebraMap.mpr inferInstance
+
+/-- Passing from a homomorphism to its scheme-theoretic image does not change its kernel
+closed subgroup, including the possibly nonreduced scheme structure. -/
+@[simp]
+theorem kernelHopfIdeal_imageι (f : H ⟶ K) :
+    kernelHopfIdeal (imageι f) = kernelHopfIdeal f := by
+  rw [← kernelHopfIdeal_comp_of_surjective (mkImage f) (mkImage_surjective f),
+    mkImage_comp_imageι]
 
 instance imageι_mono (f : H ⟶ K) : Mono (imageι f) :=
   ConcreteCategory.mono_of_injective _ (imageι_injective f)

@@ -1,0 +1,122 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.RepresentationTheory.Quiver.Representation.Projective.Module
+public import TauCeti.Algebra.Category.FGModuleCat.Projective
+
+/-!
+# Finiteness of vertex projectives
+
+Every vertex projective is a finitely generated path-algebra module. This places vertex
+projectives in the category of finitely generated modules and its Grothendieck group.
+
+See Assem--Simson--Skowroński, *Elements of the Representation Theory of Associative Algebras I*,
+Chapter III, Section 2.
+-/
+
+public section
+
+namespace TauCeti
+
+open CategoryTheory
+open scoped ModuleCat
+
+universe u v w
+
+variable (k : Type u) (Q : Type v) [Field k] [Quiver.{w} Q] [Finite Q]
+
+/-- A vertex projective is finitely generated as a path-algebra module. -/
+theorem module_finite_indecProjModule (i : Q) :
+    Module.Finite (pathAlgebra k Q) (indecProjModule k Q i) := by
+  classical
+  -- Pointwise finite-dimensionality is unavailable for quivers with cycles, but `Pᵢ` is cyclic.
+  let _ : Fintype Q := Fintype.ofFinite Q
+  let x : QuiverRep.asModule k Q (indecProjRep k Q i) :=
+    QuiverRep.ofVertex k Q (indecProjRep k Q i) i
+      (indecProjRepBasis k i i Quiver.Path.nil)
+  let S : Submodule (pathAlgebra k Q) (QuiverRep.asModule k Q (indecProjRep k Q i)) :=
+    Submodule.span (pathAlgebra k Q) {x}
+  have hb (j : Q) (p : Quiver.Path i j) :
+      QuiverRep.ofVertex k Q (indecProjRep k Q i) j (indecProjRepBasis k i j p) ∈ S := by
+    have h := QuiverRep.smul_ofVertex k Q (indecProjRep k Q i) p
+      (indecProjRepBasis k i i Quiver.Path.nil)
+    -- Retype the vertex-space map as the representation map to use its basis rule.
+    change (PathAlgebra.ofPath ⟨i, j, p⟩ : pathAlgebra k Q) •
+        QuiverRep.ofVertex k Q (indecProjRep k Q i) i
+          (indecProjRepBasis k i i Quiver.Path.nil) =
+      QuiverRep.ofVertex k Q (indecProjRep k Q i) j
+        ((indecProjRep k Q i).map p (indecProjRepBasis k i i Quiver.Path.nil)) at h
+    rw [indecProjRep_map_basis, Quiver.Path.nil_comp] at h
+    rw [← h]
+    exact S.smul_mem _ (Submodule.subset_span (Set.mem_singleton x))
+  have hv (j : Q) (z : (indecProjRep k Q i).obj j) :
+      QuiverRep.ofVertex k Q (indecProjRep k Q i) j z ∈ S := by
+    let f : (indecProjRep k Q i).obj j →ₗ[k]
+        QuiverRep.asModule k Q (indecProjRep k Q i) :=
+      QuiverRep.ofVertex k Q (indecProjRep k Q i) j
+    -- The explicit domain identifies the representation's `Paths` object with the vertex.
+    change f z ∈ S
+    have hz : z ∈ Submodule.span k (Set.range (indecProjRepBasis k i j)) := by
+      rw [(indecProjRepBasis k i j).span_eq]
+      exact Submodule.mem_top
+    induction hz using Submodule.span_induction with
+    | mem y hy =>
+        obtain ⟨p, rfl⟩ := hy
+        exact hb j p
+    | zero =>
+        rw [f.map_zero]
+        exact S.zero_mem
+    | add y z _ _ hy hz =>
+        rw [f.map_add]
+        exact S.add_mem hy hz
+    | smul c y _ hy =>
+        rw [f.map_smul]
+        rw [← algebraMap_smul (pathAlgebra k Q) c (f y)]
+        exact S.smul_mem _ hy
+  have htop : S = ⊤ := by
+    apply Submodule.eq_top_iff'.2
+    intro y
+    rw [← QuiverRep.sum_ofVertex_toVertex k Q (indecProjRep k Q i) y]
+    exact Submodule.sum_mem _ fun j _ ↦ hv j _
+  let hmodule : Module.Finite (pathAlgebra k Q)
+      (QuiverRep.asModule k Q (indecProjRep k Q i)) :=
+    Module.Finite.of_fg_top (Submodule.fg_def.mpr
+      ⟨{x}, Set.finite_singleton x, htop⟩)
+  let hshrink : Module.Finite (pathAlgebra k Q)
+      (QuiverRep.asModuleShrink k Q (indecProjRep k Q i)) :=
+    Module.Finite.equiv (QuiverRep.asModuleShrinkEquiv k Q (indecProjRep k Q i)).symm
+  let e : indecProjModule k Q i ≅ QuiverRep.asModuleShrink k Q (indecProjRep k Q i) :=
+    (quiverRepFunctorFullyFaithful k Q).preimageIso
+      (indecProjModuleIso k Q i ≪≫
+        (QuiverRep.asModuleShrinkIso k Q (indecProjRep k Q i)).symm)
+  exact Module.Finite.equiv e.toLinearEquiv.symm
+
+/-- A vertex projective as a finitely generated path-algebra module. -/
+noncomputable def vertexProjectiveModuleFG (i : Q) :
+    FGModuleCat (pathAlgebra k Q) :=
+  ⟨indecProjModule k Q i, module_finite_indecProjModule k Q i⟩
+
+/-- The underlying module of a finite vertex projective is `indecProjModule`. -/
+@[simp]
+theorem vertexProjectiveModuleFG_obj (i : Q) :
+    (vertexProjectiveModuleFG k Q i).obj = indecProjModule k Q i := by
+  rfl
+
+/-- A finite vertex projective is projective as a path-algebra module. -/
+instance (i : Q) :
+    Module.Projective (pathAlgebra k Q) (vertexProjectiveModuleFG k Q i) := by
+  -- The module coercion of `FGModuleCat` unfolds to `.obj`, where the object equality rewrites.
+  change Module.Projective (pathAlgebra k Q) (vertexProjectiveModuleFG k Q i).obj
+  rw [vertexProjectiveModuleFG_obj]
+  infer_instance
+
+/-- A finite vertex projective is a projective object of finitely generated modules. -/
+instance (i : Q) :
+    Projective (vertexProjectiveModuleFG k Q i) :=
+  FGModuleCat.projective_of_moduleProjective (pathAlgebra k Q) _
+
+end TauCeti

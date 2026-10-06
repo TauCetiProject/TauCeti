@@ -7,21 +7,29 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Star.Classification
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Star.Components
+public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Star.UniqueBranch
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.TypeA
 
 /-!
 # Reindexing a simply-laced branch diagram onto a star
 
-Deleting the unique branch vertex of a connected simply-laced finite-type diagram leaves three
-path components. This file roots each path at the neighbour of the deleted vertex and joins the
-three rooted paths back to their centre. The resulting simultaneous row-and-column relabelling
-identifies the original matrix with `TauCeti.starCartanMatrix`.
+Deleting the unique branch vertex of a simply-laced diagram which is a tree of maximum degree
+three leaves three path components. This file roots each path at the neighbour of the deleted
+vertex and joins the three rooted paths back to their centre. The resulting simultaneous
+row-and-column relabelling identifies the original matrix with `TauCeti.starCartanMatrix`.
 
-The model-star classification then applies to an arbitrary simply-laced branch diagram, completing
-the `D` and `E` branch of the finite-type Cartan-matrix classification.
+Only the Cartan-matrix normalization, the symmetric vanishing pattern and the shape of the diagram
+are used, exactly as in the type `Aₙ` relabelling of
+`TauCeti.LinearAlgebra.RootSystem.FiniteType.TypeA`, so the relabelling also applies to diagrams
+not yet known to be of finite type. A connected simply-laced finite-type diagram with a branch
+vertex has that shape, and the model-star classification then applies to it, completing the `D`
+and `E` branch of the finite-type Cartan-matrix classification.
 
 ## Main results
 
+* `TauCeti.exists_equiv_forall_eq_starCartanMatrix_of_isTree_of_isSimplyLaced`: a simply-laced
+  matrix with diagonal entries `2` whose diagram is a tree of maximum degree three with a unique
+  vertex of degree three is a three-armed star.
 * `IsFiniteType.exists_equiv_forall_eq_starCartanMatrix_of_isSimplyLaced_of_degree_eq_three`:
   a connected simply-laced finite-type matrix with a branch vertex is a three-armed star.
 * `TauCeti.IsFiniteType.existsUnique_dynkinType_of_isSimplyLaced_of_degree_eq_three`: such a
@@ -176,42 +184,50 @@ private theorem degree_toSimpleGraph_le_one_of_adj_branch {B : Type*} [Fintype B
     exact (G.ne_of_adj hcx) (huniq hx3).symm
   exact hdegq
 
-private theorem apply_eq_chainEntry_of_component_iso {B : Type*} [Fintype B]
-    {A : Matrix B B ℤ} (h : IsFiniteType A) (hsl : A.IsSimplyLaced) {c : B}
+private theorem apply_eq_chainEntry_of_component_iso {B : Type*}
+    {A : Matrix B B ℤ} (hdiag : ∀ i, A i i = 2)
+    (hadj : ∀ i j, (diagramGraph A).Adj i j ↔ i ≠ j ∧ A i j ≠ 0) (hsl : A.IsSimplyLaced) {c : B}
     (C : ((diagramGraph A).induce ({c}ᶜ : Set B)).ConnectedComponent)
     (f : C.toSimpleGraph ≃g pathGraph (Nat.card ↑C.supp)) (v w : ↑C.supp) :
     A v.1.1 w.1.1 = chainEntry (f v) (f w) := by
   let A' : Matrix ↑C.supp ↑C.supp ℤ := fun x y ↦ A x.1.1 y.1.1
-  have hdiag' : ∀ x : ↑C.supp, A' x x = 2 := fun x ↦ h.apply_self x.1.1
+  have hdiag' : ∀ x : ↑C.supp, A' x x = 2 := fun x ↦ hdiag x.1.1
   have hsl' : A'.IsSimplyLaced := fun {x y} hxy ↦
     hsl fun heq ↦ hxy (Subtype.ext (Subtype.ext heq))
   have hadj' : ∀ x y : ↑C.supp, C.toSimpleGraph.Adj x y ↔ x ≠ y ∧ A' x y ≠ 0 := by
     intro x y
-    rw [connectedComponent_toSimpleGraph_adj, h.diagramGraph_adj_iff]
+    rw [connectedComponent_toSimpleGraph_adj, hadj]
     exact ⟨fun ⟨hne, hA⟩ ↦ ⟨fun heq ↦ hne (congrArg (fun z : ↑C.supp ↦ z.1.1) heq), hA⟩,
       fun ⟨hne, hA⟩ ↦ ⟨fun heq ↦ hne (Subtype.ext (Subtype.ext heq)), hA⟩⟩
   exact apply_eq_chainEntry_of_iso_pathGraph hdiag' hsl' hadj' f v w
 
-namespace IsFiniteType
+section Star
 
 variable {B : Type*} [Fintype B] {A : Matrix B B ℤ}
 
-open Classical in
-/-- **A connected simply-laced finite-type matrix with a branch vertex is a three-armed star.**
+/-- **A simply-laced matrix with diagonal entries `2` whose diagram is a tree of maximum degree
+three, with a unique vertex of degree three, is a three-armed star.**
 
 The arm lengths are the cardinalities of the three components left after deleting the branch
 vertex. They are nonzero, and the equivalence sends the branch vertex to the centre and roots each
-arm at its unique neighbour of the centre. -/
-theorem exists_equiv_forall_eq_starCartanMatrix_of_isSimplyLaced_of_degree_eq_three
-    (h : IsFiniteType A) (hconn : (diagramGraph A).Connected) (hsl : A.IsSimplyLaced)
-    {c : B} (hc : (diagramGraph A).degree c = 3) :
+arm at its unique neighbour of the centre.
+
+Only the Cartan-matrix normalization, the symmetric vanishing pattern and the shape of the diagram
+are needed here, rather than positive definiteness or the other finite-type hypotheses. -/
+theorem exists_equiv_forall_eq_starCartanMatrix_of_isTree_of_isSimplyLaced [DecidableEq B]
+    (htree : (diagramGraph A).IsTree) (hdiag : ∀ i, A i i = 2)
+    (hzero : ∀ i j, A i j = 0 ↔ A j i = 0) (hsl : A.IsSimplyLaced)
+    (hdeg : ∀ i, (diagramGraph A).degree i ≤ 3) {c : B} (hc : (diagramGraph A).degree c = 3)
+    (huniq : ∀ i, (diagramGraph A).degree i = 3 → i = c) :
     ∃ (ℓ : Fin 3 → ℕ) (e : B ≃ StarIndex ℓ),
       (∀ i, ℓ i ≠ 0) ∧ e c = none ∧ ∀ i j, A i j = starCartanMatrix ℓ (e i) (e j) := by
   classical
   let G := diagramGraph A
   let H := G.induce ({c}ᶜ : Set B)
-  have htree : G.IsTree := h.isTree_diagramGraph hconn
-  obtain ⟨eC, heC⟩ := h.exists_three_path_components_of_isSimplyLaced hconn hsl hc
+  have hGadj : ∀ i j, G.Adj i j ↔ i ≠ j ∧ A i j ≠ 0 := fun i j ↦ by
+    rw [diagramGraph_adj]
+    exact ⟨fun h ↦ ⟨h.1, h.2.1⟩, fun h ↦ ⟨h.1, h.2, fun hji ↦ h.2 ((hzero i j).mpr hji)⟩⟩
+  obtain ⟨eC, heC⟩ := exists_three_path_components_of_isTree htree hdeg hc huniq
   let _ : (C : H.ConnectedComponent) → Fintype ↑C.supp := fun _ ↦ Fintype.ofFinite _
   let _ : (C : H.ConnectedComponent) → DecidableRel C.toSimpleGraph.Adj :=
     fun _ ↦ Classical.decRel _
@@ -229,8 +245,7 @@ theorem exists_equiv_forall_eq_starCartanMatrix_of_isSimplyLaced_of_degree_eq_th
       _ = eC i := Equiv.apply_symm_apply _ _
   let q (i : Fin 3) : ↑(ConnectedComponent.supp (eC i)) := ⟨x i, hxC i⟩
   have hqdeg (i : Fin 3) : (eC i).toSimpleGraph.degree (q i) ≤ 1 := by
-    exact degree_toSimpleGraph_le_one_of_adj_branch c h.degree_le_three
-      (fun hx3 ↦ h.eq_of_degree_eq_three hsl hconn hx3 hc) (hcn i) (eC i) (hxC i)
+    exact degree_toSimpleGraph_le_one_of_adj_branch c hdeg (huniq _) (hcn i) (eC i) (hxC i)
   let f (i : Fin 3) : (eC i).toSimpleGraph ≃g
       pathGraph (Nat.card ↑(ConnectedComponent.supp (eC i))) := by
     exact Classical.choose
@@ -270,7 +285,7 @@ theorem exists_equiv_forall_eq_starCartanMatrix_of_isSimplyLaced_of_degree_eq_th
       (v : ↑(ConnectedComponent.supp (eC i)))
       (w : ↑(ConnectedComponent.supp (eC j))) : A v.1.1 w.1.1 = 0 := by
     by_contra hA
-    have hadjG : G.Adj v.1.1 w.1.1 := h.diagramGraph_adj_iff.mpr ⟨by
+    have hadjG : G.Adj v.1.1 w.1.1 := (hGadj _ _).mpr ⟨by
       intro hvw
       have hvwH : v.1 = w.1 := Subtype.ext hvw
       have hcomp : eC i = eC j :=
@@ -291,19 +306,19 @@ theorem exists_equiv_forall_eq_starCartanMatrix_of_isSimplyLaced_of_degree_eq_th
     obtain ⟨w, rfl⟩ := E.surjective j
     simp only [E.symm_apply_apply]
     rcases v with _ | v <;> rcases w with _ | w
-    · simp only [E, starVertexEquiv_none, h.apply_self, starCartanMatrix_none_none]
+    · simp only [E, starVertexEquiv_none, hdiag, starCartanMatrix_none_none]
     · simp only [E, starVertexEquiv_none, starVertexEquiv_some,
         starCartanMatrix_none_some]
       by_cases hw : (w.2 : ℕ) = 0
       · rw [ite_eq_left hw]
         have hadj := (hcenter w.1 w.2).mpr hw
         have hneA : A c ((f w.1).symm w.2).1.1 ≠ 0 := by
-          exact (h.diagramGraph_adj_iff.mp hadj).2
+          exact ((hGadj _ _).mp hadj).2
         exact (hsl (G.ne_of_adj hadj)).resolve_left hneA
       · rw [ite_eq_right hw]
         by_contra hA
         have hadj : G.Adj c ((f w.1).symm w.2).1.1 :=
-          h.diagramGraph_adj_iff.mpr ⟨fun hcw ↦ ((f w.1).symm w.2).1.property
+          (hGadj _ _).mpr ⟨fun hcw ↦ ((f w.1).symm w.2).1.property
             (Set.mem_singleton_iff.mpr hcw.symm), hA⟩
         exact hw ((hcenter w.1 w.2).mp hadj)
     · simp only [E, starVertexEquiv_none, starVertexEquiv_some,
@@ -312,13 +327,13 @@ theorem exists_equiv_forall_eq_starCartanMatrix_of_isSimplyLaced_of_degree_eq_th
       · rw [ite_eq_left hv]
         have hadj := (hcenter v.1 v.2).mpr hv
         have hneA : A ((f v.1).symm v.2).1.1 c ≠ 0 := by
-          exact (h.diagramGraph_adj_iff.mp hadj.symm).2
+          exact ((hGadj _ _).mp hadj.symm).2
         exact (hsl (G.ne_of_adj hadj).symm).resolve_left hneA
       · rw [ite_eq_right hv]
         by_contra hA
         have hadj : G.Adj c ((f v.1).symm v.2).1.1 := by
           symm
-          exact h.diagramGraph_adj_iff.mpr ⟨fun hvc ↦ ((f v.1).symm v.2).1.property
+          exact (hGadj _ _).mpr ⟨fun hvc ↦ ((f v.1).symm v.2).1.property
             (Set.mem_singleton_iff.mpr hvc), hA⟩
         exact hv ((hcenter v.1 v.2).mp hadj)
     · rcases v with ⟨i, v⟩
@@ -328,9 +343,31 @@ theorem exists_equiv_forall_eq_starCartanMatrix_of_isSimplyLaced_of_degree_eq_th
       · subst j
         rw [ite_eq_left rfl]
         simpa only [RelIso.apply_symm_apply, chainEntry_def] using
-          apply_eq_chainEntry_of_component_iso h hsl (eC i) (f i) ((f i).symm v) ((f i).symm w)
+          apply_eq_chainEntry_of_component_iso hdiag hGadj hsl (eC i) (f i) ((f i).symm v)
+            ((f i).symm w)
       · rw [ite_eq_right hij]
         exact hdifferent hij ((f i).symm v) ((f j).symm w)
+
+end Star
+
+namespace IsFiniteType
+
+variable {B : Type*} [Fintype B] {A : Matrix B B ℤ}
+
+open Classical in
+/-- **A connected simply-laced finite-type matrix with a branch vertex is a three-armed star.**
+
+The arm lengths are the cardinalities of the three components left after deleting the branch
+vertex. They are nonzero, and the equivalence sends the branch vertex to the centre and roots each
+arm at its unique neighbour of the centre. -/
+theorem exists_equiv_forall_eq_starCartanMatrix_of_isSimplyLaced_of_degree_eq_three
+    (h : IsFiniteType A) (hconn : (diagramGraph A).Connected) (hsl : A.IsSimplyLaced)
+    {c : B} (hc : (diagramGraph A).degree c = 3) :
+    ∃ (ℓ : Fin 3 → ℕ) (e : B ≃ StarIndex ℓ),
+      (∀ i, ℓ i ≠ 0) ∧ e c = none ∧ ∀ i j, A i j = starCartanMatrix ℓ (e i) (e j) :=
+  exists_equiv_forall_eq_starCartanMatrix_of_isTree_of_isSimplyLaced
+    (h.isTree_diagramGraph hconn) h.apply_self (fun _ _ ↦ h.apply_eq_zero_iff) hsl
+    h.degree_le_three hc fun _ hi ↦ h.eq_of_degree_eq_three hsl hconn hi hc
 
 open Classical in
 /-- **The simply-laced branch case of the finite-type Cartan-matrix classification.** A connected

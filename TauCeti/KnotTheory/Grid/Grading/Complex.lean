@@ -48,9 +48,8 @@ theorem bidegree_eq_sub_of_mem_fullyBlockedRectangles {x y : GridState n}
     {r : GridRectangleBetween x y} (hr : r ∈ G.1.fullyBlockedRectangles x y) :
     G.bidegree y = G.bidegree x - (1, 0) := by
   obtain ⟨he, ha⟩ := (G.1.mem_fullyBlockedRectangles x y r).mp hr
-  have hO := r.disjoint_squares_OSet_of_avoidsMarkings ha
-  have hX := r.disjoint_squares_XSet_of_avoidsMarkings ha
-  rw [GridRectangle.squares_eq_coveredSquares] at hO hX
+  have hO := r.disjoint_coveredSquares_OSet_of_avoidsMarkings ha
+  have hX := r.disjoint_coveredSquares_XSet_of_avoidsMarkings ha
   have hM := G.1.maslovO_sub_maslovO_eq_one_of_disjoint_coveredSquares r he hO
   have hA := G.1.alexander_eq_alexander_of_disjoint_coveredSquares r
     (Finset.disjoint_union_right.mpr ⟨hO, hX⟩)

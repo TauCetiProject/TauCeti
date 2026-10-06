@@ -9,9 +9,12 @@ public import Mathlib.LinearAlgebra.Matrix.Cartan.Basic
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Cyclic
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Cardinality
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Quadratic
+public import TauCeti.LinearAlgebra.IntegralLattice.Level
+public import TauCeti.LinearAlgebra.IntegralLattice.PosDef.Minimum
 public import TauCeti.LinearAlgebra.IntegralLattice.Signature
 public import TauCeti.LinearAlgebra.IntegralLattice.StandardCoordinates
 public import TauCeti.LinearAlgebra.IntegralLattice.Unimodular
+import Mathlib.Algebra.BigOperators.Field
 import TauCeti.LinearAlgebra.RootSystem.FiniteType.Dynkin
 
 /-!
@@ -27,6 +30,9 @@ det E₆ = 3,   A_{E₆} ≃+ ℤ/3,   q(ϖ₁) = 2/3,
 det E₇ = 2,   A_{E₇} ≃+ ℤ/2,   q(ϖ₇) = 3/4,
 det E₈ = 1,   A_{E₈} = 0,      E₈ is unimodular.
 ```
+
+Their levels are respectively `3`, `4`, and `1`, computed from these quadratic values
+using `IntegralLattice.IsEven.level_eq_addOrderOf` and the even-unimodular criterion.
 
 The generators are the classes of the minuscule fundamental weights, `ϖ₁` for `E₆` and `ϖ₇` for
 `E₇`, written in the simple-root coordinates that the inverse Cartan matrix dictates:
@@ -77,6 +83,8 @@ the branch node of the diagram is `α₄`, and `α₂` is the short arm.
 * `TauCeti.IntegralLattice.discriminantQuadraticMap_typeE₇MinusculeWeightClass`: `q(ϖ₇) = 3/4`.
 * `TauCeti.IntegralLattice.isUnimodular_typeE₈RootLattice`: `E₈` is unimodular, so its discriminant
   form is trivial.
+* `TauCeti.IntegralLattice.minimum_typeE₈RootLattice`: `E₈` has minimum `2`.
+* `TauCeti.IntegralLattice.level_typeE₆RootLattice` and its analogues: the levels are `3`, `4`, `1`.
 
 ## References
 
@@ -320,6 +328,15 @@ theorem discriminantQuadraticMap_typeE₆MinusculeWeightClass :
   congr 1
   rw [coe_typeE₆MinusculeWeightDual, form_typeE₆MinusculeWeight_self]
   norm_num
+
+/-- The level of the `E₆` root lattice is `3`. -/
+@[simp]
+theorem level_typeE₆RootLattice : typeE₆RootLattice.level = 3 := by
+  rw [isEven_typeE₆RootLattice.level_eq_addOrderOf _
+    zmultiples_typeE₆MinusculeWeightClass_eq_top,
+    discriminantQuadraticMap_typeE₆MinusculeWeightClass]
+  simpa only [Rat.cast_id, mul_one] using
+    (_root_.AddCircle.addOrderOf_coe_rat (p := (1 : ℚ)) (q := 2 / 3)).trans (by norm_num)
 
 /-- **The discriminant bilinear value of the minuscule weight `ϖ₁` of type `E₆` is `1/3`.** -/
 @[simp]
@@ -597,6 +614,15 @@ theorem discriminantQuadraticMap_typeE₇MinusculeWeightClass :
   rw [coe_typeE₇MinusculeWeightDual, form_typeE₇MinusculeWeight_self]
   norm_num
 
+/-- The level of the `E₇` root lattice is `4`, not the exponent `2` of its discriminant group. -/
+@[simp]
+theorem level_typeE₇RootLattice : typeE₇RootLattice.level = 4 := by
+  rw [isEven_typeE₇RootLattice.level_eq_addOrderOf _
+    zmultiples_typeE₇MinusculeWeightClass_eq_top,
+    discriminantQuadraticMap_typeE₇MinusculeWeightClass]
+  simpa only [Rat.cast_id, mul_one] using
+    (_root_.AddCircle.addOrderOf_coe_rat (p := (1 : ℚ)) (q := 3 / 4)).trans (by norm_num)
+
 /-- **The discriminant bilinear value of the minuscule weight `ϖ₇` of type `E₇` is `1/2`.** -/
 @[simp]
 theorem discriminantPairing_typeE₇MinusculeWeightClass :
@@ -713,6 +739,18 @@ theorem isEven_typeE₈RootLattice : typeE₈RootLattice.IsEven := by
   rw [typeE₈RootLattice, isEven_ofGramMatrix_iff]
   decide
 
+/-- **The type `E₈` root lattice has minimum `2`**: it is even and positive definite, and its
+simple roots are roots, of norm `2`. -/
+theorem minimum_typeE₈RootLattice : typeE₈RootLattice.minimum = 2 := by
+  have hmem : typeE₈SimpleRoot 0 ∈ typeE₈RootLattice.carrier :=
+    (mem_typeE₈RootLattice_carrier_iff _).mpr fun i ↦
+      ⟨if i = 0 then 1 else 0, by simp [typeE₈SimpleRoot_apply]⟩
+  refine isPosDef_typeE₈RootLattice.minimum_eq_two isEven_typeE₈RootLattice (x := ⟨_, hmem⟩) ?_
+  have h : (typeE₈RootLattice.integralNorm ⟨_, hmem⟩ : ℚ) = 2 := by
+    rw [integralNorm_cast, norm_apply, form_typeE₈SimpleRoot_typeE₈SimpleRoot]
+    decide
+  exact_mod_cast h
+
 /-- **The determinant of the type `E₈` root lattice is `1`.** -/
 @[simp]
 theorem determinant_typeE₈RootLattice : typeE₈RootLattice.determinant = 1 := by
@@ -729,6 +767,12 @@ theorem discriminant_typeE₈RootLattice : typeE₈RootLattice.discriminant = 1 
 theorem isUnimodular_typeE₈RootLattice : typeE₈RootLattice.IsUnimodular := by
   rw [isUnimodular_iff_isUnit_determinant, determinant_typeE₈RootLattice]
   exact isUnit_one
+
+/-- The even unimodular `E₈` root lattice has level `1`. -/
+@[simp]
+theorem level_typeE₈RootLattice : typeE₈RootLattice.level = 1 :=
+  typeE₈RootLattice.level_eq_one_iff.mpr
+    ⟨isEven_typeE₈RootLattice, isUnimodular_typeE₈RootLattice⟩
 
 /-- **The type `E₈` root lattice is self-dual.** -/
 @[simp]

@@ -35,6 +35,8 @@ weights in Lie--Kolchin arguments.
 
 * `GroupLike.weightSpace`: the weight space belonging to a group-like element.
 * `GroupLike.weightSubcomodule`: the weight space as a subcomodule.
+* `TauCeti.Subcomodule.existsUnique_le_groupLikeWeightSpace_of_finrank_eq_one`: a line
+  subcomodule lies in the weight space of a unique group-like element.
 * `TauCeti.Comodule.iSupIndep_groupLikeWeightSpace`: distinct group-like weight spaces are
   independent.
 * `TauCeti.Comodule.finite_setOf_groupLikeWeightSpace_ne_bot`: a Noetherian comodule has only
@@ -179,6 +181,31 @@ end Projective
 end Comodule
 
 end TauCeti
+
+namespace TauCeti.Subcomodule
+
+variable {k C M : Type*} [Field k] [AddCommMonoid C] [Module k C] [Coalgebra k C]
+  [AddCommGroup M] [Module k M] [Comodule k C M]
+
+/-- A one-dimensional subcomodule lies in the weight space of a unique group-like element.
+For a coordinate Hopf algebra, this is the character by which the group acts on the line. -/
+theorem existsUnique_le_groupLikeWeightSpace_of_finrank_eq_one
+    (L : Subcomodule k C M) (hL : Module.finrank k L.toSubmodule = 1) :
+    ∃! χ : GroupLike k C, L.toSubmodule ≤ χ.weightSpace (M := M) := by
+  have hL0 : L.toSubmodule ≠ ⊥ := (Submodule.isAtom_iff_finrank_eq_one.mpr hL).ne_bot
+  obtain ⟨v, hv, hv0⟩ := L.toSubmodule.ne_bot_iff.mp hL0
+  have hspan := eq_span_singleton_of_mem_of_finrank_eq_one hL hv hv0
+  obtain ⟨c, hc, hcoact⟩ :=
+    Comodule.exists_isGroupLikeElem_coact_eq_tmul_of_toSubmodule_eq_span L hv0 hspan
+  refine ⟨⟨c, hc⟩, ?_, ?_⟩
+  · intro x hx
+    rw [GroupLike.mem_weightSpace]
+    exact Comodule.coact_eq_tmul_of_mem_span hcoact (hspan ▸ hx)
+  · intro χ hχ
+    apply GroupLike.val_injective
+    exact Comodule.eq_of_coact_eq_tmul hv0 (GroupLike.mem_weightSpace.mp (hχ hv)) hcoact
+
+end TauCeti.Subcomodule
 
 namespace GroupLike
 

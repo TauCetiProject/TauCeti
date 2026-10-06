@@ -61,6 +61,8 @@ such a family of affine pieces.
   argument.
 * `TauCeti.IsPLOn.mono`, `TauCeti.IsPLOn.congr`, `TauCeti.isPLOn_of_locally`,
   `TauCeti.IsPLOn.comp`: the four closure properties a `Pregroupoid` property must have.
+* `ContinuousAffineMap.isPLOn_affineGraph`: the graph of a continuous affine map is piecewise
+  affine on every subset of its domain.
 * `TauCeti.isPLOn_abs` and `TauCeti.not_exists_continuousAffineMap_eq_abs`: the absolute value is
   piecewise linear and is not affine, so the predicate is strictly weaker than affineness.
 
@@ -175,6 +177,16 @@ theorem IsPiecewiseAffineOn.isPLOn (h : IsPiecewiseAffineOn f V) : IsPLOn f V :=
 /-- A continuous affine map is piecewise linear on every set. -/
 theorem isPLOn_continuousAffineMap (A : E →ᴬ[ℝ] F) (s : Set E) : IsPLOn (⇑A) s :=
   (isPiecewiseAffineOn_continuousAffineMap A s).isPLOn
+
+/-- The graph of a continuous affine map is piecewise affine on every subset of its domain. -/
+theorem _root_.ContinuousAffineMap.isPLOn_affineGraph
+    {E F : Type*} [AddCommGroup E] [Module ℝ E] [TopologicalSpace E]
+    [AddCommGroup F] [Module ℝ F] [TopologicalSpace F]
+    (A : E →ᴬ[ℝ] F) (s : Set E) :
+    IsPLOn (fun x : E => (x, A x)) s := by
+  convert isPLOn_continuousAffineMap ((ContinuousAffineMap.id ℝ E).prod A) s using 1
+  funext x
+  rfl
 
 /-- The identity is piecewise linear on every set. -/
 theorem isPLOn_id (s : Set E) : IsPLOn (id : E → E) s :=

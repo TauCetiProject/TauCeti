@@ -49,6 +49,8 @@ hyperbolic pair `e, f` hold over any commutative ring and are stated at that lev
   a symplectic basis.**
 * `LinearMap.BilinForm.IsAlt.even_finrank`: a space carrying a nondegenerate alternating form has
   even dimension.
+* `LinearMap.BilinForm.IsAlt.exists_basis_apply_eq_J_inl_zero_eq`: every nonzero vector is the
+  vector at `inl 0` of some symplectic basis.
 
 ## References
 
@@ -307,5 +309,28 @@ theorem IsAlt.exists_basis_toMatrix_eq_J :
 theorem IsAlt.even_finrank : Even (finrank K V) := by
   obtain ⟨m, b, -⟩ := hB.exists_basis_toMatrix_eq_J hnd
   exact ⟨m, by rw [finrank_eq_card_basis b, Fintype.card_sum, Fintype.card_fin]⟩
+
+/-- **Every nonzero vector heads a symplectic basis.** For a nondegenerate alternating form on a
+finite-dimensional space and a nonzero vector `e`, there is a basis indexed by
+`Fin (m + 1) ⊕ Fin (m + 1)` in which the matrix of the form is `Matrix.J` and whose vector at the
+position `inl 0` is `e`. -/
+theorem IsAlt.exists_basis_apply_eq_J_inl_zero_eq {e : V} (he : e ≠ 0) :
+    ∃ (m : ℕ) (b : Basis (Fin (m + 1) ⊕ Fin (m + 1)) K V),
+      (∀ x y, B (b x) (b y) = Matrix.J (Fin (m + 1)) K x y) ∧ b (Sum.inl 0) = e := by
+  -- A partner `f` with `B f e = 1`.
+  obtain ⟨w, hw⟩ : ∃ w, B w e ≠ 0 := by
+    by_contra! h
+    exact he (hnd.2 e h)
+  have hfe : B ((B w e)⁻¹ • w) e = 1 := by
+    rw [map_smul, LinearMap.smul_apply, smul_eq_mul, inv_mul_cancel₀ hw]
+  -- A symplectic basis of the orthogonal complement of the hyperbolic pair.
+  have hZ : (B.restrict (B.orthogonal (span K {e, (B w e)⁻¹ • w}))).IsAlt :=
+    fun z => hB.self_eq_zero z
+  obtain ⟨m, c, hc⟩ :=
+    hZ.exists_basis_toMatrix_eq_J (hB.restrict_nondegenerate_orthogonal_span_pair hfe hnd)
+  have hc' : ∀ x y, B (c x) (c y) = Matrix.J (Fin m) K x y := fun x y => by
+    rw [← hc, toMatrix_apply, restrict_apply, LinearMap.domRestrict_apply]
+  obtain ⟨b, hb, hbd⟩ := hB.exists_basis_apply_eq_J_of_basis_orthogonal_span_pair hnd hfe c hc'
+  exact ⟨m, b, hb, by rw [hbd, Sum.elim_inl, Fin.cons_zero]⟩
 
 end LinearMap.BilinForm

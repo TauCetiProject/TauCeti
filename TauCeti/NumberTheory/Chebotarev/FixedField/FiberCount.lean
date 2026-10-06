@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.Chebotarev.FrobeniusPrimeSet
 import TauCeti.NumberTheory.NumberField.Frobenius.FiberCount
+import TauCeti.RingTheory.DedekindDomain.PrimesAbove
 public import TauCeti.NumberTheory.NumberField.Frobenius.FixedField.Fiber
 
 /-!
@@ -190,9 +191,8 @@ theorem fixedField_frobenius_fiber_eq_image
         (Q.under (𝓞 ↥(fixedField (Subgroup.zpowers sigma)))).asIdeal :=
       ⟨HeightOneSpectrum.under_asIdeal _ Q⟩
     refine ⟨?_, mem_frobeniusPrimeSet_mk_of_isArithFrobAt hurE Q.asIdeal (htau_eq ▸ htau)⟩
-    apply HeightOneSpectrum.ext
-    simpa only [HeightOneSpectrum.under_asIdeal, Ideal.under_under] using
-      congrArg HeightOneSpectrum.asIdeal hQp
+    exact (HeightOneSpectrum.under_under
+      (𝓞 ↥(fixedField (Subgroup.zpowers sigma))) Q).trans hQp
 
 /-- **Residue degree one detects the absolute Frobenius class below a relative fiber.** Let `P`
 be a prime of `L ^ <sigma>` whose relative Artin class in `L / L ^ <sigma>` is represented by

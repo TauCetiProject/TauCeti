@@ -29,6 +29,9 @@ The weak initiality hypothesis is stated as the family of nonemptiness assertion
 that data is a path-connected topological space, whose fundamental groupoid comes with paths out
 of a chosen basepoint.
 
+For a monoid `M`, a functor from such a groupoid to `SingleObj M` is determined by its values on
+the morphisms out of `x₀` (`TauCeti.Groupoid.functor_singleObj_ext_of_map_eq`).
+
 ## Main declarations
 
 * `TauCeti.Groupoid.singleObjFunctor`: the functor `SingleObj (End x₀) ⥤ C` picking out `x₀`.
@@ -38,6 +41,10 @@ of a chosen basepoint.
   equivalence, when `x₀` admits a morphism to every object.
 * `TauCeti.Groupoid.singleObjEquivalence`: **a connected groupoid is equivalent to the
   one-object category of its vertex group.**
+* `TauCeti.Groupoid.functorOfEndHom`: the functor to `SingleObj G` induced by a homomorphism
+  `End x₀ →* G` and a choice of morphisms out of `x₀`.
+* `TauCeti.Groupoid.functor_singleObj_ext_of_map_eq`: functors from a connected groupoid to
+  `SingleObj M` are determined by their values on the morphisms out of one object.
 -/
 
 public section
@@ -115,6 +122,48 @@ theorem singleObjEquivalence_functor (hconn : ∀ x : C, Nonempty (x₀ ⟶ x)) 
     (singleObjEquivalence x₀ hconn).functor = singleObjFunctor x₀ :=
   (rfl)
 
+/-- A monoid homomorphism `f` out of the vertex group at `x₀`, together with a choice of morphisms
+`τ y : x₀ ⟶ y` for every object `y`, induces a functor from the whole groupoid to `SingleObj G`: a
+morphism `g : y ⟶ z` is sent to the image under `f` of the loop `τ y ≫ g ≫ inv (τ z)` at `x₀`. -/
+noncomputable def functorOfEndHom (τ : ∀ y : C, x₀ ⟶ y) {G : Type*} [Monoid G]
+    (f : End x₀ →* G) : C ⥤ SingleObj G where
+  obj _ := SingleObj.star G
+  map {y z} g := f (τ y ≫ g ≫ inv (τ z))
+  map_id y := by
+    rw [Category.id_comp, IsIso.hom_inv_id, ← End.one_def, map_one, SingleObj.id_as_one]
+  map_comp {y z w} g h := by
+    rw [SingleObj.comp_as_mul, ← map_mul]
+    congr 1
+    simp [End.mul_def, Category.assoc]
+
+@[simp]
+theorem functorOfEndHom_obj (τ : ∀ y : C, x₀ ⟶ y) {G : Type*} [Monoid G] (f : End x₀ →* G)
+    (y : C) : (functorOfEndHom x₀ τ f).obj y = SingleObj.star G :=
+  (rfl)
+
+@[simp]
+theorem functorOfEndHom_map (τ : ∀ y : C, x₀ ⟶ y) {G : Type*} [Monoid G] (f : End x₀ →* G)
+    {y z : C} (g : y ⟶ z) : (functorOfEndHom x₀ τ f).map g = f (τ y ≫ g ≫ inv (τ z)) :=
+  (rfl)
+
 end Groupoid
+
+section Ext
+
+variable {M : Type*} [Monoid M]
+
+/-- In a groupoid, two functors to the one-object category of a monoid are equal once they agree
+on every morphism out of an object `x₀` which admits a morphism to every object. -/
+theorem functor_singleObj_ext_of_map_eq {C : Type u} [CategoryTheory.Groupoid.{v} C] (x₀ : C)
+    (hconn : ∀ x : C, Nonempty (x₀ ⟶ x)) {F F' : C ⥤ SingleObj M}
+    (h : ∀ (x : C) (f : x₀ ⟶ x), F.map f = F'.map f) : F = F' := by
+  refine CategoryTheory.Functor.ext (fun _ ↦ rfl) fun a b f ↦ ?_
+  -- The object components agree by `rfl`, so the coherence morphisms are identities.
+  simp only [eqToHom_refl, Category.id_comp, Category.comp_id]
+  obtain ⟨e⟩ := hconn a
+  rw [← IsIso.inv_hom_id_assoc e f, F.map_comp, F'.map_comp]
+  simp only [Functor.map_inv, h]
+
+end Ext
 
 end TauCeti.Groupoid

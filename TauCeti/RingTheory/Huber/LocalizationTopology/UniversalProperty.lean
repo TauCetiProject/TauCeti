@@ -26,15 +26,17 @@ power-bounded — are in `LocalizationTopology.Basic` and imported from there.
 
 * `continuous_of_continuous_algebraMap_of_isPowerBounded`: a sufficient criterion for a ring
   homomorphism out of `Aₛ` to be continuous. The converse is not proved here.
+* `locTopology_congr_pairOfDefinition`: the topology on `Aₛ` does not depend on the pair of
+  definition.
 * `existsUnique_continuous_ringHom_locTopology`: the universal property — a continuous
   `φ : A →+* B` inverting `s` and sending each `t/s` to a power-bounded element extends to `Aₛ` in
   exactly one continuous way.
 
 ## Provenance
 
-The declarations here are relocated from the AINTLIB port recorded in
-`LocalizationTopology.Basic`; see that module's Provenance section for the source file and
-commit. This module adds no new mathematics.
+The declarations here other than `locTopology_congr_pairOfDefinition` are relocated from the
+AINTLIB port recorded in `LocalizationTopology.Basic`; see that module's Provenance section for
+the source file and commit.
 
 ## References
 
@@ -177,6 +179,29 @@ theorem continuous_of_continuous_algebraMap_of_isPowerBounded {B : Type*}
   rw [locIdeal_pow_eq_span] at hd
   simpa using map_mul_mem_of_mem_span_locIdeal_pow P T s S f W.toAddSubgroup hm hd 1
 
+/-- **The localisation topology does not depend on the pair of definition.** Two pairs of
+definition for which `(T, s)` satisfies the standing hypothesis `HasDenominatorPower` give `Aₛ`
+the same topology. Wedhorn's Proposition and Definition 5.51 characterises `A(T/s)` by a universal
+property that names no pair of definition; this is the corresponding fact for `locTopology`, which
+is built from one.
+
+Compare `locTopology_congr`, which instead fixes the pair of definition and changes the presentation
+`(T, s)` to one with the same ring of definition. When `T` spans an open ideal,
+`hasDenominatorPower_of_isOpen_span` supplies both standing hypotheses. -/
+theorem locTopology_congr_pairOfDefinition [IsTopologicalRing A] (P P' : PairOfDefinition A)
+    (T : Finset A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
+    (hden : HasDenominatorPower P T s S) (hden' : HasDenominatorPower P' T s S) :
+    locTopology P T s S hden = locTopology P' T s S hden' := by
+  -- the identity of `Aₛ` is continuous from either topology to the other: the continuity
+  -- criterion applies with the other topology on the target
+  have hle (Q Q' : PairOfDefinition A) (h : HasDenominatorPower Q T s S)
+      (h' : HasDenominatorPower Q' T s S) : locTopology Q T s S h ≤ locTopology Q' T s S h' := by
+    let _ := locTopology Q' T s S h'
+    have _ := nonarchimedeanRing_locTopology Q' T s S h'
+    exact continuous_id_iff_le.mp <| continuous_of_continuous_algebraMap_of_isPowerBounded
+      Q T s S h (RingHom.id S) (continuous_algebraMap_locTopology Q' T s S h')
+      fun _ ↦ isPowerBounded_divBy Q' T s S h'
+  exact le_antisymm (hle P P' hden hden') (hle P' P hden' hden)
 
 /-! ### The universal property -/
 

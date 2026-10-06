@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Fourier.AddCircle
 public import TauCeti.MeasureTheory.Group.TypeTags
 public import TauCeti.RepresentationTheory.Compact.Character.Basic
-public import TauCeti.RepresentationTheory.LinearCharacter
+public import TauCeti.RepresentationTheory.LinearCharacter.Basic
 import TauCeti.RepresentationTheory.Continuous.Transport
 
 /-!

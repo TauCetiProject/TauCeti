@@ -149,8 +149,7 @@ private theorem isPowerBounded_quotientMk_weightedC_mul_unit_inv {t : Fin k → 
   rcases hu with rfl | ⟨i, rfl⟩
   · simp
   -- `tᵢ/s` is the class of `Xᵢ`
-  · convert (isPowerBounded_weightedX_one_weight i).map_of_isOpenMap continuous_quot_mk.continuousAt
-      (QuotientRing.isOpenMap_coe (rationalRelationIdeal t s)) using 1
+  · convert (isPowerBounded_weightedX_one_weight i).quotientMk (rationalRelationIdeal t s) using 1
     exact (Units.mul_inv_eq_iff_eq_mul _).2 <|
       (rationalRelationIdeal_quotientMk_weightedC_mul_weightedX t s i).symm.trans (mul_comm _ _)
 

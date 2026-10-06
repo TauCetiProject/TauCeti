@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Measure.AtomlessStandardBorel.Transport
-public import TauCeti.MeasureTheory.OptimalTransport.GraphPlan
+public import TauCeti.MeasureTheory.OptimalTransport.GraphPlan.Basic
 
 /-!
 # Realizing a coupling along a source partition

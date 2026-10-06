@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Dynamics.Ergodic.MeasurePreserving
-public import TauCeti.Probability.Exchangeability.PathSpace.Shift
+public import TauCeti.Probability.Process.PathLaw.Shift
 -- Non-public: Poincaré recurrence for a conservative map is used only inside proofs.
 import Mathlib.Dynamics.Ergodic.Conservative
 

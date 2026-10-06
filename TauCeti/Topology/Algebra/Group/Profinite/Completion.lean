@@ -16,9 +16,10 @@ unbundled groups and continuous monoid homomorphisms. It also proves that the ca
 a finite group to its profinite completion is bijective, and exposes the projections of the
 profinite completion onto the finite quotients it is the limit of.
 
-The correspondence is obtained from `ProfiniteGrp.ProfiniteCompletion.homEquiv`; the finite-group
-result uses its canonical map's dense range and Mathlib's residual-finiteness criterion. The
-projections are the components of Mathlib's explicit limit cone.
+The correspondence `continuousMonoidHomEquiv` allows the group and the profinite target to live
+in independent universes, unlike Mathlib's single-universe adjunction
+`ProfiniteGrp.ProfiniteCompletion.homEquiv`; this is what lets a fixed universe-polymorphic
+completion, such as the profinite integers, map to profinite groups in any universe.
 
 The continuous finite quotients of the completion are exactly the finite quotients of `G`
 (`isFiniteContinuousQuotient_iff_exists_surjective`), and the completion of a finitely generated
@@ -47,34 +48,8 @@ namespace ProfiniteCompletion
 universe u v
 
 variable (G : Type u) [Group G]
-variable (P : Type u) [Group P] [TopologicalSpace P] [IsTopologicalGroup P]
+variable (P : Type v) [Group P] [TopologicalSpace P] [IsTopologicalGroup P]
   [CompactSpace P] [TotallyDisconnectedSpace P]
-
-/-- Continuous homomorphisms from the profinite completion of `G` to a profinite group `P`
-correspond to abstract homomorphisms from `G` to `P`. -/
-noncomputable def continuousMonoidHomEquiv :
-    (ProfiniteGrp.ProfiniteCompletion.completion (GrpCat.of G) →ₜ* P) ≃ (G →* P) :=
-  (ConcreteCategory.homEquiv (C := ProfiniteGrp)).symm |>.trans
-    (ProfiniteGrp.ProfiniteCompletion.homEquiv (GrpCat.of G) (ProfiniteGrp.of P)) |>.trans
-      (ConcreteCategory.homEquiv (C := GrpCat))
-
-/-- The unbundled profinite-completion correspondence restricts a continuous homomorphism along
-the canonical map. -/
-@[simp]
-theorem continuousMonoidHomEquiv_apply
-    (f : ProfiniteGrp.ProfiniteCompletion.completion (GrpCat.of G) →ₜ* P) (g : G) :
-    continuousMonoidHomEquiv G P f g =
-      f (ProfiniteGrp.ProfiniteCompletion.etaFn (GrpCat.of G) g) :=
-  -- Mathlib has no propositional forward computation rule for `homEquiv`; isolate its
-  -- definitional reduction through both concrete-category equivalences in this opaque theorem.
-  (rfl)
-
-/-- The continuous lift of an abstract homomorphism agrees with it on the original group. -/
-@[simp]
-theorem continuousMonoidHomEquiv_symm_apply_etaFn (f : G →* P) (g : G) :
-    (continuousMonoidHomEquiv G P).symm f
-      (ProfiniteGrp.ProfiniteCompletion.etaFn (GrpCat.of G) g) = f g := by
-  rw [← continuousMonoidHomEquiv_apply, Equiv.apply_symm_apply]
 
 /-- Two continuous homomorphisms from a profinite completion to a Hausdorff topological monoid
 agree if they agree on the canonical dense image of the original group. -/
@@ -142,6 +117,88 @@ theorem continuous_coordinateHom (H : FiniteIndexNormalSubgroup G) :
   -- The finite-quotient object hides its discrete underlying quotient group.
   ((ProfiniteGrp.limitCone
     (ProfiniteGrp.ProfiniteCompletion.diagram (GrpCat.of G))).π.app H).hom.continuous_toFun
+
+variable {G P} in
+/-- The continuous homomorphism from the profinite completion of `G` to the limit of the finite
+quotients of `P` induced by `f : G →* P`: its coordinate at an open normal subgroup `U` is the
+coordinate of the completion at the preimage of `U`, pushed forward along `f`. -/
+private def liftToLimit (f : G →* P) :
+    ProfiniteGrp.ProfiniteCompletion.completion (GrpCat.of G) →ₜ*
+      ProfiniteGrp.limit (ProfiniteGrp.diagram (ProfiniteGrp.of P)) where
+  toFun x := ⟨fun U ↦ QuotientGroup.map
+      (U.toFiniteIndexNormalSubgroup.comap f).toSubgroup U.toSubgroup f (fun _ h ↦ h)
+      (x.val (U.toFiniteIndexNormalSubgroup.comap f)), by
+    intro U V hUV
+    have hx := x.property (FiniteIndexNormalSubgroup.comap_mono f
+      (OpenNormalSubgroup.toFiniteIndexNormalSubgroup_mono hUV.le)).hom
+    obtain ⟨g, hg⟩ := QuotientGroup.mk_surjective (x.val (U.toFiniteIndexNormalSubgroup.comap f))
+    dsimp only
+    rw [← hx, ← hg]
+    -- Both sides are the coset of `f g` modulo `V`.
+    rfl⟩
+  map_one' := ProfiniteGrp.limit_ext _ _ _ fun _ ↦ map_one (QuotientGroup.map _ _ f _)
+  map_mul' _ _ := ProfiniteGrp.limit_ext _ _ _ fun _ ↦ map_mul (QuotientGroup.map _ _ f _) _ _
+  continuous_toFun := by
+    refine Continuous.subtype_mk (continuous_pi fun U ↦ ?_) _
+    let H := U.toFiniteIndexNormalSubgroup.comap f
+    let _ : TopologicalSpace (G ⧸ H.toSubgroup) := ⊥
+    have _ : DiscreteTopology (G ⧸ H.toSubgroup) := ⟨rfl⟩
+    have hc : Continuous fun x : ProfiniteGrp.ProfiniteCompletion.completion (GrpCat.of G) ↦
+        x.val H :=
+      (continuous_coordinateHom G H).congr (coordinateHom_apply G H)
+    exact (continuous_of_discreteTopology (α := G ⧸ H.toSubgroup)
+      (β := (ProfiniteGrp.diagram (ProfiniteGrp.of P)).obj U)
+      (f := QuotientGroup.map H.toSubgroup U.toSubgroup f fun _ h ↦ h)).comp hc
+
+variable {G P} in
+/-- The continuous extension of `f : G →* P` to the profinite completion of `G`, read back into
+`P` through its presentation as the limit of its finite quotients. -/
+private noncomputable def liftAux (f : G →* P) :
+    ProfiniteGrp.ProfiniteCompletion.completion (GrpCat.of G) →ₜ* P :=
+  ContinuousMonoidHom.comp
+    (ProfiniteGrp.continuousMulEquivLimittoFiniteQuotientFunctor (ProfiniteGrp.of P)).symm
+    (liftToLimit f)
+
+variable {G P} in
+/-- The continuous extension of `f` agrees with `f` on the original group. -/
+private theorem liftAux_etaFn (f : G →* P) (g : G) :
+    liftAux f (ProfiniteGrp.ProfiniteCompletion.etaFn (GrpCat.of G) g) = f g := by
+  -- Unfold `liftAux` to the inverse of the limit presentation applied to `liftToLimit f`.
+  change (ProfiniteGrp.continuousMulEquivLimittoFiniteQuotientFunctor (ProfiniteGrp.of P)).symm
+    (liftToLimit f (ProfiniteGrp.ProfiniteCompletion.etaFn (GrpCat.of G) g)) = f g
+  rw [ContinuousMulEquiv.symm_apply_eq]
+  -- Both sides are the family of cosets of `f g`.
+  rfl
+
+/-- Continuous homomorphisms from the profinite completion of `G` to a profinite group `P`
+correspond to abstract homomorphisms from `G` to `P`, by restriction along the canonical map.
+The target `P` may live in a different universe from `G`. -/
+-- Mathlib's adjunction `ProfiniteGrp.ProfiniteCompletion.homEquiv` is stated within one universe,
+-- so the inverse is built from the presentation of `P` as the limit of its finite quotients,
+-- Mathlib's `ProfiniteGrp.continuousMulEquivLimittoFiniteQuotientFunctor`.
+noncomputable def continuousMonoidHomEquiv :
+    (ProfiniteGrp.ProfiniteCompletion.completion (GrpCat.of G) →ₜ* P) ≃ (G →* P) where
+  toFun f := (f : _ →* P).comp (ProfiniteGrp.ProfiniteCompletion.eta (GrpCat.of G)).hom
+  invFun := liftAux
+  left_inv _ := continuousMonoidHom_ext G fun g ↦ liftAux_etaFn _ g
+  right_inv f := MonoidHom.ext (liftAux_etaFn f)
+
+/-- The unbundled profinite-completion correspondence restricts a continuous homomorphism along
+the canonical map. -/
+@[simp]
+theorem continuousMonoidHomEquiv_apply
+    (f : ProfiniteGrp.ProfiniteCompletion.completion (GrpCat.of G) →ₜ* P) (g : G) :
+    continuousMonoidHomEquiv G P f g =
+      f (ProfiniteGrp.ProfiniteCompletion.etaFn (GrpCat.of G) g) :=
+  -- The canonical morphism `eta` is `etaFn` as a homomorphism, by definition.
+  (rfl)
+
+/-- The continuous lift of an abstract homomorphism agrees with it on the original group. -/
+@[simp]
+theorem continuousMonoidHomEquiv_symm_apply_etaFn (f : G →* P) (g : G) :
+    (continuousMonoidHomEquiv G P).symm f
+      (ProfiniteGrp.ProfiniteCompletion.etaFn (GrpCat.of G) g) = f g :=
+  liftAux_etaFn f g
 
 section FiniteQuotients
 

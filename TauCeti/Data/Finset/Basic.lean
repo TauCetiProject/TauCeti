@@ -8,8 +8,10 @@ module
 public import Mathlib.Data.Fintype.BigOperators
 import Mathlib.Algebra.BigOperators.Group.Finset.Powerset
 import Mathlib.Algebra.BigOperators.Ring.Finset
+import Mathlib.Logic.Equiv.Fintype
 public import Mathlib.Algebra.Ring.Defs
 public import Mathlib.Data.Finset.Interval
+public import Mathlib.Data.Finset.SymmDiff
 import Mathlib.Data.Nat.Choose.Sum
 import Mathlib.Data.Set.PowersetCard
 public import Mathlib.Data.Fintype.Card
@@ -21,6 +23,8 @@ import Mathlib.Tactic.NoncommRing
 
 * `Finset.exists_nat_prod_lt` bounds both coordinates of a finite set of pairs of
   natural numbers.
+* `Finset.exists_perm_eqOn_le_apply` gives a permutation of `ℕ` fixing one finite set pointwise
+  and carrying a disjoint one past any bound.
 * `TauCeti.product_union_eq_union_product` rearranges a union of products of finsets.
 * `TauCeti.card_nonempty_finset` counts the nonempty finsets of a finite type.
 * `TauCeti.card_even_card_finset` and `TauCeti.card_odd_card_finset` count the finsets of a
@@ -34,8 +38,19 @@ import Mathlib.Tactic.NoncommRing
   `Finset.sum_Icc_neg_one_pow_card_sub_card_right` compute the Möbius function of the Boolean
   lattice of finsets: the signed sum over an interval `[s, t]` is `1` if `s = t` and `0`
   otherwise.
+* `Finset.card_symmDiff_add_two_mul_card_inter` and `Finset.even_card_symmDiff_iff` compare the
+  cardinality of a symmetric difference with the cardinalities of its two arguments: exactly, and
+  modulo two.
+* `Finset.map_swap_pair`, `Finset.map_swap_pair_right` and `Finset.map_swap_eq_self_iff`
+  describe how a transposition moves a finset around, and
+  `Finset.mem_map_swap_symmDiff_pair_iff`, `Finset.involutive_map_swap_symmDiff_pair` and
+  `Finset.map_swap_symmDiff_pair_eq_self_iff` do the same for a transposition composed with the
+  toggle of the two transposed points.
 * `Finset.sum_filter_le_sum_filter_le` reindexes a double sum over chains in a finite type with a
   `≤` relation.
+* `Finset.sum_eq_two` and `Finset.sum_eq_four` reduce a sum over a finite type, and a double sum
+  over a pair of finite types, to the values of its summand at the two points where it is
+  supported, and at the four cells of a rectangle.
 * `TauCeti.sum_piecewise_eq_sum_update_of_card_eq_succ` reindexes a sum of `Finset.piecewise` terms
   over the subsets of size one less than `card ι` as a sum of `Function.update` terms over `ι`. It
   is what turns a formula indexed by "all but one point" into one indexed by the omitted point, as
@@ -149,6 +164,100 @@ end TauCeti
 
 namespace Finset
 
+open scoped symmDiff
+
+/-- **The symmetric difference and the intersection account for both cardinalities.** The
+symmetric difference is the union minus the intersection, and the union and the intersection
+together have the two cardinalities as their total. -/
+theorem card_symmDiff_add_two_mul_card_inter {α : Type*} [DecidableEq α] (s t : Finset α) :
+    (s ∆ t).card + 2 * (s ∩ t).card = s.card + t.card := by
+  have hsub : s ∩ t ⊆ s ∪ t := inter_subset_left.trans subset_union_left
+  have hcard : (s ∆ t).card = (s ∪ t).card - (s ∩ t).card := by
+    rw [symmDiff_eq_sup_sdiff_inf, sup_eq_union, inf_eq_inter, card_sdiff,
+      inter_eq_left.2 hsub]
+  have hunion := card_union_add_card_inter s t
+  have hle : (s ∩ t).card ≤ (s ∪ t).card := card_le_card hsub
+  omega
+
+/-- **A symmetric difference has even cardinality exactly when its two arguments have the same
+cardinality parity.** -/
+@[simp]
+theorem even_card_symmDiff_iff {α : Type*} [DecidableEq α] (s t : Finset α) :
+    Even (s ∆ t).card ↔ (Even s.card ↔ Even t.card) := by
+  have h := card_symmDiff_add_two_mul_card_inter s t
+  simp only [Nat.even_iff]
+  omega
+
+/-- A transposition fixes the pair it transposes. -/
+theorem map_swap_pair {α : Type*} [DecidableEq α] (a b : α) :
+    ({a, b} : Finset α).map (Equiv.swap a b).toEmbedding = {a, b} := by
+  simp [Finset.pair_comm]
+
+/-- A transposition moves a pair along its first index, provided the second index is fixed. -/
+theorem map_swap_pair_right {α : Type*} [DecidableEq α] {a b c : α} (hca : c ≠ a) (hcb : c ≠ b) :
+    ({b, c} : Finset α).map (Equiv.swap a b).toEmbedding = {a, c} := by
+  simp [Equiv.swap_apply_of_ne_of_ne hca hcb]
+
+/-- **A transposition fixes a finset exactly when the two transposed points have the same
+membership.** -/
+theorem map_swap_eq_self_iff {α : Type*} [DecidableEq α] (a b : α) (s : Finset α) :
+    s.map (Equiv.swap a b).toEmbedding = s ↔ (a ∈ s ↔ b ∈ s) := by
+  constructor
+  · intro h
+    have ha := Finset.ext_iff.1 h a
+    rw [mem_map_equiv, Equiv.symm_swap, Equiv.swap_apply_left] at ha
+    exact ha.symm
+  · intro h
+    ext x
+    rw [mem_map_equiv, Equiv.symm_swap]
+    rcases eq_or_ne x a with rfl | hx
+    · rw [Equiv.swap_apply_left]
+      exact h.symm
+    · rcases eq_or_ne x b with rfl | hx'
+      · rw [Equiv.swap_apply_right]
+        exact h
+      · rw [Equiv.swap_apply_of_ne_of_ne hx hx']
+
+/-- Membership in a transposed finset with the two transposed points toggled. -/
+theorem mem_map_swap_symmDiff_pair_iff {α : Type*} [DecidableEq α] (a b : α) (s : Finset α)
+    (x : α) :
+    x ∈ s.map (Equiv.swap a b).toEmbedding ∆ ({a, b} : Finset α) ↔
+      (Equiv.swap a b x ∈ s ↔ x ≠ a ∧ x ≠ b) := by
+  simp only [mem_symmDiff, mem_map_equiv, Equiv.symm_swap, mem_insert, mem_singleton]
+  grind
+
+/-- **Transposing two points of a finset and toggling both is an involution.** -/
+theorem involutive_map_swap_symmDiff_pair {α : Type*} [DecidableEq α] (a b : α) :
+    Function.Involutive fun s : Finset α => s.map (Equiv.swap a b).toEmbedding ∆ {a, b} := by
+  intro s
+  ext x
+  simp only [mem_map_swap_symmDiff_pair_iff, Equiv.swap_apply_self]
+  grind
+
+/-- **Transposing two points of a finset and toggling both fixes it exactly when the two points
+have opposite membership.** -/
+theorem map_swap_symmDiff_pair_eq_self_iff {α : Type*} [DecidableEq α] (a b : α) (s : Finset α) :
+    s.map (Equiv.swap a b).toEmbedding ∆ ({a, b} : Finset α) = s ↔ (a ∈ s ↔ b ∉ s) := by
+  constructor
+  · intro h
+    have hb := (mem_map_swap_symmDiff_pair_iff a b s b).symm.trans (Finset.ext_iff.1 h b)
+    rw [Equiv.swap_apply_right] at hb
+    have hbb : ¬(b ≠ a ∧ b ≠ b) := fun hc => hc.2 rfl
+    tauto
+  · intro h
+    ext x
+    rw [mem_map_swap_symmDiff_pair_iff]
+    rcases eq_or_ne x a with rfl | hx
+    · rw [Equiv.swap_apply_left]
+      have hxx : ¬(x ≠ x ∧ x ≠ b) := fun hc => hc.1 rfl
+      tauto
+    · rcases eq_or_ne x b with rfl | hx'
+      · rw [Equiv.swap_apply_right]
+        have hxx : ¬(x ≠ a ∧ x ≠ x) := fun hc => hc.2 rfl
+        tauto
+      · rw [Equiv.swap_apply_of_ne_of_ne hx hx']
+        tauto
+
 /-- The two coordinates of every element of a finite set of natural-number pairs lie below a
 common bound. -/
 theorem exists_nat_prod_lt (I : Finset (ℕ × ℕ)) :
@@ -156,6 +265,35 @@ theorem exists_nat_prod_lt (I : Finset (ℕ × ℕ)) :
   refine ⟨(I.sup fun p ↦ max p.1 p.2) + 1, fun p hp ↦ ?_⟩
   have hle := le_sup (f := fun p : ℕ × ℕ ↦ max p.1 p.2) hp
   omega
+
+/-- A permutation of `ℕ` that fixes a finite set `I` pointwise and carries a finite set `J`,
+disjoint from `I`, past `n`. -/
+theorem exists_perm_eqOn_le_apply (I J : Finset ℕ) (hIJ : Disjoint I J) (n : ℕ) :
+    ∃ ρ : Equiv.Perm ℕ, (∀ i ∈ I, ρ i = i) ∧ ∀ j ∈ J, n ≤ ρ j := by
+  classical
+  -- shift `J` by `N`, large enough to clear both `n` and everything in `I`
+  set N : ℕ := n + (I ∪ J).sup id + 1 with hN
+  let g : ↥(I ∪ J) → ℕ := fun x => if (x : ℕ) ∈ I then x else x + N
+  -- every element of `J` is sent past `N`, hence past everything in `I ∪ J`
+  have hbig : ∀ x : ↥(I ∪ J), (x : ℕ) < N := fun x => by
+    have := Finset.le_sup (f := id) x.property
+    simp only [id] at this; omega
+  have hg : Function.Injective g := by
+    intro x y hxy
+    simp only [g] at hxy
+    apply Subtype.ext
+    have hx := hbig x
+    have hy := hbig y
+    split_ifs at hxy <;> omega
+  obtain ⟨ρ, hρ⟩ := Equiv.Perm.exists_extending_pair (fun x : ↥(I ∪ J) => (x : ℕ)) g
+    Subtype.val_injective hg
+  refine ⟨ρ, fun i hi => ?_, fun j hj => ?_⟩
+  · have := hρ ⟨i, Finset.mem_union_left _ hi⟩
+    simpa [g, hi] using this
+  · have hjI : j ∉ I := Finset.disjoint_right.mp hIJ hj
+    have := hρ ⟨j, Finset.mem_union_right _ hj⟩
+    simp only [g, hjI, ite_false] at this
+    rw [this]; omega
 
 open Classical in
 /-- A double sum over a chain `a ≤ b ≤ c`, summed first over `b` and then over `c`, can instead
@@ -247,6 +385,42 @@ theorem sum_Icc_neg_one_pow_card_sub_card_right {α R : Type*} [DecidableEq α] 
     exact hsign _ _
   rw [sum_congr rfl hterm, ← mul_sum, sum_Icc_neg_one_pow_card_sub_card_left]
   split_ifs with h <;> simp [h]
+
+/-- The sum over a finite type of a function that vanishes away from two distinct points is the sum
+of its values at those two points. -/
+theorem sum_eq_two {α M : Type*} [Fintype α] [AddCommMonoid M] (f : α → M) (a b : α)
+    (hab : a ≠ b) (h : ∀ x, x ≠ a → x ≠ b → f x = 0) : ∑ x, f x = f a + f b := by
+  classical
+  -- The summand vanishes away from the pair `a`, `b`, so the sum over the whole type is the sum
+  -- over the two-point finset, which `Finset.sum_pair` evaluates.
+  calc (∑ x, f x) = ∑ x ∈ ({a, b} : Finset α), f x := by
+        refine (Finset.sum_subset (s₁ := ({a, b} : Finset α)) (s₂ := (Finset.univ : Finset α))
+          (fun x _ => Finset.mem_univ x) ?_).symm
+        intro x _ hx
+        have hx' : x ≠ a ∧ x ≠ b := by simpa using hx
+        exact h x hx'.1 hx'.2
+    _ = f a + f b := Finset.sum_pair hab
+
+/-- The double sum over a pair of finite types of a function that vanishes outside the four cells
+of the rectangle `i`, `i'` by `j`, `j'` is the sum of its four values there. -/
+theorem sum_eq_four {ι κ M : Type*} [Fintype ι] [Fintype κ] [AddCommMonoid M] (g : ι → κ → M)
+    (i i' : ι) (j j' : κ) (hi'ne : i ≠ i') (hj'ne : j ≠ j')
+    (h0 : ∀ x y, ¬(x = i ∧ y = j) → ¬(x = i ∧ y = j') → ¬(x = i' ∧ y = j)
+      → ¬(x = i' ∧ y = j') → g x y = 0) :
+    (∑ x, ∑ y, g x y) = g i j + g i j' + g i' j + g i' j' := by
+  classical
+  have hzero (x : ι) (hx : x ≠ i) (hx' : x ≠ i') : (∑ y, g x y) = 0 := by
+    apply Finset.sum_eq_zero
+    intro y _
+    exact h0 x y (fun h => hx h.1) (fun h => hx h.1) (fun h => hx' h.1) (fun h => hx' h.1)
+  calc (∑ x, ∑ y, g x y) = (∑ y, g i y) + (∑ y, g i' y) :=
+        sum_eq_two (fun x => ∑ y, g x y) i i' hi'ne (fun x hx hx' => hzero x hx hx')
+    _ = (g i j + g i j') + (g i' j + g i' j') := by
+        rw [sum_eq_two (g i) j j' hj'ne (fun y hyj hyj' => h0 i y (fun h => hyj h.2)
+              (fun h => hyj' h.2) (fun h => hi'ne h.1) (fun h => hi'ne h.1)),
+            sum_eq_two (g i') j j' hj'ne (fun y hyj hyj' => h0 i' y (fun h => hi'ne h.1.symm)
+              (fun h => hi'ne h.1.symm) (fun h => hyj h.2) (fun h => hyj' h.2))]
+    _ = g i j + g i j' + g i' j + g i' j' := by simp only [add_assoc]
 
 end Finset
 

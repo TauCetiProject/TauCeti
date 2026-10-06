@@ -32,10 +32,11 @@ the points of the curve `W.map f` over `S`, with no fields and no tower involved
   statement for `f`.
 * `WeierstrassCurve.Affine.Point.mapAlong_iterateFrobenius_some`: iterated Frobenius
   sends `(x, y)` to `(x ^ (p ^ n), y ^ (p ^ n))`.
+* `WeierstrassCurve.Affine.Point.mapAlong_add`: over fields the transport is additive.
 
-`Affine.Point.map` is already an `AddMonoidHom`, so rewriting with `mapAlong_eq_map` gives
-`map_add`, `map_zero` and `map_zsmul` from Mathlib directly. Nothing field-level is defined or
-restated here — a bundled hom or `add`/`zsmul` lemmas would be a wrapper around Mathlib's.
+`Affine.Point.map` is already an `AddMonoidHom`, so installing `f.toAlgebra` locally and rewriting
+with `mapAlong_eq_map` gives `map_add`, `map_zero` and `map_zsmul` from Mathlib directly, including
+when `f` is a field endomorphism.
 
 What Mathlib lacks, and what this file adds, is the transport over arbitrary commutative rings,
 where `W.Point` has no group law to speak of.
@@ -57,9 +58,9 @@ Ported from the AINTLIB `HasseWeil` project (`github.com/CBirkbeck/AINTLIB`, Apa
 that roadmap at `dev/hasse-weil @ 513e83879e2f`), `HasseWeil/EC/AffinePointMap.lean`,
 declarations `map`, `map_zero`, `map_some` and `map_neg`.
 
-The source's `map_add`, `mapAddMonoidHom` and `map_zsmul` are **not** ported. Over a field all
-three are Mathlib's `Affine.Point.map` under `f.toAlgebra`, and `mapAlong_eq_map` is the bridge
-to it; anything more here would be a wrapper.
+The source's `mapAddMonoidHom` and `map_zsmul` are **not** ported; over fields they are Mathlib's
+`Affine.Point.map` under `f.toAlgebra`. The source's `map_add` corresponds to `mapAlong_add`, proved
+through the same bridge.
 
 Changes from the source. The names take an `Along` suffix (`mapAlong`), Mathlib having taken
 `Point.map` for the `AlgHom` version. The computation rules are stated in simp-normal form, and
@@ -161,6 +162,30 @@ lemma _root_.WeierstrassCurve.Affine.Point.mapAlong_eq_map (P : W.toAffine.Point
     exact (Affine.Point.map_some (W' := W) (F := F) (K := K) (Algebra.ofId F K) h).symm
 
 end Field
+
+section FieldHom
+
+variable {F K : Type*} [Field F] [Field K] [DecidableEq F] [DecidableEq K]
+  {W : _root_.WeierstrassCurve F} (f : F →+* K) (hf : Function.Injective f)
+
+/-- **Over fields the point map is additive**, by identifying it with Mathlib's additive
+`Affine.Point.map` after installing the algebra structure induced by `f`. -/
+@[simp]
+theorem _root_.WeierstrassCurve.Affine.Point.mapAlong_add (P Q : W.toAffine.Point) :
+    WeierstrassCurve.Affine.Point.mapAlong f hf (P + Q) =
+      WeierstrassCurve.Affine.Point.mapAlong f hf P +
+        WeierstrassCurve.Affine.Point.mapAlong f hf Q := by
+  let _ : Algebra F K := f.toAlgebra
+  have hmap (R : W.toAffine.Point) :
+      WeierstrassCurve.Affine.Point.mapAlong f hf R =
+        Affine.Point.map (W' := W) (Algebra.ofId F K) R := by
+    simpa only [f.algebraMap_toAlgebra] using
+      WeierstrassCurve.Affine.Point.mapAlong_eq_map (F := F) (K := K) R
+  rw [hmap, hmap, hmap]
+  simpa only using!
+    (Affine.Point.map (W' := W) (Algebra.ofId F K)).map_add P Q
+
+end FieldHom
 
 section IterateFrobenius
 

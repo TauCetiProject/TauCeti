@@ -27,22 +27,20 @@ arbitrary loop off a point, which is done in
 
 ## Main declarations
 
-* `TauCeti.homotopic_of_segment_ne_zero`: radial projection of a straight-line
+* `Path.homotopic_of_segment_ne_zero`: radial projection of a straight-line
   homotopy between sphere paths.
 * `TauCeti.contractibleSpace_sphere_compl_singleton`: the sphere minus one point is contractible.
 * `TauCeti.compl_singleton_union_compl_singleton_neg`: the complements of two antipodal points
   cover the sphere.
 * `TauCeti.nullhomotopic_inclusion_sphere_compl_singleton`: the inclusion of the sphere minus a
   point into the sphere is null-homotopic.
-* `TauCeti.homotopic_refl_of_notMem_range`: a loop on the unit sphere omitting a point of
+* `Path.homotopic_refl_of_notMem_range`: a loop on the unit sphere omitting a point of
   the sphere is null-homotopic.
 
 ## References
 
-This serves the `π₁(RPⁿ)` line of `TauCetiRoadmap/UniversalCovers/README.md`, Stage 4, item 13,
-whose only missing input is the simple connectivity of the covering sphere. The contraction of a
-punctured sphere onto the antipode of the puncture is the standard one, as in Hatcher,
-*Algebraic Topology*, Section 1.1. No Mathlib code is vendored.
+The contraction of a punctured sphere onto the antipode of the puncture is the standard one,
+as in Hatcher, *Algebraic Topology*, Section 1.1.
 -/
 
 public section
@@ -56,7 +54,8 @@ namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
-private theorem smul_sub_smul_ne_zero_of_ne {x p : E} (hx : ‖x‖ = 1) (hp : ‖p‖ = 1)
+private theorem smul_sub_smul_ne_zero_of_ne {E : Type*} [SeminormedAddCommGroup E]
+    [NormedSpace ℝ E] {x p : E} (hx : ‖x‖ = 1) (hp : ‖p‖ = 1)
     (hxp : x ≠ p) (u : ℝ) : (1 - u) • x - u • p ≠ 0 := by
   intro h
   have h' : (1 - u) • x = u • p := by rwa [sub_eq_zero] at h
@@ -127,7 +126,7 @@ end Segment
 /-- A path in the unit sphere is homotopic to the radial projection of a continuous comparison
 map when every point of their pointwise straight-line homotopy avoids the origin and the comparison
 map itself takes the source and target values at the two endpoints. -/
-theorem homotopic_of_segment_ne_zero {a b : sphere (0 : E) 1} (γ γ' : Path a b)
+theorem _root_.Path.homotopic_of_segment_ne_zero {a b : sphere (0 : E) 1} (γ γ' : Path a b)
     (f : I → E) (hf : Continuous f)
     (hγ' : ∀ t, ((γ' t : sphere (0 : E) 1) : E) = normalize (f t))
     (hf_zero : f 0 = (a : E)) (hf_one : f 1 = (b : E))
@@ -194,49 +193,41 @@ theorem contractibleSpace_sphere_compl_singleton (p : sphere (0 : E) 1) :
     simpa only [inclusion, smul_neg, sub_eq_add_neg] using smul_sub_smul_ne_zero_of_ne
       (mem_sphere_zero_iff_norm.mp (q : sphere (0 : E) 1).2) hp
       (fun hq => q.2 (Set.mem_singleton_iff.mpr (Subtype.ext hq))) u
-  -- The contraction, presented by the value of its underlying vector so that no later step has
-  -- to unfold `normalizeSegmentToSphere`.
-  obtain ⟨G, hGcont, hGval⟩ :
-      ∃ G : I × ({p}ᶜ : Set (sphere (0 : E) 1)) → sphere (0 : E) 1, Continuous G ∧
-        ∀ (u : I) (q : ({p}ᶜ : Set (sphere (0 : E) 1))),
-          ((G (u, q) : sphere (0 : E) 1) : E) =
-            normalize ((1 - (u : ℝ)) • ((q : sphere (0 : E) 1) : E) - (u : ℝ) • (p : E)) :=
-    ⟨normalizeSegmentToSphere inclusion (fun _ => -(p : E)) hinclusion continuous_const hsegment,
-      ContinuousMap.continuous _,
-      fun u q => by rw [coe_normalizeSegmentToSphere_apply, smul_neg, ← sub_eq_add_neg]⟩
+  let G := normalizeSegmentToSphere inclusion (fun _ => -(p : E))
+    hinclusion continuous_const hsegment
   have hGne : ∀ z, G z ≠ p := by
     rintro ⟨u, q⟩ hG
     refine normalize_smul_sub_smul_ne_of_ne
       (mem_sphere_zero_iff_norm.mp (q : sphere (0 : E) 1).2) hp
       (fun hq => q.2 (Set.mem_singleton_iff.mpr (Subtype.ext hq))) u ?_
-    rw [← hGval u q, hG]
+    have hval := congrArg Subtype.val hG
+    simpa only [G, coe_normalizeSegmentToSphere_apply, inclusion, smul_neg,
+      ← sub_eq_add_neg] using hval
   have hneg : -p ≠ p := (ne_neg_of_mem_unit_sphere ℝ p).symm
   refine ⟨⟨-p, by simpa only [Set.mem_compl_iff, Set.mem_singleton_iff]⟩, ⟨?_⟩⟩
   exact
     { toFun := fun z => ⟨G z,
         by simpa only [Set.mem_compl_iff, Set.mem_singleton_iff] using hGne z⟩
-      continuous_toFun := hGcont.subtype_mk fun z => by
+      continuous_toFun := G.continuous.subtype_mk fun z => by
         simpa only [Set.mem_compl_iff, Set.mem_singleton_iff] using hGne z
       map_zero_left := fun q => by
-        have hraw : ((G (0, q) : sphere (0 : E) 1) : E) =
-            ((q : sphere (0 : E) 1) : E) := by
-          rw [hGval]
-          simpa using normalize_eq_self_of_norm_eq_one
-            (mem_sphere_zero_iff_norm.mp (q : sphere (0 : E) 1).2)
-        exact Subtype.ext (Subtype.ext hraw)
+        apply Subtype.ext ∘ Subtype.ext
+        rw [coe_normalizeSegmentToSphere_zero_left]
+        exact normalize_eq_self_of_norm_eq_one
+          (mem_sphere_zero_iff_norm.mp (q : sphere (0 : E) 1).2)
       map_one_left := fun q => by
-        have hraw : ((G (1, q) : sphere (0 : E) 1) : E) = -(p : E) := by
-          rw [hGval]
-          simpa [normalize_neg] using congrArg Neg.neg (normalize_eq_self_of_norm_eq_one hp)
-        exact Subtype.ext (Subtype.ext (hraw.trans (coe_neg_sphere p).symm)) }
+        apply Subtype.ext ∘ Subtype.ext
+        rw [coe_normalizeSegmentToSphere_one_left]
+        simp only [ContinuousMap.const_apply, Subtype.coe_mk, coe_neg_sphere, normalize_neg,
+          normalize_eq_self_of_norm_eq_one hp] }
 
 /-- The complements of two antipodal points cover the unit sphere. -/
-lemma compl_singleton_union_compl_singleton_neg (p : sphere (0 : E) 1) :
+lemma compl_singleton_union_compl_singleton_neg {E : Type*} [SeminormedAddCommGroup E]
+    [NormedSpace ℝ E] (p : sphere (0 : E) 1) :
     ({p}ᶜ ∪ {-p}ᶜ : Set (sphere (0 : E) 1)) = Set.univ := by
-  refine Set.eq_univ_of_forall fun x => ?_
-  by_contra h
-  simp only [Set.mem_union, Set.mem_compl_iff, Set.mem_singleton_iff, not_or, not_not] at h
-  exact ne_neg_of_mem_unit_sphere ℝ p (h.1.symm.trans h.2)
+  rw [← Set.compl_inter, Set.singleton_inter_of_notMem]
+  · exact Set.compl_empty
+  · exact ne_neg_of_mem_unit_sphere ℝ p
 
 /-- **The inclusion of the unit sphere minus one point into the sphere is null-homotopic.** -/
 theorem nullhomotopic_inclusion_sphere_compl_singleton (p : sphere (0 : E) 1) :
@@ -250,10 +241,10 @@ theorem nullhomotopic_inclusion_sphere_compl_singleton (p : sphere (0 : E) 1) :
 
 /-- **A loop on the unit sphere that omits a point of the sphere is null-homotopic.** The loop
 runs in the punctured sphere, whose inclusion into the sphere is null-homotopic. -/
-theorem homotopic_refl_of_notMem_range {x : sphere (0 : E) 1} (γ : Path x x)
+theorem _root_.Path.homotopic_refl_of_notMem_range {x : sphere (0 : E) 1} (γ : Path x x)
     {p : sphere (0 : E) 1} (hp : p ∉ Set.range γ) : γ.Homotopic (Path.refl x) := by
   have hmem : ∀ t, γ t ∈ ({p}ᶜ : Set (sphere (0 : E) 1)) := fun t hmem =>
-    hp ⟨t, (Set.mem_singleton_iff.mp hmem).symm ▸ rfl⟩
+    hp ⟨t, Set.mem_singleton_iff.mp hmem⟩
   exact Path.Homotopic.refl_of_forall_mem_of_nullhomotopic
     (nullhomotopic_inclusion_sphere_compl_singleton p) γ hmem
 

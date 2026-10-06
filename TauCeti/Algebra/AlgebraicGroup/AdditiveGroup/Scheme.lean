@@ -6,11 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.AffineSpace
-public import Mathlib.LinearAlgebra.SymmetricAlgebra.Basis
 public import Mathlib.RingTheory.Smooth.Basic
 public import TauCeti.Algebra.AlgebraicGroup.AdditiveGroup.Basic
 public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.SchemePoints
 public import TauCeti.AlgebraicGeometry.AffineGroupScheme.HopfSpec
+public import TauCeti.LinearAlgebra.SymmetricAlgebra.FiniteType
 
 /-!
 # The additive group scheme
@@ -43,6 +43,9 @@ affine-space APIs.
 
 * `TauCeti.AdditiveGroup.coordinateHopfAlgebra`: the symmetric Hopf algebra representing `G_a`.
 * `TauCeti.AdditiveGroup.coordinateAlgEquiv`: its rank-one polynomial presentation.
+* `TauCeti.AdditiveGroup.connectedSpace_primeSpectrum_coordinateHopfAlgebra`: its prime spectrum
+  is connected over a domain.
+* `TauCeti.AdditiveGroup.isReduced_coordinateHopfAlgebra`: it is reduced over a reduced ring.
 * `TauCeti.AdditiveGroup.groupScheme`: the additive group scheme over `Spec R`.
 * `TauCeti.AdditiveGroup.groupSchemeAffineSpaceIso`: its canonical identification with affine
   one-space over the base.
@@ -71,8 +74,7 @@ the spectrum-transport pattern in `TauCetiProject/TauCeti`, revision
 `90f7e09cf472553c4d268db39fcae6b84bd91e04`,
 `TauCeti/Algebra/AlgebraicGroup/GeneralLinear/Scheme.lean` (Apache 2.0), specialized to Mathlib's
 rank-one symmetric-algebra and affine-space equivalences. The scheme-valued-points interface follows
-the “Functor of points is the notion of points” design note in
-`TauCetiRoadmap/ReductiveGroups/README.md` and its cited Lean Zulip discussion
+the Lean Zulip discussion
 [#Is there code for X? > Algebraic groups](https://leanprover.zulipchat.com/#narrow/channel/217875-Is%20there%20code%20for%20X%3F/topic/Algebraic%20groups).
 -/
 
@@ -116,19 +118,6 @@ lemma coordinateAlgEquiv_ι_one :
 
 end CoordinateAlgebra
 
-section FiniteType
-
-variable (R : Type u) [CommSemiring R]
-
-/-- The coordinate algebra of `𝔾ₐ` is of finite type: it is the polynomial algebra on the single
-generator `x`. -/
-instance instFiniteTypeSymmetricAlgebra : Algebra.FiniteType R (SymmetricAlgebra R R) :=
-  Algebra.FiniteType.equiv
-    (inferInstanceAs (Algebra.FiniteType R (MvPolynomial (CoordinateIndex.{u}) R)))
-    (coordinateAlgEquiv R).symm
-
-end FiniteType
-
 variable (R : Type u) [CommRing R]
 
 /-- The commutative Hopf algebra representing the one-dimensional additive group. Its carrier is
@@ -142,6 +131,17 @@ instance instSmoothSymmetricAlgebra : Algebra.Smooth R (SymmetricAlgebra R R) :=
   letI : Algebra.Smooth R (MvPolynomial (CoordinateIndex.{u}) R) :=
     ⟨inferInstance, inferInstance⟩
   Algebra.Smooth.of_equiv (coordinateAlgEquiv R).symm
+
+/-- The coordinate Hopf algebra of `𝔾ₐ` has connected prime spectrum over a domain. -/
+theorem connectedSpace_primeSpectrum_coordinateHopfAlgebra [IsDomain R] :
+    ConnectedSpace (PrimeSpectrum (coordinateHopfAlgebra R)) :=
+  inferInstanceAs (ConnectedSpace (PrimeSpectrum (SymmetricAlgebra R R)))
+
+/-- The coordinate Hopf algebra of `𝔾ₐ` is reduced over a reduced ring: it is the polynomial
+algebra on the single generator `x`. -/
+theorem isReduced_coordinateHopfAlgebra [IsReduced R] :
+    IsReduced (coordinateHopfAlgebra R) :=
+  isReduced_of_injective (coordinateAlgEquiv R).toRingHom (coordinateAlgEquiv R).injective
 
 /-- The additive group scheme obtained by applying relative spectrum to the symmetric Hopf
 algebra on one generator.

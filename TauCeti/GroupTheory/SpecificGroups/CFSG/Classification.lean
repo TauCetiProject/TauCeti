@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.SimpleGroupUniverse
+import TauCeti.GroupTheory.SimpleGroupUniverse
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Assembly.LieType
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.Presentation
 public import Mathlib.GroupTheory.SpecificGroups.Alternating
@@ -22,11 +22,12 @@ finite presentations, without assuming any recognition theorem for the presented
 
 ## Main definitions
 
-* `TauCeti.ValidLieTypeIndex.Group`: the concrete fixed-point, derived-subgroup, central-quotient
-  carrier selected by a valid Lie-type index.
 * `TauCeti.CFSGIndex.Group`: the concrete carrier selected by an index on the classification list.
 * `TauCeti.ClassificationStatement`: every finite simple group is isomorphic to a listed carrier,
   with `TauCeti.classificationStatement_iff` stating the quantified proposition it names.
+
+## Main results
+
 * `TauCeti.classificationStatement_of_zero`: the universe-zero statement implies the statement in
   every universe.
 
@@ -36,7 +37,7 @@ public section
 
 namespace TauCeti
 
-/-- The concrete group represented by an index on the classification list. -/
+/-- The concrete carrier type represented by an index on the classification list. -/
 abbrev CFSGIndex.Group : CFSGIndex → Type
   | .cyclic p _ => Multiplicative (ZMod p)
   | .alternating degree _ => alternatingGroup (Fin degree)

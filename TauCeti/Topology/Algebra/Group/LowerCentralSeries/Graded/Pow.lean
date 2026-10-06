@@ -23,7 +23,9 @@ odd `p` the correction vanishes, so `π` commutes with the bracket in every degr
 is the iterated bracket `[[x, y], x]`, resp. `[[x, y], y]`. These are the counterparts for the
 bracket of the degree-zero additivity defect `π (x + y) = π x + π y + (p choose 2) • [y, x]`
 (`TauCeti.gradedPow_add_zero`), and together with the results away from degree zero they describe
-`π` on the whole graded Lie algebra.
+`π` on the whole graded Lie algebra. The file also records that a degree-zero class brackets
+trivially with its iterated `p`-powers, `[π^j x, x] = 0`
+(`TauCeti.gradedBracket_gradedPowIter_self`).
 
 ## Main results
 
@@ -37,6 +39,11 @@ bracket of the degree-zero additivity defect `π (x + y) = π x + π y + (p choo
 * `TauCeti.gradedBracket_gradedPow_zero_left_of_two`,
   `TauCeti.gradedBracket_gradedPow_zero_right_of_two`: for `p = 2`,
   `[π x, y] = π [x, y] + [[x, y], x]` and `[x, π y] = π [x, y] + [[x, y], y]`.
+* `TauCeti.gradedPow_gradedBracket_left_zero`, `TauCeti.gradedPow_gradedBracket_left_zero_of_odd`,
+  `TauCeti.gradedPow_gradedBracket_zero_zero`: the identities for a bracket `[x, y]` with `y` of
+  degree zero, where `π [x, y]` and `[π x, y]` have the same degree and no transport is needed.
+* `TauCeti.gradedBracket_gradedPowIter_self`: `[π^j x, x] = 0` for `x` of degree zero, the class
+  of `⁅g ^ (p ^ j), g⁆ = 1`.
 
 ## References
 
@@ -183,5 +190,50 @@ theorem gradedBracket_gradedPow_zero_right_of_two (hp : p = 2) {j : ℕ}
   -- Skew-symmetry reverses the outer bracket up to a sign, which is trivial for `p = 2`.
   rw [← neg_gradedPiece_two (gradedBracket 2 G 0 (j + 0 + 1) y (gradedBracket 2 G j 0 x y)),
     ← gradedCast_gradedBracket_swap, gradedCast_trans]
+
+/-! ### Brackets with a degree-zero class, without transport of degrees -/
+
+/-- **`π` against a bracket with a degree-zero class**, away from degree zero: `π [x, y] = [π x, y]`
+for `x ∈ gr_j(G)` with `j ≥ 1` and `y ∈ gr_0(G)`. Both sides lie in `gr_{j+2}(G)`, so no
+transport of degrees is needed. -/
+theorem gradedPow_gradedBracket_left_zero {j : ℕ} (hj : 1 ≤ j) (x : gradedPiece p G j)
+    (y : gradedPiece p G 0) :
+    gradedPow p G (j + 1) (gradedBracket p G j 0 x y) =
+      gradedBracket p G (j + 1) 0 (gradedPow p G j x) y :=
+  (gradedPow_gradedBracket_left hj x y).trans (gradedCast_rfl _)
+
+/-- For odd `p`, `π [x, y] = [π x, y]` for `y` of degree zero, in every degree of `x`. -/
+theorem gradedPow_gradedBracket_left_zero_of_odd (hp : Odd p) {j : ℕ} (x : gradedPiece p G j)
+    (y : gradedPiece p G 0) :
+    gradedPow p G (j + 1) (gradedBracket p G j 0 x y) =
+      gradedBracket p G (j + 1) 0 (gradedPow p G j x) y :=
+  (gradedPow_gradedBracket_left_of_odd hp x y).trans (gradedCast_rfl _)
+
+/-- **`π` against a bracket of two degree-zero classes**:
+`π [x, y] = [π x, y] + (p choose 2) • [[x, y], x]` in `gr_2(G)`. For odd `p` the correction
+vanishes, and for `p = 2` it is `[[x, y], x]`. -/
+theorem gradedPow_gradedBracket_zero_zero (x y : gradedPiece p G 0) :
+    gradedPow p G 1 (gradedBracket p G 0 0 x y) =
+      gradedBracket p G 1 0 (gradedPow p G 0 x) y +
+        p.choose 2 • gradedBracket p G 1 0 (gradedBracket p G 0 0 x y) x := by
+  have h := gradedBracket_gradedPow_zero_left x y
+  have hswap := gradedCast_gradedBracket_swap x (gradedBracket p G 0 0 x y)
+  rw [gradedCast_rfl, gradedCast_rfl] at h
+  rw [gradedCast_rfl] at hswap
+  rw [← neg_eq_iff_eq_neg] at hswap
+  rw [h, ← hswap, smul_neg, neg_add_cancel_right]
+
+/-! ### Brackets with iterated `p`-powers -/
+
+/-- **A degree-zero class brackets trivially with its iterated `p`-powers**: `[π^j x, x] = 0`, since
+it is the class of the commutator `⁅g ^ (p ^ j), g⁆ = 1`. -/
+@[simp]
+theorem gradedBracket_gradedPowIter_self (j : ℕ) (x : gradedPiece p G 0) :
+    gradedBracket p G j 0 (gradedPowIter p G j x) x = 0 := by
+  obtain ⟨g, rfl⟩ := gradedMkZero_surjective x
+  rw [gradedPowIter_gradedMkZero, ← gradedMk_zero ⟨g, mem_pLowerCentralSeries_zero p g⟩,
+    gradedBracket_gradedMk, gradedMk_eq_zero_iff]
+  simp only [commutatorElement_eq_one_iff_commute.mpr (Commute.pow_self g _)]
+  exact one_mem _
 
 end TauCeti

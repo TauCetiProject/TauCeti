@@ -7,12 +7,16 @@ module
 
 -- Public: `AlgHom`, `RingHom.toAlgebra` and `algebraMap` all occur in the statement below.
 public import Mathlib.Algebra.Algebra.Hom
+public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
+public import Mathlib.RingTheory.Ideal.Maps
 
 /-!
 # Bridging lemmas between `AlgHom` and `RingHom`
 
 Two small families of identities relating the bundled homomorphism types, each of which several
-files would otherwise restate inline.
+files would otherwise restate inline, together with the maximality of the kernel of an
+augmentation to the ground field, and the promotion of an algebra homomorphism between
+finite-dimensional algebras of equal finrank to an algebra equivalence.
 
 ## The structure map of the algebra induced by an algebra homomorphism
 
@@ -40,6 +44,12 @@ several do.
 * `RingHom.toIntAlgHom_id`, `RingHom.toIntAlgHom_comp`: `RingHom.toIntAlgHom` is functorial.
 * `RingHom.toIntAlgHom_toRingHom`, `AlgHom.toRingHom_toIntAlgHom`: it is inverse to
   `AlgHom.toRingHom` in both directions.
+* `AlgHom.kernelIsMaximal`: the kernel of an augmentation `H →ₐ[k] k` to a field is a maximal
+  ideal, for any (not necessarily commutative) `k`-algebra `H`.
+* `AlgHom.algEquivOfFinrankEq`: an algebra homomorphism from a finite-dimensional division algebra
+  to a finite-dimensional algebra of the same finrank is an algebra equivalence. It is the
+  algebra analogue of Mathlib's `LinearMap.linearEquivOfInjective`, with injectivity supplied by
+  the division-ring source.
 
 ## Implementation notes
 
@@ -121,3 +131,38 @@ theorem AlgHom.toRingHom_toIntAlgHom (φ : R →ₐ[ℤ] S) : ((φ : R →+* S))
   AlgHom.ext fun _ ↦ rfl
 
 end ToIntAlgHom
+
+/-! ### The kernel of an augmentation -/
+
+/-- The kernel of an augmentation to a field is a maximal ideal, even when the algebra is
+not commutative. -/
+instance AlgHom.kernelIsMaximal {k H : Type*} [Field k] [Ring H] [Algebra k H]
+    (f : H →ₐ[k] k) : (RingHom.ker (f : H →+* k)).IsMaximal :=
+  RingHom.ker_isMaximal_of_surjective (f : H →+* k)
+    (fun r ↦ ⟨algebraMap k H r, f.commutes r⟩)
+
+/-! ### Algebra equivalences from equal finrank -/
+
+section FinrankEq
+
+variable {K L M : Type*} [Field K] [DivisionRing L] [Semiring M] [Algebra K L] [Algebra K M]
+  [FiniteDimensional K L] [Module.Finite K M]
+
+/-- An algebra homomorphism from a finite-dimensional division algebra to a finite-dimensional
+algebra of the same finrank promotes to an algebra equivalence. This is the algebra analogue of
+Mathlib's `LinearMap.linearEquivOfInjective`. -/
+noncomputable def AlgHom.algEquivOfFinrankEq (f : L →ₐ[K] M)
+    (hfin : Module.finrank K L = Module.finrank K M) : L ≃ₐ[K] M :=
+  letI := Algebra.semiringToRing (A := M) K
+  haveI : Nontrivial M := Module.nontrivial_of_finrank_pos (R := K) (hfin ▸ Module.finrank_pos)
+  AlgEquiv.ofBijective f
+    ⟨f.injective, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank hfin
+      (f := f.toLinearMap)).mp f.injective⟩
+
+@[simp]
+theorem AlgHom.algEquivOfFinrankEq_apply (f : L →ₐ[K] M)
+    (hfin : Module.finrank K L = Module.finrank K M) (x : L) :
+    f.algEquivOfFinrankEq hfin x = f x :=
+  AlgEquiv.ofBijective_apply f _ x
+
+end FinrankEq

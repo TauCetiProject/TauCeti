@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Relative
+import Mathlib.CategoryTheory.Limits.Preserves.SigmaConst
 
 /-!
 # Relative chains and complementary simplices

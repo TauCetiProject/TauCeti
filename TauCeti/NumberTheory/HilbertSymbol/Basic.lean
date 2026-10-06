@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Quaternion.SplittingCriterion
+public import TauCeti.FieldTheory.SquareClassGroup.Basic
+import Mathlib.Tactic.LinearCombination
 
 /-!
 # The norm-equation Hilbert symbol
@@ -13,12 +15,16 @@ public import TauCeti.Algebra.Quaternion.SplittingCriterion
 `TauCeti.hilbertSymbol a b` is the sign `+1` when `b = x² - a y²` is solvable, and
 `-1` otherwise. The definition makes sense over any field. This file supplies the
 field-generic part of its theory: the quadratic-algebra norm and quaternion splitting
-criteria, symmetry, square rescaling, and the elementary split values.
+criteria, symmetry, square rescaling, invariance under isomorphisms of fields, and the elementary
+split values.
 
 The comparison theorems reuse the four-fold splitting criterion in
 `TauCeti.Algebra.Quaternion.SplittingCriterion`. No local classification enters the
 definition. In particular, no bimultiplicativity is asserted over an arbitrary field:
 that property needs a local norm-index theorem.
+
+The symbol factors through square classes, so its value can be computed from any unit
+representatives.
 
 ## References
 
@@ -150,6 +156,45 @@ theorem hilbertSymbol_congr_sq (a a' b b' : Kˣ)
     simp [pow_two, div_eq_mul_inv, mul_assoc, mul_left_comm]
   rw [ha', hb', hilbertSymbol_mul_sq_left, hilbertSymbol_mul_sq_right]
 
+/-- The Hilbert symbol is invariant under a ring isomorphism of fields: the norm equation
+`b = x² - a y²` is solvable over `K` exactly when its image is solvable over `L`. -/
+@[simp]
+theorem hilbertSymbol_units_map_ringEquiv {L : Type*} [Field L] (e : K ≃+* L) (a b : Kˣ) :
+    hilbertSymbol (Units.map (e : K →* L) a) (Units.map (e : K →* L) b) = hilbertSymbol a b := by
+  classical
+  have he : (∃ x y : L, ((Units.map (e : K →* L) b : Lˣ) : L) =
+      x ^ 2 - (Units.map (e : K →* L) a : Lˣ) * y ^ 2) ↔
+      ∃ x y : K, (b : K) = x ^ 2 - a * y ^ 2 := by
+    simp only [Units.coe_map, MonoidHom.coe_ofClass]
+    constructor
+    · rintro ⟨x, y, h⟩
+      exact ⟨e.symm x, e.symm y, e.injective (by simpa using h)⟩
+    · rintro ⟨x, y, h⟩
+      exact ⟨e x, e y, by simp [h]⟩
+  simp only [hilbertSymbol_def, he]
+
+-- The quotient-representative construction follows
+-- `TauCeti.BrauerGroup.quaternionClassOnSquareClasses`.
+/-- The Hilbert symbol on square classes of a field. -/
+def hilbertSymbolOnSquareClasses (x y : SquareClassGroup K) : ℤˣ :=
+  hilbertSymbol (Additive.toMul (Quotient.out x)) (Additive.toMul (Quotient.out y))
+
+/-- The square-class symbol agrees with the Hilbert symbol on representatives. -/
+@[simp]
+theorem hilbertSymbolOnSquareClasses_squareClass (a b : Kˣ) :
+    hilbertSymbolOnSquareClasses (squareClass a) (squareClass b) = hilbertSymbol a b := by
+  unfold hilbertSymbolOnSquareClasses
+  apply hilbertSymbol_congr_sq
+  · exact (squareClass_eq_iff_isSquare_mul _ _).mp (squareClass_toMul_out _)
+  · exact (squareClass_eq_iff_isSquare_mul _ _).mp (squareClass_toMul_out _)
+
+/-- The square-class Hilbert symbol is trivial on a zero second argument. -/
+@[simp] theorem hilbertSymbolOnSquareClasses_zero_right (x : SquareClassGroup K) :
+    hilbertSymbolOnSquareClasses x 0 = 1 := by
+  rw [← (squareClass_eq_zero_iff (1 : Kˣ)).mpr IsSquare.one,
+    ← squareClass_toMul_out x, hilbertSymbolOnSquareClasses_squareClass]
+  exact hilbertSymbol_one_right _
+
 variable [Invertible (2 : K)]
 
 /-- The positive sign is equivalent to splitting the associated quaternion algebra. -/
@@ -182,6 +227,17 @@ theorem hilbertSymbol_eq_of_nonempty_algEquiv {a b c d : Kˣ}
 /-- Symmetry of the norm-equation Hilbert symbol. -/
 theorem hilbertSymbol_comm (a b : Kˣ) : hilbertSymbol a b = hilbertSymbol b a :=
   hilbertSymbol_eq_of_nonempty_algEquiv ⟨_root_.QuaternionAlgebra.swapEquiv _ _⟩
+
+/-- The square-class Hilbert symbol is symmetric. -/
+theorem hilbertSymbolOnSquareClasses_comm (x y : SquareClassGroup K) :
+    hilbertSymbolOnSquareClasses x y = hilbertSymbolOnSquareClasses y x := by
+  unfold hilbertSymbolOnSquareClasses
+  exact hilbertSymbol_comm _ _
+
+/-- The square-class Hilbert symbol is trivial on a zero first argument. -/
+@[simp] theorem hilbertSymbolOnSquareClasses_zero_left (y : SquareClassGroup K) :
+    hilbertSymbolOnSquareClasses 0 y = 1 := by
+  rw [hilbertSymbolOnSquareClasses_comm, hilbertSymbolOnSquareClasses_zero_right]
 
 /-- A square first parameter has positive symbol. -/
 theorem hilbertSymbol_eq_one_of_isSquare_left {a : Kˣ} (ha : IsSquare a) (b : Kˣ) :

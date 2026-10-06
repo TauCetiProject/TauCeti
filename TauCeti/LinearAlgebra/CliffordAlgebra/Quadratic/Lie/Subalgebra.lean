@@ -8,6 +8,7 @@ module
 import Mathlib.Tactic.NoncommRing
 public import Mathlib.Algebra.Lie.OfAssociative
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Even
+import TauCeti.Algebra.Lie.Derivation.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector
 
 /-!
@@ -63,6 +64,9 @@ scope.
   `⋀[R]^2 M` under `CliffordAlgebra.bivectorExterior`.
 * `CliffordAlgebra.lie_ι_mem_range_ι_of_mem_quadraticLieSubalgebra`: bracketing with a
   quadratic element preserves the generators.
+* `CliffordAlgebra.adjoin_quadraticLieSubalgebra` and
+  `CliffordAlgebra.adjoin_coe_preimage_quadraticLieSubalgebra_eq_top`: the quadratic elements
+  generate the even subalgebra as an algebra.
 
 ## References
 
@@ -83,13 +87,6 @@ section CommRing
 
 variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M]
   (Q : QuadraticForm R M) [Invertible (2 : R)]
-
-omit [Invertible (2 : R)] in
-/-- Bracketing with a fixed element of an associative ring is a derivation. -/
-private theorem lie_mul (x y z : CliffordAlgebra Q) :
-    ⁅x, y * z⁆ = ⁅x, y⁆ * z + y * ⁅x, z⁆ := by
-  simp only [Ring.lie_def]
-  noncomm_ring
 
 omit [Invertible (2 : R)] in
 /-- The commutator of a product of two Clifford generators with a third generator. -/
@@ -146,7 +143,12 @@ generator at a time — the derivation property, written on the half-normalized 
 private theorem lie_bivector_of_lie_ι {x : CliffordAlgebra Q} {c d c' d' : M}
     (hc : ⁅x, ι Q c⁆ = ι Q c') (hd : ⁅x, ι Q d⁆ = ι Q d') :
     ⁅x, bivector Q c d⁆ = bivector Q c' d + bivector Q c d' := by
-  simp only [bivector_def, lie_smul, lie_sub, lie_mul, hc, hd]
+  have hcd := TauCeti.derivationLieAlgebra.leibniz
+    (TauCeti.innerDerivation R x) (ι Q c) (ι Q d)
+  have hdc := TauCeti.derivationLieAlgebra.leibniz
+    (TauCeti.innerDerivation R x) (ι Q d) (ι Q c)
+  simp only [TauCeti.coe_innerDerivation, LieAlgebra.ad_apply] at hcd hdc
+  simp only [bivector_def, lie_smul, lie_sub, hcd, hdc, hc, hd]
   module
 
 /-- **The bracket of two Clifford bivectors.** Bracketing with `bivector Q a b` is a
@@ -230,6 +232,34 @@ theorem quadraticLieSubalgebra_le_filtration_two :
     (quadraticLieSubalgebra Q).toSubmodule ≤ filtration Q 2 :=
   quadraticLieSubalgebra_toSubmodule_le_of_bivector_mem Q
     (bivector_mem_filtration_two Q)
+
+/-- **The quadratic elements generate the even subalgebra.** A product `ι a * ι b` of two
+generators is its Clifford bivector plus a scalar (`CliffordAlgebra.ι_mul_ι_eq_bivector_add`), and
+those products generate the even part. -/
+@[simp]
+theorem adjoin_quadraticLieSubalgebra :
+    Algebra.adjoin R (quadraticLieSubalgebra Q : Set (CliffordAlgebra Q)) = even Q := by
+  refine le_antisymm (Algebra.adjoin_le fun x hx => quadraticLieSubalgebra_le_even Q hx) ?_
+  intro x hx
+  rw [← Subalgebra.mem_toSubmodule, even_toSubmodule] at hx
+  induction x, hx using even_induction with
+  | algebraMap r => exact Subalgebra.algebraMap_mem _ r
+  | add x y _ _ ihx ihy => exact add_mem ihx ihy
+  | ι_mul_ι_mul a b x _ ih =>
+    refine mul_mem ?_ ih
+    rw [ι_mul_ι_eq_bivector_add]
+    exact add_mem (Algebra.subset_adjoin (bivector_mem_quadraticLieSubalgebra Q a b))
+      (Subalgebra.smul_mem _ (Subalgebra.algebraMap_mem _ _) _)
+
+/-- **The quadratic elements generate the even subalgebra from within**: regarded as elements of
+`even Q`, they generate all of it. This is the form in which a representation of the even
+subalgebra is determined by its values on the quadratic elements. -/
+@[simp]
+theorem adjoin_coe_preimage_quadraticLieSubalgebra_eq_top :
+    Algebra.adjoin R (((↑) : even Q → CliffordAlgebra Q) ⁻¹' quadraticLieSubalgebra Q) = ⊤ := by
+  have := Algebra.adjoin_adjoin_coe_preimage (R := R)
+    (s := (quadraticLieSubalgebra Q : Set (CliffordAlgebra Q)))
+  rwa [adjoin_quadraticLieSubalgebra] at this
 
 /-- **The quadratic elements are the image of the second exterior power.** This is the sense in
 which the Lie subalgebra realizes `⋀[R]^2 M` inside the Clifford algebra; the map itself is

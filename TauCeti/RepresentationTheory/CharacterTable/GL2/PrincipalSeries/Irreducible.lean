@@ -120,7 +120,7 @@ open CategoryTheory Matrix
 namespace TauCeti
 
 /-- **A representation on a line is a simple object of `FDRep k G`.** Private packaging of
-`TauCeti.Representation.isIrreducible_of_finrank_eq_one` and
+`Representation.isIrreducible_of_finrank_eq_one` and
 `TauCeti.FDRep.simple_of_isIrreducible`, used only to feed Schur's lemma below. -/
 private theorem simple_of_finrank_eq_one {k : Type u} {S : Type v} [Field k] [Group S]
     (X : FDRep k S) (h : Module.finrank k X = 1) : Simple X :=

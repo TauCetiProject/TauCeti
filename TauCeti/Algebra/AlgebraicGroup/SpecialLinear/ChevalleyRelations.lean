@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.RootSubgroup
+public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.RootSubgroup.Basic
 
 /-!
 # Chevalley relations for the root subgroups of the special linear group

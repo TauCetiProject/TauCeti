@@ -10,6 +10,7 @@ public import TauCeti.RingTheory.Huber.StronglyNoetherian
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Completion
 
 import TauCeti.RingTheory.Huber.OpenMapping
+import TauCeti.RingTheory.Huber.WeightedEval.Completion
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.FirstCountable
 import TauCeti.Topology.Algebra.GroupCompletion
 
@@ -81,9 +82,13 @@ it.
 * `TauCeti.Huber.IsStrictlyTopologicallyFiniteType.quotientMk` and
   `TauCeti.Huber.IsTopologicallyFiniteType.quotientMk`: in particular, stable under passing to a
   quotient by an ideal.
+* `TauCeti.Huber.IsTopologicallyFiniteType.comp_ringEquiv`: topological finite type is stable
+  under precomposing with an isomorphism of topological rings of the base.
 * `TauCeti.Huber.isStrictlyTopologicallyFiniteType_quotientMk_algebraMap`: every quotient of
   `A⟨X₁, …, Xₖ⟩` is strictly topologically of finite type over `A` — the shape of every Laurent
   and rational presentation.
+* `TauCeti.Huber.isStrictlyTopologicallyFiniteType_id`: the identity of a complete Hausdorff
+  nonarchimedean ring is strictly topologically of finite type, presented with no variables.
 * `TauCeti.Huber.IsStrictlyTopologicallyFiniteType.isStronglyNoetherian`: over a strongly
   noetherian Huber ring, an algebra strictly topologically of finite type is again strongly
   noetherian.
@@ -220,6 +225,64 @@ theorem isStrictlyTopologicallyFiniteType_quotientMk_algebraMap (k : ℕ)
   (isStrictlyTopologicallyFiniteType_algebraMap k).quotientMk I
 
 end OpenQuotient
+
+/-! ### Change of base along an isomorphism -/
+
+section RingEquiv
+
+variable {A' : Type*} [CommRing A'] [TopologicalSpace A'] [NonarchimedeanRing A']
+
+/-- **Topological finite type is stable under precomposition with an isomorphism of topological
+rings.** If `φ : A → B` is topologically of finite type and `e : A' ≃+* A` is a ring isomorphism
+continuous in both directions, then `φ ∘ e : A' → B` is topologically of finite type. Compare
+`TauCeti.Huber.IsTopologicallyFiniteType.comp_isOpenQuotientMap`, which changes the target rather
+than the base. -/
+theorem IsTopologicallyFiniteType.comp_ringEquiv {φ : A →+* B} (h : IsTopologicallyFiniteType φ)
+    (e : A' ≃+* A) (he : Continuous e) (he' : Continuous e.symm) :
+    IsTopologicallyFiniteType (φ.comp (e : A' →+* A)) := by
+  obtain ⟨k, T, hTfin, hT, π, hπ, rfl⟩ := isTopologicallyFiniteType_iff.mp h
+  -- the weights `Tᵢ` pull back to `e⁻¹(Tᵢ)`
+  have hT' : IsWeightFamily fun i ↦ e.symm '' T i :=
+    hT.image (φ := (e.symm : A →+* A')) he' (.of_inverse he e.symm_apply_apply e.apply_symm_apply)
+  have hTS i : (e : A' →+* A) '' (e.symm '' T i) ⊆ T i := (e.image_symm_image _).le
+  have hST i : (e.symm : A →+* A') '' T i ⊆ e.symm '' T i := subset_rfl
+  -- the presenting algebras are identified by the isomorphism `ψ` induced by `e`
+  let ψ := weightedMapCompletionEquiv e he he' hT' hT hTS hST
+  have hψ : IsOpenQuotientMap ψ := Homeomorph.isOpenQuotientMap ⟨ψ.toEquiv,
+    continuous_weightedMapCompletionEquiv .., continuous_weightedMapCompletionEquiv_symm ..⟩
+  refine isTopologicallyFiniteType_iff.mpr ⟨k, _, fun i ↦ (hTfin i).image _, hT', π.comp ψ,
+    hπ.comp hψ, RingHom.ext fun a ↦ ?_⟩
+  -- `ψ` passes `he : Continuous e` for continuity of `(e : A' →+* A)`, so the lemmas about the
+  -- induced maps only match once instantiated at that `he`
+  simp [ψ, weightedMapCompletion_coe (φ := (e : A' →+* A)) he,
+    weightedMap_weightedC (φ := (e : A' →+* A)) he]
+
+end RingEquiv
+
+/-! ### The identity of a complete ring -/
+
+section Identity
+
+variable {R : Type*} [CommRing R] [UniformSpace R] [IsUniformAddGroup R] [NonarchimedeanRing R]
+  [CompleteSpace R] [T0Space R]
+
+/-- **The identity of a complete Hausdorff nonarchimedean ring is strictly topologically of finite
+type**, presented in no variables. Compare the `k = 0` case of
+`TauCeti.Huber.isStrictlyTopologicallyFiniteType_algebraMap`, which presents the completion map
+`R → R⟨⟩` of an arbitrary `R` rather than the identity. -/
+theorem isStrictlyTopologicallyFiniteType_id : IsStrictlyTopologicallyFiniteType (RingHom.id R) :=
+  -- The presenting map `π : R⟨⟩ → R` is the continuous extension of the identity of `R`.
+  let π := weightedEvalHomCompletion (φ := .id R) isWeightFamily_one_weight continuousAt_id
+    ((isWeightBounded_one_weight_iff_forall_isPowerBounded _ ![]).mpr isEmptyElim)
+  -- The structure map `R → R⟨⟩` is a section of `π`.
+  have hπ : Function.LeftInverse π (algebraMap R _) := fun a ↦ by simp [π]
+  -- A continuous map with a continuous section is a quotient map, and a quotient map of
+  -- topological groups is open.
+  ⟨0, π, AddMonoidHom.isOpenQuotientMap_of_isQuotientMap <| .of_inverse
+    (continuous_algebraMap_restrictedMvPowerSeriesCompletion 0 R)
+    (continuous_weightedEvalHomCompletion ..) hπ, RingHom.ext hπ⟩
+
+end Identity
 
 /-! ### Strong noetherianness
 
