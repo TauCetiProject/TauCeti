@@ -10,7 +10,7 @@ public import Mathlib.Order.Fin.Basic
 public import Mathlib.Data.Fin.VecNotation
 public import Mathlib.Dynamics.Ergodic.MeasurePreserving
 public import Mathlib.Probability.IdentDistrib
-import TauCeti.Probability.Exchangeability.PermutationExtension
+import TauCeti.Data.Fin.StrictMono
 import TauCeti.Probability.Exchangeability.ExchangeableAtMonotone
 import Mathlib.Order.Fin.Tuple
 import TauCeti.Probability.Process.PathLaw.FiniteMarginals
@@ -30,7 +30,8 @@ converse characterization `contractable_iff_forall_map_reindex_pathLaw`.
 
 These declarations are adapted from the `cameronfreer/exchangeability` Layer 0 sources pinned
 at `e0532e59ceff23edab44dda9ab0655debbc9cc22`, with Tau Ceti API names and hypotheses; the
-combinatorial core now lives in `PermutationExtension.lean`. `Contractable.pairLaw_eq` is adapted
+combinatorial core, `StrictMono.exists_strictMono_nat_extending_fin`, now lives in
+`TauCeti.Data.Fin.StrictMono`. `Contractable.pairLaw_eq` is adapted
 from `DeFinetti/ViaMartingale/FutureRectangles.lean` (`contractable_dist_eq`) in the same repo,
 reproved via the reindexing route below rather than the reference's rectangle π-system.
 -/
@@ -200,7 +201,7 @@ theorem contractable_iff_forall_map_reindex_pathLaw {μ : Measure Ω} {X : ℕ �
   · intro hX φ hφ
     exact (hX.measurePreserving_reindex hX_meas hφ).map_eq
   · intro hX m k hk
-    obtain ⟨φ, hφ, hφ_eq⟩ := exists_strictMono_nat_extending_fin hk
+    obtain ⟨φ, hφ, hφ_eq⟩ := hk.exists_strictMono_nat_extending_fin
     have hmap := congrArg (fun ν : Measure (ℕ → α) ↦ ν.map (prefixProj α m)) (hX φ hφ)
     rw [map_reindex_prefixProj_pathLaw μ hX_meas φ m,
       map_prefixProj_pathLaw μ (AEMeasurable.of_eval hX_meas) m] at hmap
