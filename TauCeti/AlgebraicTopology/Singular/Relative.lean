@@ -367,3 +367,101 @@ instance : Epi (P.singularHomologyπ R 0) := inferInstance
 end LongExactSequence
 
 end TopPair
+
+namespace TauCeti.TopPair
+
+variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Preadditive C] (R : C)
+
+/-- The short complex of subspace, ambient, and relative singular chains, functorial in
+maps of topological pairs. -/
+@[no_expose]
+def singularChainComplexShortComplexFunctor : TopPair.{w} ⥤ ShortComplex (ChainComplex C ℕ) where
+  obj P := P.singularChainComplexShortComplex R
+  map f := SSetPair.chainComplexShortComplexMap (_root_.TopPair.toSSetPair.map f) R
+  map_id P := by
+    rw [CategoryTheory.Functor.map_id]
+    apply ShortComplex.hom_ext
+    · rw [SSetPair.chainComplexShortComplexMap_τ₁, ShortComplex.id_τ₁]
+      -- The left component is the map of the forgetful functor to the subobject.
+      change ((SSet.chainComplexFunctor C).obj R).map
+        ((MorphismProperty.Arrow.forget _ _ _ ⋙ Arrow.leftFunc).map
+          (𝟙 (_root_.TopPair.toSSetPair.obj P))) = _
+      simp only [CategoryTheory.Functor.map_id]
+      -- The forgetful functor has object `P.left` (respectively `P.right`), and
+      -- `SSet.chainComplex` abbreviates the object of the coefficient chain functor.
+      rfl
+    · rw [SSetPair.chainComplexShortComplexMap_τ₂, ShortComplex.id_τ₂]
+      -- The right component is the map of the forgetful functor to the ambient object.
+      change ((SSet.chainComplexFunctor C).obj R).map
+        ((MorphismProperty.Arrow.forget _ _ _ ⋙ Arrow.rightFunc).map
+          (𝟙 (_root_.TopPair.toSSetPair.obj P))) = _
+      simp only [CategoryTheory.Functor.map_id]
+      -- The forgetful functor has object `P.left` (respectively `P.right`), and
+      -- `SSet.chainComplex` abbreviates the object of the coefficient chain functor.
+      rfl
+    · simpa only [SSetPair.chainComplexShortComplexMap_τ₃, ShortComplex.id_τ₃] using
+        ((SSetPair.chainComplexFunctor C).obj R).map_id (_root_.TopPair.toSSetPair.obj P)
+  map_comp f g := by
+    rw [Functor.map_comp]
+    apply ShortComplex.hom_ext
+    · simpa only [SSetPair.chainComplexShortComplexMap_τ₁, ShortComplex.comp_τ₁,
+        MorphismProperty.Comma.comp_left] using
+        ((SSet.chainComplexFunctor C).obj R).map_comp
+          (_root_.TopPair.toSSetPair.map f).left (_root_.TopPair.toSSetPair.map g).left
+    · simpa only [SSetPair.chainComplexShortComplexMap_τ₂, ShortComplex.comp_τ₂,
+        MorphismProperty.Comma.comp_right] using
+        ((SSet.chainComplexFunctor C).obj R).map_comp
+          (_root_.TopPair.toSSetPair.map f).right (_root_.TopPair.toSSetPair.map g).right
+    · simpa only [SSetPair.chainComplexShortComplexMap_τ₃, ShortComplex.comp_τ₃] using
+        ((SSetPair.chainComplexFunctor C).obj R).map_comp
+          (_root_.TopPair.toSSetPair.map f) (_root_.TopPair.toSSetPair.map g)
+
+/-- Evaluating the functor gives the short complex of singular chains of the pair. -/
+@[simp]
+lemma singularChainComplexShortComplexFunctor_obj (P : TopPair.{w}) :
+    (singularChainComplexShortComplexFunctor R).obj P =
+      P.singularChainComplexShortComplex R := by
+  rw [singularChainComplexShortComplexFunctor.eq_def]
+
+/-- The first term is the singular chain functor of the subspace. -/
+lemma singularChainComplexShortComplexFunctor_comp_π₁ :
+    singularChainComplexShortComplexFunctor R ⋙ ShortComplex.π₁ =
+      TopPair.proj₂ ⋙ TopCat.toSSet ⋙ (SSet.chainComplexFunctor C).obj R := by
+  rw [singularChainComplexShortComplexFunctor.eq_def]
+  refine CategoryTheory.Functor.hext (fun _ ↦ rfl) ?_
+  intro P Q f
+  simp only [Functor.comp_map, ShortComplex.π₁_map,
+    SSetPair.chainComplexShortComplexMap_τ₁, _root_.TopPair.toSSetPair_map_left]
+  -- `SSet.chainComplexMap` is the map of `(SSet.chainComplexFunctor C).obj R`;
+  -- the definition of `TopPair.proj₂` identifies the subspace component of a pair morphism.
+  rfl
+
+/-- The second term is the singular chain functor of the ambient space. -/
+lemma singularChainComplexShortComplexFunctor_comp_π₂ :
+    singularChainComplexShortComplexFunctor R ⋙ ShortComplex.π₂ =
+      TopPair.proj₁ ⋙ TopCat.toSSet ⋙ (SSet.chainComplexFunctor C).obj R := by
+  rw [singularChainComplexShortComplexFunctor.eq_def]
+  refine CategoryTheory.Functor.hext (fun _ ↦ rfl) ?_
+  intro P Q f
+  simp only [Functor.comp_map, ShortComplex.π₂_map,
+    SSetPair.chainComplexShortComplexMap_τ₂, _root_.TopPair.toSSetPair_map_right]
+  -- `SSet.chainComplexMap` is the map of `(SSet.chainComplexFunctor C).obj R`;
+  -- the definition of `TopPair.proj₁` identifies the ambient component of a pair morphism.
+  rfl
+
+/-- The third term is the relative singular chain functor. -/
+lemma singularChainComplexShortComplexFunctor_comp_π₃ :
+    singularChainComplexShortComplexFunctor R ⋙ ShortComplex.π₃ =
+      (TopPair.singularChainComplexFunctor C).obj R := by
+  rw [singularChainComplexShortComplexFunctor.eq_def]
+  refine CategoryTheory.Functor.hext (fun P ↦ ?_) ?_
+  · simp
+  · intro P Q f
+    simp only [Functor.comp_map, ShortComplex.π₃_map,
+      SSetPair.chainComplexShortComplexMap_τ₃]
+    exact ((conj_eqToHom_iff_heq _ _
+      (TopPair.singularChainComplexFunctor_obj_obj P R)
+      (TopPair.singularChainComplexFunctor_obj_obj Q R)).1
+        (TopPair.singularChainComplexFunctor_obj_map P Q f R)).symm
+
+end TauCeti.TopPair

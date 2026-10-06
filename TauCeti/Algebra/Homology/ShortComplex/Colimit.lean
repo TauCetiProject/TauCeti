@@ -19,7 +19,8 @@ public import Mathlib.CategoryTheory.Abelian.GrothendieckAxioms.Basic
 This file proves that homology of short complexes in an abelian category, and hence homology of
 homological complexes, commutes with colimits of every shape whose colimits are exact. It also
 supplies the small-universe AB5 instance for module categories in which the ring and its modules
-live in unrelated universes.
+live in unrelated universes. It also gives a general criterion transferring a colimit along a
+cokernel presentation, needing neither abelianness nor exactness of colimits.
 
 ## Main results
 
@@ -30,8 +31,9 @@ live in unrelated universes.
   associated to a homological complex preserves all existing colimits.
 * `TauCeti.homologicalComplexHomologyFunctor_preservesColimitsOfShape`: homology of homological
   complexes preserves colimits of any exact shape.
-* `TauCeti.isColimitπ₃MapCoconeOfIsCokernel`: in a cocone of cokernel sequences, colimits on the
-  first two terms imply a colimit on the third, without exactness assumptions.
+* `TauCeti.isColimitπ₃MapCoconeOfIsCokernel`: in a cocone of short complexes whose
+  second maps are epimorphisms, colimits on the first two terms and a cokernel presentation
+  at the apex imply a colimit on the third, without exactness assumptions.
 
 ## Implementation notes
 
@@ -260,12 +262,13 @@ open CategoryTheory Limits
 variable {D : Type*} [Category* D] [HasZeroMorphisms D]
   {I : Type*} [Category I] {F : I ⥤ ShortComplex D}
 
-/-- A cocone of cokernel sequences is a colimit on the third terms if it is a colimit on the
-first two terms and its apex is also a cokernel sequence. No exactness of colimits is needed. -/
+/-- A cocone of short complexes is a colimit on the third terms if it is a colimit on the
+first two terms, its stagewise second maps are epimorphisms, and its apex is a cokernel
+sequence. No exactness of colimits or stagewise cokernel presentations are needed. -/
 noncomputable def isColimitπ₃MapCoconeOfIsCokernel (c : Cocone F)
     (h₁ : IsColimit (ShortComplex.π₁.mapCocone c))
     (h₂ : IsColimit (ShortComplex.π₂.mapCocone c))
-    (h : ∀ i, IsColimit (CokernelCofork.ofπ (F.obj i).g (F.obj i).zero))
+    (h : ∀ i, Epi (F.obj i).g)
     (hpt : IsColimit (CokernelCofork.ofπ c.pt.g c.pt.zero)) :
     IsColimit (ShortComplex.π₃.mapCocone c) := by
   let t (s : Cocone (F ⋙ ShortComplex.π₃)) : Cocone (F ⋙ ShortComplex.π₂) :=
@@ -279,34 +282,35 @@ noncomputable def isColimitπ₃MapCoconeOfIsCokernel (c : Cocone F)
       _ = (F.obj i).f ≫ (t s).ι.app i := congrArg ((F.obj i).f ≫ ·) (h₂.fac (t s) i)
       _ = 0 := ((reassoc_of% (F.obj i).zero) _).trans zero_comp
       _ = _ := comp_zero.symm
+  -- The projection components are recorded by `ShortComplex.π₂_map` and
+  -- `ShortComplex.π₃_map`; `ShortComplex.π₂Toπ₃_app` identifies the legs of `t s`
+  -- with `(F.obj i).g ≫ s.ι.app i`. These identifications are definitional.
+  have hd (s : Cocone (F ⋙ ShortComplex.π₃)) :
+      c.pt.g ≫ hpt.desc (CokernelCofork.ofπ (h₂.desc (t s)) (hz s)) =
+        h₂.desc (t s) := Cofork.IsColimit.π_desc hpt
+  have ht (s : Cocone (F ⋙ ShortComplex.π₃)) (i : I) :
+      (c.ι.app i).τ₂ ≫ h₂.desc (t s) = (F.obj i).g ≫ s.ι.app i := h₂.fac (t s) i
   refine
     { desc := fun s ↦ hpt.desc (CokernelCofork.ofπ (h₂.desc (t s)) (hz s))
       fac := ?_
       uniq := ?_ }
   · intro s i
-    have hd : c.pt.g ≫ hpt.desc (CokernelCofork.ofπ (h₂.desc (t s)) (hz s)) =
-        h₂.desc (t s) := Cofork.IsColimit.π_desc hpt
-    have ht : (c.ι.app i).τ₂ ≫ h₂.desc (t s) = (F.obj i).g ≫ s.ι.app i :=
-      h₂.fac (t s) i
-    apply Cofork.IsColimit.hom_ext (h i)
+    have := h i
+    apply (cancel_epi (F.obj i).g).1
     calc
       _ = (c.ι.app i).τ₂ ≫ c.pt.g ≫
           hpt.desc (CokernelCofork.ofπ (h₂.desc (t s)) (hz s)) :=
         ((reassoc_of% (c.ι.app i).comm₂₃) _).symm
       _ = (c.ι.app i).τ₂ ≫ h₂.desc (t s) :=
-        congrArg ((c.ι.app i).τ₂ ≫ ·) hd
-      _ = _ := ht
+        congrArg ((c.ι.app i).τ₂ ≫ ·) (hd s)
+      _ = _ := ht s i
   · intro s m hm
     apply Cofork.IsColimit.hom_ext hpt
-    have hd : c.pt.g ≫ hpt.desc (CokernelCofork.ofπ (h₂.desc (t s)) (hz s)) =
-        h₂.desc (t s) := Cofork.IsColimit.π_desc hpt
-    refine (h₂.hom_ext (fun i ↦ ?_)).trans hd.symm
-    have ht : (c.ι.app i).τ₂ ≫ h₂.desc (t s) = (F.obj i).g ≫ s.ι.app i :=
-      h₂.fac (t s) i
+    refine (h₂.hom_ext (fun i ↦ ?_)).trans (hd s).symm
     calc
       _ = (F.obj i).g ≫ (c.ι.app i).τ₃ ≫ m :=
         (reassoc_of% (c.ι.app i).comm₂₃) _
       _ = (F.obj i).g ≫ s.ι.app i := congrArg ((F.obj i).g ≫ ·) (hm i)
-      _ = _ := ht.symm
+      _ = _ := (ht s i).symm
 
 end TauCeti

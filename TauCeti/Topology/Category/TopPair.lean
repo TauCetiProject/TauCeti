@@ -212,3 +212,17 @@ def sigmaCofanIsColimit : IsColimit (sigmaCofan P) :=
 end sigma
 
 end TopPair
+
+namespace TauCeti.TopPair
+
+/-- The subspace component of a map of pairs is an embedding if the ambient component is. -/
+lemma Hom.isEmbedding_snd_of_isEmbedding_fst {P Q : TopPair.{u}} (f : P ⟶ Q)
+    (h : Topology.IsEmbedding (_root_.TopPair.Hom.fst f)) :
+    Topology.IsEmbedding (_root_.TopPair.Hom.snd f) := by
+  apply (Q.isEmbedding_map.of_comp_iff (f := _root_.TopPair.Hom.snd f)).mp
+  have hw : (Q.map : Q.snd → Q.fst) ∘ _root_.TopPair.Hom.snd f =
+      _root_.TopPair.Hom.fst f ∘ P.map := funext (_root_.TopPair.Hom.w_apply f)
+  rw [hw]
+  exact h.comp P.isEmbedding_map
+
+end TauCeti.TopPair
