@@ -144,7 +144,8 @@ theorem isFunctionField_iff_functionField [Algebra (RatFunc k) F]
       rw [AlgHom.fieldRange_eq_map, ← RatFunc.adjoin_X, IntermediateField.adjoin_map]
       simp only [Set.image_singleton, f, IsScalarTower.coe_toAlgHom', y]
     let : FiniteDimensional f.fieldRange F := hrange.symm ▸ inferInstance
-    exact AlgHom.finiteDimensional_of_fieldRange f (fun _ ↦ rfl)
+    exact AlgHom.finiteDimensional_of_fieldRange f (fun z ↦ by
+      simp only [f, IsScalarTower.coe_toAlgHom'])
   · intro hF
     let : FunctionField k F := hF
     exact ⟨y, hy, FunctionField.FiniteDimensional.adjoin_algebraMap_X⟩
