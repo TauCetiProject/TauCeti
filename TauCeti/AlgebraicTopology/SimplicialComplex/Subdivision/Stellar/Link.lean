@@ -22,6 +22,14 @@ of the closed star, computed in `Subdivision.Stellar.Basic`.
 
 ## References
 
+* G. Cunningham, D. Zach, S. Friedl,
+  *Formalizing Abstract Simplicial Complexes & Stellar Subdivisions in Lean* (2026),
+  [Theorem 3.9 in the preprint](https://arxiv.org/html/2607.10216v1#S3.Thmtheorem9)
+  (Theorem 19 in the published version), and the associated
+  [`not-gary/pachner` formalization](https://github.com/not-gary/pachner),
+  `stellarSubdivision_anticomm_link` in `Pachner/Results/StellarSubdivAnticommLink.lean`.
+  `link_stellarSubdivision_of_notMem` extends their link–stellar-subdivision identity
+  to arbitrary precomplexes and sets avoiding the starring vertex.
 * C. P. Rourke, B. J. Sanderson, *Introduction to Piecewise-Linear Topology*, Springer (1972),
   Chapters 2 and 3 (stellar subdivision and links).
 * W. B. R. Lickorish, *Simplicial moves on complexes and manifolds*, Geom. Topol. Monogr. 2
