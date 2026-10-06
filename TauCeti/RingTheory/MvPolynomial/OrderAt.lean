@@ -55,6 +55,8 @@ The Taylor shift itself preserves the degree in each variable (`MvPolynomial.deg
   determined by which iterated partial derivatives, up to the total degree, vanish there.
 * `MvPolynomial.orderAt_le_orderAt_aeval`: substitution does not decrease the order.
 * `MvPolynomial.orderAt_rename`: renaming along an injective map preserves the order.
+* `MvPolynomial.map_eval_taylor_X_map_C`: the Taylor shift at `a` is the specialization at `a`
+  of the Taylor shift at the generic point, so Taylor coefficients depend polynomially on `a`.
 * `MvPolynomial.finSuccEquiv_taylor`, `MvPolynomial.coeff_taylor_cons`: singling out the
   variable `X₀` turns the Taylor shift at `a` into the univariate Taylor shift at `a₀` followed by
   the Taylor shift at the remaining coordinates.
@@ -113,6 +115,23 @@ theorem taylor_zero (p : MvPolynomial σ R) : taylor 0 p = p := by
 theorem taylor_taylor (a b : σ → R) (p : MvPolynomial σ R) :
     taylor a (taylor b p) = taylor (a + b) p := by
   induction p using MvPolynomial.induction_on <;> simp_all [add_assoc]
+
+/-- The Taylor shift commutes with coefficient maps. -/
+@[simp]
+theorem map_taylor {S : Type*} [CommSemiring S] (φ : R →+* S) (a : σ → R)
+    (p : MvPolynomial σ R) : map φ (taylor a p) = taylor (φ ∘ a) (map φ p) := by
+  induction p using MvPolynomial.induction_on <;> simp_all
+
+/-- **Taylor coefficients depend polynomially on the point.** Shifting `p` at the generic point,
+whose coordinates are the variables `X i` of the coefficient ring `MvPolynomial σ R`, and then
+specializing those variables at `a` gives the Taylor shift of `p` at `a`. Thus each Taylor
+coefficient of `p` at `a` is the value at `a` of a polynomial independent of `a`. -/
+theorem map_eval_taylor_X_map_C (a : σ → R) (p : MvPolynomial σ R) :
+    map (eval a) (taylor X (map C p)) = taylor a p := by
+  rw [map_taylor, map_map, show (eval a).comp C = RingHom.id R from RingHom.ext eval_C, map_id]
+  congr 1
+  ext i
+  simp
 
 /-- The Taylor shift does not increase the total degree. -/
 theorem totalDegree_taylor_le (a : σ → R) (p : MvPolynomial σ R) :

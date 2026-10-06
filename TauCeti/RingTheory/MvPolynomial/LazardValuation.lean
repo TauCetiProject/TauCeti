@@ -41,6 +41,14 @@ coefficient the Taylor coefficient of `p` at `a` of exponent `v`
 cylindrical algebraic decomposition converts constancy of Lazard valuations into constancy of
 orders of vanishing of one-variable restrictions.
 
+The same comparison of weights gives the parameterized identity: if the Taylor coefficients of
+`f` at `a` with exponents below `v ∈ V` vanish, then
+`f (a + y ^ c) = y ^ (∑ i, cᵢ vᵢ) * (f_{a,v} + y * Q (a, y))`, where `f_{a,v}` is the Taylor
+coefficient with exponent `v` and `Q` is one polynomial in `y` with coefficients polynomial in
+the point, independent of `a` (`MvPolynomial.exists_forall_aeval_monomialCurve_eq_X_pow_mul`).
+The coefficients of `Q` come from the Taylor shift at the generic point
+(`MvPolynomial.map_eval_taylor_X_map_C`).
+
 ## Main definitions
 
 * `MvPolynomial.lazardValuation`: the Lazard valuation of `p` at `a`.
@@ -58,6 +66,9 @@ orders of vanishing of one-variable restrictions.
 * `MvPolynomial.finite_range_lazardValuation`, `MvPolynomial.finite_setOf_lazardValuation_eq`:
   a polynomial has only finitely many Lazard valuations.
 * `TauCeti.exists_isLazardEvaluator`: every finite set of exponents has an evaluator.
+* `MvPolynomial.exists_forall_aeval_monomialCurve_eq_X_pow_mul`: the parameterized identity
+  `f (a + y ^ c) = y ^ (∑ i, cᵢ vᵢ) * (f_{a,v} + y * Q (a, y))`, with `Q` a polynomial
+  independent of `a`, at every point where the Taylor coefficients below `v` vanish.
 * `MvPolynomial.natTrailingDegree_aeval_monomialCurve`: the order of `y ↦ p (a + y ^ c)` at `0`
   is the `c`-weight of the Lazard valuation of `p` at `a`.
 
@@ -216,6 +227,56 @@ theorem coeff_aeval_monomialCurve (a : σ → R) (c : σ → ℕ) (p : MvPolynom
     Finset.sum_ite, Finset.sum_const_zero, add_zero]
 
 end Substitution
+
+section ParameterizedIdentity
+
+variable {σ R : Type*} [CommSemiring R] [LinearOrder σ] {V : Set (σ →₀ ℕ)} {c : σ → ℕ}
+  {v : σ →₀ ℕ}
+
+/-- **The parameterized identity along monomial curves.** Let `c` be an evaluator for a set of
+exponents containing `v`. There is a single polynomial `Q` in `y` whose coefficients are
+polynomials in the coordinates of the point such that, at every point `a` where the Taylor
+coefficients of `f` with exponents lexicographically below `v` vanish,
+`f (a + y ^ c) = y ^ (∑ i, cᵢ vᵢ) * (f_{a,v} + y * Q (a, y))`, where `f_{a,v}` is the Taylor
+coefficient of `f` at `a` with exponent `v`.
+
+For `R = A[z]`, a polynomial `f` in the variables `X i` and `z`, and points `a = C ∘ α` with
+`α : σ → A`, this is the identity `f (α + y ^ c, z) = y ^ (∑ i, cᵢ vᵢ) * (f_{α,v}(z) + y * Q)`
+with `Q` a polynomial in `(α, y, z)`, uniformly on any set of points `α` where the lower Taylor
+coefficients vanish. -/
+theorem exists_forall_aeval_monomialCurve_eq_X_pow_mul (f : MvPolynomial σ R)
+    (hc : TauCeti.IsLazardEvaluator V c) (hv : v ∈ V) :
+    ∃ Q : Polynomial (MvPolynomial σ R), ∀ a : σ → R,
+      (∀ u : σ →₀ ℕ, toLex u < toLex v → (taylor a f).coeff u = 0) →
+      aeval (monomialCurve a c) f = Polynomial.X ^ weight c v *
+        (Polynomial.C ((taylor a f).coeff v) + Polynomial.X * Q.map (eval a)) := by
+  classical
+  -- the Taylor shift at the generic point, which specializes to the Taylor shift at each `a`
+  obtain ⟨T, hT⟩ : ∃ T : MvPolynomial σ (MvPolynomial σ R), ∀ a, taylor a f = map (eval a) T :=
+    ⟨_, fun a ↦ (map_eval_taylor_X_map_C a f).symm⟩
+  refine ⟨∑ m ∈ T.support with toLex v < toLex m,
+    Polynomial.monomial (weight c m - weight c v - 1) (T.coeff m), fun a ha ↦ ?_⟩
+  simp only [hT, coeff_map] at ha ⊢
+  rw [aeval_monomialCurve, hT]
+  conv_lhs => rw [T.as_sum, map_sum, map_sum]
+  simp only [map_monomial, aeval_X_pow_left_monomial, Polynomial.map_sum, Polynomial.map_monomial]
+  rw [← Finset.sum_filter_not_add_sum_filter T.support (toLex v < toLex ·), mul_add,
+    Finset.mul_sum, Finset.mul_sum]
+  congr 1
+  · -- below `v` the Taylor coefficients vanish at `a`, so only the term of exponent `v` remains
+    rw [mul_comm, Polynomial.C_mul_X_pow_eq_monomial]
+    refine Finset.sum_eq_single v (fun m hm hmv ↦ ?_) fun hv' ↦ ?_
+    · rw [ha m (lt_of_le_of_ne (not_lt.1 (Finset.mem_filter.1 hm).2)
+        (toLex.injective.ne hmv)), map_zero]
+    · rw [show T.coeff v = 0 by simpa using hv', map_zero, map_zero]
+  · -- above `v` the evaluator makes the `c`-weights exceed that of `v`
+    refine Finset.sum_congr rfl fun m hm ↦ ?_
+    have := hc.weight_lt_weight hv (Finset.mem_filter.1 hm).2
+    rw [← mul_assoc, ← pow_succ, Polynomial.X_pow_mul_monomial]
+    congr 2
+    omega
+
+end ParameterizedIdentity
 
 variable {σ R : Type*} [LinearOrder σ] [WellFoundedGT σ]
 

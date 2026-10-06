@@ -10,7 +10,9 @@ public import Mathlib.Algebra.Polynomial.Reverse
 public import TauCeti.Algebra.MvPolynomial.Equiv
 public import TauCeti.Algebra.Polynomial.Taylor
 public import TauCeti.Data.Finsupp.Fin
+public import TauCeti.RingTheory.MvPolynomial.LazardValuation
 public import TauCeti.RingTheory.MvPolynomial.OrderAt
+import Mathlib.Data.Set.Finite.Lemmas
 
 /-!
 # Lazard evaluation
@@ -35,7 +37,18 @@ nonzero coefficient when `q ≠ 0`. Iterating it, the
 removed exponents are the lexicographically least exponent `u` of a nonzero Taylor coefficient
 of `p` at `a`, and the Lazard evaluation is that coefficient (`lazardExponent_eq_iff`,
 `coeff_taylor_lazardExponent`). Here the lexicographic order on `Fin n →₀ ℕ` makes coordinate
-`0` the most significant, matching the order of elimination.
+`0` the most significant, matching the order of elimination. For nonzero `p` the removed
+exponents are therefore the Lazard valuation `p.lazardValuation a`.
+
+Lazard's method uses these exponents along monomial curves `y ↦ α + y ^ c`. For a set `T` of
+points `α ∈ Rⁿ`, take `v` lexicographically least among the exponents removed from `f` at the
+points of `T` (read in `S` along a ring map `R →+* S`, such as `C : R →+* R[z]`), and `c` an
+evaluator for the finitely many exponents removed from `f` and from finitely many further
+polynomials `g` over `R` at the points of `T`. Then
+`f (α + y ^ c) = y ^ (∑ i, cᵢ vᵢ) * (f_{α,v} + y * Q (α, y))` on `T` with a single polynomial
+`Q`, and each `y ↦ g (α + y ^ c)` vanishes at `y = 0` to the order given by the `c`-weight of
+the exponents removed from `g` at `α`
+(`exists_isLazardEvaluator_forall_aeval_monomialCurve_eq`).
 
 ## Main definitions
 
@@ -54,13 +67,19 @@ of `p` at `a`, and the Lazard evaluation is that coefficient (`lazardExponent_eq
   of `p` at `a`, and the Lazard evaluation is that Taylor coefficient.
 * `MvPolynomial.lazardEval_mul`, `MvPolynomial.lazardExponent_mul`: without zero divisors, Lazard
   evaluation is multiplicative and the removed exponents add.
+* `MvPolynomial.lazardValuation_eq_toLex_lazardExponent`,
+  `MvPolynomial.finite_range_lazardExponent`: the removed exponents are the Lazard valuation, and
+  a polynomial has only finitely many of them.
+* `MvPolynomial.exists_isLazardEvaluator_forall_aeval_monomialCurve_eq`: the uniform
+  parameterized identity along monomial curves on a set of points, together with the orders of
+  vanishing along those curves.
 
 ## References
 
 * D. Lazard, *An improved projection for cylindrical algebraic decomposition*, in
   *Algebraic Geometry and its Applications*, Springer (1994), 467–476.
 * S. McCallum, A. Parusiński, L. Paunescu, *Validity proof of Lazard's method for CAD
-  construction*, Journal of Symbolic Computation 92 (2019), 52–69, Section 2.
+  construction*, Journal of Symbolic Computation 92 (2019), 52–69, Section 2 and Section 5.1.
 -/
 
 public section
@@ -279,5 +298,76 @@ theorem lazardExponent_mul {p q : MvPolynomial (Fin n) S} (hp : p ≠ 0) (hq : q
     rw [ih (by simpa using hP) (by simpa using hQ)]
 
 end NoZeroDivisors
+
+/-! ### Lazard valuations and the uniform parameterized identity -/
+
+section Valuation
+
+open Finsupp
+
+/-- For a nonzero polynomial, the exponents removed by Lazard evaluation at `a` are its Lazard
+valuation at `a`. -/
+theorem lazardValuation_eq_toLex_lazardExponent {p : MvPolynomial (Fin n) S} (hp : p ≠ 0)
+    (a : Fin n → S) : p.lazardValuation a = toLex (p.lazardExponent a) :=
+  lazardValuation_eq_coe_iff.2 ((lazardExponent_eq_iff hp).1 rfl)
+
+/-- A polynomial has only finitely many vectors of exponents removed by Lazard evaluation. -/
+theorem finite_range_lazardExponent (p : MvPolynomial (Fin n) S) :
+    (Set.range p.lazardExponent).Finite := by
+  obtain rfl | hp := eq_or_ne p 0
+  · exact (Set.finite_singleton 0).subset <| Set.range_subset_iff.2 lazardExponent_zero
+  · exact (finite_setOf_lazardValuation_eq p).subset fun _ ⟨a, ha⟩ ↦
+      ⟨a, ha ▸ lazardValuation_eq_toLex_lazardExponent hp a⟩
+
+/-- If `c` is an evaluator for a set containing the exponents removed by Lazard evaluation of `p`
+at `a`, then `y ↦ p (a + y ^ c)` vanishes at `y = 0` to order exactly their `c`-weight. For
+`p = 0` both sides are zero. -/
+theorem natTrailingDegree_aeval_monomialCurve_lazardExponent {V : Set (Fin n →₀ ℕ)}
+    {c : Fin n → ℕ} (hc : TauCeti.IsLazardEvaluator V c) {p : MvPolynomial (Fin n) S}
+    {a : Fin n → S} (ha : p.lazardExponent a ∈ V) :
+    (aeval (monomialCurve a c) p).natTrailingDegree = weight c (p.lazardExponent a) := by
+  obtain rfl | hp := eq_or_ne p 0
+  · simp
+  · exact natTrailingDegree_aeval_monomialCurve (lazardValuation_eq_toLex_lazardExponent hp a) ha hc
+
+/-- **The uniform parameterized identity for Lazard evaluation.** Let `φ : R →+* S`, let `f` be a
+polynomial over `S` (for instance over `S = R[z]`, with `φ = C`), let `G` be a finite family of
+polynomials over `R`, and let `T` be a nonempty set of points of `Rⁿ`, read in `Sⁿ` along `φ` when
+evaluating `f`. There is an evaluator `c` for the exponents removed by Lazard evaluation of `f`
+and of the members of `G` at the points of `T`, such that for every `α ∈ T`:
+* each `g ∈ G` restricts to `y ↦ g (α + y ^ c)` vanishing at `y = 0` to order exactly the
+  `c`-weight of the exponents removed by Lazard evaluation of `g` at `α`; in particular this
+  order is constant on `T` when the Lazard valuation of `g` is;
+* with `v` the lexicographically least vector of exponents removed from `f` at the points of `T`,
+  `f (α + y ^ c) = y ^ (∑ i, cᵢ vᵢ) * (f_{α,v} + y * Q (α, y))` for a single polynomial `Q`
+  independent of `α`. Here `f_{α,v}` is the Taylor coefficient of `f` at `α` with exponent `v`,
+  which is the Lazard evaluation of `f` at `α` wherever `v` is the exponent removed there. -/
+theorem exists_isLazardEvaluator_forall_aeval_monomialCurve_eq {R : Type*} [CommRing R]
+    (φ : R →+* S) (f : MvPolynomial (Fin n) S) (G : Finset (MvPolynomial (Fin n) R))
+    {T : Set (Fin n → R)} (hT : T.Nonempty) :
+    ∃ c, TauCeti.IsLazardEvaluator
+        ((fun α ↦ f.lazardExponent (φ ∘ α)) '' T ∪ ⋃ g ∈ G, g.lazardExponent '' T) c ∧
+      (∀ g ∈ G, ∀ α ∈ T,
+        (aeval (monomialCurve α c) g).natTrailingDegree = weight c (g.lazardExponent α)) ∧
+      ∃ v ∈ (fun α ↦ f.lazardExponent (φ ∘ α)) '' T,
+        (∀ α ∈ T, toLex v ≤ toLex (f.lazardExponent (φ ∘ α))) ∧
+        ∃ Q : Polynomial (MvPolynomial (Fin n) S), ∀ α ∈ T,
+          aeval (monomialCurve (φ ∘ α) c) f = Polynomial.X ^ weight c v *
+            (Polynomial.C ((taylor (φ ∘ α) f).coeff v) +
+              Polynomial.X * Q.map (eval (φ ∘ α))) := by
+  have hfin : ((fun α ↦ f.lazardExponent (φ ∘ α)) '' T).Finite :=
+    (finite_range_lazardExponent f).subset <| Set.image_subset_iff.2 fun α _ ↦ ⟨φ ∘ α, rfl⟩
+  obtain ⟨c, hc⟩ := TauCeti.exists_isLazardEvaluator <| hfin.union <|
+    G.finite_toSet.biUnion fun g _ ↦
+      (finite_range_lazardExponent g).subset (Set.image_subset_range _ _)
+  obtain ⟨v, hvT, hv⟩ := Set.exists_min_image _ toLex hfin (hT.image _)
+  have hv' (α) (hα : α ∈ T) : toLex v ≤ toLex (f.lazardExponent (φ ∘ α)) := hv _ ⟨α, hα, rfl⟩
+  obtain ⟨Q, hQ⟩ := exists_forall_aeval_monomialCurve_eq_X_pow_mul f hc (Or.inl hvT)
+  refine ⟨c, hc, fun g hg α hα ↦ ?_, v, hvT, hv', Q, fun α hα ↦ hQ _ fun u hu ↦
+    coeff_taylor_eq_zero_of_lt_lazardExponent (hu.trans_le (hv' α hα))⟩
+  exact natTrailingDegree_aeval_monomialCurve_lazardExponent hc
+    (Or.inr (Set.mem_biUnion hg ⟨α, hα, rfl⟩))
+
+end Valuation
 
 end MvPolynomial
