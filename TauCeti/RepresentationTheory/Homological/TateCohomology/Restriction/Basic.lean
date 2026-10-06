@@ -12,6 +12,7 @@ public import TauCeti.RepresentationTheory.Homological.TateCohomology.Functorial
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.LowDegree
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.NegativeCorestriction
 public import TauCeti.RepresentationTheory.RelativeNorm
+import TauCeti.RepresentationTheory.Coinvariants
 
 /-!
 # Restriction in negative Tate degrees and maps in the two low degrees
@@ -260,7 +261,7 @@ private theorem hNegOne_cor_le :
         (Submodule.inclusion
           (Representation.ker_norm_comp_subtype_le_ker_norm (ρ := M.ρ) (H := H)))
         ((Coinvariants.ker M.ρ).submoduleOf (ker M.ρ.norm)) :=
-  fun _ hx => Representation.coinvariantsKer_comp_subtype_le (H := H) hx
+  fun _ hx => M.ρ.coinvariantsKer_comp_le H.subtype hx
 
 /-- Restriction to a subgroup in degree `-1` Tate cohomology, induced by the relative transfer. -/
 def HNegOneRes :

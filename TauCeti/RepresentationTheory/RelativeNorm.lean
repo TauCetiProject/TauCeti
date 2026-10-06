@@ -227,34 +227,6 @@ section Coinvariants
 
 variable {ρ H}
 
-/-- The augmentation submodule of `H` is contained in the augmentation submodule of `G`. -/
-theorem coinvariantsKer_comp_subtype_le :
-    Coinvariants.ker (ρ.comp H.subtype) ≤ Coinvariants.ker ρ := by
-  rw [Coinvariants.ker, Coinvariants.ker, Submodule.span_le]
-  rintro _ ⟨⟨h, y⟩, rfl⟩
-  exact Submodule.subset_span ⟨((h : G), y), rfl⟩
-
-/-- **An intertwining map carries the augmentation submodule into the augmentation submodule.**
-Only the compatibility of the actions is used, so `e` need not be a homomorphism. -/
-theorem coinvariantsKer_map_le {G' V' : Type*} [Group G'] [AddCommGroup V'] [Module R V']
-    {ρ' : Representation R G' V'} (e : G → G') (φ : V →ₗ[R] V')
-    (hφ : ∀ g x, φ (ρ g x) = ρ' (e g) (φ x)) :
-    (Coinvariants.ker ρ).map φ ≤ Coinvariants.ker ρ' := by
-  rw [Coinvariants.ker, Submodule.map_span_le]
-  rintro _ ⟨⟨g, x⟩, rfl⟩
-  rw [map_sub, hφ]
-  exact Coinvariants.sub_mem_ker _ _
-
-/-- **Precomposing the restricting homomorphism with a surjection does not change the
-augmentation submodule.** -/
-theorem coinvariantsKer_comp_comp_of_surjective {G' G'' : Type*} [Group G'] [Group G'']
-    (ψ : G' →* G) (ε : G'' →* G') (hε : Function.Surjective ε) :
-    Coinvariants.ker (ρ.comp (ψ.comp ε)) = Coinvariants.ker (ρ.comp ψ) := by
-  rw [Coinvariants.ker, Coinvariants.ker]
-  exact congrArg (Submodule.span R)
-    ((Prod.map_surjective.2 ⟨hε, Function.surjective_id⟩).range_comp
-      fun gv : G' × V => (ρ.comp ψ) gv.1 gv.2 - gv.2)
-
 variable [Fintype (G ⧸ H)]
 
 /-- Modulo the augmentation submodule of `G`, the relative transfer is multiplication by the
