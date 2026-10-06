@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.DedekindDomain.AdicValuation
 public import TauCeti.FieldTheory.FunctionField.Place.Basic
+public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Basic
 
 /-!
 # Places attached to the height-one primes of a Dedekind model
@@ -28,7 +28,9 @@ function field it produces the places of a chosen affine model.
 * `TauCeti.Place.adic`: the place of `F / k` attached to `p : IsDedekindDomain.HeightOneSpectrum R`.
 * `TauCeti.Place.integersAdicEquiv`: the valuation ring of that place is the localization of `R`
   at `p`.
-* `TauCeti.Place.adicResidueHom`: reduction `R → F_P` at that place.
+
+Reduction `R → F_P` at an adic place is the canonical map
+`algebraMap R (TauCeti.Place.adic k F p).ResidueField`.
 
 ## Main results
 
@@ -60,23 +62,6 @@ noncomputable section
 open scoped WithZero
 
 open IsDedekindDomain
-
-namespace IsDedekindDomain.HeightOneSpectrum
-
-variable (k : Type*) (F : Type*) {R : Type*} [Field k] [Field F] [CommRing R]
-  [IsDedekindDomain R] [Algebra k R] [Algebra R F] [IsFractionRing R F] [Algebra k F]
-  [IsScalarTower k R F]
-
-/-- The adic valuation of a height-one prime of a Dedekind `k`-algebra is trivial on `k`: a
-nonzero constant is a unit of `R`, hence lies outside every prime ideal. -/
-instance isTrivialOn_valuation (p : HeightOneSpectrum R) :
-    (p.valuation F).IsTrivialOn k where
-  eq_one c hc := by
-    rw [IsScalarTower.algebraMap_apply k R F, valuation_eq_one_iff_notMem]
-    exact fun hmem => p.isPrime.ne_top (Ideal.eq_top_of_isUnit_mem _ hmem
-      ((algebraMap k R).isUnit_map (isUnit_iff_ne_zero.2 hc)))
-
-end IsDedekindDomain.HeightOneSpectrum
 
 namespace TauCeti
 
@@ -176,53 +161,34 @@ theorem integersAdicEquiv_apply (x : HeightOneSpectrum.valuationSubringAtPrime F
 instance : IsLocalization.AtPrime ((adic k F p).integers) p.asIdeal :=
   IsLocalization.isLocalization_of_algEquiv p.asIdeal.primeCompl (integersAdicEquiv k F p)
 
-/-- Reduction at the place `adic k F p`, as a ring homomorphism from `R` to its residue field. -/
-def adicResidueHom : R →+* (adic k F p).ResidueField :=
-  (IsLocalRing.residue _).comp (algebraMap R (adic k F p).integers)
-
-/-- Reduction at an adic place is the residue of the image in its valuation ring. -/
-theorem adicResidueHom_apply (r : R) :
-    adicResidueHom k F p r =
-      IsLocalRing.residue (adic k F p).integers (algebraMap R (adic k F p).integers r) :=
-  (rfl)
-
 variable {k F p}
 
+/-- Reduction from `R` at an adic place vanishes exactly on its prime ideal. -/
 @[simp]
-theorem adicResidueHom_eq_zero_iff {r : R} :
-    adicResidueHom k F p r = 0 ↔ r ∈ p.asIdeal := by
-  rw [adicResidueHom, RingHom.comp_apply, residue_eq_zero_iff_valuation_lt_one, valuation_adic,
-    ← ValuationSubring.algebraMap_apply, ← IsScalarTower.algebraMap_apply R _ F]
-  exact HeightOneSpectrum.valuation_lt_one_iff_mem p _
+theorem algebraMap_residueField_adic_eq_zero_iff {r : R} :
+    algebraMap R (adic k F p).ResidueField r = 0 ↔ r ∈ p.asIdeal := by
+  rw [IsScalarTower.algebraMap_apply R (adic k F p).integers _,
+    IsLocalRing.ResidueField.algebraMap_eq, IsLocalRing.residue_eq_zero_iff]
+  exact IsLocalization.AtPrime.to_map_mem_maximal_iff ((adic k F p).integers) p.asIdeal r
 
 variable (k F p)
-
-@[simp]
-theorem adicResidueHom_algebraMap (c : k) :
-    adicResidueHom k F p (algebraMap k R c) =
-      algebraMap k (adic k F p).ResidueField c := by
-  rw [adicResidueHom, RingHom.comp_apply, ← IsScalarTower.algebraMap_apply k R _,
-    IsScalarTower.algebraMap_apply k (adic k F p).integers (adic k F p).ResidueField,
-    IsLocalRing.ResidueField.algebraMap_eq]
 
 /-- **The residue field of an adic place is the residue field of its prime**: reduction at
 `adic k F p` identifies `R ⧸ p` with `F_P`, as `k`-algebras. Since the valuation ring of the place
 is the localization of `R` at `p`, this is Mathlib's
-`IsLocalization.AtPrime.equivQuotMaximalIdeal`, upgraded to a `k`-algebra equivalence. -/
+`IsLocalization.AtPrime.equivQuotMaximalIdeal`, restricted from `R` to `k`. -/
 def adicResidueFieldEquiv : (R ⧸ p.asIdeal) ≃ₐ[k] (adic k F p).ResidueField :=
   haveI := p.isMaximal
-  AlgEquiv.ofRingEquiv
-    (f := (IsLocalization.AtPrime.equivQuotMaximalIdeal p.asIdeal
-      ((adic k F p).integers)).toRingEquiv)
-    fun c =>
-      (IsLocalization.AtPrime.equivQuotMaximalIdeal_apply_mk p.asIdeal _
-        (algebraMap k R c)).trans (adicResidueHom_algebraMap k F p c)
+  (IsLocalization.AtPrime.equivQuotMaximalIdeal p.asIdeal
+    ((adic k F p).integers)).restrictScalars k
 
 @[simp]
 theorem adicResidueFieldEquiv_mk (r : R) :
-    adicResidueFieldEquiv k F p (Ideal.Quotient.mk p.asIdeal r) = adicResidueHom k F p r :=
+    adicResidueFieldEquiv k F p (Ideal.Quotient.mk p.asIdeal r) =
+      algebraMap R (adic k F p).ResidueField r :=
   have := p.isMaximal
-  IsLocalization.AtPrime.equivQuotMaximalIdeal_apply_mk p.asIdeal ((adic k F p).integers) r
+  (IsLocalization.AtPrime.equivQuotMaximalIdeal p.asIdeal
+    ((adic k F p).integers)).commutes r
 
 /-- The degree of an adic place is the degree of the residue field of its prime. -/
 theorem degree_adic : (adic k F p).degree = Module.finrank k (R ⧸ p.asIdeal) := by

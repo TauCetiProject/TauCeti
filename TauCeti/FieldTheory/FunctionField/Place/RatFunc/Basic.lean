@@ -281,7 +281,8 @@ def adicOfIrreducibleResidueFieldEquiv {q : k[X]} (hq : Irreducible q) :
 theorem adicOfIrreducibleResidueFieldEquiv_mk {q : k[X]} (hq : Irreducible q) (r : k[X]) :
     adicOfIrreducibleResidueFieldEquiv hq (Ideal.Quotient.mk (Ideal.span {q}) r) =
       AlgEquiv.cast (R := k) (adicOfIrreducible_def hq).symm
-        (adicResidueHom k (RatFunc k) (HeightOneSpectrum.ofIrreducible hq) r) :=
+        (algebraMap k[X] (adic k (RatFunc k) (HeightOneSpectrum.ofIrreducible hq)).ResidueField
+          r) :=
   congrArg (AlgEquiv.cast (R := k) (adicOfIrreducible_def hq).symm)
     ((congrArg
       (fun x => adicResidueFieldEquiv k (RatFunc k) (HeightOneSpectrum.ofIrreducible hq) x)

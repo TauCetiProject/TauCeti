@@ -180,13 +180,14 @@ def completionResidueFieldEquivAdicCompletionIntegers :
     (completionIntegersEquivAdicCompletionIntegers k F p).toAlgEquiv
 
 /-- Both residue comparison routes agree on each affine-model representative. -/
-theorem completionResidueFieldEquivAdicCompletionIntegers_apply_adicResidueHom
+theorem completionResidueFieldEquivAdicCompletionIntegers_apply_algebraMap
     (r : R) :
     completionResidueFieldEquivAdicCompletionIntegers k F p
-        ((adic k F p).residueFieldEquivCompletion (adicResidueHom k F p r)) =
+        ((adic k F p).residueFieldEquivCompletion (algebraMap R (adic k F p).ResidueField r)) =
       residueFieldAlgEquivAdicCompletionIntegers (K := F) k (v := p)
         (Ideal.Quotient.mk p.asIdeal r) := by
-  rw [adicResidueHom_apply, residueFieldEquivCompletion_apply_residue]
+  rw [IsScalarTower.algebraMap_apply R (adic k F p).integers _,
+    IsLocalRing.ResidueField.algebraMap_eq, residueFieldEquivCompletion_apply_residue]
   simp only [completionResidueFieldEquivAdicCompletionIntegers,
     IsLocalRing.ResidueField.mapAlgEquiv_residue, ContinuousAlgEquiv.coe_toAlgEquiv,
     completionIntegersEquivAdicCompletionIntegers_completionIntegersEmbedding_algebraMap]
@@ -203,6 +204,6 @@ theorem residueFieldAlgEquivAdicCompletionIntegers_eq_trans :
   ext x
   obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective x
   simpa only [AlgEquiv.trans_apply, adicResidueFieldEquiv_mk] using
-    (completionResidueFieldEquivAdicCompletionIntegers_apply_adicResidueHom k F p r).symm
+    (completionResidueFieldEquivAdicCompletionIntegers_apply_algebraMap k F p r).symm
 
 end TauCeti.Place
