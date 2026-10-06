@@ -94,47 +94,88 @@ noncomputable def projectivePointTranslation (g : WithConv (H →ₐ[R] R)) :
     ((LinearMap.GeneralLinearGroup.generalLinearEquiv R M)
       (Representation.asGroupHom (basePointsRepresentation (R := R) (H := H) M) g)).dualMap
 
+/-- Translation by the identity point is the identity projective isomorphism. -/
+@[simp]
+theorem projectivePointTranslation_one :
+    projectivePointTranslation (M := M) (1 : WithConv (H →ₐ[R] R)) = Iso.refl _ := by
+  simp [projectivePointTranslation, LinearEquiv.one_eq_refl]
+
+/-- Projective translation by a convolution product composes the corresponding
+translations in the order of the point action. -/
+@[simp]
+theorem projectivePointTranslation_mul (g h : WithConv (H →ₐ[R] R)) :
+    projectivePointTranslation (M := M) (g * h) =
+      (projectivePointTranslation (M := M) h).trans (projectivePointTranslation (M := M) g) := by
+  simp only [projectivePointTranslation, map_mul, LinearEquiv.mul_eq_trans,
+    ← LinearEquiv.dualMap_trans, Proj.symmetricAlgebraMapIso_trans]
+
+/-- Translation by the inverse point is the inverse projective isomorphism. -/
+@[simp]
+theorem projectivePointTranslation_inv_eq_symm (g : WithConv (H →ₐ[R] R)) :
+    projectivePointTranslation (M := M) g⁻¹ = (projectivePointTranslation (M := M) g).symm := by
+  simp only [projectivePointTranslation, map_inv]
+  -- Inversion in the linear-equivalence group is symmetry; Mathlib has no bundled
+  -- comparison lemma, so identify the two equivalences by their functions.
+  rw [show ((LinearMap.GeneralLinearGroup.generalLinearEquiv R M)
+    (Representation.asGroupHom (basePointsRepresentation M) g))⁻¹ =
+      ((LinearMap.GeneralLinearGroup.generalLinearEquiv R M)
+        (Representation.asGroupHom (basePointsRepresentation M) g)).symm by
+          ext x; simp]
+  rw [← LinearEquiv.dualMap_symm, Proj.symmetricAlgebraMapIso_symm]
+
 /-- The forward projective translation is the projective map induced by the dual
-linear equivalence of the point action. -/
+linear map of the point action. -/
+@[simp]
 theorem projectivePointTranslation_hom (g : WithConv (H →ₐ[R] R)) :
     (projectivePointTranslation (M := M) g).hom =
-      (Proj.symmetricAlgebraMapIso R
-        ((LinearMap.GeneralLinearGroup.generalLinearEquiv R M)
-          (Representation.asGroupHom
-            (basePointsRepresentation (R := R) (H := H) M) g)).dualMap).hom := (rfl)
+      Proj.map (SymmetricAlgebra.gradedMap R (basePointsRepresentation M g).dualMap)
+        (HomogeneousIdeal.irrelevant_le_map_of_surjective _ (by
+          simpa only [Function.Surjective, SymmetricAlgebra.gradedMap_apply,
+            LinearEquiv.dualMap,
+            LinearMap.GeneralLinearGroup.generalLinearEquiv_to_linearMap,
+            Representation.asGroupHom_apply] using
+            SymmetricAlgebra.map_surjective R _
+              ((LinearMap.GeneralLinearGroup.generalLinearEquiv R M)
+                (Representation.asGroupHom
+                  (basePointsRepresentation M) g)).dualMap.surjective)) := by
+  rw [projectivePointTranslation, Proj.symmetricAlgebraMapIso_hom]
+  simp only [LinearEquiv.dualMap,
+    LinearMap.GeneralLinearGroup.generalLinearEquiv_to_linearMap,
+    Representation.asGroupHom_apply]
 
-/-- The inverse projective translation is the inverse projective map induced by
-the dual linear equivalence of the point action. -/
+/-- The inverse projective translation is the projective map induced by the dual
+linear map of the inverse point action. -/
+@[simp]
 theorem projectivePointTranslation_inv (g : WithConv (H →ₐ[R] R)) :
     (projectivePointTranslation (M := M) g).inv =
-      (Proj.symmetricAlgebraMapIso R
-        ((LinearMap.GeneralLinearGroup.generalLinearEquiv R M)
-          (Representation.asGroupHom
-            (basePointsRepresentation (R := R) (H := H) M) g)).dualMap).inv := (rfl)
+      Proj.map (SymmetricAlgebra.gradedMap R (basePointsRepresentation M g⁻¹).dualMap)
+        (HomogeneousIdeal.irrelevant_le_map_of_surjective _ (by
+          simpa only [Function.Surjective, SymmetricAlgebra.gradedMap_apply,
+            LinearEquiv.dualMap,
+            LinearMap.GeneralLinearGroup.generalLinearEquiv_to_linearMap,
+            Representation.asGroupHom_apply] using
+            SymmetricAlgebra.map_surjective R _
+              ((LinearMap.GeneralLinearGroup.generalLinearEquiv R M)
+                (Representation.asGroupHom
+                  (basePointsRepresentation M) g⁻¹)).dualMap.surjective)) := by
+  simpa only [projectivePointTranslation_inv_eq_symm, Iso.symm_hom] using
+    projectivePointTranslation_hom (M := M) g⁻¹
 
 /-- The coordinate pullback of the projective translation is induced by the
 point action on the dual module. -/
-@[simp]
 theorem projectivePointTranslation_preimage_basicOpen
     (g : WithConv (H →ₐ[R] R)) (s : SymmetricAlgebra R (Module.Dual R M)) :
     (projectivePointTranslation (M := M) g).hom ⁻¹ᵁ Proj.basicOpen _ s =
       Proj.basicOpen _ (SymmetricAlgebra.map R (basePointsRepresentation M g).dualMap s) := by
-  rw [projectivePointTranslation_hom, Proj.symmetricAlgebraMapIso_hom,
-    Proj.map_preimage_basicOpen]
-  rw [SymmetricAlgebra.gradedMap_apply]
-  congr 2
+  simp
 
 /-- The inverse projective translation pulls coordinates back by the dual point
 action of the inverse group point. -/
-@[simp]
 theorem projectivePointTranslation_inv_preimage_basicOpen
     (g : WithConv (H →ₐ[R] R)) (s : SymmetricAlgebra R (Module.Dual R M)) :
     (projectivePointTranslation (M := M) g).inv ⁻¹ᵁ Proj.basicOpen _ s =
       Proj.basicOpen _ (SymmetricAlgebra.map R (basePointsRepresentation M g⁻¹).dualMap s) := by
-  rw [projectivePointTranslation_inv, Proj.symmetricAlgebraMapIso_inv,
-    Proj.map_preimage_basicOpen, SymmetricAlgebra.gradedMap_apply]
-  rw [LinearEquiv.dualMap_symm]
-  congr 2
+  simp
 
 variable [Module.Finite R M] [Module.Projective R M]
 

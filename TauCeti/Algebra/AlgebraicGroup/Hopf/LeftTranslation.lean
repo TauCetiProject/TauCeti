@@ -57,4 +57,34 @@ theorem toConv_comp_leftTranslationAlgEquiv {A : Type*} [CommRing A] [Algebra R 
   rw [map_mul, AlgHom.mapValue_algebraOfId] at h
   simpa only [AlgHom.mapValue_apply, ofConv_toConv, AlgHom.comp_id] using h
 
+/-- Left translation by the identity point is the identity algebra automorphism. -/
+@[simp]
+theorem leftTranslationAlgEquiv_one :
+    leftTranslationAlgEquiv (1 : WithConv (H →ₐ[R] R)) = 1 := by
+  apply AlgEquiv.coe_toAlgHom_injective
+  apply toConv_injective
+  rw [toConv_leftTranslationAlgEquiv, map_one, one_mul]
+  rfl
+
+/-- Pullback by left translation reverses the order of convolution products. -/
+@[simp]
+theorem leftTranslationAlgEquiv_mul (g h : WithConv (H →ₐ[R] R)) :
+    leftTranslationAlgEquiv (g * h) =
+      leftTranslationAlgEquiv h * leftTranslationAlgEquiv g := by
+  apply AlgEquiv.coe_toAlgHom_injective
+  apply toConv_injective
+  -- The monoid hom identifies multiplication of equivalences with composition of algebra maps.
+  rw [show (leftTranslationAlgEquiv h * leftTranslationAlgEquiv g).toAlgHom =
+    (leftTranslationAlgEquiv h).toAlgHom.comp (leftTranslationAlgEquiv g).toAlgHom from
+      map_mul (AlgEquiv.toAlgHomHom R H) _ _]
+  rw [toConv_comp_leftTranslationAlgEquiv,
+    toConv_leftTranslationAlgEquiv, toConv_leftTranslationAlgEquiv, map_mul, mul_assoc]
+
+/-- Left translation by the inverse point is the inverse algebra automorphism. -/
+@[simp]
+theorem leftTranslationAlgEquiv_inv (g : WithConv (H →ₐ[R] R)) :
+    leftTranslationAlgEquiv g⁻¹ = (leftTranslationAlgEquiv g)⁻¹ := by
+  apply eq_inv_of_mul_eq_one_left
+  rw [← leftTranslationAlgEquiv_mul, mul_inv_cancel, leftTranslationAlgEquiv_one]
+
 end TauCeti.HopfAlgebra
