@@ -10,7 +10,8 @@ public import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.VariableChange
 -- Proof-only: an extension of an algebraically closed field adds no torsion.
 import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Torsion.AlgClosed
--- Proof-only: over an algebraically closed field, torsion is read off the roots of `ΨSqₙ`.
+-- Proof-only: over an algebraically closed field, the `2`- and `3`-torsion in characteristic `2`
+-- and `3`, read off the roots of `ΨSqₙ`.
 import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Torsion.Roots
 
 /-!
@@ -185,55 +186,6 @@ theorem isOrdinary_variableChange_iff (C : VariableChange K) :
 
 /-! ### Characteristic two and three -/
 
-section AlgClosed
-
-variable {F : Type*} [Field F] [IsAlgClosed F] [DecidableEq F] (V : WeierstrassCurve F)
-  [V.IsElliptic]
-
-/-- In characteristic `2` the `2`-torsion of an elliptic curve over an algebraically closed field
-is trivial exactly when `a₁ = 0`: then `ΨSq₂ = a₃²` is a nonzero constant, and otherwise
-`x = a₃ / a₁` is a root of `ΨSq₂ = a₁² x² + a₃²`. -/
-private theorem torsionBy_two_eq_bot_iff [CharP F 2] :
-    AddSubgroup.torsionBy V.toAffine.Point 2 = ⊥ ↔ V.a₁ = 0 := by
-  have h2 : (2 : F) = 0 := CharP.cast_eq_zero F 2
-  have heval (x : F) : (V.ΨSq 2).eval x = V.a₁ ^ 2 * x ^ 2 + V.a₃ ^ 2 := by
-    rw [ΨSq_two, Ψ₂Sq, ← b₂_of_char_two, ← b₆_of_char_two]
-    simp only [eval_add, eval_mul, eval_C, eval_pow, eval_X]
-    linear_combination (2 * x ^ 3 + V.b₄ * x) * h2
-  rw [torsionBy_eq_bot_iff_forall_eval_ΨSq_ne_zero]
-  simp only [heval]
-  refine ⟨fun h ↦ by_contra fun ha ↦ h (V.a₃ / V.a₁) ?_, fun ha x ↦ ?_⟩
-  · field_simp
-    linear_combination V.a₃ ^ 2 * h2
-  · have hΔ := V.isUnit_Δ.ne_zero
-    rw [Δ_of_char_two, ha] at hΔ
-    simpa [ha] using hΔ
-
-/-- In characteristic `3` the `3`-torsion of an elliptic curve over an algebraically closed field
-is trivial exactly when `b₂ = 0`: there `ψ₃ = b₂ x³ + b₈`, whose constant term `b₈` cannot vanish
-together with `b₂`, and which has a root as soon as `b₂ ≠ 0`. -/
-private theorem torsionBy_three_eq_bot_iff [CharP F 3] :
-    AddSubgroup.torsionBy V.toAffine.Point 3 = ⊥ ↔ V.b₂ = 0 := by
-  have h3 : (3 : F) = 0 := CharP.cast_eq_zero F 3
-  have heval (x : F) : (V.ΨSq 3).eval x = (V.b₂ * x ^ 3 + V.b₈) ^ 2 := by
-    rw [ΨSq_three, Ψ₃]
-    simp only [eval_pow, eval_add, eval_mul, eval_C, eval_X, eval_ofNat]
-    linear_combination (x ^ 4 + V.b₄ * x ^ 2 + V.b₆ * x) *
-      (3 * x ^ 4 + 2 * V.b₂ * x ^ 3 + 3 * V.b₄ * x ^ 2 + 3 * V.b₆ * x + 2 * V.b₈) * h3
-  rw [torsionBy_eq_bot_iff_forall_eval_ΨSq_ne_zero]
-  simp only [heval, ne_eq, pow_eq_zero_iff two_ne_zero]
-  refine ⟨fun h ↦ by_contra fun hb ↦ ?_, fun hb x hx ↦ ?_⟩
-  · obtain ⟨z, hz⟩ := IsAlgClosed.exists_pow_nat_eq (-V.b₈ / V.b₂) three_pos
-    exact h z (by rw [hz]; field_simp; ring)
-  · rw [hb, zero_mul, zero_add] at hx
-    have hb₄ : V.b₄ = 0 := by
-      have := V.b_relation_of_char_three
-      rw [hx, hb, zero_mul, zero_sub, zero_eq_neg] at this
-      exact pow_eq_zero_iff two_ne_zero |>.mp this
-    exact V.isUnit_Δ.ne_zero (by rw [Δ_of_char_three, hb, hb₄]; ring)
-
-end AlgClosed
-
 variable [W.IsElliptic]
 
 /-- **In characteristic `2` an elliptic curve is supersingular exactly when `j = 0`**, equivalently
@@ -242,8 +194,8 @@ theorem isSupersingular_two_iff_j_eq_zero [CharP K 2] : W.IsSupersingular 2 ↔ 
   classical
   have : (W.baseChange (AlgebraicClosure K)).IsElliptic := inferInstanceAs (W.map _).IsElliptic
   have hj : (W.baseChange (AlgebraicClosure K)).j = algebraMap K _ W.j := W.map_j _
-  rw [IsSupersingular, Nat.cast_ofNat, torsionBy_two_eq_bot_iff, ← j_eq_zero_iff_of_char_two, hj,
-    FaithfulSMul.algebraMap_eq_zero_iff]
+  rw [IsSupersingular, Nat.cast_ofNat, torsionBy_two_eq_bot_iff_of_char_two,
+    ← j_eq_zero_iff_of_char_two, hj, FaithfulSMul.algebraMap_eq_zero_iff]
 
 /-- **In characteristic `3` an elliptic curve is supersingular exactly when `j = 0`**, equivalently
 `b₂ = 0` (`WeierstrassCurve.j_eq_zero_iff_of_char_three`). -/
@@ -251,8 +203,8 @@ theorem isSupersingular_three_iff_j_eq_zero [CharP K 3] : W.IsSupersingular 3 �
   classical
   have : (W.baseChange (AlgebraicClosure K)).IsElliptic := inferInstanceAs (W.map _).IsElliptic
   have hj : (W.baseChange (AlgebraicClosure K)).j = algebraMap K _ W.j := W.map_j _
-  rw [IsSupersingular, Nat.cast_ofNat, torsionBy_three_eq_bot_iff, ← j_eq_zero_iff_of_char_three,
-    hj, FaithfulSMul.algebraMap_eq_zero_iff]
+  rw [IsSupersingular, Nat.cast_ofNat, torsionBy_three_eq_bot_iff_of_char_three,
+    ← j_eq_zero_iff_of_char_three, hj, FaithfulSMul.algebraMap_eq_zero_iff]
 
 end WeierstrassCurve
 
