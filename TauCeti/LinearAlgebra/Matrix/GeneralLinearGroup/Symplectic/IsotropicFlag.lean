@@ -50,6 +50,28 @@ theorem flagOrder_addNat (i : Fin m) :
     finSumFinEquiv_symm_apply_natAdd,
     Equiv.sumCongr_apply, Sum.map_inr, Fin.revPerm_apply, finSumFinEquiv_apply_right]
 
+/-- Flag order preserves comparisons within the isotropic half. -/
+theorem flagOrder_castAdd_lt_castAdd_iff (i j : Fin m) :
+    flagOrder m (j.castAdd m) < flagOrder m (i.castAdd m) ↔ j < i := by
+  simp only [flagOrder_castAdd, Fin.lt_def, Fin.val_castAdd]
+
+/-- Flag order reverses comparisons within the dual half. -/
+theorem flagOrder_addNat_lt_addNat_iff (i j : Fin m) :
+    flagOrder m (j.addNat m) < flagOrder m (i.addNat m) ↔ i < j := by
+  simp only [flagOrder_addNat, Fin.lt_def, Fin.val_addNat, Fin.val_rev]
+  omega
+
+/-- Every isotropic basis index precedes every dual basis index in flag order. -/
+theorem flagOrder_castAdd_lt_addNat (i j : Fin m) :
+    flagOrder m (j.castAdd m) < flagOrder m (i.addNat m) := by
+  simp only [flagOrder_castAdd, flagOrder_addNat, Fin.lt_def, Fin.val_castAdd, Fin.val_addNat]
+  omega
+
+/-- No dual basis index precedes an isotropic basis index in flag order. -/
+theorem not_flagOrder_addNat_lt_castAdd (i j : Fin m) :
+    ¬ flagOrder m (j.addNat m) < flagOrder m (i.castAdd m) :=
+  (flagOrder_castAdd_lt_addNat m j i).not_gt
+
 /-- The self-dual flag-order permutation is its own inverse. -/
 @[simp]
 theorem flagOrder_symm : (flagOrder m).symm = flagOrder m := by
@@ -86,44 +108,28 @@ theorem mem_matrixSubgroup_iff (g : GLSymplecticFin m A) :
   · intro h
     refine ⟨?_, ?_, ?_⟩
     · intro i j hij
-      apply h
-      simpa only [flagOrder_castAdd, Fin.lt_def, Fin.val_castAdd] using hij
+      exact h _ _ ((flagOrder_castAdd_lt_castAdd_iff m i j).mpr hij)
     · intro i j hij
-      apply h
-      simp only [flagOrder_addNat, Fin.lt_def, Fin.val_addNat, Fin.val_rev]
-      omega
+      exact h _ _ ((flagOrder_addNat_lt_addNat_iff m i j).mpr hij)
     · intro i j
-      apply h
-      simp only [flagOrder_castAdd, flagOrder_addNat, Fin.lt_def,
-        Fin.val_castAdd, Fin.val_addNat]
-      omega
+      exact h _ _ (flagOrder_castAdd_lt_addNat m i j)
   · rintro ⟨hupper, hlower, hzero⟩ i j
     refine Fin.addCases (fun i ↦ ?_) (fun i ↦ ?_) i <;>
       refine Fin.addCases (fun j ↦ ?_) (fun j ↦ ?_) j
     · intro hij
-      apply hupper
-      simpa only [flagOrder_castAdd, Fin.lt_def, Fin.val_castAdd] using hij
-    · simp only [Fin.natAdd_eq_addNat, flagOrder_castAdd, flagOrder_addNat, Fin.lt_def,
-        Fin.val_castAdd, Fin.val_addNat]
-      omega
+      exact hupper i j ((flagOrder_castAdd_lt_castAdd_iff m i j).mp hij)
+    · simp only [Fin.natAdd_eq_addNat, not_flagOrder_addNat_lt_castAdd, false_implies]
     · intro _
       simpa only [Fin.natAdd_eq_addNat] using hzero i j
     · intro hij
       simp only [Fin.natAdd_eq_addNat] at hij ⊢
-      apply hlower
-      simp only [flagOrder_addNat, Fin.lt_def, Fin.val_addNat, Fin.val_rev] at hij
-      omega
+      exact hlower i j ((flagOrder_addNat_lt_addNat_iff m i j).mp hij)
 
 /-- The symplectic isotropic flag subgroup is solvable over every commutative ring. -/
 instance instIsSolvableMatrixSubgroup : Group.IsSolvable (matrixSubgroup m (A := A)) := by
-  let f : matrixSubgroup m (A := A) →* upperTriangularGroup (Fin (m + m)) A :=
-    (((flagOrder m).reindexGL A).toMonoidHom.comp
-      ((GLSymplecticFin m A).subtype.comp (Subgroup.subtype _))).codRestrict _ fun g ↦ g.property
-  have hf : Function.Injective f := by
-    intro g h hgh
-    apply Subtype.ext
-    apply Subtype.ext
-    exact ((flagOrder m).reindexGL A).injective (congrArg Subtype.val hgh)
-  exact Group.isSolvable_of_isSolvable_injective hf
+  let φ := ((flagOrder m).reindexGL A).toMonoidHom.comp (GLSymplecticFin m A).subtype
+  exact Group.isSolvable_of_isSolvable_injective
+    (φ.subgroupComap_injective (upperTriangularGroup (Fin (m + m)) A)
+      (((flagOrder m).reindexGL A).injective.comp (Subgroup.subtype_injective _)))
 
 end TauCeti.GLSymplecticFin.IsotropicFlag
