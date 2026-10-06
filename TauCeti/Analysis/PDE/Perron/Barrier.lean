@@ -72,12 +72,6 @@ open InnerProductSpace Metric Set Filter Topology
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   {Ω : Set E} {g w : E → ℝ} {ξ : E}
 
-/-- Continuous boundary data on the frontier of a bounded set is bounded. -/
-private lemma isBounded_image_frontier (hb : Bornology.IsBounded Ω)
-    (hg : ContinuousOn g (frontier Ω)) : Bornology.IsBounded (g '' frontier Ω) :=
-  ((hb.isCompact_closure.of_isClosed_subset isClosed_frontier
-    frontier_subset_closure).image_of_continuousOn hg).isBounded
-
 variable [MeasurableSpace E] [BorelSpace E]
 
 /-- A **barrier** at the point `ξ` relative to `Ω`: a function `w` that is superharmonic on `Ω`
@@ -198,7 +192,9 @@ boundary data `g` continuous on `frontier Ω` is continuous on `closure Ω`. -/
 theorem continuousOn_perronSolution (hΩ : IsOpen Ω) (hb : Bornology.IsBounded Ω)
     (hreg : ∀ ξ ∈ frontier Ω, ∃ w, IsBarrier Ω ξ w) (hg : ContinuousOn g (frontier Ω)) :
     ContinuousOn (perronSolution Ω g) (closure Ω) := by
-  have hgb := isBounded_image_frontier hb hg
+  have hgb : Bornology.IsBounded (g '' frontier Ω) :=
+    ((hb.isCompact_closure.of_isClosed_subset isClosed_frontier
+      frontier_subset_closure).image_of_continuousOn hg).isBounded
   intro x hx
   by_cases hxΩ : x ∈ Ω
   · exact ((harmonicOnNhd_perronSolution hΩ hb hgb.bddAbove (perronFamily_nonempty hgb.bddBelow)
@@ -226,7 +222,9 @@ theorem exists_harmonicOnNhd_continuousOn_closure_eqOn_frontier (hΩ : IsOpen Ω
       rw [hconst]
       exact harmonicAt_const _
     · exact (continuous_of_const fun a b ↦ congrArg g (Subsingleton.elim a b)).continuousOn
-  have hgb := isBounded_image_frontier hb hg
+  have hgb : Bornology.IsBounded (g '' frontier Ω) :=
+    ((hb.isCompact_closure.of_isClosed_subset isClosed_frontier
+      frontier_subset_closure).image_of_continuousOn hg).isBounded
   refine ⟨perronSolution Ω g, harmonicOnNhd_perronSolution hΩ hb hgb.bddAbove
     (perronFamily_nonempty hgb.bddBelow), continuousOn_perronSolution hΩ hb hreg hg,
     fun ξ hξ ↦ ?_⟩
