@@ -7,9 +7,7 @@ module
 
 public import Mathlib.RingTheory.Localization.Away.Basic
 public import TauCeti.RingTheory.Syntomic.Composition
-import Mathlib.RingTheory.Flat.Localization
-import Mathlib.RingTheory.KrullDimension.Field
-import Mathlib.RingTheory.Localization.BaseChange
+import TauCeti.RingTheory.Syntomic.Smooth
 
 /-!
 # Standard syntomic algebras and localization
@@ -56,19 +54,8 @@ namespace Algebra.IsStandardSyntomicOfRelativeDimension
 /-- A localization away from one element is standard syntomic of relative dimension zero. -/
 theorem localization_away {R : Type*} [CommRing R] (S : Type*) [CommRing S] [Algebra R S]
     (r : R) [IsLocalization.Away r S] : IsStandardSyntomicOfRelativeDimension 0 R S := by
-  have : Module.Flat R S := IsLocalization.flat S (.powers r)
-  refine (_root_.Algebra.Presentation.localizationAway S r).isStandardSyntomicOfRelativeDimension
-    (by simp) fun p _ _ ↦ ?_
-  have hr : algebraMap R p.ResidueField r ≠ 0 := by
-    intro hr
-    have hu := IsLocalization.Away.algebraMap_isUnit (S := p.Fiber S)
-      (algebraMap R p.ResidueField r)
-    rw [hr, map_zero, isUnit_zero_iff] at hu
-    exact zero_ne_one hu
-  let e := IsLocalization.atUnits p.ResidueField (.powers (algebraMap R p.ResidueField r))
-    (S := p.Fiber S) (Submonoid.powers_le.mpr (isUnit_iff_ne_zero.mpr hr))
-  rw [← ringKrullDim_eq_of_ringEquiv e.toRingEquiv, ringKrullDim_eq_zero_of_field]
-  rfl
+  have := _root_.Algebra.IsStandardSmoothOfRelativeDimension.localization_away (S := S) r
+  infer_instance
 
 variable {n : ℕ} {R S T : Type*} [CommRing R] [CommRing S] [CommRing T] [Algebra R S]
   [Algebra S T] [Algebra R T] [IsScalarTower R S T]
