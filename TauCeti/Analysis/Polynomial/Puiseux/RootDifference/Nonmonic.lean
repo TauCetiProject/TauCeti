@@ -19,9 +19,9 @@ other parameters. Negative exponents permit poles; positive exponents permit col
 
 The normalized roots are supplied by a splitting of the integral normalization off the
 hyperplane. No splitting of the original family on the hyperplane is required, where its
-degree may drop or it may be nullified. The normalization discriminant identity and continuity
-extend the normalized discriminant formula across this hyperplane. The monic root-difference
-theorem then gives a power-times-unit difference, which is divided by the leading coefficient.
+degree may drop or it may be nullified. Parameter-independent orders of root differences are
+used in analytic preparation of nonmonic polynomial families, including those whose branches
+have poles.
 The original coefficient and discriminant formulas are required only off the hyperplane:
 recomputing a discriminant after a degree drop need not preserve the formal discriminant. No
 constant-coefficient hypothesis is needed for differences.
