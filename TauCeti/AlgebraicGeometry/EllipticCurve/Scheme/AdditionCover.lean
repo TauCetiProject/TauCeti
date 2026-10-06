@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.AdditionLaw
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.AdditionLaw.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Chart
 import TauCeti.LinearAlgebra.Unimodular
 

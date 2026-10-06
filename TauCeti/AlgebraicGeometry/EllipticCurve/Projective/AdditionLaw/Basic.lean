@@ -44,8 +44,8 @@ curve its diagonal is the doubling formula, so its coordinates are named `dblAdd
   `addXYZ_cross_dblAddXYZ`: for two point representatives on the curve, the `2 × 2` minors of the
   matrix with rows `addXYZ P Q` and `dblAddXYZ P Q` vanish, that is, the cross product of the two
   rows is zero.
-* `WeierstrassCurve.Projective.equation_dblAddXYZ`: over a field, the law takes two nonsingular
-  point representatives to a solution of the Weierstrass equation.
+* `WeierstrassCurve.Projective.equation_dblAddXYZ_of_nonsingular`: over a field, the law takes two
+  nonsingular point representatives to a solution of the Weierstrass equation.
 * `WeierstrassCurve.Projective.addXYZ_ne_zero_or_dblAddXYZ_ne_zero`: over a field, the laws
   `addXYZ` and `dblAddXYZ` do not vanish simultaneously at two nonsingular point representatives,
   which is the non-vanishing condition for the two laws to form a complete system.
@@ -70,8 +70,9 @@ Ported from AINTLIB (`github.com/CBirkbeck/AINTLIB`, Apache-2.0) at commit
   coordinates of one of the two points. The `XZ` certificate is the source's. The `XY` and `YZ`
   minors are instead reduced to minors involving `negY (dblAddXYZ P Q)`, whose certificates are
   linear combinations of the source's.
-* from `AdditionLawField.lean`: `equation_dblAddXYZ` and `addXYZ_ne_zero_or_dblAddXYZ_ne_zero`. The
-  source's proportionality lemma for vectors with vanishing `2 × 2` minors is replaced by Mathlib's
+* from `AdditionLawField.lean`: `equation_dblAddXYZ` (as `equation_dblAddXYZ_of_nonsingular`) and
+  `addXYZ_ne_zero_or_dblAddXYZ_ne_zero`. The source's proportionality lemma for vectors with
+  vanishing `2 × 2` minors is replaced by Mathlib's
   `Projectivization.mk_eq_mk_iff_crossProduct_eq_zero`, through `addXYZ_cross_dblAddXYZ`.
 * from `AdditionLawOnCurve.lean`: `map_dblAddX`, `map_dblAddY`, `map_dblAddZ` and `map_dblAddXYZ`,
   and `map_addXYZ_ne_zero_or_map_dblAddXYZ_ne_zero`, within
@@ -570,9 +571,10 @@ section Field
 variable {F : Type*} [Field F] {W : Projective F}
 
 /-- Over a field, the value of the addition law attached to the line `Y = 0` at two nonsingular
-point representatives satisfies the Weierstrass equation. -/
-theorem equation_dblAddXYZ {P Q : Fin 3 → F} (hP : W.Nonsingular P) (hQ : W.Nonsingular Q) :
-    W.Equation (W.dblAddXYZ P Q) := by
+point representatives satisfies the Weierstrass equation. For solutions over an arbitrary
+commutative ring, see `WeierstrassCurve.Projective.Equation.dblAddXYZ`. -/
+theorem equation_dblAddXYZ_of_nonsingular {P Q : Fin 3 → F} (hP : W.Nonsingular P)
+    (hQ : W.Nonsingular Q) : W.Equation (W.dblAddXYZ P Q) := by
   by_cases hPQ : P ≈ Q
   · obtain ⟨u, rfl⟩ := hPQ
     rw [dblAddXYZ_units_smul_self hQ.left, equation_smul _ (u.isUnit.pow 2), ← add_self]

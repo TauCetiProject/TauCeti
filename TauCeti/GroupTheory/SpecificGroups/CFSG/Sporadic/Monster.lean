@@ -10,18 +10,17 @@ public import TauCeti.GroupTheory.Presentation.Coxeter
 /-!
 # A transcribed presentation of the Monster group
 
-This file carries the `M` row of the sporadic presentation data required by milestone S1 of
-`TauCetiRoadmap/CFSGStatement/README.md`. It records the `Y₄₄₃` presentation of the Monster as a
-`TauCeti.GroupPresentation`, together with the exact diagram, source conventions, expected counts,
-and decidable transcription checks.
+This file records the `Y₄₄₃` presentation of the Monster as a `TauCeti.GroupPresentation`,
+together with the exact diagram, source conventions, expected counts, and decidable transcription
+checks.
 
 The twelve involutory generators are the central node `a` and the nodes on three arms of lengths
 four, four, and three:
 
 ```text
 e₁ -- d₁ -- c₁ -- b₁ -- a -- b₂ -- c₂ -- d₂ -- e₂
-                         |
-                         b₃ -- c₃ -- d₃
+                        |
+                        b₃ -- c₃ -- d₃
 ```
 
 The Coxeter relations contribute `12` square relations, `11` order-three edge relations, and `55`
@@ -45,7 +44,7 @@ below reproduce that figure; the final central relator has length `63`, giving t
 
 ## Where each piece of the data comes from
 
-Ivanov defines `Yₚᵩᵣ` on p. 413, states the centrality of `f₃₁₂` in Lemma 3.2 on p. 419, and
+Ivanov defines `Y_pqr` on p. 413, states the centrality of `f₃₁₂` in Lemma 3.2 on p. 419, and
 identifies the quotient in Section 3.9 on pp. 430--431.
 
 Ivanov's definition on p. 413 takes the Coxeter group on the central node `a` together with the
@@ -72,9 +71,7 @@ seven-letter word repeated nine times is the length `63` checked below. Section 
 p. 431 that `Y₄₄₃ / ⟨f₃₁₂⟩ ≅ M`, and hence that `Y₄₄₃ ≅ 2 × M`, so appending this one relator to
 Bray's seventy-nine is exactly the passage from `M × 2` to `M`.
 
-This file asserts no order, finiteness, or simplicity result for the presented group. The roadmap's
-independent permutation-group cross-check does not cover `M`, whose smallest faithful permutation
-representation is far too large for that construction.
+This file asserts no order, finiteness, or simplicity result for the presented group.
 
 ## Main definitions
 
@@ -100,7 +97,7 @@ representation is far too large for that construction.
   presentation of `M × 2`,
   <https://webspace.maths.qmul.ac.uk/j.n.bray/web/Pres/Mnst.html>.
 * A. A. Ivanov, *Y-groups via Transitive Extension*, Journal of Algebra **218** (1999), 412--435,
-  especially the definition of `Yₚᵩᵣ` on p. 413, Lemma 3.2 on p. 419, and Section 3.9 on
+  especially the definition of `Y_pqr` on p. 413, Lemma 3.2 on p. 419, and Section 3.9 on
   pp. 430--431, <https://doi.org/10.1006/jabr.1999.7882>.
 -/
 
@@ -219,8 +216,7 @@ def presentation : GroupPresentation where
     (a*b_i*c_i*d_i*b_j*c_j*b_k)^9."
   transcriptionNotes := "The Coxeter matrix expands the displayed Y443 diagram to 78 relators. \
     Append Bray's spider relator to present M x 2, then Ivanov's f_312 to quotient its central \
-    factor and present M. The first 79 relators have the source's length 400; f_312 has length 63. \
-    The independent FiniteSimpleGroups permutation construction does not cover M."
+    factor and present M. The first 79 relators have the source's length 400; f_312 has length 63."
   expectedGeneratorCount := 12
   expectedRelatorCount := 80
   transcribed := relatorList
@@ -259,8 +255,7 @@ theorem presentation_generatorConvention : presentation.generatorConvention =
 theorem presentation_transcriptionNotes : presentation.transcriptionNotes =
     "The Coxeter matrix expands the displayed Y443 diagram to 78 relators. Append Bray's spider \
       relator to present M x 2, then Ivanov's f_312 to quotient its central factor and present M. \
-      The first 79 relators have the source's length 400; f_312 has length 63. The independent \
-      FiniteSimpleGroups permutation construction does not cover M." := by
+      The first 79 relators have the source's length 400; f_312 has length 63." := by
   rw [presentation]
 
 /-- The expected generator count recorded for the Monster presentation. -/

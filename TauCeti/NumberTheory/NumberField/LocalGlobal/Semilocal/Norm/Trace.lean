@@ -20,6 +20,7 @@ identities are from `TauCeti.RingTheory.NormTrace.BaseChange`.
 
 ## Main results
 
+* `TauCeti.norm_eq_prod_norm_semilocalEquiv`: the norm in the local étale algebra.
 * `TauCeti.algebraMap_norm_eq_prod_norm`: the norm of `x ∈ L` is the product of its local norms.
 * `TauCeti.trace_eq_sum_trace_semilocalEquiv`: the trace of `K_v ⊗[K] L` over `K_v` is the sum
   of the traces of its semilocal components.
@@ -65,6 +66,15 @@ theorem trace_integralSemilocalToField_tmul_mul
     map_smul, Algebra.trace_baseChange_tmul, smul_eq_mul]
 
 attribute [local instance] Fintype.ofFinite in
+/-- The norm of the local étale algebra is the product of the norms of its semilocal components. -/
+theorem norm_eq_prod_norm_semilocalEquiv (ξ : v.adicCompletion K ⊗[K] L) :
+    Algebra.norm (v.adicCompletion K) ξ =
+      ∏ w : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal},
+        Algebra.norm (v.adicCompletion K) (semilocalEquiv L v ξ w) := by
+  rw [← Algebra.norm_eq_of_algEquiv (semilocalEquiv L v)]
+  exact Algebra.norm_pi _
+
+attribute [local instance] Fintype.ofFinite in
 /-- The norm of a number-field element is the product of its norms in the completions above `v`. -/
 theorem algebraMap_norm_eq_prod_norm (x : L) :
     algebraMap K (v.adicCompletion K) (Algebra.norm K x) =
@@ -75,14 +85,10 @@ theorem algebraMap_norm_eq_prod_norm (x : L) :
     algebraMap K (v.adicCompletion K) (Algebra.norm K x) =
         Algebra.norm (v.adicCompletion K) ((1 : v.adicCompletion K) ⊗ₜ[K] x) :=
       (Algebra.norm_baseChange_tmul (A := v.adicCompletion K) (B := L) x).symm
-    _ = Algebra.norm (v.adicCompletion K)
-        (semilocalEquiv L v ((1 : v.adicCompletion K) ⊗ₜ[K] x)) := by
-      symm
-      exact Algebra.norm_eq_of_algEquiv (semilocalEquiv L v) _
     _ = ∏ w : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal},
         Algebra.norm (v.adicCompletion K)
         (semilocalEquiv L v ((1 : v.adicCompletion K) ⊗ₜ[K] x) w) :=
-      Algebra.norm_pi _
+      norm_eq_prod_norm_semilocalEquiv L v _
     _ = ∏ w : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal},
         Algebra.norm (v.adicCompletion K)
         (algebraMap L (w.1.adicCompletion L) x) := by

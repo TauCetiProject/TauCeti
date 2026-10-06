@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.HopfIdealPoints.Functor
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Root.Subgroup
-public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Parabolic
+public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Parabolic.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperTriangular.Basic
 
 /-!
