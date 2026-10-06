@@ -19,9 +19,9 @@ The real factor is retained for the study of rational diagonal points in the ful
 
 This file constructs all three full adelic groups and the continuous maps `Spin → SO → O`.
 Their projections to finite adeles commute with these maps. Membership in the image of `SO → O`
-is characterized by properness at every place; for a nondegenerate form on a finite-dimensional,
-nonzero space, the kernel of `Spin → SO` is characterized by scalar `±1` at every place, with
-independent signs.
+is characterized by properness at every place; for a nondegenerate form on a finite-dimensional
+space, the kernel of `Spin → SO` is characterized by scalar `±1` at every place. On a nonzero
+space the signs are independent; on the zero space the Spin group is trivial.
 
 The real coordinate of a full adelic point `x` is `x.1`, and its finite coordinates are `x.2 p`.
 The product and restricted-product extensionality lemmas therefore apply directly. All carriers
@@ -187,9 +187,9 @@ theorem mem_range_fullAdelicSpecialOrthogonalToOrthogonal_iff (x : U.fullAdelicO
     range_specialOrthogonalToOrthogonal,
     U.mem_range_finiteAdelicSpecialOrthogonalToOrthogonal_iff]
 
-/-- For a nondegenerate form on a nonzero space, the full adelic Spin kernel has independent
-scalar signs at the real place and at each finite place. -/
-theorem mem_ker_fullAdelicSpinToSpecialOrthogonal_iff [FiniteDimensional ℚ V] [Nontrivial V]
+/-- For a nondegenerate form, a full adelic Spin element lies in the kernel exactly when each
+component is `1` or `-1` in its local Clifford algebra. -/
+theorem mem_ker_fullAdelicSpinToSpecialOrthogonal_iff [FiniteDimensional ℚ V]
     (hQ : Q.Nondegenerate) (x : U.fullAdelicSpin) :
     x ∈ U.fullAdelicSpinToSpecialOrthogonal.ker ↔
       ((x.1 : CliffordAlgebra (Q.baseChange ℝ)) = 1 ∨
@@ -197,15 +197,24 @@ theorem mem_ker_fullAdelicSpinToSpecialOrthogonal_iff [FiniteDimensional ℚ V] 
       ∀ p : Nat.Primes,
         (x.2 p : CliffordAlgebra (Q.baseChange ℚ_[p])) = 1 ∨
           (x.2 p : CliffordAlgebra (Q.baseChange ℚ_[p])) = -1 := by
-  have : Nontrivial (ℝ ⊗[ℚ] V) := Module.nontrivial_of_finrank_pos <| by
-    rw [Module.finrank_baseChange]
-    exact Module.finrank_pos
-  have hQr : (Q.baseChange ℝ).Nondegenerate :=
-    _root_.QuadraticForm.Nondegenerate.baseChange hQ
-  rw [fullAdelicSpinToSpecialOrthogonal, MonoidHom.ker_prodMap, Subgroup.mem_prod,
-    U.mem_ker_finiteAdelicSpinToSpecialOrthogonal_iff hQ,
-    CliffordAlgebra.mem_ker_spinToSpecialOrthogonal_iff _ hQr]
-  simp only [Subtype.ext_iff, OneMemClass.coe_one, CliffordAlgebra.spinGroup.coe_negOne]
+  rcases subsingleton_or_nontrivial V with hV | hV
+  · let _ : Subsingleton V := hV
+    have hx : x = 1 := by
+      apply Prod.ext
+      · exact Subsingleton.elim _ _
+      · ext p : 1
+        exact Subsingleton.elim _ _
+    simp [hx]
+  · let _ : Nontrivial V := hV
+    have : Nontrivial (ℝ ⊗[ℚ] V) := Module.nontrivial_of_finrank_pos <| by
+      rw [Module.finrank_baseChange]
+      exact Module.finrank_pos
+    have hQr : (Q.baseChange ℝ).Nondegenerate :=
+      _root_.QuadraticForm.Nondegenerate.baseChange hQ
+    rw [fullAdelicSpinToSpecialOrthogonal, MonoidHom.ker_prodMap, Subgroup.mem_prod,
+      U.mem_ker_finiteAdelicSpinToSpecialOrthogonal_iff hQ,
+      CliffordAlgebra.mem_ker_spinToSpecialOrthogonal_iff _ hQr]
+    simp only [Subtype.ext_iff, OneMemClass.coe_one, CliffordAlgebra.spinGroup.coe_negOne]
 
 end
 
