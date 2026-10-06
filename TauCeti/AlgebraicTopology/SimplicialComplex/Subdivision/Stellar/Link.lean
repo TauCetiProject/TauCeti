@@ -15,10 +15,10 @@ at `σ \ τ`. This includes faces meeting `σ`: their links are starred at the c
 part of `σ`, rather than at `σ` itself. If `τ` contains `σ`, it is removed and both sides
 of the formula are void, since starring the empty set gives the void complex.
 
-The formula proves that every surviving old vertex of a combinatorial manifold retains its
-sphere-or-ball link condition. It isolates the new vertex's link as the remaining calculation
-in proving that stellar subdivision preserves combinatorial manifolds. That link is the boundary
-of the closed star, computed in `Subdivision.Stellar.Basic`.
+These link identities transfer sphere-or-ball link conditions at surviving old vertices when
+the starring vertex is unused in their old links, and preserve void links in dimension zero.
+The complementary new-vertex link is the boundary of the closed star, computed in
+`Subdivision.Stellar.Basic`.
 
 ## References
 
@@ -95,28 +95,34 @@ theorem stellarEquivalent_link_stellarSubdivision_of_notMem
 /-- A surviving old vertex of a zero-dimensional combinatorial manifold still has void link
 after stellar subdivision. -/
 theorem IsCombinatorialManifold.link_stellarSubdivision_eq_bot
-    (hK : IsCombinatorialManifold K 0) (hv : ({v} : Finset ι) ∉ K) (hwv : w ≠ v)
+    (hK : IsCombinatorialManifold K 0) (hwv : w ≠ v)
     (hw : ({w} : Finset ι) ∈ stellarSubdivision K σ v) :
     link (stellarSubdivision K σ v) {w} = ⊥ := by
   have hvw : v ∉ ({w} : Finset ι) := by simpa [eq_comm] using hwv
   have hwK := (mem_stellarSubdivision_iff_of_notMem hvw).mp hw |>.1
+  have hlink := isCombinatorialManifold_zero_iff.mp hK hwK
+  have hvlink : ({v} : Finset ι) ∉ link K {w} := by
+    rw [hlink]
+    exact Set.notMem_empty _
   have he := stellarEquivalent_link_stellarSubdivision_of_notMem
-    (fun h => hv (link_le h)) hvw hw
+    hvlink hvw hw
   apply dimension_eq_bot_iff.mp
-  rw [he.dimension_eq, isCombinatorialManifold_zero_iff.mp hK hwK, dimension_bot]
+  rw [he.dimension_eq, hlink, dimension_bot]
 
 /-- Every surviving old vertex of a positive-dimensional combinatorial manifold retains its
-sphere-or-ball link condition under stellar subdivision. The condition at the new vertex is
-separate: its link is the boundary of the starred closed star. -/
+sphere-or-ball link condition under stellar subdivision when the starring vertex is unused in
+its old link. The condition at the new vertex is separate: its link is the boundary of the
+starred closed star. -/
 theorem IsCombinatorialManifold.isCombinatorialSphere_or_isCombinatorialBall_link_stellarSubdivision
-    (hK : IsCombinatorialManifold K (n + 1)) (hv : ({v} : Finset ι) ∉ K) (hwv : w ≠ v)
+    (hK : IsCombinatorialManifold K (n + 1)) (hvlink : ({v} : Finset ι) ∉ link K {w})
+    (hwv : w ≠ v)
     (hw : ({w} : Finset ι) ∈ stellarSubdivision K σ v) :
     IsCombinatorialSphere (link (stellarSubdivision K σ v) {w}) n ∨
       IsCombinatorialBall (link (stellarSubdivision K σ v) {w}) n := by
   have hvw : v ∉ ({w} : Finset ι) := by simpa [eq_comm] using hwv
   have hwK := (mem_stellarSubdivision_iff_of_notMem hvw).mp hw |>.1
   have he := (stellarEquivalent_link_stellarSubdivision_of_notMem
-    (fun h => hv (link_le h)) hvw hw).symm.stellarEquivalentUpToRelabeling
+    hvlink hvw hw).symm.stellarEquivalentUpToRelabeling
   exact (isCombinatorialManifold_succ_iff.mp hK hwK).imp
     (IsCombinatorialSphere.of_stellarEquivalentUpToRelabeling he)
     (IsCombinatorialBall.of_stellarEquivalentUpToRelabeling he)
