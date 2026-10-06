@@ -62,13 +62,7 @@ variable {ι : Type*} [Fintype ι] {mu : Measure (EuclideanSpace ℝ ι)} [mu.Is
   {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
   {c : EuclideanSpace ℝ ι → ℝ}
 
-/-- Shortcut normed group instance on `H¹₀(Ω)`, needed by the inherited Hilbert structure. -/
-noncomputable local instance instNormedAddCommGroupH1ZeroFredholm :
-    NormedAddCommGroup (W1p0 mu Omega 2) := inferInstance
-
-/-- Shortcut inner-product instance on `H¹₀(Ω)`. -/
-noncomputable local instance instInnerProductSpaceH1ZeroFredholm :
-    InnerProductSpace ℝ (W1p0 mu Omega 2) := inferInstance
+attribute [local instance] instNormedAddCommGroupH1Zero instInnerProductSpaceH1Zero
 
 /-- The Lax--Milgram operator representing the `L²` mass form on `H¹₀(Ω)`.  It is characterized
 by `TauCeti.PDE.energyFormH1_dirichletMassOperator`. -/
