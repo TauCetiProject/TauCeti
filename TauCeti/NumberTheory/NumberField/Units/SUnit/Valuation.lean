@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.NumberField.Units.SUnit.Basic
 public import TauCeti.RingTheory.DedekindDomain.Action
+public import TauCeti.Algebra.MonoidAlgebra.Basis
 public import Mathlib.RepresentationTheory.Rep.Basic
 public import Mathlib.Algebra.Group.Action.Units
 public import Mathlib.GroupTheory.GroupAction.SubMulAction
@@ -93,20 +94,18 @@ theorem sUnitAction_smul_val
 
 variable (S : SubMulAction (L ≃ₐ[K] L) (HeightOneSpectrum (𝓞 L))) [Finite S]
 
-private def valuationCoordinates : Additive (S → Multiplicative ℤ) ≃ₗ[ℤ] ℤ[S] :=
-  (MulEquiv.funMultiplicative S ℤ).symm.toAdditiveLeft.toIntLinearEquiv.trans
-    ((Finsupp.linearEquivFunOnFinite ℤ ℤ S).symm.trans (coeffLinearEquiv ℤ).symm)
-
 private def valuationVector :
     Additive ((S : Set (HeightOneSpectrum (𝓞 L))).unit L) →ₗ[ℤ] ℤ[S] :=
-  (valuationCoordinates S).toLinearMap ∘ₗ
+  (TauCeti.MonoidAlgebra.funMultiplicativeIntLinearEquiv S).toLinearMap ∘ₗ
     (Set.unitValuation (S : Set (HeightOneSpectrum (𝓞 L))) L).toAdditive.toIntLinearMap
 
 private theorem valuationVector_coeff
     (u : Additive ((S : Set (HeightOneSpectrum (𝓞 L))).unit L)) (v : S) :
     (valuationVector S u).coeff v =
       Multiplicative.toAdd (v.val.valuationOfNeZero u.toMul.val) := by
-  -- The coordinate equivalences and type-tag combinators compute to the valuation tuple.
+  rw [valuationVector, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap,
+    TauCeti.MonoidAlgebra.funMultiplicativeIntLinearEquiv_coeff]
+  -- The additive homomorphism is the type-tagged valuation tuple.
   change Multiplicative.toAdd
     (Set.unitValuation (S : Set (HeightOneSpectrum (𝓞 L))) L u.toMul v) = _
   rw [Set.unitValuation_apply]
@@ -207,7 +206,7 @@ theorem range_sUnitInclusion_eq_ker_sUnitValuation :
   have hzero : (sUnitValuation S).hom u = 0 ↔
       u.toMul ∈ (Set.unitValuation (S : Set (HeightOneSpectrum (𝓞 L))) L).ker := by
     -- The coordinate equivalence is injective; only the valuation tuple can vanish.
-    change valuationCoordinates S
+    change TauCeti.MonoidAlgebra.funMultiplicativeIntLinearEquiv S
       ((Set.unitValuation (S : Set (HeightOneSpectrum (𝓞 L))) L).toAdditive u) = 0 ↔ _
     rw [LinearEquiv.map_eq_zero_iff]
     rfl
@@ -235,7 +234,7 @@ theorem finiteIndex_range_sUnitValuation :
       (TauCeti.finiteIndex_range_unitValuation (𝓞 L) L _)
   have hrange : (sUnitValuation S).hom.toLinearMap.range.toAddSubgroup =
       (Set.unitValuation (S : Set (HeightOneSpectrum (𝓞 L))) L).range.toAddSubgroup.map
-        (valuationCoordinates S).toAddMonoidHom := by
+        (TauCeti.MonoidAlgebra.funMultiplicativeIntLinearEquiv S).toAddMonoidHom := by
     ext y
     constructor
     · rintro ⟨u, rfl⟩
@@ -243,7 +242,8 @@ theorem finiteIndex_range_sUnitValuation :
     · rintro ⟨x, ⟨u, rfl⟩, rfl⟩
       exact ⟨Additive.ofMul u, rfl⟩
   rw [hrange]
-  exact AddSubgroup.FiniteIndex.map_of_surjective _ (valuationCoordinates S).surjective
+  exact AddSubgroup.FiniteIndex.map_of_surjective _
+    (TauCeti.MonoidAlgebra.funMultiplicativeIntLinearEquiv S).surjective
 
 end SubMulAction
 
@@ -270,7 +270,7 @@ theorem sUnitInclusion_comp_sUnitValuation : sUnitInclusion S ≫ sUnitValuation
 
 /-- The ordinary-unit inclusion followed by the valuation onto its categorical image.
 Mathlib's `image.ι` embeds the last term into the finite-prime permutation representation. -/
-abbrev sUnitShortComplex : ShortComplex (Rep ℤ (L ≃ₐ[K] L)) where
+def sUnitShortComplex : ShortComplex (Rep ℤ (L ≃ₐ[K] L)) where
   X₁ := Rep.ofMulDistribMulAction (L ≃ₐ[K] L) (𝓞 L)ˣ
   X₂ := sUnitRep S
   X₃ := image (sUnitValuation S)
@@ -278,14 +278,28 @@ abbrev sUnitShortComplex : ShortComplex (Rep ℤ (L ≃ₐ[K] L)) where
   g := factorThruImage (sUnitValuation S)
   zero := comp_factorThruImage_eq_zero (sUnitInclusion_comp_sUnitValuation S)
 
+/-- The first object of the S-unit sequence is the ordinary-unit representation. -/
+@[simp]
+theorem sUnitShortComplex_X₁ :
+    (sUnitShortComplex S).X₁ = Rep.ofMulDistribMulAction (L ≃ₐ[K] L) (𝓞 L)ˣ := (rfl)
+
+/-- The middle object of the S-unit sequence is the S-unit representation. -/
+@[simp]
+theorem sUnitShortComplex_X₂ : (sUnitShortComplex S).X₂ = sUnitRep S := (rfl)
+
+/-- The last object of the S-unit sequence is the categorical valuation image. -/
+@[simp]
+theorem sUnitShortComplex_X₃ :
+    (sUnitShortComplex S).X₃ = image (sUnitValuation S) := (rfl)
+
 /-- The first arrow of the S-unit sequence is the ordinary-unit inclusion. -/
 @[simp]
-theorem sUnitShortComplex_f : (sUnitShortComplex S).f = sUnitInclusion S := (rfl)
+theorem sUnitShortComplex_f : HEq (sUnitShortComplex S).f (sUnitInclusion S) := (HEq.rfl)
 
 /-- The last arrow of the S-unit sequence is the canonical valuation image factorization. -/
 @[simp]
 theorem sUnitShortComplex_g :
-    (sUnitShortComplex S).g = factorThruImage (sUnitValuation S) := (rfl)
+    HEq (sUnitShortComplex S).g (factorThruImage (sUnitValuation S)) := (HEq.rfl)
 
 /-- Ordinary units, S-units, and the valuation image form a short exact sequence. -/
 theorem sUnitShortComplex_shortExact : (sUnitShortComplex S).ShortExact := by
