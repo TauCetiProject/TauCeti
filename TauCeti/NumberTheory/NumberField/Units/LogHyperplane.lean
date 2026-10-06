@@ -187,7 +187,7 @@ def unitLogRepresentation : Representation ℝ Gal(K/k) (unitLogHyperplane K) wh
 
 /-- The full logarithmic embedding intertwines the action on units and the permutation
 representation on infinite places. -/
-theorem unitLogRepresentation_embedding (σ : Gal(K/k)) (u : (𝓞 K)ˣ) :
+@[simp] theorem unitLogRepresentation_embedding (σ : Gal(K/k)) (u : (𝓞 K)ˣ) :
     unitLogRepresentation K k σ (unitLogEmbedding K (.ofMul u)) =
       unitLogEmbedding K (.ofMul (Units.map (RingOfIntegers.mapRingEquiv σ.toRingEquiv) u)) := by
   ext w
