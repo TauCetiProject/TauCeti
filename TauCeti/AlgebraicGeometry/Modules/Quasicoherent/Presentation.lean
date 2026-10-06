@@ -21,6 +21,7 @@ presentations. Quasicoherence can therefore be checked on restrictions to affine
 The open-subscheme transport and restriction criteria live in `TauCeti.AlgebraicGeometry`.
 Use `TauCeti.AlgebraicGeometry.presentationOver M U P`, or open that namespace and use
 `presentationOver M U P`; the finiteness instance is inferred automatically.
+The restriction criteria use the same namespace and ordinary function application.
 
 ## References
 
