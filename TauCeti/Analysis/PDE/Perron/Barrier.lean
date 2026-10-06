@@ -231,17 +231,6 @@ theorem exists_harmonicOnNhd_continuousOn_closure_eqOn_frontier (hΩ : IsOpen Ω
 
 /-! ### The exterior sphere condition -/
 
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- If a closed ball centred at `y ≠ ξ` meets `closure Ω` only at `ξ`, its centre `y` lies outside
-`closure Ω`. -/
-private lemma closure_subset_compl_singleton_of_dist_lt {y : E} (hξy : ξ ≠ y)
-    (h : ∀ x ∈ closure Ω, x ≠ ξ → dist ξ y < dist x y) : closure Ω ⊆ {y}ᶜ := fun x hx hxy ↦ by
-  rcases eq_or_ne x ξ with rfl | hxξ
-  · exact hξy hxy
-  · have := h x hx hxξ
-    rw [mem_singleton_iff.1 hxy, dist_self] at this
-    exact dist_nonneg.not_gt this
-
 /-- **The exterior sphere barrier.** In `ℝⁿ` with `n ≠ 2`, suppose a closed ball centred at
 `y ≠ ξ` meets `closure Ω` only at `ξ`, that is, every other point of `closure Ω` is farther from
 `y` than `ξ`. Then `x ↦ G(ξ - y) - G(x - y)`, with `G = TauCeti.newtonianKernel n`, is a barrier
@@ -250,8 +239,9 @@ theorem isBarrier_newtonianKernel_sub {n : ℕ} (hn : n ≠ 2) {Ω : Set (Euclid
     {ξ y : EuclideanSpace ℝ (Fin n)} (hξy : ξ ≠ y)
     (h : ∀ x ∈ closure Ω, x ≠ ξ → dist ξ y < dist x y) :
     IsBarrier Ω ξ fun x ↦ newtonianKernel n (ξ - y) - newtonianKernel n (x - y) := by
+  -- The pole `y` lies outside `closure Ω`, since `dist ξ y < dist y y = 0` is impossible.
   have hH := (harmonicOnNhd_newtonianKernel_sub n y).mono
-    (closure_subset_compl_singleton_of_dist_lt hξy h)
+    (subset_compl_singleton_iff.2 fun hy ↦ (h y hy hξy.symm).not_ge (by simp))
   refine ⟨?_, continuousOn_const.sub hH.continuousOn, by simp, fun x hx hxξ ↦ sub_pos.2 ?_⟩
   · have heq : -(fun x ↦ newtonianKernel n (ξ - y) - newtonianKernel n (x - y)) =
         (fun x ↦ newtonianKernel n (x - y)) - fun _ ↦ newtonianKernel n (ξ - y) := by
@@ -270,8 +260,9 @@ farther from `y` than `ξ`. Then `x ↦ log ‖x - y‖ - log ‖ξ - y‖` is a
 theorem isBarrier_log_norm_sub (hE : Module.finrank ℝ E = 2) {y : E} (hξy : ξ ≠ y)
     (h : ∀ x ∈ closure Ω, x ≠ ξ → dist ξ y < dist x y) :
     IsBarrier Ω ξ fun x ↦ Real.log ‖x - y‖ - Real.log ‖ξ - y‖ := by
+  -- The pole `y` lies outside `closure Ω`, since `dist ξ y < dist y y = 0` is impossible.
   have hH := (harmonicOnNhd_log_norm_sub_of_finrank_eq_two hE y).mono
-    (closure_subset_compl_singleton_of_dist_lt hξy h)
+    (subset_compl_singleton_iff.2 fun hy ↦ (h y hy hξy.symm).not_ge (by simp))
   refine ⟨?_, hH.continuousOn.sub continuousOn_const, sub_self _, fun x hx hxξ ↦ sub_pos.2 ?_⟩
   · have heq : -(fun x ↦ Real.log ‖x - y‖ - Real.log ‖ξ - y‖) =
         (fun _ ↦ Real.log ‖ξ - y‖) - fun x ↦ Real.log ‖x - y‖ := by
