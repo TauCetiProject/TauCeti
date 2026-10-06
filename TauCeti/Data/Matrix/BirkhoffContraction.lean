@@ -7,9 +7,8 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import Mathlib.Data.Matrix.Mul
-import Mathlib.Analysis.Calculus.Deriv.MeanValue
-import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import Mathlib.Data.Fintype.Lattice
+import TauCeti.Analysis.SpecialFunctions.Log.OneAddMulExp
 
 /-!
 # Hilbert's projective metric and Birkhoff's contraction theorem
@@ -218,31 +217,6 @@ private theorem two_dim_le {α β α' β' s l : ℝ} (hα : 0 < α) (hβ : 0 < �
   nlinarith [mul_le_mul_of_nonneg_right h₁ (by positivity : 0 ≤ (α' + β') * (l + s) ^ 2),
     mul_le_mul_of_nonneg_left h₂ (by positivity : 0 ≤ α + β)]
 
-/-- The concavity estimate behind Birkhoff's theorem:
-`log ((1 + l * exp σ) / (l + exp σ)) ≤ (l - 1) / (l + 1) * σ` for `σ ≥ 0` and `l ≥ 1`. Both sides
-vanish at `σ = 0`, and the derivative of the left side is at most `(l - 1) / (l + 1)`. -/
-private theorem log_div_le_mul {l σ : ℝ} (hl : 1 ≤ l) (hσ : 0 ≤ σ) :
-    log ((1 + l * exp σ) / (l + exp σ)) ≤ (l - 1) / (l + 1) * σ := by
-  have hpos₁ : ∀ t, 0 < 1 + l * exp t := fun t ↦ by positivity
-  have hpos₂ : ∀ t, 0 < l + exp t := fun t ↦ by positivity
-  have hderiv : ∀ t, HasDerivAt
-      (fun t ↦ (l - 1) / (l + 1) * t - (log (1 + l * exp t) - log (l + exp t)))
-      ((l - 1) / (l + 1) - (l * exp t / (1 + l * exp t) - exp t / (l + exp t))) t := fun t ↦ by
-    have := ((hasDerivAt_id t).const_mul ((l - 1) / (l + 1))).sub
-      ((((hasDerivAt_exp t).const_mul l).const_add 1).log (hpos₁ t).ne' |>.sub
-        (((hasDerivAt_exp t).const_add l).log (hpos₂ t).ne'))
-    exact this.congr_deriv (by ring)
-  have hmono := monotone_of_hasDerivAt_nonneg hderiv fun t ↦ by
-    have hw := (exp_pos t).le
-    rw [Pi.zero_apply, sub_nonneg, div_sub_div _ _ (hpos₁ t).ne' (hpos₂ t).ne',
-      div_le_div_iff₀ (mul_pos (hpos₁ t) (hpos₂ t)) (by linarith)]
-    nlinarith [mul_nonneg (mul_nonneg (sub_nonneg.2 hl) (zero_le_one.trans hl))
-      (sq_nonneg (exp t - 1))]
-  have := hmono hσ
-  simp only [mul_zero, exp_zero, mul_one, add_comm (1 : ℝ) l, sub_self] at this
-  rw [log_div (hpos₁ σ).ne' (hpos₂ σ).ne']
-  linarith
-
 /-- The two-dimensional form of Birkhoff's theorem: for `R ≥ 1` and positive `α, β, α', β'` with
 `α * β' ≤ l ^ 2 * (β * α')`, the logarithmic cross ratio of `(R * α + β, α + β)` and
 `(R * α' + β', α' + β')` is at most `(l - 1) / (l + 1) * log R`. -/
@@ -270,7 +244,7 @@ private theorem log_cross_le {α β α' β' R l : ℝ} (hα : 0 < α) (hβ : 0 <
     _ = 2 * log ((1 + l * s) / (l + s)) := by rw [log_pow]; norm_num
     _ ≤ 2 * ((l - 1) / (l + 1) * (log R / 2)) := by
         gcongr
-        exact log_div_le_mul hl (by linarith [log_nonneg hR])
+        exact log_one_add_mul_exp_div_add_exp_le hl (by linarith [log_nonneg hR])
     _ = (l - 1) / (l + 1) * log R := by ring
 
 end TauCeti
@@ -390,7 +364,7 @@ theorem hilbertProjectiveDist_mulVec_le_projectiveDiameter {K : Matrix ι κ ℝ
 `K *ᵥ x` and `K *ᵥ y` in terms of `α` and `β` turns each cross ratio of the images into a
 two-dimensional quantity bounded by `((1 + λ s) / (λ + s)) ^ 2`, where `λ = exp (Δ(K) / 2)` and
 `s ^ 2 = M / m`, and the concavity estimate `log ((1 + λ s) / (λ + s)) ≤ tanh (Δ(K) / 4) * log s`
-finishes the proof. -/
+(`TauCeti.log_one_add_mul_exp_div_add_exp_le`) finishes the proof. -/
 
 /-- The cross-ratio estimate behind Birkhoff's theorem, for `m * y ≤ x ≤ M * y` with both bounds
 strict somewhere: every logarithmic cross ratio of `K *ᵥ x` and `K *ᵥ y` is at most
