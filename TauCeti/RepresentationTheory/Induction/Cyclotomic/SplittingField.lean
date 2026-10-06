@@ -87,7 +87,7 @@ theorem virtualCharacters_eq_map_of_isPrimitiveRoot {n : ℕ} [NeZero n] {ζ : K
         funext (ClassFunction.ind_apply (ClassFunction.ofCharacter ρ))
       rw [hInd, hρχ, hχ]
       convert indClassFun_indClassFun_subgroupOf hHE
-        (MonoidHom.comp_mem_classFunction ψ Units.val) using 1
+        (ClassFunction.mem_iff.mp (MonoidHom.comp_mem_classFunction ψ Units.val)) using 1
       simp [ψ]
     obtain ⟨f, hf, hdescent⟩ := exists_virtualCharacter_indFDRep_of_isPrimitiveRoot hζ hG ψ
     rw [hind, hdescent]

@@ -103,7 +103,7 @@ theorem indClassFun_apply_coe [Finite G] (hH : IsTISubgroup H) (hk : IsUnit (Nat
     rw [indTerm_apply, dite_eq_left hmem, hcoe]
     exact ClassFunction.mem_iff.mp hf x y⁻¹
   refine mul_left_cancel₀ hk.ne_zero ?_
-  rw [natCard_mul_indClassFun hf]
+  rw [← nsmul_eq_mul, natCard_nsmul_indClassFun (ClassFunction.mem_iff.mp hf)]
   simp only [← indTerm_apply]
   calc ∑ y : G, indTerm f (x : G) y
       = ∑ y ∈ Finset.univ.filter fun y : G => y ∈ H, indTerm f (x : G) y :=

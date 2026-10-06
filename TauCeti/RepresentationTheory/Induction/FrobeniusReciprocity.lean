@@ -228,9 +228,9 @@ section ClassFunctions
 
 variable {k : Type u} {G : Type v} [Group G] {S : Subgroup G}
 
-/-! Both steps of the double count are cleared-denominator identities, so they live at the
-semiring level alongside `TauCeti.natCard_mul_indClassFun`; only the normalized statements below
-divide, and only those need a field. -/
+/-! Both steps of the double count are cleared-denominator identities, so they need only a
+semiring. The underlying group-sum formula `TauCeti.natCard_nsmul_indClassFun` needs only additive
+coefficients. Only the normalized statements below divide and need a field. -/
 
 section Semiring
 
@@ -284,7 +284,7 @@ private theorem natCard_mul_sum_indClassFun_mul [Fintype G] {f : S → k}
         exact Finset.sum_congr rfl fun g _ => (mul_assoc _ _ _).symm
     _ = ∑ g : G, (∑ x : G, indTerm f g x) * h g⁻¹ := by
         refine Finset.sum_congr rfl fun g _ => ?_
-        rw [natCard_mul_indClassFun hf g]
+        rw [← nsmul_eq_mul, natCard_nsmul_indClassFun (ClassFunction.mem_iff.mp hf) g]
         simp only [indTerm_apply]
     _ = ∑ x : G, ∑ g : G, indTerm f g x * h g⁻¹ := by
         rw [Finset.sum_comm]
