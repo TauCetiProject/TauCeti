@@ -34,7 +34,10 @@ Apply the trajectory lemmas by their qualified names in `TauCeti.IsIntegralCurve
 `TauCeti.IsIntegralCurve`, following the organization of `Morse.GradientFlow`. The
 curve predicates themselves are Mathlib's `IsIntegralCurveOn` and `IsIntegralCurve`; the
 qualified namespaces above contain the energy lemmas, not new predicates. The
-connecting-orbit lemmas are in `TauCeti.Flow.IsNegativeGradient`.
+connecting-orbit lemmas are in `TauCeti.Flow.IsNegativeGradient`. With `open TauCeti`, use
+`hφ.integrable_norm_gradient_sq_of_mem_unstableSet_inter_stableSet hf hfp hfq hx` for finite
+energy, and `hφ.integral_norm_gradient_sq_eq_sub_of_mem_unstableSet_inter_stableSet hf hfp hfq hx`
+for the endpoint energy identity.
 The restricted-curve lemmas take the interval endpoints before the curve hypothesis; for example,
 `TauCeti.IsIntegralCurveOn.integrableOn_Ioi_norm_gradient_sq a hγ hf hplus` proves finite
 forward energy after time `a`.
