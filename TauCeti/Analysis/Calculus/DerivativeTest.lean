@@ -9,15 +9,22 @@ public import Mathlib.Analysis.Calculus.DerivativeTest
 public import TauCeti.Analysis.Calculus.TaylorIntegral
 
 /-!
-# Necessary second-derivative tests
+# Necessary derivative tests
 
 This file records necessary versions of Mathlib's sufficient second-derivative tests. At a local
 maximum of a continuous real-valued function, the value `deriv (deriv g) t₀` is nonpositive; at a
 local minimum it is nonnegative. On a real normed space the same holds for every diagonal entry
 `fderiv ℝ (fderiv ℝ f) x w w` of the Hessian of a `C²` function at a local extremum.
 
+It also records the one-sided first-derivative test at an endpoint: a function with a local
+maximum on `Iic a` at `a` (a maximum *from the left*) has nonnegative left derivative there. This
+is the time-direction step of the parabolic maximum principle, where the maximum may sit on the
+top of the space-time cylinder.
+
 ## Main declarations
 
+* `IsLocalMaxOn.hasDerivWithinAt_Iic_nonneg`: the left derivative at a maximum from the left is
+  nonnegative.
 * `TauCeti.deriv_deriv_nonpos_of_isLocalMax`: the local-maximum version.
 * `TauCeti.deriv_deriv_nonneg_of_isLocalMin`: the local-minimum version.
 * `TauCeti.fderiv_fderiv_self_nonpos_of_isLocalMax` /
@@ -57,6 +64,16 @@ theorem deriv_deriv_nonneg_of_isLocalMin {g : ℝ → ℝ} {t₀ : ℝ}
     0 ≤ deriv (deriv g) t₀ := by
   have := deriv_deriv_nonpos_of_isLocalMax (g := -g) hg.neg hmin.neg
   simpa using this
+
+/-- **One-sided first-derivative test.** If `f : ℝ → ℝ` has a local maximum on `Iic a` at `a`,
+that is a maximum from the left, then its left derivative at `a` is nonnegative. -/
+theorem _root_.IsLocalMaxOn.hasDerivWithinAt_Iic_nonneg {f : ℝ → ℝ} {f' a : ℝ}
+    (h : IsLocalMaxOn f (Set.Iic a) a) (hf : HasDerivWithinAt f f' (Set.Iic a) a) : 0 ≤ f' := by
+  have hy : (-1 : ℝ) ∈ posTangentConeAt (Set.Iic a) a :=
+    mem_posTangentConeAt_of_segment_subset <| by
+      rw [segment_symm, segment_eq_Icc (by linarith)]
+      exact Set.Icc_subset_Iic_self
+  simpa using h.hasFDerivWithinAt_nonpos hf.hasFDerivWithinAt hy
 
 section NormedSpace
 
