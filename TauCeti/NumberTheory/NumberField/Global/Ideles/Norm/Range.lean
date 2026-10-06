@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.Norm.Relative
-public import TauCeti.NumberTheory.NumberField.LocalGlobal.Semilocal.NormUnits
+public import TauCeti.NumberTheory.NumberField.LocalGlobal.Semilocal.Norm.Units
 import TauCeti.NumberTheory.Chebotarev.RamifiedPrimes
 
 /-!

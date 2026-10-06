@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.Global.Places.Semilocal
-public import TauCeti.NumberTheory.NumberField.LocalGlobal.Semilocal.NormTrace
+public import TauCeti.NumberTheory.NumberField.LocalGlobal.Semilocal.Norm.Trace
 public import TauCeti.NumberTheory.LocalField.Norm.Unramified.Basic
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.RamificationIndex
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
