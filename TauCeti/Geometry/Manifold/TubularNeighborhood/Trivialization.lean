@@ -91,6 +91,21 @@ theorem normalCoordinateMap_def (x₀ x : M) :
     (Ring.inverse_mul_cancel _ hx)
   simpa [normalCoordinateMap, normalCompression, mul_apply_eq_comp] using h
 
+/-- The continuous-linear change from the reference normal fibre at `x₀` to that at `x₁`.
+On overlaps it transports coordinates between the corresponding normal trivializations. -/
+def normalCoordinateChange (I : ModelWithCorners ℝ E H) (f : M → V) (x₀ x₁ x : M) :
+    normalSubspace I f x₀ →L[ℝ] normalSubspace I f x₁ :=
+  normalCoordinateMap I f x₁ x ∘L (normalSubspace I f x).starProjection ∘L
+    (normalSubspace I f x₀).subtypeL
+
+/-- A change of normal coordinates projects into the moving fibre and takes its target
+reference coordinates. -/
+@[simp] theorem normalCoordinateChange_apply (x₀ x₁ x : M)
+    (w : normalSubspace I f x₀) :
+    normalCoordinateChange I f x₀ x₁ x w =
+      normalCoordinateMap I f x₁ x ((normalSubspace I f x).starProjection w) :=
+  (rfl)
+
 end Complete
 
 section FiniteDimensional
@@ -141,8 +156,7 @@ theorem contMDiffOn_normalCoordinateChange
     (hf : ContMDiff I 𝓘(ℝ, V) (n + 1) f)
     (himm : ∀ x, Injective (mfderiv I 𝓘(ℝ, V) f x)) (x₀ x₁ : M) :
     ContMDiffOn I 𝓘(ℝ, normalSubspace I f x₀ →L[ℝ] normalSubspace I f x₁) n
-      (fun x => normalCoordinateMap I f x₁ x ∘L (normalSubspace I f x).starProjection ∘L
-        (normalSubspace I f x₀).subtypeL)
+      (normalCoordinateChange I f x₀ x₁)
       {x | IsUnit (normalCompression I f x₁ x)} := by
   intro x hx
   exact ((contMDiffAt_normalCoordinateMap hf himm x₁ hx).clm_comp
@@ -219,6 +233,20 @@ its compression. -/
     (p : TotalSpace (normalSubspace I f x₀) (fun x => normalSubspace I f x)) :
     normalTrivialization hf himm x₀ p = (p.proj, normalCoordinateMap I f x₀ p.proj p.2) :=
   (rfl)
+
+/-- The transition operator takes source trivialization coordinates to target coordinates.
+Source base-set membership suffices, so the identity applies in particular on overlaps. -/
+theorem normalCoordinateChange_normalTrivialization
+    (hf : ContMDiff I 𝓘(ℝ, V) (n + 1) f)
+    (himm : ∀ x, Injective (mfderiv I 𝓘(ℝ, V) f x)) (x₀ x₁ : M)
+    (p : TotalSpace (normalSubspace I f x₀) (fun x => normalSubspace I f x))
+    (hp : p.proj ∈ (normalTrivialization hf himm x₀).baseSet) :
+    normalCoordinateChange I f x₀ x₁ p.proj (normalTrivialization hf himm x₀ p).2 =
+      (normalTrivialization hf himm x₁ ⟨p.proj, p.2⟩).2 := by
+  simp only [normalTrivialization_apply, normalCoordinateChange_apply]
+  rw [starProjection_normalCoordinateMap x₀ p.proj
+    ((finrank_normalSubspace (himm x₀)).trans (finrank_normalSubspace (himm p.proj)).symm)
+    hp p.2.property]
 
 /-- The inverse normal trivialization projects the reference vector into the moving
 normal fibre, retaining its base point. -/
