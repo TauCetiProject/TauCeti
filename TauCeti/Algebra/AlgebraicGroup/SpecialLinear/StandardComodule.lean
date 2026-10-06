@@ -130,6 +130,8 @@ theorem piScalarRight_comp_endOfPoint
 
 end PointAction
 
+-- `@[simp]` would fail `simpNF`: the left-hand side already simplifies via
+-- `basePointsRepresentation_corestrict` and the general-linear action formula.
 /-- A base-valued point acts on the standard special-linear comodule by its matrix. -/
 theorem basePointsRepresentation_eq_mulVec
     (g : WithConv (coordinateHopfAlgebra R n →ₐ[R] R)) (v : Fin n → R) :
