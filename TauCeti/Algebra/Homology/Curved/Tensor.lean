@@ -180,6 +180,12 @@ theorem tensorHom_comp_tensorHom (f : X ⟶ X') (f' : X' ⟶ X'') (g : Y ⟶ Y')
   ext <;> apply biprod.hom_ext' <;> apply biprod.hom_ext <;>
     simp [MonoidalPreadditive.tensor_add]
 
+@[simp] theorem zero_tensorHom (g : Y ⟶ Y') : tensorHom (0 : X ⟶ X') g = 0 := by
+  ext <;> apply biprod.hom_ext' <;> apply biprod.hom_ext <;> simp
+
+@[simp] theorem tensorHom_zero (f : X ⟶ X') : tensorHom f (0 : Y ⟶ Y') = 0 := by
+  ext <;> apply biprod.hom_ext' <;> apply biprod.hom_ext <;> simp
+
 /-- The tensor product of a null-homotopic map with a closed map is null-homotopic: if
 `f = d h + h d` for the odd map `h = (h₀, h₁)`, then `f ⊗ g` is the boundary of `h ⊗ g`. -/
 theorem tensorHom_nullHomotopicMap_left (h₀ : X.X₀ ⟶ X'.X₁) (h₁ : X.X₁ ⟶ X'.X₀) (g : Y ⟶ Y') :

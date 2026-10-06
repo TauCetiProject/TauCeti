@@ -106,6 +106,14 @@ theorem tensorHom_comp_tensorHom (f : X ⟶ X') (f' : X' ⟶ X'') (g : Y ⟶ Y')
   ext : 1
   exact CurvedDuplex.tensorHom_add f.hom g.hom g'.hom
 
+@[simp] theorem zero_tensorHom (g : Y ⟶ Y') : tensorHom (0 : X ⟶ X') g = 0 := by
+  ext : 1
+  exact CurvedDuplex.zero_tensorHom g.hom
+
+@[simp] theorem tensorHom_zero (f : X ⟶ X') : tensorHom f (0 : Y ⟶ Y') = 0 := by
+  ext : 1
+  exact CurvedDuplex.tensorHom_zero f.hom
+
 variable (S v w) in
 /-- The **tensor-product bifunctor** from matrix factorizations of `v` and of `w` to matrix
 factorizations of `v + w`. -/
