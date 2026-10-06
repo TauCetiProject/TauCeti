@@ -34,6 +34,9 @@ largest summand, so Mathlib's dominant-antidiagonal theorem applies.
 
 * `MvPowerSeries.norm_eq_gaussNorm`: the norm is the Gauss norm at the chosen polyradii.
 * `MvPowerSeries.norm_le_iff`: a norm bound is equivalent to bounds on every weighted coefficient.
+* `MvPowerSeries.exists_achievesGaussNorm` and `MvPowerSeries.exists_norm_coeff_mul_prod_gap`: a
+  restricted series attains its norm, and its smaller weighted coefficient norms stay below a
+  constant smaller than its norm.
 * The restricted-series subring inherits `CompleteSpace`, `IsUltrametricDist`, and
   `NormMulClass` from its coefficient ring.
 * Over a normed field, the restricted-series subring is a `NormedAlgebra` over its coefficients.
@@ -99,6 +102,41 @@ theorem norm_le_iff {f : IsRestricted.subring (R := R) c} {r : ℝ}
   refine ⟨fun h t ↦ (norm_coeff_mul_prod_le f t).trans h, fun h ↦ ?_⟩
   rw [norm_eq_gaussNorm, gaussNorm]
   exact Real.iSup_le (by simpa using h) hr
+
+/-- **The norm gap of a restricted series.** The weighted coefficient norms of a nonzero
+restricted series that are smaller than its norm are bounded by a constant smaller than its
+norm: only finitely many of them exceed half the norm. -/
+theorem exists_norm_coeff_mul_prod_gap (f : IsRestricted.subring (R := R) c) (hf : f ≠ 0) :
+    ∃ ε, 0 ≤ ε ∧ ε < ‖f‖ ∧ ∀ t, ‖coeff t (f : MvPowerSeries σ R)‖ * t.prod (c · ^ ·) < ‖f‖ →
+      ‖coeff t (f : MvPowerSeries σ R)‖ * t.prod (c · ^ ·) ≤ ε := by
+  classical
+  set M := ‖f‖
+  set w : (σ →₀ ℕ) → ℝ := fun t ↦ ‖coeff t (f : MvPowerSeries σ R)‖ * t.prod (c · ^ ·)
+  have hM : 0 < M := norm_pos_iff.mpr hf
+  have hF : {t | M / 2 ≤ w t}.Finite := by
+    simpa [eventually_cofinite, not_lt] using f.2.eventually (gt_mem_nhds (half_pos hM))
+  let F' := hF.toFinset.filter fun t ↦ w t < M
+  rcases F'.eq_empty_or_nonempty with hF' | hF'
+  · refine ⟨M / 2, (half_pos hM).le, half_lt_self hM, fun t ht ↦ le_of_not_ge fun h ↦ ?_⟩
+    have : t ∈ F' := Finset.mem_filter.mpr ⟨hF.mem_toFinset.mpr h, ht⟩
+    simp [hF'] at this
+  · obtain ⟨t₀, ht₀, hmax⟩ := F'.exists_max_image w hF'
+    refine ⟨max (M / 2) (w t₀), (half_pos hM).le.trans (le_max_left _ _),
+      max_lt (half_lt_self hM) (Finset.mem_filter.mp ht₀).2, fun t ht ↦ ?_⟩
+    by_cases h : M / 2 ≤ w t
+    · exact le_max_of_le_right (hmax t (Finset.mem_filter.mpr ⟨hF.mem_toFinset.mpr h, ht⟩))
+    · exact le_max_of_le_left (le_of_not_ge h)
+
+/-- A restricted series attains its Gauss norm at some exponent. -/
+theorem exists_achievesGaussNorm (f : IsRestricted.subring (R := R) c) :
+    ∃ t, AchievesGaussNorm norm c (f : MvPowerSeries σ R) t := by
+  rcases eq_or_ne f 0 with rfl | hf
+  · exact ⟨0, by simp [AchievesGaussNorm, gaussNorm_zero]⟩
+  obtain ⟨ε, hε0, hεM, hε⟩ := exists_norm_coeff_mul_prod_gap f hf
+  by_contra! h
+  have hM : ‖f‖ ≤ ε := (norm_le_iff hε0).mpr fun t ↦
+    hε t ((norm_coeff_mul_prod_le f t).lt_of_ne (h t))
+  exact hM.not_gt hεM
 
 /-- The norm of a restricted monomial is its weighted coefficient norm. -/
 @[simp]
