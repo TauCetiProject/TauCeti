@@ -57,6 +57,7 @@ noncomputable def analyticAffineChartProdHomeomorph (σ : Φ.cones) (τ : Ψ.con
     (Φ.analyticChartGenerators σ).2 (Ψ.analyticChartGenerators τ).2
 
 /-- The first affine product coordinate is the chart map induced by the first fan projection. -/
+@[simp↓]
 theorem analyticAffineChartProdHomeomorph_fst (σ : Φ.cones) (τ : Ψ.cones)
     (x : (Φ.prod Ψ).analyticAffineChartDiagram.obj (Φ.prodCone Ψ σ τ)) :
     (Φ.analyticAffineChartProdHomeomorph Ψ σ τ x).1 =
@@ -75,6 +76,7 @@ theorem analyticAffineChartProdHomeomorph_fst (σ : Φ.cones) (τ : Ψ.cones)
   simp
 
 /-- The second affine product coordinate is the chart map induced by the second fan projection. -/
+@[simp↓]
 theorem analyticAffineChartProdHomeomorph_snd (σ : Φ.cones) (τ : Ψ.cones)
     (x : (Φ.prod Ψ).analyticAffineChartDiagram.obj (Φ.prodCone Ψ σ τ)) :
     (Φ.analyticAffineChartProdHomeomorph Ψ σ τ x).2 =
@@ -195,9 +197,7 @@ private theorem isOpenMap_analyticProdComparison :
       Prod.map (Φ.analyticAffineChartι hΦ σ) (Ψ.analyticAffineChartι hΨ τ) ∘
         Φ.analyticAffineChartProdHomeomorph Ψ σ τ :=
     funext (Φ.analyticProdComparison_analyticAffineChartι Ψ hΦ hΨ σ τ)
-  -- The sigma component is the composite on the product-cone chart.
-  change IsOpenMap (fun x ↦ Φ.analyticProdComparison Ψ hΦ hΨ
-    ((Φ.prod Ψ).analyticAffineChartι (Fan.IsRegular.prod Φ Ψ hΦ hΨ) (Φ.prodCone Ψ σ τ) x))
+  simp only [Function.comp_apply, q]
   rw [hchart]
   exact ((Φ.isOpenEmbedding_analyticAffineChartι hΦ σ).isOpenMap.prodMap
     (Ψ.isOpenEmbedding_analyticAffineChartι hΨ τ).isOpenMap).comp
