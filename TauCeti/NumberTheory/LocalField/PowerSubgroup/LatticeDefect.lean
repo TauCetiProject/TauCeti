@@ -200,11 +200,11 @@ private noncomputable def valuationHom : Additive Lˣ →+[L ≃ₐ[K] L] ℤ :=
         Additive.toMul_smul, AlgEquiv.smul_units_def, AlgEquiv.normalizedValuation_unitsMap]
       exact (one_smul ℤ _).symm }
 
-variable (k : Type) (ℓ : ℕ) [Fact ℓ.Prime]
+variable (k : Type) (ℓ : ℕ)
 
 /-- **The defect does not depend on the step of the unit filtration**: all the `U(L,i)` have finite
 index in `U(L,0) = 𝒪[L]ˣ`, so they have the same lattice defect. -/
-theorem latticeDefect_unitFiltration_eq [CommRing k] [NeZero (ℓ : L)] (i j : ℕ) :
+theorem latticeDefect_unitFiltration_eq [CommRing k] [Fact ℓ.Prime] [NeZero (ℓ : L)] (i j : ℕ) :
     latticeDefect k (L ≃ₐ[K] L) ℓ (Additive (unitFiltration L i)) =
       latticeDefect k (L ≃ₐ[K] L) ℓ (Additive (unitFiltration L j)) := by
   suffices h : ∀ i, latticeDefect k (L ≃ₐ[K] L) ℓ (Additive (unitFiltration L i)) =
@@ -223,7 +223,8 @@ theorem latticeDefect_unitFiltration_eq [CommRing k] [NeZero (ℓ : L)] (i j : �
 quotient `ℤ` carries the trivial action, and the inclusions of finite index `U(L,i) ⊆ 𝒪[L]ˣ`,
 the defect of `Lˣ` is that of any step `U(L,i)` of the unit filtration plus the class `1 = [k]` of
 the trivial line. -/
-theorem latticeDefect_units_eq_one_add [Field k] [CharP k ℓ] [NeZero (ℓ : L)] (i : ℕ) :
+theorem latticeDefect_units_eq_one_add [Field k] [Fact ℓ.Prime] [CharP k ℓ] [NeZero (ℓ : L)]
+    (i : ℕ) :
     latticeDefect k (L ≃ₐ[K] L) ℓ (Additive Lˣ) =
       1 + latticeDefect k (L ≃ₐ[K] L) ℓ (Additive (unitFiltration L i)) := by
   rw [latticeDefect_add_of_exact k _ ℓ (unitFiltrationSubtypeHom K L 0) (valuationHom K L)
@@ -238,8 +239,10 @@ unit of `𝒪[L]`, raising to the `ℓ`-th power is bijective on every positive-
 theorem latticeDefect_unitFiltration_succ_eq_zero_of_isUnit [CommRing k]
     (hℓ : IsUnit (ℓ : 𝒪[L])) (i : ℕ) :
     haveI : NeZero (ℓ : L) := ⟨natCast_ne_zero_of_isUnit hℓ⟩
+    haveI : NeZero ℓ := .of_neZero_natCast L
     latticeDefect k (L ≃ₐ[K] L) ℓ (Additive (unitFiltration L (i + 1))) = 0 := by
   have : NeZero (ℓ : L) := ⟨natCast_ne_zero_of_isUnit hℓ⟩
+  have : NeZero ℓ := .of_neZero_natCast L
   refine latticeDefect_eq_zero_of_bijective_zsmul k _ ℓ _ ?_
   have h : (fun x : Additive (unitFiltration L (i + 1)) ↦ (ℓ : ℤ) • x) =
       Additive.ofMul ∘ powMonoidHom ℓ ∘ Additive.toMul := funext fun x ↦ by
@@ -251,7 +254,8 @@ theorem latticeDefect_unitFiltration_succ_eq_zero_of_isUnit [CommRing k]
 /-- **The class of `Lˣ ⧸ (Lˣ)^ℓ`** in `G₀(k[Gal(L/K)])`, for `k` of characteristic `ℓ`: it is
 `[k] + [μ_ℓ(L)] + latticeDefect (U(L,i))` for every step `U(L,i)` of the unit filtration, where
 `μ_ℓ(L)` is the `ℓ`-torsion of `Lˣ`. -/
-theorem reductionK0_quotSMulTop_units [Field k] [CharP k ℓ] [NeZero (ℓ : L)] (i : ℕ) :
+theorem reductionK0_quotSMulTop_units [Field k] [Fact ℓ.Prime] [CharP k ℓ] [NeZero (ℓ : L)]
+    (i : ℕ) :
     reductionK0 k
         ((Representation.ofDistribMulAction ℤ (L ≃ₐ[K] L) (Additive Lˣ)).quotSMulTop ℓ) =
       1 + reductionK0 k
@@ -264,7 +268,7 @@ theorem reductionK0_quotSMulTop_units [Field k] [CharP k ℓ] [NeZero (ℓ : L)]
 
 /-- **The class of `Lˣ ⧸ (Lˣ)^ℓ` away from the residue characteristic**: if `ℓ` is a unit of
 `𝒪[L]`, then `[Lˣ ⧸ (Lˣ)^ℓ] = [k] + [μ_ℓ(L)]` in `G₀(k[Gal(L/K)])`. -/
-theorem reductionK0_quotSMulTop_units_of_isUnit [Field k] [CharP k ℓ]
+theorem reductionK0_quotSMulTop_units_of_isUnit [Field k] [Fact ℓ.Prime] [CharP k ℓ]
     (hℓ : IsUnit (ℓ : 𝒪[L])) :
     haveI : NeZero (ℓ : L) := ⟨natCast_ne_zero_of_isUnit hℓ⟩
     reductionK0 k
