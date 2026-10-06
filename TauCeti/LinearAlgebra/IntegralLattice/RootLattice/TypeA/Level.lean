@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Data.Rat.NumDenDvd
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.TypeA.Basic
 public import TauCeti.LinearAlgebra.IntegralLattice.Level
 
@@ -46,7 +45,11 @@ theorem level_typeARootLattice (n : ℕ) :
       Nat.gcd_add_mul_right_left, Nat.gcd_comm 2 n]
   have hden : (n : ℚ) / (2 * ((n : ℚ) + 1)) = (n : ℚ) / (2 * (n + 1) : ℕ) := by
     norm_cast
-  rw [hden, Rat.den_natCast_div_natCast n (2 * (n + 1)) (by omega), hgcd]
+  rw [hden]
+  simpa only [Rat.divInt_eq_div, Int.cast_natCast, Int.natCast_eq_zero,
+    ite_eq_right (by omega : 2 * (n + 1) ≠ 0), Int.gcd_def, Int.natAbs_natCast,
+    Nat.gcd_comm (2 * (n + 1)) n, hgcd] using
+    _root_.Rat.den_divInt (n : ℤ) ((2 * (n + 1) : ℕ) : ℤ)
 
 /-- In even rank, the level of `Aₙ` is `n + 1`, including rank zero. -/
 theorem level_typeARootLattice_of_even {n : ℕ} (hn : Even n) :

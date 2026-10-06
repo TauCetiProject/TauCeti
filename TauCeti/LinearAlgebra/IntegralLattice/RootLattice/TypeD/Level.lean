@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Data.Rat.NumDenDvd
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.TypeD.Basic
 public import TauCeti.LinearAlgebra.IntegralLattice.Level
 
@@ -60,10 +59,10 @@ theorem level_checkerboardLattice (n : ℕ) [NeZero n] :
     apply Nat.dvd_antisymm
     · exact (h _).mpr ⟨Nat.dvd_lcm_left .., Nat.dvd_lcm_right ..⟩
     · exact Nat.lcm_dvd ((h _).mp dvd_rfl).1 ((h _).mp dvd_rfl).2
-  rw [hlevel]
-  -- Expose the natural cast in the denominator so the shared fraction lemma matches.
-  change Nat.lcm 2 ((n : ℚ) / (8 : ℕ)).den = 8 / n.gcd 4
-  rw [Rat.den_natCast_div_natCast n 8 (by decide)]
+  have hden : ((n : ℚ) / 8).den = 8 / n.gcd 8 := by
+    simpa [Rat.divInt_eq_div, Int.gcd_def, Nat.gcd_comm] using
+      _root_.Rat.den_divInt (n : ℤ) 8
+  rw [hlevel, hden]
   calc
     -- Put both arguments in `8 / d` form for `Nat.div_lcm_eq_div_gcd`.
     Nat.lcm 2 (8 / n.gcd 8) = Nat.lcm (8 / 4) (8 / n.gcd 8) := by norm_num
