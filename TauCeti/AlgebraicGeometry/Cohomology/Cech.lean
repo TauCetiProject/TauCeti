@@ -45,17 +45,18 @@ namespace TauCeti.AlgebraicGeometry
 
 variable {X : Scheme.{u}} (M : X.Modules) (U V : Opens X)
 
-/-- The Čech coboundary for two open subsets, with sign `s| - t|`. -/
-def cechDifference : (Γ(M, U) × Γ(M, V)) →+ Γ(M, U ⊓ V) :=
-  mayerVietorisSectionsDifference (Opens.mayerVietorisSquare U V)
+/-- The difference of restrictions to the overlap of two open subsets, with sign `s| - t|`
+matching the Mayer–Vietoris sequence. This is the negative of the standard Čech differential. -/
+def mayerVietorisSectionsDifference : (Γ(M, U) × Γ(M, V)) →+ Γ(M, U ⊓ V) :=
+  TauCeti.CategoryTheory.mayerVietorisSectionsDifference (Opens.mayerVietorisSquare U V)
     ((_root_.SheafOfModules.toSheaf X.ringCatSheaf).obj M)
 
 @[simp]
-lemma cechDifference_apply (s : Γ(M, U)) (t : Γ(M, V)) :
-    cechDifference M U V (s, t) =
+lemma mayerVietorisSectionsDifference_apply (s : Γ(M, U)) (t : Γ(M, V)) :
+    mayerVietorisSectionsDifference M U V (s, t) =
       M.val.map (CategoryTheory.homOfLE inf_le_left).op s -
         M.val.map (CategoryTheory.homOfLE inf_le_right).op t :=
-  mayerVietorisSectionsDifference_apply
+  TauCeti.CategoryTheory.mayerVietorisSectionsDifference_apply
     (Opens.mayerVietorisSquare U V) ((_root_.SheafOfModules.toSheaf X.ringCatSheaf).obj M) s t
 
 /-- The two-open Čech comparison in degree one: if the members cover the scheme and
@@ -63,7 +64,7 @@ have vanishing first cohomology, the quotient of overlap sections by coboundarie
 first cohomology of the scheme. -/
 def sectionsQuotientEquivCohomologyOne (hUV : U ⊔ V = ⊤)
     (hU : Subsingleton (cohomologyOn M 1 U)) (hV : Subsingleton (cohomologyOn M 1 V)) :
-    (Γ(M, U ⊓ V) ⧸ (cechDifference M U V).range) ≃+ Cohomology M 1 :=
+    (Γ(M, U ⊓ V) ⧸ (mayerVietorisSectionsDifference M U V).range) ≃+ Cohomology M 1 :=
   (mayerVietorisSectionsQuotientEquiv
     (Opens.mayerVietorisSquare U V) ((_root_.SheafOfModules.toSheaf X.ringCatSheaf).obj M)
     hU hV).trans <|
