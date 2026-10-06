@@ -251,9 +251,7 @@ theorem μ_comp_homEquiv_symm_tensorHom_unit_comp_μ
       (adj.counit.app X ⊗ₘ adj.counit.app Y)) (X Y : C) :
     μ F X Y ≫ (adj.homEquiv _ _).symm ((adj.unit.app X ⊗ₘ adj.unit.app Y) ≫ μ G _ _) = 𝟙 _ := by
   rw [homEquiv_counit, F.map_comp, Category.assoc, ← μ_natural_assoc]
-  dsimp only [Functor.comp_obj]
-  rw [hcounit, tensorHom_comp_tensorHom, left_triangle_components, left_triangle_components,
-    tensorHom_id, id_whiskerRight]
+  simp [hcounit]
 
 /-- If the unit of an adjunction between lax monoidal functors is compatible with the
 tensorators, then the mate of the tensorator of the right adjoint is a section of the tensorator
@@ -263,9 +261,8 @@ theorem homEquiv_symm_tensorHom_unit_comp_μ_comp_μ
       (adj.unit.app X ⊗ₘ adj.unit.app Y) ≫ μ G _ _ ≫ G.map (μ F X Y)) (X Y : C) :
     (adj.homEquiv _ _).symm ((adj.unit.app X ⊗ₘ adj.unit.app Y) ≫ μ G _ _) ≫ μ F X Y = 𝟙 _ := by
   apply (adj.homEquiv _ _).injective
-  rw [homEquiv_naturality_right, Equiv.apply_symm_apply, Category.assoc, ← hunit,
-    homEquiv_unit, Functor.map_id]
-  exact (Category.comp_id _).symm
+  rw [homEquiv_naturality_right, Equiv.apply_symm_apply, Category.assoc, ← hunit]
+  simp [homEquiv_unit]
 
 /-- **Doctrinal adjunction** for tensorators: if the unit and the counit of an adjunction
 between lax monoidal functors are compatible with the tensorators, then the tensorator of the

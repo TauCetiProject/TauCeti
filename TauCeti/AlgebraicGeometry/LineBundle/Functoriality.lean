@@ -141,9 +141,7 @@ lemma pullback_mul (f : X ⟶ Y) (a b : LineBundleClass Y) :
     pullback f (a * b) = pullback f a * pullback f b := by
   obtain ⟨L, rfl⟩ := mk_surjective a
   obtain ⟨K, rfl⟩ := mk_surjective b
-  rw [← mk_tensorProduct, pullback_mk, pullback_mk, pullback_mk, ← mk_tensorProduct, mk_eq_mk_iff,
-    InvertibleSheaf.tensorProduct_obj, InvertibleSheaf.pullback_obj_obj,
-    InvertibleSheaf.tensorProduct_obj, InvertibleSheaf.pullback_obj_obj,
+  simp only [← mk_tensorProduct, pullback_mk, mk_eq_mk_iff, InvertibleSheaf.tensorProduct_obj,
     InvertibleSheaf.pullback_obj_obj]
   -- A line bundle is locally free, hence quasicoherent, so the tensor comparison of pullback is
   -- invertible; the tensor product of line bundles is identified with the monoidal tensor
