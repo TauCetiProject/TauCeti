@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.MvPolynomial.Funext
 public import Mathlib.LinearAlgebra.FreeModule.Basic
 public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
-import Mathlib.Algebra.MvPolynomial.Basic
 
 /-!
 # Descending a nonsingular intertwining matrix to a smaller ring
@@ -37,6 +36,8 @@ Tate's lemma on lattices in a real representation.
   under some `F`-linear functional `K → F`.
 * `Matrix.exists_det_ne_zero_forall_mul_eq_mul_of_algebraMap`: a nonsingular matrix over `K`
   intertwining two families of matrices over `F` can be replaced by one over `F`.
+* `Matrix.map_algebraMap_mul`, `Matrix.map_mul_algebraMap`: an `F`-linear functional applied
+  entrywise commutes with multiplication by a matrix over `F`.
 
 ## References
 
@@ -80,16 +81,16 @@ theorem exists_linearMap_det_map_ne_zero [DecidableEq n] {F K : Type*} [CommRing
 
 /-- An `F`-linear functional applied entrywise commutes with left multiplication by a matrix over
 `F`. -/
-private theorem map_algebraMap_mul {F K : Type*} [CommRing F] [CommRing K] [Algebra F K]
-    (f : K →ₗ[F] F) (C : Matrix n n F) (X : Matrix n n K) :
+theorem map_algebraMap_mul {l m o F K : Type*} [Fintype m] [CommSemiring F] [Semiring K]
+    [Algebra F K] (f : K →ₗ[F] F) (C : Matrix l m F) (X : Matrix m o K) :
     (C.map (algebraMap F K) * X).map f = C * X.map f := by
   ext i j
   simp [mul_apply, ← Algebra.smul_def]
 
 /-- An `F`-linear functional applied entrywise commutes with right multiplication by a matrix over
 `F`. -/
-private theorem map_mul_algebraMap {F K : Type*} [CommRing F] [CommRing K] [Algebra F K]
-    (f : K →ₗ[F] F) (C : Matrix n n F) (X : Matrix n n K) :
+theorem map_mul_algebraMap {l m o F K : Type*} [Fintype m] [CommSemiring F] [Semiring K]
+    [Algebra F K] (f : K →ₗ[F] F) (C : Matrix m o F) (X : Matrix l m K) :
     (X * C.map (algebraMap F K)).map f = X.map f * C := by
   ext i j
   simp only [map_apply, mul_apply, map_sum]
