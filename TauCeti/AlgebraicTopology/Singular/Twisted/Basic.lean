@@ -338,15 +338,8 @@ lemma twistedChainComplexCoefficientMap_comp (η : L ⟶ K) (θ : K ⟶ J) :
 /-- An isomorphism of local coefficient systems induces an isomorphism of twisted chain
 complexes. -/
 def twistedChainComplexCoefficientIso (e : L ≅ K) :
-    twistedChainComplex L ≅ twistedChainComplex K where
-  hom := twistedChainComplexCoefficientMap e.hom
-  inv := twistedChainComplexCoefficientMap e.inv
-  hom_inv_id := by
-    rw [← twistedChainComplexCoefficientMap_comp, e.hom_inv_id,
-      twistedChainComplexCoefficientMap_id]
-  inv_hom_id := by
-    rw [← twistedChainComplexCoefficientMap_comp, e.inv_hom_id,
-      twistedChainComplexCoefficientMap_id]
+    twistedChainComplex L ≅ twistedChainComplex K :=
+  (twistedChainsFunctor R X ⋙ AlgebraicTopology.alternatingFaceMapComplex _).mapIso e
 
 @[simp]
 lemma twistedChainComplexCoefficientIso_hom (e : L ≅ K) :

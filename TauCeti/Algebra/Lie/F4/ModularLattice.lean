@@ -186,67 +186,15 @@ theorem f4Modular_lie_rootVector_simpleCoroot (α : Fin 48) (i : Fin F4.rank) :
 theorem f4IntegralCoroot_eq_sum_simple (β : Fin 48) :
     f4IntegralCoroot β = ∑ i : Fin F4.rank,
       f4Coroot β (Fin.cast rank_F4 i) • f4IntegralSimpleCoroot i := by
-  -- Compare in the rational Lie algebra: include the integral lattice and Cartan subalgebra,
-  -- then identify integral scalar multiplication with its rational scalar extension.
+  -- Compare in the rational Lie algebra, where integral scalars act through `ℤ → ℚ`.
   apply Subtype.ext
-  have h := congrArg
-    (fun y : F4.cartanSubalgebra valid_F4 => (y : F4.lieAlgebra valid_F4))
+  have h := congrArg (fun y : F4.cartanSubalgebra valid_F4 => (y : F4.lieAlgebra valid_F4))
     (f4KillingCoroot_eq_sum_simple β)
-  convert h using 1
-  · simp only [coe_f4IntegralCoroot, rootSystem_coroot_apply]
-  · let u : Fin F4.rank → F4.lieAlgebra valid_F4 := fun i =>
-      f4ChevalleyLieLattice.toSubmodule.subtype
-        (f4Coroot β (Fin.cast rank_F4 i) • f4IntegralSimpleCoroot i)
-    let v : Fin F4.rank → F4.lieAlgebra valid_F4 := fun i =>
-      (F4.cartanSubalgebra valid_F4).incl
-        ((F4.rationalRootSystem valid_F4).coroot (f4RootIndex β) i •
-          (rootSystem (F4.cartanSubalgebra valid_F4)).coroot
-            ((F4.lieBasis valid_F4).baseSupportEquiv i))
-    have huv (i : Fin F4.rank) : u i = v i := by
-      have hcoeff :
-          (f4Coroot β (Fin.cast rank_F4 i) : ℚ) =
-            (F4.rationalRootSystem valid_F4).coroot (f4RootIndex β) i := by
-        rw [coroot_rationalRootSystem, simplyConnectedRootDatum_F4,
-          f4SimplyConnectedRootDatum_coroot]
-        congr 1
-      dsimp only [u, v]
-      -- Both subtype inclusions preserve scalar multiplication by definition.
-      change f4Coroot β (Fin.cast rank_F4 i) •
-          (f4IntegralSimpleCoroot i : F4.lieAlgebra valid_F4) =
-        (F4.rationalRootSystem valid_F4).coroot (f4RootIndex β) i •
-          (((rootSystem (F4.cartanSubalgebra valid_F4)).coroot
-            ((F4.lieBasis valid_F4).baseSupportEquiv i) :
-              F4.cartanSubalgebra valid_F4) : F4.lieAlgebra valid_F4)
-      simp only [coe_f4IntegralSimpleCoroot, rootSystem_coroot_apply]
-      let w : F4.lieAlgebra valid_F4 :=
-        ((coroot (((F4.lieBasis valid_F4).baseSupportEquiv i :
-          (F4.cartanSubalgebra valid_F4).root) :
-            Weight ℚ (F4.cartanSubalgebra valid_F4) (F4.lieAlgebra valid_F4)) :
-              F4.cartanSubalgebra valid_F4) : F4.lieAlgebra valid_F4)
-      -- The local name w abbreviates the same coroot included in the rational Lie algebra.
-      change f4Coroot β (Fin.cast rank_F4 i) • w =
-        (F4.rationalRootSystem valid_F4).coroot (f4RootIndex β) i • w
-      calc
-        _ = (f4Coroot β (Fin.cast rank_F4 i) : ℚ) • w :=
-          (Int.cast_smul_eq_zsmul ℚ _ _).symm
-        _ = _ := congrArg (· • w) hcoeff
-    -- Write the two subtype inclusions as linear maps so map_sum applies to each side.
-    change f4ChevalleyLieLattice.toSubmodule.subtype
-        (∑ i : Fin F4.rank,
-          f4Coroot β (Fin.cast rank_F4 i) • f4IntegralSimpleCoroot i) =
-      (F4.cartanSubalgebra valid_F4).incl
-        (∑ i : Fin F4.rank,
-          (F4.rationalRootSystem valid_F4).coroot (f4RootIndex β) i •
-            (rootSystem (F4.cartanSubalgebra valid_F4)).coroot
-              ((F4.lieBasis valid_F4).baseSupportEquiv i))
-    calc
-      _ = ∑ i : Fin F4.rank, u i :=
-        map_sum f4ChevalleyLieLattice.toSubmodule.subtype _ Finset.univ
-      _ = ∑ i : Fin F4.rank, v i := by
-        apply Finset.sum_congr rfl
-        intro i _
-        exact huv i
-      _ = _ := (map_sum (F4.cartanSubalgebra valid_F4).incl _ Finset.univ).symm
+  simp only [rootSystem_coroot_apply, AddSubmonoidClass.coe_finsetSum, coroot_rationalRootSystem,
+    simplyConnectedRootDatum_F4, f4SimplyConnectedRootDatum_coroot, Int.cast_smul_eq_zsmul] at h
+  simp only [coe_f4IntegralCoroot, AddSubmonoidClass.coe_finsetSum, SetLike.val_smul,
+    coe_f4IntegralSimpleCoroot]
+  exact h
 
 /-- Reduction modulo two preserves the pinned simple-coroot coordinate expansion. -/
 theorem f4ModularCoroot_eq_sum_simple (β : Fin 48) :
@@ -530,8 +478,7 @@ theorem f4Modular_lie_simpleCoroot_simpleCoroot_eq_zero (i j : Fin F4.rank) :
     (i : Fin F4.rank) (γ : Fin 48) :
     f4ModularChevalleyBasis.repr (f4ModularSimpleCoroot i)
       (Sum.inl (f4KillingRootLabel γ)) = 0 := by
-  classical
-  rw [f4ModularSimpleCoroot_eq_basis, f4ModularChevalleyBasis.repr_self]
+  simp only [f4ModularSimpleCoroot_eq_basis, Basis.repr_self]
   exact Finsupp.single_eq_of_ne (by simp)
 
 /-- A modular coroot has no root-vector coordinate. -/
@@ -539,33 +486,23 @@ theorem f4Modular_lie_simpleCoroot_simpleCoroot_eq_zero (i j : Fin F4.rank) :
     (β γ : Fin 48) :
     f4ModularChevalleyBasis.repr (f4ModularCoroot β)
       (Sum.inl (f4KillingRootLabel γ)) = 0 := by
-  classical
-  rw [f4ModularCoroot_eq_sum_simple, map_sum]
-  simp only [Finsupp.coe_finsetSum, Finset.sum_apply]
-  apply Finset.sum_eq_zero
-  intro i _
-  rw [map_smul, Finsupp.smul_apply,
-    f4ModularChevalleyBasis_repr_simpleCoroot_inl, smul_zero]
+  simp only [f4ModularCoroot_eq_sum_simple, map_sum, map_smul, Finsupp.coe_finsetSum,
+    Finset.sum_apply, Finsupp.smul_apply, f4ModularChevalleyBasis_repr_simpleCoroot_inl,
+    smul_zero, Finset.sum_const_zero]
 
 /-- A root vector has zero coordinate at any different root label. -/
 @[simp] theorem f4ModularChevalleyBasis_repr_rootVector_inl_eq_zero
     (ε γ : Fin 48) (hεγ : f4KillingRootLabel ε ≠ f4KillingRootLabel γ) :
     f4ModularChevalleyBasis.repr (f4ModularRootVector ε)
       (Sum.inl (f4KillingRootLabel γ)) = 0 := by
-  classical
-  have hindex : (Sum.inl (f4KillingRootLabel γ) : f4ChevalleyIndex) ≠
-      Sum.inl (f4KillingRootLabel ε) := by
-    intro h
-    exact hεγ ((Sum.inl.inj h).symm)
-  rw [f4ModularRootVector_eq_basis, f4ModularChevalleyBasis.repr_self,
-    Finsupp.single_eq_of_ne hindex]
+  simp only [f4ModularRootVector_eq_basis, Basis.repr_self]
+  exact Finsupp.single_eq_of_ne (by simpa using hεγ.symm)
 
 /-- The coordinate of a root vector at its own root label is one. -/
 @[simp] theorem f4ModularChevalleyBasis_repr_rootVector_self (β : Fin 48) :
     f4ModularChevalleyBasis.repr (f4ModularRootVector β)
       (Sum.inl (f4KillingRootLabel β)) = 1 := by
-  rw [f4ModularRootVector_eq_basis, f4ModularChevalleyBasis.repr_self,
-    Finsupp.single_eq_same]
+  simp only [f4ModularRootVector_eq_basis, Basis.repr_self, Finsupp.single_eq_same]
 
 /-- A nonzero root coordinate in a modular root-vector bracket has the expected integral root
 label, even though the bracket itself is reduced modulo two. -/
@@ -576,40 +513,26 @@ theorem f4_root_eq_add_of_repr_lie_rootVector_ne_zero
         (Sum.inl (f4KillingRootLabel γ)) ≠ 0) :
     f4SimplyConnectedRootDatum.root γ =
       f4SimplyConnectedRootDatum.root β + f4SimplyConnectedRootDatum.root δ := by
-  classical
-  let H := F4.cartanSubalgebra valid_F4
-  by_cases hsum :
-      (f4KillingRoot δ : H → ℚ) + (f4KillingRoot β : H → ℚ) = 0
-  · have hindex : δ = f4OppositeRootIndex β := by
+  by_cases hsum : (f4KillingRoot δ : F4.cartanSubalgebra valid_F4 → ℚ) + f4KillingRoot β = 0
+  · obtain rfl : δ = f4OppositeRootIndex β := by
       by_contra hopp
       exact f4KillingRoot_add_ne_zero_of_ne_opposite δ β hopp hsum
-    rw [hindex, ← lie_skew, f4Modular_lie_rootVector_opposite, map_neg] at hne
-    rw [Finsupp.neg_apply] at hne
-    rw [f4ModularChevalleyBasis_repr_coroot_inl, neg_zero] at hne
-    exact (hne rfl).elim
-  by_cases hbot : rootSpace H
-      ((f4KillingRoot δ : H → ℚ) + (f4KillingRoot β : H → ℚ)) = ⊥
-  · have hlie : ⁅f4ModularRootVector δ, f4ModularRootVector β⁆ = 0 :=
-      f4Modular_lie_rootVector_eq_zero_of_rootSpace_add_eq_bot δ β hbot
-    have hz : f4ModularChevalleyBasis.repr
-        ⁅f4ModularRootVector δ, f4ModularRootVector β⁆
-          (Sum.inl (f4KillingRootLabel γ)) = 0 := by
-      simp only [hlie, map_zero, Finsupp.zero_apply]
-    exact (hne hz).elim
-  · obtain ⟨ε, hε⟩ := exists_f4_root_eq_add_of_rootSpace_ne_bot δ β hsum hbot
-    obtain ⟨z, _, hlie⟩ := exists_f4Modular_lie_rootVector_eq_smul_of_add δ β ε hε
-    by_cases heq : f4KillingRootLabel ε = f4KillingRootLabel γ
-    · have hεγ : ε = γ := by
-        simpa only [f4PinnedRootIndex_f4KillingRootLabel] using
-          congrArg f4PinnedRootIndex heq
-      have hγε : γ = ε := hεγ.symm
-      exact hγε ▸ hε
-    · have hz : f4ModularChevalleyBasis.repr
-          ⁅f4ModularRootVector δ, f4ModularRootVector β⁆
-            (Sum.inl (f4KillingRootLabel γ)) = 0 := by
-        simp only [hlie, map_smul, Finsupp.smul_apply,
-          f4ModularChevalleyBasis_repr_rootVector_inl_eq_zero ε γ heq, smul_zero]
-      exact (hne hz).elim
+    simp only [← lie_skew (f4ModularRootVector (f4OppositeRootIndex β)),
+      f4Modular_lie_rootVector_opposite, map_neg,
+      Finsupp.neg_apply, f4ModularChevalleyBasis_repr_coroot_inl, neg_zero, ne_eq,
+      not_true_eq_false] at hne
+  by_cases hbot : rootSpace (F4.cartanSubalgebra valid_F4)
+      ((f4KillingRoot δ : F4.cartanSubalgebra valid_F4 → ℚ) + f4KillingRoot β) = ⊥
+  · simp only [f4Modular_lie_rootVector_eq_zero_of_rootSpace_add_eq_bot δ β hbot, map_zero,
+      Finsupp.zero_apply, ne_eq, not_true_eq_false] at hne
+  obtain ⟨ε, hε⟩ := exists_f4_root_eq_add_of_rootSpace_ne_bot δ β hsum hbot
+  obtain ⟨z, -, hlie⟩ := exists_f4Modular_lie_rootVector_eq_smul_of_add δ β ε hε
+  by_cases heq : f4KillingRootLabel ε = f4KillingRootLabel γ
+  · obtain rfl : ε = γ := f4KillingRoot_injective (congrArg Subtype.val heq)
+    exact hε
+  simp only [hlie, map_smul, Finsupp.smul_apply,
+    f4ModularChevalleyBasis_repr_rootVector_inl_eq_zero ε γ heq, smul_zero, ne_eq,
+    not_true_eq_false] at hne
 
 /-- The root-vector coordinate of a simple-coroot bracket is its reduced Cartan integer. -/
 @[simp] theorem f4ModularChevalleyBasis_repr_lie_simpleCoroot_rootVector_self

@@ -178,12 +178,15 @@ theorem coeff_toPolynomial (x : Cyclotomic e) (j : ℕ) : x.toPolynomial.coeff j
 noncomputable def toAdjoinRoot (x : Cyclotomic e) : AdjoinRoot (cyclotomic e ℤ) :=
   AdjoinRoot.mk _ x.toPolynomial
 
-private theorem degree_toPolynomial_lt (x : Cyclotomic e) :
+/-- The canonical representative has degree strictly less than the cyclotomic polynomial. -/
+theorem degree_toPolynomial_lt (x : Cyclotomic e) :
     x.toPolynomial.degree < (cyclotomic e ℤ).degree := by
   rw [degree_cyclotomic]
   simpa [toPolynomial] using degree_ofCoeffList_lt x.coeffs
 
-private theorem modByMonic_toPolynomial (x : Cyclotomic e) :
+/-- The canonical representative is already reduced modulo the cyclotomic polynomial. -/
+@[simp]
+theorem modByMonic_toPolynomial (x : Cyclotomic e) :
     x.toPolynomial %ₘ cyclotomic e ℤ = x.toPolynomial :=
   (modByMonic_eq_self_iff (cyclotomic.monic e ℤ)).2 x.degree_toPolynomial_lt
 
@@ -202,9 +205,8 @@ quotient. -/
 theorem toAdjoinRoot_ofCoeffList (l : List ℤ) :
     toAdjoinRoot (ofCoeffList e l) = AdjoinRoot.mk _ (TauCeti.Polynomial.ofCoeffList l) := by
   rw [toAdjoinRoot, toPolynomial, coeffs_ofCoeffList, ofCoeffList_modByCyclotomic,
-    AdjoinRoot.mk_eq_mk]
-  rw [modByMonic_eq_sub_mul_div, sub_sub_cancel_left]
-  exact dvd_neg.mpr (dvd_mul_right _ _)
+    ← AdjoinRoot.modByMonicHom_mk (cyclotomic.monic e ℤ)]
+  exact AdjoinRoot.mk_leftInverse (cyclotomic.monic e ℤ) _
 
 @[simp]
 theorem toAdjoinRoot_zero : toAdjoinRoot (0 : Cyclotomic e) = 0 := by
@@ -237,59 +239,31 @@ theorem toAdjoinRoot_mul (x y : Cyclotomic e) :
     ofCoeffList_mulCoeffList]
   simp only [toPolynomial]
 
-instance : CommRing (Cyclotomic e) where
-  add := add
-  add_assoc a b c := toAdjoinRoot_injective (by simp only [toAdjoinRoot_add, add_assoc])
-  zero := zero e
-  zero_add a := toAdjoinRoot_injective (by
-    simp only [toAdjoinRoot_add, toAdjoinRoot_zero, zero_add])
-  add_zero a := toAdjoinRoot_injective (by
-    simp only [toAdjoinRoot_add, toAdjoinRoot_zero, add_zero])
-  nsmul := @nsmulRec (Cyclotomic e) ⟨zero e⟩ ⟨add⟩
-  add_comm a b := toAdjoinRoot_injective (by simp only [toAdjoinRoot_add, add_comm])
-  mul := mul
-  mul_assoc a b c := toAdjoinRoot_injective (by simp only [toAdjoinRoot_mul, mul_assoc])
-  one := one e
-  one_mul a := toAdjoinRoot_injective (by
-    simp only [toAdjoinRoot_mul, toAdjoinRoot_one, one_mul])
-  mul_one a := toAdjoinRoot_injective (by
-    simp only [toAdjoinRoot_mul, toAdjoinRoot_one, mul_one])
-  npow := @npowRec (Cyclotomic e) ⟨one e⟩ ⟨mul⟩
-  zero_mul a := toAdjoinRoot_injective (by
-    simp only [toAdjoinRoot_mul, toAdjoinRoot_zero, zero_mul])
-  mul_zero a := toAdjoinRoot_injective (by
-    simp only [toAdjoinRoot_mul, toAdjoinRoot_zero, mul_zero])
-  left_distrib a b c := toAdjoinRoot_injective (by
-    simp only [toAdjoinRoot_add, toAdjoinRoot_mul, left_distrib])
-  right_distrib a b c := toAdjoinRoot_injective (by
-    simp only [toAdjoinRoot_add, toAdjoinRoot_mul, right_distrib])
-  natCast n := ofCoeffList e [n]
-  natCast_zero := toAdjoinRoot_injective (by
-    rw [toAdjoinRoot_ofCoeffList, toAdjoinRoot_zero]
-    simp [TauCeti.Polynomial.ofCoeffList_cons])
-  natCast_succ n := toAdjoinRoot_injective (by
-    rw [toAdjoinRoot_ofCoeffList, toAdjoinRoot_add, toAdjoinRoot_ofCoeffList,
-      toAdjoinRoot_one]
-    simp [TauCeti.Polynomial.ofCoeffList_cons])
-  neg := neg
-  sub := fun x y => add x (neg y)
-  zsmul := @zsmulRec (Cyclotomic e) ⟨zero e⟩ ⟨add⟩ ⟨neg⟩
-    (@nsmulRec (Cyclotomic e) ⟨zero e⟩ ⟨add⟩)
-  sub_eq_add_neg := by intros; rfl
-  zsmul_zero' := by intros; rfl
-  zsmul_succ' := by intros; rfl
-  zsmul_neg' := by intros; rfl
-  neg_add_cancel a := toAdjoinRoot_injective (by
-    rw [toAdjoinRoot_add, neg_eq, toAdjoinRoot_neg, toAdjoinRoot_zero, neg_add_cancel])
-  intCast z := ofCoeffList e [z]
-  intCast_ofNat n := rfl
-  intCast_negSucc n := toAdjoinRoot_injective (by
-    -- The structure is still being assembled, so spell out its pending cast field.
-    change toAdjoinRoot (ofCoeffList e [Int.negSucc n]) =
-      toAdjoinRoot (neg (ofCoeffList e [(n + 1 : ℕ)]))
-    rw [toAdjoinRoot_ofCoeffList, neg_eq, toAdjoinRoot_neg, toAdjoinRoot_ofCoeffList]
-    simp [TauCeti.Polynomial.ofCoeffList_cons])
-  mul_comm a b := toAdjoinRoot_injective (by simp only [toAdjoinRoot_mul, mul_comm])
+/-- The commutative ring structure on exact cyclotomic integers, with executable arithmetic on
+canonical coefficient vectors. -/
+instance : CommRing (Cyclotomic e) := fast_instance% by
+  -- Transport the laws using `Function.Injective.commRing`; normalization keeps the operations
+  -- computable.
+  have hn (n : ℕ) (x : Cyclotomic e) :
+      toAdjoinRoot (nsmulRec n x) = n • toAdjoinRoot x := by
+    induction n with
+    | zero => simpa only [nsmulRec, zero_nsmul] using toAdjoinRoot_zero (e := e)
+    | succ n ih => simp only [nsmulRec, toAdjoinRoot_add, ih, succ_nsmul]
+  refine Function.Injective.commRing toAdjoinRoot toAdjoinRoot_injective
+    toAdjoinRoot_zero toAdjoinRoot_one toAdjoinRoot_add toAdjoinRoot_mul toAdjoinRoot_neg
+    (fun x y => ?_) hn (fun n x => ?_) (fun x n => ?_) (fun n => ?_) (fun z => ?_)
+  · exact (toAdjoinRoot_add x (-y)).trans (by rw [toAdjoinRoot_neg, sub_eq_add_neg])
+  -- The ring laws are not available yet, so use the primitive recursion and cast instances.
+  · change toAdjoinRoot (zsmulRec nsmulRec n x) = n • toAdjoinRoot x
+    cases n <;> simp only [zsmulRec, hn, toAdjoinRoot_neg, Int.ofNat_eq_natCast, natCast_zsmul,
+      negSucc_zsmul]
+  · change toAdjoinRoot (npowRec n x) = toAdjoinRoot x ^ n
+    induction n with
+    | zero => simp [npowRec]
+    | succ n ih => simp [npowRec, toAdjoinRoot_mul, ih, pow_succ]
+  · change toAdjoinRoot (ofCoeffList e [(n : ℤ)]) = n
+    simp [toAdjoinRoot_ofCoeffList, TauCeti.Polynomial.ofCoeffList_cons]
+  · simp [intCast_def, toAdjoinRoot_ofCoeffList, TauCeti.Polynomial.ofCoeffList_cons]
 
 /-- Every coordinate of `0` vanishes, its canonical representative being the zero polynomial. -/
 @[simp]
@@ -430,26 +404,14 @@ theorem evalCoeffs_eq_eval₂ {R : Type*} [Semiring R] (f : ℤ →+* R) (r : R)
 coordinates against the powers of `r`, one term for each element of the power basis. -/
 theorem evalCoeffs_eq_sum {R : Type*} [Semiring R] (f : ℤ →+* R) (r : R) (x : Cyclotomic e) :
     evalCoeffs f r x = ∑ j : Fin e.totient, f (x.coeff j) * r ^ (j : ℕ) := by
-  rw [evalCoeffs_eq_eval₂]
-  have hdeg : x.toPolynomial.degree < (e.totient : WithBot ℕ) :=
-    (degree_lt_iff_coeff_zero _ _).2 fun m hm => by
-      rw [coeff_toPolynomial]; exact coeff_eq_zero_of_totient_le x hm
-  rcases Nat.eq_zero_or_pos e.totient with h | h
-  · have hempty : (Finset.univ : Finset (Fin e.totient)) = ∅ :=
-      Finset.eq_empty_of_forall_notMem fun j => absurd j.isLt (by omega)
-    have hzero : x.toPolynomial = 0 :=
-      Polynomial.ext fun m => by
-        rw [coeff_toPolynomial, Polynomial.coeff_zero]
-        exact coeff_eq_zero_of_totient_le x (by omega)
-    rw [hzero, hempty]
-    simp
-  · have hnat : x.toPolynomial.natDegree < e.totient := by
-      rcases eq_or_ne x.toPolynomial 0 with h0 | h0
-      · simpa [h0] using h
-      · exact (natDegree_lt_iff_degree_lt h0).2 hdeg
-    rw [eval₂_eq_sum_range' f hnat,
-      Fin.sum_univ_eq_sum_range (fun j => f (x.coeff j) * r ^ j) e.totient]
-    exact Finset.sum_congr rfl fun j _ => by rw [coeff_toPolynomial]
+  rw [evalCoeffs_eq_eval₂, eval₂_eq_sum,
+    Fin.sum_univ_eq_sum_range (fun j => f (x.coeff j) * r ^ j) e.totient]
+  rw [Polynomial.sum_eq_of_subset (fun j a => f a * r ^ j) (by simp)
+    (s := Finset.range e.totient)]
+  · simp only [coeff_toPolynomial]
+  · intro j hj
+    exact Finset.mem_range.mpr (lt_of_not_ge fun h =>
+      (mem_support_iff.mp hj) (by rw [coeff_toPolynomial]; exact x.coeff_eq_zero_of_totient_le h))
 
 /-- Reduction of exact cyclotomic integers in `ZMod p`, evaluated at a chosen residue `r`.
 When `p` is prime and `r` is a primitive `e`-th root, `TauCeti.Cyclotomic.reduceRingHom` packages
@@ -539,8 +501,7 @@ theorem complexEmbedding_apply [NeZero e] (x : Cyclotomic e) :
 
 @[simp]
 theorem complexEmbedding_zeta [NeZero e] : complexEmbedding (zeta e) = complexRoot e := by
-  rw [complexEmbedding, zeta, evalRingHom_ofCoeffList]
-  simp [TauCeti.Polynomial.ofCoeffList_cons]
+  exact evalRingHom_zeta _ _ _
 
 /-- The distinguished complex realization of exact cyclotomic integers is injective. -/
 theorem complexEmbedding_injective [NeZero e] :

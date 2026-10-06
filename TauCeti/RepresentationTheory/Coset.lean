@@ -5,10 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.GroupTheory.Coset.Defs
 public import Mathlib.RepresentationTheory.Basic
 
 /-!
-# Invariant maps on cosets of a representation
+# Invariant vectors and maps on cosets
+
+For a representation `ρ` of a group `G` and a vector `x` fixed by a subgroup `H`, the value
+`ρ a x` depends only on the left coset `aH`. This holds over any semiring.
 
 For a representation `ρ` of a submonoid `Δ` of a group and a subgroup `Γ` contained in `Δ`,
 let `q` be a semilinear map satisfying `q ∘ ρ(γ) = q` for `γ ∈ Γ`. Then `q ∘ ρ(x)` depends
@@ -24,6 +28,21 @@ public section
 open scoped Pointwise
 
 namespace Representation
+
+section FixedVectors
+
+variable {R G V : Type*} [Semiring R] [Group G] [AddCommMonoid V] [Module R V]
+  (ρ : Representation R G V) {H : Subgroup G}
+
+/-- The image of an `H`-fixed vector under `ρ` depends only on the left coset `aH`. -/
+theorem apply_eq_apply_of_quotientGroup_mk_eq {x : V}
+    (hx : ∀ h : H, ρ h x = x) {a b : G}
+    (hab : (a : G ⧸ H) = (b : G ⧸ H)) : ρ a x = ρ b x := by
+  obtain ⟨h, rfl⟩ : ∃ h : H, a * (h : G) = b :=
+    ⟨⟨a⁻¹ * b, QuotientGroup.eq.mp hab⟩, by simp⟩
+  simp [map_mul, Module.End.mul_apply, hx]
+
+end FixedVectors
 
 variable {G : Type*} [Group G] {Δ : Submonoid G} {Γ : Subgroup G}
   {R S V W : Type*} [Semiring R] [Semiring S] [AddCommMonoid V] [Module R V]

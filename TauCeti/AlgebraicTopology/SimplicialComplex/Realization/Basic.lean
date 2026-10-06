@@ -150,6 +150,14 @@ theorem continuous_iff_faceInclusion {K : AbstractSimplicialComplex ι}
   rw [continuous_iSup_dom]
   exact forall_congr' fun _ => continuous_coinduced_dom
 
+/-- Barycentric coordinates are continuous for the weak topology, for any vertex type. -/
+theorem continuous_realization_coe (K : AbstractSimplicialComplex ι) :
+    Continuous (fun x : Realization K => (x.1 : ι → ℝ)) := by
+  apply continuous_iff_faceInclusion.mpr
+  intro σ
+  exact continuous_induced_dom.congr fun x => by
+    exact congrArg (fun y : ι →₀ ℝ => (y : ι → ℝ)) (faceInclusion_val K σ x).symm
+
 /-- The coordinate image of every abstract face is a face of the geometric complex. -/
 theorem image_single_mem_standardGeometricComplex_faces {K : AbstractSimplicialComplex ι}
     {σ : Finset ι} (hσ : σ ∈ K) :

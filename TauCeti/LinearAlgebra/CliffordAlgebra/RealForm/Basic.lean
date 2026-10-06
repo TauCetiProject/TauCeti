@@ -254,34 +254,6 @@ private def realCliffordSplitLinearEquiv (p₁ p₂ q₁ q₂ : ℕ) :
       (realCliffordSplitIndexEquiv p₁ p₂ q₁ q₂)).trans
     (LinearEquiv.sumArrowLequivProdArrow _ _ ℝ ℝ)
 
-private theorem realCliffordSplitIndexEquiv_symm_inl_pos
-    (p₁ p₂ q₁ q₂ : ℕ) (i : Fin p₁) :
-    (realCliffordSplitIndexEquiv p₁ p₂ q₁ q₂).symm
-        (Sum.inl (finSumFinEquiv (Sum.inl i))) =
-      finSumFinEquiv (Sum.inl (finSumFinEquiv (Sum.inl i))) := by
-  simp [realCliffordSplitIndexEquiv]
-
-private theorem realCliffordSplitIndexEquiv_symm_inl_neg
-    (p₁ p₂ q₁ q₂ : ℕ) (i : Fin q₁) :
-    (realCliffordSplitIndexEquiv p₁ p₂ q₁ q₂).symm
-        (Sum.inl (finSumFinEquiv (Sum.inr i))) =
-      finSumFinEquiv (Sum.inr (finSumFinEquiv (Sum.inl i))) := by
-  simp [realCliffordSplitIndexEquiv]
-
-private theorem realCliffordSplitIndexEquiv_symm_inr_pos
-    (p₁ p₂ q₁ q₂ : ℕ) (i : Fin p₂) :
-    (realCliffordSplitIndexEquiv p₁ p₂ q₁ q₂).symm
-        (Sum.inr (finSumFinEquiv (Sum.inl i))) =
-      finSumFinEquiv (Sum.inl (finSumFinEquiv (Sum.inr i))) := by
-  simp [realCliffordSplitIndexEquiv]
-
-private theorem realCliffordSplitIndexEquiv_symm_inr_neg
-    (p₁ p₂ q₁ q₂ : ℕ) (i : Fin q₂) :
-    (realCliffordSplitIndexEquiv p₁ p₂ q₁ q₂).symm
-        (Sum.inr (finSumFinEquiv (Sum.inr i))) =
-      finSumFinEquiv (Sum.inr (finSumFinEquiv (Sum.inr i))) := by
-  simp [realCliffordSplitIndexEquiv]
-
 private theorem realCliffordSplitWeight_inl (p₁ p₂ q₁ q₂ : ℕ)
     (i : Fin (p₁ + q₁)) :
     realCliffordWeight (p₁ + p₂) (q₁ + q₂)
@@ -302,18 +274,6 @@ private theorem realCliffordSplitWeight_inr (p₁ p₂ q₁ q₂ : ℕ)
   rcases finSumFinEquiv.symm i with i | i
   · simp [realCliffordSplitIndexEquiv, realCliffordWeight]
   · simp [realCliffordSplitIndexEquiv, realCliffordWeight]
-
-private theorem realCliffordSplitLinearEquiv_fst (p₁ p₂ q₁ q₂ : ℕ)
-    (x : Fin ((p₁ + p₂) + (q₁ + q₂)) → ℝ) (i : Fin (p₁ + q₁)) :
-    (realCliffordSplitLinearEquiv p₁ p₂ q₁ q₂ x).1 i =
-      x ((realCliffordSplitIndexEquiv p₁ p₂ q₁ q₂).symm (Sum.inl i)) := by
-  simp [realCliffordSplitLinearEquiv]
-
-private theorem realCliffordSplitLinearEquiv_snd (p₁ p₂ q₁ q₂ : ℕ)
-    (x : Fin ((p₁ + p₂) + (q₁ + q₂)) → ℝ) (i : Fin (p₂ + q₂)) :
-    (realCliffordSplitLinearEquiv p₁ p₂ q₁ q₂ x).2 i =
-      x ((realCliffordSplitIndexEquiv p₁ p₂ q₁ q₂).symm (Sum.inr i)) := by
-  simp [realCliffordSplitLinearEquiv]
 
 /-- Splits a standard real signature form into two standard signature blocks. -/
 def realCliffordSplitIsometry (p₁ p₂ q₁ q₂ : ℕ) :
@@ -348,9 +308,7 @@ theorem realCliffordSplitIsometry_fst_pos (p₁ p₂ q₁ q₂ : ℕ)
       x (Fin.castAdd (q₁ + q₂) (Fin.castAdd p₂ i)) := by
   -- The bundled-isometry coercion does not expose the underlying linear equivalence with `dsimp`.
   change (realCliffordSplitLinearEquiv p₁ p₂ q₁ q₂ x).1 _ = _
-  rw [realCliffordSplitLinearEquiv_fst, ← finSumFinEquiv_apply_left,
-    realCliffordSplitIndexEquiv_symm_inl_pos]
-  congr 1
+  simp [realCliffordSplitLinearEquiv, realCliffordSplitIndexEquiv]
 
 /-- The first output block receives the first negative-coordinate block. -/
 @[simp]
@@ -360,9 +318,7 @@ theorem realCliffordSplitIsometry_fst_neg (p₁ p₂ q₁ q₂ : ℕ)
       x (Fin.natAdd (p₁ + p₂) (Fin.castAdd q₂ i)) := by
   -- The bundled-isometry coercion does not expose the underlying linear equivalence with `dsimp`.
   change (realCliffordSplitLinearEquiv p₁ p₂ q₁ q₂ x).1 _ = _
-  rw [realCliffordSplitLinearEquiv_fst, ← finSumFinEquiv_apply_right,
-    realCliffordSplitIndexEquiv_symm_inl_neg]
-  congr 1
+  simp [realCliffordSplitLinearEquiv, realCliffordSplitIndexEquiv]
 
 /-- The second output block receives the second positive-coordinate block. -/
 @[simp]
@@ -372,9 +328,7 @@ theorem realCliffordSplitIsometry_snd_pos (p₁ p₂ q₁ q₂ : ℕ)
       x (Fin.castAdd (q₁ + q₂) (Fin.natAdd p₁ i)) := by
   -- The bundled-isometry coercion does not expose the underlying linear equivalence with `dsimp`.
   change (realCliffordSplitLinearEquiv p₁ p₂ q₁ q₂ x).2 _ = _
-  rw [realCliffordSplitLinearEquiv_snd, ← finSumFinEquiv_apply_left,
-    realCliffordSplitIndexEquiv_symm_inr_pos]
-  congr 1
+  simp [realCliffordSplitLinearEquiv, realCliffordSplitIndexEquiv]
 
 /-- The second output block receives the second negative-coordinate block. -/
 @[simp]
@@ -384,9 +338,7 @@ theorem realCliffordSplitIsometry_snd_neg (p₁ p₂ q₁ q₂ : ℕ)
       x (Fin.natAdd (p₁ + p₂) (Fin.natAdd q₁ i)) := by
   -- The bundled-isometry coercion does not expose the underlying linear equivalence with `dsimp`.
   change (realCliffordSplitLinearEquiv p₁ p₂ q₁ q₂ x).2 _ = _
-  rw [realCliffordSplitLinearEquiv_snd, ← finSumFinEquiv_apply_right,
-    realCliffordSplitIndexEquiv_symm_inr_neg]
-  congr 1
+  simp [realCliffordSplitLinearEquiv, realCliffordSplitIndexEquiv]
 
 private def realCliffordOnePositiveIsometry :
     (realCliffordForm 1 0).IsometryEquiv (QuadraticMap.sq (R := ℝ) (A := ℝ)) :=
