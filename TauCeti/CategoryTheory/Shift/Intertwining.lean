@@ -196,6 +196,20 @@ noncomputable instance mapFunctorCommShift
 
 end CategoryTheory.Equivalence.IntSequence
 
+namespace TauCeti.Shift
+
+open CategoryTheory CategoryTheory.Equivalence CategoryTheory.Equivalence.IntSequence
+
+variable {C : Type u₁} {D : Type u₂} [Category.{v₁} C] [Category.{v₂} D]
+  {e : C ≌ C} {e' : D ≌ D} {F : C ⥤ D}
+
+/-- The shift comparison for a degreewise intertwining functor is its reindexing comparison. -/
+@[simp]
+theorem mapFunctor_commShiftIso (α : e.functor ⋙ F ≅ F ⋙ e'.functor) (k : ℤ) :
+    (mapFunctor α).commShiftIso k = mapFunctorShiftIso α k := (rfl)
+
+end TauCeti.Shift
+
 namespace CategoryTheory.Equivalence
 
 open CategoryTheory.Functor IntSequence
@@ -447,7 +461,7 @@ private lemma eval_inv_map_commShiftIso_one_hom_app_f_zero (F : C ⥤ D) (e : C 
     reindex_map_f]
   rw [Functor.commShiftIso_comp_hom_app]
   simp only [comp_f, mapFunctor_map_f]
-  rw [show (mapFunctor α).commShiftIso (1 : ℤ) = mapFunctorShiftIso α 1 from rfl]
+  rw [TauCeti.Shift.mapFunctor_commShiftIso]
   simp only [mapFunctorShiftIso_hom_app_f]
   erw [Category.comp_id]
   rw [comparison_hom_app_f_zero]

@@ -151,6 +151,11 @@ noncomputable instance sequenceFunctorCommShift : (sequenceFunctor C).CommShift 
         rfl (add_comm _ _) (by omega) X]
     simp [shiftFunctorAdd']
 
+/-- The shift comparison for the canonical sequence functor is its reindexing comparison. -/
+@[simp]
+theorem sequenceFunctor_commShiftIso (k : ℤ) :
+    (sequenceFunctor C).commShiftIso k = sequenceFunctorShiftIso C k := (rfl)
+
 /-- Evaluation is naturally the inverse of the canonical sequence equivalence. -/
 private noncomputable def evalIsoSequenceInverse :
     IntSequence.eval (e := shiftEquiv C (1 : ℤ)) ≅ (sequenceFunctor C).inv :=
@@ -224,9 +229,7 @@ theorem evalCommShift_iso_one :
   ext X
   have h := NatTrans.shift_app_comm (sequenceFunctorCompEvalIso C).hom (1 : ℤ) X
   rw [Functor.commShiftIso_comp_hom_app] at h
-  -- No comparison lemma exposes this instance field; it is definitionally the chosen
-  -- sequence shift isomorphism, whose component API is used in the next step.
-  rw [show (sequenceFunctor C).commShiftIso (1 : ℤ) = sequenceFunctorShiftIso C 1 from rfl] at h
+  rw [sequenceFunctor_commShiftIso] at h
   simp only [Functor.comp_obj, Functor.commShiftIso_id_hom_app,
     IntSequence.eval_map, sequenceFunctorShiftIso_hom_app_f,
     sequenceFunctorCompEvalIso_hom_app] at h
@@ -335,11 +338,7 @@ theorem commShiftOfIntertwiningToShift_iso_one (e : C ≌ C) (F : C ⥤ D)
   rw [Functor.CommShift.ofIso_commShiftIso_hom_app]
   simp only [Functor.commShiftIso_comp_hom_app, evalCommShift_iso_one,
     IntSequence.eval_map, IntSequence.reindexOneCompEvalIso_hom_app]
-  -- No exported lemma exposes this instance field; reduce it to the named reindexing
-  -- comparison before applying its component formula.
-  have hm : (IntSequence.mapFunctor (e' := shiftEquiv D (1 : ℤ)) α').commShiftIso (1 : ℤ) =
-      IntSequence.mapFunctorShiftIso (e' := shiftEquiv D (1 : ℤ)) α' 1 := by rfl
-  rw [hm]
+  rw [mapFunctor_commShiftIso]
   simp only [IntSequence.mapFunctorShiftIso_hom_app_f]
   simp only [intertwiningComparison, Iso.trans_hom, Iso.trans_inv, isoWhiskerLeft_hom,
     isoWhiskerLeft_inv, isoWhiskerRight_hom, isoWhiskerRight_inv, NatTrans.comp_app,

@@ -22,13 +22,9 @@ stable triangles. This description supplies the categorical structure for compar
 explicit mapping-cone triangles. No abelianity or positive-period assumption is needed; period
 zero gives integer indexing.
 
-The existential characterization is `CategoryTheory.Functor.distTriang_iff` applied to
-`ExactStructure.homologicalComplexSplitStableToHomotopy`. To use it, install the Frobenius
-structure's `stableHasShift`, `stableShiftFunctor_additive`, and `stablePretriangulated`,
-then `stableToHomotopyCommShift` and `stableToHomotopy_isTriangulated` locally. Unfolding
-`CategoryTheory.Functor.essImageDistTriang` gives the source triangle and image isomorphism;
-`ExactStructure.IsFrobenius.stablePretriangulated_distinguishedTriangles` identifies source
-membership with `stableDistinguishedTriangles`.
+`HomotopyCategory.mem_distTriang_iff` characterizes distinguished triangles as images of
+standard stable triangles of componentwise split conflations, up to isomorphism.
+`HomotopyCategory.mk_distinguished_of_conflation` supplies the corresponding introduction rule.
 
 The transport follows `TauCeti.CommutativeAlgebra.MatrixFactorization.Triangulated`, using
 Mathlib's localization at isomorphisms.
@@ -60,6 +56,8 @@ local notation "hE" => ExactStructure.homologicalComplex_split_isFrobenius
   (fun i => Exists.intro (i + 1) rfl)
 local notation "F" => ExactStructure.homologicalComplexSplitStableToHomotopy C
   (ComplexShape.up (ZMod n)) (fun i => Exists.intro (i + 1) rfl)
+local notation "E" => ExactStructure.homologicalComplex (ExactStructure.split C)
+  (ComplexShape.up (ZMod n))
 
 /-- The periodic homotopy category is pretriangulated, with distinguished triangles transported
 from the componentwise split stable category and the existing signed cyclic shift. -/
@@ -95,5 +93,43 @@ instance HomotopyCategory.instIsTriangulated :
   haveI := (hE).stableIsTriangulated
   haveI := stableToHomotopy_isTriangulated C n
   Triangulated.Localization.isTriangulated F (MorphismProperty.isomorphisms _)
+
+/-- The image of the standard stable triangle of a componentwise split conflation is
+distinguished in the periodic homotopy category. -/
+theorem HomotopyCategory.mk_distinguished_of_conflation
+    (S : ShortComplex (CochainComplex C (ZMod n))) (hS : (E).Conflation S) :
+    letI := (hE).stableHasShift
+    letI := stableToHomotopyCommShift C n
+    (F).mapTriangle.obj ((hE).stableConflationTriangle S hS) ∈
+      distTriang (HomotopyCategory C (ComplexShape.up (ZMod n))) := by
+  let := (hE).stableHasShift
+  let := (hE).stableShiftFunctor_additive
+  let := (hE).stablePretriangulated
+  let := stableToHomotopyCommShift C n
+  have := stableToHomotopy_isTriangulated C n
+  apply (F).map_distinguished
+  rw [ExactStructure.IsFrobenius.stablePretriangulated_distinguishedTriangles]
+  exact (hE).stableConflationTriangle_mem S hS
+
+/-- A triangle in the periodic homotopy category is distinguished exactly when it is
+isomorphic to the image of the standard stable triangle of a componentwise split conflation. -/
+theorem HomotopyCategory.mem_distTriang_iff
+    (T : Triangle (HomotopyCategory C (ComplexShape.up (ZMod n)))) :
+    letI := (hE).stableHasShift
+    letI := stableToHomotopyCommShift C n
+    T ∈ distTriang (HomotopyCategory C (ComplexShape.up (ZMod n))) ↔
+      ∃ (S : ShortComplex (CochainComplex C (ZMod n))) (hS : (E).Conflation S),
+        Nonempty (T ≅ (F).mapTriangle.obj ((hE).stableConflationTriangle S hS)) := by
+  let := (hE).stableHasShift
+  let := (hE).stableShiftFunctor_additive
+  let := (hE).stablePretriangulated
+  let := stableToHomotopyCommShift C n
+  have := stableToHomotopy_isTriangulated C n
+  refine ⟨fun hT => ?_, fun ⟨S, hS, ⟨e⟩⟩ =>
+    isomorphic_distinguished _ (HomotopyCategory.mk_distinguished_of_conflation C n S hS) _ e⟩
+  obtain ⟨T', e, hT'⟩ := ((F).distTriang_iff T).1 hT
+  rw [ExactStructure.IsFrobenius.stablePretriangulated_distinguishedTriangles] at hT'
+  obtain ⟨S, hS, ⟨e'⟩⟩ := ((hE).mem_stableDistinguishedTriangles_iff T').1 hT'
+  exact ⟨S, hS, ⟨e ≪≫ (F).mapTriangle.mapIso e'⟩⟩
 
 end TauCeti.PeriodicComplex
