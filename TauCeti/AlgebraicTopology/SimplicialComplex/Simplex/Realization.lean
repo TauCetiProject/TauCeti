@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import Mathlib.Analysis.Convex.Topology
 import Mathlib.Analysis.Normed.Module.RCLike.Real
 
 public import Mathlib.Analysis.Convex.StdSimplex
@@ -44,9 +45,30 @@ open Metric Set TauCeti.SetLike
 
 namespace AbstractSimplicialComplex
 
-variable {ι : Type*} [Fintype ι] [Nonempty ι]
+variable {ι : Type*}
 
 attribute [local instance] Classical.decEq
+
+/-- Every closed coordinate simplex is compact, even in an infinite vertex set. -/
+instance instCompactSpaceStandardSimplex (σ : Finset ι) : CompactSpace (StandardSimplex σ) := by
+  let c := Finsupp.lcoeFun (R := ℝ) (α := ι) (M := ℝ)
+  let : TopologicalSpace (ι →₀ ℝ) := TopologicalSpace.induced c inferInstance
+  let : IsTopologicalAddGroup (ι →₀ ℝ) :=
+    Topology.IsInducing.isTopologicalAddGroup c ⟨rfl⟩
+  let : ContinuousSMul ℝ (ι →₀ ℝ) :=
+    Topology.IsInducing.continuousSMul (g := c) ⟨rfl⟩ continuous_id (map_smul c _ _)
+  have hc := (σ.finite_toSet.image (fun v => Finsupp.single v (1 : ℝ))).isCompact_convexHull ℝ
+  -- The simplex topology is induced directly from coordinates; induction through the
+  -- ambient finitely supported functions gives the same topology.
+  have htop : (inferInstance : TopologicalSpace (StandardSimplex σ)) =
+      TopologicalSpace.induced Subtype.val inferInstance := induced_compose.symm
+  have hc' : IsCompact
+      (convexHull ℝ (σ.image (fun v => Finsupp.single v (1 : ℝ)) : Set (ι →₀ ℝ))) := by
+    simpa only [Finset.coe_image] using hc
+  exact (congrArg (fun t => @CompactSpace (StandardSimplex σ) t) htop).mpr
+    (isCompact_iff_compactSpace.mp hc')
+
+variable [Fintype ι] [Nonempty ι]
 
 private theorem univ_mem_top : (Finset.univ : Finset ι) ∈ (⊤ : AbstractSimplicialComplex ι) :=
   Finset.univ_nonempty

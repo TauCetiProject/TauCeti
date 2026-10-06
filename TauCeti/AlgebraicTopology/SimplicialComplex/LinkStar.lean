@@ -245,20 +245,25 @@ theorem mem_closedStar_inf_deletion_iff_sdiff (hσ : σ ∈ K) :
     have hstar := (mem_closedStar_iff_sdiff hσ).mpr ⟨hne, hlink⟩
     exact ⟨⟨hne, hlink⟩, closedStar_le hstar, hnot⟩
 
-/-- A closed star has finitely many faces whenever its link does. -/
-theorem finite_faces_closedStar (hσ : σ ∈ K) (hlink : (link K σ).faces.Finite) :
-    (closedStar K σ).faces.Finite := by
-  have hfin := (σ.powerset.finite_toSet.prod (hlink.insert ∅)).image
-    (fun p : Finset ι × Finset ι => p.1 ∪ p.2)
-  apply hfin.subset
-  intro ρ hρ
-  obtain ⟨-, hrem⟩ := (mem_closedStar_iff_sdiff hσ).mp hρ
-  refine ⟨(ρ ∩ σ, ρ \ σ), ⟨?_, ?_⟩, ?_⟩
-  · exact mem_powerset.mpr inter_subset_right
-  · rcases hrem with h | h
-    · exact Or.inl h
-    · exact Or.inr h
-  · exact sup_inf_sdiff ρ σ
+/-- A closed star has finitely many faces exactly when its link does, for any finset `σ`. -/
+theorem finite_faces_closedStar_iff :
+    (closedStar K σ).faces.Finite ↔ (link K σ).faces.Finite := by
+  constructor
+  · intro hstar
+    exact hstar.subset link_le_closedStar
+  · intro hlink
+    have hfin := (σ.powerset.finite_toSet.prod (hlink.insert ∅)).image
+      (fun p : Finset ι × Finset ι => p.1 ∪ p.2)
+    apply hfin.subset
+    intro ρ hρ
+    obtain ⟨-, hface⟩ := mem_closedStar_nonempty.mp hρ
+    refine ⟨(ρ ∩ σ, ρ \ σ), ⟨?_, ?_⟩, ?_⟩
+    · exact mem_powerset.mpr inter_subset_right
+    · by_cases h : ρ \ σ = ∅
+      · exact Or.inl h
+      · exact Or.inr (mem_link_nonempty.mpr ⟨nonempty_iff_ne_empty.mpr h,
+          sdiff_disjoint, by rwa [sdiff_union_self_eq_union]⟩)
+    · exact sup_inf_sdiff ρ σ
 
 section IsCone
 

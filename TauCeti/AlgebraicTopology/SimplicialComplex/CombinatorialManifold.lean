@@ -315,7 +315,7 @@ zero-dimensional manifolds, whose vertex links are void. -/
 theorem IsCombinatorialManifold.finite_faces_closedStar
     (h : IsCombinatorialManifold K n) (hv : ({v} : Finset ι) ∈ K) :
     (closedStar K {v}).faces.Finite := by
-  apply PreAbstractSimplicialComplex.finite_faces_closedStar hv
+  apply PreAbstractSimplicialComplex.finite_faces_closedStar_iff.mpr
   cases n with
   | zero =>
     rw [isCombinatorialManifold_zero_iff.mp h hv]

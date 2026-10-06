@@ -150,7 +150,7 @@ theorem isEmbedding_realization_coe_of_finite_vertex_stars
     apply Set.eq_univ_of_forall
     rintro ⟨_, x, rfl⟩
     obtain ⟨v, hv⟩ := mem_iUnion.mp (K.iUnion_openStarRealization ▸ mem_univ x)
-    exact mem_iUnion.mpr ⟨v, hv⟩
+    simpa [U, c, openStarRealization] using mem_iUnion.mpr ⟨v, hv⟩
   have hc : Continuous (rangeFactorization c) := (continuous_realization_coe K).rangeFactorization
   have he : Topology.IsEmbedding (rangeFactorization c) := by
     apply (hcover.isEmbedding_iff_restrictPreimage hc).mpr
@@ -161,8 +161,9 @@ theorem isEmbedding_realization_coe_of_finite_vertex_stars
     have hC : Topology.IsEmbedding (fun x : C => c x.1) :=
       ((continuous_realization_coe K).comp continuous_subtype_val).isClosedEmbedding
         (fun _ _ h => Subtype.ext (Subtype.ext (Finsupp.ext fun w => congrFun h w))) |>.isEmbedding
-    have hsub : (rangeFactorization c) ⁻¹' (U v) ⊆ C :=
-      K.openStarRealization_subset_closedStarRealization v
+    have hsub : (rangeFactorization c) ⁻¹' (U v) ⊆ C := by
+      simpa [U, c, C, openStarRealization, closedStarRealization] using
+        K.openStarRealization_subset_closedStarRealization v
     have hi := hC.comp (Topology.IsEmbedding.inclusion hsub)
     -- Forget the two range subtypes to compare the restricted coordinate map with
     -- its factorization through the compact closed star.
