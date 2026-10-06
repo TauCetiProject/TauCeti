@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.IdempotentHead
+public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Idempotent.Head
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Admissible
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Projective.Graded
 

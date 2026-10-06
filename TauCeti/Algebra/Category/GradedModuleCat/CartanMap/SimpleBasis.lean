@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Length
-public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.IdempotentCoordinate
+public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Idempotent.Coordinate
 public import TauCeti.CategoryTheory.Simple
 
 /-!
