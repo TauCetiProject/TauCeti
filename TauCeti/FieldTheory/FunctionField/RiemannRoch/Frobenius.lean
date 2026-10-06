@@ -28,18 +28,11 @@ public section
 
 namespace TauCeti
 
-variable {k F : Type*} [Field k] [Field F] [Algebra k F] [PerfectField k]
-
-/-- The iterated Frobenius power subfield of a function field over perfect constants is again
-a function field over the same constants. -/
-theorem IsFunctionField.frobeniusPowers (hF : IsFunctionField k F)
-    (p : ℕ) [ExpChar k p] [ExpChar F p] (n : ℕ) :
-    IsFunctionField k (TauCeti.frobeniusPowers k F p n) :=
-  hF.of_isAlgebraic_top
+variable {k F : Type*} [Field k] [Field F] [Algebra k F]
 
 /-- Iterated Frobenius preserves the genus over perfect constants: `g(F^{p^n} / k) = g(F / k)`.
 The statement identifies the defining suprema even without a function-field hypothesis. -/
-theorem genus_frobeniusPowers (p : ℕ) [ExpChar k p] [ExpChar F p] (n : ℕ) :
+theorem genus_frobeniusPowers (p : ℕ) [ExpChar k p] [ExpChar F p] [PerfectRing k p] (n : ℕ) :
     genus k (frobeniusPowers k F p n) = genus k F :=
   genus_eq_of_ringEquiv (iterateFrobeniusEquiv k p n)
     (iterateFrobeniusEquivPowers k F p n) (iterateFrobeniusEquivPowers_algebraMap k F p n)

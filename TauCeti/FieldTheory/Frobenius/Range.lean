@@ -60,6 +60,7 @@ theorem coe_iterateFrobeniusEquivPowers (x : F) :
     (iterateFrobeniusEquivPowers k F p n x : F) = x ^ p ^ n := (rfl)
 
 /-- On constants, the power-subfield isomorphism acts by the Frobenius automorphism of `k`. -/
+@[simp]
 theorem iterateFrobeniusEquivPowers_algebraMap (c : k) :
     iterateFrobeniusEquivPowers k F p n (algebraMap k F c) =
       algebraMap k (frobeniusPowers k F p n) (iterateFrobeniusEquiv k p n c) := by
