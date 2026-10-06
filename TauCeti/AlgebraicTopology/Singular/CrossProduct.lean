@@ -25,8 +25,10 @@ and in both coefficient objects.
 By the Eilenberg–Zilber theorem the shuffle map is a chain homotopy equivalence with homotopy
 inverse the Alexander–Whitney map, so the map induced by Alexander–Whitney on homology recovers
 the algebraic cross product (`TopCat.singularHomologyCross_comp_homologyMap_alexanderWhitney`).
-So whether the homology cross product of two spaces is an isomorphism, as in the Künneth theorem
-over a field, is a question about the cross product of their singular chain complexes.
+So the Künneth theorem over a field, that the direct sum over all `p + q = n` of the homology
+cross products `Hₚ(X; k) ⊗ H_q(Y; k) ⟶ Hₙ(X × Y; k)` is an isomorphism, reduces to the
+corresponding statement for the direct sum of the algebraic cross products of the singular chain
+complexes.
 
 ## Main definitions and results
 

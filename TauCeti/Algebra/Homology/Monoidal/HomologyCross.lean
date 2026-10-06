@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
+public import TauCeti.Algebra.Homology.Monoidal.HomologyTensor
 public import TauCeti.Algebra.Homology.Monoidal.Summand
 
 /-!
@@ -17,7 +17,8 @@ degree `p` and a cycle of `L` of degree `q` have a tensor product which is a cyc
 degree `n = p + q`: the differential `d (x ⊗ y) = d x ⊗ y ± x ⊗ d y` vanishes on it.  If `x` is a
 boundary `x = d x'` then `x ⊗ y = d (x' ⊗ y)`, and symmetrically, up to sign, in `y`.  When
 tensoring on either side preserves cokernels (for instance for modules over a commutative ring),
-the homology objects are cokernels of the boundaries, so the construction descends to the
+the homology objects are cokernels of the boundaries
+(`HomologicalComplex.homologyWhiskerRightIsCokernel`), so the construction descends to the
 *cross product*
 
 `Hₚ(K) ⊗ H_q(L) ⟶ Hₙ(K ⊗ L)`,
@@ -31,8 +32,6 @@ the map of the algebraic Künneth theorem.  It is natural in both complexes.
 * `HomologicalComplex.homologyCross`: the cross product
   `K.homology p ⊗ L.homology q ⟶ (K ⊗ L).homology n`, characterized by
   `HomologicalComplex.homologyπ_tensorHom_homologyCross` on classes of cycles.
-* `HomologicalComplex.homology_tensor_homology_hom_ext`: morphisms out of
-  `K.homology p ⊗ L.homology q` are determined on tensor products of classes of cycles.
 * `HomologicalComplex.cyclesCross_naturality` and `HomologicalComplex.homologyCross_naturality`:
   naturality in both complexes.
 
@@ -50,42 +49,7 @@ open CategoryTheory Limits MonoidalCategory
 namespace HomologicalComplex
 
 variable {C : Type*} [Category* C] [Preadditive C] [MonoidalCategory C] [MonoidalPreadditive C]
-  {I : Type*} {c : ComplexShape I}
-
-section Cokernel
-
-variable [∀ T : C, PreservesColimitsOfShape WalkingParallelPair (tensorLeft T)]
-  [∀ T : C, PreservesColimitsOfShape WalkingParallelPair (tensorRight T)]
-  (K L : HomologicalComplex C c) (p q : I) [K.HasHomology p] [L.HasHomology q]
-
-/-- `K.homology p ⊗ T` is the cokernel of the boundaries of `K` tensored with `T`. -/
-private def homologyWhiskerRightIsCokernel (T : C) :
-    IsColimit (CokernelCofork.ofπ (K.homologyπ p ▷ T)
-      (by rw [← comp_whiskerRight, toCycles_comp_homologyπ,
-        MonoidalPreadditive.zero_whiskerRight]) :
-        Cofork (K.toCycles (c.prev p) p ▷ T) 0) :=
-  isColimitCoforkMapOfIsColimit' (tensorRight T) _ (K.homologyIsCokernel (c.prev p) p rfl)
-
-/-- `T ⊗ L.homology q` is the cokernel of the boundaries of `L` tensored with `T`. -/
-private def homologyWhiskerLeftIsCokernel (T : C) :
-    IsColimit (CokernelCofork.ofπ (T ◁ L.homologyπ q)
-      (by rw [← whiskerLeft_comp, toCycles_comp_homologyπ,
-        MonoidalPreadditive.whiskerLeft_zero]) :
-        Cofork (T ◁ L.toCycles (c.prev q) q) 0) :=
-  isColimitCoforkMapOfIsColimit' (tensorLeft T) _ (L.homologyIsCokernel (c.prev q) q rfl)
-
-/-- Morphisms out of `K.homology p ⊗ L.homology q` are determined by their composites with the
-tensor product of the projections from cycles. -/
-lemma homology_tensor_homology_hom_ext {T : C} {f g : K.homology p ⊗ L.homology q ⟶ T}
-    (hfg : (K.homologyπ p ⊗ₘ L.homologyπ q) ≫ f = (K.homologyπ p ⊗ₘ L.homologyπ q) ≫ g) :
-    f = g := by
-  refine Cofork.IsColimit.hom_ext (homologyWhiskerLeftIsCokernel L q _) ?_
-  refine Cofork.IsColimit.hom_ext (homologyWhiskerRightIsCokernel K p _) ?_
-  simpa [tensorHom_def] using hfg
-
-end Cokernel
-
-variable [AddMonoid I] [c.TensorSigns] [DecidableEq I]
+  {I : Type*} [AddMonoid I] {c : ComplexShape I} [c.TensorSigns] [DecidableEq I]
 
 section Cycles
 
@@ -97,28 +61,23 @@ differential of `K ⊗ L`. -/
 private lemma iCycles_whiskerRight_d₁ {i : I} (j : I) :
     (K.iCycles p ▷ L.X i) ≫ mapBifunctor.d₁ K L (curriedTensor C) c p i j = 0 := by
   by_cases hp : c.Rel p (c.next p)
-  · rw [mapBifunctor.d₁_eq' _ _ _ _ hp, Units.smul_def, Preadditive.comp_zsmul,
-      curriedTensor_map_app, ← comp_whiskerRight_assoc, iCycles_d,
-      MonoidalPreadditive.zero_whiskerRight, zero_comp, smul_zero]
-  · rw [mapBifunctor.d₁_eq_zero _ _ _ _ _ _ _ hp, comp_zero]
+  · simp [mapBifunctor.d₁_eq' _ _ _ _ hp, ← comp_whiskerRight_assoc]
+  · simp [mapBifunctor.d₁_eq_zero _ _ _ _ _ _ _ hp]
 
 /-- Any chain of `K` tensored with a cycle of `L` is killed by the second part of the
 differential of `K ⊗ L`. -/
 private lemma whiskerLeft_iCycles_d₂ {i : I} (j : I) :
     (K.X i ◁ L.iCycles q) ≫ mapBifunctor.d₂ K L (curriedTensor C) c i q j = 0 := by
   by_cases hq : c.Rel q (c.next q)
-  · rw [mapBifunctor.d₂_eq' _ _ _ _ _ hq, Units.smul_def, Preadditive.comp_zsmul,
-      curriedTensor_obj_map, ← whiskerLeft_comp_assoc, iCycles_d,
-      MonoidalPreadditive.whiskerLeft_zero, zero_comp, smul_zero]
-  · rw [mapBifunctor.d₂_eq_zero _ _ _ _ _ _ _ hq, comp_zero]
+  · simp [mapBifunctor.d₂_eq' _ _ _ _ _ hq, ← whiskerLeft_comp_assoc]
+  · simp [mapBifunctor.d₂_eq_zero _ _ _ _ _ _ _ hq]
 
 omit [(tensorObj K L).HasHomology n] in
 /-- The tensor product of cycles of `K` and `L` is killed by the differential of `K ⊗ L`. -/
 private lemma tensorHom_iCycles_ιTensorObj_d (j : I) :
     (K.iCycles p ⊗ₘ L.iCycles q) ≫ ιTensorObj K L p q n h ≫ (tensorObj K L).d n j = 0 := by
-  rw [mapBifunctor.d_eq, Preadditive.comp_add, Preadditive.comp_add, mapBifunctor.ι_D₁,
-    mapBifunctor.ι_D₂, tensorHom_def'_assoc, iCycles_whiskerRight_d₁, comp_zero,
-    tensorHom_def_assoc, whiskerLeft_iCycles_d₂, comp_zero, add_zero]
+  simp [mapBifunctor.d_eq, tensorHom_def', whisker_exchange_assoc, iCycles_whiskerRight_d₁,
+    whiskerLeft_iCycles_d₂]
 
 /-- The tensor product of cycles: the map `K.cycles p ⊗ L.cycles q ⟶ (K ⊗ L).cycles n` induced
 by the inclusion of the summand `K.X p ⊗ L.X q` of `(K ⊗ L).X n`. -/
@@ -140,12 +99,11 @@ private lemma whiskerRight_toCycles_cyclesCross {i : I} (hi : c.Rel i p) :
     (K.toCycles i p ▷ L.cycles q) ≫ cyclesCross K L p q n h =
       (tensorObj K L).liftCycles (((K.X i ◁ L.iCycles q) ≫ ιTensorObj K L i q (i + q) rfl) ≫
         (tensorObj K L).d (i + q) n) (c.next n) rfl (by simp) := by
-  rw [← cancel_mono ((tensorObj K L).iCycles n), Category.assoc, cyclesCross_iCycles,
-    liftCycles_i, Category.assoc, mapBifunctor.d_eq, Preadditive.comp_add, Preadditive.comp_add,
-    mapBifunctor.ι_D₁, mapBifunctor.ι_D₂, whiskerLeft_iCycles_d₂, add_zero,
-    mapBifunctor.d₁_eq _ _ _ _ hi _ _ (by simpa using h)]
-  simp only [ComplexShape.ε₁_def, one_smul, curriedTensor_map_app]
-  rw [tensorHom_def_assoc, ← comp_whiskerRight_assoc, toCycles_i, whisker_exchange_assoc]
+  rw [← cancel_mono ((tensorObj K L).iCycles n)]
+  simp only [Category.assoc, cyclesCross_iCycles, liftCycles_i, mapBifunctor.d_eq,
+    Preadditive.comp_add, mapBifunctor.ι_D₁, mapBifunctor.ι_D₂, whiskerLeft_iCycles_d₂, add_zero]
+  rw [mapBifunctor.d₁_eq _ _ _ _ hi _ _ (by simpa using h)]
+  simp [tensorHom_def, ← comp_whiskerRight_assoc, whisker_exchange_assoc]
 
 /-- A cycle of `K` tensored with a boundary of `L` is a boundary of `K ⊗ L`:
 `x ⊗ d y = ε(p) d (x ⊗ y)` when `d x = 0`, where `x` has degree `p`. -/
@@ -154,14 +112,13 @@ private lemma whiskerLeft_toCycles_cyclesCross {i : I} (hi : c.Rel i q) :
       (tensorObj K L).liftCycles ((((c.ε p : ℤ) • (K.iCycles p ▷ L.X i)) ≫
         ιTensorObj K L p i (p + i) rfl) ≫ (tensorObj K L).d (p + i) n) (c.next n) rfl
         (by simp) := by
-  rw [← cancel_mono ((tensorObj K L).iCycles n), Category.assoc, cyclesCross_iCycles,
-    liftCycles_i, Category.assoc, mapBifunctor.d_eq, Preadditive.comp_add, Preadditive.comp_add,
-    mapBifunctor.ι_D₁, mapBifunctor.ι_D₂, Preadditive.zsmul_comp, iCycles_whiskerRight_d₁,
-    smul_zero, zero_add, mapBifunctor.d₂_eq _ _ _ _ _ hi _ (by simpa using h)]
-  simp only [ComplexShape.ε₂_def, curriedTensor_obj_map, Units.smul_def, Preadditive.comp_zsmul,
-    Preadditive.zsmul_comp, smul_smul, ← Units.val_mul, Int.units_mul_self, Units.val_one,
-    one_smul]
-  rw [tensorHom_def'_assoc, ← whiskerLeft_comp_assoc, toCycles_i, whisker_exchange_assoc]
+  rw [← cancel_mono ((tensorObj K L).iCycles n)]
+  simp only [Category.assoc, cyclesCross_iCycles, liftCycles_i, mapBifunctor.d_eq,
+    Preadditive.comp_add, mapBifunctor.ι_D₁, mapBifunctor.ι_D₂, Preadditive.zsmul_comp,
+    iCycles_whiskerRight_d₁, smul_zero, zero_add]
+  rw [mapBifunctor.d₂_eq _ _ _ _ _ hi _ (by simpa using h)]
+  simp [tensorHom_def', ← whiskerLeft_comp_assoc, whisker_exchange_assoc, Units.smul_def,
+    smul_smul, ← Units.val_mul]
 
 end Cycles
 
@@ -227,9 +184,7 @@ variable {K L K' L' : HomologicalComplex C c} [HasTensor K L] [HasTensor K' L']
 lemma cyclesCross_naturality :
     (cyclesMap φ p ⊗ₘ cyclesMap ψ q) ≫ cyclesCross K' L' p q n h =
       cyclesCross K L p q n h ≫ cyclesMap (tensorHom φ ψ) n := by
-  rw [← cancel_mono ((tensorObj K' L').iCycles n), Category.assoc, cyclesCross_iCycles,
-    tensorHom_comp_tensorHom_assoc, cyclesMap_i, cyclesMap_i, Category.assoc, cyclesMap_i,
-    cyclesCross_iCycles_assoc, ι_tensorHom, ← tensorHom_comp_tensorHom_assoc]
+  simp [← cancel_mono ((tensorObj K' L').iCycles n), ← tensorHom_def_assoc, ιTensorObj]
 
 /-- **Naturality of the homology cross product** in both complexes. -/
 @[reassoc]
@@ -239,10 +194,8 @@ lemma homologyCross_naturality
     (homologyMap φ p ⊗ₘ homologyMap ψ q) ≫ homologyCross K' L' p q n h =
       homologyCross K L p q n h ≫ homologyMap (tensorHom φ ψ) n := by
   refine homology_tensor_homology_hom_ext K L p q ?_
-  rw [tensorHom_comp_tensorHom_assoc, homologyπ_naturality, homologyπ_naturality,
-    ← tensorHom_comp_tensorHom_assoc, homologyπ_tensorHom_homologyCross_assoc,
-    homologyπ_tensorHom_homologyCross, cyclesCross_naturality_assoc,
-    homologyπ_naturality]
+  rw [tensorHom_comp_tensorHom_assoc]
+  simp [← tensorHom_comp_tensorHom_assoc, cyclesCross_naturality_assoc]
 
 end Naturality
 
