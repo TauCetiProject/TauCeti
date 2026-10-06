@@ -35,7 +35,7 @@ public noncomputable section
 open IsDedekindDomain NumberField TauCeti.GlobalNumberFields
 open scoped NumberField
 
-namespace TauCeti.Set
+namespace TauCeti
 
 variable {K : Type*} [Field K] [NumberField K]
 variable (S : Set (HeightOneSpectrum (𝓞 K)))
@@ -160,4 +160,4 @@ theorem sum_sUnitLog [Fintype S] (u : S.unit K) :
     Real.log_one] at h
   simpa [Fintype.sum_sum_type, sUnitLog, Real.log_pow] using h
 
-end TauCeti.Set
+end TauCeti
