@@ -84,9 +84,9 @@ theorem nonempty_ker_linearEquiv_of_range_eq {P : Type v} {E : Type w}
   obtain ⟨e, he⟩ := exists_linearEquiv_comp_fst_eq_comp_snd_comp h
   -- `e` carries `ker (a ∘ fst) = ker a × P` onto `ker (b ∘ snd) = P × ker b`.
   have hmap : Submodule.map e.toLinearMap ((ker a).prod ⊤) = (⊤ : Submodule _ P).prod (ker b) := by
-    rw [← Submodule.comap_fst, ← Submodule.comap_snd, ← ker_comp, ← ker_comp, he,
-      ← LinearMap.comp_assoc, ker_comp e.toLinearMap,
-      Submodule.map_comap_eq_of_surjective e.surjective]
+    ext y
+    obtain ⟨x, rfl⟩ := e.surjective y
+    simpa [Submodule.mem_map_equiv] using congr($(LinearMap.congr_fun he x) = 0)
   have hl : range ((ker a).subtype.prodMap (LinearMap.id : P →ₗ[_] P)) = (ker a).prod ⊤ := by
     rw [range_prodMap, Submodule.range_subtype, range_id]
   have hr : range ((LinearMap.id : P →ₗ[_] P).prodMap (ker b).subtype) = (⊤ : Submodule _ P).prod
