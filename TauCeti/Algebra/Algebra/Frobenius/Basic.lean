@@ -53,6 +53,8 @@ The trace of square matrices is the basic example; see `TauCeti.Algebra.Algebra.
 
 * `LinearMap.IsFrobeniusFunctional.of_left`, `LinearMap.IsFrobeniusFunctional.of_right`: in finite
   dimension one-sided nondegeneracy suffices.
+* `LinearMap.IsFrobeniusFunctional.comp_algEquiv`: Frobenius functionals pull back along algebra
+  isomorphisms.
 * `LinearMap.exists_isFrobeniusFunctional_iff`: a Frobenius functional exists if and only if the
   regular right module is isomorphic to the dual.
 * `LinearMap.IsFrobeniusFunctional.apply_mul_nakayamaAut` and
@@ -136,6 +138,17 @@ theorem IsFrobeniusFunctional.op (hφ : φ.IsFrobeniusFunctional) :
     simpa using h (MulOpposite.op c)
   · refine MulOpposite.unop_injective (hφ.eq_zero_of_forall_left fun c => ?_)
     simpa using h (MulOpposite.op c)
+
+/-- A Frobenius functional on `A` pulls back to a Frobenius functional along an algebra
+isomorphism `B ≃ₐ[k] A`. -/
+theorem IsFrobeniusFunctional.comp_algEquiv {B : Type*} [Ring B] [Algebra k B]
+    (hφ : φ.IsFrobeniusFunctional) (e : B ≃ₐ[k] A) :
+    (φ ∘ₗ e.toLinearMap).IsFrobeniusFunctional := by
+  refine isFrobeniusFunctional_iff.mpr ⟨fun a h => ?_, fun b h => ?_⟩
+  · refine e.injective ((hφ.eq_zero_of_forall_left fun c => ?_).trans (map_zero e).symm)
+    simpa using h (e.symm c)
+  · refine e.injective ((hφ.eq_zero_of_forall_right fun c => ?_).trans (map_zero e).symm)
+    simpa using h (e.symm c)
 
 end Nondegenerate
 
