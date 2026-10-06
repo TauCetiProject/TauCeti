@@ -66,4 +66,18 @@ theorem mul_J_add_J_mul_transpose_eq_zero {A : Matrix (l ⊕ l) (l ⊕ l) R} (hA
       = A * J l R + (J l R * J l R) * (-A) * (-J l R) := by noncomm_ring
     _ = 0 := by rw [J_squared]; noncomm_ring
 
+/-- Membership in the symplectic Lie algebra is equivalent to the linearized
+symplectic-group equation, also in characteristic two. -/
+theorem mem_sp_iff_mul_J_add_J_mul_transpose_eq_zero (A : Matrix (l ⊕ l) (l ⊕ l) R) :
+    A ∈ sp l R ↔ A * J l R + J l R * Aᵀ = 0 := by
+  constructor
+  · exact mul_J_add_J_mul_transpose_eq_zero
+  · intro h
+    rw [mem_sp_iff_transpose_eq_J_conj_neg, J_inv]
+    have h' : J l R * A * J l R - Aᵀ = 0 := by
+      simpa [mul_add, ← mul_assoc, J_squared, sub_eq_add_neg] using
+        congrArg (fun X ↦ J l R * X) h
+    rw [← sub_eq_zero.mp h']
+    noncomm_ring
+
 end LieAlgebra.Symplectic

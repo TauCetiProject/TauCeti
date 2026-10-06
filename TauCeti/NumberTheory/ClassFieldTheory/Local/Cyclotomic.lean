@@ -5,10 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Cyclotomic.Character
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.ArtinMap
 public import TauCeti.NumberTheory.LocalField.Padic
+import Mathlib.NumberTheory.Cyclotomic.Gal
+import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Cyclotomic.FiniteExtension
 import TauCeti.GroupTheory.OrderOfElement.Basic
 import TauCeti.NumberTheory.ClassFieldTheory.Local.Unramified
+import TauCeti.NumberTheory.Cyclotomic.Irreducible
 import TauCeti.NumberTheory.LocalField.Unramified.Existence
 
 /-!
@@ -26,6 +30,13 @@ This is the local cyclotomic input of the cyclotomic normalization of the local 
 Artin symbol of `2` is `ζ₅ ↦ ζ₅ ^ 2` (`localArtinMap_Q2_zeta5`); with geometric Frobenius the
 exponent would be `3`.
 
+On the roots of unity of `p`-power order, the Artin symbol of `p` over `ℚ_p` acts trivially: `p`
+is the norm of `ζ - 1` from `ℚ_p(ζ)` for every primitive `pⁿ`-th root of unity `ζ` with `pⁿ ≠ 2`.
+So the `p`-adic cyclotomic character takes the value `1` on every lift of `Art_{ℚ_p}(p)` to the
+absolute Galois group (`localCyclotomicCharacter_artinMap_padic_uniformizer`). Together with the
+value of the cyclotomic character on the Artin symbols of units, this determines the cyclotomic
+character on the whole image of the Artin map of `ℚ_p`.
+
 ## Main results
 
 * `TauCeti.ClassFieldTheory.localArtinMap_cyclotomic_uniformizer`: the Artin symbol of a
@@ -34,6 +45,8 @@ exponent would be `3`.
   `p` raises every root of unity of order prime to `p` to the `p`-th power.
 * `TauCeti.ClassFieldTheory.localArtinMap_Q2_zeta5`: over `ℚ_[2]`, the Artin symbol of `2` sends
   a fifth root of unity `ζ` to `ζ ^ 2`.
+* `TauCeti.ClassFieldTheory.localCyclotomicCharacter_artinMap_padic_uniformizer`: the `p`-adic
+  cyclotomic character of the Artin symbol of `p` over `ℚ_[p]` is `1`.
 
 ## Implementation notes
 
@@ -44,10 +57,17 @@ extension with the Artin symbol on `L` (`artinMap_restrict`), and the action on 
 factors through the abelian group `(ℤ/nℤ)ˣ` (`IsPrimitiveRoot.autToPow`), so it only depends on
 the class of an automorphism in `Gal(L/K)ᵃᵇ`.
 
+For the roots of unity of `p`-power order over `ℚ_[p]`, the norm computation is Mathlib's
+`IsPrimitiveRoot.sub_one_norm_isPrimePow`, which needs `Φ_{pⁿ}` to be irreducible over `ℚ_[p]`
+(`TauCeti.irreducible_cyclotomic_prime_pow_ratPadic`). A norm has trivial finite Artin symbol
+(`localArtinMap_eq_zero_iff`), so the restriction of a lift of `Art_{ℚ_p}(p)` to `ℚ_p(ζ)` is
+trivial by `artinMap_restrict` and the injectivity of `IsPrimitiveRoot.autToPow`.
+
 ## References
 
 * J.-P. Serre, *Local Fields*, Chapter XIII, §4.
-* J. Neukirch, *Algebraic Number Theory*, Chapter V, §1.
+* J. Neukirch, *Algebraic Number Theory*, Chapter V, §1, and §2 for the norm residue symbol
+  over `ℚ_p`.
 -/
 
 public section
@@ -160,5 +180,66 @@ theorem localArtinMap_Q2_zeta5 (E : Type*) [Field E] [Algebra ℚ_[2] E]
     {ζ : E} (hζ : ζ ^ 5 = 1) :
     σ ζ = ζ ^ 2 :=
   localArtinMap_cyclotomic_padic 2 E ι (by simpa using hσ) (by norm_num) hζ
+
+/-! ### The Artin symbol of `p` on roots of unity of `p`-power order -/
+
+variable (p : ℕ) [Fact p.Prime]
+
+/-- A lift `σ` of the Artin symbol of `p` over `ℚ_[p]` fixes every root of unity of `p`-power order
+in the separable closure: such a root lies in `ℚ_p(ζ)` for a primitive `p^(n+2)`-th root of unity
+`ζ`, and `p = N(ζ - 1)` is a norm from `ℚ_p(ζ)`. -/
+private theorem absoluteGaloisGroupRestrictEquiv_artinMap_padic_apply_of_pow_eq_one
+    (σ : Field.absoluteGaloisGroup ℚ_[p])
+    (hσ : (σ : Field.absoluteGaloisGroupAbelianization ℚ_[p]) = artinMap ℚ_[p]
+      (Units.mk0 (p : ℚ_[p]) (Nat.cast_ne_zero.2 (Fact.out : p.Prime).ne_zero)))
+    {n : ℕ} {t : SeparableClosure ℚ_[p]} (ht : t ^ p ^ n = 1) :
+    absoluteGaloisGroupRestrictEquiv ℚ_[p] σ t = t := by
+  have hp := (Fact.out : p.Prime)
+  -- Work at level `p ^ (n + 2) ≠ 2`, where `N(ζ - 1) = p` holds for every prime `p`.
+  set m := p ^ (n + 2)
+  have hm : 2 ^ 2 ≤ m :=
+    (Nat.pow_le_pow_left hp.two_le 2).trans (Nat.pow_le_pow_right hp.pos (by omega))
+  have : NeZero m := ⟨pow_ne_zero _ hp.ne_zero⟩
+  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_primitiveRoot (SeparableClosure ℚ_[p]) m
+  let E := IntermediateField.adjoin ℚ_[p] {ζ}
+  have := hζ.intermediateField_adjoin_isCyclotomicExtension ℚ_[p]
+  have := IsCyclotomicExtension.finiteDimensional {m} ℚ_[p] E
+  have := IsCyclotomicExtension.isGalois {m} ℚ_[p] E
+  set ζ' : E := ⟨ζ, IntermediateField.mem_adjoin_simple_self ℚ_[p] ζ⟩
+  have hζ' : IsPrimitiveRoot ζ' m := IsPrimitiveRoot.coe_submonoidClass_iff.1 hζ
+  have hnorm := hζ'.sub_one_norm_isPrimePow (hp.isPrimePow.pow (by omega))
+    (irreducible_cyclotomic_prime_pow_ratPadic p (n + 2)) (by omega)
+  rw [hp.pow_minFac (by omega)] at hnorm
+  have hne : ζ' - 1 ≠ 0 := sub_ne_zero.2 (hζ'.ne_one (by omega))
+  have hmem : Units.mk0 (p : ℚ_[p]) (Nat.cast_ne_zero.2 hp.ne_zero) ∈ normGroup ℚ_[p] E :=
+    mem_normGroup_iff.2 ⟨Units.mk0 _ hne, by simp [hnorm]⟩
+  -- The restriction of `σ` to `ℚ_p(ζ)` represents the Artin symbol of the norm `p`, which is
+  -- trivial, and `Gal(ℚ_p(ζ)/ℚ_p)` embeds in `(ℤ/mℤ)ˣ` through its action on `ζ`.
+  have hres := (artinMap_restrict ℚ_[p] E E.val _ σ hσ).symm.trans
+    ((localArtinMap_eq_zero_iff ℚ_[p] E E.val _).2 hmem)
+  have h1 : E.val.restrictNormalHom (absoluteGaloisGroupRestrictEquiv ℚ_[p] σ) = 1 := by
+    have h := congrArg (Abelianization.lift (hζ'.autToPow ℚ_[p])) (Additive.ofMul.injective hres)
+    rw [Abelianization.lift_apply_of, map_one] at h
+    exact hζ'.autToPow_injective ℚ_[p] (h.trans (map_one _).symm)
+  have hfix : absoluteGaloisGroupRestrictEquiv ℚ_[p] σ ζ = ζ := by
+    have h := E.val.restrictNormalHom_commutes (absoluteGaloisGroupRestrictEquiv ℚ_[p] σ) ζ'
+    rw [h1] at h
+    exact h.symm
+  obtain ⟨i, -, rfl⟩ := hζ.eq_pow_of_pow_eq_one (k := m) (by
+    rw [show m = p ^ n * p ^ 2 by ring, pow_mul, ht, one_pow])
+  rw [map_pow, hfix]
+
+/-- **The cyclotomic character of the Artin symbol of `p` over `ℚ_[p]`.** If `σ` in the absolute
+Galois group of `ℚ_[p]` represents the absolute local Artin symbol of `p`, then
+`χ_cyc(σ) = 1` for the `p`-adic cyclotomic character: `σ` fixes every root of unity of `p`-power
+order, because `p` is a norm from every `ℚ_p(μ_{pⁿ})`. -/
+theorem localCyclotomicCharacter_artinMap_padic_uniformizer (σ : Field.absoluteGaloisGroup ℚ_[p])
+    (hσ : (σ : Field.absoluteGaloisGroupAbelianization ℚ_[p]) = artinMap ℚ_[p]
+      (Units.mk0 (p : ℚ_[p]) (Nat.cast_ne_zero.2 (Fact.out : p.Prime).ne_zero))) :
+    localCyclotomicCharacter p ℚ_[p] σ = 1 := by
+  rw [← cyclotomicCharacter_absoluteGaloisGroupRestrictEquiv,
+    ← map_one (cyclotomicCharacter (SeparableClosure ℚ_[p]) p)]
+  exact cyclotomicCharacter_eq_of_forall_pow_eq_one p fun _ _ ht ↦
+    absoluteGaloisGroupRestrictEquiv_artinMap_padic_apply_of_pow_eq_one p σ hσ ht
 
 end TauCeti.ClassFieldTheory

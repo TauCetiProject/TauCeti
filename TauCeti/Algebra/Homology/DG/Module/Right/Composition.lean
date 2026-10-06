@@ -49,21 +49,14 @@ variable {R A M N P : Type u}
   [AddCommGroup M] [Module R M] [Module Aᵐᵒᵖ M] [IsScalarTower R Aᵐᵒᵖ M]
   [AddCommGroup N] [Module R N] [Module Aᵐᵒᵖ N] [IsScalarTower R Aᵐᵒᵖ N]
   [AddCommGroup P] [Module R P] [Module Aᵐᵒᵖ P] [IsScalarTower R Aᵐᵒᵖ P]
-  {𝒜 : ℤ → Submodule R A} [GradedAlgebra 𝒜] {d : A →ₗ[R] A}
-  {h : IsDGAlgebra 𝒜 d}
-  {ℳ : ℤ → Submodule R M}
-    [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece ℳ]
-    [DirectSum.Decomposition ℳ] {dM : M →ₗ[R] M}
-  {ℳN : ℤ → Submodule R N}
-    [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece ℳN]
-    [DirectSum.Decomposition ℳN] {dN : N →ₗ[R] N}
-  {ℳP : ℤ → Submodule R P}
-    [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece ℳP]
-    [DirectSum.Decomposition ℳP] {dP : P →ₗ[R] P}
-  {hM : IsDGRightModule h ℳ dM} {hN : IsDGRightModule h ℳN dN}
-  {hP : IsDGRightModule h ℳP dP}
 
 namespace dgRightModuleCochains
+
+section
+
+variable {ℳ : ℤ → Submodule R M}
+  {ℳN : ℤ → Submodule R N}
+  {ℳP : ℤ → Submodule R P}
 
 /-- Composition of homogeneous right-module cochains. -/
 def comp {p q j : ℤ}
@@ -83,8 +76,6 @@ def comp {p q j : ℤ}
     change g.1 (f.1 x) ∈ ℳP (r + (p + q))
     simpa only [add_assoc, add_comm q p] using this⟩
 
-omit [DirectSum.Decomposition ℳ] [DirectSum.Decomposition ℳN]
-    [DirectSum.Decomposition ℳP] in
 /-- Composition of homogeneous right-module cochains is pointwise composition. -/
 @[simp]
 theorem comp_apply {p q j : ℤ}
@@ -95,8 +86,6 @@ theorem comp_apply {p q j : ℤ}
   subst j
   rfl
 
-omit [DirectSum.Decomposition ℳ] [DirectSum.Decomposition ℳN]
-    [DirectSum.Decomposition ℳP] in
 @[simp]
 theorem add_comp {p q j : ℤ}
     (g g' : dgRightModuleCochains (R := R) (A := A) (ℳ := ℳN) (ℳN := ℳP) p)
@@ -105,8 +94,6 @@ theorem add_comp {p q j : ℤ}
   ext x
   simp only [comp_apply, Submodule.coe_add, LinearMap.add_apply]
 
-omit [DirectSum.Decomposition ℳ] [DirectSum.Decomposition ℳN]
-    [DirectSum.Decomposition ℳP] in
 @[simp]
 theorem comp_add {p q j : ℤ}
     (g : dgRightModuleCochains (R := R) (A := A) (ℳ := ℳN) (ℳN := ℳP) p)
@@ -115,8 +102,6 @@ theorem comp_add {p q j : ℤ}
   ext x
   simp only [comp_apply, Submodule.coe_add, LinearMap.add_apply, map_add]
 
-omit [DirectSum.Decomposition ℳ] [DirectSum.Decomposition ℳN]
-    [DirectSum.Decomposition ℳP] in
 @[simp]
 theorem zero_comp {p q j : ℤ}
     (f : dgRightModuleCochains (R := R) (A := A) (ℳ := ℳ) (ℳN := ℳN) q)
@@ -126,8 +111,6 @@ theorem zero_comp {p q j : ℤ}
   ext x
   simp only [comp_apply, Submodule.coe_zero, LinearMap.zero_apply]
 
-omit [DirectSum.Decomposition ℳ] [DirectSum.Decomposition ℳN]
-    [DirectSum.Decomposition ℳP] in
 @[simp]
 theorem comp_zero {p q j : ℤ}
     (g : dgRightModuleCochains (R := R) (A := A) (ℳ := ℳN) (ℳN := ℳP) p)
@@ -137,8 +120,6 @@ theorem comp_zero {p q j : ℤ}
   ext x
   simp only [comp_apply, Submodule.coe_zero, LinearMap.zero_apply, map_zero]
 
-omit [DirectSum.Decomposition ℳ] [DirectSum.Decomposition ℳN]
-    [DirectSum.Decomposition ℳP] in
 @[simp]
 theorem smul_comp {p q j : ℤ} (r : R)
     (g : dgRightModuleCochains (R := R) (A := A) (ℳ := ℳN) (ℳN := ℳP) p)
@@ -147,8 +128,6 @@ theorem smul_comp {p q j : ℤ} (r : R)
   ext x
   simp only [comp_apply, Submodule.coe_smul_of_tower, LinearMap.smul_apply]
 
-omit [DirectSum.Decomposition ℳ] [DirectSum.Decomposition ℳN]
-    [DirectSum.Decomposition ℳP] in
 @[simp]
 theorem comp_smul {p q j : ℤ} (r : R)
     (g : dgRightModuleCochains (R := R) (A := A) (ℳ := ℳN) (ℳN := ℳP) p)
@@ -170,15 +149,12 @@ def id :
     change x ∈ ℳ (p + 0)
     simpa only [LinearMap.id_coe, id_eq, add_zero] using hx⟩
 
-omit [DirectSum.Decomposition ℳ] in
 /-- The identity cochain acts as the identity map. -/
 @[simp]
 theorem id_apply (x : M) :
     ((id (R := R) (A := A) (ℳ := ℳ)).1 : M →ₗ[Aᵐᵒᵖ] M) x = x :=
   (rfl)
 
-omit [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece ℳN]
-    [DirectSum.Decomposition ℳN] [DirectSum.Decomposition ℳ] in
 /-- Composing on the right with the identity cochain changes nothing. -/
 @[simp]
 theorem comp_id {p : ℤ}
@@ -187,8 +163,6 @@ theorem comp_id {p : ℤ}
   ext x
   simp only [comp_apply, id_apply]
 
-omit [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece ℳ]
-    [DirectSum.Decomposition ℳ] [DirectSum.Decomposition ℳN] in
 /-- Composing on the left with the identity cochain changes nothing. -/
 @[simp]
 theorem id_comp {p : ℤ}
@@ -197,12 +171,6 @@ theorem id_comp {p : ℤ}
   ext x
   simp only [comp_apply, id_apply]
 
-omit [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece ℳ]
-    [DirectSum.Decomposition ℳ]
-    [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece ℳN]
-    [DirectSum.Decomposition ℳN]
-    [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece ℳP]
-    [DirectSum.Decomposition ℳP] in
 /-- Composition of homogeneous right-module cochains is associative. -/
 @[simp]
 theorem comp_assoc {Q : Type u} [AddCommGroup Q] [Module R Q] [Module Aᵐᵒᵖ Q]
@@ -217,9 +185,15 @@ theorem comp_assoc {Q : Type u} [AddCommGroup Q] [Module R Q] [Module Aᵐᵒᵖ
   ext x
   simp only [comp_apply]
 
+end
+
 section gradedCommutator
 
-variable (hMh : LinearMap.IsHomogeneous dM ℳ ℳ 1)
+variable {d : A →ₗ[R] A}
+  {ℳ : ℤ → Submodule R M} [DirectSum.Decomposition ℳ] {dM : M →ₗ[R] M}
+  {ℳN : ℤ → Submodule R N} [DirectSum.Decomposition ℳN] {dN : N →ₗ[R] N}
+  {ℳP : ℤ → Submodule R P} {dP : P →ₗ[R] P}
+  (hMh : LinearMap.IsHomogeneous dM ℳ ℳ 1)
   (hMl : ∀ {q : ℤ} {x : M}, x ∈ ℳ q → ∀ a : A,
     dM (op a • x) = op a • dM x + q.negOnePow • (op (d a) • x))
   (hNh : LinearMap.IsHomogeneous dN ℳN ℳN 1)
@@ -229,7 +203,6 @@ variable (hMh : LinearMap.IsHomogeneous dM ℳ ℳ 1)
   (hPl : ∀ {q : ℤ} {x : P}, x ∈ ℳP q → ∀ a : A,
     dP (op a • x) = op a • dP x + q.negOnePow • (op (d a) • x))
 
-omit [DirectSum.Decomposition ℳP] in
 /-- The graded commutator satisfies the graded Leibniz rule for composition of cochains, with
 the sign carried by the degree of the outer factor.  Only the degree and the Leibniz rule of the
 module differentials enter, so this is the Leibniz rule of the Hom differentials of both ordinary
@@ -257,6 +230,24 @@ theorem gradedCommutator_id :
     Submodule.coe_zero, LinearMap.zero_apply]
 
 end gradedCommutator
+
+end dgRightModuleCochains
+
+variable {𝒜 : ℤ → Submodule R A} [GradedAlgebra 𝒜] {d : A →ₗ[R] A}
+  {h : IsDGAlgebra 𝒜 d}
+  {ℳ : ℤ → Submodule R M}
+    [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece ℳ]
+    [DirectSum.Decomposition ℳ] {dM : M →ₗ[R] M}
+  {ℳN : ℤ → Submodule R N}
+    [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece ℳN]
+    [DirectSum.Decomposition ℳN] {dN : N →ₗ[R] N}
+  {ℳP : ℤ → Submodule R P}
+    [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece ℳP]
+    [DirectSum.Decomposition ℳP] {dP : P →ₗ[R] P}
+  {hM : IsDGRightModule h ℳ dM} {hN : IsDGRightModule h ℳN dN}
+  {hP : IsDGRightModule h ℳP dP}
+
+namespace dgRightModuleCochains
 
 /-- The differential on homogeneous right-module cochains satisfies the graded Leibniz rule for
 composition. -/

@@ -35,6 +35,8 @@ for the spinor-norm homomorphisms they describe.
   the form is a square, the orthogonal spinor norm is trivial.
 * `CliffordAlgebra.spinToSpecialOrthogonal_surjective_of_isSquare_apply`: the same square-value
   hypothesis makes the Spin action surjective.
+* `CliffordAlgebra.spinToSpecialOrthogonal_surjective_of_square_eq_top`: the Spin action is
+  surjective when every unit of the field is a square.
 * `CliffordAlgebra.range_spinToSpecialOrthogonal_eq_ker_spinorNorm`: the Spin image is
   the kernel of the spinor norm.
 * `CliffordAlgebra.spinToSpinorNormKernel`: the Spin action corestricted to that kernel.
@@ -261,6 +263,19 @@ theorem spinToSpecialOrthogonal_surjective_of_isSquare_apply
   rw [MonoidHom.mem_ker, spinorNorm_apply,
     orthogonalSpinorNorm_eq_one_of_isSquare_apply Q hQ hsq]
   rfl
+
+/-- If every unit of the field is a square, the Spin action on the special orthogonal group of a
+finite-dimensional nondegenerate quadratic space is surjective. -/
+theorem spinToSpecialOrthogonal_surjective_of_square_eq_top
+    (Q : QuadraticForm K V) (hQ : Q.Nondegenerate)
+    (hsquare : Subgroup.square Kˣ = ⊤) :
+    Function.Surjective (spinToSpecialOrthogonal Q) := by
+  apply spinToSpecialOrthogonal_surjective_of_isSquare_apply Q hQ
+  intro v _
+  have hv : IsSquare (unitOfInvertible (Q v)) := by
+    rw [← Subgroup.mem_square, hsquare]
+    exact Subgroup.mem_top _
+  simpa only [val_unitOfInvertible] using isSquare_units_val_iff.mpr hv
 
 end CliffordAlgebra
 

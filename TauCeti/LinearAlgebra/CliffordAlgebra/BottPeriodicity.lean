@@ -10,7 +10,7 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.SignSwitch
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Prod
 public import Mathlib.RingTheory.MatrixAlgebra
 
-import TauCeti.LinearAlgebra.Matrix.TensorProduct
+public import TauCeti.LinearAlgebra.Matrix.TensorProduct
 
 /-!
 # Hyperbolic Bott periodicity for real Clifford algebras
@@ -427,9 +427,7 @@ private def tensorMatrixMulEquiv (R A : Type*) [CommSemiring R] [Semiring A] [Al
       A ⊗[R] Matrix (Fin (m * n)) (Fin (m * n)) R :=
   (Algebra.TensorProduct.assoc R R R A
       (Matrix (Fin m) (Fin m) R) (Matrix (Fin n) (Fin n) R)).trans
-    (Algebra.TensorProduct.congr (AlgEquiv.refl : A ≃ₐ[R] A)
-      ((Matrix.kroneckerAlgEquiv (Fin m) (Fin n) R).trans
-        (Matrix.reindexAlgEquiv R R finProdFinEquiv)))
+    (Algebra.TensorProduct.congr (AlgEquiv.refl : A ≃ₐ[R] A) (Matrix.kroneckerFinAlgEquiv m n R))
 
 private def tensorMatrixOneEquiv (R A : Type*) [CommSemiring R] [Semiring A] [Algebra R A] :
     A ≃ₐ[R] A ⊗[R] Matrix (Fin 1) (Fin 1) R :=
@@ -495,8 +493,7 @@ theorem realCliffordBottIterEquiv_succ (p q n : ℕ) :
               (Matrix (Fin 2) (Fin 2) ℝ)).trans
             (Algebra.TensorProduct.congr
               (AlgEquiv.refl : _root_.CliffordAlgebra (realCliffordForm p q) ≃ₐ[ℝ] _)
-              ((Matrix.kroneckerAlgEquiv (Fin (2 ^ n)) (Fin 2) ℝ).trans
-                (Matrix.reindexAlgEquiv ℝ ℝ finProdFinEquiv))))) := by
+              (Matrix.kroneckerFinAlgEquiv (2 ^ n) 2 ℝ)))) := by
   unfold realCliffordBottIterEquiv
   rw [realCliffordBottIterEquivImpl]
   rfl

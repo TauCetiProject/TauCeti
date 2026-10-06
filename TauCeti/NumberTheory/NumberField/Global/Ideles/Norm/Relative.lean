@@ -44,6 +44,10 @@ homomorphism to `ℝ≥0ˣ`.
   `TauCeti.GlobalNumberFields.ideleInfiniteCoord_ideleNormMap`: the coordinate of the norm of an
   idele at a place `v` of `K` is the product of the local norms of its coordinates at the places
   above `v`.
+* `TauCeti.GlobalNumberFields.ideleNormMap_ofCompletion`,
+  `TauCeti.GlobalNumberFields.ideleClassNormMap_ofCompletion`: the norm of an idele, or of an
+  idele class, concentrated at one infinite place `w` is concentrated at the place below `w`,
+  with the local norm as coordinate.
 * `TauCeti.GlobalNumberFields.ideleNormMap_unitEmbedding`: the norm of a principal idele is the
   principal idele of the global norm.
 * `TauCeti.GlobalNumberFields.ideleNormMap_ideleExtension`,
@@ -110,6 +114,37 @@ theorem ideleInfiniteCoord_ideleNormMap (v : InfinitePlace K) (x : IdeleGroup (�
   rw [← Units.coeHom_apply, ← Units.coeHom_apply, map_finprod _ (Set.toFinite _)]
   simp
 
+variable {K L} in
+/-- **The norm of an idele concentrated at one infinite place.** If `w` lies over `v`, the norm
+of the idele that is `u` at `w` and `1` elsewhere is the idele that is `N_{L_w/K_v}(u)` at `v`
+and `1` elsewhere. -/
+theorem ideleNormMap_ofCompletion (v : InfinitePlace K) (w : InfinitePlace L) [w.LiesOver v]
+    (u : w.Completionˣ) :
+    ideleNormMap K L (IdeleGroup.ofCompletion (𝓞 L) L w u) =
+      IdeleGroup.ofCompletion (𝓞 K) K v (Algebra.normUnits v.Completion u) := by
+  refine IdeleGroup.ext (fun v' ↦ ?_) ?_
+  · rw [ideleInfiniteCoord_ideleNormMap]
+    by_cases hv : v' = v
+    · subst hv
+      rw [InfinitePlace.ideleInfiniteCoord_ofCompletion_self, finprod_eq_single _ ⟨w, ‹_›⟩]
+      · rw [InfinitePlace.ideleInfiniteCoord_ofCompletion_self]
+      · rintro ⟨w', hw'⟩ hne
+        rw [InfinitePlace.ideleInfiniteCoord_ofCompletion_of_ne w' fun h ↦ hne (Subtype.ext h),
+          map_one]
+    · -- No place above `v'` is `w`, so every factor is trivial.
+      rw [InfinitePlace.ideleInfiniteCoord_ofCompletion_of_ne v' hv]
+      refine finprod_eq_one_of_forall_eq_one fun w' ↦ ?_
+      have hne : w'.1 ≠ w := by
+        rintro h
+        apply hv
+        rw [← LiesOver.comap_eq w'.1 v', ← LiesOver.comap_eq w v, h]
+      rw [InfinitePlace.ideleInfiniteCoord_ofCompletion_of_ne w'.1 hne, map_one]
+  · rw [IdeleGroup.toFiniteIdele_ofCompletion]
+    apply Units.ext
+    have h := congrArg Units.val (IdeleGroup.toFiniteIdele_ofCompletion (𝓞 L) L w u)
+    rw [IdeleGroup.coe_toFiniteIdele] at h ⊢
+    rw [coe_ideleNormMap, adeleNorm_snd, h, Units.val_one, map_one, Units.val_one]
+
 /-- The norm of a principal idele is the principal idele of the norm of `L / K`. -/
 @[simp]
 theorem ideleNormMap_unitEmbedding (x : Lˣ) :
@@ -160,6 +195,17 @@ theorem ideleClassNormMap_mk (x : IdeleGroup (𝓞 L) L) :
     ideleClassNormMap K L (x : IdeleClassGroup (𝓞 L) L) =
       (ideleNormMap K L x : IdeleClassGroup (𝓞 K) K) := by
   simp [ideleClassNormMap]
+
+variable {K L} in
+/-- **The norm of an idele class concentrated at one infinite place.** If `w` lies over `v`, the
+norm of the class of the idele that is `u` at `w` is the class of the idele that is
+`N_{L_w/K_v}(u)` at `v`. -/
+theorem ideleClassNormMap_ofCompletion (v : InfinitePlace K) (w : InfinitePlace L)
+    [w.LiesOver v] (u : w.Completionˣ) :
+    ideleClassNormMap K L (IdeleClassGroup.ofCompletion (𝓞 L) L w u) =
+      IdeleClassGroup.ofCompletion (𝓞 K) K v (Algebra.normUnits v.Completion u) := by
+  rw [IdeleClassGroup.ofCompletion_apply, ideleClassNormMap_mk, ideleNormMap_ofCompletion v w,
+    ← IdeleClassGroup.ofCompletion_apply]
 
 /-- The relative norm on idele classes is continuous for the quotient topology. -/
 @[continuity, fun_prop]

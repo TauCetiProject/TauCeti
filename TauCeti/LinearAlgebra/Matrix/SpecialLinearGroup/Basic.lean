@@ -110,6 +110,15 @@ theorem map_comp {R S T : Type*} [CommRing R] [CommRing S] [CommRing T] {n : Typ
     [DecidableEq n] (f : R →+* S) (g : S →+* T) :
     (map (n := n) g).comp (map f) = map (g.comp f) := rfl
 
+/-- The inclusion into the general linear group commutes with entrywise ring maps. -/
+theorem toGL_map {R S : Type*} [CommRing R] [CommRing S] {n : Type*}
+    [Fintype n] [DecidableEq n] (f : R →+* S) (g : SpecialLinearGroup n R) :
+    toGL (map f g) = GeneralLinearGroup.map f (toGL g) := by
+  apply GeneralLinearGroup.ext
+  intro i j
+  simp only [coe_GL_coe_matrix, map_apply_coe, GeneralLinearGroup.map_apply,
+    RingHom.mapMatrix_apply, Matrix.map_apply]
+
 /-- The determinant-one identity for an element of `SL₂(R)`, written in coordinates. -/
 lemma fin_two_mul_sub_mul_eq_one {R : Type*} [CommRing R] (g : SL(2, R)) :
     g 0 0 * g 1 1 - g 0 1 * g 1 0 = 1 := by

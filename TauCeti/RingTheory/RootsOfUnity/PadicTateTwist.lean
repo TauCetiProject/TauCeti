@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.Cyclotomic.CyclotomicCharacter
 public import Mathlib.RepresentationTheory.Basic
 public import TauCeti.Algebra.Module.Torsion.TateModule
+public import TauCeti.RingTheory.RootsOfUnity.TateModule
 
 /-!
 # The `p`-adic Tate twist
@@ -25,12 +26,18 @@ Ring automorphisms act on it componentwise; when all `p`-power roots of unity ex
 is scalar multiplication by Mathlib's `p`-adic cyclotomic character.  These are the coefficient
 module and action used by `p`-adic Weil pairings.
 
+For `ℓ` nonzero and prime to `p`, the powers `ℓ ^ n` are levels of the prime-to-`p` Tate module
+`ℤ̂^{(p')}(1) = lim_{p ∤ m} μ_m`, and keeping the components at these levels is a continuous,
+Galois-equivariant homomorphism `ℤ̂^{(p')}(1) → ℤ_ℓ(1)`.
+
 ## Main definitions
 
 * `TauCeti.PadicTateTwist`: the inverse limit `ℤ_p(1)`.
 * `TauCeti.PadicTateTwist.proj`: projection to `μ_{p^n}`, in additive notation.
 * `TauCeti.PadicTateTwist.galoisRepresentation`: the componentwise action of field
   automorphisms.
+* `TauCeti.PrimeToPTateModule.toPadicTateTwist`: the `ℓ`-adic component `ℤ̂^{(p')}(1) → ℤ_ℓ(1)`
+  of the prime-to-`p` Tate module, for `ℓ` prime to `p`.
 
 ## Main results
 
@@ -41,6 +48,10 @@ module and action used by `p`-adic Weil pairings.
 * `TauCeti.PadicTateTwist.galoisRepresentation_apply_eq_smul`: the Galois action is scalar
   multiplication by the cyclotomic character.
 * `TauCeti.PadicTateTwist.continuous_galoisRepresentation`: this action is jointly continuous.
+* `TauCeti.PrimeToPTateModule.proj_toPadicTateTwist`: the components of the `ℓ`-adic component
+  are the components of level `ℓ ^ n`.
+* `TauCeti.PrimeToPTateModule.toPadicTateTwist_smul`: the `ℓ`-adic component is
+  Galois-equivariant.
 
 ## References
 
@@ -242,6 +253,75 @@ theorem continuous_galoisRepresentation [∀ n, HasEnoughRootsOfUnity K (p ^ n)]
 end Galois
 
 end PadicTateTwist
+
+/-! ### The `ℓ`-adic component of the prime-to-`p` Tate module -/
+
+namespace PrimeToPTateModule
+
+open PadicTateTwist
+
+section Basic
+
+variable {p : ℕ} {E : Type*} [CommMonoid E] (ℓ : ℕ) [NeZero ℓ]
+
+/-- **The `ℓ`-adic component of the prime-to-`p` Tate module.** For `ℓ` nonzero and prime to `p`,
+the powers `ℓ ^ n` are among the levels of `ℤ̂^{(p')}(1) = lim_{p ∤ m} μ_m(E)`, and keeping only
+those components is a continuous homomorphism to the `ℓ`-adic Tate twist
+`ℤ_ℓ(1) = lim_n μ_{ℓ ^ n}(E)`, written multiplicatively. For a prime `ℓ ≠ p` this is the
+specialization of `ℤ̂^{(p')}(1)` at the prime `ℓ`. -/
+def toPadicTateTwist (hℓ : ℓ.Coprime p) :
+    PrimeToPTateModule p E →ₜ* Multiplicative (PadicTateTwist ℓ E) where
+  toMonoidHom := AddMonoidHom.toMultiplicativeRight <| TateModule.lift
+    (fun n ↦ (levelAddEquivRootsOfUnity n).symm.toAddMonoidHom.comp
+      (MonoidHom.toAdditive (proj ⟨ℓ ^ n, pow_ne_zero n (NeZero.ne ℓ), hℓ.pow_left n⟩)))
+    fun n ↦ AddMonoidHom.ext fun x ↦ Subtype.ext <| Additive.toMul.injective <| by
+      have h : (proj ⟨ℓ ^ (n + 1), pow_ne_zero _ (NeZero.ne ℓ), hℓ.pow_left _⟩ x.toMul : Eˣ) ^ ℓ =
+          proj ⟨ℓ ^ n, pow_ne_zero n (NeZero.ne ℓ), hℓ.pow_left n⟩ x.toMul := by
+        have hdiv := proj_pow_div x.toMul
+          (m := ⟨ℓ ^ (n + 1), pow_ne_zero _ (NeZero.ne ℓ), hℓ.pow_left _⟩)
+          (n := ⟨ℓ ^ n, pow_ne_zero n (NeZero.ne ℓ), hℓ.pow_left n⟩) (pow_dvd_pow ℓ n.le_succ)
+        -- The exponent `ℓ ^ (n + 1) / ℓ ^ n` in `proj_pow_div` is `ℓ`.
+        convert hdiv using 2
+        exact (Nat.mul_div_cancel _ (pow_pos (Nat.pos_of_ne_zero (NeZero.ne ℓ)) n)).symm.trans
+          (congrArg (· / ℓ ^ n) (pow_succ' ℓ n).symm)
+      simp [tateModuleTransition_apply, toMul_nsmul, h]
+  continuous_toFun := continuous_ofAdd.comp <| TateModule.continuous_iff.2 fun n ↦ by
+    simp_rw [← AddMonoidHom.comp_apply (TateModule.proj n), TateModule.proj_lift]
+    exact (isLocallyConstant_proj ⟨ℓ ^ n, pow_ne_zero n (NeZero.ne ℓ), hℓ.pow_left n⟩).comp
+      fun ζ ↦ (levelAddEquivRootsOfUnity n).symm (.ofMul ζ)
+
+variable {ℓ} {hℓ : ℓ.Coprime p}
+
+/-- The `ℓ ^ n`-th roots-of-unity component of the `ℓ`-adic component of `x` is the level-`ℓ ^ n`
+component of `x`. -/
+@[simp]
+theorem proj_toPadicTateTwist (x : PrimeToPTateModule p E) (n : ℕ) :
+    PadicTateTwist.proj n (toPadicTateTwist ℓ hℓ x).toAdd =
+      Additive.ofMul (proj ⟨ℓ ^ n, pow_ne_zero n (NeZero.ne ℓ), hℓ.pow_left n⟩ x) :=
+  (congrArg (levelAddEquivRootsOfUnity n) (DFunLike.congr_fun (TateModule.proj_lift _ _ n) _)).trans
+    ((levelAddEquivRootsOfUnity n).apply_symm_apply _)
+
+end Basic
+
+section Galois
+
+variable {p : ℕ} {F K : Type*} [Field F] [Field K] [Algebra F K] {ℓ : ℕ} [Fact ℓ.Prime]
+  {hℓ : ℓ.Coprime p}
+
+/-- **The `ℓ`-adic component is Galois-equivariant**: it carries the action of `Gal(K/F)` on
+`ℤ̂^{(p')}(1)` through the roots of unity to the Galois representation on `ℤ_ℓ(1)`. -/
+theorem toPadicTateTwist_smul (σ : K ≃ₐ[F] K) (x : PrimeToPTateModule p K) :
+    toPadicTateTwist ℓ hℓ (σ • x) =
+      .ofAdd (galoisRepresentation (p := ℓ) σ (toPadicTateTwist ℓ hℓ x).toAdd) := by
+  refine Multiplicative.toAdd.injective <| PadicTateTwist.ext fun n ↦ ?_
+  refine Additive.toMul.injective <| Subtype.ext <| Units.ext ?_
+  rw [proj_toPadicTateTwist, coe_proj, toAdd_ofAdd, coe_tateModuleProj_galoisRepresentation,
+    ← coe_proj, proj_toPadicTateTwist]
+  exact PrimeToPTateModule.coe_proj_smul σ x _
+
+end Galois
+
+end PrimeToPTateModule
 
 end TauCeti
 

@@ -325,6 +325,20 @@ theorem norm_sq_eq_norm_prev_sq_add_norm_weakFDeriv_sq
   rw [← Submodule.norm_coe, prev_coe, weakFDeriv_coe]
   exact WithLp.prod_norm_sq_eq_of_L2 u.1
 
+/-- Convergence in a weak-derivative graph step is equivalent to convergence of the preceding
+component and of the adjoined weak derivative. -/
+theorem tendsto_iff_prev_weakFDeriv {base : X →L[ℝ] Lp F p (mu.restrict Omega)} {I : Type*}
+    {l : Filter I} {v : I → WeakDerivStep mu Omega p base} {u : WeakDerivStep mu Omega p base} :
+    Filter.Tendsto v l (nhds u) ↔
+      Filter.Tendsto (fun i => prev base (v i)) l (nhds (prev base u)) ∧
+      Filter.Tendsto (fun i => weakFDeriv base (v i)) l (nhds (weakFDeriv base u)) := by
+  simp only [prev_coe, weakFDeriv_coe]
+  refine (tendsto_subtype_rng (f := v) (x := u)).trans ?_
+  rw [(WithLp.prodContinuousLinearEquiv 2 ℝ _ _).toHomeomorph.isEmbedding.tendsto_nhds_iff]
+  simp only [Function.comp_def, ContinuousLinearEquiv.coe_toHomeomorph,
+    WithLp.prodContinuousLinearEquiv_apply]
+  exact Prod.tendsto_iff _ _
+
 /-- A weak-derivative graph step over a complete preceding space is complete because it is a
 closed subspace. -/
 instance [CompleteSpace X] (base : X →L[ℝ] Lp F p (mu.restrict Omega)) :

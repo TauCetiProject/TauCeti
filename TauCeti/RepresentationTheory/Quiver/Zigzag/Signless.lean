@@ -110,6 +110,36 @@ theorem signlessPreprojectiveMk_ofArrow_eq_signlessArrow {i j : DoubledQuiver G}
     signlessArrow_of_adj k ((nonempty_hom_iff G).1 ⟨e⟩)]
   exact congrArg (fun e => signlessPreprojectiveMk k _ (ofArrow e)) (Subsingleton.elim _ _)
 
+/-- Cutting an arrow class on the right selects its source vertex. -/
+@[simp]
+theorem signlessArrow_mul_vertexIdempotent (i j : ℕ) (v : Fin n) :
+    signlessArrow k G i j * signlessPreprojectiveMk k _ (vertexIdempotent k (vertex G v)) =
+      if i = v.val then signlessArrow k G i j else 0 := by
+  classical
+  unfold signlessArrow
+  split_ifs with h hij hv
+  all_goals try simp only [zero_mul]
+  · have hvi : (⟨i, h.1⟩ : Fin n) = v := Fin.ext hv
+    subst v
+    rw [← map_mul, ofArrow_eq_ofPath, ofPath_mul_vertexIdempotent]
+  · rw [← map_mul, ofArrow_eq_ofPath, ofPath_mul_vertexIdempotent_of_ne, map_zero]
+    exact fun he => hv (congrArg Fin.val (vertex_injective G he.symm))
+
+/-- Cutting an arrow class on the left selects its target vertex. -/
+@[simp]
+theorem vertexIdempotent_mul_signlessArrow (v : Fin n) (i j : ℕ) :
+    signlessPreprojectiveMk k _ (vertexIdempotent k (vertex G v)) * signlessArrow k G i j =
+      if j = v.val then signlessArrow k G i j else 0 := by
+  classical
+  unfold signlessArrow
+  split_ifs with h hij hv
+  all_goals try simp only [mul_zero]
+  · have hvj : (⟨j, h.2⟩ : Fin n) = v := Fin.ext hv
+    subst v
+    rw [← map_mul, ofArrow_eq_ofPath, vertexIdempotent_mul_ofPath]
+  · rw [← map_mul, ofArrow_eq_ofPath, vertexIdempotent_mul_ofPath_of_ne, map_zero]
+    exact fun he => hv (congrArg Fin.val (vertex_injective G he.symm))
+
 variable (G) in
 /-- **The signless relation at a vertex `v`**: the backtracks `v → w → v` sum to zero, the sum
 running over all vertices `w`, of which only the neighbours of `v` contribute. -/

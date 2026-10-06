@@ -26,6 +26,8 @@ the separable or algebraic closure, and across finite extensions of the ground f
 
 * `TauCeti.cyclotomicCharacter_eq_one_of_not_forall_isPrimitiveRoot`: the cyclotomic character of
   a domain lacking a primitive `pⁱ`-th root of unity for some `i` is trivial.
+* `TauCeti.cyclotomicCharacter_eq_of_forall_pow_eq_one`: two automorphisms that agree on the roots
+  of unity of `p`-power order have the same cyclotomic character.
 * `TauCeti.cyclotomicCharacter_eq_of_injective`: the cyclotomic character is natural along an
   injective ring homomorphism intertwining two automorphisms.
 -/
@@ -51,6 +53,23 @@ theorem cyclotomicCharacter_eq_one_of_not_forall_isPrimitiveRoot
   ext1
   simp only [cyclotomicCharacter, MonoidHom.coe_toHomUnits, MonoidHom.coe_mk, OneHom.coe_mk,
     cyclotomicCharacter.toFun, dite_eq_right H, Units.val_one]
+
+/-- **The cyclotomic character only depends on the action on roots of unity**: two automorphisms
+of a domain `A` that agree on every root of unity of `p`-power order have the same cyclotomic
+character. In particular an automorphism fixing all these roots of unity has trivial character. -/
+theorem cyclotomicCharacter_eq_of_forall_pow_eq_one {g h : A ≃+* A}
+    (hgh : ∀ (n : ℕ) (t : A), t ^ p ^ n = 1 → g t = h t) :
+    cyclotomicCharacter A p g = cyclotomicCharacter A p h := by
+  by_cases hA : ∀ i : ℕ, ∃ ζ : A, IsPrimitiveRoot ζ (p ^ i)
+  · have _ (i : ℕ) : HasEnoughRootsOfUnity A (p ^ i) := ⟨hA i, rootsOfUnity.isCyclic _ _⟩
+    refine Units.ext <| PadicInt.ext_of_toZModPow.1 fun n ↦ ?_
+    -- Both characters are read off from the action on one primitive `pⁿ`-th root of unity.
+    obtain ⟨ζ, hζ⟩ := hA n
+    have hpow := hgh n ζ hζ.pow_eq_one
+    rw [cyclotomicCharacter.spec p g ζ hζ.pow_eq_one,
+      cyclotomicCharacter.spec p h ζ hζ.pow_eq_one] at hpow
+    exact ZMod.val_injective _ (hζ.pow_inj (ZMod.val_lt _) (ZMod.val_lt _) hpow)
+  · simp [hA]
 
 /-- **Naturality of the cyclotomic character.** Let `f : A →+* B` be an injective homomorphism of
 domains with `h ∘ f = f ∘ g` for automorphisms `g` of `A` and `h` of `B`. If `A` has primitive

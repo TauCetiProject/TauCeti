@@ -16,9 +16,7 @@ public import TauCeti.RingTheory.Ideal.Norm.AbsNorm
 /-!
 # Completely multiplicative ideal weights
 
-The completely multiplicative specializations of `TauCeti.IdealArithmeticFunction`: the two
-carriers on which every Euler product, Hecke character and character-family argument of this
-development is stated.
+The completely multiplicative specializations of `TauCeti.IdealArithmeticFunction`.
 
 A `TauCeti.MultiplicativeIdealWeight K` is a monoid-with-zero homomorphism
 `Ideal (𝓞 K) →*₀ ℂ` killing only finitely many height-one primes, and
@@ -30,19 +28,15 @@ Both carriers are *degree one*: the value at `𝔭 ^ n` is forced to be `χ 𝔭
 therefore deliberately too narrow for the ideal Möbius function or for coefficient systems
 whose prime-power values are independent local data; those get separate carriers.
 
-The organising notion is `Ideal.IsPrimeTo`, an ideal of a Dedekind domain being nonzero and
-divisible by no prime of a given set; it is stated for a general Dedekind domain because
-nothing in it is specific to a number field. The good ideals of a weight are the ideals
-prime to its bad primes, and `Ideal.IsPrimeTo.induction_on` factors such an ideal into
-good primes; this is the engine behind both
+The good ideals of a weight are the ideals prime to its bad primes in the sense of
+`Ideal.IsPrimeTo` (from `TauCeti.RingTheory.DedekindDomain.Ideal`): nonzero and divisible by no
+prime of the set. Its induction principle `Ideal.IsPrimeTo.induction_on` factors a good ideal
+into good primes; this is the engine behind both
 `TauCeti.MultiplicativeIdealWeight.apply_ne_zero_iff_isGood` and
 `TauCeti.UnitaryIdealWeight.norm_eq_one`.
 
 ## Main declarations
 
-* `Ideal.IsPrimeTo`: an ideal is nonzero and no prime of `S` divides it, with its
-  multiplicativity (`Ideal.isPrimeTo_mul_iff`) and its induction principle
-  (`Ideal.IsPrimeTo.induction_on`);
 * `TauCeti.MultiplicativeIdealWeight`: the general completely multiplicative carrier, its
   `TauCeti.MultiplicativeIdealWeight.badPrimes` and its good ideals
   (`TauCeti.MultiplicativeIdealWeight.IsGood`);
@@ -77,16 +71,16 @@ good primes; this is the engine behind both
   `TauCeti.UnitaryIdealWeight.normTwist` (the last for the imaginary norm twists only), and
   `TauCeti.UnitaryIdealWeight.toIdealArithmeticFunction` for its passage to the general carrier;
 * `TauCeti.MultiplicativeIdealWeight.map` and `TauCeti.UnitaryIdealWeight.map`, with their
-  equivalences `mapEquiv`: functoriality under an isomorphism `K ≃+* L` of the ambient fields,
-  together with the identity and composition laws, the preservation of the pointwise product
-  (`map_one` and `map_mul` on both carriers), the naturality of restriction, conjugation and norm
-  twists, and the compatibilities
+  multiplicative equivalences `mapEquiv`: functoriality under an isomorphism `K ≃+* L` of the
+  ambient fields, together with the identity and composition laws, the preservation of the
+  pointwise product (`map_one` and `map_mul` on both carriers), the naturality of restriction,
+  conjugation and norm twists, and the compatibilities
   `TauCeti.MultiplicativeIdealWeight.badPrimes_map` and
   `TauCeti.MultiplicativeIdealWeight.toIdealArithmeticFunction_map`.
 
-## Rejection tests
+## Negative results
 
-The two worked negative examples of this layer are proved here.
+Two negative results delimit the carriers.
 `TauCeti.MultiplicativeIdealWeight.coe_ne_const_one` says the everywhere-one function on *all*
 integral ideals underlies no weight, because `→*₀` forces the value `0` at `⊥` — the
 everywhere-one function on the *nonzero* ideals is the trivial weight instead
@@ -98,9 +92,6 @@ twists live only in the general carrier.
 ## References
 
 * J. Neukirch, *Algebraic Number Theory*, Chapter VII.
-* `TauCetiRoadmap/ArithmeticDirichletSeries/README.md` and its `Suggested.lean` target
-  signatures: this file implements the Layer 0 export contract stated there, and follows its
-  naming and organization for the two weight carriers.
 -/
 
 public section
@@ -303,9 +294,9 @@ theorem badPrimes_mul (χ ψ : MultiplicativeIdealWeight K) :
   ext 𝔭
   simp [badPrimes, mul_eq_zero]
 
-/-- The pointwise product of multiplicative ideal weights, with the trivial weight as unit.
-Ideal convolution (roadmap Layer 2) will instead be an operation on
-`TauCeti.IdealArithmeticFunction`. -/
+/-- The pointwise product of multiplicative ideal weights, with the trivial weight as unit. It is
+not the Dirichlet convolution of ideal arithmetic functions, which is
+`TauCeti.IdealArithmeticFunction.convolution`. -/
 noncomputable instance : CommMonoid (MultiplicativeIdealWeight K) where
   mul_assoc χ ψ ω := by ext I; simp [mul_assoc]
   one_mul χ := by
@@ -476,6 +467,7 @@ theorem normTwist_zero (χ : MultiplicativeIdealWeight K) : normTwist 0 χ = χ 
   simp
 
 /-- Successive norm twists combine by adding their parameters. -/
+@[simp]
 theorem normTwist_normTwist (z w : ℂ) (χ : MultiplicativeIdealWeight K) :
     normTwist z (normTwist w χ) = normTwist (z + w) χ := by
   ext I
@@ -671,16 +663,19 @@ theorem toIdealArithmeticFunction_apply (χ : MultiplicativeIdealWeight K) (I : 
     χ.toIdealArithmeticFunction I = χ I :=
   IdealArithmeticFunction.restrict_apply _ I
 
+/-- The ideal arithmetic function underlying a norm twist multiplies by `N(I) ^ (-z)`. -/
+theorem toIdealArithmeticFunction_normTwist (z : ℂ) (χ : MultiplicativeIdealWeight K) :
+    (normTwist z χ).toIdealArithmeticFunction =
+      fun I ↦ χ.toIdealArithmeticFunction I * (Ideal.absNorm (I : Ideal (𝓞 K)) : ℂ) ^ (-z) :=
+  funext fun I ↦ by simp [normTwist_apply]
+
 /-- **Regrouping absorbs a norm twist.** Twisting a weight by `N(I) ^ (-z)` twists its `n`-th norm
 coefficient by `n ^ (-z)`. -/
 @[simp]
 theorem normCoeff_normTwist (z : ℂ) (χ : MultiplicativeIdealWeight K) (n : ℕ) :
     normCoeff K (normTwist z χ).toIdealArithmeticFunction n =
       normCoeff K χ.toIdealArithmeticFunction n * (n : ℂ) ^ (-z) := by
-  have h : (normTwist z χ).toIdealArithmeticFunction =
-      fun I ↦ χ.toIdealArithmeticFunction I * (Ideal.absNorm (I : Ideal (𝓞 K)) : ℂ) ^ (-z) :=
-    funext fun I ↦ by simp [normTwist_apply]
-  rw [h, normCoeff_mul_absNorm_cpow]
+  rw [toIdealArithmeticFunction_normTwist, normCoeff_mul_absNorm_cpow]
 
 /-- The ideal arithmetic function underlying a completely multiplicative ideal weight is
 multiplicative on relatively prime ideals. -/
@@ -788,23 +783,6 @@ theorem map_map (e : K ≃+* L) (e' : L ≃+* M) (χ : MultiplicativeIdealWeight
     rw [toIdealArithmeticFunction_map, toIdealArithmeticFunction_map,
       toIdealArithmeticFunction_map, IdealArithmeticFunction.map_map]
 
-/-- **Transport along an isomorphism of fields, as an equivalence** of the two carriers, with
-inverse the transport along `e.symm`. -/
-noncomputable def mapEquiv (e : K ≃+* L) :
-    MultiplicativeIdealWeight K ≃ MultiplicativeIdealWeight L where
-  toFun := map e
-  invFun := map e.symm
-  left_inv χ := by rw [map_map, e.self_trans_symm, map_id]
-  right_inv χ := by rw [map_map, e.symm_trans_self, map_id]
-
-@[simp]
-theorem mapEquiv_apply (e : K ≃+* L) (χ : MultiplicativeIdealWeight K) :
-    mapEquiv e χ = map e χ := (rfl)
-
-@[simp]
-theorem mapEquiv_symm_apply (e : K ≃+* L) (χ : MultiplicativeIdealWeight L) :
-    (mapEquiv e).symm χ = map e.symm χ := (rfl)
-
 /-! Transport preserves the pointwise `CommMonoid` structure. -/
 
 @[simp]
@@ -818,6 +796,24 @@ theorem map_mul (e : K ≃+* L) (χ ψ : MultiplicativeIdealWeight K) :
     map e (χ * ψ) = map e χ * map e ψ := by
   ext I
   rw [map_apply, mul_apply, mul_apply, map_apply, map_apply]
+
+/-- **Transport along an isomorphism of fields, as a multiplicative equivalence** of the two
+carriers, with inverse the transport along `e.symm`. -/
+noncomputable def mapEquiv (e : K ≃+* L) :
+    MultiplicativeIdealWeight K ≃* MultiplicativeIdealWeight L where
+  toFun := map e
+  invFun := map e.symm
+  left_inv χ := by rw [map_map, e.self_trans_symm, map_id]
+  right_inv χ := by rw [map_map, e.symm_trans_self, map_id]
+  map_mul' := map_mul e
+
+@[simp]
+theorem mapEquiv_apply (e : K ≃+* L) (χ : MultiplicativeIdealWeight K) :
+    mapEquiv e χ = map e χ := (rfl)
+
+@[simp]
+theorem mapEquiv_symm_apply (e : K ≃+* L) (χ : MultiplicativeIdealWeight L) :
+    (mapEquiv e).symm χ = map e.symm χ := (rfl)
 
 /-- Transport carries an indicator weight to the indicator of the image prime set. -/
 @[simp]
@@ -1090,21 +1086,6 @@ theorem map_map (e : K ≃+* L) (e' : L ≃+* M) (χ : UnitaryIdealWeight K) :
     map e' (map e χ) = map (e.trans e') χ :=
   Subtype.ext (by rw [val_map, val_map, val_map, MultiplicativeIdealWeight.map_map])
 
-/-- **Transport along an isomorphism of fields, as an equivalence** of the unitary carriers. -/
-noncomputable def mapEquiv (e : K ≃+* L) : UnitaryIdealWeight K ≃ UnitaryIdealWeight L where
-  toFun := map e
-  invFun := map e.symm
-  left_inv χ := by rw [map_map, e.self_trans_symm, map_id]
-  right_inv χ := by rw [map_map, e.symm_trans_self, map_id]
-
-@[simp]
-theorem mapEquiv_apply (e : K ≃+* L) (χ : UnitaryIdealWeight K) :
-    mapEquiv e χ = map e χ := (rfl)
-
-@[simp]
-theorem mapEquiv_symm_apply (e : K ≃+* L) (χ : UnitaryIdealWeight L) :
-    (mapEquiv e).symm χ = map e.symm χ := (rfl)
-
 /-! Transport preserves the pointwise `CommMonoid` structure of the unitary carrier too. -/
 
 @[simp]
@@ -1116,6 +1097,23 @@ theorem map_mul (e : K ≃+* L) (χ ψ : UnitaryIdealWeight K) :
     map e (χ * ψ) = map e χ * map e ψ :=
   Subtype.ext (by
     rw [val_map, val_mul, val_mul, val_map, val_map, MultiplicativeIdealWeight.map_mul])
+
+/-- **Transport along an isomorphism of fields, as a multiplicative equivalence** of the unitary
+carriers. -/
+noncomputable def mapEquiv (e : K ≃+* L) : UnitaryIdealWeight K ≃* UnitaryIdealWeight L where
+  toFun := map e
+  invFun := map e.symm
+  left_inv χ := by rw [map_map, e.self_trans_symm, map_id]
+  right_inv χ := by rw [map_map, e.symm_trans_self, map_id]
+  map_mul' := map_mul e
+
+@[simp]
+theorem mapEquiv_apply (e : K ≃+* L) (χ : UnitaryIdealWeight K) :
+    mapEquiv e χ = map e χ := (rfl)
+
+@[simp]
+theorem mapEquiv_symm_apply (e : K ≃+* L) (χ : UnitaryIdealWeight L) :
+    (mapEquiv e).symm χ = map e.symm χ := (rfl)
 
 /-- Transport commutes with restriction on unitary weights after carrying the excluded prime set
 forward. -/
