@@ -40,6 +40,8 @@ unitary group is strictly larger than the Spin group.
   carrier coincide.
 * `CliffordAlgebra.spinGroupEquivEvenUnitaryOfFinrankLeFour`: the resulting multiplicative
   equivalence between the Spin group and the even unitary carrier.
+* `CliffordAlgebra.spinGroupEquivNegOfFinrankLeFour`: the induced equivalence between the Spin
+  groups of a form and its negation.
 
 ## References
 
@@ -121,5 +123,53 @@ theorem spinGroupEquivEvenUnitaryOfFinrankLeFour_apply
     spinGroupEquivEvenUnitaryOfFinrankLeFour Q hQ hV0 hV s =
       spinGroupToEvenUnitary Q s :=
   MulEquiv.ofBijective_apply _ _ s
+
+/-- In positive dimension at most four, negating a nondegenerate quadratic form preserves its
+Spin group through the canonical equivalence of even Clifford algebras. -/
+noncomputable def spinGroupEquivNegOfFinrankLeFour
+    (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) (hV0 : 0 < finrank K V)
+    (hV : finrank K V ≤ 4) : spinGroup Q ≃* spinGroup (-Q) :=
+  (spinGroupEquivEvenUnitaryOfFinrankLeFour Q hQ hV0 hV).trans
+    ((evenUnitaryGroupEquivNeg Q).trans
+      (spinGroupEquivEvenUnitaryOfFinrankLeFour (-Q)
+        ((QuadraticMap.nondegenerate_neg Q).mpr hQ) hV0 hV).symm)
+
+/-- The low-rank Spin negation equivalence applies `evenEquivEvenNeg` to the underlying even
+Clifford value. -/
+@[simp]
+theorem spinGroupEquivNegOfFinrankLeFour_apply_evenPart
+    (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) (hV0 : 0 < finrank K V)
+    (hV : finrank K V ≤ 4) (s : spinGroup Q) :
+    evenUnitaryGroupEvenPart (-Q)
+        (spinGroupToEvenUnitary (-Q) (spinGroupEquivNegOfFinrankLeFour Q hQ hV0 hV s)) =
+      evenEquivEvenNeg Q (evenUnitaryGroupEvenPart Q (spinGroupToEvenUnitary Q s)) := by
+  rw [spinGroupEquivNegOfFinrankLeFour, MulEquiv.trans_apply, MulEquiv.trans_apply,
+    spinGroupEquivEvenUnitaryOfFinrankLeFour_apply]
+  let y := evenUnitaryGroupEquivNeg Q (spinGroupToEvenUnitary Q s)
+  have hy : spinGroupToEvenUnitary (-Q)
+      ((spinGroupEquivEvenUnitaryOfFinrankLeFour (-Q)
+        ((QuadraticMap.nondegenerate_neg Q).mpr hQ) hV0 hV).symm y) = y := by
+    rw [← spinGroupEquivEvenUnitaryOfFinrankLeFour_apply]
+    exact (spinGroupEquivEvenUnitaryOfFinrankLeFour (-Q)
+      ((QuadraticMap.nondegenerate_neg Q).mpr hQ) hV0 hV).apply_symm_apply y
+  rw [hy, evenUnitaryGroupEquivNeg_apply_evenPart]
+
+/-- The inverse low-rank Spin negation equivalence applies the inverse even-Clifford equivalence
+to the underlying even Clifford value. -/
+@[simp]
+theorem spinGroupEquivNegOfFinrankLeFour_symm_apply_evenPart
+    (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) (hV0 : 0 < finrank K V)
+    (hV : finrank K V ≤ 4) (s : spinGroup (-Q)) :
+    evenUnitaryGroupEvenPart Q
+        (spinGroupToEvenUnitary Q ((spinGroupEquivNegOfFinrankLeFour Q hQ hV0 hV).symm s)) =
+      (evenEquivEvenNeg Q).symm
+        (evenUnitaryGroupEvenPart (-Q) (spinGroupToEvenUnitary (-Q) s)) := by
+  apply (evenEquivEvenNeg Q).injective
+  rw [AlgEquiv.apply_symm_apply]
+  exact (spinGroupEquivNegOfFinrankLeFour_apply_evenPart Q hQ hV0 hV
+    ((spinGroupEquivNegOfFinrankLeFour Q hQ hV0 hV).symm s)).symm.trans
+      (congrArg (fun t : spinGroup (-Q) ↦
+        evenUnitaryGroupEvenPart (-Q) (spinGroupToEvenUnitary (-Q) t))
+        ((spinGroupEquivNegOfFinrankLeFour Q hQ hV0 hV).apply_symm_apply s))
 
 end CliffordAlgebra

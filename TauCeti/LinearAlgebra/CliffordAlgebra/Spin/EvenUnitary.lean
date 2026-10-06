@@ -38,6 +38,8 @@ functoriality API.
 * `CliffordAlgebra.evenUnitaryGroup.reverse_mul_self` and
   `CliffordAlgebra.evenUnitaryGroup.self_mul_reverse` give its two norm equations.
 * `CliffordAlgebra.evenUnitaryGroup.reverse_eq_inv` identifies reversal with the unit inverse.
+* `CliffordAlgebra.evenUnitaryGroupEquivNeg` transports the carrier when the quadratic form is
+  negated.
 * `CliffordAlgebra.rightIotaEven_spinGroup_smul` transports the Spin action after right
   multiplication by a vector of quadratic value `-1`.
 -/
@@ -446,6 +448,100 @@ theorem coe_evenUnitaryGroupEquivUnitaryOfAlgEquiv_symm_apply
         (coe_unitaryMapEquiv_evenStarMulEquiv_symm_apply Q e he q)
     _ = (e.symm (q : A) : even Q) :=
       coe_evenStarMulEquivOfAlgEquiv_symm_apply Q e he _
+
+private def evenStarMulEquivNeg :
+    evenStarSubsemiring Q ≃⋆* evenStarSubsemiring (-Q) where
+  toFun x := ⟨evenEquivEvenNeg Q (evenStarSubsemiringToEven Q x),
+    (evenEquivEvenNeg Q (evenStarSubsemiringToEven Q x)).2⟩
+  invFun x := ⟨(evenEquivEvenNeg Q).symm (evenStarSubsemiringToEven (-Q) x),
+    ((evenEquivEvenNeg Q).symm (evenStarSubsemiringToEven (-Q) x)).2⟩
+  left_inv x := by
+    apply Subtype.ext
+    exact congrArg Subtype.val
+      ((evenEquivEvenNeg Q).symm_apply_apply (evenStarSubsemiringToEven Q x))
+  right_inv x := by
+    apply Subtype.ext
+    exact congrArg Subtype.val
+      ((evenEquivEvenNeg Q).apply_symm_apply (evenStarSubsemiringToEven (-Q) x))
+  map_mul' x y := by
+    apply Subtype.ext
+    exact congrArg Subtype.val (map_mul (evenEquivEvenNeg Q)
+      (evenStarSubsemiringToEven Q x) (evenStarSubsemiringToEven Q y))
+  map_star' x := by
+    apply Subtype.ext
+    calc
+      (evenEquivEvenNeg Q (evenStarSubsemiringToEven Q (star x)) :
+          CliffordAlgebra (-Q)) =
+          (evenEquivEvenNeg Q (reverseEven Q (evenStarSubsemiringToEven Q x)) :
+            CliffordAlgebra (-Q)) := by
+        exact congrArg (fun y : even Q ↦ (evenEquivEvenNeg Q y : CliffordAlgebra (-Q)))
+          (evenStarSubsemiringToEven_star Q x)
+      _ = (reverseEven (-Q)
+          (evenEquivEvenNeg Q (evenStarSubsemiringToEven Q x)) : CliffordAlgebra (-Q)) :=
+        congrArg Subtype.val
+          (evenEquivEvenNeg_reverseEven Q (evenStarSubsemiringToEven Q x))
+      _ = star ((evenEquivEvenNeg Q (evenStarSubsemiringToEven Q x) : even (-Q)) :
+          CliffordAlgebra (-Q)) := by
+        rw [star_def, involute_eq_of_mem_even
+          (evenEquivEvenNeg Q (evenStarSubsemiringToEven Q x)).2]
+        exact coe_reverseEven_apply _
+      _ = ((star (⟨evenEquivEvenNeg Q (evenStarSubsemiringToEven Q x),
+          by
+            change (evenEquivEvenNeg Q (evenStarSubsemiringToEven Q x) :
+              CliffordAlgebra (-Q)) ∈ even (-Q)
+            exact (evenEquivEvenNeg Q (evenStarSubsemiringToEven Q x)).2⟩ :
+            evenStarSubsemiring (-Q)) : evenStarSubsemiring (-Q)) :
+              CliffordAlgebra (-Q)) := rfl
+
+/-- Negating a quadratic form preserves its even unitary Clifford group. -/
+noncomputable def evenUnitaryGroupEquivNeg :
+    evenUnitaryGroup Q ≃* evenUnitaryGroup (-Q) :=
+  (evenUnitaryGroupEquivUnitaryEven Q).trans
+    ((Unitary.mapEquiv (evenStarMulEquivNeg Q)).toMulEquiv.trans
+      (evenUnitaryGroupEquivUnitaryEven (-Q)).symm)
+
+/-- The negation equivalence applies the standard even-Clifford equivalence to the underlying
+even part. -/
+@[simp]
+theorem evenUnitaryGroupEquivNeg_apply_evenPart (x : evenUnitaryGroup Q) :
+    evenUnitaryGroupEvenPart (-Q) (evenUnitaryGroupEquivNeg Q x) =
+      evenEquivEvenNeg Q (evenUnitaryGroupEvenPart Q x) := by
+  apply Subtype.ext
+  rw [evenUnitaryGroupEquivNeg, MulEquiv.trans_apply, MulEquiv.trans_apply]
+  change ((((evenUnitaryGroupEquivUnitaryEven (-Q)).symm
+      ((Unitary.mapEquiv (evenStarMulEquivNeg Q)).toMulEquiv
+        (evenUnitaryGroupEquivUnitaryEven Q x)) : evenUnitaryGroup (-Q)) :
+          (CliffordAlgebra (-Q))ˣ) : CliffordAlgebra (-Q)) = _
+  rw [coe_equivUnitaryEven_symm_apply]
+  calc
+    ((((Unitary.mapEquiv (evenStarMulEquivNeg Q)).toMulEquiv
+        (evenUnitaryGroupEquivUnitaryEven Q x) : unitary (evenStarSubsemiring (-Q))) :
+          evenStarSubsemiring (-Q)) : CliffordAlgebra (-Q)) =
+        ((Unitary.map (evenStarMulEquivNeg Q).toStarMonoidHom
+          (evenUnitaryGroupEquivUnitaryEven Q x) : evenStarSubsemiring (-Q)) :
+            CliffordAlgebra (-Q)) :=
+      congrArg (fun y : evenStarSubsemiring (-Q) ↦ (y : CliffordAlgebra (-Q)))
+        (congrArg Subtype.val (Unitary.mapEquiv_apply (evenStarMulEquivNeg Q)
+          (evenUnitaryGroupEquivUnitaryEven Q x)))
+    _ = (evenStarMulEquivNeg Q
+        ((evenUnitaryGroupEquivUnitaryEven Q x : unitary (evenStarSubsemiring Q)) :
+          evenStarSubsemiring Q) : CliffordAlgebra (-Q)) :=
+      congrArg Subtype.val (Unitary.coe_map _ _)
+    _ = (evenEquivEvenNeg Q (evenUnitaryGroupEvenPart Q x) :
+        CliffordAlgebra (-Q)) := rfl
+
+/-- The inverse negation equivalence applies the inverse even-Clifford equivalence to the
+underlying even part. -/
+@[simp]
+theorem evenUnitaryGroupEquivNeg_symm_apply_evenPart (x : evenUnitaryGroup (-Q)) :
+    evenUnitaryGroupEvenPart Q ((evenUnitaryGroupEquivNeg Q).symm x) =
+      (evenEquivEvenNeg Q).symm (evenUnitaryGroupEvenPart (-Q) x) := by
+  apply (evenEquivEvenNeg Q).injective
+  rw [AlgEquiv.apply_symm_apply]
+  exact (evenUnitaryGroupEquivNeg_apply_evenPart Q
+    ((evenUnitaryGroupEquivNeg Q).symm x)).symm.trans
+      (congrArg (evenUnitaryGroupEvenPart (-Q))
+        ((evenUnitaryGroupEquivNeg Q).apply_symm_apply x))
 
 end Transport
 
