@@ -35,6 +35,7 @@ class group.
   place, as a homomorphism to the units of the `v`-adic completion.
 * `NumberField.InfinitePlace.ideleInfiniteCoord`: the coordinate of an idele at an infinite place,
   as a homomorphism to the units of the archimedean completion.
+* `TauCeti.GlobalNumberFields.ideleOfUnits`: assemble an idele from prescribed local units.
 * `TauCeti.GlobalNumberFields.ideleNorm`: the idele norm, a homomorphism to `ℝ≥0ˣ`.
 
 ## Main results
@@ -100,6 +101,37 @@ theorem NumberField.InfinitePlace.coe_ideleInfiniteCoord
     (w : InfinitePlace K) (x : IdeleGroup R K) :
     (w.ideleInfiniteCoord x : w.Completion) = (x : AdeleRing R K).1 w :=
   (rfl)
+
+namespace TauCeti.GlobalNumberFields
+
+/-- Assemble an idele from local units that are integral units at almost every finite place. -/
+def ideleOfUnits (zi : ∀ w : InfinitePlace K, w.Completionˣ)
+    (z : ∀ v : HeightOneSpectrum R, (v.adicCompletion K)ˣ)
+    (hz : ∀ᶠ v in Filter.cofinite, z v ∈ (v.adicCompletionIntegers K).units) :
+    IdeleGroup R K :=
+  MulEquiv.prodUnits.symm (MulEquiv.piUnits.symm zi, RestrictedProduct.mkUnit z hz)
+
+/-- The finite coordinates of the idele assembled from local units are the prescribed units. -/
+@[simp]
+theorem ideleFiniteCoord_ideleOfUnits (zi : ∀ w : InfinitePlace K, w.Completionˣ)
+    (z : ∀ v : HeightOneSpectrum R, (v.adicCompletion K)ˣ)
+    (hz : ∀ᶠ v in Filter.cofinite, z v ∈ (v.adicCompletionIntegers K).units)
+    (v : HeightOneSpectrum R) : v.ideleFiniteCoord (ideleOfUnits zi z hz) = z v := by
+  apply Units.ext
+  rw [HeightOneSpectrum.coe_ideleFiniteCoord]
+  rfl
+
+/-- The infinite coordinates of the idele assembled from local units are the prescribed units. -/
+@[simp]
+theorem ideleInfiniteCoord_ideleOfUnits (zi : ∀ w : InfinitePlace K, w.Completionˣ)
+    (z : ∀ v : HeightOneSpectrum R, (v.adicCompletion K)ˣ)
+    (hz : ∀ᶠ v in Filter.cofinite, z v ∈ (v.adicCompletionIntegers K).units)
+    (w : InfinitePlace K) : w.ideleInfiniteCoord (ideleOfUnits zi z hz) = zi w := by
+  apply Units.ext
+  rw [InfinitePlace.coe_ideleInfiniteCoord]
+  rfl
+
+end TauCeti.GlobalNumberFields
 
 /-- The finite coordinate of a principal idele is the image of the global element. -/
 @[simp]
