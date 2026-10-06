@@ -99,10 +99,12 @@ theorem adjoin_div_eq_top_of_isSingular (hF : IsFunctionField k F) (hP : P.degre
     exact K.sub_mem (K.add_mem (pow_mem hz 2) (K.mul_mem (K.algebraMap_mem _) hz))
       (K.algebraMap_mem _)
   have hxK : x ∈ K := by
-    rw [show x = X + algebraMap k F x₀ by rw [hXdef]; ring]
+    have hx : x = X + algebraMap k F x₀ := (sub_add_cancel x _).symm
+    rw [hx]
     exact K.add_mem hXK (K.algebraMap_mem x₀)
   have hyK : y ∈ K := by
-    rw [show y = z * X + algebraMap k F y₀ by rw [← hY]; ring]
+    have hy : y = z * X + algebraMap k F y₀ := eq_add_of_sub_eq hY
+    rw [hy]
     exact K.add_mem (K.mul_mem hz hXK) (K.algebraMap_mem y₀)
   rw [eq_top_iff, ← h.adjoin_eq_top hF hP, IntermediateField.adjoin_le_iff]
   exact Set.insert_subset_iff.mpr ⟨hxK, Set.singleton_subset_iff.mpr hyK⟩
@@ -155,10 +157,13 @@ theorem squarefree_of_isCharNeTwoNF [W.IsCharNeTwoNF] (hF : IsFunctionField k F)
     rw [sq]
     exact (mul_dvd_mul (dvd_iff_isRoot.mpr ha) (dvd_iff_isRoot.mpr ha)).trans hg2
   have h0 : a ^ 3 + W.a₂ * a ^ 2 + W.a₄ * a + W.a₆ = 0 := by
-    rw [← show f.eval a = a ^ 3 + W.a₂ * a ^ 2 + W.a₄ * a + W.a₆ by simp [hfdef]]
+    have hfa : f.eval a = a ^ 3 + W.a₂ * a ^ 2 + W.a₄ * a + W.a₆ := by simp [hfdef]
+    rw [← hfa]
     simp [hq]
   have h1 : 3 * a ^ 2 + 2 * W.a₂ * a + W.a₄ = 0 := by
-    rw [← show (derivative f).eval a = 3 * a ^ 2 + 2 * W.a₂ * a + W.a₄ by simp [hfdef]; ring]
+    have hf'a : (derivative f).eval a = 3 * a ^ 2 + 2 * W.a₂ * a + W.a₄ := by
+      simp [hfdef]; ring
+    rw [← hf'a]
     simp [hq, derivative_mul, derivative_pow]
   -- The double root `a` makes `(a, 0)` a rational singular point.
   refine hg (h.genus_eq_zero_of_isSingular hF hP (x₀ := a) (y₀ := 0) ?_)
