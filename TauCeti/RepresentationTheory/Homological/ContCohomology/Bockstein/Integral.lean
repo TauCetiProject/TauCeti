@@ -290,6 +290,21 @@ theorem integralBockstein_mulCastHom (n k : ℕ) {m : ℕ} [NeZero n] [NeZero m]
   rw [hid, coeffMap_id, Category.comp_id] at h
   exact h.symm
 
+/-- Pullback along a continuous homomorphism of compact groups commutes with the integral
+Bockstein, the coefficients being trivial on both sides and the coefficient maps the identity. -/
+@[reassoc]
+theorem integralBockstein_map {H : Type u} [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
+    [CompactSpace H] (φ : H →ₜ* G) (n : ℕ) [NeZero n] (i : ℕ) :
+    integralBockstein G n i ≫ _root_.ContinuousCohomology.map φ
+        (ofDiscreteModulePair (φ : H →* G) (AddMonoidHom.id (ULift.{u} ℤ)).toIntLinearMap
+          fun _ _ ↦ rfl) (i + 1) =
+      _root_.ContinuousCohomology.map φ
+        (ofDiscreteModulePair (φ : H →* G) (AddMonoidHom.id (ULift.{u} (ZMod n))).toIntLinearMap
+          fun _ _ ↦ rfl) i ≫ integralBockstein H n i :=
+  (integralBocksteinShortExact G n).delta_map (integralBocksteinShortExact H n) φ
+    (AddMonoidHom.id _) (AddMonoidHom.id _) (AddMonoidHom.id _) (fun _ _ ↦ rfl) (fun _ _ ↦ rfl)
+    (fun _ _ ↦ rfl) (fun _ ↦ rfl) (fun _ ↦ rfl) i
+
 /-- Restriction to a compact subgroup commutes with the integral Bockstein. -/
 @[reassoc]
 theorem integralBockstein_res (n : ℕ) [NeZero n] (U : Subgroup G) [CompactSpace U] (i : ℕ) :

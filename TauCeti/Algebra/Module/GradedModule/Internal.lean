@@ -137,6 +137,17 @@ theorem linearMap_ext {N : Type w} [AddCommMonoid N] [Module R N]
   · rw [← Submodule.iSup_eq_span]
     exact G.isInternal.submodule_iSup_eq_top
 
+/-- The homogeneous elements of an internally graded module span it over any scalar semiring
+acting on the total module. No compatibility between that action and the grading is needed. -/
+theorem span_setOf_exists_mem_piece_eq_top (S : Type*) [Semiring S] [Module S M]
+    (G : InternalGrading R M) : Submodule.span S {x : M | ∃ p, x ∈ G.piece p} = ⊤ := by
+  classical
+  apply top_unique
+  intro y _
+  rw [← DirectSum.sum_support_decompose G.piece y]
+  exact Submodule.sum_mem _ fun p _ => Submodule.subset_span
+    ⟨p, (DirectSum.decompose G.piece y p).property⟩
+
 section Map
 
 variable {N : Type w} [AddCommMonoid N] [Module R N]

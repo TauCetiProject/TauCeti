@@ -248,9 +248,9 @@ theorem subresultantCoeff_C_mul_right [CommRing R]
 /-- The fixed-bound subresultant polynomial at index `j`.
 
 Its coefficient of degree `k ≤ j` is `subresultantCoeff p q m n j k`; all coefficients above
-`j` vanish.  Subresultant polynomials occur only at strict indices `j < min m n`; outside that
-range this definition is zero.  In particular, it does not turn a terminal empty determinant
-into a polynomial, since terminal data is represented by `psc`. -/
+`j` vanish.  This definition is the subresultant polynomial only at strict indices
+`j < min m n` and returns zero outside that range; terminal data, including the empty
+determinant, is represented by `psc` instead. -/
 noncomputable def subresultant [CommRing R]
     (p q : R[X]) (m n j : ℕ) : R[X] := by
   classical
@@ -271,7 +271,7 @@ theorem subresultant_coeff [CommRing R]
       simp [subresultant, hj, hkj, hk]
   · simp [subresultant, hj]
 
-/-- There is no subresultant polynomial at or beyond the terminal index. -/
+/-- `subresultant` returns zero at and beyond the terminal index `min m n`. -/
 @[simp]
 theorem subresultant_eq_zero_of_min_le [CommRing R]
     (p q : R[X]) (m n j : ℕ) (hj : min m n ≤ j) :
@@ -299,8 +299,8 @@ theorem degree_subresultant_le [CommRing R]
   intro k hk
   simp [show ¬ k ≤ j by exact_mod_cast hk.not_ge]
 
-/-- The subresultant polynomial has degree exactly `j` precisely when its principal coefficient
-does not vanish. -/
+/-- At a strict index `j < min m n`, the subresultant polynomial has degree exactly `j`
+precisely when its principal coefficient does not vanish. -/
 theorem degree_subresultant_eq_iff [CommRing R]
     (p q : R[X]) (m n j : ℕ) (hj : j < min m n) :
     (subresultant p q m n j).degree = j ↔ psc p q m n j ≠ 0 := by

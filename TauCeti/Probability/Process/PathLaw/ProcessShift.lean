@@ -5,13 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.Exchangeability.PathSpace.Shift
+public import TauCeti.Probability.Process.PathLaw.Shift
 
 /-!
 # Process shift operation
 
-The process-level path shift for a process `X : ℕ → Ω → α`, used to build the de Finetti
-block-product factorisation:
+The process-level path shift for a process `X : ℕ → Ω → α`, the random path seen from time `m`
+onward:
 
 * `processShift X m` — the shifted random path `ω ↦ (n ↦ X (m + n) ω)`, defined as the `m`-fold
   path-space shift `(shift α)^[m]` of the process's path.

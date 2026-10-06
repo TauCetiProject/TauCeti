@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.Exchangeability.FiniteMarginals
+public import TauCeti.Probability.Process.PathLaw.FiniteMarginals
 public import TauCeti.Probability.Exchangeability.PathSpace.Law.Basic
 
 /-!

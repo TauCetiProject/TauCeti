@@ -640,13 +640,8 @@ theorem charOfPoint_ofAdd_diagonalRootDatum_root (r : RootSubgroupIndex m)
     DiagonalizableGroup.charOfPoint t.ofConv
         (Multiplicative.ofAdd ((diagonalRootDatum.{u} m).root r)) =
       r.character (GeneralLinear.diagonalTorusCoordinates (SplitTorus.pointsMulEquiv t)) := by
-  have hw (x : ULift.{u} (Fin m) →₀ ℤ) :
-      Multiplicative.ofAdd x = SplitTorus.weightCharacter ⇑x := by
-    apply Multiplicative.toAdd.injective
-    ext j
-    rw [SplitTorus.toAdd_weightCharacter, toAdd_ofAdd]
   classical
-  rw [hw, SplitTorus.charOfPoint_weightCharacter]
+  rw [← SplitTorus.weightCharacter_coe, SplitTorus.charOfPoint_weightCharacter]
   cases r with
   | positiveLong i => simp [Finsupp.single_eq_pi_single, sq]
   | negativeLong i =>

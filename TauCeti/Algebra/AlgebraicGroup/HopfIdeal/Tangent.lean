@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Map
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Equivariance
+public import TauCeti.Algebra.AlgebraicGroup.Tangent.Naturality
 public import TauCeti.Algebra.Bialgebra.Quotient
 public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Basic
 
@@ -100,6 +101,18 @@ lemma quotientLieHom_apply_apply (I : HopfIdeal R H)
         (d (Ideal.Quotient.mkₐ R I.toIdeal x)) := by
   simp [quotientLieHom]
   rfl
+
+/-- The closed-subgroup differential commutes with extension of the coefficient algebra. -/
+@[simp]
+theorem quotientLieHom_mapValue (I : HopfIdeal R H)
+    {C : Type*} [CommRing C] [Algebra R C] (φ : B →ₐ[R] C)
+    (d : Derivation R (H ⧸ I.toIdeal)
+      (Bialgebra.CounitAlgebra R (H ⧸ I.toIdeal) B)) :
+    quotientLieHom I (Derivation.mapValue φ d) =
+      Derivation.mapValue φ (quotientLieHom I d) := by
+  ext x
+  simp only [quotientLieHom_apply_apply, Derivation.mapValue_apply]
+  exact Bialgebra.CounitAlgebra.algEquivSelf_map φ _
 
 /-- The differential of a closed-subgroup inclusion is injective. -/
 theorem quotientLieHom_injective (I : HopfIdeal R H) :
