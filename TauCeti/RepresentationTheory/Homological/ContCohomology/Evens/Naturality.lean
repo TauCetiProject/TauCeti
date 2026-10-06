@@ -84,8 +84,8 @@ theorem trivialF2Map_graphClass (φ : H →ₜ* G) (U : OpenSubgroup G)
         (hα.comp (φ.continuous.subtype_map fun _ hx => hx)) := by
   obtain ⟨s, hs, -⟩ := Subgroup.index_eq_two_iff_exists_notMem_and.mp hφU
   have hφs : φ s ∉ U := fun h => hs (OpenSubgroup.mem_comap.2 h)
-  rw [graphClass_eq_cochainClass U hU (φ s) hφs α hα,
-    graphClass_eq_cochainClass _ hφU s hs, evensGraphCochainClass_def U,
+  rw [graphClass_eq_evensGraphCochainClass U hU (φ s) hφs α hα,
+    graphClass_eq_evensGraphCochainClass _ hφU s hs, evensGraphCochainClass_def U,
     evensGraphCochainClass_def (U.comap (φ : H →* G) φ.continuous)]
   have hmap := eqToHom_comp_trivialF2Map φ (ofDiscreteModule_trivialF2 G)
     (ofDiscreteModule_trivialF2 H) trivialF2Transfer (trivialF2Transfer_smul φ)
