@@ -8,6 +8,8 @@ module
 public import TauCeti.Analysis.InnerProductSpace.Laplacian.MeanValueInequality
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
+import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
+import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 public import TauCeti.Geometry.Symplectic.Complex.Module.Basic
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Varying
@@ -72,13 +74,6 @@ open InnerProductSpace Laplacian Filter Topology Complex Metric MeasureTheory Re
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
 
-/-- Differentiating `y ↦ k y v` in the direction `w` gives the second derivative `D k · w v`. -/
-private theorem fderiv_apply_const {W : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W]
-    {k : ℂ → ℂ →L[ℝ] W} {y : ℂ} (hk : DifferentiableAt ℝ k y) (v w : ℂ) :
-    fderiv ℝ (fun y ↦ k y v) y w = fderiv ℝ k y w v := by
-  rw [fderiv_clm_apply hk (differentiableAt_const v)]
-  simp
-
 variable {u : ℂ → V} {J : V → V →L[ℝ] V} {z : ℂ}
 
 /-- A curve that is `J'`-holomorphic at `z` for the standard complex structure of `ℂ` satisfies
@@ -91,43 +86,6 @@ theorem IsJHolomorphicAt.fderiv_I_eq {J' : V → AlmostComplexStructure V}
   simp only [LinearMap.coe_comp, Function.comp_apply, ContinuousLinearMap.coe_coe] at h1
   rw [hf'.fderiv]
   simpa [AlmostComplexStructure.ofComplexModule_apply] using h1
-
-/-- The third derivative of a `C³` map is symmetric in its last two directions. -/
-private theorem fderiv_fderiv_fderiv_apply_comm (hu : ContDiffAt ℝ 3 u z) (a b c : ℂ) :
-    fderiv ℝ (fderiv ℝ (fderiv ℝ u)) z a b c = fderiv ℝ (fderiv ℝ (fderiv ℝ u)) z a c b := by
-  have hD2 : DifferentiableAt ℝ (fderiv ℝ (fderiv ℝ u)) z :=
-    ((hu.fderiv_right (m := 2) (by norm_num)).fderiv_right (m := 1) (by norm_num)).differentiableAt
-      (by norm_num)
-  have hsymm : (fun y ↦ fderiv ℝ (fderiv ℝ u) y b c) =ᶠ[𝓝 z]
-      fun y ↦ fderiv ℝ (fderiv ℝ u) y c b := by
-    have hev : ∀ᶠ y in 𝓝 z, ContDiffAt ℝ 3 u y := hu.eventually (by simp)
-    filter_upwards [hev] with y hy
-    exact hy.isSymmSndFDerivAt (by norm_num [minSmoothness_of_isRCLikeNormedField]) b c
-  have h := congrArg (fun L : ℂ →L[ℝ] V ↦ L a) hsymm.fderiv_eq
-  have hb : DifferentiableAt ℝ (fun y ↦ fderiv ℝ (fderiv ℝ u) y b) z :=
-    hD2.clm_apply (differentiableAt_const b)
-  have hc : DifferentiableAt ℝ (fun y ↦ fderiv ℝ (fderiv ℝ u) y c) z :=
-    hD2.clm_apply (differentiableAt_const c)
-  rwa [fderiv_apply_const hb, fderiv_apply_const hc, fderiv_apply_const hD2,
-    fderiv_apply_const hD2] at h
-
-/-- Second derivatives of a directional derivative of a `C³` map are third derivatives. -/
-private theorem fderiv_fderiv_fderiv_apply (hu : ContDiffAt ℝ 3 u z) (v a b : ℂ) :
-    fderiv ℝ (fderiv ℝ fun y ↦ fderiv ℝ u y v) z a b =
-      fderiv ℝ (fderiv ℝ (fderiv ℝ u)) z a b v := by
-  have hDu : ContDiffAt ℝ 2 (fderiv ℝ u) z := hu.fderiv_right (m := 2) (by norm_num)
-  have hD2 : DifferentiableAt ℝ (fderiv ℝ (fderiv ℝ u)) z :=
-    (hDu.fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
-  have hv : ContDiffAt ℝ 2 (fun y ↦ fderiv ℝ u y v) z := hDu.clm_apply contDiffAt_const
-  have hfirst : (fun y ↦ fderiv ℝ (fun y ↦ fderiv ℝ u y v) y b) =ᶠ[𝓝 z]
-      fun y ↦ fderiv ℝ (fderiv ℝ u) y b v := by
-    have hev : ∀ᶠ y in 𝓝 z, ContDiffAt ℝ 2 (fderiv ℝ u) y := hDu.eventually (by simp)
-    filter_upwards [hev] with y hy
-    exact fderiv_apply_const (hy.differentiableAt (by norm_num)) v b
-  rw [← fderiv_apply_const ((hv.fderiv_right (m := 1) (by norm_num)).differentiableAt
-    (by norm_num)), hfirst.fderiv_eq, fderiv_clm_apply (hD2.clm_apply (differentiableAt_const b))
-    (differentiableAt_const v)]
-  simp [fderiv_apply_const hD2]
 
 /-- The Cauchy--Riemann equation `∂ₜu = J(u) ∂ₛu` differentiated twice at `z`, in the directions
 `w` and then `a`. -/
@@ -157,9 +115,9 @@ private theorem fderiv_fderiv_fderiv_apply_I_eq (hu : ContDiffAt ℝ 3 u z)
     have h := congrArg (fun L : ℂ →L[ℝ] V ↦ L w)
       (EventuallyEq.fderiv_eq (𝕜 := ℝ) (f₁ := fun y ↦ fderiv ℝ u y I)
         (f := fun y ↦ g y (fderiv ℝ u y 1)) hCRy)
-    rw [fderiv_apply_const (hy.differentiableAt (by norm_num)),
+    rw [fderiv_clm_apply_const_apply (hy.differentiableAt (by norm_num)),
       fderiv_clm_apply (hgy.differentiableAt (by norm_num)) hξ] at h
-    simpa [fderiv_apply_const (hy.differentiableAt (by norm_num))] using h
+    simpa [fderiv_clm_apply_const_apply (hy.differentiableAt (by norm_num))] using h
   have h := congrArg (fun L : ℂ →L[ℝ] V ↦ L a) hfirst.fderiv_eq
   rw [fderiv_clm_apply (hD2.clm_apply (differentiableAt_const w)) (differentiableAt_const I),
     fderiv_fun_add (hg.differentiableAt (by norm_num) |>.clm_apply
@@ -172,8 +130,9 @@ private theorem fderiv_fderiv_fderiv_apply_I_eq (hu : ContDiffAt ℝ 3 u z)
       ((hDu.differentiableAt (by norm_num)).clm_apply (differentiableAt_const 1)),
     fderiv_clm_apply (hD2.clm_apply (differentiableAt_const w)) (differentiableAt_const 1)] at h
   simp only [fderiv_const_apply, add_apply, ContinuousLinearMap.comp_apply,
-    ContinuousLinearMap.flip_apply, zero_apply, map_zero, zero_add, fderiv_apply_const hD2,
-    fderiv_apply_const hDg, fderiv_apply_const (hDu.differentiableAt (by norm_num))] at h
+    ContinuousLinearMap.flip_apply, zero_apply, map_zero, zero_add,
+    fderiv_clm_apply_const_apply hD2, fderiv_clm_apply_const_apply hDg,
+    fderiv_clm_apply_const_apply (hDu.differentiableAt (by norm_num))] at h
   rw [h]
   abel
 
@@ -195,64 +154,17 @@ private theorem laplacian_fderiv_one_eq (hu : ContDiffAt ℝ 3 u z) (hJ : ContDi
     hu.isSymmSndFDerivAt (by norm_num [minSmoothness_of_isRCLikeNormedField]) I 1
   have hsymm₃ : fderiv ℝ (fderiv ℝ (fderiv ℝ u)) z I I 1 =
       fderiv ℝ (fderiv ℝ (fderiv ℝ u)) z 1 I I := by
-    rw [fderiv_fderiv_fderiv_apply_comm hu I I 1,
+    rw [fderiv_fderiv_fderiv_apply_comm hu (by simp) I I 1,
       hDu.isSymmSndFDerivAt (by norm_num [minSmoothness_of_isRCLikeNormedField]) I 1]
   have h₁ := fderiv_fderiv_fderiv_apply_I_eq hu hJ hCR 1 I
   have h₂ := fderiv_fderiv_fderiv_apply_I_eq hu hJ hCR 1 1
-  rw [fderiv_fderiv_fderiv_apply_comm hu 1 I 1, h₂, hsymm₂] at h₁
+  rw [fderiv_fderiv_fderiv_apply_comm hu (by simp) 1 I 1, h₂, hsymm₂] at h₁
   rw [laplacian_eq_iteratedFDeriv_complexPlane]
   simp only [iteratedFDeriv_two_apply, Fin.isValue, Matrix.cons_val_zero, Matrix.cons_val_one,
     Matrix.cons_val_fin_one]
   rw [fderiv_fderiv_fderiv_apply hu, fderiv_fderiv_fderiv_apply hu, hsymm₃, h₁]
   simp only [map_add, hJsq]
   module
-
-/-- The first derivative of `J ∘ u`, by the chain rule. -/
-private theorem fderiv_structure_comp_apply (hu : ContDiffAt ℝ 3 u z)
-    (hJ : ContDiffAt ℝ 2 J (u z)) (w : ℂ) :
-    fderiv ℝ (fun y ↦ J (u y)) z w = fderiv ℝ J (u z) (fderiv ℝ u z w) := by
-  rw [fderiv_fun_comp z (hJ.differentiableAt (by norm_num)) (hu.differentiableAt (by norm_num)),
-    ContinuousLinearMap.comp_apply]
-
-/-- The second derivative of `J ∘ u`, by the chain rule. -/
-private theorem fderiv_fderiv_structure_comp_apply (hu : ContDiffAt ℝ 3 u z)
-    (hJ : ContDiffAt ℝ 2 J (u z)) (a w : ℂ) :
-    fderiv ℝ (fderiv ℝ fun y ↦ J (u y)) z a w =
-      fderiv ℝ (fderiv ℝ J) (u z) (fderiv ℝ u z a) (fderiv ℝ u z w) +
-        fderiv ℝ J (u z) (fderiv ℝ (fderiv ℝ u) z a w) := by
-  have hDu : ContDiffAt ℝ 2 (fderiv ℝ u) z := hu.fderiv_right (m := 2) (by norm_num)
-  have hg : ContDiffAt ℝ 2 (fun y ↦ J (u y)) z := hJ.comp z (hu.of_le (by norm_num))
-  have hDJ : ContDiffAt ℝ 1 (fderiv ℝ J) (u z) := hJ.fderiv_right (m := 1) (by norm_num)
-  have hDJu : DifferentiableAt ℝ (fun y ↦ fderiv ℝ J (u y)) z :=
-    (hDJ.differentiableAt (by norm_num)).comp z (hu.differentiableAt (by norm_num))
-  have hfirst : (fun y ↦ fderiv ℝ (fun y ↦ J (u y)) y w) =ᶠ[𝓝 z]
-      fun y ↦ fderiv ℝ J (u y) (fderiv ℝ u y w) := by
-    have hJ' : ∀ᶠ y in 𝓝 z, ContDiffAt ℝ 2 J (u y) :=
-      hu.continuousAt.eventually (hJ.eventually (by simp))
-    have hu' : ∀ᶠ y in 𝓝 z, ContDiffAt ℝ 3 u y := hu.eventually (by simp)
-    filter_upwards [hJ', hu'] with y hJy huy
-    exact fderiv_structure_comp_apply huy hJy w
-  rw [← fderiv_apply_const ((hg.fderiv_right (m := 1) (by norm_num)).differentiableAt
-    (by norm_num)), hfirst.fderiv_eq, fderiv_clm_apply hDJu
-    ((hDu.differentiableAt (by norm_num)).clm_apply (differentiableAt_const w)),
-    fderiv_fun_comp z (hDJ.differentiableAt (by norm_num)) (hu.differentiableAt (by norm_num))]
-  simp [fderiv_apply_const (hDu.differentiableAt (by norm_num)), add_comm]
-
-/-- A bound on the second derivative of `J` through the norm of its second iterated
-derivative. -/
-private theorem norm_fderiv_fderiv_apply_le {c : ℝ} {p : V}
-    (hc : ‖iteratedFDeriv ℝ 2 J p‖ ≤ c) (x y v : V) :
-    ‖fderiv ℝ (fderiv ℝ J) p x y v‖ ≤ c * ‖x‖ * ‖y‖ * ‖v‖ := by
-  have h := (iteratedFDeriv ℝ 2 J p).le_opNorm ![x, y]
-  rw [iteratedFDeriv_two_apply, Fin.prod_univ_two] at h
-  simp only [Fin.isValue, Matrix.cons_val_zero, Matrix.cons_val_one] at h
-  have h' : ‖fderiv ℝ (fderiv ℝ J) p x y‖ ≤ c * ‖x‖ * ‖y‖ := by
-    refine h.trans ?_
-    rw [mul_assoc]
-    gcongr
-  calc ‖fderiv ℝ (fderiv ℝ J) p x y v‖ ≤ ‖fderiv ℝ (fderiv ℝ J) p x y‖ * ‖v‖ :=
-        (fderiv ℝ (fderiv ℝ J) p x y).le_opNorm v
-    _ ≤ c * ‖x‖ * ‖y‖ * ‖v‖ := by gcongr
 
 /-- The Laplacian of `∂ₛu` is bounded by `‖∂ₛu‖³` and by `‖∂ₛu‖` times the second derivatives
 `∂ₛ∂ₛu` and `∂ₛ∂ₜu`, with constants from bounds on `J` and its first two derivatives. -/
@@ -264,8 +176,15 @@ private theorem norm_laplacian_fderiv_one_le {a b c : ℝ} (hu : ContDiffAt ℝ 
       2 * a * c * ‖fderiv ℝ u z 1‖ ^ 3 +
         2 * b * ‖fderiv ℝ u z 1‖ * ‖fderiv ℝ (fderiv ℝ u) z 1 I‖ +
         4 * a * b * ‖fderiv ℝ u z 1‖ * ‖fderiv ℝ (fderiv ℝ u) z 1 1‖ := by
+  have hJu₁ : ∀ w, fderiv ℝ (fun y ↦ J (u y)) z w = fderiv ℝ J (u z) (fderiv ℝ u z w) := fun w ↦ by
+    rw [fderiv_fun_comp z (hJ.differentiableAt (by norm_num)) (hu.differentiableAt (by norm_num)),
+      ContinuousLinearMap.comp_apply]
+  have hJu₂ : ∀ a w, fderiv ℝ (fderiv ℝ fun y ↦ J (u y)) z a w =
+      fderiv ℝ (fderiv ℝ J) (u z) (fderiv ℝ u z a) (fderiv ℝ u z w) +
+        fderiv ℝ J (u z) (fderiv ℝ (fderiv ℝ u) z a w) :=
+    fderiv_fderiv_comp_apply hJ (hu.of_le (by norm_num))
   rw [laplacian_fderiv_one_eq hu hJ hCR hJsq]
-  simp only [fderiv_structure_comp_apply hu hJ, fderiv_fderiv_structure_comp_apply hu hJ]
+  simp only [hJu₁, hJu₂]
   rw [hCR.self_of_nhds]
   set ξ := fderiv ℝ u z 1
   set ξs := fderiv ℝ (fderiv ℝ u) z 1 1
@@ -277,7 +196,10 @@ private theorem norm_laplacian_fderiv_one_le {a b c : ℝ} (hu : ContDiffAt ℝ 
   have hc₀ : 0 ≤ c := (norm_nonneg _).trans hc
   have hJ₀ : ∀ v, ‖J₀ v‖ ≤ a * ‖v‖ := fun v ↦ (J₀.le_opNorm v).trans (by gcongr)
   have hJ₁ : ∀ x v, ‖J₁ x v‖ ≤ b * ‖x‖ * ‖v‖ := fun x v ↦ (J₁.le_opNorm₂ x v).trans (by gcongr)
-  have hJ₂ := norm_fderiv_fderiv_apply_le hc
+  have hJ₂ : ∀ x y v, ‖fderiv ℝ (fderiv ℝ J) (u z) x y v‖ ≤ c * ‖x‖ * ‖y‖ * ‖v‖ := by
+    rw [← norm_iteratedFDeriv_fderiv, norm_iteratedFDeriv_one] at hc
+    exact fun x y v ↦ (ContinuousLinearMap.le_opNorm _ v).trans
+      (by gcongr; exact (ContinuousLinearMap.le_opNorm₂ _ x y).trans (by gcongr))
   -- Bound the five terms one by one.
   have h₁ : ‖(2 : ℝ) • J₀ (J₁ ξ ξs)‖ ≤ 2 * (a * (b * ‖ξ‖ * ‖ξs‖)) := by
     rw [norm_smul, Real.norm_two]
@@ -317,7 +239,7 @@ theorem neg_mul_norm_fderiv_one_pow_four_le_laplacian {a b c : ℝ}
   have hDu : ContDiffAt ℝ 2 (fderiv ℝ u) z := hu.fderiv_right (m := 2) (by norm_num)
   have hξ : ContDiffAt ℝ 2 (fun y ↦ fderiv ℝ u y 1) z := hDu.clm_apply contDiffAt_const
   have hD : ∀ w, fderiv ℝ (fun y ↦ fderiv ℝ u y 1) z w = fderiv ℝ (fderiv ℝ u) z w 1 :=
-    fderiv_apply_const (hDu.differentiableAt (by norm_num)) 1
+    fderiv_clm_apply_const_apply (hDu.differentiableAt (by norm_num)) 1
   have hsymm : fderiv ℝ (fderiv ℝ u) z I 1 = fderiv ℝ (fderiv ℝ u) z 1 I :=
     hu.isSymmSndFDerivAt (by norm_num [minSmoothness_of_isRCLikeNormedField]) I 1
   have hL := norm_laplacian_fderiv_one_le hu hJ hCR hJsq ha hb hc
