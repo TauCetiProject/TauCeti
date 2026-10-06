@@ -8,7 +8,7 @@ module
 import Mathlib.Analysis.Normed.Module.RCLike.Real
 
 public import Mathlib.Analysis.Convex.StdSimplex
-public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Basic
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Simplex.Basic
 
 /-!
