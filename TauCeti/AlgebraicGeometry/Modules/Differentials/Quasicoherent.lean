@@ -9,7 +9,6 @@ public import TauCeti.AlgebraicGeometry.Modules.Differentials.Restriction
 public import TauCeti.AlgebraicGeometry.Modules.Differentials.Spec
 public import TauCeti.AlgebraicGeometry.Modules.Localization
 public import TauCeti.AlgebraicGeometry.Modules.FinitePresentation
-public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Presentation
 public import Mathlib.AlgebraicGeometry.Morphisms.FinitePresentation
 public import Mathlib.AlgebraicGeometry.Morphisms.FiniteType
 public import Mathlib.RingTheory.Extension.Cotangent.Basic
@@ -83,7 +82,15 @@ private def affinePresentation (U : X.affineOpens)
         (X.relativeDifferentials R)
   let Q'' := @SheafOfModules.Presentation.ofIsIso.{u, u, u}
     _ _ _ _ _ _ _ _ e'.hom e'.isIso_hom Q'
-  exact presentationOver (X.relativeDifferentials R) U.val Q''
+  let F := Scheme.Modules.overEquiv U.val
+  let η := U.val.sheafOfModulesEquivOverInverseUnit X.ringCatSheaf
+  let Q''' := @SheafOfModules.Presentation.map
+    _ _ _ _ _ _ _ _ _ _ _ _ _ Q'' F.inverse
+      F.symm.toAdjunction.leftAdjoint_preservesColimits η.symm
+  let e'' := F.inverse.mapIso ((Scheme.Modules.overFunctorEquiv U.val).app
+    (X.relativeDifferentials R)).symm ≪≫
+      (F.unitIso.app ((X.relativeDifferentials R).over U.val)).symm
+  exact SheafOfModules.Presentation.ofIsIso.{u, u, u} e''.hom Q'''
 
 /-- The sheaf of relative differentials of a scheme over `Spec R` is quasi-coherent. -/
 instance isQuasicoherent_relativeDifferentials : (X.relativeDifferentials R).IsQuasicoherent :=
@@ -104,7 +111,8 @@ private theorem isFinite_affinePresentation (U : X.affineOpens)
       (tilde (ModuleCat.of Γ(X, U) Ω[Γ(X, U)⁄R])).Presentation) [P.IsFinite] :
     (affinePresentation R X U P).IsFinite := by
   dsimp only [affinePresentation]
-  apply +allowSynthFailures isFinite_presentationOver
+  apply +allowSynthFailures SheafOfModules.instIsFiniteOfIsIso
+  apply +allowSynthFailures SheafOfModules.Presentation.isFinite_map
   apply +allowSynthFailures SheafOfModules.instIsFiniteOfIsIso
   unfold Scheme.Modules.presentationRestrict
   apply +allowSynthFailures SheafOfModules.Presentation.isFinite_map

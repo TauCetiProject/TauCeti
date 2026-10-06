@@ -15,13 +15,6 @@ A quasicoherent module on an affine scheme admits a global presentation by free 
 with arbitrary sets of generators and relations. This permits colimit arguments with
 quasicoherent modules on an affine scheme, even when no finite generation is assumed.
 
-The restriction to an open subscheme and the module on its slice site have compatible
-presentations.
-
-The open-subscheme transport lives in `TauCeti.AlgebraicGeometry`.
-Use `TauCeti.AlgebraicGeometry.presentationOver M U P`, or open that namespace and use
-`presentationOver M U P`; the finiteness instance is inferred automatically.
-
 ## References
 
 * R. Hartshorne, *Algebraic Geometry*, Proposition II.5.1.
@@ -83,31 +76,6 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.nonempty_presentation_of_isAffin
     (Scheme.Modules.fromTildeΓ N)
     (Scheme.Modules.isIso_fromTildeΓ_of_isQuasicoherent N) P
   exact ⟨M.presentationOfIsoSpec Q⟩
-
-namespace AlgebraicGeometry
-
-/-- A presentation on the open subscheme gives a presentation on the slice site over the open. -/
-def presentationOver {X : Scheme.{u}} (M : X.Modules) (U : X.Opens)
-    (P : (M.restrict U.ι).Presentation) : (M.over U).Presentation := by
-  -- The equivalence changes the base ring sheaf, so its comparison is not an iso of
-  -- modules over `X.ringCatSheaf.over U`; transport the presentation through the equivalence.
-  let F : SheafOfModules U.toScheme.ringCatSheaf ⥤
-      SheafOfModules (X.ringCatSheaf.over U) := (Scheme.Modules.overEquiv U).inverse
-  have : PreservesColimitsOfSize.{u, u} F :=
-    (Scheme.Modules.overEquiv U).symm.toAdjunction.leftAdjoint_preservesColimits
-  let Q := P.map F (U.sheafOfModulesEquivOverInverseUnit X.ringCatSheaf).symm
-  let e := (Scheme.Modules.overEquiv U).unitIso.app (M.over U) ≪≫
-    (Scheme.Modules.overEquiv U).inverse.mapIso ((Scheme.Modules.overFunctorEquiv U).app M)
-  exact Q.ofIsIso e.inv
-
-/-- Transport from an open subscheme to its slice site preserves finite presentations. -/
-instance isFinite_presentationOver {X : Scheme.{u}} (M : X.Modules) (U : X.Opens)
-    (P : (M.restrict U.ι).Presentation) [P.IsFinite] : (presentationOver M U P).IsFinite := by
-  unfold presentationOver
-  apply +allowSynthFailures SheafOfModules.instIsFiniteOfIsIso
-  apply +allowSynthFailures SheafOfModules.Presentation.isFinite_map
-
-end AlgebraicGeometry
 
 end
 
