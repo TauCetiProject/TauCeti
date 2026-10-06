@@ -22,11 +22,6 @@ a candidate constructed from its value and linear action on one tangent space. I
 particular it is the uniqueness input to identifying the full isometry groups of the
 round sphere and the other homogeneous Riemannian models.
 
-The local statement uses normal coordinates and naturality of the exponential map. For
-the global statement, the locus of agreement of all tangent vectors is closed, since the
-tangent maps are continuous and the tangent-bundle projection is open; normal coordinates
-make that locus open as well.
-
 ## References
 
 * J. M. Lee, *Introduction to Riemannian Manifolds*, second edition, Proposition 5.22
