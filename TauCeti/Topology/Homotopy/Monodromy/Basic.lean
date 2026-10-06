@@ -46,6 +46,7 @@ subgroups differ, and it is the stabiliser, not the kernel, that the classificat
 
 ## Main declarations
 
+* `IsCoveringMap.coe_monodromy_mk`: monodromy along a path is the endpoint of its lift.
 * `TauCeti.coveringFiberEquiv`: monodromy along a homotopy class of paths is a bijection between
   the fibres over its endpoints.
 * `IsCoveringMap.toPermHom_eq_monodromyPerm`: the permutation representation of the monodromy
@@ -90,6 +91,14 @@ namespace TauCeti
 variable {E X : Type*} [TopologicalSpace E] [TopologicalSpace X] {p : E → X} {x : X}
 
 /-! ### Monodromy as a bijection between fibres -/
+
+/-- Monodromy along the class of a path `γ` sends a lift `e` of its source to the endpoint of the
+lift of `γ` starting at `e`. This is the defining formula of `IsCoveringMap.monodromy` on a
+representative path. -/
+theorem _root_.IsCoveringMap.coe_monodromy_mk (hp : IsCoveringMap p) {x y : X} (γ : Path x y)
+    (e : p ⁻¹' {x}) (h : γ.toContinuousMap 0 = p e) :
+    (hp.monodromy (.mk γ) e : E) = hp.liftPath γ.toContinuousMap e h 1 :=
+  (rfl)
 
 /-- **Monodromy along a homotopy class of paths is a bijection between the fibres** over its
 endpoints. It is `IsCoveringMap.monodromy`, whose bijectivity Mathlib records, packaged as an

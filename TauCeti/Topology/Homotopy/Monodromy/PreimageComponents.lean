@@ -33,7 +33,6 @@ local monodromy.
 
 ## Main declarations
 
-* `IsCoveringMap.coe_monodromy_mk`: monodromy along a path is the endpoint of its lift.
 * `IsCoveringMap.joinedIn_preimage_iff`: points of the fibre over `v ∈ V` are joined inside
   `p ⁻¹' V` exactly when they differ by the monodromy of a loop of `V`.
 * `IsCoveringMap.exists_joinedIn_preimage`: for a path-connected `V`, every point of `p ⁻¹' V`
@@ -57,14 +56,6 @@ namespace TauCeti
 open Equiv Equiv.Perm
 
 variable {E X : Type*} [TopologicalSpace E] [TopologicalSpace X] {p : E → X}
-
-/-- Monodromy along the class of a path `γ` sends a lift `e` of its source to the endpoint of the
-lift of `γ` starting at `e`. This is the defining formula of `IsCoveringMap.monodromy` on a
-representative path. -/
-theorem _root_.IsCoveringMap.coe_monodromy_mk (hp : IsCoveringMap p) {x y : X} (γ : Path x y)
-    (e : p ⁻¹' {x}) (h : γ.toContinuousMap 0 = p e) :
-    (hp.monodromy (.mk γ) e : E) = hp.liftPath γ.toContinuousMap e h 1 :=
-  (rfl)
 
 /-- **Points of a fibre joined over `V`.** Two points of the fibre over `v ∈ V` are joined by a
 path inside `p ⁻¹' V` exactly when monodromy along the image in `π₁(X, v)` of some loop of `V`
@@ -101,8 +92,7 @@ theorem _root_.IsCoveringMap.joinedIn_preimage_iff (hp : IsCoveringMap p) {V : S
     refine ⟨⟨hp.liftPath γ.toContinuousMap e hγ, hp.liftPath_zero .., ?_⟩, fun t => ?_⟩
     · rw [FundamentalGroup.map_apply, ← Path.Homotopic.Quotient.mk_map, hp.coe_monodromy_mk γ e hγ]
       rfl
-    · change p (hp.liftPath γ.toContinuousMap e hγ t) ∈ V
-      rw [← Function.comp_apply (f := p), hp.liftPath_lifts]
+    · rw [Set.mem_preimage, Path.coe_mk', ← Function.comp_apply (f := p), hp.liftPath_lifts]
       exact (δ t).2
 
 /-- **Every point over a path-connected `V` is joined over `V` to the fibre over `v`.** Lifting a
@@ -115,8 +105,7 @@ theorem _root_.IsCoveringMap.exists_joinedIn_preimage (hp : IsCoveringMap p) {V 
   let Λ := hp.liftPath β.toContinuousMap e β.source
   have hΛ (t) : p (Λ t) = β t := congrFun (hp.liftPath_lifts β.toContinuousMap e β.source) t
   refine ⟨⟨Λ 1, by simp [hΛ]⟩, ⟨⟨Λ, hp.liftPath_zero .., rfl⟩, fun t => ?_⟩⟩
-  change p (Λ t) ∈ V
-  rw [hΛ]
+  rw [Set.mem_preimage, Path.coe_mk', hΛ]
   exact hjoin.somePath_mem t
 
 /-- **Cycles of a generating loop are the components over `V`.** If the class `c` generates
