@@ -73,7 +73,7 @@ Continuity of that action is carried as the instance hypothesis
 `[ContinuousSMul (G ⧸ N) (FixedPoints.addSubgroup N M)]` rather than deduced from discreteness of
 `M`, because nothing below uses discreteness for anything else;
 `TauCeti.continuousSMulQuotientFixedPointsOfContinuousSMul` discharges it for a discrete `M`, which
-is the case the roadmap's arithmetic consumers instantiate.
+is the case arising in arithmetic applications.
 
 Everything here except `TauCeti.ContCohomology.explicitInfRes2_exact` holds for an arbitrary
 topological group `G` and an arbitrary normal subgroup `N`; neither profiniteness nor closedness of
@@ -96,11 +96,6 @@ a cocycle killed by restriction with a cohomologous one vanishing on `G × N` an
 then descends to `G ⧸ N` (`TauCeti.ContCohomology.descendZ2`). The cohomologous cocycle is built
 from a choice of coset representatives of `N`; openness of `N` makes `G ⧸ N` discrete, so that
 this choice, and hence the correction, is continuous.
-
-This implements the inflation part of the "three instances, in all three degrees" milestone of
-Layer 2, and the "inflation-restriction" milestone of Layer 5, of the human-authored roadmap
-`TauCetiRoadmap/ProfiniteCohomology/README.md`, whose `Suggested.lean` fixes the names
-`explicitInfl1`, `explicitInfl2`, `explicitInfl1_injective` and `explicitInfRes_exact`.
 
 ## References
 
