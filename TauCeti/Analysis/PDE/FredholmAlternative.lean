@@ -72,6 +72,7 @@ noncomputable local instance instInnerProductSpaceH1ZeroFredholm :
 
 /-- The Lax--Milgram operator representing the `L²` mass form on `H¹₀(Ω)`.  It is characterized
 by `TauCeti.PDE.energyFormH1_dirichletMassOperator`. -/
+@[expose]
 def dirichletMassOperator
     (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
     (hcoercive : IsCoercive (energyFormH1L0 hcoeff)) :

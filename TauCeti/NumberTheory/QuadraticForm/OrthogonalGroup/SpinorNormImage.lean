@@ -39,6 +39,12 @@ nontrivial subgroup of local square classes.
 public section
 
 namespace TauCeti
+
+-- Cache Mathlib's commutative-ring instance for the p-adic spinor-norm coordinates.
+-- Imported simp rules otherwise repeat the general rank-condition instance search.
+private instance padicStrongRankCondition (p : Nat.Primes) : StrongRankCondition ℚ_[p] :=
+  commRing_strongRankCondition ℚ_[p]
+
 namespace QuadraticMap
 
 open _root_.QuadraticMap

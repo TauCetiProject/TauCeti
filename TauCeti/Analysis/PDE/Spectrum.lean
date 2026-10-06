@@ -143,6 +143,7 @@ value of the unique weak solution of `L u = f` in `Ω`, `u = 0` on `∂Ω`.  It 
 Dirichlet problem, and it is the operator whose spectrum carries the Dirichlet eigenvalue
 problem; `TauCeti.PDE.dirichletSolutionOperator_apply` identifies its value with the
 Lax--Milgram solution. -/
+@[expose]
 def dirichletSolutionOperator
     (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
     (hcoercive : IsCoercive (energyFormH1L0 hcoeff)) :
