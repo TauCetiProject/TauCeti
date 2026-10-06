@@ -153,6 +153,7 @@ variable [MulOneClass k]
 
 /-- Pointwise multiplication of labels on the original arrows becomes pointwise multiplication
 of their gauge labellings on the doubled quiver. -/
+@[simp]
 theorem doubledLabelling_mul (u u' : ∀ ⦃i j : Q⦄, (i ⟶ j) → k) ⦃x y : Symmetrify Q⦄ (b : x ⟶ y) :
     doubledLabelling k (fun _ _ a => u a * u' a) b
       = doubledLabelling k u b * doubledLabelling k u' b := by
