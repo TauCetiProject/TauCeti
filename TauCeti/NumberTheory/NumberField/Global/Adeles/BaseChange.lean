@@ -40,6 +40,9 @@ mapping theorem for σ-compact groups.
   `TauCeti.GlobalNumberFields.adeleBaseChangeHom_snd`: the infinite and finite components are
   the infinite- and finite-adele comparisons.
 * `TauCeti.GlobalNumberFields.adeleBaseChangeHom_bijective`: the map is bijective.
+* `TauCeti.GlobalNumberFields.adeleBaseChangeEquiv_tmul_one`,
+  `TauCeti.GlobalNumberFields.adeleBaseChangeEquiv_apply_prod`: the continuous comparison
+  extends `𝔸_K → 𝔸_L` and is the product of the infinite- and finite-adele comparisons.
 
 ## References
 
@@ -229,6 +232,28 @@ theorem adeleBaseChangeEquiv_tmul (a : AdeleRing (𝓞 K) K) (x : L) :
       adeleExtension (𝓞 K) K (𝓞 L) L a * algebraMap L (AdeleRing (𝓞 L) L) x := by
   have h : (adeleBaseChangeEquiv K L).toAlgHom = adeleBaseChangeHom K L := by simp
   exact (AlgHom.congr_fun h (a ⊗ₜ[K] x)).trans (adeleBaseChangeHom_tmul K L a x)
+
+/-- The continuous comparison restricts on `𝔸_K ⊗ 1` to the extension map `𝔸_K → 𝔸_L`. -/
+theorem adeleBaseChangeEquiv_tmul_one (a : AdeleRing (𝓞 K) K) :
+    adeleBaseChangeEquiv K L (a ⊗ₜ 1) = adeleExtension (𝓞 K) K (𝓞 L) L a := by
+  rw [adeleBaseChangeEquiv_tmul, map_one, mul_one]
+
+/-- The continuous comparison is the pair of the infinite- and finite-adele comparisons, after
+splitting the source tensor product into its two components. -/
+theorem adeleBaseChangeEquiv_apply_prod (t : AdeleRing (𝓞 K) K ⊗[K] L) :
+    adeleBaseChangeEquiv K L t =
+      ((infiniteAdeleBaseChangeAlgEquiv K L
+          (TensorProduct.prodLeft K K (InfiniteAdeleRing K) (FiniteAdeleRing (𝓞 K) K) L t).1,
+        finiteAdeleBaseChangeAlgEquiv K L
+          (TensorProduct.prodLeft K K (InfiniteAdeleRing K) (FiniteAdeleRing (𝓞 K) K) L t).2) :
+        AdeleRing (𝓞 L) L) := by
+  have h : (adeleBaseChangeEquiv K L).toAlgHom = adeleBaseChangeHom K L := by simp
+  -- Rewriting cannot see through the adele type synonym, so chain the equalities instead.
+  exact (AlgHom.congr_fun h t).trans <| Prod.ext
+    ((adeleBaseChangeHom_fst K L t).trans
+      (AlgHom.congr_fun (infiniteAdeleBaseChangeAlgEquiv_toAlgHom K L) _).symm)
+    ((adeleBaseChangeHom_snd K L t).trans
+      (AlgHom.congr_fun (finiteAdeleBaseChangeAlgEquiv_toAlgHom K L) _).symm)
 
 /-- The inverse comparison sends a diagonal field element to `1 ⊗ x`. -/
 @[simp]
