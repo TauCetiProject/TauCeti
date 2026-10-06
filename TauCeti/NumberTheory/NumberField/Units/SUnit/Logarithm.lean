@@ -7,7 +7,7 @@ module
 
 public import Mathlib.NumberTheory.NumberField.Units.DirichletTheorem
 public import TauCeti.RingTheory.DedekindDomain.SInteger.Unit
-public import TauCeti.NumberTheory.NumberField.Global.Places.Units
+public import TauCeti.NumberTheory.NumberField.Global.Places.Basic
 
 /-!
 # The logarithmic map of S-units
@@ -32,10 +32,10 @@ uses `finprod_normalizedAbsValue_eq_one`.
 
 public noncomputable section
 
-open IsDedekindDomain NumberField
+open IsDedekindDomain NumberField TauCeti.GlobalNumberFields
 open scoped NumberField
 
-namespace TauCeti.GlobalNumberFields
+namespace TauCeti.Set
 
 variable {K : Type*} [Field K] [NumberField K]
 variable (S : Set (HeightOneSpectrum (𝓞 K)))
@@ -160,4 +160,4 @@ theorem sum_sUnitLog [Fintype S] (u : S.unit K) :
     Real.log_one] at h
   simpa [Fintype.sum_sum_type, sUnitLog, Real.log_pow] using h
 
-end TauCeti.GlobalNumberFields
+end TauCeti.Set

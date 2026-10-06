@@ -153,6 +153,15 @@ theorem normalizedAbsValue_inl_le_one_iff (y : K) :
   exact WithZeroMulInt.toNNReal_le_one_iff
     (NumberField.HeightOneSpectrum.one_lt_absNorm_nnreal v)
 
+/-- A finite normalized absolute value is `1` exactly when the valuation is `1`. -/
+theorem normalizedAbsValue_inl_eq_one_iff (y : K) :
+    normalizedAbsValue (Sum.inl v) y = 1 ↔ v.valuation K y = 1 := by
+  rw [normalizedAbsValue_inl, NumberField.HeightOneSpectrum.adicAbv_def]
+  norm_cast
+  exact WithZeroMulInt.toNNReal_eq_one_iff _
+    (NumberField.HeightOneSpectrum.one_lt_absNorm_nnreal v).ne_zero
+    (NumberField.HeightOneSpectrum.one_lt_absNorm_nnreal v).ne'
+
 /-- An element of a number field is an algebraic integer exactly when its normalized absolute
 value is at most `1` at every finite place. -/
 theorem forall_normalizedAbsValue_inl_le_one_iff (y : K) :
