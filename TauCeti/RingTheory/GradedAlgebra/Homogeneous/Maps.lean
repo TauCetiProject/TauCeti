@@ -48,11 +48,11 @@ namespace TauCeti.HomogeneousIdeal
 variable {A B σ : Type*} [Semiring A] [CommSemiring B] [SetLike σ A]
   [AddSubmonoidClass σ A] (𝒜 : ℕ → σ) [GradedRing 𝒜]
 
-/-- Degreewise unit rescaling preserves the condition that the irrelevant ideal maps
+/-- Unit rescaling in positive degrees preserves the condition that the irrelevant ideal maps
 to the unit ideal. -/
 theorem map_irrelevant_eq_top_of_unit_rescaling
     (f g : A →+* B) (c : Bˣ)
-    (h : ∀ n, ∀ a ∈ 𝒜 n, g a = c ^ n * f a)
+    (h : ∀ n, 0 < n → ∀ a ∈ 𝒜 n, g a = c ^ n * f a)
     (hf : (HomogeneousIdeal.irrelevant 𝒜).toIdeal.map f = ⊤) :
     (HomogeneousIdeal.irrelevant 𝒜).toIdeal.map g = ⊤ := by
   have hle : (HomogeneousIdeal.irrelevant 𝒜).toIdeal.map f ≤
@@ -60,7 +60,7 @@ theorem map_irrelevant_eq_top_of_unit_rescaling
     rw [Ideal.map_le_iff_le_comap, HomogeneousIdeal.toIdeal_irrelevant_le]
     intro n hn a ha
     exact (Ideal.unit_mul_mem_iff_mem _ (c.isUnit.pow n)).mp
-      (h n a ha ▸ Ideal.mem_map_of_mem g (HomogeneousIdeal.mem_irrelevant_of_mem 𝒜 hn ha))
+      (h n hn a ha ▸ Ideal.mem_map_of_mem g (HomogeneousIdeal.mem_irrelevant_of_mem 𝒜 hn ha))
   rw [hf] at hle
   exact top_unique hle
 

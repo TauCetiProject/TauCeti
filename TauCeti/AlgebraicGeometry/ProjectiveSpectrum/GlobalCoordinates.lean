@@ -140,9 +140,11 @@ theorem fromOfGlobalSections_eq_of_unit_rescaling
     (h : ∀ n, ∀ a ∈ 𝒜 n, g a = c ^ n * f a)
     (hf : (HomogeneousIdeal.irrelevant 𝒜).toIdeal.map f = ⊤) :
     Proj.fromOfGlobalSections 𝒜 g
-        (TauCeti.HomogeneousIdeal.map_irrelevant_eq_top_of_unit_rescaling 𝒜 f g c h hf) =
+        (TauCeti.HomogeneousIdeal.map_irrelevant_eq_top_of_unit_rescaling
+          𝒜 f g c (fun n _ ↦ h n) hf) =
       Proj.fromOfGlobalSections 𝒜 f hf := by
-  let hg := TauCeti.HomogeneousIdeal.map_irrelevant_eq_top_of_unit_rescaling 𝒜 f g c h hf
+  let hg := TauCeti.HomogeneousIdeal.map_irrelevant_eq_top_of_unit_rescaling
+    𝒜 f g c (fun n _ ↦ h n) hf
   refine (Proj.openCoverOfMapIrrelevantEqTop 𝒜 f hf).hom_ext _ _ fun ⟨d, t, hd, ht⟩ ↦ ?_
   obtain ⟨he, hchart⟩ := toBasicOpenOfGlobalSections_eq_of_unit_rescaling 𝒜 f g c h hd ht
   have hfchart := Proj.fromOfGlobalSections_resLE 𝒜 f hf hd ht
