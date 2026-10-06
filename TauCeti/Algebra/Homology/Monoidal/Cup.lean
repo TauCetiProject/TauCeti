@@ -101,14 +101,6 @@ lemma cupCochain_naturality {A' B' E' : ChainComplex C ℕ} [A'.HasTensor B']
   rw [cupCochain_apply, cupCochain_apply, ← tensorHom_f_comp_tensorCochain, ← Category.assoc,
     ← HomologicalComplex.comp_f, ← hD, HomologicalComplex.comp_f, Category.assoc]
 
-/-- Precomposing a diagonal pulls back the cup product of cochains. -/
-lemma cupCochain_precomp {E' : ChainComplex C ℕ} (e : E' ⟶ E)
-    (p q n : ℕ) (h : p + q = n) (φ : A.X p ⟶ M) (ψ : B.X q ⟶ N) :
-    cupCochain k (e ≫ D) μ p q n h φ ψ = e.f n ≫ cupCochain k D μ p q n h φ ψ := by
-  simpa only [id_f, Category.id_comp] using
-    cupCochain_naturality D μ (e ≫ D) e (𝟙 A) (𝟙 B)
-      (by simp [HomologicalComplex.tensorHom, mapBifunctorMap]) p q n h φ ψ
-
 end Cochain
 
 section Cohomology
