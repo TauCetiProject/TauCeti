@@ -46,10 +46,6 @@ open scoped TensorProduct
 
 noncomputable section
 
--- Use the nontriviality carried by a group with zero before trying derived module witnesses
--- over the p-adic coefficient fields. This avoids recursion through rank conditions.
-attribute [instance 1100] GroupWithZero.toNontrivial
-
 /-- The canonical invertibility witness for two over the rationals. -/
 local instance spinorNormImageInvertibleTwoRat : Invertible (2 : ℚ) :=
   invertibleOfNonzero two_ne_zero
