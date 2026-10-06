@@ -7,8 +7,11 @@ module
 
 public import Mathlib.FieldTheory.Galois.Basic
 public import Mathlib.RepresentationTheory.Homological.GroupCohomology.Functoriality
+import Mathlib.FieldTheory.Galois.Infinite
+import TauCeti.Algebra.GroupWithZero.Units.Basic
 import TauCeti.FieldTheory.Galois.Restriction
 import TauCeti.FieldTheory.GaloisCohomology.Hilbert90
+import TauCeti.RepresentationTheory.Homological.GroupCohomology.Functoriality
 import TauCeti.RepresentationTheory.Homological.GroupCohomology.InflationRestriction
 
 /-!
@@ -54,7 +57,7 @@ language of relative Brauer groups, `Br(M/K) ∩ ker(res_{M/L}) = Br(L/K)`.
 ## Main results
 
 * `TauCeti.exists_unitsMap_eq_of_forall_apply_eq`: a Galois-fixed unit of `E` comes from the base
-  field.
+  field, for any Galois extension `E/F`.
 * `TauCeti.map_unitsInflationHom_comp_map_unitsBaseChangeHom`: inflation followed by restriction
   is base change.
 * `TauCeti.map_unitsInflationHom_two_injective`: inflation `H²(Gal(L/K), Lˣ) → H²(Gal(M/K), Mˣ)`
@@ -76,14 +79,14 @@ universe u
 
 section Fixed
 
-variable {F E : Type*} [Field F] [Field E] [Algebra F E] [FiniteDimensional F E] [IsGalois F E]
+variable {F E : Type*} [Field F] [Field E] [Algebra F E] [IsGalois F E]
 
-/-- **A Galois-fixed unit comes from the base field**: a unit of a finite Galois extension `E/F`
-that is fixed by `Gal(E/F)` is the image of a unit of `F`. -/
+/-- **A Galois-fixed unit comes from the base field**: a unit of a Galois extension `E/F`, not
+necessarily finite, that is fixed by `Gal(E/F)` is the image of a unit of `F`. -/
 theorem exists_unitsMap_eq_of_forall_apply_eq {x : Eˣ} (hx : ∀ σ : Gal(E/F), σ (x : E) = x) :
-    ∃ a : Fˣ, Units.map (algebraMap F E : F →* E) a = x := by
-  obtain ⟨a, ha⟩ := (IsGalois.mem_range_algebraMap_iff_fixed (F := F) (x : E)).2 hx
-  exact ⟨Units.mk0 a fun h ↦ x.ne_zero (by rw [← ha, h, map_zero]), Units.ext ha⟩
+    ∃ a : Fˣ, Units.map (algebraMap F E : F →* E) a = x :=
+  (mem_range_iff_exists_units_map_eq (algebraMap F E) x).1
+    ((InfiniteGalois.mem_range_algebraMap_iff_fixed (x : E)).2 hx)
 
 end Fixed
 
@@ -180,8 +183,10 @@ theorem toMul_mapCocycles₂_unitsBaseChangeHom
         (unitsBaseChangeHom K E L M) c) (g, h))) =
       Units.map (algebraMap E M : E →* M) (Additive.toMul (Rep.toAdditive
         (c ((AlgEquiv.restrictNormalHom E).comp (AlgEquiv.restrictScalarsHom K) g,
-          (AlgEquiv.restrictNormalHom E).comp (AlgEquiv.restrictScalarsHom K) h)))) :=
-  congrArg (fun x ↦ Additive.toMul (Rep.toAdditive x)) (unitsBaseChangeHom_apply K E L M _)
+          (AlgEquiv.restrictNormalHom E).comp (AlgEquiv.restrictScalarsHom K) h)))) := by
+  have h := congrFun (toAdditive_comp_unitsBaseChangeHom K E L M)
+  simp only [Function.comp_apply] at h
+  rw [groupCohomology.mapCocycles₂_apply, h, toMul_ofMul]
 
 /-- Including `Eˣ` into `Mˣ` and then base changing from `M/K` to `M/L` is base change from `E/K`
 to `M/L`. -/

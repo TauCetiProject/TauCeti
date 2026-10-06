@@ -387,11 +387,8 @@ theorem subsingleton_H2_unitFiltration_zero :
     (mem_zpowers_frobeniusAlgEquiv K L) 2 even_two y).2 ?_
   -- The Frobenius-fixed unit `u` of valuation one is a unit `a` of `K` of valuation one.
   set u : unitFiltration L 0 := (Rep.toAdditive y.1).toMul
-  have hfix : frobeniusAlgEquiv (K := K) (L := L) • u = u := by
-    have := LinearMap.mem_ker.1 y.2
-    simp only [Rep.sub_hom, Representation.IntertwiningMap.sub_toLinearMap,
-      LinearMap.sub_apply, sub_eq_zero] at this
-    exact congrArg (fun z ↦ (Rep.toAdditive z).toMul) this
+  have hfix : frobeniusAlgEquiv (K := K) (L := L) • u = u :=
+    congrArg (fun z ↦ (Rep.toAdditive z).toMul) (Rep.FiniteCyclicGroup.ρ_apply_of_mem_ker A _ y)
   obtain ⟨a, hau⟩ := exists_unitsMap_eq_of_smul_eq (mem_zpowers_frobeniusAlgEquiv K L)
     ((AlgEquiv.coe_smul_unitFiltration _ u).symm.trans congr(($hfix : Lˣ)))
   have haU : a ∈ unitFiltration K 0 := by

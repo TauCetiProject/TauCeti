@@ -92,6 +92,7 @@ include hg in
 private theorem isCyclic_of_forall_mem_zpowers : IsCyclic (L ≃ₐ[K] L) :=
   ⟨g, fun σ ↦ Subgroup.mem_zpowers_iff.1 (hg σ)⟩
 
+omit [FiniteDimensional K L] in
 include hg in
 /-- **A unit fixed by a generator comes from the base field**: if `g` generates `Gal(L/K)`, a unit
 of `L` fixed by `g` is the image of a unit of `K`. -/
@@ -141,6 +142,7 @@ private theorem coe_unitsToFixedUnits (a : Kˣ) :
       Rep.toAdditive.symm (Additive.ofMul (Units.map (algebraMap K L : K →* L) a)) :=
   (rfl)
 
+omit [FiniteDimensional K L] in
 include hg in
 /-- A `g`-fixed element of `Lˣ` lies in `Kˣ`, since `g` generates `Gal(L/K)`. -/
 private theorem unitsToFixedUnits_surjective : Function.Surjective (unitsToFixedUnits g) := by

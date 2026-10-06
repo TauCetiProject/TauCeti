@@ -105,9 +105,6 @@ corestriction on the invariant `σ b` of the fixing subgroup is the product of t
   `TauCeti.kummerRes_kummerMap` is the same statement on units.
 * `TauCeti.explicitCor0_embeddedUnitsInvariants`: degree-zero corestriction on the invariants of
   `(Kˢ)ˣ` is the norm of `L/K`.
-* `TauCeti.unitsCoeffMap_embeddedUnitsInvariants`: for extensions `E/K` and `M/L` with
-  compatible embeddings, `unitsCoeffMap` carries the embedded unit of `a ∈ Eˣ` to the embedded
-  unit of its image in `Mˣ`.
 * `TauCeti.kummerIso_norm`: for a finite `L/K`, corestriction corresponds to the map of power
   classes `Lˣ ⧸ (Lˣ)ⁿ → Kˣ ⧸ (Kˣ)ⁿ` induced by the norm; `TauCeti.kummerCor_kummerMap` is the
   same statement on units.
@@ -820,21 +817,6 @@ theorem unitsCoeffMapSymm_coe_baseUnitsEquivInvariants (b : Lˣ) :
     unitsCoeffMapSymm K L σ (baseUnitsEquivInvariants L (Additive.ofMul b)) =
       embeddedUnitsInvariants K L σ b :=
   Additive.toMul.injective <| Units.ext <| by simp [separableClosureRingEquiv_algebraMap]
-
-/-- **The coefficient square of a compatible base change.** If the embeddings of `E` and `M` are
-compatible under `separableClosureRingEquiv K L σ`, then transporting the embedded unit `ρ a` of
-`Kˢ` to `Lˢ` by `unitsCoeffMap` gives the embedded unit `τ a` of its image in `M`. -/
-theorem unitsCoeffMap_embeddedUnitsInvariants (E M : Type*) [Field E] [Field M] [Algebra K E]
-    [Algebra L M] [Algebra E M] (ρ : E →ₐ[K] SeparableClosure K)
-    (τ : M →ₐ[L] SeparableClosure L)
-    (hcompat : ∀ x : E, separableClosureRingEquiv K L σ (τ (algebraMap E M x)) = ρ x)
-    (a : Eˣ) :
-    unitsCoeffMap K L σ (embeddedUnitsInvariants K E ρ a : UnitsCoeff K) =
-      (embeddedUnitsInvariants L M τ (Units.map (algebraMap E M : E →* M) a) : UnitsCoeff L) := by
-  refine Additive.toMul.injective (Units.ext ?_)
-  simp only [toMul_unitsCoeffMap, toMul_coe_embeddedUnitsInvariants, Units.coe_map]
-  apply (separableClosureRingEquiv K L σ).injective
-  simpa using (hcompat (a : E)).symm
 
 variable [FiniteDimensional K L]
 
