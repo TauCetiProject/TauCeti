@@ -63,6 +63,11 @@ theorem negOnePowCast_add (a b : ℤ) :
 theorem negOnePowCast_two_mul (a : ℤ) : negOnePowCast R (2 * a) = 1 := by
   simp [negOnePowCast]
 
+/-- The scalar `(-1) ^ e` squares to one. -/
+@[simp]
+theorem negOnePowCast_mul_self (e : ℤ) : negOnePowCast R e * negOnePowCast R e = 1 := by
+  rw [← negOnePowCast_add, ← two_mul, negOnePowCast_two_mul]
+
 theorem negOnePowCast_even {e : ℤ} (he : Even e) : negOnePowCast R e = 1 := by
   simp [negOnePowCast, Int.negOnePow_even _ he]
 
