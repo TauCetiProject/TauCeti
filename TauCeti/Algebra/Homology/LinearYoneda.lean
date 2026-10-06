@@ -31,6 +31,8 @@ singular cohomology is obtained from the one of chain complexes.
 * `TauCeti.ChainComplex.shortExact_map_linearYonedaFunctor`: `Hom(-, Y)` preserves short
   exactness of degreewise split sequences.
 * `Homotopy.linearYonedaFunctorMap`: `Hom(-, Y)` takes a chain homotopy to a cochain homotopy.
+* `TauCeti.HomotopyEquiv.linearYonedaFunctorMap`: `Hom(-, Y)` takes a chain homotopy
+  equivalence to a cochain homotopy equivalence in the opposite direction.
 -/
 
 public section
@@ -67,6 +69,37 @@ noncomputable def _root_.Homotopy.linearYonedaFunctorMap {X X' : ChainComplex C 
     (h : Homotopy φ ψ) :
     Homotopy ((linearYonedaFunctor k Y).map φ.op) ((linearYonedaFunctor k Y).map ψ.op) :=
   (((linearYoneda k C).obj Y).rightOp.mapHomotopy h).unop
+
+/-- `Hom(-, Y)` takes a chain homotopy equivalence to a cochain homotopy equivalence in
+the opposite direction, with maps given by precomposition. -/
+noncomputable def _root_.TauCeti.HomotopyEquiv.linearYonedaFunctorMap
+    {X X' : ChainComplex C α} (h : _root_.HomotopyEquiv X X') :
+    _root_.HomotopyEquiv ((linearYonedaFunctor k Y).obj (op X'))
+      ((linearYonedaFunctor k Y).obj (op X)) where
+  hom := (linearYonedaFunctor k Y).map h.hom.op
+  inv := (linearYonedaFunctor k Y).map h.inv.op
+  homotopyHomInvId := by
+    simpa only [← Functor.map_comp, ← op_comp] using
+      (h.homotopyInvHomId.linearYonedaFunctorMap k Y).trans
+        (Homotopy.ofEq ((linearYonedaFunctor k Y).map_id _))
+  homotopyInvHomId := by
+    simpa only [← Functor.map_comp, ← op_comp] using
+      (h.homotopyHomInvId.linearYonedaFunctorMap k Y).trans
+        (Homotopy.ofEq ((linearYonedaFunctor k Y).map_id _))
+
+/-- The forward map of the induced homotopy equivalence is precomposition with `h.hom`. -/
+@[simp]
+lemma _root_.TauCeti.HomotopyEquiv.linearYonedaFunctorMap_hom
+    {X X' : ChainComplex C α} (h : _root_.HomotopyEquiv X X') :
+    (TauCeti.HomotopyEquiv.linearYonedaFunctorMap k Y h).hom =
+      (linearYonedaFunctor k Y).map h.hom.op := (rfl)
+
+/-- The inverse map of the induced homotopy equivalence is precomposition with `h.inv`. -/
+@[simp]
+lemma _root_.TauCeti.HomotopyEquiv.linearYonedaFunctorMap_inv
+    {X X' : ChainComplex C α} (h : _root_.HomotopyEquiv X X') :
+    (TauCeti.HomotopyEquiv.linearYonedaFunctorMap k Y h).inv =
+      (linearYonedaFunctor k Y).map h.inv.op := (rfl)
 
 end Preadditive
 

@@ -27,8 +27,7 @@ homotopy; it does not assert a Künneth decomposition of cohomology.
 * S. Eilenberg and J. A. Zilber, *On products of complexes*, Amer. J. Math. 75 (1953).
 
 The construction uses `TauCeti.ChainComplex.cup`, and the comparison uses
-`TopCat.alexanderWhitneyShuffleHomotopy`, `TopCat.shuffleAlexanderWhitneyHomotopy`,
-and `Homotopy.linearYonedaFunctorMap`.
+`TopCat.eilenbergZilberHomotopyEquiv` and `TauCeti.HomotopyEquiv.linearYonedaFunctorMap`.
 -/
 
 public section
@@ -151,17 +150,8 @@ def singularEilenbergZilberCohomologyIso (X Y : TopCat.{w}) (R S P : C) (n : ℕ
       (_root_.ChainComplex.linearYonedaObj
         (HomologicalComplex.tensorObj ((TopCat.toSSet.obj X).chainComplex R)
           ((TopCat.toSSet.obj Y).chainComplex S)) k P).homology n :=
-  HomotopyEquiv.toHomologyIso
-    { hom := (ChainComplex.linearYonedaFunctor k P).map (TopCat.shuffle X Y R S).op
-      inv := (ChainComplex.linearYonedaFunctor k P).map (TopCat.alexanderWhitney X Y R S).op
-      homotopyHomInvId := by
-        simpa only [← Functor.map_comp, ← op_comp] using
-          ((TopCat.alexanderWhitneyShuffleHomotopy X Y R S).linearYonedaFunctorMap k P).trans
-            (Homotopy.ofEq ((ChainComplex.linearYonedaFunctor k P).map_id _))
-      homotopyInvHomId := by
-        simpa only [← Functor.map_comp, ← op_comp] using
-          ((TopCat.shuffleAlexanderWhitneyHomotopy X Y R S).linearYonedaFunctorMap k P).trans
-            (Homotopy.ofEq ((ChainComplex.linearYonedaFunctor k P).map_id _)) } n
+  (HomotopyEquiv.linearYonedaFunctorMap k P
+    (TopCat.eilenbergZilberHomotopyEquiv X Y R S).symm).toHomologyIso n
 
 /-- The forward Eilenberg–Zilber comparison is induced by precomposition with the shuffle map. -/
 @[simp]
@@ -172,8 +162,11 @@ lemma singularEilenbergZilberCohomologyIso_hom (X Y : TopCat.{w}) (R S P : C) (n
         (L := _root_.ChainComplex.linearYonedaObj
           (HomologicalComplex.tensorObj ((TopCat.toSSet.obj X).chainComplex R)
             ((TopCat.toSSet.obj Y).chainComplex S)) k P)
-        ((ChainComplex.linearYonedaFunctor k P).map (TopCat.shuffle X Y R S).op) n :=
-  (rfl)
+        ((ChainComplex.linearYonedaFunctor k P).map (TopCat.shuffle X Y R S).op) n := by
+  simp only [singularEilenbergZilberCohomologyIso, _root_.HomotopyEquiv.toHomologyIso,
+    HomotopyEquiv.linearYonedaFunctorMap_hom, _root_.HomotopyEquiv.symm_hom,
+    TopCat.eilenbergZilberHomotopyEquiv_inv]
+  rfl
 
 /-- The inverse Eilenberg–Zilber comparison is induced by precomposition with Alexander–Whitney. -/
 @[simp]
@@ -185,8 +178,11 @@ lemma singularEilenbergZilberCohomologyIso_inv (X Y : TopCat.{w}) (R S P : C) (n
             ((TopCat.toSSet.obj Y).chainComplex S)) k P)
         (L := (X ⊗ Y).singularCochainComplex (R ⊗ S) k P)
         ((ChainComplex.linearYonedaFunctor k P).map
-          (TopCat.alexanderWhitney X Y R S).op) n :=
-  (rfl)
+          (TopCat.alexanderWhitney X Y R S).op) n := by
+  simp only [singularEilenbergZilberCohomologyIso, _root_.HomotopyEquiv.toHomologyIso,
+    HomotopyEquiv.linearYonedaFunctorMap_inv, _root_.HomotopyEquiv.symm_inv,
+    TopCat.eilenbergZilberHomotopyEquiv_hom]
+  rfl
 
 /-- The Eilenberg–Zilber comparison commutes with pullback along maps in both spaces. -/
 @[reassoc]
