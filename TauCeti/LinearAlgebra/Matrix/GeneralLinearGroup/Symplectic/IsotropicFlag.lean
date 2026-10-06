@@ -125,6 +125,24 @@ theorem mem_matrixSubgroup_iff (g : GLSymplecticFin m A) :
       simp only [Fin.natAdd_eq_addNat] at hij ⊢
       exact hlower i j ((flagOrder_addNat_lt_addNat_iff m i j).mp hij)
 
+/-- Apply a ring homomorphism entrywise to a flag-preserving symplectic matrix. -/
+def map {B : Type*} [CommRing B] (phi : A →+* B) :
+    matrixSubgroup m (A := A) →* matrixSubgroup m (A := B) :=
+  ((GLSymplecticFin.map m A phi).domRestrict (matrixSubgroup m)).codRestrict
+    (matrixSubgroup m) fun g ↦ by
+      rw [mem_matrixSubgroup_iff_flagOrder]
+      intro i j hij
+      rw [MonoidHom.domRestrict_apply, GLSymplecticFin.coe_map,
+        Matrix.GeneralLinearGroup.map_apply,
+        (mem_matrixSubgroup_iff_flagOrder m g.val).mp g.property i j hij, map_zero]
+
+/-- The underlying symplectic matrix of coefficient change is the ambient coefficient map. -/
+@[simp]
+theorem coe_map {B : Type*} [CommRing B] (phi : A →+* B)
+    (g : matrixSubgroup m (A := A)) :
+    (map m phi g : GLSymplecticFin m B) = GLSymplecticFin.map m A phi g := by
+  rfl
+
 /-- The symplectic isotropic flag subgroup is solvable over every commutative ring. -/
 instance instIsSolvableMatrixSubgroup : Group.IsSolvable (matrixSubgroup m (A := A)) := by
   let φ := ((flagOrder m).reindexGL A).toMonoidHom.comp (GLSymplecticFin m A).subtype

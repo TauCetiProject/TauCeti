@@ -207,14 +207,25 @@ theorem quotientPointsHom_pointsMulEquiv_symm (g : matrixSubgroup m (A := A)) :
 
 variable {B : Type v} [CommRing B] [Algebra R B]
 
-/-- The flag-subgroup point equivalence is natural in the value algebra, read on its
-underlying symplectic matrix. -/
+/-- The flag-subgroup point equivalence is natural in the value algebra. -/
 theorem pointsMulEquiv_mapValue (phi : A →ₐ[R] B)
     (f : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R m) (CommAlgCat.of R A)) :
-    (pointsMulEquiv R m (A := B) (AlgHom.mapValue phi f) : GLSymplecticFin m B) =
-      GLSymplecticFin.map m A (phi : A →+* B) (pointsMulEquiv R m (A := A) f) := by
-  rw [← pointsMulEquiv_coe, ← CommHopfAlgCat.mapValue_quotientPointsHom,
+    pointsMulEquiv R m (A := B) (AlgHom.mapValue phi f) =
+      GLSymplecticFin.IsotropicFlag.map m (phi : A →+* B)
+        (pointsMulEquiv R m (A := A) f) := by
+  apply Subtype.ext
+  rw [GLSymplecticFin.IsotropicFlag.coe_map,
+    ← pointsMulEquiv_coe, ← CommHopfAlgCat.mapValue_quotientPointsHom,
     Symplectic.pointsMulEquiv_mapValue, pointsMulEquiv_coe]
+
+/-- The inverse flag-subgroup point equivalence is natural in the value algebra. -/
+theorem mapValue_pointsMulEquiv_symm_apply (phi : A →ₐ[R] B)
+    (g : matrixSubgroup m (A := A)) :
+    AlgHom.mapValue phi ((pointsMulEquiv R m (A := A)).symm g) =
+      (pointsMulEquiv R m (A := B)).symm
+        (GLSymplecticFin.IsotropicFlag.map m (phi : A →+* B) g) := by
+  apply (pointsMulEquiv R m (A := B)).injective
+  rw [pointsMulEquiv_mapValue, MulEquiv.apply_symm_apply, MulEquiv.apply_symm_apply]
 
 /-- Every algebra-valued point group of the isotropic flag subgroup is solvable. -/
 theorem isSolvable_points :
