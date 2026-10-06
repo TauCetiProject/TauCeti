@@ -310,4 +310,18 @@ theorem IsCombinatorialManifold.dimension_eq (h : IsCombinatorialManifold K n) (
       rw [Finset.card_insert_of_notMem hvσ, hcard] at hle
       simpa using hle
 
+/-- Every vertex star in a combinatorial manifold has finitely many faces. This includes
+zero-dimensional manifolds, whose vertex links are void. -/
+theorem IsCombinatorialManifold.finite_faces_closedStar
+    (h : IsCombinatorialManifold K n) (hv : ({v} : Finset ι) ∈ K) :
+    (closedStar K {v}).faces.Finite := by
+  apply PreAbstractSimplicialComplex.finite_faces_closedStar hv
+  cases n with
+  | zero =>
+    rw [isCombinatorialManifold_zero_iff.mp h hv]
+    exact Set.finite_empty
+  | succ n =>
+    exact (isCombinatorialManifold_succ_iff.mp h hv).elim
+      IsCombinatorialSphere.finite_faces IsCombinatorialBall.finite_faces
+
 end PreAbstractSimplicialComplex

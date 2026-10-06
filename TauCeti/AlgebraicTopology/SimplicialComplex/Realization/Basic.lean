@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Convex.SimplicialComplex.AffineIndependentUnion
 public import Mathlib.Analysis.Convex.Combination
 public import Mathlib.Topology.UniformSpace.Real
+import Mathlib.Topology.Separation.Hausdorff
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Basic
 
 /-!
@@ -157,6 +158,13 @@ theorem continuous_realization_coe (K : AbstractSimplicialComplex ι) :
   intro σ
   exact continuous_induced_dom.congr fun x => by
     exact congrArg (fun y : ι →₀ ℝ => (y : ι → ℝ)) (faceInclusion_val K σ x).symm
+
+/-- The weak realization is Hausdorff: distinct points have distinct continuous
+barycentric coordinates. -/
+instance instT2SpaceRealization (K : AbstractSimplicialComplex ι) : T2Space (Realization K) :=
+  T2Space.of_injective_continuous
+    (fun _ _ h => Subtype.ext (Finsupp.ext fun v => congrFun h v))
+    (continuous_realization_coe K)
 
 /-- The coordinate image of every abstract face is a face of the geometric complex. -/
 theorem image_single_mem_standardGeometricComplex_faces {K : AbstractSimplicialComplex ι}

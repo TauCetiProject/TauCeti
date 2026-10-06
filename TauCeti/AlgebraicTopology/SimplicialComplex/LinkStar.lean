@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Basic
-public import Mathlib.Data.Finset.Basic
+public import Mathlib.Data.Finset.Powerset
+import Mathlib.Basic.Finite.Prod
 public import TauCeti.AlgebraicTopology.SimplicialComplex.IsCone
 
 /-!
@@ -243,6 +244,21 @@ theorem mem_closedStar_inf_deletion_iff_sdiff (hσ : σ ∈ K) :
   · rintro ⟨hne, hnot, hlink⟩
     have hstar := (mem_closedStar_iff_sdiff hσ).mpr ⟨hne, hlink⟩
     exact ⟨⟨hne, hlink⟩, closedStar_le hstar, hnot⟩
+
+/-- A closed star has finitely many faces whenever its link does. -/
+theorem finite_faces_closedStar (hσ : σ ∈ K) (hlink : (link K σ).faces.Finite) :
+    (closedStar K σ).faces.Finite := by
+  have hfin := (σ.powerset.finite_toSet.prod (hlink.insert ∅)).image
+    (fun p : Finset ι × Finset ι => p.1 ∪ p.2)
+  apply hfin.subset
+  intro ρ hρ
+  obtain ⟨-, hrem⟩ := (mem_closedStar_iff_sdiff hσ).mp hρ
+  refine ⟨(ρ ∩ σ, ρ \ σ), ⟨?_, ?_⟩, ?_⟩
+  · exact mem_powerset.mpr inter_subset_right
+  · rcases hrem with h | h
+    · exact Or.inl h
+    · exact Or.inr h
+  · exact sup_inf_sdiff ρ σ
 
 section IsCone
 
