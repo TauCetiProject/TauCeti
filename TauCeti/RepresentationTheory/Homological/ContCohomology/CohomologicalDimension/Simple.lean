@@ -61,33 +61,6 @@ variable {p : ℕ} {G : Type u} [Group G]
 
 namespace ContinuousCohomology
 
-/-- A nonzero finite `ZMod p`-module with an action of `G` has a minimal nonzero `G`-stable
-subgroup: an atom of its lattice of subrepresentations. It carries an irreducible representation,
-and it is the subgroup the dévissage splits off. -/
-private theorem exists_isIrreducible_addSubgroup [Fact p.Prime] (M : Type u) [AddCommGroup M]
-    [Module (ZMod p) M] [DistribMulAction G M] [Finite M] [Nontrivial M] :
-    ∃ (P : AddSubgroup M) (hP : ∀ g : G, ∀ x ∈ P, g • x ∈ P), 1 < Nat.card P ∧
-      letI := P.restrictDistribMulAction hP
-      (Representation.ofDistribMulAction (ZMod p) G P).IsIrreducible := by
-  let ρ := Representation.ofDistribMulAction (ZMod p) G M
-  have : Finite (Subrepresentation ρ) :=
-    .of_injective (fun W : Subrepresentation ρ ↦ (W : Set M)) SetLike.coe_injective
-  obtain ⟨W, hW, -⟩ := (eq_bot_or_exists_atom_le (⊤ : Subrepresentation ρ)).resolve_left
-    top_ne_bot
-  let P : AddSubgroup M := W.toSubmodule.toAddSubgroup
-  have hP : ∀ g : G, ∀ x ∈ P, g • x ∈ P := fun g _ hx ↦ W.apply_mem_toSubmodule g hx
-  let := P.restrictDistribMulAction hP
-  refine ⟨P, hP, ?_, ?_⟩
-  · have : Nontrivial W.toSubmodule := Submodule.nontrivial_iff_ne_bot.2 fun h ↦
-      hW.1 (Subrepresentation.toSubmodule_injective h)
-    exact Finite.one_lt_card_iff_nontrivial.2 this
-  -- `W.toSubmodule` and `P` have the same elements, and the identity between them is additive,
-  -- hence `ZMod p`-linear; it is equivariant since `g` acts on both as `g • ·` on `M`
-  let e : W.toSubmodule ≃+ P := AddEquiv.refl _
-  exact Representation.isIrreducible_of_linearEquiv
-    { e with map_smul' := ZMod.map_smul e } (fun _ _ ↦ rfl)
-    (Representation.isIrreducible_toRepresentation_of_isAtom hW)
-
 variable [TopologicalSpace G] [IsTopologicalGroup G] [LocallyCompactSpace G]
 
 /-- Vanishing of `Hⁿ(G, -)` on the finite discrete simple `𝔽_p`-representations of `G` implies
@@ -113,8 +86,21 @@ theorem subsingleton_continuousCohomology_of_forall_isIrreducible [Fact p.Prime]
   · exact subsingleton_continuousCohomology_ofDiscreteModule_of_subsingleton A n
   -- split off a simple subrepresentation `P`
   have := AddCommGroup.zmodModule hA
-  obtain ⟨P, hP, hPcard, hPirr⟩ := exists_isIrreducible_addSubgroup (p := p) (G := G) A
+  obtain ⟨W, hW, hWirr⟩ := Representation.exists_isIrreducible_subrepresentation
+    (Representation.ofDistribMulAction (ZMod p) G A)
+  let P : AddSubgroup A := W.toSubmodule.toAddSubgroup
+  have hP : ∀ g : G, ∀ x ∈ P, g • x ∈ P := fun g _ hx ↦ W.apply_mem_toSubmodule g hx
   let := P.restrictDistribMulAction hP
+  have hPcard : 1 < Nat.card P := by
+    have : Nontrivial W.toSubmodule := Submodule.nontrivial_iff_ne_bot.2 fun h ↦
+      hW (Subrepresentation.toSubmodule_injective h)
+    exact Finite.one_lt_card_iff_nontrivial.2 this
+  -- `W.toSubmodule` and `P` have the same elements, and the identity between them is additive,
+  -- hence `ZMod p`-linear; it is equivariant since `g` acts on both as `g • ·` on `A`
+  have hPirr : (Representation.ofDistribMulAction (ZMod p) G P).IsIrreducible := by
+    let e : W.toSubmodule ≃+ P := AddEquiv.refl _
+    exact Representation.isIrreducible_of_linearEquiv
+      { e with map_smul' := ZMod.map_smul e } (fun _ _ ↦ rfl) hWirr
   let := P.quotientDistribMulAction hP
   have : ContinuousSMul G P := P.restrictDistribMulAction_continuousSMul hP
   have : ContinuousSMul G (A ⧸ P) := P.quotientDistribMulAction_continuousSMul hP
