@@ -342,11 +342,6 @@ theorem OColumns_swapColumns_eq_image_of_coveredColumns (r : GridRectangle n) {a
     simpa only [Equiv.swap_apply_self] using
       (r.mem_coveredSquares_swap_iff_of_coveredColumns h (d, G.O d)).mpr hd
 
-/-- The covered `O`-markings are exactly the markings of the covered `O`-columns. -/
-theorem OSet_inter_coveredSquares (r : GridRectangle n) :
-    G.OSet ∩ r.coveredSquares = (G.OColumns r).image fun c => (c, G.O c) := by
-  exact G.OSet_inter_eq_image_OColumnsOfSquares r.coveredSquares
-
 /-- The number of covered `O`-columns is the number of `O`-markings among the covered squares:
 a grid diagram has exactly one `O`-marking in each column. -/
 theorem card_OColumns (r : GridRectangle n) :

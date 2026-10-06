@@ -150,6 +150,15 @@ theorem bottom_eq_bottom_of_left_eq_right (h : S.left = R.right) : S.bottom = R.
 theorem top_eq_top_of_left_eq_right (h : S.left = R.right) : S.top = R.top := by
   rw [top_def, R.right_eq_left_of_left_eq_right S h, R.map_left, top_def]
 
+/-- A returning rectangle starting on the terminal side column covers the complementary column
+arc and the outgoing row arc. -/
+theorem coveredSquares_eq_product_of_left_eq_right (h : S.left = R.right) :
+    S.toGridRectangle.coveredSquares = Grid.cIco R.right R.left ×ˢ Grid.cIco R.bottom R.top := by
+  simp only [GridRectangle.coveredSquares_def, GridRectangle.coveredColumns_def,
+    GridRectangle.coveredRows_def, toGridRectangle_left, toGridRectangle_right,
+    toGridRectangle_bottom, toGridRectangle_top, h, R.right_eq_left_of_left_eq_right S h,
+    R.bottom_eq_bottom_of_left_eq_right S h, R.top_eq_top_of_left_eq_right S h]
+
 /-- A returning pair whose two rectangles start on the same side column covers a full vertical
 band: the same columns as the outgoing rectangle, and every row. -/
 theorem coveredSquares_union_coveredSquares_of_left_eq_left (h : S.left = R.left) :
@@ -174,14 +183,14 @@ horizontal band: every column, and the same rows as the outgoing rectangle. -/
 theorem coveredSquares_union_coveredSquares_of_left_eq_right (h : S.left = R.right) :
     R.toGridRectangle.coveredSquares ∪ S.toGridRectangle.coveredSquares =
       (Finset.univ : Finset (Fin n)) ×ˢ R.toGridRectangle.coveredRows := by
+  rw [R.coveredSquares_eq_product_of_left_eq_right S h, GridRectangle.coveredSquares_def]
   have hcol : Grid.cIco R.left R.right ∪ Grid.cIco R.right R.left = Finset.univ :=
     Grid.cIco_union_swap R.left_ne_right
   ext p
-  simp only [Finset.mem_union, GridRectangle.mem_coveredSquares,
+  simp only [Finset.mem_union,
     GridRectangle.mem_coveredColumns, GridRectangle.mem_coveredRows, Finset.mem_product,
     Finset.mem_univ, true_and, toGridRectangle_left, toGridRectangle_right,
-    toGridRectangle_bottom, toGridRectangle_top, h, R.right_eq_left_of_left_eq_right S h,
-    R.bottom_eq_bottom_of_left_eq_right S h, R.top_eq_top_of_left_eq_right S h]
+    toGridRectangle_bottom, toGridRectangle_top]
   refine ⟨fun hp => hp.elim And.right And.right, fun hp => ?_⟩
   have := hcol ▸ Finset.mem_univ p.1
   rcases Finset.mem_union.mp this with hb | hb
