@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Ring.LadderValley
-public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Diagram
-public import TauCeti.RepresentationTheory.Quiver.Zigzag.Signless
+public import TauCeti.RepresentationTheory.Quiver.Preprojective.ADE.TypeD.Basic
 public import TauCeti.RingTheory.Idempotents.Corner
 
 /-!
@@ -39,6 +37,8 @@ namespace TauCeti
 
 open PathAlgebra DoubledQuiver
 
+attribute [local instance] forkNeighborSetFintype
+
 variable (k : Type*) [CommRing k] {n : ℕ}
 
 local notation "DG" => diagramGraph (DynkinType.cartanMatrix (DynkinType.D n))
@@ -46,13 +46,6 @@ local notation "Π" => signlessPreprojectiveAlgebra k (DoubledQuiver DG)
 local notation "π" => signlessPreprojectiveMk k (DoubledQuiver DG)
 local notation "c" => n - 3
 local notation "e" => fun a : Fin (DynkinType.D n).rank => π (vertexIdempotent k (vertex DG a))
-
-/-- The neighbours of a vertex in a finite graph form a finite type; this is the finiteness
-structure of the orientation comparisons of
-`TauCeti.RepresentationTheory.Quiver.Zigzag.Preprojective`. -/
-noncomputable local instance forkNeighborSetFintype {V : Type*} [Finite V] (G : SimpleGraph V)
-    (i : V) : Fintype (G.neighborSet i) :=
-  Fintype.ofFinite _
 
 /-- The corner word which stays on the long arm, with valley bottom `m` counted from the fork.
 Its path interpretation requires `a, b ≤ n - 3` and `m ≤ min (n - 3 - a) (n - 3 - b)`. -/

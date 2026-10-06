@@ -6,10 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Algebra.SquareZeroPair
+public import TauCeti.Algebra.Ring.LadderValley
+public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Diagram
 public import TauCeti.RepresentationTheory.Quiver.AdmissibleIdeal.Basic
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Admissible
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Preprojective
-public import TauCeti.RepresentationTheory.Quiver.Preprojective.ADE.TypeD.Words
+public import TauCeti.RepresentationTheory.Quiver.Zigzag.Signless
 
 /-!
 # Path reduction in the type-`D` preprojective algebra
@@ -32,13 +34,10 @@ A path is then rewritten, one arrow at a time, into one of the following normal 
 word on the long arm which does not reach the branch node; or a word of the shape
 `(path out of c) · w · (path into c)`, where `w` lies in a power of the span of `{x, y}` and the
 outer paths are the direct paths into and out of the branch node, with the entry allowed an
-integer scalar, and have length at most `c + 1`. Combining this with the two alternating words
-spanning each power of the backtrack span gives the explicit finite corner words of
-`TauCeti.signlessPreprojectiveDNormalForms`. A long enough path has `w` in a power of degree
+integer scalar, and have length at most `c + 1`. A long enough path has `w` in a power of degree
 at least `c + 2`, so **every path of length at least `4 n` vanishes**. Below rank three the diagram
-has no
-edges, and the same bound holds trivially. The bound `4 n` is not sharp; the sharp bound `h - 1`,
-for the Coxeter number `h = 2 n - 2` of `Dₙ`, is not proved here.
+has no edges, and the same bound holds trivially. The bound `4 n` is not sharp; the sharp bound
+`h - 1`, for the Coxeter number `h = 2 n - 2` of `Dₙ`, is not proved here.
 
 The signless algebra of a bipartite graph is the preprojective algebra of each of its
 orientations, by an explicit sign rescaling of the arrows. Thus the same bound holds in the
@@ -47,8 +46,6 @@ relation ideal is admissible, and `Π_k(Q)` is finite-dimensional over every fie
 
 ## Main results
 
-* `TauCeti.signlessPreprojectiveMk_D_ofPath_mem_span_normalForms`: each path class lies in the
-  span of the explicit normal words for its source/target corner.
 * `TauCeti.signlessPreprojectiveMk_D_ofPath_eq_zero_of_le`: paths of length at least `4 n` vanish
   in the signless algebra of `Dₙ`.
 * `TauCeti.preprojectiveMk_D_ofPath_eq_zero_of_le`: the same in the preprojective algebra of every
@@ -74,7 +71,12 @@ namespace TauCeti
 
 open _root_.Quiver PathAlgebra DoubledQuiver
 
-attribute [local instance] forkNeighborSetFintype
+/-- The neighbours of a vertex in a finite graph form a finite type; this is the finiteness
+structure of the orientation comparisons of
+`TauCeti.RepresentationTheory.Quiver.Zigzag.Preprojective`. -/
+noncomputable local instance forkNeighborSetFintype {V : Type*} [Finite V] (G : SimpleGraph V)
+    (i : V) : Fintype (G.neighborSet i) :=
+  Fintype.ofFinite _
 
 /-! ### Graphs with a long arm and two leaves at its end -/
 
@@ -105,11 +107,6 @@ private noncomputable def forkEntry (i : ℕ)
     (E : signlessPreprojectiveAlgebra k (DoubledQuiver G)) :=
   if i ≤ c then ladderValley (forkUp k G c) (forkDown k G c) 0 (c - i) 0 * E
   else signlessArrow k G i c * E
-
-/-- The direct path out of the branch node towards `j`. -/
-private noncomputable def forkExit (j : ℕ) :=
-  if j ≤ c then ladderValley (forkUp k G c) (forkDown k G c) 0 0 (c - j)
-  else signlessArrow k G c j
 
 /-- The **normal forms of a path** from the vertex `i₀` to the vertex `j`, of length `L`, whose
 source idempotent is `E`:
@@ -437,107 +434,6 @@ private def dColoring (n : ℕ) : (diagramGraph (DynkinType.D n).cartanMatrix).C
 section CommRing
 
 variable (k : Type*) [CommRing k] {n : ℕ}
-
-section NormalWords
-
-local notation "DG" => diagramGraph (DynkinType.cartanMatrix (DynkinType.D n))
-local notation "Π" => signlessPreprojectiveAlgebra k (DoubledQuiver DG)
-local notation "π" => signlessPreprojectiveMk k (DoubledQuiver DG)
-local notation "dc" => n - 3
-local notation "e" => fun a : Fin (DynkinType.D n).rank => π (vertexIdempotent k (vertex DG a))
-local notation "entry" => forkEntry k (n := DynkinType.rank (DynkinType.D n)) DG dc
-local notation "exit" => forkExit k (n := DynkinType.rank (DynkinType.D n)) DG dc
-local notation "turn" => forkTurn k (n := DynkinType.rank (DynkinType.D n)) DG dc
-local notation "S" => forkSpan k (n := DynkinType.rank (DynkinType.D n)) DG dc
-
-/-- Alternating fork backtracks, placed between the direct entry and exit paths, lie in the
-span of the finite normal-word family. -/
-private theorem forkBranch_mem_span_normalForms (hn : 3 ≤ n)
-    (a b : Fin (DynkinType.D n).rank) (t : ℕ) (w : Π) (hw : w ∈ S ^ t) :
-    e b * exit b.val * w * entry a.val (e a) ∈
-      Submodule.span k (signlessPreprojectiveDNormalForms k a b) := by
-  let M := Submodule.span k (signlessPreprojectiveDNormalForms k a b)
-  have hword (l : Bool) (s : ℕ) (hs : s < dc + 2) :
-      e b * exit b.val *
-        (if s = 0 then 1 else
-          (if l then turn (dc + 1) else turn (dc + 2)) *
-            (turn (dc + 1) + turn (dc + 2)) ^ (s - 1)) * entry a.val (e a) ∈ M := by
-    have hmem : signlessPreprojectiveDBranchWord k a b l s ∈ M := by
-      apply Submodule.subset_span
-      rw [signlessPreprojectiveDNormalForms_def]
-      exact .inl (.inr ⟨(l, ⟨s, hs⟩), Set.mem_univ _, rfl⟩)
-    rw [signlessPreprojectiveDBranchWord_def] at hmem
-    dsimp only [forkExit, forkEntry, forkTurn] at hmem ⊢
-    unfold forkUp forkDown
-    simpa only [ite_mul, mul_assoc] using hmem
-  have hn' : (DynkinType.D n).rank = dc + 3 := by rw [DynkinType.rank_D]; omega
-  have hG := diagramGraph_D_adj hn
-  by_cases ht : dc + 2 ≤ t
-  · have hzero := forkSpan_pow_eq_bot k (G := DG) hn' hG ht
-    have hw0 : w = 0 := (Submodule.mem_bot ℤ).mp (hzero ▸ hw)
-    simp only [hw0, mul_zero, zero_mul, Submodule.zero_mem]
-  cases t with
-  | zero =>
-    rw [pow_zero, Submodule.one_eq_span] at hw
-    obtain ⟨α, rfl⟩ := Submodule.mem_span_singleton.mp hw
-    simpa only [← Int.cast_smul_eq_zsmul k, mul_smul_comm, smul_mul_assoc, ite_true] using
-      M.smul_of_tower_mem α (hword false 0 (by omega))
-  | succ t =>
-    have hx := forkTurn_mul_self k (G := DG) hn' hG (l := dc + 1) (by omega) (by omega)
-    have hy := forkTurn_mul_self k (G := DG) hn' hG (l := dc + 2) (by omega) (by omega)
-    have hw' := span_pair_pow_succ_le (R := ℤ) hx hy t hw
-    obtain ⟨α, β, rfl⟩ := Submodule.mem_span_pair.mp hw'
-    have hleft := hword true (t + 1) (by omega)
-    have hright := hword false (t + 1) (by omega)
-    simp only [Nat.add_sub_cancel, Nat.succ_ne_zero, ite_false, Bool.false_eq_true,
-      ite_true] at hleft hright
-    simpa only [mul_add, add_mul, ← Int.cast_smul_eq_zsmul k, mul_smul_comm, smul_mul_assoc] using
-      M.add_mem (M.smul_of_tower_mem α hleft) (M.smul_of_tower_mem β hright)
-
-/-- Every path class from `a` to `b` belongs to the span of the explicit type-`D` corner words.
-This is a uniform spanning theorem, with no independence or characteristic assumption. -/
-theorem signlessPreprojectiveMk_D_ofPath_mem_span_normalForms (hn : 3 ≤ n)
-    {a b : Fin (DynkinType.D n).rank} (p : Path (vertex DG a) (vertex DG b)) :
-    π (ofPath ⟨_, _, p⟩) ∈ Submodule.span k (signlessPreprojectiveDNormalForms k a b) := by
-  let M := Submodule.span k (signlessPreprojectiveDNormalForms k a b)
-  have hcorner : e b * π (ofPath ⟨_, _, p⟩) = π (ofPath ⟨_, _, p⟩) := by
-    rw [← map_mul, vertexIdempotent_mul_ofPath]
-  have hnf := forkNormalForm_ofPath k (G := DG) (c := dc)
-    (by rw [DynkinType.rank_D]; omega) (diagramGraph_D_adj hn) p
-  rw [ForkNormalForm] at hnf
-  simp only [vertexEquiv_symm_vertex, ← vertexIdempotent_eq_ofPath] at hnf
-  rcases hnf with ⟨m, s, r, ε, hm, -, hs, hr, hz⟩ |
-    ⟨t, s₀, w, D, hw, -, hb, -, hz, ε, hD⟩ |
-    ⟨t, s₀, w, D, hw, -, hb, -, hz, ε, hD⟩ | ⟨-, hb, hab, hz⟩
-  · have ha : a.val ≤ dc := by omega
-    have hb : b.val ≤ dc := by omega
-    have hval : signlessPreprojectiveDValley k a b m ∈ M := by
-      apply Submodule.subset_span
-      rw [signlessPreprojectiveDNormalForms_def, ite_eq_left ⟨ha, hb⟩]
-      exact .inl (.inl ⟨m, Finset.mem_Icc.mpr ⟨hm, by omega⟩, rfl⟩)
-    rw [← hcorner, hz, mul_smul_comm]
-    have hs' : dc - a.val - m = s := by omega
-    have hr' : dc - b.val - m = r := by omega
-    unfold forkUp forkDown
-    simpa only [signlessPreprojectiveDValley_def, hs', hr', mul_assoc] using
-      M.smul_of_tower_mem ε hval
-  · rw [← hcorner, hz, hD]
-    have h := forkBranch_mem_span_normalForms k hn a b t w hw
-    rw [forkExit, ite_eq_left hb] at h
-    simpa only [mul_assoc, mul_smul_comm] using M.smul_of_tower_mem ε h
-  · rw [← hcorner, hz, hD]
-    have h := forkBranch_mem_span_normalForms k hn a b t w hw
-    rw [forkExit, ite_eq_right (by omega)] at h
-    simpa only [mul_assoc, mul_smul_comm] using M.smul_of_tower_mem ε h
-  · have hab' : a = b := Fin.ext hab.symm
-    rw [hz]
-    apply Submodule.subset_span
-    rw [signlessPreprojectiveDNormalForms_def]
-    apply Or.inr
-    rw [ite_eq_left ⟨hab', by omega⟩]
-    exact Set.mem_singleton _
-
-end NormalWords
 
 /-- **Every path of length at least `4 n` vanishes in the signless algebra of `Dₙ`.** -/
 @[simp]
