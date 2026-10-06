@@ -118,13 +118,6 @@ private theorem finsetFinTwo_cases (s : Finset (Fin 2)) :
     s = ∅ ∨ s = {0} ∨ s = {1} ∨ s = {0, 1} := by
   fin_cases s <;> decide
 
-private theorem exteriorGenerator_mul_mul_self {M : Type*} [AddCommGroup M] [Module K M]
-    (x y : M) :
-    ExteriorAlgebra.ι K x * (ExteriorAlgebra.ι K y * ExteriorAlgebra.ι K x) = 0 := by
-  rw [← mul_assoc,
-    eq_neg_of_add_eq_zero_left (ExteriorAlgebra.ι_add_mul_swap x y), neg_mul, mul_assoc]
-  simp
-
 private theorem orderedPair_eq_smul_exteriorBasis
     (P : SpinPolarizationData Q) (b : Basis (Fin 2) K P.W) :
     ExteriorAlgebra.ι K (b 0) * ExteriorAlgebra.ι K (b 1) =
@@ -162,7 +155,11 @@ private theorem toMatrix_spinAction_typeDSimpleRootBivector_fin_two_one
   intro s
   rcases finsetFinTwo_cases s with rfl | rfl | rfl | rfl
   · simp [map_mul, Module.End.mul_apply]
-  · simp [map_mul, Module.End.mul_apply, exteriorGenerator_mul_mul_self]
+  · have h : ExteriorAlgebra.ι K (b 0) *
+        (ExteriorAlgebra.ι K (b 1) * ExteriorAlgebra.ι K (b 0)) = 0 := by
+      simpa using ExteriorAlgebra.ι_mul_prod_list (R := K)
+        (![b 1, b 0] : Fin 2 → P.W) (1 : Fin 2)
+    simp [map_mul, Module.End.mul_apply, h]
   · simp [map_mul, Module.End.mul_apply]
   · rw [spinFourExteriorBasis_pair, orderedPair_eq_smul_exteriorBasis P b]
     simp [map_mul, Module.End.mul_apply,
