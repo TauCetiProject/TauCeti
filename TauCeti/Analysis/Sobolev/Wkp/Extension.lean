@@ -7,7 +7,8 @@ module
 
 public import TauCeti.Analysis.Sobolev.Wkp.Zero
 public import TauCeti.Analysis.Sobolev.Wkp.Restriction
-public import TauCeti.Analysis.Sobolev.W1p.Extension
+public import TauCeti.MeasureTheory.Function.Lp.ExtendByZero
+import TauCeti.Analysis.Sobolev.W1p.Extension
 import Mathlib.Analysis.Normed.Operator.Extend
 
 /-!
@@ -23,10 +24,8 @@ This transport lets whole-space approximation and derivative estimates apply to
 zero-boundary functions on a domain. The zero-boundary condition is essential: a general
 domain Sobolev function can acquire singular distributional derivatives across the boundary.
 
-The construction extends the inclusion of test functions by Mathlib's
-`LinearMap.extendOfIsometry`, using the full iterated graph norm. At first order it reuses
-`TauCeti.Sobolev1JetLp.extendByZeroₗᵢ`; higher orders use the same zero extension for each
-recorded derivative field.
+The extension is characterized by continuity and its action on the dense family of test
+functions: a test function on `Ω` becomes the same function on `Ω'`.
 
 ## References
 
@@ -82,6 +81,7 @@ private theorem norm_testFunction_mono (hsub : Omega ≤ Omega') (k : ℕ)
         TestFunction.monoCLM_apply]
       simp [hsub]
   | one =>
+      -- Reuse the first-order zero-extension isometry for value-gradient jets.
       have h := (Sobolev1JetLp.extendByZeroₗᵢ (mu := mu) (p := p) hsub).norm_map
         (W1p.ofTestFunctionₗ mu Omega p phi : Sobolev1JetLp mu Omega p)
       rw [Sobolev1JetLp.extendByZeroₗᵢ_ofTestFunctionₗ] at h
@@ -111,6 +111,7 @@ private theorem norm_testFunction_mono (hsub : Omega ≤ Omega') (k : ℕ)
 Sobolev spaces. This preserves the full norm at every order, including at `p = ∞`. -/
 def Wkp0.extendByZeroₗᵢ (hsub : Omega ≤ Omega') (k : ℕ) :
     Wkp0 mu Omega p k →ₗᵢ[ℝ] Wkp0 mu Omega' p k :=
+  -- Extend the dense test-function inclusion using Mathlib's `LinearMap.extendOfIsometry`.
   ((Wkp0.ofTestFunctionₗ (mu := mu) (Omega := Omega') (p := p) k).comp
     (TestFunction.monoCLM ℝ).toLinearMap).extendOfIsometry
     (Wkp0.denseRange_ofTestFunctionₗ k) (fun phi => by

@@ -414,6 +414,16 @@ theorem Wkp0.coe_lowerOrderL (k : ℕ) (u : Wkp0 mu Omega p (k + 1)) :
       Wkp.lowerOrder k (u : Wkp mu Omega p (k + 1)) :=
   Wkp.lowerOrderL_apply k (u : Wkp mu Omega p (k + 1))
 
+/-- Forgetting the highest derivative of a zero-boundary test function gives its embedding
+at the preceding order. -/
+-- The dependent successor index prevents this rule from matching in `simp`.
+theorem Wkp0.lowerOrderL_ofTestFunctionₗ (k : ℕ) (phi : 𝓓(Omega, ℝ)) :
+    Wkp0.lowerOrderL k (Wkp0.ofTestFunctionₗ (mu := mu) (p := p) (k + 1) phi) =
+      Wkp0.ofTestFunctionₗ (mu := mu) (p := p) k phi := by
+  apply Subtype.ext
+  rw [Wkp0.coe_lowerOrderL, Wkp0.coe_ofTestFunctionₗ, Wkp0.coe_ofTestFunctionₗ,
+    Wkp.lowerOrder_ofTestFunctionₗ]
+
 /-- `W^{k,p}_0(Ω)` is complete in the iterated graph norm. -/
 instance (k : ℕ) : CompleteSpace (Wkp0 mu Omega p k) :=
   (wkp0Submodule mu Omega p k).isClosed.completeSpace_coe
