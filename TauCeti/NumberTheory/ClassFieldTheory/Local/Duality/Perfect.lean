@@ -8,6 +8,8 @@ module
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.Duality.Explicit
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.Duality.FiniteModule
 
+import TauCeti.Algebra.Group.Hom.Instances
+
 /-!
 # Local Tate duality for the named evaluation pairing
 
@@ -53,25 +55,6 @@ attribute [local instance] TopRep.distribMulAction absoluteGaloisGroupAction
 
 variable {n : ℕ}
 
-/-- A pairing that reads, through additive equivalences `eX` and `eY`, as a bijective map
-`α : Y₀ → (X₀ →+ ZMod n)` separates the points of its second argument, and every homomorphism
-from its first argument to `ZMod n` is pairing with some point. -/
-private theorem flip_perfect_of_bijective {X Y X₀ Y₀ : Type*} [AddCommGroup X] [AddCommGroup Y]
-    [AddCommGroup X₀] [AddCommGroup Y₀] (pair : X → Y → ZMod n) (eX : X₀ ≃+ X) (eY : Y₀ ≃+ Y)
-    (α : Y₀ →+ X₀ →+ ZMod n) (hα : Function.Bijective α)
-    (h : ∀ x y, pair (eX x) (eY y) = α y x) :
-    (∀ y : Y, (∀ x : X, pair x y = 0) → y = 0) ∧
-      ∀ ψ : X →+ ZMod n, ∃ y : Y, ∀ x : X, pair x y = ψ x := by
-  refine ⟨fun y hy => ?_, fun ψ => ?_⟩
-  · have hα0 : α (eY.symm y) = α 0 := by
-      ext x
-      rw [← h, eY.apply_symm_apply, map_zero, AddMonoidHom.zero_apply]
-      exact hy _
-    rw [← eY.apply_symm_apply y, hα.1 hα0, map_zero]
-  · obtain ⟨y, hy⟩ := hα.2 (ψ.comp eX.toAddMonoidHom)
-    refine ⟨eY y, fun x => ?_⟩
-    rw [← eX.apply_symm_apply x, h, hy, AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom]
-
 section Degrees
 
 variable {F : Type} [Field F] (tr : continuousCohomology 2 (muNRep n F) ≃+ ZMod n)
@@ -111,7 +94,8 @@ private theorem flip_perfect_zero_two (hij : 0 + 2 = 2) :
           ∀ x : continuousCohomology 0 (tateDual A), tateDualityPairing A tr 0 2 hij x y = ψ x := by
   have := hA.out.continuousSMul
   have := (isSmoothDiscrete_tateDual A hA.out).continuousSMul
-  refine flip_perfect_of_bijective (tateDualityPairing A tr 0 2 hij)
+  refine forall_eq_zero_and_exists_eq_of_bijective_of_addEquiv
+    (tateDualityPairing A tr 0 2 hij)
     (((AddEquiv.ofBijective _ (explicitMap0_bijective _ _
         (absoluteGaloisGroupRestrictEquiv F : Field.absoluteGaloisGroup F →* AbsoluteGaloisGroup F)
         (absoluteGaloisGroupRestrictEquiv F).surjective (internalHomEquivTateDual A)
@@ -149,7 +133,8 @@ private theorem flip_perfect_one_one (hij : 1 + 1 = 2) :
           ∀ x : continuousCohomology 1 (tateDual A), tateDualityPairing A tr 1 1 hij x y = ψ x := by
   have := hA.out.continuousSMul
   have := (isSmoothDiscrete_tateDual A hA.out).continuousSMul
-  refine flip_perfect_of_bijective (tateDualityPairing A tr 1 1 hij)
+  refine forall_eq_zero_and_exists_eq_of_bijective_of_addEquiv
+    (tateDualityPairing A tr 1 1 hij)
     ((explicitMap1Equiv _ _ _ _ (absoluteGaloisGroupRestrictEquiv F) (internalHomEquivTateDual A)
       continuous_of_discreteTopology continuous_of_discreteTopology
       (internalHomEquivTateDual_smul A)).trans
@@ -185,7 +170,8 @@ private theorem flip_perfect_two_zero (hij : 2 + 0 = 2) :
           ∀ x : continuousCohomology 2 (tateDual A), tateDualityPairing A tr 2 0 hij x y = ψ x := by
   have := hA.out.continuousSMul
   have := (isSmoothDiscrete_tateDual A hA.out).continuousSMul
-  refine flip_perfect_of_bijective (tateDualityPairing A tr 2 0 hij)
+  refine forall_eq_zero_and_exists_eq_of_bijective_of_addEquiv
+    (tateDualityPairing A tr 2 0 hij)
     ((explicitMap2Equiv _ _ _ _ (absoluteGaloisGroupRestrictEquiv F) (internalHomEquivTateDual A)
       continuous_of_discreteTopology continuous_of_discreteTopology
       (internalHomEquivTateDual_smul A)).trans
